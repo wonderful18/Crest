@@ -1,10 +1,7 @@
 package io.crest.auth.filter;
 
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.auth0.jwt.interfaces.Verification;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import io.crest.auth.bo.TokenUserBO;
 import io.crest.constant.AuthConstant;
@@ -99,12 +96,7 @@ public class TokenFilter implements Filter {
                 Object pwdObj = ReflectionUtils.invokeMethod(getSecretMethod, shareSecretManage, resourceId, userId);
                 String linkSecret = pwdObj.toString();
 
-                Algorithm algorithm = Algorithm.HMAC256(linkSecret);
-                Verification verification = JWT.require(algorithm);
-                JWTVerifier verifier = verification.build();
-                DecodedJWT decode = JWT.decode(linkToken);
-                algorithm.verify(decode);
-                verifier.verify(linkToken);
+                SignedTokenUtils.verify(linkToken, linkSecret);
 
                 request.setAttribute(AuthConstant.LINK_RESOURCE_ID_ATTR, resourceId);
                 UserUtils.setUserInfo(new TokenUserBO(userId, oid));

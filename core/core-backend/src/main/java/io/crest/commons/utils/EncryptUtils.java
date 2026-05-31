@@ -38,6 +38,9 @@ public class EncryptUtils extends CodingUtil {
         if (o == null) {
             return null;
         }
+        if (io.crest.utils.CryptoMode.isSmSuite()) {
+            return io.crest.utils.SmCryptoUtils.sm4EncryptWithConfiguredKey(o.toString());
+        }
         return aesEncrypt(o.toString(), configuredSecretKey(), iv());
     }
 
@@ -45,7 +48,11 @@ public class EncryptUtils extends CodingUtil {
         if (o == null) {
             return null;
         }
-        return aesDecrypt(o.toString(), configuredSecretKey(), iv());
+        String value = o.toString();
+        if (io.crest.utils.SmCryptoUtils.isSm4Ciphertext(value)) {
+            return io.crest.utils.SmCryptoUtils.sm4DecryptWithConfiguredKey(value);
+        }
+        return aesDecrypt(value, configuredSecretKey(), iv());
     }
 
     public static <T> Object aesDecrypt(List<T> o, String attrName) {
@@ -54,7 +61,7 @@ public class EncryptUtils extends CodingUtil {
         }
         return o.stream()
                 .filter(element -> BeanUtils.getFieldValueByName(attrName, element) != null)
-                .peek(element -> BeanUtils.setFieldValueByName(element, attrName, aesDecrypt(BeanUtils.getFieldValueByName(attrName, element).toString(), configuredSecretKey(), iv()), String.class))
+                .peek(element -> BeanUtils.setFieldValueByName(element, attrName, aesDecrypt(BeanUtils.getFieldValueByName(attrName, element)), String.class))
                 .collect(Collectors.toList());
     }
 

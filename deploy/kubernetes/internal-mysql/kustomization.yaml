@@ -28,6 +28,8 @@ secretGenerator:
       - MYSQL_ROOT_PASSWORD=<set-strong-password-before-apply>
       - CREST_AES_KEY=<set-32-character-aes-key>
       - CREST_AES_IV=<set-16-character-aes-iv>
+      - CREST_CRYPTO_MODE=standard
+      - CREST_SM4_KEY=<set-16-character-sm4-key-when-crypto-mode-is-sm-suite>
       - CREST_INITIAL_PASSWORD=<set-initial-admin-password>
 
 generatorOptions:

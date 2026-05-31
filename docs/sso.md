@@ -106,14 +106,21 @@ SSO 用户的账号由身份提供方维护，用户管理中不能修改账号�
 
 ## 加密配置
 
-Client Secret 使用运行时 AES 配置加密保存：
+默认模式下，Client Secret 使用运行时 AES 配置加密保存：
 
 ```bash
 CREST_AES_KEY=<16/24/32-character-key>
 CREST_AES_IV=<16-character-iv>
 ```
 
-已有环境升级时不要修改这两个值。修改后，已保存的数据源密码和 SSO Client Secret 等密文无法解密，需要重新配置。
+启用 SM 算法套件时使用：
+
+```bash
+CREST_CRYPTO_MODE=sm-suite
+CREST_SM4_KEY=<16-character-sm4-key>
+```
+
+已有环境升级时不要修改这些值。修改后，已保存的数据源密码和 SSO Client Secret 等密文无法解密，需要重新配置。
 
 ## HTTPS 和代理
 

@@ -106,6 +106,8 @@ bash install.sh
 | `DE_MYSQL_IMAGE` | MySQL 镜像，默认 `mysql:8.4.5` |
 | `DE_MYSQL_PASSWORD` | MySQL root 密码，留空时自动生成 |
 | `DE_AES_KEY` / `DE_AES_IV` | 加密参数，留空时自动生成；升级已有环境时不要修改 |
+| `DE_CRYPTO_MODE` | 加密模式，默认 `standard`；需要 SM2/SM3/SM4 时设为 `sm-suite` |
+| `DE_SM4_KEY` | SM4 使用的 16 位 Key；启用 `sm-suite` 后留空会自动生成 |
 | `DE_INITIAL_PASSWORD` | 管理员初始密码，留空时自动生成 |
 | `DE_ORIGIN_LIST` | 允许访问来源，生产环境应改成实际域名 |
 
@@ -247,6 +249,8 @@ export CREST_DB_USERNAME=root
 export CREST_DB_PASSWORD='<mysql-password>'
 export CREST_AES_KEY='<32-character-aes-key>'
 export CREST_AES_IV='<16-character-aes-iv>'
+export CREST_CRYPTO_MODE='standard'
+export CREST_SM4_KEY='<16-character-sm4-key-when-crypto-mode-is-sm-suite>'
 export CREST_INITIAL_PASSWORD='<admin-initial-password>'
 ./run.sh start
 ```
@@ -337,7 +341,8 @@ Crest 支持基于 OIDC / OAuth2 授权码模式的单点登录。配置入口�
 
 关键规则：
 
-- Client Secret 使用运行时 AES 配置加密保存；
+- 默认模式下 Client Secret 使用运行时 AES 配置加密保存；
+- `CREST_CRYPTO_MODE=sm-suite` 时，登录传输使用 SM2，密码升级为 SM3 迭代哈希，敏感配置和下载票据等签名加密链路使用 SM4 / HMAC-SM3；
 - 回调阶段只下发一次性票据，Crest token 不出现在回调 URL 中；
 - 用户按外部唯一标识和账号绑定，可按配置自动创建普通账号；
 - 关闭本地登录后，管理员仍可通过 `/#/admin-login` 处理应急运维；

@@ -43,7 +43,9 @@ data:
         exportData: ${CREST_PATH_EXPORT_DATA:/opt/crest/data/exportData/}
         ehcache: ${CREST_PATH_EHCACHE:/opt/crest/cache}
       crypto:
+        mode: ${CREST_CRYPTO_MODE:standard}
         aes-key: ${CREST_AES_KEY}
         aes-iv: ${CREST_AES_IV}
+        sm4-key: ${CREST_SM4_KEY}
       user:
         initial-password: ${CREST_INITIAL_PASSWORD}

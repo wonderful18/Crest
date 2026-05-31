@@ -54,6 +54,7 @@ rg -n "(BEGIN .*PRIVATE KEY|AKIA[0-9A-Z]{16}|secret_access_key|password\\s*[:=]|
 - 将 `DE_ORIGIN_LIST` / `CREST_ORIGIN_LIST` 设置为实际访问域名；
 - 管理员初始密码使用随机强密码，首次登录后立即修改；
 - `CREST_AES_KEY` 和 `CREST_AES_IV` 使用部署环境独立生成的值，升级已有环境时不要更换；
+- 需要 SM2/SM3/SM4 时设置 `CREST_CRYPTO_MODE=sm-suite`，并使用部署环境独立生成的 `CREST_SM4_KEY`；
 - 如开启 SQLBot 连接信息加密，显式配置 `CREST_SQLBOT_AES_KEY` 和 `CREST_SQLBOT_AES_IV`；
 - MySQL、业务数据源和 OceanBase 使用最小权限账号；
 - 不把 Crest 直接暴露到公网管理面；

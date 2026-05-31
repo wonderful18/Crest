@@ -104,6 +104,8 @@ export CREST_DB_USERNAME=root
 export CREST_DB_PASSWORD='<mysql-password>'
 export CREST_AES_KEY='<32-character-aes-key>'
 export CREST_AES_IV='<16-character-aes-iv>'
+export CREST_CRYPTO_MODE='standard'
+export CREST_SM4_KEY='<16-character-sm4-key-when-crypto-mode-is-sm-suite>'
 export CREST_INITIAL_PASSWORD='<admin-initial-password>'
 ./run.sh start
 ```
@@ -131,6 +133,8 @@ pnpm dev
 | `CREST_INITIAL_PASSWORD` | 管理员初始密码，不能为空 |
 | `CREST_AES_KEY` | 32 位加密 Key |
 | `CREST_AES_IV` | 16 位加密 IV |
+| `CREST_CRYPTO_MODE` | 加密模式，默认 `standard`；需要 SM2/SM3/SM4 时设为 `sm-suite` |
+| `CREST_SM4_KEY` | SM4 使用的 16 位 Key；仅在 `CREST_CRYPTO_MODE=sm-suite` 时必填 |
 | `CREST_SQLBOT_ENCRYPT` | SQLBot 对外返回连接信息时是否加密，默认 `false` |
 | `CREST_SQLBOT_AES_KEY` / `CREST_SQLBOT_AES_IV` | 仅在开启 SQLBot 加密时配置，系统不提供默认密钥 |
 | `CREST_ORIGIN_LIST` | 允许来源列表 |

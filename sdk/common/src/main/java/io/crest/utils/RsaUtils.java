@@ -149,6 +149,15 @@ public class RsaUtils {
         if (StringUtils.isBlank(data) || StringUtils.isBlank(privateKey)) {
             DEException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
         }
+        if (SmCryptoUtils.isSm2Ciphertext(data)) {
+            try {
+                return SmCryptoUtils.sm2Decrypt(data, privateKey);
+            } catch (Exception e) {
+                LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+                DEException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
+                return "";
+            }
+        }
         try {
             return decrypt(data, getPrivateKey(privateKey));
         } catch (Exception e) {
@@ -159,10 +168,18 @@ public class RsaUtils {
     }
 
     public static String decryptStr(String data) {
+        if (SmCryptoUtils.isSm2Ciphertext(data)) {
+            CoreRsa coreRsa = rsaManage.ensureSmSuiteKey();
+            return decryptStr(data, coreRsa.getSm2PrivateKey());
+        }
         return decryptStr(data, privateKey());
     }
 
     public static String encryptStr(String data) {
+        if (CryptoMode.isSmSuite()) {
+            CoreRsa coreRsa = rsaManage.ensureSmSuiteKey();
+            return SmCryptoUtils.sm2Encrypt(data, coreRsa.getSm2PublicKey());
+        }
         try {
             return encrypt(data, getPublicKey(publicKey()));
         } catch (Exception e) {
@@ -177,6 +194,10 @@ public class RsaUtils {
     }
 
     public static String publicKey() {
+        if (CryptoMode.isSmSuite()) {
+            CoreRsa coreRsa = rsaManage.ensureSmSuiteKey();
+            return SmCryptoUtils.sm2PublicKeyPayload(coreRsa.getSm2PublicKey());
+        }
         CoreRsa coreRsa = rsaManage.query();
         String publicKey = coreRsa.getPublicKey();
         String aesKey = coreRsa.getAesKey();
@@ -219,10 +240,14 @@ public class RsaUtils {
     public static String generateSymmetricKey() {
         try {
             if (!CacheUtils.keyExist(Symmetric_Key, symmetricKey)) {
-                KeyGenerator keyGenerator = KeyGenerator.getInstance(ALGORITHM);
-                keyGenerator.init(KEY_SIZE, new SecureRandom());
-                SecretKey secretKey = keyGenerator.generateKey();
-                CacheUtils.put(Symmetric_Key, symmetricKey, Base64.getEncoder().encodeToString(secretKey.getEncoded()));
+                if (CryptoMode.isSmSuite()) {
+                    CacheUtils.put(Symmetric_Key, symmetricKey, SmCryptoUtils.generateBase64Sm4Key());
+                } else {
+                    KeyGenerator keyGenerator = KeyGenerator.getInstance(ALGORITHM);
+                    keyGenerator.init(KEY_SIZE, new SecureRandom());
+                    SecretKey secretKey = keyGenerator.generateKey();
+                    CacheUtils.put(Symmetric_Key, symmetricKey, Base64.getEncoder().encodeToString(secretKey.getEncoded()));
+                }
             }
             return CacheUtils.get(Symmetric_Key, symmetricKey).toString();
         } catch (Exception e) {
@@ -231,6 +256,9 @@ public class RsaUtils {
     }
 
     public static String symmetricEncrypt(String data) {
+        if (CryptoMode.isSmSuite()) {
+            return SmCryptoUtils.sm4EncryptWithBase64Key(data, generateSymmetricKey());
+        }
         try {
             byte[] iv = IV_KEY.getBytes(StandardCharsets.UTF_8);
             IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
@@ -245,6 +273,9 @@ public class RsaUtils {
     }
 
     public static String symmetricDecrypt(String data) {
+        if (SmCryptoUtils.isSm4Ciphertext(data)) {
+            return SmCryptoUtils.sm4DecryptWithBase64Key(data, generateSymmetricKey());
+        }
         try {
             byte[] iv = IV_KEY.getBytes(StandardCharsets.UTF_8);
             IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);

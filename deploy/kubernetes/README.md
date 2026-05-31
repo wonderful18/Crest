@@ -82,6 +82,8 @@ docker build -t ghcr.io/sevoniva/crest:main .
 | `MYSQL_ROOT_PASSWORD` | 内置 MySQL 模式需要 |
 | `CREST_AES_KEY` | 32 位加密 Key |
 | `CREST_AES_IV` | 16 位加密 IV |
+| `CREST_CRYPTO_MODE` | 加密模式，默认 `standard`；需要 SM2/SM3/SM4 时设为 `sm-suite` |
+| `CREST_SM4_KEY` | SM4 使用的 16 位 Key |
 | `CREST_INITIAL_PASSWORD` | 管理员初始密码 |
 
 部署前必须替换所有占位值。不要把生产密码提交到仓库。

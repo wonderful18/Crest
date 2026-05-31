@@ -77,11 +77,24 @@ public class AesUtils {
 
     public static Object aesEncrypt(Object o) {
 
-        return o == null ? null : aesEncrypt(o.toString(), configuredSecretKey(), configuredIv());
+        if (o == null) {
+            return null;
+        }
+        if (CryptoMode.isSmSuite()) {
+            return SmCryptoUtils.sm4EncryptWithConfiguredKey(o.toString());
+        }
+        return aesEncrypt(o.toString(), configuredSecretKey(), configuredIv());
     }
 
     public static Object aesDecrypt(Object o) {
-        return o == null ? null : aesDecrypt(o.toString(), configuredSecretKey(), configuredIv());
+        if (o == null) {
+            return null;
+        }
+        String value = o.toString();
+        if (SmCryptoUtils.isSm4Ciphertext(value)) {
+            return SmCryptoUtils.sm4DecryptWithConfiguredKey(value);
+        }
+        return aesDecrypt(value, configuredSecretKey(), configuredIv());
     }
 
     public static String aesEncryptWithIv(String src, String secretKey) {

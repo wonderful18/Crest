@@ -28,8 +28,10 @@ crest:
   path:
     ehcache: ${DE_CACHE_PATH}
   crypto:
+    mode: ${DE_CRYPTO_MODE}
     aes-key: ${DE_AES_KEY}
     aes-iv: ${DE_AES_IV}
+    sm4-key: ${DE_SM4_KEY}
   user:
     initial-password: ${DE_INITIAL_PASSWORD}
 task:

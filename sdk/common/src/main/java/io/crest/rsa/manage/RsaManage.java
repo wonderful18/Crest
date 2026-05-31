@@ -4,9 +4,12 @@ import io.crest.model.RSAModel;
 import io.crest.rsa.dao.entity.CoreRsa;
 import io.crest.rsa.dao.mapper.CoreRsaMapper;
 import io.crest.utils.CommonBeanFactory;
+import io.crest.utils.CryptoMode;
+import io.crest.utils.SmCryptoUtils;
 import io.crest.utils.RsaUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
@@ -25,6 +28,9 @@ public class RsaManage {
         if (ObjectUtils.isEmpty(proxy.query())) {
             proxy.save();
         }
+        if (CryptoMode.isSmSuite()) {
+            proxy.ensureSmSuiteKey();
+        }
     }
 
     @CacheEvict(value = RSA_CACHE, key = "'-de-'")
@@ -37,6 +43,26 @@ public class RsaManage {
         coreRsa.setPublicKey(model.getPublicKey());
         coreRsa.setAesKey(model.getAesKey());
         coreRsaMapper.insert(coreRsa);
+    }
+
+    @CacheEvict(value = RSA_CACHE, key = "'-de-'")
+    public CoreRsa ensureSmSuiteKey() {
+        CoreRsa coreRsa = coreRsaMapper.selectById(1);
+        if (ObjectUtils.isEmpty(coreRsa)) {
+            save();
+            coreRsa = coreRsaMapper.selectById(1);
+        }
+        if (StringUtils.isBlank(coreRsa.getSm2PrivateKey()) || StringUtils.isBlank(coreRsa.getSm2PublicKey())) {
+            SmCryptoUtils.Sm2KeyPair keyPair = SmCryptoUtils.generateSm2KeyPair();
+            CoreRsa update = new CoreRsa();
+            update.setId(coreRsa.getId());
+            update.setSm2PrivateKey(keyPair.privateKey());
+            update.setSm2PublicKey(keyPair.publicKey());
+            update.setSm2CreateTime(System.currentTimeMillis());
+            coreRsaMapper.updateById(update);
+            coreRsa = coreRsaMapper.selectById(1);
+        }
+        return coreRsa;
     }
 
     @Cacheable(value = RSA_CACHE, key = "'-de-'", unless = "#result == null")

@@ -1,10 +1,6 @@
 package io.crest.exportCenter.manage;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.auth0.jwt.interfaces.Verification;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -397,10 +393,7 @@ public class ExportCenterManage implements BaseExportApi {
             DEException.throwException(Translator.get("i18n_download_link_invalid"));
         }
         try {
-            Algorithm algorithm = Algorithm.HMAC256(resolveTicketSecret(exportTask));
-            Verification verification = JWT.require(algorithm);
-            JWTVerifier verifier = verification.build();
-            DecodedJWT jwt = verifier.verify(ticket);
+            DecodedJWT jwt = SignedTokenUtils.verify(ticket, resolveTicketSecret(exportTask));
             String taskId = jwt.getClaim("taskId").asString();
             Long uid = jwt.getClaim("uid").asLong();
             Long ticketTime = jwt.getClaim("ts").asLong();
@@ -418,13 +411,11 @@ public class ExportCenterManage implements BaseExportApi {
     }
 
     private String buildDownloadTicket(CoreExportTask exportTask, long createTime, Long validTime) {
-        Algorithm algorithm = Algorithm.HMAC256(resolveTicketSecret(exportTask));
-        return JWT.create()
-                .withClaim("taskId", exportTask.getId())
-                .withClaim("uid", exportTask.getUserId())
-                .withClaim("ts", createTime)
-                .withExpiresAt(new Date(createTime + validTime * 60 * 1000))
-                .sign(algorithm);
+        Map<String, Object> claims = new LinkedHashMap<>();
+        claims.put("taskId", exportTask.getId());
+        claims.put("uid", exportTask.getUserId());
+        claims.put("ts", createTime);
+        return SignedTokenUtils.sign(claims, resolveTicketSecret(exportTask), new Date(createTime + validTime * 60 * 1000));
     }
 
     private String resolveTicketSecret(CoreExportTask exportTask) {

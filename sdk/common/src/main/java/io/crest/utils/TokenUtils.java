@@ -1,8 +1,6 @@
 package io.crest.utils;
 
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.crest.auth.bo.TokenUserBO;
 import io.crest.exception.DEException;
@@ -17,9 +15,7 @@ public class TokenUtils {
 
     public static TokenUserBO userBOByToken(String token) {
         String secret = userSecret(token);
-        Algorithm algorithm = Algorithm.HMAC256(secret);
-        JWTVerifier verifier = JWT.require(algorithm).build();
-        DecodedJWT jwt = verifier.verify(token);
+        DecodedJWT jwt = SignedTokenUtils.verify(token, secret);
         Long userId = jwt.getClaim("uid").asLong();
         Long oid = jwt.getClaim("oid").asLong();
         if (ObjectUtils.isEmpty(userId)) {

@@ -1,8 +1,5 @@
 package io.crest.system.manage;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTCreator;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.crest.api.system.request.SsoConfigRequest;
 import io.crest.api.system.vo.SettingItemVO;
@@ -27,6 +24,7 @@ import io.crest.utils.HttpClientConfig;
 import io.crest.utils.HttpClientUtil;
 import io.crest.utils.IDUtils;
 import io.crest.utils.JsonUtil;
+import io.crest.utils.SignedTokenUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -44,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -410,9 +409,10 @@ public class SsoManage {
         TokenUserBO bo = new TokenUserBO();
         bo.setUserId(user.getId());
         bo.setDefaultOid(platformPermissionManage.defaultOrgId(user.getId()));
-        Algorithm algorithm = Algorithm.HMAC256(user.getPasswordHash());
-        JWTCreator.Builder builder = JWT.create();
-        String token = builder.withClaim("uid", bo.getUserId()).withClaim("oid", bo.getDefaultOid()).sign(algorithm);
+        Map<String, Object> claims = new LinkedHashMap<>();
+        claims.put("uid", bo.getUserId());
+        claims.put("oid", bo.getDefaultOid());
+        String token = SignedTokenUtils.sign(claims, user.getPasswordHash(), null);
         return new TokenVO(token, 0L);
     }
 

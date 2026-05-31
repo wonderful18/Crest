@@ -19,8 +19,10 @@ public class PasswordEncoder {
 
     private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
     private static final int ITERATIONS = 100000;
+    private static final int SM3_ITERATIONS = 100000;
     private static final int KEY_LENGTH = 256;
     private static final int SALT_LENGTH = 16;
+    private static final String SM3_PREFIX = "sm3";
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -38,6 +40,14 @@ public class PasswordEncoder {
         // 生成随机盐
         byte[] salt = new byte[SALT_LENGTH];
         RANDOM.nextBytes(salt);
+
+        if (CryptoMode.isSmSuite()) {
+            byte[] hash = SmCryptoUtils.sm3HmacHash(rawPassword.toCharArray(), salt, SM3_ITERATIONS);
+            return SM3_PREFIX + ":" +
+                    SM3_ITERATIONS + ":" +
+                    Base64.getEncoder().encodeToString(salt) + ":" +
+                    Base64.getEncoder().encodeToString(hash);
+        }
 
         // 计算哈希
         byte[] hash = pbkdf2(rawPassword.toCharArray(), salt, ITERATIONS, KEY_LENGTH);
@@ -63,6 +73,9 @@ public class PasswordEncoder {
         try {
             // 解析编码后的密码
             String[] parts = encodedPassword.split(":");
+            if (isSm3Encoded(parts)) {
+                return matchesSm3(rawPassword, parts);
+            }
             if (parts.length != 3) {
                 return false;
             }
@@ -99,6 +112,13 @@ public class PasswordEncoder {
 
         try {
             String[] parts = encodedPassword.split(":");
+            if (isSm3Encoded(parts)) {
+                int iterations = Integer.parseInt(parts[1]);
+                return iterations < SM3_ITERATIONS;
+            }
+            if (CryptoMode.isSmSuite()) {
+                return true;
+            }
             if (parts.length != 3) {
                 return true;
             }
@@ -123,6 +143,18 @@ public class PasswordEncoder {
         } catch (Exception e) {
             throw new RuntimeException("密码编码失败", e);
         }
+    }
+
+    private static boolean isSm3Encoded(String[] parts) {
+        return parts.length == 4 && SM3_PREFIX.equals(parts[0]);
+    }
+
+    private static boolean matchesSm3(String rawPassword, String[] parts) {
+        int iterations = Integer.parseInt(parts[1]);
+        byte[] salt = Base64.getDecoder().decode(parts[2]);
+        byte[] expectedHash = Base64.getDecoder().decode(parts[3]);
+        byte[] actualHash = SmCryptoUtils.sm3HmacHash(rawPassword.toCharArray(), salt, iterations);
+        return constantTimeEquals(expectedHash, actualHash);
     }
 
     /**

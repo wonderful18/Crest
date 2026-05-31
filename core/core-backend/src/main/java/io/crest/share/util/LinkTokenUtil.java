@@ -1,20 +1,22 @@
 package io.crest.share.util;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTCreator;
-import com.auth0.jwt.algorithms.Algorithm;
+import io.crest.utils.SignedTokenUtils;
 import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class LinkTokenUtil {
     public static String generate(Long uid, Long resourceId, Long exp, String pwd, Long oid) {
-        Algorithm algorithm = Algorithm.HMAC256(pwd);
-        JWTCreator.Builder builder = JWT.create();
-        builder.withClaim("uid", uid).withClaim("resourceId", resourceId).withClaim("oid", oid);
+        Map<String, Object> claims = new LinkedHashMap<>();
+        claims.put("uid", uid);
+        claims.put("resourceId", resourceId);
+        claims.put("oid", oid);
+        Date expiresAt = null;
         if (ObjectUtils.isNotEmpty(exp) && !exp.equals(0L)) {
-            builder = builder.withExpiresAt(new Date(exp));
+            expiresAt = new Date(exp);
         }
-        return builder.sign(algorithm);
+        return SignedTokenUtils.sign(claims, pwd, expiresAt);
     }
 }

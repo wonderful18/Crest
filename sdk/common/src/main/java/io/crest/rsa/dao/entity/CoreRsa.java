@@ -33,6 +33,12 @@ public class CoreRsa implements Serializable {
 
     private String aesKey;
 
+    private String sm2PrivateKey;
+
+    private String sm2PublicKey;
+
+    private Long sm2CreateTime;
+
     /**
      * 生成时间
      */
@@ -76,6 +82,30 @@ public class CoreRsa implements Serializable {
 
     public void setAesKey(String aesKey) {
         this.aesKey = aesKey;
+    }
+
+    public String getSm2PrivateKey() {
+        return sm2PrivateKey;
+    }
+
+    public void setSm2PrivateKey(String sm2PrivateKey) {
+        this.sm2PrivateKey = sm2PrivateKey;
+    }
+
+    public String getSm2PublicKey() {
+        return sm2PublicKey;
+    }
+
+    public void setSm2PublicKey(String sm2PublicKey) {
+        this.sm2PublicKey = sm2PublicKey;
+    }
+
+    public Long getSm2CreateTime() {
+        return sm2CreateTime;
+    }
+
+    public void setSm2CreateTime(Long sm2CreateTime) {
+        this.sm2CreateTime = sm2CreateTime;
     }
 
     @Override

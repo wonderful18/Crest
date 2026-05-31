@@ -71,6 +71,15 @@ function check_and_prepare_env_params() {
    fi
    set +a
    DE_INTERNAL_LITE=${DE_INTERNAL_LITE:-true}
+   DE_CRYPTO_MODE=${DE_CRYPTO_MODE:-standard}
+   case "$DE_CRYPTO_MODE" in
+      standard|sm-suite) ;;
+      *)
+         echo "DE_CRYPTO_MODE 只支持 standard 或 sm-suite"
+         exit 1
+         ;;
+   esac
+   export DE_CRYPTO_MODE
    if [[ -z "$DE_MYSQL_PASSWORD" ]]; then
       DE_MYSQL_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 32)
       export DE_MYSQL_PASSWORD
@@ -82,6 +91,10 @@ function check_and_prepare_env_params() {
    if [[ -z "$DE_AES_IV" ]]; then
       DE_AES_IV=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)
       export DE_AES_IV
+   fi
+   if [[ "$DE_CRYPTO_MODE" == "sm-suite" ]] && [[ -z "$DE_SM4_KEY" ]]; then
+      DE_SM4_KEY=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)
+      export DE_SM4_KEY
    fi
    if [[ -z "$DE_INITIAL_PASSWORD" ]]; then
       DE_INITIAL_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 20)

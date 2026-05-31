@@ -13,6 +13,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class PasswordEncoderTest {
 
+    @org.junit.jupiter.api.AfterEach
+    void clearCryptoMode() {
+        System.clearProperty("crest.crypto.mode");
+    }
+
     @Test
     @DisplayName("应正确编码密码")
     void shouldEncodePassword() {
@@ -80,5 +85,28 @@ class PasswordEncoderTest {
     @DisplayName("null 密码编码应抛出异常")
     void shouldThrowOnNullPassword() {
         assertThrows(IllegalArgumentException.class, () -> PasswordEncoder.encode(null));
+    }
+
+    @Test
+    @DisplayName("SM 算法套件模式应使用 SM3 迭代哈希并兼容验证")
+    void shouldUseSm3HashingInSmSuiteMode() {
+        System.setProperty("crest.crypto.mode", "sm-suite");
+
+        String encoded = PasswordEncoder.encode("TestPassword123!");
+
+        assertTrue(encoded.startsWith("sm3:"));
+        assertTrue(PasswordEncoder.matches("TestPassword123!", encoded));
+        assertFalse(PasswordEncoder.matches("WrongPassword", encoded));
+        assertFalse(PasswordEncoder.needsReEncoding(encoded));
+    }
+
+    @Test
+    @DisplayName("SM 算法套件模式应识别旧 PBKDF2 密码需要升级")
+    void shouldUpgradeLegacyPbkdf2HashInSmSuiteMode() {
+        String legacyEncoded = PasswordEncoder.encode("TestPassword123!");
+        System.setProperty("crest.crypto.mode", "sm-suite");
+
+        assertTrue(PasswordEncoder.matches("TestPassword123!", legacyEncoded));
+        assertTrue(PasswordEncoder.needsReEncoding(legacyEncoded));
     }
 }
