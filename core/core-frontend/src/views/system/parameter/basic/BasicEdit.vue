@@ -123,7 +123,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
       }
       showLoading()
       request
-        .post({ url: '/sysParameter/basic/save', data: param })
+        .post({ url: '/sys-parameter/basic/record', data: param })
         .then(res => {
           if (!res.msg) {
             ElMessage.success(t('common.save_success'))
@@ -225,7 +225,7 @@ const loadRoleOptions = async () => {
   if (!oid) {
     return
   }
-  const res = await request.get({ url: `/role/queryWithOid/${oid}` })
+  const res = await request.get({ url: `/role/organization/${oid}` })
   const data = res.data
   const map = groupBy(data)
   state.roleOptions[0].children = map.get(false)
@@ -484,7 +484,7 @@ defineExpose({
           content: '*';
           color: var(--ed-color-danger);
           margin-left: 2px;
-          font-family: var(--de-custom_font, 'PingFang');
+          font-family: var(--crest-custom_font, 'PingFang');
           font-size: 14px;
           font-style: normal;
           font-weight: 400;

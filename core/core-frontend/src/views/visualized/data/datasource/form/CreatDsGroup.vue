@@ -73,7 +73,7 @@ const showPid = computed(() => {
 
 const labelName = computed(() => {
   return nodeType.value === 'folder'
-    ? t('deDataset.folder_name')
+    ? t('datasetUi.folder_name')
     : t('data_source.data_source_name')
 })
 
@@ -81,10 +81,10 @@ const dialogTitle = computed(() => {
   let title = ''
   switch (nodeType.value) {
     case 'folder':
-      title = t('deDataset.new_folder')
+      title = t('datasetUi.new_folder')
       break
     case 'datasource':
-      title = t('deDataset.create') + t('auth.datasource')
+      title = t('datasetUi.create') + t('auth.datasource')
       break
     default:
       break
@@ -364,7 +364,7 @@ const emits = defineEmits(['finish', 'handleShowFinishPage'])
       <el-form-item v-if="showName" :label="labelName" prop="name">
         <el-input :placeholder="placeholder" v-model="datasetForm.name" />
       </el-form-item>
-      <el-form-item v-if="showPid" :label="t('deDataset.folder')" prop="pid">
+      <el-form-item v-if="showPid" :label="t('datasetUi.folder')" prop="pid">
         <el-tree-select
           v-model="datasetForm.pid"
           :data="state.tData"
@@ -464,7 +464,7 @@ const emits = defineEmits(['finish', 'handleShowFinishPage'])
       margin-bottom: 8px;
     }
     span {
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       font-weight: 400;
       line-height: 22px;

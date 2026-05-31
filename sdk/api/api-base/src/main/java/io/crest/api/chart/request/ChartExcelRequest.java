@@ -27,7 +27,7 @@ public class ChartExcelRequest extends ChartExcelRequestInner {
 
     private List<ChartExcelRequestInner> multiInfo;
 
-    private boolean dataEaseBi = false;
+    private boolean embeddedExport = false;
 
     private String downloadType;
 

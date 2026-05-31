@@ -1,6 +1,6 @@
 package io.crest.cache.impl;
 
-import io.crest.cache.DECacheService;
+import io.crest.cache.CrestCacheService;
 import io.crest.utils.CommonBeanFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
@@ -15,9 +15,9 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.TimeUnit;
 
 @ConditionalOnExpression("'${spring.cache.type}'.equals('redis')")
-@Component("dECacheService")
+@Component("crestCacheService")
 @SuppressWarnings("unchecked")
-public class RedisCacheImpl implements DECacheService {
+public class RedisCacheImpl implements CrestCacheService {
 
     private static final String SEPARATOR = "::";
 

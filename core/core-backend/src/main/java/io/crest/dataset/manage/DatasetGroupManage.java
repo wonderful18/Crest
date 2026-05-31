@@ -23,7 +23,7 @@ import io.crest.datasource.dao.auto.mapper.CoreDatasourceMapper;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.engine.func.FunctionConstant;
 import io.crest.engine.utils.Utils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
@@ -119,7 +119,7 @@ public class DatasetGroupManage {
             datasetGroupInfoDTO.setLastUpdateTime(System.currentTimeMillis());
             if (Strings.CI.equals(datasetGroupInfoDTO.getNodeType(), leafType)) {
                 if (!rename && ObjectUtils.isEmpty(datasetGroupInfoDTO.getAllFields())) {
-                    DEException.throwException(Translator.get("i18n_no_fields"));
+                    CrestException.throwException(Translator.get("i18n_no_fields"));
                 }
                 // get union sql
                 Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null);
@@ -143,7 +143,7 @@ public class DatasetGroupManage {
             } else {
                 isCreate = false;
                 if (Objects.equals(datasetGroupInfoDTO.getId(), datasetGroupInfoDTO.getPid())) {
-                    DEException.throwException(Translator.get("i18n_pid_not_eq_id"));
+                    CrestException.throwException(Translator.get("i18n_pid_not_eq_id"));
                 }
                 Objects.requireNonNull(CommonBeanFactory.getBean(this.getClass())).innerEdit(datasetGroupInfoDTO);
             }
@@ -169,7 +169,7 @@ public class DatasetGroupManage {
             }
             return datasetGroupInfoDTO;
         } catch (Exception e) {
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
         return null;
     }
@@ -220,7 +220,7 @@ public class DatasetGroupManage {
 
     public boolean perDelete(Long id) {
         if (relationManage != null) {
-            Long count = relationManage.getDatasetResource(id);
+            Long count = relationManage.datasetResource(id);
             if (count > 0) {
                 return true;
             }
@@ -230,7 +230,7 @@ public class DatasetGroupManage {
     public void delete(Long id) {
         CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(id);
         if (ObjectUtils.isEmpty(coreDatasetGroup)) {
-            DEException.throwException("resource not exist");
+            CrestException.throwException("resource not exist");
         }
         requireDatasetTreeAccess(id);
         Objects.requireNonNull(CommonBeanFactory.getBean(this.getClass())).recursionDel(id);
@@ -260,9 +260,9 @@ public class DatasetGroupManage {
         }
         String info = CommunityUtils.getInfo();
         if (StringUtils.isNotBlank(info)) {
-            queryWrapper.notExists(String.format(info, "core_dataset_group.id"));
+            queryWrapper.notExists(String.format(info, "dataset_group.id"));
         }
-        String scopeSql = platformPermissionManage.resourceScopeSql("dataset", "core_dataset_group.id", "core_dataset_group.create_by", null);
+        String scopeSql = platformPermissionManage.resourceScopeSql("dataset", "dataset_group.id", "dataset_group.create_by", null);
         if (StringUtils.isNotBlank(scopeSql)) {
             queryWrapper.apply(scopeSql);
         }
@@ -289,11 +289,11 @@ public class DatasetGroupManage {
         if (StringUtils.isNotBlank(updateUserName)) {
             dataSetBarVO.setUpdater(updateUserName);
         }
-        dataSetBarVO.setDatasourceDTOList(getDatasource(id));
+        dataSetBarVO.setDatasourceDTOList(datasource(id));
         return dataSetBarVO;
     }
 
-    private List<DatasourceDTO> getDatasource(Long datasetId) {
+    private List<DatasourceDTO> datasource(Long datasetId) {
         requireDatasetAccess(datasetId);
         QueryWrapper<CoreDatasetTable> wrapper = new QueryWrapper<>();
         wrapper.eq("dataset_group_id", datasetId);
@@ -301,7 +301,7 @@ public class DatasetGroupManage {
         Set<Long> ids = new LinkedHashSet();
         coreDatasetTables.forEach(ele -> ids.add(ele.getDatasourceId()));
         if (CollectionUtils.isEmpty(ids)) {
-            DEException.throwException(Translator.get("i18n_dataset_create_error"));
+            CrestException.throwException(Translator.get("i18n_dataset_create_error"));
         }
 
         QueryWrapper<CoreDatasource> datasourceQueryWrapper = new QueryWrapper<>();
@@ -313,7 +313,7 @@ public class DatasetGroupManage {
             return dto;
         }).collect(Collectors.toList());
         if (ids.size() != datasourceDTOList.size()) {
-            DEException.throwException(Translator.get("i18n_dataset_ds_delete"));
+            CrestException.throwException(Translator.get("i18n_dataset_ds_delete"));
         }
         return datasourceDTOList;
     }
@@ -340,7 +340,7 @@ public class DatasetGroupManage {
                 }
                 CoreDatasetTable coreDatasetTable = datasetTableManage.selectById(currentDs.getId());
                 if (coreDatasetTable != null && isCreate) {
-                    DEException.throwException(Translator.get("i18n_table_duplicate"));
+                    CrestException.throwException(Translator.get("i18n_table_duplicate"));
                 }
                 currentDs.setDatasetGroupId(datasetGroupId);
                 datasetTableManage.save(currentDs);
@@ -371,28 +371,28 @@ public class DatasetGroupManage {
                         for (DatasetTableFieldDTO fieldDTO : unionFields) {
                             if (Objects.equals(datasetTableFieldDTO.getDatasetTableId(), fieldDTO.getDatasetTableId())
                                     && Objects.equals(datasetTableFieldDTO.getOriginName(), fieldDTO.getOriginName())) {
-                                datasetTableFieldDTO.setDataeaseName(fieldDTO.getDataeaseName());
+                                datasetTableFieldDTO.setEngineFieldName(fieldDTO.getEngineFieldName());
                                 datasetTableFieldDTO.setFieldShortName(fieldDTO.getFieldShortName());
                             }
                         }
                     }
                     if (Objects.equals(datasetTableFieldDTO.getExtField(), ExtFieldConstant.EXT_CALC)) {
-                        String dataeaseName = TableUtils.fieldNameShort(datasetTableFieldDTO.getId() + "_" + datasetTableFieldDTO.getOriginName());
-                        datasetTableFieldDTO.setDataeaseName(dataeaseName);
-                        datasetTableFieldDTO.setFieldShortName(dataeaseName);
-                        datasetTableFieldDTO.setDeExtractType(datasetTableFieldDTO.getDeType());
+                        String engineFieldName = TableUtils.fieldNameShort(datasetTableFieldDTO.getId() + "_" + datasetTableFieldDTO.getOriginName());
+                        datasetTableFieldDTO.setEngineFieldName(engineFieldName);
+                        datasetTableFieldDTO.setFieldShortName(engineFieldName);
+                        datasetTableFieldDTO.setExtractedFieldType(datasetTableFieldDTO.getFieldType());
                     }
                     if (Objects.equals(datasetTableFieldDTO.getExtField(), ExtFieldConstant.EXT_GROUP)) {
-                        String dataeaseName = TableUtils.fieldNameShort(datasetTableFieldDTO.getId() + "_" + datasetTableFieldDTO.getOriginName());
-                        datasetTableFieldDTO.setDataeaseName(dataeaseName);
-                        datasetTableFieldDTO.setFieldShortName(dataeaseName);
-                        datasetTableFieldDTO.setDeExtractType(0);
-                        datasetTableFieldDTO.setDeType(0);
+                        String engineFieldName = TableUtils.fieldNameShort(datasetTableFieldDTO.getId() + "_" + datasetTableFieldDTO.getOriginName());
+                        datasetTableFieldDTO.setEngineFieldName(engineFieldName);
+                        datasetTableFieldDTO.setFieldShortName(engineFieldName);
+                        datasetTableFieldDTO.setExtractedFieldType(0);
+                        datasetTableFieldDTO.setFieldType(0);
                         datasetTableFieldDTO.setGroupType("d");
                     }
                     datasetTableFieldDTO.setDatasetGroupId(datasetGroupId);
                 } else {
-                    datasetTableFieldDTO.setDataeaseName(dto.getDataeaseName());
+                    datasetTableFieldDTO.setEngineFieldName(dto.getEngineFieldName());
                     datasetTableFieldDTO.setFieldShortName(dto.getFieldShortName());
                 }
                 datasetTableFieldDTO = datasetTableFieldManage.save(datasetTableFieldDTO);
@@ -417,7 +417,7 @@ public class DatasetGroupManage {
             List<DatasetTableFieldDTO> allFields = dsFields.stream().map(ele -> {
                 DatasetTableFieldDTO datasetTableFieldDTO = new DatasetTableFieldDTO();
                 BeanUtils.copyBean(datasetTableFieldDTO, ele);
-                datasetTableFieldDTO.setFieldShortName(ele.getDataeaseName());
+                datasetTableFieldDTO.setFieldShortName(ele.getEngineFieldName());
                 return datasetTableFieldDTO;
             }).collect(Collectors.toList());
 
@@ -457,7 +457,7 @@ public class DatasetGroupManage {
             List<DatasetTableFieldDTO> allFields = dsFields.stream().map(ele -> {
                 DatasetTableFieldDTO datasetTableFieldDTO = new DatasetTableFieldDTO();
                 BeanUtils.copyBean(datasetTableFieldDTO, ele);
-                datasetTableFieldDTO.setFieldShortName(ele.getDataeaseName());
+                datasetTableFieldDTO.setFieldShortName(ele.getEngineFieldName());
                 return datasetTableFieldDTO;
             }).collect(Collectors.toList());
 
@@ -468,7 +468,7 @@ public class DatasetGroupManage {
         return dto;
     }
 
-    public DatasetGroupInfoDTO getDatasetGroupInfoDTO(Long id, String type) throws Exception {
+    public DatasetGroupInfoDTO datasetGroupInfoDTO(Long id, String type) throws Exception {
         requireDatasetAccess(id);
         CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(id);
         if (coreDatasetGroup == null) {
@@ -496,7 +496,7 @@ public class DatasetGroupManage {
             List<DatasetTableFieldDTO> allFields = dsFields.stream().map(ele -> {
                 DatasetTableFieldDTO datasetTableFieldDTO = new DatasetTableFieldDTO();
                 BeanUtils.copyBean(datasetTableFieldDTO, ele);
-                datasetTableFieldDTO.setFieldShortName(ele.getDataeaseName());
+                datasetTableFieldDTO.setFieldShortName(ele.getEngineFieldName());
                 return datasetTableFieldDTO;
             }).collect(Collectors.toList());
 
@@ -519,7 +519,7 @@ public class DatasetGroupManage {
 
     public List<DatasetTableDTO> getDetail(List<Long> ids) {
         if (ObjectUtils.isEmpty(ids)) {
-            DEException.throwException(Translator.get("i18n_table_id_can_not_empty"));
+            CrestException.throwException(Translator.get("i18n_table_id_can_not_empty"));
         }
         List<DatasetTableDTO> list = new ArrayList<>();
         for (Long id : ids) {
@@ -538,7 +538,7 @@ public class DatasetGroupManage {
         return list;
     }
 
-    public List<SqlVariableDetails> getSqlParams(List<Long> ids) {
+    public List<SqlVariableDetails> sqlParams(List<Long> ids) {
         List<SqlVariableDetails> list = new ArrayList<>();
         if (ObjectUtils.isEmpty(ids)) {
             return list;
@@ -569,19 +569,19 @@ public class DatasetGroupManage {
         }
         list.forEach(sqlVariableDetail -> {
             sqlVariableDetail.setId(sqlVariableDetail.getDatasetTableId() + "|DE|" + sqlVariableDetail.getVariableName());
-            sqlVariableDetail.setDeType(FieldUtils.transType2DeType(sqlVariableDetail.getType().get(0).contains("DATETIME") ? "DATETIME" : sqlVariableDetail.getType().get(0)));
+            sqlVariableDetail.setFieldType(FieldUtils.resolveFieldType(sqlVariableDetail.getType().get(0).contains("DATETIME") ? "DATETIME" : sqlVariableDetail.getType().get(0)));
         });
         return list;
     }
 
     public void checkMove(DatasetGroupInfoDTO datasetGroupInfoDTO) {
         if (Objects.equals(datasetGroupInfoDTO.getId(), datasetGroupInfoDTO.getPid())) {
-            DEException.throwException(Translator.get("i18n_pid_not_eq_id"));
+            CrestException.throwException(Translator.get("i18n_pid_not_eq_id"));
         }
         List<Long> ids = new ArrayList<>();
         getParents(datasetGroupInfoDTO.getPid(), ids);
         if (ids.contains(datasetGroupInfoDTO.getId())) {
-            DEException.throwException(Translator.get("i18n_pid_not_eq_id"));
+            CrestException.throwException(Translator.get("i18n_pid_not_eq_id"));
         }
     }
 
@@ -670,7 +670,7 @@ public class DatasetGroupManage {
                 List<DatasetTableFieldDTO> allFields = dsFields.stream().map(ele -> {
                     DatasetTableFieldDTO datasetTableFieldDTO = new DatasetTableFieldDTO();
                     BeanUtils.copyBean(datasetTableFieldDTO, ele);
-                    datasetTableFieldDTO.setFieldShortName(ele.getDataeaseName());
+                    datasetTableFieldDTO.setFieldShortName(ele.getEngineFieldName());
                     return datasetTableFieldDTO;
                 }).collect(Collectors.toList());
 
@@ -687,7 +687,7 @@ public class DatasetGroupManage {
     private CoreDatasetGroup requireDatasetAccess(Long datasetId) {
         CoreDatasetGroup dataset = coreDatasetGroupMapper.selectById(datasetId);
         if (dataset == null) {
-            DEException.throwException("resource not exist");
+            CrestException.throwException("resource not exist");
         }
         CrestPermissionUtils.requireCreator(dataset.getCreateBy());
         return dataset;
@@ -696,7 +696,7 @@ public class DatasetGroupManage {
     private CoreDatasource requireDatasourceAccess(Long datasourceId) {
         CoreDatasource datasource = coreDatasourceMapper.selectById(datasourceId);
         if (datasource == null) {
-            DEException.throwException(Translator.get("i18n_datasource_not_exists"));
+            CrestException.throwException(Translator.get("i18n_datasource_not_exists"));
         }
         CrestPermissionUtils.requireCreator(datasource.getCreateBy());
         return datasource;

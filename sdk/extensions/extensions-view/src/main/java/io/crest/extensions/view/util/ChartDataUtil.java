@@ -129,16 +129,16 @@ public class ChartDataUtil {
         data.forEach(ele -> {
             Map<String, Object> d = new HashMap<>();
             for (int i = 0; i < fields.size(); i++) {
-                if (ObjectUtils.isNotEmpty(desensitizationList.keySet()) && desensitizationList.keySet().contains(fields.get(i).getDataeaseName())) {
-                    d.put(fields.get(i).getDataeaseName(), desensitizationValue(desensitizationList.get(fields.get(i).getDataeaseName()), String.valueOf(ele[i])));
+                if (ObjectUtils.isNotEmpty(desensitizationList.keySet()) && desensitizationList.keySet().contains(fields.get(i).getEngineFieldName())) {
+                    d.put(fields.get(i).getEngineFieldName(), desensitizationValue(desensitizationList.get(fields.get(i).getEngineFieldName()), String.valueOf(ele[i])));
                     continue;
                 }
                 if (i == ele.length) break;
                 ChartViewFieldDTO chartViewFieldDTO = fields.get(i);
-                if (chartViewFieldDTO.getDeType() == 0 || chartViewFieldDTO.getDeType() == 1 || chartViewFieldDTO.getDeType() == 5) {
-                    d.put(fields.get(i).getDataeaseName(), StringUtils.isEmpty(ele[i]) ? "" : ele[i]);
-                } else if (chartViewFieldDTO.getDeType() == 2 || chartViewFieldDTO.getDeType() == 3 || chartViewFieldDTO.getDeType() == 4) {
-                    d.put(fields.get(i).getDataeaseName(), StringUtils.isEmpty(ele[i]) ? null : new BigDecimal(ele[i]).setScale(8, RoundingMode.HALF_UP));
+                if (chartViewFieldDTO.getFieldType() == 0 || chartViewFieldDTO.getFieldType() == 1 || chartViewFieldDTO.getFieldType() == 5) {
+                    d.put(fields.get(i).getEngineFieldName(), StringUtils.isEmpty(ele[i]) ? "" : ele[i]);
+                } else if (chartViewFieldDTO.getFieldType() == 2 || chartViewFieldDTO.getFieldType() == 3 || chartViewFieldDTO.getFieldType() == 4) {
+                    d.put(fields.get(i).getEngineFieldName(), StringUtils.isEmpty(ele[i]) ? null : new BigDecimal(ele[i]).setScale(8, RoundingMode.HALF_UP));
                 }
             }
             tableRow.add(d);

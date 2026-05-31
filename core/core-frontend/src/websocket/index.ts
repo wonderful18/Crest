@@ -35,8 +35,8 @@ export default {
         return
       }
       let prefix = '/'
-      if (window.DataEaseBi?.baseUrl) {
-        prefix = window.DataEaseBi.baseUrl
+      if (window.CrestBi?.baseUrl) {
+        prefix = window.CrestBi.baseUrl
       } else {
         const path = location.pathname.endsWith('/')
           ? location.pathname

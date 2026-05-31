@@ -12,7 +12,7 @@ import io.crest.engine.sql.SQLProvider;
 import io.crest.engine.trans.Dimension2SQLObj;
 import io.crest.engine.trans.Quota2SQLObj;
 import io.crest.engine.utils.Utils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.datasource.dto.DatasourceRequest;
@@ -86,7 +86,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         var desensitizationList = (Map<String, ColumnPermissionItem>) formatResult.getContext().get("desensitizationList");
         if (MapUtils.isNotEmpty(desensitizationList)) {
             formatResult.getAxisMap().forEach((axis, fields) -> {
-                fields.removeIf(f -> desensitizationList.containsKey(f.getDataeaseName()));
+                fields.removeIf(f -> desensitizationList.containsKey(f.getEngineFieldName()));
             });
         }
         return (T) new CustomFilterResult(filterList, formatResult.getContext());
@@ -424,7 +424,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                 prefix = first.getPrefix();
                 suffix = first.getSuffix();
             } else {
-                DEException.throwException("当前数据源插件不存在");
+                CrestException.throwException("当前数据源插件不存在");
             }
         }
 
@@ -460,7 +460,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                 prefix = first.getPrefix();
                 suffix = first.getSuffix();
             } else {
-                DEException.throwException("当前数据源插件不存在");
+                CrestException.throwException("当前数据源插件不存在");
             }
         }
 
@@ -855,7 +855,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
             tmpFilter.setDatePattern(fieldMap.get(tmpField.getId()).getDatePattern());
             tmpFilter.setFieldId(String.valueOf(tmpField.getId()));
             tmpFilter.setFilterType(1);
-            if (datasetTableField.getDeType() == 1) {
+            if (datasetTableField.getFieldType() == 1) {
                 tmpFilter.setOriginValue(Collections.singletonList(dimValMap.get(tmpField.getId())));
                 tmpFilter.setOperator("between");
                 // 把value类似过滤组件处理，获得start time和end time

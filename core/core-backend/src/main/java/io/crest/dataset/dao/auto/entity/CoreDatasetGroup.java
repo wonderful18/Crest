@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @author fit2cloud
  * @since 2025-04-14
  */
-@TableName("core_dataset_group")
+@TableName("dataset_group")
 public class CoreDatasetGroup implements Serializable {
 
     private static final long serialVersionUID = 1L;

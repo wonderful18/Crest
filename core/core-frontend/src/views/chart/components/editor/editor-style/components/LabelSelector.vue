@@ -438,9 +438,9 @@ watch(chartType, () => {
 
 const allFields = computed(() => {
   return defaultTo(props.allFields, []).map(item => ({
-    key: item.dataeaseName,
+    key: item.engineFieldName,
     name: item.name,
-    value: `${item.dataeaseName}@${item.name}`,
+    value: `${item.engineFieldName}@${item.name}`,
     disabled: false
   }))
 })
@@ -1222,11 +1222,11 @@ const isProgressBar = computed(() => {
         >
           <template #prefix>
             <el-icon v-if="curSeriesFormatter[computedIdKey]" style="font-size: 14px">
-              <Icon :className="`field-icon-${fieldType[curSeriesFormatter.deType]}`"
+              <Icon :className="`field-icon-${fieldType[curSeriesFormatter.fieldType]}`"
                 ><component
-                  :class="`field-icon-${fieldType[curSeriesFormatter.deType]}`"
+                  :class="`field-icon-${fieldType[curSeriesFormatter.fieldType]}`"
                   class="svg-icon"
-                  :is="iconFieldMap[fieldType[curSeriesFormatter.deType]]"
+                  :is="iconFieldMap[fieldType[curSeriesFormatter.fieldType]]"
                 ></component
               ></Icon>
             </el-icon>
@@ -1234,11 +1234,11 @@ const isProgressBar = computed(() => {
           <template v-for="item in state.labelForm.seriesLabelFormatter" :key="item[computedIdKey]">
             <el-option class="series-select-option" :value="item" :label="item.optionLabel">
               <el-icon style="margin-right: 8px">
-                <Icon :className="`field-icon-${fieldType[item.deType]}`"
+                <Icon :className="`field-icon-${fieldType[item.fieldType]}`"
                   ><component
-                    :class="`field-icon-${fieldType[item.deType]}`"
+                    :class="`field-icon-${fieldType[item.fieldType]}`"
                     class="svg-icon"
-                    :is="iconFieldMap[fieldType[item.deType]]"
+                    :is="iconFieldMap[fieldType[item.fieldType]]"
                   ></component
                 ></Icon>
               </el-icon>

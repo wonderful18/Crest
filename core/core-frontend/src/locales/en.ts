@@ -2185,7 +2185,7 @@ export default {
     select_year: 'Select year',
     sql_variable_limit_1: '1. SQL variables can only be used in WHERE conditions',
     sql_variable_limit_2:
-      "2. select * from table where $DE_PARAM{'{'} name = substring('$[PARAM1]',1,5){'}'} and $DE_PARAM{'{'} name in ($[PARAM2]) {'}'}",
+      "2. select * from table where $CREST_PARAM{'{'} name = substring('$[PARAM1]',1,5){'}'} and $CREST_PARAM{'{'} name in ($[PARAM2]) {'}'}",
     select_month: 'Select month',
     select_date: 'Select date',
     select_time: 'Select time',
@@ -2468,7 +2468,7 @@ export default {
     ungrouped_value: 'Ungrouped value',
     please_enter_number: 'Please enter a number'
   },
-  deDataset: {
+  datasetUi: {
     search_by_name: 'Search by name',
     new_folder: 'Create a new folder',
     search_fields: 'Search fields',

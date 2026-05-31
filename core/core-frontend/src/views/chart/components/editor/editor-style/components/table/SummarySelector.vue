@@ -62,7 +62,7 @@ watch(
 
 function getAxisList() {
   return props.chart.type === 'table-info'
-    ? filter(props.chart.xAxis, axis => [2, 3, 4].includes(axis.deType))
+    ? filter(props.chart.xAxis, axis => [2, 3, 4].includes(axis.fieldType))
     : props.chart.yAxis
 }
 
@@ -115,7 +115,7 @@ const init = () => {
   const tempList = []
   for (let i = 0; i < axisList.length; i++) {
     const axis = axisList[i]
-    let savedAxis = find(state.basicStyleForm.seriesSummary, s => s.field === axis.dataeaseName)
+    let savedAxis = find(state.basicStyleForm.seriesSummary, s => s.field === axis.engineFieldName)
     if (savedAxis) {
       if (savedAxis.summary == undefined) {
         savedAxis.summary = 'sum'
@@ -125,7 +125,7 @@ const init = () => {
       }
     } else {
       savedAxis = {
-        field: axis.dataeaseName,
+        field: axis.engineFieldName,
         summary: 'sum',
         show: true
       }
@@ -149,7 +149,7 @@ const setFieldDefaultValue = field => {
   field.datasetGroupId = props.chart.tableId
   field.lastSyncTime = null
   field.columnIndex = dimension().length + quota().length
-  field.deExtractType = field.deType
+  field.extractedFieldType = field.fieldType
 }
 onMounted(() => {
   init()
@@ -190,8 +190,8 @@ onMounted(() => {
         >
           <el-option
             v-for="c in computedAxis"
-            :key="c.dataeaseName"
-            :value="c.dataeaseName"
+            :key="c.engineFieldName"
+            :value="c.engineFieldName"
             :label="c.chartShowName ?? c.name"
           />
         </el-select>

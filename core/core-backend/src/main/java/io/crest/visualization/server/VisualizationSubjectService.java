@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.crest.api.visualization.VisualizationSubjectApi;
 import io.crest.api.visualization.request.VisualizationSubjectRequest;
 import io.crest.api.visualization.vo.VisualizationSubjectVO;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.utils.BeanUtils;
 import io.crest.utils.IDUtils;
 import io.crest.visualization.dao.auto.entity.VisualizationSubject;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  * @date : 2023/6/9 18:41
  */
 @RestController
-@RequestMapping("/visualizationSubject")
+@RequestMapping("/visualization-subject")
 @SuppressWarnings({"deprecation", "unchecked", "rawtypes"})
 public class VisualizationSubjectService implements VisualizationSubjectApi {
 
@@ -72,7 +72,7 @@ public class VisualizationSubjectService implements VisualizationSubjectApi {
                 BeanUtils.copyBean(saveInfo,request);
                 subjectMapper.insert(saveInfo);
             } else {
-                DEException.throwException("名称已经存在");
+                CrestException.throwException("名称已经存在");
             }
         } else {
             QueryWrapper<VisualizationSubject> wrapper = new QueryWrapper<>();
@@ -85,7 +85,7 @@ public class VisualizationSubjectService implements VisualizationSubjectApi {
                 BeanUtils.copyBean(updateInfo,request);
                 subjectMapper.updateById(updateInfo);
             } else {
-                DEException.throwException("名称已经存在");
+                CrestException.throwException("名称已经存在");
             }
         }
     }

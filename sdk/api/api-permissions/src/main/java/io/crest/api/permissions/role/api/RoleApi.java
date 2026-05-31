@@ -5,18 +5,18 @@ import io.crest.api.permissions.role.dto.*;
 import io.crest.api.permissions.role.vo.ExternalUserVO;
 import io.crest.api.permissions.role.vo.RoleDetailVO;
 import io.crest.api.permissions.role.vo.RoleVO;
-import io.crest.auth.DeApiPath;
-import io.crest.auth.DePermit;
+import io.crest.auth.CrestApiPath;
+import io.crest.auth.CrestPermit;
 import io.crest.model.KeywordRequest;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -24,41 +24,41 @@ import static io.crest.constant.AuthResourceEnum.ROLE;
 
 @Tag(name = "角色")
 @ApiSupport(order = 887, author = "Crest")
-@DeApiPath(value = "/role", rt = ROLE)
+@CrestApiPath(value = "/role", rt = ROLE)
 public interface RoleApi {
 
     @Operation(summary = "查询")
-    @DePermit("m:read")
-    @PostMapping("/query")
+    @CrestPermit("m:read")
+    @PostMapping("/list")
     List<RoleVO> query(@RequestBody KeywordRequest request);
 
     @Operation(summary = "创建")
-    @DePermit("m:read")
-    @PostMapping("/create")
+    @CrestPermit("m:read")
+    @PostMapping
     Long create(@RequestBody RoleCreator creator);
 
     @Operation(summary = "编辑")
-    @DePermit({"m:read", "#p0.id + ':manage'"})
-    @PostMapping("/edit")
+    @CrestPermit({"m:read", "#p0.id + ':manage'"})
+    @PutMapping
     void edit(@RequestBody RoleEditor editor);
 
     @Operation(summary = "绑定用户")
-    @DePermit({"m:read", "#p0.rid + ':manage'"})
-    @PostMapping("/mountUser")
+    @CrestPermit({"m:read", "#p0.rid + ':manage'"})
+    @PostMapping("/users")
     void mountUser(@RequestBody MountUserRequest request);
 
     @Operation(summary = "绑定组织外用户")
-    @DePermit({"m:read", "#p0.rid + ':manage'"})
-    @PostMapping("/mountExternalUser")
+    @CrestPermit({"m:read", "#p0.rid + ':manage'"})
+    @PostMapping("/external-users")
     void mountExternalUser(@RequestBody MountExternalUserRequest request);
 
     @Operation(summary = "查询组织外用户")
-    @GetMapping("/searchExternalUser/{keyword}")
+    @GetMapping("/external-users/search/{keyword}")
     ExternalUserVO searchExternalUser(@PathVariable("keyword") String keyword);
 
     @Operation(summary = "解绑用户")
-    @DePermit({"m:read", "#p0.rid + ':manage'"})
-    @PostMapping("/unMountUser")
+    @CrestPermit({"m:read", "#p0.rid + ':manage'"})
+    @PostMapping("/users/unmount")
     void unMountUser(@RequestBody UnmountUserRequest request);
 
     @Operation(summary = "用户可选角色")
@@ -76,12 +76,12 @@ public interface RoleApi {
 
     @Operation(summary = "删除角色")
     @Parameter(name = "rid", description = "角色ID", required = true, in = ParameterIn.PATH)
-    @DePermit({"m:manage", "#p0 + ':manage'"})
-    @PostMapping("/delete/{rid}")
+    @CrestPermit({"m:manage", "#p0 + ':manage'"})
+    @DeleteMapping("/{rid}")
     void delete(@PathVariable("rid") Long rid);
 
     @Operation(summary = "解绑用户询问")
-    @PostMapping("/beforeUnmountInfo")
+    @PostMapping("/unmount-info")
     Integer beforeUnmountInfo(@RequestBody UnmountUserRequest request);
 
     @Operation(summary = "复制", hidden = true)
@@ -89,10 +89,10 @@ public interface RoleApi {
     void copy(@RequestBody RoleCopyRequest request);
 
     @Operation(summary = "查询组织内角色")
-    @PostMapping("/byCurOrg")
+    @PostMapping("/by-current-org")
     List<RoleVO> byCurOrg(@RequestBody KeywordRequest request);
 
     @Hidden
-    @GetMapping("/queryWithOid/{oid}")
+    @GetMapping("/organization/{oid}")
     List<RoleVO> queryWithOid(@PathVariable("oid") Long oid);
 }

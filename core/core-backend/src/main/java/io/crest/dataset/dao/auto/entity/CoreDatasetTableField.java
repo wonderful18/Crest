@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @author fit2cloud
  * @since 2025-11-26
  */
-@TableName("core_dataset_table_field")
+@TableName("dataset_field")
 public class CoreDatasetTableField implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -57,12 +57,12 @@ public class CoreDatasetTableField implements Serializable {
     private String description;
 
     /**
-     * de字段名用作唯一标识
+     * 引擎字段名用作唯一标识
      */
-    private String dataeaseName;
+    private String engineFieldName;
 
     /**
-     * de字段别名
+     * 字段别名
      */
     private String fieldShortName;
 
@@ -92,14 +92,14 @@ public class CoreDatasetTableField implements Serializable {
     private Integer size;
 
     /**
-     * dataease字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制
+     * Crest 字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制
      */
-    private Integer deType;
+    private Integer fieldType;
 
     /**
-     * de记录的原始类型
+     * 数据源原始类型
      */
-    private Integer deExtractType;
+    private Integer extractedFieldType;
 
     /**
      * 是否扩展字段 0原始 1复制 2计算字段...
@@ -210,12 +210,12 @@ public class CoreDatasetTableField implements Serializable {
         this.description = description;
     }
 
-    public String getDataeaseName() {
-        return dataeaseName;
+    public String getEngineFieldName() {
+        return engineFieldName;
     }
 
-    public void setDataeaseName(String dataeaseName) {
-        this.dataeaseName = dataeaseName;
+    public void setEngineFieldName(String engineFieldName) {
+        this.engineFieldName = engineFieldName;
     }
 
     public String getFieldShortName() {
@@ -266,20 +266,20 @@ public class CoreDatasetTableField implements Serializable {
         this.size = size;
     }
 
-    public Integer getDeType() {
-        return deType;
+    public Integer getFieldType() {
+        return fieldType;
     }
 
-    public void setDeType(Integer deType) {
-        this.deType = deType;
+    public void setFieldType(Integer fieldType) {
+        this.fieldType = fieldType;
     }
 
-    public Integer getDeExtractType() {
-        return deExtractType;
+    public Integer getExtractedFieldType() {
+        return extractedFieldType;
     }
 
-    public void setDeExtractType(Integer deExtractType) {
-        this.deExtractType = deExtractType;
+    public void setExtractedFieldType(Integer extractedFieldType) {
+        this.extractedFieldType = extractedFieldType;
     }
 
     public Integer getExtField() {
@@ -365,15 +365,15 @@ public class CoreDatasetTableField implements Serializable {
         ", originName = " + originName +
         ", name = " + name +
         ", description = " + description +
-        ", dataeaseName = " + dataeaseName +
+        ", engineFieldName = " + engineFieldName +
         ", fieldShortName = " + fieldShortName +
         ", groupList = " + groupList +
         ", otherGroup = " + otherGroup +
         ", groupType = " + groupType +
         ", type = " + type +
         ", size = " + size +
-        ", deType = " + deType +
-        ", deExtractType = " + deExtractType +
+        ", fieldType = " + fieldType +
+        ", extractedFieldType = " + extractedFieldType +
         ", extField = " + extField +
         ", checked = " + checked +
         ", columnIndex = " + columnIndex +

@@ -217,9 +217,9 @@ const init = () => {
 }
 const initOptions = item => {
   if (item.field) {
-    if ([0, 5, 7].includes(item.field.deType)) {
+    if ([0, 5, 7].includes(item.field.fieldType)) {
       item.options = JSON.parse(JSON.stringify(textOptions))
-    } else if (item.field.deType === 1) {
+    } else if (item.field.fieldType === 1) {
       item.options = JSON.parse(JSON.stringify(dateOptions))
     } else {
       item.options = JSON.parse(JSON.stringify(valueOptions))
@@ -312,16 +312,16 @@ init()
                 :key="fieldOption.id"
                 :label="fieldOption.name"
                 :value="fieldOption.id"
-                :disabled="chart.type === 'table-info' && fieldOption.deType === 7"
+                :disabled="chart.type === 'table-info' && fieldOption.fieldType === 7"
               >
                 <el-icon style="margin-right: 8px">
                   <Icon
                     ><component
                       :class="`field-icon-${
-                        fieldType[[2, 3].includes(fieldOption.deType) ? 2 : 0]
+                        fieldType[[2, 3].includes(fieldOption.fieldType) ? 2 : 0]
                       }`"
                       class="svg-icon"
-                      :is="iconFieldMap[fieldType[fieldOption.deType]]"
+                      :is="iconFieldMap[fieldType[fieldOption.fieldType]]"
                     ></component
                   ></Icon>
                 </el-icon>
@@ -382,7 +382,7 @@ init()
               <el-form-item class="form-item">
                 <el-input-number
                   v-model="item.value"
-                  v-if="[2, 3].includes(fieldItem.field.deType)"
+                  v-if="[2, 3].includes(fieldItem.field.fieldType)"
                   :placeholder="t('chart.drag_block_label_value')"
                   controls-position="right"
                   class="value-item"

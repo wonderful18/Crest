@@ -2,13 +2,13 @@ import request from '@/config/axios'
 
 export const getTaskLogListApi = (current: number, size: number, data: any) => {
   return request.post({
-    url: `/sync/task/log/pager/${current}/${size}`,
+    url: `/sync/task/log/page/${current}/${size}`,
     data: data
   })
 }
 
 export const removeApi = (logId: string) => {
-  return request.post({ url: `/sync/task/log/delete/${logId}` })
+  return request.delete({ url: `/sync/task/log/${logId}` })
 }
 
 export const getTaskLogDetailApi = (logId: string, fromLineNum: number) => {
@@ -20,5 +20,5 @@ export const clear = (clearData: {}) => {
 }
 
 export const terminationTaskApi = (logId: string) => {
-  return request.post({ url: `/sync/task/log/terminationTask/${logId}`, data: {} })
+  return request.post({ url: `/sync/task/log/termination/${logId}`, data: {} })
 }

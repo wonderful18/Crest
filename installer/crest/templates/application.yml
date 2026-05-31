@@ -2,38 +2,38 @@ server:
   tomcat:
     connection-timeout: 70000
   servlet:
-    context-path: ${DE_CONTEXT_PATH}
+    context-path: ${CREST_CONTEXT_PATH}
 spring:
   servlet:
     multipart:
       max-file-size: 500MB
       max-request-size: 500MB
   datasource:
-    url: jdbc:mysql://${DE_MYSQL_HOST}:${DE_MYSQL_PORT}/${DE_MYSQL_DB}?${DE_MYSQL_PARAMS}
-    username: ${DE_MYSQL_USER}
-    password: ${DE_MYSQL_PASSWORD}
+    url: jdbc:mysql://${CREST_DB_HOST}:${CREST_DB_PORT}/${CREST_DB_NAME}?${CREST_DB_PARAMS}
+    username: ${CREST_DB_USERNAME}
+    password: ${CREST_DB_PASSWORD}
 logging:
   file:
-    path: ${DE_LOG_PATH}
+    path: ${CREST_LOG_PATH}
 crest:
   export:
     views:
-      limit: ${DE_EXPORT_VIEWS_LIMIT}
+      limit: ${CREST_EXPORT_VIEWS_LIMIT}
     dataset:
-      limit: ${DE_EXPORT_DATASET_LIMIT}
-  origin-list: ${DE_ORIGIN_LIST}
-  login_timeout: ${DE_LOGIN_TIMEOUT}
-  servers: ${DE_SERVERS}
-  playwright-server: ${DE_PLAYWRIGHT_SERVER}
+      limit: ${CREST_EXPORT_DATASET_LIMIT}
+  origin-list: ${CREST_ORIGIN_LIST}
+  login_timeout: ${CREST_LOGIN_TIMEOUT}
+  servers: ${CREST_SERVERS}
+  playwright-server: ${CREST_PLAYWRIGHT_SERVER}
   path:
-    ehcache: ${DE_CACHE_PATH}
+    ehcache: ${CREST_CACHE_PATH}
   crypto:
-    mode: ${DE_CRYPTO_MODE}
-    aes-key: ${DE_AES_KEY}
-    aes-iv: ${DE_AES_IV}
-    sm4-key: ${DE_SM4_KEY}
+    mode: ${CREST_CRYPTO_MODE}
+    aes-key: ${CREST_AES_KEY}
+    aes-iv: ${CREST_AES_IV}
+    sm4-key: ${CREST_SM4_KEY}
   user:
-    initial-password: ${DE_INITIAL_PASSWORD}
+    initial-password: ${CREST_INITIAL_PASSWORD}
 task:
   executor:
     address: http://sync-task-actuator:9001

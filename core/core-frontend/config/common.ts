@@ -14,7 +14,7 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components-secondary/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components-secondary/resolvers'
 const root = process.cwd()
-const skipViteLint = process.env.DE_SKIP_VITE_LINT === 'true'
+const skipViteLint = process.env.CREST_SKIP_VITE_LINT === 'true'
 const lintPlugins = skipViteLint
   ? []
   : [

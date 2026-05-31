@@ -6,13 +6,13 @@ import io.crest.dataset.utils.TableUtils;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
 import io.crest.datasource.dao.auto.entity.CoreDatasourceTask;
 import io.crest.datasource.dao.auto.entity.CoreDatasourceTaskLog;
-import io.crest.datasource.dao.auto.entity.CoreDeEngine;
+import io.crest.datasource.dao.auto.entity.CoreEngine;
 import io.crest.datasource.dao.auto.mapper.CoreDatasourceMapper;
 import io.crest.datasource.provider.*;
 import io.crest.datasource.request.EngineRequest;
 import io.crest.datasource.server.DatasourceServer;
 import io.crest.datasource.server.DatasourceTaskServer;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.datasource.dto.DatasourceDTO;
 import io.crest.extensions.datasource.dto.DatasourceRequest;
@@ -61,7 +61,7 @@ public class DatasourceSyncManage {
         DatasourceServer.UpdateType updateType = DatasourceServer.UpdateType.valueOf(type);
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDatasource(transDTO(coreDatasource));
-        List<DatasetTableDTO> tables = ExcelUtils.getTables(datasourceRequest);
+        List<DatasetTableDTO> tables = ExcelUtils.tables(datasourceRequest);
         for (DatasetTableDTO tableDTO : tables) {
             CoreDatasourceTaskLog datasetTableTaskLog = datasourceTaskServer.initTaskLog(coreDatasource.getId(), null, tableDTO.getTableName(), CRON.toString());
             datasourceRequest.setTable(tableDTO.getTableName());
@@ -88,9 +88,9 @@ public class DatasourceSyncManage {
                 datasetTableTaskLog.setTaskStatus(TaskStatus.Error.toString());
                 datasetTableTaskLog.setInfo(datasetTableTaskLog.getInfo() + "/n Failed to sync datatable: " + datasourceRequest.getTable() + ", " + e.getMessage());
                 if (e.getMessage().contains("Duplicate entry")) {
-                    DEException.throwException("不能追加主键相同的数据, " + e.getMessage());
+                    CrestException.throwException("不能追加主键相同的数据, " + e.getMessage());
                 } else {
-                    DEException.throwException(e);
+                    CrestException.throwException(e);
                 }
 
             } finally {
@@ -182,7 +182,7 @@ public class DatasourceSyncManage {
     public void extractedExcelData(Long taskId, CoreDatasource coreDatasource, DatasourceServer.UpdateType updateType, String scheduleType) {
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDatasource(transDTO(coreDatasource));
-        List<DatasetTableDTO> tables = ExcelUtils.getTables(datasourceRequest);
+        List<DatasetTableDTO> tables = ExcelUtils.tables(datasourceRequest);
         for (DatasetTableDTO tableDTO : tables) {
             CoreDatasourceTaskLog datasetTableTaskLog = datasourceTaskServer.initTaskLog(coreDatasource.getId(), taskId, tableDTO.getTableName(), scheduleType);
             datasourceRequest.setTable(tableDTO.getTableName());
@@ -276,7 +276,7 @@ public class DatasourceSyncManage {
     private void extractApiData(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType extractType, List<TableField> tableFields) throws Exception {
         Map<String, Object> result = (Map<String, Object>) datasourceServer.invokeMethod(datasourceRequest.getDatasource().getType(), "fetchApiResultField", DatasourceRequest.class, datasourceRequest);
         List<String[]> dataList = (List<String[]>) result.get("dataList");
-        CoreDeEngine engine = engineManage.info();
+        CoreEngine engine = engineManage.info();
         EngineRequest engineRequest = new EngineRequest();
         engineRequest.setEngine(engine);
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
@@ -296,7 +296,7 @@ public class DatasourceSyncManage {
     private void extractExcelData(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType extractType, List<TableField> tableFields) throws Exception {
         ExcelUtils excelUtils = new ExcelUtils();
         List<String[]> dataList = excelUtils.fetchDataList(datasourceRequest);
-        CoreDeEngine engine = engineManage.info();
+        CoreEngine engine = engineManage.info();
         EngineRequest engineRequest = new EngineRequest();
         engineRequest.setEngine(engine);
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
@@ -314,7 +314,7 @@ public class DatasourceSyncManage {
     }
 
     private void replaceTable(String tableName) throws Exception {
-        CoreDeEngine engine = engineManage.info();
+        CoreEngine engine = engineManage.info();
         EngineRequest engineRequest = new EngineRequest();
         engineRequest.setEngine(engine);
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
@@ -328,7 +328,7 @@ public class DatasourceSyncManage {
     }
 
     public void createEngineTable(String tableName, List<TableField> tableFields) throws Exception {
-        CoreDeEngine engine = engineManage.info();
+        CoreEngine engine = engineManage.info();
         EngineRequest engineRequest = new EngineRequest();
         engineRequest.setEngine(engine);
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
@@ -337,7 +337,7 @@ public class DatasourceSyncManage {
     }
 
     public void dropEngineTable(String tableName) throws Exception {
-        CoreDeEngine engine = engineManage.info();
+        CoreEngine engine = engineManage.info();
         EngineRequest engineRequest = new EngineRequest();
         engineRequest.setEngine(engine);
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
@@ -345,7 +345,7 @@ public class DatasourceSyncManage {
         calciteProvider.exec(engineRequest);
     }
 
-    public void addSchedule(CoreDatasourceTask datasourceTask) throws DEException {
+    public void addSchedule(CoreDatasourceTask datasourceTask) throws CrestException {
         if (Strings.CI.equals(datasourceTask.getSyncRate(), DatasourceTaskServer.ScheduleType.RIGHTNOW.toString())) {
             scheduleManager.addOrUpdateSingleJob(new JobKey(datasourceTask.getId().toString(), datasourceTask.getDsId().toString()), new TriggerKey(datasourceTask.getId().toString(), datasourceTask.getDsId().toString()), ExtractDataJob.class, new Date(datasourceTask.getStartTime()), scheduleManager.getDefaultJobDataMap(datasourceTask.getDsId().toString(), datasourceTask.getCron(), datasourceTask.getId().toString(), datasourceTask.getUpdateType()));
         } else {

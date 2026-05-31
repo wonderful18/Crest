@@ -1,6 +1,6 @@
 package io.crest.system.sso;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
@@ -36,7 +36,7 @@ public enum SsoProviderType {
                 return type;
             }
         }
-        DEException.throwException("不支持的身份提供方类型：" + value);
+        CrestException.throwException("不支持的身份提供方类型：" + value);
         return OIDC_GENERIC;
     }
 }

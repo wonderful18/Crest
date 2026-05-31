@@ -9,7 +9,7 @@ public class ViewDetailField implements Serializable {
 
     private String name;
 
-    private String dataeaseName;
+    private String engineFieldName;
 
-    private Integer deType;
+    private Integer fieldType;
 }

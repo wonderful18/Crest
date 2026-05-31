@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.crest.api.chart.dto.PageInfo;
 import io.crest.api.dataset.union.DatasetGroupInfoDTO;
 import io.crest.chart.charts.impl.DefaultChartHandler;
-import io.crest.constant.DeTypeConstants;
+import io.crest.constant.FieldTypeConstants;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.engine.sql.SQLProvider;
 import io.crest.engine.trans.Dimension2SQLObj;
@@ -201,7 +201,7 @@ public class TableInfoHandler extends DefaultChartHandler {
             if (CollectionUtils.isNotEmpty(fieldList)) {
                 var customCalcFields = new ArrayList<ChartViewFieldDTO>();
                 var seriesList = JsonUtil.parseList(JsonUtil.toJSONString(fieldList).toString(), new TypeReference<List<ChartViewFieldDTO>>(){});
-                var quotaIds = allFields.stream().map(DatasetTableFieldDTO::getDataeaseName).collect(Collectors.toSet());
+                var quotaIds = allFields.stream().map(DatasetTableFieldDTO::getEngineFieldName).collect(Collectors.toSet());
                 seriesList.forEach(field -> {
                     if (!BooleanUtils.isTrue(field.getShow()) || !"custom".equalsIgnoreCase(field.getSummary())) {
                         return;
@@ -213,7 +213,7 @@ public class TableInfoHandler extends DefaultChartHandler {
                         return;
                     }
                     field.setSummary("");
-                    field.setDeType(DeTypeConstants.DE_FLOAT);
+                    field.setFieldType(FieldTypeConstants.FLOAT);
                     field.setId(IDUtils.snowID());
                     field.setExtField(ExtFieldConstant.EXT_CALC);
                     customCalcFields.add(field);

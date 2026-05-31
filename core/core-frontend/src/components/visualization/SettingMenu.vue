@@ -7,7 +7,7 @@
           <el-dropdown-item
             v-if="state.editFilter.includes(curComponent.type)"
             icon="el-icon-edit-outline"
-            @click="edit"
+            @click="change"
             >{{ t('visualization.edit') }}
           </el-dropdown-item>
           <el-dropdown-item
@@ -25,7 +25,7 @@
             >{{ t('visualization.delete') }}
           </el-dropdown-item>
           <el-dropdown-item
-            v-if="curComponent.component === 'DeTabs'"
+            v-if="curComponent.component === 'Tabs'"
             icon="el-icon-sort"
             @click="openCustomSort"
             >{{ t('chart.sort') }}
@@ -63,7 +63,7 @@
             >{{ t('visualization.carousel') }}
           </el-dropdown-item>
           <el-dropdown-item
-            v-if="'DeTabs' === curComponent.component"
+            v-if="'Tabs' === curComponent.component"
             icon="el-icon-plus"
             @click="addTab"
             >{{ t('visualization.add_tab') }}
@@ -145,7 +145,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
-import { getViewLinkageGather } from '@/api/visualization/linkage'
+import { viewLinkageGather } from '@/api/visualization/linkage'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 import eventBus from '@/utils/eventBus'
@@ -195,7 +195,7 @@ const state = reactive({
 })
 
 const tabCarouselShow = computed(() => {
-  return curComponent.value.component === 'DeTabs'
+  return curComponent.value.component === 'Tabs'
 })
 
 const linkJumpSetShow = computed(() => {
@@ -321,7 +321,7 @@ const linkageSetting = () => {
     sourceViewId: curComponent.value.propValue.viewId,
     targetViewIds: targetViewIds
   }
-  getViewLinkageGather(requestInfo).then(rsp => {
+  viewLinkageGather(requestInfo).then(rsp => {
     dvMainStore.setLinkageTargetInfo(rsp.data)
   })
 }

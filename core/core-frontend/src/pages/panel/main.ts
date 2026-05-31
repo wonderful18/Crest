@@ -121,7 +121,7 @@ const setupAll = async (
   userStore.setUser()
   const appRes = await import('@/store/modules/app')
   const appStore = appRes.useAppStoreWithOut()
-  appStore.setIsDataEaseBi(true)
+  appStore.setIsCrestBi(true)
   const appearanceRes = await import('@/store/modules/appearance')
   const appearanceStore = appearanceRes.useAppearanceStoreWithOut()
   appearanceStore.setAppearance(true)
@@ -146,7 +146,7 @@ const defaultOptions = {
   theme: 'default'
 }
 
-class DataEaseBi {
+class CrestBi {
   baseUrl: string
   token: string
   type:
@@ -165,7 +165,7 @@ class DataEaseBi {
   dfId: string
   pid: string
   chartId: string
-  deOptions: Options
+  clientOptions: Options
   vm: App<Element>
 
   constructor(type, options) {
@@ -183,9 +183,9 @@ class DataEaseBi {
   }
 
   async initialize(options: Options) {
-    this.deOptions = { ...defaultOptions, ...options }
+    this.clientOptions = { ...defaultOptions, ...options }
     this.vm = await setupAll(
-      this.deOptions.container,
+      this.clientOptions.container,
       this.type,
       this.busiFlag,
       this.outerParams,
@@ -224,4 +224,4 @@ class DataEaseBi {
   }
 }
 
-window.DataEaseBi = DataEaseBi
+window.CrestBi = CrestBi

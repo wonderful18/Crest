@@ -5,13 +5,13 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fit2cloud
  * @since 2023-11-26
  */
-@TableName("core_opt_recent")
+@TableName("workspace_recent_resource")
 public class CoreOptRecent implements Serializable {
 
     private static final long serialVersionUID = 1L;

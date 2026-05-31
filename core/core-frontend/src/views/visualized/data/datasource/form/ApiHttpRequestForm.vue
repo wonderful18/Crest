@@ -230,7 +230,7 @@ const emits = defineEmits(['changeId'])
     margin: 0 16px;
 
     :deep(.ed-tabs__item) {
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       font-style: normal;
       font-weight: 400;

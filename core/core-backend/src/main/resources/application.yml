@@ -26,7 +26,7 @@ spring:
     parser:
       allow-numeric-leading-zeros: true
   quartz:
-    scheduler-name: deSyncJob
+    scheduler-name: crestSyncJob
 management:
   health:
     redis:

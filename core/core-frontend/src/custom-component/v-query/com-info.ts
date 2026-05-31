@@ -14,15 +14,15 @@ const { componentData, canvasViewInfo } = storeToRefs(dvMainStore)
 export const comInfo = () => {
   const dfsComponentData = () => {
     let arr = componentData.value.filter(
-      com => !['VQuery', 'DeTabs'].includes(com.innerType) && com.component !== 'Group'
+      com => !['VQuery', 'Tabs'].includes(com.innerType) && com.component !== 'Group'
     )
     componentData.value.forEach(ele => {
-      if (ele.innerType === 'DeTabs') {
+      if (ele.innerType === 'Tabs') {
         ele.propValue.forEach(itx => {
           arr = [
             ...arr,
             ...itx.componentData.filter(
-              com => !['VQuery', 'DeTabs'].includes(com.innerType) && com.component !== 'Group'
+              com => !['VQuery', 'Tabs'].includes(com.innerType) && com.component !== 'Group'
             )
           ]
 
@@ -32,7 +32,7 @@ export const comInfo = () => {
                 ...arr,
                 element.propValue.filter(
                   coms =>
-                    !['VQuery', 'DeTabs'].includes(coms.innerType) && coms.component !== 'Group'
+                    !['VQuery', 'Tabs'].includes(coms.innerType) && coms.component !== 'Group'
                 )
               ]
             }
@@ -42,16 +42,16 @@ export const comInfo = () => {
         arr = [
           ...arr,
           ele.propValue.filter(
-            com => !['VQuery', 'DeTabs'].includes(com.innerType) && com.component !== 'Group'
+            com => !['VQuery', 'Tabs'].includes(com.innerType) && com.component !== 'Group'
           )
         ]
         ele.propValue.forEach(element => {
-          if (element.innerType === 'DeTabs') {
+          if (element.innerType === 'Tabs') {
             element.propValue.forEach(itx => {
               arr = [
                 ...arr,
                 ...itx.componentData.filter(
-                  com => !['VQuery', 'DeTabs'].includes(com.innerType) && com.component !== 'Group'
+                  com => !['VQuery', 'Tabs'].includes(com.innerType) && com.component !== 'Group'
                 )
               ]
             })

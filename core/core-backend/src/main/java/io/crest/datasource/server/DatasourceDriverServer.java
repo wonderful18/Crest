@@ -30,7 +30,7 @@ import java.util.Map;
 
 @Transactional(rollbackFor = Exception.class)
 @RestController
-@RequestMapping("/datasourceDriver")
+@RequestMapping("/datasource-driver")
 public class DatasourceDriverServer implements DatasourceDriverApi {
 
     @Value("${crest.path.custom-drivers:/opt/crest/custom-drivers/}")
@@ -92,7 +92,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     public void delete(String driverId) {
         coreDriverMapper.deleteById(driverId);
         Map<String, Object> map = new HashMap<>();
-        map.put("deDriverId", driverId);
+        map.put("driverId", driverId);
         coreDriverJarMapper.deleteByMap(map);
     }
 
@@ -101,7 +101,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     public List<DriveJarDTO> listDriverJar(String driverId) {
         List<DriveJarDTO> driveJarDTOS = new ArrayList<>();
         QueryWrapper<CoreDriverJar> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("deDriverId", driverId);
+        queryWrapper.eq("driverId", driverId);
         coreDriverJarMapper.selectList(queryWrapper).forEach(coreDriverJar -> {
             DriveJarDTO driveJarDTO = new DriveJarDTO();
             BeanUtils.copyBean(driveJarDTO, coreDriverJar);
@@ -114,14 +114,14 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     public void deleteDriverJar(String jarId) {
         CoreDriverJar driverJar = coreDriverJarMapper.selectById(jarId);
         coreDriverJarMapper.deleteById(jarId);
-        CoreDriver driver = coreDriverMapper.selectById(driverJar.getDeDriverId());
-        FileUtils.deleteFile(DRIVER_PATH + driverJar.getDeDriverId() + "/" + driverJar.getTransName());
+        CoreDriver driver = coreDriverMapper.selectById(driverJar.getDriverId());
+        FileUtils.deleteFile(DRIVER_PATH + driverJar.getDriverId() + "/" + driverJar.getTransName());
         //TODO 更新classloader
     }
 
     @Override
-    public DriveJarDTO uploadJar(@RequestParam("deDriverId") String deDriverId, @RequestParam("jarFile") MultipartFile jarFile) throws Exception {
-        CoreDriver coreDriver = coreDriverMapper.selectById(deDriverId);
+    public DriveJarDTO uploadJar(@RequestParam("driverId") String driverId, @RequestParam("jarFile") MultipartFile jarFile) throws Exception {
+        CoreDriver coreDriver = coreDriverMapper.selectById(driverId);
         if (coreDriver == null) {
             throw new RuntimeException("DRIVER_NOT_FOUND");
         }
@@ -136,12 +136,12 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
             throw new Exception("A file with the same name already exists：" + filename);
         }
 
-        String dirPath = DRIVER_PATH + deDriverId + "/";
+        String dirPath = DRIVER_PATH + driverId + "/";
         String filePath = dirPath + Md5Utils.md5(filename) + ".jar";
         saveJarFile(jarFile, dirPath, filePath);
 
         CoreDriverJar coreDriverJar = new CoreDriverJar();
-        coreDriverJar.setDeDriverId(deDriverId);
+        coreDriverJar.setDriverId(driverId);
         coreDriverJar.setVersion("");
         coreDriverJar.setFileName(filename);
         coreDriverJar.setDriverClass(String.join(",", new ArrayList<>()));

@@ -87,7 +87,7 @@ const save = () => {
     if (val) {
       const pwd = rsaEncryp(pwdForm.pwd)
       const newPwd = rsaEncryp(pwdForm.newPwd)
-      request.post({ url: '/user/modifyPwd', data: { pwd, newPwd } }).then(() => {
+      request.post({ url: '/user/modify-password', data: { pwd, newPwd } }).then(() => {
         if (isMobile()) {
           emits('success')
           return
@@ -135,7 +135,7 @@ const save = () => {
         :placeholder="t('system.the_confirmation_password')"
       />
     </el-form-item>
-    <el-button @click="save" type="primary">
+    <el-button @click="record" type="primary">
       {{ t('common.save') }}
     </el-button>
   </el-form>

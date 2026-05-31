@@ -39,7 +39,7 @@ import { Icon } from '@/components/icon-custom'
 import { getTableField } from '@/api/dataset'
 import CodeMirror from './SqlCodeEditor.vue'
 import type { Field, DataSource } from './util'
-import { getDatasourceList, getTables, getPreviewSql } from '@/api/dataset'
+import { datasourceList, tables, getPreviewSql } from '@/api/dataset'
 import GridTable from '@/components/grid-table/src/GridTable.vue'
 import { EmptyBackground } from '@/components/empty-background'
 import { timestampFormatDate, defaultValueScopeList, fieldOptions } from './util'
@@ -118,7 +118,7 @@ const { height: windowHeight } = useWindowSize()
 const generateColumns = (arr: Field[]) =>
   arr.map(ele => ({
     key: ele.originName,
-    deType: ele.deType,
+    fieldType: ele.fieldType,
     dataKey: ele.originName,
     title: ele.originName,
     width: 170,
@@ -126,8 +126,8 @@ const generateColumns = (arr: Field[]) =>
       <div class="flex-align-center">
         <ElIcon style={{ marginRight: '6px' }}>
           <Icon>
-            {h(iconFieldMap[fieldType[column.deType]], {
-              class: `svg-icon field-icon-${fieldType[column.deType]}`
+            {h(iconFieldMap[fieldType[column.fieldType]], {
+              class: `svg-icon field-icon-${fieldType[column.fieldType]}`
             })}
           </Icon>
         </ElIcon>
@@ -215,7 +215,7 @@ const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
     pre[next[from]] = next[to]
     return pre
   }, {})
-  const on = originName.match(/\$f2cde\[(.+?)\]/g)
+  const on = originName.match(/\$crest\[(.+?)\]/g)
   if (on) {
     on.forEach(itm => {
       const ele = itm.slice(7, -1)
@@ -223,10 +223,10 @@ const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
         name2Auto.push(nameIdMap[ele])
       }
       if (from === 'id' && ids.includes(ele)) {
-        name2Id = name2Id.replace(`$f2cde[${ele}]`, `$f2cde[${nameIdMap[ele]}]`)
+        name2Id = name2Id.replace(`$crest[${ele}]`, `$crest[${nameIdMap[ele]}]`)
       }
       if (from === 'name' && names.includes(ele)) {
-        name2Id = name2Id.replace(`$f2cde[${ele}]`, `$f2cde[${nameIdMap[ele]}]`)
+        name2Id = name2Id.replace(`$crest[${ele}]`, `$crest[${nameIdMap[ele]}]`)
       }
     })
   }
@@ -283,8 +283,8 @@ const getNodeField = ({ datasourceId, tableName }) => {
     })
 }
 
-const getDatasource = () => {
-  getDatasourceList().then(res => {
+const datasource = () => {
+  datasourceList().then(res => {
     const _list = (res as unknown as DataSource[]) || []
     if (_list && _list.length > 0 && _list[0].id === '0') {
       state.dataSourceList = _list[0].children
@@ -358,7 +358,7 @@ const treeProps = {
   label: 'name'
 }
 
-getDatasource()
+datasource()
 
 const emits = defineEmits(['close', 'save'])
 
@@ -482,7 +482,7 @@ const handleShowLeft = () => {
 
 const dsChange = debounce((val: string) => {
   dsLoading.value = true
-  getTables({ datasourceId: val })
+  tables({ datasourceId: val })
     .then(res => {
       tableList = res || []
       datasourceTableData.value = [...tableList]
@@ -514,7 +514,7 @@ const mouseupDrag = () => {
 
 const parseVariable = () => {
   state.variablesTmp = []
-  const variableReg = new RegExp('\\$DE_PARAM{(.*?)}', 'gim')
+  const variableReg = new RegExp('\\$CREST_PARAM{(.*?)}', 'gim')
   const variableMatch = codeCom.value.state.doc.toString().match(variableReg)
   if (variableMatch !== null) {
     const names = []
@@ -630,7 +630,7 @@ const mousedownDrag = () => {
         </template>
         {{ t('auth.sysParams') }}
       </el-button>
-      <el-button :disabled="!changeFlagCode" @click="save" type="primary">
+      <el-button :disabled="!changeFlagCode" @click="record" type="primary">
         {{ t('data_set.save') }}</el-button
       >
       <el-divider direction="vertical" />
@@ -691,7 +691,7 @@ const mousedownDrag = () => {
         <el-input
           v-model="searchTable"
           class="search"
-          :placeholder="t('deDataset.by_table_name')"
+          :placeholder="t('datasetUi.by_table_name')"
           clearable
         >
           <template #prefix>
@@ -799,8 +799,8 @@ const mousedownDrag = () => {
                                 <Icon
                                   ><component
                                     class="svg-icon"
-                                    :class="`field-icon-${fieldType[scope.row.deType]}`"
-                                    :is="iconFieldMap[fieldType[scope.row.deType]]"
+                                    :class="`field-icon-${fieldType[scope.row.fieldType]}`"
+                                    :is="iconFieldMap[fieldType[scope.row.fieldType]]"
                                   ></component
                                 ></Icon>
                               </el-icon>
@@ -844,7 +844,7 @@ const mousedownDrag = () => {
         @change="changeFlagCode = true"
         :height="`${dragHeight}px`"
         dom-id="sql-editor"
-        :regexp="/\$f2cde\[(.*?)\]/g"
+        :regexp="/\$crest\[(.*?)\]/g"
         ref="myCm"
         :quotaMap="fieldFormList.filter(ele => ['num'].includes(ele.type)).map(ele => ele.name)"
         :dimensionMap="
@@ -859,7 +859,7 @@ const mousedownDrag = () => {
         </div>
         <div class="padding-24">
           <el-tabs v-model="tabActive">
-            <el-tab-pane :label="t('deDataset.running_results')" name="result" />
+            <el-tab-pane :label="t('datasetUi.running_results')" name="result" />
           </el-tabs>
         </div>
         <div v-show="tabActive === 'result'" class="table-sql">
@@ -972,7 +972,7 @@ const mousedownDrag = () => {
             </div>
             <div
               class="variable-item flex-align-center"
-              @click="insertFieldToCodeMirror(`$f2cde[${fieldForm.name}]`)"
+              @click="insertFieldToCodeMirror(`$crest[${fieldForm.name}]`)"
               v-for="fieldForm in builtInList"
               :key="fieldForm.id"
             >
@@ -985,7 +985,7 @@ const mousedownDrag = () => {
               class="variable-item flex-align-center"
               v-for="fieldForm in fieldFormListComputed"
               :key="fieldForm.id"
-              @click="insertFieldToCodeMirror(`$f2cde[${fieldForm.name}]`)"
+              @click="insertFieldToCodeMirror(`$crest[${fieldForm.name}]`)"
               :class="['num'].includes(fieldForm.type) && 'with-type'"
             >
               <el-icon>
@@ -1020,7 +1020,7 @@ const mousedownDrag = () => {
     </div>
     <el-table header-cell-class-name="header-cell" :data="state.variablesTmp">
       <el-table-column width="220" prop="variableName" :label="t('visualization.param_name')" />
-      <el-table-column width="200" :label="t('deDataset.parameter_type')">
+      <el-table-column width="200" :label="t('datasetUi.parameter_type')">
         <template #default="scope">
           <el-cascader
             class="select-type"
@@ -1184,7 +1184,7 @@ const mousedownDrag = () => {
     height: 24px;
     width: 20px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--deCardStrokeColor, #dee0e3);
+    border: 1px solid var(--crestCardStrokeColor, #dee0e3);
     display: flex;
     align-items: center;
     padding-left: 2px;
@@ -1205,7 +1205,7 @@ const mousedownDrag = () => {
     height: 100%;
     width: 240px;
     float: left;
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     border-right: 1px solid rgba(31, 35, 41, 0.15);
 
     .list-item_primary {
@@ -1221,13 +1221,13 @@ const mousedownDrag = () => {
       font-weight: 500;
       display: flex;
       justify-content: space-between;
-      color: var(--deTextPrimary, #1f2329);
+      color: var(--crestTextPrimary, #1f2329);
       position: relative;
 
       i {
         cursor: pointer;
         font-size: 12px;
-        color: var(--deTextPlaceholder, rgba(31, 35, 41, 0.15));
+        color: var(--crestTextPlaceholder, rgba(31, 35, 41, 0.15));
       }
 
       .left-outlined {
@@ -1268,7 +1268,7 @@ const mousedownDrag = () => {
       i {
         cursor: auto;
         font-size: 16px;
-        color: var(--deTextPlaceholder, #646a73);
+        color: var(--crestTextPlaceholder, #646a73);
       }
     }
 
@@ -1300,7 +1300,7 @@ const mousedownDrag = () => {
 
       .not-allow {
         cursor: not-allowed;
-        color: var(--deTextDisable, #bbbfc4);
+        color: var(--crestTextDisable, #bbbfc4);
       }
 
       .name-copy {
@@ -1322,7 +1322,7 @@ const mousedownDrag = () => {
     height: calc(100vh - 156px);
     position: relative;
     .sql-result {
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       overflow-y: auto;
       box-sizing: border-box;
@@ -1398,7 +1398,7 @@ const mousedownDrag = () => {
       .de-Pending-result,
       .de-Underway-result {
         &::before {
-          background: var(--deTextPlaceholder, #8f959e);
+          background: var(--crestTextPlaceholder, #8f959e);
         }
       }
 
@@ -1412,13 +1412,13 @@ const mousedownDrag = () => {
       .de-Stopped-result,
       .de-Completed-pre {
         &::before {
-          background: var(--deSuccess, #34c724);
+          background: var(--crestSuccess, #34c724);
         }
       }
 
       .de-Error-pre {
         &::before {
-          background: var(--deDanger, #f54a45);
+          background: var(--crestDanger, #f54a45);
         }
 
         .ed-icon-s-order {
@@ -1590,7 +1590,7 @@ const mousedownDrag = () => {
 .sql-tips {
   color: #646a73;
   text-align: center;
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   font-size: 14px;
   font-style: normal;
   font-weight: 400;
@@ -1614,7 +1614,7 @@ const mousedownDrag = () => {
       .num {
         margin-left: auto;
         color: #646a73;
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 14px;
         font-style: normal;
         font-weight: 400;
@@ -1696,7 +1696,7 @@ const mousedownDrag = () => {
     position: relative;
     line-height: 22px;
     padding: 9px 0 9px 40px;
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 400;
 

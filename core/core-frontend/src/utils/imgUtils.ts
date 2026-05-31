@@ -3,7 +3,7 @@ import JsPDF from 'jspdf'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { useEmbedded } from '@/store/modules/embedded'
 import { storeToRefs } from 'pinia'
-import { findResourceAsBase64 } from '@/api/staticResource'
+import { resourceBase64 } from '@/api/staticResource'
 import FileSaver from 'file-saver'
 import { deepCopy } from '@/utils/utils'
 import { domToPng } from 'modern-screenshot'
@@ -15,7 +15,7 @@ const { canvasStyleData, componentData, canvasViewInfo, canvasViewDataInfo, dvIn
 const basePath = import.meta.env.VITE_API_BASEPATH
 
 export function formatterUrl(url: string) {
-  return url.replace('//de2api', '/de2api')
+  return url.replace('//api/v1', '/api/v1')
 }
 export function imgUrlTrans(url) {
   if (url) {
@@ -215,7 +215,7 @@ function findStaticSourceInner(componentDataInfo, staticResource) {
       })
     } else if (item.component === 'Group') {
       findStaticSourceInner(item.propValue, staticResource)
-    } else if (item.component === 'DeTabs') {
+    } else if (item.component === 'Tabs') {
       item.propValue.forEach(tabItem => {
         findStaticSourceInner(tabItem.componentData, staticResource)
       })
@@ -236,11 +236,11 @@ export function findStaticSource(callBack) {
   findStaticSourceInner(componentData.value, staticResource)
   if (staticResource.length > 0) {
     try {
-      findResourceAsBase64({ resourcePathList: staticResource }).then(rsp => {
+      resourceBase64({ resourcePathList: staticResource }).then(rsp => {
         callBack(rsp.data)
       })
     } catch (e) {
-      console.error('findResourceAsBase64 error', e)
+      console.error('resourceBase64 error', e)
       callBack()
     }
   } else {

@@ -43,7 +43,7 @@
               <el-tooltip class="item" effect="dark" :content="$t('commons.copy')" placement="top">
                 <el-button text @click.stop="copyTicket(scope.row.ticket)">
                   <template #icon>
-                    <Icon name="de-copy"><deCopy class="svg-icon" /></Icon>
+                    <Icon name="copy"><CopyIcon class="svg-icon" /></Icon>
                   </template>
                 </el-button>
               </el-tooltip>
@@ -128,7 +128,7 @@
 
 <script lang="ts" setup>
 import icon_close_outlined from '@/assets/svg/icon_close_outlined.svg'
-import deCopy from '@/assets/svg/de-copy.svg'
+import CopyIcon from '@/assets/svg/copy.svg'
 import icon_refresh_outlined from '@/assets/svg/icon_refresh_outlined.svg'
 import dvInfo from '@/assets/svg/dv-info.svg'
 import icon_deleteTrash_outlined from '@/assets/svg/icon_delete-trash_outlined.svg'
@@ -171,7 +171,7 @@ const close = () => {
 }
 
 const requireTicketChange = val => {
-  const url = '/ticket/enableTicket'
+  const url = '/ticket/tickets/enabled'
   const data = {
     resourceId: props.resourceId,
     require: val
@@ -242,7 +242,7 @@ const copyTicket = async ticket => {
   }
 }
 const refreshTicket = row => {
-  const url = '/ticket/saveTicket'
+  const url = '/ticket/tickets'
   const param = JSON.parse(JSON.stringify(row))
   param['generateNew'] = true
   request.post({ url, data: param }).then(res => {
@@ -252,8 +252,8 @@ const refreshTicket = row => {
 
 const deleteTicket = row => {
   const param = { ticket: row.ticket }
-  const url = '/ticket/delTicket'
-  request.post({ url, data: param }).then(() => {
+  const url = '/ticket/tickets'
+  request.delete({ url, data: param }).then(() => {
     loadTicketData()
   })
 }
@@ -267,7 +267,7 @@ const finish = () => {
 }
 const loadTicketData = () => {
   const resourceId = props.resourceId
-  const url = `/ticket/pager/${resourceId}/${state.paginationConfig.currentPage}/${state.paginationConfig.pageSize}`
+  const url = `/ticket/page/${resourceId}/${state.paginationConfig.currentPage}/${state.paginationConfig.pageSize}`
   request.post({ url }).then(res => {
     state.tableData = res.data?.records || []
     state.paginationConfig.total = res.data.total
@@ -311,7 +311,7 @@ onMounted(() => {
       display: flex;
       align-items: center;
       color: #1f2329;
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-weight: 500;
       font-size: 14px;
       .ticket-title {

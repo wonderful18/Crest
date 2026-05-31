@@ -42,7 +42,7 @@ public class DatasetSyncQueryManage {
             return sqlMap;
         }
 
-        CoreDatasource engine = engineManage.getDeEngine();
+        CoreDatasource engine = engineManage.getEngineDatasource();
         DatasourceSchemaDTO datasource = new DatasourceSchemaDTO();
         BeanUtils.copyBean(datasource, engine);
         datasource.setSchemaAlias(String.format(SQLConstants.SCHEMA, datasource.getId()));

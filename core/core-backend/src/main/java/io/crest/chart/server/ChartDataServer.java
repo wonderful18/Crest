@@ -5,14 +5,14 @@ import io.crest.api.chart.ChartDataApi;
 import io.crest.api.chart.dto.ViewDetailField;
 import io.crest.api.chart.request.ChartExcelRequest;
 import io.crest.api.chart.request.ChartExcelRequestInner;
-import io.crest.auth.DeLinkPermit;
+import io.crest.auth.CrestLinkPermit;
 import io.crest.chart.constant.ChartConstants;
 import io.crest.chart.manage.ChartDataManage;
 import io.crest.constant.*;
 import io.crest.dataset.manage.PermissionManage;
 import io.crest.dataset.server.DatasetFieldServer;
 import io.crest.dataset.utils.DatasetUtils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.exportCenter.dao.auto.entity.CoreExportTask;
 import io.crest.exportCenter.manage.ExportCenterDownLoadManage;
 import io.crest.exportCenter.manage.ExportCenterManage;
@@ -20,7 +20,7 @@ import io.crest.exportCenter.util.ExportCenterUtils;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.view.dto.*;
 import io.crest.i18n.Lang;
-import io.crest.log.DeLog;
+import io.crest.log.CrestAudit;
 import io.crest.result.ResultCode;
 import io.crest.utils.CommonBeanFactory;
 import io.crest.utils.JsonUtil;
@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
  * @Author Junjun
  */
 @RestController
-@RequestMapping("/chartData")
+@RequestMapping("/chart-data")
 @SuppressWarnings("unchecked")
 public class ChartDataServer implements ChartDataApi {
     @Resource
@@ -79,7 +79,7 @@ public class ChartDataServer implements ChartDataApi {
     private final Long sheetLimit = 1000000L;
 
 
-    @DeLinkPermit("#p0.sceneId")
+    @CrestLinkPermit("#p0.sceneId")
     @Override
     public ChartViewDTO getData(ChartViewDTO chartViewDTO) throws Exception {
         try {
@@ -94,7 +94,7 @@ public class ChartDataServer implements ChartDataApi {
                 return dto;
             }
         } catch (Exception e) {
-            DEException.throwException(ResultCode.DATA_IS_WRONG.code(), e.getMessage() + "\n\n" + ExceptionUtils.getStackTrace(e));
+            CrestException.throwException(ResultCode.DATA_IS_WRONG.code(), e.getMessage() + "\n\n" + ExceptionUtils.getStackTrace(e));
         }
         return null;
     }
@@ -113,10 +113,10 @@ public class ChartDataServer implements ChartDataApi {
                 viewDTO.setType("table-info");
                 viewDTO.setRender("antv");
                 List<DatasetTableFieldDTO> sourceFields = datasetFieldServer.listByDatasetGroup(viewDTO.getTableId());
-                List<String> fileNames = permissionManage.filterColumnPermissions(sourceFields, new HashMap<>(), viewDTO.getTableId(), null).stream().map(DatasetTableFieldDTO::getDataeaseName).collect(Collectors.toList());
-                sourceFields = sourceFields.stream().filter(datasetTableFieldDTO -> fileNames.contains(datasetTableFieldDTO.getDataeaseName())).collect(Collectors.toList());
+                List<String> fileNames = permissionManage.filterColumnPermissions(sourceFields, new HashMap<>(), viewDTO.getTableId(), null).stream().map(DatasetTableFieldDTO::getEngineFieldName).collect(Collectors.toList());
+                sourceFields = sourceFields.stream().filter(datasetTableFieldDTO -> fileNames.contains(datasetTableFieldDTO.getEngineFieldName())).collect(Collectors.toList());
                 dsHeader = sourceFields.stream().map(DatasetTableFieldDTO::getName).toArray(String[]::new);
-                dsTypes = sourceFields.stream().map(DatasetTableFieldDTO::getDeType).toArray(Integer[]::new);
+                dsTypes = sourceFields.stream().map(DatasetTableFieldDTO::getFieldType).toArray(Integer[]::new);
                 TypeReference<List<ChartViewFieldDTO>> listTypeReference = new TypeReference<List<ChartViewFieldDTO>>() {
                 };
                 viewDTO.setXAxis(JsonUtil.parseList(JsonUtil.toJSONString(sourceFields).toString(), listTypeReference));
@@ -235,13 +235,13 @@ public class ChartDataServer implements ChartDataApi {
     }
 
 
-    @DeLinkPermit("#p0.dvId")
+    @CrestLinkPermit("#p0.dvId")
     @Override
     public void innerExportDetails(ChartExcelRequest request, HttpServletResponse response) throws Exception {
         HttpServletRequest httpServletRequest = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         String linkToken = httpServletRequest.getHeader(AuthConstant.LINK_TOKEN_KEY);
-        LogUtil.info(request.getViewInfo().getId() + " " + StringUtils.isNotEmpty(linkToken) + " " + request.isDataEaseBi());
-        if ((StringUtils.isNotEmpty(linkToken) && !request.isDataEaseBi()) || (request.isDataEaseBi() && StringUtils.isEmpty(linkToken))) {
+        LogUtil.info(request.getViewInfo().getId() + " " + StringUtils.isNotEmpty(linkToken) + " " + request.isEmbeddedExport());
+        if ((StringUtils.isNotEmpty(linkToken) && !request.isEmbeddedExport()) || (request.isEmbeddedExport() && StringUtils.isEmpty(linkToken))) {
             OutputStream outputStream = response.getOutputStream();
             try {
                 Workbook wb = new SXSSFWorkbook();
@@ -364,14 +364,14 @@ public class ChartDataServer implements ChartDataApi {
                     LogUtil.error(e);
                 }
             } catch (Exception e) {
-                DEException.throwException(e);
+                CrestException.throwException(e);
             }
         } else {
             exportCenterManage.addTask(request.getViewId(), "chart", request, request.getBusiFlag());
         }
     }
 
-    @DeLinkPermit("#p0.dvId")
+    @CrestLinkPermit("#p0.dvId")
     @Override
     public void innerExportDataSetDetails(ChartExcelRequest request, HttpServletResponse response) throws Exception {
         this.innerExportDetails(request, response);
@@ -400,7 +400,7 @@ public class ChartDataServer implements ChartDataApi {
                 if (tmpAxis.isHide()) {
                     continue;
                 }
-                if (tmpAxis.getDeType().equals(DeTypeConstants.DE_INT) || tmpAxis.getDeType().equals(DeTypeConstants.DE_FLOAT)) {
+                if (tmpAxis.getFieldType().equals(FieldTypeConstants.INTEGER) || tmpAxis.getFieldType().equals(FieldTypeConstants.FLOAT)) {
                     CellStyle formatterCellStyle = createCellStyle(wb, tmpAxis.getFormatterCfg(), null);
                     styles.add(formatterCellStyle);
                 } else {
@@ -554,7 +554,7 @@ public class ChartDataServer implements ChartDataApi {
                             detailsSheet.setColumnWidth(j, 255 * 20);
                         } else if (cellValObj != null) {
                             try {
-                                if (Strings.CI.equalsAny(viewInfo.getType(), "table-info", "table-normal") && Arrays.asList(DeTypeConstants.DE_INT,DeTypeConstants.DE_FLOAT).contains(xAxis.get(j).getDeType())) {
+                                if (Strings.CI.equalsAny(viewInfo.getType(), "table-info", "table-normal") && Arrays.asList(FieldTypeConstants.INTEGER,FieldTypeConstants.FLOAT).contains(xAxis.get(j).getFieldType())) {
                                     try {
                                         FormatterCfgDTO formatterCfgDTO = xAxis.get(j).getFormatterCfg() == null ? new FormatterCfgDTO().setUnitLanguage(Lang.isChinese() ? "ch" : "en") : xAxis.get(j).getFormatterCfg();
                                         row.getCell(j).setCellStyle(styles.get(j));
@@ -563,7 +563,7 @@ public class ChartDataServer implements ChartDataApi {
                                         cell.setCellValue(cellValObj.toString());
                                     }
                                 } else {
-                                    if ((excelTypes[j].equals(DeTypeConstants.DE_INT) || excelTypes[j].equals(DeTypeConstants.DE_FLOAT)) && StringUtils.isNotEmpty(cellValObj.toString())) {
+                                    if ((excelTypes[j].equals(FieldTypeConstants.INTEGER) || excelTypes[j].equals(FieldTypeConstants.FLOAT)) && StringUtils.isNotEmpty(cellValObj.toString())) {
                                         cell.setCellValue(Double.valueOf(cellValObj.toString()));
                                     } else if (cellValObj != null) {
                                         cell.setCellValue(cellValObj.toString());
@@ -579,7 +579,7 @@ public class ChartDataServer implements ChartDataApi {
                                 ChartSeniorFunctionCfgDTO functionCfgDTO = JsonUtil.parseObject((String) JsonUtil.toJSONString(senior.get("functionCfg")), ChartSeniorFunctionCfgDTO.class);
                                 if (functionCfgDTO != null && StringUtils.isNotEmpty(functionCfgDTO.getEmptyDataStrategy()) && functionCfgDTO.getEmptyDataStrategy().equalsIgnoreCase("setZero")) {
                                     if ((viewInfo.getType().equalsIgnoreCase("table-normal") || viewInfo.getType().equalsIgnoreCase("table-info"))) {
-                                        if (functionCfgDTO.getEmptyDataFieldCtrl().contains(xAxis.get(j).getDataeaseName())) {
+                                        if (functionCfgDTO.getEmptyDataFieldCtrl().contains(xAxis.get(j).getEngineFieldName())) {
                                             cell.setCellValue(0);
                                         }
                                     } else {
@@ -656,7 +656,7 @@ public class ChartDataServer implements ChartDataApi {
         }
         for (int i = 0; i < leafColumn.size(); i++) {
             var a = leafColumn.get(i);
-            var b = fields.get(i).getDataeaseName();
+            var b = fields.get(i).getEngineFieldName();
             if (!Strings.CS.equals(a, b)) {
                 return false;
             }
@@ -745,7 +745,7 @@ public class ChartDataServer implements ChartDataApi {
 
     private static String getDeFieldName(List<ChartViewFieldDTO> xAxis, String key) {
         for (ChartViewFieldDTO xAxi : xAxis) {
-            if (xAxi.getDataeaseName().equals(key)) {
+            if (xAxi.getEngineFieldName().equals(key)) {
                 return StringUtils.isNotBlank(xAxi.getChartShowName()) ? xAxi.getChartShowName() : xAxi.getName();
             }
         }
@@ -881,11 +881,11 @@ public class ChartDataServer implements ChartDataApi {
         return chartDataManage.getDrillFieldData(view, fieldId);
     }
 
-    @DeLog(id = "#p0", ot = LogOT.EXPORT, st = LogST.PANEL)
+    @CrestAudit(id = "#p0", ot = LogOT.EXPORT, st = LogST.PANEL)
     public void exportPanelViewLog(Long id) {
     }
 
-    @DeLog(id = "#p0", ot = LogOT.EXPORT, st = LogST.SCREEN)
+    @CrestAudit(id = "#p0", ot = LogOT.EXPORT, st = LogST.SCREEN)
     public void exportScreenViewLog(Long id) {
     }
 
@@ -918,7 +918,7 @@ public class ChartDataServer implements ChartDataApi {
         }
 
         for (ChartViewFieldDTO field : summaryFields) {
-            String fName = field.getDataeaseName();
+            String fName = field.getEngineFieldName();
             String sType = "sum";
             boolean sShow = true;
             if (seriesSummary != null) {
@@ -943,7 +943,7 @@ public class ChartDataServer implements ChartDataApi {
             acc.totalCount++;
             for (int j = 0; j < allColumns.size() && j < row.length; j++) {
                 ChartViewFieldDTO field = allColumns.get(j);
-                String fName = field.getDataeaseName();
+                String fName = field.getEngineFieldName();
                 if (!config.summaryShowMap.containsKey(fName) || !config.summaryShowMap.get(fName)) continue;
                 String sType = config.summaryTypeMap.get(fName);
                 if (sType == null || "custom".equals(sType)) continue;
@@ -981,7 +981,7 @@ public class ChartDataServer implements ChartDataApi {
         boolean labelSet = false;
         for (int j = 0; j < allColumns.size(); j++) {
             ChartViewFieldDTO field = allColumns.get(j);
-            String fName = field.getDataeaseName();
+            String fName = field.getEngineFieldName();
             if (config.summaryShowMap.containsKey(fName) && config.summaryShowMap.get(fName)) {
                 String sType = config.summaryTypeMap.get(fName);
                 switch (sType) {

@@ -58,7 +58,7 @@
                cor.time as `recent_use_time`
         FROM visualization_template vt
                  LEFT JOIN visualization_template_category_map vtcm ON vt.id = vtcm.template_id
-                 left JOIN core_opt_recent cor on cor.resource_type = 6 and vt.id = cor.resource_name
+                 left JOIN workspace_recent_resource cor on cor.resource_type = 6 and vt.id = cor.resource_name
         ORDER BY vt.use_count ,vt.create_time DESC
     </select>
 
@@ -174,68 +174,68 @@
     </select>
     <select id="findAppViewInfo" resultType="io.crest.api.visualization.vo.AppCoreChartViewVO">
         SELECT
-            core_chart_view.*
+            bi_chart.*
         FROM
-            core_chart_view
+            bi_chart
         WHERE
-            core_chart_view.id in
+            bi_chart.id in
         <foreach collection="viewIds" item="viewId" index="index" open="(" close=")" separator=",">
             #{viewId}
         </foreach>
     </select>
     <select id="findAppDatasetGroupInfo" resultType="io.crest.api.visualization.vo.AppCoreDatasetGroupVO">
         SELECT
-        DISTINCT core_dataset_group.*
+        DISTINCT dataset_group.*
         FROM
-        	core_dataset_group
+            dataset_group
         WHERE
-        	core_dataset_group.id in
+            dataset_group.id in
         <foreach collection="dsIds" item="dsId" index="index" open="(" close=")" separator=",">
             #{dsId}
         </foreach>
     </select>
     <select id="findAppDatasetTableInfo" resultType="io.crest.api.visualization.vo.AppCoreDatasetTableVO">
         SELECT
-        DISTINCT core_dataset_table.*
+        DISTINCT dataset_table.*
         FROM
-        	core_dataset_table
+            dataset_table
         WHERE
-         	core_dataset_table.dataset_group_id in
+             dataset_table.dataset_group_id in
          <foreach collection="dsIds" item="dsId" index="index" open="(" close=")" separator=",">
              #{dsId}
          </foreach>
     </select>
     <select id="findAppDatasetTableFieldInfo" resultType="io.crest.api.visualization.vo.AppCoreDatasetTableFieldVO">
         SELECT DISTINCT
-        	core_dataset_table_field.*
+            dataset_field.*
         FROM
-        	core_dataset_table_field
+            dataset_field
         WHERE
-        	core_dataset_table_field.dataset_group_id in
+            dataset_field.dataset_group_id in
          <foreach collection="dsIds" item="dsId" index="index" open="(" close=")" separator=",">
              #{dsId}
          </foreach>
     </select>
     <select id="findAppDatasourceInfo" resultType="io.crest.api.visualization.vo.AppCoreDatasourceVO">
         SELECT
-        DISTINCT core_datasource.*
-        FROM core_datasource inner join
-        	core_dataset_table on core_dataset_table.datasource_id = core_datasource.id
+        DISTINCT data_source.*
+        FROM data_source inner join
+            dataset_table on dataset_table.datasource_id = data_source.id
         WHERE
-         	core_dataset_table.dataset_group_id in
+             dataset_table.dataset_group_id in
          <foreach collection="dsIds" item="dsId" index="index" open="(" close=")" separator=",">
              #{dsId}
          </foreach>
     </select>
     <select id="findAppDatasourceTaskInfo" resultType="io.crest.api.visualization.vo.AppCoreDatasourceTaskVO">
         SELECT
-        	core_datasource_task.*
+            data_source_sync_task.*
         FROM
-        	core_datasource_task
-        	INNER JOIN core_datasource ON core_datasource_task.ds_id = core_datasource.id
-        	INNER JOIN core_dataset_table ON core_dataset_table.datasource_id = core_datasource.id
+            data_source_sync_task
+            INNER JOIN data_source ON data_source_sync_task.ds_id = data_source.id
+            INNER JOIN dataset_table ON dataset_table.datasource_id = data_source.id
         WHERE
-         	core_dataset_table.dataset_group_id in
+             dataset_table.dataset_group_id in
          <foreach collection="dsIds" item="dsId" index="index" open="(" close=")" separator=",">
              #{dsId}
          </foreach>
@@ -251,40 +251,40 @@
     </select>
     <select id="findAppLinkageFieldInfo" resultType="io.crest.api.visualization.vo.VisualizationLinkageFieldVO">
         SELECT
-        	visualization_linkage_field.*
+            visualization_linkage_field.*
         FROM
-        	visualization_linkage_field
-        	INNER JOIN visualization_linkage ON visualization_linkage.id = visualization_linkage_field.linkage_id
+            visualization_linkage_field
+            INNER JOIN visualization_linkage ON visualization_linkage.id = visualization_linkage_field.linkage_id
         WHERE
-        	visualization_linkage.dv_id = #{dvId}
+            visualization_linkage.dv_id = #{dvId}
     </select>
 
     <select id="findAppLinkJumpInfo" resultType="io.crest.api.visualization.vo.VisualizationLinkJumpVO">
         SELECT
-        	visualization_link_jump.*
+            visualization_link_jump.*
         FROM
-        	visualization_link_jump
+            visualization_link_jump
         WHERE
-        	visualization_link_jump.source_dv_id = #{dvId}
+            visualization_link_jump.source_dv_id = #{dvId}
     </select>
 
     <select id="findAppLinkJumpInfoInfo" resultType="io.crest.api.visualization.vo.VisualizationLinkJumpInfoVO">
         SELECT
-        	visualization_link_jump_info.*
+            visualization_link_jump_info.*
         FROM
-        	visualization_link_jump_info
-        	INNER JOIN visualization_link_jump ON visualization_link_jump.id = visualization_link_jump_info.link_jump_id
+            visualization_link_jump_info
+            INNER JOIN visualization_link_jump ON visualization_link_jump.id = visualization_link_jump_info.link_jump_id
         WHERE
-        	visualization_link_jump.source_dv_id = #{dvId}
+            visualization_link_jump.source_dv_id = #{dvId}
     </select>
     <select id="findAppLinkJumpTargetViewInfoInfo" resultType="io.crest.api.visualization.vo.VisualizationLinkJumpTargetViewInfoVO">
         SELECT
-        	visualization_link_jump_target_view_info.*
+            visualization_link_jump_target_view_info.*
         FROM
-        	visualization_link_jump_target_view_info
-        	INNER JOIN visualization_link_jump_info ON visualization_link_jump_target_view_info.link_jump_info_id = visualization_link_jump_info.id
-        	INNER JOIN visualization_link_jump ON visualization_link_jump.id = visualization_link_jump_info.link_jump_id
+            visualization_link_jump_target_view_info
+            INNER JOIN visualization_link_jump_info ON visualization_link_jump_target_view_info.link_jump_info_id = visualization_link_jump_info.id
+            INNER JOIN visualization_link_jump ON visualization_link_jump.id = visualization_link_jump_info.link_jump_id
         WHERE
-        	visualization_link_jump.source_dv_id = #{dvId}
+            visualization_link_jump.source_dv_id = #{dvId}
     </select>
 </mapper>

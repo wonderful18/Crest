@@ -5,7 +5,7 @@ import io.crest.api.chart.dto.PageInfo;
 import io.crest.api.dataset.union.DatasetGroupInfoDTO;
 import io.crest.chart.charts.impl.DefaultChartHandler;
 import io.crest.chart.constant.ChartConstants;
-import io.crest.constant.DeTypeConstants;
+import io.crest.constant.FieldTypeConstants;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.engine.sql.SQLProvider;
 import io.crest.engine.trans.Dimension2SQLObj;
@@ -174,9 +174,9 @@ public class TableNormalHandler extends DefaultChartHandler {
                 for (int i = 0; i < xAxis.size(); i++) {
                     originDim.append(originDataLine[i]);
                 }
-                var targetData = expendedDataCache.get(originDim.toString());
-                if (targetData != null) {
-                    resultData.add(targetData);
+                var tardata = expendedDataCache.get(originDim.toString());
+                if (tardata != null) {
+                    resultData.add(tardata);
                     continue;
                 }
                 for (String[] expandedDataLine : expandedData) {
@@ -255,7 +255,7 @@ public class TableNormalHandler extends DefaultChartHandler {
             if (CollectionUtils.isNotEmpty(fieldList)) {
                 var customCalcFields = new ArrayList<ChartViewFieldDTO>();
                 var seriesList = JsonUtil.parseList(JsonUtil.toJSONString(fieldList).toString(), new TypeReference<List<ChartViewFieldDTO>>(){});
-                var quotaIds = allFields.stream().map(DatasetTableFieldDTO::getDataeaseName).collect(Collectors.toSet());
+                var quotaIds = allFields.stream().map(DatasetTableFieldDTO::getEngineFieldName).collect(Collectors.toSet());
                 seriesList.forEach(field -> {
                     if (!BooleanUtils.isTrue(field.getShow()) || !"custom".equalsIgnoreCase(field.getSummary())) {
                         return;
@@ -267,7 +267,7 @@ public class TableNormalHandler extends DefaultChartHandler {
                         return;
                     }
                     field.setSummary("");
-                    field.setDeType(DeTypeConstants.DE_FLOAT);
+                    field.setFieldType(FieldTypeConstants.FLOAT);
                     field.setId(IDUtils.snowID());
                     field.setExtField(ExtFieldConstant.EXT_CALC);
                     customCalcFields.add(field);

@@ -3,8 +3,8 @@ package io.crest.template.manage;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.crest.api.visualization.request.DataVisualizationBaseRequest;
 import io.crest.utils.LogUtil;
-import io.crest.template.dao.auto.entity.DeTemplateVersion;
-import io.crest.template.dao.auto.mapper.DeTemplateVersionMapper;
+import io.crest.template.dao.auto.entity.TemplateVersion;
+import io.crest.template.dao.auto.mapper.TemplateVersionMapper;
 import io.crest.utils.JsonUtil;
 import io.crest.visualization.server.StaticResourceServer;
 import jakarta.annotation.Resource;
@@ -31,7 +31,7 @@ public class TemplateLocalParseManage {
     private StaticResourceServer staticResourceServer;
 
     @Resource
-    private DeTemplateVersionMapper deTemplateVersionMapper;
+    private TemplateVersionMapper templateVersionMapper;
 
     @Resource(type = ResourceLoader.class)
     private ResourceLoader resourceLoader;
@@ -42,10 +42,10 @@ public class TemplateLocalParseManage {
             for (int i = 0; i < templateFiles.length; i++) {
                 org.springframework.core.io.Resource templateFile = templateFiles[i];
                 String templateName = templateFile.getFilename();
-                QueryWrapper<DeTemplateVersion> queryWrapper = new QueryWrapper<>();
+                QueryWrapper<TemplateVersion> queryWrapper = new QueryWrapper<>();
                 queryWrapper.eq("script", templateName);
-                if (!deTemplateVersionMapper.exists(queryWrapper)) {
-                    DeTemplateVersion version = new DeTemplateVersion();
+                if (!templateVersionMapper.exists(queryWrapper)) {
+                    TemplateVersion version = new TemplateVersion();
                     version.setScript(templateName);
                     version.setInstalledOn(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES));
                     try {
@@ -53,11 +53,11 @@ public class TemplateLocalParseManage {
                         DataVisualizationBaseRequest template = JsonUtil.parseObject(content, DataVisualizationBaseRequest.class);
                         parseCore(template);
                         version.setSuccess(true);
-                        deTemplateVersionMapper.insert(version);
+                        templateVersionMapper.insert(version);
                     } catch (Exception e) {
                         LogUtil.error("De Template Version Error : " + templateName);
                         version.setSuccess(false);
-                        deTemplateVersionMapper.insert(version);
+                        templateVersionMapper.insert(version);
                         break;
                     }
                 }

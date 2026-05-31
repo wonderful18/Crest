@@ -1,6 +1,6 @@
 package io.crest.utils;
 
-import io.crest.model.DeModel;
+import io.crest.model.CrestDeploymentMode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -14,11 +14,11 @@ public class ModelUtils {
         ModelUtils.modelValue = modelValue;
     }
 
-    public static DeModel get() {
-        return DeModel.valueOf(modelValue.toUpperCase());
+    public static CrestDeploymentMode get() {
+        return CrestDeploymentMode.valueOf(modelValue.toUpperCase());
     }
 
     public static boolean isDesktop() {
-        return get() == DeModel.DESKTOP;
+        return get() == CrestDeploymentMode.DESKTOP;
     }
 }

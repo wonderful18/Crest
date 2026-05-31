@@ -74,14 +74,14 @@ public class PermissionManage {
 
             if (CollectionUtils.isNotEmpty(fieldUserColumnPermissionItems)) {
                 if (fieldUserColumnPermissionItems.stream().map(ColumnPermissionItem::getOpt).collect(Collectors.toList()).contains(ColumnPermissionConstants.Desensitization)) {
-                    desensitizationList.put(field.getDataeaseName(), fieldUserColumnPermissionItems.get(0));
+                    desensitizationList.put(field.getEngineFieldName(), fieldUserColumnPermissionItems.get(0));
                     result.add(field);
                 }
                 return;
             }
             if (CollectionUtils.isNotEmpty(fieldRoleColumnPermissionItems)) {
                 if (fieldRoleColumnPermissionItems.stream().map(ColumnPermissionItem::getOpt).collect(Collectors.toList()).contains(ColumnPermissionConstants.Desensitization)) {
-                    desensitizationList.put(field.getDataeaseName(), fieldRoleColumnPermissionItems.get(0));
+                    desensitizationList.put(field.getEngineFieldName(), fieldRoleColumnPermissionItems.get(0));
                     result.add(field);
                 }
                 return;

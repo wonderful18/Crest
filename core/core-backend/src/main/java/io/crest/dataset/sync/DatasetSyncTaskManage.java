@@ -9,14 +9,14 @@ import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTask;
 import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTaskLog;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetSyncTaskLogMapper;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetSyncTaskMapper;
-import io.crest.datasource.dao.auto.entity.CoreDeEngine;
+import io.crest.datasource.dao.auto.entity.CoreEngine;
 import io.crest.datasource.manage.EngineManage;
 import io.crest.datasource.provider.EngineProvider;
 import io.crest.datasource.provider.ProviderUtil;
 import io.crest.datasource.provider.CalciteProvider;
 import io.crest.datasource.request.EngineRequest;
 import io.crest.datasource.server.DatasourceTaskServer;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import io.crest.job.schedule.DatasetSyncJob;
 import io.crest.job.schedule.ScheduleManager;
@@ -71,7 +71,7 @@ public class DatasetSyncTaskManage {
     @Transactional(rollbackFor = Exception.class)
     public DatasetSyncTaskDTO save(DatasetSyncTaskDTO task) {
         if (task == null || task.getDatasetGroupId() == null) {
-            DEException.throwException("datasetGroupId can not be empty");
+            CrestException.throwException("datasetGroupId can not be empty");
         }
         CoreDatasetSyncTask record = normalize(task);
         CoreDatasetSyncTask exists = selectByDatasetGroupId(record.getDatasetGroupId());
@@ -301,7 +301,7 @@ public class DatasetSyncTaskManage {
 
     public boolean cacheTableExists(Long datasetGroupId) {
         try {
-            CoreDeEngine engine = engineManage.info();
+            CoreEngine engine = engineManage.info();
             DatasourceConfiguration.DatasourceType engineType = DatasourceConfiguration.DatasourceType.valueOf(engine.getType());
             EngineRequest request = new EngineRequest();
             request.setEngine(engine);
@@ -342,7 +342,7 @@ public class DatasetSyncTaskManage {
         }
         if (!Strings.CI.equals(record.getSyncRate(), DatasourceTaskServer.ScheduleType.RIGHTNOW.name())
                 && StringUtils.isBlank(record.getCron())) {
-            DEException.throwException("cron can not be empty");
+            CrestException.throwException("cron can not be empty");
         }
         if (StringUtils.isBlank(record.getTaskStatus())) {
             record.setTaskStatus(TaskStatus.WaitingForExecution.name());
@@ -441,7 +441,7 @@ public class DatasetSyncTaskManage {
 
     private void dropCacheTable(String tableName) {
         try {
-            CoreDeEngine engine = engineManage.info();
+            CoreEngine engine = engineManage.info();
             EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
             EngineRequest request = new EngineRequest();
             request.setEngine(engine);

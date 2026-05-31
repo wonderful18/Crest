@@ -41,7 +41,7 @@ const dimensions = shallowRef([])
 dimensions.value = [
   {
     name: '123',
-    deType: 0,
+    fieldType: 0,
     id: '123'
   }
 ]
@@ -49,12 +49,12 @@ dimensions.value = [
 quota.value = [
   {
     name: 'dfad',
-    deType: 2,
+    fieldType: 2,
     id: '1239'
   },
   {
     name: 'dflad',
-    deType: 2,
+    fieldType: 2,
     id: '12399'
   }
 ]
@@ -154,8 +154,8 @@ const handleTabClick = () => {
                 <Icon
                   ><component
                     class="svg-icon"
-                    :class="`field-icon-${fieldType[element.deType]}`"
-                    :is="iconFieldMap[fieldType[element.deType]]"
+                    :class="`field-icon-${fieldType[element.fieldType]}`"
+                    :is="iconFieldMap[fieldType[element.fieldType]]"
                   ></component
                 ></Icon>
               </el-icon>
@@ -184,8 +184,8 @@ const handleTabClick = () => {
                 <Icon
                   ><component
                     class="svg-icon"
-                    :class="`field-icon-${fieldType[element.deType]}`"
-                    :is="iconFieldMap[fieldType[element.deType]]"
+                    :class="`field-icon-${fieldType[element.fieldType]}`"
+                    :is="iconFieldMap[fieldType[element.fieldType]]"
                   ></component
                 ></Icon>
               </el-icon>
@@ -368,7 +368,7 @@ const handleTabClick = () => {
       position: sticky;
       top: 0;
       height: 32px;
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-style: normal;
       font-weight: 500;
       font-size: 14px;

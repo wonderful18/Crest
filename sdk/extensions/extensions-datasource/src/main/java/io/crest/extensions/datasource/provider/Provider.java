@@ -2,7 +2,7 @@ package io.crest.extensions.datasource.provider;
 
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
 import io.crest.extensions.datasource.dto.*;
 import io.crest.extensions.datasource.model.SQLMeta;
@@ -51,7 +51,7 @@ public abstract class Provider {
      * @param datasourceRequest
      * @return
      */
-    public abstract List<DatasetTableDTO> getTables(DatasourceRequest datasourceRequest);
+    public abstract List<DatasetTableDTO> tables(DatasourceRequest datasourceRequest);
 
     /**
      * 创建数据库连接
@@ -76,18 +76,18 @@ public abstract class Provider {
      *
      * @param datasourceRequest
      * @return
-     * @throws DEException
+     * @throws CrestException
      */
-    public abstract Map<String, Object> fetchResultField(DatasourceRequest datasourceRequest) throws DEException;
+    public abstract Map<String, Object> fetchResultField(DatasourceRequest datasourceRequest) throws CrestException;
 
     /**
      * 获取表字段
      *
      * @param datasourceRequest
      * @return
-     * @throws DEException
+     * @throws CrestException
      */
-    public abstract List<TableField> fetchTableField(DatasourceRequest datasourceRequest) throws DEException;
+    public abstract List<TableField> fetchTableField(DatasourceRequest datasourceRequest) throws CrestException;
 
     /**
      * 隐藏密码
@@ -112,14 +112,14 @@ public abstract class Provider {
 
     public Statement getStatement(Connection connection, int queryTimeout) {
         if (connection == null) {
-            DEException.throwException("Failed to get connection!");
+            CrestException.throwException("Failed to get connection!");
         }
         Statement stat = null;
         try {
             stat = connection.createStatement();
             stat.setQueryTimeout(queryTimeout);
         } catch (Exception e) {
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
         return stat;
     }
@@ -140,10 +140,10 @@ public abstract class Provider {
         return replaceMssqlN(s);
     }
 
-    public String transSqlDialect(String sql, Map<Long, DatasourceSchemaDTO> dsMap) throws DEException {
+    public String transSqlDialect(String sql, Map<Long, DatasourceSchemaDTO> dsMap) throws CrestException {
         return transSqlDialect(sql, dsMap, false);
     }
-    public String transSqlDialect(String sql, Map<Long, DatasourceSchemaDTO> dsMap, boolean forSqlbot) throws DEException {
+    public String transSqlDialect(String sql, Map<Long, DatasourceSchemaDTO> dsMap, boolean forSqlbot) throws CrestException {
         DatasourceSchemaDTO value = dsMap.entrySet().iterator().next().getValue();
         ConnectionObj connection = null;
         try {
@@ -162,7 +162,7 @@ public abstract class Provider {
             }
             return dialect;
         } catch (Exception e) {
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         } finally {
             if (connection != null) {
                 try {
@@ -185,11 +185,11 @@ public abstract class Provider {
     }
 
     public String replaceMssqlN(String s) {
-        Pattern compile = Pattern.compile("'-DENS-.*?'");
+        Pattern compile = Pattern.compile("'-CREST_NS-.*?'");
         Matcher matcher = compile.matcher(s);
         while (matcher.find()) {
             String v = matcher.group();
-            s = s.replaceAll(Pattern.quote(v), "N" + v.replace("-DENS-", ""));
+            s = s.replaceAll(Pattern.quote(v), "N" + v.replace("-CREST_NS-", ""));
         }
         return s;
     }
@@ -336,7 +336,7 @@ public abstract class Provider {
         try {
             session.connect(1000 * 5);
         } catch (Exception e) {
-            DEException.throwException("SSH 连接失败：" + e.getMessage());
+            CrestException.throwException("SSH 连接失败：" + e.getMessage());
         }
         session.setPortForwardingL(configuration.getLPort(), configuration.getHost(), configuration.getPort());
 

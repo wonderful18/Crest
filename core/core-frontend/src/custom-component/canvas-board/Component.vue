@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { toRefs } from 'vue'
-import Board from '@/components/de-board/Board.vue'
+import Board from '@/components/visual-board/Board.vue'
 const props = defineProps({
   propValue: {
     type: String,

@@ -6,7 +6,7 @@ import io.crest.dataset.utils.FieldUtils;
 import io.crest.datasource.dto.es.EsResponse;
 import io.crest.datasource.dto.es.Request;
 import io.crest.datasource.type.Es;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.*;
 import io.crest.extensions.datasource.provider.Provider;
 import io.crest.i18n.Translator;
@@ -31,7 +31,7 @@ public class EsProvider extends Provider {
     }
 
     @Override
-    public List<DatasetTableDTO> getTables(DatasourceRequest datasourceRequest) {
+    public List<DatasetTableDTO> tables(DatasourceRequest datasourceRequest) {
         List<DatasetTableDTO> tables = new ArrayList<>();
         try {
             String response = execQuery(datasourceRequest, "show tables", "?format=json");
@@ -42,7 +42,7 @@ public class EsProvider extends Provider {
             });
         } catch (Exception e) {
             e.getMessage();
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         return tables;
     }
@@ -71,7 +71,7 @@ public class EsProvider extends Provider {
             es.setUri("_sql");
         }
         datasourceRequest.getDatasource().setConfiguration(JsonUtil.toJSONString(es).toString());
-        getTables(datasourceRequest);
+        tables(datasourceRequest);
         return "Success";
     }
 
@@ -84,7 +84,7 @@ public class EsProvider extends Provider {
             result.put("fields", fetchResultField4Sql(response));
         } catch (Exception e) {
             e.printStackTrace();
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         return result;
     }
@@ -95,8 +95,8 @@ public class EsProvider extends Provider {
         try {
             String sql;
             if (datasourceRequest.getTable() != null) {
-                if (!getTables(datasourceRequest).stream().map(DatasetTableDTO::getTableName).collect(Collectors.toList()).contains(datasourceRequest.getTable())) {
-                    DEException.throwException("无效的表名！");
+                if (!tables(datasourceRequest).stream().map(DatasetTableDTO::getTableName).collect(Collectors.toList()).contains(datasourceRequest.getTable())) {
+                    CrestException.throwException("无效的表名！");
                 }
                 sql = "select * from \"" + datasourceRequest.getTable() + "\" limit 0";
             } else {
@@ -105,7 +105,7 @@ public class EsProvider extends Provider {
             String response = execQuery(datasourceRequest, sql, "?format=json");
             tableFields = fetchResultField4Sql(response);
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         return tableFields;
     }
@@ -141,12 +141,12 @@ public class EsProvider extends Provider {
             TableField field = new TableField();
             field.setOriginName(column.getName());
             field.setOriginName(column.getName());
-            field.setFieldType(column.getType());
+            field.setNativeType(column.getType());
             field.setType(column.getType().toUpperCase());
-            field.setFieldType(field.getType());
-            int deType = FieldUtils.transType2DeType(field.getType());
-            field.setDeExtractType(deType);
-            field.setDeType(deType);
+            field.setNativeType(field.getType());
+            int fieldType = FieldUtils.resolveFieldType(field.getType());
+            field.setExtractedFieldType(fieldType);
+            field.setFieldType(fieldType);
             fieldList.add(field);
         }
         return fieldList;

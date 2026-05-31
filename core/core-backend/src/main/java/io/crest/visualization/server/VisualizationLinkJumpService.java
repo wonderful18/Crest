@@ -8,7 +8,7 @@ import io.crest.api.visualization.request.VisualizationLinkJumpBaseRequest;
 import io.crest.api.visualization.response.VisualizationLinkJumpBaseResponse;
 import io.crest.api.visualization.vo.VisualizationOutParamsJumpVO;
 import io.crest.api.visualization.vo.VisualizationViewTableVO;
-import io.crest.auth.DeLinkPermit;
+import io.crest.auth.CrestLinkPermit;
 import io.crest.chart.dao.auto.entity.CoreChartView;
 import io.crest.chart.dao.auto.mapper.CoreChartViewMapper;
 import io.crest.constant.CommonConstants;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * @date : 2023/7/18 14:31
  */
 @RestController
-@RequestMapping("linkJump")
+@RequestMapping("link-jump")
 public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
 
     @Resource
@@ -78,7 +78,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
         return extVisualizationLinkageMapper.queryTableFieldWithViewId(viewId);
     }
 
-    @DeLinkPermit
+    @CrestLinkPermit
     //获取仪表板的跳转信息
     @Override
     public VisualizationLinkJumpBaseResponse queryVisualizationJumpInfo(Long dvId, String resourceTable) {
@@ -152,7 +152,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
         });
     }
 
-    @DeLinkPermit("#p0.targetDvId")
+    @CrestLinkPermit("#p0.targetDvId")
     @Override
     public VisualizationLinkJumpBaseResponse queryTargetVisualizationJumpInfo(VisualizationLinkJumpBaseRequest request) {
         List<VisualizationLinkJumpDTO> result = null;
@@ -193,7 +193,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     }
 
     @Override
-    public void removeJumpSet(VisualizationLinkJumpDTO jumpDTO) {
+    public void deleteJumpSet(VisualizationLinkJumpDTO jumpDTO) {
         //清理原有数据
         extVisualizationLinkJumpMapper.deleteJumpTargetViewInfoSnapshot(jumpDTO.getSourceDvId(), jumpDTO.getSourceViewId());
         extVisualizationLinkJumpMapper.deleteJumpInfoSnapshot(jumpDTO.getSourceDvId(), jumpDTO.getSourceViewId());

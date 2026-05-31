@@ -2,27 +2,25 @@
 action=$1
 target=$2
 
-DE_BASE=/opt
-DE_RUNNING_BASE=${DE_BASE}/crest
+CREST_BASE=/opt
+CREST_RUNNING_BASE=${CREST_BASE}/crest
 compose_files="-f docker-compose.yml"
 compose_cmd="docker-compose"
 current_version=""
 
 set -a
-source ${DE_RUNNING_BASE}/.env
+source ${CREST_RUNNING_BASE}/.env
 set +a
 export COMPOSE_HTTP_TIMEOUT=180
-DE_INTERNAL_LITE=${DE_INTERNAL_LITE:-true}
+CREST_INTERNAL_LITE=${CREST_INTERNAL_LITE:-true}
 
-docker-compose version >/dev/null 2>&1
-if [ $? -ne 0 ]; then
-   docker compose version >/dev/null 2>&1
-   if [ $? -ne 0 ]; then
-      compose_cmd="docker compose"
-   fi
+if docker-compose version >/dev/null 2>&1; then
+   compose_cmd="docker-compose"
+elif docker compose version >/dev/null 2>&1; then
+   compose_cmd="docker compose"
 fi
 
-if [[ ! ${DE_EXTERNAL_MYSQL} ]] || [ "${DE_EXTERNAL_MYSQL}" = "false" ]; then
+if [[ ! ${CREST_EXTERNAL_MYSQL} ]] || [ "${CREST_EXTERNAL_MYSQL}" = "false" ]; then
   compose_files="${compose_files} -f docker-compose-mysql.yml"
 fi
 
@@ -47,22 +45,22 @@ function usage() {
    echo "  version               查看 CREST 版本"
 }
 function _generate_compose_file_args() {
-   if [[ "$DE_INTERNAL_LITE" == "true" ]];then
+   if [[ "$CREST_INTERNAL_LITE" == "true" ]];then
       return
    fi
-   if [[ $DE_INSTALL_MODE != "community" ]];then
-      if [[ -f $DE_RUNNING_BASE/docker-compose-task.yml ]] && [[ "$DE_EXTERNAL_SYNC_TASK" != "true" ]];then
+   if [[ $CREST_INSTALL_MODE != "community" ]];then
+      if [[ -f $CREST_RUNNING_BASE/docker-compose-task.yml ]] && [[ "$CREST_EXTERNAL_SYNC_TASK" != "true" ]];then
          compose_files="${compose_files} -f docker-compose-task.yml"
       fi
 
-      if [[ -f $DE_RUNNING_BASE/docker-compose-playwright.yml ]] && [[ "$DE_EXTERNAL_PLAYWRIGHT" != "true" ]];then
+      if [[ -f $CREST_RUNNING_BASE/docker-compose-playwright.yml ]] && [[ "$CREST_EXTERNAL_PLAYWRIGHT" != "true" ]];then
          compose_files="${compose_files} -f docker-compose-playwright.yml"
       fi
    fi
 }
 function _healthcheck() {
    echo
-   container_name=$(grep "container_name" $DE_RUNNING_BASE/docker-compose.yml | awk -F': ' '{print $2}')
+   container_name=$(grep "container_name" $CREST_RUNNING_BASE/docker-compose.yml | awk -F': ' '{print $2}')
    sleep 1
    if [ -z $(docker ps --filter "name=$container_name" -q) ];then
       echo "未找到容器 $container_name。"
@@ -90,18 +88,18 @@ function _healthcheck() {
    echo
 }
 function _get_current_version() {
-   de_current_version=$(grep "^    image:.*crest" ${DE_RUNNING_BASE}/docker-compose.yml | awk -F'image: ' '{print $2}' | sed 's/^.*://')
-   if test -z $de_current_version; then
+   crest_current_version=$(grep "^    image:.*crest" ${CREST_RUNNING_BASE}/docker-compose.yml | awk -F'image: ' '{print $2}' | sed 's/^.*://')
+   if test -z $crest_current_version; then
       echo "获取当前版本失败，请检查当前版本是否正确"
       exit 1
    fi
-   current_version=$de_current_version
+   current_version=$crest_current_version
 }
 function status() {
    echo
    echo "Crest 容器运行状态"
    _generate_compose_file_args
-   cd ${DE_RUNNING_BASE}
+   cd ${CREST_RUNNING_BASE}
    ${compose_cmd} ${compose_files} ps
 
    echo
@@ -114,28 +112,28 @@ function status() {
 
    echo
    echo "日志文件大小 : "
-   du -Sh ${DE_RUNNING_BASE}/logs/
+   du -Sh ${CREST_RUNNING_BASE}/logs/
 
    echo
    echo "Crest 运行目录及文件大小 : "
-   du -sh ${DE_BASE}
+   du -sh ${CREST_BASE}
    echo
    echo "Crest 运行目录使用情况 : "
-   df -H ${DE_BASE}
+   df -H ${CREST_BASE}
 
    _healthcheck
 }
 function start() {
    echo
    _generate_compose_file_args
-   cd ${DE_RUNNING_BASE}
+   cd ${CREST_RUNNING_BASE}
    ${compose_cmd} ${compose_files} up -d
    _healthcheck
 }
 function stop() {
    echo
    _generate_compose_file_args
-   cd ${DE_RUNNING_BASE}
+   cd ${CREST_RUNNING_BASE}
    ${compose_cmd} ${compose_files} down -v ${target}
 }
 function restart() {
@@ -158,7 +156,7 @@ function upgrade() {
 }
 function clear_images() {
    echo
-   for f in $DE_RUNNING_BASE/*.yml; do
+   for f in $CREST_RUNNING_BASE/*.yml; do
       [[ -e "$f" ]] || break
       grep "^    image:.*:" "$f" | uniq | while read -r component_image_defined; do
          component_ref=$(echo ${component_image_defined} | awk -F'image: ' '{print $2}')
@@ -185,15 +183,15 @@ function clear_images() {
 }
 function clear_logs() {
    echo "开始清理 Crest 历史日志"
-   rm -rf ${DE_RUNNING_BASE}/logs/crest/*.????-??-??.*.log
-   rm -rf ${DE_RUNNING_BASE}/logs/crest/sync-task/task-handler-log/*
-   echo "" > ${DE_RUNNING_BASE}/logs/crest/info.log
-   echo "" > ${DE_RUNNING_BASE}/logs/crest/error.log
+   rm -rf ${CREST_RUNNING_BASE}/logs/crest/*.????-??-??.*.log
+   rm -rf ${CREST_RUNNING_BASE}/logs/crest/sync-task/task-handler-log/*
+   echo "" > ${CREST_RUNNING_BASE}/logs/crest/info.log
+   echo "" > ${CREST_RUNNING_BASE}/logs/crest/error.log
    echo "清理完毕"
 }
 function backup() {
    # 检查当前目录是否在 Crest 安装目录或其子目录下
-   if [[ "$(pwd)" == "$DE_RUNNING_BASE" || "$(pwd)" == "$DE_RUNNING_BASE"/* ]]; then
+   if [[ "$(pwd)" == "$CREST_RUNNING_BASE" || "$(pwd)" == "$CREST_RUNNING_BASE"/* ]]; then
       echo -e "\033[31m当前目录为 Crest 安装目录，请切换到其他目录后再执行备份操作！\033[0m"
       exit 1
    fi
@@ -227,7 +225,7 @@ function backup() {
    fi
 
    backup_file_name=crest-backup-$(date +%Y%m%d)_$(date +%H%M%S).tar.gz
-   tar --exclude=logs/crest -zcf $backup_file_name -C $DE_RUNNING_BASE .
+   tar --exclude=logs/crest -zcf $backup_file_name -C $CREST_RUNNING_BASE .
    if [ $? -ne 0 ]; then
       echo "备份失败"
       exit 1
@@ -245,12 +243,12 @@ function restore() {
       exit 1
    elif [[ -f $target ]];then
       service crest stop
-      if [[ ! -d $DE_RUNNING_BASE ]];then
-         mkdir -p $DE_RUNNING_BASE
+      if [[ ! -d $CREST_RUNNING_BASE ]];then
+         mkdir -p $CREST_RUNNING_BASE
       fi
       echo "恢复备份 $target"
-      rm -rf $DE_RUNNING_BASE/data/mysql/*
-      tar -zxf $target --directory=$DE_RUNNING_BASE
+      rm -rf $CREST_RUNNING_BASE/data/mysql/*
+      tar -zxf $target --directory=$CREST_RUNNING_BASE
       service crest start
    else
       echo "未找到备份文件 $target！"

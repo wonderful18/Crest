@@ -3,8 +3,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Close, FullScreen, RefreshLeft, Search } from '@element-plus/icons-vue'
 import RelationGraphView from '@/components/relation-chart/GraphView.vue'
 import {
-  getDatasourceRelationship,
-  getDatasetRelationship,
+  datasourceRelationship,
+  datasetRelationship,
   getPanelRelationship,
   getRelationshipOverview,
   listRelationResources
@@ -463,9 +463,9 @@ const loadGraph = async () => {
       return
     }
     if (queryType.value === 'datasource') {
-      graph.value = await getDatasourceRelationship(selectedResource.value)
+      graph.value = await datasourceRelationship(selectedResource.value)
     } else if (queryType.value === 'dataset') {
-      graph.value = await getDatasetRelationship(selectedResource.value)
+      graph.value = await datasetRelationship(selectedResource.value)
     } else {
       graph.value = await getPanelRelationship(selectedResource.value)
     }

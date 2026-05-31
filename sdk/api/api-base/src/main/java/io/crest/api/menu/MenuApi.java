@@ -11,6 +11,6 @@ import java.util.List;
 public interface MenuApi {
 
     @Operation(summary = "请求菜单")
-    @GetMapping("/query")
+    @GetMapping("/list")
     List<MenuVO> query();
 }

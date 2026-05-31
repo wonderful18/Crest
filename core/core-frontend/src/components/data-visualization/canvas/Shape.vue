@@ -95,7 +95,7 @@
       ></div>
       <div
         class="shape-shadow"
-        v-show="batchOptFlag && element.component !== 'DeTabs'"
+        v-show="batchOptFlag && element.component !== 'Tabs'"
         @mousedown="batchSelected"
       ></div>
       <template v-if="boardMoveActive">
@@ -105,17 +105,17 @@
           @mousedown="handleBoardMouseDownOnShape"
         />
         <div
-          v-show="!element.editing && element.component !== 'DeTabs'"
+          v-show="!element.editing && element.component !== 'Tabs'"
           class="de-drag-area de-drag-right"
           @mousedown="handleBoardMouseDownOnShape"
         />
         <div
-          v-show="!element.editing && element.component !== 'DeTabs'"
+          v-show="!element.editing && element.component !== 'Tabs'"
           class="de-drag-area de-drag-bottom"
           @mousedown="handleBoardMouseDownOnShape"
         />
         <div
-          v-show="!element.editing && element.component !== 'DeTabs'"
+          v-show="!element.editing && element.component !== 'Tabs'"
           class="de-drag-area de-drag-left"
           @mousedown="handleBoardMouseDownOnShape"
         />
@@ -156,7 +156,7 @@ import {
   isTabCanvas,
   itemCanvasPathCheck
 } from '@/utils/canvasUtils'
-import Board from '@/components/de-board/Board.vue'
+import Board from '@/components/visual-board/Board.vue'
 import { activeWatermarkCheckUser, removeActiveWatermark } from '@/components/watermark/watermark'
 import { useI18n } from '@/hooks/web/useI18n'
 import { CommonBackground } from '@/components/visualization/component-background/Types'
@@ -213,7 +213,7 @@ const state = reactive({
     id: ''
   },
   // 禁止移入Tab中的组件
-  ignoreTabMoveComponent: ['de-button', 'de-reset-button', 'DeTabs', 'GroupArea'],
+  ignoreTabMoveComponent: ['de-button', 'de-reset-button', 'Tabs', 'GroupArea'],
   // 当画布在tab中是 宽度左右拓展的余量
   parentWidthTabOffset: 40,
   canvasChangeTips: 'none',
@@ -661,7 +661,7 @@ const handleMouseDownOnShape = e => {
       }
 
       //如果当前组件是Group分组 则要进行内部组件深度计算
-      if (['DeTabs', 'Group'].includes(element.value.component)) {
+      if (['Tabs', 'Group'].includes(element.value.component)) {
         groupSizeStyleAdaptor(element.value)
       }
       //如果当前画布是Group内部画布 则对应组件定位在resize时要还原到groupStyle中
@@ -872,7 +872,7 @@ const handleMouseDownOnPoint = (point, e) => {
     //如果当前组件是Group分组或者Tab 则要进行内部组件深度计算
     if (
       ['Group'].includes(element.value.component) ||
-      (['DeTabs'].includes(element.value.component) && !element.value.resizeInnerKeep)
+      (['Tabs'].includes(element.value.component) && !element.value.resizeInnerKeep)
     ) {
       groupSizeStyleAdaptor(element.value)
     }
@@ -888,7 +888,7 @@ const handleMouseDownOnPoint = (point, e) => {
 
   const up = () => {
     // 如果内部组件保持尺寸时，这里在鼠标抬起时，重新计算一下内部组件占比
-    if (['DeTabs'].includes(element.value.component) && element.value.resizeInnerKeep) {
+    if (['Tabs'].includes(element.value.component) && element.value.resizeInnerKeep) {
       tabInnerStyleRevert(element.value)
     }
 
@@ -1033,7 +1033,7 @@ const tabMoveInCheck = async () => {
         item.getAttribute('component-id') !== domId.value && // 去掉当前
         item.getAttribute('tab-is-check') !== null &&
         item.getAttribute('tab-is-check') !== 'false' &&
-        item.getAttribute('component-type') === 'DeTabs'
+        item.getAttribute('component-type') === 'Tabs'
       ) {
         const componentId = item.getAttribute('component-id')
 

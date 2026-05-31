@@ -32,7 +32,7 @@ public interface LoginApi {
      */
     @Operation(summary = "本地登录")
     @ApiOperationSupport(order = 1)
-    @PostMapping("/login/localLogin")
+    @PostMapping("/login/local-login")
     TokenVO localLogin(@Valid @RequestBody PwdLoginDTO dto);
 
     @Operation(summary = "token续命", hidden = true)
@@ -42,7 +42,7 @@ public interface LoginApi {
 
     @Operation(summary = "第三方登录", hidden = true)
     @ApiOperationSupport(order = 3)
-    @PostMapping("/login/platformLogin/{origin}")
+    @PostMapping("/login/platform-login/{origin}")
     TokenVO platformLogin(@PathVariable("origin") Integer origin);
 
     @Operation(summary = "登出")
@@ -61,6 +61,6 @@ public interface LoginApi {
     TokenVO mfaLogin(@RequestBody MfaLoginDTO dto);
 
     @Operation(summary = "修改无效密码", hidden = true)
-    @PostMapping("/login/modifyInvalidPwd")
+    @PostMapping("/login/modify-invalid-password")
     void modifyInvalidPwd(@RequestBody ModifyPwdRequest request);
 }

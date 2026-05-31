@@ -72,8 +72,8 @@ defineExpose({
   margin-bottom: 16px;
 
   > :nth-child(1) {
-    color: var(--deTextSecondary, #1f2329);
-    font-family: var(--de-custom_font, 'PingFang');
+    color: var(--crestTextSecondary, #1f2329);
+    font-family: var(--crest-custom_font, 'PingFang');
     font-style: normal;
     font-weight: 400;
     font-size: 14px;

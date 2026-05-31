@@ -9,7 +9,7 @@ interface IResourceCount {
 export const getResourceCount = () => {
   return request
     .get({
-      url: 'sync/summary/resourceCount',
+      url: 'sync/summary/resource-count',
       method: 'get'
     })
     .then(res => {
@@ -19,7 +19,7 @@ export const getResourceCount = () => {
 
 export const getJobLogLienChartInfo = () => {
   return request.post({
-    url: '/sync/summary/logChartData',
+    url: '/sync/summary/log-chart-data',
     method: 'post',
     data: ''
   })

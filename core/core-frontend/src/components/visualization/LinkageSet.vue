@@ -207,9 +207,9 @@
                               <Icon
                                 ><component
                                   style="width: 14px; height: 14px"
-                                  :class="`field-icon-${fieldType[item.deType]}`"
+                                  :class="`field-icon-${fieldType[item.fieldType]}`"
                                   class="svg-icon"
-                                  :is="iconFieldMap[fieldType[item.deType]]"
+                                  :is="iconFieldMap[fieldType[item.fieldType]]"
                                 ></component
                               ></Icon>
                               <span style="float: left; margin-left: 4px; font-size: 14px">{{
@@ -243,8 +243,8 @@
                                 ><component
                                   style="width: 14px; height: 14px"
                                   class="svg-icon"
-                                  :class="`field-icon-${fieldType[item.deType]}`"
-                                  :is="iconFieldMap[fieldType[item.deType]]"
+                                  :class="`field-icon-${fieldType[item.fieldType]}`"
+                                  :is="iconFieldMap[fieldType[item.fieldType]]"
                                 ></component
                               ></Icon>
                               <span style="float: left; margin-left: 4px; font-size: 14px">{{
@@ -309,10 +309,10 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { fieldType } from '@/utils/attr'
 import {
   getPanelAllLinkageInfo,
-  getViewLinkageGatherArray,
+  viewLinkageGatherArray,
   saveLinkage
 } from '@/api/visualization/linkage'
-import { getDatasetDetails } from '@/api/dataset'
+import { datasetDetails } from '@/api/dataset'
 import { findAllViewsId } from '@/utils/canvasUtils'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import LinkageSetOption from '@/components/visualization/LinkageSetOption.vue'
@@ -409,7 +409,7 @@ const linkageSetting = curViewId => {
     linkageInfo: null,
     resourceTable: 'snapshot'
   }
-  getViewLinkageGatherArray(requestInfo).then(rsp => {
+  viewLinkageGatherArray(requestInfo).then(rsp => {
     // 获取当前仪表板的图表(去掉当前图表)
     curLinkageTargetViewsInfo.value = rsp.data || []
     curLinkageTargetViewsInfo.value.forEach(item => {
@@ -463,7 +463,7 @@ const init = viewItem => {
   if (chartDetails.tableId) {
     state.tableId = chartDetails.tableId
     // 获取当前数据集信息
-    getDatasetDetails(chartDetails.tableId).then(res => {
+    datasetDetails(chartDetails.tableId).then(res => {
       state.curDatasetInfo = res || {}
     })
   }
@@ -939,7 +939,7 @@ span {
 
 .padding-lr {
   height: 500px;
-  border: 1px solid var(--deCardStrokeColor, #dee0e3);
+  border: 1px solid var(--crestCardStrokeColor, #dee0e3);
   border-radius: 6px;
   padding: 12px;
   box-sizing: border-box;
@@ -968,7 +968,7 @@ span {
   margin-top: 8px;
   text-align: center;
   font-size: 14px;
-  color: var(--deTextDisable);
+  color: var(--crestTextDisable);
 }
 .outer-content-mirror {
   border: 1px solid #d9dcdf;

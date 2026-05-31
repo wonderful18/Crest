@@ -1,6 +1,6 @@
 package io.crest.api.permissions.relation.api;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 
 /**
  * @Author Junjun
@@ -8,7 +8,7 @@ import io.crest.exception.DEException;
 public interface RelationApi {
     Long getDsResource(Long id);
 
-    Long getDatasetResource(Long id);
+    Long datasetResource(Long id);
 
-    void checkAuth() throws DEException;
+    void checkAuth() throws CrestException;
 }

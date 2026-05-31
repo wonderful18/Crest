@@ -1,7 +1,7 @@
 package io.crest.engine.trans;
 
-import io.crest.api.chart.dto.DeSortField;
-import io.crest.constant.DeTypeConstants;
+import io.crest.api.chart.dto.ChartSortFieldDTO;
+import io.crest.constant.FieldTypeConstants;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.constant.SQLConstants;
 import io.crest.engine.utils.Utils;
@@ -23,7 +23,7 @@ import java.util.*;
  */
 public class Order2SQLObj {
 
-    public static void getOrders(SQLMeta meta, List<DeSortField> sortFields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
+    public static void getOrders(SQLMeta meta, List<ChartSortFieldDTO> sortFields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         SQLObj tableObj = meta.getTable();
         List<SQLObj> xOrders = meta.getXOrders() == null ? new ArrayList<>() : meta.getXOrders();
         if (ObjectUtils.isEmpty(tableObj)) {
@@ -32,15 +32,15 @@ public class Order2SQLObj {
         if (ObjectUtils.isNotEmpty(sortFields)) {
             int step = originFields.size();
             for (int i = step; i < (step + sortFields.size()); i++) {
-                DeSortField deSortField = sortFields.get(i - step);
-                SQLObj order = buildSortField(deSortField, tableObj, i, originFields, isCross, dsMap, fieldParam, chartParam, pluginManage);
+                ChartSortFieldDTO sortField = sortFields.get(i - step);
+                SQLObj order = buildSortField(sortField, tableObj, i, originFields, isCross, dsMap, fieldParam, chartParam, pluginManage);
                 xOrders.add(order);
             }
             meta.setXOrders(xOrders);
         }
     }
 
-    private static SQLObj buildSortField(DeSortField f, SQLObj tableObj, int i, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
+    private static SQLObj buildSortField(ChartSortFieldDTO f, SQLObj tableObj, int i, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         Map<String, String> paramMap = Utils.mergeParam(fieldParam, chartParam);
         String originField;
 
@@ -64,7 +64,7 @@ public class Order2SQLObj {
             if (Strings.CI.equals(dsType, "es")) {
                 originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), f.getOriginName());
             } else {
-                originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), f.getDataeaseName());
+                originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), f.getEngineFieldName());
             }
         } else if (ObjectUtils.isNotEmpty(f.getExtField()) && Objects.equals(f.getExtField(), ExtFieldConstant.EXT_GROUP)) {
             String groupFieldExp = Utils.transGroupFieldToSql(f, originFields, isCross, dsMap, pluginManage);
@@ -78,44 +78,44 @@ public class Order2SQLObj {
             if (Strings.CI.equals(dsType, "es")) {
                 originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), f.getOriginName());
             } else {
-                originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), f.getDataeaseName());
+                originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), f.getEngineFieldName());
             }
         }
         String fieldAlias = String.format(SQLConstants.FIELD_ALIAS_X_PREFIX, i);
         String fieldName = "";
         // 处理横轴字段
-        if (Objects.equals(f.getDeExtractType(), DeTypeConstants.DE_TIME)) {
-            if (Objects.equals(f.getDeType(), DeTypeConstants.DE_INT) || Objects.equals(f.getDeType(), DeTypeConstants.DE_FLOAT)) {
+        if (Objects.equals(f.getExtractedFieldType(), FieldTypeConstants.TIME)) {
+            if (Objects.equals(f.getFieldType(), FieldTypeConstants.INTEGER) || Objects.equals(f.getFieldType(), FieldTypeConstants.FLOAT)) {
                 fieldName = String.format(SQLConstants.UNIX_TIMESTAMP, originField);
             } else {
                 // 如果都是时间类型，把date和time类型进行字符串拼接
                 if (isCross) {
                     if (Strings.CI.equals(f.getType(), "date")) {
-                        originField = String.format(SQLConstants.DE_STR_TO_DATE, String.format(SQLConstants.CONCAT, originField, "' 00:00:00'"), SQLConstants.DEFAULT_DATE_FORMAT);
+                        originField = String.format(SQLConstants.CREST_STR_TO_DATE, String.format(SQLConstants.CONCAT, originField, "' 00:00:00'"), SQLConstants.DEFAULT_DATE_FORMAT);
                     } else if (Strings.CI.equals(f.getType(), "time")) {
-                        originField = String.format(SQLConstants.DE_STR_TO_DATE, String.format(SQLConstants.CONCAT, "'1970-01-01 '", originField), SQLConstants.DEFAULT_DATE_FORMAT);
+                        originField = String.format(SQLConstants.CREST_STR_TO_DATE, String.format(SQLConstants.CONCAT, "'1970-01-01 '", originField), SQLConstants.DEFAULT_DATE_FORMAT);
                     }
                 }
                 fieldName = originField;
             }
-        } else if (Objects.equals(f.getDeExtractType(), DeTypeConstants.DE_STRING)) {
-            if (Objects.equals(f.getDeType(), DeTypeConstants.DE_INT)) {
+        } else if (Objects.equals(f.getExtractedFieldType(), FieldTypeConstants.STRING)) {
+            if (Objects.equals(f.getFieldType(), FieldTypeConstants.INTEGER)) {
                 fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_INT_FORMAT);
-            } else if (Objects.equals(f.getDeType(), DeTypeConstants.DE_FLOAT)) {
+            } else if (Objects.equals(f.getFieldType(), FieldTypeConstants.FLOAT)) {
                 fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_FLOAT_FORMAT);
-            } else if (Objects.equals(f.getDeType(), DeTypeConstants.DE_TIME)) {
-                fieldName = StringUtils.isEmpty(f.getDateFormat()) ? String.format(SQLConstants.DE_STR_TO_DATE, originField, SQLConstants.DEFAULT_DATE_FORMAT) :
-                        String.format(SQLConstants.DE_DATE_FORMAT, String.format(SQLConstants.DE_STR_TO_DATE, originField, f.getDateFormat()), SQLConstants.DEFAULT_DATE_FORMAT);
+            } else if (Objects.equals(f.getFieldType(), FieldTypeConstants.TIME)) {
+                fieldName = StringUtils.isEmpty(f.getDateFormat()) ? String.format(SQLConstants.CREST_STR_TO_DATE, originField, SQLConstants.DEFAULT_DATE_FORMAT) :
+                        String.format(SQLConstants.CREST_DATE_FORMAT, String.format(SQLConstants.CREST_STR_TO_DATE, originField, f.getDateFormat()), SQLConstants.DEFAULT_DATE_FORMAT);
             } else {
                 fieldName = originField;
             }
         } else {
-            if (Objects.equals(f.getDeType(), DeTypeConstants.DE_TIME)) {
+            if (Objects.equals(f.getFieldType(), FieldTypeConstants.TIME)) {
                 String cast = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_INT_FORMAT);
                 fieldName = String.format(SQLConstants.FROM_UNIXTIME, cast, SQLConstants.DEFAULT_DATE_FORMAT);
-            } else if (Objects.equals(f.getDeType(), DeTypeConstants.DE_INT)) {
+            } else if (Objects.equals(f.getFieldType(), FieldTypeConstants.INTEGER)) {
                 fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_INT_FORMAT);
-            } else if (Objects.equals(f.getDeType(), DeTypeConstants.DE_FLOAT)) {
+            } else if (Objects.equals(f.getFieldType(), FieldTypeConstants.FLOAT)) {
                 fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_FLOAT_FORMAT);
             } else {
                 fieldName = originField;

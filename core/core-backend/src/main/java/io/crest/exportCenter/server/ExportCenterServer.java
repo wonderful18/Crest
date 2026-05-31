@@ -5,10 +5,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.crest.api.exportCenter.ExportCenterApi;
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.exportCenter.manage.ExportCenterManage;
 import io.crest.exportCenter.util.ExportCenterUtils;
-import io.crest.log.DeLog;
+import io.crest.log.CrestAudit;
 import io.crest.model.ExportTaskDTO;
 import io.crest.result.ResultMessage;
 import io.crest.utils.JsonUtil;
@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/exportCenter")
+@RequestMapping("/export-center")
 @Transactional(rollbackFor = Exception.class)
 public class ExportCenterServer implements ExportCenterApi {
     @Resource
@@ -44,35 +44,35 @@ public class ExportCenterServer implements ExportCenterApi {
     }
 
     @Override
-    @DeLog(id = "#p0", ot = LogOT.DELETE, st = LogST.DATA)
+    @CrestAudit(id = "#p0", ot = LogOT.DELETE, st = LogST.DATA)
     public void delete(String id) {
         exportCenterManage.delete(id);
     }
 
     @Override
-    @DeLog(ot = LogOT.DELETE, st = LogST.DATA)
+    @CrestAudit(ot = LogOT.DELETE, st = LogST.DATA)
     public void delete(List<String> ids) {
         exportCenterManage.delete(ids);
     }
 
     @Override
-    @DeLog(ot = LogOT.CLEAR, st = LogST.DATA)
+    @CrestAudit(ot = LogOT.CLEAR, st = LogST.DATA)
     public void deleteAll(String type) {
         exportCenterManage.deleteAll(type);
     }
 
     @Override
-    @DeLog(id = "#p0", ot = LogOT.DOWNLOAD, st = LogST.DATA)
+    @CrestAudit(id = "#p0", ot = LogOT.DOWNLOAD, st = LogST.DATA)
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void download(String id, String ticket, HttpServletResponse response) throws Exception {
         try {
             exportCenterManage.download(id, ticket, response);
-        } catch (DEException e) {
+        } catch (CrestException e) {
             writeForbidden(response, e);
         }
     }
 
-    private void writeForbidden(HttpServletResponse response, DEException e) throws Exception {
+    private void writeForbidden(HttpServletResponse response, CrestException e) throws Exception {
         if (response.isCommitted()) {
             return;
         }
@@ -84,13 +84,13 @@ public class ExportCenterServer implements ExportCenterApi {
     }
 
     @Override
-    @DeLog(id = "#p0", ot = LogOT.READ, st = LogST.DATA)
+    @CrestAudit(id = "#p0", ot = LogOT.READ, st = LogST.DATA)
     public String generateDownloadUri(String id) throws Exception {
         return exportCenterManage.generateDownloadUri(id);
     }
 
     @Override
-    @DeLog(id = "#p0", ot = LogOT.MODIFY, st = LogST.DATA)
+    @CrestAudit(id = "#p0", ot = LogOT.MODIFY, st = LogST.DATA)
     public void retry(String id) {
         exportCenterManage.retry(id);
     }

@@ -84,11 +84,11 @@ export const routes: AppRouteRecordRaw[] = [
     component: () => import('@/views/data-visualization/PreviewShow.vue')
   },
   {
-    path: '/DeResourceTree',
-    name: 'DeResourceTree',
+    path: '/CrestResourceTree',
+    name: 'CrestResourceTree',
     hidden: true,
     meta: {},
-    component: () => import('@/views/common/DeResourceTree.vue')
+    component: () => import('@/views/common/CrestResourceTree.vue')
   },
   {
     path: '/dataset-embedded',
@@ -119,7 +119,7 @@ export const routes: AppRouteRecordRaw[] = [
     component: () => import('@/views/data-visualization/PreviewCanvas.vue')
   },
   {
-    path: '/de-link/:uuid',
+    path: '/link/:uuid',
     name: 'link',
     hidden: true,
     meta: {},
@@ -130,7 +130,7 @@ export const routes: AppRouteRecordRaw[] = [
     name: 'rich-text',
     hidden: true,
     meta: {},
-    component: () => import('@/custom-component/rich-text/DeRichTextView.vue')
+    component: () => import('@/custom-component/rich-text/CrestRichTextView.vue')
   },
   {
     path: '/modify-pwd',

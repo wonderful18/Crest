@@ -31,8 +31,8 @@ public class GlobalExceptionHandler {
         return new ResultMessage(ResultCode.PARAM_IS_INVALID.code(), msg);
     }
 
-    @ExceptionHandler(DEException.class)
-    public ResultMessage deExceptionHandler(DEException e) {
+    @ExceptionHandler(CrestException.class)
+    public ResultMessage crestExceptionHandler(CrestException e) {
         LogUtil.info(e.getMessage());
         return new ResultMessage(e.getCode(), e.getMessage());
     }

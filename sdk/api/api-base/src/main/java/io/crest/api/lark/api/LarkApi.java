@@ -8,9 +8,9 @@ import io.crest.api.lark.vo.LarkInfoVO;
 import io.crest.api.lark.dto.LarkSettingCreator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "飞书设置")
 @ApiSupport(order = 898)
@@ -25,7 +25,7 @@ public interface LarkApi {
     LarkInfoVO qrinfo();
 
     @Operation(summary = "保存")
-    @PostMapping("/create")
+    @PostMapping
     void save(@RequestBody LarkSettingCreator creator);
 
     @Operation(summary = "飞书token", hidden = true)
@@ -33,7 +33,7 @@ public interface LarkApi {
     String larkToken(@RequestBody LarkTokenRequest request);
 
     @Operation(summary = "切换开启状态")
-    @PostMapping("/switchEnable")
+    @PostMapping("/enabled")
     void switchEnable(@RequestBody LarkEnableEditor editor);
 
     @Operation(summary = "验证可用性")
@@ -45,6 +45,6 @@ public interface LarkApi {
     void bind(@RequestBody LarkTokenRequest request);
 
     @Operation(summary = "获取飞书群组", hidden = true)
-    @GetMapping("/getGroup")
+    @GetMapping("/groups")
     LarkGroupVO getGroup();
 }

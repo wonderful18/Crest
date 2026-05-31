@@ -7,9 +7,9 @@ import io.crest.api.lark.vo.LarkGroupVO;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "钉钉设置")
 @ApiSupport(order = 899)
@@ -24,7 +24,7 @@ public interface DingtalkApi {
     DingtalkInfoVO qrinfo();
 
     @Operation(summary = "保存")
-    @PostMapping("/create")
+    @PostMapping
     void save(@RequestBody DingtalkSettingCreator creator);
 
     @Operation(summary = "钉钉token", hidden = true)
@@ -32,7 +32,7 @@ public interface DingtalkApi {
     String dingtalkToken(@RequestBody DingtalkTokenRequest request);
 
     @Operation(summary = "切换开启状态")
-    @PostMapping("/switchEnable")
+    @PostMapping("/enabled")
     void switchEnable(@RequestBody DingtalkEnableEditor editor);
 
     @Operation(summary = "验证可用性")
@@ -44,14 +44,14 @@ public interface DingtalkApi {
     void bind(@RequestBody DingtalkTokenRequest request);
 
     @Operation(summary = "获取群组", hidden = true)
-    @GetMapping("/getGroup")
+    @GetMapping("/groups")
     LarkGroupVO getGroup();
 
     @Hidden
-    @PostMapping("/getSignatureInfo")
+    @PostMapping("/signature-info")
     DingtalkSignatureInfo getSignatureInfo(@RequestBody SignatureRequest request);
 
     @Hidden
-    @PostMapping("/checkChat")
+    @PostMapping("/chat-check")
     void checkChat(@RequestBody DingtalkChatCheckRequest request);
 }

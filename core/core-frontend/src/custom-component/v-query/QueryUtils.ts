@@ -23,7 +23,7 @@ export const checkFilterRemove = componentTarget => {
     componentTarget.propValue.forEach(groupItem => {
       checkFilterRemove(groupItem)
     })
-  } else if (componentTarget.component === 'DeTabs') {
+  } else if (componentTarget.component === 'Tabs') {
     componentTarget.propValue.forEach(tabItem => {
       tabItem.componentData?.forEach(tabComponent => {
         checkFilterRemove(tabComponent)

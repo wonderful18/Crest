@@ -5,13 +5,13 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fit2cloud
  * @since 2023-08-08
  */
-@TableName("core_dataset_table_sql_log")
+@TableName("dataset_sql_log")
 public class CoreDatasetTableSqlLog implements Serializable {
 
     private static final long serialVersionUID = 1L;

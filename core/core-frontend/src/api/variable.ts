@@ -1,25 +1,25 @@
 import request from '@/config/axios'
 
-export const variableCreateApi = data => request.post({ url: '/sysVariable/create', data })
+export const variableCreateApi = data => request.post({ url: '/sys-variable', data })
 
-export const variableEditApi = data => request.post({ url: '/sysVariable/edit', data })
+export const variableEditApi = data => request.put({ url: '/sys-variable', data })
 
-export const variableDetailApi = id => request.get({ url: '/sysVariable/detail/' + id })
+export const variableDetailApi = id => request.get({ url: '/sys-variable/detail/' + id })
 
-export const variableDeletelApi = id => request.get({ url: '/sysVariable/delete/' + id })
+export const variableDeletelApi = id => request.delete({ url: '/sys-variable/' + id })
 
-export const searchVariableApi = async data => request.post({ url: '/sysVariable/query', data })
+export const searchVariableApi = async data => request.post({ url: '/sys-variable/list', data })
 
 export const valueSelectedForVariableApi = (page: number, limit: number, data) =>
-  request.post({ url: `/sysVariable/value/selected/${page}/${limit}`, data })
+  request.post({ url: `/sys-variable/value/selected/${page}/${limit}`, data })
 
-export const valueForVariable = id => request.get({ url: '/sysVariable/value/selected/' + id })
+export const valueForVariable = id => request.get({ url: '/sys-variable/value/selected/' + id })
 
 export const variableValueCreateApi = data =>
-  request.post({ url: '/sysVariable/value/create', data })
+  request.post({ url: '/sys-variable/value', data })
 
-export const variableValueDeletelApi = id => request.get({ url: '/sysVariable/value/delete/' + id })
+export const variableValueDeletelApi = id => request.delete({ url: '/sys-variable/value/' + id })
 
-export const variableValueEditApi = data => request.post({ url: '/sysVariable/value/edit', data })
+export const variableValueEditApi = data => request.put({ url: '/sys-variable/value', data })
 
-export const batchDelApi = data => request.post({ url: '/sysVariable/value/batchDel', data })
+export const batchDelApi = data => request.delete({ url: '/sys-variable/value/batch', data })

@@ -3,7 +3,7 @@ package io.crest.security;
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
 import io.crest.log.AuditLogService;
-import io.crest.log.DeLog;
+import io.crest.log.CrestAudit;
 import io.crest.log.GenericAuditLogAspect;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -45,7 +45,7 @@ class GenericAuditLogAspectTest {
     }
 
     @Test
-    @DisplayName("未标注 DeLog 的写接口应自动记录审计日志")
+    @DisplayName("未标注 CrestAudit 的写接口应自动记录审计日志")
     void shouldAuditUnannotatedWriteApi() throws Throwable {
         GenericAuditLogAspect aspect = new GenericAuditLogAspect();
         injectAuditLogService(aspect);
@@ -63,7 +63,7 @@ class GenericAuditLogAspectTest {
     }
 
     @Test
-    @DisplayName("未标注 DeLog 的导出下载类 GET 接口也应记录审计日志")
+    @DisplayName("未标注 CrestAudit 的导出下载类 GET 接口也应记录审计日志")
     void shouldAuditUnannotatedExportOrDownloadApi() throws Throwable {
         GenericAuditLogAspect aspect = new GenericAuditLogAspect();
         injectAuditLogService(aspect);
@@ -132,7 +132,7 @@ class GenericAuditLogAspectTest {
     }
 
     @Test
-    @DisplayName("未标注 DeLog 的分享创建接口应按分享链接归类")
+    @DisplayName("未标注 CrestAudit 的分享创建接口应按分享链接归类")
     void shouldClassifyShareLinkApi() throws Throwable {
         GenericAuditLogAspect aspect = new GenericAuditLogAspect();
         injectAuditLogService(aspect);
@@ -150,7 +150,7 @@ class GenericAuditLogAspectTest {
     }
 
     @Test
-    @DisplayName("未标注 DeLog 的驱动上传接口应按驱动归类")
+    @DisplayName("未标注 CrestAudit 的驱动上传接口应按驱动归类")
     void shouldClassifyDatasourceDriverApi() throws Throwable {
         GenericAuditLogAspect aspect = new GenericAuditLogAspect();
         injectAuditLogService(aspect);
@@ -168,7 +168,7 @@ class GenericAuditLogAspectTest {
     }
 
     @Test
-    @DisplayName("已标注 DeLog 的接口不应再被兜底审计重复记录")
+    @DisplayName("已标注 CrestAudit 的接口不应再被兜底审计重复记录")
     void shouldSkipAnnotatedApi() throws Throwable {
         GenericAuditLogAspect aspect = new GenericAuditLogAspect();
         injectAuditLogService(aspect);
@@ -226,7 +226,7 @@ class GenericAuditLogAspectTest {
             return null;
         }
 
-        @DeLog(ot = LogOT.MODIFY, st = LogST.DATA)
+        @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA)
         @PostMapping("/sso/config")
         public Object annotatedSave() {
             return null;

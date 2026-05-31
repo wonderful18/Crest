@@ -8,7 +8,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-@TableName("core_dataset_sync_task")
+@TableName("dataset_sync_task")
 public class CoreDatasetSyncTask implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)

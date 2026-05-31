@@ -883,7 +883,7 @@ const dragenter_handler = ev => {
 
 const drop_handler = ev => {
   ev.preventDefault()
-  let data = ev.dataTransfer.getData('text')
+  let data = ev.dataTransfer.data('text')
   const { tableName, type, datasourceId, name: noteName } = JSON.parse(data) as Table
   const extraData = {
     info: JSON.stringify({
@@ -1278,7 +1278,7 @@ const emits = defineEmits([
 .union-item-drawer {
   .ed-drawer__header {
     height: auto;
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
 
     .ed-drawer__close-btn {
       top: 40.5px;
@@ -1311,7 +1311,7 @@ const emits = defineEmits([
   width: 100%;
   border: 1px solid #dee0e3;
   border-radius: 6px;
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   font-size: 14px;
   font-weight: 400;
   color: #1f2329;
@@ -1433,7 +1433,7 @@ const emits = defineEmits([
   }
 
   p {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-style: normal;
     font-weight: 400;
     font-size: 14px;

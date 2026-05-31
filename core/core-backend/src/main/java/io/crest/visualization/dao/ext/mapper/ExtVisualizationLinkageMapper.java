@@ -13,11 +13,11 @@ import java.util.List;
 @Mapper
 public interface ExtVisualizationLinkageMapper {
 
-    List<VisualizationLinkageDTO> getViewLinkageGather(@Param("dvId") Long dvId, @Param("sourceViewId") Long sourceViewId, @Param("targetViewIds") List<String> targetViewIds);
+    List<VisualizationLinkageDTO> viewLinkageGather(@Param("dvId") Long dvId, @Param("sourceViewId") Long sourceViewId, @Param("targetViewIds") List<String> targetViewIds);
 
     List<LinkageInfoDTO> getPanelAllLinkageInfo(@Param("dvId") Long dvId);
 
-    List<VisualizationLinkageDTO> getViewLinkageGatherSnapshot(@Param("dvId") Long dvId, @Param("sourceViewId") Long sourceViewId, @Param("targetViewIds") List<String> targetViewIds);
+    List<VisualizationLinkageDTO> viewLinkageGatherSnapshot(@Param("dvId") Long dvId, @Param("sourceViewId") Long sourceViewId, @Param("targetViewIds") List<String> targetViewIds);
 
     List<LinkageInfoDTO> getPanelAllLinkageInfoSnapshot(@Param("dvId") Long dvId);
 

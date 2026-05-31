@@ -10,31 +10,31 @@ export interface Font {
 }
 
 export const list = () => {
-  return request.get({ url: '/typeface/listFont' }).then(res => {
+  return request.get({ url: '/typeface/fonts' }).then(res => {
     return res?.data
   })
 }
 
 export const create = (data = {}) => {
-  return request.post({ url: '/typeface/create', data }).then(res => {
+  return request.post({ url: '/typeface', data }).then(res => {
     return res?.data
   })
 }
 
 export const edit = (data = {}) => {
-  return request.post({ url: '/typeface/edit', data }).then(res => {
+  return request.put({ url: '/typeface', data }).then(res => {
     return res?.data
   })
 }
 
 export const deleteById = id => {
-  return request.post({ url: '/typeface/delete/' + id, data: {} }).then(res => {
+  return request.delete({ url: '/typeface/' + id, data: {} }).then(res => {
     return res?.data
   })
 }
 
 export const defaultFont = () => {
-  return request.get({ url: '/typeface/defaultFont' }).then(res => {
+  return request.get({ url: '/typeface/default' }).then(res => {
     return res?.data
   })
 }
@@ -42,7 +42,7 @@ export const defaultFont = () => {
 export const uploadFontFile = async (data): Promise<IResponse> => {
   return request
     .post({
-      url: '/typeface/uploadFile',
+      url: '/typeface/files/upload',
       data,
       loading: true,
       headersType: 'multipart/form-data;'

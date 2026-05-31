@@ -1,6 +1,6 @@
 package io.crest.datasource.request;
 
-import io.crest.datasource.dao.auto.entity.CoreDeEngine;
+import io.crest.datasource.dao.auto.entity.CoreEngine;
 import lombok.Data;
 import org.springframework.util.StringUtils;
 
@@ -14,7 +14,7 @@ public class EngineRequest {
     private Pattern WITH_SQL_FRAGMENT = Pattern.compile("((?i)WITH[\\s\\S]+(?i)AS?\\s*\\([\\s\\S]+\\))\\s*(?i)SELECT");
     protected String query;
     protected String table;
-    protected CoreDeEngine engine;
+    protected CoreEngine engine;
     private Integer pageSize;
     private Integer page;
     private Integer realSize;

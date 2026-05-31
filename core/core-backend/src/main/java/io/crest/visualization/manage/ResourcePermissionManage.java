@@ -29,7 +29,7 @@ public class ResourcePermissionManage {
     private ResourcePermissionMapper resourcePermissionMapper;
 
 
-    public static final String regex2 = "\\$f2cde\\[(.*?)\\]";
+    public static final String regex2 = "\\$crest\\[(.*?)\\]";
 
     public List<DatasetPermissionTemplate> queruDatasetPermissionTemplate(Long resourceId) {
         String componentDataText = resourcePermissionMapper.queryResourceData(resourceId);
@@ -39,7 +39,7 @@ public class ResourcePermissionManage {
         List<Map<String, Object>> userViewList = getUserViewList(componentData);
         List<Long> viewIds = userViewList.stream().filter(item -> ObjectUtils.isNotEmpty(item.get("id"))).map(item -> Long.parseLong(item.get("id").toString())).collect(Collectors.toList());
         List<CoreDatasetGroup> datasetGroups = resourcePermissionMapper.queryDataSetList(viewIds);
-        return getDatasetPermissionTemplate(datasetGroups);
+        return datasetPermissionTemplate(datasetGroups);
     }
 
     private static boolean isParams(String paramId) {
@@ -70,7 +70,7 @@ public class ResourcePermissionManage {
             if ("UserView".equals(node.get("component"))) {
                 userViewList.add(node);
             }
-            if ("DeTabs".equals(node.get("component"))) {
+            if ("Tabs".equals(node.get("component"))) {
                 Object propValueObj = null;
                 List<Map<String, Object>> tabComponentList = null;
                 if (ObjectUtils.isNotEmpty(propValueObj = node.get("propValue")) && CollectionUtils.isNotEmpty(tabComponentList = (List<Map<String, Object>>) propValueObj)) {
@@ -89,7 +89,7 @@ public class ResourcePermissionManage {
     }
 
 
-    private List<DatasetPermissionTemplate> getDatasetPermissionTemplate(List<CoreDatasetGroup> datasetGroups) {
+    private List<DatasetPermissionTemplate> datasetPermissionTemplate(List<CoreDatasetGroup> datasetGroups) {
         TypeReference<List<UnionDTO>> typeReference = new TypeReference<>() {
         };
         List<DatasetPermissionTemplate> templateList = new ArrayList<>();

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { store } from '@/store'
 import { queryTreeApi, queryBusiTreeApi } from '@/api/visualization/dataVisualization'
-import { getDatasetTree } from '@/api/dataset'
+import { datasetTree } from '@/api/dataset'
 import { listDatasources } from '@/api/datasource'
 import type { BusiTreeRequest, BusiTreeNode } from '@/models/tree/TreeNode'
 import { pathValid } from '@/store/modules/permission'
@@ -21,7 +21,7 @@ interface InteractiveState {
   data: Record<number, InnerInteractive>
 }
 
-const apiMap = [queryTreeApi, queryTreeApi, getDatasetTree, listDatasources]
+const apiMap = [queryTreeApi, queryTreeApi, datasetTree, listDatasources]
 
 const busiFlagMap = ['dashboard', 'dataV', 'dataset', 'datasource']
 
@@ -36,20 +36,20 @@ export const interactiveStore = defineStore('interactive', {
     getScreen(): InnerInteractive {
       return this.data[1]
     },
-    getDataset(): InnerInteractive {
+    dataset(): InnerInteractive {
       return this.data[2]
     },
-    getDatasource(): InnerInteractive {
+    datasource(): InnerInteractive {
       return this.data[3]
     },
-    getData(): InteractiveState {
+    data(): InteractiveState {
       return this.data
     }
   },
   actions: {
     async setInteractive(param: BusiTreeRequest, resParam?: object) {
       const flag = busiFlagMap.findIndex(item => item === param.busiFlag)
-      if (!hasMenuAuth(flag) && !window.DataEaseBi && !appStore.getIsIframe) {
+      if (!hasMenuAuth(flag) && !window.CrestBi && !appStore.getIsIframe) {
         const tempData: InnerInteractive = {
           rootManage: false,
           anyManage: false,
@@ -99,7 +99,7 @@ export const interactiveStore = defineStore('interactive', {
       const param = {}
       for (let i = 0; i < busiFlagMap.length; i++) {
         const key = busiFlagMap[i]
-        if (window.DataEaseBi || appStore.getIsIframe || hasMenuAuth(i)) {
+        if (window.CrestBi || appStore.getIsIframe || hasMenuAuth(i)) {
           param[key] = { busiFlag: key }
         }
       }

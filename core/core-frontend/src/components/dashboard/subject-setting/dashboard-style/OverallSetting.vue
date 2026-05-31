@@ -348,7 +348,7 @@ const onRefreshChange = val => {
 const fontFamilyChange = () => {
   appearanceStore.setCurrentFont(canvasStyleData.value.fontFamily)
   document.documentElement.style.setProperty(
-    '--de-canvas_custom_font',
+    '--crest-canvas_custom_font',
     `${canvasStyleData.value.fontFamily}`
   )
   adaptTitleFontFamilyAll(canvasStyleData.value.fontFamily)

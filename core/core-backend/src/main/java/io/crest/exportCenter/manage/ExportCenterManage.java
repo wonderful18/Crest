@@ -12,7 +12,7 @@ import io.crest.auth.bo.TokenUserBO;
 import io.crest.auth.config.SubstituleLoginConfig;
 import io.crest.commons.utils.ExcelWatermarkUtils;
 import io.crest.dataset.manage.*;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.exportCenter.dao.auto.entity.CoreExportDownloadTask;
 import io.crest.exportCenter.dao.auto.entity.CoreExportTask;
 import io.crest.exportCenter.dao.auto.mapper.CoreExportDownloadTaskMapper;
@@ -87,7 +87,7 @@ public class ExportCenterManage implements BaseExportApi {
 
     public void deleteAll(String type) {
         if (!STATUS.contains(type)) {
-            DEException.throwException("无效的状态");
+            CrestException.throwException("无效的状态");
         }
         Long currentUserId = currentUserId();
         QueryWrapper<CoreExportTask> queryWrapper = new QueryWrapper<>();
@@ -107,7 +107,7 @@ public class ExportCenterManage implements BaseExportApi {
     public void retry(String id) {
         CoreExportTask exportTask = getCurrentUserExportTask(id);
         if (!exportTask.getExportStatus().equalsIgnoreCase("FAILED")) {
-            DEException.throwException("正在导出中!");
+            CrestException.throwException("正在导出中!");
         }
         exportTask.setExportStatus("PENDING");
         exportTask.setExportProgress("0");
@@ -129,7 +129,7 @@ public class ExportCenterManage implements BaseExportApi {
                 exportTask.setMsg(e.getMessage());
                 exportTask.setExportStatus("FAILED");
                 exportTaskMapper.updateById(exportTask);
-                DEException.throwException(e.getMessage());
+                CrestException.throwException(e.getMessage());
             }
             exportCenterDownLoadManage.startDatasetTask(exportTask, request);
         }
@@ -137,7 +137,7 @@ public class ExportCenterManage implements BaseExportApi {
 
     public IPage<ExportTaskDTO> pager(Page<ExportTaskDTO> page, String status) {
         if (!STATUS.contains(status)) {
-            DEException.throwException("Invalid status: " + status);
+            CrestException.throwException("Invalid status: " + status);
         }
 
         Long currentUserId = currentUserId();
@@ -217,7 +217,7 @@ public class ExportCenterManage implements BaseExportApi {
             InetAddress localMachine = InetAddress.getLocalHost();
             hostname = localMachine.getHostName();
         } catch (Exception e) {
-            DEException.throwException("请设置主机名！");
+            CrestException.throwException("请设置主机名！");
         }
         return hostname;
     }
@@ -267,10 +267,10 @@ public class ExportCenterManage implements BaseExportApi {
     }
 
     private void prepareDatasetExportRequest(Long exportFrom, DataSetExportRequest request) throws Exception {
-        DatasetGroupInfoDTO dataset = datasetGroupManage.getDatasetGroupInfoDTO(exportFrom, null);
+        DatasetGroupInfoDTO dataset = datasetGroupManage.datasetGroupInfoDTO(exportFrom, null);
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(dataset, null);
         if (sqlMap == null || StringUtils.isBlank((String) sqlMap.get("sql"))) {
-            DEException.throwException("数据集配置不完整，无法导出");
+            CrestException.throwException("数据集配置不完整，无法导出");
         }
         if (StringUtils.isBlank(request.getFilename())) {
             request.setFilename(StringUtils.defaultIfBlank(dataset.getName(), "dataset-" + exportFrom));
@@ -298,7 +298,7 @@ public class ExportCenterManage implements BaseExportApi {
         String key = "basic.exportFileLiveTime";
         String val = sysParameterManage.singleVal(key);
         if (StringUtils.isBlank(val)) {
-            DEException.throwException("未获取到文件保留时间");
+            CrestException.throwException("未获取到文件保留时间");
         }
         QueryWrapper<CoreExportTask> queryWrapper = new QueryWrapper<>();
         long expTime = Long.parseLong(val) * 24L * 3600L * 1000L;
@@ -337,7 +337,7 @@ public class ExportCenterManage implements BaseExportApi {
             coreExportDownloadTask.setValidTime(5L);
             coreExportDownloadTaskMapper.insert(coreExportDownloadTask);
         }
-        return "/exportCenter/download/" + id + "?ticket=" + buildDownloadTicket(exportTask, createTime, coreExportDownloadTask.getValidTime());
+        return "/export-center/download/" + id + "?ticket=" + buildDownloadTicket(exportTask, createTime, coreExportDownloadTask.getValidTime());
     }
 
 
@@ -361,7 +361,7 @@ public class ExportCenterManage implements BaseExportApi {
         Long currentUserId = currentUserId();
         CoreExportTask exportTask = exportTaskMapper.selectById(id);
         if (exportTask == null || !Objects.equals(exportTask.getUserId(), currentUserId)) {
-            DEException.throwException("任务不存在");
+            CrestException.throwException("任务不存在");
         }
         return exportTask;
     }
@@ -385,12 +385,12 @@ public class ExportCenterManage implements BaseExportApi {
 
     private CoreExportTask validateDownloadTask(String id, String ticket) {
         if (StringUtils.isBlank(ticket)) {
-            DEException.throwException(Translator.get("i18n_download_link_invalid"));
+            CrestException.throwException(Translator.get("i18n_download_link_invalid"));
         }
         CoreExportDownloadTask coreExportDownloadTask = coreExportDownloadTaskMapper.selectById(id);
         CoreExportTask exportTask = exportTaskMapper.selectById(id);
         if (coreExportDownloadTask == null || exportTask == null) {
-            DEException.throwException(Translator.get("i18n_download_link_invalid"));
+            CrestException.throwException(Translator.get("i18n_download_link_invalid"));
         }
         try {
             DecodedJWT jwt = SignedTokenUtils.verify(ticket, resolveTicketSecret(exportTask));
@@ -401,10 +401,10 @@ public class ExportCenterManage implements BaseExportApi {
                     || !Objects.equals(uid, exportTask.getUserId())
                     || !Objects.equals(ticketTime, coreExportDownloadTask.getCreateTime())
                     || System.currentTimeMillis() - coreExportDownloadTask.getCreateTime() > coreExportDownloadTask.getValidTime() * 60 * 1000) {
-                DEException.throwException(Translator.get("i18n_download_link_invalid"));
+                CrestException.throwException(Translator.get("i18n_download_link_invalid"));
             }
         } catch (Exception e) {
-            DEException.throwException(Translator.get("i18n_download_link_invalid"));
+            CrestException.throwException(Translator.get("i18n_download_link_invalid"));
         }
         coreExportDownloadTaskMapper.deleteById(id);
         return exportTask;
@@ -425,7 +425,7 @@ public class ExportCenterManage implements BaseExportApi {
     private Long currentUserId() {
         TokenUserBO user = AuthUtils.getUser();
         if (user == null || user.getUserId() == null) {
-            DEException.throwException("user not found");
+            CrestException.throwException("user not found");
         }
         return user.getUserId();
     }

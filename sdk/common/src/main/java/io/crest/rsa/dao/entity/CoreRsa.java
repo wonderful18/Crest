@@ -5,13 +5,13 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fit2cloud
  * @since 2023-04-03
  */
-@TableName("core_rsa")
+@TableName("crypto_key")
 public class CoreRsa implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -16,13 +16,13 @@ import java.util.Map;
  * @date : 2024/3/27 09:47
  */
 @RestController
-@RequestMapping("aiBase")
+@RequestMapping("ai-base")
 public class AiBaseService implements AiComponentApi {
     @Resource
     private SysParameterManage sysParameterManage;
 
     @Override
-    public Map<String, String> findTargetUrl() {
+    public Map<String, String> targetUrl() {
         Map<String, String> templateParams = sysParameterManage.groupVal("ai.");
         if (templateParams != null && StringUtils.isNotEmpty(templateParams.get("ai.baseUrl"))) {
             return templateParams;

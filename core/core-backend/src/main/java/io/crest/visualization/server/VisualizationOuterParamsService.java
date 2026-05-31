@@ -8,11 +8,11 @@ import io.crest.api.visualization.VisualizationOuterParamsApi;
 import io.crest.api.visualization.dto.VisualizationOuterParamsDTO;
 import io.crest.api.visualization.dto.VisualizationOuterParamsInfoDTO;
 import io.crest.api.visualization.response.VisualizationOuterParamsBaseResponse;
-import io.crest.auth.DeLinkPermit;
+import io.crest.auth.CrestLinkPermit;
 import io.crest.constant.CommonConstants;
 import io.crest.dataset.dao.auto.entity.CoreDatasetTable;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetTableMapper;
-import io.crest.constant.DeTypeConstants;
+import io.crest.constant.FieldTypeConstants;
 import io.crest.dataset.utils.FieldUtils;
 import io.crest.extensions.view.dto.SqlVariableDetails;
 import io.crest.utils.BeanUtils;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * @date : 2024/3/11 09:44
  */
 @RestController
-@RequestMapping("outerParams")
+@RequestMapping("outer-params")
 public class VisualizationOuterParamsService implements VisualizationOuterParamsApi {
 
     @Resource
@@ -119,7 +119,7 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
 
     }
 
-    @DeLinkPermit
+    @CrestLinkPermit
     @Override
     public VisualizationOuterParamsBaseResponse getOuterParamsInfo(String visualizationId) {
         List<VisualizationOuterParamsInfoDTO> result = extOuterParamsMapper.getVisualizationOuterParamsInfo(visualizationId);
@@ -151,7 +151,7 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
                             List<SqlVariableDetails> defaultsSqlVariableDetails = JsonUtil.parseList(sqlVarDetail, listTypeReference);
                             defaultsSqlVariableDetails.forEach(sqlVariableDetails -> {
                                 String varFieldId = coreDatasetTable.getId() + "|DE|" + sqlVariableDetails.getVariableName();
-                                fields.add(new CoreDatasetTableFieldVO(varFieldId, sqlVariableDetails.getVariableName(), FieldUtils.transType2DeType(sqlVariableDetails.getType().get(0).contains("DATETIME") ? "DATETIME" : sqlVariableDetails.getType().get(0))));
+                                fields.add(new CoreDatasetTableFieldVO(varFieldId, sqlVariableDetails.getVariableName(), FieldUtils.resolveFieldType(sqlVariableDetails.getType().get(0).contains("DATETIME") ? "DATETIME" : sqlVariableDetails.getType().get(0))));
                             });
                         }
                     });

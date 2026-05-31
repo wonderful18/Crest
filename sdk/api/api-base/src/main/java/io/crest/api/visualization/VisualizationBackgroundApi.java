@@ -19,7 +19,7 @@ import java.util.Map;
 @Tag(name = "可视化管理:背景")
 @ApiSupport(order = 997)
 public interface VisualizationBackgroundApi {
-    @GetMapping("/findAll")
+    @GetMapping("/list")
     @Operation(summary = "背景信息查询")
     @I18n
     Map<String, List<VisualizationBackgroundVO>> findAll();

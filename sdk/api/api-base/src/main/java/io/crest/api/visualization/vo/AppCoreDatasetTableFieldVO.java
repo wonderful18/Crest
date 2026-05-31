@@ -56,12 +56,12 @@ public class AppCoreDatasetTableFieldVO implements Serializable {
     private String description;
 
     /**
-     * de字段名用作唯一标识
+     * 引擎字段名用作唯一标识
      */
-    private String dataeaseName;
+    private String engineFieldName;
 
     /**
-     * de字段别名
+     * 字段别名
      */
     private String fieldShortName;
 
@@ -78,14 +78,14 @@ public class AppCoreDatasetTableFieldVO implements Serializable {
     private Integer size;
 
     /**
-     * dataease字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制
+     * Crest 字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制
      */
-    private Integer deType;
+    private Integer fieldType;
 
     /**
-     * de记录的原始类型
+     * 数据源原始类型
      */
-    private Integer deExtractType;
+    private Integer extractedFieldType;
 
     /**
      * 分组设置

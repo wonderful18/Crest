@@ -32,15 +32,17 @@ function check_and_prepare_env_params() {
    cd ${CURRENT_DIR}
    if [ -f /usr/bin/crestctl ]; then
       ctl_cmd=/usr/bin/crestctl
-      v2_version=$($ctl_cmd version | head -n 2 | grep "v2.")
-      if [[ -z $v2_version ]];then
-         echo "系统当前版本不是 Crest v2 版本系列，不支持升级到 v2，请检查离线包版本。"
+      existing_version=$($ctl_cmd version 2>/dev/null | awk '/current version is/{print $4; exit}')
+      if [[ ! $existing_version =~ ^v?1\.5\. ]];then
+         echo "检测到已安装的 Crest 版本：${existing_version:-unknown}"
+         echo "v1.5.0 是全新安装基线，不支持从早期开发版本直接原地升级。"
+         echo "请先备份并导出业务资源，再卸载旧环境后执行全新安装。"
          exit 1;
       fi
       # 获取已安装的 Crest 的运行目录
-      DE_BASE=$(grep "^DE_BASE=" $ctl_cmd | cut -d'=' -f2)
-      DE_BASE_OLD=$DE_BASE
-      sed -i -e "s#DE_BASE=.*#DE_BASE=${DE_BASE}#g" crestctl
+      CREST_BASE=$(grep "^CREST_BASE=" $ctl_cmd | cut -d'=' -f2)
+      CREST_BASE_OLD=$CREST_BASE
+      sed -i -e "s#CREST_BASE=.*#CREST_BASE=${CREST_BASE}#g" crestctl
       \cp crestctl /usr/local/bin && chmod +x /usr/local/bin/crestctl
       ln -sf /usr/local/bin/crestctl /usr/bin/crestctl 2>/dev/null
 
@@ -56,52 +58,52 @@ function check_and_prepare_env_params() {
 
    set -a
    source ${CURRENT_DIR}/install.conf
-   if [[ $DE_BASE_OLD ]];then
-      DE_BASE=$DE_BASE_OLD
-      export DE_BASE=$DE_BASE_OLD
+   if [[ $CREST_BASE_OLD ]];then
+      CREST_BASE=$CREST_BASE_OLD
+      export CREST_BASE=$CREST_BASE_OLD
    fi
-   if [[ -d $DE_BASE ]] && [[ -f $DE_BASE/crest/.env ]]; then
-      source $DE_BASE/crest/.env
+   if [[ -d $CREST_BASE ]] && [[ -f $CREST_BASE/crest/.env ]]; then
+      source $CREST_BASE/crest/.env
       INSTALL_TYPE='upgrade'
       log_content "升级安装"
    else
       INSTALL_TYPE='install'
-      mkdir -p ${DE_BASE}
+      mkdir -p ${CREST_BASE}
       log_content "全新安装"
    fi
    set +a
-   DE_INTERNAL_LITE=${DE_INTERNAL_LITE:-true}
-   DE_CRYPTO_MODE=${DE_CRYPTO_MODE:-standard}
-   case "$DE_CRYPTO_MODE" in
+   CREST_INTERNAL_LITE=${CREST_INTERNAL_LITE:-true}
+   CREST_CRYPTO_MODE=${CREST_CRYPTO_MODE:-standard}
+   case "$CREST_CRYPTO_MODE" in
       standard|sm-suite) ;;
       *)
-         echo "DE_CRYPTO_MODE 只支持 standard 或 sm-suite"
+         echo "CREST_CRYPTO_MODE 只支持 standard 或 sm-suite"
          exit 1
          ;;
    esac
-   export DE_CRYPTO_MODE
-   if [[ -z "$DE_MYSQL_PASSWORD" ]]; then
-      DE_MYSQL_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 32)
-      export DE_MYSQL_PASSWORD
+   export CREST_CRYPTO_MODE
+   if [[ -z "$CREST_DB_PASSWORD" ]]; then
+      CREST_DB_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 32)
+      export CREST_DB_PASSWORD
    fi
-   if [[ -z "$DE_AES_KEY" ]]; then
-      DE_AES_KEY=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)
-      export DE_AES_KEY
+   if [[ -z "$CREST_AES_KEY" ]]; then
+      CREST_AES_KEY=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)
+      export CREST_AES_KEY
    fi
-   if [[ -z "$DE_AES_IV" ]]; then
-      DE_AES_IV=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)
-      export DE_AES_IV
+   if [[ -z "$CREST_AES_IV" ]]; then
+      CREST_AES_IV=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)
+      export CREST_AES_IV
    fi
-   if [[ "$DE_CRYPTO_MODE" == "sm-suite" ]] && [[ -z "$DE_SM4_KEY" ]]; then
-      DE_SM4_KEY=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)
-      export DE_SM4_KEY
+   if [[ "$CREST_CRYPTO_MODE" == "sm-suite" ]] && [[ -z "$CREST_SM4_KEY" ]]; then
+      CREST_SM4_KEY=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)
+      export CREST_SM4_KEY
    fi
-   if [[ -z "$DE_INITIAL_PASSWORD" ]]; then
-      DE_INITIAL_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 20)
-      export DE_INITIAL_PASSWORD
+   if [[ -z "$CREST_INITIAL_PASSWORD" ]]; then
+      CREST_INITIAL_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 20)
+      export CREST_INITIAL_PASSWORD
    fi
 
-   read available_disk <<< $(df -H --output=avail "${DE_BASE}" | tail -1)
+   read available_disk <<< $(df -H --output=avail "${CREST_BASE}" | tail -1)
    disk_num=${available_disk%[KMGTP]}
    disk_unit=${available_disk##*[0-9.]}
    case $disk_unit in
@@ -116,56 +118,56 @@ function check_and_prepare_env_params() {
 
 function set_run_base_path() {
    log_title "设置运行目录"
-   DE_RUN_BASE=$DE_BASE/crest
-   export DE_RUN_BASE
-   DE_LOG_PATH=${DE_LOG_PATH:-/opt/crest/logs/crest}
-   DE_CACHE_PATH=${DE_CACHE_PATH:-/opt/crest/cache}
-   export DE_LOG_PATH
-   export DE_CACHE_PATH
-   CONF_FOLDER=${DE_RUN_BASE}/conf
-   TEMPLATES_FOLDER=${DE_RUN_BASE}/templates
-   log_content "运行目录 $DE_RUN_BASE"
+   CREST_RUN_BASE=$CREST_BASE/crest
+   export CREST_RUN_BASE
+   CREST_LOG_PATH=${CREST_LOG_PATH:-/opt/crest/logs/crest}
+   CREST_CACHE_PATH=${CREST_CACHE_PATH:-/opt/crest/cache}
+   export CREST_LOG_PATH
+   export CREST_CACHE_PATH
+   CONF_FOLDER=${CREST_RUN_BASE}/conf
+   TEMPLATES_FOLDER=${CREST_RUN_BASE}/templates
+   log_content "运行目录 $CREST_RUN_BASE"
    log_content "配置文件目录 $CONF_FOLDER"
 }
 
-function prepare_de_run_base() {
+function prepare_crest_run_base() {
    log_title "初始化运行目录"
    cd ${CURRENT_DIR}
-   mkdir -p ${DE_RUN_BASE}
+   mkdir -p ${CREST_RUN_BASE}
    log_content "复制安装文件到运行目录"
-   cp -r ./crest/* ${DE_RUN_BASE}/
+   cp -r ./crest/* ${CREST_RUN_BASE}/
 
-   cd $DE_RUN_BASE
-   env | grep DE_ >.env
+   cd $CREST_RUN_BASE
+   env | grep CREST_ >.env
 
-   mkdir -p ${DE_RUN_BASE}/{cache,logs,conf}
-   mkdir -p ${DE_RUN_BASE}/data/{mysql,static-resource,appearance,exportData,excel,font,i18n,plugin}
+   mkdir -p ${CREST_RUN_BASE}/{cache,logs,conf}
+   mkdir -p ${CREST_RUN_BASE}/data/{mysql,static-resource,appearance,exportData,excel,font,i18n,plugin}
    chown -R 10001:10001 \
-      ${DE_RUN_BASE}/cache \
-      ${DE_RUN_BASE}/logs \
-      ${DE_RUN_BASE}/data/static-resource \
-      ${DE_RUN_BASE}/data/appearance \
-      ${DE_RUN_BASE}/data/exportData \
-      ${DE_RUN_BASE}/data/excel \
-      ${DE_RUN_BASE}/data/font \
-      ${DE_RUN_BASE}/data/i18n \
-      ${DE_RUN_BASE}/data/plugin 2>/dev/null || true
+      ${CREST_RUN_BASE}/cache \
+      ${CREST_RUN_BASE}/logs \
+      ${CREST_RUN_BASE}/data/static-resource \
+      ${CREST_RUN_BASE}/data/appearance \
+      ${CREST_RUN_BASE}/data/exportData \
+      ${CREST_RUN_BASE}/data/excel \
+      ${CREST_RUN_BASE}/data/font \
+      ${CREST_RUN_BASE}/data/i18n \
+      ${CREST_RUN_BASE}/data/plugin 2>/dev/null || true
 
-   if [[ "${DE_INTERNAL_LITE}" != "true" ]]; then
-      mkdir -p ${DE_RUN_BASE}/task/logs
-      chmod 777 ${DE_RUN_BASE}/task/logs
+   if [[ "${CREST_INTERNAL_LITE}" != "true" ]]; then
+      mkdir -p ${CREST_RUN_BASE}/task/logs
+      chmod 777 ${CREST_RUN_BASE}/task/logs
    fi
 
-   if [ "${DE_EXTERNAL_MYSQL}" = "false" ]; then
-      sed -i -e "s/^      DE_MYSQL_HOST/      ${DE_MYSQL_HOST}/g" docker-compose.yml
-      sed -i -e "s/^. DE_MYSQL_HOST/  ${DE_MYSQL_HOST}/g" docker-compose-mysql.yml
-      export DE_MYSQL_PORT=3306
+   if [ "${CREST_EXTERNAL_MYSQL}" = "false" ]; then
+      sed -i -e "s/^      CREST_DB_HOST/      ${CREST_DB_HOST}/g" docker-compose.yml
+      sed -i -e "s/^. CREST_DB_HOST/  ${CREST_DB_HOST}/g" docker-compose-mysql.yml
+      export CREST_DB_PORT=3306
    else
       sed -i -e "/^    depends_on/,+2d" docker-compose.yml
    fi
 
    log_content "调整配置文件参数"
-   cd $DE_RUN_BASE
+   cd $CREST_RUN_BASE
    cp -r $TEMPLATES_FOLDER/* $CONF_FOLDER
 
    cd ${TEMPLATES_FOLDER}
@@ -182,7 +184,7 @@ function update_crestctl() {
    log_title "安装 crestctl 命令行工具"
    log_content "安装至 /usr/local/bin/crestctl & /usr/bin/crestctl"
    cd ${CURRENT_DIR}
-   sed -i -e "s#DE_BASE=.*#DE_BASE=${DE_BASE}#g" crestctl
+   sed -i -e "s#CREST_BASE=.*#CREST_BASE=${CREST_BASE}#g" crestctl
    \cp crestctl /usr/local/bin && chmod +x /usr/local/bin/crestctl
    ln -sf /usr/local/bin/crestctl /usr/bin/crestctl 2>/dev/null
 }
@@ -197,8 +199,8 @@ function prepare_system_settings() {
 
    if which firewall-cmd >/dev/null 2>&1; then
       if systemctl is-active firewalld &>/dev/null ;then
-         log_content "开启防火墙端口 ${DE_PORT}"
-         firewall-cmd --zone=public --add-port=${DE_PORT}/tcp --permanent
+         log_content "开启防火墙端口 ${CREST_PORT}"
+         firewall-cmd --zone=public --add-port=${CREST_PORT}/tcp --permanent
          firewall-cmd --reload
       else
          log_content "防火墙未开启，忽略端口开放"
@@ -302,7 +304,7 @@ function install_docker_compose() {
    export COMPOSE_HTTP_TIMEOUT=180
 }
 
-function load_de_images() {
+function load_crest_images() {
    log_title "加载 Crest 镜像"
    cd ${CURRENT_DIR}
 
@@ -323,7 +325,7 @@ function load_de_images() {
    fi
 }
 
-function set_de_service() {
+function configure_crest_service() {
    log_title "配置 Crest 服务"
 
    # 判断是否为wsl
@@ -334,7 +336,7 @@ function set_de_service() {
 
    if [[ ! -f /etc/systemd/system/crest.service ]];then
       log_content "配置 Crest Service"
-      cp ${DE_RUN_BASE}/bin/crest/crest.service /etc/systemd/system/
+      cp ${CREST_RUN_BASE}/bin/crest/crest.service /etc/systemd/system/
       #--- 如果是 WSL，则移除 service 文件中对 docker 的依赖 ---
       if [ "$is_wsl" = true ]; then
          log_content "检测到 WSL 环境，移除 crest.service 中的 Docker 依赖配置"
@@ -347,15 +349,15 @@ function set_de_service() {
    fi
 }
 
-function start_de_service() {
+function start_crest_service() {
    log_title "启动 Crest 服务"
    systemctl start crest 2>&1 | tee -a ${CURRENT_DIR}/install.log
 
-   access_port=$DE_PORT
+   access_port=$CREST_PORT
    echo
    if [[ $INSTALL_TYPE != "upgrade" ]];then
       echo -e "======================= 安装完成 =======================\n" 2>&1 | tee -a ${CURRENT_DIR}/install.log
-      echo -e "系统登录信息如下:\n\t访问地址: http://服务器IP:$access_port\n\t用户名: admin\n\t初始密码: ${DE_INITIAL_PASSWORD}" 2>&1 | tee -a ${CURRENT_DIR}/install.log
+      echo -e "系统登录信息如下:\n\t访问地址: http://服务器IP:$access_port\n\t用户名: admin\n\t初始密码: ${CREST_INITIAL_PASSWORD}" 2>&1 | tee -a ${CURRENT_DIR}/install.log
    else
       echo -e "======================= 升级完成 =======================\n" 2>&1 | tee -a ${CURRENT_DIR}/install.log
    fi
@@ -364,14 +366,14 @@ function start_de_service() {
 function main() {
    check_and_prepare_env_params
    set_run_base_path
-   prepare_de_run_base
+   prepare_crest_run_base
    update_crestctl
    prepare_system_settings
    install_docker
    install_docker_compose
-   load_de_images
-   set_de_service
-   start_de_service
+   load_crest_images
+   configure_crest_service
+   start_crest_service
 }
 
 main

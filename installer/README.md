@@ -6,7 +6,7 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| `install.sh` | 安装或升级入口 |
+| `install.sh` | 安装和同发布线升级入口 |
 | `install.conf` | 安装配置模板 |
 | `uninstall.sh` | 卸载脚本 |
 | `crestctl` | 安装后的运维控制命令 |
@@ -21,7 +21,7 @@
 Crest 默认使用内部轻量模式：
 
 ```bash
-DE_INTERNAL_LITE=true
+CREST_INTERNAL_LITE=true
 ```
 
 该模式只启动两个容器：
@@ -34,9 +34,9 @@ DE_INTERNAL_LITE=true
 如需恢复同步任务或外部截图服务，可在 `install.conf` 中调整后重新制作安装包：
 
 ```bash
-DE_INTERNAL_LITE=false
-DE_EXTERNAL_PLAYWRIGHT=false
-DE_EXTERNAL_SYNC_TASK=false
+CREST_INTERNAL_LITE=false
+CREST_EXTERNAL_PLAYWRIGHT=false
+CREST_EXTERNAL_SYNC_TASK=false
 ```
 
 ## 安装前检查
@@ -55,8 +55,8 @@ DE_EXTERNAL_SYNC_TASK=false
 生产环境建议：
 
 - 使用固定域名和 HTTPS 反向代理；
-- 修改 `DE_ORIGIN_LIST` 为实际访问地址；
-- 使用高强度 `DE_MYSQL_PASSWORD`、`DE_AES_KEY`、`DE_AES_IV` 和 `DE_INITIAL_PASSWORD`；
+- 修改 `CREST_ORIGIN_LIST` 为实际访问地址；
+- 使用高强度 `CREST_DB_PASSWORD`、`CREST_AES_KEY`、`CREST_AES_IV` 和 `CREST_INITIAL_PASSWORD`；
 - 首次登录后修改管理员密码；
 - 将 `/opt/crest` 纳入备份。
 
@@ -66,19 +66,19 @@ DE_EXTERNAL_SYNC_TASK=false
 
 | 配置项 | 默认值 | 说明 |
 | --- | --- | --- |
-| `DE_BASE` | `/opt` | 安装基目录，实际运行目录为 `${DE_BASE}/crest` |
-| `DE_PORT` | `8100` | Web 访问端口 |
-| `DE_APP_IMAGE` | `ghcr.io/sevoniva/crest:v1.3.0` | Crest 应用镜像 |
-| `DE_MYSQL_IMAGE` | `mysql:8.4.5` | MySQL 镜像 |
-| `DE_MYSQL_DB` | `crest` | 元数据库名 |
-| `DE_MYSQL_USER` | `root` | MySQL 用户 |
-| `DE_MYSQL_PASSWORD` | 空 | 留空时安装脚本自动生成 |
-| `DE_AES_KEY` | 空 | 留空时自动生成 32 位值；升级时不要改 |
-| `DE_AES_IV` | 空 | 留空时自动生成 16 位值；升级时不要改 |
-| `DE_CRYPTO_MODE` | `standard` | 加密模式，`standard` 使用 AES/RSA，`sm-suite` 使用 SM2/SM3/SM4 |
-| `DE_SM4_KEY` | 空 | SM4 使用的 16 位 Key；`DE_CRYPTO_MODE=sm-suite` 且留空时自动生成，服务启动会校验，升级时不要改 |
-| `DE_INITIAL_PASSWORD` | 空 | 管理员初始密码，留空时自动生成并输出 |
-| `DE_ORIGIN_LIST` | `http://localhost:8100` | 允许来源，正式环境要改成实际域名 |
+| `CREST_BASE` | `/opt` | 安装基目录，实际运行目录为 `${CREST_BASE}/crest` |
+| `CREST_PORT` | `8100` | Web 访问端口 |
+| `CREST_APP_IMAGE` | `ghcr.io/sevoniva/crest:v1.5.0` | Crest 应用镜像 |
+| `CREST_MYSQL_IMAGE` | `mysql:8.4.5` | MySQL 镜像 |
+| `CREST_DB_NAME` | `crest` | 元数据库名 |
+| `CREST_DB_USERNAME` | `root` | MySQL 用户 |
+| `CREST_DB_PASSWORD` | 空 | 留空时安装脚本自动生成 |
+| `CREST_AES_KEY` | 空 | 留空时自动生成 32 位值；升级时不要改 |
+| `CREST_AES_IV` | 空 | 留空时自动生成 16 位值；升级时不要改 |
+| `CREST_CRYPTO_MODE` | `standard` | 加密模式，`standard` 使用 AES/RSA，`sm-suite` 使用 SM2/SM3/SM4 |
+| `CREST_SM4_KEY` | 空 | SM4 使用的 16 位 Key；`CREST_CRYPTO_MODE=sm-suite` 且留空时自动生成，服务启动会校验，升级时不要改 |
+| `CREST_INITIAL_PASSWORD` | 空 | 管理员初始密码，留空时自动生成并输出 |
+| `CREST_ORIGIN_LIST` | `http://localhost:8100` | 允许来源，正式环境要改成实际域名 |
 
 ## 在线安装
 
@@ -127,15 +127,17 @@ crestctl version
 - 备份文件不要放在 `/opt/crest` 目录内；
 - 备份文件可能包含数据库内容、导出文件和业务配置，不提交到 Git。
 
-## 升级
+## 迁移和同发布线升级
 
-升级前：
+v1.5.0 是全新安装基线，不支持从早期开发版本直接原地升级。已有早期环境迁移到 v1.5.0 时，请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
+
+同一发布线的小版本升级前：
 
 ```bash
 crestctl backup stop
 ```
 
-替换镜像标签后，在运行目录执行：
+确认 release notes 明确支持原地升级后，替换镜像标签并在运行目录执行：
 
 ```bash
 cd /opt/crest
@@ -161,8 +163,8 @@ docker logs crest --tail 200
 发布包按 CPU 架构分别制作：
 
 ```bash
-bash make-offline-package.sh v1.3.0 linux-amd64
-bash make-offline-package.sh v1.3.0 linux-arm64
+bash make-offline-package.sh v1.5.0 linux-amd64
+bash make-offline-package.sh v1.5.0 linux-arm64
 ```
 
 默认输出目录：
@@ -174,25 +176,25 @@ bash make-offline-package.sh v1.3.0 linux-arm64
 正式包名：
 
 ```text
-crest-offline-v1.3.0-linux-amd64.tar.gz
-crest-offline-v1.3.0-linux-arm64.tar.gz
+crest-offline-v1.5.0-linux-amd64.tar.gz
+crest-offline-v1.5.0-linux-arm64.tar.gz
 ```
 
 制作前需要本机已有对应架构镜像：
 
 ```text
-ghcr.io/sevoniva/crest:v1.3.0-amd64
-ghcr.io/sevoniva/crest:v1.3.0-arm64
+ghcr.io/sevoniva/crest:v1.5.0-amd64
+ghcr.io/sevoniva/crest:v1.5.0-arm64
 mysql:8.4.5
 ```
 
 也可以通过环境变量指定来源镜像：
 
 ```bash
-SOURCE_APP_IMAGE=ghcr.io/sevoniva/crest:v1.3.0-amd64 \
-APP_IMAGE=ghcr.io/sevoniva/crest:v1.3.0-amd64 \
+SOURCE_APP_IMAGE=ghcr.io/sevoniva/crest:v1.5.0-amd64 \
+APP_IMAGE=ghcr.io/sevoniva/crest:v1.5.0-amd64 \
 MYSQL_IMAGE=mysql:8.4.5 \
-bash make-offline-package.sh v1.3.0 linux-amd64
+bash make-offline-package.sh v1.5.0 linux-amd64
 ```
 
 脚本会校验应用镜像和 MySQL 镜像架构，架构不一致会直接停止。
@@ -202,8 +204,8 @@ bash make-offline-package.sh v1.3.0 linux-amd64
 在目标服务器执行：
 
 ```bash
-tar -zxf crest-offline-v1.3.0-linux-amd64.tar.gz
-cd crest-offline-v1.3.0-linux-amd64
+tar -zxf crest-offline-v1.5.0-linux-amd64.tar.gz
+cd crest-offline-v1.5.0-linux-amd64
 vi install.conf
 bash install.sh
 ```
@@ -267,7 +269,7 @@ tail -f /opt/crest/logs/crest/error.log
 | --- | --- |
 | 页面打不开 | 端口是否开放、`crest` 容器是否健康、反向代理是否转发到 `8100` |
 | 登录失败 | 初始密码是否来自安装输出，是否已经被修改 |
-| 数据库连接失败 | `mysql-crest` 是否健康，`DE_MYSQL_PASSWORD` 是否和 `.env` 一致 |
+| 数据库连接失败 | `mysql-crest` 是否健康，`CREST_DB_PASSWORD` 是否和 `.env` 一致 |
 | 升级后启动失败 | Flyway 迁移日志、数据库备份是否可恢复、镜像架构是否正确 |
 | 导出文件不可下载 | `/opt/crest/data/exportData` 权限和磁盘空间 |
 

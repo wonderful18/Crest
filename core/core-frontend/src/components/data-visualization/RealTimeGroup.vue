@@ -322,7 +322,7 @@ const expandClick = component => {
                 @click="onClick(transformIndex(index))"
               >
                 <div
-                  v-if="['DeTabs', 'Group'].includes(getComponent(index)?.component)"
+                  v-if="['Tabs', 'Group'].includes(getComponent(index)?.component)"
                   style="width: 12px; margin-right: 10px"
                 >
                   <el-icon
@@ -425,7 +425,7 @@ const expandClick = component => {
                 </el-dropdown>
               </div>
               <div
-                v-if="getComponent(index)?.component === 'DeTabs' && getComponent(index)?.expand"
+                v-if="getComponent(index)?.component === 'Tabs' && getComponent(index)?.expand"
               >
                 <real-time-tab
                   :tab-element="getComponent(index)"

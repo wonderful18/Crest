@@ -7,8 +7,8 @@ import io.crest.api.permissions.login.vo.MfaQrVO;
 import io.crest.api.permissions.role.dto.UserRequest;
 import io.crest.api.permissions.user.dto.*;
 import io.crest.api.permissions.user.vo.*;
-import io.crest.auth.DeApiPath;
-import io.crest.auth.DePermit;
+import io.crest.auth.CrestApiPath;
+import io.crest.auth.CrestPermit;
 import io.crest.auth.vo.TokenVO;
 import io.crest.model.KeywordRequest;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -28,7 +28,7 @@ import static io.crest.constant.AuthResourceEnum.USER;
 
 @Tag(name = "用户")
 @ApiSupport(order = 888, author = "Crest")
-@DeApiPath(value = "/user", rt = USER)
+@CrestApiPath(value = "/user", rt = USER)
 public interface UserApi {
 
     @Operation(summary = "查询用户列表")
@@ -37,57 +37,57 @@ public interface UserApi {
             @Parameter(name = "pageSize", description = "每页容量", required = true, in = ParameterIn.PATH),
             @Parameter(name = "request", description = "过滤条件", required = true)
     })
-    @DePermit("m:read")
-    @PostMapping("/pager/{goPage}/{pageSize}")
+    @CrestPermit("m:read")
+    @PostMapping("/page/{goPage}/{pageSize}")
     IPage<UserGridVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody UserGridRequest request);
 
     @Operation(summary = "查询用户详情")
     @Parameter(name = "id", description = "ID", required = true, in = ParameterIn.PATH)
-    @DePermit({"m:read", "#p0 + ':read'"})
-    @GetMapping("/queryById/{id}")
+    @CrestPermit({"m:read", "#p0 + ':read'"})
+    @GetMapping("/detail/{id}")
     UserFormVO queryById(@PathVariable("id") Long id);
 
 
     @Operation(summary = "查询个人信息")
-    @GetMapping("/personInfo")
+    @GetMapping("/person-info")
     UserFormVO personInfo();
 
     @Operation(summary = "查询用户系统变量信息")
-    @GetMapping("/personSysVariableInfo/{id}")
+    @GetMapping("/person-sys-variable-info/{id}")
     UserGridVO personSysVariableInfo(@PathVariable("id") Long id);
 
     @Operation(summary = "查询客户端IP信息")
-    @GetMapping("/ipInfo")
+    @GetMapping("/ip-info")
     CurIpVO ipInfo();
 
     @Operation(summary = "创建")
-    @DePermit("m:read")
-    @PostMapping("/create")
+    @CrestPermit("m:read")
+    @PostMapping
     Long create(@RequestBody UserCreator creator);
 
     @Operation(summary = "创建第三方用户")
-    @DePermit("m:read")
-    @PostMapping("/createPlatform")
+    @CrestPermit("m:read")
+    @PostMapping("/platform-record")
     void createPlatform(@RequestBody PlatformUserCreator creator);
 
     @Operation(summary = "编辑")
-    @DePermit({"m:read", "#p0.id + ':manage'"})
-    @PostMapping("/edit")
+    @CrestPermit({"m:read", "#p0.id + ':manage'"})
+    @PutMapping
     void edit(@RequestBody UserEditor editor);
 
     @Operation(summary = "变更个人信息")
-    @PostMapping("/personEdit")
+    @PostMapping("/person-edit")
     void personEdit(@RequestBody UserEditor editor);
 
     @Operation(summary = "删除")
     @Parameter(name = "id", description = "ID", required = true, in = ParameterIn.PATH)
-    @DePermit({"m:read", "#p0 + ':manage'"})
-    @PostMapping("/delete/{id}")
+    @CrestPermit({"m:read", "#p0 + ':manage'"})
+    @DeleteMapping("/{id}")
     void delete(@PathVariable("id") Long id);
 
     @Operation(summary = "批量删除")
-    @DePermit({"m:read", "#p0 + ':manage'"})
-    @PostMapping("/batchDel")
+    @CrestPermit({"m:read", "#p0 + ':manage'"})
+    @DeleteMapping("/batch")
     void batchDel(@RequestBody List<Long> ids);
 
     @Operation(summary = "角色可绑用户")
@@ -117,63 +117,63 @@ public interface UserApi {
     CurUserVO info();
 
     @Operation(summary = "查询当前组织内用户")
-    @PostMapping("/byCurOrg")
+    @PostMapping("/by-current-org")
     List<UserItem> byCurOrg(@RequestBody KeywordRequest request);
 
     @Operation(summary = "用户数量", hidden = true)
     @Hidden
-    @GetMapping("/userCount")
+    @GetMapping("/user-count")
     int userCount();
 
     @Operation(summary = "切换语言")
-    @PostMapping("/switchLanguage")
+    @PostMapping("/switch-language")
     void switchLanguage(@RequestBody LangSwitchRequest request);
 
     @Operation(summary = "下载批量导入模版")
-    @PostMapping("/excelTemplate")
+    @PostMapping("/excel-template")
     void excelTemplate();
 
     @Operation(summary = "批量导入")
-    @PostMapping("/batchImport")
+    @PostMapping("/batch-import")
     UserImportVO batchImport(@RequestPart(value = "file") MultipartFile file);
 
 
     @Operation(summary = "下载批量导入失败记录")
     @Parameter(name = "key", description = "导入结果key", required = true, in = ParameterIn.PATH)
-    @GetMapping("/errorRecord/{key}")
+    @GetMapping("/error-record/{key}")
     void errorRecord(@PathVariable("key") String key);
 
     @Operation(summary = "清理批量导入失败记录")
     @Parameter(name = "key", description = "导入结果key", required = true, in = ParameterIn.PATH)
-    @GetMapping("/clearErrorRecord/{key}")
+    @GetMapping("/clear-error-record/{key}")
     void clearErrorRecord(@PathVariable("key") String key);
 
     @Operation(summary = "查询默认密码")
-    @DePermit({"m:read"})
-    @GetMapping("/defaultPwd")
+    @CrestPermit({"m:read"})
+    @GetMapping("/default-password")
     String defaultPwd();
 
     @Operation(summary = "重置为默认密码")
     @Parameter(name = "id", description = "用户ID", required = true, in = ParameterIn.PATH)
-    @DePermit({"m:read", "#p0 + ':manage'"})
-    @PostMapping("/resetPwd/{id}")
+    @CrestPermit({"m:read", "#p0 + ':manage'"})
+    @PostMapping("/reset-password/{id}")
     void resetPwd(@PathVariable("id") Long id);
 
     @Operation(summary = "切换用户状态")
-    @DePermit({"m:read", "#p0.id + ':manage'"})
+    @CrestPermit({"m:read", "#p0.id + ':manage'"})
     @PostMapping("/enable")
     void enable(@RequestBody EnableSwitchRequest request);
 
     @Operation(summary = "修改个人密码")
-    @PostMapping("/modifyPwd")
+    @PostMapping("/modify-password")
     void modifyPwd(@RequestBody ModifyPwdRequest request);
 
     @Hidden
-    @GetMapping("/firstEchelon/{limit}")
+    @GetMapping("/first-echelon/{limit}")
     List<Long> firstEchelon(@PathVariable("limit") Long limit);
 
     @Operation(summary = "根据账号查询用户")
-    @GetMapping("/queryByAccount/{account}")
+    @GetMapping("/account/{account}")
     CurUserVO queryByAccount(@PathVariable("account") String account);
 
     @Hidden
@@ -189,30 +189,30 @@ public interface UserApi {
     void bind(@RequestBody UserBindRequest request);
 
     @Operation(summary = "解除绑定")
-    @PostMapping("/unBind/{origin}")
+    @PostMapping("/unbind/{origin}")
     void unBind(@PathVariable("origin") Integer origin);
 
     @Operation(summary = "绑定状态")
-    @GetMapping("/bindStatus")
+    @GetMapping("/bind-status")
     List<Integer> bindStatus();
 
     @Hidden
-    @GetMapping("/getRecipient")
-    List<Map<String, Object>> getRecipient(@RequestBody UserReciRequest request);
+    @GetMapping("/recipients")
+    List<Map<String, Object>> recipients(@RequestBody UserReciRequest request);
 
     @Hidden
-    @GetMapping("/orgAdmin")
+    @GetMapping("/org-admin")
     boolean orgAdmin();
 
     @Hidden
-    @GetMapping("/defaultOrgAdmin")
+    @GetMapping("/default-org-admin")
     boolean defaultOrgAdmin();
 
     @Hidden
-    @PostMapping("/subOrgUser")
+    @PostMapping("/sub-org-user")
     List<UserItem> subOrgUser(@RequestBody List<Long> oidList);
 
-    List<Long> getRecipientUserIds(UserReciRequest request);
+    List<Long> recipientsUserIds(UserReciRequest request);
 
     List<Long> getUserIdByAccount(String account);
 
@@ -221,7 +221,7 @@ public interface UserApi {
     List<Map<String, Object>> listUserInfosByIds(List<Long> ids);
 
     @Operation(summary = "MFA二维码信息")
-    @GetMapping("/mfaQr")
+    @GetMapping("/mfa-qr")
     MfaQrVO mfaQr();
 
     @Operation(summary = "MFA绑定状态")
@@ -229,15 +229,15 @@ public interface UserApi {
     Boolean mfaBound();
 
     @Operation(summary = "绑定MFA")
-    @PostMapping("/mfaBind")
+    @PostMapping("/mfa-bind")
     void mfaBind(@RequestBody MfaLoginDTO dto);
 
     @Operation(summary = "解绑MFA")
-    @PostMapping("/mfaUnbind/{code}")
+    @PostMapping("/mfa-unbind/{code}")
     String mfaUnbind(@PathVariable("code") String code);
 
     @Operation(summary = "重置MFA绑定状态")
-    @PostMapping("/mfaRest/{id}")
+    @PostMapping("/mfa-reset/{id}")
     void resetBind(@PathVariable("id") Long id);
 
     @Hidden

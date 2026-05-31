@@ -1,6 +1,6 @@
 package io.crest.system.sso;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
@@ -19,14 +19,14 @@ public final class SsoClaimMapper {
                                          String emailAttribute,
                                          String unionIdAttribute) {
         if (providerId == null) {
-            DEException.throwException("身份提供方 ID 不能为空");
+            CrestException.throwException("身份提供方 ID 不能为空");
         }
         if (providerType == null) {
-            DEException.throwException("身份提供方类型不能为空");
+            CrestException.throwException("身份提供方类型不能为空");
         }
         String subject = claim(claims, subjectAttribute);
         if (StringUtils.isBlank(subject)) {
-            DEException.throwException("身份提供方未返回用户唯一标识：" + subjectAttribute);
+            CrestException.throwException("身份提供方未返回用户唯一标识：" + subjectAttribute);
         }
         String account = SsoAccountPolicy.normalizeAccount(claim(claims, accountAttribute), subject);
         String name = SsoAccountPolicy.normalizeDisplayName(claim(claims, nameAttribute), account);

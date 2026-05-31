@@ -208,7 +208,7 @@ span {
     :deep(span) {
       color: var(--N900, #1f2329);
       /* 中文/桌面端/正文 14 22 Regular */
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       font-style: normal;
       font-weight: 400;

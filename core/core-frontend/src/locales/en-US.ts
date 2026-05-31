@@ -2218,7 +2218,7 @@ export default {
     origin_name: 'Physical field name',
     origin_type: 'Physical field type'
   },
-  deDataset: {
+  datasetUi: {
     search_by_name: 'Search by name',
     new_folder: 'Create a new folder',
     search_fields: 'Search fields',

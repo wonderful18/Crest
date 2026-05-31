@@ -5,7 +5,7 @@ import io.crest.api.permissions.role.dto.RoleEditor;
 import io.crest.api.permissions.role.vo.ExternalUserVO;
 import io.crest.api.permissions.role.vo.RoleDetailVO;
 import io.crest.api.permissions.role.vo.RoleVO;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.IDUtils;
@@ -39,8 +39,8 @@ public class CrestRoleManage {
         List<Object> args = new java.util.ArrayList<>();
         StringBuilder sql = new StringBuilder("""
                 SELECT r.id, r.name, r.readonly, r.system_role
-                FROM crest_role r
-                INNER JOIN crest_user_role ur ON ur.rid = r.id
+                FROM iam_role r
+                INNER JOIN iam_user_role ur ON ur.rid = r.id
                 WHERE ur.uid = ?
                 """);
         args.add(uid);
@@ -66,10 +66,10 @@ public class CrestRoleManage {
         Long oid = currentOid();
         List<ExternalUserVO> users = jdbcTemplate.query("""
                 SELECT u.id, u.account, u.name, u.email, u.phone
-                FROM crest_user u
+                FROM iam_user u
                 WHERE u.enable = 1
                   AND NOT EXISTS (
-                      SELECT 1 FROM crest_user_org uo WHERE uo.uid = u.id AND uo.oid = ?
+                      SELECT 1 FROM iam_user_org uo WHERE uo.uid = u.id AND uo.oid = ?
                   )
                   AND (u.account = ? OR u.email = ? OR u.name LIKE ?)
                 ORDER BY u.create_time DESC
@@ -90,12 +90,12 @@ public class CrestRoleManage {
     public Long create(RoleCreator creator) {
         platformPermissionManage.requireSystemAdmin();
         if (creator == null || StringUtils.isBlank(creator.getName())) {
-            DEException.throwException("角色名称不能为空");
+            CrestException.throwException("角色名称不能为空");
         }
         long id = IDUtils.snowID();
         long now = System.currentTimeMillis();
         jdbcTemplate.update("""
-                INSERT INTO crest_role(id, oid, name, code, description, type_code, readonly, system_role, org_admin, create_time, update_time)
+                INSERT INTO iam_role(id, oid, name, code, description, type_code, readonly, system_role, org_admin, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, id, creator.getOid() == null ? currentOid() : creator.getOid(), creator.getName().trim(), null, creator.getDesc(),
                 creator.getTypeCode() == null ? 0 : creator.getTypeCode(), false, false, false, now, now);
@@ -106,10 +106,10 @@ public class CrestRoleManage {
     public void edit(RoleEditor editor) {
         platformPermissionManage.requireSystemAdmin();
         if (editor == null || editor.getId() == null || StringUtils.isBlank(editor.getName())) {
-            DEException.throwException("角色名称不能为空");
+            CrestException.throwException("角色名称不能为空");
         }
         jdbcTemplate.update("""
-                UPDATE crest_role
+                UPDATE iam_role
                 SET name = ?, description = ?, update_time = ?
                 WHERE id = ? AND readonly = 0
                 """, editor.getName().trim(), editor.getDesc(), System.currentTimeMillis(), editor.getId());
@@ -119,17 +119,17 @@ public class CrestRoleManage {
     public void delete(Long rid) {
         platformPermissionManage.requireSystemAdmin();
         if (rid == null || rid == PlatformPermissionManage.SYSTEM_ADMIN_ROLE_ID || rid == PlatformPermissionManage.MEMBER_ROLE_ID) {
-            DEException.throwException("内置角色不能删除");
+            CrestException.throwException("内置角色不能删除");
         }
-        jdbcTemplate.update("DELETE FROM crest_user_role WHERE rid = ?", rid);
-        jdbcTemplate.update("DELETE FROM crest_role_menu_permission WHERE rid = ?", rid);
-        jdbcTemplate.update("DELETE FROM crest_resource_permission WHERE target_type = 'role' AND target_id = ?", rid);
-        jdbcTemplate.update("DELETE FROM crest_role WHERE id = ? AND readonly = 0", rid);
+        jdbcTemplate.update("DELETE FROM iam_user_role WHERE rid = ?", rid);
+        jdbcTemplate.update("DELETE FROM iam_role_menu_permission WHERE rid = ?", rid);
+        jdbcTemplate.update("DELETE FROM iam_resource_permission WHERE target_type = 'role' AND target_id = ?", rid);
+        jdbcTemplate.update("DELETE FROM iam_role WHERE id = ? AND readonly = 0", rid);
     }
 
     public RoleDetailVO detail(Long rid) {
         List<RoleDetailVO> list = jdbcTemplate.query("""
-                SELECT id, name, description, type_code FROM crest_role WHERE id = ? LIMIT 1
+                SELECT id, name, description, type_code FROM iam_role WHERE id = ? LIMIT 1
                 """, (rs, rowNum) -> {
             RoleDetailVO vo = new RoleDetailVO();
             vo.setId(rs.getLong("id"));
@@ -157,11 +157,11 @@ public class CrestRoleManage {
     @Transactional
     public void unmountUser(Long rid, Long uid) {
         platformPermissionManage.requireSystemAdmin();
-        jdbcTemplate.update("DELETE FROM crest_user_role WHERE uid = ? AND rid = ?", uid, rid);
+        jdbcTemplate.update("DELETE FROM iam_user_role WHERE uid = ? AND rid = ?", uid, rid);
     }
 
     public Integer beforeUnmountInfo(Long rid, Long uid) {
-        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM crest_user_role WHERE rid = ? AND uid = ?",
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM iam_user_role WHERE rid = ? AND uid = ?",
                 Integer.class, rid, uid);
         return count == null ? 0 : count;
     }

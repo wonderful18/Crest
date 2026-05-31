@@ -3,9 +3,9 @@ package io.crest.api.ds;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.github.xiaoymin.knife4j.annotations.ApiSupport;
 import io.crest.api.ds.vo.*;
-import io.crest.auth.DeApiPath;
-import io.crest.auth.DePermit;
-import io.crest.exception.DEException;
+import io.crest.auth.CrestApiPath;
+import io.crest.auth.CrestPermit;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.ApiDefinition;
 import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.datasource.dto.DatasourceDTO;
@@ -26,7 +26,7 @@ import static io.crest.constant.AuthResourceEnum.DATASOURCE;
 
 @Tag(name = "数据源管理:基础")
 @ApiSupport(order = 969)
-@DeApiPath(value = "/datasource", rt = DATASOURCE)
+@CrestApiPath(value = "/datasource", rt = DATASOURCE)
 public interface DatasourceApi {
     /**
      * 查询数据源树
@@ -34,156 +34,156 @@ public interface DatasourceApi {
      * @param keyWord 过滤关键字
      * @return
      */
-    @GetMapping("/query/{keyWord}")
+    @GetMapping("/list/{keyWord}")
     @Operation(summary = "查询")
     List<DatasourceDTO> query(@PathVariable("keyWord") String keyWord);
 
-    @PostMapping("/save")
+    @PostMapping("/record")
     @Operation(summary = "保存")
-    DatasourceDTO save(@RequestBody BusiDsRequest dataSourceDTO) throws DEException;
+    DatasourceDTO save(@RequestBody BusiDsRequest dataSourceDTO) throws CrestException;
 
-    @PostMapping("/update")
+    @PutMapping
     @Operation(summary = "更新")
-    DatasourceDTO update(@RequestBody BusiDsRequest dataSourceDTO) throws DEException;
+    DatasourceDTO update(@RequestBody BusiDsRequest dataSourceDTO) throws CrestException;
 
     @PostMapping("/move")
     @Operation(summary = "移动")
-    DatasourceDTO move(@RequestBody BusiCreateFolderRequest dataSourceDTO) throws DEException;
+    DatasourceDTO move(@RequestBody BusiCreateFolderRequest dataSourceDTO) throws CrestException;
 
-    @PostMapping("/reName")
+    @PostMapping("/rename")
     @Operation(summary = "重命名")
-    DatasourceDTO reName(@RequestBody BusiRenameRequest dataSourceDTO) throws DEException;
+    DatasourceDTO reName(@RequestBody BusiRenameRequest dataSourceDTO) throws CrestException;
 
-    @PostMapping("/createFolder")
+    @PostMapping("/folders")
     @Operation(summary = "新建文件夹")
-    DatasourceDTO createFolder(@RequestBody BusiCreateFolderRequest dataSourceDTO) throws DEException;
+    DatasourceDTO createFolder(@RequestBody BusiCreateFolderRequest dataSourceDTO) throws CrestException;
 
-    @PostMapping("/checkRepeat")
+    @PostMapping("/duplicate-check")
     @Operation(summary = "校验重复")
-    boolean checkRepeat(@RequestBody BusiDsRequest dataSourceDTO) throws DEException;
+    boolean checkRepeat(@RequestBody BusiDsRequest dataSourceDTO) throws CrestException;
 
     @GetMapping("/types")
     @Operation(summary = "数据源类型")
-    List<DatasourceConfiguration.DatasourceType> datasourceTypes() throws DEException;
+    List<DatasourceConfiguration.DatasourceType> datasourceTypes() throws CrestException;
 
     @PostMapping("/validate")
     @Operation(summary = "校验")
-    DatasourceDTO validate(@RequestBody BusiDsRequest dataSourceDTO) throws DEException;
+    DatasourceDTO validate(@RequestBody BusiDsRequest dataSourceDTO) throws CrestException;
 
-    @PostMapping("/getSchema")
+    @PostMapping("/schemas")
     @Operation(summary = "获取 schema")
-    List<String> getSchema(@RequestBody BusiDsRequest dataSourceDTO) throws DEException;
+    List<String> getSchema(@RequestBody BusiDsRequest dataSourceDTO) throws CrestException;
 
-    @DePermit({"#p0+':manage'"})
+    @CrestPermit({"#p0+':manage'"})
     @GetMapping("/validate/{datasourceId}")
     @Operation(summary = "校验")
-    DatasourceDTO validate(@PathVariable("datasourceId") Long datasourceId) throws DEException;
+    DatasourceDTO validate(@PathVariable("datasourceId") Long datasourceId) throws CrestException;
 
-    @DePermit({"#p0+':manage'"})
-    @PostMapping("/perDelete/{datasourceId}")
+    @CrestPermit({"#p0+':manage'"})
+    @PostMapping("/deletion-impact/{datasourceId}")
     @Operation(summary = "是否有数据集正在使用此数据源")
     boolean perDelete(@PathVariable("datasourceId") Long datasourceId);
 
-    @DePermit({"#p0+':manage'"})
-    @GetMapping("/delete/{datasourceId}")
+    @CrestPermit({"#p0+':manage'"})
+    @DeleteMapping("/{datasourceId}")
     @Operation(summary = "删除")
-    void delete(@PathVariable("datasourceId") Long datasourceId) throws DEException;
+    void delete(@PathVariable("datasourceId") Long datasourceId) throws CrestException;
 
-    @DePermit({"#p0+':manage'"})
-    @GetMapping("/get/{datasourceId}")
+    @CrestPermit({"#p0+':manage'"})
+    @GetMapping("/detail/{datasourceId}")
     @Operation(summary = "数据源详情")
-    DatasourceDTO get(@PathVariable("datasourceId") Long datasourceId) throws DEException;
+    DatasourceDTO get(@PathVariable("datasourceId") Long datasourceId) throws CrestException;
 
-    @DePermit({"#p0+':manage'"})
-    @GetMapping("/hidePw/{datasourceId}")
+    @CrestPermit({"#p0+':manage'"})
+    @GetMapping("/password/masked/{datasourceId}")
     @Operation(summary = "数据源详情")
-    DatasourceDTO hidePw(@PathVariable("datasourceId") Long datasourceId) throws DEException;
+    DatasourceDTO hidePw(@PathVariable("datasourceId") Long datasourceId) throws CrestException;
 
-    @DePermit({"#p0+':read'"})
-    @GetMapping("/getSimpleDs/{datasourceId}")
+    @CrestPermit({"#p0+':read'"})
+    @GetMapping("/simple-info/{datasourceId}")
     @Operation(summary = "数据源详情")
-    DatasourceDTO getSimpleDs(@PathVariable("datasourceId") Long datasourceId) throws DEException;
+    DatasourceDTO getSimpleDs(@PathVariable("datasourceId") Long datasourceId) throws CrestException;
 
 
-    @PostMapping("/getTableField")
+    @PostMapping("/table-fields")
     @Operation(summary = "获取表字段")
-    List<TableField> getTableField(@RequestBody Map<String, String> req) throws DEException;
+    List<TableField> getTableField(@RequestBody Map<String, String> req) throws CrestException;
 
-    @PostMapping("/syncApiTable")
+    @PostMapping("/api-tables/sync")
     @Operation(summary = "同步API数据表")
-    void syncApiTable(@RequestBody Map<String, String> req) throws DEException;
+    void syncApiTable(@RequestBody Map<String, String> req) throws CrestException;
 
-    @PostMapping("/syncApiDs")
+    @PostMapping("/api-data-sources/sync")
     @Operation(summary = "同步API数据源")
     void syncApiDs(@RequestBody Map<String, String> req) throws Exception;
 
     @PostMapping("tree")
     @Operation(summary = "数据源列表")
-    List<BusiNodeVO> tree(@RequestBody BusiNodeRequest request) throws DEException;
+    List<BusiNodeVO> tree(@RequestBody BusiNodeRequest request) throws CrestException;
 
 
-    @DePermit({"#p0.datasourceId+':read'"})
-    @PostMapping("getTables")
+    @CrestPermit({"#p0.datasourceId+':read'"})
+    @PostMapping("tables")
     @Operation(summary = "获取表")
-    List<DatasetTableDTO> getTables(@RequestBody DatasetTableDTO datasetTableDTO) throws DEException;
+    List<DatasetTableDTO> tables(@RequestBody DatasetTableDTO datasetTableDTO) throws CrestException;
 
-    @DePermit({"#p0.datasourceId+':read'"})
-    @PostMapping("getTableStatus")
+    @CrestPermit({"#p0.datasourceId+':read'"})
+    @PostMapping("table-status")
     @Operation(summary = "获取数据表更新状态")
-    List<DatasetTableDTO> getTableStatus(@RequestBody DatasetTableDTO datasetTableDTO) throws DEException;
+    List<DatasetTableDTO> tableStatus(@RequestBody DatasetTableDTO datasetTableDTO) throws CrestException;
 
-    @PostMapping("/checkApiDatasource")
+    @PostMapping("/api-data-source-check")
     @Operation(summary = "校验API数据源")
-    ApiDefinition checkApiDatasource(@RequestBody Map<String, String> data) throws DEException;
+    ApiDefinition checkApiDatasource(@RequestBody Map<String, String> data) throws CrestException;
 
-    @PostMapping("/uploadFile")
+    @PostMapping("/files/upload")
     @Operation(summary = "上传文件")
-    ExcelFileData uploadFile(@RequestParam("file") MultipartFile file, @RequestParam("id") long datasourceId, @RequestParam("editType") Integer editType) throws DEException;
+    ExcelFileData uploadFile(@RequestParam("file") MultipartFile file, @RequestParam("id") long datasourceId, @RequestParam("editType") Integer editType) throws CrestException;
 
-    @PostMapping("/previewData")
+    @PostMapping("/preview-data")
     @Operation(summary = "预览数据")
-    Map<String, Object> previewDataWithLimit(@RequestBody Map<String, Object> req) throws DEException;
+    Map<String, Object> previewDataWithLimit(@RequestBody Map<String, Object> req) throws CrestException;
 
-    @DePermit({"#p0.datasourceId+':read'"})
-    @PostMapping("/excelData/page")
+    @CrestPermit({"#p0.datasourceId+':read'"})
+    @PostMapping("/excel-data/page")
     @Operation(summary = "分页读取 Excel 数据")
-    ExcelDataPageVO excelDataPage(@RequestBody ExcelDataPageRequest request) throws DEException;
+    ExcelDataPageVO excelDataPage(@RequestBody ExcelDataPageRequest request) throws CrestException;
 
-    @DePermit({"#p0.datasourceId+':manage'"})
-    @PostMapping("/excelData/save")
+    @CrestPermit({"#p0.datasourceId+':manage'"})
+    @PostMapping("/excel-data/record")
     @Operation(summary = "保存 Excel 在线编辑数据")
-    void saveExcelData(@RequestBody ExcelDataSaveRequest request) throws DEException;
+    void saveExcelData(@RequestBody ExcelDataSaveRequest request) throws CrestException;
 
-    @PostMapping("/latestUse")
+    @PostMapping("/latest-use")
     @Operation(summary = "最近常用")
     public List<String> latestUse();
 
-    @GetMapping("showFinishPage")
+    @GetMapping("finish-page/visible")
     @Operation(summary = "是否显示完成页面")
-    public boolean showFinishPage() throws DEException;
+    public boolean showFinishPage() throws CrestException;
 
-    @PostMapping("setShowFinishPage")
+    @PostMapping("finish-page/visible")
     @Operation(summary = "是否显示完成页面")
-    public void setShowFinishPage() throws DEException;
+    public void setShowFinishPage() throws CrestException;
 
-    @PostMapping("/listSyncRecord/{dsId}/{goPage}/{pageSize}")
+    @PostMapping("/sync-records/{dsId}/{goPage}/{pageSize}")
     @Operation(summary = "更新日志")
     IPage<CoreDatasourceTaskLogDTO> listSyncRecord(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @PathVariable("dsId") Long dsId);
 
-    DatasourceDTO innerGet(Long datasourceId) throws DEException;
+    DatasourceDTO innerGet(Long datasourceId) throws CrestException;
 
-    String getName(Long datasourceId) throws DEException;
+    String getName(Long datasourceId) throws CrestException;
 
-    List<DatasourceDTO> innerList(List<Long> ids, List<String> types) throws DEException;
+    List<DatasourceDTO> innerList(List<Long> ids, List<String> types) throws CrestException;
 
     @GetMapping("/simple/{id}")
     DsSimpleVO simple(@PathVariable("id") Long id);
 
-    @PostMapping("/multidimensionalTables")
+    @PostMapping("/multidimensional-tables")
     @Operation(summary = "获取多维表格列表")
-    List<Map<String, String>> multidimensionalTables(@RequestBody Map<String, String> data) throws DEException;
+    List<Map<String, String>> multidimensionalTables(@RequestBody Map<String, String> data) throws CrestException;
 
-    @PostMapping("/loadRemoteFile")
+    @PostMapping("/remote-files/load")
     @Operation(summary = "加载文件")
-    ExcelFileData loadRemoteFile(@RequestBody RemoteExcelRequest remoteExcelRequeste) throws DEException, IOException;
+    ExcelFileData loadRemoteFile(@RequestBody RemoteExcelRequest remoteExcelRequeste) throws CrestException, IOException;
 }

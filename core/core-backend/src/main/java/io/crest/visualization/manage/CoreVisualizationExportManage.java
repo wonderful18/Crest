@@ -6,9 +6,9 @@ import io.crest.chart.constant.ChartConstants;
 import io.crest.chart.manage.ChartDataManage;
 import io.crest.chart.manage.ChartViewManege;
 import io.crest.constant.CommonConstants;
-import io.crest.constant.DeTypeConstants;
+import io.crest.constant.FieldTypeConstants;
 import io.crest.dataset.server.DatasetFieldServer;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.exportCenter.util.ExportCenterUtils;
 import io.crest.chart.server.ChartDataServer;
 import io.crest.extensions.view.dto.ChartExtFilterDTO;
@@ -58,22 +58,22 @@ public class CoreVisualizationExportManage {
 
     public String getResourceName(Long dvId, String busiFlag) {
         DataVisualizationVO visualization = extDataVisualizationMapper.findDvInfo(dvId, busiFlag, "core");
-        if (ObjectUtils.isEmpty(visualization)) DEException.throwException("资源不存在或已经被删除...");
+        if (ObjectUtils.isEmpty(visualization)) CrestException.throwException("资源不存在或已经被删除...");
         return visualization.getName();
     }
 
     public File exportExcel(Long dvId, String busiFlag, List<Long> viewIdList, boolean onlyDisplay, String filterJson) throws Exception {
         DataVisualizationVO visualization = extDataVisualizationMapper.findDvInfo(dvId, busiFlag, "core");
-        if (ObjectUtils.isEmpty(visualization)) DEException.throwException("资源不存在或已经被删除...");
+        if (ObjectUtils.isEmpty(visualization)) CrestException.throwException("资源不存在或已经被删除...");
         List<ChartViewDTO> chartViewDTOS = chartViewManege.listBySceneId(dvId, CommonConstants.RESOURCE_TABLE.CORE);
 
         String componentsJson = visualization.getComponentData();
         List<Map<String, Object>> components = JsonUtil.parseList(componentsJson, tokenType);
         components = components.stream().flatMap(item -> {
-            if (ObjectUtils.isNotEmpty(item.get("innerType")) && Strings.CI.equals(item.get("innerType").toString(), "DeTabs")) {
+            if (ObjectUtils.isNotEmpty(item.get("innerType")) && Strings.CI.equals(item.get("innerType").toString(), "Tabs")) {
                 if (ObjectUtils.isNotEmpty(item.get("propValue"))) {
-                    List<Map<String, Object>> deTabs = (List<Map<String, Object>>) item.get("propValue");
-                    return deTabs.stream().flatMap(tab -> ((List<Map<String, Object>>) tab.get("componentData")).stream());
+                    List<Map<String, Object>> tabs = (List<Map<String, Object>>) item.get("propValue");
+                    return tabs.stream().flatMap(tab -> ((List<Map<String, Object>>) tab.get("componentData")).stream());
                 }
             }
             return Stream.of(item);
@@ -112,16 +112,16 @@ public class CoreVisualizationExportManage {
         if (CollectionUtils.isNotEmpty(fields)) {
             fields.forEach(field -> {
                 Object name = field.getName();
-                Object dataeaseName = field.getDataeaseName();
-                Object deType = field.getDeType();
-                if (ObjectUtils.isNotEmpty(name) && ObjectUtils.isNotEmpty(dataeaseName)) {
+                Object engineFieldName = field.getEngineFieldName();
+                Object fieldType = field.getFieldType();
+                if (ObjectUtils.isNotEmpty(name) && ObjectUtils.isNotEmpty(engineFieldName)) {
                     heads.add(name.toString());
-                    headKeys.add(dataeaseName.toString());
-                    if (deType == null) {
-                        field.setDeType(DeTypeConstants.DE_STRING);
-                        deType = DeTypeConstants.DE_STRING;
+                    headKeys.add(engineFieldName.toString());
+                    if (fieldType == null) {
+                        field.setFieldType(FieldTypeConstants.STRING);
+                        fieldType = FieldTypeConstants.STRING;
                     }
-                    fieldTypes.add((int) deType);
+                    fieldTypes.add((int) fieldType);
                 }
             });
         }
@@ -217,7 +217,7 @@ public class CoreVisualizationExportManage {
             acc.totalCount++;
             for (int j = 0; j < allColumns.size(); j++) {
                 ChartViewFieldDTO field = allColumns.get(j);
-                String fName = field.getDataeaseName();
+                String fName = field.getEngineFieldName();
                 if (!config.summaryShowMap.containsKey(fName) || !config.summaryShowMap.get(fName)) continue;
                 String sType = config.summaryTypeMap.get(fName);
                 if (sType == null || "custom".equals(sType)) continue;
@@ -256,7 +256,7 @@ public class CoreVisualizationExportManage {
 
         List<String> headKeys = new ArrayList<>();
         for (ChartViewFieldDTO field : allColumns) {
-            headKeys.add(field.getDataeaseName());
+            headKeys.add(field.getEngineFieldName());
         }
 
         List<String> summaryRow = new ArrayList<>();

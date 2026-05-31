@@ -20,7 +20,7 @@ public class SsoProviderConfigManageTest {
         config.setUserInfoEndpoint("https://open.feishu.cn/open-apis/authen/v1/user_info");
         config.setIssuer("https://open.feishu.cn");
         config.setScope("openid profile email");
-        config.setRedirectUri("https://crest.example.com/de2api/sso/callback");
+        config.setRedirectUri("https://crest.example.com/api/v1/sso/callback");
         config.setUserIdAttribute("open_id");
         config.setAccountAttribute("employee_no");
         config.setNameAttribute("name");

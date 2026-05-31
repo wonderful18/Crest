@@ -13,7 +13,7 @@ import java.io.Serializable;
  * @author fit2cloud
  * @since 2023-04-17
  */
-@TableName("core_driver_jar")
+@TableName("data_source_driver_jar")
 public class CoreDriverJar implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -27,7 +27,7 @@ public class CoreDriverJar implements Serializable {
     /**
      * 驱动主键
      */
-    private String deDriverId;
+    private String driverId;
 
     /**
      * 名称
@@ -56,12 +56,12 @@ public class CoreDriverJar implements Serializable {
         this.id = id;
     }
 
-    public String getDeDriverId() {
-        return deDriverId;
+    public String getDriverId() {
+        return driverId;
     }
 
-    public void setDeDriverId(String deDriverId) {
-        this.deDriverId = deDriverId;
+    public void setDriverId(String driverId) {
+        this.driverId = driverId;
     }
 
     public String getFileName() {
@@ -108,7 +108,7 @@ public class CoreDriverJar implements Serializable {
     public String toString() {
         return "CoreDriverJar{" +
         "id = " + id +
-        ", deDriverId = " + deDriverId +
+        ", driverId = " + driverId +
         ", fileName = " + fileName +
         ", version = " + version +
         ", driverClass = " + driverClass +

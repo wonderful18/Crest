@@ -73,7 +73,7 @@ public class SymbolicMapHandler extends GroupChartHandler {
         BeanUtils.copyBean(sqlMeta1, sqlMeta);
         Dimension2SQLObj.dimension2sqlObj(sqlMeta, xAxis, datasetTableFieldDTOList, crossDs, dsMap, Utils.getParams(datasetTableFieldDTOList), view.getCalParams(), pluginManage);
         List<ChartViewFieldDTO> yAxis = new ArrayList<>();
-        if (!extBubble.isEmpty() && !"*".equals(extBubble.get(0).getDataeaseName())) {
+        if (!extBubble.isEmpty() && !"*".equals(extBubble.get(0).getEngineFieldName())) {
             yAxis.addAll(extBubble);
         }
         yAxis.addAll(countField);

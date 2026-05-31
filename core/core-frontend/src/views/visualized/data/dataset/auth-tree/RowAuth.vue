@@ -40,7 +40,7 @@ const submit = () => {
     errorMessage: errorMessage.value
   })
 }
-const errorDetected = ({ enumValue, deType, filterType, term, value, name }) => {
+const errorDetected = ({ enumValue, fieldType, filterType, term, value, name }) => {
   if (!name) {
     errorMessage.value = t('data_set.cannot_be_empty_')
     return
@@ -54,7 +54,7 @@ const errorDetected = ({ enumValue, deType, filterType, term, value, name }) => 
       errorMessage.value = t('chart.filter_value_can_null')
       return
     }
-    if ([2, 3].includes(deType)) {
+    if ([2, 3].includes(fieldType)) {
       if (parseFloat(value).toString() === 'NaN') {
         errorMessage.value = t('chart.filter_value_can_not_str')
         return
@@ -78,7 +78,7 @@ const dfsInit = arr => {
       elementList.push({ logic, child })
     } else {
       const { enumValue, fieldId, filterType, term, timeType, value, field } = ele
-      const { name, deType } = field || {}
+      const { name, fieldType } = field || {}
       elementList.push({
         enumValue,
         fieldId,
@@ -87,7 +87,7 @@ const dfsInit = arr => {
         value,
         timeType,
         name,
-        deType
+        fieldType
       })
     }
   })
@@ -111,8 +111,8 @@ const dfsSubmit = arr => {
         subTree: { logic, items: subTree }
       })
     } else {
-      const { enumValue, fieldId, filterType, deType, term, timeType, value, name } = ele
-      errorDetected({ deType, enumValue, filterType, term, value, name })
+      const { enumValue, fieldId, filterType, fieldType, term, timeType, value, name } = ele
+      errorDetected({ fieldType, enumValue, filterType, term, value, name })
       if (fieldId) {
         items.push({
           enumValue: enumValue || [],
@@ -264,7 +264,7 @@ const addCondReal = (type, logic) => {
           timeType: 'year',
           filterType: 'logic',
           name: '',
-          deType: ''
+          fieldType: ''
         }
       : { child: [], logic }
   )

@@ -10,7 +10,7 @@ import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTaskLog;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetGroupMapper;
 import io.crest.dataset.manage.DatasetGroupManage;
 import io.crest.dataset.manage.DatasetSQLManage;
-import io.crest.datasource.dao.auto.entity.CoreDeEngine;
+import io.crest.datasource.dao.auto.entity.CoreEngine;
 import io.crest.datasource.manage.EngineManage;
 import io.crest.datasource.provider.EngineProvider;
 import io.crest.datasource.provider.ProviderUtil;
@@ -19,7 +19,7 @@ import io.crest.datasource.server.DatasourceServer;
 import io.crest.datasource.server.DatasourceTaskServer;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.engine.utils.Utils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.datasource.dto.DatasourceRequest;
 import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
@@ -165,22 +165,22 @@ public class DatasetSyncManage {
     private SyncContext prepareContext(Long datasetGroupId) throws Exception {
         DatasetGroupInfoDTO dataset = datasetGroupManage.getForCount(datasetGroupId);
         if (dataset == null || !Strings.CI.equals(dataset.getNodeType(), "dataset")) {
-            DEException.throwException("数据集不存在");
+            CrestException.throwException("数据集不存在");
         }
         if (!Objects.equals(dataset.getMode(), 1)) {
-            DEException.throwException("请先开启数据集同步模式");
+            CrestException.throwException("请先开启数据集同步模式");
         }
         if (Objects.equals(dataset.getIsCross(), true)) {
-            DEException.throwException("OB Oracle 数据集同步暂不支持跨源数据集");
+            CrestException.throwException("OB Oracle 数据集同步暂不支持跨源数据集");
         }
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(dataset, null);
         Map<Long, DatasourceSchemaDTO> dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
         if (dsMap == null || dsMap.size() != 1) {
-            DEException.throwException("OB Oracle 数据集同步仅支持单一数据源");
+            CrestException.throwException("OB Oracle 数据集同步仅支持单一数据源");
         }
         DatasourceSchemaDTO datasource = dsMap.entrySet().iterator().next().getValue();
         if (!Strings.CI.equals(datasource.getType(), DatasourceConfiguration.DatasourceType.obOracle.name())) {
-            DEException.throwException("当前同步能力仅支持 OB Oracle 数据源");
+            CrestException.throwException("当前同步能力仅支持 OB Oracle 数据源");
         }
         String sourceSql = Utils.replaceSchemaAlias((String) sqlMap.get("sql"), dsMap);
         List<DatasetTableFieldDTO> checkedFields = (List<DatasetTableFieldDTO>) sqlMap.get("field");
@@ -190,9 +190,9 @@ public class DatasetSyncManage {
                 .collect(Collectors.toList());
         List<TableField> tableFields = DatasetSyncUtils.toEngineTableFields(syncFields);
         if (tableFields.isEmpty()) {
-            DEException.throwException("数据集没有可同步字段");
+            CrestException.throwException("数据集没有可同步字段");
         }
-        CoreDeEngine engine = engineManage.info();
+        CoreEngine engine = engineManage.info();
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
         Provider sourceProvider = ProviderFactory.getProvider(datasource.getType());
         return new SyncContext(dataset, sourceSql, dsMap, sourceProvider, engine, engineProvider, syncFields, tableFields);
@@ -241,7 +241,7 @@ public class DatasetSyncManage {
         }
         int incrementalIndex = incrementalIndex(context.checkedFields, incrementalField);
         if (incrementalIndex < 0) {
-            DEException.throwException("增量字段必须是数据集已选中的普通字段");
+            CrestException.throwException("增量字段必须是数据集已选中的普通字段");
         }
 
         String tableName = DatasetSyncUtils.cacheTableName(context.dataset.getId());
@@ -250,10 +250,10 @@ public class DatasetSyncManage {
         createEngineTable(context, DatasetSyncUtils.tmpCacheTableName(context.dataset.getId()));
         DatasourceSchemaDTO datasource = context.dsMap.entrySet().iterator().next().getValue();
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasource.getType());
-        String fieldName = StringUtils.defaultIfBlank(incrementalField.getDataeaseName(), incrementalField.getFieldShortName());
+        String fieldName = StringUtils.defaultIfBlank(incrementalField.getEngineFieldName(), incrementalField.getFieldShortName());
         copyRetainedCacheRows(context, tableName, incrementalField, task.getIncrementalLastValue());
         String predicate = DatasetSyncUtils.buildIncrementalPredicate(incrementalField, task.getIncrementalLastValue(), datasourceType.getPrefix(), datasourceType.getSuffix(), true);
-        String incrementalSql = "SELECT * FROM (" + context.sourceSql + ") de_sync_src WHERE " + predicate
+        String incrementalSql = "SELECT * FROM (" + context.sourceSql + ") sync_src WHERE " + predicate
                 + " ORDER BY " + incrementalOrderBy(context.checkedFields, fieldName, datasourceType);
 
         SyncResult result = new SyncResult();
@@ -296,7 +296,7 @@ public class DatasetSyncManage {
                 request.setQuery(pageSql);
                 Map<String, Object> data = context.sourceProvider.fetchResultField(request);
                 return (List<String[]>) data.get("data");
-            } catch (DEException e) {
+            } catch (CrestException e) {
                 if (attempt >= FETCH_RETRY_TIMES || !isTransientDatasourceConnection(e)) {
                     throw e;
                 }
@@ -307,7 +307,7 @@ public class DatasetSyncManage {
         return List.of();
     }
 
-    private boolean isTransientDatasourceConnection(DEException e) {
+    private boolean isTransientDatasourceConnection(CrestException e) {
         return Strings.CI.contains(e.getMessage(), "Datasource connection exception");
     }
 
@@ -316,7 +316,7 @@ public class DatasetSyncManage {
             Thread.sleep(attempt * 1000L);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            DEException.throwException("数据集同步重试被中断");
+            CrestException.throwException("数据集同步重试被中断");
         }
     }
 
@@ -381,16 +381,16 @@ public class DatasetSyncManage {
             return;
         }
         try {
-            result.sourceRowCount = sourceLong(context, "SELECT COUNT(*) FROM (" + context.sourceSql + ") DE_SYNC_VERIFY_SRC");
+            result.sourceRowCount = sourceLong(context, "SELECT COUNT(*) FROM (" + context.sourceSql + ") SYNC_VERIFY_SRC");
             result.cacheRowCount = engineLong(context, "SELECT COUNT(*) FROM " + quotedEngineTable(context, tableName));
             String sourceWatermark = null;
             String cacheWatermark = null;
             if (incrementalField != null) {
                 DatasourceSchemaDTO datasource = context.dsMap.entrySet().iterator().next().getValue();
                 DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasource.getType());
-                String fieldName = StringUtils.defaultIfBlank(incrementalField.getDataeaseName(), incrementalField.getFieldShortName());
+                String fieldName = StringUtils.defaultIfBlank(incrementalField.getEngineFieldName(), incrementalField.getFieldShortName());
                 sourceWatermark = sourceString(context, "SELECT MAX(" + DatasetSyncUtils.quote(fieldName, datasourceType.getPrefix(), datasourceType.getSuffix())
-                        + ") FROM (" + context.sourceSql + ") DE_SYNC_VERIFY_SRC");
+                        + ") FROM (" + context.sourceSql + ") SYNC_VERIFY_SRC");
                 cacheWatermark = engineString(context, "SELECT MAX(" + quotedEngineColumn(context, fieldName)
                         + ") FROM " + quotedEngineTable(context, tableName));
             }
@@ -485,13 +485,13 @@ public class DatasetSyncManage {
         return dataset.getAllFields().stream()
                 .filter(field -> Objects.equals(field.getChecked(), true))
                 .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
-                .filter(field -> Objects.equals(field.getDeExtractType(), 1) || Objects.equals(field.getDeType(), 1))
+                .filter(field -> Objects.equals(field.getExtractedFieldType(), 1) || Objects.equals(field.getFieldType(), 1))
                 .findFirst()
                 .or(() -> dataset.getAllFields().stream()
                         .filter(field -> Objects.equals(field.getChecked(), true))
                         .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
-                        .filter(field -> Objects.equals(field.getDeExtractType(), 2) || Objects.equals(field.getDeExtractType(), 3)
-                                || Objects.equals(field.getDeType(), 2) || Objects.equals(field.getDeType(), 3))
+                        .filter(field -> Objects.equals(field.getExtractedFieldType(), 2) || Objects.equals(field.getExtractedFieldType(), 3)
+                                || Objects.equals(field.getFieldType(), 2) || Objects.equals(field.getFieldType(), 3))
                         .findFirst())
                 .orElse(null);
     }
@@ -512,7 +512,7 @@ public class DatasetSyncManage {
         LinkedHashSet<String> orderFields = new LinkedHashSet<>();
         orderFields.add(firstFieldName);
         for (DatasetTableFieldDTO field : fields) {
-            String fieldName = StringUtils.defaultIfBlank(field.getDataeaseName(), field.getFieldShortName());
+            String fieldName = StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName());
             if (StringUtils.isNotBlank(fieldName)) {
                 orderFields.add(fieldName);
             }
@@ -527,11 +527,11 @@ public class DatasetSyncManage {
     private void assertTaskRunnable(CoreDatasetSyncTask task, long syncStartTime) {
         if (DatasetSyncUtils.isTaskTimedOut(task, syncStartTime, System.currentTimeMillis())) {
             int timeoutMinutes = Objects.requireNonNullElse(task.getTaskTimeoutMinutes(), DatasetSyncUtils.DEFAULT_TASK_TIMEOUT_MINUTES);
-            DEException.throwException("数据集同步任务超过 " + timeoutMinutes + " 分钟未完成，已自动终止");
+            CrestException.throwException("数据集同步任务超过 " + timeoutMinutes + " 分钟未完成，已自动终止");
         }
         CoreDatasetSyncTask latest = taskManage.selectById(task.getId());
         if (!DatasetSyncUtils.isTaskRunnable(latest)) {
-            DEException.throwException("数据集同步任务已停止或已删除");
+            CrestException.throwException("数据集同步任务已停止或已删除");
         }
     }
 
@@ -556,8 +556,8 @@ public class DatasetSyncManage {
         if (StringUtils.isBlank(current)) {
             return candidate;
         }
-        if (Objects.equals(field.getDeExtractType(), 2) || Objects.equals(field.getDeExtractType(), 3)
-                || Objects.equals(field.getDeType(), 2) || Objects.equals(field.getDeType(), 3)) {
+        if (Objects.equals(field.getExtractedFieldType(), 2) || Objects.equals(field.getExtractedFieldType(), 3)
+                || Objects.equals(field.getFieldType(), 2) || Objects.equals(field.getFieldType(), 3)) {
             return new BigDecimal(candidate).compareTo(new BigDecimal(current)) > 0 ? candidate : current;
         }
         return candidate.compareTo(current) > 0 ? candidate : current;
@@ -580,13 +580,13 @@ public class DatasetSyncManage {
         private final String sourceSql;
         private final Map<Long, DatasourceSchemaDTO> dsMap;
         private final Provider sourceProvider;
-        private final CoreDeEngine engine;
+        private final CoreEngine engine;
         private final EngineProvider engineProvider;
         private final List<DatasetTableFieldDTO> checkedFields;
         private final List<TableField> tableFields;
 
         private SyncContext(DatasetGroupInfoDTO dataset, String sourceSql, Map<Long, DatasourceSchemaDTO> dsMap,
-                            Provider sourceProvider, CoreDeEngine engine, EngineProvider engineProvider,
+                            Provider sourceProvider, CoreEngine engine, EngineProvider engineProvider,
                             List<DatasetTableFieldDTO> checkedFields, List<TableField> tableFields) {
             this.dataset = dataset;
             this.sourceSql = sourceSql;

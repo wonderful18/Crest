@@ -1,7 +1,7 @@
 package io.crest.security;
 
 import io.crest.auth.bo.TokenUserBO;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.log.AuditLogController;
 import io.crest.result.ResultCode;
 import io.crest.utils.AuthUtils;
@@ -36,10 +36,10 @@ class AuditLogControllerSecurityTest {
         AuthUtils.setUser(new TokenUserBO(2L, 1L));
         AuditLogController controller = new AuditLogController();
 
-        DEException pagerError = assertThrows(DEException.class,
+        CrestException pagerError = assertThrows(CrestException.class,
                 () -> controller.pager(1, 15, Map.of()));
-        DEException statisticsError = assertThrows(DEException.class, controller::statistics);
-        DEException operationTypesError = assertThrows(DEException.class, controller::operationTypes);
+        CrestException statisticsError = assertThrows(CrestException.class, controller::statistics);
+        CrestException operationTypesError = assertThrows(CrestException.class, controller::operationTypes);
 
         assertEquals(ResultCode.PERMISSION_NO_ACCESS.code().intValue(), pagerError.getCode());
         assertEquals(ResultCode.PERMISSION_NO_ACCESS.code().intValue(), statisticsError.getCode());

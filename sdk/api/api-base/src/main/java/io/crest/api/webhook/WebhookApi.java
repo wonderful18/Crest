@@ -11,10 +11,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -28,19 +28,19 @@ public interface WebhookApi {
             @Parameter(name = "pageSize", description = "每页容量", required = true, in = ParameterIn.PATH),
             @Parameter(name = "request", description = "过滤条件", required = true)
     })
-    @PostMapping("/pager/{goPage}/{pageSize}")
+    @PostMapping("/page/{goPage}/{pageSize}")
     IPage<WebhookGridVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody KeywordRequest request);
 
     @Operation(summary = "保存")
-    @PostMapping("/save")
+    @PostMapping("/record")
     void save(@RequestBody WebhookGridVO creator);
 
     @Operation(summary = "切换SSL")
-    @PostMapping("/switchSsl")
+    @PostMapping("/ssl/enabled")
     void switchSsl(@RequestBody WebhookSwitchRequest request);
 
     @Operation(summary = "删除")
-    @PostMapping("/delete")
+    @DeleteMapping
     void delete(@RequestBody List<Long> ids);
 
     @Operation(summary = "查询选项")

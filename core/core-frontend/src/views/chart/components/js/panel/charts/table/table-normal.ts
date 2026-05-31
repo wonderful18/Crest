@@ -104,22 +104,22 @@ export class TableNormal extends S2ChartView<TableSheet> {
       fields = fields.filter(ele => {
         return !filterFields.includes(ele.id)
       })
-      drillFieldMap[curDrillField.dataeaseName] = chart.drillFields[0].dataeaseName
+      drillFieldMap[curDrillField.engineFieldName] = chart.drillFields[0].engineFieldName
       fields.splice(drillFieldIndex, 0, curDrillField)
     }
     const axisMap = [...chart.xAxis, ...chart.yAxis].reduce((pre, cur) => {
-      pre[cur.dataeaseName] = cur
+      pre[cur.engineFieldName] = cur
       return pre
     }, {})
     // add drill list
     fields.forEach(ele => {
-      const f = axisMap[ele.dataeaseName]
+      const f = axisMap[ele.engineFieldName]
       if (f?.hide === true) {
         return
       }
-      columns.push(ele.dataeaseName)
+      columns.push(ele.engineFieldName)
       meta.push({
-        field: ele.dataeaseName,
+        field: ele.engineFieldName,
         name: ele.chartShowName ?? ele.name,
         formatter: function (value) {
           if (!f) {
@@ -128,7 +128,7 @@ export class TableNormal extends S2ChartView<TableSheet> {
           if (value === null || value === undefined) {
             return value
           }
-          if (![2, 3, 4].includes(f.deType) || !isNumeric(value)) {
+          if (![2, 3, 4].includes(f.fieldType) || !isNumeric(value)) {
             return value
           }
           let formatCfg = f.formatterCfg
@@ -293,7 +293,7 @@ export class TableNormal extends S2ChartView<TableSheet> {
       const cell = newChart.getCell(ev.target)
       const meta = cell.getMeta() as ViewMeta
       const nameIdMap = fields.reduce((pre, next) => {
-        pre[next['dataeaseName']] = next['id']
+        pre[next['engineFieldName']] = next['id']
         return pre
       }, {})
 

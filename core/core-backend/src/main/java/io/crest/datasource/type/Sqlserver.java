@@ -1,7 +1,7 @@
 package io.crest.datasource.type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,7 +27,7 @@ public class Sqlserver extends DatasourceConfiguration {
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             if (!getJdbcUrl().startsWith("jdbc:sqlserver")) {
-                DEException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
+                CrestException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
             }
             return getJdbcUrl();
         }
@@ -46,7 +46,7 @@ public class Sqlserver extends DatasourceConfiguration {
         }
         for (String illegalParameter : illegalParameters) {
             if (URLDecoder.decode(jdbcUrl).toLowerCase().contains(illegalParameter.toLowerCase()) || URLDecoder.decode(jdbcUrl).contains(illegalParameter.toLowerCase())) {
-                DEException.throwException("Illegal parameter: " + illegalParameter);
+                CrestException.throwException("Illegal parameter: " + illegalParameter);
             }
         }
         return jdbcUrl;
@@ -55,7 +55,7 @@ public class Sqlserver extends DatasourceConfiguration {
     private static final Pattern DB_NAME_PATTERN = Pattern.compile(";databaseName=([^;]+)");
 
     @Override
-    protected Pattern getDatabasePattern() {
+    protected Pattern databasePattern() {
         return DB_NAME_PATTERN;
     }
 

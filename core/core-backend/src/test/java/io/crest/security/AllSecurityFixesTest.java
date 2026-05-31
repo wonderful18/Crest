@@ -1,6 +1,6 @@
 package io.crest.security;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.utils.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,17 +28,17 @@ class AllSecurityFixesTest {
     class WhitelistSecurityTests {
 
         @Test
-        @DisplayName("敏感端点 /symmetricKey 不应在白名单中")
+        @DisplayName("敏感端点 /symmetric-key 不应在白名单中")
         void symmetricKeyNotInWhitelist() {
-            assertFalse(WhitelistUtils.WHITE_PATH.contains("/symmetricKey"),
-                    "/symmetricKey 端点仍在白名单中，会导致 AES 密钥泄露");
+            assertFalse(WhitelistUtils.WHITE_PATH.contains("/symmetric-key"),
+                    "/symmetric-key 端点仍在白名单中，会导致 AES 密钥泄露");
         }
 
         @Test
-        @DisplayName("/dekey 应在白名单中（登录流程需要）")
-        void dekeyShouldBeInWhitelist() {
-            assertTrue(WhitelistUtils.WHITE_PATH.contains("/dekey"),
-                    "/dekey 端点不在白名单中，登录流程将无法工作");
+        @DisplayName("/public-key 应在白名单中（登录流程需要）")
+        void publicKeyShouldBeInWhitelist() {
+            assertTrue(WhitelistUtils.WHITE_PATH.contains("/public-key"),
+                    "/public-key 端点不在白名单中，登录流程将无法工作");
         }
 
         @Test
@@ -78,7 +78,7 @@ class AllSecurityFixesTest {
         })
         @DisplayName("应阻止内部地址和危险协议")
         void shouldBlockInternalAddresses(String url) {
-            assertThrows(DEException.class, () -> SsrfProtection.validateUrl(url));
+            assertThrows(CrestException.class, () -> SsrfProtection.validateUrl(url));
         }
 
         @Test
@@ -96,9 +96,9 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("应阻止数据库端口")
         void shouldBlockDatabasePorts() {
-            assertThrows(DEException.class, () -> SsrfProtection.validateUrl("http://example.com:3306/"));
-            assertThrows(DEException.class, () -> SsrfProtection.validateUrl("http://example.com:5432/"));
-            assertThrows(DEException.class, () -> SsrfProtection.validateUrl("http://example.com:6379/"));
+            assertThrows(CrestException.class, () -> SsrfProtection.validateUrl("http://example.com:3306/"));
+            assertThrows(CrestException.class, () -> SsrfProtection.validateUrl("http://example.com:5432/"));
+            assertThrows(CrestException.class, () -> SsrfProtection.validateUrl("http://example.com:6379/"));
         }
     }
 
@@ -238,31 +238,31 @@ class AllSecurityFixesTest {
         })
         @DisplayName("弱密码应被拒绝")
         void shouldRejectWeakPasswords(String password) {
-            assertThrows(DEException.class, () -> PasswordValidator.validate(password));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate(password));
         }
 
         @Test
         @DisplayName("缺少大写字母应被拒绝")
         void shouldRejectWithoutUppercase() {
-            assertThrows(DEException.class, () -> PasswordValidator.validate("mypassword1!"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate("mypassword1!"));
         }
 
         @Test
         @DisplayName("缺少小写字母应被拒绝")
         void shouldRejectWithoutLowercase() {
-            assertThrows(DEException.class, () -> PasswordValidator.validate("MYPASSWORD1!"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate("MYPASSWORD1!"));
         }
 
         @Test
         @DisplayName("缺少数字应被拒绝")
         void shouldRejectWithoutDigit() {
-            assertThrows(DEException.class, () -> PasswordValidator.validate("MyPassword!"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate("MyPassword!"));
         }
 
         @Test
         @DisplayName("缺少特殊字符应被拒绝")
         void shouldRejectWithoutSpecialChar() {
-            assertThrows(DEException.class, () -> PasswordValidator.validate("MyPassword1"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate("MyPassword1"));
         }
 
         @ParameterizedTest
@@ -273,19 +273,19 @@ class AllSecurityFixesTest {
         })
         @DisplayName("常见弱密码应被拒绝")
         void shouldRejectCommonPasswords(String password) {
-            assertThrows(DEException.class, () -> PasswordValidator.validate(password));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate(password));
         }
 
         @Test
         @DisplayName("连续相同字符应被拒绝")
         void shouldRejectSequentialChars() {
-            assertThrows(DEException.class, () -> PasswordValidator.validate("Aaa111!@#"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate("Aaa111!@#"));
         }
 
         @Test
         @DisplayName("null 密码应抛出异常")
         void shouldRejectNull() {
-            assertThrows(DEException.class, () -> PasswordValidator.validate(null));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate(null));
         }
 
         @Test

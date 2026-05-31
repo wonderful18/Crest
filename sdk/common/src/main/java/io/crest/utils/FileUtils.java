@@ -1,6 +1,6 @@
 package io.crest.utils;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.i18n.Translator;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
@@ -24,7 +24,7 @@ public class FileUtils {
                 || filename.contains("..")
                 || filename.indexOf('\0') >= 0
                 || containsControlCharacter(filename)) {
-            DEException.throwException(Translator.get("i18n_invalid_file_name"));
+            CrestException.throwException(Translator.get("i18n_invalid_file_name"));
         }
     }
 
@@ -240,7 +240,7 @@ public class FileUtils {
     public static byte[] readBytes(String path) {
         File file = new File(path);
         if (!file.exists() || !file.isFile()) {
-            DEException.throwException("文件不存在");
+            CrestException.throwException("文件不存在");
         }
 
         byte[] bytes = null;

@@ -1,7 +1,7 @@
 package io.crest.utils;
 
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.model.RSAModel;
 import io.crest.result.ResultCode;
 import io.crest.rsa.dao.entity.CoreRsa;
@@ -56,7 +56,7 @@ public class RsaUtils {
             generator = KeyPairGenerator.getInstance("RSA");
         } catch (NoSuchAlgorithmException e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         generator.initialize(2048);
         return generator.generateKeyPair();
@@ -147,14 +147,14 @@ public class RsaUtils {
 
     public static String decryptStr(String data, String privateKey) {
         if (StringUtils.isBlank(data) || StringUtils.isBlank(privateKey)) {
-            DEException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
+            CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
         }
         if (SmCryptoUtils.isSm2Ciphertext(data)) {
             try {
                 return SmCryptoUtils.sm2Decrypt(data, privateKey);
             } catch (Exception e) {
                 LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
-                DEException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
+                CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
                 return "";
             }
         }
@@ -162,7 +162,7 @@ public class RsaUtils {
             return decrypt(data, getPrivateKey(privateKey));
         } catch (Exception e) {
             LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
-            DEException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
+            CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
             return "";
         }
     }
@@ -233,23 +233,23 @@ public class RsaUtils {
 
 
     private static final String ALGORITHM = "AES";
-    public static String symmetricKey = "symmetricKey";
+    private static final String SYMMETRIC_KEY_CACHE_ENTRY = "symmetricKey";
     private static final int KEY_SIZE = 128;
 
 
     public static String generateSymmetricKey() {
         try {
-            if (!CacheUtils.keyExist(Symmetric_Key, symmetricKey)) {
+            if (!CacheUtils.keyExist(Symmetric_Key, SYMMETRIC_KEY_CACHE_ENTRY)) {
                 if (CryptoMode.isSmSuite()) {
-                    CacheUtils.put(Symmetric_Key, symmetricKey, SmCryptoUtils.generateBase64Sm4Key());
+                    CacheUtils.put(Symmetric_Key, SYMMETRIC_KEY_CACHE_ENTRY, SmCryptoUtils.generateBase64Sm4Key());
                 } else {
                     KeyGenerator keyGenerator = KeyGenerator.getInstance(ALGORITHM);
                     keyGenerator.init(KEY_SIZE, new SecureRandom());
                     SecretKey secretKey = keyGenerator.generateKey();
-                    CacheUtils.put(Symmetric_Key, symmetricKey, Base64.getEncoder().encodeToString(secretKey.getEncoded()));
+                    CacheUtils.put(Symmetric_Key, SYMMETRIC_KEY_CACHE_ENTRY, Base64.getEncoder().encodeToString(secretKey.getEncoded()));
                 }
             }
-            return CacheUtils.get(Symmetric_Key, symmetricKey).toString();
+            return CacheUtils.get(Symmetric_Key, SYMMETRIC_KEY_CACHE_ENTRY).toString();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

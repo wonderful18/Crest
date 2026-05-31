@@ -7,7 +7,7 @@ const { componentData } = storeToRefs(dvMainStore)
 
 // 检查是否可以加入到分组
 export function checkJoinGroup(item) {
-  if (item.component === 'DeTabs') {
+  if (item.component === 'Tabs') {
     let result = true
     item.propValue?.forEach(tabItem => {
       tabItem.componentData?.forEach(tabComponent => {
@@ -26,7 +26,7 @@ export function checkJoinTab(item) {
   if (item.component === 'Group') {
     let result = true
     item.propValue.forEach(groupItem => {
-      if (groupItem.component === 'DeTabs') {
+      if (groupItem.component === 'Tabs') {
         result = false
       }
     })
@@ -50,7 +50,7 @@ export function itemCanvasPathCheck(item, checkType) {
   if (checkType === 'pTabGroup') {
     return Boolean(
       pathMap[item.id] &&
-        pathMap[item.id].component === 'DeTabs' &&
+        pathMap[item.id].component === 'Tabs' &&
         pathMap[pathMap[item.id].id] &&
         pathMap[pathMap[item.id].id].component === 'Group'
     )
@@ -60,14 +60,14 @@ export function itemCanvasPathCheck(item, checkType) {
     return Boolean(
       item.component === 'Group' &&
         pathMap[pathMap[item.id].id] &&
-        pathMap[pathMap[item.id].id].component === 'DeTabs'
+        pathMap[pathMap[item.id].id].component === 'Tabs'
     )
   }
 
   // 当前组件是Tab且在Group中
   if (checkType === 'tabInGroup') {
     return Boolean(
-      item.component === 'DeTabs' && pathMap[item.id] && pathMap[item.id].component === 'Group'
+      item.component === 'Tabs' && pathMap[item.id] && pathMap[item.id].component === 'Group'
     )
   }
   return false
@@ -75,7 +75,7 @@ export function itemCanvasPathCheck(item, checkType) {
 
 export function canvasIdMapCheck(item, pItem, pathMap) {
   pathMap[item.id] = pItem
-  if (item.component === 'DeTabs') {
+  if (item.component === 'Tabs') {
     item.propValue?.forEach(tabItem => {
       tabItem.componentData?.forEach(tabComponent => {
         canvasIdMapCheck(tabComponent, item, pathMap)

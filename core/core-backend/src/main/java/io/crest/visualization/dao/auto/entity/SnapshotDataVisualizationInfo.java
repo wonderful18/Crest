@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @author fit2cloud
  * @since 2025-03-24
  */
-@TableName("snapshot_data_visualization_info")
+@TableName("bi_visualization_snapshot")
 public class SnapshotDataVisualizationInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;

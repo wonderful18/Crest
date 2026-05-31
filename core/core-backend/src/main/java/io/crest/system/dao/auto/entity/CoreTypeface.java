@@ -5,13 +5,13 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fit2cloud
  * @since 2024-08-08
  */
-@TableName("core_typeface")
+@TableName("typeface_asset")
 public class CoreTypeface implements Serializable {
 
     private static final long serialVersionUID = 1L;

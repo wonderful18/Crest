@@ -1,8 +1,8 @@
 package io.crest.share.interceptor;
 
-import io.crest.auth.DeLinkPermit;
+import io.crest.auth.CrestLinkPermit;
 import io.crest.constant.AuthConstant;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.utils.ServletUtils;
 import io.crest.utils.WhitelistUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,9 +20,9 @@ import java.util.List;
 @Component
 public class LinkInterceptor implements HandlerInterceptor {
 
-    private final static String whiteListText = "/user/ipInfo, /datasetData/enumValue, /datasetData/enumValueObj, /datasetData/getFieldTree, /dekey, /symmetricKey, /share/validate";
+    private final static String whiteListText = "/user/ip-info, /dataset-data/enum-values, /dataset-data/enum-values/object, /dataset-data/field-tree, /public-key, /symmetric-key, /share/validate";
 
-    private final static String whiteStartListText = "/dataVisualization/findDvType/";
+    private final static String whiteStartListText = "/data-visualization/type/";
 
     private boolean isWhiteStart(String url) {
         List<String> whiteStartList = Arrays.stream(StringUtils.split(whiteStartListText, ",")).map(String::trim).toList();
@@ -36,8 +36,8 @@ public class LinkInterceptor implements HandlerInterceptor {
             return true;
         }
         if (handler instanceof HandlerMethod handlerMethod) {
-            DeLinkPermit deLinkPermit = handlerMethod.getMethodAnnotation(DeLinkPermit.class);
-            if (deLinkPermit == null) {
+            CrestLinkPermit linkPermit = handlerMethod.getMethodAnnotation(CrestLinkPermit.class);
+            if (linkPermit == null) {
 
                 List<String> whiteList = Arrays.stream(StringUtils.split(whiteListText, ",")).map(String::trim).toList();
 
@@ -45,12 +45,12 @@ public class LinkInterceptor implements HandlerInterceptor {
                 if (Strings.CS.startsWith(requestURI, WhitelistUtils.getContextPath())) {
                     requestURI = requestURI.replaceFirst(WhitelistUtils.getContextPath(), "");
                 }
-                if (Strings.CS.startsWith(requestURI, AuthConstant.DE_API_PREFIX)) {
-                    requestURI = requestURI.replaceFirst(AuthConstant.DE_API_PREFIX, "");
+                if (Strings.CS.startsWith(requestURI, AuthConstant.CREST_API_PREFIX)) {
+                    requestURI = requestURI.replaceFirst(AuthConstant.CREST_API_PREFIX, "");
                 }
                 boolean valid = whiteList.contains(requestURI) || isWhiteStart(requestURI) || WhitelistUtils.match(requestURI);
                 if (!valid) {
-                    DEException.throwException("分享链接Token不支持访问当前url[" + requestURI + "]");
+                    CrestException.throwException("分享链接Token不支持访问当前url[" + requestURI + "]");
                 }
                 return true;
             }

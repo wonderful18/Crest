@@ -3,7 +3,7 @@ package io.crest.config;
 
 import io.crest.commons.utils.MybatisInterceptorConfig;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
-import io.crest.datasource.dao.auto.entity.CoreDeEngine;
+import io.crest.datasource.dao.auto.entity.CoreEngine;
 import io.crest.interceptor.MybatisInterceptor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +22,7 @@ public class MybatisConfig {
     public MybatisInterceptor dbInterceptor() {
         MybatisInterceptor interceptor = new MybatisInterceptor();
         List<MybatisInterceptorConfig> configList = new ArrayList<>();
-        configList.add(new MybatisInterceptorConfig(CoreDeEngine.class, "configuration"));
+        configList.add(new MybatisInterceptorConfig(CoreEngine.class, "configuration"));
         configList.add(new MybatisInterceptorConfig(CoreDatasource.class, "configuration"));
         interceptor.setInterceptorConfigList(configList);
         return interceptor;

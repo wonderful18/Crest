@@ -2,7 +2,7 @@
 
 # 冒烟测试脚本 - 验证安全修复
 # 用法: ./smoke-test-security-fixes.sh [BASE_URL]
-# 可选：CREST_API_PREFIX=/de2api ./smoke-test-security-fixes.sh http://localhost:8104
+# 可选：CREST_API_PREFIX=/api/v1 ./smoke-test-security-fixes.sh http://localhost:8104
 # 默认: http://localhost:8100
 
 BASE_URL="${1:-http://localhost:8100}"
@@ -10,9 +10,9 @@ BASE_URL="${BASE_URL%/}"
 API_BASE="${BASE_URL}${CREST_API_PREFIX:-}"
 if [ -z "${CREST_API_PREFIX:-}" ]; then
     dekey_status=$(curl -s -o /dev/null -w "%{http_code}" "$API_BASE/dekey" 2>/dev/null)
-    de2api_dekey_status=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/de2api/dekey" 2>/dev/null)
-    if [ "$dekey_status" = "404" ] && [ "$de2api_dekey_status" = "200" ]; then
-        API_BASE="$BASE_URL/de2api"
+    api_v1_dekey_status=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/api/v1/dekey" 2>/dev/null)
+    if [ "$dekey_status" = "404" ] && [ "$api_v1_dekey_status" = "200" ]; then
+        API_BASE="$BASE_URL/api/v1"
     fi
 fi
 TOKEN=""
@@ -34,7 +34,7 @@ NC='\033[0m'
 get_token() {
     echo -e "\n${YELLOW}[准备] 获取认证 Token...${NC}"
     # 这里需要根据实际情况获取 token
-    # TOKEN=$(curl -s -X POST "$BASE_URL/de2api/login/localLogin" ...)
+    # TOKEN=$(curl -s -X POST "$BASE_URL/api/v1/login/localLogin" ...)
     echo "请手动设置 TOKEN 变量"
 }
 
@@ -80,14 +80,14 @@ echo -e "\n${YELLOW}[测试 2] SSRF 防护${NC}"
 if [ -n "$TOKEN" ]; then
     # 测试内部地址
     resp=$(curl -s -X POST "$API_BASE/datasource/loadRemoteFile" \
-        -H "X-DE-TOKEN: $TOKEN" \
+        -H "X-CREST-TOKEN: $TOKEN" \
         -H "Content-Type: application/json" \
         -d '{"url":"http://127.0.0.1/","type":"json"}' 2>/dev/null | grep -o '"code":[0-9]*' | cut -d: -f2)
     test_case "SSRF 应阻止 127.0.0.1" "40001" "$resp"
 
     # 测试元数据地址
     resp=$(curl -s -X POST "$API_BASE/datasource/loadRemoteFile" \
-        -H "X-DE-TOKEN: $TOKEN" \
+        -H "X-CREST-TOKEN: $TOKEN" \
         -H "Content-Type: application/json" \
         -d '{"url":"http://169.254.169.254/","type":"json"}' 2>/dev/null | grep -o '"code":[0-9]*' | cut -d: -f2)
     test_case "SSRF 应阻止 169.254.169.254" "40001" "$resp"

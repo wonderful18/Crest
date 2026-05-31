@@ -45,8 +45,8 @@ import DragInfo from '@/components/visualization/common/DragInfo.vue'
 import { activeWatermarkCheckUser } from '@/components/watermark/watermark'
 import PopArea from '@/custom-component/pop-area/Component.vue'
 import DatasetParamsComponent from '@/components/visualization/DatasetParamsComponent.vue'
-import DeGrid from '@/components/data-visualization/DeGrid.vue'
-import DeGridScreen from '@/components/data-visualization/DeGridScreen.vue'
+import CanvasGrid from '@/components/data-visualization/CanvasGrid.vue'
+import ScreenGrid from '@/components/data-visualization/ScreenGrid.vue'
 import GroupAreaShadow from '@/custom-component/group-area/ComponentShadow.vue'
 
 const snapshotStore = snapshotStoreWithOut()
@@ -951,7 +951,7 @@ function removeItem(index) {
   let item = componentData.value[index]
   if (item && isSameCanvas(item, canvasId.value)) {
     removeItemComponent(item)
-    dvMainStore.removeLinkageInfo(item['id'])
+    dvMainStore.deleteLinkageInfo(item['id'])
     if (isMainCanvas(canvasId.value)) {
       // 主画布中存在隐藏组件 直接从原始componentData中进行删除
       dvMainStore.deleteComponentById(item.id, undefined, false)
@@ -1628,12 +1628,12 @@ defineExpose({
       :show-position="'popEdit'"
     ></PopArea>
     <!-- 网格线 -->
-    <de-grid v-if="showGrid" :matrix-style="matrixStyle" :themes="themes"></de-grid>
-    <de-grid-screen
+    <CanvasGrid v-if="showGrid" :matrix-style="matrixStyle" :themes="themes"></CanvasGrid>
+    <ScreenGrid
       v-if="showGridScreen"
       :matrix-style="matrixStyle"
       :themes="themes"
-    ></de-grid-screen>
+    ></ScreenGrid>
     <drag-shadow
       v-if="infoBox && infoBox.moveItem && editMode !== 'preview'"
       :base-height="dashboardScaleWithWidth ? baseWidth * 1.6 : baseHeight"

@@ -108,7 +108,7 @@ const areaDataPush = component => {
     component.isShow &&
     component.canvasId === 'canvas-main' &&
     component.category !== 'hidden' &&
-    !['GroupArea', 'DeTabs'].includes(component.component)
+    !['GroupArea', 'Tabs'].includes(component.component)
   ) {
     areaData.value.components.push(component)
   }
@@ -520,7 +520,7 @@ const canvasChange = () => {
                 @click="onClick($event, transformIndex(index))"
               >
                 <div
-                  v-show="['Group', 'DeTabs'].includes(getComponent(index)?.component)"
+                  v-show="['Group', 'Tabs'].includes(getComponent(index)?.component)"
                   style="width: 22px"
                 >
                   <el-icon
@@ -629,7 +629,7 @@ const canvasChange = () => {
                 <real-time-group :component-data="getComponent(index).propValue"></real-time-group>
               </div>
               <div
-                v-if="getComponent(index)?.component === 'DeTabs' && getComponent(index)?.expand"
+                v-if="getComponent(index)?.component === 'Tabs' && getComponent(index)?.expand"
               >
                 <real-time-tab
                   :tab-element="getComponent(index)"

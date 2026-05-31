@@ -2,13 +2,13 @@ import request from '@/config/axios'
 
 export function queryWithVisualizationId(dvId) {
   return request.get({
-    url: '/outerParams/queryWithVisualizationId/' + dvId
+    url: '/outer-params/by-visualization/' + dvId
   })
 }
 
 export function updateOuterParamsSet(requestInfo) {
   return request.post({
-    url: '/outerParams/updateOuterParamsSet',
+    url: '/outer-params/outer-params-settings',
     data: requestInfo,
     loading: true
   })
@@ -16,7 +16,7 @@ export function updateOuterParamsSet(requestInfo) {
 
 export function getOuterParamsInfo(dvId) {
   return request.get({
-    url: '/outerParams/getOuterParamsInfo/' + dvId,
+    url: '/outer-params/outer-params-info/' + dvId,
     method: 'get',
     loading: false
   })

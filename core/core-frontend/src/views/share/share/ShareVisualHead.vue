@@ -164,7 +164,7 @@
                     placement="top"
                   >
                     <el-icon style="cursor: pointer">
-                      <Icon><deCopy class="svg-icon" /></Icon>
+                      <Icon><CopyIcon class="svg-icon" /></Icon>
                     </el-icon>
                   </el-tooltip>
                 </div>
@@ -222,7 +222,7 @@ import icon_shareLabel_outlined from '@/assets/svg/icon_share-label_outlined.svg
 import icon_edit_outlined from '@/assets/svg/icon_edit_outlined.svg'
 import icon_close_outlined from '@/assets/svg/icon_close_outlined.svg'
 import icon_done_outlined from '@/assets/svg/icon_done_outlined.svg'
-import deCopy from '@/assets/svg/de-copy.svg'
+import CopyIcon from '@/assets/svg/copy.svg'
 import icon_refresh_outlined from '@/assets/svg/icon_refresh_outlined.svg'
 import { useI18n } from '@/hooks/web/useI18n'
 import { ref, reactive, computed, nextTick, watch } from 'vue'
@@ -457,7 +457,7 @@ const expChangeHandler = exp => {
   }
   expError.value = false
   const resourceId = props.resourceId
-  const url = '/share/editExp'
+  const url = '/share/expiration'
   const data = { resourceId, exp }
   request.post({ url, data }).then(() => {
     loadShareInfo(null)
@@ -478,7 +478,7 @@ const resetPwd = () => {
 }
 const resetPwdHandler = (pwd?: string, autoPwd?: boolean) => {
   const resourceId = props.resourceId
-  const url = '/share/editPwd'
+  const url = '/share/password'
   const data = { resourceId, pwd, autoPwd }
   request.post({ url, data }).then(() => {
     loadShareInfo(null)
@@ -654,7 +654,7 @@ const validateUuid = async () => {
 }
 
 const uuidValidateApi = async val => {
-  const url = '/share/editUuid'
+  const url = '/share/uuid'
   const data = { resourceId: props.resourceId, uuid: val }
   const res = await request.post({ url, data })
   return res.data

@@ -1,6 +1,6 @@
 package io.crest.system.sso;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -76,6 +76,6 @@ public class SsoEndpointPolicyMatrixTest {
             assertEquals(endpoint.trim(), SsoEndpointPolicy.validateEndpoint(endpoint, requireHttps, "端点"));
             return;
         }
-        assertThrows(DEException.class, () -> SsoEndpointPolicy.validateEndpoint(endpoint, requireHttps, "端点"));
+        assertThrows(CrestException.class, () -> SsoEndpointPolicy.validateEndpoint(endpoint, requireHttps, "端点"));
     }
 }

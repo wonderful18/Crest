@@ -129,7 +129,7 @@ const templateInnerPreview = () => {
     }
     .name {
       color: #1f2329;
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       font-style: normal;
       font-weight: 500;

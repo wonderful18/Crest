@@ -20,7 +20,7 @@ public interface DatasourceDriverApi {
      * @return
      */
     @Operation(summary = "查询数据源树", hidden = true)
-    @GetMapping("/query/{keyWord}")
+    @GetMapping("/list/{keyWord}")
     List<DatasourceDTO> query(@PathVariable("keyWord") String keyWord);
 
     @Operation(summary = "列表")
@@ -32,26 +32,26 @@ public interface DatasourceDriverApi {
     List<DriveDTO> listByDsType(@PathVariable("dsType") String dsType);
 
     @Operation(summary = "保存")
-    @PostMapping("/save")
+    @PostMapping("/record")
     DriveDTO save(@RequestBody DriveDTO datasourceDrive);
 
     @Operation(summary = "更新")
-    @PostMapping("/update")
+    @PutMapping
     DriveDTO update(@RequestBody DriveDTO datasourceDrive);
 
     @Operation(summary = "删除")
-    @PostMapping("/delete/{driverId}")
+    @DeleteMapping("/{driverId}")
     void delete(@PathVariable("driverId") String driverId);
 
     @Operation(summary = "获取驱动jar列表")
-    @GetMapping("/listDriverJar/{driverId}")
+    @GetMapping("/driver-jars/{driverId}")
     List<DriveJarDTO> listDriverJar(@PathVariable("driverId") String driverId);
 
     @Operation(summary = "删除驱动jar")
-    @PostMapping("/deleteDriverJar/{jarId}")
+    @DeleteMapping("/driver-jars/{jarId}")
     void deleteDriverJar(@PathVariable("jarId") String jarId);
 
     @Operation(summary = "上传驱动jar")
-    @PostMapping("/uploadJar")
-    DriveJarDTO uploadJar(@RequestParam("deDriverId") String deDriverId, @RequestParam("jarFile") MultipartFile jarFile) throws Exception;
+    @PostMapping("/driver-jars/upload")
+    DriveJarDTO uploadJar(@RequestParam("driverId") String driverId, @RequestParam("jarFile") MultipartFile jarFile) throws Exception;
 }

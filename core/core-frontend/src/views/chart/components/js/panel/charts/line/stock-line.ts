@@ -67,22 +67,22 @@ export class StockLine extends G2PlotChartView<MixOptions, Mix> {
     const xAxis = chart.xAxis
     const yAxis = chart.yAxis
     // 时间字段
-    const xAxisDataeaseName = xAxis[0].dataeaseName
+    const xAxisEngineFieldName = xAxis[0].engineFieldName
     // 收盘价字段
-    const yAxisDataeaseName = yAxis[1].dataeaseName
+    const yAxisEngineFieldName = yAxis[1].engineFieldName
     const result = []
     for (let i = 0; i < data.length; i++) {
       if (i < dayCount) {
         result.push({
-          [xAxisDataeaseName]: data[i][xAxisDataeaseName],
+          [xAxisEngineFieldName]: data[i][xAxisEngineFieldName],
           value: null
         })
       } else {
         const sum = data
           .slice(i - dayCount + 1, i + 1)
-          .reduce((sum, item) => sum + item[yAxisDataeaseName], 0)
+          .reduce((sum, item) => sum + item[yAxisEngineFieldName], 0)
         result.push({
-          [xAxisDataeaseName]: data[i][xAxisDataeaseName],
+          [xAxisEngineFieldName]: data[i][xAxisEngineFieldName],
           value: parseFloat((sum / dayCount).toFixed(3))
         })
       }
@@ -227,7 +227,7 @@ export class StockLine extends G2PlotChartView<MixOptions, Mix> {
     const data = parseJson(chart.data?.tableRow)
 
     // 时间字段
-    const xAxisDataeaseName = xAxis[0].dataeaseName
+    const xAxisEngineFieldName = xAxis[0].engineFieldName
     const averages = [5, 10, 20, 60, 120, 180]
     const legendItems: any[] = [
       {
@@ -261,9 +261,9 @@ export class StockLine extends G2PlotChartView<MixOptions, Mix> {
 
     // 将均线数据设置到主数据中
     data.forEach((item: any) => {
-      const date = item[xAxisDataeaseName]
+      const date = item[xAxisEngineFieldName]
       for (const [key, value] of averagesLineData) {
-        item[key] = value.find(m => m[xAxisDataeaseName] === date)?.value
+        item[key] = value.find(m => m[xAxisEngineFieldName] === date)?.value
       }
     })
 
@@ -282,7 +282,7 @@ export class StockLine extends G2PlotChartView<MixOptions, Mix> {
         top: true,
         options: {
           smooth: false,
-          xField: xAxisDataeaseName,
+          xField: xAxisEngineFieldName,
           yField: key,
           color: colors[index - 1],
           xAxis: null,
@@ -348,7 +348,7 @@ export class StockLine extends G2PlotChartView<MixOptions, Mix> {
 
           options: {
             meta: {
-              [xAxisDataeaseName]: {
+              [xAxisEngineFieldName]: {
                 mask: dateFormat
               }
             },
@@ -362,12 +362,12 @@ export class StockLine extends G2PlotChartView<MixOptions, Mix> {
               min: minValue,
               max: maxValue
             },
-            xField: xAxisDataeaseName,
+            xField: xAxisEngineFieldName,
             yField: [
-              yAxis[0].dataeaseName,
-              yAxis[1].dataeaseName,
-              yAxis[2].dataeaseName,
-              yAxis[3].dataeaseName
+              yAxis[0].engineFieldName,
+              yAxis[1].engineFieldName,
+              yAxis[2].engineFieldName,
+              yAxis[3].engineFieldName
             ],
             legend: {
               position: 'top',
@@ -383,7 +383,7 @@ export class StockLine extends G2PlotChartView<MixOptions, Mix> {
     const plot = new MixClass(container, option)
     this.registerEvent(data, plot, averagesLineData)
     plot.on('schema:click', evt => {
-      const selectSchema = evt.data.data[xAxisDataeaseName]
+      const selectSchema = evt.data.data[xAxisEngineFieldName]
       const paramData = parseJson(chart.data?.data)
       const selectData = paramData.filter(item => item.field === selectSchema)
       const quotaList = []
@@ -462,7 +462,7 @@ export class StockLine extends G2PlotChartView<MixOptions, Mix> {
     const showFiled = chart.data.fields
     const customTooltipItems = originalItems => {
       const formattedItems = originalItems.map(item => {
-        const fieldObj = showFiled.find(q => q.dataeaseName === item.name)
+        const fieldObj = showFiled.find(q => q.engineFieldName === item.name)
         const displayName = fieldObj?.chartShowName || fieldObj?.name || item.name
         const formattedName = displayName.startsWith('ma') ? displayName.toUpperCase() : displayName
         tooltipAttr.tooltipFormatter.decimalCount = 3

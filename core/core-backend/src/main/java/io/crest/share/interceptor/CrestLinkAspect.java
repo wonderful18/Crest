@@ -1,0 +1,93 @@
+package io.crest.share.interceptor;
+
+import io.crest.auth.CrestLinkPermit;
+import io.crest.constant.AuthConstant;
+import io.crest.exception.CrestException;
+import io.crest.utils.LogUtil;
+import io.crest.utils.ServletUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.stereotype.Component;
+
+import java.lang.reflect.Method;
+import java.util.Objects;
+
+@Aspect
+@Component
+public class CrestLinkAspect {
+
+    private static final String PARAM_VARIABLE_PREFIX = "p";
+    private static final String SPRING_EL_FLAG = "#";
+
+    private final ExpressionParser parser = new SpelExpressionParser();
+
+
+    @Around(value = "@annotation(io.crest.auth.CrestLinkPermit)")
+    public Object logAround(ProceedingJoinPoint point) throws Throwable {
+        Object[] params = point.getArgs();
+        String linkToken = ServletUtils.getHead(AuthConstant.LINK_TOKEN_KEY);
+        if (StringUtils.isNotBlank(linkToken)) {
+            MethodSignature ms = (MethodSignature) point.getSignature();
+            Method method = ms.getMethod();
+            CrestLinkPermit linkPermit = method.getAnnotation(CrestLinkPermit.class);
+            String value = linkPermit.value();
+            if (StringUtils.isBlank(value)) {
+                value = SPRING_EL_FLAG + PARAM_VARIABLE_PREFIX + "0";
+            }
+            Long id = getExpression(params, value);
+            Object resourceIdAttr = ServletUtils.request().getAttribute(AuthConstant.LINK_RESOURCE_ID_ATTR);
+            if (ObjectUtils.isEmpty(resourceIdAttr)) {
+                CrestException.throwException("link token invalid");
+            }
+            Long resourceId = Long.parseLong(resourceIdAttr.toString());
+            if (!id.equals(resourceId)) {
+                CrestException.throwException("link token invalid");
+                return false;
+            }
+        }
+        try {
+            return point.proceed(params);
+        } catch (Exception e) {
+            LogUtil.info(e.getMessage());
+            throw e;
+        }
+    }
+
+    public Long getExpression(Object[] params, String expression) {
+        StandardEvaluationContext context = buildContext(params);
+        Object o = resolveValue(expression, context);
+        if (ObjectUtils.isNotEmpty(o)) return Long.parseLong(o.toString());
+        return null;
+    }
+
+    private StandardEvaluationContext buildContext(Object[] params) {
+        StandardEvaluationContext context = new StandardEvaluationContext();
+        if (params != null && params.length == 1) {
+            context.setRootObject(params[0]);
+        }
+        for (int i = 0; i < Objects.requireNonNull(params).length; i++) {
+            Object paramValue = params[i];
+            context.setVariable(PARAM_VARIABLE_PREFIX + i, paramValue);
+        }
+        return context;
+    }
+
+    // nosemgrep: java.spring.security.audit.spel-injection.spel-injection
+    private Object resolveValue(String exp, EvaluationContext context) {
+        if (Strings.CS.contains(exp, SPRING_EL_FLAG)) {
+            Expression expression = parser.parseExpression(exp); // nosemgrep: java.spring.security.audit.spel-injection.spel-injection
+            return expression.getValue(context);
+        }
+        return exp;
+    }
+}

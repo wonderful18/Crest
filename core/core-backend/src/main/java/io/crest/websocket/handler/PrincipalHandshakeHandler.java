@@ -1,6 +1,6 @@
 package io.crest.websocket.handler;
 
-import io.crest.websocket.entity.DePrincipal;
+import io.crest.websocket.entity.CrestPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.server.ServerHttpRequest;
@@ -22,7 +22,7 @@ public class PrincipalHandshakeHandler extends DefaultHandshakeHandler {
             if (StringUtils.isEmpty(userId)) {
                 return null;
             }
-            return new DePrincipal(userId);
+            return new CrestPrincipal(userId);
         }
         return null;
     }

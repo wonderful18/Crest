@@ -12,8 +12,8 @@ import CommonEvent from '@/custom-component/common/CommonEvent.vue'
 import CarouselSetting from '@/custom-component/common/CarouselSetting.vue'
 import CommonBorderSetting from '@/custom-component/common/CommonBorderSetting.vue'
 import CollapseSwitchItem from '../../components/collapse-switch-item/src/CollapseSwitchItem.vue'
-import TabBackgroundOverall from '@/custom-component/de-tabs/TabBackgroundOverall.vue'
-import CustomTabsSortSide from '@/custom-component/de-tabs/CustomTabsSortSide.vue'
+import TabBackgroundOverall from '@/custom-component/tabs/TabBackgroundOverall.vue'
+import CustomTabsSortSide from '@/custom-component/tabs/CustomTabsSortSide.vue'
 const snapshotStore = snapshotStoreWithOut()
 
 const { t } = useI18n()
@@ -80,7 +80,7 @@ const containerWidth = ref()
 const borderSettingShow = computed(() => {
   return (
     !!element.value.style['borderStyle'] &&
-    !['DeDecoration', 'DynamicBackground'].includes(element.value.component)
+    !['Decoration', 'DynamicBackground'].includes(element.value.component)
   )
 })
 
@@ -95,7 +95,7 @@ const eventsShow = computed(() => {
 
 const carouselShow = computed(() => {
   return (
-    ['DeTabs', 'DeScreen'].includes(element.value.component) &&
+    ['Tabs', 'Screen'].includes(element.value.component) &&
     element.value.carousel &&
     !mobileInPc.value
   )
@@ -110,19 +110,19 @@ const backgroundCustomShow = computed(() => {
         'CanvasIcon',
         'CircleShape',
         'RectShape',
-        'DeDecoration',
+        'Decoration',
         'DynamicBackground'
       ].includes(element.value.component))
   )
 })
 
 const titleBackgroundShow = computed(
-  () => ['DeTabs', 'DeScreen'].includes(element.value.component) && element.value.titleBackground
+  () => ['Tabs', 'Screen'].includes(element.value.component) && element.value.titleBackground
 )
 
 const tabTitleShow = computed(() => {
   return (
-    element.value && element.value.style && ['DeTabs', 'DeScreen'].includes(element.value.component)
+    element.value && element.value.style && ['Tabs', 'Screen'].includes(element.value.component)
   )
 })
 
@@ -130,7 +130,7 @@ const styleShow = computed(() => {
   return (
     element.value &&
     element.value.style &&
-    !['DeDecoration', 'DynamicBackground', 'DeTabs', 'DeScreen'].includes(
+    !['Decoration', 'DynamicBackground', 'Tabs', 'Screen'].includes(
       element.value.component
     ) &&
     Object.keys(element.value.style).length > 0

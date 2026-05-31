@@ -12,10 +12,10 @@ import org.apache.ibatis.annotations.*;
 public interface ExportTaskExtMapper extends BaseMapper<CoreExportTask> {
 
     @Select(
-            """     
-                    select * 
-                    from core_export_task
-                    ${ew.customSqlSegment} 
+            """
+                    select *
+                    from export_task
+                    ${ew.customSqlSegment}
                     """
     )
     @Results(

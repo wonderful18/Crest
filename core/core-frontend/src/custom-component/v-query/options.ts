@@ -4,7 +4,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
 
 const infoFormat = (obj: ComponentInfo) => {
-  const { id, name, deType, type, datasetId } = obj
+  const { id, name, fieldType, type, datasetId } = obj
   return {
     id: guid(),
     name,
@@ -15,7 +15,7 @@ const infoFormat = (obj: ComponentInfo) => {
       id,
       type,
       name,
-      deType
+      fieldType
     },
     displayId: id,
     sortId: '',
@@ -70,7 +70,7 @@ const addQueryCriteriaConfig = () => {
   const componentInfo: ComponentInfo = {
     id: '',
     name: t('v_query.unnamed'),
-    deType: 0,
+    fieldType: 0,
     type: 'VARCHAR',
     datasetId: ''
   }

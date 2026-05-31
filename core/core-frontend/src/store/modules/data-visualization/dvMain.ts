@@ -18,7 +18,7 @@ import {
   COMMON_COMPONENT_BACKGROUND_DARK,
   COMMON_COMPONENT_BACKGROUND_LIGHT,
   defaultStyleValue,
-  findBaseDeFaultAttr
+  findBaseDefaultAttr
 } from '@/custom-component/component-list'
 import { get, set } from 'lodash-es'
 import { checkIsSameDs, viewFieldTimeTrans } from '@/utils/viewUtils'
@@ -424,7 +424,7 @@ export const dvMainStore = defineStore('dataVisualization', {
         this.componentData.forEach(componentItem => {
           if (
             component.canvasId.includes(componentItem.id) &&
-            componentItem.component == 'DeTabs'
+            componentItem.component == 'Tabs'
           ) {
             componentItem.propValue.forEach(tabItem => {
               if (component.canvasId.includes(tabItem.name)) {
@@ -573,7 +573,7 @@ export const dvMainStore = defineStore('dataVisualization', {
             indexResult.push(index)
           } else if (deep && component.component === 'Group') {
             this.deleteComponentById(componentId, component.propValue || [])
-          } else if (deep && component.innerType === 'DeTabs') {
+          } else if (deep && component.innerType === 'Tabs') {
             component.propValue.forEach(ele => {
               this.deleteComponentById(componentId, ele.componentData || [])
             })
@@ -637,7 +637,7 @@ export const dvMainStore = defineStore('dataVisualization', {
           item.propValue.forEach(groupItem => {
             this.clearTargetViewLinkage(viewId, groupItem)
           })
-        } else if (item.component === 'DeTabs') {
+        } else if (item.component === 'Tabs') {
           item.propValue.forEach(tabItem => {
             tabItem.componentData?.forEach(tabComponent => {
               this.clearTargetViewLinkage(viewId, tabComponent)
@@ -680,7 +680,7 @@ export const dvMainStore = defineStore('dataVisualization', {
         }
       } else {
         // 其他组件批量操作 do other
-        this.batchOptComponents[id] = findBaseDeFaultAttr(componentType)
+        this.batchOptComponents[id] = findBaseDefaultAttr(componentType)
         this.setBatchOptComponentInfo()
       }
       if (this.batchOptComponentType !== 'UserView') {
@@ -888,7 +888,7 @@ export const dvMainStore = defineStore('dataVisualization', {
                 }
               }
             })
-          } else if (component.component === 'DeTabs') {
+          } else if (component.component === 'Tabs') {
             component.propValue.forEach(tabItem => {
               tabItem.componentData?.forEach(tabComponent => {
                 if (this.curBatchOptComponents.includes(tabComponent.id)) {
@@ -921,7 +921,7 @@ export const dvMainStore = defineStore('dataVisualization', {
               groupItem.commonBackground = deepCopy(newBackground)
             }
           })
-        } else if (component.component === 'DeTabs') {
+        } else if (component.component === 'Tabs') {
           component.propValue.forEach(tabItem => {
             tabItem.componentData?.forEach(tabComponent => {
               if (this.curBatchOptComponents.includes(tabComponent.id)) {
@@ -1060,7 +1060,7 @@ export const dvMainStore = defineStore('dataVisualization', {
               )
               element.propValue[index] = groupItem
             })
-          } else if (element.component === 'DeTabs') {
+          } else if (element.component === 'Tabs') {
             element.propValue?.forEach(tabItem => {
               tabItem.componentData?.forEach((tabComponent, index) => {
                 this.trackFilterCursor(
@@ -1093,7 +1093,7 @@ export const dvMainStore = defineStore('dataVisualization', {
               this.trackWebFilterCursor(groupItem, params)
               element.propValue[index] = groupItem
             })
-          } else if (element.component === 'DeTabs') {
+          } else if (element.component === 'Tabs') {
             element.propValue?.forEach(tabItem => {
               tabItem.componentData?.forEach((tabComponent, index) => {
                 this.trackWebFilterCursor(tabComponent, params)
@@ -1179,7 +1179,7 @@ export const dvMainStore = defineStore('dataVisualization', {
               )
               element.propValue[index] = groupItem
             })
-          } else if (element.component === 'DeTabs') {
+          } else if (element.component === 'Tabs') {
             element.propValue?.forEach(tabItem => {
               tabItem.componentData?.forEach((tabComponent, index) => {
                 if (['UserView', 'VQuery'].includes(tabComponent.component)) {
@@ -1271,9 +1271,9 @@ export const dvMainStore = defineStore('dataVisualization', {
         targetInfoList.forEach(targetInfo => {
           const targetInfoArray = targetInfo.split('#')
           const targetViewId = targetInfoArray[0] // 目标图表
-          // DE_EMPTY 为清空条件标志
+          // CREST_EMPTY 为清空条件标志
           if (element.component === 'UserView' && element.id === targetViewId) {
-            if ('DE_EMPTY' !== paramValueStr && paramValueStr !== null && paramValueStr !== '') {
+            if ('CREST_EMPTY' !== paramValueStr && paramValueStr !== null && paramValueStr !== '') {
               // 如果目标图表 和 当前循环组件id相等 则进行条件增减
               const targetFieldId = targetInfoArray[1] // 目标图表列ID
               const condition = {
@@ -1383,7 +1383,7 @@ export const dvMainStore = defineStore('dataVisualization', {
                     filterItem['numValueStart'] = queryParams[0]
                     filterItem['numValueEnd'] = queryParams[1]
                   }
-                  if ('DE_EMPTY' === paramValueStr) {
+                  if ('CREST_EMPTY' === paramValueStr) {
                     filterItem['selectValue'] = null
                     filterItem['defaultValue'] = null
                     filterItem['conditionValueF'] = null
@@ -1397,7 +1397,7 @@ export const dvMainStore = defineStore('dataVisualization', {
             })
             // 级联条件处理
             if (element.cascade?.length && Object.keys(defaultValueMap).length) {
-              const allCascadeDataset = element.cascade
+              const allCascadatasetUi = element.cascade
                 .flat()
                 .map(item => `--${item.datasetId}`)
                 .join('')
@@ -1413,7 +1413,7 @@ export const dvMainStore = defineStore('dataVisualization', {
                         itemInner['selectValue'] = Array.isArray(curDefaultValue)
                           ? curDefaultValue
                           : [curDefaultValue]
-                      } else if (!allCascadeDataset.includes(key)) {
+                      } else if (!allCascadatasetUi.includes(key)) {
                         itemInner['currentSelectValue'] = []
                         itemInner['selectValue'] = []
                       }
@@ -1584,7 +1584,7 @@ export const dvMainStore = defineStore('dataVisualization', {
               useEmitt().emitter.emit('query-data-' + groupItem.id)
             }
           })
-        } else if (item.component === 'DeTabs') {
+        } else if (item.component === 'Tabs') {
           item.propValue.forEach(tabItem => {
             tabItem.componentData?.forEach(tabComponent => {
               if (tabComponent.linkageFilters && tabComponent.linkageFilters.length > 0) {
@@ -1724,7 +1724,7 @@ export const dvMainStore = defineStore('dataVisualization', {
       this.componentData = []
       this.canvasViewInfo = {}
     },
-    removeLinkageInfo(targetId) {
+    deleteLinkageInfo(targetId) {
       if (!!targetId && !!this.nowPanelTrackInfo) {
         Object.keys(this.nowPanelTrackInfo).forEach(trackId => {
           const targetInfo = this.nowPanelTrackInfo[trackId]

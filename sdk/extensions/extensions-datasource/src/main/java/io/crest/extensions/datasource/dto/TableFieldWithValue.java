@@ -26,7 +26,7 @@ public class TableFieldWithValue implements Serializable {
     private String isDateTime;
     private String dateFormat;
     private String term = "eq";
-    private Integer deExtractType;
+    private Integer extractedFieldType;
 
     public static TableFieldWithValue copy(TableFieldWithValue tableFieldWithValue) {
         return new TableFieldWithValue()
@@ -39,6 +39,6 @@ public class TableFieldWithValue implements Serializable {
                 .setIsDateTime(tableFieldWithValue.getIsDateTime())
                 .setDateFormat(tableFieldWithValue.getDateFormat())
                 .setTerm(tableFieldWithValue.getTerm())
-                .setDeExtractType(tableFieldWithValue.getDeExtractType());
+                .setExtractedFieldType(tableFieldWithValue.getExtractedFieldType());
     }
 }

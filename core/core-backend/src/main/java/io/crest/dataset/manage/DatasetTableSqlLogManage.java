@@ -51,7 +51,7 @@ public class DatasetTableSqlLogManage {
         }).collect(Collectors.toList());
     }
 
-    public void deleteByTableId(String id) {
+    public void tableRemoval(String id) {
         QueryWrapper<CoreDatasetTableSqlLog> wrapper = new QueryWrapper<>();
         wrapper.eq("table_id", id);
         coreDatasetTableSqlLogMapper.delete(wrapper);

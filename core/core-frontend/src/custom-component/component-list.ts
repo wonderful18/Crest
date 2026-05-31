@@ -347,10 +347,10 @@ const list: any[] = [
     matrixStyle: {}
   },
   {
-    component: 'DeVideo',
+    component: 'Video',
     name: t('visualization.video'),
     label: t('visualization.video'),
-    innerType: 'DeVideo',
+    innerType: 'Video',
     editing: false,
     canvasActive: false,
     icon: 'icon-video',
@@ -366,10 +366,10 @@ const list: any[] = [
     matrixStyle: {}
   },
   {
-    component: 'DeStreamMedia',
+    component: 'StreamMedia',
     name: t('visualization.stream_media'),
     label: t('visualization.stream_media'),
-    innerType: 'DeStreamMedia',
+    innerType: 'StreamMedia',
     editing: false,
     canvasActive: false,
     icon: 'icon-stream',
@@ -385,10 +385,10 @@ const list: any[] = [
     matrixStyle: {}
   },
   {
-    component: 'DeFrame',
+    component: 'Frame',
     name: t('visualization.web'),
     label: t('visualization.web'),
-    innerType: 'DeFrame',
+    innerType: 'Frame',
     editing: false,
     canvasActive: false,
     icon: 'db-more-web',
@@ -405,11 +405,11 @@ const list: any[] = [
     matrixStyle: {}
   },
   {
-    component: 'DeTimeClock',
+    component: 'TimeClock',
     name: t('visualization.time_component'),
     label: t('visualization.time_component'),
     icon: 'dv-more-time-clock',
-    innerType: 'DeTimeClock',
+    innerType: 'TimeClock',
     editing: false,
     canvasActive: false,
     x: 1,
@@ -502,7 +502,7 @@ const list: any[] = [
     }
   },
   {
-    component: 'DeDecoration',
+    component: 'Decoration',
     name: t('visualization.decoration'),
     label: t('visualization.decoration'),
     propValue: '&nbsp;',
@@ -581,7 +581,7 @@ const list: any[] = [
     }
   },
   {
-    component: 'DeTabs',
+    component: 'Tabs',
     name: t('visualization.tabs'),
     label: t('visualization.tabs'),
     propValue: [
@@ -640,7 +640,7 @@ const list: any[] = [
     }
   },
   {
-    component: 'DeScreen',
+    component: 'Screen',
     name: t('visualization.screen_page'),
     label: t('visualization.screen_page'),
     propValue: [
@@ -700,7 +700,7 @@ export function findNewComponentFromList(
         COMMON_COMPONENT_BACKGROUND_MAP[curOriginThemes.value]
       )
       newComponent.innerType = innerType
-      if (['DeTabs', 'DeScreen'].includes(comp.component)) {
+      if (['Tabs', 'Screen'].includes(comp.component)) {
         newComponent.propValue[0].name = guid()
         newComponent['titleBackground'] = deepCopy(COMMON_TAB_TITLE_BACKGROUND)
       }
@@ -720,7 +720,7 @@ export function findNewComponentFromList(
   return newComponent
 }
 
-export function findBaseDeFaultAttr(componentName) {
+export function findBaseDefaultAttr(componentName) {
   let result = {}
   list.forEach(comp => {
     if (comp.component === componentName) {

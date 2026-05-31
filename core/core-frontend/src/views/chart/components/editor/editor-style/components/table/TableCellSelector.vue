@@ -141,9 +141,9 @@ const init = () => {
         })
       }
       axis.forEach(item => {
-        const align = alignCfgMap[item.dataeaseName] || 'left'
+        const align = alignCfgMap[item.engineFieldName] || 'left'
         alignConfigOptions.push({
-          id: item.dataeaseName,
+          id: item.engineFieldName,
           label: item.chartShowName ?? item.name,
           align
         })

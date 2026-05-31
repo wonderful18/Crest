@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { computed, onBeforeUnmount, onMounted, ref, type CSSProperties } from 'vue'
-import DePreview from '@/components/data-visualization/canvas/DePreview.vue'
+import CrestPreview from '@/components/data-visualization/canvas/CrestPreview.vue'
 import { storeToRefs } from 'pinia'
 
 const dvMainStore = dvMainStoreWithOut()
 const { fullscreenFlag } = storeToRefs(dvMainStore)
-const dePreviewRef = ref<InstanceType<typeof DePreview> | null>(null)
-const dePreviewOuterRef = ref<HTMLElement | null>(null)
+const crestPreviewRef = ref<InstanceType<typeof CrestPreview> | null>(null)
+const crestPreviewOuterRef = ref<HTMLElement | null>(null)
 const dataInitState = ref(true)
 const keepProportion = ref('heightFirst')
 const props = defineProps({
@@ -55,7 +55,7 @@ const props = defineProps({
 })
 
 const restore = () => {
-  dePreviewRef.value?.restore()
+  crestPreviewRef.value?.restore()
 }
 const contentInnerClass = computed(() => {
   //屏幕适配方式 widthFirst=宽度优先(默认) heightFirst=高度优先 full=铺满全屏 keepSize=不缩放
@@ -86,7 +86,7 @@ const screenAdaptor = computed(() => {
 
 const keepProportionCheck = outerContentRect => {
   const { width, height } = outerContentRect
-  const { innerWidth, innerHeight } = dePreviewRef.value.getPreviewCanvasSize()
+  const { innerWidth, innerHeight } = crestPreviewRef.value.getPreviewCanvasSize()
   if (width > innerWidth || height < innerHeight) {
     keepProportion.value = 'heightFirst'
   } else {
@@ -102,8 +102,8 @@ onMounted(() => {
     }
   })
 
-  if (dePreviewOuterRef.value) {
-    observer.observe(dePreviewOuterRef.value)
+  if (crestPreviewOuterRef.value) {
+    observer.observe(crestPreviewOuterRef.value)
   }
 
   // 在组件卸载时停止观察
@@ -120,14 +120,14 @@ defineExpose({
 <template>
   <div
     id="de-preview-content"
-    ref="dePreviewOuterRef"
-    :class="{ 'de-screen-full': fullscreenFlag }"
+    ref="crestPreviewOuterRef"
+    :class="{ 'screen-full': fullscreenFlag }"
     :style="outerStyle"
     class="content-outer"
   >
     <div class="content-inner" :class="contentInnerClass">
-      <de-preview
-        ref="dePreviewRef"
+      <CrestPreview
+        ref="crestPreviewRef"
         v-if="canvasStylePreview && dataInitState"
         :component-data="canvasDataPreview"
         :canvas-style-data="canvasStylePreview"
@@ -139,7 +139,7 @@ defineExpose({
         :outer-screen-adaptor="screenAdaptor"
         :show-pop-bar="showPopBar"
         :show-linkage-button="showLinkageButton"
-      ></de-preview>
+      ></CrestPreview>
     </div>
   </div>
 </template>

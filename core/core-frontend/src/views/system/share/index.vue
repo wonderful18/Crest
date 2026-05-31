@@ -23,7 +23,7 @@ const typeMap = {
 
 const shareLink = computed(() => {
   if (!current.uuid) return ''
-  return `${window.location.origin}${window.location.pathname}#/de-link/${current.uuid}`
+  return `${window.location.origin}${window.location.pathname}#/link/${current.uuid}`
 })
 
 const formatTime = val => {
@@ -36,7 +36,7 @@ const loadTable = async () => {
   try {
     const queryType = type.value === 'dashboard' ? 'panel' : type.value === 'dataV' ? 'screen' : ''
     const res = await request.post({
-      url: `/share/pager/${pager.currentPage}/${pager.pageSize}`,
+      url: `/share/page/${pager.currentPage}/${pager.pageSize}`,
       data: { keyword: keyword.value, type: queryType, asc: false }
     })
     tableData.value = res.data?.records || []
@@ -54,7 +54,7 @@ const openDetail = async row => {
 
 const saveExp = async () => {
   await request.post({
-    url: '/share/editExp',
+    url: '/share/expiration',
     data: { resourceId: current.resourceId, exp: current.exp || 0 }
   })
   ElMessage.success('有效期已更新')
@@ -63,7 +63,7 @@ const saveExp = async () => {
 
 const savePwd = async () => {
   await request.post({
-    url: '/share/editPwd',
+    url: '/share/password',
     data: { resourceId: current.resourceId, pwd: current.pwd || '', autoPwd: false }
   })
   ElMessage.success('访问密码已更新')

@@ -1,6 +1,6 @@
 package io.crest.system.sso;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.substitute.permissions.user.CrestUserManage;
 import io.crest.substitute.permissions.user.model.CrestUser;
 import org.junit.Test;
@@ -26,7 +26,7 @@ public class SsoIdentityBindingResolverTest {
     public void rejectsDisabledBoundUser() {
         CrestUser bound = user(1L, "zhang.san", false);
 
-        assertThrows(DEException.class, () -> resolver.resolve(profile("zhang.san"), bound, null, true));
+        assertThrows(CrestException.class, () -> resolver.resolve(profile("zhang.san"), bound, null, true));
     }
 
     @Test
@@ -34,7 +34,7 @@ public class SsoIdentityBindingResolverTest {
         CrestUser bound = user(1L, "old.account", true);
         CrestUser accountUser = user(2L, "zhang.san", true);
 
-        assertThrows(DEException.class, () -> resolver.resolve(profile("zhang.san"), bound, accountUser, true));
+        assertThrows(CrestException.class, () -> resolver.resolve(profile("zhang.san"), bound, accountUser, true));
     }
 
     @Test
@@ -51,7 +51,7 @@ public class SsoIdentityBindingResolverTest {
     public void rejectsDisabledAccountUserBeforeBinding() {
         CrestUser accountUser = user(2L, "zhang.san", false);
 
-        assertThrows(DEException.class, () -> resolver.resolve(profile("zhang.san"), null, accountUser, true));
+        assertThrows(CrestException.class, () -> resolver.resolve(profile("zhang.san"), null, accountUser, true));
     }
 
     @Test
@@ -64,7 +64,7 @@ public class SsoIdentityBindingResolverTest {
 
     @Test
     public void rejectsUnknownUserWhenAutoCreateDisabled() {
-        assertThrows(DEException.class, () -> resolver.resolve(profile("zhang.san"), null, null, false));
+        assertThrows(CrestException.class, () -> resolver.resolve(profile("zhang.san"), null, null, false));
     }
 
     @Test
@@ -83,7 +83,7 @@ public class SsoIdentityBindingResolverTest {
         SsoIdentityProfile profile = profile("zhang.san");
         profile.setProviderId(null);
 
-        assertThrows(DEException.class, () -> resolver.resolve(profile, null, null, true));
+        assertThrows(CrestException.class, () -> resolver.resolve(profile, null, null, true));
     }
 
     @Test
@@ -91,7 +91,7 @@ public class SsoIdentityBindingResolverTest {
         SsoIdentityProfile profile = profile("zhang.san");
         profile.setProviderType(null);
 
-        assertThrows(DEException.class, () -> resolver.resolve(profile, null, null, true));
+        assertThrows(CrestException.class, () -> resolver.resolve(profile, null, null, true));
     }
 
     @Test
@@ -99,7 +99,7 @@ public class SsoIdentityBindingResolverTest {
         SsoIdentityProfile profile = profile("zhang.san");
         profile.setExternalSubject(null);
 
-        assertThrows(DEException.class, () -> resolver.resolve(profile, null, null, true));
+        assertThrows(CrestException.class, () -> resolver.resolve(profile, null, null, true));
     }
 
     @Test

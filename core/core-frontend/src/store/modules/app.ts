@@ -7,9 +7,9 @@ interface AppState {
   size: boolean
   pageLoading: boolean
   title: string
-  dekey: string
+  clientKey: string
   desktop: boolean
-  isDataEaseBi: boolean
+  isCrestBi: boolean
   isIframe: boolean
   arrowSide: boolean
 }
@@ -20,8 +20,8 @@ export const useAppStore = defineStore('app', {
       size: true, // 尺寸图标
       pageLoading: false, // 路由跳转loading
       title: '',
-      dekey: 'DataEaseKey',
-      isDataEaseBi: false,
+      clientKey: 'CrestKey',
+      isCrestBi: false,
       isIframe: false,
       desktop: false,
       arrowSide: false
@@ -40,14 +40,14 @@ export const useAppStore = defineStore('app', {
     getTitle(): string {
       return this.title
     },
-    getIsDataEaseBi(): boolean {
-      return this.isDataEaseBi
+    getIsCrestBi(): boolean {
+      return this.isCrestBi
     },
     getIsIframe(): boolean {
       return this.isIframe
     },
-    getDekey(): string {
-      return this.dekey
+    getClientKey(): string {
+      return this.clientKey
     },
     getDesktop(): string {
       return this.desktop
@@ -66,8 +66,8 @@ export const useAppStore = defineStore('app', {
     setArrowSide(ArrowSide: boolean) {
       this.arrowSide = ArrowSide
     },
-    setIsDataEaseBi(isDataEaseBi: boolean) {
-      this.isDataEaseBi = isDataEaseBi
+    setIsCrestBi(isCrestBi: boolean) {
+      this.isCrestBi = isCrestBi
     },
     setIsIframe(isIframe: boolean) {
       this.isIframe = isIframe
@@ -80,8 +80,8 @@ export const useAppStore = defineStore('app', {
       document.title = title
     },
 
-    setDekey(dekey: string) {
-      this.dekey = dekey
+    setClientKey(clientKey: string) {
+      this.clientKey = clientKey
     },
     setDesktop(desktop: boolean) {
       wsCache.set('app.desktop', desktop)

@@ -1,6 +1,6 @@
 package io.crest.extensions.datafilling.factory;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datafilling.plugin.DataFillingPlugin;
 import io.crest.extensions.datafilling.provider.ExtDDLProvider;
 import io.crest.extensions.datafilling.vo.PluginDataFillingVO;
@@ -26,7 +26,7 @@ public class ExtDDLProviderFactory {
         }
         ExtDDLProvider instance = getInstance(type);
         if (instance == null) {
-            DEException.throwException("插件异常，请检查插件");
+            CrestException.throwException("插件异常，请检查插件");
         }
         return instance;
     }
@@ -45,7 +45,7 @@ public class ExtDDLProviderFactory {
             CrestPluginFactory.loadTemplate(moduleName, plugin);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), new Throwable(e));
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 

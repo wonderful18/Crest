@@ -88,7 +88,7 @@ const initFieldCtrl = () => {
       if (item.groupType === 'q') {
         fieldOptions.value.push({
           label: item.name,
-          value: item.dataeaseName
+          value: item.engineFieldName
         })
       }
     })

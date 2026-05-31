@@ -8,7 +8,7 @@ import java.util.List;
  * @Author Junjun
  */
 public class FieldUtils {
-    public static int transType2DeType(final String type) {
+    public static int resolveFieldType(final String type) {
         List<String> text = Arrays.asList("CHAR", "VARCHAR", "TEXT", "TINYTEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "ANY", "STRING", "BOOL", "BOOLEAN");
         List<String> time = Arrays.asList("DATE", "TIME", "YEAR", "DATETIME", "TIMESTAMP", "DATEV2", "DATETIMEV2", "DATETIME2", "DATETIMEOFFSET", "SMALLDATETIME", "DATETIME64", "_TIMESTAMPTZ", "TIMESTAMPTZ");
         List<String> num = Arrays.asList("INT", "SMALLINT", "MEDIUMINT", "INTEGER", "BIGINT", "LONG", "INT2", "INT4", "INT8", "int2", "int4", "int8", "INT16", "INT32", "INT64", "UINT8", "UINT16", "UINT32", "UINT64");
@@ -45,8 +45,8 @@ public class FieldUtils {
         return 0;// 文本
     }
 
-    public static String transDeType2DQ(int deType) {
-        switch (deType) {
+    public static String resolveFieldGroup(int fieldType) {
+        switch (fieldType) {
             case 0:
             case 1:
             case 5:

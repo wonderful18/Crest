@@ -225,9 +225,9 @@ const init = () => {
 }
 const initOptions = (item, fieldObj) => {
   if (fieldObj) {
-    if ([0, 5, 7].includes(fieldObj.deType)) {
+    if ([0, 5, 7].includes(fieldObj.fieldType)) {
       item.options = JSON.parse(JSON.stringify(textOptions))
-    } else if (fieldObj.deType === 1) {
+    } else if (fieldObj.fieldType === 1) {
       item.options = JSON.parse(JSON.stringify(dateOptions))
     } else {
       item.options = JSON.parse(JSON.stringify(valueOptions))
@@ -350,8 +350,8 @@ const getConditionsFields = (fieldItem, conditionItem, conditionItemField) => {
 
   if (
     fieldItemObj.length === 0 ||
-    fieldItemObj[0]?.deType === undefined ||
-    fieldItemObj[0]?.deType === null
+    fieldItemObj[0]?.fieldType === undefined ||
+    fieldItemObj[0]?.fieldType === null
   ) {
     fieldItem.fieldId = null
     conditionItem.fieldId = null
@@ -359,15 +359,15 @@ const getConditionsFields = (fieldItem, conditionItem, conditionItemField) => {
     return []
   }
 
-  const fieldItemDeType = fieldItemObj[0]?.deType
+  const fieldItemDeType = fieldItemObj[0]?.fieldType
   const result =
     state.fields.filter(item => {
       // 文本、时间、boole、地理位置时，需要同类型的字段
       if ([0, 1, 4, 5].includes(fieldItemDeType)) {
-        return item.deType === fieldItemDeType
+        return item.fieldType === fieldItemDeType
       } else if ([2, 3].includes(fieldItemDeType)) {
         // 整型浮点型时，需要整型或者浮点型类型的字段
-        return item.deType === 2 || item.deType === 3
+        return item.fieldType === 2 || item.fieldType === 3
       } else {
         return false
       }
@@ -380,13 +380,13 @@ const getConditionsFields = (fieldItem, conditionItem, conditionItemField) => {
 }
 
 const getDynamicSummaryOptions = itemId => {
-  const deType = state.fields.filter(ele => ele.id === itemId)?.[0]?.deType
-  if (deType === 1) {
+  const fieldType = state.fields.filter(ele => ele.id === itemId)?.[0]?.fieldType
+  if (fieldType === 1) {
     // 时间
     return dynamicSummaryOptions.filter(ele => {
       return ele.id !== 'avg'
     })
-  } else if (deType === 0 || deType === 5) {
+  } else if (fieldType === 0 || fieldType === 5) {
     // 文本、地理位置
     return dynamicSummaryOptions.filter(ele => {
       return ele.id === 'value'
@@ -457,16 +457,16 @@ init()
                 :key="fieldOption.id"
                 :label="fieldOption.name"
                 :value="fieldOption.id"
-                :disabled="chart.type === 'table-info' && fieldOption.deType === 7"
+                :disabled="chart.type === 'table-info' && fieldOption.fieldType === 7"
               >
                 <el-icon style="margin-right: 8px">
                   <Icon
                     ><component
                       :class="`field-icon-${
-                        fieldType[[2, 3].includes(fieldOption.deType) ? 2 : 0]
+                        fieldType[[2, 3].includes(fieldOption.fieldType) ? 2 : 0]
                       }`"
                       class="svg-icon"
-                      :is="iconFieldMap[fieldType[fieldOption.deType]]"
+                      :is="iconFieldMap[fieldType[fieldOption.fieldType]]"
                     ></component
                   ></Icon>
                 </el-icon>
@@ -544,7 +544,7 @@ init()
               <el-form-item class="form-item">
                 <el-input-number
                   v-model="item.value"
-                  v-if="[2, 3].includes(fieldItem.field.deType)"
+                  v-if="[2, 3].includes(fieldItem.field.fieldType)"
                   :placeholder="t('chart.drag_block_label_value')"
                   controls-position="right"
                   class="value-item"
@@ -554,7 +554,7 @@ init()
                 <el-date-picker
                   v-model="item.value"
                   v-else-if="
-                    [1].includes(fieldItem.field.deType) && fieldItem.field.dateStyle !== 'H_m_s'
+                    [1].includes(fieldItem.field.fieldType) && fieldItem.field.dateStyle !== 'H_m_s'
                   "
                   :type="datePickerType(fieldItem.field)"
                   :placeholder="t('chart.drag_block_label_value')"
@@ -568,7 +568,7 @@ init()
                 <el-time-picker
                   v-model="item.value"
                   v-else-if="
-                    [1].includes(fieldItem.field.deType) && fieldItem.field.dateStyle === 'H_m_s'
+                    [1].includes(fieldItem.field.fieldType) && fieldItem.field.dateStyle === 'H_m_s'
                   "
                   :placeholder="t('chart.drag_block_label_value')"
                   :format="datePickerFormat(fieldItem.field)"
@@ -607,16 +607,16 @@ init()
                     :key="itemFieldOption.id"
                     :label="itemFieldOption.name"
                     :value="itemFieldOption.id"
-                    :disabled="chart.type === 'table-info' && itemFieldOption.deType === 7"
+                    :disabled="chart.type === 'table-info' && itemFieldOption.fieldType === 7"
                   >
                     <el-icon style="margin-right: 8px">
                       <Icon
                         ><component
                           :class="`field-icon-${
-                            fieldType[[2, 3].includes(itemFieldOption.deType) ? 2 : 0]
+                            fieldType[[2, 3].includes(itemFieldOption.fieldType) ? 2 : 0]
                           }`"
                           class="svg-icon"
-                          :is="iconFieldMap[fieldType[itemFieldOption.deType]]"
+                          :is="iconFieldMap[fieldType[itemFieldOption.fieldType]]"
                         ></component
                       ></Icon>
                     </el-icon>
@@ -711,16 +711,16 @@ init()
                     :key="itemFieldOption.id"
                     :label="itemFieldOption.name"
                     :value="itemFieldOption.id"
-                    :disabled="chart.type === 'table-info' && itemFieldOption.deType === 7"
+                    :disabled="chart.type === 'table-info' && itemFieldOption.fieldType === 7"
                   >
                     <el-icon style="margin-right: 8px">
                       <Icon
                         ><component
                           :class="`field-icon-${
-                            fieldType[[2, 3].includes(itemFieldOption.deType) ? 2 : 0]
+                            fieldType[[2, 3].includes(itemFieldOption.fieldType) ? 2 : 0]
                           }`"
                           class="svg-icon"
-                          :is="iconFieldMap[fieldType[itemFieldOption.deType]]"
+                          :is="iconFieldMap[fieldType[itemFieldOption.fieldType]]"
                         ></component
                       ></Icon>
                     </el-icon>
@@ -775,16 +775,16 @@ init()
                     :key="itemFieldOption.id"
                     :label="itemFieldOption.name"
                     :value="itemFieldOption.id"
-                    :disabled="chart.type === 'table-info' && itemFieldOption.deType === 7"
+                    :disabled="chart.type === 'table-info' && itemFieldOption.fieldType === 7"
                   >
                     <el-icon style="margin-right: 8px">
                       <Icon
                         ><component
                           :class="`field-icon-${
-                            fieldType[[2, 3].includes(itemFieldOption.deType) ? 2 : 0]
+                            fieldType[[2, 3].includes(itemFieldOption.fieldType) ? 2 : 0]
                           }`"
                           class="svg-icon"
-                          :is="iconFieldMap[fieldType[itemFieldOption.deType]]"
+                          :is="iconFieldMap[fieldType[itemFieldOption.fieldType]]"
                         ></component
                       ></Icon>
                     </el-icon>
@@ -847,10 +847,10 @@ init()
                       <Icon
                         ><component
                           :class="`field-icon-${
-                            fieldType[[2, 3].includes(targetField.deType) ? 2 : 0]
+                            fieldType[[2, 3].includes(targetField.fieldType) ? 2 : 0]
                           }`"
                           class="svg-icon"
-                          :is="iconFieldMap[fieldType[targetField.deType]]"
+                          :is="iconFieldMap[fieldType[targetField.fieldType]]"
                         ></component
                       ></Icon>
                     </el-icon>

@@ -32,7 +32,7 @@ const state = reactive({
 const dvMainStore = dvMainStoreWithOut()
 
 const checkPer = async resourceId => {
-  if (!window.DataEaseBi || !resourceId) {
+  if (!window.CrestBi || !resourceId) {
     return true
   }
   const request = { busiFlag: embeddedParams.busiFlag }
@@ -48,7 +48,7 @@ onBeforeMount(async () => {
   }
   let tokenInfo = null
   if (embeddedStore.getToken && !Object.keys((tokenInfo = embeddedStore.getTokenInfo)).length) {
-    const res = await request.get({ url: '/embedded/getTokenArgs' })
+    const res = await request.get({ url: '/embedded/token-args' })
     embeddedStore.setTokenInfo(res.data)
     tokenInfo = embeddedStore.getTokenInfo
   }
@@ -120,7 +120,7 @@ onBeforeMount(async () => {
     :class="isPc ? 'dashboard-preview' : 'dv-common-layout-mobile_embedded'"
     v-if="state.canvasStylePreview && state.initState"
   >
-    <de-preview
+    <CrestPreview
       ref="dashboardPreview"
       :dv-info="state.dvInfo"
       :cur-gap="state.curPreviewGap"
@@ -128,7 +128,7 @@ onBeforeMount(async () => {
       :canvas-style-data="state.canvasStylePreview"
       :canvas-view-info="state.canvasViewInfoPreview"
       show-position="preview"
-    ></de-preview>
+    ></CrestPreview>
   </div>
   <empty-background v-if="!state.initState" description="参数不能为空" img-type="noneWhite" />
 </template>

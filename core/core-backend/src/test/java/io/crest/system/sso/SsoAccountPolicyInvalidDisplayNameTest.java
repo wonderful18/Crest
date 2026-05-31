@@ -1,6 +1,6 @@
 package io.crest.system.sso;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -52,6 +52,6 @@ public class SsoAccountPolicyInvalidDisplayNameTest {
 
     @Test
     public void rejectsUnsafeDisplayName() {
-        assertThrows(DEException.class, () -> SsoAccountPolicy.normalizeDisplayName(displayName, "safe.account"));
+        assertThrows(CrestException.class, () -> SsoAccountPolicy.normalizeDisplayName(displayName, "safe.account"));
     }
 }

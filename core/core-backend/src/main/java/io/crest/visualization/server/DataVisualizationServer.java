@@ -17,7 +17,7 @@ import io.crest.api.visualization.request.DataVisualizationBaseRequest;
 import io.crest.api.visualization.request.VisualizationAppExportRequest;
 import io.crest.api.visualization.request.VisualizationWorkbranchQueryRequest;
 import io.crest.api.visualization.vo.*;
-import io.crest.auth.DeLinkPermit;
+import io.crest.auth.CrestLinkPermit;
 import io.crest.chart.dao.auto.entity.CoreChartView;
 import io.crest.chart.dao.auto.mapper.CoreChartViewMapper;
 import io.crest.chart.dao.ext.mapper.ExtChartViewMapper;
@@ -42,12 +42,12 @@ import io.crest.datasource.dao.auto.entity.CoreDatasource;
 import io.crest.datasource.dao.auto.mapper.CoreDatasourceMapper;
 import io.crest.datasource.provider.ExcelUtils;
 import io.crest.datasource.server.DatasourceServer;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import io.crest.extensions.view.dto.ChartViewDTO;
 import io.crest.i18n.Translator;
-import io.crest.log.DeLog;
+import io.crest.log.CrestAudit;
 import io.crest.menu.dao.auto.entity.CoreMenu;
 import io.crest.model.BusiNodeRequest;
 import io.crest.model.BusiNodeVO;
@@ -87,7 +87,7 @@ import java.util.stream.Collectors;
 
 
 @RestController
-@RequestMapping("/dataVisualization")
+@RequestMapping("/data-visualization")
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class DataVisualizationServer implements DataVisualizationApi {
 
@@ -150,7 +150,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     @Resource
     private CoreBusiManage coreBusiManage;
 
-    @Value("${crest.version:1.3.0}")
+    @Value("${crest.version:1.5.0}")
     private String crestVersion;
 
     @Resource
@@ -192,8 +192,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
-    @DeLinkPermit("#p0.id")
-    @DeLog(id = "#p0.id", ot = LogOT.READ, stExp = "#p0.busiFlag")
+    @CrestLinkPermit("#p0.id")
+    @CrestAudit(id = "#p0.id", ot = LogOT.READ, stExp = "#p0.busiFlag")
     @Override
     public DataVisualizationVO findById(DataVisualizationBaseRequest request) {
         Long dvId = request.getId();
@@ -252,7 +252,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
             result.setWeight(9);
             return result;
         } else {
-            DEException.throwException(Translator.get("i18n_resource_not_exists"));
+            CrestException.throwException(Translator.get("i18n_resource_not_exists"));
         }
         return null;
     }
@@ -300,13 +300,13 @@ public class DataVisualizationServer implements DataVisualizationApi {
         List<AppCoreDatasetTableFieldVO> sourceDatasetTableFieldList = appData.getDatasetTableFieldsInfo();
 
         Map<Long, List<AppCoreDatasetTableVO>> sourceDatasetTableMap =
-                DeCollectionUtils.groupBy(sourceDatasetTableList, AppCoreDatasetTableVO::getDatasetGroupId);
+                CrestCollectionUtils.groupBy(sourceDatasetTableList, AppCoreDatasetTableVO::getDatasetGroupId);
 
         Map<Long, List<AppCoreDatasetTableFieldVO>> sourceDatasetTableFieldMap =
-                DeCollectionUtils.groupBy(sourceDatasetTableFieldList, AppCoreDatasetTableFieldVO::getDatasetTableId);
+                CrestCollectionUtils.groupBy(sourceDatasetTableFieldList, AppCoreDatasetTableFieldVO::getDatasetTableId);
 
         Map<Long, List<AppCoreDatasetTableFieldVO>> sourceDatasetTableFieldMapGroup =
-                DeCollectionUtils.groupBy(sourceDatasetTableFieldList, AppCoreDatasetTableFieldVO::getDatasetGroupId);
+                CrestCollectionUtils.groupBy(sourceDatasetTableFieldList, AppCoreDatasetTableFieldVO::getDatasetGroupId);
 
 
         sourceDatasetGroupList.forEach(sourceDatasetGroup -> {
@@ -340,7 +340,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                                         if (sourceTableField.getOriginName().equals(systemTableField.getOriginName())) {
                                             // 获取dsTableIdMap datasourceIdMap
                                             dsTableFieldsIdMap.put(sourceTableField.getId(), systemTableField.getId());
-                                            dsTableFieldsDatasetNameMap.put(sourceTableField.getDataeaseName(),systemTableField.getDataeaseName());
+                                            dsTableFieldsDatasetNameMap.put(sourceTableField.getEngineFieldName(),systemTableField.getEngineFieldName());
                                             break;
                                         }
                                     }
@@ -358,7 +358,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                                         if (dsTableFieldsIdMap.get(sourceTableField.getId())==null && sourceTableField.getName().equals(systemTableField.getName())) {
                                             // 获取dsTableIdMap datasourceIdMap
                                             dsTableFieldsIdMap.put(sourceTableField.getId(), systemTableField.getId());
-                                            dsTableFieldsDatasetNameMap.put(sourceTableField.getDataeaseName(),systemTableField.getDataeaseName());
+                                            dsTableFieldsDatasetNameMap.put(sourceTableField.getEngineFieldName(),systemTableField.getEngineFieldName());
                                             break;
                                         }
                                     }
@@ -375,7 +375,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     }
 
-    @DeLog(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, stExp = "#p0.type")
+    @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, stExp = "#p0.type")
     @Override
     @Transactional
     public String saveCanvas(DataVisualizationBaseRequest request) throws Exception {
@@ -419,7 +419,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                         // Excel 数据表明映射
                         if (StringUtils.isNotEmpty(datasourceOld.getConfiguration())) {
                             if (datasourceOld.getType().equals(DatasourceConfiguration.DatasourceType.API.name())) {
-                                DEException.throwException(Translator.get("i18n_app_error_no_api"));
+                                CrestException.throwException(Translator.get("i18n_app_error_no_api"));
                             } else if (datasourceOld.getType().equals(DatasourceConfiguration.DatasourceType.Excel.name()) || datasourceOld.getType().equals(DatasourceConfiguration.DatasourceType.ExcelRemote.name())) {
                                 dsTableNamesMap.put(datasourceOld.getId(), ExcelUtils.getTableNamesMap(datasourceOld.getType(), datasourceOld.getConfiguration()));
                             } else if (datasourceOld.getType().contains(DatasourceConfiguration.DatasourceType.API.name())) {
@@ -561,7 +561,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
                 } catch (Exception e) {
                     LogUtil.error(e);
-                    DEException.throwException(e);
+                    CrestException.throwException(e);
                 }
             }
 
@@ -751,7 +751,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     public String checkCanvasChange(DataVisualizationBaseRequest request) {
         Long dvId = request.getId();
         if (dvId == null) {
-            DEException.throwException("ID can not be null");
+            CrestException.throwException("ID can not be null");
         }
         // 内容ID校验
         QueryWrapper<DataVisualizationInfo> queryWrapper = new QueryWrapper<>();
@@ -763,7 +763,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return "Success";
     }
 
-    @DeLog(id = "#p0.id", ot = LogOT.MODIFY, stExp = "#p0.type")
+    @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, stExp = "#p0.type")
     @Override
     @Transactional
     public DataVisualizationVO updateCanvas(DataVisualizationBaseRequest request) {
@@ -772,7 +772,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
         Long dvId = request.getId();
         if (dvId == null) {
-            DEException.throwException("ID can not be null");
+            CrestException.throwException("ID can not be null");
         }
         DataVisualizationInfo visualizationInfo = new DataVisualizationInfo();
         BeanUtils.copyBean(visualizationInfo, request);
@@ -842,21 +842,21 @@ public class DataVisualizationServer implements DataVisualizationApi {
      * @Description: 更新基础信息；
      * 为什么单独接口：1.基础信息更新频繁数据且数据载量较小；2.防止出现更新过多信息的情况，造成图表的误删等操作
      */
-    @DeLog(id = "#p0.id", ot = LogOT.MODIFY, stExp = "#p0.type")
+    @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, stExp = "#p0.type")
     @Override
     @Transactional
     public void updateBase(DataVisualizationBaseRequest request) {
         if (request.getId() != null) {
             coreVisualizationManage.innerEdit(BeanUtils.copyBean(new DataVisualizationInfo(), request));
         } else {
-            DEException.throwException("Id can not be null");
+            CrestException.throwException("Id can not be null");
         }
     }
 
     /**
      * @Description: 逻辑删除可视化信息；将delete_flag 置为0
      */
-    @DeLog(id = "#p0", ot = LogOT.DELETE, stExp = "#p1")
+    @CrestAudit(id = "#p0", ot = LogOT.DELETE, stExp = "#p1")
     @Transactional
     @Override
     public void deleteLogic(Long dvId, String busiFlag) {
@@ -872,7 +872,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
-    @DeLog(ot = LogOT.READ, st = LogST.PANEL)
+    @CrestAudit(ot = LogOT.READ, st = LogST.PANEL)
     @Override
     public List<BusiNodeVO> tree(BusiNodeRequest request) {
         if (StringUtils.isEmpty(request.getResourceTable())) {
@@ -922,7 +922,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return coreBusiManage.interactiveTree(requestMap);
     }
 
-    @DeLog(id = "#p0.id", pid = "#p0.pid", ot = LogOT.MODIFY, stExp = "#p0.type")
+    @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.MODIFY, stExp = "#p0.type")
     @Transactional
     @Override
     public void move(DataVisualizationBaseRequest request) {
@@ -989,7 +989,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     public String findDvType(Long dvId) {
         String result = extDataVisualizationMapper.findDvType(dvId);
         if (StringUtils.isEmpty(result)) {
-            DEException.throwException(Translator.get("i18n_resource_not_exists"));
+            CrestException.throwException(Translator.get("i18n_resource_not_exists"));
         }
         return result;
     }
@@ -1043,7 +1043,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
             } else if (DataVisualizationConstants.NEW_PANEL_FROM.NEW_MARKET_TEMPLATE.equals(newFrom)) {
                 TemplateManageFileDTO templateFileInfo = templateCenterManage.getTemplateFromMarketV2(request.getResourceName());
                 if (templateFileInfo == null) {
-                    DEException.throwException("Can't find the template's info from market,please check");
+                    CrestException.throwException("Can't find the template's info from market,please check");
                 }
                 templateStyle = templateFileInfo.getCanvasStyleData();
                 templateData = templateFileInfo.getComponentData();
@@ -1119,7 +1119,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
             return new DataVisualizationVO(newDvId, name, dvType, version, templateStyle, templateData, appDataStr, canvasViewInfo, null,viewIdsMap);
         } catch (Exception e) {
             e.printStackTrace();
-            DEException.throwException("解析错误");
+            CrestException.throwException("解析错误");
             return null;
         }
 
@@ -1166,9 +1166,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
 
         if (CollectionUtils.isEmpty(datasourceVOInfo)) {
-            DEException.throwException("当前不存在数据源无法导出");
+            CrestException.throwException("当前不存在数据源无法导出");
         } else if (datasourceVOInfo.stream().anyMatch(datasource -> datasource.getType().contains(DatasourceConfiguration.DatasourceType.API.name()))) {
-            DEException.throwException(Translator.get("i18n_app_error_no_api"));
+            CrestException.throwException(Translator.get("i18n_app_error_no_api"));
         }
 
         List<VisualizationLinkageVO> linkageVOInfo = appTemplateMapper.findAppLinkageInfo(dvId);
@@ -1180,22 +1180,22 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return new VisualizationExport2AppVO(chartViewVOInfo, datasetGroupVOInfo, datasetTableVOInfo, datasetTableFieldVOInfo, datasourceVOInfo, datasourceTaskVOInfo, linkJumpVOInfo, linkJumpInfoVOInfo, listJumpTargetViewInfoVO, linkageVOInfo, linkageFieldVOInfo);
     }
 
-    @DeLog(id = "#p0.id", ot = LogOT.APP_TEMPLATE_EXPORT, stExp = "#p0.type")
+    @CrestAudit(id = "#p0.id", ot = LogOT.APP_TEMPLATE_EXPORT, stExp = "#p0.type")
     public void exportLogApp(DataVisualizationBaseRequest request) {
 
     }
 
-    @DeLog(id = "#p0.id", ot = LogOT.TEMPLATE_EXPORT, stExp = "#p0.type")
+    @CrestAudit(id = "#p0.id", ot = LogOT.TEMPLATE_EXPORT, stExp = "#p0.type")
     public void exportLogTemplate(DataVisualizationBaseRequest request) {
 
     }
 
-    @DeLog(id = "#p0.id", ot = LogOT.PDF_EXPORT, stExp = "#p0.type")
+    @CrestAudit(id = "#p0.id", ot = LogOT.PDF_EXPORT, stExp = "#p0.type")
     public void exportLogPDF(DataVisualizationBaseRequest request) {
 
     }
 
-    @DeLog(id = "#p0.id", ot = LogOT.IMG_EXPORT, stExp = "#p0.type")
+    @CrestAudit(id = "#p0.id", ot = LogOT.IMG_EXPORT, stExp = "#p0.type")
     public void exportLogImg(DataVisualizationBaseRequest request) {
 
     }
@@ -1224,7 +1224,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
         List<DataVisualizationInfo> existList = visualizationInfoMapper.selectList(wrapper);
         if (CollectionUtils.isNotEmpty(existList) && existList.stream().anyMatch(item -> item.getName().equals(request.getName().trim()))) {
-            DEException.throwException("当前名称已经存在");
+            CrestException.throwException("当前名称已经存在");
         }
     }
 

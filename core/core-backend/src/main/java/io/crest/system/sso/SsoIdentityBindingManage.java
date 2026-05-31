@@ -19,7 +19,7 @@ public class SsoIdentityBindingManage {
     public void upsertProvider(Long providerId, SsoProviderType providerType, String providerName) {
         long now = System.currentTimeMillis();
         jdbcTemplate.update("""
-                INSERT INTO sso_provider(id, provider_key, provider_type, name, enabled, create_time, update_time)
+                INSERT INTO auth_sso_provider(id, provider_key, provider_type, name, enabled, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                     provider_type = VALUES(provider_type),
@@ -38,7 +38,7 @@ public class SsoIdentityBindingManage {
 
     public Long boundUserId(SsoIdentityProfile profile) {
         List<Long> bySubject = jdbcTemplate.queryForList("""
-                SELECT user_id FROM sso_identity_binding
+                SELECT user_id FROM auth_sso_identity_binding
                 WHERE provider_id = ? AND external_subject = ?
                 LIMIT 1
                 """, Long.class, profile.getProviderId(), profile.getExternalSubject());
@@ -49,7 +49,7 @@ public class SsoIdentityBindingManage {
             return null;
         }
         List<Long> byUnion = jdbcTemplate.queryForList("""
-                SELECT user_id FROM sso_identity_binding
+                SELECT user_id FROM auth_sso_identity_binding
                 WHERE provider_id = ? AND union_id = ?
                 LIMIT 1
                 """, Long.class, profile.getProviderId(), profile.getUnionId());
@@ -60,7 +60,7 @@ public class SsoIdentityBindingManage {
     public void upsert(Long userId, SsoIdentityProfile profile) {
         long now = System.currentTimeMillis();
         jdbcTemplate.update("""
-                INSERT INTO sso_identity_binding(id, user_id, provider_id, provider_type, external_subject,
+                INSERT INTO auth_sso_identity_binding(id, user_id, provider_id, provider_type, external_subject,
                     account, display_name, email, union_id, last_login_time, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE

@@ -12,7 +12,7 @@ import io.crest.datasource.manage.EngineManage;
 import io.crest.datasource.request.EngineRequest;
 import io.crest.datasource.security.JdbcUrlSecurityPolicy;
 import io.crest.datasource.type.*;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.*;
 import io.crest.extensions.datasource.provider.DriverShim;
 import io.crest.extensions.datasource.provider.ExtendedJdbcClassLoader;
@@ -108,7 +108,7 @@ public class CalciteProvider extends Provider {
         try {
             connection.setReadOnly(true);
         } catch (SQLException e) {
-            DEException.throwException("源库只读连接启用失败：" + e.getMessage());
+            CrestException.throwException("源库只读连接启用失败：" + e.getMessage());
         }
     }
 
@@ -186,7 +186,7 @@ public class CalciteProvider extends Provider {
             }
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
         if (datasourceRequest.getDatasource().getType().equalsIgnoreCase(DatasourceConfiguration.DatasourceType.pg.name())) {
             Set<String> SYSTEM_SCHEMAS = new HashSet<>(Arrays.asList("information_schema", "pg_catalog", "pg_temp_1", "pg_toast", "pg_toast_temp_1"));
@@ -203,7 +203,7 @@ public class CalciteProvider extends Provider {
                 DatasourceConfiguration configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Pg.class);
                 List<String> schemas = getSchema(datasourceRequest);
                 if (CollectionUtils.isEmpty(schemas) || !schemas.contains(configuration.getSchema())) {
-                    DEException.throwException("无效的 schema！");
+                    CrestException.throwException("无效的 schema！");
                 }
                 break;
             default:
@@ -223,7 +223,7 @@ public class CalciteProvider extends Provider {
             setConnectionReadOnly(con.getConnection(), readOnly);
             try {
                 datasourceRequest.setDsVersion(con.getConnection().getMetaData().getDatabaseMajorVersion());
-                QueryAndParams queryAndParams = getTablesSql(datasourceRequest).get(0);
+                QueryAndParams queryAndParams = tablesSql(datasourceRequest).get(0);
                 try (PreparedStatement statement = prepareStatement(con.getConnection(), queryAndParams, 30);
                      ResultSet resultSet = statement.executeQuery()) {
                     if (resultSet != null) {
@@ -240,7 +240,7 @@ public class CalciteProvider extends Provider {
     }
 
     @Override
-    public List<DatasetTableDTO> getTables(DatasourceRequest datasourceRequest) {
+    public List<DatasetTableDTO> tables(DatasourceRequest datasourceRequest) {
         List<DatasetTableDTO> tables = new ArrayList<>();
         try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId())) {
             DatasourceConfiguration datasourceConfiguration = parseDatasourceConfiguration(
@@ -255,7 +255,7 @@ public class CalciteProvider extends Provider {
             setConnectionReadOnly(con, readOnly);
             try {
                 datasourceRequest.setDsVersion(con.getMetaData().getDatabaseMajorVersion());
-                List<QueryAndParams> tablesSqls = getTablesSql(datasourceRequest);
+                List<QueryAndParams> tablesSqls = tablesSql(datasourceRequest);
                 for (QueryAndParams tablesSql : tablesSqls) {
                     try (PreparedStatement statement = prepareStatement(con, tablesSql, 30);
                          ResultSet resultSet = statement.executeQuery()) {
@@ -269,13 +269,13 @@ public class CalciteProvider extends Provider {
             }
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
         return tables;
     }
 
     @Override
-    public Map<String, Object> fetchResultField(DatasourceRequest datasourceRequest) throws DEException {
+    public Map<String, Object> fetchResultField(DatasourceRequest datasourceRequest) throws CrestException {
         // 不跨数据源
         if (datasourceRequest.getIsCross() == null || !datasourceRequest.getIsCross()) {
             return jdbcFetchResultField(datasourceRequest);
@@ -298,13 +298,13 @@ public class CalciteProvider extends Provider {
                 tableField.setOriginName(metaData.getColumnLabel(i));
                 tableField.setType(metaData.getColumnTypeName(i));
                 tableField.setPrecision(metaData.getPrecision(i));
-                int deType = FieldUtils.transType2DeType(tableField.getType());
-                tableField.setDeExtractType(deType);
-                tableField.setDeType(deType);
+                int fieldType = FieldUtils.resolveFieldType(tableField.getType());
+                tableField.setExtractedFieldType(fieldType);
+                tableField.setFieldType(fieldType);
                 tableField.setScale(metaData.getScale(i));
                 datasetTableFields.add(tableField);
             }
-            list = getDataResult(resultSet);
+            list = dataResult(resultSet);
         } catch (Exception | AssertionError e) {
             String msg;
             if (e.getCause() != null && e.getCause().getCause() != null) {
@@ -312,7 +312,7 @@ public class CalciteProvider extends Provider {
             } else {
                 msg = e.getMessage();
             }
-            DEException.throwException(Translator.get("i18n_fetch_error") + msg);
+            CrestException.throwException(Translator.get("i18n_fetch_error") + msg);
         } finally {
             try {
                 if (resultSet != null) resultSet.close();
@@ -327,7 +327,7 @@ public class CalciteProvider extends Provider {
     }
 
     @Override
-    public String transSqlDialect(String sql, Map<Long, DatasourceSchemaDTO> dsMap) throws DEException {
+    public String transSqlDialect(String sql, Map<Long, DatasourceSchemaDTO> dsMap) throws CrestException {
         DatasourceSchemaDTO value = dsMap.entrySet().iterator().next().getValue();
         try (Connection connection = getConnectionFromPool(value.getId());) {
             // 获取数据库version
@@ -338,7 +338,7 @@ public class CalciteProvider extends Provider {
             SqlNode sqlNode = parser.parseStmt();
             return sqlNode.toSqlString(getDialect(value)).toString();
         } catch (Exception e) {
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
         return null;
     }
@@ -354,16 +354,16 @@ public class CalciteProvider extends Provider {
             tableField.setOriginName(columnName);
             tableField.setName(label);
             tableField.setType(metaData.getColumnTypeName(j + 1));
-            tableField.setFieldType(tableField.getType());
-            int deType = FieldUtils.transType2DeType(tableField.getType());
-            tableField.setDeExtractType(deType);
-            tableField.setDeType(deType);
+            tableField.setNativeType(tableField.getType());
+            int fieldType = FieldUtils.resolveFieldType(tableField.getType());
+            tableField.setExtractedFieldType(fieldType);
+            tableField.setFieldType(fieldType);
             fieldList.add(tableField);
         }
         return fieldList;
     }
 
-    private Map<String, Integer> getTableTypeMap(DatasourceRequest datasourceRequest, DatasourceConfiguration datasourceConfiguration, String tableName) throws DEException {
+    private Map<String, Integer> getTableTypeMap(DatasourceRequest datasourceRequest, DatasourceConfiguration datasourceConfiguration, String tableName) throws CrestException {
         Map<String, Integer> map = new HashMap<>();
         String schemaTable = (ObjectUtils.isNotEmpty(datasourceConfiguration.getSchema()) ? (quoteIdentifierPart(datasourceConfiguration.getSchema()) + ".") : "") + quoteIdentifierPart(tableName);
         // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string - SQL identifiers cannot be bound as parameters; each part is escaped by quoteIdentifierPart.
@@ -409,7 +409,7 @@ public class CalciteProvider extends Provider {
 
     private String quoteIdentifierPart(String identifier) {
         if (StringUtils.isBlank(identifier)) {
-            DEException.throwException("Illegal empty identifier");
+            CrestException.throwException("Illegal empty identifier");
         }
         return "`" + identifier.replace("`", "``") + "`";
     }
@@ -433,7 +433,7 @@ public class CalciteProvider extends Provider {
     }
 
     @Override
-    public List<TableField> fetchTableField(DatasourceRequest datasourceRequest) throws DEException {
+    public List<TableField> fetchTableField(DatasourceRequest datasourceRequest) throws CrestException {
         if (datasourceRequest.getIsCross() != null && datasourceRequest.getIsCross()) {
             List<TableField> datasetTableFields = new ArrayList<>();
             PreparedStatement statement = null;
@@ -451,14 +451,14 @@ public class CalciteProvider extends Provider {
                     tableField.setOriginName(metaData.getColumnLabel(i));
                     tableField.setType(metaData.getColumnTypeName(i));
                     tableField.setPrecision(metaData.getPrecision(i));
-                    int deType = FieldUtils.transType2DeType(tableField.getType());
-                    tableField.setDeExtractType(deType);
-                    tableField.setDeType(deType);
+                    int fieldType = FieldUtils.resolveFieldType(tableField.getType());
+                    tableField.setExtractedFieldType(fieldType);
+                    tableField.setFieldType(fieldType);
                     tableField.setScale(metaData.getScale(i));
                     datasetTableFields.add(tableField);
                 }
             } catch (Exception e) {
-                throw DEException.getException(e.getMessage());
+                throw CrestException.getException(e.getMessage());
             }
             return datasetTableFields;
         }
@@ -485,7 +485,7 @@ public class CalciteProvider extends Provider {
                     resetConnectionReadOnly(con, readOnly);
                 }
             } catch (Exception e) {
-                DEException.throwException(e.getMessage());
+                CrestException.throwException(e.getMessage());
             } finally {
                 if (resultSet != null) {
                     try {
@@ -496,8 +496,8 @@ public class CalciteProvider extends Provider {
                 }
             }
         } else {
-            if (!getTables(datasourceRequest).stream().map(DatasetTableDTO::getTableName).collect(Collectors.toList()).contains(table)) {
-                DEException.throwException(Translator.get("i18n_invalid_table_name"));
+            if (!tables(datasourceRequest).stream().map(DatasetTableDTO::getTableName).collect(Collectors.toList()).contains(table)) {
+                CrestException.throwException(Translator.get("i18n_invalid_table_name"));
             }
             ResultSet resultSet = null;
             try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId());
@@ -539,7 +539,7 @@ public class CalciteProvider extends Provider {
                     resetConnectionReadOnly(con, readOnly);
                 }
             } catch (Exception e) {
-                DEException.throwException(e.getMessage());
+                CrestException.throwException(e.getMessage());
             } finally {
                 if (resultSet != null) {
                     try {
@@ -633,7 +633,7 @@ public class CalciteProvider extends Provider {
             conn = driverClass.connect(jdbcUrl, props);
 
         } catch (Exception e) {
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
         connectionObj.setConnection(conn);
         return connectionObj;
@@ -647,12 +647,12 @@ public class CalciteProvider extends Provider {
         try {
             customDriverId = Long.valueOf(customDriver);
         } catch (NumberFormatException e) {
-            DEException.throwException("invalid driver");
+            CrestException.throwException("invalid driver");
             return null;
         }
         CoreDriver coreDriver = coreDriverMapper.selectById(customDriverId);
         if (coreDriver == null || !StringUtils.equalsIgnoreCase(coreDriver.getType(), datasourceType)) {
-            DEException.throwException("invalid driver");
+            CrestException.throwException("invalid driver");
         }
         return coreDriver;
     }
@@ -677,7 +677,7 @@ public class CalciteProvider extends Provider {
         return drivers;
     }
 
-    public Map<String, Object> jdbcFetchResultField(DatasourceRequest datasourceRequest) throws DEException {
+    public Map<String, Object> jdbcFetchResultField(DatasourceRequest datasourceRequest) throws CrestException {
         DatasourceSchemaDTO value = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
         datasourceRequest.setDatasource(value);
 
@@ -728,14 +728,14 @@ public class CalciteProvider extends Provider {
                     resultSet = statement.executeQuery(datasourceRequest.getQuery());
                 }
                 fieldList = getField(resultSet, datasourceRequest);
-                dataList = getData(resultSet, datasourceRequest);
+                dataList = data(resultSet, datasourceRequest);
             } finally {
                 resetConnectionReadOnly(con, readOnly);
             }
         } catch (SQLException e) {
-            DEException.throwException("SQL ERROR: " + e.getMessage());
+            CrestException.throwException("SQL ERROR: " + e.getMessage());
         } catch (Exception e) {
-            DEException.throwException("Datasource connection exception: " + e.getMessage());
+            CrestException.throwException("Datasource connection exception: " + e.getMessage());
         } finally {
             if (resultSet != null) {
                 try {
@@ -752,7 +752,7 @@ public class CalciteProvider extends Provider {
     }
 
     @Override
-    public void exec(DatasourceRequest datasourceRequest) throws DEException {
+    public void exec(DatasourceRequest datasourceRequest) throws CrestException {
         DatasourceSchemaDTO value = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
         datasourceRequest.setDatasource(value);
         DatasourceConfiguration datasourceConfiguration = parseDatasourceConfiguration(datasourceRequest.getDatasource().getConfiguration(), value.getType());
@@ -795,9 +795,9 @@ public class CalciteProvider extends Provider {
             }
 
         } catch (SQLException e) {
-            DEException.throwException("SQL ERROR: " + e.getMessage());
+            CrestException.throwException("SQL ERROR: " + e.getMessage());
         } catch (Exception e) {
-            DEException.throwException("Datasource connection exception: " + e.getMessage());
+            CrestException.throwException("Datasource connection exception: " + e.getMessage());
         } finally {
             if (resultSet != null) {
                 try {
@@ -832,7 +832,7 @@ public class CalciteProvider extends Provider {
     }
 
     @Override
-    public ExecuteResult executeUpdate(DatasourceRequest datasourceRequest, String autoIncrementPkName) throws DEException {
+    public ExecuteResult executeUpdate(DatasourceRequest datasourceRequest, String autoIncrementPkName) throws CrestException {
         DatasourceSchemaDTO value = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
         datasourceRequest.setDatasource(value);
         DatasourceConfiguration datasourceConfiguration = parseDatasourceConfiguration(datasourceRequest.getDatasource().getConfiguration(), value.getType());
@@ -889,9 +889,9 @@ public class CalciteProvider extends Provider {
 
             return result;
         } catch (SQLException e) {
-            DEException.throwException("SQL ERROR: " + e.getMessage());
+            CrestException.throwException("SQL ERROR: " + e.getMessage());
         } catch (Exception e) {
-            DEException.throwException("Datasource connection exception: " + e.getMessage());
+            CrestException.throwException("Datasource connection exception: " + e.getMessage());
         } finally {
             if (resultSet != null) {
                 try {
@@ -919,14 +919,14 @@ public class CalciteProvider extends Provider {
             TableField field = new TableField();
             field.setOriginName(l);
             field.setName(l);
-            field.setFieldType(t);
+            field.setNativeType(t);
             field.setType(t);
             fieldList.add(field);
         }
         return fieldList;
     }
 
-    private List<String[]> getData(ResultSet rs, DatasourceRequest datasourceRequest) throws Exception {
+    private List<String[]> data(ResultSet rs, DatasourceRequest datasourceRequest) throws Exception {
         String targetCharset = null;
         String originCharset = null;
         if (datasourceRequest != null && isOracleLike(datasourceRequest.getDatasource().getType())) {
@@ -996,7 +996,7 @@ public class CalciteProvider extends Provider {
         try {
             return Charset.forName(normalized).name();
         } catch (UnsupportedCharsetException | IllegalCharsetNameException e) {
-            DEException.throwException("Unsupported charset: " + charset);
+            CrestException.throwException("Unsupported charset: " + charset);
         }
         return null;
     }
@@ -1157,10 +1157,10 @@ public class CalciteProvider extends Provider {
         TableField tableField = new TableField();
         tableField.setOriginName(resultSet.getString(1));
         tableField.setType(resultSet.getString(2).toUpperCase());
-        tableField.setFieldType(tableField.getType());
-        int deType = FieldUtils.transType2DeType(tableField.getType());
-        tableField.setDeExtractType(deType);
-        tableField.setDeType(deType);
+        tableField.setNativeType(tableField.getType());
+        int fieldType = FieldUtils.resolveFieldType(tableField.getType());
+        tableField.setExtractedFieldType(fieldType);
+        tableField.setFieldType(fieldType);
         tableField.setName(resultSet.getString(commentIndex));
         try {
             tableField.setPrimary(resultSet.getInt(4) > 0);
@@ -1218,7 +1218,7 @@ public class CalciteProvider extends Provider {
             Class.forName("org.apache.calcite.jdbc.Driver");
             connection = DriverManager.getConnection("jdbc:calcite:", info);
         } catch (Exception e) {
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
         return connection;
     }
@@ -1338,7 +1338,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case db2:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Db2.class);
-                                dataSource.setValidationQuery("select 1 from syscat.tables  WHERE TABSCHEMA ='DE_SCHEMA' AND \"TYPE\" = 'T'".replace("DE_SCHEMA", configuration.getSchema()));
+                                dataSource.setValidationQuery("select 1 from syscat.tables  WHERE TABSCHEMA ='CREST_SCHEMA' AND \"TYPE\" = 'T'".replace("CREST_SCHEMA", configuration.getSchema()));
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1449,7 +1449,7 @@ public class CalciteProvider extends Provider {
         return rootSchema;
     }
 
-    private List<String[]> getDataResult(ResultSet rs) {
+    private List<String[]> dataResult(ResultSet rs) {
         List<String[]> list = new LinkedList<>();
         try {
             ResultSetMetaData metaData = rs.getMetaData();
@@ -1479,7 +1479,7 @@ public class CalciteProvider extends Provider {
                 list.add(row);
             }
         } catch (Exception e) {
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
         return list;
     }
@@ -1528,7 +1528,7 @@ public class CalciteProvider extends Provider {
             case obOracle:
                 configuration = parseOracleLikeConfiguration(datasourceRequest.getDatasource().getConfiguration(), datasourceRequest.getDatasource().getType());
                 if (StringUtils.isEmpty(configuration.getSchema())) {
-                    DEException.throwException(Translator.get("i18n_schema_is_empty"));
+                    CrestException.throwException(Translator.get("i18n_schema_is_empty"));
                 }
                 sql = String.format("""
                         SELECT tc.COLUMN_NAME AS ColumnName,
@@ -1563,14 +1563,14 @@ public class CalciteProvider extends Provider {
             case db2:
                 configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Db2.class);
                 if (StringUtils.isEmpty(configuration.getSchema())) {
-                    DEException.throwException(Translator.get("i18n_schema_is_empty"));
+                    CrestException.throwException(Translator.get("i18n_schema_is_empty"));
                 }
                 sql = String.format("SELECT COLNAME, TYPENAME, REMARKS, 0, 0 FROM SYSCAT.COLUMNS WHERE TABSCHEMA = '%s' AND TABNAME = '%s' ", configuration.getSchema(), datasourceRequest.getTable());
                 break;
             case sqlServer:
                 configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Sqlserver.class);
                 if (StringUtils.isEmpty(configuration.getSchema())) {
-                    DEException.throwException(Translator.get("i18n_schema_is_empty"));
+                    CrestException.throwException(Translator.get("i18n_schema_is_empty"));
                 }
 
                 sql = String.format("""
@@ -1607,7 +1607,7 @@ public class CalciteProvider extends Provider {
             case pg:
                 configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Pg.class);
                 if (StringUtils.isEmpty(configuration.getSchema())) {
-                    DEException.throwException(Translator.get("i18n_schema_is_empty"));
+                    CrestException.throwException(Translator.get("i18n_schema_is_empty"));
                 }
                 sql = String.format("""
                         SELECT a.attname     AS ColumnName,
@@ -1669,7 +1669,7 @@ public class CalciteProvider extends Provider {
         return sql;
     }
 
-    private List<QueryAndParams> getTablesSql(DatasourceRequest datasourceRequest) throws DEException {
+    private List<QueryAndParams> tablesSql(DatasourceRequest datasourceRequest) throws CrestException {
         List<QueryAndParams> tableSqls = new ArrayList<>();
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasourceRequest.getDatasource().getType());
         DatasourceConfiguration configuration = null;
@@ -1715,7 +1715,7 @@ public class CalciteProvider extends Provider {
             case obOracle:
                 configuration = parseOracleLikeConfiguration(datasourceRequest.getDatasource().getConfiguration(), datasourceRequest.getDatasource().getType());
                 if (StringUtils.isEmpty(configuration.getSchema())) {
-                    DEException.throwException(Translator.get("i18n_schema_is_empty"));
+                    CrestException.throwException(Translator.get("i18n_schema_is_empty"));
                 }
                 tableSqls.add(new QueryAndParams("select table_name, comments, owner from all_tab_comments where owner = ? AND table_type = 'TABLE'", configuration.getSchema()));
                 tableSqls.add(new QueryAndParams("select table_name, comments, owner from all_tab_comments where owner = ? AND table_type = 'VIEW'", configuration.getSchema()));
@@ -1726,14 +1726,14 @@ public class CalciteProvider extends Provider {
             case db2:
                 configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Db2.class);
                 if (StringUtils.isEmpty(configuration.getSchema())) {
-                    DEException.throwException(Translator.get("i18n_schema_is_empty"));
+                    CrestException.throwException(Translator.get("i18n_schema_is_empty"));
                 }
                 tableSqls.add(new QueryAndParams("select TABNAME, REMARKS from syscat.tables WHERE TABSCHEMA = ? AND \"TYPE\" = 'T'", configuration.getSchema()));
                 break;
             case sqlServer:
                 configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Sqlserver.class);
                 if (StringUtils.isEmpty(configuration.getSchema())) {
-                    DEException.throwException(Translator.get("i18n_schema_is_empty"));
+                    CrestException.throwException(Translator.get("i18n_schema_is_empty"));
                 }
                 tableSqls.add(new QueryAndParams("SELECT   \n" + "    t.name AS TableName,  \n" + "    ep.value AS TableDescription  \n" + "FROM   \n" + "    sys.tables t  \n" + "LEFT OUTER JOIN   sys.schemas sc ON sc.schema_id =t.schema_id \n" + "LEFT OUTER JOIN   \n" + "    sys.extended_properties ep ON t.object_id = ep.major_id   \n" + "                               AND ep.minor_id = 0   \n" + "                               AND ep.class = 1  \n" + "                               AND ep.name = 'MS_Description'\n" + "where sc.name = ?", configuration.getSchema()));
                 tableSqls.add(new QueryAndParams("SELECT   \n" + "    t.name AS TableName,  \n" + "    ep.value AS TableDescription  \n" + "FROM   \n" + "    sys.views t  \n" + "LEFT OUTER JOIN   sys.schemas sc ON sc.schema_id =t.schema_id \n" + "LEFT OUTER JOIN   \n" + "    sys.extended_properties ep ON t.object_id = ep.major_id   \n" + "                               AND ep.minor_id = 0   \n" + "                               AND ep.class = 1  \n" + "                               AND ep.name = 'MS_Description'\n" + "where sc.name = ?", configuration.getSchema()));
@@ -1741,7 +1741,7 @@ public class CalciteProvider extends Provider {
             case pg:
                 configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Pg.class);
                 if (StringUtils.isEmpty(configuration.getSchema())) {
-                    DEException.throwException(Translator.get("i18n_schema_is_empty"));
+                    CrestException.throwException(Translator.get("i18n_schema_is_empty"));
                 }
                 tableSqls.add(new QueryAndParams("SELECT  \n" + "    relname AS TableName,  \n" + "    obj_description(relfilenode::regclass, 'pg_class') AS TableDescription  \n" + "FROM  \n" + "    pg_class  \n" + "WHERE  \n" + "   relkind in  ('r','p', 'f')  \n" + "    AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?) ", configuration.getSchema()));
                 tableSqls.add(new QueryAndParams("SELECT \n" + "    c.relname AS view_name,\n" + "    COALESCE(d.description, 'No description provided') AS view_description\n" + "FROM \n" + "    pg_class c\n" + "JOIN \n" + "    pg_namespace n ON c.relnamespace = n.oid\n" + "LEFT JOIN \n" + "    pg_description d ON c.oid = d.objoid\n" + "WHERE \n" + "    c.relkind = 'v'  \n" + "    AND n.nspname = ?", configuration.getSchema()));
@@ -1797,7 +1797,7 @@ public class CalciteProvider extends Provider {
         }
     }
 
-    private String getSchemaSql(DatasourceDTO datasource) throws DEException {
+    private String getSchemaSql(DatasourceDTO datasource) throws CrestException {
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasource.getType());
         switch (datasourceType) {
             case oracle:
@@ -1819,14 +1819,14 @@ public class CalciteProvider extends Provider {
 
     public Statement getStatement(Connection connection, int queryTimeout) {
         if (connection == null) {
-            DEException.throwException("Failed to get connection!");
+            CrestException.throwException("Failed to get connection!");
         }
         Statement stat = null;
         try {
             stat = connection.createStatement();
             stat.setQueryTimeout(queryTimeout);
         } catch (Exception e) {
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
         return stat;
     }
@@ -1851,7 +1851,7 @@ public class CalciteProvider extends Provider {
                 }
                 stat.setQueryTimeout(queryTimeout);
             } catch (Exception e) {
-                DEException.throwException(e.getMessage());
+                CrestException.throwException(e.getMessage());
             }
             return stat;
         } else {
@@ -1865,7 +1865,7 @@ public class CalciteProvider extends Provider {
 
     protected ExtendedJdbcClassLoader getCustomJdbcClassLoader(CoreDriver coreDriver) {
         if (coreDriver == null) {
-            DEException.throwException("Can not found custom Driver");
+            CrestException.throwException("Can not found custom Driver");
         }
         ExtendedJdbcClassLoader customJdbcClassLoader = customJdbcClassLoaders.get(coreDriver.getId());
         if (customJdbcClassLoader == null) {
@@ -1907,7 +1907,7 @@ public class CalciteProvider extends Provider {
             customJdbcClassLoaders.put(coreDriver.getId(), customJdbcClassLoader);
             return customJdbcClassLoader;
         } catch (Exception e) {
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
         return null;
     }
@@ -1921,7 +1921,7 @@ public class CalciteProvider extends Provider {
                 .filter(coreDatasource -> !Arrays.asList("folder", "API", "Excel", "ExcelRemote").contains(coreDatasource.getType()))
                 .filter(coreDatasource -> Strings.CI.equals(coreDatasource.getStatus(), "Success"))
                 .collect(Collectors.toList());
-        CoreDatasource engine = engineManage.deEngine();
+        CoreDatasource engine = engineManage.engineDatasource();
         if (engine != null) {
             coreDatasources.add(engine);
         }
@@ -1943,7 +1943,7 @@ public class CalciteProvider extends Provider {
 
     }
 
-    public void update(DatasourceDTO datasourceDTO) throws DEException {
+    public void update(DatasourceDTO datasourceDTO) throws CrestException {
         DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
         BeanUtils.copyBean(datasourceSchemaDTO, datasourceDTO);
         datasourceSchemaDTO.setSchemaAlias(String.format(SQLConstants.SCHEMA, datasourceSchemaDTO.getId()));
@@ -1954,11 +1954,11 @@ public class CalciteProvider extends Provider {
             CalciteConnection calciteConnection = conn.unwrap(CalciteConnection.class);
             SchemaPlus rootSchema = buildSchema(datasourceRequest, calciteConnection);
         } catch (Exception e) {
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
     }
 
-    public void updateDsPoolAfterCheckStatus(DatasourceDTO datasourceDTO) throws DEException {
+    public void updateDsPoolAfterCheckStatus(DatasourceDTO datasourceDTO) throws CrestException {
         DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
         BeanUtils.copyBean(datasourceSchemaDTO, datasourceDTO);
         datasourceSchemaDTO.setSchemaAlias(String.format(SQLConstants.SCHEMA, datasourceSchemaDTO.getId()));
@@ -1979,11 +1979,11 @@ public class CalciteProvider extends Provider {
             }
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
     }
 
-    public void delete(CoreDatasource datasource) throws DEException {
+    public void delete(CoreDatasource datasource) throws CrestException {
         DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
         BeanUtils.copyBean(datasourceSchemaDTO, datasource);
         datasourceSchemaDTO.setSchemaAlias(String.format(SQLConstants.SCHEMA, datasourceSchemaDTO.getId()));
@@ -1998,7 +1998,7 @@ public class CalciteProvider extends Provider {
                 removeSubSchema(rootSchema, datasourceSchemaDTO.getSchemaAlias());
             }
         } catch (Exception e) {
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
         Provider.getLPorts().remove(datasource.getId());
         if (Provider.getSessions().get(datasource.getId()) != null) {
@@ -2028,17 +2028,17 @@ public class CalciteProvider extends Provider {
             CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
             SchemaPlus rootSchema = calciteConnection.getRootSchema();
             if (rootSchema.getSubSchema(String.format(SQLConstants.SCHEMA, dsId)) == null) {
-                DEException.throwException(Translator.get("i18n_check_datasource_connection"));
+                CrestException.throwException(Translator.get("i18n_check_datasource_connection"));
             }
             JdbcSchema jdbcSchema = rootSchema.getSubSchema(String.format(SQLConstants.SCHEMA, dsId)).unwrap(JdbcSchema.class);
             BasicDataSource basicDataSource = (BasicDataSource) jdbcSchema.getDataSource();
             basicDataSource.setMaxWaitMillis(5 * 1000);
             return basicDataSource.getConnection();
-        } catch (DEException e) {
+        } catch (CrestException e) {
             throw e;
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(Translator.get("i18n_invalid_connection") + e.getMessage());
+            CrestException.throwException(Translator.get("i18n_invalid_connection") + e.getMessage());
         }
         return null;
     }
@@ -2054,7 +2054,7 @@ public class CalciteProvider extends Provider {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 Map<String, Object> map = new LinkedHashMap<>();
                 map.put("fields", fetchResultField(resultSet));
-                map.put("data", getDataResult(resultSet));
+                map.put("data", dataResult(resultSet));
                 return map;
             }
         }

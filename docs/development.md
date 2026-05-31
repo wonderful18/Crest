@@ -170,22 +170,20 @@ pnpm dev
 core/core-backend/src/main/resources/db/migration
 ```
 
-当前迁移脚本：
+`v1.5.0` 是全新安装基线，不支持从旧版本直接通过 Flyway 原地升级。当前只保留两份发布脚本：
 
 | 脚本 | 说明 |
 | --- | --- |
-| `V1.1__initial_schema.sql` | 创建运行所需表结构、默认管理员、基础菜单、系统参数、内置驱动和主题配置 |
-| `V1.2__demo_retail_dashboard.sql` | 创建 `crest_demo_retail` 零售经营演示库，写入演示数据源、数据集、图表和大屏 |
-| `V1.3__demo_engineering_efficiency.sql` | 写入研发效能主题数据、指标视图、图表和大屏 |
-| `V1.4__sso_integration.sql` | 增加单点登录配置、菜单和用户认证来源字段 |
-| `V1.5__sanitize_user_display_names.sql` | 清理异常用户展示名并更新单点登录默认展示名称 |
+| `V1.5.0.1__initial_schema.sql` | 创建运行所需表结构、默认管理员、基础菜单、系统参数、平台管理、单点登录、审计日志、国产密码套件配置和内置驱动 |
+| `V1.5.0.2__demo_resources.sql` | 创建 `crest_demo_retail` 零售经营演示库，写入研发效能主题数据、演示数据源、数据集、图表和大屏 |
 
 迁移规则：
 
-- 已发布脚本不直接改写，后续变化新增 `Vx.y__description.sql`；
+- `v1.5.0` 之前的本地实验脚本不作为公开升级链路保留；
+- 后续正式发布如支持原地升级，新增脚本必须从已发布版本向前迁移，不改写已发布脚本；
 - 初始化数据必须环境无关，不能写入本地 IP、个人账号、外部库密码或临时资源；
 - 新增演示资源要能说明来源字段、指标口径、下钻字段和展示目的；
-- 数据结构变化要兼容已有安装，必要时提供回滚说明；
+- 数据结构变化要在 release notes 中明确是否支持原地升级，必要时提供回滚说明；
 - 迁移脚本应能在空库首次安装时一次执行成功。
 
 空库验证建议：
@@ -197,13 +195,15 @@ docker exec crest-mysql-local mysql -uroot -p'<mysql-root-password>' \
 
 验证点：
 
-- `de_standalone_version` 包含最新迁移；
+- `crest_schema_version` 包含最新迁移；
 - 只有一个默认管理员账号；
-- `core_opt_recent`、`core_export_task` 等运行残留为空；
+- `workspace_recent_resource`、`export_task` 等运行残留为空；
 - 零售经营和研发效能演示资源存在；
 - `sso.` 配置项存在，默认不开启单点登录；
 - 演示数据源连接信息不含本地环境地址；
-- `/index.html`、`/doc.html`、`/v3/api-docs` 返回 200；
+- `/index.html` 返回 200；
+- `/doc.html` 可打开或跳转到登录流程；
+- `/v3/api-docs` 在未登录时返回受保护状态，登录或放行接口文档后可正常读取；
 - 数据血缘能从演示数据源追踪到字段、数据集、图表和大屏。
 
 ## 前端开发约定

@@ -19,11 +19,11 @@ import java.util.List;
 public interface ThresholdApi {
 
     @Operation(summary = "保存")
-    @PostMapping("/save")
+    @PostMapping("/record")
     void save(@RequestBody ThresholdCreator creator);
 
     @Operation(summary = "修改")
-    @PostMapping("/edit")
+    @PutMapping
     void edit(@RequestBody ThresholdCreator creator);
 
     @Operation(summary = "查询列表")
@@ -32,11 +32,11 @@ public interface ThresholdApi {
             @Parameter(name = "pageSize", description = "每页容量", required = true, in = ParameterIn.PATH),
             @Parameter(name = "request", description = "过滤条件", required = true)
     })
-    @PostMapping("/pager/{goPage}/{pageSize}")
+    @PostMapping("/page/{goPage}/{pageSize}")
     IPage<ThresholdGridVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody ThresholdGridRequest request);
 
     @Operation(summary = "查询表单")
-    @GetMapping("/formInfo/{id}/{resourceTable}")
+    @GetMapping("/form-info/{id}/{resourceTable}")
     ThresholdCreator formInfo(@PathVariable("id") Long id, @PathVariable("resourceTable") String resourceTable);
 
     @Operation(summary = "切换可用")
@@ -44,11 +44,11 @@ public interface ThresholdApi {
     void switchEnable(@RequestBody ThresholdSwitchRequest request);
 
     @Operation(summary = "删除")
-    @PostMapping("/delete/{resourceTable}")
+    @DeleteMapping("/{resourceTable}")
     void delete(@RequestBody List<Long> idList, @PathVariable("resourceTable") String resourceTable);
 
     @Operation(summary = "批量设置接收人")
-    @PostMapping("/batchReci")
+    @PostMapping("/batch-recipients")
     void batchReci(@RequestBody ThresholdBatchReciRequest request);
 
     @Operation(summary = "查询实例列表")
@@ -57,7 +57,7 @@ public interface ThresholdApi {
             @Parameter(name = "pageSize", description = "每页容量", required = true, in = ParameterIn.PATH),
             @Parameter(name = "request", description = "过滤条件", required = true)
     })
-    @PostMapping("/instancePager/{goPage}/{pageSize}")
+    @PostMapping("/instances/page/{goPage}/{pageSize}")
     IPage<ThresholdInstanceVO> instancePager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody ThresholdInstanceRequest request);
 
     @Operation(summary = "预览信息")
@@ -65,10 +65,10 @@ public interface ThresholdApi {
     String preview(@RequestBody ThresholdPreviewRequest request);
 
     @Operation(summary = "视图是否设置了阈值告警")
-    @GetMapping("/anyThreshold/{chartId}/{resourceTable}")
+    @GetMapping("/any-threshold/{chartId}/{resourceTable}")
     boolean anyThreshold(@PathVariable("chartId") Long chartId, @PathVariable("resourceTable") String resourceTable);
 
     @Operation(summary = "根据视图ID删除")
-    @GetMapping("/deleteWithChart/{chartId}/{resourceTable}")
+    @DeleteMapping("/charts/{chartId}/{resourceTable}")
     void deleteWithChart(@PathVariable("chartId") Long chartId, @PathVariable("resourceTable") String resourceTable);
 }

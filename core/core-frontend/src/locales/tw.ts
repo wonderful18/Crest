@@ -2125,7 +2125,7 @@ export default {
     select_year: '選擇年',
     sql_variable_limit_1: '1、SQL 變數只能在WHERE 條件中使用',
     sql_variable_limit_2:
-      "2、範例: select * from table where $DE_PARAM{'{'} name = substring('$[PARAM1]',1,5){'}'} and $DE_PARAM{'{'} name in ($[PARAM2]) {'}'}",
+      "2、範例: select * from table where $CREST_PARAM{'{'} name = substring('$[PARAM1]',1,5){'}'} and $CREST_PARAM{'{'} name in ($[PARAM2]) {'}'}",
     select_month: '選擇月',
     select_date: '選擇日期',
     select_time: '選擇時間',
@@ -2401,7 +2401,7 @@ export default {
     ungrouped_value: '未分組的值',
     please_enter_number: '請輸入數字'
   },
-  deDataset: {
+  datasetUi: {
     search_by_name: '透過名稱搜尋',
     new_folder: '新建資料夾',
     search_fields: '搜尋欄位',

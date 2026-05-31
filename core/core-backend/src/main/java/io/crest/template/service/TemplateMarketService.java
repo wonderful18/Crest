@@ -17,7 +17,7 @@ import java.util.List;
  * @date : 2023/11/17 13:20
  */
 @RestController
-@RequestMapping("/templateMarket")
+@RequestMapping("/template-market")
 @ConditionalOnProperty(prefix = "crest.internal-lite", name = "enabled", havingValue = "false", matchIfMissing = true)
 public class TemplateMarketService implements TemplateMarketApi {
 

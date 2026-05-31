@@ -86,7 +86,7 @@ defineExpose({
   margin-bottom: 16px;
 
   > :nth-child(1) {
-    color: var(--deTextSecondary, #1f2329);
+    color: var(--crestTextSecondary, #1f2329);
     font-style: normal;
     font-weight: 400;
     font-size: 14px;

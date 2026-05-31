@@ -29,7 +29,7 @@ class ShortcutOption {
     this.busiFlag = 'recent'
     this.busiRecordMap = {
       recent: {
-        url: '/dataVisualization/findRecent',
+        url: '/data-visualization/recent',
         busiList: ['panel', 'screen', 'dataset', 'datasource'],
         dataCache: [],
         columnList: [
@@ -40,7 +40,7 @@ class ShortcutOption {
         ]
       },
       store: {
-        url: '/store/query',
+        url: '/store/list',
         busiList: ['panel', 'screen'],
         dataCache: [],
         columnList: [

@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { deepCopy } from '@/utils/utils'
-import DeUpload from '@/components/visualization/common/DeUpload.vue'
+import CrestUpload from '@/components/visualization/common/CrestUpload.vue'
 const { t } = useI18n()
 const loading = ref(false)
 
@@ -90,7 +90,7 @@ const onImgChange = imgUrl => {
         <template #label>
           <label class="m-label"> {{ t('components.cover') }} </label>
         </template>
-        <de-upload themes="light" :img-url="subjectForm.coverUrl" @onImgChange="onImgChange" />
+        <CrestUpload themes="light" :img-url="subjectForm.coverUrl" @onImgChange="onImgChange" />
       </el-form-item>
     </el-form>
     <template #footer>

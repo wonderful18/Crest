@@ -48,12 +48,12 @@ import {
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { copyStoreWithOut } from '@/store/modules/data-visualization/copy'
 import TabsGroup from '@/custom-component/component-group/TabsGroup.vue'
-import DeResourceGroupOpt from '@/views/common/DeResourceGroupOpt.vue'
+import CrestResourceGroupActions from '@/views/common/CrestResourceGroupActions.vue'
 import OuterParamsSet from '@/components/visualization/OuterParamsSet.vue'
 import DbMoreComGroup from '@/custom-component/component-group/DbMoreComGroup.vue'
 import { useCache } from '@/hooks/web/useCache'
-import DeFullscreen from '@/components/visualization/common/DeFullscreen.vue'
-import DeAppApply from '@/views/common/DeAppApply.vue'
+import CrestFullscreen from '@/components/visualization/common/CrestFullscreen.vue'
+import CrestAppApply from '@/views/common/CrestAppApply.vue'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { updatePublishStatus } from '@/api/visualization/dataVisualization'
 const { t } = useI18n()
@@ -166,7 +166,7 @@ const queryList = computed(() => {
     if (com.innerType === 'VQuery') {
       arr.push(com)
     }
-    if ('DeTabs' === com.innerType) {
+    if ('Tabs' === com.innerType) {
       com.propValue.forEach(itx => {
         arr = [...itx.componentData.filter(item => item.innerType === 'VQuery'), ...arr]
       })
@@ -252,7 +252,7 @@ const saveCanvasWithCheck = (withPublish = false, status?) => {
 }
 
 const saveResource = (checkParams?) => {
-  wsCache.delete('DE-DV-CATCH-' + dvInfo.value.id)
+  wsCache.delete('CREST-DV-CACHE-' + dvInfo.value.id)
   if (styleChangeTimes.value > 0 || checkParams.withPublish) {
     dvMainStore.matrixSizeAdaptor()
     queryList.value.forEach(ele => {
@@ -330,7 +330,7 @@ const backHandler = (url: string) => {
     useEmitt().emitter.emit('changeCurrentComponent', 'DashboardPanel')
     return
   }
-  if (window['dataease-embedded-host'] && openHandler?.value) {
+  if (window['crest-embedded-host'] && openHandler?.value) {
     const pm = {
       methodName: 'embeddedInteractive',
       args: {
@@ -341,7 +341,7 @@ const backHandler = (url: string) => {
     openHandler.value.invokeMethod(pm)
     return
   }
-  wsCache.delete('DE-DV-CATCH-' + dvInfo.value.id)
+  wsCache.delete('CREST-DV-CACHE-' + dvInfo.value.id)
   wsCache.set('db-info-id', dvInfo.value.id)
   if (!!history.state.back) {
     history.back()
@@ -379,7 +379,7 @@ const batchDelete = () => {
     if (curBatchOptComponents.value.includes(component.id)) {
       eventBus.emit('removeMatrixItemById-' + component.canvasId, component.id)
     }
-    if (component.component === 'DeTabs') {
+    if (component.component === 'Tabs') {
       component.propValue?.forEach(tabItem => {
         tabItem.componentData?.forEach(tabComponent => {
           if (curBatchOptComponents.value.includes(tabComponent.id)) {
@@ -400,7 +400,7 @@ const batchCopy = () => {
     if (curBatchOptComponents.value.includes(component.id)) {
       multiplexingComponents[component.id] = component
     }
-    if (component.component === 'DeTabs') {
+    if (component.component === 'Tabs') {
       component.propValue?.forEach(tabItem => {
         tabItem.componentData?.forEach(tabComponent => {
           if (curBatchOptComponents.value.includes(tabComponent.id)) {
@@ -503,7 +503,7 @@ const onDvNameChange = () => {
   snapshotStore.recordSnapshotCache('onDvNameChange')
 }
 const appStore = useAppStoreWithOut()
-const isEmbedded = computed(() => appStore.getIsDataEaseBi || appStore.getIsIframe)
+const isEmbedded = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
 
 const openHandler = ref(null)
 const initOpenHandler = newWindow => {
@@ -812,22 +812,22 @@ const initOpenHandler = newWindow => {
     </Teleport>
 
     <multiplexing-canvas ref="multiplexingRef"></multiplexing-canvas>
-    <de-resource-group-opt
+    <CrestResourceGroupActions
       @finish="resourceOptFinish"
       cur-canvas-type="dashboard"
       ref="resourceGroupOpt"
     />
     <outer-params-set ref="outerParamsSetRef"> </outer-params-set>
   </div>
-  <de-fullscreen show-position="edit" ref="fullScreeRef"></de-fullscreen>
-  <de-app-apply
+  <CrestFullscreen show-position="change" ref="fullScreeRef"></CrestFullscreen>
+  <CrestAppApply
     ref="resourceAppOpt"
     :component-data="componentData"
     :dv-info="dvInfo"
     :canvas-view-info="canvasViewInfo"
     cur-canvas-type="dashboard"
     @saveAppCanvas="saveCanvasWithCheck"
-  ></de-app-apply>
+  ></CrestAppApply>
 </template>
 
 <style lang="less" scoped>

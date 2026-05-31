@@ -485,7 +485,7 @@ watch(
 <style lang="less">
 .set-time-filtering-range {
   .ed-radio,
-  .ed-checkbox.ed-checkbox--default {
+  .ed-checkbox.ed-checkbox--crestfault {
     height: 22px;
     margin-right: 24px;
     --ed-radio-input-height: 16px;

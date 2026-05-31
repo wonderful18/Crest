@@ -2,7 +2,7 @@ package io.crest.visualization.server;
 
 import io.crest.api.visualization.StaticResourceApi;
 import io.crest.api.visualization.request.StaticResourceRequest;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.utils.FileUtils;
 import io.crest.utils.JsonUtil;
 import io.crest.utils.LogUtil;
@@ -37,7 +37,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 @RestController
-@RequestMapping("/staticResource")
+@RequestMapping("/static-resource")
 @SuppressWarnings("unchecked")
 public class StaticResourceServer implements StaticResourceApi {
 
@@ -66,13 +66,13 @@ public class StaticResourceServer implements StaticResourceApi {
             byte[] fileBytes = file.getBytes();
             validateImageContent(newFileName, fileBytes, file.getContentType(), true);
             writeFileIfAbsent(newFileName, fileBytes);
-        } catch (DEException e) {
+        } catch (CrestException e) {
             throw e;
         } catch (IOException e) {
             LogUtil.error("文件上传失败", e);
-            DEException.throwException("文件上传失败");
+            CrestException.throwException("文件上传失败");
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -137,21 +137,21 @@ public class StaticResourceServer implements StaticResourceApi {
         try {
             validateImageFilename(fileName);
             if (StringUtils.isEmpty(content)) {
-                DEException.throwException("静态资源内容不能为空");
+                CrestException.throwException("静态资源内容不能为空");
             }
             byte[] fileBytes = decodeBase64Content(content);
             validateImageContent(fileName, fileBytes, null, false);
             writeFileIfAbsent(fileName, fileBytes);
-        } catch (DEException e) {
+        } catch (CrestException e) {
             throw e;
         } catch (Exception e) {
             LogUtil.error("template static resource save error", e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
     @Override
-    public Map<String, String> findResourceAsBase64(StaticResourceRequest resourceRequest) {
+    public Map<String, String> resourceBase64(StaticResourceRequest resourceRequest) {
         Map<String, String> result = new HashMap<>();
         if (CollectionUtils.isNotEmpty(resourceRequest.getResourcePathList())) {
             for (String path : resourceRequest.getResourcePathList()) {
@@ -165,7 +165,7 @@ public class StaticResourceServer implements StaticResourceApi {
     private void validateImageFilename(String filename) {
         FileUtils.validateUploadFilename(filename);
         if (!hasValidImageExtension(filename)) {
-            DEException.throwException("静态资源必须是图片");
+            CrestException.throwException("静态资源必须是图片");
         }
     }
 
@@ -197,7 +197,7 @@ public class StaticResourceServer implements StaticResourceApi {
         try {
             return Base64.getDecoder().decode(content);
         } catch (IllegalArgumentException e) {
-            DEException.throwException("静态资源Base64内容无效");
+            CrestException.throwException("静态资源Base64内容无效");
             return new byte[0];
         }
     }
@@ -207,7 +207,7 @@ public class StaticResourceServer implements StaticResourceApi {
         FileUtils.createIfAbsent(basePath);
         Path uploadPath = basePath.resolve(fileName).normalize();
         if (!uploadPath.startsWith(basePath.normalize())) {
-            DEException.throwException("静态资源文件名非法");
+            CrestException.throwException("静态资源文件名非法");
         }
         if (Files.exists(uploadPath)) {
             LogUtil.info("file exists");
@@ -218,14 +218,14 @@ public class StaticResourceServer implements StaticResourceApi {
 
     private void validateImageContent(String fileName, byte[] content, String mimeType, boolean checkSvgMimeType) {
         if (content == null || content.length == 0) {
-            DEException.throwException("静态资源内容不能为空");
+            CrestException.throwException("静态资源内容不能为空");
         }
         if (Strings.CI.endsWith(fileName, ".svg")) {
             validateSvgContent(content, mimeType, checkSvgMimeType);
             return;
         }
         if (!isImageOther(content)) {
-            DEException.throwException("静态资源必须是图片");
+            CrestException.throwException("静态资源必须是图片");
         }
     }
 
@@ -241,7 +241,7 @@ public class StaticResourceServer implements StaticResourceApi {
 
     private void validateSvgContent(byte[] content, String mimeType, boolean checkSvgMimeType) {
         if (checkSvgMimeType && !isValidSvgMimeType(mimeType)) {
-            DEException.throwException("无效的SVG文件MIME类型");
+            CrestException.throwException("无效的SVG文件MIME类型");
         }
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try (InputStream inputStream = new ByteArrayInputStream(content)) {
@@ -256,16 +256,16 @@ public class StaticResourceServer implements StaticResourceApi {
             DocumentBuilder db = dbf.newDocumentBuilder();
             Document doc = db.parse(inputStream);
             if (!"svg".equals(doc.getDocumentElement().getNodeName())) {
-                DEException.throwException("根元素必须是svg");
+                CrestException.throwException("根元素必须是svg");
             }
             if (containsDangerousContent(doc)) {
-                DEException.throwException("SVG包含不允许的脚本或事件处理器");
+                CrestException.throwException("SVG包含不允许的脚本或事件处理器");
             }
         } catch (ParserConfigurationException | SAXException | IOException e) {
             if (e.getMessage() != null && e.getMessage().contains("DOCTYPE")) {
-                DEException.throwException("svg 内容禁止使用 DOCTYPE");
+                CrestException.throwException("svg 内容禁止使用 DOCTYPE");
             } else {
-                DEException.throwException("SVG解析失败: " + e.getMessage());
+                CrestException.throwException("SVG解析失败: " + e.getMessage());
             }
         }
     }
@@ -277,7 +277,7 @@ public class StaticResourceServer implements StaticResourceApi {
 
         // MIME类型预检查
         if (!isValidSvgMimeType(file)) {
-            DEException.throwException("无效的SVG文件MIME类型");
+            CrestException.throwException("无效的SVG文件MIME类型");
             return false;
         }
 
@@ -300,13 +300,13 @@ public class StaticResourceServer implements StaticResourceApi {
 
             // 检查根元素是否是<svg>
             if (!"svg".equals(doc.getDocumentElement().getNodeName())) {
-                DEException.throwException("根元素必须是svg");
+                CrestException.throwException("根元素必须是svg");
                 return false;
             }
 
             // 安全检查：如果发现任何危险内容，直接返回false
             if (containsDangerousContent(doc)) {
-                DEException.throwException("SVG包含不允许的脚本或事件处理器");
+                CrestException.throwException("SVG包含不允许的脚本或事件处理器");
                 return false;
             }
 
@@ -315,9 +315,9 @@ public class StaticResourceServer implements StaticResourceApi {
         } catch (ParserConfigurationException | SAXException | IOException e) {
             // 如果出现任何解析错误，说明该文件不是合法的SVG
             if(e.getMessage() != null && e.getMessage().contains("DOCTYPE")){
-                DEException.throwException("svg 内容禁止使用 DOCTYPE");
+                CrestException.throwException("svg 内容禁止使用 DOCTYPE");
             } else {
-                DEException.throwException("SVG解析失败: " + e.getMessage());
+                CrestException.throwException("SVG解析失败: " + e.getMessage());
             }
         }
         return false;

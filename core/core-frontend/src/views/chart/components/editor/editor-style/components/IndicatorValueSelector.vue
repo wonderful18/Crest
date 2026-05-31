@@ -691,7 +691,7 @@ defineExpose({ getFormData })
 }
 .remark-label {
   color: var(--N600, #646a73);
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   font-size: 12px;
   font-style: normal;
   font-weight: 400;

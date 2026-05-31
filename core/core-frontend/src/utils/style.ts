@@ -285,7 +285,7 @@ export function groupItemStyleAdaptor(component, parentStyle) {
 }
 
 export function groupStyleRevertBatch(groupComponent, parentStyle) {
-  if (groupComponent.component === 'DeTabs') {
+  if (groupComponent.component === 'Tabs') {
     groupComponent.propValue?.forEach(tabItem => {
       tabItem.componentData?.forEach(tabComponent => {
         groupStyleRevert(tabComponent, parentStyle)

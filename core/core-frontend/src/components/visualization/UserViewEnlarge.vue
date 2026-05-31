@@ -462,7 +462,7 @@ const exportData = () => {
 
 const openMessageLoading = cb => {
   const iconClass = `el-icon-loading`
-  const customClass = `de-message-loading de-message-export`
+  const customClass = `crest-message-loading crest-message-export`
   ElMessage({
     message: h('p', null, [
       t('data_fill.exporting'),

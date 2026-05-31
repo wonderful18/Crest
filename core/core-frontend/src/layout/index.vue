@@ -6,7 +6,7 @@ import Sidebar from './components/Sidebar.vue'
 import Menu from './components/Menu.vue'
 import Main from './components/Main.vue'
 import CollapseBar from './components/CollapseBar.vue'
-import DeResourceArrow from '@/views/common/DeResourceArrow.vue'
+import CrestResourceArrow from '@/views/common/CrestResourceArrow.vue'
 import { ElContainer } from 'element-plus-secondary'
 import { useRoute } from 'vue-router_2'
 const route = useRoute()
@@ -39,7 +39,7 @@ const changeSettingSideStatus = (showSide: boolean) => {
     <el-container class="layout-container">
       <template v-if="systemMenu || settingMenu">
         <template v-if="settingMenu">
-          <DeResourceArrow
+          <CrestResourceArrow
             class="setting-resource-arrow"
             :style="{ left: (isCollapse ? 0 : settingSideWidth - 12) + 'px' }"
             :isInside="isCollapse"
@@ -89,7 +89,7 @@ const changeSettingSideStatus = (showSide: boolean) => {
   color: #0f172a;
   min-width: 1000px;
   overflow-x: auto;
-  font-family: var(--crest-font-sans, var(--de-custom_font, 'PingFang'));
+  font-family: var(--crest-font-sans, var(--crest-custom_font, 'PingFang'));
 
   .layout-container {
     flex: 1;

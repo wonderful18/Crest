@@ -21,7 +21,7 @@ import io.crest.dataset.utils.TableUtils;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.engine.func.FunctionConstant;
 import io.crest.engine.utils.Utils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.dto.CalParam;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
@@ -93,11 +93,11 @@ public class ChartViewManege {
     @Transactional
     public ChartViewDTO save(ChartViewDTO chartViewDTO) throws Exception {
         if (chartViewDTO.getTitle().length() > 100) {
-            DEException.throwException(Translator.get("i18n_name_limit_100"));
+            CrestException.throwException(Translator.get("i18n_name_limit_100"));
         }
         Long id = chartViewDTO.getId();
         if (id == null) {
-            DEException.throwException(Translator.get("i18n_no_id"));
+            CrestException.throwException(Translator.get("i18n_no_id"));
         }
         SnapshotCoreChartView coreChartView = snapshotCoreChartViewMapper.selectById(id);
         SnapshotCoreChartView record = transDTO2Record(chartViewDTO);
@@ -286,7 +286,7 @@ public class ChartViewManege {
         // filter column disable field
         Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
         List<DatasetTableFieldDTO> datasetTableFieldDTOS = permissionManage.filterColumnPermissions(collect, desensitizationList, id, null);
-        datasetTableFieldDTOS.forEach(ele -> ele.setDesensitized(desensitizationList.containsKey(ele.getDataeaseName())));
+        datasetTableFieldDTOS.forEach(ele -> ele.setDesensitized(desensitizationList.containsKey(ele.getEngineFieldName())));
         datasetTableFieldDTOS.add(createCountField(id));
         List<ChartViewFieldDTO> list = transFieldDTO(datasetTableFieldDTOS);
 
@@ -353,8 +353,8 @@ public class ChartViewManege {
         coreDatasetTableField.setExtField(2);
         coreDatasetTableField.setOriginName("[" + id + "]");
         coreDatasetTableField.setId(IDUtils.snowID());
-        coreDatasetTableField.setDataeaseName(TableUtils.fieldNameShort(coreDatasetTableField.getId() + "_" + coreDatasetTableField.getOriginName()));
-        coreDatasetTableField.setFieldShortName(coreDatasetTableField.getDataeaseName());
+        coreDatasetTableField.setEngineFieldName(TableUtils.fieldNameShort(coreDatasetTableField.getId() + "_" + coreDatasetTableField.getOriginName()));
+        coreDatasetTableField.setFieldShortName(coreDatasetTableField.getEngineFieldName());
         coreDatasetTableFieldMapper.insert(coreDatasetTableField);
     }
 
@@ -367,7 +367,7 @@ public class ChartViewManege {
         }
     }
 
-    public void deleteField(Long id) {
+    public void fieldRemoval(Long id) {
         CoreDatasetTableField field = coreDatasetTableFieldMapper.selectById(id);
         if (field != null) {
             requireDatasetAccess(field.getDatasetGroupId());
@@ -375,7 +375,7 @@ public class ChartViewManege {
         coreDatasetTableFieldMapper.deleteById(id);
     }
 
-    public void deleteFieldByChartId(Long chartId) {
+    public void chartFieldRemovalId(Long chartId) {
         CoreChartView chart = coreChartViewMapper.selectById(chartId);
         if (chart != null) {
             requireChartAccess(chart.getCreateBy(), chart.getSceneId(), chart.getTableId());
@@ -452,11 +452,11 @@ public class ChartViewManege {
         dto.setDatasetGroupId(id);
         dto.setOriginName("*");
         dto.setName("记录数*");
-        dto.setDataeaseName("*");
+        dto.setEngineFieldName("*");
         dto.setType("INT");
         dto.setChecked(true);
         dto.setColumnIndex(999);
-        dto.setDeType(2);
+        dto.setFieldType(2);
         dto.setExtField(1);
         dto.setGroupType("q");
         return dto;
@@ -472,7 +472,7 @@ public class ChartViewManege {
             dto.setDateShowFormat("y_M_d");
             dto.setChartType("bar");
 
-            if (dto.getId() == -1L || dto.getDeType() == 0 || dto.getDeType() == 1 || dto.getDeType() == 7) {
+            if (dto.getId() == -1L || dto.getFieldType() == 0 || dto.getFieldType() == 1 || dto.getFieldType() == 7) {
                 dto.setSummary("count");
             } else {
                 dto.setSummary("sum");

@@ -17,9 +17,9 @@ import io.crest.api.permissions.user.vo.UserItem;
 import io.crest.auth.bo.TokenUserBO;
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.i18n.Lang;
-import io.crest.log.DeLog;
+import io.crest.log.CrestAudit;
 import io.crest.result.ResultCode;
 import io.crest.substitute.permissions.user.model.CrestUser;
 import io.crest.substitute.permissions.user.model.UserImportRow;
@@ -52,13 +52,13 @@ public class SubstituteUserServer {
     @Resource
     private CrestUserManage crestUserManage;
 
-    @DeLog(ot = LogOT.READ, st = LogST.USER)
+    @CrestAudit(ot = LogOT.READ, st = LogST.USER)
     @GetMapping("/info")
     public CurUserVO info() {
         Long uid = currentUserId();
         CrestUser user = crestUserManage.queryById(uid);
         if (user == null) {
-            DEException.throwException(ResultCode.USER_NOT_EXIST.code(), ResultCode.USER_NOT_EXIST.message());
+            CrestException.throwException(ResultCode.USER_NOT_EXIST.code(), ResultCode.USER_NOT_EXIST.message());
         }
         CurUserVO result = crestUserManage.toCurrent(user);
         Object langObj = CacheUtils.get(USER_COMMUNITY_LANGUAGE, "de");
@@ -68,8 +68,8 @@ public class SubstituteUserServer {
         return result;
     }
 
-    @DeLog(ot = LogOT.READ, st = LogST.USER)
-    @GetMapping("/personInfo")
+    @CrestAudit(ot = LogOT.READ, st = LogST.USER)
+    @GetMapping("/person-info")
     public UserFormVO personInfo() {
         Long uid = currentUserId();
         UserFormVO userFormVO = crestUserManage.toForm(crestUserManage.queryById(uid));
@@ -77,7 +77,7 @@ public class SubstituteUserServer {
         return userFormVO;
     }
 
-    @GetMapping("/ipInfo")
+    @GetMapping("/ip-info")
     public CurIpVO ipInfo() {
         CurIpVO curIpVO = new CurIpVO();
         curIpVO.setAccount("admin");
@@ -86,88 +86,88 @@ public class SubstituteUserServer {
         return curIpVO;
     }
 
-    @DeLog(ot = LogOT.READ, st = LogST.USER)
-    @PostMapping("/pager/{goPage}/{pageSize}")
+    @CrestAudit(ot = LogOT.READ, st = LogST.USER)
+    @PostMapping("/page/{goPage}/{pageSize}")
     public IPage<UserGridVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody UserGridRequest request) {
         CrestPermissionUtils.requireAdmin();
         return crestUserManage.pager(goPage, pageSize, request);
     }
 
-    @DeLog(ot = LogOT.READ, st = LogST.USER, id = "#p0")
-    @GetMapping("/queryById/{id}")
+    @CrestAudit(ot = LogOT.READ, st = LogST.USER, id = "#p0")
+    @GetMapping("/detail/{id}")
     public UserFormVO queryById(@PathVariable("id") Long id) {
         CrestPermissionUtils.requireAdmin();
         return crestUserManage.toForm(crestUserManage.queryById(id));
     }
 
-    @DeLog(ot = LogOT.CREATE, st = LogST.USER)
-    @PostMapping("/create")
+    @CrestAudit(ot = LogOT.CREATE, st = LogST.USER)
+    @PostMapping
     public Long create(@RequestBody UserCreator creator) {
         CrestPermissionUtils.requireAdmin();
         return crestUserManage.create(creator);
     }
 
-    @DeLog(ot = LogOT.MODIFY, st = LogST.USER, id = "#p0.id")
-    @PostMapping("/edit")
+    @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER, id = "#p0.id")
+    @PutMapping
     public void edit(@RequestBody UserEditor editor) {
         CrestPermissionUtils.requireAdmin();
         crestUserManage.edit(editor);
     }
 
-    @DeLog(ot = LogOT.DELETE, st = LogST.USER, id = "#p0")
-    @PostMapping("/delete/{id}")
+    @CrestAudit(ot = LogOT.DELETE, st = LogST.USER, id = "#p0")
+    @DeleteMapping("/{id}")
     public void delete(@PathVariable("id") Long id) {
         CrestPermissionUtils.requireAdmin();
         crestUserManage.delete(id);
     }
 
-    @DeLog(ot = LogOT.MODIFY, st = LogST.USER, id = "#p0.id")
+    @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER, id = "#p0.id")
     @PostMapping("/enable")
     public void enable(@RequestBody EnableSwitchRequest request) {
         CrestPermissionUtils.requireAdmin();
         crestUserManage.enable(request);
     }
 
-    @GetMapping("/defaultPwd")
+    @GetMapping("/default-password")
     public String defaultPwd() {
         CrestPermissionUtils.requireAdmin();
         return "";
     }
 
-    @DeLog(ot = LogOT.MODIFY, st = LogST.USER, id = "#p0")
-    @PostMapping("/resetPwd/{id}")
+    @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER, id = "#p0")
+    @PostMapping("/reset-password/{id}")
     public void resetPwd(@PathVariable("id") Long id) {
         CrestPermissionUtils.requireAdmin();
         crestUserManage.resetPwd(id);
     }
 
-    @DeLog(ot = LogOT.MODIFY, st = LogST.USER)
-    @PostMapping("/modifyPwd")
+    @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER)
+    @PostMapping("/modify-password")
     public void modifyPwd(@RequestBody ModifyPwdRequest request) {
         Long uid = ObjectUtils.isEmpty(request.getUid()) ? AuthUtils.getUser().getUserId() : request.getUid();
         crestUserManage.modifyPwd(uid, request.getPwd(), request.getNewPwd());
     }
 
-    @DeLog(ot = LogOT.READ, st = LogST.USER)
-    @GetMapping("/queryByAccount/{account}")
+    @CrestAudit(ot = LogOT.READ, st = LogST.USER)
+    @GetMapping("/account/{account}")
     public CurUserVO queryByAccount(@PathVariable("account") String account) {
         return crestUserManage.toCurrent(crestUserManage.queryByAccount(account));
     }
 
-    @PostMapping("/byCurOrg")
+    @PostMapping("/by-current-org")
     public List<UserItem> byCurOrg(@RequestBody(required = false) UserGridRequest request) {
         return crestUserManage.usersByCurrentOrg(request == null ? null : request.getKeyword());
     }
 
-    @PostMapping("/batchImport")
-    @DeLog(ot = LogOT.UPLOADFILE, st = LogST.USER)
+    @PostMapping("/batch-import")
+    @CrestAudit(ot = LogOT.UPLOADFILE, st = LogST.USER)
     public UserImportVO batchImport(@RequestParam("file") MultipartFile file) throws Exception {
         CrestPermissionUtils.requireAdmin();
         return crestUserManage.importUsers(file);
     }
 
-    @PostMapping("/batchDel")
-    @DeLog(ot = LogOT.DELETE, st = LogST.USER)
+    @DeleteMapping("/batch")
+    @CrestAudit(ot = LogOT.DELETE, st = LogST.USER)
     public void batchDel(@RequestBody List<Long> ids) {
         CrestPermissionUtils.requireAdmin();
         if (ids != null) {
@@ -175,8 +175,8 @@ public class SubstituteUserServer {
         }
     }
 
-    @PostMapping("/excelTemplate")
-    @DeLog(ot = LogOT.DOWNLOAD, st = LogST.USER)
+    @PostMapping("/excel-template")
+    @CrestAudit(ot = LogOT.DOWNLOAD, st = LogST.USER)
     public void excelTemplate(HttpServletResponse response) throws Exception {
         CrestPermissionUtils.requireAdmin();
         UserImportRow row = new UserImportRow();
@@ -187,18 +187,18 @@ public class SubstituteUserServer {
         CommonExcelUtils.writeExcel(response, List.of(row), UserImportRow.class, List.of(), "user-import-template", "用户导入模板");
     }
 
-    @GetMapping("/errorRecord/{key}")
+    @GetMapping("/error-record/{key}")
     public void errorRecord(@PathVariable("key") String key, HttpServletResponse response) throws Exception {
         response.setContentType("text/plain;charset=UTF-8");
         response.getOutputStream().write("导入失败记录请根据返回数量检查源文件。".getBytes(StandardCharsets.UTF_8));
     }
 
-    @GetMapping("/clearErrorRecord/{key}")
+    @GetMapping("/clear-error-record/{key}")
     public void clearErrorRecord(@PathVariable("key") String key) {
     }
 
-    @DeLog(ot = LogOT.MODIFY, st = LogST.USER)
-    @PostMapping("/switchLanguage")
+    @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER)
+    @PostMapping("/switch-language")
     public void switchLanguage(@RequestBody LangSwitchRequest request) {
         String lang = request.getLang();
         if (Strings.CI.equals(Lang.zh_CN.getDesc(), lang)) {
@@ -206,7 +206,7 @@ public class SubstituteUserServer {
         } else if (Strings.CI.equalsAny(lang, "en", "tw")) {
             lang = lang.toLowerCase();
         } else {
-            DEException.throwException("无效language");
+            CrestException.throwException("无效language");
         }
         CacheUtils.put(USER_COMMUNITY_LANGUAGE, "de", lang);
     }
@@ -214,7 +214,7 @@ public class SubstituteUserServer {
     private Long currentUserId() {
         TokenUserBO user = AuthUtils.getUser();
         if (user == null || user.getUserId() == null) {
-            DEException.throwException(ResultCode.USER_NOT_LOGGED_IN.code(), ResultCode.USER_NOT_LOGGED_IN.message());
+            CrestException.throwException(ResultCode.USER_NOT_LOGGED_IN.code(), ResultCode.USER_NOT_LOGGED_IN.message());
         }
         return user.getUserId();
     }

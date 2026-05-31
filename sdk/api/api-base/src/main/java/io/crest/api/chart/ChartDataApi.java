@@ -2,8 +2,8 @@ package io.crest.api.chart;
 
 import com.github.xiaoymin.knife4j.annotations.ApiSupport;
 import io.crest.api.chart.request.ChartExcelRequest;
-import io.crest.auth.DeApiPath;
-import io.crest.auth.DePermit;
+import io.crest.auth.CrestApiPath;
+import io.crest.auth.CrestPermit;
 import io.crest.extensions.view.dto.ChartViewDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,27 +21,27 @@ import static io.crest.constant.AuthResourceEnum.PANEL;
  */
 @Tag(name = "图表管理:数据")
 @ApiSupport(order = 989)
-@DeApiPath(value = "/chartData", rt = PANEL)
+@CrestApiPath(value = "/chart-data", rt = PANEL)
 public interface ChartDataApi {
     @Operation(summary = "获取图表数据")
-    @PostMapping("getData")
+    @PostMapping("data")
     ChartViewDTO getData(@RequestBody ChartViewDTO chartViewDTO) throws Exception;
 
     @Operation(summary = "导出数据")
-    @PostMapping("/innerExportDetails")
-    @DePermit(value = {"#p0.dvId+':export_view'"}, busiFlag = "#p0.busiFlag")
+    @PostMapping("/internal-export/details")
+    @CrestPermit(value = {"#p0.dvId+':export_view'"}, busiFlag = "#p0.busiFlag")
     void innerExportDetails(@RequestBody ChartExcelRequest request, HttpServletResponse response) throws Exception;
 
     @Operation(summary = "导出明细数据")
-    @PostMapping("/innerExportDataSetDetails")
-    @DePermit(value = {"#p0.dvId+':export_detail'"}, busiFlag = "#p0.busiFlag")
+    @PostMapping("/internal-export/dataset-details")
+    @CrestPermit(value = {"#p0.dvId+':export_detail'"}, busiFlag = "#p0.busiFlag")
     void innerExportDataSetDetails(@RequestBody ChartExcelRequest request, HttpServletResponse response) throws Exception;
 
     @Operation(summary = "获取字段值")
-    @PostMapping("/getFieldData/{fieldId}/{fieldType}")
+    @PostMapping("/field-values/{fieldId}/{fieldType}")
     List<String> getFieldData(@RequestBody ChartViewDTO view, @PathVariable Long fieldId, @PathVariable String fieldType) throws Exception;
 
     @Operation(summary = "获取下钻字段值")
-    @PostMapping("/getDrillFieldData/{fieldId}")
+    @PostMapping("/drill-field-values/{fieldId}")
     List<String> getDrillFieldData(@RequestBody ChartViewDTO view, @PathVariable Long fieldId) throws Exception;
 }

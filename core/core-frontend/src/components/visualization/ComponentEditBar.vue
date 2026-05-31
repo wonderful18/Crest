@@ -14,7 +14,7 @@
       effect="dark"
       placement="top"
       :content="t('visualization.sort')"
-      v-if="element.component === 'DeTabs' && showPosition === 'canvas'"
+      v-if="element.component === 'Tabs' && showPosition === 'canvas'"
     >
       <el-icon class="bar-base-icon" @click="tabSort">
         <Sort />
@@ -241,7 +241,7 @@ import { exportExcelDownload } from '@/views/chart/components/js/util'
 import FieldsList from '@/custom-component/rich-text/FieldsList.vue'
 import { RefreshLeft } from '@element-plus/icons-vue'
 import { ElMessage, ElTooltip, ElButton } from 'element-plus-secondary'
-import CustomTabsSort from '@/custom-component/de-tabs/CustomTabsSort.vue'
+import CustomTabsSort from '@/custom-component/tabs/CustomTabsSort.vue'
 import { exportPivotExcel } from '@/views/chart/components/js/panel/common/common_table'
 import { exportPermission, isMobile } from '@/utils/utils'
 import { isMainCanvas } from '@/utils/canvasUtils'
@@ -430,7 +430,7 @@ const showBarTooltipPosition = computed(() => {
 
 const openMessageLoading = cb => {
   const iconClass = `el-icon-loading`
-  const customClass = `de-message-loading de-message-export`
+  const customClass = `crest-message-loading crest-message-export`
   ElMessage({
     message: h('p', null, [
       '后台导出中,可前往',
@@ -577,7 +577,7 @@ const existLinkage = computed(() => {
           linkageFiltersCount++
         }
       })
-    } else if (item.component === 'DeTabs') {
+    } else if (item.component === 'Tabs') {
       item.propValue.forEach(tabItem => {
         tabItem.componentData?.forEach(tabComponent => {
           if (linkageChange(tabComponent)) {

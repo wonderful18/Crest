@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Generate a repeatable Crest engineering efficiency demo dataset.
 
-The script prints SQL used by V1.3__demo_engineering_efficiency.sql.
+The script prints SQL for the engineering efficiency section in V1.5.0.2__demo_resources.sql.
 Run it into the local MySQL container while iterating:
 
   python3 .crest-local/engineering_efficiency_demo.py > .crest-local/engineering_efficiency_demo.sql
-  docker exec -i mysql-crest-local mysql -uroot -p'Password123@mysql' < .crest-local/engineering_efficiency_demo.sql
+  docker exec -i mysql-crest-local mysql -uroot -p"$CREST_LOCAL_DB_PASSWORD" < .crest-local/engineering_efficiency_demo.sql
 """
 
 from __future__ import annotations
@@ -1238,7 +1238,7 @@ DATASET_BY_GROUP = {}
 
 def make_field(dataset, index, origin_name, name, field_type, group_type):
     field_id = 984000000 + (dataset["group_id"] - 982000) * 100 + index
-    de_type, de_extract_type, size, accuracy = TYPE_META[field_type]
+    field_type, extracted_field_type, size, accuracy = TYPE_META[field_type]
     field = {
         "id": field_id,
         "datasourceId": DATASOURCE_ID,
@@ -1249,7 +1249,7 @@ def make_field(dataset, index, origin_name, name, field_type, group_type):
         "name": name,
         "dbFieldName": None,
         "description": f"研发效能演示字段：{origin_name}",
-        "dataeaseName": f"f_{index}",
+        "engineFieldName": f"f_{index}",
         "fieldShortName": f"f_{index}",
         "groupList": [],
         "otherGroup": None,
@@ -1258,8 +1258,8 @@ def make_field(dataset, index, origin_name, name, field_type, group_type):
         "size": size,
         "precision": None,
         "scale": None,
-        "deType": de_type,
-        "deExtractType": de_extract_type,
+        "fieldType": field_type,
+        "extractedFieldType": extracted_field_type,
         "extField": 0,
         "checked": True,
         "columnIndex": index,
@@ -1310,7 +1310,7 @@ def chart_field(group_id, origin_name, summary=None, formatter=None, chart_show_
                 "unitLanguage": "ch",
                 "unit": 1,
                 "suffix": "",
-                "decimalCount": 1 if field["deType"] == 3 else 0,
+                "decimalCount": 1 if field["fieldType"] == 3 else 0,
                 "thousandSeparator": field["groupType"] == "q",
             },
             "chartShowName": chart_show_name,
@@ -2691,15 +2691,15 @@ def dataset_sql():
                     field["originName"],
                     field["name"],
                     field["description"],
-                    field["dataeaseName"],
+                    field["engineFieldName"],
                     field["fieldShortName"],
                     json_text(field["groupList"]),
                     None,
                     field["groupType"],
                     field["type"],
                     field["size"],
-                    field["deType"],
-                    field["deExtractType"],
+                    field["fieldType"],
+                    field["extractedFieldType"],
                     field["extField"],
                     1,
                     field["columnIndex"],
@@ -2713,7 +2713,7 @@ def dataset_sql():
             )
     sql = []
     sql += insert_many(
-        "crest.core_dataset_group",
+        "crest.dataset_group",
         [
             "id",
             "name",
@@ -2736,13 +2736,13 @@ def dataset_sql():
         100,
     )
     sql += insert_many(
-        "crest.core_dataset_table",
+        "crest.dataset_table",
         ["id", "name", "table_name", "datasource_id", "dataset_group_id", "type", "info", "sql_variable_details"],
         rows_table,
         100,
     )
     sql += insert_many(
-        "crest.core_dataset_table_field",
+        "crest.dataset_field",
         [
             "id",
             "datasource_id",
@@ -2752,15 +2752,15 @@ def dataset_sql():
             "origin_name",
             "name",
             "description",
-            "dataease_name",
+            "engine_field_name",
             "field_short_name",
             "group_list",
             "other_group",
             "group_type",
             "type",
             "size",
-            "de_type",
-            "de_extract_type",
+            "field_type",
+            "extracted_field_type",
             "ext_field",
             "checked",
             "column_index",
@@ -2829,7 +2829,7 @@ def chart_sql():
             )
         )
     return insert_many(
-        "crest.core_chart_view",
+        "crest.bi_chart",
         [
             "id",
             "title",
@@ -2914,7 +2914,7 @@ def screen_sql():
             )
         )
     return insert_many(
-        "crest.data_visualization_info",
+        "crest.bi_visualization",
         [
             "id",
             "name",
@@ -3574,26 +3574,26 @@ WHERE e.active_status = '在岗';
 def metadata_cleanup_sql():
     return """
 USE crest;
-DELETE FROM snapshot_core_chart_view WHERE scene_id BETWEEN 980001 AND 980005 OR id BETWEEN 980000 AND 980999;
-DELETE FROM core_chart_view WHERE scene_id BETWEEN 980001 AND 980005 OR id BETWEEN 980000 AND 980999;
-DELETE FROM snapshot_data_visualization_info WHERE id IN ('980001','980002','980003','980004','980005');
-DELETE FROM data_visualization_info WHERE id IN ('980001','980002','980003','980004','980005');
-DELETE FROM core_dataset_table_field WHERE dataset_group_id BETWEEN 982000 AND 982999 OR dataset_table_id BETWEEN 983000 AND 983999 OR id BETWEEN 984000000 AND 984999999;
-DELETE FROM core_dataset_table WHERE dataset_group_id BETWEEN 982000 AND 982999 OR id BETWEEN 983000 AND 983999;
-DELETE FROM core_dataset_group WHERE id BETWEEN 982000 AND 982999;
+DELETE FROM bi_chart_snapshot WHERE scene_id BETWEEN 980001 AND 980005 OR id BETWEEN 980000 AND 980999;
+DELETE FROM bi_chart WHERE scene_id BETWEEN 980001 AND 980005 OR id BETWEEN 980000 AND 980999;
+DELETE FROM bi_visualization_snapshot WHERE id IN ('980001','980002','980003','980004','980005');
+DELETE FROM bi_visualization WHERE id IN ('980001','980002','980003','980004','980005');
+DELETE FROM dataset_field WHERE dataset_group_id BETWEEN 982000 AND 982999 OR dataset_table_id BETWEEN 983000 AND 983999 OR id BETWEEN 984000000 AND 984999999;
+DELETE FROM dataset_table WHERE dataset_group_id BETWEEN 982000 AND 982999 OR id BETWEEN 983000 AND 983999;
+DELETE FROM dataset_group WHERE id BETWEEN 982000 AND 982999;
 """
 
 
 def snapshot_sql():
     return """
-INSERT INTO crest.snapshot_core_chart_view SELECT * FROM crest.core_chart_view WHERE scene_id BETWEEN 980001 AND 980005;
-INSERT INTO crest.snapshot_data_visualization_info SELECT * FROM crest.data_visualization_info WHERE id IN ('980001','980002','980003','980004','980005');
+INSERT INTO crest.bi_chart_snapshot SELECT * FROM crest.bi_chart WHERE scene_id BETWEEN 980001 AND 980005;
+INSERT INTO crest.bi_visualization_snapshot SELECT * FROM crest.bi_visualization WHERE id IN ('980001','980002','980003','980004','980005');
 
-DELETE FROM core_opt_recent
+DELETE FROM workspace_recent_resource
 WHERE uid = 1
   AND resource_id IN (910001, 980001, 980002, 980003, 980004, 980005, 982001, 982002, 982003, 982004, 982005, 982006, 982007);
 
-INSERT INTO core_opt_recent (id, resource_id, resource_name, uid, resource_type, opt_type, time) VALUES
+INSERT INTO workspace_recent_resource (id, resource_id, resource_name, uid, resource_type, opt_type, time) VALUES
 (1780032200000000001, 980001, NULL, 1, 1, 2, 1780032200000),
 (1780032200000000002, 980002, NULL, 1, 1, 2, 1780032190000),
 (1780032200000000003, 980003, NULL, 1, 1, 2, 1780032180000),

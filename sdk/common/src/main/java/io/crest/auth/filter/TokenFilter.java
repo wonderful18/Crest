@@ -5,7 +5,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import io.crest.auth.bo.TokenUserBO;
 import io.crest.constant.AuthConstant;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.result.ResultCode;
 import io.crest.result.ResultMessage;
 import io.crest.utils.*;
@@ -29,7 +29,7 @@ import java.util.Objects;
 
 @SuppressWarnings("deprecation")
 public class TokenFilter implements Filter {
-    private static final String headName = "DE-GATEWAY-FLAG";
+    private static final String headName = "CREST-GATEWAY-FLAG";
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
@@ -55,7 +55,7 @@ public class TokenFilter implements Filter {
         boolean match = false;
         try {
             match = WhitelistUtils.match(requestURI);
-        } catch (DEException e) {
+        } catch (CrestException e) {
             HttpServletResponse res = (HttpServletResponse) servletResponse;
             ResultMessage resultMessage = new ResultMessage(e.getCode(), e.getMessage());
             ResponseEntity<ResultMessage> entity = new ResponseEntity<>(resultMessage, HttpStatus.UNAUTHORIZED);
@@ -75,12 +75,12 @@ public class TokenFilter implements Filter {
             }
             String executeVersion = null;
             if (StringUtils.isNotBlank(executeVersion = VersionUtil.getRandomVersion())) {
-                Objects.requireNonNull(ServletUtils.response()).addHeader(AuthConstant.DE_EXECUTE_VERSION, executeVersion);
+                Objects.requireNonNull(ServletUtils.response()).addHeader(AuthConstant.CREST_EXECUTE_VERSION, executeVersion);
             }
             String linkToken = ServletUtils.getHead(AuthConstant.LINK_TOKEN_KEY);
             if (StringUtils.isNotBlank(linkToken)) {
                 if (StringUtils.length(linkToken) < 100) {
-                    DEException.throwException("token is invalid");
+                    CrestException.throwException("token is invalid");
                 }
                 // Decode is used only to look up the signing secret; verifier.verify() below enforces integrity.
                 DecodedJWT jwt = JWT.decode(linkToken); // nosemgrep: java.java-jwt.security.audit.jwt-decode-without-verify.java-jwt-decode-without-verify
@@ -88,11 +88,11 @@ public class TokenFilter implements Filter {
                 Long oid = jwt.getClaim("oid").asLong();
                 Long resourceId = jwt.getClaim("resourceId").asLong();
                 if (ObjectUtils.isEmpty(userId)) {
-                    DEException.throwException("link token格式错误！");
+                    CrestException.throwException("link token格式错误！");
                 }
 
                 Object shareSecretManage = CommonBeanFactory.getBean("shareSecretManage");
-                Method getSecretMethod = DeReflectUtil.findMethod(shareSecretManage.getClass(), "getSecret");
+                Method getSecretMethod = CrestReflectionUtils.findMethod(shareSecretManage.getClass(), "getSecret");
                 Object pwdObj = ReflectionUtils.invokeMethod(getSecretMethod, shareSecretManage, resourceId, userId);
                 String linkSecret = pwdObj.toString();
 
@@ -107,7 +107,7 @@ public class TokenFilter implements Filter {
             TokenUserBO userBO = TokenUtils.validate(token);
             UserUtils.setUserInfo(userBO);
             filterChain.doFilter(servletRequest, servletResponse);
-        } catch (DEException | JWTVerificationException e) {
+        } catch (CrestException | JWTVerificationException e) {
             HttpServletResponse res = (HttpServletResponse) servletResponse;
             String message = "登录已失效，请重新登录";
             ResultMessage resultMessage = new ResultMessage(ResultCode.USER_NOT_LOGGED_IN.code(), message);

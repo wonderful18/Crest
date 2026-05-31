@@ -518,7 +518,7 @@ export function adaptTitleFontFamilyAll(fontFamily) {
           useEmitt().emitter.emit('renderChart-' + groupItem.id, viewDetails)
         }
       })
-    } else if (item.component === 'DeTabs') {
+    } else if (item.component === 'Tabs') {
       item.propValue?.forEach(tabItem => {
         tabItem.componentData?.forEach(tabComponent => {
           if (tabComponent.component === 'UserView') {
@@ -533,7 +533,7 @@ export function adaptTitleFontFamilyAll(fontFamily) {
 }
 
 export function adaptCurThemeCommonStyle(component) {
-  if (['DeTabs'].includes(component.component)) {
+  if (['Tabs'].includes(component.component)) {
     component.commonBackground['innerPadding'] = 0
   }
   // 背景融合-Begin 如果是大屏['CanvasBoard', 'CanvasIcon', 'Picture']组件不需要设置背景
@@ -548,7 +548,7 @@ export function adaptCurThemeCommonStyle(component) {
       'SvgStar',
       'RectShape',
       'CircleShape',
-      'DeDecoration',
+      'Decoration',
       'DynamicBackground'
     ].includes(component.component)
   ) {
@@ -580,7 +580,7 @@ export function adaptCurThemeCommonStyle(component) {
     component.propValue.forEach(groupItem => {
       adaptCurThemeCommonStyle(groupItem)
     })
-  } else if (['DeTabs', 'DeScreen'].includes(component.component)) {
+  } else if (['Tabs', 'Screen'].includes(component.component)) {
     if (dvMainStore.canvasStyleData.dashboard.themeColor === 'light') {
       component.style.headFontColor = LIGHT_THEME_COLOR_MAIN
       component.style.headFontActiveColor = LIGHT_THEME_COLOR_MAIN
@@ -652,5 +652,5 @@ export function isFilterComponent(component) {
 }
 
 export function isTabComponent(component) {
-  return ['DeTabs'].includes(component)
+  return ['Tabs'].includes(component)
 }

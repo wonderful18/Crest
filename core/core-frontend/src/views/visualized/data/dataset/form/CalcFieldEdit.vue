@@ -7,7 +7,7 @@ import icon_deleteTrash_outlined from '@/assets/svg/icon_delete-trash_outlined.s
 import { ref, reactive, onMounted, onBeforeUnmount, watch, unref, computed, nextTick } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import CodeMirror from './SqlCodeEditor.vue'
-import { getFunction } from '@/api/dataset'
+import { functions } from '@/api/dataset'
 import { fieldType } from '@/utils/attr'
 import { cloneDeep } from 'lodash-es'
 import { guid } from './util'
@@ -19,13 +19,13 @@ export interface CalcFieldType {
   datasetGroupId?: string // 有就传，没有null
   originName: string // 物理字段名
   name: string // 字段显示名
-  dataeaseName?: string // 字段别名
+  engineFieldName?: string // 字段别名
   groupType: 'd' | 'q' // d=维度，q=指标
   type: string
   params?: Array<{ id: string; name: string; value: number }>
   checked: boolean
-  deType: number // 字段类型
-  deExtractType?: number // 字段原始类型
+  fieldType: number // 字段类型
+  extractedFieldType?: number // 字段原始类型
   extField?: number // 0=原始字段，2=复制或计算字段
   fieldShortName?: string // 字段别名
 }
@@ -61,7 +61,7 @@ const defaultForm = {
   name: '', // 字段显示名
   groupType: 'd', // d=维度，q=指标
   type: 'VARCHAR',
-  deType: 0, // 字段类型
+  fieldType: 0, // 字段类型
   extField: 2,
   id: '',
   params: [],
@@ -211,7 +211,7 @@ const insertParamToCodeMirror = (value: string) => {
 }
 let functions = []
 const initFunction = () => {
-  getFunction().then(res => {
+  functions().then(res => {
     functions = cloneDeep(res)
     state.functionData = cloneDeep(res)
   })
@@ -357,14 +357,14 @@ initFunction()
                 </div>
               </el-form-item>
               <el-form-item class="mr0" :label="t('dataset.field_type')">
-                <el-select v-model="fieldForm.deType" style="width: 376px">
+                <el-select v-model="fieldForm.fieldType" style="width: 376px">
                   <template #prefix>
                     <el-icon>
                       <Icon
                         ><component
                           class="svg-icon"
-                          :class="`field-icon-${fieldType[fieldForm.deType]}`"
-                          :is="iconFieldMap[fieldType[fieldForm.deType]]"
+                          :class="`field-icon-${fieldType[fieldForm.fieldType]}`"
+                          :is="iconFieldMap[fieldType[fieldForm.fieldType]]"
                         ></component
                       ></Icon>
                     </el-icon>
@@ -458,8 +458,8 @@ initFunction()
                     <Icon
                       ><component
                         class="svg-icon"
-                        :class="`field-icon-${fieldType[item.deType]}`"
-                        :is="iconFieldMap[fieldType[item.deType]]"
+                        :class="`field-icon-${fieldType[item.fieldType]}`"
+                        :is="iconFieldMap[fieldType[item.fieldType]]"
                       ></component
                     ></Icon>
                   </el-icon>
@@ -509,8 +509,8 @@ initFunction()
                     <Icon
                       ><component
                         class="svg-icon"
-                        :class="`field-icon-${fieldType[item.deType]}`"
-                        :is="iconFieldMap[fieldType[item.deType]]"
+                        :class="`field-icon-${fieldType[item.fieldType]}`"
+                        :is="iconFieldMap[fieldType[item.fieldType]]"
                       ></component
                     ></Icon>
                   </el-icon>
@@ -694,7 +694,7 @@ initFunction()
       & > :nth-child(2) {
         margin: 0 -0.67px 0 2px;
         color: #f54a45;
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 14px;
         font-style: normal;
         font-weight: 400;
@@ -714,7 +714,7 @@ initFunction()
   overflow-y: hidden;
   .padding-lr-content {
     padding: 12px;
-    border: 1px solid var(--deCardStrokeColor, #dee0e3);
+    border: 1px solid var(--crestCardStrokeColor, #dee0e3);
     box-sizing: border-box;
     height: 500px;
     border-radius: 6px;
@@ -874,7 +874,7 @@ initFunction()
   margin-top: 8px;
   text-align: center;
   font-size: 14px;
-  color: var(--deTextDisable);
+  color: var(--crestTextDisable);
 }
 </style>
 

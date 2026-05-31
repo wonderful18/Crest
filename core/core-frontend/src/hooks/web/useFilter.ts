@@ -175,7 +175,7 @@ export const useFilter = (curComponentId: string, firstLoad = false) => {
       searchQuery(list, filter, curComponentId, firstLoad)
 
       list.forEach(element => {
-        if (element.innerType === 'DeTabs') {
+        if (element.innerType === 'Tabs') {
           element.propValue.forEach(itx => {
             const elementArr = itx.componentData.filter(
               item =>
@@ -188,7 +188,7 @@ export const useFilter = (curComponentId: string, firstLoad = false) => {
       })
 
       ele.propValue.forEach(element => {
-        if (element.innerType === 'DeTabs') {
+        if (element.innerType === 'Tabs') {
           element.propValue.forEach(itx => {
             const elementArr = itx.componentData.filter(
               item =>
@@ -201,7 +201,7 @@ export const useFilter = (curComponentId: string, firstLoad = false) => {
       })
     }
 
-    if (ele.innerType === 'DeTabs') {
+    if (ele.innerType === 'Tabs') {
       ele.propValue.forEach(itx => {
         itx.componentData.forEach(v => {
           if (v.component === 'Group') {

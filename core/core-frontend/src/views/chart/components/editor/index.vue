@@ -56,7 +56,7 @@ import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapsho
 import CalcFieldEdit from '@/views/visualized/data/dataset/form/CalcFieldEdit.vue'
 import { getFieldName, guid } from '@/views/visualized/data/dataset/form/util'
 import { cloneDeep, forEach, get, debounce, set, concat, keys, merge } from 'lodash-es'
-import { deleteField, saveField } from '@/api/dataset'
+import { fieldRemoval, saveField } from '@/api/dataset'
 import chartViewManager from '@/views/chart/components/js/panel'
 import DatasetSelect from '@/views/chart/components/editor/dataset-select/DatasetSelect.vue'
 import { useDraggable } from '@vueuse/core'
@@ -211,7 +211,7 @@ onMounted(() => {
 })
 
 const appStore = useAppStoreWithOut()
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi || appStore.getIsIframe)
+const isCrestBi = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
 const itemFormRules = reactive<FormRules>({
   chartShowName: [
     { required: true, message: t('commons.input_content'), trigger: 'change' },
@@ -353,7 +353,7 @@ const queryList = computed(() => {
     if (com.innerType === 'VQuery') {
       arr.push(com)
     }
-    if ('DeTabs' === com.innerType) {
+    if ('Tabs' === com.innerType) {
       com.propValue.forEach(itx => {
         arr = [...itx.componentData.filter(item => item.innerType === 'VQuery'), ...arr]
       })
@@ -667,7 +667,7 @@ const dragCheckMapType = list => {
   if (list && list.length > 0) {
     let valid = true
     for (let i = 0; i < list.length; i++) {
-      if (list[i].deType !== 5) {
+      if (list[i].fieldType !== 5) {
         list.splice(i, 1)
         valid = false
       }
@@ -697,10 +697,10 @@ const addAxis = (e, axis: AxisType) => {
     if (list && list.length > 0) {
       let valid = true
       for (let i = 0; i < list.length; i++) {
-        if (list[i].groupType === 'd' && list[i].deType === 1) {
+        if (list[i].groupType === 'd' && list[i].fieldType === 1) {
           list[i].sort = 'asc'
         }
-        if (!(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].deType === 1))) {
+        if (!(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))) {
           list.splice(i, 1)
           valid = false
         }
@@ -719,7 +719,7 @@ const addAxis = (e, axis: AxisType) => {
     if (list && list.length > 0) {
       let valid = true
       for (let i = 0; i < list.length; i++) {
-        if (!(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].deType === 1))) {
+        if (!(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))) {
           list.splice(i, 1)
           valid = false
         }
@@ -747,7 +747,7 @@ const addAxis = (e, axis: AxisType) => {
     if (list && list.length > 0) {
       let valid = true
       for (let i = 0; i < list.length; i++) {
-        if (list[i].deType !== 2 && list[i].deType !== 3) {
+        if (list[i].fieldType !== 2 && list[i].fieldType !== 3) {
           list.splice(i, 1)
           valid = false
         }
@@ -832,13 +832,13 @@ const addAxis = (e, axis: AxisType) => {
   if (typeValid && view.value.type === 'bar-range') {
     //处理某一个轴有数据的情况
     let tempType = null
-    let tempDeType = null
+    let tempFieldType = null
     if (axis === 'yAxis' && view.value.yAxisExt[0]) {
       tempType = view.value.yAxisExt[0].groupType
-      tempDeType = view.value.yAxisExt[0].deType
+      tempFieldType = view.value.yAxisExt[0].fieldType
     } else if (axis === 'yAxisExt' && view.value.yAxis[0]) {
       tempType = view.value.yAxis[0].groupType
-      tempDeType = view.value.yAxis[0].deType
+      tempFieldType = view.value.yAxis[0].fieldType
     }
     if (tempType !== null) {
       const list = view.value[axis]
@@ -848,7 +848,7 @@ const addAxis = (e, axis: AxisType) => {
           if (
             !(
               list[i].groupType === tempType &&
-              (tempType === 'q' || (tempType === 'd' && list[i].deType === tempDeType))
+              (tempType === 'q' || (tempType === 'd' && list[i].fieldType === tempFieldType))
             )
           ) {
             list.splice(i, 1)
@@ -1465,11 +1465,11 @@ const closeResultFilter = () => {
 }
 const saveResultFilter = () => {
   if (
-    ((state.filterItem.deType === 0 || state.filterItem.deType === 5) &&
+    ((state.filterItem.fieldType === 0 || state.filterItem.fieldType === 5) &&
       state.filterItem.filterType !== 'enum') ||
-    state.filterItem.deType === 1 ||
-    state.filterItem.deType === 2 ||
-    state.filterItem.deType === 3
+    state.filterItem.fieldType === 1 ||
+    state.filterItem.fieldType === 2 ||
+    state.filterItem.fieldType === 3
   ) {
     for (let i = 0; i < state.filterItem.filter.length; i++) {
       const f = state.filterItem.filter[i]
@@ -1477,7 +1477,7 @@ const saveResultFilter = () => {
         ElMessage.error(t('chart.filter_value_can_null'))
         return
       }
-      if (state.filterItem.deType === 2 || state.filterItem.deType === 3) {
+      if (state.filterItem.fieldType === 2 || state.filterItem.fieldType === 3) {
         if (!f.term.includes('null') && !f.term.includes('empty') && isNaN(f.value)) {
           ElMessage.error(t('chart.filter_value_can_not_str'))
           return
@@ -1539,7 +1539,7 @@ const editDs = () => {
       return
     }
     canvasSave(() => {
-      wsCache.delete('DE-DV-CATCH-' + dvInfo.value.id)
+      wsCache.delete('CREST-DV-CACHE-' + dvInfo.value.id)
       const newWindow = window.open(routeData.href, openType)
       initOpenHandler(newWindow)
     })
@@ -1678,12 +1678,12 @@ const confirmEditCalc = () => {
   })
 }
 
-const getIconName = (deType, extField, dimension = false) => {
+const getIconName = (fieldType, extField, dimension = false) => {
   if (extField === 2) {
     const iconFieldCalculated = dimension ? iconFieldCalculatedMap : iconFieldCalculatedQMap
-    return iconFieldCalculated[deType]
+    return iconFieldCalculated[fieldType]
   }
-  return iconFieldMap[fieldType[deType]]
+  return iconFieldMap[fieldType[fieldType]]
 }
 
 const chartFieldEdit = param => {
@@ -1704,7 +1704,7 @@ const chartFieldEdit = param => {
       editField(param.item)
       break
     case 'delete':
-      deleteField(param.item?.id).then(() => {
+      fieldRemoval(param.item?.id).then(() => {
         getFields(view.value.tableId, view.value.id, view.value.type)
       })
       break
@@ -1720,10 +1720,10 @@ const setFieldDefaultValue = field => {
   field.extField = 2
   field.chartId = view.value.id
   field.datasetGroupId = view.value.tableId
-  field.dataeaseName = null
+  field.engineFieldName = null
   field.lastSyncTime = null
   field.columnIndex = state.dimension.length + state.quota.length
-  field.deExtractType = field.deType
+  field.extractedFieldType = field.fieldType
 }
 
 const el = ref<HTMLElement | null>(null)
@@ -2008,7 +2008,7 @@ const chartStyleScroll = (val: any) => {
 </script>
 
 <template>
-  <div class="chart-edit" :class="'editor-' + themes" @keydown.stop @keyup.stop>
+  <div class="chart-change" :class="'editor-' + themes" @keydown.stop @keyup.stop>
     <!--移动端设计使用 注意与pc设计同步-->
     <template v-if="mobileInPc">
       <el-container direction="vertical">
@@ -3517,11 +3517,11 @@ const chartStyleScroll = (val: any) => {
                 />
                 <el-tooltip
                   :effect="toolTip"
-                  :content="$t('deDataset.edit_dataset')"
+                  :content="$t('datasetUi.edit_dataset')"
                   placement="top"
                 >
                   <el-icon
-                    v-if="curDatasetWeight >= 7 && !isDataEaseBi"
+                    v-if="curDatasetWeight >= 7 && !isCrestBi"
                     class="field-search-icon-btn"
                     :class="{ dark: themes === 'dark' }"
                     style="margin-left: 8px"
@@ -3623,9 +3623,9 @@ const chartStyleScroll = (val: any) => {
                             ><component
                               class="svg-icon"
                               :class="`field-icon-${
-                                fieldType[[2, 3].includes(element.deType) ? 2 : 0]
+                                fieldType[[2, 3].includes(element.fieldType) ? 2 : 0]
                               }`"
-                              :is="getIconName(element.deType, element.extField)"
+                              :is="getIconName(element.fieldType, element.extField)"
                             ></component
                           ></Icon>
                         </el-icon>
@@ -3707,9 +3707,9 @@ const chartStyleScroll = (val: any) => {
                                 ><component
                                   class="svg-icon"
                                   :class="`field-icon-${
-                                    fieldType[[2, 3].includes(ele.deType) ? 2 : 0]
+                                    fieldType[[2, 3].includes(ele.fieldType) ? 2 : 0]
                                   }`"
-                                  :is="iconFieldMap[fieldType[ele.deType]]"
+                                  :is="iconFieldMap[fieldType[ele.fieldType]]"
                                 ></component
                               ></Icon>
                             </el-icon>
@@ -3789,11 +3789,11 @@ const chartStyleScroll = (val: any) => {
                         ]"
                       >
                         <el-icon>
-                          <Icon :class-name="`field-icon-${fieldType[element.deType]}`"
+                          <Icon :class-name="`field-icon-${fieldType[element.fieldType]}`"
                             ><component
                               class="svg-icon"
-                              :class="`field-icon-${fieldType[element.deType]}`"
-                              :is="getIconName(element.deType, element.extField, true)"
+                              :class="`field-icon-${fieldType[element.fieldType]}`"
+                              :is="getIconName(element.fieldType, element.extField, true)"
                             ></component
                           ></Icon>
                         </el-icon>
@@ -3871,11 +3871,11 @@ const chartStyleScroll = (val: any) => {
                             class="items flex-align-center"
                           >
                             <el-icon>
-                              <Icon :class-name="`field-icon-${fieldType[ele.deType]}`"
+                              <Icon :class-name="`field-icon-${fieldType[ele.fieldType]}`"
                                 ><component
                                   class="svg-icon"
-                                  :class-name="`field-icon-${fieldType[ele.deType]}`"
-                                  :is="iconFieldMap[fieldType[ele.deType]]"
+                                  :class-name="`field-icon-${fieldType[ele.fieldType]}`"
+                                  :is="iconFieldMap[fieldType[ele.fieldType]]"
                                 ></component
                               ></Icon>
                             </el-icon>
@@ -4271,7 +4271,7 @@ const chartStyleScroll = (val: any) => {
         height: 35px;
         line-height: 35px;
         color: var(--ed-color-primary, #3B82F6);
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 12px;
         font-style: normal;
         font-weight: 500;
@@ -4300,7 +4300,7 @@ const chartStyleScroll = (val: any) => {
         height: 35px;
         line-height: 35px;
         color: var(--ed-color-primary, #3B82F6);
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 12px;
         font-style: normal;
         font-weight: 500;
@@ -4352,7 +4352,7 @@ const chartStyleScroll = (val: any) => {
         height: 35px;
         line-height: 35px;
         color: var(--ed-color-primary, #3B82F6);
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 12px;
         font-style: normal;
         font-weight: 500;
@@ -4633,7 +4633,7 @@ span {
       content: '*';
       color: var(--ed-color-danger);
       margin-left: 4px;
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-style: normal;
       font-weight: 400;
     }
@@ -4653,7 +4653,7 @@ span {
       content: '*';
       color: var(--ed-color-danger);
       margin-left: 2px;
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-style: normal;
       font-weight: 400;
     }
@@ -5229,7 +5229,7 @@ span {
   margin-bottom: 16px !important;
 
   .text {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-style: normal;
     font-weight: 400;
@@ -5238,7 +5238,7 @@ span {
     --ed-input-height: 32px;
 
     :deep(.ed-input__inner) {
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       font-style: normal;
       font-weight: 400;
@@ -5249,7 +5249,7 @@ span {
   :deep(.ed-form-item__label) {
     color: #1f2329;
 
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-style: normal;
     font-weight: 400;

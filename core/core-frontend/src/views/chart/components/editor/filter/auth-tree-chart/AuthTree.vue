@@ -74,7 +74,7 @@ const add = (type, child, logic) => {
           timeValue: '',
           timeType: 'year',
           dynamicTimeSetting: {},
-          deType: ''
+          fieldType: ''
         }
       : { child: [], logic }
   )
@@ -157,7 +157,7 @@ const del = (index, child) => {
     z-index: 10;
 
     .operate-title {
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       word-wrap: break-word;
       box-sizing: border-box;
       color: rgba(0, 0, 0, 0.65);

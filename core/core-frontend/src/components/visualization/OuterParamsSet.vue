@@ -247,8 +247,8 @@
                               ><component
                                 class="svg-icon"
                                 style="width: 14px; height: 14px"
-                                :class="`field-icon-${fieldType[item.deType]}`"
-                                :is="iconFieldMap[fieldType[item.deType]]"
+                                :class="`field-icon-${fieldType[item.fieldType]}`"
+                                :is="iconFieldMap[fieldType[item.fieldType]]"
                               ></component
                             ></Icon>
                             <span style="font-size: 12px">{{ item.name }}</span>
@@ -563,7 +563,7 @@ const initParams = async () => {
           state.baseFilterInfo.push(groupItem)
         }
       })
-    } else if (componentItem.component === 'DeTabs') {
+    } else if (componentItem.component === 'Tabs') {
       componentItem.propValue.forEach(tabItem => {
         tabItem.componentData?.forEach(tabComponent => {
           if (tabComponent.component === 'VQuery') {

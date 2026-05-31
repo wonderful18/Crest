@@ -58,12 +58,12 @@ public class CoreDatasetTableFieldVO implements Serializable {
     private String description;
 
     /**
-     * de字段名用作唯一标识
+     * 引擎字段名用作唯一标识
      */
-    private String dataeaseName;
+    private String engineFieldName;
 
     /**
-     * de字段别名
+     * 字段别名
      */
     private String fieldShortName;
 
@@ -80,14 +80,14 @@ public class CoreDatasetTableFieldVO implements Serializable {
     private Integer size;
 
     /**
-     * dataease字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制
+     * Crest 字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制
      */
-    private Integer deType;
+    private Integer fieldType;
 
     /**
-     * de记录的原始类型
+     * 数据源原始类型
      */
-    private Integer deExtractType;
+    private Integer extractedFieldType;
 
     /**
      * 是否扩展字段 0原始 1复制 2计算字段...
@@ -124,9 +124,9 @@ public class CoreDatasetTableFieldVO implements Serializable {
     // 附加ID 兼容自定义参数ID
     private String attachId;
 
-    public CoreDatasetTableFieldVO(String attachId, String name,  Integer deType) {
+    public CoreDatasetTableFieldVO(String attachId, String name,  Integer fieldType) {
         this.attachId = attachId;
         this.name = name;
-        this.deType = deType;
+        this.fieldType = fieldType;
     }
 }

@@ -89,7 +89,7 @@
           #{visualizationId} as visualization_id,
           ifnull( vop.checked, 0 ) AS checked
       FROM
-          snapshot_data_visualization_info dvi
+          bi_visualization_snapshot dvi
               LEFT JOIN snapshot_visualization_outer_params vop ON dvi.id = vop.visualization_id
       WHERE
           dvi.id = #{visualizationId}
@@ -132,7 +132,7 @@
             visualization_outer_params pop
         WHERE
             pop.visualization_id = #{visualizationId}
-	</delete>
+    </delete>
 
 
     <delete id="deleteOuterParamsTargetWithVisualizationIdSnapshot" >
@@ -172,7 +172,7 @@
             snapshot_visualization_outer_params pop
         WHERE
             pop.visualization_id = #{visualizationId}
-	</delete>
+    </delete>
 
     <select id="getVisualizationOuterParamsInfo" resultMap="AllOuterParamsMap">
         SELECT DISTINCT
@@ -192,60 +192,60 @@
 
         <select id="getVisualizationOuterParamsInfoBase" resultType="io.crest.visualization.dao.auto.entity.SnapshotVisualizationOuterParamsInfo">
            SELECT
-           	vopi.param_name,
-           	vopi.params_info_id
+               vopi.param_name,
+               vopi.params_info_id
            FROM
-           	snapshot_visualization_outer_params_info vopi
-           	INNER JOIN snapshot_visualization_outer_params vop ON vop.params_id = vopi.params_id
+               snapshot_visualization_outer_params_info vopi
+               INNER JOIN snapshot_visualization_outer_params vop ON vop.params_id = vopi.params_id
            WHERE
-           	vop.visualization_id = #{visualizationId}
+               vop.visualization_id = #{visualizationId}
         </select>
 
       <select id="queryDsWithVisualizationId"  resultMap="BaseDsResultMapDTO">
           SELECT DISTINCT
-          	cdg.`id`,
-          	cdg.`name`,
-          	cdg.`pid`,
-          	cdg.`level`,
-          	cdg.`node_type`,
-          	cdg.`type`,
-          	cdg.`mode`,
-          	cdg.`info`,
-          	cdg.`create_by`,
-          	cdg.`create_time`,
-          	cdg.`qrtz_instance`,
-          	cdg.`sync_status`,
-          	cdg.`update_by`,
-          	cdg.`last_update_time`,
-          	#{visualizationId} as visualizationId
+              cdg.`id`,
+              cdg.`name`,
+              cdg.`pid`,
+              cdg.`level`,
+              cdg.`node_type`,
+              cdg.`type`,
+              cdg.`mode`,
+              cdg.`info`,
+              cdg.`create_by`,
+              cdg.`create_time`,
+              cdg.`qrtz_instance`,
+              cdg.`sync_status`,
+              cdg.`update_by`,
+              cdg.`last_update_time`,
+              #{visualizationId} as visualizationId
           FROM
-          	core_dataset_group cdg
-          	INNER JOIN snapshot_core_chart_view ccv ON cdg.id = ccv.table_id
-          	AND ccv.type != 'VQuery'
-          	INNER JOIN snapshot_data_visualization_info dvi ON ccv.scene_id = dvi.id
+              dataset_group cdg
+              INNER JOIN bi_chart_snapshot ccv ON cdg.id = ccv.table_id
+              AND ccv.type != 'VQuery'
+              INNER JOIN bi_visualization_snapshot dvi ON ccv.scene_id = dvi.id
           WHERE
-          	ccv.scene_id = #{visualizationId}
-          	AND dvi.id = #{visualizationId}
-          	AND LOCATE(
-          	ccv.id,
-          	dvi.component_data)
+              ccv.scene_id = #{visualizationId}
+              AND dvi.id = #{visualizationId}
+              AND LOCATE(
+              ccv.id,
+              dvi.component_data)
       </select>
 
        <select id="getDsFieldInfo"  resultType="io.crest.api.dataset.vo.CoreDatasetTableFieldVO">
-          select cdtf.*,cdtf.id as attachId from core_dataset_table_field cdtf where cdtf.dataset_group_id = #{dataset_group_id} order by cdtf.de_type, cdtf.origin_name
+          select cdtf.*,cdtf.id as attachId from dataset_field cdtf where cdtf.dataset_group_id = #{dataset_group_id} order by cdtf.field_type, cdtf.origin_name
       </select>
 
       <select id="getViewInfo"  resultType="io.crest.api.chart.vo.ChartBaseVO">
            SELECT DISTINCT
-          	ccv.id as chartId,ccv.title as chartName,ccv.type as chartType
+              ccv.id as chartId,ccv.title as chartName,ccv.type as chartType
           FROM
-          	snapshot_core_chart_view ccv
-          	INNER JOIN snapshot_data_visualization_info dvi ON ccv.scene_id = dvi.id
+              bi_chart_snapshot ccv
+              INNER JOIN bi_visualization_snapshot dvi ON ccv.scene_id = dvi.id
           WHERE
-          	ccv.table_id = #{dataset_group_id}
-          	AND ccv.type != 'VQuery'
-          	AND dvi.id = #{visualizationId}
-          	AND LOCATE(ccv.id, dvi.component_data)
+              ccv.table_id = #{dataset_group_id}
+              AND ccv.type != 'VQuery'
+              AND dvi.id = #{visualizationId}
+              AND LOCATE(ccv.id, dvi.component_data)
       </select>
 
 </mapper>

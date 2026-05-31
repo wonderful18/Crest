@@ -515,7 +515,7 @@ public class ChartDataBuild {
                 // 判断时间维度
                 ChartViewFieldDTO xField = xAxisQuota.get(0);
                 boolean isTimeDimension = ("d".equalsIgnoreCase(xField.getGroupType()))
-                        || (xField.getDeType() != null && xField.getDeType() == 1);
+                        || (xField.getFieldType() != null && xField.getFieldType() == 1);
                 if (isTimeDimension) {
                     // 保留为字符串
                     dto.setXLabel(row[xQuotaStart]);
@@ -1407,13 +1407,13 @@ public class ChartDataBuild {
         Map<String, List<String[]>> groupDataList = detailData.stream().collect(Collectors.groupingBy(item -> "(" + StringUtils.join(ArrayUtils.subarray(item, 0, xEndIndex), ")-de-(") + ")"));
 
         tableRow.forEach(row -> {
-            String key = xAxis.stream().map(x -> String.format(format, row.get(x.getDataeaseName()).toString())).collect(Collectors.joining("-de-"));
+            String key = xAxis.stream().map(x -> String.format(format, row.get(x.getEngineFieldName()).toString())).collect(Collectors.joining("-de-"));
             List<String[]> detailFieldValueList = groupDataList.get(key);
             List<Map<String, Object>> detailValueMapList = detailFieldValueList.stream().map((detailArr -> {
                 Map<String, Object> temp = new HashMap<>();
                 for (int i = 0; i < realDetailFields.size(); i++) {
                     ChartViewFieldDTO realDetailField = realDetailFields.get(i);
-                    temp.put(realDetailField.getDataeaseName(), detailArr[detailIndex + i]);
+                    temp.put(realDetailField.getEngineFieldName(), detailArr[detailIndex + i]);
                 }
                 return temp;
             })).collect(Collectors.toList());
@@ -1423,7 +1423,7 @@ public class ChartDataBuild {
         ChartViewFieldDTO detailFieldDTO = new ChartViewFieldDTO();
         detailFieldDTO.setId(IDUtils.snowID());
         detailFieldDTO.setName("detail");
-        detailFieldDTO.setDataeaseName("detail");
+        detailFieldDTO.setEngineFieldName("detail");
         fields.add(detailFieldDTO);
         map.put("fields", fields);
         map.put("detailFields", realDetailFields);
@@ -1439,8 +1439,8 @@ public class ChartDataBuild {
         if (ObjectUtils.isNotEmpty(fieldMap.get("xAxis"))) fields.addAll(fieldMap.get("xAxis"));
         if (ObjectUtils.isNotEmpty(fieldMap.get("tooltipAxis"))) {
             fieldMap.get("tooltipAxis").forEach(field -> {
-                Integer deType = field.getDeType();
-                if (deType == 2 || deType == 3) {
+                Integer fieldType = field.getFieldType();
+                if (fieldType == 2 || fieldType == 3) {
                     yfields.add(field);
                 } else {
                     fields.add(field);
@@ -1449,8 +1449,8 @@ public class ChartDataBuild {
         }
         if (ObjectUtils.isNotEmpty(fieldMap.get("labelAxis"))) {
             fieldMap.get("labelAxis").forEach(field -> {
-                Integer deType = field.getDeType();
-                if (deType == 2 || deType == 3) {
+                Integer fieldType = field.getFieldType();
+                if (fieldType == 2 || fieldType == 3) {
                     yfields.add(field);
                 } else {
                     fields.add(field);
@@ -1526,22 +1526,22 @@ public class ChartDataBuild {
         data.forEach(ele -> {
             Map<String, Object> d = new HashMap<>();
             for (int i = 0; i < fields.size(); i++) {
-                if (ObjectUtils.isNotEmpty(desensitizationList.keySet()) && desensitizationList.containsKey(fields.get(i).getDataeaseName())) {
-                    String desensitizationValue = desensitizationValue(desensitizationList.get(fields.get(i).getDataeaseName()), String.valueOf(ele[i]));
+                if (ObjectUtils.isNotEmpty(desensitizationList.keySet()) && desensitizationList.containsKey(fields.get(i).getEngineFieldName())) {
+                    String desensitizationValue = desensitizationValue(desensitizationList.get(fields.get(i).getEngineFieldName()), String.valueOf(ele[i]));
                     ele[i] = desensitizationValue;
-                    d.put(fields.get(i).getDataeaseName(), desensitizationValue);
+                    d.put(fields.get(i).getEngineFieldName(), desensitizationValue);
                     continue;
                 }
                 if (i == ele.length) break;
                 ChartViewFieldDTO chartViewFieldDTO = fields.get(i);
-                if (chartViewFieldDTO.getDeType() == 0 || chartViewFieldDTO.getDeType() == 1 || chartViewFieldDTO.getDeType() == 5 || chartViewFieldDTO.getDeType() == 7) {
-                    d.put(fields.get(i).getDataeaseName(), ele[i]);
-                } else if (chartViewFieldDTO.getDeType() == 2 || chartViewFieldDTO.getDeType() == 3 || chartViewFieldDTO.getDeType() == 4) {
+                if (chartViewFieldDTO.getFieldType() == 0 || chartViewFieldDTO.getFieldType() == 1 || chartViewFieldDTO.getFieldType() == 5 || chartViewFieldDTO.getFieldType() == 7) {
+                    d.put(fields.get(i).getEngineFieldName(), ele[i]);
+                } else if (chartViewFieldDTO.getFieldType() == 2 || chartViewFieldDTO.getFieldType() == 3 || chartViewFieldDTO.getFieldType() == 4) {
                     // 如果是在维度中展示，导出excel时展示为字符串，其它情况展示为数值类型
                     if (view.getIsExcelExport() || Strings.CI.equals(chartViewFieldDTO.getGroupType(), "d")) {
-                        d.put(fields.get(i).getDataeaseName(), StringUtils.isEmpty(ele[i]) ? "" : ele[i]);
+                        d.put(fields.get(i).getEngineFieldName(), StringUtils.isEmpty(ele[i]) ? "" : ele[i]);
                     } else {
-                        d.put(fields.get(i).getDataeaseName(), StringUtils.isEmpty(ele[i]) ? null : new BigDecimal(ele[i]).setScale(8, RoundingMode.HALF_UP));
+                        d.put(fields.get(i).getEngineFieldName(), StringUtils.isEmpty(ele[i]) ? null : new BigDecimal(ele[i]).setScale(8, RoundingMode.HALF_UP));
                     }
                 }
             }
@@ -2022,19 +2022,19 @@ public class ChartDataBuild {
         List<Map<String, Object>> tableRow = (List<Map<String, Object>>) map.get("tableRow");
         final int xEndIndex = detailIndex;
         Map<String, List<String[]>> groupDataList = detailData.stream().collect(Collectors.groupingBy(item -> "(" + StringUtils.join(ArrayUtils.subarray(item, 0, xEndIndex), ")-de-(") + ")"));
-        String extBubbleDataeaseName = ObjectUtils.isNotEmpty(extBubble) ? extBubble.get(0).getDataeaseName() : "";
+        String extBubbleEngineFieldName = ObjectUtils.isNotEmpty(extBubble) ? extBubble.get(0).getEngineFieldName() : "";
         tableRow.forEach(row -> {
-            BigDecimal rowValue = row.get(extBubbleDataeaseName) == null ? BigDecimal.ZERO : new BigDecimal(row.get(extBubbleDataeaseName).toString());
-            String key = xAxis.stream().map(x -> String.format(format, row.get(x.getDataeaseName()).toString())).collect(Collectors.joining("-de-"));
+            BigDecimal rowValue = row.get(extBubbleEngineFieldName) == null ? BigDecimal.ZERO : new BigDecimal(row.get(extBubbleEngineFieldName).toString());
+            String key = xAxis.stream().map(x -> String.format(format, row.get(x.getEngineFieldName()).toString())).collect(Collectors.joining("-de-"));
             List<String[]> detailFieldValueList = groupDataList.get(key);
             List<Map<String, Object>> detailValueMapList = Optional.ofNullable(detailFieldValueList).orElse(new ArrayList<>()).stream().map((detailArr -> {
                 Map<String, Object> temp = new HashMap<>();
                 for (int i = 0; i < realDetailFields.size(); i++) {
                     ChartViewFieldDTO realDetailField = realDetailFields.get(i);
-                    if (Strings.CI.equals(extBubbleDataeaseName, realDetailField.getDataeaseName())) {
-                        temp.put(realDetailField.getDataeaseName(), rowValue);
+                    if (Strings.CI.equals(extBubbleEngineFieldName, realDetailField.getEngineFieldName())) {
+                        temp.put(realDetailField.getEngineFieldName(), rowValue);
                     } else {
-                        temp.put(realDetailField.getDataeaseName(), detailArr[detailIndex + i]);
+                        temp.put(realDetailField.getEngineFieldName(), detailArr[detailIndex + i]);
                     }
                 }
                 return temp;
@@ -2044,10 +2044,10 @@ public class ChartDataBuild {
         });
         // 先过滤掉所有记录数字段
         List<ChartViewFieldDTO> filterCountAxis = fields.stream()
-                .filter(item -> !Strings.CI.equals(item.getDataeaseName(), "*"))
+                .filter(item -> !Strings.CI.equals(item.getEngineFieldName(), "*"))
                 .collect(Collectors.toList());
         // 如果气泡大小是记录数，添加到字段列表中
-        if (ObjectUtils.isNotEmpty(extBubble) && "*".equals(extBubble.get(0).getDataeaseName())) {
+        if (ObjectUtils.isNotEmpty(extBubble) && "*".equals(extBubble.get(0).getEngineFieldName())) {
             filterCountAxis.addAll(yAxis);
         }
         map.put("fields", filterCountAxis);

@@ -139,11 +139,11 @@ const getOperationDesc = (row: any) => {
   const res = row.resource_type
   const url = row.request_url || ''
 
-  if (url.includes('/auth/busiPermission')) return '查看业务资源权限'
-  if (url.includes('/auth/menuPermission')) return '查看菜单权限'
-  if (url.includes('/auth/saveBusiPer')) return '配置业务资源权限'
-  if (url.includes('/auth/saveMenuPer')) return '配置菜单权限'
-  if (url.includes('/role/byCurOrg') || url.includes('/role/query')) return '查询角色列表'
+  if (url.includes('/auth/business-permissions')) return '查看业务资源权限'
+  if (url.includes('/auth/menu-permissions')) return '查看菜单权限'
+  if (url.includes('/auth/business-permissions')) return '配置业务资源权限'
+  if (url.includes('/auth/menu-permissions')) return '配置菜单权限'
+  if (url.includes('/role/by-current-org') || url.includes('/role/list')) return '查询角色列表'
   if (op === 'LOGIN') return '用户登录系统'
   if (op === 'CREATE') return `新建${getResourceTypeLabel(res)}`
   if (op === 'DELETE') return `删除${getResourceTypeLabel(res)}`
@@ -167,7 +167,7 @@ const loadTable = async () => {
   loading.value = true
   try {
     const res = await request.post({
-      url: `/auditLog/pager/${pager.currentPage}/${pager.pageSize}`,
+      url: `/audit-log/page/${pager.currentPage}/${pager.pageSize}`,
       data: {
         operationType: filters.operationType || undefined,
         resourceType: filters.resourceType || undefined,

@@ -60,7 +60,7 @@ function changeComponentsSizeWithScaleCircle(componentDataCopy, scale) {
       groupSizeStyleAdaptor(component)
       const parentStyle = component.style
       component.propValue.forEach(componentInner => {
-        if (['DeTabs'].includes(componentInner.component)) {
+        if (['Tabs'].includes(componentInner.component)) {
           componentInner.propValue.forEach(tabItem => {
             changeComponentsSizeWithScaleCircle(tabItem.componentData, scale)
           })
@@ -69,14 +69,14 @@ function changeComponentsSizeWithScaleCircle(componentDataCopy, scale) {
           groupItemStyleAdaptor(componentInner, parentStyle)
         }
       })
-    } else if (['DeTabs'].includes(component.component)) {
+    } else if (['Tabs'].includes(component.component)) {
       component.propValue.forEach(tabItem => {
         changeComponentsSizeWithScaleCircle(tabItem.componentData, scale)
       })
     }
     // 如果是分组组件 则要进行分组内部组件groupStyle进行深度计算
     // 计算逻辑 Group 中样式 * groupComponent.groupStyle[sonKey].
-    if (['Group', 'DeTabs'].includes(component.component)) {
+    if (['Group', 'Tabs'].includes(component.component)) {
       try {
         nextTick(() => groupSizeStyleAdaptor(component))
       } catch (e) {

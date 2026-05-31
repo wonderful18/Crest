@@ -176,7 +176,7 @@ const initCurFields = chartDetails => {
       dataRowFiledName.value.push(`[记录数*]`)
     }
     const sourceFieldNameIdMap = chartDetails.data.fields.reduce((pre, next) => {
-      pre[next['dataeaseName']] = next['name']
+      pre[next['engineFieldName']] = next['name']
       return pre
     }, {})
     const rowData = chartDetails.data.tableRow[0]
@@ -245,7 +245,7 @@ const calcData = (viewCalc: Chart, callback) => {
     v.type = 'table-info'
     v.render = 'antv'
     v.resultCount = 1
-    getData(v)
+    data(v)
       .then(res => {
         if (res.code && res.code !== 0) {
           isError.value = true

@@ -15,7 +15,7 @@ public class ResourceApi {
     @Resource
     private ResourceService resourceService;
 
-    @PostMapping("checkPermission/{id}")
+    @PostMapping("permission-check/{id}")
     public boolean checkPermission(@PathVariable("id") Long id) {
         return resourceService.checkPermission(id);
     }

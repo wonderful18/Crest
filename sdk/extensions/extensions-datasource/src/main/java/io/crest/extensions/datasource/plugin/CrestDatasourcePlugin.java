@@ -1,6 +1,6 @@
 package io.crest.extensions.datasource.plugin;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasourceRequest;
 import io.crest.extensions.datasource.factory.ProviderFactory;
 import io.crest.extensions.datasource.provider.Provider;
@@ -44,7 +44,7 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
         try {
             loadDriver();
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -82,7 +82,7 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
         try {
             pluginInfo = getPluginInfo();
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         String config = pluginInfo.getConfig();
         PluginDatasourceVO vo = JsonUtil.parseObject(config, PluginDatasourceVO.class);
@@ -107,7 +107,7 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
                 }
             }
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 }

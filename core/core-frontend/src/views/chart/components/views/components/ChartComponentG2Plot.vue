@@ -263,7 +263,7 @@ const calcData = async (view, callback) => {
   if (view.tableId || view['dataFrom'] === 'template') {
     isError.value = false
     const v = JSON.parse(JSON.stringify(view))
-    getData(v)
+    data(v)
       .then(async res => {
         const dataRes = res as any
         if (res.code && res.code !== 0) {

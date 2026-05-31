@@ -1,6 +1,6 @@
 package io.crest.system.sso;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
@@ -14,7 +14,7 @@ public final class SsoEndpointPolicy {
 
     public static String validateEndpoint(String endpoint, Boolean requireHttps, String name) {
         if (StringUtils.isBlank(endpoint)) {
-            DEException.throwException(name + "不能为空");
+            CrestException.throwException(name + "不能为空");
         }
         String value = endpoint.trim();
         if (!Objects.equals(value, endpoint)) {
@@ -26,22 +26,22 @@ public final class SsoEndpointPolicy {
             String scheme = uri.getScheme();
             String host = uri.getHost();
             if (!Strings.CI.equalsAny(scheme, "https", "http") || StringUtils.isBlank(host)) {
-                DEException.throwException(name + "必须是 HTTP 或 HTTPS 绝对地址");
+                CrestException.throwException(name + "必须是 HTTP 或 HTTPS 绝对地址");
             }
             if (StringUtils.isNotBlank(uri.getUserInfo())) {
-                DEException.throwException(name + "不能包含用户名或密码");
+                CrestException.throwException(name + "不能包含用户名或密码");
             }
             if (endpoint.chars().anyMatch(Character::isISOControl)) {
-                DEException.throwException(name + "不能包含控制字符");
+                CrestException.throwException(name + "不能包含控制字符");
             }
             if (Boolean.TRUE.equals(requireHttps)
                     && !Strings.CI.equals(scheme, "https")
                     && !isLocalHost(host)) {
-                DEException.throwException(name + "生产环境必须使用 HTTPS");
+                CrestException.throwException(name + "生产环境必须使用 HTTPS");
             }
             return endpoint;
         } catch (IllegalArgumentException e) {
-            DEException.throwException(name + "格式无效");
+            CrestException.throwException(name + "格式无效");
             return null;
         }
     }

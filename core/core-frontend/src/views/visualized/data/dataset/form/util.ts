@@ -146,8 +146,8 @@ interface Node {
 
 interface Field {
   checked: boolean
-  deExtractType: number
-  deType: number
+  extractedFieldType: number
+  fieldType: number
   name: string
   type: string
   originName: string

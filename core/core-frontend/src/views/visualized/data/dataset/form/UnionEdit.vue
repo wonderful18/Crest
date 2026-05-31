@@ -150,7 +150,7 @@ defineExpose({
 <style lang="less" scoped>
 .field-style {
   height: 430px;
-  border: 1px solid var(--deCardStrokeColor, #dee0e3);
+  border: 1px solid var(--crestCardStrokeColor, #dee0e3);
   border-radius: 6px;
   width: 100%;
   box-sizing: border-box;
@@ -163,7 +163,7 @@ defineExpose({
   width: 50%;
 
   & > p {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 500;
     margin: 0;
@@ -172,10 +172,10 @@ defineExpose({
     overflow: hidden;
     white-space: nowrap;
     width: 100%;
-    color: var(--deTextPrimary, #1f2329);
+    color: var(--crestTextPrimary, #1f2329);
   }
   &:nth-child(1) {
-    border-right: 1px solid var(--deCardStrokeColor, #dee0e3);
+    border-right: 1px solid var(--crestCardStrokeColor, #dee0e3);
   }
 }
 </style>

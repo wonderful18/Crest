@@ -37,7 +37,7 @@ type L7Plot = any
 type L7ZoomControlOption = Record<string, any>
 type GeoFeatureCollection = {
   features?: Array<Record<string, any>>
-  deMapping?: Record<string, string>
+  areaMapping?: Record<string, string>
 }
 
 type Listener = (...args: any[]) => void
@@ -47,11 +47,11 @@ const L7_LEGEND_ITEM_TPL = '<div class="l7plot-legend__category-item"></div>'
 const L7_LEGEND_LIST_CLASS = 'l7plot-legend__category-list'
 
 class LiteMapObject {
-  deMapProvider?: string
-  deMapAutoFit?: boolean
-  deMapAutoZoom?: number
-  deMapAutoLng?: number
-  deMapAutoLat?: number
+  mapProvider?: string
+  mapAutoFit?: boolean
+  mapAutoZoom?: number
+  mapAutoLng?: number
+  mapAutoLat?: number
   showLabel?: boolean
   dragPan = { disable: () => undefined }
   scrollZoom = { disable: () => undefined }
@@ -1245,8 +1245,8 @@ export function handleGeoJson(
   useGlobalAreaMapping = false
 ) {
   let mapping = nameMapping
-  if (useGlobalAreaMapping && geoJson?.['deMapping']) {
-    mapping = geoJson['deMapping']
+  if (useGlobalAreaMapping && geoJson?.['areaMapping']) {
+    mapping = geoJson['areaMapping']
   }
   geoJson?.features.forEach(item => {
     if (!item.properties['centroid']) {
@@ -1363,11 +1363,11 @@ export class CustomZoom extends LiteZoom {
     )
     // 抽出重置事件，方便其他事件（移动端触摸）触发
     const zoomReset = () => {
-      if (this.mapsService.map?.deMapProvider == 'qq') {
-        if (this.mapsService.map.deMapAutoFit) {
-          this.mapsService.setZoomAndCenter(this.mapsService.map.deMapAutoZoom, [
-            this.mapsService.map.deMapAutoLng,
-            this.mapsService.map.deMapAutoLat
+      if (this.mapsService.map?.mapProvider == 'qq') {
+        if (this.mapsService.map.mapAutoFit) {
+          this.mapsService.setZoomAndCenter(this.mapsService.map.mapAutoZoom, [
+            this.mapsService.map.mapAutoLng,
+            this.mapsService.map.mapAutoLat
           ])
         } else {
           this.mapsService.setZoomAndCenter(
@@ -1416,7 +1416,7 @@ export class CustomZoom extends LiteZoom {
     setStyle(elements, 'border-bottom', 'none')
     this['updateDisabled']()
     // 腾讯地图需要监听移动端的触摸事件
-    if (this.mapsService.map?.deMapProvider === 'qq') {
+    if (this.mapsService.map?.mapProvider === 'qq') {
       const handlers = [zoomReset, () => this.zoomIn(), () => this.zoomOut()]
       elements.forEach((el, i) => {
         el.addEventListener('touchend', handlers[i])
@@ -1530,19 +1530,19 @@ export function configL7Zoom(
           const endAxis = chart.xAxisExt
           if (startAxis?.length === 2) {
             chart.data?.tableRow?.forEach(row => {
-              coordinates.push([row[startAxis[0].dataeaseName], row[startAxis[1].dataeaseName]])
+              coordinates.push([row[startAxis[0].engineFieldName], row[startAxis[1].engineFieldName]])
             })
           }
           if (endAxis?.length === 2) {
             chart.data?.tableRow?.forEach(row => {
-              coordinates.push([row[endAxis[0].dataeaseName], row[endAxis[1].dataeaseName]])
+              coordinates.push([row[endAxis[0].engineFieldName], row[endAxis[1].engineFieldName]])
             })
           }
         } else {
           const axis = chart.xAxis
           if (axis?.length === 2) {
             chart.data?.tableRow?.forEach(row => {
-              coordinates.push([row[axis[0].dataeaseName], row[axis[1].dataeaseName]])
+              coordinates.push([row[axis[0].engineFieldName], row[axis[1].engineFieldName]])
             })
           }
         }
@@ -1639,12 +1639,12 @@ export function mapRendering(dom: HTMLElement | string) {
 }
 
 export function qqMapRendered(scene?: Scene) {
-  if (scene?.map && scene.map.deMapProvider === 'qq') {
+  if (scene?.map && scene.map.mapProvider === 'qq') {
     setTimeout(() => {
       if (scene.map) {
-        scene.map.deMapAutoZoom = scene.map.getZoom()
-        scene.map.deMapAutoLng = scene.map.getCenter().getLng()
-        scene.map.deMapAutoLat = scene.map.getCenter().getLat()
+        scene.map.mapAutoZoom = scene.map.getZoom()
+        scene.map.mapAutoLng = scene.map.getCenter().getLng()
+        scene.map.mapAutoLat = scene.map.getCenter().getLat()
       }
     }, 1000)
   }
@@ -1753,9 +1753,9 @@ export async function getMapScene(
     if (basicStyle.autoFit === false) {
       scene.setZoomAndCenter(basicStyle.zoomLevel, center)
       if (mapKey.mapType === 'qq') {
-        scene.map.deMapAutoFit = false
-        scene.map.deMapZoom = basicStyle.zoomLevel
-        scene.map.deMapCenter = center
+        scene.map.mapAutoFit = false
+        scene.map.mapZoom = basicStyle.zoomLevel
+        scene.map.mapCenter = center
       }
     }
   }
@@ -1771,11 +1771,11 @@ export async function getMapScene(
       })
       scene.setMapStyle(mapStyle)
 
-      scene.map.deMapProvider = 'qq'
-      scene.map.deMapAutoFit = !!basicStyle.autoFit
-      // scene.map.deMapAutoZoom = scene.map.getZoom()
-      // scene.map.deMapAutoLng = scene.map.getCenter().getLng()
-      // scene.map.deMapAutoLat = scene.map.getCenter().getLat()
+      scene.map.mapProvider = 'qq'
+      scene.map.mapAutoFit = !!basicStyle.autoFit
+      // scene.map.mapAutoZoom = scene.map.getZoom()
+      // scene.map.mapAutoLng = scene.map.getCenter().getLng()
+      // scene.map.mapAutoLat = scene.map.getCenter().getLat()
     }
     // 去除天地图自己的缩放按钮
     if (mapKey.mapType === 'tianditu') {

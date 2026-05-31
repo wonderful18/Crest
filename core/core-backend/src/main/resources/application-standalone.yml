@@ -7,7 +7,7 @@ spring:
     basename: i18n/lic,i18n/core,i18n/permissions,i18n/sync
   flyway:
     enabled: true
-    table: de_standalone_version
+    table: crest_schema_version
     validate-on-migrate: false
     locations: classpath:db/migration
     baseline-on-migrate: true

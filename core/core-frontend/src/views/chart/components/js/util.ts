@@ -12,7 +12,7 @@ import { useAppStoreWithOut } from '@/store/modules/app'
 import { Decimal } from 'decimal.js'
 
 const appStore = useAppStoreWithOut()
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi)
+const isCrestBi = computed(() => appStore.getIsCrestBi)
 
 const { t } = useI18n()
 // 同时支持将hex和rgb，转换成rgba
@@ -507,16 +507,16 @@ const getExcelDownloadRequest = (data, type?) => {
   }
   const tableRow = JSON.parse(JSON.stringify(data.tableRow))
   const excelHeader = fields.map(item => item.chartShowName ?? item.name)
-  const excelTypes = fields.map(item => item.deType)
-  const excelHeaderKeys = fields.map(item => item.dataeaseName)
+  const excelTypes = fields.map(item => item.fieldType)
+  const excelHeaderKeys = fields.map(item => item.engineFieldName)
   let excelData = tableRow.map(item => excelHeaderKeys.map(i => item[i]))
   let detailFields = []
   if (data.detailFields?.length) {
     detailFields = data.detailFields.map(item => {
       return {
         name: item.name,
-        deType: item.deType,
-        dataeaseName: item.dataeaseName
+        fieldType: item.fieldType,
+        engineFieldName: item.engineFieldName
       }
     })
     excelData = tableRow.map(item => {
@@ -524,7 +524,7 @@ const getExcelDownloadRequest = (data, type?) => {
         if (i === 'detail' && !item[i] && Array.isArray(item['details'])) {
           const arr = item['details']
           if (arr?.length) {
-            return arr.map(ele => detailFields.map(field => ele[field.dataeaseName]))
+            return arr.map(ele => detailFields.map(field => ele[field.engineFieldName]))
           }
           return null
         }
@@ -588,8 +588,8 @@ export const exportExcelDownload = (chart, preFix, callBack?) => {
 
   const linkStore = useLinkStoreWithOut()
 
-  if (isDataEaseBi.value || appStore.getIsIframe) {
-    request.dataEaseBi = true
+  if (isCrestBi.value || appStore.getIsIframe) {
+    request.embeddedExport = true
   }
   const method = request.downloadType === 'dataset' ? innerExportDataSetDetails : innerExportDetails
   if (request.viewInfo?.customAttr?.basicStyle?.tablePageMode) {
@@ -597,7 +597,7 @@ export const exportExcelDownload = (chart, preFix, callBack?) => {
   }
   method(request)
     .then(res => {
-      if (linkStore.getLinkToken || isDataEaseBi.value || appStore.getIsIframe) {
+      if (linkStore.getLinkToken || isCrestBi.value || appStore.getIsIframe) {
         const blob = new Blob([res.data], { type: 'application/vnd.ms-excel' })
         const link = document.createElement('a')
         link.style.display = 'none'

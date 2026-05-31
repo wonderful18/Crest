@@ -617,7 +617,7 @@ const dragover = () => {
 }
 
 const drop = e => {
-  const componentInfoArr: ComponentInfo[] = JSON.parse(e.dataTransfer.getData('dimension') || '{}')
+  const componentInfoArr: ComponentInfo[] = JSON.parse(e.dataTransfer.data('dimension') || '{}')
   componentInfoArr.forEach(componentInfo => {
     const checkedFields = []
     const checkedFieldsMap = {}
@@ -628,7 +628,7 @@ const drop = e => {
       }
     })
     // URL 字段类型换成文本字段类型
-    const displayType = componentInfo.deType === 7 ? 0 : `${componentInfo.deType}`
+    const displayType = componentInfo.fieldType === 7 ? 0 : `${componentInfo.fieldType}`
     list.value.push({
       ...infoFormat(componentInfo),
       auto: true,

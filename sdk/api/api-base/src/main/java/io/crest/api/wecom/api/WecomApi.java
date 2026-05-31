@@ -7,9 +7,9 @@ import io.crest.api.wecom.dto.WecomTokenRequest;
 import io.crest.api.wecom.vo.WecomInfoVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "企微设置")
 @ApiSupport(order = 899)
@@ -24,7 +24,7 @@ public interface WecomApi {
     WecomInfoVO qrinfo();
 
     @Operation(summary = "保存")
-    @PostMapping("/create")
+    @PostMapping
     void save(@RequestBody WecomCreator creator);
 
     @Operation(summary = "企微token", hidden = true)
@@ -32,7 +32,7 @@ public interface WecomApi {
     String wecomToken(@RequestBody WecomTokenRequest request);
 
     @Operation(summary = "切换开启状态")
-    @PostMapping("/switchEnable")
+    @PostMapping("/enabled")
     void switchEnable(@RequestBody WecomEnableEditor editor);
 
     @Operation(summary = "验证可用性")

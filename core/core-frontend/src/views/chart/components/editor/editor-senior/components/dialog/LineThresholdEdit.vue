@@ -242,8 +242,8 @@ const isDynamic = item => {
 }
 
 const getFieldOptions = fieldItem => {
-  const deType = state.fields.filter(ele => ele.id === fieldItem.fieldId)?.[0]?.deType
-  if (deType === 1) {
+  const fieldType = state.fields.filter(ele => ele.id === fieldItem.fieldId)?.[0]?.fieldType
+  if (fieldType === 1) {
     return fieldOptions.filter(ele => ele.value === 'fixed')
   } else {
     return fieldOptions
@@ -281,16 +281,16 @@ init()
                 :key="fieldOption.id"
                 :label="fieldOption.name"
                 :value="fieldOption.id"
-                :disabled="chart.type === 'table-info' && fieldOption.deType === 7"
+                :disabled="chart.type === 'table-info' && fieldOption.fieldType === 7"
               >
                 <el-icon style="margin-right: 8px">
                   <Icon
                     ><component
                       :class="`field-icon-${
-                        fieldType[[2, 3].includes(fieldOption.deType) ? 2 : 0]
+                        fieldType[[2, 3].includes(fieldOption.fieldType) ? 2 : 0]
                       }`"
                       class="svg-icon"
-                      :is="iconFieldMap[fieldType[fieldOption.deType]]"
+                      :is="iconFieldMap[fieldType[fieldOption.fieldType]]"
                     ></component
                   ></Icon>
                 </el-icon>
@@ -359,7 +359,7 @@ init()
               <el-form-item class="form-item">
                 <el-input-number
                   v-model="item.value"
-                  v-if="[2, 3].includes(fieldItem.field.deType)"
+                  v-if="[2, 3].includes(fieldItem.field.fieldType)"
                   :placeholder="t('chart.drag_block_label_value')"
                   controls-position="right"
                   class="value-item"

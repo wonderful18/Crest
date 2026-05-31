@@ -1,7 +1,7 @@
 package io.crest.dataset.utils;
 
 import com.google.common.collect.ImmutableList;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.parser.SqlParseException;
@@ -38,7 +38,7 @@ public class SqlUtils {
             sqlNode = sqlParser.parseStmt();
             addTableSchema(sqlNode, false, schema, config);
         } catch (SqlParseException e) {
-            DEException.throwException("使用 Calcite 进行语法分析发生了异常:" + e);
+            CrestException.throwException("使用 Calcite 进行语法分析发生了异常:" + e);
         }
         String sqlRender = sqlNode.toString();
         // 处理sql中多余的`都替换成1个
@@ -109,7 +109,7 @@ public class SqlUtils {
                 }
             }
         } catch (Exception e) {
-            DEException.throwException("使用 Calcite 进行语法分析发生了异常:" + e);
+            CrestException.throwException("使用 Calcite 进行语法分析发生了异常:" + e);
         }
     }
 

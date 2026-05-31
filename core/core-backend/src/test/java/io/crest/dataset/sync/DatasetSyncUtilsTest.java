@@ -21,12 +21,12 @@ public class DatasetSyncUtilsTest {
 
     @Test
     public void cacheTableNameUsesDatasetIdNamespace() {
-        assertEquals("de_sync_dataset_12345", DatasetSyncUtils.cacheTableName(12345L));
-        assertEquals("tmp_de_sync_dataset_12345", DatasetSyncUtils.tmpCacheTableName(12345L));
+        assertEquals("dataset_sync_12345", DatasetSyncUtils.cacheTableName(12345L));
+        assertEquals("tmp_dataset_sync_12345", DatasetSyncUtils.tmpCacheTableName(12345L));
     }
 
     @Test
-    public void toEngineTableFieldsUsesDataeaseNamesAndSkipsCalculatedFields() {
+    public void toEngineTableFieldsUsesEngineFieldNamesAndSkipsCalculatedFields() {
         DatasetTableFieldDTO normal = field(1L, "USER_ID", "用户ID", "f_user_id", 2, ExtFieldConstant.EXT_NORMAL);
         DatasetTableFieldDTO calc = field(2L, "sum([1])", "计算字段", "f_calc", 3, ExtFieldConstant.EXT_CALC);
 
@@ -36,7 +36,7 @@ public class DatasetSyncUtilsTest {
         assertEquals("f_user_id", fields.get(0).getName());
         assertEquals("f_user_id", fields.get(0).getOriginName());
         assertEquals("用户ID", fields.get(0).getFieldType());
-        assertEquals(Integer.valueOf(2), fields.get(0).getDeExtractType());
+        assertEquals(Integer.valueOf(2), fields.get(0).getExtractedFieldType());
     }
 
     @Test
@@ -96,14 +96,14 @@ public class DatasetSyncUtilsTest {
     }
 
     @Test
-    public void buildCacheSelectSqlReadsDataeaseColumnsFromCacheTable() {
+    public void buildCacheSelectSqlReadsEngineColumnsFromCacheTable() {
         DatasetTableFieldDTO id = field(1L, "ID", "ID", "f_id", 2, ExtFieldConstant.EXT_NORMAL);
         DatasetTableFieldDTO name = field(2L, "NAME", "名称", "f_name", 0, ExtFieldConstant.EXT_NORMAL);
 
         String sql = DatasetSyncUtils.buildCacheSelectSql(8L, List.of(id, name), "`", "`", "s_a_1");
 
         assertEquals(
-                "SELECT `f_id` AS `f_id`,`f_name` AS `f_name` FROM `s_a_1`.`de_sync_dataset_8`",
+                "SELECT `f_id` AS `f_id`,`f_name` AS `f_name` FROM `s_a_1`.`dataset_sync_8`",
                 sql
         );
     }
@@ -123,7 +123,7 @@ public class DatasetSyncUtilsTest {
         );
 
         assertEquals(
-                "SELECT DE_SYNC_PAGE.\"f_id\" FROM (SELECT DE_SYNC_SRC.*, ROWNUM AS DE_ROWNUM FROM (SELECT t_a_0.\"ID\" AS \"f_id\" FROM \"T_USER\" t_a_0) DE_SYNC_SRC WHERE ROWNUM <= 3000) DE_SYNC_PAGE WHERE DE_ROWNUM > 2000",
+                "SELECT SYNC_PAGE.\"f_id\" FROM (SELECT SYNC_SRC.*, ROWNUM AS SYNC_ROWNUM FROM (SELECT t_a_0.\"ID\" AS \"f_id\" FROM \"T_USER\" t_a_0) SYNC_SRC WHERE ROWNUM <= 3000) SYNC_PAGE WHERE SYNC_ROWNUM > 2000",
                 sql
         );
     }
@@ -248,15 +248,15 @@ public class DatasetSyncUtilsTest {
         assertEquals("源端最大水位 2026-05-15 10:00:00.0 与缓存最大水位 2026-05-15 09:59:00.0 不一致", watermarkMismatch.message());
     }
 
-    private DatasetTableFieldDTO field(Long id, String originName, String name, String dataeaseName, Integer deExtractType, Integer extField) {
+    private DatasetTableFieldDTO field(Long id, String originName, String name, String engineFieldName, Integer fieldType, Integer extField) {
         DatasetTableFieldDTO field = new DatasetTableFieldDTO();
         field.setId(id);
         field.setOriginName(originName);
         field.setName(name);
-        field.setDataeaseName(dataeaseName);
-        field.setFieldShortName(dataeaseName);
-        field.setDeExtractType(deExtractType);
-        field.setDeType(deExtractType);
+        field.setEngineFieldName(engineFieldName);
+        field.setFieldShortName(engineFieldName);
+        field.setExtractedFieldType(fieldType);
+        field.setFieldType(fieldType);
         field.setExtField(extField);
         field.setChecked(true);
         return field;

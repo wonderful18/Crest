@@ -127,8 +127,8 @@ init()
                   <Icon
                     ><component
                       class="svg-icon"
-                      :class="`field-icon-${fieldType[item.deType]}`"
-                      :is="iconFieldMap[fieldType[item.deType]]"
+                      :class="`field-icon-${fieldType[item.fieldType]}`"
+                      :is="iconFieldMap[fieldType[item.fieldType]]"
                     ></component
                   ></Icon>
                 </el-icon>
@@ -161,8 +161,8 @@ init()
                   <Icon
                     ><component
                       class="svg-icon"
-                      :class="`field-icon-${fieldType[item.deType]}`"
-                      :is="iconFieldMap[fieldType[item.deType]]"
+                      :class="`field-icon-${fieldType[item.fieldType]}`"
+                      :is="iconFieldMap[fieldType[item.fieldType]]"
                     ></component
                   ></Icon>
                 </el-icon>
@@ -195,7 +195,7 @@ init()
 <style lang="less" scoped>
 .union-container {
   height: 275px;
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
 }
 .union-header {
   display: flex;
@@ -203,7 +203,7 @@ init()
   width: 100%;
   justify-content: space-between;
   margin-bottom: 8px;
-  color: var(--deTextPrimary, #1f2329);
+  color: var(--crestTextPrimary, #1f2329);
   font-size: 16px;
   font-weight: 500;
 }
@@ -242,11 +242,11 @@ init()
   display: flex;
   align-items: center;
   font-size: 14px;
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   font-style: normal;
   font-weight: 400;
   margin: 20px 0 8px 0;
-  color: var(--deTextSecondary, #1f2329);
+  color: var(--crestTextSecondary, #1f2329);
 }
 .union-body-header .column {
   width: 364px;
@@ -292,7 +292,7 @@ init()
 
   :deep(.ed-icon) {
     font-size: 16px;
-    color: var(--deTextSecondary, #646a73);
+    color: var(--crestTextSecondary, #646a73);
   }
 }
 </style>

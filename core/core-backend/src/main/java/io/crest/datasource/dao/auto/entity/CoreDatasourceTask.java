@@ -14,7 +14,7 @@ import java.io.Serializable;
  * @author fit2cloud
  * @since 2023-09-28
  */
-@TableName("core_datasource_task")
+@TableName("data_source_sync_task")
 public class CoreDatasourceTask implements Serializable {
 
     private static final long serialVersionUID = 1L;

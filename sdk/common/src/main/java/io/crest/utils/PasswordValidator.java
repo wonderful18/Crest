@@ -1,6 +1,6 @@
 package io.crest.utils;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.result.ResultCode;
 
 import java.util.ArrayList;
@@ -31,11 +31,11 @@ public class PasswordValidator {
      * 验证密码是否符合策略
      *
      * @param password 待验证的密码
-     * @throws DEException 如果密码不符合策略
+     * @throws CrestException 如果密码不符合策略
      */
     public static void validate(String password) {
         if (password == null || password.isEmpty()) {
-            throw new DEException(ResultCode.PARAM_IS_INVALID.code(), "密码不能为空");
+            throw new CrestException(ResultCode.PARAM_IS_INVALID.code(), "密码不能为空");
         }
 
         List<String> errors = new ArrayList<>();
@@ -73,7 +73,7 @@ public class PasswordValidator {
         }
 
         if (!errors.isEmpty()) {
-            throw new DEException(ResultCode.PARAM_IS_INVALID.code(),
+            throw new CrestException(ResultCode.PARAM_IS_INVALID.code(),
                     "密码不符合安全策略: " + String.join("; ", errors));
         }
     }

@@ -5,13 +5,13 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fit2cloud
  * @since 2023-08-24
  */
-@TableName("core_store")
+@TableName("workspace_favorite_resource")
 public class CoreStore implements Serializable {
 
     private static final long serialVersionUID = 1L;

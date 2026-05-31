@@ -3,7 +3,7 @@ package io.crest.font.manage;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import io.crest.api.font.dto.FontDto;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.font.dao.auto.entity.CoreFont;
 import io.crest.font.dao.auto.mapper.CoreFontMapper;
 import io.crest.utils.BeanUtils;
@@ -55,7 +55,7 @@ public class FontManage {
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("name", fontDto.getName());
         if (CollectionUtils.isNotEmpty(coreFontMapper.selectList(queryWrapper))) {
-            DEException.throwException("存在重名字库");
+            CrestException.throwException("存在重名字库");
         }
         fontDto.setId(IDUtils.snowID());
         CoreFont coreFont = new CoreFont();
@@ -114,7 +114,7 @@ public class FontManage {
         queryWrapper.eq("file_trans_name", file);
         List<CoreFont> coreFonts = coreFontMapper.selectList(queryWrapper);
         if (CollectionUtils.isEmpty(coreFonts)) {
-            DEException.throwException("不存在的字库文件");
+            CrestException.throwException("不存在的字库文件");
         }
 
         try {
@@ -130,7 +130,7 @@ public class FontManage {
                 out.flush();
             }
         } catch (IOException e) {
-            DEException.throwException(e.getMessage());
+            CrestException.throwException(e.getMessage());
         }
     }
 
@@ -147,12 +147,12 @@ public class FontManage {
         return fontDtos;
     }
 
-    private FontDto saveFile(MultipartFile file, String fileNameUUID) throws DEException {
+    private FontDto saveFile(MultipartFile file, String fileNameUUID) throws CrestException {
         FontDto fontDto = new FontDto();
         try {
             String filename = file.getOriginalFilename();
             if (StringUtils.isEmpty(filename) || !filename.toLowerCase().endsWith(".ttf")) {
-                DEException.throwException("非法格式的文件！");
+                CrestException.throwException("非法格式的文件！");
             }
             String suffix = filename.substring(filename.lastIndexOf(".") + 1);
             String filePath = path + fileNameUUID + "." + suffix;
@@ -182,7 +182,7 @@ public class FontManage {
             fontDto.setSizeType(unit);
             fontDto.setName(font.getFontName());
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         return fontDto;
     }

@@ -151,7 +151,7 @@ const calcData = (viewInfo: Chart, callback, resetPageInfo = true) => {
   if (viewInfo.tableId || viewInfo['dataFrom'] === 'template') {
     isError.value = false
     const v = JSON.parse(JSON.stringify(viewInfo))
-    getData(v)
+    data(v)
       .then(res => {
         const dataRes = res as any
         if (res.code && res.code !== 0) {
@@ -625,7 +625,7 @@ const trackMenuCalc = itemId => {
   // 明细表 URL 字段图片放大
   if (view.value.type === 'table-info') {
     view.value.xAxis?.forEach(axis => {
-      if (axis.id === itemId && axis.deType === 7) {
+      if (axis.id === itemId && axis.fieldType === 7) {
         trackMenuInfo.push('enlarge')
       }
     })
@@ -730,7 +730,7 @@ const autoStyle = computed(() => {
 })
 
 const tabStyle = computed(() => [
-  { '--de-pager-color': canvasStyleData.value.component.seniorStyleSetting?.pagerColor }
+  { '--crest-pager-color': canvasStyleData.value.component.seniorStyleSetting?.pagerColor }
 ])
 
 const tablePageClass = computed(() => {
@@ -824,7 +824,7 @@ const tablePageClass = computed(() => {
 }
 
 .table-page-info {
-  --ed-text-color-regular: var(--de-pager-color);
+  --ed-text-color-regular: var(--crest-pager-color);
   position: relative;
   padding-left: 4px;
   margin: 4px;
@@ -832,16 +832,16 @@ const tablePageClass = computed(() => {
   display: flex;
   width: 100%;
   font-size: 14px;
-  color: var(--de-pager-color);
+  color: var(--crest-pager-color);
   :deep(.table-page-content) {
     button,
     button[disabled] {
-      color: var(--de-pager-color);
+      color: var(--crest-pager-color);
       background: transparent !important;
     }
     ul li {
       &:not(.is-active) {
-        color: var(--de-pager-color);
+        color: var(--crest-pager-color);
       }
       background: transparent !important;
     }

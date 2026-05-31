@@ -15,8 +15,8 @@ export function getItemType(dimensionData, quotaData, item) {
       if (item.chartId) {
         if (
           ele.originName === item.originName &&
-          ele.dataeaseName === item.dataeaseName &&
-          ele.deType === item.deType &&
+          ele.engineFieldName === item.engineFieldName &&
+          ele.fieldType === item.fieldType &&
           ele.groupType === item.groupType
         ) {
           checked = true
@@ -26,7 +26,7 @@ export function getItemType(dimensionData, quotaData, item) {
         if (
           ele.id === item.id &&
           ele.originName === item.originName &&
-          ele.deType === item.deType &&
+          ele.fieldType === item.fieldType &&
           ele.groupType === item.groupType
         ) {
           checked = true
@@ -41,8 +41,8 @@ export function getItemType(dimensionData, quotaData, item) {
       if (item.chartId) {
         if (
           ele.originName === item.originName &&
-          ele.dataeaseName === item.dataeaseName &&
-          ele.deType === item.deType &&
+          ele.engineFieldName === item.engineFieldName &&
+          ele.fieldType === item.fieldType &&
           ele.groupType === item.groupType
         ) {
           checked = true
@@ -52,7 +52,7 @@ export function getItemType(dimensionData, quotaData, item) {
         if (
           ele.id === item.id &&
           ele.originName === item.originName &&
-          ele.deType === item.deType &&
+          ele.fieldType === item.fieldType &&
           ele.groupType === item.groupType
         ) {
           checked = true

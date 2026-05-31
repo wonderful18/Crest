@@ -9,8 +9,7 @@ export default {
       // 使用 proxy 实例
       '/api': {
         target: 'http://localhost:8100',
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api/, 'de2api')
+        changeOrigin: true
       }
     },
     port: 8080

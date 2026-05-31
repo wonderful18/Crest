@@ -6,17 +6,17 @@ import io.crest.api.permissions.org.dto.OrgEditor;
 import io.crest.api.permissions.org.dto.OrgLazyRequest;
 import io.crest.api.permissions.org.dto.OrgRequest;
 import io.crest.api.permissions.org.vo.*;
-import io.crest.auth.DeApiPath;
-import io.crest.auth.DePermit;
+import io.crest.auth.CrestApiPath;
+import io.crest.auth.CrestPermit;
 import io.crest.model.KeywordRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -24,33 +24,33 @@ import static io.crest.constant.AuthResourceEnum.ORG;
 
 @Tag(name = "组织")
 @ApiSupport(order = 886, author = "Crest")
-@DeApiPath(value = "/org", rt = ORG)
+@CrestApiPath(value = "/org", rt = ORG)
 public interface OrgApi {
 
     @Operation(summary = "查询组织树")
     @PostMapping("/page/tree")
-    @DePermit("m:read")
+    @CrestPermit("m:read")
     List<OrgPageVO> pageTree(@RequestBody OrgRequest request);
 
     @Operation(summary = "懒加载组织树")
-    @PostMapping("/page/lazyTree")
-    @DePermit("m:read")
+    @PostMapping("/page/lazy-tree")
+    @CrestPermit("m:read")
     LazyTreeVO lazyPageTree(@RequestBody OrgLazyRequest request);
 
     @Operation(summary = "创建")
-    @DePermit({"m:read"})
-    @PostMapping("/page/create")
+    @CrestPermit({"m:read"})
+    @PostMapping("/page")
     Long create(@RequestBody OrgCreator creator);
 
     @Operation(summary = "编辑")
-    @DePermit({"m:read", "#p0.id+':manage'"})
-    @PostMapping("/page/edit")
+    @CrestPermit({"m:read", "#p0.id+':manage'"})
+    @PutMapping("/page")
     void edit(@RequestBody OrgEditor editor);
 
     @Operation(summary = "删除")
     @Parameter(name = "id", description = "ID", required = true, in = ParameterIn.PATH)
-    @PostMapping("/page/delete/{id}")
-    @DePermit({"m:read", "#p0+':manage'"})
+    @DeleteMapping("/page/{id}")
+    @CrestPermit({"m:read", "#p0+':manage'"})
     void delete(@PathVariable("id") Long id);
 
     @Operation(summary = "查询权限内组织树")
@@ -58,11 +58,11 @@ public interface OrgApi {
     List<MountedVO> mounted(@RequestBody KeywordRequest request);
 
     @Operation(summary = "查询权限内组织树(懒加载)")
-    @PostMapping("/lazyMounted")
+    @PostMapping("/lazy-mounted")
     LazyMountedVO lazyMounted(@RequestBody OrgLazyRequest request);
 
     @Operation(summary = "", hidden = true)
-    @GetMapping("/resourceExist/{oid}")
+    @GetMapping("/resource-exists/{oid}")
     boolean resourceExist(@PathVariable("oid") Long oid);
 
     @Operation(hidden = true)
@@ -70,6 +70,6 @@ public interface OrgApi {
     OrgDetailVO detail(@PathVariable("oid") Long oid);
 
     @Operation(hidden = true)
-    @GetMapping("/subOrgs")
+    @GetMapping("/sub-orgs")
     List<String> subOrgs();
 }

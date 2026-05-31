@@ -74,7 +74,7 @@ const widthShow = computed(() => `${canvasCollapse.value[sideName.value] ? 36 : 
 const isViewTitle = computed(() => view.value && ['picture-group'].includes(view.value.type))
 
 const slideStyle = computed(() => {
-  return { '--de-scroll-width': props.scrollWidth + 'px', width: widthShow.value }
+  return { '--crest-scroll-width': props.scrollWidth + 'px', width: widthShow.value }
 })
 
 const closeEditComponentName = () => {
@@ -268,11 +268,11 @@ const onComponentNameChange = () => {
   }
 
   :deep(.ed-scrollbar__bar) {
-    width: var(--de-scroll-width);
+    width: var(--crest-scroll-width);
   }
 
   :deep(.ed-scrollbar__thumb) {
-    width: var(--de-scroll-width);
+    width: var(--crest-scroll-width);
   }
 }
 .aside-left-dark {
@@ -311,7 +311,7 @@ const onComponentNameChange = () => {
 }
 
 .ed-scrollbar__bar.is-vertical {
-  width: var(--de-scroll-width);
+  width: var(--crest-scroll-width);
 }
 
 .name-area-attr {

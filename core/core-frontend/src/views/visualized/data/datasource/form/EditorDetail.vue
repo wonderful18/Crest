@@ -4,8 +4,8 @@ import icon_rename_outlined from '@/assets/svg/icon_rename_outlined.svg'
 import icon_down_outlined from '@/assets/svg/icon_down_outlined.svg'
 import icon_down_outlined1 from '@/assets/svg/icon_down_outlined-1.svg'
 import icon_add_outlined from '@/assets/svg/icon_add_outlined.svg'
-import deCopy from '@/assets/svg/de-copy.svg'
-import deDelete from '@/assets/svg/de-delete.svg'
+import CopyIcon from '@/assets/svg/copy.svg'
+import DeleteIcon from '@/assets/svg/delete.svg'
 import icon_warning_filled from '@/assets/svg/icon_warning_filled.svg'
 import icon_deleteTrash_outlined from '@/assets/svg/icon_delete-trash_outlined.svg'
 import icon_edit_outlined from '@/assets/svg/icon_edit_outlined.svg'
@@ -119,7 +119,7 @@ const api_table_title = ref('')
 const editApiItem = ref()
 const defaultApiItem = {
   name: '',
-  deTableName: '',
+  displayTableName: '',
   url: '',
   type: '',
   serialNumber: 0,
@@ -436,7 +436,7 @@ const setItemRef = (ele: ComponentPublicInstance | null | Element) => {
 
 const copyItem = (item?: ApiConfiguration) => {
   const newItem = JSON.parse(JSON.stringify(item))
-  newItem.deTableName = ''
+  newItem.displayTableName = ''
   newItem.serialNumber =
     form.value.apiConfiguration[form.value.apiConfiguration.length - 1].serialNumber + 1
   newItem.copy = true
@@ -680,7 +680,7 @@ const activeParamsID = ref(0)
 const paramsObj = ref({
   name: '',
   id: 1,
-  deType: 0
+  fieldType: 0
 })
 
 const apiObj = ref({
@@ -918,9 +918,9 @@ defineExpose({
                     }}</span>
                   </el-col>
                   <el-col style="text-align: right" :span="5">
-                    <el-icon class="de-copy-icon hover-icon" @click.stop="copyItem(api)">
-                      <Icon name="de-copy">
-                        <deCopy class="svg-icon" />
+                    <el-icon class="copy-icon hover-icon" @click.stop="copyItem(api)">
+                      <Icon name="copy">
+                        <CopyIcon class="svg-icon" />
                       </Icon>
                     </el-icon>
 
@@ -934,12 +934,12 @@ defineExpose({
                         trigger="click"
                       >
                         <template #reference>
-                          <el-icon class="de-delete-icon hover-icon">
-                            <Icon name="de-delete"><deDelete class="svg-icon" /></Icon>
+                          <el-icon class="delete-icon hover-icon">
+                            <Icon name="delete"><DeleteIcon class="svg-icon" /></Icon>
                           </el-icon>
                         </template>
                         <template #default>
-                          <el-icon class="de-copy-icon icon-warning">
+                          <el-icon class="copy-icon icon-warning">
                             <Icon name="icon_warning_filled"
                               ><icon_warning_filled class="svg-icon"
                             /></Icon>
@@ -1015,19 +1015,19 @@ defineExpose({
                     {{ scope.row.name || '-' }}
                   </template>
                 </el-table-column>
-                <el-table-column :label="t('deDataset.parameter_type')">
+                <el-table-column :label="t('datasetUi.parameter_type')">
                   <template #default="scope">
                     <div class="flex-align-center icon">
                       <el-icon>
                         <Icon>
                           <component
                             class="svg-icon"
-                            :class="`field-icon-${fieldType[scope.row.deType]}`"
-                            :is="iconFieldMap[fieldType[scope.row.deType]]"
+                            :class="`field-icon-${fieldType[scope.row.fieldType]}`"
+                            :is="iconFieldMap[fieldType[scope.row.fieldType]]"
                           ></component>
                         </Icon>
                       </el-icon>
-                      {{ fieldTypeText[scope.row.deType] }}
+                      {{ fieldTypeText[scope.row.fieldType] }}
                     </div>
                   </template>
                 </el-table-column>
@@ -1630,8 +1630,8 @@ defineExpose({
               v-model="paramsObj.name"
             />
           </el-form-item>
-          <el-form-item :label="t('deDataset.parameter_type')" prop="deType">
-            <el-radio-group v-model="paramsObj.deType">
+          <el-form-item :label="t('datasetUi.parameter_type')" prop="fieldType">
+            <el-radio-group v-model="paramsObj.fieldType">
               <el-radio :value="0" :label="t('data_source.text')"></el-radio>
               <el-radio :value="2" :label="t('data_source.numerical_value')"></el-radio>
               <el-radio :value="3" :label="t('data_source.numeric_value_decimal')"></el-radio>
@@ -1706,7 +1706,7 @@ defineExpose({
   }
 
   .de-expand {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 400;
     line-height: 22px;
@@ -1799,7 +1799,7 @@ defineExpose({
       width: 100%;
       display: flex;
       align-items: center;
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       font-style: normal;
       font-weight: 400;
@@ -1819,7 +1819,7 @@ defineExpose({
         position: relative;
         color: #1f2329;
         font-weight: 400;
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 14px;
         font-style: normal;
         line-height: 22px;
@@ -1869,11 +1869,11 @@ defineExpose({
   height: 120px;
   width: 392px;
   border-radius: 6px;
-  border: 1px solid var(--deCardStrokeColor, #dee0e3);
+  border: 1px solid var(--crestCardStrokeColor, #dee0e3);
   border-radius: 6px;
   margin: 0 0 16px 16px;
   padding: 16px;
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   cursor: pointer;
 
   &:hover {
@@ -1907,20 +1907,20 @@ defineExpose({
   }
 
   .req-title {
-    color: var(--deTextSecondary, #646a73);
+    color: var(--crestTextSecondary, #646a73);
     margin: 16px 0 4px 0;
   }
 
   .req-value {
-    color: var(--deTextPrimary, #1f2329);
+    color: var(--crestTextPrimary, #1f2329);
   }
 
-  .de-copy-icon {
+  .copy-icon {
     margin-right: 16px;
-    color: var(--deTextSecondary, #646a73);
+    color: var(--crestTextSecondary, #646a73);
   }
 
-  .de-delete-icon {
+  .delete-icon {
     cursor: pointer;
   }
 
@@ -1962,17 +1962,17 @@ defineExpose({
   }
 
   .tips {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 500;
     line-height: 22px;
     margin-left: 8.67px;
-    color: var(--deTextPrimary, #1f2329);
+    color: var(--crestTextPrimary, #1f2329);
   }
 
   i {
     font-size: 14.666666030883789px;
-    color: var(--deWarning, #ff8800);
+    color: var(--crestWarning, #ff8800);
     line-height: 22px;
   }
 

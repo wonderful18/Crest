@@ -5,13 +5,13 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fit2cloud
  * @since 2024-06-21
  */
-@TableName("core_share_ticket")
+@TableName("share_ticket")
 public class CoreShareTicket implements Serializable {
 
     private static final long serialVersionUID = 1L;

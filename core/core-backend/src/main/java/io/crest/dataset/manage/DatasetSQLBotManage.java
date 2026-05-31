@@ -28,7 +28,7 @@ import io.crest.engine.trans.Order2SQLObj;
 import io.crest.engine.trans.Table2SQLObj;
 import io.crest.engine.trans.WhereTree2Str;
 import io.crest.engine.utils.Utils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.dto.CalParam;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
@@ -75,7 +75,7 @@ public class DatasetSQLBotManage {
     @Resource
     private Environment environment;
 
-    private CoreDatasource deEngine;
+    private CoreDatasource engineDatasource;
 
     @Resource
     private PermissionManage permissionManage;
@@ -158,11 +158,11 @@ public class DatasetSQLBotManage {
     }
 
 
-    public List<DataSQLBotDatasetVO> getDatasetList(String dvInfo) {
+    public List<DataSQLBotDatasetVO> datasetList(String dvInfo) {
         return extChartViewMapper.findDataSQLBotDatasetDvId(dvInfo);
     }
 
-    public List<DataSQLBotAssistantVO> getDatasourceList(Long dsId, Long datasetId) {
+    public List<DataSQLBotAssistantVO> datasourceList(Long dsId, Long datasetId) {
         TokenUserBO user = Objects.requireNonNull(AuthUtils.getUser());
         Long oid = user.getDefaultOid();
         Long uid = user.getUserId();
@@ -213,7 +213,7 @@ public class DatasetSQLBotManage {
         Map<String, DataSQLBotAssistantVO> dsFlagMap = new HashMap<>();
         Map<String, SQLBotAssistanTable> tableFlagMap = new HashMap<>();
         Map<String, SQLBotAssistantField> fieldFlagMap = new HashMap<>();
-        deEngine = engineManage.getDeEngine();
+        engineDatasource = engineManage.getEngineDatasource();
         for (Map<String, Object> row : list) {
             // build ds
             String datasourceId = row.get("cd_id").toString();
@@ -274,23 +274,23 @@ public class DatasetSQLBotManage {
                 for (DatasetTableFieldDTO fieldDTO : unionFields) {
                     if (Objects.equals(datasetTableFieldDTO.getDatasetTableId(), fieldDTO.getDatasetTableId())
                             && Objects.equals(datasetTableFieldDTO.getOriginName(), fieldDTO.getOriginName())) {
-                        datasetTableFieldDTO.setDataeaseName(fieldDTO.getDataeaseName());
+                        datasetTableFieldDTO.setEngineFieldName(fieldDTO.getEngineFieldName());
                         datasetTableFieldDTO.setFieldShortName(fieldDTO.getFieldShortName());
                     }
                 }
             }
             if (Objects.equals(datasetTableFieldDTO.getExtField(), ExtFieldConstant.EXT_CALC)) {
-                String dataeaseName = TableUtils.fieldNameShort(datasetTableFieldDTO.getId() + "_" + datasetTableFieldDTO.getOriginName());
-                datasetTableFieldDTO.setDataeaseName(dataeaseName);
-                datasetTableFieldDTO.setFieldShortName(dataeaseName);
-                datasetTableFieldDTO.setDeExtractType(datasetTableFieldDTO.getDeType());
+                String engineFieldName = TableUtils.fieldNameShort(datasetTableFieldDTO.getId() + "_" + datasetTableFieldDTO.getOriginName());
+                datasetTableFieldDTO.setEngineFieldName(engineFieldName);
+                datasetTableFieldDTO.setFieldShortName(engineFieldName);
+                datasetTableFieldDTO.setExtractedFieldType(datasetTableFieldDTO.getFieldType());
             }
             if (Objects.equals(datasetTableFieldDTO.getExtField(), ExtFieldConstant.EXT_GROUP)) {
-                String dataeaseName = TableUtils.fieldNameShort(datasetTableFieldDTO.getId() + "_" + datasetTableFieldDTO.getOriginName());
-                datasetTableFieldDTO.setDataeaseName(dataeaseName);
-                datasetTableFieldDTO.setFieldShortName(dataeaseName);
-                datasetTableFieldDTO.setDeExtractType(0);
-                datasetTableFieldDTO.setDeType(0);
+                String engineFieldName = TableUtils.fieldNameShort(datasetTableFieldDTO.getId() + "_" + datasetTableFieldDTO.getOriginName());
+                datasetTableFieldDTO.setEngineFieldName(engineFieldName);
+                datasetTableFieldDTO.setFieldShortName(engineFieldName);
+                datasetTableFieldDTO.setExtractedFieldType(0);
+                datasetTableFieldDTO.setFieldType(0);
                 datasetTableFieldDTO.setGroupType("d");
             }
         }
@@ -340,7 +340,7 @@ public class DatasetSQLBotManage {
             if (ObjectUtils.isNotEmpty(fieldRowData.get("params"))) {
                 fieldDTO.setParams(JsonUtil.parseList(fieldRowData.get("params").toString(), typeToken));
             }
-            fieldDTO.setFieldShortName(fieldDTO.getDataeaseName());
+            fieldDTO.setFieldShortName(fieldDTO.getEngineFieldName());
             return fieldDTO;
         }).collect(Collectors.toList());
 
@@ -358,7 +358,7 @@ public class DatasetSQLBotManage {
         String dsType = dsRowData.get("type").toString();
         Configuration config = null;
         if (dsType.contains(DatasourceConfiguration.DatasourceType.Excel.name()) || dsType.contains(DatasourceConfiguration.DatasourceType.API.name())) {
-            coreDatasource = deEngine;
+            coreDatasource = engineDatasource;
         } else {
             coreDatasource = BeanUtils.mapToBean(dsRowData, CoreDatasource.class);
         }
@@ -372,7 +372,7 @@ public class DatasetSQLBotManage {
         // 获取allFields
         List<DatasetTableFieldDTO> fields = datasetGroupInfoDTO.getAllFields();
         if (ObjectUtils.isEmpty(fields)) {
-            DEException.throwException(Translator.get("i18n_no_fields"));
+            CrestException.throwException(Translator.get("i18n_no_fields"));
         }
 
         List<DatasetTableFieldDTO> originFields = new ArrayList<>(fields);
@@ -397,7 +397,7 @@ public class DatasetSQLBotManage {
             }).collect(Collectors.toList());
             // fields = permissionManage.filterColumnPermissions(fields, desensitizationList, datasetGroupInfoDTO.getId(), null);
             if (ObjectUtils.isEmpty(fields)) {
-                DEException.throwException(Translator.get("i18n_no_column_permission"));
+                CrestException.throwException(Translator.get("i18n_no_column_permission"));
             }
             if (sqlbotFields.size() > fields.size()) {
                 Set<Long> fieldIdSet = fields.stream().map(DatasetTableFieldDTO::getId).collect(Collectors.toSet());
@@ -495,8 +495,8 @@ public class DatasetSQLBotManage {
         if (ObjectUtils.isNotEmpty(row.get("cdtf_id"))) {
             field.setFieldId(Long.parseLong(row.get("cdtf_id").toString()));
         }
-        if (ObjectUtils.isNotEmpty(row.get("cdtf_dataease_name"))) {
-            field.setDataeaseName(row.get("cdtf_dataease_name").toString());
+        if (ObjectUtils.isNotEmpty(row.get("cdtf_engine_field_name"))) {
+            field.setEngineFieldName(row.get("cdtf_engine_field_name").toString());
         }
         field.setName(row.get("cdtf_origin_name").toString());
         field.setType(row.get("cdtf_type").toString());
@@ -531,12 +531,12 @@ public class DatasetSQLBotManage {
         String config_json = null;
         Configuration config = null;
         if (dsType.contains(DatasourceConfiguration.DatasourceType.Excel.name()) || dsType.contains(DatasourceConfiguration.DatasourceType.API.name())) {
-            config_json = EncryptUtils.aesDecrypt(deEngine.getConfiguration()).toString();
+            config_json = EncryptUtils.aesDecrypt(engineDatasource.getConfiguration()).toString();
             config = JsonUtil.parseObject(config_json, Configuration.class);
             if (StringUtils.isNotBlank(dsHost) && ObjectUtils.isNotEmpty(config)) {
                 config.setHost(dsHost);
             }
-            dsType = deEngine.getType();
+            dsType = engineDatasource.getType();
         } else {
             config_json = EncryptUtils.aesDecrypt(dsConfig.toString()).toString();
             config = JsonUtil.parseObject(config_json, Configuration.class);
@@ -612,7 +612,7 @@ public class DatasetSQLBotManage {
             DatasetTableInfoDTO tableInfoDTO = JsonUtil.parseObject(info, DatasetTableInfoDTO.class);
             if (StringUtils.isNotBlank(tableInfoDTO.getSql())) {
                 String sql = new String(Base64.getDecoder().decode(tableInfoDTO.getSql()));
-                if (StringUtils.isNotBlank(sql) && Strings.CS.contains(sql, "$DE_PARAM")) {
+                if (StringUtils.isNotBlank(sql) && Strings.CS.contains(sql, "$CREST_PARAM")) {
                     table.setNeedTransform(true);
                 }
                 table.setSql(sql);

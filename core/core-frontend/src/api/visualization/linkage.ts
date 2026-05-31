@@ -1,17 +1,17 @@
 import request from '@/config/axios'
 
-export const getViewLinkageGather = data =>
-  request.post({ url: '/linkage/getViewLinkageGather', data })
+export const viewLinkageGather = data =>
+  request.post({ url: '/linkage/view-linkage-gather', data })
 
-export const getViewLinkageGatherArray = data =>
-  request.post({ url: '/linkage/getViewLinkageGatherArray', data })
+export const viewLinkageGatherArray = data =>
+  request.post({ url: '/linkage/view-linkage-gather-array', data })
 
-export const saveLinkage = data => request.post({ url: '/linkage/saveLinkage', data })
+export const saveLinkage = data => request.post({ url: '/linkage/linkage', data })
 
 export const getPanelAllLinkageInfo = (dvId, resourceTable = 'snapshot') =>
-  request.get({ url: '/linkage/getVisualizationAllLinkageInfo/' + dvId + '/' + resourceTable })
+  request.get({ url: '/linkage/visualization-linkage-info/' + dvId + '/' + resourceTable })
 
 export const updateLinkageActive = data =>
-  request.post({ url: '/linkage/updateLinkageActive', data })
+  request.post({ url: '/linkage/linkage-active-state', data })
 
-export const removeLinkage = data => request.post({ url: '/linkage/removeLinkage', data })
+export const deleteLinkage = data => request.delete({ url: '/linkage/linkage', data })

@@ -25,10 +25,10 @@ public interface ExtDataVisualizationMapper {
 
     @Select("<script> SELECT id, `name`, `name` as label, pid, org_id, node_type, mobile_layout, create_time, create_by, update_time, update_by \n" +
             "FROM\n" +
-            "\tdata_visualization_info where delete_flag=0 <when test='nodeType !=null'> and node_type = #{nodeType} </when>  <when test='type !=null'> and type = #{type} </when> order by node_type desc </script>")
+            "\tbi_visualization where delete_flag=0 <when test='nodeType !=null'> and node_type = #{nodeType} </when>  <when test='type !=null'> and type = #{type} </when> order by node_type desc </script>")
     List<DataVisualizationBaseVO> findBashInfo(@Param("nodeType") String nodeType, @Param("type") String type);
 
-    @Select("select type from data_visualization_info where id = #{dvId}")
+    @Select("select type from bi_visualization where id = #{dvId}")
     String findDvType(@Param("dvId") Long dvId);
 
     void dvCopy(@Param("sourceDvId") Long sourceDvId,@Param("newDvId") Long newDvId,@Param("copyId") Long copyId);
@@ -101,9 +101,9 @@ public interface ExtDataVisualizationMapper {
 
     void restoreOuterParams(@Param("dvId") Long dvId);
 
-    @Select("select status from data_visualization_info where id = #{dvId}")
+    @Select("select status from bi_visualization where id = #{dvId}")
     Integer findDvInfoStats(@Param("dvId") Long dvId);
 
-    @Select("select id from data_visualization_info where pid = -1")
+    @Select("select id from bi_visualization where pid = -1")
     List<Long> findCopyResource();
 }

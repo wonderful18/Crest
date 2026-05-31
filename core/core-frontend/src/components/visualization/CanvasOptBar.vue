@@ -75,7 +75,7 @@ const existLinkage = computed(() => {
             linkageFiltersCount++
           }
         })
-      } else if (item.component === 'DeTabs') {
+      } else if (item.component === 'Tabs') {
         item.propValue.forEach(tabItem => {
           tabItem.componentData?.forEach(tabComponent => {
             if (tabComponent.linkageFilters && tabComponent.linkageFilters.length > 0) {

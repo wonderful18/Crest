@@ -126,15 +126,15 @@ watch(
               <Icon
                 ><component
                   class="svg-icon"
-                  :class="`field-icon-${fieldType[scope.row.deType]}`"
-                  :is="iconFieldMap[fieldType[scope.row.deType]]"
+                  :class="`field-icon-${fieldType[scope.row.fieldType]}`"
+                  :is="iconFieldMap[fieldType[scope.row.fieldType]]"
                 ></component
               ></Icon>
             </el-icon>
             {{ scope.row.originName }}
           </template>
         </el-table-column>
-        <el-table-column property="description" :label="t('deDataset.description')" />
+        <el-table-column property="description" :label="t('datasetUi.description')" />
       </el-table>
     </div>
   </div>
@@ -144,7 +144,7 @@ watch(
 .field-block-style {
   height: 100%;
   width: 100%;
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   .field-block-body {
     height: 327px;
     overflow-y: auto;
@@ -156,7 +156,7 @@ watch(
     align-items: center;
     font-size: 14px;
     font-weight: 500;
-    color: var(--deTextSecondary, #646a73);
+    color: var(--crestTextSecondary, #646a73);
   }
   .field-style {
     width: 140px;
@@ -166,7 +166,7 @@ watch(
     white-space: pre;
     font-size: 14px;
     font-weight: 500;
-    color: var(--deTextSecondary, #646a73);
+    color: var(--crestTextSecondary, #646a73);
   }
   .field-block-option {
     width: 100%;
@@ -178,7 +178,7 @@ watch(
   .option-field {
     font-size: 14px;
     font-weight: 400;
-    color: var(--deTextSecondary, #646a73);
+    color: var(--crestTextSecondary, #646a73);
   }
   .option-input {
     width: 200px;

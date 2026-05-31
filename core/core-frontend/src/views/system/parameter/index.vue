@@ -34,7 +34,7 @@ const activeName = ref('basic')
 .router-title {
   color: #0f172a;
   font-feature-settings: 'clig' off, 'liga' off;
-  font-family: var(--crest-font-sans, var(--de-custom_font, 'PingFang'));
+  font-family: var(--crest-font-sans, var(--crest-custom_font, 'PingFang'));
   font-size: 18px;
   font-style: normal;
   font-weight: 700;

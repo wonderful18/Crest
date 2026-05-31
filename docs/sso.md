@@ -26,7 +26,7 @@ Crest 支持基于 OIDC / OAuth2 授权码模式的单点登录。该能力不�
 
 ## 配置存储
 
-SSO 配置保存到 `core_sys_setting`，键名前缀为 `sso.`。
+SSO 配置保存到 `sys_setting`，键名前缀为 `sso.`。
 
 | 配置项 | 说明 |
 | --- | --- |
@@ -49,7 +49,7 @@ SSO 配置保存到 `core_sys_setting`，键名前缀为 `sso.`。
 | `sso.requireHttps` | 非本地端点是否必须使用 HTTPS |
 | `sso.logoutRedirectUrl` | 退出跳转地址，当前仅保存配置 |
 
-用户表 `crest_user` 增加字段：
+用户表 `iam_user` 包含以下 SSO 字段：
 
 | 字段 | 说明 |
 | --- | --- |
@@ -96,7 +96,7 @@ SSO 用户的账号由身份提供方维护，用户管理中不能修改账号�
 ## 配置步骤
 
 1. 在身份提供方创建 Web 应用；
-2. 将 Crest 页面展示的回调地址登记为 Redirect URI，默认格式为 `https://<host>/de2api/sso/callback`；
+2. 将 Crest 页面展示的回调地址登记为 Redirect URI，默认格式为 `https://<host>/sso/callback`；
 3. 在“系统设置 / 单点登录”中填写 Client ID、Client Secret、授权端点、令牌端点和用户信息端点；
 4. 根据 UserInfo 返回结构配置字段映射；
 5. 保存配置，并先保留本地登录入口；

@@ -6,7 +6,7 @@ import lombok.Data;
 import java.io.Serial;
 import java.io.Serializable;
 
-@TableName("core_api_traffic")
+@TableName("api_traffic")
 @Data
 public class CoreApiTraffic implements Serializable {
     @Serial

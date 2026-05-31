@@ -173,7 +173,7 @@ const initFieldList = () => {
     xAxis = JSON.parse(chart.value.xAxis)
   }
   const t1 = xAxis.filter(ele => {
-    return ele.deType === 1
+    return ele.fieldType === 1
   })
 
   if (chart.value.type === 'table-pivot') {
@@ -184,15 +184,15 @@ const initFieldList = () => {
       xAxisExt = JSON.parse(chart.value.xAxisExt)
     }
     const t2 = xAxisExt.filter(ele => {
-      return ele.deType === 1
+      return ele.fieldType === 1
     })
 
     t1.push(...t2)
   }
   if (isIndicator.value) {
     t1.length = 0
-    t1.push(...props.dimensionData.filter(ele => ele.deType === 1))
-    t1.push(...props.quotaData.filter(ele => ele.deType === 1))
+    t1.push(...props.dimensionData.filter(ele => ele.fieldType === 1))
+    t1.push(...props.quotaData.filter(ele => ele.fieldType === 1))
   }
 
   state.fieldList = t1

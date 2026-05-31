@@ -9,8 +9,8 @@ import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
 import io.crest.constant.StaticResourceConstants;
 import io.crest.constant.SystemSettingConstants;
-import io.crest.exception.DEException;
-import io.crest.log.DeLog;
+import io.crest.exception.CrestException;
+import io.crest.log.CrestAudit;
 import io.crest.system.dao.auto.entity.CoreSysSetting;
 import io.crest.system.manage.SysParameterManage;
 import io.crest.utils.CrestPermissionUtils;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/sysParameter")
+@RequestMapping("/sys-parameter")
 public class SysParameterServer implements SysParameterApi {
 
     @Resource
@@ -52,7 +52,7 @@ public class SysParameterServer implements SysParameterApi {
     }
 
     @Override
-    @DeLog(ot = LogOT.MODIFY, st = LogST.DATA)
+    @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA)
     public void saveBasicSetting(List<SettingItemVO> settingItemVOS) {
         CrestPermissionUtils.requireAdmin();
         sysParameterManage.saveBasic(settingItemVOS);
@@ -145,7 +145,7 @@ public class SysParameterServer implements SysParameterApi {
     }
 
     @Override
-    @DeLog(ot = LogOT.MODIFY, st = LogST.DATA)
+    @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA)
     public void saveSqlBotConfig(SQLBotConfigCreator creator) {
         assertFullModeFeature();
         sysParameterManage.saveSqlBotConfig(creator);
@@ -153,7 +153,7 @@ public class SysParameterServer implements SysParameterApi {
 
     private void assertFullModeFeature() {
         if (internalLiteEnabled) {
-            DEException.throwException("当前版本未启用该功能");
+            CrestException.throwException("当前版本未启用该功能");
         }
     }
 }

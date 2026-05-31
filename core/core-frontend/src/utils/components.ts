@@ -9,34 +9,34 @@ import Picture from '@/custom-component/picture/Component.vue'
 import PictureAttr from '@/custom-component/picture/Attr.vue'
 import DynamicBackground from '@/custom-component/dynamic_background/Component.vue'
 import DynamicBackgroundAttr from '@/custom-component/dynamic_background/Attr.vue'
-import DeDecoration from '@/custom-component/de-decoration/Component.vue'
-import DeDecorationAttr from '@/custom-component/de-decoration/Attr.vue'
+import Decoration from '@/custom-component/decoration/Component.vue'
+import DecorationAttr from '@/custom-component/decoration/Attr.vue'
 import CanvasBoard from '@/custom-component/canvas-board/Component.vue'
 import CanvasBoardAttr from '@/custom-component/canvas-board/Attr.vue'
 import CanvasIcon from '@/custom-component/canvas-icon/Component.vue'
 import CanvasIconAttr from '@/custom-component/canvas-icon/Attr.vue'
-import DeTabs from '@/custom-component/de-tabs/Component.vue'
-import DeTabsAttr from '@/custom-component/de-tabs/Attr.vue'
-import DeGraphical from '@/custom-component/de-graphical/Component.vue'
-import DeGraphicalAttr from '@/custom-component/de-graphical/Attr.vue'
+import Tabs from '@/custom-component/tabs/Component.vue'
+import TabsAttr from '@/custom-component/tabs/Attr.vue'
+import Graphical from '@/custom-component/graphical/Component.vue'
+import GraphicalAttr from '@/custom-component/graphical/Attr.vue'
 import CircleShape from '@/custom-component/circle-shape/Component.vue'
 import CircleShapeAttr from '@/custom-component/circle-shape/Attr.vue'
 import RectShape from '@/custom-component/rect-shape/Component.vue'
 import RectShapeAttr from '@/custom-component/rect-shape/Attr.vue'
 import SvgTriangle from '@/custom-component/svgs/svg-triangle/Component.vue'
 import SvgTriangleAttr from '@/custom-component/svgs/svg-triangle/Attr.vue'
-import DeTimeClock from '@/custom-component/de-time-clock/Component.vue'
-import DeTimeClockAttr from '@/custom-component/de-time-clock/Attr.vue'
+import TimeClock from '@/custom-component/time-clock/Component.vue'
+import TimeClockAttr from '@/custom-component/time-clock/Attr.vue'
 import GroupArea from '@/custom-component/group-area/Component.vue'
 import GroupAreaAttr from '@/custom-component/group-area/Attr.vue'
-import DeFrame from '@/custom-component/de-frame/ComponentFrame.vue'
-import DeFrameAttr from '@/custom-component/de-frame/Attr.vue'
-import DeScreen from '@/custom-component/de-screen/Component.vue'
-import DeScreenAttr from '@/custom-component/de-screen//Attr.vue'
-import DeVideo from '@/custom-component/de-video/Component.vue'
-import DeVideoAttr from '@/custom-component/de-video/Attr.vue'
-import DeStreamMedia from '@/custom-component/de-stream-media/Component.vue'
-import DeStreamMediaAttr from '@/custom-component/de-stream-media/Attr.vue'
+import Frame from '@/custom-component/frame/ComponentFrame.vue'
+import FrameAttr from '@/custom-component/frame/Attr.vue'
+import Screen from '@/custom-component/screen/Component.vue'
+import ScreenAttr from '@/custom-component/screen//Attr.vue'
+import Video from '@/custom-component/video/Component.vue'
+import VideoAttr from '@/custom-component/video/Attr.vue'
+import StreamMedia from '@/custom-component/stream-media/Component.vue'
+import StreamMediaAttr from '@/custom-component/stream-media/Attr.vue'
 import ScrollText from '@/custom-component/scroll-text/Component.vue'
 import ScrollTextAttr from '@/custom-component/scroll-text/Attr.vue'
 import PopArea from '@/custom-component/pop-area/Component.vue'
@@ -59,36 +59,36 @@ export const componentsMap = {
   CanvasBoardAttr: CanvasBoardAttr,
   CanvasIcon: CanvasIcon,
   CanvasIconAttr: CanvasIconAttr,
-  DeTabs: DeTabs,
-  DeTabsAttr: DeTabsAttr,
-  DeGraphical: DeGraphical,
-  DeGraphicalAttr: DeGraphicalAttr,
+  Tabs: Tabs,
+  TabsAttr: TabsAttr,
+  Graphical: Graphical,
+  GraphicalAttr: GraphicalAttr,
   CircleShape: CircleShape,
   CircleShapeAttr: CircleShapeAttr,
   RectShape: RectShape,
   RectShapeAttr: RectShapeAttr,
   SvgTriangle: SvgTriangle,
   SvgTriangleAttr: SvgTriangleAttr,
-  DeTimeClock: DeTimeClock,
-  DeTimeClockAttr: DeTimeClockAttr,
+  TimeClock: TimeClock,
+  TimeClockAttr: TimeClockAttr,
   GroupArea: GroupArea,
   GroupAreaAttr: GroupAreaAttr,
-  DeFrame: DeFrame,
-  DeFrameAttr: DeFrameAttr,
-  DeVideo: DeVideo,
-  DeVideoAttr: DeVideoAttr,
-  DeStreamMedia: DeStreamMedia,
-  DeStreamMediaAttr: DeStreamMediaAttr,
+  Frame: Frame,
+  FrameAttr: FrameAttr,
+  Video: Video,
+  VideoAttr: VideoAttr,
+  StreamMedia: StreamMedia,
+  StreamMediaAttr: StreamMediaAttr,
   ScrollText: ScrollText,
   ScrollTextAttr: ScrollTextAttr,
   PopArea: PopArea,
   PopAreaAttr: PopAreaAttr,
   PictureGroup: PictureGroup,
   PictureGroupAttr: PictureGroupAttr,
-  DeDecoration: DeDecoration,
-  DeDecorationAttr: DeDecorationAttr,
-  DeScreen: DeScreen,
-  DeScreenAttr: DeScreenAttr
+  Decoration: Decoration,
+  DecorationAttr: DecorationAttr,
+  Screen: Screen,
+  ScreenAttr: ScreenAttr
 }
 
 export default function findComponent(key) {

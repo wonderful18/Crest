@@ -13,7 +13,7 @@ import java.util.List;
  * @Author Junjun
  */
 @RestController
-@RequestMapping("datasetTableSqlLog")
+@RequestMapping("dataset-table-sql-log")
 public class DatasetTableSqlLogServer implements DatasetTableSqlLogApi {
     @Resource
     private DatasetTableSqlLogManage datasetTableSqlLogManage;
@@ -29,7 +29,7 @@ public class DatasetTableSqlLogServer implements DatasetTableSqlLogApi {
     }
 
     @Override
-    public void deleteByTableId(String id) throws Exception {
-        datasetTableSqlLogManage.deleteByTableId(id);
+    public void tableRemoval(String id) throws Exception {
+        datasetTableSqlLogManage.tableRemoval(id);
     }
 }

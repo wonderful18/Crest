@@ -1,6 +1,6 @@
 package io.crest.system.sso;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -60,6 +60,6 @@ public class SsoAccountPolicyInvalidAccountTest {
 
     @Test
     public void rejectsInvalidAccount() {
-        assertThrows(DEException.class, () -> SsoAccountPolicy.normalizeAccount(account, null));
+        assertThrows(CrestException.class, () -> SsoAccountPolicy.normalizeAccount(account, null));
     }
 }

@@ -8,7 +8,7 @@ import io.crest.api.permissions.org.vo.LazyOrgTreeNode;
 import io.crest.api.permissions.org.vo.LazyTreeVO;
 import io.crest.api.permissions.org.vo.OrgDetailVO;
 import io.crest.api.permissions.org.vo.OrgPageVO;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.IDUtils;
 import jakarta.annotation.Resource;
@@ -33,7 +33,7 @@ public class CrestOrgManage {
     public List<OrgPageVO> pageTree(OrgRequest request) {
         List<OrgPageVO> orgs = jdbcTemplate.query("""
                 SELECT id, pid, name, create_time, readonly
-                FROM crest_org
+                FROM iam_org
                 WHERE enable = 1
                 ORDER BY sort ASC, id ASC
                 """, (rs, rowNum) -> {
@@ -46,7 +46,7 @@ public class CrestOrgManage {
             return vo;
         });
         Map<Long, OrgPageVO> byId = orgs.stream().collect(Collectors.toMap(OrgPageVO::getId, item -> item));
-        List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT id, pid FROM crest_org WHERE enable = 1");
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT id, pid FROM iam_org WHERE enable = 1");
         for (Map<String, Object> row : rows) {
             Long id = ((Number) row.get("id")).longValue();
             Number pidNumber = (Number) row.get("pid");
@@ -77,7 +77,7 @@ public class CrestOrgManage {
     public Long create(OrgCreator creator) {
         platformPermissionManage.requireSystemAdmin();
         if (creator == null || StringUtils.isBlank(creator.getName())) {
-            DEException.throwException("组织名称不能为空");
+            CrestException.throwException("组织名称不能为空");
         }
         Long pid = creator.getPid() == null ? 0L : creator.getPid();
         String parentPath = "/";
@@ -85,7 +85,7 @@ public class CrestOrgManage {
         if (pid != 0L) {
             OrgDetailVO parent = detail(pid);
             if (parent == null) {
-                DEException.throwException("上级组织不存在");
+                CrestException.throwException("上级组织不存在");
             }
             parentPath = parent.getRootPath();
             level = parentPath.split("/").length - 2;
@@ -93,7 +93,7 @@ public class CrestOrgManage {
         long id = creator.getId() == null ? IDUtils.snowID() : creator.getId();
         long now = System.currentTimeMillis();
         jdbcTemplate.update("""
-                INSERT INTO crest_org(id, pid, name, code, path, level, sort, enable, readonly, create_time, update_time)
+                INSERT INTO iam_org(id, pid, name, code, path, level, sort, enable, readonly, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, id, pid, creator.getName().trim(), null, parentPath + id + "/", level, 0, true, false, now, now);
         return id;
@@ -103,9 +103,9 @@ public class CrestOrgManage {
     public void edit(OrgEditor editor) {
         platformPermissionManage.requireSystemAdmin();
         if (editor == null || editor.getId() == null || StringUtils.isBlank(editor.getName())) {
-            DEException.throwException("组织名称不能为空");
+            CrestException.throwException("组织名称不能为空");
         }
-        jdbcTemplate.update("UPDATE crest_org SET name = ?, update_time = ? WHERE id = ? AND readonly = 0",
+        jdbcTemplate.update("UPDATE iam_org SET name = ?, update_time = ? WHERE id = ? AND readonly = 0",
                 editor.getName().trim(), System.currentTimeMillis(), editor.getId());
     }
 
@@ -113,27 +113,27 @@ public class CrestOrgManage {
     public void delete(Long id) {
         platformPermissionManage.requireSystemAdmin();
         if (id == null || id == PlatformPermissionManage.ROOT_ORG_ID) {
-            DEException.throwException("默认组织不能删除");
+            CrestException.throwException("默认组织不能删除");
         }
         if (resourceExist(id)) {
-            DEException.throwException("组织下存在用户、子组织或资源，不能删除");
+            CrestException.throwException("组织下存在用户、子组织或资源，不能删除");
         }
-        jdbcTemplate.update("DELETE FROM crest_org WHERE id = ? AND readonly = 0", id);
+        jdbcTemplate.update("DELETE FROM iam_org WHERE id = ? AND readonly = 0", id);
     }
 
     public boolean resourceExist(Long oid) {
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT
-                  (SELECT COUNT(1) FROM crest_org WHERE pid = ?) +
-                  (SELECT COUNT(1) FROM crest_user_org WHERE oid = ?) +
-                  (SELECT COUNT(1) FROM crest_resource_index WHERE oid = ?)
+                  (SELECT COUNT(1) FROM iam_org WHERE pid = ?) +
+                  (SELECT COUNT(1) FROM iam_user_org WHERE oid = ?) +
+                  (SELECT COUNT(1) FROM iam_resource_index WHERE oid = ?)
                 """, Integer.class, oid, oid, oid);
         return count != null && count > 0;
     }
 
     public OrgDetailVO detail(Long oid) {
         List<OrgDetailVO> list = jdbcTemplate.query("""
-                SELECT id, name, pid, path FROM crest_org WHERE id = ? LIMIT 1
+                SELECT id, name, pid, path FROM iam_org WHERE id = ? LIMIT 1
                 """, (rs, rowNum) -> new OrgDetailVO(rs.getLong("id"), rs.getString("name"),
                 rs.getLong("pid"), rs.getString("path")), oid);
         return list.isEmpty() ? null : list.get(0);
@@ -144,15 +144,15 @@ public class CrestOrgManage {
         if (org == null) {
             return List.of();
         }
-        return jdbcTemplate.queryForList("SELECT CAST(id AS CHAR) FROM crest_org WHERE path LIKE ?",
+        return jdbcTemplate.queryForList("SELECT CAST(id AS CHAR) FROM iam_org WHERE path LIKE ?",
                 String.class, org.getRootPath() + "%");
     }
 
     private List<LazyOrgTreeNode> children(Long pid) {
         return jdbcTemplate.query("""
                 SELECT o.id, o.pid, o.name, o.create_time, o.readonly,
-                       EXISTS(SELECT 1 FROM crest_org c WHERE c.pid = o.id) AS has_children
-                FROM crest_org o
+                       EXISTS(SELECT 1 FROM iam_org c WHERE c.pid = o.id) AS has_children
+                FROM iam_org o
                 WHERE o.pid = ? AND o.enable = 1
                 ORDER BY o.sort ASC, o.id ASC
                 """, (rs, rowNum) -> {

@@ -38,7 +38,7 @@ public class ServletUtils {
     }
 
     public static String getLdapUser() {
-        String authorization = getHead(AuthConstant.DE_LDAP_AUTHORIZATION);
+        String authorization = getHead(AuthConstant.CREST_LDAP_AUTHORIZATION);
         if (StringUtils.isBlank(authorization)) return null;
         return authorization;
     }

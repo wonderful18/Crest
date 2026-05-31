@@ -90,7 +90,7 @@ export const useLocaleStore = defineStore('locales', {
         return this.localeMap
       }
       try {
-        const res = await request.get({ url: '/sysParameter/i18nOptions' })
+        const res = await request.get({ url: '/sys-parameter/i18n-options' })
         this.customLoaded = true
         const customMap = res.data
         let match = false

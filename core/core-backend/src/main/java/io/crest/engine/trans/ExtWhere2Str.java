@@ -2,7 +2,7 @@ package io.crest.engine.trans;
 
 import io.crest.constant.SQLConstants;
 import io.crest.engine.utils.Utils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
 import io.crest.extensions.datasource.dto.CalParam;
@@ -76,7 +76,7 @@ public class ExtWhere2Str {
                         if (Strings.CI.equals(dsType, "es")) {
                             originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getOriginName());
                         } else {
-                            originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getDataeaseName());
+                            originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getEngineFieldName());
                         }
                     } else if (ObjectUtils.isNotEmpty(field.getExtField()) && field.getExtField() == 3) {
                         String groupFieldExp = Utils.transGroupFieldToSql(field, originFields, isCross, dsMap, pluginManage);
@@ -90,16 +90,16 @@ public class ExtWhere2Str {
                         if (Strings.CI.equals(dsType, "es")) {
                             originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getOriginName());
                         } else {
-                            originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getDataeaseName());
+                            originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getEngineFieldName());
                         }
                     }
 
-                    if (field.getDeType() == 1) {
-                        if (field.getDeExtractType() == 0 || field.getDeExtractType() == 5) {
+                    if (field.getFieldType() == 1) {
+                        if (field.getExtractedFieldType() == 0 || field.getExtractedFieldType() == 5) {
                             // 此处获取标准格式的日期
-                            whereName = String.format(SQLConstants.DE_STR_TO_DATE, originName, StringUtils.isEmpty(field.getDateFormat()) ? SQLConstants.DEFAULT_DATE_FORMAT : field.getDateFormat());
+                            whereName = String.format(SQLConstants.CREST_STR_TO_DATE, originName, StringUtils.isEmpty(field.getDateFormat()) ? SQLConstants.DEFAULT_DATE_FORMAT : field.getDateFormat());
                         }
-                        if (field.getDeExtractType() == 2 || field.getDeExtractType() == 3 || field.getDeExtractType() == 4) {
+                        if (field.getExtractedFieldType() == 2 || field.getExtractedFieldType() == 3 || field.getExtractedFieldType() == 4) {
                             String cast = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_INT_FORMAT);
                             // 此处获取标准格式的日期
                             whereName = String.format(SQLConstants.FROM_UNIXTIME, cast, SQLConstants.DEFAULT_DATE_FORMAT);
@@ -107,31 +107,31 @@ public class ExtWhere2Str {
                                 whereName = String.format(SQLConstants.UNIX_TIMESTAMP, whereName);
                             }
                         }
-                        if (field.getDeExtractType() == 1) {
+                        if (field.getExtractedFieldType() == 1) {
                             // 如果都是时间类型，把date和time类型进行字符串拼接
                             if (isCross) {
                                 if (Strings.CI.equals(field.getType(), "date")) {
-                                    originName = String.format(SQLConstants.DE_STR_TO_DATE, String.format(SQLConstants.CONCAT, originName, "' 00:00:00'"), SQLConstants.DEFAULT_DATE_FORMAT);
+                                    originName = String.format(SQLConstants.CREST_STR_TO_DATE, String.format(SQLConstants.CONCAT, originName, "' 00:00:00'"), SQLConstants.DEFAULT_DATE_FORMAT);
                                 } else if (Strings.CI.equals(field.getType(), "time")) {
-                                    originName = String.format(SQLConstants.DE_STR_TO_DATE, String.format(SQLConstants.CONCAT, "'1970-01-01 '", originName), SQLConstants.DEFAULT_DATE_FORMAT);
+                                    originName = String.format(SQLConstants.CREST_STR_TO_DATE, String.format(SQLConstants.CONCAT, "'1970-01-01 '", originName), SQLConstants.DEFAULT_DATE_FORMAT);
                                 }
                             }
                             // 此处获取标准格式的日期，同时此处是仪表板过滤，仪表板中图表的日期均已经格式化，所以要强制加上日期转换
-                            whereName = String.format(SQLConstants.DE_CAST_DATE_FORMAT, originName,
+                            whereName = String.format(SQLConstants.CREST_CAST_DATE_FORMAT, originName,
                                     SQLConstants.DEFAULT_DATE_FORMAT,
                                     SQLConstants.DEFAULT_DATE_FORMAT);
                         }
-                    } else if (field.getDeType() == 2 || field.getDeType() == 3) {
-                        if (field.getDeExtractType() == 0 || field.getDeExtractType() == 5) {
+                    } else if (field.getFieldType() == 2 || field.getFieldType() == 3) {
+                        if (field.getExtractedFieldType() == 0 || field.getExtractedFieldType() == 5) {
                             whereName = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_FLOAT_FORMAT);
                         }
-                        if (field.getDeExtractType() == 1) {
+                        if (field.getExtractedFieldType() == 1) {
                             whereName = String.format(SQLConstants.UNIX_TIMESTAMP, originName);
                         }
-                        if (field.getDeExtractType() == 2 || field.getDeExtractType() == 4) {
+                        if (field.getExtractedFieldType() == 2 || field.getExtractedFieldType() == 4) {
                             whereName = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_INT_FORMAT);
                         }
-                        if (field.getDeExtractType() == 3) {
+                        if (field.getExtractedFieldType() == 3) {
                             whereName = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_FLOAT_FORMAT);
                         }
                     } else {
@@ -188,7 +188,7 @@ public class ExtWhere2Str {
                                     && Strings.CI.equals(dsType, DatasourceConfiguration.DatasourceType.sqlServer.getType())) {
                                 whereValue = "(" + value.stream().map(ExtWhere2Str::toSqlServerNQuotedValue).collect(Collectors.joining(",")) + ")";
                             } else {
-                                if (request.getDatasetTableField().getDeType() == 2 || request.getDatasetTableField().getDeType() == 3) {
+                                if (request.getDatasetTableField().getFieldType() == 2 || request.getDatasetTableField().getFieldType() == 3) {
                                     whereValue = "(" + value.stream().map(ExtWhere2Str::sanitizeNumberLiteral).collect(Collectors.joining(",")) + ")";
                                 } else {
                                     whereValue = "(" + value.stream().map(ExtWhere2Str::toQuotedValue).collect(Collectors.joining(",")) + ")";
@@ -224,10 +224,10 @@ public class ExtWhere2Str {
                         }
                     }
                 } else if (Strings.CI.contains(request.getOperator(), "between")) {
-                    if (request.getDatasetTableField().getDeType() == 1) {
-                        if (request.getDatasetTableField().getDeExtractType() == 2
-                                || request.getDatasetTableField().getDeExtractType() == 3
-                                || request.getDatasetTableField().getDeExtractType() == 4) {
+                    if (request.getDatasetTableField().getFieldType() == 1) {
+                        if (request.getDatasetTableField().getExtractedFieldType() == 2
+                                || request.getDatasetTableField().getExtractedFieldType() == 3
+                                || request.getDatasetTableField().getExtractedFieldType() == 4) {
                             if (isCross) {
                                 whereValue = String.format(SQLConstants.WHERE_VALUE_BETWEEN, sanitizeNumberLiteral(value.get(0)), sanitizeNumberLiteral(value.get(1)));
                             } else {
@@ -245,9 +245,9 @@ public class ExtWhere2Str {
                                 }
                             }
                         }
-                    } else if (request.getDatasetTableField().getDeType() == 2
-                            || request.getDatasetTableField().getDeType() == 3
-                            || request.getDatasetTableField().getDeType() == 4) {
+                    } else if (request.getDatasetTableField().getFieldType() == 2
+                            || request.getDatasetTableField().getFieldType() == 3
+                            || request.getDatasetTableField().getFieldType() == 4) {
                         whereValue = String.format(SQLConstants.WHERE_VALUE_BETWEEN, sanitizeNumberLiteral(value.get(0)), sanitizeNumberLiteral(value.get(1)));
                     } else {
                         whereValue = String.format(SQLConstants.WHERE_BETWEEN, sanitizeSqlLiteral(value.get(0)), sanitizeSqlLiteral(value.get(1)));
@@ -281,9 +281,9 @@ public class ExtWhere2Str {
                                     && Strings.CI.equals(dsType, DatasourceConfiguration.DatasourceType.sqlServer.getType())) {
                                 whereValue = String.format(SQLConstants.WHERE_VALUE_VALUE_CH, sanitizeSqlLiteral(value.get(0)));
                             } else {
-                                if (request.getDatasetTableField().getDeType() == 2
-                                        || request.getDatasetTableField().getDeType() == 3
-                                        || request.getDatasetTableField().getDeType() == 4) {
+                                if (request.getDatasetTableField().getFieldType() == 2
+                                        || request.getDatasetTableField().getFieldType() == 3
+                                        || request.getDatasetTableField().getFieldType() == 4) {
                                     whereValue = String.format(SQLConstants.WHERE_NUMBER_VALUE, sanitizeNumberLiteral(value.get(0)));
                                 } else {
                                     whereValue = String.format(SQLConstants.WHERE_VALUE_VALUE, sanitizeSqlLiteral(value.get(0)));
@@ -339,7 +339,7 @@ public class ExtWhere2Str {
     private static String sanitizeNumberLiteral(String value) {
         String normalized = StringUtils.trimToEmpty(value);
         if (!NUMBER_PATTERN.matcher(normalized).matches()) {
-            DEException.throwException("Illegal number filter value");
+            CrestException.throwException("Illegal number filter value");
         }
         return normalized;
     }

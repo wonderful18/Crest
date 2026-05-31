@@ -1,6 +1,6 @@
 package io.crest.visualization.utils;
 
-import io.crest.constant.DeTypeConstants;
+import io.crest.constant.FieldTypeConstants;
 import io.crest.utils.ConfigUtils;
 import io.crest.utils.FileUtils;
 import io.crest.utils.LogUtil;
@@ -69,7 +69,7 @@ public class VisualizationExcelUtils {
                         for (int j = 0; j < rowData.size(); j++) {
                             Cell cell = row.createCell(j);
                             // with DataType
-                            if (i > 0 && (fieldTypes.get(j).equals(DeTypeConstants.DE_INT) || fieldTypes.get(j).equals(DeTypeConstants.DE_FLOAT)) && StringUtils.isNotEmpty(rowData.get(j))) {
+                            if (i > 0 && (fieldTypes.get(j).equals(FieldTypeConstants.INTEGER) || fieldTypes.get(j).equals(FieldTypeConstants.FLOAT)) && StringUtils.isNotEmpty(rowData.get(j))) {
                                 cell.setCellValue(Double.valueOf(rowData.get(j)));
                             } else {
                                 cell.setCellValue(rowData.get(j));

@@ -40,7 +40,7 @@ const backToMain = () => {
 
 <style lang="less" scoped>
 .system-header {
-  font-family: var(--crest-font-sans, var(--de-custom_font, 'PingFang'));
+  font-family: var(--crest-font-sans, var(--crest-custom_font, 'PingFang'));
 
   .logo {
     flex: 0 0 188px;

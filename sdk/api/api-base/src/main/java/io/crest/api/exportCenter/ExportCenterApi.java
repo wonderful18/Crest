@@ -2,17 +2,17 @@ package io.crest.api.exportCenter;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.github.xiaoymin.knife4j.annotations.ApiSupport;
-import io.crest.auth.DePermit;
+import io.crest.auth.CrestPermit;
 import io.crest.model.ExportTaskDTO;
-import io.crest.auth.DeApiPath;
+import io.crest.auth.CrestApiPath;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -24,23 +24,23 @@ import static io.crest.constant.AuthResourceEnum.DATASOURCE;
 public interface ExportCenterApi {
 
 
-    @PostMapping("/exportTasks/records")
+    @PostMapping("/export-tasks/records")
     public Map<String, Long> exportTasks();
 
-    @DePermit("m:read")
-    @PostMapping("/exportTasks/{status}/{goPage}/{pageSize}")
+    @CrestPermit("m:read")
+    @PostMapping("/export-tasks/{status}/{goPage}/{pageSize}")
     IPage<ExportTaskDTO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @PathVariable String status);
 
     @Operation(summary = "删除单条记录")
-    @GetMapping("/delete/{id}")
+    @DeleteMapping("/{id}")
     public void delete(@PathVariable String id);
 
     @Operation(summary = "批量删除")
-    @PostMapping("/delete")
+    @DeleteMapping
     public void delete(@RequestBody List<String> ids);
 
     @Operation(summary = "删除")
-    @PostMapping("/deleteAll/{type}")
+    @DeleteMapping("/all/{type}")
     public void deleteAll(@PathVariable String type);
 
     @Operation(summary = "下载")
@@ -48,14 +48,14 @@ public interface ExportCenterApi {
     public void download(@PathVariable String id, @RequestParam(required = false) String ticket, HttpServletResponse response) throws Exception;
 
     @Operation(summary = "生成下载Url")
-    @GetMapping("/generateDownloadUri/{id}")
+    @GetMapping("/download-tickets/{id}")
     public String generateDownloadUri(@PathVariable String id) throws Exception;
 
     @Operation(summary = "重试")
     @PostMapping("/retry/{id}")
     public void retry(@PathVariable String id);
 
-    @PostMapping("/exportLimit")
+    @PostMapping("/export-limit")
     public String exportLimit();
 
 }

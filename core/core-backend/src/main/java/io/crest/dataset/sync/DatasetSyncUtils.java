@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 public class DatasetSyncUtils {
 
-    public static final String CACHE_TABLE_PREFIX = "de_sync_dataset_";
+    public static final String CACHE_TABLE_PREFIX = "dataset_sync_";
     public static final int DEFAULT_FULL_SYNC_INTERVAL_HOURS = 24;
     public static final int DEFAULT_CACHE_EXPIRE_HOURS = 26;
     public static final int DEFAULT_TASK_TIMEOUT_MINUTES = 360;
@@ -142,17 +142,17 @@ public class DatasetSyncUtils {
             if (!Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL)) {
                 continue;
             }
-            String columnName = StringUtils.defaultIfBlank(field.getDataeaseName(), field.getFieldShortName());
+            String columnName = StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName());
             if (StringUtils.isBlank(columnName)) {
                 continue;
             }
             TableField tableField = new TableField();
             tableField.setName(columnName);
             tableField.setOriginName(columnName);
-            tableField.setFieldType(field.getName());
+            tableField.setNativeType(field.getName());
             tableField.setType(field.getType());
-            tableField.setDeExtractType(field.getDeExtractType());
-            tableField.setDeType(field.getDeType());
+            tableField.setExtractedFieldType(field.getExtractedFieldType());
+            tableField.setFieldType(field.getFieldType());
             tableField.setChecked(true);
             tableFields.add(tableField);
         }
@@ -164,20 +164,20 @@ public class DatasetSyncUtils {
     }
 
     public static String buildIncrementalPredicate(DatasetTableFieldDTO field, String lastValue, String prefix, String suffix, boolean inclusive) {
-        String column = prefix + StringUtils.defaultIfBlank(field.getDataeaseName(), field.getFieldShortName()) + suffix;
+        String column = prefix + StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()) + suffix;
         String operator = inclusive ? " >= " : " > ";
-        if (Objects.equals(field.getDeExtractType(), 1) || Objects.equals(field.getDeType(), 1)) {
+        if (Objects.equals(field.getExtractedFieldType(), 1) || Objects.equals(field.getFieldType(), 1)) {
             return column + operator + "TO_TIMESTAMP('" + escapeSqlLiteral(lastValue) + "', 'YYYY-MM-DD HH24:MI:SS.FF')";
         }
-        if (Objects.equals(field.getDeExtractType(), 2) || Objects.equals(field.getDeExtractType(), 3)
-                || Objects.equals(field.getDeType(), 2) || Objects.equals(field.getDeType(), 3)) {
+        if (Objects.equals(field.getExtractedFieldType(), 2) || Objects.equals(field.getExtractedFieldType(), 3)
+                || Objects.equals(field.getFieldType(), 2) || Objects.equals(field.getFieldType(), 3)) {
             return column + operator + lastValue;
         }
         return column + operator + "'" + escapeSqlLiteral(lastValue) + "'";
     }
 
     public static String buildCacheWatermarkPredicate(DatasetTableFieldDTO field, String lastValue, String prefix, String suffix, String operator) {
-        String column = prefix + StringUtils.defaultIfBlank(field.getDataeaseName(), field.getFieldShortName()) + suffix;
+        String column = prefix + StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()) + suffix;
         String safeOperator = StringUtils.defaultIfBlank(operator, ">").trim();
         if (isNumericField(field) && isNumericLiteral(lastValue)) {
             return column + " " + safeOperator + " " + lastValue;
@@ -193,8 +193,8 @@ public class DatasetSyncUtils {
     }
 
     private static boolean isNumericField(DatasetTableFieldDTO field) {
-        return Objects.equals(field.getDeExtractType(), 2) || Objects.equals(field.getDeExtractType(), 3)
-                || Objects.equals(field.getDeType(), 2) || Objects.equals(field.getDeType(), 3);
+        return Objects.equals(field.getExtractedFieldType(), 2) || Objects.equals(field.getExtractedFieldType(), 3)
+                || Objects.equals(field.getFieldType(), 2) || Objects.equals(field.getFieldType(), 3);
     }
 
     private static boolean isNumericLiteral(String value) {
@@ -205,7 +205,7 @@ public class DatasetSyncUtils {
         String selectFields = fields.stream()
                 .filter(field -> Objects.equals(field.getChecked(), true))
                 .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
-                .map(field -> StringUtils.defaultIfBlank(field.getDataeaseName(), field.getFieldShortName()))
+                .map(field -> StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()))
                 .filter(StringUtils::isNotBlank)
                 .map(fieldName -> quote(fieldName, prefix, suffix) + " AS " + quote(fieldName, prefix, suffix))
                 .collect(Collectors.joining(","));
@@ -220,13 +220,13 @@ public class DatasetSyncUtils {
         String selectFields = fields.stream()
                 .filter(field -> Objects.equals(field.getChecked(), true))
                 .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
-                .map(field -> StringUtils.defaultIfBlank(field.getDataeaseName(), field.getFieldShortName()))
+                .map(field -> StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()))
                 .filter(StringUtils::isNotBlank)
-                .map(fieldName -> "DE_SYNC_PAGE." + quote(fieldName, prefix, suffix))
+                .map(fieldName -> "SYNC_PAGE." + quote(fieldName, prefix, suffix))
                 .collect(Collectors.joining(","));
         return "SELECT " + selectFields
-                + " FROM (SELECT DE_SYNC_SRC.*, ROWNUM AS DE_ROWNUM FROM (" + sourceSql + ") DE_SYNC_SRC WHERE ROWNUM <= "
-                + (offset + limit) + ") DE_SYNC_PAGE WHERE DE_ROWNUM > " + offset;
+                + " FROM (SELECT SYNC_SRC.*, ROWNUM AS SYNC_ROWNUM FROM (" + sourceSql + ") SYNC_SRC WHERE ROWNUM <= "
+                + (offset + limit) + ") SYNC_PAGE WHERE SYNC_ROWNUM > " + offset;
     }
 
     public static String quote(String value, String prefix, String suffix) {
@@ -238,12 +238,12 @@ public class DatasetSyncUtils {
                 .filter(field -> Objects.equals(field.getChecked(), true))
                 .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
                 .map(field -> String.join("|",
-                        StringUtils.defaultString(field.getDataeaseName()),
+                        StringUtils.defaultString(field.getEngineFieldName()),
                         StringUtils.defaultString(field.getFieldShortName()),
                         StringUtils.defaultString(field.getName()),
                         StringUtils.defaultString(field.getOriginName()),
-                        String.valueOf(field.getDeExtractType()),
-                        String.valueOf(field.getDeType())
+                        String.valueOf(field.getExtractedFieldType()),
+                        String.valueOf(field.getFieldType())
                 ))
                 .collect(Collectors.joining("\n"));
         try {

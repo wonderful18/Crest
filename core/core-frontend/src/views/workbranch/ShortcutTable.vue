@@ -39,7 +39,7 @@ const state = reactive({
   curTypeList: [],
   tableColumn: []
 })
-const busiDataMap = computed(() => interactiveStore.getData)
+const busiDataMap = computed(() => interactiveStore.data)
 const iconMap = {
   panel: '/svg/icon_dashboard.svg',
   panelMobile: '/svg/icon_dashboard.svg',

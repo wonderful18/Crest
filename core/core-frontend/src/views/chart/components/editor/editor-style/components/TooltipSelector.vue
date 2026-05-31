@@ -203,15 +203,15 @@ const COUNT_AGGREGATION_TYPE = [
   { name: t('chart.count'), value: 'count' },
   { name: t('chart.count_distinct'), value: 'count_distinct' }
 ]
-const COUNT_DE_TYPE = [0, 1, 5]
+const COUNT_FIELD_TYPES = [0, 1, 5]
 
 // 当前选中的指标是否为非数值类型，非数值类型禁用数值格式配置
 const isNonNumericFormatter = computed(() => {
-  return COUNT_DE_TYPE.includes(curSeriesFormatter.value?.deType)
+  return COUNT_FIELD_TYPES.includes(curSeriesFormatter.value?.fieldType)
 })
 
 const aggregationList = computed(() => {
-  if (COUNT_DE_TYPE.includes(curSeriesFormatter.value?.deType)) {
+  if (COUNT_FIELD_TYPES.includes(curSeriesFormatter.value?.fieldType)) {
     return COUNT_AGGREGATION_TYPE
   }
   return AGGREGATION_TYPE
@@ -459,9 +459,9 @@ const updateAxis = (form: AxisEditForm) => {
 }
 const allFields = computed(() => {
   return defaultTo(props.allFields, []).map(item => ({
-    key: item.dataeaseName,
+    key: item.engineFieldName,
     name: item.name,
-    value: `${item.dataeaseName}@${item.name}`,
+    value: `${item.engineFieldName}@${item.name}`,
     disabled: false
   }))
 })
@@ -762,11 +762,11 @@ onMounted(() => {
         >
           <template #prefix>
             <el-icon v-if="curSeriesFormatter.seriesId" style="font-size: 14px">
-              <Icon :className="`field-icon-${fieldType[curSeriesFormatter.deType]}`"
+              <Icon :className="`field-icon-${fieldType[curSeriesFormatter.fieldType]}`"
                 ><component
                   class="svg-icon"
-                  :class="`field-icon-${fieldType[curSeriesFormatter.deType]}`"
-                  :is="iconFieldMap[fieldType[curSeriesFormatter.deType]]"
+                  :class="`field-icon-${fieldType[curSeriesFormatter.fieldType]}`"
+                  :is="iconFieldMap[fieldType[curSeriesFormatter.fieldType]]"
                 ></component
               ></Icon>
             </el-icon>
@@ -781,11 +781,11 @@ onMounted(() => {
               v-if="showOption(item)"
             >
               <el-icon style="margin-right: 8px">
-                <Icon :className="`field-icon-${fieldType[item.deType]}`"
+                <Icon :className="`field-icon-${fieldType[item.fieldType]}`"
                   ><component
                     class="svg-icon"
-                    :class="`field-icon-${fieldType[item.deType]}`"
-                    :is="iconFieldMap[fieldType[item.deType]]"
+                    :class="`field-icon-${fieldType[item.fieldType]}`"
+                    :is="iconFieldMap[fieldType[item.fieldType]]"
                   ></component
                 ></Icon>
               </el-icon>

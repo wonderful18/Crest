@@ -10,7 +10,7 @@ import java.util.Map;
 @Data
 public class ApiDefinition {
     private String name;
-    private String deTableName;
+    private String displayTableName;
     private String desc;
     private String url;
     private String method = "GET";

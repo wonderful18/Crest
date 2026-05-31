@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/datasetSync")
+@RequestMapping("/dataset-sync")
 public class DatasetSyncServer implements DatasetSyncApi {
 
     @Resource

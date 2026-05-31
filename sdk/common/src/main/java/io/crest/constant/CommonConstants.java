@@ -44,7 +44,7 @@ public class CommonConstants {
         public static final String PANEL = "panel";
 
         // 仪表板编辑
-        public static final String PANEL_EDIT = "panel_edit";
+        public static final String PANEL_EDIT = "panel_change";
 
     }
 

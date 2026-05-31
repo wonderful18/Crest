@@ -4,7 +4,7 @@ const flagArray = ['panel', 'screen', 'dataset', 'datasource']
 
 export const checkPermission = (el, binding) => {
   const { value } = binding
-  const data = interactiveStore.getData
+  const data = interactiveStore.data
   const permissionData = {}
   flagArray.forEach((item, index) => {
     permissionData[item] = data[index]

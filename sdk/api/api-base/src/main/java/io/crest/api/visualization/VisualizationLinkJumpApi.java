@@ -8,6 +8,7 @@ import io.crest.api.visualization.response.VisualizationLinkJumpBaseResponse;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,36 +25,36 @@ import java.util.List;
 public interface VisualizationLinkJumpApi {
 
 
-    @GetMapping("/getTableFieldWithViewId/{viewId}")
+    @GetMapping("/table-fields/by-view/{viewId}")
     @Operation(summary = "查询可跳转字段信息")
     List<DatasetTableFieldDTO> getTableFieldWithViewId(@PathVariable Long viewId);
 
-    @GetMapping("/queryWithViewId/{dvId}/{viewId}")
+    @GetMapping("/by-view/{dvId}/{viewId}")
     @Operation(summary = "根据图表ID查询跳转信息")
     VisualizationLinkJumpDTO queryWithViewId(@PathVariable Long dvId, @PathVariable Long viewId);
 
-    @GetMapping("/queryVisualizationJumpInfo/{dvId}/{resourceTable}")
+    @GetMapping("/visualization-jump-info/{dvId}/{resourceTable}")
     @Operation(summary = "根据可视化资源ID查询跳转信息")
     VisualizationLinkJumpBaseResponse queryVisualizationJumpInfo(@PathVariable Long dvId, @PathVariable String resourceTable);
 
-    @PostMapping("/updateJumpSet")
+    @PostMapping("/jump-set")
     @Operation(summary = "更新跳转信息")
     void updateJumpSet(@RequestBody VisualizationLinkJumpDTO jumpDTO);
 
-    @PostMapping("/queryTargetVisualizationJumpInfo")
+    @PostMapping("/target-visualization-jump-info")
     @Operation(summary = "查询目标跳转信息")
     VisualizationLinkJumpBaseResponse queryTargetVisualizationJumpInfo(@RequestBody VisualizationLinkJumpBaseRequest request);
 
-    @GetMapping("/viewTableDetailList/{dvId}")
+    @GetMapping("/view-table-detail-list/{dvId}")
     @Operation(summary = "查询跳转明细")
     VisualizationComponentDTO viewTableDetailList(@PathVariable Long dvId);
 
-    @PostMapping("/updateJumpSetActive")
+    @PostMapping("/jump-set-active")
     @Operation(summary = "更新跳转信息可用状态")
     VisualizationLinkJumpBaseResponse updateJumpSetActive(@RequestBody VisualizationLinkJumpBaseRequest request);
 
-    @PostMapping("/removeJumpSet")
+    @DeleteMapping("/jump-set")
     @Operation(summary = "删除跳转信息")
-    void removeJumpSet(@RequestBody VisualizationLinkJumpDTO jumpDTO);
+    void deleteJumpSet(@RequestBody VisualizationLinkJumpDTO jumpDTO);
 
 }

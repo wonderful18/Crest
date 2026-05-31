@@ -14,7 +14,7 @@ public class ExcelSheetData {
     private String tableName;
     private String fileName;
     private String size;
-    private String deTableName;
+    private String displayTableName;
     private Long lastUpdateTime;
     private String path;
     private boolean isSheet = true;

@@ -87,7 +87,7 @@ defineProps({
 .template-popper-tips-content {
   color: rgba(255, 255, 255, 1);
   .content {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 500;
     line-height: 22px;

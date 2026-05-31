@@ -2,10 +2,10 @@ import { useCache } from '@/hooks/web/useCache'
 const { wsCache } = useCache()
 export const clearCache = () => {
   const keys = [
-    'DataEaseKey',
+    'CrestKey',
     'TreeSort-backend',
     'app.desktop',
-    'de-global-refresh',
+    'crest-global-refresh',
     'open-backend',
     'panel-weight',
     'screen-weight',

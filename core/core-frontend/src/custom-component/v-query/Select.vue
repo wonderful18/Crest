@@ -955,7 +955,7 @@ defineExpose({
 <style lang="less">
 .filter-select-popper_class {
   --ed-fill-color-light: #f5f7fa47;
-  font-family: var(--de-canvas_custom_font);
+  font-family: var(--crest-canvas_custom_font);
   .ed-vl__window.ed-select-dropdown__list {
     min-width: 200px;
   }

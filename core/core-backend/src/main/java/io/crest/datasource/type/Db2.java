@@ -1,7 +1,7 @@
 package io.crest.datasource.type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,11 +31,11 @@ public class Db2 extends DatasourceConfiguration {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             for (String illegalParameter : illegalParameters) {
                 if (getJdbcUrl().toLowerCase().contains(illegalParameter.toLowerCase())) {
-                    DEException.throwException("Illegal parameter: " + illegalParameter);
+                    CrestException.throwException("Illegal parameter: " + illegalParameter);
                 }
             }
             if (!getJdbcUrl().startsWith("jdbc:db2")) {
-                DEException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
+                CrestException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
             }
             return getJdbcUrl();
         }
@@ -62,7 +62,7 @@ public class Db2 extends DatasourceConfiguration {
         }
         for (String illegalParameter : illegalParameters) {
             if (url.toLowerCase().contains(illegalParameter.toLowerCase())) {
-                DEException.throwException("Illegal parameter: " + illegalParameter);
+                CrestException.throwException("Illegal parameter: " + illegalParameter);
             }
         }
         return url;

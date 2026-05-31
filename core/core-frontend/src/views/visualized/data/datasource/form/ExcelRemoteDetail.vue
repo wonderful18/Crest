@@ -42,7 +42,7 @@ export interface Field {
   fieldSize: number
   fieldType: string
   name: string
-  deExtractType: number
+  extractedFieldType: number
   checked: boolean
   primaryKey: boolean
   length: number
@@ -229,7 +229,7 @@ const validateExcel = () => {
           selectNode[i].fields[j].checked &&
           selectNode[i].fields[j].primaryKey &&
           !selectNode[i].fields[j].length &&
-          selectNode[i].fields[j].deExtractType === 0
+          selectNode[i].fields[j].extractedFieldType === 0
         ) {
           ElMessage({
             message:
@@ -379,7 +379,7 @@ const generateColumns = (arr: Field[]) =>
   arr.map(ele => ({
     key: ele.originName,
     fieldType: ele.fieldType,
-    deExtractType: ele.deExtractType,
+    extractedFieldType: ele.extractedFieldType,
     dataKey: ele.originName,
     title: ele.name,
     checked: ele.checked,
@@ -549,7 +549,7 @@ const disabledFieldLength = item => {
   if (!item.checked) {
     return true
   }
-  if (item.deExtractType !== 0) {
+  if (item.extractedFieldType !== 0) {
     return true
   }
 }
@@ -582,7 +582,7 @@ const saveExcelDs = (params, successCb, finallyCb) => {
           selectNode[i].fields[j].checked &&
           selectNode[i].fields[j].primaryKey &&
           !selectNode[i].fields[j].length &&
-          selectNode[i].fields[j].deExtractType === 0
+          selectNode[i].fields[j].extractedFieldType === 0
         ) {
           ElMessage({
             message:
@@ -637,7 +637,7 @@ const saveExcelDs = (params, successCb, finallyCb) => {
   }
   table.syncSetting = form.value.syncSetting
   if (props.form.editType === 0 && props.form.id && (effectExtField || changeFiled)) {
-    ElMessageBox.confirm(t('deDataset.replace_the_data'), {
+    ElMessageBox.confirm(t('datasetUi.replace_the_data'), {
       confirmButtonText: t('dataset.confirm'),
       tip: t('data_source.to_replace_it'),
       cancelButtonText: 'Cancel',
@@ -665,14 +665,14 @@ const fieldOptions = [
   }
 ]
 
-const deExtractTypeChange = item => {
-  item.deType = item.deExtractType
+const extractedFieldTypeChange = item => {
+  item.fieldType = item.extractedFieldType
   const sheet = state.excelData[0]?.sheets.find(ele => ele.sheetId === activeTab.value)
   sheet.fields.forEach(row => {
     if (row.originName === item.dataKey) {
-      row.deExtractType = item.deExtractType
-      row.deType = item.deExtractType
-      row.fieldType = fieldTypeToStr[item.deExtractType]
+      row.extractedFieldType = item.extractedFieldType
+      row.fieldType = item.extractedFieldType
+      row.fieldType = fieldTypeToStr[item.extractedFieldType]
     }
   })
 }
@@ -854,21 +854,21 @@ defineExpose({
               <template #default="scope">{{ scope.row.title }}</template>
             </el-table-column>
 
-            <el-table-column prop="deExtractType" :label="t('datasource.field_type')">
+            <el-table-column prop="extractedFieldType" :label="t('datasource.field_type')">
               <template #default="scope">
                 <el-select
-                  v-model="scope.row.deExtractType"
+                  v-model="scope.row.extractedFieldType"
                   class="select-type"
                   style="display: inline-block; width: 120px"
-                  @change="deExtractTypeChange(scope.row)"
+                  @change="extractedFieldTypeChange(scope.row)"
                 >
                   <template #prefix>
                     <el-icon>
-                      <Icon :className="`field-icon-${fieldTypeLowercase[scope.row.deExtractType]}`"
+                      <Icon :className="`field-icon-${fieldTypeLowercase[scope.row.extractedFieldType]}`"
                         ><component
                           class="svg-icon"
-                          :class="`field-icon-${fieldTypeLowercase[scope.row.deExtractType]}`"
-                          :is="iconFieldMap[fieldTypeLowercase[scope.row.deExtractType]]"
+                          :class="`field-icon-${fieldTypeLowercase[scope.row.extractedFieldType]}`"
+                          :is="iconFieldMap[fieldTypeLowercase[scope.row.extractedFieldType]]"
                         ></component
                       ></Icon>
                     </el-icon>
@@ -1097,7 +1097,7 @@ defineExpose({
   }
 
   .de-expand {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 400;
     line-height: 22px;
@@ -1147,7 +1147,7 @@ defineExpose({
 
     .upload-tip {
       color: #8f959e;
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       font-style: normal;
       font-weight: 400;
@@ -1224,7 +1224,7 @@ defineExpose({
       width: 100%;
       display: flex;
       align-items: center;
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       font-style: normal;
       font-weight: 400;
@@ -1244,7 +1244,7 @@ defineExpose({
         position: relative;
         color: #1f2329;
         font-weight: 400;
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 14px;
         font-style: normal;
         line-height: 22px;
@@ -1334,11 +1334,11 @@ defineExpose({
   height: 120px;
   width: 392px;
   border-radius: 6px;
-  border: 1px solid var(--deCardStrokeColor, #dee0e3);
+  border: 1px solid var(--crestCardStrokeColor, #dee0e3);
   border-radius: 6px;
   margin: 0 0 16px 16px;
   padding: 16px;
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   cursor: pointer;
 
   &:hover {
@@ -1367,17 +1367,17 @@ defineExpose({
     }
   }
   .req-title {
-    color: var(--deTextSecondary, #646a73);
+    color: var(--crestTextSecondary, #646a73);
     margin: 16px 0 4px 0;
   }
   .req-value {
-    color: var(--deTextPrimary, #1f2329);
+    color: var(--crestTextPrimary, #1f2329);
   }
-  .de-copy-icon {
+  .copy-icon {
     margin-right: 16px;
-    color: var(--deTextSecondary, #646a73);
+    color: var(--crestTextSecondary, #646a73);
   }
-  .de-delete-icon {
+  .delete-icon {
     cursor: pointer;
   }
   .de-tag {
@@ -1417,16 +1417,16 @@ defineExpose({
   }
 
   .tips {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 500;
     line-height: 22px;
     margin-left: 8.67px;
-    color: var(--deTextPrimary, #1f2329);
+    color: var(--crestTextPrimary, #1f2329);
   }
   i {
     font-size: 14.666666030883789px;
-    color: var(--deWarning, #ff8800);
+    color: var(--crestWarning, #ff8800);
     line-height: 22px;
   }
   .foot {

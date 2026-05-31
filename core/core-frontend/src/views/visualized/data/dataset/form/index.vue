@@ -57,17 +57,17 @@ import { cancelMap } from '@/config/axios/service'
 import { useEmbedded } from '@/store/modules/embedded'
 import { useAppStoreWithOut } from '@/store/modules/app'
 import {
-  getDatasourceList,
-  getTables,
+  datasourceList,
+  tables,
   getPreviewData,
-  getDatasetDetails,
+  datasetDetails,
   saveDatasetTree,
   barInfoApi,
-  getDatasetSyncTask,
+  datasetSyncTask,
   saveDatasetSyncTask,
   executeDatasetSync,
   stopDatasetSync,
-  getDatasetSyncLogs
+  datasetSyncLogs
 } from '@/api/dataset'
 import type { DatasetSyncLog, DatasetSyncTask, Table } from '@/api/dataset'
 import DatasetUnion from './DatasetUnion.vue'
@@ -81,9 +81,9 @@ interface DragEvent extends MouseEvent {
 interface Field {
   fieldShortName: string
   name: string
-  dataeaseName: string
+  engineFieldName: string
   originName: string
-  deType: number
+  fieldType: number
 }
 const { wsCache } = useCache()
 const appStore = useAppStoreWithOut()
@@ -285,7 +285,7 @@ const getDsName = (id: string) => {
 
 const pushDataset = () => {
   wsCache.set(`dataset-info-id`, nodeInfo.id)
-  if (appStore.isDataEaseBi) {
+  if (appStore.isCrestBi) {
     embeddedStore.clearState()
     useEmitt().emitter.emit('changeCurrentComponent', 'Dataset')
     return
@@ -326,7 +326,7 @@ const closeCustomTime = () => {
     const { idArr } = currentField.value
     allfields.value.forEach(ele => {
       if (idArr.includes(ele.id)) {
-        Object.assign(ele, { deTypeArr: [...oldArrValue] })
+        Object.assign(ele, { fieldTypeSelectionValue: [...oldArrValue] })
       }
     })
     delete currentField.value.name
@@ -335,7 +335,7 @@ const closeCustomTime = () => {
     dimensions.value.concat(quota.value).some(ele => {
       if (ele.id === currentField.value.id) {
         delete currentField.value.name
-        Object.assign(ele, { deTypeArr: [...oldArrValue] })
+        Object.assign(ele, { fieldTypeSelectionValue: [...oldArrValue] })
         return true
       }
       return false
@@ -352,10 +352,10 @@ const confirmCustomTime = () => {
     allfields.value.forEach(ele => {
       if (idArr.includes(ele.id)) {
         Object.assign(ele, {
-          deType: 1,
+          fieldType: 1,
           dateFormatType: 'custom',
           dateFormat: name,
-          deTypeArr: [1, 'custom']
+          fieldTypeSelectionValue: [1, 'custom']
         })
       }
     })
@@ -368,7 +368,7 @@ const confirmCustomTime = () => {
         dimensions.value.concat(quota.value).some(ele => {
           if (ele.id === currentField.value.id) {
             ele.dateFormat = currentField.value.name
-            ele.deType = 1
+            ele.fieldType = 1
             ele.dateFormatType = 'custom'
             return true
           }
@@ -422,7 +422,7 @@ const handleFieldMore = (ele, type) => {
   }
   const arr = ['text', 'time', 'value', 'float', 'value', 'location', 'binary', 'url']
   if (arr.includes(type as string)) {
-    ele.deType = arr.indexOf(type)
+    ele.fieldType = arr.indexOf(type)
     ele.dateFormat = ''
     return
   }
@@ -430,7 +430,7 @@ const handleFieldMore = (ele, type) => {
     currentField.value.dateFormat = ele.dateFormat
     currentField.value.dateFormatType = ele.dateFormatType
 
-    ele.deType = 1
+    ele.fieldType = 1
     ele.dateFormatType = type
     ele.dateFormat = type
   }
@@ -443,7 +443,7 @@ const handleFieldMore = (ele, type) => {
       }
       break
     case 'delete':
-      deleteField(ele)
+      fieldRemoval(ele)
       break
     case 'translate':
       dqTrans(ele.id)
@@ -492,7 +492,7 @@ const copyField = item => {
   param.extField = 2
   param.originName = item.extField === 2 ? item.originName : '[' + item.id + ']'
   param.name = getFieldName(dimensions.value.concat(quota.value), item.name)
-  param.dataeaseName = null
+  param.engineFieldName = null
   param.lastSyncTime = null
   const index = allfields.value.findIndex(ele => ele.id === item.id)
   allfields.value.splice(index + 1, 0, param)
@@ -568,7 +568,7 @@ const delFieldByIdFake = (arr, fakeAllfields) => {
   return idList
 }
 
-const deleteField = item => {
+const fieldRemoval = item => {
   let tip = ''
   const idArr = allfields.value.reduce((pre, next) => {
     if (![2, 3].includes(next.extField)) return pre
@@ -678,10 +678,10 @@ const confirmEditCalc = () => {
         return
       }
       const obj = cloneDeep(calcEdit.value.fieldForm)
-      const { deType, dateFormat, deExtractType } = obj
-      obj.dateFormat = deType === 1 ? dateFormat : ''
-      obj.dateFormatType = deType === 1 ? dateFormat : ''
-      obj.deTypeArr = deType === 1 && deExtractType === 0 ? [deType, dateFormat] : [deType]
+      const { fieldType, dateFormat, extractedFieldType } = obj
+      obj.dateFormat = fieldType === 1 ? dateFormat : ''
+      obj.dateFormatType = fieldType === 1 ? dateFormat : ''
+      obj.fieldTypeSelectionValue = fieldType === 1 && extractedFieldType === 0 ? [fieldType, dateFormat] : [fieldType]
       const result = allfields.value.findIndex(ele => obj.id === ele.id)
       if (result !== -1) {
         allfields.value.splice(result, 1, obj)
@@ -695,17 +695,17 @@ const confirmEditCalc = () => {
 
 const generateColumns = (arr: Field[]) =>
   arr.map(ele => ({
-    key: ele.dataeaseName,
-    deType: ele.deType,
-    dataKey: ele.dataeaseName,
+    key: ele.engineFieldName,
+    fieldType: ele.fieldType,
+    dataKey: ele.engineFieldName,
     title: ele.name,
     width: 150,
     headerCellRenderer: ({ column }) => (
       <div class="flex-align-center">
         <ElIcon>
           <Icon>
-            {h(iconFieldMap[fieldType[column.deType]], {
-              class: `svg-icon field-icon-${fieldType[column.deType]}`
+            {h(iconFieldMap[fieldType[column.fieldType]], {
+              class: `svg-icon field-icon-${fieldType[column.fieldType]}`
             })}
           </Icon>
         </ElIcon>
@@ -719,7 +719,7 @@ const generateColumns = (arr: Field[]) =>
 const dsChange = (val: string) => {
   dsLoading.value = true
   sqlNode.datasourceId = dataSource.value
-  return getTables({ datasourceId: val })
+  return tables({ datasourceId: val })
     .then(res => {
       tableList = res || []
       datasourceTableData.value = [...tableList]
@@ -740,7 +740,7 @@ const datasetCheckRef = ref()
 const initEdite = async () => {
   let { id, datasourceId, tableName } = route.query
   let { id: copyId } = route.params
-  if (appStore.getIsDataEaseBi) {
+  if (appStore.getIsCrestBi) {
     id = embeddedStore.datasetId
     datasourceId = embeddedStore.datasourceId
     tableName = embeddedStore.tableName
@@ -762,7 +762,7 @@ const initEdite = async () => {
 
   loading.value = true
   try {
-    const res = await getDatasetDetails(copyId || id)
+    const res = await datasetDetails(copyId || id)
     loading.value = false
     let arr = []
     const { pid, name } = res || {}
@@ -827,15 +827,15 @@ const tabChange = val => {
   if (val === 'preview') return
   reGetName()
   allfields.value.forEach(ele => {
-    if (!Array.isArray(ele.deTypeArr)) {
-      ele.deTypeArr =
-        ele.deType === 1 && ele.deExtractType === 0
-          ? [ele.deType, ele.dateFormatType]
-          : [ele.deType]
+    if (!Array.isArray(ele.fieldTypeSelectionValue)) {
+      ele.fieldTypeSelectionValue =
+        ele.fieldType === 1 && ele.extractedFieldType === 0
+          ? [ele.fieldType, ele.dateFormatType]
+          : [ele.fieldType]
     } else {
-      const [type] = ele.deTypeArr
-      if (ele.deTypeArr.length && type !== ele.deType) {
-        ele.deTypeArr.splice(0, 1, ele.deType)
+      const [type] = ele.fieldTypeSelectionValue
+      if (ele.fieldTypeSelectionValue.length && type !== ele.fieldType) {
+        ele.fieldTypeSelectionValue.splice(0, 1, ele.fieldType)
       }
     }
   })
@@ -911,11 +911,11 @@ const incrementalFieldOptions = computed(() =>
   allfields.value.filter(ele => ele.extField === 0 && ele.checked !== false)
 )
 const timeIncrementalFields = computed(() =>
-  incrementalFieldOptions.value.filter(field => Number(field.deExtractType ?? field.deType) === 1)
+  incrementalFieldOptions.value.filter(field => Number(field.extractedFieldType ?? field.fieldType) === 1)
 )
 const numberIncrementalFields = computed(() =>
   incrementalFieldOptions.value.filter(field =>
-    [2, 3].includes(Number(field.deExtractType ?? field.deType))
+    [2, 3].includes(Number(field.extractedFieldType ?? field.fieldType))
   )
 )
 const autoIncrementalField = computed(() => {
@@ -1037,12 +1037,12 @@ const validateSyncSetting = () => {
 
 const loadDatasetSyncTask = async id => {
   Object.assign(syncTask, defaultSyncTask())
-  const task = await getDatasetSyncTask(id)
+  const task = await datasetSyncTask(id)
   if (task) {
     Object.assign(syncTask, task)
   }
   applyIncrementalDefaults()
-  syncLogs.value = await getDatasetSyncLogs(id)
+  syncLogs.value = await datasetSyncLogs(id)
   if (syncRunning.value) {
     startSyncPolling()
   } else {
@@ -1054,12 +1054,12 @@ const refreshDatasetSyncState = async () => {
   if (!currentDatasetId.value) {
     return
   }
-  const task = await getDatasetSyncTask(currentDatasetId.value)
+  const task = await datasetSyncTask(currentDatasetId.value)
   if (task) {
     Object.assign(syncTask, task)
   }
   applyIncrementalDefaults()
-  syncLogs.value = await getDatasetSyncLogs(currentDatasetId.value)
+  syncLogs.value = await datasetSyncLogs(currentDatasetId.value)
   if (!syncRunning.value) {
     stopSyncPolling()
   }
@@ -1122,7 +1122,7 @@ const executeDatasetSyncNow = async () => {
     if (task) {
       Object.assign(syncTask, task)
     }
-    syncLogs.value = await getDatasetSyncLogs(currentDatasetId.value)
+    syncLogs.value = await datasetSyncLogs(currentDatasetId.value)
     startSyncPolling()
     ElMessage.success('同步任务已提交')
   } finally {
@@ -1332,11 +1332,11 @@ const defaultObj = {
   originName: '',
   otherGroup: '',
   groupType: 'd',
-  deType: 0,
+  fieldType: 0,
   type: 'ANY',
-  deExtractType: 0,
+  extractedFieldType: 0,
   extField: 3,
-  deTypeOrigin: null,
+  originalFieldType: null,
   groupList: [
     {
       name: '',
@@ -1364,8 +1364,8 @@ const addGroupField = () => {
 }
 const handleFieldschange = val => {
   const field = groupFields.value.find(ele => ele.id === val)
-  const { deType } = field
-  if (deType !== currentGroupField.deExtractType || deType === 0) {
+  const { fieldType } = field
+  if (fieldType !== currentGroupField.extractedFieldType || fieldType === 0) {
     refsForm.value = []
     currentGroupField.groupList = [
       {
@@ -1379,8 +1379,8 @@ const handleFieldschange = val => {
       }
     ]
   }
-  currentGroupField.deTypeOrigin = deType
-  if (deType !== 0) return
+  currentGroupField.originalFieldType = fieldType
+  if (fieldType !== 0) return
   enumValueLoading.value = true
   const arr = []
   const allfieldsCopy = cloneDeep(unref(allfields))
@@ -1463,7 +1463,7 @@ const confirmGroupField = () => {
             startTime: '',
             endTime: ''
           }
-          if (currentGroupField.deTypeOrigin === 1) {
+          if (currentGroupField.originalFieldType === 1) {
             const [startTime, endTime] = time
             obj.startTime = dayjs(startTime).format('YYYY-MM-DD HH:mm:ss')
             obj.endTime = dayjs(endTime).format('YYYY-MM-DD HH:mm:ss')
@@ -1524,10 +1524,10 @@ const verify = () => {
         return
       }
       const obj = cloneDeep(calcEdit.value.fieldForm)
-      const { deType, dateFormat, deExtractType } = obj
-      obj.dateFormat = deType === 1 ? dateFormat : ''
-      obj.dateFormatType = deType === 1 ? dateFormat : ''
-      obj.deTypeArr = deType === 1 && deExtractType === 0 ? [deType, dateFormat] : [deType]
+      const { fieldType, dateFormat, extractedFieldType } = obj
+      obj.dateFormat = fieldType === 1 ? dateFormat : ''
+      obj.dateFormatType = fieldType === 1 ? dateFormat : ''
+      obj.fieldTypeSelectionValue = fieldType === 1 && extractedFieldType === 0 ? [fieldType, dateFormat] : [fieldType]
       const result = allfields.value.findIndex(ele => obj.id === ele.id)
       const allfieldsCopy = cloneDeep(unref(allfields))
       if (result !== -1) {
@@ -1623,7 +1623,7 @@ onMounted(async () => {
   isEdit.value = false
   await nextTick()
   await initEdite()
-  getDatasource(isEdit.value ? 0 : 2)
+  datasource(isEdit.value ? 0 : 2)
   window.addEventListener('resize', handleResize)
   await nextTick()
   getSqlResultHeight()
@@ -1638,8 +1638,8 @@ const getSqlResultHeight = () => {
   const sqlResult = document.querySelector('.sql-result') as HTMLElement | null
   sqlResultHeight.value = sqlResult?.offsetHeight || 0
 }
-const getDatasource = (weight?: number) => {
-  getDatasourceList(weight).then(res => {
+const datasource = (weight?: number) => {
+  datasourceList(weight).then(res => {
     const _list = (res as unknown as DataSource[]) || []
     if (_list && _list.length > 0 && _list[0].id === '0' && _list[0].children?.length) {
       state.dataSourceList = dfsChild(_list[0].children)
@@ -1703,7 +1703,7 @@ const datasetSave = () => {
   }
   let union = []
   dfsNodeList(union, datasetDrag.value.getNodeList())
-  const pid = appStore.getIsDataEaseBi ? embeddedStore.datasetPid : route.query.pid || nodeInfo.pid
+  const pid = appStore.getIsCrestBi ? embeddedStore.datasetPid : route.query.pid || nodeInfo.pid
   if (!union.length) {
     ElMessage.error(t('data_set.dataset_cannot_be'))
     return
@@ -1789,37 +1789,37 @@ const dimensionsTable = ref()
 const dimensionsSelection = ref([])
 const quotaSelection = ref([])
 
-const deTypeSelection = ref([])
+const fieldTypeSelection = ref([])
 const fieldSelection = ref([])
 
 const showCascaderBatch = computed(() => {
-  return !!deTypeSelection.value.length && Array.from(new Set(deTypeSelection.value)).length === 1
+  return !!fieldTypeSelection.value.length && Array.from(new Set(fieldTypeSelection.value)).length === 1
 })
 
 const clearSelection = () => {
   dimensionsTable.value.clearSelection()
   quotaTable.value.clearSelection()
 }
-const deTypeArr = ref([])
+const fieldTypeSelectionValue = ref([])
 
-const setDeTypeSelection = () => {
+const setFieldTypeSelection = () => {
   fieldSelection.value = [
     ...dimensionsTable.value.getSelectionRows(),
     ...quotaTable.value.getSelectionRows()
   ]
-  deTypeSelection.value = fieldSelection.value.map(ele => ele.deExtractType)
-  let deTypes = fieldSelection.value.map(ele => ele.deType)
+  fieldTypeSelection.value = fieldSelection.value.map(ele => ele.extractedFieldType)
+  let fieldTypes = fieldSelection.value.map(ele => ele.fieldType)
   const [obj] = fieldSelection.value
   nextTick(() => {
     dimensionsSelection.value = dimensionsTable.value.getSelectionRows().map(ele => ele.id)
     quotaSelection.value = quotaTable.value.getSelectionRows().map(ele => ele.id)
   })
-  if (Array.from(new Set(deTypes)).length !== 1) {
-    deTypeArr.value = []
+  if (Array.from(new Set(fieldTypes)).length !== 1) {
+    fieldTypeSelectionValue.value = []
     return
   }
-  deTypeArr.value =
-    obj.deType === 1 && obj.deExtractType === 0 ? [1, obj.dateFormatType] : [obj.deType]
+  fieldTypeSelectionValue.value =
+    obj.fieldType === 1 && obj.extractedFieldType === 0 ? [1, obj.dateFormatType] : [obj.fieldType]
 }
 
 const rowClick = (_, __, event) => {
@@ -1834,14 +1834,14 @@ const rowClick = (_, __, event) => {
 let oldArrValue = []
 
 const cascaderChangeArr = val => {
-  const [deType, dateFormat] = val
+  const [fieldType, dateFormat] = val
   dimensionsSelection.value = dimensionsTable.value.getSelectionRows().map(ele => ele.id)
   quotaSelection.value = quotaTable.value.getSelectionRows().map(ele => ele.id)
 
   const arr = [...quotaSelection.value, ...dimensionsSelection.value]
   if (dateFormat === 'custom') {
     const [obj] = allfields.value.filter(ele => arr.includes(ele.id))
-    oldArrValue = obj.deType === 1 ? [1, obj.dateFormatType] : [obj.deType]
+    oldArrValue = obj.fieldType === 1 ? [1, obj.dateFormatType] : [obj.fieldType]
     currentField.value.id = ''
     currentField.value.idArr = [...arr]
     currentField.value.dateFormat = ''
@@ -1852,10 +1852,10 @@ const cascaderChangeArr = val => {
   }
   allfields.value.forEach(ele => {
     if (arr.includes(ele.id)) {
-      ele.deType = deType
-      ele.dateFormat = deType === 1 ? dateFormat : ''
-      ele.dateFormatType = deType === 1 ? dateFormat : ''
-      ele.deTypeArr = deType === 1 && ele.deExtractType === 0 ? [deType, dateFormat] : [deType]
+      ele.fieldType = fieldType
+      ele.dateFormat = fieldType === 1 ? dateFormat : ''
+      ele.dateFormatType = fieldType === 1 ? dateFormat : ''
+      ele.fieldTypeSelectionValue = fieldType === 1 && ele.extractedFieldType === 0 ? [fieldType, dateFormat] : [fieldType]
     }
   })
   recoverSelection()
@@ -1885,16 +1885,16 @@ const dragEnd = () => {
 }
 
 const cascaderChange = (row, val) => {
-  const [deType, dateFormat] = val
+  const [fieldType, dateFormat] = val
   if (dateFormat === 'custom') {
-    oldArrValue = row.deType === 1 ? [1, row.dateFormatType] : [row.deType]
+    oldArrValue = row.fieldType === 1 ? [1, row.dateFormatType] : [row.fieldType]
     currentField.value.id = row.id
     updateCustomTime.value = true
     return
   }
-  row.deType = deType
-  row.dateFormat = deType === 1 ? dateFormat : ''
-  row.dateFormatType = deType === 1 ? dateFormat : ''
+  row.fieldType = fieldType
+  row.dateFormat = fieldType === 1 ? dateFormat : ''
+  row.dateFormatType = fieldType === 1 ? dateFormat : ''
 }
 
 const dfsUnion = (arr, list) => {
@@ -2002,12 +2002,12 @@ const getDsIconName = data => {
   return iconDatasourceMap[data.type]
 }
 
-const getIconNameCalc = (deType, extField, dimension = false) => {
+const getIconNameCalc = (fieldType, extField, dimension = false) => {
   if (extField === 2) {
     const iconFieldCalculated = dimension ? iconFieldCalculatedMap : iconFieldCalculatedQMap
-    return iconFieldCalculated[deType]
+    return iconFieldCalculated[fieldType]
   }
-  return iconFieldMap[fieldType[deType]]
+  return iconFieldMap[fieldType[fieldType]]
 }
 </script>
 
@@ -2244,7 +2244,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
           <el-input
             v-model="searchTable"
             class="search"
-            :placeholder="t('deDataset.by_table_name')"
+            :placeholder="t('datasetUi.by_table_name')"
             clearable
           >
             <template #prefix>
@@ -2394,8 +2394,8 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                         <Icon
                           ><component
                             class="svg-icon"
-                            :class="`field-icon-${fieldType[[2, 3].includes(data.deType) ? 2 : 0]}`"
-                            :is="getIconNameCalc(data.deType, data.extField)"
+                            :class="`field-icon-${fieldType[[2, 3].includes(data.fieldType) ? 2 : 0]}`"
+                            :is="getIconNameCalc(data.fieldType, data.extField)"
                           ></component
                         ></Icon>
                       </el-icon>
@@ -2404,7 +2404,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                         <field-more
                           :extField="data.extField"
                           :trans-type="t('data_set.convert_to_indicator')"
-                          :show-time="data.deExtractType === 0"
+                          :show-time="data.extractedFieldType === 0"
                           @handle-command="type => handleFieldMore(data, type)"
                         ></field-more>
                       </div>
@@ -2428,8 +2428,8 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                         <Icon
                           ><component
                             class="svg-icon"
-                            :class="`field-icon-${fieldType[[2, 3].includes(data.deType) ? 2 : 0]}`"
-                            :is="getIconNameCalc(data.deType, data.extField, true)"
+                            :class="`field-icon-${fieldType[[2, 3].includes(data.fieldType) ? 2 : 0]}`"
+                            :is="getIconNameCalc(data.fieldType, data.extField, true)"
                           ></component
                         ></Icon>
                       </el-icon>
@@ -2438,7 +2438,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                         <field-more
                           :trans-type="t('data_set.convert_to_dimension')"
                           typeColor="green-color"
-                          :show-time="data.deExtractType === 0"
+                          :show-time="data.extractedFieldType === 0"
                           :extField="data.extField"
                           @handle-command="type => handleFieldMore(data, type)"
                         ></field-more>
@@ -2459,7 +2459,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                 style="width: 100%; height: 100%"
               >
                 <el-table-column
-                  :key="column.dataKey + column.deType"
+                  :key="column.dataKey + column.fieldType"
                   v-for="(column, index) in columns"
                   :prop="column.dataKey"
                   :label="column.title"
@@ -2473,9 +2473,9 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                           ><component
                             class="svg-icon"
                             :class="`field-icon-${
-                              fieldType[[2, 3].includes(column.deType) ? 2 : 0]
+                              fieldType[[2, 3].includes(column.fieldType) ? 2 : 0]
                             }`"
-                            :is="iconFieldMap[fieldType[column.deType]]"
+                            :is="iconFieldMap[fieldType[column.fieldType]]"
                           ></component
                         ></Icon>
                       </ElIcon>
@@ -2500,7 +2500,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                   class="dimension-manage-header manage-header"
                 >
                   <el-table
-                    @selection-change="setDeTypeSelection"
+                    @selection-change="setFieldTypeSelection"
                     ref="dimensionsTable"
                     :data="dimensions"
                     :height="quotaTableHeight"
@@ -2539,7 +2539,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
 
                     <el-table-column
                       prop="description"
-                      :label="t('deDataset.description')"
+                      :label="t('datasetUi.description')"
                       width="240"
                     >
                       <template #default="scope">
@@ -2558,17 +2558,17 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                         {{ scope.row.extField === 0 ? nameMap[scope.row.datasetTableId] : '' }}
                       </template>
                     </el-table-column>
-                    <el-table-column prop="deType" :label="t('dataset.field_type')" width="200">
+                    <el-table-column prop="fieldType" :label="t('dataset.field_type')" width="200">
                       <template #default="scope">
                         <el-cascader
                           :class="
-                            !!scope.row.deTypeArr && !!scope.row.deTypeArr.length && 'select-type'
+                            !!scope.row.fieldTypeSelectionValue && !!scope.row.fieldTypeSelectionValue.length && 'select-type'
                           "
                           v-if="scope.row.extField !== 3"
                           popper-class="cascader-panel"
-                          v-model="scope.row.deTypeArr"
+                          v-model="scope.row.fieldTypeSelectionValue"
                           @change="val => cascaderChange(scope.row, val)"
-                          :options="scope.row.deExtractType === 0 ? fieldOptions : fieldOptionsText"
+                          :options="scope.row.extractedFieldType === 0 ? fieldOptions : fieldOptionsText"
                         >
                           <template v-slot="{ data }">
                             <el-icon>
@@ -2592,9 +2592,9 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                               ><component
                                 class="svg-icon"
                                 :class="`field-icon-${
-                                  fieldType[[2, 3].includes(scope.row.deType) ? 2 : 0]
+                                  fieldType[[2, 3].includes(scope.row.fieldType) ? 2 : 0]
                                 }`"
-                                :is="iconFieldMap[getIconName(scope.row.deType)]"
+                                :is="iconFieldMap[getIconName(scope.row.fieldType)]"
                               ></component
                             ></Icon>
                           </el-icon>
@@ -2603,7 +2603,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                     </el-table-column>
 
                     <el-table-column
-                      prop="deExtraType"
+                      prop="originType"
                       :label="t('dataset.origin_type')"
                       width="168"
                     >
@@ -2620,11 +2620,11 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                               <Icon className="primary-color"
                                 ><component
                                   class="svg-icon primary-color"
-                                  :is="iconFieldMap[getIconName(scope.row.deExtractType)]"
+                                  :is="iconFieldMap[getIconName(scope.row.extractedFieldType)]"
                                 ></component
                               ></Icon>
                             </el-icon>
-                            {{ fieldTypes(scope.row.deExtractType) }}
+                            {{ fieldTypes(scope.row.extractedFieldType) }}
                           </span>
                         </div>
                       </template>
@@ -2711,7 +2711,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                   class="quota-manage-header manage-header"
                 >
                   <el-table
-                    @selection-change="setDeTypeSelection"
+                    @selection-change="setFieldTypeSelection"
                     ref="quotaTable"
                     :height="quotaTableHeight"
                     :data="quota"
@@ -2744,7 +2744,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
 
                     <el-table-column
                       prop="description"
-                      :label="t('deDataset.description')"
+                      :label="t('datasetUi.description')"
                       width="240"
                     >
                       <template #default="scope">
@@ -2765,16 +2765,16 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                       </template>
                     </el-table-column>
 
-                    <el-table-column prop="deType" :label="t('dataset.field_type')" width="200">
+                    <el-table-column prop="fieldType" :label="t('dataset.field_type')" width="200">
                       <template #default="scope">
                         <el-cascader
                           :class="
-                            !!scope.row.deTypeArr && !!scope.row.deTypeArr.length && 'select-type'
+                            !!scope.row.fieldTypeSelectionValue && !!scope.row.fieldTypeSelectionValue.length && 'select-type'
                           "
                           popper-class="cascader-panel"
-                          v-model="scope.row.deTypeArr"
+                          v-model="scope.row.fieldTypeSelectionValue"
                           @change="val => cascaderChange(scope.row, val)"
-                          :options="scope.row.deExtractType === 0 ? fieldOptions : fieldOptionsText"
+                          :options="scope.row.extractedFieldType === 0 ? fieldOptions : fieldOptionsText"
                         >
                           <template v-slot="{ data }">
                             <el-icon>
@@ -2797,9 +2797,9 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                               ><component
                                 class="svg-icon"
                                 :class="`field-icon-${
-                                  fieldType[[2, 3].includes(scope.row.deType) ? 2 : 0]
+                                  fieldType[[2, 3].includes(scope.row.fieldType) ? 2 : 0]
                                 }`"
-                                :is="iconFieldMap[getIconName(scope.row.deType)]"
+                                :is="iconFieldMap[getIconName(scope.row.fieldType)]"
                               ></component
                             ></Icon>
                           </el-icon>
@@ -2808,7 +2808,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                     </el-table-column>
 
                     <el-table-column
-                      prop="deExtraType"
+                      prop="originType"
                       :label="t('dataset.origin_type')"
                       width="168"
                     >
@@ -2825,11 +2825,11 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                               <Icon className="green-color"
                                 ><component
                                   class="svg-icon green-color"
-                                  :is="iconFieldMap[getIconName(scope.row.deExtractType)]"
+                                  :is="iconFieldMap[getIconName(scope.row.extractedFieldType)]"
                                 ></component
                               ></Icon>
                             </el-icon>
-                            {{ fieldTypes(scope.row.deExtractType) }}
+                            {{ fieldTypes(scope.row.extractedFieldType) }}
                           </span>
                         </div>
                       </template>
@@ -2908,10 +2908,10 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                 </el-collapse-item>
               </el-collapse>
             </div>
-            <div class="batch-operate flex-align-center" v-if="!!deTypeSelection.length">
+            <div class="batch-operate flex-align-center" v-if="!!fieldTypeSelection.length">
               <div class="flex-align-center">
                 {{ t('data_set.selected') }}
-                <span class="num">{{ deTypeSelection.length }}</span>
+                <span class="num">{{ fieldTypeSelection.length }}</span>
                 {{ t('data_set.bar') }}
                 <el-button @click="clearSelection" text style="margin-left: 16px">{{
                   t('commons.clear')
@@ -2920,12 +2920,12 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
               <div class="cascader-batch">
                 <el-cascader
                   :disabled="!showCascaderBatch"
-                  :class="!!deTypeArr.length && 'select-type'"
-                  v-model="deTypeArr"
+                  :class="!!fieldTypeSelectionValue.length && 'select-type'"
+                  v-model="fieldTypeSelectionValue"
                   @change="cascaderChangeArr"
                   popper-class="cascader-panel"
                   :options="
-                    deTypeSelection.every(ele => ele === 0) ? fieldOptions : fieldOptionsText
+                    fieldTypeSelection.every(ele => ele === 0) ? fieldOptions : fieldOptionsText
                   "
                 >
                   <template v-slot="{ data }">
@@ -2943,11 +2943,11 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                 </el-cascader>
                 <span class="select-svg-icon">
                   <el-icon>
-                    <Icon :className="`field-icon-${getIconName(deTypeArr[0])}`"
+                    <Icon :className="`field-icon-${getIconName(fieldTypeSelectionValue[0])}`"
                       ><component
                         class="svg-icon"
-                        :class="`field-icon-${getIconName(deTypeArr[0])}`"
-                        :is="iconFieldMap[getIconName(deTypeArr[0])]"
+                        :class="`field-icon-${getIconName(fieldTypeSelectionValue[0])}`"
+                        :is="iconFieldMap[getIconName(fieldTypeSelectionValue[0])]"
                       ></component
                     ></Icon>
                   </el-icon>
@@ -3136,7 +3136,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                 /></el-form-item>
                 <el-form-item
                   :key="index + 'text'"
-                  v-if="[0, null].includes(currentGroupField.deTypeOrigin)"
+                  v-if="[0, null].includes(currentGroupField.originalFieldType)"
                   prop="text"
                   style="width: 100%; margin-left: 24px"
                   :rules="{
@@ -3164,7 +3164,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
 
                 <div
                   class="group-fields_num"
-                  v-else-if="[2, 3, 4].includes(currentGroupField.deTypeOrigin)"
+                  v-else-if="[2, 3, 4].includes(currentGroupField.originalFieldType)"
                 >
                   <el-form-item
                     :key="index + 'min'"
@@ -3219,7 +3219,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                   :key="index + 'time'"
                   prop="time"
                   class="group-fields_num"
-                  v-else-if="[1].includes(currentGroupField.deTypeOrigin)"
+                  v-else-if="[1].includes(currentGroupField.originalFieldType)"
                   :rules="{
                     required: true,
                     validator: validatePass,
@@ -3305,7 +3305,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
 
     .name {
       color: #fff;
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 16px;
       font-weight: 400;
       display: flex;
@@ -3378,7 +3378,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
       height: 24px;
       width: 20px;
       box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-      border: 1px solid var(--deCardStrokeColor, #dee0e3);
+      border: 1px solid var(--crestCardStrokeColor, #dee0e3);
       display: flex;
       align-items: center;
       padding-left: 2px;
@@ -3413,7 +3413,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
       width: 240px;
       padding-bottom: 16px;
 
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       border-right: 1px solid rgba(31, 35, 41, 0.15);
 
       .select-ds {
@@ -3422,13 +3422,13 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        color: var(--deTextPrimary, #1f2329);
+        color: var(--crestTextPrimary, #1f2329);
         position: relative;
 
         i {
           cursor: pointer;
           font-size: 12px;
-          color: var(--deTextPlaceholder, rgba(31, 35, 41, 0.15));
+          color: var(--crestTextPlaceholder, rgba(31, 35, 41, 0.15));
         }
 
         .left-outlined {
@@ -3469,7 +3469,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
         i {
           cursor: auto;
           font-size: 16px;
-          color: var(--deTextPlaceholder, #646a73);
+          color: var(--crestTextPlaceholder, #646a73);
         }
       }
 
@@ -3617,7 +3617,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
 
         .not-allow {
           cursor: not-allowed;
-          color: var(--deTextDisable, #bbbfc4);
+          color: var(--crestTextDisable, #bbbfc4);
         }
       }
     }
@@ -3645,7 +3645,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
         }
       }
       .sql-result {
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 14px;
         overflow-y: auto;
         box-sizing: border-box;
@@ -3659,7 +3659,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
           height: 10px;
           position: relative;
           z-index: 5;
-          color: var(--deTextPrimary, #1f2329);
+          color: var(--crestTextPrimary, #1f2329);
 
           .field-data {
             position: absolute;
@@ -3770,7 +3770,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
                 margin: 1px;
                 top: 1px;
                 height: 49px;
-                font-family: var(--de-custom_font, 'PingFang');
+                font-family: var(--crest-custom_font, 'PingFang');
                 font-style: normal;
                 font-weight: 500;
                 font-size: 14px;
@@ -4051,7 +4051,7 @@ const getIconNameCalc = (deType, extField, dimension = false) => {
     content: '*';
     color: var(--ed-color-danger);
     margin-left: 2px;
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-style: normal;
     font-weight: 400;

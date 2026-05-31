@@ -347,7 +347,7 @@ export class MultiScatter extends G2PlotChartView<ScatterOptions, G2Scatter> {
     const xAxisField = chart.xAxis?.[0]
     const isTimeX =
       xAxisField &&
-      (xAxisField.groupType === 'd' || (xAxisField.deType != null && xAxisField.deType === 1))
+      (xAxisField.groupType === 'd' || (xAxisField.fieldType != null && xAxisField.fieldType === 1))
     // 日期 x 轴的字段名称
     const xFieldName = xAxisField
       ? isEmpty(xAxisField.chartShowName)

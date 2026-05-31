@@ -6,7 +6,7 @@ import io.crest.api.visualization.dto.LinkageInfoDTO;
 import io.crest.api.visualization.dto.VisualizationLinkageDTO;
 import io.crest.api.visualization.request.VisualizationLinkageRequest;
 import io.crest.api.visualization.vo.VisualizationLinkageFieldVO;
-import io.crest.auth.DeLinkPermit;
+import io.crest.auth.CrestLinkPermit;
 import io.crest.chart.dao.auto.entity.CoreChartView;
 import io.crest.chart.dao.auto.mapper.CoreChartViewMapper;
 import io.crest.constant.CommonConstants;
@@ -58,13 +58,13 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
     private SnapshotCoreChartViewMapper snapshotCoreChartViewMapper;
 
     @Override
-    public Map<String, VisualizationLinkageDTO> getViewLinkageGather(VisualizationLinkageRequest request) {
+    public Map<String, VisualizationLinkageDTO> viewLinkageGather(VisualizationLinkageRequest request) {
         if (CollectionUtils.isNotEmpty(request.getTargetViewIds())) {
             List<VisualizationLinkageDTO> linkageDTOList = null;
             if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(request.getResourceTable())) {
-                linkageDTOList = extVisualizationLinkageMapper.getViewLinkageGatherSnapshot(request.getDvId(), request.getSourceViewId(), request.getTargetViewIds());
+                linkageDTOList = extVisualizationLinkageMapper.viewLinkageGatherSnapshot(request.getDvId(), request.getSourceViewId(), request.getTargetViewIds());
             } else {
-                linkageDTOList =  extVisualizationLinkageMapper.getViewLinkageGather(request.getDvId(), request.getSourceViewId(), request.getTargetViewIds());
+                linkageDTOList =  extVisualizationLinkageMapper.viewLinkageGather(request.getDvId(), request.getSourceViewId(), request.getTargetViewIds());
             }
             return linkageDTOList.stream().collect(Collectors.toMap(targetViewId -> String.valueOf(targetViewId), PanelViewLinkageDTO -> PanelViewLinkageDTO));
         }
@@ -72,11 +72,11 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
     }
 
     @Override
-    public List<VisualizationLinkageDTO> getViewLinkageGatherArray(VisualizationLinkageRequest request) {
+    public List<VisualizationLinkageDTO> viewLinkageGatherArray(VisualizationLinkageRequest request) {
         if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(request.getResourceTable())) {
-            return extVisualizationLinkageMapper.getViewLinkageGatherSnapshot(request.getDvId(), request.getSourceViewId(), request.getTargetViewIds());
+            return extVisualizationLinkageMapper.viewLinkageGatherSnapshot(request.getDvId(), request.getSourceViewId(), request.getTargetViewIds());
         } else {
-            return extVisualizationLinkageMapper.getViewLinkageGather(request.getDvId(), request.getSourceViewId(), request.getTargetViewIds());
+            return extVisualizationLinkageMapper.viewLinkageGather(request.getDvId(), request.getSourceViewId(), request.getTargetViewIds());
         }
     }
 
@@ -126,7 +126,7 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
         return new BaseRspModel();
     }
 
-    @DeLinkPermit
+    @CrestLinkPermit
     @Override
     public Map<String, List<String>> getVisualizationAllLinkageInfo(Long dvId, String resourceTable) {
         List<LinkageInfoDTO> info = null;
@@ -148,7 +148,7 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
     }
 
     @Override
-    public void removeLinkage(VisualizationLinkageRequest request) {
+    public void deleteLinkage(VisualizationLinkageRequest request) {
         // 清理原有关系
         extVisualizationLinkageMapper.deleteViewLinkageFieldSnapshot(request.getDvId(), request.getSourceViewId());
         extVisualizationLinkageMapper.deleteViewLinkageSnapshot(request.getDvId(), request.getSourceViewId());

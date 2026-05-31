@@ -15,11 +15,11 @@ import java.util.List;
 public interface EmailApi {
 
     @Operation(summary = "查询邮件设置")
-    @GetMapping("/setting/query")
+    @GetMapping("/setting/list")
     List<SettingItemVO> queryEmailSetting();
 
     @Operation(summary = "保存邮件设置")
-    @PostMapping("/setting/save")
+    @PostMapping("/setting/record")
     void saveEmailSetting(@RequestBody List<SettingItemVO> settingItemVOS);
 
     @Operation(summary = "校验邮件设置")

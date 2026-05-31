@@ -75,7 +75,7 @@
         <el-row style="margin-left: 53px; text-align: left">
           <el-button type="i" @click="cancel">{{ t('watermark.reset') }} </el-button>
           <el-button type="info" @click="preview">{{ t('watermark.preview') }} </el-button>
-          <el-button type="primary" @click="save">{{ t('watermark.save') }} </el-button>
+          <el-button type="primary" @click="record">{{ t('watermark.save') }} </el-button>
         </el-row>
       </el-col>
       <el-col :span="12" style="height: 100%">

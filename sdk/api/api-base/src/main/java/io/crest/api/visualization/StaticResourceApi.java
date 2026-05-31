@@ -15,8 +15,8 @@ public interface StaticResourceApi {
     @Operation(summary = "上传静态文件")
     void upload(@PathVariable("fileId") String fileId, @RequestPart("file") MultipartFile file);
 
-    @PostMapping("findResourceAsBase64")
+    @PostMapping("resource-base64")
     @Operation(summary = "查找静态文件并转为Base64")
-    Map<String,String> findResourceAsBase64(@RequestBody StaticResourceRequest resourceRequest);
+    Map<String,String> resourceBase64(@RequestBody StaticResourceRequest resourceRequest);
 
 }
