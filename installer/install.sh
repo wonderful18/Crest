@@ -25,6 +25,15 @@ function prop {
    [ -f "$1" ] | grep -P "^\s*[^#]?${2}=.*$" $1 | cut -d'=' -f2
 }
 
+function load_env_file() {
+   local env_file=$1
+   local key value
+   while IFS='=' read -r key value || [[ -n "$key" ]]; do
+      [[ "$key" =~ ^CREST_[A-Z0-9_]+$ ]] || continue
+      export "${key}=${value}"
+   done < "$env_file"
+}
+
 function check_and_prepare_env_params() {
    log "当前时间 : $(date)"
    log_title "检查安装环境并初始化环境变量"
@@ -35,7 +44,7 @@ function check_and_prepare_env_params() {
       existing_version=$($ctl_cmd version 2>/dev/null | awk '/current version is/{print $4; exit}')
       if [[ ! $existing_version =~ ^v?1\.5\. ]];then
          echo "检测到已安装的 Crest 版本：${existing_version:-unknown}"
-         echo "v1.5.0 面向全新环境安装，不支持从早期开发版本直接原地升级。"
+         echo "v1.5 系列面向全新环境安装，不支持从早期开发版本直接原地升级。"
          echo "请先备份并导出业务资源，再卸载旧环境后执行全新安装。"
          exit 1;
       fi
@@ -63,7 +72,7 @@ function check_and_prepare_env_params() {
       export CREST_BASE=$CREST_BASE_OLD
    fi
    if [[ -d $CREST_BASE ]] && [[ -f $CREST_BASE/crest/.env ]]; then
-      source $CREST_BASE/crest/.env
+      load_env_file "$CREST_BASE/crest/.env"
       INSTALL_TYPE='upgrade'
       log_content "升级安装"
    else
@@ -73,6 +82,20 @@ function check_and_prepare_env_params() {
    fi
    set +a
    CREST_INTERNAL_LITE=${CREST_INTERNAL_LITE:-true}
+   CREST_EXTERNAL_MYSQL=${CREST_EXTERNAL_MYSQL:-false}
+   case "$(echo "$CREST_EXTERNAL_MYSQL" | tr '[:upper:]' '[:lower:]')" in
+      true|1|yes)
+         CREST_EXTERNAL_MYSQL=true
+         ;;
+      false|0|no)
+         CREST_EXTERNAL_MYSQL=false
+         ;;
+      *)
+         echo "CREST_EXTERNAL_MYSQL 只支持 true 或 false"
+         exit 1
+         ;;
+   esac
+   export CREST_EXTERNAL_MYSQL
    CREST_CRYPTO_MODE=${CREST_CRYPTO_MODE:-standard}
    case "$CREST_CRYPTO_MODE" in
       standard|sm-suite) ;;
@@ -82,6 +105,27 @@ function check_and_prepare_env_params() {
          ;;
    esac
    export CREST_CRYPTO_MODE
+
+   CREST_LOAD_DEMO=${CREST_LOAD_DEMO:-true}
+   case "$(echo "$CREST_LOAD_DEMO" | tr '[:upper:]' '[:lower:]')" in
+      true|1|yes)
+         CREST_LOAD_DEMO=true
+         CREST_FLYWAY_LOCATIONS="classpath:db/migration,classpath:db/demo-migration"
+         log_content "初始化内置演示资源"
+         ;;
+      false|0|no)
+         CREST_LOAD_DEMO=false
+         CREST_FLYWAY_LOCATIONS="classpath:db/migration"
+         log_content "跳过内置演示资源"
+         ;;
+      *)
+         echo "CREST_LOAD_DEMO 只支持 true 或 false"
+         exit 1
+         ;;
+   esac
+   export CREST_LOAD_DEMO
+   export CREST_FLYWAY_LOCATIONS
+
    if [[ -z "$CREST_DB_PASSWORD" ]]; then
       CREST_DB_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 32)
       export CREST_DB_PASSWORD
@@ -159,10 +203,13 @@ function prepare_crest_run_base() {
    fi
 
    if [ "${CREST_EXTERNAL_MYSQL}" = "false" ]; then
-      sed -i -e "s/^      CREST_DB_HOST/      ${CREST_DB_HOST}/g" docker-compose.yml
-      sed -i -e "s/^. CREST_DB_HOST/  ${CREST_DB_HOST}/g" docker-compose-mysql.yml
       export CREST_DB_PORT=3306
    else
+      awk '
+         /^  mysql-crest:/ { skip = 1; next }
+         /^  crest:/ { skip = 0 }
+         !skip { print }
+      ' docker-compose.yml > docker-compose.yml.tmp && mv docker-compose.yml.tmp docker-compose.yml
       sed -i -e "/^    depends_on/,+2d" docker-compose.yml
    fi
 

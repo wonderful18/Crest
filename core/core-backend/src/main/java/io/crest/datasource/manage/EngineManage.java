@@ -46,6 +46,9 @@ public class EngineManage {
     @Value("${crest.path.engine:jdbc:h2:/opt/crest/desktop_data;AUTO_SERVER=TRUE;AUTO_RECONNECT=TRUE;MODE=MySQL;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DATABASE_TO_UPPER=FALSE}")
     private String engineUrl;
 
+    @Value("${crest.demo.enabled:true}")
+    private boolean demoEnabled;
+
     public CoreEngine info() throws CrestException {
         List<CoreEngine> engines = engineMapper.selectList(null);
         if (CollectionUtils.isEmpty(engines)) {
@@ -168,6 +171,9 @@ public class EngineManage {
     }
 
     public void initLocalDataSource() {
+        if (!demoEnabled) {
+            return;
+        }
         Matcher matcher = MYSQL_JDBC_PATTERN.matcher(env.getProperty("spring.datasource.url", ""));
         if (!matcher.find()) {
             return;

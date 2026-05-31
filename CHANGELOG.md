@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.5.1 - 2026-06-01
+
+v1.5.1 是 v1.5 系列维护发布，重点整理安装交付、演示资源初始化和公开文档。默认安装仍加载零售经营与研发效能演示资源；生产环境可在安装前关闭。
+
+### 调整
+
+- 内置演示资源迁移到独立目录 `db/demo-migration`，通过 `CREST_LOAD_DEMO` 和 `CREST_FLYWAY_LOCATIONS` 控制是否初始化。
+- 单机安装包、Kubernetes 清单和运行配置模板同步增加演示资源开关。
+- API 文档页改为 Crest OpenAPI，并按当前产品模块整理接口分组。
+- README、安装文档、Kubernetes 文档、开发文档和数据血缘文档补充演示资源开关和清理说明。
+- 安装和运维脚本改为安全读取运行目录 `.env`，避免 JDBC 参数中的 `&` 被 shell 截断。
+- 演示资源脚本不再写死元数据库名，自定义 `CREST_DB_NAME` 的新安装环境可正常初始化。
+
+### 新增
+
+- `cleanup-demo-data.sh`：单机环境演示资源清理入口。
+- `cleanup-demo-data.sql`：固定演示资源和 `crest_demo_retail` 演示库清理 SQL，可按运维流程用于 Kubernetes 环境。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest:v1.5.1`。
+- 默认离线包为 `crest-offline-v1.5.1-linux-amd64.tar.gz` 和 `crest-offline-v1.5.1-linux-arm64.tar.gz`。
+- 生产环境不需要示例数据时，安装前设置 `CREST_LOAD_DEMO=false`。
+- 已加载演示资源的单机环境可执行 `bash cleanup-demo-data.sh --yes` 清理。
+
 ## v1.5.0 - 2026-06-01
 
 Crest v1.5.0 面向企业内网和私有化部署场景发布，提供元数据库初始化、内置演示资源、平台管理、单点登录、审计日志、服务治理和国产密码套件适配能力。v1.5.0 不支持从早期开发版本直接执行 Flyway 原地升级；已有环境请先导出业务资源，再在新环境导入。

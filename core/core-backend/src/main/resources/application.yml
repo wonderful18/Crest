@@ -36,6 +36,8 @@ crest:
   login_timeout: 2880
   internal-lite:
     enabled: true
+  demo:
+    enabled: ${CREST_LOAD_DEMO:true}
   origin-list: http://localhost:8080
   path:
     excel: ${CREST_PATH_EXCEL:/opt/crest/data/excel/}
@@ -54,11 +56,11 @@ mybatis:
 logging:
   file:
     path: ${CREST_LOG_PATH:/opt/crest/logs/crest}
-# sql日志生产环境注释掉
+# 生产环境如需排查 SQL，再临时打开下列配置。
 #mybatis-plus:
 #  configuration:
 #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-# springdoc-openapi项目配置
+# OpenAPI 文档配置。
 springdoc:
   swagger-ui:
     enabled: false
@@ -68,7 +70,7 @@ springdoc:
   api-docs:
     enabled: true
     path: /v3/api-docs
-# knife4j的增强配置，不需要增强可以不配
+# Knife4j 文档界面配置。
 knife4j:
   enable: true
   setting:

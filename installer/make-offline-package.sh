@@ -85,6 +85,7 @@ cp "${INSTALLER_DIR}/LICENSE" "${PACKAGE_DIR}/"
 cp "${INSTALLER_DIR}/README.md" "${PACKAGE_DIR}/"
 cp "${INSTALLER_DIR}/install.conf" "${PACKAGE_DIR}/"
 cp "${INSTALLER_DIR}/install.sh" "${PACKAGE_DIR}/"
+cp "${INSTALLER_DIR}/cleanup-demo-data.sh" "${PACKAGE_DIR}/"
 cp "${INSTALLER_DIR}/uninstall.sh" "${PACKAGE_DIR}/"
 cp "${INSTALLER_DIR}/crestctl" "${PACKAGE_DIR}/"
 cp -R "${INSTALLER_DIR}/crest" "${PACKAGE_DIR}/crest"
@@ -129,6 +130,13 @@ bash install.sh
 - \`CREST_APP_IMAGE\`：Crest 应用镜像，已固定为本包内镜像
 - \`CREST_MYSQL_IMAGE\`：MySQL 镜像，已固定为本包内镜像
 - \`CREST_INITIAL_PASSWORD\`：管理员初始密码；留空时安装脚本会随机生成并在安装完成后输出
+- \`CREST_LOAD_DEMO\`：是否初始化内置演示资源，默认 \`true\`；生产环境不需要示例数据时设为 \`false\`
+
+已加载演示资源的环境可执行：
+
+\`\`\`bash
+bash cleanup-demo-data.sh --yes
+\`\`\`
 
 ## 镜像
 

@@ -21,10 +21,10 @@ public abstract class AbstractChartPlugin {
 
     /**
      * 处理视图的过滤条件，包括联动、跳转、过滤、外部参数、下钻等等。
-     * DE 本身有标准的处理流程将所有的条件处理成统一的过滤列表，如果有额外的条件需要处理可在这边操作，例如子维度下钻。
+     * Crest 会将查询条件整理成统一的过滤列表，如需补充子维度下钻等额外条件，可在这里处理。
      *
      * @param view         视图对象
-     * @param filterList   DE 标准化处理后的过滤条件列表。
+     * @param filterList   标准化处理后的过滤条件列表。
      * @param formatResult 处理后的轴和过程变量，变量放到整个流程上下文中。
      * @param <T>          泛化的返回类型，可继承。
      * @return 处理后的过滤条件列表和过程变量，变量放到整个流程上下文中。
@@ -58,4 +58,3 @@ public abstract class AbstractChartPlugin {
      */
     public abstract ChartViewDTO buildChart(ChartViewDTO view, ChartCalcDataResult calcResult, AxisFormatResult formatResult, CustomFilterResult filterResult);
 }
-

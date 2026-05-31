@@ -41,8 +41,8 @@ public class SwaggerConfig {
         contact.setUrl("https://github.com/sevoniva/Crest");
         return new OpenAPI()
                 .info(new Info()
-                        .title("Crest API")
-                        .description("看见数据，读懂业务")
+                        .title("Crest OpenAPI")
+                        .description("Crest 接口文档，覆盖可视化资源、数据准备、数据血缘、导出中心、系统设置和权限管理。")
                         .termsOfService("https://github.com/sevoniva/Crest")
                         .contact(contact)
                         .version(version));
@@ -51,27 +51,27 @@ public class SwaggerConfig {
 
     @Bean
     public GroupedOpenApi visualizationApi() {
-        return GroupedOpenApi.builder().group("1-visualization").displayName("可视化管理").packagesToScan("io.crest.visualization", "io.crest.share").build();
+        return GroupedOpenApi.builder().group("1-visualization").displayName("仪表盘与数据大屏").packagesToScan("io.crest.visualization", "io.crest.share").build();
     }
 
     @Bean
     public GroupedOpenApi chartApi() {
-        return GroupedOpenApi.builder().group("2-view").displayName("图表管理").packagesToScan("io.crest.chart").build();
+        return GroupedOpenApi.builder().group("2-chart").displayName("图表").packagesToScan("io.crest.chart").build();
     }
 
     @Bean
     public GroupedOpenApi datasetApi() {
-        return GroupedOpenApi.builder().group("3-dataset").displayName("数据集管理").packagesToScan("io.crest.dataset").build();
+        return GroupedOpenApi.builder().group("3-dataset").displayName("数据集").packagesToScan("io.crest.dataset").build();
     }
 
     @Bean
     public GroupedOpenApi dsApi() {
-        return GroupedOpenApi.builder().group("4-datasource").displayName("数据源管理").packagesToScan("io.crest.datasource").build();
+        return GroupedOpenApi.builder().group("4-datasource").displayName("数据源").packagesToScan("io.crest.datasource").build();
     }
 
     @Bean
     public GroupedOpenApi relationApi() {
-        return GroupedOpenApi.builder().group("5-relation").displayName("数据血缘").packagesToScan("io.crest.relation").build();
+        return GroupedOpenApi.builder().group("5-lineage").displayName("数据血缘").packagesToScan("io.crest.relation").build();
     }
 
     @Bean
@@ -86,17 +86,17 @@ public class SwaggerConfig {
                 "io.crest.font",
                 "io.crest.menu",
         };
-        return GroupedOpenApi.builder().group("7-system").displayName("系统管理").packagesToScan(packageArray).build();
+        return GroupedOpenApi.builder().group("7-system").displayName("系统设置").packagesToScan(packageArray).build();
     }
 
     @Bean
     public GroupedOpenApi baseApi() {
-        return GroupedOpenApi.builder().group("8-base").displayName("基础功能").packagesToScan("io.crest.base", "io.crest.resource").build();
+        return GroupedOpenApi.builder().group("8-foundation").displayName("基础能力").packagesToScan("io.crest.base", "io.crest.resource").build();
     }
 
     @Bean
     public GroupedOpenApi systemApi() {
-        return GroupedOpenApi.builder().group("9-permission").displayName("权限管理").packagesToScan("io.crest.substitute.permissions").build();
+        return GroupedOpenApi.builder().group("9-access-control").displayName("权限管理").packagesToScan("io.crest.substitute.permissions").build();
     }
 
     @Bean

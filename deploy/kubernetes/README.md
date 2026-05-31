@@ -34,7 +34,7 @@ deploy/kubernetes
 默认应用镜像：
 
 ```text
-ghcr.io/sevoniva/crest:v1.5.0
+ghcr.io/sevoniva/crest:v1.5.1
 ```
 
 应用镜像以 Alpine 为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime。容器以固定非 root 用户运行：
@@ -66,6 +66,8 @@ docker build -t ghcr.io/sevoniva/crest:main .
 | 配置项 | 说明 |
 | --- | --- |
 | `CREST_CONTEXT_PATH` | 应用上下文路径，默认空 |
+| `CREST_LOAD_DEMO` | 是否初始化内置演示资源，默认 `true` |
+| `CREST_FLYWAY_LOCATIONS` | Flyway 执行目录；关闭演示资源时设为 `classpath:db/migration` |
 | `CREST_DB_HOST` | MySQL 地址 |
 | `CREST_DB_PORT` | MySQL 端口 |
 | `CREST_DB_NAME` | 元数据库名 |
@@ -228,13 +230,33 @@ kubectl -n crest-internal describe pod -l app.kubernetes.io/name=crest
 - `/v3/api-docs` 在未登录时返回受保护状态，登录或放行接口文档后可正常读取；
 - 使用 `CREST_INITIAL_PASSWORD` 配置的初始管理员密码可以登录；
 - `crest_schema_version` 最新迁移成功；
-- 初始状态包含零售经营和研发效能演示数据源、数据集、图表和数据大屏；
+- 启用 `CREST_LOAD_DEMO` 时，初始状态包含零售经营和研发效能演示数据源、数据集、图表和数据大屏；
 - 工作台、数据源、数据集、仪表盘、数据大屏、数据血缘、系统设置和导出中心能打开；
 - 应用日志没有持续的 `WARN`、`ERROR` 或 `Exception`。
 
+## 内置演示资源
+
+Kubernetes 清单默认加载内置演示资源。如需安装纯净环境，部署前在对应 `kustomization.yaml` 中设置：
+
+```yaml
+configMapGenerator:
+  - name: crest-env
+    literals:
+      - CREST_LOAD_DEMO=false
+      - CREST_FLYWAY_LOCATIONS=classpath:db/migration
+```
+
+已加载演示资源的环境需要先把以上两个配置改好并重启应用，再在元数据库中执行：
+
+```text
+installer/crest/bin/mysql/cleanup-demo-data.sql
+```
+
+执行前请先备份元数据库；脚本只删除固定演示资源 ID 和 `crest_demo_retail` 演示库。
+
 ## 迁移和同发布线升级
 
-v1.5.0 面向全新环境安装，不支持从早期开发版本直接执行 Flyway 原地升级。已有早期环境迁移到 v1.5.0 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
+v1.5.1 面向全新环境安装，不支持从早期开发版本直接执行 Flyway 原地升级。已有早期环境迁移到 v1.5.1 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
 
 同一发布线的小版本升级前：
 
@@ -246,7 +268,7 @@ v1.5.0 面向全新环境安装，不支持从早期开发版本直接执行 Fly
 确认 release notes 明确支持原地升级后，更新镜像：
 
 ```bash
-kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest:v1.5.0
+kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest:v1.5.1
 kubectl -n crest-internal rollout status deployment/crest --timeout=300s
 ```
 

@@ -20,7 +20,7 @@ data:
         enabled: true
         table: crest_schema_version
         validate-on-migrate: false
-        locations: classpath:db/migration
+        locations: ${CREST_FLYWAY_LOCATIONS:classpath:db/migration,classpath:db/demo-migration}
         baseline-on-migrate: true
         out-of-order: false
 
@@ -36,6 +36,8 @@ data:
     crest:
       internal-lite:
         enabled: true
+      demo:
+        enabled: ${CREST_LOAD_DEMO:true}
       origin-list: ${CREST_ORIGIN_LIST:http://localhost:8100}
       login_timeout: ${CREST_LOGIN_TIMEOUT:960}
       path:

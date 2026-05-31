@@ -768,7 +768,7 @@ CREATE TABLE `plugin_registry` (
   `flag` varchar(255) NOT NULL COMMENT '类型',
   `developer` varchar(255) NOT NULL COMMENT '开发者',
   `config` longtext NOT NULL COMMENT '插件配置',
-  `require_version` varchar(255) NOT NULL COMMENT 'DE最低版本',
+  `require_version` varchar(255) NOT NULL COMMENT 'Crest 最低版本',
   `module_name` varchar(255) NOT NULL COMMENT '模块名称',
   `jar_name` varchar(255) NOT NULL COMMENT 'Jar包名称',
   PRIMARY KEY (`id`)

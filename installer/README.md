@@ -8,6 +8,7 @@
 | --- | --- |
 | `install.sh` | 安装和同发布线升级入口 |
 | `install.conf` | 安装配置模板 |
+| `cleanup-demo-data.sh` | 内置演示资源清理脚本 |
 | `uninstall.sh` | 卸载脚本 |
 | `crestctl` | 安装后的运维控制命令 |
 | `crest/docker-compose.yml` | Crest 应用容器模板 |
@@ -68,8 +69,10 @@ CREST_EXTERNAL_SYNC_TASK=false
 | --- | --- | --- |
 | `CREST_BASE` | `/opt` | 安装基目录，实际运行目录为 `${CREST_BASE}/crest` |
 | `CREST_PORT` | `8100` | Web 访问端口 |
-| `CREST_APP_IMAGE` | `ghcr.io/sevoniva/crest:v1.5.0` | Crest 应用镜像 |
+| `CREST_APP_IMAGE` | `ghcr.io/sevoniva/crest:v1.5.1` | Crest 应用镜像 |
 | `CREST_MYSQL_IMAGE` | `mysql:8.4.5` | MySQL 镜像 |
+| `CREST_LOAD_DEMO` | `true` | 是否初始化内置演示资源；生产环境不需要示例数据时设为 `false` |
+| `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部 MySQL；默认安装内置 MySQL 容器 |
 | `CREST_DB_NAME` | `crest` | 元数据库名 |
 | `CREST_DB_USERNAME` | `root` | MySQL 用户 |
 | `CREST_DB_PASSWORD` | 空 | 留空时安装脚本自动生成 |
@@ -92,12 +95,13 @@ bash install.sh
 1. 读取 `install.conf`；
 2. 创建运行目录；
 3. 生成缺省密码和加密参数；
-4. 复制配置模板；
-5. 安装或复用 Docker 与 Docker Compose；
-6. 加载 `images/` 中的离线镜像，如果目录不存在则从镜像仓库拉取；
-7. 注册 `crest.service`；
-8. 启动服务；
-9. 输出访问地址、账号和初始密码。
+4. 根据 `CREST_LOAD_DEMO` 决定是否加载内置演示资源；
+5. 复制配置模板；
+6. 安装或复用 Docker 与 Docker Compose；
+7. 加载 `images/` 中的离线镜像，如果目录不存在则从镜像仓库拉取；
+8. 注册 `crest.service`；
+9. 启动服务；
+10. 输出访问地址、账号和初始密码。
 
 默认账号：
 
@@ -129,7 +133,7 @@ crestctl version
 
 ## 迁移和同发布线升级
 
-v1.5.0 面向全新环境安装，不支持从早期开发版本直接原地升级。已有早期环境迁移到 v1.5.0 时，请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
+v1.5.1 面向全新环境安装，不支持从早期开发版本直接原地升级。已有早期环境迁移到 v1.5.1 时，请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
 
 同一发布线的小版本升级前：
 
@@ -158,13 +162,29 @@ docker logs crest --tail 200
 - 登录、工作台、数据源、数据集、仪表盘、数据大屏、数据血缘和导出中心可打开；
 - 日志中没有持续的 `ERROR` 或 `Exception`。
 
+## 内置演示资源
+
+默认安装会加载零售经营和研发效能演示资源，便于验证数据源、数据集、图表、大屏和数据血缘链路。生产环境不需要示例数据时，安装前在 `install.conf` 中关闭：
+
+```bash
+CREST_LOAD_DEMO=false
+```
+
+已加载演示资源的环境可执行清理脚本：
+
+```bash
+bash cleanup-demo-data.sh --yes
+```
+
+脚本会删除固定演示资源 ID、`crest_demo_retail` 演示库，并把运行配置改为后续不再初始化演示资源。执行前建议先备份元数据库。
+
 ## 离线包制作
 
 发布包按 CPU 架构分别制作：
 
 ```bash
-bash make-offline-package.sh v1.5.0 linux-amd64
-bash make-offline-package.sh v1.5.0 linux-arm64
+bash make-offline-package.sh v1.5.1 linux-amd64
+bash make-offline-package.sh v1.5.1 linux-arm64
 ```
 
 默认输出目录：
@@ -176,25 +196,25 @@ bash make-offline-package.sh v1.5.0 linux-arm64
 正式包名：
 
 ```text
-crest-offline-v1.5.0-linux-amd64.tar.gz
-crest-offline-v1.5.0-linux-arm64.tar.gz
+crest-offline-v1.5.1-linux-amd64.tar.gz
+crest-offline-v1.5.1-linux-arm64.tar.gz
 ```
 
 制作前需要本机已有对应架构镜像：
 
 ```text
-ghcr.io/sevoniva/crest:v1.5.0-amd64
-ghcr.io/sevoniva/crest:v1.5.0-arm64
+ghcr.io/sevoniva/crest:v1.5.1-amd64
+ghcr.io/sevoniva/crest:v1.5.1-arm64
 mysql:8.4.5
 ```
 
 也可以通过环境变量指定来源镜像：
 
 ```bash
-SOURCE_APP_IMAGE=ghcr.io/sevoniva/crest:v1.5.0-amd64 \
-APP_IMAGE=ghcr.io/sevoniva/crest:v1.5.0-amd64 \
+SOURCE_APP_IMAGE=ghcr.io/sevoniva/crest:v1.5.1-amd64 \
+APP_IMAGE=ghcr.io/sevoniva/crest:v1.5.1-amd64 \
 MYSQL_IMAGE=mysql:8.4.5 \
-bash make-offline-package.sh v1.5.0 linux-amd64
+bash make-offline-package.sh v1.5.1 linux-amd64
 ```
 
 脚本会校验应用镜像和 MySQL 镜像架构，架构不一致会直接停止。
@@ -204,8 +224,8 @@ bash make-offline-package.sh v1.5.0 linux-amd64
 在目标服务器执行：
 
 ```bash
-tar -zxf crest-offline-v1.5.0-linux-amd64.tar.gz
-cd crest-offline-v1.5.0-linux-amd64
+tar -zxf crest-offline-v1.5.1-linux-amd64.tar.gz
+cd crest-offline-v1.5.1-linux-amd64
 vi install.conf
 bash install.sh
 ```

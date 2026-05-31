@@ -8,9 +8,16 @@ compose_files="-f docker-compose.yml"
 compose_cmd="docker-compose"
 current_version=""
 
-set -a
-source ${CREST_RUNNING_BASE}/.env
-set +a
+function load_env_file() {
+   local env_file=$1
+   local key value
+   while IFS='=' read -r key value || [[ -n "$key" ]]; do
+      [[ "$key" =~ ^CREST_[A-Z0-9_]+$ ]] || continue
+      export "${key}=${value}"
+   done < "$env_file"
+}
+
+load_env_file ${CREST_RUNNING_BASE}/.env
 export COMPOSE_HTTP_TIMEOUT=180
 CREST_INTERNAL_LITE=${CREST_INTERNAL_LITE:-true}
 
@@ -18,10 +25,6 @@ if docker-compose version >/dev/null 2>&1; then
    compose_cmd="docker-compose"
 elif docker compose version >/dev/null 2>&1; then
    compose_cmd="docker compose"
-fi
-
-if [[ ! ${CREST_EXTERNAL_MYSQL} ]] || [ "${CREST_EXTERNAL_MYSQL}" = "false" ]; then
-  compose_files="${compose_files} -f docker-compose-mysql.yml"
 fi
 
 function usage() {
