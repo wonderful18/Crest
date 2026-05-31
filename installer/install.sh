@@ -35,7 +35,7 @@ function check_and_prepare_env_params() {
       existing_version=$($ctl_cmd version 2>/dev/null | awk '/current version is/{print $4; exit}')
       if [[ ! $existing_version =~ ^v?1\.5\. ]];then
          echo "检测到已安装的 Crest 版本：${existing_version:-unknown}"
-         echo "v1.5.0 是全新安装基线，不支持从早期开发版本直接原地升级。"
+         echo "v1.5.0 面向全新环境安装，不支持从早期开发版本直接原地升级。"
          echo "请先备份并导出业务资源，再卸载旧环境后执行全新安装。"
          exit 1;
       fi

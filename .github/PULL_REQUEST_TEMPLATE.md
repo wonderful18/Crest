@@ -24,6 +24,6 @@ mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -Dskip
 
 - [ ] 没有提交 `.env`、密码、token、私钥、证书、备份、日志、离线包或真实业务数据。
 - [ ] 文档已按实际行为更新。
-- [ ] 数据库迁移脚本没有直接修改已发布基线。
+- [ ] 数据库迁移脚本没有直接修改已发布初始化脚本。
 - [ ] UI 改动已检查常用分辨率。
 - [ ] 提交信息清楚，便于回溯。

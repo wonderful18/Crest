@@ -13,7 +13,7 @@
 
 ## 明确不做
 
-本次治理不做旧 DataEase/DE API、旧环境变量、旧数据库表名或旧前端路由的兼容层。迁移完成后，旧名称应从运行路径中消失。例外仅限：
+本轮治理不做旧 DataEase/DE API、旧环境变量、旧数据库表名或旧前端路由的兼容层。迁移完成后，旧名称应从运行路径中消失。例外仅限：
 
 - `LICENSE`、版权声明、README 中对上游 DataEase 来源的合规说明；
 - Quartz 等第三方框架自带表名；
@@ -269,7 +269,7 @@ cd core/core-frontend && pnpm run build:base
 最终合并前必须满足：
 
 - `scripts/governance/scan-service-governance.sh --strict` 通过；
-- 后端测试通过；
+- 后端构建和必要测试通过；
 - 前端构建通过；
 - 空库 Flyway 首次初始化通过；
 - 已有本地库升级迁移通过；
