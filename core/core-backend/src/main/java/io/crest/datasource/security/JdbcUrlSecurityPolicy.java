@@ -1,7 +1,7 @@
 package io.crest.datasource.security;
 
 import io.crest.datasource.dao.auto.entity.CoreDriver;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
@@ -101,20 +101,20 @@ public final class JdbcUrlSecurityPolicy {
 
     public static String validate(String type, String jdbcUrl, String extraParams) {
         if (StringUtils.isBlank(jdbcUrl)) {
-            DEException.throwException("Illegal jdbcUrl: " + jdbcUrl);
+            CrestException.throwException("Illegal jdbcUrl: " + jdbcUrl);
         }
         String normalizedType = normalizeType(type);
         String normalizedUrl = canonicalize(jdbcUrl);
         String normalizedExtraParams = canonicalize(extraParams);
         String expectedPrefix = JDBC_PREFIXES.get(normalizedType);
         if (StringUtils.isBlank(expectedPrefix) || !normalizedUrl.startsWith(expectedPrefix)) {
-            DEException.throwException("Illegal jdbcUrl: " + jdbcUrl);
+            CrestException.throwException("Illegal jdbcUrl: " + jdbcUrl);
         }
         Set<String> dangerousFragments = new LinkedHashSet<>(COMMON_DANGEROUS_FRAGMENTS);
         dangerousFragments.addAll(TYPE_DANGEROUS_FRAGMENTS.getOrDefault(normalizedType, Set.of()));
         for (String fragment : dangerousFragments) {
             if (normalizedUrl.contains(fragment) || normalizedExtraParams.contains(fragment)) {
-                DEException.throwException("Illegal parameter: " + fragment);
+                CrestException.throwException("Illegal parameter: " + fragment);
             }
         }
         return jdbcUrl;
@@ -123,7 +123,7 @@ public final class JdbcUrlSecurityPolicy {
     public static String trustedDriverClass(String type) {
         String driverClass = DEFAULT_DRIVERS.get(normalizeType(type));
         if (StringUtils.isBlank(driverClass)) {
-            DEException.throwException("invalid driver");
+            CrestException.throwException("invalid driver");
         }
         return driverClass;
     }
@@ -133,13 +133,13 @@ public final class JdbcUrlSecurityPolicy {
             if (registeredDriver == null
                     || StringUtils.isBlank(registeredDriver.getDriverClass())
                     || !Strings.CI.equals(normalizeType(type), normalizeType(registeredDriver.getType()))) {
-                DEException.throwException("invalid driver");
+                CrestException.throwException("invalid driver");
             }
             return registeredDriver.getDriverClass();
         }
         String trustedDriverClass = trustedDriverClass(type);
         if (StringUtils.isNotBlank(requestedDriverClass) && !Strings.CI.equals(requestedDriverClass, trustedDriverClass)) {
-            DEException.throwException("invalid driver");
+            CrestException.throwException("invalid driver");
         }
         return trustedDriverClass;
     }

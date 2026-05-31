@@ -75,98 +75,98 @@ export const CANVAS_MATERIAL = [
     ]
   },
   // {
-  //   category: 'DeDecoration',
+  //   category: 'Decoration',
   //   title: t('visualization.decoration'),
   //   span: 8,
   //   details: [
   //     {
-  //       value: 'DeDecoration1',
-  //       type: 'de_decoration',
+  //       value: 'Decoration1',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [1]),
-  //       icon: 'DeDecoration1'
+  //       icon: 'Decoration1'
   //     },
   //     {
-  //       value: 'DeDecoration2',
-  //       type: 'de_decoration',
+  //       value: 'Decoration2',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [2]),
-  //       icon: 'DeDecoration2'
+  //       icon: 'Decoration2'
   //     },
   //     {
-  //       value: 'DeDecoration3',
-  //       type: 'de_decoration',
+  //       value: 'Decoration3',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [3]),
-  //       icon: 'DeDecoration3'
+  //       icon: 'Decoration3'
   //     },
   //     {
-  //       value: 'DeDecoration4',
-  //       type: 'de_decoration',
+  //       value: 'Decoration4',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [4]),
-  //       icon: 'DeDecoration4'
+  //       icon: 'Decoration4'
   //     },
   //     {
-  //       value: 'DeDecoration5',
-  //       type: 'de_decoration',
+  //       value: 'Decoration5',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [5]),
-  //       icon: 'DeDecoration5'
+  //       icon: 'Decoration5'
   //     },
   //     {
-  //       value: 'DeBoard1',
-  //       type: 'de_decoration',
+  //       value: 'DecorationBoard1',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [6]),
-  //       icon: 'DeBoard1'
+  //       icon: 'DecorationBoard1'
   //     },
   //     {
-  //       value: 'DeBoard2',
-  //       type: 'de_decoration',
+  //       value: 'DecorationBoard2',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [7]),
-  //       icon: 'DeBoard2'
+  //       icon: 'DecorationBoard2'
   //     },
   //     {
-  //       value: 'DeBoard3',
-  //       type: 'de_decoration',
+  //       value: 'DecorationBoard3',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [8]),
-  //       icon: 'DeBoard3'
+  //       icon: 'DecorationBoard3'
   //     },
   //     {
-  //       value: 'DeBoard4',
-  //       type: 'de_decoration',
+  //       value: 'DecorationBoard4',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [9]),
-  //       icon: 'DeBoard4'
+  //       icon: 'DecorationBoard4'
   //     },
   //     {
-  //       value: 'DeBoard5',
-  //       type: 'de_decoration',
+  //       value: 'DecorationBoard5',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [10]),
-  //       icon: 'DeBoard5'
+  //       icon: 'DecorationBoard5'
   //     },
   //     {
-  //       value: 'DeBoard6',
-  //       type: 'de_decoration',
+  //       value: 'DecorationBoard6',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [11]),
-  //       icon: 'DeBoard6'
+  //       icon: 'DecorationBoard6'
   //     },
   //     {
-  //       value: 'DeBoard7',
-  //       type: 'de_decoration',
+  //       value: 'DecorationBoard7',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [12]),
-  //       icon: 'DeBoard7'
+  //       icon: 'DecorationBoard7'
   //     },
   //     {
-  //       value: 'DeBoard8',
-  //       type: 'de_decoration',
+  //       value: 'DecorationBoard8',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [13]),
-  //       icon: 'DeBoard8'
+  //       icon: 'DecorationBoard8'
   //     },
   //     {
-  //       value: 'DeBoard10',
-  //       type: 'de_decoration',
+  //       value: 'DecorationBoard10',
+  //       type: 'decoration',
   //       title: t('visualization.decoration_name', [14]),
-  //       icon: 'DeBoard10'
+  //       icon: 'DecorationBoard10'
   //     }
   //   ]
   // },
   {
-    category: 'DeGraphical',
+    category: 'Graphical',
     title: t('visualization.graphic'),
     span: 8,
     details: [

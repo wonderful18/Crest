@@ -365,7 +365,7 @@ span {
 }
 
 .label-dark {
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   font-style: normal;
   font-weight: 400;
   line-height: 20px;

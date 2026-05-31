@@ -2,7 +2,7 @@ package io.crest.exportCenter.manage;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.crest.api.chart.dto.DeSortField;
+import io.crest.api.chart.dto.ChartSortFieldDTO;
 import io.crest.api.chart.dto.ViewDetailField;
 import io.crest.api.chart.request.ChartExcelRequest;
 import io.crest.api.chart.request.ChartExcelRequestInner;
@@ -15,7 +15,7 @@ import io.crest.auth.bo.TokenUserBO;
 import io.crest.chart.dao.auto.mapper.CoreChartViewMapper;
 import io.crest.chart.server.ChartDataServer;
 import io.crest.commons.utils.ExcelWatermarkUtils;
-import io.crest.constant.DeTypeConstants;
+import io.crest.constant.FieldTypeConstants;
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
 import io.crest.dataset.dao.auto.entity.CoreDatasetGroup;
@@ -25,7 +25,7 @@ import io.crest.datasource.utils.DatasourceUtils;
 import io.crest.engine.sql.SQLProvider;
 import io.crest.engine.trans.*;
 import io.crest.engine.utils.Utils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.exportCenter.dao.auto.entity.CoreExportTask;
 import io.crest.exportCenter.dao.auto.mapper.CoreExportTaskMapper;
 import io.crest.exportCenter.util.ExportCenterUtils;
@@ -41,7 +41,7 @@ import io.crest.extensions.view.dto.ChartViewFieldDTO;
 import io.crest.extensions.view.dto.ColumnPermissionItem;
 import io.crest.extensions.view.dto.DatasetRowPermissionsTreeObj;
 import io.crest.i18n.Translator;
-import io.crest.log.DeLog;
+import io.crest.log.CrestAudit;
 import io.crest.model.ExportTaskDTO;
 import io.crest.utils.*;
 import io.crest.visualization.dao.auto.entity.VisualizationWatermark;
@@ -157,7 +157,7 @@ public class ExportCenterDownLoadManage {
         }
     }
 
-    @DeLog(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.DATASET)
+    @CrestAudit(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.DATASET)
     public void startDatasetTask(CoreExportTask exportTask, DataSetExportRequest request) {
         File directory = prepareTaskDirectory(exportTask.getId());
         String dataPath = directory.getAbsolutePath();
@@ -182,22 +182,22 @@ public class ExportCenterDownLoadManage {
                 List<DatasetTableFieldDTO> allFields = dsFields.stream().map(ele -> {
                     DatasetTableFieldDTO datasetTableFieldDTO = new DatasetTableFieldDTO();
                     BeanUtils.copyBean(datasetTableFieldDTO, ele);
-                    datasetTableFieldDTO.setFieldShortName(ele.getDataeaseName());
+                    datasetTableFieldDTO.setFieldShortName(ele.getEngineFieldName());
                     return datasetTableFieldDTO;
                 }).collect(Collectors.toList());
-                DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.getDatasetGroupInfoDTO(request.getId(), null);
+                DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTO(request.getId(), null);
                 Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null);
                 if (sqlMap == null || StringUtils.isBlank((String) sqlMap.get("sql"))) {
-                    DEException.throwException("数据集配置不完整，无法导出");
+                    CrestException.throwException("数据集配置不完整，无法导出");
                 }
                 String sql = (String) sqlMap.get("sql");
                 if (ObjectUtils.isEmpty(allFields)) {
-                    DEException.throwException(Translator.get("i18n_no_fields"));
+                    CrestException.throwException(Translator.get("i18n_no_fields"));
                 }
                 Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
                 allFields = permissionManage.filterColumnPermissions(allFields, desensitizationList, dto.getId(), null);
                 if (ObjectUtils.isEmpty(allFields)) {
-                    DEException.throwException(Translator.get("i18n_no_column_permission"));
+                    CrestException.throwException(Translator.get("i18n_no_column_permission"));
                 }
                 dto.setAllFields(allFields);
                 datasetDataManage.buildFieldName(sqlMap, allFields);
@@ -211,7 +211,7 @@ public class ExportCenterDownLoadManage {
                 boolean crossDs = dto.getIsCross();
                 if (!crossDs) {
                     if (datasetDataManage.notFullDs.contains(dsMap.entrySet().iterator().next().getValue().getType()) && (boolean) sqlMap.get("isFullJoin")) {
-                        DEException.throwException(Translator.get("i18n_not_full"));
+                        CrestException.throwException(Translator.get("i18n_not_full"));
                     }
                     sql = Utils.replaceSchemaAlias(sql, dsMap);
                 }
@@ -239,10 +239,10 @@ public class ExportCenterDownLoadManage {
                 Table2SQLObj.table2sqlobj(sqlMeta, null, "(" + sql + ")", crossDs);
                 Field2SQLObj.field2sqlObj(sqlMeta, allFields, allFields, crossDs, dsMap, Utils.getParams(allFields), null, pluginManage);
                 WhereTree2Str.transFilterTrees(sqlMeta, rowPermissionsTree, allFields, crossDs, dsMap, Utils.getParams(allFields), null, pluginManage);
-                List<DeSortField> sortFields = new ArrayList<>();
+                List<ChartSortFieldDTO> sortFields = new ArrayList<>();
                 for (DatasetTableFieldDTO field : allFields) {
                     if (field.getOrderChecked()) {
-                        DeSortField sortField = new DeSortField();
+                        ChartSortFieldDTO sortField = new ChartSortFieldDTO();
                         BeanUtils.copyBean(sortField, field);
                         sortField.setOrderDirection("asc");
                         sortFields.add(sortField);
@@ -251,7 +251,7 @@ public class ExportCenterDownLoadManage {
                 dto.setSortFields(sortFields);
                 DatasetOrder2SQLObj.getOrders(sqlMeta, dto.getSortFields(), allFields);
                 String replaceSql = provider.rebuildSQL(SQLProvider.createQuerySQL(sqlMeta, false, false, false), sqlMeta, crossDs, dsMap);
-                Long totalCount = datasetDataManage.getDatasetTotal(dto, replaceSql, null);
+                Long totalCount = datasetDataManage.datasetTotal(dto, replaceSql, null);
                 Long curLimit = ExportCenterUtils.getExportLimit("dataset");
                 totalCount = totalCount > curLimit ? curLimit : totalCount;
 
@@ -298,7 +298,7 @@ public class ExportCenterDownLoadManage {
                             for (Map<String, Object> obj : data) {
                                 List<String> row = new ArrayList<>();
                                 for (DatasetTableFieldDTO field : allFields) {
-                                    String string = (String) obj.get(field.getDataeaseName());
+                                    String string = (String) obj.get(field.getEngineFieldName());
                                     row.add(string);
                                 }
                                 details.add(row);
@@ -315,7 +315,7 @@ public class ExportCenterDownLoadManage {
                                                 cell.setCellStyle(cellStyle);
                                                 detailsSheet.setColumnWidth(j, 255 * 20);
                                             } else {
-                                                if ((allFields.get(j).getDeType().equals(DeTypeConstants.DE_INT) || allFields.get(j).getDeType() == DeTypeConstants.DE_FLOAT) && StringUtils.isNotEmpty(rowData.get(j))) {
+                                                if ((allFields.get(j).getFieldType().equals(FieldTypeConstants.INTEGER) || allFields.get(j).getFieldType() == FieldTypeConstants.FLOAT) && StringUtils.isNotEmpty(rowData.get(j))) {
                                                     try {
                                                         cell.setCellValue(Double.valueOf(rowData.get(j)));
                                                     } catch (Exception e) {
@@ -334,7 +334,7 @@ public class ExportCenterDownLoadManage {
                             for (Map<String, Object> obj : data) {
                                 List<String> row = new ArrayList<>();
                                 for (DatasetTableFieldDTO field : allFields) {
-                                    String string = (String) obj.get(field.getDataeaseName());
+                                    String string = (String) obj.get(field.getEngineFieldName());
                                     row.add(string);
                                 }
                                 details.add(row);
@@ -346,7 +346,7 @@ public class ExportCenterDownLoadManage {
                                 if (rowData != null) {
                                     for (int j = 0; j < rowData.size(); j++) {
                                         Cell cell = row.createCell(j);
-                                        if ((allFields.get(j).getDeType().equals(DeTypeConstants.DE_INT) || allFields.get(j).getDeType() == DeTypeConstants.DE_FLOAT) && StringUtils.isNotEmpty(rowData.get(j))) {
+                                        if ((allFields.get(j).getFieldType().equals(FieldTypeConstants.INTEGER) || allFields.get(j).getFieldType() == FieldTypeConstants.FLOAT) && StringUtils.isNotEmpty(rowData.get(j))) {
                                             try {
                                                 cell.setCellValue(Double.valueOf(rowData.get(j)));
                                             } catch (Exception e) {
@@ -389,12 +389,12 @@ public class ExportCenterDownLoadManage {
         Running_Task.put(exportTask.getId(), future);
     }
 
-    @DeLog(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.PANEL)
+    @CrestAudit(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.PANEL)
     public void startPanelViewTask(CoreExportTask exportTask, ChartExcelRequest request) {
         startViewTask(exportTask, request);
     }
 
-    @DeLog(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.SCREEN)
+    @CrestAudit(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.SCREEN)
     public void startDataVViewTask(CoreExportTask exportTask, ChartExcelRequest request) {
         startViewTask(exportTask, request);
     }
@@ -598,12 +598,12 @@ public class ExportCenterDownLoadManage {
         File directory = new File(exportData_path, taskId);
         if (directory.exists()) {
             if (!directory.isDirectory()) {
-                DEException.throwException("导出目录被文件占用: " + directory.getAbsolutePath());
+                CrestException.throwException("导出目录被文件占用: " + directory.getAbsolutePath());
             }
             return directory;
         }
         if (!directory.mkdirs() && !directory.isDirectory()) {
-            DEException.throwException("导出目录创建失败: " + directory.getAbsolutePath());
+            CrestException.throwException("导出目录创建失败: " + directory.getAbsolutePath());
         }
         return directory;
     }
@@ -643,7 +643,7 @@ public class ExportCenterDownLoadManage {
         }
     }
 
-    @DeLog(id = "#p0.id", ot = LogOT.EXPORT, st = LogST.DATASET)
+    @CrestAudit(id = "#p0.id", ot = LogOT.EXPORT, st = LogST.DATASET)
     public void downloadDataset(DataSetExportRequest request, HttpServletResponse response) throws Exception {
         OutputStream outputStream = response.getOutputStream();
         try {
@@ -661,22 +661,22 @@ public class ExportCenterDownLoadManage {
             List<DatasetTableFieldDTO> allFields = dsFields.stream().map(ele -> {
                 DatasetTableFieldDTO datasetTableFieldDTO = new DatasetTableFieldDTO();
                 BeanUtils.copyBean(datasetTableFieldDTO, ele);
-                datasetTableFieldDTO.setFieldShortName(ele.getDataeaseName());
+                datasetTableFieldDTO.setFieldShortName(ele.getEngineFieldName());
                 return datasetTableFieldDTO;
             }).collect(Collectors.toList());
-            DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.getDatasetGroupInfoDTO(request.getId(), null);
+            DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTO(request.getId(), null);
             Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null);
             if (sqlMap == null || StringUtils.isBlank((String) sqlMap.get("sql"))) {
-                DEException.throwException("数据集配置不完整，无法导出");
+                CrestException.throwException("数据集配置不完整，无法导出");
             }
             String sql = (String) sqlMap.get("sql");
             if (ObjectUtils.isEmpty(allFields)) {
-                DEException.throwException(Translator.get("i18n_no_fields"));
+                CrestException.throwException(Translator.get("i18n_no_fields"));
             }
             Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
             allFields = permissionManage.filterColumnPermissions(allFields, desensitizationList, dto.getId(), null);
             if (ObjectUtils.isEmpty(allFields)) {
-                DEException.throwException(Translator.get("i18n_no_column_permission"));
+                CrestException.throwException(Translator.get("i18n_no_column_permission"));
             }
             dto.setAllFields(allFields);
             datasetDataManage.buildFieldName(sqlMap, allFields);
@@ -690,7 +690,7 @@ public class ExportCenterDownLoadManage {
             boolean crossDs = dto.getIsCross();
             if (!crossDs) {
                 if (datasetDataManage.notFullDs.contains(dsMap.entrySet().iterator().next().getValue().getType()) && (boolean) sqlMap.get("isFullJoin")) {
-                    DEException.throwException(Translator.get("i18n_not_full"));
+                    CrestException.throwException(Translator.get("i18n_not_full"));
                 }
                 sql = Utils.replaceSchemaAlias(sql, dsMap);
             }
@@ -720,7 +720,7 @@ public class ExportCenterDownLoadManage {
             WhereTree2Str.transFilterTrees(sqlMeta, rowPermissionsTree, allFields, crossDs, dsMap, Utils.getParams(allFields), null, pluginManage);
             Order2SQLObj.getOrders(sqlMeta, dto.getSortFields(), allFields, crossDs, dsMap, Utils.getParams(allFields), null, pluginManage);
             String replaceSql = provider.rebuildSQL(SQLProvider.createQuerySQL(sqlMeta, false, false, false), sqlMeta, crossDs, dsMap);
-            Long totalCount = datasetDataManage.getDatasetTotal(dto, replaceSql, null);
+            Long totalCount = datasetDataManage.datasetTotal(dto, replaceSql, null);
             Long curLimit = ExportCenterUtils.getExportLimit("dataset");
             totalCount = totalCount > curLimit ? curLimit : totalCount;
 
@@ -767,7 +767,7 @@ public class ExportCenterDownLoadManage {
                         for (Map<String, Object> obj : data) {
                             List<String> row = new ArrayList<>();
                             for (DatasetTableFieldDTO field : allFields) {
-                                String string = (String) obj.get(field.getDataeaseName());
+                                String string = (String) obj.get(field.getEngineFieldName());
                                 row.add(string);
                             }
                             details.add(row);
@@ -784,7 +784,7 @@ public class ExportCenterDownLoadManage {
                                             cell.setCellStyle(cellStyle);
                                             detailsSheet.setColumnWidth(j, 255 * 20);
                                         } else {
-                                            if ((allFields.get(j).getDeType().equals(DeTypeConstants.DE_INT) || allFields.get(j).getDeType() == DeTypeConstants.DE_FLOAT) && StringUtils.isNotEmpty(rowData.get(j))) {
+                                            if ((allFields.get(j).getFieldType().equals(FieldTypeConstants.INTEGER) || allFields.get(j).getFieldType() == FieldTypeConstants.FLOAT) && StringUtils.isNotEmpty(rowData.get(j))) {
                                                 try {
                                                     cell.setCellValue(Double.valueOf(rowData.get(j)));
                                                 } catch (Exception e) {
@@ -803,7 +803,7 @@ public class ExportCenterDownLoadManage {
                         for (Map<String, Object> obj : data) {
                             List<String> row = new ArrayList<>();
                             for (DatasetTableFieldDTO field : allFields) {
-                                String string = (String) obj.get(field.getDataeaseName());
+                                String string = (String) obj.get(field.getEngineFieldName());
                                 row.add(string);
                             }
                             details.add(row);
@@ -820,7 +820,7 @@ public class ExportCenterDownLoadManage {
                                         cell.setCellStyle(cellStyle);
                                         detailsSheet.setColumnWidth(j, 255 * 20);
                                     } else {
-                                        if ((allFields.get(j).getDeType().equals(DeTypeConstants.DE_INT) || allFields.get(j).getDeType() == DeTypeConstants.DE_FLOAT) && StringUtils.isNotEmpty(rowData.get(j))) {
+                                        if ((allFields.get(j).getFieldType().equals(FieldTypeConstants.INTEGER) || allFields.get(j).getFieldType() == FieldTypeConstants.FLOAT) && StringUtils.isNotEmpty(rowData.get(j))) {
                                             try {
                                                 cell.setCellValue(Double.valueOf(rowData.get(j)));
                                             } catch (Exception e) {
@@ -844,7 +844,7 @@ public class ExportCenterDownLoadManage {
             outputStream.flush();
             outputStream.close();
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 }

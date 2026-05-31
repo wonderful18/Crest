@@ -61,7 +61,7 @@ const removeCache = () => {
   keys.forEach(key => {
     if (
       key.startsWith('de-plugin-') ||
-      key === 'de-platform-client' ||
+      key === 'crest-platform-client' ||
       key === 'pwd-validity-period' ||
       key === 'pluginBridge-model-distributed'
     ) {

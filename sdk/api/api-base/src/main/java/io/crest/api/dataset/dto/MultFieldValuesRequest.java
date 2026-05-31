@@ -13,7 +13,7 @@ public class MultFieldValuesRequest {
     Long userId = null;
     private List<ChartExtFilterDTO> filter;// 级联查询条件，多个条件之间用and拼接到SQL
 
-    private DeSortDTO sort;
+    private DatasetSortDTO sort;
     private Integer resultMode = 0;
 
 }

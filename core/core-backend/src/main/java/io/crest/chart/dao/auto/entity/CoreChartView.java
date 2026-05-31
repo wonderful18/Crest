@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @author fit2cloud
  * @since 2024-12-12
  */
-@TableName("core_chart_view")
+@TableName("bi_chart")
 public class CoreChartView implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -137,7 +137,7 @@ public class CoreChartView implements Serializable {
     private Long updateTime;
 
     /**
-     * 缩略图 
+     * 缩略图
      */
     private String snapshot;
 

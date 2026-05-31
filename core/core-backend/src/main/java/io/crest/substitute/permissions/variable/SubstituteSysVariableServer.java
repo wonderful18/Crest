@@ -5,11 +5,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.crest.api.permissions.variable.api.SysVariablesApi;
 import io.crest.api.permissions.variable.dto.SysVariableDto;
 import io.crest.api.permissions.variable.dto.SysVariableValueDto;
-import io.crest.exception.DEException;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import io.crest.exception.CrestException;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,25 +18,25 @@ import java.util.List;
 import java.util.Map;
 
 @RestController("sysVariableServer")
-@RequestMapping("/sysVariable")
+@RequestMapping("/sys-variable")
 public class SubstituteSysVariableServer implements SysVariablesApi {
 
     @Override
-    @PostMapping("/create")
+    @PostMapping
     public SysVariableDto create(@RequestBody SysVariableDto sysVariableDto) {
         throwUnsupported();
         return sysVariableDto;
     }
 
     @Override
-    @PostMapping("/edit")
+    @PutMapping
     public SysVariableDto edit(@RequestBody SysVariableDto sysVariableDto) {
         throwUnsupported();
         return sysVariableDto;
     }
 
     @Override
-    @GetMapping("/delete/{id}")
+    @DeleteMapping("/{id}")
     public void delete(@PathVariable("id") Long id) {
         throwUnsupported();
     }
@@ -49,27 +49,27 @@ public class SubstituteSysVariableServer implements SysVariablesApi {
     }
 
     @Override
-    @PostMapping("/query")
+    @PostMapping("/list")
     public List<SysVariableDto> query(@RequestBody(required = false) SysVariableDto sysVariableDto) {
         return Collections.emptyList();
     }
 
     @Override
-    @PostMapping("/value/create")
+    @PostMapping("/value")
     public SysVariableValueDto createValue(@RequestBody SysVariableValueDto sysVariableDto) {
         throwUnsupported();
         return sysVariableDto;
     }
 
     @Override
-    @PostMapping("/value/edit")
+    @PutMapping("/value")
     public SysVariableValueDto editValue(@RequestBody SysVariableValueDto sysVariableDto) {
         throwUnsupported();
         return sysVariableDto;
     }
 
     @Override
-    @GetMapping("/value/delete/{id}")
+    @DeleteMapping("/value/{id}")
     public void deleteValue(@PathVariable("id") String id) {
         throwUnsupported();
     }
@@ -87,7 +87,7 @@ public class SubstituteSysVariableServer implements SysVariablesApi {
     }
 
     @Override
-    @PostMapping("/value/batchDel")
+    @DeleteMapping("/value/batch")
     public void batchDel(@RequestBody List<Long> ids) {
         throwUnsupported();
     }
@@ -98,6 +98,6 @@ public class SubstituteSysVariableServer implements SysVariablesApi {
     }
 
     private void throwUnsupported() {
-        DEException.throwException("当前版本不支持自定义系统变量管理");
+        CrestException.throwException("当前版本不支持自定义系统变量管理");
     }
 }

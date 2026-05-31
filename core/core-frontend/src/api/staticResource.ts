@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus-secondary'
 const staticResourcePath = '/static-resource/'
 export const uploadFile = (fileId: number | string, param) =>
   request.post({
-    url: '/staticResource/upload/' + fileId,
+    url: '/static-resource/upload/' + fileId,
     headersType: 'multipart/form-data',
     loading: true,
     data: param
@@ -42,9 +42,9 @@ export function uploadFileResult(file, callback) {
     })
 }
 
-export function findResourceAsBase64(params) {
+export function resourceBase64(params) {
   return request.post({
-    url: '/staticResource/findResourceAsBase64',
+    url: '/static-resource/resource-base64',
     data: params
   })
 }

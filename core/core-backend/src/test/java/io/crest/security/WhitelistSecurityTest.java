@@ -45,7 +45,7 @@ class WhitelistSecurityTest {
     @Test
     @DisplayName("/symmetricKey 不应在白名单中（通过match方法验证）")
     void symmetricKeyShouldNotMatch() {
-        assertFalse(WhitelistUtils.match("/de2api/symmetricKey"),
+        assertFalse(WhitelistUtils.match("/api/v1/symmetricKey"),
                 "/symmetricKey 应该需要认证");
     }
 }

@@ -6,7 +6,7 @@ import io.crest.api.chart.vo.ViewSelectorVO;
 import io.crest.chart.manage.ChartViewManege;
 import io.crest.constant.CommonConstants;
 import io.crest.dataset.utils.DatasetUtils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.view.dto.ChartViewDTO;
 import io.crest.extensions.view.dto.ChartViewFieldDTO;
 import io.crest.result.ResultCode;
@@ -31,7 +31,7 @@ public class ChartViewServer implements ChartViewApi {
         try {
             return chartViewManege.getChart(id, CommonConstants.RESOURCE_TABLE.CORE);
         } catch (Exception e) {
-            DEException.throwException(ResultCode.DATA_IS_WRONG.code(), e.getMessage());
+            CrestException.throwException(ResultCode.DATA_IS_WRONG.code(), e.getMessage());
         }
         return null;
     }
@@ -70,13 +70,13 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     @Override
-    public void deleteField(Long id) {
-        chartViewManege.deleteField(id);
+    public void fieldRemoval(Long id) {
+        chartViewManege.fieldRemoval(id);
     }
 
     @Override
-    public void deleteFieldByChart(Long chartId) {
-        chartViewManege.deleteFieldByChartId(chartId);
+    public void chartFieldRemoval(Long chartId) {
+        chartViewManege.chartFieldRemovalId(chartId);
     }
 
     @Override

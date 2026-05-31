@@ -487,7 +487,7 @@ span {
 
 .padding-lr {
   height: 500px;
-  border: 1px solid var(--deCardStrokeColor, #dee0e3);
+  border: 1px solid var(--crestCardStrokeColor, #dee0e3);
   border-radius: 6px;
   padding: 12px;
   box-sizing: border-box;
@@ -516,7 +516,7 @@ span {
   margin-top: 8px;
   text-align: center;
   font-size: 14px;
-  color: var(--deTextDisable);
+  color: var(--crestTextDisable);
 }
 .outer-content-mirror {
   border: 1px solid #d9dcdf;

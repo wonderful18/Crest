@@ -21,8 +21,8 @@ public interface CoreStoreExtMapper {
             v.name,
             v.mobile_layout as ext_flag,
             v.status as ext_flag1
-            from core_store s
-            inner join data_visualization_info v on s.resource_id = v.id
+            from workspace_favorite_resource s
+            inner join bi_visualization v on s.resource_id = v.id
             ${ew.customSqlSegment}
             """)
     IPage<StorePO> query(IPage<StorePO> page, @Param("ew") QueryWrapper<Object> ew);

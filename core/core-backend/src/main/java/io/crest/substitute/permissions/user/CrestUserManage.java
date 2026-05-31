@@ -13,7 +13,7 @@ import io.crest.api.permissions.user.vo.UserGridVO;
 import io.crest.api.permissions.user.vo.UserGridRoleItem;
 import io.crest.api.permissions.user.vo.UserImportVO;
 import io.crest.api.permissions.user.vo.UserItem;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.substitute.permissions.user.model.CrestUser;
 import io.crest.substitute.permissions.user.model.SsoUserProfile;
@@ -85,40 +85,40 @@ public class CrestUserManage {
 
     @PostConstruct
     public void initAdmin() {
-        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM crest_user WHERE id = 1", Integer.class);
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM iam_user WHERE id = 1", Integer.class);
         if (count == null || count == 0) {
             long now = System.currentTimeMillis();
             jdbcTemplate.update("""
-                    INSERT INTO crest_user(id, account, name, password_hash, enable, is_admin, origin, create_time, update_time)
+                    INSERT INTO iam_user(id, account, name, password_hash, enable, is_admin, origin, create_time, update_time)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, 1L, "admin", "管理员", PasswordEncoder.encode(initialPassword()), true, true, 0, now, now);
             platformPermissionManage.bindUserToOrg(1L, PlatformPermissionManage.ROOT_ORG_ID, true);
             platformPermissionManage.bindUserToRole(1L, PlatformPermissionManage.ROOT_ORG_ID, PlatformPermissionManage.SYSTEM_ADMIN_ROLE_ID);
         } else {
             String passwordHash = jdbcTemplate.queryForObject(
-                    "SELECT password_hash FROM crest_user WHERE id = 1", String.class);
+                    "SELECT password_hash FROM iam_user WHERE id = 1", String.class);
             if (Strings.CS.equals(passwordHash, LEGACY_ADMIN_PASSWORD_HASH)) {
-                jdbcTemplate.update("UPDATE crest_user SET password_hash = ?, is_admin = 1, enable = 1, update_time = ? WHERE id = 1",
+                jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, is_admin = 1, enable = 1, update_time = ? WHERE id = 1",
                         PasswordEncoder.encode(initialPassword()), System.currentTimeMillis());
             } else {
-                jdbcTemplate.update("UPDATE crest_user SET is_admin = 1, enable = 1 WHERE id = 1");
+                jdbcTemplate.update("UPDATE iam_user SET is_admin = 1, enable = 1 WHERE id = 1");
             }
         }
     }
 
     public CrestUser queryByAccount(String account) {
-        List<CrestUser> users = jdbcTemplate.query("SELECT * FROM crest_user WHERE account = ? LIMIT 1", rowMapper, account);
+        List<CrestUser> users = jdbcTemplate.query("SELECT * FROM iam_user WHERE account = ? LIMIT 1", rowMapper, account);
         return users.isEmpty() ? null : users.get(0);
     }
 
     public CrestUser queryById(Long id) {
-        List<CrestUser> users = jdbcTemplate.query("SELECT * FROM crest_user WHERE id = ? LIMIT 1", rowMapper, id);
+        List<CrestUser> users = jdbcTemplate.query("SELECT * FROM iam_user WHERE id = ? LIMIT 1", rowMapper, id);
         return users.isEmpty() ? null : users.get(0);
     }
 
     public CrestUser queryByExternalId(String authType, String externalId) {
         List<CrestUser> users = jdbcTemplate.query("""
-                SELECT * FROM crest_user
+                SELECT * FROM iam_user
                 WHERE auth_type = ? AND external_id = ?
                 LIMIT 1
                 """, rowMapper, authType, externalId);
@@ -148,7 +148,7 @@ public class CrestUserManage {
         // 3. 如果匹配且是旧格式，自动升级到新格式
         if (matches && PasswordEncoder.needsReEncoding(storedHash)) {
             String newHash = PasswordEncoder.encode(rawPassword);
-            jdbcTemplate.update("UPDATE crest_user SET password_hash = ? WHERE id = ?",
+            jdbcTemplate.update("UPDATE iam_user SET password_hash = ? WHERE id = ?",
                     newHash, user.getId());
         }
 
@@ -163,7 +163,7 @@ public class CrestUserManage {
     @Transactional
     public CrestUser createOrUpdateSsoUser(SsoUserProfile profile, boolean autoCreateUser) {
         if (profile == null || StringUtils.isBlank(profile.getExternalId())) {
-            DEException.throwException("单点登录用户唯一标识不能为空");
+            CrestException.throwException("单点登录用户唯一标识不能为空");
         }
         validate(profile.getAccount(), StringUtils.defaultIfBlank(profile.getName(), profile.getAccount()));
         String account = profile.getAccount().trim();
@@ -177,11 +177,11 @@ public class CrestUserManage {
         }
         if (user == null) {
             if (!autoCreateUser) {
-                DEException.throwException("用户不存在，且未启用自动创建用户");
+                CrestException.throwException("用户不存在，且未启用自动创建用户");
             }
             long id = IDUtils.snowID();
             jdbcTemplate.update("""
-                    INSERT INTO crest_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
+                    INSERT INTO iam_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
                         origin, auth_type, external_id, last_login_time, create_time, update_time)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, id, account, name, email, null, null, Md5Utils.md5(IDUtils.randomID(32)),
@@ -191,14 +191,14 @@ public class CrestUserManage {
             return queryById(id);
         }
         if (Boolean.FALSE.equals(user.getEnable())) {
-            DEException.throwException("用户已停用");
+            CrestException.throwException("用户已停用");
         }
         CrestUser sameAccount = queryByAccount(account);
         if (sameAccount != null && !sameAccount.getId().equals(user.getId())) {
-            DEException.throwException("单点登录账号已被其他用户占用");
+            CrestException.throwException("单点登录账号已被其他用户占用");
         }
         jdbcTemplate.update("""
-                UPDATE crest_user
+                UPDATE iam_user
                 SET account = ?, name = ?, email = ?, auth_type = ?, external_id = ?, origin = ?, last_login_time = ?, update_time = ?
                 WHERE id = ?
                 """, account, name, email, AUTH_TYPE_SSO, profile.getExternalId(), 2, now, now, user.getId());
@@ -215,7 +215,7 @@ public class CrestUserManage {
         if (SsoIdentityAction.CREATE_USER.equals(decision.getAction())) {
             long id = IDUtils.snowID();
             jdbcTemplate.update("""
-                    INSERT INTO crest_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
+                    INSERT INTO iam_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
                         origin, auth_type, external_id, last_login_time, create_time, update_time)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, id, account, name, email, null, null, Md5Utils.md5(IDUtils.randomID(32)),
@@ -227,14 +227,14 @@ public class CrestUserManage {
         Long userId = decision.getUserId();
         CrestUser user = queryById(userId);
         if (user == null) {
-            DEException.throwException("用户不存在");
+            CrestException.throwException("用户不存在");
         }
         if (!AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType())) {
             markLoginSuccess(userId);
             return queryById(userId);
         }
         jdbcTemplate.update("""
-                UPDATE crest_user
+                UPDATE iam_user
                 SET account = ?, name = ?, email = ?, auth_type = ?, external_id = ?, origin = ?, last_login_time = ?, update_time = ?
                 WHERE id = ?
                 """, account, name, email, AUTH_TYPE_SSO, profile.getExternalSubject(), 2, now, now, userId);
@@ -245,7 +245,7 @@ public class CrestUserManage {
     public void markLoginSuccess(Long id) {
         if (id == null) return;
         long now = System.currentTimeMillis();
-        jdbcTemplate.update("UPDATE crest_user SET last_login_time = ?, update_time = ? WHERE id = ?", now, now, id);
+        jdbcTemplate.update("UPDATE iam_user SET last_login_time = ?, update_time = ? WHERE id = ?", now, now, id);
     }
 
     public IPage<UserGridVO> pager(int goPage, int pageSize, UserGridRequest request) {
@@ -269,15 +269,15 @@ public class CrestUserManage {
             where.append(")");
         }
         if (request != null && request.getOid() != null) {
-            where.append(" AND EXISTS (SELECT 1 FROM crest_user_org uo WHERE uo.uid = crest_user.id AND uo.oid = ?)");
+            where.append(" AND EXISTS (SELECT 1 FROM iam_user_org uo WHERE uo.uid = iam_user.id AND uo.oid = ?)");
             args.add(request.getOid());
         }
-        Long total = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM crest_user" + where, Long.class, args.toArray());
+        Long total = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM iam_user" + where, Long.class, args.toArray());
         String order = request != null && Boolean.FALSE.equals(request.getTimeDesc()) ? " ASC" : " DESC";
         args.add(Math.max((goPage - 1) * pageSize, 0));
         args.add(pageSize);
         List<CrestUser> users = jdbcTemplate.query(
-                "SELECT * FROM crest_user" + where + " ORDER BY create_time" + order + " LIMIT ?, ?",
+                "SELECT * FROM iam_user" + where + " ORDER BY create_time" + order + " LIMIT ?, ?",
                 rowMapper,
                 args.toArray());
         Page<UserGridVO> page = new Page<>(goPage, pageSize);
@@ -291,8 +291,8 @@ public class CrestUserManage {
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder("""
                 SELECT u.id, u.name, u.account
-                FROM crest_user u
-                INNER JOIN crest_user_org uo ON uo.uid = u.id
+                FROM iam_user u
+                INNER JOIN iam_user_org uo ON uo.uid = u.id
                 WHERE uo.oid = ? AND u.enable = 1
                 """);
         args.add(oid);
@@ -316,7 +316,7 @@ public class CrestUserManage {
     @Transactional
     public UserImportVO importUsers(MultipartFile file) throws Exception {
         if (file == null || file.isEmpty()) {
-            DEException.throwException("导入文件不能为空");
+            CrestException.throwException("导入文件不能为空");
         }
         List<UserImportRow> rows = readImportRows(file);
         int success = 0;
@@ -375,7 +375,7 @@ public class CrestUserManage {
     public Long create(UserCreator creator) {
         validate(creator.getAccount(), creator.getName());
         if (queryByAccount(creator.getAccount()) != null) {
-            DEException.throwException("账号已存在");
+            CrestException.throwException("账号已存在");
         }
 
         // RBAC权限检查：只有管理员可以创建管理员账户
@@ -383,7 +383,7 @@ public class CrestUserManage {
         if (requestAdminRole) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
             if (currentUserId == null || !isAdmin(currentUserId)) {
-                DEException.throwException("只有管理员可以创建管理员账户");
+                CrestException.throwException("只有管理员可以创建管理员账户");
             }
         }
 
@@ -394,7 +394,7 @@ public class CrestUserManage {
         long id = IDUtils.snowID();
         long now = System.currentTimeMillis();
         jdbcTemplate.update("""
-                INSERT INTO crest_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
+                INSERT INTO iam_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
                     origin, auth_type, external_id, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, id, creator.getAccount().trim(), creator.getName().trim(), creator.getEmail(),
@@ -411,27 +411,27 @@ public class CrestUserManage {
     public void edit(UserEditor editor) {
         CrestUser user = queryById(editor.getId());
         if (user == null) {
-            DEException.throwException("用户不存在");
+            CrestException.throwException("用户不存在");
         }
 
         // RBAC权限检查：只有系统管理员可以编辑管理员账户
         if (Boolean.TRUE.equals(user.getAdmin())) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
             if (currentUserId == null || !AuthUtils.isSysAdmin(currentUserId)) {
-                DEException.throwException("只有系统管理员可以编辑管理员账户");
+                CrestException.throwException("只有系统管理员可以编辑管理员账户");
             }
         }
 
         validate(editor.getAccount(), editor.getName());
         if (AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType()) && !Strings.CS.equals(user.getAccount(), editor.getAccount().trim())) {
-            DEException.throwException("单点登录用户账号由身份提供方维护");
+            CrestException.throwException("单点登录用户账号由身份提供方维护");
         }
         CrestUser sameAccount = queryByAccount(editor.getAccount());
         if (sameAccount != null && !sameAccount.getId().equals(editor.getId())) {
-            DEException.throwException("账号已存在");
+            CrestException.throwException("账号已存在");
         }
         jdbcTemplate.update("""
-                UPDATE crest_user
+                UPDATE iam_user
                 SET account = ?, name = ?, email = ?, phone_prefix = ?, phone = ?, enable = ?, is_admin = ?, update_time = ?
                 WHERE id = ?
                 """, editor.getAccount().trim(), editor.getName().trim(), editor.getEmail(),
@@ -445,7 +445,7 @@ public class CrestUserManage {
     @Transactional
     public void delete(Long id) {
         if (id == 1L) {
-            DEException.throwException("内置管理员不能删除");
+            CrestException.throwException("内置管理员不能删除");
         }
 
         // RBAC权限检查：只有系统管理员可以删除管理员账户
@@ -453,19 +453,19 @@ public class CrestUserManage {
         if (targetUser != null && Boolean.TRUE.equals(targetUser.getAdmin())) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
             if (currentUserId == null || !AuthUtils.isSysAdmin(currentUserId)) {
-                DEException.throwException("只有系统管理员可以删除管理员账户");
+                CrestException.throwException("只有系统管理员可以删除管理员账户");
             }
         }
 
-        jdbcTemplate.update("DELETE FROM crest_user WHERE id = ?", id);
-        jdbcTemplate.update("DELETE FROM crest_user_org WHERE uid = ?", id);
-        jdbcTemplate.update("DELETE FROM crest_user_role WHERE uid = ?", id);
+        jdbcTemplate.update("DELETE FROM iam_user WHERE id = ?", id);
+        jdbcTemplate.update("DELETE FROM iam_user_org WHERE uid = ?", id);
+        jdbcTemplate.update("DELETE FROM iam_user_role WHERE uid = ?", id);
     }
 
     @Transactional
     public void enable(EnableSwitchRequest request) {
         if (request.getId() == 1L && Boolean.FALSE.equals(request.getEnable())) {
-            DEException.throwException("内置管理员不能停用");
+            CrestException.throwException("内置管理员不能停用");
         }
 
         // RBAC权限检查：只有系统管理员可以启用/禁用管理员账户
@@ -473,11 +473,11 @@ public class CrestUserManage {
         if (targetUser != null && Boolean.TRUE.equals(targetUser.getAdmin())) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
             if (currentUserId == null || !AuthUtils.isSysAdmin(currentUserId)) {
-                DEException.throwException("只有系统管理员可以修改管理员状态");
+                CrestException.throwException("只有系统管理员可以修改管理员状态");
             }
         }
 
-        jdbcTemplate.update("UPDATE crest_user SET enable = ?, update_time = ? WHERE id = ?",
+        jdbcTemplate.update("UPDATE iam_user SET enable = ?, update_time = ? WHERE id = ?",
                 request.getEnable(), System.currentTimeMillis(), request.getId());
     }
 
@@ -485,12 +485,12 @@ public class CrestUserManage {
     public void resetPwd(Long id) {
         CrestUser user = queryById(id);
         if (user == null) {
-            DEException.throwException("用户不存在");
+            CrestException.throwException("用户不存在");
         }
         if (AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType())) {
-            DEException.throwException("单点登录用户不支持重置本地密码");
+            CrestException.throwException("单点登录用户不支持重置本地密码");
         }
-        jdbcTemplate.update("UPDATE crest_user SET password_hash = ?, update_time = ? WHERE id = ?",
+        jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, update_time = ? WHERE id = ?",
                 PasswordEncoder.encode(initialPassword()), System.currentTimeMillis(), id);
     }
 
@@ -498,19 +498,19 @@ public class CrestUserManage {
     public void modifyPwd(Long id, String oldPwd, String newPwd) {
         CrestUser user = queryById(id);
         if (user == null) {
-            DEException.throwException("用户不存在");
+            CrestException.throwException("用户不存在");
         }
         if (AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType())) {
-            DEException.throwException("单点登录用户不支持修改本地密码");
+            CrestException.throwException("单点登录用户不支持修改本地密码");
         }
         if (!passwordMatches(user, oldPwd)) {
-            DEException.throwException("原密码不正确");
+            CrestException.throwException("原密码不正确");
         }
 
         // 使用密码策略验证器
         PasswordValidator.validate(newPwd);
 
-        jdbcTemplate.update("UPDATE crest_user SET password_hash = ?, update_time = ? WHERE id = ?",
+        jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, update_time = ? WHERE id = ?",
                 PasswordEncoder.encode(newPwd), System.currentTimeMillis(), id);
     }
 
@@ -569,20 +569,20 @@ public class CrestUserManage {
 
     private void validate(String account, String name) {
         if (StringUtils.isBlank(account)) {
-            DEException.throwException("账号不能为空");
+            CrestException.throwException("账号不能为空");
         }
         if (!ACCOUNT_PATTERN.matcher(account.trim()).matches()) {
-            DEException.throwException("账号只支持 64 位以内的字母、数字、点、下划线、横线和 @");
+            CrestException.throwException("账号只支持 64 位以内的字母、数字、点、下划线、横线和 @");
         }
         if (StringUtils.isBlank(name)) {
-            DEException.throwException("姓名不能为空");
+            CrestException.throwException("姓名不能为空");
         }
         String displayName = name.trim();
         if (displayName.length() > 64) {
-            DEException.throwException("姓名不能超过 64 个字符");
+            CrestException.throwException("姓名不能超过 64 个字符");
         }
         if (UNSAFE_DISPLAY_NAME_PATTERN.matcher(displayName).find()) {
-            DEException.throwException("姓名不能包含 HTML 标签或控制字符");
+            CrestException.throwException("姓名不能包含 HTML 标签或控制字符");
         }
     }
 

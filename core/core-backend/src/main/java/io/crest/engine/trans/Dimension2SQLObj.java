@@ -1,6 +1,6 @@
 package io.crest.engine.trans;
 
-import io.crest.constant.DeTypeConstants;
+import io.crest.constant.FieldTypeConstants;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.constant.SQLConstants;
 import io.crest.engine.utils.Utils;
@@ -58,7 +58,7 @@ public class Dimension2SQLObj {
                     if (Strings.CI.equals(dsType, "es")) {
                         originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getOriginName());
                     } else {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getDataeaseName());
+                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getEngineFieldName());
                     }
                 } else if (ObjectUtils.isNotEmpty(x.getExtField()) && Objects.equals(x.getExtField(), ExtFieldConstant.EXT_GROUP)) {
                     String groupFieldExp = Utils.transGroupFieldToSql(x, originFields, isCross, dsMap, pluginManage);
@@ -72,7 +72,7 @@ public class Dimension2SQLObj {
                     if (Strings.CI.equals(dsType, "es")) {
                         originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getOriginName());
                     } else {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getDataeaseName());
+                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getEngineFieldName());
                     }
                 }
                 String fieldAlias = String.format(SQLConstants.FIELD_ALIAS_X_PREFIX, i);
@@ -97,25 +97,25 @@ public class Dimension2SQLObj {
 
     public static SQLObj getXFields(ChartViewFieldDTO x, String originField, String fieldAlias, boolean isCross) {
         String fieldName = "";
-        if (Objects.equals(x.getDeExtractType(), DeTypeConstants.DE_TIME)) {
-            if (Objects.equals(x.getDeType(), DeTypeConstants.DE_INT) || Objects.equals(x.getDeType(), DeTypeConstants.DE_FLOAT)) {
+        if (Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.TIME)) {
+            if (Objects.equals(x.getFieldType(), FieldTypeConstants.INTEGER) || Objects.equals(x.getFieldType(), FieldTypeConstants.FLOAT)) {
                 fieldName = String.format(SQLConstants.UNIX_TIMESTAMP, originField);
-            } else if (Objects.equals(x.getDeType(), DeTypeConstants.DE_TIME) && !Strings.CI.equals(x.getType(), "year")) {
+            } else if (Objects.equals(x.getFieldType(), FieldTypeConstants.TIME) && !Strings.CI.equals(x.getType(), "year")) {
                 // 如果都是时间类型，把date和time类型进行字符串拼接
                 if (isCross) {
                     if (Strings.CI.equals(x.getType(), "date")) {
-                        originField = String.format(SQLConstants.DE_STR_TO_DATE, String.format(SQLConstants.CONCAT, originField, "' 00:00:00'"), SQLConstants.DEFAULT_DATE_FORMAT);
+                        originField = String.format(SQLConstants.CREST_STR_TO_DATE, String.format(SQLConstants.CONCAT, originField, "' 00:00:00'"), SQLConstants.DEFAULT_DATE_FORMAT);
                     } else if (Strings.CI.equals(x.getType(), "time")) {
-                        originField = String.format(SQLConstants.DE_STR_TO_DATE, String.format(SQLConstants.CONCAT, "'1970-01-01 '", originField), SQLConstants.DEFAULT_DATE_FORMAT);
+                        originField = String.format(SQLConstants.CREST_STR_TO_DATE, String.format(SQLConstants.CONCAT, "'1970-01-01 '", originField), SQLConstants.DEFAULT_DATE_FORMAT);
                     }
                 }
                 String format = Utils.transDateFormat(x.getDateStyle(), x.getDatePattern());
                 if (Strings.CI.equals(x.getDateStyle(), "y_Q")) {
                     fieldName = String.format(format,
-                            String.format(SQLConstants.DE_DATE_FORMAT, originField, "yyyy"),
+                            String.format(SQLConstants.CREST_DATE_FORMAT, originField, "yyyy"),
                             String.format(SQLConstants.QUARTER, originField));
                 } else {
-                    fieldName = String.format(SQLConstants.DE_CAST_DATE_FORMAT, originField,
+                    fieldName = String.format(SQLConstants.CREST_CAST_DATE_FORMAT, originField,
                             SQLConstants.DEFAULT_DATE_FORMAT,
                             format);
                 }
@@ -123,36 +123,36 @@ public class Dimension2SQLObj {
                 fieldName = originField;
             }
         } else {
-            if (Objects.equals(x.getDeType(), DeTypeConstants.DE_TIME)) {
+            if (Objects.equals(x.getFieldType(), FieldTypeConstants.TIME)) {
                 String format = Utils.transDateFormat(x.getDateStyle(), x.getDatePattern());
-                if (Objects.equals(x.getDeExtractType(), DeTypeConstants.DE_STRING) || Objects.equals(x.getDeExtractType(), DeTypeConstants.DE_LOCATION)) {
+                if (Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.STRING) || Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.LOCATION)) {
                     if (Strings.CI.equals(x.getDateStyle(), "y_Q")) {
                         fieldName = String.format(format,
-                                String.format(SQLConstants.DE_DATE_FORMAT, String.format(SQLConstants.DE_STR_TO_DATE, originField, SQLConstants.DEFAULT_DATE_FORMAT), "yyyy"),
-                                String.format(SQLConstants.QUARTER, String.format(SQLConstants.DE_STR_TO_DATE, originField, SQLConstants.DEFAULT_DATE_FORMAT)));
+                                String.format(SQLConstants.CREST_DATE_FORMAT, String.format(SQLConstants.CREST_STR_TO_DATE, originField, SQLConstants.DEFAULT_DATE_FORMAT), "yyyy"),
+                                String.format(SQLConstants.QUARTER, String.format(SQLConstants.CREST_STR_TO_DATE, originField, SQLConstants.DEFAULT_DATE_FORMAT)));
                     } else {
-                        String s = String.format(SQLConstants.DE_STR_TO_DATE, originField, StringUtils.isEmpty(x.getDateFormat()) ? SQLConstants.DEFAULT_DATE_FORMAT : x.getDateFormat());
-                        fieldName = String.format(SQLConstants.DE_CAST_DATE_FORMAT, s, SQLConstants.DEFAULT_DATE_FORMAT, format);
+                        String s = String.format(SQLConstants.CREST_STR_TO_DATE, originField, StringUtils.isEmpty(x.getDateFormat()) ? SQLConstants.DEFAULT_DATE_FORMAT : x.getDateFormat());
+                        fieldName = String.format(SQLConstants.CREST_CAST_DATE_FORMAT, s, SQLConstants.DEFAULT_DATE_FORMAT, format);
                     }
-                } else if (Objects.equals(x.getDeExtractType(), DeTypeConstants.DE_INT) || Objects.equals(x.getDeExtractType(), DeTypeConstants.DE_FLOAT) || Objects.equals(x.getDeExtractType(), DeTypeConstants.DE_BOOL)) {
+                } else if (Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.INTEGER) || Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.FLOAT) || Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.BOOLEAN)) {
                     String cast = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_INT_FORMAT);
                     String from_unixtime = String.format(SQLConstants.FROM_UNIXTIME, cast, SQLConstants.DEFAULT_DATE_FORMAT);
                     if (Strings.CI.equals(x.getDateStyle(), "y_Q")) {
                         fieldName = String.format(format,
-                                String.format(SQLConstants.DE_DATE_FORMAT, from_unixtime, "yyyy"),
+                                String.format(SQLConstants.CREST_DATE_FORMAT, from_unixtime, "yyyy"),
                                 String.format(SQLConstants.QUARTER, from_unixtime));
                     } else {
-                        fieldName = String.format(SQLConstants.DE_CAST_DATE_FORMAT, from_unixtime, SQLConstants.DEFAULT_DATE_FORMAT, format);
+                        fieldName = String.format(SQLConstants.CREST_CAST_DATE_FORMAT, from_unixtime, SQLConstants.DEFAULT_DATE_FORMAT, format);
                     }
                 } else {
-                    fieldName = String.format(SQLConstants.DE_DATE_FORMAT, originField, format);
+                    fieldName = String.format(SQLConstants.CREST_DATE_FORMAT, originField, format);
                 }
-            } else if (Objects.equals(x.getDeType(), DeTypeConstants.DE_STRING) && Objects.equals(x.getDeExtractType(), DeTypeConstants.DE_STRING)) {
+            } else if (Objects.equals(x.getFieldType(), FieldTypeConstants.STRING) && Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.STRING)) {
                 fieldName = originField;
             } else {
-                if (Objects.equals(x.getDeType(), DeTypeConstants.DE_INT)) {
+                if (Objects.equals(x.getFieldType(), FieldTypeConstants.INTEGER)) {
                     fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_INT_FORMAT);
-                } else if (Objects.equals(x.getDeType(), DeTypeConstants.DE_FLOAT)) {
+                } else if (Objects.equals(x.getFieldType(), FieldTypeConstants.FLOAT)) {
                     fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_FLOAT_FORMAT);
                 } else {
                     fieldName = originField;

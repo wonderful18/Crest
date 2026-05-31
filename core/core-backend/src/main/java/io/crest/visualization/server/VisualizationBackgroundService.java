@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * @date : 2023/6/12 19:31
  */
 @RestController
-@RequestMapping("/visualizationBackground")
+@RequestMapping("/visualization-background")
 public class VisualizationBackgroundService implements VisualizationBackgroundApi {
     @Resource
     VisualizationBackgroundMapper mapper;

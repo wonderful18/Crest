@@ -55,8 +55,8 @@ defineExpose({
   margin-bottom: 4px;
 
   > :nth-child(1) {
-    color: var(--deTextSecondary, #1f2329);
-    font-family: var(--de-custom_font, 'PingFang');
+    color: var(--crestTextSecondary, #1f2329);
+    font-family: var(--crest-custom_font, 'PingFang');
     font-style: normal;
     font-weight: 400;
     font-size: 14px;
@@ -68,7 +68,7 @@ defineExpose({
     margin-top: 8px;
     .item,
     .more {
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       white-space: nowrap;
       font-size: 14px;
       font-weight: 400;
@@ -76,8 +76,8 @@ defineExpose({
       margin-right: 12px;
       text-align: center;
       padding: 1px 6px;
-      background: var(--deTextPrimary5, #f5f6f7);
-      color: var(--deTextPrimary, #1f2329);
+      background: var(--crestTextPrimary5, #f5f6f7);
+      color: var(--crestTextPrimary, #1f2329);
       border-radius: 2px;
       cursor: pointer;
       display: inline-block;

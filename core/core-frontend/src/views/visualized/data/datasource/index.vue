@@ -39,7 +39,7 @@ import {
 } from 'element-plus-secondary'
 import { treeDraggble } from '@/utils/treeDraggble'
 import GridTable from '@/components/grid-table/src/GridTable.vue'
-import ArrowSide from '@/views/common/DeResourceArrow.vue'
+import ArrowSide from '@/views/common/CrestResourceArrow.vue'
 import relationChart from '@/components/relation-chart/index.vue'
 import { HandleMore } from '@/components/handle-more'
 import { Icon } from '@/components/icon-custom'
@@ -52,7 +52,7 @@ import {
   perDeleteDatasource,
   getSimpleDs,
   supportSetKey,
-  getTableStatus,
+  tableStatus,
   excelDataPage,
   saveExcelData
 } from '@/api/datasource'
@@ -100,9 +100,9 @@ const interactiveStore = interactiveStoreWithOut()
 interface Field {
   fieldShortName: string
   name: string
-  dataeaseName: string
+  engineFieldName: string
   originName: string
-  deType: number
+  fieldType: number
 }
 const { wsCache } = useCache()
 const { t } = useI18n()
@@ -127,11 +127,11 @@ const recordState = reactive({
     total: 0
   }
 })
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi)
+const isCrestBi = computed(() => appStore.getIsCrestBi)
 const isIframe = computed(() => appStore.getIsIframe)
 const embedded = useEmbedded()
 const createDataset = (tableName?: string) => {
-  if (isDataEaseBi.value) {
+  if (isCrestBi.value) {
     embedded.clearState()
     embedded.setDatasourceId(nodeInfo.id as string)
     embedded.setTableName(tableName)
@@ -195,7 +195,7 @@ const datasetTypeList = computed(() => {
       command: 'datasource'
     },
     {
-      label: t('deDataset.new_folder'),
+      label: t('datasetUi.new_folder'),
       divided: true,
       svgName: dvFolder,
       command: 'folder'
@@ -257,16 +257,16 @@ const scrollbarRef = ref()
 const generateColumns = (arr: Field[]) =>
   arr.map(ele => ({
     key: ele.originName,
-    deType: ele.deType,
+    fieldType: ele.fieldType,
     dataKey: ele.originName,
     title: ele.name,
     width: 150,
     headerCellRenderer: ({ column }) => (
       <div class="flex-align-center">
         <ElIcon style={{ marginRight: '6px' }}>
-          <Icon className={`field-icon-${fieldType[column.deType]}`}>
-            {h(iconFieldMap[fieldType[column.deType]], {
-              class: `svg-icon field-icon-${fieldType[column.deType]}`
+          <Icon className={`field-icon-${fieldType[column.fieldType]}`}>
+            {h(iconFieldMap[fieldType[column.fieldType]], {
+              class: `svg-icon field-icon-${fieldType[column.fieldType]}`
             })}
           </Icon>
         </ElIcon>
@@ -605,7 +605,7 @@ const excelEditColumnWidth = (field: Field) => {
   return Math.min(Math.max(title.length * 16 + 72, 160), 320)
 }
 
-const excelEditFieldType = (field: Field) => fieldType[field.deType] || 'text'
+const excelEditFieldType = (field: Field) => fieldType[field.fieldType] || 'text'
 
 const resetExcelEditChanges = () => {
   excelEditState.dirty = false
@@ -937,7 +937,7 @@ const getRecord = () => {
 }
 
 const updateApiTable = api => {
-  syncApiTable({ name: api.name, tableName: api.deTableName, datasourceId: nodeInfo.id }).then(
+  syncApiTable({ name: api.name, tableName: api.displayTableName, datasourceId: nodeInfo.id }).then(
     () => {
       ElMessage.success(t('datasource.req_completed'))
     }
@@ -1098,7 +1098,7 @@ const handleCopy = async data => {
     datasource.name = t('datasource.copy')
     if (datasource.type.startsWith('API')) {
       for (let i = 0; i < datasource.apiConfiguration.length; i++) {
-        datasource.apiConfiguration[i].deTableName = ''
+        datasource.apiConfiguration[i].displayTableName = ''
       }
     }
     datasourceEditor.value.init(datasource, null, null, isSupportSetKey.value)
@@ -1231,7 +1231,7 @@ const handleClick = (tabName: TabPaneName) => {
         tableData.value = res.data
         initSearch()
         if (nodeInfo.type.startsWith('API') || nodeInfo.type === 'ExcelRemote') {
-          getTableStatus({ datasourceId: nodeInfo.id }).then(res => {
+          tableStatus({ datasourceId: nodeInfo.id }).then(res => {
             for (let i = 0; i < state.filterTable.length; i++) {
               for (let j = 0; j < res.data.length; j++) {
                 if (state.filterTable[i].tableName === res.data[j].tableName) {
@@ -1368,7 +1368,7 @@ const getMenuList = (val: boolean) => {
                 offset="14"
                 effect="dark"
                 popper-class="new-folder_tip"
-                :content="t('deDataset.new_folder')"
+                :content="t('datasetUi.new_folder')"
                 placement="top"
               >
                 <el-icon
@@ -1523,8 +1523,8 @@ const getMenuList = (val: boolean) => {
     <div
       class="datasource-content"
       :class="{
-        auto: isIframe || isDataEaseBi,
-        h100: isDataEaseBi || isIframe
+        auto: isIframe || isCrestBi,
+        h100: isCrestBi || isIframe
       }"
     >
       <template v-if="!state.datasourceTree.length && mounted">
@@ -2124,17 +2124,17 @@ const getMenuList = (val: boolean) => {
             <template #default="scope">
               <div class="flex-align-center icon">
                 <el-icon>
-                  <icon :class="`field-icon-${fieldType[scope.row.deType]}`"
+                  <icon :class="`field-icon-${fieldType[scope.row.fieldType]}`"
                     ><component
                       class="svg-icon"
-                      :class="`field-icon-${fieldType[scope.row.deType]}`"
-                      :is="iconFieldMap[fieldType[scope.row.deType]]"
+                      :class="`field-icon-${fieldType[scope.row.fieldType]}`"
+                      :is="iconFieldMap[fieldType[scope.row.fieldType]]"
                     ></component
                   ></icon>
                 </el-icon>
                 {{
-                  t(`dataset.${fieldType[scope.row.deType]}`) +
-                  `${scope.row.deType === 3 ? '(' + t('dataset.float') + ')' : ''}`
+                  t(`dataset.${fieldType[scope.row.fieldType]}`) +
+                  `${scope.row.fieldType === 3 ? '(' + t('dataset.float') + ')' : ''}`
                 }}
               </div>
             </template>
@@ -2531,11 +2531,11 @@ const getMenuList = (val: boolean) => {
     width: calc(50% - 16px);
     height: 140px;
     border-radius: 6px;
-    border: 1px solid var(--deCardStrokeColor, #dee0e3);
+    border: 1px solid var(--crestCardStrokeColor, #dee0e3);
     border-radius: 6px;
     margin: 0 0 16px 16px;
     padding: 16px;
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     .name {
       font-size: 16px;
       font-weight: 500;
@@ -2561,21 +2561,21 @@ const getMenuList = (val: boolean) => {
       }
     }
     .req-title {
-      color: var(--deTextSecondary, #646a73);
+      color: var(--crestTextSecondary, #646a73);
       margin: 16px 0 4px 0;
     }
     .req-value {
-      color: var(--deTextPrimary, #1f2329);
+      color: var(--crestTextPrimary, #1f2329);
     }
-    .de-copy-icon {
+    .copy-icon {
       cursor: pointer;
       margin-right: 20px;
-      color: var(--deTextSecondary, #646a73);
+      color: var(--crestTextSecondary, #646a73);
     }
-    .de-delete-icon:not(.not-allow) {
+    .delete-icon:not(.not-allow) {
       cursor: pointer;
       &:hover {
-        color: var(--deDanger, #f54a45);
+        color: var(--crestDanger, #f54a45);
       }
     }
     .de-tag {
@@ -2599,7 +2599,7 @@ const getMenuList = (val: boolean) => {
   }
 
   .de-expand {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 400;
     line-height: 22px;
@@ -2663,7 +2663,7 @@ const getMenuList = (val: boolean) => {
         width: 100%;
         display: flex;
         align-items: center;
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 16px;
         font-weight: 500;
 
@@ -3041,19 +3041,19 @@ const getMenuList = (val: boolean) => {
 
   .table-value,
   .table-name {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 400;
     margin: 0;
   }
 
   .table-name {
-    color: var(--deTextSecondary, #646a73);
+    color: var(--crestTextSecondary, #646a73);
   }
 
   .table-value {
     margin: 4px 0 24px 0;
-    color: var(--deTextPrimary, #1f2329);
+    color: var(--crestTextPrimary, #1f2329);
   }
 }
 
@@ -3098,7 +3098,7 @@ const getMenuList = (val: boolean) => {
 
   .excel-edit-summary {
     margin-left: 12px;
-    color: var(--deTextSecondary, #646a73);
+    color: var(--crestTextSecondary, #646a73);
     font-size: 14px;
   }
 

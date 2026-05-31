@@ -12,10 +12,7 @@ import io.crest.model.ExportTaskDTO;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -26,7 +23,7 @@ public interface InteractiveAuthApi {
 
     @Operation(summary = "查询菜单ID")
     @ApiOperationSupport(order = 1)
-    @GetMapping("/menuIds")
+    @GetMapping("/menu-ids")
     List<Long> menuIds();
 
 
@@ -43,51 +40,51 @@ public interface InteractiveAuthApi {
 
     @Operation(summary = "同步保存资源")
     @ApiOperationSupport(order = 3)
-    @PostMapping("/resource/create")
+    @PostMapping("/resource")
     void saveResource(@RequestBody BusiResourceCreator creator);
 
     @Operation(summary = "同步更新资源")
     @ApiOperationSupport(order = 4)
-    @PostMapping("/resource/edit")
+    @PutMapping("/resource")
     void editResource(@RequestBody BusiResourceEditor editor);
 
     @Operation(summary = "同步删除资源")
     @ApiOperationSupport(order = 5)
-    @GetMapping("/resource/del/{id}")
+    @DeleteMapping("/resource/{id}")
     void delResource(@PathVariable("id") Long id);
 
     @Operation(summary = "删除检测")
     @ApiOperationSupport(order = 6)
-    @GetMapping("/resource/checkDel/{id}")
+    @GetMapping("/resource/deletion-impact/{id}")
     boolean checkDel(@PathVariable("id") Long id);
 
     @Operation(summary = "移动资源")
     @ApiOperationSupport(order = 7)
-    @PostMapping("/moveResource")
+    @PostMapping("/resource-move")
     void moveResource(@RequestBody BusiResourceMover mover);
 
     @Operation(summary = "权限校验")
     @ApiOperationSupport(order = 8)
-    @PostMapping("/checkAuth")
+    @PostMapping("/auth-check")
     void checkAuth(@RequestBody BusiPerCheckDTO checkDTO);
 
     @Operation(summary = "权限查询")
     @ApiOperationSupport(order = 9)
-    @PostMapping("/queryAuth/{id}")
+    @PostMapping("/authorization/{id}")
     PermissionValVO queryAuth(@PathVariable("id") Long id);
 
-    @GetMapping("/query2Root/{id}/{flag}/{logOT}")
+    @GetMapping("/root-path/{id}/{flag}/{logOT}")
     List<ResourceNodeVO> query2Root(@PathVariable("id") Long id, @PathVariable("flag") Integer flag, Integer logOT);
 
-    @GetMapping("/checkEmpty")
+    @GetMapping("/empty-check")
     boolean checkEmpty();
 
-    @GetMapping("/OrgNameForResource")
+    @GetMapping("/org-name-for-resource")
     String OrgNameForResource(ExportTaskDTO exportTaskDTO);
 
     void editResourceExtraFlag(BusiResourceEditor editor);
 
-    @PostMapping("/batchAuthorize")
+    @PostMapping("/batch-authorize")
     void batchAuthorize(@RequestBody BusiBatchAuthorizeRequest request);
 
     @Hidden

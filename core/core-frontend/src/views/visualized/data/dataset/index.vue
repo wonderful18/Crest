@@ -32,7 +32,7 @@ import {
   h,
   provide
 } from 'vue'
-import ArrowSide from '@/views/common/DeResourceArrow.vue'
+import ArrowSide from '@/views/common/CrestResourceArrow.vue'
 import { useEmbedded } from '@/store/modules/embedded'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import relationChart from '@/components/relation-chart/index.vue'
@@ -53,15 +53,15 @@ import CreatDsGroup from './form/CreatDsGroup.vue'
 import type { BusiTreeNode, BusiTreeRequest } from '@/models/tree/TreeNode'
 import {
   delDatasetTree,
-  getDatasetPreview,
+  datasetPreview,
   barInfoApi,
   perDelete,
   exportDatasetData,
   exportLimit,
-  getDatasetTotal
+  datasetTotal
 } from '@/api/dataset'
 import EmptyBackground from '@/components/empty-background/src/EmptyBackground.vue'
-import DeResourceGroupOpt from '@/views/common/DeResourceGroupOpt.vue'
+import CrestResourceGroupActions from '@/views/common/CrestResourceGroupActions.vue'
 import DatasetDetail from './DatasetDetail.vue'
 import { guid } from '@/views/visualized/data/dataset/form/util'
 import { save as saveVisualization } from '@/api/visualization/dataVisualization'
@@ -88,9 +88,9 @@ const { wsCache } = useCache()
 interface Field {
   fieldShortName: string
   name: string
-  dataeaseName: string
+  engineFieldName: string
   originName: string
-  deType: number
+  fieldType: number
 }
 
 interface Node {
@@ -140,7 +140,7 @@ const state = reactive({
 const curCanvasType = ref('')
 const mounted = ref(false)
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi)
+const isCrestBi = computed(() => appStore.getIsCrestBi)
 const isIframe = computed(() => appStore.getIsIframe)
 const exportPermissions = computed(() => exportPermission(nodeInfo.weight, nodeInfo.ext))
 const createPanel = path => {
@@ -221,21 +221,21 @@ const allFieldsColumns = [
     width: 250
   },
   {
-    key: 'deType',
-    dataKey: 'deType',
+    key: 'fieldType',
+    dataKey: 'fieldType',
     title: t('data_set.field_type'),
     width: 250,
-    cellRenderer: ({ cellData: deType }) => (
+    cellRenderer: ({ cellData: fieldType }) => (
       <div style={{ width: '100%', display: 'flex', alignItems: 'center' }}>
         <ElIcon style={{ marginRight: '6px' }}>
           <Icon>
-            {h(iconFieldMap[fieldType[deType]], {
-              class: `svg-icon field-icon-${fieldType[deType]}`
+            {h(iconFieldMap[fieldType[fieldType]], {
+              class: `svg-icon field-icon-${fieldType[fieldType]}`
             })}
           </Icon>
         </ElIcon>
-        {t(`dataset.${fieldType[deType]}`) +
-          `${deType === 3 ? '(' + t('dataset.float') + ')' : ''}`}
+        {t(`dataset.${fieldType[fieldType]}`) +
+          `${fieldType === 3 ? '(' + t('dataset.float') + ')' : ''}`}
       </div>
     )
   },
@@ -267,17 +267,17 @@ const { handleDrop, allowDrop, handleDragStart } = treeDraggble(
 
 const generateColumns = (arr: Field[]) =>
   arr.map(ele => ({
-    key: ele.dataeaseName,
-    deType: ele.deType,
-    dataKey: ele.dataeaseName,
+    key: ele.engineFieldName,
+    fieldType: ele.fieldType,
+    dataKey: ele.engineFieldName,
     title: ele.name,
     width: 150,
     headerCellRenderer: ({ column }) => (
       <div class="flex-align-center">
         <ElIcon style={{ marginRight: '6px' }}>
           <Icon>
-            {h(iconFieldMap[fieldType[column.deType]], {
-              class: `svg-icon field-icon-${fieldType[column.deType]}`
+            {h(iconFieldMap[fieldType[column.fieldType]], {
+              class: `svg-icon field-icon-${fieldType[column.fieldType]}`
             })}
           </Icon>
         </ElIcon>
@@ -290,7 +290,7 @@ const generateColumns = (arr: Field[]) =>
 
 const dtLoading = ref(false)
 const isCreated = ref(false)
-const getData = () => {
+const data = () => {
   dtLoading.value = true
   let curSortType = sortList[Number(wsCache.get('TreeSort-backend')) ?? 1].value
   curSortType = wsCache.get('TreeSort-dataset') ?? curSortType
@@ -351,7 +351,7 @@ onBeforeMount(() => {
   wsCache.delete('db-info-id')
   wsCache.delete('dv-info-id')
   loadInit()
-  getData()
+  data()
   getLimit()
 })
 
@@ -395,7 +395,7 @@ const save = ({ logic, items, errorMessage }: any) => {
   table.value.id = nodeInfo.id
   table.value.row = 100000
   table.value.filename = exportForm.value.name
-  table.value.dataEaseBi = isDataEaseBi.value || appStore.getIsIframe
+  table.value.embeddedExport = isCrestBi.value || appStore.getIsIframe
   if (errorMessage) {
     ElMessage.error(errorMessage)
     return
@@ -404,7 +404,7 @@ const save = ({ logic, items, errorMessage }: any) => {
   exportDatasetLoading.value = true
   exportDatasetData(table.value)
     .then(res => {
-      if (isDataEaseBi.value || appStore.getIsIframe) {
+      if (isCrestBi.value || appStore.getIsIframe) {
         const blob = new Blob([res.data], { type: 'application/vnd.ms-excel' })
         const link = document.createElement('a')
         link.style.display = 'none'
@@ -448,7 +448,7 @@ const rowClick = (_, __, event) => {
 
 const openMessageLoading = cb => {
   const iconClass = `el-icon-loading`
-  const customClass = `de-message-loading de-message-export`
+  const customClass = `crest-message-loading crest-message-export`
   ElMessage({
     message: h('p', null, [
       t('data_set.can_go_to'),
@@ -479,7 +479,7 @@ const editorDataset = () => {
 const embedded = useEmbedded()
 
 const handleEdit = id => {
-  if (isDataEaseBi.value) {
+  if (isCrestBi.value) {
     embedded.clearState()
     embedded.setDatasetId(id as string)
     useEmitt().emitter.emit('changeCurrentComponent', 'DatasetEditor')
@@ -494,7 +494,7 @@ const handleEdit = id => {
 }
 
 const createDataset = (data?: BusiTreeNode) => {
-  if (isDataEaseBi.value) {
+  if (isCrestBi.value) {
     embedded.clearState()
     embedded.setdatasetPid(data?.id as string)
     useEmitt().emitter.emit('changeCurrentComponent', 'DatasetEditor')
@@ -518,7 +518,7 @@ const handleClick = (tabName: TabPaneName) => {
       }
       dataPreviewLoading.value = true
       total.value = null
-      getDatasetPreview(nodeInfo.id)
+      datasetPreview(nodeInfo.id)
         .then(res => {
           allFields = (res?.allFields as unknown as Field[]) || []
           datasetTableFiled.value = allFields
@@ -530,7 +530,7 @@ const handleClick = (tabName: TabPaneName) => {
         .finally(() => {
           dataPreviewLoading.value = false
         })
-      getDatasetTotal(nodeInfo.id).then(res => {
+      datasetTotal(nodeInfo.id).then(res => {
         total.value = res
       })
       break
@@ -549,7 +549,7 @@ const handleClick = (tabName: TabPaneName) => {
 const relationChartRef = ref()
 const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
   if (cmd === 'copy') {
-    if (isDataEaseBi.value) {
+    if (isCrestBi.value) {
       embedded.clearState()
       embedded.setDatasetCopyId(data.id as string)
       useEmitt().emitter.emit('changeCurrentComponent', 'DatasetEditor')
@@ -607,7 +607,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
             ])
           }).then(() => {
             delDatasetTree(data.id).then(() => {
-              getData()
+              data()
               ElMessage.success(t('dataset.delete_success'))
             })
           })
@@ -617,7 +617,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
             options as ElMessageBoxOptions
           ).then(() => {
             delDatasetTree(data.id).then(() => {
-              getData()
+              data()
               ElMessage.success(t('dataset.delete_success'))
             })
           })
@@ -627,7 +627,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
       ElMessageBox.confirm(t('data_set.delete_this_folder'), options as ElMessageBoxOptions).then(
         () => {
           delDatasetTree(data.id).then(() => {
-            getData()
+            data()
             ElMessage.success(t('dataset.delete_success'))
           })
         }
@@ -689,7 +689,7 @@ const datasetTypeList = computed(() => {
       command: 'dataset'
     },
     {
-      label: t('deDataset.new_folder'),
+      label: t('datasetUi.new_folder'),
       divided: true,
       svgName: dvFolder,
       command: 'folder'
@@ -817,7 +817,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
                 effect="dark"
                 offset="14"
                 popper-class="new-folder_tip"
-                :content="t('deDataset.new_folder')"
+                :content="t('datasetUi.new_folder')"
                 arrow-offset="10"
                 placement="top"
               >
@@ -945,7 +945,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
     <div
       class="dataset-content"
       :class="{
-        auto: isIframe || isDataEaseBi
+        auto: isIframe || isCrestBi
       }"
     >
       <template v-if="!state.datasetTree.length && mounted">
@@ -954,7 +954,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
             <template #icon>
               <Icon name="icon_add_outlined"><icon_add_outlined class="svg-icon" /></Icon>
             </template>
-            {{ t('deDataset.create') + t('auth.dataset') }}</el-button
+            {{ t('datasetUi.create') + t('auth.dataset') }}</el-button
           >
         </empty-background>
       </template>
@@ -1066,11 +1066,11 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
                     <template #header>
                       <div class="flex-align-center">
                         <ElIcon style="margin-right: 6px">
-                          <Icon :className="`field-icon-${fieldType[column.deType]}`"
+                          <Icon :className="`field-icon-${fieldType[column.fieldType]}`"
                             ><component
                               class="svg-icon"
-                              :class="`field-icon-${fieldType[column.deType]}`"
-                              :is="iconFieldMap[fieldType[column.deType]]"
+                              :class="`field-icon-${fieldType[column.fieldType]}`"
+                              :is="iconFieldMap[fieldType[column.fieldType]]"
                             ></component
                           ></Icon>
                         </ElIcon>
@@ -1093,16 +1093,16 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
         </div>
       </template>
       <template v-else-if="mounted">
-        <empty-background :description="t('deDataset.on_the_left')" img-type="select" />
+        <empty-background :description="t('datasetUi.on_the_left')" img-type="select" />
       </template>
     </div>
     <relationChart ref="relationChartRef"></relationChart>
-    <de-resource-group-opt
+    <CrestResourceGroupActions
       :cur-canvas-type="curCanvasType"
       @finish="resourceOptFinish"
       ref="resourceGroupOpt"
-    ></de-resource-group-opt>
-    <creat-ds-group @finish="getData()" ref="creatDsFolder"></creat-ds-group>
+    ></CrestResourceGroupActions>
+    <creat-ds-group @finish="data()" ref="creatDsFolder"></creat-ds-group>
   </div>
   <!--导出数据集弹框-->
   <el-dialog
@@ -1127,7 +1127,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
       <el-form-item :label="$t('dataset.export_filter')" prop="expressionTree">
         <div class="tree-cont">
           <div class="content">
-            <RowAuth @save="save" ref="rowAuth" />
+            <RowAuth @save="record" ref="rowAuth" />
           </div>
         </div>
       </el-form-item>
@@ -1166,7 +1166,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
     width: 100%;
     padding: 16px;
     border-radius: 6px;
-    border: 1px solid var(--deBorderBase, #dcdfe6);
+    border: 1px solid var(--crestBorderBase, #dcdfe6);
     overflow: auto;
 
     .content {
@@ -1320,7 +1320,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
         width: 100%;
         display: flex;
         align-items: center;
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 16px;
         font-weight: 500;
 
@@ -1365,8 +1365,8 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
     }
 
     .preview-num {
-      color: var(--deTextSecondary, #606266);
-      font-family: var(--de-custom_font, 'PingFang');
+      color: var(--crestTextSecondary, #606266);
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       font-weight: 400;
       line-height: 22px;

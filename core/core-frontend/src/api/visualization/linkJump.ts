@@ -2,25 +2,25 @@ import request from '@/config/axios'
 
 export function getTableFieldWithViewId(viewId) {
   return request.get({
-    url: '/linkJump/getTableFieldWithViewId/' + viewId
+    url: '/link-jump/table-fields/by-view/' + viewId
   })
 }
 export function queryWithViewId(dvId, viewId) {
   return request.get({
-    url: '/linkJump/queryWithViewId/' + dvId + '/' + viewId
+    url: '/link-jump/by-view/' + dvId + '/' + viewId
   })
 }
 
 export function updateJumpSet(requestInfo) {
   return request.post({
-    url: '/linkJump/updateJumpSet',
+    url: '/link-jump/jump-set',
     data: requestInfo,
     loading: true
   })
 }
 export function queryTargetVisualizationJumpInfo(requestInfo) {
   return request.post({
-    url: '/linkJump/queryTargetVisualizationJumpInfo',
+    url: '/link-jump/target-visualization-jump-info',
     data: requestInfo,
     loading: true
   })
@@ -28,29 +28,29 @@ export function queryTargetVisualizationJumpInfo(requestInfo) {
 
 export function queryVisualizationJumpInfo(dvId, resourceTable = 'snapshot') {
   return request.get({
-    url: '/linkJump/queryVisualizationJumpInfo/' + dvId + '/' + resourceTable,
+    url: '/link-jump/visualization-jump-info/' + dvId + '/' + resourceTable,
     loading: false
   })
 }
 
 export function viewTableDetailList(dvId) {
   return request.get({
-    url: '/linkJump/viewTableDetailList/' + dvId,
+    url: '/link-jump/view-table-detail-list/' + dvId,
     loading: false
   })
 }
 
 export function updateJumpSetActive(requestInfo) {
   return request.post({
-    url: '/linkJump/updateJumpSetActive',
+    url: '/link-jump/jump-set-active',
     data: requestInfo,
     loading: true
   })
 }
 
-export function removeJumpSet(requestInfo) {
-  return request.post({
-    url: '/linkJump/removeJumpSet',
+export function deleteJumpSet(requestInfo) {
+  return request.delete({
+    url: '/link-jump/jump-set',
     data: requestInfo,
     loading: true
   })

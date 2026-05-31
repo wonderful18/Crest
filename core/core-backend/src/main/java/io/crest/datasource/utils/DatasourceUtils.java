@@ -1,6 +1,6 @@
 package io.crest.datasource.utils;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
 import io.crest.i18n.Translator;
 import org.apache.commons.lang3.ObjectUtils;
@@ -14,12 +14,12 @@ import java.util.Map;
 public class DatasourceUtils {
     public static void checkDsStatus(Map<Long, DatasourceSchemaDTO> dsMap) {
         if (ObjectUtils.isEmpty(dsMap)) {
-            DEException.throwException(Translator.get("i18n_datasource_delete"));
+            CrestException.throwException(Translator.get("i18n_datasource_delete"));
         }
         for (Map.Entry<Long, DatasourceSchemaDTO> next : dsMap.entrySet()) {
             DatasourceSchemaDTO ds = next.getValue();
             if (StringUtils.isNotEmpty(ds.getStatus()) && "Error".equalsIgnoreCase(ds.getStatus())) {
-                DEException.throwException(Translator.get("i18n_invalid_ds"));
+                CrestException.throwException(Translator.get("i18n_invalid_ds"));
             }
         }
     }

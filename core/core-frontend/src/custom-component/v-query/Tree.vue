@@ -14,7 +14,7 @@ import {
 } from 'vue'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { cloneDeep, debounce, sortBy } from 'lodash-es'
-import { getFieldTree } from '@/api/dataset'
+import { fieldTree } from '@/api/dataset'
 import colorFunctions from 'less/lib/less/functions/color.js'
 import colorTree from 'less/lib/less/tree/color.js'
 import { colorStringToHex } from '@/utils/color'
@@ -355,7 +355,7 @@ function containsNodeById(source, params) {
 
 const getTreeOption = debounce(() => {
   loading.value = true
-  getFieldTree({
+  fieldTree({
     fieldIds: props.config.treeFieldList.map(ele => ele.id),
     resultMode: config.value.resultMode || 0,
     filter: getCascadeFieldId()

@@ -110,16 +110,16 @@ bash install.sh
 
 | 配置项 | 说明 |
 | --- | --- |
-| `DE_BASE` | 安装基目录，默认 `/opt`，实际运行目录为 `/opt/crest` |
-| `DE_PORT` | Web 端口，默认 `8100` |
-| `DE_APP_IMAGE` | Crest 应用镜像，默认 `ghcr.io/sevoniva/crest:v1.3.0` |
-| `DE_MYSQL_IMAGE` | MySQL 镜像，默认 `mysql:8.4.5` |
-| `DE_MYSQL_PASSWORD` | MySQL root 密码，留空时自动生成 |
-| `DE_AES_KEY` / `DE_AES_IV` | 加密参数，留空时自动生成；升级已有环境时不要修改 |
-| `DE_CRYPTO_MODE` | 加密模式，默认 `standard`；需要 SM2/SM3/SM4 时设为 `sm-suite` |
-| `DE_SM4_KEY` | SM4 使用的 16 位 Key；启用 `sm-suite` 后留空会自动生成 |
-| `DE_INITIAL_PASSWORD` | 管理员初始密码，留空时自动生成 |
-| `DE_ORIGIN_LIST` | 允许访问来源，生产环境应改成实际域名 |
+| `CREST_BASE` | 安装基目录，默认 `/opt`，实际运行目录为 `/opt/crest` |
+| `CREST_PORT` | Web 端口，默认 `8100` |
+| `CREST_APP_IMAGE` | Crest 应用镜像，默认 `ghcr.io/sevoniva/crest:v1.3.0` |
+| `CREST_MYSQL_IMAGE` | MySQL 镜像，默认 `mysql:8.4.5` |
+| `CREST_DB_PASSWORD` | MySQL root 密码，留空时自动生成 |
+| `CREST_AES_KEY` / `CREST_AES_IV` | 加密参数，留空时自动生成；升级已有环境时不要修改 |
+| `CREST_CRYPTO_MODE` | 加密模式，默认 `standard`；需要 SM2/SM3/SM4 时设为 `sm-suite` |
+| `CREST_SM4_KEY` | SM4 使用的 16 位 Key；启用 `sm-suite` 后留空会自动生成 |
+| `CREST_INITIAL_PASSWORD` | 管理员初始密码，留空时自动生成 |
+| `CREST_ORIGIN_LIST` | 允许访问来源，生产环境应改成实际域名 |
 
 安装后使用：
 
@@ -322,8 +322,8 @@ OceanBase Oracle 数据集支持结果缓存。Crest 会按数据集建模规则
 
 | 对象 | 名称 |
 | --- | --- |
-| 缓存表 | `de_sync_dataset_<datasetGroupId>` |
-| 临时缓存表 | `tmp_de_sync_dataset_<datasetGroupId>` |
+| 缓存表 | `dataset_sync_<datasetGroupId>` |
+| 临时缓存表 | `tmp_dataset_sync_<datasetGroupId>` |
 | 同步任务表 | `core_dataset_sync_task` |
 | 同步日志表 | `core_dataset_sync_task_log` |
 

@@ -17,11 +17,11 @@ import java.util.List;
 @ApiSupport(order = 994)
 public interface VisualizationStoreApi {
 
-    @PostMapping("/execute")
+    @PostMapping("/runs")
     @Operation(summary = "变更收藏信息")
     void execute(@RequestBody VisualizationStoreRequest request);
 
-    @PostMapping("/query")
+    @PostMapping("/list")
     @Operation(summary = "查询收藏资源信息")
     List<VisualizationStoreVO> query(@RequestBody VisualizationWorkbranchQueryRequest request);
     @GetMapping("/favorited/{id}")

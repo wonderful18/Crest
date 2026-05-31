@@ -183,7 +183,7 @@ onMounted(loadConfig)
 
       <div class="actions">
         <el-button @click="validate">校验配置</el-button>
-        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="record">保存</el-button>
       </div>
     </div>
   </div>

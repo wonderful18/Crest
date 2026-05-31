@@ -6,7 +6,7 @@ import org.quartz.JobExecutionContext;
 import org.springframework.stereotype.Component;
 
 @Component
-public class DatasetSyncJob extends DeScheduleJob {
+public class DatasetSyncJob extends CrestScheduleJob {
 
     private final DatasetSyncManage datasetSyncManage;
 

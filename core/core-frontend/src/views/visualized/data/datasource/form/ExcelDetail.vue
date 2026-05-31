@@ -44,7 +44,7 @@ export interface Field {
   fieldSize: number
   fieldType: string
   name: string
-  deExtractType: number
+  extractedFieldType: number
   checked: boolean
   primaryKey: boolean
   length: number
@@ -130,7 +130,7 @@ const generateColumns = (arr: Field[]) =>
   arr.map(ele => ({
     key: ele.originName,
     fieldType: ele.fieldType,
-    deExtractType: ele.deExtractType,
+    extractedFieldType: ele.extractedFieldType,
     dataKey: ele.originName,
     title: ele.name,
     checked: ele.checked,
@@ -250,7 +250,7 @@ const saveExcelDs = (params, successCb, finallyCb) => {
           selectNode[i].fields[j].checked &&
           selectNode[i].fields[j].primaryKey &&
           !selectNode[i].fields[j].length &&
-          selectNode[i].fields[j].deExtractType === 0
+          selectNode[i].fields[j].extractedFieldType === 0
         ) {
           ElMessage({
             message:
@@ -304,7 +304,7 @@ const saveExcelDs = (params, successCb, finallyCb) => {
   }
 
   if (props.param.editType === 0 && props.param.id && (effectExtField || changeFiled)) {
-    ElMessageBox.confirm(t('deDataset.replace_the_data'), {
+    ElMessageBox.confirm(t('datasetUi.replace_the_data'), {
       confirmButtonText: t('dataset.confirm'),
       tip: t('data_source.to_replace_it'),
       cancelButtonText: 'Cancel',
@@ -431,14 +431,14 @@ const status = ref(false)
 const initMultipleTable = ref(false)
 const currentMode = ref('preview')
 
-const deExtractTypeChange = item => {
-  item.deType = item.deExtractType
+const extractedFieldTypeChange = item => {
+  item.fieldType = item.extractedFieldType
   const sheet = state.excelData[0]?.sheets.find(ele => ele.sheetId === activeTab.value)
   sheet.fields.forEach(row => {
     if (row.originName === item.dataKey) {
-      row.deExtractType = item.deExtractType
-      row.deType = item.deExtractType
-      row.fieldType = fieldTypeToStr[item.deExtractType]
+      row.extractedFieldType = item.extractedFieldType
+      row.fieldType = item.extractedFieldType
+      row.fieldType = fieldTypeToStr[item.extractedFieldType]
     }
   })
 }
@@ -510,7 +510,7 @@ const disabledFieldLength = item => {
   if (!item.checked) {
     return true
   }
-  if (item.deExtractType !== 0) {
+  if (item.extractedFieldType !== 0) {
     return true
   }
 }
@@ -720,21 +720,21 @@ defineExpose({
               <template #default="scope">{{ scope.row.title }}</template>
             </el-table-column>
 
-            <el-table-column prop="deExtractType" :label="t('datasource.field_type')">
+            <el-table-column prop="extractedFieldType" :label="t('datasource.field_type')">
               <template #default="scope">
                 <el-select
-                  v-model="scope.row.deExtractType"
+                  v-model="scope.row.extractedFieldType"
                   class="select-type"
                   style="display: inline-block; width: 120px"
-                  @change="deExtractTypeChange(scope.row)"
+                  @change="extractedFieldTypeChange(scope.row)"
                 >
                   <template #prefix>
                     <el-icon>
-                      <Icon :className="`field-icon-${fieldTypeLowercase[scope.row.deExtractType]}`"
+                      <Icon :className="`field-icon-${fieldTypeLowercase[scope.row.extractedFieldType]}`"
                         ><component
                           class="svg-icon"
-                          :class="`field-icon-${fieldTypeLowercase[scope.row.deExtractType]}`"
-                          :is="iconFieldMap[fieldTypeLowercase[scope.row.deExtractType]]"
+                          :class="`field-icon-${fieldTypeLowercase[scope.row.extractedFieldType]}`"
+                          :is="iconFieldMap[fieldTypeLowercase[scope.row.extractedFieldType]]"
                         ></component
                       ></Icon>
                     </el-icon>
@@ -885,7 +885,7 @@ defineExpose({
 
     .upload-tip {
       color: #8f959e;
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       font-style: normal;
       font-weight: 400;

@@ -110,7 +110,7 @@ const groupConfigValid = computed(() => {
   }
   const showColumns = []
   allAxis?.forEach(axis => {
-    axis.hide !== true && showColumns.push({ key: axis.dataeaseName })
+    axis.hide !== true && showColumns.push({ key: axis.engineFieldName })
   })
   if (!showColumns.length) {
     return false
@@ -182,9 +182,9 @@ const init = () => {
       })
     }
     axis.forEach(item => {
-      const align = alignCfgMap[item.dataeaseName] || 'left'
+      const align = alignCfgMap[item.engineFieldName] || 'left'
       alignConfigOptions.push({
-        id: item.dataeaseName,
+        id: item.engineFieldName,
         label: item.chartShowName ?? item.name,
         align
       })

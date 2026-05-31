@@ -7,13 +7,13 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fit2cloud
  * @since 2023-06-02
  */
-@TableName("core_menu")
+@TableName("iam_menu")
 public class CoreMenu implements Serializable {
 
     private static final long serialVersionUID = 1L;

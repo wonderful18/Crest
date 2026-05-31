@@ -1,6 +1,6 @@
 package io.crest.datasource.type;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,7 +31,7 @@ public class ObOracle extends DatasourceConfiguration {
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !Strings.CI.equals(getUrlType(), "hostName")) {
             if (!Strings.CI.startsWith(getJdbcUrl(), "jdbc:oceanbase://")) {
-                DEException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
+                CrestException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
             }
             validateIllegalParameters(getJdbcUrl());
             return getJdbcUrl();
@@ -75,7 +75,7 @@ public class ObOracle extends DatasourceConfiguration {
         String decodedValue = URLDecoder.decode(StringUtils.defaultString(value), StandardCharsets.UTF_8);
         for (String illegalParameter : ILLEGAL_PARAMETERS) {
             if (Strings.CI.contains(decodedValue, illegalParameter)) {
-                DEException.throwException("Illegal parameter: " + illegalParameter);
+                CrestException.throwException("Illegal parameter: " + illegalParameter);
             }
         }
     }

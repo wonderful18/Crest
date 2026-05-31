@@ -27,7 +27,7 @@ import UserViewGroup from '@/custom-component/component-group/UserViewGroup.vue'
 import MediaGroup from '@/custom-component/component-group/MediaGroup.vue'
 import TextGroup from '@/custom-component/component-group/TextGroup.vue'
 import CommonGroup from '@/custom-component/component-group/CommonGroup.vue'
-import DeResourceGroupOpt from '@/views/common/DeResourceGroupOpt.vue'
+import CrestResourceGroupActions from '@/views/common/CrestResourceGroupActions.vue'
 import {
   canvasSave,
   canvasSaveWithParams,
@@ -43,8 +43,8 @@ import ComponentButton from '@/components/visualization/ComponentButton.vue'
 import OuterParamsSet from '@/components/visualization/OuterParamsSet.vue'
 import MultiplexingCanvas from '@/views/common/MultiplexingCanvas.vue'
 import ComponentButtonLabel from '@/components/visualization/ComponentButtonLabel.vue'
-import DeFullscreen from '@/components/visualization/common/DeFullscreen.vue'
-import DeAppApply from '@/views/common/DeAppApply.vue'
+import CrestFullscreen from '@/components/visualization/common/CrestFullscreen.vue'
+import CrestAppApply from '@/views/common/CrestAppApply.vue'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import TabsGroup from '@/custom-component/component-group/TabsGroup.vue'
@@ -181,7 +181,7 @@ const saveResource = (checkParams?) => {
     nextTick(() => {
       canvasSaveWithParams(checkParams, () => {
         snapshotStore.resetStyleChangeTimes()
-        wsCache.delete('DE-DV-CATCH-' + dvInfo.value.id)
+        wsCache.delete('CREST-DV-CACHE-' + dvInfo.value.id)
         let url = window.location.href
         url = url.replace(/(#\/[^?]*)(?:\?[^#]*)?/, `$1?dvId=${dvInfo.value.id}`)
         if (!embeddedStore.baseUrl) {
@@ -245,7 +245,7 @@ const backToMain = () => {
   }
 }
 const embeddedStore = useEmbedded()
-const isEmbedded = computed(() => appStore.getIsDataEaseBi || appStore.getIsIframe)
+const isEmbedded = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
 
 const backHandler = (url: string) => {
   if (isEmbedded.value) {
@@ -254,7 +254,7 @@ const backHandler = (url: string) => {
     useEmitt().emitter.emit('changeCurrentComponent', 'ScreenPanel')
     return
   }
-  if (window['dataease-embedded-host'] && openHandler?.value) {
+  if (window['crest-embedded-host'] && openHandler?.value) {
     const pm = {
       methodName: 'embeddedInteractive',
       args: {
@@ -266,7 +266,7 @@ const backHandler = (url: string) => {
     return
   }
   dvMainStore.canvasStateChange({ key: 'curPointArea', value: 'base' })
-  wsCache.delete('DE-DV-CATCH-' + dvInfo.value.id)
+  wsCache.delete('CREST-DV-CACHE-' + dvInfo.value.id)
   wsCache.set('dv-info-id', dvInfo.value.id)
   if (!!history.state.back) {
     history.back()
@@ -551,21 +551,21 @@ const fullScreenPreview = () => {
       />
     </Teleport>
 
-    <de-resource-group-opt
+    <CrestResourceGroupActions
       @finish="resourceOptFinish"
       cur-canvas-type="dataV"
       ref="resourceGroupOpt"
     />
-    <de-app-apply
+    <CrestAppApply
       ref="resourceAppOpt"
       :component-data="componentData"
       :dv-info="dvInfo"
       :canvas-view-info="canvasViewInfo"
       cur-canvas-type="dataV"
       @saveAppCanvas="saveCanvasWithCheck"
-    ></de-app-apply>
+    ></CrestAppApply>
   </div>
-  <de-fullscreen ref="fullScreeRef" show-position="dvEdit"></de-fullscreen>
+  <CrestFullscreen ref="fullScreeRef" show-position="dvEdit"></CrestFullscreen>
   <multiplexing-canvas ref="multiplexingRef"></multiplexing-canvas>
   <outer-params-set ref="outerParamsSetRef"></outer-params-set>
 </template>

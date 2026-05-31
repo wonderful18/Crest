@@ -14,11 +14,11 @@ import java.util.List;
 public interface CoreDataSetExtMapper {
 
     @Select("""
-            select id, name, node_type, pid from core_dataset_group
+            select id, name, node_type, pid from dataset_group
             ${ew.customSqlSegment}
             """)
     List<DataSetNodePO> query(@Param("ew") QueryWrapper queryWrapper);
 
-    @Select("select id, name, node_type, create_by, create_time, update_by, last_update_time, is_cross from core_dataset_group where id = #{id}")
+    @Select("select id, name, node_type, create_by, create_time, update_by, last_update_time, is_cross from dataset_group where id = #{id}")
     DataSetBarVO queryBarInfo(@Param("id") Long id);
 }

@@ -23,12 +23,12 @@
                             ccv.ext_color
                             <choose>
                                <when test="resourceTable == 'snapshot'">
-                                    from snapshot_core_chart_view ccv
-                                         left join snapshot_data_visualization_info dvi on dvi.id = ccv.scene_id
+                                    from bi_chart_snapshot ccv
+                                         left join bi_visualization_snapshot dvi on dvi.id = ccv.scene_id
                                </when>
                                <otherwise>
-                                    from core_chart_view ccv
-                                         left join data_visualization_info dvi on dvi.id = ccv.scene_id
+                                    from bi_chart ccv
+                                         left join bi_visualization dvi on dvi.id = ccv.scene_id
                                </otherwise>
                             </choose>
                         where ccv.id = #{id}
@@ -39,10 +39,10 @@
         select * from
     <choose>
             <when test="resourceTable == 'snapshot'">
-                snapshot_core_chart_view
+                bi_chart_snapshot
             </when>
             <otherwise>
-                core_chart_view
+                bi_chart
             </otherwise>
     </choose>
         where scene_id = #{sceneId}
@@ -51,10 +51,10 @@
           delete from
     <choose>
             <when test="resourceTable == 'snapshot'">
-                snapshot_core_chart_view
+                bi_chart_snapshot
             </when>
             <otherwise>
-                core_chart_view
+                bi_chart
             </otherwise>
     </choose>
           where scene_id = #{sceneId}

@@ -13,7 +13,7 @@ import io.crest.api.permissions.auth.vo.ResourceItemVO;
 import io.crest.api.permissions.auth.vo.ResourceVO;
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
-import io.crest.log.DeLog;
+import io.crest.log.CrestAudit;
 import io.crest.utils.IDUtils;
 import jakarta.annotation.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -40,7 +40,7 @@ public class SubstituleAuthServer implements AuthApi {
         String type = normalizeFlag(flag);
         return jdbcTemplate.query("""
                 SELECT id, resource_id, name
-                FROM crest_resource_index
+                FROM iam_resource_index
                 WHERE resource_type = ?
                 ORDER BY update_time DESC, id DESC
                 """, (rs, rowNum) -> {
@@ -60,7 +60,7 @@ public class SubstituleAuthServer implements AuthApi {
         String targetType = targetType(request.getType());
         vo.setPermissions(jdbcTemplate.query("""
                 SELECT CAST(resource_id AS UNSIGNED) AS resource_id, permission
-                FROM crest_resource_permission
+                FROM iam_resource_permission
                 WHERE target_type = ? AND target_id = ? AND resource_type = ?
                 """, (rs, rowNum) -> {
             PermissionItem item = new PermissionItem();
@@ -81,7 +81,7 @@ public class SubstituleAuthServer implements AuthApi {
     public List<ResourceVO> menuResource() {
         List<ResourceVO> menus = jdbcTemplate.query("""
                 SELECT id, pid, name, type
-                FROM core_menu
+                FROM iam_menu
                 WHERE in_layout = 1
                 ORDER BY menu_sort ASC, id ASC
                 """, (rs, rowNum) -> {
@@ -93,7 +93,7 @@ public class SubstituleAuthServer implements AuthApi {
             return vo;
         });
         Map<Long, ResourceVO> byId = menus.stream().collect(Collectors.toMap(ResourceVO::getId, item -> item));
-        List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT id, pid FROM core_menu WHERE in_layout = 1");
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT id, pid FROM iam_menu WHERE in_layout = 1");
         for (Map<String, Object> row : rows) {
             Long id = ((Number) row.get("id")).longValue();
             Long pid = ((Number) row.get("pid")).longValue();
@@ -127,12 +127,12 @@ public class SubstituleAuthServer implements AuthApi {
     }
 
     @Override
-    @DeLog(ot = LogOT.AUTHORIZE, st = LogST.DATA, id = "#p0.id")
+    @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.DATA, id = "#p0.id")
     public void saveBusiPer(BusiPerEditor editor) {
         platformPermissionManage.requireSystemAdmin();
         String targetType = targetType(editor.getType());
         jdbcTemplate.update("""
-                DELETE FROM crest_resource_permission
+                DELETE FROM iam_resource_permission
                 WHERE target_type = ? AND target_id = ? AND resource_type = ?
                 """, targetType, editor.getId(), normalizeFlag(editor.getFlag()));
         if (editor.getPermissions() == null) {
@@ -145,7 +145,7 @@ public class SubstituleAuthServer implements AuthApi {
     }
 
     @Override
-    @DeLog(ot = LogOT.AUTHORIZE, st = LogST.DATA)
+    @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.DATA)
     public void saveBusiTargetPer(BusiTargetPerCreator creator) {
         platformPermissionManage.requireSystemAdmin();
         if (creator.getPermissions() == null || creator.getIds() == null) {
@@ -154,7 +154,7 @@ public class SubstituleAuthServer implements AuthApi {
         String targetType = targetType(creator.getType());
         for (Long resourceId : creator.getIds()) {
             jdbcTemplate.update("""
-                    DELETE FROM crest_resource_permission
+                    DELETE FROM iam_resource_permission
                     WHERE resource_type = ? AND resource_id = ? AND target_type = ?
                     """, normalizeFlag(creator.getFlag()), String.valueOf(resourceId), targetType);
             for (PermissionItem item : creator.getPermissions()) {
@@ -165,16 +165,16 @@ public class SubstituleAuthServer implements AuthApi {
     }
 
     @Override
-    @DeLog(ot = LogOT.AUTHORIZE, st = LogST.MENU, id = "#p0.id")
+    @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.MENU, id = "#p0.id")
     public void saveMenuPer(MenuPerEditor editor) {
         platformPermissionManage.requireSystemAdmin();
-        jdbcTemplate.update("DELETE FROM crest_role_menu_permission WHERE rid = ?", editor.getId());
+        jdbcTemplate.update("DELETE FROM iam_role_menu_permission WHERE rid = ?", editor.getId());
         if (editor.getPermissions() == null) {
             return;
         }
         for (PermissionItem item : editor.getPermissions()) {
             jdbcTemplate.update("""
-                    INSERT IGNORE INTO crest_role_menu_permission(id, rid, menu_id, permission, create_time)
+                    INSERT IGNORE INTO iam_role_menu_permission(id, rid, menu_id, permission, create_time)
                     VALUES (?, ?, ?, ?, ?)
                     """, IDUtils.snowID(), editor.getId(), item.getId(),
                     platformPermissionManage.permissionByWeight(item.getWeight()), System.currentTimeMillis());
@@ -182,7 +182,7 @@ public class SubstituleAuthServer implements AuthApi {
     }
 
     @Override
-    @DeLog(ot = LogOT.AUTHORIZE, st = LogST.MENU)
+    @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.MENU)
     public void saveMenuTargetPer(MenuTargetPerCreator creator) {
         platformPermissionManage.requireSystemAdmin();
         if (creator.getPermissions() == null || creator.getIds() == null) {
@@ -202,8 +202,8 @@ public class SubstituleAuthServer implements AuthApi {
         if ("user".equals(targetType)) {
             return jdbcTemplate.query("""
                     SELECT DISTINCT u.id, u.account, u.name
-                    FROM crest_user u
-                    INNER JOIN crest_resource_permission p ON p.target_id = u.id AND p.target_type = 'user'
+                    FROM iam_user u
+                    INNER JOIN iam_resource_permission p ON p.target_id = u.id AND p.target_type = 'user'
                     WHERE p.resource_type = ? AND p.resource_id = ?
                     ORDER BY u.name ASC, u.account ASC
                     """, (rs, rowNum) -> {
@@ -216,8 +216,8 @@ public class SubstituleAuthServer implements AuthApi {
         }
         return jdbcTemplate.query("""
                 SELECT DISTINCT r.id, r.code AS account, r.name
-                FROM crest_role r
-                INNER JOIN crest_resource_permission p ON p.target_id = r.id AND p.target_type = 'role'
+                FROM iam_role r
+                INNER JOIN iam_resource_permission p ON p.target_id = r.id AND p.target_type = 'role'
                 WHERE p.resource_type = ? AND p.resource_id = ?
                 ORDER BY r.system_role DESC, r.name ASC
                 """, (rs, rowNum) -> {
@@ -231,7 +231,7 @@ public class SubstituleAuthServer implements AuthApi {
 
     private void saveResourcePermission(String resourceType, String resourceId, String targetType, Long targetId, String permission) {
         jdbcTemplate.update("""
-                INSERT IGNORE INTO crest_resource_permission(id, resource_type, resource_id, target_type, target_id, permission, create_time)
+                INSERT IGNORE INTO iam_resource_permission(id, resource_type, resource_id, target_type, target_id, permission, create_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, IDUtils.snowID(), resourceType, resourceId, targetType, targetId, permission, System.currentTimeMillis());
     }

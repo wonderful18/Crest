@@ -1,6 +1,6 @@
 package io.crest.security;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.utils.PasswordValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,31 +34,31 @@ class PasswordValidatorTest {
     })
     @DisplayName("弱密码应被拒绝")
     void shouldRejectWeakPasswords(String password) {
-        assertThrows(DEException.class, () -> PasswordValidator.validate(password));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate(password));
     }
 
     @Test
     @DisplayName("缺少大写字母应被拒绝")
     void shouldRejectWithoutUppercase() {
-        assertThrows(DEException.class, () -> PasswordValidator.validate("mypassword1!"));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate("mypassword1!"));
     }
 
     @Test
     @DisplayName("缺少小写字母应被拒绝")
     void shouldRejectWithoutLowercase() {
-        assertThrows(DEException.class, () -> PasswordValidator.validate("MYPASSWORD1!"));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate("MYPASSWORD1!"));
     }
 
     @Test
     @DisplayName("缺少数字应被拒绝")
     void shouldRejectWithoutDigit() {
-        assertThrows(DEException.class, () -> PasswordValidator.validate("MyPassword!"));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate("MyPassword!"));
     }
 
     @Test
     @DisplayName("缺少特殊字符应被拒绝")
     void shouldRejectWithoutSpecialChar() {
-        assertThrows(DEException.class, () -> PasswordValidator.validate("MyPassword1"));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate("MyPassword1"));
     }
 
     @ParameterizedTest
@@ -70,25 +70,25 @@ class PasswordValidatorTest {
     })
     @DisplayName("常见弱密码应被拒绝")
     void shouldRejectCommonPasswords(String password) {
-        assertThrows(DEException.class, () -> PasswordValidator.validate(password));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate(password));
     }
 
     @Test
     @DisplayName("连续相同字符应被拒绝")
     void shouldRejectSequentialChars() {
-        assertThrows(DEException.class, () -> PasswordValidator.validate("Aaa111!@#"));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate("Aaa111!@#"));
     }
 
     @Test
     @DisplayName("null 密码应抛出异常")
     void shouldRejectNull() {
-        assertThrows(DEException.class, () -> PasswordValidator.validate(null));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate(null));
     }
 
     @Test
     @DisplayName("空密码应抛出异常")
     void shouldRejectEmpty() {
-        assertThrows(DEException.class, () -> PasswordValidator.validate(""));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate(""));
     }
 
     @Test

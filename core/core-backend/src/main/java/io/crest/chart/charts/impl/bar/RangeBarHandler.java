@@ -37,7 +37,7 @@ public class RangeBarHandler extends YoyChartHandler {
             if (Strings.CI.equals(axis1.getGroupType(), "q") && Strings.CI.equals(axis2.getGroupType(), "q")) {
                 yAxis.add(axis1);
                 yAxis.add(axis2);
-            } else if (Strings.CI.equals(axis1.getGroupType(), "d") && axis1.getDeType() == 1 && Strings.CI.equals(axis2.getGroupType(), "d") && axis2.getDeType() == 1) {
+            } else if (Strings.CI.equals(axis1.getGroupType(), "d") && axis1.getFieldType() == 1 && Strings.CI.equals(axis2.getGroupType(), "d") && axis2.getFieldType() == 1) {
                 barRangeDate = true;
                 if (BooleanUtils.isTrue(view.getAggregate())) {
                     axis1.setSummary("min");

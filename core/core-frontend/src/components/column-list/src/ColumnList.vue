@@ -93,7 +93,7 @@ const handleCheckAllChange = (val: CheckboxValueType) => {
 
   .title,
   .ed-checkbox {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 400;
     padding: 5px 0;

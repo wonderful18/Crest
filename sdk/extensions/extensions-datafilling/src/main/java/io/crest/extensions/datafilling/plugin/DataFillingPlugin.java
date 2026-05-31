@@ -1,6 +1,6 @@
 package io.crest.extensions.datafilling.plugin;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datafilling.factory.ExtDDLProviderFactory;
 import io.crest.extensions.datafilling.provider.ExtDDLProvider;
 import io.crest.extensions.datafilling.vo.PluginDataFillingVO;
@@ -22,7 +22,7 @@ public abstract class DataFillingPlugin extends ExtDDLProvider implements CrestP
         try {
             pluginInfo = getPluginInfo();
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         String config = pluginInfo.getConfig();
         PluginDataFillingVO vo = JsonUtil.parseObject(config, PluginDataFillingVO.class);

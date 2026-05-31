@@ -685,7 +685,7 @@ declare interface CalcTotals {
  * 汇总聚合配置
  */
 declare interface CalcTotalCfg extends Axis {
-  dataeaseName: string
+  engineFieldName: string
   /**
    * 聚合方式
    */

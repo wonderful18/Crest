@@ -89,7 +89,7 @@ export class TableInfo extends S2ChartView<TableSheet> {
     const columns = []
     const meta = []
     const axisMap = chart.xAxis.reduce((pre, cur) => {
-      pre[cur.dataeaseName] = cur
+      pre[cur.engineFieldName] = cur
       return pre
     }, {})
     const drillFieldMap = {}
@@ -107,17 +107,17 @@ export class TableInfo extends S2ChartView<TableSheet> {
       fields = fields.filter(ele => {
         return !filterFields.includes(ele.id)
       })
-      drillFieldMap[curDrillField.dataeaseName] = chart.drillFields[0].dataeaseName
+      drillFieldMap[curDrillField.engineFieldName] = chart.drillFields[0].engineFieldName
       fields.splice(drillFieldIndex, 0, curDrillField)
     }
     fields.forEach(ele => {
-      const f = axisMap[ele.dataeaseName]
+      const f = axisMap[ele.engineFieldName]
       if (f?.hide === true) {
         return
       }
-      columns.push(ele.dataeaseName)
+      columns.push(ele.engineFieldName)
       meta.push({
-        field: ele.dataeaseName,
+        field: ele.engineFieldName,
         name: ele.chartShowName ?? ele.name,
         formatter: function (value) {
           if (!f) {
@@ -126,7 +126,7 @@ export class TableInfo extends S2ChartView<TableSheet> {
           if (value === null || value === undefined) {
             return value
           }
-          if (![2, 3, 4].includes(f.deType) || !isNumeric(value)) {
+          if (![2, 3, 4].includes(f.fieldType) || !isNumeric(value)) {
             return value
           }
           let formatCfg = f.formatterCfg
@@ -192,7 +192,7 @@ export class TableInfo extends S2ChartView<TableSheet> {
     // 自适应列宽模式下，URL 字段的宽度固定为 120
     if (basicStyle.tableColumnMode === 'adapt') {
       const urlFields = fields.filter(
-        field => field.deType === 7 && !axisMap[field.dataeaseName]?.hide
+        field => field.fieldType === 7 && !axisMap[field.engineFieldName]?.hide
       )
       s2Options.style.colCfg.widthByFieldValue = urlFields?.reduce((p, n) => {
         p[n.chartShowName ?? n.name] = 120
@@ -318,8 +318,8 @@ export class TableInfo extends S2ChartView<TableSheet> {
         }
         // 第一次渲染初始化，把图片字段固定为 120 进行计算
         const urlFields = fields
-          .filter(field => field.deType === 7 && !axisMap[field.dataeaseName]?.hide)
-          .map(f => f.dataeaseName)
+          .filter(field => field.fieldType === 7 && !axisMap[field.engineFieldName]?.hide)
+          .map(f => f.engineFieldName)
         const totalWidthWithImg = ev.colLeafNodes.reduce((p, n) => {
           return p + (urlFields.includes(n.field) ? 120 : n.width)
         }, 0)
@@ -364,7 +364,7 @@ export class TableInfo extends S2ChartView<TableSheet> {
       const cell = newChart.getCell(ev.target)
       const meta = cell.getMeta() as ViewMeta
       const nameIdMap = fields.reduce((pre, next) => {
-        pre[next['dataeaseName']] = next['id']
+        pre[next['engineFieldName']] = next['id']
         return pre
       }, {})
 
@@ -523,7 +523,7 @@ export class TableInfo extends S2ChartView<TableSheet> {
       s2Options.style.rowCfg = { heightByField }
       // 计算汇总加入到数据里，冻结最后一行
       s2Options.frozenTrailingRowCount = 1
-      const axis = filter(xAxis, axis => [2, 3, 4].includes(axis.deType))
+      const axis = filter(xAxis, axis => [2, 3, 4].includes(axis.fieldType))
       const summaryObj = getSummaryRow(
         data,
         axis,
@@ -552,7 +552,7 @@ export class TableInfo extends S2ChartView<TableSheet> {
             viewMeta.isSummaryLabel = true
           } else {
             // 第一列不是数值类型的，显示总计
-            if (![2, 3, 4].includes(xAxis?.[0]?.deType)) {
+            if (![2, 3, 4].includes(xAxis?.[0]?.fieldType)) {
               viewMeta.fieldValue = summaryLabel ?? t('chart.total_show')
               viewMeta.isSummaryLabel = true
             }
@@ -560,8 +560,8 @@ export class TableInfo extends S2ChartView<TableSheet> {
         }
         return new SummaryCell(viewMeta, sheet)
       }
-      const field = fields.find(f => f.dataeaseName === viewMeta.valueField)
-      if (field?.deType === 7 && chart.showPosition !== 'dialog') {
+      const field = fields.find(f => f.engineFieldName === viewMeta.valueField)
+      if (field?.fieldType === 7 && chart.showPosition !== 'dialog') {
         return new ImageCell(viewMeta, sheet)
       }
       if (viewMeta.colIndex === 0 && s2Options.showSeriesNumber) {

@@ -189,45 +189,45 @@ export interface IDsTable {
   datasetPath: string
 }
 
-export const getDatasourceListByTypeApi = (type: string) => {
+export const datasourceListByTypeApi = (type: string) => {
   return request.get({ url: `/sync/datasource/list/${type}` })
 }
 export const getTaskInfoListApi = (current: number, size: number, data) => {
-  return request.post({ url: `/sync/task/pager/${current}/${size}`, data: data })
+  return request.post({ url: `/sync/task/page/${current}/${size}`, data: data })
 }
 
 export const executeOneApi = (id: string) => {
-  return request.get({ url: `/sync/task/execute/${id}` })
+  return request.get({ url: `/sync/task/runs/${id}` })
 }
 
 export const startTaskApi = (id: string) => {
-  return request.get({ url: `/sync/task/start/${id}` })
+  return request.get({ url: `/sync/task/lifecycle/start/${id}` })
 }
 
 export const stopTaskApi = (id: string) => {
-  return request.get({ url: `/sync/task/stop/${id}` })
+  return request.get({ url: `/sync/task/lifecycle/stop/${id}` })
 }
 
 export const addApi = (data: ITaskInfoInsertReq) => {
-  return request.post({ url: `/sync/task/add`, data: data })
+  return request.post({ url: `/sync/task`, data: data })
 }
 
 export const removeApi = (taskId: string) => {
-  return request.post({ url: `/sync/task/remove/${taskId}` })
+  return request.delete({ url: `/sync/task/${taskId}` })
 }
 
 export const batchRemoveApi = (taskIds: string[]) => {
-  return request.post({ url: `/sync/task/batch/del`, data: taskIds })
+  return request.delete({ url: `/sync/task/batch`, data: taskIds })
 }
 
 export const modifyApi = (data: ITaskInfoUpdateReq) => {
-  return request.post({ url: `/sync/task/update`, data: data })
+  return request.put({ url: `/sync/task`, data: data })
 }
 
 export const findTaskInfoByIdApi = (taskId: string) => {
-  return request.get({ url: `/sync/task/get/${taskId}` })
+  return request.get({ url: `/sync/task/detail/${taskId}` })
 }
 
-export const getDatasourceTableListApi = (dsId: string) => {
+export const datasourceTableListApi = (dsId: string) => {
   return request.get({ url: `/sync/datasource/table/list/${dsId}` })
 }

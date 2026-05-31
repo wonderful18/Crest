@@ -19,11 +19,11 @@ public interface TemplateMarketApi {
     @GetMapping("/search")
     @Operation(summary = "查询")
     MarketBaseResponse searchTemplate();
-    @GetMapping("/searchRecommend")
+    @GetMapping("/recommendations/search")
     @Operation(summary = "查询基础信息")
     MarketBaseResponse searchTemplateRecommend();
 
-    @GetMapping("/searchPreview")
+    @GetMapping("/previews/search")
     @Operation(summary = "预览")
     MarketPreviewBaseResponse searchTemplatePreview();
 
@@ -31,7 +31,7 @@ public interface TemplateMarketApi {
     @Operation(summary = "分类")
     List<String> categories();
 
-    @GetMapping("/categoriesObject")
+    @GetMapping("/categories/object")
     @Operation(summary = "分类明细")
     List<MarketMetaDataVO> categoriesObject() ;
 

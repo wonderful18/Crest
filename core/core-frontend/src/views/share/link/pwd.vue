@@ -48,7 +48,7 @@ import request from '@/config/axios'
 import { useAppStoreWithOut } from '@/store/modules/app'
 import { rsaEncryp } from '@/utils/encryption'
 import { useCache } from '@/hooks/web/useCache'
-import { queryDekey } from '@/api/login'
+import { queryPublicKey } from '@/api/login'
 import { CustomPassword } from '@/components/custom-password'
 const { wsCache } = useCache()
 const appStore = useAppStoreWithOut()
@@ -105,7 +105,7 @@ const prepare = () => {
   const curLocation = window.location.href
   const pmIndex = curLocation.lastIndexOf('?')
   const uuidObj = curLocation.substring(
-    curLocation.lastIndexOf('de-link/') + 8,
+    curLocation.lastIndexOf('link/') + 5,
     pmIndex > 0 ? pmIndex : curLocation.length
   )
   let uuid = null
@@ -127,10 +127,10 @@ const prepare = () => {
   }
 }
 onMounted(() => {
-  if (!wsCache.get(appStore.getDekey)) {
-    queryDekey()
+  if (!wsCache.get(appStore.getClientKey)) {
+    queryPublicKey()
       .then(res => {
-        wsCache.set(appStore.getDekey, res.data)
+        wsCache.set(appStore.getClientKey, res.data)
         prepare()
       })
       .finally(() => {

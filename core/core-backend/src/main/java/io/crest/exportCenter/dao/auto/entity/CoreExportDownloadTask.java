@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @author fit2cloud
  * @since 2025-06-16
  */
-@TableName("core_export_download_task")
+@TableName("export_download_task")
 public class CoreExportDownloadTask implements Serializable {
 
     private static final long serialVersionUID = 1L;

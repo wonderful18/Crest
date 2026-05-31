@@ -1,6 +1,6 @@
 package io.crest.extensions.view.plugin;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.view.factory.PluginsChartFactory;
 import io.crest.extensions.view.vo.PluginViewVO;
 import io.crest.plugins.template.CrestPlugin;
@@ -20,7 +20,7 @@ public abstract class CrestChartPlugin extends AbstractChartPlugin implements Cr
         try {
             pluginInfo = getPluginInfo();
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         String config = pluginInfo.getConfig();
         PluginViewVO vo = JsonUtil.parseObject(config, PluginViewVO.class);

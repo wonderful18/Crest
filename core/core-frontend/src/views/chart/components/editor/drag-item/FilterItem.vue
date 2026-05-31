@@ -104,11 +104,11 @@ onMounted(() => {
       >
         <span style="display: flex">
           <el-icon>
-            <Icon :className="`field-icon-${fieldType[item.deType]}`"
+            <Icon :className="`field-icon-${fieldType[item.fieldType]}`"
               ><component
                 class="svg-icon"
-                :class="`field-icon-${fieldType[item.deType]}`"
-                :is="iconFieldMap[fieldType[item.deType]]"
+                :class="`field-icon-${fieldType[item.fieldType]}`"
+                :is="iconFieldMap[fieldType[item.fieldType]]"
               ></component
             ></Icon>
           </el-icon>

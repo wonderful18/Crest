@@ -112,7 +112,7 @@ defineExpose({
             />
           </el-select>
         </div>
-        <el-button @click="deleteCascade(idx)" class="cascade-delete" text>
+        <el-button @click="deleteCascade(idx)" class="cascadelete" text>
           <template #icon>
             <Icon name="icon_delete-trash_outlined"
               ><icon_deleteTrash_outlined class="svg-icon"
@@ -153,8 +153,8 @@ defineExpose({
       }
     }
 
-    .cascade-delete-block,
-    .cascade-delete {
+    .cascadelete-block,
+    .cascadelete {
       width: 40px;
       font-size: 20px;
       color: #646a73;

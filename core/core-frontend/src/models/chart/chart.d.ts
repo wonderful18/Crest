@@ -209,7 +209,7 @@ declare interface ChartViewField {
   /**
    * de名称
    */
-  dataeaseName: string
+  engineFieldName: string
   /**
    * id
    */
@@ -221,7 +221,7 @@ declare interface ChartViewField {
   /**
    * 字段类型
    */
-  deType: number
+  fieldType: number
   /**
    * 分组类型
    */
@@ -236,7 +236,7 @@ declare interface ChartViewField {
   type?: string
   precision?: number | null
   scale?: number | null
-  deExtractType?: number
+  extractedFieldType?: number
   extField?: number
   checked?: boolean
   columnIndex?: number | null

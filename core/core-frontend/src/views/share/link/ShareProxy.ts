@@ -48,7 +48,7 @@ class ShareProxy {
     const curLocation = window.location.href
     const pmIndex = curLocation.lastIndexOf('?')
     const uuidObj = curLocation.substring(
-      curLocation.lastIndexOf('de-link/') + 8,
+      curLocation.lastIndexOf('link/') + 5,
       pmIndex > 0 ? pmIndex : curLocation.length
     )
 
@@ -68,7 +68,7 @@ class ShareProxy {
       return null
     }
     const uuid = this.uuid
-    const url = '/share/proxyInfo'
+    const url = '/share/proxy-info'
     const inIframe = isInIframe()
     const ticket = this.getTicket()
     const param = { uuid, ciphertext: null, inIframe, ticket }

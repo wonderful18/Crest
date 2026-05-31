@@ -1,6 +1,6 @@
 package io.crest.cache.impl;
 
-import io.crest.cache.DECacheService;
+import io.crest.cache.CrestCacheService;
 import io.crest.utils.LogUtil;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
@@ -17,8 +17,8 @@ import javax.cache.expiry.ModifiedExpiryPolicy;
 import java.util.concurrent.TimeUnit;
 
 @ConditionalOnExpression("'${spring.cache.type}'.equals('jcache')")
-@Component("dECacheService")
-public class DefaultCacheImpl implements DECacheService {
+@Component("crestCacheService")
+public class DefaultCacheImpl implements CrestCacheService {
 
 
     private CacheManager cacheManager;

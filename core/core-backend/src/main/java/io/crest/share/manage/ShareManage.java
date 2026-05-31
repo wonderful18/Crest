@@ -14,7 +14,7 @@ import io.crest.api.share.vo.ShareProxyVO;
 import io.crest.auth.bo.TokenUserBO;
 import io.crest.constant.AuthConstant;
 import io.crest.constant.BusiResourceEnum;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.i18n.Translator;
 import io.crest.share.dao.auto.entity.CoreShareTicket;
 import io.crest.share.dao.auto.entity.CoreShare;
@@ -149,7 +149,7 @@ public class ShareManage {
     public void editExp(Long resourceId, Long exp) {
         CoreShare originData = queryByResource(resourceId);
         if (ObjectUtils.isEmpty(originData)) {
-            DEException.throwException("share instance not exist");
+            CrestException.throwException("share instance not exist");
         }
         originData.setExp(exp);
         if (ObjectUtils.isEmpty(exp)) {
@@ -161,7 +161,7 @@ public class ShareManage {
     public void editPwd(Long resourceId, String pwd, Boolean autoPwd) {
         CoreShare originData = queryByResource(resourceId);
         if (ObjectUtils.isEmpty(originData)) {
-            DEException.throwException("share instance not exist");
+            CrestException.throwException("share instance not exist");
         }
         originData.setPwd(pwd);
         originData.setAutoPwd(ObjectUtils.isEmpty(autoPwd) || autoPwd);
@@ -178,7 +178,7 @@ public class ShareManage {
         if (StringUtils.isNotBlank(request.getType())) {
             BusiResourceEnum busiResourceEnum = BusiResourceEnum.valueOf(request.getType().toUpperCase());
             if (ObjectUtils.isEmpty(busiResourceEnum)) {
-                DEException.throwException("type is invalid");
+                CrestException.throwException("type is invalid");
             }
             String resourceType = convertResourceType(request.getType());
             if (StringUtils.isNotBlank(resourceType)) {

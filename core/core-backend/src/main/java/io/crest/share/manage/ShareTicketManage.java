@@ -9,7 +9,7 @@ import io.crest.api.share.request.TicketSwitchRequest;
 import io.crest.api.share.vo.TicketVO;
 import io.crest.api.share.vo.TicketValidVO;
 import io.crest.commons.utils.CodingUtil;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.share.dao.auto.entity.CoreShareTicket;
 import io.crest.share.dao.auto.entity.CoreShare;
 import io.crest.share.dao.auto.mapper.CoreShareTicketMapper;
@@ -88,7 +88,7 @@ public class ShareTicketManage {
     public void deleteTicket(TicketDelRequest request) {
         String ticket = request.getTicket();
         if (StringUtils.isBlank(ticket)) {
-            DEException.throwException("ticket为必填参数");
+            CrestException.throwException("ticket为必填参数");
         }
         QueryWrapper<CoreShareTicket> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("ticket", ticket);

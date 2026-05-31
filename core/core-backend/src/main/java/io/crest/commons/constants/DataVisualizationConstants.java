@@ -12,7 +12,7 @@ public class DataVisualizationConstants {
         public static final String MAIN = "main";
 
         // 主工程编辑区
-        public static final String MAIN_EDIT = "main-edit";
+        public static final String MAIN_EDIT = "main-change";
     }
 
     //新建仪表板来源
@@ -61,7 +61,7 @@ public class DataVisualizationConstants {
         //重命名
         public static final String RENAME = "rename";
 
-        public static final String EDIT = "edit";
+        public static final String EDIT = "change";
         //复制
         public static final String COPY = "copy";
     }

@@ -14,17 +14,17 @@ import java.util.Set;
 public interface CoreVisualiationExtMapper {
 
     @Select("""
-            select id, name, pid, node_type, mobile_layout as extraFlag, status as extraFlag1 from data_visualization_info
+            select id, name, pid, node_type, mobile_layout as extraFlag, status as extraFlag1 from bi_visualization
             ${ew.customSqlSegment}
             """)
     List<VisualizationNodePO> queryNodes(@Param("ew") QueryWrapper<Object> queryWrapper);
 
-    @Select("select id from data_visualization_info where pid = #{pid} and delete_flag = 0")
+    @Select("select id from bi_visualization where pid = #{pid} and delete_flag = 0")
     List<Long> queryChildrenId(@Param("pid") Long pid);
 
     @Update("""
             <script>
-            update data_visualization_info set delete_flag = 1, delete_time = #{time}, delete_by = #{uid} where id in
+            update bi_visualization set delete_flag = 1, delete_time = #{time}, delete_by = #{uid} where id in
             <foreach item='id' index='index' collection='ids' open='(' separator=',' close=')'>
             #{id}
             </foreach>

@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `crest_org` (
+CREATE TABLE IF NOT EXISTS `iam_org` (
   `id` bigint NOT NULL COMMENT '组织ID',
   `pid` bigint DEFAULT NULL COMMENT '父组织ID',
   `name` varchar(128) NOT NULL COMMENT '组织名称',
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `crest_org` (
   KEY `idx_crest_org_path` (`path`(191))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='组织表';
 
-CREATE TABLE IF NOT EXISTS `crest_role` (
+CREATE TABLE IF NOT EXISTS `iam_role` (
   `id` bigint NOT NULL COMMENT '角色ID',
   `oid` bigint NOT NULL COMMENT '组织ID',
   `name` varchar(128) NOT NULL COMMENT '角色名称',
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `crest_role` (
   KEY `idx_crest_role_oid` (`oid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='角色表';
 
-CREATE TABLE IF NOT EXISTS `crest_user_org` (
+CREATE TABLE IF NOT EXISTS `iam_user_org` (
   `id` bigint NOT NULL COMMENT 'ID',
   `uid` bigint NOT NULL COMMENT '用户ID',
   `oid` bigint NOT NULL COMMENT '组织ID',
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS `crest_user_org` (
   KEY `idx_crest_user_org_oid` (`oid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户组织关系表';
 
-CREATE TABLE IF NOT EXISTS `crest_user_role` (
+CREATE TABLE IF NOT EXISTS `iam_user_role` (
   `id` bigint NOT NULL COMMENT 'ID',
   `uid` bigint NOT NULL COMMENT '用户ID',
   `oid` bigint NOT NULL COMMENT '组织ID',
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS `crest_user_role` (
   KEY `idx_crest_user_role_rid` (`rid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户角色关系表';
 
-CREATE TABLE IF NOT EXISTS `crest_role_menu_permission` (
+CREATE TABLE IF NOT EXISTS `iam_role_menu_permission` (
   `id` bigint NOT NULL COMMENT 'ID',
   `rid` bigint NOT NULL COMMENT '角色ID',
   `menu_id` bigint NOT NULL COMMENT '菜单ID',
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS `crest_role_menu_permission` (
   KEY `idx_crest_role_menu_id` (`menu_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='角色菜单权限表';
 
-CREATE TABLE IF NOT EXISTS `crest_resource_index` (
+CREATE TABLE IF NOT EXISTS `iam_resource_index` (
   `id` bigint NOT NULL COMMENT 'ID',
   `resource_id` varchar(64) NOT NULL COMMENT '业务资源ID',
   `resource_type` varchar(32) NOT NULL COMMENT '资源类型',
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS `crest_resource_index` (
   KEY `idx_crest_resource_creator` (`creator`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='统一资源索引表';
 
-CREATE TABLE IF NOT EXISTS `crest_resource_permission` (
+CREATE TABLE IF NOT EXISTS `iam_resource_permission` (
   `id` bigint NOT NULL COMMENT 'ID',
   `resource_type` varchar(32) NOT NULL COMMENT '资源类型',
   `resource_id` varchar(64) NOT NULL COMMENT '业务资源ID',
@@ -94,47 +94,47 @@ CREATE TABLE IF NOT EXISTS `crest_resource_permission` (
   KEY `idx_crest_resource_permission_target` (`target_type`, `target_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='资源授权表';
 
-INSERT IGNORE INTO `crest_org` (`id`, `pid`, `name`, `code`, `path`, `level`, `sort`, `enable`, `readonly`, `create_time`, `update_time`)
+INSERT IGNORE INTO `iam_org` (`id`, `pid`, `name`, `code`, `path`, `level`, `sort`, `enable`, `readonly`, `create_time`, `update_time`)
 VALUES (1, 0, '默认组织', 'default', '/1/', 0, 0, 1, 1, 1779664240000, 1779664240000);
 
-INSERT IGNORE INTO `crest_role` (`id`, `oid`, `name`, `code`, `description`, `type_code`, `readonly`, `system_role`, `org_admin`, `create_time`, `update_time`)
+INSERT IGNORE INTO `iam_role` (`id`, `oid`, `name`, `code`, `description`, `type_code`, `readonly`, `system_role`, `org_admin`, `create_time`, `update_time`)
 VALUES
   (1, 1, '系统管理员', 'system_admin', '拥有全部系统管理和资源管理权限', 1, 1, 1, 1, 1779664240000, 1779664240000),
   (2, 1, '普通用户', 'member', '默认业务使用角色', 2, 0, 1, 0, 1779664240000, 1779664240000),
   (3, 1, '审计只读', 'auditor', '面向审计和巡检场景的只读角色', 3, 1, 1, 0, 1779664240000, 1779664240000);
 
-INSERT IGNORE INTO `core_menu` (`id`, `pid`, `type`, `name`, `component`, `menu_sort`, `icon`, `path`, `hidden`, `in_layout`, `auth`)
+INSERT IGNORE INTO `iam_menu` (`id`, `pid`, `type`, `name`, `component`, `menu_sort`, `icon`, `path`, `hidden`, `in_layout`, `auth`)
 VALUES
   (73, 15, 2, 'org-management', 'system/org', 5, 'org', '/org-management', 0, 1, 1),
   (74, 15, 2, 'role-management', 'system/role', 6, 'peoples', '/role-management', 0, 1, 1),
   (75, 15, 2, 'permission-management', 'system/permission', 7, 'auth', '/permission-management', 0, 1, 1);
 
-INSERT IGNORE INTO `crest_user_org` (`id`, `uid`, `oid`, `default_org`, `create_time`)
-SELECT id, id, 1, 1, COALESCE(create_time, 1779664240000) FROM `crest_user`;
+INSERT IGNORE INTO `iam_user_org` (`id`, `uid`, `oid`, `default_org`, `create_time`)
+SELECT id, id, 1, 1, COALESCE(create_time, 1779664240000) FROM `iam_user`;
 
-INSERT IGNORE INTO `crest_user_role` (`id`, `uid`, `oid`, `rid`, `create_time`)
+INSERT IGNORE INTO `iam_user_role` (`id`, `uid`, `oid`, `rid`, `create_time`)
 SELECT CAST(CONV(SUBSTR(MD5(CONCAT('user-role:', id, ':', CASE WHEN is_admin = 1 THEN 1 ELSE 2 END)), 1, 15), 16, 10) AS UNSIGNED),
        id, 1, CASE WHEN is_admin = 1 THEN 1 ELSE 2 END, COALESCE(create_time, 1779664240000)
-FROM `crest_user`;
+FROM `iam_user`;
 
-INSERT IGNORE INTO `crest_role_menu_permission` (`id`, `rid`, `menu_id`, `permission`, `create_time`)
-SELECT id * 100 + 1, 1, id, 'manage', 1779664240000 FROM `core_menu` WHERE `auth` = 1 OR `id` IN (15, 16, 64, 67, 68, 69, 71, 72);
+INSERT IGNORE INTO `iam_role_menu_permission` (`id`, `rid`, `menu_id`, `permission`, `create_time`)
+SELECT id * 100 + 1, 1, id, 'manage', 1779664240000 FROM `iam_menu` WHERE `auth` = 1 OR `id` IN (15, 16, 64, 67, 68, 69, 71, 72);
 
-INSERT IGNORE INTO `crest_role_menu_permission` (`id`, `rid`, `menu_id`, `permission`, `create_time`)
-SELECT id * 100 + 2, 2, id, 'read', 1779664240000 FROM `core_menu` WHERE `auth` = 1 AND `id` NOT IN (15, 16, 64, 67, 68, 69, 71, 72);
+INSERT IGNORE INTO `iam_role_menu_permission` (`id`, `rid`, `menu_id`, `permission`, `create_time`)
+SELECT id * 100 + 2, 2, id, 'read', 1779664240000 FROM `iam_menu` WHERE `auth` = 1 AND `id` NOT IN (15, 16, 64, 67, 68, 69, 71, 72);
 
-INSERT IGNORE INTO `crest_role_menu_permission` (`id`, `rid`, `menu_id`, `permission`, `create_time`)
-SELECT id * 100 + 3, 3, id, 'read', 1779664240000 FROM `core_menu` WHERE `auth` = 1 AND `id` NOT IN (15, 16, 64, 67, 68, 69, 71, 72, 73, 74, 75);
+INSERT IGNORE INTO `iam_role_menu_permission` (`id`, `rid`, `menu_id`, `permission`, `create_time`)
+SELECT id * 100 + 3, 3, id, 'read', 1779664240000 FROM `iam_menu` WHERE `auth` = 1 AND `id` NOT IN (15, 16, 64, 67, 68, 69, 71, 72, 73, 74, 75);
 
-INSERT IGNORE INTO `crest_resource_index` (`id`, `resource_id`, `resource_type`, `oid`, `creator`, `name`, `create_time`, `update_time`)
+INSERT IGNORE INTO `iam_resource_index` (`id`, `resource_id`, `resource_type`, `oid`, `creator`, `name`, `create_time`, `update_time`)
 SELECT CAST(CONV(SUBSTR(MD5(CONCAT('datasource:', id)), 1, 15), 16, 10) AS UNSIGNED), CAST(id AS CHAR), 'datasource', 1, CAST(create_by AS UNSIGNED), name, create_time, update_time
-FROM `core_datasource` WHERE `type` != 'folder';
+FROM `data_source` WHERE `type` != 'folder';
 
-INSERT IGNORE INTO `crest_resource_index` (`id`, `resource_id`, `resource_type`, `oid`, `creator`, `name`, `create_time`, `update_time`)
+INSERT IGNORE INTO `iam_resource_index` (`id`, `resource_id`, `resource_type`, `oid`, `creator`, `name`, `create_time`, `update_time`)
 SELECT CAST(CONV(SUBSTR(MD5(CONCAT('dataset:', id)), 1, 15), 16, 10) AS UNSIGNED), CAST(id AS CHAR), 'dataset', 1, CAST(create_by AS UNSIGNED), name, create_time, last_update_time
-FROM `core_dataset_group` WHERE `node_type` = 'dataset';
+FROM `dataset_group` WHERE `node_type` = 'dataset';
 
-INSERT IGNORE INTO `crest_resource_index` (`id`, `resource_id`, `resource_type`, `oid`, `creator`, `name`, `create_time`, `update_time`)
+INSERT IGNORE INTO `iam_resource_index` (`id`, `resource_id`, `resource_type`, `oid`, `creator`, `name`, `create_time`, `update_time`)
 SELECT CAST(CONV(SUBSTR(MD5(CONCAT('visualization:', id)), 1, 15), 16, 10) AS UNSIGNED), CAST(id AS CHAR), CASE WHEN `type` = 'dataV' THEN 'screen' ELSE 'panel' END,
        COALESCE(CAST(NULLIF(org_id, '') AS UNSIGNED), 1), CAST(create_by AS UNSIGNED), name, create_time, update_time
-FROM `data_visualization_info` WHERE `delete_flag` = 0 AND `node_type` = 'leaf';
+FROM `bi_visualization` WHERE `delete_flag` = 0 AND `node_type` = 'leaf';

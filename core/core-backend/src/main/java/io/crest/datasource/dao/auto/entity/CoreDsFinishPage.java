@@ -7,13 +7,13 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fit2cloud
  * @since 2023-10-08
  */
-@TableName("core_ds_finish_page")
+@TableName("data_source_finish_page")
 public class CoreDsFinishPage implements Serializable {
 
     private static final long serialVersionUID = 1L;

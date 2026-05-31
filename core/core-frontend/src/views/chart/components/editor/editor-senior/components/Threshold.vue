@@ -212,14 +212,14 @@ const changeTableThreshold = () => {
             return
           }
           if (
-            (field.field.deType === 2 || field.field.deType === 3 || field.field.deType === 4) &&
+            (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) &&
             (parseFloat(ele.min).toString() === 'NaN' || parseFloat(ele.max).toString() === 'NaN')
           ) {
             ElMessage.error(t('chart.value_error'))
             return
           }
           if (
-            (field.field.deType === 2 || field.field.deType === 3 || field.field.deType === 4) &&
+            (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) &&
             parseFloat(ele.min) > parseFloat(ele.max)
           ) {
             ElMessage.error(t('chart.value_min_max_invalid'))
@@ -233,7 +233,7 @@ const changeTableThreshold = () => {
           if (
             !ele.term.includes('null') &&
             !ele.term.includes('empty') &&
-            (field.field.deType === 2 || field.field.deType === 3 || field.field.deType === 4) &&
+            (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) &&
             parseFloat(ele.value).toString() === 'NaN'
           ) {
             ElMessage.error(t('chart.value_error'))
@@ -305,14 +305,14 @@ const changeLineThreshold = () => {
           return
         }
         if (
-          (field.field.deType === 2 || field.field.deType === 3 || field.field.deType === 4) &&
+          (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) &&
           (parseFloat(ele.min).toString() === 'NaN' || parseFloat(ele.max).toString() === 'NaN')
         ) {
           ElMessage.error(t('chart.value_error'))
           return
         }
         if (
-          (field.field.deType === 2 || field.field.deType === 3 || field.field.deType === 4) &&
+          (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) &&
           parseFloat(ele.min) > parseFloat(ele.max)
         ) {
           ElMessage.error(t('chart.value_min_max_invalid'))
@@ -324,7 +324,7 @@ const changeLineThreshold = () => {
           return
         }
         if (
-          (field.field.deType === 2 || field.field.deType === 3 || field.field.deType === 4) &&
+          (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) &&
           parseFloat(ele.value).toString() === 'NaN'
         ) {
           ElMessage.error(t('chart.value_error'))
@@ -640,11 +640,11 @@ init()
           >
             <div class="field-style" :class="{ 'field-style-dark': themes === 'dark' }">
               <el-icon>
-                <Icon :className="`field-icon-${fieldType[fieldItem.field.deType]}`"
+                <Icon :className="`field-icon-${fieldType[fieldItem.field.fieldType]}`"
                   ><component
                     class="svg-icon"
-                    :class="`field-icon-${fieldType[fieldItem.field.deType]}`"
-                    :is="iconFieldMap[fieldType[fieldItem.field.deType]]"
+                    :class="`field-icon-${fieldType[fieldItem.field.fieldType]}`"
+                    :is="iconFieldMap[fieldType[fieldItem.field.fieldType]]"
                   ></component
                 ></Icon>
               </el-icon>
@@ -840,11 +840,11 @@ init()
           >
             <div class="field-style" :class="{ 'field-style-dark': themes === 'dark' }">
               <el-icon>
-                <Icon :className="`field-icon-${fieldType[fieldItem.field.deType]}`"
+                <Icon :className="`field-icon-${fieldType[fieldItem.field.fieldType]}`"
                   ><component
                     class="svg-icon"
-                    :class="`field-icon-${fieldType[fieldItem.field.deType]}`"
-                    :is="iconFieldMap[fieldType[fieldItem.field.deType]]"
+                    :class="`field-icon-${fieldType[fieldItem.field.fieldType]}`"
+                    :is="iconFieldMap[fieldType[fieldItem.field.fieldType]]"
                   ></component
                 ></Icon>
               </el-icon>
@@ -972,11 +972,11 @@ init()
           >
             <div class="field-style" :class="{ 'field-style-dark': themes === 'dark' }">
               <el-icon>
-                <Icon :className="`field-icon-${fieldType[fieldItem.field.deType]}`"
+                <Icon :className="`field-icon-${fieldType[fieldItem.field.fieldType]}`"
                   ><component
                     class="svg-icon"
-                    :class="`field-icon-${fieldType[fieldItem.field.deType]}`"
-                    :is="iconFieldMap[fieldType[fieldItem.field.deType]]"
+                    :class="`field-icon-${fieldType[fieldItem.field.fieldType]}`"
+                    :is="iconFieldMap[fieldType[fieldItem.field.fieldType]]"
                   ></component
                 ></Icon>
               </el-icon>
@@ -1329,7 +1329,7 @@ span {
   }
 }
 .label-dark {
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   font-style: normal;
   font-weight: 400;
   line-height: 20px;

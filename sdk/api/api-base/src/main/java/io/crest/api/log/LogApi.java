@@ -27,7 +27,7 @@ public interface LogApi {
             @Parameter(name = "pageSize", description = "每页容量", required = true, in = ParameterIn.PATH),
             @Parameter(name = "request", description = "过滤条件", required = true)
     })
-    @PostMapping("/pager/{goPage}/{pageSize}")
+    @PostMapping("/page/{goPage}/{pageSize}")
     IPage<LogGridVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody LogGridRequest request);
 
     @Operation(summary = "导出日志列表")

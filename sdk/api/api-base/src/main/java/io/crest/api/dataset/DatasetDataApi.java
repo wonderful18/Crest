@@ -20,42 +20,42 @@ import java.util.Map;
 @ApiSupport(order = 978)
 public interface DatasetDataApi {
     @Operation(summary = "预览数据")
-    @PostMapping("previewData")
+    @PostMapping("preview-data")
     Map<String, Object> previewData(@RequestBody DatasetGroupInfoDTO datasetGroupInfoDTO) throws Exception;
 
     @Operation(summary = "获取数据集节点字段")
-    @PostMapping("tableField")
+    @PostMapping("table-fields")
     List<DatasetTableFieldDTO> tableField(@RequestBody DatasetTableDTO datasetTableDTO) throws Exception;
 
     @Operation(summary = "SQL预览")
-    @PostMapping("previewSql")
+    @PostMapping("preview-sql")
     Map<String, Object> previewSql(@RequestBody PreviewSqlDTO dto) throws Exception;
 
     @Operation(summary = "sql片段校验", hidden = true)
-    @PostMapping("previewSqlCheck")
+    @PostMapping("preview-sql/check")
     Map<String, Object> previewSqlCheck(@RequestBody PreviewSqlDTO dto) throws Exception;
 
     @Operation(summary = "数据集获取字段枚举值")
-    @PostMapping("enumValueDs")
+    @PostMapping("enum-values/dataset")
     List<String> getFieldEnumDs(@RequestBody EnumObj map) throws Exception;
 
     @Operation(summary = "获取字段枚举值")
-    @PostMapping("enumValue")
+    @PostMapping("enum-values")
     List<String> getFieldEnum(@RequestBody MultFieldValuesRequest multFieldValuesRequest) throws Exception;
 
     @Operation(summary = "获取字段枚举值(多字段)")
-    @PostMapping("enumValueObj")
+    @PostMapping("enum-values/object")
     List<Map<String, Object>> getFieldEnumObj(@RequestBody EnumValueRequest request) throws Exception;
 
     @Operation(summary = "获取数据集总数据量", hidden = true)
-    @PostMapping("getDatasetCount")
-    Long getDatasetCount(@RequestBody DatasetGroupInfoDTO datasetGroupInfoDTO) throws Exception;
+    @PostMapping("dataset-count")
+    Long datasetCount(@RequestBody DatasetGroupInfoDTO datasetGroupInfoDTO) throws Exception;
 
     @Operation(summary = "获取数据集数据量", hidden = true)
-    @PostMapping("getDatasetTotal")
-    Long getDatasetTotal(@RequestBody DatasetGroupInfoDTO datasetGroupInfoDTO) throws Exception;
+    @PostMapping("dataset-total")
+    Long datasetTotal(@RequestBody DatasetGroupInfoDTO datasetGroupInfoDTO) throws Exception;
 
     @Operation(summary = "获取下拉树数据", hidden = true)
-    @PostMapping("getFieldTree")
+    @PostMapping("field-tree")
     List<BaseTreeNodeDTO> getFieldValueTree(@RequestBody MultFieldValuesRequest multFieldValuesRequest) throws Exception;
 }

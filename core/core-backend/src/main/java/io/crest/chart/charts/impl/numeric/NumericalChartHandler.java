@@ -6,7 +6,7 @@ import io.crest.chart.utils.ChartDataBuild;
 import io.crest.engine.sql.SQLProvider;
 import io.crest.engine.trans.Quota2SQLObj;
 import io.crest.engine.utils.Utils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.datasource.dto.DatasourceRequest;
 import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
@@ -67,7 +67,7 @@ public class NumericalChartHandler extends DefaultChartHandler {
         if (Strings.CI.equals("dynamic", maxType)) {
             Map<String, Object> maxField = (Map<String, Object>) target.get(field);
             if (maxField.get("id") == null || StringUtils.isEmpty(maxField.get("id").toString())) {
-                DEException.throwException(Translator.get("i18n_gauge_field_delete"));
+                CrestException.throwException(Translator.get("i18n_gauge_field_delete"));
             }
             Long id = Long.valueOf((String) maxField.get("id"));
             String summary = (String) maxField.get("summary");
@@ -80,7 +80,7 @@ public class NumericalChartHandler extends DefaultChartHandler {
                 }
                 return dto;
             } else {
-                DEException.throwException(Translator.get("i18n_gauge_field_delete"));
+                CrestException.throwException(Translator.get("i18n_gauge_field_delete"));
             }
         }
         return null;

@@ -16,7 +16,7 @@ import DvSidebar from '../../components/visualization/DvSidebar.vue'
 import router from '@/router'
 import Editor from '@/views/chart/components/editor/index.vue'
 import { guid } from '@/views/visualized/data/dataset/form/util.js'
-import { getDatasetTree } from '@/api/dataset'
+import { datasetTree } from '@/api/dataset'
 import { Tree } from '@/views/visualized/data/dataset/form/CreatDsGroup.vue'
 import {
   decompressionPre,
@@ -26,7 +26,7 @@ import {
   onInitReady
 } from '@/utils/canvasUtils'
 import CanvasCore from '@/components/data-visualization/canvas/CanvasCore.vue'
-import { listenGlobalKeyDown, releaseAttachKey } from '@/utils/DeShortcutKey'
+import { listenGlobalKeyDown, releaseAttachKey } from '@/utils/shortcutKey'
 import { adaptCurThemeCommonStyle } from '@/utils/canvasStyle'
 import { useEmbedded } from '@/store/modules/embedded'
 import { changeComponentSizeWithScale } from '@/utils/changeComponentsSizeWithScale'
@@ -40,11 +40,11 @@ import { Base64 } from 'js-base64'
 import CanvasCacheDialog from '@/components/visualization/CanvasCacheDialog.vue'
 import { deepCopy } from '@/utils/utils'
 import DvPreview from '@/views/data-visualization/DvPreview.vue'
-import DeRuler from '@/custom-component/common/DeRuler.vue'
+import Ruler from '@/custom-component/common/Ruler.vue'
 import { useRequestStoreWithOut } from '@/store/modules/request'
 import { usePermissionStoreWithOut } from '@/store/modules/permission'
 import ChartStyleBatchSet from '@/views/chart/components/editor/editor-style/ChartStyleBatchSet.vue'
-import CustomTabsSort from '@/custom-component/de-tabs/CustomTabsSort.vue'
+import CustomTabsSort from '@/custom-component/tabs/CustomTabsSort.vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { recoverToPublished } from '@/api/visualization/dataVisualization'
 const interactiveStore = interactiveStoreWithOut()
@@ -67,14 +67,14 @@ const eventCheck = e => {
 const mainCanvasCoreRef = ref(null)
 const customTabsSortRef = ref(null)
 const appStore = useAppStoreWithOut()
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi)
+const isCrestBi = computed(() => appStore.getIsCrestBi)
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const contextmenuStore = contextmenuStoreWithOut()
 const composeStore = composeStoreWithOut()
 const canvasCacheOutRef = ref(null)
-const deWRulerRef = ref(null)
-const deHRulerRef = ref(null)
+const widthRulerRef = ref(null)
+const heightRulerRef = ref(null)
 const requestStore = useRequestStoreWithOut()
 const permissionStore = usePermissionStoreWithOut()
 const {
@@ -208,7 +208,7 @@ const handleNew = newComponentInfo => {
 const handleDrop = e => {
   e.preventDefault()
   e.stopPropagation()
-  const componentInfo = e.dataTransfer.getData('id')
+  const componentInfo = e.dataTransfer.data('id')
   const rectInfo = editorMap.value[state.canvasId].getBoundingClientRect()
   if (componentInfo) {
     const component = findDragComponent(componentInfo)
@@ -254,7 +254,7 @@ const deselectCurComponent = e => {
 }
 
 const initDataset = () => {
-  getDatasetTree({}).then(res => {
+  datasetTree({}).then(res => {
     state.datasetTree = (res as unknown as Tree[]) || []
   })
 }
@@ -278,7 +278,7 @@ const initScroll = () => {
   })
 }
 const doUseCache = flag => {
-  const canvasCache = wsCache.get('DE-DV-CATCH-' + state.resourceId)
+  const canvasCache = wsCache.get('CREST-DV-CACHE-' + state.resourceId)
   if (flag && canvasCache) {
     const canvasCacheSeries = deepCopy(canvasCache)
     snapshotStore.snapshotPublish(canvasCacheSeries)
@@ -295,7 +295,7 @@ const doUseCache = flag => {
     initLocalCanvasData(() => {
       // do init
     })
-    wsCache.delete('DE-DV-CATCH-' + state.resourceId)
+    wsCache.delete('CREST-DV-CACHE-' + state.resourceId)
   }
 }
 
@@ -349,7 +349,7 @@ watch(
   }
 )
 const checkPer = async resourceId => {
-  if (!window.DataEaseBi || !resourceId) {
+  if (!window.CrestBi || !resourceId) {
     return true
   }
   const request = { busiFlag: 'dataV', resourceTable: 'core' }
@@ -403,7 +403,7 @@ onMounted(async () => {
   state.opt = opt
   if (dvId) {
     state.canvasInitStatus = false
-    const canvasCache = wsCache.get('DE-DV-CATCH-' + dvId)
+    const canvasCache = wsCache.get('CREST-DV-CACHE-' + dvId)
     if (canvasCache) {
       canvasCacheOutRef.value?.dialogInit({ canvasType: 'dataV', resourceId: dvId })
     } else {
@@ -422,13 +422,13 @@ onMounted(async () => {
     } catch (e) {
       console.error('can not find watermark info')
     }
-    let deTemplateData
+    let templatePayload
     let preName
     if (createType === 'template') {
       const templateParamsApply = JSON.parse(Base64.decode(decodeURIComponent(templateParams + '')))
       await decompressionPre(templateParamsApply, result => {
-        deTemplateData = result
-        preName = deTemplateData.baseInfo?.preName
+        templatePayload = result
+        preName = templatePayload.baseInfo?.preName
       })
     }
     dvMainStore.createInit('dataV', null, pid, watermarkBaseInfo, preName)
@@ -438,10 +438,10 @@ onMounted(async () => {
       snapshotStore.recordSnapshotCache('renderChart')
       // 从模板新建
       if (createType === 'template') {
-        dvMainStore.setComponentData(deTemplateData['componentData'])
-        dvMainStore.setCanvasStyle(deTemplateData['canvasStyleData'])
-        dvMainStore.setCanvasViewInfo(deTemplateData['canvasViewInfo'])
-        dvMainStore.setAppDataInfo(deTemplateData['appData'])
+        dvMainStore.setComponentData(templatePayload['componentData'])
+        dvMainStore.setCanvasStyle(templatePayload['canvasStyleData'])
+        dvMainStore.setCanvasViewInfo(templatePayload['canvasViewInfo'])
+        dvMainStore.setAppDataInfo(templatePayload['appData'])
         setTimeout(() => {
           snapshotStore.recordSnapshotCache('template')
         }, 1500)
@@ -495,8 +495,8 @@ const viewsPropertiesShow = computed(() => {
 })
 
 const scrollCanvas = e => {
-  deWRulerRef.value.rulerScroll(e)
-  deHRulerRef.value.rulerScroll(e)
+  widthRulerRef.value.rulerScroll(e)
+  heightRulerRef.value.rulerScroll(e)
 }
 
 const coreComponentData = computed(() =>
@@ -528,7 +528,7 @@ eventBus.on('tabSort', tabSort)
   <div
     ref="dvLayout"
     class="dv-common-layout"
-    :class="isDataEaseBi && !newWindowFromDiv && 'dataease-w-h'"
+    :class="isCrestBi && !newWindowFromDiv && 'crest-w-h'"
   >
     <DvToolbar @recover-to-published="doRecoverToPublished" />
     <div class="custom-dv-divider" />
@@ -554,18 +554,18 @@ eventBus.on('tabSort', tabSort)
       </dv-sidebar>
       <!-- 中间画布 -->
       <main id="dv-main-center" class="center" ref="canvasCenterRef">
-        <div class="de-ruler-icon-outer">
-          <el-icon class="de-ruler-icon">
+        <div class="ruler-icon-outer">
+          <el-icon class="ruler-icon">
             <Icon name="dv-ruler"><dvRuler class="svg-icon" /></Icon>
           </el-icon>
         </div>
-        <de-ruler ref="deWRulerRef" @update:tickSize="val => (state.baseWidth = val)"></de-ruler>
-        <de-ruler
+        <Ruler ref="widthRulerRef" @update:tickSize="val => (state.baseWidth = val)"></Ruler>
+        <Ruler
           direction="vertical"
           @update:tickSize="val => (state.baseHeight = val)"
           :size="mainHeight"
-          ref="deHRulerRef"
-        ></de-ruler>
+          ref="heightRulerRef"
+        ></Ruler>
         <el-scrollbar
           ref="canvasOut"
           @scroll="scrollCanvas"
@@ -718,7 +718,7 @@ eventBus.on('tabSort', tabSort)
       height: 100%;
     }
   }
-  &.dataease-w-h {
+  &.crest-w-h {
     height: 100%;
     width: 100%;
     .dv-layout-container {
@@ -758,14 +758,14 @@ eventBus.on('tabSort', tabSort)
   align-items: center;
 }
 
-.de-ruler-icon-outer {
+.ruler-icon-outer {
   background: #2c2c2c;
   position: absolute;
   width: 30px;
   height: 30px;
   z-index: 3;
   color: #ebebeb;
-  .de-ruler-icon {
+  .ruler-icon {
     margin-left: 6px;
     margin-top: 6px;
     font-size: 24px;

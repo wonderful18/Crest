@@ -1,7 +1,7 @@
 package io.crest.utils;
 
 import io.crest.auth.bo.TokenUserBO;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.result.ResultCode;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -19,7 +19,7 @@ public class CrestPermissionUtils {
         }
         try {
             Object userManage = CommonBeanFactory.getBean("crestUserManage");
-            Method method = DeReflectUtil.findMethod(userManage.getClass(), "isAdmin");
+            Method method = CrestReflectionUtils.findMethod(userManage.getClass(), "isAdmin");
             Object result = ReflectionUtils.invokeMethod(method, userManage, uid);
             if (result instanceof Boolean bool) {
                 return bool;
@@ -31,7 +31,7 @@ public class CrestPermissionUtils {
 
     public static void requireAdmin() {
         if (!currentUserIsAdmin()) {
-            DEException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "当前用户没有管理员权限");
+            CrestException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "当前用户没有管理员权限");
         }
     }
 
@@ -48,7 +48,7 @@ public class CrestPermissionUtils {
             return;
         }
         if (!canAccessCreator(createBy)) {
-            DEException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "当前用户无权访问该资源");
+            CrestException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "当前用户无权访问该资源");
         }
     }
 
@@ -65,12 +65,12 @@ public class CrestPermissionUtils {
         String safeUid = Strings.CS.replace(String.valueOf(uid), "'", "''");
         return """
                 SELECT 1 FROM (
-                  SELECT CAST(id AS CHAR) AS resource_id, create_by FROM core_datasource
-                  UNION ALL SELECT CAST(id AS CHAR) AS resource_id, create_by FROM core_dataset_group
-                  UNION ALL SELECT CAST(id AS CHAR) AS resource_id, create_by FROM core_chart_view
-                  UNION ALL SELECT CAST(id AS CHAR) AS resource_id, create_by FROM data_visualization_info
-                ) crest_resource_scope
-                WHERE crest_resource_scope.resource_id = CAST(%s AS CHAR)
-                  AND (crest_resource_scope.create_by IS NULL OR crest_resource_scope.create_by <> '""" + safeUid + "')";
+                  SELECT CAST(id AS CHAR) AS resource_id, create_by FROM data_source
+                  UNION ALL SELECT CAST(id AS CHAR) AS resource_id, create_by FROM dataset_group
+                  UNION ALL SELECT CAST(id AS CHAR) AS resource_id, create_by FROM bi_chart
+                  UNION ALL SELECT CAST(id AS CHAR) AS resource_id, create_by FROM bi_visualization
+                ) resource_scope
+                WHERE resource_scope.resource_id = CAST(%s AS CHAR)
+                  AND (resource_scope.create_by IS NULL OR resource_scope.create_by <> '""" + safeUid + "')";
     }
 }

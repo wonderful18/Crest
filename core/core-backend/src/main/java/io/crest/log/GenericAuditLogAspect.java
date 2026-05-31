@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 
 /**
- * Audit fallback for REST endpoints that have not been annotated with DeLog.
+ * Audit fallback for REST endpoints that have not been annotated with CrestAudit.
  */
 @Aspect
 @Component
@@ -32,9 +32,9 @@ public class GenericAuditLogAspect {
 
     @Around("within(@org.springframework.web.bind.annotation.RestController *)"
             + " && execution(public * io.crest..*(..))"
-            + " && !@annotation(io.crest.log.DeLog)")
+            + " && !@annotation(io.crest.log.CrestAudit)")
     public Object around(ProceedingJoinPoint point) throws Throwable {
-        if (hasDeLog(point)) {
+        if (hasCrestAudit(point)) {
             return point.proceed();
         }
         HttpServletRequest request = ServletUtils.request();
@@ -106,17 +106,17 @@ public class GenericAuditLogAspect {
                 || uri.contains("/chartdata/innerexport");
     }
 
-    private boolean hasDeLog(ProceedingJoinPoint point) {
+    private boolean hasCrestAudit(ProceedingJoinPoint point) {
         if (!(point.getSignature() instanceof MethodSignature signature)) {
             return false;
         }
         Method method = signature.getMethod();
-        if (method.isAnnotationPresent(DeLog.class)) {
+        if (method.isAnnotationPresent(CrestAudit.class)) {
             return true;
         }
         try {
             Method targetMethod = point.getTarget().getClass().getMethod(method.getName(), method.getParameterTypes());
-            return targetMethod.isAnnotationPresent(DeLog.class);
+            return targetMethod.isAnnotationPresent(CrestAudit.class);
         } catch (Exception ignored) {
             return false;
         }
@@ -152,7 +152,7 @@ public class GenericAuditLogAspect {
         if (containsAny(normalizedUri, "upload", "import") || containsAny(normalizedName, "upload", "import")) {
             return LogOT.UPLOADFILE;
         }
-        if (containsAny(normalizedUri, "create", "add") || containsAny(normalizedName, "create", "add")) {
+        if ("POST".equalsIgnoreCase(method) && containsAny(normalizedName, "create", "save")) {
             return LogOT.CREATE;
         }
         if (containsAny(normalizedUri, "clear")) {
@@ -234,14 +234,14 @@ public class GenericAuditLogAspect {
                 "/sysparameter/", "/engine/", "/exportcenter/exporttasks", "/exportcenter/exportlimit",
                 "/auth/busipermission", "/auth/busitargetpermission", "/auth/busiresource",
                 "/auth/menupermission", "/auth/menutargetpermission", "/auth/menuresource",
-                "/role/bycurorg", "/role/query", "/role/detail", "/role/querywithoid",
+                "/role/bycurorg", "/role/list", "/role/detail", "/role/listwithoid",
                 "/user/bycurorg", "/user/defaultpwd", "/org/mounted");
     }
 
     private boolean isReadOperation(String uri, String methodName) {
         return containsAny(uri,
-                "/query", "/pager", "/tree", "/info", "/detail", "/status", "/option", "/selected",
-                "/bycurorg", "/querybyid", "/querywithoid", "/mounted", "/permission", "/resource",
+                "/list", "/pager", "/tree", "/info", "/detail", "/status", "/option", "/selected",
+                "/bycurorg", "/listbyid", "/listwithoid", "/mounted", "/permission", "/resource",
                 "/exporttasks", "/exportlimit", "/validatepwd")
                 || containsAny(methodName, "query", "pager", "tree", "info", "detail", "status", "option",
                 "selected", "permission", "resource", "validate");

@@ -166,7 +166,7 @@ router.beforeEach(async (to, from, next) => {
       next()
     } else if (
       to.name === 'link' ||
-      to.path.startsWith('/de-link/') ||
+      to.path.startsWith('/link/') ||
       (!platform && embeddedWindowWhiteList.includes(to.path)) ||
       whiteList.includes(to.path)
     ) {

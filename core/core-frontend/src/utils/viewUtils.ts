@@ -10,25 +10,25 @@ export function viewFieldTimeTrans(viewDataInfo, params) {
       : []
 
     const idNameMap = fields.reduce((pre, next) => {
-      pre[next['id']] = next['dataeaseName']
+      pre[next['id']] = next['engineFieldName']
       return pre
     }, {})
 
     const nameTypeMap = fields.reduce((pre, next) => {
-      pre[next['dataeaseName']] = next['deType']
+      pre[next['engineFieldName']] = next['fieldType']
       return pre
     }, {})
 
     const nameDateStyleMap = fields.reduce((pre, next) => {
-      pre[next['dataeaseName']] = next['dateStyle']
+      pre[next['engineFieldName']] = next['dateStyle']
       return pre
     }, {})
 
     params.dimensionList.forEach(dimension => {
-      const dataeaseName = idNameMap[dimension.id]
-      // deType === 1 表示是时间类型
-      if (nameTypeMap[dataeaseName] === 1) {
-        dimension['timeValue'] = getRange(dimension.value, nameDateStyleMap[dataeaseName])
+      const engineFieldName = idNameMap[dimension.id]
+      // fieldType === 1 表示是时间类型
+      if (nameTypeMap[engineFieldName] === 1) {
+        dimension['timeValue'] = getRange(dimension.value, nameDateStyleMap[engineFieldName])
       }
     })
   }

@@ -140,7 +140,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
 
     const { xAxis: rowFields, xAxisExt: columnFields, yAxis: valueFields } = chart
     const [r, c, v] = [rowFields, columnFields, valueFields].map(arr =>
-      arr.map(i => i.dataeaseName)
+      arr.map(i => i.engineFieldName)
     )
 
     // fields
@@ -160,14 +160,14 @@ export class TablePivot extends S2ChartView<PivotSheet> {
       ...chart.xAxisExt,
       ...chart.yAxis
     ].reduce((p, n) => {
-      p[n.dataeaseName] = n
+      p[n.engineFieldName] = n
       return p
     }, {})
     fields.forEach(ele => {
-      const f = valueFieldMap[ele.dataeaseName]
-      columns.push(ele.dataeaseName)
+      const f = valueFieldMap[ele.engineFieldName]
+      columns.push(ele.engineFieldName)
       meta.push({
-        field: ele.dataeaseName,
+        field: ele.engineFieldName,
         name: ele.chartShowName ?? ele.name,
         formatter: value => {
           if (!f) {
@@ -176,7 +176,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
           if (value === null || value === undefined) {
             return value
           }
-          if (![2, 3, 4].includes(f.deType) || !isNumeric(value)) {
+          if (![2, 3, 4].includes(f.fieldType) || !isNumeric(value)) {
             return value
           }
           if (f.formatterCfg) {
@@ -216,7 +216,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
         if (!tableTotal.col.calcTotals.cfg?.length) {
           tableTotal.col.calcTotals.cfg = chart.yAxis.map(y => {
             return {
-              dataeaseName: y.dataeaseName,
+              engineFieldName: y.engineFieldName,
               aggregation: 'SUM'
             }
           })
@@ -230,7 +230,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
       if (total.cfg?.length) {
         delete total.aggregation
         const totalCfgMap = total.cfg.reduce((p, n) => {
-          p[n.dataeaseName] = n
+          p[n.engineFieldName] = n
           return p
         }, {})
         total.calcFunc = (query, data, _, status) => {
@@ -324,7 +324,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
         tableTotal.col.calcTotals?.cfg?.length
       ) {
         const colTotalCfgMap = tableTotal.col.calcTotals.cfg.reduce((p, n) => {
-          p[n.dataeaseName] = n
+          p[n.engineFieldName] = n
           return p
         }, {})
         s2Options.layoutCoordinate = (_, __, col) => {
@@ -343,7 +343,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
         tableTotal.row.calcTotals?.cfg?.length
       ) {
         const rowTotalCfgMap = tableTotal.row.calcTotals.cfg.reduce((p, n) => {
-          p[n.dataeaseName] = n
+          p[n.engineFieldName] = n
           return p
         }, {})
         // eslint-disable-next-line
@@ -550,7 +550,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
     const cell = s2Instance.getCell(ev.target)
     const meta = cell.getMeta()
     const nameIdMap = chart.data.fields.reduce((pre, next) => {
-      pre[next['dataeaseName']] = next['id']
+      pre[next['engineFieldName']] = next['id']
       return pre
     }, {})
     const rowData = { ...meta.rowQuery, ...meta.colQuery }
@@ -578,7 +578,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
     const meta = cell.getMeta()
     const rowData = meta.query
     const nameIdMap = chart.data.fields.reduce((pre, next) => {
-      pre[next['dataeaseName']] = next['id']
+      pre[next['engineFieldName']] = next['id']
       return pre
     }, {})
     const dimensionList = []
@@ -742,7 +742,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
     // 行列分开处理，先行后列，样式设置中汇总总计排序的优先级最高，剩下的按照字段的排序优先级设置进行排序
     const { xAxis: rowFields, xAxisExt: columnFields, yAxis: valueFields } = chart
     const [r, c, v] = [rowFields, columnFields, valueFields].map(arr =>
-      arr.map(i => i.dataeaseName)
+      arr.map(i => i.engineFieldName)
     )
     const { tableTotal } = parseJson(chart.customAttr)
     // 解析合计、小计排序
@@ -803,7 +803,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
       ...columnFields,
       ...valueFields
     ].reduce((p, n) => {
-      p[n.dataeaseName] = n
+      p[n.engineFieldName] = n
       return p
     }, {})
     //列维度为空，行排序需要考虑指标的排序设置和优先级设置
@@ -844,13 +844,13 @@ export class TablePivot extends S2ChartView<PivotSheet> {
         const tmpFields = [...sortFieldsBeforeValueFields, ...sortFieldsNotInPriority]
         tmpFields.forEach(f => {
           const sort: any = {
-            sortFieldId: sortRowFieldsMap[f].dataeaseName
+            sortFieldId: sortRowFieldsMap[f].engineFieldName
           }
           const sortMethod = sortRowFieldsMap[f]?.sort?.toUpperCase()
           if (sortMethod === 'CUSTOM_SORT') {
             sort.sortBy = sortRowFieldsMap[f].customSort
           } else {
-            if ([2, 3, 4].includes(sortRowFieldsMap[f]?.deType)) {
+            if ([2, 3, 4].includes(sortRowFieldsMap[f]?.fieldType)) {
               const fieldValues = newData.map(item => item[f])
               const uniqueValues = [...new Set(fieldValues)]
               uniqueValues.sort((a, b) => {
@@ -885,11 +885,11 @@ export class TablePivot extends S2ChartView<PivotSheet> {
           const sortValueField = valueFields.find(f => f.id === minSortValueFieldId)
           sortFieldsAfterValueFields.forEach(f => {
             const sort: any = {
-              sortFieldId: sortRowFieldsMap[f].dataeaseName,
+              sortFieldId: sortRowFieldsMap[f].engineFieldName,
               sortMethod: sortValueField.sort.toUpperCase(),
               sortByMeasure: TOTAL_VALUE,
               query: {
-                [EXTRA_FIELD]: sortValueField.dataeaseName
+                [EXTRA_FIELD]: sortValueField.engineFieldName
               }
             }
             sortParams.push(sort)
@@ -900,21 +900,21 @@ export class TablePivot extends S2ChartView<PivotSheet> {
         rowFields.forEach(f => {
           if (sortRowFieldsMap[f.id]) {
             const sort: any = {
-              sortFieldId: f.dataeaseName
+              sortFieldId: f.engineFieldName
             }
             const sortMethod = f.sort.toUpperCase()
             if (sortMethod === 'CUSTOM_SORT') {
               sort.sortBy = f.customSort
             } else {
-              if ([2, 3, 4].includes(f.deType)) {
-                const fieldValues = newData.map(item => item[f.dataeaseName])
+              if ([2, 3, 4].includes(f.fieldType)) {
+                const fieldValues = newData.map(item => item[f.engineFieldName])
                 const uniqueValues = [...new Set(fieldValues)]
                 uniqueValues.sort((a, b) => {
                   return sortMethod === 'ASC' ? a - b : b - a
                 })
                 sort.sortBy = uniqueValues
               } else {
-                const fieldValues = newData.map(item => item[f.dataeaseName])
+                const fieldValues = newData.map(item => item[f.engineFieldName])
                 const uniqueValues = [...new Set(fieldValues)]
 
                 // 根据配置动态决定排序顺序
@@ -940,11 +940,11 @@ export class TablePivot extends S2ChartView<PivotSheet> {
             if (sortValueFields.length) {
               const sortValueField = valueFields.find(f => f.id === sortValueFields[0])
               const sort: any = {
-                sortFieldId: f.dataeaseName,
+                sortFieldId: f.engineFieldName,
                 sortMethod: sortValueField.sort.toUpperCase(),
                 sortByMeasure: TOTAL_VALUE,
                 query: {
-                  [EXTRA_FIELD]: sortValueField.dataeaseName
+                  [EXTRA_FIELD]: sortValueField.engineFieldName
                 }
               }
               sortParams.push(sort)
@@ -966,7 +966,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
         if (sortMethod === 'CUSTOM_SORT') {
           sort.sortBy = valueFieldMap[f].customSort
         } else {
-          if ([2, 3, 4].includes(valueFieldMap[f]?.deType)) {
+          if ([2, 3, 4].includes(valueFieldMap[f]?.fieldType)) {
             const fieldValues = newData.map(item => item[f])
             const uniqueValues = [...new Set(fieldValues)]
             uniqueValues.sort((a, b) => {
@@ -1012,7 +1012,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
         if (sortMethod === 'CUSTOM_SORT') {
           sort.sortBy = valueFieldMap[f].customSort
         } else {
-          if ([2, 3, 4].includes(valueFieldMap[f]?.deType)) {
+          if ([2, 3, 4].includes(valueFieldMap[f]?.fieldType)) {
             const fieldValues = newData.map(item => item[f])
             const uniqueValues = [...new Set(fieldValues)]
             uniqueValues.sort((a, b) => {
@@ -1346,7 +1346,7 @@ function getCustomCalcResult(query, axisMap, chart: ChartObj, status: TotalStatu
 }
 
 function getSubLevel(query, axis) {
-  const fields: [] = axis.map(a => a.dataeaseName)
+  const fields: [] = axis.map(a => a.engineFieldName)
   let subLevel = -1
   const queryFields = keys(query)
   for (let i = fields.length - 1; i >= 0; i--) {
@@ -1363,9 +1363,9 @@ function getTreePath(query, axis) {
   const path = []
   const fields = keys(query)
   axis.forEach(a => {
-    const index = fields.findIndex(f => f === a.dataeaseName)
+    const index = fields.findIndex(f => f === a.engineFieldName)
     if (index !== -1) {
-      path.push(query[a.dataeaseName])
+      path.push(query[a.engineFieldName])
     }
   })
   return path
@@ -1429,7 +1429,7 @@ const processFieldValues = (data: DataItem[], field: string, filterIllegalValue 
   }, [])
 }
 
-export const getDataSumByField = (data: DataItem[], field: string): number => {
+export const dataSumByField = (data: DataItem[], field: string): number => {
   const fieldValues = processFieldValues(data, field)
   if (!fieldValues.length) {
     return 0
@@ -1438,7 +1438,7 @@ export const getDataSumByField = (data: DataItem[], field: string): number => {
   return Decimal.sum(...fieldValues).toNumber()
 }
 
-export const getDataExtremumByField = (
+export const dataExtremumByField = (
   method: 'min' | 'max',
   data: DataItem[],
   field: string
@@ -1452,7 +1452,7 @@ export const getDataExtremumByField = (
   return Decimal[method](...fieldValues).toNumber()
 }
 
-export const getDataAvgByField = (data: DataItem[], field: string): number => {
+export const dataAvgByField = (data: DataItem[], field: string): number => {
   const fieldValues = processFieldValues(data, field)
   if (!fieldValues?.length) {
     return 0
@@ -1466,10 +1466,10 @@ export const getDataAvgByField = (data: DataItem[], field: string): number => {
 const calcActionByType: {
   [type in Aggregation]: (data: DataItem[], field: string) => number
 } = {
-  [Aggregation.SUM]: getDataSumByField,
-  [Aggregation.MIN]: (data, field) => getDataExtremumByField('min', data, field),
-  [Aggregation.MAX]: (data, field) => getDataExtremumByField('max', data, field),
-  [Aggregation.AVG]: getDataAvgByField,
+  [Aggregation.SUM]: dataSumByField,
+  [Aggregation.MIN]: (data, field) => dataExtremumByField('min', data, field),
+  [Aggregation.MAX]: (data, field) => dataExtremumByField('max', data, field),
+  [Aggregation.AVG]: dataAvgByField,
   [Aggregation.COUNT]: data => data?.length ?? 0
 }
 

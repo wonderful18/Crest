@@ -2,7 +2,7 @@ package io.crest.visualization.manage;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.crest.extensions.view.dto.ChartViewDTO;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.template.dao.auto.entity.VisualizationTemplateExtendData;
 import io.crest.template.dao.auto.mapper.VisualizationTemplateExtendDataMapper;
 import io.crest.utils.JsonUtil;
@@ -40,7 +40,7 @@ public class VisualizationTemplateExtendDataManage {
             }
 
         } else {
-            DEException.throwException("模板缓存数据中未获取指定图表数据：" + viewId);
+            CrestException.throwException("模板缓存数据中未获取指定图表数据：" + viewId);
         }
         return view;
     }

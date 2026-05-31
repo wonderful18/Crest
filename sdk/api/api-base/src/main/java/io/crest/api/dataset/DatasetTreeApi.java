@@ -5,8 +5,8 @@ import io.crest.api.dataset.dto.DataSetExportRequest;
 import io.crest.api.dataset.dto.DatasetNodeDTO;
 import io.crest.api.dataset.union.DatasetGroupInfoDTO;
 import io.crest.api.dataset.vo.DataSetBarVO;
-import io.crest.auth.DeApiPath;
-import io.crest.auth.DePermit;
+import io.crest.auth.CrestApiPath;
+import io.crest.auth.CrestPermit;
 import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.view.dto.SqlVariableDetails;
 import io.crest.model.BusiNodeRequest;
@@ -14,10 +14,10 @@ import io.crest.model.BusiNodeVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ import static io.crest.constant.AuthResourceEnum.DATASET;
 
 @Tag(name = "数据集管理:树")
 @ApiSupport(order = 979)
-@DeApiPath(value = "/datasetTree", rt = DATASET)
+@CrestApiPath(value = "/dataset-tree", rt = DATASET)
 public interface DatasetTreeApi {
 
     /**
@@ -36,12 +36,12 @@ public interface DatasetTreeApi {
      * @throws Exception
      */
     @Operation(summary = "保存数据集", hidden = true)
-    @DePermit({"#p0.id+':manage'"})
-    @PostMapping("save")
+    @CrestPermit({"#p0.id+':manage'"})
+    @PostMapping("record")
     DatasetNodeDTO save(@RequestBody DatasetGroupInfoDTO dto) throws Exception;
 
     @Operation(summary = "重命名数据集")
-    @DePermit({"#p0.id+':manage'"})
+    @CrestPermit({"#p0.id+':manage'"})
     @PostMapping("rename")
     DatasetNodeDTO rename(@RequestBody DatasetGroupInfoDTO dto) throws Exception;
 
@@ -53,23 +53,23 @@ public interface DatasetTreeApi {
      * @throws Exception
      */
     @Operation(summary = "创建数据集")
-    @DePermit({"#p0.pid+':manage'"})
-    @PostMapping("create")
+    @CrestPermit({"#p0.pid+':manage'"})
+    @PostMapping
     DatasetNodeDTO create(@RequestBody DatasetGroupInfoDTO dto) throws Exception;
 
     @Operation(summary = "移动数据集")
-    @DePermit({"#p0.id+':manage'", "#p0.pid+':manage'"})
+    @CrestPermit({"#p0.id+':manage'", "#p0.pid+':manage'"})
     @PostMapping("move")
     DatasetNodeDTO move(@RequestBody DatasetGroupInfoDTO dto) throws Exception;
 
     @Operation(summary = "是否有仪表板、大屏正在使用此数据集")
-    @DePermit({"#p0+':manage'"})
-    @PostMapping("perDelete/{id}")
+    @CrestPermit({"#p0+':manage'"})
+    @PostMapping("deletion-impact/{id}")
     boolean perDelete(@PathVariable("id") Long id);
 
     @Operation(summary = "删除数据集")
-    @DePermit({"#p0+':manage'"})
-    @PostMapping("delete/{id}")
+    @CrestPermit({"#p0+':manage'"})
+    @DeleteMapping("/{id}")
     void delete(@PathVariable("id") Long id);
 
     @Operation(summary = "查询文件夹以及数据集tree")
@@ -77,11 +77,11 @@ public interface DatasetTreeApi {
     List<BusiNodeVO> tree(@RequestBody BusiNodeRequest request);
 
     @Operation(summary = "查询数据集对应用户信息")
-    @GetMapping("/barInfo/{id}")
+    @GetMapping("/bar-info/{id}")
     DataSetBarVO barInfo(@PathVariable("id") Long id);
 
     @Operation(summary = "查询数据集")
-    @PostMapping("get/{id}")
+    @PostMapping("detail/{id}")
     DatasetGroupInfoDTO get(@PathVariable("id") Long id) throws Exception;
 
     @Operation(summary = "获取数据集详情")
@@ -89,19 +89,19 @@ public interface DatasetTreeApi {
     DatasetGroupInfoDTO details(@PathVariable("id") Long id) throws Exception;
 
     @Operation(summary = "获取数据集详情")
-    @PostMapping("dsDetails")
+    @PostMapping("dataset-details")
     List<DatasetTableDTO> panelGetDsDetails(@RequestBody List<Long> ids) throws Exception;
 
     @Operation(summary = "获取SQL参数")
-    @PostMapping("getSqlParams")
-    List<SqlVariableDetails> getSqlParams(@RequestBody List<Long> ids) throws Exception;
+    @PostMapping("sql-params")
+    List<SqlVariableDetails> sqlParams(@RequestBody List<Long> ids) throws Exception;
 
     @Operation(summary = "带权限查询数据集详情")
-    @PostMapping("detailWithPerm")
+    @PostMapping("detail-with-permission")
     List<DatasetTableDTO> detailWithPerm(@RequestBody List<Long> ids) throws Exception;
 
-    @DePermit(value = {"#p0.id+':export'"})
+    @CrestPermit(value = {"#p0.id+':export'"})
     @Operation(summary = "数据集导出")
-    @PostMapping("/exportDataset")
+    @PostMapping("/export-dataset")
     void exportDataset(@RequestBody DataSetExportRequest request, HttpServletResponse response) throws Exception;
 }

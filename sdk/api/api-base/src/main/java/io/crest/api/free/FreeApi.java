@@ -4,27 +4,27 @@ import io.crest.api.free.dto.*;
 import io.crest.api.free.vo.FreeRelationVO;
 import io.crest.api.free.vo.FreeVO;
 import io.swagger.v3.oas.annotations.Hidden;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @Hidden
 public interface FreeApi {
 
-    @PostMapping("/query")
+    @PostMapping("/list")
     List<FreeVO> query(@RequestBody FreeQueryRequest request);
 
-    @PostMapping("/syncAll")
+    @PostMapping("/sync/all")
     void syncAll(@RequestBody FreeSyncRequest request);
 
-    @PostMapping("/deleteAll")
+    @DeleteMapping("/all")
     void deleteAll();
 
-    @PostMapping("/syncBatch")
+    @PostMapping("/sync/batch")
     void syncBatch(@RequestBody FreeBatchSyncRequest request);
 
-    @PostMapping("/deleteBatch")
+    @DeleteMapping("/batch")
     void deleteBatch(@RequestBody FreeBatchDelRequest request);
 
     @PostMapping("/relation")

@@ -23,7 +23,7 @@ export interface Field {
   checked: boolean
   primaryKey: boolean
   children?: Array<{}>
-  deExtractType?: number
+  extractedFieldType?: number
 }
 
 export interface ApiItem {
@@ -33,7 +33,7 @@ export interface ApiItem {
   appToken: string
   tableId: string
   viewId: string
-  deTableName?: string
+  displayTableName?: string
   url: string
   copy: boolean
   method: string
@@ -48,7 +48,7 @@ export interface ApiItem {
 }
 
 export interface JsonField {
-  deType: number
+  fieldType: number
   size: number
   children: null
   name: string
@@ -59,7 +59,7 @@ export interface JsonField {
   jsonPath: string
   type: string
   originName: string
-  deExtractType: number
+  extractedFieldType: number
 }
 const { t } = useI18n()
 
@@ -352,7 +352,7 @@ const saveItem = () => {
       if (
         apiItem.fields[i].primaryKey &&
         !apiItem.fields[i].length &&
-        apiItem.fields[i].deExtractType === 0
+        apiItem.fields[i].extractedFieldType === 0
       ) {
         ElMessage.error(t('datasource.primary_key_length') + apiItem.fields[i].name)
         return
@@ -363,7 +363,7 @@ const saveItem = () => {
       if (
         apiItem.fields[i].primaryKey &&
         !apiItem.fields[i].length &&
-        apiItem.fields[i].deExtractType === 0
+        apiItem.fields[i].extractedFieldType === 0
       ) {
         ElMessage.error(t('datasource.primary_key_length') + apiItem.fields[i].name)
         return
@@ -530,7 +530,7 @@ const disabledFieldLength = item => {
   if (item.hasOwnProperty('children') && item.children.length > 0) {
     return true
   } else {
-    return item.deExtractType !== 0
+    return item.extractedFieldType !== 0
   }
 }
 
@@ -561,8 +561,8 @@ const disabledChangeFieldByChildren = item => {
   }
 }
 
-const deExtractTypeChange = item => {
-  if (item.deExtractType !== 0) {
+const extractedFieldTypeChange = item => {
+  if (item.extractedFieldType !== 0) {
     item.length = ''
   }
 }
@@ -869,25 +869,25 @@ defineExpose({
             </el-table-column>
 
             <el-table-column
-              prop="deExtractType"
+              prop="extractedFieldType"
               :label="t('datasource.field_type')"
               :disabled="apiItem.type === 'params'"
             >
               <template #default="scope">
                 <el-select
-                  v-model="scope.row.deExtractType"
+                  v-model="scope.row.extractedFieldType"
                   :disabled="disabledChangeFieldByChildren(scope.row)"
                   class="select-type"
                   style="display: inline-block; width: 120px"
-                  @change="deExtractTypeChange(scope.row)"
+                  @change="extractedFieldTypeChange(scope.row)"
                 >
                   <template #prefix>
                     <el-icon>
-                      <Icon :className="`field-icon-${fieldType[scope.row.deExtractType]}`"
+                      <Icon :className="`field-icon-${fieldType[scope.row.extractedFieldType]}`"
                         ><component
                           class="svg-icon"
-                          :class="`field-icon-${fieldType[scope.row.deExtractType]}`"
-                          :is="iconFieldMap[fieldType[scope.row.deExtractType]]"
+                          :class="`field-icon-${fieldType[scope.row.extractedFieldType]}`"
+                          :is="iconFieldMap[fieldType[scope.row.extractedFieldType]]"
                         ></component
                       ></Icon>
                     </el-icon>
@@ -1074,7 +1074,7 @@ defineExpose({
     cursor: pointer;
     .name {
       color: #1f2329;
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 16px;
       font-style: normal;
       font-weight: 500;

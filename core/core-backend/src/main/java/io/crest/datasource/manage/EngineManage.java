@@ -2,12 +2,12 @@ package io.crest.datasource.manage;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
-import io.crest.datasource.dao.auto.entity.CoreDeEngine;
+import io.crest.datasource.dao.auto.entity.CoreEngine;
 import io.crest.datasource.dao.auto.mapper.CoreDatasourceMapper;
-import io.crest.datasource.dao.auto.mapper.CoreDeEngineMapper;
+import io.crest.datasource.dao.auto.mapper.CoreEngineMapper;
 import io.crest.datasource.type.H2;
 import io.crest.datasource.type.Mysql;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasourceDTO;
 import io.crest.extensions.datasource.dto.DatasourceRequest;
 import io.crest.extensions.datasource.factory.ProviderFactory;
@@ -39,43 +39,43 @@ public class EngineManage {
     @Resource
     private Environment env;
     @Resource
-    private CoreDeEngineMapper deEngineMapper;
+    private CoreEngineMapper engineMapper;
     @Resource
     private CoreDatasourceMapper coreDatasourceMapper;
 
     @Value("${crest.path.engine:jdbc:h2:/opt/crest/desktop_data;AUTO_SERVER=TRUE;AUTO_RECONNECT=TRUE;MODE=MySQL;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DATABASE_TO_UPPER=FALSE}")
     private String engineUrl;
 
-    public CoreDeEngine info() throws DEException {
-        List<CoreDeEngine> deEngines = deEngineMapper.selectList(null);
-        if (CollectionUtils.isEmpty(deEngines)) {
-            DEException.throwException("未完整设置数据引擎");
+    public CoreEngine info() throws CrestException {
+        List<CoreEngine> engines = engineMapper.selectList(null);
+        if (CollectionUtils.isEmpty(engines)) {
+            CrestException.throwException("未完整设置数据引擎");
         }
-        return deEngines.get(0);
+        return engines.get(0);
     }
 
-    public CoreDatasource getDeEngine() {
-        List<CoreDeEngine> deEngines = deEngineMapper.selectList(null);
-        if (CollectionUtils.isEmpty(deEngines)) {
-            DEException.throwException("未完整设置数据引擎");
+    public CoreDatasource getEngineDatasource() {
+        List<CoreEngine> engines = engineMapper.selectList(null);
+        if (CollectionUtils.isEmpty(engines)) {
+            CrestException.throwException("未完整设置数据引擎");
         }
         CoreDatasource coreDatasource = new CoreDatasource();
-        BeanUtils.copyBean(coreDatasource, deEngines.get(0));
+        BeanUtils.copyBean(coreDatasource, engines.get(0));
         return coreDatasource;
     }
 
 
-    public CoreDatasource deEngine() {
-        List<CoreDeEngine> deEngines = deEngineMapper.selectList(null);
+    public CoreDatasource engineDatasource() {
+        List<CoreEngine> engines = engineMapper.selectList(null);
         CoreDatasource coreDatasource = new CoreDatasource();
-        if (CollectionUtils.isEmpty(deEngines)) {
+        if (CollectionUtils.isEmpty(engines)) {
             return null;
         }
-        BeanUtils.copyBean(coreDatasource, deEngines.get(0));
+        BeanUtils.copyBean(coreDatasource, engines.get(0));
         return coreDatasource;
     }
 
-    public void validate(CoreDeEngine engine) throws Exception {
+    public void validate(CoreEngine engine) throws Exception {
         if (StringUtils.isEmpty(engine.getType()) || StringUtils.isEmpty(engine.getConfiguration())) {
             throw new Exception("未完整设置数据引擎");
         }
@@ -87,33 +87,33 @@ public class EngineManage {
             datasourceRequest.setDatasource(datasource);
             ProviderFactory.getProvider(engine.getType()).checkStatus(datasourceRequest);
         } catch (Exception e) {
-            DEException.throwException("校验失败：" + e.getMessage());
+            CrestException.throwException("校验失败：" + e.getMessage());
         }
     }
 
-    public ResultMessage save(CoreDeEngine engine) throws Exception {
+    public ResultMessage save(CoreEngine engine) throws Exception {
         if (engine.getId() == null) {
-            deEngineMapper.insert(engine);
+            engineMapper.insert(engine);
         } else {
-            deEngineMapper.updateById(engine);
+            engineMapper.updateById(engine);
         }
         return ResultMessage.success(engine);
     }
 
     public void initSimpleEngine() throws Exception {
         initLocalDataSource();
-        QueryWrapper<CoreDeEngine> queryWrapper = new QueryWrapper<>();
+        QueryWrapper<CoreEngine> queryWrapper = new QueryWrapper<>();
         if (ModelUtils.isDesktop()) {
             queryWrapper.eq("type", engineType.h2.name());
         } else {
             queryWrapper.eq("type", engineType.mysql.name());
         }
-        List<CoreDeEngine> deEngines = deEngineMapper.selectList(queryWrapper);
-        if (!CollectionUtils.isEmpty(deEngines) && validConfiguration(deEngines.get(0).getConfiguration())) {
+        List<CoreEngine> engines = engineMapper.selectList(queryWrapper);
+        if (!CollectionUtils.isEmpty(engines) && validConfiguration(engines.get(0).getConfiguration())) {
             return;
         }
 
-        CoreDeEngine engine = CollectionUtils.isEmpty(deEngines) ? new CoreDeEngine() : deEngines.get(0);
+        CoreEngine engine = CollectionUtils.isEmpty(engines) ? new CoreEngine() : engines.get(0);
         if (ModelUtils.isDesktop()) {
             engine.setType(engineType.h2.name());
             H2 h2 = new H2();
@@ -142,9 +142,9 @@ public class EngineManage {
         engine.setName("默认引擎");
         engine.setDescription("默认引擎");
         if (engine.getId() == null) {
-            deEngineMapper.insert(engine);
+            engineMapper.insert(engine);
         } else {
-            deEngineMapper.updateById(engine);
+            engineMapper.updateById(engine);
         }
     }
 

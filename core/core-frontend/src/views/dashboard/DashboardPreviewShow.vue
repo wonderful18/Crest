@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import icon_add_outlined from '@/assets/svg/icon_add_outlined.svg'
-import DeResourceTree from '@/views/common/DeResourceTree.vue'
+import CrestResourceTree from '@/views/common/CrestResourceTree.vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { reactive, nextTick, ref, toRefs, onBeforeMount, computed, onMounted } from 'vue'
-import DePreview from '@/components/data-visualization/canvas/DePreview.vue'
+import CrestPreview from '@/components/data-visualization/canvas/CrestPreview.vue'
 import PreviewHead from '@/views/data-visualization/PreviewHead.vue'
 import EmptyBackground from '@/components/empty-background/src/EmptyBackground.vue'
-import ArrowSide from '@/views/common/DeResourceArrow.vue'
+import ArrowSide from '@/views/common/CrestResourceArrow.vue'
 import {
   getMapElementIds,
   initCanvasData,
@@ -19,7 +19,7 @@ import { Icon } from '@/components/icon-custom'
 import { download2AppTemplate, downloadCanvas2 } from '@/utils/imgUtils'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus-secondary'
-import AppExportForm from '@/components/de-app/AppExportForm.vue'
+import AppExportForm from '@/components/application/AppExportForm.vue'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { useI18n } from '@/hooks/web/useI18n'
@@ -84,7 +84,7 @@ const resourceTreeRef = ref()
 const hasTreeData = computed(() => {
   return resourceTreeRef.value?.hasData
 })
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi)
+const isCrestBi = computed(() => appStore.getIsCrestBi)
 
 const rootManage = computed(() => {
   return resourceTreeRef.value?.rootManage
@@ -265,7 +265,7 @@ defineExpose({
       ref="node"
       :style="{ width: width + 'px' }"
     >
-      <de-resource-tree
+      <CrestResourceTree
         ref="resourceTreeRef"
         v-show="slideShow"
         :cur-canvas-type="'dashboard'"
@@ -299,14 +299,14 @@ defineExpose({
           ref="previewCanvasContainer"
           class="content"
           id="de-preview-content"
-          :class="{ 'de-screen-full': fullscreenFlag }"
+          :class="{ 'screen-full': fullscreenFlag }"
         >
           <canvas-opt-bar
             canvas-id="canvas-main"
             :canvas-style-data="state.canvasStylePreview || {}"
             :component-data="state.canvasDataPreview || []"
           ></canvas-opt-bar>
-          <de-preview
+          <CrestPreview
             ref="dashboardPreview"
             v-if="state.canvasStylePreview && dataInitState"
             :dv-info="state.dvInfo"
@@ -317,7 +317,7 @@ defineExpose({
             :show-position="showPosition"
             :download-status="downloadStatus"
             :show-linkage-button="false"
-          ></de-preview>
+          ></CrestPreview>
         </div>
       </template>
       <template v-else-if="hasTreeData && mounted">
@@ -333,7 +333,7 @@ defineExpose({
           :description="t('visualization.have_none_resource')"
           img-type="none"
         >
-          <el-button v-if="rootManage && !isDataEaseBi" @click="createNew" type="primary">
+          <el-button v-if="rootManage && !isCrestBi" @click="createNew" type="primary">
             <template #icon>
               <Icon name="icon_add_outlined"><icon_add_outlined class="svg-icon" /></Icon>
             </template>
@@ -360,7 +360,7 @@ defineExpose({
   display: flex;
   background: #f8fafc;
   color: #0f172a;
-  font-family: var(--de-custom_font, var(--crest-font-sans));
+  font-family: var(--crest-custom_font, var(--crest-font-sans));
   position: relative;
   .resource-area {
     position: relative;

@@ -332,7 +332,7 @@ const multipleChange = (val: boolean, isMultipleChange = false) => {
       : defaultValue
   }
 
-  if (curComponent.value.field.deType === 1) {
+  if (curComponent.value.field.fieldType === 1) {
     curComponent.value.multiple = val
     return
   }
@@ -764,7 +764,7 @@ defineExpose({
         border-radius: 0;
         box-shadow: none;
         height: 26px;
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         word-wrap: break-word;
         text-align: left;
         color: rgba(0, 0, 0, 0.65);

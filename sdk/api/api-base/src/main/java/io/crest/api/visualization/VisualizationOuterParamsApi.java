@@ -13,19 +13,19 @@ import java.util.List;
 public interface VisualizationOuterParamsApi {
 
 
-    @GetMapping("/queryWithVisualizationId/{dvId}")
+    @GetMapping("/by-visualization/{dvId}")
     @Operation(summary = "查询")
     VisualizationOuterParamsDTO queryWithVisualizationId(@PathVariable("dvId") String dvId);
 
-    @PostMapping("/updateOuterParamsSet")
+    @PostMapping("/outer-params-settings")
     @Operation(summary = "更新")
     void updateOuterParamsSet(@RequestBody VisualizationOuterParamsDTO OuterParamsDTO);
 
-    @GetMapping("/getOuterParamsInfo/{dvId}")
+    @GetMapping("/outer-params-info/{dvId}")
     @Operation(summary = "查询基础信息")
     VisualizationOuterParamsBaseResponse getOuterParamsInfo(@PathVariable("dvId") String dvId);
 
-    @GetMapping("/queryDsWithVisualizationId/{dvId}")
+    @GetMapping("/datasources/by-visualization/{dvId}")
     @Operation(summary = "查询涉及数据集基础信息")
     List<CoreDatasetGroupVO> queryDsWithVisualizationId(@PathVariable("dvId") String dvId);
 }

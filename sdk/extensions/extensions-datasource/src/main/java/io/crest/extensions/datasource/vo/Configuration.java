@@ -111,13 +111,13 @@ public class Configuration {
     }
 
     protected void convertDatabase(String jdbcUrl) {
-        Matcher matcher = getDatabasePattern().matcher(jdbcUrl);
+        Matcher matcher = databasePattern().matcher(jdbcUrl);
         if (matcher.find()) {
             setDataBase(matcher.group(1));
         }
     }
 
-    protected Pattern getDatabasePattern() {
+    protected Pattern databasePattern() {
         return DB_NAME_PATTERN;
     }
 

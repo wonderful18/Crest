@@ -7,7 +7,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import request from '@/config/axios'
 import { dsTypes, Node } from '@/views/visualized/data/datasource/form/option'
 import { cloneDeep } from 'lodash-es'
-import { getDeEngine } from '@/api/datasource'
+import { getEngineDatasource } from '@/api/datasource'
 import { CustomPassword } from '@/components/custom-password'
 import { Base64 } from 'js-base64'
 import { querySymmetricKey } from '@/api/login'
@@ -160,7 +160,7 @@ const defaultInfo = {
 const nodeInfo = reactive(cloneDeep(defaultInfo))
 const edit = () => {
   querySymmetricKey().then(response => {
-    getDeEngine()
+    getEngineDatasource()
       .then(res => {
         let {
           name,
@@ -218,7 +218,7 @@ const submitForm = async () => {
     if (result) {
       showLoading()
       request
-        .post({ url: '/engine/save', data: data })
+        .post({ url: '/engine/record', data: data })
         .then(res => {
           if (res !== undefined) {
             ElMessage.success(t('common.save_success'))
@@ -454,7 +454,7 @@ defineExpose({
 <style lang="less">
 .basic-param-drawer {
   .de-expand_engine {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 400;
     line-height: 22px;

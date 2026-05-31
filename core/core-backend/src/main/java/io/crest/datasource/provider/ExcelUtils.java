@@ -16,7 +16,7 @@ import io.crest.api.ds.vo.ExcelSheetData;
 import io.crest.api.ds.vo.RemoteExcelRequest;
 import io.crest.commons.utils.EncryptUtils;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.datasource.dto.DatasourceDTO;
 import io.crest.extensions.datasource.dto.DatasourceRequest;
@@ -64,10 +64,10 @@ public class ExcelUtils {
     public static void mergeSheets(CoreDatasource requestDatasource, DatasourceDTO sourceData) {
         if (requestDatasource.getType().equalsIgnoreCase("Excel")) {
             List<ExcelSheetData> newSheets = JsonUtil.parseList(requestDatasource.getConfiguration(), sheets);
-            List<String> tableNames = newSheets.stream().map(ExcelSheetData::getDeTableName).collect(Collectors.toList());
+            List<String> tableNames = newSheets.stream().map(ExcelSheetData::getDisplayTableName).collect(Collectors.toList());
             List<ExcelSheetData> oldSheets = JsonUtil.parseList(sourceData.getConfiguration(), sheets);
             for (ExcelSheetData oldSheet : oldSheets) {
-                if (!tableNames.contains(oldSheet.getDeTableName())) {
+                if (!tableNames.contains(oldSheet.getDisplayTableName())) {
                     newSheets.add(oldSheet);
                 }
             }
@@ -75,10 +75,10 @@ public class ExcelUtils {
         } else {
             ExcelConfiguration excelConfiguration = JsonUtil.parseObject(requestDatasource.getConfiguration(), ExcelConfiguration.class);
             List<ExcelSheetData> newSheets = excelConfiguration.getSheets();
-            List<String> tableNames = newSheets.stream().map(ExcelSheetData::getDeTableName).collect(Collectors.toList());
+            List<String> tableNames = newSheets.stream().map(ExcelSheetData::getDisplayTableName).collect(Collectors.toList());
             List<ExcelSheetData> oldSheets = JsonUtil.parseObject(sourceData.getConfiguration(), ExcelConfiguration.class).getSheets();
             for (ExcelSheetData oldSheet : oldSheets) {
-                if (!tableNames.contains(oldSheet.getDeTableName())) {
+                if (!tableNames.contains(oldSheet.getDisplayTableName())) {
                     newSheets.add(oldSheet);
                 }
             }
@@ -88,7 +88,7 @@ public class ExcelUtils {
 
     }
 
-    public static List<DatasetTableDTO> getTables(DatasourceRequest datasourceRequest) throws DEException {
+    public static List<DatasetTableDTO> tables(DatasourceRequest datasourceRequest) throws CrestException {
         List<DatasetTableDTO> tableDescs = new ArrayList<>();
         try {
             String sheets = "";
@@ -100,20 +100,20 @@ public class ExcelUtils {
             JsonNode rootNode = objectMapper.readTree(sheets);
             for (int i = 0; i < rootNode.size(); i++) {
                 DatasetTableDTO datasetTableDTO = new DatasetTableDTO();
-                datasetTableDTO.setTableName(rootNode.get(i).get("deTableName").asText());
-                datasetTableDTO.setName(rootNode.get(i).get("deTableName").asText());
+                datasetTableDTO.setTableName(rootNode.get(i).get("displayTableName").asText());
+                datasetTableDTO.setName(rootNode.get(i).get("displayTableName").asText());
                 datasetTableDTO.setDatasourceId(datasourceRequest.getDatasource().getId());
                 datasetTableDTO.setLastUpdateTime(rootNode.get(i).get("lastUpdateTime") == null ? datasourceRequest.getDatasource().getCreateTime() : rootNode.get(i).get("lastUpdateTime").asLong(0L));
                 tableDescs.add(datasetTableDTO);
             }
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
 
         return tableDescs;
     }
 
-    public static Map<String, String> getTableNamesMap(String type, String configuration) throws DEException {
+    public static Map<String, String> getTableNamesMap(String type, String configuration) throws CrestException {
         Map<String, String> result = new HashMap<>();
         JsonNode rootNode = null;
         // 兼容历史未加密信息
@@ -127,18 +127,18 @@ public class ExcelUtils {
             try {
                 rootNode = objectMapper.readTree(sheets);
             } catch (Exception ex) {
-                DEException.throwException(ex);
+                CrestException.throwException(ex);
             }
         }
         if (rootNode != null) {
             for (int i = 0; i < rootNode.size(); i++) {
-                result.put(rootNode.get(i).get("tableName").asText(), rootNode.get(i).get("deTableName").asText());
+                result.put(rootNode.get(i).get("tableName").asText(), rootNode.get(i).get("displayTableName").asText());
             }
         }
         return result;
     }
 
-    public static String getFileName(CoreDatasource datasource) throws DEException {
+    public static String getFileName(CoreDatasource datasource) throws CrestException {
         if (datasource.getType().equalsIgnoreCase("ExcelRemote")) {
             ExcelConfiguration excelConfiguration = JsonUtil.parseObject(datasource.getConfiguration(), ExcelConfiguration.class);
             for (ExcelSheetData sheet : excelConfiguration.getSheets()) {
@@ -152,7 +152,7 @@ public class ExcelUtils {
             try {
                 rootNode = objectMapper.readTree(datasource.getConfiguration());
             } catch (Exception ex) {
-                DEException.throwException(ex);
+                CrestException.throwException(ex);
             }
         }
         if (rootNode != null) {
@@ -163,7 +163,7 @@ public class ExcelUtils {
         return "";
     }
 
-    public static String getSize(CoreDatasource datasource) throws DEException {
+    public static String getSize(CoreDatasource datasource) throws CrestException {
         if (datasource.getType().equalsIgnoreCase("ExcelRemote")) {
             ExcelConfiguration excelConfiguration = JsonUtil.parseObject(datasource.getConfiguration(), ExcelConfiguration.class);
             for (ExcelSheetData sheet : excelConfiguration.getSheets()) {
@@ -176,18 +176,18 @@ public class ExcelUtils {
                 return rootNode.get(i).get("size").asText();
             }
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         return "0 B";
     }
 
-    public List<String[]> fetchDataList(DatasourceRequest datasourceRequest) throws DEException, IOException {
+    public List<String[]> fetchDataList(DatasourceRequest datasourceRequest) throws CrestException, IOException {
         List<String[]> dataList = new ArrayList<>();
         if (datasourceRequest.getDatasource().getType().equalsIgnoreCase("ExcelRemote")) {
             ExcelConfiguration excelConfiguration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), ExcelConfiguration.class);
             Map<String, String> fileNames = downLoadRemoteExcel(excelConfiguration);
             for (ExcelSheetData sheet : excelConfiguration.getSheets()) {
-                if (sheet.getDeTableName().equalsIgnoreCase(datasourceRequest.getTable())) {
+                if (sheet.getDisplayTableName().equalsIgnoreCase(datasourceRequest.getTable())) {
                     List<TableField> tableFields = sheet.getFields();
                     String suffix = fileNames.get("fileName").substring(fileNames.get("fileName").lastIndexOf(".") + 1);
                     InputStream inputStream = new FileInputStream(getExcelPath() + fileNames.get("tranName"));
@@ -207,7 +207,7 @@ public class ExcelUtils {
             try {
                 JsonNode rootNode = objectMapper.readTree(datasourceRequest.getDatasource().getConfiguration());
                 for (int i = 0; i < rootNode.size(); i++) {
-                    if (rootNode.get(i).get("deTableName").asText().equalsIgnoreCase(datasourceRequest.getTable())) {
+                    if (rootNode.get(i).get("displayTableName").asText().equalsIgnoreCase(datasourceRequest.getTable())) {
                         List<TableField> tableFields = JsonUtil.parseList(rootNode.get(i).get("fields").toString(), TableFieldListTypeReference);
                         String suffix = rootNode.get(i).get("path").asText().substring(rootNode.get(i).get("path").asText().lastIndexOf(".") + 1);
                         InputStream inputStream = new FileInputStream(rootNode.get(i).get("path").asText());
@@ -221,7 +221,7 @@ public class ExcelUtils {
                     }
                 }
             } catch (Exception e) {
-                DEException.throwException(e);
+                CrestException.throwException(e);
             }
         }
         return dataList;
@@ -240,7 +240,7 @@ public class ExcelUtils {
             excelReader.read(readSheet);
             for (String s : noModelDataListener.getHeader()) {
                 TableField tableFiled = new TableField();
-                tableFiled.setFieldType("TEXT");
+                tableFiled.setNativeType("TEXT");
                 tableFiled.setName(s);
                 tableFiled.setOriginName(s);
                 fields.add(tableFiled);
@@ -249,7 +249,7 @@ public class ExcelUtils {
         return noModelDataListener.getData();
     }
 
-    public static List<TableField> getTableFields(DatasourceRequest datasourceRequest) throws DEException {
+    public static List<TableField> getTableFields(DatasourceRequest datasourceRequest) throws CrestException {
         List<TableField> tableFields = new ArrayList<>();
         TypeReference<List<TableField>> listTypeReference = new TypeReference<List<TableField>>() {
         };
@@ -262,24 +262,24 @@ public class ExcelUtils {
             }
             JsonNode rootNode = objectMapper.readTree(sheets);
             for (int i = 0; i < rootNode.size(); i++) {
-                if (rootNode.get(i).get("deTableName").asText().equalsIgnoreCase(datasourceRequest.getTable())) {
+                if (rootNode.get(i).get("displayTableName").asText().equalsIgnoreCase(datasourceRequest.getTable())) {
                     tableFields = JsonUtil.parseList(rootNode.get(i).get("fields").toString(), listTypeReference);
                 }
             }
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         return tableFields;
     }
 
-    public ExcelFileData excelSaveAndParse(MultipartFile file, String createBy) throws DEException {
+    public ExcelFileData excelSaveAndParse(MultipartFile file, String createBy) throws CrestException {
         String filename = file.getOriginalFilename();
         FileUtils.validateUploadFilename(filename);
         List<ExcelSheetData> excelSheetDataList = null;
         try {
             excelSheetDataList = parseExcel(filename, file.getInputStream(), true, filename);
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         List<ExcelSheetData> returnSheetDataList = new ArrayList<>();
         returnSheetDataList = excelSheetDataList;
@@ -291,31 +291,31 @@ public class ExcelUtils {
         for (ExcelSheetData excelSheetData : returnSheetDataList) {
             excelSheetData.setLastUpdateTime(System.currentTimeMillis());
             excelSheetData.setTableName(excelSheetData.getExcelLabel());
-            excelSheetData.setDeTableName("excel_" + excelSheetData.getExcelLabel() + "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10));
+            excelSheetData.setDisplayTableName("excel_" + excelSheetData.getExcelLabel() + "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10));
             excelSheetData.setPath(filePath);
             excelSheetData.setSheetId(UUID.randomUUID().toString());
             excelSheetData.setSheetExcelId(excelId);
             excelSheetData.setFileName(filename);
             /**
-             * dataease字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制
+             * Crest 字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制
              */
             for (TableField field : excelSheetData.getFields()) {
                 //TEXT LONG DATETIME DOUBLE
-                if (field.getFieldType().equalsIgnoreCase("TEXT")) {
-                    field.setDeType(0);
-                    field.setDeExtractType(0);
+                if (field.getNativeType().equalsIgnoreCase("TEXT")) {
+                    field.setFieldType(0);
+                    field.setExtractedFieldType(0);
                 }
-                if (field.getFieldType().equalsIgnoreCase("DATETIME")) {
-                    field.setDeType(1);
-                    field.setDeExtractType(1);
+                if (field.getNativeType().equalsIgnoreCase("DATETIME")) {
+                    field.setFieldType(1);
+                    field.setExtractedFieldType(1);
                 }
-                if (field.getFieldType().equalsIgnoreCase("LONG")) {
-                    field.setDeType(2);
-                    field.setDeExtractType(2);
+                if (field.getNativeType().equalsIgnoreCase("LONG")) {
+                    field.setFieldType(2);
+                    field.setExtractedFieldType(2);
                 }
-                if (field.getFieldType().equalsIgnoreCase("DOUBLE")) {
-                    field.setDeType(3);
-                    field.setDeExtractType(3);
+                if (field.getNativeType().equalsIgnoreCase("DOUBLE")) {
+                    field.setFieldType(3);
+                    field.setExtractedFieldType(3);
                 }
 
             }
@@ -357,43 +357,43 @@ public class ExcelUtils {
         }
     }
 
-    public ExcelFileData parseRemoteExcel(RemoteExcelRequest remoteExcelRequest) throws DEException, FileNotFoundException {
+    public ExcelFileData parseRemoteExcel(RemoteExcelRequest remoteExcelRequest) throws CrestException, FileNotFoundException {
         Map<String, String> fileNames = downLoadRemoteExcel(remoteExcelRequest);
         FileInputStream fileInputStream = new FileInputStream(getExcelPath() + fileNames.get("tranName"));
         List<ExcelSheetData> returnSheetDataList = new ArrayList<>();
         try {
             returnSheetDataList = parseExcel(fileNames.get("tranName"), fileInputStream, true, fileNames.get("fileName")).stream().filter(excelSheetData -> !CollectionUtils.isEmpty(excelSheetData.getFields())).collect(Collectors.toList());
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         for (ExcelSheetData excelSheetData : returnSheetDataList) {
             excelSheetData.setLastUpdateTime(System.currentTimeMillis());
             excelSheetData.setTableName(excelSheetData.getExcelLabel());
-            excelSheetData.setDeTableName("excel_" + excelSheetData.getExcelLabel() + "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10));
+            excelSheetData.setDisplayTableName("excel_" + excelSheetData.getExcelLabel() + "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10));
             excelSheetData.setPath(getExcelPath() + fileNames.get("tranName"));
             excelSheetData.setSheetId(UUID.randomUUID().toString());
             excelSheetData.setSheetExcelId(fileNames.get("tranName").split("\\.")[0]);
             excelSheetData.setFileName(fileNames.get("fileName"));
             /**
-             * dataease字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制
+             * Crest 字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制
              */
             for (TableField field : excelSheetData.getFields()) {
                 //TEXT LONG DATETIME DOUBLE
-                if (field.getFieldType().equalsIgnoreCase("TEXT")) {
-                    field.setDeType(0);
-                    field.setDeExtractType(0);
+                if (field.getNativeType().equalsIgnoreCase("TEXT")) {
+                    field.setFieldType(0);
+                    field.setExtractedFieldType(0);
                 }
-                if (field.getFieldType().equalsIgnoreCase("DATETIME")) {
-                    field.setDeType(1);
-                    field.setDeExtractType(1);
+                if (field.getNativeType().equalsIgnoreCase("DATETIME")) {
+                    field.setFieldType(1);
+                    field.setExtractedFieldType(1);
                 }
-                if (field.getFieldType().equalsIgnoreCase("LONG")) {
-                    field.setDeType(2);
-                    field.setDeExtractType(2);
+                if (field.getNativeType().equalsIgnoreCase("LONG")) {
+                    field.setFieldType(2);
+                    field.setExtractedFieldType(2);
                 }
-                if (field.getFieldType().equalsIgnoreCase("DOUBLE")) {
-                    field.setDeType(3);
-                    field.setDeExtractType(3);
+                if (field.getNativeType().equalsIgnoreCase("DOUBLE")) {
+                    field.setFieldType(3);
+                    field.setExtractedFieldType(3);
                 }
             }
             long size = 0;
@@ -424,7 +424,7 @@ public class ExcelUtils {
         return excelFileData;
     }
 
-    private static Map<String, String> downLoadRemoteExcel(ExcelConfiguration remoteExcelRequest) throws DEException, FileNotFoundException {
+    private static Map<String, String> downLoadRemoteExcel(ExcelConfiguration remoteExcelRequest) throws CrestException, FileNotFoundException {
         Map<String, String> fileNames = new HashMap<>();
         if (remoteExcelRequest.getUrl().trim().startsWith("http")) {
             HttpClientConfig httpClientConfig = new HttpClientConfig();
@@ -437,7 +437,7 @@ public class ExcelUtils {
         } else if (remoteExcelRequest.getUrl().trim().startsWith("ftp")) {
             fileNames = downLoadFromFtp(remoteExcelRequest);
         } else {
-            DEException.throwException(Translator.get("i18n_unsupported_protocol"));
+            CrestException.throwException(Translator.get("i18n_unsupported_protocol"));
         }
         return fileNames;
     }
@@ -445,15 +445,15 @@ public class ExcelUtils {
     private static File ensureExcelDirectory() {
         File directory = new File(getExcelPath());
         if (!directory.exists() && !directory.mkdirs()) {
-            DEException.throwException("Excel文件目录创建失败: " + directory.getAbsolutePath());
+            CrestException.throwException("Excel文件目录创建失败: " + directory.getAbsolutePath());
         }
         if (!directory.isDirectory()) {
-            DEException.throwException("Excel文件目录被文件占用: " + directory.getAbsolutePath());
+            CrestException.throwException("Excel文件目录被文件占用: " + directory.getAbsolutePath());
         }
         return directory;
     }
 
-    private static String saveFile(MultipartFile file, String fileNameUUID) throws DEException {
+    private static String saveFile(MultipartFile file, String fileNameUUID) throws CrestException {
         String filePath = null;
         try {
             String filename = file.getOriginalFilename();
@@ -467,7 +467,7 @@ public class ExcelUtils {
             fileOutputStream.flush();
             fileOutputStream.close();
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         return filePath;
     }
@@ -487,7 +487,7 @@ public class ExcelUtils {
         return isEmpty;
     }
 
-    public static List<String[]> csvData(BufferedReader reader, boolean isPreview, int size) throws DEException {
+    public static List<String[]> csvData(BufferedReader reader, boolean isPreview, int size) throws CrestException {
         List<String[]> data = new ArrayList<>();
         try {
             int num = 1;
@@ -514,7 +514,7 @@ public class ExcelUtils {
                 }
             }
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         return data;
     }
@@ -548,17 +548,17 @@ public class ExcelUtils {
             return;
         }
         if (i == 0) {
-            tableFiled.setFieldType(cellType(value));
+            tableFiled.setNativeType(cellType(value));
         } else {
             String type = cellType(value);
-            if (tableFiled.getFieldType() == null) {
-                tableFiled.setFieldType(type);
+            if (tableFiled.getNativeType() == null) {
+                tableFiled.setNativeType(type);
             } else {
                 if (type.equalsIgnoreCase("TEXT")) {
-                    tableFiled.setFieldType(type);
+                    tableFiled.setNativeType(type);
                 }
-                if (type.equalsIgnoreCase("DOUBLE") && tableFiled.getFieldType().equalsIgnoreCase("LONG")) {
-                    tableFiled.setFieldType(type);
+                if (type.equalsIgnoreCase("DOUBLE") && tableFiled.getNativeType().equalsIgnoreCase("LONG")) {
+                    tableFiled.setNativeType(type);
                 }
             }
         }
@@ -636,11 +636,11 @@ public class ExcelUtils {
                 List<TableField> fields = new ArrayList<>();
                 excelReader.read(readSheet);
                 if (CollectionUtils.isEmpty(noModelDataListener.getHeader())) {
-                    DEException.throwException(readSheet.getSheetName() + "首行不能为空！");
+                    CrestException.throwException(readSheet.getSheetName() + "首行不能为空！");
                 }
                 for (String s : noModelDataListener.getHeader()) {
                     TableField tableFiled = new TableField();
-                    tableFiled.setFieldType(null);
+                    tableFiled.setNativeType(null);
                     tableFiled.setName(s);
                     tableFiled.setOriginName(s);
                     tableFiled.setChecked(true);
@@ -661,8 +661,8 @@ public class ExcelUtils {
                 }
 
                 for (int i = 0; i < fields.size(); i++) {
-                    if (StringUtils.isEmpty(fields.get(i).getFieldType())) {
-                        fields.get(i).setFieldType("TEXT");
+                    if (StringUtils.isEmpty(fields.get(i).getNativeType())) {
+                        fields.get(i).setNativeType("TEXT");
                     }
                 }
 
@@ -684,7 +684,7 @@ public class ExcelUtils {
                 for (int i = 0; i < split.length; i++) {
                     String filedName = split[i];
                     if (StringUtils.isEmpty(filedName)) {
-                        DEException.throwException(Translator.get("i18n_excel_error_first_row"));
+                        CrestException.throwException(Translator.get("i18n_excel_error_first_row"));
                     }
                     if (filedName.startsWith(UFEFF)) {
                         filedName = filedName.replace(UFEFF, "");
@@ -692,7 +692,7 @@ public class ExcelUtils {
                     TableField tableFiled = new TableField();
                     tableFiled.setName(filedName);
                     tableFiled.setOriginName(filedName);
-                    tableFiled.setFieldType(null);
+                    tableFiled.setNativeType(null);
                     tableFiled.setChecked(true);
                     fields.add(tableFiled);
                 }
@@ -712,8 +712,8 @@ public class ExcelUtils {
                 }
             }
             for (int i = 0; i < fields.size(); i++) {
-                if (StringUtils.isEmpty(fields.get(i).getFieldType())) {
-                    fields.get(i).setFieldType("TEXT");
+                if (StringUtils.isEmpty(fields.get(i).getNativeType())) {
+                    fields.get(i).setNativeType("TEXT");
                 }
             }
 
@@ -763,7 +763,7 @@ public class ExcelUtils {
                 serverAddress = matcher.group(3);
                 filePath = matcher.group(4);
             } else {
-                DEException.throwException(Translator.get("i18n_invalid_address"));
+                CrestException.throwException(Translator.get("i18n_invalid_address"));
             }
         } else {
             String regex = "ftp://([^/]+)(.*)";
@@ -773,7 +773,7 @@ public class ExcelUtils {
                 serverAddress = matcher.group(1);
                 filePath = matcher.group(2);
             } else {
-                DEException.throwException(Translator.get("i18n_invalid_address"));
+                CrestException.throwException(Translator.get("i18n_invalid_address"));
             }
         }
         if (StringUtils.isNotEmpty(remoteExcelRequest.getUserName())) {
@@ -785,7 +785,7 @@ public class ExcelUtils {
         filePath = filePath.startsWith("/") ? filePath.substring(1) : filePath;
         String suffix = filePath.substring(filePath.lastIndexOf(".") + 1);
         if (!Arrays.asList("csv", "xlsx", "xls").contains(suffix)) {
-            DEException.throwException(Translator.get("i18n_unsupported_file_format"));
+            CrestException.throwException(Translator.get("i18n_unsupported_file_format"));
         }
         String tranName = UUID.randomUUID().toString() + "." + suffix;
         String localFilePath = getExcelPath() + tranName;
@@ -812,7 +812,7 @@ public class ExcelUtils {
             outputStream.close();
 
         } catch (IOException e) {
-            DEException.throwException(Translator.get("i18n_file_download_failed") + ", " + e.getMessage());
+            CrestException.throwException(Translator.get("i18n_file_download_failed") + ", " + e.getMessage());
         }
         return fileNames;
     }

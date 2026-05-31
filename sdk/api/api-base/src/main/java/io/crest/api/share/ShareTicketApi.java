@@ -10,32 +10,32 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "可视化管理:分享:TICKET")
 public interface ShareTicketApi {
 
-    @PostMapping("/saveTicket")
+    @PostMapping("/tickets")
     @Operation(summary = "保存Ticket")
     String saveTicket(@RequestBody TicketCreator creator);
 
-    @PostMapping("/delTicket")
+    @DeleteMapping("/tickets")
     @Operation(summary = "删除Ticket")
     void deleteTicket(@RequestBody TicketDelRequest request);
 
-    @PostMapping("/enableTicket")
+    @PostMapping("/tickets/enabled")
     @Operation(summary = "切换Ticket必填状态")
     void switchRequire(@RequestBody TicketSwitchRequest request);
 
-    @PostMapping("/pager/{resourceId}/{goPage}/{pageSize}")
+    @PostMapping("/page/{resourceId}/{goPage}/{pageSize}")
     @Operation(summary = "根据资源查询Ticket")
     @Parameter(name = "resourceId", description = "资源ID", required = true, in = ParameterIn.PATH)
     IPage<TicketVO> pager(@PathVariable("resourceId") Long resourceId, @PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize);
 
-    @GetMapping("/tempTicket")
+    @GetMapping("/tickets/temporary")
     @Operation(summary = "生成临时Ticket")
     String tempTicket();
 

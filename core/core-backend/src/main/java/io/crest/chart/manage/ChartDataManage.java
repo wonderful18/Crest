@@ -15,7 +15,7 @@ import io.crest.dataset.utils.DatasetUtils;
 import io.crest.engine.sql.SQLProvider;
 import io.crest.engine.trans.*;
 import io.crest.engine.utils.Utils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.datasource.dto.DatasourceRequest;
@@ -88,7 +88,7 @@ public class ChartDataManage {
         }
 
         if (ObjectUtils.isEmpty(view)) {
-            DEException.throwException(ResultCode.DATA_IS_WRONG.code(), Translator.get("i18n_chart_delete"));
+            CrestException.throwException(ResultCode.DATA_IS_WRONG.code(), Translator.get("i18n_chart_delete"));
         }
         if (ObjectUtils.isNotEmpty(AuthUtils.getUser())) {
             chartExtRequest.setUser(AuthUtils.getUser().getUserId());
@@ -112,13 +112,13 @@ public class ChartDataManage {
             chartHandler = chartHandlerManager.getChartHandler(view.getRender(), view.getType());
         }
         if (chartHandler == null) {
-            DEException.throwException(ResultCode.DATA_IS_WRONG.code(), Translator.get("i18n_chart_not_handler") + ": " + view.getRender() + "," + view.getType());
+            CrestException.throwException(ResultCode.DATA_IS_WRONG.code(), Translator.get("i18n_chart_not_handler") + ": " + view.getRender() + "," + view.getType());
         }
 
         var drillAxis = new ArrayList<ChartViewFieldDTO>();
-        DatasetGroupInfoDTO table = datasetGroupManage.getDatasetGroupInfoDTO(view.getTableId(), null);
+        DatasetGroupInfoDTO table = datasetGroupManage.datasetGroupInfoDTO(view.getTableId(), null);
         if (table == null) {
-            DEException.throwException(ResultCode.DATA_IS_WRONG.code(), Translator.get("i18n_no_ds"));
+            CrestException.throwException(ResultCode.DATA_IS_WRONG.code(), Translator.get("i18n_no_ds"));
         }
         // check permission
         BusiPerCheckDTO dto = new BusiPerCheckDTO();
@@ -126,7 +126,7 @@ public class ChartDataManage {
         dto.setAuthEnum(AuthEnum.READ);
         boolean checked = corePermissionManage.checkAuth(dto);
         if (!checked) {
-            DEException.throwException(Translator.get("i18n_no_dataset_permission"));
+            CrestException.throwException(Translator.get("i18n_no_dataset_permission"));
         }
 
         List<ChartViewFieldDTO> allFields = getAllChartFields(view);
@@ -136,9 +136,9 @@ public class ChartDataManage {
         // row permission
         List<DataSetRowPermissionsTreeDTO> rowPermissionsTree = permissionManage.getRowPermissionsTree(table.getId(), chartExtRequest.getUser());
         //将没有权限的列删掉
-        List<String> dataeaseNames = columnPermissionFields.stream().map(DatasetTableFieldDTO::getDataeaseName).collect(Collectors.toList());
+        List<String> engineFieldNames = columnPermissionFields.stream().map(DatasetTableFieldDTO::getEngineFieldName).collect(Collectors.toList());
         //计数字段
-        dataeaseNames.add("*");
+        engineFieldNames.add("*");
         AxisFormatResult formatResult = chartHandler.formatAxis(view);
         formatResult.getContext().put("dataset", table);
         formatResult.getContext().put("desensitizationList", desensitizationList);
@@ -146,12 +146,12 @@ public class ChartDataManage {
         var yAxis = formatResult.getAxisMap().get(ChartAxis.yAxis);
         formatResult.getContext().put("allFields", allFields);
         var axisMap = formatResult.getAxisMap();
-        axisMap.forEach((axis, fields) -> fields.removeIf(fieldDTO -> !dataeaseNames.contains(fieldDTO.getDataeaseName())));
+        axisMap.forEach((axis, fields) -> fields.removeIf(fieldDTO -> !engineFieldNames.contains(fieldDTO.getEngineFieldName())));
 
         // 过滤来自仪表板的条件
         List<ChartExtFilterDTO> extFilterList = new ArrayList<>();
         //组件过滤条件
-        List<SqlVariableDetails> sqlVariables = datasetGroupManage.getSqlParams(Collections.singletonList(view.getTableId()));
+        List<SqlVariableDetails> sqlVariables = datasetGroupManage.sqlParams(Collections.singletonList(view.getTableId()));
         if (ObjectUtils.isNotEmpty(chartExtRequest.getFilter())) {
             for (ChartExtFilterDTO request : chartExtRequest.getFilter()) {
                 // 解析多个fieldId,fieldId是一个逗号分隔的字符串
@@ -314,7 +314,7 @@ public class ChartDataManage {
                         drillFilter.setDatePattern(viewField.getDatePattern());
                         drillFilter.setDateStyle(viewField.getDateStyle());
                         drillFilter.setFilterType(1);
-                        if (datasetTableField.getDeType() == 1) {
+                        if (datasetTableField.getFieldType() == 1) {
                             drillFilter.setOperator("between");
                             drillFilter.setOriginValue(Collections.singletonList(dim.getValue()));
                             // 把value类似过滤组件处理，获得start time和end time
@@ -387,12 +387,12 @@ public class ChartDataManage {
         }
 
         if (ObjectUtils.isEmpty(dsMap)) {
-            DEException.throwException(ResultCode.DATA_IS_WRONG.code(), Translator.get("i18n_datasource_delete"));
+            CrestException.throwException(ResultCode.DATA_IS_WRONG.code(), Translator.get("i18n_datasource_delete"));
         }
         for (Map.Entry<Long, DatasourceSchemaDTO> next : dsMap.entrySet()) {
             DatasourceSchemaDTO ds = next.getValue();
             if (StringUtils.isNotEmpty(ds.getStatus()) && "Error".equalsIgnoreCase(ds.getStatus())) {
-                DEException.throwException(ResultCode.DATA_IS_WRONG.code(), Translator.get("i18n_invalid_ds"));
+                CrestException.throwException(ResultCode.DATA_IS_WRONG.code(), Translator.get("i18n_invalid_ds"));
             }
         }
 
@@ -460,9 +460,9 @@ public class ChartDataManage {
             String summary = (String) maxField.get("summary");
             DatasetTableFieldDTO datasetTableField = datasetTableFieldManage.selectById(id);
             if (ObjectUtils.isNotEmpty(datasetTableField)) {
-                if (datasetTableField.getDeType() == 0 || datasetTableField.getDeType() == 1 || datasetTableField.getDeType() == 5) {
+                if (datasetTableField.getFieldType() == 0 || datasetTableField.getFieldType() == 1 || datasetTableField.getFieldType() == 5) {
                     if (!Strings.CI.contains(summary, "count")) {
-                        DEException.throwException(Translator.get("i18n_gauge_field_change"));
+                        CrestException.throwException(Translator.get("i18n_gauge_field_change"));
                     }
                 }
                 ChartViewFieldDTO dto = new ChartViewFieldDTO();
@@ -470,7 +470,7 @@ public class ChartDataManage {
                 dto.setSummary(summary);
                 return dto;
             } else {
-                DEException.throwException(Translator.get("i18n_gauge_field_delete"));
+                CrestException.throwException(Translator.get("i18n_gauge_field_delete"));
             }
         }
         return null;
@@ -639,7 +639,7 @@ public class ChartDataManage {
 
     public List<String[]> sqlData(ChartViewDTO view, ChartExtRequest requestList, Long fieldId) throws Exception {
         if (ObjectUtils.isEmpty(view)) {
-            DEException.throwException(Translator.get("i18n_chart_delete"));
+            CrestException.throwException(Translator.get("i18n_chart_delete"));
         }
 
         // get all fields
@@ -676,7 +676,7 @@ public class ChartDataManage {
         List<ChartViewFieldDTO> drill = new ArrayList<>(view.getDrillFields());
 
         // 获取数据集,需校验权限
-        DatasetGroupInfoDTO table = datasetGroupManage.getDatasetGroupInfoDTO(view.getTableId(), null);
+        DatasetGroupInfoDTO table = datasetGroupManage.datasetGroupInfoDTO(view.getTableId(), null);
         Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
         List<DataSetRowPermissionsTreeDTO> rowPermissionsTree = permissionManage.getRowPermissionsTree(table.getId(), view.getChartExtRequest().getUser());
 
@@ -753,12 +753,12 @@ public class ChartDataManage {
         //如果不是插件图表 走原生逻辑
         if (table.getMode() == 0 || table.getMode() == 1) {// 直连或同步缓存
             if (ObjectUtils.isEmpty(dsMap)) {
-                DEException.throwException(Translator.get("i18n_datasource_delete"));
+                CrestException.throwException(Translator.get("i18n_datasource_delete"));
             }
             for (Map.Entry<Long, DatasourceSchemaDTO> next : dsMap.entrySet()) {
                 DatasourceSchemaDTO ds = next.getValue();
                 if (StringUtils.isNotEmpty(ds.getStatus()) && "Error".equalsIgnoreCase(ds.getStatus())) {
-                    DEException.throwException(Translator.get("i18n_invalid_ds"));
+                    CrestException.throwException(Translator.get("i18n_invalid_ds"));
                 }
             }
 
@@ -827,7 +827,7 @@ public class ChartDataManage {
                         chartViewDTO.setSceneId(sceneId);
                         chartViewManege.save(chartViewDTO);
                     } catch (Exception e) {
-                        DEException.throwException(e);
+                        CrestException.throwException(e);
                     }
                 } else {
                     disuseChartIdList.add(chartViewDTO.getId());

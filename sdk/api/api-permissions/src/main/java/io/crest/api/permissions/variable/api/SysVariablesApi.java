@@ -5,14 +5,14 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.github.xiaoymin.knife4j.annotations.ApiSupport;
 import io.crest.api.permissions.variable.dto.SysVariableDto;
 import io.crest.api.permissions.variable.dto.SysVariableValueDto;
-import io.crest.auth.DeApiPath;
+import io.crest.auth.CrestApiPath;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -22,19 +22,19 @@ import static io.crest.constant.AuthResourceEnum.SYSTEM;
 @Hidden
 @Tag(name = "系统变量")
 @ApiSupport(order = 881, author = "Crest")
-@DeApiPath(value = "/sysVariable", rt = SYSTEM)
+@CrestApiPath(value = "/sys-variable", rt = SYSTEM)
 public interface SysVariablesApi {
 
     @Operation(summary = "创建变量")
-    @PostMapping("/create")
+    @PostMapping
     SysVariableDto create(@RequestBody SysVariableDto sysVariableDto);
 
     @Operation(summary = "编辑变量")
-    @PostMapping("/edit")
+    @PutMapping
     SysVariableDto edit(@RequestBody SysVariableDto sysVariableDto);
 
     @Operation(summary = "删除变量")
-    @GetMapping("/delete/{id}")
+    @DeleteMapping("/{id}")
     void delete(@PathVariable("id") Long id);
 
     @Operation(summary = "变量详细信息")
@@ -42,19 +42,19 @@ public interface SysVariablesApi {
     SysVariableDto detail(@PathVariable("id") Long id);
 
     @Operation(summary = "系统变量列表")
-    @PostMapping("/query")
+    @PostMapping("/list")
     List<SysVariableDto> query(@RequestBody SysVariableDto sysVariableDto);
 
     @Operation(summary = "创建变量值")
-    @PostMapping("/value/create")
+    @PostMapping("/value")
     SysVariableValueDto createValue(@RequestBody SysVariableValueDto sysVariableDto);
 
     @Operation(summary = "编辑变量值")
-    @PostMapping("/value/edit")
+    @PutMapping("/value")
     SysVariableValueDto editValue(@RequestBody SysVariableValueDto sysVariableDto);
 
     @Operation(summary = "删除变量值")
-    @GetMapping("/value/delete/{id}")
+    @DeleteMapping("/value/{id}")
     void deleteValue(@PathVariable("id") String id);
 
     @Operation(summary = "查看变量值详细信息")
@@ -66,7 +66,7 @@ public interface SysVariablesApi {
     IPage<SysVariableValueDto> selectPage(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody SysVariableValueDto sysVariableValueDto);
 
     @Operation(summary = "批量删除变量值")
-    @PostMapping("/value/batchDel")
+    @DeleteMapping("/value/batch")
     void batchDel(@RequestBody List<Long> ids);
 
     @Hidden

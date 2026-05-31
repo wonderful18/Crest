@@ -129,7 +129,7 @@ export class ProgressBar extends G2PlotChartView<BarOptions, G2Progress> {
         progress: progress >= 100 ? 100 : progress
       }
     })
-    const targetData = data1.map(item => {
+    const tardata = data1.map(item => {
       const progress = 100 - currentData.find(i => i.title === item.field)?.progress
       return {
         ...item,
@@ -143,7 +143,7 @@ export class ProgressBar extends G2PlotChartView<BarOptions, G2Progress> {
     // options
     const initOptions: BarOptions = {
       ...this.baseOptions,
-      data: currentData.concat(targetData).flat()
+      data: currentData.concat(tardata).flat()
     }
     const options = this.setupOptions(chart, initOptions)
 

@@ -2,8 +2,8 @@ package io.crest.chart.manage;
 
 import io.crest.api.chart.request.ThresholdCheckRequest;
 import io.crest.api.chart.vo.ThresholdCheckVO;
-import io.crest.constant.DeTypeConstants;
-import io.crest.exception.DEException;
+import io.crest.constant.FieldTypeConstants;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.view.dto.ChartViewDTO;
 import io.crest.extensions.view.dto.ChartViewFieldDTO;
@@ -139,13 +139,13 @@ public class ChartViewThresholdManage {
             String enumValueText = String.join(",", enumValue);
             return fieldName + " " + Translator.get("i18n_threshold_logic_in") + " " + "( " + enumValueText + " )";
         } else {
-            Integer deType = map.getDeType();
+            Integer fieldType = map.getFieldType();
             String valueType = item.getValueType();
-            return fieldName + " " + translateTerm(item.getTerm()) + " " + formatFieldValue(item.getValue(), valueType, deType);
+            return fieldName + " " + translateTerm(item.getTerm()) + " " + formatFieldValue(item.getValue(), valueType, fieldType);
         }
     }
 
-    private String formatFieldValue(String value, String valueType, Integer deType) {
+    private String formatFieldValue(String value, String valueType, Integer fieldType) {
         if (StringUtils.isBlank(valueType)) {
             valueType = "fixed";
         }
@@ -158,7 +158,7 @@ public class ChartViewThresholdManage {
             return Translator.get("i18n_threshold_min");
         } else if (Strings.CS.equals("average", value)) {
             return Translator.get("i18n_threshold_average");
-        } else if (deType == 1) {
+        } else if (fieldType == 1) {
             return formatDynamicTimeLabel(value);
         } else {
             return value;
@@ -190,7 +190,7 @@ public class ChartViewThresholdManage {
                 } else if (Strings.CI.equals("YYYY-MM-DD", format)) {
                     unitLabels = List.of(Translator.get("i18n_time_year"), Translator.get("i18n_time_month"), Translator.get("i18n_time_date"));
                 } else if (Strings.CI.equals("HH:mm:ss", format)) {
-                    DEException.throwException("纯时间格式不支持动态格式");
+                    CrestException.throwException("纯时间格式不支持动态格式");
                 } else {
                     unitLabels = List.of(Translator.get("i18n_time_year"), Translator.get("i18n_time_month"), Translator.get("i18n_time_date"), Translator.get("i18n_time_hour"));
                 }
@@ -296,7 +296,7 @@ public class ChartViewThresholdManage {
                 // 根据id从map中获取替换文本
                 DatasetTableFieldDTO fieldDTO = fieldMap.get(id);
                 if (ObjectUtils.isEmpty(fieldDTO)) continue;
-                String dataeaseName = fieldDTO.getDataeaseName();
+                String engineFieldName = fieldDTO.getEngineFieldName();
                 String fieldDTOName = fieldDTO.getName();
 
                 if (rows.size() > thresholdRecordCount) {
@@ -304,11 +304,11 @@ public class ChartViewThresholdManage {
                 }
                 if (request.isShowFieldValue()) {
                     String replacement = null;
-                    if (fieldDTO.getDeType().equals(DeTypeConstants.DE_FLOAT) || fieldDTO.getDeType().equals(DeTypeConstants.DE_INT)) {
-                        List<String> valueList = rows.stream().map(row -> ObjectUtils.isEmpty(row.get(dataeaseName)) ? null : stripTrailingZeros2String(row.get(dataeaseName))).collect(Collectors.toList());
+                    if (fieldDTO.getFieldType().equals(FieldTypeConstants.FLOAT) || fieldDTO.getFieldType().equals(FieldTypeConstants.INTEGER)) {
+                        List<String> valueList = rows.stream().map(row -> ObjectUtils.isEmpty(row.get(engineFieldName)) ? null : stripTrailingZeros2String(row.get(engineFieldName))).collect(Collectors.toList());
                         replacement = fieldDTOName + ": " + JsonUtil.toJSONString(valueList);
                     } else {
-                        List<String> valueList = rows.stream().map(row -> ObjectUtils.isEmpty(row.get(dataeaseName)) ? null : row.get(dataeaseName).toString()).collect(Collectors.toList());
+                        List<String> valueList = rows.stream().map(row -> ObjectUtils.isEmpty(row.get(engineFieldName)) ? null : row.get(engineFieldName).toString()).collect(Collectors.toList());
                         replacement = fieldDTOName + ": " + JsonUtil.toJSONString(valueList);
                     }
                     matcher.appendReplacement(sb, replacement);
@@ -327,14 +327,14 @@ public class ChartViewThresholdManage {
                 List<List<String>> thresholdTableList = rows.stream().map(row -> thresholdFieldIdSet.stream().map(fieldId -> {
                     DatasetTableFieldDTO fieldDTO = fieldMap.get(fieldId);
                     if (ObjectUtils.isEmpty(fieldDTO)) return "";
-                    String dataeaseName = fieldDTO.getDataeaseName();
-                    Integer deType = fieldDTO.getDeType();
+                    String engineFieldName = fieldDTO.getEngineFieldName();
+                    Integer fieldType = fieldDTO.getFieldType();
                     String value = null;
 
-                    if (deType.equals(DeTypeConstants.DE_FLOAT) || deType.equals(DeTypeConstants.DE_INT)) {
-                        value = ObjectUtils.isEmpty(row.get(dataeaseName)) ? null : stripTrailingZeros2String(row.get(dataeaseName));
+                    if (fieldType.equals(FieldTypeConstants.FLOAT) || fieldType.equals(FieldTypeConstants.INTEGER)) {
+                        value = ObjectUtils.isEmpty(row.get(engineFieldName)) ? null : stripTrailingZeros2String(row.get(engineFieldName));
                     } else {
-                        value = ObjectUtils.isEmpty(row.get(dataeaseName)) ? null : row.get(dataeaseName).toString();
+                        value = ObjectUtils.isEmpty(row.get(engineFieldName)) ? null : row.get(engineFieldName).toString();
                     }
                     return value;
                 }).collect(Collectors.toList())).collect(Collectors.toList());
@@ -417,10 +417,10 @@ public class ChartViewThresholdManage {
             } else {
                 Long fieldId = item.getFieldId();
                 DatasetTableFieldDTO fieldDTO = fieldMap.get(fieldId);
-                if ((Objects.equals(fieldDTO.getDeType(), DeTypeConstants.DE_INT) || Objects.equals(fieldDTO.getDeType(), DeTypeConstants.DE_FLOAT)) && Strings.CS.equals("dynamic", item.getValueType())) {
+                if ((Objects.equals(fieldDTO.getFieldType(), FieldTypeConstants.INTEGER) || Objects.equals(fieldDTO.getFieldType(), FieldTypeConstants.FLOAT)) && Strings.CS.equals("dynamic", item.getValueType())) {
                     item.setField(fieldDTO);
                     item.setValue(formatValue(rows, item));
-                } else if (Objects.equals(fieldDTO.getDeType(), DeTypeConstants.DE_TIME) && Strings.CS.equals("dynamic", item.getValueType())) {
+                } else if (Objects.equals(fieldDTO.getFieldType(), FieldTypeConstants.TIME) && Strings.CS.equals("dynamic", item.getValueType())) {
                     item.setField(fieldDTO);
                     item.setValue(dynamicFormatValue(item));
                 }
@@ -521,13 +521,13 @@ public class ChartViewThresholdManage {
 
     private String formatValue(List<Map<String, Object>> rows, FilterTreeItem item) {
         DatasetTableFieldDTO field = item.getField();
-        String dataeaseName = field.getDataeaseName();
+        String engineFieldName = field.getEngineFieldName();
         String value = item.getValue();
         Float tempFVal = Strings.CS.equalsAny(value, "min", "max") ? null : 0f;
         int validLen = 0;
 
         for (Map<String, Object> row : rows) {
-            Object o = row.get(dataeaseName);
+            Object o = row.get(engineFieldName);
             if (ObjectUtils.isEmpty(o)) continue;
             float fvalue = Float.parseFloat(o.toString());
             if (Strings.CS.equals("min", value)) {
@@ -604,16 +604,16 @@ public class ChartViewThresholdManage {
     }
 
     private boolean rowMatch(Map<String, Object> row, FilterTreeItem item, DatasetTableFieldDTO fieldDTO) {
-        String dataeaseName = fieldDTO.getDataeaseName();
+        String engineFieldName = fieldDTO.getEngineFieldName();
         String filterType = item.getFilterType();
-        Integer deType = fieldDTO.getDeType();
-        Object valueObj = row.get(dataeaseName);
+        Integer fieldType = fieldDTO.getFieldType();
+        Object valueObj = row.get(engineFieldName);
         if (Strings.CS.equals(filterType, "enum")) {
             List<String> enumValue = item.getEnumValue();
             return ObjectUtils.isNotEmpty(valueObj) && enumValue.contains(valueObj);
         } else {
             String term = item.getTerm();
-            if (Objects.equals(deType, DeTypeConstants.DE_STRING)) {
+            if (Objects.equals(fieldType, FieldTypeConstants.STRING)) {
                 if (valueObj == null) {
                     return Strings.CS.equals(term, "null");
                 }
@@ -640,7 +640,7 @@ public class ChartViewThresholdManage {
                 } else {
                     return Strings.CS.equals(item.getValue(), valueObj.toString());
                 }
-            } else if (Objects.equals(deType, DeTypeConstants.DE_INT) || Objects.equals(deType, DeTypeConstants.DE_FLOAT)) {
+            } else if (Objects.equals(fieldType, FieldTypeConstants.INTEGER) || Objects.equals(fieldType, FieldTypeConstants.FLOAT)) {
                 if (valueObj == null) return false;
                 if (ObjectUtils.isEmpty(item.getValue())) {
                     return false;
@@ -662,7 +662,7 @@ public class ChartViewThresholdManage {
                 } else {
                     return Strings.CS.equals(item.getValue(), valueObj.toString());
                 }
-            } else if (Objects.equals(deType, DeTypeConstants.DE_TIME)) {
+            } else if (Objects.equals(fieldType, FieldTypeConstants.TIME)) {
                 // 补充时间逻辑
                 return timeMatch(item, valueObj);
             } else {

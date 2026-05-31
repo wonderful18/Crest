@@ -7,12 +7,12 @@ import { downloadCanvas2 } from '@/utils/imgUtils'
 import ComponentEditBar from '@/components/visualization/ComponentEditBar.vue'
 import ComponentSelector from '@/components/visualization/ComponentSelector.vue'
 import { useEmitt } from '@/hooks/web/useEmitt'
-import Board from '@/components/de-board/Board.vue'
+import Board from '@/components/visual-board/Board.vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { activeWatermarkCheckUser, removeActiveWatermark } from '@/components/watermark/watermark'
 import { isMobile } from '@/utils/utils'
 import { isMainCanvas } from '@/utils/canvasUtils'
-import DePreviewPopDialog from '@/components/visualization/DePreviewPopDialog.vue'
+import CrestPreviewPopDialog from '@/components/visualization/CrestPreviewPopDialog.vue'
 import Icon from '../../icon-custom/src/Icon.vue'
 import replaceOutlined from '@/assets/svg/icon_replace_outlined.svg'
 import { useI18n } from '@/hooks/web/useI18n'
@@ -28,7 +28,7 @@ const componentEditBarRef = ref(null)
 const dvMainStore = dvMainStoreWithOut()
 const downLoading = ref(false)
 const commonFilterAttrs = ['width', 'height', 'top', 'left', 'rotate']
-const dePreviewPopDialogRef = ref(null)
+const crestPreviewPopDialogRef = ref(null)
 const commonFilterAttrsFilterBorder = [
   'width',
   'height',
@@ -320,7 +320,7 @@ const onWrapperClick = e => {
       const jumpType = config.value.events.jump.type
       try {
         if ('newPop' === jumpType) {
-          dePreviewPopDialogRef.value.previewInit({ url, size: 'middle' })
+          crestPreviewPopDialogRef.value.previewInit({ url, size: 'middle' })
         } else if ('_blank' === jumpType) {
           if (window['originOpen']) {
             window['originOpen'](url, '_blank')
@@ -531,7 +531,7 @@ onBeforeUnmount(() => {
         :name="commonBackgroundSvgInner"
       ></Board>
     </div>
-    <DePreviewPopDialog ref="dePreviewPopDialogRef"></DePreviewPopDialog>
+    <CrestPreviewPopDialog ref="crestPreviewPopDialogRef"></CrestPreviewPopDialog>
   </div>
 </template>
 

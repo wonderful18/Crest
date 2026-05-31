@@ -119,7 +119,7 @@ public class WhereTree2Str {
             if (Strings.CI.equals(dsType, "es")) {
                 originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getOriginName());
             } else {
-                originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getDataeaseName());
+                originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getEngineFieldName());
             }
         } else if (ObjectUtils.isNotEmpty(field.getExtField()) && Objects.equals(field.getExtField(), ExtFieldConstant.EXT_GROUP)) {
             String groupFieldExp = Utils.transGroupFieldToSql(field, originFields, isCross, dsMap, pluginManage);
@@ -133,46 +133,46 @@ public class WhereTree2Str {
             if (Strings.CI.equals(dsType, "es")) {
                 originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getOriginName());
             } else {
-                originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getDataeaseName());
+                originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getEngineFieldName());
             }
         }
-        if (field.getDeType() == 1) {
-            if (field.getDeExtractType() == 0 || field.getDeExtractType() == 5) {
-                whereName = String.format(SQLConstants.DE_STR_TO_DATE, originName, StringUtils.isNotEmpty(field.getDateFormat()) ? field.getDateFormat() : SQLConstants.DEFAULT_DATE_FORMAT);
+        if (field.getFieldType() == 1) {
+            if (field.getExtractedFieldType() == 0 || field.getExtractedFieldType() == 5) {
+                whereName = String.format(SQLConstants.CREST_STR_TO_DATE, originName, StringUtils.isNotEmpty(field.getDateFormat()) ? field.getDateFormat() : SQLConstants.DEFAULT_DATE_FORMAT);
             }
-            if (field.getDeExtractType() == 2 || field.getDeExtractType() == 3 || field.getDeExtractType() == 4) {
+            if (field.getExtractedFieldType() == 2 || field.getExtractedFieldType() == 3 || field.getExtractedFieldType() == 4) {
                 String cast = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_INT_FORMAT);
                 whereName = String.format(SQLConstants.FROM_UNIXTIME, cast, SQLConstants.DEFAULT_DATE_FORMAT);
             }
-            if (field.getDeExtractType() == 1) {
+            if (field.getExtractedFieldType() == 1) {
                 // 如果都是时间类型，把date和time类型进行字符串拼接
                 if (isCross) {
                     if (Strings.CI.equals(field.getType(), "date")) {
-                        originName = String.format(SQLConstants.DE_STR_TO_DATE, String.format(SQLConstants.CONCAT, originName, "' 00:00:00'"), SQLConstants.DEFAULT_DATE_FORMAT);
+                        originName = String.format(SQLConstants.CREST_STR_TO_DATE, String.format(SQLConstants.CONCAT, originName, "' 00:00:00'"), SQLConstants.DEFAULT_DATE_FORMAT);
                     } else if (Strings.CI.equals(field.getType(), "time")) {
-                        originName = String.format(SQLConstants.DE_STR_TO_DATE, String.format(SQLConstants.CONCAT, "'1970-01-01 '", originName), SQLConstants.DEFAULT_DATE_FORMAT);
+                        originName = String.format(SQLConstants.CREST_STR_TO_DATE, String.format(SQLConstants.CONCAT, "'1970-01-01 '", originName), SQLConstants.DEFAULT_DATE_FORMAT);
                     }
                 }
                 if (Strings.CI.equals(field.getType(), "date")
                         || (isOracleLike(dsMap.entrySet().iterator().next().getValue().getType()) && Strings.CI.equals(field.getType(), "timestamp"))) {
-                    whereName = String.format(SQLConstants.DE_CAST_DATE_FORMAT, originName,
+                    whereName = String.format(SQLConstants.CREST_CAST_DATE_FORMAT, originName,
                             SQLConstants.DEFAULT_DATE_FORMAT,
                             SQLConstants.DEFAULT_DATE_FORMAT);
                 } else {
                     whereName = originName;
                 }
             }
-        } else if (field.getDeType() == 2 || field.getDeType() == 3) {
-            if (field.getDeExtractType() == 0 || field.getDeExtractType() == 5) {
+        } else if (field.getFieldType() == 2 || field.getFieldType() == 3) {
+            if (field.getExtractedFieldType() == 0 || field.getExtractedFieldType() == 5) {
                 whereName = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_FLOAT_FORMAT);
             }
-            if (field.getDeExtractType() == 1) {
+            if (field.getExtractedFieldType() == 1) {
                 whereName = String.format(SQLConstants.UNIX_TIMESTAMP, originName);
             }
-            if (field.getDeExtractType() == 2 || field.getDeExtractType() == 4) {
+            if (field.getExtractedFieldType() == 2 || field.getExtractedFieldType() == 4) {
                 whereName = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_INT_FORMAT);
             }
-            if (field.getDeExtractType() == 3) {
+            if (field.getExtractedFieldType() == 3) {
                 whereName = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_FLOAT_FORMAT);
             }
         } else {
@@ -195,7 +195,7 @@ public class WhereTree2Str {
             String whereTerm = Utils.transFilterTerm(item.getTerm());
             String whereValue = "";
 
-            if (field.getDeType() == 1 && isCross) {
+            if (field.getFieldType() == 1 && isCross) {
                 whereName = String.format(SQLConstants.UNIX_TIMESTAMP, whereName);
             }
 
@@ -227,7 +227,7 @@ public class WhereTree2Str {
                 }
             } else {
                 // 如果是时间字段过滤，当条件是等于和不等于的时候转换成between和not between
-                if (field.getDeType() == 1) {
+                if (field.getFieldType() == 1) {
                     Map<String, Long> stringLongMap = Utils.parseDateTimeValue(value);
                     if (Strings.CI.equals(whereTerm, " = ")) {
                         whereTerm = " BETWEEN ";

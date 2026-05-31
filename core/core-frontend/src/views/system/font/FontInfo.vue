@@ -48,7 +48,7 @@ const del = () => {
   }
 
   .info {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-style: normal;
     font-weight: 400;
     width: 80%;

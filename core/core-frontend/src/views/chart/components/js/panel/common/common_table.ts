@@ -522,8 +522,8 @@ export function getStyle(chart: Chart, dataConfig: S2DataConfig): Style {
             item => item.id === chart.drillFilters[0].fieldId
           )
           const drillEnterField = xAxis[drillEnterFieldIndex]
-          fieldMap[curDrillField.dataeaseName] = {
-            width: fieldMap[drillEnterField.dataeaseName]?.width
+          fieldMap[curDrillField.engineFieldName] = {
+            width: fieldMap[drillEnterField.engineFieldName]?.width
           }
         }
         // 铺满
@@ -571,7 +571,7 @@ export function getStyle(chart: Chart, dataConfig: S2DataConfig): Style {
         const parentNodeWidthMap = {}
         const nodeMaxWidthMap = {}
         const quotaLabelMap = chart.yAxis?.reduce((p, n) => {
-          p[n.dataeaseName] = n.chartShowName || n.name
+          p[n.engineFieldName] = n.chartShowName || n.name
           return p
         }, {}) || {}
         let calcCount = 50
@@ -672,7 +672,7 @@ export function getCurrentField(valueFieldList: Axis[], field: ChartViewField) {
   if (list) {
     for (let i = 0; i < list.length; i++) {
       const f = list[i]
-      if (field.dataeaseName === f.dataeaseName) {
+      if (field.engineFieldName === f.engineFieldName) {
         res = f
         break
       }
@@ -698,10 +698,10 @@ export function getConditions(chart: Chart) {
     allFields.push(...chart.yAxis)
   }
   const fieldIdToName = allFields.reduce((acc, f) => {
-    acc[f.id] = f.dataeaseName
+    acc[f.id] = f.engineFieldName
     return acc
   }, {})
-  const allColumnNames = allFields.map(f => f.dataeaseName)
+  const allColumnNames = allFields.map(f => f.engineFieldName)
 
   if (conditions?.length > 0) {
     const { tableCell, basicStyle, tableHeader } = parseJson(chart.customAttr)
@@ -739,7 +739,7 @@ export function getConditions(chart: Chart) {
           const targetName = fieldIdToName[rule.targetFieldId]
           if (targetName) targets = [targetName]
         } else {
-          targets = [fieldItem.field.dataeaseName]
+          targets = [fieldItem.field.engineFieldName]
         }
 
         targets.forEach(targetName => {
@@ -817,7 +817,7 @@ export function mappingColorCustom(value, defaultColor, field, type, filedValueM
         tv = t.value
       }
     }
-    if (field.field.deType === 2 || field.field.deType === 3 || field.field.deType === 4) {
+    if (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) {
       tv = parseFloat(tv)
       if (t.term === 'eq') {
         if (value === tv) {
@@ -873,7 +873,7 @@ export function mappingColorCustom(value, defaultColor, field, type, filedValueM
       } else if (i === field.conditions.length - 1) {
         color = defaultColor
       }
-    } else if (field.field.deType === 0 || field.field.deType === 5) {
+    } else if (field.field.fieldType === 0 || field.field.fieldType === 5) {
       if (t.term === 'eq') {
         if (value === tv) {
           color = t[type]
@@ -989,10 +989,10 @@ export function mappingColor(value, defaultColor, rules, type, filedValueMap?, r
     let targetValue, max, min
 
     let checkValue = value;
-    if (sourceField.dataeaseName) {
-      checkValue = rowData?.[sourceField.dataeaseName]
+    if (sourceField.engineFieldName) {
+      checkValue = rowData?.[sourceField.engineFieldName]
       if (checkValue === undefined) {
-        checkValue = rowData?.query?.[sourceField.dataeaseName]
+        checkValue = rowData?.query?.[sourceField.engineFieldName]
       }
     }
 
@@ -1014,7 +1014,7 @@ export function mappingColor(value, defaultColor, rules, type, filedValueMap?, r
 
     const val = checkValue;
 
-    if (sourceField.deType === 2 || sourceField.deType === 3 || sourceField.deType === 4) {
+    if (sourceField.fieldType === 2 || sourceField.fieldType === 3 || sourceField.fieldType === 4) {
       targetValue = parseFloat(targetValue)
       const numVal = parseFloat(val)
       if (t.term === 'eq') {
@@ -1069,7 +1069,7 @@ export function mappingColor(value, defaultColor, rules, type, filedValueMap?, r
       if (flag) {
         break
       }
-    } else if (sourceField.deType === 0 || sourceField.deType === 5) {
+    } else if (sourceField.fieldType === 0 || sourceField.fieldType === 5) {
       if (t.term === 'eq') {
         if (val === targetValue) {
           color = t[type]
@@ -1197,10 +1197,10 @@ export function getPivotConditions(chart: Chart) {
   }
   const conditions = threshold.tableThreshold ?? []
 
-  const dimFields = [...chart.xAxis, ...chart.xAxisExt].map(i => i.dataeaseName)
+  const dimFields = [...chart.xAxis, ...chart.xAxisExt].map(i => i.engineFieldName)
   const allFields = [...chart.xAxis, ...chart.xAxisExt, ...chart.yAxis]
   const fieldIdToName = allFields.reduce((acc, f) => {
-    acc[f.id] = f.dataeaseName
+    acc[f.id] = f.engineFieldName
     return acc
   }, {})
 
@@ -1235,12 +1235,12 @@ export function getPivotConditions(chart: Chart) {
       : hexColorToRGBA(tableHeader.tableHeaderColBgColor, basicStyle.alpha)
     const filedValueMap = getFieldValueMap(chart)
 
-    
+
 
     const targetRulesMap = {} // columnName -> Array<{ rule, sourceField }>
-    const xFields = chart.xAxis.map(f => f.dataeaseName)
-    const xExtFields = chart.xAxisExt.map(f => f.dataeaseName)
-    const yFields = chart.yAxis.map(f => f.dataeaseName)
+    const xFields = chart.xAxis.map(f => f.engineFieldName)
+    const xExtFields = chart.xAxisExt.map(f => f.engineFieldName)
+    const yFields = chart.yAxis.map(f => f.engineFieldName)
     for (let i = 0; i < conditions.length; i++) {
       const fieldItem = conditions[i]
       if (!fieldItem.conditions) continue;
@@ -1249,13 +1249,13 @@ export function getPivotConditions(chart: Chart) {
         const rule = fieldItem.conditions[j]
         let targets = []
         if (rule.target === 'total_row') {
-          if (xFields.includes(fieldItem.field.dataeaseName)) {
+          if (xFields.includes(fieldItem.field.engineFieldName)) {
             targets.push(...xFields)
             if (basicStyle.quotaPosition === 'row') {
               targets.push(EXTRA_FIELD)
             }
           }
-          if (xExtFields.includes(fieldItem.field.dataeaseName)) {
+          if (xExtFields.includes(fieldItem.field.engineFieldName)) {
             targets.push(...xExtFields)
             if (basicStyle.quotaPosition !== 'row') {
               targets.push(EXTRA_FIELD)
@@ -1266,7 +1266,7 @@ export function getPivotConditions(chart: Chart) {
           const targetName = fieldIdToName[rule.targetFieldId]
           if (targetName) targets = [targetName]
         } else {
-          targets = [fieldItem.field.dataeaseName]
+          targets = [fieldItem.field.engineFieldName]
         }
 
         targets.forEach(targetName => {
@@ -1320,7 +1320,7 @@ export function getPivotConditions(chart: Chart) {
           if (rowData.cornerType) {
             return null
           }
-          
+
           const fill = mappingPivotColor(
             value,
             defaultBgColor,
@@ -1350,10 +1350,10 @@ export function mappingPivotColor(value, defaultColor, rules, type, filedValueMa
     let targetValue, max, min
 
     let checkValue = value;
-    if (sourceField.dataeaseName) {
-      checkValue = rowData?.[sourceField.dataeaseName]
+    if (sourceField.engineFieldName) {
+      checkValue = rowData?.[sourceField.engineFieldName]
       if (checkValue === undefined) {
-        checkValue = rowData?.query?.[sourceField.dataeaseName]
+        checkValue = rowData?.query?.[sourceField.engineFieldName]
       }
     }
 
@@ -1361,14 +1361,14 @@ export function mappingPivotColor(value, defaultColor, rules, type, filedValueMa
       if (rule.target !== 'total_row') {
         return null
       }
-      checkValue = rowData?.query?.[sourceField.dataeaseName]
+      checkValue = rowData?.query?.[sourceField.engineFieldName]
     }
 
     if (rowData.field === EXTRA_FIELD) {
       if (rule.target !== 'total_row') {
         return null
       }
-      checkValue = rowData?.query?.[sourceField.dataeaseName]
+      checkValue = rowData?.query?.[sourceField.engineFieldName]
     }
     if (checkValue === undefined) {
       return null
@@ -1392,7 +1392,7 @@ export function mappingPivotColor(value, defaultColor, rules, type, filedValueMa
 
     const val = checkValue;
 
-    if (sourceField.deType === 2 || sourceField.deType === 3 || sourceField.deType === 4) {
+    if (sourceField.fieldType === 2 || sourceField.fieldType === 3 || sourceField.fieldType === 4) {
       targetValue = parseFloat(targetValue)
       const numVal = parseFloat(val)
       if (t.term === 'eq') {
@@ -1447,7 +1447,7 @@ export function mappingPivotColor(value, defaultColor, rules, type, filedValueMa
       if (flag) {
         break
       }
-    } else if (sourceField.deType === 0 || sourceField.deType === 5) {
+    } else if (sourceField.fieldType === 0 || sourceField.fieldType === 5) {
       if (t.term === 'eq') {
         if (val === targetValue) {
           color = t[type]
@@ -1577,10 +1577,10 @@ function getFieldValueMap(view) {
 function getValue(field, filedValueMap, rowData) {
   if (field.summary === 'value') {
     // 单元格数据
-    let value =  rowData?.[field.field?.dataeaseName]
+    let value =  rowData?.[field.field?.engineFieldName]
     // 表头数据
     if (value === undefined) {
-      value = rowData.query?.[field.field?.dataeaseName]
+      value = rowData.query?.[field.field?.engineFieldName]
     }
     return value
   } else {
@@ -1598,17 +1598,17 @@ export function handleTableEmptyStrategy(chart: Chart) {
   }
   const emptyDataFieldCtrl = senior?.functionCfg?.emptyDataFieldCtrl
   if (emptyDataStrategy !== 'breakLine' && emptyDataFieldCtrl?.length && newData?.length) {
-    const deNames = keys(newData[0])
-    intersectionArr = intersection(deNames, emptyDataFieldCtrl)
+    const fieldNames = keys(newData[0])
+    intersectionArr = intersection(fieldNames, emptyDataFieldCtrl)
   }
   if (intersectionArr.length) {
     newData = cloneDeep(newData)
     for (let i = newData.length - 1; i >= 0; i--) {
       for (let j = 0, tmp = intersectionArr.length; j < tmp; j++) {
-        const deName = intersectionArr[j]
-        if (newData[i][deName] === null) {
+        const fieldNameKey = intersectionArr[j]
+        if (newData[i][fieldNameKey] === null) {
           if (emptyDataStrategy === 'setZero') {
-            newData[i][deName] = 0
+            newData[i][fieldNameKey] = 0
           }
           if (emptyDataStrategy === 'ignoreData') {
             newData = filter(newData, (_, index) => index !== i)
@@ -2118,8 +2118,8 @@ export async function exportGridPivot(instance: PivotSheet, chart: ChartObj) {
     }
   })
   const formatterMap = chart.yAxis.reduce((p, n) => {
-    if (n.dataeaseName) {
-      p[n.dataeaseName] = n.formatterCfg
+    if (n.engineFieldName) {
+      p[n.engineFieldName] = n.formatterCfg
     }
     return p
   }, {})
@@ -2308,8 +2308,8 @@ export async function exportRowQuotaGridPivot(instance: PivotSheet, chart: Chart
     }
   })
   const formatterMap = chart.yAxis.reduce((p, n) => {
-    if (n.dataeaseName) {
-      p[n.dataeaseName] = n.formatterCfg
+    if (n.engineFieldName) {
+      p[n.engineFieldName] = n.formatterCfg
     }
     return p
   }, {})
@@ -2449,8 +2449,8 @@ export async function exportTreePivot(instance: PivotSheet, chart: ChartObj) {
     }
   })
   const formatterMap = chart.yAxis.reduce((p, n) => {
-    if (n.dataeaseName) {
-      p[n.dataeaseName] = n.formatterCfg
+    if (n.engineFieldName) {
+      p[n.engineFieldName] = n.formatterCfg
     }
     return p
   }, {})
@@ -2591,8 +2591,8 @@ export async function exportRowQuotaTreePivot(instance: PivotSheet, chart: Chart
     }
   })
   const formatterMap = chart.yAxis.reduce((p, n) => {
-    if (n.dataeaseName) {
-      p[n.dataeaseName] = n.formatterCfg
+    if (n.engineFieldName) {
+      p[n.engineFieldName] = n.formatterCfg
     }
     return p
   }, {})
@@ -2773,7 +2773,7 @@ export function configMergeCells(chart: Chart, options: S2Options, dataConfig: S
     const fields = chart.data.fields || []
     const fieldsMap =
       fields.reduce((p, n) => {
-        p[n.dataeaseName] = n
+        p[n.engineFieldName] = n
         return p
       }, {} as Record<string, any>) || {}
     const quotaIndex = dataConfig.meta.findIndex(m => fieldsMap[m.field as string]?.groupType === 'q')
@@ -2846,7 +2846,7 @@ export function configMergeCells(chart: Chart, options: S2Options, dataConfig: S
       if (showIndex && meta.colIndex === 0) {
         meta.fieldValue = getRowIndex(mergedCellsInfo, meta)
       }
-      meta.deFieldType = fieldsMap[meta.valueField]?.deType
+      meta.fieldType = fieldsMap[meta.valueField]?.fieldType
       return new CustomMergedCell(sheet, cells, meta)
     }
   }
@@ -2907,7 +2907,7 @@ class CustomMergedCell extends MergedCell {
   }
 
   drawTextShape(): void {
-    if (this.meta.deFieldType === 7) {
+    if (this.meta.fieldType === 7) {
       drawImage.apply(this)
     } else {
       super.drawTextShape()
@@ -3233,7 +3233,7 @@ const getWrapTextHeight = (wrapText, textStyle, spreadsheet, maxLines) => {
 export function getSummaryRow(data, axis, sumCon = [], customSumResult = {}) {
   const summaryObj = { SUMMARY: true }
   for (let i = 0; i < axis.length; i++) {
-    const a = axis[i].dataeaseName
+    const a = axis[i].engineFieldName
     let savedAxis = find(sumCon, s => s.field === a)
     if (savedAxis) {
       if (savedAxis.summary == undefined) {

@@ -1,6 +1,6 @@
 package io.crest.utils;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.result.ResultCode;
 
 import java.net.InetAddress;
@@ -42,7 +42,7 @@ public class SsrfProtection {
      * 验证 URL 是否安全（非内部地址）
      *
      * @param url 待验证的 URL
-     * @throws DEException 如果 URL 不安全
+     * @throws CrestException 如果 URL 不安全
      */
     public static void validateUrl(String url) {
         if (url == null || url.isBlank()) {
@@ -55,21 +55,21 @@ public class SsrfProtection {
             // 1. 检查协议
             String scheme = uri.getScheme();
             if (scheme == null || !ALLOWED_PROTOCOLS.contains(scheme.toLowerCase())) {
-                throw new DEException(ResultCode.PARAM_IS_INVALID.code(),
+                throw new CrestException(ResultCode.PARAM_IS_INVALID.code(),
                         "不允许的协议: " + scheme);
             }
 
             // 2. 检查主机名
             String host = uri.getHost();
             if (host == null || host.isBlank()) {
-                throw new DEException(ResultCode.PARAM_IS_INVALID.code(),
+                throw new CrestException(ResultCode.PARAM_IS_INVALID.code(),
                         "无效的主机名");
             }
 
             // 3. 检查黑名单主机
             String normalizedHost = normalizeHost(host);
             if (BLOCKED_HOSTS.contains(normalizedHost)) {
-                throw new DEException(ResultCode.PARAM_IS_INVALID.code(),
+                throw new CrestException(ResultCode.PARAM_IS_INVALID.code(),
                         "不允许访问内部地址: " + host);
             }
 
@@ -78,12 +78,12 @@ public class SsrfProtection {
                 InetAddress[] addresses = InetAddress.getAllByName(normalizedHost);
                 for (InetAddress address : addresses) {
                     if (isBlockedAddress(address)) {
-                        throw new DEException(ResultCode.PARAM_IS_INVALID.code(),
+                        throw new CrestException(ResultCode.PARAM_IS_INVALID.code(),
                                 "不允许访问内部网络地址: " + host);
                     }
                 }
             } catch (UnknownHostException e) {
-                throw new DEException(ResultCode.PARAM_IS_INVALID.code(),
+                throw new CrestException(ResultCode.PARAM_IS_INVALID.code(),
                         "无法解析主机名: " + host);
             }
 
@@ -94,15 +94,15 @@ public class SsrfProtection {
                         3306, 5432, 6379, 27017, 9200, 11211  // 数据库和缓存端口
                 );
                 if (blockedPorts.contains(port)) {
-                    throw new DEException(ResultCode.PARAM_IS_INVALID.code(),
+                    throw new CrestException(ResultCode.PARAM_IS_INVALID.code(),
                             "不允许访问内部服务端口: " + port);
                 }
             }
 
-        } catch (DEException e) {
+        } catch (CrestException e) {
             throw e;
         } catch (Exception e) {
-            throw new DEException(ResultCode.PARAM_IS_INVALID.code(),
+            throw new CrestException(ResultCode.PARAM_IS_INVALID.code(),
                     "无效的 URL: " + e.getMessage());
         }
     }

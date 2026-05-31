@@ -5,13 +5,13 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fit2cloud
  * @since 2024-08-28
  */
-@TableName("core_font")
+@TableName("font_asset")
 public class CoreFont implements Serializable {
 
     private static final long serialVersionUID = 1L;

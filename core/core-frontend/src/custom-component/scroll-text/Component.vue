@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { keycodes } from '@/utils/DeShortcutKey.js'
+import { keycodes } from '@/utils/shortcutKey.js'
 import eventBus from '@/utils/eventBus'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { toRefs } from 'vue'
@@ -86,7 +86,7 @@ const handleMousedown = e => {
 const clearStyle = e => {
   e.preventDefault()
   const clp = e.clipboardData
-  const text = clp.getData('text/plain') || ''
+  const text = clp.data('text/plain') || ''
   if (text !== '') {
     document.execCommand('insertText', false, text)
   }

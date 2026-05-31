@@ -176,7 +176,7 @@
 | 组织人力 | HR、IAM、组织主数据 | person_id、部门、角色、职级、雇佣类型、供应商、FTE、工作日历 | 角色分布、容量、人员下钻 |
 | 供应商 | 采购/合同/供应商管理 | vendor_id、合同、单价、人员、SLA、服务范围 | 供应商质量、成本、SLA |
 | 工时 | 工时/任务系统 | person_id、task_id、requirement_id、work_type、hours、approval_status、date | 工时分类、容量消耗、预算分摊 |
-| 代码 | Git/GitLab/GitHub/Gitee | repo、branch、PR、commit、author、added/deleted lines、file_path | 代码活动、返工、PR 流动 |
+| 代码 | Git/GitLab/GitHub/Gitee | repo、branch、PR、commit、author、added/removald lines、file_path | 代码活动、返工、PR 流动 |
 | CI/CD | Jenkins/GitLab CI/Argo/发布平台 | build_id、pipeline、deploy_id、environment、status、started_at、finished_at | DORA、构建部署健康 |
 | 测试缺陷 | 缺陷/测试管理 | defect_id、severity、phase、found_at、fixed_at、requirement_id | 缺陷密度、缺陷趋势 |
 | 生产问题 | ITSM/监控/告警 | incident_id、system、severity、start_at、detect_at、recover_at、root_cause、related_deploy | 生产问题密度、恢复时间、稳定性 |

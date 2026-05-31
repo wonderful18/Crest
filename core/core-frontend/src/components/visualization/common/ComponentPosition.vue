@@ -17,7 +17,7 @@
       </el-col>
     </el-row>
     <el-form-item
-      v-if="curComponent && curComponent.component === 'DeTabs'"
+      v-if="curComponent && curComponent.component === 'Tabs'"
       class="form-item"
       :class="'form-item-' + themes"
     >
@@ -180,7 +180,7 @@ const onPositionChange = key => {
     })
   }
 
-  if (['Group', 'DeTabs'].includes(curComponent.value.component)) {
+  if (['Group', 'Tabs'].includes(curComponent.value.component)) {
     //如果当前组件是Group分组或者Tab 则要进行内部组件深度计算
     groupSizeStyleAdaptor(curComponent.value)
   }

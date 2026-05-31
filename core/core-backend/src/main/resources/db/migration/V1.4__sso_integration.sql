@@ -1,17 +1,17 @@
-ALTER TABLE `core_sys_setting` MODIFY COLUMN `pval` text NOT NULL COMMENT '值';
+ALTER TABLE `sys_setting` MODIFY COLUMN `pval` text NOT NULL COMMENT '值';
 
-ALTER TABLE `crest_user`
+ALTER TABLE `iam_user`
     ADD COLUMN `auth_type` varchar(32) NOT NULL DEFAULT 'LOCAL' COMMENT '认证类型' AFTER `origin`,
     ADD COLUMN `external_id` varchar(128) DEFAULT NULL COMMENT '外部身份ID' AFTER `auth_type`,
     ADD COLUMN `last_login_time` bigint DEFAULT NULL COMMENT '最近登录时间' AFTER `external_id`;
 
-CREATE INDEX `idx_crest_user_auth_type` ON `crest_user` (`auth_type`);
-CREATE UNIQUE INDEX `idx_crest_user_external` ON `crest_user` (`auth_type`, `external_id`);
+CREATE INDEX `idx_crest_user_auth_type` ON `iam_user` (`auth_type`);
+CREATE UNIQUE INDEX `idx_crest_user_external` ON `iam_user` (`auth_type`, `external_id`);
 
-INSERT INTO `core_menu` VALUES
+INSERT INTO `iam_menu` VALUES
     (71,15,2,'single-sign-on','system/sso',5,'authentication','/single-sign-on',0,1,1);
 
-INSERT INTO `core_sys_setting` (`id`, `pkey`, `pval`, `type`, `sort`) VALUES
+INSERT INTO `sys_setting` (`id`, `pkey`, `pval`, `type`, `sort`) VALUES
     (100140000000000001,'sso.enabled','false','text',1),
     (100140000000000002,'sso.providerName','企业单点登录','text',2),
     (100140000000000003,'sso.clientId','','text',3),

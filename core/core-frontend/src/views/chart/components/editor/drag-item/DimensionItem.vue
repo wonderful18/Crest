@@ -72,7 +72,7 @@ const toolTip = computed(() => {
 const showValueFormatter = computed<boolean>(() => {
   return (
     (props.chart.type === 'table-normal' || props.chart.type === 'table-info') &&
-    (props.item.deType === 2 || props.item.deType === 3)
+    (props.item.fieldType === 2 || props.item.fieldType === 3)
   )
 })
 
@@ -190,7 +190,7 @@ const showCustomSort = item => {
   if (props.chart.type === 'symbolic-map' || props.chart.type === 'flow-map') {
     return false
   }
-  return !item.chartId && (item.deType === 0 || item.deType === 5)
+  return !item.chartId && (item.fieldType === 0 || item.fieldType === 5)
 }
 
 const NOT_SUPPORT_SORT = ['word-cloud', 'stock-line', 'treemap', 'circle-packing']
@@ -249,11 +249,11 @@ onMounted(() => {
             <Icon name="icon_sort_outlined"><icon_sort_outlined class="svg-icon" /></Icon>
           </el-icon>
           <el-icon>
-            <Icon :className="`field-icon-${fieldType[[2, 3].includes(item.deType) ? 2 : 0]}`"
+            <Icon :className="`field-icon-${fieldType[[2, 3].includes(item.fieldType) ? 2 : 0]}`"
               ><component
                 class="svg-icon"
-                :class="`field-icon-${fieldType[[2, 3].includes(item.deType) ? 2 : 0]}`"
-                :is="iconFieldMap[fieldType[item.deType]]"
+                :class="`field-icon-${fieldType[[2, 3].includes(item.fieldType) ? 2 : 0]}`"
+                :is="iconFieldMap[fieldType[item.fieldType]]"
               ></component
             ></Icon>
           </el-icon>
@@ -261,12 +261,12 @@ onMounted(() => {
         <span v-if="type === 'extColor'" style="display: flex; color: #646a73">
           <el-icon>
             <Icon
-              :className="`field-icon-${fieldType[[2, 3].includes(item.deType) ? 2 : 0]}`"
-              :name="`field_${fieldType[item.deType]}`"
+              :className="`field-icon-${fieldType[[2, 3].includes(item.fieldType) ? 2 : 0]}`"
+              :name="`field_${fieldType[item.fieldType]}`"
               ><component
                 class="svg-icon"
-                :class="`field-icon-${fieldType[[2, 3].includes(item.deType) ? 2 : 0]}`"
-                :is="iconFieldMap[fieldType[item.deType]]"
+                :class="`field-icon-${fieldType[[2, 3].includes(item.fieldType) ? 2 : 0]}`"
+                :is="iconFieldMap[fieldType[item.fieldType]]"
               ></component
             ></Icon>
           </el-icon>
@@ -418,7 +418,7 @@ onMounted(() => {
           </el-dropdown-item>
           <el-dropdown-item
             @click.prevent
-            v-if="item.deType === 1"
+            v-if="item.fieldType === 1"
             :divided="
               !chart.type.includes('chart-mix') ||
               (chart.type.includes('chart-mix') &&
@@ -599,7 +599,7 @@ onMounted(() => {
               </template>
             </el-dropdown>
           </el-dropdown-item>
-          <el-dropdown-item @click.prevent v-if="item.deType === 1">
+          <el-dropdown-item @click.prevent v-if="item.fieldType === 1">
             <el-dropdown
               :effect="themes"
               placement="right-start"

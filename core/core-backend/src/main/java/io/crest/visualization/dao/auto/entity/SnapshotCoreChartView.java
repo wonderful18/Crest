@@ -5,13 +5,13 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fit2cloud
  * @since 2025-03-24
  */
-@TableName("snapshot_core_chart_view")
+@TableName("bi_chart_snapshot")
 public class SnapshotCoreChartView implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -147,7 +147,7 @@ public class SnapshotCoreChartView implements Serializable {
     private Long updateTime;
 
     /**
-     * 缩略图 
+     * 缩略图
      */
     private String snapshot;
 

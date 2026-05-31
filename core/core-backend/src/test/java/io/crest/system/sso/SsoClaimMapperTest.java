@@ -1,6 +1,6 @@
 package io.crest.system.sso;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import org.junit.Test;
 
 import java.util.Map;
@@ -98,7 +98,7 @@ public class SsoClaimMapperTest {
     public void rejectsMissingExternalSubject() {
         Map<String, Object> claims = Map.of("preferred_username", "zhang.san");
 
-        assertThrows(DEException.class, () -> SsoClaimMapper.map(
+        assertThrows(CrestException.class, () -> SsoClaimMapper.map(
                 100L,
                 SsoProviderType.OIDC_GENERIC,
                 claims,
@@ -117,7 +117,7 @@ public class SsoClaimMapperTest {
                 "preferred_username", "用户一"
         );
 
-        assertThrows(DEException.class, () -> SsoClaimMapper.map(
+        assertThrows(CrestException.class, () -> SsoClaimMapper.map(
                 100L,
                 SsoProviderType.OIDC_GENERIC,
                 claims,
@@ -137,7 +137,7 @@ public class SsoClaimMapperTest {
                 "name", "<script>alert(1)</script>"
         );
 
-        assertThrows(DEException.class, () -> SsoClaimMapper.map(
+        assertThrows(CrestException.class, () -> SsoClaimMapper.map(
                 100L,
                 SsoProviderType.OIDC_GENERIC,
                 claims,

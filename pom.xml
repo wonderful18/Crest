@@ -73,6 +73,7 @@
         <protobuf-java.version>3.25.8</protobuf-java.version>
         <jsoup.version>1.22.2</jsoup.version>
         <commons-lang.version>2.6</commons-lang.version>
+        <lombok.version>1.18.46</lombok.version>
     </properties>
 
     <dependencyManagement>

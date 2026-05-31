@@ -17,11 +17,11 @@ import java.util.List;
 public interface PerSettingApi {
 
     @Operation(summary = "查询设置")
-    @GetMapping("/basic/query")
+    @GetMapping("/basic/list")
     List<PerSettingItemVO> basicSetting();
 
     @Operation(summary = "保存设置")
-    @PostMapping("/baisc/save")
+    @PostMapping("/baisc/record")
     void saveBasic(@RequestBody List<Object> settings);
 
     @Hidden
@@ -29,24 +29,24 @@ public interface PerSettingApi {
     String singleValue(@PathVariable("key") String key);
 
     @Operation(summary = "查询MFA设置")
-    @GetMapping("/mfa/query")
+    @GetMapping("/mfa/list")
     List<PerSettingItemVO> mfaSetting();
 
     @Operation(summary = "保存MFA设置")
-    @PostMapping("/mfa/save")
+    @PostMapping("/mfa/record")
     void saveMfa(@RequestBody List<PerSettingItemVO> settings);
 
     @Operation(summary = "查询MFA状态")
-    @GetMapping("/mfaStatus")
+    @GetMapping("/mfa-status")
     Integer mfaStatus();
 
 
     @Operation(summary = "查询Hmac设置")
-    @GetMapping("/hmac/query")
+    @GetMapping("/hmac/list")
     List<PerSettingItemVO> hmacSetting();
 
     @Operation(summary = "保存Hmac设置")
-    @PostMapping("/hmac/save")
+    @PostMapping("/hmac/record")
     void saveHmac(@RequestBody List<PerSettingItemVO> settings);
 
     @Hidden

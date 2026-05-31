@@ -67,7 +67,7 @@ const currentTypeList = computed(() => {
     }
   ]
 })
-const getDatasourceTypes = () => {
+const datasourceTypes = () => {
   const arr = [[], [], [], [], []]
   dsTypes.forEach(item => {
     const index = typeList.findIndex(ele => ele === item.catalog)
@@ -81,7 +81,7 @@ const getDatasourceTypes = () => {
     })
   })
 }
-getDatasourceTypes()
+datasourceTypes()
 const loadDsPlugin = data => {
   data.forEach(item => {
     const { name, category, type, icon, extraParams, staticMap } = item

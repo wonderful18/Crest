@@ -8,7 +8,7 @@ import { ElMessage } from 'element-plus-secondary'
 import { cloneDeep } from 'lodash-es'
 import { useI18n } from '@/hooks/web/useI18n'
 import {
-  getDatasetTree,
+  datasetTree,
   moveDatasetTree,
   createDatasetTree,
   renameDatasetTree
@@ -84,7 +84,7 @@ const showPid = computed(() => {
 })
 
 const labelName = computed(() => {
-  return nodeType.value === 'folder' ? t('deDataset.folder_name') : t('dataset.name')
+  return nodeType.value === 'folder' ? t('datasetUi.folder_name') : t('dataset.name')
 })
 
 const dialogTitle = computed(() => {
@@ -92,7 +92,7 @@ const dialogTitle = computed(() => {
 
   switch (nodeType.value) {
     case 'folder':
-      title = t('deDataset.new_folder')
+      title = t('datasetUi.new_folder')
       break
     case 'dataset':
       title = t('common.save') + t('auth.dataset')
@@ -165,7 +165,7 @@ const createInit = (type, data: Tree, exec, name: string) => {
   }
   if (data.id) {
     const request = { leaf: false, weight: 7 } as BusiTreeRequest
-    getDatasetTree(request).then(res => {
+    datasetTree(request).then(res => {
       filterFreeFolder(res, 'dataset')
       dfs(res as unknown as Tree[])
       state.tData = (res as unknown as Tree[]) || []
@@ -331,7 +331,7 @@ const emits = defineEmits(['finish', 'onDatasetSave'])
       <el-form-item v-if="showName" :label="labelName" prop="name">
         <el-input :placeholder="placeholder" v-model="datasetForm.name" />
       </el-form-item>
-      <el-form-item v-if="showPid" :label="t('deDataset.folder')" prop="pid">
+      <el-form-item v-if="showPid" :label="t('datasetUi.folder')" prop="pid">
         <el-tree-select
           v-model="datasetForm.pid"
           :data="state.tData"
@@ -433,7 +433,7 @@ const emits = defineEmits(['finish', 'onDatasetSave'])
       margin-bottom: 8px;
     }
     span {
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       font-weight: 400;
       line-height: 22px;

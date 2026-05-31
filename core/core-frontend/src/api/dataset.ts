@@ -139,7 +139,7 @@ export const saveDatasetTree = async (data: DatasetOrFolder): Promise<IResponse>
   nameTrim(data)
   const copyData = cloneDeep(data)
   originNameHandle(copyData.allFields)
-  return request.post({ url: '/datasetTree/save', data: copyData }).then(res => {
+  return request.post({ url: '/dataset-tree/record', data: copyData }).then(res => {
     if (res?.data?.allFields?.length) {
       originNameHandleBack(res?.data?.allFields)
     }
@@ -152,7 +152,7 @@ export const createDatasetTree = async (data: DatasetOrFolder): Promise<IRespons
   nameTrim(data)
   const copyData = cloneDeep(data)
   originNameHandle(copyData.allFields)
-  return request.post({ url: '/datasetTree/create', data: copyData }).then(res => {
+  return request.post({ url: '/dataset-tree', data: copyData }).then(res => {
     if (res?.data?.allFields?.length) {
       originNameHandleBack(res?.data?.allFields)
     }
@@ -163,51 +163,51 @@ export const createDatasetTree = async (data: DatasetOrFolder): Promise<IRespons
 // rename
 export const renameDatasetTree = async (data: DatasetOrFolder): Promise<IResponse> => {
   nameTrim(data)
-  return request.post({ url: '/datasetTree/rename', data }).then(res => {
+  return request.post({ url: '/dataset-tree/rename', data }).then(res => {
     return res?.data
   })
 }
 
 export const enumValueObj = async (data: EnumValue): Promise<Record<string, string>[]> => {
-  return request.post({ url: '/datasetData/enumValueObj', data }).then(res => {
+  return request.post({ url: '/dataset-data/enum-values/object', data }).then(res => {
     return res?.data
   })
 }
 
 export const enumValueDs = async (data: any): Promise<Record<string, string>[]> => {
-  return request.post({ url: '/datasetData/enumValueDs', data }).then(res => {
+  return request.post({ url: '/dataset-data/enum-values/dataset', data }).then(res => {
     return res?.data
   })
 }
 
 export const moveDatasetTree = async (data: DatasetOrFolder): Promise<IResponse> => {
-  return request.post({ url: '/datasetTree/move', data }).then(res => {
+  return request.post({ url: '/dataset-tree/move', data }).then(res => {
     return res?.data
   })
 }
 
-export const getDatasetTree = async (data: BusiTreeRequest): Promise<IResponse> => {
+export const datasetTree = async (data: BusiTreeRequest): Promise<IResponse> => {
   data.busiFlag = 'dataset'
-  return request.post({ url: '/datasetTree/tree', data }).then(res => {
+  return request.post({ url: '/dataset-tree/tree', data }).then(res => {
     return res?.data
   })
 }
 
 export const barInfoApi = async (id): Promise<IResponse> => {
-  return request.get({ url: `/datasetTree/barInfo/${id}`, data: {} }).then(res => {
+  return request.get({ url: `/dataset-tree/bar-info/${id}`, data: {} }).then(res => {
     return res?.data
   })
 }
 
 export const delDatasetTree = async (id): Promise<IResponse> => {
-  return request.post({ url: `/datasetTree/delete/${id}`, data: {} }).then(res => {
+  return request.delete({ url: `/dataset-tree/${id}`, data: {} }).then(res => {
     return res?.data
   })
 }
 
 export const exportDatasetData = (data = {}) => {
   return request.post({
-    url: '/datasetTree/exportDataset',
+    url: '/dataset-tree/export-dataset',
     method: 'post',
     data: data,
     loading: true,
@@ -216,18 +216,18 @@ export const exportDatasetData = (data = {}) => {
 }
 
 export const exportLimit = async (): Promise<boolean> => {
-  return request.post({ url: `/exportCenter/exportLimit`, data: {} }).then(res => {
+  return request.post({ url: `/export-center/export-limit`, data: {} }).then(res => {
     return res?.data
   })
 }
 
 export const perDelete = async (id): Promise<boolean> => {
-  return request.post({ url: `/datasetTree/perDelete/${id}`, data: {} }).then(res => {
+  return request.post({ url: `/dataset-tree/deletion-impact/${id}`, data: {} }).then(res => {
     return res?.data
   })
 }
 
-export const getDatasourceList = async (weight?: number): Promise<IResponse> => {
+export const datasourceList = async (weight?: number): Promise<IResponse> => {
   const data = { busiFlag: 'datasource' }
   if (weight) {
     data['weight'] = weight
@@ -237,14 +237,14 @@ export const getDatasourceList = async (weight?: number): Promise<IResponse> => 
   })
 }
 
-export const getTables = async (data): Promise<Table[]> => {
-  return request.post({ url: `/datasource/getTables`, data }).then(res => {
+export const tables = async (data): Promise<Table[]> => {
+  return request.post({ url: `/datasource/tables`, data }).then(res => {
     return res?.data
   })
 }
 
 export const getTableField = async (data): Promise<IResponse> => {
-  return request.post({ url: '/datasetData/tableField', data }).then(res => {
+  return request.post({ url: '/dataset-data/table-fields', data }).then(res => {
     return res?.data
   })
 }
@@ -252,7 +252,7 @@ export const getTableField = async (data): Promise<IResponse> => {
 export const getPreviewData = async (data): Promise<IResponse> => {
   const copyData = cloneDeep(data)
   originNameHandle(copyData.allFields)
-  return request.post({ url: '/datasetData/previewData', data: copyData }).then(res => {
+  return request.post({ url: '/dataset-data/preview-data', data: copyData }).then(res => {
     if (res?.data?.allFields?.length) {
       originNameHandleBack(res?.data?.allFields)
     }
@@ -264,20 +264,20 @@ export const getPreviewData = async (data): Promise<IResponse> => {
   })
 }
 
-export const getDatasetPreview = async (id): Promise<FieldData> => {
-  return request.post({ url: `/datasetTree/get/${id}`, data: {} }).then(res => {
+export const datasetPreview = async (id): Promise<FieldData> => {
+  return request.post({ url: `/dataset-tree/detail/${id}`, data: {} }).then(res => {
     return res?.data
   })
 }
 
-export const getDatasetTotal = async (id): Promise<FieldData> => {
-  return request.post({ url: `/datasetData/getDatasetTotal`, data: { id: id } }).then(res => {
+export const datasetTotal = async (id): Promise<FieldData> => {
+  return request.post({ url: `/dataset-data/dataset-total`, data: { id: id } }).then(res => {
     return res?.data
   })
 }
 
-export const getDatasetDetails = async (id): Promise<Dataset> => {
-  return request.post({ url: `/datasetTree/details/${id}`, data: {} }).then(res => {
+export const datasetDetails = async (id): Promise<Dataset> => {
+  return request.post({ url: `/dataset-tree/details/${id}`, data: {} }).then(res => {
     if (res?.data?.allFields?.length) {
       originNameHandleBack(res?.data?.allFields)
     }
@@ -286,195 +286,195 @@ export const getDatasetDetails = async (id): Promise<Dataset> => {
 }
 
 export const tableUpdate = async (data): Promise<IResponse> => {
-  return request.post({ url: '/dataset/table/update', data }).then(res => {
+  return request.put({ url: '/dataset/table', data }).then(res => {
     return res?.data
   })
 }
 
 export const getPreviewSql = async (data): Promise<IResponse> => {
-  return request.post({ url: '/datasetData/previewSql', data }).then(res => {
+  return request.post({ url: '/dataset-data/preview-sql', data }).then(res => {
     return res?.data
   })
 }
 
 export const getDsDetails = async (data): Promise<DatasetDetail[]> => {
-  return request.post({ url: '/datasetTree/dsDetails', data }).then(res => {
+  return request.post({ url: '/dataset-tree/dataset-details', data }).then(res => {
     return res?.data
   })
 }
 export const getDsDetailsWithPerm = async (data): Promise<DatasetDetail[]> => {
-  return request.post({ url: '/datasetTree/detailWithPerm', data }).then(res => {
+  return request.post({ url: '/dataset-tree/detail-with-permission', data }).then(res => {
     ;(res?.data || []).forEach(ele => {
       originNameHandleBackWithArr(ele, ['dimensionList', 'quotaList'])
     })
     return res?.data
   })
 }
-export const getSqlParams = async (data): Promise<ParamsDetail[]> => {
-  return request.post({ url: '/datasetTree/getSqlParams', data }).then(res => {
+export const sqlParams = async (data): Promise<ParamsDetail[]> => {
+  return request.post({ url: '/dataset-tree/sql-params', data }).then(res => {
     return res?.data
   })
 }
 
-export const getDatasetSyncTask = async (datasetGroupId): Promise<DatasetSyncTask> => {
-  return request.get({ url: `/datasetSync/task/${datasetGroupId}` }).then(res => {
+export const datasetSyncTask = async (datasetGroupId): Promise<DatasetSyncTask> => {
+  return request.get({ url: `/dataset-sync/task/${datasetGroupId}` }).then(res => {
     return res?.data
   })
 }
 
 export const saveDatasetSyncTask = async (data: DatasetSyncTask): Promise<DatasetSyncTask> => {
-  return request.post({ url: '/datasetSync/save', data }).then(res => {
+  return request.post({ url: '/dataset-sync/record', data }).then(res => {
     return res?.data
   })
 }
 
 export const executeDatasetSync = async (datasetGroupId): Promise<DatasetSyncTask> => {
-  return request.post({ url: `/datasetSync/execute/${datasetGroupId}`, data: {} }).then(res => {
+  return request.post({ url: `/dataset-sync/runs/${datasetGroupId}`, data: {} }).then(res => {
     return res?.data
   })
 }
 
 export const stopDatasetSync = async (datasetGroupId): Promise<void> => {
-  return request.post({ url: `/datasetSync/stop/${datasetGroupId}`, data: {} }).then(res => {
+  return request.post({ url: `/dataset-sync/lifecycle/stop/${datasetGroupId}`, data: {} }).then(res => {
     return res?.data
   })
 }
-export const getDatasetSyncLogs = async (datasetGroupId): Promise<DatasetSyncLog[]> => {
-  return request.get({ url: `/datasetSync/logs/${datasetGroupId}` }).then(res => {
+export const datasetSyncLogs = async (datasetGroupId): Promise<DatasetSyncLog[]> => {
+  return request.get({ url: `/dataset-sync/logs/${datasetGroupId}` }).then(res => {
     return res?.data || []
   })
 }
 export const rowPermissionList = (page: number, limit: number, datasetId: number) =>
-  request.get({ url: '/dataset/rowPermissions/pager/' + datasetId + '/' + page + '/' + limit })
+  request.get({ url: '/dataset/row-permissions/page/' + datasetId + '/' + page + '/' + limit })
 
 export const columnPermissionList = (page: number, limit: number, datasetId: number) =>
-  request.get({ url: '/dataset/columnPermissions/pager/' + datasetId + '/' + page + '/' + limit })
+  request.get({ url: '/dataset/column-permissions/page/' + datasetId + '/' + page + '/' + limit })
 
 export const rowPermissionTargetObjList = (datasetId: number, type: string) =>
-  request.get({ url: '/dataset/rowPermissions/authObjs/' + datasetId + '/' + type })
+  request.get({ url: '/dataset/row-permissions/authorized-objects/' + datasetId + '/' + type })
 
 export const listFieldByDatasetGroup = (datasetId: number) => {
-  return request.post({ url: '/datasetField/listByDatasetGroup/' + datasetId }).then(res => {
+  return request.post({ url: '/dataset-field/by-dataset-group/' + datasetId }).then(res => {
     originNameHandleBack(res?.data)
     return res
   })
 }
 
 export const multFieldValuesForPermissions = (data = {}) => {
-  return request.post({ url: '/datasetField/multFieldValuesForPermissions', data })
+  return request.post({ url: '/dataset-field/permission-field-values', data })
 }
 
 export const listFieldsWithPermissions = (datasetId: number) => {
-  return request.get({ url: '/datasetField/listWithPermissions/' + datasetId }).then(res => {
+  return request.get({ url: '/dataset-field/with-permissions/' + datasetId }).then(res => {
     originNameHandleBack(res?.data)
     return res
   })
 }
 
 export const copilotFields = (datasetId: number) => {
-  return request.post({ url: '/datasetField/copilotFields/' + datasetId })
+  return request.post({ url: '/dataset-field/copilot-fields/' + datasetId })
 }
 
 export const saveRowPermission = (data = {}) => {
-  return request.post({ url: '/dataset/rowPermissions/save', data })
+  return request.post({ url: '/dataset/row-permissions/record', data })
 }
 
 export const saveColumnPermission = (data = {}) => {
-  return request.post({ url: '/dataset/columnPermissions/save', data })
+  return request.post({ url: '/dataset/column-permissions/record', data })
 }
 
 export const deleteRowPermission = (data = {}) => {
-  return request.post({ url: '/dataset/rowPermissions/delete', data })
+  return request.delete({ url: '/dataset/row-permissions', data })
 }
 
 export const deleteColumnPermission = (data = {}) => {
-  return request.post({ url: '/dataset/columnPermissions/delete', data })
+  return request.delete({ url: '/dataset/column-permissions', data })
 }
 
 export const whiteListUsersForPermissions = (data = {}) => {
-  return request.post({ url: '/dataset/rowPermissions/whiteListUsers', data })
+  return request.post({ url: '/dataset/row-permissions/allowlist-users', data })
 }
 
 export const saveField = async (data): Promise<DatasetDetail[]> => {
-  return request.post({ url: '/datasetField/save', data }).then(res => {
+  return request.post({ url: '/dataset-field/record', data }).then(res => {
     return res?.data
   })
 }
 
-export const deleteField = async (id): Promise<DatasetDetail[]> => {
-  return request.post({ url: `/datasetField/delete/${id}`, data: {} }).then(res => {
+export const fieldRemoval = async (id): Promise<DatasetDetail[]> => {
+  return request.delete({ url: `/dataset-field/${id}`, data: {} }).then(res => {
     return res?.data
   })
 }
 
-export const deleteFieldByChartId = async (id): Promise<DatasetDetail[]> => {
-  return request.post({ url: `/datasetField/deleteByChartId/${id}`, data: {} }).then(res => {
+export const chartFieldRemovalId = async (id): Promise<DatasetDetail[]> => {
+  return request.delete({ url: `/dataset-field/charts/${id}`, data: {} }).then(res => {
     return res?.data
   })
 }
 
 export const getEnumValue = async (data): Promise<DatasetDetail[]> => {
-  return request.post({ url: '/datasetData/enumValue', data }).then(res => {
+  return request.post({ url: '/dataset-data/enum-values', data }).then(res => {
     return res?.data
   })
 }
 
-export const getFunction = async (): Promise<DatasetDetail[]> => {
-  return request.post({ url: '/datasetField/getFunction', data: {} }).then(res => {
+export const functions = async (): Promise<DatasetDetail[]> => {
+  return request.post({ url: '/dataset-field/functions', data: {} }).then(res => {
     return res?.data
   })
 }
 
 export const exportTasksRecords = () =>
-  request.post({ url: `/exportCenter/exportTasks/records`, data: {} })
+  request.post({ url: `/export-center/export-tasks/records`, data: {} })
 
 export const exportTasks = (page: number, limit: number, status: string) =>
-  request.post({ url: `/exportCenter/exportTasks/${status}/${page}/${limit}`, data: {} })
+  request.post({ url: `/export-center/export-tasks/${status}/${page}/${limit}`, data: {} })
 
 export const exportRetry = async (id): Promise<IResponse> => {
-  return request.post({ url: '/exportCenter/retry/' + id, data: {} }).then(res => {
+  return request.post({ url: '/export-center/retry/' + id, data: {} }).then(res => {
     return res?.data
   })
 }
 
 export const downloadFile = async (id): Promise<Blob> => {
-  return request.get({ url: 'exportCenter/download/' + id, responseType: 'blob' }).then(res => {
+  return request.get({ url: 'export-center/download/' + id, responseType: 'blob' }).then(res => {
     return res?.data
   })
 }
 
 export const exportDelete = async (id): Promise<IResponse> => {
-  return request.get({ url: '/exportCenter/delete/' + id }).then(res => {
+  return request.delete({ url: '/export-center/' + id }).then(res => {
     return res?.data
   })
 }
 
 export const generateDownloadUri = async (id): Promise<IResponse> => {
-  return request.get({ url: '/exportCenter/generateDownloadUri/' + id }).then(res => {
+  return request.get({ url: '/export-center/download-tickets/' + id }).then(res => {
     return res?.data
   })
 }
 
 export const exportDeleteAll = async (type, data): Promise<IResponse> => {
-  return request.post({ url: '/exportCenter/deleteAll/' + type, data }).then(res => {
+  return request.delete({ url: '/export-center/all/' + type, data }).then(res => {
     return res?.data
   })
 }
 
 export const exportDeletePost = async (data): Promise<IResponse> => {
-  return request.post({ url: '/exportCenter/delete', data }).then(res => {
+  return request.delete({ url: '/export-center', data }).then(res => {
     return res?.data
   })
 }
 
 export const listByDsIds = async (data): Promise<IResponse> => {
-  return request.post({ url: 'datasetField/listByDsIds', data }).then(res => {
+  return request.post({ url: 'dataset-field/by-dataset-ids', data }).then(res => {
     return res?.data
   })
 }
 
-export const getFieldTree = async (data): Promise<IResponse> => {
-  return request.post({ url: 'datasetData/getFieldTree', data }).then(res => {
+export const fieldTree = async (data): Promise<IResponse> => {
+  return request.post({ url: 'dataset-data/field-tree', data }).then(res => {
     return res?.data
   })
 }
@@ -486,13 +486,13 @@ export const copilotChat = async (data): Promise<IResponse> => {
 }
 
 export const getListCopilot = async (): Promise<IResponse> => {
-  return request.post({ url: '/copilot/getList' }).then(res => {
+  return request.post({ url: '/copilot/list' }).then(res => {
     return res?.data
   })
 }
 
 export const clearAllCopilot = async (): Promise<IResponse> => {
-  return request.post({ url: '/copilot/clearAll' }).then(res => {
+  return request.post({ url: '/copilot/all/clear' }).then(res => {
     return res?.data
   })
 }

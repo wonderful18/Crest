@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import icon_add_outlined from '@/assets/svg/icon_add_outlined.svg'
-import DeResourceTree from '@/views/common/DeResourceTree.vue'
+import CrestResourceTree from '@/views/common/CrestResourceTree.vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
-import ArrowSide from '@/views/common/DeResourceArrow.vue'
+import ArrowSide from '@/views/common/CrestResourceArrow.vue'
 import { nextTick, onBeforeMount, reactive, ref, computed, onMounted } from 'vue'
 import PreviewHead from '@/views/data-visualization/PreviewHead.vue'
 import EmptyBackground from '@/components/empty-background/src/EmptyBackground.vue'
@@ -19,7 +19,7 @@ import { Icon } from '@/components/icon-custom'
 import { download2AppTemplate, downloadCanvas2 } from '@/utils/imgUtils'
 import MultiplexPreviewShow from '@/views/data-visualization/MultiplexPreviewShow.vue'
 import DvPreview from '@/views/data-visualization/DvPreview.vue'
-import AppExportForm from '@/components/de-app/AppExportForm.vue'
+import AppExportForm from '@/components/application/AppExportForm.vue'
 import { ElMessage } from 'element-plus-secondary'
 import { useEmitt } from '@/hooks/web/useEmitt'
 
@@ -79,7 +79,7 @@ const rootManage = computed(() => {
 })
 const appStore = useAppStoreWithOut()
 
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi)
+const isCrestBi = computed(() => appStore.getIsCrestBi)
 
 function createNew() {
   resourceTreeRef.value?.createNewObject()
@@ -266,7 +266,7 @@ onBeforeMount(() => {
       ref="node"
       :style="{ width: width + 'px' }"
     >
-      <de-resource-tree
+      <CrestResourceTree
         ref="resourceTreeRef"
         v-show="slideShow"
         :cur-canvas-type="'dataV'"
@@ -334,7 +334,7 @@ onBeforeMount(() => {
           :description="t('visualization.no_screen')"
           img-type="none"
         >
-          <el-button v-if="rootManage && !isDataEaseBi" @click="createNew" type="primary">
+          <el-button v-if="rootManage && !isCrestBi" @click="createNew" type="primary">
             <template #icon>
               <Icon name="icon_add_outlined"><icon_add_outlined class="svg-icon" /></Icon>
             </template>
@@ -361,7 +361,7 @@ onBeforeMount(() => {
   display: flex;
   background: #f8fafc;
   color: #0f172a;
-  font-family: var(--de-custom_font, var(--crest-font-sans));
+  font-family: var(--crest-custom_font, var(--crest-font-sans));
   position: relative;
   .resource-area {
     position: relative;

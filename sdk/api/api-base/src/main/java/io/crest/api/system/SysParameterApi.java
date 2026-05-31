@@ -24,23 +24,23 @@ public interface SysParameterApi {
 
     @Operation(summary = "查询单个配置值")
     @Parameter(name = "key", description = "配置key", required = true, in = ParameterIn.PATH)
-    @GetMapping("/singleVal/{key}")
+    @GetMapping("/single-value/{key}")
     String singleVal(@PathVariable("key") String key);
 
     @Operation(summary = "查询基础设置(社区版)")
-    @GetMapping("basic/query")
+    @GetMapping("basic/list")
     List<SettingItemVO> queryBasicSetting();
 
     @Operation(summary = "保存基础设置(社区版)")
-    @PostMapping("/basic/save")
+    @PostMapping("/basic/record")
     void saveBasicSetting(@RequestBody List<SettingItemVO> settingItemVOS);
 
     @Operation(summary = "查询超时时间(社区版)")
-    @GetMapping("/requestTimeOut")
+    @GetMapping("/request-timeout")
     public Integer RequestTimeOut();
 
     @Operation(summary = "系统默认配置(社区版)")
-    @GetMapping("/defaultSettings")
+    @GetMapping("/default-settings")
     public Map<String, Object> defaultSettings();
 
     @Hidden
@@ -48,14 +48,14 @@ public interface SysParameterApi {
     List<Object> ui();
 
     @Hidden
-    @GetMapping("/defaultLogin")
+    @GetMapping("/default-login")
     Integer defaultLogin();
 
-    @GetMapping("/shareBase")
+    @GetMapping("/share-base")
     @Operation(summary = "查询分享设置")
     ShareBaseVO shareBase();
 
-    @GetMapping("/i18nOptions")
+    @GetMapping("/i18n-options")
     @Operation(summary = "查询自定义国际化选项")
     Map<String, String> i18nOptions();
 

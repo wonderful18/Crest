@@ -1,7 +1,7 @@
 import pkg from '../package.json'
 import viteCompression from 'vite-plugin-compression'
 
-const enableGzip = process.env.DE_ENABLE_VITE_GZIP === 'true'
+const enableGzip = process.env.CREST_ENABLE_VITE_GZIP === 'true'
 const emptyProxyPackages = new Set([
   'lodash-unified',
   'vue-demi',

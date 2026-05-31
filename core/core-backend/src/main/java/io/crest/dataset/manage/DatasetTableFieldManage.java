@@ -10,7 +10,7 @@ import io.crest.dataset.utils.TableUtils;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.engine.func.FunctionConstant;
 import io.crest.engine.utils.Utils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.dto.CalParam;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
@@ -74,7 +74,7 @@ public class DatasetTableFieldManage {
         }
         List<CoreDatasetTableField> fields = coreDatasetTableFieldMapper.selectList(wrapper);
         if (ObjectUtils.isNotEmpty(fields)) {
-            DEException.throwException(Translator.get("i18n_field_name_duplicated"));
+            CrestException.throwException(Translator.get("i18n_field_name_duplicated"));
         }
         datasetTableFieldDTO.setDatasetGroupId(null);
         return save(datasetTableFieldDTO);
@@ -90,10 +90,10 @@ public class DatasetTableFieldManage {
         checkNameLength(datasetTableFieldDTO.getName());
         CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldMapper.selectById(datasetTableFieldDTO.getId());
         CoreDatasetTableField record = transDTO2Record(datasetTableFieldDTO);
-        if (ObjectUtils.isEmpty(record.getDataeaseName())) {
+        if (ObjectUtils.isEmpty(record.getEngineFieldName())) {
             String n = TableUtils.fieldNameShort(record.getId() + "");
             record.setFieldShortName(n);
-            record.setDataeaseName(n);
+            record.setEngineFieldName(n);
         }
         if (ObjectUtils.isEmpty(coreDatasetTableField)) {
             coreDatasetTableFieldMapper.insert(record);
@@ -170,7 +170,7 @@ public class DatasetTableFieldManage {
         coreDatasetTableFieldMapper.delete(wrapper);
     }
 
-    public void deleteByChartId(Long chartId) {
+    public void deleteChartFields(Long chartId) {
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
         wrapper.eq("chart_id", chartId);
         coreDatasetTableFieldMapper.delete(wrapper);
@@ -234,15 +234,15 @@ public class DatasetTableFieldManage {
     }
 
     public Map<String, List<DatasetTableFieldDTO>> copilotFields(Long id) throws Exception {
-        DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.getDatasetGroupInfoDTO(id, null);
+        DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTO(id, null);
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null);
         Map<Long, DatasourceSchemaDTO> dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
         boolean crossDs = Utils.isCrossDs(dsMap);
         if (crossDs) {
-            DEException.throwException(Translator.get("i18n_dataset_cross_error"));
+            CrestException.throwException(Translator.get("i18n_dataset_cross_error"));
         }
         if (!isCopilotSupport(dsMap)) {
-            DEException.throwException(Translator.get("i18n_copilot_ds"));
+            CrestException.throwException(Translator.get("i18n_copilot_ds"));
         }
 
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
@@ -271,7 +271,7 @@ public class DatasetTableFieldManage {
                 .stream()
                 .sorted(Comparator.comparing(DatasetTableFieldDTO::getGroupType))
                 .toList();
-        tmp.forEach(ele -> ele.setDesensitized(desensitizationList.containsKey(ele.getDataeaseName())));
+        tmp.forEach(ele -> ele.setDesensitized(desensitizationList.containsKey(ele.getEngineFieldName())));
         return tmp;
     }
 
@@ -299,7 +299,7 @@ public class DatasetTableFieldManage {
                 })
                 .sorted(Comparator.comparing(DatasetTableFieldDTO::getGroupType))
                 .toList();
-        tmp.forEach(ele -> ele.setDesensitized(desensitizationList.containsKey(ele.getDataeaseName())));
+        tmp.forEach(ele -> ele.setDesensitized(desensitizationList.containsKey(ele.getEngineFieldName())));
         DatasetUtils.listEncode(tmp);
         return tmp;
     }
@@ -345,7 +345,7 @@ public class DatasetTableFieldManage {
 
     private void checkNameLength(String name) {
         if (name != null && name.length() > 100) {
-            DEException.throwException(Translator.get("i18n_field_name_limit_100"));
+            CrestException.throwException(Translator.get("i18n_field_name_limit_100"));
         }
     }
 

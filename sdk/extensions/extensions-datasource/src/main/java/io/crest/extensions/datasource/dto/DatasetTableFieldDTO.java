@@ -63,9 +63,9 @@ public class DatasetTableFieldDTO implements Serializable {
     private String description;
 
     /**
-     * de字段名用作唯一标识
+     * 引擎字段名用作唯一标识
      */
-    private String dataeaseName;
+    private String engineFieldName;
 
     /**
      * 维度/指标标识 d:维度，q:指标
@@ -82,14 +82,14 @@ public class DatasetTableFieldDTO implements Serializable {
     private Integer scale;
 
     /**
-     * dataease字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制, 7-URL
+     * Crest 字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制, 7-URL
      */
-    private Integer deType;
+    private Integer fieldType;
 
     /**
-     * de记录的原始类型
+     * 数据源原始类型
      */
-    private Integer deExtractType;
+    private Integer extractedFieldType;
 
     /**
      * 是否扩展字段 0原始 1复制 2计算字段...

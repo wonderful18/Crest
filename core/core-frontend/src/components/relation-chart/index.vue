@@ -2,8 +2,8 @@
 import { ref, reactive, nextTick } from 'vue'
 import { cloneDeep } from 'lodash-es'
 import {
-  getDatasourceRelationship as getDatasourceRelation,
-  getDatasetRelationship as getDatasetRelation
+  datasourceRelationship as datasourceRelation,
+  datasetRelationship as datasetRelation
 } from '@/api/relation/index'
 import RelationGraphView from './GraphView.vue'
 const relationDrawer = ref(false)
@@ -21,8 +21,8 @@ const getChartSize = () => {
 }
 
 let resRef = null
-const getDatasourceRelationship = id => {
-  getDatasourceRelation(id)
+const datasourceRelationship = id => {
+  datasourceRelation(id)
     .then(res => {
       resRef = cloneDeep(res || {})
     })
@@ -30,8 +30,8 @@ const getDatasourceRelationship = id => {
       tableLoading.value = false
     })
 }
-const getDatasetRelationship = id => {
-  getDatasetRelation(id)
+const datasetRelationship = id => {
+  datasetRelation(id)
     .then(res => {
       resRef = cloneDeep(res || {})
     })
@@ -55,10 +55,10 @@ const getChartData = obj => {
     getChartSize()
     switch (queryType) {
       case 'datasource':
-        getDatasourceRelationship(num)
+        datasourceRelationship(num)
         break
       case 'dataset':
-        getDatasetRelationship(num)
+        datasetRelationship(num)
         break
       default:
         break

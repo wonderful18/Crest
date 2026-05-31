@@ -7,7 +7,7 @@
         <result column="table_id" jdbcType="BIGINT" property="datasetTableId"/>
         <result column="origin_name" jdbcType="VARCHAR" property="originName"/>
         <result column="name" jdbcType="VARCHAR" property="name"/>
-        <result column="de_type" jdbcType="INTEGER" property="deType"/>
+        <result column="field_type" jdbcType="INTEGER" property="fieldType"/>
     </resultMap>
 
     <resultMap id="LinkageGatherMap" type="io.crest.api.visualization.dto.VisualizationLinkageDTO">
@@ -45,7 +45,7 @@
         vlf.source_field,
         vlf.target_field
         FROM
-        core_chart_view ccv
+        bi_chart ccv
         LEFT JOIN visualization_linkage vl ON ccv.id = vl.target_view_id
         AND vl.dv_id = #{dvId}
         AND vl.source_view_id = #{sourceViewId}
@@ -67,7 +67,7 @@
             vlf.source_field,
             vlf.target_field
             FROM
-            snapshot_core_chart_view ccv
+            bi_chart_snapshot ccv
             LEFT JOIN snapshot_visualization_linkage vl ON ccv.id = vl.target_view_id
             AND vl.dv_id = #{dvId}
             AND vl.source_view_id = #{sourceViewId}
@@ -80,24 +80,24 @@
 
     <select id="queryTableField" resultMap="TableFieldMap">
        select
-       core_dataset_table_field.id,
-       core_dataset_table_field.dataset_table_id,
-       core_dataset_table_field.origin_name,
-       core_dataset_table_field.`name`,
-       core_dataset_table_field.de_type
-    from core_dataset_table_field where dataset_group_id = #{table_id}
+       dataset_field.id,
+       dataset_field.dataset_table_id,
+       dataset_field.origin_name,
+       dataset_field.`name`,
+       dataset_field.field_type
+    from dataset_field where dataset_group_id = #{table_id}
     </select>
 
     <select id="queryTableFieldWithViewId" resultMap="TableFieldMap">
         select
-       core_dataset_table_field.id,
-       core_dataset_table_field.dataset_table_id,
-       core_dataset_table_field.origin_name,
-       core_dataset_table_field.`name`,
-       core_dataset_table_field.de_type
-        from core_dataset_table_field
-		left join core_chart_view on core_dataset_table_field.dataset_table_id= core_chart_view.table_id
-		where core_chart_view.id = #{viewId}
+       dataset_field.id,
+       dataset_field.dataset_table_id,
+       dataset_field.origin_name,
+       dataset_field.`name`,
+       dataset_field.field_type
+        from dataset_field
+        left join bi_chart on dataset_field.dataset_table_id= bi_chart.table_id
+        where bi_chart.id = #{viewId}
     </select>
 
     <delete id="deleteViewLinkage">
@@ -149,7 +149,7 @@
                 CONCAT( vl.target_view_id, '#', vlf.target_field ) AS targetInfo
         FROM
             visualization_linkage vl
-                LEFT JOIN core_chart_view ccv ON vl.source_view_id = ccv.id
+                LEFT JOIN bi_chart ccv ON vl.source_view_id = ccv.id
                 LEFT JOIN visualization_linkage_field vlf ON vl.id = vlf.linkage_id
         WHERE
             vl.dv_id = #{dvId}
@@ -164,7 +164,7 @@
                 CONCAT( vl.target_view_id, '#', vlf.target_field ) AS targetInfo
         FROM
             snapshot_visualization_linkage vl
-                LEFT JOIN snapshot_core_chart_view ccv ON vl.source_view_id = ccv.id
+                LEFT JOIN bi_chart_snapshot ccv ON vl.source_view_id = ccv.id
                 LEFT JOIN snapshot_visualization_linkage_field vlf ON vl.id = vlf.linkage_id
         WHERE
             vl.dv_id = #{dvId}
@@ -189,8 +189,8 @@
             ) SELECT
             UUID() AS id,
             pv_source_copy.t_dv_id AS dv_id,
-            pv_source_copy.t_core_chart_view_id AS source_view_id,
-            pv_target_copy.t_core_chart_view_id target_view_id,
+            pv_source_copy.t_chart_view_id AS source_view_id,
+            pv_target_copy.t_chart_view_id target_view_id,
             update_time,
             update_people,
             linkage_active,
@@ -202,30 +202,30 @@
                 visualization_linkage
                 INNER JOIN (
                 SELECT
-                    pvs.dv_id AS s_dv_id,
-                    pvs.core_chart_view_id AS s_core_chart_view_id,
-                    pvt.dv_id AS t_dv_id,
-                    pvt.core_chart_view_id AS t_core_chart_view_id
+                    pvs.scene_id AS s_dv_id,
+                    pvs.id AS s_chart_view_id,
+                    pvt.scene_id AS t_dv_id,
+                    pvt.id AS t_chart_view_id
                 FROM
-                    panel_view pvt
-                    inner JOIN panel_view pvs ON pvt.copy_from = pvs.id
+                    bi_chart pvt
+                    inner JOIN bi_chart pvs ON pvt.copy_from = pvs.id
                 WHERE
                     pvt.copy_id = #{copyId}
                 ) pv_source_copy ON visualization_linkage.dv_id = pv_source_copy.s_dv_id
-                AND visualization_linkage.source_view_id = pv_source_copy.s_core_chart_view_id
+                AND visualization_linkage.source_view_id = pv_source_copy.s_chart_view_id
                 INNER JOIN (
                 SELECT
-                    pvs.dv_id AS s_dv_id,
-                    pvs.core_chart_view_id AS s_core_chart_view_id,
-                    pvt.dv_id AS t_dv_id,
-                    pvt.core_chart_view_id AS t_core_chart_view_id
+                    pvs.scene_id AS s_dv_id,
+                    pvs.id AS s_chart_view_id,
+                    pvt.scene_id AS t_dv_id,
+                    pvt.id AS t_chart_view_id
                 FROM
-                    panel_view pvt
-                    inner JOIN panel_view pvs ON pvt.copy_from = pvs.id
+                    bi_chart pvt
+                    inner JOIN bi_chart pvs ON pvt.copy_from = pvs.id
                 WHERE
                     pvt.copy_id = #{copyId}
                 ) pv_target_copy ON visualization_linkage.dv_id = pv_target_copy.s_dv_id
-                AND visualization_linkage.target_view_id = pv_target_copy.s_core_chart_view_id
+                AND visualization_linkage.target_view_id = pv_target_copy.s_chart_view_id
 
     </insert>
 

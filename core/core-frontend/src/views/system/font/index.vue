@@ -87,7 +87,7 @@ const setDefaultFont = (url, name, fileTransName) => {
               font-style: normal;
               }`
       : ''
-  document.documentElement.style.setProperty('--de-custom_font', `${name ? name : ''}`)
+  document.documentElement.style.setProperty('--crest-custom_font', `${name ? name : ''}`)
   document.documentElement.style.setProperty('--van-base-font', `${name ? name : ''}`)
 }
 const getDefaultFont = () => {

@@ -14,7 +14,7 @@ import io.crest.dataset.dao.auto.mapper.CoreDatasetTableMapper;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetTableFieldMapper;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
 import io.crest.datasource.dao.auto.mapper.CoreDatasourceMapper;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.view.dto.ChartViewFieldDTO;
 import io.crest.relation.dto.RelationEdgeDTO;
 import io.crest.relation.dto.RelationGraphDTO;
@@ -143,7 +143,7 @@ public class RelationManage implements RelationApi {
     }
 
     @Override
-    public Long getDatasetResource(Long id) {
+    public Long datasetResource(Long id) {
         RelationGraphDTO graph = dataset(id);
         return graph.getNodes().stream()
                 .filter(node -> TYPE_CHART.equals(node.getType()) || TYPE_DV.equals(node.getType()))
@@ -151,7 +151,7 @@ public class RelationManage implements RelationApi {
     }
 
     @Override
-    public void checkAuth() throws DEException {
+    public void checkAuth() throws CrestException {
         // Community build uses the same local resource metadata and does not require extra auth.
     }
 

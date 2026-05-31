@@ -1,7 +1,7 @@
 package io.crest.datasource.type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,7 +24,7 @@ public class Mongo extends DatasourceConfiguration {
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             if (!getJdbcUrl().startsWith("jdbc:mysql")) {
-                DEException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
+                CrestException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
             }
             return getJdbcUrl();
         }

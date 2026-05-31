@@ -1,8 +1,8 @@
 package io.crest.listener;
 
-import io.crest.job.schedule.DeDataFillingTaskExecutor;
-import io.crest.job.schedule.DeTaskExecutor;
-import io.crest.job.schedule.DeDataSyncTaskExecutor;
+import io.crest.job.schedule.DataFillingTaskExecutor;
+import io.crest.job.schedule.ScheduledTaskExecutor;
+import io.crest.job.schedule.DataSyncTaskExecutor;
 import io.crest.utils.LogUtil;
 import jakarta.annotation.Resource;
 import org.springframework.boot.ApplicationArguments;
@@ -15,28 +15,28 @@ import org.springframework.stereotype.Component;
 public class DataSyncTaskStarter implements ApplicationRunner {
 
     @Resource
-    private DeTaskExecutor deTaskExecutor;
+    private ScheduledTaskExecutor taskExecutor;
 
     @Resource
-    private DeDataFillingTaskExecutor deDataFillingTaskExecutor;
+    private DataFillingTaskExecutor dataFillingTaskExecutor;
 
     @Resource
-    private DeDataSyncTaskExecutor deDataSyncTaskExecutor;
+    private DataSyncTaskExecutor dataSyncTaskExecutor;
 
     @Override
     public void run(ApplicationArguments args) {
         try {
-            deTaskExecutor.init();
+            taskExecutor.init();
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e.getCause());
         }
         try {
-            deDataFillingTaskExecutor.init();
+            dataFillingTaskExecutor.init();
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e.getCause());
         }
         try {
-            deDataSyncTaskExecutor.init();
+            dataSyncTaskExecutor.init();
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e.getCause());
         }

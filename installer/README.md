@@ -21,7 +21,7 @@
 Crest 默认使用内部轻量模式：
 
 ```bash
-DE_INTERNAL_LITE=true
+CREST_INTERNAL_LITE=true
 ```
 
 该模式只启动两个容器：
@@ -34,9 +34,9 @@ DE_INTERNAL_LITE=true
 如需恢复同步任务或外部截图服务，可在 `install.conf` 中调整后重新制作安装包：
 
 ```bash
-DE_INTERNAL_LITE=false
-DE_EXTERNAL_PLAYWRIGHT=false
-DE_EXTERNAL_SYNC_TASK=false
+CREST_INTERNAL_LITE=false
+CREST_EXTERNAL_PLAYWRIGHT=false
+CREST_EXTERNAL_SYNC_TASK=false
 ```
 
 ## 安装前检查
@@ -55,8 +55,8 @@ DE_EXTERNAL_SYNC_TASK=false
 生产环境建议：
 
 - 使用固定域名和 HTTPS 反向代理；
-- 修改 `DE_ORIGIN_LIST` 为实际访问地址；
-- 使用高强度 `DE_MYSQL_PASSWORD`、`DE_AES_KEY`、`DE_AES_IV` 和 `DE_INITIAL_PASSWORD`；
+- 修改 `CREST_ORIGIN_LIST` 为实际访问地址；
+- 使用高强度 `CREST_DB_PASSWORD`、`CREST_AES_KEY`、`CREST_AES_IV` 和 `CREST_INITIAL_PASSWORD`；
 - 首次登录后修改管理员密码；
 - 将 `/opt/crest` 纳入备份。
 
@@ -66,19 +66,19 @@ DE_EXTERNAL_SYNC_TASK=false
 
 | 配置项 | 默认值 | 说明 |
 | --- | --- | --- |
-| `DE_BASE` | `/opt` | 安装基目录，实际运行目录为 `${DE_BASE}/crest` |
-| `DE_PORT` | `8100` | Web 访问端口 |
-| `DE_APP_IMAGE` | `ghcr.io/sevoniva/crest:v1.3.0` | Crest 应用镜像 |
-| `DE_MYSQL_IMAGE` | `mysql:8.4.5` | MySQL 镜像 |
-| `DE_MYSQL_DB` | `crest` | 元数据库名 |
-| `DE_MYSQL_USER` | `root` | MySQL 用户 |
-| `DE_MYSQL_PASSWORD` | 空 | 留空时安装脚本自动生成 |
-| `DE_AES_KEY` | 空 | 留空时自动生成 32 位值；升级时不要改 |
-| `DE_AES_IV` | 空 | 留空时自动生成 16 位值；升级时不要改 |
-| `DE_CRYPTO_MODE` | `standard` | 加密模式，`standard` 使用 AES/RSA，`sm-suite` 使用 SM2/SM3/SM4 |
-| `DE_SM4_KEY` | 空 | SM4 使用的 16 位 Key；`DE_CRYPTO_MODE=sm-suite` 且留空时自动生成，服务启动会校验，升级时不要改 |
-| `DE_INITIAL_PASSWORD` | 空 | 管理员初始密码，留空时自动生成并输出 |
-| `DE_ORIGIN_LIST` | `http://localhost:8100` | 允许来源，正式环境要改成实际域名 |
+| `CREST_BASE` | `/opt` | 安装基目录，实际运行目录为 `${CREST_BASE}/crest` |
+| `CREST_PORT` | `8100` | Web 访问端口 |
+| `CREST_APP_IMAGE` | `ghcr.io/sevoniva/crest:v1.3.0` | Crest 应用镜像 |
+| `CREST_MYSQL_IMAGE` | `mysql:8.4.5` | MySQL 镜像 |
+| `CREST_DB_NAME` | `crest` | 元数据库名 |
+| `CREST_DB_USERNAME` | `root` | MySQL 用户 |
+| `CREST_DB_PASSWORD` | 空 | 留空时安装脚本自动生成 |
+| `CREST_AES_KEY` | 空 | 留空时自动生成 32 位值；升级时不要改 |
+| `CREST_AES_IV` | 空 | 留空时自动生成 16 位值；升级时不要改 |
+| `CREST_CRYPTO_MODE` | `standard` | 加密模式，`standard` 使用 AES/RSA，`sm-suite` 使用 SM2/SM3/SM4 |
+| `CREST_SM4_KEY` | 空 | SM4 使用的 16 位 Key；`CREST_CRYPTO_MODE=sm-suite` 且留空时自动生成，服务启动会校验，升级时不要改 |
+| `CREST_INITIAL_PASSWORD` | 空 | 管理员初始密码，留空时自动生成并输出 |
+| `CREST_ORIGIN_LIST` | `http://localhost:8100` | 允许来源，正式环境要改成实际域名 |
 
 ## 在线安装
 
@@ -267,7 +267,7 @@ tail -f /opt/crest/logs/crest/error.log
 | --- | --- |
 | 页面打不开 | 端口是否开放、`crest` 容器是否健康、反向代理是否转发到 `8100` |
 | 登录失败 | 初始密码是否来自安装输出，是否已经被修改 |
-| 数据库连接失败 | `mysql-crest` 是否健康，`DE_MYSQL_PASSWORD` 是否和 `.env` 一致 |
+| 数据库连接失败 | `mysql-crest` 是否健康，`CREST_DB_PASSWORD` 是否和 `.env` 一致 |
 | 升级后启动失败 | Flyway 迁移日志、数据库备份是否可恢复、镜像架构是否正确 |
 | 导出文件不可下载 | `/opt/crest/data/exportData` 权限和磁盘空间 |
 

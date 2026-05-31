@@ -6,7 +6,7 @@
       showValidate
       :setting-title="t('system.engine_settings')"
       :setting-data="templateList"
-      @edit="edit"
+      @edit="change"
       @check="validateById"
     />
     <div class="de-expand_content">
@@ -42,7 +42,7 @@ import { ElMessage } from 'element-plus-secondary'
 import { useI18n } from '@/hooks/web/useI18n'
 import InfoTemplate from '@/views/system/common/InfoTemplate.vue'
 import { dsTypes } from '@/views/visualized/data/datasource/form/option'
-import { getDeEngine } from '@/api/datasource'
+import { getEngineDatasource } from '@/api/datasource'
 import request from '@/config/axios'
 import { querySymmetricKey } from '@/api/login'
 import { symmetricDecrypt } from '@/utils/encryption'
@@ -60,7 +60,7 @@ const templateListTime = ref<SettingRecord[]>([])
 const xPackInfo = ref({ enableDataFill: false, type: undefined })
 const getEngine = () => {
   querySymmetricKey().then(response => {
-    getDeEngine().then(res => {
+    getEngineDatasource().then(res => {
       let { id, type, configuration } = res.data
       xPackInfo.value.enableDataFill = !!res.data.enableDataFill
       xPackInfo.value.type = type
@@ -170,7 +170,7 @@ const validateById = async () => {
   align-items: center;
   margin: -2px 0 -2px 0;
   .de-expand-engine {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 600;
     line-height: 22px;

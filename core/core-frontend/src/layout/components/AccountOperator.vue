@@ -25,7 +25,7 @@ interface LinkItem {
 }
 const linkList = ref([] as LinkItem[])
 
-const inPlatformClient = computed(() => !!wsCache.get('de-platform-client'))
+const inPlatformClient = computed(() => !!wsCache.get('crest-platform-client'))
 
 const logout = async () => {
   await logoutApi()

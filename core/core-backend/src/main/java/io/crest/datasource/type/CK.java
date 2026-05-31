@@ -1,7 +1,7 @@
 package io.crest.datasource.type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -42,7 +42,7 @@ public class CK extends DatasourceConfiguration {
         String jdbcUrl;
         if (StringUtils.isNotEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             if (!getJdbcUrl().startsWith("jdbc:clickhouse")) {
-                DEException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
+                CrestException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
             }
             jdbcUrl = getJdbcUrl();
         } else {
@@ -106,7 +106,7 @@ public class CK extends DatasourceConfiguration {
             SSL_CERT_PATH_CACHE.put(cacheKey, certPath);
             return certPath;
         } catch (IOException e) {
-            DEException.throwException("SSL cert write failed: " + e.getMessage());
+            CrestException.throwException("SSL cert write failed: " + e.getMessage());
             return null;
         }
     }
@@ -124,7 +124,7 @@ public class CK extends DatasourceConfiguration {
             }
             return hex.toString();
         } catch (NoSuchAlgorithmException e) {
-            DEException.throwException("SHA-256 not supported: " + e.getMessage());
+            CrestException.throwException("SHA-256 not supported: " + e.getMessage());
             return "";
         }
     }

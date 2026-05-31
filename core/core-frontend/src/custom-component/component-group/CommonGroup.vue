@@ -4,7 +4,7 @@ import eventBus from '@/utils/eventBus'
 import Icon from '@/components/icon-custom/src/Icon.vue'
 import { CANVAS_MATERIAL } from '@/custom-component/common/ComponentConfig'
 import { ElScrollbar } from 'element-plus-secondary'
-import DeDecoration from '@/custom-component/de-decoration/Component.vue'
+import Decoration from '@/custom-component/decoration/Component.vue'
 
 defineProps({
   propValue: {
@@ -96,12 +96,12 @@ const findUrl = name => {
               class-name="item-top-icon"
               ><component class="svg-icon item-top-icon" :is="chartInfo.icon"></component
             ></Icon>
-            <DeDecoration
+            <Decoration
               :curStyle="{ width: 530, height: 373 }"
               :element="{ innerType: chartInfo.value }"
               :scale="0.15"
-              v-else-if="['de_decoration'].includes(chartInfo.type)"
-            ></DeDecoration>
+              v-else-if="['decoration'].includes(chartInfo.type)"
+            ></Decoration>
             <component v-else style="color: #a6a6a6" :is="chartInfo.icon"></component>
           </div>
           <div v-if="chartInfo.title" class="item-bottom">

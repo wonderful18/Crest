@@ -61,16 +61,16 @@ const handleDragEnd = e => {
       :themes="themes"
       :icon="iconVideo"
       :label="t('visualization.video')"
-      drag-info="DeVideo&DeVideo"
-      v-on:click="newComponent('DeVideo', 'DeVideo')"
+      drag-info="Video&Video"
+      v-on:click="newComponent('Video', 'Video')"
     ></drag-component>
     <drag-component
       class="media-component"
       :themes="themes"
       :icon="iconStream"
       :label="t('visualization.stream_media')"
-      drag-info="DeStreamMedia&DeStreamMedia"
-      v-on:click="newComponent('DeStreamMedia', 'DeStreamMedia')"
+      drag-info="StreamMedia&StreamMedia"
+      v-on:click="newComponent('StreamMedia', 'StreamMedia')"
     ></drag-component>
     <drag-component
       class="media-component"

@@ -29,7 +29,7 @@ const props = defineProps({
   modelValue: String,
   fieldList: propTypes.arrayOf(
     propTypes.shape({
-      deType: propTypes.number,
+      fieldType: propTypes.number,
       id: propTypes.string,
       name: propTypes.string,
       groupType: propTypes.string
@@ -125,7 +125,7 @@ const init = ref({
         const items = props.fieldList.map(ele => {
           return {
             id: ele.id,
-            icon: iconMap[ele.deType],
+            icon: iconMap[ele.fieldType],
             type: 'choiceitem',
             text: ele.name,
             value: ele.name

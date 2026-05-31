@@ -1,7 +1,7 @@
 package io.crest.datasource.type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -30,11 +30,11 @@ public class Redshift extends DatasourceConfiguration {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             for (String illegalParameter : illegalParameters) {
                 if (URLDecoder.decode(getJdbcUrl()).contains(illegalParameter)) {
-                    DEException.throwException("Illegal parameter: " + illegalParameter);
+                    CrestException.throwException("Illegal parameter: " + illegalParameter);
                 }
             }
             if (!getJdbcUrl().startsWith("jdbc:redshift")) {
-                DEException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
+                CrestException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
             }
             return getJdbcUrl();
         }
@@ -44,7 +44,7 @@ public class Redshift extends DatasourceConfiguration {
                 .replace("DATABASE", getDataBase().trim());
         for (String illegalParameter : illegalParameters) {
             if (URLDecoder.decode(jdbcUrl).contains(illegalParameter)) {
-                DEException.throwException("Illegal parameter: " + illegalParameter);
+                CrestException.throwException("Illegal parameter: " + illegalParameter);
             }
         }
         return jdbcUrl;
@@ -53,7 +53,7 @@ public class Redshift extends DatasourceConfiguration {
     private static final Pattern DB_NAME_PATTERN = Pattern.compile("//[^/]+/([^?]+)");
 
     @Override
-    protected Pattern getDatabasePattern() {
+    protected Pattern databasePattern() {
         return DB_NAME_PATTERN;
     }
 

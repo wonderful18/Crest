@@ -13,10 +13,10 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,31 +30,31 @@ public interface ReportApi {
             @Parameter(name = "pageSize", description = "每页容量", required = true, in = ParameterIn.PATH),
             @Parameter(name = "request", description = "过滤条件", required = true)
     })
-    @PostMapping("/pager/{goPage}/{pageSize}")
+    @PostMapping("/page/{goPage}/{pageSize}")
     IPage<ReportGridVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody ReportGridRequest request);
 
     @Operation(summary = "创建任务")
-    @PostMapping("/create")
+    @PostMapping
     void create(@RequestBody ReportCreator creator);
 
     @Operation(summary = "更新任务")
-    @PostMapping("/update")
+    @PutMapping
     void update(@RequestBody ReportEditor editor);
 
     @Operation(summary = "立即运行")
-    @PostMapping("/fireNow/{taskId}")
+    @PostMapping("/run-now/{taskId}")
     void fireNow(@PathVariable("taskId") Long taskId);
 
     @Operation(summary = "停止")
-    @PostMapping("/stop/{taskId}")
+    @PostMapping("/lifecycle/lifecycle/stop/{taskId}")
     void stopNow(@PathVariable("taskId") Long taskId);
 
     @Operation(summary = "启用")
-    @PostMapping("/start/{taskId}")
+    @PostMapping("/lifecycle/lifecycle/start/{taskId}")
     void start(@PathVariable("taskId") Long taskId);
 
     @Operation(summary = "删除")
-    @PostMapping("/delete")
+    @DeleteMapping
     void delete(@RequestBody List<Long> taskIdList);
 
 
@@ -68,15 +68,15 @@ public interface ReportApi {
             @Parameter(name = "pageSize", description = "每页容量", required = true, in = ParameterIn.PATH),
             @Parameter(name = "request", description = "过滤条件", required = true)
     })
-    @PostMapping("/logPager/{goPage}/{pageSize}")
+    @PostMapping("/logs/page/{goPage}/{pageSize}")
     IPage<ReportInstanceVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody ReportInstanceRequest request);
 
     @Operation(summary = "删除日志")
-    @PostMapping("/deleteLog")
+    @DeleteMapping("/logs")
     void deleteInstance(@RequestBody ReportInstanceDelRequest request);
 
     @Operation(summary = "日志错误信息")
-    @PostMapping("/logMsg")
+    @PostMapping("/logs/message")
     String logMsg(@RequestBody ReportInstanceMsgRequest request);
 
     @Operation(summary = "导出")

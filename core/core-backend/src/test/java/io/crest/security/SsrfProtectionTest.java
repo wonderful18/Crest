@@ -1,6 +1,6 @@
 package io.crest.security;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.utils.SsrfProtection;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ class SsrfProtectionTest {
     })
     @DisplayName("应阻止访问内部地址和危险协议")
     void shouldBlockInternalAddresses(String url) {
-        assertThrows(DEException.class, () -> SsrfProtection.validateUrl(url),
+        assertThrows(CrestException.class, () -> SsrfProtection.validateUrl(url),
                 "应阻止访问: " + url);
     }
 
@@ -52,11 +52,11 @@ class SsrfProtectionTest {
     @Test
     @DisplayName("应阻止访问数据库端口")
     void shouldBlockDatabasePorts() {
-        assertThrows(DEException.class,
+        assertThrows(CrestException.class,
                 () -> SsrfProtection.validateUrl("http://example.com:3306/"));
-        assertThrows(DEException.class,
+        assertThrows(CrestException.class,
                 () -> SsrfProtection.validateUrl("http://example.com:5432/"));
-        assertThrows(DEException.class,
+        assertThrows(CrestException.class,
                 () -> SsrfProtection.validateUrl("http://example.com:6379/"));
     }
 
@@ -71,7 +71,7 @@ class SsrfProtectionTest {
     @Test
     @DisplayName("应阻止 Google Cloud 元数据地址")
     void shouldBlockGoogleMetadata() {
-        assertThrows(DEException.class,
+        assertThrows(CrestException.class,
                 () -> SsrfProtection.validateUrl("http://metadata.google.internal/"));
     }
 }

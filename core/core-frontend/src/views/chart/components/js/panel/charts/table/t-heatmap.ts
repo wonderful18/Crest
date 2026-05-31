@@ -92,16 +92,16 @@ export class TableHeatmap extends G2PlotChartView<HeatmapOptions, Heatmap> {
     return defaultLength
   }
   protected sortData = (fieldObj, data) => {
-    const { deType, sort, customSort } = fieldObj
+    const { fieldType, sort, customSort } = fieldObj
 
     if (sort === 'desc') {
-      if (deType === 0) {
+      if (fieldType === 0) {
         return data.sort().reverse()
       } else {
         return data.sort((a, b) => b - a)
       }
     } else if (sort === 'asc') {
-      if (deType === 0) {
+      if (fieldType === 0) {
         return data.sort()
       } else {
         return data.sort((a, b) => a - b)
@@ -119,9 +119,9 @@ export class TableHeatmap extends G2PlotChartView<HeatmapOptions, Heatmap> {
     if (!xAxis?.length || !xAxisExt?.length || !extColor?.length) {
       return
     }
-    const xField = xAxis[0].dataeaseName
-    const xFieldExt = xAxisExt[0].dataeaseName
-    const extColorField = extColor[0].dataeaseName
+    const xField = xAxis[0].engineFieldName
+    const xFieldExt = xAxisExt[0].engineFieldName
+    const extColorField = extColor[0].engineFieldName
     // data
     const tmpData = cloneDeep(chart.data.tableRow)
     const data =
@@ -173,10 +173,10 @@ export class TableHeatmap extends G2PlotChartView<HeatmapOptions, Heatmap> {
       const dimensionList = []
       chart.data.fields.forEach(item => {
         Object.keys(pointData).forEach(key => {
-          if (key.startsWith('f_') && item.dataeaseName === key) {
+          if (key.startsWith('f_') && item.engineFieldName === key) {
             dimensionList.push({
               id: item.id,
-              dataeaseName: item.dataeaseName,
+              engineFieldName: item.engineFieldName,
               value: pointData[key]
             })
           }
@@ -199,7 +199,7 @@ export class TableHeatmap extends G2PlotChartView<HeatmapOptions, Heatmap> {
     newChart.on('afterrender', ev => {
       const l = JSON.parse(JSON.stringify(parseJson(chart.customStyle).legend))
       if (l.show) {
-        const rail = ev.view.getController('legend').option[extColor[0].dataeaseName]?.['rail']
+        const rail = ev.view.getController('legend').option[extColor[0].engineFieldName]?.['rail']
         if (rail) {
           rail.defaultLength = this.getDefaultLength(chart, l)
         }
@@ -243,7 +243,7 @@ export class TableHeatmap extends G2PlotChartView<HeatmapOptions, Heatmap> {
               const items = []
               const createItem = (fieldObj, items, originalItems) => {
                 const name = fieldObj?.chartShowName ? fieldObj?.chartShowName : fieldObj?.name
-                let value = originalItems[0].data[fieldObj.dataeaseName]
+                let value = originalItems[0].data[fieldObj.engineFieldName]
                 if (!isNaN(Number(value))) {
                   value = valueFormatter(value, customAttr.tooltip.tooltipFormatter)
                 }
@@ -339,7 +339,7 @@ export class TableHeatmap extends G2PlotChartView<HeatmapOptions, Heatmap> {
         position: 'middle',
         layout,
         formatter: data => {
-          const value = data[extColor[0]?.dataeaseName]
+          const value = data[extColor[0]?.engineFieldName]
           if (!isNaN(Number(value))) {
             return valueFormatter(value, labelAttr.labelFormatter)
           }

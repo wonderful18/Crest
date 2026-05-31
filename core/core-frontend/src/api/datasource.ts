@@ -48,42 +48,42 @@ export const listDatasourceType = async (data = {}): Promise<IResponse> => {
     return res?.data
   })
 }
-export const getTableField = (data = {}) => request.post({ url: '/datasource/getTableField', data })
+export const getTableField = (data = {}) => request.post({ url: '/datasource/table-fields', data })
 
-export const syncApiTable = (data = {}) => request.post({ url: '/datasource/syncApiTable', data })
+export const syncApiTable = (data = {}) => request.post({ url: '/datasource/api-tables/sync', data })
 
-export const syncApiDs = (data = {}) => request.post({ url: '/datasource/syncApiDs', data })
+export const syncApiDs = (data = {}) => request.post({ url: '/datasource/api-data-sources/sync', data })
 
 export const listDatasourceTables = async (data = {}): Promise<IResponse> => {
-  return request.post({ url: '/datasource/getTables', data }).then(res => {
+  return request.post({ url: '/datasource/tables', data }).then(res => {
     return res
   })
 }
 
-export const getTableStatus = async (data = {}): Promise<IResponse> => {
-  return request.post({ url: '/datasource/getTableStatus', data }).then(res => {
+export const tableStatus = async (data = {}): Promise<IResponse> => {
+  return request.post({ url: '/datasource/table-status', data }).then(res => {
     return res
   })
 }
 
 export const getSchema = (data = {}) => {
-  return request.post({ url: '/datasource/getSchema', data })
+  return request.post({ url: '/datasource/schemas', data })
 }
 
 export const previewData = (data = {}) => {
-  return request.post({ url: '/datasource/previewData', data }).then(res => {
+  return request.post({ url: '/datasource/preview-data', data }).then(res => {
     return res?.data
   })
 }
 
 export const excelDataPage = (data = {}) => {
-  return request.post({ url: '/datasource/excelData/page', data }).then(res => {
+  return request.post({ url: '/datasource/excel-data/page', data }).then(res => {
     return res?.data
   })
 }
 
 export const saveExcelData = (data = {}) => {
-  return request.post({ url: '/datasource/excelData/save', data, loading: true }).then(res => {
+  return request.post({ url: '/datasource/excel-data/record', data, loading: true }).then(res => {
     return res?.data
   })
 }
@@ -93,34 +93,34 @@ export const validate = (data = {}) => {
 }
 
 export const isShowFinishPage = async () => {
-  return request.get({ url: '/datasource/showFinishPage' })
+  return request.get({ url: '/datasource/finish-page/visible' })
 }
 
 export const setShowFinishPage = (data = {}) => {
-  return request.post({ url: '/datasource/setShowFinishPage', data })
+  return request.post({ url: '/datasource/finish-page/visible', data })
 }
 export const latestUse = async (data = {}) => {
-  return request.post({ url: '/datasource/latestUse', data })
+  return request.post({ url: '/datasource/latest-use', data })
 }
 
 export const validateById = (id: number) => request.get({ url: '/datasource/validate/' + id })
 
 export const save = async (data = {}): Promise<Dataset> => {
   nameTrim(data)
-  return request.post({ url: '/datasource/save', data }).then(res => {
+  return request.post({ url: '/datasource/record', data }).then(res => {
     return res?.data
   })
 }
 
 export const perDeleteDatasource = async (id): Promise<boolean> => {
-  return request.post({ url: `/datasource/perDelete/${id}`, data: {} }).then(res => {
+  return request.post({ url: `/datasource/deletion-impact/${id}`, data: {} }).then(res => {
     return res?.data
   })
 }
 
 export const update = async (data = {}): Promise<Dataset> => {
   nameTrim(data)
-  return request.post({ url: '/datasource/update', data }).then(res => {
+  return request.put({ url: '/datasource', data }).then(res => {
     return res?.data
   })
 }
@@ -133,33 +133,33 @@ export const move = async (data = {}): Promise<Dataset> => {
 
 export const reName = async (data = {}): Promise<Dataset> => {
   nameTrim(data)
-  return request.post({ url: '/datasource/reName', data }).then(res => {
+  return request.post({ url: '/datasource/rename', data }).then(res => {
     return res?.data
   })
 }
 
 export const createFolder = async (data = {}): Promise<Dataset> => {
   nameTrim(data)
-  return request.post({ url: '/datasource/createFolder', data }).then(res => {
+  return request.post({ url: '/datasource/folders', data }).then(res => {
     return res?.data
   })
 }
 
 export const checkRepeat = async (data = {}): Promise<Dataset> => {
-  return request.post({ url: '/datasource/checkRepeat', data }).then(res => {
+  return request.post({ url: '/datasource/duplicate-check', data }).then(res => {
     return res?.data
   })
 }
 
 export const checkApiItem = async (data = {}): Promise<IResponse> => {
-  return request.post({ url: '/datasource/checkApiDatasource', data }).then(res => {
+  return request.post({ url: '/datasource/api-data-source-check', data }).then(res => {
     return res
   })
 }
 
-export const getDatasetTree = async (data = {}): Promise<IResponse> => {
+export const datasetTree = async (data = {}): Promise<IResponse> => {
   return request
-    .post({ url: '/datasetTree/tree', data: { ...data, ...{ busiFlag: 'dataset' } } })
+    .post({ url: '/dataset-tree/tree', data: { ...data, ...{ busiFlag: 'dataset' } } })
     .then(res => {
       return res?.data
     })
@@ -173,18 +173,18 @@ export const getDsTree = async (data = {}): Promise<IResponse> => {
     })
 }
 
-export const deleteById = (id: number) => request.get({ url: '/datasource/delete/' + id })
+export const deleteById = (id: number) => request.delete({ url: '/datasource/' + id })
 
-export const getById = (id: number) => request.get({ url: '/datasource/get/' + id })
+export const getById = (id: number) => request.get({ url: '/datasource/detail/' + id })
 
-export const getHidePwById = (id: number) => request.get({ url: '/datasource/hidePw/' + id })
+export const getHidePwById = (id: number) => request.get({ url: '/datasource/password/masked/' + id })
 
-export const getSimpleDs = (id: number) => request.get({ url: '/datasource/getSimpleDs/' + id })
+export const getSimpleDs = (id: number) => request.get({ url: '/datasource/simple-info/' + id })
 
 export const uploadFile = async (data): Promise<IResponse> => {
   return request
     .post({
-      url: '/datasource/uploadFile',
+      url: '/datasource/files/upload',
       data,
       loading: true,
       headersType: 'multipart/form-data;'
@@ -195,12 +195,12 @@ export const uploadFile = async (data): Promise<IResponse> => {
 }
 
 export const loadRemoteFile = async (data = {}) => {
-  return request.post({ url: '/datasource/loadRemoteFile', data })
+  return request.post({ url: '/datasource/remote-files/load', data })
 }
 
 export const listSyncRecord = (page: number, limit: number, dsId: number | string) =>
-  request.post({ url: '/datasource/listSyncRecord/' + dsId + '/' + page + '/' + limit })
+  request.post({ url: '/datasource/sync-records/' + dsId + '/' + page + '/' + limit })
 
-export const getDeEngine = () => request.get({ url: '/engine/getEngine' })
+export const getEngineDatasource = () => request.get({ url: '/engine/current' })
 
-export const supportSetKey = () => request.get({ url: '/engine/supportSetKey' })
+export const supportSetKey = () => request.get({ url: '/engine/support-set-key' })

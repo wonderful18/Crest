@@ -1,6 +1,6 @@
 package io.crest.utils;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import lombok.Data;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -60,7 +60,7 @@ public class HttpClientUtil {
      */
     private static CloseableHttpClient buildHttpClient(String url) {
         if (StringUtils.isEmpty(url)) {
-            throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: url 不能为空！");
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: url 不能为空！");
         }
         try {
             if (url.startsWith(HTTPS)) {
@@ -70,7 +70,7 @@ public class HttpClientUtil {
                 return HttpClientBuilder.create().build();
             }
         } catch (Exception e) {
-            throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         }
     }
 
@@ -93,7 +93,7 @@ public class HttpClientUtil {
                 return HttpClientBuilder.create().build();
             }
         } catch (Exception e) {
-            throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         }
     }
 
@@ -122,7 +122,7 @@ public class HttpClientUtil {
             return true;
         } catch (Exception e) {
             logger.error("HttpClient查询失败", e);
-            throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
             try {
                 if (httpClient != null) {
@@ -160,7 +160,7 @@ public class HttpClientUtil {
             return getResponseStr(response, config);
         } catch (Exception e) {
             logger.error("HttpClient查询失败", e);
-            throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
             try {
                 if (httpClient != null) {
@@ -191,7 +191,7 @@ public class HttpClientUtil {
             return getResponseStr(response, config);
         } catch (Exception e) {
             logger.error("HttpClient查询失败", e);
-            throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
             try {
                 httpClient.close();
@@ -232,7 +232,7 @@ public class HttpClientUtil {
             return getResponseStr(response, config);
         } catch (Exception e) {
             logger.error("HttpClient查询失败", e);
-            throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
             try {
                 if (httpClient != null) {
@@ -267,7 +267,7 @@ public class HttpClientUtil {
             return response;
         } catch (Exception e) {
             logger.error("HttpClient查询失败", e);
-            throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
             try {
                 if (httpClient != null) {
@@ -302,7 +302,7 @@ public class HttpClientUtil {
             return getResponseStr(response, config);
         } catch (Exception e) {
             logger.error("HttpClient查询失败", e);
-            throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
             try {
                 if (httpClient != null) {
@@ -353,7 +353,7 @@ public class HttpClientUtil {
                     httpPost.setEntity(new UrlEncodedFormEntity(nvps, config.getCharset()));
                 } catch (Exception e) {
                     logger.error("HttpClient转换编码错误", e);
-                    throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient转换编码错误: " + e.getMessage());
+                    throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient转换编码错误: " + e.getMessage());
                 }
             }
 
@@ -361,7 +361,7 @@ public class HttpClientUtil {
             return getResponseStr(response, config);
         } catch (Exception e) {
             logger.error("HttpClient查询失败", e);
-            throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         }
     }
 
@@ -589,7 +589,7 @@ public class HttpClientUtil {
             return getResponseStr(response, config);
         } catch (Exception e) {
             logger.error("HttpClient查询失败", e);
-            throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
             try {
                 if (httpClient != null) {
@@ -655,14 +655,14 @@ public class HttpClientUtil {
                     httpPost.setEntity(entity);
                 } catch (Exception e) {
                     logger.error("HttpClient转换编码错误", e);
-                    throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient转换编码错误: " + e.getMessage());
+                    throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient转换编码错误: " + e.getMessage());
                 }
             }
             HttpResponse response = httpClient.execute(httpPost);
             return getResponseStr(response, config);
         } catch (Exception e) {
             logger.error("HttpClient查询失败", e);
-            throw new DEException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
             try {
                 if (httpClient != null) {
@@ -698,7 +698,7 @@ public class HttpClientUtil {
 
             try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
                 if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                    throw new DEException(response.getStatusLine().getStatusCode(), response.toString());
+                    throw new CrestException(response.getStatusLine().getStatusCode(), response.toString());
                 }
                 HttpEntity entity = response.getEntity();
                 byte[] bytes = EntityUtils.toByteArray(entity);          // raw bytes

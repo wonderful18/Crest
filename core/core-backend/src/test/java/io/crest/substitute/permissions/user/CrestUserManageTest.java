@@ -1,7 +1,7 @@
 package io.crest.substitute.permissions.user;
 
 import io.crest.api.permissions.user.dto.UserCreator;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -33,6 +33,6 @@ public class CrestUserManageTest {
         creator.setRoleIds(List.of(2L));
         creator.setEnable(true);
 
-        assertThrows(DEException.class, () -> crestUserManage.create(creator));
+        assertThrows(CrestException.class, () -> crestUserManage.create(creator));
     }
 }

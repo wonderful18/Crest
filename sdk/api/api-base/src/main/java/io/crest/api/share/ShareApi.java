@@ -32,11 +32,11 @@ public interface ShareApi {
     void switcher(@PathVariable("resourceId") Long resourceId);
 
     @Operation(summary = "设置分享有效期")
-    @PostMapping("/editExp")
+    @PostMapping("/expiration")
     void editExp(@RequestBody ShareExpRequest request);
 
     @Operation(summary = "编辑分享密码")
-    @PostMapping("/editPwd")
+    @PostMapping("/password")
     void editPwd(@RequestBody SharePwdRequest request);
 
     @Operation(summary = "查询分享详情")
@@ -45,15 +45,15 @@ public interface ShareApi {
     ShareVO detail(@PathVariable("resourceId") Long resourceId);
 
     @Operation(summary = "查询分享列表")
-    @PostMapping("/query")
+    @PostMapping("/list")
     List<ShareGridVO> query(@RequestBody VisualizationWorkbranchQueryRequest request);
 
     @Operation(summary = "分页查询分享列表")
-    @PostMapping("/pager/{goPage}/{pageSize}")
+    @PostMapping("/page/{goPage}/{pageSize}")
     IPage<ShareGridVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody VisualizationWorkbranchQueryRequest request);
 
     @Operation(summary = "查询分享代理信息")
-    @PostMapping("/proxyInfo")
+    @PostMapping("/proxy-info")
     ShareProxyVO proxyInfo(@RequestBody ShareProxyRequest request);
 
     @Operation(summary = "验证分享")
@@ -61,10 +61,10 @@ public interface ShareApi {
     boolean validatePwd(@RequestBody SharePwdValidator validator);
 
     @Operation(summary = "", hidden = true)
-    @GetMapping("/queryRelationByUserId/{uid}")
+    @GetMapping("/relations/user/{uid}")
     Map<String, String> queryRelationByUserId(@PathVariable("uid") Long uid);
 
     @Operation(summary = "编辑分享uuid")
-    @PostMapping("/editUuid")
+    @PostMapping("/uuid")
     String editUuid(@RequestBody ShareUuidEditor editor);
 }

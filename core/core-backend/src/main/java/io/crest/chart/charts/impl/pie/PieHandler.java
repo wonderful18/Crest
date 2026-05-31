@@ -36,7 +36,7 @@ public class PieHandler extends YoyChartHandler {
     public ChartViewDTO buildChart(ChartViewDTO view, ChartCalcDataResult calcResult, AxisFormatResult formatResult, CustomFilterResult filterResult) {
         ChartViewDTO result = super.buildChart(view, calcResult, formatResult, filterResult);
         filterPositiveData(result, "data", AxisChartDataAntVDTO.class);
-        filterPositiveData(result, "tableRow", Map.class, view.getYAxis().get(0).getDataeaseName());
+        filterPositiveData(result, "tableRow", Map.class, view.getYAxis().get(0).getEngineFieldName());
         return result;
     }
 

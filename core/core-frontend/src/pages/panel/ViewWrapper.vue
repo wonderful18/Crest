@@ -53,7 +53,7 @@ const winMsgHandle = event => {
 }
 
 const checkPer = async resourceId => {
-  if (!window.DataEaseBi || !resourceId) {
+  if (!window.CrestBi || !resourceId) {
     return true
   }
   const request = { busiFlag: embeddedParams.busiFlag, resourceTable: 'core' }
@@ -72,7 +72,7 @@ onBeforeMount(async () => {
 
   let tokenInfo = null
   if (embeddedStore.getToken && !Object.keys((tokenInfo = embeddedStore.getTokenInfo)).length) {
-    const res = await exeRequest.get({ url: '/embedded/getTokenArgs' })
+    const res = await exeRequest.get({ url: '/embedded/token-args' })
     embeddedStore.setTokenInfo(res.data)
     tokenInfo = embeddedStore.getTokenInfo
   }
@@ -133,7 +133,7 @@ onBeforeMount(async () => {
             }
             return false
           })
-        } else if (ele.component === 'DeTabs') {
+        } else if (ele.component === 'Tabs') {
           ele.propValue.forEach(tabItem => {
             return (tabItem.componentData || []).some(itx => {
               if (itx.id === chartId) {
@@ -159,27 +159,27 @@ const userViewEnlargeOpen = opt => {
 
 const onPointClick = param => {
   try {
-    console.info('de_inner_params send')
-    if (window['dataease-embedded-host'] && openHandler?.value) {
+    console.info('crest_inner_params send')
+    if (window['crest-embedded-host'] && openHandler?.value) {
       const pm = {
         methodName: 'embeddedInteractive',
         args: {
-          eventName: 'de_inner_params',
+          eventName: 'crest_inner_params',
           args: param
         }
       }
       openHandler.value.invokeMethod(pm)
     } else {
-      console.info('de_inner_params send to host')
+      console.info('crest_inner_params send to host')
       const targetPm = {
-        type: 'dataease-embedded-interactive',
-        eventName: 'de_inner_params',
+        type: 'crest-embedded-interactive',
+        eventName: 'crest_inner_params',
         args: param
       }
       window.parent.postMessage(targetPm, '*')
     }
   } catch (e) {
-    console.warn('de_inner_params send error')
+    console.warn('crest_inner_params send error')
   }
 }
 const previewViewCanvas = ref(null)
@@ -203,7 +203,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="de-view-wrapper" ref="previewViewCanvas" v-if="!!config && state.initState">
+  <div class="crest-view-wrapper" ref="previewViewCanvas" v-if="!!config && state.initState">
     <ComponentWrapper
       style="width: 100%; height: 100%"
       :scale="state.scale"
@@ -222,7 +222,7 @@ onMounted(() => {
 </template>
 
 <style lang="less" scoped>
-.de-view-wrapper {
+.crest-view-wrapper {
   width: 100%;
   height: 100%;
   position: relative;

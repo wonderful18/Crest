@@ -9,7 +9,7 @@
         <el-button v-if="showValidate" secondary @click="check">{{
           t('datasource.validate')
         }}</el-button>
-        <el-button type="primary" @click="edit">{{ t('commons.edit') }}</el-button>
+        <el-button type="primary" @click="change">{{ t('commons.edit') }}</el-button>
       </div>
     </div>
     <div class="info-template-content">
@@ -46,7 +46,7 @@
             >
               <el-button text @click="copyVal(item.pval)" class="setting-tip-btn">
                 <template #icon>
-                  <Icon name="de-copy"><deCopy class="svg-icon" /></Icon>
+                  <Icon name="copy"><CopyIcon class="svg-icon" /></Icon>
                 </template>
               </el-button>
             </el-tooltip>
@@ -83,7 +83,7 @@
             >
               <el-button text @click="copyVal(item.pval)" class="setting-tip-btn">
                 <template #icon>
-                  <Icon name="de-copy"><deCopy class="svg-icon" /></Icon>
+                  <Icon name="copy"><CopyIcon class="svg-icon" /></Icon>
                 </template>
               </el-button>
             </el-tooltip>
@@ -97,7 +97,7 @@
 import eye from '@/assets/svg/eye.svg'
 import eyeOpen from '@/assets/svg/eye-open.svg'
 import dvInfo from '@/assets/svg/dv-info.svg'
-import deCopy from '@/assets/svg/de-copy.svg'
+import CopyIcon from '@/assets/svg/copy.svg'
 import { ref, PropType, computed } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { SettingRecord, ToolTipRecord } from './SettingTemplate'

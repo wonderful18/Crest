@@ -42,7 +42,7 @@ const submit = () => {
 }
 const errorDetected = ({
   enumValue,
-  deType,
+  fieldType,
   filterType,
   term,
   value,
@@ -63,7 +63,7 @@ const errorDetected = ({
       !term.includes('null') &&
       !term.includes('empty') &&
       ['', null, undefined].includes(value) &&
-      deType !== 1
+      fieldType !== 1
     ) {
       errorMessage.value = t('chart.filter_value_can_null')
       return
@@ -73,13 +73,13 @@ const errorDetected = ({
       !term.includes('null') &&
       !term.includes('empty') &&
       ['', null, undefined].includes(timeValue) &&
-      deType === 1 &&
+      fieldType === 1 &&
       filterTypeTime === 'dynamicDate'
     ) {
       errorMessage.value = t('chart.filter_value_can_null')
       return
     }
-    if ([2, 3].includes(deType)) {
+    if ([2, 3].includes(fieldType)) {
       if (parseFloat(value).toString() === 'NaN') {
         errorMessage.value = t('chart.filter_value_can_not_str')
         return
@@ -176,7 +176,7 @@ const dfsInit = arr => {
         value,
         field
       } = ele
-      const { name, deType } = field || {}
+      const { name, fieldType } = field || {}
       elementList.push({
         enumValue,
         fieldId,
@@ -188,7 +188,7 @@ const dfsInit = arr => {
         dynamicTimeSetting,
         value,
         name,
-        deType
+        fieldType
       })
     }
   })
@@ -221,14 +221,14 @@ const dfsSubmit = arr => {
         dynamicTimeSetting,
         fieldId,
         filterType,
-        deType,
+        fieldType,
         term,
         timeType,
         value,
         name,
         timeValue
       } = ele
-      errorDetected({ deType, enumValue, filterType, term, value, name, timeValue, filterTypeTime })
+      errorDetected({ fieldType, enumValue, filterType, term, value, name, timeValue, filterTypeTime })
       if (fieldId) {
         items.push({
           enumValue: enumValue || [],
@@ -386,7 +386,7 @@ const addCondReal = (type, logic) => {
           timeValue: '',
           filterTypeTime: 'dateValue',
           dynamicTimeSetting: {},
-          deType: ''
+          fieldType: ''
         }
       : { child: [], logic }
   )

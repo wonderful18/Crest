@@ -13,7 +13,7 @@ const form = reactive({
 const load = async () => {
   loading.value = true
   try {
-    const res = await request.get({ url: '/sysParameter/basic/query' })
+    const res = await request.get({ url: '/sys-parameter/basic/list' })
     const item = res.data?.find(ele => ele.pkey === 'basic.siteTitle')
     form.title = item?.pval || 'Crest'
   } finally {
@@ -24,7 +24,7 @@ const load = async () => {
 const save = async () => {
   const title = form.title.trim() || 'Crest'
   await request.post({
-    url: '/sysParameter/basic/save',
+    url: '/sys-parameter/basic/record',
     data: [{ pkey: 'basic.siteTitle', pval: title, type: 'text', sort: 9 }]
   })
   form.title = title
@@ -56,7 +56,7 @@ onMounted(load)
               实际显示为 {{ form.title === 'Crest' ? 'Crest' : `Crest-${form.title || 'Crest'}` }}
             </div>
           </el-form-item>
-          <el-button type="primary" @click="save">保存</el-button>
+          <el-button type="primary" @click="record">保存</el-button>
         </el-form>
       </div>
     </div>

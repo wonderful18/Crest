@@ -6,12 +6,12 @@ import io.crest.api.sync.datasource.dto.DatasourceGridRequest;
 import io.crest.api.sync.datasource.dto.GetDatasourceRequest;
 import io.crest.api.sync.datasource.dto.SyncDatasourceDTO;
 import io.crest.api.sync.datasource.vo.SyncDatasourceVO;
-import io.crest.auth.DeApiPath;
-import io.crest.exception.DEException;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import io.crest.auth.CrestApiPath;
+import io.crest.exception.CrestException;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -22,58 +22,58 @@ import static io.crest.constant.AuthResourceEnum.SYNC_DATASOURCE;
  * @author fit2cloud
  * @date 2023/11/20 10:14
  **/
-@DeApiPath(value = "/sync/datasource", rt = SYNC_DATASOURCE)
+@CrestApiPath(value = "/sync/datasource", rt = SYNC_DATASOURCE)
 public interface SyncDatasourceApi {
 
-    @PostMapping("/source/pager/{goPage}/{pageSize}")
+    @PostMapping("/source/page/{goPage}/{pageSize}")
     IPage<SyncDatasourceVO> sourcePager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody DatasourceGridRequest request);
 
-    @PostMapping("/target/pager/{goPage}/{pageSize}")
+    @PostMapping("/target/page/{goPage}/{pageSize}")
     IPage<SyncDatasourceVO> targetPager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody DatasourceGridRequest request);
 
-    @PostMapping("/save")
-    void save(@RequestBody SyncDatasourceDTO dataSourceDTO) throws DEException;
+    @PostMapping("/record")
+    void save(@RequestBody SyncDatasourceDTO dataSourceDTO) throws CrestException;
 
-    @PostMapping("/update")
-    Map<String, Object> update(@RequestBody SyncDatasourceDTO dataSourceDTO) throws DEException;
+    @PutMapping
+    Map<String, Object> update(@RequestBody SyncDatasourceDTO dataSourceDTO) throws CrestException;
 
-    @PostMapping("/delete/{datasourceId}")
-    void delete(@PathVariable("datasourceId") String datasourceId) throws DEException;
+    @DeleteMapping("/{datasourceId}")
+    void delete(@PathVariable("datasourceId") String datasourceId) throws CrestException;
 
     @GetMapping("/types")
-    Object datasourceTypes() throws DEException;
+    Object datasourceTypes() throws CrestException;
 
     @PostMapping("/validate")
-    String validate(@RequestBody SyncDatasourceDTO dataSourceDTO) throws DEException;
+    String validate(@RequestBody SyncDatasourceDTO dataSourceDTO) throws CrestException;
 
-    @PostMapping("/getSchema")
-    List<String> getSchema(@RequestBody SyncDatasourceDTO dataSourceDTO) throws DEException;
+    @PostMapping("/schemas")
+    List<String> getSchema(@RequestBody SyncDatasourceDTO dataSourceDTO) throws CrestException;
 
     @GetMapping("/validate/{datasourceId}")
-    SyncDatasourceDTO validate(@PathVariable("datasourceId") String datasourceId) throws DEException;
+    SyncDatasourceDTO validate(@PathVariable("datasourceId") String datasourceId) throws CrestException;
 
-    @PostMapping("/latestUse/{sourceType}")
+    @PostMapping("/latest-use/{sourceType}")
     List<String> latestUse(@PathVariable("sourceType") String sourceType);
 
-    @GetMapping("/get/{datasourceId}")
-    SyncDatasourceDTO get(@PathVariable("datasourceId") String datasourceId) throws DEException;
+    @GetMapping("/detail/{datasourceId}")
+    SyncDatasourceDTO get(@PathVariable("datasourceId") String datasourceId) throws CrestException;
 
-    @PostMapping("/batchDel")
-    void batchDel(@RequestBody List<String> ids) throws DEException;
+    @DeleteMapping("/batch")
+    void batchDel(@RequestBody List<String> ids) throws CrestException;
 
     @PostMapping("/fields")
-    Map<String, Object> getFields(@RequestBody GetDatasourceRequest getDsRequest) throws DEException;
+    Map<String, Object> getFields(@RequestBody GetDatasourceRequest getDsRequest) throws CrestException;
 
     @GetMapping("/list/{type}")
-    List<SyncDatasourceDTO> listByType(@PathVariable("type") String type) throws DEException;
+    List<SyncDatasourceDTO> listByType(@PathVariable("type") String type) throws CrestException;
 
     @GetMapping("/table/list/{dsId}")
-    List<DBTableDTO> getTableList(@PathVariable("dsId") String dsId) throws DEException;
+    List<DBTableDTO> getTableList(@PathVariable("dsId") String dsId) throws CrestException;
 
-    @GetMapping("/query2Root/{id}")
+    @GetMapping("/root-path/{id}")
     String query2Root(@PathVariable("id") Long id);
 
-    @GetMapping("/getLogResourceId/{id}")
+    @GetMapping("/log-resource/{id}")
     Long getLogResourceId(@PathVariable("id") String id);
 
 

@@ -9,7 +9,7 @@ export interface ShareInfo {
   ticketRequire?: boolean
 }
 
-export const SHARE_BASE = '/de-link/'
+export const SHARE_BASE = '/link/'
 
 const { t } = useI18n()
 

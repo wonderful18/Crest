@@ -23,7 +23,7 @@ const props = defineProps({
 const { t } = useI18n()
 const interactiveStore = interactiveStoreWithOut()
 
-const busiDataMap = computed(() => interactiveStore.getData)
+const busiDataMap = computed(() => interactiveStore.data)
 const panelKeyword = ref()
 const activeCommand = ref('all_types')
 const state = reactive({
@@ -69,7 +69,7 @@ const loadTableData = () => {
   const queryType = activeCommand.value === 'all_types' ? '' : activeCommand.value
   request
     .post({
-      url: '/share/query',
+      url: '/share/list',
       data: { type: queryType, keyword: panelKeyword.value, asc: !orderDesc.value }
     })
     .then(res => {

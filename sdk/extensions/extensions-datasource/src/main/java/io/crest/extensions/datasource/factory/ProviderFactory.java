@@ -1,6 +1,6 @@
 package io.crest.extensions.datasource.factory;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.plugin.CrestDatasourcePlugin;
 import io.crest.extensions.datasource.provider.Provider;
 import io.crest.extensions.datasource.utils.SpringContextUtil;
@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ProviderFactory {
 
-    public static Provider getProvider(String type) throws DEException {
+    public static Provider getProvider(String type) throws CrestException {
         if (type.equalsIgnoreCase("es")) {
             return SpringContextUtil.getApplicationContext().getBean("esProvider", Provider.class);
         }
@@ -29,7 +29,7 @@ public class ProviderFactory {
         }
         Provider instance = getInstance(type);
         if (instance == null) {
-            DEException.throwException("插件异常，请检查插件");
+            CrestException.throwException("插件异常，请检查插件");
         }
         return instance;
     }
@@ -55,7 +55,7 @@ public class ProviderFactory {
             CrestPluginFactory.loadTemplate(moduleName, plugin);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), new Throwable(e));
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 

@@ -2,7 +2,7 @@ package io.crest.datasource.provider;
 
 
 import io.crest.dataset.utils.TableUtils;
-import io.crest.datasource.dao.auto.entity.CoreDeEngine;
+import io.crest.datasource.dao.auto.entity.CoreEngine;
 import io.crest.datasource.server.DatasourceServer;
 import io.crest.extensions.datasource.dto.TableField;
 import org.apache.commons.lang3.StringUtils;
@@ -45,7 +45,7 @@ public class H2EngineProvider extends EngineProvider {
             for (int i = 0; i < strings.length; i++) {
                 if (tableFields.get(i).isChecked()) {
                     if (StringUtils.isEmpty(strings[i])) {
-                        String type = tableFields.get(i).getType() == null ? tableFields.get(i).getFieldType() : tableFields.get(i).getType();
+                        String type = tableFields.get(i).getType() == null ? tableFields.get(i).getNativeType() : tableFields.get(i).getType();
                         strings1[length] = null;
                     } else {
                         strings1[length] = strings[i].replace("\\", "\\\\").replace("'", "''");
@@ -77,7 +77,7 @@ public class H2EngineProvider extends EngineProvider {
 
 
     @Override
-    public String createTableSql(String tableName, List<TableField> tableFields, CoreDeEngine engine) {
+    public String createTableSql(String tableName, List<TableField> tableFields, CoreEngine engine) {
         validateSqlInjectionRisk(tableName);
         String dorisTableColumnSql = createTableSql(tableFields);
         return creatTableSql.replace("TABLE_NAME", tableName).replace("Column_Fields", dorisTableColumnSql);
@@ -95,7 +95,7 @@ public class H2EngineProvider extends EngineProvider {
             }
             columnFields.append(tableField.getName()).append("\" ");
             int size = tableField.getPrecision() * 4;
-            switch (tableField.getDeExtractType()) {
+            switch (tableField.getExtractedFieldType()) {
                 case 0:
                     if (StringUtils.isNotEmpty(tableField.getLength())) {
                         columnFields.append("varchar(length)".replace("length", tableField.getLength())).append(",\"");

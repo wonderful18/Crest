@@ -3,7 +3,7 @@ import more_v from '@/assets/svg/more_v.svg'
 import icon_add_outlined from '@/assets/svg/icon_add_outlined.svg'
 import icon_drag_outlined from '@/assets/svg/icon_drag_outlined.svg'
 import icon_visible_outlined from '@/assets/svg/icon_visible_outlined.svg'
-import de_pwd_invisible from '@/assets/svg/de_pwd_invisible.svg'
+import passwordInvisible from '@/assets/svg/password-invisible.svg'
 import dvFolder from '@/assets/svg/dv-folder.svg'
 import icon_dataset from '@/assets/svg/icon_dataset.svg'
 import icon_deleteTrash_outlined from '@/assets/svg/icon_delete-trash_outlined.svg'
@@ -41,11 +41,11 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { fieldType } from '@/utils/attr'
 import { ElMessage, ElSelect, ElMessageBox } from 'element-plus-secondary'
 import type { DatasetDetail } from '@/api/dataset'
-import { getDsDetailsWithPerm, getSqlParams, listFieldsWithPermissions } from '@/api/dataset'
+import { getDsDetailsWithPerm, sqlParams, listFieldsWithPermissions } from '@/api/dataset'
 import EmptyBackground from '@/components/empty-background/src/EmptyBackground.vue'
 import TreeFieldDialog from '@/custom-component/v-query/TreeFieldDialog.vue'
 import { cloneDeep } from 'lodash-es'
-import { getDatasetTree } from '@/api/dataset'
+import { datasetTree } from '@/api/dataset'
 import { Tree } from '@/views/visualized/data/dataset/form/CreatDsGroup.vue'
 import draggable from 'vuedraggable'
 import type { ManipulateType } from 'dayjs'
@@ -94,15 +94,15 @@ const datasetMap = {}
 const snapshotStore = snapshotStoreWithOut()
 const dfsComponentData = () => {
   let arr = componentData.value.filter(
-    com => !['VQuery', 'DeTabs'].includes(com.innerType) && com.component !== 'Group'
+    com => !['VQuery', 'Tabs'].includes(com.innerType) && com.component !== 'Group'
   )
   componentData.value.forEach(ele => {
-    if (ele.innerType === 'DeTabs') {
+    if (ele.innerType === 'Tabs') {
       ele.propValue.forEach(itx => {
         arr = [
           ...arr,
           ...itx.componentData.filter(
-            com => !['VQuery', 'DeTabs'].includes(com.innerType) && com.component !== 'Group'
+            com => !['VQuery', 'Tabs'].includes(com.innerType) && com.component !== 'Group'
           )
         ]
 
@@ -111,7 +111,7 @@ const dfsComponentData = () => {
             arr = [
               ...arr,
               j.propValue.filter(
-                com => !['VQuery', 'DeTabs'].includes(com.innerType) && com.component !== 'Group'
+                com => !['VQuery', 'Tabs'].includes(com.innerType) && com.component !== 'Group'
               )
             ]
           }
@@ -121,16 +121,16 @@ const dfsComponentData = () => {
       arr = [
         ...arr,
         ele.propValue.filter(
-          com => !['VQuery', 'DeTabs'].includes(com.innerType) && com.component !== 'Group'
+          com => !['VQuery', 'Tabs'].includes(com.innerType) && com.component !== 'Group'
         )
       ]
       ele.propValue.forEach(element => {
-        if (element.innerType === 'DeTabs') {
+        if (element.innerType === 'Tabs') {
           element.propValue.forEach(itx => {
             arr = [
               ...arr,
               ...itx.componentData.filter(
-                com => !['VQuery', 'DeTabs'].includes(com.innerType) && com.component !== 'Group'
+                com => !['VQuery', 'Tabs'].includes(com.innerType) && com.component !== 'Group'
               )
             ]
           })
@@ -192,7 +192,7 @@ const fields = ref<DatasetDetail[]>()
 
 const { queryElement } = toRefs(props)
 const getDetype = (id, arr) => {
-  return arr.flat().find(ele => ele.id === id)?.deType
+  return arr.flat().find(ele => ele.id === id)?.fieldType
 }
 const showConfiguration = computed(() => {
   if (!curComponent.value) return false
@@ -240,7 +240,7 @@ const showTypeError = computed(() => {
     if (
       !curComponent.value.checkedFieldsMapArrNum?.[id]?.length &&
       ['22', '2'].includes(curComponent.value.displayType) &&
-      curComponent.value.parameters.some(ele => [2, 3].includes(ele.deType)) &&
+      curComponent.value.parameters.some(ele => [2, 3].includes(ele.fieldType)) &&
       curComponent.value.checkedFieldsMap[id]
     ) {
       if (hasParameterNumArrType === 0) {
@@ -262,7 +262,7 @@ const showTypeError = computed(() => {
       displayTypeField = field
       return false
     }
-    if (displayTypeField?.deType === field?.deType && displayTypeField?.deType === 1) {
+    if (displayTypeField?.fieldType === field?.fieldType && displayTypeField?.fieldType === 1) {
       if (!Array.isArray(field.type) || !Array.isArray(displayTypeField.type)) {
         return false
       }
@@ -273,9 +273,9 @@ const showTypeError = computed(() => {
         return true
       }
     }
-    return [2, 3].includes(field?.deType) && [2, 3].includes(displayTypeField.deType)
+    return [2, 3].includes(field?.fieldType) && [2, 3].includes(displayTypeField.fieldType)
       ? false
-      : displayTypeField.deType !== field?.deType
+      : displayTypeField.fieldType !== field?.fieldType
   })
 })
 
@@ -350,7 +350,7 @@ const handleCheckedFieldsChangeTree = (value: string[]) => {
 const isParametersDisable = item => {
   let isDisabled = false
   if (!isNumParameter.value && isTimeParameter.value) {
-    if (notTimeRangeType.value.length && item.deType !== 1) {
+    if (notTimeRangeType.value.length && item.fieldType !== 1) {
       isDisabled = true
     }
   }
@@ -702,7 +702,7 @@ const setParameters = field => {
     }) && +curComponent.value.displayType === 7
   nextTick(() => {
     if (isTimeParameter.value && !notChangeType) {
-      const timeParameter = curComponent.value.parameters.find(ele => ele.deType === 1)
+      const timeParameter = curComponent.value.parameters.find(ele => ele.fieldType === 1)
       curComponent.value.timeGranularity =
         typeTimeMap[timeParameter.type[1] || timeParameter.type[0]]
       curComponent.value.displayType = '1'
@@ -717,7 +717,7 @@ const setParameters = field => {
     if (curComponent.value.displayType === '22') {
       const isNumParameter = curComponent.value.checkedFields.some(ele => {
         return curComponent.value.parameters?.some(
-          itx => [2, 3].includes(itx.deType) && curComponent.value.checkedFieldsMap[ele] === itx.id
+          itx => [2, 3].includes(itx.fieldType) && curComponent.value.checkedFieldsMap[ele] === itx.id
         )
       })
 
@@ -747,18 +747,18 @@ const setType = () => {
       .flat()
       .find(ele => checkId === ele.id)
 
-    if (field?.deType !== undefined) {
+    if (field?.fieldType !== undefined) {
       let displayType = curComponent.value.displayType
-      if (['22'].includes(curComponent.value.displayType) && [2, 3].includes(field?.deType)) {
+      if (['22'].includes(curComponent.value.displayType) && [2, 3].includes(field?.fieldType)) {
         return
       }
       if (['9'].includes(curComponent.value.displayType)) {
         return
       }
-      if (!(field?.deType === 1 && curComponent.value.displayType === '7')) {
-        curComponent.value.displayType = `${[3, 4].includes(field?.deType) ? 2 : field?.deType}`
+      if (!(field?.fieldType === 1 && curComponent.value.displayType === '7')) {
+        curComponent.value.displayType = `${[3, 4].includes(field?.fieldType) ? 2 : field?.fieldType}`
       }
-      if (field?.deType === 7) {
+      if (field?.fieldType === 7) {
         curComponent.value.displayType = '0'
       }
 
@@ -831,7 +831,7 @@ const isTimeParameter = computed(() => {
   return curComponent.value.checkedFields.some(ele => {
     return curComponent.value.parameters?.some(
       itx =>
-        itx.deType === 1 &&
+        itx.fieldType === 1 &&
         !!itx.variableName &&
         curComponent.value.checkedFieldsMap[ele] === itx.id
     )
@@ -840,7 +840,7 @@ const isTimeParameter = computed(() => {
 
 const isNumParameter = computed(() => {
   return curComponent.value.parameters?.some(
-    ele => [2, 3].includes(ele.deType) && !!ele.variableName
+    ele => [2, 3].includes(ele.fieldType) && !!ele.variableName
   )
 })
 
@@ -860,7 +860,7 @@ const canNotNumRange = computed(() => {
   } else {
     return curComponent.value.checkedFields.some(ele => {
       return curComponent.value.parameters?.some(
-        itx => [2, 3].includes(itx.deType) && curComponent.value.checkedFieldsMap[ele] === itx.id
+        itx => [2, 3].includes(itx.fieldType) && curComponent.value.checkedFieldsMap[ele] === itx.id
       )
     })
   }
@@ -913,7 +913,7 @@ const typeTimeMap = {
 const timeParameterList = computed(() => {
   if (!isTimeParameter.value) return timeList
   const [year, y] = curComponent.value.parameters?.filter(
-    ele => ele.deType === 1 && !!ele.variableName
+    ele => ele.fieldType === 1 && !!ele.variableName
   )[0].type
   let stopPush = false
   return timeList.reduce((pre, ele) => {
@@ -933,7 +933,7 @@ const cancelClick = () => {
 }
 
 const initDataset = () => {
-  getDatasetTree({}).then(res => {
+  datasetTree({}).then(res => {
     const result = (res as unknown as Tree[]) || []
     if (result[0]?.id === '0') {
       sortTypeChange(dfs(result[0].children))
@@ -1195,9 +1195,9 @@ const openCascadeDialog = () => {
         name: next.name,
         queryId: next.id,
         fieldId: fieldId,
-        deType: (datasetMap[next.dataset.id]?.fields?.dimensionList || next.dataset.fields).find(
+        fieldType: (datasetMap[next.dataset.id]?.fields?.dimensionList || next.dataset.fields).find(
           ele => ele.id === fieldId
-        )?.deType
+        )?.fieldType
       }
       return pre
     }, {})
@@ -1375,7 +1375,7 @@ const validate = () => {
           displayTypeField = field
           return false
         }
-        if (displayTypeField?.deType === field?.deType && displayTypeField?.deType === 1) {
+        if (displayTypeField?.fieldType === field?.fieldType && displayTypeField?.fieldType === 1) {
           if (!Array.isArray(field.type) || !Array.isArray(displayTypeField.type)) {
             return false
           }
@@ -1393,7 +1393,7 @@ const validate = () => {
             }
           }
         }
-        return displayTypeField.deType !== field?.deType
+        return displayTypeField.fieldType !== field?.fieldType
       })
     ) {
       ElMessage.error(errorTips)
@@ -1618,9 +1618,9 @@ const confirmClick = () => {
 const fieldsComputed = computed(() => {
   return curComponent.value.dataset.fields.filter(ele => {
     return (
-      ele.deType === +curComponent.value.displayType ||
-      ([0, 2, 3, 4].includes(ele.deType) && [0, 2].includes(+curComponent.value.displayType)) ||
-      (ele.deType === 7 && +curComponent.value.displayType === 0)
+      ele.fieldType === +curComponent.value.displayType ||
+      ([0, 2, 3, 4].includes(ele.fieldType) && [0, 2].includes(+curComponent.value.displayType)) ||
+      (ele.fieldType === 7 && +curComponent.value.displayType === 0)
     )
   })
 })
@@ -1712,7 +1712,7 @@ const init = (queryId: string) => {
   }
   const params = [...new Set(datasetFieldList.value.map(ele => ele.tableId).filter(ele => !!ele))]
   if (!params.length) return
-  Promise.all([getDsDetailsWithPerm(params), getSqlParams(params)])
+  Promise.all([getDsDetailsWithPerm(params), sqlParams(params)])
     .then(([dq, p]) => {
       dq.filter(ele => !!ele).forEach(ele => {
         ele.activelist = 'dimensionList'
@@ -1981,7 +1981,7 @@ const sortComputed = computed(() => {
 const treeDialog = ref()
 const startTreeDesign = () => {
   treeDialog.value.init(
-    curComponent.value.dataset.fields.filter(ele => ele.groupType === 'd' && ele.deType === 0),
+    curComponent.value.dataset.fields.filter(ele => ele.groupType === 'd' && ele.fieldType === 0),
     curComponent.value.treeFieldList
   )
 }
@@ -2478,7 +2478,7 @@ defineExpose({
                     @click.stop="element.visible = !element.visible"
                     v-else
                   >
-                    <Icon name="de_pwd_invisible"><de_pwd_invisible class="svg-icon" /></Icon>
+                    <Icon name="password-invisible"><passwordInvisible class="svg-icon" /></Icon>
                   </el-icon>
                 </div>
                 <div @click.stop v-if="activeConditionForRename.id === element.id" class="rename">
@@ -2637,11 +2637,11 @@ defineExpose({
                   >
                     <div class="flex-align-center icon">
                       <el-icon>
-                        <Icon :className="`field-icon-${fieldType[ele.deType]}`"
+                        <Icon :className="`field-icon-${fieldType[ele.fieldType]}`"
                           ><component
                             class="svg-icon"
-                            :class="`field-icon-${fieldType[ele.deType]}`"
-                            :is="iconFieldMap[fieldType[ele.deType]]"
+                            :class="`field-icon-${fieldType[ele.fieldType]}`"
+                            :is="iconFieldMap[fieldType[ele.fieldType]]"
                           ></component
                         ></Icon>
                       </el-icon>
@@ -2739,15 +2739,15 @@ defineExpose({
                     :key="ele.id"
                     :label="ele.name || ele.variableName"
                     :value="ele.id"
-                    :disabled="![2, 3].includes(ele.deType)"
+                    :disabled="![2, 3].includes(ele.fieldType)"
                   >
                     <div class="flex-align-center icon">
                       <el-icon>
-                        <Icon :className="`field-icon-${fieldType[ele.deType]}`"
+                        <Icon :className="`field-icon-${fieldType[ele.fieldType]}`"
                           ><component
                             class="svg-icon"
-                            :class="`field-icon-${fieldType[ele.deType]}`"
-                            :is="iconFieldMap[fieldType[ele.deType]]"
+                            :class="`field-icon-${fieldType[ele.fieldType]}`"
+                            :is="iconFieldMap[fieldType[ele.fieldType]]"
                           ></component
                         ></Icon>
                       </el-icon>
@@ -2837,7 +2837,7 @@ defineExpose({
                     :value="ele.id"
                     :disabled="
                       ele.desensitized ||
-                      (curComponent.displayType === '9' && ele.deType === 1) ||
+                      (curComponent.displayType === '9' && ele.fieldType === 1) ||
                       isParametersDisable(ele)
                     "
                   >
@@ -2846,11 +2846,11 @@ defineExpose({
                       :title="ele.desensitized ? t('v_query.as_query_conditions') : ''"
                     >
                       <el-icon>
-                        <Icon :className="`field-icon-${fieldType[ele.deType]}`"
+                        <Icon :className="`field-icon-${fieldType[ele.fieldType]}`"
                           ><component
                             class="svg-icon"
-                            :class="`field-icon-${fieldType[ele.deType]}`"
-                            :is="iconFieldMap[fieldType[ele.deType]]"
+                            :class="`field-icon-${fieldType[ele.fieldType]}`"
+                            :is="iconFieldMap[fieldType[ele.fieldType]]"
                           ></component
                         ></Icon>
                       </el-icon>
@@ -3059,9 +3059,9 @@ defineExpose({
                       ><el-icon>
                         <Icon
                           ><component
-                            :class="`field-icon-${fieldType[ele.deType]}`"
+                            :class="`field-icon-${fieldType[ele.fieldType]}`"
                             class="svg-icon"
-                            :is="iconFieldMap[fieldType[ele.deType]]"
+                            :is="iconFieldMap[fieldType[ele.fieldType]]"
                           ></component
                         ></Icon> </el-icon
                     ></span>
@@ -3207,9 +3207,9 @@ defineExpose({
                       <el-option
                         v-for="ele in curComponent.dataset.fields.filter(
                           ele =>
-                            ele.deType === +curComponent.displayType ||
-                            ([3, 4].includes(ele.deType) && +curComponent.displayType === 2) ||
-                            (ele.deType === 7 && +curComponent.displayType === 0)
+                            ele.fieldType === +curComponent.displayType ||
+                            ([3, 4].includes(ele.fieldType) && +curComponent.displayType === 2) ||
+                            (ele.fieldType === 7 && +curComponent.displayType === 0)
                         )"
                         :key="ele.id"
                         :label="ele.name"
@@ -3221,11 +3221,11 @@ defineExpose({
                           :title="ele.desensitized ? t('v_query.as_query_conditions') : ''"
                         >
                           <el-icon>
-                            <Icon :className="`field-icon-${fieldType[ele.deType]}`"
+                            <Icon :className="`field-icon-${fieldType[ele.fieldType]}`"
                               ><component
                                 class="svg-icon"
-                                :class="`field-icon-${fieldType[ele.deType]}`"
-                                :is="iconFieldMap[fieldType[ele.deType]]"
+                                :class="`field-icon-${fieldType[ele.fieldType]}`"
+                                :is="iconFieldMap[fieldType[ele.fieldType]]"
                               ></component
                             ></Icon>
                           </el-icon>
@@ -3279,11 +3279,11 @@ defineExpose({
                           :title="ele.desensitized ? t('v_query.as_query_conditions') : ''"
                         >
                           <el-icon>
-                            <Icon :className="`field-icon-${fieldType[ele.deType]}`"
+                            <Icon :className="`field-icon-${fieldType[ele.fieldType]}`"
                               ><component
                                 class="svg-icon"
-                                :class="`field-icon-${fieldType[ele.deType]}`"
-                                :is="iconFieldMap[fieldType[ele.deType]]"
+                                :class="`field-icon-${fieldType[ele.fieldType]}`"
+                                :is="iconFieldMap[fieldType[ele.fieldType]]"
                               ></component
                             ></Icon>
                           </el-icon>
@@ -3340,9 +3340,9 @@ defineExpose({
                             <el-icon>
                               <Icon
                                 ><component
-                                  :class="`field-icon-${fieldType[ele.deType]}`"
+                                  :class="`field-icon-${fieldType[ele.fieldType]}`"
                                   class="svg-icon"
-                                  :is="iconFieldMap[fieldType[ele.deType]]"
+                                  :is="iconFieldMap[fieldType[ele.fieldType]]"
                                 ></component
                               ></Icon>
                             </el-icon>
@@ -3615,7 +3615,7 @@ defineExpose({
   }
 }
 .dataset-parameters {
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   font-style: normal;
   font-weight: 400;
   .ed-select-dropdown__item {
@@ -3660,7 +3660,7 @@ defineExpose({
   }
   .container {
     font-size: 14px;
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     width: 1152px;
     height: 454px;
     border-radius: 6px;
@@ -3683,7 +3683,7 @@ defineExpose({
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 14px;
         font-style: normal;
         font-weight: 500;
@@ -3761,7 +3761,7 @@ defineExpose({
       }
 
       .title {
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 14px;
         font-style: normal;
         font-weight: 500;
@@ -3853,7 +3853,7 @@ defineExpose({
         color: #646a73;
         height: 16px;
         padding: 0px 4px;
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 10px;
         font-style: normal;
         font-weight: 500;
@@ -3882,7 +3882,7 @@ defineExpose({
       }
       .title {
         margin-bottom: 16px;
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 14px;
         font-style: normal;
         font-weight: 500;
@@ -4001,7 +4001,7 @@ defineExpose({
                 border-radius: 0;
                 box-shadow: none;
                 height: 26px;
-                font-family: var(--de-custom_font, 'PingFang');
+                font-family: var(--crest-custom_font, 'PingFang');
                 word-wrap: break-word;
                 text-align: left;
                 color: rgba(0, 0, 0, 0.65);

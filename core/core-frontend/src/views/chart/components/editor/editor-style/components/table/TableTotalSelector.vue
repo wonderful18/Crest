@@ -101,11 +101,11 @@ const initSubTotalDimensionList = () => {
       //排除最后一个
       const old = includes(
         state.tableTotalForm.row.subTotalsDimensions,
-        props.chart.xAxis[i].dataeaseName
+        props.chart.xAxis[i].engineFieldName
       )
       list.push({
         displayName: props.chart.xAxis[i].name,
-        name: props.chart.xAxis[i].dataeaseName,
+        name: props.chart.xAxis[i].engineFieldName,
         checked: !!state.tableTotalForm.row.subTotalsDimensionsNew ? old : true
       })
     }
@@ -144,12 +144,12 @@ const init = () => {
   }
   const yAxis = props.chart.yAxis
   if (yAxis?.length > 0) {
-    const axisArr = yAxis.map(i => i.dataeaseName)
+    const axisArr = yAxis.map(i => i.engineFieldName)
     if (axisArr.indexOf(state.tableTotalForm.row.totalSortField) === -1) {
-      state.tableTotalForm.row.totalSortField = yAxis[0].dataeaseName
+      state.tableTotalForm.row.totalSortField = yAxis[0].engineFieldName
     }
     if (axisArr.indexOf(state.tableTotalForm.col.totalSortField) === -1) {
-      state.tableTotalForm.col.totalSortField = yAxis[0].dataeaseName
+      state.tableTotalForm.col.totalSortField = yAxis[0].engineFieldName
     }
   } else {
     state.tableTotalForm.row.totalSortField = ''
@@ -173,16 +173,16 @@ const init = () => {
   totalTupleArr.forEach(tuple => {
     const [total, totalCfg] = tuple
     if (!totalCfg.length) {
-      total.dataeaseName = ''
+      total.engineFieldName = ''
       total.aggregation = ''
       total.originName = ''
       return
     }
-    const totalIndex = totalCfg.findIndex(i => i.dataeaseName === total.dataeaseName)
+    const totalIndex = totalCfg.findIndex(i => i.engineFieldName === total.engineFieldName)
     if (totalIndex !== -1) {
       total.aggregation = totalCfg[totalIndex].aggregation
     } else {
-      total.dataeaseName = totalCfg[0].dataeaseName
+      total.engineFieldName = totalCfg[0].engineFieldName
       total.aggregation = totalCfg[0].aggregation
       total.originName = totalCfg[0].originName
       total.label = totalCfg[0].label
@@ -198,7 +198,7 @@ const showProperty = prop => props.propertyInner?.includes(prop)
 const changeTotal = (totalItem, totals) => {
   for (let i = 0; i < totals.length; i++) {
     const item = totals[i]
-    if (item.dataeaseName === totalItem.dataeaseName) {
+    if (item.engineFieldName === totalItem.engineFieldName) {
       totalItem.aggregation = item.aggregation
       totalItem.originName = item.originName
       totalItem.label = item.label
@@ -209,7 +209,7 @@ const changeTotal = (totalItem, totals) => {
 const changeTotalAggr = (totalItem, totals, colOrNum) => {
   for (let i = 0; i < totals.length; i++) {
     const item = totals[i]
-    if (item.dataeaseName === totalItem.dataeaseName) {
+    if (item.engineFieldName === totalItem.engineFieldName) {
       item.aggregation = totalItem.aggregation
       item.label = totalItem.label
       break
@@ -224,7 +224,7 @@ const setupTotalCfg = (totalCfg, axis) => {
   if (!totalCfg.length) {
     axis.forEach(i => {
       totalCfg.push({
-        dataeaseName: i.dataeaseName,
+        engineFieldName: i.engineFieldName,
         aggregation: 'SUM',
         label: i.chartShowName ?? i.name
       })
@@ -236,17 +236,17 @@ const setupTotalCfg = (totalCfg, axis) => {
     return
   }
   const cfgMap = totalCfg.reduce((p, n) => {
-    p[n.dataeaseName] = n
+    p[n.engineFieldName] = n
     return p
   }, {})
   totalCfg.splice(0, totalCfg.length)
   axis.forEach(i => {
     totalCfg.push({
-      dataeaseName: i.dataeaseName,
-      aggregation: cfgMap[i.dataeaseName] ? cfgMap[i.dataeaseName].aggregation : 'SUM',
-      originName: cfgMap[i.dataeaseName] ? cfgMap[i.dataeaseName].originName : '',
-      label: cfgMap[i.dataeaseName]?.label
-        ? cfgMap[i.dataeaseName].label
+      engineFieldName: i.engineFieldName,
+      aggregation: cfgMap[i.engineFieldName] ? cfgMap[i.engineFieldName].aggregation : 'SUM',
+      originName: cfgMap[i.engineFieldName] ? cfgMap[i.engineFieldName].originName : '',
+      label: cfgMap[i.engineFieldName]?.label
+        ? cfgMap[i.engineFieldName].label
         : i.chartShowName ?? i.name
     })
   })
@@ -274,7 +274,7 @@ const confirmEditCalc = () => {
   calcEdit.value.setFieldForm()
   const obj = cloneDeep(calcEdit.value.fieldForm)
   state.totalCfg?.forEach(item => {
-    if (item.dataeaseName === obj.dataeaseName) {
+    if (item.engineFieldName === obj.engineFieldName) {
       item.originName = obj.originName
       setFieldDefaultValue(item)
       state.totalItem.originName = item.originName
@@ -289,7 +289,7 @@ const setFieldDefaultValue = field => {
   field.datasetGroupId = props.chart.tableId
   field.lastSyncTime = null
   field.columnIndex = dimension().length + quota().length
-  field.deExtractType = field.deType
+  field.extractedFieldType = field.fieldType
 }
 onMounted(() => {
   init()
@@ -357,15 +357,15 @@ onMounted(() => {
         <el-col :span="11">
           <el-select
             :effect="themes"
-            v-model="state.rowTotalItem.dataeaseName"
+            v-model="state.rowTotalItem.engineFieldName"
             :placeholder="t('chart.aggregation')"
             @change="changeTotal(state.rowTotalItem, state.tableTotalForm.row.calcTotals.cfg)"
           >
             <el-option
               v-for="option in chart.yAxis"
-              :key="option.dataeaseName"
+              :key="option.engineFieldName"
               :label="option.name"
-              :value="option.dataeaseName"
+              :value="option.engineFieldName"
             />
           </el-select>
         </el-col>
@@ -457,9 +457,9 @@ onMounted(() => {
         >
           <el-option
             v-for="option in chart.yAxis"
-            :key="option.dataeaseName"
+            :key="option.engineFieldName"
             :label="option.name"
-            :value="option.dataeaseName"
+            :value="option.engineFieldName"
           />
         </el-select>
       </el-form-item>
@@ -555,16 +555,16 @@ onMounted(() => {
         <el-col :span="11">
           <el-select
             :effect="themes"
-            v-model="state.rowSubTotalItem.dataeaseName"
+            v-model="state.rowSubTotalItem.engineFieldName"
             :disabled="chart.xAxis.length < 2"
             :placeholder="t('chart.aggregation')"
             @change="changeTotal(state.rowSubTotalItem, state.tableTotalForm.row.calcSubTotals.cfg)"
           >
             <el-option
               v-for="option in chart.yAxis"
-              :key="option.dataeaseName"
+              :key="option.engineFieldName"
               :label="option.name"
-              :value="option.dataeaseName"
+              :value="option.engineFieldName"
             />
           </el-select>
         </el-col>
@@ -664,15 +664,15 @@ onMounted(() => {
         <el-col :span="11">
           <el-select
             :effect="themes"
-            v-model="state.colTotalItem.dataeaseName"
+            v-model="state.colTotalItem.engineFieldName"
             :placeholder="t('chart.aggregation')"
             @change="changeTotal(state.colTotalItem, state.tableTotalForm.col.calcTotals.cfg)"
           >
             <el-option
               v-for="option in chart.yAxis"
-              :key="option.dataeaseName"
+              :key="option.engineFieldName"
               :label="option.name"
-              :value="option.dataeaseName"
+              :value="option.engineFieldName"
             />
           </el-select>
         </el-col>
@@ -763,9 +763,9 @@ onMounted(() => {
         >
           <el-option
             v-for="option in chart.yAxis"
-            :key="option.dataeaseName"
+            :key="option.engineFieldName"
             :label="option.name"
-            :value="option.dataeaseName"
+            :value="option.engineFieldName"
           />
         </el-select>
       </el-form-item>
@@ -825,16 +825,16 @@ onMounted(() => {
         <el-col :span="11">
           <el-select
             :effect="themes"
-            v-model="state.colSubTotalItem.dataeaseName"
+            v-model="state.colSubTotalItem.engineFieldName"
             :disabled="chart.xAxisExt?.length < 2"
             :placeholder="t('chart.aggregation')"
             @change="changeTotal(state.colSubTotalItem, state.tableTotalForm.col.calcSubTotals.cfg)"
           >
             <el-option
               v-for="option in chart.yAxis"
-              :key="option.dataeaseName"
+              :key="option.engineFieldName"
               :label="option.name"
-              :value="option.dataeaseName"
+              :value="option.engineFieldName"
             />
           </el-select>
         </el-col>

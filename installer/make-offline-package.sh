@@ -92,8 +92,8 @@ mkdir -p "${PACKAGE_DIR}/images"
 
 log "Pin install.conf image names"
 sed -i.bak \
-  -e "s#^DE_APP_IMAGE=.*#DE_APP_IMAGE=${APP_IMAGE}#g" \
-  -e "s#^DE_MYSQL_IMAGE=.*#DE_MYSQL_IMAGE=${MYSQL_IMAGE}#g" \
+  -e "s#^CREST_APP_IMAGE=.*#CREST_APP_IMAGE=${APP_IMAGE}#g" \
+  -e "s#^CREST_MYSQL_IMAGE=.*#CREST_MYSQL_IMAGE=${MYSQL_IMAGE}#g" \
   "${PACKAGE_DIR}/install.conf"
 rm -f "${PACKAGE_DIR}/install.conf.bak"
 
@@ -124,11 +124,11 @@ bash install.sh
 
 安装前可按需调整 \`install.conf\`：
 
-- \`DE_PORT\`：Web 访问端口，默认 8100
-- \`DE_RUN_BASE\`：数据、日志和配置持久化目录
-- \`DE_APP_IMAGE\`：Crest 应用镜像，已固定为本包内镜像
-- \`DE_MYSQL_IMAGE\`：MySQL 镜像，已固定为本包内镜像
-- \`DE_INITIAL_PASSWORD\`：管理员初始密码；留空时安装脚本会随机生成并在安装完成后输出
+- \`CREST_PORT\`：Web 访问端口，默认 8100
+- \`CREST_RUN_BASE\`：数据、日志和配置持久化目录
+- \`CREST_APP_IMAGE\`：Crest 应用镜像，已固定为本包内镜像
+- \`CREST_MYSQL_IMAGE\`：MySQL 镜像，已固定为本包内镜像
+- \`CREST_INITIAL_PASSWORD\`：管理员初始密码；留空时安装脚本会随机生成并在安装完成后输出
 
 ## 镜像
 

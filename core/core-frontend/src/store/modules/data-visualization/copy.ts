@@ -225,7 +225,7 @@ function deepCopyHelper(data, idMap) {
     })
   }
   // 深度拷贝Tab
-  if (result.component === 'DeTabs') {
+  if (result.component === 'Tabs') {
     result.propValue.forEach(tabItem => {
       tabItem.componentData?.forEach((tabComponent, i) => {
         tabItem.componentData[i] = deepCopyHelper(tabComponent, idMap)

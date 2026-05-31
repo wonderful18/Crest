@@ -8,7 +8,7 @@ import { Plus, Search } from '@element-plus/icons-vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { useAppStoreWithOut } from '@/store/modules/app'
 import _ from 'lodash'
-import { getDatasetTree, getDatasourceList } from '@/api/dataset'
+import { datasetTree, datasourceList } from '@/api/dataset'
 import { ElFormItem, FormInstance } from 'element-plus-secondary'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { useCache } from '@/hooks/web/useCache'
@@ -67,7 +67,7 @@ const sortTypeChange = arr => {
 
 const initDataset = () => {
   loadingDatasetTree.value = true
-  const method = props.sourceType === 'datasource' ? getDatasourceList : getDatasetTree
+  const method = props.sourceType === 'datasource' ? datasourceList : datasetTree
   const params = props.sourceType === 'datasource' ? null : {}
   ;(method as any)(params)
     .then(res => {
@@ -251,7 +251,7 @@ const handleFocus = () => {
 
 defineExpose({ getNode })
 const appStore = useAppStoreWithOut()
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi || appStore.getIsIframe)
+const isCrestBi = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
 onMounted(() => {
   initDataset()
   useEmitt({
@@ -368,7 +368,7 @@ onMounted(() => {
               </el-tree>
             </el-scrollbar>
           </el-main>
-          <el-footer v-if="!isDataEaseBi">
+          <el-footer v-if="!isCrestBi">
             <div class="footer-container">
               <el-button
                 type="primary"

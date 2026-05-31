@@ -13,7 +13,7 @@ import java.io.Serializable;
  * @author fit2cloud
  * @since 2023-04-18
  */
-@TableName("core_driver")
+@TableName("data_source_driver")
 public class CoreDriver implements Serializable {
 
     private static final long serialVersionUID = 1L;

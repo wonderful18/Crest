@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia'
 import { nextTick, onMounted, reactive, ref } from 'vue'
 import { DEFAULT_COLOR_CASE } from '@/views/chart/components/editor/util/chart'
 import { useI18n } from '@/hooks/web/useI18n'
-import DeSlider from '@/components/dashboard/subject-setting/pre-subject/Slider.vue'
+import Slider from '@/components/dashboard/subject-setting/pre-subject/Slider.vue'
 import OverallSetting from '@/components/dashboard/subject-setting/dashboard-style/OverallSetting.vue'
 import ComponentColorSelector from '@/components/dashboard/subject-setting/dashboard-style/ComponentColorSelector.vue'
 import { adaptCurThemeCommonStyleAll } from '@/utils/canvasStyle'
@@ -118,7 +118,7 @@ const saveSelfSubject = () => {
     <el-row>
       <el-collapse v-model="canvasAttrActiveNames">
         <el-collapse-item :title="t('components.dashboard_style')" name="style">
-          <de-slider ref="slider" />
+          <Slider ref="slider" />
           <el-button class="button-panel__style" text size="small" @click="saveSelfSubject">
             {{ $t('commons.save') }}
           </el-button>

@@ -4,11 +4,11 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.crest.api.sync.task.dto.TaskLogGridRequest;
 import io.crest.api.sync.task.vo.LogResultVO;
 import io.crest.api.sync.task.vo.TaskLogVO;
-import io.crest.auth.DeApiPath;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import io.crest.auth.CrestApiPath;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Hidden;
 
 import java.util.Map;
@@ -20,36 +20,36 @@ import static io.crest.constant.AuthResourceEnum.TASK;
  * @date 2023/12/4 12:43
  **/
 @Hidden
-@DeApiPath(value = "/sync/task/log", rt = TASK)
+@CrestApiPath(value = "/sync/task/log", rt = TASK)
 public interface TaskLogApi {
-    @PostMapping("/pager/{goPage}/{pageSize}")
+    @PostMapping("/page/{goPage}/{pageSize}")
     IPage<TaskLogVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody TaskLogGridRequest request);
 
     @GetMapping("/detail/{logId}/{fromLineNum}")
     LogResultVO logDetail(@PathVariable("logId") String logId, @PathVariable("fromLineNum") int fromLineNum);
 
-    @PostMapping("/save")
+    @PostMapping("/record")
     void saveLog(@RequestBody TaskLogVO logDetail);
 
-    @PostMapping("/update")
+    @PutMapping
     void updateLog(@RequestBody TaskLogVO logDetail);
 
-    @PostMapping("/deleteByJobId/{jobId}")
+    @DeleteMapping("/jobs/{jobId}")
     void deleteByJobId(@PathVariable("jobId") String jobId);
 
-    @PostMapping("/delete/{logId}")
+    @DeleteMapping("/{logId}")
     void deleteById(@PathVariable("logId") String logId);
 
     @PostMapping("/clear")
     void clearJobLog(@RequestBody TaskLogVO taskLogVO);
 
-    @PostMapping("terminationTask/{logId}")
+    @PostMapping("termination/{logId}")
     void terminationTask(@PathVariable("logId") String logId);
 
-    @GetMapping("/getLogResourceId")
+    @GetMapping("/log-resource")
     Long getLogResourceId(@PathVariable("params") Map<String, String> params);
 
-    @GetMapping("/query2Root")
+    @GetMapping("/root-path")
     String query2Root(@PathVariable("params") Map<String, String> params);
 
 }

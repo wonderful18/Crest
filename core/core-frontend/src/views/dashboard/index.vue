@@ -8,12 +8,12 @@ import router from '@/router'
 import { useAppStoreWithOut } from '@/store/modules/app'
 import DbToolbar from '@/components/dashboard/DbToolbar.vue'
 import ViewEditor from '@/views/chart/components/editor/index.vue'
-import { getDatasetTree } from '@/api/dataset'
+import { datasetTree } from '@/api/dataset'
 import { Tree } from '@/views/visualized/data/dataset/form/CreatDsGroup.vue'
 import DbCanvasAttr from '@/components/dashboard/DbCanvasAttr.vue'
 import { decompressionPre, initCanvasData, onInitReady } from '@/utils/canvasUtils'
 import ChartStyleBatchSet from '@/views/chart/components/editor/editor-style/ChartStyleBatchSet.vue'
-import DeCanvas from '@/views/canvas/DeCanvas.vue'
+import CanvasRenderer from '@/views/canvas/CanvasRenderer.vue'
 import { check, compareStorage } from '@/utils/CrossPermission'
 import { useCache } from '@/hooks/web/useCache'
 import { useEmbedded } from '@/store/modules/embedded'
@@ -36,7 +36,7 @@ const contextmenuStore = contextmenuStoreWithOut()
 const embeddedStore = useEmbedded()
 const { wsCache } = useCache()
 const canvasCacheOutRef = ref(null)
-const deCanvasRef = ref(null)
+const canvasRendererRef = ref(null)
 const eventCheck = e => {
   if (e.key === 'panel-weight' && !compareStorage(e.oldValue, e.newValue)) {
     const resourceId = embeddedStore.resourceId || router.currentRoute.value.query.resourceId
@@ -64,7 +64,7 @@ const {
 } = storeToRefs(dvMainStore)
 const dataInitState = ref(false)
 const appStore = useAppStoreWithOut()
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi)
+const isCrestBi = computed(() => appStore.getIsCrestBi)
 const { t } = useI18n()
 
 const state = reactive({
@@ -76,7 +76,7 @@ const state = reactive({
 })
 
 const initDataset = () => {
-  getDatasetTree({}).then(res => {
+  datasetTree({}).then(res => {
     state.datasetTree = (res as unknown as Tree[]) || []
   })
 }
@@ -108,7 +108,7 @@ const viewEditorShow = computed(() => {
   )
 })
 const checkPer = async resourceId => {
-  if (!window.DataEaseBi || !resourceId) {
+  if (!window.CrestBi || !resourceId) {
     return true
   }
   const request = { busiFlag: 'dashboard', resourceTable: 'core' }
@@ -120,7 +120,7 @@ const loadFinish = ref(false)
 const newWindowFromDiv = ref(false)
 
 const doUseCache = flag => {
-  const canvasCache = wsCache.get('DE-DV-CATCH-' + state.resourceId)
+  const canvasCache = wsCache.get('CREST-DV-CACHE-' + state.resourceId)
   if (flag && canvasCache) {
     const canvasCacheSeries = deepCopy(canvasCache)
     snapshotStore.snapshotPublish(canvasCacheSeries)
@@ -132,7 +132,7 @@ const doUseCache = flag => {
     }, 1500)
   } else {
     initLocalCanvasData()
-    wsCache.delete('DE-DV-CATCH-' + state.resourceId)
+    wsCache.delete('CREST-DV-CACHE-' + state.resourceId)
   }
 }
 
@@ -187,7 +187,7 @@ onMounted(async () => {
   state.resourceId = resourceId
   if (resourceId) {
     dataInitState.value = false
-    const canvasCache = wsCache.get('DE-DV-CATCH-' + resourceId)
+    const canvasCache = wsCache.get('CREST-DV-CACHE-' + resourceId)
     if (canvasCache) {
       canvasCacheOutRef.value?.dialogInit({ canvasType: 'dashboard', resourceId: resourceId })
     } else {
@@ -206,13 +206,13 @@ onMounted(async () => {
     } catch (e) {
       console.error('can not find watermark info')
     }
-    let deTemplateData
+    let templatePayload
     let preName
     if (createType === 'template') {
       const templateParamsApply = JSON.parse(Base64.decode(decodeURIComponent(templateParams + '')))
       await decompressionPre(templateParamsApply, result => {
-        deTemplateData = result
-        preName = deTemplateData.baseInfo?.preName
+        templatePayload = result
+        preName = templatePayload.baseInfo?.preName
       })
     }
     nextTick(() => {
@@ -220,10 +220,10 @@ onMounted(async () => {
       // 从模板新建
       if (createType === 'template') {
         wsCache.delete('de-template-data')
-        dvMainStore.setComponentData(deTemplateData['componentData'])
-        dvMainStore.setCanvasStyle(deTemplateData['canvasStyleData'])
-        dvMainStore.setCanvasViewInfo(deTemplateData['canvasViewInfo'])
-        dvMainStore.setAppDataInfo(deTemplateData['appData'])
+        dvMainStore.setComponentData(templatePayload['componentData'])
+        dvMainStore.setCanvasStyle(templatePayload['canvasStyleData'])
+        dvMainStore.setCanvasViewInfo(templatePayload['canvasViewInfo'])
+        dvMainStore.setAppDataInfo(templatePayload['appData'])
         setTimeout(() => {
           snapshotStore.recordSnapshotCache('template')
         }, 1500)
@@ -261,13 +261,13 @@ const dashboardComponentData = computed(() =>
 )
 
 const cancelHidden = item => {
-  if (deCanvasRef.value) {
+  if (canvasRendererRef.value) {
     if (!(lastHiddenComponent.value?.length && lastHiddenComponent.value.includes(item.id))) {
       item.y = undefined
     }
-    deCanvasRef.value.addItemBox(item)
+    canvasRendererRef.value.addItemBox(item)
     nextTick(() => {
-      deCanvasRef.value.canvasInit(false)
+      canvasRendererRef.value.canvasInit(false)
     })
     snapshotStore.recordSnapshotCache('cancelHidden')
   }
@@ -281,7 +281,7 @@ const doRecoverToPublished = () => {
       state.opt = null
       initLocalCanvasData(() => {
         nextTick(() => {
-          deCanvasRef.value.canvasInit(false)
+          canvasRendererRef.value.canvasInit(false)
           dvMainStore.updateDvInfoCall(1)
           useEmitt().emitter.emit('calcData-all')
         })
@@ -300,7 +300,7 @@ onUnmounted(() => {
 <template>
   <div
     class="dv-common-layout dv-teleport-query"
-    :class="isDataEaseBi && !newWindowFromDiv && 'dataease-w-h'"
+    :class="isCrestBi && !newWindowFromDiv && 'crest-w-h'"
     v-loading="requestStore.loadingMap[permissionStore.currentPath]"
     v-if="loadFinish"
   >
@@ -311,17 +311,17 @@ onUnmounted(() => {
       element-loading-background="rgba(0, 0, 0, 0)"
     >
       <!-- 中间画布 -->
-      <main class="center" :class="{ 'de-screen-full': fullscreenFlag }">
-        <de-canvas
+      <main class="center" :class="{ 'screen-full': fullscreenFlag }">
+        <CanvasRenderer
           style="overflow-x: hidden"
           v-if="dataInitState"
-          ref="deCanvasRef"
+          ref="canvasRendererRef"
           :canvas-id="state.canvasId"
           :component-data="dashboardComponentData"
           :canvas-style-data="canvasStyleData"
           :canvas-view-info="canvasViewInfo"
           :font-family="canvasStyleData.fontFamily"
-        ></de-canvas>
+        ></CanvasRenderer>
       </main>
       <!-- 右侧侧组件列表 -->
       <dv-sidebar
@@ -415,7 +415,7 @@ onUnmounted(() => {
     }
   }
 
-  &.dataease-w-h {
+  &.crest-w-h {
     height: 100%;
     width: 100%;
     .dv-layout-container {

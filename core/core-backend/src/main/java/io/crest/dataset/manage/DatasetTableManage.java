@@ -3,7 +3,7 @@ package io.crest.dataset.manage;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.crest.dataset.dao.auto.entity.CoreDatasetTable;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetTableMapper;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.i18n.Translator;
 import io.crest.utils.BeanUtils;
@@ -74,7 +74,7 @@ public class DatasetTableManage {
 
     private void checkNameLength(String name) {
         if (name != null && name.length() > 100) {
-            DEException.throwException(Translator.get("i18n_name_limit_100"));
+            CrestException.throwException(Translator.get("i18n_name_limit_100"));
         }
     }
 }

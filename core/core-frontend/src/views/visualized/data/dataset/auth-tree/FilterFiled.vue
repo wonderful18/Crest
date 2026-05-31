@@ -19,7 +19,7 @@ export interface Item {
   term: string
   fieldId: string
   filterType: string
-  deType: number
+  fieldType: number
   enumValue: string[]
   name: string
   value: number
@@ -38,7 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
     fieldId: '',
     filterType: '',
     timeType: 'year',
-    deType: 0,
+    fieldType: 0,
     enumValue: [],
     name: '',
     value: null
@@ -47,7 +47,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { t } = useI18n()
 const enumInput = ref()
-const deElDropdownMenuFixed = ref()
+const dropdownMenuFixedRef = ref()
 const showDel = ref(false)
 const keywords = ref('')
 const activeName = ref('')
@@ -92,13 +92,13 @@ const sysParamsIln = computed(() => {
   }
 })
 const operators = computed(() => {
-  const { deType } = item.value
+  const { fieldType } = item.value
   if (authTargetType.value === 'sysParams') {
     return textOptionsForSysParams
   }
-  if ([0, 5].includes(deType)) {
+  if ([0, 5].includes(fieldType)) {
     return textOptions
-  } else if (deType === 1) {
+  } else if (fieldType === 1) {
     return dateOptions
   } else {
     return valueOptions
@@ -127,7 +127,7 @@ watch(
 
 onBeforeMount(() => {
   initNameEnumName()
-  filterListInit(item.value.deType)
+  filterListInit(item.value.fieldType)
 })
 
 const confirm = () => {
@@ -177,9 +177,9 @@ const initEnumOptions = () => {
   if (authTargetType.value === 'sysParams') {
     return
   }
-  const { deType, filterType, fieldId } = item.value
+  const { fieldType, filterType, fieldId } = item.value
   // 查找枚举值
-  if (filterType === 'enum' && [0, 5].includes(deType)) {
+  if (filterType === 'enum' && [0, 5].includes(fieldType)) {
     multFieldValuesForPermissions({ fieldIds: [fieldId] }).then(res => {
       enumList.value = optionData(res.data)
       checkboxlist.value = enumList.value.filter(ele => checklist.value.includes(ele))
@@ -212,32 +212,32 @@ const delChecks = (idx, i) => {
   selectedChange()
 }
 
-const selectItem = ({ name, id, deType }) => {
+const selectItem = ({ name, id, fieldType }) => {
   activeName.value = name
   Object.assign(item.value, {
     fieldId: id,
     name,
-    deType,
+    fieldType,
     filterType: 'logic',
     enumValue: [],
     value: '',
     term: ''
   })
-  filterListInit(deType)
+  filterListInit(fieldType)
   checklist.value = []
 }
-const filterListInit = deType => {
+const filterListInit = fieldType => {
   filterList.value = [
     {
       value: 'logic',
-      label: t('deDataset.logic_filter')
+      label: t('datasetUi.logic_filter')
     },
     {
       value: 'enum',
-      label: t('deDataset.enum_filter')
+      label: t('datasetUi.enum_filter')
     }
   ]
-  if (authTargetType.value === 'sysParams' || [1, 2, 3].includes(deType)) {
+  if (authTargetType.value === 'sysParams' || [1, 2, 3].includes(fieldType)) {
     filterList.value = [filterList.value[0]]
   }
 }
@@ -319,7 +319,7 @@ const addFields = () => {
 }
 const timeDialog = ref()
 const showTimeDialog = (obj: any) => {
-  if (obj.deType !== 1) return
+  if (obj.fieldType !== 1) return
   timeDialog.value.init(obj.timeType, obj.value)
 }
 const saveTime = (type, value) => {
@@ -377,8 +377,8 @@ const emits = defineEmits(['update:item', 'del'])
                   <Icon
                     ><component
                       class="svg-icon"
-                      :class="`field-icon-${fieldEnums[ele.deType]}`"
-                      :is="iconFieldMap[fieldEnums[ele.deType]]"
+                      :class="`field-icon-${fieldEnums[ele.fieldType]}`"
+                      :is="iconFieldMap[fieldEnums[ele.fieldType]]"
                     ></component
                   ></Icon>
                 </el-icon>
@@ -435,7 +435,7 @@ const emits = defineEmits(['update:item', 'del'])
           </template>
           <template
             v-else-if="
-              [2, 3].includes(item.deType) &&
+              [2, 3].includes(item.fieldType) &&
               !['null', 'empty', 'not_null', 'not_empty'].includes(item.term)
             "
           >
@@ -452,7 +452,7 @@ const emits = defineEmits(['update:item', 'del'])
             <el-input
               class="w70 mar5"
               size="small"
-              :readonly="item.deType === 1"
+              :readonly="item.fieldType === 1"
               v-model="item.value"
               @click="showTimeDialog(item)"
             />
@@ -465,7 +465,7 @@ const emits = defineEmits(['update:item', 'del'])
           v-else
           width="360px"
           trigger="click"
-          ref="deElDropdownMenuFixed"
+          ref="dropdownMenuFixedRef"
           :hide-on-click="false"
         >
           <template #reference>
@@ -506,7 +506,7 @@ const emits = defineEmits(['update:item', 'del'])
                 {{ t('common.list_selection') }}
                 <div class="right-btn">
                   <span @click="cancelKeyDow">
-                    <i class="el-icon-edit"></i>
+                    <i class="el-icon-change"></i>
                     {{ t('auth.manual_input') }}
                   </span>
                   <transition name="el-zoom-in-top">
@@ -662,7 +662,7 @@ const emits = defineEmits(['update:item', 'del'])
   }
 
   .bottom-line {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-variant: tabular-nums;
     font-feature-settings: 'tnum';
     word-wrap: break-word;
@@ -711,7 +711,7 @@ const emits = defineEmits(['update:item', 'del'])
     border-radius: 0;
     box-shadow: none !important;
     height: 26px;
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     word-wrap: break-word;
     text-align: left;
     color: rgba(0, 0, 0, 0.65);
@@ -824,7 +824,7 @@ const emits = defineEmits(['update:item', 'del'])
   }
 
   .ed-input {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     box-sizing: border-box;
     margin: 0;
     color: rgba(0, 0, 0, 0.65);
@@ -869,7 +869,7 @@ const emits = defineEmits(['update:item', 'del'])
       }
     }
     .mod-left {
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       color: rgba(0, 0, 0, 0.65);
       font-size: 14px;
       vertical-align: top;

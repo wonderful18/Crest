@@ -13,7 +13,7 @@ import java.io.Serializable;
  * @author fit2cloud
  * @since 2024-07-09
  */
-@TableName("core_datasource")
+@TableName("data_source")
 public class CoreDatasource implements Serializable {
 
     private static final long serialVersionUID = 1L;

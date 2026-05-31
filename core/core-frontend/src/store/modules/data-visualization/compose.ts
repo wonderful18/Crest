@@ -161,7 +161,7 @@ export const composeStore = defineStore('compose', {
 
           components.push(...component.propValue)
         } else if (['GroupArea'].includes(component.component)) {
-          // do nothing GroupAreas组合视阔区 DeTabs 均不加入分组中
+          // do nothing GroupAreas组合视阔区 Tabs 均不加入分组中
         } else if (checkJoinGroup(component)) {
           components.push(component)
         }

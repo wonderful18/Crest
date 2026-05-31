@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import dvPreviewDownload from '@/assets/svg/icon_download_outlined.svg'
-import deDelete from '@/assets/svg/de-delete.svg'
+import DeleteIcon from '@/assets/svg/delete.svg'
 import icon_fileExcel_colorful from '@/assets/svg/icon_file-excel_colorful.svg'
 import icon_refresh_outlined from '@/assets/svg/icon_refresh_outlined.svg'
 import { ref, h, onUnmounted, computed, reactive } from 'vue'
@@ -160,10 +160,10 @@ const init = (params?: { activeName?: string }) => {
 }
 const linkStore = useLinkStoreWithOut()
 const appStore = useAppStoreWithOut()
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi)
+const isCrestBi = computed(() => appStore.getIsCrestBi)
 
 const taskExportTopicCall = (task: string) => {
-  if (!linkStore.getLinkToken && !isDataEaseBi.value && !appStore.getIsIframe) {
+  if (!linkStore.getLinkToken && !isCrestBi.value && !appStore.getIsIframe) {
     if (JSON.parse(task).exportStatus === 'SUCCESS') {
       openMessageLoading(
         JSON.parse(task).exportFromName + ` ${t('data_set.successful_go_to')}`,
@@ -184,7 +184,7 @@ const taskExportTopicCall = (task: string) => {
 
 const openMessageLoading = (text: string, type = 'success', cb?: () => void) => {
   // success error loading
-  const customClass = `de-message-${type || 'success'} de-message-export`
+  const customClass = `crest-message-${type || 'success'} crest-message-export`
   ElMessage({
     message: h('p', null, [
       h(
@@ -263,7 +263,7 @@ const retry = item => {
   })
 }
 
-const deleteField = item => {
+const fieldRemoval = item => {
   ElMessageBox.confirm(t('data_export.sure_del'), {
     confirmButtonType: 'danger',
     type: 'warning',
@@ -389,7 +389,7 @@ defineExpose({
         secondary
         @click="delAll"
         ><template #icon>
-          <Icon name="de-delete"><deDelete class="svg-icon" /></Icon> </template
+          <Icon name="delete"><DeleteIcon class="svg-icon" /></Icon> </template
         >{{ $t('data_export.del_all') }}
       </el-button>
       <el-button
@@ -398,7 +398,7 @@ defineExpose({
         secondary
         @click="delAll"
         ><template #icon>
-          <Icon name="de-delete"><deDelete class="svg-icon" /></Icon> </template
+          <Icon name="delete"><DeleteIcon class="svg-icon" /></Icon> </template
         >{{ $t('commons.delete') }}
       </el-button>
     </div>
@@ -503,9 +503,9 @@ defineExpose({
               </el-tooltip>
 
               <el-tooltip effect="dark" :content="t('data_set.delete')" placement="top">
-                <el-button class="row-icon-btn is-danger" text @click="deleteField(scope.row)">
+                <el-button class="row-icon-btn is-danger" text @click="field-removal(scope.row)">
                   <template #icon>
-                    <Icon name="de-delete"><deDelete class="svg-icon" /></Icon>
+                    <Icon name="delete"><DeleteIcon class="svg-icon" /></Icon>
                   </template>
                 </el-button>
               </el-tooltip>

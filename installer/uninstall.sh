@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DE_BASE=/opt
+CREST_BASE=/opt
 
 echo "如需备份 Crest 数据，请执行 crestctl backup 进行备份。如您的控制脚本不支持 backup 命令，请升级版本。"
 read -r -p "即将卸载 Crest 服务，包括删除运行目录、数据及相关镜像，是否继续? [Y/n] " input
@@ -41,7 +41,7 @@ fi
 
 if [ -f /usr/bin/crestctl ]; then
    # 获取已安装的 Crest 的运行目录
-   DE_BASE=$(grep "^DE_BASE=" /usr/bin/crestctl | cut -d'=' -f2)
+   CREST_BASE=$(grep "^CREST_BASE=" /usr/bin/crestctl | cut -d'=' -f2)
 fi
 
 # 清理 Crest 相关镜像
@@ -56,6 +56,6 @@ if test -n "$(docker images | grep -E 'ghcr.io/sevoniva/crest')"; then
 fi
 
 # 清理 Crest 运行目录及命令行工具
-rm -rf ${DE_BASE}/crest /usr/bin/crestctl /usr/local/bin/crestctl
+rm -rf ${CREST_BASE}/crest /usr/bin/crestctl /usr/local/bin/crestctl
 
 echo "Crest 服务卸载完成"

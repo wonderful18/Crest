@@ -122,7 +122,7 @@ const options = computed(() => {
   }
   return optionArr
 })
-const deTypeArr = ref([])
+const fieldTypeSelectionValue = ref([])
 const popover = ref()
 const level = ref(1)
 const cascaderPanel = ref()
@@ -131,11 +131,11 @@ const handleExpand = val => {
 }
 const emit = defineEmits(['handleCommand'])
 const handleCommand = () => {
-  const [translate, fieldType, timeType] = deTypeArr.value
+  const [translate, fieldType, timeType] = fieldTypeSelectionValue.value
   popover.value.hide()
   emit('handleCommand', timeType || fieldType || translate)
   nextTick(() => {
-    deTypeArr.value = []
+    fieldTypeSelectionValue.value = []
   })
 }
 const handleChange = () => {
@@ -164,7 +164,7 @@ const handleChange = () => {
       </el-icon>
     </template>
     <ElCascaderPanel
-      v-model="deTypeArr"
+      v-model="fieldTypeSelectionValue"
       @expand-change="handleExpand"
       ref="cascaderPanel"
       :border="false"

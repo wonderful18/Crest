@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @author fit2cloud
  * @since 2024-05-15
  */
-@TableName("core_sys_startup_job")
+@TableName("startup_job")
 public class CoreSysStartupJob implements Serializable {
 
     private static final long serialVersionUID = 1L;

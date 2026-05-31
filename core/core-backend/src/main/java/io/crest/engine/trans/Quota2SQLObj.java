@@ -1,6 +1,6 @@
 package io.crest.engine.trans;
 
-import io.crest.constant.DeTypeConstants;
+import io.crest.constant.FieldTypeConstants;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.constant.SQLConstants;
 import io.crest.engine.utils.Utils;
@@ -58,7 +58,7 @@ public class Quota2SQLObj {
                     if (Strings.CI.equals(dsType, "es")) {
                         originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), y.getOriginName());
                     } else {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), y.getDataeaseName());
+                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), y.getEngineFieldName());
                     }
                 } else if (ObjectUtils.isNotEmpty(y.getExtField()) && Objects.equals(y.getExtField(), ExtFieldConstant.EXT_GROUP)) {
                     String groupFieldExp = Utils.transGroupFieldToSql(y, originFields, isCross, dsMap, pluginManage);
@@ -72,13 +72,13 @@ public class Quota2SQLObj {
                     if (Strings.CI.equals(dsType, "es")) {
                         originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), y.getOriginName());
                     } else {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), y.getDataeaseName());
+                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), y.getEngineFieldName());
                     }
                 }
                 String fieldAlias = String.format(SQLConstants.FIELD_ALIAS_Y_PREFIX, i);
                 // 处理纵轴字段
                 SQLObj ySQLObj = getYFields(y, originField, fieldAlias);
-                if (Strings.CI.equals("bar-range", meta.getChartType()) && Strings.CI.equals(y.getGroupType(), "d") && y.getDeType() == 1) {
+                if (Strings.CI.equals("bar-range", meta.getChartType()) && Strings.CI.equals(y.getGroupType(), "d") && y.getFieldType() == 1) {
                     yFields.add(Dimension2SQLObj.getXFields(y, ySQLObj.getFieldName(), fieldAlias, isCross));
                 } else {
                     yFields.add(ySQLObj);
@@ -109,7 +109,7 @@ public class Quota2SQLObj {
         String fieldName = "";
         if (Strings.CI.equals(y.getOriginName(), "*")) {
             fieldName = SQLConstants.AGG_COUNT;
-        } else if (SQLConstants.DIMENSION_TYPE.contains(y.getDeType())) {
+        } else if (SQLConstants.DIMENSION_TYPE.contains(y.getFieldType())) {
             if (Strings.CI.equals(y.getSummary(), "count_distinct")) {
                 fieldName = String.format(SQLConstants.AGG_FIELD, "COUNT", "DISTINCT " + originField);
             } else {
@@ -117,12 +117,12 @@ public class Quota2SQLObj {
             }
         } else {
             if (Strings.CI.equals(y.getSummary(), "avg") || Strings.CI.contains(y.getSummary(), "pop")) {
-                String cast = String.format(SQLConstants.CAST, originField, Objects.equals(y.getDeType(), DeTypeConstants.DE_INT) ? SQLConstants.DEFAULT_INT_FORMAT : SQLConstants.DEFAULT_FLOAT_FORMAT);
+                String cast = String.format(SQLConstants.CAST, originField, Objects.equals(y.getFieldType(), FieldTypeConstants.INTEGER) ? SQLConstants.DEFAULT_INT_FORMAT : SQLConstants.DEFAULT_FLOAT_FORMAT);
                 String agg = String.format(SQLConstants.AGG_FIELD, y.getSummary(), cast);
                 String cast1 = String.format(SQLConstants.CAST, agg, SQLConstants.DEFAULT_FLOAT_FORMAT);
                 fieldName = String.format(SQLConstants.ROUND, cast1, "8");
             } else {
-                String cast = String.format(SQLConstants.CAST, originField, Objects.equals(y.getDeType(), DeTypeConstants.DE_INT) ? SQLConstants.DEFAULT_INT_FORMAT : SQLConstants.DEFAULT_FLOAT_FORMAT);
+                String cast = String.format(SQLConstants.CAST, originField, Objects.equals(y.getFieldType(), FieldTypeConstants.INTEGER) ? SQLConstants.DEFAULT_INT_FORMAT : SQLConstants.DEFAULT_FLOAT_FORMAT);
                 if (Strings.CI.equals(y.getSummary(), "count_distinct")) {
                     fieldName = String.format(SQLConstants.AGG_FIELD, "COUNT", "DISTINCT " + cast);
                 } else if (y.getSummary() == null) {

@@ -15,7 +15,7 @@ public class SQLBotAssistantField implements Serializable {
     @JsonIgnore
     private Long fieldId;
     @JsonIgnore
-    private String dataeaseName;
+    private String engineFieldName;
 
     @JsonIgnore
     private boolean needTransform;

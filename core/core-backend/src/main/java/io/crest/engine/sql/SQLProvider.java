@@ -43,7 +43,7 @@ public class SQLProvider {
         List<SQLObj> xOrders = sqlMeta.getXOrders();
 
         STGroup stg = new STGroupString(SqlTemplate.PREVIEW_SQL);
-        ST st_sql = stg.getInstanceOf("previewSql");
+        ST st_sql = stg.getInstanceOf("preview-sql");
         st_sql.add("isGroup", isGroup);
         st_sql.add("distinct", distinct);
         if (ObjectUtils.isNotEmpty(xFields)) st_sql.add("groups", xFields);
@@ -78,7 +78,7 @@ public class SQLProvider {
 
     public static String createQuerySQL(SQLMeta sqlMeta, boolean isGroup, boolean needOrder, ChartViewDTO view) {
         STGroup stg = new STGroupString(SqlTemplate.PREVIEW_SQL);
-        ST st_sql = stg.getInstanceOf("previewSql");
+        ST st_sql = stg.getInstanceOf("preview-sql");
 
         st_sql.add("isGroup", isGroup);
 
@@ -104,7 +104,7 @@ public class SQLProvider {
         if (ObjectUtils.isNotEmpty(wheres)) st_sql.add("filters", wheres);
         String sql = st_sql.render();
 
-        ST st = stg.getInstanceOf("previewSql");
+        ST st = stg.getInstanceOf("preview-sql");
         st_sql.add("isGroup", isGroup);
 
         SQLObj tableSQL = SQLObj.builder()
@@ -157,7 +157,7 @@ public class SQLProvider {
 
     public static String createQuerySQLNoSort(SQLMeta sqlMeta, boolean isGroup, ChartViewDTO view) {
         STGroup stg = new STGroupString(SqlTemplate.PREVIEW_SQL);
-        ST st_sql = stg.getInstanceOf("previewSql");
+        ST st_sql = stg.getInstanceOf("preview-sql");
 
         st_sql.add("isGroup", isGroup);
 
@@ -181,7 +181,7 @@ public class SQLProvider {
         if (ObjectUtils.isNotEmpty(wheres)) st_sql.add("filters", wheres);
         String sql = st_sql.render();
 
-        ST st = stg.getInstanceOf("previewSql");
+        ST st = stg.getInstanceOf("preview-sql");
         st_sql.add("isGroup", isGroup);
 
         SQLObj tableSQL = SQLObj.builder()

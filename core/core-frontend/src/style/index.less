@@ -23,7 +23,7 @@
   --crest-motion-fast: 120ms;
   --crest-motion-base: 160ms;
   --crest-ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
-  font-family: var(--de-custom_font, var(--crest-font-sans));
+  font-family: var(--crest-custom_font, var(--crest-font-sans));
   font-weight: 400;
   color-scheme: light dark;
   -webkit-font-smoothing: antialiased;
@@ -83,7 +83,7 @@ body {
   box-sizing: border-box;
 }
 
-.de-search-table {
+.search-table {
   border-radius: 12px !important;
   .top-operate {
     margin-bottom: 16px;
@@ -162,7 +162,7 @@ body {
 }
 
 .title-form_primary {
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   font-style: normal;
   font-weight: 500;
   font-size: 14px;
@@ -541,7 +541,7 @@ strong {
   justify-content: center;
 }
 
-.de-message-export {
+.crest-message-export {
   min-width: 20px !important;
   padding: 16px 20px !important;
   display: flex;
@@ -549,7 +549,7 @@ strong {
   box-shadow: 0px 4px 8px 0px #1f23291a;
 
   & > p {
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 500;
     line-height: 22px;
@@ -590,7 +590,7 @@ strong {
   }
 }
 
-.de-message-loading {
+.crest-message-loading {
   border: 1px solid var(--primary, #3B82F6) !important;
   background: #f0f4ff !important;
   @keyframes circle {
@@ -609,21 +609,21 @@ strong {
   }
 }
 
-.de-message-error {
-  border: 1px solid var(--deDanger, #f54a45) !important;
-  background: var(--deWhitemsgDeDanger, #fef1f1) !important;
+.crest-message-error {
+  border: 1px solid var(--crestDanger, #f54a45) !important;
+  background: var(--crestWhiteMsgDanger, #fef1f1) !important;
 
   .ed-message__icon {
-    color: var(--deDanger, #f54a45);
+    color: var(--crestDanger, #f54a45);
   }
 }
 
-.de-message-success {
-  border: 1px solid var(--deSuccess, #34c724) !important;
-  background: var(--deWhitemsgDeSuccess, #f0fbef) !important;
+.crest-message-success {
+  border: 1px solid var(--crestSuccess, #34c724) !important;
+  background: var(--crestWhiteMsgSuccess, #f0fbef) !important;
 
   .ed-message__icon {
-    color: var(--deSuccess, #34c724);
+    color: var(--crestSuccess, #34c724);
   }
 }
 
@@ -634,7 +634,7 @@ strong {
 
 // 解决screenfull全屏时 部分嵌入到body中的组件（如 下来框 消息通知框等）被覆盖问题
 // 这里使用的方案为直接将body全屏 区间组件覆盖整个body
-.de-screen-full {
+.screen-full {
   position: fixed !important;
   z-index: 1001 !important;
   top: 0;

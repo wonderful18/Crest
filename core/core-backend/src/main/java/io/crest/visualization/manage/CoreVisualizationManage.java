@@ -12,7 +12,7 @@ import io.crest.commons.constants.DataVisualizationConstants;
 import io.crest.commons.constants.OptConstants;
 import io.crest.constant.BusiResourceEnum;
 import io.crest.constant.CommonConstants;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.model.BusiNodeRequest;
 import io.crest.model.BusiNodeVO;
 import io.crest.operation.manage.CoreOptRecentManage;
@@ -93,11 +93,11 @@ public class CoreVisualizationManage {
         queryWrapper.eq("type", request.getBusiFlag());
         String info = CommunityUtils.getInfo();
         if (StringUtils.isNotBlank(info)) {
-            queryWrapper.notExists(String.format(info, "data_visualization_info.id"));
+            queryWrapper.notExists(String.format(info, "bi_visualization.id"));
         }
         String resourceType = "dataV".equalsIgnoreCase(request.getBusiFlag()) ? "screen" : "panel";
-        String scopeSql = platformPermissionManage.resourceScopeSql(resourceType, "data_visualization_info.id",
-                "data_visualization_info.create_by", "data_visualization_info.org_id");
+        String scopeSql = platformPermissionManage.resourceScopeSql(resourceType, "bi_visualization.id",
+                "bi_visualization.create_by", "bi_visualization.org_id");
         if (StringUtils.isNotBlank(scopeSql)) {
             queryWrapper.apply(scopeSql);
         }
@@ -123,7 +123,7 @@ public class CoreVisualizationManage {
     public void delete(Long id) {
         DataVisualizationInfo info = mapper.selectById(id);
         if (ObjectUtils.isEmpty(info)) {
-            DEException.throwException("resource not exist");
+            CrestException.throwException("resource not exist");
         }
         requireVisualizationTreeAccess(id);
         Set<Long> delIds = new LinkedHashSet<>();
@@ -167,7 +167,7 @@ public class CoreVisualizationManage {
             DataVisualizationInfo visualizationInfo = new DataVisualizationInfo();
             BeanUtils.copyBean(visualizationInfo, request);
             if (ObjectUtils.isEmpty(visualizationInfo.getId())) {
-                DEException.throwException("resource not exist");
+                CrestException.throwException("resource not exist");
             }
             visualizationInfo.setUpdateTime(System.currentTimeMillis());
             SnapshotDataVisualizationInfo snapshotVisualizationInfo = new SnapshotDataVisualizationInfo();
@@ -243,7 +243,7 @@ public class CoreVisualizationManage {
 
     private void requireName(DataVisualizationInfo visualizationInfo) {
         if (StringUtils.isBlank(visualizationInfo.getName())) {
-            DEException.throwException("资源名称不能为空");
+            CrestException.throwException("资源名称不能为空");
         }
     }
 
@@ -256,16 +256,16 @@ public class CoreVisualizationManage {
             visualizationInfo.setName(current.getName());
             return;
         }
-        DEException.throwException("资源名称不能为空");
+        CrestException.throwException("资源名称不能为空");
     }
 
     private DataVisualizationInfo requireVisualizationAccess(Long id) {
         if (ObjectUtils.isEmpty(id)) {
-            DEException.throwException("resource not exist");
+            CrestException.throwException("resource not exist");
         }
         DataVisualizationInfo info = mapper.selectById(id);
         if (ObjectUtils.isEmpty(info)) {
-            DEException.throwException("resource not exist");
+            CrestException.throwException("resource not exist");
         }
         CrestPermissionUtils.requireCreator(info.getCreateBy());
         return info;
@@ -340,7 +340,7 @@ public class CoreVisualizationManage {
         try {
             BusiResourceEnum.valueOf(type.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
-            DEException.throwException("type is invalid");
+            CrestException.throwException("type is invalid");
         }
     }
 

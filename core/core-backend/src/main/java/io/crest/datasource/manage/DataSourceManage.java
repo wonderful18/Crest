@@ -11,7 +11,7 @@ import io.crest.datasource.dao.ext.mapper.DataSourceExtMapper;
 import io.crest.datasource.dao.ext.po.DataSourceNodePO;
 import io.crest.datasource.dao.ext.po.DsItem;
 import io.crest.datasource.dto.DatasourceNodeBO;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.dto.DatasourceDTO;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
@@ -105,9 +105,9 @@ public class DataSourceManage {
         }
         String info = CommunityUtils.getInfo();
         if (StringUtils.isNotBlank(info)) {
-            queryWrapper.notExists(String.format(info, "core_datasource.id"));
+            queryWrapper.notExists(String.format(info, "data_source.id"));
         }
-        String scopeSql = platformPermissionManage.resourceScopeSql("datasource", "core_datasource.id", "core_datasource.create_by", null);
+        String scopeSql = platformPermissionManage.resourceScopeSql("datasource", "data_source.id", "data_source.create_by", null);
         if (StringUtils.isNotBlank(scopeSql)) {
             queryWrapper.apply(scopeSql);
         }
@@ -134,7 +134,7 @@ public class DataSourceManage {
 
     public void checkName(DatasourceDTO dto) {
         if (StringUtils.isEmpty(dto.getName()) || StringUtils.isEmpty(dto.getName().trim())) {
-            DEException.throwException(Translator.get("i18n_df_name_can_not_empty"));
+            CrestException.throwException(Translator.get("i18n_df_name_can_not_empty"));
         }
         QueryWrapper<CoreDatasource> wrapper = new QueryWrapper<>();
         if (ObjectUtils.isNotEmpty(dto.getPid())) {
@@ -160,7 +160,7 @@ public class DataSourceManage {
         }
         List<CoreDatasource> list = coreDatasourceMapper.selectList(wrapper);
         if (list.size() > 0) {
-            DEException.throwException(Translator.get("i18n_ds_name_exists"));
+            CrestException.throwException(Translator.get("i18n_ds_name_exists"));
         }
     }
     public String getTenantAccessToken() {
@@ -197,7 +197,7 @@ public class DataSourceManage {
         Long id = dataSourceDTO.getId();
         CoreDatasource sourceData = null;
         if (ObjectUtils.isEmpty(id) || ObjectUtils.isEmpty(sourceData = getCoreDatasource(id))) {
-            DEException.throwException("resource not exist");
+            CrestException.throwException("resource not exist");
         }
         checkName(dataSourceDTO);
 
@@ -228,7 +228,7 @@ public class DataSourceManage {
 
     public CoreDatasource getCoreDatasource(Long id) {
         if (id == -1L) {
-            return engineManage.getDeEngine();
+            return engineManage.getEngineDatasource();
         }
         return coreDatasourceMapper.selectById(id);
     }
@@ -254,7 +254,7 @@ public class DataSourceManage {
         return result;
     }
 
-    public CoreDatasource getDatasource(Long id) {
+    public CoreDatasource datasource(Long id) {
         return getCoreDatasource(id);
     }
 

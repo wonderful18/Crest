@@ -13,7 +13,7 @@ import java.util.List;
 @Data
 public class MarketMetaDataBaseResponse {
 
-    private List<MarketMetaDataVO> deVersion;
+    private List<MarketMetaDataVO> platformVersion;
 
     private List<MarketMetaDataVO> templateTypes;
 

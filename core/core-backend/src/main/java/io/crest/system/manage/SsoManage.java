@@ -9,7 +9,7 @@ import io.crest.auth.bo.TokenUserBO;
 import io.crest.auth.vo.TokenVO;
 import io.crest.constant.AuthConstant;
 import io.crest.constant.CacheConstant;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.substitute.permissions.user.model.CrestUser;
 import io.crest.system.sso.SsoClaimMapper;
@@ -137,7 +137,7 @@ public class SsoManage {
     public void login(String redirect, HttpServletRequest request, HttpServletResponse response) {
         SsoConfigVO config = runtimeConfig(request);
         if (!Boolean.TRUE.equals(config.getEnabled())) {
-            DEException.throwException("单点登录未启用");
+            CrestException.throwException("单点登录未启用");
         }
         String state = IDUtils.randomID(40);
         String nonce = IDUtils.randomID(32);
@@ -154,7 +154,7 @@ public class SsoManage {
                     .addParameter("nonce", nonce);
             response.sendRedirect(builder.build().toString());
         } catch (Exception e) {
-            DEException.throwException("单点登录跳转地址生成失败：" + e.getMessage());
+            CrestException.throwException("单点登录跳转地址生成失败：" + e.getMessage());
         }
     }
 
@@ -199,7 +199,7 @@ public class SsoManage {
         if (cached instanceof TokenVO tokenVO) {
             return tokenVO;
         }
-        DEException.throwException("单点登录票据无效或已过期");
+        CrestException.throwException("单点登录票据无效或已过期");
         return null;
     }
 
@@ -214,7 +214,7 @@ public class SsoManage {
         try {
             config.setClientSecret(AesUtils.aesDecrypt(encryptedSecret).toString());
         } catch (Exception e) {
-            DEException.throwException("单点登录客户端密钥无法解密，请检查加密配置");
+            CrestException.throwException("单点登录客户端密钥无法解密，请检查加密配置");
         }
         return config;
     }
@@ -250,7 +250,7 @@ public class SsoManage {
         if (StringUtils.isAnyBlank(config.getProviderName(), config.getClientId(), secret,
                 config.getAuthorizationEndpoint(), config.getTokenEndpoint(), config.getUserInfoEndpoint(),
                 config.getScope(), config.getUserIdAttribute(), config.getAccountAttribute())) {
-            DEException.throwException("单点登录配置不完整");
+            CrestException.throwException("单点登录配置不完整");
         }
         validateEndpoint(config.getAuthorizationEndpoint(), config.getRequireHttps(), "授权端点");
         validateEndpoint(config.getTokenEndpoint(), config.getRequireHttps(), "令牌端点");
@@ -434,7 +434,7 @@ public class SsoManage {
                 host += ":" + serverPort;
             }
         }
-        return proto + "://" + host + request.getContextPath() + AuthConstant.DE_API_PREFIX + "/sso/callback";
+        return proto + "://" + host + request.getContextPath() + AuthConstant.CREST_API_PREFIX + "/sso/callback";
     }
 
     private void redirectTicket(HttpServletRequest request, HttpServletResponse response, String ticket, String redirect) throws IOException {

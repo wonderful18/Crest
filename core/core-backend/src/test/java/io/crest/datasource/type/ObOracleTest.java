@@ -1,6 +1,6 @@
 package io.crest.datasource.type;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -73,6 +73,6 @@ public class ObOracleTest {
         obOracle.setUrlType("jdbcUrl");
         obOracle.setJdbcUrl("jdbc:oracle:thin:@localhost:1521:ORCL");
 
-        assertThrows(DEException.class, obOracle::getJdbc);
+        assertThrows(CrestException.class, obOracle::getJdbc);
     }
 }

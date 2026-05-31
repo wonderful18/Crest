@@ -14,13 +14,13 @@ import java.io.IOException;
 @RequestMapping
 public class RestIndexController {
 
-    @GetMapping("/dekey")
+    @GetMapping("/public-key")
     @ResponseBody
-    public String dekey() {
+    public String clientKey() {
         return RsaUtils.publicKey();
     }
 
-    @GetMapping("/symmetricKey")
+    @GetMapping("/symmetric-key")
     @ResponseBody
     public String symmetricKey() {
         return RsaUtils.generateSymmetricKey();

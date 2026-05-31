@@ -5,9 +5,9 @@ import io.crest.api.visualization.request.VisualizationSubjectRequest;
 import io.crest.api.visualization.vo.VisualizationSubjectVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -15,19 +15,19 @@ import java.util.List;
 @ApiSupport(order = 993)
 public interface VisualizationSubjectApi {
 
-    @PostMapping("/query")
+    @PostMapping("/list")
     @Operation(summary = "查询")
     List<VisualizationSubjectVO> query(@RequestBody VisualizationSubjectRequest request);
 
-    @PostMapping("/querySubjectWithGroup")
+    @PostMapping("/subjects-with-groups")
     @Operation(summary = "分组查询")
     List<VisualizationSubjectVO> querySubjectWithGroup(@RequestBody VisualizationSubjectRequest request);
 
-    @PostMapping("/update")
+    @PutMapping
     @Operation(summary = "更新")
     void update(@RequestBody VisualizationSubjectRequest request);
 
-    @PostMapping("/delete/{id}")
+    @DeleteMapping("/{id}")
     @Operation(summary = "删除")
     void delete(@PathVariable("id") String id);
 

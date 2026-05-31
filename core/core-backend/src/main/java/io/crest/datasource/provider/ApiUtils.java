@@ -10,7 +10,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import io.crest.extensions.datasource.dto.ApiDefinition;
 import io.crest.extensions.datasource.dto.ApiDefinitionRequest;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.datasource.dto.DatasourceRequest;
 import io.crest.extensions.datasource.dto.TableField;
@@ -62,7 +62,7 @@ public class ApiUtils {
         return new SimpleDateFormat(timeFunction[1]).format(calendar.getTime());
     }
 
-    public static List<DatasetTableDTO> getApiTables(DatasourceRequest datasourceRequest) throws DEException {
+    public static List<DatasetTableDTO> getApiTables(DatasourceRequest datasourceRequest) throws CrestException {
         List<DatasetTableDTO> tableDescs = new ArrayList<>();
         TypeReference<List<ApiDefinition>> listTypeReference = new TypeReference<List<ApiDefinition>>() {
         };
@@ -75,7 +75,7 @@ public class ApiUtils {
                 continue;
             }
             DatasetTableDTO datasetTableDTO = new DatasetTableDTO();
-            datasetTableDTO.setTableName(apiDefinition.getDeTableName());
+            datasetTableDTO.setTableName(apiDefinition.getDisplayTableName());
             datasetTableDTO.setName(apiDefinition.getName());
             datasetTableDTO.setDatasourceId(datasourceRequest.getDatasource().getId());
             tableDescs.add(datasetTableDTO);
@@ -83,28 +83,28 @@ public class ApiUtils {
         return tableDescs;
     }
 
-    public static Map<String, String> getTableNamesMap(String configration) throws DEException {
+    public static Map<String, String> getTableNamesMap(String configration) throws CrestException {
         Map<String, String> result = new HashMap<>();
         try {
             JsonNode rootNode = objectMapper.readTree(configration);
             for (int i = 0; i < rootNode.size(); i++) {
-                result.put(rootNode.get(i).get("name").asText(), rootNode.get(i).get("deTableName").asText());
+                result.put(rootNode.get(i).get("name").asText(), rootNode.get(i).get("displayTableName").asText());
             }
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
 
         return result;
     }
 
 
-    public static Map<String, Object> fetchApiResultField(DatasourceRequest datasourceRequest) throws DEException {
+    public static Map<String, Object> fetchApiResultField(DatasourceRequest datasourceRequest) throws CrestException {
         Map<String, Object> result = new HashMap<>();
         List<String[]> dataList = new ArrayList<>();
         List<TableField> fieldList = new ArrayList<>();
         ApiDefinition apiDefinition = getApiDefinition(datasourceRequest);
         if (apiDefinition == null) {
-            DEException.throwException("未找到");
+            CrestException.throwException("未找到");
         }
         if (apiDefinition.getRequest().getPage() != null && apiDefinition.getRequest().getPage().getPageType() != null && !apiDefinition.getRequest().getPage().getPageType().equalsIgnoreCase("empty")) {
             String response = execHttpRequest(false, apiDefinition, apiDefinition.getApiQueryTimeout() == null || apiDefinition.getApiQueryTimeout() <= 0 ? 10 : apiDefinition.getApiQueryTimeout(), params(datasourceRequest));
@@ -157,11 +157,11 @@ public class ApiUtils {
     }
 
 
-    private static List<TableField> getTableFields(ApiDefinition apiDefinition) throws DEException {
+    private static List<TableField> getTableFields(ApiDefinition apiDefinition) throws CrestException {
         return apiDefinition.getFields();
     }
 
-    public static List<TableField> getTableFields(DatasourceRequest datasourceRequest) throws DEException {
+    public static List<TableField> getTableFields(DatasourceRequest datasourceRequest) throws CrestException {
         TypeReference<List<ApiDefinition>> listTypeReference = new TypeReference<List<ApiDefinition>>() {
         };
 
@@ -169,7 +169,7 @@ public class ApiUtils {
         try {
             List<ApiDefinition> lists = JsonUtil.parseList(datasourceRequest.getDatasource().getConfiguration(), listTypeReference);
             for (ApiDefinition apiDefinition : lists) {
-                if (datasourceRequest.getTable().equalsIgnoreCase(apiDefinition.getDeTableName())) {
+                if (datasourceRequest.getTable().equalsIgnoreCase(apiDefinition.getDisplayTableName())) {
                     tableFields = getTableFields(apiDefinition);
                 }
             }
@@ -191,7 +191,7 @@ public class ApiUtils {
             datasourceRequest.setTable(apiDefinition.getName());
             ObjectNode apiItemStatuses = objectMapper.createObjectNode();
             try {
-                getData(datasourceRequest);
+                data(datasourceRequest);
                 apiItemStatuses.put("name", apiDefinition.getName());
                 apiItemStatuses.put("status", "Success");
             } catch (Exception e) {
@@ -204,10 +204,10 @@ public class ApiUtils {
         return JsonUtil.toJSONString(status).toString();
     }
 
-    private static List<String[]> getData(DatasourceRequest datasourceRequest) throws Exception {
+    private static List<String[]> data(DatasourceRequest datasourceRequest) throws Exception {
         ApiDefinition apiDefinition = getApiDefinition(datasourceRequest);
         if (apiDefinition == null) {
-            DEException.throwException("未找到");
+            CrestException.throwException("未找到");
         }
         String response = execHttpRequest(true, apiDefinition, apiDefinition.getApiQueryTimeout() == null || apiDefinition.getApiQueryTimeout() <= 0 ? 10 : apiDefinition.getApiQueryTimeout(), params(datasourceRequest));
         return fetchResult(response, apiDefinition);
@@ -370,7 +370,7 @@ public class ApiUtils {
                 break;
             case "POST":
                 if (!apiDefinitionRequest.getBody().keySet().contains("type")) {
-                    DEException.throwException("请求类型不能为空");
+                    CrestException.throwException("请求类型不能为空");
                 }
                 String type = apiDefinitionRequest.getBody().get("type").toString();
                 if (Strings.CS.equalsAny(type, "JSON", "XML", "Raw")) {
@@ -424,7 +424,7 @@ public class ApiUtils {
                             rootNode = objectMapper.readValue(JsonUtil.toJSONString(apiDefinition.getRequest().getBody().get("kvs")).toString(), listTypeReference);
                         } catch (Exception e) {
                             e.printStackTrace();
-                            DEException.throwException(e);
+                            CrestException.throwException(e);
                         }
                         for (JsonNode jsonNode : rootNode) {
                             if (jsonNode.has("name") && jsonNode.has("value")) {
@@ -536,7 +536,7 @@ public class ApiUtils {
         }
     }
 
-    public static ApiDefinition checkApiDefinition(DatasourceRequest datasourceRequest) throws DEException {
+    public static ApiDefinition checkApiDefinition(DatasourceRequest datasourceRequest) throws CrestException {
         ApiDefinition apiDefinition = new ApiDefinition();
         TypeReference<List<ApiDefinition>> listTypeReference = new TypeReference<List<ApiDefinition>>() {
         };
@@ -552,9 +552,9 @@ public class ApiUtils {
         return checkApiDefinition(apiDefinition, response);
     }
 
-    private static ApiDefinition checkApiDefinition(ApiDefinition apiDefinition, String response) throws DEException {
+    private static ApiDefinition checkApiDefinition(ApiDefinition apiDefinition, String response) throws CrestException {
         if (StringUtils.isEmpty(response)) {
-            DEException.throwException("该请求返回数据为空");
+            CrestException.throwException("该请求返回数据为空");
         }
         List<Map<String, Object>> fields = new ArrayList<>();
         if (apiDefinition.isShowApiStructure() || !apiDefinition.isUseJsonPath()) {
@@ -565,7 +565,7 @@ public class ApiUtils {
                 try {
                     jsonArray = objectMapper.readTree(response);
                 } catch (Exception e) {
-                    DEException.throwException(e);
+                    CrestException.throwException(e);
                 }
                 for (Object o : jsonArray) {
                     handleStr(apiDefinition, o.toString(), fields, rootPath);
@@ -587,13 +587,13 @@ public class ApiUtils {
                     currentData.add((LinkedHashMap) object);
                 }
             } catch (Exception e) {
-                DEException.throwException(e);
+                CrestException.throwException(e);
             }
             int i = 0;
             try {
                 LinkedHashMap data = currentData.get(0);
             } catch (Exception e) {
-                DEException.throwException("数据不符合规范, " + e.getMessage());
+                CrestException.throwException("数据不符合规范, " + e.getMessage());
             }
             for (LinkedHashMap data : currentData) {
                 if (i >= apiDefinition.getPreviewNum()) {
@@ -607,8 +607,8 @@ public class ApiUtils {
                         field.put("type", "STRING");
                         field.put("checked", true);
                         field.put("size", 65535);
-                        field.put("deExtractType", 0);
-                        field.put("deType", 0);
+                        field.put("extractedFieldType", 0);
+                        field.put("fieldType", 0);
                         field.put("extField", 0);
                         fields.add(field);
                     }
@@ -628,7 +628,7 @@ public class ApiUtils {
                             };
                             array = objectMapper.readValue(field.get("value").toString(), listTypeReference);
                         } catch (Exception e) {
-                            DEException.throwException(e);
+                            CrestException.throwException(e);
                         }
                         array.add(value.replaceAll("\n", " ").replaceAll("\r", " "));
                     } else {
@@ -644,7 +644,7 @@ public class ApiUtils {
     }
 
 
-    private static void handleStr(ApiDefinition apiDefinition, String jsonStr, List<Map<String, Object>> fields, String rootPath) throws DEException {
+    private static void handleStr(ApiDefinition apiDefinition, String jsonStr, List<Map<String, Object>> fields, String rootPath) throws CrestException {
         if (jsonStr.startsWith("[")) {
             TypeReference<List<Object>> listTypeReference = new TypeReference<List<Object>>() {
             };
@@ -653,7 +653,7 @@ public class ApiUtils {
             try {
                 jsonArray = objectMapper.readValue(jsonStr, listTypeReference);
             } catch (Exception e) {
-                DEException.throwException(e);
+                CrestException.throwException(e);
             }
             for (Object o : jsonArray) {
                 handleStr(apiDefinition, o.toString(), fields, rootPath);
@@ -663,7 +663,7 @@ public class ApiUtils {
             try {
                 jsonNode = objectMapper.readTree(jsonStr);
             } catch (Exception e) {
-                DEException.throwException(e);
+                CrestException.throwException(e);
             }
             Iterator<String> fieldNames = jsonNode.fieldNames();
             while (fieldNames.hasNext()) {
@@ -742,8 +742,8 @@ public class ApiUtils {
         o.put("name", s);
         o.put("type", "STRING");
         o.put("size", 65535);
-        o.put("deExtractType", 0);
-        o.put("deType", 0);
+        o.put("extractedFieldType", 0);
+        o.put("fieldType", 0);
         o.put("checked", false);
         if (!apiDefinition.isUseJsonPath()) {
             for (TableField field : apiDefinition.getFields()) {
@@ -752,13 +752,13 @@ public class ApiUtils {
                     o.put("name", field.getName());
                     o.put("primaryKey", field.isPrimaryKey());
                     o.put("length", field.getLength());
-                    o.put("deExtractType", field.getDeExtractType());
+                    o.put("extractedFieldType", field.getExtractedFieldType());
                 }
             }
         }
     }
 
-    private static boolean hasItem(ApiDefinition apiDefinition, List<Map<String, Object>> fields, Map<String, Object> item) throws DEException {
+    private static boolean hasItem(ApiDefinition apiDefinition, List<Map<String, Object>> fields, Map<String, Object> item) throws CrestException {
         boolean has = false;
         for (Map<String, Object> field : fields) {
             if (field.get("jsonPath").equals(item.get("jsonPath"))) {
@@ -773,7 +773,7 @@ public class ApiUtils {
     }
 
 
-    private static void mergeField(Map<String, Object> field, Map<String, Object> item) throws DEException {
+    private static void mergeField(Map<String, Object> field, Map<String, Object> item) throws CrestException {
         if (item.get("children") != null) {
             List<Map<String, Object>> fieldChildren = null;
             List<Map<String, Object>> itemChildren = null;
@@ -781,7 +781,7 @@ public class ApiUtils {
                 fieldChildren = objectMapper.readValue(JsonUtil.toJSONString(field.get("children")).toString(), listForMapTypeReference);
                 itemChildren = objectMapper.readValue(JsonUtil.toJSONString(item.get("children")).toString(), listForMapTypeReference);
             } catch (Exception e) {
-                DEException.throwException(e);
+                CrestException.throwException(e);
             }
             if (fieldChildren == null) {
                 fieldChildren = new ArrayList<>();
@@ -802,7 +802,7 @@ public class ApiUtils {
         }
     }
 
-    private static void mergeValue(Map<String, Object> field, ApiDefinition apiDefinition, Map<String, Object> item) throws DEException {
+    private static void mergeValue(Map<String, Object> field, ApiDefinition apiDefinition, Map<String, Object> item) throws CrestException {
         TypeReference<JSONArray> listTypeReference = new TypeReference<JSONArray>() {
         };
         try {
@@ -831,7 +831,7 @@ public class ApiUtils {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
 
     }
@@ -906,7 +906,7 @@ public class ApiUtils {
         return apiDefinitionListTemp.stream().filter(apiDefinition -> apiDefinition != null && apiDefinition.getType() != null && apiDefinition.getType().equalsIgnoreCase("params")).collect(Collectors.toList());
     }
 
-    private static ApiDefinition getApiDefinition(DatasourceRequest datasourceRequest) throws DEException {
+    private static ApiDefinition getApiDefinition(DatasourceRequest datasourceRequest) throws CrestException {
         List<ApiDefinition> apiDefinitionList = new ArrayList<>();
         TypeReference<List<ApiDefinition>> listTypeReference = new TypeReference<List<ApiDefinition>>() {
         };
@@ -917,24 +917,24 @@ public class ApiUtils {
                 if (apiDefinition == null || apiDefinition.getType() == null || apiDefinition.getType().equalsIgnoreCase("params")) {
                     continue;
                 }
-                if (apiDefinition.getDeTableName().equalsIgnoreCase(datasourceRequest.getTable()) || apiDefinition.getName().equalsIgnoreCase(datasourceRequest.getTable())) {
+                if (apiDefinition.getDisplayTableName().equalsIgnoreCase(datasourceRequest.getTable()) || apiDefinition.getName().equalsIgnoreCase(datasourceRequest.getTable())) {
                     apiDefinitionList.add(apiDefinition);
                 }
 
             }
         }
         if (CollectionUtils.isEmpty(apiDefinitionList)) {
-            DEException.throwException("未找到API数据表");
+            CrestException.throwException("未找到API数据表");
         }
         if (apiDefinitionList.size() > 1) {
-            DEException.throwException("存在重名的API数据表");
+            CrestException.throwException("存在重名的API数据表");
         }
         ApiDefinition find = null;
         for (ApiDefinition apiDefinition : apiDefinitionList) {
             if (apiDefinition == null) {
                 continue;
             }
-            if (apiDefinition.getName().equalsIgnoreCase(datasourceRequest.getTable()) || apiDefinition.getDeTableName().equalsIgnoreCase(datasourceRequest.getTable())) {
+            if (apiDefinition.getName().equalsIgnoreCase(datasourceRequest.getTable()) || apiDefinition.getDisplayTableName().equalsIgnoreCase(datasourceRequest.getTable())) {
                 find = apiDefinition;
             }
         }

@@ -7,7 +7,7 @@ import io.crest.api.template.request.TemplateManageBatchRequest;
 import io.crest.api.template.request.TemplateManageRequest;
 import io.crest.api.template.vo.VisualizationTemplateVO;
 import io.crest.constant.CommonConstants;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.template.dao.auto.entity.VisualizationTemplate;
 import io.crest.template.dao.auto.entity.VisualizationTemplateCategory;
 import io.crest.template.dao.auto.entity.VisualizationTemplateCategoryMap;
@@ -36,7 +36,7 @@ import static io.crest.constant.StaticResourceConstants.UPLOAD_URL_PREFIX;
  * @date : 2023/11/7 13:29
  */
 @RestController
-@RequestMapping("/templateManage")
+@RequestMapping("/template-manage")
 @ConditionalOnProperty(prefix = "crest.internal-lite", name = "enabled", havingValue = "false", matchIfMissing = true)
 public class TemplateManageService implements TemplateManageApi {
 
@@ -94,7 +94,7 @@ public class TemplateManageService implements TemplateManageApi {
                 request.setPid(request.getTemplateType());
                 String nameCheckResult = this.categoryNameCheck(CommonConstants.OPT_TYPE.INSERT, request.getName(), null);
                 if (CommonConstants.CHECK_RESULT.EXIST_ALL.equals(nameCheckResult)) {
-                    DEException.throwException("名称已存在");
+                    CrestException.throwException("名称已存在");
                 }
                 VisualizationTemplateCategory templateCategory = new VisualizationTemplateCategory();
                 BeanUtils.copyBean(templateCategory, request);
@@ -127,7 +127,7 @@ public class TemplateManageService implements TemplateManageApi {
             if (request.getLevel() == 0) {
                 String nameCheckResult = this.categoryNameCheck(CommonConstants.OPT_TYPE.UPDATE, request.getName(), request.getId());
                 if (CommonConstants.CHECK_RESULT.EXIST_ALL.equals(nameCheckResult)) {
-                    DEException.throwException("名称已存在");
+                    CrestException.throwException("名称已存在");
                 }
                 VisualizationTemplateCategory templateCategory = new VisualizationTemplateCategory();
                 BeanUtils.copyBean(templateCategory, request);
@@ -135,7 +135,7 @@ public class TemplateManageService implements TemplateManageApi {
             } else {
                 String nameCheckResult = this.nameCheck(CommonConstants.OPT_TYPE.UPDATE, request.getName(), request.getId());
                 if (CommonConstants.CHECK_RESULT.EXIST_ALL.equals(nameCheckResult)) {
-                    DEException.throwException("名称已存在");
+                    CrestException.throwException("名称已存在");
                 }
                 VisualizationTemplate template = new VisualizationTemplate();
                 BeanUtils.copyBean(template, request);

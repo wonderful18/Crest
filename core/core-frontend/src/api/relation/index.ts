@@ -1,12 +1,12 @@
 import request from '@/config/axios'
 
-export function getDatasourceRelationship(id) {
+export function datasourceRelationship(id) {
   return request.post({ url: `/relation/datasource/${id}` }).then(res => {
     return res?.data
   })
 }
 
-export function getDatasetRelationship(id) {
+export function datasetRelationship(id) {
   return request.post({ url: `/relation/dataset/${id}` }).then(res => {
     return res?.data
   })
@@ -32,6 +32,6 @@ export function listRelationResources(type = 'all', data = {}) {
 
 export function resourceCheckPermission(id) {
   return request.post({
-    url: `/resource/checkPermission/${id}`
+    url: `/resource/permission-check/${id}`
   })
 }

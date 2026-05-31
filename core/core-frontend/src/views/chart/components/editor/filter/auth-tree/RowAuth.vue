@@ -40,7 +40,7 @@ const submit = () => {
     errorMessage: errorMessage.value
   })
 }
-const errorDetected = ({ enumValue, deType, filterType, term, value, name, timeValue }) => {
+const errorDetected = ({ enumValue, fieldType, filterType, term, value, name, timeValue }) => {
   if (!name) {
     errorMessage.value = t('data_set.cannot_be_empty_')
     return
@@ -54,7 +54,7 @@ const errorDetected = ({ enumValue, deType, filterType, term, value, name, timeV
       !term.includes('null') &&
       !term.includes('empty') &&
       ['', null, undefined].includes(value) &&
-      deType !== 1
+      fieldType !== 1
     ) {
       errorMessage.value = t('chart.filter_value_can_null')
       return
@@ -64,12 +64,12 @@ const errorDetected = ({ enumValue, deType, filterType, term, value, name, timeV
       !term.includes('null') &&
       !term.includes('empty') &&
       ['', null, undefined].includes(timeValue) &&
-      deType === 1
+      fieldType === 1
     ) {
       errorMessage.value = t('chart.filter_value_can_null')
       return
     }
-    if ([2, 3].includes(deType)) {
+    if ([2, 3].includes(fieldType)) {
       if (parseFloat(value).toString() === 'NaN') {
         errorMessage.value = t('chart.filter_value_can_not_str')
         return
@@ -94,7 +94,7 @@ const dfsInit = arr => {
       elementList.push({ logic, child })
     } else {
       const { enumValue, fieldId, filterType, term, timeType, value, timeValue, field } = ele
-      const { name, deType } = field || {}
+      const { name, fieldType } = field || {}
       elementList.push({
         enumValue,
         fieldId,
@@ -104,7 +104,7 @@ const dfsInit = arr => {
         timeValue,
         value,
         name,
-        deType
+        fieldType
       })
     }
   })
@@ -129,8 +129,8 @@ const dfsSubmit = arr => {
         subTree: { logic, items: subTree }
       })
     } else {
-      const { enumValue, fieldId, filterType, deType, term, value, timeType, name, timeValue } = ele
-      errorDetected({ deType, enumValue, filterType, term, value, name, timeValue })
+      const { enumValue, fieldId, filterType, fieldType, term, value, timeType, name, timeValue } = ele
+      errorDetected({ fieldType, enumValue, filterType, term, value, name, timeValue })
       if (fieldId) {
         items.push({
           enumValue: enumValue || [],
@@ -284,7 +284,7 @@ const addCondReal = (type, logic) => {
           timeType: 'year',
           name: '',
           timeValue: '',
-          deType: ''
+          fieldType: ''
         }
       : { child: [], logic }
   )

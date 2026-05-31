@@ -5,13 +5,13 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fit2cloud
  * @since 2023-10-27
  */
-@TableName("core_sys_setting")
+@TableName("sys_setting")
 public class CoreSysSetting implements Serializable {
 
     private static final long serialVersionUID = 1L;

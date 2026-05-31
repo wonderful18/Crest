@@ -194,9 +194,9 @@ watch(
 
 const initOptions = () => {
   if (item?.value) {
-    if (item.value.deType === 0 || item.value.deType === 5) {
+    if (item.value.fieldType === 0 || item.value.fieldType === 5) {
       state.options = JSON.parse(JSON.stringify(state.textOptions))
-    } else if (item.value.deType === 1) {
+    } else if (item.value.fieldType === 1) {
       state.options = JSON.parse(JSON.stringify(state.dateOptions))
     } else {
       state.options = JSON.parse(JSON.stringify(state.valueOptions))
@@ -213,7 +213,7 @@ const init = () => {
 }
 const initEnumOptions = () => {
   // 查找枚举值
-  if (item.value.deType === 0 || item.value.deType === 5) {
+  if (item.value.fieldType === 0 || item.value.fieldType === 5) {
     multFieldValuesForPermissions({ fieldIds: [item.value.id] }).then(res => {
       state.fieldOptions = optionData(res.data)
       needRequestEnum.value = false
@@ -261,7 +261,7 @@ init()
 <template>
   <div @keydown.stop @keyup.stop>
     <el-col>
-      <div v-if="item.deType === 0 || item.deType === 5">
+      <div v-if="item.fieldType === 0 || item.fieldType === 5">
         <div>{{ t('chart.slc_logic') }}:</div>
         <el-radio-group
           v-model="state.filterType"
@@ -276,10 +276,10 @@ init()
 
       <div
         v-if="
-          ((item.deType === 0 || item.deType === 5) && state.filterType === 'logic') ||
-          item.deType === 1 ||
-          item.deType === 2 ||
-          item.deType === 3
+          ((item.fieldType === 0 || item.fieldType === 5) && state.filterType === 'logic') ||
+          item.fieldType === 1 ||
+          item.fieldType === 2 ||
+          item.fieldType === 3
         "
       >
         <div
@@ -355,7 +355,7 @@ init()
         </el-button>
       </div>
 
-      <div v-if="(item.deType === 0 || item.deType === 5) && state.filterType === 'enum'">
+      <div v-if="(item.fieldType === 0 || item.fieldType === 5) && state.filterType === 'enum'">
         <span style="margin-right: 10px">{{ t('chart.filter_exp') }}</span>
         <el-select
           v-model="state.enumCheckField"
@@ -418,7 +418,7 @@ span {
     :deep(span) {
       color: var(--N900, #1f2329);
       /* 中文/桌面端/正文 14 22 Regular */
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 14px;
       font-style: normal;
       font-weight: 400;

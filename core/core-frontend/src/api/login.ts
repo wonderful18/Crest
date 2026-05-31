@@ -1,22 +1,22 @@
 import request from '@/config/axios'
 
-export const loginApi = data => request.post({ url: '/login/localLogin', data })
+export const loginApi = data => request.post({ url: '/login/local-login', data })
 
-export const queryDekey = () => request.get({ url: 'dekey' })
+export const queryPublicKey = () => request.get({ url: 'public-key' })
 
-export const querySymmetricKey = () => request.get({ url: 'symmetricKey' })
+export const querySymmetricKey = () => request.get({ url: 'symmetric-key' })
 
 export const modelApi = () => request.get({ url: 'model' })
 
-export const platformLoginApi = origin => request.post({ url: '/login/platformLogin/' + origin })
+export const platformLoginApi = origin => request.post({ url: '/login/platform-login/' + origin })
 
 export const logoutApi = () => request.get({ url: '/logout' })
 
 export const refreshApi = (time?: any) => request.get({ url: '/login/refresh', params: { time } })
 
-export const uiLoadApi = () => request.get({ url: '/sysParameter/ui' })
+export const uiLoadApi = () => request.get({ url: '/sys-parameter/ui' })
 
-export const loginCategoryApi = () => request.get({ url: '/sysParameter/defaultLogin' })
+export const loginCategoryApi = () => request.get({ url: '/sys-parameter/default-login' })
 
 export const ssoStatusApi = () => request.get({ url: '/sso/public/status' })
 

@@ -5,9 +5,9 @@ import io.crest.auth.bo.TokenUserBO;
 import io.crest.auth.vo.TokenVO;
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
-import io.crest.log.DeLog;
+import io.crest.log.CrestAudit;
 import io.crest.substitute.permissions.user.CrestUserManage;
 import io.crest.substitute.permissions.user.model.CrestUser;
 import io.crest.system.manage.SsoManage;
@@ -37,8 +37,8 @@ public class SubstituleLoginServer {
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
-    @DeLog(ot = LogOT.LOGIN, st = LogST.USER)
-    @PostMapping("/login/localLogin")
+    @CrestAudit(ot = LogOT.LOGIN, st = LogST.USER)
+    @PostMapping("/login/local-login")
     public TokenVO localLogin(@RequestBody PwdLoginDTO dto) {
 
         String name = dto.getName();
@@ -51,17 +51,17 @@ public class SubstituleLoginServer {
 
         CrestUser user = crestUserManage.queryByAccount(name);
         if (user == null || !crestUserManage.passwordMatches(user, pwd)) {
-            DEException.throwException("用户名或密码错误");
+            CrestException.throwException("用户名或密码错误");
         }
         if (Boolean.FALSE.equals(user.getEnable())) {
-            DEException.throwException("用户已停用");
+            CrestException.throwException("用户已停用");
         }
         boolean emergencyAdmin = Boolean.TRUE.equals(dto.getEmergency()) && Boolean.TRUE.equals(user.getAdmin());
         if (CrestUserManage.AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType()) && !emergencyAdmin) {
-            DEException.throwException("单点登录用户请使用企业账号登录");
+            CrestException.throwException("单点登录用户请使用企业账号登录");
         }
         if (!ssoManage.localLoginAllowed() && !emergencyAdmin) {
-            DEException.throwException("当前已启用单点登录，请使用企业账号登录");
+            CrestException.throwException("当前已启用单点登录，请使用企业账号登录");
         }
         TokenUserBO tokenUserBO = new TokenUserBO();
         tokenUserBO.setUserId(user.getId());
@@ -76,19 +76,19 @@ public class SubstituleLoginServer {
         // 获取当前用户
         io.crest.auth.bo.TokenUserBO userBO = io.crest.utils.AuthUtils.getUser();
         if (userBO == null) {
-            DEException.throwException("用户未登录");
+            CrestException.throwException("用户未登录");
         }
 
         // 查询用户信息用于生成新Token
         io.crest.substitute.permissions.user.model.CrestUser user = crestUserManage.queryById(userBO.getUserId());
         if (user == null) {
-            DEException.throwException("用户不存在");
+            CrestException.throwException("用户不存在");
         }
 
         return generate(userBO, user.getPasswordHash());
     }
 
-    @DeLog(ot = LogOT.LOGIN, st = LogST.USER)
+    @CrestAudit(ot = LogOT.LOGIN, st = LogST.USER)
     @GetMapping("/logout")
     public void logout() {
         LogUtil.info("substitule logout");

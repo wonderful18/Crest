@@ -41,7 +41,7 @@ const loadTable = async () => {
   loading.value = true
   try {
     const res = await request.post({
-      url: `/user/pager/${pager.currentPage}/${pager.pageSize}`,
+      url: `/user/page/${pager.currentPage}/${pager.pageSize}`,
       data: { keyword: keyword.value, oid: selectedOrgId.value, timeDesc: true }
     })
     tableData.value = res.data?.records || []
@@ -53,8 +53,8 @@ const loadTable = async () => {
 
 const loadRoles = async () => {
   const res = selectedOrgId.value
-    ? await request.get({ url: `/role/queryWithOid/${selectedOrgId.value}` })
-    : await request.post({ url: '/role/byCurOrg', data: {} })
+    ? await request.get({ url: `/role/organization/${selectedOrgId.value}` })
+    : await request.post({ url: '/role/by-current-org', data: {} })
   roleOptions.value = res.data || []
 }
 
@@ -71,8 +71,8 @@ const onOrgChange = async node => {
 
 const onFormOrgChange = async () => {
   const res = form.oid
-    ? await request.get({ url: `/role/queryWithOid/${form.oid}` })
-    : await request.post({ url: '/role/byCurOrg', data: {} })
+    ? await request.get({ url: `/role/organization/${form.oid}` })
+    : await request.post({ url: '/role/by-current-org', data: {} })
   roleOptions.value = res.data || []
 }
 
@@ -98,7 +98,7 @@ const openCreate = () => {
 }
 
 const openEdit = async row => {
-  const res = await request.get({ url: `/user/queryById/${row.id}` })
+  const res = await request.get({ url: `/user/detail/${row.id}` })
   Object.assign(form, res.data || row)
   form.oid = res.data?.oid || row.oid || selectedOrgId.value
   form.roleIds = (res.data?.roleIds || row.roleItems?.map(role => String(role.id)) || ['2']).map(
@@ -118,7 +118,8 @@ const save = async () => {
     ElMessage.warning('请选择所属组织')
     return
   }
-  await request.post({ url: isEdit.value ? '/user/edit' : '/user/create', data: form })
+  const method = isEdit.value ? request.put : request.post
+  await method({ url: '/user', data: form })
   ElMessage.success('保存成功')
   dialogVisible.value = false
   await loadTable()
@@ -136,7 +137,7 @@ const resetPwd = async row => {
     cancelButtonText: '取消',
     type: 'warning'
   })
-  await request.post({ url: `/user/resetPwd/${row.id}` })
+  await request.post({ url: `/user/reset-password/${row.id}` })
   ElMessage.success('密码已重置')
 }
 
@@ -146,7 +147,7 @@ const remove = async row => {
     cancelButtonText: '取消',
     type: 'warning'
   })
-  await request.post({ url: `/user/delete/${row.id}` })
+  await request.delete({ url: `/user/${row.id}` })
   ElMessage.success('删除成功')
   await loadTable()
 }
@@ -161,14 +162,14 @@ const batchRemove = async () => {
     cancelButtonText: '取消',
     type: 'warning'
   })
-  await request.post({ url: '/user/batchDel', data: selectedRows.value.map(row => row.id) })
+  await request.delete({ url: '/user/batch', data: selectedRows.value.map(row => row.id) })
   ElMessage.success('删除成功')
   selectedRows.value = []
   await loadTable()
 }
 
 const downloadTemplate = async () => {
-  const res: any = await request.post({ url: '/user/excelTemplate', responseType: 'blob' })
+  const res: any = await request.post({ url: '/user/excel-template', responseType: 'blob' })
   const blob = new Blob([res.data], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   })
@@ -184,7 +185,7 @@ const importUsers = async options => {
   const data = new FormData()
   data.append('file', options.file)
   const res = await request.post({
-    url: '/user/batchImport',
+    url: '/user/batch-import',
     headersType: 'multipart/form-data',
     data
   })
@@ -221,8 +222,9 @@ const saveOrg = async () => {
     ElMessage.warning('请输入组织名称')
     return
   }
-  await request.post({
-    url: orgIsEdit.value ? '/org/page/edit' : '/org/page/create',
+  const method = orgIsEdit.value ? request.put : request.post
+  await method({
+    url: '/org/page',
     data: { id: orgForm.id, pid: orgForm.pid, name: orgForm.name }
   })
   ElMessage.success('保存成功')
@@ -236,7 +238,7 @@ const removeOrg = async (node: any) => {
     cancelButtonText: '取消',
     type: 'warning'
   })
-  await request.post({ url: `/org/page/delete/${node.id}` })
+  await request.delete({ url: `/org/page/${node.id}` })
   ElMessage.success('删除成功')
   if (String(node.id) === String(selectedOrgId.value)) {
     selectedOrgId.value = null
@@ -428,7 +430,7 @@ onMounted(async () => {
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="save">保存</el-button>
+        <el-button type="primary" @click="record">保存</el-button>
       </template>
     </el-dialog>
 

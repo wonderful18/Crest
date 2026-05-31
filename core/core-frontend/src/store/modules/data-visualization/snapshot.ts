@@ -217,7 +217,7 @@ export const snapshotStore = defineStore('snapshot', {
         // 清理缓存计数器
         this.snapshotCacheTimes = 0
         if (this.snapshotData.length > 1) {
-          wsCache.set('DE-DV-CATCH-' + dvInfo.value.id, newSnapshot)
+          wsCache.set('CREST-DV-CACHE-' + dvInfo.value.id, newSnapshot)
         }
       }
     }

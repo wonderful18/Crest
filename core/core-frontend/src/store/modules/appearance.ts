@@ -164,7 +164,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
     setCurrentFont(name) {
       const currentFont = this.fontList.find(ele => ele.name === name)
       if (currentFont) {
-        document.documentElement.style.setProperty('--de-custom_font', `${name}`)
+        document.documentElement.style.setProperty('--crest-custom_font', `${name}`)
         document.documentElement.style.setProperty('--van-base-font', `${name}`)
         if (!currentFont.fileTransName) {
           return
@@ -205,7 +205,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
     setLoaded(data: boolean) {
       this.loaded = data
     },
-    async setAppearance(isDataEaseBi?: boolean) {
+    async setAppearance(isCrestBi?: boolean) {
       const desktop = wsCache.get('app.desktop')
       if (desktop) {
         this.loaded = true
@@ -234,7 +234,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
           }
           if (!name) {
             fontStyleElement.innerHTML = ''
-            document.documentElement.style.removeProperty('--de-custom_font')
+            document.documentElement.style.removeProperty('--crest-custom_font')
             document.documentElement.style.removeProperty('--van-base-font')
             return
           }
@@ -246,18 +246,18 @@ export const useAppearanceStore = defineStore('appearanceStore', {
                 font-style: normal;
                 }`
             : ''
-          document.documentElement.style.setProperty('--de-custom_font', `${name}`)
+          document.documentElement.style.setProperty('--crest-custom_font', `${name}`)
           document.documentElement.style.setProperty('--van-base-font', `${name}`)
         }
       })
-      if (!isDataEaseBi) {
+      if (!isCrestBi) {
         document.title = ''
       }
       const res = await uiLoadApi()
       this.loaded = true
       const resData = res.data
       if (!resData?.length) {
-        if (!isDataEaseBi) {
+        if (!isCrestBi) {
           document.title = 'Crest'
           setLinkIcon()
         }
@@ -339,7 +339,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
       this.name = data.name
       this.foot = data.foot
       this.footContent = data.footContent
-      if (isDataEaseBi) return
+      if (isCrestBi) return
       if (this.name) {
         applyDocumentTitle(this.name)
       } else {

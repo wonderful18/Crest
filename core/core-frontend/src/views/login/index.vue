@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { FormRules, FormInstance } from 'element-plus-secondary'
-import { loginApi, queryDekey, ssoStatusApi, ssoTokenApi } from '@/api/login'
+import { loginApi, queryPublicKey, ssoStatusApi, ssoTokenApi } from '@/api/login'
 import { useCache } from '@/hooks/web/useCache'
 import { useAppStoreWithOut } from '@/store/modules/app'
 import { CustomPassword } from '@/components/custom-password'
@@ -13,7 +13,7 @@ import router from '@/router'
 import { ElMessage } from 'element-plus-secondary'
 import { logoutHandler } from '@/utils/logout'
 import { PATH_URL } from '@/config/axios/service'
-import DeImage from '@/assets/crest-login-hero.png'
+import LoginHeroImage from '@/assets/crest-login-hero.png'
 import crestLogo from '@/assets/img/crest-logo-horizontal-192h.png'
 import elementResizeDetectorMaker from 'element-resize-detector'
 import { cleanPlatformFlag } from '@/utils/utils'
@@ -105,9 +105,9 @@ const enterHandler = e => {
 const formRef = ref<FormInstance | undefined>()
 const duringLogin = ref(true)
 const refreshDekey = async () => {
-  const res = await queryDekey()
+  const res = await queryPublicKey()
   if (res?.data) {
-    wsCache.set(appStore.getDekey, res.data)
+    wsCache.set(appStore.getClientKey, res.data)
   }
 }
 const handleLogin = () => {
@@ -291,11 +291,11 @@ onMounted(async () => {
   }
   await loadSsoStatus()
   duringLogin.value = false
-  if (localStorage.getItem('DE-GATEWAY-FLAG')) {
-    const msg = localStorage.getItem('DE-GATEWAY-FLAG')
+  if (localStorage.getItem('CREST-GATEWAY-FLAG')) {
+    const msg = localStorage.getItem('CREST-GATEWAY-FLAG')
     loginErrorMsg.value = decodeURIComponent(msg)
     showLoginErrorMsg()
-    localStorage.removeItem('DE-GATEWAY-FLAG')
+    localStorage.removeItem('CREST-GATEWAY-FLAG')
     logoutHandler(true)
   }
   refreshDekey()
@@ -324,7 +324,7 @@ onMounted(async () => {
           v-if="axiosFinished"
           class="login-image"
           fit="cover"
-          :src="loginImageUrl || DeImage"
+          :src="loginImageUrl || LoginHeroImage"
         />
       </div>
       <div class="login-form-content" v-loading="loading">
@@ -504,7 +504,7 @@ onMounted(async () => {
     text-align: center;
     margin-top: 8px;
     color: #646a73;
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-style: normal;
     font-weight: 400;
@@ -545,13 +545,13 @@ onMounted(async () => {
       margin-top: 24px;
     }
 
-    .ed-form-item--default {
+    .ed-form-item--crestfault {
       margin-bottom: 24px;
     }
     .login-form-title {
       margin-top: 0;
       color: #1f2329;
-      font-family: var(--de-custom_font, 'PingFang');
+      font-family: var(--crest-custom_font, 'PingFang');
       font-size: 20px;
       font-weight: 500;
       line-height: 28px;
@@ -609,7 +609,7 @@ onMounted(async () => {
 
   :deep(.ed-divider__text) {
     color: #8f959e;
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 12px;
     font-style: normal;
     font-weight: 400;

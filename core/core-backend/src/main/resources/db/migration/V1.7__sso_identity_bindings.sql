@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `sso_provider`
+CREATE TABLE IF NOT EXISTS `auth_sso_provider`
 (
     `id`            bigint       NOT NULL,
     `provider_key`  varchar(64)  NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `sso_provider`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
 
-CREATE TABLE IF NOT EXISTS `sso_identity_binding`
+CREATE TABLE IF NOT EXISTS `auth_sso_identity_binding`
 (
     `id`               bigint       NOT NULL,
     `user_id`          bigint       NOT NULL,
@@ -37,5 +37,5 @@ CREATE TABLE IF NOT EXISTS `sso_identity_binding`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
 
-INSERT IGNORE INTO `sso_provider` (`id`, `provider_key`, `provider_type`, `name`, `enabled`, `create_time`, `update_time`)
+INSERT IGNORE INTO `auth_sso_provider` (`id`, `provider_key`, `provider_type`, `name`, `enabled`, `create_time`, `update_time`)
 VALUES (1, 'default', 'OIDC_GENERIC', '统一身份认证', 1, 0, 0);

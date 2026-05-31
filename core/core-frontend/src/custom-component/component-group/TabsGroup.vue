@@ -30,7 +30,7 @@ const props = defineProps({
 
 const { dvModel } = toRefs(props)
 const newComponent = () => {
-  eventBus.emit('handleNew', { componentName: 'DeTabs', innerType: 'DeTabs' })
+  eventBus.emit('handleNew', { componentName: 'Tabs', innerType: 'Tabs' })
 }
 
 const handleDragStart = e => {
@@ -53,7 +53,7 @@ const handleDragEnd = e => {
       :themes="themes"
       :icon="dvTabShow"
       label="Tab"
-      drag-info="DeTabs&DeTabs"
+      drag-info="Tabs&Tabs"
     ></drag-component>
   </div>
 </template>

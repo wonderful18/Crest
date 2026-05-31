@@ -7,13 +7,13 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author fit2cloud
  * @since 2023-09-28
  */
-@TableName("core_datasource_task_log")
+@TableName("data_source_sync_task_log")
 public class CoreDatasourceTaskLog implements Serializable {
 
     private static final long serialVersionUID = 1L;

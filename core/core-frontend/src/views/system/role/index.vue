@@ -13,7 +13,7 @@ const form = reactive<any>({ id: null, name: '', desc: '', typeCode: 0 })
 const loadTable = async () => {
   loading.value = true
   try {
-    const res = await request.post({ url: '/role/byCurOrg', data: { keyword: keyword.value } })
+    const res = await request.post({ url: '/role/by-current-org', data: { keyword: keyword.value } })
     const rows = res.data || []
     tableData.value = keyword.value
       ? rows.filter(row => String(row.name || '').includes(keyword.value))
@@ -41,7 +41,8 @@ const save = async () => {
     ElMessage.warning('请输入角色名称')
     return
   }
-  await request.post({ url: isEdit.value ? '/role/edit' : '/role/create', data: form })
+  const method = isEdit.value ? request.put : request.post
+  await method({ url: '/role', data: form })
   ElMessage.success('保存成功')
   dialogVisible.value = false
   await loadTable()
@@ -53,7 +54,7 @@ const remove = async (row: any) => {
     cancelButtonText: '取消',
     type: 'warning'
   })
-  await request.post({ url: `/role/delete/${row.id}` })
+  await request.delete({ url: `/role/${row.id}` })
   ElMessage.success('删除成功')
   await loadTable()
 }
@@ -138,7 +139,7 @@ onMounted(loadTable)
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="save">保存</el-button>
+        <el-button type="primary" @click="record">保存</el-button>
       </template>
     </el-dialog>
   </div>

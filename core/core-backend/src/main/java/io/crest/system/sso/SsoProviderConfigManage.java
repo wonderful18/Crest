@@ -42,7 +42,7 @@ public class SsoProviderConfigManage {
     public void upsert(SsoProviderConfig provider) {
         long now = System.currentTimeMillis();
         jdbcTemplate.update("""
-                INSERT INTO sso_provider(id, provider_key, provider_type, name, enabled, client_id, client_secret,
+                INSERT INTO auth_sso_provider(id, provider_key, provider_type, name, enabled, client_id, client_secret,
                     authorization_endpoint, token_endpoint, user_info_endpoint, issuer, scope, redirect_uri,
                     user_id_attribute, account_attribute, name_attribute, email_attribute, union_id_attribute,
                     auto_create_user, require_https, create_time, update_time)

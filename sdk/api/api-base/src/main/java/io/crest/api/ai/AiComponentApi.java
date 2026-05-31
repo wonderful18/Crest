@@ -9,6 +9,6 @@ import java.util.Map;
  * @date : 2024/3/27 09:44
  */
 public interface AiComponentApi {
-    @GetMapping("findTargetUrl")
-    Map<String, String> findTargetUrl();
+    @GetMapping("target-url")
+    Map<String, String> targetUrl();
 }

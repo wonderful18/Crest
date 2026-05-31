@@ -6,7 +6,7 @@ import { cancelRequestBatch } from '@/config/axios/service'
 import icon_drilling_outlined from '@/assets/svg/icon_drilling_outlined.svg'
 import { useI18n } from '@/hooks/web/useI18n'
 import ChartComponentG2Plot from './components/ChartComponentG2Plot.vue'
-import DeIndicator from '@/custom-component/indicator/DeIndicator.vue'
+import Indicator from '@/custom-component/indicator/Indicator.vue'
 import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 import { useAppStoreWithOut } from '@/store/modules/app'
 import { useEmbedded } from '@/store/modules/embedded'
@@ -44,8 +44,8 @@ import chartViewManager from '@/views/chart/components/js/panel'
 import { storeToRefs } from 'pinia'
 import { checkAddHttp, setIdValueTrans } from '@/utils/canvasUtils'
 import { Base64 } from 'js-base64'
-import DeRichTextView from '@/custom-component/rich-text/DeRichTextView.vue'
-import DePictureGroup from '@/custom-component/picture-group/Component.vue'
+import CrestRichTextView from '@/custom-component/rich-text/CrestRichTextView.vue'
+import PictureGroup from '@/custom-component/picture-group/Component.vue'
 import ChartEmptyInfo from '@/views/chart/components/views/components/ChartEmptyInfo.vue'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import { viewFieldTimeTrans } from '@/utils/viewUtils'
@@ -53,7 +53,7 @@ import { CHART_TYPE_CONFIGS } from '@/views/chart/components/editor/util/chart'
 import request from '@/config/axios'
 import { store } from '@/store'
 import { clearExtremum } from '@/views/chart/components/js/extremumUitl'
-import DePreviewPopDialog from '@/components/visualization/DePreviewPopDialog.vue'
+import CrestPreviewPopDialog from '@/components/visualization/CrestPreviewPopDialog.vue'
 import { useRoute } from 'vue-router_2'
 const route = useRoute()
 const { wsCache } = useCache()
@@ -61,12 +61,12 @@ const chartComponent = ref<any>()
 const { t } = useI18n()
 const dvMainStore = dvMainStoreWithOut()
 const { emitter } = useEmitt()
-const dePreviewPopDialogRef = ref(null)
+const crestPreviewPopDialogRef = ref(null)
 let innerRefreshTimer = null
 let innerSearchCount = 0
 const appStore = useAppStoreWithOut()
 const appearanceStore = useAppearanceStoreWithOut()
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi)
+const isCrestBi = computed(() => appStore.getIsCrestBi)
 const isIframe = computed(() => appStore.getIsIframe)
 
 const emit = defineEmits(['onPointClick', 'onComponentEvent'])
@@ -337,7 +337,7 @@ const onPointClick = param => {
     }
     emit('onPointClick', msg)
   } catch (e) {
-    console.warn('de_inner_params send error')
+    console.warn('crest_inner_params send error')
   }
 }
 
@@ -413,7 +413,7 @@ const windowsJump = (url, jumpType, size = 'middle') => {
   try {
     let newWindow
     if ('newPop' === jumpType) {
-      dePreviewPopDialogRef.value.previewInit({ url, size })
+      crestPreviewPopDialogRef.value.previewInit({ url, size })
     } else if ('_self' === jumpType) {
       newWindow = window.open(url, jumpType)
     } else {
@@ -458,9 +458,9 @@ const jumpClick = param => {
     param.sourceViewId = param.viewId
     param.sourceFieldId = dimension.id
     let embeddedBaseUrl = ''
-    const divSelf = isDataEaseBi.value && jumpInfo.jumpType === '_self'
+    const divSelf = isCrestBi.value && jumpInfo.jumpType === '_self'
     const iframeSelf = isIframe.value && jumpInfo.jumpType === '_self'
-    if (isDataEaseBi.value) {
+    if (isCrestBi.value) {
       embeddedBaseUrl = embeddedStore.baseUrl
     }
     const jumpInfoParam = `&jumpInfoParam=${encodeURIComponent(
@@ -536,7 +536,7 @@ const jumpClick = param => {
       let url = setIdValueTrans('id', 'value', jumpInfo.content, colList)
       url = checkAddHttp(url)
 
-      if (isIframe.value || isDataEaseBi.value) {
+      if (isIframe.value || isCrestBi.value) {
         embeddedStore.clearState()
       }
       if (divSelf) {
@@ -552,7 +552,7 @@ const jumpClick = param => {
 }
 
 const queryDataFromSelect = (firstLoad = false) => {
-  cancelRequestBatch(`chartData/getData/${view.value.id}`)
+  cancelRequestBatch(`chartData/data/${view.value.id}`)
   loading.value = false
   queryData(firstLoad)
 }
@@ -635,7 +635,7 @@ const checkFieldIsAllowEmpty = (allField?) => {
     }
     const axisConfigMap = new Map(Object.entries(chartView.axisConfig))
     // 验证拖入的字段是否包含在当前数据集字段中，如果有一个不在数据集字段中，则显示空图表
-    let includeDatasetField = false
+    let includatasetUiField = false
     if (allField && allField.length > 0) {
       viewAllDatasetFields.set(view.value.id, allField)
       outerLoop: for (const [key, value] of axisConfigMap) {
@@ -644,13 +644,13 @@ const checkFieldIsAllowEmpty = (allField?) => {
         if (!view.value?.[key]?.length) continue
         for (const item of view.value[key]) {
           if (!allField.find(field => field.id === item.id)) {
-            includeDatasetField = true
+            includatasetUiField = true
             break outerLoop
           }
         }
       }
     }
-    if (includeDatasetField) {
+    if (includatasetUiField) {
       showEmpty.value = true
       return
     }
@@ -664,13 +664,13 @@ const checkFieldIsAllowEmpty = (allField?) => {
           // 检查图表字段是否有不在数据集中
           for (const item of view.value[key]) {
             if (!viewAllDatasetFields.get(view.value?.id).find(field => field.id === item.id)) {
-              includeDatasetField = true
+              includatasetUiField = true
               break
             }
           }
         }
         // 如果有不在数据集中
-        if (includeDatasetField) {
+        if (includatasetUiField) {
           showEmpty.value = true
           break
         }
@@ -1190,7 +1190,7 @@ const clearG2Tooltip = () => {
     </div>
     <!--这里去渲染不同图库的图表-->
     <div v-if="allEmptyCheck || (chartAreaShow && !showEmpty)" style="flex: 1; overflow: hidden">
-      <de-picture-group
+      <PictureGroup
         v-if="showChartView(ChartLibraryType.PICTURE_GROUP)"
         :themes="canvasStyleData.dashboard.themeColor"
         ref="chartComponent"
@@ -1200,8 +1200,8 @@ const clearG2Tooltip = () => {
         :show-position="showPosition"
         :suffixId="suffixId"
       >
-      </de-picture-group>
-      <de-rich-text-view
+      </PictureGroup>
+      <CrestRichTextView
         v-else-if="showChartView(ChartLibraryType.RICH_TEXT)"
         :scale="scale"
         :themes="canvasStyleData.dashboard.themeColor"
@@ -1213,7 +1213,7 @@ const clearG2Tooltip = () => {
         :edit-mode="editMode"
         :suffixId="suffixId"
       />
-      <de-indicator
+      <Indicator
         :scale="scale"
         v-else-if="showChartView(ChartLibraryType.INDICATOR)"
         :themes="canvasStyleData.dashboard.themeColor"
@@ -1277,7 +1277,7 @@ const clearG2Tooltip = () => {
       :drill-filters="state.drillFilters"
       @onDrillJump="drillJump"
     />
-    <DePreviewPopDialog ref="dePreviewPopDialogRef"></DePreviewPopDialog>
+    <CrestPreviewPopDialog ref="crestPreviewPopDialogRef"></CrestPreviewPopDialog>
   </div>
 </template>
 

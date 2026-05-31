@@ -32,9 +32,9 @@
 
 | 资源 | 主要表 | 可复用字段 |
 | --- | --- | --- |
-| 数据源 | `core_datasource` | `create_by`、`create_time`、`update_time` |
-| 数据集 | `core_dataset_group` | `create_by`、`create_time`、`last_update_time`、`node_type` |
-| 仪表盘/大屏 | `data_visualization_info` | `create_by`、`org_id`、`type`、`node_type`、`delete_flag` |
+| 数据源 | `data_source` | `create_by`、`create_time`、`update_time` |
+| 数据集 | `dataset_group` | `create_by`、`create_time`、`last_update_time`、`node_type` |
+| 仪表盘/大屏 | `bi_visualization` | `create_by`、`org_id`、`type`、`node_type`、`delete_flag` |
 
 数据源和数据集没有完整组织字段，因此需要统一资源索引表补齐组织归属。仪表盘和数据大屏优先使用已有 `org_id`，同时写入统一资源索引。
 

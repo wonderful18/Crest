@@ -1,9 +1,9 @@
 package io.crest.log;
 
-import io.crest.auth.DePermit;
+import io.crest.auth.CrestPermit;
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.result.ResultCode;
 import io.crest.utils.AuthUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,7 +23,7 @@ import java.util.Map;
  */
 @Tag(name = "审计日志")
 @RestController
-@RequestMapping("/auditLog")
+@RequestMapping("/audit-log")
 public class AuditLogController {
 
     private static final int DEFAULT_PAGE = 1;
@@ -33,10 +33,10 @@ public class AuditLogController {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @DeLog(ot = LogOT.READ, st = LogST.DATA)
+    @CrestAudit(ot = LogOT.READ, st = LogST.DATA)
     @Operation(summary = "查询审计日志")
-    @DePermit("m:read")
-    @PostMapping("/pager/{goPage}/{pageSize}")
+    @CrestPermit("m:read")
+    @PostMapping("/page/{goPage}/{pageSize}")
     public Map<String, Object> pager(
             @PathVariable("goPage") int goPage,
             @PathVariable("pageSize") int pageSize,
@@ -84,11 +84,11 @@ public class AuditLogController {
         }
 
         // 查询总数
-        String countSql = "SELECT COUNT(*) FROM core_audit_log" + where;
+        String countSql = "SELECT COUNT(*) FROM audit_log" + where;
         Long total = jdbcTemplate.queryForObject(countSql, Long.class, params.toArray());
 
         // 查询数据
-        String dataSql = "SELECT * FROM core_audit_log" + where + " ORDER BY operation_time DESC LIMIT ? OFFSET ?";
+        String dataSql = "SELECT * FROM audit_log" + where + " ORDER BY operation_time DESC LIMIT ? OFFSET ?";
         params.add(safePageSize);
         params.add(offset);
         List<Map<String, Object>> records = jdbcTemplate.queryForList(dataSql, params.toArray());
@@ -103,7 +103,7 @@ public class AuditLogController {
     }
 
     @Operation(summary = "审计日志统计")
-    @DePermit("m:read")
+    @CrestPermit("m:read")
     @GetMapping("/statistics")
     public Map<String, Object> statistics() {
         requireSystemAdmin();
@@ -111,36 +111,36 @@ public class AuditLogController {
 
         // 今日操作数
         Long todayCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM core_audit_log WHERE DATE(operation_time) = CURDATE()",
+                "SELECT COUNT(*) FROM audit_log WHERE DATE(operation_time) = CURDATE()",
                 Long.class);
         stats.put("todayCount", todayCount != null ? todayCount : 0);
 
         // 今日登录数
         Long todayLogin = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM core_audit_log WHERE operation_type = 'LOGIN' AND DATE(operation_time) = CURDATE()",
+                "SELECT COUNT(*) FROM audit_log WHERE operation_type = 'LOGIN' AND DATE(operation_time) = CURDATE()",
                 Long.class);
         stats.put("todayLogin", todayLogin != null ? todayLogin : 0);
 
         // 操作类型统计
         List<Map<String, Object>> typeStats = jdbcTemplate.queryForList(
-                "SELECT operation_type, COUNT(*) as count FROM core_audit_log WHERE DATE(operation_time) = CURDATE() GROUP BY operation_type");
+                "SELECT operation_type, COUNT(*) as count FROM audit_log WHERE DATE(operation_time) = CURDATE() GROUP BY operation_type");
         stats.put("typeStats", typeStats);
 
         return stats;
     }
 
     @Operation(summary = "获取操作类型列表")
-    @DePermit("m:read")
-    @GetMapping("/operationTypes")
+    @CrestPermit("m:read")
+    @GetMapping("/operation-types")
     public List<Map<String, Object>> operationTypes() {
         requireSystemAdmin();
         return jdbcTemplate.queryForList(
-                "SELECT DISTINCT operation_type as value, operation_type as label FROM core_audit_log ORDER BY operation_type");
+                "SELECT DISTINCT operation_type as value, operation_type as label FROM audit_log ORDER BY operation_type");
     }
 
     private void requireSystemAdmin() {
         if (!AuthUtils.isSysAdmin()) {
-            DEException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "仅系统管理员可访问审计日志");
+            CrestException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "仅系统管理员可访问审计日志");
         }
     }
 }

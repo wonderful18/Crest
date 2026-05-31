@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
-import DePreview from '@/components/data-visualization/canvas/DePreview.vue'
+import CrestPreview from '@/components/data-visualization/canvas/CrestPreview.vue'
 import router from '@/router'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { initCanvasData, onInitReady } from '@/utils/canvasUtils'
@@ -293,7 +293,7 @@ defineExpose({
       :show-position="state.showPosition"
       :show-linkage-button="false"
     ></DvPreview>
-    <de-preview
+    <CrestPreview
       ref="dvPreview"
       v-if="state.canvasStylePreview && state.initState && state.dvInfo?.type === 'dashboard'"
       :component-data="state.canvasDataPreview"
@@ -306,7 +306,7 @@ defineExpose({
       :show-pop-bar="true"
       :show-position="state.showPosition"
       :show-linkage-button="false"
-    ></de-preview>
+    ></CrestPreview>
     <empty-background
       v-if="!state.initState"
       :description="t('visualization.no_params_tips')"

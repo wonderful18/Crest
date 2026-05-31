@@ -50,22 +50,22 @@ const handleDragEnd = e => {
       :themes="themes"
       name="YYYY-MM-DD 08:00:00"
       :label="t('visualization.date_time')"
-      drag-info="DeTimeClock&DeTimeClock"
-      v-on:click="newComponent('DeTimeClock')"
+      drag-info="TimeClock&TimeClock"
+      v-on:click="newComponent('TimeClock')"
     ></drag-component>
     <drag-component
       :themes="themes"
       :icon="dbMoreWeb"
       :label="t('visualization.web')"
-      drag-info="DeFrame&DeFrame"
-      v-on:click="newComponent('DeFrame')"
+      drag-info="Frame&Frame"
+      v-on:click="newComponent('Frame')"
     ></drag-component>
     <!--    <drag-component-->
     <!--      :themes="themes"-->
     <!--      :icon="dvTabScreen"-->
     <!--      :label="$t('visualization.screen_page')"-->
-    <!--      drag-info="DeScreen&DeScreen"-->
-    <!--      v-on:click="newComponent('DeScreen', 'DeScreen')"-->
+    <!--      drag-info="Screen&Screen"-->
+    <!--      v-on:click="newComponent('Screen', 'Screen')"-->
     <!--    ></drag-component>-->
   </div>
 </template>

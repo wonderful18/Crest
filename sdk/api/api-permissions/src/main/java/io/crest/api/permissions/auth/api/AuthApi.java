@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
@@ -25,57 +26,57 @@ public interface AuthApi {
     @Operation(summary = "查询资源树")
     @ApiOperationSupport(order = 1)
     @Parameter(name = "flag", description = "类型")
-    @GetMapping("/busiResource/{flag}")
+    @GetMapping("/business-resources/{flag}")
     List<ResourceVO> busiResource(@PathVariable("flag") String flag);
 
     @Operation(summary = "查询对象已授权资源")
     @ApiOperationSupport(order = 3)
-    @PostMapping("/busiPermission")
+    @PostMapping("/business-permissions")
     PermissionVO busiPermission(@RequestBody BusiPermissionRequest request);
 
     @Operation(summary = "查询资源已授权对象")
     @ApiOperationSupport(order = 5)
-    @PostMapping("/busiTargetPermission")
+    @PostMapping("/business-target-permissions")
     PermissionVO busiTargetPermission(@RequestBody BusiPermissionRequest request);
 
     @Operation(summary = "查询菜单树")
     @ApiOperationSupport(order = 2)
-    @GetMapping("/menuResource")
+    @GetMapping("/menu-resources")
     List<ResourceVO> menuResource();
 
     @Operation(summary = "查询对象已授权菜单")
     @ApiOperationSupport(order = 4)
-    @PostMapping("/menuPermission")
+    @PostMapping("/menu-permissions")
     PermissionVO menuPermission(@RequestBody MenuPermissionRequest request);
 
     @Operation(summary = "查询菜单已授权对象")
     @ApiOperationSupport(order = 6)
-    @PostMapping("/menuTargetPermission")
+    @PostMapping("/menu-target-permissions")
     PermissionVO menuTargetPermission(@RequestBody MenuPermissionRequest request);
 
     @Operation(summary = "保存资源权限")
     @ApiOperationSupport(order = 7)
-    @PostMapping("/saveBusiPer")
+    @PutMapping("/business-permissions")
     void saveBusiPer(@RequestBody BusiPerEditor editor);
 
     @Operation(summary = "资源维度保存权限")
     @ApiOperationSupport(order = 9)
-    @PostMapping("/saveBusiTargetPer")
+    @PutMapping("/business-target-permissions")
     void saveBusiTargetPer(@RequestBody BusiTargetPerCreator creator);
 
     @Operation(summary = "保存菜单权限")
     @ApiOperationSupport(order = 8)
-    @PostMapping("/saveMenuPer")
+    @PutMapping("/menu-permissions")
     void saveMenuPer(@RequestBody MenuPerEditor editor);
 
     @Operation(summary = "菜单维度保存权限")
     @ApiOperationSupport(order = 10)
-    @PostMapping("/saveMenuTargetPer")
+    @PutMapping("/menu-target-permissions")
     void saveMenuTargetPer(@RequestBody MenuTargetPerCreator creator);
 
 
     @Hidden
-    @PostMapping("/busiTargetPermissionAll")
+    @PostMapping("/business-target-permissions/all")
     List<ResourceItemVO> busiTargetPermissionAll(@RequestBody BusiPermissionRequest request);
 
 }

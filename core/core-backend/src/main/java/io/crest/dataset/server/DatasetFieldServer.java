@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * @Author Junjun
  */
 @RestController
-@RequestMapping("datasetField")
+@RequestMapping("dataset-field")
 public class DatasetFieldServer implements DatasetTableApi {
     @Resource
     private DatasetTableFieldManage datasetTableFieldManage;
@@ -77,7 +77,7 @@ public class DatasetFieldServer implements DatasetTableApi {
     }
 
     @Override
-    public List<SQLFunctionDTO> getFunction() {
+    public List<SQLFunctionDTO> functions() {
         SQLFunctionsEnum[] values = SQLFunctionsEnum.values();
         return Arrays.stream(values).map(ele -> {
             SQLFunctionDTO dto = new SQLFunctionDTO();
@@ -91,7 +91,7 @@ public class DatasetFieldServer implements DatasetTableApi {
     }
 
     @Override
-    public void deleteByChartId(Long id) {
-        datasetTableFieldManage.deleteByChartId(id);
+    public void deleteChartFields(Long id) {
+        datasetTableFieldManage.deleteChartFields(id);
     }
 }

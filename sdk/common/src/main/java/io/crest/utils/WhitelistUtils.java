@@ -1,7 +1,7 @@
 package io.crest.utils;
 
 import io.crest.constant.AuthConstant;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.core.env.Environment;
@@ -27,7 +27,7 @@ public class WhitelistUtils {
             "/login/localLogin",
             "/apisix/check",
             "/actuator/health",
-            "/dekey",
+            "/public-key",
             "/index.html",
             "/model",
             "/swagger-resources",
@@ -62,14 +62,14 @@ public class WhitelistUtils {
         if (Strings.CS.startsWith(requestURI, getContextPath())) {
             requestURI = requestURI.replaceFirst(getContextPath(), "");
         }
-        if (Strings.CS.startsWith(requestURI, AuthConstant.DE_API_PREFIX)) {
-            requestURI = requestURI.replaceFirst(AuthConstant.DE_API_PREFIX, "");
+        if (Strings.CS.startsWith(requestURI, AuthConstant.CREST_API_PREFIX)) {
+            requestURI = requestURI.replaceFirst(AuthConstant.CREST_API_PREFIX, "");
         }
-        if (Strings.CS.startsWith(requestURI, AuthConstant.DE_CASAPI_PREFIX)) {
-            requestURI = requestURI.replaceFirst(AuthConstant.DE_CASAPI_PREFIX, "");
+        if (Strings.CS.startsWith(requestURI, AuthConstant.CREST_CASAPI_PREFIX)) {
+            requestURI = requestURI.replaceFirst(AuthConstant.CREST_CASAPI_PREFIX, "");
         }
-        if (Strings.CS.startsWith(requestURI, AuthConstant.DE_OIDCAPI_PREFIX)) {
-            requestURI = requestURI.replaceFirst(AuthConstant.DE_OIDCAPI_PREFIX, "");
+        if (Strings.CS.startsWith(requestURI, AuthConstant.CREST_OIDCAPI_PREFIX)) {
+            requestURI = requestURI.replaceFirst(AuthConstant.CREST_OIDCAPI_PREFIX, "");
         }
         return WHITE_PATH.contains(requestURI)
                 || Strings.CS.endsWithAny(requestURI, ".gif", ".ico", ".js", ".css", ".svg", ".png", ".jpg", ".jpeg", ".js.map", ".otf", ".ttf", ".woff2")
@@ -105,12 +105,12 @@ public class WhitelistUtils {
         if (StringUtils.isNotBlank(contextPath)) {
             redirect_uri += contextPath;
         }
-        return redirect_uri + AuthConstant.DE_API_PREFIX + "/";
+        return redirect_uri + AuthConstant.CREST_API_PREFIX + "/";
     }
 
     private static void invalidUrl(String requestURI) {
         if (requestURI.contains("./") || requestURI.contains(".%") || requestURI.toLowerCase().contains("%2e") || (requestURI.contains(";") && !requestURI.contains("?"))) {
-            DEException.throwException(INTERFACE_ADDRESS_INVALID.code(), String.format("%s [%s]", INTERFACE_ADDRESS_INVALID.message(), requestURI));
+            CrestException.throwException(INTERFACE_ADDRESS_INVALID.code(), String.format("%s [%s]", INTERFACE_ADDRESS_INVALID.message(), requestURI));
         }
     }
 }

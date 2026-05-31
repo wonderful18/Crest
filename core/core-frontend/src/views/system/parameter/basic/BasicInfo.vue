@@ -163,7 +163,7 @@ const loginInoSettings = computed(() => {
 })
 
 const search = cb => {
-  const url = '/sysParameter/basic/query'
+  const url = '/sys-parameter/basic/list'
   originData = []
   state.templateList = []
   const resultList = []
@@ -280,7 +280,7 @@ const loadOrgOptions = async () => {
   state.orgOptions = data
 }
 const loadRoleOptions = async () => {
-  const res = await request.get({ url: `/role/queryWithOid/${selectedOid.value}` })
+  const res = await request.get({ url: `/role/organization/${selectedOid.value}` })
   const data = res.data
   const map = groupBy(data)
   state.roleOptions[0].children = map.get(false)

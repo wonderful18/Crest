@@ -148,7 +148,7 @@ const currentTypeList = computed(() => {
   })
 })
 
-const getDatasourceTypes = () => {
+const datasourceTypes = () => {
   const arr = [[], [], [], [], []]
   dsTypes.forEach(item => {
     const index = typeList.findIndex(ele => ele === item.catalog)
@@ -162,7 +162,7 @@ const getDatasourceTypes = () => {
     })
   })
 }
-getDatasourceTypes()
+datasourceTypes()
 
 const pluginIndex = ref('')
 const pluginDs = ref([])
@@ -511,11 +511,11 @@ const saveDS = () => {
   } else if (currentDsType.value.includes('API')) {
     for (let i = 0; i < request.apiConfiguration.length; i++) {
       if (
-        request.apiConfiguration[i].deTableName === '' ||
-        request.apiConfiguration[i].deTableName === undefined ||
-        request.apiConfiguration[i].deTableName === null
+        request.apiConfiguration[i].displayTableName === '' ||
+        request.apiConfiguration[i].displayTableName === undefined ||
+        request.apiConfiguration[i].displayTableName === null
       ) {
-        request.apiConfiguration[i].deTableName =
+        request.apiConfiguration[i].displayTableName =
           'api_' +
           request.apiConfiguration[i].name +
           '_' +
@@ -788,7 +788,7 @@ defineExpose({
         <el-steps custom style="max-width: 500px; flex: 1" :active="activeStep" align-center>
           <el-step>
             <template #title>
-              {{ t('deDataset.select_data_source') }}
+              {{ t('datasetUi.select_data_source') }}
             </template>
           </el-step>
           <el-step>
@@ -1094,7 +1094,7 @@ defineExpose({
       .title {
         display: flex;
         justify-content: space-between;
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 14px;
         font-weight: 500;
         color: var(--TextPrimary, #1f2329);
@@ -1149,7 +1149,7 @@ defineExpose({
         width: 100%;
         padding: 16px 24px;
         color: #1f2329;
-        font-family: var(--de-custom_font, 'PingFang');
+        font-family: var(--crest-custom_font, 'PingFang');
         font-size: 16px;
         font-style: normal;
         font-weight: 500;

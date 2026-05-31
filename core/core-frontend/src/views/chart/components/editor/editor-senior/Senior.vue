@@ -14,13 +14,13 @@ import LinkageSet from '@/components/visualization/LinkageSet.vue'
 import { canvasSave } from '@/utils/canvasUtils'
 import {
   queryVisualizationJumpInfo,
-  removeJumpSet,
+  deleteJumpSet,
   updateJumpSetActive
 } from '@/api/visualization/linkJump'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import {
   getPanelAllLinkageInfo,
-  removeLinkage,
+  deleteLinkage,
   updateLinkageActive
 } from '@/api/visualization/linkage'
 import { includesAny } from '../util/StringUtils'
@@ -212,10 +212,10 @@ const linkageActiveChange = () => {
   })
 }
 const appStore = useAppStoreWithOut()
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi)
+const isCrestBi = computed(() => appStore.getIsCrestBi)
 
-const removeLinkageSenior = () => {
-  removeLinkage({ dvId: dvInfo.value.id, sourceViewId: chart.value.id }).then(() => {
+const deleteLinkageSenior = () => {
+  deleteLinkage({ dvId: dvInfo.value.id, sourceViewId: chart.value.id }).then(() => {
     // 刷新联动信息
     getPanelAllLinkageInfo(dvInfo.value.id).then(rsp => {
       dvMainStore.setNowPanelTrackInfo(rsp.data)
@@ -224,7 +224,7 @@ const removeLinkageSenior = () => {
 }
 
 const removeJumpSenior = () => {
-  removeJumpSet({ sourceDvId: dvInfo.value.id, sourceViewId: chart.value.id }).then(() => {
+  deleteJumpSet({ sourceDvId: dvInfo.value.id, sourceViewId: chart.value.id }).then(() => {
     // 刷新跳转信息
     queryVisualizationJumpInfo(dvInfo.value.id).then(rsp => {
       dvMainStore.setNowPanelJumpInfo(rsp.data)
@@ -328,7 +328,7 @@ const removeJumpSenior = () => {
                     class="circle-button_icon"
                     :title="t('chart.delete')"
                     :style="{ margin: '0 8px' }"
-                    @click="removeLinkageSenior"
+                    @click="deleteLinkageSenior"
                   >
                     <el-icon>
                       <Icon
@@ -358,7 +358,7 @@ const removeJumpSenior = () => {
             </div>
           </collapse-switch-item>
           <collapse-switch-item
-            v-if="showProperties('jump-set') && !isDataEaseBi"
+            v-if="showProperties('jump-set') && !isCrestBi"
             :themes="themes"
             name="jumpSet"
             :title="t('visualization.jump_set')"
@@ -499,7 +499,7 @@ span {
 }
 
 .label-dark {
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   font-style: normal;
   font-weight: 400;
   line-height: 20px;

@@ -57,7 +57,7 @@ const treeProps = {
 }
 
 const loadRoles = async () => {
-  const res = await request.post({ url: '/role/byCurOrg', data: {} })
+  const res = await request.post({ url: '/role/by-current-org', data: {} })
   roles.value = res.data || []
   if (!roles.value.some(role => String(role.id) === String(activeRoleId.value))) {
     activeRoleId.value = roles.value[0]?.id
@@ -65,12 +65,12 @@ const loadRoles = async () => {
 }
 
 const loadMenuTree = async () => {
-  const res = await request.get({ url: '/auth/menuResource' })
+  const res = await request.get({ url: '/auth/menu-resources' })
   menuTree.value = res.data || []
 }
 
 const loadResourceTree = async () => {
-  const res = await request.get({ url: `/auth/busiResource/${resourceType.value}` })
+  const res = await request.get({ url: `/auth/business-resources/${resourceType.value}` })
   resourceTree.value = res.data || []
 }
 
@@ -79,9 +79,9 @@ const loadPermissions = async () => {
   loading.value = true
   try {
     const [menuRes, resourceRes]: any[] = await Promise.all([
-      request.post({ url: '/auth/menuPermission', data: { id: activeRoleId.value } }),
+      request.post({ url: '/auth/menu-permissions', data: { id: activeRoleId.value } }),
       request.post({
-        url: '/auth/busiPermission',
+        url: '/auth/business-permissions',
         data: { id: activeRoleId.value, type: 2, flag: resourceType.value }
       })
     ])
@@ -100,8 +100,8 @@ const saveMenu = async () => {
   saving.value = true
   try {
     const ids = menuTreeRef.value?.getCheckedKeys(false) || []
-    await request.post({
-      url: '/auth/saveMenuPer',
+    await request.put({
+      url: '/auth/menu-permissions',
       data: { id: activeRoleId.value, permissions: ids.map(id => ({ id, weight: 7 })) }
     })
     ElMessage.success('菜单权限已保存')
@@ -114,8 +114,8 @@ const saveResource = async () => {
   saving.value = true
   try {
     const ids = resourceTreeRef.value?.getCheckedKeys(false) || []
-    await request.post({
-      url: '/auth/saveBusiPer',
+    await request.put({
+      url: '/auth/business-permissions',
       data: {
         id: activeRoleId.value,
         type: 2,

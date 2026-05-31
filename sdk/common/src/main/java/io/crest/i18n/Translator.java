@@ -1,7 +1,7 @@
 package io.crest.i18n;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.utils.BeanUtils;
 import io.crest.utils.JsonUtil;
 import io.crest.utils.LogUtil;
@@ -153,7 +153,7 @@ public class Translator {
                     }
                 } catch (Exception e) {
                     LogUtil.error(e.getMessage());
-                    DEException.throwException(e);
+                    CrestException.throwException(e);
                 }
 
             }

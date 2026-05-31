@@ -51,7 +51,7 @@ export interface AxiosInstanceWithLoading extends AxiosInstance {
 
 const getTimeOut = () => {
   let time = 100
-  const url = PATH_URL + '/sysParameter/requestTimeOut'
+  const url = PATH_URL + '/sys-parameter/request-timeout'
   const xhr = new XMLHttpRequest()
   xhr.onreadystatechange = () => {
     if (xhr.readyState === 4 && xhr.status === 200) {
@@ -79,7 +79,7 @@ const getTimeOut = () => {
 
 // 创建axios实例
 const time = getTimeOut()
-window._de_get_time_out = time
+window._crest_get_time_out = time
 const service: AxiosInstanceWithLoading = axios.create({
   baseURL: PATH_URL, // api 的 base_url
   timeout: time ? time * 1000 : config.request_timeout // 请求超时时间
@@ -114,10 +114,10 @@ service.interceptors.request.use(
     }
 
     if (isMobile()) {
-      ;(config.headers as AxiosRequestHeaders)['X-DE-MOBILE'] = true
+      ;(config.headers as AxiosRequestHeaders)['X-CREST-MOBILE'] = true
     }
     if (linkStore.getLinkToken) {
-      ;(config.headers as AxiosRequestHeaders)['X-DE-LINK-TOKEN'] = linkStore.getLinkToken
+      ;(config.headers as AxiosRequestHeaders)['X-CREST-LINK-TOKEN'] = linkStore.getLinkToken
     } else if (embeddedStore.token) {
       ;(config.headers as AxiosRequestHeaders)['X-EMBEDDED-TOKEN'] = embeddedStore.token
     }
@@ -141,8 +141,8 @@ service.interceptors.request.use(
       config.url = url
     }
 
-    if (config.url.endsWith('chartData/getData')) {
-      const chartKey = `chartData/getData/${(config.data as any).id}`
+    if (config.url.endsWith('chartData/data')) {
+      const chartKey = `chartData/data/${(config.data as any).id}`
       config.cancelToken = new CancelToken(function executor(c) {
         cancelMap[chartKey] = c
       })
@@ -167,12 +167,12 @@ service.interceptors.response.use(
     response: AxiosResponse<any> & { config: InternalAxiosRequestConfig & { loading?: boolean } }
   ) => {
     executeVersionHandler(response)
-    /* if (response.headers['x-de-refresh-token']) {
-      wsCache.set('user.token', response.headers['x-de-refresh-token'])
+    /* if (response.headers['x-crest-refresh-token']) {
+      wsCache.set('user.token', response.headers['x-crest-refresh-token'])
       wsCache.set('user.exp', new Date().getTime() + 90000)
     } */
-    if (response.headers['x-de-link-token']) {
-      linkStore.setLinkToken(response.headers['x-de-link-token'])
+    if (response.headers['x-crest-link-token']) {
+      linkStore.setLinkToken(response.headers['x-crest-link-token'])
     }
     response.config.loading && tryHideLoading(permissionStore.getCurrentPath)
 
@@ -230,7 +230,7 @@ service.interceptors.response.use(
     }
     const header = error.response?.headers as AxiosHeaders
     const responseData = error.response?.data as Record<string, any> | undefined
-    if (!header.has('DE-FORBIDDEN-FLAG') && !header.has('DE-GATEWAY-FLAG')) {
+    if (!header.has('CREST-FORBIDDEN-FLAG') && !header.has('CREST-GATEWAY-FLAG')) {
       ElMessage({
         type: 'error',
         message: responseData?.msg ? responseData.msg : error.message,
@@ -239,13 +239,13 @@ service.interceptors.response.use(
     }
 
     error.config.loading && tryHideLoading(permissionStore.getCurrentPath)
-    if (header.has('DE-GATEWAY-FLAG')) {
+    if (header.has('CREST-GATEWAY-FLAG')) {
       const userToken = wsCache.get('user.token')
-      const inPlatformClient = !!wsCache.get('de-platform-client')
+      const inPlatformClient = !!wsCache.get('crest-platform-client')
       clearCache()
       if (!(userToken && inPlatformClient)) {
-        const flag = header.get('DE-GATEWAY-FLAG')
-        localStorage.setItem('DE-GATEWAY-FLAG', flag.toString())
+        const flag = header.get('CREST-GATEWAY-FLAG')
+        localStorage.setItem('CREST-GATEWAY-FLAG', flag.toString())
       }
       let queryRedirectPath = '/workbranch/index'
       if (router.currentRoute.value.fullPath) {
@@ -253,7 +253,7 @@ service.interceptors.response.use(
       }
       router.push(`/login?redirect=${queryRedirectPath}`)
     }
-    if (header.has('DE-FORBIDDEN-FLAG')) {
+    if (header.has('CREST-FORBIDDEN-FLAG')) {
       showMsg('当前权限不允许访问，请联系管理员', '-changed-')
     }
     /* if ([400, 401].includes(error?.response.status)) {
@@ -289,7 +289,7 @@ const showMsg = (msg: string, id: string) => {
 }
 
 const executeVersionHandler = (response: AxiosResponse) => {
-  const key = 'x-de-execute-version'
+  const key = 'x-crest-execute-version'
   const executeVersion = response.headers[key]
   const cacheVal = wsCache.get(key)
   if (!cacheVal) {

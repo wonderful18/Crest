@@ -106,7 +106,7 @@ watch(
   display: flex;
   align-items: center;
   margin: 17px 0;
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   font-weight: 400;
 
   .sum {

@@ -108,7 +108,7 @@ const AXIS_FORMAT_VIEW = ['table-normal', 'table-info', 'table-pivot', 'indicato
 const showValueFormatter = computed<boolean>(() => {
   return (
     AXIS_FORMAT_VIEW.includes(props.chart.type) &&
-    (props.item.deType === 2 || props.item.deType === 3)
+    (props.item.fieldType === 2 || props.item.fieldType === 3)
   )
 })
 
@@ -125,7 +125,7 @@ const isEnableCompare = () => {
     xAxis = JSON.parse(chart.value.xAxis)
   }
   const t1 = xAxis.filter(ele => {
-    return ele.deType === 1 && SUPPORT_Y_M.includes(ele.dateStyle)
+    return ele.fieldType === 1 && SUPPORT_Y_M.includes(ele.dateStyle)
   })
 
   if (chart.value.type === 'table-pivot') {
@@ -136,7 +136,7 @@ const isEnableCompare = () => {
       xAxisExt = JSON.parse(chart.value.xAxisExt)
     }
     const t2 = xAxisExt.filter(ele => {
-      return ele.deType === 1 && SUPPORT_Y_M.includes(ele.dateStyle)
+      return ele.fieldType === 1 && SUPPORT_Y_M.includes(ele.dateStyle)
     })
 
     t1.push(...t2)
@@ -359,11 +359,11 @@ onMounted(() => {
             <Icon name="icon_sort_outlined"><icon_sort_outlined class="svg-icon" /></Icon>
           </el-icon>
           <el-icon>
-            <Icon :className="`field-icon-${fieldType[[2, 3].includes(item.deType) ? 2 : 0]}`"
+            <Icon :className="`field-icon-${fieldType[[2, 3].includes(item.fieldType) ? 2 : 0]}`"
               ><component
-                :class="`field-icon-${fieldType[[2, 3].includes(item.deType) ? 2 : 0]}`"
+                :class="`field-icon-${fieldType[[2, 3].includes(item.fieldType) ? 2 : 0]}`"
                 class="svg-icon"
-                :is="iconFieldMap[fieldType[item.deType]]"
+                :is="iconFieldMap[fieldType[item.fieldType]]"
               ></component
             ></Icon>
           </el-icon>
@@ -421,7 +421,7 @@ onMounted(() => {
         <el-icon v-if="showHideIcon" style="margin-left: 4px">
           <Icon>
             <icon_invisible_outlined
-              :class="`field-icon-${fieldType[[2, 3].includes(item.deType) ? 2 : 0]}`"
+              :class="`field-icon-${fieldType[[2, 3].includes(item.fieldType) ? 2 : 0]}`"
               class="svg-icon inner-class"
             />
           </Icon>
@@ -480,7 +480,7 @@ onMounted(() => {
                 >
                   <el-dropdown-item
                     class="menu-item-padding"
-                    v-if="item.id !== '-1' && ![0, 1, 5, 7].includes(item.deType)"
+                    v-if="item.id !== '-1' && ![0, 1, 5, 7].includes(item.fieldType)"
                     :command="beforeSummary('sum')"
                   >
                     <span
@@ -497,7 +497,7 @@ onMounted(() => {
                   </el-dropdown-item>
                   <el-dropdown-item
                     class="menu-item-padding"
-                    v-if="item.id !== '-1' && ![0, 1, 5, 7].includes(item.deType)"
+                    v-if="item.id !== '-1' && ![0, 1, 5, 7].includes(item.fieldType)"
                     :command="beforeSummary('avg')"
                   >
                     <span
@@ -514,7 +514,7 @@ onMounted(() => {
                   </el-dropdown-item>
                   <el-dropdown-item
                     class="menu-item-padding"
-                    v-if="item.id !== '-1' && ![0, 1, 5, 7].includes(item.deType)"
+                    v-if="item.id !== '-1' && ![0, 1, 5, 7].includes(item.fieldType)"
                     :command="beforeSummary('max')"
                   >
                     <span
@@ -531,7 +531,7 @@ onMounted(() => {
                   </el-dropdown-item>
                   <el-dropdown-item
                     class="menu-item-padding"
-                    v-if="item.id !== '-1' && ![0, 1, 5, 7].includes(item.deType)"
+                    v-if="item.id !== '-1' && ![0, 1, 5, 7].includes(item.fieldType)"
                     :command="beforeSummary('min')"
                   >
                     <span
@@ -548,7 +548,7 @@ onMounted(() => {
                   </el-dropdown-item>
                   <el-dropdown-item
                     class="menu-item-padding"
-                    v-if="item.id !== '-1' && ![0, 1, 5, 7].includes(item.deType)"
+                    v-if="item.id !== '-1' && ![0, 1, 5, 7].includes(item.fieldType)"
                     :command="beforeSummary('stddev_pop')"
                   >
                     <span
@@ -565,7 +565,7 @@ onMounted(() => {
                   </el-dropdown-item>
                   <el-dropdown-item
                     class="menu-item-padding"
-                    v-if="item.id !== '-1' && ![0, 1, 5, 7].includes(item.deType)"
+                    v-if="item.id !== '-1' && ![0, 1, 5, 7].includes(item.fieldType)"
                     :command="beforeSummary('var_pop')"
                   >
                     <span

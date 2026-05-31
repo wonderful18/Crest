@@ -17,7 +17,7 @@ defineProps({
 <style lang="less">
 .base-info-item {
   margin-top: 16px;
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   font-size: 14px;
   font-style: normal;
   font-weight: 400;

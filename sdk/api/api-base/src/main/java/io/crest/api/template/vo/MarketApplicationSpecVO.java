@@ -16,7 +16,7 @@ public class MarketApplicationSpecVO {
 
     private String type;
 
-    private String deVersion;
+    private String platformVersion;
 
     private String templateType;
 

@@ -2,7 +2,7 @@ package io.crest.engine.trans;
 
 import io.crest.constant.SQLConstants;
 import io.crest.engine.utils.Utils;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
 import io.crest.extensions.datasource.dto.CalParam;
@@ -106,7 +106,7 @@ public class CustomWhere2Str {
             if (Strings.CI.equals(dsType, "es")) {
                 originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getOriginName());
             } else {
-                originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getDataeaseName());
+                originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getEngineFieldName());
             }
         } else if (ObjectUtils.isNotEmpty(field.getExtField()) && field.getExtField() == 3) {
             String groupFieldExp = Utils.transGroupFieldToSql(field, originFields, isCross, dsMap, pluginManage);
@@ -120,49 +120,49 @@ public class CustomWhere2Str {
             if (Strings.CI.equals(dsType, "es")) {
                 originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getOriginName());
             } else {
-                originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getDataeaseName());
+                originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getEngineFieldName());
             }
         }
-        if (field.getDeType() == 1) {
-            if (field.getDeExtractType() == 0 || field.getDeExtractType() == 5) {
+        if (field.getFieldType() == 1) {
+            if (field.getExtractedFieldType() == 0 || field.getExtractedFieldType() == 5) {
                 // 此处获取标准格式的日期
-                whereName = String.format(SQLConstants.DE_STR_TO_DATE, originName, StringUtils.isNotEmpty(field.getDateFormat()) ? field.getDateFormat() : SQLConstants.DEFAULT_DATE_FORMAT);
+                whereName = String.format(SQLConstants.CREST_STR_TO_DATE, originName, StringUtils.isNotEmpty(field.getDateFormat()) ? field.getDateFormat() : SQLConstants.DEFAULT_DATE_FORMAT);
             }
-            if (field.getDeExtractType() == 2 || field.getDeExtractType() == 3 || field.getDeExtractType() == 4) {
+            if (field.getExtractedFieldType() == 2 || field.getExtractedFieldType() == 3 || field.getExtractedFieldType() == 4) {
                 String cast = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_INT_FORMAT);
                 // 此处获取标准格式的日期
                 whereName = String.format(SQLConstants.FROM_UNIXTIME, cast, SQLConstants.DEFAULT_DATE_FORMAT);
             }
-            if (field.getDeExtractType() == 1) {
+            if (field.getExtractedFieldType() == 1) {
                 // 如果都是时间类型，把date和time类型进行字符串拼接
                 if (isCross) {
                     if (Strings.CI.equals(field.getType(), "date")) {
-                        originName = String.format(SQLConstants.DE_STR_TO_DATE, String.format(SQLConstants.CONCAT, originName, "' 00:00:00'"), SQLConstants.DEFAULT_DATE_FORMAT);
+                        originName = String.format(SQLConstants.CREST_STR_TO_DATE, String.format(SQLConstants.CONCAT, originName, "' 00:00:00'"), SQLConstants.DEFAULT_DATE_FORMAT);
                     } else if (Strings.CI.equals(field.getType(), "time")) {
-                        originName = String.format(SQLConstants.DE_STR_TO_DATE, String.format(SQLConstants.CONCAT, "'1970-01-01 '", originName), SQLConstants.DEFAULT_DATE_FORMAT);
+                        originName = String.format(SQLConstants.CREST_STR_TO_DATE, String.format(SQLConstants.CONCAT, "'1970-01-01 '", originName), SQLConstants.DEFAULT_DATE_FORMAT);
                     }
                 }
                 // 此处获取标准格式的日期
                 if (Strings.CI.equals(field.getType(), "date")
                         || (isOracleLike(dsMap.entrySet().iterator().next().getValue().getType()) && Strings.CI.equals(field.getType(), "timestamp"))) {
-                    whereName = String.format(SQLConstants.DE_CAST_DATE_FORMAT, originName,
+                    whereName = String.format(SQLConstants.CREST_CAST_DATE_FORMAT, originName,
                             SQLConstants.DEFAULT_DATE_FORMAT,
                             SQLConstants.DEFAULT_DATE_FORMAT);
                 } else {
                     whereName = originName;
                 }
             }
-        } else if (field.getDeType() == 2 || field.getDeType() == 3) {
-            if (field.getDeExtractType() == 0 || field.getDeExtractType() == 5) {
+        } else if (field.getFieldType() == 2 || field.getFieldType() == 3) {
+            if (field.getExtractedFieldType() == 0 || field.getExtractedFieldType() == 5) {
                 whereName = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_FLOAT_FORMAT);
             }
-            if (field.getDeExtractType() == 1) {
+            if (field.getExtractedFieldType() == 1) {
                 whereName = String.format(SQLConstants.UNIX_TIMESTAMP, originName);
             }
-            if (field.getDeExtractType() == 2 || field.getDeExtractType() == 4) {
+            if (field.getExtractedFieldType() == 2 || field.getExtractedFieldType() == 4) {
                 whereName = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_INT_FORMAT);
             }
-            if (field.getDeExtractType() == 3) {
+            if (field.getExtractedFieldType() == 3) {
                 whereName = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_FLOAT_FORMAT);
             }
         } else {
@@ -181,7 +181,7 @@ public class CustomWhere2Str {
                 }
             }
         } else {
-            if (field.getDeType() == 1 && isCross) {
+            if (field.getFieldType() == 1 && isCross) {
                 // 规定几种日期格式，一一匹配，匹配到就是该格式
                 whereName = String.format(SQLConstants.UNIX_TIMESTAMP, whereName);
             }
@@ -218,7 +218,7 @@ public class CustomWhere2Str {
                 }
             } else {
                 // 如果是时间字段过滤，当条件是等于和不等于的时候转换成between和not between
-                if (field.getDeType() == 1) {
+                if (field.getFieldType() == 1) {
                     // 如果是动态时间，计算具体值
                     value = fixValue(item);
                     Map<String, Long> stringLongMap = Utils.parseDateTimeValue(value);
@@ -262,9 +262,9 @@ public class CustomWhere2Str {
                             && Strings.CI.equals(dsType, DatasourceConfiguration.DatasourceType.sqlServer.getType())) {
                         whereValue = String.format(SQLConstants.WHERE_VALUE_VALUE_CH, sanitizeSqlLiteral(value));
                     } else {
-                        if (field.getDeType() == 2
-                                || field.getDeType() == 3
-                                || field.getDeType() == 4) {
+                        if (field.getFieldType() == 2
+                                || field.getFieldType() == 3
+                                || field.getFieldType() == 4) {
                             whereValue = String.format(SQLConstants.WHERE_NUMBER_VALUE, sanitizeNumberLiteral(value));
                         } else {
                             whereValue = String.format(SQLConstants.WHERE_VALUE_VALUE, sanitizeSqlLiteral(value));
@@ -312,7 +312,7 @@ public class CustomWhere2Str {
     private static String sanitizeNumberLiteral(String value) {
         String normalized = StringUtils.trimToEmpty(value);
         if (!NUMBER_PATTERN.matcher(normalized).matches()) {
-            DEException.throwException("Illegal number filter value");
+            CrestException.throwException("Illegal number filter value");
         }
         return normalized;
     }

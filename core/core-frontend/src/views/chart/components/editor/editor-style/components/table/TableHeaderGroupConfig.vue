@@ -62,7 +62,7 @@ const allAxis = computed(() => {
 })
 const onConfigChange = () => {
   const showAxis = allAxis.value
-    ?.map(axis => axis.hide !== true && axis.dataeaseName)
+    ?.map(axis => axis.hide !== true && axis.engineFieldName)
     .filter(i => i)
   const { fields, meta } = s2.dataCfg
   const groupMeta = meta.filter(item => !showAxis.includes(item.field))
@@ -74,7 +74,7 @@ const init = () => {
   const { headerGroupConfig } = chart.customAttr.tableHeader
   const showColumns = []
   allAxis.value?.forEach(axis => {
-    axis.hide !== true && showColumns.push({ key: axis.dataeaseName })
+    axis.hide !== true && showColumns.push({ key: axis.engineFieldName })
   })
   if (!showColumns.length) {
     return
@@ -153,17 +153,17 @@ const renderTable = (chart: ChartObj) => {
   const meta: any[] = [...headerGroupConfig.meta]
   const columns = headerGroupConfig.columns
   const axisMap = allAxis.value.reduce((pre, cur) => {
-    pre[cur.dataeaseName] = cur
+    pre[cur.engineFieldName] = cur
     return pre
   }, {})
   if (data?.fields?.length) {
     data.fields.forEach(ele => {
-      const f = axisMap[ele.dataeaseName]
+      const f = axisMap[ele.engineFieldName]
       if (f?.hide === true) {
         return
       }
       meta.push({
-        field: ele.dataeaseName,
+        field: ele.engineFieldName,
         name: ele.chartShowName ?? ele.name,
         formatter: function (value) {
           if (!f) {
@@ -172,7 +172,7 @@ const renderTable = (chart: ChartObj) => {
           if (value === null || value === undefined) {
             return value
           }
-          if (![2, 3].includes(f.deType) || !isNumber(value)) {
+          if (![2, 3].includes(f.fieldType) || !isNumber(value)) {
             return value
           }
           let formatCfg = f.formatterCfg
@@ -187,7 +187,7 @@ const renderTable = (chart: ChartObj) => {
     allAxis.value?.forEach(axis => {
       if (axis.hide !== true) {
         meta.push({
-          field: axis.dataeaseName,
+          field: axis.engineFieldName,
           name: axis.chartShowName ?? axis.name
         })
       }

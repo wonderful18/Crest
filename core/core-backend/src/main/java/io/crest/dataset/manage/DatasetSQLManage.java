@@ -5,7 +5,7 @@ import io.crest.api.permissions.auth.dto.BusiPerCheckDTO;
 import io.crest.api.permissions.dataset.api.RowPermissionsApi;
 import io.crest.api.permissions.user.vo.UserFormVO;
 import io.crest.commons.utils.SqlVariableHandleResult;
-import io.crest.commons.utils.SqlparserUtils;
+import io.crest.commons.utils.SqlParserUtils;
 import io.crest.constant.AuthEnum;
 import io.crest.constant.SQLConstants;
 import io.crest.dataset.constant.DatasetTableType;
@@ -19,7 +19,7 @@ import io.crest.datasource.dao.auto.mapper.CoreDatasourceMapper;
 import io.crest.datasource.manage.DataSourceManage;
 import io.crest.datasource.manage.EngineManage;
 import io.crest.engine.constant.ExtFieldConstant;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
@@ -131,7 +131,7 @@ public class DatasetSQLManage {
 
     public Map<String, Object> getUnionSQLForEdit(DatasetGroupInfoDTO dataTableInfoDTO, ChartExtRequest chartExtRequest, CoreDatasource coreDatasource, boolean isFromDataSet) throws Exception {
         Map<Long, DatasourceSchemaDTO> dsMap = new LinkedHashMap<>();
-        // 获取所有字段，将dataeaseName赋值给currentField中的dataeaseName
+        // 获取所有字段，将engineFieldName赋值给currentField中的engineFieldName
         List<DatasetTableFieldDTO> allFields = dataTableInfoDTO.getAllFields();
         List<UnionDTO> union = dataTableInfoDTO.getUnion();
         // 所有选中的字段，即select后的查询字段
@@ -167,27 +167,27 @@ public class DatasetSQLManage {
 
             String[] array = fields.stream()
                     .map(f -> {
-                        // 赋值dataeaseName
+                        // 赋值engineFieldName
                         for (DatasetTableFieldDTO a_f: allFields) {
                             if (Objects.equals(a_f.getId(),f.getId())) {
-                                f.setDataeaseName(a_f.getDataeaseName());
+                                f.setEngineFieldName(a_f.getEngineFieldName());
                             }
                         }
 
                         String alias;
-                        if (StringUtils.isEmpty(f.getDataeaseName())) {
+                        if (StringUtils.isEmpty(f.getEngineFieldName())) {
                             alias = TableUtils.fieldNameShort(f.getDatasetTableId() + "_" + f.getOriginName());
                         } else {
-                            alias = f.getDataeaseName();
+                            alias = f.getEngineFieldName();
                         }
 
                         f.setFieldShortName(alias);
-                        f.setDataeaseName(f.getFieldShortName());
+                        f.setEngineFieldName(f.getFieldShortName());
                         f.setDatasetTableId(datasetTable.getId());
                         String prefix = "";
                         String suffix = "";
 
-                        DsTypeDTO datasourceType = getDatasourceType(dsMap, datasetTable.getDatasourceId());
+                        DsTypeDTO datasourceType = datasourceType(dsMap, datasetTable.getDatasourceId());
                         if (Objects.equals(f.getExtField(), ExtFieldConstant.EXT_NORMAL)) {
                             if (isCross) {
                                 prefix = "`";
@@ -247,7 +247,7 @@ public class DatasetSQLManage {
                         tablePrefix = "`";
                         tableSuffix = "`";
                     } else {
-                        DsTypeDTO datasourceType = getDatasourceType(dsMap, currentDs1.getDatasourceId());
+                        DsTypeDTO datasourceType = datasourceType(dsMap, currentDs1.getDatasourceId());
                         tablePrefix = datasourceType.getPrefix();
                         tableSuffix = datasourceType.getSuffix();
                     }
@@ -261,7 +261,7 @@ public class DatasetSQLManage {
                         .append(" ").append(currentSQLObj.getTableAlias()).append(" ")
                         .append(" ON ");
                 if (unionParamDTO.getUnionFields().size() == 0) {
-                    DEException.throwException(Translator.get("i18n_union_field_can_not_empty"));
+                    CrestException.throwException(Translator.get("i18n_union_field_can_not_empty"));
                 }
                 for (int i = 0; i < unionParamDTO.getUnionFields().size(); i++) {
                     UnionItemDTO unionItemDTO = unionParamDTO.getUnionFields().get(i);
@@ -275,7 +275,7 @@ public class DatasetSQLManage {
                             pPrefix = "`";
                             pSuffix = "`";
                         } else {
-                            DsTypeDTO datasourceType = getDatasourceType(dsMap, parentDs.getDatasourceId());
+                            DsTypeDTO datasourceType = datasourceType(dsMap, parentDs.getDatasourceId());
                             pPrefix = datasourceType.getPrefix();
                             pSuffix = datasourceType.getSuffix();
                         }
@@ -287,7 +287,7 @@ public class DatasetSQLManage {
                             cPrefix = "`";
                             cSuffix = "`";
                         } else {
-                            DsTypeDTO datasourceType = getDatasourceType(dsMap, currentDs1.getDatasourceId());
+                            DsTypeDTO datasourceType = datasourceType(dsMap, currentDs1.getDatasourceId());
                             cPrefix = datasourceType.getPrefix();
                             cSuffix = datasourceType.getSuffix();
                         }
@@ -303,15 +303,15 @@ public class DatasetSQLManage {
                 }
             }
             if (StringUtils.isEmpty(f)) {
-                DEException.throwException(Translator.get("i18n_union_ds_no_checked"));
+                CrestException.throwException(Translator.get("i18n_union_ds_no_checked"));
             }
-            sql = MessageFormat.format("SELECT {0} FROM {1}", f, TableUtils.getTableAndAlias(tableName, getDatasourceType(dsMap, currentDs.getDatasourceId()), isCross)) + join.toString();
+            sql = MessageFormat.format("SELECT {0} FROM {1}", f, TableUtils.getTableAndAlias(tableName, datasourceType(dsMap, currentDs.getDatasourceId()), isCross)) + join.toString();
         } else {
             String f = StringUtils.join(checkedInfo.get(tableName.getTableAlias()), ",");
             if (StringUtils.isEmpty(f)) {
-                DEException.throwException(Translator.get("i18n_union_ds_no_checked"));
+                CrestException.throwException(Translator.get("i18n_union_ds_no_checked"));
             }
-            sql = MessageFormat.format("SELECT {0} FROM {1}", f, TableUtils.getTableAndAlias(tableName, getDatasourceType(dsMap, currentDs.getDatasourceId()), isCross));
+            sql = MessageFormat.format("SELECT {0} FROM {1}", f, TableUtils.getTableAndAlias(tableName, datasourceType(dsMap, currentDs.getDatasourceId()), isCross));
         }
         logger.debug("calcite origin sql: " + sql);
         Map<String, Object> map = new HashMap<>();
@@ -351,22 +351,22 @@ public class DatasetSQLManage {
 
             String[] array = fields.stream()
                     .map(f -> {
-                        // 赋值dataeaseName
+                        // 赋值engineFieldName
                         for (DatasetTableFieldDTO a_f: allFields) {
                             if (Objects.equals(a_f.getId(),f.getId())) {
-                                f.setDataeaseName(a_f.getDataeaseName());
+                                f.setEngineFieldName(a_f.getEngineFieldName());
                             }
                         }
 
                         String alias;
-                        if (StringUtils.isEmpty(f.getDataeaseName())) {
+                        if (StringUtils.isEmpty(f.getEngineFieldName())) {
                             alias = TableUtils.fieldNameShort(f.getDatasetTableId() + "_" + f.getOriginName());
                         } else {
-                            alias = f.getDataeaseName();
+                            alias = f.getEngineFieldName();
                         }
 
                         f.setFieldShortName(alias);
-                        f.setDataeaseName(f.getFieldShortName());
+                        f.setEngineFieldName(f.getFieldShortName());
                         f.setDatasetTableId(datasetTable.getId());
                         String prefix = "";
                         String suffix = "";
@@ -375,7 +375,7 @@ public class DatasetSQLManage {
                                 prefix = "`";
                                 suffix = "`";
                             } else {
-                                DsTypeDTO datasourceType = getDatasourceType(dsMap, datasetTable.getDatasourceId());
+                                DsTypeDTO datasourceType = datasourceType(dsMap, datasetTable.getDatasourceId());
                                 prefix = datasourceType.getPrefix();
                                 suffix = datasourceType.getSuffix();
                             }
@@ -418,15 +418,15 @@ public class DatasetSQLManage {
         }
     }
 
-    private DsTypeDTO getDatasourceType(Map<Long, DatasourceSchemaDTO> dsMap, Long datasourceId) {
+    private DsTypeDTO datasourceType(Map<Long, DatasourceSchemaDTO> dsMap, Long datasourceId) {
         DatasourceSchemaDTO datasourceSchemaDTO = dsMap.get(datasourceId);
         String type;
         if (datasourceSchemaDTO == null) {
             CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(datasourceId);
             if (coreDatasource == null) {
-                DEException.throwException(Translator.get("i18n_dataset_ds_error") + ",ID:" + datasourceId);
+                CrestException.throwException(Translator.get("i18n_dataset_ds_error") + ",ID:" + datasourceId);
             }
-            type = engineManage.getDeEngine().getType();
+            type = engineManage.getEngineDatasource().getType();
         } else {
             type = datasourceSchemaDTO.getType();
         }
@@ -449,7 +449,7 @@ public class DatasetSQLManage {
                 dto.setSuffix(first.getSuffix());
                 return dto;
             } else {
-                DEException.throwException(Translator.get("i18n_dataset_plugin_error"));
+                CrestException.throwException(Translator.get("i18n_dataset_plugin_error"));
             }
             return null;
         }
@@ -500,7 +500,7 @@ public class DatasetSQLManage {
             Provider provider = ProviderFactory.getProvider(dsMap.entrySet().iterator().next().getValue().getType());
             // parser sql params and replace default value
             String s = new String(Base64.getDecoder().decode(infoDTO.getSql()));
-            SqlVariableHandleResult sqlResult = new SqlparserUtils().handleVariableDefaultValueWithPreparedParams(s, currentDs.getSqlVariableDetails(), false, isFromDataSet, parameters, isCross, dsMap, pluginManage, getUserEntity());
+            SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(s, currentDs.getSqlVariableDetails(), false, isFromDataSet, parameters, isCross, dsMap, pluginManage, getUserEntity());
             String sql = sqlResult.getSql();
             tableFieldWithValues.addAll(sqlResult.getTableFieldWithValues());
             sql = provider.replaceComment(sql);
@@ -528,7 +528,7 @@ public class DatasetSQLManage {
             dto.setAuthEnum(AuthEnum.READ);
             boolean checked = corePermissionManage.checkAuth(dto);
             if (!checked) {
-                DEException.throwException(Translator.get("i18n_no_datasource_permission"));
+                CrestException.throwException(Translator.get("i18n_no_datasource_permission"));
             }
         }
         String schemaAlias;
@@ -536,10 +536,10 @@ public class DatasetSQLManage {
             if (ObjectUtils.isEmpty(coreDatasource)) {
                 coreDatasource = dataSourceManage.getCoreDatasource(ds.getDatasourceId());
                 if (coreDatasource == null) {
-                    DEException.throwException(Translator.get("i18n_dataset_ds_error") + ",ID:" + ds.getDatasourceId());
+                    CrestException.throwException(Translator.get("i18n_dataset_ds_error") + ",ID:" + ds.getDatasourceId());
                 }
                 if (coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name()) || coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.API.name())) {
-                    coreDatasource = engineManage.getDeEngine();
+                    coreDatasource = engineManage.getEngineDatasource();
                 }
             }
 
@@ -569,7 +569,7 @@ public class DatasetSQLManage {
             }
         } else {
             if (ObjectUtils.isEmpty(coreDatasource)) {
-                coreDatasource = engineManage.getDeEngine();
+                coreDatasource = engineManage.getEngineDatasource();
             }
             schemaAlias = String.format(SQLConstants.SCHEMA, coreDatasource.getId());
             if (!dsMap.containsKey(coreDatasource.getId())) {

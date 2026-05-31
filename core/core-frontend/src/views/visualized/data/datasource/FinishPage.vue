@@ -68,7 +68,7 @@ const handleChange = (val: boolean) => {
             <p class="name">{{ $t('auth.dataset') }}</p>
             <p class="size">{{ t('data_source.or_large_screen') }}</p>
           </div>
-          <el-button class="create" secondary :disabled="disabled" @click="createDataset">
+          <el-button class="record-new" secondary :disabled="disabled" @click="createDataset">
             {{ t('data_source.go_to_create') }}
           </el-button>
         </div>
@@ -99,7 +99,7 @@ const handleChange = (val: boolean) => {
     flex-direction: column;
     align-items: center;
     padding-top: 83px;
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-style: normal;
     font-weight: 400;
 
@@ -148,7 +148,7 @@ const handleChange = (val: boolean) => {
         }
 
         .info {
-          font-family: var(--de-custom_font, 'PingFang');
+          font-family: var(--crest-custom_font, 'PingFang');
           font-style: normal;
           font-weight: 400;
           .name {

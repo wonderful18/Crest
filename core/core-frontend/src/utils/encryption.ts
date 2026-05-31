@@ -27,13 +27,13 @@ const aesDecrypt = (word, keyStr) => {
 }
 
 export const rsaEncryp = word => {
-  const dekey = wsCache.get(appStore.getDekey)
-  if (typeof dekey === 'string' && dekey.startsWith(smSuitePublicKeyPrefix)) {
-    const publicKey = dekey.substring(smSuitePublicKeyPrefix.length)
+  const clientKey = wsCache.get(appStore.getClientKey)
+  if (typeof clientKey === 'string' && clientKey.startsWith(smSuitePublicKeyPrefix)) {
+    const publicKey = clientKey.substring(smSuitePublicKeyPrefix.length)
     return sm2CipherPrefix + sm2.doEncrypt(word, publicKey, 1)
   }
   const separator = Base64.encodeURI(rsaKey) + '='
-  const keyArray = dekey.split(separator)
+  const keyArray = clientKey.split(separator)
   const k1 = keyArray[0]
   const k2 = keyArray[1]
   const pk = aesDecrypt(k1, k2)

@@ -133,7 +133,7 @@ public class YoyChartHandler extends DefaultChartHandler {
         // 指标排序
         List<ChartViewFieldDTO> yAxisSortList = view.getYAxis().stream().filter(y -> {
             //需要针对区间条形图的时间类型判断一下
-            if (Strings.CI.equals("bar-range", view.getType()) && Strings.CI.equals(y.getGroupType(), "d") && y.getDeType() == 1) {
+            if (Strings.CI.equals("bar-range", view.getType()) && Strings.CI.equals(y.getGroupType(), "d") && y.getFieldType() == 1) {
                 return false;
             } else {
                 return !Strings.CI.equals("none", y.getSort());

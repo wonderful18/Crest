@@ -1,11 +1,11 @@
 package io.crest.datasource.server;
 
 import io.crest.api.ds.EngineApi;
-import io.crest.datasource.dao.auto.entity.CoreDeEngine;
-import io.crest.datasource.dao.auto.mapper.CoreDeEngineMapper;
+import io.crest.datasource.dao.auto.entity.CoreEngine;
+import io.crest.datasource.dao.auto.mapper.CoreEngineMapper;
 import io.crest.datasource.manage.EngineManage;
 import io.crest.datasource.provider.CalciteProvider;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasourceDTO;
 import io.crest.result.ResultCode;
 import io.crest.utils.AuthUtils;
@@ -27,7 +27,7 @@ import java.util.*;
 @Transactional(rollbackFor = Exception.class)
 public class EngineServer implements EngineApi {
     @Resource
-    private CoreDeEngineMapper deEngineMapper;
+    private CoreEngineMapper engineMapper;
     @Resource
     private EngineManage engineManage;
     @Resource
@@ -36,14 +36,14 @@ public class EngineServer implements EngineApi {
     @Override
     public DatasourceDTO getEngine() {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
-            DEException.throwException("非管理员，无权访问！");
+            CrestException.throwException("非管理员，无权访问！");
         }
         DatasourceDTO datasourceDTO = new DatasourceDTO();
-        List<CoreDeEngine> deEngines = deEngineMapper.selectList(null);
-        if (CollectionUtils.isEmpty(deEngines)) {
+        List<CoreEngine> engines = engineMapper.selectList(null);
+        if (CollectionUtils.isEmpty(engines)) {
             return datasourceDTO;
         }
-        BeanUtils.copyBean(datasourceDTO, deEngines.get(0));
+        BeanUtils.copyBean(datasourceDTO, engines.get(0));
         datasourceDTO.setConfiguration(RsaUtils.symmetricEncrypt(datasourceDTO.getConfiguration()));
         return datasourceDTO;
     }
@@ -51,19 +51,19 @@ public class EngineServer implements EngineApi {
     @Override
     public void save(DatasourceDTO datasourceDTO) {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
-            DEException.throwException("非管理员，无权访问！");
+            CrestException.throwException("非管理员，无权访问！");
         }
         if (StringUtils.isNotEmpty(datasourceDTO.getConfiguration())) {
             datasourceDTO.setConfiguration(decodeBase64RequestValue(datasourceDTO.getConfiguration(), "引擎配置"));
         }
-        CoreDeEngine coreDeEngine = new CoreDeEngine();
-        BeanUtils.copyBean(coreDeEngine, datasourceDTO);
-        if (coreDeEngine.getId() == null) {
-            coreDeEngine.setId(IDUtils.snowID());
-            datasourceDTO.setId(coreDeEngine.getId());
-            deEngineMapper.insert(coreDeEngine);
+        CoreEngine coreEngine = new CoreEngine();
+        BeanUtils.copyBean(coreEngine, datasourceDTO);
+        if (coreEngine.getId() == null) {
+            coreEngine.setId(IDUtils.snowID());
+            datasourceDTO.setId(coreEngine.getId());
+            engineMapper.insert(coreEngine);
         } else {
-            deEngineMapper.updateById(coreDeEngine);
+            engineMapper.updateById(coreEngine);
         }
         calciteProvider.update(datasourceDTO);
     }
@@ -71,29 +71,29 @@ public class EngineServer implements EngineApi {
     @Override
     public void validate(DatasourceDTO datasourceDTO) throws Exception {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
-            DEException.throwException("非管理员，无权访问！");
+            CrestException.throwException("非管理员，无权访问！");
         }
-        CoreDeEngine coreDeEngine = new CoreDeEngine();
-        BeanUtils.copyBean(coreDeEngine, datasourceDTO);
-        coreDeEngine.setConfiguration(decodeBase64RequestValue(coreDeEngine.getConfiguration(), "引擎配置"));
-        engineManage.validate(coreDeEngine);
+        CoreEngine coreEngine = new CoreEngine();
+        BeanUtils.copyBean(coreEngine, datasourceDTO);
+        coreEngine.setConfiguration(decodeBase64RequestValue(coreEngine.getConfiguration(), "引擎配置"));
+        engineManage.validate(coreEngine);
     }
 
     @Override
     public void validateById(Long id) throws Exception {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
-            DEException.throwException("非管理员，无权访问！");
+            CrestException.throwException("非管理员，无权访问！");
         }
-        engineManage.validate(deEngineMapper.selectById(id));
+        engineManage.validate(engineMapper.selectById(id));
     }
 
     @Override
     public boolean supportSetKey() throws Exception {
-        List<CoreDeEngine> deEngines = deEngineMapper.selectList(null);
-        if (CollectionUtils.isEmpty(deEngines)) {
+        List<CoreEngine> engines = engineMapper.selectList(null);
+        if (CollectionUtils.isEmpty(engines)) {
             return false;
         } else {
-            return !deEngines.getFirst().getType().equalsIgnoreCase("h2");
+            return !engines.getFirst().getType().equalsIgnoreCase("h2");
         }
 
     }
@@ -105,7 +105,7 @@ public class EngineServer implements EngineApi {
         try {
             return new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
         } catch (IllegalArgumentException e) {
-            DEException.throwException(ResultCode.PARAM_IS_INVALID.code(), fieldName + "格式无效");
+            CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), fieldName + "格式无效");
             return "";
         }
     }

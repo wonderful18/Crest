@@ -33,10 +33,10 @@ const delayExecute = (token: string) => {
 }
 
 const getRefreshStatus = () => {
-  return wsCache.get('de-global-refresh') || false
+  return wsCache.get('crest-global-refresh') || false
 }
 const setRefreshStatus = (status: boolean) => {
-  wsCache.set('de-global-refresh', status, { exp: 5 })
+  wsCache.set('crest-global-refresh', status, { exp: 5 })
 }
 
 const cacheRequest = cb => {
@@ -49,7 +49,7 @@ export const configHandler = config => {
     return config
   }
   if (wsCache.get('user.token')) {
-    config.headers['X-DE-TOKEN'] = wsCache.get('user.token')
+    config.headers['X-CREST-TOKEN'] = wsCache.get('user.token')
     const expired = isExpired()
     if (expired && !config.url.includes(refreshUrl)) {
       if (!getRefreshStatus()) {
@@ -60,7 +60,7 @@ export const configHandler = config => {
               userStore.setToken(res.data.token)
               userStore.setExp(res.data.exp)
               userStore.setTime(Date.now())
-              config.headers['X-DE-TOKEN'] = res.data.token
+              config.headers['X-CREST-TOKEN'] = res.data.token
               delayExecute(res.data.token)
             } else {
               delayExecute(null)
@@ -75,7 +75,7 @@ export const configHandler = config => {
       }
       const retry = new Promise(resolve => {
         cacheRequest(token => {
-          config.headers['X-DE-TOKEN'] = token
+          config.headers['X-CREST-TOKEN'] = token
           resolve(config)
         })
       })

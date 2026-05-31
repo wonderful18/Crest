@@ -188,7 +188,7 @@ export interface ApiConfiguration {
   id: string
   name: string
   type: string
-  deTableName: string
+  displayTableName: string
   method: string
   copy: boolean
   url: string

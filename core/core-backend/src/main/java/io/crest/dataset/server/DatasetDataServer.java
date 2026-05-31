@@ -18,7 +18,7 @@ import java.util.Map;
  * @Author Junjun
  */
 @RestController
-@RequestMapping("datasetData")
+@RequestMapping("dataset-data")
 public class DatasetDataServer implements DatasetDataApi {
     @Resource
     private DatasetDataManage datasetDataManage;
@@ -74,13 +74,13 @@ public class DatasetDataServer implements DatasetDataApi {
     }
 
     @Override
-    public Long getDatasetCount(DatasetGroupInfoDTO datasetGroupInfoDTO) throws Exception {
-        return datasetDataManage.getDatasetTotal(datasetGroupInfoDTO.getId());
+    public Long datasetCount(DatasetGroupInfoDTO datasetGroupInfoDTO) throws Exception {
+        return datasetDataManage.datasetTotal(datasetGroupInfoDTO.getId());
     }
 
     @Override
-    public Long getDatasetTotal(DatasetGroupInfoDTO datasetGroupInfoDTO) throws Exception {
-        return datasetDataManage.getDatasetCountWithWhere(datasetGroupInfoDTO.getId());
+    public Long datasetTotal(DatasetGroupInfoDTO datasetGroupInfoDTO) throws Exception {
+        return datasetDataManage.datasetCountWithWhere(datasetGroupInfoDTO.getId());
     }
 
     @Override

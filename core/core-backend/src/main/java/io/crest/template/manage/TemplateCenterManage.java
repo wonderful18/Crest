@@ -10,7 +10,7 @@ import io.crest.api.template.vo.MarketApplicationSpecVO;
 import io.crest.api.template.vo.MarketLatestReleaseVO;
 import io.crest.api.template.vo.MarketMetaDataVO;
 import io.crest.constant.CommonConstants;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.i18n.Translator;
 import io.crest.operation.manage.CoreOptRecentManage;
 import io.crest.system.manage.SysParameterManage;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class TemplateCenterManage {
-    private final static String POSTS_API_V2 = "/apis/api.store.halo.run/v1alpha1/applications?keyword=&priceMode=&sort=latestReleaseTimestamp%2Cdesc&type=THEME&deVersion=V2&templateType=&label=&page=1&size=2000";
+    private final static String POSTS_API_V2 = "/apis/api.store.halo.run/v1alpha1/applications?keyword=&priceMode=&sort=latestReleaseTimestamp%2Cdesc&type=THEME&platformVersion=V2&templateType=&label=&page=1&size=2000";
     private final static String TEMPLATE_META_DATA_URL = "/upload/meta_data.json";
     private final static String TEMPLATE_BASE_INFO_URL = "/apis/api.store.halo.run/v1alpha1/applications/";
     @Resource
@@ -141,7 +141,7 @@ public class TemplateCenterManage {
                     .collect(Collectors.toMap(TemplateManageDTO::getId, TemplateManageDTO::getName));
             return baseManage2MarketTrans(manageResult, categoryMap);
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         return null;
     }
@@ -168,7 +168,7 @@ public class TemplateCenterManage {
         try {
             v2BaseResponse = templateQuery(templateParams);
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         // 模版管理使用次数推荐
         List<TemplateMarketDTO> manage = searchTemplateFromManage();

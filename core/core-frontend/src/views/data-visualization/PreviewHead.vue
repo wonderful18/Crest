@@ -33,7 +33,7 @@ const embeddedStore = useEmbedded()
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
 const favorited = ref(false)
 const preview = () => {
-  const baseUrl = isDataEaseBi.value ? embeddedStore.baseUrl : ''
+  const baseUrl = isCrestBi.value ? embeddedStore.baseUrl : ''
   const url =
     baseUrl +
     '#/preview?dvId=' +
@@ -44,7 +44,7 @@ const preview = () => {
   const newWindow = window.open(url, '_blank')
   initOpenHandler(newWindow)
 }
-const isDataEaseBi = computed(() => appStore.getIsDataEaseBi)
+const isCrestBi = computed(() => appStore.getIsCrestBi)
 const isIframe = computed(() => appStore.getIsIframe)
 const shareDisable = computed(() => shareStore.getShareDisable)
 const exportPermissions = computed(() =>
@@ -62,7 +62,7 @@ const downloadAsAppTemplate = downloadType => {
 }
 
 const dvEdit = () => {
-  if (isDataEaseBi.value || isIframe.value) {
+  if (isCrestBi.value || isIframe.value) {
     embeddedStore.clearState()
     if (dvInfo.value.type === 'dataV') {
       embeddedStore.setDvId(dvInfo.value.id)
@@ -257,7 +257,7 @@ const initOpenHandler = newWindow => {
   background: #ffffff;
   color: #0f172a;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-  font-family: var(--de-custom_font, var(--crest-font-sans));
+  font-family: var(--crest-custom_font, var(--crest-font-sans));
   .canvas-name {
     max-width: 200px;
     font-size: 16px;

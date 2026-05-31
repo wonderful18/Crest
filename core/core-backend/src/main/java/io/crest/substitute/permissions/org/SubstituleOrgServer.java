@@ -12,7 +12,7 @@ import io.crest.api.permissions.org.vo.OrgDetailVO;
 import io.crest.api.permissions.org.vo.OrgPageVO;
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
-import io.crest.log.DeLog;
+import io.crest.log.CrestAudit;
 import io.crest.model.KeywordRequest;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.AuthUtils;
@@ -45,19 +45,19 @@ public class SubstituleOrgServer implements OrgApi {
     }
 
     @Override
-    @DeLog(ot = LogOT.CREATE, st = LogST.ORG)
+    @CrestAudit(ot = LogOT.CREATE, st = LogST.ORG)
     public Long create(OrgCreator creator) {
         return crestOrgManage.create(creator);
     }
 
     @Override
-    @DeLog(ot = LogOT.MODIFY, st = LogST.ORG, id = "#p0.id")
+    @CrestAudit(ot = LogOT.MODIFY, st = LogST.ORG, id = "#p0.id")
     public void edit(OrgEditor editor) {
         crestOrgManage.edit(editor);
     }
 
     @Override
-    @DeLog(ot = LogOT.DELETE, st = LogST.ORG, id = "#p0")
+    @CrestAudit(ot = LogOT.DELETE, st = LogST.ORG, id = "#p0")
     public void delete(Long id) {
         crestOrgManage.delete(id);
     }

@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class TableCalcTotalCfg {
-    private String dataeaseName;
+    private String engineFieldName;
     private String aggregation;
     private String originName;
     private int extField;

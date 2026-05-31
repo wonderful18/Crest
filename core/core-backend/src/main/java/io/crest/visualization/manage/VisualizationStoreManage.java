@@ -7,7 +7,7 @@ import io.crest.api.visualization.request.VisualizationStoreRequest;
 import io.crest.api.visualization.request.VisualizationWorkbranchQueryRequest;
 import io.crest.api.visualization.vo.VisualizationStoreVO;
 import io.crest.constant.BusiResourceEnum;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.system.manage.CoreUserManage;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.CommonBeanFactory;
@@ -117,7 +117,7 @@ public class VisualizationStoreManage {
         try {
             return BusiResourceEnum.valueOf(type.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
-            DEException.throwException("type is invalid");
+            CrestException.throwException("type is invalid");
             return null;
         }
     }

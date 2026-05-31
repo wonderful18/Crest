@@ -1,6 +1,6 @@
 package io.crest.extensions.view.factory;
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.view.plugin.AbstractChartPlugin;
 import io.crest.extensions.view.plugin.CrestChartPlugin;
 import io.crest.extensions.view.vo.PluginViewVO;
@@ -30,7 +30,7 @@ public class PluginsChartFactory {
             CrestPluginFactory.loadTemplate(moduleName, plugin);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), new Throwable(e));
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 

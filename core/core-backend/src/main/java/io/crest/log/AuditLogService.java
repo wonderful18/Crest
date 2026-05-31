@@ -55,7 +55,7 @@ public class AuditLogService {
             }
 
             String sql = """
-                INSERT INTO core_audit_log
+                INSERT INTO audit_log
                 (operation_type, resource_type, resource_id, resource_name,
                  operation_desc, request_method, request_url,
                  operator_id, operator_name, operator_account, operator_ip,
@@ -82,7 +82,7 @@ public class AuditLogService {
     public void logLogin(String account, Long userId, String ip, boolean success, String msg) {
         try {
             String sql = """
-                INSERT INTO core_audit_log
+                INSERT INTO audit_log
                 (operation_type, resource_type, resource_id, resource_name,
                  operation_desc, operator_id, operator_name, operator_account, operator_ip,
                  response_code, response_msg, operation_time)

@@ -69,8 +69,8 @@
                         <Icon
                           ><component
                             class="svg-icon"
-                            :class="`field-icon-${fieldType[data.sourceDeType]}`"
-                            :is="iconFieldMap[fieldType[data.sourceDeType]]"
+                            :class="`field-icon-${fieldType[data.sourceFieldType]}`"
+                            :is="iconFieldMap[fieldType[data.sourceFieldType]]"
                           ></component
                         ></Icon>
                       </el-icon>
@@ -272,8 +272,8 @@
                                           ><component
                                             class="svg-icon"
                                             style="width: 14px; height: 14px"
-                                            :class="`field-icon-${fieldType[curViewField.deType]}`"
-                                            :is="iconFieldMap[fieldType[curViewField.deType]]"
+                                            :class="`field-icon-${fieldType[curViewField.fieldType]}`"
+                                            :is="iconFieldMap[fieldType[curViewField.fieldType]]"
                                           ></component
                                         ></Icon>
                                         <span
@@ -343,8 +343,8 @@
                                           ><component
                                             class="svg-icon"
                                             style="width: 14px; height: 14px"
-                                            :class="`field-icon-${fieldType[viewField.deType]}`"
-                                            :is="iconFieldMap[fieldType[viewField.deType]]"
+                                            :class="`field-icon-${fieldType[viewField.fieldType]}`"
+                                            :is="iconFieldMap[fieldType[viewField.fieldType]]"
                                           ></component
                                         ></Icon>
                                         <span
@@ -584,8 +584,8 @@
                                 <Icon
                                   ><component
                                     class="svg-icon"
-                                    :class="`field-icon-${fieldType[item.sourceDeType]}`"
-                                    :is="iconFieldMap[fieldType[item.sourceDeType]]"
+                                    :class="`field-icon-${fieldType[item.sourceFieldType]}`"
+                                    :is="iconFieldMap[fieldType[item.sourceFieldType]]"
                                   ></component
                                 ></Icon>
                               </el-icon>
@@ -641,7 +641,7 @@ import { storeToRefs } from 'pinia'
 import { findDvType, queryTreeApi } from '@/api/visualization/dataVisualization'
 import { ElMessage, ElScrollbar } from 'element-plus-secondary'
 import { useI18n } from '@/hooks/web/useI18n'
-import { getDatasetDetails, listFieldByDatasetGroup } from '@/api/dataset'
+import { datasetDetails, listFieldByDatasetGroup } from '@/api/dataset'
 import { BusiTreeRequest } from '@/models/tree/TreeNode'
 import JumpSetOuterContentEditor from '@/components/visualization/JumpSetOuterContentEditor.vue'
 import { Search } from '@element-plus/icons-vue'
@@ -765,13 +765,13 @@ const initCurFilterFieldArray = componentDataCheck => {
           state.linkJumpCurFilterFieldArray.push({
             id: filterItem.id,
             name: filterItem.name,
-            deType: 'filter'
+            fieldType: 'filter'
           })
         }
       })
     } else if (componentItem.component === 'Group') {
       initCurFilterFieldArray(componentItem.propValue)
-    } else if (componentItem.component === 'DeTabs') {
+    } else if (componentItem.component === 'Tabs') {
       componentItem.propValue.forEach(tabItem => {
         initCurFilterFieldArray(tabItem.componentData)
       })
@@ -840,7 +840,7 @@ const init = viewItem => {
 
   if (chartDetails.tableId) {
     // 获取当前数据集信息
-    getDatasetDetails(chartDetails.tableId).then(res => {
+    datasetDetails(chartDetails.tableId).then(res => {
       state.curDatasetInfo = res || {}
     })
     // 获取当前图表的字段信息
@@ -1075,7 +1075,7 @@ const filterNodeMethod = (value, data) => {
   return !value || data.checked
 }
 
-const isEmbedded = computed(() => appStore.getIsDataEaseBi || appStore.getIsIframe)
+const isEmbedded = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
 const openType = '_blank'
 
 const resourceEdit = async resourceId => {
@@ -1287,7 +1287,7 @@ defineExpose({
 
   color: var(--neutral-900, #1f2329);
   /* 中文/桌面端/正文 14 22 Regular */
-  font-family: var(--de-custom_font, 'PingFang');
+  font-family: var(--crest-custom_font, 'PingFang');
   font-size: 14px;
   font-style: normal;
   font-weight: 400;
@@ -1483,7 +1483,7 @@ span {
 
 .padding-lr {
   height: 500px;
-  border: 1px solid var(--deCardStrokeColor, #dee0e3);
+  border: 1px solid var(--crestCardStrokeColor, #dee0e3);
   border-radius: 6px;
   padding: 12px;
   box-sizing: border-box;
@@ -1512,7 +1512,7 @@ span {
   margin-top: 8px;
   text-align: center;
   font-size: 14px;
-  color: var(--deTextDisable);
+  color: var(--crestTextDisable);
 }
 .outer-content-mirror {
   border: 1px solid #d9dcdf;

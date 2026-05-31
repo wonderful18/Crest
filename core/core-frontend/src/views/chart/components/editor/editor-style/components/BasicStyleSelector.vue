@@ -210,7 +210,7 @@ const initTableColumnWidth = () => {
   const { tableHeader } = customAttr
   if (allAxis.length && tableHeader.showIndex) {
     const indexColumn = {
-      dataeaseName: SERIES_NUMBER_FIELD,
+      engineFieldName: SERIES_NUMBER_FIELD,
       name: tableHeader.indexLabel
     } as unknown as Axis
     allAxis.unshift(indexColumn)
@@ -225,7 +225,7 @@ const initTableColumnWidth = () => {
       const defaultWidth = parseFloat((100 / allAxis.length).toFixed(2))
       allAxis.forEach(item => {
         state.basicStyleForm.tableFieldWidth.push({
-          fieldId: item.dataeaseName,
+          fieldId: item.engineFieldName,
           name: item.name,
           width: defaultWidth
         })
@@ -238,11 +238,11 @@ const initTableColumnWidth = () => {
       state.basicStyleForm.tableFieldWidth.splice(0)
       allAxis.forEach(item => {
         let width = 10
-        if (fieldMap[item.dataeaseName]) {
-          width = fieldMap[item.dataeaseName].width
+        if (fieldMap[item.engineFieldName]) {
+          width = fieldMap[item.engineFieldName].width
         }
         state.basicStyleForm.tableFieldWidth.push({
-          fieldId: item.dataeaseName,
+          fieldId: item.engineFieldName,
           name: item.name,
           width
         })

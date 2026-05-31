@@ -281,7 +281,7 @@ const validMaxFieldNum = computed(() => {
 })
 
 const isNumType = field => {
-  return quotaData.value.find(ele => ele.id === field.id && NUMBER_DE_TYPE.includes(ele.deType))
+  return quotaData.value.find(ele => ele.id === field.id && NUMBER_DE_TYPE.includes(ele.fieldType))
 }
 
 /**
@@ -396,11 +396,11 @@ onMounted(() => {
                 :value="item.id"
               >
                 <el-icon style="margin-right: 8px">
-                  <Icon :className="`field-icon-${fieldType[item.deType]}`"
+                  <Icon :className="`field-icon-${fieldType[item.fieldType]}`"
                     ><component
                       class="svg-icon"
-                      :class="`field-icon-${fieldType[item.deType]}`"
-                      :is="iconFieldMap[fieldType[item.deType]]"
+                      :class="`field-icon-${fieldType[item.fieldType]}`"
+                      :is="iconFieldMap[fieldType[item.fieldType]]"
                     ></component
                   ></Icon>
                 </el-icon>
@@ -498,11 +498,11 @@ onMounted(() => {
                 :value="item.id"
               >
                 <el-icon style="margin-right: 8px">
-                  <Icon :className="`field-icon-${fieldType[item.deType]}`"
+                  <Icon :className="`field-icon-${fieldType[item.fieldType]}`"
                     ><component
-                      :class="`field-icon-${fieldType[item.deType]}`"
+                      :class="`field-icon-${fieldType[item.fieldType]}`"
                       class="svg-icon"
-                      :is="iconFieldMap[fieldType[item.deType]]"
+                      :is="iconFieldMap[fieldType[item.fieldType]]"
                     ></component
                   ></Icon>
                 </el-icon>
@@ -704,11 +704,11 @@ onMounted(() => {
               :value="item.id"
             >
               <el-icon style="margin-right: 8px">
-                <Icon :className="`field-icon-${fieldType[item.deType]}`"
+                <Icon :className="`field-icon-${fieldType[item.fieldType]}`"
                   ><component
-                    :class="`field-icon-${fieldType[item.deType]}`"
+                    :class="`field-icon-${fieldType[item.fieldType]}`"
                     class="svg-icon"
-                    :is="iconFieldMap[fieldType[item.deType]]"
+                    :is="iconFieldMap[fieldType[item.fieldType]]"
                   ></component
                 ></Icon>
               </el-icon>

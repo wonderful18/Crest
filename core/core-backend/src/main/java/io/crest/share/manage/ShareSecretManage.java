@@ -1,7 +1,7 @@
 package io.crest.share.manage;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.share.dao.auto.entity.CoreShare;
 import io.crest.share.dao.auto.mapper.CoreShareMapper;
 import jakarta.annotation.Resource;
@@ -28,7 +28,7 @@ public class ShareSecretManage {
         queryWrapper.eq("creator", uid);
         queryWrapper.eq("resource_id", resourceId);
         CoreShare coreShare = coreShareMapper.selectOne(queryWrapper);
-        if (ObjectUtils.isEmpty(coreShare)) DEException.throwException("Share resource do not exist");
+        if (ObjectUtils.isEmpty(coreShare)) CrestException.throwException("Share resource do not exist");
         String sharePwd = coreShare.getPwd();
         return StringUtils.isNotBlank(sharePwd) ? sharePwd : defaultPwd;
     }

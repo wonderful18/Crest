@@ -92,7 +92,7 @@ export function findNewComponent(componentName, innerType, staticMap?) {
   componentList.forEach(comp => {
     if (comp.component === componentName || comp.component === innerType) {
       newComponent = cloneDeep(comp)
-      if (['DeTabs', 'DeScreen'].includes(newComponent.component)) {
+      if (['Tabs', 'Screen'].includes(newComponent.component)) {
         newComponent.propValue[0].name = guid()
         newComponent['titleBackground'] = deepCopy(COMMON_TAB_TITLE_BACKGROUND)
       }
@@ -118,7 +118,7 @@ export function findNewComponent(componentName, innerType, staticMap?) {
     if (newComponent.isPlugin) {
       newComponent.staticMap = staticMap
     }
-  } else if (['DeDecoration', 'DynamicBackground'].includes(componentName)) {
+  } else if (['Decoration', 'DynamicBackground'].includes(componentName)) {
     newComponent.style.borderWidth = 0
     newComponent.style.innerPadding = getNewInnerPadding()
   }
@@ -159,7 +159,7 @@ function matrixAdaptor(componentItem) {
     componentItem.propValue?.forEach(groupItem => {
       matrixAdaptor(groupItem)
     })
-  } else if (componentItem.component === 'DeTabs') {
+  } else if (componentItem.component === 'Tabs') {
     componentItem.propValue?.forEach(tabItem => {
       tabItem.componentData?.forEach(tabComponent => {
         matrixAdaptor(tabComponent)
@@ -210,7 +210,7 @@ export function historyItemAdaptor(
       componentItem['commonBackground'].borderRadius
     )
   }
-  if (componentItem.component === 'DeTabs') {
+  if (componentItem.component === 'Tabs') {
     componentItem['editableTabsValue'] = componentItem['editableTabsValue'] || ''
     componentItem.style['showTabTitle'] =
       componentItem.style['showTabTitle'] === undefined ? true : componentItem.style['showTabTitle']
@@ -270,7 +270,7 @@ export function historyItemAdaptor(
   componentItem.events['jump'].type = componentItem.events['jump'].type || '_blank'
   componentItem['category'] = componentItem['category'] || 'base'
 
-  if (componentItem.component === 'DeTabs') {
+  if (componentItem.component === 'Tabs') {
     componentItem['titleBackground'] =
       componentItem['titleBackground'] || deepCopy(COMMON_TAB_TITLE_BACKGROUND)
     componentItem.style.fontStyle = componentItem.style.fontStyle || 'normal'
@@ -301,7 +301,7 @@ export function historyAdaptor(
       componentItem.canvasId = 'canvas-main'
     })
   }
-  const curVersion = wsCache.get('x-de-execute-version')
+  const curVersion = wsCache.get('x-crest-execute-version')
   // 含有定时报告过滤项每次都需要匹配
   const reportFilterInfo = canvasInfo?.reportFilterInfo
   if (canvasInfo?.checkVersion === curVersion && !reportFilterInfo) {
@@ -465,7 +465,7 @@ export function initCanvasDataPrepare(dvId, params, callBack) {
         : 0
     appearanceStore.setCurrentFont(canvasStyleResult.fontFamily)
     document.documentElement.style.setProperty(
-      '--de-canvas_custom_font',
+      '--crest-canvas_custom_font',
       `${canvasStyleResult.fontFamily}`
     )
     callBack({ canvasDataResult, canvasStyleResult, dvInfo, canvasViewInfoPreview, curPreviewGap })
@@ -578,7 +578,7 @@ export function initCanvasDataMobile(dvId, params, callBack) {
               queryItem.mQueryConditionWidth || queryItem.queryConditionWidth
           })
         }
-        if (ele.component === 'DeTabs') {
+        if (ele.component === 'Tabs') {
           ele.propValue?.forEach(tabItem => {
             tabItem.componentData?.forEach(tabComponent => {
               tabComponent.style = tabComponent.mStyle || tabComponent.style
@@ -662,7 +662,7 @@ export async function canvasSaveWithParams(params, callBack) {
       item.propValue?.forEach(groupItem => {
         groupItem.linkageFilters = []
       })
-    } else if (item.component === 'DeTabs') {
+    } else if (item.component === 'Tabs') {
       item.propValue?.forEach(tabItem => {
         tabItem.componentData?.forEach(tabComponent => {
           tabComponent.linkageFilters = []
@@ -677,7 +677,7 @@ export async function canvasSaveWithParams(params, callBack) {
     canvasViewInfo: canvasViewInfo.value,
     appData: appData.value,
     ...curDvInfo.value,
-    checkVersion: wsCache.get('x-de-execute-version'),
+    checkVersion: wsCache.get('x-crest-execute-version'),
     contentId: newContentId,
     watermarkInfo: null
   }
@@ -754,7 +754,7 @@ export function isMainCanvas(canvasId) {
 }
 // 检查是否可以加入到分组
 export function checkJoinGroup(item) {
-  if (item.component === 'DeTabs') {
+  if (item.component === 'Tabs') {
     let result = true
     item.propValue?.forEach(tabItem => {
       tabItem.componentData?.forEach(tabComponent => {
@@ -773,7 +773,7 @@ export function checkJoinTab(item) {
   if (item.component === 'Group') {
     let result = true
     item.propValue?.forEach(groupItem => {
-      if (groupItem.component === 'DeTabs') {
+      if (groupItem.component === 'Tabs') {
         result = false
       }
     })
@@ -797,7 +797,7 @@ export function itemCanvasPathCheck(item, checkType) {
   if (checkType === 'pTabGroup') {
     return Boolean(
       pathMap[item.id] &&
-        pathMap[item.id].component === 'DeTabs' &&
+        pathMap[item.id].component === 'Tabs' &&
         pathMap[pathMap[item.id].id] &&
         pathMap[pathMap[item.id].id].component === 'Group'
     )
@@ -807,14 +807,14 @@ export function itemCanvasPathCheck(item, checkType) {
     return Boolean(
       item.component === 'Group' &&
         pathMap[pathMap[item.id].id] &&
-        pathMap[pathMap[item.id].id].component === 'DeTabs'
+        pathMap[pathMap[item.id].id].component === 'Tabs'
     )
   }
 
   // 当前组件是Tab且在Group中
   if (checkType === 'tabInGroup') {
     return Boolean(
-      item.component === 'DeTabs' && pathMap[item.id] && pathMap[item.id].component === 'Group'
+      item.component === 'Tabs' && pathMap[item.id] && pathMap[item.id].component === 'Group'
     )
   }
   return false
@@ -822,7 +822,7 @@ export function itemCanvasPathCheck(item, checkType) {
 
 export function canvasIdMapCheck(item, pItem, pathMap) {
   pathMap[item.id] = pItem
-  if (item.component === 'DeTabs') {
+  if (item.component === 'Tabs') {
     item.propValue?.forEach(tabItem => {
       tabItem.componentData?.forEach(tabComponent => {
         canvasIdMapCheck(tabComponent, item, pathMap)
@@ -904,7 +904,7 @@ export function findAllViewsId(componentData, idArray) {
       item.propValue?.forEach(groupItem => {
         idArray.push(groupItem.id)
       })
-    } else if (item.component === 'DeTabs') {
+    } else if (item.component === 'Tabs') {
       item.propValue?.forEach(tabItem => {
         tabItem.componentData?.forEach(tabComponent => {
           idArray.push(tabComponent.id)
@@ -971,21 +971,21 @@ export function findParentIdByChildIdRecursive(tree, targetChildId) {
 }
 
 export async function decompressionPre(params, callBack) {
-  let deTemplateData
+  let templatePayload
   await decompression(params)
     .then(response => {
-      const deTemplateDataTemp = response.data
-      const sourceComponentData = JSON.parse(deTemplateDataTemp['componentData']) as any[]
-      const appData = deTemplateDataTemp['appData']
-      const sourceCanvasStyle = JSON.parse(deTemplateDataTemp['canvasStyleData']) as Record<
+      const templatePayloadRaw = response.data
+      const sourceComponentData = JSON.parse(templatePayloadRaw['componentData']) as any[]
+      const appData = templatePayloadRaw['appData']
+      const sourceCanvasStyle = JSON.parse(templatePayloadRaw['canvasStyleData']) as Record<
         string,
         any
       >
       sourceComponentData.forEach(componentItem => {
         // 2 为基础版本 此处需要增加仪表板矩阵密度
         if (
-          (!deTemplateDataTemp.version || deTemplateDataTemp.version === 2) &&
-          deTemplateDataTemp.type === 'dashboard'
+          (!templatePayloadRaw.version || templatePayloadRaw.version === 2) &&
+          templatePayloadRaw.type === 'dashboard'
         ) {
           matrixAdaptor(componentItem)
         }
@@ -995,13 +995,13 @@ export async function decompressionPre(params, callBack) {
         sourceCanvasStyle.component['seniorStyleSetting'] || deepCopy(SENIOR_STYLE_SETTING_LIGHT)
       sourceCanvasStyle['scaleWidth'] = sourceCanvasStyle['scale']
       sourceCanvasStyle['scaleHeight'] = sourceCanvasStyle['scaleHeight']
-      deTemplateData = {
+      templatePayload = {
         canvasStyleData: sourceCanvasStyle,
         componentData: sourceComponentData,
-        canvasViewInfo: deTemplateDataTemp['canvasViewInfo'],
+        canvasViewInfo: templatePayloadRaw['canvasViewInfo'],
         appData: appData,
         baseInfo: {
-          preName: deTemplateDataTemp.name
+          preName: templatePayloadRaw.name
         }
       }
     })
@@ -1009,13 +1009,13 @@ export async function decompressionPre(params, callBack) {
       console.error(e)
     })
   historyAdaptor(
-    deTemplateData.canvasStyleData,
-    deTemplateData.componentData,
+    templatePayload.canvasStyleData,
+    templatePayload.componentData,
     null,
     { resourceTable: 'snapshot' },
     null
   )
-  callBack(deTemplateData)
+  callBack(templatePayload)
 }
 
 export function isDashboard() {
@@ -1053,7 +1053,7 @@ export function componentPreSort(componentData) {
   if (componentData && Array.isArray(componentData)) {
     componentData.sort((c1, c2) => c1.y - c2.y)
     componentData.forEach(componentItem => {
-      if (componentItem.component === 'DeTabs') {
+      if (componentItem.component === 'Tabs') {
         componentItem.propValue?.forEach(tabItem => {
           componentPreSort(tabItem.componentData)
         })
@@ -1088,7 +1088,7 @@ export function findComponentById(componentId) {
           result = groupItem
         }
       })
-    } else if (item.component === 'DeTabs') {
+    } else if (item.component === 'Tabs') {
       item.propValue?.forEach(tabItem => {
         tabItem.componentData?.forEach(tabComponent => {
           if (tabComponent.id === componentId) {
@@ -1105,7 +1105,7 @@ export function onInitReady(params, eventName = 'canvas_init_ready') {
   try {
     console.info('event:' + eventName)
     const targetPm = {
-      type: 'dataease-embedded-interactive',
+      type: 'crest-embedded-interactive',
       eventName: eventName,
       args: params
     }
@@ -1114,7 +1114,7 @@ export function onInitReady(params, eventName = 'canvas_init_ready') {
       : window.location.origin
     window.parent.postMessage(targetPm, targetOrigin)
   } catch (e) {
-    console.debug('de_inner_params send error')
+    console.debug('crest_inner_params send error')
   }
 }
 
@@ -1152,7 +1152,7 @@ export function getMapElementIds(canvasDataPreview) {
     if (mapChartTypes.includes(item.innerType)) {
       mapElementIds.push(item.id)
     }
-    if (item.component === 'DeTabs') {
+    if (item.component === 'Tabs') {
       item.propValue?.forEach(tabItem => {
         tabItem.componentData?.forEach(tabComponent => {
           if (mapChartTypes.includes(tabComponent.innerType)) {

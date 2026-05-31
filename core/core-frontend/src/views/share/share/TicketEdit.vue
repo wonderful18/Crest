@@ -4,7 +4,7 @@ import { ElMessage, ElLoading } from 'element-plus-secondary'
 import { useI18n } from '@/hooks/web/useI18n'
 import type { FormInstance, FormRules } from 'element-plus-secondary'
 import request from '@/config/axios'
-import deCopy from '@/assets/svg/de-copy.svg'
+import CopyIcon from '@/assets/svg/copy.svg'
 import icon_refresh_outlined from '@/assets/svg/icon_refresh_outlined.svg'
 import icon_deleteTrash_outlined from '@/assets/svg/icon_delete-trash_outlined.svg'
 import icon_add_outlined from '@/assets/svg/icon_add_outlined.svg'
@@ -64,7 +64,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
       }
       showLoading()
       request
-        .post({ url: '/ticket/saveTicket', data: param })
+        .post({ url: '/ticket/tickets', data: param })
         .then(res => {
           if (!res.msg) {
             ElMessage.success(t('common.save_success'))
@@ -118,7 +118,7 @@ const edit = (row, link) => {
 }
 
 const generateTicket = () => {
-  const url = '/ticket/tempTicket'
+  const url = '/ticket/tickets/temporary'
   request.get({ url }).then(res => {
     state.form.ticket = res.data
   })
@@ -231,7 +231,7 @@ const refreshTicket = () => {
     generateTicket()
     return
   }
-  const url = '/ticket/saveTicket'
+  const url = '/ticket/tickets'
   const param = { ticket: state.form.ticket }
   param['generateNew'] = true
   request.post({ url, data: param }).then(res => {
@@ -277,7 +277,7 @@ defineExpose({
         <el-tooltip class="item" effect="dark" :content="t('commons.copy')" placement="top">
           <el-button text @click.stop="copyTicket(state.form.ticket)">
             <template #icon>
-              <Icon name="de-copy"><deCopy class="svg-icon" /></Icon>
+              <Icon name="copy"><CopyIcon class="svg-icon" /></Icon>
             </template>
           </el-button>
         </el-tooltip>
@@ -404,7 +404,7 @@ defineExpose({
           content: '*';
           color: var(--ed-color-danger);
           margin-left: 2px;
-          font-family: var(--de-custom_font, 'PingFang');
+          font-family: var(--crest-custom_font, 'PingFang');
           font-size: 14px;
           font-style: normal;
           font-weight: 400;

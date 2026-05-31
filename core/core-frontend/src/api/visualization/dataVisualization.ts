@@ -21,7 +21,7 @@ export interface Panel {
 }
 
 export const findCopyResource = async (dvId, busiFlag): Promise<IResponse> => {
-  return request.get({ url: '/dataVisualization/findCopyResource/' + dvId + '/' + busiFlag })
+  return request.get({ url: '/data-visualization/copy-resource/' + dvId + '/' + busiFlag })
 }
 
 export const findById = async (
@@ -36,44 +36,44 @@ export const findById = async (
     })
   }
   const data = { id: dvId, busiFlag: busiFlagResult, ...attachInfo }
-  return request.post({ url: '/dataVisualization/findById', data })
+  return request.post({ url: '/data-visualization/detail', data })
 }
 
 export const updateCheckVersion = dvId =>
-  request.get({ url: `/dataVisualization/updateCheckVersion/${dvId}` })
+  request.get({ url: `/data-visualization/check-version/${dvId}` })
 
 export const queryTreeApi = async (data: BusiTreeRequest): Promise<IResponse> => {
-  return request.post({ url: '/dataVisualization/tree', data }).then(res => {
+  return request.post({ url: '/data-visualization/tree', data }).then(res => {
     return res?.data
   })
 }
 
 export const queryBusiTreeApi = async (data): Promise<IResponse> => {
-  return request.post({ url: '/dataVisualization/interactiveTree', data }).then(res => {
+  return request.post({ url: '/data-visualization/interactive-tree', data }).then(res => {
     return res?.data
   })
 }
 
 export const findDvType = async dvId =>
-  request.get({ url: `/dataVisualization/findDvType/${dvId}` })
+  request.get({ url: `/data-visualization/type/${dvId}` })
 
-export const save = data => request.post({ url: '/dataVisualization/save', data })
+export const save = data => request.post({ url: '/data-visualization/record', data })
 
 export const checkCanvasChange = data =>
-  request.post({ url: '/dataVisualization/checkCanvasChange', data, loading: true })
+  request.post({ url: '/data-visualization/canvas-change-impact', data, loading: true })
 
 export const saveCanvas = data =>
-  request.post({ url: '/dataVisualization/saveCanvas', data, loading: true })
+  request.post({ url: '/data-visualization/canvas', data, loading: true })
 
 export const updatePublishStatus = data =>
-  request.post({ url: '/dataVisualization/updatePublishStatus', data, loading: false })
+  request.post({ url: '/data-visualization/publish-status', data, loading: false })
 
 export const recoverToPublished = data =>
-  request.post({ url: '/dataVisualization/recoverToPublished', data, loading: true })
+  request.post({ url: '/data-visualization/published-state/recover', data, loading: true })
 export const appCanvasNameCheck = async data =>
-  request.post({ url: '/dataVisualization/appCanvasNameCheck', data, loading: false })
+  request.post({ url: '/data-visualization/canvas-name-check', data, loading: false })
 
-export const updateBase = data => request.post({ url: '/dataVisualization/updateBase', data })
+export const updateBase = data => request.put({ url: '/data-visualization/base', data })
 
 export const updateCanvas = data => {
   const copyData = cloneDeep(data)
@@ -92,28 +92,28 @@ export const updateCanvas = data => {
   for (const key in copyData.canvasViewInfo) {
     originNameHandleWithArr(copyData.canvasViewInfo[key], fields)
   }
-  return request.post({ url: '/dataVisualization/updateCanvas', data: copyData, loading: true })
+  return request.put({ url: '/data-visualization/canvas', data: copyData, loading: true })
 }
 
-export const moveResource = data => request.post({ url: '/dataVisualization/move', data })
+export const moveResource = data => request.post({ url: '/data-visualization/move', data })
 
-export const copyResource = data => request.post({ url: '/dataVisualization/copy', data })
+export const copyResource = data => request.post({ url: '/data-visualization/copy', data })
 
 export const deleteLogic = (dvId, busiFlag) =>
-  request.post({ url: '/dataVisualization/deleteLogic/' + dvId + '/' + busiFlag })
+  request.delete({ url: '/data-visualization/trash/' + dvId + '/' + busiFlag })
 
 export const querySubjectWithGroupApi = data =>
-  request.post({ url: '/visualizationSubject/querySubjectWithGroup', data })
+  request.post({ url: '/visualization-subject/subjects-with-groups', data })
 
 export const saveOrUpdateSubject = data =>
-  request.post({ url: '/visualizationSubject/update', data })
+  request.put({ url: '/visualization-subject', data })
 
-export const deleteSubject = id => request.post({ url: '/visualizationSubject/delete/' + id })
+export const deleteSubject = id => request.delete({ url: '/visualization-subject/' + id })
 
-export const dvNameCheck = async data => request.post({ url: '/dataVisualization/nameCheck', data })
+export const dvNameCheck = async data => request.post({ url: '/data-visualization/name-check', data })
 
 export const storeApi = (data): Promise<IResponse> => {
-  return request.post({ url: '/store/execute', data })
+  return request.post({ url: '/store/runs', data })
 }
 
 export const storeStatusApi = (id: string): Promise<IResponse> => {
@@ -121,11 +121,11 @@ export const storeStatusApi = (id: string): Promise<IResponse> => {
 }
 
 export const decompression = async data =>
-  request.post({ url: '/dataVisualization/decompression', data, loading: true })
+  request.post({ url: '/data-visualization/decompression', data, loading: true })
 
 export const viewDetailList = dvId => {
   return request.get({
-    url: '/dataVisualization/viewDetailList/' + dvId,
+    url: '/data-visualization/view-detail-list/' + dvId,
     method: 'get',
     loading: false
   })
@@ -140,7 +140,7 @@ export const getComponentInfo = dvId => {
 
 export const export2AppCheck = params => {
   return request.post({
-    url: '/dataVisualization/export2AppCheck',
+    url: '/data-visualization/app-export-check',
     data: params,
     loading: true
   })
@@ -148,7 +148,7 @@ export const export2AppCheck = params => {
 
 export const queryOuterParamsDsInfo = async dvId => {
   return request.get({
-    url: '/outerParams/queryDsWithVisualizationId/' + dvId,
+    url: '/outer-params/datasources/by-visualization/' + dvId,
     method: 'get',
     loading: false
   })
@@ -156,16 +156,16 @@ export const queryOuterParamsDsInfo = async dvId => {
 
 export const queryShareBaseApi = () => {
   return request.get({
-    url: '/sysParameter/shareBase',
+    url: '/sys-parameter/share-base',
     loading: false
   })
 }
 
-export const exportLogApp = data => request.post({ url: '/dataVisualization/exportLogApp', data })
+export const exportLogApp = data => request.post({ url: '/data-visualization/export-logs/app', data })
 
 export const exportLogTemplate = data =>
-  request.post({ url: '/dataVisualization/exportLogTemplate', data })
+  request.post({ url: '/data-visualization/export-logs/template', data })
 
-export const exportLogPDF = data => request.post({ url: '/dataVisualization/exportLogPDF', data })
+export const exportLogPDF = data => request.post({ url: '/data-visualization/export-logs/pdf', data })
 
-export const exportLogImg = data => request.post({ url: '/dataVisualization/exportLogImg', data })
+export const exportLogImg = data => request.post({ url: '/data-visualization/export-logs/image', data })

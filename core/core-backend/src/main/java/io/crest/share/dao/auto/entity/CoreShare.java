@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @author fit2cloud
  * @since 2024-06-21
  */
-@TableName("core_share")
+@TableName("share_link")
 public class CoreShare implements Serializable {
 
     private static final long serialVersionUID = 1L;

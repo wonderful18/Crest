@@ -155,11 +155,11 @@ onMounted(() => {
             </el-icon>
           </template>
           <el-icon>
-            <Icon :className="`field-icon-${fieldType[[2, 3].includes(item.deType) ? 2 : 0]}`"
+            <Icon :className="`field-icon-${fieldType[[2, 3].includes(item.fieldType) ? 2 : 0]}`"
               ><component
                 class="svg-icon"
-                :class="`field-icon-${fieldType[[2, 3].includes(item.deType) ? 2 : 0]}`"
-                :is="iconFieldMap[fieldType[item.deType]]"
+                :class="`field-icon-${fieldType[[2, 3].includes(item.fieldType) ? 2 : 0]}`"
+                :is="iconFieldMap[fieldType[item.fieldType]]"
               ></component
             ></Icon>
           </el-icon>

@@ -13,14 +13,14 @@ interface Cascade {
   datasetId: string
   name: string
   queryId: string
-  deType: string
+  fieldType: string
   fieldId: string
   isTree: boolean
 }
 
 type cascadeMap = Record<string, Cascade>
 const { t } = useI18n()
-let deTypeMap = shallowRef({})
+let fieldTypeMap = shallowRef({})
 const emits = defineEmits(['saveCascade'])
 
 const dialogVisible = ref(false)
@@ -70,14 +70,14 @@ const init = (cascadeMap: cascadeMap, arr) => {
   datasetMap.value = Object.values(cascadeMap).map(ele => ({
     label: ele.name,
     isTree: ele.isTree,
-    deType: ele.deType,
+    fieldType: ele.fieldType,
     value: `${ele.datasetId}--${ele.queryId}--${ele.fieldId}`
   }))
   let obj = {}
   Object.values(cascadeMap).forEach(ele => {
-    obj[`${ele.datasetId}--${ele.queryId}--${ele.fieldId}`] = ele.deType
+    obj[`${ele.datasetId}--${ele.queryId}--${ele.fieldId}`] = ele.fieldType
   })
-  deTypeMap.value = obj
+  fieldTypeMap.value = obj
   listByDsIds(datasetMap.value.map(ele => ele.value.split('--')[0]))
     .then(res => {
       optionsMap.value = res
@@ -234,7 +234,7 @@ defineExpose({
           </template>
           {{ t('v_query.add_cascade_condition') }}
         </el-button>
-        <el-button @click="deleteCascadeBlock(index)" class="cascade-delete-block" text>
+        <el-button @click="deleteCascadeBlock(index)" class="cascadelete-block" text>
           <template #icon>
             <Icon name="icon_delete-trash_outlined"
               ><icon_deleteTrash_outlined class="svg-icon"
@@ -265,7 +265,7 @@ defineExpose({
               :disabled="
                 (disabledDatasetId.includes(itx.value) &&
                   item.map(ele => ele.datasetId).includes(itx.value)) ||
-                (!!ele.datasetId && deTypeMap[ele.datasetId] !== itx.deType)
+                (!!ele.datasetId && fieldTypeMap[ele.datasetId] !== itx.fieldType)
               "
             />
           </el-select>
@@ -290,7 +290,7 @@ defineExpose({
             />
           </el-select>
         </div>
-        <el-button v-show="idx !== 0" @click="deleteCascade(idx, item)" class="cascade-delete" text>
+        <el-button v-show="idx !== 0" @click="deleteCascade(idx, item)" class="cascadelete" text>
           <template #icon>
             <Icon name="icon_delete-trash_outlined"
               ><icon_deleteTrash_outlined class="svg-icon"
@@ -324,7 +324,7 @@ defineExpose({
     background: var(--ed-color-primary-1a, rgba(59, 130, 246, 0.1));
     position: relative;
     padding: 9px 0 9px 40px;
-    font-family: var(--de-custom_font, 'PingFang');
+    font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 400;
     line-height: 20px;
@@ -373,8 +373,8 @@ defineExpose({
       }
     }
 
-    .cascade-delete-block,
-    .cascade-delete {
+    .cascadelete-block,
+    .cascadelete {
       width: 40px;
       font-size: 20px;
       color: #646a73;

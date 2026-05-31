@@ -1,7 +1,7 @@
 package io.crest.job.schedule;
 
 
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.i18n.Translator;
 import io.crest.utils.LogUtil;
 import jakarta.annotation.Resource;
@@ -98,7 +98,7 @@ public class ScheduleManager {
 
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -128,7 +128,7 @@ public class ScheduleManager {
 
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -179,7 +179,7 @@ public class ScheduleManager {
 
             scheduler.rescheduleJob(triggerKey, trigger);// 修改一个任务的触发时间
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -222,7 +222,7 @@ public class ScheduleManager {
 
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -254,7 +254,7 @@ public class ScheduleManager {
             }
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -278,7 +278,7 @@ public class ScheduleManager {
 
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -287,7 +287,7 @@ public class ScheduleManager {
             sched.start();
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -298,7 +298,7 @@ public class ScheduleManager {
             }
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -324,7 +324,7 @@ public class ScheduleManager {
     }
 
     public void addOrUpdateSingleJob(JobKey jobKey, TriggerKey triggerKey, Class clz,
-                                     Date date, JobDataMap jobDataMap) throws DEException {
+                                     Date date, JobDataMap jobDataMap) throws CrestException {
         try {
             if (scheduler.checkExists(triggerKey)) {
                 modifySingleJobTime(triggerKey, date);
@@ -332,7 +332,7 @@ public class ScheduleManager {
                 addSingleJob(jobKey, triggerKey, clz, date, jobDataMap);
             }
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -357,7 +357,7 @@ public class ScheduleManager {
      * @throws SchedulerException
      */
     public void addOrUpdateCronJob(JobKey jobKey, TriggerKey triggerKey, Class jobClass, String cron, Date startTime,
-                                   Date endTime, JobDataMap jobDataMap) throws DEException {
+                                   Date endTime, JobDataMap jobDataMap) throws CrestException {
 
         LogUtil.info("AddOrUpdateCronJob: " + jobKey.getName() + "," + triggerKey.getGroup());
         try {
@@ -367,7 +367,7 @@ public class ScheduleManager {
                 addCronJob(jobKey, triggerKey, jobClass, cron, startTime, endTime, jobDataMap);
             }
         } catch (Exception e) {
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -406,7 +406,7 @@ public class ScheduleManager {
     public static CronTrigger getCronTrigger(String cron) {
         if (!CronExpression.isValidExpression(cron)) {
             String msg = Translator.get("I18N_CRON_ERROR");
-            DEException.throwException(msg + " : " + cron);
+            CrestException.throwException(msg + " : " + cron);
         }
         return TriggerBuilder.newTrigger().withIdentity("Calculate Date")
                 .withSchedule(CronScheduleBuilder.cronSchedule(cron)).build();
@@ -504,7 +504,7 @@ public class ScheduleManager {
             }
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -563,7 +563,7 @@ public class ScheduleManager {
             return trigger.getFireTimeAfter(currentTime) != null ? trigger.getFireTimeAfter(currentTime).getTime() : null;
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
         return null;
     }
@@ -578,7 +578,7 @@ public class ScheduleManager {
             }
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 
@@ -592,7 +592,7 @@ public class ScheduleManager {
             }
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            DEException.throwException(e);
+            CrestException.throwException(e);
         }
     }
 }

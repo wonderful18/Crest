@@ -327,7 +327,7 @@ const editQueryCriteria = () => {
             <li @click="downComponent">{{ t('visualization.down_component') }}</li>
             <li @click="topComponent">{{ t('visualization.top_component') }}</li>
             <li @click="bottomComponent">{{ t('visualization.bottom_component') }}</li>
-            <li @click="customSort" v-if="curComponent.component === 'DeTabs'">
+            <li @click="customSort" v-if="curComponent.component === 'Tabs'">
               {{ t('visualization.sort') }}
             </li>
             <li @click="categoryChange('hidden')" v-show="showMoveMenu">

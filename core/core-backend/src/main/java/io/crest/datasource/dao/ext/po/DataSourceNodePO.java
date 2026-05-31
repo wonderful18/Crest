@@ -7,7 +7,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-@TableName("core_datasource")
+@TableName("data_source")
 public class DataSourceNodePO implements Serializable {
 
     @TableId

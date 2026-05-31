@@ -179,6 +179,6 @@ const formatDate = computed(() => {
 </template>
 <style lang="less">
 .custom-dynamic-time-range-popper_class {
-  font-family: var(--de-canvas_custom_font);
+  font-family: var(--crest-canvas_custom_font);
 }
 </style>

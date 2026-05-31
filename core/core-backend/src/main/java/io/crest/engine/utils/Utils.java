@@ -2,7 +2,7 @@ package io.crest.engine.utils;
 
 import io.crest.constant.SQLConstants;
 import io.crest.engine.constant.ExtFieldConstant;
-import io.crest.exception.DEException;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
 import io.crest.extensions.datasource.dto.*;
@@ -57,7 +57,7 @@ public class Utils {
             }
             return buildCalcField(chartField, tableObj, originFields, i, isCross, datasourceType, paramMap, true, chartField.getOriginName());
         } catch (Exception e) {
-            DEException.throwException(Translator.get("i18n_field_circular_ref"));
+            CrestException.throwException(Translator.get("i18n_field_circular_ref"));
         }
         return null;
     }
@@ -72,7 +72,7 @@ public class Utils {
             }
             return buildCalcField(chartField, tableObj, originFields, i, isCross, datasourceType, null, true, chartField.getOriginName());
         } catch (Exception e) {
-            DEException.throwException(Translator.get("i18n_field_circular_ref"));
+            CrestException.throwException(Translator.get("i18n_field_circular_ref"));
         }
         return null;
     }
@@ -81,7 +81,7 @@ public class Utils {
         try {
             i++;
             if (i > 100) {
-                DEException.throwException(Translator.get("i18n_field_circular_error"));
+                CrestException.throwException(Translator.get("i18n_field_circular_error"));
             }
             String originField = getCalcField(chartField, originFields, isFirst, fieldExpression);
             originField = originField.replaceAll("[\\t\\n\\r]]", "");
@@ -110,9 +110,9 @@ public class Utils {
                     // 计算字段允许二次引用，这里递归查询完整引用链
                     if (Objects.equals(ele.getExtField(), ExtFieldConstant.EXT_NORMAL)) {
                         if (isCross) {
-                            originField = originField.replaceAll("\\[" + ele.getId() + "]", String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), ele.getDataeaseName()));
+                            originField = originField.replaceAll("\\[" + ele.getId() + "]", String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), ele.getEngineFieldName()));
                         } else {
-                            originField = originField.replaceAll("\\[" + ele.getId() + "]", datasourceType.getPrefix() + tableObj.getTableAlias() + datasourceType.getSuffix() + "." + datasourceType.getPrefix() + ele.getDataeaseName() + datasourceType.getSuffix());
+                            originField = originField.replaceAll("\\[" + ele.getId() + "]", datasourceType.getPrefix() + tableObj.getTableAlias() + datasourceType.getSuffix() + "." + datasourceType.getPrefix() + ele.getEngineFieldName() + datasourceType.getSuffix());
                         }
                     } else {
                         originField = originField.replaceAll("\\[" + ele.getId() + "]", "(" + ele.getOriginName() + ")");
@@ -122,7 +122,7 @@ public class Utils {
             }
             return originField;
         } catch (Exception e) {
-            DEException.throwException(Translator.get("i18n_field_circular_error"));
+            CrestException.throwException(Translator.get("i18n_field_circular_error"));
         }
         return null;
     }
@@ -241,7 +241,7 @@ public class Utils {
             for (DatasetTableFieldDTO ele : fields) {
                 if (Strings.CI.contains(id, ele.getId() + "")) {
                     if (ids.contains(id)) {
-                        DEException.throwException(Translator.get("i18n_field_circular_ref"));
+                        CrestException.throwException(Translator.get("i18n_field_circular_ref"));
                     }
                     ids.add(id);
                     if (Objects.equals(ele.getExtField(), ExtFieldConstant.EXT_CALC)) {
@@ -264,7 +264,7 @@ public class Utils {
             for (DatasetTableFieldDTO ele : fields) {
                 if (Strings.CI.contains(id, ele.getId() + "")) {
                     if (ids.contains(id)) {
-                        DEException.throwException(Translator.get("i18n_field_circular_ref"));
+                        CrestException.throwException(Translator.get("i18n_field_circular_ref"));
                     }
                     ids.add(id);
                     if (Objects.equals(ele.getExtField(), ExtFieldConstant.EXT_CALC)) {
@@ -536,7 +536,7 @@ public class Utils {
             }
         }
         if (originField == null) {
-            DEException.throwException("Field not exists");
+            CrestException.throwException("Field not exists");
         }
 
         DsTypeDTO datasourceType = null;
@@ -545,19 +545,19 @@ public class Utils {
             datasourceType = getDs(pluginManage, next.getValue().getType());
         }
         if (datasourceType == null) {
-            DEException.throwException("Datasource not exists");
+            CrestException.throwException("Datasource not exists");
         }
 
         String fieldName;
         if (isCross) {
-            fieldName = originField.getDataeaseName();
+            fieldName = originField.getEngineFieldName();
         } else {
-            fieldName = datasourceType.getPrefix() + originField.getDataeaseName() + datasourceType.getSuffix();
+            fieldName = datasourceType.getPrefix() + originField.getEngineFieldName() + datasourceType.getSuffix();
         }
 
         StringBuilder exp = new StringBuilder();
         exp.append(" (CASE ");
-        if (originField.getDeType() == 0) {
+        if (originField.getFieldType() == 0) {
             for (FieldGroupDTO fieldGroupDTO : dto.getGroupList()) {
                 exp.append(" WHEN ");
                 for (int i = 0; i < fieldGroupDTO.getText().size(); i++) {
@@ -569,7 +569,7 @@ public class Utils {
                 }
                 exp.append(" THEN '").append(transValue(fieldGroupDTO.getName())).append("'");
             }
-        } else if (originField.getDeType() == 1) {
+        } else if (originField.getFieldType() == 1) {
             for (FieldGroupDTO fieldGroupDTO : dto.getGroupList()) {
                 exp.append(" WHEN ");
                 exp.append(fieldName).append(" >= ").append("'").append(fieldGroupDTO.getStartTime()).append("'");
@@ -577,7 +577,7 @@ public class Utils {
                 exp.append(fieldName).append(" <= ").append("'").append(fieldGroupDTO.getEndTime()).append("'");
                 exp.append(" THEN '").append(transValue(fieldGroupDTO.getName())).append("'");
             }
-        } else if (originField.getDeType() == 2 || originField.getDeType() == 3 || originField.getDeType() == 4) {
+        } else if (originField.getFieldType() == 2 || originField.getFieldType() == 3 || originField.getFieldType() == 4) {
             for (FieldGroupDTO fieldGroupDTO : dto.getGroupList()) {
                 exp.append(" WHEN ");
                 exp.append(fieldName).append(Strings.CI.equals(fieldGroupDTO.getMinTerm(), "le") ? " >= " : " > ").append(fieldGroupDTO.getMin());
@@ -607,7 +607,7 @@ public class Utils {
         }
         for (Pattern pattern : SQL_INJECTION_PATTERNS_FOR_VALUES) {
             if (pattern.matcher(normalized).find()) {
-                DEException.throwException("Illegal filter value");
+                CrestException.throwException("Illegal filter value");
             }
         }
     }
