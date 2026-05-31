@@ -29,6 +29,7 @@ public class RsaManage {
             proxy.save();
         }
         if (CryptoMode.isSmSuite()) {
+            SmCryptoUtils.validateConfiguration();
             proxy.ensureSmSuiteKey();
         }
     }
@@ -56,7 +57,7 @@ public class RsaManage {
             SmCryptoUtils.Sm2KeyPair keyPair = SmCryptoUtils.generateSm2KeyPair();
             CoreRsa update = new CoreRsa();
             update.setId(coreRsa.getId());
-            update.setSm2PrivateKey(keyPair.privateKey());
+            update.setSm2PrivateKey(SmCryptoUtils.encryptSm2PrivateKeyForStorage(keyPair.privateKey()));
             update.setSm2PublicKey(keyPair.publicKey());
             update.setSm2CreateTime(System.currentTimeMillis());
             coreRsaMapper.updateById(update);

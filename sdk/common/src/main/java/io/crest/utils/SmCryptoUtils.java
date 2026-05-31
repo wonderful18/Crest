@@ -23,6 +23,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Base64;
@@ -135,11 +136,14 @@ public class SmCryptoUtils {
         }
         try {
             ensureProvider();
+            byte[] key = validateSm4Key(secretKey);
             byte[] iv = randomBytes(16);
             Cipher cipher = Cipher.getInstance("SM4/CBC/PKCS7Padding", BouncyCastleProvider.PROVIDER_NAME);
-            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(validateSm4Key(secretKey), "SM4"), new IvParameterSpec(iv));
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "SM4"), new IvParameterSpec(iv));
             byte[] encrypted = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
-            return SM4_PREFIX + Hex.toHexString(iv) + ":" + Hex.toHexString(encrypted);
+            String ivHex = Hex.toHexString(iv);
+            String ciphertextHex = Hex.toHexString(encrypted);
+            return SM4_PREFIX + ivHex + ":" + ciphertextHex + ":" + sm4MacHex(key, ivHex, ciphertextHex);
         } catch (Exception e) {
             throw new IllegalStateException("SM4 encrypt error", e);
         }
@@ -163,14 +167,18 @@ public class SmCryptoUtils {
         }
         try {
             ensureProvider();
-            String[] parts = ciphertext.substring(SM4_PREFIX.length()).split(":", 2);
-            if (parts.length != 2) {
+            String[] parts = ciphertext.substring(SM4_PREFIX.length()).split(":", -1);
+            if (parts.length != 2 && parts.length != 3) {
                 throw new IllegalArgumentException("SM4 ciphertext is invalid");
+            }
+            byte[] key = validateSm4Key(secretKey);
+            if (parts.length == 3) {
+                verifySm4Mac(key, parts[0], parts[1], parts[2]);
             }
             Cipher cipher = Cipher.getInstance("SM4/CBC/PKCS7Padding", BouncyCastleProvider.PROVIDER_NAME);
             cipher.init(
                     Cipher.DECRYPT_MODE,
-                    new SecretKeySpec(validateSm4Key(secretKey), "SM4"),
+                    new SecretKeySpec(key, "SM4"),
                     new IvParameterSpec(Hex.decode(parts[0]))
             );
             return new String(cipher.doFinal(Hex.decode(parts[1])), StandardCharsets.UTF_8);
@@ -223,16 +231,33 @@ public class SmCryptoUtils {
         return startsWith(value, SM4_PREFIX);
     }
 
+    public static void validateConfiguration() {
+        if (CryptoMode.isSmSuite()) {
+            validateSm4Key(configuredSm4KeyBytes());
+        }
+    }
+
+    public static String encryptSm2PrivateKeyForStorage(String privateKey) {
+        return sm4EncryptWithConfiguredKey(normalizePrivateKey(privateKey));
+    }
+
+    public static String readSm2PrivateKeyFromStorage(String storedPrivateKey) {
+        if (isSm4Ciphertext(storedPrivateKey)) {
+            return normalizePrivateKey(sm4DecryptWithConfiguredKey(storedPrivateKey));
+        }
+        return normalizePrivateKey(storedPrivateKey);
+    }
+
     private static byte[] configuredSm4KeyBytes() {
         String value = ConfigUtils.getConfig(SM4_KEY_PROPERTY, null);
         if (StringUtils.isBlank(value)) {
             throw new IllegalStateException(SM4_KEY_PROPERTY + " must be configured when crest.crypto.mode is sm-suite");
         }
         if (StringUtils.length(value) == 16) {
-            return value.getBytes(StandardCharsets.UTF_8);
+            return validateSm4Key(value.getBytes(StandardCharsets.UTF_8));
         }
         try {
-            return Base64.getDecoder().decode(value);
+            return validateSm4Key(Base64.getDecoder().decode(value));
         } catch (IllegalArgumentException e) {
             throw new IllegalStateException(SM4_KEY_PROPERTY + " must be 16 characters or a Base64 encoded 128-bit key", e);
         }
@@ -259,6 +284,26 @@ public class SmCryptoUtils {
         byte[] output = new byte[hmac.getMacSize()];
         hmac.doFinal(output, 0);
         return output;
+    }
+
+    private static String sm4MacHex(byte[] key, String ivHex, String ciphertextHex) {
+        return Hex.toHexString(hmacSm3(key, (ivHex + ":" + ciphertextHex).getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private static void verifySm4Mac(byte[] key, String ivHex, String ciphertextHex, String macHex) {
+        if (StringUtils.isBlank(macHex)) {
+            throw new IllegalArgumentException("SM4 ciphertext is invalid");
+        }
+        byte[] expected = Hex.decode(sm4MacHex(key, ivHex, ciphertextHex));
+        byte[] actual;
+        try {
+            actual = Hex.decode(macHex);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("SM4 ciphertext is invalid", e);
+        }
+        if (!MessageDigest.isEqual(expected, actual)) {
+            throw new IllegalArgumentException("SM4 ciphertext integrity check failed");
+        }
     }
 
     private static byte[] concat(byte[] first, byte[] second) {

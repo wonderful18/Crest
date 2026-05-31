@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>extensions-datasource</artifactId>
+    <name>crest-extension-datasource</name>
 
     <dependencies>
         <!--calcite核心包-->

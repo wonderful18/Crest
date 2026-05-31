@@ -3,6 +3,14 @@ declare module 'sm-crypto' {
     doEncrypt(message: string | number[], publicKey: string, cipherMode?: number): string
   }
 
+  export const sm3: (
+    input: string | number[],
+    options?: {
+      mode?: 'hmac'
+      key?: string | number[]
+    }
+  ) => string
+
   export const sm4: {
     decrypt(
       ciphertext: string,

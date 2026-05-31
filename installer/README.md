@@ -76,7 +76,7 @@ DE_EXTERNAL_SYNC_TASK=false
 | `DE_AES_KEY` | 空 | 留空时自动生成 32 位值；升级时不要改 |
 | `DE_AES_IV` | 空 | 留空时自动生成 16 位值；升级时不要改 |
 | `DE_CRYPTO_MODE` | `standard` | 加密模式，`standard` 使用 AES/RSA，`sm-suite` 使用 SM2/SM3/SM4 |
-| `DE_SM4_KEY` | 空 | SM4 使用的 16 位 Key；`DE_CRYPTO_MODE=sm-suite` 且留空时自动生成，升级时不要改 |
+| `DE_SM4_KEY` | 空 | SM4 使用的 16 位 Key；`DE_CRYPTO_MODE=sm-suite` 且留空时自动生成，服务启动会校验，升级时不要改 |
 | `DE_INITIAL_PASSWORD` | 空 | 管理员初始密码，留空时自动生成并输出 |
 | `DE_ORIGIN_LIST` | `http://localhost:8100` | 允许来源，正式环境要改成实际域名 |
 

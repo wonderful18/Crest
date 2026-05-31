@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>extensions-datafilling</artifactId>
+    <name>crest-extension-datafilling</name>
 
     <dependencies>
         <dependency>

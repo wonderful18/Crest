@@ -63,6 +63,16 @@ Crest 采用前后端分离开发、后端统一打包部署的结构。
 | `deploy/kubernetes` | Kubernetes 部署清单，支持内置 MySQL 和外部 MySQL |
 | `docs` | 数据血缘、研发效能大屏和开发说明 |
 
+Maven 构建日志统一使用 `crest-*` 模块名，便于发布和排障时识别边界：
+
+| 构建模块名 | 目录 |
+| --- | --- |
+| `crest-platform` | 根工程 |
+| `crest-sdk` / `crest-sdk-common` | `sdk`、`sdk/common` |
+| `crest-extensions` / `crest-extension-datasource` / `crest-extension-view` | `sdk/extensions` |
+| `crest-api` / `crest-api-base` / `crest-api-permissions` / `crest-api-sync` | `sdk/api` |
+| `crest-core` / `crest-web` / `crest-service` | `core`、`core/core-frontend`、`core/core-backend` |
+
 运行时只需要 Crest 应用容器和 MySQL。应用启动时由 Flyway 执行数据库迁移，初始化必要表结构、管理员账号、系统参数、演示数据源、演示数据集、演示图表和演示大屏。
 
 ## 默认端口和账号
@@ -342,7 +352,8 @@ Crest 支持基于 OIDC / OAuth2 授权码模式的单点登录。配置入口�
 关键规则：
 
 - 默认模式下 Client Secret 使用运行时 AES 配置加密保存；
-- `CREST_CRYPTO_MODE=sm-suite` 时，登录传输使用 SM2，密码升级为 SM3 迭代哈希，敏感配置和下载票据等签名加密链路使用 SM4 / HMAC-SM3；
+- `CREST_CRYPTO_MODE=sm-suite` 时，登录传输使用 SM2，密码升级为 SM3 迭代哈希，敏感配置使用带随机 IV 和 HMAC-SM3 完整性校验的 SM4 密文保存，下载票据等签名链路使用 HMAC-SM3；
+- 启用 `sm-suite` 时启动阶段会校验 `CREST_SM4_KEY`，SM2 私钥使用配置的 SM4 Key 加密后落库；
 - 回调阶段只下发一次性票据，Crest token 不出现在回调 URL 中；
 - 用户按外部唯一标识和账号绑定，可按配置自动创建普通账号；
 - 关闭本地登录后，管理员仍可通过 `/#/admin-login` 处理应急运维；

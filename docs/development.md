@@ -51,6 +51,26 @@ Maven 使用仓库内 `.mvn/settings.xml`。前端依赖使用 `core/core-fronte
 
 不要引入私有制品仓库、个人代理源、无法公开访问的镜像仓库或授权不清的二进制文件。确需新增第三方驱动或前端包时，需要在提交说明中写明用途和许可证。
 
+## Maven 模块命名
+
+构建输出统一使用 `crest-*` 名称。该名称来自各 `pom.xml` 的 `<name>`，不会改变目录、artifactId 或已有依赖坐标。
+
+| 构建模块名 | artifactId | 说明 |
+| --- | --- | --- |
+| `crest-platform` | `crest` | 根工程 |
+| `crest-sdk` | `sdk` | SDK 聚合模块 |
+| `crest-sdk-common` | `common` | 通用模型、认证和工具 |
+| `crest-extensions` | `extensions` | 扩展聚合模块 |
+| `crest-extension-datasource` | `extensions-datasource` | 数据源扩展 |
+| `crest-extension-view` | `extensions-view` | 可视化扩展 |
+| `crest-api` | `api` | API 聚合模块 |
+| `crest-api-base` | `api-base` | 基础接口契约 |
+| `crest-api-permissions` | `api-permissions` | 权限接口契约 |
+| `crest-api-sync` | `api-sync` | 同步接口契约 |
+| `crest-core` | `core` | 应用聚合模块 |
+| `crest-web` | `core-frontend` | 前端资源构建 |
+| `crest-service` | `core-backend` | 后端服务和最终 JAR |
+
 ## 常用命令
 
 编译数据源扩展相关模块：
@@ -134,7 +154,7 @@ pnpm dev
 | `CREST_AES_KEY` | 32 位加密 Key |
 | `CREST_AES_IV` | 16 位加密 IV |
 | `CREST_CRYPTO_MODE` | 加密模式，默认 `standard`；需要 SM2/SM3/SM4 时设为 `sm-suite` |
-| `CREST_SM4_KEY` | SM4 使用的 16 位 Key；仅在 `CREST_CRYPTO_MODE=sm-suite` 时必填 |
+| `CREST_SM4_KEY` | SM4 使用的 16 位 Key；仅在 `CREST_CRYPTO_MODE=sm-suite` 时必填，启动阶段会校验 |
 | `CREST_SQLBOT_ENCRYPT` | SQLBot 对外返回连接信息时是否加密，默认 `false` |
 | `CREST_SQLBOT_AES_KEY` / `CREST_SQLBOT_AES_IV` | 仅在开启 SQLBot 加密时配置，系统不提供默认密钥 |
 | `CREST_ORIGIN_LIST` | 允许来源列表 |

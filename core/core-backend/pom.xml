@@ -11,6 +11,7 @@
     <modelVersion>4.0.0</modelVersion>
     <packaging>jar</packaging>
     <artifactId>core-backend</artifactId>
+    <name>crest-service</name>
 
     <dependencies>
         <dependency>

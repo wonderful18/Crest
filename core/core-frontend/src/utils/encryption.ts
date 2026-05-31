@@ -1,7 +1,7 @@
 import CryptoJS from 'crypto-js/crypto-js'
 import JSEncrypt from 'jsencrypt'
 import { Base64 } from 'js-base64'
-import { sm2, sm4 } from 'sm-crypto'
+import { sm2, sm3, sm4 } from 'sm-crypto'
 import { useCache } from '@/hooks/web/useCache'
 import { useAppStoreWithOut } from '@/store/modules/app'
 
@@ -43,8 +43,12 @@ export const rsaEncryp = word => {
 
 export const symmetricDecrypt = (data, keyStr) => {
   if (typeof data === 'string' && data.startsWith(sm4CipherPrefix)) {
-    const [iv, ciphertext] = data.substring(sm4CipherPrefix.length).split(':')
-    return sm4.decrypt(ciphertext, CryptoJS.enc.Base64.parse(keyStr).toString(CryptoJS.enc.Hex), {
+    const [iv, ciphertext, mac] = data.substring(sm4CipherPrefix.length).split(':')
+    const keyHex = CryptoJS.enc.Base64.parse(keyStr).toString(CryptoJS.enc.Hex)
+    if (mac && !constantTimeEqualsHex(sm3(`${iv}:${ciphertext}`, { key: keyHex }), mac)) {
+      throw new Error('SM4 payload integrity check failed')
+    }
+    return sm4.decrypt(ciphertext, keyHex, {
       mode: 'cbc',
       iv
     })
@@ -58,4 +62,15 @@ export const symmetricDecrypt = (data, keyStr) => {
     padding: CryptoJS.pad.Pkcs7
   })
   return decrypted.toString(CryptoJS.enc.Utf8)
+}
+
+const constantTimeEqualsHex = (left: string, right: string) => {
+  if (left.length !== right.length) {
+    return false
+  }
+  let result = 0
+  for (let index = 0; index < left.length; index++) {
+    result |= left.charCodeAt(index) ^ right.charCodeAt(index)
+  }
+  return result === 0
 }

@@ -170,7 +170,7 @@ public class RsaUtils {
     public static String decryptStr(String data) {
         if (SmCryptoUtils.isSm2Ciphertext(data)) {
             CoreRsa coreRsa = rsaManage.ensureSmSuiteKey();
-            return decryptStr(data, coreRsa.getSm2PrivateKey());
+            return decryptStr(data, SmCryptoUtils.readSm2PrivateKeyFromStorage(coreRsa.getSm2PrivateKey()));
         }
         return decryptStr(data, privateKey());
     }
