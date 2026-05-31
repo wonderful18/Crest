@@ -125,7 +125,7 @@ bash install.sh
 安装前可按需调整 \`install.conf\`：
 
 - \`CREST_PORT\`：Web 访问端口，默认 8100
-- \`CREST_RUN_BASE\`：数据、日志和配置持久化目录
+- \`CREST_BASE\`：安装基目录，实际运行目录为 \`\${CREST_BASE}/crest\`
 - \`CREST_APP_IMAGE\`：Crest 应用镜像，已固定为本包内镜像
 - \`CREST_MYSQL_IMAGE\`：MySQL 镜像，已固定为本包内镜像
 - \`CREST_INITIAL_PASSWORD\`：管理员初始密码；留空时安装脚本会随机生成并在安装完成后输出

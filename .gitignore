@@ -58,6 +58,8 @@ core/core-frontend/src/assets/fsSvg.html
 .crest-verify-*/
 offline-packages/
 release/
+!docs/release/
+!docs/release/*.md
 releases/
 artifacts/
 packages/

@@ -34,7 +34,7 @@ deploy/kubernetes
 默认应用镜像：
 
 ```text
-ghcr.io/sevoniva/crest:v1.3.0
+ghcr.io/sevoniva/crest:v1.5.0
 ```
 
 应用镜像以 Alpine 为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime。容器以固定非 root 用户运行：
@@ -117,7 +117,7 @@ http://127.0.0.1:18100/index.html
 内置 MySQL 默认使用：
 
 ```text
-mysql:8.0
+mysql:8.4.5
 ```
 
 如果集群无法访问 Docker Hub，需要先把 MySQL 镜像同步到内部镜像仓库，再修改 `internal-mysql/mysql.yaml`。
@@ -186,14 +186,14 @@ http://127.0.0.1:18101/index.html
 mvn -s .mvn/settings.xml -pl :core-backend -am -DskipTests -Dmaven.test.skip=true package
 docker build -t ghcr.io/sevoniva/crest:main .
 kind load docker-image ghcr.io/sevoniva/crest:main --name crest-kind
-kind load docker-image mysql:8.0 --name crest-kind
+kind load docker-image mysql:8.4.5 --name crest-kind
 ```
 
-如果 `kind load` 后 MySQL 名称不是 `docker.io/library/mysql:8.0`，可以在 kind 节点里补标签：
+如果 `kind load` 后 MySQL 名称不是 `docker.io/library/mysql:8.4.5`，可以在 kind 节点里补标签：
 
 ```bash
 docker exec crest-kind-control-plane \
-  ctr --namespace=k8s.io images tag docker.io/crest-kind/mysql:8.0 docker.io/library/mysql:8.0
+  ctr --namespace=k8s.io images tag docker.io/crest-kind/mysql:8.4.5 docker.io/library/mysql:8.4.5
 ```
 
 部署内置 MySQL 模式：
@@ -224,28 +224,29 @@ kubectl -n crest-internal describe pod -l app.kubernetes.io/name=crest
 
 - Pod 全部 Ready，应用容器重启次数为 0；
 - `/index.html` 返回 200；
-- `/doc.html` 返回 200；
-- `/v3/api-docs` 返回 200；
-- `/v3/api-docs/5-relation` 返回 200；
+- `/doc.html` 可打开或跳转到登录流程；
+- `/v3/api-docs` 在未登录时返回受保护状态，登录或放行接口文档后可正常读取；
 - 使用 `CREST_INITIAL_PASSWORD` 配置的初始管理员密码可以登录；
 - `crest_schema_version` 最新迁移成功；
 - 初始状态包含零售经营和研发效能演示数据源、数据集、图表和数据大屏；
 - 工作台、数据源、数据集、仪表盘、数据大屏、数据血缘、系统设置和导出中心能打开；
 - 应用日志没有持续的 `WARN`、`ERROR` 或 `Exception`。
 
-## 升级
+## 迁移和同发布线升级
 
-升级前：
+v1.5.0 是全新安装基线，不支持从早期开发版本直接执行 Flyway 原地升级。已有早期环境迁移到 v1.5.0 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
+
+同一发布线的小版本升级前：
 
 1. 备份外部 MySQL 或内置 MySQL PVC；
 2. 记录当前镜像标签；
 3. 准备新镜像并确认架构；
 4. 在测试命名空间完成一次迁移验证。
 
-更新镜像后：
+确认 release notes 明确支持原地升级后，更新镜像：
 
 ```bash
-kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest:v1.3.0
+kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest:v1.5.0
 kubectl -n crest-internal rollout status deployment/crest --timeout=300s
 ```
 

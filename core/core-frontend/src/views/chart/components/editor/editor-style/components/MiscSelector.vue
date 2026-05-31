@@ -118,7 +118,7 @@ const initField = () => {
   // 过滤掉记录数字段
   state.quotaData = props.quotaFields.filter(ele => ele.id !== '-1')
 }
-const NUMBER_DE_TYPE = [2, 3]
+const NUMERIC_FIELD_TYPES = [2, 3]
 
 const getDynamicField = () => {
   return (
@@ -281,7 +281,7 @@ const validMaxFieldNum = computed(() => {
 })
 
 const isNumType = field => {
-  return quotaData.value.find(ele => ele.id === field.id && NUMBER_DE_TYPE.includes(ele.fieldType))
+  return quotaData.value.find(ele => ele.id === field.id && NUMERIC_FIELD_TYPES.includes(ele.fieldType))
 }
 
 /**

@@ -203,15 +203,15 @@ const COUNT_AGGREGATION_TYPE = [
   { name: t('chart.count'), value: 'count' },
   { name: t('chart.count_distinct'), value: 'count_distinct' }
 ]
-const COUNT_DE_TYPE = [0, 1, 5]
+const COUNT_FIELD_TYPES = [0, 1, 5]
 
 // 当前选中的指标是否为非数值类型，非数值类型禁用数值格式配置
 const isNonNumericFormatter = computed(() => {
-  return COUNT_DE_TYPE.includes(curSeriesFormatter.value?.fieldType)
+  return COUNT_FIELD_TYPES.includes(curSeriesFormatter.value?.fieldType)
 })
 
 const aggregationList = computed(() => {
-  if (COUNT_DE_TYPE.includes(curSeriesFormatter.value?.fieldType)) {
+  if (COUNT_FIELD_TYPES.includes(curSeriesFormatter.value?.fieldType)) {
     return COUNT_AGGREGATION_TYPE
   }
   return AGGREGATION_TYPE

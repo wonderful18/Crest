@@ -32,9 +32,11 @@ function check_and_prepare_env_params() {
    cd ${CURRENT_DIR}
    if [ -f /usr/bin/crestctl ]; then
       ctl_cmd=/usr/bin/crestctl
-      v2_version=$($ctl_cmd version | head -n 2 | grep "v2.")
-      if [[ -z $v2_version ]];then
-         echo "系统当前版本不是 Crest v2 版本系列，不支持升级到 v2，请检查离线包版本。"
+      existing_version=$($ctl_cmd version 2>/dev/null | awk '/current version is/{print $4; exit}')
+      if [[ ! $existing_version =~ ^v?1\.5\. ]];then
+         echo "检测到已安装的 Crest 版本：${existing_version:-unknown}"
+         echo "v1.5.0 是全新安装基线，不支持从早期开发版本直接原地升级。"
+         echo "请先备份并导出业务资源，再卸载旧环境后执行全新安装。"
          exit 1;
       fi
       # 获取已安装的 Crest 的运行目录

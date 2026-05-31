@@ -233,23 +233,23 @@ public class RsaUtils {
 
 
     private static final String ALGORITHM = "AES";
-    public static String symmetricKey = "symmetricKey";
+    private static final String SYMMETRIC_KEY_CACHE_ENTRY = "symmetricKey";
     private static final int KEY_SIZE = 128;
 
 
     public static String generateSymmetricKey() {
         try {
-            if (!CacheUtils.keyExist(Symmetric_Key, symmetricKey)) {
+            if (!CacheUtils.keyExist(Symmetric_Key, SYMMETRIC_KEY_CACHE_ENTRY)) {
                 if (CryptoMode.isSmSuite()) {
-                    CacheUtils.put(Symmetric_Key, symmetricKey, SmCryptoUtils.generateBase64Sm4Key());
+                    CacheUtils.put(Symmetric_Key, SYMMETRIC_KEY_CACHE_ENTRY, SmCryptoUtils.generateBase64Sm4Key());
                 } else {
                     KeyGenerator keyGenerator = KeyGenerator.getInstance(ALGORITHM);
                     keyGenerator.init(KEY_SIZE, new SecureRandom());
                     SecretKey secretKey = keyGenerator.generateKey();
-                    CacheUtils.put(Symmetric_Key, symmetricKey, Base64.getEncoder().encodeToString(secretKey.getEncoded()));
+                    CacheUtils.put(Symmetric_Key, SYMMETRIC_KEY_CACHE_ENTRY, Base64.getEncoder().encodeToString(secretKey.getEncoded()));
                 }
             }
-            return CacheUtils.get(Symmetric_Key, symmetricKey).toString();
+            return CacheUtils.get(Symmetric_Key, SYMMETRIC_KEY_CACHE_ENTRY).toString();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

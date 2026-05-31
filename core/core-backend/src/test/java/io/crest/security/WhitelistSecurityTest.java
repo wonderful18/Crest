@@ -9,23 +9,23 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 安全测试：验证敏感端点已从白名单移除
  *
- * 修复漏洞：PT-01（/symmetricKey 密钥泄露）
- * 注意：/dekey 保留在白名单中，因为登录流程需要 RSA 公钥
+ * 修复漏洞：PT-01（/symmetric-key 密钥泄露）
+ * 注意：/public-key 保留在白名单中，因为登录流程需要 RSA 公钥
  */
 class WhitelistSecurityTest {
 
     @Test
-    @DisplayName("敏感端点 /symmetricKey 不应在白名单中")
+    @DisplayName("敏感端点 /symmetric-key 不应在白名单中")
     void symmetricKeyShouldNotBeInWhitelist() {
-        assertFalse(WhitelistUtils.WHITE_PATH.contains("/symmetricKey"),
-                "/symmetricKey 端点仍在白名单中，会导致 AES 密钥泄露");
+        assertFalse(WhitelistUtils.WHITE_PATH.contains("/symmetric-key"),
+                "/symmetric-key 端点仍在白名单中，会导致 AES 密钥泄露");
     }
 
     @Test
-    @DisplayName("/dekey 应在白名单中（登录流程需要）")
-    void dekeyShouldBeInWhitelist() {
-        assertTrue(WhitelistUtils.WHITE_PATH.contains("/dekey"),
-                "/dekey 端点不在白名单中，登录流程将无法工作");
+    @DisplayName("/public-key 应在白名单中（登录流程需要）")
+    void publicKeyShouldBeInWhitelist() {
+        assertTrue(WhitelistUtils.WHITE_PATH.contains("/public-key"),
+                "/public-key 端点不在白名单中，登录流程将无法工作");
     }
 
     @Test
@@ -43,9 +43,9 @@ class WhitelistSecurityTest {
     }
 
     @Test
-    @DisplayName("/symmetricKey 不应在白名单中（通过match方法验证）")
+    @DisplayName("/symmetric-key 不应在白名单中（通过match方法验证）")
     void symmetricKeyShouldNotMatch() {
-        assertFalse(WhitelistUtils.match("/api/v1/symmetricKey"),
-                "/symmetricKey 应该需要认证");
+        assertFalse(WhitelistUtils.match("/api/v1/symmetric-key"),
+                "/symmetric-key 应该需要认证");
     }
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate a repeatable Crest engineering efficiency demo dataset.
 
-The script prints SQL used by V1.3__demo_engineering_efficiency.sql.
+The script prints SQL for the engineering efficiency section in V1.5.0.2__demo_resources.sql.
 Run it into the local MySQL container while iterating:
 
   python3 .crest-local/engineering_efficiency_demo.py > .crest-local/engineering_efficiency_demo.sql

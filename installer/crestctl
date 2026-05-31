@@ -14,12 +14,10 @@ set +a
 export COMPOSE_HTTP_TIMEOUT=180
 CREST_INTERNAL_LITE=${CREST_INTERNAL_LITE:-true}
 
-docker-compose version >/dev/null 2>&1
-if [ $? -ne 0 ]; then
-   docker compose version >/dev/null 2>&1
-   if [ $? -ne 0 ]; then
-      compose_cmd="docker compose"
-   fi
+if docker-compose version >/dev/null 2>&1; then
+   compose_cmd="docker-compose"
+elif docker compose version >/dev/null 2>&1; then
+   compose_cmd="docker compose"
 fi
 
 if [[ ! ${CREST_EXTERNAL_MYSQL} ]] || [ "${CREST_EXTERNAL_MYSQL}" = "false" ]; then

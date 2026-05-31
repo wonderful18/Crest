@@ -28,17 +28,17 @@ class AllSecurityFixesTest {
     class WhitelistSecurityTests {
 
         @Test
-        @DisplayName("敏感端点 /symmetricKey 不应在白名单中")
+        @DisplayName("敏感端点 /symmetric-key 不应在白名单中")
         void symmetricKeyNotInWhitelist() {
-            assertFalse(WhitelistUtils.WHITE_PATH.contains("/symmetricKey"),
-                    "/symmetricKey 端点仍在白名单中，会导致 AES 密钥泄露");
+            assertFalse(WhitelistUtils.WHITE_PATH.contains("/symmetric-key"),
+                    "/symmetric-key 端点仍在白名单中，会导致 AES 密钥泄露");
         }
 
         @Test
-        @DisplayName("/dekey 应在白名单中（登录流程需要）")
-        void dekeyShouldBeInWhitelist() {
-            assertTrue(WhitelistUtils.WHITE_PATH.contains("/dekey"),
-                    "/dekey 端点不在白名单中，登录流程将无法工作");
+        @DisplayName("/public-key 应在白名单中（登录流程需要）")
+        void publicKeyShouldBeInWhitelist() {
+            assertTrue(WhitelistUtils.WHITE_PATH.contains("/public-key"),
+                    "/public-key 端点不在白名单中，登录流程将无法工作");
         }
 
         @Test
