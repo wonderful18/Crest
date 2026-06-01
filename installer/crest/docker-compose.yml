@@ -12,7 +12,6 @@ services:
       - ${CREST_RUN_BASE}/conf/mysql.env
     volumes:
       - ${CREST_RUN_BASE}/conf/my.cnf:/etc/mysql/conf.d/my.cnf
-      - ${CREST_RUN_BASE}/bin/mysql:/docker-entrypoint-initdb.d/
       - ${CREST_RUN_BASE}/data/mysql:/var/lib/mysql
     networks:
       - crest-network

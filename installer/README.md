@@ -12,7 +12,7 @@
 | `uninstall.sh` | 卸载脚本 |
 | `crestctl` | 安装后的运维控制命令 |
 | `crest/docker-compose.yml` | Crest 应用容器模板 |
-| `crest/bin/mysql/init.sql` | MySQL 初始化脚本，只负责创建数据库 |
+| `crest/bin/manual/cleanup-demo-data.sql` | 手动清理内置演示资源使用的 SQL |
 | `crest/templates/application.yml` | 后端运行配置模板 |
 | `make-offline-package.sh` | 离线包制作脚本 |
 | `LICENSE` | GPLv3 许可证副本 |

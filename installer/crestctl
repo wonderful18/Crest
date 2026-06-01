@@ -63,9 +63,9 @@ function _generate_compose_file_args() {
 }
 function _healthcheck() {
    echo
-   container_name=$(grep "container_name" $CREST_RUNNING_BASE/docker-compose.yml | awk -F': ' '{print $2}')
+   container_name=crest
    sleep 1
-   if [ -z $(docker ps --filter "name=$container_name" -q) ];then
+   if [ -z "$(docker ps --filter "name=^/${container_name}$" -q)" ];then
       echo "未找到容器 $container_name。"
       exit 1
    fi

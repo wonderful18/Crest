@@ -47,9 +47,9 @@ CREST_DB_USERNAME=${CREST_DB_USERNAME:-root}
 CREST_MYSQL_IMAGE=${CREST_MYSQL_IMAGE:-mysql:8.4.5}
 CREST_EXTERNAL_MYSQL=${CREST_EXTERNAL_MYSQL:-false}
 
-SQL_FILE="${CURRENT_DIR}/crest/bin/mysql/cleanup-demo-data.sql"
-if [[ ! -f "${SQL_FILE}" && -f "${CREST_RUN_BASE}/bin/mysql/cleanup-demo-data.sql" ]]; then
-  SQL_FILE="${CREST_RUN_BASE}/bin/mysql/cleanup-demo-data.sql"
+SQL_FILE="${CURRENT_DIR}/crest/bin/manual/cleanup-demo-data.sql"
+if [[ ! -f "${SQL_FILE}" && -f "${CREST_RUN_BASE}/bin/manual/cleanup-demo-data.sql" ]]; then
+  SQL_FILE="${CREST_RUN_BASE}/bin/manual/cleanup-demo-data.sql"
 fi
 
 if [[ ! -f "${SQL_FILE}" ]]; then

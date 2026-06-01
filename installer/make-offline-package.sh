@@ -155,6 +155,7 @@ bash cleanup-demo-data.sh --yes
 EOF
 
 log "Create archive"
-tar -zcf "${OUTPUT_DIR}/${PACKAGE_NAME}.tar.gz" -C "${OUTPUT_DIR}" "${PACKAGE_NAME}"
+find "${PACKAGE_DIR}" \( -name '._*' -o -name '.DS_Store' \) -delete
+COPYFILE_DISABLE=1 tar -zcf "${OUTPUT_DIR}/${PACKAGE_NAME}.tar.gz" -C "${OUTPUT_DIR}" "${PACKAGE_NAME}"
 
 log "Package ready: ${OUTPUT_DIR}/${PACKAGE_NAME}.tar.gz"
