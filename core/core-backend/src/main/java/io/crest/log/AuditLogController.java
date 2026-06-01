@@ -147,10 +147,12 @@ public class AuditLogController {
         if (uid == null) {
             CrestException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "当前用户无权访问审计日志");
         }
-        boolean hasAuditRole = platformPermissionManage
-                .roleIds(uid, platformPermissionManage.defaultOrgId(uid))
+        if (platformPermissionManage.isSystemAdmin(uid)) {
+            return;
+        }
+        boolean hasAuditRole = platformPermissionManage.roleIds(uid, platformPermissionManage.defaultOrgId(uid))
                 .contains(PlatformPermissionManage.AUDITOR_ROLE_ID);
-        if (!platformPermissionManage.isSystemAdmin(uid) && !hasAuditRole) {
+        if (!hasAuditRole) {
             CrestException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "当前用户无权访问审计日志");
         }
     }

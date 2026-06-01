@@ -60,7 +60,6 @@ class CrestAuditAspectTest {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
         when(signature.getMethod()).thenReturn(TestEndpoint.class.getDeclaredMethod("save", VisualizationRequest.class));
-        when(signature.getName()).thenReturn("save");
         when(point.getSignature()).thenReturn(signature);
         when(point.getArgs()).thenReturn(new Object[]{visualizationRequest});
         when(point.proceed()).thenReturn("ok");

@@ -4,6 +4,7 @@ import io.crest.auth.bo.TokenUserBO;
 import io.crest.exception.CrestException;
 import io.crest.log.AuditLogController;
 import io.crest.result.ResultCode;
+import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.AuthUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,10 +33,15 @@ class AuditLogControllerSecurityTest {
     }
 
     @Test
-    @DisplayName("审计日志接口应仅允许系统管理员访问")
-    void auditLogApisShouldRequireSystemAdmin() {
+    @DisplayName("审计日志接口应仅允许管理员或审计角色访问")
+    void auditLogApisShouldRequireAuditAccess() throws Exception {
         AuthUtils.setUser(new TokenUserBO(2L, 1L));
         AuditLogController controller = new AuditLogController();
+        PlatformPermissionManage platformPermissionManage = mock(PlatformPermissionManage.class);
+        injectPlatformPermissionManage(controller, platformPermissionManage);
+        when(platformPermissionManage.isSystemAdmin(2L)).thenReturn(false);
+        when(platformPermissionManage.defaultOrgId(2L)).thenReturn(1L);
+        when(platformPermissionManage.roleIds(2L, 1L)).thenReturn(List.of());
 
         CrestException pagerError = assertThrows(CrestException.class,
                 () -> controller.pager(1, 15, Map.of()));
@@ -52,7 +59,10 @@ class AuditLogControllerSecurityTest {
         AuthUtils.setUser(new TokenUserBO(1L, 1L));
         AuditLogController controller = new AuditLogController();
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        PlatformPermissionManage platformPermissionManage = mock(PlatformPermissionManage.class);
         injectJdbcTemplate(controller, jdbcTemplate);
+        injectPlatformPermissionManage(controller, platformPermissionManage);
+        when(platformPermissionManage.isSystemAdmin(1L)).thenReturn(true);
         when(jdbcTemplate.queryForObject(anyString(), eq(Long.class), any(Object[].class))).thenReturn(0L);
         when(jdbcTemplate.queryForList(anyString(), any(Object[].class))).thenReturn(java.util.List.of());
 
@@ -67,5 +77,13 @@ class AuditLogControllerSecurityTest {
         Field field = AuditLogController.class.getDeclaredField("jdbcTemplate");
         field.setAccessible(true);
         field.set(controller, jdbcTemplate);
+    }
+
+    private void injectPlatformPermissionManage(
+            AuditLogController controller,
+            PlatformPermissionManage platformPermissionManage) throws Exception {
+        Field field = AuditLogController.class.getDeclaredField("platformPermissionManage");
+        field.setAccessible(true);
+        field.set(controller, platformPermissionManage);
     }
 }
