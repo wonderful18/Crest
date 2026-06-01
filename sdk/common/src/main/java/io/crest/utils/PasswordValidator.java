@@ -8,12 +8,6 @@ import java.util.List;
 
 /**
  * 密码策略验证器
- *
- * 验证密码是否符合安全策略要求。
- *
- * 修复漏洞：PT-05（弱密码策略）
- *
- * @author security-fix
  */
 public class PasswordValidator {
 

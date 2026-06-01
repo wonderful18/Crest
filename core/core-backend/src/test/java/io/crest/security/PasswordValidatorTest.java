@@ -9,11 +9,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * 安全测试：密码策略验证器
- *
- * 修复漏洞：PT-05（弱密码策略）
- */
 class PasswordValidatorTest {
 
     @Test

@@ -11,7 +11,7 @@
 | 密码策略 | 用户密码需要满足长度、大小写、数字和特殊字符要求 |
 | SSRF 防护 | 数据源连接和外部请求拦截本机、内网、云元数据地址、危险协议和高风险端口 |
 | XSS 防护 | 用户输入进入展示链路前进行清理和输出编码 |
-| HTTP 安全头 | 默认返回 X-Frame-Options、X-Content-Type-Options、Content-Security-Policy、Referrer-Policy 等安全头；HSTS 只在 HTTPS 或可信 HTTPS 网关场景下返回 |
+| HTTP 安全头 | 前端入口、静态资源和后端接口默认返回 X-Frame-Options、X-Content-Type-Options、Content-Security-Policy、Referrer-Policy 等安全头；HSTS 只在 HTTPS 或可信 HTTPS 网关场景下返回 |
 | 审计日志 | 平台管理、登录、单点登录、导出、权限等关键操作进入审计链路 |
 | 配置外部化 | 密码、加密密钥、单点登录密钥和数据库连接信息通过配置或环境变量注入 |
 

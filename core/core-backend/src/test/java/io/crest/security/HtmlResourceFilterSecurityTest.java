@@ -28,6 +28,9 @@ class HtmlResourceFilterSecurityTest {
 
         filter.doFilter(request, response, chain);
 
+        verify(response).setHeader("X-Frame-Options", "SAMEORIGIN");
+        verify(response).setHeader("X-XSS-Protection", "1; mode=block");
+        verify(response).setHeader(eq("Content-Security-Policy"), contains("frame-ancestors 'self'"));
         verify(response).setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
         verify(response).setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=()");
         verify(response).setHeader("Cache-Control", "no-store, no-cache, must-revalidate");

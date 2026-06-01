@@ -6,11 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * 安全测试：密码编码器
- *
- * 修复漏洞：SAST-03（MD5 密码哈希）
- */
 class PasswordEncoderTest {
 
     @org.junit.jupiter.api.AfterEach

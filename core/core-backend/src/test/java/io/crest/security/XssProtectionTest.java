@@ -6,11 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * 安全测试：XSS 防护
- *
- * 修复漏洞：DAST-01（存储型 XSS）
- */
 class XssProtectionTest {
 
     @Test

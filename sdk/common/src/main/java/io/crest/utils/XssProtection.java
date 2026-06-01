@@ -4,12 +4,6 @@ import java.util.regex.Pattern;
 
 /**
  * XSS 防护工具类
- *
- * 提供输入清理和输出编码功能，防止跨站脚本攻击。
- *
- * 修复漏洞：DAST-01（存储型 XSS）
- *
- * @author security-fix
  */
 public class XssProtection {
 
