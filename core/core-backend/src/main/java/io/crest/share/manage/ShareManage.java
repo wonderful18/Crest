@@ -308,6 +308,9 @@ public class ShareManage {
         QueryWrapper<CoreShare> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("uuid", uuid);
         CoreShare coreShare = coreShareMapper.selectOne(queryWrapper);
+        if (ObjectUtils.isEmpty(coreShare)) {
+            return false;
+        }
         return Strings.CS.equals(coreShare.getUuid(), uuid) && Strings.CS.equals(coreShare.getPwd(), pwd);
     }
 

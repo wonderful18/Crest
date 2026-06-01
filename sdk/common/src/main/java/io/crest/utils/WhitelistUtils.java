@@ -56,6 +56,8 @@ public class WhitelistUtils {
             "/embedded/initIframe",
             "/sys-parameter/i18n-options",
             "/login/modify-invalid-password",
+            "/share/proxy-info",
+            "/share/validate",
             "/perSetting/hmac/info",
             "/");
 
@@ -83,7 +85,6 @@ public class WhitelistUtils {
                 || Strings.CS.startsWithAny(requestURI, "/webjars/")
                 || Strings.CS.startsWithAny(requestURI, "/static-resource/")
                 || Strings.CS.startsWithAny(requestURI, "/appearance/image/")
-                || Strings.CS.startsWithAny(requestURI, "/share/proxyInfo")
                 || Strings.CS.startsWithAny(requestURI, "/websocket")
                 || Strings.CS.startsWithAny(requestURI, "/oauth2/")
                 || Strings.CS.startsWithAny(requestURI, "/sso/token/")

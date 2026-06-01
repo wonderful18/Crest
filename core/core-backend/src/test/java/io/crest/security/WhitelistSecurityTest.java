@@ -39,6 +39,17 @@ class WhitelistSecurityTest {
     }
 
     @Test
+    @DisplayName("分享链接启动接口应允许无登录态访问")
+    void shareBootstrapEndpointsShouldBeInWhitelist() {
+        assertTrue(WhitelistUtils.match("/api/v1/share/proxy-info"));
+        assertTrue(WhitelistUtils.match("/api/v1/share/validate"));
+        assertFalse(WhitelistUtils.match("/api/v1/share/proxyInfo"),
+                "不存在的历史路径不应继续保留白名单");
+        assertFalse(WhitelistUtils.match("/api/v1/share/list"),
+                "分享管理列表必须保留登录态");
+    }
+
+    @Test
     @DisplayName("健康检查端点应在白名单中")
     void healthShouldBeInWhitelist() {
         assertTrue(WhitelistUtils.WHITE_PATH.contains("/actuator/health"),

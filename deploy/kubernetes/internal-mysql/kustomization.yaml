@@ -15,24 +15,12 @@ configMapGenerator:
       - CREST_DB_PORT=3306
       - CREST_DB_NAME=crest
       - CREST_DB_PARAMS=autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-      - CREST_ORIGIN_LIST=http://localhost:8100
+      - CREST_ORIGIN_LIST=http://localhost:18100,http://127.0.0.1:18100,http://localhost:8100
       - CREST_LOGIN_TIMEOUT=960
   - name: crest-mysql-init
     files:
       - 01-init.sql=mysql-init.sql
       - my.cnf=mysql-my.cnf
-
-secretGenerator:
-  - name: crest-db-secret
-    literals:
-      - CREST_DB_USERNAME=root
-      - CREST_DB_PASSWORD=<set-strong-password-before-apply>
-      - MYSQL_ROOT_PASSWORD=<set-strong-password-before-apply>
-      - CREST_AES_KEY=<set-32-character-aes-key>
-      - CREST_AES_IV=<set-16-character-aes-iv>
-      - CREST_CRYPTO_MODE=standard
-      - CREST_SM4_KEY=<set-16-character-sm4-key-when-crypto-mode-is-sm-suite>
-      - CREST_INITIAL_PASSWORD=<set-initial-admin-password>
 
 generatorOptions:
   disableNameSuffixHash: true

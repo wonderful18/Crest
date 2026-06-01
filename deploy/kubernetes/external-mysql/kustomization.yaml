@@ -14,19 +14,8 @@ configMapGenerator:
       - CREST_DB_PORT=13306
       - CREST_DB_NAME=crest_k8s_external
       - CREST_DB_PARAMS=autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-      - CREST_ORIGIN_LIST=http://localhost:8100
+      - CREST_ORIGIN_LIST=http://localhost:18101,http://127.0.0.1:18101,http://localhost:8100
       - CREST_LOGIN_TIMEOUT=960
-
-secretGenerator:
-  - name: crest-db-secret
-    literals:
-      - CREST_DB_USERNAME=root
-      - CREST_DB_PASSWORD=<set-strong-password-before-apply>
-      - CREST_AES_KEY=<set-32-character-aes-key>
-      - CREST_AES_IV=<set-16-character-aes-iv>
-      - CREST_CRYPTO_MODE=standard
-      - CREST_SM4_KEY=<set-16-character-sm4-key-when-crypto-mode-is-sm-suite>
-      - CREST_INITIAL_PASSWORD=<set-initial-admin-password>
 
 generatorOptions:
   disableNameSuffixHash: true
