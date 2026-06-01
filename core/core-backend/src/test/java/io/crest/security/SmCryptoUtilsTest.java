@@ -54,7 +54,9 @@ class SmCryptoUtilsTest {
     void shouldRejectTamperedSm4PayloadBeforeDecrypting() {
         String key = "0123456789abcdef";
         String ciphertext = SmCryptoUtils.sm4Encrypt("{\"token\":\"sensitive\"}", key);
-        String tamperedIv = "0" + ciphertext.substring("sm-suite:v1:sm4:".length() + 1);
+        String payload = ciphertext.substring("sm-suite:v1:sm4:".length());
+        char replacement = payload.charAt(0) == '0' ? '1' : '0';
+        String tamperedIv = replacement + payload.substring(1);
 
         assertThrows(IllegalArgumentException.class, () -> SmCryptoUtils.sm4Decrypt("sm-suite:v1:sm4:" + tamperedIv, key));
     }

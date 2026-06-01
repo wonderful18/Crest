@@ -34,6 +34,23 @@ function load_env_file() {
    done < "$env_file"
 }
 
+function normalize_bool_env() {
+   local name=$1
+   local value="${!name:-false}"
+   case "$(echo "$value" | tr '[:upper:]' '[:lower:]')" in
+      true|1|yes)
+         export "${name}=true"
+         ;;
+      false|0|no|"")
+         export "${name}=false"
+         ;;
+      *)
+         echo "${name} 只支持 true 或 false"
+         exit 1
+         ;;
+   esac
+}
+
 function check_and_prepare_env_params() {
    log "当前时间 : $(date)"
    log_title "检查安装环境并初始化环境变量"
@@ -147,6 +164,35 @@ function check_and_prepare_env_params() {
       export CREST_INITIAL_PASSWORD
    fi
 
+   normalize_bool_env CREST_PROMETHEUS_ENABLED
+   normalize_bool_env CREST_GRAFANA_ENABLED
+   if [[ "$CREST_GRAFANA_ENABLED" == "true" && "$CREST_PROMETHEUS_ENABLED" != "true" ]]; then
+      CREST_PROMETHEUS_ENABLED=true
+      export CREST_PROMETHEUS_ENABLED
+      log_content "Grafana 已启用，自动启用 Prometheus"
+   fi
+   if [[ "$CREST_PROMETHEUS_ENABLED" == "true" && -z "$CREST_PROMETHEUS_TOKEN" ]]; then
+      CREST_PROMETHEUS_TOKEN=$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 48)
+      export CREST_PROMETHEUS_TOKEN
+   fi
+   if [[ "$CREST_GRAFANA_ENABLED" == "true" && -z "$CREST_GRAFANA_ADMIN_PASSWORD" ]]; then
+      CREST_GRAFANA_ADMIN_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 24)
+      export CREST_GRAFANA_ADMIN_PASSWORD
+   fi
+   if [[ "$CREST_GRAFANA_ENABLED" == "true" && -z "$CREST_GRAFANA_PUBLIC_URL" ]]; then
+      CREST_GRAFANA_PUBLIC_URL="http://localhost:${CREST_GRAFANA_PORT:-3000}"
+      export CREST_GRAFANA_PUBLIC_URL
+   fi
+   if [[ "$CREST_PROMETHEUS_ENABLED" == "true" || "$CREST_GRAFANA_ENABLED" == "true" ]]; then
+      CREST_COMPOSE_PROFILES=observability
+      export CREST_COMPOSE_PROFILES
+      log_content "启用可观测性组件"
+   else
+      CREST_COMPOSE_PROFILES=
+      export CREST_COMPOSE_PROFILES
+      log_content "跳过可观测性组件"
+   fi
+
    read available_disk <<< $(df -H --output=avail "${CREST_BASE}" | tail -1)
    disk_num=${available_disk%[KMGTP]}
    disk_unit=${available_disk##*[0-9.]}
@@ -187,7 +233,7 @@ function prepare_crest_run_base() {
    env | grep CREST_ >.env
 
    mkdir -p ${CREST_RUN_BASE}/{cache,logs,conf}
-   mkdir -p ${CREST_RUN_BASE}/data/{mysql,static-resource,appearance,exportData,excel,font,i18n,plugin}
+   mkdir -p ${CREST_RUN_BASE}/data/{mysql,static-resource,appearance,exportData,excel,font,i18n,plugin,prometheus,grafana}
    chown -R 10001:10001 \
       ${CREST_RUN_BASE}/cache \
       ${CREST_RUN_BASE}/logs \
@@ -198,6 +244,16 @@ function prepare_crest_run_base() {
       ${CREST_RUN_BASE}/data/font \
       ${CREST_RUN_BASE}/data/i18n \
       ${CREST_RUN_BASE}/data/plugin 2>/dev/null || true
+   chown -R 65534:65534 ${CREST_RUN_BASE}/data/prometheus 2>/dev/null || true
+   chown -R 472:472 ${CREST_RUN_BASE}/data/grafana 2>/dev/null || true
+
+   if [[ "$CREST_PROMETHEUS_ENABLED" == "true" ]]; then
+      printf "%s" "$CREST_PROMETHEUS_TOKEN" > ${CONF_FOLDER}/prometheus-token
+      chown 65534:65534 ${CONF_FOLDER}/prometheus-token 2>/dev/null || true
+      chmod 0400 ${CONF_FOLDER}/prometheus-token 2>/dev/null || chmod 0440 ${CONF_FOLDER}/prometheus-token 2>/dev/null || true
+   else
+      rm -f ${CONF_FOLDER}/prometheus-token
+   fi
 
    if [[ "${CREST_INTERNAL_LITE}" != "true" ]]; then
       mkdir -p ${CREST_RUN_BASE}/task/logs

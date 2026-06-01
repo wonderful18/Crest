@@ -7,6 +7,8 @@
 | `crest-service` | Spring Boot | 提供 `/api/v1/`、`/websocket`、OpenAPI 文档和后台任务 |
 | `crest` | Nginx | 提供前端静态资源，转发后端接口和 WebSocket |
 | `mysql-crest` | MySQL 8.0 | 保存元数据、系统配置、演示资源和任务状态 |
+| `crest-prometheus` | Prometheus | 可选，抓取后端指标 |
+| `crest-grafana` | Grafana | 可选，展示接口和运行时看板 |
 
 前端容器只暴露 Web 端口。后端和 MySQL 只在 Compose 网络内访问，外部反向代理不应直接暴露后端端口。
 
@@ -45,6 +47,41 @@ http://127.0.0.1:18100/
 
 本地验证使用固定密码和固定加密参数。生产环境必须改为随机值，并在首次登录后修改管理员密码。
 
+## 启用 Prometheus 和 Grafana
+
+准备 Prometheus token 文件：
+
+```bash
+printf '%s' 'local-prometheus-token' > deploy/split/prometheus-token
+chmod 0400 deploy/split/prometheus-token
+```
+
+启动可观测性 profile：
+
+```bash
+COMPOSE_PROFILES=observability \
+CREST_PROMETHEUS_ENABLED=true \
+CREST_PROMETHEUS_TOKEN=local-prometheus-token \
+CREST_PROMETHEUS_TOKEN_FILE=./prometheus-token \
+CREST_GRAFANA_ENABLED=true \
+CREST_GRAFANA_ADMIN_PASSWORD=admin \
+CREST_WEB_PORT=18100 \
+docker compose -f deploy/split/docker-compose.yml up -d
+```
+
+Grafana 地址：
+
+```text
+http://127.0.0.1:3000
+```
+
+Prometheus 不映射宿主机端口。需要检查指标时从容器内访问：
+
+```bash
+docker exec split-crest-prometheus wget -qO- http://crest-service:8100/api/v1/actuator/prometheus \
+  --header='Authorization: Bearer local-prometheus-token' | head
+```
+
 ## 安全边界
 
 拆分部署默认启用以下容器加固项：
@@ -75,6 +112,7 @@ http://127.0.0.1:18100/
 | 前端健康检查 | `/healthz` 返回 `204`，用于判断 Nginx 网关是否可用 |
 | 后端存活检查 | `/api/v1/actuator/health/liveness` 只做进程级轻量检查 |
 | 后端就绪检查 | `/api/v1/actuator/health/readiness` 校验数据库连接，适合容器 healthcheck 和流量接入判断 |
+| 指标路径 | `/api/v1/actuator/prometheus` 不经前端网关公开，由 Prometheus 在内网直接抓后端 |
 | 上传大小 | `client_max_body_size 500m`，与后端上传限制保持一致 |
 | API 转发 | `/api/v1/` 转发到 `crest-service:8100/api/v1/` |
 | API 安全头 | 接口响应使用 `X-Frame-Options: DENY` 和 `frame-ancestors 'none'`，不继承前端页面 CSP |
@@ -100,6 +138,7 @@ docker exec split-crest-web nginx -t
 curl -sSI http://127.0.0.1:18100/healthz
 curl -sS http://127.0.0.1:18100/api/v1/actuator/health/liveness
 curl -sS http://127.0.0.1:18100/api/v1/actuator/health/readiness
+curl -i http://127.0.0.1:18100/api/v1/actuator/prometheus
 curl -sS -H 'Origin: http://127.0.0.1:18100' http://127.0.0.1:18100/api/v1/public-key
 docker logs split-crest-service --since 5m | grep -E 'WARN|ERROR|Exception' || true
 docker logs split-crest-web --since 5m | grep -Ei 'warn|error|exception' || true

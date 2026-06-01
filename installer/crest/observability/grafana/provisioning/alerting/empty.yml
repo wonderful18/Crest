@@ -1,0 +1,9 @@
+apiVersion: 1
+
+groups: []
+contactPoints: []
+policies: []
+muteTimes: []
+templates: []
+deleteRules: []
+deleteContactPoints: []

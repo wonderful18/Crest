@@ -23,7 +23,7 @@ services:
       - crest-network
 
   crest-service:
-    image: ${CREST_BACKEND_IMAGE:-ghcr.io/sevoniva/crest-service:v1.5.3}
+    image: ${CREST_BACKEND_IMAGE:-ghcr.io/sevoniva/crest-service:v1.5.4-rc.1}
     restart: unless-stopped
     init: true
     user: "10001:10001"
@@ -65,7 +65,7 @@ services:
       - crest-network
 
   crest:
-    image: ${CREST_FRONTEND_IMAGE:-ghcr.io/sevoniva/crest-web:v1.5.3}
+    image: ${CREST_FRONTEND_IMAGE:-ghcr.io/sevoniva/crest-web:v1.5.4-rc.1}
     restart: unless-stopped
     init: true
     user: "10001:10001"
@@ -99,6 +99,75 @@ services:
     depends_on:
       crest-service:
         condition: service_healthy
+    networks:
+      - crest-network
+
+  crest-prometheus:
+    image: ${CREST_PROMETHEUS_IMAGE:-prom/prometheus:v3.12.0}
+    container_name: crest-prometheus
+    profiles:
+      - observability
+    restart: unless-stopped
+    user: "65534:65534"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    volumes:
+      - ${CREST_RUN_BASE}/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${CREST_RUN_BASE}/conf/prometheus-token:/etc/prometheus/secrets/crest-token:ro
+      - ${CREST_RUN_BASE}/data/prometheus:/prometheus
+    depends_on:
+      crest-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9090/-/ready >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+    networks:
+      - crest-network
+
+  crest-grafana:
+    image: ${CREST_GRAFANA_IMAGE:-grafana/grafana-oss:13.0.1}
+    container_name: crest-grafana
+    profiles:
+      - observability
+    restart: unless-stopped
+    user: "472:472"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${CREST_GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${CREST_GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_LOG_LEVEL: error
+      GF_UNIFIED_ALERTING_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_SERVER_ROOT_URL: ${CREST_GRAFANA_PUBLIC_URL:-http://localhost:3000}
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    volumes:
+      - ${CREST_RUN_BASE}/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${CREST_RUN_BASE}/data/grafana:/var/lib/grafana
+    ports:
+      - ${CREST_GRAFANA_PORT:-3000}:3000
+    depends_on:
+      crest-prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
     networks:
       - crest-network
 

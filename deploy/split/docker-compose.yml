@@ -66,6 +66,11 @@ services:
       CREST_LOAD_DEMO: ${CREST_LOAD_DEMO:-true}
       CREST_FLYWAY_LOCATIONS: ${CREST_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo-migration}
       CREST_ORIGIN_LIST: ${CREST_ORIGIN_LIST:-http://localhost:18100,http://127.0.0.1:18100}
+      CREST_PROMETHEUS_ENABLED: ${CREST_PROMETHEUS_ENABLED:-false}
+      CREST_PROMETHEUS_TOKEN: ${CREST_PROMETHEUS_TOKEN:-}
+      CREST_PROMETHEUS_MAX_URI_TAGS: ${CREST_PROMETHEUS_MAX_URI_TAGS:-200}
+      CREST_GRAFANA_ENABLED: ${CREST_GRAFANA_ENABLED:-false}
+      CREST_GRAFANA_PUBLIC_URL: ${CREST_GRAFANA_PUBLIC_URL:-}
     volumes:
       - split-crest-logs:/opt/crest/logs
       - split-crest-cache:/opt/crest/cache
@@ -114,6 +119,65 @@ services:
     networks:
       - crest-network
 
+  crest-prometheus:
+    image: ${CREST_PROMETHEUS_IMAGE:-prom/prometheus:v3.12.0}
+    container_name: split-crest-prometheus
+    profiles:
+      - observability
+    restart: unless-stopped
+    user: "65534:65534"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    volumes:
+      - ../../installer/crest/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${CREST_PROMETHEUS_TOKEN_FILE:-./prometheus-token}:/etc/prometheus/secrets/crest-token:ro
+      - split-prometheus-data:/prometheus
+    depends_on:
+      crest-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9090/-/ready >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+    networks:
+      - crest-network
+
+  crest-grafana:
+    image: ${CREST_GRAFANA_IMAGE:-grafana/grafana-oss:13.0.1}
+    container_name: split-crest-grafana
+    profiles:
+      - observability
+    restart: unless-stopped
+    user: "472:472"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${CREST_GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${CREST_GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_LOG_LEVEL: error
+      GF_UNIFIED_ALERTING_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_SERVER_ROOT_URL: ${CREST_GRAFANA_PUBLIC_URL:-http://localhost:3000}
+    volumes:
+      - ../../installer/crest/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - split-grafana-data:/var/lib/grafana
+    ports:
+      - ${CREST_GRAFANA_PORT:-3000}:3000
+    depends_on:
+      crest-prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+    networks:
+      - crest-network
+
 networks:
   crest-network:
 
@@ -122,3 +186,5 @@ volumes:
   split-crest-logs:
   split-crest-cache:
   split-crest-data:
+  split-prometheus-data:
+  split-grafana-data:

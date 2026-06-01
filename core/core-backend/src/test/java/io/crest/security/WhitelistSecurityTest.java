@@ -61,6 +61,15 @@ class WhitelistSecurityTest {
     }
 
     @Test
+    @DisplayName("Prometheus 指标端点不应进入普通白名单")
+    void prometheusEndpointShouldNotBeInWhitelist() {
+        assertFalse(WhitelistUtils.WHITE_PATH.contains("/actuator/prometheus"),
+                "指标端点必须使用专用抓取认证，不能进入普通白名单");
+        assertFalse(WhitelistUtils.match("/api/v1/actuator/prometheus"),
+                "指标端点必须使用专用抓取认证，不能被普通白名单放行");
+    }
+
+    @Test
     @DisplayName("导出中心下载地址应通过签名链接访问")
     void exportCenterDownloadShouldBeWhitelisted() {
         assertTrue(WhitelistUtils.match("/api/v1/export-center/download/task-id"),

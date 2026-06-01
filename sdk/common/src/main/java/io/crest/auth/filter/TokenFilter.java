@@ -51,6 +51,10 @@ public class TokenFilter implements Filter {
             return;
         }
         String requestURI = request.getRequestURI();
+        if (Boolean.TRUE.equals(request.getAttribute(AuthConstant.PROMETHEUS_AUTHENTICATED_ATTR))) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+        }
 
         boolean match = false;
         try {

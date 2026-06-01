@@ -12,6 +12,7 @@
 | `uninstall.sh` | 卸载脚本 |
 | `crestctl` | 安装后的运维控制命令 |
 | `crest/docker-compose.yml` | Crest 应用容器模板 |
+| `crest/observability` | Prometheus 配置和 Grafana provisioning 文件 |
 | `crest/bin/manual/cleanup-demo-data.sql` | 手动清理内置演示资源使用的 SQL |
 | `crest/templates/application.yml` | 后端运行配置模板 |
 | `make-offline-package.sh` | 离线包制作脚本 |
@@ -24,6 +25,11 @@ Crest 单机安装默认采用前后端分离容器：
 - `crest`：前端 Nginx 网关，对外暴露 Web 端口；
 - `crest-service`：后端 Spring Boot 服务，只在 Compose 网络内访问；
 - `mysql-crest`：元数据库。
+
+可观测性组件默认关闭。启用后会额外启动：
+
+- `crest-prometheus`：在 Compose 网络内抓取后端指标，不映射宿主机端口；
+- `crest-grafana`：加载 Prometheus 数据源和 Crest 看板，默认映射 `3000/tcp`。
 
 数据血缘、导出中心、系统管理、数据源、数据集、仪表盘和数据大屏都在后端服务内运行，不需要单独部署同步任务服务或截图服务。
 
@@ -60,8 +66,8 @@ Crest 单机安装默认采用前后端分离容器：
 | --- | --- | --- |
 | `CREST_BASE` | `/opt` | 安装基目录，实际运行目录为 `${CREST_BASE}/crest` |
 | `CREST_PORT` | `8100` | Web 访问端口 |
-| `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v1.5.3` | Crest 后端镜像 |
-| `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v1.5.3` | Crest 前端镜像 |
+| `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v1.5.4-rc.1` | Crest 后端镜像 |
+| `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v1.5.4-rc.1` | Crest 前端镜像 |
 | `CREST_MYSQL_IMAGE` | `mysql:8.0.43` | MySQL 镜像 |
 | `CREST_LOAD_DEMO` | `true` | 是否初始化内置演示资源；生产环境不需要示例数据时设为 `false` |
 | `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部 MySQL；默认安装内置 MySQL 容器 |
@@ -75,6 +81,14 @@ Crest 单机安装默认采用前后端分离容器：
 | `CREST_INITIAL_PASSWORD` | 空 | 管理员初始密码，留空时自动生成并输出 |
 | `CREST_SUBSTITULE_PATH` | 空 | 登录兼容配置文件路径；留空时自动使用 `${CREST_CACHE_PATH}/substitule.json` |
 | `CREST_ORIGIN_LIST` | `http://localhost:${CREST_PORT},http://127.0.0.1:${CREST_PORT}` | 允许来源，正式环境要改成实际域名 |
+| `CREST_PROMETHEUS_ENABLED` | `false` | 是否启用 Prometheus 指标端点和采集容器 |
+| `CREST_PROMETHEUS_TOKEN` | 空 | Prometheus 抓取后端指标使用的 Bearer Token；开启后留空自动生成 |
+| `CREST_PROMETHEUS_MAX_URI_TAGS` | `200` | 接口 URI 指标标签数量上限 |
+| `CREST_GRAFANA_ENABLED` | `false` | 是否启用 Grafana 容器 |
+| `CREST_GRAFANA_PORT` | `3000` | Grafana 对外端口 |
+| `CREST_GRAFANA_ADMIN_USER` | `admin` | Grafana 管理员账号 |
+| `CREST_GRAFANA_ADMIN_PASSWORD` | 空 | Grafana 管理员密码；开启后留空自动生成 |
+| `CREST_GRAFANA_PUBLIC_URL` | 空 | Grafana 页面访问地址；留空时安装脚本按本机端口生成 |
 
 ## 在线安装
 
@@ -103,6 +117,27 @@ bash install.sh
 密码：安装完成后终端输出的初始密码
 ```
 
+## 可观测性
+
+启用 Prometheus 和 Grafana：
+
+```bash
+CREST_PROMETHEUS_ENABLED=true
+CREST_GRAFANA_ENABLED=true
+```
+
+Prometheus 抓取后端 `/api/v1/actuator/prometheus` 时使用 Bearer Token。安装脚本会把 token 写入运行目录的 `conf/prometheus-token`，Prometheus 以只读文件方式挂载。前端网关会对外屏蔽指标路径，Prometheus 直接访问 Compose 网络内的 `crest-service:8100`。
+
+企业已有 Prometheus/Grafana 时，不需要启动内置 `crest-prometheus` 和 `crest-grafana`。只开启 `CREST_PROMETHEUS_ENABLED=true`，设置 `CREST_PROMETHEUS_TOKEN`，由企业 Prometheus 抓取后端内网地址，再导入 `crest/observability/grafana/provisioning/dashboards/crest-observability.json`。
+
+Grafana 启动后访问：
+
+```text
+http://服务器IP:${CREST_GRAFANA_PORT}
+```
+
+默认加载“Crest 可观测性总览”看板，包含接口吞吐、接口延迟、错误率、状态码分布、JVM、GC、运行时线程池和 CPU 指标。
+
 ## 运维命令
 
 安装后使用 `crestctl`：
@@ -126,7 +161,7 @@ crestctl version
 
 ## 迁移和同发布线升级
 
-v1.5.3 面向全新环境安装，不支持从早期开发版本直接原地升级。已有早期环境迁移到 v1.5.3 时，请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
+v1.5.4-rc.1 面向全新环境安装，不支持从早期开发版本直接原地升级。已有早期环境迁移到 v1.5.4-rc.1 时，请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
 
 同一发布线的小版本升级前：
 
@@ -176,8 +211,8 @@ bash cleanup-demo-data.sh --yes
 发布包按 CPU 架构分别制作：
 
 ```bash
-bash make-offline-package.sh v1.5.3 linux-amd64
-bash make-offline-package.sh v1.5.3 linux-arm64
+bash make-offline-package.sh v1.5.4-rc.1 linux-amd64
+bash make-offline-package.sh v1.5.4-rc.1 linux-arm64
 ```
 
 默认输出目录：
@@ -186,43 +221,53 @@ bash make-offline-package.sh v1.5.3 linux-arm64
 ../offline-packages
 ```
 
-正式包名：
+候选包名：
 
 ```text
-crest-offline-v1.5.3-linux-amd64.tar.gz
-crest-offline-v1.5.3-linux-arm64.tar.gz
+crest-offline-v1.5.4-rc.1-linux-amd64.tar.gz
+crest-offline-v1.5.4-rc.1-linux-arm64.tar.gz
 ```
 
 制作前需要本机已有对应架构镜像：
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.3-amd64
-ghcr.io/sevoniva/crest-service:v1.5.3-arm64
-ghcr.io/sevoniva/crest-web:v1.5.3-amd64
-ghcr.io/sevoniva/crest-web:v1.5.3-arm64
+ghcr.io/sevoniva/crest-service:v1.5.4-rc.1-amd64
+ghcr.io/sevoniva/crest-service:v1.5.4-rc.1-arm64
+ghcr.io/sevoniva/crest-web:v1.5.4-rc.1-amd64
+ghcr.io/sevoniva/crest-web:v1.5.4-rc.1-arm64
 mysql:8.0.43
+```
+
+如需把 Prometheus 和 Grafana 镜像也放入离线包，先准备对应架构镜像，再设置：
+
+```bash
+INCLUDE_OBSERVABILITY_IMAGES=true \
+PROMETHEUS_IMAGE=prom/prometheus:v3.12.0 \
+GRAFANA_IMAGE=grafana/grafana-oss:13.0.1 \
+bash make-offline-package.sh v1.5.4-rc.1 linux-amd64
 ```
 
 也可以通过环境变量指定来源镜像：
 
 ```bash
-SOURCE_BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.3-amd64 \
-BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.3-amd64 \
-SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.3-amd64 \
-FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.3-amd64 \
+SOURCE_BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.4-rc.1-amd64 \
+BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.4-rc.1-amd64 \
+SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.4-rc.1-amd64 \
+FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.4-rc.1-amd64 \
+SOURCE_MYSQL_IMAGE=mysql:8.0.43-amd64 \
 MYSQL_IMAGE=mysql:8.0.43 \
-bash make-offline-package.sh v1.5.3 linux-amd64
+bash make-offline-package.sh v1.5.4-rc.1 linux-amd64
 ```
 
-脚本会校验前端、后端和 MySQL 镜像架构，架构不一致会直接停止。
+脚本会校验前端、后端和 MySQL 镜像架构，架构不一致会直接停止。`SOURCE_*_IMAGE` 用于本机制作来源，包内 `install.conf` 仍写入不带架构后缀的目标镜像名。
 
 ## 离线安装
 
 在目标服务器执行：
 
 ```bash
-tar -zxf crest-offline-v1.5.3-linux-amd64.tar.gz
-cd crest-offline-v1.5.3-linux-amd64
+tar -zxf crest-offline-v1.5.4-rc.1-linux-amd64.tar.gz
+cd crest-offline-v1.5.4-rc.1-linux-amd64
 vi install.conf
 bash install.sh
 ```

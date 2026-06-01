@@ -8,6 +8,7 @@
       <div class="container-sys-param" :class="{ 'basic-info_bg': activeName === 'basic' }">
         <basic-info v-if="activeName === 'basic'" />
         <engine-info v-if="activeName === 'engine'" />
+        <observability-info v-if="activeName === 'observability'" />
       </div>
     </div>
   </div>
@@ -18,11 +19,13 @@ import { ref } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import BasicInfo from './basic/BasicInfo.vue'
 import EngineInfo from '@/views/system/parameter/engine/EngineInfo.vue'
+import ObservabilityInfo from '@/views/system/parameter/observability/ObservabilityInfo.vue'
 const { t } = useI18n()
 
 const tabArray = ref([
   { label: t('system.basic_settings'), name: 'basic' },
-  { label: t('system.engine_settings'), name: 'engine' }
+  { label: t('system.engine_settings'), name: 'engine' },
+  { label: '可观测性', name: 'observability' }
 ])
 
 const activeName = ref('basic')
