@@ -17,7 +17,7 @@ services:
       - crest-network
 
   crest:
-    image: ${CREST_APP_IMAGE:-ghcr.io/sevoniva/crest:v1.5.1}
+    image: ${CREST_APP_IMAGE:-ghcr.io/sevoniva/crest:v1.5.2}
     stop_signal: SIGTERM
     stop_grace_period: 15s
     container_name: crest

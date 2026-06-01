@@ -1,6 +1,6 @@
 # Crest
 
-Crest 是面向私有化部署的开源 BI 平台，覆盖数据源接入、数据集建模、仪表盘、数据大屏、分享、导出、系统管理和字段级数据血缘。当前发布版本为 `v1.5.1`。
+Crest 是面向私有化部署的开源 BI 平台，覆盖数据源接入、数据集建模、仪表盘、数据大屏、分享、导出、系统管理和字段级数据血缘。当前发布版本为 `v1.5.2`。
 
 Crest 基于 DataEase 2.10.22 开源版本继续开发，并合入 2.10.23 相关安全加固和依赖升级。仓库保留上游版权和 GPLv3 许可声明。品牌、部署脚本、演示资源、OceanBase Oracle 数据源、数据血缘和研发效能分析能力由 Crest 独立维护。
 
@@ -112,7 +112,7 @@ bash install.sh
 | --- | --- |
 | `CREST_BASE` | 安装基目录，默认 `/opt`，实际运行目录为 `/opt/crest` |
 | `CREST_PORT` | Web 端口，默认 `8100` |
-| `CREST_APP_IMAGE` | Crest 应用镜像，默认 `ghcr.io/sevoniva/crest:v1.5.1` |
+| `CREST_APP_IMAGE` | Crest 应用镜像，默认 `ghcr.io/sevoniva/crest:v1.5.2` |
 | `CREST_MYSQL_IMAGE` | MySQL 镜像，默认 `mysql:8.4.5` |
 | `CREST_EXTERNAL_MYSQL` | 是否连接外部 MySQL，默认 `false` |
 | `CREST_DB_PASSWORD` | MySQL root 密码，留空时自动生成 |
@@ -132,7 +132,7 @@ crestctl restart
 crestctl clear-logs
 ```
 
-`v1.5.1` 面向全新环境安装，不支持从旧版本直接执行 Flyway 原地升级。旧环境迁移到 `v1.5.1` 时，请先完成数据备份和资源导出，再在新环境中导入业务资源。后续同一发布线的小版本升级策略会在发布说明中单独说明。
+`v1.5.2` 面向全新环境安装，不支持从旧版本直接执行 Flyway 原地升级。旧环境迁移到 `v1.5.2` 时，请先完成数据备份和资源导出，再在新环境中导入业务资源。后续同一发布线的小版本升级策略会在发布说明中单独说明。
 
 已有 `v1.5.x` 环境只替换应用镜像时，可在运行目录执行 `docker-compose up -d --no-deps crest`。
 
@@ -142,22 +142,22 @@ crestctl clear-logs
 
 ```bash
 cd installer
-bash make-offline-package.sh v1.5.1 linux-amd64
-bash make-offline-package.sh v1.5.1 linux-arm64
+bash make-offline-package.sh v1.5.2 linux-amd64
+bash make-offline-package.sh v1.5.2 linux-arm64
 ```
 
 正式包名：
 
 ```text
-crest-offline-v1.5.1-linux-amd64.tar.gz
-crest-offline-v1.5.1-linux-arm64.tar.gz
+crest-offline-v1.5.2-linux-amd64.tar.gz
+crest-offline-v1.5.2-linux-arm64.tar.gz
 ```
 
 包内包含安装脚本、配置模板、Docker Compose 文件、正式说明文档和 `images/` 镜像归档。离线服务器解压后直接执行：
 
 ```bash
-tar -zxf crest-offline-v1.5.1-linux-amd64.tar.gz
-cd crest-offline-v1.5.1-linux-amd64
+tar -zxf crest-offline-v1.5.2-linux-amd64.tar.gz
+cd crest-offline-v1.5.2-linux-amd64
 bash install.sh
 ```
 
@@ -202,7 +202,7 @@ http://127.0.0.1:18100/index.html
 默认镜像：
 
 ```text
-ghcr.io/sevoniva/crest:v1.5.1
+ghcr.io/sevoniva/crest:v1.5.2
 ghcr.io/sevoniva/crest:main
 ```
 
@@ -384,7 +384,7 @@ Crest 支持基于 OIDC / OAuth2 授权码模式的单点登录。配置入口�
 
 ## 平台管理
 
-Crest `v1.5.1` 内置平台管理能力，包括用户、组织、角色、菜单权限和业务资源权限。权限判断在后端执行，前端只负责菜单、按钮和授权界面的展示。
+Crest `v1.5.2` 内置平台管理能力，包括用户、组织、角色、菜单权限和业务资源权限。权限判断在后端执行，前端只负责菜单、按钮和授权界面的展示。
 
 平台管理能力覆盖：
 
@@ -434,7 +434,7 @@ git clean -fdXn
 | 文档 | 内容 |
 | --- | --- |
 | [docs/development.md](./docs/development.md) | 仓库结构、开发工具链、构建命令、迁移规则和提交前检查 |
-| [docs/release/v1.5.1.md](./docs/release/v1.5.1.md) | v1.5.1 发布说明、镜像、离线包和安装注意事项 |
+| [docs/release/v1.5.2.md](./docs/release/v1.5.2.md) | v1.5.2 发布说明、镜像、离线包和安装注意事项 |
 | [docs/data-lineage.md](./docs/data-lineage.md) | 字段级数据血缘的入口、口径、接口和边界 |
 | [docs/sso.md](./docs/sso.md) | 单点登录配置、登录流程、用户映射和运维要求 |
 | [docs/platform-management.md](./docs/platform-management.md) | 平台管理、组织角色、菜单权限和资源权限的设计口径 |
@@ -447,7 +447,7 @@ git clean -fdXn
 
 ## 版本与变更
 
-当前版本：`v1.5.1`。
+当前版本：`v1.5.2`。
 
 变更记录见 [CHANGELOG.md](./CHANGELOG.md)。
 

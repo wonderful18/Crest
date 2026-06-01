@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: wait-for-database
-          image: ghcr.io/sevoniva/crest:v1.5.1
+          image: ghcr.io/sevoniva/crest:v1.5.2
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -50,7 +50,7 @@ spec:
               drop:
                 - ALL
         - name: seed-static-resource
-          image: ghcr.io/sevoniva/crest:v1.5.1
+          image: ghcr.io/sevoniva/crest:v1.5.2
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -70,7 +70,7 @@ spec:
               subPath: static-resource
       containers:
         - name: crest
-          image: ghcr.io/sevoniva/crest:v1.5.1
+          image: ghcr.io/sevoniva/crest:v1.5.2
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

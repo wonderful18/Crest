@@ -34,7 +34,7 @@ deploy/kubernetes
 默认应用镜像：
 
 ```text
-ghcr.io/sevoniva/crest:v1.5.1
+ghcr.io/sevoniva/crest:v1.5.2
 ```
 
 应用镜像以 Alpine 为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime。容器以固定非 root 用户运行：
@@ -256,7 +256,7 @@ installer/crest/bin/mysql/cleanup-demo-data.sql
 
 ## 迁移和同发布线升级
 
-v1.5.1 面向全新环境安装，不支持从早期开发版本直接执行 Flyway 原地升级。已有早期环境迁移到 v1.5.1 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
+v1.5.2 面向全新环境安装，不支持从早期开发版本直接执行 Flyway 原地升级。已有早期环境迁移到 v1.5.2 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
 
 同一发布线的小版本升级前：
 
@@ -268,7 +268,7 @@ v1.5.1 面向全新环境安装，不支持从早期开发版本直接执行 Fly
 确认 release notes 明确支持原地升级后，更新镜像：
 
 ```bash
-kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest:v1.5.1
+kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest:v1.5.2
 kubectl -n crest-internal rollout status deployment/crest --timeout=300s
 ```
 

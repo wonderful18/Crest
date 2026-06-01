@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.5.2 - 2026-06-01
+
+v1.5.2 是 v1.5 系列安装交付修复版本，重点修正单机离线安装包在全新环境中的数据库初始化流程。已成功运行的 v1.5.1 环境可继续使用；重新部署或分发离线包时建议使用 v1.5.2。
+
+### 修复
+
+- 修复演示资源清理 SQL 被 MySQL 首次初始化流程误执行的问题。
+- 修复 `crestctl` 在同时存在 `mysql-crest` 和 `crest` 容器时误判服务状态的问题。
+
+### 调整
+
+- 内置 MySQL 使用 `MYSQL_DATABASE=${CREST_DB_NAME}` 创建元数据库，不再通过初始化 SQL 写死数据库名。
+- `cleanup-demo-data.sql` 移至手动维护目录，仅由 `cleanup-demo-data.sh` 调用。
+- 离线包制作流程清理 macOS 扩展属性文件，避免包内出现 `._*` 或 `.DS_Store`。
+- 文档、镜像标签、Kubernetes 示例和安装包示例统一更新至 v1.5.2。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest:v1.5.2`。
+- 默认离线包为 `crest-offline-v1.5.2-linux-amd64.tar.gz` 和 `crest-offline-v1.5.2-linux-arm64.tar.gz`。
+- 默认安装加载内置演示资源；生产环境不需要示例数据时，安装前设置 `CREST_LOAD_DEMO=false`。
+- 已加载演示资源的单机环境可执行 `bash cleanup-demo-data.sh --yes` 清理。
+
 ## v1.5.1 - 2026-06-01
 
 v1.5.1 是 v1.5 系列维护发布，重点整理安装交付、演示资源初始化和公开文档。默认安装仍加载零售经营与研发效能演示资源；生产环境可在安装前关闭。
