@@ -112,7 +112,8 @@ public class EngineManage {
             queryWrapper.eq("type", engineType.mysql.name());
         }
         List<CoreEngine> engines = engineMapper.selectList(queryWrapper);
-        if (!CollectionUtils.isEmpty(engines) && validConfiguration(engines.get(0).getConfiguration())) {
+        if (!CollectionUtils.isEmpty(engines) && validConfiguration(engines.get(0).getConfiguration())
+                && !legacyCharsetConfiguration(engines.get(0).getConfiguration())) {
             return;
         }
 
@@ -153,6 +154,15 @@ public class EngineManage {
 
     private boolean validConfiguration(String configuration) {
         return StringUtils.isNotBlank(configuration) && configuration.trim().startsWith("{");
+    }
+
+    private boolean legacyCharsetConfiguration(String configuration) {
+        if (StringUtils.isBlank(configuration)) {
+            return false;
+        }
+        String normalized = configuration.toLowerCase(java.util.Locale.ROOT);
+        return normalized.contains("charactersetresults")
+                || normalized.contains("characterencoding=utf8&");
     }
 
 

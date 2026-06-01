@@ -141,7 +141,7 @@ configMapGenerator:
       - CREST_DB_HOST=mysql.example.com
       - CREST_DB_PORT=3306
       - CREST_DB_NAME=crest
-      - CREST_DB_PARAMS=autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&characterSetResults=UTF-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+      - CREST_DB_PARAMS=autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
 ```
 
 替换 `crest-db-secret` 中的账号、密码和加密参数后部署：

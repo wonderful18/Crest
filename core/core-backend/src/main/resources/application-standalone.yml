@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${CREST_DB_URL:jdbc:mysql://127.0.0.1:3306/crest?autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&characterSetResults=UTF-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true}
+    url: ${CREST_DB_URL:jdbc:mysql://127.0.0.1:3306/crest?autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true}
     username: ${CREST_DB_USERNAME:root}
     password: ${CREST_DB_PASSWORD:}
   messages:
