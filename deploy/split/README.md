@@ -58,9 +58,10 @@ http://127.0.0.1:18100/
 - 容器标准输出日志启用大小和文件数滚动，避免占满宿主机磁盘；
 - 运行时写入目录通过 volume 或 tmpfs 显式挂载；
 - Nginx 不暴露版本号，静态资源和 HTML 使用不同缓存策略；
+- Nginx 为前端入口和静态资源发送点击劫持、MIME 嗅探、CSP、引用来源和浏览器权限相关安全头；
 - Nginx 为接口、WebSocket 和文档入口设置独立超时；
 - Nginx 为请求写入 `X-Request-Id`，便于网关、后端和日志关联；
-- Nginx 默认发送 `X-Content-Type-Options`、`Referrer-Policy` 和 `Permissions-Policy`；
+- Nginx 在 Docker 网络内按固定周期解析后端服务名，后端容器重建后不需要重启前端网关；
 - MySQL 服务不暴露宿主机端口。
 
 `/doc.html`、`/v3/api-docs` 和 `/swagger-ui` 会转发到后端，便于本地调试接口。生产环境如果需要开放接口文档，应放在内网或网关白名单后面。
@@ -75,11 +76,12 @@ http://127.0.0.1:18100/
 | 上传大小 | `client_max_body_size 500m`，与后端上传限制保持一致 |
 | API 转发 | `/api/v1/` 转发到 `crest-service:8100/api/v1/` |
 | 请求追踪 | 生成并透传 `X-Request-Id` |
-| 网关头 | 转发时保留浏览器原始 `Host`、外部端口和可信 HTTPS 网关协议 |
+| 网关头 | 转发时保留浏览器原始 `Host`、外部端口和可信 HTTPS 网关协议，后端重定向不降级 |
 | 大响应处理 | API 响应不落 Nginx 临时文件，避免大导出占用网关磁盘 |
 | WebSocket | `/websocket` 保持长连接，读写超时 1 小时 |
 | HTML 缓存 | `index.html` 和路由回退不缓存，避免升级后加载旧入口 |
 | 静态资源缓存 | JS、CSS、图片和字体缓存 30 天 |
+| 服务解析 | 通过 Docker 内置 DNS 定期解析后端服务，降低容器重建后的 502 风险 |
 | Source Map | `*.map` 默认不对外提供 |
 | 隐藏文件 | 拒绝访问隐藏文件，保留 `.well-known` 例外 |
 

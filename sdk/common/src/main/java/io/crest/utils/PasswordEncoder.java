@@ -8,12 +8,6 @@ import java.util.Base64;
 
 /**
  * 密码编码器
- *
- * 使用 PBKDF2 算法进行密码哈希，替代不安全的 MD5。
- *
- * 修复漏洞：SAST-03（MD5 密码哈希）
- *
- * @author security-fix
  */
 public class PasswordEncoder {
 

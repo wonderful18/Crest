@@ -12,12 +12,6 @@ import java.util.Locale;
 
 /**
  * SSRF 防护工具类
- *
- * 防止服务器端请求伪造攻击，阻止访问内部网络资源。
- *
- * 修复漏洞：DAST-02, PT-02（SSRF 漏洞）
- *
- * @author security-fix
  */
 public class SsrfProtection {
 

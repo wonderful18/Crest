@@ -9,11 +9,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * 安全测试：SSRF 防护
- *
- * 修复漏洞：DAST-02, PT-02（SSRF 漏洞）
- */
 class SsrfProtectionTest {
 
     @ParameterizedTest

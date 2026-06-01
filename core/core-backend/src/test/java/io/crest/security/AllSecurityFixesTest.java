@@ -10,19 +10,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * 综合安全修复测试
- *
- * 验证所有安全修复的功能正确性。
- *
- * @author security-fix
- */
-@DisplayName("安全修复综合测试")
+@DisplayName("安全基线综合测试")
 class AllSecurityFixesTest {
 
-    // ==========================================
-    // 修复 1: 白名单安全
-    // ==========================================
     @Nested
     @DisplayName("白名单安全测试")
     class WhitelistSecurityTests {
@@ -54,9 +44,6 @@ class AllSecurityFixesTest {
         }
     }
 
-    // ==========================================
-    // 修复 2: SSRF 防护
-    // ==========================================
     @Nested
     @DisplayName("SSRF 防护测试")
     class SsrfProtectionTests {
@@ -102,9 +89,6 @@ class AllSecurityFixesTest {
         }
     }
 
-    // ==========================================
-    // 修复 3: XSS 防护
-    // ==========================================
     @Nested
     @DisplayName("XSS 防护测试")
     class XssProtectionTests {
@@ -161,9 +145,6 @@ class AllSecurityFixesTest {
         }
     }
 
-    // ==========================================
-    // 修复 4: 密码编码器
-    // ==========================================
     @Nested
     @DisplayName("密码编码器测试")
     class PasswordEncoderTests {
@@ -214,9 +195,6 @@ class AllSecurityFixesTest {
         }
     }
 
-    // ==========================================
-    // 修复 5: 密码策略验证器
-    // ==========================================
     @Nested
     @DisplayName("密码策略验证器测试")
     class PasswordValidatorTests {

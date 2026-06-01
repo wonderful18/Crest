@@ -20,6 +20,20 @@ public class HtmlResourceFilter implements Filter, Ordered {
     private static final Pattern VERSIONED_FRONTEND_ASSET = Pattern.compile(
             "^(js|assets/(?:chunk|css|svg|png|jpg|jpeg|gif|ico|woff2?))/(.+)-\\d+\\.\\d+\\.\\d+-(crest.*)$"
     );
+    private static final String FRONTEND_CONTENT_SECURITY_POLICY = String.join("; ",
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: blob: http: https:",
+            "font-src 'self' data:",
+            "connect-src 'self' http: https: ws: wss:",
+            "media-src 'self' data: blob: http: https:",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "frame-src 'self' http: https:",
+            "frame-ancestors 'self'",
+            "form-action 'self'",
+            "worker-src 'self' blob:");
 
     @Value("${crest.http.cache:false}")
     private Boolean httpCache;
@@ -105,7 +119,10 @@ public class HtmlResourceFilter implements Filter, Ordered {
     }
 
     private void applySecurityHeaders(HttpServletResponse response) {
+        response.setHeader("X-Frame-Options", "SAMEORIGIN");
         response.setHeader("X-Content-Type-Options", "nosniff");
+        response.setHeader("X-XSS-Protection", "1; mode=block");
+        response.setHeader("Content-Security-Policy", FRONTEND_CONTENT_SECURITY_POLICY);
         response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
         response.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=()");
     }

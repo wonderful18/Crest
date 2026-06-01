@@ -6,12 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * 安全测试：验证敏感端点已从白名单移除
- *
- * 修复漏洞：PT-01（/symmetric-key 密钥泄露）
- * 注意：/public-key 保留在白名单中，因为登录流程需要 RSA 公钥
- */
 class WhitelistSecurityTest {
 
     @Test
