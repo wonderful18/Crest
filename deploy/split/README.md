@@ -72,7 +72,9 @@ http://127.0.0.1:18100/
 
 | 项目 | 策略 |
 | --- | --- |
-| 健康检查 | `/healthz` 返回 `204` |
+| 前端健康检查 | `/healthz` 返回 `204`，用于判断 Nginx 网关是否可用 |
+| 后端存活检查 | `/api/v1/actuator/health/liveness` 只做进程级轻量检查 |
+| 后端就绪检查 | `/api/v1/actuator/health/readiness` 校验数据库连接，适合容器 healthcheck 和流量接入判断 |
 | 上传大小 | `client_max_body_size 500m`，与后端上传限制保持一致 |
 | API 转发 | `/api/v1/` 转发到 `crest-service:8100/api/v1/` |
 | API 安全头 | 接口响应使用 `X-Frame-Options: DENY` 和 `frame-ancestors 'none'`，不继承前端页面 CSP |
@@ -96,6 +98,8 @@ http://127.0.0.1:18100/
 docker compose -f deploy/split/docker-compose.yml ps
 docker exec split-crest-web nginx -t
 curl -sSI http://127.0.0.1:18100/healthz
+curl -sS http://127.0.0.1:18100/api/v1/actuator/health/liveness
+curl -sS http://127.0.0.1:18100/api/v1/actuator/health/readiness
 curl -sS -H 'Origin: http://127.0.0.1:18100' http://127.0.0.1:18100/api/v1/public-key
 docker logs split-crest-service --since 5m | grep -E 'WARN|ERROR|Exception' || true
 docker logs split-crest-web --since 5m | grep -Ei 'warn|error|exception' || true

@@ -100,21 +100,30 @@ spec:
             - secretRef:
                 name: crest-db-secret
           startupProbe:
-            tcpSocket:
-              port: http
+            exec:
+              command:
+                - sh
+                - -ec
+                - wget -qO- "http://127.0.0.1:${RUNNING_PORT}${CREST_CONTEXT_PATH:-}/api/v1/actuator/health/liveness" >/dev/null
             periodSeconds: 5
-            failureThreshold: 60
-          readinessProbe:
-            httpGet:
-              path: /index.html
-              port: http
-            periodSeconds: 10
             timeoutSeconds: 3
-            failureThreshold: 6
+            failureThreshold: 120
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - wget -qO- "http://127.0.0.1:${RUNNING_PORT}${CREST_CONTEXT_PATH:-}/api/v1/actuator/health/readiness" >/dev/null
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
           livenessProbe:
-            httpGet:
-              path: /index.html
-              port: http
+            exec:
+              command:
+                - sh
+                - -ec
+                - wget -qO- "http://127.0.0.1:${RUNNING_PORT}${CREST_CONTEXT_PATH:-}/api/v1/actuator/health/liveness" >/dev/null
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3

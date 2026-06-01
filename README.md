@@ -140,6 +140,8 @@ crestctl clear-logs
 
 单机 Compose 模板默认启用容器降权、只读根文件系统、`no-new-privileges` 和必要 tmpfs 挂载。需要写入的日志、缓存、上传文件、导出文件和字体资源均位于 `/opt/crest` 运行目录，便于备份和权限审计。
 
+前端网关使用 `/healthz` 判断 Nginx 是否可用。后端服务提供 `/api/v1/actuator/health/liveness` 和 `/api/v1/actuator/health/readiness`：前者只检查应用进程响应，后者会校验元数据库连接，适合容器健康检查和 Kubernetes 就绪探针。
+
 ## 离线包
 
 离线包制作脚本：

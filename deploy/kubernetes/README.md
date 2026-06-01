@@ -59,6 +59,18 @@ mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -Dskip
 docker build -t ghcr.io/sevoniva/crest:main .
 ```
 
+## 健康检查
+
+应用容器使用三类探针：
+
+| 探针 | 路径 | 阈值 | 设计目的 |
+| --- | --- | --- | --- |
+| startupProbe | `${CREST_CONTEXT_PATH}/api/v1/actuator/health/liveness` | 每 5 秒检查一次，超时 3 秒，最多失败 120 次 | 给镜像冷启动、Flyway 迁移和演示数据初始化预留最长 10 分钟，启动完成前不触发存活探针 |
+| readinessProbe | `${CREST_CONTEXT_PATH}/api/v1/actuator/health/readiness` | 每 10 秒检查一次，超时 5 秒，连续失败 3 次摘除流量，成功 1 次恢复 | 校验数据库连接，避免服务已启动但无法处理业务请求时继续接收流量 |
+| livenessProbe | `${CREST_CONTEXT_PATH}/api/v1/actuator/health/liveness` | 每 30 秒检查一次，超时 5 秒，连续失败 3 次重启容器 | 只判断进程和 Web 容器是否存活，避免因为数据库短抖动或慢查询误杀应用 |
+
+`readiness` 依赖元数据库，数据库不可用时返回 `503`。`liveness` 不访问数据库，只用于判断应用进程是否还能响应。
+
 ## 配置项
 
 `crest-env` ConfigMap:
@@ -225,6 +237,8 @@ kubectl -n crest-internal describe pod -l app.kubernetes.io/name=crest
 功能验证：
 
 - Pod 全部 Ready，应用容器重启次数为 0；
+- `/api/v1/actuator/health/liveness` 返回 200；
+- `/api/v1/actuator/health/readiness` 返回 200；
 - `/index.html` 返回 200；
 - `/doc.html` 可打开或跳转到登录流程；
 - `/v3/api-docs` 在未登录时返回受保护状态，登录或放行接口文档后可正常读取；

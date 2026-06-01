@@ -41,9 +41,10 @@ COPY --chown=10001:10001 core/core-backend/target/CoreApplication.jar /opt/apps/
 
 ENV JAVA_APP_JAR=/opt/apps/app.jar
 ENV RUNNING_PORT=8100
+ENV CREST_HEALTHCHECK_PATH=/api/v1/actuator/health/readiness
 ENV JAVA_OPTIONS="-Dfile.encoding=utf-8 -Dloader.path=/opt/apps -Dspring.config.additional-location=/opt/apps/config/"
 
-HEALTHCHECK --interval=15s --timeout=5s --retries=20 --start-period=30s CMD nc -z 127.0.0.1 $RUNNING_PORT
+HEALTHCHECK --interval=15s --timeout=5s --retries=20 --start-period=60s CMD wget -qO- "http://127.0.0.1:${RUNNING_PORT}${CREST_HEALTHCHECK_PATH}" >/dev/null || exit 1
 
 USER crest
 
