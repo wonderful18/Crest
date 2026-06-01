@@ -8,7 +8,7 @@
 
 | Version | Status |
 | --- | --- |
-| `v1.3.x` | Supported |
+| `v1.5.x` | Supported |
 
 更早的本地构建和实验分支不作为公开安全维护对象。正式部署建议使用 GitHub Release 或 `ghcr.io/sevoniva/crest` 中带版本号的镜像。
 
