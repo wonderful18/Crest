@@ -1,0 +1,14 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: crest-service
+    scheme: http
+    metrics_path: /api/v1/actuator/prometheus
+    bearer_token_file: /etc/prometheus/secrets/crest-token
+    static_configs:
+      - targets:
+          - crest-service:8100
+        labels:
+          service: crest-service

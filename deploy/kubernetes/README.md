@@ -1,9 +1,11 @@
 # Crest Kubernetes 部署
 
-本目录提供 Crest 在 Kubernetes 上的基础部署清单。当前支持两种方式：
+本目录提供 Crest 在 Kubernetes 上的基础部署清单。当前支持四种方式：
 
 - `internal-mysql`：同时安装 Crest 和 MySQL；
-- `external-mysql`：只安装 Crest，连接外部 MySQL。
+- `external-mysql`：只安装 Crest，连接外部 MySQL；
+- `internal-mysql-observability`：内置 MySQL，并启用 Prometheus 和 Grafana；
+- `external-mysql-observability`：外部 MySQL，并启用 Prometheus 和 Grafana。
 
 两种方式共用 `base` 中的应用 Deployment、Service、PVC 和配置模板，差异在数据库地址、数据库 Secret 和是否创建 MySQL StatefulSet。
 
@@ -25,9 +27,21 @@ deploy/kubernetes
 │   ├── mysql-my.cnf
 │   ├── mysql.yaml
 │   └── namespace.yaml
-└── external-mysql
+├── external-mysql
+│   ├── kustomization.yaml
+│   └── namespace.yaml
+├── observability
+│   ├── grafana
+│   ├── prometheus
+│   ├── kustomization.yaml
+│   ├── networkpolicy.yaml
+│   └── observability.yaml
+├── internal-mysql-observability
+│   ├── kustomization.yaml
+│   └── observability-env-patch.yaml
+└── external-mysql-observability
     ├── kustomization.yaml
-    └── namespace.yaml
+    └── observability-env-patch.yaml
 ```
 
 ## 镜像
@@ -35,8 +49,8 @@ deploy/kubernetes
 默认应用镜像：
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.3
-ghcr.io/sevoniva/crest-web:v1.5.3
+ghcr.io/sevoniva/crest-service:v1.5.4-rc.1
+ghcr.io/sevoniva/crest-web:v1.5.4-rc.1
 ```
 
 后端镜像以 Alpine 为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime。前端镜像基于 Nginx Alpine，负责静态资源、API 转发和 WebSocket 转发。两个应用容器都以固定非 root 用户运行：
@@ -97,6 +111,10 @@ docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:main .
 | `CREST_DB_PARAMS` | JDBC 参数 |
 | `CREST_ORIGIN_LIST` | 允许来源列表，正式环境改为实际域名 |
 | `CREST_LOGIN_TIMEOUT` | 登录超时时间，默认 960 分钟 |
+| `CREST_PROMETHEUS_ENABLED` | 是否启用 Prometheus 指标端点，默认 `false` |
+| `CREST_PROMETHEUS_MAX_URI_TAGS` | 接口 URI 指标标签数量上限，默认 `200` |
+| `CREST_GRAFANA_ENABLED` | 是否在系统页面显示 Grafana 已启用 |
+| `CREST_GRAFANA_PUBLIC_URL` | Grafana 外部访问地址 |
 
 `crest-db-secret` Secret:
 
@@ -112,6 +130,13 @@ docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:main .
 | `CREST_INITIAL_PASSWORD` | 管理员初始密码 |
 
 `crest-db-secret` 不由 Kustomize 生成，部署前必须在目标 namespace 中创建。不要把生产密码、证书或 kubeconfig 提交到仓库。
+
+`crest-observability-secret` Secret:
+
+| 配置项 | 说明 |
+| --- | --- |
+| `CREST_PROMETHEUS_TOKEN` | Prometheus 抓取后端指标使用的 Bearer Token |
+| `GF_SECURITY_ADMIN_PASSWORD` | Grafana 管理员密码 |
 
 ## 内置 MySQL 部署
 
@@ -216,6 +241,57 @@ kubectl -n crest-external port-forward svc/crest 18101:8100
 http://127.0.0.1:18101/index.html
 ```
 
+## Prometheus 和 Grafana
+
+可观测性 overlay 会部署：
+
+- `crest-prometheus`：ClusterIP 服务，抓取 `crest-service:8100/api/v1/actuator/prometheus`；
+- `crest-grafana`：ClusterIP 服务，自动加载 Prometheus 数据源和 Crest 看板；
+- `NetworkPolicy`：只允许前端网关和 Prometheus 访问后端 `8100` 端口。
+
+企业集群已有 Prometheus/Grafana 时，可不使用 `observability` overlay。只需在应用环境中设置 `CREST_PROMETHEUS_ENABLED=true`，通过 Secret 注入 `CREST_PROMETHEUS_TOKEN`，再由企业 Prometheus 按 Bearer Token 抓取 `crest-service:8100/api/v1/actuator/prometheus`。Grafana 可导入 `deploy/kubernetes/observability/grafana/dashboards/crest-observability.json`。
+
+创建 Secret：
+
+```bash
+kubectl -n crest-internal create secret generic crest-observability-secret \
+  --from-literal=CREST_PROMETHEUS_TOKEN='<prometheus-scrape-token>' \
+  --from-literal=GF_SECURITY_ADMIN_PASSWORD='<grafana-admin-password>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+内置 MySQL 模式：
+
+```bash
+kubectl apply -k deploy/kubernetes/internal-mysql-observability
+kubectl -n crest-internal rollout status deployment/crest-prometheus --timeout=180s
+kubectl -n crest-internal rollout status deployment/crest-grafana --timeout=180s
+kubectl -n crest-internal port-forward svc/crest-grafana 3000:3000
+```
+
+外部 MySQL 模式把 namespace 改成 `crest-external`，并使用：
+
+```bash
+kubectl apply -k deploy/kubernetes/external-mysql-observability
+```
+
+验证指标端点：
+
+```bash
+kubectl -n crest-internal run crest-metrics-check --rm -i --restart=Never --image=busybox:1.36 -- \
+  wget -qO- --header='Authorization: Bearer <prometheus-scrape-token>' \
+  http://crest-service:8100/api/v1/actuator/prometheus
+```
+
+前端网关不公开 Prometheus 指标路径：
+
+```bash
+kubectl -n crest-internal port-forward svc/crest 18100:8100
+curl -i http://127.0.0.1:18100/api/v1/actuator/prometheus
+```
+
+返回 `404` 即符合预期。
+
 ## 持久化
 
 `base/pvc.yaml` 创建 `crest-data` PVC，用于保存：
@@ -236,6 +312,8 @@ http://127.0.0.1:18101/index.html
 | `crest-tmp` | `emptyDir`，内存 | 后端临时文件 |
 | `nginx-*` | `emptyDir` 或内存 | 前端 Nginx 运行目录和临时目录 |
 | `crest-data` | PVC | 业务持久化数据 |
+| `crest-prometheus-data` | PVC | Prometheus TSDB，启用可观测性时创建 |
+| `crest-grafana-data` | PVC | Grafana 本地数据，启用可观测性时创建 |
 
 正式环境如需长期保存应用日志，建议接入集群日志采集系统，或按现场规范改为持久化卷。
 
@@ -245,10 +323,10 @@ http://127.0.0.1:18101/index.html
 
 ```bash
 mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true -Dcrest.copy.frontend.skip=true
-docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:v1.5.3 .
-docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:v1.5.3 .
-kind load docker-image ghcr.io/sevoniva/crest-service:v1.5.3 --name crest-kind
-kind load docker-image ghcr.io/sevoniva/crest-web:v1.5.3 --name crest-kind
+docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:v1.5.4-rc.1 .
+docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:v1.5.4-rc.1 .
+kind load docker-image ghcr.io/sevoniva/crest-service:v1.5.4-rc.1 --name crest-kind
+kind load docker-image ghcr.io/sevoniva/crest-web:v1.5.4-rc.1 --name crest-kind
 kind load docker-image mysql:8.0.43 --name crest-kind
 ```
 
@@ -302,6 +380,9 @@ kubectl -n crest-internal describe pod -l app.kubernetes.io/name=crest
 - Pod 全部 Ready，`crest`、`crest-service` 和 `crest-mysql` 重启次数为 0；
 - `/api/v1/actuator/health/liveness` 返回 200；
 - `/api/v1/actuator/health/readiness` 返回 200；
+- 前端网关访问 `/api/v1/actuator/prometheus` 返回 404；
+- 启用可观测性时，Prometheus 通过 Bearer Token 能抓到 `http_server_requests_seconds_count`；
+- 启用可观测性时，Grafana “Crest 可观测性总览”看板加载成功；
 - `/index.html` 返回 200；
 - `/doc.html` 可打开或跳转到登录流程；
 - `/v3/api-docs` 在未登录时返回受保护状态，登录或放行接口文档后可正常读取；
@@ -333,7 +414,7 @@ installer/crest/bin/mysql/cleanup-demo-data.sql
 
 ## 迁移和同发布线升级
 
-v1.5.3 面向全新环境安装，不支持从早期开发版本直接执行 Flyway 原地升级。已有早期环境迁移到 v1.5.3 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
+v1.5.4-rc.1 面向全新环境安装，不支持从早期开发版本直接执行 Flyway 原地升级。已有早期环境迁移到 v1.5.4-rc.1 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
 
 同一发布线的小版本升级前：
 
@@ -345,8 +426,8 @@ v1.5.3 面向全新环境安装，不支持从早期开发版本直接执行 Fly
 确认 release notes 明确支持原地升级后，更新镜像：
 
 ```bash
-kubectl -n crest-internal set image deployment/crest-service crest-service=ghcr.io/sevoniva/crest-service:v1.5.3
-kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest-web:v1.5.3
+kubectl -n crest-internal set image deployment/crest-service crest-service=ghcr.io/sevoniva/crest-service:v1.5.4-rc.1
+kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest-web:v1.5.4-rc.1
 kubectl -n crest-internal rollout status deployment/crest-service --timeout=300s
 kubectl -n crest-internal rollout status deployment/crest --timeout=300s
 ```

@@ -48,6 +48,9 @@ function usage() {
    echo "  version               查看 CREST 版本"
 }
 function _generate_compose_file_args() {
+   if [[ "$CREST_COMPOSE_PROFILES" == "observability" || "$CREST_PROMETHEUS_ENABLED" == "true" || "$CREST_GRAFANA_ENABLED" == "true" ]]; then
+      export COMPOSE_PROFILES=observability
+   fi
    if [[ "$CREST_INTERNAL_LITE" == "true" ]];then
       return
    fi

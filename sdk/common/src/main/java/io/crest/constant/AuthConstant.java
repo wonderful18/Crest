@@ -21,6 +21,7 @@ public class AuthConstant {
 
     public final static String LINK_TOKEN_KEY = "X-CREST-LINK-TOKEN";
     public final static String LINK_RESOURCE_ID_ATTR = "CREST_LINK_RESOURCE_ID";
+    public final static String PROMETHEUS_AUTHENTICATED_ATTR = "CREST_PROMETHEUS_AUTHENTICATED";
     public final static String ASK_TOKEN_KEY = "X-CREST-ASK-TOKEN";
 
     public final static String CREST_EXECUTE_VERSION = "X-CREST-EXECUTE-VERSION";

@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: crest-service-ingress
+  labels:
+    app.kubernetes.io/name: crest-service
+    app.kubernetes.io/part-of: crest
+    app.kubernetes.io/component: backend
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: crest-service
+      app.kubernetes.io/component: backend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: crest
+              app.kubernetes.io/component: frontend
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: crest-prometheus
+      ports:
+        - protocol: TCP
+          port: 8100

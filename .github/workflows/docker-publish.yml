@@ -9,7 +9,7 @@ on:
       image_tag:
         description: Crest image tag to publish
         required: false
-        default: v1.5.3
+        default: v1.5.4-rc.1
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_TAG: ${{ inputs.image_tag || github.ref_name || 'v1.5.3' }}
+  IMAGE_TAG: ${{ inputs.image_tag || github.ref_name || 'v1.5.4-rc.1' }}
   REGISTRY: ghcr.io
   BACKEND_IMAGE: ghcr.io/sevoniva/crest-service
   FRONTEND_IMAGE: ghcr.io/sevoniva/crest-web

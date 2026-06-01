@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: crest-prometheus-data
+  labels:
+    app.kubernetes.io/name: crest-prometheus
+    app.kubernetes.io/part-of: crest
+    app.kubernetes.io/component: observability
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: crest-grafana-data
+  labels:
+    app.kubernetes.io/name: crest-grafana
+    app.kubernetes.io/part-of: crest
+    app.kubernetes.io/component: observability
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

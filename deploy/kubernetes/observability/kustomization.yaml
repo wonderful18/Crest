@@ -1,0 +1,17 @@
+resources:
+  - observability.yaml
+  - networkpolicy.yaml
+  - pvc.yaml
+
+configMapGenerator:
+  - name: crest-prometheus-config
+    files:
+      - prometheus.yml=prometheus/prometheus.yml
+  - name: crest-grafana-provisioning
+    files:
+      - prometheus-datasource.yml=grafana/datasources/prometheus.yml
+      - dashboards.yml=grafana/dashboards/dashboards.yml
+      - crest-observability.json=grafana/dashboards/crest-observability.json
+
+generatorOptions:
+  disableNameSuffixHash: true

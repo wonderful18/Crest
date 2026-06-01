@@ -1,12 +1,26 @@
 package io.crest.auth.filter;
 
+import io.crest.observability.ObservabilityProperties;
+import io.crest.observability.PrometheusMetricsAccessFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@EnableConfigurationProperties(ObservabilityProperties.class)
 @SuppressWarnings("unchecked")
 public class FilterConfig {
+
+    @Bean
+    public FilterRegistrationBean prometheusMetricsAccessFilter(ObservabilityProperties observabilityProperties) {
+        FilterRegistrationBean filter = new FilterRegistrationBean<>();
+        filter.setName("prometheusMetricsAccessFilter");
+        filter.setFilter(new PrometheusMetricsAccessFilter(observabilityProperties));
+        filter.addUrlPatterns("/*");
+        filter.setOrder(-10);
+        return filter;
+    }
 
     @Bean
     public FilterRegistrationBean orderFilter() {
