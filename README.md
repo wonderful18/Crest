@@ -455,6 +455,7 @@ git clean -fdXn
 | [deploy/kubernetes/README.md](./deploy/kubernetes/README.md) | Kubernetes 部署、Secret 配置、验证和运维说明 |
 | [core/core-frontend/README.md](./core/core-frontend/README.md) | 前端工程结构、构建命令、品牌资源和页面约定 |
 | [SECURITY.md](./SECURITY.md) | 安全报告、公开仓库检查和部署加固建议 |
+| [SECURITY_BASELINE.md](./SECURITY_BASELINE.md) | 发布前安全基线、初始化脚本和部署检查项 |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | 贡献流程、分支、提交、测试和文档要求 |
 
 ## 版本与变更

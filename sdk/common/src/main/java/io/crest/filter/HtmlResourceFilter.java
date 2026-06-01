@@ -99,7 +99,6 @@ public class HtmlResourceFilter implements Filter, Ordered {
         applySecurityHeaders(response);
         if (httpCache == null || !httpCache) {
             response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate");
-            response.setHeader("Cache", "no-cache");
             response.setHeader(HttpHeaders.PRAGMA, "no-cache");
             response.setHeader(HttpHeaders.EXPIRES, "0");
         }
