@@ -39,12 +39,12 @@ Crest 按 GNU General Public License version 3 (GPLv3) 发布。使用、修改�
 
 ## 架构概览
 
-Crest 采用前后端分离开发、后端统一打包部署的结构。
+Crest 采用前后端分离开发和部署。发布镜像拆分为后端服务镜像和前端网关镜像，便于单独升级、回滚和定位问题。
 
 ```text
 浏览器
-  -> Vue 3 / Vite 前端静态资源
-  -> Spring Boot 后端接口
+  -> Nginx 前端网关（静态资源、API 转发、WebSocket 转发）
+  -> Spring Boot 后端服务
   -> Crest 元数据库 MySQL
   -> 外部业务数据源
 ```
@@ -59,7 +59,8 @@ Crest 采用前后端分离开发、后端统一打包部署的结构。
 | `sdk/common` | 公共模型、认证、工具类和 Spring 配置 |
 | `sdk/extensions/extensions-datasource` | JDBC 数据源扩展定义 |
 | `drivers` | 随仓库分发的 JDBC 驱动，当前包含 OceanBase Connector/J |
-| `installer` | 单机 Docker 安装脚本、控制脚本和离线包制作脚本 |
+| `installer` | 单机 Docker 安装脚本、控制脚本、Compose 模板和离线包制作脚本 |
+| `deploy/split` | 前后端分离部署验证配置 |
 | `deploy/kubernetes` | Kubernetes 部署清单，支持内置 MySQL 和外部 MySQL |
 | `docs` | 数据血缘、研发效能大屏和开发说明 |
 
@@ -73,13 +74,13 @@ Maven 构建日志统一使用 `crest-*` 模块名，便于发布和排障时识
 | `crest-api` / `crest-api-base` / `crest-api-permissions` / `crest-api-sync` | `sdk/api` |
 | `crest-core` / `crest-web` / `crest-service` | `core`、`core/core-frontend`、`core/core-backend` |
 
-运行时只需要 Crest 应用容器和 MySQL。应用启动时由 Flyway 执行数据库迁移，初始化必要表结构、管理员账号、系统参数和平台基础数据。安装包默认加载内置演示资源，生产环境不需要示例数据时可在安装前关闭。
+单机安装默认启动三个容器：`crest` 前端网关、`crest-service` 后端服务和 `mysql-crest` 元数据库。应用启动时由 Flyway 执行数据库迁移，初始化必要表结构、管理员账号、系统参数和平台基础数据。安装包默认加载内置演示资源，生产环境不需要示例数据时可在安装前关闭。
 
 ## 默认端口和账号
 
 | 项目 | 默认值 |
 | --- | --- |
-| Web 端口 | `8100` |
+| Web 端口 | `8100`，由前端 Nginx 容器对外暴露 |
 | 默认管理员账号 | `admin` |
 | 单机安装初始密码 | 安装脚本随机生成，并在安装完成后输出 |
 | Kubernetes 初始密码 | `CREST_INITIAL_PASSWORD` Secret 中配置 |
@@ -136,6 +137,8 @@ crestctl clear-logs
 `v1.5.2` 面向全新环境安装，不支持从旧版本直接执行 Flyway 原地升级。旧环境迁移到 `v1.5.2` 时，请先完成数据备份和资源导出，再在新环境中导入业务资源。后续同一发布线的小版本升级策略会在发布说明中单独说明。
 
 已有 `v1.5.x` 环境只替换后端镜像时，可在运行目录执行 `docker-compose up -d --no-deps crest-service`；只替换前端镜像时执行 `docker-compose up -d --no-deps crest`。
+
+单机 Compose 模板默认启用容器降权、只读根文件系统、`no-new-privileges` 和必要 tmpfs 挂载。需要写入的日志、缓存、上传文件、导出文件和字体资源均位于 `/opt/crest` 运行目录，便于备份和权限审计。
 
 ## 离线包
 
@@ -222,7 +225,7 @@ docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:local .
 docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:local .
 ```
 
-后端镜像使用 Alpine 作为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime；前端镜像基于 Nginx Alpine。两个镜像都以非 root 用户 `10001:10001` 运行。
+后端镜像使用 Alpine 作为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime；前端镜像基于 Nginx Alpine。两个镜像都以非 root 用户 `10001:10001` 运行，部署模板默认关闭多余 Linux capability。
 
 GitHub Actions 发布入口：
 

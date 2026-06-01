@@ -3,6 +3,7 @@ services:
   mysql-crest:
     image: ${CREST_MYSQL_IMAGE:-mysql:8.0.43}
     container_name: split-mysql-crest
+    restart: unless-stopped
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -23,8 +24,16 @@ services:
   crest-service:
     image: ${CREST_BACKEND_IMAGE:-crest-service:split}
     container_name: split-crest-service
+    restart: unless-stopped
     stop_signal: SIGTERM
     stop_grace_period: 15s
+    read_only: true
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment:
       CREST_DB_HOST: mysql-crest
       CREST_DB_PORT: 3306
@@ -53,10 +62,24 @@ services:
   crest:
     image: ${CREST_FRONTEND_IMAGE:-crest-web:split}
     container_name: split-crest-web
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx/client_temp:uid=10001,gid=10001,mode=0755
+      - /var/cache/nginx/proxy_temp:uid=10001,gid=10001,mode=0755
+      - /var/cache/nginx/fastcgi_temp:uid=10001,gid=10001,mode=0755
+      - /var/cache/nginx/uwsgi_temp:uid=10001,gid=10001,mode=0755
+      - /var/cache/nginx/scgi_temp:uid=10001,gid=10001,mode=0755
+      - /var/run/nginx:uid=10001,gid=10001,mode=0755
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
       - ${CREST_WEB_PORT:-18100}:8080
     depends_on:
-      - crest-service
+      crest-service:
+        condition: service_healthy
     networks:
       - crest-network
 

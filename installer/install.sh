@@ -166,8 +166,10 @@ function set_run_base_path() {
    export CREST_RUN_BASE
    CREST_LOG_PATH=${CREST_LOG_PATH:-/opt/crest/logs/crest}
    CREST_CACHE_PATH=${CREST_CACHE_PATH:-/opt/crest/cache}
+   CREST_SUBSTITULE_PATH=${CREST_SUBSTITULE_PATH:-${CREST_CACHE_PATH}/substitule.json}
    export CREST_LOG_PATH
    export CREST_CACHE_PATH
+   export CREST_SUBSTITULE_PATH
    CONF_FOLDER=${CREST_RUN_BASE}/conf
    TEMPLATES_FOLDER=${CREST_RUN_BASE}/templates
    log_content "运行目录 $CREST_RUN_BASE"

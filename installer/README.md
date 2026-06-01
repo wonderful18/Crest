@@ -19,26 +19,15 @@
 
 ## 默认部署形态
 
-Crest 默认使用内部轻量模式：
+Crest 单机安装默认采用前后端分离容器：
 
-```bash
-CREST_INTERNAL_LITE=true
-```
-
-该模式只启动两个容器：
-
-- `crest`：Crest 应用；
+- `crest`：前端 Nginx 网关，对外暴露 Web 端口；
+- `crest-service`：后端 Spring Boot 服务，只在 Compose 网络内访问；
 - `mysql-crest`：元数据库。
 
-数据血缘、导出中心、系统管理、数据源、数据集、仪表盘和数据大屏都在应用容器内运行，不需要额外服务。同步任务服务和外部截图服务默认不安装。
+数据血缘、导出中心、系统管理、数据源、数据集、仪表盘和数据大屏都在后端服务内运行，不需要单独部署同步任务服务或截图服务。
 
-如需恢复同步任务或外部截图服务，可在 `install.conf` 中调整后重新制作安装包：
-
-```bash
-CREST_INTERNAL_LITE=false
-CREST_EXTERNAL_PLAYWRIGHT=false
-CREST_EXTERNAL_SYNC_TASK=false
-```
+前端和后端容器默认以非 root 用户运行，并启用只读根文件系统、`no-new-privileges` 和最小 capability。运行时写入目录集中在 `/opt/crest`，便于做备份、权限审计和磁盘容量监控。
 
 ## 安装前检查
 
@@ -82,6 +71,7 @@ CREST_EXTERNAL_SYNC_TASK=false
 | `CREST_CRYPTO_MODE` | `standard` | 加密模式，`standard` 使用 AES/RSA，`sm-suite` 使用 SM2/SM3/SM4 |
 | `CREST_SM4_KEY` | 空 | SM4 使用的 16 位 Key；`CREST_CRYPTO_MODE=sm-suite` 且留空时自动生成，服务启动会校验，升级时不要改 |
 | `CREST_INITIAL_PASSWORD` | 空 | 管理员初始密码，留空时自动生成并输出 |
+| `CREST_SUBSTITULE_PATH` | 空 | 登录兼容配置文件路径；留空时自动使用 `${CREST_CACHE_PATH}/substitule.json` |
 | `CREST_ORIGIN_LIST` | `http://localhost:${CREST_PORT},http://127.0.0.1:${CREST_PORT}` | 允许来源，正式环境要改成实际域名 |
 
 ## 在线安装
@@ -146,7 +136,7 @@ crestctl backup stop
 
 ```bash
 cd /opt/crest
-docker-compose up -d --no-deps crest
+docker-compose up -d --no-deps crest-service crest
 ```
 
 升级后检查：
@@ -158,7 +148,7 @@ docker logs crest --tail 200
 
 确认点：
 
-- `crest` 和 `crest-service` 容器健康；
+- `crest`、`crest-service` 和 `mysql-crest` 容器健康；
 - Flyway 迁移成功；
 - 登录、工作台、数据源、数据集、仪表盘、数据大屏、数据血缘和导出中心可打开；
 - 日志中没有持续的 `ERROR` 或 `Exception`。
