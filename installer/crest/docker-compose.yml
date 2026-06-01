@@ -4,6 +4,11 @@ services:
     image: ${CREST_MYSQL_IMAGE:-mysql:8.0.43}
     container_name: mysql-crest
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u${CREST_DB_USERNAME}", "-p${CREST_DB_PASSWORD}", "--protocol","tcp"]
       interval: 5s
@@ -20,8 +25,20 @@ services:
   crest-service:
     image: ${CREST_BACKEND_IMAGE:-ghcr.io/sevoniva/crest-service:v1.5.2}
     restart: unless-stopped
+    init: true
+    user: "10001:10001"
     stop_signal: SIGTERM
     stop_grace_period: 15s
+    pids_limit: 1024
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
     container_name: crest-service
     read_only: true
     tmpfs:
@@ -50,8 +67,20 @@ services:
   crest:
     image: ${CREST_FRONTEND_IMAGE:-ghcr.io/sevoniva/crest-web:v1.5.2}
     restart: unless-stopped
+    init: true
+    user: "10001:10001"
     stop_signal: SIGTERM
     stop_grace_period: 10s
+    pids_limit: 256
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
     container_name: crest
     read_only: true
     tmpfs:

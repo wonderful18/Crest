@@ -4,6 +4,11 @@ services:
     image: ${CREST_MYSQL_IMAGE:-mysql:8.0.43}
     container_name: split-mysql-crest
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -25,8 +30,20 @@ services:
     image: ${CREST_BACKEND_IMAGE:-crest-service:split}
     container_name: split-crest-service
     restart: unless-stopped
+    init: true
+    user: "10001:10001"
     stop_signal: SIGTERM
     stop_grace_period: 15s
+    pids_limit: 1024
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
     read_only: true
     tmpfs:
       - /tmp:uid=10001,gid=10001,mode=1777
@@ -63,6 +80,20 @@ services:
     image: ${CREST_FRONTEND_IMAGE:-crest-web:split}
     container_name: split-crest-web
     restart: unless-stopped
+    init: true
+    user: "10001:10001"
+    stop_signal: SIGTERM
+    stop_grace_period: 10s
+    pids_limit: 256
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
     read_only: true
     tmpfs:
       - /var/cache/nginx/client_temp:uid=10001,gid=10001,mode=0755

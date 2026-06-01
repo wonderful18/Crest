@@ -43,8 +43,8 @@ export const listDatasources = data => {
     })
 }
 
-export const listDatasourceType = async (data = {}): Promise<IResponse> => {
-  return request.post({ url: '/datasource/types', data }).then(res => {
+export const listDatasourceType = async (): Promise<IResponse> => {
+  return request.get({ url: '/datasource/types' }).then(res => {
     return res?.data
   })
 }
