@@ -27,6 +27,8 @@ public class WhitelistUtils {
             "/login/local-login",
             "/apisix/check",
             "/actuator/health",
+            "/actuator/health/liveness",
+            "/actuator/health/readiness",
             "/public-key",
             "/index.html",
             "/model",

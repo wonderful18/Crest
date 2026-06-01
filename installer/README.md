@@ -29,6 +29,8 @@ Crest 单机安装默认采用前后端分离容器：
 
 前端和后端容器默认以非 root 用户运行，并启用只读根文件系统、`no-new-privileges`、最小 capability、进程数边界和日志滚动。运行时写入目录集中在 `/opt/crest`，便于做备份、权限审计和磁盘容量监控。
 
+前端容器通过 `/healthz` 判断网关是否可用。后端容器通过 `/api/v1/actuator/health/readiness` 判断服务是否可以接收业务流量；该检查会访问元数据库。`/api/v1/actuator/health/liveness` 只判断应用进程是否仍能响应，适合作为存活检查。
+
 ## 安装前检查
 
 建议服务器满足：

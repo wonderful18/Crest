@@ -43,6 +43,10 @@ class WhitelistSecurityTest {
     void healthShouldBeInWhitelist() {
         assertTrue(WhitelistUtils.WHITE_PATH.contains("/actuator/health"),
                 "健康检查端点应在白名单中");
+        assertTrue(WhitelistUtils.match("/api/v1/actuator/health/liveness"),
+                "存活检查端点应在白名单中");
+        assertTrue(WhitelistUtils.match("/api/v1/actuator/health/readiness"),
+                "就绪检查端点应在白名单中");
     }
 
     @Test
