@@ -12,7 +12,7 @@
 | --- | --- |
 | `v1.5.x` | Supported |
 
-更早的本地构建和实验分支不作为公开安全维护对象。正式部署建议使用 GitHub Release 或 `ghcr.io/sevoniva/crest` 中带版本号的镜像。
+更早的本地构建和实验分支不作为公开安全维护对象。正式部署建议使用 GitHub Release，或使用 `ghcr.io/sevoniva/crest-service` 与 `ghcr.io/sevoniva/crest-web` 中带版本号的镜像。
 
 ## Reporting a Vulnerability
 
@@ -63,6 +63,8 @@ rg -n "(BEGIN .*PRIVATE KEY|AKIA[0-9A-Z]{16}|secret_access_key|password\\s*[:=]|
 - 不把 Crest 直接暴露到公网管理面；
 - 限制 `/doc.html` 和 `/v3/api-docs` 的访问范围；
 - 前端和后端容器保持非 root、只读根文件系统、`no-new-privileges` 和最小 capability；
+- 前端网关只暴露 Web 入口，后端服务通过内部网络或 ClusterIP 访问；
+- Kubernetes 使用 startup、readiness 和 liveness 分离探针，后端 readiness 校验元数据库，liveness 不依赖数据库；
 - 在外部网关统一配置 TLS、HSTS、访问控制、限流和日志脱敏；
 - 定期备份 `/opt/crest` 和元数据库；
 - 升级前先在测试环境验证 Flyway 迁移；

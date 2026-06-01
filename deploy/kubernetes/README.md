@@ -13,6 +13,7 @@
 deploy/kubernetes
 ├── base
 │   ├── configmap-app.yaml
+│   ├── configmap-nginx.yaml
 │   ├── deployment.yaml
 │   ├── kustomization.yaml
 │   ├── pvc.yaml
@@ -34,10 +35,11 @@ deploy/kubernetes
 默认应用镜像：
 
 ```text
-ghcr.io/sevoniva/crest:v1.5.2
+ghcr.io/sevoniva/crest-service:v1.5.3
+ghcr.io/sevoniva/crest-web:v1.5.3
 ```
 
-应用镜像以 Alpine 为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime。容器以固定非 root 用户运行：
+后端镜像以 Alpine 为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime。前端镜像基于 Nginx Alpine，负责静态资源、API 转发和 WebSocket 转发。两个应用容器都以固定非 root 用户运行：
 
 ```text
 uid: 10001
@@ -55,21 +57,30 @@ gid: 10001
 本地构建镜像：
 
 ```bash
-mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true
-docker build -t ghcr.io/sevoniva/crest:main .
+cd core/core-frontend
+pnpm install --frozen-lockfile
+pnpm run build:base
+pnpm run build:lite:check
+
+cd ../..
+mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true -Dcrest.copy.frontend.skip=true
+docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:main .
+docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:main .
 ```
 
 ## 健康检查
 
-应用容器使用三类探针：
+后端服务使用三类探针：
 
 | 探针 | 路径 | 阈值 | 设计目的 |
 | --- | --- | --- | --- |
-| startupProbe | `${CREST_CONTEXT_PATH}/api/v1/actuator/health/liveness` | 每 5 秒检查一次，超时 3 秒，最多失败 120 次 | 给镜像冷启动、Flyway 迁移和演示数据初始化预留最长 10 分钟，启动完成前不触发存活探针 |
+| startupProbe | `${CREST_CONTEXT_PATH}/api/v1/actuator/health/liveness` | 启动后延迟 30 秒开始检查，每 5 秒检查一次，超时 3 秒，最多失败 120 次 | 给镜像冷启动、Flyway 迁移和演示数据初始化预留最长 10 分钟，启动完成前不触发存活探针 |
 | readinessProbe | `${CREST_CONTEXT_PATH}/api/v1/actuator/health/readiness` | 每 10 秒检查一次，超时 5 秒，连续失败 3 次摘除流量，成功 1 次恢复 | 校验数据库连接，避免服务已启动但无法处理业务请求时继续接收流量 |
 | livenessProbe | `${CREST_CONTEXT_PATH}/api/v1/actuator/health/liveness` | 每 30 秒检查一次，超时 5 秒，连续失败 3 次重启容器 | 只判断进程和 Web 容器是否存活，避免因为数据库短抖动或慢查询误杀应用 |
 
 `readiness` 依赖元数据库，数据库不可用时返回 `503`。`liveness` 不访问数据库，只用于判断应用进程是否还能响应。
+
+前端网关使用 `/healthz` 做 startup、readiness 和 liveness 检查。该检查只判断 Nginx 进程和站点配置是否可用，不访问后端数据库，避免数据库短暂抖动导致前端容器被误重启。
 
 ## 配置项
 
@@ -93,24 +104,42 @@ docker build -t ghcr.io/sevoniva/crest:main .
 | --- | --- |
 | `CREST_DB_USERNAME` | 元数据库账号 |
 | `CREST_DB_PASSWORD` | 元数据库密码 |
-| `MYSQL_ROOT_PASSWORD` | 内置 MySQL 模式需要 |
+| `MYSQL_ROOT_PASSWORD` | 内置 MySQL 模式需要；外部 MySQL 模式不需要 |
 | `CREST_AES_KEY` | 32 位加密 Key |
 | `CREST_AES_IV` | 16 位加密 IV |
 | `CREST_CRYPTO_MODE` | 加密模式，默认 `standard`；需要 SM2/SM3/SM4 时设为 `sm-suite` |
 | `CREST_SM4_KEY` | SM4 使用的 16 位 Key；`CREST_CRYPTO_MODE=sm-suite` 时必填，服务启动会校验 |
 | `CREST_INITIAL_PASSWORD` | 管理员初始密码 |
 
-部署前必须替换所有占位值。不要把生产密码提交到仓库。
+`crest-db-secret` 不由 Kustomize 生成，部署前必须在目标 namespace 中创建。不要把生产密码、证书或 kubeconfig 提交到仓库。
 
 ## 内置 MySQL 部署
 
 适合快速验证、单集群测试或不依赖外部数据库的环境。
 
-部署：
+先创建 namespace 和 Secret：
+
+```bash
+kubectl create namespace crest-internal --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl -n crest-internal create secret generic crest-db-secret \
+  --from-literal=CREST_DB_USERNAME=root \
+  --from-literal=CREST_DB_PASSWORD='<strong-db-password>' \
+  --from-literal=MYSQL_ROOT_PASSWORD='<strong-db-password>' \
+  --from-literal=CREST_AES_KEY='<32-character-aes-key>' \
+  --from-literal=CREST_AES_IV='<16-character-aes-iv>' \
+  --from-literal=CREST_CRYPTO_MODE=standard \
+  --from-literal=CREST_SM4_KEY='<16-character-sm4-key>' \
+  --from-literal=CREST_INITIAL_PASSWORD='<initial-admin-password>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+再部署应用：
 
 ```bash
 kubectl apply -k deploy/kubernetes/internal-mysql
 kubectl -n crest-internal rollout status statefulset/crest-mysql --timeout=180s
+kubectl -n crest-internal rollout status deployment/crest-service --timeout=300s
 kubectl -n crest-internal rollout status deployment/crest --timeout=300s
 kubectl -n crest-internal port-forward svc/crest 18100:8100
 ```
@@ -125,7 +154,7 @@ http://127.0.0.1:18100/index.html
 
 ```text
 用户名：admin
-密码：internal-mysql/kustomization.yaml 中 CREST_INITIAL_PASSWORD 的值
+密码：`crest-db-secret` 中 `CREST_INITIAL_PASSWORD` 的值
 ```
 
 内置 MySQL 默认使用：
@@ -156,10 +185,27 @@ configMapGenerator:
       - CREST_DB_PARAMS=autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
 ```
 
-替换 `crest-db-secret` 中的账号、密码和加密参数后部署：
+创建 namespace 和 Secret：
+
+```bash
+kubectl create namespace crest-external --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl -n crest-external create secret generic crest-db-secret \
+  --from-literal=CREST_DB_USERNAME='<db-user>' \
+  --from-literal=CREST_DB_PASSWORD='<db-password>' \
+  --from-literal=CREST_AES_KEY='<32-character-aes-key>' \
+  --from-literal=CREST_AES_IV='<16-character-aes-iv>' \
+  --from-literal=CREST_CRYPTO_MODE=standard \
+  --from-literal=CREST_SM4_KEY='<16-character-sm4-key>' \
+  --from-literal=CREST_INITIAL_PASSWORD='<initial-admin-password>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+再部署应用：
 
 ```bash
 kubectl apply -k deploy/kubernetes/external-mysql
+kubectl -n crest-external rollout status deployment/crest-service --timeout=300s
 kubectl -n crest-external rollout status deployment/crest --timeout=300s
 kubectl -n crest-external port-forward svc/crest 18101:8100
 ```
@@ -185,9 +231,10 @@ http://127.0.0.1:18101/index.html
 
 | Volume | 类型 | 说明 |
 | --- | --- | --- |
-| `crest-cache` | `emptyDir`，内存 | 应用缓存 |
-| `crest-logs` | `emptyDir`，内存 | 容器内日志 |
-| `crest-tmp` | `emptyDir`，内存 | 临时文件 |
+| `crest-cache` | `emptyDir`，内存 | 后端应用缓存 |
+| `crest-logs` | `emptyDir`，内存 | 后端容器内日志 |
+| `crest-tmp` | `emptyDir`，内存 | 后端临时文件 |
+| `nginx-*` | `emptyDir` 或内存 | 前端 Nginx 运行目录和临时目录 |
 | `crest-data` | PVC | 业务持久化数据 |
 
 正式环境如需长期保存应用日志，建议接入集群日志采集系统，或按现场规范改为持久化卷。
@@ -197,9 +244,11 @@ http://127.0.0.1:18101/index.html
 构建并加载镜像：
 
 ```bash
-mvn -s .mvn/settings.xml -pl :core-backend -am -DskipTests -Dmaven.test.skip=true package
-docker build -t ghcr.io/sevoniva/crest:main .
-kind load docker-image ghcr.io/sevoniva/crest:main --name crest-kind
+mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true -Dcrest.copy.frontend.skip=true
+docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:v1.5.3 .
+docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:v1.5.3 .
+kind load docker-image ghcr.io/sevoniva/crest-service:v1.5.3 --name crest-kind
+kind load docker-image ghcr.io/sevoniva/crest-web:v1.5.3 --name crest-kind
 kind load docker-image mysql:8.0.43 --name crest-kind
 ```
 
@@ -213,8 +262,21 @@ docker exec crest-kind-control-plane \
 部署内置 MySQL 模式：
 
 ```bash
+kubectl create namespace crest-internal --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n crest-internal create secret generic crest-db-secret \
+  --from-literal=CREST_DB_USERNAME=root \
+  --from-literal=CREST_DB_PASSWORD='<strong-db-password>' \
+  --from-literal=MYSQL_ROOT_PASSWORD='<strong-db-password>' \
+  --from-literal=CREST_AES_KEY='<32-character-aes-key>' \
+  --from-literal=CREST_AES_IV='<16-character-aes-iv>' \
+  --from-literal=CREST_CRYPTO_MODE=standard \
+  --from-literal=CREST_SM4_KEY='<16-character-sm4-key>' \
+  --from-literal=CREST_INITIAL_PASSWORD='<initial-admin-password>' \
+  --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -k deploy/kubernetes/internal-mysql
 kubectl -n crest-internal get pods
+kubectl -n crest-internal rollout status deployment/crest-service --timeout=300s
+kubectl -n crest-internal rollout status deployment/crest --timeout=300s
 ```
 
 外部 MySQL 模式在 Docker Desktop 上可使用宿主机地址 `host.docker.internal`。例如本机 MySQL 映射到 `13306`：
@@ -230,13 +292,14 @@ docker exec crest-mysql-local mysql -uroot -p'<mysql-root-password>' \
 
 ```bash
 kubectl -n crest-internal get pods
+kubectl -n crest-internal logs deploy/crest-service --tail=200
 kubectl -n crest-internal logs deploy/crest --tail=200
 kubectl -n crest-internal describe pod -l app.kubernetes.io/name=crest
 ```
 
 功能验证：
 
-- Pod 全部 Ready，应用容器重启次数为 0；
+- Pod 全部 Ready，`crest`、`crest-service` 和 `crest-mysql` 重启次数为 0；
 - `/api/v1/actuator/health/liveness` 返回 200；
 - `/api/v1/actuator/health/readiness` 返回 200；
 - `/index.html` 返回 200；
@@ -270,7 +333,7 @@ installer/crest/bin/mysql/cleanup-demo-data.sql
 
 ## 迁移和同发布线升级
 
-v1.5.2 面向全新环境安装，不支持从早期开发版本直接执行 Flyway 原地升级。已有早期环境迁移到 v1.5.2 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
+v1.5.3 面向全新环境安装，不支持从早期开发版本直接执行 Flyway 原地升级。已有早期环境迁移到 v1.5.3 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
 
 同一发布线的小版本升级前：
 
@@ -282,13 +345,16 @@ v1.5.2 面向全新环境安装，不支持从早期开发版本直接执行 Fly
 确认 release notes 明确支持原地升级后，更新镜像：
 
 ```bash
-kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest:v1.5.2
+kubectl -n crest-internal set image deployment/crest-service crest-service=ghcr.io/sevoniva/crest-service:v1.5.3
+kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest-web:v1.5.3
+kubectl -n crest-internal rollout status deployment/crest-service --timeout=300s
 kubectl -n crest-internal rollout status deployment/crest --timeout=300s
 ```
 
 如需回滚：
 
 ```bash
+kubectl -n crest-internal rollout undo deployment/crest-service
 kubectl -n crest-internal rollout undo deployment/crest
 ```
 
@@ -305,4 +371,4 @@ kubectl delete ns crest-external
 
 ## 公开仓库注意事项
 
-清单中的 Secret 当前使用占位值，部署前由运维替换。不要提交真实密码、内网地址、证书、kubeconfig、镜像仓库凭据或生产导出的 YAML。
+公开清单不包含真实 Secret。部署时由运维在目标 namespace 中创建 `crest-db-secret`，或接入集群侧 Secret 管理系统。不要提交真实密码、内网地址、证书、kubeconfig、镜像仓库凭据或生产导出的 YAML。

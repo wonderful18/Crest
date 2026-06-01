@@ -20,7 +20,7 @@ import java.util.List;
 @Component
 public class LinkInterceptor implements HandlerInterceptor {
 
-    private final static String whiteListText = "/user/ip-info, /dataset-data/enum-values, /dataset-data/enum-values/object, /dataset-data/field-tree, /public-key, /symmetric-key, /share/validate";
+    private final static String whiteListText = "/user/ip-info, /dataset-data/enum-values, /dataset-data/enum-values/object, /dataset-data/field-tree, /public-key, /share/validate";
 
     private final static String whiteStartListText = "/data-visualization/type/";
 

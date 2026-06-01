@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.5.3 - 2026-06-02
+
+v1.5.3 是 v1.5 系列的部署形态升级版本。发布时后端服务镜像和前端网关镜像分别构建，Kubernetes 清单也按前端、后端和 MySQL 拆分探针与资源边界。
+
+### 调整
+
+- Kubernetes 应用清单拆分为 `crest-service` 后端 Deployment 和 `crest` 前端 Deployment。
+- 前端网关使用独立 Nginx 配置，保留静态资源缓存、API 转发、WebSocket 转发和安全响应头。
+- 后端 readiness 检查元数据库连接，liveness 只检查应用进程响应；前端通过 `/healthz` 检查 Nginx 网关。
+- Kubernetes 部署不再由 Kustomize 生成占位 Secret，改为部署前在目标 namespace 创建 `crest-db-secret`。
+- README、安装文档、Kubernetes 文档、开发文档和 CI 默认镜像标签更新至 v1.5.3。
+- 前端和后端工程版本号更新为 `1.5.3`。
+
+### 修复
+
+- 修复公开分享链接独立打开时被登录态拦截的问题；分享页可无登录进入，并通过受限分享 token 访问被分享资源。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.3` 和 `ghcr.io/sevoniva/crest-web:v1.5.3`。
+- 默认离线包为 `crest-offline-v1.5.3-linux-amd64.tar.gz` 和 `crest-offline-v1.5.3-linux-arm64.tar.gz`。
+- v1.5.3 面向全新环境安装；早期环境迁移前请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
+
 ## v1.5.2 - 2026-06-01
 
 v1.5.2 是 v1.5 系列安装交付修复版本，重点修正单机离线安装包在全新环境中的数据库初始化流程。已成功运行的 v1.5.1 环境可继续使用；重新部署或分发离线包时建议使用 v1.5.2。
