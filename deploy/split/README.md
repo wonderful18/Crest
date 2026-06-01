@@ -50,12 +50,16 @@ http://127.0.0.1:18100/
 拆分部署默认启用以下容器加固项：
 
 - 前端和后端容器均以非 root 用户 `10001:10001` 运行；
+- Compose 显式指定运行用户，避免镜像默认值被误改后扩大权限；
 - 前端和后端容器启用只读根文件系统；
 - 前端和后端容器删除全部 Linux capability；
 - 前端和后端容器启用 `no-new-privileges`；
+- 前端和后端容器启用进程数和打开文件数边界；
+- 容器标准输出日志启用大小和文件数滚动，避免占满宿主机磁盘；
 - 运行时写入目录通过 volume 或 tmpfs 显式挂载；
 - Nginx 不暴露版本号，静态资源和 HTML 使用不同缓存策略；
 - Nginx 为接口、WebSocket 和文档入口设置独立超时；
+- Nginx 为请求写入 `X-Request-Id`，便于网关、后端和日志关联；
 - Nginx 默认发送 `X-Content-Type-Options`、`Referrer-Policy` 和 `Permissions-Policy`；
 - MySQL 服务不暴露宿主机端口。
 
@@ -63,13 +67,16 @@ http://127.0.0.1:18100/
 
 ## Nginx 说明
 
-前端配置位于 `deploy/split/nginx/crest.conf`。主要策略：
+前端主配置位于 `deploy/split/nginx/nginx.conf`，站点配置位于 `deploy/split/nginx/crest.conf`。主要策略：
 
 | 项目 | 策略 |
 | --- | --- |
 | 健康检查 | `/healthz` 返回 `204` |
 | 上传大小 | `client_max_body_size 500m`，与后端上传限制保持一致 |
 | API 转发 | `/api/v1/` 转发到 `crest-service:8100/api/v1/` |
+| 请求追踪 | 生成并透传 `X-Request-Id` |
+| 端口保持 | 转发时保留浏览器原始 `Host`，文档和后端重定向不会丢失外部端口 |
+| 大响应处理 | API 响应不落 Nginx 临时文件，避免大导出占用网关磁盘 |
 | WebSocket | `/websocket` 保持长连接，读写超时 1 小时 |
 | HTML 缓存 | `index.html` 和路由回退不缓存，避免升级后加载旧入口 |
 | 静态资源缓存 | JS、CSS、图片和字体缓存 30 天 |
