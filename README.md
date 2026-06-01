@@ -104,7 +104,7 @@ bash install.sh
 4. 安装或复用 Docker 和 Docker Compose；
 5. 加载离线镜像目录 `images/` 中的镜像，或从镜像仓库拉取；
 6. 创建 `crest.service`；
-7. 启动 MySQL 和 Crest。
+7. 启动 MySQL、Crest 后端服务和 Crest 前端服务。
 
 常用配置项：
 
@@ -112,15 +112,16 @@ bash install.sh
 | --- | --- |
 | `CREST_BASE` | 安装基目录，默认 `/opt`，实际运行目录为 `/opt/crest` |
 | `CREST_PORT` | Web 端口，默认 `8100` |
-| `CREST_APP_IMAGE` | Crest 应用镜像，默认 `ghcr.io/sevoniva/crest:v1.5.2` |
-| `CREST_MYSQL_IMAGE` | MySQL 镜像，默认 `mysql:8.4.5` |
+| `CREST_BACKEND_IMAGE` | Crest 后端镜像，默认 `ghcr.io/sevoniva/crest-service:v1.5.2` |
+| `CREST_FRONTEND_IMAGE` | Crest 前端镜像，默认 `ghcr.io/sevoniva/crest-web:v1.5.2` |
+| `CREST_MYSQL_IMAGE` | MySQL 镜像，默认 `mysql:8.0.43` |
 | `CREST_EXTERNAL_MYSQL` | 是否连接外部 MySQL，默认 `false` |
 | `CREST_DB_PASSWORD` | MySQL root 密码，留空时自动生成 |
 | `CREST_AES_KEY` / `CREST_AES_IV` | 加密参数，留空时自动生成；升级已有环境时不要修改 |
 | `CREST_CRYPTO_MODE` | 加密模式，默认 `standard`；需要 SM2/SM3/SM4 时设为 `sm-suite` |
 | `CREST_SM4_KEY` | SM4 使用的 16 位 Key；启用 `sm-suite` 后留空会自动生成 |
 | `CREST_INITIAL_PASSWORD` | 管理员初始密码，留空时自动生成 |
-| `CREST_ORIGIN_LIST` | 允许访问来源，生产环境应改成实际域名 |
+| `CREST_ORIGIN_LIST` | 允许访问来源，默认包含 localhost 和 127.0.0.1；生产环境应改成实际域名 |
 
 安装后使用：
 
@@ -134,7 +135,7 @@ crestctl clear-logs
 
 `v1.5.2` 面向全新环境安装，不支持从旧版本直接执行 Flyway 原地升级。旧环境迁移到 `v1.5.2` 时，请先完成数据备份和资源导出，再在新环境中导入业务资源。后续同一发布线的小版本升级策略会在发布说明中单独说明。
 
-已有 `v1.5.x` 环境只替换应用镜像时，可在运行目录执行 `docker-compose up -d --no-deps crest`。
+已有 `v1.5.x` 环境只替换后端镜像时，可在运行目录执行 `docker-compose up -d --no-deps crest-service`；只替换前端镜像时执行 `docker-compose up -d --no-deps crest`。
 
 ## 离线包
 
@@ -202,18 +203,26 @@ http://127.0.0.1:18100/index.html
 默认镜像：
 
 ```text
-ghcr.io/sevoniva/crest:v1.5.2
-ghcr.io/sevoniva/crest:main
+ghcr.io/sevoniva/crest-service:v1.5.2
+ghcr.io/sevoniva/crest-service:main
+ghcr.io/sevoniva/crest-web:v1.5.2
+ghcr.io/sevoniva/crest-web:main
 ```
 
 本地构建：
 
 ```bash
-mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true
-docker build -t ghcr.io/sevoniva/crest:local .
+cd core/core-frontend
+pnpm install --frozen-lockfile
+pnpm run build:base
+
+cd ../..
+mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true -Dcrest.copy.frontend.skip=true
+docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:local .
+docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:local .
 ```
 
-镜像使用 Alpine 作为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime，以非 root 用户 `10001:10001` 运行。
+后端镜像使用 Alpine 作为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime；前端镜像基于 Nginx Alpine。两个镜像都以非 root 用户 `10001:10001` 运行。
 
 GitHub Actions 发布入口：
 

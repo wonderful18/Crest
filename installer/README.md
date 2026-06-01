@@ -69,8 +69,9 @@ CREST_EXTERNAL_SYNC_TASK=false
 | --- | --- | --- |
 | `CREST_BASE` | `/opt` | 安装基目录，实际运行目录为 `${CREST_BASE}/crest` |
 | `CREST_PORT` | `8100` | Web 访问端口 |
-| `CREST_APP_IMAGE` | `ghcr.io/sevoniva/crest:v1.5.2` | Crest 应用镜像 |
-| `CREST_MYSQL_IMAGE` | `mysql:8.4.5` | MySQL 镜像 |
+| `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v1.5.2` | Crest 后端镜像 |
+| `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v1.5.2` | Crest 前端镜像 |
+| `CREST_MYSQL_IMAGE` | `mysql:8.0.43` | MySQL 镜像 |
 | `CREST_LOAD_DEMO` | `true` | 是否初始化内置演示资源；生产环境不需要示例数据时设为 `false` |
 | `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部 MySQL；默认安装内置 MySQL 容器 |
 | `CREST_DB_NAME` | `crest` | 元数据库名 |
@@ -81,7 +82,7 @@ CREST_EXTERNAL_SYNC_TASK=false
 | `CREST_CRYPTO_MODE` | `standard` | 加密模式，`standard` 使用 AES/RSA，`sm-suite` 使用 SM2/SM3/SM4 |
 | `CREST_SM4_KEY` | 空 | SM4 使用的 16 位 Key；`CREST_CRYPTO_MODE=sm-suite` 且留空时自动生成，服务启动会校验，升级时不要改 |
 | `CREST_INITIAL_PASSWORD` | 空 | 管理员初始密码，留空时自动生成并输出 |
-| `CREST_ORIGIN_LIST` | `http://localhost:8100` | 允许来源，正式环境要改成实际域名 |
+| `CREST_ORIGIN_LIST` | `http://localhost:${CREST_PORT},http://127.0.0.1:${CREST_PORT}` | 允许来源，正式环境要改成实际域名 |
 
 ## 在线安装
 
@@ -157,7 +158,7 @@ docker logs crest --tail 200
 
 确认点：
 
-- `crest` 容器健康；
+- `crest` 和 `crest-service` 容器健康；
 - Flyway 迁移成功；
 - 登录、工作台、数据源、数据集、仪表盘、数据大屏、数据血缘和导出中心可打开；
 - 日志中没有持续的 `ERROR` 或 `Exception`。
@@ -203,21 +204,25 @@ crest-offline-v1.5.2-linux-arm64.tar.gz
 制作前需要本机已有对应架构镜像：
 
 ```text
-ghcr.io/sevoniva/crest:v1.5.2-amd64
-ghcr.io/sevoniva/crest:v1.5.2-arm64
-mysql:8.4.5
+ghcr.io/sevoniva/crest-service:v1.5.2-amd64
+ghcr.io/sevoniva/crest-service:v1.5.2-arm64
+ghcr.io/sevoniva/crest-web:v1.5.2-amd64
+ghcr.io/sevoniva/crest-web:v1.5.2-arm64
+mysql:8.0.43
 ```
 
 也可以通过环境变量指定来源镜像：
 
 ```bash
-SOURCE_APP_IMAGE=ghcr.io/sevoniva/crest:v1.5.2-amd64 \
-APP_IMAGE=ghcr.io/sevoniva/crest:v1.5.2-amd64 \
-MYSQL_IMAGE=mysql:8.4.5 \
+SOURCE_BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.2-amd64 \
+BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.2-amd64 \
+SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.2-amd64 \
+FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.2-amd64 \
+MYSQL_IMAGE=mysql:8.0.43 \
 bash make-offline-package.sh v1.5.2 linux-amd64
 ```
 
-脚本会校验应用镜像和 MySQL 镜像架构，架构不一致会直接停止。
+脚本会校验前端、后端和 MySQL 镜像架构，架构不一致会直接停止。
 
 ## 离线安装
 

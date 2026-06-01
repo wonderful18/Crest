@@ -105,13 +105,14 @@ pnpm run build:lite:check
 打包后端：
 
 ```bash
-mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true
+mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true -Dcrest.copy.frontend.skip=true
 ```
 
 构建本地镜像：
 
 ```bash
-docker build -t ghcr.io/sevoniva/crest:local .
+docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:local .
+docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:local .
 ```
 
 源码方式启动后端：
@@ -382,7 +383,7 @@ git clean -fdX
 | 前端页面、样式、组件 | `pnpm run build:lite:check`，必要时再跑 `pnpm run build:base` |
 | 后端接口、数据源、导出、血缘 | Maven 打包或相关模块编译，结合服务做接口回归 |
 | 数据库迁移 | 空库启动，检查 Flyway 版本和初始化数据 |
-| 安装脚本或 Dockerfile | 本地镜像构建，单机安装或离线包验证 |
+| 安装脚本或 Dockerfile | 前后端镜像构建，单机安装或离线包验证 |
 | Kubernetes 清单 | `kubectl apply -k` 到测试命名空间并检查 rollout |
 | 文档 | 检查版本号、镜像名、端口、账号和路径是否与代码一致 |
 

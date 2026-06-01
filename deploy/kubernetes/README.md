@@ -119,7 +119,7 @@ http://127.0.0.1:18100/index.html
 内置 MySQL 默认使用：
 
 ```text
-mysql:8.4.5
+mysql:8.0.43
 ```
 
 如果集群无法访问 Docker Hub，需要先把 MySQL 镜像同步到内部镜像仓库，再修改 `internal-mysql/mysql.yaml`。
@@ -188,14 +188,14 @@ http://127.0.0.1:18101/index.html
 mvn -s .mvn/settings.xml -pl :core-backend -am -DskipTests -Dmaven.test.skip=true package
 docker build -t ghcr.io/sevoniva/crest:main .
 kind load docker-image ghcr.io/sevoniva/crest:main --name crest-kind
-kind load docker-image mysql:8.4.5 --name crest-kind
+kind load docker-image mysql:8.0.43 --name crest-kind
 ```
 
-如果 `kind load` 后 MySQL 名称不是 `docker.io/library/mysql:8.4.5`，可以在 kind 节点里补标签：
+如果 `kind load` 后 MySQL 名称不是 `docker.io/library/mysql:8.0.43`，可以在 kind 节点里补标签：
 
 ```bash
 docker exec crest-kind-control-plane \
-  ctr --namespace=k8s.io images tag docker.io/crest-kind/mysql:8.4.5 docker.io/library/mysql:8.4.5
+  ctr --namespace=k8s.io images tag docker.io/crest-kind/mysql:8.0.43 docker.io/library/mysql:8.0.43
 ```
 
 部署内置 MySQL 模式：

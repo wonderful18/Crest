@@ -22,7 +22,8 @@ concurrency:
 env:
   IMAGE_TAG: ${{ inputs.image_tag || github.ref_name || 'v1.5.2' }}
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ghcr.io/sevoniva/crest
+  BACKEND_IMAGE: ghcr.io/sevoniva/crest-service
+  FRONTEND_IMAGE: ghcr.io/sevoniva/crest-web
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -62,7 +63,7 @@ jobs:
 
       - name: Build backend
         run: |
-          mvn -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true
+          mvn -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true -Dcrest.copy.frontend.skip=true
 
       - name: Log in to GHCR
         uses: docker/login-action@v4.2.0
@@ -74,17 +75,34 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4.1.0
 
-      - name: Build and push Crest image
+      - name: Build and push Crest backend image
         uses: docker/build-push-action@v7.2.0
         with:
           context: .
+          file: Dockerfile.backend
           platforms: linux/amd64,linux/arm64
           push: true
           labels: |
             org.opencontainers.image.source=https://github.com/sevoniva/Crest
-            org.opencontainers.image.description=Crest with OceanBase Oracle support
+            org.opencontainers.image.description=Crest backend service
             org.opencontainers.image.licenses=GPL-3.0
           tags: |
-            ${{ env.IMAGE_PREFIX }}:${{ env.IMAGE_TAG }}
-            ${{ env.IMAGE_PREFIX }}:main
-            ${{ env.IMAGE_PREFIX }}:sha-${{ github.sha }}
+            ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.BACKEND_IMAGE }}:main
+            ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+
+      - name: Build and push Crest frontend image
+        uses: docker/build-push-action@v7.2.0
+        with:
+          context: .
+          file: Dockerfile.frontend
+          platforms: linux/amd64,linux/arm64
+          push: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/sevoniva/Crest
+            org.opencontainers.image.description=Crest frontend web
+            org.opencontainers.image.licenses=GPL-3.0
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.FRONTEND_IMAGE }}:main
+            ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}

@@ -207,10 +207,15 @@ function prepare_crest_run_base() {
    else
       awk '
          /^  mysql-crest:/ { skip = 1; next }
-         /^  crest:/ { skip = 0 }
+         /^  crest-service:/ { skip = 0 }
+         skip { next }
+         /^  crest-service:/ { in_backend = 1; print; next }
+         /^  [a-zA-Z0-9_-]+:/ { in_backend = 0 }
+         in_backend && /^    depends_on:/ { skip_dep = 1; next }
+         skip_dep && /^    [a-zA-Z0-9_-]+:/ { skip_dep = 0 }
+         skip_dep { next }
          !skip { print }
       ' docker-compose.yml > docker-compose.yml.tmp && mv docker-compose.yml.tmp docker-compose.yml
-      sed -i -e "/^    depends_on/,+2d" docker-compose.yml
    fi
 
    log_content "调整配置文件参数"

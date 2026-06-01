@@ -13,6 +13,10 @@
     <artifactId>core-backend</artifactId>
     <name>crest-service</name>
 
+    <properties>
+        <crest.copy.frontend.skip>false</crest.copy.frontend.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>commons-net</groupId>
@@ -152,6 +156,7 @@
                                 <id>copy-front-2-back</id>
                                 <phase>generate-resources</phase>
                                 <configuration>
+                                    <skip>${crest.copy.frontend.skip}</skip>
                                     <target>
                                         <copy todir="src/main/resources/static">
                                             <fileset dir="../core-frontend/dist">
