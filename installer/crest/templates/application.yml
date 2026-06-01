@@ -31,6 +31,7 @@ crest:
   playwright-server: ${CREST_PLAYWRIGHT_SERVER}
   path:
     ehcache: ${CREST_CACHE_PATH}
+    substitule: ${CREST_SUBSTITULE_PATH}
   crypto:
     mode: ${CREST_CRYPTO_MODE}
     aes-key: ${CREST_AES_KEY}

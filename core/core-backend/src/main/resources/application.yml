@@ -43,6 +43,7 @@ crest:
     excel: ${CREST_PATH_EXCEL:/opt/crest/data/excel/}
     exportData: ${CREST_PATH_EXPORT_DATA:/opt/crest/data/exportData/}
     ehcache: ${CREST_PATH_EHCACHE:/opt/crest/cache}
+    substitule: ${CREST_SUBSTITULE_PATH:/opt/crest/cache/substitule.json}
   crypto:
     mode: ${CREST_CRYPTO_MODE:standard}
     aes-key: ${CREST_AES_KEY:}

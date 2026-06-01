@@ -3,6 +3,7 @@ services:
   mysql-crest:
     image: ${CREST_MYSQL_IMAGE:-mysql:8.0.43}
     container_name: mysql-crest
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u${CREST_DB_USERNAME}", "-p${CREST_DB_PASSWORD}", "--protocol","tcp"]
       interval: 5s
@@ -11,18 +12,26 @@ services:
     env_file:
       - ${CREST_RUN_BASE}/conf/mysql.env
     volumes:
-      - ${CREST_RUN_BASE}/conf/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ${CREST_RUN_BASE}/conf/my.cnf:/etc/mysql/conf.d/my.cnf:ro
       - ${CREST_RUN_BASE}/data/mysql:/var/lib/mysql
     networks:
       - crest-network
 
   crest-service:
     image: ${CREST_BACKEND_IMAGE:-ghcr.io/sevoniva/crest-service:v1.5.2}
+    restart: unless-stopped
     stop_signal: SIGTERM
     stop_grace_period: 15s
     container_name: crest-service
+    read_only: true
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
-      - ${CREST_RUN_BASE}/conf:/opt/apps/config
+      - ${CREST_RUN_BASE}/conf:/opt/apps/config:ro
       - ${CREST_RUN_BASE}/logs:/opt/crest/logs
       - ${CREST_RUN_BASE}/data/static-resource:/opt/crest/data/static-resource
       - ${CREST_RUN_BASE}/cache:/opt/crest/cache
@@ -40,13 +49,27 @@ services:
 
   crest:
     image: ${CREST_FRONTEND_IMAGE:-ghcr.io/sevoniva/crest-web:v1.5.2}
+    restart: unless-stopped
     stop_signal: SIGTERM
     stop_grace_period: 10s
     container_name: crest
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx/client_temp:uid=10001,gid=10001,mode=0755
+      - /var/cache/nginx/proxy_temp:uid=10001,gid=10001,mode=0755
+      - /var/cache/nginx/fastcgi_temp:uid=10001,gid=10001,mode=0755
+      - /var/cache/nginx/uwsgi_temp:uid=10001,gid=10001,mode=0755
+      - /var/cache/nginx/scgi_temp:uid=10001,gid=10001,mode=0755
+      - /var/run/nginx:uid=10001,gid=10001,mode=0755
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
       - ${CREST_PORT}:8080
     depends_on:
-      - crest-service
+      crest-service:
+        condition: service_healthy
     networks:
       - crest-network
 

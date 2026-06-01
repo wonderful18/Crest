@@ -51,7 +51,7 @@ rg -n "(BEGIN .*PRIVATE KEY|AKIA[0-9A-Z]{16}|secret_access_key|password\\s*[:=]|
 生产环境建议：
 
 - 使用 HTTPS 或可信网关反向代理；
-- 将 `CREST_ORIGIN_LIST` / `CREST_ORIGIN_LIST` 设置为实际访问域名；
+- 将 `CREST_ORIGIN_LIST` 设置为实际访问域名；
 - 管理员初始密码使用随机强密码，首次登录后立即修改；
 - `CREST_AES_KEY` 和 `CREST_AES_IV` 使用部署环境独立生成的值，升级已有环境时不要更换；
 - 需要 SM2/SM3/SM4 时设置 `CREST_CRYPTO_MODE=sm-suite`，并使用部署环境独立生成的 `CREST_SM4_KEY`；
@@ -60,6 +60,8 @@ rg -n "(BEGIN .*PRIVATE KEY|AKIA[0-9A-Z]{16}|secret_access_key|password\\s*[:=]|
 - MySQL、业务数据源和 OceanBase 使用最小权限账号；
 - 不把 Crest 直接暴露到公网管理面；
 - 限制 `/doc.html` 和 `/v3/api-docs` 的访问范围；
+- 前端和后端容器保持非 root、只读根文件系统、`no-new-privileges` 和最小 capability；
+- 在外部网关统一配置 TLS、HSTS、访问控制、限流和日志脱敏；
 - 定期备份 `/opt/crest` 和元数据库；
 - 升级前先在测试环境验证 Flyway 迁移；
 - Kubernetes 部署使用 Secret 管理密码，不在清单中写真实值。
