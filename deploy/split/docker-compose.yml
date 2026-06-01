@@ -31,8 +31,8 @@ services:
       CREST_DB_NAME: ${CREST_DB_NAME:-crest}
       CREST_DB_USERNAME: root
       CREST_DB_PASSWORD: ${CREST_DB_PASSWORD:-crest_local_password}
-      CREST_DB_PARAMS: autoReconnect=false&useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci&characterSetResults=utf8mb4&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
-      CREST_DB_URL: jdbc:mysql://mysql-crest:3306/${CREST_DB_NAME:-crest}?autoReconnect=false&useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci&characterSetResults=utf8mb4&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      CREST_DB_PARAMS: autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      CREST_DB_URL: jdbc:mysql://mysql-crest:3306/${CREST_DB_NAME:-crest}?autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
       CREST_AES_KEY: ${CREST_AES_KEY:-12345678901234567890123456789012}
       CREST_AES_IV: ${CREST_AES_IV:-1234567890123456}
       CREST_CRYPTO_MODE: standard
