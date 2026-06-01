@@ -73,7 +73,6 @@
         <jsch.version>0.2.26</jsch.version>
         <protobuf-java.version>3.25.8</protobuf-java.version>
         <jsoup.version>1.22.2</jsoup.version>
-        <commons-lang.version>2.6</commons-lang.version>
         <lombok.version>1.18.46</lombok.version>
     </properties>
 
@@ -161,11 +160,6 @@
                 <groupId>org.apache.velocity</groupId>
                 <artifactId>velocity-engine-core</artifactId>
                 <version>${velocity.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>${commons-lang.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
