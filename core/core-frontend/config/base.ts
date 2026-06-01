@@ -10,6 +10,7 @@ const emptyProxyPackages = new Set([
   '@floating-ui',
   '@floating-ui/dom',
   '@floating-ui/core',
+  '@antv/vendor',
   'javascript-natural-sort',
   'escape-latex',
   'seedrandom',
@@ -20,12 +21,20 @@ function vendorChunkName(id: string) {
   if (!id.includes('node_modules')) {
     return
   }
-  const parts = id.toString().split('node_modules/')[1].split('/')
+  const modulePath = id.toString().replace(/\\/g, '/').split('node_modules/').pop()
+  if (!modulePath) {
+    return
+  }
+  const parts = modulePath.split('/')
   const packageName = parts[0].startsWith('@') ? `${parts[0]}/${parts[1]}` : parts[0]
   if (emptyProxyPackages.has(packageName) || emptyProxyPackages.has(parts[0])) {
     return
   }
   return packageName
+    .replace(/^@/, '')
+    .replace(/[\\/]/g, '-')
+    .replace(/[^a-zA-Z0-9._-]/g, '-')
+    .replace(/^\.+/, 'vendor-')
 }
 
 export default {

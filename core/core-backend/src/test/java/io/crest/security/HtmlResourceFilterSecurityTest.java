@@ -11,8 +11,7 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class HtmlResourceFilterSecurityTest {
 
@@ -32,6 +31,7 @@ class HtmlResourceFilterSecurityTest {
         verify(response).setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
         verify(response).setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=()");
         verify(response).setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+        verify(response, never()).setHeader(eq("Cache"), anyString());
         verify(chain).doFilter(request, response);
     }
 }

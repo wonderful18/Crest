@@ -75,7 +75,7 @@ http://127.0.0.1:18100/
 | 上传大小 | `client_max_body_size 500m`，与后端上传限制保持一致 |
 | API 转发 | `/api/v1/` 转发到 `crest-service:8100/api/v1/` |
 | 请求追踪 | 生成并透传 `X-Request-Id` |
-| 端口保持 | 转发时保留浏览器原始 `Host`，文档和后端重定向不会丢失外部端口 |
+| 网关头 | 转发时保留浏览器原始 `Host`、外部端口和可信 HTTPS 网关协议 |
 | 大响应处理 | API 响应不落 Nginx 临时文件，避免大导出占用网关磁盘 |
 | WebSocket | `/websocket` 保持长连接，读写超时 1 小时 |
 | HTML 缓存 | `index.html` 和路由回退不缓存，避免升级后加载旧入口 |

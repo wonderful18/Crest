@@ -15,11 +15,6 @@ import java.io.IOException;
 
 import static org.mockito.Mockito.*;
 
-/**
- * 安全测试：HTTP 安全头
- *
- * 修复漏洞：DAST-05（缺少安全头）
- */
 @ExtendWith(MockitoExtension.class)
 class SecurityHeadersTest {
 
@@ -79,12 +74,34 @@ class SecurityHeadersTest {
     }
 
     @Test
-    @DisplayName("应设置 Strict-Transport-Security 头")
-    void shouldSetHSTS() throws ServletException, IOException {
+    @DisplayName("HTTPS 请求应设置 Strict-Transport-Security 头")
+    void shouldSetHSTSForHttps() throws ServletException, IOException {
+        when(request.isSecure()).thenReturn(true);
+
         SecurityHeadersConfig filter = new SecurityHeadersConfig();
         filter.doFilter(request, response, filterChain);
 
         verify(response).setHeader(eq("Strict-Transport-Security"), contains("max-age="));
+    }
+
+    @Test
+    @DisplayName("外部网关为 HTTPS 时应设置 Strict-Transport-Security 头")
+    void shouldSetHSTSForForwardedHttps() throws ServletException, IOException {
+        when(request.getHeader("X-Forwarded-Proto")).thenReturn("https");
+
+        SecurityHeadersConfig filter = new SecurityHeadersConfig();
+        filter.doFilter(request, response, filterChain);
+
+        verify(response).setHeader(eq("Strict-Transport-Security"), contains("max-age="));
+    }
+
+    @Test
+    @DisplayName("HTTP 请求不应设置 Strict-Transport-Security 头")
+    void shouldNotSetHSTSForHttp() throws ServletException, IOException {
+        SecurityHeadersConfig filter = new SecurityHeadersConfig();
+        filter.doFilter(request, response, filterChain);
+
+        verify(response, never()).setHeader(eq("Strict-Transport-Security"), anyString());
     }
 
     @Test
