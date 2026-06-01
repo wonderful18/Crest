@@ -64,19 +64,25 @@ function _generate_compose_file_args() {
 function _healthcheck() {
    echo
    container_name=crest
+   backend_container_name=crest-service
    sleep 1
    if [ -z "$(docker ps --filter "name=^/${container_name}$" -q)" ];then
       echo "未找到容器 $container_name。"
+      exit 1
+   fi
+   if [ -z "$(docker ps --filter "name=^/${backend_container_name}$" -q)" ];then
+      echo "未找到容器 $backend_container_name。"
       exit 1
    fi
 
    for b in {1..90}
    do
       sleep 1
-      read status healthy<<<$(docker inspect $container_name --format '{{.State.Status}} {{.State.Health.Status}}')
-      if [[ "$healthy" == "starting" ]];then
+      read frontend_status frontend_healthy<<<$(docker inspect $container_name --format '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{else}}unknown{{end}}')
+      read backend_status backend_healthy<<<$(docker inspect $backend_container_name --format '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{else}}unknown{{end}}')
+      if [[ "$frontend_healthy" == "starting" || "$backend_healthy" == "starting" ]];then
          printf "\rCrest 服务状态 : 正在启动 ... %3ds" $b
-      elif [[ "$status" == "running" ]] && [[ "$healthy" == "healthy" ]];then
+      elif [[ "$frontend_status" == "running" ]] && [[ "$backend_status" == "running" ]] && [[ "$frontend_healthy" == "healthy" ]] && [[ "$backend_healthy" == "healthy" ]];then
          printf "\rCrest 服务状态 : 正常运行          "
          echo
          return;
@@ -91,12 +97,13 @@ function _healthcheck() {
    echo
 }
 function _get_current_version() {
-   crest_current_version=$(grep "^    image:.*crest" ${CREST_RUNNING_BASE}/docker-compose.yml | awk -F'image: ' '{print $2}' | sed 's/^.*://')
-   if test -z $crest_current_version; then
+   crest_frontend_version=$(awk '/^  crest:/{in_service=1; next} /^  [a-zA-Z0-9_-]+:/{in_service=0} in_service && /image:/{print $2; exit}' ${CREST_RUNNING_BASE}/docker-compose.yml | sed 's/^.*://')
+   crest_backend_version=$(awk '/^  crest-service:/{in_service=1; next} /^  [a-zA-Z0-9_-]+:/{in_service=0} in_service && /image:/{print $2; exit}' ${CREST_RUNNING_BASE}/docker-compose.yml | sed 's/^.*://')
+   if test -z "$crest_frontend_version" || test -z "$crest_backend_version"; then
       echo "获取当前版本失败，请检查当前版本是否正确"
       exit 1
    fi
-   current_version=$crest_current_version
+   current_version="web:${crest_frontend_version}, service:${crest_backend_version}"
 }
 function status() {
    echo

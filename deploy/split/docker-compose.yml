@@ -1,0 +1,70 @@
+services:
+
+  mysql-crest:
+    image: ${CREST_MYSQL_IMAGE:-mysql:8.0.43}
+    container_name: split-mysql-crest
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${CREST_DB_PASSWORD:-crest_local_password}", "--protocol", "tcp"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    environment:
+      MYSQL_ROOT_PASSWORD: ${CREST_DB_PASSWORD:-crest_local_password}
+      MYSQL_DATABASE: ${CREST_DB_NAME:-crest}
+    volumes:
+      - split-mysql-data:/var/lib/mysql
+    networks:
+      - crest-network
+
+  crest-service:
+    image: ${CREST_BACKEND_IMAGE:-crest-service:split}
+    container_name: split-crest-service
+    stop_signal: SIGTERM
+    stop_grace_period: 15s
+    environment:
+      CREST_DB_HOST: mysql-crest
+      CREST_DB_PORT: 3306
+      CREST_DB_NAME: ${CREST_DB_NAME:-crest}
+      CREST_DB_USERNAME: root
+      CREST_DB_PASSWORD: ${CREST_DB_PASSWORD:-crest_local_password}
+      CREST_DB_PARAMS: autoReconnect=false&useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci&characterSetResults=utf8mb4&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      CREST_DB_URL: jdbc:mysql://mysql-crest:3306/${CREST_DB_NAME:-crest}?autoReconnect=false&useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci&characterSetResults=utf8mb4&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      CREST_AES_KEY: ${CREST_AES_KEY:-12345678901234567890123456789012}
+      CREST_AES_IV: ${CREST_AES_IV:-1234567890123456}
+      CREST_CRYPTO_MODE: standard
+      CREST_INITIAL_PASSWORD: ${CREST_INITIAL_PASSWORD:-admin}
+      CREST_LOAD_DEMO: ${CREST_LOAD_DEMO:-true}
+      CREST_FLYWAY_LOCATIONS: ${CREST_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/demo-migration}
+      CREST_ORIGIN_LIST: ${CREST_ORIGIN_LIST:-http://localhost:18100,http://127.0.0.1:18100}
+    volumes:
+      - split-crest-logs:/opt/crest/logs
+      - split-crest-cache:/opt/crest/cache
+      - split-crest-data:/opt/crest/data
+    depends_on:
+      mysql-crest:
+        condition: service_healthy
+    networks:
+      - crest-network
+
+  crest:
+    image: ${CREST_FRONTEND_IMAGE:-crest-web:split}
+    container_name: split-crest-web
+    ports:
+      - ${CREST_WEB_PORT:-18100}:8080
+    depends_on:
+      - crest-service
+    networks:
+      - crest-network
+
+networks:
+  crest-network:
+
+volumes:
+  split-mysql-data:
+  split-crest-logs:
+  split-crest-cache:
+  split-crest-data:

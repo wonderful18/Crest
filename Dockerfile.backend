@@ -1,0 +1,44 @@
+FROM eclipse-temurin:21-jdk-alpine AS jre-build
+
+WORKDIR /opt/apps
+
+RUN jlink \
+    --add-modules java.base,java.compiler,java.datatransfer,java.desktop,java.instrument,java.logging,java.management,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.security.jgss,java.security.sasl,java.sql,java.transaction.xa,java.xml,jdk.crypto.ec,jdk.unsupported \
+    --strip-debug \
+    --no-man-pages \
+    --no-header-files \
+    --compress=zip-6 \
+    --output /opt/java-runtime
+
+FROM alpine:3.22.2
+
+ARG TARGETARCH
+
+ENV JAVA_HOME=/opt/java/openjdk
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+ENV JAVA_OPTS="-Dfile.encoding=utf-8 -Djava.awt.headless=true -Dspring.config.additional-location=/opt/apps/config/"
+ENV RUNNING_PORT=8100
+
+WORKDIR /opt/apps
+
+RUN addgroup -g 10001 crest \
+    && adduser -D -u 10001 -G crest -h /opt/apps -s /sbin/nologin crest \
+    && apk add --no-cache curl fontconfig freetype font-noto-cjk font-noto-emoji ttf-dejavu tzdata \
+    && fc-cache -f \
+    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && mkdir -p /opt/crest/logs /opt/crest/cache /opt/crest/data/static-resource /opt/apps/config \
+    && chown -R 10001:10001 /opt/apps /opt/crest
+
+COPY --from=jre-build /opt/java-runtime ${JAVA_HOME}
+COPY --chown=10001:10001 drivers /opt/apps/drivers
+COPY --chown=10001:10001 staticResource /opt/apps/staticResource
+COPY --chown=10001:10001 core/core-backend/target/CoreApplication.jar /opt/apps/app.jar
+
+USER 10001:10001
+
+EXPOSE 8100
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=20 \
+  CMD nc -z 127.0.0.1 "${RUNNING_PORT}" || exit 1
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /opt/apps/app.jar"]

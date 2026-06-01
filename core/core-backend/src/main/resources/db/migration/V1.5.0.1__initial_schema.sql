@@ -1573,6 +1573,8 @@ INSERT INTO `visualization_watermark` VALUES ('system_default','1.0','{\"enable\
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+/*!50503 SET NAMES utf8mb4 */;
+
 ALTER TABLE `sys_setting` MODIFY COLUMN `pval` text NOT NULL COMMENT '值';
 
 ALTER TABLE `iam_user`
@@ -1627,7 +1629,7 @@ CREATE TABLE IF NOT EXISTS `auth_sso_provider`
     `provider_key`  varchar(64)  NOT NULL,
     `provider_type` varchar(32)  NOT NULL,
     `name`          varchar(128) NOT NULL,
-    `enabled`       tinyint(1)   NOT NULL DEFAULT 1,
+    `enabled`       tinyint   NOT NULL DEFAULT 1,
     `create_time`   bigint       NOT NULL,
     `update_time`   bigint       NOT NULL,
     PRIMARY KEY (`id`),
@@ -1707,8 +1709,8 @@ ALTER TABLE `auth_sso_provider`
     ADD COLUMN `name_attribute` varchar(128) DEFAULT NULL AFTER `account_attribute`,
     ADD COLUMN `email_attribute` varchar(128) DEFAULT NULL AFTER `name_attribute`,
     ADD COLUMN `union_id_attribute` varchar(128) DEFAULT NULL AFTER `email_attribute`,
-    ADD COLUMN `auto_create_user` tinyint(1) NOT NULL DEFAULT 1 AFTER `union_id_attribute`,
-    ADD COLUMN `require_https` tinyint(1) NOT NULL DEFAULT 1 AFTER `auto_create_user`;
+    ADD COLUMN `auto_create_user` tinyint NOT NULL DEFAULT 1 AFTER `union_id_attribute`,
+    ADD COLUMN `require_https` tinyint NOT NULL DEFAULT 1 AFTER `auto_create_user`;
 
 UPDATE `auth_sso_provider`
 SET
@@ -1780,8 +1782,8 @@ CREATE TABLE IF NOT EXISTS `iam_org` (
   `path` varchar(1024) NOT NULL COMMENT '组织路径',
   `level` int NOT NULL DEFAULT 0 COMMENT '层级',
   `sort` int NOT NULL DEFAULT 0 COMMENT '排序',
-  `enable` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
-  `readonly` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否只读',
+  `enable` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用',
+  `readonly` tinyint NOT NULL DEFAULT 0 COMMENT '是否只读',
   `create_time` bigint NOT NULL COMMENT '创建时间',
   `update_time` bigint NOT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`),
@@ -1797,9 +1799,9 @@ CREATE TABLE IF NOT EXISTS `iam_role` (
   `code` varchar(64) DEFAULT NULL COMMENT '角色编码',
   `description` varchar(255) DEFAULT NULL COMMENT '描述',
   `type_code` int NOT NULL DEFAULT 0 COMMENT '角色类型',
-  `readonly` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否只读',
-  `system_role` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否系统角色',
-  `org_admin` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否组织管理员',
+  `readonly` tinyint NOT NULL DEFAULT 0 COMMENT '是否只读',
+  `system_role` tinyint NOT NULL DEFAULT 0 COMMENT '是否系统角色',
+  `org_admin` tinyint NOT NULL DEFAULT 0 COMMENT '是否组织管理员',
   `create_time` bigint NOT NULL COMMENT '创建时间',
   `update_time` bigint NOT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`),
@@ -1811,7 +1813,7 @@ CREATE TABLE IF NOT EXISTS `iam_user_org` (
   `id` bigint NOT NULL COMMENT 'ID',
   `uid` bigint NOT NULL COMMENT '用户ID',
   `oid` bigint NOT NULL COMMENT '组织ID',
-  `default_org` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否默认组织',
+  `default_org` tinyint NOT NULL DEFAULT 0 COMMENT '是否默认组织',
   `create_time` bigint NOT NULL COMMENT '创建时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_crest_user_org_uid_oid` (`uid`, `oid`),

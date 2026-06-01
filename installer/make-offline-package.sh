@@ -10,7 +10,7 @@ REPO_DIR=$(cd "${INSTALLER_DIR}/.." && pwd)
 VERSION=${1:?"Usage: $0 <version> <linux-amd64|linux-arm64> [output_dir]"}
 TARGET_PLATFORM=${2:?"Usage: $0 <version> <linux-amd64|linux-arm64> [output_dir]"}
 OUTPUT_DIR=${3:-"${REPO_DIR}/offline-packages"}
-MYSQL_IMAGE=${MYSQL_IMAGE:-"mysql:8.4.5"}
+MYSQL_IMAGE=${MYSQL_IMAGE:-"mysql:8.0.43"}
 
 case "${TARGET_PLATFORM}" in
   amd64 | x86_64 | linux-amd64)
@@ -28,8 +28,10 @@ case "${TARGET_PLATFORM}" in
     ;;
 esac
 
-APP_IMAGE=${APP_IMAGE:-"ghcr.io/sevoniva/crest:${VERSION}-${TARGET_ARCH}"}
-SOURCE_APP_IMAGE=${SOURCE_APP_IMAGE:-"${APP_IMAGE}"}
+BACKEND_IMAGE=${BACKEND_IMAGE:-"ghcr.io/sevoniva/crest-service:${VERSION}-${TARGET_ARCH}"}
+FRONTEND_IMAGE=${FRONTEND_IMAGE:-"ghcr.io/sevoniva/crest-web:${VERSION}-${TARGET_ARCH}"}
+SOURCE_BACKEND_IMAGE=${SOURCE_BACKEND_IMAGE:-"${BACKEND_IMAGE}"}
+SOURCE_FRONTEND_IMAGE=${SOURCE_FRONTEND_IMAGE:-"${FRONTEND_IMAGE}"}
 PACKAGE_NAME="crest-offline-${VERSION}-${TARGET_PLATFORM}"
 PACKAGE_DIR="${OUTPUT_DIR}/${PACKAGE_NAME}"
 
@@ -55,9 +57,15 @@ image_arch() {
 require_cmd docker
 require_cmd tar
 
-if ! docker image inspect "${SOURCE_APP_IMAGE}" >/dev/null 2>&1; then
-  echo "Source app image not found: ${SOURCE_APP_IMAGE}" >&2
-  echo "Build or tag the app image first, or set SOURCE_APP_IMAGE." >&2
+if ! docker image inspect "${SOURCE_BACKEND_IMAGE}" >/dev/null 2>&1; then
+  echo "Source backend image not found: ${SOURCE_BACKEND_IMAGE}" >&2
+  echo "Build or tag the backend image first, or set SOURCE_BACKEND_IMAGE." >&2
+  exit 1
+fi
+
+if ! docker image inspect "${SOURCE_FRONTEND_IMAGE}" >/dev/null 2>&1; then
+  echo "Source frontend image not found: ${SOURCE_FRONTEND_IMAGE}" >&2
+  echo "Build or tag the frontend image first, or set SOURCE_FRONTEND_IMAGE." >&2
   exit 1
 fi
 
@@ -67,8 +75,13 @@ if ! docker image inspect "${MYSQL_IMAGE}" >/dev/null 2>&1; then
   exit 1
 fi
 
-if [ "$(image_arch "${SOURCE_APP_IMAGE}")" != "${TARGET_ARCH}" ]; then
-  echo "Source app image architecture mismatch: ${SOURCE_APP_IMAGE} is $(image_arch "${SOURCE_APP_IMAGE}"), expected ${TARGET_ARCH}." >&2
+if [ "$(image_arch "${SOURCE_BACKEND_IMAGE}")" != "${TARGET_ARCH}" ]; then
+  echo "Source backend image architecture mismatch: ${SOURCE_BACKEND_IMAGE} is $(image_arch "${SOURCE_BACKEND_IMAGE}"), expected ${TARGET_ARCH}." >&2
+  exit 1
+fi
+
+if [ "$(image_arch "${SOURCE_FRONTEND_IMAGE}")" != "${TARGET_ARCH}" ]; then
+  echo "Source frontend image architecture mismatch: ${SOURCE_FRONTEND_IMAGE} is $(image_arch "${SOURCE_FRONTEND_IMAGE}"), expected ${TARGET_ARCH}." >&2
   exit 1
 fi
 
@@ -93,19 +106,27 @@ mkdir -p "${PACKAGE_DIR}/images"
 
 log "Pin install.conf image names"
 sed -i.bak \
-  -e "s#^CREST_APP_IMAGE=.*#CREST_APP_IMAGE=${APP_IMAGE}#g" \
+  -e "s#^CREST_BACKEND_IMAGE=.*#CREST_BACKEND_IMAGE=${BACKEND_IMAGE}#g" \
+  -e "s#^CREST_FRONTEND_IMAGE=.*#CREST_FRONTEND_IMAGE=${FRONTEND_IMAGE}#g" \
   -e "s#^CREST_MYSQL_IMAGE=.*#CREST_MYSQL_IMAGE=${MYSQL_IMAGE}#g" \
   "${PACKAGE_DIR}/install.conf"
 rm -f "${PACKAGE_DIR}/install.conf.bak"
 
-log "Tag app image ${SOURCE_APP_IMAGE} -> ${APP_IMAGE}"
-docker tag "${SOURCE_APP_IMAGE}" "${APP_IMAGE}"
+log "Tag backend image ${SOURCE_BACKEND_IMAGE} -> ${BACKEND_IMAGE}"
+docker tag "${SOURCE_BACKEND_IMAGE}" "${BACKEND_IMAGE}"
 
-APP_ARCHIVE="${PACKAGE_DIR}/images/$(safe_image_file_name "${APP_IMAGE}").tar.gz"
+log "Tag frontend image ${SOURCE_FRONTEND_IMAGE} -> ${FRONTEND_IMAGE}"
+docker tag "${SOURCE_FRONTEND_IMAGE}" "${FRONTEND_IMAGE}"
+
+BACKEND_ARCHIVE="${PACKAGE_DIR}/images/$(safe_image_file_name "${BACKEND_IMAGE}").tar.gz"
+FRONTEND_ARCHIVE="${PACKAGE_DIR}/images/$(safe_image_file_name "${FRONTEND_IMAGE}").tar.gz"
 MYSQL_ARCHIVE="${PACKAGE_DIR}/images/$(safe_image_file_name "${MYSQL_IMAGE}").tar.gz"
 
-log "Save ${APP_IMAGE}"
-docker save "${APP_IMAGE}" | gzip -c > "${APP_ARCHIVE}"
+log "Save ${BACKEND_IMAGE}"
+docker save "${BACKEND_IMAGE}" | gzip -c > "${BACKEND_ARCHIVE}"
+
+log "Save ${FRONTEND_IMAGE}"
+docker save "${FRONTEND_IMAGE}" | gzip -c > "${FRONTEND_ARCHIVE}"
 
 log "Save ${MYSQL_IMAGE}"
 docker save "${MYSQL_IMAGE}" | gzip -c > "${MYSQL_ARCHIVE}"
@@ -127,7 +148,8 @@ bash install.sh
 
 - \`CREST_PORT\`：Web 访问端口，默认 8100
 - \`CREST_BASE\`：安装基目录，实际运行目录为 \`\${CREST_BASE}/crest\`
-- \`CREST_APP_IMAGE\`：Crest 应用镜像，已固定为本包内镜像
+- \`CREST_BACKEND_IMAGE\`：Crest 后端镜像，已固定为本包内镜像
+- \`CREST_FRONTEND_IMAGE\`：Crest 前端镜像，已固定为本包内镜像
 - \`CREST_MYSQL_IMAGE\`：MySQL 镜像，已固定为本包内镜像
 - \`CREST_INITIAL_PASSWORD\`：管理员初始密码；留空时安装脚本会随机生成并在安装完成后输出
 - \`CREST_LOAD_DEMO\`：是否初始化内置演示资源，默认 \`true\`；生产环境不需要示例数据时设为 \`false\`
@@ -140,7 +162,8 @@ bash cleanup-demo-data.sh --yes
 
 ## 镜像
 
-- 应用镜像：\`${APP_IMAGE}\`
+- 后端镜像：\`${BACKEND_IMAGE}\`
+- 前端镜像：\`${FRONTEND_IMAGE}\`
 - MySQL 镜像：\`${MYSQL_IMAGE}\`
 - 目标架构：\`${TARGET_PLATFORM}\`
 
