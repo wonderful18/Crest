@@ -66,6 +66,7 @@ class SecurityHeadersTest {
         filter.doFilter(request, response, filterChain);
 
         verify(response).setHeader(eq("Content-Security-Policy"), contains("default-src 'self'"));
+        verify(response).setHeader(eq("Content-Security-Policy"), contains("worker-src 'self' blob:"));
     }
 
     @Test

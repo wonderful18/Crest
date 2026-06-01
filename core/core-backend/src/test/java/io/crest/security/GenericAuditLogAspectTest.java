@@ -67,7 +67,7 @@ class GenericAuditLogAspectTest {
     void shouldAuditUnannotatedExportOrDownloadApi() throws Throwable {
         GenericAuditLogAspect aspect = new GenericAuditLogAspect();
         injectAuditLogService(aspect);
-        bindRequest("GET", "/exportCenter/download/task-1");
+        bindRequest("GET", "/export-center/download/task-1");
         when(signature.getMethod()).thenReturn(TestEndpoint.class.getDeclaredMethod("download"));
         when(signature.getName()).thenReturn("download");
         when(point.getSignature()).thenReturn(signature);
@@ -76,7 +76,7 @@ class GenericAuditLogAspectTest {
         aspect.around(point);
 
         verify(auditLogService).log(eq(LogOT.DOWNLOAD), eq("DATA"), isNull(), contains("下载"),
-                eq("GET"), eq("/exportCenter/download/task-1"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                eq("GET"), eq("/export-center/download/task-1"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
                 anyLong(), eq(200), eq("success"));
     }
 
@@ -85,7 +85,7 @@ class GenericAuditLogAspectTest {
     void shouldClassifyExportCenterTaskQueryAsRead() throws Throwable {
         GenericAuditLogAspect aspect = new GenericAuditLogAspect();
         injectAuditLogService(aspect);
-        bindRequest("POST", "/exportCenter/exportTasks/records");
+        bindRequest("POST", "/export-center/export-tasks/records");
         when(signature.getMethod()).thenReturn(TestEndpoint.class.getDeclaredMethod("exportTasks"));
         when(signature.getName()).thenReturn("exportTasks");
         when(point.getSignature()).thenReturn(signature);
@@ -94,7 +94,7 @@ class GenericAuditLogAspectTest {
         aspect.around(point);
 
         verify(auditLogService).log(eq(LogOT.READ), eq("DATA"), isNull(), contains("查看"),
-                eq("POST"), eq("/exportCenter/exportTasks/records"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                eq("POST"), eq("/export-center/export-tasks/records"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
                 anyLong(), eq(200), eq("success"));
     }
 
@@ -183,9 +183,9 @@ class GenericAuditLogAspectTest {
     }
 
     private void bindRequest(String method, String uri) {
-        when(request.getMethod()).thenReturn(method);
-        when(request.getRequestURI()).thenReturn(uri);
-        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        lenient().when(request.getMethod()).thenReturn(method);
+        lenient().when(request.getRequestURI()).thenReturn(uri);
+        lenient().when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
     }
 

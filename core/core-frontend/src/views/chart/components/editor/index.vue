@@ -1678,12 +1678,12 @@ const confirmEditCalc = () => {
   })
 }
 
-const getIconName = (fieldType, extField, dimension = false) => {
+const getIconName = (fieldTypeCode, extField, dimension = false) => {
   if (extField === 2) {
     const iconFieldCalculated = dimension ? iconFieldCalculatedMap : iconFieldCalculatedQMap
-    return iconFieldCalculated[fieldType]
+    return iconFieldCalculated[fieldTypeCode]
   }
-  return iconFieldMap[fieldType[fieldType]]
+  return iconFieldMap[fieldType[fieldTypeCode]]
 }
 
 const chartFieldEdit = param => {
@@ -2008,7 +2008,7 @@ const chartStyleScroll = (val: any) => {
 </script>
 
 <template>
-  <div class="chart-change" :class="'editor-' + themes" @keydown.stop @keyup.stop>
+  <div class="chart-edit" :class="'editor-' + themes" @keydown.stop @keyup.stop>
     <!--移动端设计使用 注意与pc设计同步-->
     <template v-if="mobileInPc">
       <el-container direction="vertical">
@@ -4312,6 +4312,14 @@ const chartStyleScroll = (val: any) => {
 // editor form 全局样式
 .editor-dark {
   border-left: solid 1px @main-collapse-border-dark !important;
+  color: @dv-canvas-main-font-color;
+  background-color: @side-area-background;
+  .content-area,
+  .dataset-main,
+  .dataset-area,
+  .dataset-main-top {
+    background-color: @side-area-background;
+  }
   .dataset-selector {
     :deep(.ed-input__inner),
     :deep(.ed-input__wrapper),

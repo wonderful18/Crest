@@ -151,7 +151,7 @@ const calcData = (viewInfo: Chart, callback, resetPageInfo = true) => {
   if (viewInfo.tableId || viewInfo['dataFrom'] === 'template') {
     isError.value = false
     const v = JSON.parse(JSON.stringify(viewInfo))
-    data(v)
+    getData(v)
       .then(res => {
         const dataRes = res as any
         if (res.code && res.code !== 0) {

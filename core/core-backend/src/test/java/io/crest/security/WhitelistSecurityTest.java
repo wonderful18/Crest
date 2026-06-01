@@ -31,8 +31,17 @@ class WhitelistSecurityTest {
     @Test
     @DisplayName("登录端点应在白名单中")
     void loginShouldBeInWhitelist() {
-        assertTrue(WhitelistUtils.WHITE_PATH.contains("/login/localLogin"),
+        assertTrue(WhitelistUtils.WHITE_PATH.contains("/login/local-login"),
                 "登录端点应在白名单中");
+    }
+
+    @Test
+    @DisplayName("登录页启动配置端点应在白名单中")
+    void loginBootstrapEndpointsShouldBeInWhitelist() {
+        assertTrue(WhitelistUtils.match("/api/v1/sys-parameter/default-settings"));
+        assertTrue(WhitelistUtils.match("/api/v1/sys-parameter/ui"));
+        assertTrue(WhitelistUtils.match("/api/v1/typeface/default"));
+        assertTrue(WhitelistUtils.match("/api/v1/typeface/fonts"));
     }
 
     @Test
@@ -40,6 +49,15 @@ class WhitelistSecurityTest {
     void healthShouldBeInWhitelist() {
         assertTrue(WhitelistUtils.WHITE_PATH.contains("/actuator/health"),
                 "健康检查端点应在白名单中");
+    }
+
+    @Test
+    @DisplayName("导出中心下载地址应通过签名链接访问")
+    void exportCenterDownloadShouldBeWhitelisted() {
+        assertTrue(WhitelistUtils.match("/api/v1/export-center/download/task-id"),
+                "导出中心下载地址使用签名 ticket 校验，应允许浏览器直接打开");
+        assertFalse(WhitelistUtils.match("/api/v1/export-center/download-tickets/task-id"),
+                "生成下载地址必须保留登录态，不能被下载白名单误放行");
     }
 
     @Test

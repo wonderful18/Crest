@@ -1,8 +1,9 @@
 import { useI18n } from '@/hooks/web/useI18n'
 import { formatterItem, valueFormatter } from '@/views/chart/components/js/formatter'
 import {
+  bindTableCopyEvents,
   configEmptyDataStyle,
-  copyContent,
+  configTableCopyInteraction,
   CustomDataCell,
   getSummaryRow,
   SortTooltip,
@@ -190,6 +191,13 @@ export class TableNormal extends S2ChartView<TableSheet> {
         hoverFocus: false
       }
     }
+    configTableCopyInteraction(s2Options, {
+      visibleTable: true,
+      showSeriesNumber: tableHeader.showIndex,
+      indexLabel: tableHeader.indexLabel,
+      showTableHeader: tableHeader.showTableHeader,
+      pageInfo
+    })
     // 列宽设置
     s2Options.style = this.configStyle(chart, s2DataConfig)
     // 行列冻结
@@ -326,8 +334,7 @@ export class TableNormal extends S2ChartView<TableSheet> {
     }
     // header resize
     newChart.on(S2Event.LAYOUT_RESIZE_COL_WIDTH, ev => resizeAction(ev))
-    // right click
-    newChart.on(S2Event.GLOBAL_CONTEXT_MENU, event => copyContent(newChart, event, meta))
+    bindTableCopyEvents(newChart, meta)
     // theme
     const customTheme = this.configTheme(chart)
     newChart.setThemeCfg({ theme: customTheme })

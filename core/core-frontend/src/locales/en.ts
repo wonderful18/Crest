@@ -205,6 +205,8 @@ export default {
     all: 'All',
     successful_go_to: 'Export successful, go to',
     failed_go_to: 'Export failed, go to',
+    export_tasks_successful_go_to: '{count} export tasks completed, go to',
+    export_tasks_failed_go_to: '{count} export tasks failed, go to',
     data_set: 'Dataset',
     view: 'Chart',
     organization: 'Organization',

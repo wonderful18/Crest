@@ -1881,7 +1881,8 @@ INSERT IGNORE INTO `iam_menu` (`id`, `pid`, `type`, `name`, `component`, `menu_s
 VALUES
   (73, 15, 2, 'org-management', 'system/org', 5, 'org', '/org-management', 0, 1, 1),
   (74, 15, 2, 'role-management', 'system/role', 6, 'peoples', '/role-management', 0, 1, 1),
-  (75, 15, 2, 'permission-management', 'system/permission', 7, 'auth', '/permission-management', 0, 1, 1);
+  (75, 15, 2, 'permission-management', 'system/permission', 7, 'auth', '/permission-management', 0, 1, 1),
+  (76, 15, 2, 'audit-log', 'system/audit-log', 8, 'log', '/audit-log', 0, 1, 1);
 
 INSERT IGNORE INTO `iam_user_org` (`id`, `uid`, `oid`, `default_org`, `create_time`)
 SELECT id, id, 1, 1, COALESCE(create_time, 1779664240000) FROM `iam_user`;
@@ -1895,7 +1896,7 @@ INSERT IGNORE INTO `iam_role_menu_permission` (`id`, `rid`, `menu_id`, `permissi
 SELECT id * 100 + 1, 1, id, 'manage', 1779664240000 FROM `iam_menu` WHERE `auth` = 1 OR `id` IN (15, 16, 64, 67, 68, 69, 71, 72);
 
 INSERT IGNORE INTO `iam_role_menu_permission` (`id`, `rid`, `menu_id`, `permission`, `create_time`)
-SELECT id * 100 + 2, 2, id, 'read', 1779664240000 FROM `iam_menu` WHERE `auth` = 1 AND `id` NOT IN (15, 16, 64, 67, 68, 69, 71, 72);
+SELECT id * 100 + 2, 2, id, 'read', 1779664240000 FROM `iam_menu` WHERE `auth` = 1 AND `id` NOT IN (15, 16, 64, 67, 68, 69, 71, 72, 73, 74, 75, 76);
 
 INSERT IGNORE INTO `iam_role_menu_permission` (`id`, `rid`, `menu_id`, `permission`, `create_time`)
 SELECT id * 100 + 3, 3, id, 'read', 1779664240000 FROM `iam_menu` WHERE `auth` = 1 AND `id` NOT IN (15, 16, 64, 67, 68, 69, 71, 72, 73, 74, 75);

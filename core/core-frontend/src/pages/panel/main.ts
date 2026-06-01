@@ -128,8 +128,8 @@ const setupAll = async (
   const getDefaultSort = await import('@/api/common')
   const defaultSort = await getDefaultSort.getDefaultSettings()
   const { wsCache } = useCache()
-  wsCache.set('TreeSort-backend', defaultSort['basic.defaultSort'] ?? '1')
-  wsCache.set('open-backend', defaultSort['basic.defaultOpen'] ?? '0')
+  wsCache.set('TreeSort-backend', defaultSort?.['basic.defaultSort'] ?? '1')
+  wsCache.set('open-backend', defaultSort?.['basic.defaultOpen'] ?? '0')
   app.mount(dom)
   return app
 }

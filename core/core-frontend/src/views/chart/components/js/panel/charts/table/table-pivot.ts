@@ -23,7 +23,8 @@ import { TABLE_EDITOR_PROPERTY_INNER } from './common'
 import { useI18n } from '@/hooks/web/useI18n'
 import { keys, maxBy, merge, minBy, some, isEmpty, get } from 'lodash-es'
 import {
-  copyContent,
+  bindTableCopyEvents,
+  configTableCopyInteraction,
   CustomDataCell,
   getPivotConditions,
   isNumeric
@@ -273,6 +274,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
       }) as any,
       frozenRowHeader: !(tableHeader.rowHeaderFreeze === false)
     }
+    configTableCopyInteraction(s2Options, { visibleTable: false })
     // options
     s2Options.style = this.configStyle(chart, s2DataConfig)
     if (basicStyle.tableLayoutMode === 'tree') {
@@ -521,8 +523,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
     s2.on(S2Event.DATA_CELL_CLICK, ev => this.dataCellClickAction(chart, ev, s2, action))
     s2.on(S2Event.ROW_CELL_CLICK, ev => this.headerCellClickAction(chart, ev, s2, action))
     s2.on(S2Event.COL_CELL_CLICK, ev => this.headerCellClickAction(chart, ev, s2, action))
-    // right click
-    s2.on(S2Event.GLOBAL_CONTEXT_MENU, event => copyContent(s2, event, meta))
+    bindTableCopyEvents(s2, meta)
     // theme
     const customTheme = this.configTheme(chart)
     s2.setThemeCfg({ theme: customTheme })

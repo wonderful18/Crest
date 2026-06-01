@@ -579,7 +579,7 @@ const calcData = (view: Chart, callback) => {
       v.resultCount = 1
       v.resultMode = 'custom'
     }
-    data(v)
+    getData(v)
       .then(res => {
         if (res.code && res.code !== 0) {
           isError.value = true

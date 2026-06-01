@@ -2002,12 +2002,12 @@ const getDsIconName = data => {
   return iconDatasourceMap[data.type]
 }
 
-const getIconNameCalc = (fieldType, extField, dimension = false) => {
+const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
   if (extField === 2) {
     const iconFieldCalculated = dimension ? iconFieldCalculatedMap : iconFieldCalculatedQMap
-    return iconFieldCalculated[fieldType]
+    return iconFieldCalculated[fieldTypeCode]
   }
-  return iconFieldMap[fieldType[fieldType]]
+  return iconFieldMap[fieldType[fieldTypeCode]]
 }
 </script>
 

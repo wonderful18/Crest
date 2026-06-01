@@ -1,6 +1,5 @@
 /* eslint-disable prettier/prettier */
 import {
-  copyString,
   hexColorToRGBA,
   isAlphaColor,
   isTransparent,
@@ -16,13 +15,12 @@ import {
 } from '@/views/chart/components/editor/util/chart'
 import {
   BaseTooltip,
-  DataCellBrushSelection,
   FONT_FAMILY,
+  copyToClipboard,
   getAutoAdjustPosition,
   getEmptyPlaceholder,
   getPolygonPoints,
   getTooltipDefaultOptions,
-  InteractionName,
   InteractionStateName,
   MergedCell,
   MergedCellInfo,
@@ -66,6 +64,13 @@ import { saveAs } from 'file-saver'
 import { ElMessage } from 'element-plus-secondary'
 import { useI18n } from '@/hooks/web/useI18n'
 import Decimal from 'decimal.js'
+import {
+  buildTableCopyHtml,
+  buildTableCopyText,
+  createTableCopyTransformer,
+  getTableCellCopyText,
+  normalizeTableCellText
+} from './tableText.mjs'
 
 const { t: i18nt } = useI18n()
 
@@ -1791,140 +1796,337 @@ export function configTooltip(chart: Chart, option: S2Options) {
   }
 }
 
+export function configTableCopyInteraction(option: S2Options, copyConfig: Record<string, any> = {}) {
+  ;(option as Record<string, any>).crestCopy = copyConfig
+  const useVisibleTableCopy = copyConfig.visibleTable === true
+  option.interaction = {
+    ...option.interaction,
+    brushSelection: {
+      dataCell: true,
+      rowCell: true,
+      colCell: true
+    },
+    copy: {
+      enable: !useVisibleTableCopy,
+      withFormat: true,
+      withHeader: true,
+      customTransformer: createTableCopyTransformer
+    }
+  }
+}
+
+export function bindTableCopyEvents(s2Instance: SpreadSheet, fieldMeta) {
+  s2Instance.on(S2Event.GLOBAL_CONTEXT_MENU, event => copyContent(s2Instance, event, fieldMeta))
+  if (!getTableCopyConfig(s2Instance).visibleTable) {
+    s2Instance.on(S2Event.GLOBAL_COPIED, () => {
+      ElMessage.success(i18nt('commons.copy_success'))
+    })
+    return
+  }
+  s2Instance.on(S2Event.GLOBAL_KEYBOARD_DOWN, event => {
+    if (!isCopyShortcut(event) || !hasCopySelection(s2Instance)) {
+      return
+    }
+    event.preventDefault?.()
+    event.stopPropagation?.()
+    copyVisibleSelection(s2Instance, fieldMeta)
+  })
+}
+
+function getFieldMap(fieldMeta) {
+  return fieldMeta?.reduce((p, n) => {
+    p[n.field] = n.name
+    return p
+  }, {})
+}
+
+function getCellCopyValue(cellMeta, fieldMeta) {
+  if (!cellMeta) {
+    return ''
+  }
+  const valueField = cellMeta.valueField
+  let fieldVal
+  if (cellMeta?.data && valueField) {
+    const value = cellMeta.data?.[valueField]
+    const metaObj = find(fieldMeta, m => m.field === valueField)
+    fieldVal = value?.toString()
+    if (metaObj) {
+      fieldVal = metaObj.formatter(value)
+    }
+    if (cellMeta.isSummaryLabel) {
+      fieldVal = cellMeta.fieldValue?.toString() ?? fieldVal
+    }
+  }
+  if (fieldVal === undefined || fieldVal === null) {
+    const fieldMap = getFieldMap(fieldMeta)
+    fieldVal = cellMeta.value ?? cellMeta.label ?? cellMeta.fieldValue ?? ''
+    if (fieldMap?.[fieldVal]) {
+      fieldVal = fieldMap[fieldVal]
+    }
+  }
+  return normalizeTableCellText(fieldVal)
+}
+
+function getCellCopyHeader(cellMeta, fieldMeta) {
+  const fieldMap = getFieldMap(fieldMeta)
+  const valueField = cellMeta?.valueField
+  if (!valueField) {
+    return ''
+  }
+  if (valueField === SERIES_NUMBER_FIELD) {
+    return i18nt('relation.index')
+  }
+  return fieldMap?.[valueField] ?? cellMeta.value ?? cellMeta.label ?? valueField
+}
+
+function getCellMeta(cell) {
+  return typeof cell?.getMeta === 'function' ? cell.getMeta() : cell
+}
+
+function isCellInSelection(targetMeta, cells) {
+  return cells?.some(cell => {
+    const meta = getCellMeta(cell)
+    return (
+      meta?.id === targetMeta?.id ||
+      (meta?.rowIndex === targetMeta?.rowIndex && meta?.colIndex === targetMeta?.colIndex)
+    )
+  })
+}
+
+function isCopyShortcut(event) {
+  return (
+    String(event?.key || '').toLowerCase() === 'c' &&
+    (event?.metaKey || event?.ctrlKey) &&
+    !event?.altKey
+  )
+}
+
+function hasCopySelection(s2Instance: SpreadSheet) {
+  const selectState = s2Instance.interaction.getState()
+  return (
+    selectState?.stateName === InteractionStateName.ALL_SELECTED ||
+    !!selectState?.cells?.length
+  )
+}
+
+function copyRowsWithFormat(rows, headerRows = []) {
+  const plain = buildTableCopyText(rows, headerRows)
+  if (!plain) {
+    return
+  }
+  void copyToClipboard([
+    {
+      type: 'text/plain',
+      content: plain
+    },
+    {
+      type: 'text/html',
+      content: buildTableCopyHtml(rows, headerRows)
+    }
+  ]).then(() => ElMessage.success(i18nt('commons.copy_success')))
+}
+
+function normalizeFormattedResult(result) {
+  if (!result) {
+    return result
+  }
+  const { formattedValue } = result
+  if (formattedValue === null || formattedValue === undefined) {
+    return result
+  }
+  return {
+    ...result,
+    formattedValue: normalizeTableCellText(formattedValue)
+  }
+}
+
+function getRangeFromIndexes(indexes: number[], max: number) {
+  if (!indexes.length || max < 0) {
+    return []
+  }
+  const start = Math.max(0, Math.min(...indexes))
+  const end = Math.min(max, Math.max(...indexes))
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index)
+}
+
+function getAllIndexes(length: number) {
+  return Array.from({ length }, (_, index) => index)
+}
+
+function getTableDisplayRows(s2Instance: SpreadSheet) {
+  const dataSet = s2Instance.dataSet as Record<string, any>
+  if (typeof dataSet?.getDisplayDataSet === 'function') {
+    return dataSet.getDisplayDataSet() || []
+  }
+  return dataSet?.displayData || dataSet?.originData || []
+}
+
+function getVisibleColNodes(s2Instance: SpreadSheet) {
+  return s2Instance.facet?.getColLeafNodes?.() || []
+}
+
+function getCopySelectionIndexes(s2Instance: SpreadSheet) {
+  const selectState = s2Instance.interaction.getState()
+  const cells = selectState?.cells || []
+  const colNodes = getVisibleColNodes(s2Instance)
+  const rowCount = getTableDisplayRows(s2Instance).length
+  const colCount = colNodes.length
+
+  if (selectState?.stateName === InteractionStateName.ALL_SELECTED) {
+    return {
+      rowIndexes: getAllIndexes(rowCount),
+      colIndexes: getAllIndexes(colCount)
+    }
+  }
+
+  const getCellType = cell => cell?.type || cell?.cellType
+  const isDataCell = cell => {
+    const type = getCellType(cell)
+    return (
+      Number.isInteger(cell?.rowIndex) &&
+      Number.isInteger(cell?.colIndex) &&
+      (!type || type === 'dataCell' || type === 'mergedCell')
+    )
+  }
+  const isRowCell = cell => {
+    const type = getCellType(cell)
+    return Number.isInteger(cell?.rowIndex) && (type === 'rowCell' || !Number.isInteger(cell?.colIndex))
+  }
+  const isColCell = cell => {
+    const type = getCellType(cell)
+    return Number.isInteger(cell?.colIndex) && (type === 'colCell' || !Number.isInteger(cell?.rowIndex))
+  }
+
+  const dataCells = cells.filter(isDataCell)
+  const selectedRows = cells.filter(isRowCell)
+  const selectedCols = cells.filter(isColCell)
+
+  let rowIndexes = dataCells.length
+    ? getRangeFromIndexes(
+        dataCells.map(cell => cell.rowIndex),
+        rowCount - 1
+      )
+    : []
+  let colIndexes = dataCells.length
+    ? getRangeFromIndexes(
+        dataCells.map(cell => cell.colIndex),
+        colCount - 1
+      )
+    : []
+
+  if (selectedRows.length) {
+    rowIndexes = getRangeFromIndexes(
+      selectedRows.map(cell => cell.rowIndex),
+      rowCount - 1
+    )
+    colIndexes = getAllIndexes(colCount)
+  }
+
+  if (selectedCols.length) {
+    rowIndexes = getAllIndexes(rowCount)
+    colIndexes = getRangeFromIndexes(
+      selectedCols.map(cell => cell.colIndex),
+      colCount - 1
+    )
+  }
+
+  return {
+    rowIndexes,
+    colIndexes
+  }
+}
+
+function getTableCopyConfig(s2Instance: SpreadSheet) {
+  return ((s2Instance.options as Record<string, any>)?.crestCopy || {}) as Record<string, any>
+}
+
+function getVisibleTableHeader(cellMeta, fieldMeta, s2Instance: SpreadSheet) {
+  const copyConfig = getTableCopyConfig(s2Instance)
+  if (copyConfig.showSeriesNumber && cellMeta?.colIndex === 0) {
+    return copyConfig.indexLabel || i18nt('relation.index')
+  }
+  return getCellCopyHeader(cellMeta, fieldMeta)
+}
+
+function getVisibleTableValue(rowIndex: number, colIndex: number, fieldMeta, s2Instance: SpreadSheet) {
+  const copyConfig = getTableCopyConfig(s2Instance)
+  if (copyConfig.showSeriesNumber && colIndex === 0) {
+    const mergedCellsInfo = s2Instance.options.mergedCellsInfo
+    if (copyConfig.mergeCells && mergedCellsInfo) {
+      return getTableCellCopyText(getRowIndex(mergedCellsInfo, { rowIndex, colIndex } as ViewMeta))
+    }
+    const pageInfo = copyConfig.pageInfo || {}
+    const pageSize = Number(pageInfo.pageSize || 0)
+    const currentPage = Math.max(Number(pageInfo.currentPage || 1), 1)
+    const offset = pageSize ? pageSize * (currentPage - 1) : 0
+    return getTableCellCopyText(offset + rowIndex + 1)
+  }
+
+  const cellMeta = s2Instance.facet?.getCellMeta?.(rowIndex, colIndex)
+  return getTableCellCopyText(getCellCopyValue(cellMeta, fieldMeta))
+}
+
+function buildVisibleTableCopy(s2Instance: SpreadSheet, fieldMeta, rowIndexes: number[], colIndexes: number[]) {
+  if (!rowIndexes.length || !colIndexes.length) {
+    return null
+  }
+
+  const copyConfig = getTableCopyConfig(s2Instance)
+  const headerRows = copyConfig.showTableHeader === false
+    ? []
+    : [
+        colIndexes.map(colIndex => {
+          const cellMeta = s2Instance.facet?.getCellMeta?.(rowIndexes[0], colIndex)
+          return getVisibleTableHeader(cellMeta, fieldMeta, s2Instance)
+        })
+      ]
+
+  const rows = rowIndexes.map(rowIndex =>
+    colIndexes.map(colIndex => getVisibleTableValue(rowIndex, colIndex, fieldMeta, s2Instance))
+  )
+
+  return { rows, headerRows }
+}
+
+function copyVisibleSelection(s2Instance: SpreadSheet, fieldMeta) {
+  const { rowIndexes, colIndexes } = getCopySelectionIndexes(s2Instance)
+  const copyData = buildVisibleTableCopy(s2Instance, fieldMeta, rowIndexes, colIndexes)
+  if (!copyData) {
+    return
+  }
+  copyRowsWithFormat(copyData.rows, copyData.headerRows)
+}
+
 export function copyContent(s2Instance: SpreadSheet, event, fieldMeta) {
+  if (!getTableCopyConfig(s2Instance).visibleTable) {
+    return
+  }
   event.preventDefault()
   const cell = s2Instance.getCell(event.target)
-  const valueField = cell.getMeta().valueField
+  if (!cell?.getMeta) {
+    return
+  }
   const cellMeta = cell.getMeta()
   const selectState = s2Instance.interaction.getState()
-  let content = ''
   // 多选
-  if (selectState.stateName === InteractionStateName.SELECTED) {
+  if (hasCopySelection(s2Instance)) {
     const { cells } = selectState
-    if (!cells?.length) {
+    if (selectState.stateName !== InteractionStateName.ALL_SELECTED && !cells?.length) {
       return
     }
-    if (cells.length === 1) {
-      const curCell = cells[0]
-      if (cell.getMeta().id === curCell.id) {
-        const cellMeta = cell.getMeta()
-        const valueField = cellMeta.valueField
-        const value = cellMeta.data?.[valueField]
-        const metaObj = find(fieldMeta, m => m.field === valueField)
-        let fieldVal = value?.toString()
-        if (metaObj) {
-          fieldVal = metaObj.formatter(value)
-        }
-        if (fieldVal === undefined || fieldVal === null) {
-          const fieldMap = fieldMeta?.reduce((p, n) => {
-            p[n.field] = n.name
-            return p
-          }, {})
-          fieldVal = cellMeta.value
-          if (fieldMap?.[fieldVal]) {
-            fieldVal = fieldMap[fieldVal]
-          }
-        }
-        copyString(fieldVal, true)
-      }
-      s2Instance.interaction.clearState()
-      return
-    }
-    const brushSelection = s2Instance.interaction.interactions.get(
-      InteractionName.DATA_CELL_BRUSH_SELECTION
-    ) as any
-    const selectedCells: TableDataCell[] = brushSelection.getScrollBrushRangeCells(cells)
-    selectedCells.sort((a, b) => {
-      const aMeta = a.getMeta()
-      const bMeta = b.getMeta()
-      if (aMeta.rowIndex !== bMeta.rowIndex) {
-        return aMeta.rowIndex - bMeta.rowIndex
-      }
-      return aMeta.colIndex - bMeta.colIndex
-    })
-    // 点击已选的就复制，未选的就忽略
-    let validClick = false
-    const matrix = selectedCells.reduce((p, n) => {
-      if (
-        n.getMeta().colIndex === cellMeta.colIndex &&
-        n.getMeta().rowIndex === cellMeta.rowIndex
-      ) {
-        validClick = true
-      }
-      const arr = p[n.getMeta().rowIndex]
-      if (!arr) {
-        p[n.getMeta().rowIndex] = [n]
-      } else {
-        arr.push(n)
-      }
-      return p
-    }, {}) as Record<number, TableDataCell[]>
-    if (validClick) {
-      keys(matrix).forEach(k => {
-        const arr = matrix[k] as TableDataCell[]
-        arr.forEach((cell, index) => {
-          const cellMeta = cell.getMeta()
-          const valueField = cellMeta.valueField
-          const value = cellMeta.data?.[valueField]
-          const metaObj = find(fieldMeta, m => m.field === valueField)
-          let fieldVal = value?.toString()
-          if (metaObj) {
-            fieldVal = metaObj.formatter(value)
-          }
-          if (cellMeta.isSummaryLabel) {
-              fieldVal = cellMeta.fieldValue?.toString() ?? fieldVal
-          }
-          if (fieldVal === undefined || fieldVal === null) {
-            const fieldMap = fieldMeta?.reduce((p, n) => {
-              p[n.field] = n.name
-              return p
-            }, {})
-            fieldVal = cellMeta.value
-            if (fieldMap?.[fieldVal]) {
-              fieldVal = fieldMap[fieldVal]
-            }
-          }
-          if (fieldVal === undefined || fieldVal === null) {
-            fieldVal = ''
-          }
-          if (index !== arr.length - 1) {
-            fieldVal += '\t'
-          }
-          content += fieldVal
-        })
-        content = content + '\n'
-      })
-      if (content) {
-        copyString(content, true)
-      }
+    if (selectState.stateName === InteractionStateName.ALL_SELECTED || isCellInSelection(cellMeta, cells)) {
+      copyVisibleSelection(s2Instance, fieldMeta)
     }
     s2Instance.interaction.clearState()
     return
   }
   // 单元格
-  if (cellMeta?.data) {
-    const value = cellMeta.data[valueField]
-    const metaObj = find(fieldMeta, m => m.field === valueField)
-    content = value?.toString()
-    if (metaObj) {
-      content = metaObj.formatter(value)
-    }
-    if (cellMeta.isSummaryLabel) {
-      content = cellMeta.fieldValue?.toString() ?? content
-    }
-  } else {
-    // 列头&行头
-    const fieldMap = fieldMeta?.reduce((p, n) => {
-      p[n.field] = n.name
-      return p
-    }, {})
-    content = String(cellMeta.value ?? '')
-    if (fieldMap?.[content]) {
-      content = fieldMap[content]
-    }
-  }
-  if (content) {
-    copyString(content, true)
+  const content = getTableCellCopyText(getVisibleTableValue(cellMeta.rowIndex, cellMeta.colIndex, fieldMeta, s2Instance), {
+    preserveLineBreaks: true
+  })
+  if (content !== '') {
+    const header = getVisibleTableHeader(cellMeta, fieldMeta, s2Instance)
+    copyRowsWithFormat([[content]], header ? [[header]] : [])
   }
 }
 
@@ -2876,6 +3078,10 @@ export function getRowIndex(mergedCellsInfo: MergedCellInfo[][], meta: ViewMeta)
 }
 
 class CustomMergedCell extends MergedCell {
+  getFormattedFieldValue() {
+    return normalizeFormattedResult(super.getFormattedFieldValue())
+  }
+
   protected drawBackgroundShape() {
     const allPoints = getPolygonPoints(this.cells)
     // 处理条件样式，这里没有用透明度
@@ -2916,6 +3122,10 @@ class CustomMergedCell extends MergedCell {
 }
 
 export class CustomDataCell extends TableDataCell {
+  getFormattedFieldValue() {
+    return normalizeFormattedResult(super.getFormattedFieldValue())
+  }
+
   /**
    * 重写这个方法是为了处理底部的汇总行取消 hover 状态时设置 border 为 1,
    * 这样会导致单元格隐藏横边边框失败，出现一条白线
@@ -2973,6 +3183,9 @@ export class CustomDataCell extends TableDataCell {
 }
 
 export class CustomTableColCell extends TableColCell {
+  getFormattedFieldValue() {
+    return normalizeFormattedResult(super.getFormattedFieldValue())
+  }
 
   protected getTextStyle(): any {
     const textStyle = super.getTextStyle() as any
@@ -3025,12 +3238,16 @@ const drawTextShape = (cell, isHeader) => {
   const emptyPlaceholder = getEmptyPlaceholder(this, placeholder)
   // 单元格文本
   const { formattedValue } = cell.getFormattedFieldValue()
+  const cellText =
+    formattedValue === null || formattedValue === undefined || formattedValue === ''
+      ? emptyPlaceholder
+      : normalizeTableCellText(formattedValue)
   // 获取文本样式
   const textStyle = cloneDeep(cell.getTextStyle())
   textStyle.textAlign = undefined
   // 宽度能放几个字符，就放几个，放不下就换行
   let wrapText = getWrapText(
-    formattedValue ? formattedValue?.toString() : emptyPlaceholder,
+    cellText,
     textStyle,
     cell.meta.width,
     cell.spreadsheet

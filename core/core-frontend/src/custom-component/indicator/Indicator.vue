@@ -383,7 +383,7 @@ const calcData = (view, callback) => {
     state.loading = true
     isError.value = false
     const v = JSON.parse(JSON.stringify(view))
-    data(v)
+    getData(v)
       .then(res => {
         if (res.code && res.code !== 0) {
           isError.value = true

@@ -197,6 +197,8 @@ export default {
     all: '全部',
     successful_go_to: '導出成功，前往',
     failed_go_to: '導出失敗，前往',
+    export_tasks_successful_go_to: '{count} 個導出任務已成功，前往',
+    export_tasks_failed_go_to: '{count} 個導出任務失敗，前往',
     data_set: '資料集',
     view: '圖表',
     organization: '所屬組織',

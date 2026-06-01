@@ -43,6 +43,7 @@ public class SecurityHeadersConfig implements Filter {
                 "img-src 'self' data: blob:; " +
                 "font-src 'self' data:; " +
                 "connect-src 'self' ws: wss:; " +
+                "worker-src 'self' blob:; " +
                 "frame-ancestors 'none'");
 
         // 5. 引用策略

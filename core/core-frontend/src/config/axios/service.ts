@@ -141,14 +141,16 @@ service.interceptors.request.use(
       config.url = url
     }
 
-    if (config.url.endsWith('chartData/data')) {
-      const chartKey = `chartData/data/${(config.data as any).id}`
+    const requestUrl = String(config.url || '')
+    if (requestUrl.endsWith('/chart-data/data') || requestUrl.endsWith('chartData/data')) {
+      const chartKey = `chartData/data/${(config.data as any)?.id}`
       config.cancelToken = new CancelToken(function executor(c) {
+        cancelMap[requestUrl] = c
         cancelMap[chartKey] = c
       })
     } else {
       config.cancelToken = new CancelToken(function executor(c) {
-        cancelMap[config.url] = c
+        cancelMap[requestUrl] = c
       })
     }
 
@@ -175,16 +177,17 @@ service.interceptors.response.use(
       linkStore.setLinkToken(response.headers['x-crest-link-token'])
     }
     response.config.loading && tryHideLoading(permissionStore.getCurrentPath)
+    const responseUrl = String(response.config.url || '')
 
     if (response.config.responseType === 'blob') {
       // 如果是文件流，直接过
       return response
     } else if (response.data.code === result_code || response.data.code === 50002) {
       return response.data
-    } else if (response.config.url.match(/^\/map|geo\/\d{3}\/\d+\.json$/)) {
+    } else if (responseUrl.match(/^\/map|geo\/\d{3}\/\d+\.json$/)) {
       //   TODO 处理静态文件
       return response
-    } else if (response.config.url.includes('/i18n/custom_')) {
+    } else if (responseUrl.includes('/i18n/custom_')) {
       return response
     } else {
       if (response?.data?.code !== 60003) {
@@ -207,7 +210,17 @@ service.interceptors.response.use(
     }
   },
   (error: AxiosErrorWidthLoading<AxiosError>) => {
-    if (error.message?.includes('timeout of')) {
+    if (axios.isCancel(error)) {
+      error.config?.loading && tryHideLoading(permissionStore.getCurrentPath)
+      return Promise.resolve({
+        code: 499,
+        data: null,
+        msg: 'request canceled',
+        canceled: true
+      })
+    }
+    const errorMessage = String(error.message || '')
+    if (errorMessage.includes('timeout of')) {
       requestStore.resetLoadingMap()
       ElMessage({
         type: 'error',
@@ -233,7 +246,7 @@ service.interceptors.response.use(
     if (!header.has('CREST-FORBIDDEN-FLAG') && !header.has('CREST-GATEWAY-FLAG')) {
       ElMessage({
         type: 'error',
-        message: responseData?.msg ? responseData.msg : error.message,
+        message: responseData?.msg ? responseData.msg : errorMessage,
         showClose: true
       })
     }

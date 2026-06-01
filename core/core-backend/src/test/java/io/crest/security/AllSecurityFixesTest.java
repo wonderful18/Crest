@@ -44,7 +44,7 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("登录端点应在白名单中")
         void loginInWhitelist() {
-            assertTrue(WhitelistUtils.WHITE_PATH.contains("/login/localLogin"));
+            assertTrue(WhitelistUtils.WHITE_PATH.contains("/login/local-login"));
         }
 
         @Test

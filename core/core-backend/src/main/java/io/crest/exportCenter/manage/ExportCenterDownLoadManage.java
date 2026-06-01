@@ -167,6 +167,9 @@ public class ExportCenterDownLoadManage {
             AuthUtils.setUser(tokenUserBO);
             try {
                 exportTask.setExportStatus("IN_PROGRESS");
+                exportTask.setMsg(null);
+                exportTask.setFileSize(null);
+                exportTask.setFileSizeUnit(null);
                 exportTaskMapper.updateById(exportTask);
                 CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(exportTask.getExportFrom());
                 if (coreDatasetGroup == null) {
@@ -376,6 +379,7 @@ public class ExportCenterDownLoadManage {
                 wb.close();
                 exportTask.setExportProgress("100");
                 exportTask.setExportStatus("SUCCESS");
+                exportTask.setMsg(null);
                 setFileSize(dataPath + "/" + exportTask.getId() + ".xlsx", exportTask);
 
             } catch (Exception e) {
@@ -424,6 +428,9 @@ public class ExportCenterDownLoadManage {
             AuthUtils.setUser(tokenUserBO);
             try {
                 exportTask.setExportStatus("IN_PROGRESS");
+                exportTask.setMsg(null);
+                exportTask.setFileSize(null);
+                exportTask.setFileSizeUnit(null);
                 exportTaskMapper.updateById(exportTask);
                 Workbook wb = new SXSSFWorkbook();
                 CellStyle cellStyle = wb.createCellStyle();
@@ -514,6 +521,7 @@ public class ExportCenterDownLoadManage {
                 wb.close();
                 exportTask.setExportProgress("100");
                 exportTask.setExportStatus("SUCCESS");
+                exportTask.setMsg(null);
                 setFileSize(dataPath + "/" + exportTask.getId() + ".xlsx", exportTask);
             } catch (Exception e) {
                 exportTask.setMsg(e.getMessage());
@@ -622,18 +630,21 @@ public class ExportCenterDownLoadManage {
     }
 
     public void download(CoreExportTask exportTask, HttpServletResponse response) throws Exception {
+        File exportFile;
+        if (exportTask.getExportTime() != null && exportTask.getExportTime() < 1730277243491L) {
+            exportFile = new File(new File(exportData_path, exportTask.getId()), exportTask.getFileName());
+        } else {
+            exportFile = new File(new File(exportData_path, exportTask.getId()), exportTask.getId() + ".xlsx");
+        }
+        if (!exportFile.isFile()) {
+            CrestException.throwException(Translator.get("i18n_export_file_missing"));
+        }
+
         response.setContentType("application/octet-stream");
         String encodedFileName = URLEncoder.encode(exportTask.getFileName(), StandardCharsets.UTF_8);
         response.setHeader("Content-Disposition", "attachment; filename=\"" + encodedFileName + "\"; filename*=utf-8''" + encodedFileName);
-        String filePath;
 
-        if (exportTask.getExportTime() < 1730277243491L) {
-            filePath = new File(new File(exportData_path, exportTask.getId()), exportTask.getFileName()).getAbsolutePath();
-        } else {
-            filePath = new File(new File(exportData_path, exportTask.getId()), exportTask.getId() + ".xlsx").getAbsolutePath();
-        }
-
-        try (FileInputStream fileInputStream = new FileInputStream(filePath); OutputStream outputStream = response.getOutputStream()) {
+        try (FileInputStream fileInputStream = new FileInputStream(exportFile); OutputStream outputStream = response.getOutputStream()) {
             FileChannel fileChannel = fileInputStream.getChannel();
             WritableByteChannel outputChannel = Channels.newChannel(outputStream);
             fileChannel.transferTo(0, fileChannel.size(), outputChannel);

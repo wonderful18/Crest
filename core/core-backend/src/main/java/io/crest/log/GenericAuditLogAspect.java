@@ -178,7 +178,7 @@ public class GenericAuditLogAspect {
         if (value.contains("/sysvariable/")) return LogST.DATA;
         if (value.contains("/staticresource/")) return LogST.DATA;
         if (value.contains("/font/")) return LogST.DATA;
-        if (value.contains("/exportcenter/")) return LogST.DATA;
+        if (value.contains("/export-center/")) return LogST.DATA;
         if (value.contains("/sso/") || value.contains("/sysparameter/")) return LogST.DATA;
         return LogST.DATA;
     }
@@ -231,7 +231,7 @@ public class GenericAuditLogAspect {
 
     private boolean isManagementReadEndpoint(String uri) {
         return containsAny(uri,
-                "/sysparameter/", "/engine/", "/exportcenter/exporttasks", "/exportcenter/exportlimit",
+                "/sysparameter/", "/engine/", "/export-center/export-tasks", "/export-center/export-limit",
                 "/auth/busipermission", "/auth/busitargetpermission", "/auth/busiresource",
                 "/auth/menupermission", "/auth/menutargetpermission", "/auth/menuresource",
                 "/role/bycurorg", "/role/list", "/role/detail", "/role/listwithoid",
@@ -242,7 +242,7 @@ public class GenericAuditLogAspect {
         return containsAny(uri,
                 "/list", "/pager", "/tree", "/info", "/detail", "/status", "/option", "/selected",
                 "/bycurorg", "/listbyid", "/listwithoid", "/mounted", "/permission", "/resource",
-                "/exporttasks", "/exportlimit", "/validatepwd")
+                "/export-tasks", "/export-limit", "/validatepwd")
                 || containsAny(methodName, "query", "pager", "tree", "info", "detail", "status", "option",
                 "selected", "permission", "resource", "validate");
     }

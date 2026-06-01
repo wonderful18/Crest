@@ -22,6 +22,7 @@ import DvPreview from '@/views/data-visualization/DvPreview.vue'
 import AppExportForm from '@/components/application/AppExportForm.vue'
 import { ElMessage } from 'element-plus-secondary'
 import { useEmitt } from '@/hooks/web/useEmitt'
+import { useRoute } from 'vue-router_2'
 
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { useI18n } from '@/hooks/web/useI18n'
@@ -38,6 +39,7 @@ const userName = computed(() => userStore.getName)
 const { t } = useI18n()
 
 const dvMainStore = dvMainStoreWithOut()
+const route = useRoute()
 const { dvInfo, canvasViewDataInfo } = storeToRefs(dvMainStore)
 const previewCanvasContainer = ref(null)
 const dvPreviewRef = ref(null)
@@ -239,6 +241,10 @@ onMounted(() => {
       download('img')
     }
   })
+  const routeDvId = route.query.dvId
+  if (props.showPosition === 'preview' && routeDvId) {
+    loadCanvasData(routeDvId)
+  }
 })
 
 defineExpose({

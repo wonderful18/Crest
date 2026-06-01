@@ -5,6 +5,7 @@ import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
 import io.crest.exception.CrestException;
 import io.crest.result.ResultCode;
+import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.AuthUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +34,9 @@ public class AuditLogController {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private PlatformPermissionManage platformPermissionManage;
+
     @CrestAudit(ot = LogOT.READ, st = LogST.DATA)
     @Operation(summary = "查询审计日志")
     @CrestPermit("m:read")
@@ -42,7 +46,7 @@ public class AuditLogController {
             @PathVariable("pageSize") int pageSize,
             @RequestBody(required = false) Map<String, Object> request) {
 
-        requireSystemAdmin();
+        requireAuditAccess();
         int safePage = Math.max(goPage, DEFAULT_PAGE);
         int safePageSize = pageSize <= 0 ? DEFAULT_PAGE_SIZE : Math.min(pageSize, MAX_PAGE_SIZE);
         int offset = (safePage - 1) * safePageSize;
@@ -106,7 +110,7 @@ public class AuditLogController {
     @CrestPermit("m:read")
     @GetMapping("/statistics")
     public Map<String, Object> statistics() {
-        requireSystemAdmin();
+        requireAuditAccess();
         Map<String, Object> stats = new HashMap<>();
 
         // 今日操作数
@@ -133,14 +137,21 @@ public class AuditLogController {
     @CrestPermit("m:read")
     @GetMapping("/operation-types")
     public List<Map<String, Object>> operationTypes() {
-        requireSystemAdmin();
+        requireAuditAccess();
         return jdbcTemplate.queryForList(
                 "SELECT DISTINCT operation_type as value, operation_type as label FROM audit_log ORDER BY operation_type");
     }
 
-    private void requireSystemAdmin() {
-        if (!AuthUtils.isSysAdmin()) {
-            CrestException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "仅系统管理员可访问审计日志");
+    private void requireAuditAccess() {
+        Long uid = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
+        if (uid == null) {
+            CrestException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "当前用户无权访问审计日志");
+        }
+        boolean hasAuditRole = platformPermissionManage
+                .roleIds(uid, platformPermissionManage.defaultOrgId(uid))
+                .contains(PlatformPermissionManage.AUDITOR_ROLE_ID);
+        if (!platformPermissionManage.isSystemAdmin(uid) && !hasAuditRole) {
+            CrestException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "当前用户无权访问审计日志");
         }
     }
 }

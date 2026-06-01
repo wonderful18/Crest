@@ -22,6 +22,7 @@ import Icon from '@/components/icon-custom/src/Icon.vue'
 import { useCache } from '@/hooks/web/useCache'
 import { useLinkStoreWithOut } from '@/store/modules/link'
 import { useAppStoreWithOut } from '@/store/modules/app'
+import { createExportNoticeQueue, formatExportNoticeMessage } from './exportNoticeQueue.mjs'
 
 const { t } = useI18n()
 type ExportTask = {
@@ -78,6 +79,7 @@ const desktop = wsCache.get('app.desktop')
 
 onUnmounted(() => {
   clearInterval(timer)
+  exportNoticeQueue.clear()
 })
 const handleClick = (tab?: { paneName?: string | number }, _ev?: Event) => {
   if (tab) {
@@ -161,39 +163,48 @@ const init = (params?: { activeName?: string }) => {
 const linkStore = useLinkStoreWithOut()
 const appStore = useAppStoreWithOut()
 const isCrestBi = computed(() => appStore.getIsCrestBi)
+const exportNoticeQueue = createExportNoticeQueue({
+  emit: notice => {
+    const noticeText = formatExportNoticeMessage(
+      notice,
+      t('data_set.successful_go_to'),
+      t('data_set.failed_go_to'),
+      t('data_set.export_tasks_successful_go_to', { count: notice.count }),
+      t('data_set.export_tasks_failed_go_to', { count: notice.count })
+    )
+    openMessageLoading(
+      noticeText,
+      notice.status === 'FAILED' ? 'error' : 'success',
+      notice.status === 'FAILED' ? callbackExportError : callbackExportSuc
+    )
+  }
+})
 
 const taskExportTopicCall = (task: string) => {
   if (!linkStore.getLinkToken && !isCrestBi.value && !appStore.getIsIframe) {
-    if (JSON.parse(task).exportStatus === 'SUCCESS') {
-      openMessageLoading(
-        JSON.parse(task).exportFromName + ` ${t('data_set.successful_go_to')}`,
-        'success',
-        callbackExportSuc
-      )
+    let exportTask: ExportTask
+    try {
+      exportTask = JSON.parse(task)
+    } catch {
       return
     }
-    if (JSON.parse(task).exportStatus === 'FAILED') {
-      openMessageLoading(
-        JSON.parse(task).exportFromName + ` ${t('data_set.failed_go_to')}`,
-        'error',
-        callbackExportError
-      )
-    }
+    exportNoticeQueue.push(exportTask)
   }
 }
 
 const openMessageLoading = (text: string, type = 'success', cb?: () => void) => {
   // success error loading
   const customClass = `crest-message-${type || 'success'} crest-message-export`
+  const messageText = String(text)
   ElMessage({
     message: h('p', null, [
       h(
         'span',
         {
-          title: t(text),
+          title: messageText,
           class: 'ellipsis m50-export'
         },
-        t(text)
+        messageText
       ),
       h(
         ElButton,
@@ -503,7 +514,7 @@ defineExpose({
               </el-tooltip>
 
               <el-tooltip effect="dark" :content="t('data_set.delete')" placement="top">
-                <el-button class="row-icon-btn is-danger" text @click="field-removal(scope.row)">
+                <el-button class="row-icon-btn is-danger" text @click="fieldRemoval(scope.row)">
                   <template #icon>
                     <Icon name="delete"><DeleteIcon class="svg-icon" /></Icon>
                   </template>

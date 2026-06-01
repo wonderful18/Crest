@@ -198,6 +198,8 @@ export default {
     all: '全部',
     successful_go_to: '导出成功，前往',
     failed_go_to: '导出失败，前往',
+    export_tasks_successful_go_to: '{count} 个导出任务已成功，前往',
+    export_tasks_failed_go_to: '{count} 个导出任务失败，前往',
     data_set: '数据集',
     view: '图表',
     organization: '所属组织',

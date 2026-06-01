@@ -23,6 +23,7 @@ import java.util.List;
  * 将SQLMeta各个部分先构建完毕，然后在这个类中拼接
  */
 public class SQLProvider {
+    private static final String PREVIEW_SQL_TEMPLATE = "previewSql";
 
     /**
      * @param sqlMeta sql作为table，首尾用'(',')'
@@ -43,7 +44,7 @@ public class SQLProvider {
         List<SQLObj> xOrders = sqlMeta.getXOrders();
 
         STGroup stg = new STGroupString(SqlTemplate.PREVIEW_SQL);
-        ST st_sql = stg.getInstanceOf("preview-sql");
+        ST st_sql = stg.getInstanceOf(PREVIEW_SQL_TEMPLATE);
         st_sql.add("isGroup", isGroup);
         st_sql.add("distinct", distinct);
         if (ObjectUtils.isNotEmpty(xFields)) st_sql.add("groups", xFields);
@@ -78,7 +79,7 @@ public class SQLProvider {
 
     public static String createQuerySQL(SQLMeta sqlMeta, boolean isGroup, boolean needOrder, ChartViewDTO view) {
         STGroup stg = new STGroupString(SqlTemplate.PREVIEW_SQL);
-        ST st_sql = stg.getInstanceOf("preview-sql");
+        ST st_sql = stg.getInstanceOf(PREVIEW_SQL_TEMPLATE);
 
         st_sql.add("isGroup", isGroup);
 
@@ -104,8 +105,8 @@ public class SQLProvider {
         if (ObjectUtils.isNotEmpty(wheres)) st_sql.add("filters", wheres);
         String sql = st_sql.render();
 
-        ST st = stg.getInstanceOf("preview-sql");
-        st_sql.add("isGroup", isGroup);
+        ST st = stg.getInstanceOf(PREVIEW_SQL_TEMPLATE);
+        st.add("isGroup", isGroup);
 
         SQLObj tableSQL = SQLObj.builder()
                 .tableName(String.format(SQLConstants.BRACKETS, sql))
@@ -157,7 +158,7 @@ public class SQLProvider {
 
     public static String createQuerySQLNoSort(SQLMeta sqlMeta, boolean isGroup, ChartViewDTO view) {
         STGroup stg = new STGroupString(SqlTemplate.PREVIEW_SQL);
-        ST st_sql = stg.getInstanceOf("preview-sql");
+        ST st_sql = stg.getInstanceOf(PREVIEW_SQL_TEMPLATE);
 
         st_sql.add("isGroup", isGroup);
 
@@ -181,8 +182,8 @@ public class SQLProvider {
         if (ObjectUtils.isNotEmpty(wheres)) st_sql.add("filters", wheres);
         String sql = st_sql.render();
 
-        ST st = stg.getInstanceOf("preview-sql");
-        st_sql.add("isGroup", isGroup);
+        ST st = stg.getInstanceOf(PREVIEW_SQL_TEMPLATE);
+        st.add("isGroup", isGroup);
 
         SQLObj tableSQL = SQLObj.builder()
                 .tableName(String.format(SQLConstants.BRACKETS, sql))

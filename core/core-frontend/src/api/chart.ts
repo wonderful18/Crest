@@ -73,6 +73,9 @@ export const getData = async (data): Promise<IResponse> => {
   const dataFields = ['fields', 'sourceFields']
   originNameHandleWithArr(copyData, fields)
   return request.post({ url: '/chart-data/data', data: copyData }).then(res => {
+    if (res?.canceled) {
+      return Promise.reject(res)
+    }
     if (res.code === 0) {
       originNameHandleBackWithArr(res?.data, fields)
       // 动态计算字段在数据中，也需要转码

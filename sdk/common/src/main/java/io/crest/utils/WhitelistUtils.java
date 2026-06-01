@@ -24,7 +24,7 @@ public class WhitelistUtils {
     }
 
     public static List<String> WHITE_PATH = List.of(
-            "/login/localLogin",
+            "/login/local-login",
             "/apisix/check",
             "/actuator/health",
             "/public-key",
@@ -43,17 +43,17 @@ public class WhitelistUtils {
             "/dingtalk/token",
             "/wecom/qrinfo",
             "/wecom/token",
-            "/sysParameter/requestTimeOut",
-            "/sysParameter/defaultSettings",
+            "/sys-parameter/request-timeout",
+            "/sys-parameter/default-settings",
             "/setting/authentication/status",
-            "/sysParameter/ui",
-            "/sysParameter/defaultLogin",
+            "/sys-parameter/ui",
+            "/sys-parameter/default-login",
             "/sso/public/status",
             "/sso/login",
             "/sso/callback",
             "/embedded/initIframe",
-            "/sysParameter/i18nOptions",
-            "/login/modifyInvalidPwd",
+            "/sys-parameter/i18n-options",
+            "/login/modify-invalid-password",
             "/perSetting/hmac/info",
             "/");
 
@@ -74,7 +74,7 @@ public class WhitelistUtils {
         return WHITE_PATH.contains(requestURI)
                 || Strings.CS.endsWithAny(requestURI, ".gif", ".ico", ".js", ".css", ".svg", ".png", ".jpg", ".jpeg", ".js.map", ".otf", ".ttf", ".woff2")
                 || Strings.CS.startsWithAny(requestURI, "data:image")
-                || Strings.CS.startsWithAny(requestURI, "/login/platformLogin/")
+                || Strings.CS.startsWithAny(requestURI, "/login/platform-login/")
                 // 移除API文档白名单，需要认证才能访问
                 // || Strings.CS.startsWithAny(requestURI, "/v3/api-docs")
                 // || Strings.CS.startsWithAny(requestURI, "/swagger-ui")
@@ -88,9 +88,9 @@ public class WhitelistUtils {
                 || Strings.CS.startsWithAny(requestURI, "/mfa/qr/")
                 || Strings.CS.startsWithAny(requestURI, "/mfa/login")
                 || Strings.CS.startsWithAny(requestURI, "/typeface/download")
-                || Strings.CS.startsWithAny(requestURI, "/typeface/defaultFont")
-                || Strings.CS.startsWithAny(requestURI, "/typeface/listFont")
-                || Strings.CS.startsWithAny(requestURI, "/exportCenter/download")
+                || Strings.CS.startsWithAny(requestURI, "/typeface/default")
+                || Strings.CS.startsWithAny(requestURI, "/typeface/fonts")
+                || Strings.CS.startsWithAny(requestURI, "/export-center/download/")
                 || Strings.CS.startsWithAny(requestURI, "/i18n/")
                 || Strings.CS.startsWithAny(requestURI, "/communicate/image/")
                 || Strings.CS.startsWithAny(requestURI, "/saml/")

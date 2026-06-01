@@ -98,7 +98,7 @@ const getBusiListWithPermission = () => {
   }
   return busiFlagList
 }
-const busiAuthList: string[] = getBusiListWithPermission()
+const busiAuthList = computed(() => getBusiListWithPermission())
 
 const imgType = ref()
 const emptyDesc = ref('')

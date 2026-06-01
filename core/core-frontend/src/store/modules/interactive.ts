@@ -41,9 +41,6 @@ export const interactiveStore = defineStore('interactive', {
     },
     datasource(): InnerInteractive {
       return this.data[3]
-    },
-    data(): InteractiveState {
-      return this.data
     }
   },
   actions: {

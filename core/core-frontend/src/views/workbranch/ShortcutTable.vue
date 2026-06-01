@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { useI18n } from '@/hooks/web/useI18n'
-import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import type { TabsPaneContext } from 'element-plus-secondary'
 import GridTable from '@/components/grid-table/src/GridTable.vue'
 import { useRouter } from 'vue-router_2'
@@ -22,8 +22,6 @@ const appStore = useAppStoreWithOut()
 const embeddedStore = useEmbedded()
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
-
-import { cloneDeep } from 'lodash-es'
 const { push } = useRouter()
 defineProps({
   expand: {
@@ -34,6 +32,8 @@ defineProps({
 const panelKeyword = ref()
 const activeName = ref('store')
 const activeCommand = ref('all_types')
+const orderDesc = ref(true)
+const loading = ref(false)
 const state = reactive({
   tableData: [],
   curTypeList: [],
@@ -71,7 +71,7 @@ const handleClick = (ele: TabsPaneContext) => {
     shortcutOption.setBusiFlag(ele.paneName)
     state.curTypeList = shortcutOption
       .getBusiList()
-      .filter(busi => busi === 'all_types' || busiAuthList.includes(busi))
+      .filter(busi => busi === 'all_types' || busiAuthList.value.includes(busi))
     state.tableColumn = shortcutOption.getColumnList()
     loadTableData()
   }
@@ -84,9 +84,6 @@ const getBusiListWithPermission = () => {
       busiFlagList.push(baseFlagList[parseInt(key)])
     }
   }
-  baseTablePaneList.value[0].disabled = !busiFlagList?.length
-  baseTablePaneList.value[1].disabled =
-    !busiFlagList.includes('panel') && !busiFlagList.includes('screen')
   return busiFlagList
 }
 const triggerFilterPanel = () => {
@@ -163,17 +160,23 @@ const loadTableData = () => {
     })
 }
 
-const baseTablePaneList = ref([
-  { title: t('work_branch.my_collection'), name: 'store', disabled: false },
-  { title: t('work_branch.recently_used'), name: 'recent', disabled: false }
-])
+const busiAuthList = computed(() => getBusiListWithPermission())
+
+const baseTablePaneList = computed(() => {
+  const hasBusiAuth = !!busiAuthList.value.length
+  const hasVisualizationAuth =
+    busiAuthList.value.includes('panel') || busiAuthList.value.includes('screen')
+
+  return [
+    { title: t('work_branch.my_collection'), name: 'store', disabled: !hasBusiAuth },
+    { title: t('work_branch.recently_used'), name: 'recent', disabled: !hasVisualizationAuth }
+  ]
+})
 
 const dfTablePaneList = ref([])
 
-const busiAuthList = getBusiListWithPermission()
-
 const tablePaneList = computed(() => {
-  const list = cloneDeep(!!busiAuthList.length ? baseTablePaneList.value : [])
+  const list = !!busiAuthList.value.length ? [...baseTablePaneList.value] : []
   for (const valueElement of dfTablePaneList.value) {
     list.push(valueElement)
   }
@@ -181,31 +184,33 @@ const tablePaneList = computed(() => {
 })
 
 const firstChangeActiveName = ref(false)
+const initialDataLoaded = ref(false)
 
 watch(
-  () => tablePaneList.value.length,
+  () => tablePaneList.value,
   () => {
     if (tablePaneList.value.length > 0 && !firstChangeActiveName.value) {
       firstChangeActiveName.value = true
       activeName.value = tablePaneList.value[0].name
     }
+
+    if (!initialDataLoaded.value && tablePaneList.value.length) {
+      initialDataLoaded.value = true
+      handleClick({
+        paneName: activeName.value,
+        uid: 0,
+        slots: undefined,
+        props: undefined,
+        active: false,
+        index: '',
+        isClosable: false
+      })
+    }
+  },
+  {
+    immediate: true
   }
 )
-
-onMounted(() => {
-  !!busiAuthList.length &&
-    handleClick({
-      paneName: 'store',
-      uid: 0,
-      slots: undefined,
-      props: undefined,
-      active: false,
-      index: '',
-      isClosable: false
-    })
-})
-const orderDesc = ref(true)
-const loading = ref(false)
 const sortChange = param => {
   orderDesc.value = true
   const type = param.order.substring(0, param.order.indexOf('ending'))

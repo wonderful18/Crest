@@ -73,6 +73,7 @@ public class ExportCenterManage implements BaseExportApi {
     private VisualizationWatermarkMapper watermarkMapper;
     @Resource
     private ExtDataVisualizationMapper visualizationMapper;
+    private static final long LEGACY_EXPORT_FILE_TIME = 1730277243491L;
     static private List<String> STATUS = Arrays.asList("SUCCESS", "FAILED", "PENDING", "IN_PROGRESS", "ALL");
     private Map<String, Future> Running_Task = new HashMap<>();
     public void download(String id, String ticket, HttpServletResponse response) throws Exception {
@@ -111,6 +112,9 @@ public class ExportCenterManage implements BaseExportApi {
         }
         exportTask.setExportStatus("PENDING");
         exportTask.setExportProgress("0");
+        exportTask.setMsg(null);
+        exportTask.setFileSize(null);
+        exportTask.setFileSizeUnit(null);
         exportTask.setExportMachineName(hostName());
         exportTask.setExportTime(System.currentTimeMillis());
         exportTaskMapper.updateById(exportTask);
@@ -141,6 +145,7 @@ public class ExportCenterManage implements BaseExportApi {
         }
 
         Long currentUserId = currentUserId();
+        expireMissingSuccessTasks(currentUserId);
         QueryWrapper<CoreExportTask> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", currentUserId);
         if (!status.equalsIgnoreCase("ALL")) {
@@ -164,6 +169,7 @@ public class ExportCenterManage implements BaseExportApi {
 
     public Map<String, Long> exportTasks() {
         Long currentUserId = currentUserId();
+        expireMissingSuccessTasks(currentUserId);
         Map<String, Long> result = new HashMap<>();
         QueryWrapper<CoreExportTask> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", currentUserId);
@@ -325,6 +331,7 @@ public class ExportCenterManage implements BaseExportApi {
 
     public String generateDownloadUri(String id) {
         CoreExportTask exportTask = getCurrentUserExportTask(id);
+        ensureDownloadableTask(exportTask);
         long createTime = System.currentTimeMillis();
         CoreExportDownloadTask coreExportDownloadTask = coreExportDownloadTaskMapper.selectById(id);
         if (coreExportDownloadTask != null) {
@@ -406,8 +413,57 @@ public class ExportCenterManage implements BaseExportApi {
         } catch (Exception e) {
             CrestException.throwException(Translator.get("i18n_download_link_invalid"));
         }
+        ensureDownloadableTask(exportTask);
         coreExportDownloadTaskMapper.deleteById(id);
         return exportTask;
+    }
+
+    private void expireMissingSuccessTasks(Long userId) {
+        QueryWrapper<CoreExportTask> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("user_id", userId);
+        queryWrapper.eq("export_status", "SUCCESS");
+        exportTaskMapper.selectList(queryWrapper).forEach(exportTask -> {
+            if (!exportFileExists(exportTask)) {
+                markExportFileMissing(exportTask);
+            }
+        });
+    }
+
+    private void failIfExportFileMissing(CoreExportTask exportTask) {
+        if (exportTask != null && "SUCCESS".equalsIgnoreCase(exportTask.getExportStatus()) && !exportFileExists(exportTask)) {
+            markExportFileMissing(exportTask);
+            CrestException.throwException(Translator.get("i18n_export_file_missing"));
+        }
+    }
+
+    private void ensureDownloadableTask(CoreExportTask exportTask) {
+        if ("SUCCESS".equalsIgnoreCase(exportTask.getExportStatus())) {
+            failIfExportFileMissing(exportTask);
+            return;
+        }
+        if (StringUtils.isNotBlank(exportTask.getMsg())) {
+            CrestException.throwException(Translator.get(exportTask.getMsg()));
+        }
+        CrestException.throwException(Translator.get("i18n_export_task_not_success"));
+    }
+
+    private void markExportFileMissing(CoreExportTask exportTask) {
+        exportTask.setExportStatus("FAILED");
+        exportTask.setExportProgress("100");
+        exportTask.setMsg(Translator.get("i18n_export_file_missing"));
+        exportTaskMapper.updateById(exportTask);
+        coreExportDownloadTaskMapper.deleteById(exportTask.getId());
+    }
+
+    private boolean exportFileExists(CoreExportTask exportTask) {
+        return resolveExportFile(exportTask).isFile();
+    }
+
+    private File resolveExportFile(CoreExportTask exportTask) {
+        String fileName = exportTask.getExportTime() != null && exportTask.getExportTime() < LEGACY_EXPORT_FILE_TIME
+                ? exportTask.getFileName()
+                : exportTask.getId() + ".xlsx";
+        return new File(taskDirectoryPath(exportTask.getId()), fileName);
     }
 
     private String buildDownloadTicket(CoreExportTask exportTask, long createTime, Long validTime) {

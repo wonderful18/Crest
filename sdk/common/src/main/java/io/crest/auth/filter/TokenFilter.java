@@ -35,7 +35,7 @@ public class TokenFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         String method = request.getMethod();
-        if (!Strings.CS.equalsAny(method, "GET", "POST", "OPTIONS", "DELETE")) {
+        if (!Strings.CS.equalsAny(method, "GET", "POST", "PUT", "OPTIONS", "DELETE")) {
             HttpServletResponse res = (HttpServletResponse) servletResponse;
             res.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
             return;
@@ -124,6 +124,7 @@ public class TokenFilter implements Filter {
         HttpStatusCode statusCode = responseEntity.getStatusCode();
         httpResponse.setStatus(statusCode.value());
         httpResponse.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        httpResponse.setContentType("application/json;charset=UTF-8");
         HttpHeaders headers = responseEntity.getHeaders();
         if (ObjectUtils.isNotEmpty(headers)) {
             headers.forEach((key, value) -> httpResponse.addHeader(key, value.toString()));

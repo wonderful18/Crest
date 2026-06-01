@@ -16,11 +16,12 @@ import { TABLE_EDITOR_PROPERTY, TABLE_EDITOR_PROPERTY_INNER } from './common'
 import { useI18n } from '@/hooks/web/useI18n'
 import { filter, isEqual, merge } from 'lodash-es'
 import {
+  bindTableCopyEvents,
   calcTreeWidth,
   calculateGroupHeaderHeight,
   calculateHeaderHeight,
   configEmptyDataStyle,
-  copyContent,
+  configTableCopyInteraction,
   CustomDataCell,
   CustomTableColCell,
   drawImage,
@@ -188,6 +189,14 @@ export class TableInfo extends S2ChartView<TableSheet> {
         hoverFocus: false
       }
     }
+    configTableCopyInteraction(s2Options, {
+      visibleTable: true,
+      showSeriesNumber: tableHeader.showIndex,
+      indexLabel: tableHeader.indexLabel,
+      showTableHeader: tableHeader.showTableHeader,
+      mergeCells: tableCell.mergeCells,
+      pageInfo
+    })
     s2Options.style = this.configStyle(chart, s2DataConfig)
     // 自适应列宽模式下，URL 字段的宽度固定为 120
     if (basicStyle.tableColumnMode === 'adapt') {
@@ -400,8 +409,7 @@ export class TableInfo extends S2ChartView<TableSheet> {
     }
     // header resize
     newChart.on(S2Event.LAYOUT_RESIZE_COL_WIDTH, ev => resizeAction(ev))
-    // right click
-    newChart.on(S2Event.GLOBAL_CONTEXT_MENU, event => copyContent(newChart, event, meta))
+    bindTableCopyEvents(newChart, meta)
     // theme
     const customTheme = this.configTheme(chart)
     newChart.setThemeCfg({ theme: customTheme })

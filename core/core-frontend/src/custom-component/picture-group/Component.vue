@@ -245,7 +245,7 @@ const calcData = (viewCalc: Chart, callback) => {
     v.type = 'table-info'
     v.render = 'antv'
     v.resultCount = 1
-    data(v)
+    getData(v)
       .then(res => {
         if (res.code && res.code !== 0) {
           isError.value = true

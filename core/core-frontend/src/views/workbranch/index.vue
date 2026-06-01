@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import userImg from '@/assets/svg/user-img.svg'
 import { useI18n } from '@/hooks/web/useI18n'
-import { ref, shallowRef, computed } from 'vue'
+import { computed } from 'vue'
 import { usePermissionStoreWithOut } from '@/store/modules/permission'
 import { useRequestStoreWithOut } from '@/store/modules/request'
 import { interactiveStoreWithOut } from '@/store/modules/interactive'
@@ -16,11 +16,10 @@ const permissionStore = usePermissionStoreWithOut()
 const requestStore = useRequestStoreWithOut()
 const { t } = useI18n()
 const busiDataMap = computed(() => interactiveStore.data)
-const busiCountCardList = ref([])
 const { wsCache } = useCache()
 const router = useRouter()
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
-const quickCreationList = shallowRef([
+const quickCreationBaseList = [
   {
     icon: '/svg/icon_dashboard.svg',
     name: 'panel',
@@ -45,19 +44,20 @@ const quickCreationList = shallowRef([
     color: '#F5A623',
     code: 'SOURCE'
   }
-])
+]
 
-const fillCardInfo = () => {
-  for (const key in busiDataMap.value) {
-    if (key !== '3') {
-      busiCountCardList.value.push(busiDataMap.value[key])
-    }
-    if (quickCreationList.value[key]) {
-      quickCreationList.value[key]['menuAuth'] = busiDataMap.value[key]['menuAuth']
-      quickCreationList.value[key]['anyManage'] = busiDataMap.value[key]['anyManage']
-    }
-  }
-}
+const quickCreationList = computed(() =>
+  quickCreationBaseList.map((item, index) => ({
+    ...item,
+    menuAuth: !!busiDataMap.value[index]?.menuAuth,
+    anyManage: !!busiDataMap.value[index]?.anyManage
+  }))
+)
+
+const busiCountCardList = computed(() =>
+  [0, 1, 2].map(index => busiDataMap.value[index]).filter(Boolean)
+)
+
 const quickCreate = (flag: number, hasAuth: boolean) => {
   if (!hasAuth) {
     return
@@ -99,8 +99,6 @@ const createDatasource = () => {
   const baseUrl = '#/data/datasource?opt=create'
   window.open(baseUrl, openType)
 }
-
-fillCardInfo()
 
 const getLeafTimes = item => {
   const stack = [...(item?.treeNodes || [])]

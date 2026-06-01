@@ -45,7 +45,7 @@ import { getDsDetailsWithPerm, sqlParams, listFieldsWithPermissions } from '@/ap
 import EmptyBackground from '@/components/empty-background/src/EmptyBackground.vue'
 import TreeFieldDialog from '@/custom-component/v-query/TreeFieldDialog.vue'
 import { cloneDeep } from 'lodash-es'
-import { datasetTree } from '@/api/dataset'
+import { datasetTree as fetchDatasetTree } from '@/api/dataset'
 import { Tree } from '@/views/visualized/data/dataset/form/CreatDsGroup.vue'
 import draggable from 'vuedraggable'
 import type { ManipulateType } from 'dayjs'
@@ -933,7 +933,7 @@ const cancelClick = () => {
 }
 
 const initDataset = () => {
-  datasetTree({}).then(res => {
+  fetchDatasetTree({}).then(res => {
     const result = (res as unknown as Tree[]) || []
     if (result[0]?.id === '0') {
       sortTypeChange(dfs(result[0].children))

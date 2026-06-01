@@ -16,7 +16,7 @@ useEmitt({
 </script>
 <template>
   <config-global>
-    <router-view :key="route.path" />
+    <router-view :key="route.fullPath" />
     <ExportExcel ref="exportExcelRef"></ExportExcel>
   </config-global>
 </template>

@@ -23,6 +23,7 @@ import {
   getStyle,
   handleTableEmptyStrategy
 } from '@/views/chart/components/js/panel/common/common_table'
+import { normalizeTableCellText } from '@/views/chart/components/js/panel/common/tableText.mjs'
 import '@antv/s2/dist/s2.min.css'
 import { find } from 'lodash-es'
 
@@ -102,6 +103,7 @@ export abstract class S2ChartView<P extends SpreadSheet> extends AntVAbstractCha
     if (!content) {
       return
     }
+    content = normalizeTableCellText(content)
     event.s2Instance = s2Instance
     const style = s2Instance.options.tooltip.style
     setTooltipContainerStyle(s2Instance.tooltip.container, { style })

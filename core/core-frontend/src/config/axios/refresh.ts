@@ -51,7 +51,8 @@ export const configHandler = config => {
   if (wsCache.get('user.token')) {
     config.headers['X-CREST-TOKEN'] = wsCache.get('user.token')
     const expired = isExpired()
-    if (expired && !config.url.includes(refreshUrl)) {
+    const requestUrl = String(config.url || '')
+    if (expired && !requestUrl.includes(refreshUrl)) {
       if (!getRefreshStatus()) {
         setRefreshStatus(true)
         refreshApi(Date.now())

@@ -8,7 +8,7 @@ import { Plus, Search } from '@element-plus/icons-vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { useAppStoreWithOut } from '@/store/modules/app'
 import _ from 'lodash'
-import { datasetTree, datasourceList } from '@/api/dataset'
+import { datasetTree as fetchDatasetTree, datasourceList } from '@/api/dataset'
 import { ElFormItem, FormInstance } from 'element-plus-secondary'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { useCache } from '@/hooks/web/useCache'
@@ -67,11 +67,14 @@ const sortTypeChange = arr => {
 
 const initDataset = () => {
   loadingDatasetTree.value = true
-  const method = props.sourceType === 'datasource' ? datasourceList : datasetTree
+  const method = props.sourceType === 'datasource' ? datasourceList : fetchDatasetTree
   const params = props.sourceType === 'datasource' ? null : {}
   ;(method as any)(params)
     .then(res => {
       sortTypeChange((res as unknown as Tree[]) || [])
+    })
+    .catch(() => {
+      sortTypeChange([])
     })
     .finally(() => {
       loadingDatasetTree.value = false

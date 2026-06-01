@@ -30,10 +30,12 @@ import {
   exportLogPDF,
   exportLogTemplate
 } from '@/api/visualization/dataVisualization'
+import { useRoute } from 'vue-router_2'
 const userStore = useUserStoreWithOut()
 
 const userName = computed(() => userStore.getName)
 const appExportFormRef = ref(null)
+const route = useRoute()
 
 const dvMainStore = dvMainStoreWithOut()
 const previewCanvasContainer = ref(null)
@@ -100,6 +102,10 @@ onMounted(() => {
       downloadH2('img')
     }
   })
+  const routeDvId = route.query.dvId || route.query.resourceId
+  if (showPosition.value === 'preview' && routeDvId) {
+    loadCanvasData(routeDvId)
+  }
 })
 
 function createNew() {

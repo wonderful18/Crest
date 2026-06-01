@@ -95,12 +95,12 @@ final class AuditLogText {
         if (url.contains("/user/modifypwd")) return "修改用户密码";
         if (url.contains("/user/enable")) return "变更用户状态";
         if (url.contains("/switchlanguage")) return "切换系统语言";
-        if (url.contains("/exportcenter/exporttasks/records")) return "查看导出任务统计";
-        if (url.contains("/exportcenter/exporttasks")) return "查询导出任务列表";
-        if (url.contains("/exportcenter/exportlimit")) return "查看导出限制";
-        if (url.contains("/exportcenter/generatedownloaduri")) return "生成导出文件下载地址";
-        if (url.contains("/exportcenter/download")) return "下载导出文件";
-        if (url.contains("/exportcenter/") && operationType == LogOT.DELETE) return "删除导出任务";
+        if (url.contains("/export-center/export-tasks/records")) return "查看导出任务统计";
+        if (url.contains("/export-center/export-tasks")) return "查询导出任务列表";
+        if (url.contains("/export-center/export-limit")) return "查看导出限制";
+        if (url.contains("/export-center/download-tickets")) return "生成导出文件下载地址";
+        if (url.contains("/export-center/download")) return "下载导出文件";
+        if (url.contains("/export-center/") && operationType == LogOT.DELETE) return "删除导出任务";
         if (url.contains("/datasettree/exportdataset")) return "导出数据集";
         if (url.contains("/sso/validate")) return "校验单点登录配置";
         if (url.contains("/sso/config")) return operationType == LogOT.READ ? "查看单点登录配置" : "保存单点登录配置";
