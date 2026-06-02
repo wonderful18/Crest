@@ -49,8 +49,8 @@ deploy/kubernetes
 默认应用镜像：
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.4-rc.1
-ghcr.io/sevoniva/crest-web:v1.5.4-rc.1
+ghcr.io/sevoniva/crest-service:v1.5.4
+ghcr.io/sevoniva/crest-web:v1.5.4
 ```
 
 后端镜像以 Alpine 为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime。前端镜像基于 Nginx Alpine，负责静态资源、API 转发和 WebSocket 转发。两个应用容器都以固定非 root 用户运行：
@@ -249,7 +249,7 @@ http://127.0.0.1:18101/index.html
 - `crest-grafana`：ClusterIP 服务，自动加载 Prometheus 数据源和 Crest 看板；
 - `NetworkPolicy`：只允许前端网关和 Prometheus 访问后端 `8100` 端口。
 
-企业集群已有 Prometheus/Grafana 时，可不使用 `observability` overlay。只需在应用环境中设置 `CREST_PROMETHEUS_ENABLED=true`，通过 Secret 注入 `CREST_PROMETHEUS_TOKEN`，再由企业 Prometheus 按 Bearer Token 抓取 `crest-service:8100/api/v1/actuator/prometheus`。Grafana 可导入 `deploy/kubernetes/observability/grafana/dashboards/crest-observability.json`。
+企业集群已有 Prometheus/Grafana 时，可不使用 `observability` overlay。只需在应用环境中设置 `CREST_PROMETHEUS_ENABLED=true`，通过 Secret 注入 `CREST_PROMETHEUS_TOKEN`，再由企业 Prometheus 按 Bearer Token 抓取 `crest-service:8100/api/v1/actuator/prometheus`。Grafana 可导入 `deploy/kubernetes/observability/grafana/dashboards/` 下的 Crest 看板，Prometheus 可加载 `deploy/kubernetes/observability/prometheus/rules/crest-alerts.yml`。
 
 创建 Secret：
 
@@ -323,10 +323,10 @@ curl -i http://127.0.0.1:18100/api/v1/actuator/prometheus
 
 ```bash
 mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true -Dcrest.copy.frontend.skip=true
-docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:v1.5.4-rc.1 .
-docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:v1.5.4-rc.1 .
-kind load docker-image ghcr.io/sevoniva/crest-service:v1.5.4-rc.1 --name crest-kind
-kind load docker-image ghcr.io/sevoniva/crest-web:v1.5.4-rc.1 --name crest-kind
+docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:v1.5.4 .
+docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:v1.5.4 .
+kind load docker-image ghcr.io/sevoniva/crest-service:v1.5.4 --name crest-kind
+kind load docker-image ghcr.io/sevoniva/crest-web:v1.5.4 --name crest-kind
 kind load docker-image mysql:8.0.43 --name crest-kind
 ```
 
@@ -382,7 +382,7 @@ kubectl -n crest-internal describe pod -l app.kubernetes.io/name=crest
 - `/api/v1/actuator/health/readiness` 返回 200；
 - 前端网关访问 `/api/v1/actuator/prometheus` 返回 404；
 - 启用可观测性时，Prometheus 通过 Bearer Token 能抓到 `http_server_requests_seconds_count`；
-- 启用可观测性时，Grafana “Crest 可观测性总览”看板加载成功；
+- 启用可观测性时，Grafana Crest 看板和 Prometheus 告警规则加载成功；
 - `/index.html` 返回 200；
 - `/doc.html` 可打开或跳转到登录流程；
 - `/v3/api-docs` 在未登录时返回受保护状态，登录或放行接口文档后可正常读取；
@@ -414,7 +414,7 @@ installer/crest/bin/mysql/cleanup-demo-data.sql
 
 ## 迁移和同发布线升级
 
-v1.5.4-rc.1 面向全新环境安装，不支持从早期开发版本直接执行 Flyway 原地升级。已有早期环境迁移到 v1.5.4-rc.1 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
+v1.5.4 面向全新环境安装，不支持从早期开发版本直接执行 Flyway 原地升级。已有早期环境迁移到 v1.5.4 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
 
 同一发布线的小版本升级前：
 
@@ -426,8 +426,8 @@ v1.5.4-rc.1 面向全新环境安装，不支持从早期开发版本直接执�
 确认 release notes 明确支持原地升级后，更新镜像：
 
 ```bash
-kubectl -n crest-internal set image deployment/crest-service crest-service=ghcr.io/sevoniva/crest-service:v1.5.4-rc.1
-kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest-web:v1.5.4-rc.1
+kubectl -n crest-internal set image deployment/crest-service crest-service=ghcr.io/sevoniva/crest-service:v1.5.4
+kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest-web:v1.5.4
 kubectl -n crest-internal rollout status deployment/crest-service --timeout=300s
 kubectl -n crest-internal rollout status deployment/crest --timeout=300s
 ```

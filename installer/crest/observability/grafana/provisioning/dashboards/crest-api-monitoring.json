@@ -788,7 +788,7 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",uri=~\"$uri\",status=~\"$status\"}[$__rate_interval])) by (status)",
+          "expr": "sum(increase(http_server_requests_seconds_count{job=\"$job\",uri=~\"$uri\",status=~\"$status\"}[$__range])) by (status) or label_replace(vector(0), \"status\", \"200\", \"__name__\", \".*\") or label_replace(vector(0), \"status\", \"401\", \"__name__\", \".*\") or label_replace(vector(0), \"status\", \"404\", \"__name__\", \".*\") or label_replace(vector(0), \"status\", \"500\", \"__name__\", \".*\")",
           "legendFormat": "{{status}}",
           "refId": "S",
           "format": "time_series"
@@ -936,7 +936,7 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "topk(20, sum(rate(http_server_requests_seconds_count{job=\"$job\",uri=~\"$uri\",status=~\"$status\"}[$__rate_interval])) by (method, uri))",
+          "expr": "topk(20, sum(increase(http_server_requests_seconds_count{job=\"$job\",uri=~\"$uri\",status=~\"$status\"}[$__range])) by (method, uri)) or label_replace(label_replace(vector(0), \"method\", \"-\", \"__name__\", \".*\"), \"uri\", \"无访问数据\", \"__name__\", \".*\")",
           "legendFormat": "{{method}} {{uri}}",
           "refId": "L",
           "format": "time_series"
@@ -1005,7 +1005,7 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "topk(20, histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\",uri=~\"$uri\"}[$__rate_interval])) by (le, method, uri)))",
+          "expr": "topk(20, histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\",uri=~\"$uri\"}[$__rate_interval])) by (le, method, uri))) or label_replace(label_replace(vector(0), \"method\", \"-\", \"__name__\", \".*\"), \"uri\", \"无访问数据\", \"__name__\", \".*\")",
           "legendFormat": "{{method}} {{uri}}",
           "refId": "B",
           "format": "time_series"

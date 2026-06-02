@@ -69,6 +69,9 @@ spec:
               mountPath: /etc/prometheus/prometheus.yml
               subPath: prometheus.yml
               readOnly: true
+            - name: prometheus-rules
+              mountPath: /etc/prometheus/rules
+              readOnly: true
             - name: prometheus-token
               mountPath: /etc/prometheus/secrets
               readOnly: true
@@ -78,6 +81,9 @@ spec:
         - name: prometheus-config
           configMap:
             name: crest-prometheus-config
+        - name: prometheus-rules
+          configMap:
+            name: crest-prometheus-rules
         - name: prometheus-token
           secret:
             secretName: crest-observability-secret
@@ -194,26 +200,18 @@ spec:
               mountPath: /etc/grafana/provisioning/datasources/prometheus.yml
               subPath: prometheus-datasource.yml
               readOnly: true
-            - name: grafana-dashboards-provider
-              mountPath: /etc/grafana/provisioning/dashboards/dashboards.yml
-              subPath: dashboards.yml
-              readOnly: true
-            - name: grafana-dashboard
-              mountPath: /etc/grafana/provisioning/dashboards/crest-observability.json
-              subPath: crest-observability.json
+            - name: grafana-dashboards
+              mountPath: /etc/grafana/provisioning/dashboards
               readOnly: true
             - name: grafana-data
               mountPath: /var/lib/grafana
       volumes:
         - name: grafana-datasources
           configMap:
-            name: crest-grafana-provisioning
-        - name: grafana-dashboards-provider
+            name: crest-grafana-datasources
+        - name: grafana-dashboards
           configMap:
-            name: crest-grafana-provisioning
-        - name: grafana-dashboard
-          configMap:
-            name: crest-grafana-provisioning
+            name: crest-grafana-dashboards
         - name: grafana-data
           persistentVolumeClaim:
             claimName: crest-grafana-data
