@@ -128,7 +128,7 @@ CREST_GRAFANA_ENABLED=true
 
 Prometheus 抓取后端 `/api/v1/actuator/prometheus` 时使用 Bearer Token。安装脚本会把 token 写入运行目录的 `conf/prometheus-token`，Prometheus 以只读文件方式挂载。前端网关会对外屏蔽指标路径，Prometheus 直接访问 Compose 网络内的 `crest-service:8100`。
 
-企业已有 Prometheus/Grafana 时，不需要启动内置 `crest-prometheus` 和 `crest-grafana`。只开启 `CREST_PROMETHEUS_ENABLED=true`，设置 `CREST_PROMETHEUS_TOKEN`，由企业 Prometheus 抓取后端内网地址，再导入 `crest/observability/grafana/provisioning/dashboards/crest-observability.json`。
+企业已有 Prometheus/Grafana 时，不需要启动内置 `crest-prometheus` 和 `crest-grafana`。只开启 `CREST_PROMETHEUS_ENABLED=true`，设置 `CREST_PROMETHEUS_TOKEN`，由企业 Prometheus 抓取后端内网地址，再导入 `crest/observability/grafana/provisioning/dashboards/*.json` 和 `crest/observability/prometheus/rules/crest-alerts.yml`。
 
 Grafana 启动后访问：
 
@@ -136,7 +136,7 @@ Grafana 启动后访问：
 http://服务器IP:${CREST_GRAFANA_PORT}
 ```
 
-默认加载“Crest 可观测性总览”看板，包含接口吞吐、接口延迟、错误率、状态码分布、JVM、GC、运行时线程池和 CPU 指标。
+默认加载 Crest 服务总览、API 监控、告警与 SLO、JVM、数据库连接池、任务与缓存看板。告警规则覆盖服务可用性、API 错误率、P95 延迟、JVM 堆内存、数据库连接池和线程池队列。
 
 ## 运维命令
 

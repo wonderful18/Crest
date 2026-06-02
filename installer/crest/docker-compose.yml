@@ -121,6 +121,7 @@ services:
         max-file: "5"
     volumes:
       - ${CREST_RUN_BASE}/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${CREST_RUN_BASE}/observability/prometheus/rules:/etc/prometheus/rules:ro
       - ${CREST_RUN_BASE}/conf/prometheus-token:/etc/prometheus/secrets/crest-token:ro
       - ${CREST_RUN_BASE}/data/prometheus:/prometheus
     depends_on:

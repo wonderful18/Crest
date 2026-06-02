@@ -44,6 +44,7 @@ public class ObservabilityServer {
         grafanaStatus.put("provisionedDashboards", List.of(
                 "Crest 服务总览",
                 "Crest API 监控",
+                "Crest 告警与 SLO",
                 "Crest JVM 运行时",
                 "Crest 数据库与连接池",
                 "Crest 任务与缓存"

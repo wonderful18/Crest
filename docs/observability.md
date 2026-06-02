@@ -1,16 +1,17 @@
 # Crest 可观测性
 
-Crest 可以按需启用 Prometheus 和 Grafana。默认安装不启动监控组件，后端也不会暴露 Prometheus 指标端点。
+Crest 支持按需启用 Prometheus 和 Grafana。默认安装不启动监控组件，后端也不暴露 Prometheus 指标端点。启用后，后端通过 `/api/v1/actuator/prometheus` 输出指标，Prometheus 使用 Bearer Token 在容器或集群内网抓取 `crest-service:8100`。前端 Nginx 默认不公开该路径。
 
-启用后，后端通过 `/api/v1/actuator/prometheus` 输出指标，Prometheus 在内网直接抓取 `crest-service:8100`。抓取请求必须携带 Bearer Token；没有 token、token 错误或端点未开启时，服务端不会返回指标。前端 Nginx 默认对外屏蔽该路径。
+Grafana 通过 provisioning 自动加载 Prometheus 数据源和 Crest 看板。当前交付 6 个看板：
 
-Grafana 通过 provisioning 自动加载 Prometheus 数据源和“Crest 可观测性总览”看板。看板覆盖：
-
-- API 请求速率、错误率、P95 延迟和状态码分布；
-- 按 URI、Method、Status 汇总的接口明细；
-- JVM 内存、GC、线程；
-- 运行时线程池；
-- 进程 CPU 和采集状态。
+| 看板 | 用途 |
+| --- | --- |
+| Crest 服务总览 | 服务采集状态、请求量、错误率、P95 延迟、CPU、磁盘和高频接口 |
+| Crest API 监控 | API 纳管率、模块分类、模块请求量、模块错误量、接口明细和未访问接口清单 |
+| Crest 告警与 SLO | 可用性、5xx 错误率、P95 延迟、堆内存、连接池和当前告警 |
+| Crest JVM 运行时 | JVM 内存、GC、线程、类加载和运行时长 |
+| Crest 数据库与连接池 | Hikari 连接池、JDBC 连接、连接获取耗时和连接等待 |
+| Crest 任务与缓存 | 线程池、调度任务、缓存命中、缓存写入和缓存清理 |
 
 ## 接入模式
 
@@ -18,7 +19,7 @@ Crest 不要求必须使用内置 Prometheus/Grafana。生产环境可按现场�
 
 | 模式 | 适用场景 | 做法 |
 | --- | --- | --- |
-| 只开启 metrics | 企业已有 Prometheus 和 Grafana | 设置 `CREST_PROMETHEUS_ENABLED=true` 和 `CREST_PROMETHEUS_TOKEN`，在企业 Prometheus 中增加抓取任务，Grafana 导入 Crest dashboard |
+| 只开启 metrics | 企业已有 Prometheus 和 Grafana | 设置 `CREST_PROMETHEUS_ENABLED=true` 和 `CREST_PROMETHEUS_TOKEN`，在企业 Prometheus 中增加抓取任务，导入 Crest 看板和告警规则 |
 | 内置 Prometheus/Grafana | 单机验证、小规模内网部署、无统一监控平台 | 设置 `CREST_PROMETHEUS_ENABLED=true` 和 `CREST_GRAFANA_ENABLED=true`，由 Compose 或 Kubernetes overlay 启动配套组件 |
 
 企业 Prometheus 抓取示例：
@@ -34,10 +35,16 @@ scrape_configs:
           - crest-service:8100
 ```
 
-Grafana dashboard 文件：
+Grafana 看板文件：
 
 ```text
-installer/crest/observability/grafana/provisioning/dashboards/crest-observability.json
+installer/crest/observability/grafana/provisioning/dashboards/*.json
+```
+
+Prometheus 告警规则：
+
+```text
+installer/crest/observability/prometheus/rules/crest-alerts.yml
 ```
 
 ## 单机安装
@@ -56,7 +63,7 @@ CREST_GRAFANA_PORT=3000
 ${CREST_BASE}/crest/conf/prometheus-token
 ```
 
-Grafana 管理员密码由 `CREST_GRAFANA_ADMIN_PASSWORD` 控制，留空时同样自动生成。安装完成后：
+Grafana 管理员密码由 `CREST_GRAFANA_ADMIN_PASSWORD` 控制，留空时自动生成。安装完成后：
 
 ```bash
 crestctl status
@@ -71,44 +78,6 @@ http://服务器IP:3000
 ```
 
 Prometheus 端口不对宿主机开放。需要临时排查时，在服务器上进入容器网络或使用运维侧端口转发，不建议直接暴露 `9090`。
-
-## 本地 split 验证
-
-先准备 token 文件：
-
-```bash
-printf '%s' 'local-prometheus-token' > deploy/split/prometheus-token
-chmod 0400 deploy/split/prometheus-token
-```
-
-启动：
-
-```bash
-COMPOSE_PROFILES=observability \
-CREST_PROMETHEUS_ENABLED=true \
-CREST_PROMETHEUS_TOKEN=local-prometheus-token \
-CREST_PROMETHEUS_TOKEN_FILE=./prometheus-token \
-CREST_GRAFANA_ENABLED=true \
-CREST_GRAFANA_ADMIN_PASSWORD=admin \
-CREST_WEB_PORT=18100 \
-docker compose -f deploy/split/docker-compose.yml up -d
-```
-
-验证：
-
-```bash
-curl -i http://127.0.0.1:18100/api/v1/actuator/prometheus
-docker exec split-crest-prometheus wget -qO- http://crest-service:8100/api/v1/actuator/prometheus \
-  --header='Authorization: Bearer local-prometheus-token' | head
-```
-
-第一条应返回 `404`，说明前端网关没有公开指标路径。第二条应返回 Prometheus 文本指标。
-
-Grafana 地址：
-
-```text
-http://127.0.0.1:3000
-```
 
 ## Kubernetes
 
@@ -148,6 +117,91 @@ Prometheus 同样只在集群内访问：
 kubectl -n crest-internal port-forward svc/crest-prometheus 9090:9090
 ```
 
+## 指标口径
+
+| 指标 | 口径 |
+| --- | --- |
+| `crest_api_route_info` | Crest 启动后注册的 API 路由清单，包含 `method`、`uri`、`module`、`controller`、`handler` 标签 |
+| `http_server_requests_seconds_count` | HTTP 请求次数，按 `method`、`uri`、`status`、`outcome` 等标签聚合 |
+| `http_server_requests_seconds_sum` | HTTP 请求耗时总和 |
+| `http_server_requests_seconds_bucket` | HTTP 请求耗时直方图，用于 P95、P99 计算 |
+| `jvm_memory_used_bytes` | JVM 内存使用量 |
+| `jvm_gc_pause_seconds_*` | GC 停顿次数和耗时 |
+| `jvm_threads_*` | JVM 线程数量 |
+| `executor_*` | WebSocket、审计日志、调度等运行时线程池状态 |
+| `hikaricp_connections_*` | Hikari 数据库连接池状态 |
+| `process_cpu_usage` | 当前进程 CPU 使用率 |
+| `up` | Prometheus 采集状态 |
+
+`CREST_PROMETHEUS_MAX_URI_TAGS` 用于限制 `http.server.requests` 的 URI 标签数量，默认 `200`。生产环境 URI 模板异常增长时，应先排查路由或代理配置，避免高基数指标影响 Prometheus。
+
+## API 纳管口径
+
+API 监控区分两个概念：
+
+| 名称 | 含义 |
+| --- | --- |
+| 接口纳管率 | 已注册并暴露到 `crest_api_route_info` 的 API 占比。正常值为 `100%` |
+| 已访问业务接口 | 当前 Prometheus 时间范围内发生过请求的 API 数量 |
+| 未访问接口清单 | 已纳管但当前时间范围内没有访问记录的 API。该清单用于测试覆盖和巡检，不表示监控缺失 |
+
+业务模块由路由前缀归类，当前包含 `visualization`、`dataset`、`datasource`、`access-control`、`system`、`sharing`、`authentication`、`export`、`lineage`、`operations` 和 `platform`。
+
+## SLO 建议
+
+| 目标 | 建议口径 | 默认告警阈值 |
+| --- | --- | --- |
+| 可用性 | `avg_over_time(up{job="crest-service"}[窗口])` | 连续 2 分钟采集失败触发 critical |
+| 5xx 错误率 | 5xx 请求速率 / 总请求速率 | 连续 5 分钟高于 2% 触发 warning |
+| P95 延迟 | HTTP 请求耗时直方图 P95 | 连续 5 分钟高于 2 秒触发 warning |
+| JVM 堆内存 | 已用堆内存 / 最大堆内存 | 连续 10 分钟高于 85% 触发 warning |
+| 数据库连接池 | 活跃连接 / 最大连接 | 连续 5 分钟高于 85% 触发 warning |
+| 线程池队列 | `executor_queued_tasks` 汇总 | 连续 5 分钟超过 100 触发 warning |
+
+上述阈值用于默认交付。正式生产环境应结合部署规模、业务峰值、数据库规格和 SLA 要求调整。
+
+## 告警规则
+
+默认规则文件为：
+
+```text
+installer/crest/observability/prometheus/rules/crest-alerts.yml
+```
+
+规则分组：
+
+| 分组 | 规则 |
+| --- | --- |
+| `crest.availability` | 服务采集中断、API 路由清单缺失 |
+| `crest.api-slo` | HTTP 5xx 错误率偏高、HTTP P95 延迟偏高 |
+| `crest.runtime` | 进程 CPU 偏高、JVM 堆内存偏高、线程池队列积压 |
+| `crest.database` | 数据库连接池使用率偏高、数据库连接等待 |
+
+内置 Prometheus 当前只加载规则和展示告警状态，不内置 Alertmanager。生产环境需要通知能力时，应接入企业已有 Alertmanager、Grafana Alerting 或统一告警平台。
+
+规则校验：
+
+```bash
+docker exec crest-prometheus promtool check rules /etc/prometheus/rules/crest-alerts.yml
+```
+
+查看规则加载状态：
+
+```bash
+curl http://127.0.0.1:9090/api/v1/rules
+```
+
+## 排查入口
+
+| 现象 | 优先检查 |
+| --- | --- |
+| Grafana 面板显示 No data | Prometheus target、Grafana datasource、容器代理变量、看板变量 |
+| 接口纳管率不是 100% | `crest_api_route_info` 是否存在、服务是否重启完成、Prometheus 是否已重新抓取 |
+| 5xx 错误率升高 | 后端日志、最近发布、数据库连接池、慢 SQL、外部依赖 |
+| P95 延迟升高 | 慢接口 Top、数据库连接池、CPU、GC、线程池队列 |
+| 连接池使用率升高 | 慢 SQL、连接泄漏、数据库连接上限、数据库负载 |
+| JVM 堆内存升高 | 缓存增长、导出任务、对象保留、GC 频率 |
+
 ## 系统页面
 
 管理员登录后进入：
@@ -157,24 +211,6 @@ kubectl -n crest-internal port-forward svc/crest-prometheus 9090:9090
 ```
 
 页面展示 Prometheus 是否开启、指标端点、token 是否已配置、Grafana 访问地址和已加载看板名称。页面不会展示或保存 Prometheus token。
-
-## 指标口径
-
-接口指标来自 Spring Boot Actuator 和 Micrometer。核心指标包括：
-
-| 指标 | 口径 |
-| --- | --- |
-| `http_server_requests_seconds_count` | HTTP 请求次数，按 `method`、`uri`、`status`、`outcome` 等标签聚合 |
-| `http_server_requests_seconds_sum` | HTTP 请求耗时总和 |
-| `http_server_requests_seconds_bucket` | HTTP 请求耗时直方图，用于 P95、P99 计算 |
-| `jvm_memory_used_bytes` | JVM 内存使用量 |
-| `jvm_gc_pause_seconds_*` | GC 停顿次数和耗时 |
-| `jvm_threads_*` | JVM 线程数量 |
-| `executor_*` | WebSocket、审计日志、调度等运行时线程池状态 |
-| `process_cpu_usage` | 当前进程 CPU 使用率 |
-| `up` | Prometheus 采集状态 |
-
-`CREST_PROMETHEUS_MAX_URI_TAGS` 用于限制 `http.server.requests` 的 URI 标签数量，默认 `200`。生产环境 URI 模板异常增长时，应先排查路由或代理配置，避免高基数指标压垮 Prometheus。
 
 ## 安全建议
 
