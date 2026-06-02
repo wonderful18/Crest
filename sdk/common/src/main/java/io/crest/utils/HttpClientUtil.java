@@ -7,7 +7,6 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -35,11 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.URI;
 import java.net.URL;
-import java.net.URLDecoder;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -377,161 +372,6 @@ public class HttpClientUtil {
             throw new Exception(msg);
         }
         return EntityUtils.toString(response.getEntity(), config.getCharset());
-    }
-
-    public static Map<String, String> downloadFile(String url, HttpClientConfig config, String path) {
-        URI downloadUri = validateRemoteDownloadUrl(url);
-        Map<String, String> name = new HashMap<>();
-        try (CloseableHttpClient httpClient = buildHttpClient(downloadUri.getScheme())) {
-            HttpHost target = new HttpHost(downloadUri.getHost(), downloadUri.getPort(), downloadUri.getScheme());
-            HttpGet httpGet = new HttpGet();
-            httpGet.setURI(URI.create(downloadPathAndQuery(downloadUri)));
-            // 设置请求配置
-            httpGet.setConfig(config.buildRequestConfig());
-            // 设置请求头
-            config.getHeader().forEach(httpGet::addHeader);
-            HttpResponse response = httpClient.execute(target, httpGet);
-            if (response.getStatusLine().getStatusCode() >= 400) {
-                String msg = EntityUtils.toString(response.getEntity(), config.getCharset());
-                if (StringUtils.isEmpty(msg)) {
-                    msg = "StatusCode: " + response.getStatusLine().getStatusCode();
-                }
-                throw new Exception(msg);
-            }
-            String fileName = extractFileName(response, url);
-            String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
-            String tranName = UUID.randomUUID().toString() + "." + suffix;
-            name.put("fileName", fileName);
-            name.put("tranName", tranName);
-            File localFile = FileUtils.resolveUnderDirectory(path, tranName);
-            try (InputStream is = response.getEntity().getContent();
-                 FileOutputStream outputStream = new FileOutputStream(localFile)) {
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = is.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-            }
-        } catch (Exception e) {
-            logger.error("HttpClient查询失败", e);
-            throw new RuntimeException("HttpClient查询失败: " + e.getMessage(), e);
-        }
-        return name;
-    }
-
-    private static String downloadPathAndQuery(URI uri) {
-        String path = StringUtils.defaultIfBlank(uri.getRawPath(), "/");
-        if (StringUtils.isBlank(uri.getRawQuery())) {
-            return path;
-        }
-        return path + "?" + uri.getRawQuery();
-    }
-
-    public static URI validateRemoteDownloadUrl(String url) {
-        try {
-            URI uri = URI.create(url);
-            String scheme = uri.getScheme();
-            if (!Strings.CI.equalsAny(scheme, "http", "https")) {
-                throw new IllegalArgumentException("only http and https downloads are allowed");
-            }
-            assertRemoteHostAllowed(uri.getHost());
-            return uri.normalize();
-        } catch (Exception e) {
-            throw new CrestException(SYSTEM_INNER_ERROR.code(), "远程下载地址不合法: " + e.getMessage());
-        }
-    }
-
-    public static void assertRemoteHostAllowed(String host) throws UnknownHostException {
-        if (StringUtils.isBlank(host) || host.contains("/") || host.contains("\\") || host.contains("@")) {
-            throw new UnknownHostException("invalid host");
-        }
-        String lookupHost = normalizeLookupHost(host);
-        if (StringUtils.isBlank(lookupHost)) {
-            throw new UnknownHostException("invalid host");
-        }
-        if (Boolean.parseBoolean(ConfigUtils.getConfig("crest.security.remote-download.allow-private-address", "false"))) {
-            return;
-        }
-        for (InetAddress address : InetAddress.getAllByName(lookupHost)) {
-            if (address.isAnyLocalAddress()
-                    || address.isLoopbackAddress()
-                    || address.isLinkLocalAddress()
-                    || address.isSiteLocalAddress()
-                    || address.isMulticastAddress()) {
-                throw new UnknownHostException("private or local address is not allowed");
-            }
-        }
-    }
-
-    private static String normalizeLookupHost(String host) {
-        String value = host.trim();
-        if (value.startsWith("[") && value.contains("]")) {
-            return value.substring(1, value.indexOf(']'));
-        }
-        int firstColon = value.indexOf(':');
-        int lastColon = value.lastIndexOf(':');
-        if (firstColon == lastColon && firstColon > 0) {
-            return value.substring(0, firstColon);
-        }
-        return value;
-    }
-
-    private static String extractFileName(HttpResponse response, String url) {
-        url = URLDecoder.decode(url);
-        String fileName = "";
-        String disposition = response.getHeaders("Content-Disposition").toString();
-        if (disposition != null) {
-            int filenameIndex = disposition.indexOf("filename=");
-            if (filenameIndex > 0) {
-                fileName = disposition.substring(filenameIndex + 9)
-                        .replaceAll("\"", "") // 去除引号
-                        .trim();
-            }
-        }
-        if (fileName.isEmpty()) {
-            url = url.split("\\?")[0];
-            fileName = url.contains("/")
-                    ? url.substring(url.lastIndexOf('/') + 1)
-                    : "download_" + System.currentTimeMillis();
-        }
-        if (fileName.trim().isEmpty()) {
-            fileName = "download_" + System.currentTimeMillis();
-        }
-        return fileName;
-    }
-
-    public static byte[] downloadBytes(String url) {
-        HttpClientConfig config = new HttpClientConfig();
-        return HttpClientUtil.downFromRemote(url, config);
-    }
-
-    public static byte[] downFromRemote(String url, HttpClientConfig config) {
-        validateRemoteDownloadUrl(url);
-        try (CloseableHttpClient httpClient = buildHttpClient(url)) {
-            HttpGet httpGet = new HttpGet(url);
-            // 设置请求配置
-            httpGet.setConfig(config.buildRequestConfig());
-
-            // 设置请求头
-            config.getHeader().forEach(httpGet::addHeader);
-            HttpResponse response = httpClient.execute(httpGet);
-            try (InputStream inputStream = response.getEntity().getContent();
-                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-
-                // 读取响应内容并写入输出流
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-
-                return outputStream.toByteArray();
-            }
-        } catch (Exception e) {
-            logger.error("HttpClient查询失败", e);
-            throw new RuntimeException("HttpClient查询失败: " + e.getMessage(), e);
-        }
     }
 
     public static String postFile(String fileServer, byte[] bytes, String fileName, Map<String, String> param, HttpClientConfig config) {

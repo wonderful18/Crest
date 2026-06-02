@@ -451,9 +451,7 @@ public class CalciteProvider extends Provider {
                 }
             }
         } else {
-            if (!tables(datasourceRequest).stream().map(DatasetTableDTO::getTableName).collect(Collectors.toList()).contains(table)) {
-                CrestException.throwException(Translator.get("i18n_invalid_table_name"));
-            }
+            table = resolveKnownTableName(datasourceRequest, table);
             try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId())) {
                 boolean readOnly = shouldUseReadOnlyConnection(datasourceRequest, datasourceConfiguration, datasourceSchemaDTO.getType());
                 setConnectionReadOnly(con, readOnly);
@@ -473,6 +471,16 @@ public class CalciteProvider extends Provider {
         }
 
         return datasetTableFields;
+    }
+
+    private String resolveKnownTableName(DatasourceRequest datasourceRequest, String requestedTable) {
+        for (DatasetTableDTO tableDesc : tables(datasourceRequest)) {
+            if (Strings.CI.equals(tableDesc.getTableName(), requestedTable)) {
+                return tableDesc.getTableName();
+            }
+        }
+        CrestException.throwException(Translator.get("i18n_invalid_table_name"));
+        return "";
     }
 
     private List<TableField> fetchTableFieldsFromMetadata(

@@ -431,13 +431,7 @@ public class ExcelUtils {
     private static Map<String, String> downLoadRemoteExcel(ExcelConfiguration remoteExcelRequest) throws CrestException, FileNotFoundException {
         Map<String, String> fileNames = new HashMap<>();
         if (remoteExcelRequest.getUrl().trim().startsWith("http")) {
-            HttpClientConfig httpClientConfig = new HttpClientConfig();
-            if (StringUtils.isNotEmpty(remoteExcelRequest.getUserName()) && StringUtils.isNotEmpty(remoteExcelRequest.getPasswd())) {
-                String authValue = "Basic " + Base64.getUrlEncoder().encodeToString((remoteExcelRequest.getUserName() + ":" + remoteExcelRequest.getPasswd()).getBytes());
-                httpClientConfig.addHeader("Authorization", authValue);
-            }
-            ensureExcelDirectory();
-            fileNames = HttpClientUtil.downloadFile(remoteExcelRequest.getUrl(), httpClientConfig, getExcelPath());
+            CrestException.throwException(Translator.get("i18n_unsupported_protocol"));
         } else if (remoteExcelRequest.getUrl().trim().startsWith("ftp")) {
             CrestException.throwException(Translator.get("i18n_unsupported_protocol"));
         } else {
