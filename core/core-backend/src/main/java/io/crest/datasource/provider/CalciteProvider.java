@@ -150,7 +150,7 @@ public class CalciteProvider extends Provider {
                         try {
                             extendedJdbcClassLoader.addFile(tmp);
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            io.crest.utils.LogUtil.error(e.getMessage(), e);
                         }
                     }
                 }
@@ -394,13 +394,13 @@ public class CalciteProvider extends Provider {
                 resetConnectionReadOnly(con, readOnly);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         } finally {
             if (resultSet != null) {
                 try {
                     resultSet.close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    io.crest.utils.LogUtil.error(e.getMessage(), e);
                 }
             }
         }
@@ -517,7 +517,7 @@ public class CalciteProvider extends Provider {
                     try {
                         resultSet.close();
                     } catch (SQLException e) {
-                        e.printStackTrace();
+                        io.crest.utils.LogUtil.error(e.getMessage(), e);
                     }
                 }
             }
@@ -571,7 +571,7 @@ public class CalciteProvider extends Provider {
                     try {
                         resultSet.close();
                     } catch (SQLException e) {
-                        e.printStackTrace();
+                        io.crest.utils.LogUtil.error(e.getMessage(), e);
                     }
                 }
             }
@@ -785,7 +785,7 @@ public class CalciteProvider extends Provider {
                 try {
                     resultSet.close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    io.crest.utils.LogUtil.error(e.getMessage(), e);
                 }
             }
         }
@@ -847,7 +847,7 @@ public class CalciteProvider extends Provider {
                 try {
                     resultSet.close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    io.crest.utils.LogUtil.error(e.getMessage(), e);
                 }
             }
         }
@@ -941,7 +941,7 @@ public class CalciteProvider extends Provider {
                 try {
                     resultSet.close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    io.crest.utils.LogUtil.error(e.getMessage(), e);
                 }
             }
         }
@@ -1920,7 +1920,7 @@ public class CalciteProvider extends Provider {
                         try {
                             customJdbcClassLoader.addFile(tmp);
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            io.crest.utils.LogUtil.error(e.getMessage(), e);
                         }
                     }
                 }

@@ -212,7 +212,7 @@ public class DatasourceSyncManage {
                 datasetTableTaskLog.setTaskStatus(TaskStatus.Error.toString());
                 datasetTableTaskLog.setEndTime(System.currentTimeMillis());
 
-                e.printStackTrace();
+                io.crest.utils.LogUtil.error(e.getMessage(), e);
             } finally {
                 datasourceTaskServer.saveLog(datasetTableTaskLog);
             }

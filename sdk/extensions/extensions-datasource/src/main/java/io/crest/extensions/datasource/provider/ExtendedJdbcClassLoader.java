@@ -90,7 +90,7 @@ public class ExtendedJdbcClassLoader extends URLClassLoader {
         try {
             this.addURL(u);
         } catch (Throwable t) {
-            t.printStackTrace();
+            io.crest.utils.LogUtil.error(t.getMessage(), t);
             throw new IOException("Error, could not add URL to system classloader");
         }
     }

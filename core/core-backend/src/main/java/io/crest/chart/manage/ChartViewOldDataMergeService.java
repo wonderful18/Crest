@@ -67,7 +67,7 @@ public class ChartViewOldDataMergeService {
                 coreChartViewMapper.updateById(view);
             } catch (Exception e) {
                 // do nothing,to continue
-                e.printStackTrace();
+                io.crest.utils.LogUtil.error(e.getMessage(), e);
             }
         }
     }
@@ -181,7 +181,7 @@ public class ChartViewOldDataMergeService {
                 coreChartViewMapper.updateById(view);
             } catch (Exception e) {
                 // do nothing,to continue
-                e.printStackTrace();
+                io.crest.utils.LogUtil.error(e.getMessage(), e);
             }
         }
     }
