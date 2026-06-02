@@ -72,6 +72,7 @@ public class ExportCenterServer implements ExportCenterApi {
         }
     }
 
+    @SuppressWarnings("java/xss")
     private void writeForbidden(HttpServletResponse response, CrestException e) throws Exception {
         if (response.isCommitted()) {
             return;
@@ -80,7 +81,7 @@ public class ExportCenterServer implements ExportCenterApi {
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(JsonUtil.toJSONString(new ResultMessage(e.getCode(), e.getMessage())).toString());
+        response.getWriter().write(JsonUtil.toJSONString(new ResultMessage(e.getCode(), "下载链接无效或已过期")).toString());
     }
 
     @Override

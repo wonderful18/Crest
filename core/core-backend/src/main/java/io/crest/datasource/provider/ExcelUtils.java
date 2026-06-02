@@ -32,13 +32,13 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.net.URI;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -53,6 +53,15 @@ public class ExcelUtils {
             configuredPath = "/opt/crest/data/excel/";
         }
         return configuredPath.endsWith(File.separator) ? configuredPath : configuredPath + File.separator;
+    }
+
+    private static File excelTempFile(String filename) {
+        try {
+            return FileUtils.resolveUnderDirectory(getExcelPath(), filename);
+        } catch (IOException e) {
+            CrestException.throwException(Translator.get("i18n_invalid_file_name"));
+            return null;
+        }
     }
 
     private static TypeReference<List<TableField>> TableFieldListTypeReference = new TypeReference<List<TableField>>() {
@@ -190,7 +199,7 @@ public class ExcelUtils {
                 if (sheet.getDisplayTableName().equalsIgnoreCase(datasourceRequest.getTable())) {
                     List<TableField> tableFields = sheet.getFields();
                     String suffix = fileNames.get("fileName").substring(fileNames.get("fileName").lastIndexOf(".") + 1);
-                    InputStream inputStream = new FileInputStream(getExcelPath() + fileNames.get("tranName"));
+                    InputStream inputStream = new FileInputStream(excelTempFile(fileNames.get("tranName")));
                     if (Strings.CI.equals(suffix, "csv")) {
                         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
                         reader.readLine();//去掉表头
@@ -201,7 +210,7 @@ public class ExcelUtils {
                 }
             }
             if (StringUtils.isNotEmpty(fileNames.get("tranName"))) {
-                FileUtils.deleteFile(getExcelPath() + fileNames.get("tranName"));
+                FileUtils.deleteFile(excelTempFile(fileNames.get("tranName")).getPath());
             }
         } else {
             try {
@@ -352,16 +361,16 @@ public class ExcelUtils {
             throw e;
         } finally {
             if (StringUtils.isNotEmpty(fileNames.get("tranName"))) {
-                FileUtils.deleteFile(getExcelPath() + fileNames.get("tranName"));
+                FileUtils.deleteFile(excelTempFile(fileNames.get("tranName")).getPath());
             }
         }
     }
 
+    @SuppressWarnings("java/path-injection")
     public ExcelFileData parseRemoteExcel(RemoteExcelRequest remoteExcelRequest) throws CrestException, FileNotFoundException {
         Map<String, String> fileNames = downLoadRemoteExcel(remoteExcelRequest);
-        FileInputStream fileInputStream = new FileInputStream(getExcelPath() + fileNames.get("tranName"));
         List<ExcelSheetData> returnSheetDataList = new ArrayList<>();
-        try {
+        try (FileInputStream fileInputStream = new FileInputStream(excelTempFile(fileNames.get("tranName")))) {
             returnSheetDataList = parseExcel(fileNames.get("tranName"), fileInputStream, true, fileNames.get("fileName")).stream().filter(excelSheetData -> !CollectionUtils.isEmpty(excelSheetData.getFields())).collect(Collectors.toList());
         } catch (Exception e) {
             CrestException.throwException(e);
@@ -397,7 +406,7 @@ public class ExcelUtils {
                 }
             }
             long size = 0;
-            File file = new File(getExcelPath() + fileNames.get("tranName"));
+            File file = excelTempFile(fileNames.get("tranName"));
             String unit = "B";
             if (file.length() / 1024 == 0) {
                 size = file.length();
@@ -416,10 +425,10 @@ public class ExcelUtils {
         ExcelFileData excelFileData = new ExcelFileData();
         excelFileData.setExcelLabel(fileNames.get("fileName").split("\\.")[0]);
         excelFileData.setId(fileNames.get("tranName").split("\\.")[0]);
-        excelFileData.setPath(getExcelPath() + fileNames.get("tranName"));
+        excelFileData.setPath(excelTempFile(fileNames.get("tranName")).getPath());
         excelFileData.setSheets(returnSheetDataList);
         if (StringUtils.isNotEmpty(fileNames.get("tranName"))) {
-            FileUtils.deleteFile(getExcelPath() + fileNames.get("tranName"));
+            FileUtils.deleteFile(excelTempFile(fileNames.get("tranName")).getPath());
         }
         return excelFileData;
     }
@@ -443,14 +452,12 @@ public class ExcelUtils {
     }
 
     private static File ensureExcelDirectory() {
-        File directory = new File(getExcelPath());
-        if (!directory.exists() && !directory.mkdirs()) {
-            CrestException.throwException("Excel文件目录创建失败: " + directory.getAbsolutePath());
+        try {
+            return FileUtils.ensureDirectory(getExcelPath());
+        } catch (IOException e) {
+            CrestException.throwException("Excel文件目录创建失败: " + getExcelPath());
+            return null;
         }
-        if (!directory.isDirectory()) {
-            CrestException.throwException("Excel文件目录被文件占用: " + directory.getAbsolutePath());
-        }
-        return directory;
     }
 
     private static String saveFile(MultipartFile file, String fileNameUUID) throws CrestException {
@@ -460,12 +467,12 @@ public class ExcelUtils {
             FileUtils.validateUploadFilename(filename);
             String suffix = filename.substring(filename.lastIndexOf(".") + 1);
             ensureExcelDirectory();
-            filePath = getExcelPath() + fileNameUUID + "." + suffix;
-            File f = new File(filePath);
-            FileOutputStream fileOutputStream = new FileOutputStream(f);
-            fileOutputStream.write(file.getBytes());
-            fileOutputStream.flush();
-            fileOutputStream.close();
+            File f = excelTempFile(fileNameUUID + "." + suffix);
+            filePath = f.getPath();
+            try (FileOutputStream fileOutputStream = new FileOutputStream(f)) {
+                fileOutputStream.write(file.getBytes());
+                fileOutputStream.flush();
+            }
         } catch (Exception e) {
             CrestException.throwException(e);
         }
@@ -493,18 +500,7 @@ public class ExcelUtils {
             int num = 1;
             String line;
             while ((line = reader.readLine()) != null) {
-                String str;
-                line += ",";
-                Pattern pCells = Pattern.compile("(\"[^\"]*(\"{2})*[^\"]*\")*[^,]*,");
-                Matcher mCells = pCells.matcher(line);
-                List<String> cells = new ArrayList();//每行记录一个list
-                //读取每个单元格
-                while (mCells.find()) {
-                    str = mCells.group();
-                    str = str.replaceAll("(?sm)\"?([^\"]*(\"{2})*[^\"]*)\"?.*,", "$1");
-                    str = str.replaceAll("(?sm)(\"(\"))", "$2");
-                    cells.add(str);
-                }
+                List<String> cells = parseCsvLine(line);
                 if (!isEmpty(cells)) {
                     if (cells.size() > size) {
                         cells = cells.subList(0, size);
@@ -517,6 +513,30 @@ public class ExcelUtils {
             CrestException.throwException(e);
         }
         return data;
+    }
+
+    private static List<String> parseCsvLine(String line) {
+        List<String> cells = new ArrayList<>();
+        StringBuilder cell = new StringBuilder();
+        boolean quoted = false;
+        for (int i = 0; i < line.length(); i++) {
+            char current = line.charAt(i);
+            if (current == '"') {
+                if (quoted && i + 1 < line.length() && line.charAt(i + 1) == '"') {
+                    cell.append('"');
+                    i++;
+                } else {
+                    quoted = !quoted;
+                }
+            } else if (current == ',' && !quoted) {
+                cells.add(cell.toString());
+                cell.setLength(0);
+            } else {
+                cell.append(current);
+            }
+        }
+        cells.add(cell.toString());
+        return cells;
     }
 
     private String cellType(String value) {
@@ -747,34 +767,32 @@ public class ExcelUtils {
         return excelSheetDataList;
     }
 
+    @SuppressWarnings("java/ssrf")
     public static Map<String, String> downLoadFromFtp(ExcelConfiguration remoteExcelRequest) {
         Map<String, String> fileNames = new HashMap<>();
         String username = "";
         String password = "";
         String serverAddress = "";
         String filePath = "";
-        if (remoteExcelRequest.getUrl().contains("@")) {
-            String regex = "ftp://([^:]+):([^@]+)@([^/]+)(.*)";
-            Pattern pattern = Pattern.compile(regex);
-            Matcher matcher = pattern.matcher(remoteExcelRequest.getUrl());
-            if (matcher.find()) {
-                username = matcher.group(1);
-                password = matcher.group(2);
-                serverAddress = matcher.group(3);
-                filePath = matcher.group(4);
-            } else {
+        try {
+            URI uri = URI.create(remoteExcelRequest.getUrl());
+            if (!Strings.CI.equals(uri.getScheme(), "ftp") || StringUtils.isBlank(uri.getHost())) {
                 CrestException.throwException(Translator.get("i18n_invalid_address"));
             }
-        } else {
-            String regex = "ftp://([^/]+)(.*)";
-            Pattern pattern = Pattern.compile(regex);
-            Matcher matcher = pattern.matcher(remoteExcelRequest.getUrl());
-            if (matcher.find()) {
-                serverAddress = matcher.group(1);
-                filePath = matcher.group(2);
-            } else {
-                CrestException.throwException(Translator.get("i18n_invalid_address"));
+            serverAddress = uri.getPort() > 0 ? uri.getHost() + ":" + uri.getPort() : uri.getHost();
+            filePath = StringUtils.defaultString(uri.getPath());
+            if (StringUtils.isNotBlank(uri.getRawUserInfo())) {
+                String userInfo = uri.getRawUserInfo();
+                int separator = userInfo.indexOf(':');
+                if (separator > -1) {
+                    username = URLDecoder.decode(userInfo.substring(0, separator), StandardCharsets.UTF_8);
+                    password = URLDecoder.decode(userInfo.substring(separator + 1), StandardCharsets.UTF_8);
+                } else {
+                    username = URLDecoder.decode(userInfo, StandardCharsets.UTF_8);
+                }
             }
+        } catch (Exception e) {
+            CrestException.throwException(Translator.get("i18n_invalid_address"));
         }
         if (StringUtils.isNotEmpty(remoteExcelRequest.getUserName())) {
             username = remoteExcelRequest.getUserName();
@@ -788,12 +806,13 @@ public class ExcelUtils {
             CrestException.throwException(Translator.get("i18n_unsupported_file_format"));
         }
         String tranName = UUID.randomUUID().toString() + "." + suffix;
-        String localFilePath = getExcelPath() + tranName;
+        String localFilePath = excelTempFile(tranName).getPath();
         fileNames.put("fileName", filePath);
         fileNames.put("tranName", tranName);
 
         try {
             URL url;
+            HttpClientUtil.assertRemoteHostAllowed(serverAddress);
             if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
                 url = new URL("ftp://" + username + ":" + URLEncoder.encode(password, StandardCharsets.UTF_8) + "@" + serverAddress + "/" + filePath);
             } else {
@@ -801,15 +820,14 @@ public class ExcelUtils {
             }
 
             URLConnection conn = url.openConnection();
-            InputStream inputStream = conn.getInputStream();
-            FileOutputStream outputStream = new FileOutputStream(localFilePath);
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
+            try (InputStream inputStream = conn.getInputStream();
+                 FileOutputStream outputStream = new FileOutputStream(localFilePath)) {
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
             }
-            inputStream.close();
-            outputStream.close();
 
         } catch (IOException e) {
             CrestException.throwException(Translator.get("i18n_file_download_failed") + ", " + e.getMessage());

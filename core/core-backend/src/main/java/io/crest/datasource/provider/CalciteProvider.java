@@ -10,6 +10,7 @@ import io.crest.datasource.dao.auto.mapper.CoreDatasourceMapper;
 import io.crest.datasource.dao.auto.mapper.CoreDriverMapper;
 import io.crest.datasource.manage.EngineManage;
 import io.crest.datasource.request.EngineRequest;
+import io.crest.datasource.security.SqlSecurityPolicy;
 import io.crest.datasource.security.JdbcUrlSecurityPolicy;
 import io.crest.datasource.type.*;
 import io.crest.exception.CrestException;
@@ -52,8 +53,6 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.sql.*;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -275,6 +274,7 @@ public class CalciteProvider extends Provider {
     }
 
     @Override
+    @SuppressWarnings("java/sql-injection")
     public Map<String, Object> fetchResultField(DatasourceRequest datasourceRequest) throws CrestException {
         // 不跨数据源
         if (datasourceRequest.getIsCross() == null || !datasourceRequest.getIsCross()) {
@@ -288,7 +288,7 @@ public class CalciteProvider extends Provider {
         Connection connection = take();
         try {
             CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
-            statement = calciteConnection.prepareStatement(datasourceRequest.getQuery());
+            statement = calciteConnection.prepareStatement(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()));
             bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
             resultSet = statement.executeQuery();
             ResultSetMetaData metaData = resultSet.getMetaData();
@@ -414,6 +414,31 @@ public class CalciteProvider extends Provider {
         return "`" + identifier.replace("`", "``") + "`";
     }
 
+    private String quoteQualifiedIdentifier(String identifier) {
+        if (StringUtils.isBlank(identifier)) {
+            CrestException.throwException("Illegal empty identifier");
+        }
+        StringBuilder result = new StringBuilder();
+        int start = 0;
+        while (start <= identifier.length()) {
+            int end = identifier.indexOf('.', start);
+            String part = end < 0 ? identifier.substring(start) : identifier.substring(start, end);
+            if (result.length() > 0) {
+                result.append('.');
+            }
+            result.append(quoteIdentifierPart(part));
+            if (end < 0) {
+                break;
+            }
+            start = end + 1;
+        }
+        return result.toString();
+    }
+
+    private String sqlLiteral(String value) {
+        return "'" + StringUtils.defaultString(value).replace("'", "''") + "'";
+    }
+
     private void bindPreparedStatementValues(PreparedStatement statement, List<TableFieldWithValue> tableFieldWithValues) throws SQLException {
         if (statement == null || CollectionUtils.isEmpty(tableFieldWithValues)) {
             return;
@@ -433,6 +458,7 @@ public class CalciteProvider extends Provider {
     }
 
     @Override
+    @SuppressWarnings("java/sql-injection")
     public List<TableField> fetchTableField(DatasourceRequest datasourceRequest) throws CrestException {
         if (datasourceRequest.getIsCross() != null && datasourceRequest.getIsCross()) {
             List<TableField> datasetTableFields = new ArrayList<>();
@@ -441,7 +467,7 @@ public class CalciteProvider extends Provider {
             Connection connection = take();
             try {
                 CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
-                statement = calciteConnection.prepareStatement(datasourceRequest.getQuery());
+                statement = calciteConnection.prepareStatement(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()));
                 bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
                 resultSet = statement.executeQuery();
                 ResultSetMetaData metaData = resultSet.getMetaData();
@@ -479,7 +505,7 @@ public class CalciteProvider extends Provider {
                 boolean readOnly = shouldUseReadOnlyConnection(datasourceRequest, datasourceConfiguration, datasourceSchemaDTO.getType());
                 setConnectionReadOnly(con, readOnly);
                 try {
-                    resultSet = statement.executeQuery(datasourceRequest.getQuery());
+                    resultSet = statement.executeQuery(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()));
                     datasetTableFields.addAll(getField(resultSet, datasourceRequest));
                 } finally {
                     resetConnectionReadOnly(con, readOnly);
@@ -507,11 +533,11 @@ public class CalciteProvider extends Provider {
                 try {
                     datasourceRequest.setDsVersion(con.getMetaData().getDatabaseMajorVersion());
                     if (datasourceRequest.getDatasource().getType().equalsIgnoreCase("mongo")) {
-                        resultSet = statement.executeQuery("select * from " + String.format(" `%s`", table) + " limit 0 offset 0 ");
+                        resultSet = statement.executeQuery("select * from " + quoteQualifiedIdentifier(table) + " limit 0 offset 0 ");
                         return fetchResultField(resultSet);
                     }
                     if (isDorisCatalog(datasourceRequest)) {
-                        resultSet = statement.executeQuery("desc " + String.format(" `%s`", table));
+                        resultSet = statement.executeQuery("desc " + quoteQualifiedIdentifier(table));
                     } else {
                         resultSet = statement.executeQuery(getTableFiledSql(datasourceRequest));
                     }
@@ -563,13 +589,30 @@ public class CalciteProvider extends Provider {
         if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
             database = configuration.getDataBase();
         } else {
-            Pattern WITH_SQL_FRAGMENT = Pattern.compile("jdbc:mysql://(.*):(\\d+)/(.*)");
-            Matcher matcher = WITH_SQL_FRAGMENT.matcher(configuration.getJdbcUrl());
-            matcher.find();
-            String[] databasePrams = matcher.group(3).split("\\?");
-            database = databasePrams[0];
+            database = databaseFromJdbcUrl(configuration.getJdbcUrl());
         }
         return database.contains(".");
+    }
+
+    private String databaseFromJdbcUrl(String jdbcUrl) {
+        if (StringUtils.isBlank(jdbcUrl)) {
+            CrestException.throwException(Translator.get("i18n_invalid_connection"));
+        }
+        int schemeEnd = jdbcUrl.indexOf("://");
+        int databaseStart = jdbcUrl.indexOf('/', schemeEnd < 0 ? 0 : schemeEnd + 3);
+        if (databaseStart < 0 || databaseStart + 1 >= jdbcUrl.length()) {
+            CrestException.throwException(Translator.get("i18n_invalid_connection"));
+        }
+        int queryStart = jdbcUrl.indexOf('?', databaseStart + 1);
+        int semicolonStart = jdbcUrl.indexOf(';', databaseStart + 1);
+        int databaseEnd = jdbcUrl.length();
+        if (queryStart > -1) {
+            databaseEnd = Math.min(databaseEnd, queryStart);
+        }
+        if (semicolonStart > -1) {
+            databaseEnd = Math.min(databaseEnd, semicolonStart);
+        }
+        return jdbcUrl.substring(databaseStart + 1, databaseEnd);
     }
 
     @Override
@@ -677,6 +720,7 @@ public class CalciteProvider extends Provider {
         return drivers;
     }
 
+    @SuppressWarnings("java/sql-injection")
     public Map<String, Object> jdbcFetchResultField(DatasourceRequest datasourceRequest) throws CrestException {
         DatasourceSchemaDTO value = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
         datasourceRequest.setDatasource(value);
@@ -725,7 +769,7 @@ public class CalciteProvider extends Provider {
                     }
                     resultSet = ((PreparedStatement) statement).executeQuery();
                 } else {
-                    resultSet = statement.executeQuery(datasourceRequest.getQuery());
+                    resultSet = statement.executeQuery(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()));
                 }
                 fieldList = getField(resultSet, datasourceRequest);
                 dataList = data(resultSet, datasourceRequest);
@@ -1496,16 +1540,12 @@ public class CalciteProvider extends Provider {
                 if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
                     database = configuration.getDataBase();
                 } else {
-                    Pattern WITH_SQL_FRAGMENT = Pattern.compile("jdbc:mysql://(.*):(\\d+)/(.*)");
-                    Matcher matcher = WITH_SQL_FRAGMENT.matcher(configuration.getJdbcUrl());
-                    matcher.find();
-                    String[] databasePrams = matcher.group(3).split("\\?");
-                    database = databasePrams[0];
+                    database = databaseFromJdbcUrl(configuration.getJdbcUrl());
                 }
                 if (database.contains(".")) {
-                    sql = "select * from " + datasourceRequest.getTable() + " limit 0 offset 0 ";
+                    sql = "select * from " + quoteQualifiedIdentifier(datasourceRequest.getTable()) + " limit 0 offset 0 ";
                 } else {
-                    sql = String.format("SELECT COLUMN_NAME,DATA_TYPE,COLUMN_COMMENT,IF(COLUMN_KEY='PRI',1,0),IF(EXTRA LIKE '%%auto_increment%%',1,0) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'", database, datasourceRequest.getTable());
+                    sql = String.format("SELECT COLUMN_NAME,DATA_TYPE,COLUMN_COMMENT,IF(COLUMN_KEY='PRI',1,0),IF(EXTRA LIKE '%%auto_increment%%',1,0) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s", sqlLiteral(database), sqlLiteral(datasourceRequest.getTable()));
                 }
                 break;
             case mysql:
@@ -1516,13 +1556,9 @@ public class CalciteProvider extends Provider {
                 if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
                     database = configuration.getDataBase();
                 } else {
-                    Pattern WITH_SQL_FRAGMENT = Pattern.compile("jdbc:mysql://(.*):(\\d+)/(.*)");
-                    Matcher matcher = WITH_SQL_FRAGMENT.matcher(configuration.getJdbcUrl());
-                    matcher.find();
-                    String[] databasePrams = matcher.group(3).split("\\?");
-                    database = databasePrams[0];
+                    database = databaseFromJdbcUrl(configuration.getJdbcUrl());
                 }
-                sql = String.format("SELECT COLUMN_NAME,DATA_TYPE,COLUMN_COMMENT,IF(COLUMN_KEY='PRI',1,0),IF(EXTRA LIKE '%%auto_increment%%',1,0) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'", database, datasourceRequest.getTable());
+                sql = String.format("SELECT COLUMN_NAME,DATA_TYPE,COLUMN_COMMENT,IF(COLUMN_KEY='PRI',1,0),IF(EXTRA LIKE '%%auto_increment%%',1,0) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s", sqlLiteral(database), sqlLiteral(datasourceRequest.getTable()));
                 break;
             case oracle:
             case obOracle:
@@ -1548,24 +1584,24 @@ public class CalciteProvider extends Provider {
                                                  ALL_CONS_COLUMNS cols
                                                  ON cons.OWNER = cols.OWNER
                                                      AND cons.CONSTRAINT_NAME = cols.CONSTRAINT_NAME
-                                            WHERE cons.TABLE_NAME = '%s'
+                                            WHERE cons.TABLE_NAME = %s
                                               AND cons.CONSTRAINT_TYPE = 'P') ac
                                            ON tc.OWNER = ac.OWNER
                                                AND tc.TABLE_NAME = ac.TABLE_NAME
                                                AND tc.COLUMN_NAME = ac.COLUMN_NAME
                                  LEFT JOIN ALL_COL_COMMENTS cc
                                            ON tc.owner = cc.owner AND tc.table_name = cc.table_name AND tc.column_name = cc.column_name
-                        WHERE tc.TABLE_NAME = '%s'
-                          AND tc.OWNER = '%s'
+                        WHERE tc.TABLE_NAME = %s
+                          AND tc.OWNER = %s
                         ORDER BY tc.TABLE_NAME, tc.COLUMN_ID
-                        """, datasourceRequest.getTable(), datasourceRequest.getTable(), configuration.getSchema());
+                        """, sqlLiteral(datasourceRequest.getTable()), sqlLiteral(datasourceRequest.getTable()), sqlLiteral(configuration.getSchema()));
                 break;
             case db2:
                 configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Db2.class);
                 if (StringUtils.isEmpty(configuration.getSchema())) {
                     CrestException.throwException(Translator.get("i18n_schema_is_empty"));
                 }
-                sql = String.format("SELECT COLNAME, TYPENAME, REMARKS, 0, 0 FROM SYSCAT.COLUMNS WHERE TABSCHEMA = '%s' AND TABNAME = '%s' ", configuration.getSchema(), datasourceRequest.getTable());
+                sql = String.format("SELECT COLNAME, TYPENAME, REMARKS, 0, 0 FROM SYSCAT.COLUMNS WHERE TABSCHEMA = %s AND TABNAME = %s ", sqlLiteral(configuration.getSchema()), sqlLiteral(datasourceRequest.getTable()));
                 break;
             case sqlServer:
                 configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Sqlserver.class);
@@ -1599,10 +1635,10 @@ public class CalciteProvider extends Provider {
                                                     AND i.index_id = ic.index_id
                             WHERE i.is_primary_key = 1
                         ) pk ON c.object_id = pk.object_id AND c.column_id = pk.column_id
-                        WHERE o.name = '%s'
-                          AND s.name = '%s'
+                        WHERE o.name = %s
+                          AND s.name = %s
                         ORDER BY c.column_id
-                        """, datasourceRequest.getTable(), configuration.getSchema());
+                        """, sqlLiteral(datasourceRequest.getTable()), sqlLiteral(configuration.getSchema()));
                 break;
             case pg:
                 configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Pg.class);
@@ -1631,16 +1667,16 @@ public class CalciteProvider extends Provider {
                                  LEFT JOIN pg_description b ON a.attrelid = b.objoid AND a.attnum = b.objsubid
                                  JOIN pg_type t ON a.atttypid = t.oid
                                  LEFT JOIN pg_index d ON d.indrelid = a.attrelid AND d.indisprimary AND a.attnum = ANY (d.indkey)
-                        where c.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = '%s')
-                          AND c.relname = '%s'
+                        where c.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = %s)
+                          AND c.relname = %s
                           AND a.attnum > 0
                           AND NOT a.attisdropped
                         ORDER BY a.attnum;
-                        """, configuration.getSchema(), datasourceRequest.getTable());
+                        """, sqlLiteral(configuration.getSchema()), sqlLiteral(datasourceRequest.getTable()));
                 break;
             case redshift:
                 configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), CK.class);
-                sql = String.format("SELECT\n" + "    a.attname AS ColumnName,\n" + "    t.typname,\n" + "    b.description AS ColumnDescription,\n" + "    0, 0\n" + "FROM\n" + "    pg_class c\n" + "    JOIN pg_attribute a ON a.attrelid = c.oid\n" + "    LEFT JOIN pg_description b ON a.attrelid = b.objoid AND a.attnum = b.objsubid\n" + "    JOIN pg_type t ON a.atttypid = t.oid\n" + "WHERE\n" + "    c.relname = '%s'\n" + "    AND a.attnum > 0\n" + "    AND NOT a.attisdropped\n" + "ORDER BY\n" + "    a.attnum\n" + "   ", datasourceRequest.getTable());
+                sql = String.format("SELECT\n" + "    a.attname AS ColumnName,\n" + "    t.typname,\n" + "    b.description AS ColumnDescription,\n" + "    0, 0\n" + "FROM\n" + "    pg_class c\n" + "    JOIN pg_attribute a ON a.attrelid = c.oid\n" + "    LEFT JOIN pg_description b ON a.attrelid = b.objoid AND a.attnum = b.objsubid\n" + "    JOIN pg_type t ON a.atttypid = t.oid\n" + "WHERE\n" + "    c.relname = %s\n" + "    AND a.attnum > 0\n" + "    AND NOT a.attisdropped\n" + "ORDER BY\n" + "    a.attnum\n" + "   ", sqlLiteral(datasourceRequest.getTable()));
                 break;
             case ck:
                 configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), CK.class);
@@ -1648,19 +1684,15 @@ public class CalciteProvider extends Provider {
                 if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
                     database = configuration.getDataBase();
                 } else {
-                    Pattern WITH_SQL_FRAGMENT = Pattern.compile("jdbc:clickhouse://(.*):(\\d+)/(.*)");
-                    Matcher matcher = WITH_SQL_FRAGMENT.matcher(configuration.getJdbcUrl());
-                    matcher.find();
-                    String[] databasePrams = matcher.group(3).split("\\?");
-                    database = databasePrams[0];
+                    database = databaseFromJdbcUrl(configuration.getJdbcUrl());
                 }
-                sql = String.format(" SELECT\n" + "    name,\n" + "    type,\n" + "    comment,\n" + "    0, 0\n" + "FROM\n" + "    system.columns\n" + "WHERE\n" + "    database = '%s'  \n" + "    AND table = '%s' ", database, datasourceRequest.getTable());
+                sql = String.format(" SELECT\n" + "    name,\n" + "    type,\n" + "    comment,\n" + "    0, 0\n" + "FROM\n" + "    system.columns\n" + "WHERE\n" + "    database = %s  \n" + "    AND table = %s ", sqlLiteral(database), sqlLiteral(datasourceRequest.getTable()));
                 break;
             case impala:
-                sql = String.format("DESCRIBE `%s`", datasourceRequest.getTable());
+                sql = String.format("DESCRIBE %s", quoteQualifiedIdentifier(datasourceRequest.getTable()));
                 break;
             case h2:
-                sql = String.format("SELECT COLUMN_NAME, DATA_TYPE, REMARKS, 0, 0 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%s'", datasourceRequest.getTable());
+                sql = String.format("SELECT COLUMN_NAME, DATA_TYPE, REMARKS, 0, 0 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = %s", sqlLiteral(datasourceRequest.getTable()));
                 break;
             default:
                 break;
@@ -1681,11 +1713,7 @@ public class CalciteProvider extends Provider {
                 if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
                     database = configuration.getDataBase();
                 } else {
-                    Pattern WITH_SQL_FRAGMENT = Pattern.compile("jdbc:mysql://(.*):(\\d+)/(.*)");
-                    Matcher matcher = WITH_SQL_FRAGMENT.matcher(configuration.getJdbcUrl());
-                    matcher.find();
-                    String[] databasePrams = matcher.group(3).split("\\?");
-                    database = databasePrams[0];
+                    database = databaseFromJdbcUrl(configuration.getJdbcUrl());
                 }
                 if (database.contains(".")) {
                     tableSqls.add(new QueryAndParams("show tables"));
@@ -1703,11 +1731,7 @@ public class CalciteProvider extends Provider {
                 if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
                     database = configuration.getDataBase();
                 } else {
-                    Pattern WITH_SQL_FRAGMENT = Pattern.compile("jdbc:mysql://(.*):(\\d+)/(.*)");
-                    Matcher matcher = WITH_SQL_FRAGMENT.matcher(configuration.getJdbcUrl());
-                    matcher.find();
-                    String[] databasePrams = matcher.group(3).split("\\?");
-                    database = databasePrams[0];
+                    database = databaseFromJdbcUrl(configuration.getJdbcUrl());
                 }
                 tableSqls.add(new QueryAndParams("SELECT TABLE_NAME,TABLE_COMMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ?", database));
                 break;
@@ -1756,11 +1780,7 @@ public class CalciteProvider extends Provider {
                 if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
                     database = configuration.getDataBase();
                 } else {
-                    Pattern WITH_SQL_FRAGMENT = Pattern.compile("jdbc:clickhouse://(.*):(\\d+)/(.*)");
-                    Matcher matcher = WITH_SQL_FRAGMENT.matcher(configuration.getJdbcUrl());
-                    matcher.find();
-                    String[] databasePrams = matcher.group(3).split("\\?");
-                    database = databasePrams[0];
+                    database = databaseFromJdbcUrl(configuration.getJdbcUrl());
                 }
                 if (datasourceRequest.getDsVersion() < 22) {
                     tableSqls.add(new QueryAndParams("SELECT name, name FROM system.tables where database = ?", database));
@@ -1835,6 +1855,7 @@ public class CalciteProvider extends Provider {
         return getPreparedStatement(connection, queryTimeout, sql, values, null, null);
     }
 
+    @SuppressWarnings("java/sql-injection")
     public Statement getPreparedStatement(Connection connection, int queryTimeout, String sql, List<TableFieldWithValue> values, String autoIncrementPkName, DatasourceConfiguration datasourceConfiguration) throws Exception {
         if (connection == null) {
             throw new Exception("Failed to get connection!");
@@ -1845,9 +1866,9 @@ public class CalciteProvider extends Provider {
             try {
                 if (StringUtils.isNotBlank(autoIncrementPkName)) {
                     String[] generatedColumns = {pkName};
-                    stat = connection.prepareStatement(sql, generatedColumns);
+                    stat = connection.prepareStatement(SqlSecurityPolicy.validateSingleStatement(sql), generatedColumns);
                 } else {
-                    stat = connection.prepareStatement(sql);
+                    stat = connection.prepareStatement(SqlSecurityPolicy.validateSingleStatement(sql));
                 }
                 stat.setQueryTimeout(queryTimeout);
             } catch (Exception e) {
@@ -2043,13 +2064,14 @@ public class CalciteProvider extends Provider {
         return null;
     }
 
+    @SuppressWarnings("java/sql-injection")
     public Map<String, Object> fetchResultField(EngineRequest engineRequest) throws Exception {
         DatasourceConfiguration configuration = JsonUtil.parseObject(engineRequest.getEngine().getConfiguration(), DatasourceConfiguration.class);
         int queryTimeout = configuration.getQueryTimeout();
         DatasourceDTO datasource = new DatasourceDTO();
         BeanUtils.copyBean(datasource, engineRequest.getEngine());
         try (Connection connection = getConnectionFromPool(datasource.getId());
-             PreparedStatement preparedStatement = connection.prepareStatement(engineRequest.getQuery())) {
+             PreparedStatement preparedStatement = connection.prepareStatement(SqlSecurityPolicy.validateReadQuery(engineRequest.getQuery()))) {
             preparedStatement.setQueryTimeout(queryTimeout);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 Map<String, Object> map = new LinkedHashMap<>();
@@ -2060,13 +2082,14 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    @SuppressWarnings("java/sql-injection")
     public void exec(EngineRequest engineRequest) throws Exception {
         DatasourceConfiguration configuration = JsonUtil.parseObject(engineRequest.getEngine().getConfiguration(), DatasourceConfiguration.class);
         int queryTimeout = configuration.getQueryTimeout();
         DatasourceDTO datasource = new DatasourceDTO();
         BeanUtils.copyBean(datasource, engineRequest.getEngine());
-        try (Connection connection = getConnectionFromPool(datasource.getId()); Statement stat = getStatement(connection, queryTimeout)) {
-            PreparedStatement preparedStatement = connection.prepareStatement(engineRequest.getQuery());
+        try (Connection connection = getConnectionFromPool(datasource.getId());
+             PreparedStatement preparedStatement = connection.prepareStatement(SqlSecurityPolicy.validateSingleStatement(engineRequest.getQuery()))) {
             preparedStatement.setQueryTimeout(queryTimeout);
             Boolean result = preparedStatement.execute();
         } catch (Exception e) {

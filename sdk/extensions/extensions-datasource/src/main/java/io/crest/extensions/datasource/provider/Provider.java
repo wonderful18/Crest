@@ -214,15 +214,57 @@ public abstract class Provider {
 
         if (!fieldsDialect.isEmpty()) {
             for (Map.Entry<String, String> ele : fieldsDialect.entrySet()) {
-                s = s.replaceAll(SqlPlaceholderConstants.KEYWORD_PREFIX_REGEX + ele.getKey() + SqlPlaceholderConstants.KEYWORD_SUFFIX_REGEX, Matcher.quoteReplacement(ele.getValue()));
+                s = replaceKeywordPlaceholder(s, ele.getKey(), ele.getValue());
             }
         }
         return s;
     }
 
+    private String replaceKeywordPlaceholder(String sql, String key, String value) {
+        return sql
+                .replace("`" + key + "`", value)
+                .replace("'" + key + "'", value)
+                .replace("\"" + key + "\"", value)
+                .replace("[" + key + "]", value)
+                .replace(key, value);
+    }
+
     public String replaceComment(String s) {
-        String regex = "/\\*[\\s\\S]*?\\*/|--.*";
-        return s.replaceAll(regex, " ");
+        StringBuilder result = new StringBuilder(s.length());
+        boolean blockComment = false;
+        boolean lineComment = false;
+        for (int i = 0; i < s.length(); i++) {
+            char current = s.charAt(i);
+            char next = i + 1 < s.length() ? s.charAt(i + 1) : '\0';
+            if (blockComment) {
+                if (current == '*' && next == '/') {
+                    blockComment = false;
+                    i++;
+                }
+                continue;
+            }
+            if (lineComment) {
+                if (current == '\n' || current == '\r') {
+                    lineComment = false;
+                    result.append(' ');
+                }
+                continue;
+            }
+            if (current == '/' && next == '*') {
+                blockComment = true;
+                result.append(' ');
+                i++;
+                continue;
+            }
+            if (current == '-' && next == '-') {
+                lineComment = true;
+                result.append(' ');
+                i++;
+                continue;
+            }
+            result.append(current);
+        }
+        return result.toString();
     }
 
     public SqlDialect getDialect(DatasourceSchemaDTO coreDatasource) {

@@ -12,6 +12,11 @@ const escapeSvgText = (value: unknown) =>
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
 
+const escapeSvgAttribute = (value: unknown) =>
+  escapeSvgText(value)
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
 const formatMetricValue = (value: unknown) => {
@@ -288,7 +293,7 @@ class StageFunnelDomChart {
       : ''
 
     container.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"
-      xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeSvgText(this.chart.title)}">
+      xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeSvgAttribute(this.chart.title)}">
       <defs>${defs}</defs>
       <style>
         .stage-funnel-segment .stage-funnel-body,

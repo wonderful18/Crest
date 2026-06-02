@@ -502,7 +502,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     // dsTableFields 中存在计算字段在OriginName中 也需要替换
                     dsTableFieldsList.forEach(dsTableFields -> {
                         dsTableFieldsIdMap.forEach((key, value) -> {
-                            dsTableFields.setOriginName(dsTableFields.getOriginName().replaceAll(key.toString(), value.toString()));
+                            dsTableFields.setOriginName(dsTableFields.getOriginName().replace(key.toString(), value.toString()));
                         });
                         coreDatasetTableFieldMapper.insert(dsTableFields);
                     });
@@ -511,15 +511,15 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     // 持久化数据集
                     newDsGroupInfo.forEach(dsGroup -> {
                         dsTableIdMap.forEach((key, value) -> {
-                            dsGroup.setInfo(dsGroup.getInfo().replaceAll(key.toString(), value.toString()));
+                            dsGroup.setInfo(dsGroup.getInfo().replace(key.toString(), value.toString()));
                         });
 
                         dsTableFieldsIdMap.forEach((key, value) -> {
-                            dsGroup.setInfo(dsGroup.getInfo().replaceAll(key.toString(), value.toString()));
+                            dsGroup.setInfo(dsGroup.getInfo().replace(key.toString(), value.toString()));
                         });
 
                         datasourceIdMap.forEach((key, value) -> {
-                            dsGroup.setInfo(dsGroup.getInfo().replaceAll(key.toString(), value.toString()));
+                            dsGroup.setInfo(dsGroup.getInfo().replace(key.toString(), value.toString()));
                             //表名映射更新
                             Map<String, String> appDsTableNamesMap = dsTableNamesMap.get(key);
                             Map<String, String> systemDsTableNamesMap = dsTableNamesMap.get(value);
@@ -532,14 +532,14 @@ public class DataVisualizationServer implements DataVisualizationApi {
                                     if (bothHaveSingleEntry) {
                                         // 直接使用 systemDsTableNamesMap 的第一个值
                                         String firstSystemValue = systemDsTableNamesMap.values().iterator().next();
-                                        dsGroup.setInfo(dsGroup.getInfo().replaceAll(valueName, firstSystemValue));
+                                        dsGroup.setInfo(dsGroup.getInfo().replace(valueName, firstSystemValue));
                                         excelTableNamesMap.put(valueName, firstSystemValue);
                                     } else if (MapUtils.isNotEmpty(systemDsTableNamesMap) &&
                                             StringUtils.isNotEmpty(systemDsTableNamesMap.get(keyName))) {
-                                        dsGroup.setInfo(dsGroup.getInfo().replaceAll(valueName, systemDsTableNamesMap.get(keyName)));
+                                        dsGroup.setInfo(dsGroup.getInfo().replace(valueName, systemDsTableNamesMap.get(keyName)));
                                         excelTableNamesMap.put(valueName, systemDsTableNamesMap.get(keyName));
                                     } else {
-                                        dsGroup.setInfo(dsGroup.getInfo().replaceAll(valueName, "excel_can_not_find"));
+                                        dsGroup.setInfo(dsGroup.getInfo().replace(valueName, "excel_can_not_find"));
                                     }
                                 });
                             }
@@ -568,25 +568,25 @@ public class DataVisualizationServer implements DataVisualizationApi {
             // 更换主数据内容
             AtomicReference<String> componentDataStr = new AtomicReference<>(request.getComponentData());
             dsGroupIdMap.forEach((key, value) -> {
-                componentDataStr.set(componentDataStr.get().replaceAll(key.toString(), value.toString()));
+                componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
             });
             dsTableIdMap.forEach((key, value) -> {
-                componentDataStr.set(componentDataStr.get().replaceAll(key.toString(), value.toString()));
+                componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
             });
 
             dsTableFieldsIdMap.forEach((key, value) -> {
-                componentDataStr.set(componentDataStr.get().replaceAll(key.toString(), value.toString()));
+                componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
             });
 
             datasourceIdMap.forEach((key, value) -> {
-                componentDataStr.set(componentDataStr.get().replaceAll(key.toString(), value.toString()));
+                componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
                 //表名映射更新
                 Map<String, String> appDsTableNamesMap = dsTableNamesMap.get(key);
                 Map<String, String> systemDsTableNamesMap = dsTableNamesMap.get(value);
                 if (MapUtils.isNotEmpty(appDsTableNamesMap) && MapUtils.isNotEmpty(systemDsTableNamesMap)) {
                     appDsTableNamesMap.forEach((keyName, valueName) -> {
                         if (StringUtils.isNotEmpty(systemDsTableNamesMap.get(keyName))) {
-                            componentDataStr.set(componentDataStr.get().replaceAll(key.toString(), value.toString()));
+                            componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
                         }
                     });
                 }
@@ -619,19 +619,19 @@ public class DataVisualizationServer implements DataVisualizationApi {
             canvasViewsStr.forEach((viewId, viewInfoStr) -> {
                 AtomicReference<String> mutableViewInfoStr = new AtomicReference<>(viewInfoStr);
                 datasourceIdMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replaceAll(key.toString(), value.toString()));
+                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key.toString(), value.toString()));
                 });
                 dsTableIdMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replaceAll(key.toString(), value.toString()));
+                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key.toString(), value.toString()));
                 });
                 dsTableFieldsIdMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replaceAll(key.toString(), value.toString()));
+                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key.toString(), value.toString()));
                 });
                 dsGroupIdMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replaceAll(key.toString(), value.toString()));
+                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key.toString(), value.toString()));
                 });
                 dsTableFieldsDatasetNameMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replaceAll(key, value));
+                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key, value));
                 });
                 canvasViewsStr.put(viewId, mutableViewInfoStr.get());
             });
@@ -695,12 +695,12 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
                     dsTableFieldsIdMap.forEach((key, value) -> {
                         if(StringUtils.isNotEmpty(visualizationLinkJumpInfo.getContent())){
-                            visualizationLinkJumpInfo.setContent(visualizationLinkJumpInfo.getContent().replaceAll(key.toString(), value.toString()));
+                            visualizationLinkJumpInfo.setContent(visualizationLinkJumpInfo.getContent().replace(key.toString(), value.toString()));
                         }
                     });
                     dsTableFieldsDatasetNameMap.forEach((key, value) -> {
                         if(StringUtils.isNotEmpty(visualizationLinkJumpInfo.getContent())){
-                            visualizationLinkJumpInfo.setContent(visualizationLinkJumpInfo.getContent().replaceAll(key.toString(), value.toString()));
+                            visualizationLinkJumpInfo.setContent(visualizationLinkJumpInfo.getContent().replace(key.toString(), value.toString()));
                         }
                     });
                     snapshotVisualizationLinkJumpInfoMapper.insert(visualizationLinkJumpInfo);
@@ -722,7 +722,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     DatasetTableInfoDTO infoDTO = JsonUtil.parseObject(tableDTO.getInfo(), DatasetTableInfoDTO.class);
                     String s = new String(Base64.getDecoder().decode(infoDTO.getSql()));
                     excelTableNamesMap.forEach((key, value) -> {
-                        infoDTO.setSql(Base64.getEncoder().encodeToString(s.replaceAll(key, value).getBytes()));
+                        infoDTO.setSql(Base64.getEncoder().encodeToString(s.replace(key, value).getBytes()));
                     });
                     tableDTO.setInfo((String) JsonUtil.toJSONString(infoDTO));
                 }
@@ -967,7 +967,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
             String componentData = newDv.getComponentData();
             // componentData viewId 数据  并保存
             for (CoreChartView viewInfo : viewList) {
-                componentData = componentData.replaceAll(String.valueOf(viewInfo.getCopyFrom()), String.valueOf(viewInfo.getId()));
+                componentData = componentData.replace(String.valueOf(viewInfo.getCopyFrom()), String.valueOf(viewInfo.getId()));
             }
             newDv.setComponentData(componentData);
         }
@@ -1062,7 +1062,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     String dvInfo = appDataFormat.getVisualizationInfo();
                     VisualizationBaseInfoVO baseInfoVO = JsonUtil.parseObject(dvInfo, VisualizationBaseInfoVO.class);
                     Long sourceDvId = baseInfoVO.getId();
-                    appDataStr = appDataStr.replaceAll(sourceDvId.toString(), newDvId.toString());
+                    appDataStr = appDataStr.replace(sourceDvId.toString(), newDvId.toString());
                 } catch (Exception e) {
                     LogUtil.error(e);
                     appDataStr = null;
@@ -1101,11 +1101,11 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 // 数据处理 1.替换viewId 2.加入模板view data数据
                 VisualizationTemplateExtendDataDTO extendDataDTO = new VisualizationTemplateExtendDataDTO(newDvId, newViewId, originViewData);
                 extendDataInfo.put(newViewId, extendDataDTO);
-                templateData = templateData.replaceAll(originViewId, newViewId.toString());
+                templateData = templateData.replace(originViewId, newViewId.toString());
                 viewIdsMap.put(originViewId,Long.toString(newViewId));
                 if (StringUtils.isNotEmpty(appDataStr)) {
                     chartView.setTableId(chartView.getSourceTableId());
-                    appDataStr = appDataStr.replaceAll(originViewId, newViewId.toString());
+                    appDataStr = appDataStr.replace(originViewId, newViewId.toString());
                 }
                 canvasViewInfo.put(chartView.getId(), chartView);
                 //插入模板数据 此处预先插入减少数据交互量

@@ -12,15 +12,19 @@ import { setElementPlusLocale } from '@/plugins/element-plus'
 const mergeLocaleData = (baseLocale: any, customData: any) => {
   const merged = JSON.parse(JSON.stringify(baseLocale || {}))
 
+  const isSafeLocaleKey = (key: string) => !['__proto__', 'prototype', 'constructor'].includes(key)
+
   const mergeRecursive = (obj: any, source: any) => {
     for (const key in source) {
-      if (source.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(source, key) && isSafeLocaleKey(key)) {
         if (
           typeof source[key] === 'object' &&
           source[key] !== null &&
           !Array.isArray(source[key])
         ) {
-          if (!obj[key]) obj[key] = {}
+          if (!Object.prototype.hasOwnProperty.call(obj, key) || typeof obj[key] !== 'object') {
+            obj[key] = {}
+          }
           mergeRecursive(obj[key], source[key])
         } else {
           obj[key] = source[key]
