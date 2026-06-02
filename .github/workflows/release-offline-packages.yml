@@ -14,15 +14,17 @@ permissions:
 
 jobs:
   package:
-    name: Package ${{ matrix.platform }}
+    name: Package ${{ matrix.package_platform }}
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: linux-amd64
+          - package_platform: linux-amd64
+            docker_platform: linux/amd64
             arch: amd64
-          - platform: linux-arm64
+          - package_platform: linux-arm64
+            docker_platform: linux/arm64
             arch: arm64
 
     steps:
@@ -42,7 +44,7 @@ jobs:
       - name: Load target-architecture images
         env:
           VERSION: ${{ inputs.version }}
-          PLATFORM: ${{ matrix.platform }}
+          DOCKER_PLATFORM: ${{ matrix.docker_platform }}
           ARCH: ${{ matrix.arch }}
         run: |
           set -euo pipefail
@@ -52,8 +54,8 @@ jobs:
           load_image() {
             local source_image="$1"
             local local_image="$2"
-            printf 'FROM --platform=%s %s\n' "${PLATFORM}" "${source_image}" \
-              | docker buildx build --platform "${PLATFORM}" -t "${local_image}" --load -f - /tmp/crest-image-load
+            printf 'FROM --platform=%s %s\n' "${DOCKER_PLATFORM}" "${source_image}" \
+              | docker buildx build --platform "${DOCKER_PLATFORM}" -t "${local_image}" --load -f - /tmp/crest-image-load
             docker image inspect "${local_image}" --format '{{.Architecture}}' | grep -qx "${ARCH}"
           }
 
@@ -66,7 +68,7 @@ jobs:
       - name: Build offline package
         env:
           VERSION: ${{ inputs.version }}
-          PLATFORM: ${{ matrix.platform }}
+          PACKAGE_PLATFORM: ${{ matrix.package_platform }}
           ARCH: ${{ matrix.arch }}
           INCLUDE_OBSERVABILITY_IMAGES: "true"
           SOURCE_MYSQL_IMAGE: mysql:8.0.43-${{ matrix.arch }}
@@ -82,13 +84,13 @@ jobs:
           BACKEND_IMAGE="ghcr.io/sevoniva/crest-service:${VERSION}-${ARCH}" \
           SOURCE_FRONTEND_IMAGE="ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}" \
           FRONTEND_IMAGE="ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}" \
-          bash installer/make-offline-package.sh "${VERSION}" "${PLATFORM}"
+          bash installer/make-offline-package.sh "${VERSION}" "${PACKAGE_PLATFORM}"
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: crest-offline-${{ inputs.version }}-${{ matrix.platform }}
-          path: offline-packages/crest-offline-${{ inputs.version }}-${{ matrix.platform }}.tar.gz
+          name: crest-offline-${{ inputs.version }}-${{ matrix.package_platform }}
+          path: offline-packages/crest-offline-${{ inputs.version }}-${{ matrix.package_platform }}.tar.gz
           if-no-files-found: error
           retention-days: 14
 
