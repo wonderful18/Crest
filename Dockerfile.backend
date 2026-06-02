@@ -40,6 +40,6 @@ USER 10001:10001
 EXPOSE 8100
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=20 \
-  CMD wget -qO- "http://127.0.0.1:${RUNNING_PORT}${CREST_HEALTHCHECK_PATH}" >/dev/null || exit 1
+  CMD env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy wget -qO- "http://127.0.0.1:${RUNNING_PORT}${CREST_HEALTHCHECK_PATH}" >/dev/null || exit 1
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /opt/apps/app.jar"]

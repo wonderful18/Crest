@@ -65,6 +65,9 @@ crest:
   user:
     initial-password: ${CREST_INITIAL_PASSWORD}
   observability:
+    api:
+      route-inventory-enabled: ${CREST_API_ROUTE_INVENTORY_ENABLED:true}
+      route-prefix: ${CREST_API_ROUTE_PREFIX:/api/v1}
     prometheus:
       enabled: ${CREST_PROMETHEUS_ENABLED}
       endpoint: /api/v1/actuator/prometheus

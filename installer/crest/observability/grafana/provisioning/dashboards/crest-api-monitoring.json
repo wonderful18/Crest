@@ -7,7 +7,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 41,
-  "version": 1,
+  "version": 3,
   "refresh": "15s",
   "editable": true,
   "graphTooltip": 1,
@@ -102,7 +102,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "已观测接口数",
+      "title": "已登记业务接口",
       "datasource": {
         "type": "prometheus",
         "uid": "crest-prometheus"
@@ -119,9 +119,9 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "count(count by (method, uri) (http_server_requests_seconds_count{job=\"$job\",uri=~\"$uri\"}))",
+          "expr": "count(crest_api_route_info{uri=~\"$uri\"})",
           "legendFormat": "",
-          "refId": "M",
+          "refId": "A",
           "format": "time_series"
         }
       ],
@@ -166,13 +166,145 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "总请求数",
+      "title": "已观测业务接口",
       "datasource": {
         "type": "prometheus",
         "uid": "crest-prometheus"
       },
       "gridPos": {
         "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "(count(count by (method, uri) (http_server_requests_seconds_count{job=\"$job\",uri=~\"$uri\",uri!=\"UNKNOWN\",uri!=\"/**\",uri!=\"/websocket/**\",uri!~\".*/actuator/.*\"}) and on(method, uri) crest_api_route_info{uri=~\"$uri\"})) or vector(0)",
+          "legendFormat": "",
+          "refId": "A",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "API 覆盖率",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "100 * ((count(count by (method, uri) (http_server_requests_seconds_count{job=\"$job\",uri=~\"$uri\",uri!=\"UNKNOWN\",uri!=\"/**\",uri!=\"/websocket/**\",uri!~\".*/actuator/.*\"}) and on(method, uri) crest_api_route_info{uri=~\"$uri\"})) or vector(0)) / clamp_min((count(crest_api_route_info{uri=~\"$uri\"})), 1)",
+          "legendFormat": "",
+          "refId": "A",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "总请求数",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 18,
         "y": 0,
         "w": 6,
         "h": 4
@@ -228,7 +360,7 @@
       }
     },
     {
-      "id": 3,
+      "id": 11,
       "type": "stat",
       "title": "活跃请求",
       "datasource": {
@@ -236,8 +368,8 @@
         "uid": "crest-prometheus"
       },
       "gridPos": {
-        "x": 12,
-        "y": 0,
+        "x": 0,
+        "y": 4,
         "w": 6,
         "h": 4
       },
@@ -247,9 +379,9 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "sum(http_server_requests_active_seconds_gcount{job=\"$job\",uri=~\"$uri\"})",
+          "expr": "sum(http_server_requests_active_seconds_count{job=\"$job\",uri=~\"$uri\"})",
           "legendFormat": "",
-          "refId": "Q",
+          "refId": "A",
           "format": "time_series"
         }
       ],
@@ -292,7 +424,7 @@
       }
     },
     {
-      "id": 4,
+      "id": 12,
       "type": "stat",
       "title": "最大耗时",
       "datasource": {
@@ -300,8 +432,8 @@
         "uid": "crest-prometheus"
       },
       "gridPos": {
-        "x": 18,
-        "y": 0,
+        "x": 6,
+        "y": 4,
         "w": 6,
         "h": 4
       },
@@ -313,7 +445,7 @@
           },
           "expr": "max(http_server_requests_seconds_max{job=\"$job\",uri=~\"$uri\"})",
           "legendFormat": "",
-          "refId": "E",
+          "refId": "A",
           "format": "time_series"
         }
       ],
@@ -365,7 +497,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 32,
+        "y": 36,
         "w": 24,
         "h": 8
       },
@@ -434,7 +566,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 40,
+        "y": 44,
         "w": 24,
         "h": 8
       },
@@ -503,7 +635,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 25,
         "w": 12,
         "h": 7
       },
@@ -572,7 +704,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 21,
+        "y": 25,
         "w": 12,
         "h": 7
       },
@@ -651,7 +783,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 72,
+        "y": 76,
         "w": 24,
         "h": 9
       },
@@ -712,7 +844,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 81,
+        "y": 85,
         "w": 24,
         "h": 9
       },
@@ -749,6 +881,130 @@
           },
           "unit": "s",
           "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ]
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "未覆盖接口清单",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 94,
+        "w": 12,
+        "h": 10
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "crest_api_route_info{uri=~\"$uri\"} unless on(method, uri) count by (method, uri) (http_server_requests_seconds_count{job=\"$job\",uri=~\"$uri\",uri!=\"UNKNOWN\",uri!=\"/**\",uri!=\"/websocket/**\",uri!~\".*/actuator/.*\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ]
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "table",
+      "title": "未登记但有流量",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 94,
+        "w": 12,
+        "h": 10
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "count by (method, uri) (http_server_requests_seconds_count{job=\"$job\",uri=~\"$uri\",uri!=\"UNKNOWN\",uri!=\"/**\",uri!=\"/websocket/**\",uri!~\".*/actuator/.*\"}) unless on(method, uri) crest_api_route_info{uri=~\"$uri\"}",
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 0
         },
         "overrides": []
       },
