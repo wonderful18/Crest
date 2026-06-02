@@ -58,11 +58,31 @@ watch(filterText, val => {
   treeRef.value.filter(val)
   nextTick(() => {
     document.querySelectorAll('.node-text').forEach(ele => {
-      const content = ele.getAttribute('title')
-      ele.innerHTML = content.replace(val, `<span class="highLight">${val}</span>`)
+      renderHighlightedTreeText(ele, val)
     })
   })
 })
+
+const renderHighlightedTreeText = (ele: Element, keyword: string) => {
+  const content = ele.getAttribute('title') || ''
+  ele.textContent = ''
+  if (!keyword) {
+    ele.textContent = content
+    return
+  }
+  let offset = 0
+  let cursor = content.indexOf(keyword, offset)
+  while (cursor !== -1) {
+    ele.appendChild(document.createTextNode(content.slice(offset, cursor)))
+    const mark = document.createElement('span')
+    mark.className = 'highLight'
+    mark.textContent = keyword
+    ele.appendChild(mark)
+    offset = cursor + keyword.length
+    cursor = content.indexOf(keyword, offset)
+  }
+  ele.appendChild(document.createTextNode(content.slice(offset)))
+}
 
 const showPid = computed(() => {
   if (nodeType.value === 'folder' && !!pid.value) {

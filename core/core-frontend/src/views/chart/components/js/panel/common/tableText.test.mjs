@@ -17,6 +17,10 @@ test('normalizes common html line breaks without rendering html', () => {
   assert.equal(normalizeTableCellText('A<br/>B&nbsp;<b>C</b>'), 'A\nB C')
 })
 
+test('removes dangerous html tags from table text', () => {
+  assert.equal(normalizeTableCellText('A<script>alert(1)</script>B<iframe src=x>C'), 'ABC')
+})
+
 test('normalizes encoded html line breaks and whitespace entities', () => {
   assert.equal(normalizeTableCellText('A&lt;br&gt;B&#10;C&#9;D'), 'A\nB\nC D')
 })

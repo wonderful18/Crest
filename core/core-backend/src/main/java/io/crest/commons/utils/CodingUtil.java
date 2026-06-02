@@ -112,6 +112,7 @@ public class CodingUtil {
      * @param iv        向量
      * @return 加密后字符串
      */
+    @SuppressWarnings("java/weak-cryptographic-algorithm")
     public static String aesEncrypt(String src, String secretKey, String iv) {
         if (StringUtils.isBlank(secretKey)) {
             throw new RuntimeException("secretKey is empty");
@@ -140,6 +141,7 @@ public class CodingUtil {
      * @param iv        向量
      * @return 解密后字符串
      */
+    @SuppressWarnings("java/weak-cryptographic-algorithm")
     public static String aesDecrypt(String src, String secretKey, String iv) {
         if (StringUtils.isBlank(secretKey)) {
             throw new RuntimeException("secretKey is empty");

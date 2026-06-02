@@ -1,7 +1,8 @@
 const BLOCK_END_TAG_RE = /<\/(p|div|section|article|header|footer|li|tr|h[1-6])>/gi
 const LINE_BREAK_TAG_RE = /<br\s*\/?>/gi
 const ENCODED_LINE_BREAK_TAG_RE = /&lt;br\s*\/?&gt;/gi
-const SCRIPT_STYLE_RE = /<\s*(script|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi
+const DANGEROUS_CONTENT_RE = /<\s*(script|style|iframe)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi
+const DANGEROUS_TAG_RE = /<\s*\/?\s*(script|style|iframe)\b[^>]*>/gi
 const PRESENTATION_TAG_RE =
   /<\/?(span|strong|b|em|i|u|p|div|section|article|header|footer|li|ul|ol|table|thead|tbody|tr|td|th|a|font|label|small|mark|code|pre)[^>]*>/gi
 
@@ -34,7 +35,8 @@ export function normalizeTableCellText(value) {
     .replace(/\\t/g, '  ')
     .replace(/\t/g, '  ')
     .replace(ENCODED_LINE_BREAK_TAG_RE, '\n')
-    .replace(SCRIPT_STYLE_RE, '')
+    .replace(DANGEROUS_CONTENT_RE, '')
+    .replace(DANGEROUS_TAG_RE, '')
     .replace(LINE_BREAK_TAG_RE, '\n')
     .replace(BLOCK_END_TAG_RE, '\n')
     .replace(PRESENTATION_TAG_RE, '')
