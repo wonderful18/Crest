@@ -149,6 +149,7 @@ services:
       GF_UNIFIED_ALERTING_ENABLED: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
       GF_SERVER_ROOT_URL: ${CREST_GRAFANA_PUBLIC_URL:-http://localhost:3000}
     logging:
       driver: json-file

@@ -964,7 +964,7 @@ CREATE TABLE `iam_user` (
   `email` varchar(255) DEFAULT NULL COMMENT '邮箱',
   `phone_prefix` varchar(16) DEFAULT NULL COMMENT '电话区号',
   `phone` varchar(64) DEFAULT NULL COMMENT '电话',
-  `password_hash` varchar(64) NOT NULL COMMENT '密码摘要',
+  `password_hash` varchar(512) NOT NULL COMMENT '密码摘要',
   `enable` tinyint NOT NULL DEFAULT '1' COMMENT '是否启用',
   `is_admin` tinyint NOT NULL DEFAULT '0' COMMENT '是否管理员',
   `origin` int NOT NULL DEFAULT '0' COMMENT '用户来源',
@@ -1735,9 +1735,10 @@ SET
     `update_time` = UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3)) * 1000
 WHERE `provider_key` = 'default';
 
--- Enlarge password_hash column for PBKDF2 hashes (iterations:salt:hash format)
--- MD5 was 32 chars, PBKDF2 is ~120 chars
-ALTER TABLE iam_user MODIFY COLUMN password_hash VARCHAR(256);
+-- Enlarge password_hash column for modern password hash formats.
+-- MD5 was 32 chars; PBKDF2/SM3 are currently shorter than 128 chars,
+-- while 512 leaves room for future algorithm metadata without truncation.
+ALTER TABLE iam_user MODIFY COLUMN password_hash VARCHAR(512) NOT NULL COMMENT '密码摘要';
 
 -- 审计日志表
 CREATE TABLE IF NOT EXISTS audit_log (

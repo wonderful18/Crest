@@ -1,0 +1,922 @@
+{
+  "uid": "crest-service-overview",
+  "title": "Crest 服务总览",
+  "tags": [
+    "crest",
+    "overview"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "refresh": "15s",
+  "editable": true,
+  "graphTooltip": 1,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "fiscalYearStartMonth": 0,
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "label": "服务",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "crest-prometheus"
+        },
+        "query": "label_values(up, job)",
+        "current": {
+          "selected": false,
+          "text": "crest-service",
+          "value": "crest-service"
+        },
+        "includeAll": false,
+        "refresh": 1,
+        "sort": 1
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "服务采集状态",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "min(up{job=\"$job\"})",
+          "legendFormat": "",
+          "refId": "G",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "API 请求速率",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\"}[$__rate_interval]))",
+          "legendFormat": "",
+          "refId": "B",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "5xx 错误率",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "(sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[$__rate_interval])) or vector(0)) / clamp_min(sum(rate(http_server_requests_seconds_count{job=\"$job\"}[$__rate_interval])), 0.001)",
+          "legendFormat": "",
+          "refId": "M",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.01
+              },
+              {
+                "color": "red",
+                "value": 0.05
+              }
+            ]
+          },
+          "unit": "percentunit",
+          "decimals": 2,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "API P95 延迟",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))",
+          "legendFormat": "",
+          "refId": "J",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "API 吞吐趋势",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\"}[$__rate_interval]))",
+          "legendFormat": "QPS",
+          "refId": "G",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "错误率趋势",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "(sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[$__rate_interval])) or vector(0)) / clamp_min(sum(rate(http_server_requests_seconds_count{job=\"$job\"}[$__rate_interval])), 0.001)",
+          "legendFormat": "5xx rate",
+          "refId": "O",
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "(sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"4..\"}[$__rate_interval])) or vector(0)) / clamp_min(sum(rate(http_server_requests_seconds_count{job=\"$job\"}[$__rate_interval])), 0.001)",
+          "legendFormat": "4xx rate",
+          "refId": "T",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "延迟趋势",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))",
+          "legendFormat": "P50",
+          "refId": "F",
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))",
+          "legendFormat": "P95",
+          "refId": "B",
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))",
+          "legendFormat": "P99",
+          "refId": "B",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "资源使用",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 21,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "process_cpu_usage{job=\"$job\"}",
+          "legendFormat": "Process CPU",
+          "refId": "P",
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "system_cpu_usage{job=\"$job\"}",
+          "legendFormat": "System CPU",
+          "refId": "H",
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "sum(jvm_memory_used_bytes{job=\"$job\",area=\"heap\"}) / sum(jvm_memory_max_bytes{job=\"$job\",area=\"heap\"})",
+          "legendFormat": "Heap usage",
+          "refId": "G",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "磁盘空间",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "disk_free_bytes{job=\"$job\"}",
+          "legendFormat": "Free",
+          "refId": "O",
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "disk_total_bytes{job=\"$job\"}",
+          "legendFormat": "Total",
+          "refId": "T",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "日志事件",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 28,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "sum(rate(logback_events_total{job=\"$job\"}[$__rate_interval])) by (level)",
+          "legendFormat": "{{level}}",
+          "refId": "R",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "eps",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "慢接口 Top 20",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "topk(20, histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le, method, uri)))",
+          "legendFormat": "",
+          "refId": "C",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ]
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "错误接口 Top 20",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crest-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crest-prometheus"
+          },
+          "expr": "topk(20, sum(increase(http_server_requests_seconds_count{job=\"$job\",status=~\"4..|5..\"}[$__range])) by (method, uri, status))",
+          "legendFormat": "",
+          "refId": "I",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ]
+        }
+      }
+    }
+  ]
+}
