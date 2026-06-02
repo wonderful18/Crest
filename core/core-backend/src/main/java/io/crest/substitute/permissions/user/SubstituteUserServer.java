@@ -28,6 +28,7 @@ import io.crest.utils.CacheUtils;
 import io.crest.utils.CommonExcelUtils;
 import io.crest.utils.CrestPermissionUtils;
 import io.crest.utils.IPUtils;
+import io.crest.utils.RsaUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -145,7 +146,7 @@ public class SubstituteUserServer {
     @PostMapping("/modify-password")
     public void modifyPwd(@RequestBody ModifyPwdRequest request) {
         Long uid = ObjectUtils.isEmpty(request.getUid()) ? AuthUtils.getUser().getUserId() : request.getUid();
-        crestUserManage.modifyPwd(uid, request.getPwd(), request.getNewPwd());
+        crestUserManage.modifyPwd(uid, RsaUtils.decryptStr(request.getPwd()), RsaUtils.decryptStr(request.getNewPwd()));
     }
 
     @CrestAudit(ot = LogOT.READ, st = LogST.USER)
