@@ -538,13 +538,8 @@ public class CalciteProvider extends Provider {
                         resultSet = statement.executeQuery("select * from " + quoteQualifiedIdentifier(table) + " limit 0 offset 0 ");
                         return fetchResultField(resultSet);
                     }
-                    if (isDorisCatalog(datasourceRequest)) {
-                        // codeql[java/sql-injection] The table identifier is escaped by quoteQualifiedIdentifier and cannot be bound as a JDBC parameter.
-                        resultSet = statement.executeQuery("desc " + quoteQualifiedIdentifier(table));
-                    } else {
-                        // codeql[java/sql-injection] getTableFiledSql builds metadata SQL from validated datasource/table identifiers only.
-                        resultSet = statement.executeQuery(getTableFiledSql(datasourceRequest));
-                    }
+                    // codeql[java/sql-injection] getTableFiledSql builds metadata SQL from validated datasource/table identifiers only.
+                    resultSet = statement.executeQuery(getTableFiledSql(datasourceRequest));
 
                     Map<String, Integer> tableTypeMap = getTableTypeMap(datasourceRequest, datasourceConfiguration, table);
 
@@ -582,20 +577,6 @@ public class CalciteProvider extends Provider {
         }
 
         return datasetTableFields;
-    }
-
-    private boolean isDorisCatalog(DatasourceRequest datasourceRequest) {
-        if (!datasourceRequest.getDatasource().getType().equalsIgnoreCase("doris")) {
-            return false;
-        }
-        DatasourceConfiguration configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
-        String database = "";
-        if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
-            database = configuration.getDataBase();
-        } else {
-            database = databaseFromJdbcUrl(configuration.getJdbcUrl());
-        }
-        return database.contains(".");
     }
 
     private String databaseFromJdbcUrl(String jdbcUrl) {

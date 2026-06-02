@@ -7,6 +7,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -380,16 +381,15 @@ public class HttpClientUtil {
 
     public static Map<String, String> downloadFile(String url, HttpClientConfig config, String path) {
         URI downloadUri = validateRemoteDownloadUrl(url);
-        String encodedUrl = downloadUri.toASCIIString();
         Map<String, String> name = new HashMap<>();
-        try (CloseableHttpClient httpClient = buildHttpClient(encodedUrl)) {
-            // codeql[java/ssrf] validateRemoteDownloadUrl restricts the scheme and rejects local/private hosts before this request is created.
-            HttpGet httpGet = new HttpGet(encodedUrl);
+        try (CloseableHttpClient httpClient = buildHttpClient(downloadUri.getScheme())) {
+            HttpHost target = new HttpHost(downloadUri.getHost(), downloadUri.getPort(), downloadUri.getScheme());
+            HttpGet httpGet = new HttpGet(downloadPathAndQuery(downloadUri));
             // 设置请求配置
             httpGet.setConfig(config.buildRequestConfig());
             // 设置请求头
             config.getHeader().forEach(httpGet::addHeader);
-            HttpResponse response = httpClient.execute(httpGet);
+            HttpResponse response = httpClient.execute(target, httpGet);
             if (response.getStatusLine().getStatusCode() >= 400) {
                 String msg = EntityUtils.toString(response.getEntity(), config.getCharset());
                 if (StringUtils.isEmpty(msg)) {
@@ -416,6 +416,14 @@ public class HttpClientUtil {
             throw new RuntimeException("HttpClient查询失败: " + e.getMessage(), e);
         }
         return name;
+    }
+
+    private static String downloadPathAndQuery(URI uri) {
+        String path = StringUtils.defaultIfBlank(uri.getRawPath(), "/");
+        if (StringUtils.isBlank(uri.getRawQuery())) {
+            return path;
+        }
+        return path + "?" + uri.getRawQuery();
     }
 
     public static URI validateRemoteDownloadUrl(String url) {

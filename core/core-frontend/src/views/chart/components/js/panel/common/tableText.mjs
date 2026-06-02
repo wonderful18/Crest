@@ -1,8 +1,19 @@
-const BLOCK_END_TAG_RE = /<\/(p|div|section|article|header|footer|li|tr|h[1-6])>/gi
-const LINE_BREAK_TAG_RE = /<br\s*\/?>/gi
-const ENCODED_LINE_BREAK_TAG_RE = /&lt;br\s*\/?&gt;/gi
-const PRESENTATION_TAG_RE =
-  /<\/?(span|strong|b|em|i|u|p|div|section|article|header|footer|li|ul|ol|table|thead|tbody|tr|td|th|a|font|label|small|mark|code|pre)[^>]*>/gi
+const BLOCK_TAGS = new Set([
+  'p',
+  'div',
+  'section',
+  'article',
+  'header',
+  'footer',
+  'li',
+  'tr',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6'
+])
 
 const entityMap = {
   '&nbsp;': ' ',
@@ -22,18 +33,9 @@ export function normalizeTableCellText(value) {
     return ''
   }
 
-  const text = normalizeActualNewlines(decodeEscapedWhitespace(String(value)))
-    .replace(/&#10;|&#x0a;|&#13;|&#x0d;/gi, '\n')
-    .replace(/&#9;|&#x09;/gi, '  ')
-    .replace(ENCODED_LINE_BREAK_TAG_RE, '\n')
-    .replace(LINE_BREAK_TAG_RE, '\n')
-    .replace(BLOCK_END_TAG_RE, '\n')
-    .replace(PRESENTATION_TAG_RE, '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/[<>]/g, '')
-    .replace(/&nbsp;|&#160;|&ensp;|&emsp;|&thinsp;|&amp;|&quot;|&#34;|&#39;|&apos;/gi, match => {
-      return entityMap[match.toLowerCase()] ?? match
-    })
+  const text = decodeKnownEntities(
+    extractHtmlText(normalizeActualNewlines(decodeEscapedWhitespace(String(value))))
+  )
 
   return text
     .split('\n')
@@ -41,6 +43,76 @@ export function normalizeTableCellText(value) {
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
+}
+
+function extractHtmlText(value) {
+  if (typeof DOMParser === 'undefined') {
+    return stripHtmlFallback(value)
+  }
+  const document = new DOMParser().parseFromString(value, 'text/html')
+  return collectText(document.body)
+}
+
+function collectText(node) {
+  let result = ''
+  Array.from(node.childNodes).forEach(child => {
+    if (child.nodeType === 3) {
+      result += child.textContent ?? ''
+      return
+    }
+    if (child.nodeType !== 1) {
+      return
+    }
+    const tagName = child.tagName.toLowerCase()
+    if (tagName === 'br') {
+      result += '\n'
+    }
+    result += collectText(child)
+    if (BLOCK_TAGS.has(tagName)) {
+      result += '\n'
+    }
+  })
+  return result
+}
+
+function stripHtmlFallback(value) {
+  let result = ''
+  let insideTag = false
+  for (let index = 0; index < value.length; index += 1) {
+    const current = value[index]
+    if (current === '<') {
+      insideTag = true
+      continue
+    }
+    if (current === '>') {
+      insideTag = false
+      continue
+    }
+    if (!insideTag) {
+      result += current
+    }
+  }
+  return result
+}
+
+function decodeKnownEntities(value) {
+  return Object.entries(entityMap).reduce((result, [entity, replacement]) => {
+    return replaceIgnoreCase(result, entity, replacement)
+  }, value)
+}
+
+function replaceIgnoreCase(value, search, replacement) {
+  let result = ''
+  let cursor = 0
+  const lowerValue = value.toLowerCase()
+  const lowerSearch = search.toLowerCase()
+  let index = lowerValue.indexOf(lowerSearch, cursor)
+  while (index !== -1) {
+    result += value.slice(cursor, index) + replacement
+    cursor = index + search.length
+    index = lowerValue.indexOf(lowerSearch, cursor)
+  }
+  return result + value.slice(cursor)
 }
 
 function decodeEscapedWhitespace(value) {
