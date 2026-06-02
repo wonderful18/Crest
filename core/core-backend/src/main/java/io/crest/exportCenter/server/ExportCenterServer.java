@@ -12,6 +12,7 @@ import io.crest.log.CrestAudit;
 import io.crest.model.ExportTaskDTO;
 import io.crest.result.ResultMessage;
 import io.crest.utils.JsonUtil;
+import io.crest.utils.FileUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -87,13 +88,13 @@ public class ExportCenterServer implements ExportCenterApi {
     @Override
     @CrestAudit(id = "#p0", ot = LogOT.READ, st = LogST.DATA)
     public String generateDownloadUri(String id) throws Exception {
-        return exportCenterManage.generateDownloadUri(id);
+        return exportCenterManage.generateDownloadUri(FileUtils.requireNumericId(id, "导出任务ID"));
     }
 
     @Override
     @CrestAudit(id = "#p0", ot = LogOT.MODIFY, st = LogST.DATA)
     public void retry(String id) {
-        exportCenterManage.retry(id);
+        exportCenterManage.retry(FileUtils.requireNumericId(id, "导出任务ID"));
     }
 
     public String exportLimit() {

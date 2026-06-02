@@ -42,11 +42,49 @@ public class FileUtils {
         return directory;
     }
 
+    public static String requireNumericId(String value, String fieldName) {
+        if (StringUtils.isBlank(value)) {
+            CrestException.throwException(fieldName + "无效");
+        }
+        try {
+            long id = Long.parseLong(value);
+            if (id <= 0) {
+                CrestException.throwException(fieldName + "无效");
+            }
+            return Long.toString(id);
+        } catch (NumberFormatException e) {
+            CrestException.throwException(fieldName + "无效");
+            return "";
+        }
+    }
+
+    public static File ensureChildDirectory(String baseDirectoryPath, String directoryName) throws IOException {
+        validateUploadFilename(directoryName);
+        File baseDirectory = ensureDirectory(baseDirectoryPath);
+        File directory = new File(baseDirectory, directoryName).getCanonicalFile();
+        if (!directory.toPath().startsWith(baseDirectory.toPath())) {
+            CrestException.throwException(Translator.get("i18n_invalid_file_name"));
+        }
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("Failed to create directory: " + directory.getPath());
+        }
+        if (!directory.isDirectory()) {
+            throw new IOException("Path is not a directory: " + directory.getPath());
+        }
+        return directory;
+    }
+
     public static File resolveUnderDirectory(String directoryPath, String filename) throws IOException {
         validateUploadFilename(filename);
         File directory = ensureDirectory(directoryPath);
+        return resolveUnderDirectory(directory, filename);
+    }
+
+    public static File resolveUnderDirectory(File directory, String filename) throws IOException {
+        validateUploadFilename(filename);
+        File canonicalDirectory = directory.getCanonicalFile();
         File target = new File(directory, filename).getCanonicalFile();
-        if (!target.toPath().startsWith(directory.toPath())) {
+        if (!target.toPath().startsWith(canonicalDirectory.toPath())) {
             CrestException.throwException(Translator.get("i18n_invalid_file_name"));
         }
         return target;
@@ -293,14 +331,15 @@ public class FileUtils {
     }
 
 
-    @SuppressWarnings("java/path-injection")
     public static boolean deleteDirectoryRecursively(String directoryPath) {
-        File directory;
         try {
-            directory = new File(directoryPath).getCanonicalFile();
+            return deleteDirectoryRecursively(new File(directoryPath).getCanonicalFile());
         } catch (IOException e) {
             return false;
         }
+    }
+
+    public static boolean deleteDirectoryRecursively(File directory) {
         if (!directory.exists()) {
             return true;
         }
@@ -309,7 +348,7 @@ public class FileUtils {
         if (files != null) {
             for (File file : files) {
                 if (file.isDirectory()) {
-                    deleteDirectoryRecursively(file.getAbsolutePath());
+                    deleteDirectoryRecursively(file);
                 } else {
                     boolean deletionSuccess = file.delete();
                 }

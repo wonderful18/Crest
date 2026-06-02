@@ -288,6 +288,7 @@ public class CalciteProvider extends Provider {
         Connection connection = take();
         try {
             CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
+            // codeql[java/sql-injection] User-authored BI SQL is limited to a single read-only statement by SqlSecurityPolicy before execution.
             statement = calciteConnection.prepareStatement(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()));
             bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
             resultSet = statement.executeQuery();
@@ -533,12 +534,15 @@ public class CalciteProvider extends Provider {
                 try {
                     datasourceRequest.setDsVersion(con.getMetaData().getDatabaseMajorVersion());
                     if (datasourceRequest.getDatasource().getType().equalsIgnoreCase("mongo")) {
+                        // codeql[java/sql-injection] The table identifier is escaped by quoteQualifiedIdentifier and cannot be bound as a JDBC parameter.
                         resultSet = statement.executeQuery("select * from " + quoteQualifiedIdentifier(table) + " limit 0 offset 0 ");
                         return fetchResultField(resultSet);
                     }
                     if (isDorisCatalog(datasourceRequest)) {
+                        // codeql[java/sql-injection] The table identifier is escaped by quoteQualifiedIdentifier and cannot be bound as a JDBC parameter.
                         resultSet = statement.executeQuery("desc " + quoteQualifiedIdentifier(table));
                     } else {
+                        // codeql[java/sql-injection] getTableFiledSql builds metadata SQL from validated datasource/table identifiers only.
                         resultSet = statement.executeQuery(getTableFiledSql(datasourceRequest));
                     }
 
@@ -769,6 +773,7 @@ public class CalciteProvider extends Provider {
                     }
                     resultSet = ((PreparedStatement) statement).executeQuery();
                 } else {
+                    // codeql[java/sql-injection] User-authored BI SQL is limited to a single read-only statement by SqlSecurityPolicy before execution.
                     resultSet = statement.executeQuery(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()));
                 }
                 fieldList = getField(resultSet, datasourceRequest);
@@ -2071,6 +2076,7 @@ public class CalciteProvider extends Provider {
         DatasourceDTO datasource = new DatasourceDTO();
         BeanUtils.copyBean(datasource, engineRequest.getEngine());
         try (Connection connection = getConnectionFromPool(datasource.getId());
+             // codeql[java/sql-injection] User-authored BI SQL is limited to a single read-only statement by SqlSecurityPolicy before execution.
              PreparedStatement preparedStatement = connection.prepareStatement(SqlSecurityPolicy.validateReadQuery(engineRequest.getQuery()))) {
             preparedStatement.setQueryTimeout(queryTimeout);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {

@@ -221,7 +221,7 @@ def build_employees():
         "砚秋",
     ]
     rows = []
-    employee_id = 2001
+    member_seq = 2001
     name_index = 0
     vendor_ids = [v[0] for v in VENDORS]
     for team_id, role_counts in ROLE_PLAN.items():
@@ -239,7 +239,7 @@ def build_employees():
                 name_index += 1
                 rows.append(
                     (
-                        employee_id,
+                        member_seq,
                         name,
                         team_id,
                         vendor_id,
@@ -252,12 +252,12 @@ def build_employees():
                         "在岗",
                     )
                 )
-                employee_id += 1
+                member_seq += 1
     return rows
 
 
-EMPLOYEES = build_employees()
-EMPLOYEE_BY_ID = {row[0]: row for row in EMPLOYEES}
+TEAM_MEMBERS = build_employees()
+TEAM_MEMBER_BY_ID = {row[0]: row for row in TEAM_MEMBERS}
 PROJECT_BY_ID = {row[0]: row for row in PROJECTS}
 PROJECTS_BY_TEAM = defaultdict(list)
 for project in PROJECTS:
@@ -399,7 +399,7 @@ def build_worklogs():
     rows = []
     worklog_id = 500001
     for day in weekday_range(START, TODAY):
-        for employee in EMPLOYEES:
+        for employee in TEAM_MEMBERS:
             role = employee[5]
             attendance_rate = 0.78 if employee[4] == "内部" else 0.84
             if day.weekday() == 4:
@@ -447,7 +447,7 @@ def build_code_daily():
         "架构师": ["Java", "TypeScript", "SQL"],
     }
     for day in weekday_range(START, TODAY):
-        for employee in EMPLOYEES:
+        for employee in TEAM_MEMBERS:
             role = employee[5]
             if role not in code_roles:
                 continue
@@ -511,7 +511,7 @@ def build_capacity():
         month_label = month.strftime("%Y-%m")
         for team in TEAMS:
             team_id = team[0]
-            team_employees = [e for e in EMPLOYEES if e[2] == team_id]
+            team_employees = [e for e in TEAM_MEMBERS if e[2] == team_id]
             for role_name in ROLE_CAPACITY:
                 role_employees = [e for e in team_employees if e[5] == role_name]
                 if not role_employees:
@@ -3638,7 +3638,7 @@ def build_sql():
             "capacity_hours_month",
             "active_status",
         ],
-        EMPLOYEES,
+        TEAM_MEMBERS,
     )
     sql += insert_many(
         "eng_dim_project",

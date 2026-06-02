@@ -152,8 +152,13 @@ data:
         }
 
         location /websocket {
+            # WebSocket is the only accepted upgrade target; non-websocket upgrades are rejected below.
+            # nosemgrep: generic.nginx.security.possible-h2c-smuggling.possible-nginx-h2c-smuggling
             proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
+            if ($http_upgrade !~* "^websocket$") {
+                return 400;
+            }
+            proxy_set_header Upgrade "websocket";
             proxy_set_header Connection "upgrade";
             proxy_set_header Host $crest_forwarded_host;
             proxy_set_header X-Real-IP $remote_addr;

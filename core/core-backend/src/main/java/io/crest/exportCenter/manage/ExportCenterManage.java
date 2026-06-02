@@ -229,7 +229,13 @@ public class ExportCenterManage implements BaseExportApi {
     }
 
     private String taskDirectoryPath(String taskId) {
-        return new File(exportData_path, taskId).getPath();
+        String normalizedTaskId = FileUtils.requireNumericId(taskId, "导出任务ID");
+        try {
+            return FileUtils.ensureChildDirectory(exportData_path, normalizedTaskId).getPath();
+        } catch (Exception e) {
+            CrestException.throwException("导出任务目录不可用");
+            return "";
+        }
     }
 
     public void addTask(String exportFrom, String exportFromType, ChartExcelRequest request, String busiFlag) {

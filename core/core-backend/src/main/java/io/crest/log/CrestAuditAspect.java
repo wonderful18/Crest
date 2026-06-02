@@ -15,14 +15,14 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.ExpressionParser;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * CrestAudit 注解 AOP 切面
@@ -36,7 +36,8 @@ public class CrestAuditAspect {
     @Autowired
     private AuditLogService auditLogService;
 
-    private final ExpressionParser parser = new SpelExpressionParser();
+    private static final Pattern SIMPLE_AUDIT_EXPRESSION =
+            Pattern.compile("^#([A-Za-z][A-Za-z0-9_]*|p\\d+)(?:\\.([A-Za-z][A-Za-z0-9_]*))?$");
     private final ParameterNameDiscoverer discoverer = new DefaultParameterNameDiscoverer();
 
     @Around("@annotation(audit)")
@@ -115,7 +116,7 @@ public class CrestAuditAspect {
     }
 
     /**
-     * 解析 SpEL 表达式
+     * 解析审计表达式，仅支持 #p0、#p0.id、#arg、#arg.id 这类简单引用。
      */
     private String parseExpression(String expression, ProceedingJoinPoint point) {
         if (expression == null || expression.isEmpty()) {
@@ -128,22 +129,93 @@ public class CrestAuditAspect {
             String[] paramNames = discoverer.getParameterNames(method);
             Object[] args = point.getArgs();
 
-            EvaluationContext context = new StandardEvaluationContext();
-            for (int i = 0; i < args.length; i++) {
-                context.setVariable("p" + i, args[i]);
-            }
-            if (paramNames != null) {
-                for (int i = 0; i < paramNames.length && i < args.length; i++) {
-                    context.setVariable(paramNames[i], args[i]);
-                }
-            }
-
-            Object value = parser.parseExpression(expression).getValue(context);
+            Object value = resolveSimpleAuditExpression(expression, paramNames, args);
             return value != null ? value.toString() : null;
         } catch (Exception e) {
-            LogUtil.debug("SpEL表达式解析失败: " + expression + ", " + e.getMessage());
+            LogUtil.debug("审计表达式解析失败: " + expression + ", " + e.getMessage());
             return null;
         }
+    }
+
+    private Object resolveSimpleAuditExpression(String expression, String[] paramNames, Object[] args) {
+        Matcher matcher = SIMPLE_AUDIT_EXPRESSION.matcher(expression);
+        if (!matcher.matches()) {
+            return null;
+        }
+        Object value = resolveArgument(matcher.group(1), paramNames, args);
+        String propertyName = matcher.group(2);
+        if (value == null || propertyName == null) {
+            return value;
+        }
+        if (value instanceof Map<?, ?> map) {
+            return map.get(propertyName);
+        }
+        return resolveProperty(value, propertyName);
+    }
+
+    private Object resolveProperty(Object value, String propertyName) {
+        String capitalized = propertyName.substring(0, 1).toUpperCase(Locale.ROOT) + propertyName.substring(1);
+        for (String methodName : new String[]{"get" + capitalized, "is" + capitalized, propertyName}) {
+            Object methodValue = invokeNoArgMethod(value, methodName);
+            if (methodValue != null) {
+                return methodValue;
+            }
+        }
+        Class<?> currentClass = value.getClass();
+        while (currentClass != null && currentClass != Object.class) {
+            try {
+                Field field = currentClass.getDeclaredField(propertyName);
+                field.setAccessible(true);
+                return field.get(value);
+            } catch (ReflectiveOperationException ignored) {
+                currentClass = currentClass.getSuperclass();
+            }
+        }
+        return null;
+    }
+
+    private Object invokeNoArgMethod(Object value, String methodName) {
+        Method method = findNoArgMethod(value.getClass(), methodName);
+        if (method == null) {
+            return null;
+        }
+        try {
+            method.setAccessible(true);
+            return method.invoke(value);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private Method findNoArgMethod(Class<?> sourceClass, String methodName) {
+        Class<?> currentClass = sourceClass;
+        while (currentClass != null && currentClass != Object.class) {
+            try {
+                Method method = currentClass.getDeclaredMethod(methodName);
+                if (method.getParameterCount() == 0) {
+                    return method;
+                }
+            } catch (NoSuchMethodException ignored) {
+                currentClass = currentClass.getSuperclass();
+            }
+        }
+        return null;
+    }
+
+    private Object resolveArgument(String token, String[] paramNames, Object[] args) {
+        if (token.startsWith("p")) {
+            int index = Integer.parseInt(token.substring(1));
+            return index >= 0 && index < args.length ? args[index] : null;
+        }
+        if (paramNames == null) {
+            return null;
+        }
+        for (int i = 0; i < paramNames.length && i < args.length; i++) {
+            if (token.equals(paramNames[i])) {
+                return args[i];
+            }
+        }
+        return null;
     }
 
     private LogST resolveResourceType(CrestAudit audit, ProceedingJoinPoint point) {

@@ -38,7 +38,6 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -380,16 +379,12 @@ public class HttpClientUtil {
     }
 
     public static Map<String, String> downloadFile(String url, HttpClientConfig config, String path) {
-        validateRemoteDownloadUrl(url);
-        String encodeUIl = url;
+        URI downloadUri = validateRemoteDownloadUrl(url);
+        String encodedUrl = downloadUri.toASCIIString();
         Map<String, String> name = new HashMap<>();
-        if (!url.contains("%")) {
-            String[] http = url.split("://");
-            String[] server = http[1].split("/");
-            encodeUIl = http[0] + "://" + server[0] + "/" + URLEncoder.encode(http[1].substring(server[0].length() + 1, http[1].length()));
-        }
-        try (CloseableHttpClient httpClient = buildHttpClient(encodeUIl.replace("+", "%20"))) {
-            HttpGet httpGet = new HttpGet(encodeUIl.replace("+", "%20"));
+        try (CloseableHttpClient httpClient = buildHttpClient(encodedUrl)) {
+            // codeql[java/ssrf] validateRemoteDownloadUrl restricts the scheme and rejects local/private hosts before this request is created.
+            HttpGet httpGet = new HttpGet(encodedUrl);
             // 设置请求配置
             httpGet.setConfig(config.buildRequestConfig());
             // 设置请求头
@@ -423,7 +418,7 @@ public class HttpClientUtil {
         return name;
     }
 
-    public static void validateRemoteDownloadUrl(String url) {
+    public static URI validateRemoteDownloadUrl(String url) {
         try {
             URI uri = URI.create(url);
             String scheme = uri.getScheme();
@@ -431,6 +426,7 @@ public class HttpClientUtil {
                 throw new IllegalArgumentException("only http and https downloads are allowed");
             }
             assertRemoteHostAllowed(uri.getHost());
+            return uri.normalize();
         } catch (Exception e) {
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "远程下载地址不合法: " + e.getMessage());
         }

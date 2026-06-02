@@ -14,9 +14,13 @@ const crypt = new JSEncrypt()
 const smSuitePublicKeyPrefix = 'sm-suite:v1:sm2-public:'
 const sm2CipherPrefix = 'sm-suite:v1:sm2:'
 const sm4CipherPrefix = 'sm-suite:v1:sm4:'
+const aesCtrHmacPrefix = 'aes-ctr-hmac:v1:'
 
 const aesDecrypt = (word, keyStr) => {
-  const keyHex = CryptoJS.enc.Utf8.parse(keyStr) //
+  const keyHex = CryptoJS.enc.Utf8.parse(keyStr)
+  if (typeof word === 'string' && word.startsWith(aesCtrHmacPrefix)) {
+    return aesCtrHmacDecrypt(word, keyHex)
+  }
   const ivHex = CryptoJS.enc.Utf8.parse('0000000000000000')
   const decrypt = CryptoJS.AES.decrypt(word, keyHex, {
     iv: ivHex,
@@ -53,8 +57,11 @@ export const symmetricDecrypt = (data, keyStr) => {
       iv
     })
   }
-  const iv = CryptoJS.enc.Utf8.parse('0000000000000000')
   const key = CryptoJS.enc.Base64.parse(keyStr)
+  if (typeof data === 'string' && data.startsWith(aesCtrHmacPrefix)) {
+    return aesCtrHmacDecrypt(data, key)
+  }
+  const iv = CryptoJS.enc.Utf8.parse('0000000000000000')
   const decodedCiphertext = CryptoJS.enc.Base64.parse(data)
   const decrypted = CryptoJS.AES.decrypt({ ciphertext: decodedCiphertext }, key, {
     iv: iv,
@@ -62,6 +69,31 @@ export const symmetricDecrypt = (data, keyStr) => {
     padding: CryptoJS.pad.Pkcs7
   })
   return decrypted.toString(CryptoJS.enc.Utf8)
+}
+
+const aesCtrHmacDecrypt = (data: string, key) => {
+  const [ivText, ciphertextText, mac] = data.substring(aesCtrHmacPrefix.length).split(':')
+  if (!ivText || !ciphertextText || !mac) {
+    throw new Error('AES payload is invalid')
+  }
+  const expectedMac = CryptoJS.HmacSHA256(`${ivText}:${ciphertextText}`, key).toString(CryptoJS.enc.Hex)
+  if (!constantTimeEqualsHex(expectedMac, mac)) {
+    throw new Error('AES payload integrity check failed')
+  }
+  const iv = base64UrlToWordArray(ivText)
+  const ciphertext = base64UrlToWordArray(ciphertextText)
+  const decrypted = CryptoJS.AES.decrypt({ ciphertext }, key, {
+    iv,
+    mode: CryptoJS.mode.CTR,
+    padding: CryptoJS.pad.NoPadding
+  })
+  return decrypted.toString(CryptoJS.enc.Utf8)
+}
+
+const base64UrlToWordArray = (value: string) => {
+  const base64 = value.replace(/-/g, '+').replace(/_/g, '/')
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=')
+  return CryptoJS.enc.Base64.parse(padded)
 }
 
 const constantTimeEqualsHex = (left: string, right: string) => {

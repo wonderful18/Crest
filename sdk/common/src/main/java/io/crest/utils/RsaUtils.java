@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -207,29 +208,16 @@ public class RsaUtils {
     }
 
     public static final String IV_KEY = "0000000000000000";
+    private static final String AES_CTR_HMAC_PREFIX = "aes-ctr-hmac:v1:";
+    private static final int CTR_IV_LENGTH = 16;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private static String generateAesKey() {
         return RandomStringUtils.secure().nextAlphanumeric(16);
     }
 
-    @SuppressWarnings("java/weak-cryptographic-algorithm")
     private static String ascEncrypt(String message, String key) {
-        Cipher cipher = null;
-        try {
-            byte[] baseKey = key.getBytes(StandardCharsets.UTF_8);
-            byte[] ivBytes = IV_KEY.getBytes(StandardCharsets.UTF_8);
-            byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
-            cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
-            SecretKey keySpec = new SecretKeySpec(baseKey, "AES");
-            IvParameterSpec ivps = new IvParameterSpec(ivBytes);
-            cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivps);
-            byte[] data = cipher.doFinal(messageBytes);
-            return Base64.getEncoder().encodeToString(data);
-        } catch (Exception e) {
-            LogUtil.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-
+        return aesCtrHmacEncrypt(message, key.getBytes(StandardCharsets.UTF_8));
     }
 
 
@@ -256,40 +244,97 @@ public class RsaUtils {
         }
     }
 
-    @SuppressWarnings("java/weak-cryptographic-algorithm")
     public static String symmetricEncrypt(String data) {
         if (CryptoMode.isSmSuite()) {
             return SmCryptoUtils.sm4EncryptWithBase64Key(data, generateSymmetricKey());
         }
+        return aesCtrHmacEncrypt(data, Base64.getDecoder().decode(generateSymmetricKey()));
+    }
+
+    private static String aesCtrHmacEncrypt(String data, byte[] keyBytes) {
         try {
-            byte[] iv = IV_KEY.getBytes(StandardCharsets.UTF_8);
-            IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
-            SecretKeySpec secretKeySpec = new SecretKeySpec(Base64.getDecoder().decode(generateSymmetricKey()), ALGORITHM);
-            cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivParameterSpec);
-            byte[] ciphertext = cipher.doFinal(data.getBytes("UTF-8"));
-            return Base64.getEncoder().encodeToString(ciphertext);
+            byte[] iv = new byte[CTR_IV_LENGTH];
+            SECURE_RANDOM.nextBytes(iv);
+            Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, ALGORITHM), new IvParameterSpec(iv));
+            byte[] ciphertext = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            String ivText = Base64.getUrlEncoder().withoutPadding().encodeToString(iv);
+            String ciphertextText = Base64.getUrlEncoder().withoutPadding().encodeToString(ciphertext);
+            String mac = hmacHex(ivText + ":" + ciphertextText, keyBytes);
+            return AES_CTR_HMAC_PREFIX + ivText + ":" + ciphertextText + ":" + mac;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    @SuppressWarnings("java/weak-cryptographic-algorithm")
     public static String symmetricDecrypt(String data) {
         if (SmCryptoUtils.isSm4Ciphertext(data)) {
             return SmCryptoUtils.sm4DecryptWithBase64Key(data, generateSymmetricKey());
         }
+        if (data != null && data.startsWith(AES_CTR_HMAC_PREFIX)) {
+            return aesCtrHmacDecrypt(data, Base64.getDecoder().decode(generateSymmetricKey()));
+        }
+        return symmetricDecryptLegacyCbc(data);
+    }
+
+    private static String aesCtrHmacDecrypt(String data, byte[] keyBytes) {
+        try {
+            String[] parts = data.substring(AES_CTR_HMAC_PREFIX.length()).split(":");
+            if (parts.length != 3) {
+                throw new IllegalArgumentException("invalid AES-CTR payload");
+            }
+            String expectedMac = hmacHex(parts[0] + ":" + parts[1], keyBytes);
+            if (!constantTimeEquals(expectedMac, parts[2])) {
+                throw new IllegalArgumentException("invalid AES-CTR payload mac");
+            }
+            byte[] iv = Base64.getUrlDecoder().decode(parts[0]);
+            byte[] ciphertext = Base64.getUrlDecoder().decode(parts[1]);
+            if (iv.length != CTR_IV_LENGTH) {
+                throw new IllegalArgumentException("invalid AES-CTR iv");
+            }
+            Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyBytes, ALGORITHM), new IvParameterSpec(iv));
+            return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String symmetricDecryptLegacyCbc(String data) {
         try {
             byte[] iv = IV_KEY.getBytes(StandardCharsets.UTF_8);
             IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
             SecretKeySpec secretKeySpec = new SecretKeySpec(Base64.getDecoder().decode(generateSymmetricKey()), ALGORITHM);
+            // codeql[java/weak-cryptographic-algorithm] Compatibility path for existing CBC ciphertext. New writes use AES-CTR with HMAC.
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
             cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec);
             byte[] decodedCiphertext = Base64.getDecoder().decode(data);
             byte[] decryptedText = cipher.doFinal(decodedCiphertext);
-            return new String(decryptedText, "UTF-8");
+            return new String(decryptedText, StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static String hmacHex(String data, byte[] keyBytes) throws Exception {
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(keyBytes, "HmacSHA256"));
+        byte[] bytes = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+        StringBuilder result = new StringBuilder(bytes.length * 2);
+        for (byte item : bytes) {
+            result.append(String.format("%02x", item & 0xff));
+        }
+        return result.toString();
+    }
+
+    private static boolean constantTimeEquals(String left, String right) {
+        if (left == null || right == null || left.length() != right.length()) {
+            return false;
+        }
+        int result = 0;
+        for (int i = 0; i < left.length(); i++) {
+            result |= left.charAt(i) ^ right.charAt(i);
+        }
+        return result == 0;
     }
 }

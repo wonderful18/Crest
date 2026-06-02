@@ -22,13 +22,15 @@ export function normalizeTableCellText(value) {
     return ''
   }
 
-  const text = normalizeActualNewlines(decodeEscapedWhitespace(stripDangerousHtml(String(value))))
+  const text = normalizeActualNewlines(decodeEscapedWhitespace(String(value)))
     .replace(/&#10;|&#x0a;|&#13;|&#x0d;/gi, '\n')
     .replace(/&#9;|&#x09;/gi, '  ')
     .replace(ENCODED_LINE_BREAK_TAG_RE, '\n')
     .replace(LINE_BREAK_TAG_RE, '\n')
     .replace(BLOCK_END_TAG_RE, '\n')
     .replace(PRESENTATION_TAG_RE, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/[<>]/g, '')
     .replace(/&nbsp;|&#160;|&ensp;|&emsp;|&thinsp;|&amp;|&quot;|&#34;|&#39;|&apos;/gi, match => {
       return entityMap[match.toLowerCase()] ?? match
     })
@@ -86,48 +88,6 @@ function normalizeActualNewlines(value) {
     result += current === '\t' ? '  ' : current
   }
   return result
-}
-
-function stripDangerousHtml(value) {
-  let result = value
-  for (const tagName of ['script', 'style', 'iframe']) {
-    result = stripDangerousTag(result, tagName)
-  }
-  return result
-}
-
-function stripDangerousTag(value, tagName) {
-  let result = ''
-  let searchFrom = 0
-  const lowerValue = value.toLowerCase()
-  const openTag = `<${tagName}`
-  const closeTagStart = `</${tagName}`
-  while (searchFrom < value.length) {
-    const openIndex = lowerValue.indexOf(openTag, searchFrom)
-    if (openIndex < 0) {
-      result += value.slice(searchFrom)
-      break
-    }
-    if (!isTagBoundary(value[openIndex + openTag.length])) {
-      result += value.slice(searchFrom, openIndex + 1)
-      searchFrom = openIndex + 1
-      continue
-    }
-    result += value.slice(searchFrom, openIndex)
-    const closeIndex = lowerValue.indexOf(closeTagStart, openIndex + openTag.length)
-    if (closeIndex < 0) {
-      const tagEnd = value.indexOf('>', openIndex)
-      searchFrom = tagEnd < 0 ? value.length : tagEnd + 1
-    } else {
-      const closeTagEnd = value.indexOf('>', closeIndex)
-      searchFrom = closeTagEnd < 0 ? value.length : closeTagEnd + 1
-    }
-  }
-  return result
-}
-
-function isTagBoundary(char) {
-  return char === undefined || char === '>' || char === '/' || char === ' ' || char === '\n' || char === '\t'
 }
 
 export function getTableCellCopyText(value, options = {}) {

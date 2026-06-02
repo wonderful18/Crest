@@ -90,18 +90,20 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
 
     @Override
     public void delete(String driverId) {
-        coreDriverMapper.deleteById(driverId);
+        String normalizedDriverId = FileUtils.requireNumericId(driverId, "驱动ID");
+        coreDriverMapper.deleteById(normalizedDriverId);
         Map<String, Object> map = new HashMap<>();
-        map.put("driverId", driverId);
+        map.put("driverId", normalizedDriverId);
         coreDriverJarMapper.deleteByMap(map);
     }
 
 
     @Override
     public List<DriveJarDTO> listDriverJar(String driverId) {
+        String normalizedDriverId = FileUtils.requireNumericId(driverId, "驱动ID");
         List<DriveJarDTO> driveJarDTOS = new ArrayList<>();
         QueryWrapper<CoreDriverJar> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("driverId", driverId);
+        queryWrapper.eq("driverId", normalizedDriverId);
         coreDriverJarMapper.selectList(queryWrapper).forEach(coreDriverJar -> {
             DriveJarDTO driveJarDTO = new DriveJarDTO();
             BeanUtils.copyBean(driveJarDTO, coreDriverJar);
@@ -112,20 +114,30 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
 
     @Override
     public void deleteDriverJar(String jarId) {
-        CoreDriverJar driverJar = coreDriverJarMapper.selectById(jarId);
-        coreDriverJarMapper.deleteById(jarId);
+        String normalizedJarId = FileUtils.requireNumericId(jarId, "驱动文件ID");
+        CoreDriverJar driverJar = coreDriverJarMapper.selectById(normalizedJarId);
+        coreDriverJarMapper.deleteById(normalizedJarId);
         CoreDriver driver = coreDriverMapper.selectById(driverJar.getDriverId());
-        FileUtils.deleteFile(DRIVER_PATH + driverJar.getDriverId() + "/" + driverJar.getTransName());
+        FileUtils.validateUploadFilename(driverJar.getTransName());
+        String normalizedDriverId = FileUtils.requireNumericId(String.valueOf(driverJar.getDriverId()), "驱动ID");
+        try {
+            File driverDirectory = FileUtils.ensureChildDirectory(DRIVER_PATH, normalizedDriverId);
+            FileUtils.deleteFile(FileUtils.resolveUnderDirectory(driverDirectory, driverJar.getTransName()).getPath());
+        } catch (Exception e) {
+            throw new RuntimeException("DRIVER_JAR_DELETE_FAILED", e);
+        }
         //TODO 更新classloader
     }
 
     @Override
     public DriveJarDTO uploadJar(@RequestParam("driverId") String driverId, @RequestParam("jarFile") MultipartFile jarFile) throws Exception {
-        CoreDriver coreDriver = coreDriverMapper.selectById(driverId);
+        String normalizedDriverId = FileUtils.requireNumericId(driverId, "驱动ID");
+        CoreDriver coreDriver = coreDriverMapper.selectById(normalizedDriverId);
         if (coreDriver == null) {
             throw new RuntimeException("DRIVER_NOT_FOUND");
         }
         String filename = jarFile.getOriginalFilename();
+        FileUtils.validateUploadFilename(filename);
         if (!filename.endsWith(".jar")) {
             throw new RuntimeException("NOT_JAR");
         }
@@ -136,17 +148,16 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
             throw new Exception("A file with the same name already exists：" + filename);
         }
 
-        String dirPath = DRIVER_PATH + driverId + "/";
-        String filePath = dirPath + Md5Utils.md5(filename) + ".jar";
-        saveJarFile(jarFile, dirPath, filePath);
+        String transName = Md5Utils.md5(filename) + ".jar";
+        saveJarFile(jarFile, normalizedDriverId, transName);
 
         CoreDriverJar coreDriverJar = new CoreDriverJar();
-        coreDriverJar.setDriverId(driverId);
+        coreDriverJar.setDriverId(normalizedDriverId);
         coreDriverJar.setVersion("");
         coreDriverJar.setFileName(filename);
         coreDriverJar.setDriverClass(String.join(",", new ArrayList<>()));
         coreDriverJar.setIsTransName(true);
-        coreDriverJar.setTransName(Md5Utils.md5(filename) + ".jar");
+        coreDriverJar.setTransName(transName);
         coreDriverJarMapper.insert(coreDriverJar);
         //TODO 并更新classloader
 
@@ -155,13 +166,13 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
         return driveJarDTO;
     }
 
-    @SuppressWarnings("java/path-injection")
-    private String saveJarFile(MultipartFile file, String dirPath, String filePath) throws Exception {
-        File f = FileUtils.resolveUnderDirectory(dirPath, new File(filePath).getName());
+    private String saveJarFile(MultipartFile file, String driverId, String transName) throws Exception {
+        File driverDirectory = FileUtils.ensureChildDirectory(DRIVER_PATH, driverId);
+        File f = FileUtils.resolveUnderDirectory(driverDirectory, transName);
         try (FileOutputStream fileOutputStream = new FileOutputStream(f)) {
             fileOutputStream.write(file.getBytes());
             fileOutputStream.flush();
         }
-        return filePath;
+        return f.getPath();
     }
 }

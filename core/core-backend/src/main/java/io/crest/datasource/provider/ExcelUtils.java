@@ -32,11 +32,6 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -444,7 +439,7 @@ public class ExcelUtils {
             ensureExcelDirectory();
             fileNames = HttpClientUtil.downloadFile(remoteExcelRequest.getUrl(), httpClientConfig, getExcelPath());
         } else if (remoteExcelRequest.getUrl().trim().startsWith("ftp")) {
-            fileNames = downLoadFromFtp(remoteExcelRequest);
+            CrestException.throwException(Translator.get("i18n_unsupported_protocol"));
         } else {
             CrestException.throwException(Translator.get("i18n_unsupported_protocol"));
         }
@@ -767,72 +762,9 @@ public class ExcelUtils {
         return excelSheetDataList;
     }
 
-    @SuppressWarnings("java/ssrf")
     public static Map<String, String> downLoadFromFtp(ExcelConfiguration remoteExcelRequest) {
-        Map<String, String> fileNames = new HashMap<>();
-        String username = "";
-        String password = "";
-        String serverAddress = "";
-        String filePath = "";
-        try {
-            URI uri = URI.create(remoteExcelRequest.getUrl());
-            if (!Strings.CI.equals(uri.getScheme(), "ftp") || StringUtils.isBlank(uri.getHost())) {
-                CrestException.throwException(Translator.get("i18n_invalid_address"));
-            }
-            serverAddress = uri.getPort() > 0 ? uri.getHost() + ":" + uri.getPort() : uri.getHost();
-            filePath = StringUtils.defaultString(uri.getPath());
-            if (StringUtils.isNotBlank(uri.getRawUserInfo())) {
-                String userInfo = uri.getRawUserInfo();
-                int separator = userInfo.indexOf(':');
-                if (separator > -1) {
-                    username = URLDecoder.decode(userInfo.substring(0, separator), StandardCharsets.UTF_8);
-                    password = URLDecoder.decode(userInfo.substring(separator + 1), StandardCharsets.UTF_8);
-                } else {
-                    username = URLDecoder.decode(userInfo, StandardCharsets.UTF_8);
-                }
-            }
-        } catch (Exception e) {
-            CrestException.throwException(Translator.get("i18n_invalid_address"));
-        }
-        if (StringUtils.isNotEmpty(remoteExcelRequest.getUserName())) {
-            username = remoteExcelRequest.getUserName();
-        }
-        if (StringUtils.isNotEmpty(remoteExcelRequest.getPasswd())) {
-            password = remoteExcelRequest.getPasswd();
-        }
-        filePath = filePath.startsWith("/") ? filePath.substring(1) : filePath;
-        String suffix = filePath.substring(filePath.lastIndexOf(".") + 1);
-        if (!Arrays.asList("csv", "xlsx", "xls").contains(suffix)) {
-            CrestException.throwException(Translator.get("i18n_unsupported_file_format"));
-        }
-        String tranName = UUID.randomUUID().toString() + "." + suffix;
-        String localFilePath = excelTempFile(tranName).getPath();
-        fileNames.put("fileName", filePath);
-        fileNames.put("tranName", tranName);
-
-        try {
-            URL url;
-            HttpClientUtil.assertRemoteHostAllowed(serverAddress);
-            if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
-                url = new URL("ftp://" + username + ":" + URLEncoder.encode(password, StandardCharsets.UTF_8) + "@" + serverAddress + "/" + filePath);
-            } else {
-                url = new URL("ftp://" + serverAddress + "/" + filePath);
-            }
-
-            URLConnection conn = url.openConnection();
-            try (InputStream inputStream = conn.getInputStream();
-                 FileOutputStream outputStream = new FileOutputStream(localFilePath)) {
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-            }
-
-        } catch (IOException e) {
-            CrestException.throwException(Translator.get("i18n_file_download_failed") + ", " + e.getMessage());
-        }
-        return fileNames;
+        CrestException.throwException(Translator.get("i18n_unsupported_protocol"));
+        return new HashMap<>();
     }
 
 }

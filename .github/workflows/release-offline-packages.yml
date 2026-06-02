@@ -110,10 +110,12 @@ jobs:
           merge-multiple: true
 
       - name: Create checksums
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
           cd offline-packages
-          sha256sum crest-offline-${{ inputs.version }}-linux-*.tar.gz > crest-offline-${{ inputs.version }}-checksums.txt
+          sha256sum "crest-offline-${VERSION}"-linux-*.tar.gz > "crest-offline-${VERSION}-checksums.txt"
 
       - name: Publish release
         uses: softprops/action-gh-release@v2

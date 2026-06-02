@@ -1357,6 +1357,7 @@ public class DatasourceServer implements DatasourceApi {
         String sql = "DELETE FROM " + quoteIdentifier(tableName)
                 + " WHERE " + quoteIdentifier(EXCEL_ROW_ID_FIELD) + " = ?";
         @SuppressWarnings("java/sql-injection")
+        // codeql[java/sql-injection] Table and column names are strict quoted identifiers; row values are bound with JDBC parameters.
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         try (PreparedStatement statement = preparedStatement) {
             statement.setQueryTimeout(queryTimeout);
@@ -1386,6 +1387,7 @@ public class DatasourceServer implements DatasourceApi {
         String sql = "UPDATE " + quoteIdentifier(tableName) + " SET " + assignments
                 + " WHERE " + quoteIdentifier(EXCEL_ROW_ID_FIELD) + " = ?";
         @SuppressWarnings("java/sql-injection")
+        // codeql[java/sql-injection] Table and column names are strict quoted identifiers; edited cell values are bound with JDBC parameters.
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         try (PreparedStatement statement = preparedStatement) {
             statement.setQueryTimeout(queryTimeout);
@@ -1416,6 +1418,7 @@ public class DatasourceServer implements DatasourceApi {
         // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
         String sql = "INSERT INTO " + quoteIdentifier(tableName) + " (" + columns + ") VALUES (" + placeholders + ")";
         @SuppressWarnings("java/sql-injection")
+        // codeql[java/sql-injection] Table and column names are strict quoted identifiers; inserted cell values are bound with JDBC parameters.
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         try (PreparedStatement statement = preparedStatement) {
             statement.setQueryTimeout(queryTimeout);
