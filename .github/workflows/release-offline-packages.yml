@@ -1,0 +1,129 @@
+name: Build Release Offline Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version, for example v1.5.4
+        required: true
+        default: v1.5.4
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  package:
+    name: Package ${{ matrix.platform }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-amd64
+            arch: amd64
+          - platform: linux-arm64
+            arch: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Load target-architecture images
+        env:
+          VERSION: ${{ inputs.version }}
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p /tmp/crest-image-load
+
+          load_image() {
+            local source_image="$1"
+            local local_image="$2"
+            printf 'FROM --platform=%s %s\n' "${PLATFORM}" "${source_image}" \
+              | docker buildx build --platform "${PLATFORM}" -t "${local_image}" --load -f - /tmp/crest-image-load
+            docker image inspect "${local_image}" --format '{{.Architecture}}' | grep -qx "${ARCH}"
+          }
+
+          load_image "ghcr.io/sevoniva/crest-service:${VERSION}" "ghcr.io/sevoniva/crest-service:${VERSION}-${ARCH}"
+          load_image "ghcr.io/sevoniva/crest-web:${VERSION}" "ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}"
+          load_image "mysql:8.0.43" "mysql:8.0.43-${ARCH}"
+          load_image "prom/prometheus:v3.12.0" "prom/prometheus:v3.12.0-${ARCH}"
+          load_image "grafana/grafana-oss:13.0.1" "grafana/grafana-oss:13.0.1-${ARCH}"
+
+      - name: Build offline package
+        env:
+          VERSION: ${{ inputs.version }}
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+          INCLUDE_OBSERVABILITY_IMAGES: "true"
+          SOURCE_MYSQL_IMAGE: mysql:8.0.43-${{ matrix.arch }}
+          MYSQL_IMAGE: mysql:8.0.43
+          SOURCE_PROMETHEUS_IMAGE: prom/prometheus:v3.12.0-${{ matrix.arch }}
+          PROMETHEUS_IMAGE: prom/prometheus:v3.12.0
+          SOURCE_GRAFANA_IMAGE: grafana/grafana-oss:13.0.1-${{ matrix.arch }}
+          GRAFANA_IMAGE: grafana/grafana-oss:13.0.1
+        run: |
+          set -euo pipefail
+
+          SOURCE_BACKEND_IMAGE="ghcr.io/sevoniva/crest-service:${VERSION}-${ARCH}" \
+          BACKEND_IMAGE="ghcr.io/sevoniva/crest-service:${VERSION}-${ARCH}" \
+          SOURCE_FRONTEND_IMAGE="ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}" \
+          FRONTEND_IMAGE="ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}" \
+          bash installer/make-offline-package.sh "${VERSION}" "${PLATFORM}"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crest-offline-${{ inputs.version }}-${{ matrix.platform }}
+          path: offline-packages/crest-offline-${{ inputs.version }}-${{ matrix.platform }}.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish release assets
+    needs: package
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: offline-packages
+          merge-multiple: true
+
+      - name: Create checksums
+        run: |
+          set -euo pipefail
+          cd offline-packages
+          sha256sum crest-offline-${{ inputs.version }}-linux-*.tar.gz > crest-offline-${{ inputs.version }}-checksums.txt
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}
+          name: Crest ${{ inputs.version }}
+          body_path: docs/release/${{ inputs.version }}.md
+          draft: false
+          prerelease: false
+          make_latest: true
+          overwrite_files: true
+          files: |
+            offline-packages/crest-offline-${{ inputs.version }}-linux-amd64.tar.gz
+            offline-packages/crest-offline-${{ inputs.version }}-linux-arm64.tar.gz
+            offline-packages/crest-offline-${{ inputs.version }}-checksums.txt
