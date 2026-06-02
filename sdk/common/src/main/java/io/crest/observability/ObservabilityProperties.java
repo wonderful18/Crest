@@ -9,12 +9,22 @@ public class ObservabilityProperties {
 
     private final Grafana grafana = new Grafana();
 
+    private Api api = new Api();
+
     public Prometheus getPrometheus() {
         return prometheus;
     }
 
     public Grafana getGrafana() {
         return grafana;
+    }
+
+    public Api getApi() {
+        return api;
+    }
+
+    public void setApi(Api api) {
+        this.api = api;
     }
 
     public static class Prometheus {
@@ -74,6 +84,27 @@ public class ObservabilityProperties {
 
         public void setPublicUrl(String publicUrl) {
             this.publicUrl = publicUrl;
+        }
+    }
+
+    public static class Api {
+        private boolean routeInventoryEnabled = true;
+        private String routePrefix = "/api/v1";
+
+        public boolean isRouteInventoryEnabled() {
+            return routeInventoryEnabled;
+        }
+
+        public void setRouteInventoryEnabled(boolean routeInventoryEnabled) {
+            this.routeInventoryEnabled = routeInventoryEnabled;
+        }
+
+        public String getRoutePrefix() {
+            return routePrefix;
+        }
+
+        public void setRoutePrefix(String routePrefix) {
+            this.routePrefix = routePrefix;
         }
     }
 }

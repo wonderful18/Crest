@@ -44,7 +44,7 @@ ENV RUNNING_PORT=8100
 ENV CREST_HEALTHCHECK_PATH=/api/v1/actuator/health/readiness
 ENV JAVA_OPTIONS="-Dfile.encoding=utf-8 -Dloader.path=/opt/apps -Dspring.config.additional-location=/opt/apps/config/"
 
-HEALTHCHECK --interval=15s --timeout=5s --retries=20 --start-period=60s CMD wget -qO- "http://127.0.0.1:${RUNNING_PORT}${CREST_HEALTHCHECK_PATH}" >/dev/null || exit 1
+HEALTHCHECK --interval=15s --timeout=5s --retries=20 --start-period=60s CMD env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy wget -qO- "http://127.0.0.1:${RUNNING_PORT}${CREST_HEALTHCHECK_PATH}" >/dev/null || exit 1
 
 USER crest
 
