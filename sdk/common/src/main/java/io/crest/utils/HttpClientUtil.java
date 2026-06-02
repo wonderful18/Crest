@@ -34,9 +34,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -377,6 +380,7 @@ public class HttpClientUtil {
     }
 
     public static Map<String, String> downloadFile(String url, HttpClientConfig config, String path) {
+        validateRemoteDownloadUrl(url);
         String encodeUIl = url;
         Map<String, String> name = new HashMap<>();
         if (!url.contains("%")) {
@@ -403,7 +407,7 @@ public class HttpClientUtil {
             String tranName = UUID.randomUUID().toString() + "." + suffix;
             name.put("fileName", fileName);
             name.put("tranName", tranName);
-            File localFile = new File(path + tranName);
+            File localFile = FileUtils.resolveUnderDirectory(path, tranName);
             try (InputStream is = response.getEntity().getContent();
                  FileOutputStream outputStream = new FileOutputStream(localFile)) {
                 byte[] buffer = new byte[4096];
@@ -417,6 +421,54 @@ public class HttpClientUtil {
             throw new RuntimeException("HttpClient查询失败: " + e.getMessage(), e);
         }
         return name;
+    }
+
+    public static void validateRemoteDownloadUrl(String url) {
+        try {
+            URI uri = URI.create(url);
+            String scheme = uri.getScheme();
+            if (!Strings.CI.equalsAny(scheme, "http", "https")) {
+                throw new IllegalArgumentException("only http and https downloads are allowed");
+            }
+            assertRemoteHostAllowed(uri.getHost());
+        } catch (Exception e) {
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "远程下载地址不合法: " + e.getMessage());
+        }
+    }
+
+    public static void assertRemoteHostAllowed(String host) throws UnknownHostException {
+        if (StringUtils.isBlank(host) || host.contains("/") || host.contains("\\") || host.contains("@")) {
+            throw new UnknownHostException("invalid host");
+        }
+        String lookupHost = normalizeLookupHost(host);
+        if (StringUtils.isBlank(lookupHost)) {
+            throw new UnknownHostException("invalid host");
+        }
+        if (Boolean.parseBoolean(ConfigUtils.getConfig("crest.security.remote-download.allow-private-address", "false"))) {
+            return;
+        }
+        for (InetAddress address : InetAddress.getAllByName(lookupHost)) {
+            if (address.isAnyLocalAddress()
+                    || address.isLoopbackAddress()
+                    || address.isLinkLocalAddress()
+                    || address.isSiteLocalAddress()
+                    || address.isMulticastAddress()) {
+                throw new UnknownHostException("private or local address is not allowed");
+            }
+        }
+    }
+
+    private static String normalizeLookupHost(String host) {
+        String value = host.trim();
+        if (value.startsWith("[") && value.contains("]")) {
+            return value.substring(1, value.indexOf(']'));
+        }
+        int firstColon = value.indexOf(':');
+        int lastColon = value.lastIndexOf(':');
+        if (firstColon == lastColon && firstColon > 0) {
+            return value.substring(0, firstColon);
+        }
+        return value;
     }
 
     private static String extractFileName(HttpResponse response, String url) {
@@ -449,6 +501,7 @@ public class HttpClientUtil {
     }
 
     public static byte[] downFromRemote(String url, HttpClientConfig config) {
+        validateRemoteDownloadUrl(url);
         try (CloseableHttpClient httpClient = buildHttpClient(url)) {
             HttpGet httpGet = new HttpGet(url);
             // 设置请求配置

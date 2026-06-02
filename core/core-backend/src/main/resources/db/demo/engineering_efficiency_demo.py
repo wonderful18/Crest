@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Generate a repeatable Crest engineering efficiency demo dataset.
 
-The script prints SQL for the engineering efficiency section in V1.5.0.2__demo_resources.sql.
+The script writes SQL for the engineering efficiency section in V1.5.0.2__demo_resources.sql.
 Run it into the local MySQL container while iterating:
 
-  python3 .crest-local/engineering_efficiency_demo.py > .crest-local/engineering_efficiency_demo.sql
+  python3 .crest-local/engineering_efficiency_demo.py --output .crest-local/engineering_efficiency_demo.sql
   docker exec -i mysql-crest-local mysql -uroot -p"$CREST_LOCAL_DB_PASSWORD" < .crest-local/engineering_efficiency_demo.sql
 """
 
 from __future__ import annotations
 
+import argparse
 import copy
 import json
 import random
@@ -3795,7 +3796,12 @@ def emit_sql(add):
 
 
 def main():
-    print("\n\n".join(build_sql()))
+    parser = argparse.ArgumentParser(description="Generate Crest engineering efficiency demo SQL.")
+    parser.add_argument("--output", required=True, help="Output SQL file path.")
+    args = parser.parse_args()
+    with open(args.output, "w", encoding="utf-8") as output:
+        output.write("\n\n".join(build_sql()))
+        output.write("\n")
 
 
 if __name__ == "__main__":

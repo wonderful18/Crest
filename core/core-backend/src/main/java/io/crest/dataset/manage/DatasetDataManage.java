@@ -133,13 +133,13 @@ public class DatasetDataManage {
                 Map map = JsonUtil.parseObject(datasourceSchemaDTO.getConfiguration(), Map.class);
                 if (!datasourceRequest.getIsCross()) {
                     if (ObjectUtils.isNotEmpty(map.get("schema"))) {
-                        sql = sql.replaceAll(SqlPlaceholderConstants.KEYWORD_PREFIX_REGEX + datasourceSchemaDTO.getSchemaAlias() + SqlPlaceholderConstants.KEYWORD_SUFFIX_REGEX, String.format(format, map.get("schema").toString()));
+                        sql = replaceSchemaAlias(sql, datasourceSchemaDTO.getSchemaAlias(), String.format(format, map.get("schema").toString()));
                     } else {
-                        sql = sql.replaceAll(SqlPlaceholderConstants.KEYWORD_PREFIX_REGEX + datasourceSchemaDTO.getSchemaAlias() + SqlPlaceholderConstants.KEYWORD_SUFFIX_REGEX + "\\.", "");
+                        sql = removeSchemaAliasPrefix(sql, datasourceSchemaDTO.getSchemaAlias());
                     }
                     sql = provider.transSqlDialect(sql, datasourceRequest.getDsList());
                 } else {
-                    sql = sql.replaceAll(SqlPlaceholderConstants.KEYWORD_PREFIX_REGEX + datasourceSchemaDTO.getSchemaAlias() + SqlPlaceholderConstants.KEYWORD_SUFFIX_REGEX + "\\.", "");
+                    sql = removeSchemaAliasPrefix(sql, datasourceSchemaDTO.getSchemaAlias());
                     String tableSchema = datasetSQLManage.putObj2Map(datasourceRequest.getDsList(), datasetTableDTO, datasourceRequest.getIsCross());
                     sql = SqlUtils.addSchema(sql, tableSchema);
                 }
@@ -1318,5 +1318,23 @@ public class DatasetDataManage {
         }
         return nodes;
 
+    }
+
+    private static String replaceSchemaAlias(String sql, String schemaAlias, String replacement) {
+        return sql
+                .replace("`" + schemaAlias + "`", replacement)
+                .replace("'" + schemaAlias + "'", replacement)
+                .replace("\"" + schemaAlias + "\"", replacement)
+                .replace("[" + schemaAlias + "]", replacement)
+                .replace(schemaAlias, replacement);
+    }
+
+    private static String removeSchemaAliasPrefix(String sql, String schemaAlias) {
+        return sql
+                .replace("`" + schemaAlias + "`.", "")
+                .replace("'" + schemaAlias + "'.", "")
+                .replace("\"" + schemaAlias + "\".", "")
+                .replace("[" + schemaAlias + "].", "")
+                .replace(schemaAlias + ".", "");
     }
 }

@@ -4,7 +4,6 @@ import io.crest.constant.SQLConstants;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
-import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
 import io.crest.extensions.datasource.dto.*;
 import io.crest.extensions.datasource.model.SQLObj;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
@@ -84,16 +83,8 @@ public class Utils {
                 CrestException.throwException(Translator.get("i18n_field_circular_error"));
             }
             String originField = getCalcField(chartField, originFields, isFirst, fieldExpression);
-            originField = originField.replaceAll("[\\t\\n\\r]]", "");
-            // 正则提取[xxx]
-            String regex = "\\[(.*?)]";
-            Pattern pattern = Pattern.compile(regex);
-            Matcher matcher = pattern.matcher(originField);
-            Set<String> ids = new HashSet<>();
-            while (matcher.find()) {
-                String id = matcher.group(1);
-                ids.add(id);
-            }
+            originField = stripLineBreaks(originField);
+            Set<String> ids = bracketContents(originField);
             if (CollectionUtils.isEmpty(ids)) {
                 return originField;
             }
@@ -101,7 +92,7 @@ public class Utils {
             if (ObjectUtils.isNotEmpty(paramMap)) {
                 Set<Map.Entry<String, String>> entries = paramMap.entrySet();
                 for (Map.Entry<String, String> ele : entries) {
-                    originField = originField.replaceAll("\\[" + ele.getKey() + "]", ele.getValue());
+                    originField = originField.replace("[" + ele.getKey() + "]", ele.getValue());
                 }
             }
             // 替换字段引用
@@ -110,12 +101,12 @@ public class Utils {
                     // 计算字段允许二次引用，这里递归查询完整引用链
                     if (Objects.equals(ele.getExtField(), ExtFieldConstant.EXT_NORMAL)) {
                         if (isCross) {
-                            originField = originField.replaceAll("\\[" + ele.getId() + "]", String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), ele.getEngineFieldName()));
+                            originField = originField.replace("[" + ele.getId() + "]", String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), ele.getEngineFieldName()));
                         } else {
-                            originField = originField.replaceAll("\\[" + ele.getId() + "]", datasourceType.getPrefix() + tableObj.getTableAlias() + datasourceType.getSuffix() + "." + datasourceType.getPrefix() + ele.getEngineFieldName() + datasourceType.getSuffix());
+                            originField = originField.replace("[" + ele.getId() + "]", datasourceType.getPrefix() + tableObj.getTableAlias() + datasourceType.getSuffix() + "." + datasourceType.getPrefix() + ele.getEngineFieldName() + datasourceType.getSuffix());
                         }
                     } else {
-                        originField = originField.replaceAll("\\[" + ele.getId() + "]", "(" + ele.getOriginName() + ")");
+                        originField = originField.replace("[" + ele.getId() + "]", "(" + ele.getOriginName() + ")");
                         originField = buildCalcField(chartField, tableObj, originFields, i, isCross, datasourceType, paramMap, false, originField);
                     }
                 }
@@ -230,14 +221,9 @@ public class Utils {
     }
 
     public static void checkCircularReference(String originField, List<DatasetTableFieldDTO> fields) {
-        originField = originField.replaceAll("[\\t\\n\\r]]", "");
-        // 正则提取[xxx]
-        String regex = "\\[(.*?)]";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(originField);
-        while (matcher.find()) {
+        originField = stripLineBreaks(originField);
+        for (String id : bracketContents(originField)) {
             Set<String> ids = new HashSet<>();
-            String id = matcher.group(1);
             for (DatasetTableFieldDTO ele : fields) {
                 if (Strings.CI.contains(id, ele.getId() + "")) {
                     if (ids.contains(id)) {
@@ -245,7 +231,7 @@ public class Utils {
                     }
                     ids.add(id);
                     if (Objects.equals(ele.getExtField(), ExtFieldConstant.EXT_CALC)) {
-                        originField = originField.replaceAll("\\[" + ele.getId() + "]", ele.getOriginName());
+                        originField = originField.replace("[" + ele.getId() + "]", ele.getOriginName());
                         checkField(ids, originField, fields);
                     }
                 }
@@ -254,13 +240,8 @@ public class Utils {
     }
 
     public static void checkField(Set<String> ids, String originField, List<DatasetTableFieldDTO> fields) {
-        originField = originField.replaceAll("[\\t\\n\\r]]", "");
-        // 正则提取[xxx]
-        String regex = "\\[(.*?)]";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(originField);
-        while (matcher.find()) {
-            String id = matcher.group(1);
+        originField = stripLineBreaks(originField);
+        for (String id : bracketContents(originField)) {
             for (DatasetTableFieldDTO ele : fields) {
                 if (Strings.CI.contains(id, ele.getId() + "")) {
                     if (ids.contains(id)) {
@@ -268,7 +249,7 @@ public class Utils {
                     }
                     ids.add(id);
                     if (Objects.equals(ele.getExtField(), ExtFieldConstant.EXT_CALC)) {
-                        originField = originField.replaceAll("\\[" + ele.getId() + "]", ele.getOriginName());
+                        originField = originField.replace("[" + ele.getId() + "]", ele.getOriginName());
                         checkField(ids, originField, fields);
                     }
                 }
@@ -277,9 +258,9 @@ public class Utils {
     }
 
     public static boolean matchFunction(String func, String originField) {
-        String pattern = func + "\\s*\\((.*?)\\)";
+        String pattern = Pattern.quote(func) + "\\s*\\(";
         Pattern r = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
-        Matcher m = r.matcher(originField.replaceAll("[\\t\\n\\r]", ""));
+        Matcher m = r.matcher(stripLineBreaks(originField));
         while (m.find()) {
             return true;
         }
@@ -303,7 +284,38 @@ public class Utils {
         if (ObjectUtils.isNotEmpty(map.get("schema"))) {
             return sql;
         }
-        return sql.replaceAll(SqlPlaceholderConstants.KEYWORD_PREFIX_REGEX + value.getSchemaAlias() + SqlPlaceholderConstants.KEYWORD_SUFFIX_REGEX + "\\.", "");
+        String schemaAlias = value.getSchemaAlias();
+        return sql
+                .replace("`" + schemaAlias + "`.", "")
+                .replace("'" + schemaAlias + "'.", "")
+                .replace("\"" + schemaAlias + "\".", "")
+                .replace("[" + schemaAlias + "].", "")
+                .replace(schemaAlias + ".", "");
+    }
+
+    private static String stripLineBreaks(String value) {
+        return value == null ? null : value.replace("\t", "").replace("\n", "").replace("\r", "");
+    }
+
+    private static Set<String> bracketContents(String value) {
+        Set<String> contents = new LinkedHashSet<>();
+        if (StringUtils.isEmpty(value)) {
+            return contents;
+        }
+        int searchFrom = 0;
+        while (searchFrom < value.length()) {
+            int start = value.indexOf('[', searchFrom);
+            if (start < 0) {
+                break;
+            }
+            int end = value.indexOf(']', start + 1);
+            if (end < 0) {
+                break;
+            }
+            contents.add(value.substring(start + 1, end));
+            searchFrom = end + 1;
+        }
+        return contents;
     }
 
     public static long allDateFormat2Long(String value) {

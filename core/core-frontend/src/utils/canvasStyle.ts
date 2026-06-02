@@ -88,7 +88,7 @@ export function getComponentRotatedStyle(style) {
 }
 
 export function colorRgb(color, opacity) {
-  const reg = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/
+  const reg = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
   let sColor = color
   if (sColor && reg.test(sColor)) {
     sColor = sColor.toLowerCase()

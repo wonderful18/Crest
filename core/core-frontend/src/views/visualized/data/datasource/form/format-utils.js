@@ -95,7 +95,7 @@ export function formatXml(text) {
       return name + ' ' + props.replace(/\s+(\w+=)/g, ' $1')
     })
   // 把注释编码
-  text = text.replace(/<!--(.+?)-->/g, function ($0, text) {
+  text = text.replace(/<!--([\s\S]*?)-->/g, function ($0, text) {
     var ret = '<!--' + escape(text) + '-->'
     return ret
   })
@@ -127,7 +127,7 @@ export function formatXml(text) {
   )
   var outputText = output.substring(1)
   // 把注释还原并解码，调格式
-  outputText = outputText.replace(/(\s*)<!--(.+?)-->/g, function ($0, prefix, text) {
+  outputText = outputText.replace(/(\s*)<!--([\s\S]*?)-->/g, function ($0, prefix, text) {
     if (prefix.charAt(0) === '\r') {
       prefix = prefix.substring(1)
     }

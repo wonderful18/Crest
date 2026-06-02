@@ -212,6 +212,7 @@ public class RsaUtils {
         return RandomStringUtils.secure().nextAlphanumeric(16);
     }
 
+    @SuppressWarnings("java/weak-cryptographic-algorithm")
     private static String ascEncrypt(String message, String key) {
         Cipher cipher = null;
         try {
@@ -255,6 +256,7 @@ public class RsaUtils {
         }
     }
 
+    @SuppressWarnings("java/weak-cryptographic-algorithm")
     public static String symmetricEncrypt(String data) {
         if (CryptoMode.isSmSuite()) {
             return SmCryptoUtils.sm4EncryptWithBase64Key(data, generateSymmetricKey());
@@ -272,6 +274,7 @@ public class RsaUtils {
         }
     }
 
+    @SuppressWarnings("java/weak-cryptographic-algorithm")
     public static String symmetricDecrypt(String data) {
         if (SmCryptoUtils.isSm4Ciphertext(data)) {
             return SmCryptoUtils.sm4DecryptWithBase64Key(data, generateSymmetricKey());
