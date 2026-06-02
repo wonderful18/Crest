@@ -495,7 +495,7 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"$job\"}[$__rate_interval]) / clamp_min(rate(jvm_gc_pause_seconds_count{job=\"$job\"}[$__rate_interval]), 0.001)",
+          "expr": "((rate(jvm_gc_pause_seconds_sum{job=\"$job\"}[$__rate_interval]) / clamp_min(rate(jvm_gc_pause_seconds_count{job=\"$job\"}[$__rate_interval]), 0.001)) and ((rate(jvm_gc_pause_seconds_sum{job=\"$job\"}[$__rate_interval]) / clamp_min(rate(jvm_gc_pause_seconds_count{job=\"$job\"}[$__rate_interval]), 0.001)) >= 0)) or label_replace(vector(0), \"series\", \"avg pause\", \"__name__\", \".*\")",
           "legendFormat": "avg pause",
           "refId": "N",
           "format": "time_series"
@@ -505,9 +505,9 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "jvm_gc_pause_seconds_max{job=\"$job\"}",
+          "expr": "((jvm_gc_pause_seconds_max{job=\"$job\"}) and ((jvm_gc_pause_seconds_max{job=\"$job\"}) >= 0)) or label_replace(vector(0), \"series\", \"max pause\", \"__name__\", \".*\")",
           "legendFormat": "max pause",
-          "refId": "N",
+          "refId": "B",
           "format": "time_series"
         }
       ],

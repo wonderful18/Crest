@@ -1,6 +1,6 @@
 # Crest
 
-Crest 是面向私有化部署的开源 BI 平台，覆盖数据源接入、数据集建模、仪表盘、数据大屏、分享、导出、系统管理和字段级数据血缘。当前候选版本为 `v1.5.4-rc.1`。
+Crest 是面向私有化部署的开源 BI 平台，覆盖数据源接入、数据集建模、仪表盘、数据大屏、分享、导出、系统管理和字段级数据血缘。当前版本为 `v1.5.4`。
 
 Crest 基于 DataEase 2.10.22 开源版本继续开发，并合入 2.10.23 相关安全加固和依赖升级。仓库保留上游版权和 GPLv3 许可声明。品牌、部署脚本、演示资源、OceanBase Oracle 数据源、数据血缘和研发效能分析能力由 Crest 独立维护。
 
@@ -114,8 +114,8 @@ bash install.sh
 | --- | --- |
 | `CREST_BASE` | 安装基目录，默认 `/opt`，实际运行目录为 `/opt/crest` |
 | `CREST_PORT` | Web 端口，默认 `8100` |
-| `CREST_BACKEND_IMAGE` | Crest 后端镜像，默认 `ghcr.io/sevoniva/crest-service:v1.5.4-rc.1` |
-| `CREST_FRONTEND_IMAGE` | Crest 前端镜像，默认 `ghcr.io/sevoniva/crest-web:v1.5.4-rc.1` |
+| `CREST_BACKEND_IMAGE` | Crest 后端镜像，默认 `ghcr.io/sevoniva/crest-service:v1.5.4` |
+| `CREST_FRONTEND_IMAGE` | Crest 前端镜像，默认 `ghcr.io/sevoniva/crest-web:v1.5.4` |
 | `CREST_MYSQL_IMAGE` | MySQL 镜像，默认 `mysql:8.0.43` |
 | `CREST_EXTERNAL_MYSQL` | 是否连接外部 MySQL，默认 `false` |
 | `CREST_DB_PASSWORD` | MySQL root 密码，留空时自动生成 |
@@ -139,7 +139,7 @@ crestctl restart
 crestctl clear-logs
 ```
 
-`v1.5.4-rc.1` 面向全新环境安装，不支持从旧版本直接执行 Flyway 原地升级。旧环境迁移到 `v1.5.4-rc.1` 时，请先完成数据备份和资源导出，再在新环境中导入业务资源。后续同一发布线的小版本升级策略会在发布说明中单独说明。
+`v1.5.4` 面向全新环境安装，不支持从旧版本直接执行 Flyway 原地升级。旧环境迁移到 `v1.5.4` 时，请先完成数据备份和资源导出，再在新环境中导入业务资源。后续同一发布线的小版本升级策略会在发布说明中单独说明。
 
 已有 `v1.5.x` 环境只替换后端镜像时，可在运行目录执行 `docker-compose up -d --no-deps crest-service`；只替换前端镜像时执行 `docker-compose up -d --no-deps crest`。
 
@@ -147,7 +147,7 @@ crestctl clear-logs
 
 前端网关使用 `/healthz` 判断 Nginx 是否可用。后端服务提供 `/api/v1/actuator/health/liveness` 和 `/api/v1/actuator/health/readiness`：前者只检查应用进程响应，后者会校验元数据库连接，适合容器健康检查和 Kubernetes 就绪探针。
 
-Prometheus 指标端点默认关闭。开启后，Prometheus 使用专用 Bearer Token 在容器或集群内网直接抓取后端 `/api/v1/actuator/prometheus`，前端网关不公开该路径。企业已有 Prometheus/Grafana 时可只开启 metrics 并导入 Crest dashboard；需要内置监控组件时可启用 observability profile。详细说明见 [docs/observability.md](./docs/observability.md)。
+Prometheus 指标端点默认关闭。开启后，Prometheus 使用专用 Bearer Token 在容器或集群内网直接抓取后端 `/api/v1/actuator/prometheus`，前端网关不公开该路径。企业已有 Prometheus/Grafana 时可只开启 metrics 并导入 Crest 看板和告警规则；需要内置监控组件时可启用 observability profile。详细说明见 [docs/observability.md](./docs/observability.md)。
 
 ## 离线包
 
@@ -155,22 +155,22 @@ Prometheus 指标端点默认关闭。开启后，Prometheus 使用专用 Bearer
 
 ```bash
 cd installer
-bash make-offline-package.sh v1.5.4-rc.1 linux-amd64
-bash make-offline-package.sh v1.5.4-rc.1 linux-arm64
+bash make-offline-package.sh v1.5.4 linux-amd64
+bash make-offline-package.sh v1.5.4 linux-arm64
 ```
 
-候选包名：
+发布包名：
 
 ```text
-crest-offline-v1.5.4-rc.1-linux-amd64.tar.gz
-crest-offline-v1.5.4-rc.1-linux-arm64.tar.gz
+crest-offline-v1.5.4-linux-amd64.tar.gz
+crest-offline-v1.5.4-linux-arm64.tar.gz
 ```
 
 包内包含安装脚本、配置模板、Docker Compose 文件、部署说明文档和 `images/` 镜像归档。离线服务器解压后直接执行：
 
 ```bash
-tar -zxf crest-offline-v1.5.4-rc.1-linux-amd64.tar.gz
-cd crest-offline-v1.5.4-rc.1-linux-amd64
+tar -zxf crest-offline-v1.5.4-linux-amd64.tar.gz
+cd crest-offline-v1.5.4-linux-amd64
 bash install.sh
 ```
 
@@ -179,7 +179,7 @@ bash install.sh
 如需把 Prometheus 和 Grafana 镜像一起放进离线包，制作前先准备对应架构镜像，并设置：
 
 ```bash
-INCLUDE_OBSERVABILITY_IMAGES=true bash make-offline-package.sh v1.5.4-rc.1 linux-amd64
+INCLUDE_OBSERVABILITY_IMAGES=true bash make-offline-package.sh v1.5.4 linux-amd64
 ```
 
 ## Kubernetes 部署
@@ -226,9 +226,9 @@ http://127.0.0.1:18100/index.html
 默认镜像：
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.4-rc.1
+ghcr.io/sevoniva/crest-service:v1.5.4
 ghcr.io/sevoniva/crest-service:main
-ghcr.io/sevoniva/crest-web:v1.5.4-rc.1
+ghcr.io/sevoniva/crest-web:v1.5.4
 ghcr.io/sevoniva/crest-web:main
 ```
 
@@ -416,7 +416,7 @@ Crest 支持基于 OIDC / OAuth2 授权码模式的单点登录。配置入口�
 
 ## 平台管理
 
-Crest `v1.5.4-rc.1` 内置平台管理能力，包括用户、组织、角色、菜单权限和业务资源权限。权限判断在后端执行，前端只负责菜单、按钮和授权界面的展示。
+Crest `v1.5.4` 内置平台管理能力，包括用户、组织、角色、菜单权限和业务资源权限。权限判断在后端执行，前端只负责菜单、按钮和授权界面的展示。
 
 平台管理能力覆盖：
 
@@ -466,7 +466,7 @@ git clean -fdXn
 | 文档 | 内容 |
 | --- | --- |
 | [docs/development.md](./docs/development.md) | 仓库结构、开发工具链、构建命令、迁移规则和提交前检查 |
-| [docs/release/v1.5.4-rc.1.md](./docs/release/v1.5.4-rc.1.md) | v1.5.4-rc.1 发布说明、镜像、离线包和安装注意事项 |
+| [docs/release/v1.5.4.md](./docs/release/v1.5.4.md) | v1.5.4 发布说明、镜像、离线包和安装注意事项 |
 | [docs/data-lineage.md](./docs/data-lineage.md) | 字段级数据血缘的入口、口径、接口和边界 |
 | [docs/sso.md](./docs/sso.md) | 单点登录配置、登录流程、用户映射和运维要求 |
 | [docs/platform-management.md](./docs/platform-management.md) | 平台管理、组织角色、菜单权限和资源权限的设计口径 |
@@ -480,7 +480,7 @@ git clean -fdXn
 
 ## 版本与变更
 
-当前候选版本：`v1.5.4-rc.1`。
+当前版本：`v1.5.4`。
 
 变更记录见 [CHANGELOG.md](./CHANGELOG.md)。
 

@@ -538,7 +538,7 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "rate(hikaricp_connections_usage_seconds_sum{job=\"$job\",pool=~\"$pool\"}[$__rate_interval]) / clamp_min(rate(hikaricp_connections_usage_seconds_count{job=\"$job\",pool=~\"$pool\"}[$__rate_interval]), 0.001)",
+          "expr": "((rate(hikaricp_connections_usage_seconds_sum{job=\"$job\",pool=~\"$pool\"}[$__rate_interval]) / clamp_min(rate(hikaricp_connections_usage_seconds_count{job=\"$job\",pool=~\"$pool\"}[$__rate_interval]), 0.001)) and ((rate(hikaricp_connections_usage_seconds_sum{job=\"$job\",pool=~\"$pool\"}[$__rate_interval]) / clamp_min(rate(hikaricp_connections_usage_seconds_count{job=\"$job\",pool=~\"$pool\"}[$__rate_interval]), 0.001)) >= 0)) or label_replace(vector(0), \"series\", \"avg usage\", \"__name__\", \".*\")",
           "legendFormat": "avg usage {{pool}}",
           "refId": "M",
           "format": "time_series"
@@ -548,9 +548,9 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "hikaricp_connections_usage_seconds_max{job=\"$job\",pool=~\"$pool\"}",
+          "expr": "((hikaricp_connections_usage_seconds_max{job=\"$job\",pool=~\"$pool\"}) and ((hikaricp_connections_usage_seconds_max{job=\"$job\",pool=~\"$pool\"}) >= 0)) or label_replace(vector(0), \"series\", \"max usage\", \"__name__\", \".*\")",
           "legendFormat": "max usage {{pool}}",
-          "refId": "M",
+          "refId": "B",
           "format": "time_series"
         }
       ],

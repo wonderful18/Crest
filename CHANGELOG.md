@@ -1,15 +1,16 @@
 # Changelog
 
-## v1.5.4-rc.1 - 2026-06-02
+## v1.5.4 - 2026-06-02
 
-v1.5.4-rc.1 是 v1.5 系列的可观测性候选版本，面向企业内网部署和统一监控接入场景。此版本默认不暴露指标；需要监控时可通过参数开启 Prometheus metrics，并使用 Bearer Token 保护抓取入口。
+v1.5.4 是 v1.5 系列的可观测性增强版本，面向企业内网部署和统一监控接入场景。此版本默认不暴露指标；需要监控时可通过参数开启 Prometheus metrics，并使用 Bearer Token 保护抓取入口。
 
 ### 新增
 
 - 后端接入 Spring Boot Actuator 和 Micrometer Prometheus registry，提供 `/api/v1/actuator/prometheus` 指标端点。
 - 指标端点默认关闭；开启后必须配置 `CREST_PROMETHEUS_TOKEN`，Prometheus 通过 Bearer Token 抓取。
 - 新增 `CREST_PROMETHEUS_ENABLED`、`CREST_PROMETHEUS_TOKEN`、`CREST_PROMETHEUS_MAX_URI_TAGS`、`CREST_GRAFANA_ENABLED` 等部署参数。
-- 新增 Grafana provisioning，看板覆盖接口吞吐、错误率、P95 延迟、状态码分布、接口明细、JVM、GC、运行时线程池、CPU 和采集状态。
+- 新增 Grafana provisioning，看板覆盖接口吞吐、错误率、P95 延迟、状态码分布、Top 接口、接口明细、JVM、GC、运行时线程池、CPU 和采集状态。
+- 新增 Prometheus 告警规则，覆盖服务采集中断、API 路由清单缺失、HTTP 5xx 错误率、P95 延迟、CPU、JVM 堆内存、线程池队列和数据库连接池。
 - 新增单机 Compose observability profile，可选启动 Prometheus 和 Grafana。
 - 新增 Kubernetes observability overlay，支持内置 MySQL 和外部 MySQL 两种部署形态。
 - 系统参数页新增“可观测性”页签，管理员可查看 Prometheus/Grafana 启用状态、指标端点、token 配置状态和看板信息。
@@ -17,18 +18,19 @@ v1.5.4-rc.1 是 v1.5 系列的可观测性候选版本，面向企业内网部�
 ### 调整
 
 - 前端网关默认屏蔽 `/api/v1/actuator/prometheus`，指标只允许 Prometheus 从后端内网地址抓取。
+- Grafana 状态码分布、接口吞吐 Top 20、接口 P95 Top 20 等面板增加空数据兜底，低流量窗口不再显示 No data。
 - 离线包制作脚本支持按需打入 Prometheus 和 Grafana 镜像，适配无公网环境。
-- 文档补充企业已有 Prometheus/Grafana 时的接入方式，可直接启用 Crest metrics 并导入 Grafana dashboard。
+- 文档补充企业已有 Prometheus/Grafana 时的接入方式，可直接启用 Crest metrics 并导入 Grafana 看板和 Prometheus 告警规则。
 - 后端运行镜像补齐 `jdk.management` 模块，确保 JVM、GC、线程和 CPU 指标完整输出。
-- README、安装文档、Kubernetes 文档、工作流默认镜像标签和工程版本号更新至 v1.5.4-rc.1。
+- README、安装文档、Kubernetes 文档、工作流默认镜像标签和工程版本号更新至 v1.5.4。
 
 ### 安装说明
 
-- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.4-rc.1` 和 `ghcr.io/sevoniva/crest-web:v1.5.4-rc.1`。
-- 默认离线包为 `crest-offline-v1.5.4-rc.1-linux-amd64.tar.gz` 和 `crest-offline-v1.5.4-rc.1-linux-arm64.tar.gz`。
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.4` 和 `ghcr.io/sevoniva/crest-web:v1.5.4`。
+- 默认离线包为 `crest-offline-v1.5.4-linux-amd64.tar.gz` 和 `crest-offline-v1.5.4-linux-arm64.tar.gz`。
 - Prometheus/Grafana 默认不启动。需要内置监控组件时设置 `CREST_PROMETHEUS_ENABLED=true` 和 `CREST_GRAFANA_ENABLED=true`。
-- 已有企业 Prometheus/Grafana 时，只需开启 `CREST_PROMETHEUS_ENABLED=true`，配置抓取 token，并导入仓库内 Grafana dashboard。
-- v1.5.4-rc.1 面向全新环境安装；早期环境迁移前请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
+- 已有企业 Prometheus/Grafana 时，只需开启 `CREST_PROMETHEUS_ENABLED=true`，配置抓取 token，并导入仓库内 Grafana 看板和 Prometheus 告警规则。
+- v1.5.4 面向全新环境安装；早期环境迁移前请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
 
 ## v1.5.3 - 2026-06-02
 

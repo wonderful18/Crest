@@ -278,7 +278,7 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le)) or vector(0)",
           "legendFormat": "",
           "refId": "J",
           "format": "time_series"
@@ -490,7 +490,7 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))",
+          "expr": "((histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))) and ((histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))) >= 0)) or label_replace(vector(0), \"series\", \"P50\", \"__name__\", \".*\")",
           "legendFormat": "P50",
           "refId": "F",
           "format": "time_series"
@@ -500,7 +500,7 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))",
+          "expr": "((histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))) and ((histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))) >= 0)) or label_replace(vector(0), \"series\", \"P95\", \"__name__\", \".*\")",
           "legendFormat": "P95",
           "refId": "B",
           "format": "time_series"
@@ -510,9 +510,9 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))",
+          "expr": "((histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))) and ((histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le))) >= 0)) or label_replace(vector(0), \"series\", \"P99\", \"__name__\", \".*\")",
           "legendFormat": "P99",
-          "refId": "B",
+          "refId": "C",
           "format": "time_series"
         }
       ],
@@ -816,7 +816,7 @@
             "type": "prometheus",
             "uid": "crest-prometheus"
           },
-          "expr": "topk(20, histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le, method, uri)))",
+          "expr": "topk(20, histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[$__rate_interval])) by (le, method, uri))) or label_replace(label_replace(vector(0), \"method\", \"-\", \"__name__\", \".*\"), \"uri\", \"无访问数据\", \"__name__\", \".*\")",
           "legendFormat": "",
           "refId": "C",
           "format": "table"
