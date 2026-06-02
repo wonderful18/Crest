@@ -364,78 +364,6 @@ public class CalciteProvider extends Provider {
         return fieldList;
     }
 
-    private Map<String, Integer> getTableTypeMap(DatasourceRequest datasourceRequest, DatasourceConfiguration datasourceConfiguration, String tableName) throws CrestException {
-        Map<String, Integer> map = new HashMap<>();
-        String schemaTable = (ObjectUtils.isNotEmpty(datasourceConfiguration.getSchema()) ? (quoteIdentifierPart(datasourceConfiguration.getSchema()) + ".") : "") + quoteIdentifierPart(tableName);
-        // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string - SQL identifiers cannot be bound as parameters; each part is escaped by quoteIdentifierPart.
-        String sql = "SELECT * FROM " + schemaTable + " LIMIT 0 OFFSET 0";
-        sql = transSqlDialect(sql, datasourceRequest.getDsList());
-        ResultSet resultSet = null;
-        try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId());
-             PreparedStatement statement = con.prepareStatement(sql)) {
-            boolean readOnly = shouldUseReadOnlyConnection(
-                    datasourceRequest,
-                    datasourceConfiguration,
-                    datasourceRequest.getDatasource().getType()
-            );
-            setConnectionReadOnly(con, readOnly);
-            try {
-                statement.setQueryTimeout(30);
-                // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string - table identifiers were already quoted and escaped before preparing the statement.
-                resultSet = statement.executeQuery();
-
-                ResultSetMetaData metaData = resultSet.getMetaData();
-                int columnCount = metaData.getColumnCount();
-                for (int j = 0; j < columnCount; j++) {
-                    String name = StringUtils.lowerCase(metaData.getColumnName(j + 1));
-                    Integer type = metaData.getColumnType(j + 1);
-                    map.put(name, type);
-                }
-            } finally {
-                resetConnectionReadOnly(con, readOnly);
-            }
-        } catch (Exception e) {
-            io.crest.utils.LogUtil.error(e.getMessage(), e);
-        } finally {
-            if (resultSet != null) {
-                try {
-                    resultSet.close();
-                } catch (SQLException e) {
-                    io.crest.utils.LogUtil.error(e.getMessage(), e);
-                }
-            }
-        }
-        return map;
-    }
-
-    private String quoteIdentifierPart(String identifier) {
-        if (StringUtils.isBlank(identifier)) {
-            CrestException.throwException("Illegal empty identifier");
-        }
-        return "`" + identifier.replace("`", "``") + "`";
-    }
-
-    private String quoteQualifiedIdentifier(String identifier) {
-        if (StringUtils.isBlank(identifier)) {
-            CrestException.throwException("Illegal empty identifier");
-        }
-        StringBuilder result = new StringBuilder();
-        int start = 0;
-        while (start <= identifier.length()) {
-            int end = identifier.indexOf('.', start);
-            String part = end < 0 ? identifier.substring(start) : identifier.substring(start, end);
-            if (result.length() > 0) {
-                result.append('.');
-            }
-            result.append(quoteIdentifierPart(part));
-            if (end < 0) {
-                break;
-            }
-            start = end + 1;
-        }
-        return result.toString();
-    }
-
     private String sqlLiteral(String value) {
         return "'" + StringUtils.defaultString(value).replace("'", "''") + "'";
     }
@@ -526,35 +454,12 @@ public class CalciteProvider extends Provider {
             if (!tables(datasourceRequest).stream().map(DatasetTableDTO::getTableName).collect(Collectors.toList()).contains(table)) {
                 CrestException.throwException(Translator.get("i18n_invalid_table_name"));
             }
-            ResultSet resultSet = null;
-            try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId());
-                 Statement statement = getStatement(con, 30)) {
+            try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId())) {
                 boolean readOnly = shouldUseReadOnlyConnection(datasourceRequest, datasourceConfiguration, datasourceSchemaDTO.getType());
                 setConnectionReadOnly(con, readOnly);
                 try {
                     datasourceRequest.setDsVersion(con.getMetaData().getDatabaseMajorVersion());
-                    if (datasourceRequest.getDatasource().getType().equalsIgnoreCase("mongo")) {
-                        // codeql[java/sql-injection] The table identifier is escaped by quoteQualifiedIdentifier and cannot be bound as a JDBC parameter.
-                        resultSet = statement.executeQuery("select * from " + quoteQualifiedIdentifier(table) + " limit 0 offset 0 ");
-                        return fetchResultField(resultSet);
-                    }
-                    resultSet = statement.executeQuery(getTableFiledSql(datasourceRequest)); // lgtm[java/sql-injection] getTableFiledSql builds metadata SQL from validated datasource/table identifiers only.
-
-                    Map<String, Integer> tableTypeMap = getTableTypeMap(datasourceRequest, datasourceConfiguration, table);
-
-                    while (resultSet.next()) {
-                        TableField tableFieldDesc = getTableFieldDesc(datasourceRequest, resultSet, 3, tableTypeMap);
-                        boolean repeat = false;
-                        for (TableField ele : datasetTableFields) {
-                            if (Strings.CI.equals(ele.getOriginName(), tableFieldDesc.getOriginName())) {
-                                repeat = true;
-                                break;
-                            }
-                        }
-                        if (!repeat) {
-                            datasetTableFields.add(tableFieldDesc);
-                        }
-                    }
+                    datasetTableFields.addAll(fetchTableFieldsFromMetadata(con, datasourceRequest, datasourceConfiguration, table));
                     if (isObOracle(datasourceRequest.getDatasource().getType())) {
                         DatasourceConfiguration configuration = parseOracleLikeConfiguration(datasourceRequest.getDatasource().getConfiguration(), datasourceRequest.getDatasource().getType());
                         applyOracleColumnComments(datasetTableFields, getOracleColumnComments(con, configuration.getSchema(), table));
@@ -564,18 +469,139 @@ public class CalciteProvider extends Provider {
                 }
             } catch (Exception e) {
                 CrestException.throwException(e.getMessage());
-            } finally {
-                if (resultSet != null) {
-                    try {
-                        resultSet.close();
-                    } catch (SQLException e) {
-                        io.crest.utils.LogUtil.error(e.getMessage(), e);
-                    }
-                }
             }
         }
 
         return datasetTableFields;
+    }
+
+    private List<TableField> fetchTableFieldsFromMetadata(
+            Connection connection,
+            DatasourceRequest datasourceRequest,
+            DatasourceConfiguration datasourceConfiguration,
+            String table
+    ) throws SQLException {
+        List<MetadataTableName> candidates = metadataTableCandidates(datasourceRequest, datasourceConfiguration, table);
+        for (MetadataTableName candidate : candidates) {
+            List<TableField> fields = readTableFieldsFromMetadata(connection, candidate);
+            if (!fields.isEmpty()) {
+                return fields;
+            }
+        }
+        return new ArrayList<>();
+    }
+
+    private List<TableField> readTableFieldsFromMetadata(Connection connection, MetadataTableName tableName) throws SQLException {
+        Map<String, Boolean> primaryKeys = readPrimaryKeys(connection, tableName);
+        List<TableField> fields = new ArrayList<>();
+        try (ResultSet columns = connection.getMetaData().getColumns(
+                tableName.catalog(),
+                tableName.schema(),
+                tableName.table(),
+                null
+        )) {
+            while (columns.next()) {
+                String columnName = columns.getString("COLUMN_NAME");
+                if (StringUtils.isBlank(columnName)) {
+                    continue;
+                }
+                TableField tableField = new TableField();
+                tableField.setOriginName(columnName);
+                tableField.setName(StringUtils.defaultIfBlank(columns.getString("REMARKS"), columnName));
+                tableField.setType(StringUtils.defaultIfBlank(columns.getString("TYPE_NAME"), String.valueOf(columns.getInt("DATA_TYPE"))).toUpperCase(Locale.ROOT));
+                tableField.setNativeType(tableField.getType());
+                tableField.setPrecision(columns.getInt("COLUMN_SIZE"));
+                tableField.setScale(columns.getInt("DECIMAL_DIGITS"));
+                tableField.setTypeNumber(columns.getInt("DATA_TYPE"));
+                int fieldType = FieldUtils.resolveFieldType(tableField.getType());
+                tableField.setExtractedFieldType(fieldType);
+                tableField.setFieldType(fieldType);
+                tableField.setPrimary(primaryKeys.containsKey(normalizeMetadataKey(columnName)));
+                tableField.setPrimaryKey(tableField.isPrimary());
+                tableField.setAutoIncrement(Strings.CI.equals(columns.getString("IS_AUTOINCREMENT"), "YES"));
+                fields.add(tableField);
+            }
+        }
+        return fields;
+    }
+
+    private Map<String, Boolean> readPrimaryKeys(Connection connection, MetadataTableName tableName) throws SQLException {
+        Map<String, Boolean> primaryKeys = new HashMap<>();
+        try (ResultSet resultSet = connection.getMetaData().getPrimaryKeys(
+                tableName.catalog(),
+                tableName.schema(),
+                tableName.table()
+        )) {
+            while (resultSet.next()) {
+                primaryKeys.put(normalizeMetadataKey(resultSet.getString("COLUMN_NAME")), true);
+            }
+        }
+        return primaryKeys;
+    }
+
+    private List<MetadataTableName> metadataTableCandidates(
+            DatasourceRequest datasourceRequest,
+            DatasourceConfiguration datasourceConfiguration,
+            String table
+    ) {
+        MetadataTableName base = metadataTableName(datasourceRequest, datasourceConfiguration, table);
+        List<MetadataTableName> candidates = new ArrayList<>();
+        addMetadataCandidate(candidates, base);
+        addMetadataCandidate(candidates, new MetadataTableName(base.catalog(), base.schema(), StringUtils.upperCase(base.table())));
+        addMetadataCandidate(candidates, new MetadataTableName(base.catalog(), base.schema(), StringUtils.lowerCase(base.table())));
+        return candidates;
+    }
+
+    private void addMetadataCandidate(List<MetadataTableName> candidates, MetadataTableName candidate) {
+        if (StringUtils.isBlank(candidate.table())) {
+            return;
+        }
+        for (MetadataTableName existing : candidates) {
+            if (Objects.equals(existing.catalog(), candidate.catalog())
+                    && Objects.equals(existing.schema(), candidate.schema())
+                    && Objects.equals(existing.table(), candidate.table())) {
+                return;
+            }
+        }
+        candidates.add(candidate);
+    }
+
+    private MetadataTableName metadataTableName(
+            DatasourceRequest datasourceRequest,
+            DatasourceConfiguration datasourceConfiguration,
+            String table
+    ) {
+        String catalog = null;
+        String schema = StringUtils.trimToNull(datasourceConfiguration.getSchema());
+        String tableName = table;
+        int separator = table.lastIndexOf('.');
+        if (separator > 0 && separator < table.length() - 1) {
+            schema = table.substring(0, separator);
+            tableName = table.substring(separator + 1);
+        }
+        String type = datasourceRequest.getDatasource().getType();
+        if (Strings.CI.equalsAny(type, "mysql", "mariadb", "TiDB", "doris", "StarRocks")) {
+            catalog = StringUtils.defaultIfBlank(schema, mysqlCatalog(datasourceConfiguration));
+            schema = null;
+        } else if (isOracleLike(type)) {
+            schema = StringUtils.upperCase(StringUtils.defaultIfBlank(schema, datasourceConfiguration.getSchema()));
+            tableName = StringUtils.upperCase(tableName);
+        }
+        return new MetadataTableName(catalog, schema, tableName);
+    }
+
+    private String mysqlCatalog(DatasourceConfiguration datasourceConfiguration) {
+        if (StringUtils.isEmpty(datasourceConfiguration.getUrlType()) || datasourceConfiguration.getUrlType().equalsIgnoreCase("hostName")) {
+            return StringUtils.trimToNull(datasourceConfiguration.getDataBase());
+        }
+        return StringUtils.trimToNull(databaseFromJdbcUrl(datasourceConfiguration.getJdbcUrl()));
+    }
+
+    private String normalizeMetadataKey(String value) {
+        return StringUtils.lowerCase(StringUtils.trimToEmpty(value));
+    }
+
+    private record MetadataTableName(String catalog, String schema, String table) {
     }
 
     private String databaseFromJdbcUrl(String jdbcUrl) {
@@ -1182,36 +1208,6 @@ public class CalciteProvider extends Provider {
         return StringUtils.trimToEmpty(name).toUpperCase(Locale.ROOT);
     }
 
-    private TableField getTableFieldDesc(DatasourceRequest datasourceRequest, ResultSet resultSet, int commentIndex, Map<String, Integer> tableTypeMap) throws SQLException {
-        TableField tableField = new TableField();
-        tableField.setOriginName(resultSet.getString(1));
-        tableField.setType(resultSet.getString(2).toUpperCase());
-        tableField.setNativeType(tableField.getType());
-        int fieldType = FieldUtils.resolveFieldType(tableField.getType());
-        tableField.setExtractedFieldType(fieldType);
-        tableField.setFieldType(fieldType);
-        tableField.setName(resultSet.getString(commentIndex));
-        try {
-            tableField.setPrimary(resultSet.getInt(4) > 0);
-        } catch (Exception e) {
-        }
-        try {
-            if (StringUtils.endsWithIgnoreCase(datasourceRequest.getDatasource().getType(), "oracle")) {
-                if (Strings.CS.contains(resultSet.getString(5), "nextval") || Strings.CI.equals(resultSet.getString(5), "GENERATED ALWAYS AS IDENTITY")) {
-                    tableField.setAutoIncrement(true);
-                }
-            } else {
-                tableField.setAutoIncrement(resultSet.getInt(5) > 0);
-            }
-        } catch (Exception e) {
-        }
-        try {
-            tableField.setTypeNumber(tableTypeMap.get(StringUtils.lowerCase(tableField.getOriginName())));
-        } catch (Exception e) {
-        }
-        return tableField;
-    }
-
     public Connection initConnection(Map<Long, DatasourceSchemaDTO> dsMap) throws SQLException {
         Connection connection = take();
         CalciteConnection calciteConnection = null;
@@ -1511,179 +1507,6 @@ public class CalciteProvider extends Provider {
             CrestException.throwException(e.getMessage());
         }
         return list;
-    }
-
-    private String getTableFiledSql(DatasourceRequest datasourceRequest) {
-        String sql = "";
-        DatasourceConfiguration configuration = null;
-        String database = "";
-        DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasourceRequest.getDatasource().getType());
-        switch (datasourceType) {
-            case StarRocks:
-            case doris:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
-                if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
-                    database = configuration.getDataBase();
-                } else {
-                    database = databaseFromJdbcUrl(configuration.getJdbcUrl());
-                }
-                if (database.contains(".")) {
-                    sql = "select * from " + quoteQualifiedIdentifier(datasourceRequest.getTable()) + " limit 0 offset 0 ";
-                } else {
-                    sql = String.format("SELECT COLUMN_NAME,DATA_TYPE,COLUMN_COMMENT,IF(COLUMN_KEY='PRI',1,0),IF(EXTRA LIKE '%%auto_increment%%',1,0) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s", sqlLiteral(database), sqlLiteral(datasourceRequest.getTable()));
-                }
-                break;
-            case mysql:
-            case mongo:
-            case mariadb:
-            case TiDB:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
-                if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
-                    database = configuration.getDataBase();
-                } else {
-                    database = databaseFromJdbcUrl(configuration.getJdbcUrl());
-                }
-                sql = String.format("SELECT COLUMN_NAME,DATA_TYPE,COLUMN_COMMENT,IF(COLUMN_KEY='PRI',1,0),IF(EXTRA LIKE '%%auto_increment%%',1,0) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s", sqlLiteral(database), sqlLiteral(datasourceRequest.getTable()));
-                break;
-            case oracle:
-            case obOracle:
-                configuration = parseOracleLikeConfiguration(datasourceRequest.getDatasource().getConfiguration(), datasourceRequest.getDatasource().getType());
-                if (StringUtils.isEmpty(configuration.getSchema())) {
-                    CrestException.throwException(Translator.get("i18n_schema_is_empty"));
-                }
-                sql = String.format("""
-                        SELECT tc.COLUMN_NAME AS ColumnName,
-                               tc.DATA_TYPE,
-                               cc.COMMENTS,
-                               CASE
-                                   WHEN ac.COLUMN_NAME IS NOT NULL THEN 1
-                                   ELSE 0
-                                   END,
-                               tc.DATA_DEFAULT
-                        FROM ALL_TAB_COLUMNS tc
-                                 LEFT JOIN (SELECT cols.OWNER,
-                                                   cols.TABLE_NAME,
-                                                   cols.COLUMN_NAME
-                                            FROM ALL_CONSTRAINTS cons
-                                                     JOIN
-                                                 ALL_CONS_COLUMNS cols
-                                                 ON cons.OWNER = cols.OWNER
-                                                     AND cons.CONSTRAINT_NAME = cols.CONSTRAINT_NAME
-                                            WHERE cons.TABLE_NAME = %s
-                                              AND cons.CONSTRAINT_TYPE = 'P') ac
-                                           ON tc.OWNER = ac.OWNER
-                                               AND tc.TABLE_NAME = ac.TABLE_NAME
-                                               AND tc.COLUMN_NAME = ac.COLUMN_NAME
-                                 LEFT JOIN ALL_COL_COMMENTS cc
-                                           ON tc.owner = cc.owner AND tc.table_name = cc.table_name AND tc.column_name = cc.column_name
-                        WHERE tc.TABLE_NAME = %s
-                          AND tc.OWNER = %s
-                        ORDER BY tc.TABLE_NAME, tc.COLUMN_ID
-                        """, sqlLiteral(datasourceRequest.getTable()), sqlLiteral(datasourceRequest.getTable()), sqlLiteral(configuration.getSchema()));
-                break;
-            case db2:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Db2.class);
-                if (StringUtils.isEmpty(configuration.getSchema())) {
-                    CrestException.throwException(Translator.get("i18n_schema_is_empty"));
-                }
-                sql = String.format("SELECT COLNAME, TYPENAME, REMARKS, 0, 0 FROM SYSCAT.COLUMNS WHERE TABSCHEMA = %s AND TABNAME = %s ", sqlLiteral(configuration.getSchema()), sqlLiteral(datasourceRequest.getTable()));
-                break;
-            case sqlServer:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Sqlserver.class);
-                if (StringUtils.isEmpty(configuration.getSchema())) {
-                    CrestException.throwException(Translator.get("i18n_schema_is_empty"));
-                }
-
-                sql = String.format("""
-                        SELECT
-                            c.name,
-                            t.name,
-                            CAST(ep.value AS NVARCHAR(4000)),
-                            CASE
-                                WHEN pk.column_id IS NOT NULL THEN 1
-                                ELSE 0
-                                END,
-                            COLUMNPROPERTY(c.object_id, c.name, 'IsIdentity')
-                        FROM sys.columns AS c
-                                 INNER JOIN sys.objects AS o ON c.object_id = o.object_id
-                                 INNER JOIN sys.schemas AS s ON o.schema_id = s.schema_id
-                                 LEFT JOIN sys.types AS t ON c.user_type_id = t.user_type_id
-                                 LEFT JOIN sys.extended_properties AS ep
-                                           ON c.object_id = ep.major_id
-                                               AND c.column_id = ep.minor_id
-                                               AND ep.name = 'MS_Description'
-                                 LEFT JOIN (
-                            SELECT ic.object_id, ic.column_id
-                            FROM sys.indexes i
-                                     INNER JOIN sys.index_columns ic
-                                                ON i.object_id = ic.object_id
-                                                    AND i.index_id = ic.index_id
-                            WHERE i.is_primary_key = 1
-                        ) pk ON c.object_id = pk.object_id AND c.column_id = pk.column_id
-                        WHERE o.name = %s
-                          AND s.name = %s
-                        ORDER BY c.column_id
-                        """, sqlLiteral(datasourceRequest.getTable()), sqlLiteral(configuration.getSchema()));
-                break;
-            case pg:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Pg.class);
-                if (StringUtils.isEmpty(configuration.getSchema())) {
-                    CrestException.throwException(Translator.get("i18n_schema_is_empty"));
-                }
-                sql = String.format("""
-                        SELECT a.attname     AS ColumnName,
-                               t.typname,
-                               b.description AS ColumnDescription,
-                               CASE
-                                   WHEN d.indisprimary THEN 1
-                                   ELSE 0
-                                   END,
-                               CASE
-                                   WHEN pg_get_expr(ad.adbin, ad.adrelid) LIKE 'nextval%%' THEN 1
-                        """ + (datasourceRequest.getDsVersion() > 9 ? """
-                                   WHEN a.attidentity = 'd' THEN 1
-                                   WHEN a.attidentity = 'a' THEN 1
-                        """ : "") + """
-                                   ELSE 0
-                                   END
-                        FROM pg_class c
-                                 JOIN pg_attribute a ON a.attrelid = c.oid
-                                 LEFT JOIN pg_attrdef ad ON a.attrelid = ad.adrelid AND a.attnum = ad.adnum
-                                 LEFT JOIN pg_description b ON a.attrelid = b.objoid AND a.attnum = b.objsubid
-                                 JOIN pg_type t ON a.atttypid = t.oid
-                                 LEFT JOIN pg_index d ON d.indrelid = a.attrelid AND d.indisprimary AND a.attnum = ANY (d.indkey)
-                        where c.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = %s)
-                          AND c.relname = %s
-                          AND a.attnum > 0
-                          AND NOT a.attisdropped
-                        ORDER BY a.attnum;
-                        """, sqlLiteral(configuration.getSchema()), sqlLiteral(datasourceRequest.getTable()));
-                break;
-            case redshift:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), CK.class);
-                sql = String.format("SELECT\n" + "    a.attname AS ColumnName,\n" + "    t.typname,\n" + "    b.description AS ColumnDescription,\n" + "    0, 0\n" + "FROM\n" + "    pg_class c\n" + "    JOIN pg_attribute a ON a.attrelid = c.oid\n" + "    LEFT JOIN pg_description b ON a.attrelid = b.objoid AND a.attnum = b.objsubid\n" + "    JOIN pg_type t ON a.atttypid = t.oid\n" + "WHERE\n" + "    c.relname = %s\n" + "    AND a.attnum > 0\n" + "    AND NOT a.attisdropped\n" + "ORDER BY\n" + "    a.attnum\n" + "   ", sqlLiteral(datasourceRequest.getTable()));
-                break;
-            case ck:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), CK.class);
-
-                if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
-                    database = configuration.getDataBase();
-                } else {
-                    database = databaseFromJdbcUrl(configuration.getJdbcUrl());
-                }
-                sql = String.format(" SELECT\n" + "    name,\n" + "    type,\n" + "    comment,\n" + "    0, 0\n" + "FROM\n" + "    system.columns\n" + "WHERE\n" + "    database = %s  \n" + "    AND table = %s ", sqlLiteral(database), sqlLiteral(datasourceRequest.getTable()));
-                break;
-            case impala:
-                sql = String.format("DESCRIBE %s", quoteQualifiedIdentifier(datasourceRequest.getTable()));
-                break;
-            case h2:
-                sql = String.format("SELECT COLUMN_NAME, DATA_TYPE, REMARKS, 0, 0 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = %s", sqlLiteral(datasourceRequest.getTable()));
-                break;
-            default:
-                break;
-        }
-
-        return sql;
     }
 
     private List<QueryAndParams> tablesSql(DatasourceRequest datasourceRequest) throws CrestException {
