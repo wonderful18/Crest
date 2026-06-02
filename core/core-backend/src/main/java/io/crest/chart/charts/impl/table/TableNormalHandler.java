@@ -245,7 +245,7 @@ public class TableNormalHandler extends DefaultChartHandler {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         // 自定义汇总
         var basicStyle = (Map<String, Object>) view.getCustomAttr().get("basicStyle");

@@ -82,7 +82,7 @@ public class TablePivotHandler extends GroupChartHandler {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         return result;
     }
