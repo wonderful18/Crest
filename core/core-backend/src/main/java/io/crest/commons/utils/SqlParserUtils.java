@@ -147,7 +147,7 @@ public class SqlParserUtils {
                         replaceParamItem = true;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    io.crest.utils.LogUtil.error(e.getMessage(), e);
                 }
                 if (!replaceParamItem) {
                     replaceParam = false;
@@ -195,7 +195,7 @@ public class SqlParserUtils {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         SqlVariableHandleResult result = new SqlVariableHandleResult(sql);
         result.setTableFieldWithValues(tableFieldWithValues);

@@ -47,12 +47,12 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
         try {
             engineManage.initSimpleEngine();
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         try {
             calciteProvider.initConnectionPool();
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         List<CoreDatasourceTask> list = datasourceTaskServer.listAll();
         for (CoreDatasourceTask task : list) {
@@ -69,7 +69,7 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                io.crest.utils.LogUtil.error(e.getMessage(), e);
             }
         }
 
@@ -78,7 +78,7 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
             datasetSyncTaskManage.recoverInterruptedTasks();
             datasetSyncTasks = datasetSyncTaskManage.listAll();
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         for (CoreDatasetSyncTask task : datasetSyncTasks) {
             try {
@@ -94,7 +94,7 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                io.crest.utils.LogUtil.error(e.getMessage(), e);
             }
         }
 
@@ -102,7 +102,7 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
             List<CoreSysSetting> coreSysSettings = sysParameterManage.groupList("basic.");
             datasourceServer.addJob(coreSysSettings);
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         dataSourceManage.encryptDsConfig();
     }

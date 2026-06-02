@@ -214,7 +214,7 @@ public class FileUtils {
             }
             return sb.toString();
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
             return null;
         }
     }
@@ -287,7 +287,7 @@ public class FileUtils {
             }
             return bos.toByteArray();
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
             return null;
         }
     }

@@ -52,7 +52,7 @@ public class CronUtils {
         try {
             date = sdf.parse(rateVal);
         } catch (ParseException e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         Calendar instance = Calendar.getInstance();
         assert date != null;

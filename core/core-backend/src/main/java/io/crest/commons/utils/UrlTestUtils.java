@@ -16,7 +16,7 @@ public class UrlTestUtils {
             co.connect();
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
             return false;
         }
     }

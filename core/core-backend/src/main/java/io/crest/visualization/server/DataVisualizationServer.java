@@ -1118,7 +1118,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
             staticResourceServer.saveFilesToServe(staticResource);
             return new DataVisualizationVO(newDvId, name, dvType, version, templateStyle, templateData, appDataStr, canvasViewInfo, null,viewIdsMap);
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
             CrestException.throwException("解析错误");
             return null;
         }
