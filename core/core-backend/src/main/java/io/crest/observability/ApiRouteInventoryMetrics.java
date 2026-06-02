@@ -45,6 +45,7 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
                     .description("Registered Crest API routes. Value is always 1; labels describe the route.")
                     .tag("method", route.method())
                     .tag("uri", route.uri())
+                    .tag("module", route.module())
                     .tag("controller", route.controller())
                     .tag("handler", route.handler())
                     .strongReference(true)
@@ -88,7 +89,38 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
     private RouteMetric toMetric(String method, String uri, HandlerMethod handlerMethod) {
         String controller = handlerMethod.getBeanType().getSimpleName();
         String handler = controller + "." + handlerMethod.getMethod().getName();
-        return new RouteMetric(method, uri, controller, handler);
+        return new RouteMetric(method, uri, classifyModule(uri), controller, handler);
+    }
+
+    private String classifyModule(String uri) {
+        String segment = firstRouteSegment(uri);
+        return switch (segment) {
+            case "data-visualization", "visualization-subject", "visualization-background", "panel",
+                    "outer-params", "linkage", "link-jump", "chart", "chart-data" -> "visualization";
+            case "dataset-tree", "dataset-field", "dataset-data", "dataset-sync",
+                    "dataset-table-sql-log" -> "dataset";
+            case "datasource", "datasource-driver", "engine" -> "datasource";
+            case "user", "role", "auth", "org", "menu", "resource" -> "access-control";
+            case "sys-parameter", "sys-variable", "typeface", "watermark", "static-resource",
+                    "symmetric-key", "public-key", "model" -> "system";
+            case "share", "store", "ticket" -> "sharing";
+            case "relation" -> "lineage";
+            case "export-center" -> "export";
+            case "sso", "login", "logout" -> "authentication";
+            case "audit-log", "observability", "msg-center", "ai-base" -> "operations";
+            default -> "platform";
+        };
+    }
+
+    private String firstRouteSegment(String uri) {
+        String normalized = normalizePath(uri);
+        String prefix = "/api/v1/";
+        if (!normalized.startsWith(prefix)) {
+            return "";
+        }
+        String remainder = normalized.substring(prefix.length());
+        int slashIndex = remainder.indexOf('/');
+        return slashIndex < 0 ? remainder : remainder.substring(0, slashIndex);
     }
 
     private String normalizeUri(String routePrefix, String pattern) {
@@ -120,6 +152,6 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
                 && !uri.startsWith("/api/v1/doc.html");
     }
 
-    private record RouteMetric(String method, String uri, String controller, String handler) {
+    private record RouteMetric(String method, String uri, String module, String controller, String handler) {
     }
 }
