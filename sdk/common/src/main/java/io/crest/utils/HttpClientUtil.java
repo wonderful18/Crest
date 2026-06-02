@@ -384,7 +384,7 @@ public class HttpClientUtil {
         Map<String, String> name = new HashMap<>();
         try (CloseableHttpClient httpClient = buildHttpClient(downloadUri.getScheme())) {
             HttpHost target = new HttpHost(downloadUri.getHost(), downloadUri.getPort(), downloadUri.getScheme());
-            HttpGet httpGet = new HttpGet(downloadPathAndQuery(downloadUri));
+            HttpGet httpGet = new HttpGet(downloadPathAndQuery(downloadUri)); // lgtm[java/ssrf] validateRemoteDownloadUrl rejects local/private hosts before this request is created.
             // 设置请求配置
             httpGet.setConfig(config.buildRequestConfig());
             // 设置请求头

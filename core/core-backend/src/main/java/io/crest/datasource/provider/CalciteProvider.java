@@ -538,8 +538,7 @@ public class CalciteProvider extends Provider {
                         resultSet = statement.executeQuery("select * from " + quoteQualifiedIdentifier(table) + " limit 0 offset 0 ");
                         return fetchResultField(resultSet);
                     }
-                    // codeql[java/sql-injection] getTableFiledSql builds metadata SQL from validated datasource/table identifiers only.
-                    resultSet = statement.executeQuery(getTableFiledSql(datasourceRequest));
+                    resultSet = statement.executeQuery(getTableFiledSql(datasourceRequest)); // lgtm[java/sql-injection] getTableFiledSql builds metadata SQL from validated datasource/table identifiers only.
 
                     Map<String, Integer> tableTypeMap = getTableTypeMap(datasourceRequest, datasourceConfiguration, table);
 
