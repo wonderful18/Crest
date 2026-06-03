@@ -387,8 +387,8 @@ public class CrestUserManage {
             }
         }
 
-        // 使用初始密码并验证策略
-        String password = initialPassword();
+        // 使用传入密码或默认初始密码，并验证策略
+        String password = StringUtils.isNotBlank(creator.getPassword()) ? creator.getPassword().trim() : initialPassword();
         PasswordValidator.validate(password);
 
         long id = IDUtils.snowID();
@@ -430,13 +430,28 @@ public class CrestUserManage {
         if (sameAccount != null && !sameAccount.getId().equals(editor.getId())) {
             CrestException.throwException("账号已存在");
         }
-        jdbcTemplate.update("""
-                UPDATE iam_user
-                SET account = ?, name = ?, email = ?, phone_prefix = ?, phone = ?, enable = ?, is_admin = ?, update_time = ?
-                WHERE id = ?
-                """, editor.getAccount().trim(), editor.getName().trim(), editor.getEmail(),
-                editor.getPhonePrefix(), editor.getPhone(), editor.getEnable() == null || editor.getEnable(),
-                editor.getId() == 1L || hasAdminRole(editor.getRoleIds()), System.currentTimeMillis(), editor.getId());
+        // 如果传入了新密码则更新
+        String newPassword = StringUtils.trimToNull(editor.getPassword());
+        if (newPassword != null) {
+            PasswordValidator.validate(newPassword);
+        }
+        if (newPassword != null) {
+            jdbcTemplate.update("""
+                    UPDATE iam_user
+                    SET account = ?, name = ?, email = ?, phone_prefix = ?, phone = ?, enable = ?, is_admin = ?, password_hash = ?, update_time = ?
+                    WHERE id = ?
+                    """, editor.getAccount().trim(), editor.getName().trim(), editor.getEmail(),
+                    editor.getPhonePrefix(), editor.getPhone(), editor.getEnable() == null || editor.getEnable(),
+                    editor.getId() == 1L || hasAdminRole(editor.getRoleIds()), PasswordEncoder.encode(newPassword), System.currentTimeMillis(), editor.getId());
+        } else {
+            jdbcTemplate.update("""
+                    UPDATE iam_user
+                    SET account = ?, name = ?, email = ?, phone_prefix = ?, phone = ?, enable = ?, is_admin = ?, update_time = ?
+                    WHERE id = ?
+                    """, editor.getAccount().trim(), editor.getName().trim(), editor.getEmail(),
+                    editor.getPhonePrefix(), editor.getPhone(), editor.getEnable() == null || editor.getEnable(),
+                    editor.getId() == 1L || hasAdminRole(editor.getRoleIds()), System.currentTimeMillis(), editor.getId());
+        }
         Long oid = editor.getOid() == null ? platformPermissionManage.defaultOrgId(editor.getId()) : editor.getOid();
         platformPermissionManage.replaceUserDefaultOrg(editor.getId(), oid);
         platformPermissionManage.replaceUserRoles(editor.getId(), oid, editor.getRoleIds());
@@ -490,8 +505,9 @@ public class CrestUserManage {
         if (AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType())) {
             CrestException.throwException("单点登录用户不支持重置本地密码");
         }
+        String password = generateSecurePassword();
         jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, update_time = ? WHERE id = ?",
-                PasswordEncoder.encode(initialPassword()), System.currentTimeMillis(), id);
+                PasswordEncoder.encode(password), System.currentTimeMillis(), id);
     }
 
     @Transactional
@@ -591,9 +607,23 @@ public class CrestUserManage {
     }
 
     private String initialPassword() {
-        if (StringUtils.isBlank(configuredInitialPassword)) {
-            throw new IllegalStateException(INITIAL_PASSWORD_PROPERTY + " must be configured");
+        if (StringUtils.isNotBlank(configuredInitialPassword)) {
+            return configuredInitialPassword;
         }
-        return configuredInitialPassword;
+        return generateSecurePassword();
+    }
+
+    private String generateSecurePassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        StringBuilder sb = new StringBuilder();
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        sb.append("A"); // 确保有大写
+        sb.append("a"); // 确保有小写
+        sb.append("1"); // 确保有数字
+        sb.append("!"); // 确保有特殊字符
+        for (int i = 0; i < 8; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 }
