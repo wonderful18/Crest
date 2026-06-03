@@ -23,6 +23,7 @@ const form = reactive<any>({
   name: '',
   email: '',
   phone: '',
+  password: '',
   enable: true,
   roleIds: [2],
   authType: 'LOCAL'
@@ -84,6 +85,7 @@ const resetForm = () => {
     name: '',
     email: '',
     phone: '',
+    password: '',
     enable: true,
     roleIds: [2],
     authType: 'LOCAL'
@@ -418,6 +420,15 @@ onMounted(async () => {
         </el-form-item>
         <el-form-item v-if="isEdit" label="认证来源">
           <el-tag :type="authTypeTag(form)">{{ authTypeLabel(form) }}</el-tag>
+        </el-form-item>
+        <el-form-item label="密码" :required="!isEdit">
+          <el-input
+            v-model.trim="form.password"
+            type="password"
+            show-password
+            :placeholder="isEdit ? '不填写则保持原密码' : '留空则使用系统默认密码'"
+            maxlength="100"
+          />
         </el-form-item>
         <el-form-item label="姓名" required>
           <el-input v-model.trim="form.name" maxlength="64" />
