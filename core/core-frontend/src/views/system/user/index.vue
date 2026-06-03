@@ -148,8 +148,12 @@ const resetPwd = async row => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await request.post({ url: `/user/reset-password/${row.id}` })
-    ElMessage.success('密码已重置')
+    const res: any = await request.post({ url: `/user/reset-password/${row.id}` })
+    const newPwd = res?.data || ''
+    await ElMessageBox.alert(`新密码：${newPwd}\n请妥善保管并及时告知用户。`, '密码已重置', {
+      confirmButtonText: '知道了',
+      type: 'success'
+    })
   } catch (e: any) {
     if (e !== 'cancel') {
       ElMessage.error(e?.response?.data?.message || e?.message || '重置密码失败')

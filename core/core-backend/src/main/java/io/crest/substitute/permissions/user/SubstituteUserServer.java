@@ -137,9 +137,9 @@ public class SubstituteUserServer {
 
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER, id = "#p0")
     @PostMapping("/reset-password/{id}")
-    public void resetPwd(@PathVariable("id") Long id) {
+    public String resetPwd(@PathVariable("id") Long id) {
         CrestPermissionUtils.requireAdmin();
-        crestUserManage.resetPwd(id);
+        return crestUserManage.resetPwd(id);
     }
 
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER)
