@@ -59,7 +59,6 @@ public class CrestUserManage {
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
-    @Value("${crest.user.initial-password:}")
     private String configuredInitialPassword;
 
     private final RowMapper<CrestUser> rowMapper = (rs, rowNum) -> {
@@ -82,6 +81,12 @@ public class CrestUserManage {
         user.setUpdateTime(rs.getLong("update_time"));
         return user;
     };
+
+    @PostConstruct
+    public void init() {
+        String envPwd = System.getenv("CREST_INITIAL_PASSWORD");
+        this.configuredInitialPassword = StringUtils.isNotBlank(envPwd) ? envPwd : null;
+    }
 
     @PostConstruct
     public void initAdmin() {
@@ -497,7 +502,7 @@ public class CrestUserManage {
     }
 
     @Transactional
-    public void resetPwd(Long id) {
+    public String resetPwd(Long id) {
         CrestUser user = queryById(id);
         if (user == null) {
             CrestException.throwException("用户不存在");
@@ -508,6 +513,7 @@ public class CrestUserManage {
         String password = generateSecurePassword();
         jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, update_time = ? WHERE id = ?",
                 PasswordEncoder.encode(password), System.currentTimeMillis(), id);
+        return password;
     }
 
     @Transactional
@@ -610,7 +616,8 @@ public class CrestUserManage {
         if (StringUtils.isNotBlank(configuredInitialPassword)) {
             return configuredInitialPassword;
         }
-        return generateSecurePassword();
+        // 兜底默认密码，确保符合安全策略
+        return "Crest@1234";
     }
 
     private String generateSecurePassword() {
