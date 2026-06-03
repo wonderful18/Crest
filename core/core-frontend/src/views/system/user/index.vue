@@ -127,7 +127,7 @@ const save = async () => {
     dialogVisible.value = false
     await loadTable()
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || e?.message || '保存失败')
+    // axios interceptor already shows error message
   }
 }
 
@@ -137,7 +137,7 @@ const toggleEnable = async row => {
     ElMessage.success(!row.enable ? '用户已启用' : '用户已停用')
     await loadTable()
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || e?.message || '操作失败')
+    // axios interceptor already shows error message
   }
 }
 
@@ -155,9 +155,7 @@ const resetPwd = async row => {
       type: 'success'
     })
   } catch (e: any) {
-    if (e !== 'cancel') {
-      ElMessage.error(e?.response?.data?.message || e?.message || '重置密码失败')
-    }
+    // ElMessageBox cancel or axios interceptor already shows error message
   }
 }
 
@@ -172,9 +170,7 @@ const remove = async row => {
     ElMessage.success('删除成功')
     await loadTable()
   } catch (e: any) {
-    if (e !== 'cancel') {
-      ElMessage.error(e?.response?.data?.message || e?.message || '删除失败')
-    }
+    // ElMessageBox cancel or axios interceptor already shows error message
   }
 }
 

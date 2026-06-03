@@ -419,11 +419,16 @@ public class CrestUserManage {
             CrestException.throwException("用户不存在");
         }
 
-        // RBAC权限检查：只有系统管理员可以编辑管理员账户
-        if (Boolean.TRUE.equals(user.getAdmin())) {
+        // RBAC权限检查：编辑管理员账户需要当前用户是管理员；编辑系统管理员需要系统管理员权限
+        if (editor.getId() == 1L) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
             if (currentUserId == null || !AuthUtils.isSysAdmin(currentUserId)) {
-                CrestException.throwException("只有系统管理员可以编辑管理员账户");
+                CrestException.throwException("只有系统管理员可以编辑系统管理员账户");
+            }
+        } else if (Boolean.TRUE.equals(user.getAdmin()) || hasAdminRole(editor.getRoleIds())) {
+            Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
+            if (currentUserId == null || !isAdmin(currentUserId)) {
+                CrestException.throwException("只有管理员可以编辑管理员账户");
             }
         }
 
@@ -468,12 +473,12 @@ public class CrestUserManage {
             CrestException.throwException("内置管理员不能删除");
         }
 
-        // RBAC权限检查：只有系统管理员可以删除管理员账户
+        // RBAC权限检查：删除管理员账户需要当前用户是管理员
         CrestUser targetUser = queryById(id);
         if (targetUser != null && Boolean.TRUE.equals(targetUser.getAdmin())) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
-            if (currentUserId == null || !AuthUtils.isSysAdmin(currentUserId)) {
-                CrestException.throwException("只有系统管理员可以删除管理员账户");
+            if (currentUserId == null || !isAdmin(currentUserId)) {
+                CrestException.throwException("只有管理员可以删除管理员账户");
             }
         }
 
@@ -488,12 +493,12 @@ public class CrestUserManage {
             CrestException.throwException("内置管理员不能停用");
         }
 
-        // RBAC权限检查：只有系统管理员可以启用/禁用管理员账户
+        // RBAC权限检查：修改管理员状态需要当前用户是管理员
         CrestUser targetUser = queryById(request.getId());
         if (targetUser != null && Boolean.TRUE.equals(targetUser.getAdmin())) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
-            if (currentUserId == null || !AuthUtils.isSysAdmin(currentUserId)) {
-                CrestException.throwException("只有系统管理员可以修改管理员状态");
+            if (currentUserId == null || !isAdmin(currentUserId)) {
+                CrestException.throwException("只有管理员可以修改管理员状态");
             }
         }
 
