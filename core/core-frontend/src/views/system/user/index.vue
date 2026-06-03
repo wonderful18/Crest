@@ -118,38 +118,58 @@ const save = async () => {
     ElMessage.warning('请选择所属组织')
     return
   }
-  const method = isEdit.value ? request.put : request.post
-  await method({ url: '/user', data: form })
-  ElMessage.success('保存成功')
-  dialogVisible.value = false
-  await loadTable()
+  try {
+    const method = isEdit.value ? request.put : request.post
+    await method({ url: '/user', data: form })
+    ElMessage.success('保存成功')
+    dialogVisible.value = false
+    await loadTable()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || e?.message || '保存失败')
+  }
 }
 
 const toggleEnable = async row => {
-  await request.post({ url: '/user/enable', data: { id: row.id, enable: !row.enable } })
-  ElMessage.success(!row.enable ? '用户已启用' : '用户已停用')
-  await loadTable()
+  try {
+    await request.post({ url: '/user/enable', data: { id: row.id, enable: !row.enable } })
+    ElMessage.success(!row.enable ? '用户已启用' : '用户已停用')
+    await loadTable()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || e?.message || '操作失败')
+  }
 }
 
 const resetPwd = async row => {
-  await ElMessageBox.confirm(`确认重置「${row.name}」的本地密码？`, '重置密码', {
-    confirmButtonText: '重置',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-  await request.post({ url: `/user/reset-password/${row.id}` })
-  ElMessage.success('密码已重置')
+  try {
+    await ElMessageBox.confirm(`确认重置「${row.name}」的本地密码？`, '重置密码', {
+      confirmButtonText: '重置',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await request.post({ url: `/user/reset-password/${row.id}` })
+    ElMessage.success('密码已重置')
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      ElMessage.error(e?.response?.data?.message || e?.message || '重置密码失败')
+    }
+  }
 }
 
 const remove = async row => {
-  await ElMessageBox.confirm(`确认删除「${row.name}」？`, '删除用户', {
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-  await request.delete({ url: `/user/${row.id}` })
-  ElMessage.success('删除成功')
-  await loadTable()
+  try {
+    await ElMessageBox.confirm(`确认删除「${row.name}」？`, '删除用户', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await request.delete({ url: `/user/${row.id}` })
+    ElMessage.success('删除成功')
+    await loadTable()
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      ElMessage.error(e?.response?.data?.message || e?.message || '删除失败')
+    }
+  }
 }
 
 const batchRemove = async () => {
@@ -430,7 +450,7 @@ onMounted(async () => {
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="record">保存</el-button>
+        <el-button type="primary" @click="save">保存</el-button>
       </template>
     </el-dialog>
 
