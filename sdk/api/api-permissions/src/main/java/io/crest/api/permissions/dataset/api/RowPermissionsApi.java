@@ -26,7 +26,7 @@ public interface RowPermissionsApi {
     public IPage<DataSetRowPermissionsTreeDTO> rowPermissions(@PathVariable("datasetId") Long datasetId, @PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize);
 
     @Operation(summary = "保存")
-    @PostMapping("record")
+    @PostMapping("save")
     public void save(@RequestBody DataSetRowPermissionsTreeDTO datasetRowPermissions);
 
     @Operation(summary = "删除")

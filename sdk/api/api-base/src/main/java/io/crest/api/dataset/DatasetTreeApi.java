@@ -37,7 +37,7 @@ public interface DatasetTreeApi {
      */
     @Operation(summary = "保存数据集", hidden = true)
     @CrestPermit({"#p0.id+':manage'"})
-    @PostMapping("record")
+    @PostMapping("save")
     DatasetNodeDTO save(@RequestBody DatasetGroupInfoDTO dto) throws Exception;
 
     @Operation(summary = "重命名数据集")
