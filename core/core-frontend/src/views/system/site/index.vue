@@ -56,7 +56,7 @@ onMounted(load)
               实际显示为 {{ form.title === 'Crest' ? 'Crest' : `Crest-${form.title || 'Crest'}` }}
             </div>
           </el-form-item>
-          <el-button type="primary" @click="record">保存</el-button>
+          <el-button type="primary" @click="save">保存</el-button>
         </el-form>
       </div>
     </div>

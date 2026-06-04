@@ -7,7 +7,7 @@
           <el-dropdown-item
             v-if="state.editFilter.includes(curComponent.type)"
             icon="el-icon-edit-outline"
-            @click="change"
+            @click="edit"
             >{{ t('visualization.edit') }}
           </el-dropdown-item>
           <el-dropdown-item

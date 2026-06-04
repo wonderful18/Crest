@@ -617,7 +617,7 @@ const dragover = () => {
 }
 
 const drop = e => {
-  const componentInfoArr: ComponentInfo[] = JSON.parse(e.dataTransfer.data('dimension') || '{}')
+  const componentInfoArr: ComponentInfo[] = JSON.parse(e.dataTransfer.getData('dimension') || '{}')
   componentInfoArr.forEach(componentInfo => {
     const checkedFields = []
     const checkedFieldsMap = {}

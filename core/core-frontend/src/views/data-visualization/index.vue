@@ -208,7 +208,7 @@ const handleNew = newComponentInfo => {
 const handleDrop = e => {
   e.preventDefault()
   e.stopPropagation()
-  const componentInfo = e.dataTransfer.data('id')
+  const componentInfo = e.dataTransfer.getData('id')
   const rectInfo = editorMap.value[state.canvasId].getBoundingClientRect()
   if (componentInfo) {
     const component = findDragComponent(componentInfo)
