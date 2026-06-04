@@ -17,7 +17,7 @@ import java.util.List;
 @ApiSupport(order = 977)
 public interface DatasetTableSqlLogApi {
     @Operation(summary = "保存")
-    @PostMapping("save")
+    @PostMapping("record")
     void save(@RequestBody SqlLogDTO sqlLogDTO) throws Exception;
 
     @Operation(summary = "查看SQL片段执行记录")

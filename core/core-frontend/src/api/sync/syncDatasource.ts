@@ -20,7 +20,7 @@ export const getSchemaApi = data => {
 }
 
 export const saveApi = data => {
-  return request.post({ url: '/sync/datasource/save', data })
+  return request.post({ url: '/sync/datasource/record', data })
 }
 
 export const getByIdApi = (id: string) => {

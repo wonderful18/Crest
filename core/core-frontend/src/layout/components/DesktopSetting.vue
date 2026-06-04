@@ -18,8 +18,8 @@ const redirectUser = () => {
   push(`${sysMenu.path}/${kidPath}`)
 }
 
-const downloadClick = params => {
-  useEmitt().emitter.emit('data-export-center', params)
+const downloadClick = () => {
+  useEmitt().emitter.emit('data-export-center')
 }
 </script>
 

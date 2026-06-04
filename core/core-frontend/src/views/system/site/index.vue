@@ -24,7 +24,7 @@ const load = async () => {
 const save = async () => {
   const title = form.title.trim() || 'Crest'
   await request.post({
-    url: '/sys-parameter/basic/save',
+    url: '/sys-parameter/basic/record',
     data: [{ pkey: 'basic.siteTitle', pval: title, type: 'text', sort: 9 }]
   })
   form.title = title
