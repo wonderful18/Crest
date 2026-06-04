@@ -57,7 +57,7 @@ export const queryBusiTreeApi = async (data): Promise<IResponse> => {
 export const findDvType = async dvId =>
   request.get({ url: `/data-visualization/type/${dvId}` })
 
-export const save = data => request.post({ url: '/data-visualization/record', data })
+export const save = data => request.post({ url: '/data-visualization/save', data })
 
 export const checkCanvasChange = data =>
   request.post({ url: '/data-visualization/canvas-change-impact', data, loading: true })

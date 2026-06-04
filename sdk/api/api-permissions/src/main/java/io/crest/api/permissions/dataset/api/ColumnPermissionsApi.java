@@ -25,7 +25,7 @@ public interface ColumnPermissionsApi {
     public IPage<DataSetColumnPermissionsDTO> columnPermissions(@PathVariable("datasetId") Long datasetId, @PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize);
 
     @Operation(summary = "保存")
-    @PostMapping("record")
+    @PostMapping("save")
     public void save(@RequestBody DataSetColumnPermissionsDTO dataSetColumnPermissionsDTO);
 
     @Operation(summary = "删除")

@@ -83,7 +83,7 @@ export const excelDataPage = (data = {}) => {
 }
 
 export const saveExcelData = (data = {}) => {
-  return request.post({ url: '/datasource/excel-data/record', data, loading: true }).then(res => {
+  return request.post({ url: '/datasource/excel-data/save', data, loading: true }).then(res => {
     return res?.data
   })
 }
@@ -107,7 +107,7 @@ export const validateById = (id: number) => request.get({ url: '/datasource/vali
 
 export const save = async (data = {}): Promise<Dataset> => {
   nameTrim(data)
-  return request.post({ url: '/datasource/record', data }).then(res => {
+  return request.post({ url: '/datasource/save', data }).then(res => {
     return res?.data
   })
 }

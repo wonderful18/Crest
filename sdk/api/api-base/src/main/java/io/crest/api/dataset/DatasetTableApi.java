@@ -26,7 +26,7 @@ public interface DatasetTableApi {
      * @throws Exception
      */
     @Operation(summary = "保存字段")
-    @PostMapping("record")
+    @PostMapping("save")
     DatasetTableFieldDTO save(@RequestBody DatasetTableFieldDTO datasetTableFieldDTO) throws Exception;
 
     @Operation(summary = "查询字段")
