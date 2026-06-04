@@ -630,7 +630,7 @@ const mousedownDrag = () => {
         </template>
         {{ t('auth.sysParams') }}
       </el-button>
-      <el-button :disabled="!changeFlagCode" @click="record" type="primary">
+      <el-button :disabled="!changeFlagCode" @click="save" type="primary">
         {{ t('data_set.save') }}</el-button
       >
       <el-divider direction="vertical" />
