@@ -19,7 +19,7 @@ public interface EngineApi {
     DatasourceDTO getEngine();
 
     @Operation(summary = "保存")
-    @PostMapping("/save")
+    @PostMapping("/record")
     void save(@RequestBody DatasourceDTO datasourceDTO);
 
     @Operation(summary = "校验")

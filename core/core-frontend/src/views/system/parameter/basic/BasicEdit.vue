@@ -123,7 +123,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
       }
       showLoading()
       request
-        .post({ url: '/sys-parameter/basic/save', data: param })
+        .post({ url: '/sys-parameter/basic/record', data: param })
         .then(res => {
           if (!res.msg) {
             ElMessage.success(t('common.save_success'))

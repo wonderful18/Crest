@@ -30,7 +30,7 @@ public interface ChartViewApi {
     Map<String, List<ChartViewFieldDTO>> listByDQ(@PathVariable Long id, @PathVariable Long chartId, @RequestBody ChartViewDTO dto);
 
     @Operation(summary = "保存图表")
-    @PostMapping("save")
+    @PostMapping("record")
     ChartViewDTO save(@RequestBody ChartViewDTO dto) throws Exception;
 
     @Operation(summary = "检查是否同数据集")

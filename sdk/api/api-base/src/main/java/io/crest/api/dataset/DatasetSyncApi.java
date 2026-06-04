@@ -23,7 +23,7 @@ public interface DatasetSyncApi {
 
     @Operation(summary = "保存数据集同步任务")
     @CrestPermit({"#p0.datasetGroupId+':manage'"})
-    @PostMapping("save")
+    @PostMapping("record")
     DatasetSyncTaskDTO save(@RequestBody DatasetSyncTaskDTO task) throws Exception;
 
     @Operation(summary = "查询数据集同步任务")

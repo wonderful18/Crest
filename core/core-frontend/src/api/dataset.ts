@@ -139,7 +139,7 @@ export const saveDatasetTree = async (data: DatasetOrFolder): Promise<IResponse>
   nameTrim(data)
   const copyData = cloneDeep(data)
   originNameHandle(copyData.allFields)
-  return request.post({ url: '/dataset-tree/save', data: copyData }).then(res => {
+  return request.post({ url: '/dataset-tree/record', data: copyData }).then(res => {
     if (res?.data?.allFields?.length) {
       originNameHandleBack(res?.data?.allFields)
     }
@@ -323,7 +323,7 @@ export const datasetSyncTask = async (datasetGroupId): Promise<DatasetSyncTask> 
 }
 
 export const saveDatasetSyncTask = async (data: DatasetSyncTask): Promise<DatasetSyncTask> => {
-  return request.post({ url: '/dataset-sync/save', data }).then(res => {
+  return request.post({ url: '/dataset-sync/record', data }).then(res => {
     return res?.data
   })
 }
@@ -376,11 +376,11 @@ export const copilotFields = (datasetId: number) => {
 }
 
 export const saveRowPermission = (data = {}) => {
-  return request.post({ url: '/dataset/row-permissions/save', data })
+  return request.post({ url: '/dataset/row-permissions/record', data })
 }
 
 export const saveColumnPermission = (data = {}) => {
-  return request.post({ url: '/dataset/column-permissions/save', data })
+  return request.post({ url: '/dataset/column-permissions/record', data })
 }
 
 export const deleteRowPermission = (data = {}) => {
@@ -396,7 +396,7 @@ export const whiteListUsersForPermissions = (data = {}) => {
 }
 
 export const saveField = async (data): Promise<DatasetDetail[]> => {
-  return request.post({ url: '/dataset-field/save', data }).then(res => {
+  return request.post({ url: '/dataset-field/record', data }).then(res => {
     return res?.data
   })
 }
@@ -428,7 +428,7 @@ export const getFunction = async (): Promise<DatasetDetail[]> => {
 export const exportTasksRecords = () =>
   request.post({ url: `/export-center/export-tasks/records`, data: {} })
 
-export const exportTasks = (page: number, limit: number, status: string) =>
+export const exportTasks = (page = 1, limit = 10, status = 'ALL') =>
   request.post({ url: `/export-center/export-tasks/${status}/${page}/${limit}`, data: {} })
 
 export const exportRetry = async (id): Promise<IResponse> => {
