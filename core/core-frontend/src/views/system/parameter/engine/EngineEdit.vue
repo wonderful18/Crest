@@ -218,7 +218,7 @@ const submitForm = async () => {
     if (result) {
       showLoading()
       request
-        .post({ url: '/engine/record', data: data })
+        .post({ url: '/engine/save', data: data })
         .then(res => {
           if (res !== undefined) {
             ElMessage.success(t('common.save_success'))

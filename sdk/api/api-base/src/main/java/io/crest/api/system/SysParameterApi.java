@@ -32,7 +32,7 @@ public interface SysParameterApi {
     List<SettingItemVO> queryBasicSetting();
 
     @Operation(summary = "保存基础设置(社区版)")
-    @PostMapping("/basic/record")
+    @PostMapping("/basic/save")
     void saveBasicSetting(@RequestBody List<SettingItemVO> settingItemVOS);
 
     @Operation(summary = "查询超时时间(社区版)")
