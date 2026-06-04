@@ -430,7 +430,7 @@ onMounted(async () => {
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="record">保存</el-button>
+        <el-button type="primary" @click="save">保存</el-button>
       </template>
     </el-dialog>
 
