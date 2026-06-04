@@ -883,7 +883,7 @@ const dragenter_handler = ev => {
 
 const drop_handler = ev => {
   ev.preventDefault()
-  let data = ev.dataTransfer.data('text')
+  let data = ev.dataTransfer.getData('text/plain') || ev.dataTransfer.getData('text')
   const { tableName, type, datasourceId, name: noteName } = JSON.parse(data) as Table
   const extraData = {
     info: JSON.stringify({

@@ -25,7 +25,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="closeDialog">取消</el-button>
-        <el-button type="primary" @click="record">确认</el-button>
+        <el-button type="primary" @click="save">确认</el-button>
       </div>
     </template>
   </el-dialog>
