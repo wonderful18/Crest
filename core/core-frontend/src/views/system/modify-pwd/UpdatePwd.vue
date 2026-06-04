@@ -135,7 +135,7 @@ const save = () => {
         :placeholder="t('system.the_confirmation_password')"
       />
     </el-form-item>
-    <el-button @click="record" type="primary">
+    <el-button @click="save" type="primary">
       {{ t('common.save') }}
     </el-button>
   </el-form>

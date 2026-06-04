@@ -128,7 +128,7 @@ const handleDrop = e => {
   if (!popComponentData.value || popComponentData.value.length === 0) {
     e.preventDefault()
     e.stopPropagation()
-    const componentInfo = e.dataTransfer.data('id')
+    const componentInfo = e.dataTransfer.getData('id')
     if (componentInfo) {
       const component = findDragComponent(componentInfo)
       if (component.component === 'VQuery') {

@@ -24,7 +24,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="closeDialog">{{ $t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="record">{{ $t('chart.confirm') }}</el-button>
+        <el-button type="primary" @click="save">{{ $t('chart.confirm') }}</el-button>
       </div>
     </template>
   </el-dialog>
