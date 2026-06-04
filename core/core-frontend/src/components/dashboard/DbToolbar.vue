@@ -819,7 +819,7 @@ const initOpenHandler = newWindow => {
     />
     <outer-params-set ref="outerParamsSetRef"> </outer-params-set>
   </div>
-  <CrestFullscreen show-position="change" ref="fullScreeRef"></CrestFullscreen>
+  <CrestFullscreen show-position="edit" ref="fullScreeRef"></CrestFullscreen>
   <CrestAppApply
     ref="resourceAppOpt"
     :component-data="componentData"
