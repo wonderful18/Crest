@@ -185,11 +185,11 @@ public abstract class Provider {
     }
 
     public String replaceMssqlN(String s) {
-        Pattern compile = Pattern.compile("'-CREST_NS-.*?'");
+        Pattern compile = Pattern.compile("'-DENS-.*?'");
         Matcher matcher = compile.matcher(s);
         while (matcher.find()) {
             String v = matcher.group();
-            s = s.replaceAll(Pattern.quote(v), "N" + v.replace("-CREST_NS-", ""));
+            s = s.replaceAll(Pattern.quote(v), "N" + v.replace("-DENS-", ""));
         }
         return s;
     }

@@ -20,7 +20,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button secondary @click.stop="cancel">{{ t('common.cancel') }}</el-button>
-          <el-button type="primary" @click.stop="record">
+          <el-button type="primary" @click.stop="save">
             {{ t('common.save') }}
           </el-button>
         </span>

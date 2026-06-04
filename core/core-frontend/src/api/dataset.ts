@@ -401,7 +401,7 @@ export const saveField = async (data): Promise<DatasetDetail[]> => {
   })
 }
 
-export const fieldRemoval = async (id): Promise<DatasetDetail[]> => {
+export const deleteField = async (id): Promise<DatasetDetail[]> => {
   return request.delete({ url: `/dataset-field/${id}`, data: {} }).then(res => {
     return res?.data
   })
@@ -419,7 +419,7 @@ export const getEnumValue = async (data): Promise<DatasetDetail[]> => {
   })
 }
 
-export const functions = async (): Promise<DatasetDetail[]> => {
+export const getFunction = async (): Promise<DatasetDetail[]> => {
   return request.post({ url: '/dataset-field/functions', data: {} }).then(res => {
     return res?.data
   })
