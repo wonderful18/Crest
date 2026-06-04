@@ -6,6 +6,7 @@ import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.dto.*;
 import io.crest.extensions.datasource.model.SQLObj;
+import io.crest.extensions.datasource.utils.SqlPlaceholderUtils;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import io.crest.extensions.datasource.vo.PluginDatasourceVO;
 import io.crest.i18n.Translator;
@@ -285,12 +286,7 @@ public class Utils {
             return sql;
         }
         String schemaAlias = value.getSchemaAlias();
-        return sql
-                .replace("`" + schemaAlias + "`.", "")
-                .replace("'" + schemaAlias + "'.", "")
-                .replace("\"" + schemaAlias + "\".", "")
-                .replace("[" + schemaAlias + "].", "")
-                .replace(schemaAlias + ".", "");
+        return SqlPlaceholderUtils.removeIdentifierPrefix(sql, schemaAlias);
     }
 
     private static String stripLineBreaks(String value) {

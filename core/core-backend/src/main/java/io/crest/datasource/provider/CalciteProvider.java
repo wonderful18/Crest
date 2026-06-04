@@ -336,7 +336,7 @@ public class CalciteProvider extends Provider {
             }
             SqlParser parser = SqlParser.create(sql, SqlParser.Config.DEFAULT.withLex(Lex.JAVA));
             SqlNode sqlNode = parser.parseStmt();
-            return sqlNode.toSqlString(getDialect(value)).toString();
+            return restoreUnicodeStringLiterals(sqlNode.toSqlString(getDialect(value)).toString());
         } catch (Exception e) {
             CrestException.throwException(e.getMessage());
         }
