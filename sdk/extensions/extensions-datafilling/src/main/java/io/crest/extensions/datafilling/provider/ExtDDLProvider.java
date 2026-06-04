@@ -66,7 +66,7 @@ public abstract class ExtDDLProvider {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < formFields.size(); i++) {
             TableField f = formFields.get(i);
-            if (Strings.CI.equalsAny(f.getFieldType(), "datetime")) {
+            if (Strings.CI.equalsAny(f.getType(), "datetime")) {
                 //特殊处理，全部使用统一格式输出
                 builder.append("DATE_FORMAT(`").append(f.getOriginName()).append("`,'%Y-%m-%d %H:%i:%S')");
             } else {

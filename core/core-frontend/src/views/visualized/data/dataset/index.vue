@@ -290,7 +290,7 @@ const generateColumns = (arr: Field[]) =>
 
 const dtLoading = ref(false)
 const isCreated = ref(false)
-const data = () => {
+const getData = () => {
   dtLoading.value = true
   let curSortType = sortList[Number(wsCache.get('TreeSort-backend')) ?? 1].value
   curSortType = wsCache.get('TreeSort-dataset') ?? curSortType
@@ -351,7 +351,7 @@ onBeforeMount(() => {
   wsCache.delete('db-info-id')
   wsCache.delete('dv-info-id')
   loadInit()
-  data()
+  getData()
   getLimit()
 })
 
@@ -607,7 +607,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
             ])
           }).then(() => {
             delDatasetTree(data.id).then(() => {
-              data()
+              getData()
               ElMessage.success(t('dataset.delete_success'))
             })
           })
@@ -617,7 +617,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
             options as ElMessageBoxOptions
           ).then(() => {
             delDatasetTree(data.id).then(() => {
-              data()
+              getData()
               ElMessage.success(t('dataset.delete_success'))
             })
           })
@@ -627,7 +627,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
       ElMessageBox.confirm(t('data_set.delete_this_folder'), options as ElMessageBoxOptions).then(
         () => {
           delDatasetTree(data.id).then(() => {
-            data()
+            getData()
             ElMessage.success(t('dataset.delete_success'))
           })
         }
@@ -1102,7 +1102,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
       @finish="resourceOptFinish"
       ref="resourceGroupOpt"
     ></CrestResourceGroupActions>
-    <creat-ds-group @finish="data()" ref="creatDsFolder"></creat-ds-group>
+    <creat-ds-group @finish="getData()" ref="creatDsFolder"></creat-ds-group>
   </div>
   <!--导出数据集弹框-->
   <el-dialog
@@ -1127,7 +1127,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
       <el-form-item :label="$t('dataset.export_filter')" prop="expressionTree">
         <div class="tree-cont">
           <div class="content">
-            <RowAuth @save="record" ref="rowAuth" />
+            <RowAuth @save="save" ref="rowAuth" />
           </div>
         </div>
       </el-form-item>

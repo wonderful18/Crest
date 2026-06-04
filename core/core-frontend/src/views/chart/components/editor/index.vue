@@ -56,7 +56,7 @@ import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapsho
 import CalcFieldEdit from '@/views/visualized/data/dataset/form/CalcFieldEdit.vue'
 import { getFieldName, guid } from '@/views/visualized/data/dataset/form/util'
 import { cloneDeep, forEach, get, debounce, set, concat, keys, merge } from 'lodash-es'
-import { fieldRemoval, saveField } from '@/api/dataset'
+import { deleteField, saveField } from '@/api/dataset'
 import chartViewManager from '@/views/chart/components/js/panel'
 import DatasetSelect from '@/views/chart/components/editor/dataset-select/DatasetSelect.vue'
 import { useDraggable } from '@vueuse/core'
@@ -1704,7 +1704,7 @@ const chartFieldEdit = param => {
       editField(param.item)
       break
     case 'delete':
-      fieldRemoval(param.item?.id).then(() => {
+      deleteField(param.item?.id).then(() => {
         getFields(view.value.tableId, view.value.id, view.value.type)
       })
       break

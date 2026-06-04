@@ -7,7 +7,7 @@ import icon_deleteTrash_outlined from '@/assets/svg/icon_delete-trash_outlined.s
 import { ref, reactive, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import CodeMirror from '@/views/visualized/data/dataset/form/SqlCodeEditor.vue'
-import { functions } from '@/api/dataset'
+import { getFunction } from '@/api/dataset'
 import { fieldType } from '@/utils/attr'
 import { cloneDeep } from 'lodash-es'
 import { iconFieldMap } from '@/components/icon-group/field-list'
@@ -144,7 +144,7 @@ const insertParamToCodeMirror = (value: string) => {
 }
 let functions = []
 const initFunction = () => {
-  functions().then(res => {
+  getFunction().then(res => {
     functions = cloneDeep(res)
     state.functionData = cloneDeep(res)
   })

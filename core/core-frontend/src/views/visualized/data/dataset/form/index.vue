@@ -443,7 +443,7 @@ const handleFieldMore = (ele, type) => {
       }
       break
     case 'delete':
-      fieldRemoval(ele)
+      deleteField(ele)
       break
     case 'translate':
       dqTrans(ele.id)
@@ -568,7 +568,7 @@ const delFieldByIdFake = (arr, fakeAllfields) => {
   return idList
 }
 
-const fieldRemoval = item => {
+const deleteField = item => {
   let tip = ''
   const idArr = allfields.value.reduce((pre, next) => {
     if (![2, 3].includes(next.extField)) return pre
