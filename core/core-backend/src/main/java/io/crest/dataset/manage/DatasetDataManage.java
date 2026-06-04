@@ -37,6 +37,7 @@ import io.crest.extensions.datasource.dto.*;
 import io.crest.extensions.datasource.factory.ProviderFactory;
 import io.crest.extensions.datasource.model.SQLMeta;
 import io.crest.extensions.datasource.provider.Provider;
+import io.crest.extensions.datasource.utils.SqlPlaceholderUtils;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import io.crest.extensions.view.dto.ChartExtFilterDTO;
 import io.crest.extensions.view.dto.ChartExtRequest;
@@ -1321,20 +1322,10 @@ public class DatasetDataManage {
     }
 
     private static String replaceSchemaAlias(String sql, String schemaAlias, String replacement) {
-        return sql
-                .replace("`" + schemaAlias + "`", replacement)
-                .replace("'" + schemaAlias + "'", replacement)
-                .replace("\"" + schemaAlias + "\"", replacement)
-                .replace("[" + schemaAlias + "]", replacement)
-                .replace(schemaAlias, replacement);
+        return SqlPlaceholderUtils.replaceIdentifier(sql, schemaAlias, replacement);
     }
 
     private static String removeSchemaAliasPrefix(String sql, String schemaAlias) {
-        return sql
-                .replace("`" + schemaAlias + "`.", "")
-                .replace("'" + schemaAlias + "'.", "")
-                .replace("\"" + schemaAlias + "\".", "")
-                .replace("[" + schemaAlias + "].", "")
-                .replace(schemaAlias + ".", "");
+        return SqlPlaceholderUtils.removeIdentifierPrefix(sql, schemaAlias);
     }
 }
