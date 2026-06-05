@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -91,6 +92,38 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void frontendSourcesShouldNotUseKnownBulkRenamedRoutes() throws IOException {
+        assertFrontendTreeDoesNotContain(List.of(
+                "/chart/save",
+                "/dataset-tree/save",
+                "/dataset-sync/save",
+                "/dataset/row-permissions/save",
+                "/dataset/column-permissions/save",
+                "/dataset-field/save",
+                "/datasource/excel-data/save",
+                "/datasource/save",
+                "/sync/datasource/save",
+                "/data-visualization/record",
+                "/data-visualization/save",
+                "/watermark/save",
+                "/sys-parameter/basic/save",
+                "/engine/save"
+        ));
+    }
+
+    @Test
+    void frontendSourcesShouldNotUseKnownEditToChangeMisreplacements() throws IOException {
+        assertFrontendTreeDoesNotContain(List.of(
+                "el-icon-change",
+                "main-change",
+                "panel_change",
+                "show-position=\"change\"",
+                "show-position='change'",
+                "de-dashboard-editor-back"
+        ));
+    }
+
+    @Test
     void dataVisualizationCreateShouldUseCanvasMapping() {
         assertPostMapping(DataVisualizationApi.class, "saveCanvas", "/canvas");
     }
@@ -143,6 +176,45 @@ class ApiEndpointContractTest {
                 relativePath + " should contain " + token));
         forbiddenTokens.forEach(token -> assertFalse(source.contains(token),
                 relativePath + " should not contain " + token));
+    }
+
+    private void assertFrontendTreeDoesNotContain(List<String> forbiddenTokens) throws IOException {
+        Path frontendRoot = repoRoot().resolve("core/core-frontend/src");
+        try (Stream<Path> paths = Files.walk(frontendRoot)) {
+            paths.filter(Files::isRegularFile)
+                    .filter(path -> !path.toString().contains("/node_modules/"))
+                    .filter(this::isFrontendSourceFile)
+                    .forEach(path -> {
+                        try {
+                            String source = Files.readString(path);
+                            forbiddenTokens.forEach(token -> assertFalse(source.contains(token),
+                                    frontendRoot.relativize(path) + " should not contain " + token));
+                        } catch (IOException e) {
+                            throw new AssertionError("Unable to read " + path, e);
+                        }
+                    });
+        }
+    }
+
+    private boolean isFrontendSourceFile(Path path) {
+        String name = path.getFileName().toString();
+        return name.endsWith(".vue")
+                || name.endsWith(".ts")
+                || name.endsWith(".tsx")
+                || name.endsWith(".js")
+                || name.endsWith(".jsx")
+                || name.endsWith(".mjs")
+                || name.endsWith(".cjs")
+                || name.endsWith(".json")
+                || name.endsWith(".css")
+                || name.endsWith(".less")
+                || name.endsWith(".scss")
+                || name.endsWith(".sass")
+                || name.endsWith(".html")
+                || name.endsWith(".md")
+                || name.endsWith(".svg")
+                || name.endsWith(".yaml")
+                || name.endsWith(".yml");
     }
 
     private Path repoRoot() {
