@@ -738,8 +738,9 @@ const getTableName = async (datasourceId, tableName) => {
 const isEdit = ref(false)
 const datasetCheckRef = ref()
 const initEdite = async () => {
-  let { id, datasourceId, tableName } = route.query
-  let { id: copyId } = route.params
+  let { id, datasourceId, tableName, copyId } = route.query
+  const { id: legacyCopyId } = route.params
+  copyId = copyId || legacyCopyId
   if (appStore.getIsCrestBi) {
     id = embeddedStore.datasetId
     datasourceId = embeddedStore.datasourceId
