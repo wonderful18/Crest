@@ -235,8 +235,8 @@ const renderTable = (chart: ChartObj) => {
         rowCellVertical: false
       }
     },
-    dataCell: meta => {
-      return new CustomDataCell(meta, meta.spreadsheet)
+    dataCell: (meta, sheet, config) => {
+      return new CustomDataCell(meta, sheet, config)
     },
     colCell: (meta, sheet, config) => {
       return new CustomColCell(meta, sheet, config)
@@ -587,10 +587,11 @@ const renderTable = (chart: ChartObj) => {
     const initialized = s2.store.get('initialized')
     if (!initialized) {
       s2.store.set('initialized', true)
-      s2.changeSheetSize(e.colsHierarchy.width)
+      const colsHierarchy = e?.colsHierarchy
+      s2.changeSheetSize(colsHierarchy?.width || containerDom.getBoundingClientRect().width)
       const length = s2.dataCfg.data?.length || 0
-      const headerHeight = e.colsHierarchy.height
-      const rowHeight = s2.options.style.cellCfg.height
+      const headerHeight = colsHierarchy?.height || s2.options.style?.colCfg?.height || 36
+      const rowHeight = s2.options.style?.cellCfg?.height || 32
       const totalHeight = headerHeight + rowHeight * length
       if (containerDom.offsetHeight > totalHeight) {
         containerDom.style.height = totalHeight + 'px'

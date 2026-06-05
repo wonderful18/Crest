@@ -77,6 +77,7 @@ public class ChartDataServer implements ChartDataApi {
     @Value("${crest.export.page.size:50000}")
     private Integer extractPageSize;
     private final Long sheetLimit = 1000000L;
+    private static final String AUXILIARY_HEADER_GROUP_PREFIX = "__crest_aux_header_group__";
 
 
     @CrestLinkPermit("#p0.sceneId")
@@ -425,22 +426,29 @@ public class ChartDataServer implements ChartDataApi {
             }
 
             Map<String, Object> customAttr = viewInfo.getCustomAttr();
-            Map<String, Object> tableHeaderMap = (Map<String, Object>) customAttr.get("tableHeader");
-            if (tableHeaderMap.get("headerGroup") != null && Boolean.parseBoolean(tableHeaderMap.get("headerGroup").toString())) {
-                var tmpHeader = JsonUtil.parseObject((String) JsonUtil.toJSONString(customAttr.get("tableHeader")), TableHeader.class);
-                // 校验字段数量和顺序
-                var allAxis = new ArrayList<>(viewInfo.getXAxis().stream().filter(x -> !x.isHide()).toList());
-                if (Strings.CI.equals(viewInfo.getType(), "table-normal")) {
-                    allAxis.addAll(viewInfo.getYAxis().stream().filter(x -> !x.isHide()).toList());
+            Map<String, Object> tableHeaderMap = customAttr == null ? null : (Map<String, Object>) customAttr.get("tableHeader");
+            TableHeader tmpHeader = null;
+            var allAxis = new ArrayList<>(viewInfo.getXAxis().stream().filter(x -> !x.isHide()).toList());
+            if (Strings.CI.equals(viewInfo.getType(), "table-normal")) {
+                allAxis.addAll(viewInfo.getYAxis().stream().filter(x -> !x.isHide()).toList());
+            }
+            if (tableHeaderMap != null) {
+                tmpHeader = JsonUtil.parseObject((String) JsonUtil.toJSONString(tableHeaderMap), TableHeader.class);
+            }
+            if (tmpHeader != null && tmpHeader.isHeaderGroup() && validateHeaderGroup(tmpHeader, allAxis)) {
+                tableHeader = tmpHeader;
+            }
+            if (tableHeader == null && isAuxiliaryHeaderEnabled(tmpHeader)) {
+                tableHeader = buildAuxiliaryHeader(tmpHeader, allAxis);
+            } else if (tableHeader != null && isAuxiliaryHeaderEnabled(tableHeader)) {
+                applyAuxiliaryHeader(tableHeader, allAxis);
+            }
+            if (tableHeader != null) {
+                for (TableHeader.ColumnInfo column : tableHeader.getHeaderGroupConfig().getColumns()) {
+                    totalDepth = Math.max(totalDepth, getDepth(column, 1));
                 }
-                if (validateHeaderGroup(tmpHeader, allAxis)) {
-                    tableHeader = tmpHeader;
-                    for (TableHeader.ColumnInfo column : tableHeader.getHeaderGroupConfig().getColumns()) {
-                        totalDepth = Math.max(totalDepth, getDepth(column, 1));
-                    }
-                    for (TableHeader.ColumnInfo column : tableHeader.getHeaderGroupConfig().getColumns()) {
-                        setWidth(column, 1);
-                    }
+                for (TableHeader.ColumnInfo column : tableHeader.getHeaderGroupConfig().getColumns()) {
+                    setWidth(column, 1);
                 }
             }
             if ("table-info".equalsIgnoreCase(viewInfo.getType()) && !"dataset".equalsIgnoreCase(viewInfo.getDownloadType())) {
@@ -513,21 +521,27 @@ public class ChartDataServer implements ChartDataApi {
                 cellStyle.setBorderRight(BorderStyle.THIN);
                 cellStyle.setBorderBottom(BorderStyle.THIN);
                 cellStyle.setBorderLeft(BorderStyle.THIN);
+                CellStyle auxiliaryHeaderCellStyle = createAuxiliaryHeaderCellStyle(wb, tableHeader);
                 Map<String, Row> rowMap = new HashMap<>();
                 for (Integer i = 0; i < totalDepth; i++) {
-                    rowMap.put("row" + i, detailsSheet.createRow(i));
+                    Row headerRow = detailsSheet.createRow(i);
+                    setHeaderRowHeight(headerRow, tableHeader, i, totalDepth);
+                    rowMap.put("row" + i, headerRow);
                 }
                 int width = 0;
                 Integer depth = 0;
                 for (TableHeader.ColumnInfo column : tableHeader.getHeaderGroupConfig().getColumns()) {
-                    createCell(tableHeader, column, width, depth, detailsSheet, cellStyle, totalDepth, rowMap, xAxis);
+                    createCell(tableHeader, column, width, depth, detailsSheet, cellStyle, auxiliaryHeaderCellStyle, totalDepth, rowMap, xAxis);
                     width = width + column.getWidth();
                 }
             }
             for (int i = (mergeHead ? 2 : 0); i < details.size(); i++) {
+                if (tableHeader != null && i == 0) {
+                    continue;
+                }
                 int rowIndex = i;
                 if (tableHeader != null) {
-                    rowIndex = realDetailRowIndex - 1 + i;
+                    rowIndex = realDetailRowIndex + i - 1;
                 } else {
                     rowIndex = realDetailRowIndex > 2 ? realDetailRowIndex : i;
                 }
@@ -662,6 +676,9 @@ public class ChartDataServer implements ChartDataApi {
         if (header == null) {
             return false;
         }
+        if (header.getHeaderGroupConfig() == null) {
+            return false;
+        }
         var columns = header.getHeaderGroupConfig().getColumns();
         if (CollectionUtils.isEmpty(columns)) {
             return false;
@@ -692,6 +709,117 @@ public class ChartDataServer implements ChartDataApi {
         return result;
     }
 
+    private static boolean isAuxiliaryHeaderEnabled(TableHeader tableHeader) {
+        return tableHeader != null && tableHeader.getAuxiliaryHeader() != null && tableHeader.getAuxiliaryHeader().isEnabled();
+    }
+
+    private static TableHeader buildAuxiliaryHeader(TableHeader sourceHeader, List<ChartViewFieldDTO> fields) {
+        TableHeader tableHeader = sourceHeader == null ? new TableHeader() : sourceHeader;
+        TableHeader.HeaderGroupConfig headerGroupConfig = new TableHeader.HeaderGroupConfig();
+        for (ChartViewFieldDTO field : fields) {
+            TableHeader.ColumnInfo group = new TableHeader.ColumnInfo();
+            group.setKey(AUXILIARY_HEADER_GROUP_PREFIX + field.getEngineFieldName());
+            TableHeader.ColumnInfo leaf = new TableHeader.ColumnInfo();
+            leaf.setKey(field.getEngineFieldName());
+            group.setChildren(new ArrayList<>(List.of(leaf)));
+            headerGroupConfig.getColumns().add(group);
+        }
+        tableHeader.setHeaderGroup(true);
+        tableHeader.setHeaderGroupConfig(headerGroupConfig);
+        return tableHeader;
+    }
+
+    private static void applyAuxiliaryHeader(TableHeader tableHeader, List<ChartViewFieldDTO> fields) {
+        if (tableHeader == null || tableHeader.getHeaderGroupConfig() == null || CollectionUtils.isEmpty(tableHeader.getHeaderGroupConfig().getColumns())) {
+            return;
+        }
+        var fieldNames = fields.stream().map(ChartViewFieldDTO::getEngineFieldName).collect(Collectors.toSet());
+        var columns = tableHeader.getHeaderGroupConfig().getColumns().stream()
+                .map(column -> applyAuxiliaryColumn(column, true, fieldNames))
+                .toList();
+        tableHeader.getHeaderGroupConfig().setColumns(new ArrayList<>(columns));
+    }
+
+    private static TableHeader.ColumnInfo applyAuxiliaryColumn(TableHeader.ColumnInfo column, boolean root, Set<String> fieldNames) {
+        if (column == null || StringUtils.isBlank(column.getKey())) {
+            return column;
+        }
+        if (CollectionUtils.isEmpty(column.getChildren())) {
+            if (!root || !fieldNames.contains(column.getKey())) {
+                return column;
+            }
+            TableHeader.ColumnInfo group = new TableHeader.ColumnInfo();
+            group.setKey(AUXILIARY_HEADER_GROUP_PREFIX + column.getKey());
+            group.setChildren(new ArrayList<>(List.of(column)));
+            return group;
+        }
+        var children = column.getChildren().stream()
+                .map(child -> applyAuxiliaryColumn(child, false, fieldNames))
+                .toList();
+        column.setChildren(new ArrayList<>(children));
+        return column;
+    }
+
+    private static String getLeafHeaderName(TableHeader tableHeader, List<ChartViewFieldDTO> xAxis, String key) {
+        if (isAuxiliaryHeaderEnabled(tableHeader)) {
+            return getAuxiliaryDescription(tableHeader, key);
+        }
+        return getDeFieldName(xAxis, key);
+    }
+
+    private static String getAuxiliaryDescription(TableHeader tableHeader, String key) {
+        if (tableHeader == null || tableHeader.getAuxiliaryHeader() == null || CollectionUtils.isEmpty(tableHeader.getAuxiliaryHeader().getDescriptions())) {
+            return "";
+        }
+        for (TableHeader.DescriptionInfo descriptionInfo : tableHeader.getAuxiliaryHeader().getDescriptions()) {
+            if (descriptionInfo != null && Strings.CS.equals(descriptionInfo.getField(), key)) {
+                return StringUtils.defaultString(descriptionInfo.getText());
+            }
+        }
+        return "";
+    }
+
+    private static CellStyle createAuxiliaryHeaderCellStyle(Workbook workbook, TableHeader tableHeader) {
+        CellStyle cellStyle = workbook.createCellStyle();
+        cellStyle.setBorderTop(BorderStyle.THIN);
+        cellStyle.setBorderRight(BorderStyle.THIN);
+        cellStyle.setBorderBottom(BorderStyle.THIN);
+        cellStyle.setBorderLeft(BorderStyle.THIN);
+        cellStyle.setWrapText(true);
+        cellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        cellStyle.setAlignment(resolveAuxiliaryHeaderAlignment(tableHeader));
+        cellStyle.setFillForegroundColor(IndexedColors.WHITE.getIndex());
+        cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        Font font = workbook.createFont();
+        font.setBold(false);
+        Integer fontSize = isAuxiliaryHeaderEnabled(tableHeader) ? tableHeader.getAuxiliaryHeader().getFontSize() : null;
+        font.setFontHeightInPoints((short) Math.max(8, Optional.ofNullable(fontSize).orElse(14)));
+        font.setColor(IndexedColors.BLACK.getIndex());
+        cellStyle.setFont(font);
+        return cellStyle;
+    }
+
+    private static HorizontalAlignment resolveAuxiliaryHeaderAlignment(TableHeader tableHeader) {
+        if (tableHeader == null || tableHeader.getAuxiliaryHeader() == null || StringUtils.isBlank(tableHeader.getAuxiliaryHeader().getAlign())) {
+            return HorizontalAlignment.CENTER;
+        }
+        return switch (tableHeader.getAuxiliaryHeader().getAlign()) {
+            case "left" -> HorizontalAlignment.LEFT;
+            case "right" -> HorizontalAlignment.RIGHT;
+            default -> HorizontalAlignment.CENTER;
+        };
+    }
+
+    private static void setHeaderRowHeight(Row row, TableHeader tableHeader, Integer rowIndex, Integer totalDepth) {
+        if (!isAuxiliaryHeaderEnabled(tableHeader) || !Objects.equals(rowIndex, totalDepth - 1)) {
+            return;
+        }
+        Integer rowHeight = tableHeader.getAuxiliaryHeader().getRowHeight();
+        if (rowHeight != null && rowHeight > 0) {
+            row.setHeightInPoints((float) (rowHeight * 0.75));
+        }
+    }
+
     private static Integer getDepth(TableHeader.ColumnInfo column, Integer parentDepth) {
         if (org.springframework.util.CollectionUtils.isEmpty(column.getChildren())) {
             return parentDepth;
@@ -704,18 +832,20 @@ public class ChartDataServer implements ChartDataApi {
         }
     }
 
-    private static void createCell(TableHeader tableHeader, TableHeader.ColumnInfo column, Integer width, Integer depth, Sheet sheet, CellStyle cellStyle, Integer totalDepth, Map<String, Row> rowMap, List<ChartViewFieldDTO> xAxis) {
+    private static void createCell(TableHeader tableHeader, TableHeader.ColumnInfo column, Integer width, Integer depth, Sheet sheet, CellStyle cellStyle, CellStyle auxiliaryHeaderCellStyle, Integer totalDepth, Map<String, Row> rowMap, List<ChartViewFieldDTO> xAxis) {
         if (org.springframework.util.CollectionUtils.isEmpty(column.getChildren())) {
             Integer toDepth = totalDepth - 1 > depth ? totalDepth - 1 : depth;
+            CellStyle headerCellStyle = isAuxiliaryHeaderEnabled(tableHeader) ? auxiliaryHeaderCellStyle : cellStyle;
+            String leafName = getLeafHeaderName(tableHeader, xAxis, column.getKey());
             if (depth.equals(toDepth)) {
                 Cell cell = rowMap.get("row" + depth).createCell(width);
-                cell.setCellStyle(cellStyle);
-                cell.setCellValue(getDeFieldName(xAxis, column.getKey()));
+                cell.setCellStyle(headerCellStyle);
+                cell.setCellValue(leafName);
             } else {
                 for (int i = depth; i <= toDepth; i++) {
                     Cell cell1 = rowMap.get("row" + i).createCell(width);
-                    cell1.setCellValue(getDeFieldName(xAxis, column.getKey()));
-                    cell1.setCellStyle(cellStyle);
+                    cell1.setCellValue(leafName);
+                    cell1.setCellStyle(headerCellStyle);
                 }
                 CellRangeAddress region = new CellRangeAddress(depth, toDepth, width, width);
                 sheet.addMergedRegion(region);
@@ -724,33 +854,38 @@ public class ChartDataServer implements ChartDataApi {
                 RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
                 RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);
                 Cell mergedCell = rowMap.get("row" + depth).getCell(width);
-                mergedCell.setCellStyle(cellStyle);
+                mergedCell.setCellStyle(headerCellStyle);
 
             }
         } else {
             Cell cell1 = rowMap.get("row" + depth).createCell(width);
-            cell1.setCellValue(getGroupName(tableHeader, column.getKey()));
+            cell1.setCellValue(getGroupName(tableHeader, column.getKey(), xAxis));
             cell1.setCellStyle(cellStyle);
-            Cell cell2 = rowMap.get("row" + depth).createCell(width + column.getWidth() - 1);
-            cell2.setCellValue(getGroupName(tableHeader, column.getKey()));
-            cell2.setCellStyle(cellStyle);
-            CellRangeAddress region = new CellRangeAddress(depth, depth, width, width + column.getWidth() - 1);
-            sheet.addMergedRegion(region);
-            RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);
-            RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);
-            RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
-            RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);
-            Cell mergedCell = rowMap.get("row" + depth).getCell(width);
-            mergedCell.setCellStyle(cellStyle);
+            if (column.getWidth() != null && column.getWidth() > 1) {
+                Cell cell2 = rowMap.get("row" + depth).createCell(width + column.getWidth() - 1);
+                cell2.setCellValue(getGroupName(tableHeader, column.getKey(), xAxis));
+                cell2.setCellStyle(cellStyle);
+                CellRangeAddress region = new CellRangeAddress(depth, depth, width, width + column.getWidth() - 1);
+                sheet.addMergedRegion(region);
+                RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);
+                RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);
+                RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
+                RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);
+                Cell mergedCell = rowMap.get("row" + depth).getCell(width);
+                mergedCell.setCellStyle(cellStyle);
+            }
             int subWith = width;
             for (TableHeader.ColumnInfo child : column.getChildren()) {
-                createCell(tableHeader, child, subWith, depth + 1, sheet, cellStyle, totalDepth, rowMap, xAxis);
+                createCell(tableHeader, child, subWith, depth + 1, sheet, cellStyle, auxiliaryHeaderCellStyle, totalDepth, rowMap, xAxis);
                 subWith = subWith + child.getWidth();
             }
         }
     }
 
-    private static String getGroupName(TableHeader tableHeader, String key) {
+    private static String getGroupName(TableHeader tableHeader, String key, List<ChartViewFieldDTO> xAxis) {
+        if (key != null && key.startsWith(AUXILIARY_HEADER_GROUP_PREFIX)) {
+            return getDeFieldName(xAxis, key.substring(AUXILIARY_HEADER_GROUP_PREFIX.length()));
+        }
         for (TableHeader.MetaInfo metaInfo : tableHeader.getHeaderGroupConfig().getMeta()) {
             if (metaInfo.getField().equals(key)) {
                 return metaInfo.getName();

@@ -1858,6 +1858,12 @@ export default {
     central_point: 'Center point',
     full_display: 'Full display',
     show_hover_style: 'Show mouse hover style',
+    table_header_description: 'Header description',
+    table_header_description_config: 'Description content',
+    table_header_description_height: 'Description row height',
+    table_header_description_tip:
+      'Enter descriptions for visible fields. Hidden fields and order changes are matched by field.',
+    table_header_description_placeholder: 'Enter description',
     merge_cells: 'Merge cells',
     length_limit: 'Length limit',
     radar_point: 'Enable auxiliary points',
