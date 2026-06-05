@@ -28,10 +28,23 @@ const props = defineProps({
 })
 
 const { icon, name, label, dragInfo, themes } = toRefs(props)
+const emit = defineEmits(['click'])
+
+const handleClick = (event: MouseEvent | KeyboardEvent) => {
+  emit('click', event)
+}
 </script>
 
 <template>
-  <div class="drag-component" :class="'drag-' + themes">
+  <div
+    class="drag-component"
+    :class="'drag-' + themes"
+    role="button"
+    tabindex="0"
+    @click="handleClick"
+    @keydown.enter="handleClick"
+    @keydown.space.prevent="handleClick"
+  >
     <div draggable="true" :data-id="dragInfo" class="icon-content">
       <span v-if="name" class="label-content">{{ name }}</span>
       <Icon v-if="icon"><component class="svg-icon drag-icon" :is="icon"></component></Icon>

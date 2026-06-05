@@ -40,7 +40,7 @@
           </el-button>
           <el-button
             class="m-button"
-            v-if="optType === 'details' && exportPermissions[1]"
+            v-if="optType === 'details' && exportPermissions[1] && excelExportEnabled"
             link
             :loading="exportLoading"
             :disabled="
@@ -54,7 +54,7 @@
           </el-button>
           <el-button
             class="m-button"
-            v-if="optType === 'details' && exportPermissions[2]"
+            v-if="optType === 'details' && exportPermissions[2] && excelExportEnabled"
             link
             :loading="exportLoading"
             @click="downloadViewDetails('dataset')"
@@ -68,7 +68,12 @@
           </el-button>
           <el-button
             class="m-button"
-            v-if="optType === 'details' && exportPermissions[2] && viewInfo.type === 'table-pivot'"
+            v-if="
+              optType === 'details' &&
+              exportPermissions[2] &&
+              excelExportEnabled &&
+              viewInfo.type === 'table-pivot'
+            "
             link
             :loading="exportLoading"
             @click="exportAsFormattedExcel"
@@ -81,7 +86,7 @@
           <el-divider
             class="close-divider"
             direction="vertical"
-            v-if="exportPermissions[0] || exportPermissions[1] || exportPermissions[2]"
+            v-if="exportPermissions[0] || (excelExportEnabled && (exportPermissions[1] || exportPermissions[2]))"
           />
         </div>
       </div>
@@ -173,6 +178,7 @@ import { getCanvasStyle } from '@/utils/style'
 import { exportPermission } from '@/utils/utils'
 import EmptyBackground from '../empty-background/src/EmptyBackground.vue'
 import { supportExtremumChartType } from '@/views/chart/components/js/extremumUitl'
+import { defaultViewExcelExportConfig, isExportableTableView } from '@/utils/visualization/filteredExcelExport.mjs'
 import ChartCarouselTooltip from '@/views/chart/components/js/g2plot_tooltip_carousel'
 import html2canvas from 'html2canvas'
 import { getData } from '@/api/chart'
@@ -247,6 +253,12 @@ const dialogStyle = computed(() => {
 const exportPermissions = computed(() =>
   exportPermission(dvInfo.value['weight'], dvInfo.value['ext'])
 )
+const excelExportEnabled = computed(() => {
+  if (!isExportableTableView(viewInfo.value)) {
+    return true
+  }
+  return defaultViewExcelExportConfig(config.value?.excelExport).enabled
+})
 
 const customExport = computed(() => {
   const style =

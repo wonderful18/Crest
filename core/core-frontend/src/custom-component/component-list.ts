@@ -347,6 +347,35 @@ const list: any[] = [
     matrixStyle: {}
   },
   {
+    component: 'ExportButton',
+    name: '导出按钮',
+    label: '导出按钮',
+    propValue: '',
+    icon: 'Download',
+    innerType: 'ExportButton',
+    x: 1,
+    y: 1,
+    sizeX: 12,
+    sizeY: 4,
+    exportButton: {
+      targetViewId: '',
+      scope: 'currentFiltered',
+      content: 'view',
+      text: '导出Excel'
+    },
+    style: {
+      width: 120,
+      height: 40,
+      color: '#ffffff',
+      backgroundColor: '#3B82F6',
+      fontSize: 14,
+      fontWeight: 400,
+      borderActive: false,
+      borderRadius: 4
+    },
+    matrixStyle: {}
+  },
+  {
     component: 'Video',
     name: t('visualization.video'),
     label: t('visualization.video'),
