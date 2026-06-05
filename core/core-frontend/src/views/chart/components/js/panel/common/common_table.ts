@@ -2248,8 +2248,13 @@ export function copyContent(s2Instance: SpreadSheet, event, fieldMeta) {
     preserveLineBreaks: true
   })
   if (content !== '') {
-    const header = getVisibleTableHeader(cellMeta, fieldMeta, s2Instance)
-    copyRowsWithFormat([[content]], header ? [[header]] : [])
+    const headerRows = getVisibleTableHeaderRows(
+      s2Instance,
+      fieldMeta,
+      [cellMeta.colIndex],
+      cellMeta.rowIndex ?? 0
+    )
+    copyRowsWithFormat([[content]], headerRows)
   }
 }
 
