@@ -586,6 +586,67 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void shareAndChartRuntimeHelpersShouldGuardMissingDomAndGeometry() throws IOException {
+        List.of(
+                "core/core-frontend/src/views/share/share/ShareHandler.vue",
+                "core/core-frontend/src/views/share/share/ShareVisualHead.vue"
+        ).forEach(relativePath -> {
+            try {
+                assertFrontendContract(relativePath,
+                        List.of(
+                                "const checkboxBorder = e?.children?.[0]?.children?.[1] as HTMLElement | undefined",
+                                "const messageContainer = e?.children?.[1]?.children?.[0] as HTMLElement | undefined",
+                                "const parentElement = e?.parentElement",
+                                "if (!e || !parentElement)"
+                        ),
+                        List.of(
+                                "e.children[0].children[1].style.borderColor",
+                                "e.children[1].children[0].querySelector",
+                                "e.children[1].children[0].appendChild",
+                                "e.parentElement.querySelector"
+                        ));
+            } catch (IOException e) {
+                throw new AssertionError("Unable to read " + relativePath, e);
+            }
+        });
+        assertFrontendContract("core/core-frontend/src/views/share/share/TicketEdit.vue",
+                List.of(
+                        "const e = domRef?.input",
+                        "const parentElement = e?.parentElement",
+                        "if (!e || !parentElement)"
+                ),
+                List.of(
+                        "const e = domRef.input",
+                        "e.parentElement.querySelector"
+                ));
+        assertFrontendContract("core/core-frontend/src/views/chart/components/js/g2plot_tooltip_carousel.ts",
+                List.of(
+                        "const geometry = view.getGeometries()?.[0]",
+                        "const elements = geometry?.elements || []",
+                        "const point = elements[elements.length - 1]?.getModel?.()"
+                ),
+                List.of(".elements[view.getGeometries()?.[0].elements?.length - 1].getModel()"));
+        assertFrontendContract("core/core-frontend/src/views/chart/components/js/extremumUitl.ts",
+                List.of(
+                        "const seriesLabelFormatterList = labelAttr.seriesLabelFormatter || []",
+                        "const { yAxis = [] } = parseJson(chart)",
+                        "const geometry = newChart.chart?.geometries?.[0]",
+                        "geometry?.beforeMappingData?.forEach",
+                        "newChart.chart?.geometries?.[0]?.on?.('afteranimate'",
+                        "components?.[0]?.component?.cfg?.items || []",
+                        "if (!containerElement) {",
+                        "const geometries = ev.view?.getGeometries?.() || []"
+                ),
+                List.of(
+                        "newChart.chart.geometries[0].on",
+                        ".components[0].component.cfg.items",
+                        "labelAttr.seriesLabelFormatter.find",
+                        "labelAttr.seriesLabelFormatter[0]",
+                        "ev.view\n    .getGeometries()"
+                ));
+    }
+
+    @Test
     void dataVisualizationCreateShouldUseCanvasMapping() {
         assertPostMapping(DataVisualizationApi.class, "saveCanvas", "/canvas");
     }

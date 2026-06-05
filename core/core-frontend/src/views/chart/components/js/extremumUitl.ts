@@ -143,11 +143,13 @@ export const extremumEvt = (newChart, chart, _options, container) => {
   if (!supportExtremumChartType(chart)) {
     return
   }
-  const { label: labelAttr } = parseJson(chart.customAttr)
-  const { yAxis } = parseJson(chart)
+  const { label: labelAttr = {} } = parseJson(chart.customAttr)
+  const seriesLabelFormatterList = labelAttr.seriesLabelFormatter || []
+  const { yAxis = [] } = parseJson(chart)
   newChart.once('beforerender', ev => {
     ev.view.on('beforepaint', () => {
-      newChart.chart.geometries[0]?.beforeMappingData.forEach(i => {
+      const geometry = newChart.chart?.geometries?.[0]
+      geometry?.beforeMappingData?.forEach(i => {
         i.forEach(item => {
           delete item._origin.EXTREME
         })
@@ -159,7 +161,7 @@ export const extremumEvt = (newChart, chart, _options, container) => {
         }
         let showExtremum = false
         if (noChildrenFieldChart(chart) || yAxis.length > 1) {
-          const seriesLabelFormatter = labelAttr.seriesLabelFormatter.find(
+          const seriesLabelFormatter = seriesLabelFormatterList.find(
             d =>
               (d.chartShowName ? d.chartShowName : d.name === minItem._origin.category) ||
               (d.chartShowName ? d.chartShowName : d.name === maxItem._origin.category)
@@ -169,7 +171,7 @@ export const extremumEvt = (newChart, chart, _options, container) => {
           if (['bar-group'].includes(chart.type)) {
             showExtremum = labelAttr.showExtremum
           } else {
-            showExtremum = labelAttr.seriesLabelFormatter[0]?.showExtremum
+            showExtremum = seriesLabelFormatterList[0]?.showExtremum
           }
         }
         if (showExtremum) {
@@ -178,14 +180,14 @@ export const extremumEvt = (newChart, chart, _options, container) => {
         }
       })
     })
-    newChart.chart.geometries[0].on('afteranimate', () => {
+    newChart.chart?.geometries?.[0]?.on?.('afteranimate', () => {
       createExtremumPoint(chart, ev)
     })
   })
   newChart.on('legend-item:click', ev => {
-    const legendHideData = ev.view
-      .getController('legend')
-      .components[0].component.cfg.items.filter(l => l.unchecked)
+    const legendItems =
+      ev.view?.getController?.('legend')?.components?.[0]?.component?.cfg?.items || []
+    const legendHideData = legendItems.filter(l => l.unchecked)
     if (legendHideData.length > 0) {
       legendHideData.forEach(l => {
         const seriesKey = chartContainerId(chart) + chartPointParentId(chart) + l.id
@@ -213,9 +215,10 @@ const findMinMax = (data): { minItem; maxItem } => {
 }
 export const createExtremumPoint = (chart, ev) => {
   // 获取标注样式
-  const { label: labelAttr, basicStyle } = parseJson(chart.customAttr)
+  const { label: labelAttr = {}, basicStyle = {} } = parseJson(chart.customAttr)
+  const seriesLabelFormatterList = labelAttr.seriesLabelFormatter || []
   const pointSize = basicStyle.lineSymbolSize
-  const { yAxis } = parseJson(chart)
+  const { yAxis = [] } = parseJson(chart)
   clearExtremum(chart)
   // 创建标注父元素
   const divParentElement = document.getElementById(chartPointParentId(chart))
@@ -230,6 +233,9 @@ export const createExtremumPoint = (chart, ev) => {
     divParent.style['pointer-events'] = 'none'
     // 将父标注加入到图表中
     const containerElement = document.getElementById(chart.container)
+    if (!containerElement) {
+      return
+    }
     containerElement.insertBefore(divParent, containerElement.firstChild)
     // 处理最值闪烁的问题
     let opacity = 0
@@ -247,15 +253,12 @@ export const createExtremumPoint = (chart, ev) => {
   }
   let geometriesDataArray = []
   // 获取数据点
-  const intervalPoint = ev.view
-    .getGeometries()
-    .find((intervalItem: { type: string }) => intervalItem.type === 'interval')
+  const geometries = ev.view?.getGeometries?.() || []
+  const intervalPoint = geometries.find((intervalItem: { type: string }) => intervalItem.type === 'interval')
   if (intervalPoint) {
     geometriesDataArray = intervalPoint.dataArray
   }
-  const pointPoint = ev.view
-    .getGeometries()
-    .find((pointItem: { type: string }) => pointItem.type === 'point')
+  const pointPoint = geometries.find((pointItem: { type: string }) => pointItem.type === 'point')
   if (pointPoint) {
     geometriesDataArray = pointPoint.dataArray
   }
@@ -266,7 +269,7 @@ export const createExtremumPoint = (chart, ev) => {
       let attr
       let showExtremum = false
       if (noChildrenFieldChart(chart) || yAxis.length > 1) {
-        const seriesLabelFormatter = labelAttr.seriesLabelFormatter.find(d =>
+        const seriesLabelFormatter = seriesLabelFormatterList.find(d =>
           d.chartShowName
             ? d.chartShowName === pointObj._origin.category
             : d.name === pointObj._origin.category
@@ -277,8 +280,8 @@ export const createExtremumPoint = (chart, ev) => {
         if (['bar-group'].includes(chart.type)) {
           showExtremum = labelAttr.showExtremum
         } else {
-          showExtremum = labelAttr.seriesLabelFormatter[0]?.showExtremum
-          attr = labelAttr.seriesLabelFormatter[0]
+          showExtremum = seriesLabelFormatterList[0]?.showExtremum
+          attr = seriesLabelFormatterList[0]
         }
       }
       const fontSize = attr ? attr.fontSize : labelAttr.fontSize

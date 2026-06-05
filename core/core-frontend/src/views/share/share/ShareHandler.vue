@@ -519,24 +519,31 @@ const showCheckboxError = (msg, target, className?: string) => {
   className = className || 'checkbox-span-require'
   const fullClassName = `.${className}`
   const e = target.value.$el
+  if (!e) {
+    return
+  }
+  const checkboxBorder = e?.children?.[0]?.children?.[1] as HTMLElement | undefined
+  const messageContainer = e?.children?.[1]?.children?.[0] as HTMLElement | undefined
   if (!msg) {
     e.style = null
-    e.children[0].children[1].style.borderColor = null
-    const child = e.children[1].children[0].querySelector(fullClassName)
+    if (checkboxBorder) checkboxBorder.style.borderColor = null
+    const child = messageContainer?.querySelector(fullClassName)
     if (child) {
-      e.children[1].children[0].removeChild(child)
+      messageContainer?.removeChild(child)
     }
   } else {
     e.style.color = 'red'
-    e.children[0].children[1].style.borderColor = 'red'
-    const child = e.children[1].children[0].querySelector(fullClassName)
+    if (checkboxBorder) checkboxBorder.style.borderColor = 'red'
+    const child = messageContainer?.querySelector(fullClassName)
+    if (!messageContainer) return
     if (!child) {
       const errorDom = document.createElement('span')
       errorDom.className = className
       errorDom.innerText = msg
-      e.children[1].children[0].appendChild(errorDom)
+      messageContainer.appendChild(errorDom)
     } else {
-      child.innerText = msg
+      const errorText = child as HTMLElement
+      errorText.innerText = msg
     }
   }
 }
@@ -548,24 +555,28 @@ const showPageError = (msg, target, className?: string) => {
     return
   }
   const e = domRef.value.input
+  const parentElement = e?.parentElement
+  if (!e || !parentElement) {
+    return
+  }
   if (!msg) {
     e.style = null
     e.style.borderColor = null
-    const child = e.parentElement.querySelector(fullClassName)
+    const child = parentElement.querySelector(fullClassName)
     if (child) {
-      e.parentElement['style'] = null
-      e.parentElement.removeChild(child)
+      parentElement['style'] = null
+      parentElement.removeChild(child)
     }
   } else {
     e.style.color = 'red'
     e.style.borderColor = 'red'
-    e.parentElement['style']['box-shadow'] = '0 0 0 1px red inset'
-    const child = e.parentElement.querySelector(fullClassName)
+    parentElement['style']['box-shadow'] = '0 0 0 1px red inset'
+    const child = parentElement.querySelector(fullClassName)
     if (!child) {
       const errorDom = document.createElement('div')
       errorDom.className = className
       errorDom.innerText = msg
-      e.parentElement.appendChild(errorDom)
+      parentElement.appendChild(errorDom)
     } else {
       child.innerText = msg
     }
