@@ -32,6 +32,7 @@ import {
 } from '@/utils/componentUtils'
 import { formatterItem } from '@/views/chart/components/js/formatter'
 import { checkFilterRemove } from '@/custom-component/v-query/QueryUtils'
+import { normalizeLegacyComponentData } from '@/utils/legacyComponent'
 const { t } = useI18n()
 
 export const dvMainStore = defineStore('dataVisualization', {
@@ -413,7 +414,7 @@ export const dvMainStore = defineStore('dataVisualization', {
     },
 
     setComponentData(componentData = []) {
-      this.componentData = componentData
+      this.componentData = normalizeLegacyComponentData(componentData)
     },
 
     addCopyComponent(component, idMap, canvasViewInfoPre = this.canvasViewInfo) {
