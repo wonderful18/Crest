@@ -496,6 +496,63 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void dynamicDataComponentsShouldGuardEmptyChartRows() throws IOException {
+        List.of(
+                "core/core-frontend/src/custom-component/rich-text/CrestRichTextView.vue",
+                "core/core-frontend/src/custom-component/picture-group/Component.vue"
+        ).forEach(relativePath -> {
+            try {
+                assertFrontendContract(relativePath,
+                        List.of(
+                                "const sourceFields = Array.isArray(chartDetails.data?.sourceFields)",
+                                "const dataFields = Array.isArray(chartDetails.data?.fields) ? chartDetails.data.fields : []",
+                                "const rowData = chartDetails.data?.tableRow?.[0] || {}",
+                                "curViewInfo['curFields'] = res.data.fields || []"
+                        ),
+                        List.of(
+                                "chartDetails.data.sourceFields.forEach",
+                                "chartDetails.data.fields.reduce",
+                                "const rowData = chartDetails.data.tableRow[0]",
+                                "curViewInfo['curFields'] = res.data.fields\n"
+                        ));
+            } catch (IOException e) {
+                throw new AssertionError("Unable to read " + relativePath, e);
+            }
+        });
+        assertFrontendContract("core/core-frontend/src/custom-component/rich-text/CrestRichTextView.vue",
+                List.of("const yAxisItems = Array.isArray(chartDetails.yAxis) ? chartDetails.yAxis : []"),
+                List.of("JSON.parse(JSON.stringify(chartDetails.yAxis))"));
+    }
+
+    @Test
+    void tabComponentsShouldGuardMissingPropValue() throws IOException {
+        List.of(
+                "core/core-frontend/src/custom-component/tabs/Component.vue",
+                "core/core-frontend/src/custom-component/screen/Component.vue"
+        ).forEach(relativePath -> {
+            try {
+                assertFrontendContract(relativePath,
+                        List.of(
+                                "const tabItems = computed(() => (Array.isArray(element.value?.propValue) ? element.value.propValue : []))",
+                                "const ensureTabItems = () => {",
+                                "if (!Array.isArray(element.value.propValue))",
+                                "ensureTabItems().push(newTab)",
+                                "const tabs = tabItems.value",
+                                "element.value.editableTabsValue = tabs[0].name"
+                        ),
+                        List.of(
+                                "v-for=\"tabItem in element.propValue\"",
+                                "v-for=\"(tabItem, index) in element.propValue\"",
+                                "element.value.propValue.length > 0",
+                                "element.value.editableTabsValue = element.value.propValue[0].name"
+                        ));
+            } catch (IOException e) {
+                throw new AssertionError("Unable to read " + relativePath, e);
+            }
+        });
+    }
+
+    @Test
     void dataVisualizationCreateShouldUseCanvasMapping() {
         assertPostMapping(DataVisualizationApi.class, "saveCanvas", "/canvas");
     }
