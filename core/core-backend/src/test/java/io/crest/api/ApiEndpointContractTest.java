@@ -290,6 +290,24 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void tableHeaderGroupConfigShouldGuardMissingMeta() throws IOException {
+        assertFrontendContract("core/core-frontend/src/views/chart/components/editor/editor-style/components/table/TableHeaderGroupConfig.vue",
+                List.of(
+                        "if (startIndex === -1 || !curCol?.children) return",
+                        "if (startIndex === undefined || startIndex === -1 || !curCol?.children) return",
+                        "if (index !== -1)",
+                        "const inputValue = cellMeta?.name || curCell.getMeta().label || cellField",
+                        "if (cellMeta) {",
+                        "curMeta.push({\n                field: cellField"
+                ),
+                List.of(
+                        "curMeta.splice(index, 1)\n          s2.setDataCfg",
+                        "inputValue: cellMeta.name",
+                        "cellMeta.name = res.value\n            s2.setDataCfg"
+                ));
+    }
+
+    @Test
     void visualizationUserLookupShouldUseCurrentUserTable() throws IOException {
         assertFrontendContract("core/core-backend/src/main/resources/mybatis/ExtDataVisualizationMapper.xml",
                 List.of("from iam_user where id"),
