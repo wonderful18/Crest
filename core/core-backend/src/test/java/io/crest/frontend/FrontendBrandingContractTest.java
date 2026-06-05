@@ -26,6 +26,16 @@ class FrontendBrandingContractTest {
                 List.of("crest-custom_font"), List.of("de-custom_font"));
     }
 
+    @Test
+    void embeddedToolbarEventsShouldUseCrestNames() throws IOException {
+        assertFrontendContract("core/core-frontend/src/components/dashboard/DbToolbar.vue",
+                List.of("crest-embedded-host", "crest-dashboard-editor-back"),
+                List.of("dataease-embedded-host", "de-dashboard-editor-back"));
+        assertFrontendContract("core/core-frontend/src/components/data-visualization/DvToolbar.vue",
+                List.of("crest-embedded-host", "crest-dashboard-editor-back"),
+                List.of("dataease-embedded-host", "de-dashboard-editor-back"));
+    }
+
     private void assertFrontendContract(
             String relativePath,
             List<String> requiredTokens,
