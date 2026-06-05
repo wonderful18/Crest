@@ -124,6 +124,30 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void datasetStructurePreviewShouldNotShadowFieldTypeLookup() throws IOException {
+        assertFrontendContract("core/core-frontend/src/views/visualized/data/dataset/index.vue",
+                List.of("cellData: fieldTypeCode", "fieldType[fieldTypeCode]"),
+                List.of("cellData: fieldType })", "fieldType[fieldType]"));
+    }
+
+    @Test
+    void datasetCreateRouteShouldNotSendUndefinedPid() throws IOException {
+        assertFrontendContract("core/core-frontend/src/views/visualized/data/dataset/index.vue",
+                List.of("const query = data?.id ? { pid: data.id } : {}", "query"),
+                List.of("pid: data?.id"));
+    }
+
+    @Test
+    void queryCascadeFiltersShouldNotSpreadScalarValues() throws IOException {
+        assertFrontendContract("core/core-frontend/src/custom-component/v-query/Select.vue",
+                List.of("normalizeCascadeValue(item.selectValue)", "normalizeCascadeValue(item.currentSelectValue)"),
+                List.of("value: [...item.selectValue]", "value: [...item.currentSelectValue]"));
+        assertFrontendContract("core/core-frontend/src/custom-component/v-query/Tree.vue",
+                List.of("normalizeCascadeValue(item.selectValue)", "normalizeCascadeValue(item.currentSelectValue)"),
+                List.of("value: [...item.selectValue]", "value: [...item.currentSelectValue]"));
+    }
+
+    @Test
     void dataVisualizationCreateShouldUseCanvasMapping() {
         assertPostMapping(DataVisualizationApi.class, "saveCanvas", "/canvas");
     }

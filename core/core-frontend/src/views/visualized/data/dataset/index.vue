@@ -225,17 +225,17 @@ const allFieldsColumns = [
     dataKey: 'fieldType',
     title: t('data_set.field_type'),
     width: 250,
-    cellRenderer: ({ cellData: fieldType }) => (
+    cellRenderer: ({ cellData: fieldTypeCode }) => (
       <div style={{ width: '100%', display: 'flex', alignItems: 'center' }}>
         <ElIcon style={{ marginRight: '6px' }}>
           <Icon>
-            {h(iconFieldMap[fieldType[fieldType]], {
-              class: `svg-icon field-icon-${fieldType[fieldType]}`
+            {h(iconFieldMap[fieldType[fieldTypeCode]], {
+              class: `svg-icon field-icon-${fieldType[fieldTypeCode]}`
             })}
           </Icon>
         </ElIcon>
-        {t(`dataset.${fieldType[fieldType]}`) +
-          `${fieldType === 3 ? '(' + t('dataset.float') + ')' : ''}`}
+        {t(`dataset.${fieldType[fieldTypeCode]}`) +
+          `${fieldTypeCode === 3 ? '(' + t('dataset.float') + ')' : ''}`}
       </div>
     )
   },
@@ -500,11 +500,10 @@ const createDataset = (data?: BusiTreeNode) => {
     useEmitt().emitter.emit('changeCurrentComponent', 'DatasetEditor')
     return
   }
+  const query = data?.id ? { pid: data.id } : {}
   router.push({
     path: '/dataset-form',
-    query: {
-      pid: data?.id
-    }
+    query
   })
 }
 
