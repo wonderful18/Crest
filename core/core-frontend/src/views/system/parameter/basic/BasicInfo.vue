@@ -200,7 +200,8 @@ const search = cb => {
         }
       } else if (item.pkey === 'basic.pvp') {
         selectedPvp.value = item.pval || '0'
-        item.pval = pvpOptions.filter(cur => cur.value === selectedPvp.value)[0].label
+        item.pval =
+          pvpOptions.find(cur => cur.value === selectedPvp.value)?.label || pvpOptions[0].label
       } else if (item.pkey === 'basic.defaultLogin') {
         await queryCategoryStatus()
         if (showDefaultLogin.value) {
