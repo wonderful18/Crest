@@ -99,6 +99,9 @@ export const resolvePath = (item: AppRouteRecordRaw) => {
    * parent 路由父项
    */
   const getDefaultPath = (ele, parent?) => {
+    if (!ele) {
+      return
+    }
     // 如果path是个外部链接（不建议），直接返回链接，存在个问题：如果是外部链接点击跳转后当前页内容还是上一个路由内容
     if (isExternal(ele.path)) {
       path = ele.path
@@ -111,14 +114,14 @@ export const resolvePath = (item: AppRouteRecordRaw) => {
       path += '/' + ele.path
     }
     // 如果还有子项，继续递归
-    if (ele.children) {
+    if (ele.children?.length) {
       getDefaultPath(ele.children[0])
     }
   }
 
-  if (item.children) {
+  if (item.children?.length) {
     getDefaultPath(item.children[0], item)
-    return path
+    return path || item.path
   }
 
   return item.path

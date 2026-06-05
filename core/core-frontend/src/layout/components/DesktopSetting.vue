@@ -14,8 +14,8 @@ const navigateBg = computed(() => appearanceStore.getNavigateBg)
 const { push, resolve } = useRouter()
 const redirectUser = () => {
   const sysMenu = resolve('/sys-setting')
-  const kidPath = sysMenu.matched[0].children[0].path
-  push(`${sysMenu.path}/${kidPath}`)
+  const kidPath = sysMenu.matched?.[0]?.children?.[0]?.path
+  push(kidPath ? `${sysMenu.path}/${kidPath}` : sysMenu.path)
 }
 
 const downloadClick = () => {
