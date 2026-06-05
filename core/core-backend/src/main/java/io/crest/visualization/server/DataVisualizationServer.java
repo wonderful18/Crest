@@ -700,7 +700,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     });
                     dsTableFieldsDatasetNameMap.forEach((key, value) -> {
                         if(StringUtils.isNotEmpty(visualizationLinkJumpInfo.getContent())){
-                            visualizationLinkJumpInfo.setContent(visualizationLinkJumpInfo.getContent().replace(key.toString(), value.toString()));
+                            visualizationLinkJumpInfo.setContent(visualizationLinkJumpInfo.getContent().replace(key, value));
                         }
                     });
                     snapshotVisualizationLinkJumpInfoMapper.insert(visualizationLinkJumpInfo);
@@ -1101,11 +1101,12 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 // 数据处理 1.替换viewId 2.加入模板view data数据
                 VisualizationTemplateExtendDataDTO extendDataDTO = new VisualizationTemplateExtendDataDTO(newDvId, newViewId, originViewData);
                 extendDataInfo.put(newViewId, extendDataDTO);
-                templateData = templateData.replace(originViewId, newViewId.toString());
+                templateData = templateData == null ? null : templateData.replace(originViewId, newViewId.toString());
                 viewIdsMap.put(originViewId,Long.toString(newViewId));
-                if (StringUtils.isNotEmpty(appDataStr)) {
+                String currentAppDataStr = appDataStr;
+                if (currentAppDataStr != null && !currentAppDataStr.isEmpty()) {
                     chartView.setTableId(chartView.getSourceTableId());
-                    appDataStr = appDataStr.replace(originViewId, newViewId.toString());
+                    appDataStr = currentAppDataStr.replace(originViewId, newViewId.toString());
                 }
                 canvasViewInfo.put(chartView.getId(), chartView);
                 //插入模板数据 此处预先插入减少数据交互量
