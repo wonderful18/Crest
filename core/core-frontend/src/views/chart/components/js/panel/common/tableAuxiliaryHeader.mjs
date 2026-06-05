@@ -98,6 +98,31 @@ export function getLeafColumnFields(columns) {
   return result
 }
 
+export function isAuxiliaryHeaderField(columns, field) {
+  const targetField = toText(field)
+  if (!targetField) {
+    return false
+  }
+  let matched = false
+  const walk = list => {
+    ;(list || []).forEach(column => {
+      if (matched) {
+        return
+      }
+      const children = typeof column === 'string' ? [] : column?.children || []
+      if (children.length) {
+        walk(children)
+        return
+      }
+      if (getColumnField(column) === targetField) {
+        matched = Boolean(column?.[AUXILIARY_HEADER_FLAG])
+      }
+    })
+  }
+  walk(columns)
+  return matched
+}
+
 function getLeafColumnPaths(columns, fieldNameMap = {}) {
   const result = {}
   const walk = (list, path) => {

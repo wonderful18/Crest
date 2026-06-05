@@ -76,6 +76,7 @@ import {
 import {
   AUXILIARY_HEADER_FLAG,
   buildHeaderCopyRows,
+  isAuxiliaryHeaderField,
   normalizeAuxiliaryHeader
 } from './tableAuxiliaryHeader.mjs'
 
@@ -2080,6 +2081,15 @@ function getVisibleTableHeader(cellMeta, fieldMeta, s2Instance: SpreadSheet) {
   return getCellCopyHeader(cellMeta, fieldMeta)
 }
 
+function getVisibleFieldByColIndex(s2Instance: SpreadSheet, colIndex: number, sampleRowIndex = 0) {
+  const copyConfig = getTableCopyConfig(s2Instance)
+  if (copyConfig.showSeriesNumber && colIndex === 0) {
+    return SERIES_NUMBER_FIELD
+  }
+  const cellMeta = s2Instance.facet?.getCellMeta?.(sampleRowIndex, colIndex)
+  return cellMeta?.valueField ?? cellMeta?.field ?? cellMeta?.fieldValue ?? ''
+}
+
 function getHeaderCellCopyText(cellMeta, fieldMeta, s2Instance: SpreadSheet) {
   const content = normalizeTableCellText(
     cellMeta?.value ?? cellMeta?.label ?? cellMeta?.fieldValue ?? ''
@@ -2180,6 +2190,62 @@ function buildAuxiliaryHeaderSelectionCopy(s2Instance: SpreadSheet, fieldMeta) {
   return { rows: [], headerRows }
 }
 
+function getAuxiliaryHeaderSelectionText(s2Instance: SpreadSheet, fieldMeta, cellMeta) {
+  if (!Number.isInteger(cellMeta?.colIndex)) {
+    return ''
+  }
+  if (Number.isInteger(cellMeta?.rowIndex) || cellMeta?.children?.length) {
+    return ''
+  }
+  if (isAuxiliaryHeaderCellMeta(cellMeta)) {
+    return getHeaderCellCopyText(cellMeta, fieldMeta, s2Instance)
+  }
+
+  const copyConfig = getTableCopyConfig(s2Instance)
+  const field = getVisibleFieldByColIndex(s2Instance, cellMeta.colIndex)
+  if (
+    !field ||
+    field === SERIES_NUMBER_FIELD ||
+    !isAuxiliaryHeaderField(copyConfig.headerColumns || [], field)
+  ) {
+    return ''
+  }
+
+  const headerRows = getVisibleTableHeaderRows(s2Instance, fieldMeta, [cellMeta.colIndex], 0)
+  const auxiliaryText = headerRows[headerRows.length - 1]?.[0] ?? ''
+  if (!auxiliaryText) {
+    return ''
+  }
+  const selectedText = getHeaderCellCopyText(cellMeta, fieldMeta, s2Instance)
+  if (selectedText && selectedText !== auxiliaryText && Number.isInteger(cellMeta?.level)) {
+    return cellMeta.level === headerRows.length - 1 ? auxiliaryText : ''
+  }
+  return auxiliaryText
+}
+
+function buildAuxiliaryHeaderLooseSelectionCopy(s2Instance: SpreadSheet, fieldMeta) {
+  const selectState = s2Instance.interaction.getState()
+  if (selectState?.stateName === InteractionStateName.ALL_SELECTED) {
+    return null
+  }
+  const cells = selectState?.cells || []
+  if (!cells.length) {
+    return null
+  }
+  const metas = cells.map(getCellMeta)
+  const items = metas
+    .map(meta => ({
+      colIndex: meta?.colIndex,
+      text: getAuxiliaryHeaderSelectionText(s2Instance, fieldMeta, meta)
+    }))
+    .filter(item => Number.isInteger(item.colIndex) && item.text !== '')
+  if (items.length !== metas.length) {
+    return null
+  }
+  const headerRows = [[...items].sort((a, b) => a.colIndex - b.colIndex).map(item => item.text)]
+  return { rows: [], headerRows }
+}
+
 function copyAuxiliaryHeaderCell(s2Instance: SpreadSheet, cellMeta, fieldMeta) {
   const content = getHeaderCellCopyText(cellMeta, fieldMeta, s2Instance)
   if (content === '') {
@@ -2193,6 +2259,11 @@ function copyVisibleSelection(s2Instance: SpreadSheet, fieldMeta) {
   const auxiliaryHeaderCopy = buildAuxiliaryHeaderSelectionCopy(s2Instance, fieldMeta)
   if (auxiliaryHeaderCopy) {
     copyRowsWithFormat(auxiliaryHeaderCopy.rows, auxiliaryHeaderCopy.headerRows)
+    return
+  }
+  const auxiliaryHeaderLooseCopy = buildAuxiliaryHeaderLooseSelectionCopy(s2Instance, fieldMeta)
+  if (auxiliaryHeaderLooseCopy) {
+    copyRowsWithFormat(auxiliaryHeaderLooseCopy.rows, auxiliaryHeaderLooseCopy.headerRows)
     return
   }
   const { rowIndexes, colIndexes } = getCopySelectionIndexes(s2Instance)
