@@ -63,6 +63,19 @@ const loadOrgOptions = async () => {
   orgOptions.value = res.data || []
 }
 
+const firstOrgId = (nodes: any[]): any => {
+  for (const node of nodes || []) {
+    if (node?.id !== undefined && node?.id !== null && node?.id !== '') {
+      return node.id
+    }
+    const childId = firstOrgId(node?.children || [])
+    if (childId !== undefined && childId !== null && childId !== '') {
+      return childId
+    }
+  }
+  return null
+}
+
 const onOrgChange = async node => {
   selectedOrgName.value = node?.name || '全部组织'
   pager.currentPage = 1
@@ -79,7 +92,7 @@ const onFormOrgChange = async () => {
 const resetForm = () => {
   Object.assign(form, {
     id: null,
-    oid: selectedOrgId.value,
+    oid: selectedOrgId.value || firstOrgId(orgOptions.value),
     account: '',
     name: '',
     email: '',
@@ -90,9 +103,12 @@ const resetForm = () => {
   })
 }
 
-const openCreate = () => {
+const openCreate = async () => {
+  if (!orgOptions.value.length) {
+    await loadOrgOptions()
+  }
   resetForm()
-  onFormOrgChange()
+  await onFormOrgChange()
   isEdit.value = false
   dialogVisible.value = true
 }
