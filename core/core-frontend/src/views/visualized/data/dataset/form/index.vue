@@ -848,7 +848,7 @@ const addComplete = () => {
     columns.value = []
     tableData.value = []
   }
-  cancelMap['/datasetData/previewData']?.()
+  cancelMap['/dataset-data/preview-data']?.()
   datasetPreviewLoading.value = false
   reGetName()
 }
