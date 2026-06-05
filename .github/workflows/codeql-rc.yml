@@ -12,7 +12,7 @@ permissions:
   security-events: write
 
 concurrency:
-  group: codeql-rc-${{ github.ref }}-${{ matrix.language }}
+  group: codeql-rc-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
