@@ -477,6 +477,25 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void chartEditorShouldGuardUnknownChartTypeConfig() throws IOException {
+        assertFrontendContract("core/core-frontend/src/views/chart/components/editor/index.vue",
+                List.of(
+                        "const currentChartTypeOption = computed(() => state.chartTypeOptions[0])",
+                        "const viewConfig = getViewConfig(newVal[0])",
+                        "state.chartTypeOptions.splice(0, state.chartTypeOptions.length, ...(viewConfig ? [viewConfig] : []))",
+                        "if (!viewConf) return",
+                        "v-if=\"currentChartTypeOption?.isPlugin\"",
+                        "v-else-if=\"currentChartTypeOption?.icon\"",
+                        "iconChartMap[currentChartTypeOption.icon]"
+                ),
+                List.of(
+                        "state.chartTypeOptions.splice(0, state.chartTypeOptions.length, getViewConfig(newVal[0]))",
+                        "state.chartTypeOptions[0].icon",
+                        "const viewConf = getViewConfig(type)\n  if (viewConf.isPlugin)"
+                ));
+    }
+
+    @Test
     void dataVisualizationCreateShouldUseCanvasMapping() {
         assertPostMapping(DataVisualizationApi.class, "saveCanvas", "/canvas");
     }
