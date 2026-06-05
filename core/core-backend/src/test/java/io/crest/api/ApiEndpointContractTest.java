@@ -342,6 +342,32 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void visualizationDialogsShouldGuardEmptyPanelTreeAndColorCases() throws IOException {
+        assertFrontendContract("core/core-frontend/src/views/chart/components/editor/editor-style/components/ColorSelector.vue",
+                List.of(
+                        "const getDefaultColorCase = () =>",
+                        "const selectedColorCase =",
+                        "state.customColor = state.colorForm.colors[0] || null"
+                ),
+                List.of("items[0].colors"));
+        List.of(
+                "core/core-frontend/src/components/visualization/LinkJumpSet.vue",
+                "core/core-frontend/src/custom-component/screen/SelectScreenDialog.vue"
+        ).forEach(relativePath -> {
+            try {
+                assertFrontendContract(relativePath,
+                        List.of(
+                                "const panelList = Array.isArray(rsp) ? rsp : []",
+                                "state.panelList = panelList[0].children || []"
+                        ),
+                        List.of("state.panelList = rsp[0].children"));
+            } catch (IOException e) {
+                throw new AssertionError("Unable to read " + relativePath, e);
+            }
+        });
+    }
+
+    @Test
     void visualizationUserLookupShouldUseCurrentUserTable() throws IOException {
         assertFrontendContract("core/core-backend/src/main/resources/mybatis/ExtDataVisualizationMapper.xml",
                 List.of("from iam_user where id"),

@@ -824,10 +824,11 @@ const init = viewItem => {
   const request = { busiFlag: 'dashboard-dataV' } as BusiTreeRequest
   // 获取可关联的仪表板
   queryTreeApi(request).then((rsp: any) => {
-    if (rsp && rsp[0]?.id === '0') {
-      state.panelList = rsp[0].children
+    const panelList = Array.isArray(rsp) ? rsp : []
+    if (panelList[0]?.id === '0') {
+      state.panelList = panelList[0].children || []
     } else {
-      state.panelList = rsp
+      state.panelList = panelList
     }
     state.panelList = filterEmptyFolderTree(state.panelList)
     const curSortType = wsCache.get(`TreeSort-${dvInfo.value.type}`) || 'time_asc'

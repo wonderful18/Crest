@@ -1,11 +1,7 @@
 <script lang="tsx" setup>
 import { reactive, watch } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
-import {
-  COLOR_PANEL,
-  DEFAULT_COLOR_CASE,
-  COLOR_CASES
-} from '@/views/chart/components/editor/util/chart'
+import { COLOR_PANEL, COLOR_CASES } from '@/views/chart/components/editor/util/chart'
 
 const { t } = useI18n()
 
@@ -24,8 +20,17 @@ const colorCases = COLOR_CASES
 
 const predefineColors = COLOR_PANEL
 
+const getDefaultColorCase = () => {
+  const defaultCase = colorCases.find(ele => ele.value === 'default') || colorCases[0]
+  return {
+    value: defaultCase?.value || 'default',
+    colors: [...(defaultCase?.colors || [])],
+    alpha: 100
+  }
+}
+
 const state = reactive({
-  colorForm: JSON.parse(JSON.stringify(DEFAULT_COLOR_CASE)),
+  colorForm: getDefaultColorCase(),
   customColor: null,
   colorIndex: 0
 })
@@ -40,12 +45,12 @@ watch(
 )
 
 const changeColorOption = (_prop?: string) => {
-  const items = colorCases.filter(ele => {
-    return ele.value === state.colorForm.value
-  })
-  state.colorForm.colors = [...items[0].colors]
+  const selectedColorCase =
+    colorCases.find(ele => ele.value === state.colorForm.value) || colorCases[0]
+  state.colorForm.value = selectedColorCase?.value || state.colorForm.value
+  state.colorForm.colors = [...(selectedColorCase?.colors || [])]
 
-  state.customColor = state.colorForm.colors[0]
+  state.customColor = state.colorForm.colors[0] || null
   state.colorIndex = 0
 
   changeColorCase()
@@ -78,9 +83,15 @@ const init = () => {
       customAttr = JSON.parse(chart.customAttr)
     }
     if (customAttr.color) {
-      state.colorForm = customAttr.color
-      if (!state.customColor) {
-        state.customColor = state.colorForm.colors[0]
+      const defaultColorCase = getDefaultColorCase()
+      const colors = Array.isArray(customAttr.color.colors) ? customAttr.color.colors : []
+      state.colorForm = {
+        ...defaultColorCase,
+        ...customAttr.color,
+        colors: colors.length ? colors : defaultColorCase.colors
+      }
+      if (!state.customColor || !state.colorForm.colors.includes(state.customColor)) {
+        state.customColor = state.colorForm.colors[0] || null
         state.colorIndex = 0
       }
     }
