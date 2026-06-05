@@ -2044,6 +2044,12 @@ export default {
     show_hover_style: 'Show mouse hover style',
     table_header_group: 'Header grouping',
     table_header_group_config: 'Header grouping config',
+    table_header_description: 'Header description',
+    table_header_description_config: 'Description content',
+    table_header_description_height: 'Description row height',
+    table_header_description_tip:
+      'Enter descriptions for visible fields. Hidden fields and order changes are matched by field.',
+    table_header_description_placeholder: 'Enter description',
     cancel_group: 'Cancel grouping',
     cancel_all_group: 'Cancel all grouping',
     group_name: 'Group name',

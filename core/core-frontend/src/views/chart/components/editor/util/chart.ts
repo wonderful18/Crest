@@ -512,6 +512,15 @@ export const DEFAULT_TABLE_HEADER: ChartTableHeaderAttr = {
     columns: [],
     meta: []
   },
+  auxiliaryHeader: {
+    enabled: false,
+    rowHeight: 120,
+    backgroundColor: '#FFFFFF',
+    fontColor: '#1F2329',
+    fontSize: 14,
+    align: 'center',
+    descriptions: []
+  },
   rowHeaderFreeze: true,
   alignConfig: []
 }

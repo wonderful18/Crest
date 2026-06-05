@@ -22,6 +22,7 @@ import {
   getPolygonPoints,
   getTooltipDefaultOptions,
   InteractionStateName,
+  type LayoutResult,
   MergedCell,
   MergedCellInfo,
   type Meta,
@@ -44,6 +45,7 @@ import {
   updateShapeAttr,
   ViewMeta
 } from '@antv/s2'
+import { renderRect } from '@antv/s2/lib/utils/g-renders'
 import {
   cloneDeep,
   filter,
@@ -71,6 +73,11 @@ import {
   getTableCellCopyText,
   normalizeTableCellText
 } from './tableText.mjs'
+import {
+  AUXILIARY_HEADER_FLAG,
+  buildHeaderCopyRows,
+  normalizeAuxiliaryHeader
+} from './tableAuxiliaryHeader.mjs'
 
 const { t: i18nt } = useI18n()
 
@@ -374,6 +381,27 @@ export function getCustomTheme(chart: Chart): S2Theme {
           }
         }
         merge(theme, tmpTheme)
+      }
+      const auxiliaryHeader = normalizeAuxiliaryHeader(tableHeader.auxiliaryHeader)
+      if (auxiliaryHeader.enabled) {
+        let backgroundColor = auxiliaryHeader.backgroundColor
+        if (!isAlphaColor(backgroundColor)) {
+          backgroundColor = hexColorToRGBA(backgroundColor, basicStyle.alpha)
+        }
+        let fontColor = auxiliaryHeader.fontColor
+        if (!isAlphaColor(fontColor)) {
+          fontColor = hexColorToRGBA(fontColor, basicStyle.alpha)
+        }
+        merge(theme, {
+          auxiliaryHeaderStyle: {
+            rowHeight: auxiliaryHeader.rowHeight,
+            backgroundColor,
+            backgroundColorOpacity: 1,
+            fontColor,
+            fontSize: auxiliaryHeader.fontSize,
+            align: auxiliaryHeader.align
+          }
+        } as any)
       }
     }
     // cell
@@ -1965,6 +1993,10 @@ function getVisibleColNodes(s2Instance: SpreadSheet) {
   return s2Instance.facet?.getColLeafNodes?.() || []
 }
 
+function isAuxiliaryHeaderCellMeta(cellMeta) {
+  return Boolean(cellMeta?.extra?.[AUXILIARY_HEADER_FLAG] || cellMeta?.[AUXILIARY_HEADER_FLAG])
+}
+
 function getCopySelectionIndexes(s2Instance: SpreadSheet) {
   const selectState = s2Instance.interaction.getState()
   const cells = selectState?.cells || []
@@ -2048,6 +2080,49 @@ function getVisibleTableHeader(cellMeta, fieldMeta, s2Instance: SpreadSheet) {
   return getCellCopyHeader(cellMeta, fieldMeta)
 }
 
+function getHeaderCellCopyText(cellMeta, fieldMeta, s2Instance: SpreadSheet) {
+  const content = normalizeTableCellText(
+    cellMeta?.value ?? cellMeta?.label ?? cellMeta?.fieldValue ?? ''
+  )
+  if (content) {
+    return content
+  }
+  return getVisibleTableHeader(cellMeta, fieldMeta, s2Instance)
+}
+
+function getVisibleTableHeaderRows(
+  s2Instance: SpreadSheet,
+  fieldMeta,
+  colIndexes: number[],
+  sampleRowIndex = 0
+) {
+  const copyConfig = getTableCopyConfig(s2Instance)
+  if (copyConfig.showTableHeader === false) {
+    return []
+  }
+  const fieldMap = {
+    ...getFieldMap(fieldMeta),
+    [SERIES_NUMBER_FIELD]: copyConfig.indexLabel || i18nt('relation.index')
+  }
+  const fields = colIndexes.map(colIndex => {
+    if (copyConfig.showSeriesNumber && colIndex === 0) {
+      return SERIES_NUMBER_FIELD
+    }
+    const cellMeta = s2Instance.facet?.getCellMeta?.(sampleRowIndex, colIndex)
+    return cellMeta?.valueField ?? cellMeta?.field ?? cellMeta?.fieldValue ?? ''
+  })
+  const headerRows = buildHeaderCopyRows(copyConfig.headerColumns || [], fields, fieldMap)
+  if (headerRows.length) {
+    return headerRows
+  }
+  return [
+    colIndexes.map(colIndex => {
+      const cellMeta = s2Instance.facet?.getCellMeta?.(sampleRowIndex, colIndex)
+      return getVisibleTableHeader(cellMeta, fieldMeta, s2Instance)
+    })
+  ]
+}
+
 function getVisibleTableValue(rowIndex: number, colIndex: number, fieldMeta, s2Instance: SpreadSheet) {
   const copyConfig = getTableCopyConfig(s2Instance)
   if (copyConfig.showSeriesNumber && colIndex === 0) {
@@ -2067,28 +2142,59 @@ function getVisibleTableValue(rowIndex: number, colIndex: number, fieldMeta, s2I
 }
 
 function buildVisibleTableCopy(s2Instance: SpreadSheet, fieldMeta, rowIndexes: number[], colIndexes: number[]) {
-  if (!rowIndexes.length || !colIndexes.length) {
+  if (!colIndexes.length) {
     return null
   }
 
-  const copyConfig = getTableCopyConfig(s2Instance)
-  const headerRows = copyConfig.showTableHeader === false
-    ? []
-    : [
-        colIndexes.map(colIndex => {
-          const cellMeta = s2Instance.facet?.getCellMeta?.(rowIndexes[0], colIndex)
-          return getVisibleTableHeader(cellMeta, fieldMeta, s2Instance)
-        })
-      ]
+  const headerRows = getVisibleTableHeaderRows(s2Instance, fieldMeta, colIndexes, rowIndexes[0] ?? 0)
 
   const rows = rowIndexes.map(rowIndex =>
     colIndexes.map(colIndex => getVisibleTableValue(rowIndex, colIndex, fieldMeta, s2Instance))
   )
 
+  if (!rows.length && !headerRows.length) {
+    return null
+  }
+
   return { rows, headerRows }
 }
 
+function buildAuxiliaryHeaderSelectionCopy(s2Instance: SpreadSheet, fieldMeta) {
+  const selectState = s2Instance.interaction.getState()
+  if (selectState?.stateName === InteractionStateName.ALL_SELECTED) {
+    return null
+  }
+  const cells = selectState?.cells || []
+  if (!cells.length) {
+    return null
+  }
+  const metas = cells.map(getCellMeta)
+  if (!metas.every(meta => isAuxiliaryHeaderCellMeta(meta) && Number.isInteger(meta?.colIndex))) {
+    return null
+  }
+  const headerRows = [
+    [...metas]
+      .sort((a, b) => a.colIndex - b.colIndex)
+      .map(meta => getHeaderCellCopyText(meta, fieldMeta, s2Instance))
+  ]
+  return { rows: [], headerRows }
+}
+
+function copyAuxiliaryHeaderCell(s2Instance: SpreadSheet, cellMeta, fieldMeta) {
+  const content = getHeaderCellCopyText(cellMeta, fieldMeta, s2Instance)
+  if (content === '') {
+    return false
+  }
+  copyRowsWithFormat([], [[content]])
+  return true
+}
+
 function copyVisibleSelection(s2Instance: SpreadSheet, fieldMeta) {
+  const auxiliaryHeaderCopy = buildAuxiliaryHeaderSelectionCopy(s2Instance, fieldMeta)
+  if (auxiliaryHeaderCopy) {
+    copyRowsWithFormat(auxiliaryHeaderCopy.rows, auxiliaryHeaderCopy.headerRows)
+    return
+  }
   const { rowIndexes, colIndexes } = getCopySelectionIndexes(s2Instance)
   const copyData = buildVisibleTableCopy(s2Instance, fieldMeta, rowIndexes, colIndexes)
   if (!copyData) {
@@ -2108,8 +2214,21 @@ export function copyContent(s2Instance: SpreadSheet, event, fieldMeta) {
   }
   const cellMeta = cell.getMeta()
   const selectState = s2Instance.interaction.getState()
+  const targetIsAuxiliaryHeader = isAuxiliaryHeaderCellMeta(cellMeta)
   // 多选
   if (hasCopySelection(s2Instance)) {
+    if (targetIsAuxiliaryHeader) {
+      const auxiliaryHeaderCopy = buildAuxiliaryHeaderSelectionCopy(s2Instance, fieldMeta)
+      if (auxiliaryHeaderCopy && isCellInSelection(cellMeta, selectState?.cells)) {
+        copyRowsWithFormat(auxiliaryHeaderCopy.rows, auxiliaryHeaderCopy.headerRows)
+        s2Instance.interaction.clearState()
+        return
+      }
+      if (copyAuxiliaryHeaderCell(s2Instance, cellMeta, fieldMeta)) {
+        s2Instance.interaction.clearState()
+        return
+      }
+    }
     const { cells } = selectState
     if (selectState.stateName !== InteractionStateName.ALL_SELECTED && !cells?.length) {
       return
@@ -2118,6 +2237,10 @@ export function copyContent(s2Instance: SpreadSheet, event, fieldMeta) {
       copyVisibleSelection(s2Instance, fieldMeta)
     }
     s2Instance.interaction.clearState()
+    return
+  }
+  if (targetIsAuxiliaryHeader) {
+    copyAuxiliaryHeaderCell(s2Instance, cellMeta, fieldMeta)
     return
   }
   // 单元格
@@ -3187,8 +3310,30 @@ export class CustomTableColCell extends TableColCell {
     return normalizeFormattedResult(super.getFormattedFieldValue())
   }
 
+  private isAuxiliaryHeaderCell(): boolean {
+    return Boolean(this.meta?.extra?.[AUXILIARY_HEADER_FLAG] || this.meta?.[AUXILIARY_HEADER_FLAG])
+  }
+
+  private getAuxiliaryHeaderStyle(): any {
+    return (this.theme as any).auxiliaryHeaderStyle || {}
+  }
+
   protected getTextStyle(): any {
     const textStyle = super.getTextStyle() as any
+    if (this.isAuxiliaryHeaderCell()) {
+      const auxiliaryHeaderStyle = this.getAuxiliaryHeaderStyle()
+      const fontSize = auxiliaryHeaderStyle.fontSize || textStyle.fontSize
+      const rowHeight = auxiliaryHeaderStyle.rowHeight || this.meta.height
+      textStyle.fill = auxiliaryHeaderStyle.fontColor || textStyle.fill
+      textStyle.fontSize = fontSize
+      textStyle.fontWeight = 'normal'
+      textStyle.fontStyle = 'normal'
+      textStyle.textAlign = auxiliaryHeaderStyle.align || 'center'
+      textStyle.textBaseline = 'middle'
+      textStyle.wordWrap = true
+      textStyle.maxLines = Math.max(1, Math.floor(rowHeight / (fontSize * 1.35)))
+      return textStyle
+    }
     const colCellAlignConfig = this.theme.colCellAlignConfig
     if (colCellAlignConfig) {
       // 分组单元格居中
@@ -3207,12 +3352,27 @@ export class CustomTableColCell extends TableColCell {
     return textStyle
   }
 
+  protected drawBackgroundShape() {
+    if (!this.isAuxiliaryHeaderCell()) {
+      super.drawBackgroundShape()
+      return
+    }
+    const auxiliaryHeaderStyle = this.getAuxiliaryHeaderStyle()
+    this.backgroundShape = renderRect(this, {
+      ...this.getBBoxByType(),
+      fill: auxiliaryHeaderStyle.backgroundColor || this.theme.colCell.cell.backgroundColor,
+      fillOpacity: auxiliaryHeaderStyle.backgroundColorOpacity ?? 1
+    })
+  }
+
   /**
    * 重写是为了表头文本内容的换行
    * @protected
    */
   drawTextShape() {
-    if (this.meta.autoWrap) {
+    if (this.isAuxiliaryHeaderCell()) {
+      super.drawTextShape()
+    } else if (this.meta.autoWrap) {
       drawTextShape(this, true)
     } else {
       super.drawTextShape()
@@ -3700,6 +3860,47 @@ export function summaryRowStyle(newChart, newData, tableCell, tableHeader, showS
       newChart.options.height =
         totalHeight < newChart.container.cfg.height - 8 ? totalHeight + 8 : totalHeight
     }
+  })
+}
+
+const isAuxiliaryHeaderNode = node => {
+  return Boolean(node?.extra?.[AUXILIARY_HEADER_FLAG] || node?.[AUXILIARY_HEADER_FLAG])
+}
+
+export function configAuxiliaryHeaderLayout(newChart, tableHeader) {
+  const auxiliaryHeader = normalizeAuxiliaryHeader(tableHeader?.auxiliaryHeader)
+  if (!auxiliaryHeader.enabled || tableHeader?.showTableHeader === false) {
+    return
+  }
+  newChart.on(S2Event.LAYOUT_AFTER_HEADER_LAYOUT, (ev: LayoutResult) => {
+    const colNodes = ev.colNodes || []
+    if (!colNodes.some(isAuxiliaryHeaderNode)) {
+      return
+    }
+    const baseHeight = tableHeader.tableTitleHeight || newChart.options.style?.colCfg?.height || 36
+    const levelHeights = {}
+    for (let i = 0; i <= ev.colsHierarchy.maxLevel; i++) {
+      levelHeights[i] = baseHeight
+    }
+    colNodes.forEach(node => {
+      if (isAuxiliaryHeaderNode(node)) {
+        levelHeights[node.level] = auxiliaryHeader.rowHeight
+      }
+    })
+    const getY = level => {
+      let y = 0
+      for (let i = 0; i < level; i++) {
+        y += levelHeights[i] || baseHeight
+      }
+      return y
+    }
+    colNodes.forEach(node => {
+      node.height = levelHeights[node.level] || baseHeight
+      node.y = getY(node.level)
+    })
+    ev.colsHierarchy.height = Object.keys(levelHeights).reduce((pre, key) => {
+      return pre + (levelHeights[key] || baseHeight)
+    }, 0)
   })
 }
 
