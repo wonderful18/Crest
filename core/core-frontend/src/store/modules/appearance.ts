@@ -169,10 +169,10 @@ export const useAppearanceStore = defineStore('appearanceStore', {
         if (!currentFont.fileTransName) {
           return
         }
-        let fontStyleElement = document.querySelector(`[id="de-custom_font${name}"]`)
+        let fontStyleElement = document.querySelector(`[id="crest-custom_font${name}"]`)
         if (!fontStyleElement) {
           fontStyleElement = document.createElement('style')
-          fontStyleElement.setAttribute('id', `de-custom_font${name}`)
+          fontStyleElement.setAttribute('id', `crest-custom_font${name}`)
           document.querySelector('head').appendChild(fontStyleElement)
         }
         fontStyleElement.innerHTML = `@font-face {
@@ -226,10 +226,10 @@ export const useAppearanceStore = defineStore('appearanceStore', {
           font?.fileTransName
         )
         function setDefaultFont(url, name, fileTransName) {
-          let fontStyleElement = document.querySelector('#de-custom_font')
+          let fontStyleElement = document.querySelector('#crest-custom_font')
           if (!fontStyleElement) {
             fontStyleElement = document.createElement('style')
-            fontStyleElement.setAttribute('id', 'de-custom_font')
+            fontStyleElement.setAttribute('id', 'crest-custom_font')
             document.querySelector('head').appendChild(fontStyleElement)
           }
           if (!name) {
