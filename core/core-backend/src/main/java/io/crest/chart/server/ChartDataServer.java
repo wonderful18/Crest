@@ -238,6 +238,7 @@ public class ChartDataServer implements ChartDataApi {
     @CrestLinkPermit("#p0.dvId")
     @Override
     public void innerExportDetails(ChartExcelRequest request, HttpServletResponse response) throws Exception {
+        ensureExportRequest(request);
         HttpServletRequest httpServletRequest = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         String linkToken = httpServletRequest.getHeader(AuthConstant.LINK_TOKEN_KEY);
         LogUtil.info(request.getViewInfo().getId() + " " + StringUtils.isNotEmpty(linkToken) + " " + request.isEmbeddedExport());
@@ -375,6 +376,21 @@ public class ChartDataServer implements ChartDataApi {
     @Override
     public void innerExportDataSetDetails(ChartExcelRequest request, HttpServletResponse response) throws Exception {
         this.innerExportDetails(request, response);
+    }
+
+    private void ensureExportRequest(ChartExcelRequest request) {
+        if (request == null || request.getViewInfo() == null) {
+            CrestException.throwException("导出图表不存在或已经被删除");
+        }
+        if (request.getViewInfo().getChartExtRequest() == null) {
+            ChartExtRequest chartExtRequest = new ChartExtRequest();
+            chartExtRequest.setFilter(new ArrayList<>());
+            chartExtRequest.setLinkageFilters(new ArrayList<>());
+            chartExtRequest.setOuterParamsFilters(new ArrayList<>());
+            chartExtRequest.setWebParamsFilters(new ArrayList<>());
+            chartExtRequest.setDrill(new ArrayList<>());
+            request.getViewInfo().setChartExtRequest(chartExtRequest);
+        }
     }
 
     public static void setExcelData(Sheet detailsSheet, CellStyle cellStyle, Object[] header, List<Object[]> details, ViewDetailField[] detailFields, Integer[] excelTypes, ChartViewDTO viewInfo, Workbook wb) {
