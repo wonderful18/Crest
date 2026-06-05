@@ -243,9 +243,13 @@ public abstract class Provider {
                     continue;
                 }
                 if (index + 4 < sql.length() && isHexSequence(sql, index + 1)) {
-                    literal.append((char) Integer.parseInt(sql.substring(index + 1, index + 5), 16));
-                    index += 5;
-                    continue;
+                    try {
+                        literal.append((char) Integer.parseInt(sql.substring(index + 1, index + 5), 16));
+                        index += 5;
+                        continue;
+                    } catch (NumberFormatException ignored) {
+                        // Fall through and keep the original escape text when the sequence is malformed.
+                    }
                 }
             }
             literal.append(current);

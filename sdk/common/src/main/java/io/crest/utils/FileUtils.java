@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -206,7 +207,8 @@ public class FileUtils {
 
     @SuppressWarnings("java/path-injection")
     public static String readJson(File file) {
-        try (Reader reader = new InputStreamReader(new FileInputStream(file.getCanonicalFile()), "utf-8")) {
+        try (InputStream inputStream = new FileInputStream(file.getCanonicalFile());
+             Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
             int ch;
             StringBuilder sb = new StringBuilder();
             while ((ch = reader.read()) != -1) {

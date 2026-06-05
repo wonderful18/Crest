@@ -199,13 +199,15 @@ public class ExcelUtils {
                 if (sheet.getDisplayTableName().equalsIgnoreCase(datasourceRequest.getTable())) {
                     List<TableField> tableFields = sheet.getFields();
                     String suffix = fileNames.get("fileName").substring(fileNames.get("fileName").lastIndexOf(".") + 1);
-                    InputStream inputStream = new FileInputStream(excelTempFile(fileNames.get("tranName")));
-                    if (Strings.CI.equals(suffix, "csv")) {
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-                        reader.readLine();//去掉表头
-                        dataList = csvData(reader, false, tableFields.size());
-                    } else {
-                        dataList = fetchExcelDataList(sheet.getTableName(), inputStream);
+                    try (InputStream inputStream = new FileInputStream(excelTempFile(fileNames.get("tranName")))) {
+                        if (Strings.CI.equals(suffix, "csv")) {
+                            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                                reader.readLine();//去掉表头
+                                dataList = csvData(reader, false, tableFields.size());
+                            }
+                        } else {
+                            dataList = fetchExcelDataList(sheet.getTableName(), inputStream);
+                        }
                     }
                 }
             }
@@ -219,13 +221,15 @@ public class ExcelUtils {
                     if (rootNode.get(i).get("displayTableName").asText().equalsIgnoreCase(datasourceRequest.getTable())) {
                         List<TableField> tableFields = JsonUtil.parseList(rootNode.get(i).get("fields").toString(), TableFieldListTypeReference);
                         String suffix = rootNode.get(i).get("path").asText().substring(rootNode.get(i).get("path").asText().lastIndexOf(".") + 1);
-                        InputStream inputStream = new FileInputStream(rootNode.get(i).get("path").asText());
-                        if (Strings.CI.equals(suffix, "csv")) {
-                            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-                            reader.readLine();//去掉表头
-                            dataList = csvData(reader, false, tableFields.size());
-                        } else {
-                            dataList = fetchExcelDataList(rootNode.get(i).get("tableName").asText(), inputStream);
+                        try (InputStream inputStream = new FileInputStream(rootNode.get(i).get("path").asText())) {
+                            if (Strings.CI.equals(suffix, "csv")) {
+                                try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                                    reader.readLine();//去掉表头
+                                    dataList = csvData(reader, false, tableFields.size());
+                                }
+                            } else {
+                                dataList = fetchExcelDataList(rootNode.get(i).get("tableName").asText(), inputStream);
+                            }
                         }
                     }
                 }

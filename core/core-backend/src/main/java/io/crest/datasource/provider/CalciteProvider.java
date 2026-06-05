@@ -462,26 +462,25 @@ public class CalciteProvider extends Provider {
     public List<TableField> fetchTableField(DatasourceRequest datasourceRequest) throws CrestException {
         if (datasourceRequest.getIsCross() != null && datasourceRequest.getIsCross()) {
             List<TableField> datasetTableFields = new ArrayList<>();
-            PreparedStatement statement = null;
-            ResultSet resultSet = null;
-            Connection connection = take();
-            try {
+            try (Connection connection = take()) {
                 CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
-                statement = calciteConnection.prepareStatement(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()));
-                bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
-                resultSet = statement.executeQuery();
-                ResultSetMetaData metaData = resultSet.getMetaData();
-                int columnCount = metaData.getColumnCount();
-                for (int i = 1; i <= columnCount; i++) {
-                    TableField tableField = new TableField();
-                    tableField.setOriginName(metaData.getColumnLabel(i));
-                    tableField.setType(metaData.getColumnTypeName(i));
-                    tableField.setPrecision(metaData.getPrecision(i));
-                    int fieldType = FieldUtils.resolveFieldType(tableField.getType());
-                    tableField.setExtractedFieldType(fieldType);
-                    tableField.setFieldType(fieldType);
-                    tableField.setScale(metaData.getScale(i));
-                    datasetTableFields.add(tableField);
+                try (PreparedStatement statement = calciteConnection.prepareStatement(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()))) {
+                    bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
+                    try (ResultSet resultSet = statement.executeQuery()) {
+                        ResultSetMetaData metaData = resultSet.getMetaData();
+                        int columnCount = metaData.getColumnCount();
+                        for (int i = 1; i <= columnCount; i++) {
+                            TableField tableField = new TableField();
+                            tableField.setOriginName(metaData.getColumnLabel(i));
+                            tableField.setType(metaData.getColumnTypeName(i));
+                            tableField.setPrecision(metaData.getPrecision(i));
+                            int fieldType = FieldUtils.resolveFieldType(tableField.getType());
+                            tableField.setExtractedFieldType(fieldType);
+                            tableField.setFieldType(fieldType);
+                            tableField.setScale(metaData.getScale(i));
+                            datasetTableFields.add(tableField);
+                        }
+                    }
                 }
             } catch (Exception e) {
                 throw CrestException.getException(e.getMessage());
