@@ -323,10 +323,12 @@ const chartViewInstance = computed(() => {
   return chartViewManager.getChartView(view.value.render, view.value.type)
 })
 const showAxis = (axis: AxisType) => chartViewInstance.value?.axis?.includes(axis)
+const currentChartTypeOption = computed(() => state.chartTypeOptions[0])
 watch(
   () => [view.value.type, view.value],
   newVal => {
-    state.chartTypeOptions.splice(0, state.chartTypeOptions.length, getViewConfig(newVal[0]))
+    const viewConfig = getViewConfig(newVal[0])
+    state.chartTypeOptions.splice(0, state.chartTypeOptions.length, ...(viewConfig ? [viewConfig] : []))
     state.useless = newVal[0]
   },
   { immediate: true, deep: false }
@@ -969,6 +971,7 @@ const renderChart = view => {
 
 const onTypeChange = (render, type) => {
   const viewConf = getViewConfig(type)
+  if (!viewConf) return
   if (viewConf.isPlugin) {
     view.value.plugin = {
       isPlugin: true,
@@ -2162,13 +2165,16 @@ const chartStyleScroll = (val: any) => {
                               <template #prefix>
                                 <Icon
                                   class-name="chart-type-select-icon"
-                                  v-if="state.chartTypeOptions[0]?.isPlugin"
-                                  :static-content="state.chartTypeOptions[0]?.icon"
+                                  v-if="currentChartTypeOption?.isPlugin"
+                                  :static-content="currentChartTypeOption?.icon"
                                 />
-                                <Icon v-else class-name="chart-type-select-icon">
+                                <Icon
+                                  v-else-if="currentChartTypeOption?.icon"
+                                  class-name="chart-type-select-icon"
+                                >
                                   <component
                                     class="svg-icon chart-type-select-icon"
-                                    :is="iconChartMap[state.chartTypeOptions[0].icon]"
+                                    :is="iconChartMap[currentChartTypeOption.icon]"
                                   ></component>
                                 </Icon>
                               </template>
