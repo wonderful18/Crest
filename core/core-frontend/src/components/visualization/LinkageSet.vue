@@ -446,9 +446,11 @@ const linkageSetting = curViewId => {
       if (firstNode) {
         const linkageTree =
           linkageTreeName === 'sameDs' ? linkageInfoTree.value : linkageInfoTreeDiffDs.value
-        linkageTree.setCurrentKey(firstNode.targetViewId)
+        linkageTree?.setCurrentKey(firstNode.targetViewId)
+        nodeClick(firstNode)
+      } else {
+        nodeClick(null)
       }
-      nodeClick(firstNode)
       sameDsTreeSelectedChange()
     })
   })
@@ -531,11 +533,11 @@ const cancelLinkageSetting = () => {
 
 const nodeClickPre = (data, treeName) => {
   if (treeName === 'sameDs') {
-    linkageInfoTree.value.setCurrentKey(data.targetViewId)
-    linkageInfoTreeDiffDs.value.setCurrentKey(null)
+    linkageInfoTree.value?.setCurrentKey(data.targetViewId)
+    linkageInfoTreeDiffDs.value?.setCurrentKey(null)
   } else {
-    linkageInfoTree.value.setCurrentKey(null)
-    linkageInfoTreeDiffDs.value.setCurrentKey(data.targetViewId)
+    linkageInfoTree.value?.setCurrentKey(null)
+    linkageInfoTreeDiffDs.value?.setCurrentKey(data.targetViewId)
   }
   nodeClick(data)
 }
@@ -649,11 +651,11 @@ const sourceLinkageInfoFilter = computed(() => {
 const targetViewCheckedChange = (treeName, data) => {
   nextTick(() => {
     if (treeName === 'sameDs') {
-      linkageInfoTree.value.setCurrentKey(data.targetViewId)
-      linkageInfoTreeDiffDs.value.setCurrentKey(null)
+      linkageInfoTree.value?.setCurrentKey(data.targetViewId)
+      linkageInfoTreeDiffDs.value?.setCurrentKey(null)
     } else {
-      linkageInfoTree.value.setCurrentKey(null)
-      linkageInfoTreeDiffDs.value.setCurrentKey(data.targetViewId)
+      linkageInfoTree.value?.setCurrentKey(null)
+      linkageInfoTreeDiffDs.value?.setCurrentKey(data.targetViewId)
     }
     nodeClick(data)
     linkageFieldAdaptor(data)
