@@ -11,6 +11,7 @@ import io.crest.api.permissions.dataset.api.ColumnPermissionsApi;
 import io.crest.api.permissions.dataset.api.RowPermissionsApi;
 import io.crest.api.sync.datasource.api.SyncDatasourceApi;
 import io.crest.api.system.SysParameterApi;
+import io.crest.api.visualization.DataVisualizationApi;
 import io.crest.api.visualization.VisualizationWatermarkApi;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -76,7 +77,7 @@ class ApiEndpointContractTest {
         assertFrontendContract("core/core-frontend/src/api/sync/syncDatasource.ts",
                 List.of("/sync/datasource/record"), List.of("/sync/datasource/save"));
         assertFrontendContract("core/core-frontend/src/api/visualization/dataVisualization.ts",
-                List.of("/data-visualization/record"), List.of("/data-visualization/save"));
+                List.of("/data-visualization/canvas"), List.of("/data-visualization/record", "/data-visualization/save"));
         assertFrontendContract("core/core-frontend/src/api/watermark.ts",
                 List.of("/watermark/record"), List.of("/watermark/save"));
         assertFrontendContract("core/core-frontend/src/views/system/parameter/basic/BasicEdit.vue",
@@ -85,6 +86,11 @@ class ApiEndpointContractTest {
                 List.of("/engine/record"), List.of("/engine/save"));
         assertFrontendContract("core/core-frontend/src/views/system/site/index.vue",
                 List.of("/sys-parameter/basic/record"), List.of("/sys-parameter/basic/save"));
+    }
+
+    @Test
+    void dataVisualizationCreateShouldUseCanvasMapping() {
+        assertPostMapping(DataVisualizationApi.class, "saveCanvas", "/canvas");
     }
 
     private void assertPostMapping(Class<?> api, String methodName, String expectedPath) {
