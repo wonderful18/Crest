@@ -484,8 +484,7 @@ const symmetricKey = ref('')
 const listDs = () => {
   rawDatasourceList.value = []
   dsLoading.value = true
-  let curSortType = sortList[Number(wsCache.get('TreeSort-backend')) ?? 1].value
-  curSortType = wsCache.get('TreeSort-datasource') ?? curSortType
+  const curSortType = getStoredSortType('TreeSort-datasource', getDefaultSortType())
   const request = { busiFlag: 'datasource' } as BusiTreeRequest
   interactiveStore
     .setInteractive(request)
@@ -576,8 +575,18 @@ const sortList = [
   }
 ]
 
+const getDefaultSortType = () => {
+  const sortIndex = Number(wsCache.get('TreeSort-backend') ?? 1)
+  return sortList[Number.isInteger(sortIndex) && sortList[sortIndex] ? sortIndex : 1].value
+}
+
+const getStoredSortType = (cacheKey: string, fallback: string) => {
+  const sortType = wsCache.get(cacheKey)
+  return sortList.some(ele => ele.value === sortType) ? sortType : fallback
+}
+
 const sortTypeTip = computed(() => {
-  return sortList.find(ele => ele.value === state.curSortType).name
+  return sortList.find(ele => ele.value === state.curSortType)?.name ?? sortList[1].name
 })
 const tableData = shallowRef([])
 const tabData = shallowRef([])
@@ -1296,10 +1305,7 @@ const defaultProps = {
 }
 
 const loadInit = () => {
-  const historyTreeSort = wsCache.get('TreeSort-datasource')
-  if (historyTreeSort) {
-    state.curSortType = historyTreeSort
-  }
+  state.curSortType = getStoredSortType('TreeSort-datasource', state.curSortType)
 }
 
 const proxyAllowDrop = throttle((arg1, arg2) => {

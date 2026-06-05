@@ -138,6 +138,27 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void resourceTreeDefaultSortShouldGuardMissingCacheValue() {
+        List<String> resourceTreeFiles = List.of(
+                "core/core-frontend/src/views/visualized/data/dataset/index.vue",
+                "core/core-frontend/src/views/visualized/data/datasource/index.vue",
+                "core/core-frontend/src/views/common/CrestResourceTree.vue",
+                "core/core-frontend/src/views/visualized/data/dataset/form/CreatDsGroup.vue",
+                "core/core-frontend/src/views/visualized/data/datasource/form/CreatDsGroup.vue"
+        );
+
+        resourceTreeFiles.forEach(relativePath -> {
+            try {
+                assertFrontendContract(relativePath,
+                        List.of("const getDefaultSortType = () =>", "Number.isInteger(sortIndex)"),
+                        List.of("sortList[Number(wsCache.get('TreeSort-backend')) ?? 1]"));
+            } catch (IOException e) {
+                throw new AssertionError("Unable to read " + relativePath, e);
+            }
+        });
+    }
+
+    @Test
     void datasetCopyRouteShouldUseQueryParam() throws IOException {
         assertFrontendContract("core/core-frontend/src/views/visualized/data/dataset/index.vue",
                 List.of("query: { copyId: data.id }"),
