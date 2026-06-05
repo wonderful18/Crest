@@ -156,6 +156,14 @@ const dfs = (arr: Tree[]) => {
 let request = null
 let dsType = ''
 const sortList = ['time_asc', 'time_desc', 'name_asc', 'name_desc']
+const getDefaultSortType = () => {
+  const sortIndex = Number(wsCache.get('TreeSort-backend') ?? 1)
+  return sortList[Number.isInteger(sortIndex) && sortList[sortIndex] ? sortIndex : 1]
+}
+const getStoredSortType = (cacheKey: string, fallback: string) => {
+  const sortType = wsCache.get(cacheKey)
+  return sortList.includes(sortType) ? sortType : fallback
+}
 const createInit = (type, data: Tree, exec, name: string) => {
   pid.value = ''
   id.value = ''
@@ -180,8 +188,7 @@ const createInit = (type, data: Tree, exec, name: string) => {
           state.tData[0].name = t('data_source.data_source')
         }
         originResourceTree.value = cloneDeep(unref(state.tData))
-        let curSortType = sortList[Number(wsCache.get('TreeSort-backend')) ?? 1]
-        curSortType = wsCache.get('TreeSort-datasource') ?? curSortType
+        const curSortType = getStoredSortType('TreeSort-datasource', getDefaultSortType())
         sortTypeChange(curSortType)
       })
     }
