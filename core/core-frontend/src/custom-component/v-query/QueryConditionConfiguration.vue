@@ -2350,7 +2350,7 @@ const addOperation = (cmd, condition, index) => {
       Object.assign(activeConditionForRename, condition)
       setTimeout(() => {
         nextTick(() => {
-          renameInput.value[0].focus()
+          renameInput.value[0]?.focus()
         })
       }, 400)
       break

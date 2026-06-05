@@ -308,6 +308,40 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void editorInsertionShouldGuardMissingCodeMirrorSelection() throws IOException {
+        assertFrontendTreeDoesNotContain(List.of(
+                "selection.ranges[0]",
+                "renameInput.value[0].focus()"
+        ));
+        assertFrontendContract("core/core-frontend/src/views/visualized/data/dataset/form/AddSql.vue",
+                List.of(
+                        "const getCursor = view =>",
+                        "if (!codeCom.value) return",
+                        "const from = getCursor(codeCom.value)",
+                        "changes: { from: 0, to, insert: value }"
+                ),
+                List.of());
+        List.of(
+                "core/core-frontend/src/views/visualized/data/dataset/form/CalcFieldEdit.vue",
+                "core/core-frontend/src/views/chart/components/editor/editor-style/components/table/CustomAggrEdit.vue",
+                "core/core-frontend/src/components/visualization/JumpSetOuterContentEditor.vue"
+        ).forEach(relativePath -> {
+            try {
+                assertFrontendContract(relativePath,
+                        List.of(
+                                "const getCursor = view =>",
+                                "if (!mirror.value) return",
+                                "const from = getCursor(mirror.value)",
+                                "selection: { anchor: from + value.length }"
+                        ),
+                        List.of());
+            } catch (IOException e) {
+                throw new AssertionError("Unable to read " + relativePath, e);
+            }
+        });
+    }
+
+    @Test
     void visualizationUserLookupShouldUseCurrentUserTable() throws IOException {
         assertFrontendContract("core/core-backend/src/main/resources/mybatis/ExtDataVisualizationMapper.xml",
                 List.of("from iam_user where id"),
