@@ -424,6 +424,59 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void queryAndTabComponentsShouldGuardLegacyEmptyState() throws IOException {
+        assertFrontendContract("core/core-frontend/src/custom-component/v-query/QueryUtils.ts",
+                List.of(
+                        "const checkedFields = next.checkedFields || []",
+                        "const checkedFieldsMap = next.checkedFieldsMap || {}",
+                        "Object.entries(checkedFieldsMap)",
+                        "const treeFieldList = next.treeFieldList || []",
+                        "Object.entries(item.checkedFieldsMap || {})",
+                        "(item.checkedFields || []).includes(ele[0])"
+                ),
+                List.of(
+                        "Object.entries(next.checkedFieldsMap)",
+                        "next.checkedFields.includes(ele[0])",
+                        "next.treeFieldList.map",
+                        "Object.entries(item.checkedFieldsMap).filter"
+                ));
+        assertFrontendContract("core/core-frontend/src/custom-component/v-query/Component.vue",
+                List.of(
+                        "(next.checkedFields || []).includes(itx)",
+                        "const defaultValueFirstItemMap = (propValue || []).reduce",
+                        "defaultValueFirstItemMap[ele.datasetId?.split('--')[1]]"
+                ),
+                List.of(
+                        "next.checkedFields.includes(itx)",
+                        "const defaultValueFirstItemMap = propValue.reduce",
+                        "defaultValueFirstItemMap[ele.datasetId.split('--')[1]]"
+                ));
+        List.of(
+                "core/core-frontend/src/custom-component/tabs/Component.vue",
+                "core/core-frontend/src/custom-component/screen/Component.vue"
+        ).forEach(relativePath -> {
+            try {
+                assertFrontendContract(relativePath,
+                        List.of("currentInstance?.refs?.['tabCanvas_' + index]?.[0]"),
+                        List.of("currentInstance.refs['tabCanvas_' + index][0]"));
+            } catch (IOException e) {
+                throw new AssertionError("Unable to read " + relativePath, e);
+            }
+        });
+        assertFrontendContract("core/core-frontend/src/custom-component/screen/Component.vue",
+                List.of(
+                        "const tabs = element.value.propValue || []",
+                        "if (!tabs.length) return",
+                        "const nowIndex = switchCount % tabs.length",
+                        "element.value.editableTabsValue = tabs[nowIndex].name"
+                ),
+                List.of(
+                        "switchCount % element.value.propValue.length",
+                        "element.value.editableTabsValue = element.value.propValue[nowIndex].name"
+                ));
+    }
+
+    @Test
     void dataVisualizationCreateShouldUseCanvasMapping() {
         assertPostMapping(DataVisualizationApi.class, "saveCanvas", "/canvas");
     }
