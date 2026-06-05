@@ -389,6 +389,41 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void visualizationRelationSettingsShouldGuardEmptyCollections() throws IOException {
+        assertFrontendContract("core/core-frontend/src/components/visualization/OuterParamsSet.vue",
+                List.of(
+                        "const outerParams = rsp.data || {}",
+                        "outerParams.outerParamsInfoArray.filter(item => item?.paramsInfoId)",
+                        "outerParamsInfoTree.value?.setCurrentKey(firstNode.paramsInfoId)",
+                        "const targetViewInfoList = outerParamsInfo.targetViewInfoList || []",
+                        "targetViewInfoList.forEach",
+                        "datasetInfo.datasetViews?.forEach",
+                        "state.currentLinkPanelViewArray = rsp.data || []",
+                        "if (!data?.paramsInfoId) return"
+                ),
+                List.of(
+                        "state.outerParamsInfoArray = state.outerParams?.outerParamsInfoArray",
+                        "outerParamsInfo.targetViewInfoList.forEach",
+                        "datasetInfo.datasetViews.forEach",
+                        "outerParamsInfoTree.value.setCurrentKey(firstNode.paramsInfoId)",
+                        "state.currentLinkPanelViewArray = rsp.data\n"
+                ));
+        assertFrontendContract("core/core-frontend/src/components/visualization/LinkageSet.vue",
+                List.of(
+                        "linkageTree?.setCurrentKey(firstNode.targetViewId)",
+                        "nodeClick(firstNode)",
+                        "nodeClick(null)",
+                        "linkageInfoTree.value?.setCurrentKey(data.targetViewId)",
+                        "linkageInfoTreeDiffDs.value?.setCurrentKey(null)"
+                ),
+                List.of(
+                        "linkageTree.setCurrentKey(firstNode.targetViewId)",
+                        "nodeClick(firstNode)\n      sameDsTreeSelectedChange()",
+                        "linkageInfoTree.value.setCurrentKey(data.targetViewId)"
+                ));
+    }
+
+    @Test
     void dataVisualizationCreateShouldUseCanvasMapping() {
         assertPostMapping(DataVisualizationApi.class, "saveCanvas", "/canvas");
     }
