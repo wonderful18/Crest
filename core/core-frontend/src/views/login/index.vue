@@ -545,7 +545,7 @@ onMounted(async () => {
       margin-top: 24px;
     }
 
-    .ed-form-item--crestfault {
+    .ed-form-item--default {
       margin-bottom: 24px;
     }
     .login-form-title {
