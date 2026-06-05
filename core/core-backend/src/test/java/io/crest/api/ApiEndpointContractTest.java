@@ -138,6 +138,23 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void datasetCopyRouteShouldUseQueryParam() throws IOException {
+        assertFrontendContract("core/core-frontend/src/views/visualized/data/dataset/index.vue",
+                List.of("query: { copyId: data.id }"),
+                List.of("params: {\n        id: data.id"));
+        assertFrontendContract("core/core-frontend/src/views/visualized/data/dataset/form/index.vue",
+                List.of("let { id, datasourceId, tableName, copyId } = route.query", "legacyCopyId"),
+                List.of("let { id: copyId } = route.params"));
+    }
+
+    @Test
+    void workbranchResourceShortcutsShouldUseQueryParam() throws IOException {
+        assertFrontendContract("core/core-frontend/src/views/workbranch/ShortcutTable.vue",
+                List.of("query: { id: sourceId }"),
+                List.of("params: {\n          id: sourceId"));
+    }
+
+    @Test
     void queryCascadeFiltersShouldNotSpreadScalarValues() throws IOException {
         assertFrontendContract("core/core-frontend/src/custom-component/v-query/Select.vue",
                 List.of("normalizeCascadeValue(item.selectValue)", "normalizeCascadeValue(item.currentSelectValue)"),
@@ -145,6 +162,17 @@ class ApiEndpointContractTest {
         assertFrontendContract("core/core-frontend/src/custom-component/v-query/Tree.vue",
                 List.of("normalizeCascadeValue(item.selectValue)", "normalizeCascadeValue(item.currentSelectValue)"),
                 List.of("value: [...item.selectValue]", "value: [...item.currentSelectValue]"));
+    }
+
+    @Test
+    void querySelectCustomSortShouldUseStableComparator() throws IOException {
+        assertFrontendContract("core/core-frontend/src/custom-component/v-query/Select.vue",
+                List.of(
+                        "const sortList = config.value.sortList",
+                        "const aIndex = sortList.indexOf(a.value)",
+                        "const bIndex = sortList.indexOf(b.value)"
+                ),
+                List.of(".sort(a => {"));
     }
 
     @Test

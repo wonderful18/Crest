@@ -556,9 +556,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
     }
     router.push({
       name: embedded.getToken && appStore.getIsIframe ? 'dataset-embedded-form' : 'dataset-form',
-      params: {
-        id: data.id
-      }
+      query: { copyId: data.id }
     })
     return
   }

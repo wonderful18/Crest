@@ -316,20 +316,21 @@ const handleFieldIdDefaultChange = (val: string[]) => {
 
 const customSort = () => {
   if (config.value.sortList?.length && config.value.sort === 'customSort') {
-    options.value = [
-      ...options.value
-        .sort(a => {
-          if (config.value.sortList.indexOf(a.value) !== -1) {
-            return -1
-          }
-        })
-        .sort((a, b) => {
-          if (config.value.sortList.indexOf(a.value) === -1) {
-            return 0
-          }
-          return config.value.sortList.indexOf(a.value) - config.value.sortList.indexOf(b.value)
-        })
-    ]
+    const sortList = config.value.sortList
+    options.value = [...options.value].sort((a, b) => {
+      const aIndex = sortList.indexOf(a.value)
+      const bIndex = sortList.indexOf(b.value)
+      if (aIndex === -1 && bIndex === -1) {
+        return 0
+      }
+      if (aIndex === -1) {
+        return 1
+      }
+      if (bIndex === -1) {
+        return -1
+      }
+      return aIndex - bIndex
+    })
   }
 }
 
