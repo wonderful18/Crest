@@ -88,7 +88,23 @@ export const componentsMap = {
   Decoration: Decoration,
   DecorationAttr: DecorationAttr,
   Screen: Screen,
-  ScreenAttr: ScreenAttr
+  ScreenAttr: ScreenAttr,
+  DeDecoration: Decoration,
+  DeDecorationAttr: DecorationAttr,
+  DeFrame: Frame,
+  DeFrameAttr: FrameAttr,
+  DeGraphical: Graphical,
+  DeGraphicalAttr: GraphicalAttr,
+  DeScreen: Screen,
+  DeScreenAttr: ScreenAttr,
+  DeStreamMedia: StreamMedia,
+  DeStreamMediaAttr: StreamMediaAttr,
+  DeTabs: Tabs,
+  DeTabsAttr: TabsAttr,
+  DeTimeClock: TimeClock,
+  DeTimeClockAttr: TimeClockAttr,
+  DeVideo: Video,
+  DeVideoAttr: VideoAttr
 }
 
 export default function findComponent(key) {
