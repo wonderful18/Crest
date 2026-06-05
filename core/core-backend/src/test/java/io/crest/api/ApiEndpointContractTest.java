@@ -204,6 +204,20 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void frontendSourcesShouldNotUseDefaultClassBulkRenameArtifacts() throws IOException {
+        assertFrontendTreeDoesNotContain(List.of("crestfault"));
+        assertFrontendContract("core/core-frontend/src/custom-component/v-query/FilterTime.vue",
+                List.of("?.label ||\n    intervalTypeList[0].label", ".ed-checkbox.ed-checkbox--default"),
+                List.of(".ed-checkbox.ed-checkbox--crestfault"));
+        assertFrontendContract("core/core-frontend/src/custom-component/v-query/RangeFilterTime.vue",
+                List.of("?.label ||\n    intervalTypeList[0].label", ".ed-checkbox.ed-checkbox--default"),
+                List.of(".ed-checkbox.ed-checkbox--crestfault"));
+        assertFrontendContract("core/core-frontend/src/views/login/index.vue",
+                List.of(".ed-form-item--default"),
+                List.of(".ed-form-item--crestfault"));
+    }
+
+    @Test
     void visualizationUserLookupShouldUseCurrentUserTable() throws IOException {
         assertFrontendContract("core/core-backend/src/main/resources/mybatis/ExtDataVisualizationMapper.xml",
                 List.of("from iam_user where id"),
