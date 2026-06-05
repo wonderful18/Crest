@@ -1932,7 +1932,7 @@ public class CalciteProvider extends Provider {
         return null;
     }
 
-    private Connection connection = null;
+    private volatile Connection connection = null;
 
     public void initConnectionPool() {
         LogUtil.info("Begin to init datasource pool...");
@@ -2028,14 +2028,17 @@ public class CalciteProvider extends Provider {
     }
 
     public Connection take() {
-        if (connection == null) { // 第一次检查，无需锁
-            synchronized (Connection.class) { // 同步块
-                if (connection == null) { // 第二次检查，需要锁
-                    connection = getCalciteConnection();
+        Connection currentConnection = connection;
+        if (currentConnection == null) {
+            synchronized (this) {
+                currentConnection = connection;
+                if (currentConnection == null) {
+                    currentConnection = getCalciteConnection();
+                    connection = currentConnection;
                 }
             }
         }
-        return connection;
+        return currentConnection;
     }
 
     private void removeSubSchema(SchemaPlus rootSchema, String schemaAlias) {

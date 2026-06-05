@@ -413,7 +413,7 @@ function performChunk(dataList, taskHandler) {
       requestIdleCallback(idle => {
         // 在当前空闲期间内尽可能多地处理任务，直到时间耗尽或所有任务处理完毕
         while (idle.timeRemaining() > 0 && i < dataList.length) {
-          taskHandler(dataList[i], i)
+          taskHandler(dataList[i])
           i++
         }
         _run()
