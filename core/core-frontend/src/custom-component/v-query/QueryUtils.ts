@@ -45,22 +45,27 @@ export const reRenderAfterDelete = oldArr => {
 }
 
 export const getKeyList = next => {
-  let checkedFieldsMapArr = Object.entries(next.checkedFieldsMap).filter(ele =>
-    next.checkedFields.includes(ele[0])
+  const checkedFields = next.checkedFields || []
+  const checkedFieldsMap = next.checkedFieldsMap || {}
+  let checkedFieldsMapArr = Object.entries(checkedFieldsMap).filter(ele =>
+    checkedFields.includes(ele[0])
   )
   if (next.displayType === '9') {
+    const treeFieldList = next.treeFieldList || []
     checkedFieldsMapArr = (
       next.treeCheckedList?.length
-        ? next.treeCheckedList.filter((_, index) => index < next.treeFieldList.length)
-        : next.treeFieldList.map(() => {
+        ? next.treeCheckedList.filter((_, index) => index < treeFieldList.length)
+        : treeFieldList.map(() => {
             return {
-              checkedFields: [...next.checkedFields],
-              checkedFieldsMap: cloneDeep(next.checkedFieldsMap)
+              checkedFields: [...checkedFields],
+              checkedFieldsMap: cloneDeep(checkedFieldsMap)
             }
           })
     )
       .map(item =>
-        Object.entries(item.checkedFieldsMap).filter(ele => item.checkedFields.includes(ele[0]))
+        Object.entries(item.checkedFieldsMap || {}).filter(ele =>
+          (item.checkedFields || []).includes(ele[0])
+        )
       )
       .flat()
   }

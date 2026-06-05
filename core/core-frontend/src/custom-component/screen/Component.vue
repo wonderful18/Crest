@@ -438,7 +438,7 @@ const componentMoveIn = component => {
         eventBus.emit('removeMatrixItemById-canvas-main', component.id)
         dvMainStore.setCurComponent({ component: null, index: null })
         component.canvasId = element.value.id + '--' + tabItem.name
-        const refInstance = currentInstance.refs['tabCanvas_' + index][0]
+        const refInstance = currentInstance?.refs?.['tabCanvas_' + index]?.[0]
         if (refInstance) {
           const matrixBase = refInstance.getBaseMatrixSize() //矩阵基础大小
           canvasChangeAdaptor(component, matrixBase)
@@ -685,15 +685,17 @@ const initCarousel = () => {
   if (!isEditMode.value) {
     if (element.value.carousel?.enable) {
       const switchTime = (element.value.carousel.time || 5) * 1000
+      const tabs = element.value.propValue || []
+      if (!tabs.length) return
       let switchCount = 1
       // 轮播定时器
       carouselTimer = setInterval(() => {
         // 鼠标移入时 停止轮播
         if (!state.hoverFlag) {
-          const nowIndex = switchCount % element.value.propValue.length
+          const nowIndex = switchCount % tabs.length
           switchCount++
           nextTick(() => {
-            element.value.editableTabsValue = element.value.propValue[nowIndex].name
+            element.value.editableTabsValue = tabs[nowIndex].name
           })
         }
       }, switchTime)

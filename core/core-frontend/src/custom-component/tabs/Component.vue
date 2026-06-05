@@ -446,7 +446,7 @@ const componentMoveIn = component => {
         eventBus.emit('removeMatrixItemById-canvas-main', component.id)
         dvMainStore.setCurComponent({ component: null, index: null })
         component.canvasId = element.value.id + '--' + tabItem.name
-        const refInstance = currentInstance.refs['tabCanvas_' + index][0]
+        const refInstance = currentInstance?.refs?.['tabCanvas_' + index]?.[0]
         if (refInstance) {
           const matrixBase = refInstance.getBaseMatrixSize() //矩阵基础大小
           canvasChangeAdaptor(component, matrixBase)
