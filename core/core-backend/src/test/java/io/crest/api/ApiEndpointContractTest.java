@@ -183,6 +183,13 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void visualizationUserLookupShouldUseCurrentUserTable() throws IOException {
+        assertFrontendContract("core/core-backend/src/main/resources/mybatis/ExtDataVisualizationMapper.xml",
+                List.of("from iam_user where id"),
+                List.of("from per_user"));
+    }
+
+    @Test
     void dataVisualizationCreateShouldUseCanvasMapping() {
         assertPostMapping(DataVisualizationApi.class, "saveCanvas", "/canvas");
     }
