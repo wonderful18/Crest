@@ -57,13 +57,10 @@ const infoTemplate = ref()
 const infoTemplateTime = ref()
 const templateList = ref<SettingRecord[]>([])
 const templateListTime = ref<SettingRecord[]>([])
-const xPackInfo = ref({ enableDataFill: false, type: undefined })
 const getEngine = () => {
   querySymmetricKey().then(response => {
     getEngineDatasource().then(res => {
       let { id, type, configuration } = res.data
-      xPackInfo.value.enableDataFill = !!res.data.enableDataFill
-      xPackInfo.value.type = type
       if (configuration) {
         configuration = JSON.parse(symmetricDecrypt(configuration, response.data))
       }
