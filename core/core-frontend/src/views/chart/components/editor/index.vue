@@ -588,6 +588,7 @@ const dragCheckType = (list, type) => {
     for (let i = 0; i < list.length; i++) {
       if (list[i].groupType !== type) {
         list.splice(i, 1)
+        i--
         valid = false
       }
     }
@@ -671,6 +672,7 @@ const dragCheckMapType = list => {
     for (let i = 0; i < list.length; i++) {
       if (list[i].fieldType !== 5) {
         list.splice(i, 1)
+        i--
         valid = false
       }
     }
@@ -704,6 +706,7 @@ const addAxis = (e, axis: AxisType) => {
         }
         if (!(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))) {
           list.splice(i, 1)
+          i--
           valid = false
         }
       }
@@ -723,6 +726,7 @@ const addAxis = (e, axis: AxisType) => {
       for (let i = 0; i < list.length; i++) {
         if (!(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))) {
           list.splice(i, 1)
+          i--
           valid = false
         }
       }
@@ -751,6 +755,7 @@ const addAxis = (e, axis: AxisType) => {
       for (let i = 0; i < list.length; i++) {
         if (list[i].fieldType !== 2 && list[i].fieldType !== 3) {
           list.splice(i, 1)
+          i--
           valid = false
         }
       }
@@ -854,6 +859,7 @@ const addAxis = (e, axis: AxisType) => {
             )
           ) {
             list.splice(i, 1)
+            i--
             valid = false
           }
         }
