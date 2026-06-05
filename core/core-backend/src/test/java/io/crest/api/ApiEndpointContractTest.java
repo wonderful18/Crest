@@ -239,11 +239,14 @@ class ApiEndpointContractTest {
         assertFrontendContract("core/core-frontend/src/custom-component/v-query/QueryConditionConfiguration.vue",
                 List.of(
                         "const timeParameter = curComponent.value.parameters?.find(",
+                        "const timeRangeParameter = curComponent.value.parametersArr[componentId][0]",
+                        "if (!timeRangeParameter?.type?.length) return",
                         "if (!timeParameter?.type?.length) return timeList",
                         "if (!field?.id || !datasetId) return pre",
                         "const fieldList = datasetMap[datasetId]?.fields?.dimensionList || next.dataset?.fields || []"
                 ),
                 List.of(
+                        "const [v1, v2] = curComponent.value.parametersArr[componentId][0].type",
                         "curComponent.value.parameters?.filter(\n    ele => ele.fieldType === 1 && !!ele.variableName\n  )[0].type",
                         "next.treeFieldList[0].id : next.field.id",
                         "datasetMap[next.dataset.id]?.fields?.dimensionList || next.dataset.fields"

@@ -628,7 +628,9 @@ const setParametersTimeType = componentId => {
       )
   )
   if (!curComponent.value.parametersArr[componentId].length) return
-  const [v1, v2] = curComponent.value.parametersArr[componentId][0].type
+  const timeRangeParameter = curComponent.value.parametersArr[componentId][0]
+  if (!timeRangeParameter?.type?.length) return
+  const [v1, v2] = timeRangeParameter.type
   curComponent.value.timeGranularityMultiple = typeTimeMap[v2 || v1]
     ? `${typeTimeMap[v2 || v1]}range`
     : ''
