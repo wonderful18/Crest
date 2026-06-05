@@ -377,9 +377,9 @@ class ChartCarouselTooltip {
     if (!xScale) return { x: 0, y: 0 }
     const values = xScale.values
     if (values.length < 2) {
-      const point = view
-        .getGeometries()?.[0]
-        .elements[view.getGeometries()?.[0].elements?.length - 1].getModel()
+      const geometry = view.getGeometries()?.[0]
+      const elements = geometry?.elements || []
+      const point = elements[elements.length - 1]?.getModel?.()
       return point || { x: 0, y: 0 }
     }
     const [rangeStart, rangeEnd] = xScale.range
