@@ -225,6 +225,32 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void frontendOptionLabelsShouldGuardUnknownValues() throws IOException {
+        assertFrontendContract("core/core-frontend/src/views/system/parameter/basic/BasicInfo.vue",
+                List.of("pvpOptions.find(cur => cur.value === selectedPvp.value)?.label || pvpOptions[0].label"),
+                List.of("pvpOptions.filter(cur => cur.value === selectedPvp.value)[0].label"));
+        assertFrontendContract("core/core-frontend/src/views/system/common/InfoTemplate.vue",
+                List.of("options.find(item => item.value === val)?.label ?? options[0].label"),
+                List.of("options.filter(item => item.value === val)[0].label"));
+    }
+
+    @Test
+    void queryConfigurationShouldGuardIncompleteParameterState() throws IOException {
+        assertFrontendContract("core/core-frontend/src/custom-component/v-query/QueryConditionConfiguration.vue",
+                List.of(
+                        "const timeParameter = curComponent.value.parameters?.find(",
+                        "if (!timeParameter?.type?.length) return timeList",
+                        "if (!field?.id || !datasetId) return pre",
+                        "const fieldList = datasetMap[datasetId]?.fields?.dimensionList || next.dataset?.fields || []"
+                ),
+                List.of(
+                        "curComponent.value.parameters?.filter(\n    ele => ele.fieldType === 1 && !!ele.variableName\n  )[0].type",
+                        "next.treeFieldList[0].id : next.field.id",
+                        "datasetMap[next.dataset.id]?.fields?.dimensionList || next.dataset.fields"
+                ));
+    }
+
+    @Test
     void visualizationUserLookupShouldUseCurrentUserTable() throws IOException {
         assertFrontendContract("core/core-backend/src/main/resources/mybatis/ExtDataVisualizationMapper.xml",
                 List.of("from iam_user where id"),

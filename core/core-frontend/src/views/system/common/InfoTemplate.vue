@@ -169,7 +169,7 @@ const getExecuteTime = val => {
     { value: 'minute', label: t('system.time_0_seconds') },
     { value: 'hour', label: t('system.and_0_seconds_de') }
   ]
-  return options.filter(item => item.value === val)[0].label
+  return options.find(item => item.value === val)?.label ?? options[0].label
 }
 
 const isLongValue = val => `${val ?? ''}`.length > 56

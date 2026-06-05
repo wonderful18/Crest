@@ -912,9 +912,11 @@ const typeTimeMap = {
 
 const timeParameterList = computed(() => {
   if (!isTimeParameter.value) return timeList
-  const [year, y] = curComponent.value.parameters?.filter(
+  const timeParameter = curComponent.value.parameters?.find(
     ele => ele.fieldType === 1 && !!ele.variableName
-  )[0].type
+  )
+  if (!timeParameter?.type?.length) return timeList
+  const [year, y] = timeParameter.type
   let stopPush = false
   return timeList.reduce((pre, ele) => {
     if (ele.value === (typeTimeMap[y] || typeTimeMap[year])) {
@@ -1187,17 +1189,17 @@ const openCascadeDialog = () => {
     })
     .reduce((pre, next) => {
       const isTree = [9].includes(+next.displayType)
-      const fieldId = isTree ? next.treeFieldList[0].id : next.field.id
-      const datasetId = isTree ? next.treeFieldList[0].datasetGroupId : next.dataset.id
+      const field = isTree ? next.treeFieldList?.[0] : next.field
+      const datasetId = isTree ? field?.datasetGroupId : next.dataset?.id
+      if (!field?.id || !datasetId) return pre
+      const fieldList = datasetMap[datasetId]?.fields?.dimensionList || next.dataset?.fields || []
       pre[next.id] = {
         datasetId,
         isTree,
         name: next.name,
         queryId: next.id,
-        fieldId: fieldId,
-        fieldType: (datasetMap[next.dataset.id]?.fields?.dimensionList || next.dataset.fields).find(
-          ele => ele.id === fieldId
-        )?.fieldType
+        fieldId: field.id,
+        fieldType: fieldList.find(ele => ele.id === field.id)?.fieldType
       }
       return pre
     }, {})
