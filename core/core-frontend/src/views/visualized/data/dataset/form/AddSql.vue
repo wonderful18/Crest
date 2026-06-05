@@ -200,10 +200,21 @@ const sysParams = () => {
   handleSearchVariableApi()
 }
 
+const getCursor = view => {
+  return (
+    view?.state?.selection?.main?.from ??
+    view?.viewState?.state?.selection?.ranges?.[0]?.from ??
+    view?.state?.doc?.length ??
+    0
+  )
+}
+
 const insertFieldToCodeMirror = (value: string) => {
+  if (!codeCom.value) return
+  const from = getCursor(codeCom.value)
   codeCom.value.dispatch({
-    changes: { from: codeCom.value.viewState.state.selection.ranges[0].from, insert: value },
-    selection: { anchor: codeCom.value.viewState.state.selection.ranges[0].from }
+    changes: { from, insert: value },
+    selection: { anchor: from + value.length }
   })
 }
 
@@ -324,12 +335,11 @@ const calculateWidth = (e: MouseEvent) => {
 }
 
 const insertParamToCodeMirror = (value: string) => {
+  if (!codeCom.value) return
+  const to = codeCom.value.state?.doc?.length ?? codeCom.value.state?.doc?.toString().length ?? 0
   codeCom.value.dispatch({
-    changes: { from: 0, to: codeCom.value.state.doc.toString().length, insert: '' }
-  })
-  codeCom.value.dispatch({
-    changes: { from: codeCom.value.viewState.state.selection.ranges[0].from, insert: value },
-    selection: { anchor: codeCom.value.viewState.state.selection.ranges[0].from }
+    changes: { from: 0, to, insert: value },
+    selection: { anchor: value.length }
   })
 }
 
