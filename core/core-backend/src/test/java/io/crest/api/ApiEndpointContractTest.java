@@ -254,6 +254,25 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void frontendInteractiveStateShouldGuardMissingSelections() throws IOException {
+        assertFrontendContract("core/core-frontend/src/store/modules/data-visualization/compose.ts",
+                List.of(
+                        "const sourceGroupComponent = componentData.value.find",
+                        "if (!sourceGroupComponent?.propValue) return",
+                        "const components = curComponent.value.propValue || []",
+                        "const pComponentTarget = (pComponent?.propValue || []).filter"
+                ),
+                List.of(
+                        "componentData.value.filter(ele => ele.id === groupId)[0]",
+                        "const components = curComponent.value.propValue\n",
+                        "pComponent.propValue.filter"
+                ));
+        assertFrontendContract("core/core-frontend/src/views/chart/components/editor/dataset-select/DatasetSelect.vue",
+                List.of("datasetTree.value[0]?.id === '0'", "return datasetTree.value[0].children || []", "function flatTree(tree: Tree[] = [])"),
+                List.of("datasetTree.value[0].id === '0'", "return datasetTree.value[0].children\n", "function flatTree(tree: Tree[])"));
+    }
+
+    @Test
     void visualizationUserLookupShouldUseCurrentUserTable() throws IOException {
         assertFrontendContract("core/core-backend/src/main/resources/mybatis/ExtDataVisualizationMapper.xml",
                 List.of("from iam_user where id"),
