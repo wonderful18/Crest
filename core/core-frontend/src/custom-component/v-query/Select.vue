@@ -208,19 +208,21 @@ const getCascadeFieldId = () => {
         filter.push(condition)
       } else {
         if (props.isConfig) {
-          if (!!item.selectValue?.length) {
+          const value = normalizeCascadeValue(item.selectValue)
+          if (value.length) {
             condition = {
               fieldId: fieldId,
               operator: 'in',
-              value: [...item.selectValue]
+              value
             }
           }
         } else {
-          if (!!item.currentSelectValue?.length) {
+          const value = normalizeCascadeValue(item.currentSelectValue)
+          if (value.length) {
             condition = {
               fieldId: fieldId,
               operator: 'in',
-              value: [...item.currentSelectValue]
+              value
             }
           }
         }
@@ -228,6 +230,11 @@ const getCascadeFieldId = () => {
     })
   })
   return filter
+}
+
+const normalizeCascadeValue = (value: any) => {
+  const values = Array.isArray(value) ? value : [value]
+  return values.filter(ele => ele !== undefined && ele !== null && ele !== '')
 }
 
 const handleValueChange = () => {
