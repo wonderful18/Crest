@@ -260,16 +260,33 @@ class ApiEndpointContractTest {
                         "const sourceGroupComponent = componentData.value.find",
                         "if (!sourceGroupComponent?.propValue) return",
                         "const components = curComponent.value.propValue || []",
-                        "const pComponentTarget = (pComponent?.propValue || []).filter"
+                        "const pComponentTarget = (pComponent?.propValue || []).filter",
+                        "if (areaDataValue.components.length <= 1)"
                 ),
                 List.of(
                         "componentData.value.filter(ele => ele.id === groupId)[0]",
                         "const components = curComponent.value.propValue\n",
-                        "pComponent.propValue.filter"
+                        "pComponent.propValue.filter",
+                        "areaDataValue.components <= 1"
                 ));
         assertFrontendContract("core/core-frontend/src/views/chart/components/editor/dataset-select/DatasetSelect.vue",
                 List.of("datasetTree.value[0]?.id === '0'", "return datasetTree.value[0].children || []", "function flatTree(tree: Tree[] = [])"),
                 List.of("datasetTree.value[0].id === '0'", "return datasetTree.value[0].children\n", "function flatTree(tree: Tree[])"));
+    }
+
+    @Test
+    void chartInteractionStateShouldGuardMissingDrillAndQuotaData() throws IOException {
+        assertFrontendContract("core/core-frontend/src/views/chart/components/views/components/ChartComponentG2Plot.vue",
+                List.of("if (curFiled?.id)", "let quotaList = state.pointParam.data.quotaList || []", "} else if (quotaList.length)"),
+                List.of("if (curView.drill) {\n      const curFiled = curView.drillFields[curView.drillFilters.length]\n      fieldIds.push(curFiled.id)",
+                        "let quotaList = state.pointParam.data.quotaList\n",
+                        "} else {\n    quotaList[0]['value']"));
+        assertFrontendContract("core/core-frontend/src/views/chart/components/views/components/ChartComponentS2.vue",
+                List.of("view.value.drillFields[drillLength.value]?.id === itemId"),
+                List.of("view.value.drillFields[drillLength.value].id === itemId"));
+        assertFrontendContract("core/core-frontend/src/views/chart/components/views/index.vue",
+                List.of("if (!props.view.drillFields?.length)"),
+                List.of());
     }
 
     @Test

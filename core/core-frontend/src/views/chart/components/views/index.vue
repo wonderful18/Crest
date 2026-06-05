@@ -342,6 +342,9 @@ const onPointClick = param => {
 }
 
 const chartClick = param => {
+  if (!props.view.drillFields?.length) {
+    return
+  }
   // 下钻字段第一个没有在维度中不允许下钻
   const xIds = view.value.xAxis.map(ele => ele.id)
   if (xIds.indexOf(props.view.drillFields[0].id) == -1) {

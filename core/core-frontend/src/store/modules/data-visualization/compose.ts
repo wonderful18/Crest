@@ -261,7 +261,7 @@ export const composeStore = defineStore('compose', {
       })
     },
     calcComposeArea(areaDataValue = this.areaData) {
-      if (areaDataValue.components <= 1) {
+      if (areaDataValue.components.length <= 1) {
         return
       }
       // 根据选中区域和区域中每个组件的位移信息来创建 Group 组件
