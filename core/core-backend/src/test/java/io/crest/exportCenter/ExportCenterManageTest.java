@@ -2,11 +2,15 @@ package io.crest.exportCenter;
 
 import io.crest.api.chart.request.ChartExcelRequest;
 import io.crest.auth.bo.TokenUserBO;
+import io.crest.auth.config.SubstituleLoginConfig;
+import io.crest.exportCenter.dao.auto.entity.CoreExportDownloadTask;
 import io.crest.exportCenter.dao.auto.entity.CoreExportTask;
+import io.crest.exportCenter.dao.auto.mapper.CoreExportDownloadTaskMapper;
 import io.crest.exportCenter.dao.auto.mapper.CoreExportTaskMapper;
 import io.crest.exportCenter.manage.ExportCenterDownLoadManage;
 import io.crest.exportCenter.manage.ExportCenterManage;
 import io.crest.utils.AuthUtils;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,6 +37,9 @@ class ExportCenterManageTest {
     private CoreExportTaskMapper exportTaskMapper;
 
     @Mock
+    private CoreExportDownloadTaskMapper coreExportDownloadTaskMapper;
+
+    @Mock
     private ExportCenterDownLoadManage exportCenterDownLoadManage;
 
     @TempDir
@@ -40,6 +48,9 @@ class ExportCenterManageTest {
     @AfterEach
     void tearDown() {
         AuthUtils.remove();
+        ReflectionTestUtils.setField(SubstituleLoginConfig.class, "ready", false);
+        ReflectionTestUtils.setField(SubstituleLoginConfig.class, "pwd", null);
+        ReflectionTestUtils.setField(SubstituleLoginConfig.class, "tokenSecret", null);
     }
 
     @Test
@@ -74,5 +85,46 @@ class ExportCenterManageTest {
         assertNull(task.getFileSize());
         assertNull(task.getFileSizeUnit());
         verify(exportCenterDownLoadManage).startViewTask(same(task), any(ChartExcelRequest.class));
+    }
+
+    @Test
+    @DisplayName("下载票据应允许导出中心刷新下载任务时间")
+    void downloadTicketShouldSurviveDownloadTaskTimeRefresh() throws Exception {
+        ExportCenterManage manage = new ExportCenterManage();
+        ReflectionTestUtils.setField(manage, "exportTaskMapper", exportTaskMapper);
+        ReflectionTestUtils.setField(manage, "coreExportDownloadTaskMapper", coreExportDownloadTaskMapper);
+        ReflectionTestUtils.setField(manage, "exportCenterDownLoadManage", exportCenterDownLoadManage);
+        ReflectionTestUtils.setField(manage, "exportData_path", exportRoot.toString());
+
+        CoreExportTask task = new CoreExportTask();
+        task.setId("task-1");
+        task.setUserId(1L);
+        task.setExportStatus("SUCCESS");
+        task.setExportTime(System.currentTimeMillis());
+        task.setFileName("export.xlsx");
+
+        Path taskDir = exportRoot.resolve("task-1");
+        Files.createDirectories(taskDir);
+        Files.writeString(taskDir.resolve("task-1.xlsx"), "xlsx");
+
+        long ticketTime = System.currentTimeMillis();
+        ReflectionTestUtils.setField(SubstituleLoginConfig.class, "ready", true);
+        ReflectionTestUtils.setField(SubstituleLoginConfig.class, "pwd", "admin");
+        ReflectionTestUtils.setField(SubstituleLoginConfig.class, "tokenSecret", "test-secret");
+        String ticket = ReflectionTestUtils.invokeMethod(manage, "buildDownloadTicket", task, ticketTime, 5L);
+
+        CoreExportDownloadTask downloadTask = new CoreExportDownloadTask();
+        downloadTask.setId("task-1");
+        downloadTask.setCreateTime(ticketTime + 1000);
+        downloadTask.setValidTime(5L);
+
+        when(exportTaskMapper.selectById("task-1")).thenReturn(task);
+        when(coreExportDownloadTaskMapper.selectById("task-1")).thenReturn(downloadTask);
+
+        HttpServletResponse response = org.mockito.Mockito.mock(HttpServletResponse.class);
+        manage.download("task-1", ticket, response);
+
+        verify(exportCenterDownLoadManage).download(same(task), same(response));
+        verify(coreExportDownloadTaskMapper).deleteById("task-1");
     }
 }

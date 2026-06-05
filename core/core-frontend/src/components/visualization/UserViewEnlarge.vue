@@ -469,7 +469,7 @@ const exportAsFormattedExcel = () => {
   exportPivotExcel(s2Instance, chart)
 }
 const exportData = () => {
-  useEmitt().emitter.emit('data-export-center', { activeName: 'IN_PROGRESS' })
+  useEmitt().emitter.emit('data-export-center', { activeName: 'ALL' })
 }
 
 const openMessageLoading = cb => {

@@ -32,7 +32,7 @@ interface FilteredExcelExportOptions {
 const normalizeId = (id: string | number) => (id === null || id === undefined ? '' : String(id))
 
 const exportCenterOpen = () => {
-  useEmitt().emitter.emit('data-export-center', { activeName: 'IN_PROGRESS' })
+  useEmitt().emitter.emit('data-export-center', { activeName: 'ALL' })
 }
 
 export const showExportQueuedMessage = (openExportCenter = exportCenterOpen) => {
