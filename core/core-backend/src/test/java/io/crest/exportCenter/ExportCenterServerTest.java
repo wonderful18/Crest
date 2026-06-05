@@ -34,6 +34,7 @@ class ExportCenterServerTest {
         verify(manage).pager(pageCaptor.capture(), eq("ALL"));
         assertEquals(1, pageCaptor.getValue().getCurrent());
         assertEquals(10, pageCaptor.getValue().getSize());
+        assertEquals(false, pageCaptor.getValue().optimizeCountSql());
     }
 
     @Test
@@ -51,6 +52,7 @@ class ExportCenterServerTest {
         verify(manage).pager(pageCaptor.capture(), eq("FAILED"));
         assertEquals(2, pageCaptor.getValue().getCurrent());
         assertEquals(20, pageCaptor.getValue().getSize());
+        assertEquals(false, pageCaptor.getValue().optimizeCountSql());
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

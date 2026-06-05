@@ -50,6 +50,7 @@ public class ExportCenterServer implements ExportCenterApi {
                 positiveIntOrDefault(goPage, DEFAULT_PAGE),
                 positiveIntOrDefault(pageSize, DEFAULT_PAGE_SIZE)
         );
+        page.setOptimizeCountSql(false);
         return exportCenterManage.pager(page, normalizeStatus(status));
     }
 
@@ -111,7 +112,10 @@ public class ExportCenterServer implements ExportCenterApi {
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(JsonUtil.toJSONString(new ResultMessage(e.getCode(), "下载链接无效或已过期")).toString());
+        String message = e.getMessage() == null || e.getMessage().isBlank()
+                ? "下载链接无效或已过期"
+                : e.getMessage();
+        response.getWriter().write(JsonUtil.toJSONString(new ResultMessage(e.getCode(), message)).toString());
     }
 
     @Override

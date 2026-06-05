@@ -129,7 +129,7 @@ const init = (params?: { activeName?: string }) => {
   }
   handleClick()
   timer = setInterval(() => {
-    if (activeName.value === 'IN_PROGRESS') {
+    if (['IN_PROGRESS', 'ALL'].includes(activeName.value)) {
       exportTasksRecords().then(res => {
         tabList.value.forEach(item => {
           if (item.name === 'ALL') {

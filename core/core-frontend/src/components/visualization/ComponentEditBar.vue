@@ -437,7 +437,7 @@ const showBarTooltipPosition = computed(() => {
 })
 
 const callbackExport = () => {
-  useEmitt().emitter.emit('data-export-center', { activeName: 'IN_PROGRESS' })
+  useEmitt().emitter.emit('data-export-center', { activeName: 'ALL' })
 }
 const exportAsFormattedExcel = () => {
   const s2Instance = dvMainStore.getViewInstanceInfo(element.value.id)
