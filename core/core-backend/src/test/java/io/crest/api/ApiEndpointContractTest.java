@@ -218,6 +218,13 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void chartFilterDynamicTimeShouldGuardUnknownPresetValue() throws IOException {
+        assertFrontendContract("core/core-frontend/src/views/chart/components/editor/filter/auth-tree-chart/FilterFiled.vue",
+                List.of("?.label", "presetTimeLabel || relativeToCurrent || ''"),
+                List.of("].find(ele => ele.value === relativeToCurrent).label"));
+    }
+
+    @Test
     void visualizationUserLookupShouldUseCurrentUserTable() throws IOException {
         assertFrontendContract("core/core-backend/src/main/resources/mybatis/ExtDataVisualizationMapper.xml",
                 List.of("from iam_user where id"),

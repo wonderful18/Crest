@@ -248,7 +248,7 @@ const confirmTimeSelect = () => {
       new Date(arbitraryTime).toLocaleTimeString()
   }
   if (relativeToCurrent !== 'custom') {
-    item.value.timeValue = [
+    const presetTimeLabel = [
       {
         label: t('dynamic_year.current'),
         value: 'thisYear'
@@ -281,7 +281,8 @@ const confirmTimeSelect = () => {
         label: t('dynamic_time.firstOfYear'),
         value: 'yearBeginning'
       }
-    ].find(ele => ele.value === relativeToCurrent).label
+    ].find(ele => ele.value === relativeToCurrent)?.label
+    item.value.timeValue = presetTimeLabel || relativeToCurrent || ''
     dialogVisible.value = false
     return
   }
