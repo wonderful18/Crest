@@ -13,7 +13,9 @@ import io.crest.api.sync.datasource.api.SyncDatasourceApi;
 import io.crest.api.system.SysParameterApi;
 import io.crest.api.visualization.DataVisualizationApi;
 import io.crest.api.visualization.VisualizationWatermarkApi;
+import io.crest.embedded.server.EmbeddedTokenServer;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import java.io.IOException;
@@ -93,6 +95,18 @@ class ApiEndpointContractTest {
         assertPostMapping(DataVisualizationApi.class, "saveCanvas", "/canvas");
     }
 
+    @Test
+    void embeddedTokenArgsShouldKeepCurrentContract() throws IOException {
+        assertGetMapping(EmbeddedTokenServer.class, "getTokenArgs", "/token-args");
+        assertGetMapping(EmbeddedTokenServer.class, "getTokenArgs", "/getTokenArgs");
+        assertFrontendContract("core/core-frontend/src/config/axios/service.ts",
+                List.of("X-CREST-EMBEDDED-TOKEN"), List.of("X-EMBEDDED-TOKEN"));
+        assertFrontendContract("core/core-frontend/src/pages/panel/DashboardPreview.vue",
+                List.of("/embedded/token-args"), List.of("/embedded/getTokenArgs"));
+        assertFrontendContract("core/core-frontend/src/pages/panel/ViewWrapper.vue",
+                List.of("/embedded/token-args"), List.of("/embedded/getTokenArgs"));
+    }
+
     private void assertPostMapping(Class<?> api, String methodName, String expectedPath) {
         Method method = Arrays.stream(api.getDeclaredMethods())
                 .filter(candidate -> candidate.getName().equals(methodName))
@@ -100,6 +114,19 @@ class ApiEndpointContractTest {
                 .orElseThrow(() -> new AssertionError(api.getName() + "#" + methodName + " missing"));
         PostMapping mapping = method.getAnnotation(PostMapping.class);
         assertNotNull(mapping, api.getName() + "#" + methodName + " should be a POST endpoint");
+
+        String[] paths = mapping.value().length > 0 ? mapping.value() : mapping.path();
+        assertTrue(Arrays.asList(paths).contains(expectedPath),
+                api.getSimpleName() + "#" + methodName + " should map to " + expectedPath);
+    }
+
+    private void assertGetMapping(Class<?> api, String methodName, String expectedPath) {
+        Method method = Arrays.stream(api.getDeclaredMethods())
+                .filter(candidate -> candidate.getName().equals(methodName))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(api.getName() + "#" + methodName + " missing"));
+        GetMapping mapping = method.getAnnotation(GetMapping.class);
+        assertNotNull(mapping, api.getName() + "#" + methodName + " should be a GET endpoint");
 
         String[] paths = mapping.value().length > 0 ? mapping.value() : mapping.path();
         assertTrue(Arrays.asList(paths).contains(expectedPath),

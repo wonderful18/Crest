@@ -119,7 +119,7 @@ service.interceptors.request.use(
     if (linkStore.getLinkToken) {
       ;(config.headers as AxiosRequestHeaders)['X-CREST-LINK-TOKEN'] = linkStore.getLinkToken
     } else if (embeddedStore.token) {
-      ;(config.headers as AxiosRequestHeaders)['X-EMBEDDED-TOKEN'] = embeddedStore.token
+      ;(config.headers as AxiosRequestHeaders)['X-CREST-EMBEDDED-TOKEN'] = embeddedStore.token
     }
     const locale = getLocale()
     if (locale) {

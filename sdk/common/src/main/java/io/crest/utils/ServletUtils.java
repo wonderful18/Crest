@@ -30,7 +30,13 @@ public class ServletUtils {
     }
 
     public static String getToken() {
-        return getHead(AuthConstant.TOKEN_KEY);
+        String token = getHead(AuthConstant.TOKEN_KEY);
+        return StringUtils.isNotBlank(token) ? token : getEmbeddedToken();
+    }
+
+    public static String getEmbeddedToken() {
+        String token = getHead(AuthConstant.EMBEDDED_TOKEN_KEY);
+        return StringUtils.isNotBlank(token) ? token : getHead(AuthConstant.LEGACY_EMBEDDED_TOKEN_KEY);
     }
 
     public static String getXUserinfo() {
