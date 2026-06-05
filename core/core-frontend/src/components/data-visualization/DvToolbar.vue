@@ -258,7 +258,7 @@ const backHandler = (url: string) => {
     const pm = {
       methodName: 'embeddedInteractive',
       args: {
-        eventName: 'de-dashboard-editor-back',
+        eventName: 'crest-dashboard-editor-back',
         args: 'Just a demo that descript Crest embedded interactive'
       }
     }
