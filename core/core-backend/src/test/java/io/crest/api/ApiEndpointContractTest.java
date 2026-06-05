@@ -553,6 +553,39 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void routeEntrypointsShouldGuardEmptyChildren() throws IOException {
+        List.of(
+                "core/core-frontend/src/layout/components/SystemCfg.vue",
+                "core/core-frontend/src/layout/components/DesktopSetting.vue"
+        ).forEach(relativePath -> {
+            try {
+                assertFrontendContract(relativePath,
+                        List.of(
+                                "const kidPath = sysMenu.matched?.[0]?.children?.[0]?.path",
+                                "push(kidPath ? `${sysMenu.path}/${kidPath}` : sysMenu.path)"
+                        ),
+                        List.of(
+                                "sysMenu.matched[0].children[0].path",
+                                "push(`${sysMenu.path}/${kidPath}`)"
+                        ));
+            } catch (IOException e) {
+                throw new AssertionError("Unable to read " + relativePath, e);
+            }
+        });
+        assertFrontendContract("core/core-frontend/src/router/establish.ts",
+                List.of(
+                        "if (!ele) {",
+                        "if (ele.children?.length) {",
+                        "if (item.children?.length) {",
+                        "return path || item.path"
+                ),
+                List.of(
+                        "if (ele.children) {\n      getDefaultPath(ele.children[0])",
+                        "if (item.children) {\n    getDefaultPath(item.children[0], item)"
+                ));
+    }
+
+    @Test
     void dataVisualizationCreateShouldUseCanvasMapping() {
         assertPostMapping(DataVisualizationApi.class, "saveCanvas", "/canvas");
     }
