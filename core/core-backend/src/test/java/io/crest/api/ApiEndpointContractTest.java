@@ -176,6 +176,13 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void mobileQuerySelectShouldNormalizePopupSelectValue() throws IOException {
+        assertFrontendContract("core/core-frontend/src/custom-component/v-query/VanPopupSelect.vue",
+                List.of("const toSelectValueList = value =>", "checkList.value = toSelectValueList(props.selectValue)"),
+                List.of("checkList.value = [...props.selectValue]"));
+    }
+
+    @Test
     void dataVisualizationCreateShouldUseCanvasMapping() {
         assertPostMapping(DataVisualizationApi.class, "saveCanvas", "/canvas");
     }

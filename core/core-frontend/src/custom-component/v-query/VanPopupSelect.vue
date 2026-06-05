@@ -26,6 +26,12 @@ const isIndeterminate = ref(false)
 const checkTableList = ref([])
 const checkList = ref([])
 const keywords = ref('')
+const toSelectValueList = value => {
+  if (Array.isArray(value)) {
+    return [...value]
+  }
+  return [value].filter(ele => ele !== undefined && ele !== null && ele !== '')
+}
 const tableListWithSearch = computed(() => {
   if (!keywords.value) return props.options
   return props.options.filter((ele: any) =>
@@ -43,11 +49,9 @@ const reset = () => {
 const showPopup = () => {
   reset()
   if (props.multiple) {
-    checkList.value = [...props.selectValue]
+    checkList.value = toSelectValueList(props.selectValue)
   } else {
-    checkList.value = Array.isArray(props.selectValue)
-      ? [...props.selectValue]
-      : [props.selectValue]
+    checkList.value = toSelectValueList(props.selectValue)
     oldCheckList = [...checkList.value]
   }
   showSelect.value = true
