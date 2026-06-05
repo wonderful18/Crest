@@ -350,6 +350,20 @@ class ApiEndpointContractTest {
                         "state.customColor = state.colorForm.colors[0] || null"
                 ),
                 List.of("items[0].colors"));
+        assertFrontendContract("core/core-frontend/src/views/chart/components/editor/editor-style/components/CustomColorStyleSelect.vue",
+                List.of(
+                        "const selectedColorCase =",
+                        "const colors = selectedColorCase?.colors || []",
+                        "state.value.basicStyleForm[colorSchemeName.value] = selectedColorCase.value"
+                ),
+                List.of("items[0].colors"));
+        assertFrontendContract("core/core-frontend/src/components/color-scheme/src/ColorScheme.vue",
+                List.of(
+                        "const getSelectedColorCase =",
+                        "const selectedColorCase = getSelectedColorCase(colorScheme.value.name)",
+                        "JSON.stringify(selectedColorCase?.colors || [])"
+                ),
+                List.of("items[0].colors"));
         List.of(
                 "core/core-frontend/src/components/visualization/LinkJumpSet.vue",
                 "core/core-frontend/src/custom-component/screen/SelectScreenDialog.vue"

@@ -13,12 +13,14 @@ const colorScheme = ref({
   name: '',
   colors: []
 })
+const getSelectedColorCase = (value?: string) => {
+  return colorCases.find(ele => ele.value === value) || colorCases[0]
+}
 const changeColorOption = () => {
   activeColor.value = ''
-  const items = colorCases.filter(ele => {
-    return ele.value === colorScheme.value.name
-  })
-  colorScheme.value.colors = JSON.parse(JSON.stringify(items[0].colors))
+  const selectedColorCase = getSelectedColorCase(colorScheme.value.name)
+  colorScheme.value.name = selectedColorCase?.value || colorScheme.value.name
+  colorScheme.value.colors = JSON.parse(JSON.stringify(selectedColorCase?.colors || []))
 }
 
 const showCustom = ref(false)
