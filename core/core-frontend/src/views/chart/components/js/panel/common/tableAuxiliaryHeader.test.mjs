@@ -7,6 +7,7 @@ import {
   buildS2HeaderColumns,
   getLeafColumnFields,
   hasAuxiliaryDescription,
+  isAuxiliaryHeaderField,
   normalizeAuxiliaryDescriptions
 } from './tableAuxiliaryHeader.mjs'
 
@@ -121,4 +122,25 @@ test('builds copy header rows for plain fields with descriptions', () => {
     ['投产周期', '需求拟稿会签耗时'],
     ['', '需求发起提出至获得审批的周期 T1']
   ])
+})
+
+test('detects auxiliary description leaf fields', () => {
+  const columns = buildS2HeaderColumns(
+    [
+      {
+        key: 'draft_group',
+        children: [{ key: 'draft_submit' }, { key: 'draft_review' }]
+      }
+    ],
+    [{ field: 'draft_group', name: '需求拟稿会签耗时' }],
+    {},
+    {
+      enabled: true,
+      descriptions: [{ field: 'draft_submit', text: '提出至审批周期 T1' }]
+    }
+  )
+
+  assert.equal(isAuxiliaryHeaderField(columns, 'draft_submit'), true)
+  assert.equal(isAuxiliaryHeaderField(columns, 'draft_group'), false)
+  assert.equal(isAuxiliaryHeaderField(['month'], 'month'), false)
 })
