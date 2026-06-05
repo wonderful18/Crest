@@ -552,7 +552,7 @@ const jumpClick = param => {
 }
 
 const queryDataFromSelect = (firstLoad = false) => {
-  cancelRequestBatch(`chartData/data/${view.value.id}`)
+  cancelRequestBatch(`/chart-data/data/${view.value.id}`)
   loading.value = false
   queryData(firstLoad)
 }

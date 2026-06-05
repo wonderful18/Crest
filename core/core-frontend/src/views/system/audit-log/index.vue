@@ -139,10 +139,18 @@ const getOperationDesc = (row: any) => {
   const res = row.resource_type
   const url = row.request_url || ''
 
-  if (url.includes('/auth/business-permissions')) return '查看业务资源权限'
-  if (url.includes('/auth/menu-permissions')) return '查看菜单权限'
-  if (url.includes('/auth/business-permissions')) return '配置业务资源权限'
-  if (url.includes('/auth/menu-permissions')) return '配置菜单权限'
+  if (url.includes('/auth/business-target-permissions')) {
+    return op === 'READ' ? '查看业务资源授权对象' : '批量配置业务资源权限'
+  }
+  if (url.includes('/auth/business-permissions')) {
+    return op === 'READ' ? '查看业务资源权限' : '配置业务资源权限'
+  }
+  if (url.includes('/auth/menu-target-permissions')) {
+    return op === 'READ' ? '查看菜单授权对象' : '批量配置菜单权限'
+  }
+  if (url.includes('/auth/menu-permissions')) {
+    return op === 'READ' ? '查看菜单权限' : '配置菜单权限'
+  }
   if (url.includes('/role/by-current-org') || url.includes('/role/list')) return '查询角色列表'
   if (op === 'LOGIN') return '用户登录系统'
   if (op === 'CREATE') return `新建${getResourceTypeLabel(res)}`
