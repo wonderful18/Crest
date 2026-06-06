@@ -157,6 +157,8 @@ Prometheus 指标端点默认关闭。开启后，Prometheus 使用专用 Bearer
 cd installer
 bash make-offline-package.sh v1.5.5 linux-amd64
 bash make-offline-package.sh v1.5.5 linux-arm64
+bash make-app-image-package.sh v1.5.5 linux-amd64
+bash make-app-image-package.sh v1.5.5 linux-arm64
 ```
 
 发布包名：
@@ -164,17 +166,22 @@ bash make-offline-package.sh v1.5.5 linux-arm64
 ```text
 crest-offline-v1.5.5-linux-amd64.tar.gz
 crest-offline-v1.5.5-linux-arm64.tar.gz
+crest-app-images-v1.5.5-linux-amd64.tar.gz
+crest-app-images-v1.5.5-linux-arm64.tar.gz
 crest-source-v1.5.5.tar.gz
 crest-v1.5.5-checksums.txt
+crest-app-images-v1.5.5-checksums.txt
 ```
 
-离线包内包含安装脚本、配置模板、Docker Compose 文件、部署说明文档、`images/` 镜像归档和 `upgrade-sql/` 升级 SQL。源码包用于内网归档和代码审计。离线服务器解压离线包后直接执行：
+`crest-offline-*` 是完整离线安装包，包含安装脚本、配置模板、Docker Compose 文件、部署说明文档、Crest 应用镜像、MySQL 镜像、可选监控组件镜像和 `upgrade-sql/` 升级 SQL。离线服务器解压完整离线包后直接执行：
 
 ```bash
 tar -zxf crest-offline-v1.5.5-linux-amd64.tar.gz
 cd crest-offline-v1.5.5-linux-amd64
 bash install.sh
 ```
+
+`crest-app-images-*` 是应用镜像升级包，仅包含 Crest 后端镜像、前端镜像、增量升级 SQL 和加载说明，适合已有内网环境只替换应用服务。源码包用于内网归档和代码审计。
 
 离线包产物属于发布物，不提交到源码仓库。源码仓库只保留制作脚本和说明。
 

@@ -16,7 +16,8 @@
 | `crest/bin/manual/cleanup-demo-data.sql` | 手动清理内置演示资源使用的 SQL |
 | `crest/templates/application.yml` | 后端运行配置模板 |
 | `upgrade-sql/` | 同发布线升级时可手动执行的 SQL |
-| `make-offline-package.sh` | 离线包制作脚本 |
+| `make-offline-package.sh` | 完整离线安装包制作脚本 |
+| `make-app-image-package.sh` | 前后端应用镜像升级包制作脚本 |
 | `LICENSE` | GPLv3 许可证副本 |
 
 ## 默认部署形态
@@ -225,6 +226,8 @@ bash cleanup-demo-data.sh --yes
 ```bash
 bash make-offline-package.sh v1.5.5 linux-amd64
 bash make-offline-package.sh v1.5.5 linux-arm64
+bash make-app-image-package.sh v1.5.5 linux-amd64
+bash make-app-image-package.sh v1.5.5 linux-arm64
 ```
 
 默认输出目录：
@@ -238,6 +241,8 @@ bash make-offline-package.sh v1.5.5 linux-arm64
 ```text
 crest-offline-v1.5.5-linux-amd64.tar.gz
 crest-offline-v1.5.5-linux-arm64.tar.gz
+crest-app-images-v1.5.5-linux-amd64.tar.gz
+crest-app-images-v1.5.5-linux-arm64.tar.gz
 ```
 
 制作前需要本机已有对应架构镜像：
@@ -271,9 +276,11 @@ MYSQL_IMAGE=mysql:8.0.43 \
 bash make-offline-package.sh v1.5.5 linux-amd64
 ```
 
-脚本会校验前端、后端和 MySQL 镜像架构，架构不一致会直接停止。`SOURCE_*_IMAGE` 用于本机制作来源，包内 `install.conf` 仍写入不带架构后缀的目标镜像名。
+完整离线安装包脚本会校验前端、后端和 MySQL 镜像架构，架构不一致会直接停止。`SOURCE_*_IMAGE` 用于本机制作来源，包内 `install.conf` 仍写入指定的目标镜像名。
 
 离线包会包含 `upgrade-sql/` 目录。全新安装不需要手动执行；升级已有环境时按发布说明选择对应 SQL。
+
+应用镜像升级包只包含 Crest 后端镜像、前端镜像、`upgrade-sql/` 和加载说明，不包含 MySQL、Prometheus、Grafana 镜像，也不包含完整安装脚本。已有内网环境只需要替换应用服务时，优先使用 `crest-app-images-*`。
 
 ## 离线安装
 
