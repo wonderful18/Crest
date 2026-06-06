@@ -3,10 +3,14 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import type { TabsPaneContext } from 'element-plus-secondary'
 import dayjs from 'dayjs'
 import router from '@/router'
-import crestLogo from '@/assets/svg/logo.svg?url'
+import crestMark from '@/assets/svg/crest-mark.svg?url'
+import iconCollectionOutlined from '@/assets/svg/icon_collection_outlined.svg'
 import userImg from '@/assets/svg/user-img.svg'
+import visualStar from '@/assets/svg/visual-star.svg'
 import GridTable from '@/components/grid-table/src/GridTable.vue'
 import { portalOverviewApi, portalResourcesApi } from '@/api/dataPortal'
+import { storeApi } from '@/api/visualization/dataVisualization'
+import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import PortalAccount from './PortalAccount.vue'
@@ -18,11 +22,17 @@ interface PortalResource {
   creatorName?: string
   updateTime?: number
   chartCount?: number
+  favorite?: boolean
 }
 
+const ALL_RESOURCES = 'all'
+const FAVORITES = 'store'
+const RECENT = 'recent'
+const appearanceStore = useAppearanceStoreWithOut()
 const userStore = useUserStoreWithOut()
-const activeName = ref('store')
+const activeName = ref(FAVORITES)
 const orderDesc = ref(true)
+const favoriteLoadingId = ref<string | number | null>(null)
 let resourceRequestSeq = 0
 
 const state = reactive({
@@ -39,12 +49,18 @@ const state = reactive({
     dashboardCount: 0,
     latestUpdateTime: null as number | null,
     backendAccess: false
+  },
+  filterCounts: {
+    total: 0,
+    screenCount: 0,
+    dashboardCount: 0
   }
 })
 
 const paneList = [
-  { title: '我的资源', name: 'store' },
-  { title: '最近使用', name: 'recent' }
+  { title: '我的收藏', name: FAVORITES },
+  { title: '全部资源', name: ALL_RESOURCES },
+  { title: '最近使用', name: RECENT }
 ]
 
 const quickCreationBaseList = [
@@ -110,9 +126,9 @@ const portalEntryBaseList = [
 ]
 
 const backendAccess = computed(() => userStore.getBackendAccess || state.overview.backendAccess)
+const systemTitle = computed(() => appearanceStore.getSiteTitle)
 const userName = computed(() => userStore.getName || '用户')
 const userId = computed(() => userStore.getUid || '-')
-const latestDateTime = computed(() => formatTime(state.overview.latestUpdateTime))
 
 const quickCreationList = computed(() =>
   quickCreationBaseList.map(item => ({
@@ -126,9 +142,14 @@ const actionCardList = computed(() =>
 )
 
 const typeFilters = computed(() => [
-  { label: '全部', value: 'all', count: state.overview.total, color: '#3B82F6' },
-  { label: '数据大屏', value: 'dataV', count: state.overview.screenCount, color: '#1FB6A6' },
-  { label: '仪表盘', value: 'dashboard', count: state.overview.dashboardCount, color: '#3B82F6' }
+  { label: '全部', value: 'all', count: state.filterCounts.total, color: '#3B82F6' },
+  { label: '数据大屏', value: 'dataV', count: state.filterCounts.screenCount, color: '#1FB6A6' },
+  {
+    label: '仪表盘',
+    value: 'dashboard',
+    count: state.filterCounts.dashboardCount,
+    color: '#3B82F6'
+  }
 ])
 
 const stats = computed(() => [
@@ -159,6 +180,16 @@ const typeColor = (type: string) => (type === 'dashboard' ? '#3B82F6' : '#1FB6A6
 const typeCode = (type: string | number) => String(type || '').toUpperCase()
 const formatTime = (time?: number | null, formatter = 'YYYY-MM-DD HH:mm') =>
   time ? dayjs(time).format(formatter) : '-'
+const resourceQueryFrom = () => (activeName.value === ALL_RESOURCES ? undefined : activeName.value)
+const emptyDescription = computed(() => {
+  if (state.keyword) {
+    return '暂无相关内容'
+  }
+  if (activeName.value === FAVORITES) {
+    return '暂无收藏'
+  }
+  return activeName.value === ALL_RESOURCES ? '暂无资源' : '暂无最近使用'
+})
 
 const getSparkValues = (value: number) => {
   const total = Number(value || 0)
@@ -202,13 +233,18 @@ const loadResources = async () => {
       type: state.type,
       page: state.page,
       pageSize: state.pageSize,
-      asc: !orderDesc.value
+      asc: !orderDesc.value,
+      queryFrom: resourceQueryFrom()
     })
     if (requestSeq !== resourceRequestSeq) {
       return
     }
     state.records = res?.data?.records || []
     state.total = Number(res?.data?.total || 0)
+    state.filterCounts.total =
+      Number(res?.data?.screenCount || 0) + Number(res?.data?.dashboardCount || 0)
+    state.filterCounts.screenCount = Number(res?.data?.screenCount || 0)
+    state.filterCounts.dashboardCount = Number(res?.data?.dashboardCount || 0)
   } finally {
     if (requestSeq === resourceRequestSeq) {
       state.loading = false
@@ -241,6 +277,16 @@ const selectType = (type: string) => {
   loadResources()
 }
 
+const openAllResources = (type: string) => {
+  const shouldReload = activeName.value !== ALL_RESOURCES || state.type !== type
+  activeName.value = ALL_RESOURCES
+  state.type = type
+  state.page = 1
+  if (shouldReload) {
+    loadResources()
+  }
+}
+
 const sortChange = (param: { order?: string }) => {
   if (!param?.order) {
     orderDesc.value = true
@@ -260,6 +306,24 @@ const openResource = (resource: PortalResource) => {
     path: `/portal/view/${resource.id}`,
     query: { dvType: resource.type }
   })
+}
+
+const storeResourceType = (type: string) => (type === 'dashboard' ? 'panel' : 'screen')
+
+const toggleFavorite = async (resource: PortalResource) => {
+  if (favoriteLoadingId.value === resource.id) {
+    return
+  }
+  favoriteLoadingId.value = resource.id
+  try {
+    await storeApi({
+      id: resource.id,
+      type: storeResourceType(resource.type)
+    })
+    await loadResources()
+  } finally {
+    favoriteLoadingId.value = null
+  }
 }
 
 const backHome = () => {
@@ -292,7 +356,7 @@ const openPortalEntry = (action: string, index: number) => {
     openExportCenter()
     return
   }
-  selectType(action)
+  openAllResources(action)
 }
 
 const enterBackend = () => {
@@ -305,11 +369,10 @@ onMounted(reload)
 <template>
   <main class="portal-page">
     <header class="portal-header">
-      <div class="brand">
-        <img class="logo" :src="crestLogo" alt="Crest" @click="backHome" />
-        <span class="divider" />
-        <span class="portal-title">研发效能指标管理系统</span>
-      </div>
+      <button class="brand" type="button" @click="backHome">
+        <img class="brand-mark" :src="crestMark" alt="" aria-hidden="true" />
+        <span class="portal-title">{{ systemTitle }}</span>
+      </button>
       <div class="header-actions">
         <el-button v-if="backendAccess" plain @click="enterBackend">进入后台</el-button>
         <PortalAccount />
@@ -440,13 +503,13 @@ onMounted(reload)
                 :show-pagination="false"
                 :table-data="state.records"
                 :data-loading="state.loading"
-                empty-desc="暂无内容"
+                :empty-desc="emptyDescription"
                 empty-img="noneWhite"
                 class="workbranch-grid"
                 @sort-change="sortChange"
                 @cell-click="openResource"
               >
-                <el-table-column key="name" min-width="260" prop="name" label="名称">
+                <el-table-column key="name" min-width="420" prop="name" label="名称">
                   <template #default="{ row }">
                     <div class="name-content asset-name jump-active">
                       <span class="asset-icon" :style="{ backgroundColor: typeColor(row.type) }">
@@ -470,16 +533,10 @@ onMounted(reload)
                     </span>
                   </template>
                 </el-table-column>
-                <el-table-column label="创建人" min-width="120" show-overflow-tooltip>
-                  <template #default="{ row }">{{ row.creatorName || '-' }}</template>
-                </el-table-column>
-                <el-table-column label="组件" width="90">
-                  <template #default="{ row }">{{ row.chartCount || 0 }}</template>
-                </el-table-column>
                 <el-table-column
                   prop="updateTime"
                   label="更新时间"
-                  min-width="160"
+                  min-width="180"
                   sortable="custom"
                 >
                   <template #default="{ row }">
@@ -488,9 +545,35 @@ onMounted(reload)
                     </span>
                   </template>
                 </el-table-column>
-                <el-table-column width="90" fixed="right" label="操作">
+                <el-table-column
+                  width="104"
+                  fixed="right"
+                  label="操作"
+                  align="center"
+                  header-align="center"
+                  class-name="operation-column"
+                  label-class-name="operation-column-header"
+                >
                   <template #default="{ row }">
                     <div class="table-actions">
+                      <el-tooltip
+                        effect="dark"
+                        :content="row.favorite ? '取消收藏' : '收藏'"
+                        placement="top"
+                      >
+                        <button
+                          type="button"
+                          class="opbtn favorite-btn"
+                          :class="{ 'is-favorite': row.favorite }"
+                          :disabled="favoriteLoadingId === row.id"
+                          @click.stop="toggleFavorite(row)"
+                        >
+                          <component
+                            :is="row.favorite ? visualStar : iconCollectionOutlined"
+                            class="favorite-svg"
+                          />
+                        </button>
+                      </el-tooltip>
                       <el-tooltip effect="dark" content="查看" placement="top">
                         <button type="button" class="opbtn" @click.stop="openResource(row)">
                           <svg
@@ -520,7 +603,7 @@ onMounted(reload)
                 </el-table-column>
               </GridTable>
               <div class="table-footer">
-                <span>共 {{ state.total }} 项 · 最近更新 {{ latestDateTime }}</span>
+                <span>共 {{ state.total }} 项</span>
                 <el-pagination
                   v-if="state.total > state.pageSize"
                   layout="prev, pager, next"
@@ -551,10 +634,10 @@ onMounted(reload)
   position: relative;
   display: flex;
   align-items: center;
-  height: 60px;
+  height: 64px;
   padding: 0 clamp(28px, 5vw, 72px);
   overflow: hidden;
-  background: linear-gradient(180deg, #edf2fb 0%, #fafbfe 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   border-bottom: 1px solid #e2e8f0;
 
   &::before {
@@ -564,7 +647,7 @@ onMounted(reload)
     content: '';
     background-image: radial-gradient(circle at 1px 1px, #3b6fd0 1px, transparent 0);
     background-size: 20px 20px;
-    opacity: 0.05;
+    opacity: 0.035;
   }
 
   > * {
@@ -575,32 +658,37 @@ onMounted(reload)
 
 .brand {
   flex: none;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-
-  .logo {
-    width: 188px;
-    height: 44px;
-    margin-right: clamp(44px, 4vw, 54px);
-    cursor: pointer;
-    object-fit: contain;
-  }
+  gap: 12px;
+  justify-self: start;
+  height: 40px;
+  min-width: 0;
+  width: max-content;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  top: 0.5px;
 }
 
-.divider {
-  width: 1px;
-  height: 24px;
-  margin-right: clamp(26px, 2vw, 32px);
-  background: #e2e8f0;
+.brand-mark {
+  flex: none;
+  display: block;
+  width: 34px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .portal-title {
+  display: block;
   flex: none;
   color: #0f172a;
-  font-size: 17px;
+  font-family: var(--crest-font-sans), 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 20px;
   font-weight: 700;
-  line-height: 24px;
-  letter-spacing: 0.2px;
+  line-height: 32px;
+  letter-spacing: 0;
   white-space: nowrap;
 }
 
@@ -637,7 +725,7 @@ onMounted(reload)
   gap: 18px;
   align-items: stretch;
   width: 100%;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 64px);
   min-height: 640px;
   padding: clamp(22px, 2vw, 32px) clamp(28px, 4vw, 72px);
   overflow: hidden;
@@ -1145,7 +1233,7 @@ onMounted(reload)
 }
 
 .asset-title {
-  max-width: 220px;
+  max-width: clamp(240px, 34vw, 560px);
   color: #0f172a;
   font-size: 13.5px;
   font-weight: 600;
@@ -1194,9 +1282,20 @@ onMounted(reload)
 
 .table-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 2px;
+  width: 100%;
+  justify-content: center;
+  gap: 4px;
   opacity: 1;
+}
+
+.workbranch-grid :deep(.operation-column .cell),
+.workbranch-grid :deep(.operation-column-header .cell),
+.workbranch-grid :deep(.ed-table-fixed-column--right .cell) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: 0;
+  padding-left: 0;
 }
 
 .opbtn {
@@ -1217,6 +1316,24 @@ onMounted(reload)
     color: #3b82f6;
     background: #f1f5f9;
   }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.55;
+  }
+}
+
+.favorite-btn {
+  &.is-favorite,
+  &:hover.is-favorite {
+    color: #f59e0b;
+  }
+}
+
+.favorite-svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
 }
 
 .table-footer {
@@ -1258,7 +1375,7 @@ onMounted(reload)
   .workbranch {
     grid-template-columns: 1fr;
     height: auto;
-    min-height: calc(100vh - 60px);
+    min-height: calc(100vh - 64px);
     overflow: auto;
   }
 
@@ -1273,16 +1390,13 @@ onMounted(reload)
     padding: 0 16px;
   }
 
-  .divider {
-    display: none;
+  .portal-title {
+    max-width: calc(100vw - 120px);
+    overflow: hidden;
+    font-size: 17px;
+    text-overflow: ellipsis;
   }
 
-  .brand .logo {
-    width: 150px;
-    margin-right: 18px;
-  }
-
-  .portal-title,
   .header-actions :deep(.account-name) {
     display: none;
   }

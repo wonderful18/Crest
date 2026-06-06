@@ -1996,7 +1996,8 @@ export default {
     table_header_description: '表頭說明',
     table_header_description_config: '說明內容',
     table_header_description_height: '說明行高',
-    table_header_description_tip: '按當前顯示字段填寫說明；字段隱藏或調整順序後，會按字段重新匹配。',
+    table_header_description_tip:
+      '按當前顯示字段填寫說明；字段隱藏或調整順序後，會按字段重新匹配。',
     table_header_description_placeholder: '請輸入說明內容',
     cancel_group: '取消分組',
     cancel_all_group: '取消所有分組',
@@ -3777,6 +3778,8 @@ export default {
     exportFileLiveTime: '後台匯出檔案保留時間 (天)',
     platformOid: '第三方平台使用者組織',
     platformRid: '第三方平台使用者角色',
+    siteTitle: '系統名稱',
+    initialPassword: '預設密碼',
     pwdStrategy: '開啟密碼策略',
     dip: '停用初始密碼',
     pvp: '密碼有效期限',

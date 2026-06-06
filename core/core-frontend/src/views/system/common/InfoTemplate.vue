@@ -20,7 +20,7 @@
         :key="item.pkey"
       >
         <div class="info-item-label">
-          <span>{{ t(item.pkey) }}</span>
+          <span>{{ settingLabel(item.pkey) }}</span>
           <el-tooltip
             v-if="tooltipItem[item.pkey]"
             effect="dark"
@@ -143,6 +143,13 @@ const executeTime = ref(t('system.and_0_seconds'))
 const curTitle = computed(() => {
   return props.settingTitle || t('system.basic_settings')
 })
+const labelFallback: Record<string, string> = {
+  'setting_basic.siteTitle': '系统名称'
+}
+const settingLabel = (key: string) => {
+  const label = t(key)
+  return label === key ? labelFallback[key] || key : label
+}
 const copyVal = async val => {
   try {
     await toClipboard(val)

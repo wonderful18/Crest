@@ -18,6 +18,7 @@ import {
 import { enumValueObj, type EnumValue, getEnumValue } from '@/api/dataset'
 import { cloneDeep, debounce } from 'lodash-es'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
+import router from '@/router'
 import Flat from './Flat.vue'
 import eventBus from '@/utils/eventBus'
 import { useEmitt } from '@/hooks/web/useEmitt'
@@ -126,6 +127,7 @@ const disabledFirstItem = computed(() => {
   const { defaultValueFirstItem, optionValueSource } = props.config
   return defaultValueFirstItem && optionValueSource === 1
 })
+const currentVisualizationId = () => dvMainStore.dvInfo?.id || router.currentRoute.value.query.dvId
 const setDefaultMapValue = arr => {
   const { displayId, field } = config.value
   if (config.value.optionValueSource !== 1) {
@@ -277,7 +279,8 @@ const handleFieldIdDefaultChange = (val: string[]) => {
   loading.value = true
   getEnumValue({
     fieldIds: val,
-    resultMode: config.value.resultMode || 0
+    resultMode: config.value.resultMode || 0,
+    visualizationId: currentVisualizationId()
   })
     .then(res => {
       options.value = (res || [])
@@ -699,7 +702,8 @@ const setOptions = (num: number) => {
           sortId: sort === 'customSort' ? '' : sortId,
           resultMode: config.value.resultMode || 0,
           searchText: searchText.value,
-          filter: getCascadeFieldId()
+          filter: getCascadeFieldId(),
+          visualizationId: currentVisualizationId()
         })
       } else {
         options.value = []

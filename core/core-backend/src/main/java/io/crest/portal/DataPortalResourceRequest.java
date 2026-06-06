@@ -15,4 +15,5 @@ public class DataPortalResourceRequest implements Serializable {
     private Integer page;
     private Integer pageSize;
     private Boolean asc;
+    private String queryFrom;
 }

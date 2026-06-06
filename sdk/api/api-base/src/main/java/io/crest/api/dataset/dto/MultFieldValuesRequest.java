@@ -15,5 +15,6 @@ public class MultFieldValuesRequest {
 
     private DatasetSortDTO sort;
     private Integer resultMode = 0;
+    private Long visualizationId;
 
 }

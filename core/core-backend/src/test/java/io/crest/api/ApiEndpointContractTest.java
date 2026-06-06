@@ -13,7 +13,9 @@ import io.crest.api.sync.datasource.api.SyncDatasourceApi;
 import io.crest.api.system.SysParameterApi;
 import io.crest.api.visualization.DataVisualizationApi;
 import io.crest.api.visualization.VisualizationWatermarkApi;
+import io.crest.constant.SystemSettingConstants;
 import io.crest.embedded.server.EmbeddedTokenServer;
+import io.crest.utils.SystemSettingUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -92,6 +94,44 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void userPasswordManagementShouldShowDefaultPassword() throws IOException {
+        assertFrontendContract("core/core-frontend/src/views/system/user/index.vue",
+                List.of(
+                        "/user/default-password",
+                        "/user/reset-password/${row.id}",
+                        "默认密码：",
+                        "复制密码",
+                        "新建用户成功",
+                        "密码已重置"
+                ),
+                List.of(
+                        "密码已重置')"
+                ));
+        assertFrontendContract("core/core-frontend/src/views/system/parameter/basic/BasicInfo.vue",
+                List.of("setting_basic.initialPassword", "账号安全"),
+                List.of("AI"));
+        assertFrontendContract("core/core-frontend/src/views/system/parameter/basic/BasicEdit.vue",
+                List.of("item.pkey === 'initialPassword'", "autocomplete=\"new-password\""),
+                List.of("AI"));
+        assertFrontendContract("core/core-backend/src/main/java/io/crest/substitute/permissions/user/SubstituteUserServer.java",
+                List.of("return crestUserManage.defaultPwd();"),
+                List.of("return \"\";"));
+    }
+
+    @Test
+    void accountSecuritySettingsShouldBePersistable() {
+        List.of(
+                SystemSettingConstants.INITIAL_PASSWORD,
+                "basic.pwdStrategy",
+                SystemSettingConstants.DIP,
+                SystemSettingConstants.PVP,
+                SystemSettingConstants.LOGIN_LIMIT,
+                SystemSettingConstants.LOGIN_LIMIT_RATE,
+                SystemSettingConstants.LOGIN_LIMIT_TIME
+        ).forEach(key -> assertFalse(SystemSettingUtils.restrictedSetting(key)));
+    }
+
+    @Test
     void frontendSourcesShouldNotUseKnownBulkRenamedRoutes() throws IOException {
         assertFrontendTreeDoesNotContain(List.of(
                 "/chart/save",
@@ -141,6 +181,8 @@ class ApiEndpointContractTest {
         assertFrontendContract("core/core-backend/src/main/java/io/crest/portal/DataPortalPermissionManage.java",
                 List.of(
                         "canReadPublishedVisualization",
+                        "canReadPublishedVisualizationDataset",
+                        "FROM bi_chart c",
                         "CAST(p.resource_id AS UNSIGNED) = v.id",
                         "v.type = 'dataV' AND p.resource_type = 'screen'",
                         "v.type = 'dashboard' AND p.resource_type = 'panel'"
@@ -151,7 +193,12 @@ class ApiEndpointContractTest {
                 ));
         assertFrontendContract("core/core-backend/src/main/java/io/crest/portal/DataPortalServer.java",
                 List.of(
-                        "\" ORDER BY v.update_time \" + orderDirection + \" LIMIT ? OFFSET ?\"",
+                        "\" ORDER BY \" + orderColumn(normalized) + \" \" + orderDirection + \" LIMIT ? OFFSET ?\"",
+                        "INNER JOIN workspace_favorite_resource wfr ON wfr.resource_id = v.id",
+                        "INNER JOIN workspace_recent_resource wrr ON wrr.resource_id = v.id",
+                        "AS favorite",
+                        "recordRecent(resource)",
+                        "OptConstants.OPT_RESOURCE_TYPE.VISUALIZATION",
                         "\" LIMIT 1\""
                 ),
                 List.of(
@@ -160,6 +207,102 @@ class ApiEndpointContractTest {
                         "ORDER BY v.update_time \"\"\"",
                         "AND v.id = ?LIMIT"
                 ));
+    }
+
+    @Test
+    void dataPortalHomeShouldDefaultToFavorites() throws IOException {
+        assertFrontendContract("core/core-frontend/src/views/portal/DataPortal.vue",
+                List.of(
+                        "const systemTitle = computed(() => appearanceStore.getSiteTitle)",
+                        "<span class=\"portal-title\">{{ systemTitle }}</span>",
+                        "const activeName = ref(FAVORITES)",
+                        "{ title: '我的收藏', name: FAVORITES }",
+                        "{ title: '全部资源', name: ALL_RESOURCES }",
+                        "const resourceQueryFrom = () => (activeName.value === ALL_RESOURCES ? undefined : activeName.value)",
+                        "queryFrom: resourceQueryFrom()",
+                        "openAllResources(action)",
+                        "storeApi({",
+                        "favoriteLoadingId",
+                        "row.favorite ? '取消收藏' : '收藏'",
+                        "label=\"更新时间\""
+                ),
+                List.of(
+                        "研发效能指标管理系统",
+                        "{ title: '我的资源', name: 'store' }",
+                        "label=\"创建人\"",
+                        "label=\"组件\""
+                ));
+        assertFrontendContract("core/core-frontend/src/api/dataPortal.ts",
+                List.of("queryFrom?: string"),
+                List.of());
+    }
+
+    @Test
+    void portalBrandTitleShouldFollowSiteTitleSetting() throws IOException {
+        assertFrontendContract("core/core-frontend/src/store/modules/appearance.ts",
+                List.of(
+                        "siteTitle: 'Crest'",
+                        "getSiteTitle(): string",
+                        "async setAppearance(isCrestBi?: boolean, force = false)",
+                        "this.siteTitle = data.siteTitle || 'Crest'"
+                ),
+                List.of());
+        assertFrontendContract("core/core-frontend/src/views/portal/DataPortal.vue",
+                List.of(
+                        "useAppearanceStoreWithOut",
+                        "const systemTitle = computed(() => appearanceStore.getSiteTitle)",
+                        "<span class=\"portal-title\">{{ systemTitle }}</span>"
+                ),
+                List.of("研发效能指标管理系统"));
+        assertFrontendContract("core/core-frontend/src/views/portal/DataPortalView.vue",
+                List.of(
+                        "useAppearanceStoreWithOut",
+                        "const systemTitle = computed(() => appearanceStore.getSiteTitle)",
+                        "<span class=\"portal-title\">{{ systemTitle }}</span>"
+                ),
+                List.of("研发效能指标管理系统"));
+        assertFrontendContract("core/core-frontend/src/views/system/site/index.vue",
+                List.of("await appearanceStore.setAppearance(false, true)"),
+                List.of("await appearanceStore.setAppearance()\n"));
+    }
+
+    @Test
+    void portalPreviewQueryFiltersShouldUseVisualizationReadContext() throws IOException {
+        assertFrontendContract("sdk/api/api-base/src/main/java/io/crest/api/dataset/dto/EnumValueRequest.java",
+                List.of("private Long visualizationId"),
+                List.of());
+        assertFrontendContract("sdk/api/api-base/src/main/java/io/crest/api/dataset/dto/MultFieldValuesRequest.java",
+                List.of("private Long visualizationId"),
+                List.of());
+        assertFrontendContract("core/core-backend/src/main/java/io/crest/dataset/manage/DatasetGroupManage.java",
+                List.of(
+                        "canReadPublishedVisualizationDataset(visualizationId, id)",
+                        "sqlParamsForVisualizationRead"
+                ),
+                List.of("canReadPublishedVisualization(visualizationId, null)"));
+        assertFrontendContract("core/core-backend/src/main/java/io/crest/dataset/manage/DatasetDataManage.java",
+                List.of(
+                        "canReadPublishedVisualizationDataset(multFieldValuesRequest.getVisualizationId(), datasetGroupId)",
+                        "canReadPublishedVisualizationDataset(request.getVisualizationId(), datasetGroupId)",
+                        "datasetGroupInfoDTOForVisualizationRead(",
+                        "sqlParamsForVisualizationRead("
+                ),
+                List.of("DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTO(datasetGroupId, null);"));
+        assertFrontendContract("core/core-frontend/src/api/dataset.ts",
+                List.of("visualizationId?: string | number"),
+                List.of());
+        assertFrontendContract("core/core-frontend/src/custom-component/v-query/Select.vue",
+                List.of(
+                        "const currentVisualizationId = () => dvMainStore.dvInfo?.id || router.currentRoute.value.query.dvId",
+                        "visualizationId: currentVisualizationId()"
+                ),
+                List.of());
+        assertFrontendContract("core/core-frontend/src/custom-component/v-query/Tree.vue",
+                List.of(
+                        "const currentVisualizationId = () => dvMainStore.dvInfo?.id || router.currentRoute.value.query.dvId",
+                        "visualizationId: currentVisualizationId()"
+                ),
+                List.of());
     }
 
     @Test
@@ -190,7 +333,7 @@ class ApiEndpointContractTest {
                 List.of(
                         "datasetGroupInfoDTOForVisualizationRead",
                         "sqlParamsForVisualizationRead",
-                        "dataPortalPermissionManage.canReadPublishedVisualization(visualizationId, null)"
+                        "dataPortalPermissionManage.canReadPublishedVisualizationDataset(visualizationId, id)"
                 ),
                 List.of());
         assertFrontendContract("core/core-frontend/src/permission.ts",

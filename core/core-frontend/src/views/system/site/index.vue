@@ -28,7 +28,7 @@ const save = async () => {
     data: [{ pkey: 'basic.siteTitle', pval: title, type: 'text', sort: 9 }]
   })
   form.title = title
-  await appearanceStore.setAppearance()
+  await appearanceStore.setAppearance(false, true)
   ElMessage.success('保存成功')
 }
 
@@ -45,16 +45,14 @@ onMounted(load)
           <div class="setting-desc">用于登录页、工作台和系统页面的浏览器标签标题。</div>
         </div>
         <el-form label-position="top" class="site-form">
-          <el-form-item label="标题后缀">
+          <el-form-item>
             <el-input
               v-model.trim="form.title"
               maxlength="40"
               show-word-limit
-              placeholder="请输入标题"
+              placeholder="请输入浏览器标题"
             />
-            <div class="form-tip">
-              实际显示为 {{ form.title === 'Crest' ? 'Crest' : `Crest-${form.title || 'Crest'}` }}
-            </div>
+            <div class="form-tip">实际显示为 {{ form.title || 'Crest' }}</div>
           </el-form-item>
           <el-button type="primary" @click="save">保存</el-button>
         </el-form>
@@ -100,7 +98,7 @@ onMounted(load)
   color: #64748b;
 }
 .site-form {
-  margin-top: 24px;
+  margin-top: 16px;
   width: 420px;
 }
 </style>

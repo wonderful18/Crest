@@ -1,6 +1,8 @@
 package io.crest.portal;
 
+import io.crest.commons.constants.OptConstants;
 import io.crest.exception.CrestException;
+import io.crest.operation.manage.CoreOptRecentManage;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -21,6 +23,9 @@ public class DataPortalServer {
 
     @Resource
     private DataPortalPermissionManage dataPortalPermissionManage;
+
+    @Resource
+    private CoreOptRecentManage coreOptRecentManage;
 
     @GetMapping("/overview")
     public DataPortalOverviewVO overview() {
@@ -50,14 +55,32 @@ public class DataPortalServer {
         Long uid = dataPortalPermissionManage.currentUid();
         DataPortalResourceRequest normalized = normalizeRequest(request);
         QueryParts query = buildBaseQuery(uid, normalized);
+        QueryParts countQuery = buildBaseQuery(uid, copyWithoutType(normalized));
 
         long total = jdbcTemplate.queryForObject(
                 "SELECT COUNT(1) " + query.fromWhere,
                 Long.class,
                 query.args.toArray()
         );
+        DataPortalPageVO page = jdbcTemplate.queryForObject("""
+                SELECT COUNT(1) AS total,
+                       SUM(CASE WHEN v.type = 'dataV' THEN 1 ELSE 0 END) AS screen_count,
+                       SUM(CASE WHEN v.type = 'dashboard' THEN 1 ELSE 0 END) AS dashboard_count
+                """ + countQuery.fromWhere, (rs, rowNum) -> {
+            DataPortalPageVO vo = new DataPortalPageVO();
+            vo.setTotal(total);
+            vo.setScreenCount(rs.getLong("screen_count"));
+            vo.setDashboardCount(rs.getLong("dashboard_count"));
+            return vo;
+        }, countQuery.args.toArray());
+        if (page == null) {
+            page = new DataPortalPageVO();
+            page.setTotal(total);
+        }
 
-        List<Object> listArgs = new ArrayList<>(query.args);
+        List<Object> listArgs = new ArrayList<>();
+        listArgs.add(uid);
+        listArgs.addAll(query.args);
         listArgs.add(normalized.getPageSize());
         listArgs.add((normalized.getPage() - 1) * normalized.getPageSize());
         String orderDirection = Boolean.TRUE.equals(normalized.getAsc()) ? "ASC" : "DESC";
@@ -68,8 +91,14 @@ public class DataPortalServer {
                        v.mobile_layout AS ext_flag,
                        v.update_time,
                        COALESCE(u.name, v.create_by) AS creator_name,
-                       (SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = v.id) AS chart_count
-                """ + query.fromWhere + " ORDER BY v.update_time " + orderDirection + " LIMIT ? OFFSET ?";
+                       (SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = v.id) AS chart_count,
+                       EXISTS (
+                           SELECT 1
+                           FROM workspace_favorite_resource fav
+                           WHERE fav.resource_id = v.id
+                             AND fav.uid = ?
+                       ) AS favorite
+                """ + query.fromWhere + " ORDER BY " + orderColumn(normalized) + " " + orderDirection + " LIMIT ? OFFSET ?";
         List<DataPortalResourceVO> records = jdbcTemplate.query(listSql, (rs, rowNum) -> {
             DataPortalResourceVO vo = new DataPortalResourceVO();
             vo.setId(rs.getLong("id"));
@@ -79,10 +108,10 @@ public class DataPortalServer {
             vo.setUpdateTime(rs.getLong("update_time"));
             vo.setCreatorName(rs.getString("creator_name"));
             vo.setChartCount(rs.getInt("chart_count"));
+            vo.setFavorite(rs.getBoolean("favorite"));
             return vo;
         }, listArgs.toArray());
 
-        DataPortalPageVO page = new DataPortalPageVO();
         page.setTotal(total);
         page.setPage(normalized.getPage());
         page.setPageSize(normalized.getPageSize());
@@ -102,6 +131,9 @@ public class DataPortalServer {
         QueryParts query = buildBaseQuery(uid, request);
         query.fromWhere += " AND v.id = ?";
         query.args.add(id);
+        List<Object> resourceArgs = new ArrayList<>();
+        resourceArgs.add(uid);
+        resourceArgs.addAll(query.args);
         String resourceSql = """
                 SELECT v.id,
                        v.name,
@@ -109,7 +141,13 @@ public class DataPortalServer {
                        v.mobile_layout AS ext_flag,
                        v.update_time,
                        COALESCE(u.name, v.create_by) AS creator_name,
-                       (SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = v.id) AS chart_count
+                       (SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = v.id) AS chart_count,
+                       EXISTS (
+                           SELECT 1
+                           FROM workspace_favorite_resource fav
+                           WHERE fav.resource_id = v.id
+                             AND fav.uid = ?
+                       ) AS favorite
                 """ + query.fromWhere + " LIMIT 1";
         List<DataPortalResourceVO> resources = jdbcTemplate.query(resourceSql, (rs, rowNum) -> {
             DataPortalResourceVO vo = new DataPortalResourceVO();
@@ -120,12 +158,15 @@ public class DataPortalServer {
             vo.setUpdateTime(rs.getLong("update_time"));
             vo.setCreatorName(rs.getString("creator_name"));
             vo.setChartCount(rs.getInt("chart_count"));
+            vo.setFavorite(rs.getBoolean("favorite"));
             return vo;
-        }, query.args.toArray());
+        }, resourceArgs.toArray());
         if (resources.isEmpty()) {
             CrestException.throwException("资源不存在或无访问权限");
         }
-        return resources.get(0);
+        DataPortalResourceVO resource = resources.get(0);
+        recordRecent(resource);
+        return resource;
     }
 
     private DataPortalResourceRequest normalizeRequest(DataPortalResourceRequest request) {
@@ -148,6 +189,14 @@ public class DataPortalServer {
             normalized.setType("datav".equals(normalizedType) ? "dataV" : "dashboard");
         }
         normalized.setKeyword(StringUtils.trimToNull(normalized.getKeyword()));
+        String queryFrom = StringUtils.trimToEmpty(normalized.getQueryFrom()).toLowerCase(Locale.ROOT);
+        if ("favorite".equals(queryFrom) || "favorites".equals(queryFrom)) {
+            queryFrom = "store";
+        }
+        if (!"store".equals(queryFrom) && !"recent".equals(queryFrom)) {
+            queryFrom = null;
+        }
+        normalized.setQueryFrom(queryFrom);
         return normalized;
     }
 
@@ -156,6 +205,21 @@ public class DataPortalServer {
         StringBuilder sql = new StringBuilder("""
                 FROM bi_visualization v
                 LEFT JOIN iam_user u ON u.id = CAST(v.create_by AS UNSIGNED)
+                """);
+        if (request != null && "store".equals(request.getQueryFrom())) {
+            sql.append("""
+                INNER JOIN workspace_favorite_resource wfr ON wfr.resource_id = v.id
+                  AND wfr.uid = ?
+                """);
+            args.add(uid);
+        } else if (request != null && "recent".equals(request.getQueryFrom())) {
+            sql.append("""
+                INNER JOIN workspace_recent_resource wrr ON wrr.resource_id = v.id
+                  AND wrr.uid = ?
+                """);
+            args.add(uid);
+        }
+        sql.append("""
                 WHERE v.delete_flag = 0
                   AND v.node_type = 'leaf'
                   AND v.status = 1
@@ -171,6 +235,34 @@ public class DataPortalServer {
         }
         dataPortalPermissionManage.appendReadScope(sql, args, uid);
         return new QueryParts(sql.toString(), args);
+    }
+
+    private DataPortalResourceRequest copyWithoutType(DataPortalResourceRequest source) {
+        DataPortalResourceRequest copy = new DataPortalResourceRequest();
+        copy.setKeyword(source.getKeyword());
+        copy.setPage(source.getPage());
+        copy.setPageSize(source.getPageSize());
+        copy.setAsc(source.getAsc());
+        copy.setQueryFrom(source.getQueryFrom());
+        return copy;
+    }
+
+    private String orderColumn(DataPortalResourceRequest request) {
+        if (request != null && "store".equals(request.getQueryFrom())) {
+            return "wfr.time";
+        }
+        if (request != null && "recent".equals(request.getQueryFrom())) {
+            return "wrr.time";
+        }
+        return "v.update_time";
+    }
+
+    private void recordRecent(DataPortalResourceVO resource) {
+        coreOptRecentManage.saveOpt(
+                resource.getId(),
+                OptConstants.OPT_RESOURCE_TYPE.VISUALIZATION,
+                OptConstants.OPT_TYPE.UPDATE
+        );
     }
 
     private static class QueryParts {

@@ -57,6 +57,19 @@ public class DataPortalPermissionManage {
         return count != null && count > 0;
     }
 
+    public boolean canReadPublishedVisualizationDataset(Long id, Long datasetGroupId) {
+        if (id == null || datasetGroupId == null || !canReadPublishedVisualization(id, null)) {
+            return false;
+        }
+        Long count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(1)
+                FROM bi_chart c
+                WHERE c.scene_id = ?
+                  AND c.table_id = ?
+                """, Long.class, id, datasetGroupId);
+        return count != null && count > 0;
+    }
+
     public void appendReadScope(StringBuilder sql, List<Object> args, Long uid) {
         if (uid == null || hasBackendAccess(uid)) {
             return;

@@ -64,6 +64,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
       showDemoTips: false,
       demoTipsContent: '',
       community: true,
+      siteTitle: 'Crest',
       fontList: []
     }
   },
@@ -143,6 +144,9 @@ export const useAppearanceStore = defineStore('appearanceStore', {
     getCommunity(): boolean {
       return this.community
     },
+    getSiteTitle(): string {
+      return this.siteTitle || 'Crest'
+    },
     getShowAi(): boolean {
       return isBtnShow(this.showAi)
     },
@@ -205,13 +209,13 @@ export const useAppearanceStore = defineStore('appearanceStore', {
     setLoaded(data: boolean) {
       this.loaded = data
     },
-    async setAppearance(isCrestBi?: boolean) {
+    async setAppearance(isCrestBi?: boolean, force = false) {
       const desktop = wsCache.get('app.desktop')
       if (desktop) {
         this.loaded = true
         this.community = true
       }
-      if (this.loaded) {
+      if (this.loaded && !force) {
         return
       }
       defaultFont().then(res => {
@@ -261,6 +265,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
           document.title = 'Crest'
           setLinkIcon()
         }
+        this.siteTitle = 'Crest'
         return
       }
       const data: AppearanceState = { loaded: false, community: true, fontList: [] }
@@ -273,6 +278,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
       })
       data.community = isCommunity
       this.community = data.community
+      this.siteTitle = data.siteTitle || 'Crest'
       if (this.community) {
         this.showDemoTips = data.showDemoTips
         this.demoTipsContent = data.demoTipsContent
@@ -352,7 +358,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
 
 const applyDocumentTitle = (siteTitle?: string) => {
   const normalized = siteTitle?.trim()
-  const title = normalized && normalized !== 'Crest' ? `Crest-${normalized}` : 'Crest'
+  const title = normalized || 'Crest'
   document.title = title
   setTitle(title)
 }
@@ -379,7 +385,8 @@ const setLinkIcon = (linkWeb?: string) => {
     document.head.appendChild(shortcut)
   }
   if (shortcut) {
-    shortcut['href'] = linkWeb ? baseUrl + linkWeb : '/favicon.ico'
+    shortcut['href'] = linkWeb ? baseUrl + linkWeb : '/favicon.svg'
+    shortcut.setAttribute('type', 'image/svg+xml')
   }
 }
 

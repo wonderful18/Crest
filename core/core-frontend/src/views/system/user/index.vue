@@ -36,6 +36,7 @@ const orgForm = reactive<any>({ id: null, pid: 0, name: '', parentName: '根目�
 const isSsoUser = row => String(row?.authType || '').toUpperCase() === 'SSO'
 const authTypeLabel = row => (isSsoUser(row) ? '单点登录' : '本地账号')
 const authTypeTag = row => (isSsoUser(row) ? 'success' : 'info')
+const localAuthType = authType => String(authType || 'LOCAL').toUpperCase() !== 'SSO'
 
 const loadTable = async () => {
   loading.value = true
@@ -134,11 +135,17 @@ const save = async () => {
     ElMessage.warning('请选择所属组织')
     return
   }
+  const isCreate = !isEdit.value
+  const account = form.account
+  const authType = form.authType
   const method = isEdit.value ? request.put : request.post
   await method({ url: '/user', data: form })
   ElMessage.success('保存成功')
   dialogVisible.value = false
   await loadTable()
+  if (isCreate && localAuthType(authType)) {
+    await showDefaultPasswordNotice('新建用户成功', `用户「${account}」已创建。`)
+  }
 }
 
 const toggleEnable = async row => {
@@ -154,7 +161,41 @@ const resetPwd = async row => {
     type: 'warning'
   })
   await request.post({ url: `/user/reset-password/${row.id}` })
-  ElMessage.success('密码已重置')
+  await showDefaultPasswordNotice('密码已重置', `「${row.name}」的本地密码已重置。`)
+}
+
+const queryDefaultPassword = async () => {
+  const res = await request.get({ url: '/user/default-password' })
+  return String(res.data || '')
+}
+
+const copyPassword = async (password: string) => {
+  await navigator.clipboard.writeText(password)
+  ElMessage.success('默认密码已复制')
+}
+
+const showDefaultPasswordNotice = async (title: string, message: string) => {
+  let password = ''
+  try {
+    password = await queryDefaultPassword()
+  } catch {
+    ElMessage.warning('默认密码未配置，请先在系统参数的账号安全中设置')
+    return
+  }
+  if (!password) {
+    ElMessage.warning('默认密码未配置，请先在系统参数的账号安全中设置')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(`${message} 默认密码：${password}`, title, {
+      confirmButtonText: '复制密码',
+      cancelButtonText: '关闭',
+      type: 'success'
+    })
+    await copyPassword(password)
+  } catch {
+    // 关闭提示框不影响已经完成的账号操作。
+  }
 }
 
 const remove = async row => {

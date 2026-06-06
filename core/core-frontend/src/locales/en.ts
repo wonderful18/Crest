@@ -3890,6 +3890,8 @@ export default {
     exportFileLiveTime: 'Background export file retention time (days)',
     platformOid: 'Third-party platform user organization',
     platformRid: 'Third-party platform user role',
+    siteTitle: 'System name',
+    initialPassword: 'Default password',
     pwdStrategy: 'Enable password policy',
     dip: 'Disable initial password',
     pvp: 'Password validity period',

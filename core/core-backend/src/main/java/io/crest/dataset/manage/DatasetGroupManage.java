@@ -478,7 +478,7 @@ public class DatasetGroupManage {
 
     public DatasetGroupInfoDTO datasetGroupInfoDTOForVisualizationRead(Long id, String type, Long visualizationId) throws Exception {
         boolean skipDatasetAccess = visualizationId != null
-                && dataPortalPermissionManage.canReadPublishedVisualization(visualizationId, null);
+                && dataPortalPermissionManage.canReadPublishedVisualizationDataset(visualizationId, id);
         return datasetGroupInfoDTO(id, type, !skipDatasetAccess);
     }
 
@@ -560,7 +560,9 @@ public class DatasetGroupManage {
 
     public List<SqlVariableDetails> sqlParamsForVisualizationRead(List<Long> ids, Long visualizationId) {
         boolean skipDatasetAccess = visualizationId != null
-                && dataPortalPermissionManage.canReadPublishedVisualization(visualizationId, null);
+                && ObjectUtils.isNotEmpty(ids)
+                && ids.stream().allMatch(id -> dataPortalPermissionManage
+                .canReadPublishedVisualizationDataset(visualizationId, id));
         return sqlParams(ids, !skipDatasetAccess);
     }
 

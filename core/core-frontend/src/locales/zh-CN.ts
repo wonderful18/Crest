@@ -2001,7 +2001,8 @@ export default {
     table_header_description: '表头说明',
     table_header_description_config: '说明内容',
     table_header_description_height: '说明行高',
-    table_header_description_tip: '按当前显示字段填写说明；字段隐藏或调整顺序后，会按字段重新匹配。',
+    table_header_description_tip:
+      '按当前显示字段填写说明；字段隐藏或调整顺序后，会按字段重新匹配。',
     table_header_description_placeholder: '请输入说明内容',
     cancel_group: '取消分组',
     cancel_all_group: '取消所有分组',
@@ -3783,6 +3784,8 @@ export default {
     exportFileLiveTime: '后台导出文件保留时间 (天)',
     platformOid: '第三方平台用户组织',
     platformRid: '第三方平台用户角色',
+    siteTitle: '系统名称',
+    initialPassword: '默认密码',
     pwdStrategy: '开启密码策略',
     dip: '禁用初始密码',
     pvp: '密码有效期',
