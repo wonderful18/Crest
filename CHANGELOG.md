@@ -15,6 +15,7 @@ v1.5.5 是面向数据门户和可视化交付场景的功能修复版本。版�
 - 新增 `/user/default-password` 管理端接口；新建本地用户和重置密码后展示默认密码，并支持复制。
 - 新增 `upgrade-sql/v1.5.4_to_v1.5.5.sql`，离线包同步携带 SQL 和执行说明。
 - Release 附件新增 `crest-source-v1.5.5.tar.gz` 源码包，并纳入 `crest-v1.5.5-checksums.txt`。
+- Release 附件新增 `crest-app-images-v1.5.5-linux-amd64.tar.gz` 和 `crest-app-images-v1.5.5-linux-arm64.tar.gz` 应用镜像升级包；包内包含前端镜像、后端镜像和增量升级 SQL。
 
 ### 变更
 
@@ -53,6 +54,7 @@ v1.5.5 是面向数据门户和可视化交付场景的功能修复版本。版�
 
 - 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.5` 和 `ghcr.io/sevoniva/crest-web:v1.5.5`。
 - 默认离线包为 `crest-offline-v1.5.5-linux-amd64.tar.gz` 和 `crest-offline-v1.5.5-linux-arm64.tar.gz`。
+- 应用镜像升级包为 `crest-app-images-v1.5.5-linux-amd64.tar.gz` 和 `crest-app-images-v1.5.5-linux-arm64.tar.gz`。
 - 默认源码包为 `crest-source-v1.5.5.tar.gz`。
 - 离线包内包含 `upgrade-sql/v1.5.4_to_v1.5.5.sql`；从 v1.5.4 升级时请先备份元数据库，再执行该文件。
 - 全新环境可直接安装 v1.5.5；v1.5.4 升级到 v1.5.5 时请替换前后端镜像并执行升级 SQL，更早版本迁移前请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
