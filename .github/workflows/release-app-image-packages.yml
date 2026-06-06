@@ -74,6 +74,24 @@ jobs:
           FRONTEND_IMAGE="ghcr.io/sevoniva/crest-web:${VERSION}" \
           bash installer/make-app-image-package.sh "${VERSION}" "${PACKAGE_PLATFORM}"
 
+      - name: Verify app image package contents
+        env:
+          VERSION: ${{ inputs.version }}
+          PACKAGE_PLATFORM: ${{ matrix.package_platform }}
+        run: |
+          set -euo pipefail
+
+          package_dir="crest-app-images-${VERSION}-${PACKAGE_PLATFORM}"
+          package_file="offline-packages/${package_dir}.tar.gz"
+          tar -tzf "${package_file}" > /tmp/crest-app-image-package-files.txt
+
+          grep -Fqx "${package_dir}/APP-IMAGES-README.md" /tmp/crest-app-image-package-files.txt
+          grep -Fqx "${package_dir}/load-images.sh" /tmp/crest-app-image-package-files.txt
+          grep -Fqx "${package_dir}/image-manifest.txt" /tmp/crest-app-image-package-files.txt
+          grep -Fqx "${package_dir}/upgrade-sql/v1.5.4_to_v1.5.5.sql" /tmp/crest-app-image-package-files.txt
+          grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-service_${VERSION}.tar.gz" /tmp/crest-app-image-package-files.txt
+          grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-web_${VERSION}.tar.gz" /tmp/crest-app-image-package-files.txt
+
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
