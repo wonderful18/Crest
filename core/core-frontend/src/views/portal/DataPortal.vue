@@ -597,8 +597,9 @@ onMounted(reload)
 .portal-title {
   flex: none;
   color: #0f172a;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
+  line-height: 24px;
   letter-spacing: 0.2px;
   white-space: nowrap;
 }
