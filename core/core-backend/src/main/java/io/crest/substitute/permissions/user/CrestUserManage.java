@@ -564,6 +564,9 @@ public class CrestUserManage {
         vo.setName(user.getName());
         vo.setOid(platformPermissionManage.defaultOrgId(user.getId()));
         vo.setLanguage("zh-CN");
+        boolean admin = Boolean.TRUE.equals(user.getAdmin()) || platformPermissionManage.isSystemAdmin(user.getId());
+        vo.setAdmin(admin);
+        vo.setBackendAccess(admin);
         return vo;
     }
 

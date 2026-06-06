@@ -124,6 +124,91 @@ class ApiEndpointContractTest {
     }
 
     @Test
+    void dataPortalShouldRemainTheDefaultUserEntry() throws IOException {
+        assertFrontendContract("core/core-frontend/src/router/index.ts",
+                List.of("redirect: '/portal'", "path: '/portal'", "DataPortal.vue", "path: '/portal/view/:id'", "DataPortalView.vue"),
+                List.of("redirect: '/workbranch/index'"));
+        assertFrontendContract("core/core-frontend/src/permission.ts",
+                List.of("const portalHome = '/portal'", "getBackendAccess", "isBackendRoute"),
+                List.of("const portalHome = '/workbranch/index'"));
+        assertFrontendContract("core/core-frontend/src/views/login/index.vue",
+                List.of("'/portal'", "'/workbranch/index'"),
+                List.of("let queryRedirectPath = '/workbranch/index'"));
+    }
+
+    @Test
+    void dataPortalScopeShouldNotUseStringCastForResourceId() throws IOException {
+        assertFrontendContract("core/core-backend/src/main/java/io/crest/portal/DataPortalPermissionManage.java",
+                List.of(
+                        "canReadPublishedVisualization",
+                        "CAST(p.resource_id AS UNSIGNED) = v.id",
+                        "v.type = 'dataV' AND p.resource_type = 'screen'",
+                        "v.type = 'dashboard' AND p.resource_type = 'panel'"
+                ),
+                List.of(
+                        "p.resource_id = CAST(v.id AS CHAR)",
+                        "p.resource_type = CASE"
+                ));
+        assertFrontendContract("core/core-backend/src/main/java/io/crest/portal/DataPortalServer.java",
+                List.of(
+                        "\" ORDER BY v.update_time \" + orderDirection + \" LIMIT ? OFFSET ?\"",
+                        "\" LIMIT 1\""
+                ),
+                List.of(
+                        "p.resource_id = CAST(v.id AS CHAR)",
+                        "p.resource_type = CASE",
+                        "ORDER BY v.update_time \"\"\"",
+                        "AND v.id = ?LIMIT"
+                ));
+    }
+
+    @Test
+    void portalPreviewShouldUseReadScopeWithoutBackendTree() throws IOException {
+        assertFrontendContract("core/core-backend/src/main/java/io/crest/visualization/server/DataVisualizationServer.java",
+                List.of(
+                        "DataPortalPermissionManage",
+                        "dataPortalPermissionManage.canReadPublishedVisualization(dvId, result.getType())"
+                ),
+                List.of("DataVisualizationConstants.QUERY_SOURCE.MAIN_EDIT.equals(request.getSource())\n            )"));
+        assertFrontendContract("core/core-backend/src/main/java/io/crest/chart/manage/ChartViewManege.java",
+                List.of(
+                        "DataPortalPermissionManage",
+                        "dataPortalPermissionManage.canReadPublishedVisualization(sceneId, null)",
+                        "portalVisualizationRead",
+                        "requireChartReadAccess(chart.getCreateBy(), chart.getSceneId(), chart.getTableId())"
+                ),
+                List.of());
+        assertFrontendContract("core/core-backend/src/main/java/io/crest/chart/manage/ChartDataManage.java",
+                List.of(
+                        "DataPortalPermissionManage",
+                        "datasetGroupInfoDTOForVisualizationRead",
+                        "sqlParamsForVisualizationRead",
+                        "portalVisualizationRead || corePermissionManage.checkAuth(dto)"
+                ),
+                List.of("datasetGroupManage.datasetGroupInfoDTO(view.getTableId(), null)"));
+        assertFrontendContract("core/core-backend/src/main/java/io/crest/dataset/manage/DatasetGroupManage.java",
+                List.of(
+                        "datasetGroupInfoDTOForVisualizationRead",
+                        "sqlParamsForVisualizationRead",
+                        "dataPortalPermissionManage.canReadPublishedVisualization(visualizationId, null)"
+                ),
+                List.of());
+        assertFrontendContract("core/core-frontend/src/permission.ts",
+                List.of("!userStore.getBackendAccess && isReadOnlyRoute(to.path, to.name)"),
+                List.of());
+        assertFrontendContract("core/core-frontend/src/store/modules/interactive.ts",
+                List.of("const treeNodes = Array.isArray(list)", "treeNodes[0]?.weight"),
+                List.of("list[0]['weight']"));
+    }
+
+    @Test
+    void standaloneRowPermissionShouldTreatMissingApiAsNoRules() throws IOException {
+        assertFrontendContract("core/core-backend/src/main/java/io/crest/dataset/manage/PermissionManage.java",
+                List.of("if (getRowPermissionsApi() == null)", "if (userEntity == null)", "Optional.ofNullable(userEntity.getRoleIds())"),
+                List.of("getRowPermissionsApi().getUserById(userId);\n        List<Long> roleIds"));
+    }
+
+    @Test
     void datasetStructurePreviewShouldNotShadowFieldTypeLookup() throws IOException {
         assertFrontendContract("core/core-frontend/src/views/visualized/data/dataset/index.vue",
                 List.of("cellData: fieldTypeCode", "fieldType[fieldTypeCode]"),

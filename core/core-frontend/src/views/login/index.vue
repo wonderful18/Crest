@@ -70,7 +70,8 @@ const showLocalLogin = computed(() => {
 })
 
 const getCurLocation = () => {
-  let queryRedirectPath = '/workbranch/index'
+  let queryRedirectPath =
+    router.currentRoute.value.path === '/admin-login' ? '/workbranch/index' : '/portal'
   if (router.currentRoute.value.query.redirect) {
     queryRedirectPath = router.currentRoute.value.query.redirect as string
   }
@@ -164,7 +165,7 @@ const loadSsoStatus = async () => {
 }
 const handleSsoLogin = () => {
   cleanPlatformFlag()
-  const redirect = (router.currentRoute.value.query.redirect as string) || '/workbranch/index'
+  const redirect = (router.currentRoute.value.query.redirect as string) || '/portal'
   const apiBase = PATH_URL.startsWith('./') ? PATH_URL.substring(1) : PATH_URL
   window.location.href = `${apiBase}/sso/login?redirect=${encodeURIComponent(redirect)}`
 }
