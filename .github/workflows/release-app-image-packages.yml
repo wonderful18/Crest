@@ -41,10 +41,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Load target-architecture app images
+      - name: Pull target-architecture app images
         env:
           VERSION: ${{ inputs.version }}
           DOCKER_PLATFORM: ${{ matrix.docker_platform }}
@@ -52,18 +49,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          mkdir -p /tmp/crest-app-image-load
-
-          load_image() {
+          pull_image() {
             local source_image="$1"
             local local_image="$2"
-            printf 'FROM --platform=%s %s\n' "${DOCKER_PLATFORM}" "${source_image}" \
-              | docker buildx build --platform "${DOCKER_PLATFORM}" -t "${local_image}" --load -f - /tmp/crest-app-image-load
+            docker pull --platform "${DOCKER_PLATFORM}" "${source_image}"
+            docker tag "${source_image}" "${local_image}"
             docker image inspect "${local_image}" --format '{{.Architecture}}' | grep -qx "${ARCH}"
           }
 
-          load_image "ghcr.io/sevoniva/crest-service:${VERSION}" "ghcr.io/sevoniva/crest-service:${VERSION}-${ARCH}"
-          load_image "ghcr.io/sevoniva/crest-web:${VERSION}" "ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}"
+          pull_image "ghcr.io/sevoniva/crest-service:${VERSION}" "ghcr.io/sevoniva/crest-service:${VERSION}-${ARCH}"
+          pull_image "ghcr.io/sevoniva/crest-web:${VERSION}" "ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}"
 
       - name: Build app image package
         env:
