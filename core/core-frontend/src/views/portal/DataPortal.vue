@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import type { TabsPaneContext } from 'element-plus-secondary'
 import dayjs from 'dayjs'
 import router from '@/router'
-import crestLogo from '@/assets/img/crest-logo-horizontal-192h.png'
+import crestLogo from '@/assets/svg/logo.svg?url'
+import userImg from '@/assets/svg/user-img.svg'
+import GridTable from '@/components/grid-table/src/GridTable.vue'
 import { logoutApi } from '@/api/login'
 import { portalOverviewApi, portalResourcesApi } from '@/api/dataPortal'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { logoutHandler } from '@/utils/logout'
-import EmptyBackground from '@/components/empty-background/src/EmptyBackground.vue'
 
 interface PortalResource {
-  id: string
+  id: string | number
   name: string
   type: string
   creatorName?: string
@@ -19,13 +21,16 @@ interface PortalResource {
 }
 
 const userStore = useUserStoreWithOut()
+const activeName = ref('store')
+const orderDesc = ref(true)
+let resourceRequestSeq = 0
 
 const state = reactive({
   loading: false,
   keyword: '',
   type: 'all',
   page: 1,
-  pageSize: 24,
+  pageSize: 20,
   total: 0,
   records: [] as PortalResource[],
   overview: {
@@ -37,25 +42,112 @@ const state = reactive({
   }
 })
 
+const paneList = [
+  { title: '我的资源', name: 'store' },
+  { title: '最近使用', name: 'recent' }
+]
+
+const quickCreationBaseList = [
+  {
+    icon: '/svg/icon_dashboard.svg',
+    name: '仪表盘',
+    color: '#3B82F6',
+    code: 'DASHBOARD'
+  },
+  {
+    icon: '/svg/icon_data-visualization.svg',
+    name: '数据大屏',
+    color: '#1FB6A6',
+    code: 'SCREEN'
+  },
+  {
+    icon: '/svg/icon_dataset.svg',
+    name: '数据集',
+    color: '#6E62E8',
+    code: 'DATASET'
+  },
+  {
+    icon: '/svg/icon_database.svg',
+    name: '数据源',
+    color: '#F5A623',
+    code: 'SOURCE'
+  }
+]
+
 const backendAccess = computed(() => userStore.getBackendAccess || state.overview.backendAccess)
 const userName = computed(() => userStore.getName || '用户')
-const userInitial = computed(() => userName.value.substring(0, 1))
-const featuredResource = computed(() => state.records[0] || null)
-const galleryResources = computed(() => state.records.slice(1))
-const openCount = computed(() => state.total || state.overview.total)
+const userId = computed(() => userStore.getUid || '-')
+const latestDateTime = computed(() => formatTime(state.overview.latestUpdateTime))
 
-const tabs = computed(() => [
-  { label: '全部', value: 'all', count: state.overview.total },
-  { label: '大屏', value: 'dataV', count: state.overview.screenCount },
-  { label: '仪表盘', value: 'dashboard', count: state.overview.dashboardCount }
+const quickCreationList = computed(() =>
+  quickCreationBaseList.map(item => ({
+    ...item,
+    disabled: !backendAccess.value
+  }))
+)
+
+const typeFilters = computed(() => [
+  { label: '全部', value: 'all', count: state.overview.total, color: '#3B82F6' },
+  { label: '数据大屏', value: 'dataV', count: state.overview.screenCount, color: '#1FB6A6' },
+  { label: '仪表盘', value: 'dashboard', count: state.overview.dashboardCount, color: '#3B82F6' }
+])
+
+const stats = computed(() => [
+  {
+    name: '数据大屏',
+    code: 'SCREEN',
+    color: '#1FB6A6',
+    value: state.overview.screenCount
+  },
+  {
+    name: '仪表盘',
+    code: 'DASHBOARD',
+    color: '#3B82F6',
+    value: state.overview.dashboardCount
+  },
+  {
+    name: '可访问资源',
+    code: 'RESOURCE',
+    color: '#6E62E8',
+    value: state.overview.total
+  }
 ])
 
 const typeLabel = (type: string) => (type === 'dashboard' ? '仪表盘' : '数据大屏')
-const typeAccent = (type: string) => (type === 'dashboard' ? '#3b82f6' : '#10b981')
+const typeIcon = (type: string) =>
+  type === 'dashboard' ? '/svg/icon_dashboard.svg' : '/svg/icon_data-visualization.svg'
+const typeColor = (type: string) => (type === 'dashboard' ? '#3B82F6' : '#1FB6A6')
+const typeCode = (type: string | number) => String(type || '').toUpperCase()
 const formatTime = (time?: number | null, formatter = 'YYYY-MM-DD HH:mm') =>
   time ? dayjs(time).format(formatter) : '-'
-const latestTime = computed(() => formatTime(state.overview.latestUpdateTime, 'HH:mm'))
-const latestDateTime = computed(() => formatTime(state.overview.latestUpdateTime))
+
+const getSparkValues = (value: number) => {
+  const total = Number(value || 0)
+  if (!total) {
+    return new Array(7).fill(0)
+  }
+  return [0, 0.16, 0.32, 0.48, 0.66, 0.84, 1].map(rate => Math.ceil(total * rate))
+}
+
+const getSparkPoints = (value: number) => {
+  const values = getSparkValues(value)
+  const max = Math.max(...values)
+  const min = Math.min(...values)
+  const range = max - min || 1
+  return values
+    .map((item, index) => {
+      const x = (46 / 6) * index
+      const y = max === min ? (max ? 9 : 15) : 16 - ((item - min) / range) * 14
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
+}
+
+const getSparkLastPoint = (value: number) => {
+  const point = getSparkPoints(value).split(' ').pop() || '46,9'
+  const [x, y] = point.split(',')
+  return { x, y }
+}
 
 const loadOverview = async () => {
   const res = await portalOverviewApi()
@@ -63,24 +155,30 @@ const loadOverview = async () => {
 }
 
 const loadResources = async () => {
+  const requestSeq = ++resourceRequestSeq
   state.loading = true
   try {
     const res = await portalResourcesApi({
       keyword: state.keyword,
       type: state.type,
       page: state.page,
-      pageSize: state.pageSize
+      pageSize: state.pageSize,
+      asc: !orderDesc.value
     })
+    if (requestSeq !== resourceRequestSeq) {
+      return
+    }
     state.records = res?.data?.records || []
     state.total = Number(res?.data?.total || 0)
   } finally {
-    state.loading = false
+    if (requestSeq === resourceRequestSeq) {
+      state.loading = false
+    }
   }
 }
 
 const reload = async () => {
-  await loadOverview()
-  await loadResources()
+  await Promise.all([loadOverview(), loadResources()])
 }
 
 const search = () => {
@@ -88,10 +186,29 @@ const search = () => {
   loadResources()
 }
 
-const switchType = (type: string) => {
+const handleTabClick = (pane: TabsPaneContext) => {
+  if (pane.paneName === activeName.value) {
+    state.page = 1
+    loadResources()
+  }
+}
+
+const selectType = (type: string) => {
+  if (state.type === type) {
+    return
+  }
   state.type = type
   state.page = 1
   loadResources()
+}
+
+const sortChange = (param: { order?: string }) => {
+  if (!param?.order) {
+    orderDesc.value = true
+  } else {
+    orderDesc.value = param.order.startsWith('desc')
+  }
+  search()
 }
 
 const pageChange = (page: number) => {
@@ -104,6 +221,19 @@ const openResource = (resource: PortalResource) => {
     path: `/portal/view/${resource.id}`,
     query: { dvType: resource.type }
   })
+}
+
+const quickCreate = (index: number) => {
+  if (!backendAccess.value) {
+    return
+  }
+  const routes = [
+    '#/dashboard?opt=create',
+    '#/dvCanvas?opt=create',
+    '#/dataset-form',
+    '#/data/datasource?opt=create'
+  ]
+  window.open(routes[index], '_self')
 }
 
 const enterBackend = () => {
@@ -124,168 +254,235 @@ onMounted(reload)
       <div class="brand">
         <img :src="crestLogo" alt="Crest" />
         <span class="divider" />
-        <span class="portal-mark">
-          <strong>数据门户</strong>
-          <small>DATA PORTAL</small>
-        </span>
+        <span class="portal-title">数据门户</span>
       </div>
       <div class="header-actions">
-        <span class="sync-pill"><i />数据同步</span>
-        <button class="user-pill" type="button">
-          <span class="avatar">{{ userInitial }}</span>
-          <span>{{ userName }}</span>
+        <el-button v-if="backendAccess" plain @click="enterBackend">进入后台</el-button>
+        <button class="account-pill" type="button">
+          <span class="account-avatar">{{ userName.substring(0, 1) }}</span>
+          <span class="user-name">{{ userName }}</span>
         </button>
-        <el-button v-if="backendAccess" secondary @click="enterBackend">进入后台</el-button>
-        <button class="logout-btn" type="button" @click="logout">退出</button>
+        <button class="top-action-text" type="button" @click="logout">退出</button>
       </div>
     </header>
 
-    <section class="portal-tools">
-      <div class="summary">
-        <h1>
-          你好，<span>{{ userName }}</span>
-        </h1>
-        <p>
-          已开放 <b>{{ openCount }}</b> 项 · 最近更新 <b>{{ latestTime }}</b>
-        </p>
-      </div>
-      <div class="stats">
-        <div class="stat-item blue">
-          <strong>{{ state.overview.screenCount }}</strong>
-          <span>大屏</span>
-        </div>
-        <div class="stat-item green">
-          <strong>{{ state.overview.dashboardCount }}</strong>
-          <span>仪表盘</span>
-        </div>
-        <div class="stat-item amber">
-          <strong>{{ state.overview.latestUpdateTime ? '实时' : '-' }}</strong>
-          <span>状态</span>
-        </div>
-      </div>
-      <div class="filters">
-        <button
-          v-for="tab in tabs"
-          :key="tab.value"
-          type="button"
-          :class="{ active: state.type === tab.value }"
-          @click="switchType(tab.value)"
-        >
-          {{ tab.label }}
-        </button>
-      </div>
-      <div class="search-box">
-        <el-input
-          v-model.trim="state.keyword"
-          placeholder="搜索名称"
-          clearable
-          @clear="search"
-          @keyup.enter="search"
-        />
-        <el-button type="primary" @click="search">查询</el-button>
-      </div>
-    </section>
-
-    <section v-loading="state.loading" class="portal-wall">
-      <button
-        v-if="featuredResource"
-        class="feature-card"
-        type="button"
-        @click="openResource(featuredResource)"
-      >
-        <span
-          class="screen-preview large"
-          :style="{ '--accent': typeAccent(featuredResource.type) }"
-        >
-          <span class="preview-head">
-            <i />
-            <strong>{{ featuredResource.name }}</strong>
-            <em>实时</em>
-          </span>
-          <span class="preview-kpis">
-            <span>
-              <label>组件</label>
-              <b>{{ featuredResource.chartCount || 0 }}</b>
+    <section class="workbranch portal-workbranch">
+      <div class="info-quick-creation">
+        <div class="user-info work-card">
+          <div class="profile-row">
+            <el-icon class="main-color user-icon-container">
+              <Icon name="user-img"><userImg class="svg-icon" /></Icon>
+            </el-icon>
+            <div class="info">
+              <div class="name-role flex-align-center">
+                <span :title="userName" class="name ellipsis">{{ userName }}</span>
+              </div>
+              <span class="id">ID: {{ userId }}</span>
+            </div>
+          </div>
+          <div v-for="item in stats" :key="item.code" class="stat-item">
+            <span class="stat-bar" :style="{ backgroundColor: item.color }" />
+            <span class="stat-meta">
+              <span class="name">{{ item.name }}</span>
+              <span class="code">{{ item.code }}</span>
             </span>
-            <span>
-              <label>类型</label>
-              <b>{{ typeLabel(featuredResource.type) }}</b>
-            </span>
-            <span>
-              <label>状态</label>
-              <b>已发布</b>
-            </span>
-          </span>
-          <svg viewBox="0 0 520 160" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M26 118 L128 84 L236 98 L348 62 L494 78" />
-            <path class="line-alt" d="M26 92 L128 104 L236 66 L348 94 L494 48" />
-          </svg>
-        </span>
-        <span class="feature-info">
-          <span class="badge"><i />重点内容</span>
-          <strong>{{ featuredResource.name }}</strong>
-          <span class="meta">
-            {{ typeLabel(featuredResource.type) }} · 组件 {{ featuredResource.chartCount || 0 }} ·
-            更新 {{ formatTime(featuredResource.updateTime) }}
-          </span>
-          <span class="enter-btn">进入查看</span>
-        </span>
-      </button>
-
-      <div v-if="galleryResources.length" class="wall-grid">
-        <button
-          v-for="item in galleryResources"
-          :key="item.id"
-          class="poster-card"
-          type="button"
-          @click="openResource(item)"
-        >
-          <span class="screen-preview" :style="{ '--accent': typeAccent(item.type) }">
-            <span class="preview-head">
-              <i />
-              <strong>{{ item.name }}</strong>
-              <em>实时</em>
-            </span>
-            <span class="preview-kpis">
-              <span>
-                <label>组件</label>
-                <b>{{ item.chartCount || 0 }}</b>
-              </span>
-              <span>
-                <label>状态</label>
-                <b>已发布</b>
-              </span>
-            </span>
-            <svg viewBox="0 0 320 120" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M18 78 L82 54 L152 68 L218 40 L302 58" />
-              <path class="line-alt" d="M18 58 L82 70 L152 42 L218 64 L302 34" />
+            <svg class="sparkline" viewBox="0 0 46 18" aria-hidden="true">
+              <polyline
+                :points="getSparkPoints(item.value)"
+                fill="none"
+                :stroke="item.color"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                opacity="0.85"
+              />
+              <circle
+                :cx="getSparkLastPoint(item.value).x"
+                :cy="getSparkLastPoint(item.value).y"
+                r="2"
+                :fill="item.color"
+              />
             </svg>
-          </span>
-          <span class="poster-info">
-            <span class="title">{{ item.name }}</span>
-            <span class="meta">
-              <span class="type-dot" :style="{ background: typeAccent(item.type) }" />
-              {{ typeLabel(item.type) }} · {{ formatTime(item.updateTime, 'MM-DD HH:mm') }}
-            </span>
-          </span>
-          <span class="poster-go">进入</span>
-        </button>
+            <span class="num">{{ item.value }}</span>
+          </div>
+        </div>
+
+        <div class="quick-creation work-card">
+          <span class="label">快速创建</span>
+          <div class="item-creation">
+            <div
+              v-for="(item, index) in quickCreationList"
+              :key="item.name"
+              class="item"
+              :class="{ 'quick-create-disabled': item.disabled }"
+              :style="{ '--accent': item.color }"
+              @click="quickCreate(index)"
+            >
+              <el-tooltip v-if="item.disabled" effect="dark" content="无创建权限" placement="top">
+                <div class="empty-tooltip-container" />
+              </el-tooltip>
+              <span class="quick-icon" :style="{ backgroundColor: item.color }">
+                <img :src="item.icon" :alt="item.name" />
+              </span>
+              <span class="name">{{ item.name }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <empty-background
-        v-if="!state.loading && !state.records.length"
-        description="暂无内容"
-        img-type="noneWhite"
-      />
+      <div class="workbranch-content">
+        <el-scrollbar class="workbranch-content-scroll">
+          <div class="dashboard-type border-radius-12" v-loading="state.loading">
+            <el-tabs v-model="activeName" class="dashboard-type-tabs" @tab-click="handleTabClick">
+              <el-tab-pane
+                v-for="item in paneList"
+                :key="item.name"
+                :label="item.title"
+                :name="item.name"
+              />
+            </el-tabs>
 
-      <div v-if="state.total > state.pageSize" class="pager">
-        <el-pagination
-          layout="prev, pager, next"
-          :current-page="state.page"
-          :page-size="state.pageSize"
-          :total="state.total"
-          @current-change="pageChange"
-        />
+            <div class="asset-toolbar">
+              <div class="type-chip-list">
+                <button
+                  v-for="item in typeFilters"
+                  :key="item.value"
+                  type="button"
+                  class="type-chip"
+                  :class="{ active: state.type === item.value }"
+                  @click="selectType(item.value)"
+                >
+                  <span
+                    v-if="item.value !== 'all'"
+                    class="type-dot"
+                    :style="{ backgroundColor: item.color }"
+                  />
+                  <span>{{ item.label }}</span>
+                  <em>{{ item.count }}</em>
+                </button>
+              </div>
+              <div class="search">
+                <el-input
+                  v-model.trim="state.keyword"
+                  clearable
+                  placeholder="搜索名称"
+                  @clear="search"
+                  @change="search"
+                  @keyup.enter="search"
+                >
+                  <template #prefix>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+                      <path
+                        d="M16.5 16.5 21 21"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </template>
+                </el-input>
+              </div>
+            </div>
+
+            <div class="panel-table">
+              <GridTable
+                :show-pagination="false"
+                :table-data="state.records"
+                :data-loading="state.loading"
+                empty-desc="暂无内容"
+                empty-img="noneWhite"
+                class="workbranch-grid"
+                @sort-change="sortChange"
+                @cell-click="openResource"
+              >
+                <el-table-column key="name" min-width="260" prop="name" label="名称">
+                  <template #default="{ row }">
+                    <div class="name-content asset-name jump-active">
+                      <span class="asset-icon" :style="{ backgroundColor: typeColor(row.type) }">
+                        <img :src="typeIcon(row.type)" :alt="typeLabel(row.type)" />
+                      </span>
+                      <span class="asset-title-wrap">
+                        <el-tooltip placement="top">
+                          <template #content>{{ row.name }}</template>
+                          <span class="asset-title ellipsis">{{ row.name }}</span>
+                        </el-tooltip>
+                        <span class="asset-code">{{ typeCode(row.id) }}</span>
+                      </span>
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column label="类型" width="130">
+                  <template #default="{ row }">
+                    <span class="asset-tag" :style="{ '--tag-color': typeColor(row.type) }">
+                      <span class="tag-dot" />
+                      {{ typeLabel(row.type) }}
+                    </span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="创建人" min-width="120" show-overflow-tooltip>
+                  <template #default="{ row }">{{ row.creatorName || '-' }}</template>
+                </el-table-column>
+                <el-table-column label="组件" width="90">
+                  <template #default="{ row }">{{ row.chartCount || 0 }}</template>
+                </el-table-column>
+                <el-table-column
+                  prop="updateTime"
+                  label="更新时间"
+                  min-width="160"
+                  sortable="custom"
+                >
+                  <template #default="{ row }">
+                    <span class="time-cell">
+                      <span class="time-full">{{ formatTime(row.updateTime) }}</span>
+                    </span>
+                  </template>
+                </el-table-column>
+                <el-table-column width="90" fixed="right" label="操作">
+                  <template #default="{ row }">
+                    <div class="table-actions">
+                      <el-tooltip effect="dark" content="查看" placement="top">
+                        <button type="button" class="opbtn" @click.stop="openResource(row)">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"
+                              stroke="currentColor"
+                              stroke-width="1.7"
+                            />
+                            <circle
+                              cx="12"
+                              cy="12"
+                              r="3"
+                              stroke="currentColor"
+                              stroke-width="1.7"
+                            />
+                          </svg>
+                        </button>
+                      </el-tooltip>
+                    </div>
+                  </template>
+                </el-table-column>
+              </GridTable>
+              <div class="table-footer">
+                <span>共 {{ state.total }} 项 · 最近更新 {{ latestDateTime }}</span>
+                <el-pagination
+                  v-if="state.total > state.pageSize"
+                  layout="prev, pager, next"
+                  :current-page="state.page"
+                  :page-size="state.pageSize"
+                  :total="state.total"
+                  @current-change="pageChange"
+                />
+              </div>
+            </div>
+          </div>
+        </el-scrollbar>
       </div>
     </section>
   </main>
@@ -294,497 +491,784 @@ onMounted(reload)
 <style scoped lang="less">
 .portal-page {
   min-height: 100vh;
+  overflow: hidden;
   color: #0f172a;
-  background: radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.08) 1px, transparent 0) 0 0/24px
-      24px,
-    #f6f8fb;
-  font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  background: #f8fafc;
+  font-family: var(--crest-font-sans), 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
 .portal-header {
-  height: 66px;
-  padding: 0 40px;
-  position: sticky;
-  top: 0;
-  z-index: 40;
+  position: relative;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #e6ebf2;
-  background: radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.12) 1px, transparent 0) 0 0/24px
-      24px,
-    linear-gradient(118deg, #e9f1fe 0%, #f3f8ff 46%, #ffffff 100%);
+  height: 60px;
+  padding: 0 clamp(20px, 4vw, 56px);
+  overflow: hidden;
+  background: linear-gradient(180deg, #edf2fb 0%, #fafbfe 100%);
+  border-bottom: 1px solid #e2e8f0;
+
+  &::before {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    content: '';
+    background-image: radial-gradient(circle at 1px 1px, #3b6fd0 1px, transparent 0);
+    background-size: 20px 20px;
+    opacity: 0.05;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 16px;
+
   img {
-    height: 34px;
+    width: 188px;
+    height: 44px;
+    object-fit: contain;
   }
 }
 
 .divider {
   width: 1px;
   height: 24px;
-  background: #e6ebf2;
+  background: #e2e8f0;
 }
 
-.portal-mark {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.15;
-  strong {
-    font-size: 15px;
-  }
-  small {
-    color: #64748b;
-    font-size: 11px;
-    letter-spacing: 0.04em;
-  }
+.portal-title {
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .header-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.sync-pill {
-  height: 30px;
-  padding: 0 13px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border-radius: 999px;
-  color: #10b981;
-  background: #e5f7f0;
-  font-size: 12px;
-  font-weight: 600;
-  i {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
-  }
-}
-
-.user-pill,
-.logout-btn {
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-
-.user-pill {
-  height: 40px;
-  padding: 5px 14px 5px 6px;
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid #e6ebf2;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.68);
-  color: #0f172a;
-  font-weight: 600;
-}
-
-.avatar {
-  width: 30px;
-  height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  color: #ffffff;
-  background: linear-gradient(135deg, #34d399, #0ea5e9);
-}
-
-.logout-btn {
-  height: 36px;
-  padding: 0 10px;
-  color: #334155;
-  font-weight: 600;
-  &:hover {
-    color: #0f172a;
-  }
-}
-
-.portal-tools {
-  padding: 20px 40px;
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  flex-wrap: wrap;
-}
-
-.summary {
-  h1 {
-    margin: 0;
-    font-size: 21px;
-    line-height: 28px;
-    font-weight: 700;
-    span {
-      color: #3b82f6;
-    }
-  }
-  p {
-    margin: 3px 0 0;
-    color: #64748b;
-    font-size: 12px;
-    b {
-      color: #334155;
-      font-weight: 700;
-    }
-  }
-}
-
-.stats {
-  padding-left: 24px;
-  display: flex;
-  gap: 26px;
-  border-left: 1px solid #e6ebf2;
-}
-
-.stat-item {
-  strong,
-  span {
-    display: block;
-  }
-  strong {
-    font-size: 22px;
-    line-height: 1;
-    font-weight: 800;
-  }
-  span {
-    margin-top: 5px;
-    color: #64748b;
-    font-size: 11px;
-  }
-  &.blue strong {
-    color: #3b82f6;
-  }
-  &.green strong {
-    color: #10b981;
-  }
-  &.amber strong {
-    color: #f59e0b;
-  }
-}
-
-.filters {
   margin-left: auto;
-  display: flex;
-  gap: 8px;
-  button {
-    height: 34px;
-    padding: 0 15px;
-    border: 1px solid #e6ebf2;
-    border-radius: 9px;
-    color: #334155;
-    background: #ffffff;
-    font-weight: 600;
-    cursor: pointer;
-    &.active {
-      color: #ffffff;
-      border-color: #0f172a;
-      background: #0f172a;
-    }
-  }
 }
 
-.search-box {
-  width: 320px;
-  display: flex;
-  gap: 8px;
-}
-
-.portal-wall {
-  min-height: 420px;
-  padding: 4px 40px 48px;
-}
-
-.feature-card,
-.poster-card {
-  width: 100%;
-  padding: 0;
-  border: 1px solid #e6ebf2;
-  overflow: hidden;
-  text-align: left;
-  background: #ffffff;
-  cursor: pointer;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.03);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-  &:hover {
-    transform: translateY(-3px);
-    border-color: #a6c7fa;
-    box-shadow: 0 20px 44px -18px rgba(11, 20, 38, 0.42);
-  }
-}
-
-.feature-card {
-  margin-bottom: 20px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr);
-  border-radius: 18px;
-}
-
-.screen-preview {
-  --accent: #3b82f6;
-  min-height: 188px;
-  padding: 14px 16px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  color: #e2e8f0;
-  background: radial-gradient(120% 80% at 0% 0%, rgba(59, 130, 246, 0.16), transparent 60%),
-    linear-gradient(160deg, #0e1a30 0%, #0b1426 100%);
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image: radial-gradient(
-      circle at 1px 1px,
-      rgba(255, 255, 255, 0.06) 1px,
-      transparent 0
-    );
-    background-size: 18px 18px;
-  }
-  &.large {
-    min-height: 280px;
-    padding: 18px 20px;
-  }
-  svg {
-    flex: 1;
-    min-height: 88px;
-    margin-top: 8px;
-    position: relative;
-    z-index: 1;
-    path {
-      fill: none;
-      stroke: var(--accent);
-      stroke-width: 3;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .line-alt {
-      stroke: #60a5fa;
-      opacity: 0.82;
-    }
-  }
-}
-
-.preview-head {
-  position: relative;
-  z-index: 1;
-  display: flex;
+.account-pill {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  i {
-    width: 7px;
-    height: 7px;
-    flex: 0 0 auto;
-    border-radius: 50%;
-    background: var(--accent);
-  }
-  strong {
-    min-width: 0;
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 12px;
-  }
-  em {
-    color: #34d399;
-    font-size: 10px;
-    font-style: normal;
-  }
+  height: 40px;
+  padding: 5px 10px 5px 5px;
+  color: #0f172a;
+  cursor: default;
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 999px;
 }
 
-.preview-kpis {
-  margin-top: 12px;
-  position: relative;
-  z-index: 1;
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  label {
-    display: block;
-    color: #8fa0b6;
-    font-size: 10px;
-  }
-  b {
-    display: block;
-    margin-top: 2px;
-    color: var(--accent);
-    font-size: 18px;
-    line-height: 1.15;
-  }
-}
-
-.feature-info {
-  padding: 30px 34px;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
-  .badge {
-    width: fit-content;
-    height: 26px;
-    padding: 0 12px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border-radius: 999px;
-    color: #2f6bd4;
-    background: #f1f6fe;
-    font-size: 12px;
-    font-weight: 700;
-    i {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #3b82f6;
-    }
-  }
-  strong {
-    margin-top: 16px;
-    color: #0f172a;
-    font-size: 25px;
-    line-height: 1.18;
-    font-weight: 800;
-  }
-  .meta {
-    margin-top: 12px;
-    color: #64748b;
-    line-height: 22px;
-  }
-}
-
-.enter-btn {
-  width: fit-content;
-  height: 42px;
-  margin-top: auto;
-  padding: 0 20px;
+.account-avatar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 11px;
-  color: #ffffff;
-  background: #3b82f6;
+  width: 28px;
+  height: 28px;
+  color: #1d4ed8;
+  font-size: 13px;
   font-weight: 700;
-  box-shadow: 0 8px 20px -8px rgba(59, 130, 246, 0.6);
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  border-radius: 50%;
 }
 
-.wall-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
+.user-name {
+  max-width: 96px;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.poster-card {
-  position: relative;
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-}
+.top-action-text {
+  height: 34px;
+  padding: 0 10px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  transition: color 0.14s ease, background 0.14s ease;
 
-.poster-info {
-  min-height: 82px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  .title {
-    overflow: hidden;
+  &:hover {
     color: #0f172a;
-    font-size: 15px;
-    font-weight: 700;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    background: #f1f5f9;
   }
-  .meta {
+}
+
+.workbranch {
+  display: grid;
+  grid-template-columns: clamp(320px, 18vw, 360px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+  width: 100%;
+  height: calc(100vh - 60px);
+  min-height: 640px;
+  padding: clamp(22px, 2vw, 32px) clamp(28px, 4vw, 72px);
+  overflow: hidden;
+  font-family: var(--crest-font-sans);
+  background: #f8fafc;
+  --workbranch-card-radius: 14px;
+
+  .work-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--workbranch-card-radius);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+
+  .info-quick-creation {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+
+    .main-color {
+      color: #3b82f6;
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      padding: 22px 24px 18px;
+
+      .profile-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 7px;
+      }
+
+      .user-icon-container {
+        position: relative;
+        flex: none;
+        width: 52px !important;
+        height: 52px !important;
+
+        &::after {
+          position: absolute;
+          right: -2px;
+          bottom: -2px;
+          width: 14px;
+          height: 14px;
+          content: '';
+          background: #22c55e;
+          border: 2.5px solid #ffffff;
+          border-radius: 50%;
+        }
+      }
+
+      .ed-icon {
+        padding: 0;
+        font-size: 22px;
+        border-radius: 50%;
+      }
+
+      .info {
+        display: flex;
+        flex: 1;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        min-width: 0;
+
+        .name-role {
+          width: 100%;
+          margin-bottom: 3px;
+          color: #0f172a;
+          font-style: normal;
+
+          .name {
+            max-width: 210px;
+            font-size: 17px;
+            font-weight: 600;
+            line-height: 24px;
+          }
+        }
+
+        .id {
+          width: 200px;
+          color: #64748b;
+          font-family: var(--crest-font-mono);
+          font-size: 12px;
+          font-weight: 400;
+          line-height: 18px;
+        }
+      }
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 0;
+        font-style: normal;
+
+        &:first-of-type {
+          padding-top: 16px;
+          border-top: 1px solid #f1f5f9;
+        }
+
+        .stat-bar {
+          flex: none;
+          width: 7px;
+          height: 24px;
+          border-radius: 2px;
+        }
+
+        .stat-meta {
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+          min-width: 0;
+        }
+
+        .name {
+          color: #64748b;
+          font-size: 12.5px;
+          font-weight: 400;
+          line-height: 18px;
+        }
+
+        .code {
+          color: #94a3b8;
+          font-family: var(--crest-font-mono);
+          font-size: 10.5px;
+          line-height: 16px;
+        }
+
+        .sparkline {
+          flex: none;
+          width: 46px;
+          height: 18px;
+        }
+
+        .num {
+          min-width: 34px;
+          color: #0f172a;
+          font-size: 22px;
+          font-weight: 700;
+          line-height: 22px;
+          text-align: right;
+          font-variant-numeric: tabular-nums;
+        }
+      }
+    }
+
+    .quick-creation {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-height: 0;
+      padding: 18px 22px 22px;
+
+      .label {
+        color: #334155;
+        font-size: 13.5px;
+        font-weight: 600;
+        line-height: 20px;
+      }
+
+      .item-creation {
+        display: grid;
+        flex: 1;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        align-content: start;
+        margin-top: 14px;
+
+        .item {
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          min-height: 64px;
+          padding: 12px 13px;
+          overflow: hidden;
+          cursor: pointer;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+
+          &::after {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            content: '';
+            background: linear-gradient(135deg, var(--accent, #3b82f6) 0%, transparent 38%);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+          }
+
+          &:hover {
+            border-color: transparent;
+            box-shadow: 0 4px 14px -4px rgba(15, 23, 42, 0.1), 0 0 0 1.5px var(--accent, #3b82f6);
+            transform: translateY(-1px);
+          }
+
+          &:hover::after {
+            opacity: 0.08;
+          }
+
+          .quick-icon {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex: none;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+
+            img {
+              width: 22px;
+              height: 22px;
+              object-fit: contain;
+            }
+          }
+
+          .name {
+            position: relative;
+            z-index: 1;
+            min-width: 0;
+            color: #0f172a;
+            font-size: 13.5px;
+            font-weight: 600;
+            line-height: 20px;
+          }
+        }
+
+        .quick-create-disabled {
+          color: var(--ed-color-info-light-5);
+          cursor: not-allowed;
+          background-color: var(--ed-color-info-light-9);
+          border-color: var(--ed-color-info-light-8);
+
+          .name {
+            color: var(--ed-color-info-light-5) !important;
+          }
+
+          .quick-icon {
+            background-color: var(--ed-color-primary-light-8) !important;
+            border-color: var(--ed-color-info-light-8) !important;
+          }
+
+          .empty-tooltip-container {
+            position: absolute;
+            width: 146px;
+            height: 52px;
+            margin-left: -16px;
+          }
+        }
+      }
+    }
+  }
+
+  .workbranch-content {
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: var(--workbranch-card-radius);
+
+    .workbranch-content-scroll {
+      height: 100%;
+      border-radius: inherit;
+
+      :deep(.ed-scrollbar__wrap),
+      :deep(.ed-scrollbar__view) {
+        height: 100%;
+        border-radius: inherit;
+      }
+    }
+  }
+}
+
+.dashboard-type {
+  height: 100%;
+  min-height: 0;
+  padding: 18px 24px 0;
+  overflow: hidden;
+  font-family: var(--crest-font-sans);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+  :deep(.ed-loading-mask) {
+    border-radius: inherit;
+  }
+
+  .dashboard-type-tabs {
+    position: relative;
+    margin-bottom: 0;
+
+    &::after {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 1px;
+      content: '';
+      background: #f1f5f9;
+    }
+
+    :deep(.ed-tabs__header) {
+      margin: 0;
+    }
+
+    :deep(.ed-tabs__nav-wrap::after) {
+      display: none;
+    }
+
+    :deep(.ed-tabs__active-bar) {
+      height: 2px;
+      background: #3b82f6;
+      border-radius: 2px 2px 0 0;
+    }
+
+    :deep(.ed-tabs__item) {
+      height: 34px;
+      padding: 0 26px 14px 0;
+      color: #64748b;
+      font-size: 14.5px;
+      font-weight: 500;
+    }
+
+    :deep(.ed-tabs__item.is-active) {
+      color: #3b82f6;
+      font-weight: 600;
+    }
+  }
+
+  .asset-toolbar {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 0;
+  }
+
+  .type-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .type-chip {
+    display: inline-flex;
+    align-items: center;
     gap: 7px;
-    color: #94a3b8;
-    font-size: 12px;
+    height: 30px;
+    padding: 0 11px;
+    color: #334155;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    transition: color 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+
+    em {
+      color: #94a3b8;
+      font-style: normal;
+      font-weight: 600;
+    }
+
+    &:hover {
+      border-color: #cbd5e1;
+    }
+
+    &.active {
+      color: #ffffff;
+      background: #3b82f6;
+      border-color: #3b82f6;
+
+      em {
+        color: rgba(255, 255, 255, 0.78);
+      }
+    }
+  }
+
+  .type-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .search {
+    flex: none;
+    text-align: right;
+
+    .ed-input {
+      width: 240px;
+    }
+
+    :deep(.ed-input__wrapper) {
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 8px;
+      box-shadow: 0 0 0 1px #e2e8f0 inset;
+      transition: box-shadow 0.14s ease, background 0.14s ease;
+    }
+
+    :deep(.ed-input__wrapper.is-focus) {
+      box-shadow: 0 0 0 1px #3b82f6 inset, 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    :deep(.ed-input__prefix) {
+      color: #64748b;
+    }
+  }
+
+  .panel-table {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 90px);
+    min-height: 0;
+
+    :deep(.ed-table) {
+      --ed-table-header-bg-color: #ffffff;
+      --ed-table-tr-bg-color: #ffffff;
+      color: #334155;
+      font-family: var(--crest-font-sans);
+      font-size: 13.5px;
+    }
+
+    :deep(.ed-table__inner-wrapper::before) {
+      display: none;
+    }
+
+    :deep(.ed-table th.ed-table__cell) {
+      padding: 10px 0;
+      color: #94a3b8;
+      font-family: var(--crest-font-mono);
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0;
+      background: #ffffff;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    :deep(.ed-table td.ed-table__cell) {
+      padding: 12px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    :deep(.ed-table__row) {
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+
+    :deep(.ed-table__row:hover > td.ed-table__cell) {
+      background: #fafbfc;
+    }
+
+    .workbranch-grid {
+      flex: 1;
+      min-height: 0;
+    }
+
+    .name-content {
+      display: flex;
+      align-items: center;
+    }
   }
 }
 
-.type-dot {
-  width: 6px;
-  height: 6px;
-  flex: 0 0 auto;
+.asset-name {
+  min-width: 0;
+}
+
+.asset-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 12px;
+  border-radius: 8px;
+
+  img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+  }
+}
+
+.asset-title-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.asset-title {
+  max-width: 220px;
+  color: #0f172a;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.asset-code {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-family: var(--crest-font-mono);
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.asset-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  color: var(--tag-color);
+  font-size: 11.5px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--tag-color) 12%, white);
+  border-radius: 5px;
+}
+
+.tag-dot {
+  width: 5px;
+  height: 5px;
+  background: var(--tag-color);
   border-radius: 50%;
 }
 
-.poster-go {
-  position: absolute;
-  right: 14px;
-  bottom: 14px;
-  color: #64748b;
-  font-weight: 700;
-  transition: color 0.15s ease;
+.time-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
 }
 
-.poster-card:hover .poster-go {
-  color: #3b82f6;
+.time-full {
+  margin-top: 1px;
+  color: #94a3b8;
+  font-family: var(--crest-font-mono);
+  font-size: 11px;
 }
 
-.pager {
-  margin-top: 22px;
+.table-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 2px;
+  opacity: 1;
 }
 
-@media (max-width: 1100px) {
-  .feature-card {
+.opbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: #64748b;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  transition: color 0.12s ease, background 0.12s ease;
+
+  &:hover {
+    color: #3b82f6;
+    background: #f1f5f9;
+  }
+}
+
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0 14px;
+  color: #64748b;
+  font-size: 12.5px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.workbranch-grid :deep(.ed-empty) {
+  padding: 80px 0 !important;
+
+  .ed-empty__description {
+    margin-top: 0;
+    line-height: 20px !important;
+  }
+}
+
+.jump-active {
+  cursor: pointer;
+}
+
+@media (max-width: 1180px) {
+  .workbranch {
+    grid-template-columns: 300px minmax(0, 1fr);
+    padding: 20px;
+  }
+}
+
+@media (max-width: 900px) {
+  .portal-page {
+    overflow: auto;
+  }
+
+  .workbranch {
     grid-template-columns: 1fr;
-  }
-  .wall-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .filters {
-    margin-left: 0;
-  }
-}
-
-@media (max-width: 760px) {
-  .portal-header,
-  .portal-tools,
-  .portal-wall {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-  .portal-header {
     height: auto;
-    min-height: 66px;
-    padding-top: 12px;
-    padding-bottom: 12px;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 12px;
+    min-height: calc(100vh - 60px);
+    overflow: auto;
   }
-  .header-actions,
-  .portal-tools,
-  .stats {
-    align-items: flex-start;
-    flex-direction: column;
+
+  .workbranch .workbranch-content {
+    height: 620px;
+    min-height: 520px;
   }
-  .stats {
-    padding-left: 0;
-    border-left: 0;
+}
+
+@media (max-width: 680px) {
+  .portal-header {
+    padding: 0 16px;
   }
-  .search-box {
-    width: 100%;
+
+  .divider,
+  .user-name {
+    display: none;
   }
-  .wall-grid {
-    grid-template-columns: 1fr;
+
+  .brand img {
+    width: 150px;
+  }
+
+  .dashboard-type {
+    padding: 16px 16px 0;
+
+    .asset-toolbar {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .search .ed-input {
+      width: 100%;
+    }
   }
 }
 </style>
