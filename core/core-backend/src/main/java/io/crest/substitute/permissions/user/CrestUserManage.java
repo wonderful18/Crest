@@ -13,11 +13,13 @@ import io.crest.api.permissions.user.vo.UserGridVO;
 import io.crest.api.permissions.user.vo.UserGridRoleItem;
 import io.crest.api.permissions.user.vo.UserImportVO;
 import io.crest.api.permissions.user.vo.UserItem;
+import io.crest.constant.SystemSettingConstants;
 import io.crest.exception.CrestException;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.substitute.permissions.user.model.CrestUser;
 import io.crest.substitute.permissions.user.model.SsoUserProfile;
 import io.crest.substitute.permissions.user.model.UserImportRow;
+import io.crest.system.manage.SysParameterManage;
 import io.crest.system.sso.SsoIdentityAction;
 import io.crest.system.sso.SsoIdentityDecision;
 import io.crest.system.sso.SsoIdentityProfile;
@@ -58,6 +60,9 @@ public class CrestUserManage {
 
     @Resource
     private PlatformPermissionManage platformPermissionManage;
+
+    @Resource
+    private SysParameterManage sysParameterManage;
 
     @Value("${crest.user.initial-password:}")
     private String configuredInitialPassword;
@@ -593,10 +598,18 @@ public class CrestUserManage {
         return roleIds != null && roleIds.stream().anyMatch(roleId -> Long.valueOf(1L).equals(roleId));
     }
 
+    public String defaultPwd() {
+        return initialPassword();
+    }
+
     private String initialPassword() {
-        if (StringUtils.isBlank(configuredInitialPassword)) {
+        String settingPassword = sysParameterManage == null
+                ? null
+                : sysParameterManage.singleVal(SystemSettingConstants.INITIAL_PASSWORD);
+        String password = StringUtils.defaultIfBlank(settingPassword, configuredInitialPassword);
+        if (StringUtils.isBlank(password)) {
             throw new IllegalStateException(INITIAL_PASSWORD_PROPERTY + " must be configured");
         }
-        return configuredInitialPassword;
+        return password;
     }
 }

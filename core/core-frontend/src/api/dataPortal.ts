@@ -6,6 +6,7 @@ export interface DataPortalResourceRequest {
   page?: number
   pageSize?: number
   asc?: boolean
+  queryFrom?: string
 }
 
 export const portalOverviewApi = () => request.get({ url: '/data-portal/overview' })

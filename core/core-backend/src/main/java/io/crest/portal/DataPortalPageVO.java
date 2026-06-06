@@ -13,6 +13,8 @@ public class DataPortalPageVO implements Serializable {
     private static final long serialVersionUID = 8093644632121377141L;
 
     private long total;
+    private long screenCount;
+    private long dashboardCount;
     private int page;
     private int pageSize;
     private List<DataPortalResourceVO> records = new ArrayList<>();

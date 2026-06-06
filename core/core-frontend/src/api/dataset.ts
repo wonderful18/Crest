@@ -28,6 +28,7 @@ export interface EnumValue {
   resultMode?: number
   searchText: string
   filter?: Array<{}>
+  visualizationId?: string | number
 }
 
 interface Fields {
@@ -335,9 +336,11 @@ export const executeDatasetSync = async (datasetGroupId): Promise<DatasetSyncTas
 }
 
 export const stopDatasetSync = async (datasetGroupId): Promise<void> => {
-  return request.post({ url: `/dataset-sync/lifecycle/stop/${datasetGroupId}`, data: {} }).then(res => {
-    return res?.data
-  })
+  return request
+    .post({ url: `/dataset-sync/lifecycle/stop/${datasetGroupId}`, data: {} })
+    .then(res => {
+      return res?.data
+    })
 }
 export const datasetSyncLogs = async (datasetGroupId): Promise<DatasetSyncLog[]> => {
   return request.get({ url: `/dataset-sync/logs/${datasetGroupId}` }).then(res => {

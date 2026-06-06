@@ -7,6 +7,7 @@ public class SystemSettingConstants {
     public static final String Front_Time_Out = "basic.frontTimeOut";
     public static final String PLATFORM_OID = "basic.platformOid";
     public static final String PLATFORM_RID = "basic.platformRid";
+    public static final String INITIAL_PASSWORD = "basic.initialPassword";
     public static final String DIP = "basic.dip";
     public static final String PVP = "basic.pvp";
     public static final String DEFAULT_LOGIN = "basic.defaultLogin";

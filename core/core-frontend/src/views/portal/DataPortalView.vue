@@ -2,8 +2,9 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router_2'
 import router from '@/router'
-import crestLogo from '@/assets/svg/logo.svg?url'
+import crestMark from '@/assets/svg/crest-mark.svg?url'
 import { portalResourceApi } from '@/api/dataPortal'
+import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 import EmptyBackground from '@/components/empty-background/src/EmptyBackground.vue'
 import PortalAccount from './PortalAccount.vue'
 
@@ -14,6 +15,7 @@ interface PortalResource {
 }
 
 const route = useRoute()
+const appearanceStore = useAppearanceStoreWithOut()
 const resource = ref<PortalResource | null>(null)
 const loading = ref(false)
 const error = ref('')
@@ -21,6 +23,7 @@ const frameKey = ref(0)
 const frameRef = ref<HTMLIFrameElement>()
 
 const resourceId = computed(() => String(route.params.id || ''))
+const systemTitle = computed(() => appearanceStore.getSiteTitle)
 const dvType = computed(() => resource.value?.type || String(route.query.dvType || 'dataV'))
 const previewUrl = computed(
   () =>
@@ -66,11 +69,10 @@ onMounted(loadResource)
 <template>
   <main class="portal-view">
     <header class="portal-header view-header">
-      <div class="brand">
-        <img class="logo" :src="crestLogo" alt="Crest" @click="back" />
-        <span class="divider" />
-        <span class="portal-title">研发效能指标管理系统</span>
-      </div>
+      <button class="brand" type="button" @click="back">
+        <img class="brand-mark" :src="crestMark" alt="" aria-hidden="true" />
+        <span class="portal-title">{{ systemTitle }}</span>
+      </button>
       <div class="resource-title">
         <strong :title="resource?.name || '数据查看'">{{ resource?.name || '数据查看' }}</strong>
       </div>
@@ -154,13 +156,13 @@ onMounted(loadResource)
 .portal-header {
   position: relative;
   display: grid;
-  grid-template-columns: auto minmax(120px, 1fr) auto;
-  column-gap: clamp(28px, 4vw, 56px);
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  column-gap: 24px;
   align-items: center;
-  height: 60px;
+  height: 64px;
   padding: 0 clamp(28px, 5vw, 72px);
   overflow: hidden;
-  background: linear-gradient(180deg, #edf2fb 0%, #fafbfe 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   border-bottom: 1px solid #e2e8f0;
 
   &::before {
@@ -170,7 +172,7 @@ onMounted(loadResource)
     content: '';
     background-image: radial-gradient(circle at 1px 1px, #3b6fd0 1px, transparent 0);
     background-size: 20px 20px;
-    opacity: 0.05;
+    opacity: 0.035;
   }
 
   > * {
@@ -181,47 +183,54 @@ onMounted(loadResource)
 
 .brand {
   flex: none;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-
-  .logo {
-    width: 188px;
-    height: 44px;
-    margin-right: clamp(44px, 4vw, 54px);
-    cursor: pointer;
-    object-fit: contain;
-  }
+  gap: 12px;
+  justify-self: start;
+  height: 40px;
+  min-width: 0;
+  width: max-content;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  top: 0.5px;
 }
 
-.divider {
-  width: 1px;
-  height: 24px;
-  margin-right: clamp(26px, 2vw, 32px);
-  background: #e2e8f0;
+.brand-mark {
+  flex: none;
+  display: block;
+  width: 34px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .portal-title {
+  display: block;
   flex: none;
   color: #0f172a;
-  font-size: 17px;
+  font-family: var(--crest-font-sans), 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 20px;
   font-weight: 700;
-  line-height: 24px;
-  letter-spacing: 0.2px;
+  line-height: 32px;
+  letter-spacing: 0;
   white-space: nowrap;
 }
 
 .resource-title {
   display: flex;
   justify-content: center;
+  justify-self: center;
   min-width: 0;
+  max-width: min(24vw, 460px);
 
   strong {
-    max-width: min(100%, 360px);
+    max-width: 100%;
     overflow: hidden;
     color: #0f172a;
-    font-size: 15px;
+    font-size: 18px;
     font-weight: 700;
-    line-height: 22px;
+    line-height: 26px;
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -232,6 +241,7 @@ onMounted(loadResource)
   flex: none;
   display: flex;
   align-items: center;
+  justify-self: end;
   justify-content: flex-end;
   gap: 8px;
   min-width: 0;
@@ -260,19 +270,20 @@ onMounted(loadResource)
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   color: #64748b;
   cursor: pointer;
-  background: transparent;
-  border: 0;
-  border-radius: 8px;
-  transition: color 0.14s ease, background 0.14s ease;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(226, 232, 240, 0.82);
+  border-radius: 10px;
+  transition: color 0.14s ease, background 0.14s ease, border-color 0.14s ease;
 
   &:hover {
     color: #0f172a;
-    background: #f1f5f9;
+    background: #ffffff;
+    border-color: #cbd5e1;
   }
 }
 
@@ -316,7 +327,7 @@ onMounted(loadResource)
 
 .preview-frame {
   width: 100%;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 64px);
   display: block;
   border: 0;
   background: #ffffff;
@@ -329,18 +340,18 @@ onMounted(loadResource)
 
   .portal-header {
     height: auto;
-    min-height: 60px;
+    min-height: 64px;
     grid-template-columns: minmax(0, 1fr) auto;
     padding: 10px 16px;
   }
 
-  .brand .logo {
-    width: 150px;
-    margin-right: 18px;
+  .portal-title {
+    max-width: calc(100vw - 168px);
+    overflow: hidden;
+    font-size: 17px;
+    text-overflow: ellipsis;
   }
 
-  .divider,
-  .portal-title,
   .resource-title {
     display: none;
   }

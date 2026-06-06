@@ -2,9 +2,11 @@ package io.crest.substitute.permissions.user;
 
 import io.crest.api.permissions.user.dto.UserCreator;
 import io.crest.api.permissions.user.vo.CurUserVO;
+import io.crest.constant.SystemSettingConstants;
 import io.crest.exception.CrestException;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.substitute.permissions.user.model.CrestUser;
+import io.crest.system.manage.SysParameterManage;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,6 +32,9 @@ public class CrestUserManageTest {
     @Mock
     private PlatformPermissionManage platformPermissionManage;
 
+    @Mock
+    private SysParameterManage sysParameterManage;
+
     @InjectMocks
     private CrestUserManage crestUserManage;
 
@@ -44,6 +49,22 @@ public class CrestUserManageTest {
         creator.setEnable(true);
 
         assertThrows(CrestException.class, () -> crestUserManage.create(creator));
+    }
+
+    @Test
+    public void defaultPwdPrefersSystemSetting() {
+        ReflectionTestUtils.setField(crestUserManage, "configuredInitialPassword", "EnvInitialPassword123!");
+        when(sysParameterManage.singleVal(SystemSettingConstants.INITIAL_PASSWORD)).thenReturn("SystemInitialPassword123!");
+
+        assertEquals("SystemInitialPassword123!", crestUserManage.defaultPwd());
+    }
+
+    @Test
+    public void defaultPwdFallsBackToConfiguredInitialPassword() {
+        ReflectionTestUtils.setField(crestUserManage, "configuredInitialPassword", "EnvInitialPassword123!");
+        when(sysParameterManage.singleVal(SystemSettingConstants.INITIAL_PASSWORD)).thenReturn("");
+
+        assertEquals("EnvInitialPassword123!", crestUserManage.defaultPwd());
     }
 
     @Test

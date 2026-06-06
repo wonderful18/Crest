@@ -17,4 +17,5 @@ public class EnumValueRequest {
     private String searchText;// 搜索内容，以 field like '%text%' 拼接到SQL
     private List<ChartExtFilterDTO> filter;// 级联查询条件，多个条件之间用and拼接到SQL
     private Integer resultMode = 0;// 请求条数，0-默认，1-全部
+    private Long visualizationId;// 门户预览时的可视化资源ID
 }

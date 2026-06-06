@@ -15,6 +15,8 @@ import {
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { cloneDeep, debounce, sortBy } from 'lodash-es'
 import { fieldTree } from '@/api/dataset'
+import router from '@/router'
+import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import colorFunctions from 'less/lib/less/functions/color.js'
 import colorTree from 'less/lib/less/tree/color.js'
 import { colorStringToHex } from '@/utils/color'
@@ -82,6 +84,7 @@ const placeholderText = computed(() => {
   return ' '
 })
 const { config } = toRefs(props)
+const dvMainStore = dvMainStoreWithOut()
 const fromTreeSelectConfirm = ref(false)
 const multiple = ref(false)
 const treeSelectConfirm = val => {
@@ -254,6 +257,7 @@ const cascade = computed(() => {
   return cascadeList() || []
 })
 const loading = ref(false)
+const currentVisualizationId = () => dvMainStore.dvInfo?.id || router.currentRoute.value.query.dvId
 
 const getCascadeFieldId = () => {
   const filter = []
@@ -365,7 +369,8 @@ const getTreeOption = debounce(() => {
   fieldTree({
     fieldIds: props.config.treeFieldList.map(ele => ele.id),
     resultMode: config.value.resultMode || 0,
-    filter: getCascadeFieldId()
+    filter: getCascadeFieldId(),
+    visualizationId: currentVisualizationId()
   })
     .then(res => {
       treeOptionList.value = filterTree(dfs(res), config.value.optionFilter)

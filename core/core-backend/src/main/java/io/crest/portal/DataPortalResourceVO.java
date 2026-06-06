@@ -20,4 +20,5 @@ public class DataPortalResourceVO implements Serializable {
     private Long updateTime;
     private Integer chartCount;
     private Integer extFlag;
+    private Boolean favorite;
 }
