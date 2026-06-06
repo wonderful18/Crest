@@ -137,5 +137,4 @@ __pycache__/
 docker-compose.override.yml
 private/
 secrets/
-AGENTS.md
 CLAUDE.md
