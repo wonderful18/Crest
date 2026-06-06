@@ -10,6 +10,7 @@ import { logoutApi } from '@/api/login'
 import { portalOverviewApi, portalResourcesApi } from '@/api/dataPortal'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { logoutHandler } from '@/utils/logout'
+import { useEmitt } from '@/hooks/web/useEmitt'
 
 interface PortalResource {
   id: string | number
@@ -52,25 +53,60 @@ const quickCreationBaseList = [
     icon: '/svg/icon_dashboard.svg',
     name: '仪表盘',
     color: '#3B82F6',
-    code: 'DASHBOARD'
+    code: 'DASHBOARD',
+    action: 'create-dashboard'
   },
   {
     icon: '/svg/icon_data-visualization.svg',
     name: '数据大屏',
     color: '#1FB6A6',
-    code: 'SCREEN'
+    code: 'SCREEN',
+    action: 'create-screen'
   },
   {
     icon: '/svg/icon_dataset.svg',
     name: '数据集',
     color: '#6E62E8',
-    code: 'DATASET'
+    code: 'DATASET',
+    action: 'create-dataset'
   },
   {
     icon: '/svg/icon_database.svg',
     name: '数据源',
     color: '#F5A623',
-    code: 'SOURCE'
+    code: 'SOURCE',
+    action: 'create-source'
+  }
+]
+
+const portalEntryBaseList = [
+  {
+    icon: '/svg/icon_dataset_outlined.svg',
+    name: '全部资源',
+    color: '#3B82F6',
+    action: 'all',
+    disabled: false
+  },
+  {
+    icon: '/svg/icon_data-visualization.svg',
+    name: '数据大屏',
+    color: '#1FB6A6',
+    action: 'dataV',
+    disabled: false
+  },
+  {
+    icon: '/svg/icon_dashboard.svg',
+    name: '仪表盘',
+    color: '#3B82F6',
+    action: 'dashboard',
+    disabled: false
+  },
+  {
+    icon: '/svg/icon_download_outlined.svg',
+    name: '导出中心',
+    color: '#F5A623',
+    action: 'export',
+    disabled: false
   }
 ]
 
@@ -84,6 +120,10 @@ const quickCreationList = computed(() =>
     ...item,
     disabled: !backendAccess.value
   }))
+)
+const actionCardTitle = computed(() => (backendAccess.value ? '快速创建' : '常用入口'))
+const actionCardList = computed(() =>
+  backendAccess.value ? quickCreationList.value : portalEntryBaseList
 )
 
 const typeFilters = computed(() => [
@@ -236,6 +276,22 @@ const quickCreate = (index: number) => {
   window.open(routes[index], '_self')
 }
 
+const openExportCenter = () => {
+  useEmitt().emitter.emit('data-export-center', { activeName: 'ALL' })
+}
+
+const openPortalEntry = (action: string, index: number) => {
+  if (backendAccess.value) {
+    quickCreate(index)
+    return
+  }
+  if (action === 'export') {
+    openExportCenter()
+    return
+  }
+  selectType(action)
+}
+
 const enterBackend = () => {
   router.push('/workbranch/index')
 }
@@ -254,7 +310,7 @@ onMounted(reload)
       <div class="brand">
         <img :src="crestLogo" alt="Crest" />
         <span class="divider" />
-        <span class="portal-title">数据门户</span>
+        <span class="portal-title">研发效能指标管理系统</span>
       </div>
       <div class="header-actions">
         <el-button v-if="backendAccess" plain @click="enterBackend">进入后台</el-button>
@@ -308,15 +364,15 @@ onMounted(reload)
         </div>
 
         <div class="quick-creation work-card">
-          <span class="label">快速创建</span>
+          <span class="label">{{ actionCardTitle }}</span>
           <div class="item-creation">
             <div
-              v-for="(item, index) in quickCreationList"
+              v-for="(item, index) in actionCardList"
               :key="item.name"
               class="item"
               :class="{ 'quick-create-disabled': item.disabled }"
               :style="{ '--accent': item.color }"
-              @click="quickCreate(index)"
+              @click="openPortalEntry(item.action || '', index)"
             >
               <el-tooltip v-if="item.disabled" effect="dark" content="无创建权限" placement="top">
                 <div class="empty-tooltip-container" />
