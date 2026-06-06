@@ -128,7 +128,15 @@ const getSparkValues = item => {
   const min = times[0]
   const max = times[times.length - 1]
   if (min === max) {
-    return [0, 0, Math.ceil(total * 0.18), Math.ceil(total * 0.42), Math.ceil(total * 0.68), Math.ceil(total * 0.86), total]
+    return [
+      0,
+      0,
+      Math.ceil(total * 0.18),
+      Math.ceil(total * 0.42),
+      Math.ceil(total * 0.68),
+      Math.ceil(total * 0.86),
+      total
+    ]
   }
 
   let cursor = 0
@@ -466,10 +474,7 @@ const getSparkLastPoint = item => {
           background: #ffffff;
           border: 1px solid #e2e8f0;
           border-radius: 10px;
-          transition:
-            border-color 0.16s ease,
-            box-shadow 0.16s ease,
-            transform 0.16s ease;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
 
           &::after {
             position: absolute;
@@ -483,9 +488,7 @@ const getSparkLastPoint = item => {
 
           &:hover {
             border-color: transparent;
-            box-shadow:
-              0 4px 14px -4px rgba(15, 23, 42, 0.1),
-              0 0 0 1.5px var(--accent, #3b82f6);
+            box-shadow: 0 4px 14px -4px rgba(15, 23, 42, 0.1), 0 0 0 1.5px var(--accent, #3b82f6);
             transform: translateY(-1px);
           }
 

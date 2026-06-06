@@ -181,7 +181,9 @@ export const resetRouter = (): void => {
   router.getRoutes().forEach(route => {
     const { name } = route
     if (name && !resetWhiteNameList.includes(name as string)) {
-      router.hasRoute(name) && router.removeRoute(name)
+      if (router.hasRoute(name)) {
+        router.removeRoute(name)
+      }
     }
   })
 }

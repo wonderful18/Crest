@@ -200,10 +200,11 @@ const formatPwd = () => {
 
 const tooltipItem = ref({})
 const formatLabel = () => {
-  props.labelTooltips?.length &&
+  if (props.labelTooltips?.length) {
     props.labelTooltips.forEach(tooltip => {
       tooltipItem.value[tooltip.key] = tooltip.val
     })
+  }
 }
 
 const switchPwd = (pkey: string) => {
