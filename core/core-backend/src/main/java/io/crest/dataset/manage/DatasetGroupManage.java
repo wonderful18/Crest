@@ -34,6 +34,7 @@ import io.crest.i18n.Translator;
 import io.crest.model.BusiNodeRequest;
 import io.crest.model.BusiNodeVO;
 import io.crest.operation.manage.CoreOptRecentManage;
+import io.crest.portal.DataPortalPermissionManage;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.system.manage.CoreUserManage;
 import io.crest.utils.*;
@@ -93,6 +94,9 @@ public class DatasetGroupManage {
 
     @Resource
     private PlatformPermissionManage platformPermissionManage;
+
+    @Resource
+    private DataPortalPermissionManage dataPortalPermissionManage;
 
     private static final String leafType = "dataset";
 
@@ -469,7 +473,19 @@ public class DatasetGroupManage {
     }
 
     public DatasetGroupInfoDTO datasetGroupInfoDTO(Long id, String type) throws Exception {
-        requireDatasetAccess(id);
+        return datasetGroupInfoDTO(id, type, true);
+    }
+
+    public DatasetGroupInfoDTO datasetGroupInfoDTOForVisualizationRead(Long id, String type, Long visualizationId) throws Exception {
+        boolean skipDatasetAccess = visualizationId != null
+                && dataPortalPermissionManage.canReadPublishedVisualization(visualizationId, null);
+        return datasetGroupInfoDTO(id, type, !skipDatasetAccess);
+    }
+
+    private DatasetGroupInfoDTO datasetGroupInfoDTO(Long id, String type, boolean checkAccess) throws Exception {
+        if (checkAccess) {
+            requireDatasetAccess(id);
+        }
         CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(id);
         if (coreDatasetGroup == null) {
             return null;
@@ -539,6 +555,16 @@ public class DatasetGroupManage {
     }
 
     public List<SqlVariableDetails> sqlParams(List<Long> ids) {
+        return sqlParams(ids, true);
+    }
+
+    public List<SqlVariableDetails> sqlParamsForVisualizationRead(List<Long> ids, Long visualizationId) {
+        boolean skipDatasetAccess = visualizationId != null
+                && dataPortalPermissionManage.canReadPublishedVisualization(visualizationId, null);
+        return sqlParams(ids, !skipDatasetAccess);
+    }
+
+    private List<SqlVariableDetails> sqlParams(List<Long> ids, boolean checkAccess) {
         List<SqlVariableDetails> list = new ArrayList<>();
         if (ObjectUtils.isEmpty(ids)) {
             return list;
@@ -546,7 +572,9 @@ public class DatasetGroupManage {
         TypeReference<List<SqlVariableDetails>> listTypeReference = new TypeReference<List<SqlVariableDetails>>() {
         };
         for (Long id : ids) {
-            requireDatasetAccess(id);
+            if (checkAccess) {
+                requireDatasetAccess(id);
+            }
             List<CoreDatasetTable> datasetTables = datasetTableManage.selectByDatasetGroupId(id);
             for (CoreDatasetTable datasetTable : datasetTables) {
                 if (StringUtils.isNotEmpty(datasetTable.getSqlVariableDetails())) {

@@ -52,6 +52,7 @@ import io.crest.menu.dao.auto.entity.CoreMenu;
 import io.crest.model.BusiNodeRequest;
 import io.crest.model.BusiNodeVO;
 import io.crest.operation.manage.CoreOptRecentManage;
+import io.crest.portal.DataPortalPermissionManage;
 import io.crest.system.manage.CoreUserManage;
 import io.crest.template.dao.auto.entity.VisualizationTemplate;
 import io.crest.template.dao.auto.entity.VisualizationTemplateExtendData;
@@ -180,6 +181,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
     @Resource
     private SnapshotVisualizationLinkJumpTargetViewInfoMapper snapshotVisualizationLinkJumpTargetViewInfoMapper;
 
+    @Resource
+    private DataPortalPermissionManage dataPortalPermissionManage;
 
 
     @Override
@@ -210,7 +213,15 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
         DataVisualizationVO result = extDataVisualizationMapper.findDvInfo(dvId, busiFlag, resourceTable);
         if (result != null) {
-            if (CrestPermissionUtils.currentUserId() != null) {
+            if (
+                    DataVisualizationConstants.QUERY_SOURCE.MAIN_EDIT.equals(request.getSource())
+                            && CrestPermissionUtils.currentUserId() != null
+            ) {
+                CrestPermissionUtils.requireCreator(result.getCreateBy());
+            } else if (
+                    CrestPermissionUtils.currentUserId() != null
+                            && !dataPortalPermissionManage.canReadPublishedVisualization(dvId, result.getType())
+            ) {
                 CrestPermissionUtils.requireCreator(result.getCreateBy());
             }
             // get creator

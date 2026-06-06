@@ -14,6 +14,8 @@ interface UserState {
   language: string
   exp: number
   time: number
+  admin: boolean
+  backendAccess: boolean
 }
 
 export const userStore = defineStore('user', {
@@ -25,7 +27,9 @@ export const userStore = defineStore('user', {
       oid: null,
       language: 'zh-CN',
       exp: null,
-      time: null
+      time: null,
+      admin: false,
+      backendAccess: false
     }
   },
   getters: {
@@ -49,6 +53,12 @@ export const userStore = defineStore('user', {
     },
     getTime(): number {
       return this.time
+    },
+    getAdmin(): boolean {
+      return this.admin
+    },
+    getBackendAccess(): boolean {
+      return this.backendAccess
     }
   },
   actions: {
@@ -59,11 +69,21 @@ export const userStore = defineStore('user', {
       data.token = wsCache.get('user.token')
       data.exp = wsCache.get('user.exp')
       data.time = wsCache.get('user.time')
-      const keys: string[] = ['token', 'uid', 'name', 'oid', 'language', 'exp', 'time']
+      const keys: string[] = [
+        'token',
+        'uid',
+        'name',
+        'oid',
+        'language',
+        'exp',
+        'time',
+        'admin',
+        'backendAccess'
+      ]
 
       keys.forEach(key => {
         const dkey = key === 'uid' ? 'id' : key
-        this[key] = data[dkey]
+        this[key] = key === 'admin' || key === 'backendAccess' ? !!data[dkey] : data[dkey]
         wsCache.set('user.' + key, this[key])
       })
       const locale = useLocaleStoreWithOut()
@@ -107,7 +127,17 @@ export const userStore = defineStore('user', {
       changeLocale(language as any)
     },
     clear() {
-      const keys: string[] = ['token', 'uid', 'name', 'oid', 'language', 'exp', 'time']
+      const keys: string[] = [
+        'token',
+        'uid',
+        'name',
+        'oid',
+        'language',
+        'exp',
+        'time',
+        'admin',
+        'backendAccess'
+      ]
       keys.forEach(key => wsCache.delete('user.' + key))
     }
   }

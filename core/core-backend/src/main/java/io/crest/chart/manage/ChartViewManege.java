@@ -31,6 +31,7 @@ import io.crest.extensions.view.dto.*;
 import io.crest.extensions.view.filter.FilterTreeObj;
 import io.crest.i18n.Lang;
 import io.crest.i18n.Translator;
+import io.crest.portal.DataPortalPermissionManage;
 import io.crest.utils.BeanUtils;
 import io.crest.utils.CrestPermissionUtils;
 import io.crest.utils.IDUtils;
@@ -66,6 +67,8 @@ public class ChartViewManege {
     private CoreChartViewMapper coreChartViewMapper;
     @Resource
     private SnapshotCoreChartViewMapper snapshotCoreChartViewMapper;
+    @Resource
+    private DataPortalPermissionManage dataPortalPermissionManage;
     @Resource
     private ChartDataManage chartDataManage;
     @Resource
@@ -151,7 +154,7 @@ public class ChartViewManege {
             if (ObjectUtils.isEmpty(snapshotCoreChartView)) {
                 return null;
             }
-            requireChartAccess(snapshotCoreChartView.getCreateBy(), snapshotCoreChartView.getSceneId(), snapshotCoreChartView.getTableId());
+            requireChartReadAccess(snapshotCoreChartView.getCreateBy(), snapshotCoreChartView.getSceneId(), snapshotCoreChartView.getTableId());
             coreChartView = new CoreChartView();
             BeanUtils.copyBean(coreChartView, snapshotCoreChartView);
         } else {
@@ -159,7 +162,7 @@ public class ChartViewManege {
             if (ObjectUtils.isEmpty(coreChartView)) {
                 return null;
             }
-            requireChartAccess(coreChartView.getCreateBy(), coreChartView.getSceneId(), coreChartView.getTableId());
+            requireChartReadAccess(coreChartView.getCreateBy(), coreChartView.getSceneId(), coreChartView.getTableId());
         }
         ChartViewDTO dto = transRecord2DTO(coreChartView);
         return dto;
@@ -169,7 +172,7 @@ public class ChartViewManege {
      * sceneId 为仪表板或者数据大屏id
      */
     public List<ChartViewDTO> listBySceneId(Long sceneId, String resourceTable) {
-        requireSceneAccess(sceneId);
+        requireSceneReadAccess(sceneId);
         QueryWrapper<CoreChartView> wrapper = new QueryWrapper<>();
         wrapper.eq("scene_id", sceneId);
         List<ChartViewDTO> chartViewDTOS = transChart(extChartViewMapper.selectListCustom(sceneId, resourceTable));
@@ -259,11 +262,19 @@ public class ChartViewManege {
     }
 
     public Map<String, List<ChartViewFieldDTO>> listByDQ(Long id, Long chartId, ChartViewDTO chartViewDTO) {
-        requireDatasetAccess(id);
+        boolean portalVisualizationRead = chartViewDTO != null
+                && dataPortalPermissionManage.canReadPublishedVisualization(chartViewDTO.getSceneId(), null);
+        if (!portalVisualizationRead) {
+            requireDatasetAccess(id);
+        }
         if (chartId != null) {
             CoreChartView chart = coreChartViewMapper.selectById(chartId);
             if (chart != null) {
-                requireChartAccess(chart.getCreateBy(), chart.getSceneId(), chart.getTableId());
+                if (portalVisualizationRead) {
+                    requireChartReadAccess(chart.getCreateBy(), chart.getSceneId(), chart.getTableId());
+                } else {
+                    requireChartAccess(chart.getCreateBy(), chart.getSceneId(), chart.getTableId());
+                }
             }
         }
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
@@ -398,8 +409,35 @@ public class ChartViewManege {
         CrestPermissionUtils.requireCreator(createBy);
     }
 
+    private void requireChartReadAccess(String createBy, Long sceneId, Long tableId) {
+        if (CrestPermissionUtils.canAccessCreator(createBy)) {
+            return;
+        }
+        if (sceneId != null && dataPortalPermissionManage.canReadPublishedVisualization(sceneId, null)) {
+            return;
+        }
+        if (sceneId != null && canAccessScene(sceneId)) {
+            return;
+        }
+        if (tableId != null && canAccessDataset(tableId)) {
+            return;
+        }
+        CrestPermissionUtils.requireCreator(createBy);
+    }
+
     private void requireSceneAccess(Long sceneId) {
         if (sceneId == null || canAccessScene(sceneId)) {
+            return;
+        }
+        CrestPermissionUtils.requireCreator(null);
+    }
+
+    private void requireSceneReadAccess(Long sceneId) {
+        if (
+                sceneId == null
+                        || canAccessScene(sceneId)
+                        || dataPortalPermissionManage.canReadPublishedVisualization(sceneId, null)
+        ) {
             return;
         }
         CrestPermissionUtils.requireCreator(null);
