@@ -6,11 +6,10 @@ import router from '@/router'
 import crestLogo from '@/assets/svg/logo.svg?url'
 import userImg from '@/assets/svg/user-img.svg'
 import GridTable from '@/components/grid-table/src/GridTable.vue'
-import { logoutApi } from '@/api/login'
 import { portalOverviewApi, portalResourcesApi } from '@/api/dataPortal'
 import { useUserStoreWithOut } from '@/store/modules/user'
-import { logoutHandler } from '@/utils/logout'
 import { useEmitt } from '@/hooks/web/useEmitt'
+import PortalAccount from './PortalAccount.vue'
 
 interface PortalResource {
   id: string | number
@@ -81,7 +80,7 @@ const quickCreationBaseList = [
 
 const portalEntryBaseList = [
   {
-    icon: '/svg/icon_dataset_outlined.svg',
+    icon: '/svg/icon_dataset_outlined.svg?v=20260606',
     name: '全部资源',
     color: '#3B82F6',
     action: 'all',
@@ -102,7 +101,7 @@ const portalEntryBaseList = [
     disabled: false
   },
   {
-    icon: '/svg/icon_download_outlined.svg',
+    icon: '/svg/icon_download_outlined.svg?v=20260606',
     name: '导出中心',
     color: '#F5A623',
     action: 'export',
@@ -263,6 +262,10 @@ const openResource = (resource: PortalResource) => {
   })
 }
 
+const backHome = () => {
+  router.push('/portal')
+}
+
 const quickCreate = (index: number) => {
   if (!backendAccess.value) {
     return
@@ -296,11 +299,6 @@ const enterBackend = () => {
   router.push('/workbranch/index')
 }
 
-const logout = async () => {
-  await logoutApi()
-  logoutHandler()
-}
-
 onMounted(reload)
 </script>
 
@@ -308,17 +306,13 @@ onMounted(reload)
   <main class="portal-page">
     <header class="portal-header">
       <div class="brand">
-        <img :src="crestLogo" alt="Crest" />
+        <img class="logo" :src="crestLogo" alt="Crest" @click="backHome" />
         <span class="divider" />
         <span class="portal-title">研发效能指标管理系统</span>
       </div>
       <div class="header-actions">
         <el-button v-if="backendAccess" plain @click="enterBackend">进入后台</el-button>
-        <button class="account-pill" type="button">
-          <span class="account-avatar">{{ userName.substring(0, 1) }}</span>
-          <span class="user-name">{{ userName }}</span>
-        </button>
-        <button class="top-action-text" type="button" @click="logout">退出</button>
+        <PortalAccount />
       </div>
     </header>
 
@@ -558,7 +552,7 @@ onMounted(reload)
   display: flex;
   align-items: center;
   height: 60px;
-  padding: 0 clamp(20px, 4vw, 56px);
+  padding: 0 clamp(28px, 5vw, 72px);
   overflow: hidden;
   background: linear-gradient(180deg, #edf2fb 0%, #fafbfe 100%);
   border-bottom: 1px solid #e2e8f0;
@@ -580,13 +574,15 @@ onMounted(reload)
 }
 
 .brand {
+  flex: none;
   display: flex;
   align-items: center;
-  gap: 16px;
 
-  img {
+  .logo {
     width: 188px;
     height: 44px;
+    margin-right: clamp(44px, 4vw, 54px);
+    cursor: pointer;
     object-fit: contain;
   }
 }
@@ -594,70 +590,41 @@ onMounted(reload)
 .divider {
   width: 1px;
   height: 24px;
+  margin-right: clamp(26px, 2vw, 32px);
   background: #e2e8f0;
 }
 
 .portal-title {
+  flex: none;
   color: #0f172a;
   font-size: 15px;
   font-weight: 700;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-left: auto;
-}
-
-.account-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 5px 10px 5px 5px;
-  color: #0f172a;
-  cursor: default;
-  background: rgba(255, 255, 255, 0.64);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 999px;
-}
-
-.account-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  color: #1d4ed8;
-  font-size: 13px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-  border-radius: 50%;
-}
-
-.user-name {
-  max-width: 96px;
-  overflow: hidden;
-  font-size: 14px;
-  font-weight: 600;
-  text-overflow: ellipsis;
+  letter-spacing: 0.2px;
   white-space: nowrap;
 }
 
-.top-action-text {
-  height: 34px;
-  padding: 0 10px;
-  color: #64748b;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-  border-radius: 8px;
-  transition: color 0.14s ease, background 0.14s ease;
+.header-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 
-  &:hover {
+  :deep(.ed-button) {
+    height: 34px;
+    padding: 0 12px;
+    color: #64748b;
+    font-family: var(--crest-font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    transition: color 0.14s ease, background 0.14s ease;
+  }
+
+  :deep(.ed-button:hover),
+  :deep(.ed-button:focus) {
     color: #0f172a;
     background: #f1f5f9;
   }
@@ -1305,13 +1272,18 @@ onMounted(reload)
     padding: 0 16px;
   }
 
-  .divider,
-  .user-name {
+  .divider {
     display: none;
   }
 
-  .brand img {
+  .brand .logo {
     width: 150px;
+    margin-right: 18px;
+  }
+
+  .portal-title,
+  .header-actions :deep(.account-name) {
+    display: none;
   }
 
   .dashboard-type {

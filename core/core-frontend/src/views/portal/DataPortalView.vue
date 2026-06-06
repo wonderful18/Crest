@@ -4,10 +4,8 @@ import { useRoute } from 'vue-router_2'
 import router from '@/router'
 import crestLogo from '@/assets/svg/logo.svg?url'
 import { portalResourceApi } from '@/api/dataPortal'
-import { logoutApi } from '@/api/login'
-import { useUserStoreWithOut } from '@/store/modules/user'
-import { logoutHandler } from '@/utils/logout'
 import EmptyBackground from '@/components/empty-background/src/EmptyBackground.vue'
+import PortalAccount from './PortalAccount.vue'
 
 interface PortalResource {
   id: string
@@ -16,7 +14,6 @@ interface PortalResource {
 }
 
 const route = useRoute()
-const userStore = useUserStoreWithOut()
 const resource = ref<PortalResource | null>(null)
 const loading = ref(false)
 const error = ref('')
@@ -24,10 +21,7 @@ const frameKey = ref(0)
 const frameRef = ref<HTMLIFrameElement>()
 
 const resourceId = computed(() => String(route.params.id || ''))
-const backendAccess = computed(() => userStore.getBackendAccess)
-const userName = computed(() => userStore.getName || '用户')
 const dvType = computed(() => resource.value?.type || String(route.query.dvType || 'dataV'))
-const dvTypeLabel = computed(() => (dvType.value === 'dashboard' ? '仪表盘' : '数据大屏'))
 const previewUrl = computed(
   () =>
     `/#/preview?dvId=${encodeURIComponent(resourceId.value)}&dvType=${encodeURIComponent(
@@ -57,21 +51,12 @@ const back = () => {
   router.push('/portal')
 }
 
-const enterBackend = () => {
-  router.push('/workbranch/index')
-}
-
 const reload = () => {
   frameKey.value += 1
 }
 
 const fullScreen = () => {
   frameRef.value?.requestFullscreen?.()
-}
-
-const logout = async () => {
-  await logoutApi()
-  logoutHandler()
 }
 
 watch(resourceId, loadResource)
@@ -82,16 +67,27 @@ onMounted(loadResource)
   <main class="portal-view">
     <header class="portal-header view-header">
       <div class="brand">
-        <img :src="crestLogo" alt="Crest" />
+        <img class="logo" :src="crestLogo" alt="Crest" @click="back" />
         <span class="divider" />
         <span class="portal-title">研发效能指标管理系统</span>
       </div>
       <div class="resource-title">
-        <strong>{{ resource?.name || '数据查看' }}</strong>
-        <span>{{ dvTypeLabel }}</span>
+        <strong :title="resource?.name || '数据查看'">{{ resource?.name || '数据查看' }}</strong>
       </div>
       <div class="header-actions">
-        <el-button plain @click="back">返回门户</el-button>
+        <el-tooltip effect="dark" content="返回门户" placement="bottom">
+          <button class="top-action" type="button" @click="back">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M15 18 9 12l6-6M10 12h10"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </el-tooltip>
         <el-tooltip effect="dark" content="刷新" placement="bottom">
           <button class="top-action" type="button" @click="reload">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -118,12 +114,7 @@ onMounted(loadResource)
             </svg>
           </button>
         </el-tooltip>
-        <el-button v-if="backendAccess" plain @click="enterBackend">进入后台</el-button>
-        <button class="account-pill" type="button">
-          <span class="account-avatar">{{ userName.substring(0, 1) }}</span>
-          <span class="user-name">{{ userName }}</span>
-        </button>
-        <button class="top-action-text" type="button" @click="logout">退出</button>
+        <PortalAccount />
       </div>
     </header>
 
@@ -131,7 +122,6 @@ onMounted(loadResource)
       <div class="resource-strip-inner">
         <div>
           <strong>{{ resource?.name || '数据查看' }}</strong>
-          <span>{{ dvTypeLabel }}</span>
         </div>
       </div>
     </section>
@@ -163,10 +153,12 @@ onMounted(loadResource)
 
 .portal-header {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr) auto;
+  column-gap: clamp(28px, 4vw, 56px);
   align-items: center;
   height: 60px;
-  padding: 0 clamp(20px, 4vw, 56px);
+  padding: 0 clamp(28px, 5vw, 72px);
   overflow: hidden;
   background: linear-gradient(180deg, #edf2fb 0%, #fafbfe 100%);
   border-bottom: 1px solid #e2e8f0;
@@ -188,13 +180,15 @@ onMounted(loadResource)
 }
 
 .brand {
+  flex: none;
   display: flex;
   align-items: center;
-  gap: 16px;
 
-  img {
+  .logo {
     width: 188px;
     height: 44px;
+    margin-right: clamp(44px, 4vw, 54px);
+    cursor: pointer;
     object-fit: contain;
   }
 }
@@ -202,6 +196,7 @@ onMounted(loadResource)
 .divider {
   width: 1px;
   height: 24px;
+  margin-right: clamp(26px, 2vw, 32px);
   background: #e2e8f0;
 }
 
@@ -210,38 +205,54 @@ onMounted(loadResource)
   color: #0f172a;
   font-size: 15px;
   font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
 .resource-title {
   display: flex;
-  flex: 1;
-  flex-direction: column;
+  justify-content: center;
   min-width: 0;
-  margin-left: 28px;
 
   strong {
-    max-width: 34vw;
+    max-width: min(100%, 360px);
     overflow: hidden;
     color: #0f172a;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
-    line-height: 20px;
+    line-height: 22px;
+    text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  span {
-    color: #64748b;
-    font-size: 12px;
-    line-height: 17px;
   }
 }
 
 .header-actions {
+  flex: none;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-left: auto;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+
+  :deep(.ed-button) {
+    height: 34px;
+    padding: 0 12px;
+    color: #64748b;
+    font-family: var(--crest-font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    transition: color 0.14s ease, background 0.14s ease;
+  }
+
+  :deep(.ed-button:hover),
+  :deep(.ed-button:focus) {
+    color: #0f172a;
+    background: #f1f5f9;
+  }
 }
 
 .top-action {
@@ -252,60 +263,6 @@ onMounted(loadResource)
   height: 34px;
   padding: 0;
   color: #64748b;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 8px;
-  transition: color 0.14s ease, background 0.14s ease, border-color 0.14s ease;
-
-  &:hover {
-    color: #3b82f6;
-    background: #ffffff;
-    border-color: #bfdbfe;
-  }
-}
-
-.account-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 5px 10px 5px 5px;
-  color: #0f172a;
-  cursor: default;
-  background: rgba(255, 255, 255, 0.64);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 999px;
-}
-
-.account-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  color: #1d4ed8;
-  font-size: 13px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-  border-radius: 50%;
-}
-
-.user-name {
-  max-width: 96px;
-  overflow: hidden;
-  font-size: 14px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.top-action-text {
-  height: 34px;
-  padding: 0 10px;
-  color: #64748b;
-  font-size: 14px;
-  font-weight: 600;
   cursor: pointer;
   background: transparent;
   border: 0;
@@ -364,12 +321,6 @@ onMounted(loadResource)
   background: #ffffff;
 }
 
-@media (max-width: 980px) {
-  .resource-title {
-    display: none;
-  }
-}
-
 @media (max-width: 720px) {
   .portal-view {
     overflow: auto;
@@ -378,22 +329,28 @@ onMounted(loadResource)
   .portal-header {
     height: auto;
     min-height: 60px;
+    grid-template-columns: minmax(0, 1fr) auto;
     padding: 10px 16px;
   }
 
-  .brand img {
+  .brand .logo {
     width: 150px;
+    margin-right: 18px;
   }
 
   .divider,
   .portal-title,
-  .user-name {
+  .resource-title {
     display: none;
   }
 
   .header-actions {
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .header-actions :deep(.account-name) {
+    display: none;
   }
 
   .resource-strip {
