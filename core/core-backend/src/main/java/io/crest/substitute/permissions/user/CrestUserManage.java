@@ -68,6 +68,7 @@ public class CrestUserManage {
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
+    @Value("${crest.user.initial-password:}")
     private String configuredInitialPassword;
 
     private final RowMapper<CrestUser> rowMapper = (rs, rowNum) -> {
@@ -90,12 +91,6 @@ public class CrestUserManage {
         user.setUpdateTime(rs.getLong("update_time"));
         return user;
     };
-
-    @PostConstruct
-    public void init() {
-        String envPwd = System.getenv("CREST_INITIAL_PASSWORD");
-        this.configuredInitialPassword = StringUtils.isNotBlank(envPwd) ? envPwd : null;
-    }
 
     @PostConstruct
     public void initAdmin() {
@@ -449,8 +444,10 @@ public class CrestUserManage {
         if (sameAccount != null && !sameAccount.getId().equals(editor.getId())) {
             CrestException.throwException("账号已存在");
         }
-        // 如果传入了新密码则更新
         String newPassword = StringUtils.trimToNull(editor.getPassword());
+        if (newPassword != null && AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType())) {
+            CrestException.throwException("单点登录用户不支持设置本地密码");
+        }
         if (newPassword != null) {
             PasswordValidator.validate(newPassword);
         }
@@ -627,11 +624,10 @@ public class CrestUserManage {
     }
 
     private String initialPassword() {
-        if (StringUtils.isNotBlank(configuredInitialPassword)) {
-            return configuredInitialPassword;
+        if (StringUtils.isBlank(configuredInitialPassword)) {
+            throw new IllegalStateException(INITIAL_PASSWORD_PROPERTY + " must be configured");
         }
-        // 兜底默认密码，确保符合安全策略
-        return "Crest@1234";
+        return configuredInitialPassword;
     }
 
     private String generateSecurePassword() {
