@@ -149,8 +149,8 @@ const resetPwd = async row => {
       type: 'warning'
     })
     const res: any = await request.post({ url: `/user/reset-password/${row.id}` })
-    const newPwd = res?.data || ''
-    await ElMessageBox.alert(`新密码：${newPwd}\n请妥善保管并及时告知用户。`, '密码已重置', {
+    const temporaryPassword = res?.data || ''
+    await ElMessageBox.alert(`临时密码：${temporaryPassword}\n请妥善保管并及时告知用户。`, '密码已重置', {
       confirmButtonText: '知道了',
       type: 'success'
     })

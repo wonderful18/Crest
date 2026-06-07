@@ -2,6 +2,7 @@ import { useCache } from '@/hooks/web/useCache'
 import { refreshApi } from '@/api/login'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { useRequestStoreWithOut } from '@/store/modules/request'
+import { authCache } from '@/utils/authCache'
 
 const { wsCache } = useCache()
 const userStore = useUserStoreWithOut()
@@ -13,11 +14,11 @@ const expConstants = 10000
 const expTimeConstants = 90000
 
 const isExpired = () => {
-  const exp = wsCache.get('user.exp')
+  const exp = authCache.get('user.exp')
   if (!exp) {
     return false
   }
-  const time = wsCache.get('user.time')
+  const time = authCache.get('user.time')
   if (!time) {
     return exp - Date.now() < expConstants
   }
@@ -33,10 +34,10 @@ const delayExecute = (token: string) => {
 }
 
 const getRefreshStatus = () => {
-  return wsCache.get('crest-global-refresh') || false
+  return authCache.get('crest-global-refresh') || false
 }
 const setRefreshStatus = (status: boolean) => {
-  wsCache.set('crest-global-refresh', status, { exp: 5 })
+  authCache.set('crest-global-refresh', status, { exp: 5 })
 }
 
 const cacheRequest = cb => {
@@ -48,8 +49,9 @@ export const configHandler = config => {
   if (desktop) {
     return config
   }
-  if (wsCache.get('user.token')) {
-    config.headers['X-CREST-TOKEN'] = wsCache.get('user.token')
+  const token = authCache.get('user.token')
+  if (token) {
+    config.headers['X-CREST-TOKEN'] = token
     const expired = isExpired()
     const requestUrl = String(config.url || '')
     if (expired && !requestUrl.includes(refreshUrl)) {

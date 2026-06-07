@@ -2,6 +2,7 @@ import SockJS from 'sockjs-client/dist/sockjs.min.js'
 import Stomp from 'stompjs'
 import { useCache } from '@/hooks/web/useCache'
 import { useEmitt } from '@/hooks/web/useEmitt'
+import { authCache } from '@/utils/authCache'
 const { wsCache } = useCache()
 let stompClient: Stomp.Client
 import dev from '../../config/dev'
@@ -24,7 +25,7 @@ export default {
       if (wsCache.get('app.desktop')) {
         return true
       }
-      return wsCache.get('user.token') && wsCache.get('user.uid')
+      return authCache.get('user.token') && wsCache.get('user.uid')
     }
 
     function connection() {

@@ -32,9 +32,6 @@ public class WhitelistUtils {
             "/public-key",
             "/index.html",
             "/model",
-            "/swagger-resources",
-            "/swagger-ui.html",
-            "/doc.html",
             "/panel.html",
             "/mobile.html",
             "/lark/qrinfo",
@@ -79,10 +76,8 @@ public class WhitelistUtils {
                 || Strings.CS.endsWithAny(requestURI, ".gif", ".ico", ".js", ".css", ".svg", ".png", ".jpg", ".jpeg", ".js.map", ".otf", ".ttf", ".woff2")
                 || Strings.CS.startsWithAny(requestURI, "data:image")
                 || Strings.CS.startsWithAny(requestURI, "/login/platform-login/")
-                // 移除API文档白名单，需要认证才能访问
-                // || Strings.CS.startsWithAny(requestURI, "/v3/api-docs")
-                // || Strings.CS.startsWithAny(requestURI, "/swagger-ui")
-                || Strings.CS.startsWithAny(requestURI, "/webjars/")
+                // API 文档入口需要认证，避免匿名暴露接口结构。
+                // || Strings.CS.startsWithAny(requestURI, "/v3/api-docs", "/swagger-ui", "/webjars/")
                 || Strings.CS.startsWithAny(requestURI, "/static-resource/")
                 || Strings.CS.startsWithAny(requestURI, "/appearance/image/")
                 || Strings.CS.startsWithAny(requestURI, "/websocket")

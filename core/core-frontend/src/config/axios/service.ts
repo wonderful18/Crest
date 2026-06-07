@@ -17,6 +17,7 @@ import { configHandler } from './refresh'
 import { isMobile, getLocale } from '@/utils/utils'
 import { useRequestStoreWithOut } from '@/store/modules/request'
 import { clearCache } from '@/utils/cacheUtil'
+import { authCache } from '@/utils/authCache'
 import { securityConfig } from './hmac'
 
 type AxiosErrorWidthLoading<T> = T & {
@@ -169,10 +170,6 @@ service.interceptors.response.use(
     response: AxiosResponse<any> & { config: InternalAxiosRequestConfig & { loading?: boolean } }
   ) => {
     executeVersionHandler(response)
-    /* if (response.headers['x-crest-refresh-token']) {
-      wsCache.set('user.token', response.headers['x-crest-refresh-token'])
-      wsCache.set('user.exp', new Date().getTime() + 90000)
-    } */
     if (response.headers['x-crest-link-token']) {
       linkStore.setLinkToken(response.headers['x-crest-link-token'])
     }
@@ -253,7 +250,7 @@ service.interceptors.response.use(
 
     error.config.loading && tryHideLoading(permissionStore.getCurrentPath)
     if (header.has('CREST-GATEWAY-FLAG')) {
-      const userToken = wsCache.get('user.token')
+      const userToken = authCache.get('user.token')
       const inPlatformClient = !!wsCache.get('crest-platform-client')
       clearCache()
       if (!(userToken && inPlatformClient)) {

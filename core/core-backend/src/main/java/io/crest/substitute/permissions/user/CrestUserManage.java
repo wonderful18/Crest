@@ -38,7 +38,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -52,6 +54,13 @@ public class CrestUserManage {
     private static final String LEGACY_ADMIN_PASSWORD_HASH = "21232f297a57a5a743894a0e4a801fc3";
     private static final Pattern ACCOUNT_PATTERN = Pattern.compile("^[A-Za-z0-9._@-]{1,64}$");
     private static final Pattern UNSAFE_DISPLAY_NAME_PATTERN = Pattern.compile("[<>\\p{Cntrl}]");
+    private static final SecureRandom PASSWORD_RANDOM = new SecureRandom();
+    private static final char[] PASSWORD_UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ".toCharArray();
+    private static final char[] PASSWORD_LOWER = "abcdefghijkmnopqrstuvwxyz".toCharArray();
+    private static final char[] PASSWORD_DIGITS = "23456789".toCharArray();
+    private static final char[] PASSWORD_SPECIALS = "!@#$%^&*_-+=".toCharArray();
+    private static final char[] PASSWORD_ALL =
+            "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*_-+=".toCharArray();
 
     @Resource
     private JdbcTemplate jdbcTemplate;
@@ -626,16 +635,30 @@ public class CrestUserManage {
     }
 
     private String generateSecurePassword() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-        StringBuilder sb = new StringBuilder();
-        java.security.SecureRandom random = new java.security.SecureRandom();
-        sb.append("A"); // 确保有大写
-        sb.append("a"); // 确保有小写
-        sb.append("1"); // 确保有数字
-        sb.append("!"); // 确保有特殊字符
-        for (int i = 0; i < 8; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
+        for (int attempt = 0; attempt < 10; attempt++) {
+            List<Character> chars = new ArrayList<>();
+            chars.add(randomChar(PASSWORD_UPPER));
+            chars.add(randomChar(PASSWORD_LOWER));
+            chars.add(randomChar(PASSWORD_DIGITS));
+            chars.add(randomChar(PASSWORD_SPECIALS));
+            for (int i = 0; i < 12; i++) {
+                chars.add(randomChar(PASSWORD_ALL));
+            }
+            Collections.shuffle(chars, PASSWORD_RANDOM);
+            StringBuilder password = new StringBuilder(chars.size());
+            chars.forEach(password::append);
+            String value = password.toString();
+            try {
+                PasswordValidator.validate(value);
+                return value;
+            } catch (CrestException ignored) {
+                // Retry; random generation can rarely create repeated-character sequences.
+            }
         }
-        return sb.toString();
+        throw new IllegalStateException("临时密码生成失败");
+    }
+
+    private char randomChar(char[] chars) {
+        return chars[PASSWORD_RANDOM.nextInt(chars.length)];
     }
 }

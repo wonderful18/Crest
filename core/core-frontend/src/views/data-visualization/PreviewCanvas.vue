@@ -20,6 +20,7 @@ import { filterEnumMapSync } from '@/utils/componentUtils'
 import CanvasOptBar from '@/components/visualization/CanvasOptBar.vue'
 import DvPreview from '@/views/data-visualization/DvPreview.vue'
 import { useCache } from '@/hooks/web/useCache'
+import { authCache } from '@/utils/authCache'
 const routeWatch = useRoute()
 
 const dvMainStore = dvMainStoreWithOut()
@@ -63,7 +64,7 @@ const props = defineProps({
 
 const loadCanvasDataAsync = async (dvId, dvType, ignoreParams = false) => {
   const needsUserToken = !props.publicLinkStatus && !props.outerId && !embeddedStore.getToken
-  if (needsUserToken && !wsCache.get('user.token')) {
+  if (needsUserToken && !authCache.get('user.token')) {
     await router.replace(
       `/login?redirect=${encodeURIComponent(router.currentRoute.value.fullPath)}`
     )

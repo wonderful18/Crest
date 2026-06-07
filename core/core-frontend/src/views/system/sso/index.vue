@@ -119,7 +119,10 @@ onMounted(loadConfig)
         <el-form-item label="用户信息端点" required>
           <el-input v-model.trim="form.userInfoEndpoint" placeholder="https://idp.example.com/oauth2/userinfo" />
         </el-form-item>
-        <el-form-item label="Issuer">
+        <el-form-item
+          label="Issuer"
+          :required="['OIDC_GENERIC', 'CASDOOR'].includes(form.providerType)"
+        >
           <el-input v-model.trim="form.issuer" placeholder="https://idp.example.com" />
         </el-form-item>
         <el-form-item label="回调地址">
@@ -183,7 +186,7 @@ onMounted(loadConfig)
 
       <div class="actions">
         <el-button @click="validate">校验配置</el-button>
-        <el-button type="primary" :loading="saving" @click="record">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
       </div>
     </div>
   </div>

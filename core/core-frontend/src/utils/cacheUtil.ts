@@ -1,20 +1,18 @@
 import { useCache } from '@/hooks/web/useCache'
+import { clearAuthCache } from '@/utils/authCache'
 const { wsCache } = useCache()
 export const clearCache = () => {
+  clearAuthCache()
   const keys = [
     'CrestKey',
     'TreeSort-backend',
     'app.desktop',
-    'crest-global-refresh',
     'open-backend',
     'panel-weight',
     'screen-weight',
-    'user.exp',
     'user.language',
     'user.name',
     'user.oid',
-    'user.time',
-    'user.token',
     'user.uid'
   ]
   keys.forEach(key => {

@@ -153,11 +153,11 @@ public interface UserApi {
     @GetMapping("/default-password")
     String defaultPwd();
 
-    @Operation(summary = "重置为默认密码")
+    @Operation(summary = "重置本地密码并返回临时密码")
     @Parameter(name = "id", description = "用户ID", required = true, in = ParameterIn.PATH)
     @CrestPermit({"m:read", "#p0 + ':manage'"})
     @PostMapping("/reset-password/{id}")
-    void resetPwd(@PathVariable("id") Long id);
+    String resetPwd(@PathVariable("id") Long id);
 
     @Operation(summary = "切换用户状态")
     @CrestPermit({"m:read", "#p0.id + ':manage'"})

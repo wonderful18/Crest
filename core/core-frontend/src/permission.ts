@@ -14,6 +14,7 @@ import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 import { useEmbedded } from '@/store/modules/embedded'
 import { useLoading } from '@/hooks/web/useLoading'
 import { ElMessageBox } from 'element-plus-secondary'
+import { authCache } from '@/utils/authCache'
 const appearanceStore = useAppearanceStoreWithOut()
 const { wsCache } = useCache()
 const permissionStore = usePermissionStoreWithOut()
@@ -75,7 +76,7 @@ router.beforeEach(async (to, from, next) => {
     next()
     return
   }
-  if (wsCache.get('user.token') || isDesktop) {
+  if (authCache.get('user.token') || isDesktop) {
     if (!userStore.getUid) {
       await userStore.setUser()
     }

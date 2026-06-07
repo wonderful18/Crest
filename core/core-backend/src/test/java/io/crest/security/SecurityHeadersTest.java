@@ -62,6 +62,8 @@ class SecurityHeadersTest {
 
         verify(response).setHeader(eq("Content-Security-Policy"), contains("default-src 'self'"));
         verify(response).setHeader(eq("Content-Security-Policy"), contains("worker-src 'self' blob:"));
+        verify(response).setHeader(eq("Content-Security-Policy"),
+                argThat(value -> value != null && !value.contains("unsafe-inline") && !value.contains("unsafe-eval")));
     }
 
     @Test

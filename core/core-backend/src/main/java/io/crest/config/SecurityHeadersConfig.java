@@ -27,11 +27,13 @@ public class SecurityHeadersConfig implements Filter {
         httpResponse.setHeader("X-XSS-Protection", "1; mode=block");
         httpResponse.setHeader("Content-Security-Policy",
                 "default-src 'self'; " +
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-                "style-src 'self' 'unsafe-inline'; " +
+                "script-src 'self'; " +
+                "style-src 'self'; " +
                 "img-src 'self' data: blob:; " +
                 "font-src 'self' data:; " +
                 "connect-src 'self' ws: wss:; " +
+                "object-src 'none'; " +
+                "base-uri 'none'; " +
                 "worker-src 'self' blob:; " +
                 "frame-ancestors 'none'");
 

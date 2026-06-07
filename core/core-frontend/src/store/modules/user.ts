@@ -3,8 +3,10 @@ import { store } from '../index'
 import { useCache } from '@/hooks/web/useCache'
 import { useLocaleStoreWithOut } from './locale'
 import { useLocale } from '@/hooks/web/useLocale'
+import { authCache } from '@/utils/authCache'
 const { wsCache } = useCache()
 const { changeLocale } = useLocale()
+const authKeys = ['token', 'exp', 'time']
 
 interface UserState {
   token: string
@@ -56,15 +58,16 @@ export const userStore = defineStore('user', {
       const user = await import('@/api/user')
       const res = await user.userInfo()
       const data = res.data
-      data.token = wsCache.get('user.token')
-      data.exp = wsCache.get('user.exp')
-      data.time = wsCache.get('user.time')
+      data.token = authCache.get('user.token')
+      data.exp = authCache.get('user.exp')
+      data.time = authCache.get('user.time')
       const keys: string[] = ['token', 'uid', 'name', 'oid', 'language', 'exp', 'time']
 
       keys.forEach(key => {
         const dkey = key === 'uid' ? 'id' : key
         this[key] = data[dkey]
-        wsCache.set('user.' + key, this[key])
+        const cache = authKeys.includes(key) ? authCache : wsCache
+        cache.set('user.' + key, this[key])
       })
       const locale = useLocaleStoreWithOut()
       if (locale.getCurrentLocale?.lang !== this.language && !window.CrestBi) {
@@ -73,15 +76,15 @@ export const userStore = defineStore('user', {
       this.setLanguage(this.language)
     },
     setToken(token: string) {
-      wsCache.set('user.token', token)
+      authCache.set('user.token', token)
       this.token = token
     },
     setExp(exp: number) {
-      wsCache.set('user.exp', exp)
+      authCache.set('user.exp', exp)
       this.exp = exp
     },
     setTime(time: number) {
-      wsCache.set('user.time', time)
+      authCache.set('user.time', time)
       this.time = time
     },
     setUid(uid: string) {
@@ -108,7 +111,10 @@ export const userStore = defineStore('user', {
     },
     clear() {
       const keys: string[] = ['token', 'uid', 'name', 'oid', 'language', 'exp', 'time']
-      keys.forEach(key => wsCache.delete('user.' + key))
+      keys.forEach(key => {
+        const cache = authKeys.includes(key) ? authCache : wsCache
+        cache.delete('user.' + key)
+      })
     }
   }
 })

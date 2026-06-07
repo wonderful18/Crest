@@ -16,6 +16,7 @@ import io.crest.system.sso.SsoClaimMapper;
 import io.crest.system.sso.SsoEndpointPolicy;
 import io.crest.system.sso.SsoIdentityProfile;
 import io.crest.system.sso.SsoLoginIdentityManage;
+import io.crest.system.sso.SsoOidcTokenVerifier;
 import io.crest.system.sso.SsoProviderConfigManage;
 import io.crest.system.sso.SsoProviderType;
 import io.crest.utils.AesUtils;
@@ -40,7 +41,7 @@ import java.io.Serializable;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -58,6 +59,7 @@ public class SsoManage {
     private static final String DEFAULT_NAME_ATTRIBUTE = "name";
     private static final String DEFAULT_EMAIL_ATTRIBUTE = "email";
     private static final String DEFAULT_REDIRECT = "/workbranch/index";
+    private static final long TOKEN_TTL_MILLIS = 24 * 60 * 60 * 1000L;
 
     @Resource
     private SysParameterManage sysParameterManage;
@@ -67,6 +69,9 @@ public class SsoManage {
 
     @Resource
     private SsoProviderConfigManage ssoProviderConfigManage;
+
+    @Resource
+    private SsoOidcTokenVerifier ssoOidcTokenVerifier;
 
     @Resource
     private PlatformPermissionManage platformPermissionManage;
@@ -181,7 +186,7 @@ public class SsoManage {
             if (StringUtils.isBlank(accessToken)) {
                 throw new IllegalStateException("令牌响应中缺少 access_token");
             }
-            Map<String, Object> claims = identityClaims(config, token, accessToken);
+            Map<String, Object> claims = identityClaims(config, token, accessToken, ssoState.nonce());
             SsoIdentityProfile profile = profile(config, claims);
             CrestUser user = ssoLoginIdentityManage.resolve(profile, Boolean.TRUE.equals(config.getAutoCreateUser()), config.getProviderName());
             TokenVO tokenVO = generate(user);
@@ -252,9 +257,15 @@ public class SsoManage {
                 config.getScope(), config.getUserIdAttribute(), config.getAccountAttribute())) {
             CrestException.throwException("单点登录配置不完整");
         }
+        if (providerType(config).isOidc() && StringUtils.isBlank(config.getIssuer())) {
+            CrestException.throwException("OIDC 单点登录必须配置 Issuer");
+        }
         validateEndpoint(config.getAuthorizationEndpoint(), config.getRequireHttps(), "授权端点");
         validateEndpoint(config.getTokenEndpoint(), config.getRequireHttps(), "令牌端点");
         validateEndpoint(config.getUserInfoEndpoint(), config.getRequireHttps(), "用户信息端点");
+        if (StringUtils.isNotBlank(config.getIssuer())) {
+            validateEndpoint(config.getIssuer(), config.getRequireHttps(), "Issuer");
+        }
         if (StringUtils.isNotBlank(config.getRedirectUri())) {
             validateEndpoint(config.getRedirectUri(), config.getRequireHttps(), "回调地址");
         }
@@ -331,10 +342,11 @@ public class SsoManage {
         return result;
     }
 
-    private Map<String, Object> identityClaims(SsoConfigVO config, Map<String, Object> token, String accessToken) {
+    private Map<String, Object> identityClaims(SsoConfigVO config, Map<String, Object> token, String accessToken, String nonce) {
         Map<String, Object> claims = new HashMap<>();
-        mergeNonBlank(claims, jwtClaims(asText(token.get("id_token"))));
-        mergeNonBlank(claims, jwtClaims(accessToken));
+        if (providerType(config).isOidc()) {
+            mergeNonBlank(claims, ssoOidcTokenVerifier.verify(config, asText(token.get("id_token")), nonce));
+        }
         try {
             mergeNonBlank(claims, fetchUserInfo(config.getUserInfoEndpoint(), accessToken));
         } catch (Exception e) {
@@ -343,23 +355,6 @@ public class SsoManage {
             }
         }
         return claims;
-    }
-
-    private Map<String, Object> jwtClaims(String token) {
-        if (StringUtils.isBlank(token)) {
-            return Map.of();
-        }
-        String[] parts = token.split("\\.");
-        if (parts.length < 2) {
-            return Map.of();
-        }
-        try {
-            String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-            Map<String, Object> result = JsonUtil.parseObject(payload, new TypeReference<>() {});
-            return result == null ? Map.of() : result;
-        } catch (Exception ignored) {
-            return Map.of();
-        }
     }
 
     private void mergeNonBlank(Map<String, Object> target, Map<String, Object> source) {
@@ -412,8 +407,9 @@ public class SsoManage {
         Map<String, Object> claims = new LinkedHashMap<>();
         claims.put("uid", bo.getUserId());
         claims.put("oid", bo.getDefaultOid());
-        String token = SignedTokenUtils.sign(claims, user.getPasswordHash(), null);
-        return new TokenVO(token, 0L);
+        Date expiresAt = new Date(System.currentTimeMillis() + TOKEN_TTL_MILLIS);
+        String token = SignedTokenUtils.sign(claims, user.getPasswordHash(), expiresAt);
+        return new TokenVO(token, TOKEN_TTL_MILLIS);
     }
 
     private String callbackUrl(HttpServletRequest request, SsoConfigVO config) {

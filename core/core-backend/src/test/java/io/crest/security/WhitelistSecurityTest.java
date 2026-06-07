@@ -30,6 +30,17 @@ class WhitelistSecurityTest {
     }
 
     @Test
+    @DisplayName("API 文档入口不应匿名访问")
+    void apiDocsShouldNotBeInWhitelist() {
+        assertFalse(WhitelistUtils.WHITE_PATH.contains("/doc.html"));
+        assertFalse(WhitelistUtils.WHITE_PATH.contains("/swagger-ui.html"));
+        assertFalse(WhitelistUtils.WHITE_PATH.contains("/swagger-resources"));
+        assertFalse(WhitelistUtils.match("/api/v1/doc.html"));
+        assertFalse(WhitelistUtils.match("/api/v1/swagger-ui/index.html"));
+        assertFalse(WhitelistUtils.match("/api/v1/webjars/swagger-ui/index.html"));
+    }
+
+    @Test
     @DisplayName("登录页启动配置端点应在白名单中")
     void loginBootstrapEndpointsShouldBeInWhitelist() {
         assertTrue(WhitelistUtils.match("/api/v1/sys-parameter/default-settings"));

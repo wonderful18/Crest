@@ -38,6 +38,17 @@ class AllSecurityFixesTest {
         }
 
         @Test
+        @DisplayName("API 文档入口不应匿名访问")
+        void apiDocsNotInWhitelist() {
+            assertFalse(WhitelistUtils.WHITE_PATH.contains("/doc.html"));
+            assertFalse(WhitelistUtils.WHITE_PATH.contains("/swagger-ui.html"));
+            assertFalse(WhitelistUtils.WHITE_PATH.contains("/swagger-resources"));
+            assertFalse(WhitelistUtils.match("/api/v1/doc.html"));
+            assertFalse(WhitelistUtils.match("/api/v1/swagger-ui/index.html"));
+            assertFalse(WhitelistUtils.match("/api/v1/webjars/swagger-ui/index.html"));
+        }
+
+        @Test
         @DisplayName("空用户 ID 不应被识别为系统管理员")
         void nullUserIdShouldNotBeSystemAdmin() {
             assertFalse(AuthUtils.isSysAdmin(null));
