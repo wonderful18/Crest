@@ -78,7 +78,7 @@ public class SysParameterManage {
         result.add(buildSettingItem("showDemoTips", showDemoTips));
         result.add(buildSettingItem("demoTipsContent", demoTipsContent));
         String siteTitle = singleVal("basic.siteTitle");
-        result.add(buildSettingItem("siteTitle", StringUtils.defaultIfBlank(siteTitle, "Crest")));
+        result.add(buildSettingItem("siteTitle", StringUtils.defaultIfBlank(siteTitle, "研发效能指标管理系统")));
         return result;
     }
     public Integer defaultLogin() {

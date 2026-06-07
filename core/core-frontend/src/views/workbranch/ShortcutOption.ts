@@ -33,9 +33,6 @@ class ShortcutOption {
         busiList: ['panel', 'screen', 'dataset', 'datasource'],
         dataCache: [],
         columnList: [
-          { field: 'type', label: t('datasource.type') },
-          { field: 'creator', label: t('visualization.create_by') },
-          { field: 'lastEditor', label: t('work_branch.last_edited_by') },
           { field: 'lastEditTime', label: t('work_branch.last_edit_time'), type: 'time' }
         ]
       },
@@ -44,9 +41,6 @@ class ShortcutOption {
         busiList: ['panel', 'screen'],
         dataCache: [],
         columnList: [
-          { field: 'type', label: t('datasource.type') },
-          { field: 'creator', label: t('visualization.create_by') },
-          { field: 'lastEditor', label: t('work_branch.last_edited_by') },
           { field: 'lastEditTime', label: t('work_branch.last_edit_time'), type: 'time' }
         ]
       }

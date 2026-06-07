@@ -872,7 +872,7 @@ CREATE TABLE `sys_setting` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 /*!40000 ALTER TABLE `sys_setting` DISABLE KEYS */;
-INSERT INTO `sys_setting` VALUES (1,'basic.dsIntervalTime','6','text',11),(2,'basic.dsExecuteTime','minute','text',3),(3,'ai.baseUrl','','text',0),(7,'template.url','','text',0),(8,'template.accessKey','crest','text',1),(9,'basic.frontTimeOut','60','text',1),(10,'basic.exportFileLiveTime','30','text',2),(100102206800000001,'basic.siteTitle','Crest','text',9),(1048232869488627717,'basic.shareDisable','false','text',11),(1048232869488627718,'basic.sharePeRequire','false','text',12),(1048232869488627719,'basic.defaultSort','1','text',13),(1048232869488627720,'basic.defaultOpen','0','text',14);
+INSERT INTO `sys_setting` VALUES (1,'basic.dsIntervalTime','6','text',11),(2,'basic.dsExecuteTime','minute','text',3),(3,'ai.baseUrl','','text',0),(7,'template.url','','text',0),(8,'template.accessKey','crest','text',1),(9,'basic.frontTimeOut','60','text',1),(10,'basic.exportFileLiveTime','30','text',2),(100102206800000001,'basic.siteTitle','研发效能指标管理系统','text',9),(1048232869488627717,'basic.shareDisable','false','text',11),(1048232869488627718,'basic.sharePeRequire','false','text',12),(1048232869488627719,'basic.defaultSort','1','text',13),(1048232869488627720,'basic.defaultOpen','0','text',14);
 /*!40000 ALTER TABLE `sys_setting` ENABLE KEYS */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;

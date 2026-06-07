@@ -5,9 +5,10 @@ import { ElMessage } from 'element-plus-secondary'
 import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 
 const appearanceStore = useAppearanceStoreWithOut()
+const defaultSiteTitle = '研发效能指标管理系统'
 const loading = ref(false)
 const form = reactive({
-  title: 'Crest'
+  title: defaultSiteTitle
 })
 
 const load = async () => {
@@ -15,14 +16,14 @@ const load = async () => {
   try {
     const res = await request.get({ url: '/sys-parameter/basic/list' })
     const item = res.data?.find(ele => ele.pkey === 'basic.siteTitle')
-    form.title = item?.pval || 'Crest'
+    form.title = item?.pval || defaultSiteTitle
   } finally {
     loading.value = false
   }
 }
 
 const save = async () => {
-  const title = form.title.trim() || 'Crest'
+  const title = form.title.trim() || defaultSiteTitle
   await request.post({
     url: '/sys-parameter/basic/record',
     data: [{ pkey: 'basic.siteTitle', pval: title, type: 'text', sort: 9 }]
@@ -45,7 +46,7 @@ onMounted(load)
           <div class="setting-desc">用于登录页、工作台和系统页面的浏览器标签标题。</div>
         </div>
         <el-form label-position="top" class="site-form">
-          <el-form-item label="标题后缀">
+          <el-form-item label="浏览器标题">
             <el-input
               v-model.trim="form.title"
               maxlength="40"
@@ -53,7 +54,7 @@ onMounted(load)
               placeholder="请输入标题"
             />
             <div class="form-tip">
-              实际显示为 {{ form.title === 'Crest' ? 'Crest' : `Crest-${form.title || 'Crest'}` }}
+              实际显示为 {{ form.title || defaultSiteTitle }}
             </div>
           </el-form-item>
           <el-button type="primary" @click="save">保存</el-button>

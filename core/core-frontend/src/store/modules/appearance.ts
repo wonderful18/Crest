@@ -258,7 +258,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
       const resData = res.data
       if (!resData?.length) {
         if (!isCrestBi) {
-          document.title = 'Crest'
+          applyDocumentTitle()
           setLinkIcon()
         }
         return
@@ -352,7 +352,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
 
 const applyDocumentTitle = (siteTitle?: string) => {
   const normalized = siteTitle?.trim()
-  const title = normalized && normalized !== 'Crest' ? `Crest-${normalized}` : 'Crest'
+  const title = normalized || '研发效能指标管理系统'
   document.title = title
   setTitle(title)
 }
