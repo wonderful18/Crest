@@ -120,7 +120,7 @@ service.interceptors.request.use(
     if (linkStore.getLinkToken) {
       ;(config.headers as AxiosRequestHeaders)['X-CREST-LINK-TOKEN'] = linkStore.getLinkToken
     } else if (embeddedStore.token) {
-      ;(config.headers as AxiosRequestHeaders)['X-EMBEDDED-TOKEN'] = embeddedStore.token
+      ;(config.headers as AxiosRequestHeaders)['X-CREST-EMBEDDED-TOKEN'] = embeddedStore.token
     }
     const locale = getLocale()
     if (locale) {
@@ -144,10 +144,11 @@ service.interceptors.request.use(
 
     const requestUrl = String(config.url || '')
     if (requestUrl.endsWith('/chart-data/data') || requestUrl.endsWith('chartData/data')) {
-      const chartKey = `chartData/data/${(config.data as any)?.id}`
+      const chartId = (config.data as any)?.id
       config.cancelToken = new CancelToken(function executor(c) {
         cancelMap[requestUrl] = c
-        cancelMap[chartKey] = c
+        cancelMap[`/chart-data/data/${chartId}`] = c
+        cancelMap[`chartData/data/${chartId}`] = c
       })
     } else {
       config.cancelToken = new CancelToken(function executor(c) {

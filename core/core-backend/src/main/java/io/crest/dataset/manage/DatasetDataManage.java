@@ -37,12 +37,14 @@ import io.crest.extensions.datasource.dto.*;
 import io.crest.extensions.datasource.factory.ProviderFactory;
 import io.crest.extensions.datasource.model.SQLMeta;
 import io.crest.extensions.datasource.provider.Provider;
+import io.crest.extensions.datasource.utils.SqlPlaceholderUtils;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import io.crest.extensions.view.dto.ChartExtFilterDTO;
 import io.crest.extensions.view.dto.ChartExtRequest;
 import io.crest.extensions.view.dto.ColumnPermissionItem;
 import io.crest.extensions.view.dto.SqlVariableDetails;
 import io.crest.i18n.Translator;
+import io.crest.portal.DataPortalPermissionManage;
 import io.crest.system.manage.CorePermissionManage;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.BeanUtils;
@@ -95,6 +97,8 @@ public class DatasetDataManage {
     private RowPermissionsApi rowPermissionsApi;
     @Resource
     private DataSourceManage dataSourceManage;
+    @Resource
+    private DataPortalPermissionManage dataPortalPermissionManage;
 
     private static Logger logger = LoggerFactory.getLogger(DatasetDataManage.class);
 
@@ -133,13 +137,13 @@ public class DatasetDataManage {
                 Map map = JsonUtil.parseObject(datasourceSchemaDTO.getConfiguration(), Map.class);
                 if (!datasourceRequest.getIsCross()) {
                     if (ObjectUtils.isNotEmpty(map.get("schema"))) {
-                        sql = sql.replaceAll(SqlPlaceholderConstants.KEYWORD_PREFIX_REGEX + datasourceSchemaDTO.getSchemaAlias() + SqlPlaceholderConstants.KEYWORD_SUFFIX_REGEX, String.format(format, map.get("schema").toString()));
+                        sql = replaceSchemaAlias(sql, datasourceSchemaDTO.getSchemaAlias(), String.format(format, map.get("schema").toString()));
                     } else {
-                        sql = sql.replaceAll(SqlPlaceholderConstants.KEYWORD_PREFIX_REGEX + datasourceSchemaDTO.getSchemaAlias() + SqlPlaceholderConstants.KEYWORD_SUFFIX_REGEX + "\\.", "");
+                        sql = removeSchemaAliasPrefix(sql, datasourceSchemaDTO.getSchemaAlias());
                     }
                     sql = provider.transSqlDialect(sql, datasourceRequest.getDsList());
                 } else {
-                    sql = sql.replaceAll(SqlPlaceholderConstants.KEYWORD_PREFIX_REGEX + datasourceSchemaDTO.getSchemaAlias() + SqlPlaceholderConstants.KEYWORD_SUFFIX_REGEX + "\\.", "");
+                    sql = removeSchemaAliasPrefix(sql, datasourceSchemaDTO.getSchemaAlias());
                     String tableSchema = datasetSQLManage.putObj2Map(datasourceRequest.getDsList(), datasetTableDTO, datasourceRequest.getIsCross());
                     sql = SqlUtils.addSchema(sql, tableSchema);
                 }
@@ -729,14 +733,17 @@ public class DatasetDataManage {
             BusiPerCheckDTO dto = new BusiPerCheckDTO();
             dto.setId(datasetGroupId);
             dto.setAuthEnum(AuthEnum.READ);
-            boolean checked = corePermissionManage.checkAuth(dto);
+            boolean portalVisualizationRead = dataPortalPermissionManage
+                    .canReadPublishedVisualizationDataset(multFieldValuesRequest.getVisualizationId(), datasetGroupId);
+            boolean checked = portalVisualizationRead || corePermissionManage.checkAuth(dto);
             if (!checked) {
                 CrestException.throwException(Translator.get("i18n_no_dataset_permission"));
             }
             if (field.getChartId() != null) {
                 allFields.addAll(datasetTableFieldManage.getChartCalcFields(field.getChartId()));
             }
-            DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTO(datasetGroupId, null);
+            DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTOForVisualizationRead(
+                    datasetGroupId, null, multFieldValuesRequest.getVisualizationId());
 
             Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, new ChartExtRequest());
             sqlMap = datasetSyncQueryManage.routeIfSynced(datasetGroupInfoDTO, sqlMap);
@@ -897,7 +904,9 @@ public class DatasetDataManage {
             BusiPerCheckDTO dto = new BusiPerCheckDTO();
             dto.setId(datasetGroupId);
             dto.setAuthEnum(AuthEnum.READ);
-            boolean checked = corePermissionManage.checkAuth(dto);
+            boolean portalVisualizationRead = dataPortalPermissionManage
+                    .canReadPublishedVisualizationDataset(request.getVisualizationId(), datasetGroupId);
+            boolean checked = portalVisualizationRead || corePermissionManage.checkAuth(dto);
             if (!checked) {
                 CrestException.throwException(Translator.get("i18n_no_dataset_permission"));
             }
@@ -905,7 +914,8 @@ public class DatasetDataManage {
             if (field.getChartId() != null) {
                 allFields.addAll(datasetTableFieldManage.getChartCalcFields(field.getChartId()));
             }
-            datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTO(datasetGroupId, null);
+            datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTOForVisualizationRead(
+                    datasetGroupId, null, request.getVisualizationId());
 
             sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, new ChartExtRequest());
             sqlMap = datasetSyncQueryManage.routeIfSynced(datasetGroupInfoDTO, sqlMap);
@@ -1138,7 +1148,8 @@ public class DatasetDataManage {
         if (field.getChartId() != null) {
             allFields.addAll(datasetTableFieldManage.getChartCalcFields(field.getChartId()));
         }
-        DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTO(datasetGroupId, null);
+        DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTOForVisualizationRead(
+                datasetGroupId, null, multFieldValuesRequest.getVisualizationId());
 
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, new ChartExtRequest());
         sqlMap = datasetSyncQueryManage.routeIfSynced(datasetGroupInfoDTO, sqlMap);
@@ -1202,7 +1213,8 @@ public class DatasetDataManage {
                 }
 
                 boolean hasParameters = false;
-                List<SqlVariableDetails> sqlVariables = datasetGroupManage.sqlParams(Arrays.asList(datasetGroupInfoDTO.getId()));
+                List<SqlVariableDetails> sqlVariables = datasetGroupManage.sqlParamsForVisualizationRead(
+                        Arrays.asList(datasetGroupInfoDTO.getId()), multFieldValuesRequest.getVisualizationId());
                 if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(sqlVariables)) {
                     for (SqlVariableDetails parameter : Optional.ofNullable(filterDTO.getParameters()).orElse(new ArrayList<>())) {
                         String parameterId = Strings.CS.endsWith(parameter.getId(), START_END_SEPARATOR) ? parameter.getId().split(START_END_SEPARATOR)[0] : parameter.getId();
@@ -1318,5 +1330,13 @@ public class DatasetDataManage {
         }
         return nodes;
 
+    }
+
+    private static String replaceSchemaAlias(String sql, String schemaAlias, String replacement) {
+        return SqlPlaceholderUtils.replaceIdentifier(sql, schemaAlias, replacement);
+    }
+
+    private static String removeSchemaAliasPrefix(String sql, String schemaAlias) {
+        return SqlPlaceholderUtils.removeIdentifierPrefix(sql, schemaAlias);
     }
 }

@@ -235,8 +235,8 @@ const renderTable = (chart: ChartObj) => {
         rowCellVertical: false
       }
     },
-    dataCell: meta => {
-      return new CustomDataCell(meta, meta.spreadsheet)
+    dataCell: (meta, sheet, config) => {
+      return new CustomDataCell(meta, sheet, config)
     },
     colCell: (meta, sheet, config) => {
       return new CustomColCell(meta, sheet, config)
@@ -292,9 +292,12 @@ const renderTable = (chart: ChartObj) => {
         if (parent?.id === 'root') {
           const startIndex = curColumns.findIndex(cell => cell.key === curCell.getMeta().field)
           const [curCol] = getColumns([curCell.getMeta().field], curColumns)
+          if (startIndex === -1 || !curCol?.children) return
           curColumns.splice(startIndex, 1, ...curCol.children)
           const index = curMeta.findIndex(meta => meta.field === curCell.getMeta().field)
-          curMeta.splice(index, 1)
+          if (index !== -1) {
+            curMeta.splice(index, 1)
+          }
           s2.setDataCfg({
             fields: {
               columns: curColumns
@@ -309,9 +312,12 @@ const renderTable = (chart: ChartObj) => {
               cell => cell.key === curCell.getMeta().field
             )
             const [curCol] = getColumns([curCell.getMeta().field], parentColumn.children)
+            if (startIndex === undefined || startIndex === -1 || !curCol?.children) return
             parentColumn.children?.splice(startIndex, 1, ...curCol.children)
             const index = curMeta.findIndex(meta => meta.field === curCell.getMeta().field)
-            curMeta.splice(index, 1)
+            if (index !== -1) {
+              curMeta.splice(index, 1)
+            }
             s2.setDataCfg({
               fields: {
                 columns: curColumns
@@ -370,14 +376,16 @@ const renderTable = (chart: ChartObj) => {
       renameBtn.innerText = t('chart.rename')
       renameBtn.onclick = () => {
         s2.hideTooltip()
-        const cellMeta = curMeta.find(meta => meta.field === curCell.getMeta().field)
+        const cellField = curCell.getMeta().field
+        const cellMeta = curMeta.find(meta => meta.field === cellField)
+        const inputValue = cellMeta?.name || curCell.getMeta().label || cellField
         ElMessageBox.prompt('', t('chart.group_name'), {
           confirmButtonText: t('chart.confirm'),
           cancelButtonText: t('chart.cancel'),
           showClose: false,
           showInput: true,
           inputPlaceholder: t('chart.group_name_edit_tip'),
-          inputValue: cellMeta.name,
+          inputValue,
           inputErrorMessage: t('chart.group_name_error_tip'),
           // 正则校验，长度 1-50
           inputValidator: val => {
@@ -388,7 +396,14 @@ const renderTable = (chart: ChartObj) => {
           }
         })
           .then(res => {
-            cellMeta.name = res.value
+            if (cellMeta) {
+              cellMeta.name = res.value
+            } else {
+              curMeta.push({
+                field: cellField,
+                name: res.value
+              })
+            }
             s2.setDataCfg({
               meta: curMeta
             })
@@ -572,10 +587,11 @@ const renderTable = (chart: ChartObj) => {
     const initialized = s2.store.get('initialized')
     if (!initialized) {
       s2.store.set('initialized', true)
-      s2.changeSheetSize(e.colsHierarchy.width)
+      const colsHierarchy = e?.colsHierarchy
+      s2.changeSheetSize(colsHierarchy?.width || containerDom.getBoundingClientRect().width)
       const length = s2.dataCfg.data?.length || 0
-      const headerHeight = e.colsHierarchy.height
-      const rowHeight = s2.options.style.cellCfg.height
+      const headerHeight = colsHierarchy?.height || s2.options.style?.colCfg?.height || 36
+      const rowHeight = s2.options.style?.cellCfg?.height || 32
       const totalHeight = headerHeight + rowHeight * length
       if (containerDom.offsetHeight > totalHeight) {
         containerDom.style.height = totalHeight + 'px'

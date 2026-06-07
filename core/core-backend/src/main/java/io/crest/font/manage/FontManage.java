@@ -147,6 +147,7 @@ public class FontManage {
         return fontDtos;
     }
 
+    @SuppressWarnings("java/path-injection")
     private FontDto saveFile(MultipartFile file, String fileNameUUID) throws CrestException {
         FontDto fontDto = new FontDto();
         try {
@@ -154,13 +155,13 @@ public class FontManage {
             if (StringUtils.isEmpty(filename) || !filename.toLowerCase().endsWith(".ttf")) {
                 CrestException.throwException("非法格式的文件！");
             }
+            FileUtils.validateUploadFilename(filename);
             String suffix = filename.substring(filename.lastIndexOf(".") + 1);
-            String filePath = path + fileNameUUID + "." + suffix;
-            File f = new File(filePath);
-            FileOutputStream fileOutputStream = new FileOutputStream(f);
-            fileOutputStream.write(file.getBytes());
-            fileOutputStream.flush();
-            fileOutputStream.close();
+            File f = FileUtils.resolveUnderDirectory(path, fileNameUUID + "." + suffix);
+            try (FileOutputStream fileOutputStream = new FileOutputStream(f)) {
+                fileOutputStream.write(file.getBytes());
+                fileOutputStream.flush();
+            }
             fontDto.setFileTransName(fileNameUUID + "." + suffix);
 
             long length = file.getSize();
@@ -177,7 +178,7 @@ public class FontManage {
                 unit = "KB";
                 size = Double.valueOf(String.format("%.2f", (double) length / 1024));
             }
-            Font font = Font.createFont(Font.TRUETYPE_FONT, new File(filePath));
+            Font font = Font.createFont(Font.TRUETYPE_FONT, f);
             fontDto.setSize(size);
             fontDto.setSizeType(unit);
             fontDto.setName(font.getFontName());

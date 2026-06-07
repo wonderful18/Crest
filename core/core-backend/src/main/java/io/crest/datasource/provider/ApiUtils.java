@@ -423,7 +423,7 @@ public class ApiUtils {
                         try {
                             rootNode = objectMapper.readValue(JsonUtil.toJSONString(apiDefinition.getRequest().getBody().get("kvs")).toString(), listTypeReference);
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            io.crest.utils.LogUtil.error(e.getMessage(), e);
                             CrestException.throwException(e);
                         }
                         for (JsonNode jsonNode : rootNode) {
@@ -830,7 +830,7 @@ public class ApiUtils {
                 field.put("children", fieldArrayChildren);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
 

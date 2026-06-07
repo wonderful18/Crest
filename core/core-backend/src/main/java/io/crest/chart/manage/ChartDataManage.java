@@ -30,6 +30,7 @@ import io.crest.extensions.view.filter.FilterTreeObj;
 import io.crest.extensions.view.plugin.AbstractChartPlugin;
 import io.crest.extensions.view.util.FieldUtil;
 import io.crest.i18n.Translator;
+import io.crest.portal.DataPortalPermissionManage;
 import io.crest.result.ResultCode;
 import io.crest.system.manage.CorePermissionManage;
 import io.crest.utils.AuthUtils;
@@ -74,6 +75,8 @@ public class ChartDataManage {
 
     @Resource
     private CorePermissionManage corePermissionManage;
+    @Resource
+    private DataPortalPermissionManage dataPortalPermissionManage;
     @Autowired(required = false)
     private PluginManageApi pluginManage;
 
@@ -116,7 +119,9 @@ public class ChartDataManage {
         }
 
         var drillAxis = new ArrayList<ChartViewFieldDTO>();
-        DatasetGroupInfoDTO table = datasetGroupManage.datasetGroupInfoDTO(view.getTableId(), null);
+        boolean portalVisualizationRead = dataPortalPermissionManage.canReadPublishedVisualization(view.getSceneId(), null);
+        DatasetGroupInfoDTO table = datasetGroupManage.datasetGroupInfoDTOForVisualizationRead(
+                view.getTableId(), null, view.getSceneId());
         if (table == null) {
             CrestException.throwException(ResultCode.DATA_IS_WRONG.code(), Translator.get("i18n_no_ds"));
         }
@@ -124,7 +129,7 @@ public class ChartDataManage {
         BusiPerCheckDTO dto = new BusiPerCheckDTO();
         dto.setId(table.getId());
         dto.setAuthEnum(AuthEnum.READ);
-        boolean checked = corePermissionManage.checkAuth(dto);
+        boolean checked = portalVisualizationRead || corePermissionManage.checkAuth(dto);
         if (!checked) {
             CrestException.throwException(Translator.get("i18n_no_dataset_permission"));
         }
@@ -151,7 +156,8 @@ public class ChartDataManage {
         // 过滤来自仪表板的条件
         List<ChartExtFilterDTO> extFilterList = new ArrayList<>();
         //组件过滤条件
-        List<SqlVariableDetails> sqlVariables = datasetGroupManage.sqlParams(Collections.singletonList(view.getTableId()));
+        List<SqlVariableDetails> sqlVariables = datasetGroupManage.sqlParamsForVisualizationRead(
+                Collections.singletonList(view.getTableId()), view.getSceneId());
         if (ObjectUtils.isNotEmpty(chartExtRequest.getFilter())) {
             for (ChartExtFilterDTO request : chartExtRequest.getFilter()) {
                 // 解析多个fieldId,fieldId是一个逗号分隔的字符串
@@ -676,7 +682,8 @@ public class ChartDataManage {
         List<ChartViewFieldDTO> drill = new ArrayList<>(view.getDrillFields());
 
         // 获取数据集,需校验权限
-        DatasetGroupInfoDTO table = datasetGroupManage.datasetGroupInfoDTO(view.getTableId(), null);
+        DatasetGroupInfoDTO table = datasetGroupManage.datasetGroupInfoDTOForVisualizationRead(
+                view.getTableId(), null, view.getSceneId());
         Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
         List<DataSetRowPermissionsTreeDTO> rowPermissionsTree = permissionManage.getRowPermissionsTree(table.getId(), view.getChartExtRequest().getUser());
 

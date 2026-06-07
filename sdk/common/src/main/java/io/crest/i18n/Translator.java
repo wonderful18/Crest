@@ -86,7 +86,6 @@ public class Translator {
                         return JsonUtil.toJSONString(translateObject(jsonObject));
                     } catch (Exception e) {
                         LogUtil.error("Failed to translate object: " + rawString, e);
-                        e.printStackTrace();
                         LogUtil.warn("Failed to translate object " + rawString + ". Error: " + ExceptionUtils.getStackTrace(e));
                         return translateRawString(null, rawString);
                     }

@@ -32,8 +32,8 @@ const permissionStore = usePermissionStore()
 const routers: any[] = formatRoute(permissionStore.getRoutersNotHidden as AppCustomRouteRecordRaw[])
 const ready = ref(false)
 
-const downloadClick = params => {
-  useEmitt().emitter.emit('data-export-center', params)
+const downloadClick = () => {
+  useEmitt().emitter.emit('data-export-center')
 }
 
 const handleSelect = (index: string) => {

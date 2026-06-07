@@ -443,7 +443,7 @@ const handleFieldMore = (ele, type) => {
       }
       break
     case 'delete':
-      fieldRemoval(ele)
+      deleteField(ele)
       break
     case 'translate':
       dqTrans(ele.id)
@@ -568,7 +568,7 @@ const delFieldByIdFake = (arr, fakeAllfields) => {
   return idList
 }
 
-const fieldRemoval = item => {
+const deleteField = item => {
   let tip = ''
   const idArr = allfields.value.reduce((pre, next) => {
     if (![2, 3].includes(next.extField)) return pre
@@ -738,8 +738,9 @@ const getTableName = async (datasourceId, tableName) => {
 const isEdit = ref(false)
 const datasetCheckRef = ref()
 const initEdite = async () => {
-  let { id, datasourceId, tableName } = route.query
-  let { id: copyId } = route.params
+  let { id, datasourceId, tableName, copyId } = route.query
+  const { id: legacyCopyId } = route.params
+  copyId = copyId || legacyCopyId
   if (appStore.getIsCrestBi) {
     id = embeddedStore.datasetId
     datasourceId = embeddedStore.datasourceId
@@ -848,7 +849,7 @@ const addComplete = () => {
     columns.value = []
     tableData.value = []
   }
-  cancelMap['/datasetData/previewData']?.()
+  cancelMap['/dataset-data/preview-data']?.()
   datasetPreviewLoading.value = false
   reGetName()
 }

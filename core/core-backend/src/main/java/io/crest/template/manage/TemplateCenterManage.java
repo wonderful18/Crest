@@ -128,7 +128,7 @@ public class TemplateCenterManage {
             return baseResponseV2Trans(templateQuery(templateParams), searchTemplateFromManage(), templateBaseUrl(templateParams));
         } catch (Exception e) {
             LogUtil.error(e);
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         return null;
     }
@@ -201,7 +201,7 @@ public class TemplateCenterManage {
             return template.getCategories().stream()
                     .anyMatch(category -> categoryNameMatch.equals(category.getName()));
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
             return false;
         }
     }

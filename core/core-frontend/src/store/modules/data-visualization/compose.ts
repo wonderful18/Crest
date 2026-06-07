@@ -63,7 +63,8 @@ export const composeStore = defineStore('compose', {
       if (canvasId) {
         // 1.查找所属分组
         const groupId = canvasId.replace('Group-', '')
-        const sourceGroupComponent = componentData.value.filter(ele => ele.id === groupId)[0]
+        const sourceGroupComponent = componentData.value.find(ele => ele.id === groupId)
+        if (!sourceGroupComponent?.propValue) return
         const sourceSubComponents = sourceGroupComponent.propValue
         // 2. 还原分组内部组件再主画布位置
         const sourceParentStyle = { ...sourceGroupComponent.style }
@@ -229,7 +230,7 @@ export const composeStore = defineStore('compose', {
         return
       }
       const parentStyle = { ...curComponent.value.style }
-      const components = curComponent.value.propValue
+      const components = curComponent.value.propValue || []
       const editorRect = editor.getBoundingClientRect()
       const isInTab = isTabCanvas(canvasId)
       let decomposeComponentData = componentData.value
@@ -240,7 +241,7 @@ export const composeStore = defineStore('compose', {
           canvasIdMapCheck(componentItem, null, pathMap)
         })
         const pComponent = pathMap[curComponent.value.id]
-        const pComponentTarget = pComponent.propValue.filter(
+        const pComponentTarget = (pComponent?.propValue || []).filter(
           item => canvasId.indexOf(item.name) > -1
         )
         if (pComponentTarget && pComponentTarget.length > 0) {
@@ -260,7 +261,7 @@ export const composeStore = defineStore('compose', {
       })
     },
     calcComposeArea(areaDataValue = this.areaData) {
-      if (areaDataValue.components <= 1) {
+      if (areaDataValue.components.length <= 1) {
         return
       }
       // 根据选中区域和区域中每个组件的位移信息来创建 Group 组件

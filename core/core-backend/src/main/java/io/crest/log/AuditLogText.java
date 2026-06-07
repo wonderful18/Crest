@@ -70,44 +70,50 @@ final class AuditLogText {
 
     static String description(LogOT operationType, String resourceType, String requestUrl) {
         String url = requestUrl == null ? "" : requestUrl.toLowerCase(Locale.ROOT);
-        if (url.contains("/login/locallogin")) return "本地账号登录";
+        if (containsAny(url, "/login/local-login", "/login/locallogin")) return "本地账号登录";
         if (url.contains("/sso/login")) return "发起单点登录";
         if (url.contains("/sso/callback")) return "处理单点登录回调";
         if (url.contains("/sso/token/")) return "签发单点登录票据";
         if (url.contains("/logout")) return "退出登录";
-        if (url.contains("/auditlog/pager")) return "查询审计日志";
-        if (url.contains("/auditlog/statistics")) return "查看审计统计";
-        if (url.contains("/auth/busipermission")) return "查看业务资源权限";
-        if (url.contains("/auth/menupermission")) return "查看菜单权限";
-        if (url.contains("/auth/recordbusiper")) return "配置业务资源权限";
-        if (url.contains("/auth/recordbusitargetper")) return "批量配置业务资源权限";
-        if (url.contains("/auth/recordmenuper")) return "配置菜单权限";
-        if (url.contains("/auth/recordmenutargetper")) return "批量配置菜单权限";
-        if (url.contains("/role/bycurorg") || url.contains("/role/list")) return "查询角色列表";
+        if (containsAny(url, "/audit-log/page", "/auditlog/pager")) return "查询审计日志";
+        if (containsAny(url, "/audit-log/statistics", "/auditlog/statistics")) return "查看审计统计";
+        if (containsAny(url, "/auth/business-target-permissions", "/auth/savebusitargetper", "/auth/recordbusitargetper")) {
+            return operationType == LogOT.READ ? "查看业务资源授权对象" : "批量配置业务资源权限";
+        }
+        if (containsAny(url, "/auth/business-permissions", "/auth/busipermission", "/auth/savebusiper", "/auth/recordbusiper")) {
+            return operationType == LogOT.READ ? "查看业务资源权限" : "配置业务资源权限";
+        }
+        if (containsAny(url, "/auth/menu-target-permissions", "/auth/savemenutargetper", "/auth/recordmenutargetper")) {
+            return operationType == LogOT.READ ? "查看菜单授权对象" : "批量配置菜单权限";
+        }
+        if (containsAny(url, "/auth/menu-permissions", "/auth/menupermission", "/auth/savemenuper", "/auth/recordmenuper")) {
+            return operationType == LogOT.READ ? "查看菜单权限" : "配置菜单权限";
+        }
+        if (containsAny(url, "/role/by-current-org", "/role/bycurorg", "/role/list")) return "查询角色列表";
         if (url.contains("/role/detail")) return "查看角色详情";
         if (url.contains("/role/mount")) return "为角色添加用户";
         if (url.contains("/role/unmount")) return "从角色移除用户";
         if (url.contains("/org/page/tree")) return "查询组织树";
-        if (url.contains("/user/bycurorg") || url.contains("/user/pager")) return "查询用户列表";
+        if (containsAny(url, "/user/by-current-org", "/user/bycurorg", "/user/page", "/user/pager")) return "查询用户列表";
         if (url.contains("/user/info")) return "查看当前用户信息";
-        if (url.contains("/user/personinfo")) return "查看个人信息";
-        if (url.contains("/user/resetpwd")) return "重置用户密码";
-        if (url.contains("/user/modifypwd")) return "修改用户密码";
+        if (containsAny(url, "/user/person-info", "/user/personinfo")) return "查看个人信息";
+        if (containsAny(url, "/user/reset-password", "/user/resetpwd")) return "重置用户密码";
+        if (containsAny(url, "/user/modify-password", "/user/modifypwd")) return "修改用户密码";
         if (url.contains("/user/enable")) return "变更用户状态";
-        if (url.contains("/switchlanguage")) return "切换系统语言";
+        if (containsAny(url, "/switch-language", "/switchlanguage")) return "切换系统语言";
         if (url.contains("/export-center/export-tasks/records")) return "查看导出任务统计";
         if (url.contains("/export-center/export-tasks")) return "查询导出任务列表";
         if (url.contains("/export-center/export-limit")) return "查看导出限制";
         if (url.contains("/export-center/download-tickets")) return "生成导出文件下载地址";
         if (url.contains("/export-center/download")) return "下载导出文件";
         if (url.contains("/export-center/") && operationType == LogOT.DELETE) return "删除导出任务";
-        if (url.contains("/datasettree/exportdataset")) return "导出数据集";
+        if (containsAny(url, "/dataset-tree/export-dataset", "/datasettree/exportdataset")) return "导出数据集";
         if (url.contains("/sso/validate")) return "校验单点登录配置";
         if (url.contains("/sso/config")) return operationType == LogOT.READ ? "查看单点登录配置" : "保存单点登录配置";
         if (url.contains("/engine/validate")) return "校验引擎连接";
         if (url.contains("/engine/")) return operationType == LogOT.READ ? "查看引擎设置" : "维护引擎设置";
-        if (url.contains("/sysparameter")) return operationType == LogOT.READ ? "查看系统参数" : "维护系统参数";
-        if (url.contains("/listbyid")) return "查看" + resourceLabel(resourceType) + "详情";
+        if (containsAny(url, "/sys-parameter", "/sysparameter")) return operationType == LogOT.READ ? "查看系统参数" : "维护系统参数";
+        if (containsAny(url, "/listbyid", "/querybyid", "/detail/")) return "查看" + resourceLabel(resourceType) + "详情";
         if (url.contains("/tree")) return "查询" + resourceLabel(resourceType) + "目录";
         if (url.contains("/overview")) return "查看数据血缘概览";
         if (operationType == LogOT.CREATE) return "新建" + resourceLabel(resourceType);
@@ -115,5 +121,14 @@ final class AuditLogText {
         if (operationType == LogOT.DELETE) return "删除" + resourceLabel(resourceType);
         if (operationType == null) return "操作" + resourceLabel(resourceType);
         return operationLabel(operationType.name()) + resourceLabel(resourceType);
+    }
+
+    private static boolean containsAny(String value, String... fragments) {
+        for (String fragment : fragments) {
+            if (value.contains(fragment)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

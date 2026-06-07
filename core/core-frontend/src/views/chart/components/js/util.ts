@@ -595,7 +595,7 @@ export const exportExcelDownload = (chart, preFix, callBack?) => {
   if (request.viewInfo?.customAttr?.basicStyle?.tablePageMode) {
     request.viewInfo.customAttr.basicStyle.tablePageMode = 'page'
   }
-  method(request)
+  return method(request)
     .then(res => {
       if (linkStore.getLinkToken || isCrestBi.value || appStore.getIsIframe) {
         const blob = new Blob([res.data], { type: 'application/vnd.ms-excel' })

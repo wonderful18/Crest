@@ -16,6 +16,8 @@ interface UserState {
   language: string
   exp: number
   time: number
+  admin: boolean
+  backendAccess: boolean
 }
 
 export const userStore = defineStore('user', {
@@ -27,7 +29,9 @@ export const userStore = defineStore('user', {
       oid: null,
       language: 'zh-CN',
       exp: null,
-      time: null
+      time: null,
+      admin: false,
+      backendAccess: false
     }
   },
   getters: {
@@ -51,6 +55,12 @@ export const userStore = defineStore('user', {
     },
     getTime(): number {
       return this.time
+    },
+    getAdmin(): boolean {
+      return this.admin
+    },
+    getBackendAccess(): boolean {
+      return this.backendAccess
     }
   },
   actions: {
@@ -61,11 +71,21 @@ export const userStore = defineStore('user', {
       data.token = authCache.get('user.token')
       data.exp = authCache.get('user.exp')
       data.time = authCache.get('user.time')
-      const keys: string[] = ['token', 'uid', 'name', 'oid', 'language', 'exp', 'time']
+      const keys: string[] = [
+        'token',
+        'uid',
+        'name',
+        'oid',
+        'language',
+        'exp',
+        'time',
+        'admin',
+        'backendAccess'
+      ]
 
       keys.forEach(key => {
         const dkey = key === 'uid' ? 'id' : key
-        this[key] = data[dkey]
+        this[key] = key === 'admin' || key === 'backendAccess' ? !!data[dkey] : data[dkey]
         const cache = authKeys.includes(key) ? authCache : wsCache
         cache.set('user.' + key, this[key])
       })
@@ -110,7 +130,17 @@ export const userStore = defineStore('user', {
       changeLocale(language as any)
     },
     clear() {
-      const keys: string[] = ['token', 'uid', 'name', 'oid', 'language', 'exp', 'time']
+      const keys: string[] = [
+        'token',
+        'uid',
+        'name',
+        'oid',
+        'language',
+        'exp',
+        'time',
+        'admin',
+        'backendAccess'
+      ]
       keys.forEach(key => {
         const cache = authKeys.includes(key) ? authCache : wsCache
         cache.delete('user.' + key)

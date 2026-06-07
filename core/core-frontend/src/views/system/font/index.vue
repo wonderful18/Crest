@@ -72,10 +72,10 @@ const setToDefault = item => {
     })
 }
 const setDefaultFont = (url, name, fileTransName) => {
-  let fontStyleElement = document.querySelector('#de-custom_font')
+  let fontStyleElement = document.querySelector('#crest-custom_font')
   if (!fontStyleElement && name) {
     fontStyleElement = document.createElement('style')
-    fontStyleElement.setAttribute('id', 'de-custom_font')
+    fontStyleElement.setAttribute('id', 'crest-custom_font')
     document.querySelector('head').appendChild(fontStyleElement)
   }
   fontStyleElement.innerHTML =

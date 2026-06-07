@@ -151,11 +151,18 @@ public class PermissionManage {
         List<DataSetRowPermissionsTreeDTO> datasetRowPermissions = new ArrayList<>();
         userId = userId != null ? userId : AuthUtils.getUser().getUserId();
 
+        if (getRowPermissionsApi() == null) {
+            return datasetRowPermissions;
+        }
         if (AuthUtils.isSysAdmin(userId)) {
             return datasetRowPermissions;
         }
         UserFormVO userEntity = getRowPermissionsApi().getUserById(userId);
-        List<Long> roleIds = userEntity.getRoleIds().stream().map(x -> Long.valueOf(x)).collect(Collectors.toList());
+        if (userEntity == null) {
+            return datasetRowPermissions;
+        }
+        List<Long> roleIds = Optional.ofNullable(userEntity.getRoleIds()).orElse(Collections.emptyList())
+                .stream().map(x -> Long.valueOf(x)).collect(Collectors.toList());
         DatasetRowPermissionsTreeRequest dataSetRowPermissionsDTO = new DatasetRowPermissionsTreeRequest();
         if (ObjectUtils.isNotEmpty(datasetId)) {
             dataSetRowPermissionsDTO.setDatasetId(datasetId);

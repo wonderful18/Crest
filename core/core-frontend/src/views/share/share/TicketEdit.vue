@@ -185,28 +185,32 @@ const setErrorStatus = (index, value, status?: boolean) => {
     }
   }
   const domRef = inputRefList[index]
-  const e = domRef.input
+  const e = domRef?.input
+  const parentElement = e?.parentElement
+  if (!e || !parentElement) {
+    return
+  }
   const className = 'link-ticket-error-msg'
   const fullClassName = `.${className}`
   if (valid) {
     e.style = null
     e.style.borderColor = null
-    const child = e.parentElement.querySelector(fullClassName)
+    const child = parentElement.querySelector(fullClassName)
     if (child) {
-      e.parentElement['style'] = null
-      e.parentElement.removeChild(child)
+      parentElement['style'] = null
+      parentElement.removeChild(child)
     }
   } else {
     const msg = 'JSON格式错误'
     e.style.color = 'red'
     e.style.borderColor = 'red'
-    e.parentElement['style']['box-shadow'] = '0 0 0 1px red inset'
-    const child = e.parentElement.querySelector(fullClassName)
+    parentElement['style']['box-shadow'] = '0 0 0 1px red inset'
+    const child = parentElement.querySelector(fullClassName)
     if (!child) {
       const errorDom = document.createElement('div')
       errorDom.className = className
       errorDom.innerText = msg
-      e.parentElement.appendChild(errorDom)
+      parentElement.appendChild(errorDom)
     } else {
       child.innerText = msg
     }

@@ -129,7 +129,7 @@ const init = (params?: { activeName?: string }) => {
   }
   handleClick()
   timer = setInterval(() => {
-    if (activeName.value === 'IN_PROGRESS') {
+    if (['IN_PROGRESS', 'ALL'].includes(activeName.value)) {
       exportTasksRecords().then(res => {
         tabList.value.forEach(item => {
           if (item.name === 'ALL') {
@@ -274,7 +274,7 @@ const retry = item => {
   })
 }
 
-const fieldRemoval = item => {
+const deleteField = item => {
   ElMessageBox.confirm(t('data_export.sure_del'), {
     confirmButtonType: 'danger',
     type: 'warning',
@@ -514,7 +514,7 @@ defineExpose({
               </el-tooltip>
 
               <el-tooltip effect="dark" :content="t('data_set.delete')" placement="top">
-                <el-button class="row-icon-btn is-danger" text @click="fieldRemoval(scope.row)">
+                <el-button class="row-icon-btn is-danger" text @click="deleteField(scope.row)">
                   <template #icon>
                     <Icon name="delete"><DeleteIcon class="svg-icon" /></Icon>
                   </template>

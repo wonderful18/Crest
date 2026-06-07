@@ -29,9 +29,27 @@ const { loadStart, loadDone } = usePageLoading()
 const whiteList = ['/login', '/sso/callback', '/chart-view', '/admin-login', '/401'] // 不重定向白名单
 const embeddedWindowWhiteList = ['/dvCanvas', '/dashboard', '/preview', '/dataset-embedded-form']
 const embeddedRouteWhiteList = ['/dataset-embedded', '/dataset-form', '/dataset-embedded-form']
+const portalHome = '/portal'
+const backendHome = '/workbranch/index'
+
+const isPortalRoute = (path: string) => path === portalHome || path.startsWith(`${portalHome}/`)
+const isReadOnlyRoute = (path: string, name?: string | symbol) =>
+  path === '/preview' ||
+  path === '/previewShow' ||
+  path === '/dashboardPreview' ||
+  path === '/chart-view' ||
+  path.startsWith('/link/') ||
+  name === 'link'
+const isAccountRoute = (path: string) => path.startsWith('/modify-pwd')
+const isBackendRoute = (path: string, name?: string | symbol) =>
+  !isPortalRoute(path) &&
+  !isReadOnlyRoute(path, name) &&
+  !isAccountRoute(path) &&
+  !whiteList.includes(path) &&
+  !embeddedRouteWhiteList.includes(path)
 
 const parseRedirectLocation = (redirectPath: string) => {
-  let target = redirectPath || '/workbranch/index'
+  let target = redirectPath || portalHome
   try {
     for (let i = 0; i < 5; i++) {
       const nextTarget = decodeURIComponent(target)
@@ -81,7 +99,18 @@ router.beforeEach(async (to, from, next) => {
       await userStore.setUser()
     }
     if (to.path === '/login') {
-      next({ path: '/workbranch/index' })
+      next({ path: portalHome })
+    } else if (to.path === '/admin-login') {
+      next({ path: userStore.getBackendAccess ? backendHome : portalHome })
+    } else if (isPortalRoute(to.path)) {
+      permissionStore.setCurrentPath(to.path)
+      next()
+    } else if (!userStore.getBackendAccess && isReadOnlyRoute(to.path, to.name)) {
+      permissionStore.setCurrentPath(to.path)
+      next()
+    } else if (!userStore.getBackendAccess && isBackendRoute(to.path, to.name)) {
+      permissionStore.setCurrentPath(portalHome)
+      next({ path: portalHome })
     } else {
       permissionStore.setCurrentPath(to.path)
       if (permissionStore.getIsAddRouters) {

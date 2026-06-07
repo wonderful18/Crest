@@ -225,17 +225,17 @@ const allFieldsColumns = [
     dataKey: 'fieldType',
     title: t('data_set.field_type'),
     width: 250,
-    cellRenderer: ({ cellData: fieldType }) => (
+    cellRenderer: ({ cellData: fieldTypeCode }) => (
       <div style={{ width: '100%', display: 'flex', alignItems: 'center' }}>
         <ElIcon style={{ marginRight: '6px' }}>
           <Icon>
-            {h(iconFieldMap[fieldType[fieldType]], {
-              class: `svg-icon field-icon-${fieldType[fieldType]}`
+            {h(iconFieldMap[fieldType[fieldTypeCode]], {
+              class: `svg-icon field-icon-${fieldType[fieldTypeCode]}`
             })}
           </Icon>
         </ElIcon>
-        {t(`dataset.${fieldType[fieldType]}`) +
-          `${fieldType === 3 ? '(' + t('dataset.float') + ')' : ''}`}
+        {t(`dataset.${fieldType[fieldTypeCode]}`) +
+          `${fieldTypeCode === 3 ? '(' + t('dataset.float') + ')' : ''}`}
       </div>
     )
   },
@@ -292,8 +292,7 @@ const dtLoading = ref(false)
 const isCreated = ref(false)
 const loadData = () => {
   dtLoading.value = true
-  let curSortType = sortList[Number(wsCache.get('TreeSort-backend')) ?? 1].value
-  curSortType = wsCache.get('TreeSort-dataset') ?? curSortType
+  const curSortType = getStoredSortType('TreeSort-dataset', getDefaultSortType())
   const request = { busiFlag: 'dataset' } as BusiTreeRequest
   interactiveStore
     .setInteractive(request)
@@ -500,11 +499,10 @@ const createDataset = (data?: BusiTreeNode) => {
     useEmitt().emitter.emit('changeCurrentComponent', 'DatasetEditor')
     return
   }
+  const query = data?.id ? { pid: data.id } : {}
   router.push({
     path: '/dataset-form',
-    query: {
-      pid: data?.id
-    }
+    query
   })
 }
 
@@ -557,9 +555,7 @@ const operation = (cmd: string, nodeData: BusiTreeNode, nodeType: string) => {
     }
     router.push({
       name: embedded.getToken && appStore.getIsIframe ? 'dataset-embedded-form' : 'dataset-form',
-      params: {
-        id: nodeData.id
-      }
+      query: { copyId: nodeData.id }
     })
     return
   }
@@ -733,11 +729,18 @@ const sortList = [
   }
 ]
 
+const getDefaultSortType = () => {
+  const sortIndex = Number(wsCache.get('TreeSort-backend') ?? 1)
+  return sortList[Number.isInteger(sortIndex) && sortList[sortIndex] ? sortIndex : 1].value
+}
+
+const getStoredSortType = (cacheKey: string, fallback: string) => {
+  const sortType = wsCache.get(cacheKey)
+  return sortList.some(ele => ele.value === sortType) ? sortType : fallback
+}
+
 const loadInit = () => {
-  const historyTreeSort = wsCache.get('TreeSort-dataset')
-  if (historyTreeSort) {
-    state.curSortType = historyTreeSort
-  }
+  state.curSortType = getStoredSortType('TreeSort-dataset', state.curSortType)
 }
 
 const getLimit = () => {
@@ -747,7 +750,7 @@ const getLimit = () => {
 }
 
 const sortTypeTip = computed(() => {
-  return sortList.find(ele => ele.value === state.curSortType).name
+  return sortList.find(ele => ele.value === state.curSortType)?.name ?? sortList[1].name
 })
 
 const tablePanes = ref([])

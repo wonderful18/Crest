@@ -132,7 +132,7 @@ public class SubstituteUserServer {
     @GetMapping("/default-password")
     public String defaultPwd() {
         CrestPermissionUtils.requireAdmin();
-        return "";
+        return crestUserManage.defaultPwd();
     }
 
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER, id = "#p0")

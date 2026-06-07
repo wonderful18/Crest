@@ -230,16 +230,12 @@ const handleCellClick = row => {
         embeddedStore.getToken && appStore.getIsIframe ? 'dataset-embedded' : 'dataset'
       push({
         name: routeName,
-        params: {
-          id: sourceId
-        }
+        query: { id: sourceId }
       })
     } else if (['datasource'].includes(row.type)) {
       push({
         name: 'datasource',
-        params: {
-          id: sourceId
-        }
+        query: { id: sourceId }
       })
     }
   }

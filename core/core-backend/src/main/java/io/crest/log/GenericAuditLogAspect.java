@@ -78,7 +78,7 @@ public class GenericAuditLogAspect {
         }
         String method = request.getMethod().toUpperCase(Locale.ROOT);
         String uri = request.getRequestURI().toLowerCase(Locale.ROOT);
-        if (uri.contains("/auditlog/")) {
+        if (uri.contains("/audit-log/") || uri.contains("/auditlog/")) {
             return false;
         }
         if (hasDedicatedAudit(uri)) {
@@ -102,6 +102,8 @@ public class GenericAuditLogAspect {
     private boolean hasDedicatedAudit(String uri) {
         return uri.contains("/sso/config")
                 || uri.contains("/sso/validate")
+                || uri.contains("/dataset-tree/export-dataset")
+                || uri.contains("/chart-data/internal-export")
                 || uri.contains("/datasettree/exportdataset")
                 || uri.contains("/chartdata/innerexport");
     }
@@ -132,8 +134,7 @@ public class GenericAuditLogAspect {
         if (normalizedUri.contains("download") || normalizedName.contains("download")) {
             return LogOT.DOWNLOAD;
         }
-        if (containsAny(normalizedUri, "savebusiper", "savebusitargetper", "savemenuper", "savemenutargetper")
-                || containsAny(normalizedName, "savebusiper", "savebusitargetper", "savemenuper", "savemenutargetper")) {
+        if (isPermissionMutation(method, normalizedUri, normalizedName)) {
             return LogOT.AUTHORIZE;
         }
         if (isReadOperation(normalizedUri, normalizedName)) {
@@ -168,18 +169,20 @@ public class GenericAuditLogAspect {
         if (value.contains("/org/")) return LogST.ORG;
         if (value.contains("/auth/men")) return LogST.MENU;
         if (value.contains("/auth/")) return LogST.DATA;
-        if (value.contains("/datasourcedriver/")) return LogST.DRIVER;
+        if (value.contains("/datasource-driver/") || value.contains("/datasourcedriver/")) return LogST.DRIVER;
         if (value.contains("/datasource/")) return LogST.DATASOURCE;
-        if (value.contains("/datasetsync/")) return LogST.SYNC_TASK;
-        if (value.contains("/dataset/")) return LogST.DATASET;
-        if (value.contains("/datavisualization/")) return value.contains("datav") ? LogST.SCREEN : LogST.PANEL;
+        if (value.contains("/dataset-sync/") || value.contains("/datasetsync/")) return LogST.SYNC_TASK;
+        if (containsAny(value, "/dataset/", "/dataset-tree/", "/dataset-field/", "/dataset-data/")) return LogST.DATASET;
+        if (value.contains("/data-visualization/") || value.contains("/datavisualization/")) {
+            return value.contains("datav") ? LogST.SCREEN : LogST.PANEL;
+        }
         if (value.contains("/chart/")) return LogST.VIEW;
         if (value.contains("/share/") || value.contains("/ticket/")) return LogST.LINK;
         if (value.contains("/sysvariable/")) return LogST.DATA;
-        if (value.contains("/staticresource/")) return LogST.DATA;
+        if (value.contains("/static-resource/") || value.contains("/staticresource/")) return LogST.DATA;
         if (value.contains("/font/")) return LogST.DATA;
         if (value.contains("/export-center/")) return LogST.DATA;
-        if (value.contains("/sso/") || value.contains("/sysparameter/")) return LogST.DATA;
+        if (value.contains("/sso/") || value.contains("/sys-parameter/") || value.contains("/sysparameter/")) return LogST.DATA;
         return LogST.DATA;
     }
 
@@ -229,19 +232,33 @@ public class GenericAuditLogAspect {
         return false;
     }
 
+    private boolean isPermissionMutation(String method, String uri, String methodName) {
+        if (containsAny(uri, "savebusiper", "savebusitargetper", "savemenuper", "savemenutargetper")
+                || containsAny(methodName, "savebusiper", "savebusitargetper", "savemenuper", "savemenutargetper")) {
+            return true;
+        }
+        return "PUT".equalsIgnoreCase(method) && containsAny(uri,
+                "/auth/business-permissions",
+                "/auth/business-target-permissions",
+                "/auth/menu-permissions",
+                "/auth/menu-target-permissions");
+    }
+
     private boolean isManagementReadEndpoint(String uri) {
         return containsAny(uri,
-                "/sysparameter/", "/engine/", "/export-center/export-tasks", "/export-center/export-limit",
+                "/sys-parameter/", "/sysparameter/", "/engine/", "/export-center/export-tasks", "/export-center/export-limit",
+                "/auth/business-permissions", "/auth/business-target-permissions", "/auth/business-resources",
+                "/auth/menu-permissions", "/auth/menu-target-permissions", "/auth/menu-resources",
                 "/auth/busipermission", "/auth/busitargetpermission", "/auth/busiresource",
                 "/auth/menupermission", "/auth/menutargetpermission", "/auth/menuresource",
-                "/role/bycurorg", "/role/list", "/role/detail", "/role/listwithoid",
-                "/user/bycurorg", "/user/defaultpwd", "/org/mounted");
+                "/role/by-current-org", "/role/bycurorg", "/role/list", "/role/detail", "/role/listwithoid",
+                "/user/by-current-org", "/user/bycurorg", "/user/default-password", "/user/defaultpwd", "/org/mounted");
     }
 
     private boolean isReadOperation(String uri, String methodName) {
         return containsAny(uri,
                 "/list", "/pager", "/tree", "/info", "/detail", "/status", "/option", "/selected",
-                "/bycurorg", "/listbyid", "/listwithoid", "/mounted", "/permission", "/resource",
+                "/by-current-org", "/bycurorg", "/listbyid", "/listwithoid", "/mounted", "/permission", "/resource",
                 "/export-tasks", "/export-limit", "/validatepwd")
                 || containsAny(methodName, "query", "pager", "tree", "info", "detail", "status", "option",
                 "selected", "permission", "resource", "validate");

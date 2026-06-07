@@ -146,8 +146,8 @@
                 </div>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item v-if="exportPermissions[1]" @click="exportAsExcel"
-                      >Excel</el-dropdown-item
+                    <el-dropdown-item v-if="exportPermissions[1] && excelExportEnabled" @click="exportAsExcel"
+                      >{{ excelExportLabel }}</el-dropdown-item
                     >
                     <el-dropdown-item
                       v-if="exportPermissions[1] && element.innerType === 'table-pivot'"
@@ -192,8 +192,8 @@
       </el-icon>
       <template #dropdown>
         <el-dropdown-menu style="width: 118px">
-          <el-dropdown-item @click="exportAsExcel" v-if="exportPermissions[1]"
-            >Excel</el-dropdown-item
+          <el-dropdown-item @click="exportAsExcel" v-if="exportPermissions[1] && excelExportEnabled"
+            >{{ excelExportLabel }}</el-dropdown-item
           >
           <el-dropdown-item
             v-if="exportPermissions[1] && element.innerType === 'table-pivot'"
@@ -229,7 +229,7 @@ import dvBarUnLinkage from '@/assets/svg/dv-bar-unLinkage.svg'
 import database from '@/assets/svg/database.svg'
 import icon_more_outlined from '@/assets/svg/icon_more_outlined.svg'
 import dvPreviewDownload from '@/assets/svg/icon_download_outlined.svg'
-import { computed, h, onBeforeUnmount, onMounted, reactive, ref, toRefs, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, toRefs, watch } from 'vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 import { useI18n } from '@/hooks/web/useI18n'
@@ -239,12 +239,20 @@ import { useEmitt } from '@/hooks/web/useEmitt'
 import { copyStoreWithOut } from '@/store/modules/data-visualization/copy'
 import { exportExcelDownload } from '@/views/chart/components/js/util'
 import FieldsList from '@/custom-component/rich-text/FieldsList.vue'
-import { RefreshLeft } from '@element-plus/icons-vue'
-import { ElMessage, ElTooltip, ElButton } from 'element-plus-secondary'
+import { ElTooltip } from 'element-plus-secondary'
 import CustomTabsSort from '@/custom-component/tabs/CustomTabsSort.vue'
 import { exportPivotExcel } from '@/views/chart/components/js/panel/common/common_table'
 import { exportPermission, isMobile } from '@/utils/utils'
 import { isMainCanvas } from '@/utils/canvasUtils'
+import {
+  exportFilteredExcel,
+  showExportQueuedMessage
+} from '@/utils/visualization/filteredExcelExportService'
+import {
+  EXCEL_EXPORT_SCOPE,
+  defaultViewExcelExportConfig,
+  isExportableTableView
+} from '@/utils/visualization/filteredExcelExport.mjs'
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const copyStore = copyStoreWithOut()
@@ -428,35 +436,8 @@ const showBarTooltipPosition = computed(() => {
   }
 })
 
-const openMessageLoading = cb => {
-  const iconClass = `el-icon-loading`
-  const customClass = `crest-message-loading crest-message-export`
-  ElMessage({
-    message: h('p', null, [
-      '后台导出中,可前往',
-      h(
-        ElButton,
-        {
-          text: true,
-          size: 'small',
-          class: 'btn-text',
-          onClick: () => {
-            cb()
-          }
-        },
-        t('data_export.export_center')
-      ),
-      '查看进度，进行下载'
-    ]),
-    iconClass,
-    icon: h(RefreshLeft) as any,
-    showClose: true,
-    customClass
-  } as any)
-}
-
 const callbackExport = () => {
-  useEmitt().emitter.emit('data-export-center', { activeName: 'IN_PROGRESS' })
+  useEmitt().emitter.emit('data-export-center', { activeName: 'ALL' })
 }
 const exportAsFormattedExcel = () => {
   const s2Instance = dvMainStore.getViewInstanceInfo(element.value.id)
@@ -468,12 +449,27 @@ const exportAsFormattedExcel = () => {
 }
 
 const exportAsExcel = () => {
-  const viewDataInfo = dvMainStore.getViewDataDetails(element.value.id)
-  const chartExtRequest = dvMainStore.getLastViewRequestInfo(element.value.id)
-  const viewInfo = dvMainStore.getViewDetails(element.value.id)
-  const chart = { ...viewInfo, chartExtRequest, data: viewDataInfo, busiFlag: dvInfo.value.type }
-  exportExcelDownload(chart, dvInfo.value.name, () => {
-    openMessageLoading(callbackExport)
+  if (!isExportableTableView(currentViewInfo.value)) {
+    const viewDataInfo = dvMainStore.getViewDataDetails(element.value.id)
+    const chartExtRequest = dvMainStore.getLastViewRequestInfo(element.value.id)
+    const viewInfo = dvMainStore.getViewDetails(element.value.id)
+    const chart = { ...viewInfo, chartExtRequest, data: viewDataInfo, busiFlag: dvInfo.value.type }
+    exportExcelDownload(chart, dvInfo.value.name, result => {
+      if (result === 'error') {
+        return
+      }
+      showExportQueuedMessage(callbackExport)
+    })
+    return
+  }
+
+  exportFilteredExcel({
+    targetViewId: element.value.id,
+    scope: tableExcelConfig.value.scope,
+    content: tableExcelConfig.value.content,
+    onQueued: () => {
+      showExportQueuedMessage(callbackExport)
+    }
   })
 }
 const exportAsImage = () => {
@@ -628,6 +624,25 @@ const initCurFields = () => {
 const showDownload = computed(
   () => canvasViewInfo.value[element.value.id]?.dataFrom !== 'template' && !isPopWindow.value
 )
+const currentViewInfo = computed(() => canvasViewInfo.value[element.value.id])
+const tableExcelConfig = computed(() =>
+  defaultViewExcelExportConfig(currentViewInfo.value?.excelExport || element.value?.excelExport)
+)
+const excelExportEnabled = computed(() => {
+  if (!isExportableTableView(currentViewInfo.value)) {
+    return true
+  }
+  return tableExcelConfig.value.enabled
+})
+const excelExportLabel = computed(() => {
+  if (
+    isExportableTableView(currentViewInfo.value) &&
+    tableExcelConfig.value.scope === EXCEL_EXPORT_SCOPE.CURRENT_FILTERED
+  ) {
+    return '导出筛选结果'
+  }
+  return 'Excel'
+})
 // 富文本-End
 
 const datasetParamsSetShow = computed(() => {

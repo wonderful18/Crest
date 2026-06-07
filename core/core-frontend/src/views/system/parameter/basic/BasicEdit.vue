@@ -33,6 +33,7 @@ const requireKeys = [
   'thresholdLogLiveTime',
   'exportFileLiveTime',
   'dataFillingLogLiveTime',
+  'initialPassword',
   'frontTimeOut',
   'loginLimitTime',
   'loginLimitRate',
@@ -415,6 +416,17 @@ defineExpose({
             :placeholder="t('common.inputText')"
             controls-position="right"
             type="number"
+          />
+        </div>
+        <div v-else-if="item.pkey === 'initialPassword'">
+          <el-input
+            v-model.trim="state.form[item.pkey]"
+            class="edit-all-line"
+            type="password"
+            show-password
+            autocomplete="new-password"
+            maxlength="100"
+            :placeholder="t('common.inputText')"
           />
         </div>
         <div v-else-if="item.pkey === 'defaultLogin'">

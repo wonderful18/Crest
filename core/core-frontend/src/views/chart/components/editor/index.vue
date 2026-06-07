@@ -56,7 +56,7 @@ import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapsho
 import CalcFieldEdit from '@/views/visualized/data/dataset/form/CalcFieldEdit.vue'
 import { getFieldName, guid } from '@/views/visualized/data/dataset/form/util'
 import { cloneDeep, forEach, get, debounce, set, concat, keys, merge } from 'lodash-es'
-import { fieldRemoval, saveField } from '@/api/dataset'
+import { deleteField, saveField } from '@/api/dataset'
 import chartViewManager from '@/views/chart/components/js/panel'
 import DatasetSelect from '@/views/chart/components/editor/dataset-select/DatasetSelect.vue'
 import { useDraggable } from '@vueuse/core'
@@ -323,10 +323,12 @@ const chartViewInstance = computed(() => {
   return chartViewManager.getChartView(view.value.render, view.value.type)
 })
 const showAxis = (axis: AxisType) => chartViewInstance.value?.axis?.includes(axis)
+const currentChartTypeOption = computed(() => state.chartTypeOptions[0])
 watch(
   () => [view.value.type, view.value],
   newVal => {
-    state.chartTypeOptions.splice(0, state.chartTypeOptions.length, getViewConfig(newVal[0]))
+    const viewConfig = getViewConfig(newVal[0])
+    state.chartTypeOptions.splice(0, state.chartTypeOptions.length, ...(viewConfig ? [viewConfig] : []))
     state.useless = newVal[0]
   },
   { immediate: true, deep: false }
@@ -586,6 +588,7 @@ const dragCheckType = (list, type) => {
     for (let i = 0; i < list.length; i++) {
       if (list[i].groupType !== type) {
         list.splice(i, 1)
+        i--
         valid = false
       }
     }
@@ -669,6 +672,7 @@ const dragCheckMapType = list => {
     for (let i = 0; i < list.length; i++) {
       if (list[i].fieldType !== 5) {
         list.splice(i, 1)
+        i--
         valid = false
       }
     }
@@ -702,6 +706,7 @@ const addAxis = (e, axis: AxisType) => {
         }
         if (!(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))) {
           list.splice(i, 1)
+          i--
           valid = false
         }
       }
@@ -721,6 +726,7 @@ const addAxis = (e, axis: AxisType) => {
       for (let i = 0; i < list.length; i++) {
         if (!(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))) {
           list.splice(i, 1)
+          i--
           valid = false
         }
       }
@@ -749,6 +755,7 @@ const addAxis = (e, axis: AxisType) => {
       for (let i = 0; i < list.length; i++) {
         if (list[i].fieldType !== 2 && list[i].fieldType !== 3) {
           list.splice(i, 1)
+          i--
           valid = false
         }
       }
@@ -852,6 +859,7 @@ const addAxis = (e, axis: AxisType) => {
             )
           ) {
             list.splice(i, 1)
+            i--
             valid = false
           }
         }
@@ -969,6 +977,7 @@ const renderChart = view => {
 
 const onTypeChange = (render, type) => {
   const viewConf = getViewConfig(type)
+  if (!viewConf) return
   if (viewConf.isPlugin) {
     view.value.plugin = {
       isPlugin: true,
@@ -1704,7 +1713,7 @@ const chartFieldEdit = param => {
       editField(param.item)
       break
     case 'delete':
-      fieldRemoval(param.item?.id).then(() => {
+      deleteField(param.item?.id).then(() => {
         getFields(view.value.tableId, view.value.id, view.value.type)
       })
       break
@@ -2162,13 +2171,16 @@ const chartStyleScroll = (val: any) => {
                               <template #prefix>
                                 <Icon
                                   class-name="chart-type-select-icon"
-                                  v-if="state.chartTypeOptions[0]?.isPlugin"
-                                  :static-content="state.chartTypeOptions[0]?.icon"
+                                  v-if="currentChartTypeOption?.isPlugin"
+                                  :static-content="currentChartTypeOption?.icon"
                                 />
-                                <Icon v-else class-name="chart-type-select-icon">
+                                <Icon
+                                  v-else-if="currentChartTypeOption?.icon"
+                                  class-name="chart-type-select-icon"
+                                >
                                   <component
                                     class="svg-icon chart-type-select-icon"
-                                    :is="iconChartMap[state.chartTypeOptions[0].icon]"
+                                    :is="iconChartMap[currentChartTypeOption.icon]"
                                   ></component>
                                 </Icon>
                               </template>

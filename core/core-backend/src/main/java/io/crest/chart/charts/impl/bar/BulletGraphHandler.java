@@ -79,7 +79,7 @@ public class BulletGraphHandler extends YoyChartHandler {
                 result.setDynamicAssistFields(dynamicAssistFields);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         return result;
     }

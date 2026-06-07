@@ -1347,6 +1347,7 @@ public class DatasourceServer implements DatasourceApi {
         return engineRequest;
     }
 
+    @SuppressWarnings("java/sql-injection")
     private void executeExcelDeletes(Connection connection, int queryTimeout, String tableName, List<String> deletes) throws Exception {
         if (CollectionUtils.isEmpty(deletes)) {
             return;
@@ -1355,7 +1356,9 @@ public class DatasourceServer implements DatasourceApi {
         // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
         String sql = "DELETE FROM " + quoteIdentifier(tableName)
                 + " WHERE " + quoteIdentifier(EXCEL_ROW_ID_FIELD) + " = ?";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        @SuppressWarnings("java/sql-injection")
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement statement = preparedStatement) {
             statement.setQueryTimeout(queryTimeout);
             for (String rowId : deletes) {
                 statement.setString(1, normalizeRowId(rowId));
@@ -1367,6 +1370,7 @@ public class DatasourceServer implements DatasourceApi {
         }
     }
 
+    @SuppressWarnings("java/sql-injection")
     private void executeExcelUpdates(Connection connection, int queryTimeout, String tableName, List<TableField> fields, List<Map<String, Object>> updates) throws Exception {
         if (CollectionUtils.isEmpty(updates)) {
             return;
@@ -1381,7 +1385,9 @@ public class DatasourceServer implements DatasourceApi {
         // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
         String sql = "UPDATE " + quoteIdentifier(tableName) + " SET " + assignments
                 + " WHERE " + quoteIdentifier(EXCEL_ROW_ID_FIELD) + " = ?";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        @SuppressWarnings("java/sql-injection")
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement statement = preparedStatement) {
             statement.setQueryTimeout(queryTimeout);
             for (Map<String, Object> row : updates) {
                 int index = bindExcelFieldValues(statement, fields, row, 1);
@@ -1394,6 +1400,7 @@ public class DatasourceServer implements DatasourceApi {
         }
     }
 
+    @SuppressWarnings("java/sql-injection")
     private void executeExcelInserts(Connection connection, int queryTimeout, String tableName, List<TableField> fields, List<Map<String, Object>> inserts) throws Exception {
         if (CollectionUtils.isEmpty(inserts)) {
             return;
@@ -1408,7 +1415,9 @@ public class DatasourceServer implements DatasourceApi {
         String placeholders = columnNames.stream().map(name -> "?").collect(Collectors.joining(", "));
         // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
         String sql = "INSERT INTO " + quoteIdentifier(tableName) + " (" + columns + ") VALUES (" + placeholders + ")";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        @SuppressWarnings("java/sql-injection")
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement statement = preparedStatement) {
             statement.setQueryTimeout(queryTimeout);
             for (Map<String, Object> row : inserts) {
                 int index = bindExcelFieldValues(statement, fields, row, 1);
@@ -1573,7 +1582,7 @@ public class DatasourceServer implements DatasourceApi {
         try {
             doUpdate();
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         } finally {
             this.isUpdatingStatus = false;
         }

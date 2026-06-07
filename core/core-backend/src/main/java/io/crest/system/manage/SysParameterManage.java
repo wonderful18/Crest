@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.crest.api.system.request.SQLBotConfigCreator;
 import io.crest.api.system.vo.SettingItemVO;
 import io.crest.api.system.vo.ShareBaseVO;
+import io.crest.constant.SystemSettingConstants;
 import io.crest.datasource.server.DatasourceServer;
 import io.crest.system.dao.auto.entity.CoreSysSetting;
 import io.crest.system.dao.auto.mapper.CoreSysSettingMapper;
@@ -33,6 +34,9 @@ public class SysParameterManage {
 
     @Value("${crest.demo-tips-content:#{null}}")
     private String demoTipsContent;
+
+    @Value("${crest.user.initial-password:}")
+    private String configuredInitialPassword;
 
     @Resource
     private CoreSysSettingMapper coreSysSettingMapper;
@@ -67,7 +71,44 @@ public class SysParameterManage {
         QueryWrapper<CoreSysSetting> queryWrapper = new QueryWrapper<>();
         queryWrapper.likeRight("pkey", groupKey);
         queryWrapper.orderByAsc("sort");
-        return coreSysSettingMapper.selectList(queryWrapper);
+        List<CoreSysSetting> sysSettings = coreSysSettingMapper.selectList(queryWrapper);
+        if (Strings.CS.equals(groupKey, "basic.")) {
+            appendBasicDefaults(sysSettings);
+        }
+        return sysSettings;
+    }
+
+    private void appendBasicDefaults(List<CoreSysSetting> sysSettings) {
+        if (sysSettings.stream().noneMatch(item -> SystemSettingConstants.INITIAL_PASSWORD.equals(item.getPkey()))) {
+            sysSettings.add(buildCoreSetting(SystemSettingConstants.INITIAL_PASSWORD, configuredInitialPassword, "pwd", 15));
+        } else if (StringUtils.isNotBlank(configuredInitialPassword)) {
+            sysSettings.stream()
+                    .filter(item -> SystemSettingConstants.INITIAL_PASSWORD.equals(item.getPkey()) && StringUtils.isBlank(item.getPval()))
+                    .forEach(item -> item.setPval(configuredInitialPassword));
+        }
+        appendIfMissing(sysSettings, "basic.pwdStrategy", "true", "text", 16);
+        appendIfMissing(sysSettings, SystemSettingConstants.DIP, "false", "text", 17);
+        appendIfMissing(sysSettings, SystemSettingConstants.PVP, "0", "text", 18);
+        appendIfMissing(sysSettings, SystemSettingConstants.LOGIN_LIMIT, "false", "text", 19);
+        appendIfMissing(sysSettings, SystemSettingConstants.LOGIN_LIMIT_RATE, "5", "text", 20);
+        appendIfMissing(sysSettings, SystemSettingConstants.LOGIN_LIMIT_TIME, "30", "text", 21);
+        sysSettings.sort(Comparator.comparing(CoreSysSetting::getSort));
+    }
+
+    private void appendIfMissing(List<CoreSysSetting> sysSettings, String pkey, String pval, String type, int sort) {
+        if (sysSettings.stream().noneMatch(item -> pkey.equals(item.getPkey()))) {
+            sysSettings.add(buildCoreSetting(pkey, pval, type, sort));
+        }
+    }
+
+    private CoreSysSetting buildCoreSetting(String pkey, String pval, String type, int sort) {
+        CoreSysSetting sysSetting = new CoreSysSetting();
+        sysSetting.setId(IDUtils.snowID());
+        sysSetting.setPkey(pkey);
+        sysSetting.setPval(StringUtils.defaultString(pval));
+        sysSetting.setType(type);
+        sysSetting.setSort(sort);
+        return sysSetting;
     }
     public List<SettingItemVO> convert(List<CoreSysSetting> sysSettings) {
         return sysSettings.stream().sorted(Comparator.comparing(CoreSysSetting::getSort)).map(item -> BeanUtils.copyBean(new SettingItemVO(), item)).toList();

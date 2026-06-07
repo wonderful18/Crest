@@ -35,7 +35,7 @@ public class DatasetSyncUtilsTest {
         assertEquals(1, fields.size());
         assertEquals("f_user_id", fields.get(0).getName());
         assertEquals("f_user_id", fields.get(0).getOriginName());
-        assertEquals("用户ID", fields.get(0).getFieldType());
+        assertEquals("用户ID", fields.get(0).getNativeType());
         assertEquals(Integer.valueOf(2), fields.get(0).getExtractedFieldType());
     }
 

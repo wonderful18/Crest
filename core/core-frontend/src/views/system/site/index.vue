@@ -29,7 +29,7 @@ const save = async () => {
     data: [{ pkey: 'basic.siteTitle', pval: title, type: 'text', sort: 9 }]
   })
   form.title = title
-  await appearanceStore.setAppearance()
+  await appearanceStore.setAppearance(false, true)
   ElMessage.success('保存成功')
 }
 
@@ -51,7 +51,7 @@ onMounted(load)
               v-model.trim="form.title"
               maxlength="40"
               show-word-limit
-              placeholder="请输入标题"
+              placeholder="请输入浏览器标题"
             />
             <div class="form-tip">
               实际显示为 {{ form.title || defaultSiteTitle }}
@@ -101,7 +101,7 @@ onMounted(load)
   color: #64748b;
 }
 .site-form {
-  margin-top: 24px;
+  margin-top: 16px;
   width: 420px;
 }
 </style>

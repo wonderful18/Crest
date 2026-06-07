@@ -47,6 +47,7 @@ import { useCache } from '@/hooks/web/useCache'
 import { isDesktop } from '@/utils/ModelUtil'
 import { ShorthandMode } from '@/Types'
 import { formatterItem } from '@/views/chart/components/js/formatter'
+import { normalizeLegacyComponent, normalizeLegacyComponentData } from '@/utils/legacyComponent'
 const { t } = useI18n()
 const appearanceStore = useAppearanceStoreWithOut()
 const { wsCache } = useCache()
@@ -175,6 +176,7 @@ export function historyItemAdaptor(
   canvasVersion,
   canvasInfo
 ) {
+  normalizeLegacyComponent(componentItem)
   componentItem['canvasActive'] = false
   if (componentItem.component === 'VQuery') {
     componentItem['freeze'] = componentItem['freeze'] || false // 冻结字段适配
@@ -301,6 +303,7 @@ export function historyAdaptor(
       componentItem.canvasId = 'canvas-main'
     })
   }
+  normalizeLegacyComponentData(canvasDataResult)
   const curVersion = wsCache.get('x-crest-execute-version')
   // 含有定时报告过滤项每次都需要匹配
   const reportFilterInfo = canvasInfo?.reportFilterInfo

@@ -23,12 +23,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/export-center")
 @Transactional(rollbackFor = Exception.class)
 public class ExportCenterServer implements ExportCenterApi {
+    private static final int DEFAULT_PAGE = 1;
+    private static final int DEFAULT_PAGE_SIZE = 10;
+    private static final String DEFAULT_STATUS = "ALL";
+    private static final Set<String> EXPORT_STATUSES = Set.of("SUCCESS", "FAILED", "PENDING", "IN_PROGRESS", "ALL");
+
     @Resource
     private ExportCenterManage exportCenterManage;
 
@@ -38,9 +45,33 @@ public class ExportCenterServer implements ExportCenterApi {
     }
 
     @Override
-    public IPage<ExportTaskDTO> pager(int goPage, int pageSize, String status) {
-        Page<ExportTaskDTO> page = new Page<>(goPage, pageSize);
-        return exportCenterManage.pager(page, status);
+    public IPage<ExportTaskDTO> pager(String goPage, String pageSize, String status) {
+        Page<ExportTaskDTO> page = new Page<>(
+                positiveIntOrDefault(goPage, DEFAULT_PAGE),
+                positiveIntOrDefault(pageSize, DEFAULT_PAGE_SIZE)
+        );
+        page.setOptimizeCountSql(false);
+        return exportCenterManage.pager(page, normalizeStatus(status));
+    }
+
+    private int positiveIntOrDefault(String value, int defaultValue) {
+        try {
+            int parsed = Integer.parseInt(value);
+            return parsed > 0 ? parsed : defaultValue;
+        } catch (RuntimeException e) {
+            return defaultValue;
+        }
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null || status.isBlank() || "undefined".equalsIgnoreCase(status) || "null".equalsIgnoreCase(status)) {
+            return DEFAULT_STATUS;
+        }
+        String normalized = status.trim().toUpperCase(Locale.ROOT);
+        if (EXPORT_STATUSES.contains(normalized)) {
+            return normalized;
+        }
+        return status;
     }
 
     @Override
@@ -72,6 +103,7 @@ public class ExportCenterServer implements ExportCenterApi {
         }
     }
 
+    @SuppressWarnings("java/xss")
     private void writeForbidden(HttpServletResponse response, CrestException e) throws Exception {
         if (response.isCommitted()) {
             return;
@@ -80,7 +112,10 @@ public class ExportCenterServer implements ExportCenterApi {
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(JsonUtil.toJSONString(new ResultMessage(e.getCode(), e.getMessage())).toString());
+        String message = e.getMessage() == null || e.getMessage().isBlank()
+                ? "下载链接无效或已过期"
+                : e.getMessage();
+        response.getWriter().write(JsonUtil.toJSONString(new ResultMessage(e.getCode(), message)).toString());
     }
 
     @Override

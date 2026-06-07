@@ -128,8 +128,8 @@ const showEmptyInfo = computed(() => {
 
 const computedTree = computed(() => {
   if (showTree.value) {
-    if (datasetTree.value[0].id === '0') {
-      return datasetTree.value[0].children
+    if (datasetTree.value[0]?.id === '0') {
+      return datasetTree.value[0].children || []
     }
   }
   return datasetTree.value
@@ -176,7 +176,7 @@ const rules = ref([
   }
 ])
 
-function flatTree(tree: Tree[]) {
+function flatTree(tree: Tree[] = []) {
   let result = _.cloneDeep(tree)
   _.forEach(tree, node => {
     if (node.children && node.children.length > 0) {

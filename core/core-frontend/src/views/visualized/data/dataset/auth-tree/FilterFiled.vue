@@ -506,7 +506,7 @@ const emits = defineEmits(['update:item', 'del'])
                 {{ t('common.list_selection') }}
                 <div class="right-btn">
                   <span @click="cancelKeyDow">
-                    <i class="el-icon-change"></i>
+                    <i class="el-icon-edit"></i>
                     {{ t('auth.manual_input') }}
                   </span>
                   <transition name="el-zoom-in-top">

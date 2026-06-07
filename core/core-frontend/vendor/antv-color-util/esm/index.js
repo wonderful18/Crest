@@ -2,8 +2,8 @@ import { map, memoize, isString, each } from '@antv/util';
 var RGB_REG = /rgba?\(([\s.,0-9]+)\)/;
 var regexLG = /^l\s*\(\s*([\d.]+)\s*\)\s*(.*)/i;
 var regexRG = /^r\s*\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)\s*(.*)/i;
-var regexColorStop = /[\d.]+:(#[^\s]+|[^\)]+\))/gi;
 var isGradientColor = function (val) { return /^[r,R,L,l]{1}[\s]*\(/.test(val); };
+var parseColorStops = function (steps) { return (steps || '').split(/\s+/).filter(function (item) { return item.indexOf(':') > 0; }); };
 // 创建辅助 tag 取颜色
 var createTmp = function () {
     var i = document.createElement('i');
@@ -105,7 +105,7 @@ var toCSSGradient = function (gradientColor) {
             var arr = regexRG.exec(gradientColor);
             steps = arr[4];
         }
-        var colorStops_1 = steps.match(regexColorStop);
+        var colorStops_1 = parseColorStops(steps);
         each(colorStops_1, function (item, index) {
             var itemArr = item.split(':');
             cssColor_1 += itemArr[1] + " " + itemArr[0] * 100 + "%";

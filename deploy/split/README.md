@@ -29,12 +29,12 @@ docker build -f Dockerfile.frontend -t crest-web:split .
 ## 启动
 
 ```bash
-export CREST_DB_PASSWORD="$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 32)"
-export CREST_AES_KEY="$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)"
-export CREST_AES_IV="$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)"
-export CREST_INITIAL_PASSWORD="$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 20)"
-
-CREST_WEB_PORT=18100 docker compose -f deploy/split/docker-compose.yml up -d
+CREST_DB_PASSWORD='<strong-db-password>' \
+CREST_AES_KEY='<32-character-aes-key>' \
+CREST_AES_IV='<16-character-iv>' \
+CREST_INITIAL_PASSWORD='<initial-admin-password>' \
+CREST_WEB_PORT=18100 \
+docker compose -f deploy/split/docker-compose.yml up -d
 ```
 
 访问地址：
@@ -43,11 +43,11 @@ CREST_WEB_PORT=18100 docker compose -f deploy/split/docker-compose.yml up -d
 http://127.0.0.1:18100/
 ```
 
-默认账号：
+初始账号：
 
 ```text
 用户名：admin
-密码：使用启动前设置的 CREST_INITIAL_PASSWORD
+密码：CREST_INITIAL_PASSWORD 指定的值
 ```
 
 `CREST_DB_PASSWORD`、`CREST_AES_KEY`、`CREST_AES_IV` 和 `CREST_INITIAL_PASSWORD` 必须显式配置。启动命令不会再提供固定默认值，缺少任一变量时 Compose 会直接停止。建议保存本次部署使用的变量值，并在首次登录后修改管理员密码。
@@ -65,6 +65,10 @@ chmod 0400 deploy/split/prometheus-token
 
 ```bash
 COMPOSE_PROFILES=observability \
+CREST_DB_PASSWORD='<strong-db-password>' \
+CREST_AES_KEY='<32-character-aes-key>' \
+CREST_AES_IV='<16-character-iv>' \
+CREST_INITIAL_PASSWORD='<initial-admin-password>' \
 CREST_PROMETHEUS_ENABLED=true \
 CREST_PROMETHEUS_TOKEN=local-prometheus-token \
 CREST_PROMETHEUS_TOKEN_FILE=./prometheus-token \

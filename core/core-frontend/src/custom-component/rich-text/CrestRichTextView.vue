@@ -591,7 +591,7 @@ const calcData = (view: Chart, callback) => {
           const curViewInfo = canvasViewInfo.value[element.value.id]
           // 此处是编辑时使用，多仪表板嵌入 canvasViewInfo 会被覆盖可能出现无法读取情况
           if (res.data && curViewInfo) {
-            curViewInfo['curFields'] = res.data.fields
+            curViewInfo['curFields'] = res.data.fields || []
           }
           dvMainStore.setViewDataDetails(element.value.id, res)
           initReady.value = true
@@ -637,13 +637,16 @@ const initCurFields = chartDetails => {
   dataRowSelect.value = {}
   dataRowNameSelect.value = {}
   dataRowNameSelectSource.value = {} // 记录原格式，部分数字是经过格式化的，再匹配颜色时会有问题
-  if (chartDetails.data && chartDetails.data.sourceFields) {
+  const sourceFields = Array.isArray(chartDetails.data?.sourceFields)
+    ? chartDetails.data.sourceFields
+    : []
+  if (sourceFields.length) {
     const checkAllAxisStr =
       JSON.stringify(chartDetails.xAxis) +
       JSON.stringify(chartDetails.xAxisExt) +
       JSON.stringify(chartDetails.yAxis) +
       JSON.stringify(chartDetails.yAxisExt)
-    chartDetails.data.sourceFields.forEach(field => {
+    sourceFields.forEach(field => {
       if (checkAllAxisStr.indexOf(field.id) > -1) {
         dataRowFiledName.value.push(`[${field.name}]`)
       }
@@ -651,18 +654,20 @@ const initCurFields = chartDetails => {
     if (checkAllAxisStr.indexOf('"记录数*"') > -1) {
       dataRowFiledName.value.push(`[记录数*]`)
     }
+    const dataFields = Array.isArray(chartDetails.data?.fields) ? chartDetails.data.fields : []
+    const rowData = chartDetails.data?.tableRow?.[0] || {}
     // Get the corresponding relationship between id and value
-    const nameIdMap = chartDetails.data.fields.reduce((pre, next) => {
+    const nameIdMap = dataFields.reduce((pre, next) => {
       pre[next['engineFieldName']] = next['id']
       return pre
     }, {})
-    const sourceFieldNameIdMap = chartDetails.data.fields.reduce((pre, next) => {
+    const sourceFieldNameIdMap = dataFields.reduce((pre, next) => {
       pre[next['engineFieldName']] = next['name']
       return pre
     }, {})
-    const rowData = chartDetails.data.tableRow[0]
+    const yAxisItems = Array.isArray(chartDetails.yAxis) ? chartDetails.yAxis : []
     if (chartDetails.type === 'rich-text') {
-      let yAxis = JSON.parse(JSON.stringify(chartDetails.yAxis))
+      let yAxis = JSON.parse(JSON.stringify(yAxisItems))
       const yEngineFieldNames = []
       const yEngineFieldNamesCfg = []
       yAxis.forEach(yItem => {
@@ -670,7 +675,7 @@ const initCurFields = chartDetails => {
         yEngineFieldNamesCfg[yItem.engineFieldName] = yItem.formatterCfg
       })
     }
-    const valueFieldMap: Record<string, Axis> = chartDetails.yAxis.reduce((p, n) => {
+    const valueFieldMap: Record<string, Axis> = yAxisItems.reduce((p, n) => {
       p[n.engineFieldName] = n
       return p
     }, {})

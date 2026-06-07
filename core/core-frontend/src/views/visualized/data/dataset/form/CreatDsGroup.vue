@@ -70,11 +70,31 @@ watch(filterText, val => {
   treeRef.value.filter(val)
   nextTick(() => {
     document.querySelectorAll('.node-text').forEach(ele => {
-      const content = ele.getAttribute('title')
-      ele.innerHTML = content.replace(val, `<span class="highLight">${val}</span>`)
+      renderHighlightedTreeText(ele, val)
     })
   })
 })
+
+const renderHighlightedTreeText = (ele: Element, keyword: string) => {
+  const content = ele.getAttribute('title') || ''
+  ele.textContent = ''
+  if (!keyword) {
+    ele.textContent = content
+    return
+  }
+  let offset = 0
+  let cursor = content.indexOf(keyword, offset)
+  while (cursor !== -1) {
+    ele.appendChild(document.createTextNode(content.slice(offset, cursor)))
+    const mark = document.createElement('span')
+    mark.className = 'highLight'
+    mark.textContent = keyword
+    ele.appendChild(mark)
+    offset = cursor + keyword.length
+    cursor = content.indexOf(keyword, offset)
+  }
+  ele.appendChild(document.createTextNode(content.slice(offset)))
+}
 
 const showPid = computed(() => {
   if (nodeType.value === 'folder' && !!pid.value) {
@@ -147,6 +167,14 @@ const formatRootMiss = (id: string | number, treeData: Tree[]) => {
 }
 const originResourceTree = ref([])
 const sortList = ['time_asc', 'time_desc', 'name_asc', 'name_desc']
+const getDefaultSortType = () => {
+  const sortIndex = Number(wsCache.get('TreeSort-backend') ?? 1)
+  return sortList[Number.isInteger(sortIndex) && sortList[sortIndex] ? sortIndex : 1]
+}
+const getStoredSortType = (cacheKey: string, fallback: string) => {
+  const sortType = wsCache.get(cacheKey)
+  return sortList.includes(sortType) ? sortType : fallback
+}
 const createInit = (type, data: Tree, exec, name: string) => {
   pid.value = ''
   id.value = ''
@@ -169,8 +197,7 @@ const createInit = (type, data: Tree, exec, name: string) => {
       filterFreeFolder(res, 'dataset')
       dfs(res as unknown as Tree[])
       state.tData = (res as unknown as Tree[]) || []
-      let curSortType = sortList[Number(wsCache.get('TreeSort-backend')) ?? 1]
-      curSortType = wsCache.get('TreeSort-dataset') ?? curSortType
+      const curSortType = getStoredSortType('TreeSort-dataset', getDefaultSortType())
       originResourceTree.value = cloneDeep(unref(state.tData))
       state.tData = treeSort(originResourceTree.value, curSortType)
       if (state.tData.length && state.tData[0].name === 'root' && state.tData[0].id === '0') {

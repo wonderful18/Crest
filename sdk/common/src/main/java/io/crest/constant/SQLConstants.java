@@ -51,15 +51,15 @@ public class SQLConstants {
 
     public static final String FIELD_DOT_FIX = "`%s`";
 
-    public static final String UNIX_TIMESTAMP = "CREST_UNIX_TIMESTAMP(%s)";
+    public static final String UNIX_TIMESTAMP = "DE_UNIX_TIMESTAMP(%s)";
 
-    public static final String CREST_DATE_FORMAT = "CREST_DATE_FORMAT(%s,'%s')";
+    public static final String CREST_DATE_FORMAT = "DE_DATE_FORMAT(%s,'%s')";
 
-    public static final String CREST_CAST_DATE_FORMAT = "CREST_CAST_DATE_FORMAT(%s,'%s','%s')";
+    public static final String CREST_CAST_DATE_FORMAT = "DE_CAST_DATE_FORMAT(%s,'%s','%s')";
 
-    public static final String FROM_UNIXTIME = "CREST_FROM_UNIXTIME(%s,'%s')";
+    public static final String FROM_UNIXTIME = "DE_FROM_UNIXTIME(%s,'%s')";
 
-    public static final String CREST_STR_TO_DATE = "CREST_STR_TO_DATE(%s,'%s')";
+    public static final String CREST_STR_TO_DATE = "DE_STR_TO_DATE(%s,'%s')";
 
     public static final String CAST = "CAST(%s AS %s)";
 
@@ -73,7 +73,7 @@ public class SQLConstants {
 
     public static final String WHERE_VALUE_VALUE = "'%s'";
 
-    public static final String WHERE_VALUE_VALUE_CH = "'-CREST_NS-%s'";
+    public static final String WHERE_VALUE_VALUE_CH = "'-DENS-%s'";
 
     public static final String WHERE_NUMBER_VALUE = "%s";
 
@@ -101,5 +101,5 @@ public class SQLConstants {
 
     public static final String CONCAT = "CONCAT(%s, %s)";
 
-    public static final String MSSQL_N_PREFIX = "-CREST_NS-";
+    public static final String MSSQL_N_PREFIX = "-DENS-";
 }

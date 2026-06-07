@@ -15,6 +15,8 @@ import {
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { cloneDeep, debounce, sortBy } from 'lodash-es'
 import { fieldTree } from '@/api/dataset'
+import router from '@/router'
+import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import colorFunctions from 'less/lib/less/functions/color.js'
 import colorTree from 'less/lib/less/tree/color.js'
 import { colorStringToHex } from '@/utils/color'
@@ -82,6 +84,7 @@ const placeholderText = computed(() => {
   return ' '
 })
 const { config } = toRefs(props)
+const dvMainStore = dvMainStoreWithOut()
 const fromTreeSelectConfirm = ref(false)
 const multiple = ref(false)
 const treeSelectConfirm = val => {
@@ -254,6 +257,7 @@ const cascade = computed(() => {
   return cascadeList() || []
 })
 const loading = ref(false)
+const currentVisualizationId = () => dvMainStore.dvInfo?.id || router.currentRoute.value.query.dvId
 
 const getCascadeFieldId = () => {
   const filter = []
@@ -269,21 +273,23 @@ const getCascadeFieldId = () => {
         filter.push(condition)
       } else {
         if (props.isConfig) {
-          if (!!item.selectValue?.length) {
+          const value = normalizeCascadeValue(item.selectValue)
+          if (value.length) {
             condition = {
               fieldId,
               defaultValueFirstItem,
               operator: 'in',
-              value: [...item.selectValue]
+              value
             }
           }
         } else {
-          if (!!item.currentSelectValue?.length) {
+          const value = normalizeCascadeValue(item.currentSelectValue)
+          if (value.length) {
             condition = {
               fieldId,
               defaultValueFirstItem,
               operator: 'in',
-              value: [...item.currentSelectValue]
+              value
             }
           }
         }
@@ -291,6 +297,11 @@ const getCascadeFieldId = () => {
     })
   })
   return filter
+}
+
+const normalizeCascadeValue = (value: any) => {
+  const values = Array.isArray(value) ? value : [value]
+  return values.filter(ele => ele !== undefined && ele !== null && ele !== '')
 }
 
 let fromSelect = false
@@ -358,7 +369,8 @@ const getTreeOption = debounce(() => {
   fieldTree({
     fieldIds: props.config.treeFieldList.map(ele => ele.id),
     resultMode: config.value.resultMode || 0,
-    filter: getCascadeFieldId()
+    filter: getCascadeFieldId(),
+    visualizationId: currentVisualizationId()
   })
     .then(res => {
       treeOptionList.value = filterTree(dfs(res), config.value.optionFilter)

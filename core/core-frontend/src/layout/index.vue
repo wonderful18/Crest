@@ -290,16 +290,12 @@ const changeSettingSideStatus = (showSide: boolean) => {
     :deep(.ed-select__wrapper) {
       border-radius: 8px;
       box-shadow: 0 0 0 1px #e2e8f0 inset;
-      transition:
-        box-shadow 0.14s ease,
-        background 0.14s ease;
+      transition: box-shadow 0.14s ease, background 0.14s ease;
     }
 
     :deep(.ed-input__wrapper.is-focus),
     :deep(.ed-select__wrapper.is-focused) {
-      box-shadow:
-        0 0 0 1px #3b82f6 inset,
-        0 0 0 3px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 1px #3b82f6 inset, 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
     :deep(.ed-button) {
