@@ -138,9 +138,11 @@ export function isISOMobile() {
 
 export const isDingTalk = window.navigator.userAgent.toLowerCase().includes('dingtalk')
 
+const defaultDocumentTitle = '研发效能指标管理系统'
+
 export const setTitle = (title?: string) => {
   if (!isDingTalk) {
-    document.title = title || 'Crest'
+    document.title = title || defaultDocumentTitle
     return
   }
   const jsUrl = 'https://g.alicdn.com/dingding/dingtalk-jsapi/3.0.25/dingtalk.open.js'
@@ -161,7 +163,7 @@ export const setTitle = (title?: string) => {
       })
     })
     .catch(() => {
-      document.title = title || 'Crest'
+      document.title = title || defaultDocumentTitle
     })
 }
 

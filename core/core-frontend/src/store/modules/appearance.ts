@@ -6,12 +6,12 @@ import { useCache } from '@/hooks/web/useCache'
 import colorFunctions from 'less/lib/less/functions/color.js'
 import colorTree from 'less/lib/less/tree/color.js'
 import { useEmbedded } from '@/store/modules/embedded'
-import { setTitle } from '@/utils/utils'
+import { isBtnShow, setTitle } from '@/utils/utils'
 
 const embeddedStore = useEmbedded()
 const basePath = import.meta.env.VITE_API_BASEPATH
 const baseUrl = basePath + '/appearance/image/'
-import { isBtnShow } from '@/utils/utils'
+const defaultSiteTitle = '研发效能指标管理系统'
 interface AppearanceState {
   themeColor?: string
   customColor?: string
@@ -64,7 +64,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
       showDemoTips: false,
       demoTipsContent: '',
       community: true,
-      siteTitle: 'Crest',
+      siteTitle: defaultSiteTitle,
       fontList: []
     }
   },
@@ -145,7 +145,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
       return this.community
     },
     getSiteTitle(): string {
-      return this.siteTitle || 'Crest'
+      return this.siteTitle || defaultSiteTitle
     },
     getShowAi(): boolean {
       return isBtnShow(this.showAi)
@@ -265,7 +265,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
           applyDocumentTitle()
           setLinkIcon()
         }
-        this.siteTitle = 'Crest'
+        this.siteTitle = defaultSiteTitle
         return
       }
       const data: AppearanceState = { loaded: false, community: true, fontList: [] }
@@ -278,7 +278,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
       })
       data.community = isCommunity
       this.community = data.community
-      this.siteTitle = data.siteTitle || 'Crest'
+      this.siteTitle = data.siteTitle || defaultSiteTitle
       if (this.community) {
         this.showDemoTips = data.showDemoTips
         this.demoTipsContent = data.demoTipsContent
@@ -358,7 +358,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
 
 const applyDocumentTitle = (siteTitle?: string) => {
   const normalized = siteTitle?.trim()
-  const title = normalized || '研发效能指标管理系统'
+  const title = normalized || defaultSiteTitle
   document.title = title
   setTitle(title)
 }
