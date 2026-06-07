@@ -14,12 +14,12 @@ services:
       - --collation-server=utf8mb4_unicode_ci
       - --default-time-zone=+08:00
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${CREST_DB_PASSWORD:-crest_local_password}", "--protocol", "tcp"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${CREST_DB_PASSWORD:?CREST_DB_PASSWORD must be configured}", "--protocol", "tcp"]
       interval: 5s
       timeout: 3s
       retries: 20
     environment:
-      MYSQL_ROOT_PASSWORD: ${CREST_DB_PASSWORD:-crest_local_password}
+      MYSQL_ROOT_PASSWORD: ${CREST_DB_PASSWORD:?CREST_DB_PASSWORD must be configured}
       MYSQL_DATABASE: ${CREST_DB_NAME:-crest}
     volumes:
       - split-mysql-data:/var/lib/mysql
@@ -56,11 +56,11 @@ services:
       CREST_DB_PORT: 3306
       CREST_DB_NAME: ${CREST_DB_NAME:-crest}
       CREST_DB_USERNAME: root
-      CREST_DB_PASSWORD: ${CREST_DB_PASSWORD:-crest_local_password}
+      CREST_DB_PASSWORD: ${CREST_DB_PASSWORD:?CREST_DB_PASSWORD must be configured}
       CREST_DB_PARAMS: autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
       CREST_DB_URL: jdbc:mysql://mysql-crest:3306/${CREST_DB_NAME:-crest}?autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
-      CREST_AES_KEY: ${CREST_AES_KEY:-12345678901234567890123456789012}
-      CREST_AES_IV: ${CREST_AES_IV:-1234567890123456}
+      CREST_AES_KEY: ${CREST_AES_KEY:?CREST_AES_KEY must be configured}
+      CREST_AES_IV: ${CREST_AES_IV:?CREST_AES_IV must be configured}
       CREST_CRYPTO_MODE: standard
       CREST_INITIAL_PASSWORD: ${CREST_INITIAL_PASSWORD:?CREST_INITIAL_PASSWORD must be configured}
       CREST_LOAD_DEMO: ${CREST_LOAD_DEMO:-true}
@@ -155,13 +155,22 @@ services:
     user: "472:472"
     environment:
       GF_SECURITY_ADMIN_USER: ${CREST_GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${CREST_GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${CREST_GRAFANA_ADMIN_PASSWORD:-}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_LOG_LEVEL: error
       GF_UNIFIED_ALERTING_ENABLED: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
       GF_SERVER_ROOT_URL: ${CREST_GRAFANA_PUBLIC_URL:-http://localhost:3000}
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        if [ -z "$$GF_SECURITY_ADMIN_PASSWORD" ]; then
+          echo "CREST_GRAFANA_ADMIN_PASSWORD must be configured when observability profile is enabled" >&2
+          exit 1
+        fi
+        exec /run.sh
     volumes:
       - ../../installer/crest/observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - split-grafana-data:/var/lib/grafana
