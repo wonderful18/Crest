@@ -9,7 +9,7 @@
         <el-button v-if="showValidate" secondary @click="check">{{
           t('datasource.validate')
         }}</el-button>
-        <el-button type="primary" @click="change">{{ t('commons.edit') }}</el-button>
+        <el-button type="primary" @click="edit">{{ t('commons.edit') }}</el-button>
       </div>
     </div>
     <div class="info-template-content">

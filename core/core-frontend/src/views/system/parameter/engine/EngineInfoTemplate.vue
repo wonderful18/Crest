@@ -6,7 +6,7 @@
       showValidate
       :setting-title="t('system.engine_settings')"
       :setting-data="templateList"
-      @edit="change"
+      @edit="edit"
       @check="validateById"
     />
     <div class="de-expand_content">

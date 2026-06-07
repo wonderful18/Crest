@@ -7,7 +7,7 @@ import icon_deleteTrash_outlined from '@/assets/svg/icon_delete-trash_outlined.s
 import { ref, reactive, onMounted, onBeforeUnmount, watch, unref, computed, nextTick } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import CodeMirror from './SqlCodeEditor.vue'
-import { functions } from '@/api/dataset'
+import { functions as queryFunctions } from '@/api/dataset'
 import { fieldType } from '@/utils/attr'
 import { cloneDeep } from 'lodash-es'
 import { guid } from './util'
@@ -209,10 +209,10 @@ const insertParamToCodeMirror = (value: string) => {
     selection: { anchor: mirror.value.viewState.state.selection.ranges[0].from }
   })
 }
-let functions = []
+let functionList = []
 const initFunction = () => {
-  functions().then(res => {
-    functions = cloneDeep(res)
+  queryFunctions().then(res => {
+    functionList = cloneDeep(res)
     state.functionData = cloneDeep(res)
   })
 }
@@ -249,13 +249,13 @@ watch(
     if (val && val !== '') {
       state.functionData = JSON.parse(
         JSON.stringify(
-          functions.filter(ele => {
+          functionList.filter(ele => {
             return ele.func.toLocaleLowerCase().includes(val.toLocaleLowerCase())
           })
         )
       )
     } else {
-      state.functionData = cloneDeep(functions)
+      state.functionData = cloneDeep(functionList)
     }
   }
 )

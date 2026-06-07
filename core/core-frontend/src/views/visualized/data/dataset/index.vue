@@ -290,7 +290,7 @@ const generateColumns = (arr: Field[]) =>
 
 const dtLoading = ref(false)
 const isCreated = ref(false)
-const data = () => {
+const loadData = () => {
   dtLoading.value = true
   let curSortType = sortList[Number(wsCache.get('TreeSort-backend')) ?? 1].value
   curSortType = wsCache.get('TreeSort-dataset') ?? curSortType
@@ -351,7 +351,7 @@ onBeforeMount(() => {
   wsCache.delete('db-info-id')
   wsCache.delete('dv-info-id')
   loadInit()
-  data()
+  loadData()
   getLimit()
 })
 
@@ -547,18 +547,18 @@ const handleClick = (tabName: TabPaneName) => {
   }
 }
 const relationChartRef = ref()
-const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
+const operation = (cmd: string, nodeData: BusiTreeNode, nodeType: string) => {
   if (cmd === 'copy') {
     if (isCrestBi.value) {
       embedded.clearState()
-      embedded.setDatasetCopyId(data.id as string)
+      embedded.setDatasetCopyId(nodeData.id as string)
       useEmitt().emitter.emit('changeCurrentComponent', 'DatasetEditor')
       return
     }
     router.push({
       name: embedded.getToken && appStore.getIsIframe ? 'dataset-embedded-form' : 'dataset-form',
       params: {
-        id: data.id
+        id: nodeData.id
       }
     })
     return
@@ -572,20 +572,20 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
       tip: ''
     }
 
-    if (!!data.children?.length) {
+    if (!!nodeData.children?.length) {
       options.tip = t('data_set.operate_with_caution')
     } else {
       delete options.tip
     }
 
     if (nodeType !== 'folder') {
-      perDelete(data.id).then(res => {
+      perDelete(nodeData.id).then(res => {
         if (res === true) {
           const onClick = () => {
             relationChartRef.value.getChartData({
               queryType: 'dataset',
-              num: data.id,
-              label: data.name
+              num: nodeData.id,
+              label: nodeData.name
             })
           }
 
@@ -606,8 +606,8 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
               )
             ])
           }).then(() => {
-            delDatasetTree(data.id).then(() => {
-              data()
+            delDatasetTree(nodeData.id).then(() => {
+              loadData()
               ElMessage.success(t('dataset.delete_success'))
             })
           })
@@ -616,8 +616,8 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
             t('datasource.delete_this_dataset'),
             options as ElMessageBoxOptions
           ).then(() => {
-            delDatasetTree(data.id).then(() => {
-              data()
+            delDatasetTree(nodeData.id).then(() => {
+              loadData()
               ElMessage.success(t('dataset.delete_success'))
             })
           })
@@ -626,15 +626,15 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
     } else {
       ElMessageBox.confirm(t('data_set.delete_this_folder'), options as ElMessageBoxOptions).then(
         () => {
-          delDatasetTree(data.id).then(() => {
-            data()
+          delDatasetTree(nodeData.id).then(() => {
+            loadData()
             ElMessage.success(t('dataset.delete_success'))
           })
         }
       )
     }
   } else {
-    creatDsFolder.value.createInit(nodeType, data, cmd)
+    creatDsFolder.value.createInit(nodeType, nodeData, cmd)
   }
 }
 
@@ -1102,7 +1102,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
       @finish="resourceOptFinish"
       ref="resourceGroupOpt"
     ></CrestResourceGroupActions>
-    <creat-ds-group @finish="data()" ref="creatDsFolder"></creat-ds-group>
+    <creat-ds-group @finish="loadData()" ref="creatDsFolder"></creat-ds-group>
   </div>
   <!--导出数据集弹框-->
   <el-dialog
@@ -1127,7 +1127,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
       <el-form-item :label="$t('dataset.export_filter')" prop="expressionTree">
         <div class="tree-cont">
           <div class="content">
-            <RowAuth @save="record" ref="rowAuth" />
+            <RowAuth @save="save" ref="rowAuth" />
           </div>
         </div>
       </el-form-item>
