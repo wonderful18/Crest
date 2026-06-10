@@ -78,6 +78,9 @@ import {
   buildDatasetSyncTaskPayload,
   executeDatasetSyncNowFlow,
   formatDatasetSyncRowCount,
+  getDatasetSyncNowDisabledReason,
+  getDatasetSyncStatusText,
+  getIncrementalDisabledReason,
   normalizeDatasetSyncInfo
 } from './datasetSyncWorkflow.mjs'
 interface DragEvent extends MouseEvent {
@@ -1007,6 +1010,10 @@ const autoIncrementalField = computed(() => {
 const currentIncrementalField = computed(() =>
   incrementalFieldOptions.value.find(field => `${field.id}` === `${syncTask.incrementalFieldId}`)
 )
+const hasCurrentDatasetId = computed(() => !!currentDatasetId.value)
+const incrementalDisabledReason = computed(() =>
+  getIncrementalDisabledReason(incrementalFieldOptions.value)
+)
 const syncMethodText = computed(() => {
   if (syncTask.updateType === 'add_scope') {
     return currentIncrementalField.value?.name
@@ -1016,17 +1023,20 @@ const syncMethodText = computed(() => {
   return '全量'
 })
 const syncRunning = computed(() => syncTask.taskStatus === 'UnderExecution')
-const syncStatusText = computed(() => {
-  if (syncTask.taskStatus === 'UnderExecution') return '更新中'
-  if (syncTask.failureWarned) return '连续失败'
-  if (syncTask.lastVerifyStatus === 'WARNING') return '校验异常'
-  if (syncTask.cacheExpired) return '缓存过期'
-  if (syncTask.lastExecStatus === 'Completed')
-    return syncTask.cacheReady === 1 ? '缓存可用' : '已完成'
-  if (syncTask.lastExecStatus === 'Error') return '更新失败'
-  if (syncTask.taskStatus === 'Stopped') return '已停止'
-  return '未缓存'
-})
+const syncStatusText = computed(() =>
+  getDatasetSyncStatusText({
+    ...toRaw(syncTask),
+    syncMode: datasetMode.value,
+    hasDatasetId: hasCurrentDatasetId.value
+  })
+)
+const syncNowDisabledReason = computed(() =>
+  getDatasetSyncNowDisabledReason({
+    hasDatasetId: hasCurrentDatasetId.value,
+    syncRunning: syncRunning.value
+  })
+)
+const syncNowDisabled = computed(() => !!syncNowDisabledReason.value)
 const latestSyncLog = computed(() => syncLogs.value[0])
 const latestSyncInfo = computed(() =>
   normalizeDatasetSyncInfo(latestSyncLog.value?.info || syncTask.lastVerifyMessage || '')
@@ -1072,6 +1082,11 @@ const syncModeChange = () => {
 }
 
 const syncUpdateTypeChange = () => {
+  if (syncTask.updateType === 'add_scope' && incrementalDisabledReason.value) {
+    syncTask.updateType = 'all_scope'
+    ElMessage.warning(incrementalDisabledReason.value)
+    return
+  }
   applyIncrementalDefaults()
 }
 
@@ -2246,9 +2261,14 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
               <div class="sync-row">
                 <span>更新方式</span>
                 <el-radio-group v-model="syncTask.updateType" @change="syncUpdateTypeChange">
-                  <el-radio value="add_scope">增量</el-radio>
+                  <el-radio value="add_scope" :disabled="!!incrementalDisabledReason"
+                    >增量</el-radio
+                  >
                   <el-radio value="all_scope">全量</el-radio>
                 </el-radio-group>
+              </div>
+              <div v-if="incrementalDisabledReason" class="sync-tip">
+                {{ incrementalDisabledReason }}
               </div>
               <div class="sync-row">
                 <span>更新频率</span>
@@ -2279,15 +2299,23 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                 <span>{{ syncMethodText }}</span>
                 <span>{{ syncStatusText }}</span>
               </div>
-              <el-button
-                class="sync-now"
-                secondary
-                :loading="syncSubmitting"
-                :disabled="!currentDatasetId || syncRunning"
-                @click="executeDatasetSyncNow"
+              <el-tooltip
+                :disabled="!syncNowDisabledReason"
+                :content="syncNowDisabledReason"
+                placement="top"
               >
-                {{ syncRunning ? '更新中' : '立即更新' }}
-              </el-button>
+                <span class="sync-now-wrapper">
+                  <el-button
+                    class="sync-now"
+                    secondary
+                    :loading="syncSubmitting"
+                    :disabled="syncNowDisabled"
+                    @click="executeDatasetSyncNow"
+                  >
+                    {{ syncRunning ? '更新中' : '立即更新' }}
+                  </el-button>
+                </span>
+              </el-tooltip>
               <div class="sync-status" v-if="syncTask.lastExecTime || latestSyncLog">
                 <span v-if="latestSyncRowCountText">{{ latestSyncRowCountText }}</span>
                 <span v-if="syncTask.lastExecTime">{{
@@ -3642,6 +3670,10 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
         .sync-now {
           width: 100%;
           margin-top: 8px;
+        }
+
+        .sync-now-wrapper {
+          display: block;
         }
 
         .sync-tip {
