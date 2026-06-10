@@ -2,8 +2,10 @@ package io.crest.dataset.sync;
 
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.api.dataset.union.DatasetGroupInfoDTO;
+import io.crest.api.dataset.union.UnionDTO;
 import io.crest.commons.constants.TaskStatus;
 import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTask;
+import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
 import io.crest.extensions.datasource.dto.TableField;
@@ -140,7 +142,7 @@ public class DatasetSyncUtilsTest {
     }
 
     @Test
-    public void buildMysqlPageSqlUsesLimitOffsetAndKeepsOnlySyncableColumns() {
+    public void buildMysqlPageSqlUsesStableOrderAndKeepsOnlySyncableColumns() {
         DatasetTableFieldDTO id = field(1L, "ID", "ID", "f_id", 2, ExtFieldConstant.EXT_NORMAL);
         DatasetTableFieldDTO calc = field(2L, "[1] + 1", "计算字段", "f_calc", 2, ExtFieldConstant.EXT_CALC);
 
@@ -155,7 +157,7 @@ public class DatasetSyncUtilsTest {
         );
 
         assertEquals(
-                "SELECT SYNC_PAGE.`f_id` FROM (SELECT t_a_0.`ID` AS `f_id` FROM `t_user` t_a_0) SYNC_PAGE LIMIT 1000 OFFSET 2000",
+                "SELECT SYNC_PAGE.`f_id` FROM (SELECT t_a_0.`ID` AS `f_id` FROM `t_user` t_a_0) SYNC_PAGE ORDER BY SYNC_PAGE.`f_id` LIMIT 1000 OFFSET 2000",
                 sql
         );
     }
@@ -180,6 +182,25 @@ public class DatasetSyncUtilsTest {
         sqlMap.put("tableFieldWithValues", List.of(new Object()));
 
         assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset(1, false), sqlMap));
+    }
+
+    @Test
+    public void shouldNotRouteSqlVariableDatasetToCacheWithoutPreparedValues() {
+        DatasetGroupInfoDTO dataset = dataset(1, false);
+        dataset.setUnion(List.of(unionWithSqlVariables("[{\"variableName\":\"dept\"}]")));
+
+        assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset, sqlMap("mysql")));
+    }
+
+    @Test
+    public void detectsParameterizedSqlValuesForSyncValidation() {
+        assertFalse(DatasetSyncUtils.hasSqlParameterValues(null));
+
+        Map<String, Object> sqlMap = sqlMap("mysql");
+        assertFalse(DatasetSyncUtils.hasSqlParameterValues(sqlMap));
+
+        sqlMap.put("tableFieldWithValues", List.of(new Object()));
+        assertTrue(DatasetSyncUtils.hasSqlParameterValues(sqlMap));
     }
 
     @Test
@@ -307,6 +328,14 @@ public class DatasetSyncUtilsTest {
         dataset.setMode(mode);
         dataset.setIsCross(isCross);
         return dataset;
+    }
+
+    private UnionDTO unionWithSqlVariables(String sqlVariableDetails) {
+        DatasetTableDTO table = new DatasetTableDTO();
+        table.setSqlVariableDetails(sqlVariableDetails);
+        UnionDTO union = new UnionDTO();
+        union.setCurrentDs(table);
+        return union;
     }
 
     private Map<String, Object> sqlMap(String... types) {

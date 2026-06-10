@@ -1,10 +1,12 @@
 package io.crest.dataset.sync;
 
 import io.crest.api.dataset.union.DatasetGroupInfoDTO;
+import io.crest.api.dataset.union.UnionDTO;
 import io.crest.commons.constants.TaskStatus;
 import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTask;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
+import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
 import io.crest.extensions.datasource.dto.TableField;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
@@ -54,7 +56,7 @@ public class DatasetSyncUtils {
         if (!(dsMapObject instanceof Map<?, ?> dsMap) || dsMap.size() != 1) {
             return false;
         }
-        if (hasSqlParameterValues(sqlMap)) {
+        if (hasSqlParameters(dataset, sqlMap)) {
             return false;
         }
         Object datasourceObject = dsMap.values().iterator().next();
@@ -64,12 +66,43 @@ public class DatasetSyncUtils {
         return isSupportedCacheSource(datasource.getType());
     }
 
-    private static boolean hasSqlParameterValues(Map<String, Object> sqlMap) {
+    public static boolean hasSqlParameters(DatasetGroupInfoDTO dataset, Map<String, Object> sqlMap) {
+        return hasSqlParameterValues(sqlMap) || hasSqlParameterDefinitions(dataset);
+    }
+
+    public static boolean hasSqlParameterValues(Map<String, Object> sqlMap) {
+        if (sqlMap == null) {
+            return false;
+        }
         Object tableFieldWithValues = sqlMap.get("tableFieldWithValues");
         if (tableFieldWithValues instanceof Collection<?> values) {
             return !values.isEmpty();
         }
         return tableFieldWithValues != null;
+    }
+
+    private static boolean hasSqlParameterDefinitions(DatasetGroupInfoDTO dataset) {
+        if (dataset == null || dataset.getUnion() == null) {
+            return false;
+        }
+        return dataset.getUnion().stream().anyMatch(DatasetSyncUtils::hasSqlParameterDefinitions);
+    }
+
+    private static boolean hasSqlParameterDefinitions(UnionDTO union) {
+        if (union == null) {
+            return false;
+        }
+        DatasetTableDTO currentDs = union.getCurrentDs();
+        if (currentDs != null && hasSqlVariableDefinitions(currentDs.getSqlVariableDetails())) {
+            return true;
+        }
+        List<UnionDTO> children = union.getChildrenDs();
+        return children != null && children.stream().anyMatch(DatasetSyncUtils::hasSqlParameterDefinitions);
+    }
+
+    private static boolean hasSqlVariableDefinitions(String sqlVariableDetails) {
+        String value = StringUtils.trimToEmpty(sqlVariableDetails);
+        return StringUtils.isNotBlank(value) && !Strings.CS.equals(value, "[]");
     }
 
     public static boolean isSupportedCacheSource(String datasourceType) {
@@ -276,7 +309,16 @@ public class DatasetSyncUtils {
                 .filter(StringUtils::isNotBlank)
                 .map(fieldName -> "SYNC_PAGE." + quote(fieldName, prefix, suffix))
                 .collect(Collectors.joining(","));
-        return "SELECT " + selectFields + " FROM (" + sourceSql + ") SYNC_PAGE LIMIT " + limit + " OFFSET " + offset;
+        String orderFields = fields.stream()
+                .filter(field -> Objects.equals(field.getChecked(), true))
+                .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
+                .map(field -> StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()))
+                .filter(StringUtils::isNotBlank)
+                .map(fieldName -> "SYNC_PAGE." + quote(fieldName, prefix, suffix))
+                .collect(Collectors.joining(","));
+        String orderClause = StringUtils.isBlank(orderFields) ? "" : " ORDER BY " + orderFields;
+        return "SELECT " + selectFields + " FROM (" + sourceSql + ") SYNC_PAGE" + orderClause
+                + " LIMIT " + limit + " OFFSET " + offset;
     }
 
     public static String quote(String value, String prefix, String suffix) {
