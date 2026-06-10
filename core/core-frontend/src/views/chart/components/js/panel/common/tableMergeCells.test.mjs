@@ -63,20 +63,38 @@ describe('buildMergeCellsInfo', () => {
 
     assert.deepEqual(simplify(cellsInfo), [
       [
-        { rowIndex: 0, colIndex: 0, showText: true },
-        { rowIndex: 1, colIndex: 0, showText: false }
-      ],
-      [
-        { rowIndex: 3, colIndex: 0, showText: true },
-        { rowIndex: 4, colIndex: 0, showText: false }
-      ],
-      [
         { rowIndex: 0, colIndex: 2, showText: true },
         { rowIndex: 1, colIndex: 2, showText: false }
       ],
       [
         { rowIndex: 3, colIndex: 2, showText: true },
         { rowIndex: 4, colIndex: 2, showText: false }
+      ]
+    ])
+  })
+
+  it('keeps custom field merges inside preceding dimension context', () => {
+    const cellsInfo = buildMergeCellsInfo({
+      fields,
+      meta,
+      data: [
+        { region: '华东', city: '上海', sales: 10 },
+        { region: '华东', city: '上海', sales: 20 },
+        { region: '华南', city: '上海', sales: 30 },
+        { region: '华南', city: '上海', sales: 40 }
+      ],
+      showIndex: true,
+      mergeFields: ['city']
+    })
+
+    assert.deepEqual(simplify(cellsInfo), [
+      [
+        { rowIndex: 0, colIndex: 2, showText: true },
+        { rowIndex: 1, colIndex: 2, showText: false }
+      ],
+      [
+        { rowIndex: 2, colIndex: 2, showText: true },
+        { rowIndex: 3, colIndex: 2, showText: false }
       ]
     ])
   })

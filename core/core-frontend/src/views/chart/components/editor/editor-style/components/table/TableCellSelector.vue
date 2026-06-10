@@ -16,6 +16,7 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 import { SERIES_NUMBER_FIELD } from '@antv/s2'
 import { getMergeableFieldOptions } from '@/views/chart/components/js/panel/common/tableMergeCells.mjs'
+import { createTableCellChangePayload } from './tableCellMergeConfig.mjs'
 const dvMainStore = dvMainStoreWithOut()
 const { mobileInPc } = storeToRefs(dvMainStore)
 
@@ -92,15 +93,12 @@ const changeTableCell = prop => {
       align: item.id === alignConfig.id ? alignConfig.align : item.align
     }))
   }
-  if (prop === 'mergeCells' && state.tableCellForm.mergeCells) {
-    if (!state.tableCellForm.mergeFields?.length) {
-      state.tableCellForm.mergeFields = mergeFieldOptions.map(item => item.id)
-    }
+  const payload = createTableCellChangePayload(state.tableCellForm, prop, mergeFieldOptions)
+  if (prop === 'mergeCells' || prop === 'mergeFields') {
+    state.tableCellForm.mergeCells = payload.mergeCells
+    state.tableCellForm.mergeFields = payload.mergeFields
   }
-  if (prop === 'mergeFields' && !state.tableCellForm.mergeFields?.length) {
-    state.tableCellForm.mergeCells = false
-  }
-  emit('onTableCellChange', state.tableCellForm, prop)
+  emit('onTableCellChange', payload, prop)
 }
 
 const changeAlignConfig = () => {
@@ -113,8 +111,10 @@ const changeAlignConfig = () => {
 const init = () => {
   const tableCell = props.chart?.customAttr?.tableCell
   if (tableCell) {
-    tableCell.mergeCells = tableCell.mergeCells === undefined ? false : tableCell.mergeCells
     state.tableCellForm = defaultsDeep(cloneDeep(tableCell), cloneDeep(DEFAULT_TABLE_CELL))
+    if (tableCell.mergeCells === undefined) {
+      state.tableCellForm.mergeCells = false
+    }
     const alpha = props.chart.customAttr.basicStyle.alpha
 
     if (!isAlphaColor(state.tableCellForm.tableItemBgColor)) {
