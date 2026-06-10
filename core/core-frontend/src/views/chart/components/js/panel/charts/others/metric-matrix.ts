@@ -223,7 +223,9 @@ export class MetricMatrix extends MultiScatter {
       size: pointSizeRange || nextOptions.size || [8, 20],
       pointStyle: (datum: Record<string, unknown>) => {
         const lightness = Number(datum.lightness)
-        const opacity = Number.isFinite(lightness) ? Math.max(0.68, Math.min(1, lightness / 100)) : 0.92
+        const opacity = Number.isFinite(lightness)
+          ? Math.max(0.68, Math.min(1, lightness / 100))
+          : 0.92
         return {
           stroke: matrix.pointStroke || '#ffffff',
           lineWidth: matrix.pointLineWidth ?? 2,

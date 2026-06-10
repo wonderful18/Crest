@@ -181,7 +181,9 @@ onMounted(() => {
     transform: none;
   }
 
-  :deep(.ed-menu--horizontal > .ed-sub-menu.is-opened .ed-sub-menu__title .ed-sub-menu__icon-arrow) {
+  :deep(
+      .ed-menu--horizontal > .ed-sub-menu.is-opened .ed-sub-menu__title .ed-sub-menu__icon-arrow
+    ) {
     transform: rotate(180deg);
   }
 
@@ -191,7 +193,12 @@ onMounted(() => {
     background: transparent !important;
   }
 
-  :deep(.ed-menu--horizontal > .ed-sub-menu.is-active.is-active .ed-sub-menu__title .ed-sub-menu__icon-arrow),
+  :deep(
+      .ed-menu--horizontal
+        > .ed-sub-menu.is-active.is-active
+        .ed-sub-menu__title
+        .ed-sub-menu__icon-arrow
+    ),
   :deep(.ed-menu--horizontal > .ed-sub-menu.is-opened .ed-sub-menu__title .ed-sub-menu__icon-arrow),
   :deep(.ed-menu--horizontal > .ed-sub-menu:hover .ed-sub-menu__title .ed-sub-menu__icon-arrow) {
     color: #334155 !important;
@@ -226,9 +233,7 @@ onMounted(() => {
   background: transparent;
   border: 0;
   border-radius: 8px;
-  transition:
-    color 0.14s ease,
-    background 0.14s ease;
+  transition: color 0.14s ease, background 0.14s ease;
 
   &:hover {
     color: #0f172a;

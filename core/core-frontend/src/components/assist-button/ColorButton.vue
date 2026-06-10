@@ -55,7 +55,7 @@ const colorButtonClick = () => {
     padding-left: 5px;
     padding-top: 5px;
     border-width: 1px;
-    border-color: var(--ed-color-primary-99, #3B82F699);
+    border-color: var(--ed-color-primary-99, #3b82f699);
   }
 }
 .color-button-active {

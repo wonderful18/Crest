@@ -2,7 +2,12 @@
   <div class="parameter-page">
     <p class="router-title">{{ t('commons.system_parameter_setting') }}</p>
     <el-tabs v-model="activeName" class="parameter-tabs">
-      <el-tab-pane v-for="item in tabArray" :key="item.name" :label="item.label" :name="item.name" />
+      <el-tab-pane
+        v-for="item in tabArray"
+        :key="item.name"
+        :label="item.label"
+        :name="item.name"
+      />
     </el-tabs>
     <div class="sys-setting-p">
       <div class="container-sys-param" :class="{ 'basic-info_bg': activeName === 'basic' }">

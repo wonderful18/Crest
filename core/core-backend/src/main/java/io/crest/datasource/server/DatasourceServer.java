@@ -740,8 +740,12 @@ public class DatasourceServer implements DatasourceApi {
 
     @Override
     public DatasourceDTO validate(Long datasourceId) throws CrestException {
+        CoreDatasource sourceDatasource = dataSourceManage.getCoreDatasource(datasourceId);
+        if (sourceDatasource == null) {
+            CrestException.throwException("数据源不存在！");
+        }
         CoreDatasource coreDatasource = new CoreDatasource();
-        BeanUtils.copyBean(coreDatasource, dataSourceManage.getCoreDatasource(datasourceId));
+        BeanUtils.copyBean(coreDatasource, sourceDatasource);
         return validate(coreDatasource);
     }
 

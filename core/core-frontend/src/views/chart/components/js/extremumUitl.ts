@@ -254,7 +254,9 @@ export const createExtremumPoint = (chart, ev) => {
   let geometriesDataArray = []
   // 获取数据点
   const geometries = ev.view?.getGeometries?.() || []
-  const intervalPoint = geometries.find((intervalItem: { type: string }) => intervalItem.type === 'interval')
+  const intervalPoint = geometries.find(
+    (intervalItem: { type: string }) => intervalItem.type === 'interval'
+  )
   if (intervalPoint) {
     geometriesDataArray = intervalPoint.dataArray
   }

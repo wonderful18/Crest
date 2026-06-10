@@ -95,7 +95,10 @@
         </div>
         <div>
           <el-icon><CircleClose /></el-icon>
-          <span>Token 不会在页面返回或保存，建议放在 Docker env、Kubernetes Secret 或同级密钥系统。</span>
+          <span
+            >Token 不会在页面返回或保存，建议放在 Docker env、Kubernetes Secret
+            或同级密钥系统。</span
+          >
         </div>
       </div>
     </section>
@@ -104,7 +107,14 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
-import { CircleCheck, CircleClose, CopyDocument, Link, Monitor, Refresh } from '@element-plus/icons-vue'
+import {
+  CircleCheck,
+  CircleClose,
+  CopyDocument,
+  Link,
+  Monitor,
+  Refresh
+} from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus-secondary'
 import { observabilityStatusApi } from '@/api/observability'
 

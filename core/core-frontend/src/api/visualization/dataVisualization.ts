@@ -54,8 +54,7 @@ export const queryBusiTreeApi = async (data): Promise<IResponse> => {
   })
 }
 
-export const findDvType = async dvId =>
-  request.get({ url: `/data-visualization/type/${dvId}` })
+export const findDvType = async dvId => request.get({ url: `/data-visualization/type/${dvId}` })
 
 export const save = data => request.post({ url: '/data-visualization/canvas', data })
 
@@ -105,12 +104,12 @@ export const deleteLogic = (dvId, busiFlag) =>
 export const querySubjectWithGroupApi = data =>
   request.post({ url: '/visualization-subject/subjects-with-groups', data })
 
-export const saveOrUpdateSubject = data =>
-  request.put({ url: '/visualization-subject', data })
+export const saveOrUpdateSubject = data => request.put({ url: '/visualization-subject', data })
 
 export const deleteSubject = id => request.delete({ url: '/visualization-subject/' + id })
 
-export const dvNameCheck = async data => request.post({ url: '/data-visualization/name-check', data })
+export const dvNameCheck = async data =>
+  request.post({ url: '/data-visualization/name-check', data })
 
 export const storeApi = (data): Promise<IResponse> => {
   return request.post({ url: '/store/runs', data })
@@ -161,11 +160,14 @@ export const queryShareBaseApi = () => {
   })
 }
 
-export const exportLogApp = data => request.post({ url: '/data-visualization/export-logs/app', data })
+export const exportLogApp = data =>
+  request.post({ url: '/data-visualization/export-logs/app', data })
 
 export const exportLogTemplate = data =>
   request.post({ url: '/data-visualization/export-logs/template', data })
 
-export const exportLogPDF = data => request.post({ url: '/data-visualization/export-logs/pdf', data })
+export const exportLogPDF = data =>
+  request.post({ url: '/data-visualization/export-logs/pdf', data })
 
-export const exportLogImg = data => request.post({ url: '/data-visualization/export-logs/image', data })
+export const exportLogImg = data =>
+  request.post({ url: '/data-visualization/export-logs/image', data })

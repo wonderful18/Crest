@@ -1015,7 +1015,9 @@ onMounted(() => {
       </div>
     </el-form-item>
     <el-form-item
-      v-if="!batchOptStatus && showProperty('auxiliaryHeader') && state.tableHeaderForm.auxiliaryHeader"
+      v-if="
+        !batchOptStatus && showProperty('auxiliaryHeader') && state.tableHeaderForm.auxiliaryHeader
+      "
       class="form-item"
       :class="'form-item-' + themes"
       :disabled="!state.tableHeaderForm.showTableHeader"

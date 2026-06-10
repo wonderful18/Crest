@@ -366,8 +366,7 @@ const getNodeVisual = (node: RelationNode, degree = 0) => {
     symbolSize,
     label: {
       show: showLabel,
-      color:
-        (knowledgeMode || !isField) && !isDenseGraph.value ? '#ffffff' : '#334155',
+      color: (knowledgeMode || !isField) && !isDenseGraph.value ? '#ffffff' : '#334155',
       position: isField || isDenseGraph.value ? 'right' : 'inside',
       distance: isField || isDenseGraph.value ? 7 : 0,
       width: knowledgeMode ? (isField ? 96 : 82) : isField ? 86 : 92,

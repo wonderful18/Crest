@@ -424,9 +424,7 @@ const expandClick = component => {
                   </template>
                 </el-dropdown>
               </div>
-              <div
-                v-if="getComponent(index)?.component === 'Tabs' && getComponent(index)?.expand"
-              >
+              <div v-if="getComponent(index)?.component === 'Tabs' && getComponent(index)?.expand">
                 <real-time-tab
                   :tab-element="getComponent(index)"
                   tab-position="groupTab"

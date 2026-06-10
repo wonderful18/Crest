@@ -942,7 +942,7 @@ defineExpose({
 }
 
 .view-type-icon {
-  color: var(--ed-color-primary, #3B82F6);
+  color: var(--ed-color-primary, #3b82f6);
   width: 22px;
   height: 14px;
 }

@@ -13,7 +13,10 @@ const form = reactive<any>({ id: null, name: '', desc: '', typeCode: 0 })
 const loadTable = async () => {
   loading.value = true
   try {
-    const res = await request.post({ url: '/role/by-current-org', data: { keyword: keyword.value } })
+    const res = await request.post({
+      url: '/role/by-current-org',
+      data: { keyword: keyword.value }
+    })
     const rows = res.data || []
     tableData.value = keyword.value
       ? rows.filter(row => String(row.name || '').includes(keyword.value))
