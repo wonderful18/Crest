@@ -941,7 +941,7 @@ const onPlaceholderChange = () => {
       color: var(--ed-color-primary);
       background-color: var(--ed-color-primary-1a, rgba(59, 130, 246, 0.1));
       &:hover {
-        background-color: var(--ed-color-primary-33, #3B82F633);
+        background-color: var(--ed-color-primary-33, #3b82f633);
       }
     }
   }

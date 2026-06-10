@@ -1,12 +1,17 @@
 package io.crest.datasource.provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.net.httpserver.HttpServer;
 import io.crest.extensions.datasource.dto.ApiDefinition;
+import io.crest.extensions.datasource.dto.ApiDefinitionRequest;
 import io.crest.extensions.datasource.dto.TableField;
+import java.net.InetSocketAddress;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +59,23 @@ public class ApiUtilsJsonPathTest {
         assertNotNull(tagCode);
         assertTrue((Boolean) tagCode.get("checked"));
         assertEquals(List.of("vip", "new"), tagCode.get("value"));
+    }
+
+    @Test
+    public void apiStructurePreviewUsesJsonPathRowsWhenJsonPathIsEnabled() throws Exception {
+        ApiDefinition definition = new ApiDefinition();
+        definition.setShowApiStructure(true);
+        definition.setUseJsonPath(true);
+        definition.setJsonPath("$data.dataList");
+        definition.setFields(new ArrayList<>());
+
+        ApiDefinition checked = invokeCheckApiDefinition(definition, RESPONSE);
+
+        assertEquals("$.data.dataList", checked.getJsonPath());
+        assertNotNull(field(checked.getJsonFields(), "id"));
+        assertNotNull(field(checked.getJsonFields(), "user"));
+        assertNotNull(field(checked.getJsonFields(), "tags"));
+        assertEquals(null, field(checked.getJsonFields(), "data"));
     }
 
     @Test
@@ -105,6 +127,39 @@ public class ApiUtilsJsonPathTest {
         assertEquals("[\"vip\",\"paid\"]", rows.get(0)[1]);
         assertEquals("2", rows.get(1)[0]);
         assertEquals("new", rows.get(1)[1]);
+    }
+
+    @Test
+    public void execHttpRequestSendsFixedAuthorizationHeader() throws Exception {
+        AtomicReference<String> authorization = new AtomicReference<>();
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/users", exchange -> {
+            authorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            byte[] body = RESPONSE.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+        try {
+            ApiDefinition definition = new ApiDefinition();
+            definition.setUrl("http://127.0.0.1:" + server.getAddress().getPort() + "/users");
+            definition.setMethod("GET");
+            definition.setRequest(new ApiDefinitionRequest());
+            definition.getRequest().setHeaders(List.of(Map.of(
+                    "name", "Authorization",
+                    "nameType", "fixed",
+                    "value", "Bearer crest-token"
+            )));
+
+            String response = ApiUtils.execHttpRequest(true, definition, 10, List.of());
+
+            assertTrue(response.contains("dataList"));
+            assertEquals("Bearer crest-token", authorization.get());
+        } finally {
+            server.stop(0);
+        }
     }
 
     private ApiDefinition invokeCheckApiDefinition(ApiDefinition definition, String response) throws Exception {

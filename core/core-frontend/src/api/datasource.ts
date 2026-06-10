@@ -50,9 +50,11 @@ export const listDatasourceType = async (): Promise<IResponse> => {
 }
 export const getTableField = (data = {}) => request.post({ url: '/datasource/table-fields', data })
 
-export const syncApiTable = (data = {}) => request.post({ url: '/datasource/api-tables/sync', data })
+export const syncApiTable = (data = {}) =>
+  request.post({ url: '/datasource/api-tables/sync', data })
 
-export const syncApiDs = (data = {}) => request.post({ url: '/datasource/api-data-sources/sync', data })
+export const syncApiDs = (data = {}) =>
+  request.post({ url: '/datasource/api-data-sources/sync', data })
 
 export const listDatasourceTables = async (data = {}): Promise<IResponse> => {
   return request.post({ url: '/datasource/tables', data }).then(res => {
@@ -103,7 +105,8 @@ export const latestUse = async (data = {}) => {
   return request.post({ url: '/datasource/latest-use', data })
 }
 
-export const validateById = (id: number) => request.get({ url: '/datasource/validate/' + id })
+export const validateById = (id: number | string) =>
+  request.get({ url: '/datasource/validate/' + id })
 
 export const save = async (data = {}): Promise<Dataset> => {
   nameTrim(data)
@@ -175,11 +178,13 @@ export const getDsTree = async (data = {}): Promise<IResponse> => {
 
 export const deleteById = (id: number) => request.delete({ url: '/datasource/' + id })
 
-export const getById = (id: number) => request.get({ url: '/datasource/detail/' + id })
+export const getById = (id: number | string) => request.get({ url: '/datasource/detail/' + id })
 
-export const getHidePwById = (id: number) => request.get({ url: '/datasource/password/masked/' + id })
+export const getHidePwById = (id: number | string) =>
+  request.get({ url: '/datasource/password/masked/' + id })
 
-export const getSimpleDs = (id: number) => request.get({ url: '/datasource/simple-info/' + id })
+export const getSimpleDs = (id: number | string) =>
+  request.get({ url: '/datasource/simple-info/' + id })
 
 export const uploadFile = async (data): Promise<IResponse> => {
   return request

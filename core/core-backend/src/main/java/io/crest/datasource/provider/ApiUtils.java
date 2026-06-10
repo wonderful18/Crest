@@ -654,7 +654,9 @@ public class ApiUtils {
             CrestException.throwException("该请求返回数据为空");
         }
         List<Map<String, Object>> fields = new ArrayList<>();
-        if (apiDefinition.isShowApiStructure() || !apiDefinition.isUseJsonPath()) {
+        boolean useSelectedJsonPath = apiDefinition.isUseJsonPath()
+                && StringUtils.isNotBlank(apiDefinition.getJsonPath());
+        if (!useSelectedJsonPath) {
             String rootPath;
             if (response.startsWith("[")) {
                 rootPath = "$[*]";

@@ -209,14 +209,36 @@ onMounted(loadTable)
     <div class="table-wrap">
       <div class="toolbar">
         <el-select v-model="filters.operationType" placeholder="操作类型" clearable>
-          <el-option v-for="item in operationTypes" :key="item.value" :label="item.label" :value="item.value" />
+          <el-option
+            v-for="item in operationTypes"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
         </el-select>
         <el-select v-model="filters.resourceType" placeholder="资源类型" clearable>
-          <el-option v-for="item in resourceTypes" :key="item.value" :label="item.label" :value="item.value" />
+          <el-option
+            v-for="item in resourceTypes"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
         </el-select>
         <el-input v-model="filters.operatorAccount" placeholder="操作人" clearable />
-        <el-date-picker v-model="filters.startTime" type="datetime" placeholder="开始时间" format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" />
-        <el-date-picker v-model="filters.endTime" type="datetime" placeholder="结束时间" format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" />
+        <el-date-picker
+          v-model="filters.startTime"
+          type="datetime"
+          placeholder="开始时间"
+          format="YYYY-MM-DD HH:mm:ss"
+          value-format="YYYY-MM-DD HH:mm:ss"
+        />
+        <el-date-picker
+          v-model="filters.endTime"
+          type="datetime"
+          placeholder="结束时间"
+          format="YYYY-MM-DD HH:mm:ss"
+          value-format="YYYY-MM-DD HH:mm:ss"
+        />
         <el-button type="primary" @click="loadTable">查询</el-button>
         <el-button @click="resetFilters">重置</el-button>
       </div>
@@ -246,7 +268,12 @@ onMounted(loadTable)
           </template>
         </el-table-column>
         <el-table-column prop="resource_id" label="资源ID" width="120" show-overflow-tooltip />
-        <el-table-column prop="request_url" label="请求地址" min-width="200" show-overflow-tooltip />
+        <el-table-column
+          prop="request_url"
+          label="请求地址"
+          min-width="200"
+          show-overflow-tooltip
+        />
         <el-table-column label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="row.response_code === 200 ? 'success' : 'danger'" size="small">

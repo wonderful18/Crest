@@ -294,7 +294,7 @@ const handleLoadExcel = data => {
 const validateDS = () => {
   let nodeTmpInfo = reactive<Node>(cloneDeep(defaultInfo))
   Object.assign(nodeTmpInfo, cloneDeep(nodeInfo))
-  validateById(Number(nodeTmpInfo.id))
+  validateById(nodeTmpInfo.id)
     .then(res => {
       if (res.data.type.startsWith('API')) {
         let error = 0
@@ -980,7 +980,7 @@ const editDatasource = (editType?: number) => {
   if (nodeInfo.type.startsWith('Excel')) {
     nodeInfo.editType = editType
   }
-  return getById(Number(nodeInfo.id)).then(res => {
+  return getById(nodeInfo.id).then(res => {
     let arr = pluginDs.value.filter(ele => {
       return ele.type == res.data.type
     })
@@ -2463,7 +2463,7 @@ const getMenuList = (val: boolean) => {
             cursor: pointer;
             &::after {
               content: '';
-              background-color: var(--ed-color-primary-1a, #3B82F61a);
+              background-color: var(--ed-color-primary-1a, #3b82f61a);
               width: 28px;
               height: 28px;
               position: absolute;

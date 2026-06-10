@@ -275,7 +275,7 @@ onMounted(() => {
   }
   :deep(.is-active) {
     font-weight: 500;
-    color: var(--ed-color-primary, #3B82F6);
+    color: var(--ed-color-primary, #3b82f6);
   }
 
   :deep(.ed-tabs__nav-scroll) {

@@ -355,7 +355,7 @@ onMounted(() => {
   width: 100%;
   justify-content: space-between;
   align-items: center;
-  background-color: #3B82F60a;
+  background-color: #3b82f60a;
   border: 1px solid var(--ed-color-primary) !important;
 }
 

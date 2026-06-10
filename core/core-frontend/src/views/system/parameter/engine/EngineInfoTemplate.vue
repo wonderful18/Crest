@@ -178,9 +178,7 @@ const validateById = async () => {
     border-radius: 8px;
     display: inline-flex;
     align-items: center;
-    transition:
-      background-color 0.16s ease,
-      color 0.16s ease;
+    transition: background-color 0.16s ease, color 0.16s ease;
 
     .ed-icon {
       margin-left: 4px;

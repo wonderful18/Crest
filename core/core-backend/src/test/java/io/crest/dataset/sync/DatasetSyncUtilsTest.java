@@ -298,15 +298,15 @@ public class DatasetSyncUtilsTest {
     public void reconcileStatusReportsRowCountAndWatermarkMismatches() {
         DatasetSyncUtils.ReconcileResult passed = DatasetSyncUtils.reconcile(10L, 10L, "2026-05-15 10:00:00.0", "2026-05-15 10:00:00.0");
         assertEquals("PASSED", passed.status());
-        assertEquals("对账通过", passed.message());
+        assertEquals("源数据与缓存一致", passed.message());
 
         DatasetSyncUtils.ReconcileResult rowMismatch = DatasetSyncUtils.reconcile(10L, 12L, "2026-05-15 10:00:00.0", "2026-05-15 10:00:00.0");
         assertEquals("WARNING", rowMismatch.status());
-        assertEquals("源端行数 10 与缓存行数 12 不一致", rowMismatch.message());
+        assertEquals("源数据行数 10 与缓存行数 12 不一致", rowMismatch.message());
 
         DatasetSyncUtils.ReconcileResult watermarkMismatch = DatasetSyncUtils.reconcile(10L, 10L, "2026-05-15 10:00:00.0", "2026-05-15 09:59:00.0");
         assertEquals("WARNING", watermarkMismatch.status());
-        assertEquals("源端最大水位 2026-05-15 10:00:00.0 与缓存最大水位 2026-05-15 09:59:00.0 不一致", watermarkMismatch.message());
+        assertEquals("源数据最大增量值 2026-05-15 10:00:00.0 与缓存最大增量值 2026-05-15 09:59:00.0 不一致", watermarkMismatch.message());
     }
 
     private DatasetTableFieldDTO field(Long id, String originName, String name, String engineFieldName, Integer fieldType, Integer extField) {

@@ -171,17 +171,17 @@ public class DatasetSyncUtils {
 
     public static ReconcileResult reconcile(Long sourceRowCount, Long cacheRowCount, String sourceWatermark, String cacheWatermark) {
         if (!Objects.equals(sourceRowCount, cacheRowCount)) {
-            return new ReconcileResult("WARNING", "源端行数 " + sourceRowCount + " 与缓存行数 " + cacheRowCount + " 不一致");
+            return new ReconcileResult("WARNING", "源数据行数 " + sourceRowCount + " 与缓存行数 " + cacheRowCount + " 不一致");
         }
         if (StringUtils.isNotBlank(sourceWatermark) || StringUtils.isNotBlank(cacheWatermark)) {
             if (!Strings.CS.equals(StringUtils.defaultString(sourceWatermark), StringUtils.defaultString(cacheWatermark))) {
                 return new ReconcileResult(
                         "WARNING",
-                        "源端最大水位 " + sourceWatermark + " 与缓存最大水位 " + cacheWatermark + " 不一致"
+                        "源数据最大增量值 " + sourceWatermark + " 与缓存最大增量值 " + cacheWatermark + " 不一致"
                 );
             }
         }
-        return new ReconcileResult("PASSED", "对账通过");
+        return new ReconcileResult("PASSED", "源数据与缓存一致");
     }
 
     public static List<TableField> toEngineTableFields(List<DatasetTableFieldDTO> fields) {

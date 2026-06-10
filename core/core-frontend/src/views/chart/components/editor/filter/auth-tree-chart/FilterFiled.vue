@@ -581,7 +581,9 @@ const emits = defineEmits(['update:item', 'del'])
           </template>
           <template v-else-if="!['null', 'empty', 'not_null', 'not_empty'].includes(item.term)">
             <el-input
-              v-if="item.fieldType === 1 && item.filterTypeTime === 'dynamicDate' && !item.timeValue"
+              v-if="
+                item.fieldType === 1 && item.filterTypeTime === 'dynamicDate' && !item.timeValue
+              "
               @click="handleClick"
               readonly
               class="w70 mar5"
@@ -1115,9 +1117,9 @@ const emits = defineEmits(['update:item', 'del'])
           line-height: 26px;
           border-radius: 6px;
           padding: 0 4px;
-          color: var(--ed-color-primary, #3B82F6);
+          color: var(--ed-color-primary, #3b82f6);
           &:hover {
-            background-color: var(--ed-color-primary-1a, #3B82F61a);
+            background-color: var(--ed-color-primary-1a, #3b82f61a);
           }
         }
       }
