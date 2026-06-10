@@ -70,6 +70,7 @@ const headerSuggestions = [
   { value: 'Accept-Charset' },
   { value: 'Accept-Language' },
   { value: 'Accept-Datetime' },
+  { value: 'Authorization' },
   { value: 'X-CREST-TOKEN' },
   { value: 'Cache-Control' },
   { value: 'Connection' },

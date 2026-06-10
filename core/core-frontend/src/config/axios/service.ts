@@ -19,6 +19,7 @@ import { useRequestStoreWithOut } from '@/store/modules/request'
 import { clearCache } from '@/utils/cacheUtil'
 import { securityConfig } from './hmac'
 import { isLoginPath } from '@/router/authFailureNavigation.mjs'
+import { shouldAttachLinkToken } from './linkTokenPolicy.mjs'
 
 type AxiosErrorWidthLoading<T> = T & {
   config: {
@@ -117,7 +118,7 @@ service.interceptors.request.use(
     if (isMobile()) {
       ;(config.headers as AxiosRequestHeaders)['X-CREST-MOBILE'] = true
     }
-    if (linkStore.getLinkToken) {
+    if (linkStore.getLinkToken && shouldAttachLinkToken(config.url, window.location.hash)) {
       ;(config.headers as AxiosRequestHeaders)['X-CREST-LINK-TOKEN'] = linkStore.getLinkToken
     } else if (embeddedStore.token) {
       ;(config.headers as AxiosRequestHeaders)['X-CREST-EMBEDDED-TOKEN'] = embeddedStore.token
