@@ -212,14 +212,18 @@ const changeTableThreshold = () => {
             return
           }
           if (
-            (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) &&
+            (field.field.fieldType === 2 ||
+              field.field.fieldType === 3 ||
+              field.field.fieldType === 4) &&
             (parseFloat(ele.min).toString() === 'NaN' || parseFloat(ele.max).toString() === 'NaN')
           ) {
             ElMessage.error(t('chart.value_error'))
             return
           }
           if (
-            (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) &&
+            (field.field.fieldType === 2 ||
+              field.field.fieldType === 3 ||
+              field.field.fieldType === 4) &&
             parseFloat(ele.min) > parseFloat(ele.max)
           ) {
             ElMessage.error(t('chart.value_min_max_invalid'))
@@ -233,7 +237,9 @@ const changeTableThreshold = () => {
           if (
             !ele.term.includes('null') &&
             !ele.term.includes('empty') &&
-            (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) &&
+            (field.field.fieldType === 2 ||
+              field.field.fieldType === 3 ||
+              field.field.fieldType === 4) &&
             parseFloat(ele.value).toString() === 'NaN'
           ) {
             ElMessage.error(t('chart.value_error'))
@@ -305,14 +311,18 @@ const changeLineThreshold = () => {
           return
         }
         if (
-          (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) &&
+          (field.field.fieldType === 2 ||
+            field.field.fieldType === 3 ||
+            field.field.fieldType === 4) &&
           (parseFloat(ele.min).toString() === 'NaN' || parseFloat(ele.max).toString() === 'NaN')
         ) {
           ElMessage.error(t('chart.value_error'))
           return
         }
         if (
-          (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) &&
+          (field.field.fieldType === 2 ||
+            field.field.fieldType === 3 ||
+            field.field.fieldType === 4) &&
           parseFloat(ele.min) > parseFloat(ele.max)
         ) {
           ElMessage.error(t('chart.value_min_max_invalid'))
@@ -324,7 +334,9 @@ const changeLineThreshold = () => {
           return
         }
         if (
-          (field.field.fieldType === 2 || field.field.fieldType === 3 || field.field.fieldType === 4) &&
+          (field.field.fieldType === 2 ||
+            field.field.fieldType === 3 ||
+            field.field.fieldType === 4) &&
           parseFloat(ele.value).toString() === 'NaN'
         ) {
           ElMessage.error(t('chart.value_error'))

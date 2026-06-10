@@ -719,7 +719,8 @@ const setParameters = field => {
     if (curComponent.value.displayType === '22') {
       const isNumParameter = curComponent.value.checkedFields.some(ele => {
         return curComponent.value.parameters?.some(
-          itx => [2, 3].includes(itx.fieldType) && curComponent.value.checkedFieldsMap[ele] === itx.id
+          itx =>
+            [2, 3].includes(itx.fieldType) && curComponent.value.checkedFieldsMap[ele] === itx.id
         )
       })
 
@@ -758,7 +759,9 @@ const setType = () => {
         return
       }
       if (!(field?.fieldType === 1 && curComponent.value.displayType === '7')) {
-        curComponent.value.displayType = `${[3, 4].includes(field?.fieldType) ? 2 : field?.fieldType}`
+        curComponent.value.displayType = `${
+          [3, 4].includes(field?.fieldType) ? 2 : field?.fieldType
+        }`
       }
       if (field?.fieldType === 7) {
         curComponent.value.displayType = '0'

@@ -228,7 +228,16 @@ const dfsSubmit = arr => {
         name,
         timeValue
       } = ele
-      errorDetected({ fieldType, enumValue, filterType, term, value, name, timeValue, filterTypeTime })
+      errorDetected({
+        fieldType,
+        enumValue,
+        filterType,
+        term,
+        value,
+        name,
+        timeValue,
+        filterTypeTime
+      })
       if (fieldId) {
         items.push({
           enumValue: enumValue || [],

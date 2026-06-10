@@ -281,7 +281,9 @@ const validMaxFieldNum = computed(() => {
 })
 
 const isNumType = field => {
-  return quotaData.value.find(ele => ele.id === field.id && NUMERIC_FIELD_TYPES.includes(ele.fieldType))
+  return quotaData.value.find(
+    ele => ele.id === field.id && NUMERIC_FIELD_TYPES.includes(ele.fieldType)
+  )
 }
 
 /**

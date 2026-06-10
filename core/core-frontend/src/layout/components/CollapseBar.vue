@@ -63,9 +63,7 @@ onMounted(() => {
   color: #64748b;
   background: #fff;
   border-right: 1px solid #e2e8f0;
-  transition:
-    color 0.14s ease,
-    background 0.14s ease;
+  transition: color 0.14s ease, background 0.14s ease;
 
   &:hover {
     color: #0f172a;

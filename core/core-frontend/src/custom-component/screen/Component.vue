@@ -236,7 +236,9 @@ const {
   searchCount
 } = toRefs(props)
 
-const tabItems = computed(() => (Array.isArray(element.value?.propValue) ? element.value.propValue : []))
+const tabItems = computed(() =>
+  Array.isArray(element.value?.propValue) ? element.value.propValue : []
+)
 
 const ensureTabItems = () => {
   if (!Array.isArray(element.value.propValue)) {

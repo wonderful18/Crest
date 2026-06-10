@@ -328,7 +328,11 @@ watch(
   () => [view.value.type, view.value],
   newVal => {
     const viewConfig = getViewConfig(newVal[0])
-    state.chartTypeOptions.splice(0, state.chartTypeOptions.length, ...(viewConfig ? [viewConfig] : []))
+    state.chartTypeOptions.splice(
+      0,
+      state.chartTypeOptions.length,
+      ...(viewConfig ? [viewConfig] : [])
+    )
     state.useless = newVal[0]
   },
   { immediate: true, deep: false }
@@ -704,7 +708,9 @@ const addAxis = (e, axis: AxisType) => {
         if (list[i].groupType === 'd' && list[i].fieldType === 1) {
           list[i].sort = 'asc'
         }
-        if (!(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))) {
+        if (
+          !(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))
+        ) {
           list.splice(i, 1)
           i--
           valid = false
@@ -724,7 +730,9 @@ const addAxis = (e, axis: AxisType) => {
     if (list && list.length > 0) {
       let valid = true
       for (let i = 0; i < list.length; i++) {
-        if (!(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))) {
+        if (
+          !(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))
+        ) {
           list.splice(i, 1)
           i--
           valid = false
@@ -4183,7 +4191,7 @@ const chartStyleScroll = (val: any) => {
         font-size: 14px;
       }
       &.active {
-        border-color: var(--ed-color-primary, #3B82F6);
+        border-color: var(--ed-color-primary, #3b82f6);
       }
     }
 
@@ -4200,7 +4208,7 @@ const chartStyleScroll = (val: any) => {
       min-height: 100%;
       z-index: 5;
       .items {
-        border-color: var(--ed-color-primary, #3B82F6);
+        border-color: var(--ed-color-primary, #3b82f6);
         & + .items {
           margin-top: 2px;
         }
@@ -4290,7 +4298,7 @@ const chartStyleScroll = (val: any) => {
       .ed-tabs__item {
         height: 35px;
         line-height: 35px;
-        color: var(--ed-color-primary, #3B82F6);
+        color: var(--ed-color-primary, #3b82f6);
         font-family: var(--crest-custom_font, 'PingFang');
         font-size: 12px;
         font-style: normal;
@@ -4319,7 +4327,7 @@ const chartStyleScroll = (val: any) => {
       .ed-tabs__item {
         height: 35px;
         line-height: 35px;
-        color: var(--ed-color-primary, #3B82F6);
+        color: var(--ed-color-primary, #3b82f6);
         font-family: var(--crest-custom_font, 'PingFang');
         font-size: 12px;
         font-style: normal;
@@ -4355,7 +4363,7 @@ const chartStyleScroll = (val: any) => {
       box-shadow: 0 0 0 1px hsla(0, 0%, 100%, 0.15) inset !important;
     }
     :deep(.ed-input__wrapper:hover) {
-      box-shadow: 0 0 0 1px var(--ed-color-primary, #3B82F6) inset !important;
+      box-shadow: 0 0 0 1px var(--ed-color-primary, #3b82f6) inset !important;
     }
   }
   .query-style-tab {
@@ -4379,7 +4387,7 @@ const chartStyleScroll = (val: any) => {
       .ed-tabs__item {
         height: 35px;
         line-height: 35px;
-        color: var(--ed-color-primary, #3B82F6);
+        color: var(--ed-color-primary, #3b82f6);
         font-family: var(--crest-custom_font, 'PingFang');
         font-size: 12px;
         font-style: normal;
@@ -4521,7 +4529,7 @@ span {
         position: absolute;
         left: 16px;
         top: 0;
-        background: var(--ed-color-primary, #3B82F6);
+        background: var(--ed-color-primary, #3b82f6);
       }
     }
 
@@ -4580,7 +4588,7 @@ span {
     }
 
     &.sortable-chosen {
-      border: 1px solid var(--ed-color-primary, #3B82F6);
+      border: 1px solid var(--ed-color-primary, #3b82f6);
       background: #fff;
 
       &:hover {
@@ -4768,8 +4776,8 @@ span {
       }
 
       &.active {
-        color: var(--ed-color-primary, #3B82F6);
-        border-color: var(--ed-color-primary, #3B82F6);
+        color: var(--ed-color-primary, #3b82f6);
+        border-color: var(--ed-color-primary, #3b82f6);
       }
 
       &.invalid {
@@ -4848,7 +4856,7 @@ span {
   .result-style-dark {
     :deep(.ed-button) {
       color: #ffffff;
-      background-color: var(--ed-color-primary, #3B82F6);
+      background-color: var(--ed-color-primary, #3b82f6);
       border: none;
       border-radius: 0;
     }
@@ -4894,7 +4902,7 @@ span {
       border-radius: 2px;
     }
     :deep(.ed-button:hover) {
-      border: 1px solid var(--ed-color-primary, #3B82F6);
+      border: 1px solid var(--ed-color-primary, #3b82f6);
     }
   }
 

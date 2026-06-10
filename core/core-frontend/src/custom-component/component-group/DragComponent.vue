@@ -86,7 +86,7 @@ const handleClick = (event: MouseEvent | KeyboardEvent) => {
     .drag-icon {
       height: 40px;
       width: 40px;
-      color: var(--ed-color-primary, #3B82F6);
+      color: var(--ed-color-primary, #3b82f6);
     }
   }
   .label-content {

@@ -74,6 +74,12 @@ import DatasetUnion from './DatasetUnion.vue'
 import { cloneDeep, debounce } from 'lodash-es'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 import { iconDatasourceMap } from '@/components/icon-group/datasource-list'
+import {
+  buildDatasetSyncTaskPayload,
+  executeDatasetSyncNowFlow,
+  formatDatasetSyncRowCount,
+  normalizeDatasetSyncInfo
+} from './datasetSyncWorkflow.mjs'
 interface DragEvent extends MouseEvent {
   dataTransfer: DataTransfer
 }
@@ -391,18 +397,8 @@ const editeSave = () => {
   if (!validateSyncSetting()) {
     return
   }
-  const union = []
   loading.value = true
-  dfsNodeList(union, datasetDrag.value.getNodeList())
-  saveDatasetTree({
-    ...nodeInfo,
-    name: datasetName.value,
-    union,
-    isCross: isCross.value,
-    mode: datasetMode.value,
-    allFields: allfields.value,
-    nodeType: 'dataset'
-  })
+  saveCurrentDataset()
     .then(() => persistDatasetSync(nodeInfo.id))
     .then(() => {
       isUpdate = false
@@ -1032,7 +1028,10 @@ const syncStatusText = computed(() => {
   return '未缓存'
 })
 const latestSyncLog = computed(() => syncLogs.value[0])
-const latestSyncInfo = computed(() => latestSyncLog.value?.info || syncTask.lastVerifyMessage || '')
+const latestSyncInfo = computed(() =>
+  normalizeDatasetSyncInfo(latestSyncLog.value?.info || syncTask.lastVerifyMessage || '')
+)
+const latestSyncRowCountText = computed(() => formatDatasetSyncRowCount(latestSyncLog.value))
 const syncDetailText = computed(() => {
   const info = String(latestSyncInfo.value || '')
   if (!info) return ''
@@ -1188,33 +1187,62 @@ const persistDatasetSync = async id => {
   if (syncTask.syncRate === 'SIMPLE_CRON') {
     refreshSimpleCron()
   }
-  await saveDatasetSyncTask({
-    ...toRaw(syncTask),
-    datasetGroupId: id,
+  await saveDatasetSyncTask(
+    buildDatasetSyncTaskPayload({
+      syncTask: toRaw(syncTask),
+      datasetGroupId: id,
+      datasetName: datasetName.value
+    })
+  )
+}
+
+const saveCurrentDataset = async () => {
+  const union = []
+  dfsNodeList(union, datasetDrag.value.getNodeList())
+  const saved = await saveDatasetTree({
+    ...nodeInfo,
     name: datasetName.value,
-    incrementalFieldId: syncTask.updateType === 'add_scope' ? syncTask.incrementalFieldId : null
+    union,
+    isCross: isCross.value,
+    mode: datasetMode.value,
+    allFields: allfields.value,
+    nodeType: 'dataset'
   })
+  if (saved) {
+    nodeInfo = {
+      id: saved.id || nodeInfo.id,
+      pid: saved.pid || nodeInfo.pid,
+      name: saved.name || datasetName.value
+    }
+    currentDatasetId.value = nodeInfo.id || currentDatasetId.value
+    datasetName.value = nodeInfo.name
+    allfields.value = saved.allFields || allfields.value
+  }
+  return saved
 }
 
 const executeDatasetSyncNow = async () => {
-  if (!currentDatasetId.value) {
-    ElMessage.warning('请先保存数据集')
-    return
-  }
-  if (syncRunning.value) {
-    ElMessage.warning('已有同步任务正在执行')
+  if (!validateSyncSetting()) {
     return
   }
   syncSubmitting.value = true
   try {
-    await persistDatasetSync(currentDatasetId.value)
-    const task = await executeDatasetSync(currentDatasetId.value)
-    if (task) {
-      Object.assign(syncTask, task)
-    }
-    syncLogs.value = await datasetSyncLogs(currentDatasetId.value)
-    startSyncPolling()
-    ElMessage.success('同步任务已提交')
+    await executeDatasetSyncNowFlow({
+      currentDatasetId: currentDatasetId.value,
+      syncRunning: syncRunning.value,
+      warn: ElMessage.warning,
+      saveCurrentDataset,
+      persistDatasetSync,
+      executeDatasetSync,
+      loadDatasetSyncLogs: datasetSyncLogs,
+      applyTask: task => Object.assign(syncTask, task),
+      applyLogs: logs => {
+        syncLogs.value = logs
+      },
+      startSyncPolling,
+      success: ElMessage.success
+    })
+    isUpdate = false
   } finally {
     syncSubmitting.value = false
   }
@@ -2261,7 +2289,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                 {{ syncRunning ? '更新中' : '立即更新' }}
               </el-button>
               <div class="sync-status" v-if="syncTask.lastExecTime || latestSyncLog">
-                <span v-if="latestSyncLog">{{ latestSyncLog.rowCount || 0 }} 行</span>
+                <span v-if="latestSyncRowCountText">{{ latestSyncRowCountText }}</span>
                 <span v-if="syncTask.lastExecTime">{{
                   dayjs(syncTask.lastExecTime).format('YYYY-MM-DD HH:mm:ss')
                 }}</span>
@@ -2319,10 +2347,10 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                 <el-checkbox
                   v-model="syncTask.verifyEnabled"
                   class="sync-check"
-                  :true-label="1"
-                  :false-label="0"
+                  :true-value="1"
+                  :false-value="0"
                 >
-                  更新后校验
+                  更新后校验数据一致性
                 </el-checkbox>
               </div>
             </template>

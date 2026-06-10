@@ -31,8 +31,7 @@ export const comInfo = () => {
               arr = [
                 ...arr,
                 element.propValue.filter(
-                  coms =>
-                    !['VQuery', 'Tabs'].includes(coms.innerType) && coms.component !== 'Group'
+                  coms => !['VQuery', 'Tabs'].includes(coms.innerType) && coms.component !== 'Group'
                 )
               ]
             }

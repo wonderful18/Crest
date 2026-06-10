@@ -66,7 +66,8 @@ public class DatasetSyncManage {
     @Resource
     private CommonThreadPool commonThreadPool;
 
-    public DatasetSyncTaskDTO executeNow(Long datasetGroupId) {
+    public DatasetSyncTaskDTO executeNow(Long datasetGroupId) throws Exception {
+        assertDatasetSyncModeEnabled(datasetGroupId);
         CoreDatasetSyncTask task = taskManage.selectByDatasetGroupId(datasetGroupId);
         if (task == null) {
             DatasetSyncTaskDTO dto = new DatasetSyncTaskDTO();
@@ -163,13 +164,7 @@ public class DatasetSyncManage {
 
     @SuppressWarnings("unchecked")
     private SyncContext prepareContext(Long datasetGroupId) throws Exception {
-        DatasetGroupInfoDTO dataset = datasetGroupManage.getForCount(datasetGroupId);
-        if (dataset == null || !Strings.CI.equals(dataset.getNodeType(), "dataset")) {
-            CrestException.throwException("数据集不存在");
-        }
-        if (!Objects.equals(dataset.getMode(), 1)) {
-            CrestException.throwException("请先开启数据集同步模式");
-        }
+        DatasetGroupInfoDTO dataset = assertDatasetSyncModeEnabled(datasetGroupId);
         if (Objects.equals(dataset.getIsCross(), true)) {
             CrestException.throwException("数据集缓存暂不支持跨源数据集");
         }
@@ -199,6 +194,17 @@ public class DatasetSyncManage {
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
         Provider sourceProvider = ProviderFactory.getProvider(datasource.getType());
         return new SyncContext(dataset, sourceSql, dsMap, sourceProvider, engine, engineProvider, syncFields, tableFields);
+    }
+
+    private DatasetGroupInfoDTO assertDatasetSyncModeEnabled(Long datasetGroupId) throws Exception {
+        DatasetGroupInfoDTO dataset = datasetGroupManage.getForCount(datasetGroupId);
+        if (dataset == null || !Strings.CI.equals(dataset.getNodeType(), "dataset")) {
+            CrestException.throwException("数据集不存在");
+        }
+        if (!Objects.equals(dataset.getMode(), 1)) {
+            CrestException.throwException("请先开启数据集同步模式");
+        }
+        return dataset;
     }
 
     private SyncResult syncFull(SyncContext context, CoreDatasetSyncTask task, long syncStartTime) throws Exception {
@@ -415,7 +421,7 @@ public class DatasetSyncManage {
             }
             result.reconcileResult = DatasetSyncUtils.reconcile(result.sourceRowCount, result.cacheRowCount, sourceWatermark, cacheWatermark);
         } catch (Exception e) {
-            result.reconcileResult = new DatasetSyncUtils.ReconcileResult("WARNING", "对账执行失败：" + e.getMessage());
+            result.reconcileResult = new DatasetSyncUtils.ReconcileResult("WARNING", "数据一致性校验失败：" + e.getMessage());
         }
     }
 

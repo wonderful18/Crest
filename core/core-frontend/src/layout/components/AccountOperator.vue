@@ -170,9 +170,7 @@ if (uid.value === '1') {
   border-radius: 999px;
   overflow: hidden;
   cursor: pointer;
-  transition:
-    background 0.14s ease,
-    border-color 0.14s ease;
+  transition: background 0.14s ease, border-color 0.14s ease;
   &:hover {
     background-color: #ffffff;
     border-color: #e2e8f0;

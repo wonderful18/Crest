@@ -730,7 +730,10 @@ defineExpose({
                 >
                   <template #prefix>
                     <el-icon>
-                      <Icon :className="`field-icon-${fieldTypeLowercase[scope.row.extractedFieldType]}`"
+                      <Icon
+                        :className="`field-icon-${
+                          fieldTypeLowercase[scope.row.extractedFieldType]
+                        }`"
                         ><component
                           class="svg-icon"
                           :class="`field-icon-${fieldTypeLowercase[scope.row.extractedFieldType]}`"

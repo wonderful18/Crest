@@ -15,8 +15,7 @@ export const valueSelectedForVariableApi = (page: number, limit: number, data) =
 
 export const valueForVariable = id => request.get({ url: '/sys-variable/value/selected/' + id })
 
-export const variableValueCreateApi = data =>
-  request.post({ url: '/sys-variable/value', data })
+export const variableValueCreateApi = data => request.post({ url: '/sys-variable/value', data })
 
 export const variableValueDeletelApi = id => request.delete({ url: '/sys-variable/value/' + id })
 

@@ -815,9 +815,9 @@ onMounted(() => {
     margin-right: 4px;
   }
   .done-finish {
-    color: var(--ed-color-primary, #3B82F6);
+    color: var(--ed-color-primary, #3b82f6);
     &:hover {
-      background-color: var(--ed-color-primary-1a, #3B82F61a) !important;
+      background-color: var(--ed-color-primary-1a, #3b82f61a) !important;
     }
   }
   .input-suffix-btn {
