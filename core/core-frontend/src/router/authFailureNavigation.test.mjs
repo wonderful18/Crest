@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { resolveAuthFailureNavigation } from './authFailureNavigation.mjs'
+import { isLoginPath, resolveAuthFailureNavigation } from './authFailureNavigation.mjs'
 
 describe('auth failure navigation', () => {
   it('allows the normal login route to render after cached auth fails', () => {
+    assert.equal(isLoginPath('/login'), true)
     assert.deepEqual(
       resolveAuthFailureNavigation({
         path: '/login',
