@@ -15,9 +15,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DatasetSyncUtils {
@@ -27,6 +29,10 @@ public class DatasetSyncUtils {
     public static final int DEFAULT_CACHE_EXPIRE_HOURS = 26;
     public static final int DEFAULT_TASK_TIMEOUT_MINUTES = 360;
     public static final int DEFAULT_FAILURE_WARN_THRESHOLD = 1;
+    private static final Set<String> SUPPORTED_CACHE_SOURCE_TYPES = Set.of(
+            DatasourceConfiguration.DatasourceType.obOracle.name(),
+            DatasourceConfiguration.DatasourceType.mysql.name()
+    );
 
     private DatasetSyncUtils() {
     }
@@ -48,11 +54,26 @@ public class DatasetSyncUtils {
         if (!(dsMapObject instanceof Map<?, ?> dsMap) || dsMap.size() != 1) {
             return false;
         }
+        if (hasSqlParameterValues(sqlMap)) {
+            return false;
+        }
         Object datasourceObject = dsMap.values().iterator().next();
         if (!(datasourceObject instanceof DatasourceSchemaDTO datasource)) {
             return false;
         }
-        return Strings.CI.equals(datasource.getType(), DatasourceConfiguration.DatasourceType.obOracle.name());
+        return isSupportedCacheSource(datasource.getType());
+    }
+
+    private static boolean hasSqlParameterValues(Map<String, Object> sqlMap) {
+        Object tableFieldWithValues = sqlMap.get("tableFieldWithValues");
+        if (tableFieldWithValues instanceof Collection<?> values) {
+            return !values.isEmpty();
+        }
+        return tableFieldWithValues != null;
+    }
+
+    public static boolean isSupportedCacheSource(String datasourceType) {
+        return SUPPORTED_CACHE_SOURCE_TYPES.stream().anyMatch(type -> Strings.CI.equals(type, datasourceType));
     }
 
     public static boolean isCacheReady(CoreDatasetSyncTask task) {
@@ -164,9 +185,16 @@ public class DatasetSyncUtils {
     }
 
     public static String buildIncrementalPredicate(DatasetTableFieldDTO field, String lastValue, String prefix, String suffix, boolean inclusive) {
+        return buildIncrementalPredicate(field, lastValue, prefix, suffix, inclusive, DatasourceConfiguration.DatasourceType.obOracle.name());
+    }
+
+    public static String buildIncrementalPredicate(DatasetTableFieldDTO field, String lastValue, String prefix, String suffix, boolean inclusive, String datasourceType) {
         String column = prefix + StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()) + suffix;
         String operator = inclusive ? " >= " : " > ";
         if (Objects.equals(field.getExtractedFieldType(), 1) || Objects.equals(field.getFieldType(), 1)) {
+            if (Strings.CI.equals(datasourceType, DatasourceConfiguration.DatasourceType.mysql.name())) {
+                return column + operator + "'" + escapeSqlLiteral(lastValue) + "'";
+            }
             return column + operator + "TO_TIMESTAMP('" + escapeSqlLiteral(lastValue) + "', 'YYYY-MM-DD HH24:MI:SS.FF')";
         }
         if (Objects.equals(field.getExtractedFieldType(), 2) || Objects.equals(field.getExtractedFieldType(), 3)
@@ -227,6 +255,28 @@ public class DatasetSyncUtils {
         return "SELECT " + selectFields
                 + " FROM (SELECT SYNC_SRC.*, ROWNUM AS SYNC_ROWNUM FROM (" + sourceSql + ") SYNC_SRC WHERE ROWNUM <= "
                 + (offset + limit) + ") SYNC_PAGE WHERE SYNC_ROWNUM > " + offset;
+    }
+
+    public static String buildSourcePageSql(String datasourceType, String sourceSql, int limit, int offset,
+                                            List<DatasetTableFieldDTO> fields, String prefix, String suffix) {
+        if (Strings.CI.equals(datasourceType, DatasourceConfiguration.DatasourceType.mysql.name())) {
+            return buildMysqlPageSql(sourceSql, limit, offset, fields, prefix, suffix);
+        }
+        if (Strings.CI.equals(datasourceType, DatasourceConfiguration.DatasourceType.obOracle.name())) {
+            return buildOraclePageSql(sourceSql, limit, offset, fields, prefix, suffix);
+        }
+        throw new IllegalArgumentException("Unsupported dataset cache source type: " + datasourceType);
+    }
+
+    public static String buildMysqlPageSql(String sourceSql, int limit, int offset, List<DatasetTableFieldDTO> fields, String prefix, String suffix) {
+        String selectFields = fields.stream()
+                .filter(field -> Objects.equals(field.getChecked(), true))
+                .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
+                .map(field -> StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()))
+                .filter(StringUtils::isNotBlank)
+                .map(fieldName -> "SYNC_PAGE." + quote(fieldName, prefix, suffix))
+                .collect(Collectors.joining(","));
+        return "SELECT " + selectFields + " FROM (" + sourceSql + ") SYNC_PAGE LIMIT " + limit + " OFFSET " + offset;
     }
 
     public static String quote(String value, String prefix, String suffix) {
