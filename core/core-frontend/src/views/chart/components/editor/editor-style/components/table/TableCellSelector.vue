@@ -15,6 +15,7 @@ import { convertToAlphaColor, isAlphaColor } from '@/views/chart/components/js/u
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 import { SERIES_NUMBER_FIELD } from '@antv/s2'
+import { getMergeableFieldOptions } from '@/views/chart/components/js/panel/common/tableMergeCells.mjs'
 const dvMainStore = dvMainStoreWithOut()
 const { mobileInPc } = storeToRefs(dvMainStore)
 
@@ -80,6 +81,7 @@ const showCustomAlign = computed(() => {
 })
 
 const alignConfigOptions = reactive([])
+const mergeFieldOptions = reactive([])
 
 const emit = defineEmits(['onTableCellChange'])
 
@@ -89,6 +91,14 @@ const changeTableCell = prop => {
       id: item.id,
       align: item.id === alignConfig.id ? alignConfig.align : item.align
     }))
+  }
+  if (prop === 'mergeCells' && state.tableCellForm.mergeCells) {
+    if (!state.tableCellForm.mergeFields?.length) {
+      state.tableCellForm.mergeFields = mergeFieldOptions.map(item => item.id)
+    }
+  }
+  if (prop === 'mergeFields' && !state.tableCellForm.mergeFields?.length) {
+    state.tableCellForm.mergeCells = false
   }
   emit('onTableCellChange', state.tableCellForm, prop)
 }
@@ -157,6 +167,20 @@ const init = () => {
       } else {
         alignConfig.id = ''
         alignConfig.align = 'left'
+      }
+    }
+    mergeFieldOptions.splice(0, mergeFieldOptions.length)
+    if (props.chart.type === 'table-info') {
+      const options = getMergeableFieldOptions(props.chart?.xAxis || [])
+      mergeFieldOptions.push(...options)
+      const optionIds = new Set(options.map(item => item.id))
+      if (state.tableCellForm.mergeCells && !options.length) {
+        state.tableCellForm.mergeCells = false
+        state.tableCellForm.mergeFields = []
+      } else if (Array.isArray(tableCell.mergeFields)) {
+        state.tableCellForm.mergeFields = tableCell.mergeFields.filter(id => optionIds.has(id))
+      } else if (state.tableCellForm.mergeCells) {
+        state.tableCellForm.mergeFields = options.map(item => item.id)
       }
     }
   }
@@ -593,6 +617,7 @@ onMounted(() => {
       <el-checkbox
         size="small"
         :effect="themes"
+        :disabled="showProperty('mergeFields') && !mergeFieldOptions.length"
         v-model="state.tableCellForm.mergeCells"
         @change="changeTableCell('mergeCells')"
       >
@@ -608,6 +633,29 @@ onMounted(() => {
           </el-tooltip>
         </span>
       </el-checkbox>
+    </el-form-item>
+    <el-form-item
+      :label="t('chart.merge_cells_fields')"
+      class="form-item"
+      :class="'form-item-' + themes"
+      v-if="showProperty('mergeFields') && state.tableCellForm.mergeCells"
+    >
+      <el-select
+        :effect="themes"
+        v-model="state.tableCellForm.mergeFields"
+        multiple
+        clearable
+        collapse-tags
+        :placeholder="t('chart.merge_cells_fields_placeholder')"
+        @change="changeTableCell('mergeFields')"
+      >
+        <el-option
+          v-for="item in mergeFieldOptions"
+          :key="item.id"
+          :label="item.label"
+          :value="item.id"
+        />
+      </el-select>
     </el-form-item>
     <el-form-item
       class="form-item"
