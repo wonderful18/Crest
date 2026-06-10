@@ -90,6 +90,12 @@ tag_exists() {
   git rev-parse -q --verify "refs/tags/$1" >/dev/null
 }
 
+matches_tag_content() {
+  local tag="$1"
+  local file="$2"
+  git cat-file -e "${tag}:${file}" 2>/dev/null && git diff --quiet "${tag}..HEAD" -- "${file}"
+}
+
 requires_release_metadata=0
 db_change=0
 
@@ -98,12 +104,16 @@ while IFS= read -r file; do
 
   if [[ "${file}" =~ ^docs/release/v([0-9]+\.[0-9]+\.[0-9]+)\.md$ ]]; then
     tagged_version="v${BASH_REMATCH[1]}"
-    tag_exists "${tagged_version}" && fail "Published release notes ${file} are immutable because ${tagged_version} already exists."
+    if tag_exists "${tagged_version}" && ! matches_tag_content "${tagged_version}" "${file}"; then
+      fail "Published release notes ${file} are immutable because ${tagged_version} already exists."
+    fi
   fi
 
   if [[ "${file}" =~ ^installer/upgrade-sql/v[0-9]+\.[0-9]+\.[0-9]+_to_v([0-9]+\.[0-9]+\.[0-9]+)\.sql$ ]]; then
     tagged_version="v${BASH_REMATCH[1]}"
-    tag_exists "${tagged_version}" && fail "Published upgrade SQL ${file} is immutable because ${tagged_version} already exists."
+    if tag_exists "${tagged_version}" && ! matches_tag_content "${tagged_version}" "${file}"; then
+      fail "Published upgrade SQL ${file} is immutable because ${tagged_version} already exists."
+    fi
   fi
 
   case "${file}" in
