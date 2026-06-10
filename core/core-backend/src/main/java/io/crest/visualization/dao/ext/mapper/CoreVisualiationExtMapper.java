@@ -14,7 +14,7 @@ import java.util.Set;
 public interface CoreVisualiationExtMapper {
 
     @Select("""
-            select id, name, pid, node_type, mobile_layout as extraFlag, status as extraFlag1 from bi_visualization
+            select id, name, pid, node_type, type, create_by, org_id, mobile_layout as extraFlag, status as extraFlag1 from bi_visualization
             ${ew.customSqlSegment}
             """)
     List<VisualizationNodePO> queryNodes(@Param("ew") QueryWrapper<Object> queryWrapper);

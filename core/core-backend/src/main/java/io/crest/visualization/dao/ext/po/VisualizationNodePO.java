@@ -13,6 +13,9 @@ public class VisualizationNodePO implements Serializable {
     private String name;
     private Long pid;
     private String nodeType;
+    private String type;
+    private String createBy;
+    private Long orgId;
     @Schema(description = "额外标识")
     private int extraFlag;
     @Schema(description = "额外标识1")
