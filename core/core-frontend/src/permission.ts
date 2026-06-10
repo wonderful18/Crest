@@ -14,6 +14,8 @@ import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 import { useEmbedded } from '@/store/modules/embedded'
 import { useLoading } from '@/hooks/web/useLoading'
 import { ElMessageBox } from 'element-plus-secondary'
+import { clearCache } from '@/utils/cacheUtil'
+import { resolveAuthFailureNavigation } from '@/router/authFailureNavigation.mjs'
 const appearanceStore = useAppearanceStoreWithOut()
 const { wsCache } = useCache()
 const permissionStore = usePermissionStoreWithOut()
@@ -95,10 +97,24 @@ router.beforeEach(async (to, from, next) => {
   }
   if (wsCache.get('user.token') || isDesktop) {
     if (!userStore.getUid) {
-      await userStore.setUser()
+      try {
+        await userStore.setUser()
+      } catch {
+        clearCache()
+        userStore.clear()
+        const navigation = resolveAuthFailureNavigation(to)
+        if (navigation.type === 'allow') {
+          permissionStore.setCurrentPath(to.path)
+          next()
+        } else {
+          permissionStore.setCurrentPath('/login')
+          next(navigation.location)
+        }
+        return
+      }
     }
     if (to.path === '/login') {
-      next({ path: portalHome })
+      next({ path: userStore.getBackendAccess ? backendHome : portalHome })
     } else if (to.path === '/admin-login') {
       next({ path: userStore.getBackendAccess ? backendHome : portalHome })
     } else if (isPortalRoute(to.path)) {
