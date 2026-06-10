@@ -1060,8 +1060,16 @@ const onTableHeaderChange = val => {
   view.value.customAttr.tableHeader = val
   renderChart(view.value)
 }
-const onTableCellChange = val => {
+const renderTableCellChange = debounce(() => {
+  renderChart(view.value)
+}, 250)
+const onTableCellChange = (val, prop) => {
   view.value.customAttr.tableCell = val
+  if (prop === 'mergeFields') {
+    renderTableCellChange()
+    return
+  }
+  renderTableCellChange.cancel()
   renderChart(view.value)
 }
 const onTableTotalChange = val => {

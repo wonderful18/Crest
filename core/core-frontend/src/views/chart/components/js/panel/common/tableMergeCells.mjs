@@ -49,6 +49,24 @@ const buildCellsForRange = ({ data, field, colIndex, start, end }) => {
   return { mergeCells, nextRanges }
 }
 
+const buildContextRanges = (data, contextFields) => {
+  if (!contextFields.length) {
+    return [[0, data.length - 1]]
+  }
+
+  const ranges = []
+  let start = 0
+  for (let index = 1; index < data.length; index++) {
+    const changed = contextFields.some(field => data[index]?.[field] !== data[index - 1]?.[field])
+    if (changed) {
+      ranges.push([start, index - 1])
+      start = index
+    }
+  }
+  ranges.push([start, data.length - 1])
+  return ranges
+}
+
 export const getMergeableFieldOptions = axis => {
   const options = []
   for (const item of axis || []) {
@@ -78,12 +96,14 @@ export const buildMergeCellsInfo = ({ fields, meta, data, showIndex = false, mer
   const mergeableColumns = (meta || [])
     .map((item, index) => ({
       field: fieldName(item),
-      colIndex: showIndex ? index + 1 : index
+      colIndex: showIndex ? index + 1 : index,
+      axisIndex: index
     }))
     .filter((_, index) => index < quotaIndex || quotaIndex === -1)
 
-  const selectedFields = Array.isArray(mergeFields) ? new Set(mergeFields) : null
-  const columnsToMerge = selectedFields
+  const isCustomMerge = Array.isArray(mergeFields)
+  const selectedFields = isCustomMerge ? new Set(mergeFields) : null
+  const columnsToMerge = isCustomMerge
     ? mergeableColumns.filter(item => selectedFields.has(item.field))
     : mergeableColumns
 
@@ -91,8 +111,29 @@ export const buildMergeCellsInfo = ({ fields, meta, data, showIndex = false, mer
     return []
   }
 
-  let ranges = [[0, tableData.length - 1]]
   const mergedCellsInfo = []
+
+  if (isCustomMerge) {
+    columnsToMerge.forEach(column => {
+      const contextFields = mergeableColumns
+        .filter(item => item.axisIndex < column.axisIndex)
+        .map(item => item.field)
+      const ranges = buildContextRanges(tableData, contextFields)
+      ranges.forEach(([start, end]) => {
+        const result = buildCellsForRange({
+          data: tableData,
+          field: column.field,
+          colIndex: column.colIndex,
+          start,
+          end
+        })
+        mergedCellsInfo.push(...result.mergeCells)
+      })
+    })
+    return mergedCellsInfo
+  }
+
+  let ranges = [[0, tableData.length - 1]]
 
   columnsToMerge.forEach(column => {
     const nextRanges = []
