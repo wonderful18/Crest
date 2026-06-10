@@ -75,9 +75,7 @@ const backToMain = () => {
     line-height: 22px;
     cursor: pointer;
     border-radius: 8px;
-    transition:
-      color 0.14s ease,
-      background 0.14s ease;
+    transition: color 0.14s ease, background 0.14s ease;
 
     &:hover {
       color: #0f172a;

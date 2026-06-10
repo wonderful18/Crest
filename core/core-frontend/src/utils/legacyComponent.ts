@@ -39,4 +39,3 @@ export function normalizeLegacyComponentData<T>(componentData: T[]): T[] {
   componentData?.forEach(component => normalizeLegacyComponent(component))
   return componentData
 }
-

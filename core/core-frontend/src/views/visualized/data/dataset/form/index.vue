@@ -74,6 +74,12 @@ import DatasetUnion from './DatasetUnion.vue'
 import { cloneDeep, debounce } from 'lodash-es'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 import { iconDatasourceMap } from '@/components/icon-group/datasource-list'
+import {
+  buildDatasetSyncTaskPayload,
+  executeDatasetSyncNowFlow,
+  formatDatasetSyncRowCount,
+  normalizeDatasetSyncInfo
+} from './datasetSyncWorkflow.mjs'
 interface DragEvent extends MouseEvent {
   dataTransfer: DataTransfer
 }
@@ -127,6 +133,7 @@ const currentField = ref({
 })
 const isCross = ref(false)
 const syncMode = ref(0)
+const syncSupportRefreshKey = ref(0)
 let isUpdate = false
 let pendingSyncSave: Promise<void> | null = null
 
@@ -161,6 +168,7 @@ const fieldTypes = index => {
 
 const changeUpdate = () => {
   isUpdate = true
+  syncSupportRefreshKey.value += 1
 }
 
 const fieldOptions = [
@@ -389,18 +397,8 @@ const editeSave = () => {
   if (!validateSyncSetting()) {
     return
   }
-  const union = []
   loading.value = true
-  dfsNodeList(union, datasetDrag.value.getNodeList())
-  saveDatasetTree({
-    ...nodeInfo,
-    name: datasetName.value,
-    union,
-    isCross: isCross.value,
-    mode: datasetMode.value,
-    allFields: allfields.value,
-    nodeType: 'dataset'
-  })
+  saveCurrentDataset()
     .then(() => persistDatasetSync(nodeInfo.id))
     .then(() => {
       isUpdate = false
@@ -681,7 +679,8 @@ const confirmEditCalc = () => {
       const { fieldType, dateFormat, extractedFieldType } = obj
       obj.dateFormat = fieldType === 1 ? dateFormat : ''
       obj.dateFormatType = fieldType === 1 ? dateFormat : ''
-      obj.fieldTypeSelectionValue = fieldType === 1 && extractedFieldType === 0 ? [fieldType, dateFormat] : [fieldType]
+      obj.fieldTypeSelectionValue =
+        fieldType === 1 && extractedFieldType === 0 ? [fieldType, dateFormat] : [fieldType]
       const result = allfields.value.findIndex(ele => obj.id === ele.id)
       if (result !== -1) {
         allfields.value.splice(result, 1, obj)
@@ -903,16 +902,87 @@ const findDatasource = (list, id) => {
   }
 }
 
+const hasSqlVariableDetails = value => {
+  if (!value) {
+    return false
+  }
+  if (Array.isArray(value)) {
+    return value.length > 0
+  }
+  if (typeof value === 'string') {
+    const text = value.trim()
+    if (!text || text === '[]') {
+      return false
+    }
+    try {
+      const parsed = JSON.parse(text)
+      if (Array.isArray(parsed)) {
+        return parsed.length > 0
+      }
+      return !!parsed && Object.keys(parsed).length > 0
+    } catch {
+      return true
+    }
+  }
+  if (typeof value === 'object') {
+    return Object.keys(value).length > 0
+  }
+  return true
+}
+
+const nodeHasSqlVariables = node => {
+  if (!node) {
+    return false
+  }
+  if (
+    hasSqlVariableDetails(node.sqlVariableDetails) ||
+    hasSqlVariableDetails(node.currentDs?.sqlVariableDetails)
+  ) {
+    return true
+  }
+  let children = []
+  if (Array.isArray(node.children)) {
+    children = node.children
+  } else if (Array.isArray(node.childrenDs)) {
+    children = node.childrenDs
+  }
+  return children.some(child => nodeHasSqlVariables(child))
+}
+
 const currentDatasource = computed(() => findDatasource(state.dataSourceList, dataSource.value))
-const obOracleDataset = computed(
-  () => !!dataSource.value && !isCross.value && currentDatasource.value?.type === 'obOracle'
+const syncSupportedDatasourceTypes = ['mysql', 'obOracle']
+const syncBaseSupportedDataset = computed(
+  () => !!dataSource.value && syncSupportedDatasourceTypes.includes(currentDatasource.value?.type)
 )
-const datasetMode = computed(() => (obOracleDataset.value && syncMode.value === 1 ? 1 : 0))
+const hasDatasetSqlVariables = computed(() => {
+  const refreshVersion = syncSupportRefreshKey.value
+  const nodes = datasetDrag.value?.getNodeList?.() || []
+  return refreshVersion >= 0 && nodes.some(node => nodeHasSqlVariables(node))
+})
+const syncUnsupportedReason = computed(() => {
+  if (!syncBaseSupportedDataset.value) {
+    return ''
+  }
+  if (isCross.value) {
+    return '跨源数据集暂不支持缓存'
+  }
+  if (hasDatasetSqlVariables.value) {
+    return '带 SQL 参数的数据集暂不支持缓存'
+  }
+  return ''
+})
+const showSyncSetting = computed(() => syncBaseSupportedDataset.value)
+const syncSupportedDataset = computed(
+  () => syncBaseSupportedDataset.value && !syncUnsupportedReason.value
+)
+const datasetMode = computed(() => (syncSupportedDataset.value && syncMode.value === 1 ? 1 : 0))
 const incrementalFieldOptions = computed(() =>
   allfields.value.filter(ele => ele.extField === 0 && ele.checked !== false)
 )
 const timeIncrementalFields = computed(() =>
-  incrementalFieldOptions.value.filter(field => Number(field.extractedFieldType ?? field.fieldType) === 1)
+  incrementalFieldOptions.value.filter(
+    field => Number(field.extractedFieldType ?? field.fieldType) === 1
+  )
 )
 const numberIncrementalFields = computed(() =>
   incrementalFieldOptions.value.filter(field =>
@@ -958,7 +1028,10 @@ const syncStatusText = computed(() => {
   return '未缓存'
 })
 const latestSyncLog = computed(() => syncLogs.value[0])
-const latestSyncInfo = computed(() => latestSyncLog.value?.info || syncTask.lastVerifyMessage || '')
+const latestSyncInfo = computed(() =>
+  normalizeDatasetSyncInfo(latestSyncLog.value?.info || syncTask.lastVerifyMessage || '')
+)
+const latestSyncRowCountText = computed(() => formatDatasetSyncRowCount(latestSyncLog.value))
 const syncDetailText = computed(() => {
   const info = String(latestSyncInfo.value || '')
   if (!info) return ''
@@ -987,6 +1060,11 @@ const syncModeChange = () => {
   if (syncMode.value !== 1) {
     return
   }
+  if (syncUnsupportedReason.value) {
+    syncMode.value = 0
+    ElMessage.warning(syncUnsupportedReason.value)
+    return
+  }
   if (syncTask.updateType === 'all_scope' && autoIncrementalField.value) {
     syncTask.updateType = 'add_scope'
   }
@@ -1000,6 +1078,12 @@ const syncUpdateTypeChange = () => {
 watch([autoIncrementalField, () => syncMode.value], () => {
   if (datasetMode.value === 1) {
     applyIncrementalDefaults()
+  }
+})
+
+watch(syncUnsupportedReason, reason => {
+  if (reason && syncMode.value === 1) {
+    syncMode.value = 0
   }
 })
 
@@ -1029,6 +1113,10 @@ const syncRateChange = () => {
 }
 
 const validateSyncSetting = () => {
+  if (syncMode.value === 1 && syncUnsupportedReason.value) {
+    syncMode.value = 0
+    ElMessage.warning(syncUnsupportedReason.value)
+  }
   if (datasetMode.value !== 1) {
     return true
   }
@@ -1099,33 +1187,62 @@ const persistDatasetSync = async id => {
   if (syncTask.syncRate === 'SIMPLE_CRON') {
     refreshSimpleCron()
   }
-  await saveDatasetSyncTask({
-    ...toRaw(syncTask),
-    datasetGroupId: id,
+  await saveDatasetSyncTask(
+    buildDatasetSyncTaskPayload({
+      syncTask: toRaw(syncTask),
+      datasetGroupId: id,
+      datasetName: datasetName.value
+    })
+  )
+}
+
+const saveCurrentDataset = async () => {
+  const union = []
+  dfsNodeList(union, datasetDrag.value.getNodeList())
+  const saved = await saveDatasetTree({
+    ...nodeInfo,
     name: datasetName.value,
-    incrementalFieldId: syncTask.updateType === 'add_scope' ? syncTask.incrementalFieldId : null
+    union,
+    isCross: isCross.value,
+    mode: datasetMode.value,
+    allFields: allfields.value,
+    nodeType: 'dataset'
   })
+  if (saved) {
+    nodeInfo = {
+      id: saved.id || nodeInfo.id,
+      pid: saved.pid || nodeInfo.pid,
+      name: saved.name || datasetName.value
+    }
+    currentDatasetId.value = nodeInfo.id || currentDatasetId.value
+    datasetName.value = nodeInfo.name
+    allfields.value = saved.allFields || allfields.value
+  }
+  return saved
 }
 
 const executeDatasetSyncNow = async () => {
-  if (!currentDatasetId.value) {
-    ElMessage.warning('请先保存数据集')
-    return
-  }
-  if (syncRunning.value) {
-    ElMessage.warning('已有同步任务正在执行')
+  if (!validateSyncSetting()) {
     return
   }
   syncSubmitting.value = true
   try {
-    await persistDatasetSync(currentDatasetId.value)
-    const task = await executeDatasetSync(currentDatasetId.value)
-    if (task) {
-      Object.assign(syncTask, task)
-    }
-    syncLogs.value = await datasetSyncLogs(currentDatasetId.value)
-    startSyncPolling()
-    ElMessage.success('同步任务已提交')
+    await executeDatasetSyncNowFlow({
+      currentDatasetId: currentDatasetId.value,
+      syncRunning: syncRunning.value,
+      warn: ElMessage.warning,
+      saveCurrentDataset,
+      persistDatasetSync,
+      executeDatasetSync,
+      loadDatasetSyncLogs: datasetSyncLogs,
+      applyTask: task => Object.assign(syncTask, task),
+      applyLogs: logs => {
+        syncLogs.value = logs
+      },
+      startSyncPolling,
+      success: ElMessage.success
+    })
+    isUpdate = false
   } finally {
     syncSubmitting.value = false
   }
@@ -1528,7 +1645,8 @@ const verify = () => {
       const { fieldType, dateFormat, extractedFieldType } = obj
       obj.dateFormat = fieldType === 1 ? dateFormat : ''
       obj.dateFormatType = fieldType === 1 ? dateFormat : ''
-      obj.fieldTypeSelectionValue = fieldType === 1 && extractedFieldType === 0 ? [fieldType, dateFormat] : [fieldType]
+      obj.fieldTypeSelectionValue =
+        fieldType === 1 && extractedFieldType === 0 ? [fieldType, dateFormat] : [fieldType]
       const result = allfields.value.findIndex(ele => obj.id === ele.id)
       const allfieldsCopy = cloneDeep(unref(allfields))
       if (result !== -1) {
@@ -1794,7 +1912,9 @@ const fieldTypeSelection = ref([])
 const fieldSelection = ref([])
 
 const showCascaderBatch = computed(() => {
-  return !!fieldTypeSelection.value.length && Array.from(new Set(fieldTypeSelection.value)).length === 1
+  return (
+    !!fieldTypeSelection.value.length && Array.from(new Set(fieldTypeSelection.value)).length === 1
+  )
 })
 
 const clearSelection = () => {
@@ -1856,7 +1976,8 @@ const cascaderChangeArr = val => {
       ele.fieldType = fieldType
       ele.dateFormat = fieldType === 1 ? dateFormat : ''
       ele.dateFormatType = fieldType === 1 ? dateFormat : ''
-      ele.fieldTypeSelectionValue = fieldType === 1 && ele.extractedFieldType === 0 ? [fieldType, dateFormat] : [fieldType]
+      ele.fieldTypeSelectionValue =
+        fieldType === 1 && ele.extractedFieldType === 0 ? [fieldType, dateFormat] : [fieldType]
     }
   })
   recoverSelection()
@@ -2112,15 +2233,16 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
               </div>
             </template>
           </el-tree-select>
-          <div v-if="obOracleDataset" class="dataset-sync-setting">
+          <div v-if="showSyncSetting" class="dataset-sync-setting">
             <div class="sync-row">
               <span>读取方式</span>
               <el-radio-group v-model="syncMode" @change="syncModeChange">
                 <el-radio :value="0">直连</el-radio>
-                <el-radio :value="1">缓存</el-radio>
+                <el-radio :value="1" :disabled="!!syncUnsupportedReason">缓存</el-radio>
               </el-radio-group>
             </div>
-            <template v-if="syncMode === 1">
+            <div v-if="syncUnsupportedReason" class="sync-tip">{{ syncUnsupportedReason }}</div>
+            <template v-if="syncMode === 1 && syncSupportedDataset">
               <div class="sync-row">
                 <span>更新方式</span>
                 <el-radio-group v-model="syncTask.updateType" @change="syncUpdateTypeChange">
@@ -2167,7 +2289,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                 {{ syncRunning ? '更新中' : '立即更新' }}
               </el-button>
               <div class="sync-status" v-if="syncTask.lastExecTime || latestSyncLog">
-                <span v-if="latestSyncLog">{{ latestSyncLog.rowCount || 0 }} 行</span>
+                <span v-if="latestSyncRowCountText">{{ latestSyncRowCountText }}</span>
                 <span v-if="syncTask.lastExecTime">{{
                   dayjs(syncTask.lastExecTime).format('YYYY-MM-DD HH:mm:ss')
                 }}</span>
@@ -2225,10 +2347,10 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                 <el-checkbox
                   v-model="syncTask.verifyEnabled"
                   class="sync-check"
-                  :true-label="1"
-                  :false-label="0"
+                  :true-value="1"
+                  :false-value="0"
                 >
-                  更新后校验
+                  更新后校验数据一致性
                 </el-checkbox>
               </div>
             </template>
@@ -2395,7 +2517,9 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                         <Icon
                           ><component
                             class="svg-icon"
-                            :class="`field-icon-${fieldType[[2, 3].includes(data.fieldType) ? 2 : 0]}`"
+                            :class="`field-icon-${
+                              fieldType[[2, 3].includes(data.fieldType) ? 2 : 0]
+                            }`"
                             :is="getIconNameCalc(data.fieldType, data.extField)"
                           ></component
                         ></Icon>
@@ -2429,7 +2553,9 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                         <Icon
                           ><component
                             class="svg-icon"
-                            :class="`field-icon-${fieldType[[2, 3].includes(data.fieldType) ? 2 : 0]}`"
+                            :class="`field-icon-${
+                              fieldType[[2, 3].includes(data.fieldType) ? 2 : 0]
+                            }`"
                             :is="getIconNameCalc(data.fieldType, data.extField, true)"
                           ></component
                         ></Icon>
@@ -2563,13 +2689,17 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                       <template #default="scope">
                         <el-cascader
                           :class="
-                            !!scope.row.fieldTypeSelectionValue && !!scope.row.fieldTypeSelectionValue.length && 'select-type'
+                            !!scope.row.fieldTypeSelectionValue &&
+                            !!scope.row.fieldTypeSelectionValue.length &&
+                            'select-type'
                           "
                           v-if="scope.row.extField !== 3"
                           popper-class="cascader-panel"
                           v-model="scope.row.fieldTypeSelectionValue"
                           @change="val => cascaderChange(scope.row, val)"
-                          :options="scope.row.extractedFieldType === 0 ? fieldOptions : fieldOptionsText"
+                          :options="
+                            scope.row.extractedFieldType === 0 ? fieldOptions : fieldOptionsText
+                          "
                         >
                           <template v-slot="{ data }">
                             <el-icon>
@@ -2770,12 +2900,16 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                       <template #default="scope">
                         <el-cascader
                           :class="
-                            !!scope.row.fieldTypeSelectionValue && !!scope.row.fieldTypeSelectionValue.length && 'select-type'
+                            !!scope.row.fieldTypeSelectionValue &&
+                            !!scope.row.fieldTypeSelectionValue.length &&
+                            'select-type'
                           "
                           popper-class="cascader-panel"
                           v-model="scope.row.fieldTypeSelectionValue"
                           @change="val => cascaderChange(scope.row, val)"
-                          :options="scope.row.extractedFieldType === 0 ? fieldOptions : fieldOptionsText"
+                          :options="
+                            scope.row.extractedFieldType === 0 ? fieldOptions : fieldOptionsText
+                          "
                         >
                           <template v-slot="{ data }">
                             <el-icon>
@@ -3392,7 +3526,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
         padding-left: 4px;
         width: 24px;
         .ed-icon {
-          color: var(--ed-color-primary, #3B82F6);
+          color: var(--ed-color-primary, #3b82f6);
         }
       }
     }
@@ -3449,7 +3583,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
           z-index: 10;
           &:hover {
             .ed-icon {
-              color: var(--ed-color-primary, #3B82F6) !important;
+              color: var(--ed-color-primary, #3b82f6) !important;
             }
           }
         }
@@ -3508,6 +3642,13 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
         .sync-now {
           width: 100%;
           margin-top: 8px;
+        }
+
+        .sync-tip {
+          margin-top: 6px;
+          font-size: 12px;
+          line-height: 18px;
+          color: #8f959e;
         }
 
         .sync-summary {

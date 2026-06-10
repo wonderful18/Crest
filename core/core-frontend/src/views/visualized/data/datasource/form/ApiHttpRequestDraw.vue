@@ -845,7 +845,6 @@ defineExpose({
                   style="display: inline-block; max-width: 80px; white-space: nowrap"
                   :key="scope.row.jsonPath"
                   v-model="scope.row.checked"
-                  :disabled="apiItem.useJsonPath"
                   @change="handleCheckAllChange(scope.row)"
                 >
                   <span

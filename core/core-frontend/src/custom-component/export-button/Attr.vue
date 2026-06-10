@@ -33,14 +33,20 @@ const initExportButtonConfig = () => {
 
 const exportButton = computed(() => curComponent.value?.exportButton || defaultExportButtonConfig())
 
-const tableOptions = computed(() => collectExportableTableViews(componentData.value, canvasViewInfo.value))
-const selectedView = computed(() =>
-  tableOptions.value.find(item => item.id === String(exportButton.value.targetViewId))?.viewInfo
+const tableOptions = computed(() =>
+  collectExportableTableViews(componentData.value, canvasViewInfo.value)
+)
+const selectedView = computed(
+  () =>
+    tableOptions.value.find(item => item.id === String(exportButton.value.targetViewId))?.viewInfo
 )
 const formattedExportDisabled = computed(() => !isPivotTableView(selectedView.value))
 
 const onExportButtonChange = () => {
-  if (formattedExportDisabled.value && exportButton.value.content === EXCEL_EXPORT_CONTENT.FORMATTED) {
+  if (
+    formattedExportDisabled.value &&
+    exportButton.value.content === EXCEL_EXPORT_CONTENT.FORMATTED
+  ) {
     exportButton.value.content = EXCEL_EXPORT_CONTENT.VIEW
   }
   snapshotStore.recordSnapshotCache('exportButton')

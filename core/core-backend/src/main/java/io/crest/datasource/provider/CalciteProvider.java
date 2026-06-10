@@ -1278,13 +1278,12 @@ public class CalciteProvider extends Provider {
     }
 
     // 构建root schema
-    private SchemaPlus buildSchema(DatasourceRequest datasourceRequest, CalciteConnection calciteConnection) {
+    private synchronized SchemaPlus buildSchema(DatasourceRequest datasourceRequest, CalciteConnection calciteConnection) {
         SchemaPlus rootSchema = calciteConnection.getRootSchema();
         Map<Long, DatasourceSchemaDTO> dsList = datasourceRequest.getDsList();
         for (Map.Entry<Long, DatasourceSchemaDTO> next : dsList.entrySet()) {
             DatasourceSchemaDTO ds = next.getValue();
-            commonThreadPool.addTask(() -> {
-                try {
+            try {
                     BasicDataSource dataSource = new BasicDataSource();
                     dataSource.setMaxWaitMillis(5 * 1000);
                     dataSource.setTestWhileIdle(true);
@@ -1482,12 +1481,12 @@ public class CalciteProvider extends Provider {
                                 schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, null, configuration.getDataBase());
                                 rootSchema.add(ds.getSchemaAlias(), schema);
                         }
-                    } catch (Exception e) {
-                        LogUtil.info("Skip unavailable datasource pool: " + ds.getName());
-                    }
                 } catch (Exception e) {
+                    LogUtil.error("Skip unavailable datasource pool: " + ds.getName() + ", " + e.getMessage(), e);
                 }
-            });
+            } catch (Exception e) {
+                LogUtil.error("Init datasource pool failed: " + ds.getName() + ", " + e.getMessage(), e);
+            }
         }
         return rootSchema;
     }
@@ -2045,11 +2044,45 @@ public class CalciteProvider extends Provider {
         CalciteSchema.from(rootSchema).removeSubSchema(schemaAlias);
     }
 
+    private CoreDatasource selectPoolDatasource(Long dsId) {
+        CoreDatasource engine = engineManage.engineDatasource();
+        if (engine != null && Objects.equals(engine.getId(), dsId)) {
+            return engine;
+        }
+        CoreDatasource datasource = coreDatasourceMapper.selectById(dsId);
+        if (datasource == null || Arrays.asList("folder", "API", "Excel", "ExcelRemote").contains(datasource.getType())
+                || !Strings.CI.equals(datasource.getStatus(), "Success")) {
+            return null;
+        }
+        return datasource;
+    }
+
+    private void ensureSchemaRegistered(CalciteConnection calciteConnection, Long dsId) {
+        SchemaPlus rootSchema = calciteConnection.getRootSchema();
+        String schemaAlias = String.format(SQLConstants.SCHEMA, dsId);
+        if (rootSchema.getSubSchema(schemaAlias) != null) {
+            return;
+        }
+        CoreDatasource datasource = selectPoolDatasource(dsId);
+        if (datasource == null) {
+            return;
+        }
+        DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
+        BeanUtils.copyBean(datasourceSchemaDTO, datasource);
+        datasourceSchemaDTO.setSchemaAlias(schemaAlias);
+        DatasourceRequest datasourceRequest = new DatasourceRequest();
+        datasourceRequest.setDsList(Map.of(datasourceSchemaDTO.getId(), datasourceSchemaDTO));
+        buildSchema(datasourceRequest, calciteConnection);
+    }
+
     private Connection getConnectionFromPool(Long dsId) {
         try {
             Connection connection = take();
             CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
             SchemaPlus rootSchema = calciteConnection.getRootSchema();
+            if (rootSchema.getSubSchema(String.format(SQLConstants.SCHEMA, dsId)) == null) {
+                ensureSchemaRegistered(calciteConnection, dsId);
+            }
             if (rootSchema.getSubSchema(String.format(SQLConstants.SCHEMA, dsId)) == null) {
                 CrestException.throwException(Translator.get("i18n_check_datasource_connection"));
             }

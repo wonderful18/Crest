@@ -1530,7 +1530,10 @@ export function configL7Zoom(
           const endAxis = chart.xAxisExt
           if (startAxis?.length === 2) {
             chart.data?.tableRow?.forEach(row => {
-              coordinates.push([row[startAxis[0].engineFieldName], row[startAxis[1].engineFieldName]])
+              coordinates.push([
+                row[startAxis[0].engineFieldName],
+                row[startAxis[1].engineFieldName]
+              ])
             })
           }
           if (endAxis?.length === 2) {
