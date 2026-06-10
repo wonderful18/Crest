@@ -79,6 +79,7 @@ import {
   isAuxiliaryHeaderField,
   normalizeAuxiliaryHeader
 } from './tableAuxiliaryHeader.mjs'
+import { buildMergeCellsInfo } from './tableMergeCells.mjs'
 
 const { t: i18nt } = useI18n()
 
@@ -3166,7 +3167,7 @@ export async function exportPivotExcel(instance: PivotSheet, chart: ChartObj) {
 }
 
 export function configMergeCells(chart: Chart, options: S2Options, dataConfig: S2DataConfig) {
-  const { mergeCells } = parseJson(chart.customAttr).tableCell
+  const { mergeCells, mergeFields } = parseJson(chart.customAttr).tableCell
   const { showIndex } = parseJson(chart.customAttr).tableHeader
   if (mergeCells) {
     options.frozenColCount = 0
@@ -3177,70 +3178,19 @@ export function configMergeCells(chart: Chart, options: S2Options, dataConfig: S
         p[n.engineFieldName] = n
         return p
       }, {} as Record<string, any>) || {}
-    const quotaIndex = dataConfig.meta.findIndex(m => fieldsMap[m.field as string]?.groupType === 'q')
     const data = chart.data?.tableRow
-    if (quotaIndex === 0 || !data?.length) {
+    if (!data?.length) {
       return
     }
-    const mergedColInfo: number[][][] = [[[0, data.length - 1]]]
-    const mergedCellsInfo = []
-    const axisToMerge = dataConfig.meta.filter((_, i) => i < quotaIndex || quotaIndex === -1)
-    axisToMerge.forEach((a, i) => {
-      if (mergedColInfo[i - 1]) {
-        mergedColInfo[i - 1] = []
-      }
-      const preMergedColInfo = mergedColInfo[i]
-      const curMergedColInfo = []
-      mergedColInfo.push(curMergedColInfo)
-      preMergedColInfo.forEach(range => {
-        const [start, end] = range
-        let lastVal = data[start][a.field as string]
-        let lastIndex = start
-        for (let index = start; index <= end; index++) {
-          const curVal = data[index][a.field as string]
-          if (curVal !== lastVal || index === end) {
-            const curRange = index - lastIndex
-            if (curRange > 1 || (index === end && curRange === 1 && lastVal === curVal)) {
-              const tmpMergeCells = []
-              let textIndex = curRange % 2 === 1 ? (curRange - 1) / 2 : curRange / 2 - 1
-              if (index === end && lastVal === curVal) {
-                textIndex = curRange % 2 === 1 ? (curRange - 1) / 2 : curRange / 2
-              }
-              for (let j = 0; j < curRange; j++) {
-                tmpMergeCells.push({
-                  colIndex: showIndex ? i + 1 : i,
-                  rowIndex: lastIndex + j,
-                  showText: j === textIndex
-                })
-              }
-              if (index === end && lastVal === curVal) {
-                tmpMergeCells.push({
-                  colIndex: showIndex ? i + 1 : i,
-                  rowIndex: index,
-                  showText: false
-                })
-              }
-              mergedCellsInfo.push(tmpMergeCells)
-              curMergedColInfo.push([
-                lastIndex,
-                index === end && lastVal === curVal ? index : index - 1
-              ])
-            }
-            lastVal = curVal
-            lastIndex = index
-          }
-        }
-      })
+    const mergedCellsInfo = buildMergeCellsInfo({
+      fields,
+      meta: dataConfig.meta,
+      data,
+      showIndex,
+      mergeFields
     })
-    if (showIndex) {
-      const indexMergedCells = mergedCellsInfo.filter(cells => cells[0].colIndex === 1)
-      indexMergedCells.forEach(cells => {
-        const tmpCells = cloneDeep(cells)
-        tmpCells.forEach(cell => {
-          cell.colIndex = 0
-        })
-        mergedCellsInfo.unshift(tmpCells)
-      })
+    if (!mergedCellsInfo.length) {
+      return
     }
     options.mergedCellsInfo = mergedCellsInfo
     options.mergedCell = (sheet, cells, meta) => {

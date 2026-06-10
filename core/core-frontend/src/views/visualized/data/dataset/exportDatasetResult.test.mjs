@@ -1,9 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import {
-  EXPORT_DATASET_RESULT,
-  resolveExportDatasetResult
-} from './exportDatasetResult.mjs'
+import { EXPORT_DATASET_RESULT, resolveExportDatasetResult } from './exportDatasetResult.mjs'
 
 describe('dataset export result resolver', () => {
   it('treats an empty 200 response as a queued export task', async () => {
