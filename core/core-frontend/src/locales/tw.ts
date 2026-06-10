@@ -2009,6 +2009,8 @@ export default {
     merge_cells: '合併儲存格',
     merge_cells_fields: '合併字段',
     merge_cells_fields_placeholder: '請選擇字段',
+    merge_cells_fields_tip:
+      '僅支援選擇第一個指標前的維度字段；系統會按上下相鄰且值相同的儲存格縱向合併，後置維度會在前置維度分組內合併。',
     length_limit: '長度限制',
     radar_point: '開啟輔助點',
     radar_point_size: '輔助點大小',
