@@ -17,6 +17,12 @@ import LoginHeroImage from '@/assets/crest-login-hero.png'
 import crestLogo from '@/assets/img/crest-logo-horizontal-192h.png'
 import elementResizeDetectorMaker from 'element-resize-detector'
 import { cleanPlatformFlag } from '@/utils/utils'
+import {
+  parseLoginRedirect,
+  resolveDefaultLoginPath,
+  shouldShowLocalLogin,
+  shouldUseEmergencyLogin
+} from './loginEntryPolicy.mjs'
 import xss from 'xss'
 const { wsCache } = useCache()
 const appStore = useAppStoreWithOut()
@@ -62,41 +68,14 @@ const rules = reactive<FormRules>({
 
 const activeName = ref('simple')
 const showLocalLogin = computed(() => {
-  return (
-    !ssoStatus.enabled ||
-    ssoStatus.allowLocalLogin ||
-    router.currentRoute.value.path === '/admin-login'
-  )
+  return shouldShowLocalLogin(ssoStatus, router.currentRoute.value.path)
 })
 
 const getCurLocation = () => {
-  let queryRedirectPath =
-    router.currentRoute.value.path === '/admin-login' ? '/workbranch/index' : '/portal'
-  if (router.currentRoute.value.query.redirect) {
-    queryRedirectPath = router.currentRoute.value.query.redirect as string
-  }
-  try {
-    let decodedRedirectPath = queryRedirectPath
-    for (let i = 0; i < 5; i++) {
-      const nextPath = decodeURIComponent(decodedRedirectPath)
-      if (nextPath === decodedRedirectPath) {
-        break
-      }
-      decodedRedirectPath = nextPath
-    }
-    queryRedirectPath = decodedRedirectPath
-  } catch {
-    // keep the original path below when an invalid escape sequence is passed in
-  }
-  const [path, search = ''] = queryRedirectPath.split('?')
-  const query: Record<string, string> = {}
-  new URLSearchParams(search).forEach((value, key) => {
-    query[key] = value
-  })
-  return {
-    path,
-    query
-  }
+  const queryRedirectPath =
+    (router.currentRoute.value.query.redirect as string) ||
+    resolveDefaultLoginPath(userStore.getBackendAccess)
+  return parseLoginRedirect(queryRedirectPath)
 }
 const enterHandler = e => {
   e.target.blur()
@@ -121,7 +100,7 @@ const handleLogin = () => {
       const param = {
         name: rsaEncryp(name),
         pwd: rsaEncryp(pwd),
-        emergency: router.currentRoute.value.path === '/admin-login'
+        emergency: shouldUseEmergencyLogin(router.currentRoute.value.path)
       }
       const isLdap = activeName.value === 'ldap'
       if (isLdap) {
@@ -130,13 +109,14 @@ const handleLogin = () => {
       duringLogin.value = true
       cleanPlatformFlag()
       loginApi(param)
-        .then(res => {
+        .then(async res => {
           const { token, exp, mfa } = res.data
           if (!isLdap && mfa?.enabled) {
             duringLogin.value = false
             return
           }
           saveLoginToken({ token, exp })
+          await userStore.setUser()
           router.push(getCurLocation())
         })
         .catch(() => {

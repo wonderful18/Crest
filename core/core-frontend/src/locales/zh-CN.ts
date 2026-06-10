@@ -2012,6 +2012,10 @@ export default {
     group_name_edit_tip: '分组名称长度为 1-50 个字符',
     group_name_error_tip: '请输入正确的分组名称',
     merge_cells: '合并单元格',
+    merge_cells_fields: '合并字段',
+    merge_cells_fields_placeholder: '请选择字段',
+    merge_cells_fields_tip:
+      '仅支持选择第一个指标前的维度字段；系统会按上下相邻且值相同的单元格纵向合并，后置维度会在前置维度分组内合并。',
     length_limit: '长度限制',
     radar_point: '开启辅助点',
     radar_point_size: '辅助点大小',
