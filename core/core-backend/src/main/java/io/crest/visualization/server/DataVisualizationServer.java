@@ -959,11 +959,11 @@ public class DataVisualizationServer implements DataVisualizationApi {
         Long copyId = IDUtils.snowID() / 100; // 本次复制执行ID
         // 复制仪表板
         DataVisualizationInfo newDv = visualizationInfoMapper.selectById(sourceDvId);
-        CrestPermissionUtils.requireCreator(newDv.getCreateBy());
+        coreVisualizationManage.requireVisualizationManage(newDv);
         if (request.getPid() != null && request.getPid() > 0) {
             DataVisualizationInfo parent = visualizationInfoMapper.selectById(request.getPid());
             if (parent != null) {
-                CrestPermissionUtils.requireCreator(parent.getCreateBy());
+                coreVisualizationManage.requireVisualizationManage(parent);
             }
         }
         newDv.setName(request.getName());

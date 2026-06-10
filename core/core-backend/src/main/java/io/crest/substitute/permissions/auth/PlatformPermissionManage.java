@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -228,6 +229,57 @@ public class PlatformPermissionManage {
                 .append(")) OR (crp.target_type = 'org' AND crp.target_id = ").append(oidValue).append(")))");
         sql.append(")");
         return sql.toString();
+    }
+
+    public int resourceWeight(String resourceType, String resourceId, String creator, Long resourceOrgId) {
+        Long uid = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
+        if (uid == null) {
+            return 9;
+        }
+        Long oid = AuthUtils.getUser().getDefaultOid();
+        oid = oid == null ? defaultOrgId(uid) : oid;
+        if (isSystemAdmin(uid) || Objects.equals(String.valueOf(uid), StringUtils.trimToEmpty(creator))) {
+            return 9;
+        }
+        if (resourceOrgId != null && isOrgAdmin(uid, resourceOrgId)) {
+            return 7;
+        }
+        Set<String> permissions = resourcePermissions(resourceType, resourceId, uid, oid);
+        if (permissions.contains("manage")) {
+            return 7;
+        }
+        if (permissions.contains("read") || Objects.equals(resourceOrgId, oid)) {
+            return 1;
+        }
+        return 1;
+    }
+
+    private Set<String> resourcePermissions(String resourceType, String resourceId, Long uid, Long oid) {
+        if (StringUtils.isBlank(resourceType) || StringUtils.isBlank(resourceId) || uid == null) {
+            return Set.of();
+        }
+        List<Long> roleIds = roleIds(uid, oid);
+        List<Object> args = new ArrayList<>();
+        args.add(resourceType);
+        args.add(resourceId);
+        args.add(uid);
+        args.add(oid);
+        StringBuilder sql = new StringBuilder("""
+                SELECT DISTINCT permission FROM iam_resource_permission
+                WHERE resource_type = ? AND resource_id = ? AND permission IN ('read', 'manage')
+                  AND ((target_type = 'user' AND target_id = ?)
+                    OR (target_type = 'org' AND target_id = ?)
+                """);
+        if (!roleIds.isEmpty()) {
+            sql.append(" OR (target_type = 'role' AND target_id IN (");
+            sql.append(roleIds.stream().map(item -> "?").collect(Collectors.joining(",")));
+            sql.append("))");
+            args.addAll(roleIds);
+        }
+        sql.append(")");
+        return jdbcTemplate.queryForList(sql.toString(), String.class, args.toArray()).stream()
+                .map(StringUtils::lowerCase)
+                .collect(Collectors.toSet());
     }
 
     public Set<String> permissionsFromWeight(int weight) {
