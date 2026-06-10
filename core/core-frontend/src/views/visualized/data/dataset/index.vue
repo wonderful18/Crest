@@ -82,10 +82,7 @@ import { useCache } from '@/hooks/web/useCache'
 import { RefreshLeft } from '@element-plus/icons-vue'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 import { exportPermission, isFreeFolder } from '@/utils/utils'
-import {
-  EXPORT_DATASET_RESULT,
-  resolveExportDatasetResult
-} from './exportDatasetResult.mjs'
+import { EXPORT_DATASET_RESULT, resolveExportDatasetResult } from './exportDatasetResult.mjs'
 const { t } = useI18n()
 const interactiveStore = interactiveStoreWithOut()
 const { wsCache } = useCache()
@@ -1301,7 +1298,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
             cursor: pointer;
             &::after {
               content: '';
-              background-color: var(--ed-color-primary-1a, #3B82F61a);
+              background-color: var(--ed-color-primary-1a, #3b82f61a);
               width: 28px;
               height: 28px;
               position: absolute;

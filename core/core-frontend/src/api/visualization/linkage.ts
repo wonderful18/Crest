@@ -1,7 +1,6 @@
 import request from '@/config/axios'
 
-export const viewLinkageGather = data =>
-  request.post({ url: '/linkage/linkage-gather', data })
+export const viewLinkageGather = data => request.post({ url: '/linkage/linkage-gather', data })
 
 export const viewLinkageGatherArray = data =>
   request.post({ url: '/linkage/linkage-gather-array', data })

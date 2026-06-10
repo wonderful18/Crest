@@ -1,6 +1,6 @@
 import { useI18n } from '@/hooks/web/useI18n'
 import { deepCopy } from '@/utils/utils'
-import { formatterItem, isEnLocal } from '@/views/chart/components/js/formatter'
+import { formatterItem, isEnLocal } from '@/views/chart/components/js/formatter-default'
 const { t } = useI18n()
 
 export const DEFAULT_COLOR_CASE: DeepPartial<ChartAttr> = {

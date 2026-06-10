@@ -74,9 +74,7 @@ const menuSelect = (index: string, indexPath: string[]) => {
     font-size: 14px;
     font-weight: 600;
     border-radius: 10px;
-    transition:
-      color 0.14s ease,
-      background-color 0.14s ease;
+    transition: color 0.14s ease, background-color 0.14s ease;
   }
 
   :deep(.ed-icon) {

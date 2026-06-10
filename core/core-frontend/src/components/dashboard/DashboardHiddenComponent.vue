@@ -86,7 +86,7 @@ const addToDashboard = item => {
       z-index: 24;
       cursor: pointer;
       &:hover {
-        color: var(--ed-color-primary-99, #3B82F699);
+        color: var(--ed-color-primary-99, #3b82f699);
       }
     }
 
@@ -103,7 +103,7 @@ const addToDashboard = item => {
     }
 
     &:hover {
-      border-color: var(--ed-color-primary-99, #3B82F699);
+      border-color: var(--ed-color-primary-99, #3b82f699);
     }
   }
 }

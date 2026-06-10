@@ -547,7 +547,7 @@ initFunction()
 }
 
 .item-dimension:hover {
-  border-color: var(--ed-color-primary, #3B82F6);
+  border-color: var(--ed-color-primary, #3b82f6);
   background: var(--ed-color-primary-1a, rgba(59, 130, 246, 0.1));
   cursor: pointer;
 }
@@ -579,7 +579,7 @@ initFunction()
 }
 
 .function-style:hover {
-  border-color: var(--ed-color-primary, #3B82F6);
+  border-color: var(--ed-color-primary, #3b82f6);
   cursor: pointer;
 }
 .function-height {

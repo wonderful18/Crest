@@ -1206,7 +1206,7 @@ const mousedownDrag = () => {
       padding-left: 4px;
       width: 24px;
       .ed-icon {
-        color: var(--ed-color-primary, #3B82F6);
+        color: var(--ed-color-primary, #3b82f6);
       }
     }
   }
@@ -1257,7 +1257,7 @@ const mousedownDrag = () => {
         z-index: 10;
         &:hover {
           .ed-icon {
-            color: var(--ed-color-primary, #3B82F6) !important;
+            color: var(--ed-color-primary, #3b82f6) !important;
           }
         }
       }
@@ -1415,7 +1415,7 @@ const mousedownDrag = () => {
       .de-Exec-result,
       .de-Underway-pre {
         &::before {
-          background: var(--ed-color-primary, #3B82F6);
+          background: var(--ed-color-primary, #3b82f6);
         }
       }
 
@@ -1432,7 +1432,7 @@ const mousedownDrag = () => {
         }
 
         .ed-icon-s-order {
-          color: var(--ed-color-primary, #3B82F6);
+          color: var(--ed-color-primary, #3b82f6);
           cursor: pointer;
         }
       }
@@ -1502,7 +1502,7 @@ const mousedownDrag = () => {
               }
             }
             &:hover {
-              border-color: var(--ed-color-primary, #3B82F6);
+              border-color: var(--ed-color-primary, #3b82f6);
               background: var(--ed-color-primary-1a, rgba(59, 130, 246, 0.1));
             }
           }
@@ -1573,13 +1573,13 @@ const mousedownDrag = () => {
       }
 
       &:focus {
-        background: var(--ed-color-primary-1a, #3B82F61a);
-        color: var(--ed-color-primary, #3B82F6);
+        background: var(--ed-color-primary-1a, #3b82f61a);
+        color: var(--ed-color-primary, #3b82f6);
       }
 
       &:focus:hover {
-        color: var(--ed-color-primary, #3B82F6);
-        background: var(--ed-color-primary-33, #3B82F633);
+        color: var(--ed-color-primary, #3b82f6);
+        background: var(--ed-color-primary-33, #3b82f633);
       }
     }
   }
@@ -1715,7 +1715,7 @@ const mousedownDrag = () => {
       top: 10.6px;
       left: 16px;
       font-size: 14px;
-      color: var(--ed-color-primary, #3B82F6);
+      color: var(--ed-color-primary, #3b82f6);
     }
 
     margin-bottom: 16px;

@@ -317,7 +317,7 @@ watch(
     margin-right: 12px;
     border-radius: 6px;
     color: #fff;
-    background: var(--ed-color-primary, #3B82F6);
+    background: var(--ed-color-primary, #3b82f6);
   }
 
   .name-star {

@@ -423,10 +423,7 @@ export const dvMainStore = defineStore('dataVisualization', {
         this.componentData.push(component)
       } else {
         this.componentData.forEach(componentItem => {
-          if (
-            component.canvasId.includes(componentItem.id) &&
-            componentItem.component == 'Tabs'
-          ) {
+          if (component.canvasId.includes(componentItem.id) && componentItem.component == 'Tabs') {
             componentItem.propValue.forEach(tabItem => {
               if (component.canvasId.includes(tabItem.name)) {
                 tabItem.componentData.push(component)

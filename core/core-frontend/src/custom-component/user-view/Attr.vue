@@ -35,7 +35,9 @@ const initExcelExportConfig = () => {
   }
 }
 
-const excelExport = computed(() => curComponent.value?.excelExport || defaultViewExcelExportConfig())
+const excelExport = computed(
+  () => curComponent.value?.excelExport || defaultViewExcelExportConfig()
+)
 
 const onExcelExportChange = () => {
   if (currentViewInfo.value) {

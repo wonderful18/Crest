@@ -371,7 +371,10 @@ const getEmptyDesc = (): string => {
         >
           <el-table-column key="name" width="280" prop="name" :label="t('common.name')">
             <template v-slot:default="scope">
-              <div class="name-content asset-name" :class="{ 'jump-active': jumpActiveCheck(scope.row) }">
+              <div
+                class="name-content asset-name"
+                :class="{ 'jump-active': jumpActiveCheck(scope.row) }"
+              >
                 <span
                   class="asset-icon"
                   :class="{ disabled: checkDisabled(scope.row) }"
@@ -381,9 +384,7 @@ const getEmptyDesc = (): string => {
                     :src="
                       scope.row.extFlag
                         ? iconMap[
-                            scope.row.type +
-                              'Mobile' +
-                              (checkDisabled(scope.row) ? 'Disabled' : '')
+                            scope.row.type + 'Mobile' + (checkDisabled(scope.row) ? 'Disabled' : '')
                           ]
                         : iconMap[scope.row.type]
                     "
@@ -393,7 +394,10 @@ const getEmptyDesc = (): string => {
                 <span class="asset-title-wrap">
                   <el-tooltip placement="top">
                     <template #content>{{ scope.row.name }}</template>
-                    <span class="asset-title ellipsis" :class="{ 'color-disabled': checkDisabled(scope.row) }">
+                    <span
+                      class="asset-title ellipsis"
+                      :class="{ 'color-disabled': checkDisabled(scope.row) }"
+                    >
                       {{ scope.row.name }}
                     </span>
                   </el-tooltip>
@@ -413,10 +417,18 @@ const getEmptyDesc = (): string => {
             <template #default="scope">
               <span :class="{ 'jump-active': jumpActiveCheck(scope.row) }">
                 <span v-if="item.type && item.type === 'time'" class="time-cell">
-                  <span class="time-relative">{{ formatterRelativeTime(scope.row[item.field]) }}</span>
-                  <span class="time-full">{{ formatterTime(null, null, scope.row[item.field]) }}</span>
+                  <span class="time-relative">{{
+                    formatterRelativeTime(scope.row[item.field])
+                  }}</span>
+                  <span class="time-full">{{
+                    formatterTime(null, null, scope.row[item.field])
+                  }}</span>
                 </span>
-                <span v-else-if="item.field && item.field === 'type'" class="asset-tag" :style="{ '--tag-color': getTypeColor(scope.row[item.field]) }">
+                <span
+                  v-else-if="item.field && item.field === 'type'"
+                  class="asset-tag"
+                  :style="{ '--tag-color': getTypeColor(scope.row[item.field]) }"
+                >
                   <span class="tag-dot" />
                   {{ typeMap[scope.row[item.field]] }}
                 </span>
@@ -433,10 +445,7 @@ const getEmptyDesc = (): string => {
 
           <el-table-column width="100" fixed="right" key="_operation" :label="$t('common.operate')">
             <template #default="scope">
-              <div
-                class="table-actions"
-                :class="{ 'opt-disabled': checkDisabled(scope.row) }"
-              >
+              <div class="table-actions" :class="{ 'opt-disabled': checkDisabled(scope.row) }">
                 <template v-if="['dashboard', 'dataV', 'panel', 'screen'].includes(scope.row.type)">
                   <el-tooltip
                     effect="dark"
@@ -449,7 +458,13 @@ const getEmptyDesc = (): string => {
                       class="opbtn"
                       @click.stop="preview(scope.row, checkDisabled(scope.row))"
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
                         <path
                           d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"
                           stroke="currentColor"
@@ -509,7 +524,13 @@ const getEmptyDesc = (): string => {
                         openDataset(activeName === 'recent' ? scope.row.id : scope.row.resourceId)
                       "
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
                         <path
                           d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"
                           stroke="currentColor"
@@ -630,10 +651,7 @@ const getEmptyDesc = (): string => {
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 7px;
-    transition:
-      color 0.14s ease,
-      background 0.14s ease,
-      border-color 0.14s ease;
+    transition: color 0.14s ease, background 0.14s ease, border-color 0.14s ease;
 
     &:hover {
       border-color: #cbd5e1;
@@ -665,15 +683,11 @@ const getEmptyDesc = (): string => {
       padding: 0 12px;
       border-radius: 8px;
       box-shadow: 0 0 0 1px #e2e8f0 inset;
-      transition:
-        box-shadow 0.14s ease,
-        background 0.14s ease;
+      transition: box-shadow 0.14s ease, background 0.14s ease;
     }
 
     :deep(.ed-input__wrapper.is-focus) {
-      box-shadow:
-        0 0 0 1px #3b82f6 inset,
-        0 0 0 3px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 1px #3b82f6 inset, 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
     :deep(.ed-input__prefix) {
@@ -864,9 +878,7 @@ const getEmptyDesc = (): string => {
   background: transparent;
   border: 0;
   border-radius: 6px;
-  transition:
-    color 0.12s ease,
-    background 0.12s ease;
+  transition: color 0.12s ease, background 0.12s ease;
 
   &:hover {
     color: #3b82f6;

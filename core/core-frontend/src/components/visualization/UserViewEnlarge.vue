@@ -86,7 +86,10 @@
           <el-divider
             class="close-divider"
             direction="vertical"
-            v-if="exportPermissions[0] || (excelExportEnabled && (exportPermissions[1] || exportPermissions[2]))"
+            v-if="
+              exportPermissions[0] ||
+              (excelExportEnabled && (exportPermissions[1] || exportPermissions[2]))
+            "
           />
         </div>
       </div>
@@ -178,7 +181,10 @@ import { getCanvasStyle } from '@/utils/style'
 import { exportPermission } from '@/utils/utils'
 import EmptyBackground from '../empty-background/src/EmptyBackground.vue'
 import { supportExtremumChartType } from '@/views/chart/components/js/extremumUitl'
-import { defaultViewExcelExportConfig, isExportableTableView } from '@/utils/visualization/filteredExcelExport.mjs'
+import {
+  defaultViewExcelExportConfig,
+  isExportableTableView
+} from '@/utils/visualization/filteredExcelExport.mjs'
 import ChartCarouselTooltip from '@/views/chart/components/js/g2plot_tooltip_carousel'
 import html2canvas from 'html2canvas'
 import { getData } from '@/api/chart'
@@ -662,7 +668,7 @@ defineExpose({
   }
   :deep(.is-active) {
     font-weight: 500;
-    color: var(--ed-color-primary, #3B82F6);
+    color: var(--ed-color-primary, #3b82f6);
   }
 
   :deep(.ed-tabs__nav-scroll) {

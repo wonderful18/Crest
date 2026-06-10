@@ -146,7 +146,9 @@
                 </div>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item v-if="exportPermissions[1] && excelExportEnabled" @click="exportAsExcel"
+                    <el-dropdown-item
+                      v-if="exportPermissions[1] && excelExportEnabled"
+                      @click="exportAsExcel"
                       >{{ excelExportLabel }}</el-dropdown-item
                     >
                     <el-dropdown-item
@@ -192,7 +194,9 @@
       </el-icon>
       <template #dropdown>
         <el-dropdown-menu style="width: 118px">
-          <el-dropdown-item @click="exportAsExcel" v-if="exportPermissions[1] && excelExportEnabled"
+          <el-dropdown-item
+            @click="exportAsExcel"
+            v-if="exportPermissions[1] && excelExportEnabled"
             >{{ excelExportLabel }}</el-dropdown-item
           >
           <el-dropdown-item
@@ -690,7 +694,7 @@ watch(
   font-size: 16px !important;
 }
 .bar-main-background {
-  background-color: var(--ed-color-primary, #3B82F6);
+  background-color: var(--ed-color-primary, #3b82f6);
 }
 
 .bar-main-right {
