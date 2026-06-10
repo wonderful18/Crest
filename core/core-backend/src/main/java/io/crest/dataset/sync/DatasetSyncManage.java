@@ -171,16 +171,16 @@ public class DatasetSyncManage {
             CrestException.throwException("请先开启数据集同步模式");
         }
         if (Objects.equals(dataset.getIsCross(), true)) {
-            CrestException.throwException("OB Oracle 数据集同步暂不支持跨源数据集");
+            CrestException.throwException("数据集缓存暂不支持跨源数据集");
         }
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(dataset, null);
         Map<Long, DatasourceSchemaDTO> dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
         if (dsMap == null || dsMap.size() != 1) {
-            CrestException.throwException("OB Oracle 数据集同步仅支持单一数据源");
+            CrestException.throwException("数据集缓存仅支持单一数据源");
         }
         DatasourceSchemaDTO datasource = dsMap.entrySet().iterator().next().getValue();
-        if (!Strings.CI.equals(datasource.getType(), DatasourceConfiguration.DatasourceType.obOracle.name())) {
-            CrestException.throwException("当前同步能力仅支持 OB Oracle 数据源");
+        if (!DatasetSyncUtils.isSupportedCacheSource(datasource.getType())) {
+            CrestException.throwException("当前缓存能力仅支持 MySQL 或 OB Oracle 数据源");
         }
         String sourceSql = Utils.replaceSchemaAlias((String) sqlMap.get("sql"), dsMap);
         List<DatasetTableFieldDTO> checkedFields = (List<DatasetTableFieldDTO>) sqlMap.get("field");
@@ -252,7 +252,14 @@ public class DatasetSyncManage {
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasource.getType());
         String fieldName = StringUtils.defaultIfBlank(incrementalField.getEngineFieldName(), incrementalField.getFieldShortName());
         copyRetainedCacheRows(context, tableName, incrementalField, task.getIncrementalLastValue());
-        String predicate = DatasetSyncUtils.buildIncrementalPredicate(incrementalField, task.getIncrementalLastValue(), datasourceType.getPrefix(), datasourceType.getSuffix(), true);
+        String predicate = DatasetSyncUtils.buildIncrementalPredicate(
+                incrementalField,
+                task.getIncrementalLastValue(),
+                datasourceType.getPrefix(),
+                datasourceType.getSuffix(),
+                true,
+                datasource.getType()
+        );
         String incrementalSql = "SELECT * FROM (" + context.sourceSql + ") sync_src WHERE " + predicate
                 + " ORDER BY " + incrementalOrderBy(context.checkedFields, fieldName, datasourceType);
 
@@ -288,7 +295,15 @@ public class DatasetSyncManage {
             try {
                 DatasourceSchemaDTO datasource = context.dsMap.entrySet().iterator().next().getValue();
                 DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasource.getType());
-                String pageSql = DatasetSyncUtils.buildOraclePageSql(sql, PAGE_SIZE, offset, context.checkedFields, datasourceType.getPrefix(), datasourceType.getSuffix());
+                String pageSql = DatasetSyncUtils.buildSourcePageSql(
+                        datasource.getType(),
+                        sql,
+                        PAGE_SIZE,
+                        offset,
+                        context.checkedFields,
+                        datasourceType.getPrefix(),
+                        datasourceType.getSuffix()
+                );
                 DatasourceRequest request = new DatasourceRequest();
                 request.setDsList(context.dsMap);
                 request.setIsCross(false);
@@ -326,8 +341,9 @@ public class DatasetSyncManage {
         }
         EngineRequest request = new EngineRequest();
         request.setEngine(context.engine);
+        DatasourceSchemaDTO datasource = context.dsMap.entrySet().iterator().next().getValue();
         request.setQuery(context.engineProvider.insertSql(
-                DatasourceConfiguration.DatasourceType.obOracle.name(),
+                datasource.getType(),
                 tableName,
                 updateType,
                 rows,

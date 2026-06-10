@@ -904,10 +904,14 @@ const findDatasource = (list, id) => {
 }
 
 const currentDatasource = computed(() => findDatasource(state.dataSourceList, dataSource.value))
-const obOracleDataset = computed(
-  () => !!dataSource.value && !isCross.value && currentDatasource.value?.type === 'obOracle'
+const syncSupportedDatasourceTypes = ['mysql', 'obOracle']
+const syncSupportedDataset = computed(
+  () =>
+    !!dataSource.value &&
+    !isCross.value &&
+    syncSupportedDatasourceTypes.includes(currentDatasource.value?.type)
 )
-const datasetMode = computed(() => (obOracleDataset.value && syncMode.value === 1 ? 1 : 0))
+const datasetMode = computed(() => (syncSupportedDataset.value && syncMode.value === 1 ? 1 : 0))
 const incrementalFieldOptions = computed(() =>
   allfields.value.filter(ele => ele.extField === 0 && ele.checked !== false)
 )
@@ -2112,7 +2116,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
               </div>
             </template>
           </el-tree-select>
-          <div v-if="obOracleDataset" class="dataset-sync-setting">
+          <div v-if="syncSupportedDataset" class="dataset-sync-setting">
             <div class="sync-row">
               <span>读取方式</span>
               <el-radio-group v-model="syncMode" @change="syncModeChange">
