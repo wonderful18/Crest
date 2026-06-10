@@ -174,6 +174,9 @@ public class DatasetSyncManage {
             CrestException.throwException("数据集缓存暂不支持跨源数据集");
         }
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(dataset, null);
+        if (DatasetSyncUtils.hasSqlParameters(dataset, sqlMap)) {
+            CrestException.throwException("带 SQL 参数的数据集暂不支持缓存");
+        }
         Map<Long, DatasourceSchemaDTO> dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
         if (dsMap == null || dsMap.size() != 1) {
             CrestException.throwException("数据集缓存仅支持单一数据源");

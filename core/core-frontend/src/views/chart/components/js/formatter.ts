@@ -1,20 +1,11 @@
 import { find, merge } from 'lodash-es'
 import { useI18n } from '@/hooks/web/useI18n'
-import { getLocale } from '@/utils/utils'
 import { parseJson } from '@/views/chart/components/js/util'
+import { formatterItem, isEnLocal } from '@/views/chart/components/js/formatter-default'
+
+export { formatterItem, isEnLocal }
 
 const { t } = useI18n()
-
-export const isEnLocal = !['zh', 'zh-cn', 'zh-CN', 'tw'].includes(getLocale())
-
-export const formatterItem = {
-  type: 'auto', // auto,value,percent
-  unitLanguage: isEnLocal ? 'en' : 'ch',
-  unit: 1, // 换算单位
-  suffix: '', // 单位后缀
-  decimalCount: 2, // 小数位数
-  thousandSeparator: true // 千分符
-}
 
 // 单位list
 export const unitType = [
