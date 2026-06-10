@@ -18,6 +18,7 @@ import { isMobile, getLocale } from '@/utils/utils'
 import { useRequestStoreWithOut } from '@/store/modules/request'
 import { clearCache } from '@/utils/cacheUtil'
 import { securityConfig } from './hmac'
+import { isLoginPath } from '@/router/authFailureNavigation.mjs'
 
 type AxiosErrorWidthLoading<T> = T & {
   config: {
@@ -256,7 +257,11 @@ service.interceptors.response.use(
     if (header.has('CREST-GATEWAY-FLAG')) {
       const userToken = wsCache.get('user.token')
       const inPlatformClient = !!wsCache.get('crest-platform-client')
+      const currentPath = router.currentRoute.value.path
       clearCache()
+      if (isLoginPath(currentPath)) {
+        return Promise.reject(error)
+      }
       if (!(userToken && inPlatformClient)) {
         const flag = header.get('CREST-GATEWAY-FLAG')
         localStorage.setItem('CREST-GATEWAY-FLAG', flag.toString())
