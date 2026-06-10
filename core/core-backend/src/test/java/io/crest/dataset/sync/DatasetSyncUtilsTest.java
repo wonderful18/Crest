@@ -7,15 +7,15 @@ import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTask;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
 import io.crest.extensions.datasource.dto.TableField;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DatasetSyncUtilsTest {
 
@@ -35,7 +35,8 @@ public class DatasetSyncUtilsTest {
         assertEquals(1, fields.size());
         assertEquals("f_user_id", fields.get(0).getName());
         assertEquals("f_user_id", fields.get(0).getOriginName());
-        assertEquals("用户ID", fields.get(0).getFieldType());
+        assertEquals("用户ID", fields.get(0).getNativeType());
+        assertEquals(Integer.valueOf(2), fields.get(0).getFieldType());
         assertEquals(Integer.valueOf(2), fields.get(0).getExtractedFieldType());
     }
 
@@ -50,6 +51,16 @@ public class DatasetSyncUtilsTest {
         assertEquals(
                 "\"f_updated_at\" > TO_TIMESTAMP('2026-05-14 12:30:01', 'YYYY-MM-DD HH24:MI:SS.FF')",
                 DatasetSyncUtils.buildIncrementalPredicate(timeField, "2026-05-14 12:30:01", "\"", "\"")
+        );
+    }
+
+    @Test
+    public void buildIncrementalPredicateUsesMysqlLiteralForMysqlTimeField() {
+        DatasetTableFieldDTO timeField = field(3L, "UPDATED_AT", "更新时间", "f_updated_at", 1, ExtFieldConstant.EXT_NORMAL);
+
+        assertEquals(
+                "`f_updated_at` >= '2026-05-14 12:30:01.0'",
+                DatasetSyncUtils.buildIncrementalPredicate(timeField, "2026-05-14 12:30:01.0", "`", "`", true, "mysql")
         );
     }
 
@@ -129,17 +140,46 @@ public class DatasetSyncUtilsTest {
     }
 
     @Test
-    public void shouldRouteToCacheOnlyForSingleObOracleExtractDataset() {
+    public void buildMysqlPageSqlUsesLimitOffsetAndKeepsOnlySyncableColumns() {
+        DatasetTableFieldDTO id = field(1L, "ID", "ID", "f_id", 2, ExtFieldConstant.EXT_NORMAL);
+        DatasetTableFieldDTO calc = field(2L, "[1] + 1", "计算字段", "f_calc", 2, ExtFieldConstant.EXT_CALC);
+
+        String sql = DatasetSyncUtils.buildSourcePageSql(
+                "mysql",
+                "SELECT t_a_0.`ID` AS `f_id` FROM `t_user` t_a_0",
+                1000,
+                2000,
+                List.of(id, calc),
+                "`",
+                "`"
+        );
+
+        assertEquals(
+                "SELECT SYNC_PAGE.`f_id` FROM (SELECT t_a_0.`ID` AS `f_id` FROM `t_user` t_a_0) SYNC_PAGE LIMIT 1000 OFFSET 2000",
+                sql
+        );
+    }
+
+    @Test
+    public void shouldRouteToCacheOnlyForSingleSupportedExtractDataset() {
         assertTrue(DatasetSyncUtils.shouldRouteToCache(dataset(1, false), sqlMap("obOracle")));
+        assertTrue(DatasetSyncUtils.shouldRouteToCache(dataset(1, false), sqlMap("mysql")));
 
         assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset(0, false), sqlMap("obOracle")));
         assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset(1, true), sqlMap("obOracle")));
         assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset(1, false), sqlMap("Excel")));
         assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset(1, false), sqlMap("API")));
-        assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset(1, false), sqlMap("mysql")));
         assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset(1, false), sqlMap("obOracle", "mysql")));
         assertFalse(DatasetSyncUtils.shouldRouteToCache(null, sqlMap("obOracle")));
         assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset(1, false), null));
+    }
+
+    @Test
+    public void shouldNotRouteParameterizedSqlDatasetToCache() {
+        Map<String, Object> sqlMap = sqlMap("mysql");
+        sqlMap.put("tableFieldWithValues", List.of(new Object()));
+
+        assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset(1, false), sqlMap));
     }
 
     @Test
