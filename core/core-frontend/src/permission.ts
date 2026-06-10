@@ -16,6 +16,7 @@ import { useLoading } from '@/hooks/web/useLoading'
 import { ElMessageBox } from 'element-plus-secondary'
 import { clearCache } from '@/utils/cacheUtil'
 import { resolveAuthFailureNavigation } from '@/router/authFailureNavigation.mjs'
+import { isReadOnlyRoute, shouldBypassAuthenticatedMenuGuard } from '@/router/routeAccessPolicy.mjs'
 const appearanceStore = useAppearanceStoreWithOut()
 const { wsCache } = useCache()
 const permissionStore = usePermissionStoreWithOut()
@@ -34,13 +35,6 @@ const portalHome = '/portal'
 const backendHome = '/workbranch/index'
 
 const isPortalRoute = (path: string) => path === portalHome || path.startsWith(`${portalHome}/`)
-const isReadOnlyRoute = (path: string, name?: string | symbol) =>
-  path === '/preview' ||
-  path === '/previewShow' ||
-  path === '/dashboardPreview' ||
-  path === '/chart-view' ||
-  path.startsWith('/link/') ||
-  name === 'link'
 const isAccountRoute = (path: string) => path.startsWith('/modify-pwd')
 const isBackendRoute = (path: string, name?: string | symbol) =>
   !isPortalRoute(path) &&
@@ -120,7 +114,7 @@ router.beforeEach(async (to, from, next) => {
     } else if (isPortalRoute(to.path)) {
       permissionStore.setCurrentPath(to.path)
       next()
-    } else if (!userStore.getBackendAccess && isReadOnlyRoute(to.path, to.name)) {
+    } else if (shouldBypassAuthenticatedMenuGuard(to)) {
       permissionStore.setCurrentPath(to.path)
       next()
     } else if (!userStore.getBackendAccess && isBackendRoute(to.path, to.name)) {
