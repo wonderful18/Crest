@@ -2007,6 +2007,8 @@ export default {
     group_name_edit_tip: '分組名稱長度為 1-50 個字符',
     group_name_error_tip: '請輸入正確的分組名稱',
     merge_cells: '合併儲存格',
+    merge_cells_fields: '合併字段',
+    merge_cells_fields_placeholder: '請選擇字段',
     length_limit: '長度限制',
     radar_point: '開啟輔助點',
     radar_point_size: '輔助點大小',

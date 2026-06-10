@@ -2059,6 +2059,8 @@ export default {
     group_name_edit_tip: 'Group names are 1-50 characters in length',
     group_name_error_tip: 'Please input valid group name',
     merge_cells: 'Merge cells',
+    merge_cells_fields: 'Merge fields',
+    merge_cells_fields_placeholder: 'Select fields',
     length_limit: 'Length limit',
     radar_point: 'Enable auxiliary points',
     radar_point_size: 'Size',
