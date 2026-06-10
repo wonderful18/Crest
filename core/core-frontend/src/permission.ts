@@ -29,6 +29,10 @@ const whiteList = ['/login', '/sso/callback', '/chart-view', '/admin-login', '/4
 const embeddedWindowWhiteList = ['/dvCanvas', '/dashboard', '/preview', '/dataset-embedded-form']
 const embeddedRouteWhiteList = ['/dataset-embedded', '/dataset-form', '/dataset-embedded-form']
 
+const isPublicLinkRoute = to => {
+  return to.name === 'link' || to.path.startsWith('/link/')
+}
+
 const parseRedirectLocation = (redirectPath: string) => {
   let target = redirectPath || '/workbranch/index'
   try {
@@ -71,6 +75,12 @@ router.beforeEach(async (to, from, next) => {
   wsCache.set('TreeSort-backend', defaultSort?.['basic.defaultSort'] ?? '1')
   wsCache.set('open-backend', defaultSort?.['basic.defaultOpen'] ?? '0')
   if (to.path === '/sso/callback') {
+    permissionStore.setCurrentPath(to.path)
+    next()
+    return
+  }
+  if (isPublicLinkRoute(to)) {
+    await appearanceStore.setFontList()
     permissionStore.setCurrentPath(to.path)
     next()
     return
@@ -165,8 +175,7 @@ router.beforeEach(async (to, from, next) => {
       permissionStore.setCurrentPath(to.path)
       next()
     } else if (
-      to.name === 'link' ||
-      to.path.startsWith('/link/') ||
+      isPublicLinkRoute(to) ||
       (!platform && embeddedWindowWhiteList.includes(to.path)) ||
       whiteList.includes(to.path)
     ) {
