@@ -66,7 +66,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NullPointerException.class)
     public ResultMessage noUserExceptionHandler(Exception e) {
         String message = e.getMessage();
-        LogUtil.info("NullPointerException: " + message);
+        LogUtil.error("NullPointerException: " + message, e);
         if (Strings.CS.contains(message, "Cannot invoke \"io.crest.auth.bo.TokenUserBO.getUserId()\" because \"user\" is null")) {
             return new ResultMessage(ResultCode.USER_NOT_LOGGED_IN.code(), ResultCode.USER_NOT_LOGGED_IN.message());
         }

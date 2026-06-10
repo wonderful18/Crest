@@ -272,7 +272,9 @@
                                           ><component
                                             class="svg-icon"
                                             style="width: 14px; height: 14px"
-                                            :class="`field-icon-${fieldType[curViewField.fieldType]}`"
+                                            :class="`field-icon-${
+                                              fieldType[curViewField.fieldType]
+                                            }`"
                                             :is="iconFieldMap[fieldType[curViewField.fieldType]]"
                                           ></component
                                         ></Icon>
@@ -1302,7 +1304,7 @@ defineExpose({
 }
 
 .item-dimension:hover {
-  border: 1px solid var(--ed-color-primary, #3B82F6);
+  border: 1px solid var(--ed-color-primary, #3b82f6);
   background: var(--ed-color-primary-1a, rgba(59, 130, 246, 0.1));
 }
 

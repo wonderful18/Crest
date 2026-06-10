@@ -41,6 +41,103 @@ public class ApiUtils {
     private static TypeReference<List<Map<String, Object>>> listForMapTypeReference = new TypeReference<List<Map<String, Object>>>() {
     };
 
+    private static String normalizeJsonPath(String jsonPath) {
+        String path = StringUtils.trimToEmpty(jsonPath);
+        if (StringUtils.isBlank(path)) {
+            return path;
+        }
+        if (Strings.CS.equals(path, "$") || path.startsWith("$.") || path.startsWith("$[")) {
+            return path;
+        }
+        if (path.startsWith("$")) {
+            return "$." + path.substring(1);
+        }
+        if (path.startsWith(".")) {
+            return "$" + path;
+        }
+        return "$." + path;
+    }
+
+    private static String appendListWildcard(String jsonPath) {
+        if (StringUtils.isBlank(jsonPath) || jsonPath.endsWith("[*]")) {
+            return jsonPath;
+        }
+        return jsonPath + "[*]";
+    }
+
+    private static List<Object> toRowList(Object object) {
+        if (object instanceof List<?>) {
+            return new ArrayList<>((List<?>) object);
+        }
+        List<Object> rows = new ArrayList<>();
+        rows.add(object);
+        return rows;
+    }
+
+    private static String toJsonString(Object object) {
+        try {
+            return objectMapper.writeValueAsString(object);
+        } catch (Exception e) {
+            return String.valueOf(object);
+        }
+    }
+
+    private static void checkLeafFields(List<Map<String, Object>> fields) {
+        if (fields == null) {
+            return;
+        }
+        for (Map<String, Object> field : fields) {
+            List<Map<String, Object>> children = (List<Map<String, Object>>) field.get("children");
+            if (CollectionUtils.isEmpty(children)) {
+                field.put("checked", true);
+            } else {
+                checkLeafFields(children);
+            }
+        }
+    }
+
+    private static String toRowRelativeJsonPath(String fieldJsonPath, String rootJsonPath, String rootListJsonPath, String originName) {
+        String normalizedFieldPath = normalizeJsonPath(fieldJsonPath);
+        if (StringUtils.isBlank(normalizedFieldPath) && StringUtils.isNotBlank(originName)) {
+            return "$['" + originName + "']";
+        }
+        String suffix = null;
+        if (StringUtils.isNotBlank(rootListJsonPath) && normalizedFieldPath.startsWith(rootListJsonPath)) {
+            suffix = normalizedFieldPath.substring(rootListJsonPath.length());
+        } else if (StringUtils.isNotBlank(rootJsonPath) && normalizedFieldPath.startsWith(rootJsonPath)) {
+            suffix = normalizedFieldPath.substring(rootJsonPath.length());
+        }
+        if (StringUtils.isBlank(suffix)) {
+            return normalizedFieldPath;
+        }
+        if (suffix.startsWith(".[")) {
+            return "$" + suffix.substring(1);
+        }
+        if (suffix.startsWith(".")) {
+            return "$" + suffix;
+        }
+        return "$" + suffix;
+    }
+
+    private static String cellValue(Object value) {
+        if (value == null) {
+            return "";
+        }
+        if (value instanceof List<?> list) {
+            if (list.isEmpty()) {
+                return "";
+            }
+            if (list.size() == 1) {
+                return cellValue(list.get(0));
+            }
+            return toJsonString(list).replaceAll("\n", " ").replaceAll("\r", " ");
+        }
+        if (value instanceof Map<?, ?> || value instanceof Collection<?>) {
+            return toJsonString(value).replaceAll("\n", " ").replaceAll("\r", " ");
+        }
+        return String.valueOf(value).replaceAll("\n", " ").replaceAll("\r", " ");
+    }
+
     private static String formatTimeFunctionValue(String timeFormat) {
         if (StringUtils.isBlank(timeFormat)) {
             return null;
@@ -557,7 +654,9 @@ public class ApiUtils {
             CrestException.throwException("该请求返回数据为空");
         }
         List<Map<String, Object>> fields = new ArrayList<>();
-        if (apiDefinition.isShowApiStructure() || !apiDefinition.isUseJsonPath()) {
+        boolean useSelectedJsonPath = apiDefinition.isUseJsonPath()
+                && StringUtils.isNotBlank(apiDefinition.getJsonPath());
+        if (!useSelectedJsonPath) {
             String rootPath;
             if (response.startsWith("[")) {
                 rootPath = "$[*]";
@@ -578,66 +677,37 @@ public class ApiUtils {
             apiDefinition.setJsonFields(fields);
             return apiDefinition;
         } else {
-            List<LinkedHashMap> currentData = new ArrayList<>();
+            List<Object> currentData = new ArrayList<>();
+            String jsonPath = normalizeJsonPath(apiDefinition.getJsonPath());
+            apiDefinition.setJsonPath(jsonPath);
+            boolean jsonPathResultIsList;
             try {
-                Object object = JsonPath.read(response, apiDefinition.getJsonPath());
-                if (object instanceof List) {
-                    currentData = (List<LinkedHashMap>) object;
-                } else {
-                    currentData.add((LinkedHashMap) object);
-                }
+                Object object = JsonPath.read(response, jsonPath);
+                jsonPathResultIsList = object instanceof List;
+                currentData = toRowList(object);
             } catch (Exception e) {
                 CrestException.throwException(e);
+                return apiDefinition;
             }
             int i = 0;
             try {
-                LinkedHashMap data = currentData.get(0);
+                Object data = currentData.get(0);
+                if (!(data instanceof Map)) {
+                    CrestException.throwException("数据不符合规范");
+                }
             } catch (Exception e) {
                 CrestException.throwException("数据不符合规范, " + e.getMessage());
             }
-            for (LinkedHashMap data : currentData) {
+            String rootPath = jsonPathResultIsList ? appendListWildcard(jsonPath) : jsonPath;
+            for (Object data : currentData) {
                 if (i >= apiDefinition.getPreviewNum()) {
                     break;
                 }
-                if (i == 0) {
-                    for (Object o : data.keySet()) {
-                        Map<String, Object> field = new HashMap<>();
-                        field.put("originName", o.toString());
-                        field.put("name", o.toString());
-                        field.put("type", "STRING");
-                        field.put("checked", true);
-                        field.put("size", 65535);
-                        field.put("extractedFieldType", 0);
-                        field.put("fieldType", 0);
-                        field.put("extField", 0);
-                        fields.add(field);
-                    }
-                }
-                for (Map<String, Object> field : fields) {
-                    JSONArray array = new JSONArray();
-                    String value = Optional.ofNullable(data.get(field.get("originName"))).orElse("").toString();
-                    if (value.startsWith("{") && value.endsWith("}")) {
-                        try {
-                            value = objectMapper.writeValueAsString(data.get(field.get("originName")));
-                        } catch (Exception e) {
-                        }
-                    }
-                    if (field.get("value") != null) {
-                        try {
-                            TypeReference<JSONArray> listTypeReference = new TypeReference<JSONArray>() {
-                            };
-                            array = objectMapper.readValue(field.get("value").toString(), listTypeReference);
-                        } catch (Exception e) {
-                            CrestException.throwException(e);
-                        }
-                        array.add(value.replaceAll("\n", " ").replaceAll("\r", " "));
-                    } else {
-                        array.add(value.replaceAll("\n", " ").replaceAll("\r", " "));
-                    }
-                    field.put("value", array);
-                }
+                handleStr(apiDefinition, toJsonString(data), fields, rootPath);
                 i++;
             }
+            checkLeafFields(fields);
+            previewNum(fields, response);
             apiDefinition.setJsonFields(fields);
             return apiDefinition;
         }
@@ -839,25 +909,30 @@ public class ApiUtils {
     private static List<String[]> fetchResult(String result, ApiDefinition apiDefinition) {
         List<String[]> dataList = new LinkedList<>();
         if (apiDefinition.isUseJsonPath()) {
-            List<LinkedHashMap> currentData = new ArrayList<>();
-            Object object = JsonPath.read(result, apiDefinition.getJsonPath());
-            if (object instanceof List) {
-                currentData = (List<LinkedHashMap>) object;
-            } else {
-                currentData.add((LinkedHashMap) object);
-            }
-            for (LinkedHashMap data : currentData) {
+            String jsonPath = normalizeJsonPath(apiDefinition.getJsonPath());
+            apiDefinition.setJsonPath(jsonPath);
+            Object object = JsonPath.read(result, jsonPath);
+            boolean jsonPathResultIsList = object instanceof List;
+            String rootListJsonPath = jsonPathResultIsList ? appendListWildcard(jsonPath) : jsonPath;
+            List<Object> currentData = toRowList(object);
+            for (Object data : currentData) {
                 String[] row = new String[apiDefinition.getFields().size()];
                 int i = 0;
+                String rowJson = toJsonString(data);
                 for (TableField field : apiDefinition.getFields()) {
-                    String value = Optional.ofNullable(data.get(field.getOriginName())).orElse("").toString();
-                    if (value.startsWith("{") && value.endsWith("}")) {
-                        try {
-                            value = objectMapper.writeValueAsString(data.get(field.getOriginName()));
-                        } catch (Exception e) {
-                        }
+                    String relativePath = toRowRelativeJsonPath(
+                            field.getJsonPath(),
+                            jsonPath,
+                            rootListJsonPath,
+                            field.getOriginName()
+                    );
+                    Object value;
+                    try {
+                        value = JsonPath.using(jsonPathConf).parse(rowJson).read(relativePath);
+                    } catch (Exception e) {
+                        value = data instanceof Map<?, ?> map ? map.get(field.getOriginName()) : null;
                     }
-                    row[i] = value.replaceAll("\n", " ").replaceAll("\r", " ");
+                    row[i] = cellValue(value);
                     i++;
                 }
                 dataList.add(row);

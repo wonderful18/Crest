@@ -129,7 +129,8 @@ const dfsSubmit = arr => {
         subTree: { logic, items: subTree }
       })
     } else {
-      const { enumValue, fieldId, filterType, fieldType, term, value, timeType, name, timeValue } = ele
+      const { enumValue, fieldId, filterType, fieldType, term, value, timeType, name, timeValue } =
+        ele
       errorDetected({ fieldType, enumValue, filterType, term, value, name, timeValue })
       if (fieldId) {
         items.push({

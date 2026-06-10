@@ -7,12 +7,7 @@ import { useCache } from '@/hooks/web/useCache'
 import { ElMessage } from 'element-plus-secondary'
 import { cloneDeep } from 'lodash-es'
 import { useI18n } from '@/hooks/web/useI18n'
-import {
-  datasetTree,
-  moveDatasetTree,
-  createDatasetTree,
-  renameDatasetTree
-} from '@/api/dataset'
+import { datasetTree, moveDatasetTree, createDatasetTree, renameDatasetTree } from '@/api/dataset'
 import type { DatasetOrFolder } from '@/api/dataset'
 import nothingTree from '@/assets/img/nothing-tree.png'
 import { BusiTreeRequest } from '@/models/tree/TreeNode'
@@ -443,7 +438,7 @@ const emits = defineEmits(['finish', 'onDatasetSave'])
       text-overflow: ellipsis;
       overflow: hidden;
       :deep(.highLight) {
-        color: var(--el-color-primary, #3B82F6);
+        color: var(--el-color-primary, #3b82f6);
       }
     }
   }

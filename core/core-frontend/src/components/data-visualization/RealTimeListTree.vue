@@ -628,9 +628,7 @@ const canvasChange = () => {
               <div v-if="getComponent(index)?.component === 'Group' && getComponent(index)?.expand">
                 <real-time-group :component-data="getComponent(index).propValue"></real-time-group>
               </div>
-              <div
-                v-if="getComponent(index)?.component === 'Tabs' && getComponent(index)?.expand"
-              >
+              <div v-if="getComponent(index)?.component === 'Tabs' && getComponent(index)?.expand">
                 <real-time-tab
                   :tab-element="getComponent(index)"
                   :component-data="getComponent(index).propValue"

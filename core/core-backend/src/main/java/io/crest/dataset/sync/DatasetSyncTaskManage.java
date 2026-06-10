@@ -85,24 +85,24 @@ public class DatasetSyncTaskManage {
             record.setId(exists.getId());
             record.setCreateTime(exists.getCreateTime());
             record.setUpdateTime(now);
-            record.setCacheReady(exists.getCacheReady());
-            record.setLastExecTime(Objects.requireNonNullElse(task.getLastExecTime(), exists.getLastExecTime()));
-            record.setHeartbeatTime(Objects.requireNonNullElse(task.getHeartbeatTime(), exists.getHeartbeatTime()));
+            record.setCacheReady(firstNonNull(exists.getCacheReady(), record.getCacheReady(), 0));
+            record.setLastExecTime(firstNonNull(task.getLastExecTime(), exists.getLastExecTime()));
+            record.setHeartbeatTime(firstNonNull(task.getHeartbeatTime(), exists.getHeartbeatTime()));
             record.setLastExecStatus(StringUtils.defaultIfBlank(task.getLastExecStatus(), exists.getLastExecStatus()));
-            record.setTaskStatus(StringUtils.defaultIfBlank(task.getTaskStatus(), exists.getTaskStatus()));
+            record.setTaskStatus(resolveTaskStatus(record, exists));
             record.setSchemaHash(StringUtils.defaultIfBlank(task.getSchemaHash(), exists.getSchemaHash()));
-            record.setLastFullSyncTime(Objects.requireNonNullElse(task.getLastFullSyncTime(), exists.getLastFullSyncTime()));
-            record.setLastVerifyTime(Objects.requireNonNullElse(task.getLastVerifyTime(), exists.getLastVerifyTime()));
+            record.setLastFullSyncTime(firstNonNull(task.getLastFullSyncTime(), exists.getLastFullSyncTime()));
+            record.setLastVerifyTime(firstNonNull(task.getLastVerifyTime(), exists.getLastVerifyTime()));
             record.setLastVerifyStatus(StringUtils.defaultIfBlank(task.getLastVerifyStatus(), exists.getLastVerifyStatus()));
             record.setLastVerifyMessage(StringUtils.defaultIfBlank(task.getLastVerifyMessage(), exists.getLastVerifyMessage()));
-            record.setLastSourceRowCount(Objects.requireNonNullElse(task.getLastSourceRowCount(), exists.getLastSourceRowCount()));
-            record.setLastCacheRowCount(Objects.requireNonNullElse(task.getLastCacheRowCount(), exists.getLastCacheRowCount()));
-            record.setConsecutiveFailures(Objects.requireNonNullElse(task.getConsecutiveFailures(), exists.getConsecutiveFailures()));
-            record.setFullSyncIntervalHours(Objects.requireNonNullElse(task.getFullSyncIntervalHours(), exists.getFullSyncIntervalHours()));
-            record.setVerifyEnabled(Objects.requireNonNullElse(task.getVerifyEnabled(), exists.getVerifyEnabled()));
-            record.setCacheExpireHours(Objects.requireNonNullElse(task.getCacheExpireHours(), exists.getCacheExpireHours()));
-            record.setTaskTimeoutMinutes(Objects.requireNonNullElse(task.getTaskTimeoutMinutes(), exists.getTaskTimeoutMinutes()));
-            record.setFailureWarnThreshold(Objects.requireNonNullElse(task.getFailureWarnThreshold(), exists.getFailureWarnThreshold()));
+            record.setLastSourceRowCount(firstNonNull(task.getLastSourceRowCount(), exists.getLastSourceRowCount()));
+            record.setLastCacheRowCount(firstNonNull(task.getLastCacheRowCount(), exists.getLastCacheRowCount()));
+            record.setConsecutiveFailures(firstNonNull(task.getConsecutiveFailures(), exists.getConsecutiveFailures(), 0));
+            record.setFullSyncIntervalHours(firstNonNull(task.getFullSyncIntervalHours(), exists.getFullSyncIntervalHours(), DatasetSyncUtils.DEFAULT_FULL_SYNC_INTERVAL_HOURS));
+            record.setVerifyEnabled(firstNonNull(task.getVerifyEnabled(), exists.getVerifyEnabled(), 1));
+            record.setCacheExpireHours(firstNonNull(task.getCacheExpireHours(), exists.getCacheExpireHours(), DatasetSyncUtils.DEFAULT_CACHE_EXPIRE_HOURS));
+            record.setTaskTimeoutMinutes(firstNonNull(task.getTaskTimeoutMinutes(), exists.getTaskTimeoutMinutes(), DatasetSyncUtils.DEFAULT_TASK_TIMEOUT_MINUTES));
+            record.setFailureWarnThreshold(firstNonNull(task.getFailureWarnThreshold(), exists.getFailureWarnThreshold(), DatasetSyncUtils.DEFAULT_FAILURE_WARN_THRESHOLD));
             boolean incrementalConfigChanged = !Strings.CI.equals(record.getUpdateType(), exists.getUpdateType())
                     || !Objects.equals(record.getIncrementalFieldId(), exists.getIncrementalFieldId());
             if (incrementalConfigChanged) {
@@ -112,6 +112,9 @@ public class DatasetSyncTaskManage {
                 record.setIncrementalLastValue(exists.getIncrementalLastValue());
             }
             taskMapper.updateById(record);
+            if (incrementalConfigChanged) {
+                clearIncrementalState(record);
+            }
         }
         CoreDatasetSyncTask saved = taskMapper.selectById(record.getId());
         refreshSchedule(saved);
@@ -345,7 +348,9 @@ public class DatasetSyncTaskManage {
             CrestException.throwException("cron can not be empty");
         }
         if (StringUtils.isBlank(record.getTaskStatus())) {
-            record.setTaskStatus(TaskStatus.WaitingForExecution.name());
+            record.setTaskStatus(Strings.CI.equals(record.getSyncRate(), DatasourceTaskServer.ScheduleType.RIGHTNOW.name())
+                    ? TaskStatus.Stopped.name()
+                    : TaskStatus.WaitingForExecution.name());
         }
         if (record.getCacheReady() == null) {
             record.setCacheReady(0);
@@ -393,6 +398,36 @@ public class DatasetSyncTaskManage {
         dto.setCacheExpired(DatasetSyncUtils.isCacheExpired(task, now));
         dto.setFailureWarned(DatasetSyncUtils.isFailureWarned(task));
         return dto;
+    }
+
+    private String resolveTaskStatus(CoreDatasetSyncTask record, CoreDatasetSyncTask exists) {
+        if (Strings.CI.equals(exists.getTaskStatus(), TaskStatus.UnderExecution.name())) {
+            return TaskStatus.UnderExecution.name();
+        }
+        if (Strings.CI.equals(record.getSyncRate(), DatasourceTaskServer.ScheduleType.RIGHTNOW.name())) {
+            return TaskStatus.Stopped.name();
+        }
+        return TaskStatus.WaitingForExecution.name();
+    }
+
+    private void clearIncrementalState(CoreDatasetSyncTask task) {
+        UpdateWrapper<CoreDatasetSyncTask> wrapper = new UpdateWrapper<>();
+        wrapper.eq("id", task.getId())
+                .set("incremental_last_value", null)
+                .set("schema_hash", null);
+        if (!Strings.CI.equals(task.getUpdateType(), "add_scope")) {
+            wrapper.set("incremental_field_id", null);
+        }
+        taskMapper.update(new CoreDatasetSyncTask(), wrapper);
+    }
+
+    private <T> T firstNonNull(T preferred, T fallback) {
+        return preferred != null ? preferred : fallback;
+    }
+
+    private <T> T firstNonNull(T preferred, T fallback, T defaultValue) {
+        T value = firstNonNull(preferred, fallback);
+        return value != null ? value : defaultValue;
     }
 
     private DatasetSyncLogDTO toLogDTO(CoreDatasetSyncTaskLog log) {

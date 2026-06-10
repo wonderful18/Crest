@@ -278,8 +278,8 @@ onMounted(() => {
     }
 
     &.active {
-      color: var(--ed-color-primary, #3B82F6);
-      border-color: var(--ed-color-primary, #3B82F6);
+      color: var(--ed-color-primary, #3b82f6);
+      border-color: var(--ed-color-primary, #3b82f6);
     }
   }
 
