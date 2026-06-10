@@ -73,7 +73,8 @@ export class TableInfo extends S2ChartView<TableSheet> {
       'tableFreeze',
       'tableColumnFreezeHead',
       'tableRowFreezeHead',
-      'mergeCells'
+      'mergeCells',
+      'mergeFields'
     ],
     'summary-selector': ['showSummary', 'summaryLabel']
   }

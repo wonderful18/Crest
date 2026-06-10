@@ -634,6 +634,10 @@ declare interface ChartTableCellAttr {
    */
   mergeCells: boolean
   /**
+   * 合并字段
+   */
+  mergeFields?: string[]
+  /**
    * 对齐设置
    */
   alignConfig: {

@@ -82,6 +82,10 @@ import { useCache } from '@/hooks/web/useCache'
 import { RefreshLeft } from '@element-plus/icons-vue'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 import { exportPermission, isFreeFolder } from '@/utils/utils'
+import {
+  EXPORT_DATASET_RESULT,
+  resolveExportDatasetResult
+} from './exportDatasetResult.mjs'
 const { t } = useI18n()
 const interactiveStore = interactiveStoreWithOut()
 const { wsCache } = useCache()
@@ -391,6 +395,9 @@ const closeExport = () => {
 }
 
 const save = ({ logic, items, errorMessage }: any) => {
+  if (exportDatasetLoading.value) {
+    return
+  }
   table.value.id = nodeInfo.id
   table.value.row = 100000
   table.value.filename = exportForm.value.name
@@ -400,9 +407,24 @@ const save = ({ logic, items, errorMessage }: any) => {
     return
   }
   table.value.expressionTree = JSON.stringify({ items, logic })
+  let exportSucceeded = false
   exportDatasetLoading.value = true
   exportDatasetData(table.value)
-    .then(res => {
+    .then(async res => {
+      const result = await resolveExportDatasetResult(res)
+      if (result.status === EXPORT_DATASET_RESULT.CANCELED) {
+        ElMessage.warning(
+          result.message && result.message !== 'request canceled'
+            ? result.message
+            : '导出请求已取消，请重试'
+        )
+        return
+      }
+      if (result.status === EXPORT_DATASET_RESULT.FAILED) {
+        ElMessage.error(result.message || '数据集导出请求失败，请稍后再试')
+        return
+      }
+      exportSucceeded = true
       if (isCrestBi.value || appStore.getIsIframe) {
         const blob = new Blob([res.data], { type: 'application/vnd.ms-excel' })
         const link = document.createElement('a')
@@ -416,13 +438,22 @@ const save = ({ logic, items, errorMessage }: any) => {
         openMessageLoading(exportData)
       }
     })
+    .catch(error => {
+      const message = typeof error === 'string' ? error : error?.message
+      ElMessage.error(message || '数据集导出请求失败，请稍后再试')
+    })
     .finally(() => {
       exportDatasetLoading.value = false
-      showExport.value = false
+      if (exportSucceeded) {
+        showExport.value = false
+      }
     })
 }
 
 const exportDatasetRequest = () => {
+  if (exportDatasetLoading.value) {
+    return
+  }
   exportFormRef.value.validate(valid => {
     if (valid) {
       rowAuth.value.submit()
@@ -1139,7 +1170,11 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
     <template v-slot:footer>
       <div class="dialog-footer">
         <el-button secondary @click="closeExport">{{ $t('dataset.cancel') }} </el-button>
-        <el-button v-loading="exportDatasetLoading" type="primary" @click="exportDatasetRequest"
+        <el-button
+          v-loading="exportDatasetLoading"
+          type="primary"
+          :disabled="exportDatasetLoading"
+          @click="exportDatasetRequest"
           >{{ $t('dataset.confirm') }}
         </el-button>
       </div>
