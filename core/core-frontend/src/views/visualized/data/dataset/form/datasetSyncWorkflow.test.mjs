@@ -4,6 +4,9 @@ import {
   buildDatasetSyncTaskPayload,
   executeDatasetSyncNowFlow,
   formatDatasetSyncRowCount,
+  getDatasetSyncNowDisabledReason,
+  getDatasetSyncStatusText,
+  getIncrementalDisabledReason,
   normalizeDatasetSyncInfo
 } from './datasetSyncWorkflow.mjs'
 
@@ -155,6 +158,41 @@ describe('dataset sync workflow', () => {
     assert.equal(formatDatasetSyncRowCount({ taskStatus: 'Completed', rowCount: 0 }), '0 行')
     assert.equal(formatDatasetSyncRowCount({ taskStatus: 'Completed', rowCount: 79 }), '79 行')
     assert.equal(formatDatasetSyncRowCount(), '')
+  })
+
+  it('uses clear cache status text before cache data is generated', () => {
+    assert.equal(getDatasetSyncStatusText({ syncMode: 0 }), '未开启')
+    assert.equal(getDatasetSyncStatusText({ syncMode: 1, hasDatasetId: false }), '待保存')
+    assert.equal(getDatasetSyncStatusText({ syncMode: 1, hasDatasetId: true }), '待更新')
+    assert.equal(
+      getDatasetSyncStatusText({
+        syncMode: 1,
+        hasDatasetId: true,
+        lastExecStatus: 'Completed',
+        cacheReady: 1
+      }),
+      '缓存可用'
+    )
+  })
+
+  it('explains why cache update cannot be submitted', () => {
+    assert.equal(
+      getDatasetSyncNowDisabledReason({ hasDatasetId: false, syncRunning: false }),
+      '请先保存数据集，再执行缓存更新'
+    )
+    assert.equal(
+      getDatasetSyncNowDisabledReason({ hasDatasetId: true, syncRunning: true }),
+      '缓存更新正在执行'
+    )
+    assert.equal(getDatasetSyncNowDisabledReason({ hasDatasetId: true, syncRunning: false }), '')
+  })
+
+  it('explains when incremental update is unavailable', () => {
+    assert.equal(
+      getIncrementalDisabledReason([]),
+      '当前没有可用增量字段，请使用全量更新'
+    )
+    assert.equal(getIncrementalDisabledReason([{ id: 'field-1' }]), '')
   })
 
   it('normalizes historical reconcile copy to user-facing cache wording', () => {

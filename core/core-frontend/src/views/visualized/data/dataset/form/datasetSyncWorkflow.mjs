@@ -36,6 +36,33 @@ export const normalizeDatasetSyncInfo = info => {
     .replaceAll('对账执行失败', '数据一致性校验失败')
 }
 
+export const getDatasetSyncStatusText = syncTask => {
+  if (syncTask?.syncMode !== 1) return '未开启'
+  if (!syncTask?.hasDatasetId) return '待保存'
+  if (syncTask?.taskStatus === 'UnderExecution') return '更新中'
+  if (syncTask?.failureWarned) return '连续失败'
+  if (syncTask?.lastVerifyStatus === 'WARNING') return '校验异常'
+  if (syncTask?.cacheExpired) return '缓存过期'
+  if (syncTask?.lastExecStatus === 'Completed') {
+    return syncTask?.cacheReady === 1 ? '缓存可用' : '已完成'
+  }
+  if (syncTask?.lastExecStatus === 'Error') return '更新失败'
+  if (syncTask?.taskStatus === 'Stopped') return '已停止'
+  return '待更新'
+}
+
+export const getDatasetSyncNowDisabledReason = ({ hasDatasetId, syncRunning }) => {
+  if (!hasDatasetId) return '请先保存数据集，再执行缓存更新'
+  if (syncRunning) return '缓存更新正在执行'
+  return ''
+}
+
+export const getIncrementalDisabledReason = incrementalFieldOptions => {
+  return Array.isArray(incrementalFieldOptions) && incrementalFieldOptions.length
+    ? ''
+    : '当前没有可用增量字段，请使用全量更新'
+}
+
 export const executeDatasetSyncNowFlow = async ({
   currentDatasetId,
   syncRunning,
