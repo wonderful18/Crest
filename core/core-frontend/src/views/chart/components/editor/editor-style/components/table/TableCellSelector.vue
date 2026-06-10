@@ -656,6 +656,9 @@ onMounted(() => {
           :value="item.id"
         />
       </el-select>
+      <div class="merge-fields-tip" :class="{ 'merge-fields-tip--dark': themes === 'dark' }">
+        {{ t('chart.merge_cells_fields_tip') }}
+      </div>
     </el-form-item>
     <el-form-item
       class="form-item"
@@ -767,5 +770,15 @@ onMounted(() => {
   display: flex;
   flex-direction: row;
   align-items: center;
+}
+.merge-fields-tip {
+  margin-top: 6px;
+  color: rgba(31, 35, 41, 0.6);
+  font-size: 12px;
+  line-height: 18px;
+
+  &.merge-fields-tip--dark {
+    color: rgba(235, 235, 235, 0.65);
+  }
 }
 </style>

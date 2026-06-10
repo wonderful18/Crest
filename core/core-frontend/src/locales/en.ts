@@ -2061,6 +2061,8 @@ export default {
     merge_cells: 'Merge cells',
     merge_cells_fields: 'Merge fields',
     merge_cells_fields_placeholder: 'Select fields',
+    merge_cells_fields_tip:
+      'Only dimension fields before the first measure are available. Adjacent cells with the same value are merged vertically; lower-level dimensions are merged within the preceding dimension group.',
     length_limit: 'Length limit',
     radar_point: 'Enable auxiliary points',
     radar_point_size: 'Size',
