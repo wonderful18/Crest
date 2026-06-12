@@ -29,10 +29,12 @@ grep -Eq "^## v${current_version}[[:space:]-]" CHANGELOG.md || fail "CHANGELOG.m
 
 target_branch="${GITHUB_BASE_REF:-${GITHUB_REF_NAME:-}}"
 source_branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-}}"
+main_sync_ref="refs/tmp/release-guard-main"
 
 if [[ -n "${GITHUB_BASE_REF:-}" ]]; then
   info "pull request ${source_branch} -> ${target_branch}"
   git fetch --no-tags --prune origin "${GITHUB_BASE_REF}:${GITHUB_BASE_REF}" >/dev/null 2>&1 || true
+  git fetch --no-tags origin "refs/heads/main:${main_sync_ref}" >/dev/null 2>&1 || true
 elif [[ -n "${GITHUB_REF_NAME:-}" ]]; then
   info "push/workflow branch ${GITHUB_REF_NAME}"
 fi
@@ -96,6 +98,17 @@ matches_tag_content() {
   git cat-file -e "${tag}:${file}" 2>/dev/null && git diff --quiet "${tag}..HEAD" -- "${file}"
 }
 
+matches_ref_content() {
+  local ref="$1"
+  local file="$2"
+  git cat-file -e "${ref}:${file}" 2>/dev/null && git diff --quiet "${ref}..HEAD" -- "${file}"
+}
+
+allows_dev_sync_from_main() {
+  local file="$1"
+  [[ "${target_branch}" == "dev" ]] && matches_ref_content "${main_sync_ref}" "${file}"
+}
+
 requires_release_metadata=0
 db_change=0
 
@@ -104,14 +117,14 @@ while IFS= read -r file; do
 
   if [[ "${file}" =~ ^docs/release/v([0-9]+\.[0-9]+\.[0-9]+)\.md$ ]]; then
     tagged_version="v${BASH_REMATCH[1]}"
-    if tag_exists "${tagged_version}" && ! matches_tag_content "${tagged_version}" "${file}"; then
+    if tag_exists "${tagged_version}" && ! matches_tag_content "${tagged_version}" "${file}" && ! allows_dev_sync_from_main "${file}"; then
       fail "Published release notes ${file} are immutable because ${tagged_version} already exists."
     fi
   fi
 
   if [[ "${file}" =~ ^installer/upgrade-sql/v[0-9]+\.[0-9]+\.[0-9]+_to_v([0-9]+\.[0-9]+\.[0-9]+)\.sql$ ]]; then
     tagged_version="v${BASH_REMATCH[1]}"
-    if tag_exists "${tagged_version}" && ! matches_tag_content "${tagged_version}" "${file}"; then
+    if tag_exists "${tagged_version}" && ! matches_tag_content "${tagged_version}" "${file}" && ! allows_dev_sync_from_main "${file}"; then
       fail "Published upgrade SQL ${file} is immutable because ${tagged_version} already exists."
     fi
   fi
