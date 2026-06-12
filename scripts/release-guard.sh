@@ -34,9 +34,12 @@ main_sync_ref="refs/tmp/release-guard-main"
 if [[ -n "${GITHUB_BASE_REF:-}" ]]; then
   info "pull request ${source_branch} -> ${target_branch}"
   git fetch --no-tags --prune origin "${GITHUB_BASE_REF}:${GITHUB_BASE_REF}" >/dev/null 2>&1 || true
-  git fetch --no-tags origin "refs/heads/main:${main_sync_ref}" >/dev/null 2>&1 || true
 elif [[ -n "${GITHUB_REF_NAME:-}" ]]; then
   info "push/workflow branch ${GITHUB_REF_NAME}"
+fi
+
+if [[ "${target_branch}" == "dev" ]]; then
+  git fetch --no-tags origin "refs/heads/main:${main_sync_ref}" >/dev/null 2>&1 || true
 fi
 
 case "${target_branch}" in
