@@ -55,7 +55,7 @@ public class DataAssetServer {
     }
 
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA, id = "#p0.assetId")
-    @CrestPermit("m:manage")
+    @CrestPermit("m:read")
     @PostMapping("/profile")
     public DataAssetDetailVO saveProfile(@RequestBody DataAssetProfileRequest request) {
         return dataAssetManage.saveProfile(request);
