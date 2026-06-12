@@ -6,6 +6,7 @@ import {
   cacheTaskActions,
   cacheTaskRunningSnapshot,
   formatCacheTaskDuration,
+  resolveCacheTaskPollingError,
   shouldContinueCacheTaskPolling
 } from './cacheTaskPolicy.mjs'
 
@@ -101,5 +102,16 @@ describe('cache task policy', () => {
       }),
       false
     )
+  })
+
+  it('keeps polling after transient refresh errors and stops cleanly at the retry limit', () => {
+    assert.deepEqual(resolveCacheTaskPollingError({ attempts: 4, maxAttempts: 100 }), {
+      shouldRetry: true,
+      message: ''
+    })
+    assert.deepEqual(resolveCacheTaskPollingError({ attempts: 100, maxAttempts: 100 }), {
+      shouldRetry: false,
+      message: '状态刷新失败，请手动刷新'
+    })
   })
 })

@@ -40,6 +40,19 @@ export const shouldContinueCacheTaskPolling = ({ task, attempts, settleAttempts 
   return cacheTaskStatusText(task) === '更新中'
 }
 
+export const resolveCacheTaskPollingError = ({ attempts, maxAttempts }) => {
+  if (attempts >= maxAttempts) {
+    return {
+      shouldRetry: false,
+      message: '状态刷新失败，请手动刷新'
+    }
+  }
+  return {
+    shouldRetry: true,
+    message: ''
+  }
+}
+
 export const formatCacheTaskDuration = durationMillis => {
   if (durationMillis === null || durationMillis === undefined) {
     return '-'
