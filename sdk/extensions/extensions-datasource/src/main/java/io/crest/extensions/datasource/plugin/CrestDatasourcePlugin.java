@@ -7,6 +7,7 @@ import io.crest.extensions.datasource.provider.Provider;
 import io.crest.extensions.datasource.vo.PluginDatasourceVO;
 import io.crest.plugins.template.CrestPlugin;
 import io.crest.plugins.vo.CrestPluginVO;
+import io.crest.utils.FileUtils;
 import io.crest.utils.JsonUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -48,6 +49,7 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
         }
     }
 
+    @SuppressWarnings("java/zipslip")
     private void loadDriver() throws Exception {
         PluginDatasourceVO config = getConfig();
         String localPath = StringUtils.isEmpty(config.getDriverPath()) ? DEFAULT_FILE_PATH : config.getDriverPath();
@@ -59,10 +61,7 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
                 JarEntry entry = entries.nextElement();
                 String name = entry.getName();
                 if (Strings.CS.endsWith(name, ".jar")) {
-                    File file = new File(localPath, Paths.get(name).getFileName().toString());
-                    if (!file.getParentFile().exists()) {
-                        file.getParentFile().mkdirs();
-                    }
+                    File file = FileUtils.resolveUnderDirectory(localPath, Paths.get(name).getFileName().toString());
 
                     try (InputStream inputStream = jarFile.getInputStream(entry);
                          FileOutputStream outputStream = new FileOutputStream(file)) {
@@ -91,6 +90,7 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
     }
 
     @Override
+    @SuppressWarnings("java/zipslip")
     public void unloadPlugin() {
         try {
             ProtectionDomain protectionDomain = this.getClass().getProtectionDomain();
@@ -101,7 +101,7 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
                     JarEntry entry = entries.nextElement();
                     String name = entry.getName();
                     if (Strings.CS.endsWith(name, ".jar")) {
-                        File file = new File(DEFAULT_FILE_PATH, Paths.get(name).getFileName().toString());
+                        File file = FileUtils.resolveUnderDirectory(DEFAULT_FILE_PATH, Paths.get(name).getFileName().toString());
                         file.delete();
                     }
                 }

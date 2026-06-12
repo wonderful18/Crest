@@ -6,7 +6,7 @@
       showValidate
       :setting-title="t('system.engine_settings')"
       :setting-data="templateList"
-      @edit="change"
+      @edit="edit"
       @check="validateById"
     />
     <div class="de-expand_content">
@@ -57,13 +57,10 @@ const infoTemplate = ref()
 const infoTemplateTime = ref()
 const templateList = ref<SettingRecord[]>([])
 const templateListTime = ref<SettingRecord[]>([])
-const xPackInfo = ref({ enableDataFill: false, type: undefined })
 const getEngine = () => {
   querySymmetricKey().then(response => {
     getEngineDatasource().then(res => {
       let { id, type, configuration } = res.data
-      xPackInfo.value.enableDataFill = !!res.data.enableDataFill
-      xPackInfo.value.type = type
       if (configuration) {
         configuration = JSON.parse(symmetricDecrypt(configuration, response.data))
       }
@@ -181,9 +178,7 @@ const validateById = async () => {
     border-radius: 8px;
     display: inline-flex;
     align-items: center;
-    transition:
-      background-color 0.16s ease,
-      color 0.16s ease;
+    transition: background-color 0.16s ease, color 0.16s ease;
 
     .ed-icon {
       margin-left: 4px;

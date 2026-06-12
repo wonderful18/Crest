@@ -397,7 +397,7 @@ public class ScheduleManager {
                 returnMap.put("groupName", groupName);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
 
         return returnMap;

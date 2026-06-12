@@ -14,6 +14,9 @@ import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 import { useEmbedded } from '@/store/modules/embedded'
 import { useLoading } from '@/hooks/web/useLoading'
 import { ElMessageBox } from 'element-plus-secondary'
+import { clearCache } from '@/utils/cacheUtil'
+import { resolveAuthFailureNavigation } from '@/router/authFailureNavigation.mjs'
+import { isReadOnlyRoute, shouldBypassAuthenticatedMenuGuard } from '@/router/routeAccessPolicy.mjs'
 const appearanceStore = useAppearanceStoreWithOut()
 const { wsCache } = useCache()
 const permissionStore = usePermissionStoreWithOut()
@@ -28,9 +31,20 @@ const { loadStart, loadDone } = usePageLoading()
 const whiteList = ['/login', '/sso/callback', '/chart-view', '/admin-login', '/401'] // 不重定向白名单
 const embeddedWindowWhiteList = ['/dvCanvas', '/dashboard', '/preview', '/dataset-embedded-form']
 const embeddedRouteWhiteList = ['/dataset-embedded', '/dataset-form', '/dataset-embedded-form']
+const portalHome = '/portal'
+const backendHome = '/workbranch/index'
+
+const isPortalRoute = (path: string) => path === portalHome || path.startsWith(`${portalHome}/`)
+const isAccountRoute = (path: string) => path.startsWith('/modify-pwd')
+const isBackendRoute = (path: string, name?: string | symbol) =>
+  !isPortalRoute(path) &&
+  !isReadOnlyRoute(path, name) &&
+  !isAccountRoute(path) &&
+  !whiteList.includes(path) &&
+  !embeddedRouteWhiteList.includes(path)
 
 const parseRedirectLocation = (redirectPath: string) => {
-  let target = redirectPath || '/workbranch/index'
+  let target = redirectPath || portalHome
   try {
     for (let i = 0; i < 5; i++) {
       const nextTarget = decodeURIComponent(target)
@@ -77,10 +91,35 @@ router.beforeEach(async (to, from, next) => {
   }
   if (wsCache.get('user.token') || isDesktop) {
     if (!userStore.getUid) {
-      await userStore.setUser()
+      try {
+        await userStore.setUser()
+      } catch {
+        clearCache()
+        userStore.clear()
+        const navigation = resolveAuthFailureNavigation(to)
+        if (navigation.type === 'allow') {
+          permissionStore.setCurrentPath(to.path)
+          next()
+        } else {
+          permissionStore.setCurrentPath('/login')
+          next(navigation.location)
+        }
+        return
+      }
     }
     if (to.path === '/login') {
-      next({ path: '/workbranch/index' })
+      next({ path: userStore.getBackendAccess ? backendHome : portalHome })
+    } else if (to.path === '/admin-login') {
+      next({ path: userStore.getBackendAccess ? backendHome : portalHome })
+    } else if (isPortalRoute(to.path)) {
+      permissionStore.setCurrentPath(to.path)
+      next()
+    } else if (shouldBypassAuthenticatedMenuGuard(to)) {
+      permissionStore.setCurrentPath(to.path)
+      next()
+    } else if (!userStore.getBackendAccess && isBackendRoute(to.path, to.name)) {
+      permissionStore.setCurrentPath(portalHome)
+      next({ path: portalHome })
     } else {
       permissionStore.setCurrentPath(to.path)
       if (permissionStore.getIsAddRouters) {

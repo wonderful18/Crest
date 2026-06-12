@@ -318,7 +318,7 @@ public class ExportCenterDownLoadManage {
                                                 cell.setCellStyle(cellStyle);
                                                 detailsSheet.setColumnWidth(j, 255 * 20);
                                             } else {
-                                                if ((allFields.get(j).getFieldType().equals(FieldTypeConstants.INTEGER) || allFields.get(j).getFieldType() == FieldTypeConstants.FLOAT) && StringUtils.isNotEmpty(rowData.get(j))) {
+                                                if (isNumericExportField(allFields.get(j).getFieldType()) && StringUtils.isNotEmpty(rowData.get(j))) {
                                                     try {
                                                         cell.setCellValue(Double.valueOf(rowData.get(j)));
                                                     } catch (Exception e) {
@@ -349,7 +349,7 @@ public class ExportCenterDownLoadManage {
                                 if (rowData != null) {
                                     for (int j = 0; j < rowData.size(); j++) {
                                         Cell cell = row.createCell(j);
-                                        if ((allFields.get(j).getFieldType().equals(FieldTypeConstants.INTEGER) || allFields.get(j).getFieldType() == FieldTypeConstants.FLOAT) && StringUtils.isNotEmpty(rowData.get(j))) {
+                                        if (isNumericExportField(allFields.get(j).getFieldType()) && StringUtils.isNotEmpty(rowData.get(j))) {
                                             try {
                                                 cell.setCellValue(Double.valueOf(rowData.get(j)));
                                             } catch (Exception e) {
@@ -418,6 +418,10 @@ public class ExportCenterDownLoadManage {
             }
             list.set(i, newRow);
         }
+    }
+
+    private boolean isNumericExportField(Integer fieldType) {
+        return Objects.equals(fieldType, FieldTypeConstants.INTEGER) || Objects.equals(fieldType, FieldTypeConstants.FLOAT);
     }
 
     public void startViewTask(CoreExportTask exportTask, ChartExcelRequest request) {
@@ -795,7 +799,7 @@ public class ExportCenterDownLoadManage {
                                             cell.setCellStyle(cellStyle);
                                             detailsSheet.setColumnWidth(j, 255 * 20);
                                         } else {
-                                            if ((allFields.get(j).getFieldType().equals(FieldTypeConstants.INTEGER) || allFields.get(j).getFieldType() == FieldTypeConstants.FLOAT) && StringUtils.isNotEmpty(rowData.get(j))) {
+                                            if (isNumericExportField(allFields.get(j).getFieldType()) && StringUtils.isNotEmpty(rowData.get(j))) {
                                                 try {
                                                     cell.setCellValue(Double.valueOf(rowData.get(j)));
                                                 } catch (Exception e) {
@@ -831,7 +835,7 @@ public class ExportCenterDownLoadManage {
                                         cell.setCellStyle(cellStyle);
                                         detailsSheet.setColumnWidth(j, 255 * 20);
                                     } else {
-                                        if ((allFields.get(j).getFieldType().equals(FieldTypeConstants.INTEGER) || allFields.get(j).getFieldType() == FieldTypeConstants.FLOAT) && StringUtils.isNotEmpty(rowData.get(j))) {
+                                        if (isNumericExportField(allFields.get(j).getFieldType()) && StringUtils.isNotEmpty(rowData.get(j))) {
                                             try {
                                                 cell.setCellValue(Double.valueOf(rowData.get(j)));
                                             } catch (Exception e) {

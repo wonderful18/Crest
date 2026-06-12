@@ -4,6 +4,7 @@ import io.crest.constant.FieldTypeConstants;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.constant.SQLConstants;
 import io.crest.engine.utils.Utils;
+import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.api.PluginManageApi;
 import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
 import io.crest.extensions.datasource.dto.CalParam;
@@ -18,11 +19,13 @@ import org.apache.commons.lang3.Strings;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * @Author Junjun
  */
 public class Quota2SQLObj {
+    private static final Pattern NUMBER_PATTERN = Pattern.compile("^[-+]?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$");
 
     public static void quota2sqlObj(SQLMeta meta, List<ChartViewFieldDTO> fields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         SQLObj tableObj = meta.getTable();
@@ -156,11 +159,22 @@ public class Quota2SQLObj {
                 } else if (Strings.CI.equals(f.getTerm(), "not_empty")) {
                     whereValue = "''";
                 } else if (Strings.CI.contains(f.getTerm(), "in")) {
-                    whereValue = "('" + StringUtils.join(f.getValue(), "','") + "')";
+                    List<String> values = Arrays.stream(StringUtils.defaultString(f.getValue()).split(","))
+                            .map(StringUtils::trim)
+                            .toList();
+                    if (isNumberLikeField(y)) {
+                        whereValue = "(" + String.join(",", values.stream().map(Quota2SQLObj::sanitizeNumberLiteral).toList()) + ")";
+                    } else {
+                        whereValue = "(" + String.join(",", values.stream().map(Quota2SQLObj::toQuotedValue).toList()) + ")";
+                    }
                 } else if (Strings.CI.contains(f.getTerm(), "like")) {
-                    whereValue = "'%" + f.getValue() + "%'";
+                    whereValue = toLikeValue(f.getValue());
                 } else {
-                    whereValue = String.format(SQLConstants.WHERE_VALUE_VALUE, f.getValue());
+                    if (isNumberLikeField(y)) {
+                        whereValue = String.format(SQLConstants.WHERE_NUMBER_VALUE, sanitizeNumberLiteral(f.getValue()));
+                    } else {
+                        whereValue = String.format(SQLConstants.WHERE_VALUE_VALUE, sanitizeSqlLiteral(f.getValue()));
+                    }
                 }
                 list.add(SQLObj.builder()
                         .whereField(fieldAlias)
@@ -172,6 +186,34 @@ public class Quota2SQLObj {
         List<String> strList = new ArrayList<>();
         list.forEach(ele -> strList.add(ele.getWhereField() + " " + ele.getWhereTermAndValue()));
         return !CollectionUtils.isEmpty(list) ? "(" + String.join(" " + Utils.getLogic(y.getLogic()) + " ", strList) + ")" : null;
+    }
+
+    private static boolean isNumberLikeField(ChartViewFieldDTO field) {
+        return Objects.equals(field.getFieldType(), FieldTypeConstants.INTEGER)
+                || Objects.equals(field.getFieldType(), FieldTypeConstants.FLOAT)
+                || Objects.equals(field.getFieldType(), FieldTypeConstants.BOOLEAN);
+    }
+
+    private static String sanitizeSqlLiteral(String value) {
+        String normalized = StringUtils.defaultString(value);
+        Utils.validateSqlInjectionRisk(normalized);
+        return Utils.transValue(normalized);
+    }
+
+    private static String toQuotedValue(String value) {
+        return "'" + sanitizeSqlLiteral(value) + "'";
+    }
+
+    private static String toLikeValue(String value) {
+        return "'%" + sanitizeSqlLiteral(value) + "%'";
+    }
+
+    private static String sanitizeNumberLiteral(String value) {
+        String normalized = StringUtils.trimToEmpty(value);
+        if (!NUMBER_PATTERN.matcher(normalized).matches()) {
+            CrestException.throwException("Illegal number filter value");
+        }
+        return normalized;
     }
 
 }

@@ -523,7 +523,7 @@
     </delete>
 
      <select id="queryInnerUserInfo" resultType="io.crest.api.permissions.user.vo.UserFormVO">
-            select id,account,name from per_user where id =  #{id}
+            select id,account,name from iam_user where id =  #{id}
      </select>
 
      <insert id="snapshotDataV">

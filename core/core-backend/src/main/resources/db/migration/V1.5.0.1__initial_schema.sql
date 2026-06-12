@@ -456,6 +456,28 @@ CREATE TABLE `dataset_sync_task_log` (
 /*!40000 ALTER TABLE `dataset_sync_task_log` ENABLE KEYS */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE IF NOT EXISTS `data_asset_profile` (
+  `id` bigint NOT NULL COMMENT 'ID',
+  `asset_type` varchar(32) NOT NULL COMMENT '资产类型 datasource/table/dataset/chart/panel/screen/share',
+  `asset_id` varchar(128) NOT NULL COMMENT '资产ID',
+  `description` varchar(1024) DEFAULT NULL COMMENT '资产说明',
+  `owner_id` bigint DEFAULT NULL COMMENT '负责人ID',
+  `certified` tinyint NOT NULL DEFAULT 0 COMMENT '是否已认证',
+  `recommended` tinyint NOT NULL DEFAULT 0 COMMENT '是否推荐使用',
+  `deprecated` tinyint NOT NULL DEFAULT 0 COMMENT '是否已废弃',
+  `tags` varchar(1024) DEFAULT NULL COMMENT '标签，逗号分隔',
+  `create_time` bigint DEFAULT NULL COMMENT '创建时间',
+  `update_time` bigint DEFAULT NULL COMMENT '更新时间',
+  `update_by` bigint DEFAULT NULL COMMENT '更新人',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_data_asset_profile_asset` (`asset_type`, `asset_id`),
+  KEY `idx_data_asset_profile_status` (`asset_type`, `certified`, `recommended`, `deprecated`),
+  KEY `idx_data_asset_profile_owner` (`owner_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数据资产治理扩展信息';
+
+UPDATE `data_asset_profile` SET `certified` = 0, `recommended` = 0 WHERE `deprecated` = 1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `dataset_table` (
   `id` bigint NOT NULL COMMENT 'ID',
   `name` varchar(128) DEFAULT NULL COMMENT '名称',
@@ -872,7 +894,7 @@ CREATE TABLE `sys_setting` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 /*!40000 ALTER TABLE `sys_setting` DISABLE KEYS */;
-INSERT INTO `sys_setting` VALUES (1,'basic.dsIntervalTime','6','text',11),(2,'basic.dsExecuteTime','minute','text',3),(3,'ai.baseUrl','','text',0),(7,'template.url','','text',0),(8,'template.accessKey','crest','text',1),(9,'basic.frontTimeOut','60','text',1),(10,'basic.exportFileLiveTime','30','text',2),(100102206800000001,'basic.siteTitle','Crest','text',9),(1048232869488627717,'basic.shareDisable','false','text',11),(1048232869488627718,'basic.sharePeRequire','false','text',12),(1048232869488627719,'basic.defaultSort','1','text',13),(1048232869488627720,'basic.defaultOpen','0','text',14);
+INSERT INTO `sys_setting` VALUES (1,'basic.dsIntervalTime','6','text',11),(2,'basic.dsExecuteTime','minute','text',3),(3,'ai.baseUrl','','text',0),(7,'template.url','','text',0),(8,'template.accessKey','crest','text',1),(9,'basic.frontTimeOut','60','text',1),(10,'basic.exportFileLiveTime','30','text',2),(100102206800000001,'basic.siteTitle','Crest','text',9),(1048232869488627717,'basic.shareDisable','false','text',11),(1048232869488627718,'basic.sharePeRequire','false','text',12),(1048232869488627719,'basic.defaultSort','1','text',13),(1048232869488627720,'basic.defaultOpen','0','text',14),(1048232869488627721,'basic.initialPassword','','pwd',15),(1048232869488627722,'basic.pwdStrategy','true','text',16),(1048232869488627723,'basic.dip','false','text',17),(1048232869488627724,'basic.pvp','0','text',18),(1048232869488627725,'basic.loginLimit','false','text',19),(1048232869488627726,'basic.loginLimitRate','5','text',20),(1048232869488627727,'basic.loginLimitTime','30','text',21);
 /*!40000 ALTER TABLE `sys_setting` ENABLE KEYS */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -1885,15 +1907,17 @@ VALUES
   (73, 15, 2, 'org-management', 'system/org', 5, 'org', '/org-management', 0, 1, 1),
   (74, 15, 2, 'role-management', 'system/role', 6, 'peoples', '/role-management', 0, 1, 1),
   (75, 15, 2, 'permission-management', 'system/permission', 7, 'auth', '/permission-management', 0, 1, 1),
-  (76, 15, 2, 'audit-log', 'system/audit-log', 8, 'log', '/audit-log', 0, 1, 1);
+  (76, 15, 2, 'audit-log', 'system/audit-log', 8, 'log', '/audit-log', 0, 1, 1),
+  (77, 4, 2, 'data-asset', 'visualized/data/asset', 3, 'association', '/asset', 0, 1, 1),
+  (78, 4, 2, 'cache-task', 'visualized/data/cache-task', 4, 'task', '/cache-task', 0, 1, 1);
 
 INSERT IGNORE INTO `iam_user_org` (`id`, `uid`, `oid`, `default_org`, `create_time`)
 SELECT id, id, 1, 1, COALESCE(create_time, 1779664240000) FROM `iam_user`;
 
 INSERT IGNORE INTO `iam_user_role` (`id`, `uid`, `oid`, `rid`, `create_time`)
-SELECT CAST(CONV(SUBSTR(MD5(CONCAT('user-role:', id, ':', CASE WHEN is_admin = 1 THEN 1 ELSE 2 END)), 1, 15), 16, 10) AS UNSIGNED),
-       id, 1, CASE WHEN is_admin = 1 THEN 1 ELSE 2 END, COALESCE(create_time, 1779664240000)
-FROM `iam_user`;
+SELECT 100000 + ROW_NUMBER() OVER (ORDER BY u.id),
+       u.id, 1, CASE WHEN u.is_admin = 1 THEN 1 ELSE 2 END, COALESCE(u.create_time, 1779664240000)
+FROM `iam_user` u;
 
 INSERT IGNORE INTO `iam_role_menu_permission` (`id`, `rid`, `menu_id`, `permission`, `create_time`)
 SELECT id * 100 + 1, 1, id, 'manage', 1779664240000 FROM `iam_menu` WHERE `auth` = 1 OR `id` IN (15, 16, 64, 67, 68, 69, 71, 72);
@@ -1905,17 +1929,20 @@ INSERT IGNORE INTO `iam_role_menu_permission` (`id`, `rid`, `menu_id`, `permissi
 SELECT id * 100 + 3, 3, id, 'read', 1779664240000 FROM `iam_menu` WHERE `auth` = 1 AND `id` NOT IN (15, 16, 64, 67, 68, 69, 71, 72, 73, 74, 75);
 
 INSERT IGNORE INTO `iam_resource_index` (`id`, `resource_id`, `resource_type`, `oid`, `creator`, `name`, `create_time`, `update_time`)
-SELECT CAST(CONV(SUBSTR(MD5(CONCAT('datasource:', id)), 1, 15), 16, 10) AS UNSIGNED), CAST(id AS CHAR), 'datasource', 1, CAST(create_by AS UNSIGNED), name, create_time, update_time
-FROM `data_source` WHERE `type` != 'folder';
+SELECT 1000000000000000 + ROW_NUMBER() OVER (ORDER BY ds.id), CAST(ds.id AS CHAR), 'datasource', 1, CAST(ds.create_by AS UNSIGNED), ds.name, ds.create_time, ds.update_time
+FROM `data_source` ds
+WHERE ds.`type` != 'folder';
 
 INSERT IGNORE INTO `iam_resource_index` (`id`, `resource_id`, `resource_type`, `oid`, `creator`, `name`, `create_time`, `update_time`)
-SELECT CAST(CONV(SUBSTR(MD5(CONCAT('dataset:', id)), 1, 15), 16, 10) AS UNSIGNED), CAST(id AS CHAR), 'dataset', 1, CAST(create_by AS UNSIGNED), name, create_time, last_update_time
-FROM `dataset_group` WHERE `node_type` = 'dataset';
+SELECT 2000000000000000 + ROW_NUMBER() OVER (ORDER BY dg.id), CAST(dg.id AS CHAR), 'dataset', 1, CAST(dg.create_by AS UNSIGNED), dg.name, dg.create_time, dg.last_update_time
+FROM `dataset_group` dg
+WHERE dg.`node_type` = 'dataset';
 
 INSERT IGNORE INTO `iam_resource_index` (`id`, `resource_id`, `resource_type`, `oid`, `creator`, `name`, `create_time`, `update_time`)
-SELECT CAST(CONV(SUBSTR(MD5(CONCAT('visualization:', id)), 1, 15), 16, 10) AS UNSIGNED), CAST(id AS CHAR), CASE WHEN `type` = 'dataV' THEN 'screen' ELSE 'panel' END,
-       COALESCE(CAST(NULLIF(org_id, '') AS UNSIGNED), 1), CAST(create_by AS UNSIGNED), name, create_time, update_time
-FROM `bi_visualization` WHERE `delete_flag` = 0 AND `node_type` = 'leaf';
+SELECT 3000000000000000 + ROW_NUMBER() OVER (ORDER BY v.id), CAST(v.id AS CHAR), CASE WHEN v.`type` = 'dataV' THEN 'screen' ELSE 'panel' END,
+       COALESCE(CAST(NULLIF(v.org_id, '') AS UNSIGNED), 1), CAST(v.create_by AS UNSIGNED), v.name, v.create_time, v.update_time
+FROM `bi_visualization` v
+WHERE v.`delete_flag` = 0 AND v.`node_type` = 'leaf';
 
 UPDATE `iam_menu`
 SET `icon` = CASE `id`

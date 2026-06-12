@@ -214,7 +214,7 @@ const linkageActiveChange = () => {
 const appStore = useAppStoreWithOut()
 const isCrestBi = computed(() => appStore.getIsCrestBi)
 
-const deleteLinkageSenior = () => {
+const removeLinkageSenior = () => {
   deleteLinkage({ dvId: dvInfo.value.id, sourceViewId: chart.value.id }).then(() => {
     // 刷新联动信息
     getPanelAllLinkageInfo(dvInfo.value.id).then(rsp => {
@@ -328,7 +328,7 @@ const removeJumpSenior = () => {
                     class="circle-button_icon"
                     :title="t('chart.delete')"
                     :style="{ margin: '0 8px' }"
-                    @click="deleteLinkageSenior"
+                    @click="removeLinkageSenior"
                   >
                     <el-icon>
                       <Icon

@@ -1,6 +1,7 @@
 package io.crest.api.visualization.vo;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.google.gson.Gson;
 import io.crest.api.template.dto.VisualizationTemplateExtendDataDTO;
@@ -75,6 +76,7 @@ public class DataVisualizationVO implements Serializable {
     /**
      * 状态 0-未发布 1-已发布
      */
+    @JsonDeserialize(using = BooleanCompatibleIntegerDeserializer.class)
     private Integer status;
 
     /**

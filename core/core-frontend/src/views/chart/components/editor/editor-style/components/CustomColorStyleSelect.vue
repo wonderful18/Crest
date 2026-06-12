@@ -219,16 +219,17 @@ function selectColorCase(option) {
 const changeColorOption = (option?) => {
   let isGradient = option?.value?.endsWith('_split_gradient') || isColorGradient.value
   const getColorItems = isGradient ? getMapColorCases(colorCases) : colorCases
-  const items = getColorItems.filter(
-    ele => ele.value === state.value.basicStyleForm[colorSchemeName.value]
-  )
-  if (items.length > 0) {
-    state.value.basicStyleForm[colorsName.value] = [...items[0].colors]
-    state.value.customColor = state.value.basicStyleForm[colorsName.value][0]
+  const selectedColorCase =
+    getColorItems.find(ele => ele.value === state.value.basicStyleForm[colorSchemeName.value]) ||
+    getColorItems[0]
+  const colors = selectedColorCase?.colors || []
+  if (colors.length > 0) {
+    state.value.basicStyleForm[colorSchemeName.value] = selectedColorCase.value
+    state.value.basicStyleForm[colorsName.value] = [...colors]
+    state.value.customColor = colors[0]
     state.value.colorIndex = 0
     state.value.basicStyleForm[seriesColorName.value]?.forEach((c, i) => {
-      const length = items[0].colors.length
-      c.color = items[0].colors[i % length]
+      c.color = colors[i % colors.length]
     })
     changeBasicStyle()
     setupSeriesColor()

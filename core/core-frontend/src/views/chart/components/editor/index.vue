@@ -56,7 +56,7 @@ import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapsho
 import CalcFieldEdit from '@/views/visualized/data/dataset/form/CalcFieldEdit.vue'
 import { getFieldName, guid } from '@/views/visualized/data/dataset/form/util'
 import { cloneDeep, forEach, get, debounce, set, concat, keys, merge } from 'lodash-es'
-import { fieldRemoval, saveField } from '@/api/dataset'
+import { deleteField, saveField } from '@/api/dataset'
 import chartViewManager from '@/views/chart/components/js/panel'
 import DatasetSelect from '@/views/chart/components/editor/dataset-select/DatasetSelect.vue'
 import { useDraggable } from '@vueuse/core'
@@ -323,10 +323,16 @@ const chartViewInstance = computed(() => {
   return chartViewManager.getChartView(view.value.render, view.value.type)
 })
 const showAxis = (axis: AxisType) => chartViewInstance.value?.axis?.includes(axis)
+const currentChartTypeOption = computed(() => state.chartTypeOptions[0])
 watch(
   () => [view.value.type, view.value],
   newVal => {
-    state.chartTypeOptions.splice(0, state.chartTypeOptions.length, getViewConfig(newVal[0]))
+    const viewConfig = getViewConfig(newVal[0])
+    state.chartTypeOptions.splice(
+      0,
+      state.chartTypeOptions.length,
+      ...(viewConfig ? [viewConfig] : [])
+    )
     state.useless = newVal[0]
   },
   { immediate: true, deep: false }
@@ -586,6 +592,7 @@ const dragCheckType = (list, type) => {
     for (let i = 0; i < list.length; i++) {
       if (list[i].groupType !== type) {
         list.splice(i, 1)
+        i--
         valid = false
       }
     }
@@ -669,6 +676,7 @@ const dragCheckMapType = list => {
     for (let i = 0; i < list.length; i++) {
       if (list[i].fieldType !== 5) {
         list.splice(i, 1)
+        i--
         valid = false
       }
     }
@@ -700,8 +708,11 @@ const addAxis = (e, axis: AxisType) => {
         if (list[i].groupType === 'd' && list[i].fieldType === 1) {
           list[i].sort = 'asc'
         }
-        if (!(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))) {
+        if (
+          !(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))
+        ) {
           list.splice(i, 1)
+          i--
           valid = false
         }
       }
@@ -719,8 +730,11 @@ const addAxis = (e, axis: AxisType) => {
     if (list && list.length > 0) {
       let valid = true
       for (let i = 0; i < list.length; i++) {
-        if (!(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))) {
+        if (
+          !(list[i].groupType === 'q' || (list[i].groupType === 'd' && list[i].fieldType === 1))
+        ) {
           list.splice(i, 1)
+          i--
           valid = false
         }
       }
@@ -749,6 +763,7 @@ const addAxis = (e, axis: AxisType) => {
       for (let i = 0; i < list.length; i++) {
         if (list[i].fieldType !== 2 && list[i].fieldType !== 3) {
           list.splice(i, 1)
+          i--
           valid = false
         }
       }
@@ -852,6 +867,7 @@ const addAxis = (e, axis: AxisType) => {
             )
           ) {
             list.splice(i, 1)
+            i--
             valid = false
           }
         }
@@ -969,6 +985,7 @@ const renderChart = view => {
 
 const onTypeChange = (render, type) => {
   const viewConf = getViewConfig(type)
+  if (!viewConf) return
   if (viewConf.isPlugin) {
     view.value.plugin = {
       isPlugin: true,
@@ -1051,8 +1068,16 @@ const onTableHeaderChange = val => {
   view.value.customAttr.tableHeader = val
   renderChart(view.value)
 }
-const onTableCellChange = val => {
+const renderTableCellChange = debounce(() => {
+  renderChart(view.value)
+}, 250)
+const onTableCellChange = (val, prop) => {
   view.value.customAttr.tableCell = val
+  if (prop === 'mergeFields') {
+    renderTableCellChange()
+    return
+  }
+  renderTableCellChange.cancel()
   renderChart(view.value)
 }
 const onTableTotalChange = val => {
@@ -1704,7 +1729,7 @@ const chartFieldEdit = param => {
       editField(param.item)
       break
     case 'delete':
-      fieldRemoval(param.item?.id).then(() => {
+      deleteField(param.item?.id).then(() => {
         getFields(view.value.tableId, view.value.id, view.value.type)
       })
       break
@@ -2162,13 +2187,16 @@ const chartStyleScroll = (val: any) => {
                               <template #prefix>
                                 <Icon
                                   class-name="chart-type-select-icon"
-                                  v-if="state.chartTypeOptions[0]?.isPlugin"
-                                  :static-content="state.chartTypeOptions[0]?.icon"
+                                  v-if="currentChartTypeOption?.isPlugin"
+                                  :static-content="currentChartTypeOption?.icon"
                                 />
-                                <Icon v-else class-name="chart-type-select-icon">
+                                <Icon
+                                  v-else-if="currentChartTypeOption?.icon"
+                                  class-name="chart-type-select-icon"
+                                >
                                   <component
                                     class="svg-icon chart-type-select-icon"
-                                    :is="iconChartMap[state.chartTypeOptions[0].icon]"
+                                    :is="iconChartMap[currentChartTypeOption.icon]"
                                   ></component>
                                 </Icon>
                               </template>
@@ -4163,7 +4191,7 @@ const chartStyleScroll = (val: any) => {
         font-size: 14px;
       }
       &.active {
-        border-color: var(--ed-color-primary, #3B82F6);
+        border-color: var(--ed-color-primary, #3b82f6);
       }
     }
 
@@ -4180,7 +4208,7 @@ const chartStyleScroll = (val: any) => {
       min-height: 100%;
       z-index: 5;
       .items {
-        border-color: var(--ed-color-primary, #3B82F6);
+        border-color: var(--ed-color-primary, #3b82f6);
         & + .items {
           margin-top: 2px;
         }
@@ -4270,7 +4298,7 @@ const chartStyleScroll = (val: any) => {
       .ed-tabs__item {
         height: 35px;
         line-height: 35px;
-        color: var(--ed-color-primary, #3B82F6);
+        color: var(--ed-color-primary, #3b82f6);
         font-family: var(--crest-custom_font, 'PingFang');
         font-size: 12px;
         font-style: normal;
@@ -4299,7 +4327,7 @@ const chartStyleScroll = (val: any) => {
       .ed-tabs__item {
         height: 35px;
         line-height: 35px;
-        color: var(--ed-color-primary, #3B82F6);
+        color: var(--ed-color-primary, #3b82f6);
         font-family: var(--crest-custom_font, 'PingFang');
         font-size: 12px;
         font-style: normal;
@@ -4335,7 +4363,7 @@ const chartStyleScroll = (val: any) => {
       box-shadow: 0 0 0 1px hsla(0, 0%, 100%, 0.15) inset !important;
     }
     :deep(.ed-input__wrapper:hover) {
-      box-shadow: 0 0 0 1px var(--ed-color-primary, #3B82F6) inset !important;
+      box-shadow: 0 0 0 1px var(--ed-color-primary, #3b82f6) inset !important;
     }
   }
   .query-style-tab {
@@ -4359,7 +4387,7 @@ const chartStyleScroll = (val: any) => {
       .ed-tabs__item {
         height: 35px;
         line-height: 35px;
-        color: var(--ed-color-primary, #3B82F6);
+        color: var(--ed-color-primary, #3b82f6);
         font-family: var(--crest-custom_font, 'PingFang');
         font-size: 12px;
         font-style: normal;
@@ -4501,7 +4529,7 @@ span {
         position: absolute;
         left: 16px;
         top: 0;
-        background: var(--ed-color-primary, #3B82F6);
+        background: var(--ed-color-primary, #3b82f6);
       }
     }
 
@@ -4560,7 +4588,7 @@ span {
     }
 
     &.sortable-chosen {
-      border: 1px solid var(--ed-color-primary, #3B82F6);
+      border: 1px solid var(--ed-color-primary, #3b82f6);
       background: #fff;
 
       &:hover {
@@ -4748,8 +4776,8 @@ span {
       }
 
       &.active {
-        color: var(--ed-color-primary, #3B82F6);
-        border-color: var(--ed-color-primary, #3B82F6);
+        color: var(--ed-color-primary, #3b82f6);
+        border-color: var(--ed-color-primary, #3b82f6);
       }
 
       &.invalid {
@@ -4828,7 +4856,7 @@ span {
   .result-style-dark {
     :deep(.ed-button) {
       color: #ffffff;
-      background-color: var(--ed-color-primary, #3B82F6);
+      background-color: var(--ed-color-primary, #3b82f6);
       border: none;
       border-radius: 0;
     }
@@ -4874,7 +4902,7 @@ span {
       border-radius: 2px;
     }
     :deep(.ed-button:hover) {
-      border: 1px solid var(--ed-color-primary, #3B82F6);
+      border: 1px solid var(--ed-color-primary, #3b82f6);
     }
   }
 

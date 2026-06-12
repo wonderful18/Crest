@@ -125,7 +125,7 @@ public class ExcelWatermarkUtils {
         try {
             ImageIO.write(image, "png", baos);
         } catch (IOException e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         return baos.toByteArray();
     }

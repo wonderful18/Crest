@@ -47,6 +47,7 @@ import { useCache } from '@/hooks/web/useCache'
 import { isDesktop } from '@/utils/ModelUtil'
 import { ShorthandMode } from '@/Types'
 import { formatterItem } from '@/views/chart/components/js/formatter'
+import { normalizeLegacyComponent, normalizeLegacyComponentData } from '@/utils/legacyComponent'
 const { t } = useI18n()
 const appearanceStore = useAppearanceStoreWithOut()
 const { wsCache } = useCache()
@@ -175,6 +176,7 @@ export function historyItemAdaptor(
   canvasVersion,
   canvasInfo
 ) {
+  normalizeLegacyComponent(componentItem)
   componentItem['canvasActive'] = false
   if (componentItem.component === 'VQuery') {
     componentItem['freeze'] = componentItem['freeze'] || false // 冻结字段适配
@@ -301,6 +303,7 @@ export function historyAdaptor(
       componentItem.canvasId = 'canvas-main'
     })
   }
+  normalizeLegacyComponentData(canvasDataResult)
   const curVersion = wsCache.get('x-crest-execute-version')
   // 含有定时报告过滤项每次都需要匹配
   const reportFilterInfo = canvasInfo?.reportFilterInfo
@@ -308,6 +311,9 @@ export function historyAdaptor(
     return
   }
   //历史字段适配
+  canvasStyleResult.component = canvasStyleResult.component || {}
+  canvasStyleResult.dashboard = canvasStyleResult.dashboard || {}
+  canvasStyleResult.component.chartColor = canvasStyleResult.component.chartColor || {}
   canvasStyleResult.component['seniorStyleSetting'] =
     canvasStyleResult.component['seniorStyleSetting'] || deepCopy(SENIOR_STYLE_SETTING_LIGHT)
   canvasStyleResult.component['seniorStyleSetting']['pagerSize'] =
@@ -429,11 +435,13 @@ export function initCanvasDataPrepare(dvId, params, callBack) {
   attachInfo['resourceTable'] = params.resourceTable ? params.resourceTable : 'core'
   ;(method as any)(dvId, busiFlagCustom, attachInfo).then(res => {
     const canvasInfo = res.data as any
+    if (!canvasInfo) {
+      return
+    }
+    const rawWatermarkInfo = canvasInfo.watermarkInfo || {}
     const watermarkInfo = {
-      ...canvasInfo.watermarkInfo,
-      settingContent: canvasInfo.watermarkInfo?.settingContent
-        ? JSON.parse(canvasInfo.watermarkInfo.settingContent)
-        : {}
+      ...rawWatermarkInfo,
+      settingContent: parseWatermarkSetting(rawWatermarkInfo.settingContent)
     }
 
     const dvInfo = {
@@ -470,6 +478,17 @@ export function initCanvasDataPrepare(dvId, params, callBack) {
     )
     callBack({ canvasDataResult, canvasStyleResult, dvInfo, canvasViewInfoPreview, curPreviewGap })
   })
+}
+
+const parseWatermarkSetting = (settingContent?: string) => {
+  if (!settingContent) {
+    return {}
+  }
+  try {
+    return JSON.parse(settingContent)
+  } catch {
+    return {}
+  }
 }
 
 export async function initCanvasData(dvId, params, callBack) {

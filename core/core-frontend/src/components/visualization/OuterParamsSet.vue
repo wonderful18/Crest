@@ -553,6 +553,14 @@ const outerParamsOperation = (cmd, node, data) => {
 const initParams = async () => {
   state.baseFilterInfo = []
   state.baseDatasetInfo = []
+  state.outerParams = {
+    checked: false,
+    visualizationId: dvInfo.value.id,
+    outerParamsInfoArray: []
+  }
+  state.outerParamsInfoArray = []
+  state.mapOuterParamsInfoArray = {}
+  state.curNodeId = null
   // 同步过滤组件信息
   componentData.value.forEach(componentItem => {
     if (componentItem.component === 'VQuery') {
@@ -585,8 +593,17 @@ const initParams = async () => {
   })
   // 获取当前仪表板外部跳转信息
   queryWithVisualizationId(dvInfo.value.id).then(rsp => {
-    state.outerParams = rsp.data
-    state.outerParamsInfoArray = state.outerParams?.outerParamsInfoArray
+    const outerParams = rsp.data || {}
+    const outerParamsInfoArray = Array.isArray(outerParams.outerParamsInfoArray)
+      ? outerParams.outerParamsInfoArray.filter(item => item?.paramsInfoId)
+      : []
+    state.outerParams = {
+      ...outerParams,
+      checked: !!outerParams.checked,
+      visualizationId: outerParams.visualizationId || dvInfo.value.id,
+      outerParamsInfoArray
+    }
+    state.outerParamsInfoArray = outerParamsInfoArray
     if (state.outerParamsInfoArray.length >= 1) {
       state.outerParamsInfoArray.forEach(outerParamsInfo => {
         const newBaseFilterInfo = deepCopy(state.baseFilterInfo)
@@ -597,7 +614,7 @@ const initParams = async () => {
       state.curNodeId = null
       const firstNode = state.outerParamsInfoArray[0]
       nextTick(() => {
-        outerParamsInfoTree.value.setCurrentKey(firstNode.paramsInfoId)
+        outerParamsInfoTree.value?.setCurrentKey(firstNode.paramsInfoId)
         nodeClick(firstNode)
       })
     }
@@ -616,7 +633,7 @@ const findFields = (type, datasetFields) => {
 
 const datasetInfoChange = datasetInfo => {
   let viewCheckCount = 0
-  datasetInfo.datasetViews.forEach(dsView => {
+  datasetInfo.datasetViews?.forEach(dsView => {
     if (dsView['checked']) {
       viewCheckCount++
     }
@@ -630,7 +647,8 @@ const paramsCheckedAdaptor = (outerParamsInfo, newBaseFilterInfo, newBaseDataset
   const dsFieldIdSelected = {}
   const dsFilterMatchMode = {}
   const viewMatchIds = []
-  outerParamsInfo.targetViewInfoList.forEach(targetViewInfo => {
+  const targetViewInfoList = outerParamsInfo.targetViewInfoList || []
+  targetViewInfoList.forEach(targetViewInfo => {
     viewMatchIds.push(targetViewInfo.targetViewId)
     dsFilterMatchMode[targetViewInfo.targetDsId] = targetViewInfo.matchMode || 'self'
     dsFieldIdSelected[targetViewInfo.targetDsId] =
@@ -643,7 +661,7 @@ const paramsCheckedAdaptor = (outerParamsInfo, newBaseFilterInfo, newBaseDataset
       datasetInfo['fieldIdSelected'] = dsFieldIdSelected[datasetInfo.id]
       datasetInfo['viewExpand'] = true
       let viewCheckCount = 0
-      datasetInfo.datasetViews.forEach(dsView => {
+      datasetInfo.datasetViews?.forEach(dsView => {
         if (viewMatchIds.includes(dsView.chartId)) {
           dsView['checked'] = true
           viewCheckCount++
@@ -754,6 +772,7 @@ const save = () => {
 }
 
 const nodeClick = data => {
+  if (!data?.paramsInfoId) return
   state.outerParamsInfo = state.mapOuterParamsInfoArray[data.paramsInfoId]
   state.curNodeId = data.paramsInfoId
 }
@@ -762,7 +781,7 @@ const nodeClick = data => {
 const getPanelViewList = dvId => {
   viewDetailList(dvId).then(rsp => {
     state.viewIdFieldArrayMap = {}
-    state.currentLinkPanelViewArray = rsp.data
+    state.currentLinkPanelViewArray = rsp.data || []
     if (state.currentLinkPanelViewArray) {
       state.currentLinkPanelViewArray.forEach(view => {
         state.viewIdFieldArrayMap[view.id] = view.tableFields
@@ -789,7 +808,7 @@ const getPanelViewList = dvId => {
 
 const initSelected = data => {
   nextTick(() => {
-    outerParamsInfoTree.value.setCurrentKey(data.paramsInfoId)
+    outerParamsInfoTree.value?.setCurrentKey(data.paramsInfoId)
     nodeClick(data)
   })
 }
@@ -799,7 +818,7 @@ const sourceFieldCheckedChange = data => {
     state.outerParams.checked = true
   }
   nextTick(() => {
-    outerParamsInfoTree.value.setCurrentKey(data.paramsInfoId)
+    outerParamsInfoTree.value?.setCurrentKey(data.paramsInfoId)
     nodeClick(data)
   })
 }
@@ -829,7 +848,7 @@ const removeOuterParamsInfo = (node, data) => {
 }
 const batchSelectChange = (value, baseDatasetInfo) => {
   // do change
-  baseDatasetInfo.datasetViews.forEach(viewInfo => {
+  baseDatasetInfo.datasetViews?.forEach(viewInfo => {
     viewInfo.checked = value
   })
   baseDatasetInfo.checkAll = value
@@ -923,7 +942,7 @@ defineExpose({
 }
 
 .view-type-icon {
-  color: var(--ed-color-primary, #3B82F6);
+  color: var(--ed-color-primary, #3b82f6);
   width: 22px;
   height: 14px;
 }

@@ -122,6 +122,7 @@ const loadCanvasData = (dvId, weight?, ext?) => {
       }
       nextTick(() => {
         onInitReady({ resourceId: dvId })
+        state.cacheStatusKey++
       })
     }
   )
@@ -218,7 +219,8 @@ const state = reactive({
   canvasStylePreview: null,
   canvasViewInfoPreview: null,
   dvInfo: null,
-  curPreviewGap: 0
+  curPreviewGap: 0,
+  cacheStatusKey: 0
 })
 
 const sideTreeStatus = ref(true)
@@ -296,6 +298,7 @@ onBeforeMount(() => {
           @reload="reload"
           @download="download"
           @downloadAsAppTemplate="downloadAsAppTemplate"
+          :cache-reload-key="state.cacheStatusKey"
         />
         <div
           v-if="showPosition === 'multiplexing' && dataInitState"

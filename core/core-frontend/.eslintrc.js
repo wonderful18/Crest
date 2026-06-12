@@ -16,6 +16,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 'latest',
     parser: '@typescript-eslint/parser',
+    warnOnUnsupportedTypeScriptVersion: false,
     sourceType: 'module',
     jsxPragma: 'React',
     ecmaFeatures: {

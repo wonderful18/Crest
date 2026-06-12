@@ -6,6 +6,7 @@ import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
 import io.crest.extensions.datasource.dto.*;
 import io.crest.extensions.datasource.model.SQLMeta;
+import io.crest.extensions.datasource.utils.SqlPlaceholderUtils;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import lombok.Getter;
 import org.apache.calcite.config.Lex;
@@ -156,7 +157,7 @@ public abstract class Provider {
             }
             SqlParser parser = SqlParser.create(sql, SqlParser.Config.DEFAULT.withLex(Lex.JAVA));
             SqlNode sqlNode = parser.parseStmt();
-            String dialect = sqlNode.toSqlString(getDialect(value)).toString();
+            String dialect = restoreUnicodeStringLiterals(sqlNode.toSqlString(getDialect(value)).toString());
             if (Strings.CI.equals(value.getType(), "sqlServer")) {
                 dialect = dialect.replaceAll("\\[CONCAT]", "CONCAT");
             }
@@ -184,12 +185,117 @@ public abstract class Provider {
         return s;
     }
 
+    protected static String restoreUnicodeStringLiterals(String sql) {
+        if (StringUtils.isEmpty(sql)) {
+            return sql;
+        }
+        StringBuilder result = new StringBuilder(sql.length());
+        int index = 0;
+        while (index < sql.length()) {
+            if (isUnicodeStringLiteralStart(sql, index)) {
+                int nextIndex = appendUnicodeStringLiteral(sql, index, result);
+                if (nextIndex > index) {
+                    index = nextIndex;
+                    continue;
+                }
+            }
+            if (sql.charAt(index) == '\'') {
+                index = appendQuotedString(sql, index, result);
+                continue;
+            }
+            result.append(sql.charAt(index));
+            index++;
+        }
+        return result.toString();
+    }
+
+    private static boolean isUnicodeStringLiteralStart(String sql, int index) {
+        if (index + 2 >= sql.length()) {
+            return false;
+        }
+        char first = sql.charAt(index);
+        return (first == 'u' || first == 'U')
+                && sql.charAt(index + 1) == '&'
+                && sql.charAt(index + 2) == '\''
+                && (index == 0 || !isIdentifierCharacter(sql.charAt(index - 1)));
+    }
+
+    private static int appendUnicodeStringLiteral(String sql, int start, StringBuilder result) {
+        StringBuilder literal = new StringBuilder();
+        literal.append('\'');
+        int index = start + 3;
+        while (index < sql.length()) {
+            char current = sql.charAt(index);
+            if (current == '\'') {
+                literal.append(current);
+                if (index + 1 < sql.length() && sql.charAt(index + 1) == '\'') {
+                    literal.append('\'');
+                    index += 2;
+                    continue;
+                }
+                result.append(literal);
+                return index + 1;
+            }
+            if (current == '\\' && index + 1 < sql.length()) {
+                if (sql.charAt(index + 1) == '\\') {
+                    literal.append("\\\\");
+                    index += 2;
+                    continue;
+                }
+                if (index + 4 < sql.length() && isHexSequence(sql, index + 1)) {
+                    try {
+                        literal.append((char) Integer.parseInt(sql.substring(index + 1, index + 5), 16));
+                        index += 5;
+                        continue;
+                    } catch (NumberFormatException ignored) {
+                        // Fall through and keep the original escape text when the sequence is malformed.
+                    }
+                }
+            }
+            literal.append(current);
+            index++;
+        }
+        return start;
+    }
+
+    private static int appendQuotedString(String sql, int start, StringBuilder result) {
+        result.append('\'');
+        int index = start + 1;
+        while (index < sql.length()) {
+            char current = sql.charAt(index);
+            result.append(current);
+            index++;
+            if (current == '\'') {
+                if (index < sql.length() && sql.charAt(index) == '\'') {
+                    result.append('\'');
+                    index++;
+                    continue;
+                }
+                return index;
+            }
+        }
+        return index;
+    }
+
+    private static boolean isHexSequence(String value, int start) {
+        for (int index = start; index < start + 4; index++) {
+            if (Character.digit(value.charAt(index), 16) < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isIdentifierCharacter(char value) {
+        return Character.isLetterOrDigit(value) || value == '_' || value == '$';
+    }
+
     public String replaceMssqlN(String s) {
-        Pattern compile = Pattern.compile("'-CREST_NS-.*?'");
+        Pattern compile = Pattern.compile("'-DENS-.*?'");
         Matcher matcher = compile.matcher(s);
         while (matcher.find()) {
             String v = matcher.group();
-            s = s.replaceAll(Pattern.quote(v), "N" + v.replace("-CREST_NS-", ""));
+            s = s.replaceAll(Pattern.quote(v), "N" + v.replace("-DENS-", ""));
         }
         return s;
     }
@@ -214,15 +320,48 @@ public abstract class Provider {
 
         if (!fieldsDialect.isEmpty()) {
             for (Map.Entry<String, String> ele : fieldsDialect.entrySet()) {
-                s = s.replaceAll(SqlPlaceholderConstants.KEYWORD_PREFIX_REGEX + ele.getKey() + SqlPlaceholderConstants.KEYWORD_SUFFIX_REGEX, Matcher.quoteReplacement(ele.getValue()));
+                s = SqlPlaceholderUtils.replaceIdentifier(s, ele.getKey(), ele.getValue());
             }
         }
         return s;
     }
 
     public String replaceComment(String s) {
-        String regex = "/\\*[\\s\\S]*?\\*/|--.*";
-        return s.replaceAll(regex, " ");
+        StringBuilder result = new StringBuilder(s.length());
+        boolean blockComment = false;
+        boolean lineComment = false;
+        for (int i = 0; i < s.length(); i++) {
+            char current = s.charAt(i);
+            char next = i + 1 < s.length() ? s.charAt(i + 1) : '\0';
+            if (blockComment) {
+                if (current == '*' && next == '/') {
+                    blockComment = false;
+                    i++;
+                }
+                continue;
+            }
+            if (lineComment) {
+                if (current == '\n' || current == '\r') {
+                    lineComment = false;
+                    result.append(' ');
+                }
+                continue;
+            }
+            if (current == '/' && next == '*') {
+                blockComment = true;
+                result.append(' ');
+                i++;
+                continue;
+            }
+            if (current == '-' && next == '-') {
+                lineComment = true;
+                result.append(' ');
+                i++;
+                continue;
+            }
+            result.append(current);
+        }
+        return result.toString();
     }
 
     public SqlDialect getDialect(DatasourceSchemaDTO coreDatasource) {

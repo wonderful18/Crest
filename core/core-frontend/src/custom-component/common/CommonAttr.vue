@@ -130,9 +130,7 @@ const styleShow = computed(() => {
   return (
     element.value &&
     element.value.style &&
-    !['Decoration', 'DynamicBackground', 'Tabs', 'Screen'].includes(
-      element.value.component
-    ) &&
+    !['Decoration', 'DynamicBackground', 'Tabs', 'Screen'].includes(element.value.component) &&
     Object.keys(element.value.style).length > 0
   )
 })

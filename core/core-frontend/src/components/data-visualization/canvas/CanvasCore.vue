@@ -1629,11 +1629,7 @@ defineExpose({
     ></PopArea>
     <!-- 网格线 -->
     <CanvasGrid v-if="showGrid" :matrix-style="matrixStyle" :themes="themes"></CanvasGrid>
-    <ScreenGrid
-      v-if="showGridScreen"
-      :matrix-style="matrixStyle"
-      :themes="themes"
-    ></ScreenGrid>
+    <ScreenGrid v-if="showGridScreen" :matrix-style="matrixStyle" :themes="themes"></ScreenGrid>
     <drag-shadow
       v-if="infoBox && infoBox.moveItem && editMode !== 'preview'"
       :base-height="dashboardScaleWithWidth ? baseWidth * 1.6 : baseHeight"

@@ -54,6 +54,7 @@ core/core-frontend/src/assets/fsSvg.html
 .vite/
 .local/
 .cache/
+/cache/
 .crest-local/
 .crest-verify-*/
 offline-packages/
@@ -137,5 +138,4 @@ __pycache__/
 docker-compose.override.yml
 private/
 secrets/
-AGENTS.md
 CLAUDE.md

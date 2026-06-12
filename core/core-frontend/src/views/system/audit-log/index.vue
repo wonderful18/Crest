@@ -139,10 +139,18 @@ const getOperationDesc = (row: any) => {
   const res = row.resource_type
   const url = row.request_url || ''
 
-  if (url.includes('/auth/business-permissions')) return '查看业务资源权限'
-  if (url.includes('/auth/menu-permissions')) return '查看菜单权限'
-  if (url.includes('/auth/business-permissions')) return '配置业务资源权限'
-  if (url.includes('/auth/menu-permissions')) return '配置菜单权限'
+  if (url.includes('/auth/business-target-permissions')) {
+    return op === 'READ' ? '查看业务资源授权对象' : '批量配置业务资源权限'
+  }
+  if (url.includes('/auth/business-permissions')) {
+    return op === 'READ' ? '查看业务资源权限' : '配置业务资源权限'
+  }
+  if (url.includes('/auth/menu-target-permissions')) {
+    return op === 'READ' ? '查看菜单授权对象' : '批量配置菜单权限'
+  }
+  if (url.includes('/auth/menu-permissions')) {
+    return op === 'READ' ? '查看菜单权限' : '配置菜单权限'
+  }
   if (url.includes('/role/by-current-org') || url.includes('/role/list')) return '查询角色列表'
   if (op === 'LOGIN') return '用户登录系统'
   if (op === 'CREATE') return `新建${getResourceTypeLabel(res)}`
@@ -201,18 +209,45 @@ onMounted(loadTable)
     <div class="table-wrap">
       <div class="toolbar">
         <el-select v-model="filters.operationType" placeholder="操作类型" clearable>
-          <el-option v-for="item in operationTypes" :key="item.value" :label="item.label" :value="item.value" />
+          <el-option
+            v-for="item in operationTypes"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
         </el-select>
         <el-select v-model="filters.resourceType" placeholder="资源类型" clearable>
-          <el-option v-for="item in resourceTypes" :key="item.value" :label="item.label" :value="item.value" />
+          <el-option
+            v-for="item in resourceTypes"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
         </el-select>
         <el-input v-model="filters.operatorAccount" placeholder="操作人" clearable />
-        <el-date-picker v-model="filters.startTime" type="datetime" placeholder="开始时间" format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" />
-        <el-date-picker v-model="filters.endTime" type="datetime" placeholder="结束时间" format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" />
+        <el-date-picker
+          v-model="filters.startTime"
+          type="datetime"
+          placeholder="开始时间"
+          format="YYYY-MM-DD HH:mm:ss"
+          value-format="YYYY-MM-DD HH:mm:ss"
+        />
+        <el-date-picker
+          v-model="filters.endTime"
+          type="datetime"
+          placeholder="结束时间"
+          format="YYYY-MM-DD HH:mm:ss"
+          value-format="YYYY-MM-DD HH:mm:ss"
+        />
         <el-button type="primary" @click="loadTable">查询</el-button>
         <el-button @click="resetFilters">重置</el-button>
       </div>
-      <el-table v-loading="loading" :data="tableData" max-height="calc(100vh - 300px)">
+      <el-table
+        v-loading="loading"
+        class="crest-data-table"
+        :data="tableData"
+        max-height="calc(100vh - 300px)"
+      >
         <el-table-column label="操作时间" width="170">
           <template #default="{ row }">
             {{ row.operation_time ? dayjs(row.operation_time).format('YYYY-MM-DD HH:mm:ss') : '-' }}
@@ -238,7 +273,12 @@ onMounted(loadTable)
           </template>
         </el-table-column>
         <el-table-column prop="resource_id" label="资源ID" width="120" show-overflow-tooltip />
-        <el-table-column prop="request_url" label="请求地址" min-width="200" show-overflow-tooltip />
+        <el-table-column
+          prop="request_url"
+          label="请求地址"
+          min-width="200"
+          show-overflow-tooltip
+        />
         <el-table-column label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="row.response_code === 200 ? 'success' : 'danger'" size="small">

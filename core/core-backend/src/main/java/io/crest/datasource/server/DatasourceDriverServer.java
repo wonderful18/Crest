@@ -155,16 +155,13 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
         return driveJarDTO;
     }
 
+    @SuppressWarnings("java/path-injection")
     private String saveJarFile(MultipartFile file, String dirPath, String filePath) throws Exception {
-        File p = new File(dirPath);
-        if (!p.exists()) {
-            p.mkdirs();
+        File f = FileUtils.resolveUnderDirectory(dirPath, new File(filePath).getName());
+        try (FileOutputStream fileOutputStream = new FileOutputStream(f)) {
+            fileOutputStream.write(file.getBytes());
+            fileOutputStream.flush();
         }
-        File f = new File(filePath);
-        FileOutputStream fileOutputStream = new FileOutputStream(f);
-        fileOutputStream.write(file.getBytes());
-        fileOutputStream.flush();
-        fileOutputStream.close();
         return filePath;
     }
 }

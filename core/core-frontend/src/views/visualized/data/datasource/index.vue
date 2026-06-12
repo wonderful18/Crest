@@ -294,7 +294,7 @@ const handleLoadExcel = data => {
 const validateDS = () => {
   let nodeTmpInfo = reactive<Node>(cloneDeep(defaultInfo))
   Object.assign(nodeTmpInfo, cloneDeep(nodeInfo))
-  validateById(Number(nodeTmpInfo.id))
+  validateById(nodeTmpInfo.id)
     .then(res => {
       if (res.data.type.startsWith('API')) {
         let error = 0
@@ -484,8 +484,7 @@ const symmetricKey = ref('')
 const listDs = () => {
   rawDatasourceList.value = []
   dsLoading.value = true
-  let curSortType = sortList[Number(wsCache.get('TreeSort-backend')) ?? 1].value
-  curSortType = wsCache.get('TreeSort-datasource') ?? curSortType
+  const curSortType = getStoredSortType('TreeSort-datasource', getDefaultSortType())
   const request = { busiFlag: 'datasource' } as BusiTreeRequest
   interactiveStore
     .setInteractive(request)
@@ -576,8 +575,18 @@ const sortList = [
   }
 ]
 
+const getDefaultSortType = () => {
+  const sortIndex = Number(wsCache.get('TreeSort-backend') ?? 1)
+  return sortList[Number.isInteger(sortIndex) && sortList[sortIndex] ? sortIndex : 1].value
+}
+
+const getStoredSortType = (cacheKey: string, fallback: string) => {
+  const sortType = wsCache.get(cacheKey)
+  return sortList.some(ele => ele.value === sortType) ? sortType : fallback
+}
+
 const sortTypeTip = computed(() => {
-  return sortList.find(ele => ele.value === state.curSortType).name
+  return sortList.find(ele => ele.value === state.curSortType)?.name ?? sortList[1].name
 })
 const tableData = shallowRef([])
 const tabData = shallowRef([])
@@ -971,7 +980,7 @@ const editDatasource = (editType?: number) => {
   if (nodeInfo.type.startsWith('Excel')) {
     nodeInfo.editType = editType
   }
-  return getById(Number(nodeInfo.id)).then(res => {
+  return getById(nodeInfo.id).then(res => {
     let arr = pluginDs.value.filter(ele => {
       return ele.type == res.data.type
     })
@@ -1296,10 +1305,7 @@ const defaultProps = {
 }
 
 const loadInit = () => {
-  const historyTreeSort = wsCache.get('TreeSort-datasource')
-  if (historyTreeSort) {
-    state.curSortType = historyTreeSort
-  }
+  state.curSortType = getStoredSortType('TreeSort-datasource', state.curSortType)
 }
 
 const proxyAllowDrop = throttle((arg1, arg2) => {
@@ -2020,6 +2026,7 @@ const getMenuList = (val: boolean) => {
                   <el-auto-resizer>
                     <template #default="{ height, width }">
                       <el-table-v2
+                        class="crest-data-table-v2"
                         :columns="columns"
                         v-loading="dataPreviewLoading"
                         header-class="excel-header-cell"
@@ -2114,6 +2121,7 @@ const getMenuList = (val: boolean) => {
       <el-scrollbar>
         <el-table
           v-loading="dsTableDataLoading"
+          class="crest-data-table"
           header-cell-class-name="header-cell"
           :data="state.dsTableData"
           stripe
@@ -2212,7 +2220,7 @@ const getMenuList = (val: boolean) => {
           border
           stripe
           height="100%"
-          class="excel-edit-table"
+          class="excel-edit-table crest-data-table"
           @selection-change="handleExcelEditSelectionChange"
         >
           <el-table-column type="selection" width="44" fixed />
@@ -2457,7 +2465,7 @@ const getMenuList = (val: boolean) => {
             cursor: pointer;
             &::after {
               content: '';
-              background-color: var(--ed-color-primary-1a, #3B82F61a);
+              background-color: var(--ed-color-primary-1a, #3b82f61a);
               width: 28px;
               height: 28px;
               position: absolute;

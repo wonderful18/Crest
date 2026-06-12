@@ -30,6 +30,8 @@ import java.util.Objects;
 
 @Component
 public class ShareTicketManage {
+    private static final int MIN_TICKET_LENGTH = 6;
+    private static final int MAX_TICKET_LENGTH = 64;
 
     @Resource
     private CoreShareTicketMapper coreShareTicketMapper;
@@ -50,6 +52,7 @@ public class ShareTicketManage {
     @Transactional
     public String saveTicket(TicketCreator creator) {
         String ticket = creator.getTicket();
+        validateTicket(ticket);
         if (StringUtils.isNotBlank(ticket)) {
             CoreShareTicket ticketEntity = getByTicket(ticket);
             if (ObjectUtils.isNotEmpty(ticketEntity)) {
@@ -79,6 +82,21 @@ public class ShareTicketManage {
         linkTicket.setUuid(creator.getUuid());
         Objects.requireNonNull(CommonBeanFactory.proxy(this.getClass())).saveDao(linkTicket);
         return ticket;
+    }
+
+    private void validateTicket(String ticket) {
+        if (StringUtils.isBlank(ticket)) {
+            return;
+        }
+        if (ticket.length() < MIN_TICKET_LENGTH || ticket.length() > MAX_TICKET_LENGTH) {
+            CrestException.throwException("分享链接标识长度不合法");
+        }
+        for (int i = 0; i < ticket.length(); i++) {
+            char current = ticket.charAt(i);
+            if (!Character.isLetterOrDigit(current) && current != '_' && current != '-') {
+                CrestException.throwException("分享链接标识包含非法字符");
+            }
+        }
     }
 
     public void saveDao(CoreShareTicket ticket) {

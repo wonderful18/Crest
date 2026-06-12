@@ -628,7 +628,9 @@ const setParametersTimeType = componentId => {
       )
   )
   if (!curComponent.value.parametersArr[componentId].length) return
-  const [v1, v2] = curComponent.value.parametersArr[componentId][0].type
+  const timeRangeParameter = curComponent.value.parametersArr[componentId][0]
+  if (!timeRangeParameter?.type?.length) return
+  const [v1, v2] = timeRangeParameter.type
   curComponent.value.timeGranularityMultiple = typeTimeMap[v2 || v1]
     ? `${typeTimeMap[v2 || v1]}range`
     : ''
@@ -717,7 +719,8 @@ const setParameters = field => {
     if (curComponent.value.displayType === '22') {
       const isNumParameter = curComponent.value.checkedFields.some(ele => {
         return curComponent.value.parameters?.some(
-          itx => [2, 3].includes(itx.fieldType) && curComponent.value.checkedFieldsMap[ele] === itx.id
+          itx =>
+            [2, 3].includes(itx.fieldType) && curComponent.value.checkedFieldsMap[ele] === itx.id
         )
       })
 
@@ -756,7 +759,9 @@ const setType = () => {
         return
       }
       if (!(field?.fieldType === 1 && curComponent.value.displayType === '7')) {
-        curComponent.value.displayType = `${[3, 4].includes(field?.fieldType) ? 2 : field?.fieldType}`
+        curComponent.value.displayType = `${
+          [3, 4].includes(field?.fieldType) ? 2 : field?.fieldType
+        }`
       }
       if (field?.fieldType === 7) {
         curComponent.value.displayType = '0'
@@ -912,9 +917,11 @@ const typeTimeMap = {
 
 const timeParameterList = computed(() => {
   if (!isTimeParameter.value) return timeList
-  const [year, y] = curComponent.value.parameters?.filter(
+  const timeParameter = curComponent.value.parameters?.find(
     ele => ele.fieldType === 1 && !!ele.variableName
-  )[0].type
+  )
+  if (!timeParameter?.type?.length) return timeList
+  const [year, y] = timeParameter.type
   let stopPush = false
   return timeList.reduce((pre, ele) => {
     if (ele.value === (typeTimeMap[y] || typeTimeMap[year])) {
@@ -1187,17 +1194,17 @@ const openCascadeDialog = () => {
     })
     .reduce((pre, next) => {
       const isTree = [9].includes(+next.displayType)
-      const fieldId = isTree ? next.treeFieldList[0].id : next.field.id
-      const datasetId = isTree ? next.treeFieldList[0].datasetGroupId : next.dataset.id
+      const field = isTree ? next.treeFieldList?.[0] : next.field
+      const datasetId = isTree ? field?.datasetGroupId : next.dataset?.id
+      if (!field?.id || !datasetId) return pre
+      const fieldList = datasetMap[datasetId]?.fields?.dimensionList || next.dataset?.fields || []
       pre[next.id] = {
         datasetId,
         isTree,
         name: next.name,
         queryId: next.id,
-        fieldId: fieldId,
-        fieldType: (datasetMap[next.dataset.id]?.fields?.dimensionList || next.dataset.fields).find(
-          ele => ele.id === fieldId
-        )?.fieldType
+        fieldId: field.id,
+        fieldType: fieldList.find(ele => ele.id === field.id)?.fieldType
       }
       return pre
     }, {})
@@ -2346,7 +2353,7 @@ const addOperation = (cmd, condition, index) => {
       Object.assign(activeConditionForRename, condition)
       setTimeout(() => {
         nextTick(() => {
-          renameInput.value[0].focus()
+          renameInput.value[0]?.focus()
         })
       }, 400)
       break

@@ -25,17 +25,14 @@ import java.math.BigDecimal;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 import static io.crest.chart.manage.ChartDataManage.START_END_SEPARATOR;
 
 public class SqlParserUtils {
-    private static final String crestParamPattern = "\\$CREST_PARAM\\{(.*?)\\}";
-
-    public static final String sqlParamsRegex = "\\$\\[(.*?)\\]";
-    public static final String sysVariableRegex = "\\$crest\\[(.*?)\\]";
+    private static final String CREST_PARAM_PREFIX = "$CREST_PARAM{";
+    public static final String SQL_PARAM_PREFIX = "$[";
+    public static final String SYS_VARIABLE_PREFIX = "$crest[";
     private static final String SubstitutedSystemParamPrefix = "CrestSystemParams_";
     private UserFormVO userEntity;
     private static final String SubstitutedSql = " 'CREST-BI' = 'CREST-BI' ";
@@ -62,66 +59,60 @@ public class SqlParserUtils {
             defaultsSqlVariableDetails = JsonUtil.parseList(sqlVariableDetails, listTypeReference);
         }
         List<TableFieldWithValue> tableFieldWithValues = new ArrayList<>();
-        Pattern pattern = Pattern.compile(crestParamPattern);
-        Matcher matcher = pattern.matcher(sql);
         StringBuilder sqlBuilder = new StringBuilder();
         int lastIndex = 0;
-        while (matcher.find()) {
-            sqlBuilder.append(sql, lastIndex, matcher.start());
-            String sqlItemWithParam = matcher.group();
-            String sqlItem = sqlItemWithParam.substring(10, sqlItemWithParam.length() - 1);
+        for (DelimitedToken crestParam : findDelimitedTokens(sql, CREST_PARAM_PREFIX, '}')) {
+            sqlBuilder.append(sql, lastIndex, crestParam.start());
+            String sqlItem = crestParam.content();
             boolean replaceParam = false;
             List<TableFieldWithValue> sqlItemFieldWithValues = new ArrayList<>();
-            Pattern p = Pattern.compile(sqlParamsRegex);
-            Matcher m = p.matcher(sqlItem);
             StringBuilder sqlItemBuilder = new StringBuilder();
             int sqlItemLastIndex = 0;
-            while (m.find()) {
-                String sqlVariable = m.group();
-                sqlItemBuilder.append(sqlItem, sqlItemLastIndex, m.start());
+            for (DelimitedToken sqlVariable : findDelimitedTokens(sqlItem, SQL_PARAM_PREFIX, ']')) {
+                sqlItemBuilder.append(sqlItem, sqlItemLastIndex, sqlVariable.start());
                 boolean replaceParamItem = false;
-                String variableName = sqlVariable.substring(2, sqlVariable.length() - 1);
+                String variableName = sqlVariable.content();
                 SqlVariableDetails defaultsSqlVariableDetail = findSqlVariableDetail(defaultsSqlVariableDetails, variableName);
                 SqlVariableDetails filterParameter = findSqlVariableDetail(parameters, variableName);
                 if (filterParameter != null) {
                     PreparedSqlFragment preparedSqlFragment = buildPreparedSqlFragment(filterParameter);
-                    boolean quoted = isQuotedVariable(sqlItem, m.start(), m.end());
+                    boolean quoted = isQuotedVariable(sqlItem, sqlVariable.start(), sqlVariable.end());
                     if (quoted) {
                         sqlItemBuilder.setLength(sqlItemBuilder.length() - 1);
                     }
                     sqlItemBuilder.append(preparedSqlFragment.replacement());
-                    sqlItemLastIndex = quoted ? m.end() + 1 : m.end();
+                    sqlItemLastIndex = quoted ? sqlVariable.end() + 1 : sqlVariable.end();
                     sqlItemFieldWithValues.addAll(preparedSqlFragment.tableFieldWithValues());
                     replaceParamItem = true;
                 } else {
                     if (defaultsSqlVariableDetail != null && StringUtils.isNotEmpty(defaultsSqlVariableDetail.getDefaultValue())) {
                         if (!isEdit && isFromDataSet && defaultsSqlVariableDetail.getDefaultValueScope().equals(SqlVariableDetails.DefaultValueScope.ALLSCOPE)) {
                             PreparedSqlFragment preparedSqlFragment = buildPreparedSqlFragmentForDefaultValue(defaultsSqlVariableDetail);
-                            boolean quoted = isQuotedVariable(sqlItem, m.start(), m.end());
+                            boolean quoted = isQuotedVariable(sqlItem, sqlVariable.start(), sqlVariable.end());
                             if (quoted) {
                                 sqlItemBuilder.setLength(sqlItemBuilder.length() - 1);
                             }
                             sqlItemBuilder.append(preparedSqlFragment.replacement());
-                            sqlItemLastIndex = quoted ? m.end() + 1 : m.end();
+                            sqlItemLastIndex = quoted ? sqlVariable.end() + 1 : sqlVariable.end();
                             sqlItemFieldWithValues.addAll(preparedSqlFragment.tableFieldWithValues());
                             replaceParamItem = true;
                         }
                         if (isEdit) {
                             PreparedSqlFragment preparedSqlFragment = buildPreparedSqlFragmentForDefaultValue(defaultsSqlVariableDetail);
-                            boolean quoted = isQuotedVariable(sqlItem, m.start(), m.end());
+                            boolean quoted = isQuotedVariable(sqlItem, sqlVariable.start(), sqlVariable.end());
                             if (quoted) {
                                 sqlItemBuilder.setLength(sqlItemBuilder.length() - 1);
                             }
                             sqlItemBuilder.append(preparedSqlFragment.replacement());
-                            sqlItemLastIndex = quoted ? m.end() + 1 : m.end();
+                            sqlItemLastIndex = quoted ? sqlVariable.end() + 1 : sqlVariable.end();
                             sqlItemFieldWithValues.addAll(preparedSqlFragment.tableFieldWithValues());
                             replaceParamItem = true;
                         }
                     }
                 }
                 if (!replaceParamItem) {
-                    sqlItemBuilder.append(sqlItem, sqlItemLastIndex, m.end());
-                    sqlItemLastIndex = m.end();
+                    sqlItemBuilder.append(sqlItem, sqlItemLastIndex, sqlVariable.end());
+                    sqlItemLastIndex = sqlVariable.end();
                 }
                 if (!replaceParamItem) {
                     replaceParam = false;
@@ -134,16 +125,15 @@ public class SqlParserUtils {
                 sqlItemBuilder.append(sqlItem.substring(sqlItemLastIndex));
                 sqlItem = sqlItemBuilder.toString();
             }
-            p = Pattern.compile(sysVariableRegex);
-            m = p.matcher(sqlItem);
-            while (m.find()) {
+            for (DelimitedToken sysVariable : findDelimitedTokens(sqlItem, SYS_VARIABLE_PREFIX, ']')) {
                 boolean replaceParamItem = false;
 
-                String sysVariableId = m.group().substring(7, m.group().length() - 1);
+                String sysVariableToken = sqlItem.substring(sysVariable.start(), sysVariable.end());
+                String sysVariableId = sysVariable.content();
                 if (!isParams(sysVariableId)) {
                     continue;
                 }
-                sqlItem = sqlItem.replace(m.group(), SubstitutedSystemParamPrefix + sysVariableId);
+                sqlItem = sqlItem.replace(sysVariableToken, SubstitutedSystemParamPrefix + sysVariableId);
                 try {
                     Expression expression = CCJSqlParserUtil.parseCondExpression(sqlItem);
                     String value = null;
@@ -157,7 +147,7 @@ public class SqlParserUtils {
                         replaceParamItem = true;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    io.crest.utils.LogUtil.error(e.getMessage(), e);
                 }
                 if (!replaceParamItem) {
                     replaceParam = false;
@@ -172,7 +162,7 @@ public class SqlParserUtils {
                 sqlBuilder.append(sqlItem);
                 tableFieldWithValues.addAll(sqlItemFieldWithValues);
             }
-            lastIndex = matcher.end();
+            lastIndex = crestParam.end();
         }
         sqlBuilder.append(sql.substring(lastIndex));
         sql = sqlBuilder.toString();
@@ -200,20 +190,39 @@ public class SqlParserUtils {
                     }
                 }
 
-                Pattern patternCross = Pattern.compile("(`.*?`)");
-                Matcher matcherCross = patternCross.matcher(sql);
-                while (matcherCross.find()) {
-                    String group = matcherCross.group();
-                    String info = group.substring(1, group.length() - 1);
-                    sql = sql.replaceAll(group, prefix + info + suffix);
+                for (DelimitedToken quotedIdentifier : findDelimitedTokens(sql, "`", '`')) {
+                    sql = sql.replace("`" + quotedIdentifier.content() + "`", prefix + quotedIdentifier.content() + suffix);
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         SqlVariableHandleResult result = new SqlVariableHandleResult(sql);
         result.setTableFieldWithValues(tableFieldWithValues);
         return result;
+    }
+
+    private static List<DelimitedToken> findDelimitedTokens(String text, String prefix, char suffix) {
+        List<DelimitedToken> tokens = new ArrayList<>();
+        if (StringUtils.isEmpty(text) || StringUtils.isEmpty(prefix)) {
+            return tokens;
+        }
+        int searchFrom = 0;
+        while (searchFrom < text.length()) {
+            int start = text.indexOf(prefix, searchFrom);
+            if (start < 0) {
+                break;
+            }
+            int contentStart = start + prefix.length();
+            int endSuffix = text.indexOf(suffix, contentStart);
+            if (endSuffix < 0) {
+                break;
+            }
+            int end = endSuffix + 1;
+            tokens.add(new DelimitedToken(start, end, text.substring(contentStart, endSuffix)));
+            searchFrom = end;
+        }
+        return tokens;
     }
 
     private static boolean isParams(String paramId) {
@@ -335,6 +344,9 @@ public class SqlParserUtils {
         tableFieldWithValue.setColumnTypeName("VARCHAR");
         tableFieldWithValue.setValue(value);
         return tableFieldWithValue;
+    }
+
+    private record DelimitedToken(int start, int end, String content) {
     }
 
     private record PreparedSqlFragment(String replacement, List<TableFieldWithValue> tableFieldWithValues) {

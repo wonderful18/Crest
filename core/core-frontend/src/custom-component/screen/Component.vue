@@ -21,7 +21,7 @@
       :border-active-color="borderActiveColor"
       :hide-title="!showTabTitleFlag"
     >
-      <template :key="tabItem.name" v-for="tabItem in element.propValue">
+      <template :key="tabItem.name" v-for="tabItem in tabItems">
         <el-tab-pane
           class="el-tab-pane-custom"
           :lazy="isEditMode"
@@ -68,7 +68,7 @@
                           {{ t('visualization.edit_title') }}
                         </el-dropdown-item>
                         <el-dropdown-item
-                          v-if="element.propValue.length > 1"
+                          v-if="tabItems.length > 1"
                           :command="beforeHandleCommand('deleteCur', tabItem)"
                         >
                           {{ t('visualization.delete') }}
@@ -87,7 +87,7 @@
         :key="tabItem.name + '-content'"
         @mouseenter="handleMouseEnter"
         @mouseleave="handleMouseLeave"
-        v-for="tabItem in element.propValue"
+        v-for="tabItem in tabItems"
         :class="{ 'switch-hidden': element.editableTabsValue !== tabItem.name }"
       >
         <PreviewCanvas
@@ -236,6 +236,17 @@ const {
   searchCount
 } = toRefs(props)
 
+const tabItems = computed(() =>
+  Array.isArray(element.value?.propValue) ? element.value.propValue : []
+)
+
+const ensureTabItems = () => {
+  if (!Array.isArray(element.value.propValue)) {
+    element.value.propValue = []
+  }
+  return element.value.propValue
+}
+
 const screenType =
   dvInfo.value.type === 'dataV' ? t('work_branch.big_data_screen') : t('work_branch.dashboard')
 
@@ -322,10 +333,9 @@ const isEditMode = computed(() => editMode.value === 'edit' && isEdit.value && !
 const curThemes = isDashboard() ? 'light' : 'dark'
 const calcTabLength = () => {
   setTimeout(() => {
-    if (element.value.propValue.length > 1) {
-      const containerDom = document.getElementById(
-        'tab-' + element.value.propValue[element.value.propValue.length - 1].name
-      )
+    const tabs = tabItems.value
+    if (tabs.length > 1) {
+      const containerDom = document.getElementById('tab-' + tabs[tabs.length - 1].name)
       if (containerDom) {
         tabsAreaScroll.value =
           containerDom?.parentNode?.clientWidth > tabComponentRef.value.clientWidth - 100
@@ -362,20 +372,24 @@ function addTab() {
     screenId: null,
     closable: true
   }
-  element.value.propValue.push(newTab)
+  ensureTabItems().push(newTab)
   element.value.editableTabsValue = newTab.name
   snapshotStore.recordSnapshotCache('addTab')
 }
 
 function deleteCur(param) {
   state.curItem = param
-  let len = element.value.propValue.length
+  const tabs = ensureTabItems()
+  let len = tabs.length
   while (len--) {
-    if (element.value.propValue[len].name === param.name) {
-      element.value.propValue.splice(len, 1)
-      const activeIndex =
-        (len - 1 + element.value.propValue.length) % element.value.propValue.length
-      element.value.editableTabsValue = element.value.propValue[activeIndex].name
+    if (tabs[len].name === param.name) {
+      tabs.splice(len, 1)
+      if (tabs.length) {
+        const activeIndex = (len - 1 + tabs.length) % tabs.length
+        element.value.editableTabsValue = tabs[activeIndex].name
+      } else {
+        element.value.editableTabsValue = ''
+      }
       state.tabShow = false
       nextTick(() => {
         state.tabShow = true
@@ -385,7 +399,9 @@ function deleteCur(param) {
 }
 function copyCur(param) {
   addTab()
-  const newTabItem = element.value.propValue[element.value.propValue.length - 1]
+  const tabs = ensureTabItems()
+  const newTabItem = tabs[tabs.length - 1]
+  if (!newTabItem) return
   const idMap = {}
   const newCanvasId = element.value.id + '--' + newTabItem.name
   newTabItem.componentData = deepCopyTabItemHelper(newCanvasId, param.componentData, idMap)
@@ -438,7 +454,7 @@ const componentMoveIn = component => {
         eventBus.emit('removeMatrixItemById-canvas-main', component.id)
         dvMainStore.setCurComponent({ component: null, index: null })
         component.canvasId = element.value.id + '--' + tabItem.name
-        const refInstance = currentInstance.refs['tabCanvas_' + index][0]
+        const refInstance = currentInstance?.refs?.['tabCanvas_' + index]?.[0]
         if (refInstance) {
           const matrixBase = refInstance.getBaseMatrixSize() //矩阵基础大小
           canvasChangeAdaptor(component, matrixBase)
@@ -685,15 +701,17 @@ const initCarousel = () => {
   if (!isEditMode.value) {
     if (element.value.carousel?.enable) {
       const switchTime = (element.value.carousel.time || 5) * 1000
+      const tabs = element.value.propValue || []
+      if (!tabs.length) return
       let switchCount = 1
       // 轮播定时器
       carouselTimer = setInterval(() => {
         // 鼠标移入时 停止轮播
         if (!state.hoverFlag) {
-          const nowIndex = switchCount % element.value.propValue.length
+          const nowIndex = switchCount % tabs.length
           switchCount++
           nextTick(() => {
-            element.value.editableTabsValue = element.value.propValue[nowIndex].name
+            element.value.editableTabsValue = tabs[nowIndex].name
           })
         }
       }, switchTime)
@@ -702,8 +720,9 @@ const initCarousel = () => {
 }
 onMounted(() => {
   document.addEventListener('visibilitychange', viewToolTipsChange)
-  if (element.value.propValue.length > 0) {
-    element.value.editableTabsValue = element.value.propValue[0].name
+  const tabs = tabItems.value
+  if (tabs.length > 0) {
+    element.value.editableTabsValue = tabs[0].name
   }
   calcTabLength()
   if (['canvas', 'canvasDataV', 'edit'].includes(showPosition.value) && !mobileInPc.value) {

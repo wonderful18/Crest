@@ -111,23 +111,29 @@ onMounted(loadConfig)
         </div>
 
         <el-form-item label="授权端点" required>
-          <el-input v-model.trim="form.authorizationEndpoint" placeholder="https://idp.example.com/oauth2/authorize" />
+          <el-input
+            v-model.trim="form.authorizationEndpoint"
+            placeholder="https://idp.example.com/oauth2/authorize"
+          />
         </el-form-item>
         <el-form-item label="令牌端点" required>
-          <el-input v-model.trim="form.tokenEndpoint" placeholder="https://idp.example.com/oauth2/token" />
+          <el-input
+            v-model.trim="form.tokenEndpoint"
+            placeholder="https://idp.example.com/oauth2/token"
+          />
         </el-form-item>
         <el-form-item label="用户信息端点" required>
-          <el-input v-model.trim="form.userInfoEndpoint" placeholder="https://idp.example.com/oauth2/userinfo" />
+          <el-input
+            v-model.trim="form.userInfoEndpoint"
+            placeholder="https://idp.example.com/oauth2/userinfo"
+          />
         </el-form-item>
         <el-form-item label="Issuer">
           <el-input v-model.trim="form.issuer" placeholder="https://idp.example.com" />
         </el-form-item>
         <el-form-item label="回调地址">
           <div class="callback-row">
-            <el-input
-              v-model.trim="form.redirectUri"
-              placeholder="留空时按当前访问地址生成"
-            />
+            <el-input v-model.trim="form.redirectUri" placeholder="留空时按当前访问地址生成" />
             <el-button @click="copyCallback">复制回调地址</el-button>
           </div>
           <div class="form-tip">{{ form.callbackUrl }}</div>
@@ -183,7 +189,7 @@ onMounted(loadConfig)
 
       <div class="actions">
         <el-button @click="validate">校验配置</el-button>
-        <el-button type="primary" :loading="saving" @click="record">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
       </div>
     </div>
   </div>

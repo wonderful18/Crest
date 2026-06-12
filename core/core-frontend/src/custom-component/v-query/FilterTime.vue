@@ -52,7 +52,10 @@ const intervalTypeList = [
 ]
 
 const regularOrTrendsTitle = computed(() => {
-  return intervalTypeList.find(ele => ele.value === timeRange.value.intervalType).label
+  return (
+    intervalTypeList.find(ele => ele.value === timeRange.value.intervalType)?.label ||
+    intervalTypeList[0].label
+  )
 })
 const { timeRange } = toRefs(props)
 const dynamicTime = computed(() => {
@@ -449,7 +452,7 @@ watch(
 <style lang="less">
 .set-time-filtering-range {
   .ed-radio,
-  .ed-checkbox.ed-checkbox--crestfault {
+  .ed-checkbox.ed-checkbox--default {
     height: 22px;
     margin-right: 24px;
     --ed-radio-input-height: 16px;

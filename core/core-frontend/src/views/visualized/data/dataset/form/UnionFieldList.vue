@@ -102,6 +102,7 @@ watch(
     </div>
     <div class="field-block-body">
       <el-table
+        class="crest-data-table"
         header-cell-class-name="header-cell"
         ref="multipleTableRef"
         :data="fieldSearchList"

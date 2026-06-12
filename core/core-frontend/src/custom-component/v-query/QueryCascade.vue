@@ -234,7 +234,7 @@ defineExpose({
           </template>
           {{ t('v_query.add_cascade_condition') }}
         </el-button>
-        <el-button @click="deleteCascadeBlock(index)" class="cascadelete-block" text>
+        <el-button @click="deleteCascadeBlock(index)" class="cascade-delete-block" text>
           <template #icon>
             <Icon name="icon_delete-trash_outlined"
               ><icon_deleteTrash_outlined class="svg-icon"
@@ -290,7 +290,7 @@ defineExpose({
             />
           </el-select>
         </div>
-        <el-button v-show="idx !== 0" @click="deleteCascade(idx, item)" class="cascadelete" text>
+        <el-button v-show="idx !== 0" @click="deleteCascade(idx, item)" class="cascade-delete" text>
           <template #icon>
             <Icon name="icon_delete-trash_outlined"
               ><icon_deleteTrash_outlined class="svg-icon"
@@ -334,7 +334,7 @@ defineExpose({
       top: 10.6px;
       left: 16px;
       font-size: 14px;
-      color: var(--ed-color-primary, #3B82F6);
+      color: var(--ed-color-primary, #3b82f6);
     }
 
     margin-bottom: 16px;
@@ -373,8 +373,8 @@ defineExpose({
       }
     }
 
-    .cascadelete-block,
-    .cascadelete {
+    .cascade-delete-block,
+    .cascade-delete {
       width: 40px;
       font-size: 20px;
       color: #646a73;

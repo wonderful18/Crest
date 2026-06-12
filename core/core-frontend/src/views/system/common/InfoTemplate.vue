@@ -9,7 +9,7 @@
         <el-button v-if="showValidate" secondary @click="check">{{
           t('datasource.validate')
         }}</el-button>
-        <el-button type="primary" @click="change">{{ t('commons.edit') }}</el-button>
+        <el-button type="primary" @click="edit">{{ t('commons.edit') }}</el-button>
       </div>
     </div>
     <div class="info-template-content">
@@ -20,7 +20,7 @@
         :key="item.pkey"
       >
         <div class="info-item-label">
-          <span>{{ t(item.pkey) }}</span>
+          <span>{{ settingLabel(item.pkey) }}</span>
           <el-tooltip
             v-if="tooltipItem[item.pkey]"
             effect="dark"
@@ -143,6 +143,13 @@ const executeTime = ref(t('system.and_0_seconds'))
 const curTitle = computed(() => {
   return props.settingTitle || t('system.basic_settings')
 })
+const labelFallback: Record<string, string> = {
+  'setting_basic.siteTitle': '系统名称'
+}
+const settingLabel = (key: string) => {
+  const label = t(key)
+  return label === key ? labelFallback[key] || key : label
+}
 const copyVal = async val => {
   try {
     await toClipboard(val)
@@ -169,7 +176,7 @@ const getExecuteTime = val => {
     { value: 'minute', label: t('system.time_0_seconds') },
     { value: 'hour', label: t('system.and_0_seconds_de') }
   ]
-  return options.filter(item => item.value === val)[0].label
+  return options.find(item => item.value === val)?.label ?? options[0].label
 }
 
 const isLongValue = val => `${val ?? ''}`.length > 56
@@ -193,10 +200,11 @@ const formatPwd = () => {
 
 const tooltipItem = ref({})
 const formatLabel = () => {
-  props.labelTooltips?.length &&
+  if (props.labelTooltips?.length) {
     props.labelTooltips.forEach(tooltip => {
       tooltipItem.value[tooltip.key] = tooltip.val
     })
+  }
 }
 
 const switchPwd = (pkey: string) => {

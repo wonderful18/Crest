@@ -13,6 +13,22 @@
     "
   />
   <InfoTemplate
+    v-if="securityInfoSettings?.length"
+    ref="securityTemplate"
+    class="login-setting-template"
+    :label-tooltips="tooltips"
+    :copy-list="['setting_basic.initialPassword']"
+    setting-key="basic"
+    setting-title="账号安全"
+    :setting-data="securityInfoSettings"
+    @edit="
+      edit(
+        '账号安全',
+        securityInfoSettings.map(ele => ele.pkey.split('.')[1])
+      )
+    "
+  />
+  <InfoTemplate
     v-if="loginInoSettings?.length"
     ref="loginTemplate"
     class="login-setting-template"
@@ -59,6 +75,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
 const editor = ref()
 const infoTemplate = ref()
+const securityTemplate = ref()
 const loginTemplate = ref()
 const thirdTemplate = ref()
 const showDefaultLogin = ref(false)
@@ -88,10 +105,13 @@ const tooltips = [
     val: t('system.and_platform_docking')
   }
 ]
-const loginSettings = [
+const loginSettings = ['setting_basic.defaultLogin']
+
+const securitySettings = [
+  'setting_basic.initialPassword',
+  'setting_basic.pwdStrategy',
   'setting_basic.dip',
   'setting_basic.pvp',
-  'setting_basic.defaultLogin',
   'setting_basic.loginLimit',
   'setting_basic.loginLimitRate',
   'setting_basic.loginLimitTime'
@@ -149,9 +169,14 @@ const baseInfoSettings = computed(() =>
   state.templateList.filter(
     item =>
       !loginSettings.concat(thirdSettings).includes(item.pkey) &&
+      !securitySettings.includes(item.pkey) &&
       !['setting_basic.shareDisable', 'setting_basic.sharePeRequire'].includes(item.pkey) &&
       (!desktop || item.pkey !== 'setting_basic.defaultOpen')
   )
+)
+
+const securityInfoSettings = computed(() =>
+  state.templateList.filter(item => securitySettings.includes(item.pkey))
 )
 
 const thirdInfoSettings = computed(() =>
@@ -200,7 +225,8 @@ const search = cb => {
         }
       } else if (item.pkey === 'basic.pvp') {
         selectedPvp.value = item.pval || '0'
-        item.pval = pvpOptions.filter(cur => cur.value === selectedPvp.value)[0].label
+        item.pval =
+          pvpOptions.find(cur => cur.value === selectedPvp.value)?.label || pvpOptions[0].label
       } else if (item.pkey === 'basic.defaultLogin') {
         await queryCategoryStatus()
         if (showDefaultLogin.value) {
@@ -254,6 +280,7 @@ const refresh = () => {
   search(() => {
     nextTick(() => {
       infoTemplate?.value?.init()
+      securityTemplate?.value?.init()
       loginTemplate?.value?.init()
       thirdTemplate?.value?.init()
     })

@@ -55,7 +55,7 @@ public class DatasourceSyncManage {
 
     public void extractExcelData(CoreDatasource coreDatasource, String type) {
         if (coreDatasource == null) {
-            LogUtil.error("Can not find CoreDatasource: " + coreDatasource.getName());
+            LogUtil.error("Can not find CoreDatasource");
             return;
         }
         DatasourceServer.UpdateType updateType = DatasourceServer.UpdateType.valueOf(type);
@@ -212,7 +212,7 @@ public class DatasourceSyncManage {
                 datasetTableTaskLog.setTaskStatus(TaskStatus.Error.toString());
                 datasetTableTaskLog.setEndTime(System.currentTimeMillis());
 
-                e.printStackTrace();
+                io.crest.utils.LogUtil.error(e.getMessage(), e);
             } finally {
                 datasourceTaskServer.saveLog(datasetTableTaskLog);
             }

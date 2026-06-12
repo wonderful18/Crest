@@ -29,7 +29,7 @@ public interface ExportCenterApi {
 
     @CrestPermit("m:read")
     @PostMapping("/export-tasks/{status}/{goPage}/{pageSize}")
-    IPage<ExportTaskDTO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @PathVariable String status);
+    IPage<ExportTaskDTO> pager(@PathVariable("goPage") String goPage, @PathVariable("pageSize") String pageSize, @PathVariable String status);
 
     @Operation(summary = "删除单条记录")
     @DeleteMapping("/{id}")

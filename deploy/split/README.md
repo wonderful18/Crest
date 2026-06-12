@@ -29,7 +29,12 @@ docker build -f Dockerfile.frontend -t crest-web:split .
 ## 启动
 
 ```bash
-CREST_WEB_PORT=18100 docker compose -f deploy/split/docker-compose.yml up -d
+CREST_DB_PASSWORD='<strong-db-password>' \
+CREST_AES_KEY='<32-character-aes-key>' \
+CREST_AES_IV='<16-character-iv>' \
+CREST_INITIAL_PASSWORD='<initial-admin-password>' \
+CREST_WEB_PORT=18100 \
+docker compose -f deploy/split/docker-compose.yml up -d
 ```
 
 访问地址：
@@ -38,14 +43,14 @@ CREST_WEB_PORT=18100 docker compose -f deploy/split/docker-compose.yml up -d
 http://127.0.0.1:18100/
 ```
 
-默认账号：
+初始账号：
 
 ```text
 用户名：admin
-密码：admin
+密码：CREST_INITIAL_PASSWORD 指定的值
 ```
 
-本地验证使用固定密码和固定加密参数。生产环境必须改为随机值，并在首次登录后修改管理员密码。
+首次登录后建议立即修改管理员密码。
 
 ## 启用 Prometheus 和 Grafana
 
@@ -60,11 +65,15 @@ chmod 0400 deploy/split/prometheus-token
 
 ```bash
 COMPOSE_PROFILES=observability \
+CREST_DB_PASSWORD='<strong-db-password>' \
+CREST_AES_KEY='<32-character-aes-key>' \
+CREST_AES_IV='<16-character-iv>' \
+CREST_INITIAL_PASSWORD='<initial-admin-password>' \
 CREST_PROMETHEUS_ENABLED=true \
 CREST_PROMETHEUS_TOKEN=local-prometheus-token \
 CREST_PROMETHEUS_TOKEN_FILE=./prometheus-token \
 CREST_GRAFANA_ENABLED=true \
-CREST_GRAFANA_ADMIN_PASSWORD=admin \
+CREST_GRAFANA_ADMIN_PASSWORD='<grafana-admin-password>' \
 CREST_WEB_PORT=18100 \
 docker compose -f deploy/split/docker-compose.yml up -d
 ```

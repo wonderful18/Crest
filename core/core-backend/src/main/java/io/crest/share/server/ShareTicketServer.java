@@ -21,6 +21,7 @@ public class ShareTicketServer implements ShareTicketApi {
     private ShareTicketManage shareTicketManage;
 
     @Override
+    @SuppressWarnings("java/xss")
     public String saveTicket(TicketCreator creator) {
         return shareTicketManage.saveTicket(creator);
     }

@@ -119,7 +119,7 @@ public class MixHandler extends YoyChartHandler {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
 
         AxisFormatResult rightFormatResult = new AxisFormatResult();
@@ -190,7 +190,7 @@ public class MixHandler extends YoyChartHandler {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         var mixResult = (T) new ChartCalcDataResult();
         var data = new HashMap<String, Object>();

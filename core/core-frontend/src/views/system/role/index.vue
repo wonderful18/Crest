@@ -13,7 +13,10 @@ const form = reactive<any>({ id: null, name: '', desc: '', typeCode: 0 })
 const loadTable = async () => {
   loading.value = true
   try {
-    const res = await request.post({ url: '/role/by-current-org', data: { keyword: keyword.value } })
+    const res = await request.post({
+      url: '/role/by-current-org',
+      data: { keyword: keyword.value }
+    })
     const rows = res.data || []
     tableData.value = keyword.value
       ? rows.filter(row => String(row.name || '').includes(keyword.value))
@@ -86,7 +89,7 @@ onMounted(loadTable)
       </div>
       <el-table
         v-loading="loading"
-        class="manage-table"
+        class="manage-table crest-data-table"
         :data="tableData"
         max-height="calc(100vh - 280px)"
       >
@@ -139,7 +142,7 @@ onMounted(loadTable)
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="record">保存</el-button>
+        <el-button type="primary" @click="save">保存</el-button>
       </template>
     </el-dialog>
   </div>

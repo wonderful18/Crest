@@ -1,0 +1,35 @@
+name: Release Guard
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+      - 'release/**'
+  push:
+    branches:
+      - main
+      - dev
+      - 'release/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  release-guard:
+    name: release-guard
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Validate branch and release policy
+        env:
+          EVENT_BEFORE: ${{ github.event.before }}
+        run: bash scripts/release-guard.sh

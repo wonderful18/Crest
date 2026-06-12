@@ -124,7 +124,7 @@ public class BeanUtils {
             }
             return bean;
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
             throw new RuntimeException("Map转Bean失败", e);
         }
     }

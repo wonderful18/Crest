@@ -166,11 +166,9 @@ public class DatasetSQLBotManage {
         TokenUserBO user = Objects.requireNonNull(AuthUtils.getUser());
         Long oid = user.getDefaultOid();
         Long uid = user.getUserId();
-        List<Long> roleIds = null;
         Map<Long, List<DataSetColumnPermissionsDTO>> colPermissionMap = null;
         Map<Long, List<DataSetRowPermissionsTreeDTO>> rowPermissionMap = null;
-        Boolean model = null;
-        List<Map<String, Object>> list = null;
+        List<Map<String, Object>> list;
         boolean isAdmin = uid == 1;
         QueryWrapper<Object> queryWrapper = new QueryWrapper<>();
         if (ObjectUtils.isNotEmpty(datasetId)) {
@@ -179,32 +177,10 @@ public class DatasetSQLBotManage {
         if (ObjectUtils.isNotEmpty(dsId)) {
             queryWrapper.eq("cd.id", dsId);
         }
-        if (ObjectUtils.isEmpty(model)) {
-            if (!isAdmin) {
-                return null;
-            }
-            list = dataSetAssistantMapper.queryAll(queryWrapper);
-        } else if (!model) {
-            if (!isAdmin) {
-                return null;
-            }
-            list = dataSetAssistantMapper.queryCommunity(queryWrapper);
-        } else {
-            boolean isRootRole = isAdmin;
-            if (!isAdmin) {
-                List<Map<String, Object>> roleMapList = dataSetAssistantMapper.roleInfoByUid(uid, oid);
-                if (CollectionUtils.isNotEmpty(roleMapList)) {
-                    Long rootPid = 0L;
-                    isRootRole = roleMapList.stream().anyMatch(item -> ObjectUtils.isNotEmpty(item.get("pid")) && rootPid.equals(Long.parseLong(item.get("pid").toString())));
-                    roleIds = roleMapList.stream().map(item -> Long.parseLong(item.get("id").toString())).distinct().collect(Collectors.toList());
-                } else {
-                    roleIds = new ArrayList<>();
-                }
-                colPermissionMap = getColPermission(uid, roleIds);
-                rowPermissionMap = getRowPermission(uid, roleIds);
-            }
-            list = dataSetAssistantMapper.queryEnterprise(oid, uid, isRootRole, queryWrapper);
+        if (!isAdmin) {
+            return null;
         }
+        list = dataSetAssistantMapper.queryAll(queryWrapper);
         if (sqlbotApiLog) {
             LogUtil.info("sqlbot ds api list: {}", list);
         }

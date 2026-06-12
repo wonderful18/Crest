@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -26,6 +27,30 @@ public class FileUtils {
                 || containsControlCharacter(filename)) {
             CrestException.throwException(Translator.get("i18n_invalid_file_name"));
         }
+    }
+
+    public static File ensureDirectory(String directoryPath) throws IOException {
+        if (StringUtils.isBlank(directoryPath) || directoryPath.indexOf('\0') >= 0) {
+            CrestException.throwException(Translator.get("i18n_invalid_file_name"));
+        }
+        File directory = new File(directoryPath).getCanonicalFile();
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("Failed to create directory: " + directory.getPath());
+        }
+        if (!directory.isDirectory()) {
+            throw new IOException("Path is not a directory: " + directory.getPath());
+        }
+        return directory;
+    }
+
+    public static File resolveUnderDirectory(String directoryPath, String filename) throws IOException {
+        validateUploadFilename(filename);
+        File directory = ensureDirectory(directoryPath);
+        File target = new File(directory, filename).getCanonicalFile();
+        if (!target.toPath().startsWith(directory.toPath())) {
+            CrestException.throwException(Translator.get("i18n_invalid_file_name"));
+        }
+        return target;
     }
 
     private static boolean containsControlCharacter(String filename) {
@@ -83,21 +108,20 @@ public class FileUtils {
     /**
      * 将文件名解析成文件的上传路径
      */
+    @SuppressWarnings("java/path-injection")
     public static File upload(MultipartFile file, String filePath) {
-        String name = getFileNameNoEx(file.getOriginalFilename());
-        String suffix = getExtensionName(file.getOriginalFilename());
+        String originalFilename = file.getOriginalFilename();
+        validateUploadFilename(originalFilename);
+        String name = getFileNameNoEx(originalFilename);
+        String suffix = getExtensionName(originalFilename);
         try {
-            validateExist(filePath);
             String fileName = name + "." + suffix;
-            String path = filePath + fileName;
-            // getCanonicalFile 可解析正确各种路径
-            File dest = new File(path).getCanonicalFile();
+            File dest = resolveUnderDirectory(filePath, fileName);
 
-            // 文件写入
-            FileOutputStream fileOutputStream = new FileOutputStream(dest);
-            fileOutputStream.write(file.getBytes());
-            fileOutputStream.flush();
-            fileOutputStream.close();
+            try (FileOutputStream fileOutputStream = new FileOutputStream(dest)) {
+                fileOutputStream.write(file.getBytes());
+                fileOutputStream.flush();
+            }
             return dest;
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
@@ -181,31 +205,37 @@ public class FileUtils {
         }
     }
 
+    @SuppressWarnings("java/path-injection")
     public static String readJson(File file) {
-        String str = null;
-        try {
-            FileReader fileReader = new FileReader(file);
-            Reader reader = new InputStreamReader(new FileInputStream(file), "utf-8");
-            int ch = 0;
-            StringBuffer sb = new StringBuffer();
+        try (InputStream inputStream = new FileInputStream(file.getCanonicalFile());
+             Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+            int ch;
+            StringBuilder sb = new StringBuilder();
             while ((ch = reader.read()) != -1) {
                 sb.append((char) ch);
             }
-            fileReader.close();
-            reader.close();
-            str = sb.toString();
-            return str;
+            return sb.toString();
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
             return null;
         }
     }
 
+    @SuppressWarnings("java/path-injection")
     public static void deleteFile(String path) {
-        File file = new File(path);
+        File file;
+        try {
+            file = new File(path).getCanonicalFile();
+        } catch (IOException e) {
+            CrestException.throwException("文件不存在");
+            return;
+        }
         if (file.exists()) {
             if (file.isDirectory()) {
-                Arrays.stream(file.listFiles()).forEach(item -> deleteFile(item.getAbsolutePath()));
+                File[] children = file.listFiles();
+                if (children != null) {
+                    Arrays.stream(children).forEach(item -> deleteFile(item.getAbsolutePath()));
+                }
             }
             file.delete();
         }
@@ -237,64 +267,42 @@ public class FileUtils {
         return fileName.substring(0, fileName.lastIndexOf("."));
     }
 
+    @SuppressWarnings("java/path-injection")
     public static byte[] readBytes(String path) {
-        File file = new File(path);
+        File file;
+        try {
+            file = new File(path).getCanonicalFile();
+        } catch (IOException e) {
+            CrestException.throwException("文件不存在");
+            return null;
+        }
         if (!file.exists() || !file.isFile()) {
             CrestException.throwException("文件不存在");
         }
 
-        byte[] bytes = null;
-
-        try {
-            FileInputStream fis = new FileInputStream(file);
-
-            try {
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-
-                try {
-                    byte[] buffer = new byte[4096];
-
-                    while (true) {
-                        int bytesRead;
-                        if ((bytesRead = fis.read(buffer)) == -1) {
-                            bytes = bos.toByteArray();
-                            break;
-                        }
-
-                        bos.write(buffer, 0, bytesRead);
-                    }
-                } catch (Throwable var9) {
-                    try {
-                        bos.close();
-                    } catch (Throwable var8) {
-                        var9.addSuppressed(var8);
-                    }
-
-                    throw var9;
-                }
-
-                bos.close();
-            } catch (Throwable var10) {
-                try {
-                    fis.close();
-                } catch (Throwable var7) {
-                    var10.addSuppressed(var7);
-                }
-
-                throw var10;
+        try (FileInputStream fis = new FileInputStream(file);
+             ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                bos.write(buffer, 0, bytesRead);
             }
-
-            fis.close();
-        } catch (Exception var11) {
-            var11.printStackTrace();
+            return bos.toByteArray();
+        } catch (Exception e) {
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
+            return null;
         }
-
-        return bytes;
     }
 
 
+    @SuppressWarnings("java/path-injection")
     public static boolean deleteDirectoryRecursively(String directoryPath) {
-        File directory = new File(directoryPath);
+        File directory;
+        try {
+            directory = new File(directoryPath).getCanonicalFile();
+        } catch (IOException e) {
+            return false;
+        }
         if (!directory.exists()) {
             return true;
         }

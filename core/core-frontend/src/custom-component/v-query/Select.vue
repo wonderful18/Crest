@@ -18,6 +18,7 @@ import {
 import { enumValueObj, type EnumValue, getEnumValue } from '@/api/dataset'
 import { cloneDeep, debounce } from 'lodash-es'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
+import router from '@/router'
 import Flat from './Flat.vue'
 import eventBus from '@/utils/eventBus'
 import { useEmitt } from '@/hooks/web/useEmitt'
@@ -126,6 +127,7 @@ const disabledFirstItem = computed(() => {
   const { defaultValueFirstItem, optionValueSource } = props.config
   return defaultValueFirstItem && optionValueSource === 1
 })
+const currentVisualizationId = () => dvMainStore.dvInfo?.id || router.currentRoute.value.query.dvId
 const setDefaultMapValue = arr => {
   const { displayId, field } = config.value
   if (config.value.optionValueSource !== 1) {
@@ -208,19 +210,21 @@ const getCascadeFieldId = () => {
         filter.push(condition)
       } else {
         if (props.isConfig) {
-          if (!!item.selectValue?.length) {
+          const value = normalizeCascadeValue(item.selectValue)
+          if (value.length) {
             condition = {
               fieldId: fieldId,
               operator: 'in',
-              value: [...item.selectValue]
+              value
             }
           }
         } else {
-          if (!!item.currentSelectValue?.length) {
+          const value = normalizeCascadeValue(item.currentSelectValue)
+          if (value.length) {
             condition = {
               fieldId: fieldId,
               operator: 'in',
-              value: [...item.currentSelectValue]
+              value
             }
           }
         }
@@ -228,6 +232,11 @@ const getCascadeFieldId = () => {
     })
   })
   return filter
+}
+
+const normalizeCascadeValue = (value: any) => {
+  const values = Array.isArray(value) ? value : [value]
+  return values.filter(ele => ele !== undefined && ele !== null && ele !== '')
 }
 
 const handleValueChange = () => {
@@ -270,7 +279,8 @@ const handleFieldIdDefaultChange = (val: string[]) => {
   loading.value = true
   getEnumValue({
     fieldIds: val,
-    resultMode: config.value.resultMode || 0
+    resultMode: config.value.resultMode || 0,
+    visualizationId: currentVisualizationId()
   })
     .then(res => {
       options.value = (res || [])
@@ -309,20 +319,21 @@ const handleFieldIdDefaultChange = (val: string[]) => {
 
 const customSort = () => {
   if (config.value.sortList?.length && config.value.sort === 'customSort') {
-    options.value = [
-      ...options.value
-        .sort(a => {
-          if (config.value.sortList.indexOf(a.value) !== -1) {
-            return -1
-          }
-        })
-        .sort((a, b) => {
-          if (config.value.sortList.indexOf(a.value) === -1) {
-            return 0
-          }
-          return config.value.sortList.indexOf(a.value) - config.value.sortList.indexOf(b.value)
-        })
-    ]
+    const sortList = config.value.sortList
+    options.value = [...options.value].sort((a, b) => {
+      const aIndex = sortList.indexOf(a.value)
+      const bIndex = sortList.indexOf(b.value)
+      if (aIndex === -1 && bIndex === -1) {
+        return 0
+      }
+      if (aIndex === -1) {
+        return 1
+      }
+      if (bIndex === -1) {
+        return -1
+      }
+      return aIndex - bIndex
+    })
   }
 }
 
@@ -691,7 +702,8 @@ const setOptions = (num: number) => {
           sortId: sort === 'customSort' ? '' : sortId,
           resultMode: config.value.resultMode || 0,
           searchText: searchText.value,
-          filter: getCascadeFieldId()
+          filter: getCascadeFieldId(),
+          visualizationId: currentVisualizationId()
         })
       } else {
         options.value = []

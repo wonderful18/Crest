@@ -68,7 +68,7 @@ const handleChange = (val: boolean) => {
             <p class="name">{{ $t('auth.dataset') }}</p>
             <p class="size">{{ t('data_source.or_large_screen') }}</p>
           </div>
-          <el-button class="record-new" secondary :disabled="disabled" @click="createDataset">
+          <el-button class="create" secondary :disabled="disabled" @click="createDataset">
             {{ t('data_source.go_to_create') }}
           </el-button>
         </div>
