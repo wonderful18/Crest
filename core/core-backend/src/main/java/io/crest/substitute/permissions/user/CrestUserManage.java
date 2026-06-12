@@ -392,8 +392,8 @@ public class CrestUserManage {
             }
         }
 
-        // 使用初始密码并验证策略
-        String password = initialPassword();
+        // 使用传入密码或默认初始密码，并验证策略
+        String password = StringUtils.isNotBlank(creator.getPassword()) ? creator.getPassword().trim() : initialPassword();
         PasswordValidator.validate(password);
 
         long id = IDUtils.snowID();
@@ -419,11 +419,16 @@ public class CrestUserManage {
             CrestException.throwException("用户不存在");
         }
 
-        // RBAC权限检查：只有系统管理员可以编辑管理员账户
-        if (Boolean.TRUE.equals(user.getAdmin())) {
+        // RBAC权限检查：编辑管理员账户需要当前用户是管理员；编辑系统管理员需要系统管理员权限
+        if (editor.getId() == 1L) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
             if (currentUserId == null || !AuthUtils.isSysAdmin(currentUserId)) {
-                CrestException.throwException("只有系统管理员可以编辑管理员账户");
+                CrestException.throwException("只有系统管理员可以编辑系统管理员账户");
+            }
+        } else if (Boolean.TRUE.equals(user.getAdmin()) || hasAdminRole(editor.getRoleIds())) {
+            Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
+            if (currentUserId == null || !isAdmin(currentUserId)) {
+                CrestException.throwException("只有管理员可以编辑管理员账户");
             }
         }
 
@@ -431,17 +436,35 @@ public class CrestUserManage {
         if (AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType()) && !Strings.CS.equals(user.getAccount(), editor.getAccount().trim())) {
             CrestException.throwException("单点登录用户账号由身份提供方维护");
         }
+        String newPassword = StringUtils.trimToNull(editor.getPassword());
+        if (newPassword != null && AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType())) {
+            CrestException.throwException("单点登录用户不支持设置本地密码");
+        }
         CrestUser sameAccount = queryByAccount(editor.getAccount());
         if (sameAccount != null && !sameAccount.getId().equals(editor.getId())) {
             CrestException.throwException("账号已存在");
         }
-        jdbcTemplate.update("""
-                UPDATE iam_user
-                SET account = ?, name = ?, email = ?, phone_prefix = ?, phone = ?, enable = ?, is_admin = ?, update_time = ?
-                WHERE id = ?
-                """, editor.getAccount().trim(), editor.getName().trim(), editor.getEmail(),
-                editor.getPhonePrefix(), editor.getPhone(), editor.getEnable() == null || editor.getEnable(),
-                editor.getId() == 1L || hasAdminRole(editor.getRoleIds()), System.currentTimeMillis(), editor.getId());
+        // 如果传入了新密码则更新
+        if (newPassword != null) {
+            PasswordValidator.validate(newPassword);
+        }
+        if (newPassword != null) {
+            jdbcTemplate.update("""
+                    UPDATE iam_user
+                    SET account = ?, name = ?, email = ?, phone_prefix = ?, phone = ?, enable = ?, is_admin = ?, password_hash = ?, update_time = ?
+                    WHERE id = ?
+                    """, editor.getAccount().trim(), editor.getName().trim(), editor.getEmail(),
+                    editor.getPhonePrefix(), editor.getPhone(), editor.getEnable() == null || editor.getEnable(),
+                    editor.getId() == 1L || hasAdminRole(editor.getRoleIds()), PasswordEncoder.encode(newPassword), System.currentTimeMillis(), editor.getId());
+        } else {
+            jdbcTemplate.update("""
+                    UPDATE iam_user
+                    SET account = ?, name = ?, email = ?, phone_prefix = ?, phone = ?, enable = ?, is_admin = ?, update_time = ?
+                    WHERE id = ?
+                    """, editor.getAccount().trim(), editor.getName().trim(), editor.getEmail(),
+                    editor.getPhonePrefix(), editor.getPhone(), editor.getEnable() == null || editor.getEnable(),
+                    editor.getId() == 1L || hasAdminRole(editor.getRoleIds()), System.currentTimeMillis(), editor.getId());
+        }
         Long oid = editor.getOid() == null ? platformPermissionManage.defaultOrgId(editor.getId()) : editor.getOid();
         platformPermissionManage.replaceUserDefaultOrg(editor.getId(), oid);
         platformPermissionManage.replaceUserRoles(editor.getId(), oid, editor.getRoleIds());
@@ -453,12 +476,12 @@ public class CrestUserManage {
             CrestException.throwException("内置管理员不能删除");
         }
 
-        // RBAC权限检查：只有系统管理员可以删除管理员账户
+        // RBAC权限检查：删除管理员账户需要当前用户是管理员
         CrestUser targetUser = queryById(id);
         if (targetUser != null && Boolean.TRUE.equals(targetUser.getAdmin())) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
-            if (currentUserId == null || !AuthUtils.isSysAdmin(currentUserId)) {
-                CrestException.throwException("只有系统管理员可以删除管理员账户");
+            if (currentUserId == null || !isAdmin(currentUserId)) {
+                CrestException.throwException("只有管理员可以删除管理员账户");
             }
         }
 
@@ -473,12 +496,12 @@ public class CrestUserManage {
             CrestException.throwException("内置管理员不能停用");
         }
 
-        // RBAC权限检查：只有系统管理员可以启用/禁用管理员账户
+        // RBAC权限检查：修改管理员状态需要当前用户是管理员
         CrestUser targetUser = queryById(request.getId());
         if (targetUser != null && Boolean.TRUE.equals(targetUser.getAdmin())) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
-            if (currentUserId == null || !AuthUtils.isSysAdmin(currentUserId)) {
-                CrestException.throwException("只有系统管理员可以修改管理员状态");
+            if (currentUserId == null || !isAdmin(currentUserId)) {
+                CrestException.throwException("只有管理员可以修改管理员状态");
             }
         }
 
@@ -487,7 +510,7 @@ public class CrestUserManage {
     }
 
     @Transactional
-    public void resetPwd(Long id) {
+    public String resetPwd(Long id) {
         CrestUser user = queryById(id);
         if (user == null) {
             CrestException.throwException("用户不存在");
@@ -495,8 +518,10 @@ public class CrestUserManage {
         if (AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType())) {
             CrestException.throwException("单点登录用户不支持重置本地密码");
         }
+        String password = generateSecurePassword();
         jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, update_time = ? WHERE id = ?",
-                PasswordEncoder.encode(initialPassword()), System.currentTimeMillis(), id);
+                PasswordEncoder.encode(password), System.currentTimeMillis(), id);
+        return password;
     }
 
     @Transactional
@@ -611,5 +636,25 @@ public class CrestUserManage {
             throw new IllegalStateException(INITIAL_PASSWORD_PROPERTY + " must be configured");
         }
         return password;
+    }
+
+    private String generateSecurePassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        StringBuilder sb = new StringBuilder();
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        sb.append("A");
+        sb.append("a");
+        sb.append("1");
+        sb.append("!");
+        for (int i = 0; i < 8; i++) {
+            char next;
+            do {
+                next = chars.charAt(random.nextInt(chars.length()));
+            } while (sb.length() >= 2
+                    && sb.charAt(sb.length() - 1) == next
+                    && sb.charAt(sb.length() - 2) == next);
+            sb.append(next);
+        }
+        return sb.toString();
     }
 }

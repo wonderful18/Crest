@@ -172,8 +172,15 @@ class ApiEndpointContractTest {
                 List.of("const portalHome = '/portal'", "getBackendAccess", "isBackendRoute"),
                 List.of("const portalHome = '/workbranch/index'"));
         assertFrontendContract("core/core-frontend/src/views/login/index.vue",
-                List.of("'/portal'", "'/workbranch/index'"),
+                List.of("resolveDefaultLoginPath(userStore.getBackendAccess)", "parseLoginRedirect(queryRedirectPath)"),
                 List.of("let queryRedirectPath = '/workbranch/index'"));
+        assertFrontendContract("core/core-frontend/src/views/login/loginEntryPolicy.mjs",
+                List.of(
+                        "export const PORTAL_HOME = '/portal'",
+                        "export const BACKEND_HOME = '/workbranch/index'",
+                        "return backendAccess ? BACKEND_HOME : PORTAL_HOME"
+                ),
+                List.of());
     }
 
     @Test
@@ -193,7 +200,8 @@ class ApiEndpointContractTest {
                 ));
         assertFrontendContract("core/core-backend/src/main/java/io/crest/portal/DataPortalServer.java",
                 List.of(
-                        "\" ORDER BY \" + orderColumn(normalized) + \" \" + orderDirection + \" LIMIT ? OFFSET ?\"",
+                        "\" ORDER BY \" + orderExpression(normalized, orderDirection) + \" LIMIT ? OFFSET ?\"",
+                        "private String orderExpression(DataPortalResourceRequest request, String direction)",
                         "INNER JOIN workspace_favorite_resource wfr ON wfr.resource_id = v.id",
                         "INNER JOIN workspace_recent_resource wrr ON wrr.resource_id = v.id",
                         "AS favorite",
@@ -337,7 +345,7 @@ class ApiEndpointContractTest {
                 ),
                 List.of());
         assertFrontendContract("core/core-frontend/src/permission.ts",
-                List.of("!userStore.getBackendAccess && isReadOnlyRoute(to.path, to.name)"),
+                List.of("shouldBypassAuthenticatedMenuGuard(to)", "isReadOnlyRoute(path, name)"),
                 List.of());
         assertFrontendContract("core/core-frontend/src/store/modules/interactive.ts",
                 List.of("const treeNodes = Array.isArray(list)", "treeNodes[0]?.weight"),
@@ -710,7 +718,8 @@ class ApiEndpointContractTest {
                 List.of(
                         "const currentChartTypeOption = computed(() => state.chartTypeOptions[0])",
                         "const viewConfig = getViewConfig(newVal[0])",
-                        "state.chartTypeOptions.splice(0, state.chartTypeOptions.length, ...(viewConfig ? [viewConfig] : []))",
+                        "state.chartTypeOptions.splice(",
+                        "...(viewConfig ? [viewConfig] : [])",
                         "if (!viewConf) return",
                         "v-if=\"currentChartTypeOption?.isPlugin\"",
                         "v-else-if=\"currentChartTypeOption?.icon\"",
@@ -761,7 +770,8 @@ class ApiEndpointContractTest {
             try {
                 assertFrontendContract(relativePath,
                         List.of(
-                                "const tabItems = computed(() => (Array.isArray(element.value?.propValue) ? element.value.propValue : []))",
+                                "const tabItems = computed(() =>",
+                                "Array.isArray(element.value?.propValue) ? element.value.propValue : []",
                                 "const ensureTabItems = () => {",
                                 "if (!Array.isArray(element.value.propValue))",
                                 "ensureTabItems().push(newTab)",
