@@ -31,4 +31,17 @@ class AuditLogTextTest {
         assertEquals("维护系统参数",
                 AuditLogText.description(LogOT.MODIFY, "DATA", "/api/v1/sys-parameter/basic/record"));
     }
+
+    @Test
+    @DisplayName("数据资产治理接口应生成明确审计文案")
+    void shouldDescribeDataAssetGovernanceRoutes() {
+        assertEquals("查询数据资产目录",
+                AuditLogText.description(LogOT.READ, "DATA", "/api/v1/data-assets/page/1/20"));
+        assertEquals("查询资产负责人",
+                AuditLogText.description(LogOT.READ, "USER", "/api/v1/data-assets/owners"));
+        assertEquals("查看数据资产影响范围",
+                AuditLogText.description(LogOT.READ, "DATA", "/api/v1/data-assets/dataset/982004/impact"));
+        assertEquals("维护数据资产信息",
+                AuditLogText.description(LogOT.MODIFY, "DATA", "/api/v1/data-assets/profile"));
+    }
 }

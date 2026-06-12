@@ -89,7 +89,7 @@ onMounted(loadTable)
       </div>
       <el-table
         v-loading="loading"
-        class="manage-table"
+        class="manage-table crest-data-table"
         :data="tableData"
         max-height="calc(100vh - 280px)"
       >

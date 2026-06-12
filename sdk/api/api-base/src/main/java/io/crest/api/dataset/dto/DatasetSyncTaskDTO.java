@@ -79,4 +79,20 @@ public class DatasetSyncTaskDTO implements Serializable {
     private Boolean cacheExpired;
 
     private Boolean failureWarned;
+
+    private String datasetName;
+
+    private Long durationMillis;
+
+    private String failureReason;
+
+    private Long lastLogStartTime;
+
+    private Long lastLogEndTime;
+
+    private String lastLogStatus;
+
+    private String lastLogInfo;
+
+    private String lastTriggerType;
 }

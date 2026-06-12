@@ -77,6 +77,11 @@ final class AuditLogText {
         if (url.contains("/logout")) return "退出登录";
         if (containsAny(url, "/audit-log/page", "/auditlog/pager")) return "查询审计日志";
         if (containsAny(url, "/audit-log/statistics", "/auditlog/statistics")) return "查看审计统计";
+        if (containsAny(url, "/data-assets/profile")) return "维护数据资产信息";
+        if (containsAny(url, "/data-assets/page")) return "查询数据资产目录";
+        if (containsAny(url, "/data-assets/owners")) return "查询资产负责人";
+        if (url.contains("/data-assets/") && url.contains("/impact")) return "查看数据资产影响范围";
+        if (url.contains("/data-assets/")) return "查看数据资产详情";
         if (containsAny(url, "/auth/business-target-permissions", "/auth/savebusitargetper", "/auth/recordbusitargetper")) {
             return operationType == LogOT.READ ? "查看业务资源授权对象" : "批量配置业务资源权限";
         }

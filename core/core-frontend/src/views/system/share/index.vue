@@ -101,7 +101,12 @@ onMounted(loadTable)
         <el-input v-model="keyword" clearable placeholder="搜索名称" @change="loadTable" />
         <el-button type="primary" @click="loadTable">查询</el-button>
       </div>
-      <el-table v-loading="loading" :data="tableData" max-height="calc(100vh - 300px)">
+      <el-table
+        v-loading="loading"
+        class="crest-data-table"
+        :data="tableData"
+        max-height="calc(100vh - 300px)"
+      >
         <el-table-column prop="name" label="资源名称" min-width="220" show-overflow-tooltip />
         <el-table-column label="类型" width="120">
           <template #default="{ row }">{{ typeMap[row.type] || row.type }}</template>

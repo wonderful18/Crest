@@ -791,7 +791,12 @@ defineExpose({
           <span>{{ t('datasource.column_info') }}</span>
         </div>
         <div class="table-container de-svg-in-table" v-show="apiItem.useJsonPath">
-          <el-table :data="originFieldItem.jsonFields" style="width: 100%" row-key="jsonPath">
+          <el-table
+            class="crest-data-table"
+            :data="originFieldItem.jsonFields"
+            style="width: 100%"
+            row-key="jsonPath"
+          >
             <el-table-column
               class-name="checkbox-table"
               prop="originName"
@@ -829,6 +834,7 @@ defineExpose({
         </p>
         <div v-show="activeColumnInfo" class="de-svg-in-table">
           <el-table
+            class="crest-data-table"
             header-cell-class-name="header-cell"
             :data="apiItem.jsonFields"
             style="width: 100%"
@@ -977,6 +983,7 @@ defineExpose({
           <el-auto-resizer v-else>
             <template #default="{ height, width }">
               <el-table-v2
+                class="crest-data-table-v2"
                 :columns="columns"
                 header-class="header-cell"
                 :data="tableData"

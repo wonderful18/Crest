@@ -14,6 +14,7 @@ import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import PortalAccount from './PortalAccount.vue'
+import { portalTrustBadges } from '@/views/visualized/data/asset/dataAssetPolicy.mjs'
 
 interface PortalResource {
   id: string | number
@@ -23,6 +24,9 @@ interface PortalResource {
   updateTime?: number
   chartCount?: number
   favorite?: boolean
+  certified?: boolean
+  recommended?: boolean
+  deprecated?: boolean
 }
 
 const ALL_RESOURCES = 'all'
@@ -516,10 +520,22 @@ onMounted(reload)
                         <img :src="typeIcon(row.type)" :alt="typeLabel(row.type)" />
                       </span>
                       <span class="asset-title-wrap">
-                        <el-tooltip placement="top">
-                          <template #content>{{ row.name }}</template>
-                          <span class="asset-title ellipsis">{{ row.name }}</span>
-                        </el-tooltip>
+                        <span class="asset-title-line">
+                          <el-tooltip placement="top">
+                            <template #content>{{ row.name }}</template>
+                            <span class="asset-title ellipsis">{{ row.name }}</span>
+                          </el-tooltip>
+                          <span v-if="portalTrustBadges(row).length" class="trust-badges">
+                            <span
+                              v-for="badge in portalTrustBadges(row)"
+                              :key="badge.label"
+                              class="trust-badge"
+                              :class="badge.className"
+                            >
+                              {{ badge.label }}
+                            </span>
+                          </span>
+                        </span>
                         <span class="asset-code">{{ typeCode(row.id) }}</span>
                       </span>
                     </div>
@@ -1232,12 +1248,56 @@ onMounted(reload)
   min-width: 0;
 }
 
+.asset-title-line {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
 .asset-title {
   max-width: clamp(240px, 34vw, 560px);
   color: #0f172a;
   font-size: 13.5px;
   font-weight: 600;
   line-height: 18px;
+}
+
+.trust-badges {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  border-radius: 5px;
+}
+
+.badge-certified {
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-recommended {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-deprecated {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
 }
 
 .asset-code {

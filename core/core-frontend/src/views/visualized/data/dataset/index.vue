@@ -1061,6 +1061,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
               <el-auto-resizer v-if="activeName === 'structPreview'">
                 <template #default="{ height, width }">
                   <el-table-v2
+                    class="crest-data-table-v2"
                     key="structPreview"
                     :columns="columns"
                     v-loading="dataPreviewLoading"
@@ -1080,7 +1081,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
               <template v-if="activeName === 'dataPreview'">
                 <el-table
                   v-loading="dataPreviewLoading"
-                  class="dataset-preview_table"
+                  class="dataset-preview_table crest-data-table"
                   :data="tableData"
                   @row-click="rowClick"
                   key="dataPreview"

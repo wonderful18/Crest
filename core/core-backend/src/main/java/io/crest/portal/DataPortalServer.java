@@ -94,11 +94,37 @@ public class DataPortalServer {
                        (SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = v.id) AS chart_count,
                        EXISTS (
                            SELECT 1
+                           FROM bi_chart c
+                           INNER JOIN data_asset_profile p ON p.asset_type COLLATE utf8mb4_unicode_ci = 'dataset'
+                             AND p.asset_id COLLATE utf8mb4_unicode_ci = CAST(c.table_id AS CHAR) COLLATE utf8mb4_unicode_ci
+                             AND p.certified = 1
+                             AND p.deprecated = 0
+                           WHERE c.scene_id = v.id
+                       ) AS certified,
+                       EXISTS (
+                           SELECT 1
+                           FROM bi_chart c
+                           INNER JOIN data_asset_profile p ON p.asset_type COLLATE utf8mb4_unicode_ci = 'dataset'
+                             AND p.asset_id COLLATE utf8mb4_unicode_ci = CAST(c.table_id AS CHAR) COLLATE utf8mb4_unicode_ci
+                             AND p.recommended = 1
+                             AND p.deprecated = 0
+                           WHERE c.scene_id = v.id
+                       ) AS recommended,
+                       EXISTS (
+                           SELECT 1
+                           FROM bi_chart c
+                           INNER JOIN data_asset_profile p ON p.asset_type COLLATE utf8mb4_unicode_ci = 'dataset'
+                             AND p.asset_id COLLATE utf8mb4_unicode_ci = CAST(c.table_id AS CHAR) COLLATE utf8mb4_unicode_ci
+                             AND p.deprecated = 1
+                           WHERE c.scene_id = v.id
+                       ) AS deprecated,
+                       EXISTS (
+                           SELECT 1
                            FROM workspace_favorite_resource fav
                            WHERE fav.resource_id = v.id
                              AND fav.uid = ?
                        ) AS favorite
-                """ + query.fromWhere + " ORDER BY " + orderColumn(normalized) + " " + orderDirection + " LIMIT ? OFFSET ?";
+                """ + query.fromWhere + " ORDER BY " + orderExpression(normalized, orderDirection) + " LIMIT ? OFFSET ?";
         List<DataPortalResourceVO> records = jdbcTemplate.query(listSql, (rs, rowNum) -> {
             DataPortalResourceVO vo = new DataPortalResourceVO();
             vo.setId(rs.getLong("id"));
@@ -109,6 +135,9 @@ public class DataPortalServer {
             vo.setCreatorName(rs.getString("creator_name"));
             vo.setChartCount(rs.getInt("chart_count"));
             vo.setFavorite(rs.getBoolean("favorite"));
+            vo.setCertified(rs.getBoolean("certified"));
+            vo.setRecommended(rs.getBoolean("recommended"));
+            vo.setDeprecated(rs.getBoolean("deprecated"));
             return vo;
         }, listArgs.toArray());
 
@@ -144,6 +173,32 @@ public class DataPortalServer {
                        (SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = v.id) AS chart_count,
                        EXISTS (
                            SELECT 1
+                           FROM bi_chart c
+                           INNER JOIN data_asset_profile p ON p.asset_type COLLATE utf8mb4_unicode_ci = 'dataset'
+                             AND p.asset_id COLLATE utf8mb4_unicode_ci = CAST(c.table_id AS CHAR) COLLATE utf8mb4_unicode_ci
+                             AND p.certified = 1
+                             AND p.deprecated = 0
+                           WHERE c.scene_id = v.id
+                       ) AS certified,
+                       EXISTS (
+                           SELECT 1
+                           FROM bi_chart c
+                           INNER JOIN data_asset_profile p ON p.asset_type COLLATE utf8mb4_unicode_ci = 'dataset'
+                             AND p.asset_id COLLATE utf8mb4_unicode_ci = CAST(c.table_id AS CHAR) COLLATE utf8mb4_unicode_ci
+                             AND p.recommended = 1
+                             AND p.deprecated = 0
+                           WHERE c.scene_id = v.id
+                       ) AS recommended,
+                       EXISTS (
+                           SELECT 1
+                           FROM bi_chart c
+                           INNER JOIN data_asset_profile p ON p.asset_type COLLATE utf8mb4_unicode_ci = 'dataset'
+                             AND p.asset_id COLLATE utf8mb4_unicode_ci = CAST(c.table_id AS CHAR) COLLATE utf8mb4_unicode_ci
+                             AND p.deprecated = 1
+                           WHERE c.scene_id = v.id
+                       ) AS deprecated,
+                       EXISTS (
+                           SELECT 1
                            FROM workspace_favorite_resource fav
                            WHERE fav.resource_id = v.id
                              AND fav.uid = ?
@@ -159,6 +214,9 @@ public class DataPortalServer {
             vo.setCreatorName(rs.getString("creator_name"));
             vo.setChartCount(rs.getInt("chart_count"));
             vo.setFavorite(rs.getBoolean("favorite"));
+            vo.setCertified(rs.getBoolean("certified"));
+            vo.setRecommended(rs.getBoolean("recommended"));
+            vo.setDeprecated(rs.getBoolean("deprecated"));
             return vo;
         }, resourceArgs.toArray());
         if (resources.isEmpty()) {
@@ -247,14 +305,14 @@ public class DataPortalServer {
         return copy;
     }
 
-    private String orderColumn(DataPortalResourceRequest request) {
+    private String orderExpression(DataPortalResourceRequest request, String direction) {
         if (request != null && "store".equals(request.getQueryFrom())) {
-            return "wfr.time";
+            return "wfr.time " + direction;
         }
         if (request != null && "recent".equals(request.getQueryFrom())) {
-            return "wrr.time";
+            return "wrr.time " + direction;
         }
-        return "v.update_time";
+        return "deprecated ASC, certified DESC, recommended DESC, v.update_time " + direction;
     }
 
     private void recordRecent(DataPortalResourceVO resource) {
