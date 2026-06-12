@@ -797,6 +797,7 @@ const mousedownDrag = () => {
                     </div>
                     <div class="table-grid">
                       <el-table
+                        class="crest-data-table"
                         height="405"
                         style="width: 100%"
                         header-cell-class-name="header-cell"
@@ -877,6 +878,7 @@ const mousedownDrag = () => {
             <el-auto-resizer>
               <template #default="{ height, width }">
                 <el-table-v2
+                  class="crest-data-table-v2"
                   :columns="state.fields"
                   v-loading="dataPreviewLoading"
                   header-class="header-cell"
@@ -1028,7 +1030,11 @@ const mousedownDrag = () => {
       {{ t('dataset.sql_variable_limit_1') }}<br />
       {{ t('dataset.sql_variable_limit_2') }}<br />
     </div>
-    <el-table header-cell-class-name="header-cell" :data="state.variablesTmp">
+    <el-table
+      class="crest-data-table"
+      header-cell-class-name="header-cell"
+      :data="state.variablesTmp"
+    >
       <el-table-column width="220" prop="variableName" :label="t('visualization.param_name')" />
       <el-table-column width="200" :label="t('datasetUi.parameter_type')">
         <template #default="scope">

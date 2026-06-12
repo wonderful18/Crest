@@ -68,8 +68,8 @@ Crest 单机安装默认采用前后端分离容器：
 | --- | --- | --- |
 | `CREST_BASE` | `/opt` | 安装基目录，实际运行目录为 `${CREST_BASE}/crest` |
 | `CREST_PORT` | `8100` | Web 访问端口 |
-| `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v1.5.7` | Crest 后端镜像 |
-| `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v1.5.7` | Crest 前端镜像 |
+| `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v1.5.8` | Crest 后端镜像 |
+| `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v1.5.8` | Crest 前端镜像 |
 | `CREST_MYSQL_IMAGE` | `mysql:8.0.43` | MySQL 镜像 |
 | `CREST_LOAD_DEMO` | `true` | 是否初始化内置演示资源；生产环境不需要示例数据时设为 `false` |
 | `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部 MySQL；默认安装内置 MySQL 容器 |
@@ -163,7 +163,7 @@ crestctl version
 
 ## 迁移和同发布线升级
 
-全新环境可直接使用安装脚本部署 v1.5.7。已有 v1.5.5 或 v1.5.6 环境升级到 v1.5.7 时，请替换前后端镜像；本补丁不包含数据库变更，不需要执行新增升级 SQL。更早版本迁移到 v1.5.7 时，请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
+全新环境可直接使用安装脚本部署 v1.5.8。已有 v1.5.x 环境升级到 v1.5.8 时，请先备份元数据库和运行目录，再替换前后端镜像；已有环境需要执行 `upgrade-sql/v1.5.7_to_v1.5.8.sql`。更早版本迁移到 v1.5.8 时，请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
 
 同一发布线的小版本升级前：
 
@@ -178,7 +178,16 @@ cd /opt/crest
 docker-compose up -d --no-deps crest-service crest
 ```
 
-如果发布说明提供升级 SQL，请先确认已经完成备份，再执行对应文件。v1.5.4 升级到 v1.5.5 时，在离线包目录执行：
+如果发布说明提供升级 SQL，请先确认已经完成备份，再执行对应文件。v1.5.7 升级到 v1.5.8 时，在离线包目录执行：
+
+```bash
+set -a
+source /opt/crest/.env
+set +a
+docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.7_to_v1.5.8.sql
+```
+
+v1.5.4 升级到 v1.5.8 时，请先执行 v1.5.4 到 v1.5.5 的升级 SQL：
 
 ```bash
 set -a
@@ -224,10 +233,10 @@ bash cleanup-demo-data.sh --yes
 发布包按 CPU 架构分别制作：
 
 ```bash
-bash make-offline-package.sh v1.5.7 linux-amd64
-bash make-offline-package.sh v1.5.7 linux-arm64
-bash make-app-image-package.sh v1.5.7 linux-amd64
-bash make-app-image-package.sh v1.5.7 linux-arm64
+bash make-offline-package.sh v1.5.8 linux-amd64
+bash make-offline-package.sh v1.5.8 linux-arm64
+bash make-app-image-package.sh v1.5.8 linux-amd64
+bash make-app-image-package.sh v1.5.8 linux-arm64
 ```
 
 默认输出目录：
@@ -239,19 +248,19 @@ bash make-app-image-package.sh v1.5.7 linux-arm64
 发布包名：
 
 ```text
-crest-offline-v1.5.7-linux-amd64.tar.gz
-crest-offline-v1.5.7-linux-arm64.tar.gz
-crest-app-images-v1.5.7-linux-amd64.tar.gz
-crest-app-images-v1.5.7-linux-arm64.tar.gz
+crest-offline-v1.5.8-linux-amd64.tar.gz
+crest-offline-v1.5.8-linux-arm64.tar.gz
+crest-app-images-v1.5.8-linux-amd64.tar.gz
+crest-app-images-v1.5.8-linux-arm64.tar.gz
 ```
 
 制作前需要本机已有对应架构镜像：
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.7-amd64
-ghcr.io/sevoniva/crest-service:v1.5.7-arm64
-ghcr.io/sevoniva/crest-web:v1.5.7-amd64
-ghcr.io/sevoniva/crest-web:v1.5.7-arm64
+ghcr.io/sevoniva/crest-service:v1.5.8-amd64
+ghcr.io/sevoniva/crest-service:v1.5.8-arm64
+ghcr.io/sevoniva/crest-web:v1.5.8-amd64
+ghcr.io/sevoniva/crest-web:v1.5.8-arm64
 mysql:8.0.43
 ```
 
@@ -261,19 +270,19 @@ mysql:8.0.43
 INCLUDE_OBSERVABILITY_IMAGES=true \
 PROMETHEUS_IMAGE=prom/prometheus:v3.12.0 \
 GRAFANA_IMAGE=grafana/grafana-oss:13.0.1 \
-bash make-offline-package.sh v1.5.7 linux-amd64
+bash make-offline-package.sh v1.5.8 linux-amd64
 ```
 
 也可以通过环境变量指定来源镜像：
 
 ```bash
-SOURCE_BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.7-amd64 \
-BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.7-amd64 \
-SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.7-amd64 \
-FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.7-amd64 \
+SOURCE_BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.8-amd64 \
+BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.8-amd64 \
+SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.8-amd64 \
+FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.8-amd64 \
 SOURCE_MYSQL_IMAGE=mysql:8.0.43-amd64 \
 MYSQL_IMAGE=mysql:8.0.43 \
-bash make-offline-package.sh v1.5.7 linux-amd64
+bash make-offline-package.sh v1.5.8 linux-amd64
 ```
 
 完整离线安装包脚本会校验前端、后端和 MySQL 镜像架构，架构不一致会直接停止。`SOURCE_*_IMAGE` 用于本机制作来源，包内 `install.conf` 仍写入指定的目标镜像名。
@@ -287,8 +296,8 @@ bash make-offline-package.sh v1.5.7 linux-amd64
 在目标服务器执行：
 
 ```bash
-tar -zxf crest-offline-v1.5.7-linux-amd64.tar.gz
-cd crest-offline-v1.5.7-linux-amd64
+tar -zxf crest-offline-v1.5.8-linux-amd64.tar.gz
+cd crest-offline-v1.5.8-linux-amd64
 vi install.conf
 bash install.sh
 ```

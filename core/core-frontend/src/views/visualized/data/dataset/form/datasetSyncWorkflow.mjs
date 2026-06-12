@@ -36,6 +36,31 @@ export const normalizeDatasetSyncInfo = info => {
     .replaceAll('对账执行失败', '数据一致性校验失败')
 }
 
+export const getDatasetSyncStatusText = syncTask => {
+  if (syncTask?.syncMode !== 1) return '未开启'
+  if (!syncTask?.hasDatasetId) return '待保存'
+  if (syncTask?.taskStatus === 'UnderExecution') return '更新中'
+  if (syncTask?.failureWarned) return '更新失败'
+  if (syncTask?.lastVerifyStatus === 'WARNING') return '更新失败'
+  if (syncTask?.lastExecStatus === 'Completed') {
+    return syncTask?.cacheReady === 1 && !syncTask?.cacheExpired ? '缓存可用' : '待更新'
+  }
+  if (syncTask?.lastExecStatus === 'Error') return '更新失败'
+  return '待更新'
+}
+
+export const getDatasetSyncNowDisabledReason = ({ hasDatasetId, syncRunning }) => {
+  if (!hasDatasetId) return '请先保存数据集，再执行缓存更新'
+  if (syncRunning) return '缓存更新正在执行'
+  return ''
+}
+
+export const getIncrementalDisabledReason = incrementalFieldOptions => {
+  return Array.isArray(incrementalFieldOptions) && incrementalFieldOptions.length
+    ? ''
+    : '当前没有可用增量字段，请使用全量更新'
+}
+
 export const executeDatasetSyncNowFlow = async ({
   currentDatasetId,
   syncRunning,
@@ -54,7 +79,7 @@ export const executeDatasetSyncNowFlow = async ({
     return { submitted: false, reason: 'missingDatasetId' }
   }
   if (syncRunning) {
-    warn('已有同步任务正在执行')
+    warn('缓存更新正在执行')
     return { submitted: false, reason: 'running' }
   }
 
@@ -67,6 +92,6 @@ export const executeDatasetSyncNowFlow = async ({
   const logs = await loadDatasetSyncLogs(currentDatasetId)
   applyLogs(logs)
   startSyncPolling()
-  success('同步任务已提交')
+  success('缓存更新已提交')
   return { submitted: true, task, logs }
 }

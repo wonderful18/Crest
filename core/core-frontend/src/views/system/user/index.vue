@@ -23,6 +23,7 @@ const form = reactive<any>({
   name: '',
   email: '',
   phone: '',
+  password: '',
   enable: true,
   roleIds: [2],
   authType: 'LOCAL'
@@ -98,6 +99,7 @@ const resetForm = () => {
     name: '',
     email: '',
     phone: '',
+    password: '',
     enable: true,
     roleIds: [2],
     authType: 'LOCAL'
@@ -138,30 +140,49 @@ const save = async () => {
   const isCreate = !isEdit.value
   const account = form.account
   const authType = form.authType
-  const method = isEdit.value ? request.put : request.post
-  await method({ url: '/user', data: form })
-  ElMessage.success('保存成功')
-  dialogVisible.value = false
-  await loadTable()
-  if (isCreate && localAuthType(authType)) {
-    await showDefaultPasswordNotice('新建用户成功', `用户「${account}」已创建。`)
+  const usesDefaultPassword =
+    isCreate && localAuthType(authType) && !String(form.password || '').trim()
+  try {
+    const method = isEdit.value ? request.put : request.post
+    await method({ url: '/user', data: form })
+    ElMessage.success('保存成功')
+    dialogVisible.value = false
+    await loadTable()
+    if (usesDefaultPassword) {
+      await showDefaultPasswordNotice('新建用户成功', `用户「${account}」已创建`)
+    }
+  } catch (e: any) {
+    // axios interceptor already shows error message
   }
 }
 
 const toggleEnable = async row => {
-  await request.post({ url: '/user/enable', data: { id: row.id, enable: !row.enable } })
-  ElMessage.success(!row.enable ? '用户已启用' : '用户已停用')
-  await loadTable()
+  try {
+    await request.post({ url: '/user/enable', data: { id: row.id, enable: !row.enable } })
+    ElMessage.success(!row.enable ? '用户已启用' : '用户已停用')
+    await loadTable()
+  } catch (e: any) {
+    // axios interceptor already shows error message
+  }
 }
 
 const resetPwd = async row => {
-  await ElMessageBox.confirm(`确认重置「${row.name}」的本地密码？`, '重置密码', {
-    confirmButtonText: '重置',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-  await request.post({ url: `/user/reset-password/${row.id}` })
-  await showDefaultPasswordNotice('密码已重置', `「${row.name}」的本地密码已重置。`)
+  try {
+    await ElMessageBox.confirm(`确认重置「${row.name}」的本地密码？`, '重置密码', {
+      confirmButtonText: '重置',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    const res: any = await request.post({ url: `/user/reset-password/${row.id}` })
+    const newPwd = String(res?.data || '')
+    if (!newPwd) {
+      ElMessage.success('密码重置完成')
+      return
+    }
+    await showPasswordNotice('密码已重置', `用户「${row.name}」的新密码：${newPwd}`, newPwd)
+  } catch (e: any) {
+    // ElMessageBox cancel or axios interceptor already shows error message
+  }
 }
 
 const queryDefaultPassword = async () => {
@@ -171,7 +192,20 @@ const queryDefaultPassword = async () => {
 
 const copyPassword = async (password: string) => {
   await navigator.clipboard.writeText(password)
-  ElMessage.success('默认密码已复制')
+  ElMessage.success('密码已复制')
+}
+
+const showPasswordNotice = async (title: string, message: string, password: string) => {
+  try {
+    await ElMessageBox.confirm(message, title, {
+      confirmButtonText: '复制密码',
+      cancelButtonText: '关闭',
+      type: 'success'
+    })
+    await copyPassword(password)
+  } catch {
+    // 关闭提示框不影响已完成的账号操作。
+  }
 }
 
 const showDefaultPasswordNotice = async (title: string, message: string) => {
@@ -186,27 +220,22 @@ const showDefaultPasswordNotice = async (title: string, message: string) => {
     ElMessage.warning('默认密码未配置，请先在系统参数的账号安全中设置')
     return
   }
-  try {
-    await ElMessageBox.confirm(`${message} 默认密码：${password}`, title, {
-      confirmButtonText: '复制密码',
-      cancelButtonText: '关闭',
-      type: 'success'
-    })
-    await copyPassword(password)
-  } catch {
-    // 关闭提示框不影响已经完成的账号操作。
-  }
+  await showPasswordNotice(title, `${message}，默认密码：${password}`, password)
 }
 
 const remove = async row => {
-  await ElMessageBox.confirm(`确认删除「${row.name}」？`, '删除用户', {
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-  await request.delete({ url: `/user/${row.id}` })
-  ElMessage.success('删除成功')
-  await loadTable()
+  try {
+    await ElMessageBox.confirm(`确认删除「${row.name}」？`, '删除用户', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await request.delete({ url: `/user/${row.id}` })
+    ElMessage.success('删除成功')
+    await loadTable()
+  } catch (e: any) {
+    // ElMessageBox cancel or axios interceptor already shows error message
+  }
 }
 
 const batchRemove = async () => {
@@ -349,7 +378,7 @@ onMounted(async () => {
         </div>
         <el-table
           v-loading="loading"
-          class="manage-table"
+          class="manage-table crest-data-table"
           :data="tableData"
           max-height="calc(100vh - 320px)"
           @selection-change="selectedRows = $event"
@@ -455,6 +484,15 @@ onMounted(async () => {
         </el-form-item>
         <el-form-item v-if="isEdit" label="认证来源">
           <el-tag :type="authTypeTag(form)">{{ authTypeLabel(form) }}</el-tag>
+        </el-form-item>
+        <el-form-item v-if="localAuthType(form.authType)" label="密码" :required="!isEdit">
+          <el-input
+            v-model.trim="form.password"
+            type="password"
+            show-password
+            :placeholder="isEdit ? '不填写则保持原密码' : '留空则使用系统默认密码'"
+            maxlength="100"
+          />
         </el-form-item>
         <el-form-item label="姓名" required>
           <el-input v-model.trim="form.name" maxlength="64" />

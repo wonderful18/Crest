@@ -129,6 +129,7 @@ defineExpose({
   <div class="flex-table" :class="!tableData.length && 'no-data'">
     <el-table
       ref="table"
+      class="crest-data-table"
       :border="border"
       v-bind="state.tableAttrs"
       :data="tableData"
