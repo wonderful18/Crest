@@ -1,3 +1,4 @@
+import pkg from '../package.json'
 import viteCompression from 'vite-plugin-compression'
 
 const enableGzip = process.env.CREST_ENABLE_VITE_GZIP === 'true'
@@ -55,9 +56,9 @@ export default {
     rollupOptions: {
       output: {
         // 用于命名代码拆分时创建的共享块的输出命名
-        chunkFileNames: 'assets/chunk/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
-        entryFileNames: 'js/[name]-[hash].js',
+        chunkFileNames: `assets/chunk/[name]-[hash]-${pkg.version}-${pkg.name}.js`,
+        assetFileNames: `assets/[ext]/[name]-[hash]-${pkg.version}-${pkg.name}.[ext]`,
+        entryFileNames: `js/[name]-[hash]-${pkg.version}-${pkg.name}.js`,
         manualChunks(id: string) {
           return vendorChunkName(id)
         }
