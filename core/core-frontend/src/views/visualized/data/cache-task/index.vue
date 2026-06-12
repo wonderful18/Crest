@@ -18,6 +18,7 @@ import {
   cacheTaskRunningSnapshot,
   cacheTaskStatusText,
   formatCacheTaskDuration,
+  resolveCacheTaskPollingError,
   shouldContinueCacheTaskPolling
 } from './cacheTaskPolicy.mjs'
 
@@ -112,12 +113,26 @@ const schedulePolling = (datasetGroupId: string | number, attempts = 0) => {
     return
   }
   const timer = window.setTimeout(async () => {
-    await loadTasks({ showLoading: false })
-    const task = findRecord(datasetGroupId)
-    if (shouldContinueCacheTaskPolling({ task, attempts: attempts + 1 })) {
-      schedulePolling(datasetGroupId, attempts + 1)
-    } else {
-      pollingTimers.delete(datasetGroupId)
+    const nextAttempts = attempts + 1
+    try {
+      await loadTasks({ showLoading: false })
+      const task = findRecord(datasetGroupId)
+      if (shouldContinueCacheTaskPolling({ task, attempts: nextAttempts })) {
+        schedulePolling(datasetGroupId, nextAttempts)
+      } else {
+        pollingTimers.delete(datasetGroupId)
+      }
+    } catch (e) {
+      const result = resolveCacheTaskPollingError({
+        attempts: nextAttempts,
+        maxAttempts: MAX_POLL_ATTEMPTS
+      })
+      if (result.shouldRetry) {
+        schedulePolling(datasetGroupId, nextAttempts)
+      } else {
+        pollingTimers.delete(datasetGroupId)
+        ElMessage.warning(result.message)
+      }
     }
   }, POLL_INTERVAL)
   pollingTimers.set(datasetGroupId, timer)

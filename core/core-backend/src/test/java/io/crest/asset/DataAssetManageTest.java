@@ -180,6 +180,35 @@ class DataAssetManageTest {
     }
 
     @Test
+    void pageUsesResourceIndexOrganizationForDatasourceAndDatasetAssets() {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        PlatformPermissionManage permissionManage = mock(PlatformPermissionManage.class);
+        DataAssetManage manage = new DataAssetManage();
+        setField(manage, "jdbcTemplate", jdbcTemplate);
+        setField(manage, "platformPermissionManage", permissionManage);
+        when(permissionManage.resourceScopeSql(anyString(), anyString(), anyString(), nullable(String.class)))
+                .thenReturn(null);
+        when(jdbcTemplate.queryForObject(anyString(), eq(Long.class), any(Object[].class))).thenReturn(0L);
+        doReturn(List.<DataAssetVO>of()).when(jdbcTemplate)
+                .query(anyString(), any(RowMapper.class), any(Object[].class));
+
+        manage.page(1, 20, new DataAssetRequest());
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbcTemplate).query(sqlCaptor.capture(), any(RowMapper.class), any(Object[].class));
+        String sql = sqlCaptor.getValue();
+        assertTrue(sql.contains("LEFT JOIN iam_resource_index ds_ri"));
+        assertTrue(sql.contains("ds_ri.resource_type = 'datasource'"));
+        assertTrue(sql.contains("COALESCE(ds_ri.oid, 1) AS org_id"));
+        assertTrue(sql.contains("LEFT JOIN iam_resource_index dg_table_ri"));
+        assertTrue(sql.contains("dg_table_ri.resource_type = 'dataset'"));
+        assertTrue(sql.contains("COALESCE(dg_table_ri.oid, 1) AS org_id"));
+        assertTrue(sql.contains("LEFT JOIN iam_resource_index dg_ri"));
+        assertTrue(sql.contains("dg_ri.resource_type = 'dataset'"));
+        assertTrue(sql.contains("COALESCE(dg_ri.oid, 1) AS org_id"));
+    }
+
+    @Test
     void datasetImpactSummarizesChartsVisualizationsSharesAndCacheTasks() {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         PlatformPermissionManage permissionManage = mock(PlatformPermissionManage.class);

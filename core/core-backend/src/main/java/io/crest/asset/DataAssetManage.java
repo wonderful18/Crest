@@ -280,11 +280,14 @@ public class DataAssetManage {
                        ds.type COLLATE utf8mb4_unicode_ci AS extra_type,
                        CAST(NULL AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_type,
                        CAST(NULL AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_id,
-                       CAST(ds.create_by AS UNSIGNED) AS creator_id,
-                       1 AS org_id,
+                       COALESCE(ds_ri.creator, CAST(ds.create_by AS UNSIGNED)) AS creator_id,
+                       COALESCE(ds_ri.oid, 1) AS org_id,
                        ds.create_time AS create_time,
                        ds.update_time AS update_time
                 FROM data_source ds
+                LEFT JOIN iam_resource_index ds_ri
+                    ON ds_ri.resource_type = 'datasource'
+                   AND ds_ri.resource_id = CAST(ds.id AS CHAR)
                 WHERE ds.type <> 'folder'
                 """ + permissionClause(platformPermissionManage.resourceScopeSql("datasource", "ds.id", "ds.create_by", null)));
         selects.add("""
@@ -296,12 +299,15 @@ public class DataAssetManage {
                        dt.type COLLATE utf8mb4_unicode_ci AS extra_type,
                        'dataset' COLLATE utf8mb4_unicode_ci AS parent_asset_type,
                        CAST(dg.id AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_id,
-                       CAST(dg.create_by AS UNSIGNED) AS creator_id,
-                       1 AS org_id,
+                       COALESCE(dg_table_ri.creator, CAST(dg.create_by AS UNSIGNED)) AS creator_id,
+                       COALESCE(dg_table_ri.oid, 1) AS org_id,
                        dg.create_time AS create_time,
                        dg.last_update_time AS update_time
                 FROM dataset_table dt
                 INNER JOIN dataset_group dg ON dg.id = dt.dataset_group_id AND dg.node_type = 'dataset'
+                LEFT JOIN iam_resource_index dg_table_ri
+                    ON dg_table_ri.resource_type = 'dataset'
+                   AND dg_table_ri.resource_id = CAST(dg.id AS CHAR)
                 WHERE 1 = 1
                 """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)));
         selects.add("""
@@ -311,11 +317,14 @@ public class DataAssetManage {
                        dg.type COLLATE utf8mb4_unicode_ci AS extra_type,
                        CAST(NULL AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_type,
                        CAST(NULL AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_id,
-                       CAST(dg.create_by AS UNSIGNED) AS creator_id,
-                       1 AS org_id,
+                       COALESCE(dg_ri.creator, CAST(dg.create_by AS UNSIGNED)) AS creator_id,
+                       COALESCE(dg_ri.oid, 1) AS org_id,
                        dg.create_time AS create_time,
                        dg.last_update_time AS update_time
                 FROM dataset_group dg
+                LEFT JOIN iam_resource_index dg_ri
+                    ON dg_ri.resource_type = 'dataset'
+                   AND dg_ri.resource_id = CAST(dg.id AS CHAR)
                 WHERE dg.node_type = 'dataset'
                 """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)));
         selects.add("""
