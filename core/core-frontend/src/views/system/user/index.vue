@@ -349,7 +349,7 @@ onMounted(async () => {
         </div>
         <el-table
           v-loading="loading"
-          class="manage-table"
+          class="manage-table crest-data-table"
           :data="tableData"
           max-height="calc(100vh - 320px)"
           @selection-change="selectedRows = $event"

@@ -2026,6 +2026,7 @@ const getMenuList = (val: boolean) => {
                   <el-auto-resizer>
                     <template #default="{ height, width }">
                       <el-table-v2
+                        class="crest-data-table-v2"
                         :columns="columns"
                         v-loading="dataPreviewLoading"
                         header-class="excel-header-cell"
@@ -2120,6 +2121,7 @@ const getMenuList = (val: boolean) => {
       <el-scrollbar>
         <el-table
           v-loading="dsTableDataLoading"
+          class="crest-data-table"
           header-cell-class-name="header-cell"
           :data="state.dsTableData"
           stripe
@@ -2218,7 +2220,7 @@ const getMenuList = (val: boolean) => {
           border
           stripe
           height="100%"
-          class="excel-edit-table"
+          class="excel-edit-table crest-data-table"
           @selection-change="handleExcelEditSelectionChange"
         >
           <el-table-column type="selection" width="44" fixed />

@@ -242,7 +242,12 @@ onMounted(loadTable)
         <el-button type="primary" @click="loadTable">查询</el-button>
         <el-button @click="resetFilters">重置</el-button>
       </div>
-      <el-table v-loading="loading" :data="tableData" max-height="calc(100vh - 300px)">
+      <el-table
+        v-loading="loading"
+        class="crest-data-table"
+        :data="tableData"
+        max-height="calc(100vh - 300px)"
+      >
         <el-table-column label="操作时间" width="170">
           <template #default="{ row }">
             {{ row.operation_time ? dayjs(row.operation_time).format('YYYY-MM-DD HH:mm:ss') : '-' }}

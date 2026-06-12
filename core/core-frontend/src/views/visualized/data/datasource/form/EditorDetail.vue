@@ -1005,6 +1005,7 @@ defineExpose({
             </div>
             <div class="right-api_params">
               <el-table
+                class="crest-data-table"
                 height="300"
                 style="width: 100%"
                 header-cell-class-name="header-cell"

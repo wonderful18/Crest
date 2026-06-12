@@ -54,6 +54,7 @@ core/core-frontend/src/assets/fsSvg.html
 .vite/
 .local/
 .cache/
+/cache/
 .crest-local/
 .crest-verify-*/
 offline-packages/

@@ -40,14 +40,12 @@ export const getDatasetSyncStatusText = syncTask => {
   if (syncTask?.syncMode !== 1) return '未开启'
   if (!syncTask?.hasDatasetId) return '待保存'
   if (syncTask?.taskStatus === 'UnderExecution') return '更新中'
-  if (syncTask?.failureWarned) return '连续失败'
-  if (syncTask?.lastVerifyStatus === 'WARNING') return '校验异常'
-  if (syncTask?.cacheExpired) return '缓存过期'
+  if (syncTask?.failureWarned) return '更新失败'
+  if (syncTask?.lastVerifyStatus === 'WARNING') return '更新失败'
   if (syncTask?.lastExecStatus === 'Completed') {
-    return syncTask?.cacheReady === 1 ? '缓存可用' : '已完成'
+    return syncTask?.cacheReady === 1 && !syncTask?.cacheExpired ? '缓存可用' : '待更新'
   }
   if (syncTask?.lastExecStatus === 'Error') return '更新失败'
-  if (syncTask?.taskStatus === 'Stopped') return '已停止'
   return '待更新'
 }
 
@@ -81,7 +79,7 @@ export const executeDatasetSyncNowFlow = async ({
     return { submitted: false, reason: 'missingDatasetId' }
   }
   if (syncRunning) {
-    warn('已有同步任务正在执行')
+    warn('缓存更新正在执行')
     return { submitted: false, reason: 'running' }
   }
 
@@ -94,6 +92,6 @@ export const executeDatasetSyncNowFlow = async ({
   const logs = await loadDatasetSyncLogs(currentDatasetId)
   applyLogs(logs)
   startSyncPolling()
-  success('同步任务已提交')
+  success('缓存更新已提交')
   return { submitted: true, task, logs }
 }

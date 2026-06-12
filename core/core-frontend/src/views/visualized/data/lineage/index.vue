@@ -670,7 +670,12 @@ onBeforeUnmount(() => {
             <span>资源</span>
             <small>{{ resourceRows.length }} 项</small>
           </div>
-          <el-table class="detail-table" :data="resourceRows" height="240" size="small">
+          <el-table
+            class="detail-table crest-data-table"
+            :data="resourceRows"
+            height="240"
+            size="small"
+          >
             <el-table-column label="类型" width="94">
               <template #default="{ row }">
                 <span class="type-dot-tag" :class="getTypeClass(row.type)">
@@ -688,7 +693,12 @@ onBeforeUnmount(() => {
             <span>依赖</span>
             <small>{{ edgeRows.length }} 条</small>
           </div>
-          <el-table class="detail-table" :data="edgeRows" height="260" size="small">
+          <el-table
+            class="detail-table crest-data-table"
+            :data="edgeRows"
+            height="260"
+            size="small"
+          >
             <el-table-column label="上游" show-overflow-tooltip>
               <template #default="{ row }">
                 <div class="edge-cell">
