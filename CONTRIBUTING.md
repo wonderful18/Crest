@@ -28,12 +28,22 @@
 
 ## 分支和提交
 
-建议从 `main` 创建短生命周期分支：
+分支和发布规则见 [docs/release-process.md](./docs/release-process.md)。受保护分支包括 `main`、`dev` 和 `release/*`，必须通过 PR 合入。
+
+新功能从 `dev` 创建短生命周期分支：
 
 ```bash
-git checkout main
+git checkout dev
 git pull --ff-only
 git checkout -b feat/your-change
+```
+
+已发布版本补丁从维护分支创建：
+
+```bash
+git checkout release/1.5
+git pull --ff-only
+git checkout -b hotfix/1.5.6-your-fix
 ```
 
 提交信息使用简洁的 Conventional Commit 风格：

@@ -66,7 +66,8 @@ public class DatasetSyncManage {
     @Resource
     private CommonThreadPool commonThreadPool;
 
-    public DatasetSyncTaskDTO executeNow(Long datasetGroupId) {
+    public DatasetSyncTaskDTO executeNow(Long datasetGroupId) throws Exception {
+        assertDatasetSyncModeEnabled(datasetGroupId);
         CoreDatasetSyncTask task = taskManage.selectByDatasetGroupId(datasetGroupId);
         if (task == null) {
             DatasetSyncTaskDTO dto = new DatasetSyncTaskDTO();
@@ -163,24 +164,21 @@ public class DatasetSyncManage {
 
     @SuppressWarnings("unchecked")
     private SyncContext prepareContext(Long datasetGroupId) throws Exception {
-        DatasetGroupInfoDTO dataset = datasetGroupManage.getForCount(datasetGroupId);
-        if (dataset == null || !Strings.CI.equals(dataset.getNodeType(), "dataset")) {
-            CrestException.throwException("数据集不存在");
-        }
-        if (!Objects.equals(dataset.getMode(), 1)) {
-            CrestException.throwException("请先开启数据集同步模式");
-        }
+        DatasetGroupInfoDTO dataset = assertDatasetSyncModeEnabled(datasetGroupId);
         if (Objects.equals(dataset.getIsCross(), true)) {
-            CrestException.throwException("OB Oracle 数据集同步暂不支持跨源数据集");
+            CrestException.throwException("数据集缓存暂不支持跨源数据集");
         }
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(dataset, null);
+        if (DatasetSyncUtils.hasSqlParameters(dataset, sqlMap)) {
+            CrestException.throwException("带 SQL 参数的数据集暂不支持缓存");
+        }
         Map<Long, DatasourceSchemaDTO> dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
         if (dsMap == null || dsMap.size() != 1) {
-            CrestException.throwException("OB Oracle 数据集同步仅支持单一数据源");
+            CrestException.throwException("数据集缓存仅支持单一数据源");
         }
         DatasourceSchemaDTO datasource = dsMap.entrySet().iterator().next().getValue();
-        if (!Strings.CI.equals(datasource.getType(), DatasourceConfiguration.DatasourceType.obOracle.name())) {
-            CrestException.throwException("当前同步能力仅支持 OB Oracle 数据源");
+        if (!DatasetSyncUtils.isSupportedCacheSource(datasource.getType())) {
+            CrestException.throwException("当前缓存能力仅支持 MySQL 或 OB Oracle 数据源");
         }
         String sourceSql = Utils.replaceSchemaAlias((String) sqlMap.get("sql"), dsMap);
         List<DatasetTableFieldDTO> checkedFields = (List<DatasetTableFieldDTO>) sqlMap.get("field");
@@ -196,6 +194,17 @@ public class DatasetSyncManage {
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
         Provider sourceProvider = ProviderFactory.getProvider(datasource.getType());
         return new SyncContext(dataset, sourceSql, dsMap, sourceProvider, engine, engineProvider, syncFields, tableFields);
+    }
+
+    private DatasetGroupInfoDTO assertDatasetSyncModeEnabled(Long datasetGroupId) throws Exception {
+        DatasetGroupInfoDTO dataset = datasetGroupManage.getForCount(datasetGroupId);
+        if (dataset == null || !Strings.CI.equals(dataset.getNodeType(), "dataset")) {
+            CrestException.throwException("数据集不存在");
+        }
+        if (!Objects.equals(dataset.getMode(), 1)) {
+            CrestException.throwException("请先开启数据集同步模式");
+        }
+        return dataset;
     }
 
     private SyncResult syncFull(SyncContext context, CoreDatasetSyncTask task, long syncStartTime) throws Exception {
@@ -252,7 +261,14 @@ public class DatasetSyncManage {
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasource.getType());
         String fieldName = StringUtils.defaultIfBlank(incrementalField.getEngineFieldName(), incrementalField.getFieldShortName());
         copyRetainedCacheRows(context, tableName, incrementalField, task.getIncrementalLastValue());
-        String predicate = DatasetSyncUtils.buildIncrementalPredicate(incrementalField, task.getIncrementalLastValue(), datasourceType.getPrefix(), datasourceType.getSuffix(), true);
+        String predicate = DatasetSyncUtils.buildIncrementalPredicate(
+                incrementalField,
+                task.getIncrementalLastValue(),
+                datasourceType.getPrefix(),
+                datasourceType.getSuffix(),
+                true,
+                datasource.getType()
+        );
         String incrementalSql = "SELECT * FROM (" + context.sourceSql + ") sync_src WHERE " + predicate
                 + " ORDER BY " + incrementalOrderBy(context.checkedFields, fieldName, datasourceType);
 
@@ -288,7 +304,15 @@ public class DatasetSyncManage {
             try {
                 DatasourceSchemaDTO datasource = context.dsMap.entrySet().iterator().next().getValue();
                 DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasource.getType());
-                String pageSql = DatasetSyncUtils.buildOraclePageSql(sql, PAGE_SIZE, offset, context.checkedFields, datasourceType.getPrefix(), datasourceType.getSuffix());
+                String pageSql = DatasetSyncUtils.buildSourcePageSql(
+                        datasource.getType(),
+                        sql,
+                        PAGE_SIZE,
+                        offset,
+                        context.checkedFields,
+                        datasourceType.getPrefix(),
+                        datasourceType.getSuffix()
+                );
                 DatasourceRequest request = new DatasourceRequest();
                 request.setDsList(context.dsMap);
                 request.setIsCross(false);
@@ -326,8 +350,9 @@ public class DatasetSyncManage {
         }
         EngineRequest request = new EngineRequest();
         request.setEngine(context.engine);
+        DatasourceSchemaDTO datasource = context.dsMap.entrySet().iterator().next().getValue();
         request.setQuery(context.engineProvider.insertSql(
-                DatasourceConfiguration.DatasourceType.obOracle.name(),
+                datasource.getType(),
                 tableName,
                 updateType,
                 rows,
@@ -396,7 +421,7 @@ public class DatasetSyncManage {
             }
             result.reconcileResult = DatasetSyncUtils.reconcile(result.sourceRowCount, result.cacheRowCount, sourceWatermark, cacheWatermark);
         } catch (Exception e) {
-            result.reconcileResult = new DatasetSyncUtils.ReconcileResult("WARNING", "对账执行失败：" + e.getMessage());
+            result.reconcileResult = new DatasetSyncUtils.ReconcileResult("WARNING", "数据一致性校验失败：" + e.getMessage());
         }
     }
 

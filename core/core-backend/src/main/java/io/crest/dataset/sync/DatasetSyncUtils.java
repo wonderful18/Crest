@@ -1,10 +1,12 @@
 package io.crest.dataset.sync;
 
 import io.crest.api.dataset.union.DatasetGroupInfoDTO;
+import io.crest.api.dataset.union.UnionDTO;
 import io.crest.commons.constants.TaskStatus;
 import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTask;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
+import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
 import io.crest.extensions.datasource.dto.TableField;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
@@ -15,9 +17,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DatasetSyncUtils {
@@ -27,6 +31,10 @@ public class DatasetSyncUtils {
     public static final int DEFAULT_CACHE_EXPIRE_HOURS = 26;
     public static final int DEFAULT_TASK_TIMEOUT_MINUTES = 360;
     public static final int DEFAULT_FAILURE_WARN_THRESHOLD = 1;
+    private static final Set<String> SUPPORTED_CACHE_SOURCE_TYPES = Set.of(
+            DatasourceConfiguration.DatasourceType.obOracle.name(),
+            DatasourceConfiguration.DatasourceType.mysql.name()
+    );
 
     private DatasetSyncUtils() {
     }
@@ -48,11 +56,57 @@ public class DatasetSyncUtils {
         if (!(dsMapObject instanceof Map<?, ?> dsMap) || dsMap.size() != 1) {
             return false;
         }
+        if (hasSqlParameters(dataset, sqlMap)) {
+            return false;
+        }
         Object datasourceObject = dsMap.values().iterator().next();
         if (!(datasourceObject instanceof DatasourceSchemaDTO datasource)) {
             return false;
         }
-        return Strings.CI.equals(datasource.getType(), DatasourceConfiguration.DatasourceType.obOracle.name());
+        return isSupportedCacheSource(datasource.getType());
+    }
+
+    public static boolean hasSqlParameters(DatasetGroupInfoDTO dataset, Map<String, Object> sqlMap) {
+        return hasSqlParameterValues(sqlMap) || hasSqlParameterDefinitions(dataset);
+    }
+
+    public static boolean hasSqlParameterValues(Map<String, Object> sqlMap) {
+        if (sqlMap == null) {
+            return false;
+        }
+        Object tableFieldWithValues = sqlMap.get("tableFieldWithValues");
+        if (tableFieldWithValues instanceof Collection<?> values) {
+            return !values.isEmpty();
+        }
+        return tableFieldWithValues != null;
+    }
+
+    private static boolean hasSqlParameterDefinitions(DatasetGroupInfoDTO dataset) {
+        if (dataset == null || dataset.getUnion() == null) {
+            return false;
+        }
+        return dataset.getUnion().stream().anyMatch(DatasetSyncUtils::hasSqlParameterDefinitions);
+    }
+
+    private static boolean hasSqlParameterDefinitions(UnionDTO union) {
+        if (union == null) {
+            return false;
+        }
+        DatasetTableDTO currentDs = union.getCurrentDs();
+        if (currentDs != null && hasSqlVariableDefinitions(currentDs.getSqlVariableDetails())) {
+            return true;
+        }
+        List<UnionDTO> children = union.getChildrenDs();
+        return children != null && children.stream().anyMatch(DatasetSyncUtils::hasSqlParameterDefinitions);
+    }
+
+    private static boolean hasSqlVariableDefinitions(String sqlVariableDetails) {
+        String value = StringUtils.trimToEmpty(sqlVariableDetails);
+        return StringUtils.isNotBlank(value) && !Strings.CS.equals(value, "[]");
+    }
+
+    public static boolean isSupportedCacheSource(String datasourceType) {
+        return SUPPORTED_CACHE_SOURCE_TYPES.stream().anyMatch(type -> Strings.CI.equals(type, datasourceType));
     }
 
     public static boolean isCacheReady(CoreDatasetSyncTask task) {
@@ -117,17 +171,17 @@ public class DatasetSyncUtils {
 
     public static ReconcileResult reconcile(Long sourceRowCount, Long cacheRowCount, String sourceWatermark, String cacheWatermark) {
         if (!Objects.equals(sourceRowCount, cacheRowCount)) {
-            return new ReconcileResult("WARNING", "源端行数 " + sourceRowCount + " 与缓存行数 " + cacheRowCount + " 不一致");
+            return new ReconcileResult("WARNING", "源数据行数 " + sourceRowCount + " 与缓存行数 " + cacheRowCount + " 不一致");
         }
         if (StringUtils.isNotBlank(sourceWatermark) || StringUtils.isNotBlank(cacheWatermark)) {
             if (!Strings.CS.equals(StringUtils.defaultString(sourceWatermark), StringUtils.defaultString(cacheWatermark))) {
                 return new ReconcileResult(
                         "WARNING",
-                        "源端最大水位 " + sourceWatermark + " 与缓存最大水位 " + cacheWatermark + " 不一致"
+                        "源数据最大增量值 " + sourceWatermark + " 与缓存最大增量值 " + cacheWatermark + " 不一致"
                 );
             }
         }
-        return new ReconcileResult("PASSED", "对账通过");
+        return new ReconcileResult("PASSED", "源数据与缓存一致");
     }
 
     public static List<TableField> toEngineTableFields(List<DatasetTableFieldDTO> fields) {
@@ -164,9 +218,16 @@ public class DatasetSyncUtils {
     }
 
     public static String buildIncrementalPredicate(DatasetTableFieldDTO field, String lastValue, String prefix, String suffix, boolean inclusive) {
+        return buildIncrementalPredicate(field, lastValue, prefix, suffix, inclusive, DatasourceConfiguration.DatasourceType.obOracle.name());
+    }
+
+    public static String buildIncrementalPredicate(DatasetTableFieldDTO field, String lastValue, String prefix, String suffix, boolean inclusive, String datasourceType) {
         String column = prefix + StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()) + suffix;
         String operator = inclusive ? " >= " : " > ";
         if (Objects.equals(field.getExtractedFieldType(), 1) || Objects.equals(field.getFieldType(), 1)) {
+            if (Strings.CI.equals(datasourceType, DatasourceConfiguration.DatasourceType.mysql.name())) {
+                return column + operator + "'" + escapeSqlLiteral(lastValue) + "'";
+            }
             return column + operator + "TO_TIMESTAMP('" + escapeSqlLiteral(lastValue) + "', 'YYYY-MM-DD HH24:MI:SS.FF')";
         }
         if (Objects.equals(field.getExtractedFieldType(), 2) || Objects.equals(field.getExtractedFieldType(), 3)
@@ -227,6 +288,37 @@ public class DatasetSyncUtils {
         return "SELECT " + selectFields
                 + " FROM (SELECT SYNC_SRC.*, ROWNUM AS SYNC_ROWNUM FROM (" + sourceSql + ") SYNC_SRC WHERE ROWNUM <= "
                 + (offset + limit) + ") SYNC_PAGE WHERE SYNC_ROWNUM > " + offset;
+    }
+
+    public static String buildSourcePageSql(String datasourceType, String sourceSql, int limit, int offset,
+                                            List<DatasetTableFieldDTO> fields, String prefix, String suffix) {
+        if (Strings.CI.equals(datasourceType, DatasourceConfiguration.DatasourceType.mysql.name())) {
+            return buildMysqlPageSql(sourceSql, limit, offset, fields, prefix, suffix);
+        }
+        if (Strings.CI.equals(datasourceType, DatasourceConfiguration.DatasourceType.obOracle.name())) {
+            return buildOraclePageSql(sourceSql, limit, offset, fields, prefix, suffix);
+        }
+        throw new IllegalArgumentException("Unsupported dataset cache source type: " + datasourceType);
+    }
+
+    public static String buildMysqlPageSql(String sourceSql, int limit, int offset, List<DatasetTableFieldDTO> fields, String prefix, String suffix) {
+        String selectFields = fields.stream()
+                .filter(field -> Objects.equals(field.getChecked(), true))
+                .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
+                .map(field -> StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()))
+                .filter(StringUtils::isNotBlank)
+                .map(fieldName -> "SYNC_PAGE." + quote(fieldName, prefix, suffix))
+                .collect(Collectors.joining(","));
+        String orderFields = fields.stream()
+                .filter(field -> Objects.equals(field.getChecked(), true))
+                .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
+                .map(field -> StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()))
+                .filter(StringUtils::isNotBlank)
+                .map(fieldName -> "SYNC_PAGE." + quote(fieldName, prefix, suffix))
+                .collect(Collectors.joining(","));
+        String orderClause = StringUtils.isBlank(orderFields) ? "" : " ORDER BY " + orderFields;
+        return "SELECT " + selectFields + " FROM (" + sourceSql + ") SYNC_PAGE" + orderClause
+                + " LIMIT " + limit + " OFFSET " + offset;
     }
 
     public static String quote(String value, String prefix, String suffix) {

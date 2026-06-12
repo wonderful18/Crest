@@ -82,6 +82,7 @@ import { useCache } from '@/hooks/web/useCache'
 import { RefreshLeft } from '@element-plus/icons-vue'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 import { exportPermission, isFreeFolder } from '@/utils/utils'
+import { EXPORT_DATASET_RESULT, resolveExportDatasetResult } from './exportDatasetResult.mjs'
 const { t } = useI18n()
 const interactiveStore = interactiveStoreWithOut()
 const { wsCache } = useCache()
@@ -225,17 +226,17 @@ const allFieldsColumns = [
     dataKey: 'fieldType',
     title: t('data_set.field_type'),
     width: 250,
-    cellRenderer: ({ cellData: fieldType }) => (
+    cellRenderer: ({ cellData: fieldTypeCode }) => (
       <div style={{ width: '100%', display: 'flex', alignItems: 'center' }}>
         <ElIcon style={{ marginRight: '6px' }}>
           <Icon>
-            {h(iconFieldMap[fieldType[fieldType]], {
-              class: `svg-icon field-icon-${fieldType[fieldType]}`
+            {h(iconFieldMap[fieldType[fieldTypeCode]], {
+              class: `svg-icon field-icon-${fieldType[fieldTypeCode]}`
             })}
           </Icon>
         </ElIcon>
-        {t(`dataset.${fieldType[fieldType]}`) +
-          `${fieldType === 3 ? '(' + t('dataset.float') + ')' : ''}`}
+        {t(`dataset.${fieldType[fieldTypeCode]}`) +
+          `${fieldTypeCode === 3 ? '(' + t('dataset.float') + ')' : ''}`}
       </div>
     )
   },
@@ -290,10 +291,9 @@ const generateColumns = (arr: Field[]) =>
 
 const dtLoading = ref(false)
 const isCreated = ref(false)
-const data = () => {
+const getData = () => {
   dtLoading.value = true
-  let curSortType = sortList[Number(wsCache.get('TreeSort-backend')) ?? 1].value
-  curSortType = wsCache.get('TreeSort-dataset') ?? curSortType
+  const curSortType = getStoredSortType('TreeSort-dataset', getDefaultSortType())
   const request = { busiFlag: 'dataset' } as BusiTreeRequest
   interactiveStore
     .setInteractive(request)
@@ -351,7 +351,7 @@ onBeforeMount(() => {
   wsCache.delete('db-info-id')
   wsCache.delete('dv-info-id')
   loadInit()
-  data()
+  getData()
   getLimit()
 })
 
@@ -392,6 +392,9 @@ const closeExport = () => {
 }
 
 const save = ({ logic, items, errorMessage }: any) => {
+  if (exportDatasetLoading.value) {
+    return
+  }
   table.value.id = nodeInfo.id
   table.value.row = 100000
   table.value.filename = exportForm.value.name
@@ -401,9 +404,24 @@ const save = ({ logic, items, errorMessage }: any) => {
     return
   }
   table.value.expressionTree = JSON.stringify({ items, logic })
+  let exportSucceeded = false
   exportDatasetLoading.value = true
   exportDatasetData(table.value)
-    .then(res => {
+    .then(async res => {
+      const result = await resolveExportDatasetResult(res)
+      if (result.status === EXPORT_DATASET_RESULT.CANCELED) {
+        ElMessage.warning(
+          result.message && result.message !== 'request canceled'
+            ? result.message
+            : '导出请求已取消，请重试'
+        )
+        return
+      }
+      if (result.status === EXPORT_DATASET_RESULT.FAILED) {
+        ElMessage.error(result.message || '数据集导出请求失败，请稍后再试')
+        return
+      }
+      exportSucceeded = true
       if (isCrestBi.value || appStore.getIsIframe) {
         const blob = new Blob([res.data], { type: 'application/vnd.ms-excel' })
         const link = document.createElement('a')
@@ -417,13 +435,22 @@ const save = ({ logic, items, errorMessage }: any) => {
         openMessageLoading(exportData)
       }
     })
+    .catch(error => {
+      const message = typeof error === 'string' ? error : error?.message
+      ElMessage.error(message || '数据集导出请求失败，请稍后再试')
+    })
     .finally(() => {
       exportDatasetLoading.value = false
-      showExport.value = false
+      if (exportSucceeded) {
+        showExport.value = false
+      }
     })
 }
 
 const exportDatasetRequest = () => {
+  if (exportDatasetLoading.value) {
+    return
+  }
   exportFormRef.value.validate(valid => {
     if (valid) {
       rowAuth.value.submit()
@@ -500,11 +527,10 @@ const createDataset = (data?: BusiTreeNode) => {
     useEmitt().emitter.emit('changeCurrentComponent', 'DatasetEditor')
     return
   }
+  const query = data?.id ? { pid: data.id } : {}
   router.push({
     path: '/dataset-form',
-    query: {
-      pid: data?.id
-    }
+    query
   })
 }
 
@@ -557,9 +583,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
     }
     router.push({
       name: embedded.getToken && appStore.getIsIframe ? 'dataset-embedded-form' : 'dataset-form',
-      params: {
-        id: data.id
-      }
+      query: { copyId: data.id }
     })
     return
   }
@@ -607,7 +631,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
             ])
           }).then(() => {
             delDatasetTree(data.id).then(() => {
-              data()
+              getData()
               ElMessage.success(t('dataset.delete_success'))
             })
           })
@@ -617,7 +641,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
             options as ElMessageBoxOptions
           ).then(() => {
             delDatasetTree(data.id).then(() => {
-              data()
+              getData()
               ElMessage.success(t('dataset.delete_success'))
             })
           })
@@ -627,7 +651,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
       ElMessageBox.confirm(t('data_set.delete_this_folder'), options as ElMessageBoxOptions).then(
         () => {
           delDatasetTree(data.id).then(() => {
-            data()
+            getData()
             ElMessage.success(t('dataset.delete_success'))
           })
         }
@@ -733,11 +757,18 @@ const sortList = [
   }
 ]
 
+const getDefaultSortType = () => {
+  const sortIndex = Number(wsCache.get('TreeSort-backend') ?? 1)
+  return sortList[Number.isInteger(sortIndex) && sortList[sortIndex] ? sortIndex : 1].value
+}
+
+const getStoredSortType = (cacheKey: string, fallback: string) => {
+  const sortType = wsCache.get(cacheKey)
+  return sortList.some(ele => ele.value === sortType) ? sortType : fallback
+}
+
 const loadInit = () => {
-  const historyTreeSort = wsCache.get('TreeSort-dataset')
-  if (historyTreeSort) {
-    state.curSortType = historyTreeSort
-  }
+  state.curSortType = getStoredSortType('TreeSort-dataset', state.curSortType)
 }
 
 const getLimit = () => {
@@ -747,7 +778,7 @@ const getLimit = () => {
 }
 
 const sortTypeTip = computed(() => {
-  return sortList.find(ele => ele.value === state.curSortType).name
+  return sortList.find(ele => ele.value === state.curSortType)?.name ?? sortList[1].name
 })
 
 const tablePanes = ref([])
@@ -1030,6 +1061,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
               <el-auto-resizer v-if="activeName === 'structPreview'">
                 <template #default="{ height, width }">
                   <el-table-v2
+                    class="crest-data-table-v2"
                     key="structPreview"
                     :columns="columns"
                     v-loading="dataPreviewLoading"
@@ -1049,7 +1081,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
               <template v-if="activeName === 'dataPreview'">
                 <el-table
                   v-loading="dataPreviewLoading"
-                  class="dataset-preview_table"
+                  class="dataset-preview_table crest-data-table"
                   :data="tableData"
                   @row-click="rowClick"
                   key="dataPreview"
@@ -1102,7 +1134,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
       @finish="resourceOptFinish"
       ref="resourceGroupOpt"
     ></CrestResourceGroupActions>
-    <creat-ds-group @finish="data()" ref="creatDsFolder"></creat-ds-group>
+    <creat-ds-group @finish="getData()" ref="creatDsFolder"></creat-ds-group>
   </div>
   <!--导出数据集弹框-->
   <el-dialog
@@ -1127,7 +1159,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
       <el-form-item :label="$t('dataset.export_filter')" prop="expressionTree">
         <div class="tree-cont">
           <div class="content">
-            <RowAuth @save="record" ref="rowAuth" />
+            <RowAuth @save="save" ref="rowAuth" />
           </div>
         </div>
       </el-form-item>
@@ -1136,7 +1168,11 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
     <template v-slot:footer>
       <div class="dialog-footer">
         <el-button secondary @click="closeExport">{{ $t('dataset.cancel') }} </el-button>
-        <el-button v-loading="exportDatasetLoading" type="primary" @click="exportDatasetRequest"
+        <el-button
+          v-loading="exportDatasetLoading"
+          type="primary"
+          :disabled="exportDatasetLoading"
+          @click="exportDatasetRequest"
           >{{ $t('dataset.confirm') }}
         </el-button>
       </div>
@@ -1263,7 +1299,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
             cursor: pointer;
             &::after {
               content: '';
-              background-color: var(--ed-color-primary-1a, #3B82F61a);
+              background-color: var(--ed-color-primary-1a, #3b82f61a);
               width: 28px;
               height: 28px;
               position: absolute;

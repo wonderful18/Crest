@@ -608,7 +608,7 @@ const trackMenuCalc = itemId => {
     trackMenuInfo.push('jump')
   linkageCount && view.value?.linkageActive && trackMenuInfo.push('linkage')
   // 判断是否有下钻 同时判断下钻到第几层
-  if (view.value.drillFields.length && view.value.drillFields[drillLength.value].id === itemId) {
+  if (view.value.drillFields.length && view.value.drillFields[drillLength.value]?.id === itemId) {
     drillCount++
   }
   drillCount && trackMenuInfo.push('drill')

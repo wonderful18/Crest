@@ -258,7 +258,7 @@ const backHandler = (url: string) => {
     const pm = {
       methodName: 'embeddedInteractive',
       args: {
-        eventName: 'de-dashboard-editor-back',
+        eventName: 'crest-dashboard-editor-back',
         args: 'Just a demo that descript Crest embedded interactive'
       }
     }
@@ -437,7 +437,7 @@ const fullScreenPreview = () => {
           </component-group>
           <component-group
             is-label
-            :base-width="215"
+            :base-width="328"
             :icon-name="dvMoreCom"
             :title="t('visualization.more')"
           >

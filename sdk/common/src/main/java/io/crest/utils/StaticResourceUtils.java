@@ -81,7 +81,7 @@ public class StaticResourceUtils {
                     // Close InputStream
                     inputStream.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    io.crest.utils.LogUtil.error(e.getMessage(), e);
                 }
             }
         }

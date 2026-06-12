@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import dbMoreWeb from '@/assets/svg/db-more-web.svg'
 import dvTabScreen from '@/assets/svg/dv-tab-screen.svg'
+import iconDownloadOutlined from '@/assets/svg/icon_download_outlined.svg'
 import { toRefs } from 'vue'
 import eventBus from '@/utils/eventBus'
 import DragComponent from '@/custom-component/component-group/DragComponent.vue'
@@ -39,6 +40,13 @@ const handleDragEnd = e => {
       :label="$t('visualization.web')"
       drag-info="Frame&Frame"
       v-on:click="newComponent('Frame', 'Frame')"
+    ></drag-component>
+    <drag-component
+      :themes="themes"
+      :icon="iconDownloadOutlined"
+      label="导出按钮"
+      drag-info="ExportButton&ExportButton"
+      v-on:click="newComponent('ExportButton', 'ExportButton')"
     ></drag-component>
     <!--    <drag-component-->
     <!--      :themes="themes"-->

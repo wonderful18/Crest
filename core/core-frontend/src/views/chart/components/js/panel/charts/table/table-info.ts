@@ -14,12 +14,13 @@ import { hexColorToRGBA, isAlphaColor, parseJson } from '../../../util'
 import { S2ChartView, S2DrawOptions } from '../../types/impl/s2'
 import { TABLE_EDITOR_PROPERTY, TABLE_EDITOR_PROPERTY_INNER } from './common'
 import { useI18n } from '@/hooks/web/useI18n'
-import { filter, isEqual, merge } from 'lodash-es'
+import { cloneDeep, filter, isEqual, merge } from 'lodash-es'
 import {
   bindTableCopyEvents,
   calcTreeWidth,
   calculateGroupHeaderHeight,
   calculateHeaderHeight,
+  configAuxiliaryHeaderLayout,
   configEmptyDataStyle,
   configTableCopyInteraction,
   CustomDataCell,
@@ -35,6 +36,7 @@ import {
   SummaryCell,
   summaryRowStyle
 } from '@/views/chart/components/js/panel/common/common_table'
+import { buildS2HeaderColumns } from '@/views/chart/components/js/panel/common/tableAuxiliaryHeader.mjs'
 
 const { t } = useI18n()
 
@@ -54,7 +56,8 @@ export class TableInfo extends S2ChartView<TableSheet> {
       ...TABLE_EDITOR_PROPERTY_INNER['table-header-selector'],
       'tableHeaderSort',
       'showTableHeader',
-      'headerGroup'
+      'headerGroup',
+      'auxiliaryHeader'
     ],
     'basic-style-selector': [
       'tableColumnMode',
@@ -70,7 +73,8 @@ export class TableInfo extends S2ChartView<TableSheet> {
       'tableFreeze',
       'tableColumnFreezeHead',
       'tableRowFreezeHead',
-      'mergeCells'
+      'mergeCells',
+      'mergeFields'
     ],
     'summary-selector': ['showSummary', 'summaryLabel']
   }
@@ -142,24 +146,36 @@ export class TableInfo extends S2ChartView<TableSheet> {
     const { basicStyle, tableCell, tableHeader, tooltip } = parseJson(chart.customAttr)
     // 表头分组
     const { headerGroup, showTableHeader } = tableHeader
+    let headerGroupMeta = []
     if (headerGroup && showTableHeader !== false) {
       const { headerGroupConfig } = tableHeader
       if (headerGroupConfig?.columns?.length) {
+        const headerGroupColumns = cloneDeep(headerGroupConfig.columns)
         const allKeys = columns.map(c => drillFieldMap[c] || c)
-        const leafNodes = getLeafNodes(headerGroupConfig.columns as ColumnNode[])
+        const leafNodes = getLeafNodes(headerGroupColumns as ColumnNode[])
         const leafKeys = leafNodes.map(c => c.key)
         if (isEqual(leafKeys, allKeys)) {
           if (Object.keys(drillFieldMap).length) {
             const originField = Object.values(drillFieldMap)[0]
             const drillField = Object.keys(drillFieldMap)[0]
-            const [drillCol] = getColumns([originField], headerGroupConfig.columns as ColumnNode[])
+            const [drillCol] = getColumns([originField], headerGroupColumns as ColumnNode[])
             drillCol.key = drillField
           }
-          columns.splice(0, columns.length, ...headerGroupConfig.columns)
-          meta.push(...headerGroupConfig.meta)
+          columns.splice(0, columns.length, ...headerGroupColumns)
+          headerGroupMeta = headerGroupConfig.meta || []
+          meta.push(...headerGroupMeta)
         }
       }
     }
+    const fieldNameMap = meta.reduce((pre, cur) => {
+      pre[cur.field] = cur.name
+      return pre
+    }, {})
+    columns.splice(
+      0,
+      columns.length,
+      ...buildS2HeaderColumns(columns, headerGroupMeta, fieldNameMap, tableHeader.auxiliaryHeader)
+    )
     // 空值处理
     const newData = this.configEmptyDataStrategy(chart)
     // data config
@@ -195,7 +211,8 @@ export class TableInfo extends S2ChartView<TableSheet> {
       indexLabel: tableHeader.indexLabel,
       showTableHeader: tableHeader.showTableHeader,
       mergeCells: tableCell.mergeCells,
-      pageInfo
+      pageInfo,
+      headerColumns: cloneDeep(columns)
     })
     s2Options.style = this.configStyle(chart, s2DataConfig)
     // 自适应列宽模式下，URL 字段的宽度固定为 120
@@ -366,6 +383,7 @@ export class TableInfo extends S2ChartView<TableSheet> {
         ev.colsHierarchy.width = containerWidth
       })
     }
+    configAuxiliaryHeaderLayout(newChart, tableHeader)
     // 空数据时表格样式
     configEmptyDataStyle(newChart, basicStyle, newData, container)
     // click

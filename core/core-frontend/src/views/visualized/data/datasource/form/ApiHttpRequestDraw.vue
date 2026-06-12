@@ -255,7 +255,7 @@ const showApiData = () => {
       const data = Base64.encode(JSON.stringify(apiItem))
       const params = Base64.encode(JSON.stringify(paramsList))
       loading.value = true
-      cancelMap['/datasource/checkApiDatasource']?.()
+      cancelMap['/datasource/api-data-source-check']?.()
       checkApiItem({ dsType: dsType.value, data: data, type: 'apiStructure', paramsList: params })
         .then(response => {
           originFieldItem.jsonFields = response.data.jsonFields
@@ -424,7 +424,7 @@ const stepNext = () => {
       }
     }
   }
-  cancelMap['/datasource/checkApiDatasource']?.()
+  cancelMap['/datasource/api-data-source-check']?.()
   const params = Base64.encode(JSON.stringify(paramsList))
   disabledNext.value = true
   formLoading.value = true
@@ -471,7 +471,7 @@ const validateItem = () => {
     ElMessage.error(t('datasource.please_input_dataPath'))
     return
   }
-  cancelMap['/datasource/checkApiDatasource']?.()
+  cancelMap['/datasource/api-data-source-check']?.()
   const params = Base64.encode(JSON.stringify(paramsList))
   formLoading.value = true
   checkApiItem({
@@ -508,7 +508,7 @@ const handleSubmit = param => {
 }
 
 const closeEditItem = () => {
-  cancelMap['/datasource/checkApiDatasource']?.()
+  cancelMap['/datasource/api-data-source-check']?.()
   if (isPlugin.value) {
     pluginApiItemBasicInfo?.value?.invokeMethod({
       methodName: 'resetForm',
@@ -791,7 +791,12 @@ defineExpose({
           <span>{{ t('datasource.column_info') }}</span>
         </div>
         <div class="table-container de-svg-in-table" v-show="apiItem.useJsonPath">
-          <el-table :data="originFieldItem.jsonFields" style="width: 100%" row-key="jsonPath">
+          <el-table
+            class="crest-data-table"
+            :data="originFieldItem.jsonFields"
+            style="width: 100%"
+            row-key="jsonPath"
+          >
             <el-table-column
               class-name="checkbox-table"
               prop="originName"
@@ -829,6 +834,7 @@ defineExpose({
         </p>
         <div v-show="activeColumnInfo" class="de-svg-in-table">
           <el-table
+            class="crest-data-table"
             header-cell-class-name="header-cell"
             :data="apiItem.jsonFields"
             style="width: 100%"
@@ -845,7 +851,6 @@ defineExpose({
                   style="display: inline-block; max-width: 80px; white-space: nowrap"
                   :key="scope.row.jsonPath"
                   v-model="scope.row.checked"
-                  :disabled="apiItem.useJsonPath"
                   @change="handleCheckAllChange(scope.row)"
                 >
                   <span
@@ -978,6 +983,7 @@ defineExpose({
           <el-auto-resizer v-else>
             <template #default="{ height, width }">
               <el-table-v2
+                class="crest-data-table-v2"
                 :columns="columns"
                 header-class="header-cell"
                 :data="tableData"

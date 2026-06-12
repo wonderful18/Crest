@@ -2,6 +2,8 @@ package io.crest.api.dataset;
 
 import com.github.xiaoymin.knife4j.annotations.ApiSupport;
 import io.crest.api.dataset.dto.DatasetSyncLogDTO;
+import io.crest.api.dataset.dto.DatasetSyncTaskPageVO;
+import io.crest.api.dataset.dto.DatasetSyncTaskRequest;
 import io.crest.api.dataset.dto.DatasetSyncTaskDTO;
 import io.crest.auth.CrestApiPath;
 import io.crest.auth.CrestPermit;
@@ -20,6 +22,18 @@ import static io.crest.constant.AuthResourceEnum.DATASET;
 @ApiSupport(order = 978)
 @CrestApiPath(value = "/dataset-sync", rt = DATASET)
 public interface DatasetSyncApi {
+
+    @Operation(summary = "分页查询数据集同步任务")
+    @CrestPermit("m:read")
+    @PostMapping("tasks/{page}/{pageSize}")
+    DatasetSyncTaskPageVO page(@PathVariable("page") Integer page,
+                               @PathVariable("pageSize") Integer pageSize,
+                               @RequestBody(required = false) DatasetSyncTaskRequest request);
+
+    @Operation(summary = "查询可视化资源依赖的数据集同步状态")
+    @CrestPermit("m:read")
+    @GetMapping("dependencies/{visualizationId}")
+    List<DatasetSyncTaskDTO> dependencies(@PathVariable("visualizationId") Long visualizationId);
 
     @Operation(summary = "保存数据集同步任务")
     @CrestPermit({"#p0.datasetGroupId+':manage'"})
@@ -40,6 +54,21 @@ public interface DatasetSyncApi {
     @CrestPermit({"#p0+':manage'"})
     @PostMapping("lifecycle/stop/{datasetGroupId}")
     void stop(@PathVariable("datasetGroupId") Long datasetGroupId);
+
+    @Operation(summary = "暂停数据集同步")
+    @CrestPermit({"#p0+':manage'"})
+    @PostMapping("lifecycle/pause/{datasetGroupId}")
+    DatasetSyncTaskDTO pause(@PathVariable("datasetGroupId") Long datasetGroupId);
+
+    @Operation(summary = "恢复数据集同步")
+    @CrestPermit({"#p0+':manage'"})
+    @PostMapping("lifecycle/resume/{datasetGroupId}")
+    DatasetSyncTaskDTO resume(@PathVariable("datasetGroupId") Long datasetGroupId);
+
+    @Operation(summary = "重试数据集同步")
+    @CrestPermit({"#p0+':manage'"})
+    @PostMapping("lifecycle/retry/{datasetGroupId}")
+    DatasetSyncTaskDTO retry(@PathVariable("datasetGroupId") Long datasetGroupId) throws Exception;
 
     @Operation(summary = "查询数据集同步日志")
     @CrestPermit({"#p0+':read'"})

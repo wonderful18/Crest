@@ -37,6 +37,7 @@ const orgForm = reactive<any>({ id: null, pid: 0, name: '', parentName: '根目�
 const isSsoUser = row => String(row?.authType || '').toUpperCase() === 'SSO'
 const authTypeLabel = row => (isSsoUser(row) ? '单点登录' : '本地账号')
 const authTypeTag = row => (isSsoUser(row) ? 'success' : 'info')
+const localAuthType = authType => String(authType || 'LOCAL').toUpperCase() !== 'SSO'
 
 const loadTable = async () => {
   loading.value = true
@@ -64,6 +65,19 @@ const loadOrgOptions = async () => {
   orgOptions.value = res.data || []
 }
 
+const firstOrgId = (nodes: any[]): any => {
+  for (const node of nodes || []) {
+    if (node?.id !== undefined && node?.id !== null && node?.id !== '') {
+      return node.id
+    }
+    const childId = firstOrgId(node?.children || [])
+    if (childId !== undefined && childId !== null && childId !== '') {
+      return childId
+    }
+  }
+  return null
+}
+
 const onOrgChange = async node => {
   selectedOrgName.value = node?.name || '全部组织'
   pager.currentPage = 1
@@ -80,7 +94,7 @@ const onFormOrgChange = async () => {
 const resetForm = () => {
   Object.assign(form, {
     id: null,
-    oid: selectedOrgId.value,
+    oid: selectedOrgId.value || firstOrgId(orgOptions.value),
     account: '',
     name: '',
     email: '',
@@ -92,9 +106,12 @@ const resetForm = () => {
   })
 }
 
-const openCreate = () => {
+const openCreate = async () => {
+  if (!orgOptions.value.length) {
+    await loadOrgOptions()
+  }
   resetForm()
-  onFormOrgChange()
+  await onFormOrgChange()
   isEdit.value = false
   dialogVisible.value = true
 }
@@ -120,12 +137,20 @@ const save = async () => {
     ElMessage.warning('请选择所属组织')
     return
   }
+  const isCreate = !isEdit.value
+  const account = form.account
+  const authType = form.authType
+  const usesDefaultPassword =
+    isCreate && localAuthType(authType) && !String(form.password || '').trim()
   try {
     const method = isEdit.value ? request.put : request.post
     await method({ url: '/user', data: form })
     ElMessage.success('保存成功')
     dialogVisible.value = false
     await loadTable()
+    if (usesDefaultPassword) {
+      await showDefaultPasswordNotice('新建用户成功', `用户「${account}」已创建`)
+    }
   } catch (e: any) {
     // axios interceptor already shows error message
   }
@@ -149,14 +174,53 @@ const resetPwd = async row => {
       type: 'warning'
     })
     const res: any = await request.post({ url: `/user/reset-password/${row.id}` })
-    const newPwd = res?.data || ''
-    await ElMessageBox.alert(`新密码：${newPwd}\n请妥善保管并及时告知用户。`, '密码已重置', {
-      confirmButtonText: '知道了',
-      type: 'success'
-    })
+    const newPwd = String(res?.data || '')
+    if (!newPwd) {
+      ElMessage.success('密码重置完成')
+      return
+    }
+    await showPasswordNotice('密码已重置', `用户「${row.name}」的新密码：${newPwd}`, newPwd)
   } catch (e: any) {
     // ElMessageBox cancel or axios interceptor already shows error message
   }
+}
+
+const queryDefaultPassword = async () => {
+  const res = await request.get({ url: '/user/default-password' })
+  return String(res.data || '')
+}
+
+const copyPassword = async (password: string) => {
+  await navigator.clipboard.writeText(password)
+  ElMessage.success('密码已复制')
+}
+
+const showPasswordNotice = async (title: string, message: string, password: string) => {
+  try {
+    await ElMessageBox.confirm(message, title, {
+      confirmButtonText: '复制密码',
+      cancelButtonText: '关闭',
+      type: 'success'
+    })
+    await copyPassword(password)
+  } catch {
+    // 关闭提示框不影响已完成的账号操作。
+  }
+}
+
+const showDefaultPasswordNotice = async (title: string, message: string) => {
+  let password = ''
+  try {
+    password = await queryDefaultPassword()
+  } catch {
+    ElMessage.warning('默认密码未配置，请先在系统参数的账号安全中设置')
+    return
+  }
+  if (!password) {
+    ElMessage.warning('默认密码未配置，请先在系统参数的账号安全中设置')
+    return
+  }
+  await showPasswordNotice(title, `${message}，默认密码：${password}`, password)
 }
 
 const remove = async row => {
@@ -314,7 +378,7 @@ onMounted(async () => {
         </div>
         <el-table
           v-loading="loading"
-          class="manage-table"
+          class="manage-table crest-data-table"
           :data="tableData"
           max-height="calc(100vh - 320px)"
           @selection-change="selectedRows = $event"
@@ -421,7 +485,7 @@ onMounted(async () => {
         <el-form-item v-if="isEdit" label="认证来源">
           <el-tag :type="authTypeTag(form)">{{ authTypeLabel(form) }}</el-tag>
         </el-form-item>
-        <el-form-item label="密码" :required="!isEdit">
+        <el-form-item v-if="localAuthType(form.authType)" label="密码" :required="!isEdit">
           <el-input
             v-model.trim="form.password"
             type="password"

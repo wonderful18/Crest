@@ -83,7 +83,7 @@ public class EsProvider extends Provider {
             result.put("data", fetchResultData(response));
             result.put("fields", fetchResultField4Sql(response));
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
         return result;

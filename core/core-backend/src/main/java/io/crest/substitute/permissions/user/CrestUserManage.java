@@ -13,11 +13,13 @@ import io.crest.api.permissions.user.vo.UserGridVO;
 import io.crest.api.permissions.user.vo.UserGridRoleItem;
 import io.crest.api.permissions.user.vo.UserImportVO;
 import io.crest.api.permissions.user.vo.UserItem;
+import io.crest.constant.SystemSettingConstants;
 import io.crest.exception.CrestException;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.substitute.permissions.user.model.CrestUser;
 import io.crest.substitute.permissions.user.model.SsoUserProfile;
 import io.crest.substitute.permissions.user.model.UserImportRow;
+import io.crest.system.manage.SysParameterManage;
 import io.crest.system.sso.SsoIdentityAction;
 import io.crest.system.sso.SsoIdentityDecision;
 import io.crest.system.sso.SsoIdentityProfile;
@@ -59,6 +61,10 @@ public class CrestUserManage {
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
+    @Resource
+    private SysParameterManage sysParameterManage;
+
+    @Value("${crest.user.initial-password:}")
     private String configuredInitialPassword;
 
     private final RowMapper<CrestUser> rowMapper = (rs, rowNum) -> {
@@ -81,12 +87,6 @@ public class CrestUserManage {
         user.setUpdateTime(rs.getLong("update_time"));
         return user;
     };
-
-    @PostConstruct
-    public void init() {
-        String envPwd = System.getenv("CREST_INITIAL_PASSWORD");
-        this.configuredInitialPassword = StringUtils.isNotBlank(envPwd) ? envPwd : null;
-    }
 
     @PostConstruct
     public void initAdmin() {
@@ -436,12 +436,15 @@ public class CrestUserManage {
         if (AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType()) && !Strings.CS.equals(user.getAccount(), editor.getAccount().trim())) {
             CrestException.throwException("单点登录用户账号由身份提供方维护");
         }
+        String newPassword = StringUtils.trimToNull(editor.getPassword());
+        if (newPassword != null && AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType())) {
+            CrestException.throwException("单点登录用户不支持设置本地密码");
+        }
         CrestUser sameAccount = queryByAccount(editor.getAccount());
         if (sameAccount != null && !sameAccount.getId().equals(editor.getId())) {
             CrestException.throwException("账号已存在");
         }
         // 如果传入了新密码则更新
-        String newPassword = StringUtils.trimToNull(editor.getPassword());
         if (newPassword != null) {
             PasswordValidator.validate(newPassword);
         }
@@ -591,6 +594,9 @@ public class CrestUserManage {
         vo.setName(user.getName());
         vo.setOid(platformPermissionManage.defaultOrgId(user.getId()));
         vo.setLanguage("zh-CN");
+        boolean admin = Boolean.TRUE.equals(user.getAdmin()) || platformPermissionManage.isSystemAdmin(user.getId());
+        vo.setAdmin(admin);
+        vo.setBackendAccess(admin);
         return vo;
     }
 
@@ -617,24 +623,37 @@ public class CrestUserManage {
         return roleIds != null && roleIds.stream().anyMatch(roleId -> Long.valueOf(1L).equals(roleId));
     }
 
+    public String defaultPwd() {
+        return initialPassword();
+    }
+
     private String initialPassword() {
-        if (StringUtils.isNotBlank(configuredInitialPassword)) {
-            return configuredInitialPassword;
+        String settingPassword = sysParameterManage == null
+                ? null
+                : sysParameterManage.singleVal(SystemSettingConstants.INITIAL_PASSWORD);
+        String password = StringUtils.defaultIfBlank(settingPassword, configuredInitialPassword);
+        if (StringUtils.isBlank(password)) {
+            throw new IllegalStateException(INITIAL_PASSWORD_PROPERTY + " must be configured");
         }
-        // 兜底默认密码，确保符合安全策略
-        return "Crest@1234";
+        return password;
     }
 
     private String generateSecurePassword() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
         StringBuilder sb = new StringBuilder();
         java.security.SecureRandom random = new java.security.SecureRandom();
-        sb.append("A"); // 确保有大写
-        sb.append("a"); // 确保有小写
-        sb.append("1"); // 确保有数字
-        sb.append("!"); // 确保有特殊字符
+        sb.append("A");
+        sb.append("a");
+        sb.append("1");
+        sb.append("!");
         for (int i = 0; i < 8; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
+            char next;
+            do {
+                next = chars.charAt(random.nextInt(chars.length()));
+            } while (sb.length() >= 2
+                    && sb.charAt(sb.length() - 1) == next
+                    && sb.charAt(sb.length() - 2) == next);
+            sb.append(next);
         }
         return sb.toString();
     }

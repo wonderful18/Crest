@@ -517,6 +517,42 @@ declare interface ChartTableHeaderAttr {
     }[]
   }
   /**
+   * 表头说明
+   */
+  auxiliaryHeader: {
+    /**
+     * 开关
+     */
+    enabled: boolean
+    /**
+     * 行高
+     */
+    rowHeight: number
+    /**
+     * 背景色
+     */
+    backgroundColor: string
+    /**
+     * 字体颜色
+     */
+    fontColor: string
+    /**
+     * 字号
+     */
+    fontSize: number
+    /**
+     * 对齐方式
+     */
+    align: 'left' | 'center' | 'right'
+    /**
+     * 字段说明
+     */
+    descriptions: {
+      field: string
+      text: string
+    }[]
+  }
+  /**
    * 透视表行头冻结
    */
   rowHeaderFreeze: boolean
@@ -597,6 +633,10 @@ declare interface ChartTableCellAttr {
    * 合并单元格
    */
   mergeCells: boolean
+  /**
+   * 合并字段
+   */
+  mergeFields?: string[]
   /**
    * 对齐设置
    */

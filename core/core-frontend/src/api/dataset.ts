@@ -28,6 +28,7 @@ export interface EnumValue {
   resultMode?: number
   searchText: string
   filter?: Array<{}>
+  visualizationId?: string | number
 }
 
 interface Fields {
@@ -87,6 +88,7 @@ export interface Table {
 export interface DatasetSyncTask {
   id?: string | number
   datasetGroupId?: string | number
+  datasetName?: string
   name?: string
   updateType?: 'all_scope' | 'add_scope'
   incrementalFieldId?: string | number | null
@@ -117,6 +119,13 @@ export interface DatasetSyncTask {
   failureWarnThreshold?: number
   cacheExpired?: boolean
   failureWarned?: boolean
+  durationMillis?: number
+  failureReason?: string
+  lastLogStartTime?: number
+  lastLogEndTime?: number
+  lastLogStatus?: string
+  lastLogInfo?: string
+  lastTriggerType?: string
 }
 
 export interface DatasetSyncLog {
@@ -132,6 +141,20 @@ export interface DatasetSyncLog {
   info?: string
   createTime?: number
   triggerType?: string
+}
+
+export interface DatasetSyncTaskRequest {
+  keyword?: string
+  taskStatus?: string
+  syncRate?: string
+  updateType?: string
+}
+
+export interface DatasetSyncTaskPage {
+  page: number
+  pageSize: number
+  total: number
+  records: DatasetSyncTask[]
 }
 // 获取权限路
 // edit
@@ -322,6 +345,24 @@ export const datasetSyncTask = async (datasetGroupId): Promise<DatasetSyncTask> 
   })
 }
 
+export const datasetSyncTaskPage = async (
+  page: number,
+  pageSize: number,
+  data: DatasetSyncTaskRequest = {}
+): Promise<DatasetSyncTaskPage> => {
+  return request.post({ url: `/dataset-sync/tasks/${page}/${pageSize}`, data }).then(res => {
+    return res?.data
+  })
+}
+
+export const datasetSyncDependencies = async (
+  visualizationId: string | number
+): Promise<DatasetSyncTask[]> => {
+  return request.get({ url: `/dataset-sync/dependencies/${visualizationId}` }).then(res => {
+    return res?.data || []
+  })
+}
+
 export const saveDatasetSyncTask = async (data: DatasetSyncTask): Promise<DatasetSyncTask> => {
   return request.post({ url: '/dataset-sync/record', data }).then(res => {
     return res?.data
@@ -335,9 +376,35 @@ export const executeDatasetSync = async (datasetGroupId): Promise<DatasetSyncTas
 }
 
 export const stopDatasetSync = async (datasetGroupId): Promise<void> => {
-  return request.post({ url: `/dataset-sync/lifecycle/stop/${datasetGroupId}`, data: {} }).then(res => {
-    return res?.data
-  })
+  return request
+    .post({ url: `/dataset-sync/lifecycle/stop/${datasetGroupId}`, data: {} })
+    .then(res => {
+      return res?.data
+    })
+}
+
+export const pauseDatasetSync = async (datasetGroupId): Promise<DatasetSyncTask> => {
+  return request
+    .post({ url: `/dataset-sync/lifecycle/pause/${datasetGroupId}`, data: {} })
+    .then(res => {
+      return res?.data
+    })
+}
+
+export const resumeDatasetSync = async (datasetGroupId): Promise<DatasetSyncTask> => {
+  return request
+    .post({ url: `/dataset-sync/lifecycle/resume/${datasetGroupId}`, data: {} })
+    .then(res => {
+      return res?.data
+    })
+}
+
+export const retryDatasetSync = async (datasetGroupId): Promise<DatasetSyncTask> => {
+  return request
+    .post({ url: `/dataset-sync/lifecycle/retry/${datasetGroupId}`, data: {} })
+    .then(res => {
+      return res?.data
+    })
 }
 export const datasetSyncLogs = async (datasetGroupId): Promise<DatasetSyncLog[]> => {
   return request.get({ url: `/dataset-sync/logs/${datasetGroupId}` }).then(res => {
@@ -401,7 +468,7 @@ export const saveField = async (data): Promise<DatasetDetail[]> => {
   })
 }
 
-export const fieldRemoval = async (id): Promise<DatasetDetail[]> => {
+export const deleteField = async (id): Promise<DatasetDetail[]> => {
   return request.delete({ url: `/dataset-field/${id}`, data: {} }).then(res => {
     return res?.data
   })
@@ -419,7 +486,7 @@ export const getEnumValue = async (data): Promise<DatasetDetail[]> => {
   })
 }
 
-export const functions = async (): Promise<DatasetDetail[]> => {
+export const getFunction = async (): Promise<DatasetDetail[]> => {
   return request.post({ url: '/dataset-field/functions', data: {} }).then(res => {
     return res?.data
   })
@@ -428,7 +495,7 @@ export const functions = async (): Promise<DatasetDetail[]> => {
 export const exportTasksRecords = () =>
   request.post({ url: `/export-center/export-tasks/records`, data: {} })
 
-export const exportTasks = (page: number, limit: number, status: string) =>
+export const exportTasks = (page = 1, limit = 10, status = 'ALL') =>
   request.post({ url: `/export-center/export-tasks/${status}/${page}/${limit}`, data: {} })
 
 export const exportRetry = async (id): Promise<IResponse> => {

@@ -336,6 +336,9 @@ public class ExportCenterManage implements BaseExportApi {
         CoreExportDownloadTask coreExportDownloadTask = coreExportDownloadTaskMapper.selectById(id);
         if (coreExportDownloadTask != null) {
             coreExportDownloadTask.setCreateTime(createTime);
+            if (coreExportDownloadTask.getValidTime() == null) {
+                coreExportDownloadTask.setValidTime(5L);
+            }
             coreExportDownloadTaskMapper.updateById(coreExportDownloadTask);
         } else {
             coreExportDownloadTask = new CoreExportDownloadTask();
@@ -396,25 +399,33 @@ public class ExportCenterManage implements BaseExportApi {
         }
         CoreExportDownloadTask coreExportDownloadTask = coreExportDownloadTaskMapper.selectById(id);
         CoreExportTask exportTask = exportTaskMapper.selectById(id);
-        if (coreExportDownloadTask == null || exportTask == null) {
+        if (exportTask == null) {
             CrestException.throwException(Translator.get("i18n_download_link_invalid"));
         }
+        DecodedJWT jwt = null;
         try {
-            DecodedJWT jwt = SignedTokenUtils.verify(ticket, resolveTicketSecret(exportTask));
-            String taskId = jwt.getClaim("taskId").asString();
-            Long uid = jwt.getClaim("uid").asLong();
-            Long ticketTime = jwt.getClaim("ts").asLong();
-            if (!Objects.equals(id, taskId)
-                    || !Objects.equals(uid, exportTask.getUserId())
-                    || !Objects.equals(ticketTime, coreExportDownloadTask.getCreateTime())
-                    || System.currentTimeMillis() - coreExportDownloadTask.getCreateTime() > coreExportDownloadTask.getValidTime() * 60 * 1000) {
-                CrestException.throwException(Translator.get("i18n_download_link_invalid"));
-            }
+            jwt = SignedTokenUtils.verify(ticket, resolveTicketSecret(exportTask));
         } catch (Exception e) {
             CrestException.throwException(Translator.get("i18n_download_link_invalid"));
         }
+        if (jwt == null) {
+            CrestException.throwException(Translator.get("i18n_download_link_invalid"));
+        }
+        String taskId = jwt.getClaim("taskId").asString();
+        Long uid = jwt.getClaim("uid").asLong();
+        Long ticketTime = jwt.getClaim("ts").asLong();
+        if (!Objects.equals(id, taskId) || !Objects.equals(uid, exportTask.getUserId()) || ticketTime == null) {
+            CrestException.throwException(Translator.get("i18n_download_link_invalid"));
+        }
+        if (coreExportDownloadTask != null
+                && coreExportDownloadTask.getValidTime() != null
+                && System.currentTimeMillis() - ticketTime > coreExportDownloadTask.getValidTime() * 60 * 1000) {
+            CrestException.throwException(Translator.get("i18n_download_link_invalid"));
+        }
         ensureDownloadableTask(exportTask);
-        coreExportDownloadTaskMapper.deleteById(id);
+        if (coreExportDownloadTask != null) {
+            coreExportDownloadTaskMapper.deleteById(id);
+        }
         return exportTask;
     }
 

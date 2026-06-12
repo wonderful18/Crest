@@ -15,6 +15,8 @@ import { convertToAlphaColor, isAlphaColor } from '@/views/chart/components/js/u
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 import { SERIES_NUMBER_FIELD } from '@antv/s2'
+import { getMergeableFieldOptions } from '@/views/chart/components/js/panel/common/tableMergeCells.mjs'
+import { createTableCellChangePayload } from './tableCellMergeConfig.mjs'
 const dvMainStore = dvMainStoreWithOut()
 const { mobileInPc } = storeToRefs(dvMainStore)
 
@@ -80,6 +82,7 @@ const showCustomAlign = computed(() => {
 })
 
 const alignConfigOptions = reactive([])
+const mergeFieldOptions = reactive([])
 
 const emit = defineEmits(['onTableCellChange'])
 
@@ -90,7 +93,12 @@ const changeTableCell = prop => {
       align: item.id === alignConfig.id ? alignConfig.align : item.align
     }))
   }
-  emit('onTableCellChange', state.tableCellForm, prop)
+  const payload = createTableCellChangePayload(state.tableCellForm, prop, mergeFieldOptions)
+  if (prop === 'mergeCells' || prop === 'mergeFields') {
+    state.tableCellForm.mergeCells = payload.mergeCells
+    state.tableCellForm.mergeFields = payload.mergeFields
+  }
+  emit('onTableCellChange', payload, prop)
 }
 
 const changeAlignConfig = () => {
@@ -103,8 +111,10 @@ const changeAlignConfig = () => {
 const init = () => {
   const tableCell = props.chart?.customAttr?.tableCell
   if (tableCell) {
-    tableCell.mergeCells = tableCell.mergeCells === undefined ? false : tableCell.mergeCells
     state.tableCellForm = defaultsDeep(cloneDeep(tableCell), cloneDeep(DEFAULT_TABLE_CELL))
+    if (tableCell.mergeCells === undefined) {
+      state.tableCellForm.mergeCells = false
+    }
     const alpha = props.chart.customAttr.basicStyle.alpha
 
     if (!isAlphaColor(state.tableCellForm.tableItemBgColor)) {
@@ -157,6 +167,20 @@ const init = () => {
       } else {
         alignConfig.id = ''
         alignConfig.align = 'left'
+      }
+    }
+    mergeFieldOptions.splice(0, mergeFieldOptions.length)
+    if (props.chart.type === 'table-info') {
+      const options = getMergeableFieldOptions(props.chart?.xAxis || [])
+      mergeFieldOptions.push(...options)
+      const optionIds = new Set(options.map(item => item.id))
+      if (state.tableCellForm.mergeCells && !options.length) {
+        state.tableCellForm.mergeCells = false
+        state.tableCellForm.mergeFields = []
+      } else if (Array.isArray(tableCell.mergeFields)) {
+        state.tableCellForm.mergeFields = tableCell.mergeFields.filter(id => optionIds.has(id))
+      } else if (state.tableCellForm.mergeCells) {
+        state.tableCellForm.mergeFields = options.map(item => item.id)
       }
     }
   }
@@ -593,6 +617,7 @@ onMounted(() => {
       <el-checkbox
         size="small"
         :effect="themes"
+        :disabled="showProperty('mergeFields') && !mergeFieldOptions.length"
         v-model="state.tableCellForm.mergeCells"
         @change="changeTableCell('mergeCells')"
       >
@@ -608,6 +633,32 @@ onMounted(() => {
           </el-tooltip>
         </span>
       </el-checkbox>
+    </el-form-item>
+    <el-form-item
+      :label="t('chart.merge_cells_fields')"
+      class="form-item"
+      :class="'form-item-' + themes"
+      v-if="showProperty('mergeFields') && state.tableCellForm.mergeCells"
+    >
+      <el-select
+        :effect="themes"
+        v-model="state.tableCellForm.mergeFields"
+        multiple
+        clearable
+        collapse-tags
+        :placeholder="t('chart.merge_cells_fields_placeholder')"
+        @change="changeTableCell('mergeFields')"
+      >
+        <el-option
+          v-for="item in mergeFieldOptions"
+          :key="item.id"
+          :label="item.label"
+          :value="item.id"
+        />
+      </el-select>
+      <div class="merge-fields-tip" :class="{ 'merge-fields-tip--dark': themes === 'dark' }">
+        {{ t('chart.merge_cells_fields_tip') }}
+      </div>
     </el-form-item>
     <el-form-item
       class="form-item"
@@ -719,5 +770,15 @@ onMounted(() => {
   display: flex;
   flex-direction: row;
   align-items: center;
+}
+.merge-fields-tip {
+  margin-top: 6px;
+  color: rgba(31, 35, 41, 0.6);
+  font-size: 12px;
+  line-height: 18px;
+
+  &.merge-fields-tip--dark {
+    color: rgba(235, 235, 235, 0.65);
+  }
 }
 </style>

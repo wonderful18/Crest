@@ -8,6 +8,16 @@ import dev from '../../config/dev'
 const env = import.meta.env
 const basePath = env.VITE_API_BASEPATH
 
+const devProxyTarget = () => {
+  const proxy = dev.server.proxy
+  const exactProxy = proxy[basePath]
+  if (exactProxy?.target) {
+    return exactProxy.target
+  }
+  const matchedProxy = Object.entries(proxy).find(([path]) => basePath?.startsWith(path))?.[1]
+  return matchedProxy?.target
+}
+
 export default {
   install() {
     const channels = [
@@ -43,7 +53,7 @@ export default {
           : location.pathname.replace(/\/[^/]*$/, '/')
         prefix = location.origin + path
         if (env.MODE === 'dev') {
-          prefix = dev.server.proxy[basePath].target + '/'
+          prefix = (devProxyTarget() || location.origin) + '/'
         }
       }
       if (!prefix.endsWith('/')) {

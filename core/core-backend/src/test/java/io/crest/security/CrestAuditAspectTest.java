@@ -55,7 +55,7 @@ class CrestAuditAspectTest {
         VisualizationRequest visualizationRequest = new VisualizationRequest(9L, "dataV");
 
         when(request.getMethod()).thenReturn("POST");
-        when(request.getRequestURI()).thenReturn("/dataVisualization/save");
+        when(request.getRequestURI()).thenReturn("/data-visualization/canvas");
         when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
@@ -74,7 +74,7 @@ class CrestAuditAspectTest {
         ArgumentCaptor<String> resourceType = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> resourceId = ArgumentCaptor.forClass(String.class);
         verify(auditLogService).log(eq(LogOT.MODIFY), resourceType.capture(), resourceId.capture(),
-                anyString(), eq("POST"), eq("/dataVisualization/save"),
+                anyString(), eq("POST"), eq("/data-visualization/canvas"),
                 isNull(), isNull(), isNull(), eq("127.0.0.1"),
                 anyLong(), eq(200), eq("success"));
         assertEquals("SCREEN", resourceType.getValue());

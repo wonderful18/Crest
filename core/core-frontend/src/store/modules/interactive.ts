@@ -117,14 +117,15 @@ export const interactiveStore = defineStore('interactive', {
 export const interactiveStoreWithOut = () => interactiveStore(store)
 
 const convertInteractive = (list): InnerInteractive => {
+  const treeNodes = Array.isArray(list) ? (list as unknown as BusiTreeNode[]) : []
   const result: InnerInteractive = {
-    rootManage: list[0]['weight'] >= 7,
+    rootManage: (treeNodes[0]?.weight || 0) >= 7,
     anyManage: false,
-    treeNodes: (list as unknown as BusiTreeNode[]) || [],
+    treeNodes,
     leafNodeCount: 0,
     menuAuth: true
   }
-  const stack = [...list]
+  const stack = [...treeNodes]
   let leafNodeCount = 0
   while (stack.length) {
     const node = stack.pop()

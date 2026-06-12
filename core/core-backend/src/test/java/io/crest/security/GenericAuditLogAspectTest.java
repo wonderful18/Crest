@@ -154,7 +154,7 @@ class GenericAuditLogAspectTest {
     void shouldClassifyDatasourceDriverApi() throws Throwable {
         GenericAuditLogAspect aspect = new GenericAuditLogAspect();
         injectAuditLogService(aspect);
-        bindRequest("POST", "/datasourceDriver/upload");
+        bindRequest("POST", "/datasource-driver/upload");
         when(signature.getMethod()).thenReturn(TestEndpoint.class.getDeclaredMethod("upload"));
         when(signature.getName()).thenReturn("upload");
         when(point.getSignature()).thenReturn(signature);
@@ -163,7 +163,61 @@ class GenericAuditLogAspectTest {
         aspect.around(point);
 
         verify(auditLogService).log(eq(LogOT.UPLOADFILE), eq("DRIVER"), isNull(), contains("驱动"),
-                eq("POST"), eq("/datasourceDriver/upload"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                eq("POST"), eq("/datasource-driver/upload"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                anyLong(), eq(200), eq("success"));
+    }
+
+    @Test
+    @DisplayName("当前权限查询接口应按查看记录，而不是旧 save/record 路由")
+    void shouldClassifyCurrentPermissionReadApi() throws Throwable {
+        GenericAuditLogAspect aspect = new GenericAuditLogAspect();
+        injectAuditLogService(aspect);
+        bindRequest("POST", "/auth/business-permissions");
+        when(signature.getMethod()).thenReturn(TestEndpoint.class.getDeclaredMethod("permission"));
+        when(signature.getName()).thenReturn("permission");
+        when(point.getSignature()).thenReturn(signature);
+        when(point.proceed()).thenReturn("ok");
+
+        aspect.around(point);
+
+        verify(auditLogService).log(eq(LogOT.READ), eq("DATA"), isNull(), eq("查看业务资源权限"),
+                eq("POST"), eq("/auth/business-permissions"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                anyLong(), eq(200), eq("success"));
+    }
+
+    @Test
+    @DisplayName("当前权限保存接口应按授权记录")
+    void shouldClassifyCurrentPermissionWriteApi() throws Throwable {
+        GenericAuditLogAspect aspect = new GenericAuditLogAspect();
+        injectAuditLogService(aspect);
+        bindRequest("PUT", "/auth/menu-permissions");
+        when(signature.getMethod()).thenReturn(TestEndpoint.class.getDeclaredMethod("permission"));
+        when(signature.getName()).thenReturn("permission");
+        when(point.getSignature()).thenReturn(signature);
+        when(point.proceed()).thenReturn("ok");
+
+        aspect.around(point);
+
+        verify(auditLogService).log(eq(LogOT.AUTHORIZE), eq("MENU"), isNull(), eq("配置菜单权限"),
+                eq("PUT"), eq("/auth/menu-permissions"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                anyLong(), eq(200), eq("success"));
+    }
+
+    @Test
+    @DisplayName("当前 dataset-tree 路由应归为数据集资源")
+    void shouldClassifyCurrentDatasetTreeApi() throws Throwable {
+        GenericAuditLogAspect aspect = new GenericAuditLogAspect();
+        injectAuditLogService(aspect);
+        bindRequest("POST", "/dataset-tree/tree");
+        when(signature.getMethod()).thenReturn(TestEndpoint.class.getDeclaredMethod("tree"));
+        when(signature.getName()).thenReturn("tree");
+        when(point.getSignature()).thenReturn(signature);
+        when(point.proceed()).thenReturn("ok");
+
+        aspect.around(point);
+
+        verify(auditLogService).log(eq(LogOT.READ), eq("DATASET"), isNull(), contains("数据集"),
+                eq("POST"), eq("/dataset-tree/tree"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
                 anyLong(), eq(200), eq("success"));
     }
 
@@ -218,6 +272,16 @@ class GenericAuditLogAspectTest {
 
         @PostMapping("/upload")
         public Object upload() {
+            return null;
+        }
+
+        @PostMapping("/permission")
+        public Object permission() {
+            return null;
+        }
+
+        @PostMapping("/tree")
+        public Object tree() {
             return null;
         }
 

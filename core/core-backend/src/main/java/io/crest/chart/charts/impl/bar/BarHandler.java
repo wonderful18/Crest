@@ -80,7 +80,7 @@ public class BarHandler extends YoyChartHandler {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         return result;
     }

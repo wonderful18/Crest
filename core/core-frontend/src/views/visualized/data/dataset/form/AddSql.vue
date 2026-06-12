@@ -200,10 +200,21 @@ const sysParams = () => {
   handleSearchVariableApi()
 }
 
+const getCursor = view => {
+  return (
+    view?.state?.selection?.main?.from ??
+    view?.viewState?.state?.selection?.ranges?.[0]?.from ??
+    view?.state?.doc?.length ??
+    0
+  )
+}
+
 const insertFieldToCodeMirror = (value: string) => {
+  if (!codeCom.value) return
+  const from = getCursor(codeCom.value)
   codeCom.value.dispatch({
-    changes: { from: codeCom.value.viewState.state.selection.ranges[0].from, insert: value },
-    selection: { anchor: codeCom.value.viewState.state.selection.ranges[0].from }
+    changes: { from, insert: value },
+    selection: { anchor: from + value.length }
   })
 }
 
@@ -324,12 +335,11 @@ const calculateWidth = (e: MouseEvent) => {
 }
 
 const insertParamToCodeMirror = (value: string) => {
+  if (!codeCom.value) return
+  const to = codeCom.value.state?.doc?.length ?? codeCom.value.state?.doc?.toString().length ?? 0
   codeCom.value.dispatch({
-    changes: { from: 0, to: codeCom.value.state.doc.toString().length, insert: '' }
-  })
-  codeCom.value.dispatch({
-    changes: { from: codeCom.value.viewState.state.selection.ranges[0].from, insert: value },
-    selection: { anchor: codeCom.value.viewState.state.selection.ranges[0].from }
+    changes: { from: 0, to, insert: value },
+    selection: { anchor: value.length }
   })
 }
 
@@ -630,7 +640,7 @@ const mousedownDrag = () => {
         </template>
         {{ t('auth.sysParams') }}
       </el-button>
-      <el-button :disabled="!changeFlagCode" @click="record" type="primary">
+      <el-button :disabled="!changeFlagCode" @click="save" type="primary">
         {{ t('data_set.save') }}</el-button
       >
       <el-divider direction="vertical" />
@@ -787,6 +797,7 @@ const mousedownDrag = () => {
                     </div>
                     <div class="table-grid">
                       <el-table
+                        class="crest-data-table"
                         height="405"
                         style="width: 100%"
                         header-cell-class-name="header-cell"
@@ -867,6 +878,7 @@ const mousedownDrag = () => {
             <el-auto-resizer>
               <template #default="{ height, width }">
                 <el-table-v2
+                  class="crest-data-table-v2"
                   :columns="state.fields"
                   v-loading="dataPreviewLoading"
                   header-class="header-cell"
@@ -1018,7 +1030,11 @@ const mousedownDrag = () => {
       {{ t('dataset.sql_variable_limit_1') }}<br />
       {{ t('dataset.sql_variable_limit_2') }}<br />
     </div>
-    <el-table header-cell-class-name="header-cell" :data="state.variablesTmp">
+    <el-table
+      class="crest-data-table"
+      header-cell-class-name="header-cell"
+      :data="state.variablesTmp"
+    >
       <el-table-column width="220" prop="variableName" :label="t('visualization.param_name')" />
       <el-table-column width="200" :label="t('datasetUi.parameter_type')">
         <template #default="scope">
@@ -1196,7 +1212,7 @@ const mousedownDrag = () => {
       padding-left: 4px;
       width: 24px;
       .ed-icon {
-        color: var(--ed-color-primary, #3B82F6);
+        color: var(--ed-color-primary, #3b82f6);
       }
     }
   }
@@ -1247,7 +1263,7 @@ const mousedownDrag = () => {
         z-index: 10;
         &:hover {
           .ed-icon {
-            color: var(--ed-color-primary, #3B82F6) !important;
+            color: var(--ed-color-primary, #3b82f6) !important;
           }
         }
       }
@@ -1405,7 +1421,7 @@ const mousedownDrag = () => {
       .de-Exec-result,
       .de-Underway-pre {
         &::before {
-          background: var(--ed-color-primary, #3B82F6);
+          background: var(--ed-color-primary, #3b82f6);
         }
       }
 
@@ -1422,7 +1438,7 @@ const mousedownDrag = () => {
         }
 
         .ed-icon-s-order {
-          color: var(--ed-color-primary, #3B82F6);
+          color: var(--ed-color-primary, #3b82f6);
           cursor: pointer;
         }
       }
@@ -1492,7 +1508,7 @@ const mousedownDrag = () => {
               }
             }
             &:hover {
-              border-color: var(--ed-color-primary, #3B82F6);
+              border-color: var(--ed-color-primary, #3b82f6);
               background: var(--ed-color-primary-1a, rgba(59, 130, 246, 0.1));
             }
           }
@@ -1563,13 +1579,13 @@ const mousedownDrag = () => {
       }
 
       &:focus {
-        background: var(--ed-color-primary-1a, #3B82F61a);
-        color: var(--ed-color-primary, #3B82F6);
+        background: var(--ed-color-primary-1a, #3b82f61a);
+        color: var(--ed-color-primary, #3b82f6);
       }
 
       &:focus:hover {
-        color: var(--ed-color-primary, #3B82F6);
-        background: var(--ed-color-primary-33, #3B82F633);
+        color: var(--ed-color-primary, #3b82f6);
+        background: var(--ed-color-primary-33, #3b82f633);
       }
     }
   }
@@ -1705,7 +1721,7 @@ const mousedownDrag = () => {
       top: 10.6px;
       left: 16px;
       font-size: 14px;
-      color: var(--ed-color-primary, #3B82F6);
+      color: var(--ed-color-primary, #3b82f6);
     }
 
     margin-bottom: 16px;

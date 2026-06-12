@@ -1,19 +1,16 @@
 package io.crest.extensions.datasource.dto;
 
 import lombok.Data;
-import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Data
 @SuppressWarnings("deprecation")
 public class DatasourceRequest implements Serializable {
     private final String REG_WITH_SQL_FRAGMENT = "((?i)WITH[\\s\\S]+(?i)AS?\\s*\\([\\s\\S]+\\))\\s*(?i)SELECT";
-    private Pattern WITH_SQL_FRAGMENT = Pattern.compile("((?i)WITH[\\s\\S]+(?i)AS?\\s*\\([\\s\\S]+\\))\\s*(?i)SELECT");
     protected String query;
     protected String table;
     protected DatasourceDTO datasource;
@@ -43,20 +40,15 @@ public class DatasourceRequest implements Serializable {
     }
 
     private String rebuildSqlWithFragment(String sql) {
-        if (!sql.toLowerCase().startsWith("with")) {
-            Matcher matcher = this.WITH_SQL_FRAGMENT.matcher(sql);
-            if (matcher.find()) {
-                String withFragment = matcher.group();
-                if (!StringUtils.isEmpty(withFragment)) {
-                    if (withFragment.length() > 6) {
-                        int lastSelectIndex = withFragment.length() - 6;
-                        sql = sql.replace(withFragment, withFragment.substring(lastSelectIndex));
-                        withFragment = withFragment.substring(0, lastSelectIndex);
-                    }
-
-                    sql = withFragment + " " + sql;
-                    sql = sql.replaceAll(" {2,}", " ");
-                }
+        String lowerSql = sql.toLowerCase(Locale.ROOT);
+        if (!lowerSql.startsWith("with")) {
+            int withIndex = lowerSql.indexOf("with");
+            int selectIndex = withIndex < 0 ? -1 : lowerSql.indexOf("select", withIndex + 4);
+            if (withIndex >= 0 && selectIndex > withIndex) {
+                String withFragment = sql.substring(withIndex, selectIndex);
+                String withSelectFragment = sql.substring(withIndex, selectIndex + 6);
+                sql = sql.replace(withSelectFragment, "SELECT");
+                sql = (withFragment + " " + sql).replace("  ", " ");
             }
         }
 

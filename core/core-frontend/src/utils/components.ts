@@ -43,6 +43,8 @@ import PopArea from '@/custom-component/pop-area/Component.vue'
 import PopAreaAttr from '@/custom-component/pop-area/Attr.vue'
 import PictureGroup from '@/custom-component/picture-group/Component.vue'
 import PictureGroupAttr from '@/custom-component/picture-group/Attr.vue'
+import ExportButton from '@/custom-component/export-button/Component.vue'
+import ExportButtonAttr from '@/custom-component/export-button/Attr.vue'
 export const componentsMap = {
   VText: VText,
   VQuery,
@@ -85,10 +87,28 @@ export const componentsMap = {
   PopAreaAttr: PopAreaAttr,
   PictureGroup: PictureGroup,
   PictureGroupAttr: PictureGroupAttr,
+  ExportButton,
+  ExportButtonAttr,
   Decoration: Decoration,
   DecorationAttr: DecorationAttr,
   Screen: Screen,
-  ScreenAttr: ScreenAttr
+  ScreenAttr: ScreenAttr,
+  DeDecoration: Decoration,
+  DeDecorationAttr: DecorationAttr,
+  DeFrame: Frame,
+  DeFrameAttr: FrameAttr,
+  DeGraphical: Graphical,
+  DeGraphicalAttr: GraphicalAttr,
+  DeScreen: Screen,
+  DeScreenAttr: ScreenAttr,
+  DeStreamMedia: StreamMedia,
+  DeStreamMediaAttr: StreamMediaAttr,
+  DeTabs: Tabs,
+  DeTabsAttr: TabsAttr,
+  DeTimeClock: TimeClock,
+  DeTimeClockAttr: TimeClockAttr,
+  DeVideo: Video,
+  DeVideoAttr: VideoAttr
 }
 
 export default function findComponent(key) {

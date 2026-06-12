@@ -23,4 +23,8 @@ public class CurUserVO implements Serializable {
     private Long oid;
     @Schema(description = "语言")
     private String language;
+    @Schema(description = "是否管理员")
+    private Boolean admin;
+    @Schema(description = "是否允许进入管理后台")
+    private Boolean backendAccess;
 }

@@ -1,5 +1,5 @@
 <template>
-  <EngineInfoTemplate ref="engineInfoTemplate" setting-key="engine" @edit="change" />
+  <EngineInfoTemplate ref="engineInfoTemplate" setting-key="engine" @edit="edit" />
   <engine-edit ref="editor" @saved="refresh" />
 </template>
 

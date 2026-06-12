@@ -161,13 +161,16 @@ const initCurFields = chartDetails => {
   dataRowFiledName.value = []
   dataRowSelect.value = {}
   dataRowNameSelect.value = {}
-  if (chartDetails.data && chartDetails.data.sourceFields) {
+  const sourceFields = Array.isArray(chartDetails.data?.sourceFields)
+    ? chartDetails.data.sourceFields
+    : []
+  if (sourceFields.length) {
     const checkAllAxisStr =
       JSON.stringify(chartDetails.xAxis) +
       JSON.stringify(chartDetails.xAxisExt) +
       JSON.stringify(chartDetails.yAxis) +
       JSON.stringify(chartDetails.yAxisExt)
-    chartDetails.data.sourceFields.forEach(field => {
+    sourceFields.forEach(field => {
       if (checkAllAxisStr.indexOf(field.id) > -1) {
         dataRowFiledName.value.push(`[${field.name}]`)
       }
@@ -175,11 +178,12 @@ const initCurFields = chartDetails => {
     if (checkAllAxisStr.indexOf('"记录数*"') > -1) {
       dataRowFiledName.value.push(`[记录数*]`)
     }
-    const sourceFieldNameIdMap = chartDetails.data.fields.reduce((pre, next) => {
+    const dataFields = Array.isArray(chartDetails.data?.fields) ? chartDetails.data.fields : []
+    const rowData = chartDetails.data?.tableRow?.[0] || {}
+    const sourceFieldNameIdMap = dataFields.reduce((pre, next) => {
       pre[next['engineFieldName']] = next['name']
       return pre
     }, {})
-    const rowData = chartDetails.data.tableRow[0]
     for (const key in rowData) {
       dataRowNameSelect.value[sourceFieldNameIdMap[key]] = rowData[key]
     }
@@ -257,7 +261,9 @@ const calcData = (viewCalc: Chart, callback) => {
           state.viewDataInfo = res
           state.totalItems = res?.totalItems
           const curViewInfo = canvasViewInfo.value[element.value.id]
-          curViewInfo['curFields'] = res.data.fields
+          if (res.data && curViewInfo) {
+            curViewInfo['curFields'] = res.data.fields || []
+          }
           dvMainStore.setViewDataDetails(element.value.id, res)
           initReady.value = true
           initCurFields(res)

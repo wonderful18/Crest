@@ -15,7 +15,9 @@ import { convertToAlphaColor, isAlphaColor } from '@/views/chart/components/js/u
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 import TableHeaderGroupConfig from './TableHeaderGroupConfig.vue'
+import TableHeaderDescriptionConfig from './TableHeaderDescriptionConfig.vue'
 import { getLeafNodes } from '@/views/chart/components/js/panel/common/common_table'
+import { hasAuxiliaryDescription } from '@/views/chart/components/js/panel/common/tableAuxiliaryHeader.mjs'
 import { SERIES_NUMBER_FIELD } from '@antv/s2'
 
 const dvMainStore = dvMainStoreWithOut()
@@ -65,7 +67,8 @@ const fontSizeList = computed(() => {
 
 const state = reactive({
   tableHeaderForm: {} as ChartTableHeaderAttr,
-  showTableHeaderGroupConfig: false
+  showTableHeaderGroupConfig: false,
+  showTableHeaderDescriptionConfig: false
 })
 
 const emit = defineEmits(['onTableHeaderChange'])
@@ -86,12 +89,42 @@ const changeHeaderGroupConfig = (headerGroupConfig: ChartTableHeaderAttr['header
   changeTableHeader('headerGroupConfig')
 }
 
+const changeAuxiliaryHeaderConfig = (auxiliaryHeader: ChartTableHeaderAttr['auxiliaryHeader']) => {
+  state.tableHeaderForm.auxiliaryHeader = auxiliaryHeader
+  state.showTableHeaderDescriptionConfig = false
+  changeTableHeader('auxiliaryHeader')
+}
+
 const enableGroupConfig = computed(() => {
   return (
     !batchOptStatus.value &&
     showProperty('headerGroup') &&
     state.tableHeaderForm.headerGroup &&
     state.tableHeaderForm.showTableHeader !== false
+  )
+})
+
+const visibleTableFields = computed(() => {
+  const axis = [...(props.chart?.xAxis || [])]
+  if (props.chart?.type === 'table-normal') {
+    axis.push(...(props.chart?.yAxis || []))
+  }
+  return axis.filter(item => item.hide !== true)
+})
+
+const enableAuxiliaryConfig = computed(() => {
+  return (
+    !batchOptStatus.value &&
+    showProperty('auxiliaryHeader') &&
+    state.tableHeaderForm.auxiliaryHeader?.enabled &&
+    state.tableHeaderForm.showTableHeader !== false
+  )
+})
+
+const auxiliaryConfigValid = computed(() => {
+  return hasAuxiliaryDescription(
+    state.tableHeaderForm.auxiliaryHeader,
+    visibleTableFields.value.map(item => item.engineFieldName)
   )
 })
 
@@ -981,6 +1014,45 @@ onMounted(() => {
         </div>
       </div>
     </el-form-item>
+    <el-form-item
+      v-if="
+        !batchOptStatus && showProperty('auxiliaryHeader') && state.tableHeaderForm.auxiliaryHeader
+      "
+      class="form-item"
+      :class="'form-item-' + themes"
+      :disabled="!state.tableHeaderForm.showTableHeader"
+    >
+      <el-checkbox
+        size="small"
+        :effect="themes"
+        v-model="state.tableHeaderForm.auxiliaryHeader.enabled"
+        @change="changeTableHeader('auxiliaryHeader')"
+      >
+        {{ t('chart.table_header_description') }}
+      </el-checkbox>
+    </el-form-item>
+    <el-form-item v-if="enableAuxiliaryConfig" class="form-item" :class="'form-item-' + themes">
+      <div class="header-group-config">
+        <span>{{ t('chart.table_header_description_config') }}</span>
+        <div class="group-icon">
+          <span v-if="auxiliaryConfigValid">
+            {{ t('visualization.already_setting') }}
+          </span>
+          <div
+            class="icon-btn"
+            :class="{
+              dark: themes === 'dark'
+            }"
+          >
+            <el-icon @click="state.showTableHeaderDescriptionConfig = true">
+              <Icon>
+                <icon_edit_outlined class="svg-icon" />
+              </Icon>
+            </el-icon>
+          </div>
+        </div>
+      </div>
+    </el-form-item>
   </el-form>
   <el-dialog
     v-model="state.showTableHeaderGroupConfig"
@@ -1000,6 +1072,26 @@ onMounted(() => {
       :tableHeaderForm="state.tableHeaderForm"
       @onConfigChange="changeHeaderGroupConfig"
       @onCancelConfig="() => (state.showTableHeaderGroupConfig = false)"
+    />
+  </el-dialog>
+  <el-dialog
+    v-model="state.showTableHeaderDescriptionConfig"
+    destroy-on-close
+    append-to-body
+    :effect="themes"
+    :show-close="false"
+    width="760px"
+    :class="themes === 'dark' ? 'table-header-group-config-dialog' : ''"
+  >
+    <template #header>
+      {{ t('chart.table_header_description_config') }}
+    </template>
+    <table-header-description-config
+      :chart="chart"
+      :themes="themes"
+      :tableHeaderForm="state.tableHeaderForm"
+      @onConfigChange="changeAuxiliaryHeaderConfig"
+      @onCancelConfig="() => (state.showTableHeaderDescriptionConfig = false)"
     />
   </el-dialog>
 </template>

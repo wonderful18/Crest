@@ -18,6 +18,8 @@ import { isMobile, getLocale } from '@/utils/utils'
 import { useRequestStoreWithOut } from '@/store/modules/request'
 import { clearCache } from '@/utils/cacheUtil'
 import { securityConfig } from './hmac'
+import { isLoginPath } from '@/router/authFailureNavigation.mjs'
+import { shouldAttachLinkToken } from './linkTokenPolicy.mjs'
 
 type AxiosErrorWidthLoading<T> = T & {
   config: {
@@ -116,10 +118,10 @@ service.interceptors.request.use(
     if (isMobile()) {
       ;(config.headers as AxiosRequestHeaders)['X-CREST-MOBILE'] = true
     }
-    if (linkStore.getLinkToken) {
+    if (linkStore.getLinkToken && shouldAttachLinkToken(config.url, window.location.hash)) {
       ;(config.headers as AxiosRequestHeaders)['X-CREST-LINK-TOKEN'] = linkStore.getLinkToken
     } else if (embeddedStore.token) {
-      ;(config.headers as AxiosRequestHeaders)['X-EMBEDDED-TOKEN'] = embeddedStore.token
+      ;(config.headers as AxiosRequestHeaders)['X-CREST-EMBEDDED-TOKEN'] = embeddedStore.token
     }
     const locale = getLocale()
     if (locale) {
@@ -143,10 +145,11 @@ service.interceptors.request.use(
 
     const requestUrl = String(config.url || '')
     if (requestUrl.endsWith('/chart-data/data') || requestUrl.endsWith('chartData/data')) {
-      const chartKey = `chartData/data/${(config.data as any)?.id}`
+      const chartId = (config.data as any)?.id
       config.cancelToken = new CancelToken(function executor(c) {
         cancelMap[requestUrl] = c
-        cancelMap[chartKey] = c
+        cancelMap[`/chart-data/data/${chartId}`] = c
+        cancelMap[`chartData/data/${chartId}`] = c
       })
     } else {
       config.cancelToken = new CancelToken(function executor(c) {
@@ -255,7 +258,11 @@ service.interceptors.response.use(
     if (header.has('CREST-GATEWAY-FLAG')) {
       const userToken = wsCache.get('user.token')
       const inPlatformClient = !!wsCache.get('crest-platform-client')
+      const currentPath = router.currentRoute.value.path
       clearCache()
+      if (isLoginPath(currentPath)) {
+        return Promise.reject(error)
+      }
       if (!(userToken && inPlatformClient)) {
         const flag = header.get('CREST-GATEWAY-FLAG')
         localStorage.setItem('CREST-GATEWAY-FLAG', flag.toString())

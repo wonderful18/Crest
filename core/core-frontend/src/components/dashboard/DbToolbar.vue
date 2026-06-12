@@ -334,7 +334,7 @@ const backHandler = (url: string) => {
     const pm = {
       methodName: 'embeddedInteractive',
       args: {
-        eventName: 'de-dashboard-editor-back',
+        eventName: 'crest-dashboard-editor-back',
         args: 'Just a demo that descript Crest embedded interactive'
       }
     }
@@ -615,7 +615,7 @@ const initOpenHandler = newWindow => {
             themes="light"
             show-split-line
             is-label
-            :base-width="115"
+            :base-width="215"
             :icon-name="dvMoreCom"
             :title="t('visualization.more')"
           >
@@ -819,7 +819,7 @@ const initOpenHandler = newWindow => {
     />
     <outer-params-set ref="outerParamsSetRef"> </outer-params-set>
   </div>
-  <CrestFullscreen show-position="change" ref="fullScreeRef"></CrestFullscreen>
+  <CrestFullscreen show-position="edit" ref="fullScreeRef"></CrestFullscreen>
   <CrestAppApply
     ref="resourceAppOpt"
     :component-data="componentData"

@@ -646,7 +646,10 @@ export class GroupBar extends StackBar {
       return plot
     }
     plot.chart.once('beforepaint', () => {
-      const geo = plot.chart.geometries[0] as any
+      const geo = plot.chart.geometries?.[0] as any
+      if (typeof geo?.beforeMapping !== 'function' || typeof geo?.getXScale !== 'function') {
+        return
+      }
       const originMapping = geo.beforeMapping.bind(geo)
       geo.beforeMapping = originData => {
         const values = geo.getXScale().values

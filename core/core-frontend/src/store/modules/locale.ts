@@ -13,18 +13,33 @@ const mergeLocaleData = (baseLocale: any, customData: any) => {
   const merged = JSON.parse(JSON.stringify(baseLocale || {}))
 
   const mergeRecursive = (obj: any, source: any) => {
-    for (const key in source) {
-      if (source.hasOwnProperty(key)) {
+    for (const key of Object.keys(source || {})) {
+      if (key === '__proto__' || key === 'prototype' || key === 'constructor') {
+        continue
+      }
+      const sourceValue = source[key]
+      if (typeof sourceValue === 'object' && sourceValue !== null && !Array.isArray(sourceValue)) {
         if (
-          typeof source[key] === 'object' &&
-          source[key] !== null &&
-          !Array.isArray(source[key])
+          !Object.prototype.hasOwnProperty.call(obj, key) ||
+          typeof obj[key] !== 'object' ||
+          obj[key] === null ||
+          Array.isArray(obj[key])
         ) {
-          if (!obj[key]) obj[key] = {}
-          mergeRecursive(obj[key], source[key])
-        } else {
-          obj[key] = source[key]
+          Object.defineProperty(obj, key, {
+            value: {},
+            enumerable: true,
+            configurable: true,
+            writable: true
+          })
         }
+        mergeRecursive(obj[key], sourceValue)
+      } else {
+        Object.defineProperty(obj, key, {
+          value: sourceValue,
+          enumerable: true,
+          configurable: true,
+          writable: true
+        })
       }
     }
     return obj

@@ -6,6 +6,7 @@ import DragComponent from '@/custom-component/component-group/DragComponent.vue'
 import { commonHandleDragEnd, commonHandleDragStart } from '@/utils/canvasUtils'
 import { useI18n } from '@/hooks/web/useI18n'
 import dvTabScreen from '@/assets/svg/dv-tab-screen.svg'
+import iconDownloadOutlined from '@/assets/svg/icon_download_outlined.svg'
 const { t } = useI18n()
 const props = defineProps({
   propValue: {
@@ -59,6 +60,13 @@ const handleDragEnd = e => {
       :label="t('visualization.web')"
       drag-info="Frame&Frame"
       v-on:click="newComponent('Frame')"
+    ></drag-component>
+    <drag-component
+      :themes="themes"
+      :icon="iconDownloadOutlined"
+      label="导出按钮"
+      drag-info="ExportButton&ExportButton"
+      v-on:click="newComponent('ExportButton')"
     ></drag-component>
     <!--    <drag-component-->
     <!--      :themes="themes"-->

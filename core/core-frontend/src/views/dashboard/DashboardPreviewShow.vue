@@ -53,7 +53,8 @@ const state = reactive({
   showOffset: {
     top: 110,
     left: 280
-  }
+  },
+  cacheStatusKey: 0
 })
 
 const { fullscreenFlag, canvasViewDataInfo } = storeToRefs(dvMainStore)
@@ -136,6 +137,7 @@ const loadCanvasData = (dvId, weight?) => {
       nextTick(() => {
         dashboardPreview.value.restore()
         onInitReady({ resourceId: dvId })
+        state.cacheStatusKey++
       })
     }
   )
@@ -300,6 +302,7 @@ defineExpose({
           @reload="reload"
           @download="downloadH2"
           @downloadAsAppTemplate="downloadAsAppTemplate"
+          :cache-reload-key="state.cacheStatusKey"
         />
         <div
           ref="previewCanvasContainer"

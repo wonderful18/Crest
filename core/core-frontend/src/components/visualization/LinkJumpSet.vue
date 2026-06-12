@@ -272,7 +272,9 @@
                                           ><component
                                             class="svg-icon"
                                             style="width: 14px; height: 14px"
-                                            :class="`field-icon-${fieldType[curViewField.fieldType]}`"
+                                            :class="`field-icon-${
+                                              fieldType[curViewField.fieldType]
+                                            }`"
                                             :is="iconFieldMap[fieldType[curViewField.fieldType]]"
                                           ></component
                                         ></Icon>
@@ -824,10 +826,11 @@ const init = viewItem => {
   const request = { busiFlag: 'dashboard-dataV' } as BusiTreeRequest
   // 获取可关联的仪表板
   queryTreeApi(request).then((rsp: any) => {
-    if (rsp && rsp[0]?.id === '0') {
-      state.panelList = rsp[0].children
+    const panelList = Array.isArray(rsp) ? rsp : []
+    if (panelList[0]?.id === '0') {
+      state.panelList = panelList[0].children || []
     } else {
-      state.panelList = rsp
+      state.panelList = panelList
     }
     state.panelList = filterEmptyFolderTree(state.panelList)
     const curSortType = wsCache.get(`TreeSort-${dvInfo.value.type}`) || 'time_asc'
@@ -1301,7 +1304,7 @@ defineExpose({
 }
 
 .item-dimension:hover {
-  border: 1px solid var(--ed-color-primary, #3B82F6);
+  border: 1px solid var(--ed-color-primary, #3b82f6);
   background: var(--ed-color-primary-1a, rgba(59, 130, 246, 0.1));
 }
 

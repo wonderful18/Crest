@@ -34,6 +34,7 @@ public class AesUtils {
         return value;
     }
 
+    @SuppressWarnings("java/weak-cryptographic-algorithm")
     public static String aesDecrypt(String src, String secretKey, String iv) {
         if (StringUtils.isBlank(secretKey)) {
             throw new RuntimeException("secretKey is empty");
@@ -55,6 +56,7 @@ public class AesUtils {
         }
     }
 
+    @SuppressWarnings("java/weak-cryptographic-algorithm")
     public static String aesEncrypt(String src, String secretKey, String iv) {
         if (StringUtils.isBlank(secretKey)) {
             throw new RuntimeException("secretKey is empty");
@@ -75,6 +77,7 @@ public class AesUtils {
 
     }
 
+    @SuppressWarnings("java/weak-cryptographic-algorithm")
     public static Object aesEncrypt(Object o) {
 
         if (o == null) {
@@ -97,6 +100,7 @@ public class AesUtils {
         return aesDecrypt(value, configuredSecretKey(), configuredIv());
     }
 
+    @SuppressWarnings("java/weak-cryptographic-algorithm")
     public static String aesEncryptWithIv(String src, String secretKey) {
         if (StringUtils.isBlank(secretKey)) {
             throw new RuntimeException("secretKey is empty");

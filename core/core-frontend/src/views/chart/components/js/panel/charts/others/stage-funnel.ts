@@ -12,6 +12,9 @@ const escapeSvgText = (value: unknown) =>
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
 
+const escapeSvgAttribute = (value: unknown) =>
+  escapeSvgText(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
 const formatMetricValue = (value: unknown) => {
@@ -82,7 +85,9 @@ class StageFunnelDomChart {
       const rightIndex = stageOrder.indexOf(right.field || right.name)
       const leftOrder = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex
       const rightOrder = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex
-      return leftOrder - rightOrder || String(left.field || '').localeCompare(String(right.field || ''))
+      return (
+        leftOrder - rightOrder || String(left.field || '').localeCompare(String(right.field || ''))
+      )
     })
   }
 
@@ -134,7 +139,11 @@ class StageFunnelDomChart {
         return field?.name ? `${field.name}: ${formatMetricValue(tooltipValue)}` : ''
       })
       .filter(Boolean)
-    return [item.field || item.name, `${quotaName}: ${formatMetricValue(item.value)}`, ...tooltipLines].join('\n')
+    return [
+      item.field || item.name,
+      `${quotaName}: ${formatMetricValue(item.value)}`,
+      ...tooltipLines
+    ].join('\n')
   }
 
   private getVisualMetric(item: any) {
@@ -174,8 +183,7 @@ class StageFunnelDomChart {
       metricAliases,
       noteTitleColor,
       noteTextColor
-    } =
-      this.getStageFunnelConfig()
+    } = this.getStageFunnelConfig()
     const width = Math.max(container.clientWidth || 0, 320)
     const height = Math.max(container.clientHeight || 0, 160)
     const sideVisible = width >= 620 && height >= 190
@@ -184,7 +192,7 @@ class StageFunnelDomChart {
     const stageAreaWidth = Math.max(width - leftWidth - rightWidth - 34, 220)
     const centerX = leftWidth + stageAreaWidth / 2 + 8
     const top = clamp(height * 0.045, 8, 18)
-    const gap = clamp((height - top * 2) / data.length * 0.08, 2, 6)
+    const gap = clamp(((height - top * 2) / data.length) * 0.08, 2, 6)
     const bodyHeight = clamp((height - top * 2 - gap * (data.length - 1)) / data.length, 26, 48)
     const ellipseHeight = clamp(bodyHeight * 0.64, 16, 28)
     const maxWidth = clamp(stageAreaWidth * 0.9, 230, stageAreaWidth)
@@ -227,13 +235,19 @@ class StageFunnelDomChart {
           `M ${x} ${y + ellipseHeight / 2}`,
           `C ${x} ${y} ${x + stageWidth} ${y} ${x + stageWidth} ${y + ellipseHeight / 2}`,
           `L ${x + stageWidth} ${y + bodyHeight - ellipseHeight / 2}`,
-          `C ${x + stageWidth} ${y + bodyHeight} ${x} ${y + bodyHeight} ${x} ${y + bodyHeight - ellipseHeight / 2}`,
+          `C ${x + stageWidth} ${y + bodyHeight} ${x} ${y + bodyHeight} ${x} ${
+            y + bodyHeight - ellipseHeight / 2
+          }`,
           'Z'
         ].join(' ')
         const frontRimPath = [
           `M ${x} ${y + bodyHeight - ellipseHeight / 2}`,
-          `C ${x} ${y + bodyHeight} ${x + stageWidth} ${y + bodyHeight} ${x + stageWidth} ${y + bodyHeight - ellipseHeight / 2}`,
-          `C ${x + stageWidth} ${y + bodyHeight - ellipseHeight * 0.1} ${x} ${y + bodyHeight - ellipseHeight * 0.1} ${x} ${y + bodyHeight - ellipseHeight / 2}`,
+          `C ${x} ${y + bodyHeight} ${x + stageWidth} ${y + bodyHeight} ${x + stageWidth} ${
+            y + bodyHeight - ellipseHeight / 2
+          }`,
+          `C ${x + stageWidth} ${y + bodyHeight - ellipseHeight * 0.1} ${x} ${
+            y + bodyHeight - ellipseHeight * 0.1
+          } ${x} ${y + bodyHeight - ellipseHeight / 2}`,
           'Z'
         ].join(' ')
 
@@ -243,19 +257,31 @@ class StageFunnelDomChart {
             transform="translate(0 4)"/>
           <path class="stage-funnel-body" d="${bodyPath}" fill="url(#${gradientIdPrefix}-body-${index})"
             opacity="0.98" stroke="${colorWithAlpha('#ffffff', 0.24)}" stroke-width="1"/>
-          <ellipse cx="${centerX}" cy="${y + ellipseHeight / 2}" rx="${stageWidth / 2}" ry="${ellipseHeight / 2}"
+          <ellipse cx="${centerX}" cy="${y + ellipseHeight / 2}" rx="${stageWidth / 2}" ry="${
+          ellipseHeight / 2
+        }"
             fill="url(#${gradientIdPrefix}-top-${index})" opacity="0.98"
             stroke="${colorWithAlpha('#ffffff', 0.34)}" stroke-width="1"/>
           <path d="${frontRimPath}" fill="${colorWithAlpha(color, 0.28)}"/>
-          <ellipse cx="${centerX}" cy="${y + bodyHeight - ellipseHeight / 2}" rx="${stageWidth / 2}" ry="${ellipseHeight / 2}"
+          <ellipse cx="${centerX}" cy="${y + bodyHeight - ellipseHeight / 2}" rx="${
+          stageWidth / 2
+        }" ry="${ellipseHeight / 2}"
             fill="none" stroke="${colorWithAlpha('#ffffff', 0.2)}" stroke-width="1"/>
-          <text class="stage-funnel-value" x="${centerX - stageWidth / 2 + 22}" y="${y + bodyHeight * 0.56}"
-            text-anchor="middle" font-size="${metricFontSize + 1}" font-weight="800" fill="rgba(255,255,255,.9)">${visualMetric}</text>
-          <text class="stage-funnel-label" x="${centerX}" y="${y + bodyHeight * (metricVisible ? 0.43 : 0.58)}"
+          <text class="stage-funnel-value" x="${centerX - stageWidth / 2 + 22}" y="${
+          y + bodyHeight * 0.56
+        }"
+            text-anchor="middle" font-size="${
+              metricFontSize + 1
+            }" font-weight="800" fill="rgba(255,255,255,.9)">${visualMetric}</text>
+          <text class="stage-funnel-label" x="${centerX}" y="${
+          y + bodyHeight * (metricVisible ? 0.43 : 0.58)
+        }"
             text-anchor="middle" font-size="${labelFontSize}" font-weight="800" fill="#f8fdff">${stageName}</text>
           ${
             metricVisible
-              ? `<text class="stage-funnel-subtitle" x="${centerX}" y="${y + bodyHeight * 0.76}" text-anchor="middle"
+              ? `<text class="stage-funnel-subtitle" x="${centerX}" y="${
+                  y + bodyHeight * 0.76
+                }" text-anchor="middle"
             font-size="${metricFontSize}" fill="rgba(238,249,255,.88)">${subtitle}</text>`
               : ''
           }
@@ -265,10 +291,17 @@ class StageFunnelDomChart {
 
     const periodBlock = sideVisible
       ? `<g>
-          <rect x="12" y="${height / 2 - 28}" width="94" height="46" rx="10" fill="${colorWithAlpha(periodColor, 0.18)}"
+          <rect x="12" y="${height / 2 - 28}" width="94" height="46" rx="10" fill="${colorWithAlpha(
+          periodColor,
+          0.18
+        )}"
             stroke="${colorWithAlpha(periodColor, 0.82)}" stroke-width="1.4"/>
-          <rect x="18" y="${height / 2 - 22}" width="82" height="34" rx="8" fill="${periodColor}" opacity="0.9"/>
-          <text x="59" y="${height / 2}" text-anchor="middle" font-size="18" font-weight="800" fill="#f8fbff">
+          <rect x="18" y="${
+            height / 2 - 22
+          }" width="82" height="34" rx="8" fill="${periodColor}" opacity="0.9"/>
+          <text x="59" y="${
+            height / 2
+          }" text-anchor="middle" font-size="18" font-weight="800" fill="#f8fbff">
             ${escapeSvgText(periodLabel)}
           </text>
         </g>`
@@ -281,14 +314,18 @@ class StageFunnelDomChart {
               (line, index) =>
                 `<text x="${width - rightWidth + 6}" y="${height / 2 - 22 + index * 24}"
                   font-size="${index === 0 ? 15 : 13}" font-weight="${index === 0 ? 800 : 500}"
-                  fill="${index === 0 ? noteTitleColor : noteTextColor}">${escapeSvgText(line)}</text>`
+                  fill="${index === 0 ? noteTitleColor : noteTextColor}">${escapeSvgText(
+                  line
+                )}</text>`
             )
             .join('')}
         </g>`
       : ''
 
     container.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"
-      xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeSvgText(this.chart.title)}">
+      xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeSvgAttribute(
+        this.chart.title
+      )}">
       <defs>${defs}</defs>
       <style>
         .stage-funnel-segment .stage-funnel-body,

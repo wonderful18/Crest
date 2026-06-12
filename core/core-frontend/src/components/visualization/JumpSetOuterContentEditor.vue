@@ -24,10 +24,21 @@ const state = reactive({
 })
 const timer = ref(null)
 
+const getCursor = view => {
+  return (
+    view?.state?.selection?.main?.from ??
+    view?.viewState?.state?.selection?.ranges?.[0]?.from ??
+    view?.state?.doc?.length ??
+    0
+  )
+}
+
 const insertFieldToCodeMirror = (value: string) => {
+  if (!mirror.value) return
+  const from = getCursor(mirror.value)
   mirror.value.dispatch({
-    changes: { from: mirror.value.viewState.state.selection.ranges[0].from, insert: value },
-    selection: { anchor: mirror.value.viewState.state.selection.ranges[0].from }
+    changes: { from, insert: value },
+    selection: { anchor: from + value.length }
   })
 }
 

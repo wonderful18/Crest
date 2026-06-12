@@ -16,6 +16,7 @@ import io.crest.exception.CrestException;
 import io.crest.model.BusiNodeRequest;
 import io.crest.model.BusiNodeVO;
 import io.crest.operation.manage.CoreOptRecentManage;
+import io.crest.result.ResultCode;
 import io.crest.share.manage.ShareManage;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.system.manage.CoreUserManage;
@@ -288,7 +289,18 @@ public class CoreVisualizationManage {
     }
 
     private VisualizationNodeBO convert(VisualizationNodePO po) {
-        return new VisualizationNodeBO(po.getId(), po.getName(), Strings.CS.equals(po.getNodeType(), "leaf"), 9, po.getPid(), po.getExtraFlag(), po.getExtraFlag1());
+        int weight = platformPermissionManage.resourceWeight(resourceType(po.getType()), String.valueOf(po.getId()), po.getCreateBy(), po.getOrgId());
+        return new VisualizationNodeBO(po.getId(), po.getName(), Strings.CS.equals(po.getNodeType(), "leaf"), weight, po.getPid(), po.getExtraFlag(), po.getExtraFlag1());
+    }
+
+    public void requireVisualizationManage(DataVisualizationInfo info) {
+        if (ObjectUtils.isEmpty(info)) {
+            CrestException.throwException("resource not exist");
+        }
+        int weight = platformPermissionManage.resourceWeight(resourceType(info.getType()), String.valueOf(info.getId()), info.getCreateBy(), info.getOrgId());
+        if (weight < 7) {
+            CrestException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "当前用户无权访问该资源");
+        }
     }
 
     public CoreVisualizationManage proxy() {

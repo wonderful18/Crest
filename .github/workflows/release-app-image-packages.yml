@@ -1,0 +1,141 @@
+name: Build Release App Image Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version, for example v1.5.8
+        required: true
+        default: v1.5.8
+
+permissions:
+  contents: write
+  packages: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  package:
+    name: Package app images ${{ matrix.package_platform }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package_platform: linux-amd64
+            docker_platform: linux/amd64
+            arch: amd64
+          - package_platform: linux-arm64
+            docker_platform: linux/arm64
+            arch: arm64
+
+    steps:
+      - name: Checkout packaging scripts
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull target-architecture app images
+        env:
+          VERSION: ${{ inputs.version }}
+          DOCKER_PLATFORM: ${{ matrix.docker_platform }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+
+          pull_image() {
+            local source_image="$1"
+            local local_image="$2"
+            docker pull --platform "${DOCKER_PLATFORM}" "${source_image}"
+            docker tag "${source_image}" "${local_image}"
+            docker image inspect "${local_image}" --format '{{.Architecture}}' | grep -qx "${ARCH}"
+          }
+
+          pull_image "ghcr.io/sevoniva/crest-service:${VERSION}" "ghcr.io/sevoniva/crest-service:${VERSION}-${ARCH}"
+          pull_image "ghcr.io/sevoniva/crest-web:${VERSION}" "ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}"
+
+      - name: Build app image package
+        env:
+          VERSION: ${{ inputs.version }}
+          PACKAGE_PLATFORM: ${{ matrix.package_platform }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+
+          SOURCE_BACKEND_IMAGE="ghcr.io/sevoniva/crest-service:${VERSION}-${ARCH}" \
+          BACKEND_IMAGE="ghcr.io/sevoniva/crest-service:${VERSION}" \
+          SOURCE_FRONTEND_IMAGE="ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}" \
+          FRONTEND_IMAGE="ghcr.io/sevoniva/crest-web:${VERSION}" \
+          bash installer/make-app-image-package.sh "${VERSION}" "${PACKAGE_PLATFORM}"
+
+      - name: Verify app image package contents
+        env:
+          VERSION: ${{ inputs.version }}
+          PACKAGE_PLATFORM: ${{ matrix.package_platform }}
+        run: |
+          set -euo pipefail
+
+          package_dir="crest-app-images-${VERSION}-${PACKAGE_PLATFORM}"
+          package_file="offline-packages/${package_dir}.tar.gz"
+          tar -tzf "${package_file}" > /tmp/crest-app-image-package-files.txt
+
+          grep -Fqx "${package_dir}/APP-IMAGES-README.md" /tmp/crest-app-image-package-files.txt
+          grep -Fqx "${package_dir}/load-images.sh" /tmp/crest-app-image-package-files.txt
+          grep -Fqx "${package_dir}/image-manifest.txt" /tmp/crest-app-image-package-files.txt
+          grep -Fqx "${package_dir}/upgrade-sql/v1.5.4_to_v1.5.5.sql" /tmp/crest-app-image-package-files.txt
+          grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-service_${VERSION}.tar.gz" /tmp/crest-app-image-package-files.txt
+          grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-web_${VERSION}.tar.gz" /tmp/crest-app-image-package-files.txt
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crest-app-images-${{ inputs.version }}-${{ matrix.package_platform }}
+          path: offline-packages/crest-app-images-${{ inputs.version }}-${{ matrix.package_platform }}.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish app image release assets
+    needs: package
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout release notes
+        uses: actions/checkout@v4
+
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: offline-packages
+          merge-multiple: true
+
+      - name: Create app image checksums
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          cd offline-packages
+          sha256sum \
+            crest-app-images-${VERSION}-linux-*.tar.gz \
+            > crest-app-images-${VERSION}-checksums.txt
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}
+          name: Crest ${{ inputs.version }}
+          body_path: docs/release/${{ inputs.version }}.md
+          draft: false
+          prerelease: false
+          make_latest: true
+          overwrite_files: true
+          files: |
+            offline-packages/crest-app-images-${{ inputs.version }}-linux-amd64.tar.gz
+            offline-packages/crest-app-images-${{ inputs.version }}-linux-arm64.tar.gz
+            offline-packages/crest-app-images-${{ inputs.version }}-checksums.txt

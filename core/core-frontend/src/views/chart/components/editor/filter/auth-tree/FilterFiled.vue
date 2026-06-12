@@ -500,7 +500,7 @@ const emits = defineEmits(['update:item', 'del'])
                 {{ t('common.list_selection') }}
                 <div class="right-btn">
                   <span @click="cancelKeyDow">
-                    <i class="el-icon-change"></i>
+                    <i class="el-icon-edit"></i>
                     {{ t('auth.manual_input') }}
                   </span>
                   <transition name="el-zoom-in-top">
@@ -934,9 +934,9 @@ const emits = defineEmits(['update:item', 'del'])
           line-height: 26px;
           border-radius: 6px;
           padding: 0 4px;
-          color: var(--ed-color-primary, #3B82F6);
+          color: var(--ed-color-primary, #3b82f6);
           &:hover {
-            background-color: var(--ed-color-primary-1a, #3B82F61a);
+            background-color: var(--ed-color-primary-1a, #3b82f61a);
           }
         }
       }

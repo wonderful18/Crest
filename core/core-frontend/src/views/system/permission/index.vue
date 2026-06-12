@@ -26,6 +26,7 @@ const menuLabelMap: Record<string, string> = {
   data: '数据准备',
   dataset: '数据集',
   datasource: '数据源',
+  'data-asset': '数据资产',
   'sys-setting': '系统设置',
   parameter: '系统参数',
   font: '字体管理',

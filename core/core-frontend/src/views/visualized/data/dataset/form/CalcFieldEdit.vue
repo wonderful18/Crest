@@ -7,7 +7,7 @@ import icon_deleteTrash_outlined from '@/assets/svg/icon_delete-trash_outlined.s
 import { ref, reactive, onMounted, onBeforeUnmount, watch, unref, computed, nextTick } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import CodeMirror from './SqlCodeEditor.vue'
-import { functions } from '@/api/dataset'
+import { getFunction } from '@/api/dataset'
 import { fieldType } from '@/utils/attr'
 import { cloneDeep } from 'lodash-es'
 import { guid } from './util'
@@ -189,10 +189,21 @@ const initEdit = (obj, dimensionData, quotaData) => {
 }
 
 const insertFieldToCodeMirror = (value: string) => {
+  if (!mirror.value) return
+  const from = getCursor(mirror.value)
   mirror.value.dispatch({
-    changes: { from: mirror.value.viewState.state.selection.ranges[0].from, insert: value },
-    selection: { anchor: mirror.value.viewState.state.selection.ranges[0].from }
+    changes: { from, insert: value },
+    selection: { anchor: from + value.length }
   })
+}
+
+const getCursor = view => {
+  return (
+    view?.state?.selection?.main?.from ??
+    view?.viewState?.state?.selection?.ranges?.[0]?.from ??
+    view?.state?.doc?.length ??
+    0
+  )
 }
 
 onMounted(() => {
@@ -204,14 +215,16 @@ onBeforeUnmount(() => {
 })
 
 const insertParamToCodeMirror = (value: string) => {
+  if (!mirror.value) return
+  const from = getCursor(mirror.value)
   mirror.value.dispatch({
-    changes: { from: mirror.value.viewState.state.selection.ranges[0].from, insert: value },
-    selection: { anchor: mirror.value.viewState.state.selection.ranges[0].from }
+    changes: { from, insert: value },
+    selection: { anchor: from + value.length }
   })
 }
 let functions = []
 const initFunction = () => {
-  functions().then(res => {
+  getFunction().then(res => {
     functions = cloneDeep(res)
     state.functionData = cloneDeep(res)
   })
@@ -816,7 +829,7 @@ initFunction()
 }
 
 .item-dimension:hover {
-  border-color: var(--ed-color-primary, #3B82F6);
+  border-color: var(--ed-color-primary, #3b82f6);
   background: var(--ed-color-primary-1a, rgba(59, 130, 246, 0.1));
   cursor: pointer;
 }
@@ -848,7 +861,7 @@ initFunction()
 }
 
 .function-style:hover {
-  border-color: var(--ed-color-primary, #3B82F6);
+  border-color: var(--ed-color-primary, #3b82f6);
   cursor: pointer;
 }
 .function-height {
