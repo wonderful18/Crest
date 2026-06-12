@@ -139,7 +139,12 @@ const handleNumberSizeChange = () => {
     </el-select>
     <template v-if="page.pageType !== 'empty'">
       <div class="table-title request">{{ t('datasource.request') }}</div>
-      <el-table header-cell-class-name="header-cell" :data="page.requestData" style="width: 100%">
+      <el-table
+        class="crest-data-table"
+        header-cell-class-name="header-cell"
+        :data="page.requestData"
+        style="width: 100%"
+      >
         <el-table-column prop="parameterName" :label="t('api_pagination.parameter_name')" />
         <el-table-column
           prop="builtInParameterName"
@@ -161,7 +166,12 @@ const handleNumberSizeChange = () => {
       </el-table>
 
       <div class="table-title response">{{ t('api_pagination.response') }}</div>
-      <el-table header-cell-class-name="header-cell" :data="page.responseData" style="width: 100%">
+      <el-table
+        class="crest-data-table"
+        header-cell-class-name="header-cell"
+        :data="page.responseData"
+        style="width: 100%"
+      >
         <el-table-column
           prop="parameterName"
           :label="t('api_pagination.parameter_name')"

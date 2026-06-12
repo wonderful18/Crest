@@ -698,6 +698,7 @@ defineExpose({
           <el-auto-resizer v-if="currentMode === 'preview'">
             <template #default="{ height, width }">
               <el-table-v2
+                class="crest-data-table-v2"
                 :columns="multipleSelection"
                 header-class="excel-header-cell"
                 :data="sheetObj.jsonArray"
@@ -708,6 +709,7 @@ defineExpose({
             </template>
           </el-auto-resizer>
           <el-table
+            class="crest-data-table"
             header-class="header-cell"
             v-else
             ref="multipleTable"

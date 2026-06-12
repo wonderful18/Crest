@@ -2,16 +2,23 @@ package io.crest.dataset.sync;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import io.crest.api.dataset.dto.DatasetSyncTaskPageVO;
+import io.crest.api.dataset.dto.DatasetSyncTaskRequest;
 import io.crest.api.dataset.dto.DatasetSyncTaskDTO;
 import io.crest.commons.constants.TaskStatus;
 import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTask;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetSyncTaskMapper;
 import io.crest.datasource.server.DatasourceTaskServer;
+import io.crest.job.schedule.DatasetSyncJob;
 import io.crest.job.schedule.ScheduleManager;
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.quartz.JobDataMap;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -22,6 +29,101 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class DatasetSyncTaskManageTest {
+
+    @Test
+    void pageListsEnabledCacheDatasetsWithLatestMetrics() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(h2("dataset_sync_task_page"));
+        ReflectionTestUtils.setField(manage, "jdbcTemplate", jdbcTemplate);
+        createTaskCenterTables(jdbcTemplate);
+        jdbcTemplate.update("""
+                INSERT INTO dataset_group(id, name, node_type, mode, create_by, create_time, last_update_time)
+                VALUES (982004, '销售缓存数据集', 'dataset', 1, '1', 1000, 2000)
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO dataset_group(id, name, node_type, mode, create_by, create_time, last_update_time)
+                VALUES (982005, '直连数据集', 'dataset', 0, '1', 1000, 2000)
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO dataset_sync_task(
+                    id, dataset_group_id, name, update_type, sync_rate, cron, task_status, last_exec_status,
+                    cache_ready, last_exec_time, last_source_row_count, last_cache_row_count, create_time, update_time
+                )
+                VALUES (
+                    1262155861866975232, 982004, '销售缓存数据集', 'all_scope', 'SIMPLE_CRON',
+                    '0 0/1 * * * ? *', 'WaitingForExecution', 'Error', 0, 1781080000000, 79, 0, 1000, 2000
+                )
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO dataset_sync_task_log(
+                    id, dataset_group_id, task_id, start_time, end_time, task_status, row_count, info, trigger_type
+                )
+                VALUES (
+                    1, 982004, 1262155861866975232, 1781080000000, 1781080005000,
+                    'Error', 0, '数据源连接失败', 'SIMPLE_CRON'
+                )
+                """);
+
+        DatasetSyncTaskPageVO page = manage.page(1, 10, new DatasetSyncTaskRequest());
+
+        assertEquals(1, page.getTotal());
+        assertEquals(1, page.getRecords().size());
+        DatasetSyncTaskDTO task = page.getRecords().get(0);
+        assertEquals(982004L, task.getDatasetGroupId());
+        assertEquals("销售缓存数据集", task.getDatasetName());
+        assertEquals(5000L, task.getDurationMillis());
+        assertEquals(79L, task.getLastSourceRowCount());
+        assertEquals(0L, task.getLastCacheRowCount());
+        assertEquals("数据源连接失败", task.getFailureReason());
+    }
+
+    @Test
+    void dependenciesReturnEnabledCacheDatasetsUsedByVisualization() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(h2("dataset_sync_dependencies"));
+        ReflectionTestUtils.setField(manage, "jdbcTemplate", jdbcTemplate);
+        createTaskCenterTables(jdbcTemplate);
+        createVisualizationTables(jdbcTemplate);
+        jdbcTemplate.update("""
+                INSERT INTO dataset_group(id, name, node_type, mode, create_by, create_time, last_update_time)
+                VALUES (982004, '销售缓存数据集', 'dataset', 1, '1', 1000, 2000)
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO dataset_group(id, name, node_type, mode, create_by, create_time, last_update_time)
+                VALUES (982005, '直连数据集', 'dataset', 0, '1', 1000, 2000)
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO dataset_sync_task(
+                    id, dataset_group_id, name, update_type, sync_rate, task_status, last_exec_status,
+                    cache_ready, last_exec_time, last_source_row_count, last_cache_row_count, create_time, update_time
+                )
+                VALUES (
+                    1262155861866975232, 982004, '销售缓存数据集', 'all_scope', 'SIMPLE_CRON',
+                    'WaitingForExecution', 'Completed', 1, 1781080000000, 79, 79, 1000, 2000
+                )
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO bi_visualization(id, name, type, node_type, delete_flag, create_by, org_id)
+                VALUES (1259851055592771584, '经营仪表盘', 'dashboard', 'leaf', 0, '1', '1')
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO bi_chart(id, scene_id, table_id, title)
+                VALUES (1, 1259851055592771584, 982004, '销售趋势')
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO bi_chart(id, scene_id, table_id, title)
+                VALUES (2, 1259851055592771584, 982005, '直连趋势')
+                """);
+
+        List<DatasetSyncTaskDTO> dependencies = manage.dependencies(1259851055592771584L);
+
+        assertEquals(1, dependencies.size());
+        DatasetSyncTaskDTO task = dependencies.get(0);
+        assertEquals(982004L, task.getDatasetGroupId());
+        assertEquals("销售缓存数据集", task.getDatasetName());
+        assertEquals(1, task.getCacheReady());
+        assertEquals(TaskStatus.Completed.name(), task.getLastExecStatus());
+    }
 
     @Test
     void saveScheduledTaskHandlesNullRuntimeFieldsFromExistingTask() {
@@ -120,5 +222,178 @@ class DatasetSyncTaskManageTest {
         manage.save(request);
 
         verify(taskMapper).update(any(CoreDatasetSyncTask.class), any(Wrapper.class));
+    }
+
+    @Test
+    void pauseScheduledTaskSuspendsTaskAndDeletesSchedule() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ScheduleManager scheduleManager = mock(ScheduleManager.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "scheduleManager", scheduleManager);
+
+        CoreDatasetSyncTask exists = new CoreDatasetSyncTask();
+        exists.setId(1262155861866975232L);
+        exists.setDatasetGroupId(982004L);
+        exists.setSyncRate(DatasourceTaskServer.ScheduleType.SIMPLE_CRON.name());
+        exists.setCron("0 0/30 * * * ? *");
+        exists.setTaskStatus(TaskStatus.WaitingForExecution.name());
+        when(taskMapper.selectOne(any())).thenReturn(exists);
+        when(scheduleManager.exist(any())).thenReturn(true);
+
+        manage.pause(982004L);
+
+        ArgumentCaptor<CoreDatasetSyncTask> recordCaptor = ArgumentCaptor.forClass(CoreDatasetSyncTask.class);
+        verify(taskMapper).update(recordCaptor.capture(), any(UpdateWrapper.class));
+        assertEquals(TaskStatus.Suspend.name(), recordCaptor.getValue().getTaskStatus());
+        verify(scheduleManager).removeJob(any(), any());
+    }
+
+    @Test
+    void resumeScheduledTaskMarksWaitingAndRestoresSchedule() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ScheduleManager scheduleManager = mock(ScheduleManager.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "scheduleManager", scheduleManager);
+
+        CoreDatasetSyncTask exists = new CoreDatasetSyncTask();
+        exists.setId(1262155861866975232L);
+        exists.setDatasetGroupId(982004L);
+        exists.setSyncRate(DatasourceTaskServer.ScheduleType.SIMPLE_CRON.name());
+        exists.setSimpleCronValue(30L);
+        exists.setSimpleCronType("minute");
+        exists.setCron("0 0/30 * * * ? *");
+        exists.setStartTime(1781080000000L);
+        exists.setTaskStatus(TaskStatus.Suspend.name());
+        when(taskMapper.selectOne(any())).thenReturn(exists);
+        when(scheduleManager.getDefaultJobDataMap(eq("982004"), any(), eq("1262155861866975232"), any()))
+                .thenReturn(new JobDataMap());
+
+        manage.resume(982004L);
+
+        ArgumentCaptor<CoreDatasetSyncTask> recordCaptor = ArgumentCaptor.forClass(CoreDatasetSyncTask.class);
+        verify(taskMapper).update(recordCaptor.capture(), any(UpdateWrapper.class));
+        assertEquals(TaskStatus.WaitingForExecution.name(), recordCaptor.getValue().getTaskStatus());
+        verify(scheduleManager).addOrUpdateCronJob(any(), any(), eq(DatasetSyncJob.class), any(), any(), any(), any());
+    }
+
+    @Test
+    void shouldRestoreScheduleSkipsManualPausedAndStoppedTasks() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+
+        assertEquals(true, manage.shouldRestoreSchedule(scheduledTask(TaskStatus.WaitingForExecution.name())));
+        assertEquals(false, manage.shouldRestoreSchedule(scheduledTask(TaskStatus.Suspend.name())));
+        assertEquals(false, manage.shouldRestoreSchedule(scheduledTask(TaskStatus.Stopped.name())));
+
+        CoreDatasetSyncTask manual = scheduledTask(TaskStatus.WaitingForExecution.name());
+        manual.setSyncRate(DatasourceTaskServer.ScheduleType.RIGHTNOW.name());
+        assertEquals(false, manage.shouldRestoreSchedule(manual));
+    }
+
+    private CoreDatasetSyncTask scheduledTask(String taskStatus) {
+        CoreDatasetSyncTask task = new CoreDatasetSyncTask();
+        task.setId(1262155861866975232L);
+        task.setDatasetGroupId(982004L);
+        task.setSyncRate(DatasourceTaskServer.ScheduleType.SIMPLE_CRON.name());
+        task.setCron("0 0/30 * * * ? *");
+        task.setTaskStatus(taskStatus);
+        return task;
+    }
+
+    private JdbcDataSource h2(String name) {
+        JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setURL("jdbc:h2:mem:" + name + ";MODE=MySQL;DB_CLOSE_DELAY=-1");
+        dataSource.setUser("sa");
+        dataSource.setPassword("");
+        return dataSource;
+    }
+
+    private void createTaskCenterTables(JdbcTemplate jdbcTemplate) {
+        jdbcTemplate.execute("""
+                CREATE TABLE dataset_group (
+                    id BIGINT PRIMARY KEY,
+                    name VARCHAR(128),
+                    node_type VARCHAR(50),
+                    mode INT,
+                    create_by VARCHAR(50),
+                    create_time BIGINT,
+                    last_update_time BIGINT
+                )
+                """);
+        jdbcTemplate.execute("""
+                CREATE TABLE dataset_sync_task (
+                    id BIGINT PRIMARY KEY,
+                    dataset_group_id BIGINT,
+                    name VARCHAR(255),
+                    update_type VARCHAR(50),
+                    incremental_field_id BIGINT,
+                    incremental_last_value VARCHAR(255),
+                    start_time BIGINT,
+                    sync_rate VARCHAR(50),
+                    cron VARCHAR(255),
+                    simple_cron_value BIGINT,
+                    simple_cron_type VARCHAR(50),
+                    end_time BIGINT,
+                    create_time BIGINT,
+                    update_time BIGINT,
+                    last_exec_time BIGINT,
+                    heartbeat_time BIGINT,
+                    last_exec_status VARCHAR(50),
+                    task_status VARCHAR(50),
+                    cache_ready TINYINT,
+                    schema_hash VARCHAR(128),
+                    full_sync_interval_hours INT,
+                    last_full_sync_time BIGINT,
+                    verify_enabled TINYINT,
+                    last_verify_time BIGINT,
+                    last_verify_status VARCHAR(50),
+                    last_verify_message VARCHAR(1024),
+                    last_source_row_count BIGINT,
+                    last_cache_row_count BIGINT,
+                    cache_expire_hours INT,
+                    task_timeout_minutes INT,
+                    consecutive_failures INT,
+                    failure_warn_threshold INT
+                )
+                """);
+        jdbcTemplate.execute("""
+                CREATE TABLE dataset_sync_task_log (
+                    id BIGINT PRIMARY KEY,
+                    dataset_group_id BIGINT,
+                    task_id BIGINT,
+                    update_type VARCHAR(50),
+                    table_name VARCHAR(255),
+                    start_time BIGINT,
+                    end_time BIGINT,
+                    task_status VARCHAR(50),
+                    row_count BIGINT,
+                    info VARCHAR(1024),
+                    create_time BIGINT,
+                    trigger_type VARCHAR(50)
+                )
+                """);
+    }
+
+    private void createVisualizationTables(JdbcTemplate jdbcTemplate) {
+        jdbcTemplate.execute("""
+                CREATE TABLE bi_visualization (
+                    id BIGINT PRIMARY KEY,
+                    name VARCHAR(255),
+                    type VARCHAR(50),
+                    node_type VARCHAR(50),
+                    delete_flag INT,
+                    create_by VARCHAR(50),
+                    org_id VARCHAR(50)
+                )
+                """);
+        jdbcTemplate.execute("""
+                CREATE TABLE bi_chart (
+                    id BIGINT PRIMARY KEY,
+                    scene_id BIGINT,
+                    table_id BIGINT,
+                    title VARCHAR(255)
+                )
+                """);
     }
 }

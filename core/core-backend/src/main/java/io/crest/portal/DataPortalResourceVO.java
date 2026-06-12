@@ -21,4 +21,7 @@ public class DataPortalResourceVO implements Serializable {
     private Integer chartCount;
     private Integer extFlag;
     private Boolean favorite;
+    private Boolean certified;
+    private Boolean recommended;
+    private Boolean deprecated;
 }

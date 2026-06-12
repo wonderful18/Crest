@@ -311,6 +311,9 @@ export function historyAdaptor(
     return
   }
   //历史字段适配
+  canvasStyleResult.component = canvasStyleResult.component || {}
+  canvasStyleResult.dashboard = canvasStyleResult.dashboard || {}
+  canvasStyleResult.component.chartColor = canvasStyleResult.component.chartColor || {}
   canvasStyleResult.component['seniorStyleSetting'] =
     canvasStyleResult.component['seniorStyleSetting'] || deepCopy(SENIOR_STYLE_SETTING_LIGHT)
   canvasStyleResult.component['seniorStyleSetting']['pagerSize'] =
@@ -432,11 +435,13 @@ export function initCanvasDataPrepare(dvId, params, callBack) {
   attachInfo['resourceTable'] = params.resourceTable ? params.resourceTable : 'core'
   ;(method as any)(dvId, busiFlagCustom, attachInfo).then(res => {
     const canvasInfo = res.data as any
+    if (!canvasInfo) {
+      return
+    }
+    const rawWatermarkInfo = canvasInfo.watermarkInfo || {}
     const watermarkInfo = {
-      ...canvasInfo.watermarkInfo,
-      settingContent: canvasInfo.watermarkInfo?.settingContent
-        ? JSON.parse(canvasInfo.watermarkInfo.settingContent)
-        : {}
+      ...rawWatermarkInfo,
+      settingContent: parseWatermarkSetting(rawWatermarkInfo.settingContent)
     }
 
     const dvInfo = {
@@ -473,6 +478,17 @@ export function initCanvasDataPrepare(dvId, params, callBack) {
     )
     callBack({ canvasDataResult, canvasStyleResult, dvInfo, canvasViewInfoPreview, curPreviewGap })
   })
+}
+
+const parseWatermarkSetting = (settingContent?: string) => {
+  if (!settingContent) {
+    return {}
+  }
+  try {
+    return JSON.parse(settingContent)
+  } catch {
+    return {}
+  }
 }
 
 export async function initCanvasData(dvId, params, callBack) {

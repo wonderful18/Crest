@@ -2605,7 +2605,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
             </div>
             <div class="preview-data">
               <el-table
-                class="dataset-preview_table"
+                class="dataset-preview_table crest-data-table"
                 @row-click="rowClick"
                 v-loading="datasetPreviewLoading"
                 header-class="header-cell"
@@ -2655,6 +2655,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                   class="dimension-manage-header manage-header"
                 >
                   <el-table
+                    class="crest-data-table"
                     @selection-change="setFieldTypeSelection"
                     ref="dimensionsTable"
                     :data="dimensions"
@@ -2870,6 +2871,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                   class="quota-manage-header manage-header"
                 >
                   <el-table
+                    class="crest-data-table"
                     @selection-change="setFieldTypeSelection"
                     ref="quotaTable"
                     :height="quotaTableHeight"

@@ -43,7 +43,7 @@ describe('dataset sync workflow', () => {
       ['logs', '982004'],
       ['applyLogs', 1],
       ['poll'],
-      ['success', '同步任务已提交']
+      ['success', '缓存更新已提交']
     ])
   })
 
@@ -88,7 +88,7 @@ describe('dataset sync workflow', () => {
 
     assert.equal(result.submitted, false)
     assert.equal(result.reason, 'running')
-    assert.deepEqual(calls, [['warn', '已有同步任务正在执行']])
+    assert.deepEqual(calls, [['warn', '缓存更新正在执行']])
   })
 
   it('builds a config-only payload when saving the sync task', () => {
@@ -175,6 +175,24 @@ describe('dataset sync workflow', () => {
     )
   })
 
+  it('keeps the main cache status within the five product states', () => {
+    const cases = [
+      [{ syncMode: 1, hasDatasetId: false }, '待保存'],
+      [{ syncMode: 1, hasDatasetId: true, taskStatus: 'WaitingForExecution' }, '待更新'],
+      [{ syncMode: 1, hasDatasetId: true, taskStatus: 'Suspend' }, '待更新'],
+      [{ syncMode: 1, hasDatasetId: true, cacheExpired: true }, '待更新'],
+      [{ syncMode: 1, hasDatasetId: true, taskStatus: 'UnderExecution' }, '更新中'],
+      [{ syncMode: 1, hasDatasetId: true, lastExecStatus: 'Completed', cacheReady: 1 }, '缓存可用'],
+      [{ syncMode: 1, hasDatasetId: true, lastExecStatus: 'Error' }, '更新失败'],
+      [{ syncMode: 1, hasDatasetId: true, failureWarned: true }, '更新失败'],
+      [{ syncMode: 1, hasDatasetId: true, lastVerifyStatus: 'WARNING' }, '更新失败']
+    ]
+
+    cases.forEach(([task, status]) => {
+      assert.equal(getDatasetSyncStatusText(task), status)
+    })
+  })
+
   it('explains why cache update cannot be submitted', () => {
     assert.equal(
       getDatasetSyncNowDisabledReason({ hasDatasetId: false, syncRunning: false }),
@@ -188,10 +206,7 @@ describe('dataset sync workflow', () => {
   })
 
   it('explains when incremental update is unavailable', () => {
-    assert.equal(
-      getIncrementalDisabledReason([]),
-      '当前没有可用增量字段，请使用全量更新'
-    )
+    assert.equal(getIncrementalDisabledReason([]), '当前没有可用增量字段，请使用全量更新')
     assert.equal(getIncrementalDisabledReason([{ id: 'field-1' }]), '')
   })
 

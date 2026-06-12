@@ -82,7 +82,7 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
         }
         for (CoreDatasetSyncTask task : datasetSyncTasks) {
             try {
-                if (!Strings.CI.equals(task.getSyncRate(), DatasourceTaskServer.ScheduleType.RIGHTNOW.toString())) {
+                if (datasetSyncTaskManage.shouldRestoreSchedule(task)) {
                     if (task.getEndTime() != null && task.getEndTime() > 0) {
                         if (task.getEndTime() > System.currentTimeMillis()) {
                             datasetSyncTaskManage.addSchedule(task);

@@ -21,6 +21,7 @@ import { useEmitt } from '@/hooks/web/useEmitt'
 import { useShareStoreWithOut } from '@/store/modules/share'
 import { exportPermission } from '@/utils/utils'
 import { useCache } from '@/hooks/web/useCache'
+import DatasetCacheStatusBar from '@/components/visualization/DatasetCacheStatusBar.vue'
 
 const shareStore = useShareStoreWithOut()
 const { wsCache } = useCache('localStorage')
@@ -28,6 +29,12 @@ const dvMainStore = dvMainStoreWithOut()
 const appStore = useAppStoreWithOut()
 const { dvInfo } = storeToRefs(dvMainStore)
 const emit = defineEmits(['reload', 'download', 'downloadAsAppTemplate'])
+defineProps({
+  cacheReloadKey: {
+    type: [String, Number],
+    default: ''
+  }
+})
 const { t } = useI18n()
 const embeddedStore = useEmbedded()
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
@@ -155,6 +162,11 @@ const initOpenHandler = newWindow => {
       </el-popover>
     </div>
     <div class="canvas-opt-button">
+      <dataset-cache-status-bar
+        v-if="dvInfo.id"
+        :visualization-id="dvInfo.id"
+        :reload-key="cacheReloadKey"
+      />
       <el-button
         v-if="!isIframe"
         :disabled="dvInfo.status === 0"
