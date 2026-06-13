@@ -1003,7 +1003,10 @@ const onTypeChange = (render, type) => {
   // 处理配置项默认值，不同图表的同一配置项默认值不同
   const chartViewInstance = chartViewManager.getChartView(view.value.render, view.value.type)
   if (chartViewInstance) {
-    view.value = chartViewInstance.setupDefaultOptions(view.value) as unknown as ChartObj
+    Object.assign(
+      view.value,
+      chartViewInstance.setupDefaultOptions(view.value) as unknown as ChartObj
+    )
     // 处理轴
     const axisConfig = chartViewInstance.axisConfig
     keys(axisConfig).forEach((axis: AxisType) => {
@@ -1048,7 +1051,9 @@ const onTypeChange = (render, type) => {
       }
     }
   }
-  curComponent.value.innerType = type
+  if (curComponent.value) {
+    curComponent.value.innerType = type
+  }
   calcData(view.value, true)
 }
 

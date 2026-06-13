@@ -90,6 +90,9 @@ const defaultSheetObj = {
   sheetExcelId: '',
   fields: [],
   jsonArray: [],
+  sheet: true,
+  inspectionStatus: 'NORMAL',
+  inspectionMessage: '',
   nameExist: false,
   empty: '',
   overLength: false
@@ -154,12 +157,16 @@ const generateColumns = (arr: Field[]) =>
   }))
 
 const handleNodeClick = data => {
-  if (data.sheet) {
-    Object.assign(sheetObj, data)
-    columns.value = generateColumns(data.fields)
-    multipleSelection.value = columns.value.filter(item => item.checked)
+  Object.assign(sheetObj, data || cloneDeep(defaultSheetObj))
+  if (!data?.sheet) {
+    columns.value = []
+    multipleSelection.value = []
     currentMode.value = 'preview'
+    return
   }
+  columns.value = generateColumns(data.fields)
+  multipleSelection.value = columns.value.filter(item => item.checked)
+  currentMode.value = 'preview'
 }
 
 const beforeUpload = () => {
@@ -210,11 +217,14 @@ const uploadSuccess = response => {
     param.value.name = response.data.excelLabel
   }
   tabList.value = response.data.sheets.map(ele => {
-    const { sheetId, tableName, newSheet } = ele
+    const { sheetId, tableName, newSheet, sheet, inspectionStatus, inspectionMessage } = ele
     return {
       value: sheetId,
       label: tableName,
-      newSheet: newSheet
+      newSheet: newSheet,
+      sheet,
+      inspectionStatus,
+      inspectionMessage
     }
   })
   state.excelData = [response.data]
@@ -270,7 +280,7 @@ const saveExcelDs = (params, successCb, finallyCb) => {
   }
   if (!selectedSheet.length) {
     ElMessage({
-      message: t('dataset.ple_select_excel'),
+      message: '请选择至少一个可导入工作表',
       type: 'error'
     })
     finallyCb?.()
@@ -430,6 +440,10 @@ const appendReplaceExcel = response => {
 const status = ref(false)
 const initMultipleTable = ref(false)
 const currentMode = ref('preview')
+const currentSheetSkipped = computed(() => sheetObj.sheet === false)
+const sheetInspectionMessage = computed(
+  () => sheetObj.inspectionMessage || '该工作表未检测到可导入的数据表。'
+)
 
 const extractedFieldTypeChange = item => {
   item.fieldType = item.extractedFieldType
@@ -671,8 +685,11 @@ defineExpose({
           @tab-click="handleTabClick"
           :tab-list="tabList"
         ></SheetTabs>
+        <div class="sheet-inspection-tip" v-if="currentSheetSkipped">
+          {{ sheetInspectionMessage }}
+        </div>
 
-        <div class="table-select_mode" v-if="param.editType === 0">
+        <div class="table-select_mode" v-if="param.editType === 0 && !currentSheetSkipped">
           <div class="btn-select">
             <el-button
               @click="changeCurrentMode('preview')"
@@ -693,7 +710,7 @@ defineExpose({
         <div
           class="info-table"
           :class="param.editType === 0 && 'info-table_height'"
-          v-if="isResize"
+          v-if="isResize && !currentSheetSkipped"
         >
           <el-auto-resizer v-if="currentMode === 'preview'">
             <template #default="{ height, width }">
@@ -900,6 +917,18 @@ defineExpose({
     .title-form_primary {
       margin: 16px 0;
       margin-top: 32px;
+    }
+
+    .sheet-inspection-tip {
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      color: #646a73;
+      background: #f5f6f7;
+      border: 1px solid rgba(31, 35, 41, 0.12);
+      border-top: none;
+      font-size: 13px;
     }
 
     .info-table {

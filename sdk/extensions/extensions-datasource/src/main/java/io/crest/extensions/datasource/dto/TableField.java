@@ -10,6 +10,7 @@ import java.util.List;
 public class TableField implements Serializable {
     private String name;
     private String originName;
+    private String dbFieldName;
     private String type;               //SQL type from java.sql.Types
     private int precision;
     private long size;

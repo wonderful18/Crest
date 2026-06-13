@@ -198,14 +198,44 @@ class DataAssetManageTest {
         verify(jdbcTemplate).query(sqlCaptor.capture(), any(RowMapper.class), any(Object[].class));
         String sql = sqlCaptor.getValue();
         assertTrue(sql.contains("LEFT JOIN iam_resource_index ds_ri"));
-        assertTrue(sql.contains("ds_ri.resource_type = 'datasource'"));
+        assertTrue(sql.contains("ds_ri.resource_type COLLATE utf8mb4_unicode_ci = 'datasource' COLLATE utf8mb4_unicode_ci"));
         assertTrue(sql.contains("COALESCE(ds_ri.oid, 1) AS org_id"));
         assertTrue(sql.contains("LEFT JOIN iam_resource_index dg_table_ri"));
-        assertTrue(sql.contains("dg_table_ri.resource_type = 'dataset'"));
+        assertTrue(sql.contains("dg_table_ri.resource_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci"));
         assertTrue(sql.contains("COALESCE(dg_table_ri.oid, 1) AS org_id"));
         assertTrue(sql.contains("LEFT JOIN iam_resource_index dg_ri"));
-        assertTrue(sql.contains("dg_ri.resource_type = 'dataset'"));
+        assertTrue(sql.contains("dg_ri.resource_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci"));
         assertTrue(sql.contains("COALESCE(dg_ri.oid, 1) AS org_id"));
+    }
+
+    @Test
+    void pageUsesExplicitCollationOnBothSidesOfStringComparisons() {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        PlatformPermissionManage permissionManage = mock(PlatformPermissionManage.class);
+        DataAssetManage manage = new DataAssetManage();
+        setField(manage, "jdbcTemplate", jdbcTemplate);
+        setField(manage, "platformPermissionManage", permissionManage);
+        when(permissionManage.resourceScopeSql(anyString(), anyString(), anyString(), nullable(String.class)))
+                .thenReturn(null);
+        when(jdbcTemplate.queryForObject(anyString(), eq(Long.class), any(Object[].class))).thenReturn(0L);
+        doReturn(List.<DataAssetVO>of()).when(jdbcTemplate)
+                .query(anyString(), any(RowMapper.class), any(Object[].class));
+
+        DataAssetRequest request = new DataAssetRequest();
+        request.setAssetType(DataAssetUtils.TYPE_DATASET);
+        request.setKeyword("销售");
+        manage.page(1, 20, request);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbcTemplate).query(sqlCaptor.capture(), any(RowMapper.class), any(Object[].class));
+        String sql = sqlCaptor.getValue();
+        assertTrue(sql.contains("p.asset_type COLLATE utf8mb4_unicode_ci = a.asset_type COLLATE utf8mb4_unicode_ci"));
+        assertTrue(sql.contains("p.asset_id COLLATE utf8mb4_unicode_ci = a.asset_id COLLATE utf8mb4_unicode_ci"));
+        assertTrue(sql.contains("a.asset_type COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci"));
+        assertTrue(sql.contains("LOWER(a.name COLLATE utf8mb4_unicode_ci)"));
+        assertTrue(sql.contains("LOWER(a.asset_id COLLATE utf8mb4_unicode_ci)"));
+        assertTrue(sql.contains("ds_ri.resource_type COLLATE utf8mb4_unicode_ci = 'datasource' COLLATE utf8mb4_unicode_ci"));
+        assertTrue(sql.contains("ds_ri.resource_id COLLATE utf8mb4_unicode_ci = CAST(ds.id AS CHAR) COLLATE utf8mb4_unicode_ci"));
     }
 
     @Test

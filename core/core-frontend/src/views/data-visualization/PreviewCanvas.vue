@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
-import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import CrestPreview from '@/components/data-visualization/canvas/CrestPreview.vue'
 import router from '@/router'
 import { useEmitt } from '@/hooks/web/useEmitt'
@@ -20,9 +20,13 @@ import { filterEnumMapSync } from '@/utils/componentUtils'
 import CanvasOptBar from '@/components/visualization/CanvasOptBar.vue'
 import DvPreview from '@/views/data-visualization/DvPreview.vue'
 import { useCache } from '@/hooks/web/useCache'
+import { useAppStoreWithOut } from '@/store/modules/app'
+import { collectExportableTableViews } from '@/utils/visualization/filteredExcelExport.mjs'
+import { exportFilteredExcel } from '@/utils/visualization/filteredExcelExportService'
 const routeWatch = useRoute()
 
 const dvMainStore = dvMainStoreWithOut()
+const appStore = useAppStoreWithOut()
 const { t } = useI18n()
 const embeddedStore = useEmbedded()
 const { wsCache } = useCache()
@@ -183,6 +187,29 @@ const downloadH2 = type => {
     })
   })
 }
+
+const handlePreviewPopDownload = (event: MessageEvent) => {
+  if (event.origin !== window.location.origin) {
+    return
+  }
+  if (event.data?.type !== 'crest:preview-pop-download-data') {
+    return
+  }
+
+  const exportableViews = collectExportableTableViews(
+    dvMainStore.componentData,
+    dvMainStore.canvasViewInfo
+  )
+  if (!exportableViews.length) {
+    ElMessage.warning('当前弹窗没有可下载的表格数据')
+    return
+  }
+
+  void exportFilteredExcel({
+    targetViewId: exportableViews[0].id,
+    dvName: (state.dvInfo as any)?.name || exportableViews[0].label
+  })
+}
 // 监听路由变化
 // 监听路由变化
 watch(
@@ -194,6 +221,7 @@ watch(
 )
 
 onMounted(async () => {
+  window.addEventListener('message', handlePreviewPopDownload)
   useEmitt({
     name: 'canvasDownload',
     callback: function (type = 'img') {
@@ -210,6 +238,7 @@ onMounted(async () => {
   const isFrameFlag = window.self !== window.top
   state.editPreview = router.currentRoute.value.query.editPreview === 'true'
   dvMainStore.setIframeFlag(isFrameFlag)
+  appStore.setIsIframe(isFrameFlag)
   dvMainStore.setIsPopWindow(isPopWindow)
   state.showPosition = state.editPreview ? 'edit-preview' : 'preview'
   const { dvType, callBackFlag, taskId, showWatermark } = router.currentRoute.value.query
@@ -227,6 +256,10 @@ onMounted(async () => {
       await prepareForPrint()
     }
   })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('message', handlePreviewPopDownload)
 })
 
 const dataVKeepSize = computed(() => {

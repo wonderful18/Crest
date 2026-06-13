@@ -6,6 +6,7 @@ import {
   S2Theme,
   ScrollbarPositionType,
   TableColCell,
+  TableSeriesNumberCell,
   TableSheet,
   ViewMeta
 } from '@antv/s2'
@@ -37,6 +38,12 @@ import {
   summaryRowStyle
 } from '@/views/chart/components/js/panel/common/common_table'
 import { buildS2HeaderColumns } from '@/views/chart/components/js/panel/common/tableAuxiliaryHeader.mjs'
+import {
+  configureTableSeriesNumber,
+  getPageSeriesNumber,
+  isTableSeriesNumberCell,
+  isTableSeriesNumberNode
+} from '@/views/chart/components/js/panel/common/tableSeriesNumber.mjs'
 
 const { t } = useI18n()
 
@@ -191,7 +198,6 @@ export class TableInfo extends S2ChartView<TableSheet> {
     const s2Options: S2Options = {
       width: containerDom.getBoundingClientRect().width,
       height: containerDom.offsetHeight,
-      showSeriesNumber: tableHeader.showIndex,
       conditions: this.configConditions(chart),
       tooltip: {
         getContainer: () => containerDom,
@@ -205,6 +211,7 @@ export class TableInfo extends S2ChartView<TableSheet> {
         hoverFocus: false
       }
     }
+    configureTableSeriesNumber(s2Options, tableHeader)
     configTableCopyInteraction(s2Options, {
       visibleTable: true,
       showSeriesNumber: tableHeader.showIndex,
@@ -360,13 +367,31 @@ export class TableInfo extends S2ChartView<TableSheet> {
           return
         }
         // 图片字段固定 120, 剩余宽度按比例均摊到其他字段进行扩大
-        const totalWidthWithoutImg = ev.colLeafNodes.reduce((p, n) => {
-          return p + (urlFields.includes(n.field) ? 0 : n.width)
+        const seriesNumberWidth = ev.colLeafNodes.reduce((p, n) => {
+          return p + (isTableSeriesNumberNode(n) ? Math.round(n.width) : 0)
         }, 0)
-        const restWidth = containerWidth - urlFields.length * 120
+        const totalWidthWithoutImg = ev.colLeafNodes.reduce((p, n) => {
+          if (isTableSeriesNumberNode(n) || urlFields.includes(n.field)) {
+            return p
+          }
+          return p + n.width
+        }, 0)
+        if (totalWidthWithoutImg <= 0) {
+          ev.colLeafNodes.reduce((p, n) => {
+            n.width = Math.round(n.width)
+            n.x = p
+            return p + n.width
+          }, 0)
+          return
+        }
+        const restWidth = containerWidth - seriesNumberWidth - urlFields.length * 120
         const scale = restWidth / totalWidthWithoutImg
         const totalWidth = ev.colLeafNodes.reduce((p, n) => {
-          n.width = urlFields.includes(n.field) ? 120 : Math.round(n.width * scale)
+          if (isTableSeriesNumberNode(n)) {
+            n.width = Math.round(n.width)
+          } else {
+            n.width = urlFields.includes(n.field) ? 120 : Math.round(n.width * scale)
+          }
           n.x = p
           return p + n.width
         }, 0)
@@ -526,19 +551,6 @@ export class TableInfo extends S2ChartView<TableSheet> {
   ) {
     const { tableHeader, basicStyle, tableCell } = parseJson(chart.customAttr)
     const fields = chart.data?.fields ?? []
-    // 开启序号之后，第一列就是序号列，修改 label 即可
-    if (s2Options.showSeriesNumber) {
-      let indexLabel = tableHeader.indexLabel
-      if (!indexLabel) {
-        indexLabel = ''
-      }
-      s2Options.layoutCoordinate = (_, __, col) => {
-        if (col.colIndex === 0 && col.rowIndex === 0) {
-          col.label = indexLabel
-          col.value = indexLabel
-        }
-      }
-    }
     const { showSummary, summaryLabel } = basicStyle
     const data = s2DataConfig.data
     const xAxis = chart.xAxis
@@ -570,33 +582,33 @@ export class TableInfo extends S2ChartView<TableSheet> {
     }
     s2Options.dataCell = ((viewMeta, spreadsheet) => {
       const sheet = spreadsheet || viewMeta?.spreadsheet
+      const isSeriesNumberCell = isTableSeriesNumberCell(viewMeta)
       // 总计行处理
       if (showSummary && viewMeta.rowIndex === data.length - 1) {
-        if (viewMeta.colIndex === 0) {
-          if (tableHeader.showIndex) {
-            viewMeta.fieldValue = summaryLabel ?? t('chart.total_show')
-            viewMeta.isSummaryLabel = true
-          } else {
-            // 第一列不是数值类型的，显示总计
-            if (![2, 3, 4].includes(xAxis?.[0]?.fieldType)) {
-              viewMeta.fieldValue = summaryLabel ?? t('chart.total_show')
-              viewMeta.isSummaryLabel = true
-            }
-          }
+        if (isSeriesNumberCell) {
+          viewMeta.fieldValue = summaryLabel ?? t('chart.total_show')
+          viewMeta.isSummaryLabel = true
+        } else if (
+          !tableHeader.showIndex &&
+          viewMeta.colIndex === 0 &&
+          ![2, 3, 4].includes(xAxis?.[0]?.fieldType)
+        ) {
+          viewMeta.fieldValue = summaryLabel ?? t('chart.total_show')
+          viewMeta.isSummaryLabel = true
         }
         return new SummaryCell(viewMeta, sheet)
+      }
+      if (isSeriesNumberCell) {
+        if (tableCell.mergeCells) {
+          viewMeta.fieldValue = getRowIndex(s2Options.mergedCellsInfo, viewMeta)
+        } else {
+          viewMeta.fieldValue = getPageSeriesNumber(pageInfo, viewMeta.rowIndex)
+        }
+        return new TableSeriesNumberCell(viewMeta, sheet)
       }
       const field = fields.find(f => f.engineFieldName === viewMeta.valueField)
       if (field?.fieldType === 7 && chart.showPosition !== 'dialog') {
         return new ImageCell(viewMeta, sheet)
-      }
-      if (viewMeta.colIndex === 0 && s2Options.showSeriesNumber) {
-        if (tableCell.mergeCells) {
-          viewMeta.fieldValue = getRowIndex(s2Options.mergedCellsInfo, viewMeta)
-        } else {
-          viewMeta.fieldValue =
-            pageInfo.pageSize * (pageInfo.currentPage - 1) + viewMeta.rowIndex + 1
-        }
       }
       // 配置文本自动换行参数
       viewMeta.autoWrap = tableCell.mergeCells ? false : basicStyle.autoWrap

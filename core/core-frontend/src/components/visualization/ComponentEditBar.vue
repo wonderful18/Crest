@@ -257,6 +257,7 @@ import {
   defaultViewExcelExportConfig,
   isExportableTableView
 } from '@/utils/visualization/filteredExcelExport.mjs'
+import { canShowDownloadAction } from './componentEditBarState.mjs'
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const copyStore = copyStoreWithOut()
@@ -368,7 +369,6 @@ const {
   canvasViewInfo,
   mobileInPc,
   dvInfo,
-  isPopWindow,
   hiddenListStatus
 } = storeToRefs(dvMainStore)
 
@@ -625,8 +625,8 @@ const initCurFields = () => {
   }
 }
 
-const showDownload = computed(
-  () => canvasViewInfo.value[element.value.id]?.dataFrom !== 'template' && !isPopWindow.value
+const showDownload = computed(() =>
+  canShowDownloadAction(canvasViewInfo.value[element.value.id]?.dataFrom)
 )
 const currentViewInfo = computed(() => canvasViewInfo.value[element.value.id])
 const tableExcelConfig = computed(() =>
