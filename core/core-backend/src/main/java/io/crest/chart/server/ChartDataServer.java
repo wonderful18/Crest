@@ -243,7 +243,7 @@ public class ChartDataServer implements ChartDataApi {
         HttpServletRequest httpServletRequest = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         String linkToken = httpServletRequest.getHeader(AuthConstant.LINK_TOKEN_KEY);
         LogUtil.info(request.getViewInfo().getId() + " " + StringUtils.isNotEmpty(linkToken) + " " + request.isEmbeddedExport());
-        if ((StringUtils.isNotEmpty(linkToken) && !request.isEmbeddedExport()) || (request.isEmbeddedExport() && StringUtils.isEmpty(linkToken))) {
+        if (shouldWriteDirectExport(linkToken, request.isEmbeddedExport())) {
             OutputStream outputStream = response.getOutputStream();
             try {
                 Workbook wb = new SXSSFWorkbook();
@@ -373,6 +373,26 @@ public class ChartDataServer implements ChartDataApi {
         }
     }
 
+    public static boolean shouldWriteDirectExport(String linkToken, boolean embeddedExport) {
+        return StringUtils.isNotEmpty(linkToken) || embeddedExport;
+    }
+
+    public static void prepareTableViewForExport(ChartExcelRequest request) {
+        if (request == null || request.getViewInfo() == null) {
+            return;
+        }
+        ChartViewDTO viewInfo = request.getViewInfo();
+        boolean tableExport = Strings.CI.equalsAny(viewInfo.getType(), "table-info", "table-normal")
+                || "dataset".equals(request.getDownloadType());
+        if (!tableExport || viewInfo.getCustomAttr() == null) {
+            return;
+        }
+        Object basicStyle = viewInfo.getCustomAttr().get("basicStyle");
+        if (basicStyle instanceof Map<?, ?> basicStyleMap) {
+            ((Map<String, Object>) basicStyleMap).put("tablePageMode", "page");
+        }
+    }
+
     @CrestLinkPermit("#p0.dvId")
     @Override
     public void innerExportDataSetDetails(ChartExcelRequest request, HttpServletResponse response) throws Exception {
@@ -392,6 +412,7 @@ public class ChartDataServer implements ChartDataApi {
             chartExtRequest.setDrill(new ArrayList<>());
             request.getViewInfo().setChartExtRequest(chartExtRequest);
         }
+        prepareTableViewForExport(request);
     }
 
     public static void setExcelData(Sheet detailsSheet, CellStyle cellStyle, Object[] header, List<Object[]> details, ViewDetailField[] detailFields, Integer[] excelTypes, ChartViewDTO viewInfo, Workbook wb) {

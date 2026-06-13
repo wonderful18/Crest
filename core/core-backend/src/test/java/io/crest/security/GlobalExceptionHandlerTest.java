@@ -1,10 +1,12 @@
 package io.crest.security;
 
 import io.crest.exception.GlobalExceptionHandler;
+import io.crest.result.ResultCode;
 import io.crest.result.ResultMessage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -30,5 +32,17 @@ class GlobalExceptionHandlerTest {
         Method method = GlobalExceptionHandler.class.getMethod(
                 "methodNotSupportedExceptionHandler", HttpRequestMethodNotSupportedException.class);
         assertEquals(HttpStatus.METHOD_NOT_ALLOWED, method.getAnnotation(ResponseStatus.class).value());
+    }
+
+    @Test
+    @DisplayName("上传文件超过限制时应返回明确提示")
+    void shouldHandleMaxUploadSizeExceededAsInvalidParameter() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+        ResultMessage result = handler.maxUploadSizeExceededExceptionHandler(
+                new MaxUploadSizeExceededException(1024L));
+
+        assertEquals(ResultCode.PARAM_IS_INVALID.code(), result.getCode());
+        assertEquals("文件大小超过上传限制，请压缩文件或拆分后重新上传", result.getMsg());
     }
 }

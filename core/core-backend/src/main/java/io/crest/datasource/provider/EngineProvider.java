@@ -29,6 +29,10 @@ public abstract class EngineProvider {
 
     public abstract String insertSql(String dsType, String tableName, DatasourceServer.UpdateType extractType, List<String[]> dataList, int page, int pageNumber, List<TableField> tableFields);
 
+    protected static String physicalFieldName(TableField field) {
+        return StringUtils.defaultIfBlank(field.getDbFieldName(), field.getName());
+    }
+
     public static void validateSqlInjectionRisk(String value) {
         String normalized = StringUtils.defaultString(value);
         if (StringUtils.isEmpty(normalized)) {

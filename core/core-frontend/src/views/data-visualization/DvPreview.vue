@@ -10,6 +10,7 @@ const crestPreviewRef = ref<InstanceType<typeof CrestPreview> | null>(null)
 const crestPreviewOuterRef = ref<HTMLElement | null>(null)
 const dataInitState = ref(true)
 const keepProportion = ref('heightFirst')
+let resizeObserver: ResizeObserver | null = null
 const props = defineProps({
   canvasStylePreview: {
     required: true,
@@ -95,7 +96,7 @@ const keepProportionCheck = outerContentRect => {
 }
 
 onMounted(() => {
-  const observer = new ResizeObserver(entries => {
+  resizeObserver = new ResizeObserver(entries => {
     for (let entry of entries) {
       // entry.contentRect 包含 width, height, top, left 等属性
       keepProportionCheck(entry.contentRect)
@@ -103,13 +104,13 @@ onMounted(() => {
   })
 
   if (crestPreviewOuterRef.value) {
-    observer.observe(crestPreviewOuterRef.value)
+    resizeObserver.observe(crestPreviewOuterRef.value)
   }
+})
 
-  // 在组件卸载时停止观察
-  onBeforeUnmount(() => {
-    observer.disconnect()
-  })
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
 })
 
 defineExpose({
