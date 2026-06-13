@@ -89,6 +89,7 @@ jobs:
           grep -Fqx "${package_dir}/load-images.sh" /tmp/crest-app-image-package-files.txt
           grep -Fqx "${package_dir}/image-manifest.txt" /tmp/crest-app-image-package-files.txt
           grep -Fqx "${package_dir}/upgrade-sql/v1.5.4_to_v1.5.5.sql" /tmp/crest-app-image-package-files.txt
+          grep -Fqx "${package_dir}/upgrade-sql/v1.5.7_to_v1.5.8.sql" /tmp/crest-app-image-package-files.txt
           grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-service_${VERSION}.tar.gz" /tmp/crest-app-image-package-files.txt
           grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-web_${VERSION}.tar.gz" /tmp/crest-app-image-package-files.txt
 
