@@ -10,8 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import java.util.List;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/11/6 17:23
+ * 模板市场查询接口。
  */
 @Tag(name = "模版中心:基础")
 public interface TemplateMarketApi {

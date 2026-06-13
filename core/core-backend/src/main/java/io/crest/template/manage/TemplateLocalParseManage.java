@@ -21,8 +21,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 /**
- * @author : WangJiaHao
- * @date : 2024/5/7
+ * 初始化内置模板资源，并记录模板脚本的执行状态。
  */
 @Service
 public class TemplateLocalParseManage {
@@ -67,16 +66,15 @@ public class TemplateLocalParseManage {
     }
 
     public void parseCore(DataVisualizationBaseRequest template) {
-        // 解析静态文件并保存
+        // 保存模板携带的静态文件，供模板预览和复制后复用。
         staticResourceServer.saveFilesToServe(template.getStaticResource());
     }
 
 
     public org.springframework.core.io.Resource[] getAllFilesInResourceDirectory(String directoryName) throws Exception {
-        // 创建一个 PathMatchingResourcePatternResolver 对象
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(resourceLoader);
 
-        // 获取 classpath 下 template 目录下所有文件的 Resource 数组
+        // 当前内置模板固定加载 classpath:template 目录。
         org.springframework.core.io.Resource[] resources = resolver.getResources("classpath:template/*");
 
         return resources;

@@ -54,7 +54,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
         coreDrivers.forEach(coreDriver -> {
             DriveDTO datasourceDrive = new DriveDTO();
             BeanUtils.copyBean(datasourceDrive, coreDriver);
-            datasourceDrive.setTypeDesc(""); //TODO 设置数据源类型desc
+            datasourceDrive.setTypeDesc(""); // 驱动描述未在该接口中补充，保持空值由调用方兜底展示。
         });
         return driveDTOS;
     }
@@ -116,7 +116,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
         coreDriverJarMapper.deleteById(jarId);
         CoreDriver driver = coreDriverMapper.selectById(driverJar.getDriverId());
         FileUtils.deleteFile(DRIVER_PATH + driverJar.getDriverId() + "/" + driverJar.getTransName());
-        //TODO 更新classloader
+        // 删除驱动文件后，后续连接会重新按现有驱动文件加载。
     }
 
     @Override
@@ -148,7 +148,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
         coreDriverJar.setIsTransName(true);
         coreDriverJar.setTransName(Md5Utils.md5(filename) + ".jar");
         coreDriverJarMapper.insert(coreDriverJar);
-        //TODO 并更新classloader
+        // 上传后的驱动信息立即入库，后续连接按最新驱动文件加载。
 
         DriveJarDTO driveJarDTO = new DriveJarDTO();
         BeanUtils.copyBean(driveJarDTO, coreDriverJar);

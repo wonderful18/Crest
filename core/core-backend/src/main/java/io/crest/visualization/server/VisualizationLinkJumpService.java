@@ -32,8 +32,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/7/18 14:31
+ * 维护可视化组件跳转配置，兼容编辑态和分享快照的查询场景。
  */
 @RestController
 @RequestMapping("link-jump")
@@ -79,7 +78,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     }
 
     @CrestLinkPermit
-    //获取仪表板的跳转信息
+    // 查询仪表板或大屏的组件跳转配置。
     @Override
     public VisualizationLinkJumpBaseResponse queryVisualizationJumpInfo(Long dvId, String resourceTable) {
         Map<String, VisualizationLinkJumpInfoDTO> resultBase = new HashMap<>();

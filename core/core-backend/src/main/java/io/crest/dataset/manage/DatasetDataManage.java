@@ -505,7 +505,7 @@ public class DatasetDataManage {
         datasourceRequest.setIsCross(dto.getIsCross());
         Provider provider = ProviderFactory.getProvider(datasourceSchemaDTO.getType());
 
-        // parser sql params and replace default value
+        // 解析 SQL 参数并替换默认值。
 
         String s = new String(Base64.getDecoder().decode(dto.getSql()));
         SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(datasetSQLManage.subPrefixSuffixChar(s), dto.getSqlVariableDetails(), true, true, null, dto.getIsCross(), dsMap, pluginManage, getUserEntity());
@@ -513,7 +513,7 @@ public class DatasetDataManage {
         datasourceRequest.setTableFieldWithValues(sqlResult.getTableFieldWithValues());
         originSql = provider.replaceComment(originSql);
 
-        // sql 作为临时表，外层加上limit
+        // 将自定义 SQL 包装为临时表，再在外层追加分页限制。
         String sql;
         if (dto.getIsCross()) {
             DatasetTableDTO currentDs = new DatasetTableDTO();

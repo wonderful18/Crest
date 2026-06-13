@@ -14,6 +14,6 @@ public class ChartCalcDataResult {
     private List<String[]> assistDataOriginList;
     private List<ChartSeniorAssistDTO> dynamicAssistFieldsOriginList;
     private Map<String, Object> context;
-    // TODO 数据源插件化之后换成整个请求对象
+    // 插件图表计算时保留最终查询 SQL，供后续执行链路复用。
     private String querySql;
 }

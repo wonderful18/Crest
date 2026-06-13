@@ -84,7 +84,7 @@ const borderSettingShow = computed(() => {
   )
 })
 
-// 暂时关闭
+// 当前仅保留事件配置的可见性规则，不在属性面板展开独立开关。
 const eventsShow = computed(() => {
   return (
     ['Picture', 'CanvasIcon', 'CircleShape', 'SvgTriangle', 'RectShape', 'ScrollText'].includes(

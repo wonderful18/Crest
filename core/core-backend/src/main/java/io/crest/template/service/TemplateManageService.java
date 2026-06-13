@@ -32,8 +32,7 @@ import java.util.*;
 import static io.crest.constant.StaticResourceConstants.UPLOAD_URL_PREFIX;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/11/7 13:29
+ * 管理可视化模板目录、模板内容和模板静态资源。
  */
 @RestController
 @RequestMapping("/template-manage")
@@ -83,7 +82,7 @@ public class TemplateManageService implements TemplateManageApi {
             request.setCreateTime(System.currentTimeMillis());
             request.setCreateBy(AuthUtils.getUser().getUserId().toString());
             if ("template".equals(request.getNodeType()) || "app".equals(request.getNodeType())) {
-                //Store static resource into the server
+                // 保存模板依赖的静态资源，保证导入后可直接预览。
                 staticResourceServer.saveFilesToServe(request.getStaticResource());
                 String snapshotName = request.getNodeType() + "-" + request.getId() + ".jpeg";
                 staticResourceServer.saveSingleFileToServe(snapshotName, request.getSnapshot().replace("data:image/jpeg;base64,", ""));
@@ -315,7 +314,7 @@ public class TemplateManageService implements TemplateManageApi {
                 queryWrapper.eq("template_id", templateId);
                 queryWrapper.eq("category_id", categoryId);
                 categoryMapMapper.delete(queryWrapper);
-                // 如何是最后一个 则实际模板需要删除
+                // 当前分类是该模板的最后一个引用时，删除模板记录。
                 Long result = extTemplateMapper.checkRepeatTemplateId(categoryId, templateId);
                 if (result == 0) {
                     templateMapper.deleteById(templateId);
@@ -325,4 +324,3 @@ public class TemplateManageService implements TemplateManageApi {
         });
     }
 }
-

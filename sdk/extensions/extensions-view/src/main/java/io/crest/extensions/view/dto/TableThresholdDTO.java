@@ -5,9 +5,8 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * @author jianneng
- * @date 2024/9/19 18:31
- **/
+ * 明细表字段阈值配置。
+ */
 @Data
 public class TableThresholdDTO {
     /**

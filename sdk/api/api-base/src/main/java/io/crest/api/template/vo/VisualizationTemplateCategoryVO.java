@@ -3,8 +3,7 @@ package io.crest.api.template.vo;
 import lombok.Data;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/11/7 13:22
+ * 可视化模板分类视图对象。
  */
 @Data
 public class VisualizationTemplateCategoryVO {

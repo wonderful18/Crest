@@ -8,8 +8,7 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * @author : WangJiaHao
- * @date : 2024/3/14 12:42
+ * 可视化视图绑定的数据集表信息。
  */
 @Data
 public class VisualizationViewTableDTO extends ChartViewDTO {

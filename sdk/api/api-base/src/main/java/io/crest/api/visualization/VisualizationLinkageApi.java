@@ -15,8 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/7/13
+ * 可视化组件联动配置接口。
  */
 
 @Tag(name = "可视化管理:联动")

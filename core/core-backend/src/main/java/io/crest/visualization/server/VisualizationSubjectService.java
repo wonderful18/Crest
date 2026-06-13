@@ -22,8 +22,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/6/9 18:41
+ * 管理可视化主题资源，提供主题列表、分组查询和自定义主题维护能力。
  */
 @RestController
 @RequestMapping("/visualization-subject")

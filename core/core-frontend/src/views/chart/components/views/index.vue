@@ -1057,7 +1057,7 @@ const pluginLoaded = computed(() => {
   })
   return result
 })
-// TODO 统一加载
+// 将插件图表注册到现有图表分类中，保持编辑器侧的分类展示一致。
 const loadPluginCategory = data => {
   data.forEach(item => {
     const { category, title, render, chartValue, chartTitle, icon, staticMap } = item

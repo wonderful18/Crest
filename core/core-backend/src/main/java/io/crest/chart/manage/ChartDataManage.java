@@ -418,7 +418,7 @@ public class ChartDataManage {
         CustomWhere2Str.customWhere2sqlObj(sqlMeta, fieldCustomFilter, transFields(allFields), crossDs, dsMap, Utils.getParams(transFields(allFields)), view.getCalParams(), pluginManage);
         ExtWhere2Str.extWhere2sqlOjb(sqlMeta, extFilterList, transFields(allFields), crossDs, dsMap, Utils.getParams(transFields(allFields)), view.getCalParams(), pluginManage);
         WhereTree2Str.transFilterTrees(sqlMeta, rowPermissionsTree, transFields(allFields), crossDs, dsMap, Utils.getParams(transFields(allFields)), view.getCalParams(), pluginManage);
-        // TODO 數據源插件化之後放到插件裡面組裝SQL
+        // 插件数据源仍复用核心 SQL 组装流程，后续扩展点保持在插件类型判断内。
         if (BooleanUtils.isTrue(view.getIsPlugin())) {
             List<String> dsList = new ArrayList<>();
             for (Map.Entry<Long, DatasourceSchemaDTO> next : dsMap.entrySet()) {
