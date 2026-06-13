@@ -221,13 +221,23 @@ bash cleanup-demo-data.sh --yes
 
 本包会携带 \`upgrade-sql/\` 目录。全新安装不需要手动执行 SQL；从旧版本升级已有环境时，请先备份元数据库，再按发布说明执行对应版本的 SQL。
 
-v1.5.4 升级到 ${VERSION} 时执行：
+v1.5.7 升级到 ${VERSION} 时执行：
+
+\`\`\`bash
+set -a
+source /opt/crest/.env
+set +a
+docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.7_to_${VERSION}.sql
+\`\`\`
+
+v1.5.4 升级到 ${VERSION} 时，先执行 v1.5.4 到 v1.5.5 的升级 SQL，再执行 v1.5.7 到 ${VERSION} 的升级 SQL：
 
 \`\`\`bash
 set -a
 source /opt/crest/.env
 set +a
 docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.4_to_v1.5.5.sql
+docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.7_to_${VERSION}.sql
 \`\`\`
 
 如安装时修改过 \`CREST_BASE\`，请把 \`/opt/crest/.env\` 换成实际运行目录中的 \`.env\`。外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 元数据库。
