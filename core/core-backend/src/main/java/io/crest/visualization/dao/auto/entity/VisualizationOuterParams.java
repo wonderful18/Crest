@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 外部参数关联关系表
- * </p>
- *
- * @author fit2cloud
- * @since 2024-09-09
+ * 外部参数主配置实体。
  */
 @TableName("visualization_outer_params")
 public class VisualizationOuterParams implements Serializable {

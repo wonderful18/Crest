@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * <p>
- * 外部参数关联关系表 Mapper 接口
- * </p>
- *
- * @author fit2cloud
- * @since 2025-03-31
+ * 外部参数主配置快照 Mapper。
  */
 @Mapper
 public interface SnapshotVisualizationOuterParamsMapper extends BaseMapper<SnapshotVisualizationOuterParams> {

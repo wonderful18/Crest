@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
- *
- * @author fit2cloud
- * @since 2023-07-12
+ * 可视化主题 Mapper。
  */
 @Mapper
 public interface VisualizationSubjectMapper extends BaseMapper<VisualizationSubject> {
