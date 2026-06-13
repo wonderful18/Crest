@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -61,6 +62,13 @@ public class GlobalExceptionHandler {
     public ResultMessage methodNotSupportedExceptionHandler(HttpRequestMethodNotSupportedException e) {
         LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
         return new ResultMessage(HttpStatus.METHOD_NOT_ALLOWED.value(), "请求方法不支持");
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public ResultMessage maxUploadSizeExceededExceptionHandler(MaxUploadSizeExceededException e) {
+        LogUtil.info(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+        return new ResultMessage(ResultCode.PARAM_IS_INVALID.code(), "文件大小超过上传限制，请压缩文件或拆分后重新上传");
     }
 
     @ExceptionHandler(NullPointerException.class)

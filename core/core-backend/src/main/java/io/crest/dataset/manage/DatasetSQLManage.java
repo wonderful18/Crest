@@ -200,7 +200,7 @@ public class DatasetSQLManage {
                         if (Strings.CI.equals(datasourceType.getType(), "es")) {
                             return table.getTableAlias() + "." + prefix + f.getOriginName() + suffix;
                         } else {
-                            return table.getTableAlias() + "." + prefix + f.getOriginName() + suffix + " AS " + prefix + alias + suffix;
+                            return table.getTableAlias() + "." + prefix + sourceFieldName(f) + suffix + " AS " + prefix + alias + suffix;
                         }
                     })
                     .toArray(String[]::new);
@@ -293,10 +293,10 @@ public class DatasetSQLManage {
                         }
                     }
                     join.append(parentSQLObj.getTableAlias()).append(".")
-                            .append(pPrefix + parentField.getOriginName() + pSuffix)
+                            .append(pPrefix + sourceFieldName(parentField) + pSuffix)
                             .append(" = ")
                             .append(currentSQLObj.getTableAlias()).append(".")
-                            .append(cPrefix + currentField.getOriginName() + cSuffix);
+                            .append(cPrefix + sourceFieldName(currentField) + cSuffix);
                     if (i < unionParamDTO.getUnionFields().size() - 1) {
                         join.append(" AND ");
                     }
@@ -380,7 +380,7 @@ public class DatasetSQLManage {
                                 suffix = datasourceType.getSuffix();
                             }
                         }
-                        return table.getTableAlias() + "." + prefix + f.getOriginName() + suffix + " AS " + prefix + alias + suffix;
+                        return table.getTableAlias() + "." + prefix + sourceFieldName(f) + suffix + " AS " + prefix + alias + suffix;
                     })
                     .toArray(String[]::new);
             checkedInfo.put(table.getTableAlias(), array);
@@ -514,6 +514,10 @@ public class DatasetSQLManage {
             tableObj = SQLObj.builder().tableSchema(tableSchema).tableName(infoDTO.getTable()).tableAlias(tableAlias).build();
         }
         return tableObj;
+    }
+
+    private String sourceFieldName(DatasetTableFieldDTO field) {
+        return StringUtils.defaultIfBlank(field.getDbFieldName(), field.getOriginName());
     }
 
     public String putObj2Map(Map<Long, DatasourceSchemaDTO> dsMap, DatasetTableDTO ds, boolean isCross) {

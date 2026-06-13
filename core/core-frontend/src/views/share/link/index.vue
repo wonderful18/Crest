@@ -41,10 +41,12 @@ import ErrorTemplate from './ErrorTemplate.vue'
 import { useLinkStoreWithOut } from '@/store/modules/link'
 import { useI18n } from '@/hooks/web/useI18n'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
+import { useRoute } from 'vue-router_2'
 const linkStore = useLinkStoreWithOut()
 const requestStore = useRequestStoreWithOut()
 const permissionStore = usePermissionStoreWithOut()
 const dvMainStore = dvMainStoreWithOut()
+const route = useRoute()
 const pcanvas = ref(null)
 const iframeError = ref(true)
 const disableError = ref(true)
@@ -102,7 +104,13 @@ onMounted(async () => {
   nextTick(() => {
     const method = pcanvas?.value?.loadCanvasDataAsync
     if (method) {
-      method(proxyInfo.resourceId, proxyInfo.type, null)
+      const targetDvId = route.query.targetDvId
+        ? String(route.query.targetDvId)
+        : proxyInfo.resourceId
+      const targetDvType = route.query.targetDvType
+        ? String(route.query.targetDvType)
+        : proxyInfo.type
+      method(targetDvId, targetDvType, null)
     }
     loading.value = false
   })

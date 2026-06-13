@@ -24,6 +24,7 @@ import io.crest.datasource.dao.auto.entity.CoreDatasource;
 import io.crest.datasource.dao.auto.mapper.CoreDatasourceMapper;
 import io.crest.datasource.manage.DataSourceManage;
 import io.crest.datasource.manage.EngineManage;
+import io.crest.datasource.provider.ExcelUtils;
 import io.crest.datasource.utils.DatasourceUtils;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.engine.sql.SQLProvider;
@@ -115,6 +116,16 @@ public class DatasetDataManage {
         DatasetTableInfoDTO tableInfoDTO = JsonUtil.parseObject(datasetTableDTO.getInfo(), DatasetTableInfoDTO.class);
         if (Strings.CI.equals(type, DatasetTableType.DB) || Strings.CI.equals(type, DatasetTableType.SQL)) {
             CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(datasetTableDTO.getDatasourceId());
+            if (coreDatasource != null && coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name())
+                    && Strings.CI.equals(type, DatasetTableType.DB)) {
+                DatasourceRequest datasourceRequest = new DatasourceRequest();
+                DatasourceDTO datasourceDTO = new DatasourceDTO();
+                BeanUtils.copyBean(datasourceDTO, coreDatasource);
+                datasourceRequest.setDatasource(datasourceDTO);
+                datasourceRequest.setTable(tableInfoDTO.getTable());
+                tableFields = ExcelUtils.getTableFields(datasourceRequest);
+                return transFields(tableFields, true);
+            }
             DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
             if (coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name()) || coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.API.name())) {
                 coreDatasource = engineManage.getEngineDatasource();
@@ -185,6 +196,16 @@ public class DatasetDataManage {
             tableFields = provider.fetchTableField(datasourceRequest);
         } else {
             // excel,api
+            CoreDatasource sourceDatasource = dataSourceManage.getCoreDatasource(datasetTableDTO.getDatasourceId());
+            if (sourceDatasource != null && sourceDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name())) {
+                DatasourceRequest datasourceRequest = new DatasourceRequest();
+                DatasourceDTO datasourceDTO = new DatasourceDTO();
+                BeanUtils.copyBean(datasourceDTO, sourceDatasource);
+                datasourceRequest.setDatasource(datasourceDTO);
+                datasourceRequest.setTable(tableInfoDTO.getTable());
+                tableFields = ExcelUtils.getTableFields(datasourceRequest);
+                return transFields(tableFields, true);
+            }
             CoreDatasource coreDatasource = engineManage.getEngineDatasource();
             DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
             BeanUtils.copyBean(datasourceSchemaDTO, coreDatasource);
@@ -209,6 +230,7 @@ public class DatasetDataManage {
             DatasetTableFieldDTO dto = new DatasetTableFieldDTO();
             dto.setName(StringUtils.isNotEmpty(ele.getName()) ? ele.getName() : ele.getOriginName());
             dto.setOriginName(ele.getOriginName());
+            dto.setDbFieldName(ele.getDbFieldName());
             dto.setChecked(defaultStatus);
             dto.setType(ele.getType());
             int fieldType = FieldUtils.resolveFieldType(ele.getType());

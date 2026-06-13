@@ -1,6 +1,7 @@
 <template>
   <div>
     <el-dropdown
+      ref="dropdownRef"
       :id="'view-track-bar-' + chartId"
       :teleported="true"
       trigger="click"
@@ -35,6 +36,7 @@ import { PropType, reactive, ref, toRefs } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
 const trackButton = ref(null)
+const dropdownRef = ref<any>(null)
 const emits = defineEmits(['trackClick'])
 
 const props = defineProps({
@@ -85,6 +87,7 @@ const trackButtonClick = (id?: string) => {
 }
 
 const trackMenuClick = menu => {
+  dropdownRef.value?.handleClose?.()
   emits('trackClick', menu)
 }
 

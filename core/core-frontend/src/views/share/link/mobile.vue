@@ -34,6 +34,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { ProxyInfo, shareProxy } from './ShareProxy'
 import PwdTips from './pwd.vue'
 import ErrorTemplate from './ErrorTemplate.vue'
+import { useRoute } from 'vue-router_2'
 const disableError = ref(true)
 const peRequireError = ref(true)
 const linkExist = ref(false)
@@ -45,6 +46,7 @@ const dvMainStore = dvMainStoreWithOut()
 const pcanvas = ref(null)
 const curType = ref('')
 const { t } = useI18n()
+const route = useRoute()
 const state = reactive({
   ticketValidVO: {
     ticketValid: false,
@@ -54,7 +56,9 @@ const state = reactive({
 })
 onMounted(async () => {
   const proxyInfo = (await shareProxy.loadProxy()) as ProxyInfo
-  curType.value = proxyInfo.type || 'dashboard'
+  curType.value = route.query.targetDvType
+    ? String(route.query.targetDvType)
+    : proxyInfo.type || 'dashboard'
   dvMainStore.setInMobile(true)
   dvMainStore.setMobileInPc(curType.value === 'dashboard')
   if (proxyInfo?.shareDisable) {
@@ -94,7 +98,13 @@ onMounted(async () => {
   nextTick(() => {
     const method = pcanvas?.value?.loadCanvasDataAsync
     if (method) {
-      method(proxyInfo.resourceId, curType.value, null)
+      const targetDvId = route.query.targetDvId
+        ? String(route.query.targetDvId)
+        : proxyInfo.resourceId
+      const targetDvType = route.query.targetDvType
+        ? String(route.query.targetDvType)
+        : curType.value
+      method(targetDvId, targetDvType, null)
     }
     loading.value = false
   })

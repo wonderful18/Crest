@@ -33,6 +33,54 @@ const lintPlugins = skipViteLint
       viteStylelint()
     ]
 
+const patchElementPlusSecondaryTypes = (code: string) =>
+  code
+    .replace("import { inject } from 'vue';", "import { getCurrentInstance, inject } from 'vue';")
+    .replace(
+      'const customStyle = inject("$custom-style-filter", {});',
+      'const customStyle = getCurrentInstance() ? inject("$custom-style-filter", {}) : {};'
+    )
+
+const elementPlusSecondaryTypesPatch = () => ({
+  name: 'crest-element-plus-secondary-types-patch',
+  enforce: 'pre',
+  config() {
+    return {
+      optimizeDeps: {
+        esbuildOptions: {
+          plugins: [
+            {
+              name: 'crest-element-plus-secondary-types-patch',
+              setup(build) {
+                build.onLoad(
+                  { filter: /element-plus-secondary[\\/]es[\\/]utils[\\/]types\.mjs$/ },
+                  async args => {
+                    const fs = await import('node:fs/promises')
+                    const code = await fs.readFile(args.path, 'utf-8')
+                    return {
+                      contents: patchElementPlusSecondaryTypes(code),
+                      loader: 'js'
+                    }
+                  }
+                )
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  transform(code: string, id: string) {
+    if (!id.replace(/\\/g, '/').endsWith('/element-plus-secondary/es/utils/types.mjs')) {
+      return null
+    }
+    return {
+      code: patchElementPlusSecondaryTypes(code),
+      map: null
+    }
+  }
+})
+
 export function pathResolve(dir: string) {
   // nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
   return resolve(root, '.', dir)
@@ -40,6 +88,7 @@ export function pathResolve(dir: string) {
 export default {
   base: './',
   plugins: [
+    elementPlusSecondaryTypesPatch(),
     Vue(),
     svgLoader({
       svgo: false,

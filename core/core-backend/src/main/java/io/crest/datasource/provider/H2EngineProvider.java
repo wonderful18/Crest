@@ -90,10 +90,11 @@ public class H2EngineProvider extends EngineProvider {
             if (!tableField.isChecked()) {
                 continue;
             }
+            String fieldName = physicalFieldName(tableField);
             if (tableField.isPrimaryKey()) {
-                key.append("\"").append(tableField.getName()).append("\", ");
+                key.append("\"").append(fieldName).append("\", ");
             }
-            columnFields.append(tableField.getName()).append("\" ");
+            columnFields.append(fieldName).append("\" ");
             int size = tableField.getPrecision() * 4;
             switch (tableField.getExtractedFieldType()) {
                 case 0:

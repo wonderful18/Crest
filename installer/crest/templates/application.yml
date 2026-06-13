@@ -6,8 +6,8 @@ server:
 spring:
   servlet:
     multipart:
-      max-file-size: 500MB
-      max-request-size: 500MB
+      max-file-size: ${CREST_UPLOAD_MAX_FILE_SIZE:500MB}
+      max-request-size: ${CREST_UPLOAD_MAX_REQUEST_SIZE:500MB}
   datasource:
     url: jdbc:mysql://${CREST_DB_HOST}:${CREST_DB_PORT}/${CREST_DB_NAME}?${CREST_DB_PARAMS}
     username: ${CREST_DB_USERNAME}
