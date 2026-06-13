@@ -9,16 +9,24 @@
     :modal="false"
     :width="state.width"
   >
+    <template #header>
+      <div class="preview-pop-header">
+        <span class="preview-pop-title">{{ state.name }}</span>
+        <button class="preview-pop-download" type="button" @click="downloadData">
+          <Icon name="dv-preview-download" className="preview-pop-download-icon">
+            <dvPreviewDownload class="svg-icon" />
+          </Icon>
+          <span>下载数据</span>
+        </button>
+      </div>
+    </template>
     <div v-if="state.url" class="preview-main-frame-outer">
       <iframe
         v-if="state.dialogShow"
+        ref="previewFrameRef"
         class="preview-main-frame"
         id="iframe-de-preview-pop"
-        :src="
-          state.url.startsWith('#/preview?dvId=')
-            ? `?${new Date().getTime()}${state.url}`
-            : state.url
-        "
+        :src="state.url.startsWith('#/') ? `?${new Date().getTime()}${state.url}` : state.url"
         scrolling="auto"
         frameborder="0"
       />
@@ -27,11 +35,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useEmbedded } from '@/store/modules/embedded'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 import ChartCarouselTooltip from '@/views/chart/components/js/g2plot_tooltip_carousel'
+import dvPreviewDownload from '@/assets/svg/icon_download_outlined.svg'
 const dvMainStore = dvMainStoreWithOut()
 const { canvasStyleData } = storeToRefs(dvMainStore)
 const state = reactive({
@@ -43,6 +52,18 @@ const state = reactive({
   height: '70%'
 })
 const embeddedStore = useEmbedded()
+const previewFrameRef = ref<HTMLIFrameElement | null>(null)
+const hideTrackBarMenus = () => {
+  const hide = () => {
+    document.querySelectorAll<HTMLElement>('.track_bar_custom').forEach(menu => {
+      menu.style.display = 'none'
+      menu.setAttribute('aria-hidden', 'true')
+    })
+  }
+  hide()
+  window.setTimeout(hide, 0)
+  window.setTimeout(hide, 100)
+}
 const dialogStyle = computed(() => {
   if (state.fullscreen) {
     return [
@@ -59,6 +80,8 @@ const dialogStyle = computed(() => {
 })
 
 const previewInit = params => {
+  hideTrackBarMenus()
+  state.name = params.name || ''
   if (params.url.includes('?')) {
     state.url = `${params.url}&popWindow=true`
   } else {
@@ -76,7 +99,15 @@ const previewInit = params => {
     state.height = '65%'
   }
   state.dialogShow = true
+  void nextTick(hideTrackBarMenus)
   void embeddedStore
+}
+
+const downloadData = () => {
+  previewFrameRef.value?.contentWindow?.postMessage(
+    { type: 'crest:preview-pop-download-data' },
+    window.location.origin
+  )
 }
 // 监听弹窗显示隐藏，控制tooltip显示隐藏，避免遮挡弹窗
 watch(
@@ -85,6 +116,9 @@ watch(
     document.querySelectorAll('.g2-tooltip')?.forEach(tooltip => {
       tooltip.classList.toggle('hidden-tooltip', show)
     })
+    if (show) {
+      hideTrackBarMenus()
+    }
     if (!show) ChartCarouselTooltip.closeEnlargeDialogDestroy()
   }
 )
@@ -119,10 +153,51 @@ defineExpose({
   }
   .ed-dialog__header {
     height: 36px;
+    padding-right: 88px;
     .ed-dialog__headerbtn {
       top: 4px !important;
       right: 8px !important;
     }
+  }
+  .preview-pop-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 36px;
+    padding-left: 12px;
+  }
+  .preview-pop-title {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--ed-dialog__de-text);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 36px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .preview-pop-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 26px;
+    padding: 0 10px;
+    color: var(--ed-dialog__de-text);
+    font-size: 12px;
+    line-height: 26px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(185, 28, 28, 0.18);
+    border-radius: 4px;
+  }
+  .preview-pop-download:hover {
+    color: #a92323;
+    background: #fff7f7;
+    border-color: rgba(185, 28, 28, 0.32);
+  }
+  .preview-pop-download-icon {
+    width: 14px;
+    height: 14px;
   }
 }
 </style>

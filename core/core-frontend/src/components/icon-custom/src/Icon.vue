@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { propTypes } from '@/utils/propTypes'
+
+defineOptions({
+  inheritAttrs: false
+})
+
 const props = defineProps({
   prefix: propTypes.string.def('icon'),
   name: propTypes.string,
@@ -16,15 +21,11 @@ const svgClass = computed(() => {
 </script>
 
 <template>
-  <!-- nosemgrep: javascript.vue.security.audit.xss.templates.avoid-v-html.avoid-v-html -->
-  <div
-    class="svg-container"
-    v-if="staticContent"
-    v-html="staticContent"
-    :class="svgClass"
-    aria-hidden="true"
-  ></div>
-  <slot v-else />
+  <span v-bind="$attrs" :class="svgClass" aria-hidden="true">
+    <!-- nosemgrep: javascript.vue.security.audit.xss.templates.avoid-v-html.avoid-v-html -->
+    <span v-if="staticContent" class="svg-container" v-html="staticContent"></span>
+    <slot v-else />
+  </span>
 </template>
 <style lang="less" scope>
 .svg-icon {
