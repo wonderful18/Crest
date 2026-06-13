@@ -860,6 +860,10 @@ public class DatasourceServer implements DatasourceApi {
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDatasource(transDTO(coreDatasource));
         if (coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.API.name()) || coreDatasource.getType().contains("Excel")) {
+            if (coreDatasource.getType().contains("Excel")) {
+                datasourceRequest.setTable(tableName);
+                return checkedExcelFields(ExcelUtils.getTableFields(datasourceRequest));
+            }
             datasourceRequest.setDatasource(transDTO(engineManage.getEngineDatasource()));
             DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
             BeanUtils.copyBean(datasourceSchemaDTO, engineManage.getEngineDatasource());
@@ -920,6 +924,10 @@ public class DatasourceServer implements DatasourceApi {
                 List<DatasetTableDTO> datasetTableDTOS = ExcelUtils.tables(datasourceRequest);
                 List<ExcelSheetData> excelSheetDataList = new ArrayList<>();
                 for (ExcelSheetData sheet : excelFileData.getSheets()) {
+                    if (!sheet.isSheet()) {
+                        excelSheetDataList.add(sheet);
+                        continue;
+                    }
                     for (DatasetTableDTO datasetTableDTO : datasetTableDTOS) {
                         if (excelDataTableName(datasetTableDTO.getTableName()).equals(sheet.getTableName())) {
                             List<TableField> newTableFields = sheet.getFields();
@@ -941,6 +949,9 @@ public class DatasourceServer implements DatasourceApi {
                 datasourceRequest.setDatasource(transDTO(coreDatasource));
                 List<DatasetTableDTO> datasetTableDTOS = ExcelUtils.tables(datasourceRequest);
                 for (ExcelSheetData sheet : excelFileData.getSheets()) {
+                    if (!sheet.isSheet()) {
+                        continue;
+                    }
                     for (DatasetTableDTO datasetTableDTO : datasetTableDTOS) {
                         if (excelDataTableName(datasetTableDTO.getTableName()).equals(sheet.getTableName())) {
                             sheet.setDisplayTableName(datasetTableDTO.getTableName());
@@ -951,6 +962,9 @@ public class DatasourceServer implements DatasourceApi {
         }
 
         for (ExcelSheetData sheet : excelFileData.getSheets()) {
+            if (!sheet.isSheet()) {
+                continue;
+            }
             for (int i = 0; i < sheet.getFields().size() - 1; i++) {
                 for (int j = i + 1; j < sheet.getFields().size(); j++) {
                     if (sheet.getFields().get(i).getName().equalsIgnoreCase(sheet.getFields().get(j).getName())) {
@@ -978,6 +992,9 @@ public class DatasourceServer implements DatasourceApi {
             datasourceRequest.setDatasource(transDTO(coreDatasource));
             List<DatasetTableDTO> datasetTableDTOS = ExcelUtils.tables(datasourceRequest);
             for (ExcelSheetData sheet : excelFileData.getSheets()) {
+                if (!sheet.isSheet()) {
+                    continue;
+                }
                 for (DatasetTableDTO datasetTableDTO : datasetTableDTOS) {
                     if (excelDataTableName(datasetTableDTO.getTableName()).equals(sheet.getTableName())) {
                         sheet.setDisplayTableName(datasetTableDTO.getTableName());
@@ -986,6 +1003,9 @@ public class DatasourceServer implements DatasourceApi {
             }
         }
         for (ExcelSheetData sheet : excelFileData.getSheets()) {
+            if (!sheet.isSheet()) {
+                continue;
+            }
             for (int i = 0; i < sheet.getFields().size() - 1; i++) {
                 for (int j = i + 1; j < sheet.getFields().size(); j++) {
                     if (sheet.getFields().get(i).getName().equalsIgnoreCase(sheet.getFields().get(j).getName())) {
@@ -1156,8 +1176,7 @@ public class DatasourceServer implements DatasourceApi {
             datasourceRequest.setTable(tableName);
             List<TableField> tableFields = checkedExcelFields(ExcelUtils.getTableFields(datasourceRequest));
             String columns = tableFields.stream()
-                    .map(TableField::getName)
-                    .map(this::quoteIdentifier)
+                    .map(field -> quoteExcelIdentifier(excelDbFieldName(field)) + " AS " + quoteExcelIdentifier(field.getName()))
                     .collect(Collectors.joining(", "));
             if (StringUtils.isNotEmpty(columns)) {
                 sql = "SELECT " + columns + " FROM " + quoteIdentifier(tableName);
@@ -1183,8 +1202,8 @@ public class DatasourceServer implements DatasourceApi {
         int offset = (page - 1) * pageSize;
 
         String columns = context.fields.stream()
-                .map(TableField::getName)
-                .map(this::quoteIdentifier)
+                .map(this::excelDbFieldName)
+                .map(this::quoteExcelIdentifier)
                 .collect(Collectors.joining(", "));
         String query = "SELECT " + quoteIdentifier(EXCEL_ROW_ID_FIELD)
                 + (StringUtils.isEmpty(columns) ? "" : ", " + columns)
@@ -1270,7 +1289,8 @@ public class DatasourceServer implements DatasourceApi {
         }
         datasourceRequest.setTable(tableName);
         List<TableField> tableFields = ExcelUtils.getTableFields(datasourceRequest);
-        if (tableFields.stream().anyMatch(field -> Strings.CI.equals(field.getName(), EXCEL_ROW_ID_FIELD))) {
+        if (tableFields.stream().anyMatch(field -> Strings.CI.equals(field.getName(), EXCEL_ROW_ID_FIELD)
+                || Strings.CI.equals(field.getDbFieldName(), EXCEL_ROW_ID_FIELD))) {
             CrestException.throwException("字段名 " + EXCEL_ROW_ID_FIELD + " 为系统保留字段，暂不支持在线编辑");
         }
         CoreEngine engine = engineManage.info();
@@ -1384,7 +1404,7 @@ public class DatasourceServer implements DatasourceApi {
         }
         // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
         String assignments = fields.stream()
-                .map(field -> quoteIdentifier(field.getName()) + " = ?")
+                .map(field -> quoteExcelIdentifier(excelDbFieldName(field)) + " = ?")
                 .collect(Collectors.joining(", "));
         // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
         String sql = "UPDATE " + quoteIdentifier(tableName) + " SET " + assignments
@@ -1412,10 +1432,10 @@ public class DatasourceServer implements DatasourceApi {
         if (CollectionUtils.isEmpty(fields)) {
             CrestException.throwException("Excel 数据表没有可编辑字段");
         }
-        List<String> columnNames = fields.stream().map(TableField::getName).collect(Collectors.toCollection(ArrayList::new));
+        List<String> columnNames = fields.stream().map(this::excelDbFieldName).collect(Collectors.toCollection(ArrayList::new));
         columnNames.add(EXCEL_ROW_ID_FIELD);
         // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
-        String columns = columnNames.stream().map(this::quoteIdentifier).collect(Collectors.joining(", "));
+        String columns = columnNames.stream().map(this::quoteExcelIdentifier).collect(Collectors.joining(", "));
         String placeholders = columnNames.stream().map(name -> "?").collect(Collectors.joining(", "));
         // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
         String sql = "INSERT INTO " + quoteIdentifier(tableName) + " (" + columns + ") VALUES (" + placeholders + ")";
@@ -1497,6 +1517,17 @@ public class DatasourceServer implements DatasourceApi {
         }
         EngineProvider.validateSqlInjectionRisk(identifier);
         return "`" + identifier.replace("`", "``") + "`";
+    }
+
+    private String quoteExcelIdentifier(String identifier) {
+        if (StringUtils.isBlank(identifier)) {
+            CrestException.throwException("无效的 Excel 字段名");
+        }
+        return "`" + identifier.replace("`", "``") + "`";
+    }
+
+    private String excelDbFieldName(TableField field) {
+        return StringUtils.defaultIfBlank(field.getDbFieldName(), field.getName());
     }
 
     private static class ExcelEditContext {

@@ -80,6 +80,7 @@ import {
   normalizeAuxiliaryHeader
 } from './tableAuxiliaryHeader.mjs'
 import { buildMergeCellsInfo } from './tableMergeCells.mjs'
+import { spanSeriesNumberHeader } from './tableSeriesNumber.mjs'
 
 const { t: i18nt } = useI18n()
 
@@ -3927,6 +3928,7 @@ export function configAuxiliaryHeaderLayout(newChart, tableHeader) {
     ev.colsHierarchy.height = Object.keys(levelHeights).reduce((pre, key) => {
       return pre + (levelHeights[key] || baseHeight)
     }, 0)
+    spanSeriesNumberHeader(ev)
   })
 }
 

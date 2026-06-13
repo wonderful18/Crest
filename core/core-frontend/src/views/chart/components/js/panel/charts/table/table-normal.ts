@@ -28,11 +28,18 @@ import {
   S2Theme,
   ScrollbarPositionType,
   TableColCell,
+  TableSeriesNumberCell,
   TableSheet,
   ViewMeta
 } from '@antv/s2'
 import { cloneDeep, isEqual, merge } from 'lodash-es'
 import { TABLE_EDITOR_PROPERTY, TABLE_EDITOR_PROPERTY_INNER } from './common'
+import {
+  configureTableSeriesNumber,
+  getPageSeriesNumber,
+  isTableSeriesNumberCell,
+  isTableSeriesNumberNode
+} from '@/views/chart/components/js/panel/common/tableSeriesNumber.mjs'
 
 const { t } = useI18n()
 /**
@@ -192,7 +199,6 @@ export class TableNormal extends S2ChartView<TableSheet> {
     const s2Options: S2Options = {
       width: containerDom.getBoundingClientRect().width,
       height: containerDom.offsetHeight,
-      showSeriesNumber: tableHeader.showIndex,
       conditions: this.configConditions(chart),
       tooltip: {
         getContainer: () => containerDom,
@@ -206,6 +212,7 @@ export class TableNormal extends S2ChartView<TableSheet> {
         hoverFocus: false
       }
     }
+    configureTableSeriesNumber(s2Options, tableHeader)
     configTableCopyInteraction(s2Options, {
       visibleTable: true,
       showSeriesNumber: tableHeader.showIndex,
@@ -282,7 +289,19 @@ export class TableNormal extends S2ChartView<TableSheet> {
           return
         }
         const containerWidth = containerDom.getBoundingClientRect().width
-        const scale = containerWidth / ev.colsHierarchy.width
+        const seriesNumberWidth = ev.colLeafNodes.reduce((p, n) => {
+          return p + (isTableSeriesNumberNode(n) ? Math.round(n.width) : 0)
+        }, 0)
+        const dataWidth = ev.colsHierarchy.width - seriesNumberWidth
+        if (dataWidth <= 0) {
+          ev.colLeafNodes.reduce((p, n) => {
+            n.width = Math.round(n.width)
+            n.x = p
+            return p + n.width
+          }, 0)
+          return
+        }
+        const scale = (containerWidth - seriesNumberWidth) / dataWidth
         if (scale <= 1) {
           // 图库计算的布局宽度已经大于等于容器宽度，不需要再扩大，但是需要处理非整数宽度值，不然会出现透明细线
           ev.colLeafNodes.reduce((p, n) => {
@@ -293,7 +312,7 @@ export class TableNormal extends S2ChartView<TableSheet> {
           return
         }
         const totalWidth = ev.colLeafNodes.reduce((p, n) => {
-          n.width = Math.round(n.width * scale)
+          n.width = isTableSeriesNumberNode(n) ? Math.round(n.width) : Math.round(n.width * scale)
           n.x = p
           return p + n.width
         }, 0)
@@ -392,19 +411,6 @@ export class TableNormal extends S2ChartView<TableSheet> {
     s2DataConfig: S2DataConfig
   ) {
     const { tableHeader, basicStyle } = parseJson(chart.customAttr)
-    // 开启序号之后，第一列就是序号列，修改 label 即可
-    if (s2Options.showSeriesNumber) {
-      let indexLabel = tableHeader.indexLabel
-      if (!indexLabel) {
-        indexLabel = ''
-      }
-      s2Options.layoutCoordinate = (_, __, col) => {
-        if (col.colIndex === 0 && col.rowIndex === 0) {
-          col.label = indexLabel
-          col.value = indexLabel
-        }
-      }
-    }
     const { showSummary, summaryLabel } = basicStyle
     const data = s2DataConfig.data
     const { xAxis, yAxis } = chart
@@ -425,18 +431,21 @@ export class TableNormal extends S2ChartView<TableSheet> {
     }
     s2Options.dataCell = (viewMeta, spreadsheet) => {
       const sheet = spreadsheet || viewMeta?.spreadsheet
+      const isSeriesNumberCell = isTableSeriesNumberCell(viewMeta)
       // 总计行处理
       if (showSummary && viewMeta.rowIndex === data.length - 1) {
-        if (viewMeta.colIndex === 0) {
-          if (tableHeader.showIndex || xAxis?.length) {
-            viewMeta.fieldValue = summaryLabel ?? t('chart.total_show')
-            viewMeta.isSummaryLabel = true
-          }
+        if (
+          isSeriesNumberCell ||
+          (!tableHeader.showIndex && viewMeta.colIndex === 0 && xAxis?.length)
+        ) {
+          viewMeta.fieldValue = summaryLabel ?? t('chart.total_show')
+          viewMeta.isSummaryLabel = true
         }
         return new SummaryCell(viewMeta, sheet)
       }
-      if (viewMeta.colIndex === 0 && s2Options.showSeriesNumber) {
-        viewMeta.fieldValue = pageInfo.pageSize * (pageInfo.currentPage - 1) + viewMeta.rowIndex + 1
+      if (isSeriesNumberCell) {
+        viewMeta.fieldValue = getPageSeriesNumber(pageInfo, viewMeta.rowIndex)
+        return new TableSeriesNumberCell(viewMeta, sheet)
       }
       return new CustomDataCell(viewMeta, sheet)
     }

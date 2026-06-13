@@ -114,6 +114,11 @@ const props = defineProps({
     type: String,
     required: false,
     default: null
+  },
+  curGap: {
+    type: Number,
+    required: false,
+    default: 0
   }
 })
 
@@ -369,11 +374,11 @@ const getShapeItemShowStyle = item => {
     dvModel: dvInfo.value.type,
     cellWidth: cellWidth.value,
     cellHeight: cellHeight.value,
-    curGap: curGap.value
+    curGap: previewCurGap.value
   })
 }
 
-const curGap = computed(() => {
+const previewCurGap = computed(() => {
   return dashboardActive.value && dvMainStore.canvasStyleData.dashboard?.gap === 'yes'
     ? dvMainStore.canvasStyleData?.dashboard?.gapSize
     : 0

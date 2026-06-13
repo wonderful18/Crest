@@ -179,7 +179,7 @@ public class DataAssetManage {
         DataAssetRequest request = new DataAssetRequest();
         request.setAssetType(DataAssetUtils.requireAssetType(assetType));
         QueryParts query = filteredAssets(request);
-        query.fromWhere += " AND a.asset_id = ? COLLATE utf8mb4_unicode_ci";
+        query.fromWhere += " AND a.asset_id COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci";
         query.args.add(StringUtils.trimToEmpty(assetId));
         List<DataAssetVO> assets = jdbcTemplate.query("""
                 SELECT a.asset_type,
@@ -223,23 +223,23 @@ public class DataAssetManage {
         sql.append("""
                 ) a
                 LEFT JOIN data_asset_profile p
-                    ON p.asset_type COLLATE utf8mb4_unicode_ci = a.asset_type
-                   AND p.asset_id COLLATE utf8mb4_unicode_ci = a.asset_id
+                    ON p.asset_type COLLATE utf8mb4_unicode_ci = a.asset_type COLLATE utf8mb4_unicode_ci
+                   AND p.asset_id COLLATE utf8mb4_unicode_ci = a.asset_id COLLATE utf8mb4_unicode_ci
                 LEFT JOIN iam_user owner ON owner.id = p.owner_id
                 LEFT JOIN iam_user creator ON creator.id = a.creator_id
                 LEFT JOIN iam_org org ON org.id = a.org_id
                 WHERE 1 = 1
                 """);
         if (request != null && StringUtils.isNotBlank(request.getAssetType())) {
-            sql.append(" AND a.asset_type = ? COLLATE utf8mb4_unicode_ci");
+            sql.append(" AND a.asset_type COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci");
             args.add(request.getAssetType());
         }
         if (request != null && StringUtils.isNotBlank(request.getKeyword())) {
             sql.append("""
                     AND (
-                        LOWER(a.name) LIKE LOWER(CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') COLLATE utf8mb4_unicode_ci)
-                        OR LOWER(a.asset_id) LIKE LOWER(CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') COLLATE utf8mb4_unicode_ci)
-                        OR LOWER(COALESCE(p.tags COLLATE utf8mb4_unicode_ci, '')) LIKE LOWER(CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') COLLATE utf8mb4_unicode_ci)
+                        LOWER(a.name COLLATE utf8mb4_unicode_ci) LIKE LOWER(CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') COLLATE utf8mb4_unicode_ci)
+                        OR LOWER(a.asset_id COLLATE utf8mb4_unicode_ci) LIKE LOWER(CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') COLLATE utf8mb4_unicode_ci)
+                        OR LOWER(COALESCE(p.tags COLLATE utf8mb4_unicode_ci, '' COLLATE utf8mb4_unicode_ci)) LIKE LOWER(CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') COLLATE utf8mb4_unicode_ci)
                     )
                     """);
             args.add(request.getKeyword());
@@ -286,9 +286,9 @@ public class DataAssetManage {
                        ds.update_time AS update_time
                 FROM data_source ds
                 LEFT JOIN iam_resource_index ds_ri
-                    ON ds_ri.resource_type = 'datasource'
-                   AND ds_ri.resource_id = CAST(ds.id AS CHAR)
-                WHERE ds.type <> 'folder'
+                    ON ds_ri.resource_type COLLATE utf8mb4_unicode_ci = 'datasource' COLLATE utf8mb4_unicode_ci
+                   AND ds_ri.resource_id COLLATE utf8mb4_unicode_ci = CAST(ds.id AS CHAR) COLLATE utf8mb4_unicode_ci
+                WHERE ds.type COLLATE utf8mb4_unicode_ci <> 'folder' COLLATE utf8mb4_unicode_ci
                 """ + permissionClause(platformPermissionManage.resourceScopeSql("datasource", "ds.id", "ds.create_by", null)));
         selects.add("""
                 SELECT 'table' COLLATE utf8mb4_unicode_ci AS asset_type,
@@ -304,10 +304,10 @@ public class DataAssetManage {
                        dg.create_time AS create_time,
                        dg.last_update_time AS update_time
                 FROM dataset_table dt
-                INNER JOIN dataset_group dg ON dg.id = dt.dataset_group_id AND dg.node_type = 'dataset'
+                INNER JOIN dataset_group dg ON dg.id = dt.dataset_group_id AND dg.node_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci
                 LEFT JOIN iam_resource_index dg_table_ri
-                    ON dg_table_ri.resource_type = 'dataset'
-                   AND dg_table_ri.resource_id = CAST(dg.id AS CHAR)
+                    ON dg_table_ri.resource_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci
+                   AND dg_table_ri.resource_id COLLATE utf8mb4_unicode_ci = CAST(dg.id AS CHAR) COLLATE utf8mb4_unicode_ci
                 WHERE 1 = 1
                 """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)));
         selects.add("""
@@ -323,9 +323,9 @@ public class DataAssetManage {
                        dg.last_update_time AS update_time
                 FROM dataset_group dg
                 LEFT JOIN iam_resource_index dg_ri
-                    ON dg_ri.resource_type = 'dataset'
-                   AND dg_ri.resource_id = CAST(dg.id AS CHAR)
-                WHERE dg.node_type = 'dataset'
+                    ON dg_ri.resource_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci
+                   AND dg_ri.resource_id COLLATE utf8mb4_unicode_ci = CAST(dg.id AS CHAR) COLLATE utf8mb4_unicode_ci
+                WHERE dg.node_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci
                 """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)));
         selects.add("""
                 SELECT 'chart' COLLATE utf8mb4_unicode_ci AS asset_type,
@@ -333,7 +333,7 @@ public class DataAssetManage {
                        COALESCE(NULLIF(c.title COLLATE utf8mb4_unicode_ci, '' COLLATE utf8mb4_unicode_ci),
                                 CAST(c.id AS CHAR) COLLATE utf8mb4_unicode_ci) AS name,
                        c.type COLLATE utf8mb4_unicode_ci AS extra_type,
-                       (CASE WHEN v.type = 'dataV' THEN 'screen' ELSE 'panel' END) COLLATE utf8mb4_unicode_ci AS parent_asset_type,
+                       (CASE WHEN v.type COLLATE utf8mb4_unicode_ci = 'dataV' COLLATE utf8mb4_unicode_ci THEN 'screen' ELSE 'panel' END) COLLATE utf8mb4_unicode_ci AS parent_asset_type,
                        CAST(v.id AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_id,
                        CAST(c.create_by AS UNSIGNED) AS creator_id,
                        COALESCE(CAST(NULLIF(v.org_id, '') AS UNSIGNED), 1) AS org_id,
@@ -342,7 +342,7 @@ public class DataAssetManage {
                 FROM bi_chart c
                 INNER JOIN bi_visualization v ON v.id = c.scene_id
                 WHERE v.delete_flag = 0
-                  AND v.node_type = 'leaf'
+                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
                 """ + permissionClause(visualizationScopeSql("v")));
         selects.add(visualizationSelect("panel", "dashboard"));
         selects.add(visualizationSelect("screen", "dataV"));
@@ -353,7 +353,7 @@ public class DataAssetManage {
                               ' / ' COLLATE utf8mb4_unicode_ci,
                               s.uuid COLLATE utf8mb4_unicode_ci) AS name,
                        s.uuid COLLATE utf8mb4_unicode_ci AS extra_type,
-                       (CASE WHEN v.type = 'dataV' THEN 'screen' ELSE 'panel' END) COLLATE utf8mb4_unicode_ci AS parent_asset_type,
+                       (CASE WHEN v.type COLLATE utf8mb4_unicode_ci = 'dataV' COLLATE utf8mb4_unicode_ci THEN 'screen' ELSE 'panel' END) COLLATE utf8mb4_unicode_ci AS parent_asset_type,
                        CAST(v.id AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_id,
                        s.creator AS creator_id,
                        s.oid AS org_id,
@@ -362,7 +362,7 @@ public class DataAssetManage {
                 FROM share_link s
                 INNER JOIN bi_visualization v ON v.id = s.resource_id
                 WHERE v.delete_flag = 0
-                  AND v.node_type = 'leaf'
+                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
                 """ + permissionClause(visualizationScopeSql("v")));
         return String.join("\nUNION ALL\n", selects);
     }
@@ -382,8 +382,8 @@ public class DataAssetManage {
                        v.update_time AS update_time
                 FROM bi_visualization v
                 WHERE v.delete_flag = 0
-                  AND v.node_type = 'leaf'
-                  AND v.type = '%s'
+                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
+                  AND v.type COLLATE utf8mb4_unicode_ci = '%s' COLLATE utf8mb4_unicode_ci
                 """.formatted(assetType, visualizationType) +
                 permissionClause(platformPermissionManage.resourceScopeSql(resourceType, "v.id", "v.create_by", "v.org_id"));
     }
@@ -480,7 +480,7 @@ public class DataAssetManage {
                 FROM data_source ds
                 INNER JOIN dataset_table dt ON dt.datasource_id = ds.id
                 WHERE dt.dataset_group_id = ?
-                  AND ds.type <> 'folder'
+                  AND ds.type COLLATE utf8mb4_unicode_ci <> 'folder' COLLATE utf8mb4_unicode_ci
                 """ + permissionClause(platformPermissionManage.resourceScopeSql("datasource", "ds.id", "ds.create_by", null)), datasetId));
         items.addAll(queryItems("""
                 SELECT 'table' AS asset_type, CAST(dt.id AS CHAR) AS asset_id,
@@ -504,12 +504,12 @@ public class DataAssetManage {
                 INNER JOIN bi_visualization v ON v.id = c.scene_id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
-                  AND v.node_type = 'leaf'
+                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
                 """ + visualizationScope + """
                 ORDER BY c.update_time DESC
                 """, datasetId));
         items.addAll(queryItems("""
-                SELECT CASE WHEN v.type = 'dataV' THEN 'screen' ELSE 'panel' END AS asset_type,
+                SELECT CASE WHEN v.type COLLATE utf8mb4_unicode_ci = 'dataV' COLLATE utf8mb4_unicode_ci THEN 'screen' ELSE 'panel' END AS asset_type,
                        CAST(v.id AS CHAR) AS asset_id,
                        v.name AS name,
                        '包含使用该数据集的图表' AS relation,
@@ -518,7 +518,7 @@ public class DataAssetManage {
                 INNER JOIN bi_chart c ON c.scene_id = v.id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
-                  AND v.node_type = 'leaf'
+                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
                 """ + visualizationScope + """
                 GROUP BY v.id, v.type, v.name, v.update_time
                 ORDER BY v.update_time DESC
@@ -534,7 +534,7 @@ public class DataAssetManage {
                 INNER JOIN bi_chart c ON c.scene_id = v.id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
-                  AND v.node_type = 'leaf'
+                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
                 """ + visualizationScope + """
                 GROUP BY s.id, v.name, s.uuid, s.time
                 ORDER BY s.time DESC
@@ -560,7 +560,7 @@ public class DataAssetManage {
                        dg.last_update_time AS update_time
                 FROM dataset_group dg
                 INNER JOIN dataset_table dt ON dt.dataset_group_id = dg.id
-                WHERE dg.node_type = 'dataset'
+                WHERE dg.node_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci
                   AND dt.datasource_id = ?
                 """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), datasourceId);
     }
@@ -603,7 +603,7 @@ public class DataAssetManage {
 
     private List<DataAssetImpactItemVO> shareUpstream(Long shareId) {
         return queryItems("""
-                SELECT CASE WHEN v.type = 'dataV' THEN 'screen' ELSE 'panel' END AS asset_type,
+                SELECT CASE WHEN v.type COLLATE utf8mb4_unicode_ci = 'dataV' COLLATE utf8mb4_unicode_ci THEN 'screen' ELSE 'panel' END AS asset_type,
                        CAST(v.id AS CHAR) AS asset_id,
                        v.name AS name,
                        '被分享资源' AS relation,
@@ -628,10 +628,10 @@ public class DataAssetManage {
                     """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
             case DataAssetUtils.TYPE_DATASET -> count("""
                     SELECT COUNT(DISTINCT ds.id)
-                    FROM data_source ds
-                    INNER JOIN dataset_table dt ON dt.datasource_id = ds.id
-                    WHERE dt.dataset_group_id = ?
-                      AND ds.type <> 'folder'
+                FROM data_source ds
+                INNER JOIN dataset_table dt ON dt.datasource_id = ds.id
+                WHERE dt.dataset_group_id = ?
+                      AND ds.type COLLATE utf8mb4_unicode_ci <> 'folder' COLLATE utf8mb4_unicode_ci
                     """ + permissionClause(platformPermissionManage.resourceScopeSql("datasource", "ds.id", "ds.create_by", null)), id)
                     + count("SELECT COUNT(1) FROM dataset_table dt WHERE dt.dataset_group_id = ?", id);
             case DataAssetUtils.TYPE_CHART -> count("""
@@ -667,7 +667,7 @@ public class DataAssetManage {
                     SELECT COUNT(DISTINCT dg.id)
                     FROM dataset_group dg
                     INNER JOIN dataset_table dt ON dt.dataset_group_id = dg.id
-                    WHERE dg.node_type = 'dataset'
+                    WHERE dg.node_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci
                       AND dt.datasource_id = ?
                     """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
             case DataAssetUtils.TYPE_DATASET -> datasetDownstreamCount(id);
@@ -684,7 +684,7 @@ public class DataAssetManage {
                 INNER JOIN bi_visualization v ON v.id = c.scene_id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
-                  AND v.node_type = 'leaf'
+                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
                 """ + visualizationScope, datasetId)
                 + count("""
                 SELECT COUNT(DISTINCT v.id)
@@ -692,7 +692,7 @@ public class DataAssetManage {
                 INNER JOIN bi_chart c ON c.scene_id = v.id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
-                  AND v.node_type = 'leaf'
+                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
                 """ + visualizationScope, datasetId)
                 + count("""
                 SELECT COUNT(DISTINCT s.id)
@@ -701,7 +701,7 @@ public class DataAssetManage {
                 INNER JOIN bi_chart c ON c.scene_id = v.id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
-                  AND v.node_type = 'leaf'
+                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
                 """ + visualizationScope, datasetId)
                 + count("SELECT COUNT(1) FROM dataset_sync_task t WHERE t.dataset_group_id = ?", datasetId);
     }
@@ -763,7 +763,9 @@ public class DataAssetManage {
         if (StringUtils.isBlank(panelScope) || StringUtils.isBlank(screenScope)) {
             return StringUtils.defaultIfBlank(panelScope, screenScope);
         }
-        return "((" + alias + ".type = 'dashboard' AND " + panelScope + ") OR (" + alias + ".type = 'dataV' AND " + screenScope + "))";
+        return "((" + alias + ".type COLLATE utf8mb4_unicode_ci = 'dashboard' COLLATE utf8mb4_unicode_ci AND "
+                + panelScope + ") OR (" + alias + ".type COLLATE utf8mb4_unicode_ci = 'dataV' COLLATE utf8mb4_unicode_ci AND "
+                + screenScope + "))";
     }
 
     private String permissionClause(String scopeSql) {

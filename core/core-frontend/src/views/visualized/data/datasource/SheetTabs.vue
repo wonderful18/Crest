@@ -7,7 +7,10 @@ const props = defineProps({
   tabList: propTypes.arrayOf(
     propTypes.shape({
       label: String,
-      value: String
+      value: String,
+      sheet: Boolean,
+      inspectionStatus: String,
+      inspectionMessage: String
     })
   ),
   activeTab: propTypes.string.def('')
@@ -66,13 +69,17 @@ const nextClick = () => {
         v-for="tab in tabList"
         :key="tab.label"
         :id="`tab-${tab.value}`"
-        :title="tab.label"
-        :class="[{ active: activeTab === tab.value }, 'sheet-tab']"
+        :title="tab.inspectionMessage || tab.label"
+        :class="[
+          { active: activeTab === tab.value, skipped: tab.inspectionStatus === 'SKIPPED' },
+          'sheet-tab'
+        ]"
         @click="handleTabClick(tab)"
       >
         <span class="ellipsis">
           {{ tab.label }}
         </span>
+        <span class="sheet-tab-status" v-if="tab.inspectionStatus === 'SKIPPED'">已跳过</span>
       </div>
     </div>
     <div class="tab-btn" v-if="showBtn">
@@ -148,6 +155,22 @@ const nextClick = () => {
     .ellipsis {
       max-width: 200px;
       font-size: 14px;
+    }
+
+    .sheet-tab-status {
+      flex: none;
+      margin-left: 8px;
+      padding: 0 6px;
+      height: 18px;
+      line-height: 18px;
+      color: #646a73;
+      background: rgba(31, 35, 41, 0.08);
+      border-radius: 3px;
+      font-size: 12px;
+    }
+
+    &.skipped {
+      color: #8f959e;
     }
 
     &::after,

@@ -69,40 +69,41 @@ defineExpose({
 
 <template>
   <el-dialog
-    v-loading="loading"
     title="计算参数输入"
     v-model="subjectDialogShow"
     width="400px"
     :before-close="resetForm"
     @click="handleDialogClick"
   >
-    <el-form
-      v-if="subjectDialogShow"
-      label-position="top"
-      ref="subject"
-      :model="subjectForm"
-      :rules="rules"
-      @submit.prevent
-    >
-      <el-form-item
-        v-for="paramsItem in curDataSetParamsInfo"
-        :key="paramsItem"
-        class="form-item"
-        :prop="'value_' + paramsItem.name"
+    <div v-loading="loading">
+      <el-form
+        v-if="subjectDialogShow"
+        label-position="top"
+        ref="subject"
+        :model="subjectForm"
+        :rules="rules"
+        @submit.prevent
       >
-        <template #label>
-          <label class="m-label">
-            计算字段[{{ paramsItem.name }}] <span style="color: red">*</span>
-          </label>
-        </template>
-        <el-input-number
-          style="width: 100%"
-          v-model="paramsItem.value"
-          placeholder="请输入一个数字"
-          controls-position="right"
-        />
-      </el-form-item>
-    </el-form>
+        <el-form-item
+          v-for="paramsItem in curDataSetParamsInfo"
+          :key="paramsItem"
+          class="form-item"
+          :prop="'value_' + paramsItem.name"
+        >
+          <template #label>
+            <label class="m-label">
+              计算字段[{{ paramsItem.name }}] <span style="color: red">*</span>
+            </label>
+          </template>
+          <el-input-number
+            style="width: 100%"
+            v-model="paramsItem.value"
+            placeholder="请输入一个数字"
+            controls-position="right"
+          />
+        </el-form-item>
+      </el-form>
+    </div>
     <template #footer>
       <el-button secondary @click="resetForm()">取消</el-button>
       <el-button type="primary" @click="saveSubject()">确认</el-button>

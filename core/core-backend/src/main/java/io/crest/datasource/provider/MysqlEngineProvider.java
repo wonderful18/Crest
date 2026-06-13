@@ -75,7 +75,8 @@ public class MysqlEngineProvider extends EngineProvider {
                 insetSql = insetSql + " ON DUPLICATE KEY UPDATE ";
                 List<String> updateColumes = new ArrayList<>();
                 for (TableField notKey : notKeys) {
-                    updateColumes.add("column = VALUES(column)".replace("column", notKey.getName()));
+                    String column = "`" + physicalFieldName(notKey) + "`";
+                    updateColumes.add(column + " = VALUES(" + column + ")");
                 }
                 insetSql = insetSql + updateColumes.stream().collect(Collectors.joining(","));
             }
@@ -117,10 +118,11 @@ public class MysqlEngineProvider extends EngineProvider {
             if (!tableField.isChecked()) {
                 continue;
             }
+            String fieldName = physicalFieldName(tableField);
             if (tableField.isPrimaryKey()) {
-                key.append("`").append(tableField.getName()).append("`, ");
+                key.append("`").append(fieldName).append("`, ");
             }
-            columnFields.append(tableField.getName()).append("` ");
+            columnFields.append(fieldName).append("` ");
             int size = tableField.getPrecision() * 4;
             switch (tableField.getExtractedFieldType()) {
                 case 0:
