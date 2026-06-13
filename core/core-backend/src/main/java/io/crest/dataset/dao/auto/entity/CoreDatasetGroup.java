@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 数据集分组表
- * </p>
- *
- * @author fit2cloud
- * @since 2025-04-14
+ * 数据集分组实体。
  */
 @TableName("dataset_group")
 public class CoreDatasetGroup implements Serializable {

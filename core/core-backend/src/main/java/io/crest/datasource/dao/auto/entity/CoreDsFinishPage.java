@@ -6,12 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2023-10-08
+ * 数据源完成页配置实体。
  */
 @TableName("data_source_finish_page")
 public class CoreDsFinishPage implements Serializable {

@@ -6,12 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2023-09-28
+ * 数据源同步任务日志实体。
  */
 @TableName("data_source_sync_task_log")
 public class CoreDatasourceTaskLog implements Serializable {

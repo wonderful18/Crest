@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 组件图表表
- * </p>
- *
- * @author fit2cloud
- * @since 2024-12-12
+ * 组件图表实体。
  */
 @TableName("bi_chart")
 public class CoreChartView implements Serializable {
