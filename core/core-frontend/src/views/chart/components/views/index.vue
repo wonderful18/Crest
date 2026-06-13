@@ -14,7 +14,6 @@ import {
   computed,
   CSSProperties,
   nextTick,
-  onBeforeMount,
   onBeforeUnmount,
   onMounted,
   PropType,
@@ -55,6 +54,7 @@ import { store } from '@/store'
 import { clearExtremum } from '@/views/chart/components/js/extremumUitl'
 import CrestPreviewPopDialog from '@/components/visualization/CrestPreviewPopDialog.vue'
 import { useRoute } from 'vue-router_2'
+import { buildPublicLinkTargetUrl, isPublicLinkHash } from './publicLinkJump.mjs'
 const route = useRoute()
 const { wsCache } = useCache()
 const chartComponent = ref<any>()
@@ -522,6 +522,21 @@ const jumpClick = param => {
         } else {
           url = url + '&ignoreParams=true' + jumpInfoParam + editPreviewParams
         }
+        if (isPublicLinkHash(window.location.hash)) {
+          const publicLinkUrl = buildPublicLinkTargetUrl({
+            hash: window.location.hash,
+            targetDvId: jumpInfo.targetDvId,
+            targetDvType: jumpInfo.targetDvType,
+            attachParamsInfo,
+            jumpInfoParam,
+            editPreviewParams
+          })
+          crestPreviewPopDialogRef.value.previewInit({
+            url: publicLinkUrl,
+            size: jumpInfo.windowSize || 'large'
+          })
+          return
+        }
         const currentUrl = window.location.href
         localStorage.setItem('beforeJumpUrl', currentUrl)
         if (divSelf || iframeSelf) {
@@ -606,16 +621,6 @@ const showChartView = (...libs: ChartLibraryType[]) => {
   }
 }
 
-onBeforeMount(() => {
-  if (!showPosition.value.includes('viewDialog')) {
-    nextTick(() => {
-      useEmitt({
-        name: `query-data-${view.value.id}`,
-        callback: queryDataFromSelect
-      })
-    })
-  }
-})
 // 部分场景不需要更新图表，例如放大页面
 const listenerEnable = computed(() => {
   return !showPosition.value.includes('viewDialog')
@@ -729,6 +734,142 @@ const renderChartCallback = val => {
     chartComponent?.value?.renderChart?.(viewInfo)
   })
 }
+
+const registerEnabledEmitt = option => {
+  useEmitt({
+    name: option.name,
+    callback: (...args) => {
+      if (!listenerEnable.value) {
+        return
+      }
+      option.callback(...args)
+    }
+  })
+}
+
+registerEnabledEmitt({
+  name: `query-data-${view.value.id}`,
+  callback: queryDataFromSelect
+})
+registerEnabledEmitt({
+  name: 'checkShowEmpty',
+  callback: param => {
+    if (param.view?.id === view.value.id) {
+      checkFieldIsAllowEmpty(param.allFields)
+    }
+  }
+})
+registerEnabledEmitt({ name: 'chart-type-change', callback: changeChartType })
+registerEnabledEmitt({ name: 'dataset-change', callback: changeDataset })
+registerEnabledEmitt({
+  name: 'clearPanelLinkage',
+  callback: param => {
+    if (param.viewId === 'all' || param.viewId === element.value.id) {
+      chartComponent?.value?.clearLinkage?.()
+    }
+  }
+})
+registerEnabledEmitt({
+  name: 'snapshotChangeToView',
+  callback: cacheViewInfo => {
+    initTitle()
+    nextTick(() => {
+      if (
+        cacheViewInfo.snapshotCacheViewCalc.includes(view.value.id) ||
+        cacheViewInfo.snapshotCacheViewCalc.includes('all')
+      ) {
+        view.value.chartExtRequest = filter(false)
+        calcData(view.value)
+      } else if (
+        cacheViewInfo.snapshotCacheViewRender.includes(view.value.id) ||
+        cacheViewInfo.snapshotCacheViewRender.includes('all')
+      ) {
+        chartComponent?.value?.renderChart?.(view.value)
+      }
+    })
+  }
+})
+registerEnabledEmitt({
+  name: 'calcData-' + view.value.id,
+  callback: val => {
+    if (!state.initReady) {
+      return
+    }
+    initTitle()
+    nextTick(() => {
+      view.value.chartExtRequest = filter(false)
+      const targetVal = val || view.value
+      calcData(targetVal)
+    })
+  }
+})
+registerEnabledEmitt({
+  name: 'calcData-all',
+  callback: () => {
+    if (!state.initReady) {
+      return
+    }
+    initTitle()
+    nextTick(() => {
+      view.value.chartExtRequest = filter(false)
+      calcData(view.value)
+    })
+  }
+})
+registerEnabledEmitt({
+  name: 'renderChart-' + view.value.id,
+  callback: val => {
+    renderChartCallback(val)
+  }
+})
+registerEnabledEmitt({
+  name: 'resetDrill-' + view.value.id,
+  callback: val => {
+    nextTick(() => {
+      drillJump(val)
+    })
+  }
+})
+registerEnabledEmitt({
+  name: 'tabCanvasChange-' + element.value.canvasId,
+  callback: () => {
+    if (!state.initReady && !view.value.type.includes('table')) {
+      return
+    }
+    setTimeout(() => {
+      chartComponent?.value?.renderChart?.(view.value)
+    }, 200)
+  }
+})
+registerEnabledEmitt({
+  name: 'updateTitle-' + view.value.id,
+  callback: () => {
+    initTitle()
+  }
+})
+registerEnabledEmitt({
+  name: 'chart-type-change-' + view.value.id,
+  callback: () => {
+    const chart = cloneDeep(view.value)
+    chart.container = 'container-' + showPosition.value + '-' + view.value.id + '-' + suffixId.value
+    clearExtremum(chart)
+    // 切换到不支持下钻的图表类型时，清除下钻状态
+    const chartView = chartViewManager.getChartView(view.value.render, view.value.type)
+    if (chartView && !chartView.axis.includes('drill')) {
+      state.drillClickDimensionList = []
+      state.drillFilters = []
+    }
+  }
+})
+if (showPosition.value === 'viewDialog') {
+  useEmitt({
+    name: 'renderChart-viewDialog-' + view.value.id,
+    callback: val => {
+      renderChartCallback(val)
+    }
+  })
+}
+
 onMounted(() => {
   if (!view.value.isPlugin) {
     state.drillClickDimensionList = view.value?.chartExtRequest?.drill ?? []
@@ -742,127 +883,6 @@ onMounted(() => {
   }
   if (!listenerEnable.value) {
     return
-  }
-  useEmitt({
-    name: 'checkShowEmpty',
-    callback: param => {
-      if (param.view?.id === view.value.id) {
-        checkFieldIsAllowEmpty(param.allFields)
-      }
-    }
-  })
-  useEmitt({ name: 'chart-type-change', callback: changeChartType })
-  useEmitt({ name: 'dataset-change', callback: changeDataset })
-  useEmitt({
-    name: 'clearPanelLinkage',
-    callback: function (param) {
-      if (param.viewId === 'all' || param.viewId === element.value.id) {
-        chartComponent?.value?.clearLinkage?.()
-      }
-    }
-  })
-  useEmitt({
-    name: 'snapshotChangeToView',
-    callback: function (cacheViewInfo) {
-      initTitle()
-      nextTick(() => {
-        if (
-          cacheViewInfo.snapshotCacheViewCalc.includes(view.value.id) ||
-          cacheViewInfo.snapshotCacheViewCalc.includes('all')
-        ) {
-          view.value.chartExtRequest = filter(false)
-          calcData(view.value)
-        } else if (
-          cacheViewInfo.snapshotCacheViewRender.includes(view.value.id) ||
-          cacheViewInfo.snapshotCacheViewRender.includes('all')
-        ) {
-          chartComponent?.value?.renderChart?.(view.value)
-        }
-      })
-    }
-  })
-
-  useEmitt({
-    name: 'calcData-' + view.value.id,
-    callback: function (val) {
-      if (!state.initReady) {
-        return
-      }
-      initTitle()
-      nextTick(() => {
-        view.value.chartExtRequest = filter(false)
-        const targetVal = val || view.value
-        calcData(targetVal)
-      })
-    }
-  })
-
-  useEmitt({
-    name: 'calcData-all',
-    callback: function () {
-      if (!state.initReady) {
-        return
-      }
-      initTitle()
-      nextTick(() => {
-        view.value.chartExtRequest = filter(false)
-        calcData(view.value)
-      })
-    }
-  })
-  useEmitt({
-    name: 'renderChart-' + view.value.id,
-    callback: function (val) {
-      renderChartCallback(val)
-    }
-  })
-  useEmitt({
-    name: 'resetDrill-' + view.value.id,
-    callback: function (val) {
-      nextTick(() => {
-        drillJump(val)
-      })
-    }
-  })
-  useEmitt({
-    name: 'tabCanvasChange-' + element.value.canvasId,
-    callback: function () {
-      if (!state.initReady && !view.value.type.includes('table')) {
-        return
-      }
-      setTimeout(function () {
-        chartComponent?.value?.renderChart?.(view.value)
-      }, 200)
-    }
-  })
-  useEmitt({
-    name: 'updateTitle-' + view.value.id,
-    callback: () => {
-      initTitle()
-    }
-  })
-  useEmitt({
-    name: 'chart-type-change-' + view.value.id,
-    callback: () => {
-      const chart = cloneDeep(view.value)
-      chart.container =
-        'container-' + showPosition.value + '-' + view.value.id + '-' + suffixId.value
-      clearExtremum(chart)
-      // 切换到不支持下钻的图表类型时，清除下钻状态
-      const chartView = chartViewManager.getChartView(view.value.render, view.value.type)
-      if (chartView && !chartView.axis.includes('drill')) {
-        state.drillClickDimensionList = []
-        state.drillFilters = []
-      }
-    }
-  })
-  if (showPosition.value === 'viewDialog') {
-    useEmitt({
-      name: 'renderChart-viewDialog-' + view.value.id,
-      callback: function (val) {
-        renderChartCallback(val)
-      }
-    })
   }
 
   const { refreshViewEnable, refreshUnit, refreshTime } = view.value
@@ -981,17 +1001,22 @@ const iconSize = computed<string>(() => {
  * @param {boolean} isBorder 是否为边框
  */
 const modifyAlpha = isBorder => {
-  const { backgroundColor, backgroundType, backgroundImageEnable, backgroundColorSelect } =
-    element.value.commonBackground
+  const {
+    backgroundColor = 'rgba(255,255,255,1)',
+    backgroundType,
+    backgroundImageEnable,
+    backgroundColorSelect = true
+  } = element.value.commonBackground || {}
+  const safeBackgroundColor = String(backgroundColor || 'rgba(255,255,255,1)')
   // 透明
   const transparent = 'rgba(0,0,0,0.01)'
   // 背景图时，设置透明度为0.01
   if (backgroundType === 'outerImage' && backgroundImageEnable) return transparent
   // hex转rgba
-  if (backgroundColor.includes('#'))
-    return isBorder || !backgroundColorSelect ? transparent : backgroundColor
-  const match = backgroundColor.match(/rgba\((\d+), (\d+), (\d+), (\d+|0.\d+)\)/)
-  if (!match) return backgroundColor
+  if (safeBackgroundColor.includes('#'))
+    return isBorder || !backgroundColorSelect ? transparent : safeBackgroundColor
+  const match = safeBackgroundColor.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*(\d+|0?\.\d+)\)/)
+  if (!match) return safeBackgroundColor
   const [r, g, b, a] = match.slice(1).map(Number)
   // 边框或者不设置背景色时，设置透明度为0.01，否则原透明度
   return `rgba(${r}, ${g}, ${b}, ${!backgroundColorSelect || isBorder ? 0.01 : a})`

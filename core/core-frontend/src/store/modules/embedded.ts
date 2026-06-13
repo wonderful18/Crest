@@ -218,6 +218,10 @@ export const userStore = defineStore('embedded', {
   }
 })
 
-export const useEmbedded = () => {
+export const useEmbeddedWithOut = () => {
   return userStore(store)
+}
+
+export const useEmbedded = () => {
+  return useEmbeddedWithOut()
 }

@@ -3,6 +3,7 @@ package io.crest.share.interceptor;
 import io.crest.auth.CrestLinkPermit;
 import io.crest.constant.AuthConstant;
 import io.crest.exception.CrestException;
+import io.crest.share.manage.ShareLinkAccessManage;
 import io.crest.utils.LogUtil;
 import io.crest.utils.ServletUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -30,6 +31,11 @@ public class CrestLinkAspect {
     private static final String SPRING_EL_FLAG = "#";
 
     private final ExpressionParser parser = new SpelExpressionParser();
+    private final ShareLinkAccessManage shareLinkAccessManage;
+
+    public CrestLinkAspect(ShareLinkAccessManage shareLinkAccessManage) {
+        this.shareLinkAccessManage = shareLinkAccessManage;
+    }
 
 
     @Around(value = "@annotation(io.crest.auth.CrestLinkPermit)")
@@ -50,7 +56,7 @@ public class CrestLinkAspect {
                 CrestException.throwException("link token invalid");
             }
             Long resourceId = Long.parseLong(resourceIdAttr.toString());
-            if (!id.equals(resourceId)) {
+            if (!shareLinkAccessManage.canAccessWithShareResource(resourceId, id)) {
                 CrestException.throwException("link token invalid");
                 return false;
             }

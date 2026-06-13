@@ -12,6 +12,10 @@ spring:
     encoding: UTF-8
   main:
     allow-circular-references: true
+  servlet:
+    multipart:
+      max-file-size: ${CREST_UPLOAD_MAX_FILE_SIZE:500MB}
+      max-request-size: ${CREST_UPLOAD_MAX_REQUEST_SIZE:500MB}
   cache:
     type: jcache
     jcache:

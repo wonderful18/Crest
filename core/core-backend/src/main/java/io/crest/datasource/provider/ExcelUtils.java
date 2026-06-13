@@ -15,6 +15,7 @@ import io.crest.api.ds.vo.ExcelFileData;
 import io.crest.api.ds.vo.ExcelSheetData;
 import io.crest.api.ds.vo.RemoteExcelRequest;
 import io.crest.commons.utils.EncryptUtils;
+import io.crest.dataset.utils.TableUtils;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
 import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasetTableDTO;
@@ -45,6 +46,12 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"deprecation", "unchecked"})
 public class ExcelUtils {
     public static final String UFEFF = "\uFEFF";
+    private static final int EXCEL_FIELD_DISPLAY_NAME_LIMIT = 100;
+    private static final String SHEET_STATUS_NORMAL = "NORMAL";
+    private static final String SHEET_STATUS_SKIPPED = "SKIPPED";
+    private static final String SHEET_MESSAGE_SQL_DESCRIPTION = "检测到该工作表首行疑似 SQL 或说明文本，默认不导入。";
+    private static final String SHEET_MESSAGE_EMPTY_HEADER = "未检测到有效表头，默认不导入。";
+    private static final String SHEET_MESSAGE_BLANK_HEADER = "检测到空表头，默认不导入。";
     private static ObjectMapper objectMapper = new ObjectMapper();
 
     public static String getExcelPath() {
@@ -69,6 +76,112 @@ public class ExcelUtils {
 
     private static TypeReference<List<ExcelSheetData>> sheets = new TypeReference<List<ExcelSheetData>>() {
     };
+
+    static String excelDbFieldName(String header) {
+        return TableUtils.fieldNameShort(StringUtils.defaultString(header).trim());
+    }
+
+    private List<TableField> excelTableFields(List<String> headers) {
+        List<TableField> fields = new ArrayList<>();
+        Map<String, Integer> displayNameCounts = new HashMap<>();
+        Set<String> usedDisplayNames = new HashSet<>();
+        Set<String> usedDbFieldNames = new HashSet<>();
+        for (String header : headers) {
+            fields.add(excelTableField(uniqueExcelDisplayName(normalizeExcelHeader(header), displayNameCounts, usedDisplayNames), usedDbFieldNames));
+        }
+        return fields;
+    }
+
+    private TableField excelTableField(String displayName, Set<String> usedDbFieldNames) {
+        TableField tableField = new TableField();
+        tableField.setName(displayName);
+        tableField.setOriginName(displayName);
+        tableField.setDbFieldName(uniqueExcelDbFieldName(displayName, usedDbFieldNames));
+        return tableField;
+    }
+
+    private String uniqueExcelDisplayName(String displayName, Map<String, Integer> displayNameCounts, Set<String> usedDisplayNames) {
+        int count = displayNameCounts.getOrDefault(displayName, 0) + 1;
+        displayNameCounts.put(displayName, count);
+        String candidate = count == 1 ? displayName : excelDuplicateDisplayName(displayName, count);
+        while (!usedDisplayNames.add(candidate)) {
+            count = displayNameCounts.getOrDefault(displayName, count) + 1;
+            displayNameCounts.put(displayName, count);
+            candidate = excelDuplicateDisplayName(displayName, count);
+        }
+        return candidate;
+    }
+
+    private String excelDuplicateDisplayName(String displayName, int count) {
+        String suffix = "_" + count;
+        if (displayName.length() + suffix.length() <= EXCEL_FIELD_DISPLAY_NAME_LIMIT) {
+            return displayName + suffix;
+        }
+        return displayName.substring(0, EXCEL_FIELD_DISPLAY_NAME_LIMIT - suffix.length()) + suffix;
+    }
+
+    private String uniqueExcelDbFieldName(String displayName, Set<String> usedDbFieldNames) {
+        String dbFieldName = excelDbFieldName(displayName);
+        int count = 2;
+        while (!usedDbFieldNames.add(dbFieldName)) {
+            dbFieldName = excelDbFieldName(displayName + "_" + count);
+            count++;
+        }
+        return dbFieldName;
+    }
+
+    private String normalizeExcelHeader(String header) {
+        String displayName = StringUtils.trim(header);
+        if (StringUtils.isEmpty(displayName)) {
+            CrestException.throwException(Translator.get("i18n_excel_error_first_row"));
+        }
+        if (displayName.length() > EXCEL_FIELD_DISPLAY_NAME_LIMIT) {
+            CrestException.throwException("Excel 表头不能超过 100 个字符：" + StringUtils.abbreviate(displayName, 30));
+        }
+        return displayName;
+    }
+
+    private ExcelSheetInspection inspectSheet(List<String> header) {
+        if (CollectionUtils.isEmpty(header)) {
+            return ExcelSheetInspection.skipped(SHEET_MESSAGE_EMPTY_HEADER);
+        }
+        if (header.stream().allMatch(StringUtils::isBlank)) {
+            return ExcelSheetInspection.skipped(SHEET_MESSAGE_EMPTY_HEADER);
+        }
+        if (header.stream().anyMatch(StringUtils::isBlank)) {
+            return ExcelSheetInspection.skipped(SHEET_MESSAGE_BLANK_HEADER);
+        }
+        if (isSqlDescriptionSheet(header)) {
+            return ExcelSheetInspection.skipped(SHEET_MESSAGE_SQL_DESCRIPTION);
+        }
+        return ExcelSheetInspection.normal();
+    }
+
+    private boolean isSqlDescriptionSheet(List<String> header) {
+        List<String> cells = header.stream()
+                .filter(StringUtils::isNotBlank)
+                .map(StringUtils::trim)
+                .collect(Collectors.toList());
+        if (cells.isEmpty() || cells.size() > 2) {
+            return false;
+        }
+        String firstRowText = String.join(" ", cells).toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+        int sqlScore = 0;
+        String[] keywords = {"select ", " from ", " where ", " join ", " group by ", " order by ", " insert ", " update ", " delete ", " create ", " alter ", " with "};
+        for (String keyword : keywords) {
+            if (firstRowText.contains(keyword)) {
+                sqlScore++;
+            }
+        }
+        boolean startsWithSql = firstRowText.startsWith("select ")
+                || firstRowText.startsWith("with ")
+                || firstRowText.startsWith("insert ")
+                || firstRowText.startsWith("update ")
+                || firstRowText.startsWith("delete ")
+                || firstRowText.startsWith("create ")
+                || firstRowText.startsWith("alter ");
+        return sqlScore >= 2 && (startsWithSql || firstRowText.length() > 80);
+    }
 
     public static void mergeSheets(CoreDatasource requestDatasource, DatasourceDTO sourceData) {
         if (requestDatasource.getType().equalsIgnoreCase("Excel")) {
@@ -108,6 +221,9 @@ public class ExcelUtils {
             }
             JsonNode rootNode = objectMapper.readTree(sheets);
             for (int i = 0; i < rootNode.size(); i++) {
+                if (!isImportableSheet(rootNode.get(i))) {
+                    continue;
+                }
                 DatasetTableDTO datasetTableDTO = new DatasetTableDTO();
                 datasetTableDTO.setTableName(rootNode.get(i).get("displayTableName").asText());
                 datasetTableDTO.setName(rootNode.get(i).get("displayTableName").asText());
@@ -141,10 +257,17 @@ public class ExcelUtils {
         }
         if (rootNode != null) {
             for (int i = 0; i < rootNode.size(); i++) {
+                if (!isImportableSheet(rootNode.get(i))) {
+                    continue;
+                }
                 result.put(rootNode.get(i).get("tableName").asText(), rootNode.get(i).get("displayTableName").asText());
             }
         }
         return result;
+    }
+
+    private static boolean isImportableSheet(JsonNode sheetNode) {
+        return sheetNode == null || sheetNode.get("sheet") == null || sheetNode.get("sheet").asBoolean(true);
     }
 
     public static String getFileName(CoreDatasource datasource) throws CrestException {
@@ -251,11 +374,8 @@ public class ExcelUtils {
             noModelDataListener.clear();
             List<TableField> fields = new ArrayList<>();
             excelReader.read(readSheet);
-            for (String s : noModelDataListener.getHeader()) {
-                TableField tableFiled = new TableField();
+            for (TableField tableFiled : excelTableFields(noModelDataListener.getHeader())) {
                 tableFiled.setNativeType("TEXT");
-                tableFiled.setName(s);
-                tableFiled.setOriginName(s);
                 fields.add(tableFiled);
             }
         }
@@ -296,7 +416,6 @@ public class ExcelUtils {
         }
         List<ExcelSheetData> returnSheetDataList = new ArrayList<>();
         returnSheetDataList = excelSheetDataList;
-        returnSheetDataList = returnSheetDataList.stream().filter(excelSheetData -> !CollectionUtils.isEmpty(excelSheetData.getFields())).collect(Collectors.toList());
         // save file
         String excelId = UUID.randomUUID().toString();
         String filePath = saveFile(file, excelId);
@@ -375,7 +494,7 @@ public class ExcelUtils {
         Map<String, String> fileNames = downLoadRemoteExcel(remoteExcelRequest);
         List<ExcelSheetData> returnSheetDataList = new ArrayList<>();
         try (FileInputStream fileInputStream = new FileInputStream(excelTempFile(fileNames.get("tranName")))) {
-            returnSheetDataList = parseExcel(fileNames.get("tranName"), fileInputStream, true, fileNames.get("fileName")).stream().filter(excelSheetData -> !CollectionUtils.isEmpty(excelSheetData.getFields())).collect(Collectors.toList());
+            returnSheetDataList = parseExcel(fileNames.get("tranName"), fileInputStream, true, fileNames.get("fileName"));
         } catch (Exception e) {
             CrestException.throwException(e);
         }
@@ -644,6 +763,30 @@ public class ExcelUtils {
         public void clear() {
             data.clear();
             header.clear();
+            headerKey.clear();
+        }
+    }
+
+    @Data
+    private static class ExcelSheetInspection {
+        private boolean importable;
+        private String status;
+        private String message;
+
+        private static ExcelSheetInspection normal() {
+            ExcelSheetInspection inspection = new ExcelSheetInspection();
+            inspection.setImportable(true);
+            inspection.setStatus(SHEET_STATUS_NORMAL);
+            inspection.setMessage("");
+            return inspection;
+        }
+
+        private static ExcelSheetInspection skipped(String message) {
+            ExcelSheetInspection inspection = new ExcelSheetInspection();
+            inspection.setImportable(false);
+            inspection.setStatus(SHEET_STATUS_SKIPPED);
+            inspection.setMessage(message);
+            return inspection;
         }
     }
 
@@ -659,18 +802,25 @@ public class ExcelUtils {
                 noModelDataListener.clear();
                 List<TableField> fields = new ArrayList<>();
                 excelReader.read(readSheet);
-                if (CollectionUtils.isEmpty(noModelDataListener.getHeader())) {
-                    CrestException.throwException(readSheet.getSheetName() + "首行不能为空！");
+                List<String[]> data = new ArrayList<>(noModelDataListener.getData());
+                ExcelSheetData excelSheetData = new ExcelSheetData();
+                excelSheetData.setFileName(filename);
+                excelSheetData.setExcelLabel(readSheet.getSheetName());
+                ExcelSheetInspection inspection = inspectSheet(noModelDataListener.getHeader());
+                excelSheetData.setSheet(inspection.isImportable());
+                excelSheetData.setInspectionStatus(inspection.getStatus());
+                excelSheetData.setInspectionMessage(inspection.getMessage());
+                if (!inspection.isImportable()) {
+                    excelSheetData.setFields(fields);
+                    excelSheetData.setData(new ArrayList<>());
+                    excelSheetDataList.add(excelSheetData);
+                    continue;
                 }
-                for (String s : noModelDataListener.getHeader()) {
-                    TableField tableFiled = new TableField();
+                for (TableField tableFiled : excelTableFields(noModelDataListener.getHeader())) {
                     tableFiled.setNativeType(null);
-                    tableFiled.setName(s);
-                    tableFiled.setOriginName(s);
                     tableFiled.setChecked(true);
                     fields.add(tableFiled);
                 }
-                List<String[]> data = new ArrayList<>(noModelDataListener.getData());
                 if (isPreview) {
                     for (int i = 0; i < data.size(); i++) {
                         for (int j = 0; j < data.get(i).length; j++) {
@@ -690,11 +840,8 @@ public class ExcelUtils {
                     }
                 }
 
-                ExcelSheetData excelSheetData = new ExcelSheetData();
                 excelSheetData.setFields(fields);
                 excelSheetData.setData(data);
-                excelSheetData.setFileName(filename);
-                excelSheetData.setExcelLabel(readSheet.getSheetName());
                 excelSheetDataList.add(excelSheetData);
             }
         }
@@ -703,26 +850,29 @@ public class ExcelUtils {
             List<TableField> fields = new ArrayList<>();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
             String s = reader.readLine();// first line
+            List<String> header = new ArrayList<>();
             if (StringUtils.isNotEmpty(s)) {
                 String[] split = s.split(",");
                 for (int i = 0; i < split.length; i++) {
                     String filedName = split[i];
-                    if (StringUtils.isEmpty(filedName)) {
-                        CrestException.throwException(Translator.get("i18n_excel_error_first_row"));
-                    }
                     if (filedName.startsWith(UFEFF)) {
                         filedName = filedName.replace(UFEFF, "");
                     }
-                    TableField tableFiled = new TableField();
-                    tableFiled.setName(filedName);
-                    tableFiled.setOriginName(filedName);
+                    header.add(filedName);
+                }
+            }
+
+            List<String[]> data = csvData(reader, isPreview, header.size());
+            ExcelSheetInspection inspection = inspectSheet(header);
+            if (inspection.isImportable()) {
+                for (TableField tableFiled : excelTableFields(header)) {
                     tableFiled.setNativeType(null);
                     tableFiled.setChecked(true);
                     fields.add(tableFiled);
                 }
+            } else {
+                data = new ArrayList<>();
             }
-
-            List<String[]> data = csvData(reader, isPreview, fields.size());
             if (isPreview) {
                 for (int i = 0; i < data.size(); i++) {
                     for (int j = 0; j < data.get(i).length; j++) {
@@ -747,6 +897,9 @@ public class ExcelUtils {
             excelSheetData.setData(data);
             excelSheetData.setFileName(filename);
             excelSheetData.setExcelLabel(originFilename.substring(0, originFilename.lastIndexOf('.')));
+            excelSheetData.setSheet(inspection.isImportable());
+            excelSheetData.setInspectionStatus(inspection.getStatus());
+            excelSheetData.setInspectionMessage(inspection.getMessage());
             excelSheetDataList.add(excelSheetData);
         }
         inputStream.close();
