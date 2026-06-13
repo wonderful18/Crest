@@ -122,6 +122,14 @@ export const storeStatusApi = (id: string): Promise<IResponse> => {
 export const decompression = async data =>
   request.post({ url: '/data-visualization/decompression', data, loading: true })
 
+export const decompressionLocalFile = async data =>
+  request.post({
+    url: '/data-visualization/decompression/local-file',
+    data,
+    loading: true,
+    headersType: 'multipart/form-data'
+  })
+
 export const viewDetailList = dvId => {
   return request.get({
     url: '/data-visualization/view-detail-list/' + dvId,

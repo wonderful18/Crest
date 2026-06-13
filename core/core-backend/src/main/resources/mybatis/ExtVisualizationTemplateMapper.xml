@@ -183,6 +183,17 @@
             #{viewId}
         </foreach>
     </select>
+    <select id="findAppSnapshotViewInfo" resultType="io.crest.api.visualization.vo.AppCoreChartViewVO">
+        SELECT
+            bi_chart_snapshot.*
+        FROM
+            bi_chart_snapshot
+        WHERE
+            bi_chart_snapshot.id in
+        <foreach collection="viewIds" item="viewId" index="index" open="(" close=")" separator=",">
+            #{viewId}
+        </foreach>
+    </select>
     <select id="findAppDatasetGroupInfo" resultType="io.crest.api.visualization.vo.AppCoreDatasetGroupVO">
         SELECT
         DISTINCT dataset_group.*
@@ -286,5 +297,52 @@
             INNER JOIN visualization_link_jump ON visualization_link_jump.id = visualization_link_jump_info.link_jump_id
         WHERE
             visualization_link_jump.source_dv_id = #{dvId}
+    </select>
+
+    <select id="findAppSnapshotLinkageInfo" resultType="io.crest.api.visualization.vo.VisualizationLinkageVO">
+        SELECT
+            snapshot_visualization_linkage.*
+        FROM
+            snapshot_visualization_linkage
+        WHERE
+            snapshot_visualization_linkage.dv_id = #{dvId}
+    </select>
+    <select id="findAppSnapshotLinkageFieldInfo" resultType="io.crest.api.visualization.vo.VisualizationLinkageFieldVO">
+        SELECT
+            snapshot_visualization_linkage_field.*
+        FROM
+            snapshot_visualization_linkage_field
+            INNER JOIN snapshot_visualization_linkage ON snapshot_visualization_linkage.id = snapshot_visualization_linkage_field.linkage_id
+        WHERE
+            snapshot_visualization_linkage.dv_id = #{dvId}
+    </select>
+
+    <select id="findAppSnapshotLinkJumpInfo" resultType="io.crest.api.visualization.vo.VisualizationLinkJumpVO">
+        SELECT
+            snapshot_visualization_link_jump.*
+        FROM
+            snapshot_visualization_link_jump
+        WHERE
+            snapshot_visualization_link_jump.source_dv_id = #{dvId}
+    </select>
+
+    <select id="findAppSnapshotLinkJumpInfoInfo" resultType="io.crest.api.visualization.vo.VisualizationLinkJumpInfoVO">
+        SELECT
+            snapshot_visualization_link_jump_info.*
+        FROM
+            snapshot_visualization_link_jump_info
+            INNER JOIN snapshot_visualization_link_jump ON snapshot_visualization_link_jump.id = snapshot_visualization_link_jump_info.link_jump_id
+        WHERE
+            snapshot_visualization_link_jump.source_dv_id = #{dvId}
+    </select>
+    <select id="findAppSnapshotLinkJumpTargetViewInfoInfo" resultType="io.crest.api.visualization.vo.VisualizationLinkJumpTargetViewInfoVO">
+        SELECT
+            snapshot_visualization_link_jump_target_view_info.*
+        FROM
+            snapshot_visualization_link_jump_target_view_info
+            INNER JOIN snapshot_visualization_link_jump_info ON snapshot_visualization_link_jump_target_view_info.link_jump_info_id = snapshot_visualization_link_jump_info.id
+            INNER JOIN snapshot_visualization_link_jump ON snapshot_visualization_link_jump.id = snapshot_visualization_link_jump_info.link_jump_id
+        WHERE
+            snapshot_visualization_link_jump.source_dv_id = #{dvId}
     </select>
 </mapper>

@@ -11,7 +11,8 @@
           v-if="colorAreaInit"
           class="custom-color-pick"
           :class="{ 'custom-dark': themes === 'dark' }"
-          v-model="state"
+          :model-value="state"
+          @update:model-value="value => Object.assign(state, value)"
           :themes="themes"
           @change-basic-style="changeColorOption('value')"
         />

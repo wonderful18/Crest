@@ -989,52 +989,66 @@ export function findParentIdByChildIdRecursive(tree, targetChildId) {
   return null // 没有找到匹配的子节点
 }
 
+export function normalizeTemplatePayload(templatePayloadRaw) {
+  if (!templatePayloadRaw) {
+    return null
+  }
+  const sourceComponentData = JSON.parse(templatePayloadRaw['componentData']) as any[]
+  const appData = templatePayloadRaw['appData']
+  const sourceCanvasStyle = JSON.parse(templatePayloadRaw['canvasStyleData']) as Record<string, any>
+  sourceComponentData.forEach(componentItem => {
+    // 2 为基础版本 此处需要增加仪表板矩阵密度
+    if (
+      (!templatePayloadRaw.version || templatePayloadRaw.version === 2) &&
+      templatePayloadRaw.type === 'dashboard'
+    ) {
+      matrixAdaptor(componentItem)
+    }
+  })
+  historyAdaptor(sourceCanvasStyle, sourceComponentData, null, { resourceTable: 'snapshot' }, null)
+  //历史字段适配
+  sourceCanvasStyle.component['seniorStyleSetting'] =
+    sourceCanvasStyle.component['seniorStyleSetting'] || deepCopy(SENIOR_STYLE_SETTING_LIGHT)
+  sourceCanvasStyle['scaleWidth'] = sourceCanvasStyle['scale']
+  sourceCanvasStyle['scaleHeight'] = sourceCanvasStyle['scaleHeight'] || sourceCanvasStyle['scale']
+  return {
+    canvasStyleData: sourceCanvasStyle,
+    componentData: sourceComponentData,
+    canvasViewInfo: templatePayloadRaw['canvasViewInfo'],
+    appData: appData,
+    baseInfo: {
+      preName: templatePayloadRaw.name
+    }
+  }
+}
+
 export async function decompressionPre(params, callBack) {
   let templatePayload
   await decompression(params)
     .then(response => {
-      const templatePayloadRaw = response.data
-      const sourceComponentData = JSON.parse(templatePayloadRaw['componentData']) as any[]
-      const appData = templatePayloadRaw['appData']
-      const sourceCanvasStyle = JSON.parse(templatePayloadRaw['canvasStyleData']) as Record<
-        string,
-        any
-      >
-      sourceComponentData.forEach(componentItem => {
-        // 2 为基础版本 此处需要增加仪表板矩阵密度
-        if (
-          (!templatePayloadRaw.version || templatePayloadRaw.version === 2) &&
-          templatePayloadRaw.type === 'dashboard'
-        ) {
-          matrixAdaptor(componentItem)
-        }
-      })
-      //历史字段适配
-      sourceCanvasStyle.component['seniorStyleSetting'] =
-        sourceCanvasStyle.component['seniorStyleSetting'] || deepCopy(SENIOR_STYLE_SETTING_LIGHT)
-      sourceCanvasStyle['scaleWidth'] = sourceCanvasStyle['scale']
-      sourceCanvasStyle['scaleHeight'] = sourceCanvasStyle['scaleHeight']
-      templatePayload = {
-        canvasStyleData: sourceCanvasStyle,
-        componentData: sourceComponentData,
-        canvasViewInfo: templatePayloadRaw['canvasViewInfo'],
-        appData: appData,
-        baseInfo: {
-          preName: templatePayloadRaw.name
-        }
-      }
+      templatePayload = normalizeTemplatePayload(response.data)
     })
     .catch(e => {
       console.error(e)
     })
-  historyAdaptor(
-    templatePayload.canvasStyleData,
-    templatePayload.componentData,
-    null,
-    { resourceTable: 'snapshot' },
-    null
-  )
   callBack(templatePayload)
+}
+
+export function uploadedTemplatePre(templatePayloadRaw, callBack) {
+  callBack(normalizeTemplatePayload(templatePayloadRaw))
+}
+
+export function consumeUploadedTemplatePayload(cacheKey) {
+  const key = cacheKey ? String(cacheKey) : ''
+  if (!key) {
+    return null
+  }
+  const payload = window.sessionStorage.getItem(key)
+  if (!payload) {
+    return null
+  }
+  window.sessionStorage.removeItem(key)
+  return JSON.parse(payload)
 }
 
 export function isDashboard() {

@@ -53,6 +53,7 @@ import io.crest.model.BusiNodeRequest;
 import io.crest.model.BusiNodeVO;
 import io.crest.operation.manage.CoreOptRecentManage;
 import io.crest.portal.DataPortalPermissionManage;
+import io.crest.result.ResultCode;
 import io.crest.system.manage.CoreUserManage;
 import io.crest.template.dao.auto.entity.VisualizationTemplate;
 import io.crest.template.dao.auto.entity.VisualizationTemplateExtendData;
@@ -82,6 +83,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -323,6 +325,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         sourceDatasetGroupList.forEach(sourceDatasetGroup -> {
             Long systemDatasetGroupId = sourceDatasetGroup.getSystemDatasetId();
             Long sourceDatasetGroupId = sourceDatasetGroup.getId();
+            if (systemDatasetGroupId == null) {
+                throwAppImportMappingMissing("数据集", sourceDatasetGroup.getName());
+            }
             // 获取 dsGroupIdMap
             dsGroupIdMap.put(sourceDatasetGroup.getId(), systemDatasetGroupId);
             CoreDatasetGroup systemDatasetGroup = coreDatasetGroupMapper.selectById(systemDatasetGroupId);
@@ -426,6 +431,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     List<AppCoreDatasourceVO> appCoreDatasourceVO = appData.getDatasourceInfo();
                     //  app 数据源 excel 表名映射
                     appCoreDatasourceVO.forEach(datasourceOld -> {
+                        if (datasourceOld.getSystemDatasourceId() == null) {
+                            throwAppImportMappingMissing("数据源", datasourceOld.getName());
+                        }
                         newDatasourceId.add(datasourceOld.getSystemDatasourceId());
                         // Excel 数据表明映射
                         if (StringUtils.isNotEmpty(datasourceOld.getConfiguration())) {
@@ -570,6 +578,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
                         datasetGroupManage.innerSave(dsGroup);
                     });
 
+                } catch (CrestException e) {
+                    throw e;
                 } catch (Exception e) {
                     LogUtil.error(e);
                     CrestException.throwException(e);
@@ -578,19 +588,11 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
             // 更换主数据内容
             AtomicReference<String> componentDataStr = new AtomicReference<>(request.getComponentData());
-            dsGroupIdMap.forEach((key, value) -> {
-                componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
-            });
-            dsTableIdMap.forEach((key, value) -> {
-                componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
-            });
-
-            dsTableFieldsIdMap.forEach((key, value) -> {
-                componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
-            });
-
+            replaceMappedIds(componentDataStr, dsGroupIdMap, "数据集");
+            replaceMappedIds(componentDataStr, dsTableIdMap, "数据表");
+            replaceMappedIds(componentDataStr, dsTableFieldsIdMap, "字段");
             datasourceIdMap.forEach((key, value) -> {
-                componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
+                replaceMappedId(componentDataStr, key, value, "数据源");
                 //表名映射更新
                 Map<String, String> appDsTableNamesMap = dsTableNamesMap.get(key);
                 Map<String, String> systemDsTableNamesMap = dsTableNamesMap.get(value);
@@ -629,18 +631,10 @@ public class DataVisualizationServer implements DataVisualizationApi {
             Map<Long, String> canvasViewsStr = VisualizationUtils.viewTransToStr(canvasViews);
             canvasViewsStr.forEach((viewId, viewInfoStr) -> {
                 AtomicReference<String> mutableViewInfoStr = new AtomicReference<>(viewInfoStr);
-                datasourceIdMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key.toString(), value.toString()));
-                });
-                dsTableIdMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key.toString(), value.toString()));
-                });
-                dsTableFieldsIdMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key.toString(), value.toString()));
-                });
-                dsGroupIdMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key.toString(), value.toString()));
-                });
+                replaceMappedIds(mutableViewInfoStr, datasourceIdMap, "数据源");
+                replaceMappedIds(mutableViewInfoStr, dsTableIdMap, "数据表");
+                replaceMappedIds(mutableViewInfoStr, dsTableFieldsIdMap, "字段");
+                replaceMappedIds(mutableViewInfoStr, dsGroupIdMap, "数据集");
                 dsTableFieldsDatasetNameMap.forEach((key, value) -> {
                     mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key, value));
                 });
@@ -688,39 +682,112 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 BeanUtils.copyBean(visualizationLinkJump, visualizationLinkJumpVO);
                 visualizationLinkJump.setId(newId);
                 visualizationLinkJump.setSourceDvId(newDvId);
+                visualizationLinkJump.setSourceViewId(mappedLong(viewIdMap, visualizationLinkJump.getSourceViewId()));
                 linkJumpIdMap.put(oldId, newId);
                 snapshotVisualizationLinkJumpMapper.insert(visualizationLinkJump);
             });
 
-            appData.getLinkJumpInfos().forEach(visualizationLinkJumpInfoVO -> {
-                if("outer".equals(visualizationLinkJumpInfoVO.getLinkType())){
-                    Long oldId = visualizationLinkJumpInfoVO.getId();
-                    Long newId = IDUtils.snowID();
-                    SnapshotVisualizationLinkJumpInfo visualizationLinkJumpInfo = new SnapshotVisualizationLinkJumpInfo();
-                    BeanUtils.copyBean(visualizationLinkJumpInfo, visualizationLinkJumpInfoVO);
-                    visualizationLinkJumpInfo.setId(newId);
-                    visualizationLinkJumpInfo.setLinkJumpId(linkJumpIdMap.get(visualizationLinkJumpInfo.getLinkJumpId()));
-                    visualizationLinkJumpInfo.setSourceFieldId(dsTableFieldsIdMap.get(visualizationLinkJumpInfo.getSourceFieldId()));
-                    linkJumpInfoIdMap.put(oldId, newId);
-
-
-                    dsTableFieldsIdMap.forEach((key, value) -> {
-                        if(StringUtils.isNotEmpty(visualizationLinkJumpInfo.getContent())){
-                            visualizationLinkJumpInfo.setContent(visualizationLinkJumpInfo.getContent().replace(key.toString(), value.toString()));
-                        }
-                    });
-                    dsTableFieldsDatasetNameMap.forEach((key, value) -> {
-                        if(StringUtils.isNotEmpty(visualizationLinkJumpInfo.getContent())){
-                            visualizationLinkJumpInfo.setContent(visualizationLinkJumpInfo.getContent().replace(key, value));
-                        }
-                    });
-                    snapshotVisualizationLinkJumpInfoMapper.insert(visualizationLinkJumpInfo);
-                }
-            });
+            saveAppLinkJumpInfos(appData, linkJumpIdMap, linkJumpInfoIdMap, dsTableFieldsIdMap, dsTableFieldsDatasetNameMap, viewIdMap);
         }
         //保存图表信息
         chartDataManage.saveChartViewFromVisualization(request.getComponentData(), newDvId, canvasViews);
         return newDvId.toString();
+    }
+
+    private void replaceMappedIds(AtomicReference<String> content, Map<Long, Long> mapping, String resourceName) {
+        mapping.forEach((key, value) -> replaceMappedId(content, key, value, resourceName));
+    }
+
+    private void replaceMappedId(AtomicReference<String> content, Long sourceId, Long targetId, String resourceName) {
+        if (sourceId == null || targetId == null) {
+            throwAppImportMappingMissing(resourceName, null);
+        }
+        content.set(content.get().replace(sourceId.toString(), targetId.toString()));
+    }
+
+    private void throwAppImportMappingMissing(String resourceName, String name) {
+        String suffix = StringUtils.isBlank(name) ? "" : "：" + name;
+        CrestException.throwException(
+                ResultCode.PARAM_IS_INVALID.code(),
+                "导入应用未完成" + resourceName + "匹配，请先选择目标" + resourceName + suffix
+        );
+    }
+
+    void saveAppLinkJumpInfos(VisualizationExport2AppVO appData,
+                              Map<Long, Long> linkJumpIdMap,
+                              Map<Long, Long> linkJumpInfoIdMap,
+                              Map<Long, Long> dsTableFieldsIdMap,
+                              Map<String, String> dsTableFieldsDatasetNameMap,
+                              Map<String, String> viewIdMap) {
+        Optional.ofNullable(appData.getLinkJumpInfos()).orElseGet(ArrayList::new).forEach(visualizationLinkJumpInfoVO -> {
+            Long oldId = visualizationLinkJumpInfoVO.getId();
+            Long newId = IDUtils.snowID();
+            SnapshotVisualizationLinkJumpInfo visualizationLinkJumpInfo = new SnapshotVisualizationLinkJumpInfo();
+            BeanUtils.copyBean(visualizationLinkJumpInfo, visualizationLinkJumpInfoVO);
+            visualizationLinkJumpInfo.setId(newId);
+            visualizationLinkJumpInfo.setLinkJumpId(mappedLong(linkJumpIdMap, visualizationLinkJumpInfo.getLinkJumpId()));
+            visualizationLinkJumpInfo.setSourceFieldId(mappedLong(dsTableFieldsIdMap, visualizationLinkJumpInfo.getSourceFieldId()));
+            linkJumpInfoIdMap.put(oldId, newId);
+            if ("outer".equals(visualizationLinkJumpInfo.getLinkType())) {
+                visualizationLinkJumpInfo.setContent(mappedText(visualizationLinkJumpInfo.getContent(), dsTableFieldsIdMap, dsTableFieldsDatasetNameMap));
+            }
+            snapshotVisualizationLinkJumpInfoMapper.insert(visualizationLinkJumpInfo);
+        });
+
+        Optional.ofNullable(appData.getLinkJumpTargetInfos()).orElseGet(ArrayList::new).forEach(visualizationLinkJumpTargetViewInfoVO -> {
+            SnapshotVisualizationLinkJumpTargetViewInfo targetViewInfo = new SnapshotVisualizationLinkJumpTargetViewInfo();
+            BeanUtils.copyBean(targetViewInfo, visualizationLinkJumpTargetViewInfoVO);
+            targetViewInfo.setTargetId(IDUtils.snowID());
+            targetViewInfo.setLinkJumpInfoId(mappedLong(linkJumpInfoIdMap, targetViewInfo.getLinkJumpInfoId()));
+            targetViewInfo.setSourceFieldActiveId(mappedLong(dsTableFieldsIdMap, targetViewInfo.getSourceFieldActiveId()));
+            targetViewInfo.setTargetFieldId(mappedStringId(dsTableFieldsIdMap, targetViewInfo.getTargetFieldId()));
+            targetViewInfo.setTargetViewId(mappedStringId(viewIdMap, targetViewInfo.getTargetViewId()));
+            snapshotVisualizationLinkJumpTargetViewInfoMapper.insert(targetViewInfo);
+        });
+    }
+
+    private Long mappedLong(Map<?, ?> mapping, Long value) {
+        if (value == null || MapUtils.isEmpty(mapping)) {
+            return value;
+        }
+        Object mapped = mapping.get(value);
+        if (mapped == null) {
+            mapped = mapping.get(value.toString());
+        }
+        if (mapped == null) {
+            return value;
+        }
+        try {
+            return Long.valueOf(mapped.toString());
+        } catch (NumberFormatException e) {
+            return value;
+        }
+    }
+
+    private String mappedStringId(Map<?, ?> mapping, String value) {
+        if (StringUtils.isBlank(value) || MapUtils.isEmpty(mapping)) {
+            return value;
+        }
+        Object mapped = mapping.get(value);
+        if (mapped != null) {
+            return mapped.toString();
+        }
+        try {
+            mapped = mapping.get(Long.parseLong(value));
+            return mapped == null ? value : mapped.toString();
+        } catch (NumberFormatException e) {
+            return value;
+        }
+    }
+
+    private String mappedText(String content, Map<Long, Long> fieldIdMap, Map<String, String> datasetNameMap) {
+        if (StringUtils.isEmpty(content)) {
+            return content;
+        }
+        AtomicReference<String> mappedContent = new AtomicReference<>(content);
+        fieldIdMap.forEach((key, value) -> mappedContent.set(mappedContent.get().replace(key.toString(), value.toString())));
+        datasetNameMap.forEach((key, value) -> mappedContent.set(mappedContent.get().replace(key, value)));
+        return mappedContent.get();
     }
 
     private void excelAdaptor(DatasetGroupInfoDTO dsInfo, Map<String, String> excelTableNamesMap, List<Long> excelDsId) {
@@ -1051,6 +1118,10 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 staticResource = request.getStaticResource();
                 name = request.getName();
                 dvType = request.getType();
+                version = request.getVersion();
+                if (request.getAppData() != null) {
+                    appDataStr = Objects.requireNonNull(JsonUtil.toJSONString(request.getAppData())).toString();
+                }
             } else if (DataVisualizationConstants.NEW_PANEL_FROM.NEW_MARKET_TEMPLATE.equals(newFrom)) {
                 TemplateManageFileDTO templateFileInfo = templateCenterManage.getTemplateFromMarketV2(request.getResourceName());
                 if (templateFileInfo == null) {
@@ -1139,7 +1210,93 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     @Override
     public DataVisualizationVO decompressionLocalFile(MultipartFile file) {
-        return null;
+        try {
+            DataVisualizationBaseRequest request = parseLocalTemplate(file);
+            return decompression(request);
+        } catch (CrestException e) {
+            throw e;
+        } catch (Exception e) {
+            LogUtil.error("Import visualization template file error", e);
+            CrestException.throwException("模板文件解析失败，请确认文件格式是否正确");
+            return null;
+        }
+    }
+
+    private DataVisualizationBaseRequest parseLocalTemplate(MultipartFile file) throws Exception {
+        if (file == null || file.isEmpty()) {
+            CrestException.throwException("请选择模板文件");
+        }
+        String fileName = StringUtils.defaultString(file.getOriginalFilename());
+        String lowerFileName = fileName.toLowerCase(Locale.ROOT);
+        if (!lowerFileName.endsWith(".det2") && !lowerFileName.endsWith(".det2app")) {
+            CrestException.throwException("仅支持 DET2 或 DET2APP 模板文件");
+        }
+
+        String content = new String(file.getBytes(), StandardCharsets.UTF_8);
+        if (StringUtils.isBlank(content)) {
+            CrestException.throwException("模板文件内容为空");
+        }
+        Map<String, Object> templateInfo = JsonUtil.parseObject(content, new TypeReference<>() {});
+        if (MapUtils.isEmpty(templateInfo)) {
+            CrestException.throwException("模板文件内容为空");
+        }
+
+        DataVisualizationBaseRequest request = new DataVisualizationBaseRequest();
+        request.setNewFrom(DataVisualizationConstants.NEW_PANEL_FROM.NEW_OUTER_TEMPLATE);
+        request.setName(requireTemplateValue(templateInfo, "name", "模板名称不能为空"));
+        request.setType(requireTemplateValue(templateInfo, "dvType", "模板类型不能为空"));
+        if (!Strings.CI.equalsAny(request.getType(), "dataV", "dashboard")) {
+            CrestException.throwException("模板类型不正确");
+        }
+        request.setVersion(templateVersion(templateInfo.get("version")));
+        request.setCanvasStyleData(requireTemplateValue(templateInfo, "canvasStyleData", "模板样式数据不能为空"));
+        request.setComponentData(requireTemplateValue(templateInfo, "componentData", "模板组件数据不能为空"));
+        request.setDynamicData(requireTemplateValue(templateInfo, "dynamicData", "模板图表数据不能为空"));
+        request.setStaticResource(templateValue(templateInfo, "staticResource"));
+
+        String appData = templateValue(templateInfo, "appData");
+        if (StringUtils.isNotBlank(appData)) {
+            request.setAppData(JsonUtil.parseObject(appData, VisualizationExport2AppVO.class));
+        }
+        return request;
+    }
+
+    private String requireTemplateValue(Map<String, Object> templateInfo, String key, String message) {
+        String value = templateValue(templateInfo, key);
+        if (StringUtils.isBlank(value)) {
+            CrestException.throwException(message);
+        }
+        return value;
+    }
+
+    private String templateValue(Map<String, Object> templateInfo, String key) {
+        Object value = templateInfo.get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof String text) {
+            return text;
+        }
+        return Objects.requireNonNull(JsonUtil.toJSONString(value)).toString();
+    }
+
+    private Integer templateVersion(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        String text = value.toString();
+        if (StringUtils.isBlank(text)) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(text);
+        } catch (NumberFormatException e) {
+            CrestException.throwException("模板版本号不正确");
+            return null;
+        }
     }
 
     @Override
@@ -1167,7 +1324,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
         List<AppCoreDatasourceTaskVO> datasourceTaskVOInfo = null;
         //获取所有视图信息
         if (!CollectionUtils.isEmpty(viewIds)) {
-            chartViewVOInfo = appTemplateMapper.findAppViewInfo(viewIds);
+            chartViewVOInfo = findAppChartViews(viewIds);
         }
         if (!CollectionUtils.isEmpty(dsIds)) {
             datasetGroupVOInfo = appTemplateMapper.findAppDatasetGroupInfo(dsIds);
@@ -1183,13 +1340,47 @@ public class DataVisualizationServer implements DataVisualizationApi {
             CrestException.throwException(Translator.get("i18n_app_error_no_api"));
         }
 
-        List<VisualizationLinkageVO> linkageVOInfo = appTemplateMapper.findAppLinkageInfo(dvId);
-        List<VisualizationLinkageFieldVO> linkageFieldVOInfo = appTemplateMapper.findAppLinkageFieldInfo(dvId);
-        List<VisualizationLinkJumpVO> linkJumpVOInfo = appTemplateMapper.findAppLinkJumpInfo(dvId);
-        List<VisualizationLinkJumpInfoVO> linkJumpInfoVOInfo = appTemplateMapper.findAppLinkJumpInfoInfo(dvId);
-        List<VisualizationLinkJumpTargetViewInfoVO> listJumpTargetViewInfoVO = appTemplateMapper.findAppLinkJumpTargetViewInfoInfo(dvId);
+        List<VisualizationLinkageVO> snapshotLinkageVOInfo = appTemplateMapper.findAppSnapshotLinkageInfo(dvId);
+        List<VisualizationLinkageVO> linkageVOInfo = CollectionUtils.isEmpty(snapshotLinkageVOInfo)
+                ? appTemplateMapper.findAppLinkageInfo(dvId)
+                : snapshotLinkageVOInfo;
+        List<VisualizationLinkageFieldVO> linkageFieldVOInfo = CollectionUtils.isEmpty(snapshotLinkageVOInfo)
+                ? appTemplateMapper.findAppLinkageFieldInfo(dvId)
+                : appTemplateMapper.findAppSnapshotLinkageFieldInfo(dvId);
+
+        List<VisualizationLinkJumpVO> snapshotLinkJumpVOInfo = appTemplateMapper.findAppSnapshotLinkJumpInfo(dvId);
+        List<VisualizationLinkJumpVO> linkJumpVOInfo = CollectionUtils.isEmpty(snapshotLinkJumpVOInfo)
+                ? appTemplateMapper.findAppLinkJumpInfo(dvId)
+                : snapshotLinkJumpVOInfo;
+        List<VisualizationLinkJumpInfoVO> linkJumpInfoVOInfo = CollectionUtils.isEmpty(snapshotLinkJumpVOInfo)
+                ? appTemplateMapper.findAppLinkJumpInfoInfo(dvId)
+                : appTemplateMapper.findAppSnapshotLinkJumpInfoInfo(dvId);
+        List<VisualizationLinkJumpTargetViewInfoVO> listJumpTargetViewInfoVO = CollectionUtils.isEmpty(snapshotLinkJumpVOInfo)
+                ? appTemplateMapper.findAppLinkJumpTargetViewInfoInfo(dvId)
+                : appTemplateMapper.findAppSnapshotLinkJumpTargetViewInfoInfo(dvId);
 
         return new VisualizationExport2AppVO(chartViewVOInfo, datasetGroupVOInfo, datasetTableVOInfo, datasetTableFieldVOInfo, datasourceVOInfo, datasourceTaskVOInfo, linkJumpVOInfo, linkJumpInfoVOInfo, listJumpTargetViewInfoVO, linkageVOInfo, linkageFieldVOInfo);
+    }
+
+    private List<AppCoreChartViewVO> findAppChartViews(List<Long> viewIds) {
+        List<AppCoreChartViewVO> publishedViews = appTemplateMapper.findAppViewInfo(viewIds);
+        Map<Long, AppCoreChartViewVO> viewMap = new HashMap<>();
+        if (!CollectionUtils.isEmpty(publishedViews)) {
+            publishedViews.forEach(view -> viewMap.put(view.getId(), view));
+        }
+        List<Long> missingViewIds = viewIds.stream()
+                .filter(viewId -> !viewMap.containsKey(viewId))
+                .collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(missingViewIds)) {
+            List<AppCoreChartViewVO> snapshotViews = appTemplateMapper.findAppSnapshotViewInfo(missingViewIds);
+            if (!CollectionUtils.isEmpty(snapshotViews)) {
+                snapshotViews.forEach(view -> viewMap.put(view.getId(), view));
+            }
+        }
+        return viewIds.stream()
+                .map(viewMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     @CrestAudit(id = "#p0.id", ot = LogOT.APP_TEMPLATE_EXPORT, stExp = "#p0.type")

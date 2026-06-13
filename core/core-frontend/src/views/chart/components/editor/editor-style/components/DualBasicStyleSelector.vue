@@ -151,7 +151,8 @@ onMounted(() => {
       <el-tab-pane :label="t('chart.yAxisLeft')" name="left">
         <template v-if="showProperty('colors')">
           <custom-color-style-select
-            v-model="state"
+            :model-value="state"
+            @update:model-value="value => Object.assign(state, value)"
             :chart="chart"
             :themes="themes"
             :property-inner="propertyInner"
@@ -350,7 +351,8 @@ onMounted(() => {
         <template v-if="showProperty('colors')">
           <custom-color-style-select
             sub
-            v-model="state"
+            :model-value="state"
+            @update:model-value="value => Object.assign(state, value)"
             :chart="chart"
             :themes="themes"
             :property-inner="propertyInner"

@@ -323,7 +323,8 @@ const colorItemBorderColor = (index, state) => {
         style="flex: 1; padding-right: 8px; margin-bottom: 16px"
       >
         <gradient-color-selector
-          v-model="state"
+          :model-value="state"
+          @update:model-value="value => Object.assign(state, value)"
           :themes="themes"
           @select-color-case="selectColorCase"
         />

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import icon_add_outlined from '@/assets/svg/icon_add_outlined.svg'
+import icon_upload_outlined from '@/assets/svg/icon_upload_outlined.svg'
 import dvCopyDark from '@/assets/svg/dv-copy-dark.svg'
 import dvDelete from '@/assets/svg/dv-delete.svg'
 import dvMove from '@/assets/svg/dv-move.svg'
@@ -22,6 +23,7 @@ import { onMounted, reactive, ref, toRefs, watch, nextTick, computed } from 'vue
 import {
   copyResource,
   deleteLogic,
+  decompressionLocalFile,
   queryShareBaseApi,
   ResourceOrFolder,
   updateBase
@@ -89,7 +91,9 @@ const filterText = ref(null)
 const expandedArray = ref([])
 const resourceListTree = ref()
 const resourceGroupOpt = ref()
+const importUploadRef = ref()
 const returnMounted = ref(false)
+const importLoading = ref(false)
 const state = reactive({
   pWeightMap: {},
   curSortType: 'time_desc',
@@ -371,6 +375,57 @@ const copyLoading = ref(false)
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
 const emit = defineEmits(['nodeClick'])
 
+const beforeImportTemplateUpload = file => {
+  if (!/\.(det2|det2app)$/i.test(file.name || '')) {
+    ElMessage.error(t('visualization.template_file_type_limit'))
+    return false
+  }
+  return true
+}
+
+const importTemplateFile = uploadFile => {
+  const formData = new FormData()
+  formData.append('file', uploadFile.file)
+  importLoading.value = true
+  return decompressionLocalFile(formData)
+    .then(res => {
+      const payload = res?.data
+      if (!payload || payload.type !== curCanvasType.value) {
+        ElMessage.error(t('visualization.template_type_mismatch'))
+        return
+      }
+      const cacheKey = `CREST-VISUALIZATION-IMPORT-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}`
+      window.sessionStorage.setItem(cacheKey, JSON.stringify(payload))
+      openImportedTemplateEditor(cacheKey)
+    })
+    .finally(() => {
+      importUploadRef.value?.clearFiles()
+      importLoading.value = false
+    })
+}
+
+const openImportedTemplateEditor = cacheKey => {
+  if (isEmbedded.value) {
+    embeddedStore.clearState()
+    embeddedStore.setOpt('create')
+    embeddedStore.setCreateType('uploadedTemplate')
+    embeddedStore.setTemplateParams(cacheKey)
+    useEmitt().emitter.emit(
+      'changeCurrentComponent',
+      curCanvasType.value === 'dataV' ? 'VisualizationEditor' : 'DashboardEditor'
+    )
+    return
+  }
+  const query = `opt=create&createType=uploadedTemplate&templatePayloadKey=${encodeURIComponent(
+    cacheKey
+  )}`
+  const baseUrl = curCanvasType.value === 'dataV' ? `#/dvCanvas?${query}` : `#/dashboard?${query}`
+  const newWindow = window.open(baseUrl, openType)
+  initOpenHandler(newWindow)
+}
+
 const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
   if (cmd === 'delete') {
     const msg = data.leaf ? '' : t('visualization.delete_tips')
@@ -646,12 +701,12 @@ defineExpose({
         <span class="title"> {{ resourceLabel }} </span>
         <div v-if="rootManage" class="flex-align-center">
           <el-tooltip
-            offset="14"
+            :offset="14"
             :content="t('work_branch.new_folder')"
             placement="top"
             popper-class="new-folder_tip"
             effect="dark"
-            arrow-offset="10"
+            :arrow-offset="10"
           >
             <el-icon
               class="custom-icon btn"
@@ -674,6 +729,25 @@ defineExpose({
                   </el-icon>
                   {{ t('work_branch.new_empty') }}
                 </el-dropdown-item>
+                <el-dropdown-item @click.stop>
+                  <el-upload
+                    ref="importUploadRef"
+                    class="resource-import-upload"
+                    :show-file-list="false"
+                    accept=".DET2,.DET2APP,.det2,.det2app"
+                    :before-upload="beforeImportTemplateUpload"
+                    :http-request="importTemplateFile"
+                  >
+                    <div class="resource-import-entry">
+                      <el-icon :class="`handle-icon color-${curCanvasType}`">
+                        <Icon name="icon_upload_outlined">
+                          <icon_upload_outlined class="svg-icon" />
+                        </Icon>
+                      </el-icon>
+                      <span>{{ t('visualization.import_app_template') }}</span>
+                    </div>
+                  </el-upload>
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -694,18 +768,18 @@ defineExpose({
         </template>
       </el-input>
       <el-dropdown @command="handleSortTypeChange" trigger="click">
-        <el-icon class="filter-icon-span">
+        <span class="filter-icon-trigger">
           <el-tooltip :offset="16" effect="dark" :content="sortTypeTip" placement="top">
-            <Icon v-if="state.curSortType.includes('asc')" name="dv-sort-asc" class="opt-icon"
-              ><dvSortAsc class="svg-icon opt-icon"
-            /></Icon>
+            <el-icon class="filter-icon-span">
+              <Icon v-if="state.curSortType.includes('asc')" name="dv-sort-asc" class="opt-icon"
+                ><dvSortAsc class="svg-icon opt-icon"
+              /></Icon>
+              <Icon v-else name="dv-sort-desc" class="opt-icon"
+                ><dvSortDesc class="svg-icon opt-icon"
+              /></Icon>
+            </el-icon>
           </el-tooltip>
-          <el-tooltip :offset="16" effect="dark" :content="sortTypeTip" placement="top">
-            <Icon v-if="state.curSortType.includes('desc')" name="dv-sort-desc" class="opt-icon"
-              ><dvSortDesc class="svg-icon opt-icon"
-            /></Icon>
-          </el-tooltip>
-        </el-icon>
+        </span>
         <template #dropdown>
           <el-dropdown-menu style="width: 246px">
             <template :key="ele.value" v-for="ele in sortList">
@@ -722,7 +796,7 @@ defineExpose({
         </template>
       </el-dropdown>
     </div>
-    <el-scrollbar class="custom-tree" v-loading="copyLoading">
+    <el-scrollbar class="custom-tree" v-loading="copyLoading || importLoading">
       <el-tree
         menu
         ref="resourceListTree"
@@ -767,7 +841,7 @@ defineExpose({
                 class="box-item"
                 effect="dark"
                 :content="t('visualization.publish_tips1')"
-                :disabled="data.extraFlag1"
+                :disabled="!!data.extraFlag1"
                 placement="top-start"
               >
                 {{ node.label }}
@@ -950,6 +1024,20 @@ defineExpose({
 .custom-tree {
   height: calc(100vh - 158px);
   padding: 10px 0 0;
+}
+
+.resource-import-upload {
+  width: 100%;
+
+  :deep(.ed-upload) {
+    width: 100%;
+  }
+}
+
+.resource-import-entry {
+  width: 100%;
+  display: flex;
+  align-items: center;
 }
 
 .custom-tree-node {

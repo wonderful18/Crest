@@ -353,6 +353,7 @@ defineExpose({
     </el-container>
   </div>
   <app-export-form
+    v-if="state.dvInfo && state.canvasDataPreview && state.canvasViewInfoPreview"
     ref="appExportFormRef"
     :dv-info="state.dvInfo"
     :component-data="state.canvasDataPreview"

@@ -11,7 +11,13 @@ import ViewEditor from '@/views/chart/components/editor/index.vue'
 import { datasetTree } from '@/api/dataset'
 import { Tree } from '@/views/visualized/data/dataset/form/CreatDsGroup.vue'
 import DbCanvasAttr from '@/components/dashboard/DbCanvasAttr.vue'
-import { decompressionPre, initCanvasData, onInitReady } from '@/utils/canvasUtils'
+import {
+  consumeUploadedTemplatePayload,
+  decompressionPre,
+  initCanvasData,
+  onInitReady,
+  uploadedTemplatePre
+} from '@/utils/canvasUtils'
 import ChartStyleBatchSet from '@/views/chart/components/editor/editor-style/ChartStyleBatchSet.vue'
 import CanvasRenderer from '@/views/canvas/CanvasRenderer.vue'
 import { check, compareStorage } from '@/utils/CrossPermission'
@@ -32,6 +38,7 @@ import { useEmitt } from '@/hooks/web/useEmitt'
 import DashboardHiddenComponent from '@/components/dashboard/DashboardHiddenComponent.vue'
 import { recoverToPublished } from '@/api/visualization/dataVisualization'
 import { contextmenuStoreWithOut } from '@/store/modules/data-visualization/contextmenu'
+import { ElMessage } from 'element-plus-secondary'
 const contextmenuStore = contextmenuStoreWithOut()
 const embeddedStore = useEmbedded()
 const { wsCache } = useCache()
@@ -175,6 +182,10 @@ onMounted(async () => {
   const createType = embeddedStore.createType || router.currentRoute.value.query.createType
   const templateParams =
     embeddedStore.templateParams || router.currentRoute.value.query.templateParams
+  const templatePayloadKey =
+    embeddedStore.templateParams ||
+    router.currentRoute.value.query.templatePayloadKey ||
+    router.currentRoute.value.query.templateParams
   const checkResourceId = opt && opt === 'copy' ? null : resourceId
   const checkResult = await checkPer(checkResourceId as string)
   if (!checkResult) {
@@ -214,11 +225,22 @@ onMounted(async () => {
         templatePayload = result
         preName = templatePayload.baseInfo?.preName
       })
+    } else if (createType === 'uploadedTemplate') {
+      const uploadedTemplatePayload = consumeUploadedTemplatePayload(templatePayloadKey)
+      if (!uploadedTemplatePayload) {
+        ElMessage.error(t('visualization.import_template_expired'))
+        window.open('#/panel/index', '_self')
+        return
+      }
+      uploadedTemplatePre(uploadedTemplatePayload, result => {
+        templatePayload = result
+        preName = templatePayload.baseInfo?.preName
+      })
     }
     nextTick(() => {
       dvMainStore.createInit('dashboard', null, pid, watermarkBaseInfo, preName)
       // 从模板新建
-      if (createType === 'template') {
+      if (createType === 'template' || createType === 'uploadedTemplate') {
         wsCache.delete('de-template-data')
         dvMainStore.setComponentData(templatePayload['componentData'])
         dvMainStore.setCanvasStyle(templatePayload['canvasStyleData'])
