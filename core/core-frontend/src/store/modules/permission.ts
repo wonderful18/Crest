@@ -77,6 +77,7 @@ export const usePermissionStoreWithOut = () => {
 }
 
 export const pathValid = path => {
+  path = String(path || '').split('?')[0]
   if (path?.startsWith('/dataset-form')) {
     path = '/data/dataset'
   }

@@ -92,7 +92,7 @@ const multipleSelectionAll = computed(() => [
   ...props.multipleSelection
 ])
 watch(
-  props.pagination,
+  () => props.pagination,
   () => {
     state.paginationDefault = {
       ...state.paginationDefault,
@@ -103,10 +103,10 @@ watch(
 )
 
 watch(
-  props.tableData,
+  () => props.tableData,
   () => {
     nextTick(() => {
-      table.value.doLayout()
+      table.value?.doLayout()
     })
     if (!props.isRememberSelected) return
     // 先拷贝 重新加载数据会触发SelectionChange 导致this.multipleSelection为空

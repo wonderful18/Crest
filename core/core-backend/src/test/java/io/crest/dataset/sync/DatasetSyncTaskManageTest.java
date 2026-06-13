@@ -1,7 +1,6 @@
 package io.crest.dataset.sync;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import io.crest.api.dataset.dto.DatasetSyncTaskPageVO;
 import io.crest.api.dataset.dto.DatasetSyncTaskRequest;
 import io.crest.api.dataset.dto.DatasetSyncTaskDTO;
@@ -244,7 +243,7 @@ class DatasetSyncTaskManageTest {
         manage.pause(982004L);
 
         ArgumentCaptor<CoreDatasetSyncTask> recordCaptor = ArgumentCaptor.forClass(CoreDatasetSyncTask.class);
-        verify(taskMapper).update(recordCaptor.capture(), any(UpdateWrapper.class));
+        verify(taskMapper).update(recordCaptor.capture(), any());
         assertEquals(TaskStatus.Suspend.name(), recordCaptor.getValue().getTaskStatus());
         verify(scheduleManager).removeJob(any(), any());
     }
@@ -273,7 +272,7 @@ class DatasetSyncTaskManageTest {
         manage.resume(982004L);
 
         ArgumentCaptor<CoreDatasetSyncTask> recordCaptor = ArgumentCaptor.forClass(CoreDatasetSyncTask.class);
-        verify(taskMapper).update(recordCaptor.capture(), any(UpdateWrapper.class));
+        verify(taskMapper).update(recordCaptor.capture(), any());
         assertEquals(TaskStatus.WaitingForExecution.name(), recordCaptor.getValue().getTaskStatus());
         verify(scheduleManager).addOrUpdateCronJob(any(), any(), eq(DatasetSyncJob.class), any(), any(), any(), any());
     }

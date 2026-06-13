@@ -19,11 +19,13 @@ import { guid } from '@/views/visualized/data/dataset/form/util.js'
 import { datasetTree } from '@/api/dataset'
 import { Tree } from '@/views/visualized/data/dataset/form/CreatDsGroup.vue'
 import {
+  consumeUploadedTemplatePayload,
   decompressionPre,
   findDragComponent,
   findNewComponent,
   initCanvasData,
-  onInitReady
+  onInitReady,
+  uploadedTemplatePre
 } from '@/utils/canvasUtils'
 import CanvasCore from '@/components/data-visualization/canvas/CanvasCore.vue'
 import { listenGlobalKeyDown, releaseAttachKey } from '@/utils/shortcutKey'
@@ -47,6 +49,7 @@ import ChartStyleBatchSet from '@/views/chart/components/editor/editor-style/Cha
 import CustomTabsSort from '@/custom-component/tabs/CustomTabsSort.vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { recoverToPublished } from '@/api/visualization/dataVisualization'
+import { ElMessage } from 'element-plus-secondary'
 const interactiveStore = interactiveStoreWithOut()
 const embeddedStore = useEmbedded()
 const { wsCache } = useCache()
@@ -390,6 +393,10 @@ onMounted(async () => {
   const pid = embeddedStore.pid || router.currentRoute.value.query.pid
   const templateParams =
     embeddedStore.templateParams || router.currentRoute.value.query.templateParams
+  const templatePayloadKey =
+    embeddedStore.templateParams ||
+    router.currentRoute.value.query.templatePayloadKey ||
+    router.currentRoute.value.query.templateParams
   createType = embeddedStore.createType || router.currentRoute.value.query.createType
   const opt = embeddedStore.opt || router.currentRoute.value.query.opt
   const checkDvId = opt && opt === 'copy' ? null : dvId
@@ -430,6 +437,17 @@ onMounted(async () => {
         templatePayload = result
         preName = templatePayload.baseInfo?.preName
       })
+    } else if (createType === 'uploadedTemplate') {
+      const uploadedTemplatePayload = consumeUploadedTemplatePayload(templatePayloadKey)
+      if (!uploadedTemplatePayload) {
+        ElMessage.error(t('visualization.import_template_expired'))
+        window.open('#/screen/index', '_self')
+        return
+      }
+      uploadedTemplatePre(uploadedTemplatePayload, result => {
+        templatePayload = result
+        preName = templatePayload.baseInfo?.preName
+      })
     }
     dvMainStore.createInit('dataV', null, pid, watermarkBaseInfo, preName)
     nextTick(() => {
@@ -437,7 +455,7 @@ onMounted(async () => {
       dvMainStore.setDataPrepareState(true)
       snapshotStore.recordSnapshotCache('renderChart')
       // 从模板新建
-      if (createType === 'template') {
+      if (createType === 'template' || createType === 'uploadedTemplate') {
         dvMainStore.setComponentData(templatePayload['componentData'])
         dvMainStore.setCanvasStyle(templatePayload['canvasStyleData'])
         dvMainStore.setCanvasViewInfo(templatePayload['canvasViewInfo'])

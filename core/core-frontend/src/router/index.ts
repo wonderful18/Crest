@@ -17,6 +17,27 @@ export const routes: AppRouteRecordRaw[] = [
         hidden: true,
         component: () => import('@/views/workbranch/index.vue'),
         meta: { hidden: true }
+      },
+      {
+        path: 'workbranch/index',
+        name: 'workbranch-index',
+        hidden: true,
+        component: () => import('@/views/workbranch/index.vue'),
+        meta: { hidden: true }
+      },
+      {
+        path: 'panel/index',
+        name: 'panel-index',
+        hidden: true,
+        component: () => import('@/views/dashboard/DashboardPreviewShow.vue'),
+        meta: { hidden: true }
+      },
+      {
+        path: 'screen/index',
+        name: 'screen-index',
+        hidden: true,
+        component: () => import('@/views/data-visualization/PreviewShow.vue'),
+        meta: { hidden: true }
       }
     ]
   },

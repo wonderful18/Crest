@@ -379,7 +379,8 @@ onMounted(() => {
   <el-form size="small" style="width: 100%">
     <template v-if="showProperty('colors')">
       <custom-color-style-select
-        v-model="state"
+        :model-value="state"
+        @update:model-value="value => Object.assign(state, value)"
         :chart="chart"
         :themes="themes"
         :property-inner="propertyInner"
