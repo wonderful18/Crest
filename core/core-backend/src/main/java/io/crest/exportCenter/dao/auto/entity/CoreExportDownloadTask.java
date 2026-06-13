@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 下载任务列表
- * </p>
- *
- * @author fit2cloud
- * @since 2025-06-16
+ * 导出下载任务实体。
  */
 @TableName("export_download_task")
 public class CoreExportDownloadTask implements Serializable {

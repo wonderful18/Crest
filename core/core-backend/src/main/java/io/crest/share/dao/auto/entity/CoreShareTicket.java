@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2024-06-21
+ * 分享访问票据实体。
  */
 @TableName("share_ticket")
 public class CoreShareTicket implements Serializable {
