@@ -151,13 +151,23 @@ bash load-images.sh
 
 ## 执行升级 SQL
 
-全新安装不需要执行升级 SQL。已有 v1.5.4 环境升级到 ${VERSION} 时，请先备份元数据库，再在本包目录执行：
+全新安装不需要执行升级 SQL。已有 v1.5.7 环境升级到 ${VERSION} 时，请先备份元数据库，再在本包目录执行：
+
+\`\`\`bash
+set -a
+source /opt/crest/.env
+set +a
+docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.7_to_${VERSION}.sql
+\`\`\`
+
+已有 v1.5.4 环境升级到 ${VERSION} 时，请先执行 v1.5.4 到 v1.5.5 的升级 SQL，再执行 v1.5.7 到 ${VERSION} 的升级 SQL：
 
 \`\`\`bash
 set -a
 source /opt/crest/.env
 set +a
 docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.4_to_v1.5.5.sql
+docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.7_to_${VERSION}.sql
 \`\`\`
 
 外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 元数据库。
