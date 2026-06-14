@@ -68,6 +68,18 @@ class DatasetDataManageFieldTypeTest {
     }
 
     @Test
+    void transFieldsUsesExcelPhysicalColumnNameForQueryAlias() {
+        TableField field = tableField("业务日期", "f_safe_physical_day", "TEXT", "TEXT", 1, 0);
+
+        List<DatasetTableFieldDTO> fields = new DatasetDataManage().transFields(List.of(field), true);
+
+        DatasetTableFieldDTO result = fields.get(0);
+        assertEquals("f_safe_physical_day", result.getDbFieldName());
+        assertEquals("f_safe_physical_day", result.getEngineFieldName());
+        assertEquals("f_safe_physical_day", result.getFieldShortName());
+    }
+
+    @Test
     void transFieldsNormalizesMixedExcelFieldListWithNullTypesAndExplicitOverrides() {
         TableField day = tableField("投产日期", "f_day", null, "DATE", null, null);
         TableField amount = tableField("金额", "f_amount", "DECIMAL(18,2)", null, null, null);

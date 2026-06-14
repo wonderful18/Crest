@@ -229,6 +229,10 @@ public class DatasetDataManage {
             dto.setName(StringUtils.isNotEmpty(ele.getName()) ? ele.getName() : ele.getOriginName());
             dto.setOriginName(ele.getOriginName());
             dto.setDbFieldName(ele.getDbFieldName());
+            if (StringUtils.isNotBlank(ele.getDbFieldName())) {
+                dto.setEngineFieldName(ele.getDbFieldName());
+                dto.setFieldShortName(ele.getDbFieldName());
+            }
             dto.setChecked(defaultStatus);
             String type = StringUtils.firstNonBlank(ele.getType(), ele.getNativeType(), "TEXT");
             dto.setType(type);
