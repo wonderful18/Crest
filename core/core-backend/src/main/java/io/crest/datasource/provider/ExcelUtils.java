@@ -642,18 +642,19 @@ public class ExcelUtils {
     }
 
     private String cellType(String value) {
-        if (StringUtils.isEmpty(value) || value.length() > 19) {
+        String text = StringUtils.trimToEmpty(value);
+        if (StringUtils.isEmpty(text) || text.length() > 19 || hasLeadingZeroNumericText(text)) {
             return "TEXT";
         }
         String regex = "^-?\\d+(\\.\\d+)?$";
-        if (!value.matches(regex)) {
+        if (!text.matches(regex)) {
             return "TEXT";
         }
         try {
-            Double d = Double.valueOf(value);
+            Double d = Double.valueOf(text);
             double eps = 1e-10;
             if (d - Math.floor(d) < eps) {
-                if (value.contains(".")) {
+                if (text.contains(".")) {
                     return "DOUBLE";
                 }
                 return "LONG";
@@ -666,7 +667,11 @@ public class ExcelUtils {
     }
 
     private void cellType(String value, int i, TableField tableFiled) {
-        if (StringUtils.isEmpty(value)) {
+        if (StringUtils.isBlank(value)) {
+            return;
+        }
+        if (shouldKeepExcelFieldAsText(tableFiled)) {
+            tableFiled.setNativeType(DEFAULT_EXCEL_FIELD_TYPE);
             return;
         }
         if (i == 0) {
@@ -685,6 +690,47 @@ public class ExcelUtils {
             }
         }
 
+    }
+
+    private boolean hasLeadingZeroNumericText(String value) {
+        String text = StringUtils.trimToEmpty(value);
+        int start = text.startsWith("-") ? 1 : 0;
+        return text.length() > start + 1 && text.charAt(start) == '0' && Character.isDigit(text.charAt(start + 1));
+    }
+
+    private boolean shouldKeepExcelFieldAsText(TableField tableField) {
+        if (tableField == null) {
+            return false;
+        }
+        String fieldName = StringUtils.defaultString(StringUtils.firstNonBlank(tableField.getName(), tableField.getOriginName()));
+        String lowerName = fieldName.toLowerCase(Locale.ROOT);
+        return containsAny(fieldName, "编号", "编码", "代码", "单号", "账号", "帐号", "卡号", "身份证", "版本号", "序号")
+                || containsAny(fieldName, "日期", "时间", "月份", "年月")
+                || hasEnglishIdentifierToken(lowerName, "id")
+                || hasEnglishIdentifierToken(lowerName, "code");
+    }
+
+    private boolean containsAny(String value, String... keywords) {
+        if (StringUtils.isBlank(value)) {
+            return false;
+        }
+        for (String keyword : keywords) {
+            if (value.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasEnglishIdentifierToken(String lowerName, String token) {
+        if (StringUtils.isBlank(lowerName)) {
+            return false;
+        }
+        if (lowerName.equals(token)) {
+            return true;
+        }
+        return lowerName.matches(".*(^|[^a-z0-9])" + token + "($|[^a-z0-9]).*")
+                || lowerName.matches(".*[\\u4e00-\\u9fa5]" + token + "$");
     }
 
     @Data

@@ -13,6 +13,8 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -271,7 +273,7 @@ class ExcelFieldNameTest {
             assertField(dataSheet, "平均耗时", "DOUBLE", 3);
             assertField(dataSheet, "超期数量", "LONG", 2);
             assertField(dataSheet, "投产日期", "TEXT", 0);
-            assertField(dataSheet, "日期文本", "LONG", 2);
+            assertField(dataSheet, "日期文本", "TEXT", 0);
             assertField(dataSheet, "长编码", "TEXT", 0);
             assertField(dataSheet, "负数指标", "LONG", 2);
             assertField(dataSheet, "百分比文本", "TEXT", 0);
@@ -427,6 +429,193 @@ class ExcelFieldNameTest {
                 assertTrue(field.getDbFieldName().length() <= 64);
                 assertTrue(dbFieldNames.add(field.getDbFieldName()));
             }
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "项目编号|00123",
+            "需求编号|202605150001",
+            "需求编码|000089",
+            "版本号|202606001",
+            "工单ID|42",
+            "code|0007",
+            "dept_id|0088",
+            "日期文本|20260614",
+            "投产月份|202606",
+            "投产年月|202601"
+    })
+    void excelImportKeepsIdentifierAndDateLikeNumericTextAsText(String headerName, String value) throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("类型识别");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue(headerName);
+            header.createCell(1).setCellValue("需求数");
+            header.createCell(2).setCellValue("平均耗时");
+            Row first = sheet.createRow(1);
+            first.createCell(0).setCellValue(value);
+            first.createCell(1).setCellValue(" 12 ");
+            first.createCell(2).setCellValue(" 18.50 ");
+            Row second = sheet.createRow(2);
+            second.createCell(1).setCellValue(0);
+            second.createCell(2).setCellValue(-3.25);
+
+            ExcelSheetData dataSheet = parseWorkbook(workbook).get(0);
+
+            assertField(dataSheet, headerName, "TEXT", 0);
+            assertField(dataSheet, "需求数", "LONG", 2);
+            assertField(dataSheet, "平均耗时", "DOUBLE", 3);
+            assertEquals(value, dataSheet.getJsonArray().get(0).get(headerName));
+            assertEquals("12", dataSheet.getJsonArray().get(0).get("需求数"));
+            assertEquals("18.50", dataSheet.getJsonArray().get(0).get("平均耗时"));
+        }
+    }
+
+    @Test
+    void excelImportInfersWideOperationalSheetWithNullsIdentifiersAndMetrics() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("运营宽表");
+            Row header = sheet.createRow(0);
+            String[] headers = {
+                    "项目编号",
+                    "项目名称",
+                    "需求编号",
+                    "处室",
+                    "投产月份",
+                    "投产日期",
+                    "需求数",
+                    "投产版本数",
+                    "合并需求阶段耗时",
+                    "业务审批耗时(天)",
+                    "阈值",
+                    "超期数量",
+                    "风险等级",
+                    "备注",
+                    "长编码",
+                    "科学计数文本",
+                    "百分比文本",
+                    "空值列",
+                    "重复指标",
+                    "重复指标"
+            };
+            for (int i = 0; i < headers.length; i++) {
+                header.createCell(i).setCellValue(headers[i]);
+            }
+
+            Row first = sheet.createRow(1);
+            first.createCell(0).setCellValue("000001");
+            first.createCell(1).setCellValue("核心升级");
+            first.createCell(2).setCellValue("202605150001");
+            first.createCell(3).setCellValue("研发一室");
+            first.createCell(4).setCellValue("202606");
+            first.createCell(5).setCellValue("2026/06/14");
+            first.createCell(6).setCellValue(12);
+            first.createCell(7).setCellValue(3);
+            first.createCell(8).setCellValue(" 18 ");
+            first.createCell(9).setCellValue(21.5);
+            first.createCell(10).setCellValue(20);
+            first.createCell(12).setCellValue("高");
+            first.createCell(14).setCellValue("123456789012345678901");
+            first.createCell(15).setCellValue("1.23E4");
+            first.createCell(16).setCellValue("12.5%");
+            first.createCell(18).setCellValue(7);
+            first.createCell(19).setCellValue("A");
+
+            Row second = sheet.createRow(2);
+            second.createCell(0).setCellValue("000002");
+            second.createCell(2).setCellValue("202605150002");
+            second.createCell(3).setCellValue("研发二室");
+            second.createCell(4).setCellValue("202607");
+            second.createCell(6).setCellValue(0);
+            second.createCell(7).setCellValue(4);
+            second.createCell(8).setCellValue(-1);
+            second.createCell(9).setCellValue("待确认");
+            second.createCell(10).setCellValue(20.5);
+            second.createCell(11).setCellValue(2);
+            second.createCell(14).setCellValue("ABCD");
+            second.createCell(18).setCellValue(8);
+            second.createCell(19).setCellValue("B");
+
+            ExcelSheetData dataSheet = parseWorkbook(workbook).get(0);
+
+            assertEquals(headers.length, dataSheet.getFields().size());
+            assertField(dataSheet, "项目编号", "TEXT", 0);
+            assertField(dataSheet, "需求编号", "TEXT", 0);
+            assertField(dataSheet, "投产月份", "TEXT", 0);
+            assertField(dataSheet, "投产日期", "TEXT", 0);
+            assertField(dataSheet, "需求数", "LONG", 2);
+            assertField(dataSheet, "投产版本数", "LONG", 2);
+            assertField(dataSheet, "合并需求阶段耗时", "LONG", 2);
+            assertField(dataSheet, "业务审批耗时(天)", "TEXT", 0);
+            assertField(dataSheet, "阈值", "DOUBLE", 3);
+            assertField(dataSheet, "超期数量", "LONG", 2);
+            assertField(dataSheet, "长编码", "TEXT", 0);
+            assertField(dataSheet, "科学计数文本", "TEXT", 0);
+            assertField(dataSheet, "百分比文本", "TEXT", 0);
+            assertField(dataSheet, "空值列", "TEXT", 0);
+            assertField(dataSheet, "重复指标", "LONG", 2);
+            assertField(dataSheet, "重复指标_2", "TEXT", 0);
+            assertEquals(null, dataSheet.getJsonArray().get(0).get("超期数量"));
+            assertEquals(null, dataSheet.getJsonArray().get(1).get("项目名称"));
+            assertEquals("000002", dataSheet.getJsonArray().get(1).get("项目编号"));
+        }
+    }
+
+    @Test
+    void csvImportKeepsIdentifierAndDateLikeNumericTextAsText() throws Exception {
+        List<ExcelSheetData> sheets = parseCsv("""
+                项目编号,需求编号,投产月份,需求数,平均耗时,空值列
+                000001,202605150001,202606, 12 , 18.50 ,
+                000002,202605150002,202607,0,-3.25,
+                """);
+
+        ExcelSheetData dataSheet = sheets.get(0);
+        assertField(dataSheet, "项目编号", "TEXT", 0);
+        assertField(dataSheet, "需求编号", "TEXT", 0);
+        assertField(dataSheet, "投产月份", "TEXT", 0);
+        assertField(dataSheet, "需求数", "LONG", 2);
+        assertField(dataSheet, "平均耗时", "DOUBLE", 3);
+        assertField(dataSheet, "空值列", "TEXT", 0);
+        assertEquals("000001", dataSheet.getJsonArray().get(0).get("项目编号"));
+        assertEquals(" 12 ", dataSheet.getJsonArray().get(0).get("需求数"));
+        assertEquals("", dataSheet.getJsonArray().get(1).get("空值列"));
+    }
+
+    @Test
+    void csvImportIgnoresWhitespaceOnlyCellsDuringTypeInference() throws Exception {
+        List<ExcelSheetData> sheets = parseCsv("""
+                需求数,平均耗时,说明
+                   ,   ,首行空白
+                12,18.5,第二行有效
+                0,-3.25,第三行有效
+                """);
+
+        ExcelSheetData dataSheet = sheets.get(0);
+        assertField(dataSheet, "需求数", "LONG", 2);
+        assertField(dataSheet, "平均耗时", "DOUBLE", 3);
+        assertField(dataSheet, "说明", "TEXT", 0);
+        assertEquals("   ", dataSheet.getJsonArray().get(0).get("需求数"));
+        assertEquals("   ", dataSheet.getJsonArray().get(0).get("平均耗时"));
+    }
+
+    @Test
+    void excelImportDoesNotTreatOrdinaryEnglishWordsEndingWithIdAsIdentifiers() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("英文后缀");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("valid");
+            header.createCell(1).setCellValue("solid");
+            header.createCell(2).setCellValue("dept_id");
+            Row first = sheet.createRow(1);
+            first.createCell(0).setCellValue(1);
+            first.createCell(1).setCellValue(2);
+            first.createCell(2).setCellValue("0088");
+
+            ExcelSheetData dataSheet = parseWorkbook(workbook).get(0);
+
+            assertField(dataSheet, "valid", "LONG", 2);
+            assertField(dataSheet, "solid", "LONG", 2);
+            assertField(dataSheet, "dept_id", "TEXT", 0);
         }
     }
 

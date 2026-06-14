@@ -129,6 +129,48 @@ public class CrestSqlFunctionTranslatorTest {
     }
 
     @Test
+    public void mysqlTranslationHandlesNullIfEmptyStringsAndChineseFieldNames() {
+        String sql = "SELECT "
+                + "DE_STR_TO_DATE(NULLIF(t.`投产日期`, ''),'yyyy/MM/dd') AS release_day, "
+                + "DE_DATE_FORMAT(DE_STR_TO_DATE(COALESCE(t.`投产月份`, NULL),'yyyyMM'),'yyyy-MM') AS release_month, "
+                + "CASE WHEN DE_STR_TO_DATE(NULLIF(t.`业务审批耗时(天)`, ''),'yyyy-MM-dd') IS NULL THEN NULL ELSE t.`需求数` END AS checked_value "
+                + "FROM t "
+                + "WHERE DE_STR_TO_DATE(NULLIF(t.`投产日期`, ''),'yyyy/MM/dd') IS NOT NULL";
+
+        String translated = CrestSqlFunctionTranslator.translate(sql, datasource("mysql"));
+
+        assertFalse(translated.contains("DE_"));
+        assertEquals(
+                "SELECT "
+                        + "STR_TO_DATE(NULLIF(t.`投产日期`, ''), '%Y/%m/%d') AS release_day, "
+                        + "DATE_FORMAT(STR_TO_DATE(COALESCE(t.`投产月份`, NULL), '%Y%m'), '%Y-%m') AS release_month, "
+                        + "CASE WHEN STR_TO_DATE(NULLIF(t.`业务审批耗时(天)`, ''), '%Y-%m-%d') IS NULL THEN NULL ELSE t.`需求数` END AS checked_value "
+                        + "FROM t "
+                        + "WHERE STR_TO_DATE(NULLIF(t.`投产日期`, ''), '%Y/%m/%d') IS NOT NULL",
+                translated
+        );
+    }
+
+    @Test
+    public void mysqlTranslationHandlesQuotedDateFormatSeparatorsAndMetricCasts() {
+        String sql = "SELECT "
+                + "CAST(DE_UNIX_TIMESTAMP(DE_STR_TO_DATE(NULLIF(t.`日期文本`, ''),'yyyy-MM-dd''T''HH:mm:ss')) AS DECIMAL(26,8)) AS day_score, "
+                + "DE_FROM_UNIXTIME(NULL,'yyyy-MM-dd HH:mm:ss') AS empty_epoch "
+                + "FROM t";
+
+        String translated = CrestSqlFunctionTranslator.translate(sql, datasource("mysql"));
+
+        assertFalse(translated.contains("DE_"));
+        assertEquals(
+                "SELECT "
+                        + "CAST(UNIX_TIMESTAMP(STR_TO_DATE(NULLIF(t.`日期文本`, ''), '%Y-%m-%d''T''%H:%i:%s')) AS DECIMAL(26,8)) AS day_score, "
+                        + "FROM_UNIXTIME(NULL, '%Y-%m-%d %H:%i:%s') AS empty_epoch "
+                        + "FROM t",
+                translated
+        );
+    }
+
+    @Test
     public void mysqlTranslationPreservesMysqlFormatsAndHandlesBacktickSchemaQualifier() {
         String sql = "SELECT `crest`.de_str_to_date(t.`day`,'%Y-%m-%d') AS day_value, "
                 + "DE_FROM_UNIXTIME(t.`epoch_seconds`) AS epoch_value FROM t";
