@@ -18,7 +18,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -126,6 +128,392 @@ class ExcelFieldNameTest {
     }
 
     @Test
+    void excelImportStoresCanonicalFieldType() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("字段类型");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("月份");
+            header.createCell(1).setCellValue("数量");
+            Row row = sheet.createRow(1);
+            row.createCell(0).setCellValue("2026年1月");
+            row.createCell(1).setCellValue(12);
+
+            List<ExcelSheetData> sheets = parseWorkbook(workbook);
+
+            ExcelSheetData dataSheet = sheets.get(0);
+            assertEquals("TEXT", dataSheet.getFields().get(0).getNativeType());
+            assertEquals("TEXT", dataSheet.getFields().get(0).getType());
+            assertEquals("LONG", dataSheet.getFields().get(1).getNativeType());
+            assertEquals("LONG", dataSheet.getFields().get(1).getType());
+        }
+    }
+
+    @Test
+    void excelImportDefaultsColumnsWithLeadingBlankCellsToSafeTextType() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("空值");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("日期");
+            header.createCell(1).setCellValue("数量");
+            Row row1 = sheet.createRow(1);
+            row1.createCell(1).setCellValue(5);
+            Row row = sheet.createRow(2);
+            row.createCell(0).setCellValue("2026/06/14");
+            row.createCell(1).setCellValue(10);
+
+            List<ExcelSheetData> sheets = parseWorkbook(workbook);
+
+            ExcelSheetData dataSheet = sheets.get(0);
+            assertEquals("TEXT", dataSheet.getFields().get(0).getType());
+            assertEquals("LONG", dataSheet.getFields().get(1).getType());
+            assertEquals(null, dataSheet.getJsonArray().get(0).get("日期"));
+            assertEquals("5", dataSheet.getJsonArray().get(0).get("数量"));
+        }
+    }
+
+    @Test
+    void excelImportPromotesMixedNumericAndTextColumnsToText() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("混合类型");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("指标值");
+            Row row1 = sheet.createRow(1);
+            row1.createCell(0).setCellValue(12);
+            Row row2 = sheet.createRow(2);
+            row2.createCell(0).setCellValue("暂无");
+
+            List<ExcelSheetData> sheets = parseWorkbook(workbook);
+
+            ExcelSheetData dataSheet = sheets.get(0);
+            assertEquals("TEXT", dataSheet.getFields().get(0).getType());
+            assertEquals(0, dataSheet.getFields().get(0).getFieldType());
+            assertEquals(0, dataSheet.getFields().get(0).getExtractedFieldType());
+        }
+    }
+
+    @Test
+    void excelImportHandlesWideSheetWithNullsAndMixedFieldTypes() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("宽表");
+            Row header = sheet.createRow(0);
+            String[] headers = {
+                    "月份",
+                    "处室",
+                    "版本号",
+                    "需求数",
+                    "平均耗时",
+                    "超期数量",
+                    "投产日期",
+                    "日期文本",
+                    "长编码",
+                    "负数指标",
+                    "百分比文本",
+                    "空值指标",
+                    "金额",
+                    "是否重点",
+                    "说明",
+                    "科学计数文本",
+                    "带空格字段",
+                    "重复指标",
+                    "重复指标"
+            };
+            for (int i = 0; i < headers.length; i++) {
+                header.createCell(i).setCellValue(headers[i]);
+            }
+
+            Row row1 = sheet.createRow(1);
+            row1.createCell(0).setCellValue("2026年1月");
+            row1.createCell(1).setCellValue("研发一室");
+            row1.createCell(2).setCellValue("V1.0");
+            row1.createCell(3).setCellValue(12);
+            row1.createCell(4).setCellValue(18.5);
+            row1.createCell(6).setCellValue("2026/06/14");
+            row1.createCell(7).setCellValue("20260614");
+            row1.createCell(8).setCellValue("123456789012345678901");
+            row1.createCell(9).setCellValue(-3);
+            row1.createCell(10).setCellValue("12.5%");
+            row1.createCell(12).setCellValue(123456.78);
+            row1.createCell(13).setCellValue(true);
+            row1.createCell(14).setCellValue("包含逗号, 括号() 与较长说明");
+            row1.createCell(15).setCellValue("1.23E4");
+            row1.createCell(16).setCellValue("合同");
+            row1.createCell(17).setCellValue(7);
+            row1.createCell(18).setCellValue("B");
+
+            Row row2 = sheet.createRow(2);
+            row2.createCell(1).setCellValue("研发二室");
+            row2.createCell(2).setCellValue("V1.1");
+            row2.createCell(3).setCellValue("待定");
+            row2.createCell(4).setCellValue(20.25);
+            row2.createCell(5).setCellValue(2);
+            row2.createCell(6).setCellValue("无");
+            row2.createCell(7).setCellValue("20260701");
+            row2.createCell(8).setCellValue("ABCD");
+            row2.createCell(9).setCellValue(-4);
+            row2.createCell(10).setCellValue("0%");
+            row2.createCell(12).setCellValue(0);
+            row2.createCell(13).setCellValue(false);
+            row2.createCell(15).setCellValue("9.9E-2");
+            row2.createCell(16).setCellValue("上线");
+            row2.createCell(17).setCellValue(8);
+            row2.createCell(18).setCellValue("C");
+
+            List<ExcelSheetData> sheets = parseWorkbook(workbook);
+
+            ExcelSheetData dataSheet = sheets.get(0);
+            assertEquals(headers.length, dataSheet.getFields().size());
+            assertEquals("重复指标", dataSheet.getFields().get(17).getName());
+            assertEquals("重复指标_2", dataSheet.getFields().get(18).getName());
+            assertField(dataSheet, "月份", "TEXT", 0);
+            assertField(dataSheet, "处室", "TEXT", 0);
+            assertField(dataSheet, "版本号", "TEXT", 0);
+            assertField(dataSheet, "需求数", "TEXT", 0);
+            assertField(dataSheet, "平均耗时", "DOUBLE", 3);
+            assertField(dataSheet, "超期数量", "LONG", 2);
+            assertField(dataSheet, "投产日期", "TEXT", 0);
+            assertField(dataSheet, "日期文本", "LONG", 2);
+            assertField(dataSheet, "长编码", "TEXT", 0);
+            assertField(dataSheet, "负数指标", "LONG", 2);
+            assertField(dataSheet, "百分比文本", "TEXT", 0);
+            assertField(dataSheet, "空值指标", "TEXT", 0);
+            assertField(dataSheet, "金额", "DOUBLE", 3);
+            assertField(dataSheet, "是否重点", "TEXT", 0);
+            assertField(dataSheet, "说明", "TEXT", 0);
+            assertField(dataSheet, "科学计数文本", "TEXT", 0);
+            assertField(dataSheet, "重复指标", "LONG", 2);
+            assertField(dataSheet, "重复指标_2", "TEXT", 0);
+
+            assertEquals(null, dataSheet.getJsonArray().get(0).get("超期数量"));
+            assertEquals(null, dataSheet.getJsonArray().get(0).get("空值指标"));
+            assertEquals(null, dataSheet.getJsonArray().get(1).get("月份"));
+            assertEquals("研发二室", dataSheet.getJsonArray().get(1).get("处室"));
+            assertEquals("待定", dataSheet.getJsonArray().get(1).get("需求数"));
+            assertEquals("2", dataSheet.getJsonArray().get(1).get("超期数量"));
+        }
+    }
+
+    @Test
+    void excelImportHandlesLargeSparseSheetWithoutColumnShift() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("复杂宽表");
+            Row header = sheet.createRow(0);
+            String[] headers = {
+                    "月份",
+                    "处室",
+                    "需求编号",
+                    "版本编号",
+                    "项目编号",
+                    "项目名称",
+                    "项目级别",
+                    "项目类型",
+                    "是否重点",
+                    "需求状态",
+                    "计划投产日期",
+                    "实际投产日期",
+                    "需求数",
+                    "投产版本数",
+                    "平均耗时",
+                    "最长耗时",
+                    "超期数量",
+                    "阈值",
+                    "风险说明",
+                    "备注",
+                    "金额",
+                    "占比",
+                    "负数",
+                    "长编码",
+                    "科学计数文本",
+                    "空列指标",
+                    "日期文本",
+                    "数字文本",
+                    "布尔文本",
+                    "公式结果文本",
+                    "分类1",
+                    "分类2",
+                    "分类3",
+                    "分类4",
+                    "分类5",
+                    "指标A",
+                    "指标B",
+                    "指标C",
+                    "指标D",
+                    "指标E",
+                    "重复指标",
+                    "重复指标",
+                    "SQL片段文本",
+                    "含空格 字段",
+                    "特殊符号(天)"
+            };
+            for (int i = 0; i < headers.length; i++) {
+                header.createCell(i).setCellValue(headers[i]);
+            }
+
+            Row row1 = sheet.createRow(1);
+            row1.createCell(0).setCellValue("2026年1月");
+            row1.createCell(1).setCellValue("研发一室");
+            row1.createCell(2).setCellValue("REQ-001");
+            row1.createCell(3).setCellValue("V1.0");
+            row1.createCell(12).setCellValue(12);
+            row1.createCell(13).setCellValue(3);
+            row1.createCell(14).setCellValue(18.5);
+            row1.createCell(15).setCellValue(32);
+            row1.createCell(17).setCellValue(30.5);
+            row1.createCell(20).setCellValue(123456.78);
+            row1.createCell(21).setCellValue("12.5%");
+            row1.createCell(22).setCellValue(-5);
+            row1.createCell(23).setCellValue("123456789012345678901");
+            row1.createCell(24).setCellValue("1.23E4");
+            row1.createCell(26).setCellValue("2026/06/14");
+            row1.createCell(27).setCellValue("00123");
+            row1.createCell(28).setCellValue("Y");
+            row1.createCell(35).setCellValue(1);
+            row1.createCell(40).setCellValue(7);
+            row1.createCell(41).setCellValue("重复文本");
+            row1.createCell(42).setCellValue("SELECT a FROM t");
+            row1.createCell(44).setCellValue("右侧字段值");
+
+            Row row2 = sheet.createRow(2);
+            row2.createCell(1).setCellValue("研发二室");
+            row2.createCell(2).setCellValue("REQ-002");
+            row2.createCell(3).setCellValue("V1.1");
+            row2.createCell(12).setCellValue("待定");
+            row2.createCell(13).setCellValue(4);
+            row2.createCell(14).setCellValue(20.25);
+            row2.createCell(16).setCellValue(2);
+            row2.createCell(17).setCellValue(30);
+            row2.createCell(18).setCellValue("超过阈值");
+            row2.createCell(20).setCellValue(0);
+            row2.createCell(22).setCellValue(-1);
+            row2.createCell(23).setCellValue("ABCD");
+            row2.createCell(26).setCellValue("无");
+            row2.createCell(27).setCellValue(456);
+            row2.createCell(28).setCellValue(false);
+            row2.createCell(35).setCellValue(2.5);
+            row2.createCell(40).setCellValue(8);
+            row2.createCell(41).setCellValue("重复文本2");
+            row2.createCell(44).setCellValue("右侧字段值2");
+
+            Row row3 = sheet.createRow(3);
+            row3.createCell(2).setCellValue("REQ-003");
+            row3.createCell(16).setCellValue(0);
+            row3.createCell(35).setCellValue(3);
+            row3.createCell(44).setCellValue("只填最右列");
+
+            List<ExcelSheetData> sheets = parseWorkbook(workbook);
+
+            ExcelSheetData dataSheet = sheets.get(0);
+            assertEquals(headers.length, dataSheet.getFields().size());
+            assertEquals(3, dataSheet.getJsonArray().size());
+            assertEquals(null, dataSheet.getJsonArray().get(1).get("月份"));
+            assertEquals("研发二室", dataSheet.getJsonArray().get(1).get("处室"));
+            assertEquals("REQ-002", dataSheet.getJsonArray().get(1).get("需求编号"));
+            assertEquals("只填最右列", dataSheet.getJsonArray().get(2).get("特殊符号(天)"));
+            assertEquals(null, dataSheet.getJsonArray().get(2).get("处室"));
+            assertEquals("重复指标_2", dataSheet.getFields().get(41).getName());
+            assertField(dataSheet, "需求数", "TEXT", 0);
+            assertField(dataSheet, "投产版本数", "LONG", 2);
+            assertField(dataSheet, "平均耗时", "DOUBLE", 3);
+            assertField(dataSheet, "超期数量", "LONG", 2);
+            assertField(dataSheet, "空列指标", "TEXT", 0);
+            assertField(dataSheet, "金额", "DOUBLE", 3);
+            assertField(dataSheet, "长编码", "TEXT", 0);
+
+            Set<String> dbFieldNames = new HashSet<>();
+            for (TableField field : dataSheet.getFields()) {
+                assertNotNull(field.getType());
+                assertNotNull(field.getNativeType());
+                assertNotNull(field.getFieldType());
+                assertNotNull(field.getExtractedFieldType());
+                assertTrue(field.getDbFieldName().length() <= 64);
+                assertTrue(dbFieldNames.add(field.getDbFieldName()));
+            }
+        }
+    }
+
+    @Test
+    void excelImportSkipsSheetWithBlankHeaderGap() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("空表头");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("月份");
+            header.createCell(2).setCellValue("数量");
+            Row row = sheet.createRow(1);
+            row.createCell(0).setCellValue("2026年1月");
+            row.createCell(2).setCellValue(12);
+
+            List<ExcelSheetData> sheets = parseWorkbook(workbook);
+
+            assertEquals(1, sheets.size());
+            ExcelSheetData dataSheet = sheets.get(0);
+            assertFalse(dataSheet.isSheet());
+            assertEquals("SKIPPED", dataSheet.getInspectionStatus());
+            assertEquals("检测到空表头，默认不导入。", dataSheet.getInspectionMessage());
+            assertTrue(dataSheet.getFields().isEmpty());
+            assertTrue(dataSheet.getJsonArray().isEmpty());
+        }
+    }
+
+    @Test
+    void csvImportPreservesQuotedCommasAndMissingCellsAsSafeValues() throws Exception {
+        List<ExcelSheetData> sheets = parseCsv("部门,说明,数量,空值\n研发,\"包含,逗号\",12,\n测试,,,\n");
+
+        ExcelSheetData dataSheet = sheets.get(0);
+        assertTrue(dataSheet.isSheet());
+        assertEquals(4, dataSheet.getFields().size());
+        assertField(dataSheet, "部门", "TEXT", 0);
+        assertField(dataSheet, "说明", "TEXT", 0);
+        assertField(dataSheet, "数量", "LONG", 2);
+        assertField(dataSheet, "空值", "TEXT", 0);
+        assertEquals("包含,逗号", dataSheet.getJsonArray().get(0).get("说明"));
+        assertEquals("", dataSheet.getJsonArray().get(0).get("空值"));
+        assertEquals("", dataSheet.getJsonArray().get(1).get("说明"));
+        assertEquals("", dataSheet.getJsonArray().get(1).get("数量"));
+        assertEquals("", dataSheet.getJsonArray().get(1).get("空值"));
+    }
+
+    @Test
+    void csvImportParsesQuotedHeadersWithCommas() throws Exception {
+        List<ExcelSheetData> sheets = parseCsv("\"部门,名称\",数量\n研发一室,12\n");
+
+        ExcelSheetData dataSheet = sheets.get(0);
+        assertTrue(dataSheet.isSheet());
+        assertEquals(2, dataSheet.getFields().size());
+        assertField(dataSheet, "部门,名称", "TEXT", 0);
+        assertField(dataSheet, "数量", "LONG", 2);
+        assertEquals("研发一室", dataSheet.getJsonArray().get(0).get("部门,名称"));
+        assertEquals("12", dataSheet.getJsonArray().get(0).get("数量"));
+    }
+
+    @Test
+    void excelGetTableFieldsNormalizesLegacyFieldsWithoutType() throws Exception {
+        ExcelSheetData sheet = new ExcelSheetData();
+        sheet.setSheet(true);
+        sheet.setDisplayTableName("excel_legacy");
+        sheet.setTableName("legacy");
+        TableField field = checkedTextField("数量", "f_qty");
+        field.setType(null);
+        field.setNativeType("LONG");
+        field.setFieldType(null);
+        field.setExtractedFieldType(null);
+        sheet.setFields(java.util.List.of(field));
+
+        DatasourceRequest request = new DatasourceRequest();
+        DatasourceDTO datasource = new DatasourceDTO();
+        datasource.setType("Excel");
+        datasource.setConfiguration(JsonUtil.toJSONString(java.util.List.of(sheet)).toString());
+        request.setDatasource(datasource);
+        request.setTable("excel_legacy");
+
+        List<TableField> fields = ExcelUtils.getTableFields(request);
+
+        assertEquals(1, fields.size());
+        assertEquals("LONG", fields.get(0).getType());
+        assertEquals("LONG", fields.get(0).getNativeType());
+        assertEquals(2, fields.get(0).getFieldType());
+        assertEquals(2, fields.get(0).getExtractedFieldType());
+    }
+
+    @Test
     void csvImportSkipsSheetWithBlankHeaderCell() throws Exception {
         List<ExcelSheetData> sheets = parseCsv("月份,   ,数量\n2026年1月,12,24\n");
 
@@ -154,6 +542,17 @@ class ExcelFieldNameTest {
 
         assertEquals(1, tables.size());
         assertEquals("excel_数据", tables.get(0).getTableName());
+    }
+
+    private void assertField(ExcelSheetData sheet, String name, String type, int fieldType) {
+        TableField field = sheet.getFields().stream()
+                .filter(item -> name.equals(item.getName()))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(type, field.getType());
+        assertEquals(type, field.getNativeType());
+        assertEquals(fieldType, field.getFieldType());
+        assertEquals(fieldType, field.getExtractedFieldType());
     }
 
     private TableField checkedTextField(String name, String dbFieldName) {

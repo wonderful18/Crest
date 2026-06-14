@@ -16,6 +16,7 @@ import io.crest.datasource.type.*;
 import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.*;
 import io.crest.extensions.datasource.provider.DriverShim;
+import io.crest.extensions.datasource.provider.CrestSqlFunctionTranslator;
 import io.crest.extensions.datasource.provider.ExtendedJdbcClassLoader;
 import io.crest.extensions.datasource.provider.Provider;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
@@ -336,7 +337,8 @@ public class CalciteProvider extends Provider {
             }
             SqlParser parser = SqlParser.create(sql, SqlParser.Config.DEFAULT.withLex(Lex.JAVA));
             SqlNode sqlNode = parser.parseStmt();
-            return restoreUnicodeStringLiterals(sqlNode.toSqlString(getDialect(value)).toString());
+            String dialect = restoreUnicodeStringLiterals(sqlNode.toSqlString(getDialect(value)).toString());
+            return CrestSqlFunctionTranslator.translate(dialect, value);
         } catch (Exception e) {
             CrestException.throwException(e.getMessage());
         }

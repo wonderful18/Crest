@@ -138,7 +138,16 @@ public abstract class Provider {
         String tableDialect = sqlMeta.getTableDialect();
         s = replaceTablePlaceHolder(s, tableDialect);
         s = replaceCalcFieldPlaceHolder(s, sqlMeta);
+        s = translateCrestSqlFunctions(s, dsMap);
         return replaceMssqlN(s);
+    }
+
+    private String translateCrestSqlFunctions(String sql, Map<Long, DatasourceSchemaDTO> dsMap) {
+        if (dsMap == null || dsMap.isEmpty()) {
+            return sql;
+        }
+        DatasourceSchemaDTO value = dsMap.entrySet().iterator().next().getValue();
+        return CrestSqlFunctionTranslator.translate(sql, value);
     }
 
     public String transSqlDialect(String sql, Map<Long, DatasourceSchemaDTO> dsMap) throws CrestException {
@@ -158,6 +167,7 @@ public abstract class Provider {
             SqlParser parser = SqlParser.create(sql, SqlParser.Config.DEFAULT.withLex(Lex.JAVA));
             SqlNode sqlNode = parser.parseStmt();
             String dialect = restoreUnicodeStringLiterals(sqlNode.toSqlString(getDialect(value)).toString());
+            dialect = CrestSqlFunctionTranslator.translate(dialect, value);
             if (Strings.CI.equals(value.getType(), "sqlServer")) {
                 dialect = dialect.replaceAll("\\[CONCAT]", "CONCAT");
             }
