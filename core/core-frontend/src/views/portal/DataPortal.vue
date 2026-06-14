@@ -34,11 +34,16 @@ const FAVORITES = 'store'
 const RECENT = 'recent'
 const appearanceStore = useAppearanceStoreWithOut()
 const userStore = useUserStoreWithOut()
+// 当前资源页签，默认展示我的收藏。
 const activeName = ref(FAVORITES)
+// 资源列表更新时间排序方向。
 const orderDesc = ref(true)
+// 正在切换收藏状态的资源 id。
 const favoriteLoadingId = ref<string | number | null>(null)
+// 资源列表请求序号，用于丢弃过期响应。
 let resourceRequestSeq = 0
 
+// 门户首页的资源列表、筛选条件和统计概览状态。
 const state = reactive({
   loading: false,
   keyword: '',
@@ -61,12 +66,14 @@ const state = reactive({
   }
 })
 
+// 资源列表页签配置。
 const paneList = [
   { title: '我的收藏', name: FAVORITES },
   { title: '全部资源', name: ALL_RESOURCES },
   { title: '最近使用', name: RECENT }
 ]
 
+// 有后台权限时展示的快捷创建入口。
 const quickCreationBaseList = [
   {
     icon: '/svg/icon_dashboard.svg',
@@ -98,6 +105,7 @@ const quickCreationBaseList = [
   }
 ]
 
+// 无后台权限时展示的门户访问入口。
 const portalEntryBaseList = [
   {
     icon: '/svg/icon_dataset_outlined.svg?v=20260606',
@@ -129,22 +137,30 @@ const portalEntryBaseList = [
   }
 ]
 
+// 当前用户是否拥有后台访问能力。
 const backendAccess = computed(() => userStore.getBackendAccess || state.overview.backendAccess)
+// 门户顶部系统标题。
 const systemTitle = computed(() => appearanceStore.getSiteTitle)
+// 当前登录用户名称。
 const userName = computed(() => userStore.getName || '用户')
+// 当前登录用户 id。
 const userId = computed(() => userStore.getUid || '-')
 
+// 快捷创建入口列表，根据后台权限统一设置禁用状态。
 const quickCreationList = computed(() =>
   quickCreationBaseList.map(item => ({
     ...item,
     disabled: !backendAccess.value
   }))
 )
+// 根据权限切换快捷卡片标题。
 const actionCardTitle = computed(() => (backendAccess.value ? '快速创建' : '常用入口'))
+// 根据权限选择快捷创建入口或普通门户入口。
 const actionCardList = computed(() =>
   backendAccess.value ? quickCreationList.value : portalEntryBaseList
 )
 
+// 资源类型筛选按钮及数量。
 const typeFilters = computed(() => [
   { label: '全部', value: 'all', count: state.filterCounts.total, color: '#3B82F6' },
   { label: '数据大屏', value: 'dataV', count: state.filterCounts.screenCount, color: '#1FB6A6' },
@@ -156,6 +172,7 @@ const typeFilters = computed(() => [
   }
 ])
 
+// 顶部资源统计卡片数据。
 const stats = computed(() => [
   {
     name: '数据大屏',
@@ -177,14 +194,21 @@ const stats = computed(() => [
   }
 ])
 
+// 将资源类型转换为展示文案。
 const typeLabel = (type: string) => (type === 'dashboard' ? '仪表盘' : '数据大屏')
+// 将资源类型转换为图标地址。
 const typeIcon = (type: string) =>
   type === 'dashboard' ? '/svg/icon_dashboard.svg' : '/svg/icon_data-visualization.svg'
+// 将资源类型转换为主题色。
 const typeColor = (type: string) => (type === 'dashboard' ? '#3B82F6' : '#1FB6A6')
+// 将资源 id 或类型转换为大写编码展示。
 const typeCode = (type: string | number) => String(type || '').toUpperCase()
+// 格式化时间戳，空值展示为占位符。
 const formatTime = (time?: number | null, formatter = 'YYYY-MM-DD HH:mm') =>
   time ? dayjs(time).format(formatter) : '-'
+// 根据当前页签转换后端资源来源筛选参数。
 const resourceQueryFrom = () => (activeName.value === ALL_RESOURCES ? undefined : activeName.value)
+// 根据搜索和页签状态生成空列表文案。
 const emptyDescription = computed(() => {
   if (state.keyword) {
     return '暂无相关内容'
@@ -195,6 +219,7 @@ const emptyDescription = computed(() => {
   return activeName.value === ALL_RESOURCES ? '暂无资源' : '暂无最近使用'
 })
 
+// 根据资源数量生成统计卡片中的趋势点数值。
 const getSparkValues = (value: number) => {
   const total = Number(value || 0)
   if (!total) {
@@ -203,6 +228,7 @@ const getSparkValues = (value: number) => {
   return [0, 0.16, 0.32, 0.48, 0.66, 0.84, 1].map(rate => Math.ceil(total * rate))
 }
 
+// 将趋势点数值转换为 SVG polyline 坐标。
 const getSparkPoints = (value: number) => {
   const values = getSparkValues(value)
   const max = Math.max(...values)
@@ -217,17 +243,20 @@ const getSparkPoints = (value: number) => {
     .join(' ')
 }
 
+// 获取趋势线最后一个点，用于绘制末端圆点。
 const getSparkLastPoint = (value: number) => {
   const point = getSparkPoints(value).split(' ').pop() || '46,9'
   const [x, y] = point.split(',')
   return { x, y }
 }
 
+// 加载门户资源统计概览。
 const loadOverview = async () => {
   const res = await portalOverviewApi()
   Object.assign(state.overview, res?.data || {})
 }
 
+// 按当前页签、类型、关键字和排序加载资源列表。
 const loadResources = async () => {
   const requestSeq = ++resourceRequestSeq
   state.loading = true
@@ -256,15 +285,18 @@ const loadResources = async () => {
   }
 }
 
+// 同时刷新统计概览和资源列表。
 const reload = async () => {
   await Promise.all([loadOverview(), loadResources()])
 }
 
+// 重置到第一页并重新搜索资源。
 const search = () => {
   state.page = 1
   loadResources()
 }
 
+// 页签点击后刷新当前资源列表。
 const handleTabClick = (pane: TabsPaneContext) => {
   if (pane.paneName === activeName.value) {
     state.page = 1
@@ -272,6 +304,7 @@ const handleTabClick = (pane: TabsPaneContext) => {
   }
 }
 
+// 切换资源类型筛选并刷新列表。
 const selectType = (type: string) => {
   if (state.type === type) {
     return
@@ -281,6 +314,7 @@ const selectType = (type: string) => {
   loadResources()
 }
 
+// 进入全部资源页签并按指定资源类型筛选。
 const openAllResources = (type: string) => {
   const shouldReload = activeName.value !== ALL_RESOURCES || state.type !== type
   activeName.value = ALL_RESOURCES
@@ -291,6 +325,7 @@ const openAllResources = (type: string) => {
   }
 }
 
+// 表格排序变化后同步排序方向并刷新列表。
 const sortChange = (param: { order?: string }) => {
   if (!param?.order) {
     orderDesc.value = true
@@ -300,11 +335,13 @@ const sortChange = (param: { order?: string }) => {
   search()
 }
 
+// 分页变化后加载对应页数据。
 const pageChange = (page: number) => {
   state.page = page
   loadResources()
 }
 
+// 打开门户资源详情页。
 const openResource = (resource: PortalResource) => {
   router.push({
     path: `/portal/view/${resource.id}`,
@@ -312,8 +349,10 @@ const openResource = (resource: PortalResource) => {
   })
 }
 
+// 将门户资源类型转换为收藏接口所需类型。
 const storeResourceType = (type: string) => (type === 'dashboard' ? 'panel' : 'screen')
 
+// 切换资源收藏状态并刷新列表。
 const toggleFavorite = async (resource: PortalResource) => {
   if (favoriteLoadingId.value === resource.id) {
     return
@@ -330,10 +369,12 @@ const toggleFavorite = async (resource: PortalResource) => {
   }
 }
 
+// 返回门户首页。
 const backHome = () => {
   router.push('/portal')
 }
 
+// 根据快捷入口打开对应的后台创建页面。
 const quickCreate = (index: number) => {
   if (!backendAccess.value) {
     return
@@ -347,10 +388,12 @@ const quickCreate = (index: number) => {
   window.open(routes[index], '_self')
 }
 
+// 打开导出中心抽屉。
 const openExportCenter = () => {
   useEmitt().emitter.emit('data-export-center', { activeName: 'ALL' })
 }
 
+// 根据权限分流快捷入口：后台创建、导出中心或资源筛选。
 const openPortalEntry = (action: string, index: number) => {
   if (backendAccess.value) {
     quickCreate(index)
@@ -363,10 +406,12 @@ const openPortalEntry = (action: string, index: number) => {
   openAllResources(action)
 }
 
+// 进入后台工作台。
 const enterBackend = () => {
   router.push('/workbranch/index')
 }
 
+// 页面初始化时加载门户数据。
 onMounted(reload)
 </script>
 
