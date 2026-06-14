@@ -7,26 +7,22 @@ import java.text.Normalizer;
 import java.util.Locale;
 
 /**
- * Applies the last in-process SQL safety checks before user supplied SQL reaches
- * Calcite or a JDBC connection. This class intentionally performs lexical checks
- * only; datasource-specific authorization, parameter binding, and dialect
- * validation stay in the caller.
+ * 在用户 SQL 进入 Calcite 或 JDBC 连接前执行最后一层进程内安全检查。
+ * 这里只做词法级边界判断；数据源权限、参数绑定和方言校验仍由调用方负责。
  */
 public final class SqlSecurityPolicy {
 
     /**
-     * Utility class; all checks are stateless and must not carry request data.
+     * 工具类不保存请求上下文，所有检查都必须保持无状态。
      */
     private SqlSecurityPolicy() {
     }
 
     /**
-     * Allows read-only SQL entry points after the statement has passed the
-     * single-statement guard. The accepted prefixes cover query and metadata
-     * inspection commands used by datasource preview and field discovery flows.
+     * 校验只读查询入口。允许的前缀覆盖数据预览和字段发现使用的查询、元数据查看命令。
      *
-     * @param sql original SQL text from the request
-     * @return the original SQL text so callers keep existing formatting
+     * @param sql 请求中的原始 SQL 文本
+     * @return 原始 SQL 文本，保留调用方已有格式
      */
     public static String validateReadQuery(String sql) {
         String normalized = validateSingleStatement(sql);
@@ -43,13 +39,10 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * Normalizes and rejects inputs that can change statement boundaries before
-     * execution. Semicolons inside string literals, quoted identifiers, or SQL
-     * comments remain valid because they do not introduce another executable
-     * statement.
+     * 规范化 SQL，并拒绝会改变语句边界的输入。字符串、引用标识符和注释中的分号不视为新语句。
      *
-     * @param sql original SQL text from the request
-     * @return normalized SQL text used by downstream safety checks
+     * @param sql 请求中的原始 SQL 文本
+     * @return 用于后续安全判断的规范化 SQL 文本
      */
     public static String validateSingleStatement(String sql) {
         if (StringUtils.isBlank(sql)) {
@@ -66,9 +59,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * Detects whether a top-level semicolon is followed by another executable
-     * token. A trailing semicolon followed only by whitespace or comments is
-     * treated as part of one statement for compatibility with SQL clients.
+     * 判断顶层分号之后是否还有可执行内容。末尾分号后只有空白或注释时，按单语句兼容处理。
      */
     private static boolean containsExecutableSqlAfterTopLevelSemicolon(String sql) {
         int semicolonIndex = findTopLevelSemicolon(sql, 0);
@@ -83,9 +74,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * Finds semicolons that are outside quoted text and comments. This is a
-     * small statement-boundary scanner, not a full SQL parser, so it only tracks
-     * constructs that can hide semicolons in supported datasource queries.
+     * 查找不在引号和注释内部的分号。这里不是完整 SQL 解析器，只跟踪会隐藏分号的常见结构。
      */
     private static int findTopLevelSemicolon(String sql, int start) {
         char quote = 0;
@@ -128,9 +117,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * Checks the suffix after a semicolon for executable content while ignoring
-     * whitespace and comments. Any other token means the input contains another
-     * statement and must be rejected.
+     * 检查分号后的剩余文本是否包含可执行内容，空白和注释会被忽略。
      */
     private static boolean hasExecutableContent(String sql, int start) {
         for (int i = start; i < sql.length(); i++) {
@@ -157,8 +144,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * Advances to the end of a line comment so semicolons inside comments cannot
-     * be interpreted as statement separators.
+     * 跳过行注释，避免注释中的分号被误判为语句分隔符。
      */
     private static int skipLineComment(String sql, int start) {
         int lineEnd = sql.indexOf('\n', start);
@@ -166,9 +152,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * Advances to the end of a block comment. Unterminated block comments are
-     * consumed to the end of the SQL text because they cannot expose a following
-     * executable statement within the same input.
+     * 跳过块注释。未闭合块注释会直接消耗到 SQL 末尾，避免暴露后续伪造语句。
      */
     private static int skipBlockComment(String sql, int start) {
         int blockEnd = sql.indexOf("*/", start);
@@ -176,8 +160,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * Rejects control characters that can obscure log output, query previews, or
-     * downstream driver behavior. Standard SQL whitespace stays valid.
+     * 拒绝可能干扰日志、预览结果或驱动行为的控制字符；标准 SQL 空白字符仍然允许。
      */
     private static boolean containsControlCharacter(String value) {
         for (int i = 0; i < value.length(); i++) {
