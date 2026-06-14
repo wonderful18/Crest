@@ -40,21 +40,34 @@ interface RelationResource {
   updateTime?: number
 }
 
+// 当前接口返回的完整关系图，筛选和展示都从这份原始图派生。
 const graph = ref<RelationGraph>({
   nodes: [],
   edges: []
 })
+// 当前资源类型下可选的资源列表。
 const resources = ref<RelationResource[]>([])
+// 当前查询资源类型，overview 表示全局概览。
 const queryType = ref('datasource')
+// 当前选中的资源 id。
 const selectedResource = ref<string>()
+// 字段血缘筛选中选中的物理表节点 id。
 const selectedTable = ref<string>()
+// 字段血缘筛选中选中的物理字段节点 id。
 const selectedField = ref<string>()
+// 资源或字段关键字搜索内容。
 const keyword = ref('')
+// 是否展示字段级节点，关闭时只保留资源级关系。
 const showFieldNodes = ref(true)
+// 图谱布局模式，支持自由图谱和分层展示。
 const layoutMode = ref<'knowledge' | 'layered'>('knowledge')
+// 关系图加载状态。
 const loading = ref(false)
+// 资源下拉列表加载状态。
 const resourceLoading = ref(false)
+// 图谱面板 DOM 引用，用于进入和退出全屏。
 const graphPanelRef = ref<HTMLElement>()
+// 当前图谱面板是否处于浏览器全屏状态。
 const isGraphFullscreen = ref(false)
 
 const typeOptions = [
@@ -93,8 +106,10 @@ const typeLevelMap: Record<string, number> = {
 
 const fieldNodeTypes = new Set(['table_field', 'dataset_field', 'chart_field'])
 
+// 将节点类型转换为稳定的样式类名。
 const getTypeClass = (type: string) => `lineage-type-${String(type || '').replace(/_/g, '-')}`
 
+// 构建节点 id 到节点对象的索引，供边和筛选逻辑快速查找。
 const getNodeLookup = (sourceGraph: RelationGraph) => {
   return (sourceGraph.nodes || []).reduce<Record<string, RelationNode>>((acc, node) => {
     acc[node.id] = node
@@ -102,6 +117,7 @@ const getNodeLookup = (sourceGraph: RelationGraph) => {
   }, {})
 }
 
+// 按 source 和 target 分别构建边索引，支持向上游和下游遍历。
 const getEdgeLookup = (sourceGraph: RelationGraph) => {
   const bySource: Record<string, RelationEdge[]> = {}
   const byTarget: Record<string, RelationEdge[]> = {}
@@ -114,10 +130,12 @@ const getEdgeLookup = (sourceGraph: RelationGraph) => {
   return { bySource, byTarget }
 }
 
+// 获取一条边上与当前节点相对的另一端节点 id。
 const edgeTarget = (edge: RelationEdge, current: string) => {
   return edge.source === current ? edge.target : edge.source
 }
 
+// 从一组种子节点出发收集连通子图，适用于资源关键字搜索。
 const collectConnectedNodeIds = (sourceGraph: RelationGraph, seedIds: string[]) => {
   const nodeLookup = getNodeLookup(sourceGraph)
   const { bySource, byTarget } = getEdgeLookup(sourceGraph)
@@ -139,12 +157,14 @@ const collectConnectedNodeIds = (sourceGraph: RelationGraph, seedIds: string[]) 
   return visible
 }
 
+// 从字段节点出发按字段血缘方向收集上下游节点。
 const collectFieldLineageNodeIds = (sourceGraph: RelationGraph, seedIds: string[]) => {
   const nodeLookup = getNodeLookup(sourceGraph)
   const { bySource, byTarget } = getEdgeLookup(sourceGraph)
   const visible = new Set<string>()
   const queue = seedIds.filter(id => !!nodeLookup[id])
 
+  // 沿指定边把下一端节点加入待访问队列。
   const pushEdge = (edge: RelationEdge) => {
     const next = edgeTarget(edge, edge.source)
     if (nodeLookup[next] && !visible.has(next)) {
@@ -152,6 +172,7 @@ const collectFieldLineageNodeIds = (sourceGraph: RelationGraph, seedIds: string[
     }
   }
 
+  // 收集当前节点的上游边，按边类型限制血缘方向。
   const pushIncoming = (current: string, edgeTypes: string[]) => {
     ;(byTarget[current] || [])
       .filter(edge => !!edge.type && edgeTypes.includes(edge.type))
@@ -162,6 +183,7 @@ const collectFieldLineageNodeIds = (sourceGraph: RelationGraph, seedIds: string[
       })
   }
 
+  // 收集当前节点的下游边，按边类型限制血缘方向。
   const pushOutgoing = (current: string, edgeTypes: string[]) => {
     ;(bySource[current] || [])
       .filter(edge => !!edge.type && edgeTypes.includes(edge.type))
@@ -205,12 +227,14 @@ const collectFieldLineageNodeIds = (sourceGraph: RelationGraph, seedIds: string[
   return visible
 }
 
+// 按可见节点集合裁剪关系图，边只保留两端都可见的关系。
 const buildVisibleGraph = (sourceGraph: RelationGraph, visible: Set<string>) => ({
   ...sourceGraph,
   nodes: sourceGraph.nodes.filter(node => visible.has(node.id)),
   edges: sourceGraph.edges.filter(edge => visible.has(edge.source) && visible.has(edge.target))
 })
 
+// 基于当前可见图重新统计节点和边数量。
 const summarizeGraph = (sourceGraph: RelationGraph) => {
   const nodes = sourceGraph.nodes || []
   return {
@@ -227,6 +251,7 @@ const summarizeGraph = (sourceGraph: RelationGraph) => {
   }
 }
 
+// 按物理表聚合字段节点，供表字段筛选器使用。
 const fieldsByTable = computed(() => {
   const sourceGraph = graph.value || { nodes: [], edges: [] }
   const nodeLookup = getNodeLookup(sourceGraph)
@@ -252,6 +277,7 @@ const fieldsByTable = computed(() => {
   return result
 })
 
+// 可选物理表列表，附带字段数量并按名称排序。
 const tableOptions = computed(() => {
   const sourceGraph = graph.value || { nodes: [], edges: [] }
   return sourceGraph.nodes
@@ -263,11 +289,13 @@ const tableOptions = computed(() => {
     .sort((left, right) => (left.name || '').localeCompare(right.name || ''))
 })
 
+// 当前物理表下可选的字段列表。
 const fieldOptions = computed(() => {
   if (!selectedTable.value) return []
   return fieldsByTable.value[selectedTable.value] || []
 })
 
+// 根据字段筛选或关键字筛选生成可见关系图。
 const filteredGraph = computed<RelationGraph>(() => {
   const sourceGraph = graph.value || { nodes: [], edges: [] }
   if (selectedField.value) {
@@ -298,6 +326,7 @@ const filteredGraph = computed<RelationGraph>(() => {
   return buildVisibleGraph(sourceGraph, visible)
 })
 
+// 最终传给图组件展示的关系图，可按开关隐藏字段级节点。
 const displayGraph = computed<RelationGraph>(() => {
   if (showFieldNodes.value) {
     return filteredGraph.value
@@ -313,6 +342,7 @@ const displayGraph = computed<RelationGraph>(() => {
   }
 })
 
+// 页面顶部统计卡片数据，筛选状态下基于可见图重新计算。
 const summary = computed(() => {
   const hasFilter = !!selectedField.value || !!keyword.value.trim()
   const data = hasFilter ? summarizeGraph(filteredGraph.value) : graph.value?.summary || {}
@@ -332,6 +362,7 @@ const summary = computed(() => {
   ]
 })
 
+// 当前筛选图的节点索引，供依赖表格补充节点名称。
 const nodeMap = computed(() => {
   return (filteredGraph.value?.nodes || []).reduce<Record<string, RelationNode>>((acc, node) => {
     acc[node.id] = node
@@ -339,6 +370,7 @@ const nodeMap = computed(() => {
   }, {})
 })
 
+// 依赖明细表格数据，补充边两端节点名称和类型。
 const edgeRows = computed(() => {
   return (filteredGraph.value?.edges || []).map(edge => ({
     ...edge,
@@ -349,6 +381,7 @@ const edgeRows = computed(() => {
   }))
 })
 
+// 资源明细表格数据，按类型层级和名称排序。
 const resourceRows = computed(() => {
   return (filteredGraph.value?.nodes || []).slice().sort((left, right) => {
     const leftLevel = typeLevelMap[left.type] ?? 99
@@ -359,16 +392,19 @@ const resourceRows = computed(() => {
   })
 })
 
+// 清空表字段筛选和关键字搜索。
 const resetLineagePicker = () => {
   selectedTable.value = undefined
   selectedField.value = undefined
   keyword.value = ''
 }
 
+// 物理表选择器占位文案，包含当前可选表数量。
 const tablePickerPlaceholder = computed(() => {
   return tableOptions.value.length ? `选择表（${tableOptions.value.length}）` : '暂无可选表'
 })
 
+// 字段选择器占位文案，随当前物理表选择状态变化。
 const fieldPickerPlaceholder = computed(() => {
   if (!selectedTable.value) {
     return '先选择表'
@@ -376,6 +412,7 @@ const fieldPickerPlaceholder = computed(() => {
   return fieldOptions.value.length ? `选择字段（${fieldOptions.value.length}）` : '该表暂无字段'
 })
 
+// 当前筛选范围下的表和字段数量描述。
 const filterStats = computed(() => {
   if (queryType.value === 'overview') {
     return ''
@@ -387,8 +424,10 @@ const filterStats = computed(() => {
   return `${tableOptions.value.length} 张表 / ${fieldCount} 个物理字段`
 })
 
+// 图谱高度，普通状态填满容器，全屏状态占满视口。
 const graphHeight = computed(() => (isGraphFullscreen.value ? '100vh' : '100%'))
 
+// 选择资源类型时的默认资源，数据源优先选择内置演示资源。
 const getDefaultResource = (items: RelationResource[]) => {
   if (!items.length) return undefined
   if (queryType.value === 'datasource') {
@@ -402,6 +441,7 @@ const getDefaultResource = (items: RelationResource[]) => {
   return items[0]?.id
 }
 
+// 切换物理表时清空字段筛选，并在有表筛选时清空关键字。
 const handleTableChange = () => {
   selectedField.value = undefined
   if (selectedTable.value) {
@@ -409,18 +449,21 @@ const handleTableChange = () => {
   }
 }
 
+// 切换字段筛选时清空关键字，避免两种筛选条件叠加产生误解。
 const handleFieldChange = () => {
   if (selectedField.value) {
     keyword.value = ''
   }
 }
 
+// 输入关键字时清空字段筛选，关键字搜索使用连通子图逻辑。
 const handleKeywordInput = () => {
   if (keyword.value.trim()) {
     selectedField.value = undefined
   }
 }
 
+// 关系图变化后校正表和字段选择，避免保留不存在的筛选项。
 watch(
   () => graph.value,
   () => {
@@ -434,6 +477,7 @@ watch(
   { deep: true }
 )
 
+// 加载当前类型下可选资源，全局概览模式不需要资源列表。
 const loadResources = async () => {
   if (queryType.value === 'overview') {
     resources.value = []
@@ -451,6 +495,7 @@ const loadResources = async () => {
   }
 }
 
+// 按当前查询类型和选中资源加载关系图。
 const loadGraph = async () => {
   loading.value = true
   try {
@@ -474,6 +519,7 @@ const loadGraph = async () => {
   }
 }
 
+// 切换查询类型时重置资源和筛选条件，并重新加载资源与图。
 const handleTypeChange = async () => {
   selectedResource.value = undefined
   resetLineagePicker()
@@ -481,26 +527,31 @@ const handleTypeChange = async () => {
   await loadGraph()
 }
 
+// 查询按钮入口；没有本地筛选条件时重新从后端加载图数据。
 const handleSearch = async () => {
   if (!keyword.value && !selectedField.value) {
     await loadGraph()
   }
 }
 
+// 重置筛选条件，并重新加载当前资源关系图。
 const handleReset = async () => {
   resetLineagePicker()
   await loadGraph()
 }
 
+// 切换资源后清空字段和关键字筛选，并加载新资源关系图。
 const handleResourceChange = async () => {
   resetLineagePicker()
   await loadGraph()
 }
 
+// 同步浏览器全屏状态到本地状态，兼容用户按 Esc 退出全屏。
 const syncFullscreenState = () => {
   isGraphFullscreen.value = document.fullscreenElement === graphPanelRef.value
 }
 
+// 切换图谱面板全屏状态，并在 DOM 更新后同步本地标记。
 const toggleGraphFullscreen = async () => {
   if (isGraphFullscreen.value) {
     await document.exitFullscreen?.()
