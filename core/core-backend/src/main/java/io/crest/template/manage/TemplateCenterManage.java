@@ -32,9 +32,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Author: wangjiahao
- */
 @Service
 public class TemplateCenterManage {
     private final static String POSTS_API_V2 = "/apis/api.store.halo.run/v1alpha1/applications?keyword=&priceMode=&sort=latestReleaseTimestamp%2Cdesc&type=THEME&platformVersion=V2&templateType=&label=&page=1&size=2000";

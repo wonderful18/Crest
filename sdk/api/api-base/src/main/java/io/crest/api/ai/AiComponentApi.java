@@ -5,8 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import java.util.Map;
 
 /**
- * @author : WangJiaHao
- * @date : 2024/3/27 09:44
+ * 智能组件基础配置接口。
  */
 public interface AiComponentApi {
     @GetMapping("target-url")

@@ -57,9 +57,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/**
- * @Author Junjun
- */
 @Component
 @SuppressWarnings("unchecked")
 public class ChartViewManege {

@@ -24,9 +24,6 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-/**
- * @Author Junjun
- */
 @SuppressWarnings("deprecation")
 public abstract class CrestDatasourcePlugin extends Provider implements CrestPlugin {
     private final String DEFAULT_FILE_PATH = "/opt/crest/drivers/plugin";

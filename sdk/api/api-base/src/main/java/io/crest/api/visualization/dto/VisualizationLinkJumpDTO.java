@@ -9,12 +9,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/7/18 14:21
+ * 组件跳转配置及其目标映射信息。
  */
 @Data
 public class VisualizationLinkJumpDTO extends VisualizationLinkJumpVO {
-    //仪表板可以跳转图表信息 sourceViewId#
+    // 可作为跳转来源的图表信息，按 sourceViewId 组织。
     private String sourceInfo;
 
     private List<String> targetInfoList;

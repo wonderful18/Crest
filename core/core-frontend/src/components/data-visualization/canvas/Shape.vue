@@ -618,10 +618,10 @@ const handleMouseDownOnShape = e => {
       const left = curX - startX + startLeft
       pos['top'] = top
       pos['left'] = left
-      // 非主画布非分组画布的情况 需要检测是否从Tab中移除组件(向左移除30px 或者向右移除30px 向左移除30px)
-      // 因为仪表板中组件向下移动可能只是为了挤占空间 不一定是为了移出 这里无法判断明确意图 暂时支不支持向下移出
-      // 大屏和仪表板暂时做位置算法区分 仪表板暂时使用curX 因为缩放的影响 大屏使用 tab位置 + 组件位置（相对内部画布）+初始触发点
-      // 如果组件在tab中且tab在Group中 不允许移入移出 pTabGroupFlag = true
+      // 非主画布和非分组画布中，组件越过 Tab 横向边界时触发移出判断。
+      // 仪表板下移可能只是调整布局空间，因此移出判断仅处理横向越界。
+      // 大屏与仪表板使用不同坐标来源，避免缩放后拖拽位置偏移。
+      // Tab 位于分组内时不允许组件移入或移出。
       if (
         !pTabGroupFlag &&
         pJoinTab &&

@@ -16,10 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * @Author gin
- * @Date 2021/5/17 4:27 下午
- */
 @Service("mysqlEngine")
 public class MysqlEngineProvider extends EngineProvider {
 

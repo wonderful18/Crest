@@ -13,8 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/11/17 13:20
+ * 对外提供模板市场查询接口，封装模板中心的数据读取能力。
  */
 @RestController
 @RequestMapping("/template-market")

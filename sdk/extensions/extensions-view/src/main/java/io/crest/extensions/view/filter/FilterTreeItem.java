@@ -8,9 +8,6 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.List;
 
-/**
- * @Author Junjun
- */
 @Data
 public class FilterTreeItem implements Serializable {
     private String type;// 'item' or 'tree'

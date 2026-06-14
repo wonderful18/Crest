@@ -1,9 +1,5 @@
 package io.crest.constant;
 
-/**
- * Author: wangjiahao
- * Description:
- */
 public class CommonConstants {
 
 

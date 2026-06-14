@@ -35,9 +35,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author jianneng
- * @date 2024/9/11 11:37
- **/
+ * 明细表图表处理器，负责分页参数、扩展过滤和表格结果的组装。
+ */
 @Component
 @SuppressWarnings("unchecked")
 public class TableNormalHandler extends DefaultChartHandler {

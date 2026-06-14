@@ -6,12 +6,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * <p>
- * 外部参数配置表
- * </p>
- *
- * @author fit2cloud
- * @since 2024-03-08
+ * 外部参数配置明细。
  */
 @Data
 public class VisualizationOuterParamsInfoVO implements Serializable {

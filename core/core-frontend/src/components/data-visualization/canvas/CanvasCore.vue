@@ -1136,7 +1136,6 @@ const clearInfoBox = e => {
   }
   if (infoBox.value.moveItem) {
     dragEnd?.value(null, e, infoBox.value.moveItem, infoBox.value.moveItem._dragId)
-    //problem
     infoBox.value.moveItem['show'] = true
     delete infoBox.value.moveItem['isPlayer']
   }
@@ -1384,9 +1383,9 @@ const onMouseUp = e => {
 
 const handleDragStartMoveIn = componentInfo => {
   const moveInItemInfo = findDragComponent(componentInfo)
-  // 初始的移动组件 距离左侧的位置 300 是DbToolbar 最左侧区域宽度
+  // 拖入组件的初始位置避开左侧工具栏。
   moveInItemInfo.x = 300 / cellWidth.value
-  // 仪表板初始移动的组件暂时不显示 在松开鼠标时再确实该组件的去留
+  // 拖拽释放前先隐藏组件，释放后再确认是否加入画布。
   moveInItemInfo.isShow = false
   moveInItemInfo.id = guid()
   dvMainStore.addComponent({ component: moveInItemInfo, index: undefined })

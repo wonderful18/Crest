@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * <p>
- * 组件图表表 Mapper 接口
- * </p>
- *
- * @author fit2cloud
- * @since 2024-12-12
+ * 组件图表 Mapper。
  */
 @Mapper
 public interface CoreChartViewMapper extends BaseMapper<CoreChartView> {

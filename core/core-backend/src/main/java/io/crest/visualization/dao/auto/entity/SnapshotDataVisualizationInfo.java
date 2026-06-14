@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 可视化大屏信息表
- * </p>
- *
- * @author fit2cloud
- * @since 2025-03-24
+ * 可视化资源快照实体。
  */
 @TableName("bi_visualization_snapshot")
 public class SnapshotDataVisualizationInfo implements Serializable {

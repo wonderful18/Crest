@@ -15,9 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @Author Junjun
- */
 @Tag(name = "图表管理:查看")
 @ApiSupport(order = 988)
 public interface ChartViewApi {

@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * @author fit2cloud
+ * 数据同步表字段描述。
  */
 @Setter
 @Getter

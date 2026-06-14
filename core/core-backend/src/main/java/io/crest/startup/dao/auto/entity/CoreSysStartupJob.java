@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 项目启动任务
- * </p>
- *
- * @author fit2cloud
- * @since 2024-05-15
+ * 系统启动任务实体。
  */
 @TableName("startup_job")
 public class CoreSysStartupJob implements Serializable {

@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2024-08-28
+ * 字体资源实体。
  */
 @TableName("font_asset")
 public class CoreFont implements Serializable {

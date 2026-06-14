@@ -5,8 +5,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/6/12 19:27
+ * 可视化背景资源视图对象。
  */
 @Data
 public class VisualizationBackgroundVO implements Serializable {

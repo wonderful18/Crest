@@ -5,10 +5,6 @@ import lombok.Data;
 
 import java.util.List;
 
-/**
- * Author: wangjiahao
- * Description:
- */
 @Data
 public class TemplateManageBatchRequest {
 

@@ -2,9 +2,6 @@ package io.crest.engine.utils;
 
 import java.text.SimpleDateFormat;
 
-/**
- * @Author Junjun
- */
 public class DateUtils {
     private static final String format = "yyyy-MM-dd HH:mm:ss";
     private static final String minuteFormat = "yyyy-MM-dd HH:mm";
@@ -15,7 +12,6 @@ public class DateUtils {
     private static final String timeOnly = "HH:mm:ss";
 
     public static String get_date_format(String date) {
-        // check date split '-' or '/'
         String format1 = format;
         String minuteFormat1 = minuteFormat;
         String hourFormat1 = hourFormat;

@@ -3,9 +3,8 @@ package io.crest.extensions.view.dto;
 import lombok.Data;
 
 /**
- * @author jianneng
- * @date 2024/9/19 18:34
- **/
+ * 图表高级阈值条件。
+ */
 @Data
 public class ChartSeniorThresholdDTO {
     /**

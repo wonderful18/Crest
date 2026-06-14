@@ -22,9 +22,6 @@ import org.apache.commons.lang3.Strings;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * @Author Junjun
- */
 public class WhereTree2Str {
     public static void transFilterTrees(SQLMeta meta, List<DataSetRowPermissionsTreeDTO> requestList, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         SQLObj tableObj = meta.getTable();
@@ -138,7 +135,7 @@ public class WhereTree2Str {
         }
         if (field.getFieldType() == 1) {
             if (field.getExtractedFieldType() == 0 || field.getExtractedFieldType() == 5) {
-                whereName = String.format(SQLConstants.CREST_STR_TO_DATE, originName, StringUtils.isNotEmpty(field.getDateFormat()) ? field.getDateFormat() : SQLConstants.DEFAULT_DATE_FORMAT);
+                whereName = String.format(SQLConstants.CREST_STR_TO_DATE, FieldSqlExpressionUtils.nullSafeTextOrigin(field, originName), StringUtils.isNotEmpty(field.getDateFormat()) ? field.getDateFormat() : SQLConstants.DEFAULT_DATE_FORMAT);
             }
             if (field.getExtractedFieldType() == 2 || field.getExtractedFieldType() == 3 || field.getExtractedFieldType() == 4) {
                 String cast = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_INT_FORMAT);
@@ -164,7 +161,7 @@ public class WhereTree2Str {
             }
         } else if (field.getFieldType() == 2 || field.getFieldType() == 3) {
             if (field.getExtractedFieldType() == 0 || field.getExtractedFieldType() == 5) {
-                whereName = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_FLOAT_FORMAT);
+                whereName = String.format(SQLConstants.CAST, FieldSqlExpressionUtils.nullSafeTextOrigin(field, originName), SQLConstants.DEFAULT_FLOAT_FORMAT);
             }
             if (field.getExtractedFieldType() == 1) {
                 whereName = String.format(SQLConstants.UNIX_TIMESTAMP, originName);

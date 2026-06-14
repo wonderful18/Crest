@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 
- * </p>
- *
- * @author fit2cloud
- * @since 2023-09-28
+ * Quartz 调度器状态实体。
  */
 @TableName("QRTZ_SCHEDULER_STATE")
 public class QrtzSchedulerState implements Serializable {

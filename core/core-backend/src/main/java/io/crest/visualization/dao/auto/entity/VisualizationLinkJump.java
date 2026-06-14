@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2023-09-22
+ * 组件跳转主配置实体。
  */
 @TableName("visualization_link_jump")
 public class VisualizationLinkJump implements Serializable {

@@ -16,9 +16,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 
-/**
- * @Author Junjun
- */
 @Component
 @Order(value = 10)
 public class DatasetCrossListener implements ApplicationListener<ApplicationReadyEvent> {

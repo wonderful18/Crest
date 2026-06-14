@@ -5,9 +5,6 @@ import lombok.Data;
 
 import java.util.List;
 
-/**
- * @Author Junjun
- */
 @Data
 public class EnumValueRequest {
     private Long queryId;// 查询字段

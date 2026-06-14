@@ -1,4 +1,5 @@
 import path from 'path'
+import fs from 'node:fs'
 import { resolve } from 'path'
 import Vue from '@vitejs/plugin-vue'
 import eslintPlugin from 'vite-plugin-eslint'
@@ -14,6 +15,18 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components-secondary/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components-secondary/resolvers'
 const root = process.cwd()
+const elementPlusSecondaryStyleDeps = (() => {
+  const componentsDir = path.resolve(root, 'node_modules/element-plus-secondary/es/components')
+  if (!fs.existsSync(componentsDir)) {
+    return []
+  }
+  return fs
+    .readdirSync(componentsDir, { withFileTypes: true })
+    .filter(item => {
+      return item.isDirectory() && fs.existsSync(path.join(componentsDir, item.name, 'style/css.mjs'))
+    })
+    .map(item => `element-plus-secondary/es/components/${item.name}/style/css`)
+})()
 const skipViteLint = process.env.CREST_SKIP_VITE_LINT === 'true'
 const lintPlugins = skipViteLint
   ? []
@@ -147,7 +160,8 @@ export default {
       'element-plus-secondary/es/locale/lang/zh-cn',
       'element-plus-secondary/es/locale/lang/en',
       '@vueuse/core',
-      'axios'
+      'axios',
+      ...elementPlusSecondaryStyleDeps
     ]
   }
 }

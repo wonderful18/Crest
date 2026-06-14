@@ -4,9 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 日志返回结果
- *
- * @author fit2cloud
+ * 分段读取任务日志的返回结果。
  */
 @Getter
 @Setter

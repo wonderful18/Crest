@@ -6,9 +6,6 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * @Author gin
- */
 @Data
 public class AxisChartDataAntVDTO {
     private BigDecimal value;

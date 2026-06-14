@@ -14,9 +14,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * @Author Junjun
- */
 @Component
 @Transactional(rollbackFor = Exception.class)
 public class DatasetTableSqlLogManage {

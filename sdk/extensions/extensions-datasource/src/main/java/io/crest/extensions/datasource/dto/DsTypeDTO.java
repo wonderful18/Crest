@@ -2,9 +2,6 @@ package io.crest.extensions.datasource.dto;
 
 import lombok.Data;
 
-/**
- * @Author Junjun
- */
 @Data
 public class DsTypeDTO {
     private String type;

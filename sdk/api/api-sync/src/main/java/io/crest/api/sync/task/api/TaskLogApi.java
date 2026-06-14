@@ -16,9 +16,8 @@ import java.util.Map;
 import static io.crest.constant.AuthResourceEnum.TASK;
 
 /**
- * @author fit2cloud
- * @date 2023/12/4 12:43
- **/
+ * 数据同步任务日志接口。
+ */
 @Hidden
 @CrestApiPath(value = "/sync/task/log", rt = TASK)
 public interface TaskLogApi {

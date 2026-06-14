@@ -3,43 +3,45 @@ package io.crest.dataset.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
-/**
- * @Author Junjun
- */
 public class FieldUtils {
     public static int resolveFieldType(final String type) {
+        if (type == null || type.isBlank()) {
+            return 0;
+        }
+        String normalizedType = type.trim().toUpperCase(Locale.ROOT);
         List<String> text = Arrays.asList("CHAR", "VARCHAR", "TEXT", "TINYTEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "ANY", "STRING", "BOOL", "BOOLEAN");
         List<String> time = Arrays.asList("DATE", "TIME", "YEAR", "DATETIME", "TIMESTAMP", "DATEV2", "DATETIMEV2", "DATETIME2", "DATETIMEOFFSET", "SMALLDATETIME", "DATETIME64", "_TIMESTAMPTZ", "TIMESTAMPTZ");
-        List<String> num = Arrays.asList("INT", "SMALLINT", "MEDIUMINT", "INTEGER", "BIGINT", "LONG", "INT2", "INT4", "INT8", "int2", "int4", "int8", "INT16", "INT32", "INT64", "UINT8", "UINT16", "UINT32", "UINT64");
-        List<String> doubleList = Arrays.asList("NUMBER", "FLOAT", "DOUBLE", "DECIMAL", "REAL", "MONEY", "NUMERIC", "float4", "float8", "FLOAT4", "FLOAT8", "DECFLOAT", "FLOAT32", "FLOAT64");
+        List<String> num = Arrays.asList("INT", "SMALLINT", "MEDIUMINT", "INTEGER", "BIGINT", "LONG", "INT2", "INT4", "INT8", "INT16", "INT32", "INT64", "UINT8", "UINT16", "UINT32", "UINT64");
+        List<String> doubleList = Arrays.asList("NUMBER", "FLOAT", "DOUBLE", "DECIMAL", "REAL", "MONEY", "NUMERIC", "FLOAT4", "FLOAT8", "DECFLOAT", "FLOAT32", "FLOAT64");
         List<String> boolType = Arrays.asList("BIT", "TINYINT");
-        if (boolType.contains(type)) {
+        if (boolType.contains(normalizedType)) {
             return 4;// 布尔
         }
-        if (doubleList.contains(type)) {
+        if (doubleList.contains(normalizedType)) {
             return 3;// 浮点
         }
-        if (num.contains(type)) {
+        if (num.contains(normalizedType)) {
             return 2;// 整型
         }
-        if (time.contains(type)) {
+        if (time.contains(normalizedType)) {
             return 1;// 时间
         }
-        if (text.contains(type)) {
+        if (text.contains(normalizedType)) {
             return 0;// 文本
         }
 
-        if (boolType.stream().anyMatch(l -> type.contains(l))) {
+        if (boolType.stream().anyMatch(normalizedType::contains)) {
             return 4;// 布尔
         }
-        if (doubleList.stream().anyMatch(l -> type.contains(l))) {
+        if (doubleList.stream().anyMatch(normalizedType::contains)) {
             return 3;// 浮点
         }
-        if (num.stream().anyMatch(l -> type.contains(l))) {
+        if (num.stream().anyMatch(normalizedType::contains)) {
             return 2;// 整型
         }
-        if (time.stream().anyMatch(l -> type.contains(l))) {
+        if (time.stream().anyMatch(normalizedType::contains)) {
             return 1;// 时间
         }
         return 0;// 文本

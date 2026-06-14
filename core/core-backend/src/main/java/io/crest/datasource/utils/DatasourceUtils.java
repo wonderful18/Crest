@@ -8,9 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 
-/**
- * @Author Junjun
- */
 public class DatasourceUtils {
     public static void checkDsStatus(Map<Long, DatasourceSchemaDTO> dsMap) {
         if (ObjectUtils.isEmpty(dsMap)) {

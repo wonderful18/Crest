@@ -8,9 +8,6 @@ import org.springframework.core.io.Resource;
 import java.io.File;
 import java.util.Objects;
 
-/**
- * @Author Junjun
- */
 public class ConfigUtils {
 
     public static String configPath = "opt" + File.separator + "crest" + File.separator + "conf" + File.separator + "application.yml";

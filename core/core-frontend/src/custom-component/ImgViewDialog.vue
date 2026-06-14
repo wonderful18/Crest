@@ -49,7 +49,7 @@ const handleActions = (action: ImageViewerAction, options = {}) => {
   }
 }
 
-const mousewheelHandler = throttle((e: WheelEvent | any /* TODO: wheelDelta is deprecated */) => {
+const mousewheelHandler = throttle((e: WheelEvent | any /* 兼容旧浏览器的 wheelDelta 字段。 */) => {
   const delta = e.wheelDelta ? e.wheelDelta : -e.detail
   if (delta > 0) {
     handleActions('zoomIn', {

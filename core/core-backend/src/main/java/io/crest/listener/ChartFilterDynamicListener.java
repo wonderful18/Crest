@@ -15,9 +15,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 
-/**
- * @Author Junjun
- */
 @Component
 @Order(value = 9)
 public class ChartFilterDynamicListener implements ApplicationListener<ApplicationReadyEvent> {

@@ -1759,7 +1759,7 @@ export const dvMainStore = defineStore('dataVisualization', {
       this.canvasStyleData = { ...deepCopy(DEFAULT_CANVAS_STYLE_DATA_DARK), backgroundColor: null }
     },
     removeGroupArea(curComponentData = this.componentData) {
-      // 清理临时组件
+      // 清理分组拖拽过程中产生的临时占位组件。
       const groupAreaHis = curComponentData?.filter(ele => ele?.component === 'GroupArea')
       if (groupAreaHis && groupAreaHis.length > 0) {
         groupAreaHis.forEach(ele => {

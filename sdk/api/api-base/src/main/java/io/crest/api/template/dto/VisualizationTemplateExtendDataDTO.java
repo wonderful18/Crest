@@ -8,8 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/11/13 10:25
+ * 模板扩展数据传输对象，用于保存图表内置数据快照。
  */
 @Data
 @NoArgsConstructor

@@ -53,9 +53,6 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * @Author Junjun
- */
 @Component
 public class DatasetSQLManage {
 
@@ -167,18 +164,15 @@ public class DatasetSQLManage {
 
             String[] array = fields.stream()
                     .map(f -> {
-                        // 赋值engineFieldName
-                        for (DatasetTableFieldDTO a_f: allFields) {
-                            if (Objects.equals(a_f.getId(),f.getId())) {
-                                f.setEngineFieldName(a_f.getEngineFieldName());
-                            }
-                        }
+                        inheritEngineFieldName(allFields, f);
 
                         String alias;
-                        if (StringUtils.isEmpty(f.getEngineFieldName())) {
-                            alias = TableUtils.fieldNameShort(f.getDatasetTableId() + "_" + f.getOriginName());
-                        } else {
+                        if (StringUtils.isNotBlank(f.getEngineFieldName())) {
                             alias = f.getEngineFieldName();
+                        } else if (StringUtils.isNotBlank(f.getDbFieldName())) {
+                            alias = f.getDbFieldName();
+                        } else {
+                            alias = TableUtils.fieldNameShort(f.getDatasetTableId() + "_" + f.getOriginName());
                         }
 
                         f.setFieldShortName(alias);
@@ -351,18 +345,15 @@ public class DatasetSQLManage {
 
             String[] array = fields.stream()
                     .map(f -> {
-                        // 赋值engineFieldName
-                        for (DatasetTableFieldDTO a_f: allFields) {
-                            if (Objects.equals(a_f.getId(),f.getId())) {
-                                f.setEngineFieldName(a_f.getEngineFieldName());
-                            }
-                        }
+                        inheritEngineFieldName(allFields, f);
 
                         String alias;
-                        if (StringUtils.isEmpty(f.getEngineFieldName())) {
-                            alias = TableUtils.fieldNameShort(f.getDatasetTableId() + "_" + f.getOriginName());
-                        } else {
+                        if (StringUtils.isNotBlank(f.getEngineFieldName())) {
                             alias = f.getEngineFieldName();
+                        } else if (StringUtils.isNotBlank(f.getDbFieldName())) {
+                            alias = f.getDbFieldName();
+                        } else {
+                            alias = TableUtils.fieldNameShort(f.getDatasetTableId() + "_" + f.getOriginName());
                         }
 
                         f.setFieldShortName(alias);
@@ -518,6 +509,53 @@ public class DatasetSQLManage {
 
     private String sourceFieldName(DatasetTableFieldDTO field) {
         return StringUtils.defaultIfBlank(field.getDbFieldName(), field.getOriginName());
+    }
+
+    static void inheritEngineFieldName(List<DatasetTableFieldDTO> allFields, DatasetTableFieldDTO field) {
+        if (CollectionUtils.isEmpty(allFields) || field == null) {
+            return;
+        }
+        for (DatasetTableFieldDTO candidate : allFields) {
+            if (!sameDatasetField(candidate, field)) {
+                continue;
+            }
+            if (StringUtils.isNotBlank(candidate.getEngineFieldName())) {
+                field.setEngineFieldName(candidate.getEngineFieldName());
+            }
+            if (StringUtils.isNotBlank(candidate.getFieldShortName())) {
+                field.setFieldShortName(candidate.getFieldShortName());
+            }
+            if (StringUtils.isBlank(field.getDbFieldName()) && StringUtils.isNotBlank(candidate.getDbFieldName())) {
+                field.setDbFieldName(candidate.getDbFieldName());
+            }
+            return;
+        }
+    }
+
+    private static boolean sameDatasetField(DatasetTableFieldDTO candidate, DatasetTableFieldDTO field) {
+        if (candidate == null || field == null) {
+            return false;
+        }
+        if (candidate.getId() != null && field.getId() != null) {
+            return Objects.equals(candidate.getId(), field.getId());
+        }
+        if (candidate.getDatasetTableId() != null && field.getDatasetTableId() != null
+                && !Objects.equals(candidate.getDatasetTableId(), field.getDatasetTableId())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(candidate.getDbFieldName()) && StringUtils.isNotBlank(field.getDbFieldName())) {
+            return Objects.equals(candidate.getDbFieldName(), field.getDbFieldName())
+                    && compatibleOriginName(candidate, field);
+        }
+        return candidate.getDatasetTableId() != null && field.getDatasetTableId() != null
+                && compatibleOriginName(candidate, field);
+    }
+
+    private static boolean compatibleOriginName(DatasetTableFieldDTO candidate, DatasetTableFieldDTO field) {
+        if (StringUtils.isBlank(candidate.getOriginName()) || StringUtils.isBlank(field.getOriginName())) {
+            return true;
+        }
+        return Objects.equals(candidate.getOriginName(), field.getOriginName());
     }
 
     public String putObj2Map(Map<Long, DatasourceSchemaDTO> dsMap, DatasetTableDTO ds, boolean isCross) {

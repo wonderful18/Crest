@@ -3,9 +3,8 @@ package io.crest.extensions.view.dto;
 import lombok.Data;
 
 /**
- * @author jianneng
- * @date 2024/9/19 18:31
- **/
+ * 阈值动态字段配置。
+ */
 @Data
 public class ThresholdDynamicFieldDTO {
     /**

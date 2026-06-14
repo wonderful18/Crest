@@ -183,12 +183,12 @@ service.interceptors.response.use(
     const responseUrl = String(response.config.url || '')
 
     if (response.config.responseType === 'blob') {
-      // 如果是文件流，直接过
+      // 文件流响应保持原始结构，交给调用方处理下载。
       return response
     } else if (response.data.code === result_code || response.data.code === 50002) {
       return response.data
     } else if (responseUrl.match(/^\/map|geo\/\d{3}\/\d+\.json$/)) {
-      //   TODO 处理静态文件
+      // 地图静态资源不使用统一业务响应结构。
       return response
     } else if (responseUrl.includes('/i18n/custom_')) {
       return response

@@ -5,10 +5,6 @@ import jakarta.annotation.PreDestroy;
 
 import java.util.concurrent.*;
 
-/**
- * @Author gin
- * @Date 2021/4/13 4:08 下午
- */
 public class CommonThreadPool {
 
     private int corePoolSize = 10;

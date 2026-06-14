@@ -22,7 +22,7 @@ public class IDUtils {
         return RandomStringUtils.secure().nextAlphanumeric(num);
     }
 
-    // 主键请不要使用字符串 推荐雪花算法
+    // 业务主键默认使用雪花算法生成，避免随机字符串带来的排序和冲突风险。
     public static Long snowID() {
         return snowFlake.nextId();
     }
