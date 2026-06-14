@@ -63,15 +63,20 @@ export interface JsonField {
 }
 const { t } = useI18n()
 
+// 保存接口结构校验返回的原始字段信息，供结构预览区展示。
 const originFieldItem = reactive({
   jsonFields: [],
   fields: []
 })
 
+// 当前数据源下已有的接口表配置列表。
 let apiItemList = reactive<ApiConfiguration[]>([])
+// 当前数据源下已有的接口参数配置列表。
 let paramsList = reactive<ApiConfiguration[]>([])
+// 编辑前的字段列表快照，用于判断主键变更。
 let fields = reactive<Field[]>([])
 
+// 当前正在新增或编辑的接口配置主体。
 let apiItem = reactive<ApiItem>({
   status: '',
   name: '',
@@ -111,19 +116,33 @@ let apiItem = reactive<ApiItem>({
   jsonPath: '',
   serialNumber: -1
 })
+// 字段递归提取时收集到的重复字段名。
 let errMsg = []
+// 接口请求参数表单组件引用。
 const apiItemForm = ref()
+// 数据预览为空时的占位展示状态。
 const showEmpty = ref(false)
+// 接口配置抽屉显示状态。
 const edit_api_item = ref(false)
+// 当前步骤条所在步骤。
 const active = ref(1)
+// 接口结构加载状态。
 const loading = ref(false)
+// 表单提交和校验加载状态。
 const formLoading = ref(false)
+// 数据预览表格列配置。
 const columns = shallowRef([])
+// 参数配置中可引用的字段值列表。
 const valueList = shallowRef([])
+// 数据预览表格行数据。
 const tableData = shallowRef([])
+// 内置基础信息表单引用。
 const apiItemBasicInfo = ref<FormInstance>()
+// 插件数据源基础信息表单引用。
 const pluginApiItemBasicInfo = ref<any>()
+// 当前数据源是否支持设置主键。
 const isSupportSetKey = ref(false)
+// 校验接口请求超时时间必须为正整数。
 const isNumber = (rule, value, callback) => {
   if (!value) {
     callback(new Error(t('datasource.please_input_query_timeout')))
@@ -142,6 +161,7 @@ const isNumber = (rule, value, callback) => {
   }
   callback()
 }
+// 接口基础信息表单校验规则。
 const rule = reactive<FormRules>({
   name: [
     {
@@ -177,16 +197,26 @@ const rule = reactive<FormRules>({
     }
   ]
 })
+// 当前抽屉编辑的是接口表还是接口参数。
 const activeName = ref('table')
+// 标记当前配置是否处于编辑已有项模式。
 const editItem = ref(false)
+// 标记当前接口配置是否来自复制操作。
 const copyItem = ref(false)
+// 当前数据源类型，作为后端校验接口的类型参数。
 const dsType = ref('API')
+// 插件数据源的静态入口标识。
 const jsName = ref('')
+// 当前数据源是否走插件渲染表单。
 const isPlugin = ref(false)
+// 可用插件数据源列表。
 const pluginDs = ref([])
+// 当前插件数据源索引。
 const pluginIndex = ref('')
+// 当前数据源是否来自复制操作。
 const copyDs = ref(false)
 provide('api-active-name', activeName)
+// 初始化接口配置抽屉，并根据数据源类型准备内置或插件表单。
 const initApiItem = (
   val: ApiItem,
   from,
@@ -249,6 +279,7 @@ const initApiItem = (
   })
 }
 
+// 拉取接口结构信息，用于展示原始响应字段树。
 const showApiData = () => {
   apiItemBasicInfo.value.validate(valid => {
     if (valid) {
@@ -268,16 +299,19 @@ const showApiData = () => {
   })
 }
 
+// 接口请求方法选项。
 const reqOptions = [
   { id: 'GET', label: 'GET' },
   { id: 'POST', label: 'POST' }
 ]
 
+// 是否使用 JSONPath 解析接口响应。
 const isUseJsonPath = [
   { id: true, label: t('common.yes') },
   { id: false, label: t('common.no') }
 ]
 
+// 字段类型选项，供接口字段类型调整使用。
 const fieldOptions = [
   { label: t('dataset.text'), value: 0 },
   { label: t('dataset.value'), value: 2 },
@@ -286,7 +320,9 @@ const fieldOptions = [
     value: 3
   }
 ]
+// 下一步按钮禁用状态，防止接口校验请求重复提交。
 const disabledNext = ref(false)
+// 保存当前接口配置，校验字段、参数和主键信息后回传父组件。
 const saveItem = () => {
   if (apiItem.type !== 'params' && apiItem.fields.length === 0) {
     ElMessage.error(t('datasource.api_field_not_empty'))
@@ -379,10 +415,12 @@ const saveItem = () => {
   }
   edit_api_item.value = false
 }
+// 返回上一步。
 const before = () => {
   active.value -= 1
 }
 
+// 下一步入口，插件表单和内置表单分别触发表单校验。
 const next = () => {
   if (isPlugin.value) {
     pluginApiItemBasicInfo?.value?.invokeMethod({
@@ -398,6 +436,7 @@ const next = () => {
   }
 }
 
+// 完成基础信息校验后请求后端解析接口字段，并进入字段配置步骤。
 const stepNext = () => {
   if (apiItem.useJsonPath && !apiItem.jsonPath) {
     ElMessage.error(t('datasource.please_input_dataPath'))
@@ -449,6 +488,7 @@ const stepNext = () => {
       console.warn(error?.message)
     })
 }
+// 校验当前接口配置，插件表单和内置表单使用不同提交流程。
 const validate = () => {
   if (isPlugin.value) {
     pluginApiItemBasicInfo?.value?.invokeMethod({
@@ -466,6 +506,7 @@ const validate = () => {
   }
 }
 
+// 调用后端接口校验当前配置，并刷新字段树和数据预览。
 const validateItem = () => {
   if (apiItem.useJsonPath && !apiItem.jsonPath) {
     ElMessage.error(t('datasource.please_input_dataPath'))
@@ -494,6 +535,7 @@ const validateItem = () => {
     })
 }
 
+// 接收插件表单提交结果，并分发到校验或下一步流程。
 const handleSubmit = param => {
   const validateFrom = param.validate
   validateFrom(val => {
@@ -507,6 +549,7 @@ const handleSubmit = param => {
   })
 }
 
+// 关闭抽屉时取消未完成的接口校验请求，并重置插件表单。
 const closeEditItem = () => {
   cancelMap['/datasource/api-data-source-check']?.()
   if (isPlugin.value) {
@@ -518,6 +561,7 @@ const closeEditItem = () => {
   edit_api_item.value = false
 }
 
+// 存在子字段的节点不允许作为叶子字段直接操作。
 const disabledByChildren = item => {
   if (item.hasOwnProperty('children') && item.children.length > 0) {
     return true
@@ -526,6 +570,7 @@ const disabledByChildren = item => {
   }
 }
 
+// 字段长度仅允许文本类叶子字段编辑。
 const disabledFieldLength = item => {
   if (item.hasOwnProperty('children') && item.children.length > 0) {
     return true
@@ -534,6 +579,7 @@ const disabledFieldLength = item => {
   }
 }
 
+// 根据复制、编辑、勾选状态判断主键开关是否禁用。
 const disabledSetKey = item => {
   if (item.hasOwnProperty('children') && item.children.length > 0) {
     return true
@@ -550,6 +596,7 @@ const disabledSetKey = item => {
   return false
 }
 
+// 参数接口或非叶子节点不允许切换提取字段类型。
 const disabledChangeFieldByChildren = item => {
   if (apiItem.type == 'params') {
     return true
@@ -561,11 +608,13 @@ const disabledChangeFieldByChildren = item => {
   }
 }
 
+// 字段类型切换为非文本时清空长度配置。
 const extractedFieldTypeChange = item => {
   if (item.extractedFieldType !== 0) {
     item.length = ''
   }
 }
+// 根据已选字段组装数据预览表格的列和行。
 const previewData = () => {
   showEmpty.value = false
   const data = []
@@ -596,6 +645,7 @@ const previewData = () => {
   showEmpty.value = apiItem.fields.length === 0
 }
 
+// 勾选父节点时递归同步所有子节点的勾选状态。
 const handleCheckChange = (apiItem, node) => {
   if (node.children?.length) {
     node.children.forEach(item => {
@@ -605,6 +655,7 @@ const handleCheckChange = (apiItem, node) => {
   }
 }
 
+// 从接口响应字段树中提取所有已勾选的叶子字段。
 const handleFiledChange = apiItem => {
   for (var i = 0; i < apiItem.jsonFields.length; i++) {
     if (apiItem.jsonFields[i].checked && apiItem.jsonFields[i].children === undefined) {
@@ -615,6 +666,7 @@ const handleFiledChange = apiItem => {
     }
   }
 }
+// 递归处理子字段，遇到重名字段时取消勾选并记录提示信息。
 const handleFiledChange2 = (apiItem, jsonFields) => {
   for (var i = 0; i < jsonFields.length; i++) {
     if (jsonFields[i].checked && jsonFields[i].children === undefined) {
@@ -635,6 +687,7 @@ const handleFiledChange2 = (apiItem, jsonFields) => {
   }
 }
 
+// 处理字段树节点勾选变化，并刷新字段列表和数据预览。
 const handleCheckAllChange = row => {
   errMsg = []
   handleCheckChange(apiItem, row)
@@ -646,13 +699,17 @@ const handleCheckAllChange = row => {
     ElMessage.error([...new Set(errMsg)].join(',') + ', ' + t('datasource.has_repeat_field_name'))
   }
 }
+// 切换请求体类型时同步到接口请求配置。
 const changeId = (val: string) => {
   apiItem.request.body.typeChange = val
 }
 
+// 字段配置面板展开状态。
 const activeColumnInfo = ref(true)
+// 数据预览面板展开状态。
 const activeDataPreview = ref(true)
 
+// 获取当前插件数据源的静态入口索引。
 const getPluginStatic = () => {
   const arr = pluginDs.value.filter(ele => {
     return ele.type === dsType.value
@@ -664,8 +721,10 @@ const getPluginStatic = () => {
     : null
 }
 
+// 向父组件回传接口配置。
 const returnAPIItem = defineEmits(['returnItem'])
 
+// 暴露初始化方法，供父级抽屉控制入口调用。
 defineExpose({
   initApiItem
 })
