@@ -54,9 +54,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * @Author Junjun
- */
 @RestController
 @RequestMapping("/chart-data")
 @SuppressWarnings("unchecked")

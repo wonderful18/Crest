@@ -22,9 +22,6 @@ import org.apache.commons.lang3.Strings;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * @Author Junjun
- */
 public class WhereTree2Str {
     public static void transFilterTrees(SQLMeta meta, List<DataSetRowPermissionsTreeDTO> requestList, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         SQLObj tableObj = meta.getTable();

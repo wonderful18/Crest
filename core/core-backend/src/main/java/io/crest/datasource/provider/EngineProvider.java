@@ -12,10 +12,6 @@ import java.util.regex.Pattern;
 
 import static io.crest.engine.utils.Utils.SQL_INJECTION_PATTERNS;
 
-/**
- * @Author gin
- * @Date 2021/5/17 4:19 下午
- */
 public abstract class EngineProvider {
     public abstract String createView(String name, String viewSQL);
 

@@ -18,9 +18,6 @@ import org.apache.commons.lang3.Strings;
 
 import java.util.*;
 
-/**
- * @Author Junjun
- */
 public class Order2SQLObj {
 
     public static void getOrders(SQLMeta meta, List<ChartSortFieldDTO> sortFields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {

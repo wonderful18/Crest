@@ -2,9 +2,6 @@ package io.crest.api.dataset.engine;
 
 import lombok.Data;
 
-/**
- * @Author Junjun
- */
 @Data
 public class SQLFunctionDTO {
     private String name;

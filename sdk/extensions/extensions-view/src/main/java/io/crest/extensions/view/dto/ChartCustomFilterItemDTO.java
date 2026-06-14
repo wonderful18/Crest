@@ -6,9 +6,6 @@ import lombok.Data;
 
 import java.io.Serializable;
 
-/**
- * @Author Junjun
- */
 @Data
 public class ChartCustomFilterItemDTO implements Serializable {
     @JsonSerialize(using = ToStringSerializer.class)

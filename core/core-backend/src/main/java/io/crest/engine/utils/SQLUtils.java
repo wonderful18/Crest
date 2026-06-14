@@ -2,9 +2,6 @@ package io.crest.engine.utils;
 
 import java.util.Optional;
 
-/**
- * @Author Junjun
- */
 public class SQLUtils {
     public static String transKeyword(String value) {
         return Optional.ofNullable(value).orElse("").replaceAll("'", "''").replaceAll("\\\\","\\\\\\\\").replace("\n", "\\n");

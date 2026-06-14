@@ -69,9 +69,6 @@ import java.util.stream.Collectors;
 import static io.crest.chart.manage.ChartDataManage.START_END_SEPARATOR;
 import static io.crest.dataset.utils.TableUtils.format;
 
-/**
- * @Author Junjun
- */
 @Component
 @SuppressWarnings("unchecked")
 public class DatasetDataManage {

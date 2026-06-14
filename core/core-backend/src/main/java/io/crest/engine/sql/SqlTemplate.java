@@ -1,8 +1,5 @@
 package io.crest.engine.sql;
 
-/**
- * @Author Junjun
- */
 public class SqlTemplate {
     public static String QUERY_SQL = "querySql(limitFiled, groups, aggregators, filters, orders, table, notUseAs, useAliasForGroup)\n" +
             "::=<<\n" +

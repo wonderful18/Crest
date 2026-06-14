@@ -20,9 +20,6 @@ import java.util.*;
 
 import static io.crest.constant.SQLConstants.FIELD_DOT_FIX;
 
-/**
- * @Author Junjun
- */
 public class Field2SQLObj {
 
     public static void field2sqlObj(SQLMeta meta, List<DatasetTableFieldDTO> fields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage, boolean forSqlbot) {

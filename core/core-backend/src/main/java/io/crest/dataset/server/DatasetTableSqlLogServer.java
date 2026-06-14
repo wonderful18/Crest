@@ -9,9 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * @Author Junjun
- */
 @RestController
 @RequestMapping("dataset-table-sql-log")
 public class DatasetTableSqlLogServer implements DatasetTableSqlLogApi {

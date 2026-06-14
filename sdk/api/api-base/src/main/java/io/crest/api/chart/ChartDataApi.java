@@ -16,9 +16,6 @@ import java.util.List;
 
 import static io.crest.constant.AuthResourceEnum.PANEL;
 
-/**
- * @Author Junjun
- */
 @Tag(name = "图表管理:数据")
 @ApiSupport(order = 989)
 @CrestApiPath(value = "/chart-data", rt = PANEL)

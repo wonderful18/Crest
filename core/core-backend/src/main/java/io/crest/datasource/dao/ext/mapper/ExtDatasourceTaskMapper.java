@@ -6,10 +6,6 @@ import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
-/**
- * @Author gin
- * @Date 2021/3/9 3:26 下午
- */
 @Mapper
 public interface ExtDatasourceTaskMapper {
 

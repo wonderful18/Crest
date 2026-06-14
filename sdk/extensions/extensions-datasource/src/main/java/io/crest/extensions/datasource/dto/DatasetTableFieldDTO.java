@@ -7,9 +7,6 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.List;
 
-/**
- * @Author Junjun
- */
 @Data
 public class DatasetTableFieldDTO implements Serializable {
     /**

@@ -1,8 +1,5 @@
 package io.crest.api.dataset.engine;
 
-/**
- * @Author Junjun
- */
 public enum SQLFunctionsEnum {
     SUBSTRING("SUBSTRING", "SUBSTRING(s,n,len)", 0, "获取从字符串s中的第n个位置开始长度为len的字符串", false),
     ABS("ABS", "ABS(x)", 2, "返回x的绝对值", false),

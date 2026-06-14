@@ -4,10 +4,6 @@ import io.crest.datasource.dao.auto.entity.CoreDatasourceTask;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * @Author gin
- * @Date 2021/3/9 3:19 下午
- */
 @Getter
 @Setter
 public class CoreDatasourceTaskDTO extends CoreDatasourceTask {

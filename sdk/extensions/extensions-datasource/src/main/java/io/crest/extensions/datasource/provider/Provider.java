@@ -30,9 +30,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * @Author Junjun
- */
 @SuppressWarnings("deprecation")
 public abstract class Provider {
 

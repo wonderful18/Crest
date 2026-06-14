@@ -6,10 +6,6 @@ import lombok.Data;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Author: wangjiahao
- * Description:
- */
 @Data
 public class VisualizationOuterParamsBaseResponse {
 

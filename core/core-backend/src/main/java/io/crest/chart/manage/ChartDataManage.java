@@ -50,9 +50,6 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * @Author Junjun
- */
 @Component
 @SuppressWarnings("unchecked")
 public class ChartDataManage {

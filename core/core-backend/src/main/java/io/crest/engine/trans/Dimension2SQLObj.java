@@ -19,9 +19,6 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 
-/**
- * @Author Junjun
- */
 public class Dimension2SQLObj {
 
     public static void dimension2sqlObj(SQLMeta meta, List<ChartViewFieldDTO> fields, List<DatasetTableFieldDTO> originFields,

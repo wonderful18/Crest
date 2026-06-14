@@ -21,9 +21,6 @@ import org.springframework.util.CollectionUtils;
 import java.util.*;
 import java.util.regex.Pattern;
 
-/**
- * @Author Junjun
- */
 public class Quota2SQLObj {
     private static final Pattern NUMBER_PATTERN = Pattern.compile("^[-+]?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$");
 
