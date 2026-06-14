@@ -28,6 +28,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * API 数据源工具，负责把 API 配置转换为 Crest 内部的数据表、字段和行数据。
+ * 这里会触发真实 HTTP 请求，并处理分页、动态参数、JSONPath 字段发现和结果拉平。
+ */
 @SuppressWarnings({"deprecation", "unchecked", "rawtypes"})
 public class ApiUtils {
     private static Configuration jsonPathConf = Configuration.builder()
@@ -41,6 +45,9 @@ public class ApiUtils {
     private static TypeReference<List<Map<String, Object>>> listForMapTypeReference = new TypeReference<List<Map<String, Object>>>() {
     };
 
+    /**
+     * 将用户录入的 JSONPath 规范化为 JsonPath 库可直接读取的根路径格式。
+     */
     private static String normalizeJsonPath(String jsonPath) {
         String path = StringUtils.trimToEmpty(jsonPath);
         if (StringUtils.isBlank(path)) {
@@ -58,6 +65,9 @@ public class ApiUtils {
         return "$." + path;
     }
 
+    /**
+     * 给列表根路径补充通配符，便于后续按行读取数组中的每个对象。
+     */
     private static String appendListWildcard(String jsonPath) {
         if (StringUtils.isBlank(jsonPath) || jsonPath.endsWith("[*]")) {
             return jsonPath;
@@ -65,6 +75,9 @@ public class ApiUtils {
         return jsonPath + "[*]";
     }
 
+    /**
+     * 把 JsonPath 返回值统一成行集合，单对象结果会作为一行处理。
+     */
     private static List<Object> toRowList(Object object) {
         if (object instanceof List<?>) {
             return new ArrayList<>((List<?>) object);
@@ -74,6 +87,9 @@ public class ApiUtils {
         return rows;
     }
 
+    /**
+     * 将复杂 JSON 值转换成字符串，失败时退回到对象的字符串表示，避免字段预览中断。
+     */
     private static String toJsonString(Object object) {
         try {
             return objectMapper.writeValueAsString(object);
@@ -82,6 +98,9 @@ public class ApiUtils {
         }
     }
 
+    /**
+     * 字段发现完成后自动勾选叶子字段；中间节点只用于承载对象或数组层级。
+     */
     private static void checkLeafFields(List<Map<String, Object>> fields) {
         if (fields == null) {
             return;
@@ -96,6 +115,9 @@ public class ApiUtils {
         }
     }
 
+    /**
+     * 将字段完整 JSONPath 转为相对于当前行对象的路径，供自定义根路径结果拉平使用。
+     */
     private static String toRowRelativeJsonPath(String fieldJsonPath, String rootJsonPath, String rootListJsonPath, String originName) {
         String normalizedFieldPath = normalizeJsonPath(fieldJsonPath);
         if (StringUtils.isBlank(normalizedFieldPath) && StringUtils.isNotBlank(originName)) {
@@ -119,6 +141,9 @@ public class ApiUtils {
         return "$" + suffix;
     }
 
+    /**
+     * 将单元格值压平为无换行字符串；对象和多值数组保留 JSON 形态，单值数组按标量处理。
+     */
     private static String cellValue(Object value) {
         if (value == null) {
             return "";
@@ -138,6 +163,9 @@ public class ApiUtils {
         return String.valueOf(value).replaceAll("\n", " ").replaceAll("\r", " ");
     }
 
+    /**
+     * 解析 API 参数中的内置时间函数，当前支持时间戳、当天和昨天三类动态值。
+     */
     private static String formatTimeFunctionValue(String timeFormat) {
         if (StringUtils.isBlank(timeFormat)) {
             return null;
@@ -159,6 +187,9 @@ public class ApiUtils {
         return new SimpleDateFormat(timeFunction[1]).format(calendar.getTime());
     }
 
+    /**
+     * 根据数据源配置生成可选 API 表清单，参数型 API 只作为动态参数来源，不暴露为数据表。
+     */
     public static List<DatasetTableDTO> getApiTables(DatasourceRequest datasourceRequest) throws CrestException {
         List<DatasetTableDTO> tableDescs = new ArrayList<>();
         TypeReference<List<ApiDefinition>> listTypeReference = new TypeReference<List<ApiDefinition>>() {
@@ -180,6 +211,9 @@ public class ApiUtils {
         return tableDescs;
     }
 
+    /**
+     * 构建 API 内部表名到展示表名的映射，供前端或导入流程展示用户配置的表名。
+     */
     public static Map<String, String> getTableNamesMap(String configration) throws CrestException {
         Map<String, String> result = new HashMap<>();
         try {
@@ -195,6 +229,9 @@ public class ApiUtils {
     }
 
 
+    /**
+     * 拉取指定 API 表的字段和预览数据。分页配置存在时会按页码或游标继续请求并合并结果。
+     */
     public static Map<String, Object> fetchApiResultField(DatasourceRequest datasourceRequest) throws CrestException {
         Map<String, Object> result = new HashMap<>();
         List<String[]> dataList = new ArrayList<>();
@@ -203,6 +240,7 @@ public class ApiUtils {
         if (apiDefinition == null) {
             CrestException.throwException("未找到");
         }
+        // 分页型 API 需要先取第一页来确认字段，再根据分页策略继续补齐预览行。
         if (apiDefinition.getRequest().getPage() != null && apiDefinition.getRequest().getPage().getPageType() != null && !apiDefinition.getRequest().getPage().getPageType().equalsIgnoreCase("empty")) {
             String response = execHttpRequest(false, apiDefinition, apiDefinition.getApiQueryTimeout() == null || apiDefinition.getApiQueryTimeout() <= 0 ? 10 : apiDefinition.getApiQueryTimeout(), params(datasourceRequest));
             fieldList = getTableFields(apiDefinition);
@@ -254,10 +292,16 @@ public class ApiUtils {
     }
 
 
+    /**
+     * 返回 API 定义中已经保存的字段列表，不在此处重新推断字段结构。
+     */
     private static List<TableField> getTableFields(ApiDefinition apiDefinition) throws CrestException {
         return apiDefinition.getFields();
     }
 
+    /**
+     * 从数据源配置中找到当前请求表对应的 API 定义，并返回其已保存字段。
+     */
     public static List<TableField> getTableFields(DatasourceRequest datasourceRequest) throws CrestException {
         TypeReference<List<ApiDefinition>> listTypeReference = new TypeReference<List<ApiDefinition>>() {
         };
@@ -276,6 +320,9 @@ public class ApiUtils {
         return tableFields;
     }
 
+    /**
+     * 逐个探测 API 数据表的连通状态。单个 API 失败不会中断整体状态结果。
+     */
     public static String checkAPIStatus(DatasourceRequest datasourceRequest) throws Exception {
         TypeReference<List<ApiDefinition>> listTypeReference = new TypeReference<List<ApiDefinition>>() {
         };
@@ -301,6 +348,9 @@ public class ApiUtils {
         return JsonUtil.toJSONString(status).toString();
     }
 
+    /**
+     * 执行当前请求表对应的 API，并把响应转换为数据行。
+     */
     private static List<String[]> data(DatasourceRequest datasourceRequest) throws Exception {
         ApiDefinition apiDefinition = getApiDefinition(datasourceRequest);
         if (apiDefinition == null) {
@@ -310,15 +360,20 @@ public class ApiUtils {
         return fetchResult(response, apiDefinition);
     }
 
+    /**
+     * 根据 API 定义组装并执行 HTTP 请求。请求头、URL 参数和请求体中的动态参数会递归调用参数型 API 取值。
+     */
     public static String execHttpRequest(boolean preview, ApiDefinition api, int socketTimeout, List<ApiDefinition> paramsList) {
         ApiDefinition apiDefinition = new ApiDefinition();
         BeanUtils.copyBean(apiDefinition, api);
 
+        // 页码分页会把内置分页参数替换到 URL 和请求定义中，后续请求复用替换后的定义。
         if (apiDefinition.getRequest().getPage() != null && apiDefinition.getRequest().getPage().getPageType() != null && apiDefinition.getRequest().getPage().getPageType().equalsIgnoreCase("pageNumber")) {
             apiDefinition.setUrl(apiDefinition.getUrl().replace(apiDefinition.getRequest().getPage().getRequestData().get(0).getBuiltInParameterName(), apiDefinition.getRequest().getPage().getRequestData().get(0).getParameterDefaultValue()).replace(apiDefinition.getRequest().getPage().getRequestData().get(1).getBuiltInParameterName(), apiDefinition.getRequest().getPage().getRequestData().get(1).getParameterDefaultValue()));
             apiDefinition.setRequest(JsonUtil.parseObject(JsonUtil.toJSONString(apiDefinition.getRequest()).toString().replace(apiDefinition.getRequest().getPage().getRequestData().get(0).getBuiltInParameterName(), apiDefinition.getRequest().getPage().getRequestData().get(0).getParameterDefaultValue()).replace(apiDefinition.getRequest().getPage().getRequestData().get(1).getBuiltInParameterName(), apiDefinition.getRequest().getPage().getRequestData().get(1).getParameterDefaultValue()), ApiDefinitionRequest.class));
         }
 
+        // 游标分页的默认游标允许为空，表示第一次请求由接口返回下一轮游标。
         if (apiDefinition.getRequest().getPage() != null && apiDefinition.getRequest().getPage().getPageType() != null && apiDefinition.getRequest().getPage().getPageType().equalsIgnoreCase("cursor")) {
             apiDefinition.setUrl(apiDefinition.getUrl().replace(apiDefinition.getRequest().getPage().getRequestData().get(0).getBuiltInParameterName(), apiDefinition.getRequest().getPage().getRequestData().get(0).getParameterDefaultValue()).replace(apiDefinition.getRequest().getPage().getRequestData().get(1).getBuiltInParameterName(), apiDefinition.getRequest().getPage().getRequestData().get(1).getParameterDefaultValue()));
             String defaultCursor = apiDefinition.getRequest().getPage().getRequestData().get(0).getParameterDefaultValue();
@@ -330,6 +385,7 @@ public class ApiUtils {
         HttpClientConfig httpClientConfig = new HttpClientConfig();
         httpClientConfig.setSocketTimeout(socketTimeout * 1000);
         ApiDefinitionRequest apiDefinitionRequest = apiDefinition.getRequest();
+        // 头部参数支持固定值、参数型 API 返回值、自定义模板和内置时间函数。
         for (Map header : apiDefinitionRequest.getHeaders()) {
             if (header.get("name") != null && StringUtils.isNotEmpty(header.get("name").toString()) && header.get("value") != null && StringUtils.isNotEmpty(header.get("value").toString())) {
                 if (header.get("nameType") != null && header.get("nameType").toString().equalsIgnoreCase("params")) {
@@ -407,6 +463,7 @@ public class ApiUtils {
         }
 
         List<String> params = new ArrayList<>();
+        // URL 查询参数与请求头保持同样的动态参数语义，最终追加到请求地址后。
         for (Map<String, String> argument : apiDefinition.getRequest().getArguments()) {
             if (StringUtils.isNotEmpty(argument.get("name")) && StringUtils.isNotEmpty(argument.get("value"))) {
                 if (argument.get("nameType") != null && argument.get("nameType").toString().equalsIgnoreCase("params")) {
@@ -601,6 +658,9 @@ public class ApiUtils {
         return response;
     }
 
+    /**
+     * 给字段树填充前 100 条预览值，避免字段发现阶段把完整响应体塞进配置对象。
+     */
     private static void previewNum(List<Map<String, Object>> fields, String response) {
         int previewNum = 100;
         for (Map<String, Object> field : fields) {
@@ -633,6 +693,9 @@ public class ApiUtils {
         }
     }
 
+    /**
+     * 发起一次 API 预览请求，并根据响应结构回填可选字段树。
+     */
     public static ApiDefinition checkApiDefinition(DatasourceRequest datasourceRequest) throws CrestException {
         ApiDefinition apiDefinition = new ApiDefinition();
         TypeReference<List<ApiDefinition>> listTypeReference = new TypeReference<List<ApiDefinition>>() {
@@ -649,6 +712,9 @@ public class ApiUtils {
         return checkApiDefinition(apiDefinition, response);
     }
 
+    /**
+     * 根据 API 响应推断字段树。启用自定义 JSONPath 时，只围绕选中的根路径构造字段。
+     */
     private static ApiDefinition checkApiDefinition(ApiDefinition apiDefinition, String response) throws CrestException {
         if (StringUtils.isEmpty(response)) {
             CrestException.throwException("该请求返回数据为空");
@@ -714,6 +780,9 @@ public class ApiUtils {
     }
 
 
+    /**
+     * 递归解析 JSON 字符串，把对象字段、数组字段和标量字段转成前端可配置的字段树节点。
+     */
     private static void handleStr(ApiDefinition apiDefinition, String jsonStr, List<Map<String, Object>> fields, String rootPath) throws CrestException {
         if (jsonStr.startsWith("[")) {
             TypeReference<List<Object>> listTypeReference = new TypeReference<List<Object>>() {
@@ -807,6 +876,9 @@ public class ApiUtils {
         }
     }
 
+    /**
+     * 给字段树节点写入默认属性，并在非自定义 JSONPath 模式下恢复用户已保存的字段配置。
+     */
     private static void setProperty(ApiDefinition apiDefinition, Map<String, Object> o, String s) {
         o.put("originName", s);
         o.put("name", s);
@@ -828,6 +900,9 @@ public class ApiUtils {
         }
     }
 
+    /**
+     * 判断字段树中是否已有相同 JSONPath 节点；存在时合并字段结构和预览值。
+     */
     private static boolean hasItem(ApiDefinition apiDefinition, List<Map<String, Object>> fields, Map<String, Object> item) throws CrestException {
         boolean has = false;
         for (Map<String, Object> field : fields) {
@@ -843,6 +918,9 @@ public class ApiUtils {
     }
 
 
+    /**
+     * 合并重复字段节点的子节点结构，确保多个样本对象中出现的新字段不会丢失。
+     */
     private static void mergeField(Map<String, Object> field, Map<String, Object> item) throws CrestException {
         if (item.get("children") != null) {
             List<Map<String, Object>> fieldChildren = null;
@@ -872,6 +950,9 @@ public class ApiUtils {
         }
     }
 
+    /**
+     * 合并重复字段节点的预览值，递归处理对象和数组子节点。
+     */
     private static void mergeValue(Map<String, Object> field, ApiDefinition apiDefinition, Map<String, Object> item) throws CrestException {
         TypeReference<JSONArray> listTypeReference = new TypeReference<JSONArray>() {
         };
@@ -906,6 +987,9 @@ public class ApiUtils {
 
     }
 
+    /**
+     * 按 API 字段配置从响应体中抽取行数据。自定义 JSONPath 模式按根路径逐行读取，普通模式按列补齐。
+     */
     private static List<String[]> fetchResult(String result, ApiDefinition apiDefinition) {
         List<String[]> dataList = new LinkedList<>();
         if (apiDefinition.isUseJsonPath()) {
@@ -974,6 +1058,9 @@ public class ApiUtils {
     }
 
 
+    /**
+     * 返回配置中的参数型 API 定义，这些定义只参与动态参数求值，不作为最终查询表。
+     */
     private static List<ApiDefinition> params(DatasourceRequest datasourceRequest) {
         TypeReference<List<ApiDefinition>> listTypeReference = new TypeReference<List<ApiDefinition>>() {
         };
@@ -981,6 +1068,9 @@ public class ApiUtils {
         return apiDefinitionListTemp.stream().filter(apiDefinition -> apiDefinition != null && apiDefinition.getType() != null && apiDefinition.getType().equalsIgnoreCase("params")).collect(Collectors.toList());
     }
 
+    /**
+     * 根据请求表名查找唯一 API 定义，内部名称和展示名称都可匹配。
+     */
     private static ApiDefinition getApiDefinition(DatasourceRequest datasourceRequest) throws CrestException {
         List<ApiDefinition> apiDefinitionList = new ArrayList<>();
         TypeReference<List<ApiDefinition>> listTypeReference = new TypeReference<List<ApiDefinition>>() {
