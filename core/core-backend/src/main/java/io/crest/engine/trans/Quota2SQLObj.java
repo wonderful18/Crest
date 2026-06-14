@@ -116,13 +116,14 @@ public class Quota2SQLObj {
                 fieldName = String.format(SQLConstants.AGG_FIELD, y.getSummary(), originField);
             }
         } else {
+            String normalizedOriginField = FieldSqlExpressionUtils.nullSafeTextOrigin(y, originField);
             if (Strings.CI.equals(y.getSummary(), "avg") || Strings.CI.contains(y.getSummary(), "pop")) {
-                String cast = String.format(SQLConstants.CAST, originField, Objects.equals(y.getFieldType(), FieldTypeConstants.INTEGER) ? SQLConstants.DEFAULT_INT_FORMAT : SQLConstants.DEFAULT_FLOAT_FORMAT);
+                String cast = String.format(SQLConstants.CAST, normalizedOriginField, Objects.equals(y.getFieldType(), FieldTypeConstants.INTEGER) ? SQLConstants.DEFAULT_INT_FORMAT : SQLConstants.DEFAULT_FLOAT_FORMAT);
                 String agg = String.format(SQLConstants.AGG_FIELD, y.getSummary(), cast);
                 String cast1 = String.format(SQLConstants.CAST, agg, SQLConstants.DEFAULT_FLOAT_FORMAT);
                 fieldName = String.format(SQLConstants.ROUND, cast1, "8");
             } else {
-                String cast = String.format(SQLConstants.CAST, originField, Objects.equals(y.getFieldType(), FieldTypeConstants.INTEGER) ? SQLConstants.DEFAULT_INT_FORMAT : SQLConstants.DEFAULT_FLOAT_FORMAT);
+                String cast = String.format(SQLConstants.CAST, normalizedOriginField, Objects.equals(y.getFieldType(), FieldTypeConstants.INTEGER) ? SQLConstants.DEFAULT_INT_FORMAT : SQLConstants.DEFAULT_FLOAT_FORMAT);
                 if (Strings.CI.equals(y.getSummary(), "count_distinct")) {
                     fieldName = String.format(SQLConstants.AGG_FIELD, "COUNT", "DISTINCT " + cast);
                 } else if (y.getSummary() == null) {

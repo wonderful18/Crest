@@ -94,7 +94,7 @@ public class ExtWhere2Str {
                     if (field.getFieldType() == 1) {
                         if (field.getExtractedFieldType() == 0 || field.getExtractedFieldType() == 5) {
                             // 此处获取标准格式的日期
-                            whereName = String.format(SQLConstants.CREST_STR_TO_DATE, originName, StringUtils.isEmpty(field.getDateFormat()) ? SQLConstants.DEFAULT_DATE_FORMAT : field.getDateFormat());
+                            whereName = String.format(SQLConstants.CREST_STR_TO_DATE, FieldSqlExpressionUtils.nullSafeTextOrigin(field, originName), StringUtils.isEmpty(field.getDateFormat()) ? SQLConstants.DEFAULT_DATE_FORMAT : field.getDateFormat());
                         }
                         if (field.getExtractedFieldType() == 2 || field.getExtractedFieldType() == 3 || field.getExtractedFieldType() == 4) {
                             String cast = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_INT_FORMAT);
@@ -120,7 +120,7 @@ public class ExtWhere2Str {
                         }
                     } else if (field.getFieldType() == 2 || field.getFieldType() == 3) {
                         if (field.getExtractedFieldType() == 0 || field.getExtractedFieldType() == 5) {
-                            whereName = String.format(SQLConstants.CAST, originName, SQLConstants.DEFAULT_FLOAT_FORMAT);
+                            whereName = String.format(SQLConstants.CAST, FieldSqlExpressionUtils.nullSafeTextOrigin(field, originName), SQLConstants.DEFAULT_FLOAT_FORMAT);
                         }
                         if (field.getExtractedFieldType() == 1) {
                             whereName = String.format(SQLConstants.UNIX_TIMESTAMP, originName);
