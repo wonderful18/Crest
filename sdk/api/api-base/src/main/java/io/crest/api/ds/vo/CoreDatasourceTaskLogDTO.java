@@ -10,12 +10,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * <p>
- * 
- * </p>
- *
- * @author fit2cloud
- * @since 2023-06-08
+ * 数据源任务执行日志。
  */
 @Data
 public class CoreDatasourceTaskLogDTO implements Serializable {

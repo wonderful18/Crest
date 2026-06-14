@@ -15,6 +15,7 @@ import io.crest.api.ds.vo.ExcelFileData;
 import io.crest.api.ds.vo.ExcelSheetData;
 import io.crest.api.ds.vo.RemoteExcelRequest;
 import io.crest.commons.utils.EncryptUtils;
+import io.crest.dataset.utils.FieldUtils;
 import io.crest.dataset.utils.TableUtils;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
 import io.crest.exception.CrestException;
@@ -47,6 +48,7 @@ import java.util.stream.Collectors;
 public class ExcelUtils {
     public static final String UFEFF = "\uFEFF";
     private static final int EXCEL_FIELD_DISPLAY_NAME_LIMIT = 100;
+    private static final String DEFAULT_EXCEL_FIELD_TYPE = "TEXT";
     private static final String SHEET_STATUS_NORMAL = "NORMAL";
     private static final String SHEET_STATUS_SKIPPED = "SKIPPED";
     private static final String SHEET_MESSAGE_SQL_DESCRIPTION = "检测到该工作表首行疑似 SQL 或说明文本，默认不导入。";
@@ -128,6 +130,21 @@ public class ExcelUtils {
             count++;
         }
         return dbFieldName;
+    }
+
+    private static void normalizeExcelTableField(TableField field) {
+        String type = StringUtils.firstNonBlank(field.getType(), field.getNativeType(), DEFAULT_EXCEL_FIELD_TYPE);
+        field.setType(type);
+        if (StringUtils.isBlank(field.getNativeType())) {
+            field.setNativeType(type);
+        }
+        int fieldType = FieldUtils.resolveFieldType(type);
+        if (field.getFieldType() == null) {
+            field.setFieldType(fieldType);
+        }
+        if (field.getExtractedFieldType() == null) {
+            field.setExtractedFieldType(fieldType);
+        }
     }
 
     private String normalizeExcelHeader(String header) {
@@ -397,6 +414,7 @@ public class ExcelUtils {
             for (int i = 0; i < rootNode.size(); i++) {
                 if (rootNode.get(i).get("displayTableName").asText().equalsIgnoreCase(datasourceRequest.getTable())) {
                     tableFields = JsonUtil.parseList(rootNode.get(i).get("fields").toString(), listTypeReference);
+                    tableFields.forEach(ExcelUtils::normalizeExcelTableField);
                 }
             }
         } catch (Exception e) {
@@ -428,28 +446,8 @@ public class ExcelUtils {
             excelSheetData.setSheetId(UUID.randomUUID().toString());
             excelSheetData.setSheetExcelId(excelId);
             excelSheetData.setFileName(filename);
-            /**
-             * Crest 字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制
-             */
             for (TableField field : excelSheetData.getFields()) {
-                //TEXT LONG DATETIME DOUBLE
-                if (field.getNativeType().equalsIgnoreCase("TEXT")) {
-                    field.setFieldType(0);
-                    field.setExtractedFieldType(0);
-                }
-                if (field.getNativeType().equalsIgnoreCase("DATETIME")) {
-                    field.setFieldType(1);
-                    field.setExtractedFieldType(1);
-                }
-                if (field.getNativeType().equalsIgnoreCase("LONG")) {
-                    field.setFieldType(2);
-                    field.setExtractedFieldType(2);
-                }
-                if (field.getNativeType().equalsIgnoreCase("DOUBLE")) {
-                    field.setFieldType(3);
-                    field.setExtractedFieldType(3);
-                }
-
+                normalizeExcelTableField(field);
             }
             long size = 0;
             String unit = "B";
@@ -506,27 +504,8 @@ public class ExcelUtils {
             excelSheetData.setSheetId(UUID.randomUUID().toString());
             excelSheetData.setSheetExcelId(fileNames.get("tranName").split("\\.")[0]);
             excelSheetData.setFileName(fileNames.get("fileName"));
-            /**
-             * Crest 字段类型：0-文本，1-时间，2-整型数值，3-浮点数值，4-布尔，5-地理位置，6-二进制
-             */
             for (TableField field : excelSheetData.getFields()) {
-                //TEXT LONG DATETIME DOUBLE
-                if (field.getNativeType().equalsIgnoreCase("TEXT")) {
-                    field.setFieldType(0);
-                    field.setExtractedFieldType(0);
-                }
-                if (field.getNativeType().equalsIgnoreCase("DATETIME")) {
-                    field.setFieldType(1);
-                    field.setExtractedFieldType(1);
-                }
-                if (field.getNativeType().equalsIgnoreCase("LONG")) {
-                    field.setFieldType(2);
-                    field.setExtractedFieldType(2);
-                }
-                if (field.getNativeType().equalsIgnoreCase("DOUBLE")) {
-                    field.setFieldType(3);
-                    field.setExtractedFieldType(3);
-                }
+                normalizeExcelTableField(field);
             }
             long size = 0;
             File file = excelTempFile(fileNames.get("tranName"));
@@ -628,6 +607,7 @@ public class ExcelUtils {
                     if (cells.size() > size) {
                         cells = cells.subList(0, size);
                     }
+                    cells = cells.stream().map(ExcelUtils::normalizeNullPlaceholder).collect(Collectors.toList());
                     data.add(cells.toArray(new String[]{}));
                     num++;
                 }
@@ -663,18 +643,19 @@ public class ExcelUtils {
     }
 
     private String cellType(String value) {
-        if (StringUtils.isEmpty(value) || value.length() > 19) {
+        String text = StringUtils.trimToEmpty(value);
+        if (StringUtils.isEmpty(text) || text.length() > 19 || hasLeadingZeroNumericText(text)) {
             return "TEXT";
         }
         String regex = "^-?\\d+(\\.\\d+)?$";
-        if (!value.matches(regex)) {
+        if (!text.matches(regex)) {
             return "TEXT";
         }
         try {
-            Double d = Double.valueOf(value);
+            Double d = Double.valueOf(text);
             double eps = 1e-10;
             if (d - Math.floor(d) < eps) {
-                if (value.contains(".")) {
+                if (text.contains(".")) {
                     return "DOUBLE";
                 }
                 return "LONG";
@@ -687,13 +668,20 @@ public class ExcelUtils {
     }
 
     private void cellType(String value, int i, TableField tableFiled) {
-        if (StringUtils.isEmpty(value)) {
+        if (StringUtils.isBlank(value) || isNullPlaceholder(value)) {
             return;
         }
+        if (shouldKeepExcelFieldAsText(tableFiled)) {
+            tableFiled.setNativeType(DEFAULT_EXCEL_FIELD_TYPE);
+            return;
+        }
+        String type = cellType(value);
+        if (shouldPreferExcelFieldAsDouble(tableFiled) && isExcelNumericType(type)) {
+            type = "DOUBLE";
+        }
         if (i == 0) {
-            tableFiled.setNativeType(cellType(value));
+            tableFiled.setNativeType(type);
         } else {
-            String type = cellType(value);
             if (tableFiled.getNativeType() == null) {
                 tableFiled.setNativeType(type);
             } else {
@@ -708,6 +696,78 @@ public class ExcelUtils {
 
     }
 
+    private boolean shouldPreferExcelFieldAsDouble(TableField tableField) {
+        if (tableField == null) {
+            return false;
+        }
+        String fieldName = StringUtils.defaultString(StringUtils.firstNonBlank(tableField.getName(), tableField.getOriginName()));
+        return containsAny(fieldName, "工作量", "金额", "均值", "平均", "阈值");
+    }
+
+    private boolean isExcelNumericType(String type) {
+        return Strings.CI.equals(type, "LONG") || Strings.CI.equals(type, "DOUBLE");
+    }
+
+    private boolean hasLeadingZeroNumericText(String value) {
+        String text = StringUtils.trimToEmpty(value);
+        int start = text.startsWith("-") ? 1 : 0;
+        return text.length() > start + 1 && text.charAt(start) == '0' && Character.isDigit(text.charAt(start + 1));
+    }
+
+    private boolean shouldKeepExcelFieldAsText(TableField tableField) {
+        if (tableField == null) {
+            return false;
+        }
+        String fieldName = StringUtils.defaultString(StringUtils.firstNonBlank(tableField.getName(), tableField.getOriginName()));
+        String lowerName = fieldName.toLowerCase(Locale.ROOT);
+        return containsAny(fieldName, "编号", "编码", "代码", "单号", "账号", "帐号", "卡号", "身份证", "版本号", "序号")
+                || containsAny(fieldName, "日期", "时间", "月份", "年月")
+                || hasEnglishIdentifierToken(lowerName, "id")
+                || hasEnglishIdentifierToken(lowerName, "code");
+    }
+
+    private boolean containsAny(String value, String... keywords) {
+        if (StringUtils.isBlank(value)) {
+            return false;
+        }
+        for (String keyword : keywords) {
+            if (value.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasEnglishIdentifierToken(String lowerName, String token) {
+        if (StringUtils.isBlank(lowerName)) {
+            return false;
+        }
+        if (lowerName.equals(token)) {
+            return true;
+        }
+        return lowerName.matches(".*(^|[^a-z0-9])" + token + "($|[^a-z0-9]).*")
+                || lowerName.matches(".*[\\u4e00-\\u9fa5]" + token + "$");
+    }
+
+    private static String normalizeExcelCellValue(String value) {
+        if (StringUtils.isEmpty(value) || isNullPlaceholder(value)) {
+            return null;
+        }
+        return value;
+    }
+
+    private static String normalizeNullPlaceholder(String value) {
+        if (isNullPlaceholder(value)) {
+            return null;
+        }
+        return value;
+    }
+
+    private static boolean isNullPlaceholder(String value) {
+        String text = StringUtils.trimToEmpty(value);
+        return Strings.CI.equals(text, "null") || Strings.CS.equals(text, "\\N");
+    }
+
     @Data
     @EqualsAndHashCode(callSuper = false)
     public class NoModelDataListener extends AnalysisEventListener<Map<Integer, String>> {
@@ -718,40 +778,36 @@ public class ExcelUtils {
         @Override
         public void invokeHead(Map<Integer, ReadCellData<?>> headMap, AnalysisContext context) {
             super.invokeHead(headMap, context);
-            for (Integer key : headMap.keySet()) {
-                ReadCellData<?> cellData = headMap.get(key);
-                String value = null;
-                if (cellData.getType().equals(CellDataTypeEnum.STRING)) {
-                    value = cellData.getStringValue();
-                }
-                if (cellData.getType().equals(CellDataTypeEnum.NUMBER)) {
-                    value = cellData.getNumberValue().toString();
-                }
-                if (StringUtils.isEmpty(value)) {
-                    continue;
-                }
+            if (headMap.isEmpty()) {
+                return;
+            }
+            int minKey = Collections.min(headMap.keySet());
+            int maxKey = Collections.max(headMap.keySet());
+            for (int key = minKey; key <= maxKey; key++) {
+                String value = headCellValue(headMap.get(key));
                 headerKey.add(key);
                 header.add(value);
             }
         }
 
+        private String headCellValue(ReadCellData<?> cellData) {
+            if (cellData == null) {
+                return null;
+            }
+            if (cellData.getType().equals(CellDataTypeEnum.STRING)) {
+                return cellData.getStringValue();
+            }
+            if (cellData.getType().equals(CellDataTypeEnum.NUMBER)) {
+                return cellData.getNumberValue().toString();
+            }
+            return null;
+        }
+
         @Override
         public void invoke(Map<Integer, String> dataMap, AnalysisContext context) {
             List<String> line = new ArrayList<>();
-            for (Integer key : dataMap.keySet()) {
-                String value = dataMap.get(key);
-                if (StringUtils.isEmpty(value)) {
-                    value = null;
-                }
-                if (headerKey.contains(key)) {
-                    line.add(value);
-                }
-            }
-            int size = line.size();
-            if (size < header.size()) {
-                for (int i = 0; i < header.size() - size; i++) {
-                    line.add(null);
-                }
+            for (Integer key : headerKey) {
+                line.add(normalizeExcelCellValue(dataMap.get(key)));
             }
             data.add(line.toArray(new String[line.size()]));
         }
@@ -836,8 +892,9 @@ public class ExcelUtils {
 
                 for (int i = 0; i < fields.size(); i++) {
                     if (StringUtils.isEmpty(fields.get(i).getNativeType())) {
-                        fields.get(i).setNativeType("TEXT");
+                        fields.get(i).setNativeType(DEFAULT_EXCEL_FIELD_TYPE);
                     }
+                    normalizeExcelTableField(fields.get(i));
                 }
 
                 excelSheetData.setFields(fields);
@@ -852,9 +909,8 @@ public class ExcelUtils {
             String s = reader.readLine();// first line
             List<String> header = new ArrayList<>();
             if (StringUtils.isNotEmpty(s)) {
-                String[] split = s.split(",");
-                for (int i = 0; i < split.length; i++) {
-                    String filedName = split[i];
+                List<String> split = parseCsvLine(s);
+                for (String filedName : split) {
                     if (filedName.startsWith(UFEFF)) {
                         filedName = filedName.replace(UFEFF, "");
                     }
@@ -887,8 +943,9 @@ public class ExcelUtils {
             }
             for (int i = 0; i < fields.size(); i++) {
                 if (StringUtils.isEmpty(fields.get(i).getNativeType())) {
-                    fields.get(i).setNativeType("TEXT");
+                    fields.get(i).setNativeType(DEFAULT_EXCEL_FIELD_TYPE);
                 }
+                normalizeExcelTableField(fields.get(i));
             }
 
             ExcelSheetData excelSheetData = new ExcelSheetData();

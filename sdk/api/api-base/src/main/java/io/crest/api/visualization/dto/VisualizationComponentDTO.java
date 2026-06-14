@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * @author : WangJiaHao
- * @date : 2024/4/18 17:14
+ * 可视化组件导出和复制时使用的组件明细。
  */
 @Data
 @NoArgsConstructor

@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2023-09-22
+ * 组件联动字段实体。
  */
 @TableName("visualization_linkage_field")
 public class VisualizationLinkageField implements Serializable {

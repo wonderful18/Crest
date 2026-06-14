@@ -6,9 +6,6 @@ import lombok.Data;
 
 import java.util.List;
 
-/**
- * @Author gin
- */
 @Data
 public class ScatterChartDataDTO {
     private Object[] value;

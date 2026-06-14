@@ -52,9 +52,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-/**
- * @Author Junjun
- */
 @Component
 @Transactional(rollbackFor = Exception.class)
 @SuppressWarnings("unchecked")
@@ -151,17 +148,17 @@ public class DatasetGroupManage {
                 }
                 Objects.requireNonNull(CommonBeanFactory.getBean(this.getClass())).innerEdit(datasetGroupInfoDTO);
             }
-            // node_type=dataset需要创建dataset_table和field
+            // 数据集节点需要同步数据表和字段定义。
             if (Strings.CI.equals(datasetGroupInfoDTO.getNodeType(), "dataset")) {
                 if (encode) {
                     DatasetUtils.dsDecode(datasetGroupInfoDTO);
                 }
                 List<Long> tableIds = new ArrayList<>();
                 List<Long> fieldIds = new ArrayList<>();
-                // 解析tree，保存
+                // 解析数据集树结构并保存表字段关系。
                 saveTable(datasetGroupInfoDTO, datasetGroupInfoDTO.getUnion(), tableIds, isCreate);
                 saveField(datasetGroupInfoDTO, fieldIds);
-                // 删除不要的table和field
+                // 删除本次编辑后不再引用的数据表和字段。
                 datasetTableManage.deleteByDatasetGroupUpdate(datasetGroupInfoDTO.getId(), tableIds);
                 datasetTableFieldManage.deleteByDatasetGroupUpdate(datasetGroupInfoDTO.getId(), fieldIds);
                 if (encode) {

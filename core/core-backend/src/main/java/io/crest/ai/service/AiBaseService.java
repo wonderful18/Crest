@@ -12,8 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author : WangJiaHao
- * @date : 2024/3/27 09:47
+ * 提供智能组件相关的基础配置查询能力。
  */
 @RestController
 @RequestMapping("ai-base")

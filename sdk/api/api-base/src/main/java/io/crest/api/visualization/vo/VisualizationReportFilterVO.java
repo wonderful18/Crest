@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 
- * </p>
- *
- * @author fit2cloud
- * @since 2024-06-25
+ * 定时报告过滤条件配置。
  */
 public class VisualizationReportFilterVO implements Serializable {
     private static final long serialVersionUID = 1L;

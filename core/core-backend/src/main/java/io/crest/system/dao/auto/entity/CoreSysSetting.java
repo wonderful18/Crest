@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2023-10-27
+ * 系统配置实体。
  */
 @TableName("sys_setting")
 public class CoreSysSetting implements Serializable {

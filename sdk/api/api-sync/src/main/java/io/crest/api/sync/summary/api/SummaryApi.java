@@ -10,9 +10,8 @@ import java.util.Map;
 import static io.crest.constant.AuthResourceEnum.SUMMARY;
 
 /**
- * @author fit2cloud
- * @date 2023/12/4 12:43
- **/
+ * 数据同步概览统计接口。
+ */
 @CrestApiPath(value = "/sync/summary", rt = SUMMARY)
 public interface SummaryApi {
 

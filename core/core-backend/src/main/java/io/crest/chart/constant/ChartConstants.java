@@ -1,8 +1,5 @@
 package io.crest.chart.constant;
 
-/**
- * @Author gin
- */
 public class ChartConstants {
     public static final String YEAR_MOM = "year_mom";
     public static final String MONTH_MOM = "month_mom";

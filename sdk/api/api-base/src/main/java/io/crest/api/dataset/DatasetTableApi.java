@@ -11,9 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @Author Junjun
- */
 @Tag(name = "数据集管理:表")
 @ApiSupport(order = 977)
 public interface DatasetTableApi {

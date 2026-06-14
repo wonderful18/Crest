@@ -10,9 +10,7 @@ import java.security.MessageDigest;
 import java.util.UUID;
 
 /**
- * 加密解密工具
- *
- * @author kun.mo
+ * 通用编码和摘要工具，提供 MD5、Base64、AES 等兼容能力。
  */
 public class CodingUtil {
 

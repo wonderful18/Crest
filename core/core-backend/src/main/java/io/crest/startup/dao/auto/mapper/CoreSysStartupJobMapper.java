@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * <p>
- * 项目启动任务 Mapper 接口
- * </p>
- *
- * @author fit2cloud
- * @since 2024-05-15
+ * 系统启动任务 Mapper。
  */
 @Mapper
 public interface CoreSysStartupJobMapper extends BaseMapper<CoreSysStartupJob> {

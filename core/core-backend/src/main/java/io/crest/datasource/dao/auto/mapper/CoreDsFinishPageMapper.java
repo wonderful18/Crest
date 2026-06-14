@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
- *
- * @author fit2cloud
- * @since 2023-10-08
+ * 数据源完成页配置 Mapper。
  */
 @Mapper
 public interface CoreDsFinishPageMapper extends BaseMapper<CoreDsFinishPage> {

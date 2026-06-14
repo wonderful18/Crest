@@ -3,10 +3,8 @@ package io.crest.api.sync.task.vo;
 import lombok.Data;
 
 /**
- * 任务日志
- * @author fit2cloud
- * @date 2023/9/19 17:44
- **/
+ * 数据同步任务日志。
+ */
 @Data
 public class TaskLogVO {
 

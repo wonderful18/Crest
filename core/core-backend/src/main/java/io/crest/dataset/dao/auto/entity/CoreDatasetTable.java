@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2023-04-14
+ * 数据集表实体。
  */
 @TableName("dataset_table")
 public class CoreDatasetTable implements Serializable {

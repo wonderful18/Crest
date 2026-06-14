@@ -1,8 +1,5 @@
 package io.crest.engine.func;
 
-/**
- * @Author Junjun
- */
 public class FunctionConstant {
     /**
      * 所有聚合函数数组

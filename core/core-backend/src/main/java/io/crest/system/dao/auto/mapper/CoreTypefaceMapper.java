@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
- *
- * @author fit2cloud
- * @since 2024-08-08
+ * 字形资源 Mapper。
  */
 @Mapper
 public interface CoreTypefaceMapper extends BaseMapper<CoreTypeface> {

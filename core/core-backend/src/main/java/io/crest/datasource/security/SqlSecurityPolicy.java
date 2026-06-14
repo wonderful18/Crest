@@ -33,11 +33,96 @@ public final class SqlSecurityPolicy {
         if (normalized.indexOf('\0') >= 0 || containsControlCharacter(normalized)) {
             CrestException.throwException("SQL contains illegal characters");
         }
-        String body = normalized.endsWith(";") ? normalized.substring(0, normalized.length() - 1) : normalized;
-        if (body.contains(";")) {
+        if (containsExecutableSqlAfterTopLevelSemicolon(normalized)) {
             CrestException.throwException("Multiple SQL statements are not allowed");
         }
         return normalized;
+    }
+
+    private static boolean containsExecutableSqlAfterTopLevelSemicolon(String sql) {
+        int semicolonIndex = findTopLevelSemicolon(sql, 0);
+        if (semicolonIndex < 0) {
+            return false;
+        }
+        int nextSemicolonIndex = findTopLevelSemicolon(sql, semicolonIndex + 1);
+        if (nextSemicolonIndex >= 0) {
+            return true;
+        }
+        return hasExecutableContent(sql, semicolonIndex + 1);
+    }
+
+    private static int findTopLevelSemicolon(String sql, int start) {
+        char quote = 0;
+        for (int i = start; i < sql.length(); i++) {
+            char current = sql.charAt(i);
+            char next = i + 1 < sql.length() ? sql.charAt(i + 1) : 0;
+            if (quote != 0) {
+                if (current == '\\' && quote != '`') {
+                    i++;
+                } else if (current == quote) {
+                    if (next == quote && quote != '`') {
+                        i++;
+                    } else {
+                        quote = 0;
+                    }
+                }
+                continue;
+            }
+            if (current == '\'' || current == '"' || current == '`') {
+                quote = current;
+                continue;
+            }
+            if (current == '-' && next == '-') {
+                i = skipLineComment(sql, i + 2);
+                continue;
+            }
+            if (current == '#') {
+                i = skipLineComment(sql, i + 1);
+                continue;
+            }
+            if (current == '/' && next == '*') {
+                i = skipBlockComment(sql, i + 2);
+                continue;
+            }
+            if (current == ';') {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean hasExecutableContent(String sql, int start) {
+        for (int i = start; i < sql.length(); i++) {
+            char current = sql.charAt(i);
+            char next = i + 1 < sql.length() ? sql.charAt(i + 1) : 0;
+            if (Character.isWhitespace(current)) {
+                continue;
+            }
+            if (current == '-' && next == '-') {
+                i = skipLineComment(sql, i + 2);
+                continue;
+            }
+            if (current == '#') {
+                i = skipLineComment(sql, i + 1);
+                continue;
+            }
+            if (current == '/' && next == '*') {
+                i = skipBlockComment(sql, i + 2);
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static int skipLineComment(String sql, int start) {
+        int lineEnd = sql.indexOf('\n', start);
+        return lineEnd < 0 ? sql.length() : lineEnd;
+    }
+
+    private static int skipBlockComment(String sql, int start) {
+        int blockEnd = sql.indexOf("*/", start);
+        return blockEnd < 0 ? sql.length() : blockEnd + 1;
     }
 
     private static boolean containsControlCharacter(String value) {

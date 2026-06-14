@@ -7,9 +7,6 @@ import lombok.Data;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @Author gin
- */
 @Data
 public class ChartViewDTO extends ChartViewBaseDTO {
     private Map<String, Object> data;

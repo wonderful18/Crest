@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2023-11-26
+ * 工作台最近访问资源实体。
  */
 @TableName("workspace_recent_resource")
 public class CoreOptRecent implements Serializable {

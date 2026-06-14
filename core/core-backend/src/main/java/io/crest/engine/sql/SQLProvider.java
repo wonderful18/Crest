@@ -18,9 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * @Author Junjun
- * <p>
- * 将SQLMeta各个部分先构建完毕，然后在这个类中拼接
+ * 将 SQLMeta 的各部分转换结果拼接为最终查询语句。
  */
 public class SQLProvider {
     private static final String PREVIEW_SQL_TEMPLATE = "previewSql";

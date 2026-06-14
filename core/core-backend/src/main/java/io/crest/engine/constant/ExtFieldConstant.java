@@ -1,8 +1,5 @@
 package io.crest.engine.constant;
 
-/**
- * @Author Junjun
- */
 public class ExtFieldConstant {
     public final static Integer EXT_NORMAL = 0;
 

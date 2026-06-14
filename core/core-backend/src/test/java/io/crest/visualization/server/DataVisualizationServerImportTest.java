@@ -1,5 +1,8 @@
 package io.crest.visualization.server;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import io.crest.api.dataset.union.DatasetTableInfoDTO;
+import io.crest.api.dataset.union.UnionDTO;
 import io.crest.api.visualization.vo.DataVisualizationVO;
 import io.crest.api.visualization.request.DataVisualizationBaseRequest;
 import io.crest.api.visualization.request.VisualizationAppExportRequest;
@@ -12,9 +15,11 @@ import io.crest.api.visualization.vo.VisualizationLinkJumpTargetViewInfoVO;
 import io.crest.api.visualization.vo.VisualizationLinkJumpVO;
 import io.crest.chart.manage.ChartDataManage;
 import io.crest.exception.CrestException;
+import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.view.dto.ChartViewDTO;
 import io.crest.result.ResultCode;
 import io.crest.utils.IDUtils;
+import io.crest.utils.JsonUtil;
 import io.crest.utils.SnowFlake;
 import io.crest.template.dao.auto.mapper.VisualizationTemplateExtendDataMapper;
 import io.crest.template.dao.ext.ExtVisualizationTemplateMapper;
@@ -33,7 +38,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -107,6 +114,22 @@ class DataVisualizationServerImportTest {
         assertFalse(result.getComponentData().contains("\"id\":\"100\""));
         verify(templateExtendDataMapper).insert(any());
         verify(staticResourceServer).saveFilesToServe(eq("{\"/static-resource/logo.png\":\"data:image/png;base64,AAA\"}"));
+    }
+
+    @Test
+    void decompressionLocalFileShouldWriteImportedComponentIdsAsStrings() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "risk-screen-APP.DET2APP",
+                "application/octet-stream",
+                det2AppJsonWithNumericComponentId().getBytes(StandardCharsets.UTF_8)
+        );
+
+        DataVisualizationVO result = server.decompressionLocalFile(file);
+
+        Long newViewId = result.getCanvasViewInfo().keySet().iterator().next();
+        assertTrue(result.getComponentData().contains("\"id\":\"" + newViewId + "\""));
+        assertFalse(result.getComponentData().contains("\"id\":" + newViewId));
     }
 
     @Test
@@ -319,6 +342,92 @@ class DataVisualizationServerImportTest {
         assertEquals("关联需求数", result.getChartViewsInfo().get(1).getTitle());
     }
 
+    @Test
+    void importSqlTableMappingShouldPreferLongestSourceTableName() {
+        Map<String, String> tableNameMap = new LinkedHashMap<>();
+        tableNameMap.put("v_risk", "excel_summary");
+        tableNameMap.put("v_risk_detail", "excel_detail");
+
+        String mappedSql = ReflectionTestUtils.invokeMethod(
+                server,
+                "replaceTableNames",
+                "select * from v_risk_detail where exists (select 1 from v_risk)",
+                tableNameMap
+        );
+
+        assertEquals("select * from excel_detail where exists (select 1 from excel_summary)", mappedSql);
+    }
+
+    @Test
+    void importSqlTableMappingShouldRewriteDatasetTableAndGroupSql() {
+        Map<String, String> tableNameMap = Map.of("template_source_sheet", "excel_Sheet0_abc123");
+        String tableInfo = encodedSqlInfo(
+                "template_source_sheet",
+                "select project_code from template_source_sheet where project_code is not null"
+        );
+
+        String mappedTableInfo = ReflectionTestUtils.invokeMethod(server, "replaceDatasetTableSql", tableInfo, tableNameMap);
+        DatasetTableInfoDTO mappedInfo = JsonUtil.parseObject(mappedTableInfo, DatasetTableInfoDTO.class);
+        String mappedSql = new String(Base64.getDecoder().decode(mappedInfo.getSql()), StandardCharsets.UTF_8);
+
+        assertEquals("excel_Sheet0_abc123", mappedInfo.getTable());
+        assertEquals("select project_code from excel_Sheet0_abc123 where project_code is not null", mappedSql);
+
+        DatasetTableDTO tableDTO = new DatasetTableDTO();
+        tableDTO.setTableName("template_source_sheet");
+        tableDTO.setInfo(tableInfo);
+        UnionDTO unionDTO = new UnionDTO();
+        unionDTO.setCurrentDs(tableDTO);
+
+        String mappedGroupInfo = ReflectionTestUtils.invokeMethod(
+                server,
+                "replaceDatasetGroupSql",
+                JsonUtil.toJSONString(List.of(unionDTO)).toString(),
+                tableNameMap
+        );
+        UnionDTO mappedUnion = JsonUtil.parseList(mappedGroupInfo, new TypeReference<List<UnionDTO>>() {}).get(0);
+        DatasetTableInfoDTO mappedGroupTableInfo = JsonUtil.parseObject(mappedUnion.getCurrentDs().getInfo(), DatasetTableInfoDTO.class);
+        String mappedGroupSql = new String(Base64.getDecoder().decode(mappedGroupTableInfo.getSql()), StandardCharsets.UTF_8);
+
+        assertEquals("excel_Sheet0_abc123", mappedUnion.getCurrentDs().getTableName());
+        assertEquals("select project_code from excel_Sheet0_abc123 where project_code is not null", mappedGroupSql);
+    }
+
+    @Test
+    void importIdMappingShouldNotRewriteEncodedDatasetSql() {
+        String tableInfo = encodedSqlInfo(
+                "template_source_sheet",
+                "select 1263012001 as original_id from template_source_sheet"
+        );
+        DatasetTableDTO tableDTO = new DatasetTableDTO();
+        tableDTO.setId(1263012001L);
+        tableDTO.setTableName("template_source_sheet");
+        tableDTO.setInfo(tableInfo);
+        UnionDTO unionDTO = new UnionDTO();
+        unionDTO.setCurrentDs(tableDTO);
+
+        String mappedGroupInfo = ReflectionTestUtils.invokeMethod(
+                server,
+                "replaceMappedIdsPreservingDatasetSql",
+                JsonUtil.toJSONString(List.of(unionDTO)).toString(),
+                Map.of(1263012001L, 1263999001L)
+        );
+        String mappedTableInfo = ReflectionTestUtils.invokeMethod(
+                server,
+                "replaceDatasetGroupSql",
+                mappedGroupInfo,
+                Map.of("template_source_sheet", "excel_Sheet0_abc123")
+        );
+
+        UnionDTO mappedUnion = JsonUtil.parseList(mappedTableInfo, new TypeReference<List<UnionDTO>>() {}).get(0);
+        DatasetTableInfoDTO mappedInfo = JsonUtil.parseObject(mappedUnion.getCurrentDs().getInfo(), DatasetTableInfoDTO.class);
+        String mappedSql = new String(Base64.getDecoder().decode(mappedInfo.getSql()), StandardCharsets.UTF_8);
+
+        assertEquals(1263999001L, mappedUnion.getCurrentDs().getId());
+        assertEquals("excel_Sheet0_abc123", mappedInfo.getTable());
+        assertEquals("select 1263012001 as original_id from excel_Sheet0_abc123", mappedSql);
+    }
+
     private DataVisualizationBaseRequest baseAppSaveRequest(String dataType) {
         DataVisualizationBaseRequest request = new DataVisualizationBaseRequest();
         request.setName("经营分析演示");
@@ -385,6 +494,13 @@ class DataVisualizationServerImportTest {
         return appData;
     }
 
+    private String encodedSqlInfo(String tableName, String sql) {
+        DatasetTableInfoDTO infoDTO = new DatasetTableInfoDTO();
+        infoDTO.setTable(tableName);
+        infoDTO.setSql(Base64.getEncoder().encodeToString(sql.getBytes(StandardCharsets.UTF_8)));
+        return JsonUtil.toJSONString(infoDTO).toString();
+    }
+
     private String det2AppJson() {
         return """
                 {
@@ -397,6 +513,23 @@ class DataVisualizationServerImportTest {
                   "componentData": "[{\\"id\\":\\"100\\",\\"component\\":\\"UserView\\",\\"innerType\\":\\"bar\\"}]",
                   "dynamicData": "{\\"100\\":{\\"id\\":100,\\"sceneId\\":900,\\"title\\":\\"关联需求数\\",\\"type\\":\\"bar\\",\\"tableId\\":200,\\"data\\":{\\"sourceData\\":[]}}}",
                   "staticResource": "{\\"/static-resource/logo.png\\":\\"data:image/png;base64,AAA\\"}",
+                  "appData": "{\\"visualizationInfo\\":\\"{\\\\\\"id\\\\\\":900,\\\\\\"name\\\\\\":\\\\\\"经营分析演示\\\\\\",\\\\\\"type\\\\\\":\\\\\\"dataV\\\\\\"}\\",\\"datasourceInfo\\":[],\\"datasetGroupsInfo\\":[]}"
+                }
+                """;
+    }
+
+    private String det2AppJsonWithNumericComponentId() {
+        return """
+                {
+                  "name": "经营分析演示",
+                  "templateType": "self",
+                  "dvType": "dataV",
+                  "nodeType": "app",
+                  "version": 3,
+                  "canvasStyleData": "{\\"width\\":1920,\\"height\\":1080,\\"screenAdaptor\\":\\"keep\\"}",
+                  "componentData": "[{\\"id\\":100,\\"component\\":\\"UserView\\",\\"innerType\\":\\"bar\\"}]",
+                  "dynamicData": "{\\"100\\":{\\"id\\":100,\\"sceneId\\":900,\\"title\\":\\"指标数量\\",\\"type\\":\\"bar\\",\\"tableId\\":200,\\"data\\":{\\"sourceData\\":[]}}}",
+                  "staticResource": "{}",
                   "appData": "{\\"visualizationInfo\\":\\"{\\\\\\"id\\\\\\":900,\\\\\\"name\\\\\\":\\\\\\"经营分析演示\\\\\\",\\\\\\"type\\\\\\":\\\\\\"dataV\\\\\\"}\\",\\"datasourceInfo\\":[],\\"datasetGroupsInfo\\":[]}"
                 }
                 """;

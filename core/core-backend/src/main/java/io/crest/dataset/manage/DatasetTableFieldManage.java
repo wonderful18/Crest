@@ -35,9 +35,6 @@ import org.springframework.util.CollectionUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * @Author Junjun
- */
 @Component
 @Transactional
 @SuppressWarnings("unchecked")

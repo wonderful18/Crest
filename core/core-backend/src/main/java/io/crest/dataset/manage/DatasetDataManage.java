@@ -37,6 +37,7 @@ import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
 import io.crest.extensions.datasource.dto.*;
 import io.crest.extensions.datasource.factory.ProviderFactory;
 import io.crest.extensions.datasource.model.SQLMeta;
+import io.crest.extensions.datasource.provider.CrestSqlFunctionTranslator;
 import io.crest.extensions.datasource.provider.Provider;
 import io.crest.extensions.datasource.utils.SqlPlaceholderUtils;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
@@ -68,9 +69,6 @@ import java.util.stream.Collectors;
 import static io.crest.chart.manage.ChartDataManage.START_END_SEPARATOR;
 import static io.crest.dataset.utils.TableUtils.format;
 
-/**
- * @Author Junjun
- */
 @Component
 @SuppressWarnings("unchecked")
 public class DatasetDataManage {
@@ -231,9 +229,14 @@ public class DatasetDataManage {
             dto.setName(StringUtils.isNotEmpty(ele.getName()) ? ele.getName() : ele.getOriginName());
             dto.setOriginName(ele.getOriginName());
             dto.setDbFieldName(ele.getDbFieldName());
+            if (StringUtils.isNotBlank(ele.getDbFieldName())) {
+                dto.setEngineFieldName(ele.getDbFieldName());
+                dto.setFieldShortName(ele.getDbFieldName());
+            }
             dto.setChecked(defaultStatus);
-            dto.setType(ele.getType());
-            int fieldType = FieldUtils.resolveFieldType(ele.getType());
+            String type = StringUtils.firstNonBlank(ele.getType(), ele.getNativeType(), "TEXT");
+            dto.setType(type);
+            int fieldType = FieldUtils.resolveFieldType(type);
             dto.setExtractedFieldType(ObjectUtils.isEmpty(ele.getExtractedFieldType()) ? fieldType : ele.getExtractedFieldType());
             dto.setFieldType(ObjectUtils.isEmpty(ele.getFieldType()) ? fieldType : ele.getFieldType());
             dto.setGroupType(FieldUtils.resolveFieldGroup(dto.getFieldType()));
@@ -505,7 +508,7 @@ public class DatasetDataManage {
         datasourceRequest.setIsCross(dto.getIsCross());
         Provider provider = ProviderFactory.getProvider(datasourceSchemaDTO.getType());
 
-        // parser sql params and replace default value
+        // 解析 SQL 参数并替换默认值。
 
         String s = new String(Base64.getDecoder().decode(dto.getSql()));
         SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(datasetSQLManage.subPrefixSuffixChar(s), dto.getSqlVariableDetails(), true, true, null, dto.getIsCross(), dsMap, pluginManage, getUserEntity());
@@ -513,7 +516,7 @@ public class DatasetDataManage {
         datasourceRequest.setTableFieldWithValues(sqlResult.getTableFieldWithValues());
         originSql = provider.replaceComment(originSql);
 
-        // sql 作为临时表，外层加上limit
+        // 将自定义 SQL 包装为临时表，再在外层追加分页限制。
         String sql;
         if (dto.getIsCross()) {
             DatasetTableDTO currentDs = new DatasetTableDTO();
@@ -521,9 +524,11 @@ public class DatasetDataManage {
             currentDs.setType("sql");
             String tableSchema = datasetSQLManage.putObj2Map(dsMap, currentDs, dto.getIsCross());
             sql = SqlUtils.addSchema(originSql, tableSchema);
+            sql = translatePreviewSql(sql, datasourceSchemaDTO);
             if (Utils.isNeedOrder(List.of(datasourceSchemaDTO.getType()))) {
                 // 先根据sql获取表字段
                 String sqlField = SQLUtils.buildOriginPreviewSql(sql, 0, 0);
+                sqlField = translatePreviewSql(sqlField, datasourceSchemaDTO);
                 datasourceRequest.setQuery(sqlField);
 
                 // 获取数据源表的原始字段
@@ -542,7 +547,7 @@ public class DatasetDataManage {
 
                 sqlField = provider.transSqlDialect(sqlField, datasourceRequest.getDsList());
                 // replace placeholder
-                sqlField = provider.replaceTablePlaceHolder(sqlField, originSql);
+                sqlField = replacePreviewTablePlaceholderAndTranslate(provider, sqlField, originSql, datasourceSchemaDTO);
                 datasourceRequest.setQuery(sqlField);
 
                 // 获取数据源表的原始字段
@@ -556,7 +561,7 @@ public class DatasetDataManage {
             }
             sql = provider.transSqlDialect(sql, datasourceRequest.getDsList());
             // replace placeholder
-            sql = provider.replaceTablePlaceHolder(sql, originSql);
+            sql = replacePreviewTablePlaceholderAndTranslate(provider, sql, originSql, datasourceSchemaDTO);
         }
 
         logger.debug("calcite data preview sql: " + sql);
@@ -570,6 +575,14 @@ public class DatasetDataManage {
         map.put("data", previewData);
         map.put("sql", Base64.getEncoder().encodeToString(sql.getBytes()));
         return map;
+    }
+
+    String replacePreviewTablePlaceholderAndTranslate(Provider provider, String sql, String originSql, DatasourceSchemaDTO datasource) {
+        return translatePreviewSql(provider.replaceTablePlaceHolder(sql, originSql), datasource);
+    }
+
+    private String translatePreviewSql(String sql, DatasourceSchemaDTO datasource) {
+        return CrestSqlFunctionTranslator.translate(sql, datasource);
     }
 
     public Map<String, Object> buildPreviewData(Map<String, Object> data, List<DatasetTableFieldDTO> fields, Map<String, ColumnPermissionItem> desensitizationList, boolean isEncode) {

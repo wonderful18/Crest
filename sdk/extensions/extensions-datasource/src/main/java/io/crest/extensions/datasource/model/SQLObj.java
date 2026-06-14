@@ -5,10 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * @Author gin
- * @Date 2023/3/23 16:12 下午
- */
 @Data
 @Builder
 @NoArgsConstructor

@@ -26,8 +26,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/7/13
+ * 管理可视化组件联动配置，负责联动关系的查询、保存和快照同步。
  */
 @RestController
 @RequestMapping("linkage")

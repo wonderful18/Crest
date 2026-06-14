@@ -3,9 +3,6 @@ package io.crest.extensions.view.dto;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-/**
- * @Author Junjun
- */
 @Data
 @Accessors(chain = true)
 public class FormatterCfgDTO {

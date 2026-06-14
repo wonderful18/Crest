@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 模板表
- * </p>
- *
- * @author fit2cloud
- * @since 2023-12-04
+ * 可视化模板与分类关系实体。
  */
 @TableName("visualization_template_category_map")
 public class VisualizationTemplateCategoryMap implements Serializable {

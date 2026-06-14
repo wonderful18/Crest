@@ -6,9 +6,6 @@ import lombok.Setter;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @Author gin
- */
 @Getter
 @Setter
 public class Series {

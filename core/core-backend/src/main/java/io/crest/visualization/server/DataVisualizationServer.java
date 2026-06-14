@@ -416,12 +416,10 @@ public class DataVisualizationServer implements DataVisualizationApi {
         Map<Long, Long> datasourceIdMap = new HashMap<>();
         Map<Long, Map<String, String>> dsTableNamesMap = new HashMap<>();
         List<Long> newDatasourceId = new ArrayList<>();
-        List<Long> excelDatasourceId = new ArrayList<>();
         Map<Long, Long> linkageIdMap = new HashMap<>();
         Map<Long, Long> linkageFieldIdMap = new HashMap<>();
         Map<Long, Long> linkJumpIdMap = new HashMap<>();
         Map<Long, Long> linkJumpInfoIdMap = new HashMap<>();
-        Map<String, String> excelTableNamesMap = new HashMap<>();
         if (appData != null) {
             isAppSave = true;
             if ("dataset".equals(request.getDataType())) {
@@ -453,13 +451,13 @@ public class DataVisualizationServer implements DataVisualizationApi {
                         if (StringUtils.isNotEmpty(datasourceNew.getConfiguration())) {
                             if (datasourceNew.getType().equals(DatasourceConfiguration.DatasourceType.Excel.name()) || datasourceNew.getType().equals(DatasourceConfiguration.DatasourceType.ExcelRemote.name())) {
                                 dsTableNamesMap.put(datasourceNew.getId(), ExcelUtils.getTableNamesMap(datasourceNew.getType(), datasourceNew.getConfiguration()));
-                                excelDatasourceId.add(datasourceNew.getId());
                             } else if (datasourceNew.getType().contains(DatasourceConfiguration.DatasourceType.API.name())) {
                                 dsTableNamesMap.put(datasourceNew.getId(), (Map<String, String>) datasourceServer.invokeMethod(datasourceNew.getType(), "getTableNamesMap", String.class, datasourceNew.getConfiguration()));
                             }
                         }
                     });
                     datasourceIdMap.putAll(appData.getDatasourceInfo().stream().collect(Collectors.toMap(AppCoreDatasourceVO::getId, AppCoreDatasourceVO::getSystemDatasourceId)));
+                    Map<String, String> datasourceTableNameMap = buildDatasourceTableNameMap(appData.getDatasourceInfo(), dsTableNamesMap, datasourceIdMap);
                     Long datasetFolderPid = request.getDatasetFolderPid();
                     String datasetFolderName = request.getDatasetFolderName();
                     //新建数据集分组
@@ -500,6 +498,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
                         datasetTable.setDatasetGroupId(dsGroupIdMap.get(datasetTable.getDatasetGroupId()));
                         datasetTable.setId(newId);
                         datasetTable.setDatasourceId(datasourceIdMap.get(datasetTable.getDatasourceId()));
+                        datasetTable.setInfo(replaceDatasetTableSql(datasetTable.getInfo(), datasourceTableNameMap));
+                        datasetTable.setTableName(replaceTableNames(datasetTable.getTableName(), datasourceTableNameMap));
                         coreDatasetTableMapper.insert(datasetTable);
                         dsTableIdMap.put(oldId, newId);
 
@@ -529,40 +529,11 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     List<String> dsGroupNameSave = new ArrayList<>();
                     // 持久化数据集
                     newDsGroupInfo.forEach(dsGroup -> {
-                        dsTableIdMap.forEach((key, value) -> {
-                            dsGroup.setInfo(dsGroup.getInfo().replace(key.toString(), value.toString()));
-                        });
-
-                        dsTableFieldsIdMap.forEach((key, value) -> {
-                            dsGroup.setInfo(dsGroup.getInfo().replace(key.toString(), value.toString()));
-                        });
-
-                        datasourceIdMap.forEach((key, value) -> {
-                            dsGroup.setInfo(dsGroup.getInfo().replace(key.toString(), value.toString()));
-                            //表名映射更新
-                            Map<String, String> appDsTableNamesMap = dsTableNamesMap.get(key);
-                            Map<String, String> systemDsTableNamesMap = dsTableNamesMap.get(value);
-                            if (MapUtils.isNotEmpty(appDsTableNamesMap)) {
-                                appDsTableNamesMap.forEach((keyName, valueName) -> {
-                                    // 检查是否都只有一个元素
-                                    boolean bothHaveSingleEntry = appDsTableNamesMap.size() == 1 &&
-                                            systemDsTableNamesMap != null &&
-                                            systemDsTableNamesMap.size() == 1;
-                                    if (bothHaveSingleEntry) {
-                                        // 直接使用 systemDsTableNamesMap 的第一个值
-                                        String firstSystemValue = systemDsTableNamesMap.values().iterator().next();
-                                        dsGroup.setInfo(dsGroup.getInfo().replace(valueName, firstSystemValue));
-                                        excelTableNamesMap.put(valueName, firstSystemValue);
-                                    } else if (MapUtils.isNotEmpty(systemDsTableNamesMap) &&
-                                            StringUtils.isNotEmpty(systemDsTableNamesMap.get(keyName))) {
-                                        dsGroup.setInfo(dsGroup.getInfo().replace(valueName, systemDsTableNamesMap.get(keyName)));
-                                        excelTableNamesMap.put(valueName, systemDsTableNamesMap.get(keyName));
-                                    } else {
-                                        dsGroup.setInfo(dsGroup.getInfo().replace(valueName, "excel_can_not_find"));
-                                    }
-                                });
-                            }
-                        });
+                        dsGroup.setInfo(replaceMappedIdsPreservingDatasetSql(dsGroup.getInfo(), dsTableIdMap));
+                        dsGroup.setInfo(replaceMappedIdsPreservingDatasetSql(dsGroup.getInfo(), dsTableFieldsIdMap));
+                        dsGroup.setInfo(replaceMappedIdsPreservingDatasetSql(dsGroup.getInfo(), datasourceIdMap));
+                        dsGroup.setInfo(replaceDatasetGroupSql(dsGroup.getInfo(), datasourceTableNameMap));
+                        dsGroup.setUnionSql(replaceTableNames(dsGroup.getUnionSql(), datasourceTableNameMap));
                         if (dsGroupNameSave.contains(dsGroup.getName())) {
                             dsGroup.setName(dsGroup.getName() + "-" + UUID.randomUUID().toString());
                         }
@@ -574,14 +545,13 @@ public class DataVisualizationServer implements DataVisualizationApi {
                             }
                             datasetSQLManage.mergeDatasetCrossDefault(dsGroup);
                         }
-                        excelAdaptor(dsGroup, excelTableNamesMap, excelDatasourceId);
                         datasetGroupManage.innerSave(dsGroup);
                     });
 
                 } catch (CrestException e) {
                     throw e;
                 } catch (Exception e) {
-                    LogUtil.error(e);
+                    LogUtil.error("应用导入保存失败", e);
                     CrestException.throwException(e);
                 }
             }
@@ -642,6 +612,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
             });
             canvasViews = VisualizationUtils.viewTransToObj(canvasViewsStr);
             canvasViews.forEach((key, viewInfo) -> {
+                viewInfo.setId(key);
                 viewInfo.setDataFrom("dataset");
                 if (viewInfo.getTableId() == null) {
                     viewInfo.setTableId(viewInfo.getSourceTableId());
@@ -696,6 +667,44 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     private void replaceMappedIds(AtomicReference<String> content, Map<Long, Long> mapping, String resourceName) {
         mapping.forEach((key, value) -> replaceMappedId(content, key, value, resourceName));
+    }
+
+    private String replaceMappedIdsPreservingDatasetSql(String content, Map<Long, Long> mapping) {
+        if (StringUtils.isBlank(content) || MapUtils.isEmpty(mapping)) {
+            return content;
+        }
+        Map<String, String> encodedSqlByToken = new LinkedHashMap<>();
+        String maskedContent = maskDatasetGroupEncodedSql(content, encodedSqlByToken);
+        AtomicReference<String> mappedContent = new AtomicReference<>(maskedContent);
+        mapping.forEach((key, value) -> mappedContent.set(mappedContent.get().replace(key.toString(), value.toString())));
+        String result = mappedContent.get();
+        for (Map.Entry<String, String> entry : encodedSqlByToken.entrySet()) {
+            result = result.replace(entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
+
+    private String maskDatasetGroupEncodedSql(String content, Map<String, String> encodedSqlByToken) {
+        try {
+            List<UnionDTO> unionDTOList = JsonUtil.parseList(content, new TypeReference<>() {});
+            for (UnionDTO unionDTO : unionDTOList) {
+                DatasetTableDTO tableDTO = unionDTO.getCurrentDs();
+                if (tableDTO == null || StringUtils.isBlank(tableDTO.getInfo())) {
+                    continue;
+                }
+                DatasetTableInfoDTO infoDTO = JsonUtil.parseObject(tableDTO.getInfo(), DatasetTableInfoDTO.class);
+                if (infoDTO == null || StringUtils.isBlank(infoDTO.getSql())) {
+                    continue;
+                }
+                String token = "__CREST_ENCODED_SQL_" + encodedSqlByToken.size() + "__";
+                encodedSqlByToken.put(token, infoDTO.getSql());
+                infoDTO.setSql(token);
+                tableDTO.setInfo(Objects.requireNonNull(JsonUtil.toJSONString(infoDTO)).toString());
+            }
+            return Objects.requireNonNull(JsonUtil.toJSONString(unionDTOList)).toString();
+        } catch (Exception e) {
+            return content;
+        }
     }
 
     private void replaceMappedId(AtomicReference<String> content, Long sourceId, Long targetId, String resourceName) {
@@ -790,24 +799,85 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return mappedContent.get();
     }
 
-    private void excelAdaptor(DatasetGroupInfoDTO dsInfo, Map<String, String> excelTableNamesMap, List<Long> excelDsId) {
-        List<UnionDTO> unionDTOList = JsonUtil.parseList(dsInfo.getInfo(), new TypeReference<>() {
-        });
-        if (CollectionUtils.isNotEmpty(excelDsId) && MapUtils.isNotEmpty(excelTableNamesMap)) {
-            for (UnionDTO unionDTO : unionDTOList) {
-                DatasetTableDTO tableDTO = unionDTO.getCurrentDs();
-                if (excelDsId.contains(tableDTO.getDatasourceId())) {
-                    DatasetTableInfoDTO infoDTO = JsonUtil.parseObject(tableDTO.getInfo(), DatasetTableInfoDTO.class);
-                    String s = new String(Base64.getDecoder().decode(infoDTO.getSql()));
-                    excelTableNamesMap.forEach((key, value) -> {
-                        infoDTO.setSql(Base64.getEncoder().encodeToString(s.replace(key, value).getBytes()));
-                    });
-                    tableDTO.setInfo((String) JsonUtil.toJSONString(infoDTO));
-                }
-
+    private Map<String, String> buildDatasourceTableNameMap(List<AppCoreDatasourceVO> appDatasources,
+                                                            Map<Long, Map<String, String>> datasourceTableNames,
+                                                            Map<Long, Long> datasourceIdMap) {
+        Map<String, String> result = new HashMap<>();
+        Optional.ofNullable(appDatasources).orElseGet(ArrayList::new).forEach(sourceDatasource -> {
+            Long targetDatasourceId = datasourceIdMap.get(sourceDatasource.getId());
+            Map<String, String> sourceTables = datasourceTableNames.get(sourceDatasource.getId());
+            Map<String, String> targetTables = datasourceTableNames.get(targetDatasourceId);
+            if (MapUtils.isEmpty(sourceTables) || MapUtils.isEmpty(targetTables)) {
+                return;
             }
+            boolean singleTableMapping = sourceTables.size() == 1 && targetTables.size() == 1;
+            sourceTables.forEach((sourceTable, sourceRuntimeTable) -> {
+                String targetRuntimeTable = singleTableMapping
+                        ? targetTables.values().iterator().next()
+                        : targetTables.get(sourceTable);
+                if (StringUtils.isBlank(targetRuntimeTable)) {
+                    targetRuntimeTable = "excel_can_not_find";
+                }
+                result.put(sourceTable, targetRuntimeTable);
+                result.put(sourceRuntimeTable, targetRuntimeTable);
+            });
+        });
+        return result;
+    }
+
+    private String replaceDatasetGroupSql(String info, Map<String, String> tableNameMap) {
+        if (StringUtils.isBlank(info) || MapUtils.isEmpty(tableNameMap)) {
+            return info;
         }
-        dsInfo.setInfo((String) JsonUtil.toJSONString(unionDTOList));
+        try {
+            List<UnionDTO> unionDTOList = JsonUtil.parseList(info, new TypeReference<>() {});
+            unionDTOList.forEach(unionDTO -> {
+                DatasetTableDTO tableDTO = unionDTO.getCurrentDs();
+                if (tableDTO == null) {
+                    return;
+                }
+                tableDTO.setTableName(replaceTableNames(tableDTO.getTableName(), tableNameMap));
+                tableDTO.setInfo(replaceDatasetTableSql(tableDTO.getInfo(), tableNameMap));
+            });
+            return Objects.requireNonNull(JsonUtil.toJSONString(unionDTOList)).toString();
+        } catch (Exception e) {
+            return replaceTableNames(info, tableNameMap);
+        }
+    }
+
+    private String replaceDatasetTableSql(String info, Map<String, String> tableNameMap) {
+        if (StringUtils.isBlank(info) || MapUtils.isEmpty(tableNameMap)) {
+            return info;
+        }
+        try {
+            DatasetTableInfoDTO infoDTO = JsonUtil.parseObject(info, DatasetTableInfoDTO.class);
+            if (infoDTO == null) {
+                return replaceTableNames(info, tableNameMap);
+            }
+            infoDTO.setTable(replaceTableNames(infoDTO.getTable(), tableNameMap));
+            if (StringUtils.isNotBlank(infoDTO.getSql())) {
+                String sql = new String(Base64.getDecoder().decode(infoDTO.getSql()), StandardCharsets.UTF_8);
+                infoDTO.setSql(Base64.getEncoder().encodeToString(replaceTableNames(sql, tableNameMap).getBytes(StandardCharsets.UTF_8)));
+            }
+            return Objects.requireNonNull(JsonUtil.toJSONString(infoDTO)).toString();
+        } catch (Exception e) {
+            return replaceTableNames(info, tableNameMap);
+        }
+    }
+
+    private String replaceTableNames(String content, Map<String, String> tableNameMap) {
+        if (StringUtils.isBlank(content) || MapUtils.isEmpty(tableNameMap)) {
+            return content;
+        }
+        String mappedContent = content;
+        List<Map.Entry<String, String>> mappings = tableNameMap.entrySet().stream()
+                .filter(entry -> StringUtils.isNotBlank(entry.getKey()) && StringUtils.isNotBlank(entry.getValue()))
+                .sorted((left, right) -> Integer.compare(right.getKey().length(), left.getKey().length()))
+                .toList();
+        for (Map.Entry<String, String> mapping : mappings) {
+            mappedContent = mappedContent.replace(mapping.getKey(), mapping.getValue());
+        }
+        return mappedContent;
     }
 
     @Override
@@ -1183,7 +1253,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 // 数据处理 1.替换viewId 2.加入模板view data数据
                 VisualizationTemplateExtendDataDTO extendDataDTO = new VisualizationTemplateExtendDataDTO(newDvId, newViewId, originViewData);
                 extendDataInfo.put(newViewId, extendDataDTO);
-                templateData = templateData == null ? null : templateData.replace(originViewId, newViewId.toString());
+                templateData = replaceTemplateComponentViewId(templateData, originViewId, newViewId.toString());
                 viewIdsMap.put(originViewId,Long.toString(newViewId));
                 String currentAppDataStr = appDataStr;
                 if (currentAppDataStr != null && !currentAppDataStr.isEmpty()) {
@@ -1206,6 +1276,49 @@ public class DataVisualizationServer implements DataVisualizationApi {
             return null;
         }
 
+    }
+
+    private String replaceTemplateComponentViewId(String componentData, String originViewId, String newViewId) {
+        if (StringUtils.isBlank(componentData)) {
+            return componentData;
+        }
+        Object components = JsonUtil.parseObject(componentData, new TypeReference<Object>() {});
+        if (components != null && replaceViewIdValue(components, originViewId, newViewId)) {
+            return JsonUtil.toJSONString(components).toString();
+        }
+        return componentData
+                .replace("\"id\":\"" + originViewId + "\"", "\"id\":\"" + newViewId + "\"")
+                .replace("\"id\": \"" + originViewId + "\"", "\"id\":\"" + newViewId + "\"")
+                .replace("\"id\":" + originViewId, "\"id\":\"" + newViewId + "\"")
+                .replace("\"id\": " + originViewId, "\"id\":\"" + newViewId + "\"")
+                .replace(originViewId, newViewId);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean replaceViewIdValue(Object value, String originViewId, String newViewId) {
+        boolean changed = false;
+        if (value instanceof Map map) {
+            for (Object key : new ArrayList<>(map.keySet())) {
+                Object item = map.get(key);
+                if (originViewId.equals(String.valueOf(item))) {
+                    map.put(key, newViewId);
+                    changed = true;
+                } else if (replaceViewIdValue(item, originViewId, newViewId)) {
+                    changed = true;
+                }
+            }
+        } else if (value instanceof List list) {
+            for (int i = 0; i < list.size(); i++) {
+                Object item = list.get(i);
+                if (originViewId.equals(String.valueOf(item))) {
+                    list.set(i, newViewId);
+                    changed = true;
+                } else if (replaceViewIdValue(item, originViewId, newViewId)) {
+                    changed = true;
+                }
+            }
+        }
+        return changed;
     }
 
     @Override

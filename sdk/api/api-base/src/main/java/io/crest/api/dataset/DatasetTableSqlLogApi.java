@@ -10,9 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * @Author Junjun
- */
 @Tag(name = "数据集管理:SQL日志")
 @ApiSupport(order = 977)
 public interface DatasetTableSqlLogApi {

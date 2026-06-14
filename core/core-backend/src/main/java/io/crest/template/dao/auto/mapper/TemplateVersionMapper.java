@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
- *
- * @author fit2cloud
- * @since 2024-05-07
+ * 内置模板初始化版本 Mapper。
  */
 @Mapper
 public interface TemplateVersionMapper extends BaseMapper<TemplateVersion> {

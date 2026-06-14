@@ -13,9 +13,6 @@ import java.util.List;
 
 import static org.apache.calcite.sql.SqlKind.*;
 
-/**
- * @Author Junjun
- */
 public class SqlUtils {
     public static Logger logger = LoggerFactory.getLogger(SqlUtils.class);
 

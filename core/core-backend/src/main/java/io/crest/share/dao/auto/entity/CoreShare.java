@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 公共链接
- * </p>
- *
- * @author fit2cloud
- * @since 2024-06-21
+ * 分享链接实体。
  */
 @TableName("share_link")
 public class CoreShare implements Serializable {

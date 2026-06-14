@@ -7,9 +7,8 @@ import java.util.List;
 
 
 /**
- * @author fit2cloud
- * @date 2023/8/10 16:38
- **/
+ * 数据同步源端配置。
+ */
 @Data
 public class Source {
     private String type;

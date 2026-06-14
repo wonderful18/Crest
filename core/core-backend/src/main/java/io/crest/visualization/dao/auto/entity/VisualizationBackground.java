@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 
- * </p>
- *
- * @author fit2cloud
- * @since 2023-06-12
+ * 可视化背景资源实体。
  */
 @TableName("visualization_background")
 public class VisualizationBackground implements Serializable {

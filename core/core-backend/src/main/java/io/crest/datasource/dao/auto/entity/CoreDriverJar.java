@@ -6,12 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 驱动详情
- * </p>
- *
- * @author fit2cloud
- * @since 2023-04-17
+ * 数据源驱动 Jar 实体。
  */
 @TableName("data_source_driver_jar")
 public class CoreDriverJar implements Serializable {

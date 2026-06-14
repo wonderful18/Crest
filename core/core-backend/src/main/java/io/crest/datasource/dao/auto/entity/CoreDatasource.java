@@ -6,12 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 数据源表
- * </p>
- *
- * @author fit2cloud
- * @since 2024-07-09
+ * 数据源实体。
  */
 @TableName("data_source")
 public class CoreDatasource implements Serializable {

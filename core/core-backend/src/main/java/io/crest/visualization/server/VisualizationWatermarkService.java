@@ -12,8 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * @author : WangJiaHao
- * @date : 2024/1/10 16:59
+ * 维护系统级可视化水印配置。
  */
 @RestController
 @RequestMapping("/watermark")

@@ -12,8 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/6/12 19:19
+ * 可视化背景资源查询接口。
  */
 
 @Tag(name = "可视化管理:背景")

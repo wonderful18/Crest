@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * <p>
- * table数据集表字段 Mapper 接口
- * </p>
- *
- * @author fit2cloud
- * @since 2025-11-26
+ * 数据集表字段 Mapper。
  */
 @Mapper
 public interface CoreDatasetTableFieldMapper extends BaseMapper<CoreDatasetTableField> {

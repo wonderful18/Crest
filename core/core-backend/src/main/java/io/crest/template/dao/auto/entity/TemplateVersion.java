@@ -6,12 +6,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * <p>
- * 
- * </p>
- *
- * @author fit2cloud
- * @since 2024-05-07
+ * 内置模板初始化版本实体。
  */
 @TableName("template_version")
 public class TemplateVersion implements Serializable {

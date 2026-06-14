@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 联动记录表
- * </p>
- *
- * @author fit2cloud
- * @since 2025-03-24
+ * 组件联动快照实体。
  */
 @TableName("snapshot_visualization_linkage")
 public class SnapshotVisualizationLinkage implements Serializable {

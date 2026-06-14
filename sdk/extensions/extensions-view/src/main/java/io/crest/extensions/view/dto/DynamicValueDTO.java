@@ -6,9 +6,6 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
-/**
- * @Author Junjun
- */
 @Data
 public class DynamicValueDTO {
     @JsonSerialize(using = ToStringSerializer.class)

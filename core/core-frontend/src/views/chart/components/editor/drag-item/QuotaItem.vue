@@ -142,7 +142,7 @@ const isEnableCompare = () => {
     t1.push(...t2)
   }
 
-  // 暂时只支持类别轴/维度的时间类型字段
+  // 同环比配置仅对类别轴和维度中的时间字段生效。
   if (
     t1.length > 0 &&
     chart.value.type !== 'label' &&

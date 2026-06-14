@@ -9,8 +9,7 @@ import java.util.List;
 
 
 /**
- * @author : WangJiaHao
- * @date : 2023/7/19
+ * 可视化视图与数据集表的绑定关系。
  */
 @Data
 public class VisualizationViewTableVO {
