@@ -19,9 +19,8 @@ import java.util.Map;
 import static io.crest.constant.AuthResourceEnum.SYNC_DATASOURCE;
 
 /**
- * @author fit2cloud
- * @date 2023/11/20 10:14
- **/
+ * 数据同步数据源管理接口。
+ */
 @CrestApiPath(value = "/sync/datasource", rt = SYNC_DATASOURCE)
 public interface SyncDatasourceApi {
 

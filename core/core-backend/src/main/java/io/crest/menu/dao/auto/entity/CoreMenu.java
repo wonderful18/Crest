@@ -6,12 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2023-06-02
+ * 菜单资源实体。
  */
 @TableName("iam_menu")
 public class CoreMenu implements Serializable {

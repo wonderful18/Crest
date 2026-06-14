@@ -17,8 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/7/13
+ * 可视化组件跳转配置接口。
  */
 @Tag(name = "可视化管理:跳转")
 @ApiSupport(order = 995)

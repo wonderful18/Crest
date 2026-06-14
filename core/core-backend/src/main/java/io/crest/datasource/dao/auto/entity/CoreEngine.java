@@ -6,12 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 数据引擎
- * </p>
- *
- * @author fit2cloud
- * @since 2025-09-10
+ * 数据引擎实体。
  */
 @TableName("data_engine")
 public class CoreEngine implements Serializable {

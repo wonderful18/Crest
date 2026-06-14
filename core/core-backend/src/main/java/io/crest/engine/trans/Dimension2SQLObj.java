@@ -19,9 +19,6 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 
-/**
- * @Author Junjun
- */
 public class Dimension2SQLObj {
 
     public static void dimension2sqlObj(SQLMeta meta, List<ChartViewFieldDTO> fields, List<DatasetTableFieldDTO> originFields,
@@ -126,12 +123,13 @@ public class Dimension2SQLObj {
             if (Objects.equals(x.getFieldType(), FieldTypeConstants.TIME)) {
                 String format = Utils.transDateFormat(x.getDateStyle(), x.getDatePattern());
                 if (Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.STRING) || Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.LOCATION)) {
+                    String normalizedOriginField = FieldSqlExpressionUtils.nullSafeTextOrigin(x, originField);
                     if (Strings.CI.equals(x.getDateStyle(), "y_Q")) {
                         fieldName = String.format(format,
-                                String.format(SQLConstants.CREST_DATE_FORMAT, String.format(SQLConstants.CREST_STR_TO_DATE, originField, SQLConstants.DEFAULT_DATE_FORMAT), "yyyy"),
-                                String.format(SQLConstants.QUARTER, String.format(SQLConstants.CREST_STR_TO_DATE, originField, SQLConstants.DEFAULT_DATE_FORMAT)));
+                                String.format(SQLConstants.CREST_DATE_FORMAT, String.format(SQLConstants.CREST_STR_TO_DATE, normalizedOriginField, SQLConstants.DEFAULT_DATE_FORMAT), "yyyy"),
+                                String.format(SQLConstants.QUARTER, String.format(SQLConstants.CREST_STR_TO_DATE, normalizedOriginField, SQLConstants.DEFAULT_DATE_FORMAT)));
                     } else {
-                        String s = String.format(SQLConstants.CREST_STR_TO_DATE, originField, StringUtils.isEmpty(x.getDateFormat()) ? SQLConstants.DEFAULT_DATE_FORMAT : x.getDateFormat());
+                        String s = String.format(SQLConstants.CREST_STR_TO_DATE, normalizedOriginField, StringUtils.isEmpty(x.getDateFormat()) ? SQLConstants.DEFAULT_DATE_FORMAT : x.getDateFormat());
                         fieldName = String.format(SQLConstants.CREST_CAST_DATE_FORMAT, s, SQLConstants.DEFAULT_DATE_FORMAT, format);
                     }
                 } else if (Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.INTEGER) || Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.FLOAT) || Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.BOOLEAN)) {
@@ -151,9 +149,9 @@ public class Dimension2SQLObj {
                 fieldName = originField;
             } else {
                 if (Objects.equals(x.getFieldType(), FieldTypeConstants.INTEGER)) {
-                    fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_INT_FORMAT);
+                    fieldName = String.format(SQLConstants.CAST, FieldSqlExpressionUtils.nullSafeTextOrigin(x, originField), SQLConstants.DEFAULT_INT_FORMAT);
                 } else if (Objects.equals(x.getFieldType(), FieldTypeConstants.FLOAT)) {
-                    fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_FLOAT_FORMAT);
+                    fieldName = String.format(SQLConstants.CAST, FieldSqlExpressionUtils.nullSafeTextOrigin(x, originField), SQLConstants.DEFAULT_FLOAT_FORMAT);
                 } else {
                     fieldName = originField;
                 }

@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
- *
- * @author fit2cloud
- * @since 2023-04-03
+ * 系统加密密钥 Mapper。
  */
 @Mapper
 public interface CoreRsaMapper extends BaseMapper<CoreRsa> {

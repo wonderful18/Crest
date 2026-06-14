@@ -6,8 +6,7 @@ import io.crest.constant.CommonConstants;
 import lombok.Data;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/7/18 14:26
+ * 组件跳转配置基础请求对象。
  */
 @Data
 public class VisualizationLinkJumpBaseRequest {

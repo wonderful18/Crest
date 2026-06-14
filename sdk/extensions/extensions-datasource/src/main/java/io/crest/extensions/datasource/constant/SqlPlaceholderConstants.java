@@ -1,8 +1,5 @@
 package io.crest.extensions.datasource.constant;
 
-/**
- * @Author Junjun
- */
 public class SqlPlaceholderConstants {
     public static final String TABLE_PLACEHOLDER = "SELECT * FROM CREST_PLACEHOLDER_TABLE_0";
 

@@ -14,9 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * @Author Junjun
- */
 public class ProviderFactory {
 
     public static Provider getProvider(String type) throws CrestException {

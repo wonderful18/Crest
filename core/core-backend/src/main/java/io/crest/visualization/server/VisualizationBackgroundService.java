@@ -16,8 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/6/12 19:31
+ * 查询可视化背景资源，并按分类返回给编辑器使用。
  */
 @RestController
 @RequestMapping("/visualization-background")

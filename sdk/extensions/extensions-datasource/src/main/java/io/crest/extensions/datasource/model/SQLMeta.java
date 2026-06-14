@@ -5,9 +5,6 @@ import lombok.Data;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @Author Junjun
- */
 @Data
 public class SQLMeta {
 

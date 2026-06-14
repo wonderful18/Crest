@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2023-04-03
+ * 系统加密密钥实体。
  */
 @TableName("crypto_key")
 public class CoreRsa implements Serializable {

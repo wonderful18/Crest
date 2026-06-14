@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2023-08-08
+ * 数据集 SQL 日志实体。
  */
 @TableName("dataset_sql_log")
 public class CoreDatasetTableSqlLog implements Serializable {

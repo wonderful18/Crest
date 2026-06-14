@@ -6,9 +6,6 @@ import io.crest.system.manage.CorePermissionManage;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
-/**
- * @Author Junjun
- */
 @Component
 public class ResourceService {
     @Resource

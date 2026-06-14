@@ -7,9 +7,6 @@ import java.io.Serial;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @Author wangjiahao
- */
 @Data
 public class ChartExcelRequest extends ChartExcelRequestInner {
     @Serial

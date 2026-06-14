@@ -6,9 +6,6 @@ import lombok.Data;
 
 import java.util.List;
 
-/**
- * @Author Junjun
- */
 @Data
 public class RelationDTO {
     @JsonSerialize(using = ToStringSerializer.class)

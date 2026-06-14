@@ -5,9 +5,6 @@ import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
 import io.crest.extensions.datasource.model.SQLMeta;
 import io.crest.extensions.datasource.model.SQLObj;
 
-/**
- * @Author Junjun
- */
 public class Table2SQLObj {
     public static void table2sqlobj(SQLMeta meta, String tablePrefix, String table, boolean crossDs) {
         String sql;

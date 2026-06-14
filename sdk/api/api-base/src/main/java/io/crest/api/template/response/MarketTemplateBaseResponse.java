@@ -6,8 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/11/17 13:41
+ * 模板市场兼容接口响应。
  */
 @Data
 public class MarketTemplateBaseResponse {

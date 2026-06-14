@@ -2,9 +2,6 @@ package io.crest.api.dataset.dto;
 
 import lombok.Data;
 
-/**
- * @Author Junjun
- */
 @Data
 public class SqlLogDTO {
     /**

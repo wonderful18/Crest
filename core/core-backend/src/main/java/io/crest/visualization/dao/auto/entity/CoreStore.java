@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2023-08-24
+ * 工作台收藏资源实体。
  */
 @TableName("workspace_favorite_resource")
 public class CoreStore implements Serializable {

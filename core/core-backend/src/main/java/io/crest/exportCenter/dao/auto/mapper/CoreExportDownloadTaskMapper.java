@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * <p>
- * 下载任务列表 Mapper 接口
- * </p>
- *
- * @author fit2cloud
- * @since 2025-06-16
+ * 导出下载任务 Mapper。
  */
 @Mapper
 public interface CoreExportDownloadTaskMapper extends BaseMapper<CoreExportDownloadTask> {

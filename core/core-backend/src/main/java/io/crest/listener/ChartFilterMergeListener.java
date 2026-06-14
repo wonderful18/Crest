@@ -15,9 +15,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 
-/**
- * @Author Junjun
- */
 @Component
 @Order(value = 4)
 public class ChartFilterMergeListener implements ApplicationListener<ApplicationReadyEvent> {

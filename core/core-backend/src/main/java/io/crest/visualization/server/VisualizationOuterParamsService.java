@@ -32,8 +32,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author : WangJiaHao
- * @date : 2024/3/11 09:44
+ * 管理可视化外部参数配置，支持编辑态与快照态的数据映射。
  */
 @RestController
 @RequestMapping("outer-params")

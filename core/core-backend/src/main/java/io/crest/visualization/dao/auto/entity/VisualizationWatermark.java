@@ -4,12 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- * 仪表板水印设置表
- * </p>
- *
- * @author fit2cloud
- * @since 2024-01-09
+ * 可视化水印配置实体。
  */
 @TableName("visualization_watermark")
 public class VisualizationWatermark implements Serializable {

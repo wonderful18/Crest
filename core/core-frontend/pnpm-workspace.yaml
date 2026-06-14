@@ -5,5 +5,7 @@ allowBuilds:
   esbuild: true
   utf-8-validate: true
   vue-demi: true
+overrides:
+  esbuild: 0.28.1
 patchedDependencies:
   tinymce@8.5.1: patches/tinymce@8.5.1.patch

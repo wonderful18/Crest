@@ -9,9 +9,6 @@ import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.*;
 
-/**
- * @Author Junjun
- */
 public class DatasetOrder2SQLObj {
 
     public static void getOrders(SQLMeta meta, List<ChartSortFieldDTO> sortFields, List<DatasetTableFieldDTO> originFields) {

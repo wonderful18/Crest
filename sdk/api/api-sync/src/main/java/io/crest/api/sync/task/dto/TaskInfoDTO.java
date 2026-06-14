@@ -5,9 +5,8 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @author fit2cloud
- * @date 2023/11/28 17:17
- **/
+ * 数据同步任务传输对象。
+ */
 @Data
 public class TaskInfoDTO {
     private String id;

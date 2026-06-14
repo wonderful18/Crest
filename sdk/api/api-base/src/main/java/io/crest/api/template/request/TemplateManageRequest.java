@@ -5,11 +5,6 @@ import lombok.Data;
 
 import java.util.List;
 
-/**
- * Author: wangjiahao
- * Date: 2021-03-05
- * Description:
- */
 @Data
 public class TemplateManageRequest extends VisualizationTemplateVO {
     private String sort;

@@ -18,9 +18,6 @@ import org.apache.commons.lang3.Strings;
 
 import java.util.*;
 
-/**
- * @Author Junjun
- */
 public class Order2SQLObj {
 
     public static void getOrders(SQLMeta meta, List<ChartSortFieldDTO> sortFields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
@@ -99,13 +96,14 @@ public class Order2SQLObj {
                 fieldName = originField;
             }
         } else if (Objects.equals(f.getExtractedFieldType(), FieldTypeConstants.STRING)) {
+            String normalizedOriginField = FieldSqlExpressionUtils.nullSafeTextOrigin(f, originField);
             if (Objects.equals(f.getFieldType(), FieldTypeConstants.INTEGER)) {
-                fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_INT_FORMAT);
+                fieldName = String.format(SQLConstants.CAST, normalizedOriginField, SQLConstants.DEFAULT_INT_FORMAT);
             } else if (Objects.equals(f.getFieldType(), FieldTypeConstants.FLOAT)) {
-                fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_FLOAT_FORMAT);
+                fieldName = String.format(SQLConstants.CAST, normalizedOriginField, SQLConstants.DEFAULT_FLOAT_FORMAT);
             } else if (Objects.equals(f.getFieldType(), FieldTypeConstants.TIME)) {
-                fieldName = StringUtils.isEmpty(f.getDateFormat()) ? String.format(SQLConstants.CREST_STR_TO_DATE, originField, SQLConstants.DEFAULT_DATE_FORMAT) :
-                        String.format(SQLConstants.CREST_DATE_FORMAT, String.format(SQLConstants.CREST_STR_TO_DATE, originField, f.getDateFormat()), SQLConstants.DEFAULT_DATE_FORMAT);
+                fieldName = StringUtils.isEmpty(f.getDateFormat()) ? String.format(SQLConstants.CREST_STR_TO_DATE, normalizedOriginField, SQLConstants.DEFAULT_DATE_FORMAT) :
+                        String.format(SQLConstants.CREST_DATE_FORMAT, String.format(SQLConstants.CREST_STR_TO_DATE, normalizedOriginField, f.getDateFormat()), SQLConstants.DEFAULT_DATE_FORMAT);
             } else {
                 fieldName = originField;
             }
@@ -114,16 +112,16 @@ public class Order2SQLObj {
                 String cast = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_INT_FORMAT);
                 fieldName = String.format(SQLConstants.FROM_UNIXTIME, cast, SQLConstants.DEFAULT_DATE_FORMAT);
             } else if (Objects.equals(f.getFieldType(), FieldTypeConstants.INTEGER)) {
-                fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_INT_FORMAT);
+                fieldName = String.format(SQLConstants.CAST, FieldSqlExpressionUtils.nullSafeTextOrigin(f, originField), SQLConstants.DEFAULT_INT_FORMAT);
             } else if (Objects.equals(f.getFieldType(), FieldTypeConstants.FLOAT)) {
-                fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_FLOAT_FORMAT);
+                fieldName = String.format(SQLConstants.CAST, FieldSqlExpressionUtils.nullSafeTextOrigin(f, originField), SQLConstants.DEFAULT_FLOAT_FORMAT);
             } else {
                 fieldName = originField;
             }
         }
         SQLObj result = SQLObj.builder()
-                .orderField(String.format(SQLConstants.FIELD_DOT, originField))
-                .orderAlias(String.format(SQLConstants.FIELD_DOT, originField))
+                .orderField(String.format(SQLConstants.FIELD_DOT, fieldName))
+                .orderAlias(String.format(SQLConstants.FIELD_DOT, fieldName))
                 .orderDirection(f.getOrderDirection().equalsIgnoreCase("asc") ? "asc" : "desc").build();
         return result;
     }

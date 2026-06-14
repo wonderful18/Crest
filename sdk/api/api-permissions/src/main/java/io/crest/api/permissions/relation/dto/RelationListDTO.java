@@ -4,9 +4,6 @@ import lombok.Data;
 
 import java.io.Serializable;
 
-/**
- * @Author Junjun
- */
 @Data
 public class RelationListDTO implements Serializable {
     private Long dsId;

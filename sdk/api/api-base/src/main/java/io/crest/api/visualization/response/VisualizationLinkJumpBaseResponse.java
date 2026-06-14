@@ -7,16 +7,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/7/18 14:24
+ * 组件跳转基础配置响应。
  */
 @Data
 public class VisualizationLinkJumpBaseResponse {
 
-    // 获取基础的所有映射
+    // 跳转规则明细映射。
     private Map<String, VisualizationLinkJumpInfoDTO> baseJumpInfoMap;
 
-    // 获取仪表板类型映射
+    // 按目标可视化类型聚合的跳转目标映射。
     private Map<String, List<String>> baseJumpInfoVisualizationMap;
 
 

@@ -3,9 +3,8 @@ package io.crest.api.sync.datasource.dto;
 import lombok.Data;
 
 /**
- * @author fit2cloud
- * @date 2023/11/20 11:14
- **/
+ * 数据同步数据源传输对象。
+ */
 @Data
 public class SyncDatasourceDTO {
 

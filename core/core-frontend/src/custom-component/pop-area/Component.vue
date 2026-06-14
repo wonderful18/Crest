@@ -1,5 +1,5 @@
 <template>
-  <!--此区域暂时放到类似图表和分组平行的组件作为后续扩展使用，但当前版本只作为类似MarkLine 和canvasCore平行组件 仅做区域显示使用-->
+  <!-- 弹层画布区域，用于承载独立于主画布的浮层组件。 -->
   <div
     class="pop-area"
     :style="popCanvasStyle"
@@ -9,7 +9,7 @@
   >
     <div style="width: 100%; height: 100%">
       <div v-if="popComponentData && popComponentData.length > 0" class="pop-content">
-        <!--使用ComponentWrapper 保留扩展能力-->
+        <!-- 复用组件包装器，保持与主画布一致的渲染能力。 -->
         <ComponentWrapper
           v-for="(item, index) in popComponentData"
           :id="'component-pop-' + item.id"

@@ -5,8 +5,7 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/11/7 13:22
+ * 可视化模板节点视图对象。
  */
 @Data
 public class VisualizationTemplateVO {

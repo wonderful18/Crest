@@ -13,14 +13,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/7/13
+ * 组件联动配置请求对象。
  */
 @Data
 public class VisualizationLinkageRequest extends VisualizationLinkageVO {
 
     /**
-     * 仪表板 or 大屏ID
+     * 仪表板或大屏 ID。
      * */
     @JsonSerialize(using = ToStringSerializer.class)
     private Long dvId;
