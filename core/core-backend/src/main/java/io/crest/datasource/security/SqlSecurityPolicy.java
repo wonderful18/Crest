@@ -6,11 +6,28 @@ import org.apache.commons.lang3.StringUtils;
 import java.text.Normalizer;
 import java.util.Locale;
 
+/**
+ * Applies the last in-process SQL safety checks before user supplied SQL reaches
+ * Calcite or a JDBC connection. This class intentionally performs lexical checks
+ * only; datasource-specific authorization, parameter binding, and dialect
+ * validation stay in the caller.
+ */
 public final class SqlSecurityPolicy {
 
+    /**
+     * Utility class; all checks are stateless and must not carry request data.
+     */
     private SqlSecurityPolicy() {
     }
 
+    /**
+     * Allows read-only SQL entry points after the statement has passed the
+     * single-statement guard. The accepted prefixes cover query and metadata
+     * inspection commands used by datasource preview and field discovery flows.
+     *
+     * @param sql original SQL text from the request
+     * @return the original SQL text so callers keep existing formatting
+     */
     public static String validateReadQuery(String sql) {
         String normalized = validateSingleStatement(sql);
         String lower = normalized.stripLeading().toLowerCase(Locale.ROOT);
@@ -25,6 +42,15 @@ public final class SqlSecurityPolicy {
         return sql;
     }
 
+    /**
+     * Normalizes and rejects inputs that can change statement boundaries before
+     * execution. Semicolons inside string literals, quoted identifiers, or SQL
+     * comments remain valid because they do not introduce another executable
+     * statement.
+     *
+     * @param sql original SQL text from the request
+     * @return normalized SQL text used by downstream safety checks
+     */
     public static String validateSingleStatement(String sql) {
         if (StringUtils.isBlank(sql)) {
             CrestException.throwException("SQL must not be empty");
@@ -39,6 +65,11 @@ public final class SqlSecurityPolicy {
         return normalized;
     }
 
+    /**
+     * Detects whether a top-level semicolon is followed by another executable
+     * token. A trailing semicolon followed only by whitespace or comments is
+     * treated as part of one statement for compatibility with SQL clients.
+     */
     private static boolean containsExecutableSqlAfterTopLevelSemicolon(String sql) {
         int semicolonIndex = findTopLevelSemicolon(sql, 0);
         if (semicolonIndex < 0) {
@@ -51,6 +82,11 @@ public final class SqlSecurityPolicy {
         return hasExecutableContent(sql, semicolonIndex + 1);
     }
 
+    /**
+     * Finds semicolons that are outside quoted text and comments. This is a
+     * small statement-boundary scanner, not a full SQL parser, so it only tracks
+     * constructs that can hide semicolons in supported datasource queries.
+     */
     private static int findTopLevelSemicolon(String sql, int start) {
         char quote = 0;
         for (int i = start; i < sql.length(); i++) {
@@ -91,6 +127,11 @@ public final class SqlSecurityPolicy {
         return -1;
     }
 
+    /**
+     * Checks the suffix after a semicolon for executable content while ignoring
+     * whitespace and comments. Any other token means the input contains another
+     * statement and must be rejected.
+     */
     private static boolean hasExecutableContent(String sql, int start) {
         for (int i = start; i < sql.length(); i++) {
             char current = sql.charAt(i);
@@ -115,16 +156,29 @@ public final class SqlSecurityPolicy {
         return false;
     }
 
+    /**
+     * Advances to the end of a line comment so semicolons inside comments cannot
+     * be interpreted as statement separators.
+     */
     private static int skipLineComment(String sql, int start) {
         int lineEnd = sql.indexOf('\n', start);
         return lineEnd < 0 ? sql.length() : lineEnd;
     }
 
+    /**
+     * Advances to the end of a block comment. Unterminated block comments are
+     * consumed to the end of the SQL text because they cannot expose a following
+     * executable statement within the same input.
+     */
     private static int skipBlockComment(String sql, int start) {
         int blockEnd = sql.indexOf("*/", start);
         return blockEnd < 0 ? sql.length() : blockEnd + 1;
     }
 
+    /**
+     * Rejects control characters that can obscure log output, query previews, or
+     * downstream driver behavior. Standard SQL whitespace stays valid.
+     */
     private static boolean containsControlCharacter(String value) {
         for (int i = 0; i < value.length(); i++) {
             char current = value.charAt(i);
