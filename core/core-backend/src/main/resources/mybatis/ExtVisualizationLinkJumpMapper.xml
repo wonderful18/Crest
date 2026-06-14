@@ -70,7 +70,7 @@
             <result column="field_id" jdbcType="BIGINT" property="id"/>
             <result column="origin_name" jdbcType="VARCHAR" property="originName"/>
             <result column="field_name" jdbcType="VARCHAR" property="name"/>
-            <result column="field_type" jdbcType="VARCHAR" property="type"/>
+            <result column="raw_field_type" jdbcType="VARCHAR" property="type"/>
             <result column="field_type" jdbcType="VARCHAR" property="fieldType"/>
         </collection>
     </resultMap>
@@ -219,8 +219,8 @@
             dataset_field.id AS field_id,
             dataset_field.origin_name,
             dataset_field.`name` AS field_name,
-            dataset_field.type AS field_type,
-            dataset_field.field_type
+            dataset_field.type AS raw_field_type,
+            dataset_field.field_type AS field_type
         FROM
             bi_chart
             LEFT JOIN dataset_field ON bi_chart.table_id = dataset_field.dataset_group_id
