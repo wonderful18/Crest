@@ -51,13 +51,13 @@ public final class CrestSqlFunctionTranslator {
                 index = appendQuoted(sql, index, result);
                 continue;
             }
-            String functionName = matchFunctionName(sql, index);
-            if (functionName != null) {
-                int openParen = skipWhitespace(sql, index + functionName.length());
+            FunctionMatch functionMatch = matchFunctionName(sql, index);
+            if (functionMatch != null) {
+                int openParen = skipWhitespace(sql, functionMatch.endIndex());
                 int closeParen = findClosingParen(sql, openParen);
                 if (closeParen > openParen) {
                     List<String> args = splitArguments(sql.substring(openParen + 1, closeParen));
-                    String replacement = rewriteMysqlFunction(functionName, args);
+                    String replacement = rewriteMysqlFunction(functionMatch.name(), args);
                     if (replacement != null) {
                         removeTrailingQualifier(sql, index, result);
                         result.append(replacement);
@@ -121,24 +121,45 @@ public final class CrestSqlFunctionTranslator {
         return null;
     }
 
-    private static String matchFunctionName(String sql, int start) {
-        if (start > 0 && isIdentifierChar(sql.charAt(start - 1))) {
-            return null;
-        }
+    private static FunctionMatch matchFunctionName(String sql, int start) {
         for (String functionName : DATE_FUNCTIONS) {
-            int end = start + functionName.length();
-            if (end > sql.length()) {
-                continue;
+            FunctionMatch match = matchUnquotedFunctionName(sql, start, functionName);
+            if (match != null) {
+                return match;
             }
-            if (!sql.regionMatches(true, start, functionName, 0, functionName.length())) {
-                continue;
-            }
-            int next = skipWhitespace(sql, end);
-            if (next < sql.length() && sql.charAt(next) == '(') {
-                return functionName;
+            match = matchBacktickQuotedFunctionName(sql, start, functionName);
+            if (match != null) {
+                return match;
             }
         }
         return null;
+    }
+
+    private static FunctionMatch matchUnquotedFunctionName(String sql, int start, String functionName) {
+        if (start > 0 && isIdentifierChar(sql.charAt(start - 1))) {
+            return null;
+        }
+        int end = start + functionName.length();
+        if (end > sql.length() || !sql.regionMatches(true, start, functionName, 0, functionName.length())) {
+            return null;
+        }
+        int next = skipWhitespace(sql, end);
+        return next < sql.length() && sql.charAt(next) == '(' ? new FunctionMatch(functionName, end) : null;
+    }
+
+    private static FunctionMatch matchBacktickQuotedFunctionName(String sql, int start, String functionName) {
+        if (sql.charAt(start) != '`') {
+            return null;
+        }
+        int end = start + functionName.length() + 2;
+        if (end > sql.length() || sql.charAt(end - 1) != '`') {
+            return null;
+        }
+        if (!sql.regionMatches(true, start + 1, functionName, 0, functionName.length())) {
+            return null;
+        }
+        int next = skipWhitespace(sql, end);
+        return next < sql.length() && sql.charAt(next) == '(' ? new FunctionMatch(functionName, end) : null;
     }
 
     private static int skipWhitespace(String sql, int start) {
@@ -267,5 +288,8 @@ public final class CrestSqlFunctionTranslator {
 
     private static boolean isIdentifierChar(char value) {
         return Character.isLetterOrDigit(value) || value == '_' || value == '$';
+    }
+
+    private record FunctionMatch(String name, int endIndex) {
     }
 }

@@ -237,6 +237,23 @@ public class CrestSqlFunctionTranslatorTest {
     }
 
     @Test
+    public void mysqlTranslationHandlesBacktickQuotedFunctionNamesProducedByCalcite() {
+        String sql = "SELECT `DE_STR_TO_DATE`(t.`release_day`, 'yyyy/MM/dd') AS day_value, "
+                + "`DE_DATE_FORMAT`(`DE_STR_TO_DATE`(t.`release_day`, 'yyyy/MM/dd'), 'yyyy-MM') AS month_value, "
+                + "`crest`.`DE_UNIX_TIMESTAMP`(`DE_STR_TO_DATE`(t.`release_day`, 'yyyy/MM/dd')) AS ts_value FROM t";
+
+        String translated = CrestSqlFunctionTranslator.translate(sql, datasource("mysql"));
+
+        assertFalse(translated.contains("DE_"));
+        assertEquals(
+                "SELECT STR_TO_DATE(t.`release_day`, '%Y/%m/%d') AS day_value, "
+                        + "DATE_FORMAT(STR_TO_DATE(t.`release_day`, '%Y/%m/%d'), '%Y-%m') AS month_value, "
+                        + "UNIX_TIMESTAMP(STR_TO_DATE(t.`release_day`, '%Y/%m/%d')) AS ts_value FROM t",
+                translated
+        );
+    }
+
+    @Test
     public void mysqlTranslationDoesNotRewriteSimilarFunctionNames() {
         String sql = "SELECT MY_DE_STR_TO_DATE(t.`day`, 'yyyy-MM-dd') AS custom_value, "
                 + "DE_STR_TO_DATE_SUFFIX(t.`day`, 'yyyy-MM-dd') AS suffix_value FROM t";

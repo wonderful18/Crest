@@ -252,6 +252,31 @@ class DatasetDataManageFieldTypeTest {
     }
 
     @Test
+    void transFieldsPreservesManualConversionsWhenExcelMetadataTypesAreMissing() {
+        List<TableField> tableFields = List.of(
+                tableField("项目版本投产时间", "f_release_day", null, "TEXT", 1, 0),
+                tableField("项目版本提测时间", "f_test_day", " ", "TEXT", 1, 0),
+                tableField("开发预估工作量", "f_dev_workload", null, "TEXT", 3, 0),
+                tableField("架构师评估工作量", "f_arch_workload", " ", "TEXT", 3, 0),
+                tableField("暂停时长", "f_pause_days", null, "TEXT", 2, 0),
+                tableField("需求提出到项目终投产天数", "f_final_days", " ", "TEXT", 2, 0),
+                tableField("归属处室", "f_department", null, "TEXT", 0, 0),
+                tableField("空值列", "f_empty", null, null, null, null)
+        );
+
+        List<DatasetTableFieldDTO> fields = new DatasetDataManage().transFields(tableFields, true);
+
+        assertResolvedField(fields.get(0), "TEXT", 1, 0, "d");
+        assertResolvedField(fields.get(1), "TEXT", 1, 0, "d");
+        assertResolvedField(fields.get(2), "TEXT", 3, 0, "q");
+        assertResolvedField(fields.get(3), "TEXT", 3, 0, "q");
+        assertResolvedField(fields.get(4), "TEXT", 2, 0, "q");
+        assertResolvedField(fields.get(5), "TEXT", 2, 0, "q");
+        assertResolvedField(fields.get(6), "TEXT", 0, 0, "d");
+        assertResolvedField(fields.get(7), "TEXT", 0, 0, "d");
+    }
+
+    @Test
     void transFieldsKeepsNullTypeColumnsAsTextUntilUserChoosesConversion() {
         TableField nullOnly = tableField("空值列", "f_empty", null, null, null, null);
 

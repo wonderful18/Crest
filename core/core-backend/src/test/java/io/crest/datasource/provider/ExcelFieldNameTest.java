@@ -884,6 +884,81 @@ class ExcelFieldNameTest {
     }
 
     @Test
+    void excelImportCoversMessyWideExportWithAllNullableConversionCandidates() throws Exception {
+        Object[][] fieldCases = {
+                {"项目编号", "null", "000001", "000002", "TEXT", 0},
+                {"需求编号", "NULL", "REQ-202605150001", "202605150002", "TEXT", 0},
+                {"版本号", "\\N", "202606001", "202606002", "TEXT", 0},
+                {"工单ID", " ", "0088", "0099", "TEXT", 0},
+                {"dept_id", "null", "0007", "0008", "TEXT", 0},
+                {"valid", "", 1, 2, "LONG", 2},
+                {"solid", "   ", 3, 4, "LONG", 2},
+                {"归属处室", "Null", "开发一室", "数据应用开发室", "TEXT", 0},
+                {"项目版本投产时间", "null", "2024/05/27", "2026/12/30", "TEXT", 0},
+                {"项目版本提测时间", "NULL", "2024-05-01", "2026-11-30", "TEXT", 0},
+                {"项目首次投产日期", "\\N", "2024/05/27", "2026/12/30", "TEXT", 0},
+                {"项目最终投产日期", " ", "2024/05/27", "2026/12/31", "TEXT", 0},
+                {"验收测试报告提交时间", "null", "2024/06/05 10:20:30", "2026/12/20 09:00:00", "TEXT", 0},
+                {"项目暂停时间", "NULL", "2024/04/01", "2026/10/01", "TEXT", 0},
+                {"项目恢复时间", "\\N", "2024/04/05", "2026/10/05", "TEXT", 0},
+                {"需求确认日期", " ", "2024/01/09", "2026/08/09", "TEXT", 0},
+                {"开发预估工作量", "null", 199, 825, "DOUBLE", 3},
+                {"架构师评估工作量", "NULL", "174.00", "654.00", "DOUBLE", 3},
+                {"平均耗时", "\\N", 18, 20, "DOUBLE", 3},
+                {"均值指标", " ", "1", "2", "DOUBLE", 3},
+                {"阈值", "null", 30, 30.5, "DOUBLE", 3},
+                {"金额", "NULL", 123456, 0, "DOUBLE", 3},
+                {"暂停时长", "\\N", "0", "5", "LONG", 2},
+                {"项目暂停时长", " ", 0, 5, "LONG", 2},
+                {"需求提出到项目首投产天数", "null", "100", "140", "LONG", 2},
+                {"需求提出到项目终投产天数", "NULL", 1774, 140, "LONG", 2},
+                {"需求首次投产到需求确认天数", "\\N", -101, -139, "LONG", 2},
+                {"投产版本数", " ", 3, 4, "LONG", 2},
+                {"超期数量", "null", 0, 2, "LONG", 2},
+                {"业务审批耗时(天)", "NULL", 21.5, "待确认", "TEXT", 0},
+                {"百分比文本", "\\N", "12.5%", "0%", "TEXT", 0},
+                {"科学计数文本", " ", "1.23E4", "9.9E-2", "TEXT", 0},
+                {"长编码", "null", "123456789012345678901", "ABCD", "TEXT", 0},
+                {"空值列", "NULL", null, null, "TEXT", 0},
+                {"SQL片段文本", "\\N", "SELECT a FROM t WHERE id = 1", "普通说明", "TEXT", 0},
+                {"需求业务审批会签耗时（天）【需求提出-业务部门会签完成后出需求】", " ", 33, 37, "LONG", 2},
+                {"重复指标", "null", 7, 8, "LONG", 2},
+                {"重复指标", "NULL", "A", "B", "TEXT", 0}
+        };
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("复杂导出");
+            Row header = sheet.createRow(0);
+            Row emptyLikeRow = sheet.createRow(1);
+            Row firstDataRow = sheet.createRow(2);
+            Row secondDataRow = sheet.createRow(3);
+            for (int i = 0; i < fieldCases.length; i++) {
+                header.createCell(i).setCellValue((String) fieldCases[i][0]);
+                writeCell(emptyLikeRow, i, fieldCases[i][1]);
+                writeCell(firstDataRow, i, fieldCases[i][2]);
+                writeCell(secondDataRow, i, fieldCases[i][3]);
+            }
+
+            ExcelSheetData dataSheet = parseWorkbook(workbook).get(0);
+
+            assertEquals(fieldCases.length, dataSheet.getFields().size());
+            assertEquals(3, dataSheet.getJsonArray().size());
+            assertEquals("重复指标_2", dataSheet.getFields().get(dataSheet.getFields().size() - 1).getName());
+            for (int i = 0; i < fieldCases.length; i++) {
+                String fieldName = dataSheet.getFields().get(i).getName();
+                assertField(dataSheet, fieldName, (String) fieldCases[i][4], (Integer) fieldCases[i][5]);
+                assertNull(dataSheet.getJsonArray().get(0).get(fieldName), fieldName);
+                assertTrue(dataSheet.getFields().get(i).getDbFieldName().length() <= 64, fieldName);
+            }
+            assertEquals("000001", dataSheet.getJsonArray().get(1).get("项目编号"));
+            assertEquals("199", dataSheet.getJsonArray().get(1).get("开发预估工作量"));
+            assertEquals("1774", dataSheet.getJsonArray().get(1).get("需求提出到项目终投产天数"));
+            assertEquals("SELECT a FROM t WHERE id = 1", dataSheet.getJsonArray().get(1).get("SQL片段文本"));
+            assertEquals("-139", dataSheet.getJsonArray().get(2).get("需求首次投产到需求确认天数"));
+            assertEquals("B", dataSheet.getJsonArray().get(2).get("重复指标_2"));
+        }
+    }
+
+    @Test
     void csvImportKeepsIdentifierAndDateLikeNumericTextAsText() throws Exception {
         List<ExcelSheetData> sheets = parseCsv("""
                 项目编号,需求编号,投产月份,需求数,平均耗时,空值列

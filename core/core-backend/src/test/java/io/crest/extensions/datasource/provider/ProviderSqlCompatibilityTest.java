@@ -1,5 +1,10 @@
 package io.crest.extensions.datasource.provider;
 
+import io.crest.constant.FieldTypeConstants;
+import io.crest.engine.sql.SQLProvider;
+import io.crest.engine.trans.Field2SQLObj;
+import io.crest.engine.trans.Table2SQLObj;
+import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.datasource.model.SQLMeta;
 import io.crest.extensions.datasource.utils.SqlPlaceholderUtils;
 import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
@@ -10,6 +15,7 @@ import org.apache.calcite.sql.dialect.MysqlSqlDialect;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -167,6 +173,41 @@ class ProviderSqlCompatibilityTest {
     }
 
     @Test
+    void rebuildSqlTranslatesFieldGeneratedConversionsForWideExcelDatasetPreview() {
+        Provider provider = mock(Provider.class, CALLS_REAL_METHODS);
+        DatasourceSchemaDTO datasource = new DatasourceSchemaDTO();
+        datasource.setId(1L);
+        datasource.setType("mysql");
+        Map<Long, DatasourceSchemaDTO> dsMap = Map.of(1L, datasource);
+        SQLMeta sqlMeta = new SQLMeta();
+        Table2SQLObj.table2sqlobj(
+                sqlMeta,
+                null,
+                "(SELECT `f_release_day`, `f_test_day`, `f_dev_workload`, `f_pause_days`, `f_department`, `f_project_code` FROM `excel_table`)",
+                false
+        );
+        List<DatasetTableFieldDTO> fields = List.of(
+                field(1L, "项目版本投产时间", "f_release_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(2L, "项目版本提测时间", "f_test_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy-MM-dd"),
+                field(3L, "开发预估工作量", "f_dev_workload", FieldTypeConstants.FLOAT, FieldTypeConstants.STRING, null),
+                field(4L, "暂停时长", "f_pause_days", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(5L, "归属处室", "f_department", FieldTypeConstants.STRING, FieldTypeConstants.STRING, null),
+                field(6L, "项目编号", "f_project_code", FieldTypeConstants.STRING, FieldTypeConstants.STRING, null)
+        );
+
+        Field2SQLObj.field2sqlObj(sqlMeta, fields, fields, false, dsMap, List.of(), null, null);
+        String generatedSql = SQLProvider.createQuerySQL(sqlMeta, false, false, false);
+        String rebuiltSql = provider.rebuildSQL(generatedSql, sqlMeta, false, dsMap, true);
+
+        assertTrue(generatedSql.contains("DE_STR_TO_DATE"));
+        assertFalse(rebuiltSql.contains("DE_"), rebuiltSql);
+        assertTrue(rebuiltSql.contains("STR_TO_DATE(`t_a_0`.`f_release_day`, '%Y/%m/%d')"), rebuiltSql);
+        assertTrue(rebuiltSql.contains("STR_TO_DATE(`t_a_0`.`f_test_day`, '%Y-%m-%d')"), rebuiltSql);
+        assertTrue(rebuiltSql.contains("CAST(`t_a_0`.`f_dev_workload` AS DECIMAL(26, 8))"), rebuiltSql);
+        assertTrue(rebuiltSql.contains("CAST(`t_a_0`.`f_pause_days` AS DECIMAL(19, 0))"), rebuiltSql);
+    }
+
+    @Test
     void removesOnlyCompleteSchemaAliasPrefixes() {
         String sql = SqlPlaceholderUtils.removeIdentifierPrefix(
                 "SELECT s_a_1.f_1, `s_a_1`.f_2, s_a_10.f_3 FROM s_a_1.t",
@@ -174,5 +215,19 @@ class ProviderSqlCompatibilityTest {
         );
 
         assertEquals("SELECT f_1, f_2, s_a_10.f_3 FROM t", sql);
+    }
+
+    private DatasetTableFieldDTO field(Long id, String name, String engineFieldName, int fieldType, int extractedFieldType, String dateFormat) {
+        DatasetTableFieldDTO field = new DatasetTableFieldDTO();
+        field.setId(id);
+        field.setName(name);
+        field.setOriginName(name);
+        field.setDbFieldName(engineFieldName);
+        field.setEngineFieldName(engineFieldName);
+        field.setType("TEXT");
+        field.setFieldType(fieldType);
+        field.setExtractedFieldType(extractedFieldType);
+        field.setDateFormat(dateFormat);
+        return field;
     }
 }
