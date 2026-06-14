@@ -52,6 +52,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+/**
+ * 数据集目录与数据集定义的领域服务，负责节点保存、移动删除、权限校验和详情装配。
+ * 该类只维护数据集元数据及其表字段关系，具体 SQL 生成和数据预览由下游管理器完成。
+ */
 @Component
 @Transactional(rollbackFor = Exception.class)
 @SuppressWarnings("unchecked")
@@ -100,11 +104,14 @@ public class DatasetGroupManage {
     private Lock lock = new ReentrantLock();
 
 
+    /**
+     * 保存数据集或目录节点，并在数据集节点保存时同步联合树、字段定义和 SQL 快照。
+     */
     @Transactional
     public DatasetGroupInfoDTO save(DatasetGroupInfoDTO datasetGroupInfoDTO, boolean rename, boolean encode) throws Exception {
         try {
             boolean isCreate;
-            // 用于重命名获取pid
+            // 重命名请求可能只带节点 ID，需要回填父节点以复用名称校验流程。
             if (ObjectUtils.isEmpty(datasetGroupInfoDTO.getPid()) && ObjectUtils.isNotEmpty(datasetGroupInfoDTO.getId())) {
                 requireDatasetAccess(datasetGroupInfoDTO.getId());
                 CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(datasetGroupInfoDTO.getId());
@@ -122,7 +129,7 @@ public class DatasetGroupManage {
                 if (!rename && ObjectUtils.isEmpty(datasetGroupInfoDTO.getAllFields())) {
                     CrestException.throwException(Translator.get("i18n_no_fields"));
                 }
-                // get union sql
+                // 数据集节点保存前先生成联合 SQL，保证持久化的结构和查询文本一致。
                 Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null);
                 if (ObjectUtils.isNotEmpty(sqlMap)) {
                     String sql = (String) sqlMap.get("sql");
@@ -130,7 +137,7 @@ public class DatasetGroupManage {
                     datasetGroupInfoDTO.setInfo(Objects.requireNonNull(JsonUtil.toJSONString(datasetGroupInfoDTO.getUnion())).toString());
                 }
             }
-            // save dataset/group
+            // 新建和编辑分别走代理方法，确保事务与平台权限资源同步在同一边界内完成。
             long time = System.currentTimeMillis();
             if (ObjectUtils.isEmpty(datasetGroupInfoDTO.getId())) {
                 isCreate = true;
@@ -174,6 +181,10 @@ public class DatasetGroupManage {
         }
         return null;
     }
+
+    /**
+     * 编辑已有数据集或目录节点，并同步平台资源索引和最近操作记录。
+     */
     public void innerEdit(DatasetGroupInfoDTO datasetGroupInfoDTO) {
         requireDatasetAccess(datasetGroupInfoDTO.getId());
         checkName(datasetGroupInfoDTO);
@@ -185,6 +196,10 @@ public class DatasetGroupManage {
                 coreDatasetGroup.getCreateTime(), coreDatasetGroup.getLastUpdateTime());
         coreOptRecentManage.saveOpt(datasetGroupInfoDTO.getId(), OptConstants.OPT_RESOURCE_TYPE.DATASET, OptConstants.OPT_TYPE.UPDATE);
     }
+
+    /**
+     * 新建数据集或目录节点，并在数据集节点创建后写入平台资源索引。
+     */
     public void innerSave(DatasetGroupInfoDTO datasetGroupInfoDTO) {
         checkName(datasetGroupInfoDTO);
         CoreDatasetGroup coreDatasetGroup = BeanUtils.copyBean(new CoreDatasetGroup(), datasetGroupInfoDTO);
@@ -196,6 +211,10 @@ public class DatasetGroupManage {
         }
         coreOptRecentManage.saveOpt(coreDatasetGroup.getId(), OptConstants.OPT_RESOURCE_TYPE.DATASET, OptConstants.OPT_TYPE.NEW);
     }
+
+    /**
+     * 移动数据集或目录节点，校验目标父节点权限和循环引用后更新父子关系。
+     */
     public DatasetGroupInfoDTO move(DatasetGroupInfoDTO datasetGroupInfoDTO) {
         requireDatasetAccess(datasetGroupInfoDTO.getId());
         if (ObjectUtils.isNotEmpty(datasetGroupInfoDTO.getPid()) && !Objects.equals(datasetGroupInfoDTO.getPid(), 0L)) {
@@ -205,7 +224,7 @@ public class DatasetGroupManage {
         if (datasetGroupInfoDTO.getPid() != 0) {
             checkMove(datasetGroupInfoDTO);
         }
-        // save dataset/group
+        // 仅更新节点位置和展示信息，不重建数据集表字段关系。
         long time = System.currentTimeMillis();
         CoreDatasetGroup coreDatasetGroup = new CoreDatasetGroup();
         BeanUtils.copyBean(coreDatasetGroup, datasetGroupInfoDTO);
@@ -219,6 +238,9 @@ public class DatasetGroupManage {
         return datasetGroupInfoDTO;
     }
 
+    /**
+     * 判断数据集是否仍被关系模块引用，用于删除前的业务占用校验。
+     */
     public boolean perDelete(Long id) {
         if (relationManage != null) {
             Long count = relationManage.datasetResource(id);
@@ -228,6 +250,10 @@ public class DatasetGroupManage {
         }
         return false;
     }
+
+    /**
+     * 删除数据集或目录树，并先校验整棵子树的访问权限。
+     */
     public void delete(Long id) {
         CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(id);
         if (ObjectUtils.isEmpty(coreDatasetGroup)) {
@@ -238,6 +264,9 @@ public class DatasetGroupManage {
         coreOptRecentManage.saveOpt(coreDatasetGroup.getId(), OptConstants.OPT_RESOURCE_TYPE.DATASET, OptConstants.OPT_TYPE.DELETE);
     }
 
+    /**
+     * 递归删除节点、同步任务、表字段关系和所有子节点。
+     */
     public void recursionDel(Long id) {
         datasetSyncTaskManage.deleteByDatasetGroupId(id);
         coreDatasetGroupMapper.deleteById(id);
@@ -253,6 +282,10 @@ public class DatasetGroupManage {
             }
         }
     }
+
+    /**
+     * 查询当前用户可见的数据集树，按叶子类型和平台资源权限裁剪结果。
+     */
     public List<BusiNodeVO> tree(BusiNodeRequest request) {
 
         QueryWrapper<Object> queryWrapper = new QueryWrapper<>();
@@ -278,10 +311,13 @@ public class DatasetGroupManage {
         return TreeUtils.mergeTree(nodes, BusiNodeVO.class, false);
     }
 
+    /**
+     * 查询数据集顶部信息，包括创建人、更新人和关联数据源摘要。
+     */
     public DataSetBarVO queryBarInfo(Long id) {
         requireDatasetAccess(id);
         DataSetBarVO dataSetBarVO = coreDataSetExtMapper.queryBarInfo(id);
-        // get creator
+        // 创建人和更新人展示名只作为视图信息返回，不参与权限判断。
         String userName = coreUserManage.getUserName(Long.valueOf(dataSetBarVO.getCreateBy()));
         if (StringUtils.isNotBlank(userName)) {
             dataSetBarVO.setCreator(userName);
@@ -294,6 +330,9 @@ public class DatasetGroupManage {
         return dataSetBarVO;
     }
 
+    /**
+     * 查询数据集引用的数据源列表，并隐藏连接配置等敏感字段。
+     */
     private List<DatasourceDTO> datasource(Long datasetId) {
         requireDatasetAccess(datasetId);
         QueryWrapper<CoreDatasetTable> wrapper = new QueryWrapper<>();
@@ -319,19 +358,31 @@ public class DatasetGroupManage {
         return datasourceDTOList;
     }
 
+    /**
+     * 构造数据集树的虚拟根节点。
+     */
     private DataSetNodeBO rootNode() {
         return new DataSetNodeBO(0L, "root", false, 7, -1L, 0);
     }
 
+    /**
+     * 将数据库查询节点转换为前端树节点需要的业务对象。
+     */
     private DataSetNodeBO convert(DataSetNodePO po) {
         return new DataSetNodeBO(po.getId(), po.getName(), Strings.CS.equals(po.getNodeType(), leafType), 9, po.getPid(), 0);
     }
 
+    /**
+     * 预留名称校验入口，当前名称冲突规则由上游或数据库约束承担。
+     */
     public void checkName(DatasetGroupInfoDTO dto) {
     }
 
+    /**
+     * 递归保存联合树中的数据表节点，并收集本次仍然有效的表 ID。
+     */
     public void saveTable(DatasetGroupInfoDTO datasetGroupInfoDTO, List<UnionDTO> union, List<Long> tableIds, boolean isCreate) {
-        // table和field均由前端生成id（如果没有id）
+        // 表和字段 ID 由前端在缺省时生成，后端在这里负责补齐所属数据集关系。
         Long datasetGroupId = datasetGroupInfoDTO.getId();
         if (ObjectUtils.isNotEmpty(union)) {
             for (UnionDTO unionDTO : union) {
@@ -352,16 +403,19 @@ public class DatasetGroupManage {
         }
     }
 
+    /**
+     * 保存数据集字段定义，保持普通字段、计算字段和分组字段的引擎字段名稳定。
+     */
     public void saveField(DatasetGroupInfoDTO datasetGroupInfoDTO, List<Long> fieldIds) throws Exception {
         if (ObjectUtils.isEmpty(datasetGroupInfoDTO.getUnion())) {
             return;
         }
         datasetDataManage.previewDataWithLimit(datasetGroupInfoDTO, 0, 1, false, false);
-        // table和field均由前端生成id（如果没有id）
+        // 保存字段前先预览一行数据，用于校验联合 SQL 和字段映射可正常生成。
         Long datasetGroupId = datasetGroupInfoDTO.getId();
         List<DatasetTableFieldDTO> allFields = datasetGroupInfoDTO.getAllFields();
         if (ObjectUtils.isNotEmpty(allFields)) {
-            // 获取内层union sql和字段
+            // 联合 SQL 生成结果提供普通字段的引擎字段名，避免重复编辑后别名漂移。
             Map<String, Object> map = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null);
             List<DatasetTableFieldDTO> unionFields = (List<DatasetTableFieldDTO>) map.get("field");
 
@@ -402,6 +456,9 @@ public class DatasetGroupManage {
         }
     }
 
+    /**
+     * 查询计数场景所需的数据集定义，只返回字段结构，不组装预览数据。
+     */
     public DatasetGroupInfoDTO getForCount(Long id) throws Exception {
         requireDatasetAccess(id);
         CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(id);
@@ -413,7 +470,7 @@ public class DatasetGroupManage {
         if (Strings.CI.equals(dto.getNodeType(), "dataset")) {
             dto.setUnion(JsonUtil.parseList(coreDatasetGroup.getInfo(), new TypeReference<>() {
             }));
-            // 获取field
+            // 字段短名在计数场景复用引擎字段名，方便后续 SQL 聚合引用。
             List<DatasetTableFieldDTO> dsFields = datasetTableFieldManage.selectByDatasetGroupId(id);
             List<DatasetTableFieldDTO> allFields = dsFields.stream().map(ele -> {
                 DatasetTableFieldDTO datasetTableFieldDTO = new DatasetTableFieldDTO();
@@ -427,6 +484,9 @@ public class DatasetGroupManage {
         return dto;
     }
 
+    /**
+     * 查询数据集详情，返回联合树、字段配置和展示所需的创建更新人信息。
+     */
     public DatasetGroupInfoDTO getDetail(Long id) throws Exception {
         requireDatasetAccess(id);
         CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(id);
@@ -438,7 +498,7 @@ public class DatasetGroupManage {
         if (dto.getIsCross() == null) {
             dto.setIsCross(false);
         }
-        // get creator
+        // 展示用人员名称单独查询，避免把用户表结构暴露给调用方。
         String userName = coreUserManage.getUserName(Long.valueOf(dto.getCreateBy()));
         if (StringUtils.isNotBlank(userName)) {
             dto.setCreator(userName);
@@ -453,7 +513,7 @@ public class DatasetGroupManage {
             });
             dto.setUnion(unionDTOList);
 
-            // 获取field
+            // 字段返回前需要编码，保持和前端字段配置协议一致。
             List<DatasetTableFieldDTO> dsFields = datasetTableFieldManage.selectByDatasetGroupId(id);
             List<DatasetTableFieldDTO> allFields = dsFields.stream().map(ele -> {
                 DatasetTableFieldDTO datasetTableFieldDTO = new DatasetTableFieldDTO();
@@ -469,16 +529,25 @@ public class DatasetGroupManage {
         return dto;
     }
 
+    /**
+     * 查询数据集基础信息，默认执行数据集访问权限校验。
+     */
     public DatasetGroupInfoDTO datasetGroupInfoDTO(Long id, String type) throws Exception {
         return datasetGroupInfoDTO(id, type, true);
     }
 
+    /**
+     * 查询已发布可视化读取数据集时使用的基础信息，可在门户授权命中时跳过数据集所有者校验。
+     */
     public DatasetGroupInfoDTO datasetGroupInfoDTOForVisualizationRead(Long id, String type, Long visualizationId) throws Exception {
         boolean skipDatasetAccess = visualizationId != null
                 && dataPortalPermissionManage.canReadPublishedVisualizationDataset(visualizationId, id);
         return datasetGroupInfoDTO(id, type, !skipDatasetAccess);
     }
 
+    /**
+     * 按用途查询数据集信息，预览场景会附带样例数据、SQL 和总数。
+     */
     private DatasetGroupInfoDTO datasetGroupInfoDTO(Long id, String type, boolean checkAccess) throws Exception {
         if (checkAccess) {
             requireDatasetAccess(id);
@@ -489,7 +558,7 @@ public class DatasetGroupManage {
         }
         DatasetGroupInfoDTO dto = new DatasetGroupInfoDTO();
         BeanUtils.copyBean(dto, coreDatasetGroup);
-        // get creator
+        // 创建人和更新人名称仅用于前端展示。
         String userName = coreUserManage.getUserName(Long.valueOf(dto.getCreateBy()));
         if (StringUtils.isNotBlank(userName)) {
             dto.setCreator(userName);
@@ -504,7 +573,7 @@ public class DatasetGroupManage {
             });
             dto.setUnion(unionDTOList);
 
-            // 获取field
+            // 字段结构与联合树一起返回，供编辑器恢复数据集配置。
             List<DatasetTableFieldDTO> dsFields = datasetTableFieldManage.selectByDatasetGroupId(id);
             List<DatasetTableFieldDTO> allFields = dsFields.stream().map(ele -> {
                 DatasetTableFieldDTO datasetTableFieldDTO = new DatasetTableFieldDTO();
@@ -516,9 +585,9 @@ public class DatasetGroupManage {
             dto.setAllFields(allFields);
 
             if ("preview".equalsIgnoreCase(type)) {
-                // 请求数据
+                // 预览模式只读取前 100 行，避免详情接口承担完整数据查询压力。
                 Map<String, Object> map = datasetDataManage.previewDataWithLimit(dto, 0, 100, true, false);
-                // 获取data,sql
+                // SQL 以 Base64 返回，避免原始 SQL 中的特殊字符影响传输协议。
                 Map<String, List> data = (Map<String, List>) map.get("data");
                 String sql = (String) map.get("sql");
                 Long total = (Long) map.get("total");
@@ -530,6 +599,9 @@ public class DatasetGroupManage {
         return dto;
     }
 
+    /**
+     * 批量查询数据集对应的数据表字段结构，按输入顺序返回结果。
+     */
     public List<DatasetTableDTO> getDetail(List<Long> ids) {
         if (ObjectUtils.isEmpty(ids)) {
             CrestException.throwException(Translator.get("i18n_table_id_can_not_empty"));
@@ -551,10 +623,16 @@ public class DatasetGroupManage {
         return list;
     }
 
+    /**
+     * 查询多个数据集自定义 SQL 中声明的参数，并执行数据集访问权限校验。
+     */
     public List<SqlVariableDetails> sqlParams(List<Long> ids) {
         return sqlParams(ids, true);
     }
 
+    /**
+     * 查询已发布可视化可读取数据集的 SQL 参数，门户授权命中时跳过所有者校验。
+     */
     public List<SqlVariableDetails> sqlParamsForVisualizationRead(List<Long> ids, Long visualizationId) {
         boolean skipDatasetAccess = visualizationId != null
                 && ObjectUtils.isNotEmpty(ids)
@@ -563,6 +641,9 @@ public class DatasetGroupManage {
         return sqlParams(ids, !skipDatasetAccess);
     }
 
+    /**
+     * 聚合数据集表中的 SQL 参数，并补齐数据集路径、字段类型和前端唯一标识。
+     */
     private List<SqlVariableDetails> sqlParams(List<Long> ids, boolean checkAccess) {
         List<SqlVariableDetails> list = new ArrayList<>();
         if (ObjectUtils.isEmpty(ids)) {
@@ -601,6 +682,9 @@ public class DatasetGroupManage {
         return list;
     }
 
+    /**
+     * 校验移动目标不会把节点放到自己或自己的子孙节点下。
+     */
     public void checkMove(DatasetGroupInfoDTO datasetGroupInfoDTO) {
         if (Objects.equals(datasetGroupInfoDTO.getId(), datasetGroupInfoDTO.getPid())) {
             CrestException.throwException(Translator.get("i18n_pid_not_eq_id"));
@@ -612,16 +696,24 @@ public class DatasetGroupManage {
         }
     }
 
+    /**
+     * 递归收集指定父节点到根节点之间的祖先 ID。
+     */
     private void getParents(Long pid, List<Long> ids) {
-        CoreDatasetGroup parent = coreDatasetGroupMapper.selectById(pid);// 查找父级folder
+        // 查询父级目录并继续向根节点回溯。
+        CoreDatasetGroup parent = coreDatasetGroupMapper.selectById(pid);
         ids.add(parent.getId());
         if (parent.getPid() != null && parent.getPid() != 0) {
             getParents(parent.getPid(), ids);
         }
     }
 
+    /**
+     * 递归收集数据集所在目录的完整路径名称。
+     */
     public void geFullName(Long pid, List<String> fullName) {
-        CoreDatasetGroup parent = coreDatasetGroupMapper.selectById(pid);// 查找父级folder
+        // 查询父级目录并把名称追加到路径片段中。
+        CoreDatasetGroup parent = coreDatasetGroupMapper.selectById(pid);
         if (parent == null) {
             return;
         }
@@ -634,6 +726,9 @@ public class DatasetGroupManage {
         }
     }
 
+    /**
+     * 查询带字段权限的数据集详情，并过滤不适合作为维度或指标直接展示的聚合计算字段。
+     */
     public List<DatasetTableDTO> getDetailWithPerm(List<Long> ids) {
         var result = new ArrayList<DatasetTableDTO>();
         if (CollectionUtils.isNotEmpty(ids)) {
@@ -674,6 +769,9 @@ public class DatasetGroupManage {
         return result;
     }
 
+    /**
+     * 查询当前用户可访问的全部数据集定义，用于批处理或兼容性补齐任务。
+     */
     public List<DatasetGroupInfoDTO> getAllList() {
         List<CoreDatasetGroup> coreDatasetGroupList = coreDatasetGroupMapper.selectList(new QueryWrapper<>());
         if (CollectionUtils.isEmpty(coreDatasetGroupList)) {
@@ -692,7 +790,7 @@ public class DatasetGroupManage {
                 });
                 dto.setUnion(unionDTOList);
 
-                // 获取field
+                // 字段编码后返回，保证与编辑详情接口的字段协议一致。
                 List<DatasetTableFieldDTO> dsFields = datasetTableFieldManage.selectByDatasetGroupId(coreDatasetGroup.getId());
                 List<DatasetTableFieldDTO> allFields = dsFields.stream().map(ele -> {
                     DatasetTableFieldDTO datasetTableFieldDTO = new DatasetTableFieldDTO();
@@ -711,6 +809,9 @@ public class DatasetGroupManage {
         return list;
     }
 
+    /**
+     * 加载数据集并校验当前用户是否拥有创建者权限。
+     */
     private CoreDatasetGroup requireDatasetAccess(Long datasetId) {
         CoreDatasetGroup dataset = coreDatasetGroupMapper.selectById(datasetId);
         if (dataset == null) {
@@ -720,6 +821,9 @@ public class DatasetGroupManage {
         return dataset;
     }
 
+    /**
+     * 加载数据源并校验当前用户是否拥有创建者权限。
+     */
     private CoreDatasource requireDatasourceAccess(Long datasourceId) {
         CoreDatasource datasource = coreDatasourceMapper.selectById(datasourceId);
         if (datasource == null) {
@@ -729,6 +833,9 @@ public class DatasetGroupManage {
         return datasource;
     }
 
+    /**
+     * 递归校验目录树中所有子节点的访问权限，确保删除操作不会越权影响子资源。
+     */
     private void requireDatasetTreeAccess(Long id) {
         requireDatasetAccess(id);
         QueryWrapper<CoreDatasetGroup> wrapper = new QueryWrapper<>();
