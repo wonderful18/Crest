@@ -675,10 +675,13 @@ public class ExcelUtils {
             tableFiled.setNativeType(DEFAULT_EXCEL_FIELD_TYPE);
             return;
         }
+        String type = cellType(value);
+        if (shouldPreferExcelFieldAsDouble(tableFiled) && isExcelNumericType(type)) {
+            type = "DOUBLE";
+        }
         if (i == 0) {
-            tableFiled.setNativeType(cellType(value));
+            tableFiled.setNativeType(type);
         } else {
-            String type = cellType(value);
             if (tableFiled.getNativeType() == null) {
                 tableFiled.setNativeType(type);
             } else {
@@ -691,6 +694,18 @@ public class ExcelUtils {
             }
         }
 
+    }
+
+    private boolean shouldPreferExcelFieldAsDouble(TableField tableField) {
+        if (tableField == null) {
+            return false;
+        }
+        String fieldName = StringUtils.defaultString(StringUtils.firstNonBlank(tableField.getName(), tableField.getOriginName()));
+        return containsAny(fieldName, "工作量", "金额", "均值", "平均", "阈值");
+    }
+
+    private boolean isExcelNumericType(String type) {
+        return Strings.CI.equals(type, "LONG") || Strings.CI.equals(type, "DOUBLE");
     }
 
     private boolean hasLeadingZeroNumericText(String value) {

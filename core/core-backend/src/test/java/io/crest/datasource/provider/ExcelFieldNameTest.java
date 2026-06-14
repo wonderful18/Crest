@@ -562,6 +562,35 @@ class ExcelFieldNameTest {
         }
     }
 
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "开发预估工作量|DOUBLE|3",
+            "架构师评估工作量|DOUBLE|3",
+            "金额|DOUBLE|3",
+            "平均耗时|DOUBLE|3",
+            "阈值|DOUBLE|3",
+            "暂停时长|LONG|2"
+    })
+    void excelImportKeepsDecimalSemanticMetricFieldsAsDoubleWhenPreviewValuesAreWholeNumbers(
+            String headerName,
+            String expectedType,
+            int expectedFieldType
+    ) throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("小数语义字段");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue(headerName);
+            Row first = sheet.createRow(1);
+            first.createCell(0).setCellValue(174);
+            Row second = sheet.createRow(2);
+            second.createCell(0).setCellValue(654);
+
+            ExcelSheetData dataSheet = parseWorkbook(workbook).get(0);
+
+            assertField(dataSheet, headerName, expectedType, expectedFieldType);
+        }
+    }
+
     @Test
     void excelImportTreatsLiteralNullPlaceholdersAsMissingValuesWhenInferringTypes() throws Exception {
         try (Workbook workbook = new XSSFWorkbook()) {
@@ -777,6 +806,80 @@ class ExcelFieldNameTest {
             assertNull(dataSheet.getJsonArray().get(0).get("暂停时长"));
             assertNull(dataSheet.getJsonArray().get(1).get("项目恢复时间"));
             assertEquals("1774", dataSheet.getJsonArray().get(1).get("需求提出到项目终投产天数"));
+        }
+    }
+
+    @Test
+    void excelImportCoversWideRequirementFieldMatrixWithBlankAndNullCells() throws Exception {
+        Object[][] fieldCases = {
+                {"项目编号", " null ", "A20210186", "A20220005", "TEXT", 0},
+                {"项目类型", "", "非商务类项目模板", "一般项目", "TEXT", 0},
+                {"项目级别", "   ", "一般项目", "重要项目", "TEXT", 0},
+                {"项目经理", "\\N", "项目经理A", "项目经理B", "TEXT", 0},
+                {"项目状态", "NULL", "已投产", "进行中", "TEXT", 0},
+                {"项目规模", "Null", "任务级", "小型项目", "TEXT", 0},
+                {"归属处室", "null", "开发一室", "数据应用开发室", "TEXT", 0},
+                {"开发预估工作量", "null", "199.00", "825.33", "DOUBLE", 3},
+                {"架构师评估工作量", "NULL", 174.00, 654.00, "DOUBLE", 3},
+                {"项目版本", "\\N", "2024年紧急版", "2022年5月版", "TEXT", 0},
+                {"发版类型", "null", "紧急", "月版", "TEXT", 0},
+                {"项目版本投产时间", "NULL", "2024/05/27", "2022/05/21", "TEXT", 0},
+                {"项目版本提测时间", " ", "2024/05/01", "2022/03/25", "TEXT", 0},
+                {"项目首次投产日期", "\\N", "2024/05/27", "2022/05/21", "TEXT", 0},
+                {"项目最终投产日期", "NULL", "2024/05/27", "2026/12/30", "TEXT", 0},
+                {"交付物名称", "null", "验收测试报告.doc", "上线清单.xlsx", "TEXT", 0},
+                {"验收测试报告提交时间", "", "2024/06/05", "2024/06/06", "TEXT", 0},
+                {"项目暂停时间", "\\N", "2024/04/01", "2024/04/02", "TEXT", 0},
+                {"项目恢复时间", "NULL", "2024/04/05", "2024/04/06", "TEXT", 0},
+                {"需求标题", "   ", "需求标题A", "需求标题B", "TEXT", 0},
+                {"需求编号", "null", "REQ-202405270001", "202203250001", "TEXT", 0},
+                {"需求状态", "NULL", "已投产", "进行中", "TEXT", 0},
+                {"范围变更时间", "\\N", "2022/04/01", "2023/04/01", "TEXT", 0},
+                {"立项通过时间", " ", "2022/02/15", "2023/02/15", "TEXT", 0},
+                {"需求立项时间", "null", "2022/02/10", "2023/02/10", "TEXT", 0},
+                {"需求提出部门审批日期", "NULL", "2022/02/08", "2023/02/08", "TEXT", 0},
+                {"需求首次投产时间", "\\N", "2022/05/21", "2023/05/21", "TEXT", 0},
+                {"需求确认日期", "null", "2022/02/09", "2023/02/09", "TEXT", 0},
+                {"需求受理日期", "NULL", "2022/02/11", "2023/02/11", "TEXT", 0},
+                {"需求分析完成日期", "\\N", "2022/02/20", "2023/02/20", "TEXT", 0},
+                {"暂停时长", "null", "0", "5", "LONG", 2},
+                {"项目暂停时长", "NULL", 0, 5, "LONG", 2},
+                {"需求提出到项目首投产天数", "\\N", "100", "140", "LONG", 2},
+                {"需求提出到项目终投产天数", " ", 1774, 140, "LONG", 2},
+                {"需求确认到项目首投产天数", "null", "101", "139", "LONG", 2},
+                {"需求确认到项目终投产天数", "NULL", "1775", "139", "LONG", 2},
+                {"需求受理到首次投产天数", "\\N", "99", "137", "LONG", 2},
+                {"需求受理到最终投产天数", " ", 1773, 137, "LONG", 2},
+                {"需求分析完成到首次投产天数", "null", "90", "128", "LONG", 2},
+                {"需求分析完成到最终投产天数", "NULL", 1764, 128, "LONG", 2},
+                {"需求首次投产到需求确认天数", "\\N", -101, -139, "LONG", 2}
+        };
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("复杂字段矩阵");
+            Row header = sheet.createRow(0);
+            Row emptyLikeRow = sheet.createRow(1);
+            Row firstDataRow = sheet.createRow(2);
+            Row secondDataRow = sheet.createRow(3);
+            for (int i = 0; i < fieldCases.length; i++) {
+                header.createCell(i).setCellValue((String) fieldCases[i][0]);
+                writeCell(emptyLikeRow, i, fieldCases[i][1]);
+                writeCell(firstDataRow, i, fieldCases[i][2]);
+                writeCell(secondDataRow, i, fieldCases[i][3]);
+            }
+
+            ExcelSheetData dataSheet = parseWorkbook(workbook).get(0);
+
+            assertEquals(fieldCases.length, dataSheet.getFields().size());
+            assertEquals(3, dataSheet.getJsonArray().size());
+            for (Object[] fieldCase : fieldCases) {
+                String fieldName = (String) fieldCase[0];
+                assertField(dataSheet, fieldName, (String) fieldCase[4], (Integer) fieldCase[5]);
+                assertNull(dataSheet.getJsonArray().get(0).get(fieldName), fieldName);
+            }
+            assertEquals("A20210186", dataSheet.getJsonArray().get(1).get("项目编号"));
+            assertEquals("199.00", dataSheet.getJsonArray().get(1).get("开发预估工作量"));
+            assertEquals("1774", dataSheet.getJsonArray().get(1).get("需求提出到项目终投产天数"));
+            assertEquals("-139", dataSheet.getJsonArray().get(2).get("需求首次投产到需求确认天数"));
         }
     }
 
@@ -1071,5 +1174,20 @@ class ExcelFieldNameTest {
                 true,
                 "import.csv"
         );
+    }
+
+    private void writeCell(Row row, int column, Object value) {
+        if (value == null) {
+            return;
+        }
+        if (value instanceof Number) {
+            row.createCell(column).setCellValue(((Number) value).doubleValue());
+            return;
+        }
+        if (value instanceof Boolean) {
+            row.createCell(column).setCellValue((Boolean) value);
+            return;
+        }
+        row.createCell(column).setCellValue(value.toString());
     }
 }

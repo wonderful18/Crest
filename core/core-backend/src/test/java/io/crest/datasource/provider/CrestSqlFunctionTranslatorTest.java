@@ -194,6 +194,35 @@ public class CrestSqlFunctionTranslatorTest {
     }
 
     @Test
+    public void mysqlTranslationHandlesWideRequirementDatasetConversionExpressions() {
+        String sql = "SELECT "
+                + "DE_DATE_FORMAT(DE_STR_TO_DATE(NULLIF(NULLIF(t.`f_version_release_day`, 'null'), '\\\\N'),'yyyy/MM/dd'),'yyyy-MM') AS release_month, "
+                + "COUNT(DISTINCT t.`f_project_version`) AS version_count, "
+                + "SUM(CAST(NULLIF(NULLIF(t.`f_dev_workload`, 'null'), '') AS DECIMAL(26,8))) AS workload_sum, "
+                + "AVG(CAST(NULLIF(NULLIF(t.`f_req_to_project_final_days`, 'NULL'), '\\\\N') AS DECIMAL(26,8))) AS final_days_avg, "
+                + "SUM(CASE WHEN CAST(NULLIF(t.`f_req_to_project_final_days`, '') AS DECIMAL(26,8)) > CAST(NULLIF(t.`f_threshold`, '') AS DECIMAL(26,8)) THEN 1 ELSE 0 END) AS risk_count "
+                + "FROM t "
+                + "WHERE DE_STR_TO_DATE(NULLIF(NULLIF(t.`f_version_release_day`, 'null'), '\\\\N'),'yyyy/MM/dd') IS NOT NULL "
+                + "GROUP BY DE_DATE_FORMAT(DE_STR_TO_DATE(NULLIF(NULLIF(t.`f_version_release_day`, 'null'), '\\\\N'),'yyyy/MM/dd'),'yyyy-MM')";
+
+        String translated = CrestSqlFunctionTranslator.translate(sql, datasource("mysql"));
+
+        assertFalse(translated.contains("DE_"));
+        assertEquals(
+                "SELECT "
+                        + "DATE_FORMAT(STR_TO_DATE(NULLIF(NULLIF(t.`f_version_release_day`, 'null'), '\\\\N'), '%Y/%m/%d'), '%Y-%m') AS release_month, "
+                        + "COUNT(DISTINCT t.`f_project_version`) AS version_count, "
+                        + "SUM(CAST(NULLIF(NULLIF(t.`f_dev_workload`, 'null'), '') AS DECIMAL(26,8))) AS workload_sum, "
+                        + "AVG(CAST(NULLIF(NULLIF(t.`f_req_to_project_final_days`, 'NULL'), '\\\\N') AS DECIMAL(26,8))) AS final_days_avg, "
+                        + "SUM(CASE WHEN CAST(NULLIF(t.`f_req_to_project_final_days`, '') AS DECIMAL(26,8)) > CAST(NULLIF(t.`f_threshold`, '') AS DECIMAL(26,8)) THEN 1 ELSE 0 END) AS risk_count "
+                        + "FROM t "
+                        + "WHERE STR_TO_DATE(NULLIF(NULLIF(t.`f_version_release_day`, 'null'), '\\\\N'), '%Y/%m/%d') IS NOT NULL "
+                        + "GROUP BY DATE_FORMAT(STR_TO_DATE(NULLIF(NULLIF(t.`f_version_release_day`, 'null'), '\\\\N'), '%Y/%m/%d'), '%Y-%m')",
+                translated
+        );
+    }
+
+    @Test
     public void mysqlTranslationPreservesMysqlFormatsAndHandlesBacktickSchemaQualifier() {
         String sql = "SELECT `crest`.de_str_to_date(t.`day`,'%Y-%m-%d') AS day_value, "
                 + "DE_FROM_UNIXTIME(t.`epoch_seconds`) AS epoch_value FROM t";

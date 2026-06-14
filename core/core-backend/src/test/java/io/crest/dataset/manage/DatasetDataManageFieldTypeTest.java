@@ -188,6 +188,70 @@ class DatasetDataManageFieldTypeTest {
     }
 
     @Test
+    void transFieldsHandlesWideRequirementConversionMatrixWithNullableExcelTypes() {
+        Object[][] fieldCases = {
+                {"项目编号", "f_project_code", "TEXT", "TEXT", 0, 0, "d"},
+                {"项目类型", "f_project_type", "TEXT", "TEXT", 0, 0, "d"},
+                {"项目级别", "f_project_level", "TEXT", "TEXT", 0, 0, "d"},
+                {"项目经理", "f_project_manager", "TEXT", "TEXT", 0, 0, "d"},
+                {"项目状态", "f_project_status", "TEXT", "TEXT", 0, 0, "d"},
+                {"项目规模", "f_project_size", "TEXT", "TEXT", 0, 0, "d"},
+                {"归属处室", "f_department", "TEXT", "TEXT", 0, 0, "d"},
+                {"开发预估工作量", "f_dev_workload", "DOUBLE", "DOUBLE", 3, 3, "q"},
+                {"架构师评估工作量", "f_arch_workload", "DOUBLE", "DOUBLE", 3, 3, "q"},
+                {"项目版本", "f_project_version", "TEXT", "TEXT", 0, 0, "d"},
+                {"发版类型", "f_release_type", "TEXT", "TEXT", 0, 0, "d"},
+                {"项目版本投产时间", "f_version_release_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"项目版本提测时间", "f_version_test_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"项目首次投产日期", "f_project_first_release_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"项目最终投产日期", "f_project_final_release_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"交付物名称", "f_deliverable_name", "TEXT", "TEXT", 0, 0, "d"},
+                {"验收测试报告提交时间", "f_report_submit_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"项目暂停时间", "f_project_pause_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"项目恢复时间", "f_project_resume_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"需求标题", "f_requirement_title", "TEXT", "TEXT", 0, 0, "d"},
+                {"需求编号", "f_requirement_code", "TEXT", "TEXT", 0, 0, "d"},
+                {"需求状态", "f_requirement_status", "TEXT", "TEXT", 0, 0, "d"},
+                {"范围变更时间", "f_scope_change_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"立项通过时间", "f_approval_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"需求立项时间", "f_requirement_start_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"需求提出部门审批日期", "f_department_approval_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"需求首次投产时间", "f_requirement_first_release_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"需求确认日期", "f_requirement_confirm_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"需求受理日期", "f_requirement_accept_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"需求分析完成日期", "f_analysis_done_day", "TEXT", "TEXT", 1, 0, "d"},
+                {"暂停时长", "f_pause_days", "LONG", "LONG", 2, 2, "q"},
+                {"项目暂停时长", "f_project_pause_days", "LONG", "LONG", 2, 2, "q"},
+                {"需求提出到项目首投产天数", "f_req_to_project_first_days", "LONG", "LONG", 2, 2, "q"},
+                {"需求提出到项目终投产天数", "f_req_to_project_final_days", "LONG", "LONG", 2, 2, "q"},
+                {"需求确认到项目首投产天数", "f_confirm_to_project_first_days", "LONG", "LONG", 2, 2, "q"},
+                {"需求确认到项目终投产天数", "f_confirm_to_project_final_days", "LONG", "LONG", 2, 2, "q"},
+                {"需求受理到首次投产天数", "f_accept_to_first_days", "LONG", "LONG", 2, 2, "q"},
+                {"需求受理到最终投产天数", "f_accept_to_final_days", "LONG", "LONG", 2, 2, "q"},
+                {"需求分析完成到首次投产天数", "f_analysis_to_first_days", "LONG", "LONG", 2, 2, "q"},
+                {"需求分析完成到最终投产天数", "f_analysis_to_final_days", "LONG", "LONG", 2, 2, "q"},
+                {"需求首次投产到需求确认天数", "f_first_to_confirm_days", "LONG", "LONG", 2, 2, "q"},
+                {"空值列", "f_empty", null, null, null, null, "d"}
+        };
+        List<TableField> tableFields = java.util.Arrays.stream(fieldCases)
+                .map(item -> tableField((String) item[0], (String) item[1], (String) item[2], (String) item[3], (Integer) item[4], (Integer) item[5]))
+                .toList();
+
+        List<DatasetTableFieldDTO> fields = new DatasetDataManage().transFields(tableFields, true);
+
+        assertEquals(fieldCases.length, fields.size());
+        for (int i = 0; i < fieldCases.length; i++) {
+            DatasetTableFieldDTO field = fields.get(i);
+            assertEquals(fieldCases[i][0], field.getName());
+            assertEquals(fieldCases[i][1], field.getDbFieldName());
+            String expectedType = fieldCases[i][2] == null ? "TEXT" : (String) fieldCases[i][2];
+            int expectedFieldType = fieldCases[i][4] == null ? 0 : (Integer) fieldCases[i][4];
+            int expectedExtractedFieldType = fieldCases[i][5] == null ? 0 : (Integer) fieldCases[i][5];
+            assertResolvedField(field, expectedType, expectedFieldType, expectedExtractedFieldType, (String) fieldCases[i][6]);
+        }
+    }
+
+    @Test
     void transFieldsKeepsNullTypeColumnsAsTextUntilUserChoosesConversion() {
         TableField nullOnly = tableField("空值列", "f_empty", null, null, null, null);
 
