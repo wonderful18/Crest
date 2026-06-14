@@ -13,7 +13,9 @@ import io.crest.extensions.datasource.model.SQLMeta;
 import io.crest.extensions.datasource.utils.SqlPlaceholderUtils;
 import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
 import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
+import io.crest.extensions.view.dto.ChartViewDTO;
 import io.crest.extensions.view.dto.ChartViewFieldDTO;
+import io.crest.extensions.view.dto.ChartViewFieldFilterDTO;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.MysqlSqlDialect;
@@ -25,6 +27,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -256,6 +259,82 @@ class ProviderSqlCompatibilityTest {
     }
 
     @Test
+    void wideExcelDatasetPreviewSqlNormalizesEveryConvertedFieldAndExplicitSorts() {
+        Provider provider = mock(Provider.class, CALLS_REAL_METHODS);
+        DatasourceSchemaDTO datasource = new DatasourceSchemaDTO();
+        datasource.setId(1L);
+        datasource.setType("mysql");
+        Map<Long, DatasourceSchemaDTO> dsMap = Map.of(1L, datasource);
+        SQLMeta sqlMeta = new SQLMeta();
+        List<DatasetTableFieldDTO> fields = representativeExcelConversionFields();
+        Table2SQLObj.table2sqlobj(sqlMeta, null, tableSqlFor(fields), false);
+
+        Field2SQLObj.field2sqlObj(sqlMeta, fields, fields, false, dsMap, List.of(), null, null);
+        List<ChartSortFieldDTO> sortFields = List.of(
+                sortField(findField(fields, "f_release_day"), "asc"),
+                sortField(findField(fields, "f_dev_workload"), "desc"),
+                sortField(findField(fields, "f_req_final_days"), "desc")
+        );
+        Order2SQLObj.getOrders(sqlMeta, sortFields, fields, false, dsMap, List.of(), null, null);
+        String generatedSql = SQLProvider.createQuerySQLWithLimit(sqlMeta, false, true, false, 0, 1000);
+        String rebuiltSql = provider.rebuildSQL(generatedSql, sqlMeta, false, dsMap, true);
+
+        assertFalse(rebuiltSql.contains("DE_"), rebuiltSql);
+        assertTrue(rebuiltSql.contains("ORDER BY"), rebuiltSql);
+        assertTrue(rebuiltSql.contains("LIMIT 1000 OFFSET 0"), rebuiltSql);
+        for (DatasetTableFieldDTO field : convertedFields(fields)) {
+            assertContainsNormalizedTextOrigin(rebuiltSql, "`t_a_0`.`" + field.getEngineFieldName() + "`");
+        }
+        assertTrue(rebuiltSql.contains("STR_TO_DATE(CASE WHEN `t_a_0`.`f_release_day` IS NULL THEN NULL"), rebuiltSql);
+        assertTrue(rebuiltSql.contains("CAST(CASE WHEN `t_a_0`.`f_dev_workload` IS NULL THEN NULL"), rebuiltSql);
+        assertTrue(rebuiltSql.contains("CAST(CASE WHEN `t_a_0`.`f_req_final_days` IS NULL THEN NULL"), rebuiltSql);
+    }
+
+    @Test
+    void chartSqlNormalizesWideExcelFieldsAcrossDimensionsMetricsFiltersAndSorts() {
+        Provider provider = mock(Provider.class, CALLS_REAL_METHODS);
+        DatasourceSchemaDTO datasource = new DatasourceSchemaDTO();
+        datasource.setId(1L);
+        datasource.setType("mysql");
+        Map<Long, DatasourceSchemaDTO> dsMap = Map.of(1L, datasource);
+        List<DatasetTableFieldDTO> originFields = representativeExcelConversionFields();
+        SQLMeta sqlMeta = new SQLMeta();
+        Table2SQLObj.table2sqlobj(sqlMeta, null, tableSqlFor(originFields), false);
+
+        ChartViewFieldDTO monthDimension = chartField(findField(originFields, "f_release_day"));
+        monthDimension.setDateStyle("y_M");
+        monthDimension.setDatePattern("-");
+        monthDimension.setSort("asc");
+        ChartViewFieldDTO departmentDimension = chartField(findField(originFields, "f_department"));
+        ChartViewFieldDTO finalDaysMetric = chartField(findField(originFields, "f_req_final_days"));
+        finalDaysMetric.setSummary("avg");
+        finalDaysMetric.setFilter(List.of(chartFilter("gt", "30")));
+        ChartViewFieldDTO workloadMetric = chartField(findField(originFields, "f_dev_workload"));
+        workloadMetric.setSummary("sum");
+        workloadMetric.setFilter(List.of(chartFilter("in", "10.5,20")));
+        ChartViewFieldDTO releaseCountMetric = chartField(findField(originFields, "f_release_count"));
+        releaseCountMetric.setSummary("sum");
+
+        Dimension2SQLObj.dimension2sqlObj(sqlMeta, List.of(monthDimension, departmentDimension), originFields, false, dsMap, List.of(), null, null);
+        Quota2SQLObj.quota2sqlObj(sqlMeta, List.of(finalDaysMetric, workloadMetric, releaseCountMetric), originFields, false, dsMap, List.of(), null, null);
+        ChartViewDTO view = new ChartViewDTO();
+        view.setType("bar");
+        view.setResultMode("all");
+        String chartSql = SQLProvider.createQuerySQL(sqlMeta, true, true, view);
+        String rebuiltSql = provider.rebuildSQL(chartSql, sqlMeta, false, dsMap, true);
+
+        assertFalse(rebuiltSql.contains("DE_"), rebuiltSql);
+        assertContainsNormalizedTextOrigin(rebuiltSql, "`t_a_0`.`f_release_day`");
+        assertContainsNormalizedTextOrigin(rebuiltSql, "`t_a_0`.`f_req_final_days`");
+        assertContainsNormalizedTextOrigin(rebuiltSql, "`t_a_0`.`f_dev_workload`");
+        assertContainsNormalizedTextOrigin(rebuiltSql, "`t_a_0`.`f_release_count`");
+        assertTrue(rebuiltSql.contains("ORDER BY"), rebuiltSql);
+        assertTrue(rebuiltSql.contains("`f_ax_0`"), rebuiltSql);
+        assertTrue(rebuiltSql.contains("`f_ay_0` > 30"), rebuiltSql);
+        assertTrue(rebuiltSql.contains("`f_ay_1` IN (10.5, 20)"), rebuiltSql);
+    }
+
+    @Test
     void chartSqlNormalizesTextPlaceholdersBeforeDateBucketingAndMetricAggregation() {
         DatasourceSchemaDTO datasource = new DatasourceSchemaDTO();
         datasource.setId(1L);
@@ -379,23 +458,100 @@ class ProviderSqlCompatibilityTest {
                 arguments("项目首次投产日期", "f_first_release_day", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
                 arguments("项目最终投产日期", "f_final_release_day", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
                 arguments("验收测试报告提交时间", "f_acceptance_report_time", FieldTypeConstants.TIME, "yyyy/MM/dd HH:mm:ss", "STR_TO_DATE("),
+                arguments("项目暂停时间", "f_project_pause_start", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
+                arguments("项目恢复时间", "f_project_pause_end", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
+                arguments("范围变更时间", "f_scope_change_day", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
+                arguments("立项通过时间", "f_project_approval_day", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
+                arguments("需求立项时间", "f_requirement_project_day", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
+                arguments("需求提出部门审批日期", "f_requirement_dept_approval_day", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
+                arguments("需求首次投产时间", "f_requirement_first_release_day", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
                 arguments("需求确认日期", "f_requirement_confirm_day", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
                 arguments("需求受理日期", "f_requirement_accept_day", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
+                arguments("需求分析完成日期", "f_requirement_analysis_done_day", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
                 arguments("开发预估工作量", "f_dev_workload", FieldTypeConstants.FLOAT, null, "CAST("),
                 arguments("架构师评估工作量", "f_arch_workload", FieldTypeConstants.FLOAT, null, "CAST("),
                 arguments("平均耗时", "f_avg_days", FieldTypeConstants.FLOAT, null, "CAST("),
+                arguments("均值指标", "f_mean_value", FieldTypeConstants.FLOAT, null, "CAST("),
                 arguments("阈值", "f_threshold", FieldTypeConstants.FLOAT, null, "CAST("),
                 arguments("金额", "f_amount", FieldTypeConstants.FLOAT, null, "CAST("),
+                arguments("业务审批耗时", "f_business_approval_days", FieldTypeConstants.FLOAT, null, "CAST("),
                 arguments("暂停时长", "f_pause_days", FieldTypeConstants.INTEGER, null, "CAST("),
                 arguments("项目暂停时长", "f_project_pause_days", FieldTypeConstants.INTEGER, null, "CAST("),
                 arguments("需求提出到项目首投产天数", "f_req_first_days", FieldTypeConstants.INTEGER, null, "CAST("),
                 arguments("需求提出到项目终投产天数", "f_req_final_days", FieldTypeConstants.INTEGER, null, "CAST("),
                 arguments("需求确认到项目首投产天数", "f_confirm_first_days", FieldTypeConstants.INTEGER, null, "CAST("),
                 arguments("需求确认到项目终投产天数", "f_confirm_final_days", FieldTypeConstants.INTEGER, null, "CAST("),
+                arguments("需求受理到首次投产天数", "f_accept_first_days", FieldTypeConstants.INTEGER, null, "CAST("),
+                arguments("需求受理到最终投产天数", "f_accept_final_days", FieldTypeConstants.INTEGER, null, "CAST("),
+                arguments("需求分析完成到首次投产天数", "f_analysis_first_days", FieldTypeConstants.INTEGER, null, "CAST("),
+                arguments("需求分析完成到最终投产天数", "f_analysis_final_days", FieldTypeConstants.INTEGER, null, "CAST("),
                 arguments("需求首次投产到需求确认天数", "f_first_confirm_days", FieldTypeConstants.INTEGER, null, "CAST("),
                 arguments("投产版本数", "f_release_count", FieldTypeConstants.INTEGER, null, "CAST("),
-                arguments("超期数量", "f_overdue_count", FieldTypeConstants.INTEGER, null, "CAST(")
+                arguments("超期数量", "f_overdue_count", FieldTypeConstants.INTEGER, null, "CAST("),
+                arguments("序号", "f_row_no", FieldTypeConstants.INTEGER, null, "CAST(")
         );
+    }
+
+    private List<DatasetTableFieldDTO> representativeExcelConversionFields() {
+        return List.of(
+                field(1L, "项目编号", "f_project_code", FieldTypeConstants.STRING, FieldTypeConstants.STRING, null),
+                field(2L, "需求编号", "f_requirement_code", FieldTypeConstants.STRING, FieldTypeConstants.STRING, null),
+                field(3L, "归属处室", "f_department", FieldTypeConstants.STRING, FieldTypeConstants.STRING, null),
+                field(4L, "项目版本投产时间", "f_release_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(5L, "项目版本提测时间", "f_test_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy-MM-dd"),
+                field(6L, "项目首次投产日期", "f_first_release_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(7L, "项目最终投产日期", "f_final_release_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(8L, "验收测试报告提交时间", "f_acceptance_report_time", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd HH:mm:ss"),
+                field(9L, "项目暂停时间", "f_project_pause_start", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(10L, "项目恢复时间", "f_project_pause_end", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(11L, "范围变更时间", "f_scope_change_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(12L, "立项通过时间", "f_project_approval_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(13L, "需求立项时间", "f_requirement_project_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(14L, "需求提出部门审批日期", "f_requirement_dept_approval_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(15L, "需求首次投产时间", "f_requirement_first_release_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(16L, "需求确认日期", "f_requirement_confirm_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(17L, "需求受理日期", "f_requirement_accept_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(18L, "需求分析完成日期", "f_requirement_analysis_done_day", FieldTypeConstants.TIME, FieldTypeConstants.STRING, "yyyy/MM/dd"),
+                field(19L, "开发预估工作量", "f_dev_workload", FieldTypeConstants.FLOAT, FieldTypeConstants.STRING, null),
+                field(20L, "架构师评估工作量", "f_arch_workload", FieldTypeConstants.FLOAT, FieldTypeConstants.STRING, null),
+                field(21L, "平均耗时", "f_avg_days", FieldTypeConstants.FLOAT, FieldTypeConstants.STRING, null),
+                field(22L, "阈值", "f_threshold", FieldTypeConstants.FLOAT, FieldTypeConstants.STRING, null),
+                field(23L, "金额", "f_amount", FieldTypeConstants.FLOAT, FieldTypeConstants.STRING, null),
+                field(24L, "业务审批耗时", "f_business_approval_days", FieldTypeConstants.FLOAT, FieldTypeConstants.STRING, null),
+                field(25L, "暂停时长", "f_pause_days", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(26L, "项目暂停时长", "f_project_pause_days", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(27L, "需求提出到项目首投产天数", "f_req_first_days", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(28L, "需求提出到项目终投产天数", "f_req_final_days", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(29L, "需求确认到项目首投产天数", "f_confirm_first_days", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(30L, "需求确认到项目终投产天数", "f_confirm_final_days", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(31L, "需求受理到首次投产天数", "f_accept_first_days", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(32L, "需求受理到最终投产天数", "f_accept_final_days", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(33L, "需求分析完成到首次投产天数", "f_analysis_first_days", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(34L, "需求分析完成到最终投产天数", "f_analysis_final_days", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(35L, "需求首次投产到需求确认天数", "f_first_confirm_days", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(36L, "投产版本数", "f_release_count", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null),
+                field(37L, "超期数量", "f_overdue_count", FieldTypeConstants.INTEGER, FieldTypeConstants.STRING, null)
+        );
+    }
+
+    private List<DatasetTableFieldDTO> convertedFields(List<DatasetTableFieldDTO> fields) {
+        return fields.stream()
+                .filter(field -> !FieldTypeConstants.STRING.equals(field.getFieldType()))
+                .toList();
+    }
+
+    private String tableSqlFor(List<DatasetTableFieldDTO> fields) {
+        String selectFields = fields.stream()
+                .map(field -> "`" + field.getEngineFieldName() + "`")
+                .collect(Collectors.joining(", "));
+        return "(SELECT " + selectFields + " FROM `excel_table`)";
+    }
+
+    private DatasetTableFieldDTO findField(List<DatasetTableFieldDTO> fields, String engineFieldName) {
+        return fields.stream()
+                .filter(field -> engineFieldName.equals(field.getEngineFieldName()))
+                .findFirst()
+                .orElseThrow();
     }
 
     private DatasetTableFieldDTO field(Long id, String name, String engineFieldName, int fieldType, int extractedFieldType, String dateFormat) {
@@ -413,6 +569,10 @@ class ProviderSqlCompatibilityTest {
     }
 
     private ChartSortFieldDTO sortField(DatasetTableFieldDTO source) {
+        return sortField(source, "asc");
+    }
+
+    private ChartSortFieldDTO sortField(DatasetTableFieldDTO source, String direction) {
         ChartSortFieldDTO field = new ChartSortFieldDTO();
         field.setId(source.getId());
         field.setName(source.getName());
@@ -423,7 +583,19 @@ class ProviderSqlCompatibilityTest {
         field.setFieldType(source.getFieldType());
         field.setExtractedFieldType(source.getExtractedFieldType());
         field.setDateFormat(source.getDateFormat());
+        field.setOrderDirection(direction);
         return field;
+    }
+
+    private ChartViewFieldDTO chartField(DatasetTableFieldDTO source) {
+        return chartField(
+                source.getId(),
+                source.getName(),
+                source.getEngineFieldName(),
+                source.getFieldType(),
+                source.getExtractedFieldType(),
+                source.getDateFormat()
+        );
     }
 
     private ChartViewFieldDTO chartField(Long id, String name, String engineFieldName, int fieldType, int extractedFieldType, String dateFormat) {
@@ -438,6 +610,13 @@ class ProviderSqlCompatibilityTest {
         field.setExtractedFieldType(extractedFieldType);
         field.setDateFormat(dateFormat);
         return field;
+    }
+
+    private ChartViewFieldFilterDTO chartFilter(String term, String value) {
+        ChartViewFieldFilterDTO filter = new ChartViewFieldFilterDTO();
+        filter.setTerm(term);
+        filter.setValue(value);
+        return filter;
     }
 
     private void assertContainsNormalizedTextOrigin(String sql, String origin) {
