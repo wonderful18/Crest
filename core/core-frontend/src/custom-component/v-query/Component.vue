@@ -35,6 +35,7 @@ import { comInfo } from './com-info'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import StyleInject from './StyleInject.vue'
 import { getKeyList, reRenderAll } from '@/custom-component/v-query/QueryUtils'
+// 查询组件运行态入参，包含组件配置、画布元素、显示位置和缩放比例。
 const props = defineProps({
   view: {
     type: Object,
@@ -66,11 +67,14 @@ const props = defineProps({
 })
 const { element, view, scale } = toRefs(props)
 const { t } = useI18n()
+// 查询组件根节点引用，用于写入组件尺寸 CSS 变量。
 const vQueryRef = ref()
 const dvMainStore = dvMainStoreWithOut()
 const { curComponent, canvasViewInfo, mobileInPc, firstLoadMap, editMode } =
   storeToRefs(dvMainStore)
+// 当前组件是否处于可编辑状态，画布点击其它组件后会关闭。
 const canEdit = ref(false)
+// 查询条件配置弹窗引用。
 const queryConfig = ref()
 const defaultStyle = {
   border: '',
@@ -100,11 +104,13 @@ const defaultStyle = {
   btnColor: '#3B82F6',
   labelColorBtn: '#ffffff'
 }
+// 查询组件自定义样式状态，由画布样式配置和组件局部配置共同驱动。
 const customStyle = reactive({ ...defaultStyle })
 const snapshotStore = snapshotStoreWithOut()
 let instanceElMessage = null
 let closeTime = null
 
+// 显示必填错误提示，并自动关闭上一条同类提示。
 const closeElMessage = requiredName => {
   if (instanceElMessage) {
     instanceElMessage.close()
@@ -121,6 +127,7 @@ const closeElMessage = requiredName => {
     instanceElMessage.close()
   }, 2000)
 }
+// 查询按钮文字样式，跟随自定义按钮字体和颜色配置。
 const btnStyle = computed(() => {
   const style = {
     color: customStyle.labelColorBtn
@@ -140,6 +147,7 @@ const btnStyle = computed(() => {
   return style
 })
 
+// 将 rgba 颜色按白色背景合成为十六进制颜色，供 less 颜色函数计算。
 function rgbaTo16color(color) {
   let val = color
     .replace(/rgba?\(/, '')
@@ -158,6 +166,7 @@ function rgbaTo16color(color) {
   )
 }
 
+// 查询按钮悬停和按下颜色，基于主色自动生成。
 const btnHoverStyle = computed(() => {
   let btnColor = customStyle.btnColor
   if (customStyle.btnColor.startsWith('rgb')) {
@@ -187,18 +196,22 @@ const btnHoverStyle = computed(() => {
   }
 })
 
+// 查询按钮主色。
 const btnPrimaryColor = computed(() => {
   return btnHoverStyle.value.rawColor
 })
 
+// 查询按钮悬停色。
 const btnPrimaryHoverColor = computed(() => {
   return btnHoverStyle.value.hoverColor
 })
 
+// 查询按钮按下色。
 const btnPrimaryActiveColor = computed(() => {
   return btnHoverStyle.value.activeColor
 })
 
+// 多选标签背景色，按组件背景色生成更浅的可读颜色。
 const tagColor = computed(() => {
   if (customStyle.background && !customStyle.background.toLowerCase().includes('#ffffff')) {
     return colorFunctions
@@ -210,6 +223,7 @@ const tagColor = computed(() => {
   return '#f0f2f5'
 })
 
+// 朴素按钮样式，保留透明背景并使用自定义按钮主色。
 const btnPlainStyle = computed(() => {
   const style = {
     backgroundColor: 'transparent',
@@ -230,12 +244,14 @@ const btnPlainStyle = computed(() => {
 
   return style
 })
+// 当前画布组件视图中的查询组件样式配置。
 const curComponentView = computed(() => {
   return (canvasViewInfo.value[element.value.id] || {}).customStyle
 })
 
 const { datasetFieldList } = comInfo()
 
+// 将外部样式配置写入本地响应式样式状态，并记录快照。
 const setCustomStyle = val => {
   const {
     borderColor,
@@ -298,6 +314,7 @@ const setCustomStyle = val => {
   snapshotStore.recordSnapshotCache('setCustomStyle')
 }
 
+// 监听页面级视图样式配置变化，刷新查询组件样式。
 watch(
   () => view.value,
   val => {
@@ -310,6 +327,7 @@ watch(
   }
 )
 
+// 监听当前组件局部样式配置变化，刷新查询组件样式。
 watch(
   () => curComponentView.value,
   val => {
@@ -321,9 +339,11 @@ watch(
     immediate: true
   }
 )
+// 查询条件运行态列表。
 const list = ref([])
 let oldList = []
 let isResetData = false
+// 同步画布元素中的查询条件列表，并保留重置前的基准副本。
 watch(
   () => props.element.propValue,
   () => {
@@ -338,6 +358,7 @@ watch(
     immediate: true
   }
 )
+// 画布点击其它组件时退出当前查询组件编辑态。
 const onComponentClick = () => {
   if (curComponent.value.id !== element.value.id) {
     canEdit.value = false
@@ -345,6 +366,7 @@ const onComponentClick = () => {
 }
 
 const { emitter } = useEmitt()
+// 首次挂载时尚未完成默认值回填的选择器 id 列表。
 const unMountSelect = shallowRef([])
 onBeforeMount(() => {
   unMountSelect.value = list.value.map(ele => ele.id)
@@ -355,10 +377,12 @@ onBeforeMount(() => {
   })
 })
 
+// 选择器完成默认值同步后，从未挂载列表中移除。
 const releaseSelect = id => {
   unMountSelect.value = unMountSelect.value.filter(ele => ele !== id)
 }
 
+// 针对受影响条件补齐必填默认值，避免级联刷新后出现空必填条件。
 const fillRequireVal = arr => {
   element.value.propValue?.forEach(next => {
     if (arr.some(itx => (next.checkedFields || []).includes(itx)) && next.required) {
@@ -400,6 +424,7 @@ const fillRequireVal = arr => {
     }
   })
 }
+// 根据指定查询条件触发关联图表刷新，并在刷新前校验必填和数值范围。
 const queryDataForId = id => {
   let requiredName = ''
   let numName = ''
@@ -470,10 +495,12 @@ const queryDataForId = id => {
     emitter.emit(`query-data-${ele}`)
   })
 }
+// 获取查询条件控件宽度，提供给子选择器计算运行态宽度。
 const getQueryConditionWidth = () => {
   return customStyle.queryConditionWidth
 }
 
+// 获取级联关系列表，并把首项默认值状态同步到级联节点。
 const getCascadeList = () => {
   const { propValue, cascade = [] } = props.element
   const defaultValueFirstItemMap = (propValue || []).reduce((pre, next) => {
@@ -488,17 +515,20 @@ const getCascadeList = () => {
   return cascade
 }
 
+// 提供给子组件的占位符显示配置。
 const getPlaceholder = computed(() => {
   return {
     placeholderShow: customStyle.placeholderShow
   }
 })
 
+// 子组件值变化后的查询确认入口，带确认按钮时延迟到按钮点击触发。
 const isConfirmSearch = (id, disabledFirstItem = false) => {
   if (componentWithSure.value && !disabledFirstItem) return
   queryDataForId(id)
 }
 
+// 树形条件使用的查询触发入口，只校验数值范围和半填范围，不重复提示普通必填。
 const isConfirmSearchNoRequiredName = id => {
   if (componentWithSure.value) return
   let requiredName = ''
@@ -541,6 +571,7 @@ const isConfirmSearchNoRequiredName = id => {
   })
 }
 
+// 向查询条件子组件提供运行态服务和级联上下文。
 provide('is-confirm-search', isConfirmSearch)
 provide('unmount-select', unMountSelect)
 provide('release-unmount-select', releaseSelect)
@@ -563,6 +594,7 @@ onBeforeUnmount(() => {
   eventBus.off('componentClick', onComponentClick)
 })
 
+// 根据当前画布字段关系修正查询条件绑定，处理自动条件和失效字段映射。
 const updateQueryCriteria = () => {
   if (dvMainStore.mobileInPc && !isMobile()) return
   Array.isArray(element.value.propValue) &&
@@ -612,10 +644,12 @@ onMounted(() => {
   }
 })
 
+// 拖拽悬停占位处理，模板通过 prevent.stop 阻止浏览器默认行为。
 const dragover = () => {
-  // do
+  // 当前组件只需要接收 drop 事件，悬停阶段不改变状态。
 }
 
+// 从字段拖拽数据生成查询条件，并记录快照。
 const drop = e => {
   const componentInfoArr: ComponentInfo[] = JSON.parse(e.dataTransfer.getData('dimension') || '{}')
   componentInfoArr.forEach(componentInfo => {
@@ -642,10 +676,12 @@ const drop = e => {
   snapshotStore.recordSnapshotCache('drop')
 }
 
+// 打开指定查询条件的配置弹窗。
 const editeQueryConfig = (queryId: string) => {
   queryConfig.value.setCondition(queryId)
 }
 
+// 编辑查询条件入口，没有条件时先新增一个条件。
 const editQueryCriteria = () => {
   if (!list.value.length) {
     addCriteriaConfigOut()
@@ -654,10 +690,12 @@ const editQueryCriteria = () => {
   editeQueryConfig(list.value[0].id)
 }
 
+// 从外部新增查询条件，并立即进入配置状态。
 const addCriteriaConfigOut = () => {
   queryConfig.value.setConditionOut()
 }
 
+// 删除指定查询条件，记录快照并触发关联组件重渲染。
 const delQueryConfig = index => {
   const com = cloneDeep(unref(list))
   list.value.splice(index, 1)
@@ -666,6 +704,7 @@ const delQueryConfig = index => {
   reRenderAll(com, cloneDeep(unref(list)))
 }
 
+// 将查询条件恢复到上一次配置基准，并重算动态时间默认值和级联值。
 const resetData = () => {
   isResetData = true
   element.value.propValue = []
@@ -764,6 +803,7 @@ const resetData = () => {
   })
 }
 
+// 清空所有可见查询条件的运行态值，并按按钮模式决定是否立即查询。
 const clearData = () => {
   ;(props.element.cascade || []).forEach(ele => {
     ele.forEach(item => {
@@ -794,14 +834,17 @@ const clearData = () => {
   }, [])
   !componentWithSure.value && queryData()
 }
+// 当前可见的查询条件列表。
 const listVisible = computed(() => {
   return list.value.filter(itx => itx.visible)
 })
 
+// 当前查询组件是否展示确认按钮，决定条件变化后是否立即查询。
 const componentWithSure = computed(() => {
   return customStyle.btnList.includes('sure')
 })
 
+// 从有确认按钮切换为无确认按钮时，立即按当前条件触发查询。
 watch(
   () => componentWithSure.value,
   (val, oldVal) => {
@@ -814,14 +857,17 @@ watch(
   }
 )
 
+// 单个查询项选择框高度变量。
 const boxWidth = computed(() => {
   return `${customStyle.placeholderSize}px`
 })
 
+// 单个查询项控件高度变量。
 const boxHeight = computed(() => {
   return `${customStyle.queryConditionHeight || 32}px`
 })
 
+// 按所有查询条件触发关联图表刷新，并校验必填和数值范围。
 const queryData = () => {
   let requiredName = ''
   let numName = ''
@@ -892,6 +938,7 @@ const queryData = () => {
     emitter.emit(`query-data-${ele}`)
   })
 }
+// 查询组件标题样式。
 const titleStyle = computed(() => {
   return {
     textAlign: customStyle.titleLayout || 'left',
@@ -899,6 +946,7 @@ const titleStyle = computed(() => {
   } as CSSProperties
 })
 
+// 查询条件标签样式，跟随字体和颜色配置。
 const labelStyle = computed(() => {
   const style = {
     fontSize: customStyle.fontSize + 'px',
@@ -918,22 +966,26 @@ const labelStyle = computed(() => {
   return style
 })
 
+// 查询条件布局方式，隐藏标签时固定为横向布局。
 const comLayout = computed(() => {
   return customStyle.labelShow ? customStyle.layout : 'horizontal'
 })
 
+// 非横向布局时为查询控件预留标签高度。
 const paddingTop = computed<CSSProperties>(() => {
   return {
     paddingTop: comLayout.value !== 'horizontal' ? customStyle.nameboxSpacing + 22 + 'px' : '0'
   }
 })
 
+// 横向布局时为标签和控件之间预留间距。
 const marginRight = computed<CSSProperties>(() => {
   return {
     marginRight: comLayout.value === 'horizontal' ? customStyle.nameboxSpacing + 'px' : '8px'
   }
 })
 
+// 查询组件整体缩放样式，移动端使用 transform 保持交互区域准确。
 const autoStyle = computed(() => {
   if (isISOMobile()) {
     return {
