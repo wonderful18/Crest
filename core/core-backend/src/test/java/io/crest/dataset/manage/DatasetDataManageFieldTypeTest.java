@@ -128,6 +128,65 @@ class DatasetDataManageFieldTypeTest {
         assertResolvedField(fields.get(0), "TEXT", 1, 0, "d");
     }
 
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "项目版本投产时间|f_version_release_day|TEXT|TEXT|1|0|d",
+            "项目版本提测时间|f_version_test_day|TEXT|TEXT|1|0|d",
+            "需求确认日期|f_confirm_day|TEXT|TEXT|1|0|d",
+            "需求受理日期|f_accept_day|TEXT|TEXT|1|0|d",
+            "需求分析完成日期|f_analysis_done_day|TEXT|TEXT|1|0|d",
+            "开发预估工作量|f_dev_workload|TEXT|TEXT|3|0|q",
+            "架构师评估工作量|f_arch_workload|TEXT|TEXT|3|0|q",
+            "暂停时长|f_pause_days|TEXT|TEXT|2|0|q",
+            "项目暂停时长|f_project_pause_days|TEXT|TEXT|2|0|q",
+            "需求提出到项目终投产天数|f_req_to_final_days|TEXT|TEXT|2|0|q",
+            "需求首次投产到需求确认天数|f_first_to_confirm_days|TEXT|TEXT|2|0|q",
+            "空值列|f_empty|TEXT|TEXT|0|0|d"
+    })
+    void transFieldsPreservesManualConversionsFromTextBackedExcelColumns(
+            String name,
+            String dbFieldName,
+            String type,
+            String nativeType,
+            Integer fieldType,
+            Integer extractedFieldType,
+            String groupType
+    ) {
+        TableField field = tableField(name, dbFieldName, type, nativeType, fieldType, extractedFieldType);
+
+        List<DatasetTableFieldDTO> fields = new DatasetDataManage().transFields(List.of(field), true);
+
+        assertResolvedField(fields.get(0), type, fieldType, extractedFieldType, groupType);
+    }
+
+    @Test
+    void transFieldsHandlesRepresentativeRequirementProductionFieldListWithNullOnlyColumns() {
+        List<TableField> tableFields = List.of(
+                tableField("项目编号", "f_project_code", "TEXT", "TEXT", 0, 0),
+                tableField("项目版本投产时间", "f_release_day", "TEXT", "TEXT", 1, 0),
+                tableField("开发预估工作量", "f_dev_workload", "DOUBLE", "DOUBLE", 3, 3),
+                tableField("架构师评估工作量", "f_arch_workload", "DOUBLE", "DOUBLE", 3, 3),
+                tableField("暂停时长", "f_pause_days", "LONG", "LONG", 2, 2),
+                tableField("需求提出到项目终投产天数", "f_req_to_final_days", "LONG", "LONG", 2, 2),
+                tableField("交付物名称", "f_deliverable_name", "TEXT", "TEXT", 0, 0),
+                tableField("项目恢复时间", "f_project_resume_day", "TEXT", "TEXT", 1, 0),
+                tableField("说明", "f_note", null, null, null, null)
+        );
+
+        List<DatasetTableFieldDTO> fields = new DatasetDataManage().transFields(tableFields, true);
+
+        assertEquals(9, fields.size());
+        assertResolvedField(fields.get(0), "TEXT", 0, 0, "d");
+        assertResolvedField(fields.get(1), "TEXT", 1, 0, "d");
+        assertResolvedField(fields.get(2), "DOUBLE", 3, 3, "q");
+        assertResolvedField(fields.get(3), "DOUBLE", 3, 3, "q");
+        assertResolvedField(fields.get(4), "LONG", 2, 2, "q");
+        assertResolvedField(fields.get(5), "LONG", 2, 2, "q");
+        assertResolvedField(fields.get(6), "TEXT", 0, 0, "d");
+        assertResolvedField(fields.get(7), "TEXT", 1, 0, "d");
+        assertResolvedField(fields.get(8), "TEXT", 0, 0, "d");
+    }
+
     @Test
     void transFieldsKeepsNullTypeColumnsAsTextUntilUserChoosesConversion() {
         TableField nullOnly = tableField("空值列", "f_empty", null, null, null, null);

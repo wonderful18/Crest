@@ -28,6 +28,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ExcelFieldNameTest {
@@ -562,6 +563,224 @@ class ExcelFieldNameTest {
     }
 
     @Test
+    void excelImportTreatsLiteralNullPlaceholdersAsMissingValuesWhenInferringTypes() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("空值占位符");
+            Row header = sheet.createRow(0);
+            String[] headers = {
+                    "项目编号",
+                    "开发预估工作量",
+                    "暂停时长",
+                    "项目版本投产时间",
+                    "需求提出到项目首投产天数",
+                    "说明"
+            };
+            for (int i = 0; i < headers.length; i++) {
+                header.createCell(i).setCellValue(headers[i]);
+            }
+
+            Row first = sheet.createRow(1);
+            first.createCell(0).setCellValue("A20210186");
+            first.createCell(1).setCellValue("199.00");
+            first.createCell(2).setCellValue("null");
+            first.createCell(3).setCellValue("2024/05/27");
+            first.createCell(4).setCellValue("NULL");
+            first.createCell(5).setCellValue("正常");
+
+            Row second = sheet.createRow(2);
+            second.createCell(0).setCellValue("A20210187");
+            second.createCell(1).setCellValue("null");
+            second.createCell(2).setCellValue("3");
+            second.createCell(3).setCellValue("null");
+            second.createCell(4).setCellValue("15");
+            second.createCell(5).setCellValue("\\N");
+
+            Row third = sheet.createRow(3);
+            third.createCell(0).setCellValue("A20210188");
+            third.createCell(1).setCellValue("200.50");
+            third.createCell(2).setCellValue("0");
+            third.createCell(3).setCellValue("2024/06/01");
+            third.createCell(4).setCellValue("-2");
+            third.createCell(5).setCellValue("包含 null 字样的正常说明");
+
+            ExcelSheetData dataSheet = parseWorkbook(workbook).get(0);
+
+            assertField(dataSheet, "项目编号", "TEXT", 0);
+            assertField(dataSheet, "开发预估工作量", "DOUBLE", 3);
+            assertField(dataSheet, "暂停时长", "LONG", 2);
+            assertField(dataSheet, "项目版本投产时间", "TEXT", 0);
+            assertField(dataSheet, "需求提出到项目首投产天数", "LONG", 2);
+            assertField(dataSheet, "说明", "TEXT", 0);
+            assertNull(dataSheet.getJsonArray().get(0).get("暂停时长"));
+            assertNull(dataSheet.getJsonArray().get(0).get("需求提出到项目首投产天数"));
+            assertNull(dataSheet.getJsonArray().get(1).get("开发预估工作量"));
+            assertNull(dataSheet.getJsonArray().get(1).get("项目版本投产时间"));
+            assertNull(dataSheet.getJsonArray().get(1).get("说明"));
+            assertEquals("200.50", dataSheet.getJsonArray().get(2).get("开发预估工作量"));
+        }
+    }
+
+    @Test
+    void excelImportInfersRepresentativeRequirementProductionExportWithManyNullableFields() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("需求投产明细");
+            Row header = sheet.createRow(0);
+            String[] headers = {
+                    "项目编号",
+                    "项目类型",
+                    "项目级别",
+                    "项目经理",
+                    "项目状态",
+                    "项目规模",
+                    "归属处室",
+                    "开发预估工作量",
+                    "架构师评估工作量",
+                    "项目版本",
+                    "发版类型",
+                    "项目版本投产时间",
+                    "项目版本提测时间",
+                    "项目首次投产日期",
+                    "项目最终投产日期",
+                    "交付物名称",
+                    "验收测试报告提交时间",
+                    "项目暂停时间",
+                    "项目恢复时间",
+                    "需求标题",
+                    "需求编号",
+                    "需求状态",
+                    "范围变更时间",
+                    "立项通过时间",
+                    "需求立项时间",
+                    "需求提出部门审批日期",
+                    "需求首次投产时间",
+                    "需求确认日期",
+                    "需求受理日期",
+                    "需求分析完成日期",
+                    "暂停时长",
+                    "项目暂停时长",
+                    "需求提出到项目首投产天数",
+                    "需求提出到项目终投产天数",
+                    "需求确认到项目首投产天数",
+                    "需求确认到项目终投产天数",
+                    "需求受理到首次投产天数",
+                    "需求受理到最终投产天数",
+                    "需求分析完成到首次投产天数",
+                    "需求分析完成到最终投产天数",
+                    "需求首次投产到需求确认天数"
+            };
+            for (int i = 0; i < headers.length; i++) {
+                header.createCell(i).setCellValue(headers[i]);
+            }
+
+            Row first = sheet.createRow(1);
+            first.createCell(0).setCellValue("A20210186");
+            first.createCell(1).setCellValue("非商务类项目模板");
+            first.createCell(2).setCellValue("一般项目");
+            first.createCell(3).setCellValue("项目经理A");
+            first.createCell(4).setCellValue("已撤销");
+            first.createCell(5).setCellValue("任务级");
+            first.createCell(6).setCellValue("开发一室");
+            first.createCell(7).setCellValue("199.00");
+            first.createCell(8).setCellValue("174.00");
+            first.createCell(9).setCellValue("2024年紧急版");
+            first.createCell(10).setCellValue("紧急");
+            first.createCell(11).setCellValue("2024/05/27");
+            first.createCell(12).setCellValue("2024/05/01");
+            first.createCell(13).setCellValue("2024/05/27");
+            first.createCell(14).setCellValue("2024/05/27");
+            first.createCell(15).setCellValue("null");
+            first.createCell(16).setCellValue("null");
+            first.createCell(17).setCellValue("null");
+            first.createCell(18).setCellValue("null");
+            first.createCell(19).setCellValue("需求标题A");
+            first.createCell(20).setCellValue("REQ-202405270001");
+            first.createCell(21).setCellValue("已投产");
+            first.createCell(22).setCellValue("null");
+            first.createCell(23).setCellValue("2024/01/15");
+            first.createCell(24).setCellValue("2024/01/10");
+            first.createCell(25).setCellValue("2024/01/08");
+            first.createCell(26).setCellValue("2024/05/27");
+            first.createCell(27).setCellValue("2024/01/09");
+            first.createCell(28).setCellValue("2024/01/11");
+            first.createCell(29).setCellValue("2024/01/20");
+            first.createCell(30).setCellValue("null");
+            first.createCell(31).setCellValue("null");
+            first.createCell(32).setCellValue("140");
+            first.createCell(33).setCellValue("140");
+            first.createCell(34).setCellValue("139");
+            first.createCell(35).setCellValue("139");
+            first.createCell(36).setCellValue("137");
+            first.createCell(37).setCellValue("137");
+            first.createCell(38).setCellValue("128");
+            first.createCell(39).setCellValue("128");
+            first.createCell(40).setCellValue("-139");
+
+            Row second = sheet.createRow(2);
+            second.createCell(0).setCellValue("A20220005");
+            second.createCell(1).setCellValue("非商务类项目模板");
+            second.createCell(2).setCellValue("一般项目");
+            second.createCell(3).setCellValue("项目经理B");
+            second.createCell(4).setCellValue("进行中");
+            second.createCell(5).setCellValue("小型项目");
+            second.createCell(6).setCellValue("数据应用开发室");
+            second.createCell(7).setCellValue("825.33");
+            second.createCell(8).setCellValue("654.00");
+            second.createCell(9).setCellValue("2022年5月版");
+            second.createCell(10).setCellValue("月版");
+            second.createCell(11).setCellValue("2022/05/21");
+            second.createCell(12).setCellValue("2022/03/25");
+            second.createCell(13).setCellValue("2022/05/21");
+            second.createCell(14).setCellValue("2026/12/30");
+            second.createCell(15).setCellValue("验收测试报告.doc");
+            second.createCell(16).setCellValue("2024/06/05");
+            second.createCell(17).setCellValue("NULL");
+            second.createCell(18).setCellValue("\\N");
+            second.createCell(19).setCellValue("需求标题B");
+            second.createCell(20).setCellValue("REQ-202203250001");
+            second.createCell(21).setCellValue("进行中");
+            second.createCell(22).setCellValue("2022/04/01");
+            second.createCell(23).setCellValue("2022/02/15");
+            second.createCell(24).setCellValue("2022/02/10");
+            second.createCell(25).setCellValue("2022/02/08");
+            second.createCell(26).setCellValue("2022/05/21");
+            second.createCell(27).setCellValue("2022/02/09");
+            second.createCell(28).setCellValue("2022/02/11");
+            second.createCell(29).setCellValue("2022/02/20");
+            second.createCell(30).setCellValue("0");
+            second.createCell(31).setCellValue("5");
+            second.createCell(32).setCellValue("100");
+            second.createCell(33).setCellValue("1774");
+            second.createCell(34).setCellValue("101");
+            second.createCell(35).setCellValue("1775");
+            second.createCell(36).setCellValue("99");
+            second.createCell(37).setCellValue("1773");
+            second.createCell(38).setCellValue("90");
+            second.createCell(39).setCellValue("1764");
+            second.createCell(40).setCellValue("-101");
+
+            ExcelSheetData dataSheet = parseWorkbook(workbook).get(0);
+
+            assertEquals(headers.length, dataSheet.getFields().size());
+            assertEquals(2, dataSheet.getJsonArray().size());
+            assertField(dataSheet, "项目编号", "TEXT", 0);
+            assertField(dataSheet, "需求编号", "TEXT", 0);
+            assertField(dataSheet, "项目版本投产时间", "TEXT", 0);
+            assertField(dataSheet, "需求首次投产时间", "TEXT", 0);
+            assertField(dataSheet, "开发预估工作量", "DOUBLE", 3);
+            assertField(dataSheet, "架构师评估工作量", "DOUBLE", 3);
+            assertField(dataSheet, "暂停时长", "LONG", 2);
+            assertField(dataSheet, "项目暂停时长", "LONG", 2);
+            assertField(dataSheet, "需求提出到项目首投产天数", "LONG", 2);
+            assertField(dataSheet, "需求提出到项目终投产天数", "LONG", 2);
+            assertField(dataSheet, "需求首次投产到需求确认天数", "LONG", 2);
+            assertNull(dataSheet.getJsonArray().get(0).get("交付物名称"));
+            assertNull(dataSheet.getJsonArray().get(0).get("暂停时长"));
+            assertNull(dataSheet.getJsonArray().get(1).get("项目恢复时间"));
+            assertEquals("1774", dataSheet.getJsonArray().get(1).get("需求提出到项目终投产天数"));
+        }
+    }
+
+    @Test
     void csvImportKeepsIdentifierAndDateLikeNumericTextAsText() throws Exception {
         List<ExcelSheetData> sheets = parseCsv("""
                 项目编号,需求编号,投产月份,需求数,平均耗时,空值列
@@ -596,6 +815,27 @@ class ExcelFieldNameTest {
         assertField(dataSheet, "说明", "TEXT", 0);
         assertEquals("   ", dataSheet.getJsonArray().get(0).get("需求数"));
         assertEquals("   ", dataSheet.getJsonArray().get(0).get("平均耗时"));
+    }
+
+    @Test
+    void csvImportTreatsLiteralNullPlaceholdersAsMissingValuesForTypeInference() throws Exception {
+        List<ExcelSheetData> sheets = parseCsv("""
+                项目编号,需求数,平均耗时,备注
+                A001,null,18.5,NULL
+                A002,12,null,\\N
+                A003,0,-3.25,正常
+                """);
+
+        ExcelSheetData dataSheet = sheets.get(0);
+        assertField(dataSheet, "项目编号", "TEXT", 0);
+        assertField(dataSheet, "需求数", "LONG", 2);
+        assertField(dataSheet, "平均耗时", "DOUBLE", 3);
+        assertField(dataSheet, "备注", "TEXT", 0);
+        assertNull(dataSheet.getJsonArray().get(0).get("需求数"));
+        assertNull(dataSheet.getJsonArray().get(0).get("备注"));
+        assertNull(dataSheet.getJsonArray().get(1).get("平均耗时"));
+        assertNull(dataSheet.getJsonArray().get(1).get("备注"));
+        assertEquals("0", dataSheet.getJsonArray().get(2).get("需求数"));
     }
 
     @Test

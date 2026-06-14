@@ -171,6 +171,29 @@ public class CrestSqlFunctionTranslatorTest {
     }
 
     @Test
+    public void mysqlTranslationHandlesNullPlaceholdersInExcelBackedConversionExpressions() {
+        String sql = "SELECT "
+                + "DE_STR_TO_DATE(NULLIF(NULLIF(t.`项目版本投产时间`, 'null'), '\\\\N'),'yyyy/MM/dd') AS release_day, "
+                + "DE_DATE_FORMAT(DE_STR_TO_DATE(NULLIF(t.`项目版本投产时间`, ''),'yyyy/MM/dd'),'yyyy-MM') AS release_month, "
+                + "SUM(CAST(NULLIF(NULLIF(t.`开发预估工作量`, 'null'), '') AS DECIMAL(26,8))) AS workload_sum "
+                + "FROM t "
+                + "WHERE DE_STR_TO_DATE(NULLIF(NULLIF(t.`项目版本投产时间`, 'NULL'), ''),'yyyy/MM/dd') IS NOT NULL";
+
+        String translated = CrestSqlFunctionTranslator.translate(sql, datasource("mysql"));
+
+        assertFalse(translated.contains("DE_"));
+        assertEquals(
+                "SELECT "
+                        + "STR_TO_DATE(NULLIF(NULLIF(t.`项目版本投产时间`, 'null'), '\\\\N'), '%Y/%m/%d') AS release_day, "
+                        + "DATE_FORMAT(STR_TO_DATE(NULLIF(t.`项目版本投产时间`, ''), '%Y/%m/%d'), '%Y-%m') AS release_month, "
+                        + "SUM(CAST(NULLIF(NULLIF(t.`开发预估工作量`, 'null'), '') AS DECIMAL(26,8))) AS workload_sum "
+                        + "FROM t "
+                        + "WHERE STR_TO_DATE(NULLIF(NULLIF(t.`项目版本投产时间`, 'NULL'), ''), '%Y/%m/%d') IS NOT NULL",
+                translated
+        );
+    }
+
+    @Test
     public void mysqlTranslationPreservesMysqlFormatsAndHandlesBacktickSchemaQualifier() {
         String sql = "SELECT `crest`.de_str_to_date(t.`day`,'%Y-%m-%d') AS day_value, "
                 + "DE_FROM_UNIXTIME(t.`epoch_seconds`) AS epoch_value FROM t";

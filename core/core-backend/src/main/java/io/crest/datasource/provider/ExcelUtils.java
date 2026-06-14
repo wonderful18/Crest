@@ -607,6 +607,7 @@ public class ExcelUtils {
                     if (cells.size() > size) {
                         cells = cells.subList(0, size);
                     }
+                    cells = cells.stream().map(ExcelUtils::normalizeNullPlaceholder).collect(Collectors.toList());
                     data.add(cells.toArray(new String[]{}));
                     num++;
                 }
@@ -667,7 +668,7 @@ public class ExcelUtils {
     }
 
     private void cellType(String value, int i, TableField tableFiled) {
-        if (StringUtils.isBlank(value)) {
+        if (StringUtils.isBlank(value) || isNullPlaceholder(value)) {
             return;
         }
         if (shouldKeepExcelFieldAsText(tableFiled)) {
@@ -733,6 +734,25 @@ public class ExcelUtils {
                 || lowerName.matches(".*[\\u4e00-\\u9fa5]" + token + "$");
     }
 
+    private static String normalizeExcelCellValue(String value) {
+        if (StringUtils.isEmpty(value) || isNullPlaceholder(value)) {
+            return null;
+        }
+        return value;
+    }
+
+    private static String normalizeNullPlaceholder(String value) {
+        if (isNullPlaceholder(value)) {
+            return null;
+        }
+        return value;
+    }
+
+    private static boolean isNullPlaceholder(String value) {
+        String text = StringUtils.trimToEmpty(value);
+        return Strings.CI.equals(text, "null") || Strings.CS.equals(text, "\\N");
+    }
+
     @Data
     @EqualsAndHashCode(callSuper = false)
     public class NoModelDataListener extends AnalysisEventListener<Map<Integer, String>> {
@@ -772,11 +792,7 @@ public class ExcelUtils {
         public void invoke(Map<Integer, String> dataMap, AnalysisContext context) {
             List<String> line = new ArrayList<>();
             for (Integer key : headerKey) {
-                String value = dataMap.get(key);
-                if (StringUtils.isEmpty(value)) {
-                    value = null;
-                }
-                line.add(value);
+                line.add(normalizeExcelCellValue(dataMap.get(key)));
             }
             data.add(line.toArray(new String[line.size()]));
         }
