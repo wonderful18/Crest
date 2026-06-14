@@ -14,12 +14,16 @@ import io.crest.extensions.view.dto.DatasetRowPermissionsTreeObj;
 import io.crest.extensions.view.filter.FilterTreeItem;
 import io.crest.extensions.view.filter.FilterTreeObj;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class Quota2SQLObjTest {
 
@@ -143,6 +147,81 @@ class Quota2SQLObjTest {
         assertTrue(meta.getWhereTrees().contains("DE_STR_TO_DATE(CASE WHEN t_a_0.`f_amount` IS NULL THEN NULL"), meta.getWhereTrees());
     }
 
+    @ParameterizedTest
+    @MethodSource("convertedExcelTextMetricFields")
+    void yAxisMetricAggregationsNormalizeConvertedExcelTextFields(Integer fieldType, String summary, String expectedCast) {
+        SQLMeta meta = meta();
+        ChartViewFieldDTO field = field(fieldType, summary);
+        field.setExtractedFieldType(FieldTypeConstants.STRING);
+        field.setType("TEXT");
+
+        Quota2SQLObj.quota2sqlObj(meta, List.of(field), List.of(), false, null, null, null, null);
+
+        String metricSql = meta.getYFields().get(0).getFieldName();
+        assertContainsNormalizedTextOrigin(metricSql, "t_a_0.`f_amount`");
+        assertTrue(metricSql.contains(expectedCast), metricSql);
+    }
+
+    @ParameterizedTest
+    @MethodSource("convertedExcelTextDatasetFilters")
+    void customWhereNormalizesConvertedExcelTextFilters(Integer fieldType, String dateFormat, String expectedPrefix) {
+        SQLMeta meta = meta();
+        DatasetTableFieldDTO field = datasetField(fieldType, FieldTypeConstants.STRING, "TEXT", dateFormat);
+        FilterTreeItem item = new FilterTreeItem();
+        item.setType("item");
+        item.setField(field);
+        item.setTerm(fieldType.equals(FieldTypeConstants.TIME) ? "eq" : "gt");
+        item.setValue(fieldType.equals(FieldTypeConstants.TIME) ? "2024-05-27" : "10");
+        FilterTreeObj tree = new FilterTreeObj();
+        tree.setLogic("AND");
+        tree.setItems(List.of(item));
+
+        CustomWhere2Str.customWhere2sqlObj(meta, tree, List.of(field), false, null, null, null, null);
+
+        assertContainsNormalizedTextOrigin(meta.getCustomWheres(), "t_a_0.`f_amount`");
+        assertTrue(meta.getCustomWheres().contains(expectedPrefix + "CASE WHEN t_a_0.`f_amount` IS NULL THEN NULL"), meta.getCustomWheres());
+    }
+
+    @ParameterizedTest
+    @MethodSource("convertedExcelTextDatasetFilters")
+    void extWhereNormalizesConvertedExcelTextFilters(Integer fieldType, String dateFormat, String expectedPrefix) {
+        SQLMeta meta = meta();
+        DatasetTableFieldDTO field = datasetField(fieldType, FieldTypeConstants.STRING, "TEXT", dateFormat);
+        ChartExtFilterDTO filter = new ChartExtFilterDTO();
+        filter.setDatasetTableField(field);
+        filter.setOperator(fieldType.equals(FieldTypeConstants.TIME) ? "between" : "gt");
+        filter.setValue(fieldType.equals(FieldTypeConstants.TIME) ? List.of("1716739200000", "1716825599000") : List.of("10"));
+
+        ExtWhere2Str.extWhere2sqlOjb(meta, List.of(filter), List.of(field), false, null, null, null, null);
+
+        assertContainsNormalizedTextOrigin(meta.getExtWheres(), "t_a_0.`f_amount`");
+        assertTrue(meta.getExtWheres().contains(expectedPrefix + "CASE WHEN t_a_0.`f_amount` IS NULL THEN NULL"), meta.getExtWheres());
+    }
+
+    @ParameterizedTest
+    @MethodSource("convertedExcelTextDatasetFilters")
+    void rowPermissionTreeNormalizesConvertedExcelTextFilters(Integer fieldType, String dateFormat, String expectedPrefix) {
+        SQLMeta meta = meta();
+        DatasetTableFieldDTO field = datasetField(fieldType, FieldTypeConstants.STRING, "TEXT", dateFormat);
+        DatasetRowPermissionsTreeItem item = new DatasetRowPermissionsTreeItem();
+        item.setType("item");
+        item.setField(field);
+        item.setTerm(fieldType.equals(FieldTypeConstants.TIME) ? "eq" : "gt");
+        item.setValue(fieldType.equals(FieldTypeConstants.TIME) ? "2024-05-27" : "10");
+
+        DatasetRowPermissionsTreeObj tree = new DatasetRowPermissionsTreeObj();
+        tree.setLogic("AND");
+        tree.setItems(List.of(item));
+
+        DataSetRowPermissionsTreeDTO permission = new DataSetRowPermissionsTreeDTO();
+        permission.setTree(tree);
+
+        WhereTree2Str.transFilterTrees(meta, List.of(permission), List.of(field), false, null, null, null, null);
+
+        assertContainsNormalizedTextOrigin(meta.getWhereTrees(), "t_a_0.`f_amount`");
+        assertTrue(meta.getWhereTrees().contains(expectedPrefix + "CASE WHEN t_a_0.`f_amount` IS NULL THEN NULL"), meta.getWhereTrees());
+    }
+
     private SQLMeta meta() {
         SQLMeta meta = new SQLMeta();
         meta.setTable(SQLObj.builder().tableAlias("t_a_0").build());
@@ -155,6 +234,8 @@ class Quota2SQLObjTest {
         field.setOriginName("amount");
         field.setEngineFieldName("f_amount");
         field.setFieldType(fieldType);
+        field.setExtractedFieldType(fieldType);
+        field.setType("DECIMAL");
         field.setSummary(summary);
         return field;
     }
@@ -186,5 +267,23 @@ class Quota2SQLObjTest {
         assertTrue(sql.contains("CASE WHEN " + origin + " IS NULL THEN NULL"), sql);
         assertTrue(sql.contains("WHEN LOWER(TRIM(" + origin + ")) IN ('', 'null', '\\\\n') THEN NULL"), sql);
         assertTrue(sql.contains("ELSE TRIM(" + origin + ") END"), sql);
+    }
+
+    private static Stream<org.junit.jupiter.params.provider.Arguments> convertedExcelTextMetricFields() {
+        return Stream.of(
+                arguments(FieldTypeConstants.INTEGER, "sum", "DECIMAL(19,0)"),
+                arguments(FieldTypeConstants.FLOAT, "sum", "DECIMAL(26,8)"),
+                arguments(FieldTypeConstants.BOOLEAN, "sum", "DECIMAL(26,8)"),
+                arguments(FieldTypeConstants.INTEGER, "avg", "DECIMAL(19,0)"),
+                arguments(FieldTypeConstants.FLOAT, "avg", "DECIMAL(26,8)")
+        );
+    }
+
+    private static Stream<org.junit.jupiter.params.provider.Arguments> convertedExcelTextDatasetFilters() {
+        return Stream.of(
+                arguments(FieldTypeConstants.TIME, "yyyy/MM/dd", "DE_STR_TO_DATE("),
+                arguments(FieldTypeConstants.INTEGER, null, "CAST("),
+                arguments(FieldTypeConstants.FLOAT, null, "CAST(")
+        );
     }
 }
