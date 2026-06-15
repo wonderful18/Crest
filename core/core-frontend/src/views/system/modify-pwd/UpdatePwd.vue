@@ -9,15 +9,19 @@ import { logoutHandler } from '@/utils/logout'
 import { CustomPassword } from '@/components/custom-password'
 import { isMobile } from '@/utils/utils'
 
+// 修改密码表单的国际化文案函数。
 const { t } = useI18n()
 
+// 修改密码表单默认值。
 const defaultForm = {
   pwd: '',
   newPwd: '',
   confirm: ''
 }
+// 当前修改密码表单数据。
 const pwdForm = reactive(cloneDeep(defaultForm))
 
+// 校验新密码复杂度，并避免与原密码相同。
 const validatePwd = (_: any, value: any, callback: any) => {
   if (value === pwdForm.pwd) {
     callback(new Error(t('system.be_the_same')))
@@ -33,6 +37,7 @@ const validatePwd = (_: any, value: any, callback: any) => {
   }
 }
 
+// 校验确认密码是否与新密码一致。
 const validateConfirmPwd = (_: any, value: any, callback: any) => {
   if (value !== pwdForm.newPwd) {
     callback(new Error(t('system.twice_are_inconsistent')))
@@ -41,6 +46,7 @@ const validateConfirmPwd = (_: any, value: any, callback: any) => {
   }
 }
 
+// 修改密码表单校验规则。
 const rule = {
   pwd: [
     {
@@ -78,10 +84,13 @@ const rule = {
     { validator: validateConfirmPwd, trigger: 'blur' }
   ]
 }
+// 表单实例引用，用于触发表单校验。
 const updatePwdForm = ref()
 
+// 移动端修改成功后通知父级关闭或刷新。
 const emits = defineEmits(['success'])
 
+// 提交修改密码请求，并按终端类型处理后续登录状态。
 const save = () => {
   updatePwdForm.value.validate(val => {
     if (val) {
