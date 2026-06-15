@@ -242,6 +242,7 @@ const props = defineProps({
 })
 
 const { curCanvasType } = toRefs(props)
+// 后台内嵌打开时复用当前窗口，独立门户进入时新窗口打开数据源或数据集维护页。
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
 
 // 根据画布类型生成预览名称
@@ -269,13 +270,16 @@ const addDatasetWindow = () => {
 // 维护应用保存抽屉、树数据和表单状态
 const state = reactive({
   appApplyDrawer: false,
+  // 大屏和仪表板目录树，用于选择应用保存后的目标位置。
   dvTree: [],
+  // 数据集目录树，仅在按数据源匹配时用于选择自动生成数据集的归属目录。
   dsTree: [],
   propsTree: {
     label: 'name',
     children: 'children',
     isLeaf: node => !node.children?.length
   },
+  // 保存模板中的数据源、数据集引用，提交前需要映射到当前系统内的资源。
   appData: {
     datasourceInfo: [],
     datasetGroupsInfo: []
@@ -360,6 +364,7 @@ const goBack = () => {
 const initData = () => {
   const request = { busiFlag: curCanvasType.value, resourceTable: 'core', leaf: false, weight: 7 }
   queryTreeApi(request).then(res => {
+    // 保存应用只允许选择业务目录，过滤掉无归属或不可保存的虚拟目录。
     filterFreeFolder(res, curCanvasType.value)
     const resultTree = res || []
     dfs(resultTree as unknown as BusiTreeNode[])
@@ -374,6 +379,7 @@ const initData = () => {
 
   const requestDs = { leaf: false, weight: 7 } as BusiTreeRequest
   datasetTree(requestDs).then(res => {
+    // 数据源匹配会自动生成数据集，目录树同样只保留可落库的业务目录。
     filterFreeFolder(res, 'dataset')
     dfs(res as unknown as BusiTreeNode[])
     state.dsTree = (res as unknown as BusiTreeNode[]) || []
@@ -397,6 +403,7 @@ const dfs = (arr: BusiTreeNode[]) => {
 const init = params => {
   state.appApplyDrawer = true
   state.form = params.base
+  // 默认按数据源匹配，保留模板数据集结构并降低用户逐个选择数据集的成本。
   state.form.dataType = 'datasource'
   state.appData.datasourceInfo = deepCopy(appData.value?.datasourceInfo)
   state.appData.datasetGroupsInfo = deepCopy(appData.value?.datasetGroupsInfo)
@@ -424,12 +431,14 @@ const close = () => {
 const saveApp = () => {
   let datasourceMatchReady = true
   let datasetMatchReady = true
+  // 数据源匹配要求模板内每个数据源都有当前系统中的目标数据源。
   state.appData.datasourceInfo.forEach(datasource => {
     if (!datasource.systemDatasourceId) {
       datasourceMatchReady = false
     }
   })
 
+  // 数据集匹配要求模板内每个数据集分组都有当前系统中的目标数据集。
   state.appData.datasetGroupsInfo.forEach(dataset => {
     if (!dataset.systemDatasetId) {
       datasetMatchReady = false

@@ -678,6 +678,7 @@ export class ColumnLineMix extends G2PlotChartView<any, any> {
 }
 
 export class GroupColumnLineMix extends ColumnLineMix {
+  // 分组混合图通过左轴扩展维度拆分柱形系列，右轴仍沿用父类的线形度量。
   axis: AxisType[] = [...this['axis'], 'xAxisExt']
   propertyInner = {
     ...CHART_MIX_EDITOR_PROPERTY_INNER,
@@ -739,7 +740,7 @@ export class GroupColumnLineMix extends ColumnLineMix {
         })
       }
     }
-    //左轴
+    // 左轴颜色优先按分组维度分配，缺少分组时退回按左轴指标分配。
     const color = basicStyle.colors.map(ele => {
       const tmp = hexColorToRGBA(ele, basicStyle.alpha)
       if (basicStyle.gradient) {
@@ -759,6 +760,7 @@ export class GroupColumnLineMix extends ColumnLineMix {
     const colors = chart.customAttr.basicStyle.colors
     const { yAxis, xAxisExt } = chart
     if (xAxisExt?.length) {
+      // 存在分组字段时，系列来自查询结果中的 category，而不是指标字段本身。
       data?.forEach(d => {
         if (d.value === null || d.category === null || seriesSet.has(d.category)) {
           return
@@ -771,6 +773,7 @@ export class GroupColumnLineMix extends ColumnLineMix {
         })
       })
     } else {
+      // 未配置分组字段时，系列列表仍按左轴指标生成，保持普通混合图语义。
       yAxis?.forEach(axis => {
         if (seriesSet.has(axis.id)) {
           return
@@ -791,6 +794,7 @@ export class GroupColumnLineMix extends ColumnLineMix {
   }
 }
 export class StackColumnLineMix extends ColumnLineMix {
+  // 堆叠混合图额外启用堆叠维度，父类会在绘制阶段把柱体切换为 stack 模式。
   axis: AxisType[] = [...this['axis'], 'extStack']
   propertyInner = {
     ...CHART_MIX_EDITOR_PROPERTY_INNER,
@@ -852,7 +856,7 @@ export class StackColumnLineMix extends ColumnLineMix {
         })
       }
     }
-    //左轴
+    // 左轴颜色优先按堆叠项分配，缺少堆叠字段时退回按左轴指标分配。
     const color = basicStyle.colors.map(ele => {
       const tmp = hexColorToRGBA(ele, basicStyle.alpha)
       if (basicStyle.gradient) {
@@ -872,6 +876,7 @@ export class StackColumnLineMix extends ColumnLineMix {
     const colors = chart.customAttr.basicStyle.colors
     const { yAxis, extStack } = chart
     if (extStack?.length) {
+      // 堆叠图的系列来源是堆叠维度值，需要从结果数据中去重生成。
       data?.forEach(d => {
         if (d.value === null || d.category === null || seriesSet.has(d.category)) {
           return
@@ -884,6 +889,7 @@ export class StackColumnLineMix extends ColumnLineMix {
         })
       })
     } else {
+      // 无堆叠字段时保持按左轴指标生成系列色，避免空堆叠配置改变展示。
       yAxis?.forEach(axis => {
         if (seriesSet.has(axis.id)) {
           return
@@ -905,6 +911,7 @@ export class StackColumnLineMix extends ColumnLineMix {
 }
 
 export class DualLineMix extends ColumnLineMix {
+  // 双线图把左侧 geometry 从柱形切换为折线，左右轴都以线形系列呈现。
   axis: AxisType[] = [...this['axis'], 'xAxisExt']
   propertyInner = {
     ...CHART_MIX_EDITOR_PROPERTY_INNER,
@@ -970,7 +977,7 @@ export class DualLineMix extends ColumnLineMix {
         })
       }
     }
-    //左轴
+    // 左轴折线颜色优先按扩展维度分配，缺少扩展维度时退回按左轴指标分配。
     const color = basicStyle.colors.map(ele => {
       const tmp = hexColorToRGBA(ele, basicStyle.alpha)
       if (basicStyle.gradient) {
@@ -990,6 +997,7 @@ export class DualLineMix extends ColumnLineMix {
     const colors = chart.customAttr.basicStyle.colors
     const { yAxis, xAxisExt } = chart
     if (xAxisExt?.length) {
+      // 双线图左轴存在分类扩展时，按分类值生成系列色以匹配折线图例。
       data?.forEach(d => {
         if (d.value === null || d.category === null || seriesSet.has(d.category)) {
           return
@@ -1002,6 +1010,7 @@ export class DualLineMix extends ColumnLineMix {
         })
       })
     } else {
+      // 未配置分类扩展时按左轴指标生成系列色，与普通折线图保持一致。
       yAxis?.forEach(axis => {
         if (seriesSet.has(axis.id)) {
           return

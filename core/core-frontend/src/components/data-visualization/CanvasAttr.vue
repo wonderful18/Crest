@@ -267,6 +267,7 @@ onMounted(() => {
 }
 
 .attr-container {
+  // 画布属性面板固定使用深色底，和编辑器右侧配置区保持一致。
   background-color: rgba(37, 45, 54, 1);
   color: #fff;
   z-index: 20;
@@ -279,6 +280,7 @@ onMounted(() => {
   border-bottom: none;
 }
 :deep(.ed-collapse) {
+  // 折叠面板需要占满右侧属性容器，避免不同设置项切换时宽度抖动。
   width: 100%;
 }
 
@@ -355,12 +357,14 @@ onMounted(() => {
 }
 
 .m-size {
+  // 尺寸输入项采用左右并排布局，覆盖默认表单项的块级排列。
   :deep(.ed-form-item) {
     display: flex !important;
   }
 }
 
 :deep(.ed-form-item) {
+  // 属性面板内控件统一使用紧凑尺寸，减少大屏编辑器右侧栏的滚动成本。
   .ed-radio.ed-radio--small .ed-radio__inner {
     width: 14px;
     height: 14px;
