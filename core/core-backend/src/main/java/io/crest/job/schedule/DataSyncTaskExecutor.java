@@ -10,17 +10,37 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.Map;
 
+/**
+ * 数据同步任务执行器，负责创建、暂停、恢复和移除同步调度任务。
+ */
 @Component("dataSyncTaskExecutor")
 public class DataSyncTaskExecutor {
 
+    /**
+     * cron 同步任务分组。
+     */
     private static final String SYNC_JOB_GROUP = "SYNC_TASK";
+    /**
+     * simple 同步任务分组。
+     */
     private static final String SYNC_SIMPLE_JOB_GROUP = "SYNC_SIMPLE_TASK";
 
+    /**
+     * Quartz 调度管理器。
+     */
     @Resource
     private ScheduleManager scheduleManager;
+
+    /**
+     * 执行数据同步任务的占位入口。
+     */
     public boolean execute(Map<String, Object> taskData) {
         return false;
     }
+
+    /**
+     * 初始化执行器。
+     */
     public void init() {
     }
 
@@ -37,7 +57,7 @@ public class DataSyncTaskExecutor {
         JobKey jobKey = new JobKey(taskId, SYNC_JOB_GROUP);
         TriggerKey triggerKey = new TriggerKey(taskId, SYNC_JOB_GROUP);
 
-        // 准备JobDataMap
+        // 准备 JobDataMap。
         JobDataMap jobDataMap = jobData != null ? new JobDataMap(jobData) : new JobDataMap();
         jobDataMap.put("taskId", taskId);
         // 调度任务
@@ -58,7 +78,7 @@ public class DataSyncTaskExecutor {
     public void addOrUpdateSyncSimpleJob(String taskId, String period, Long startTime, Long endTime, Map<String, Object> jobData) {
         JobKey jobKey = new JobKey(taskId, SYNC_SIMPLE_JOB_GROUP);
         TriggerKey triggerKey = new TriggerKey(taskId, SYNC_SIMPLE_JOB_GROUP);
-        // 准备JobDataMap
+        // 准备 JobDataMap。
         JobDataMap jobDataMap = jobData != null ? new JobDataMap(jobData) : new JobDataMap();
         jobDataMap.put("taskId", taskId);
         jobDataMap.put("executeOnce", Boolean.FALSE);
@@ -70,6 +90,9 @@ public class DataSyncTaskExecutor {
 
     }
 
+    /**
+     * 移除指定同步任务。
+     */
     public void removeSyncTask(String taskId, boolean isSimpleJob) {
         String jobGroup = isSimpleJob ? SYNC_SIMPLE_JOB_GROUP : SYNC_JOB_GROUP;
         JobKey jobKey = new JobKey(taskId, jobGroup);
@@ -87,12 +110,18 @@ public class DataSyncTaskExecutor {
         return scheduleManager.getNextSimpleTriggerTime(triggerKey, currentTime);
     }
 
+    /**
+     * 暂停指定同步任务触发器。
+     */
     public void pauseTrigger(String taskId, boolean isSimpleJob) {
         String jobGroup = isSimpleJob ? SYNC_SIMPLE_JOB_GROUP : SYNC_JOB_GROUP;
         TriggerKey triggerKey = new TriggerKey(taskId, jobGroup);
         scheduleManager.pauseTrigger(triggerKey);
     }
 
+    /**
+     * 恢复指定同步任务触发器。
+     */
     public void resumeTrigger(String taskId, boolean isSimpleJob) {
         String jobGroup = isSimpleJob ? SYNC_SIMPLE_JOB_GROUP : SYNC_JOB_GROUP;
         TriggerKey triggerKey = new TriggerKey(taskId, jobGroup);

@@ -21,6 +21,9 @@ import java.util.List;
  * 将 SQLMeta 的各部分转换结果拼接为最终查询语句。
  */
 public class SQLProvider {
+    /**
+     * StringTemplate 中预览 SQL 模板名称。
+     */
     private static final String PREVIEW_SQL_TEMPLATE = "previewSql";
 
     /**
@@ -32,10 +35,16 @@ public class SQLProvider {
         return createQuerySQL(sqlMeta, isGroup, needOrder, distinct);
     }
 
+    /**
+     * 创建带分页限制的查询 SQL。
+     */
     public static String createQuerySQLWithLimit(SQLMeta sqlMeta, boolean isGroup, boolean needOrder, boolean distinct, int start, int count) {
         return createQuerySQL(sqlMeta, isGroup, needOrder, distinct) + " LIMIT " + count + " OFFSET " + start;
     }
 
+    /**
+     * 根据 SQLMeta 创建基础查询 SQL。
+     */
     public static String createQuerySQL(SQLMeta sqlMeta, boolean isGroup, boolean needOrder, boolean distinct) {
         List<SQLObj> xFields = sqlMeta.getXFields();
         SQLObj tableObj = sqlMeta.getTable();
@@ -56,7 +65,7 @@ public class SQLProvider {
         if (whereTrees != null) wheres.add(whereTrees);
         if (ObjectUtils.isNotEmpty(wheres)) st_sql.add("filters", wheres);
 
-        // check datasource 是否需要排序
+        // 判断数据源是否需要默认排序。
         if (needOrder && ObjectUtils.isEmpty(xOrders)) {
             if (ObjectUtils.isNotEmpty(xFields)) {
                 xOrders = new ArrayList<>();
@@ -75,6 +84,9 @@ public class SQLProvider {
         return st_sql.render();
     }
 
+    /**
+     * 按图表配置创建带聚合过滤和排序的查询 SQL。
+     */
     public static String createQuerySQL(SQLMeta sqlMeta, boolean isGroup, boolean needOrder, ChartViewDTO view) {
         STGroup stg = new STGroupString(SqlTemplate.PREVIEW_SQL);
         ST st_sql = stg.getInstanceOf(PREVIEW_SQL_TEMPLATE);
@@ -138,7 +150,7 @@ public class SQLProvider {
             }
             orders = tmp;
         }
-        // check datasource 是否需要排序
+        // 判断数据源是否需要默认排序。
         if (needOrder && ObjectUtils.isEmpty(orders)) {
             if (ObjectUtils.isNotEmpty(xFields) || ObjectUtils.isNotEmpty(yFields)) {
                 SQLObj sqlObj = ObjectUtils.isNotEmpty(xFields) ? xFields.get(0) : yFields.get(0);
@@ -154,6 +166,9 @@ public class SQLProvider {
         return sqlLimit(st.render(), view);
     }
 
+    /**
+     * 按图表配置创建不包含排序的查询 SQL。
+     */
     public static String createQuerySQLNoSort(SQLMeta sqlMeta, boolean isGroup, ChartViewDTO view) {
         STGroup stg = new STGroupString(SqlTemplate.PREVIEW_SQL);
         ST st_sql = stg.getInstanceOf(PREVIEW_SQL_TEMPLATE);
@@ -196,6 +211,9 @@ public class SQLProvider {
         return sqlLimit(st.render(), view);
     }
 
+    /**
+     * 按图表结果模式追加 SQL 限制条件。
+     */
     public static String sqlLimit(String sql, ChartViewDTO view) {
         if (Strings.CI.equalsAny(view.getType(), "table-info", "table-normal")) {
             return sql;

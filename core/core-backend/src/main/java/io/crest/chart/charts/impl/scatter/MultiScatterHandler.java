@@ -36,15 +36,24 @@ import java.util.stream.Collectors;
 @Component
 @SuppressWarnings("unchecked")
 public class MultiScatterHandler extends DefaultChartHandler {
+    /**
+     * 处理器对应图表类型。
+     */
     @Getter
     private String type = "multi-scatter";
 
+    /**
+     * 注册多维散点图和指标矩阵处理器。
+     */
     @Override
     public void init() {
         chartHandlerManager.registerChartHandler(this.getRender(), this.getType(), this);
         chartHandlerManager.registerChartHandler(this.getRender(), "metric-matrix", this);
     }
 
+    /**
+     * 将多维散点图的所有展示字段整理为明细查询字段。
+     */
     @Override
     public AxisFormatResult formatAxis(ChartViewDTO view) {
         var result = super.formatAxis(view);
@@ -81,6 +90,9 @@ public class MultiScatterHandler extends DefaultChartHandler {
         return result;
     }
 
+    /**
+     * 以明细维度方式查询多维散点图数据。
+     */
     @Override
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         var dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
@@ -124,6 +136,9 @@ public class MultiScatterHandler extends DefaultChartHandler {
         return calcResult;
     }
 
+    /**
+     * 构建 AntV 多维散点图数据结构。
+     */
     @Override
     public Map<String, Object> buildResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
         boolean isDrill = filterResult.getFilterList().stream().anyMatch(ele -> ele.getFilterType() == 1);
@@ -151,4 +166,3 @@ public class MultiScatterHandler extends DefaultChartHandler {
                 .collect(Collectors.toList());
     }
 }
-
