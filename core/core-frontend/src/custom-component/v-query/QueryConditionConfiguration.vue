@@ -2655,6 +2655,7 @@ defineExpose({
         </draggable>
       </div>
       <div v-if="!!curComponent" class="chart-field" :class="curComponent.auto && 'hidden'">
+        <!-- 字段绑定区控制查询条件作用到哪些图表字段，自动模式下只展示不可编辑遮罩。 -->
         <el-scrollbar>
           <div class="mask" v-if="curComponent.auto"></div>
           <div class="title flex-align-center">
@@ -3034,6 +3035,7 @@ defineExpose({
         class="condition-configuration"
         :class="curComponent.auto && 'condition-configuration_hide'"
       >
+        <!-- 条件配置区按展示类型收敛字段、参数、默认值和选项来源。 -->
         <el-scrollbar>
           <div class="mask condition" v-if="curComponent.auto"></div>
           <div class="title flex-align-center">
@@ -3676,6 +3678,7 @@ defineExpose({
     </div>
     <template #footer>
       <div class="dialog-footer">
+        <!-- 级联配置属于跨条件高级行为，放在底部入口避免干扰单条件编辑流程。 -->
         <el-button class="query-cascade" @click="openCascadeDialog">{{
           t('v_query.component_cascade_configuration')
         }}</el-button>

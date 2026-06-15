@@ -490,7 +490,7 @@ export const DEFAULT_TABLE_TOTAL: ChartTableTotalAttr = {
       aggregation: 'SUM',
       cfg: []
     },
-    totalSort: 'none', // asc,desc
+    totalSort: 'none', // 透视表列汇总排序方向，可选升序、降序或不排序。
     totalSortField: ''
   }
 }
@@ -1813,10 +1813,10 @@ export const DEFAULT_BASIC_STYLE: ChartBasicStyle = {
 
 // 基础视图配置是新建图表的完整数据模型，字段结构需要同时满足编辑器、查询接口和发布态渲染。
 export const BASE_VIEW_CONFIG = {
-  id: '', // 图表id
+  id: '', // 图表主键，新建视图保存前保持为空。
   title: t('data_set.view'),
-  sceneId: 0, // 仪表板id
-  tableId: '', // 数据集id
+  sceneId: 0, // 所属仪表板或大屏场景标识。
+  tableId: '', // 绑定数据集标识，取数前由编辑器写入。
   type: 'bar',
   render: 'antv',
   resultCount: 1000,
@@ -1824,6 +1824,7 @@ export const BASE_VIEW_CONFIG = {
   refreshViewEnable: false,
   refreshTime: 5,
   refreshUnit: 'minute',
+  // 轴字段、钻取字段和扩展字段按渲染器约定分组保存，避免不同图表族互相污染配置。
   xAxis: [],
   xAxisExt: [],
   yAxis: [],
@@ -1836,6 +1837,7 @@ export const BASE_VIEW_CONFIG = {
   extTooltip: [],
   customFilter: {},
   sortPriority: [],
+  // 自定义属性承载样式、表格和指标卡配置，字段需要和样式面板的表单模型保持一致。
   customAttr: {
     basicStyle: DEFAULT_BASIC_STYLE,
     misc: DEFAULT_MISC,
@@ -1851,6 +1853,7 @@ export const BASE_VIEW_CONFIG = {
       level: 'world'
     }
   },
+  // 自定义样式主要描述标题、图例、坐标轴和特殊轴线，不直接参与取数。
   customStyle: {
     text: DEFAULT_TITLE_STYLE,
     legend: DEFAULT_LEGEND_STYLE,
@@ -1859,6 +1862,7 @@ export const BASE_VIEW_CONFIG = {
     yAxisExt: DEFAULT_YAXIS_EXT_STYLE,
     misc: DEFAULT_MISC_STYLE
   },
+  // 高级配置承载运行态行为，默认关闭会改变数据展示节奏或数据含义的能力。
   senior: {
     functionCfg: DEFAULT_FUNCTION_CFG,
     assistLineCfg: DEFAULT_ASSIST_LINE_CFG,
