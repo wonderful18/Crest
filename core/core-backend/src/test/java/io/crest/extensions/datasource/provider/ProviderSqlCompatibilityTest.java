@@ -451,6 +451,7 @@ class ProviderSqlCompatibilityTest {
         assertEquals("SELECT f_1, f_2, s_a_10.f_3 FROM t", sql);
     }
 
+    // 构造 Excel 空值转换参数化用例。
     private static Stream<org.junit.jupiter.params.provider.Arguments> nullableExcelConversionCandidates() {
         return Stream.of(
                 arguments("项目版本投产时间", "f_release_day", FieldTypeConstants.TIME, "yyyy/MM/dd", "STR_TO_DATE("),
@@ -492,6 +493,7 @@ class ProviderSqlCompatibilityTest {
         );
     }
 
+    // 构造覆盖日期、数值和文本的代表性 Excel 字段。
     private List<DatasetTableFieldDTO> representativeExcelConversionFields() {
         return List.of(
                 field(1L, "项目编号", "f_project_code", FieldTypeConstants.STRING, FieldTypeConstants.STRING, null),
@@ -534,12 +536,14 @@ class ProviderSqlCompatibilityTest {
         );
     }
 
+    // 过滤需要执行类型转换的字段。
     private List<DatasetTableFieldDTO> convertedFields(List<DatasetTableFieldDTO> fields) {
         return fields.stream()
                 .filter(field -> !FieldTypeConstants.STRING.equals(field.getFieldType()))
                 .toList();
     }
 
+    // 基于字段列表构造测试用表查询 SQL。
     private String tableSqlFor(List<DatasetTableFieldDTO> fields) {
         String selectFields = fields.stream()
                 .map(field -> "`" + field.getEngineFieldName() + "`")
@@ -547,6 +551,7 @@ class ProviderSqlCompatibilityTest {
         return "(SELECT " + selectFields + " FROM `excel_table`)";
     }
 
+    // 按引擎字段名查找字段。
     private DatasetTableFieldDTO findField(List<DatasetTableFieldDTO> fields, String engineFieldName) {
         return fields.stream()
                 .filter(field -> engineFieldName.equals(field.getEngineFieldName()))
@@ -554,6 +559,7 @@ class ProviderSqlCompatibilityTest {
                 .orElseThrow();
     }
 
+    // 构造测试用数据集字段。
     private DatasetTableFieldDTO field(Long id, String name, String engineFieldName, int fieldType, int extractedFieldType, String dateFormat) {
         DatasetTableFieldDTO field = new DatasetTableFieldDTO();
         field.setId(id);
@@ -568,10 +574,12 @@ class ProviderSqlCompatibilityTest {
         return field;
     }
 
+    // 构造默认升序排序字段。
     private ChartSortFieldDTO sortField(DatasetTableFieldDTO source) {
         return sortField(source, "asc");
     }
 
+    // 构造指定方向的排序字段。
     private ChartSortFieldDTO sortField(DatasetTableFieldDTO source, String direction) {
         ChartSortFieldDTO field = new ChartSortFieldDTO();
         field.setId(source.getId());
@@ -587,6 +595,7 @@ class ProviderSqlCompatibilityTest {
         return field;
     }
 
+    // 从数据集字段构造图表字段。
     private ChartViewFieldDTO chartField(DatasetTableFieldDTO source) {
         return chartField(
                 source.getId(),
@@ -598,6 +607,7 @@ class ProviderSqlCompatibilityTest {
         );
     }
 
+    // 构造测试用图表字段。
     private ChartViewFieldDTO chartField(Long id, String name, String engineFieldName, int fieldType, int extractedFieldType, String dateFormat) {
         ChartViewFieldDTO field = new ChartViewFieldDTO();
         field.setId(id);
@@ -612,6 +622,7 @@ class ProviderSqlCompatibilityTest {
         return field;
     }
 
+    // 构造测试用图表筛选条件。
     private ChartViewFieldFilterDTO chartFilter(String term, String value) {
         ChartViewFieldFilterDTO filter = new ChartViewFieldFilterDTO();
         filter.setTerm(term);
@@ -619,6 +630,7 @@ class ProviderSqlCompatibilityTest {
         return filter;
     }
 
+    // 断言 SQL 包含标准化文本字段表达式。
     private void assertContainsNormalizedTextOrigin(String sql, String origin) {
         assertTrue(sql.contains("CASE WHEN " + origin + " IS NULL THEN NULL"), sql);
         assertTrue(

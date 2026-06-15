@@ -24,8 +24,10 @@ const snapshotStore = snapshotStoreWithOut()
 const { canvasStyleData, componentData, canvasViewInfo } = storeToRefs(dvMainStore)
 const { t } = useI18n()
 let canvasAttrInit = false
+// 仪表板画布属性折叠面板状态。
 const canvasAttrActiveNames = ref(['style'])
 
+// 维护仪表板主题样式面板状态。
 const state = reactive({
   colorForm: JSON.parse(JSON.stringify(DEFAULT_COLOR_CASE)),
   customColor: null,
@@ -34,6 +36,7 @@ const state = reactive({
   collapseShow: true
 })
 
+// 响应主题切换并刷新样式面板。
 const onSubjectChange = () => {
   state.collapseShow = false
   nextTick(() => {
@@ -42,21 +45,26 @@ const onSubjectChange = () => {
   })
 }
 
+// 将当前主题样式合并到所有组件。
 const dataMerge = () => {
   adaptCurThemeCommonStyleAll()
   snapshotStore.recordSnapshotCache('renderChart')
 }
 
+// 同步主题颜色配置。
 const onColorChange = val => {
   themeAttrChange('customAttr', 'color', val)
 }
+// 同步主题标题文本配置。
 const onTextChange = val => {
   themeAttrChange('customStyle', 'text', val)
 }
 
+// 同步主题数值格式配置。
 const onFormatterItemChange = val => {
   themeAttrChange('formatterCfg', 'formatterCfg', val)
 }
+// 批量同步主题属性到图表视图。
 const themeAttrChange = (custom, property, value) => {
   if (canvasAttrInit) {
     Object.keys(canvasViewInfo.value).forEach(function (viewId) {
@@ -85,10 +93,12 @@ const themeAttrChange = (custom, property, value) => {
   }
 }
 
+// 响应主题颜色切换。
 const themeColorChange = () => {
-  //do themeColorChange
+  // 预留主题颜色联动入口。
 }
 
+// 同步组件公共背景配置。
 const componentBackgroundChange = val => {
   canvasStyleData.value.component.chartCommonStyle = val
   componentData.value.forEach(component => {
@@ -107,7 +117,9 @@ onMounted(() => {
     canvasAttrInit = true
   })
 })
+// 主题轮播组件实例。
 const slider = ref()
+// 将当前画布样式保存为自定义主题。
 const saveSelfSubject = () => {
   slider.value.saveSelfSubject()
 }

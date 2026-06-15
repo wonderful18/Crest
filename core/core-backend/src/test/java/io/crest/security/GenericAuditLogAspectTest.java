@@ -236,6 +236,7 @@ class GenericAuditLogAspectTest {
         verifyNoInteractions(auditLogService);
     }
 
+    // 绑定测试用 HTTP 请求上下文。
     private void bindRequest(String method, String uri) {
         lenient().when(request.getMethod()).thenReturn(method);
         lenient().when(request.getRequestURI()).thenReturn(uri);
@@ -243,55 +244,66 @@ class GenericAuditLogAspectTest {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
     }
 
+    // 向切面注入测试用审计日志服务。
     private void injectAuditLogService(GenericAuditLogAspect aspect) throws ReflectiveOperationException {
         Field field = GenericAuditLogAspect.class.getDeclaredField("auditLogService");
         field.setAccessible(true);
         field.set(aspect, auditLogService);
     }
 
+    // 测试用接口方法集合。
     private static class TestEndpoint {
         @PostMapping("/create")
+        // 模拟创建接口。
         public Object create() {
             return null;
         }
 
         @GetMapping("/download")
+        // 模拟下载接口。
         public Object download() {
             return null;
         }
 
         @GetMapping("/info")
+        // 模拟详情查询接口。
         public Object info() {
             return null;
         }
 
         @GetMapping("/delete")
+        // 模拟删除接口。
         public Object delete() {
             return null;
         }
 
         @PostMapping("/upload")
+        // 模拟上传接口。
         public Object upload() {
             return null;
         }
 
         @PostMapping("/permission")
+        // 模拟权限保存接口。
         public Object permission() {
             return null;
         }
 
         @PostMapping("/tree")
+        // 模拟树查询接口。
         public Object tree() {
             return null;
         }
 
         @PostMapping("/exportTasks")
+        // 模拟导出任务查询接口。
         public Object exportTasks() {
             return null;
         }
 
         @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA)
         @PostMapping("/sso/config")
+        // 模拟显式审计注解接口。
         public Object annotatedSave() {
             return null;
         }
