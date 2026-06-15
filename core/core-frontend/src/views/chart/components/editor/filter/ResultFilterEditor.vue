@@ -7,6 +7,7 @@ import { multFieldValuesForPermissions } from '@/api/dataset'
 
 const { t } = useI18n()
 
+// 接收图表和筛选项配置。
 const props = defineProps({
   chart: {
     type: Object,
@@ -20,8 +21,10 @@ const props = defineProps({
 
 const { item } = toRefs(props)
 
+// 标记是否需要请求枚举值。
 const needRequestEnum = ref(true)
 
+// 维护结果筛选编辑状态。
 const state = reactive({
   textOptions: [
     {
@@ -184,6 +187,7 @@ const state = reactive({
   fieldOptions: []
 })
 
+// 监听筛选项变化并刷新可选条件。
 watch(
   [props.item],
   () => {
@@ -192,6 +196,7 @@ watch(
   { deep: true }
 )
 
+// 初始化筛选条件选项。
 const initOptions = () => {
   if (item?.value) {
     if (item.value.fieldType === 0 || item.value.fieldType === 5) {
@@ -203,6 +208,7 @@ const initOptions = () => {
     }
   }
 }
+// 初始化筛选编辑状态。
 const init = () => {
   state.logic = item.value.logic
   state.filterType = item.value.filterType
@@ -211,8 +217,9 @@ const init = () => {
     initEnumOptions()
   }
 }
+// 初始化枚举筛选选项。
 const initEnumOptions = () => {
-  // 查找枚举值
+  // 查找枚举值。
   if (item.value.fieldType === 0 || item.value.fieldType === 5) {
     multFieldValuesForPermissions({ fieldIds: [item.value.id] }).then(res => {
       state.fieldOptions = optionData(res.data)
@@ -220,6 +227,7 @@ const initEnumOptions = () => {
     })
   }
 }
+// 将接口返回值转换为枚举选项。
 const optionData = data => {
   if (!data) return null
   return data
@@ -231,6 +239,7 @@ const optionData = data => {
       }
     })
 }
+// 新增筛选条件。
 const addFilter = () => {
   item.value.filter.push({
     fieldId: item.value.id,
@@ -238,18 +247,22 @@ const addFilter = () => {
     value: ''
   })
 }
+// 删除筛选条件。
 const removeFilter = index => {
   item.value.filter.splice(index, 1)
 }
+// 同步筛选逻辑关系。
 const logicChange = val => {
   item.value.logic = val
 }
+// 同步筛选类型变化。
 const filterTypeChange = val => {
   item.value.filterType = val
   if (val === 'enum' && needRequestEnum.value) {
     initEnumOptions()
   }
 }
+// 同步枚举勾选字段。
 const enumChange = () => {
   item.value.enumCheckField = state.enumCheckField
 }

@@ -22,6 +22,7 @@ const { mobileInPc } = storeToRefs(dvMainStore)
 
 const { t } = useI18n()
 
+// 接收图表、主题和属性显示配置。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -36,6 +37,7 @@ const props = defineProps({
   }
 })
 
+// 监听表格单元格相关配置并同步表单。
 watch(
   [
     () => props.chart.customAttr.tableCell,
@@ -51,6 +53,7 @@ watch(
 
 const predefineColors = COLOR_PANEL
 
+// 生成表格单元格字号选项。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -68,24 +71,31 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+// 维护表格单元格样式表单。
 const state = reactive({
   tableCellForm: {} as ChartTableCellAttr
 })
 
+// 当前字段对齐配置。
 const alignConfig = reactive({
   id: '',
   align: 'left'
 })
 
+// 判断是否显示自定义对齐配置。
 const showCustomAlign = computed(() => {
   return ['table-info', 'table-normal'].includes(props.chart.type)
 })
 
+// 可配置对齐字段选项。
 const alignConfigOptions = reactive([])
+// 可合并字段选项。
 const mergeFieldOptions = reactive([])
 
+// 定义表格单元格变更事件。
 const emit = defineEmits(['onTableCellChange'])
 
+// 处理表格单元格样式变化。
 const changeTableCell = prop => {
   if (prop === 'alignConfig') {
     state.tableCellForm.alignConfig = alignConfigOptions.map(item => ({
@@ -101,6 +111,7 @@ const changeTableCell = prop => {
   emit('onTableCellChange', payload, prop)
 }
 
+// 切换当前字段对齐配置。
 const changeAlignConfig = () => {
   const selected = state.tableCellForm.alignConfig.find(item => item.id === alignConfig.id)
   if (selected) {
@@ -108,6 +119,7 @@ const changeAlignConfig = () => {
   }
 }
 
+// 初始化表格单元格样式表单。
 const init = () => {
   const tableCell = props.chart?.customAttr?.tableCell
   if (tableCell) {
@@ -185,6 +197,7 @@ const init = () => {
     }
   }
 }
+// 判断指定属性是否应显示。
 const showProperty = prop => props.propertyInner?.includes(prop)
 
 onMounted(() => {
