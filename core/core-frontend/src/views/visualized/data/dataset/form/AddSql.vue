@@ -246,7 +246,7 @@ const insertFieldToCodeMirror = (value: string) => {
   })
 }
 
-// 在保存和展示之间转换系统变量 ID 与名称
+// 在保存和展示之间转换系统变量 ID 与名称，编辑器展示名称，持久化保存稳定 ID。
 const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
   let name2Id = originName
   const ids = [...builtInList.value, ...fieldFormList.value].map(item => item.id)
@@ -260,6 +260,7 @@ const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
     on.forEach(itm => {
       const ele = itm.slice(7, -1)
       if (name2Auto) {
+        // 调用方可收集自动识别到的变量 ID，用于后续参数详情同步。
         name2Auto.push(nameIdMap[ele])
       }
       if (from === 'id' && ids.includes(ele)) {
@@ -282,6 +283,7 @@ const handleSearchVariableApi = async () => {
 const showSystemParams = ref(true)
 // 初始化数据源表、移动端变量列表和 CodeMirror 实例
 onMounted(async () => {
+  // 数据源表列表先按当前 SQL 节点加载，避免编辑器打开后左侧列表为空。
   dsChange(sqlNode.value.datasourceId)
   if (!desktop) {
     try {
@@ -364,6 +366,7 @@ const calculateHeight = (e: MouseEvent) => {
 
 // 根据鼠标横坐标计算左侧数据表面板宽度
 const calculateWidth = (e: MouseEvent) => {
+  // 左侧面板宽度限制在 240 到 400 像素，兼顾表名可读性和 SQL 编辑区空间。
   if (e.pageX < 240) {
     LeftWidth.value = 240
     return
@@ -450,6 +453,7 @@ const save = () => {
       sqlVariableDetails: JSON.stringify(state.variables)
     },
     () => {
+      // 保存成功提示由父级回调触发，确保后端持久化完成后再反馈用户。
       ElMessage.success(t('common.save_success'))
     }
   )
@@ -598,6 +602,7 @@ const parseVariable = () => {
         for (let matchIndex = 0; matchIndex < match.length; matchIndex++) {
           let name = match[matchIndex].substring(2, match[matchIndex].length - 1)
           if (names.indexOf(name) < 0) {
+            // 同一 SQL 中重复出现的参数只保留一份配置，避免参数抽屉出现重复行。
             names.push(name)
             let obj = undefined
             for (let i = 0; i < state.variables?.length; i++) {
@@ -635,6 +640,7 @@ const parseVariable = () => {
       for (let index = 0; index < match.length; index++) {
         let name = match[index].substring(2, match[index].length - 1)
         if (names.indexOf(name) < 0) {
+          // 旧语法参数同样按变量名去重，保持与新版参数块一致的编辑体验。
           names.push(name)
           let obj = undefined
           for (let i = 0; i < state.variables?.length; i++) {
@@ -682,6 +688,7 @@ const mousedownDrag = () => {
 
 <template>
   <div class="add-sql-name">
+    <!-- 顶部操作区承载节点命名、运行预览、参数设置和保存状态。 -->
     <el-input class="name" ref="editorName" v-model="sqlNode.tableName" @change="setFlag" />
     <div class="save-or-cancel flex-align-center">
       <el-button @click="getSQLPreview" text style="color: #1f2329">
@@ -736,6 +743,7 @@ const mousedownDrag = () => {
       class="table-list"
       :style="{ width: LeftWidth + 'px' }"
     >
+      <!-- 左侧数据源面板支持数据源切换、表搜索、字段查看和快捷复制。 -->
       <div class="table-list-top">
         <p class="select-ds">
           {{ t('data_set.current_data_source') }}
@@ -920,6 +928,7 @@ const mousedownDrag = () => {
       :class="showSysParams && 'p280'"
       :style="{ width: `calc(100% - ${showLeft ? LeftWidth : 0}px)` }"
     >
+      <!-- SQL 编辑器接收变量名映射，用于高亮区分指标型和维度型系统变量。 -->
       <code-mirror
         @change="changeFlagCode = true"
         :height="`${dragHeight}px`"

@@ -107,6 +107,7 @@ const handleClick = (tab?: { paneName?: string | number }, _ev?: Event) => {
   }
   drawerLoading.value = true
   exportTasksRecords().then(res => {
+    // 先刷新状态数量，再加载当前分页数据，保证标签计数和表格内容同步。
     tabList.value.forEach(item => {
       if (item.name === 'ALL') {
         item.label = t('data_set.all') + '(' + res.data.ALL + ')'
@@ -181,6 +182,7 @@ const appStore = useAppStoreWithOut()
 const isCrestBi = computed(() => appStore.getIsCrestBi)
 const exportNoticeQueue = createExportNoticeQueue({
   emit: notice => {
+    // Web 模式下把短时间内的导出结果聚合成一条提示，减少多任务导出时的消息刷屏。
     const noticeText = formatExportNoticeMessage(
       notice,
       t('data_set.successful_go_to'),
@@ -203,6 +205,7 @@ const taskExportTopicCall = (task: string) => {
     try {
       exportTask = JSON.parse(task)
     } catch {
+      // 非标准任务通知直接忽略，避免影响正常导出中心轮询。
       return
     }
     exportNoticeQueue.push(exportTask)
@@ -266,6 +269,7 @@ const downLoadAll = () => {
     return
   }
   multipleSelection.value.map(ele => {
+    // 已选择任务时按选择顺序逐个生成下载地址。
     generateDownloadUri(ele.id).then(uri => {
       window.open(PATH_URL + uri)
     })
@@ -385,6 +389,7 @@ const delAll = () => {
 useEmitt({ name: 'task-export-topic-call', callback: taskExportTopicCall })
 
 defineExpose({
+  // 父级通过事件总线或 ref 打开导出中心，并可指定默认激活标签。
   init
 })
 </script>
@@ -400,11 +405,13 @@ defineExpose({
     append-to-body
     :before-close="handleClose"
   >
+    <!-- 导出中心抽屉聚合任务状态、批量操作、下载和失败原因查看。 -->
     <div class="export-center-content" v-loading="drawerLoading">
       <el-tabs v-model="activeName" class="export-tabs" @tab-click="handleClick">
         <el-tab-pane v-for="tab in tabList" :key="tab.name" :label="tab.label" :name="tab.name" />
       </el-tabs>
       <div class="export-toolbar">
+        <!-- 工具栏按钮根据任务状态和选择数量切换文案与操作范围。 -->
         <el-button
           v-if="activeName === 'SUCCESS' && multipleSelection.length === 0"
           class="export-action"
@@ -582,6 +589,7 @@ defineExpose({
 
 <style lang="less">
 .de-export-excel {
+  // 导出中心使用独立 CSS 变量，避免与数据集页面其它抽屉样式相互影响。
   --export-ink: #0f172a;
   --export-ink-2: #334155;
   --export-muted: #64748b;
@@ -704,6 +712,7 @@ defineExpose({
   }
 
   .table-container {
+    // 表格容器占满抽屉剩余高度，分页固定在底部区域内展示。
     flex: 1;
     min-height: 0;
     height: auto;
@@ -863,6 +872,7 @@ defineExpose({
     }
 
     .export-row-actions {
+      // 行操作按钮固定尺寸并右对齐，避免下载、重试、删除组合导致列宽抖动。
       display: inline-flex;
       gap: 6px;
       align-items: center;
