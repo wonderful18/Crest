@@ -1332,6 +1332,7 @@ const validateConditionType = ({
   defaultConditionValueS,
   conditionType
 }) => {
+  // 单条件只校验首个值，双条件必须同时具备左右两侧默认值。
   if (conditionType === 0) {
     return defaultConditionValueF === ''
   } else {
@@ -1379,6 +1380,7 @@ const validate = () => {
     }
 
     if (ele.displayType === '9') {
+      // 树形条件需要同时校验数据集、层级字段和每一层级的图表字段映射。
       if (
         ele.defaultValueCheck &&
         ((Array.isArray(ele.defaultValue) && !ele.defaultValue.length) || !ele.defaultValue)
@@ -1413,6 +1415,7 @@ const validate = () => {
     }
 
     if (ele.displayType === '22' && ele.defaultValueCheck) {
+      // 数值范围保存前先把默认起止值同步到运行态，预览查询直接读取 numValueStart/End。
       ele.numValueEnd = ele.defaultNumValueEnd
       ele.numValueStart = ele.defaultNumValueStart
       if (
@@ -1629,6 +1632,7 @@ const validate = () => {
       }
       if (!ele.setTimeRange) return false
 
+      // 设置最大查询窗口后，默认时间必须落在动态窗口或固定区间允许范围内。
       if (
         isInRange(
           ele,
@@ -1703,6 +1707,7 @@ const confirmClick = () => {
       cascadeArr.forEach(ele => {
         ele.forEach(item => {
           if (item.datasetId.split('--')[1] === itx.id && itx.defaultValueCheck) {
+            // 确认保存时把当前默认值同步给级联节点，运行态首次查询可直接使用。
             const val = itx.mapValue
             item.selectValue = Array.isArray(val) ? [...val] : val
             item.currentSelectValue = Array.isArray(val) ? [...val] : val
@@ -2032,6 +2037,7 @@ const handleCondition = (item, idx = 0) => {
     handleCheckedFieldsChange(curComponent.value.checkedFields)
   }
   multipleChange(curComponent.value.multiple)
+  // 手动值来源编辑使用副本，切换条件时重新从当前条件恢复。
   valueSource.value = cloneDeep(curComponent.value.valueSource)
   if (!valueSource.value.length) {
     valueSource.value.push('')
@@ -2122,6 +2128,7 @@ const saveTree = arr => {
 const setSameField = () => {
   curComponent.value.treeFieldList.forEach((ele, index) => {
     if (!curComponent.value.treeCheckedList[index]) {
+      // 新增树层级时复制当前绑定关系作为初始值，减少逐层重复选择。
       curComponent.value.treeCheckedList = [
         ...curComponent.value.treeCheckedList,
         {
@@ -2639,6 +2646,7 @@ defineExpose({
                 </div>
               </div>
               <template v-if="element.treeFieldList">
+                <!-- 树形查询条件在左侧额外展示层级节点，点击层级可维护该层关联图表。 -->
                 <div
                   :class="
                     element.id === activeCondition &&
@@ -2737,6 +2745,7 @@ defineExpose({
                   v-model="curComponent.checkedFieldsMapArr[field.componentId]"
                   clearable
                 >
+                  <!-- 时间范围参数最多选择两个字段，并通过字段后缀标记开始时间或结束时间。 -->
                   <template v-if="curComponent.checkedFieldsMap[field.componentId]" #prefix>
                     <el-icon>
                       <Icon
@@ -2843,6 +2852,7 @@ defineExpose({
                   v-model="curComponent.checkedFieldsMapArrNum[field.componentId]"
                   clearable
                 >
+                  <!-- 数值范围参数最多选择两个数值字段，并分别映射为最小值和最大值。 -->
                   <template v-if="curComponent.checkedFieldsMap[field.componentId]" #prefix>
                     <el-icon>
                       <Icon
@@ -3292,6 +3302,7 @@ defineExpose({
                   </el-radio-group>
                 </div>
                 <template v-if="curComponent.optionValueSource === 1">
+                  <!-- 数据集来源模式通过查询字段、展示字段和排序字段共同定义下拉选项。 -->
                   <div class="value">
                     <el-tree-select
                       :teleported="false"
@@ -3522,6 +3533,7 @@ defineExpose({
                   </div>
                 </template>
                 <div v-if="curComponent.optionValueSource === 2" class="value flex-align-center">
+                  <!-- 手工输入模式先在弹层内编辑临时数组，确认后再写回当前条件。 -->
                   <el-popover
                     placement="bottom-start"
                     popper-class="manual-input"
