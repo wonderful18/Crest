@@ -348,6 +348,7 @@ watch(
     <div class="list-item" v-if="timeRange.intervalType !== 'none'">
       <div class="label">{{ regularOrTrendsTitle }}</div>
       <div class="setting-content">
+        <!-- 固定和动态时间共用同一份配置对象，切换时保留旧值用于回切恢复。 -->
         <div class="setting">
           <el-radio-group v-model="timeRange.regularOrTrends">
             <el-radio value="fixed">{{ t('dynamic_time.fix') }}</el-radio>
@@ -391,6 +392,7 @@ watch(
           </div>
         </template>
         <template v-else-if="dynamicTime && timeRange.intervalType === 'timeInterval'">
+          <!-- 区间模式使用范围快捷项，和开始/结束模式的单点快捷项分开维护。 -->
           <div class="setting">
             <div class="setting-label">{{ t('dynamic_time.relative') }}</div>
             <div class="setting-value select">

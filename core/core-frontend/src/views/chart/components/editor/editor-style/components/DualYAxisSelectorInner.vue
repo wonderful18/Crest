@@ -100,6 +100,7 @@ function changeUnitLanguage(cfg: BaseFormatter, lang, prop: string) {
 
 // 初始化时深拷贝外部表单，随后补齐格式化单位默认值。
 const init = () => {
+  // 双轴外层会传入左轴或右轴对象，内层只维护当前侧的编辑副本。
   state.axisForm = JSON.parse(JSON.stringify(props.form))
   initFormatCfgUnit(state.axisForm.axisLabelFormatter)
 }
@@ -175,6 +176,7 @@ onMounted(() => {
       </el-checkbox>
     </el-form-item>
     <div style="margin-left: 22px">
+      <!-- 轴标题关闭后仍保留标题文本和样式，便于用户再次开启时恢复配置。 -->
       <el-form-item
         class="form-item"
         :class="'form-item-' + themes"
@@ -269,6 +271,7 @@ onMounted(() => {
       </div>
 
       <template v-if="showProperty('axisValue') && !state.axisForm.axisValue.auto">
+        <!-- 固定刻度三项必须成组保存，防止单侧轴出现半自动刻度。 -->
         <el-row :gutter="8">
           <el-col :span="12">
             <el-form-item
@@ -395,6 +398,7 @@ onMounted(() => {
       </el-checkbox>
     </el-form-item>
     <div style="padding-left: 22px" v-if="showProperty('splitLine')">
+      <!-- 网格线配置只影响当前侧轴，另一侧轴由外层独立保存。 -->
       <div style="flex: 1; display: flex">
         <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
           <el-color-picker
@@ -456,6 +460,7 @@ onMounted(() => {
     </el-form-item>
     <div style="padding-left: 22px" v-if="showProperty('axisLabel')">
       <div style="flex: 1">
+        <!-- 轴标签颜色和字号独立于轴标题，关闭标签时保留格式化规则。 -->
         <div style="display: flex">
           <el-form-item
             class="form-item"
