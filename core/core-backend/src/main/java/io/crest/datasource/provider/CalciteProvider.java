@@ -567,7 +567,7 @@ public class CalciteProvider extends Provider {
             try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId());
                  Statement statement = getStatement(con, 30)) {
                 if (isOracleLike(datasourceSchemaDTO.getType())) {
-                    statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + datasourceConfiguration.getSchema());
+                    statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + oracleSchemaIdentifier(datasourceConfiguration.getSchema()));
                 }
                 boolean readOnly = shouldUseReadOnlyConnection(datasourceRequest, datasourceConfiguration, datasourceSchemaDTO.getType());
                 setConnectionReadOnly(con, readOnly);
@@ -955,7 +955,7 @@ public class CalciteProvider extends Provider {
         if (isOracleLike(value.getType())) {
             statement = getStatement(con, datasourceConfiguration.getQueryTimeout());
             if (StringUtils.isNotBlank(datasourceConfiguration.getSchema())) {
-                statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + datasourceConfiguration.getSchema());
+                statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + oracleSchemaIdentifier(datasourceConfiguration.getSchema()));
             }
             statement.executeUpdate("ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS'");
             // 查询文本按目标库字符集转换，避免 Oracle 兼容库解析中文 SQL 条件失败
@@ -1319,6 +1319,17 @@ public class CalciteProvider extends Provider {
      */
     private static String normalizeOracleName(String name) {
         return StringUtils.trimToEmpty(name).toUpperCase(Locale.ROOT);
+    }
+
+    /**
+     * 格式化 Oracle schema 标识符，CURRENT_SCHEMA 不支持用 JDBC 参数绑定。
+     */
+    private String oracleSchemaIdentifier(String schema) {
+        String normalized = normalizeOracleName(schema);
+        if (!normalized.matches("[A-Z][A-Z0-9_$#]*")) {
+            CrestException.throwException("Illegal schema: " + schema);
+        }
+        return "\"" + normalized + "\"";
     }
 
     /**

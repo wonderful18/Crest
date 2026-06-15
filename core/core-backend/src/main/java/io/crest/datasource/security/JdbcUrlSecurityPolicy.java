@@ -116,7 +116,7 @@ public final class JdbcUrlSecurityPolicy {
         String normalizedUrl = canonicalize(jdbcUrl);
         String normalizedExtraParams = canonicalize(extraParams);
         String expectedPrefix = JDBC_PREFIXES.get(normalizedType);
-        if (StringUtils.isBlank(expectedPrefix) || !normalizedUrl.startsWith(expectedPrefix)) {
+        if (StringUtils.isBlank(expectedPrefix) || !hasJdbcSchemePrefix(normalizedUrl, expectedPrefix)) {
             CrestException.throwException("Illegal jdbcUrl: " + jdbcUrl);
         }
         Set<String> dangerousFragments = new LinkedHashSet<>(COMMON_DANGEROUS_FRAGMENTS);
@@ -189,6 +189,13 @@ public final class JdbcUrlSecurityPolicy {
         normalized = Normalizer.normalize(normalized, Normalizer.Form.NFKC);
         normalized = normalized.replace("\\", "");
         return normalized.toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * 校验完整 JDBC scheme 边界，避免 jdbc:mysql-evil 这类伪协议绕过 startsWith。
+     */
+    private static boolean hasJdbcSchemePrefix(String normalizedUrl, String expectedPrefix) {
+        return normalizedUrl.startsWith(expectedPrefix + ":");
     }
 
     /**

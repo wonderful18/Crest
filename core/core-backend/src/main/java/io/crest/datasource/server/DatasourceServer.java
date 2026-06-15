@@ -28,6 +28,7 @@ import io.crest.datasource.manage.DatasourceSyncManage;
 import io.crest.datasource.manage.EngineManage;
 import io.crest.datasource.provider.CalciteProvider;
 import io.crest.datasource.provider.EngineProvider;
+import io.crest.datasource.type.ObOracle;
 import io.crest.datasource.provider.ExcelUtils;
 import io.crest.datasource.request.EngineRequest;
 import io.crest.exception.CrestException;
@@ -141,6 +142,56 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
+     * 解析重复连接校验使用的配置，OB Oracle 需要保留按用户名推导 schema 的逻辑。
+     */
+    private static DatasourceConfiguration parseRepeatConfiguration(String configuration, String type) {
+        DatasourceConfiguration datasourceConfiguration = Strings.CI.equals(type, DatasourceConfiguration.DatasourceType.obOracle.getType())
+                ? JsonUtil.parseObject(configuration, ObOracle.class)
+                : JsonUtil.parseObject(configuration, DatasourceConfiguration.class);
+        if (datasourceConfiguration != null) {
+            datasourceConfiguration.convertJdbcUrl();
+        }
+        return datasourceConfiguration;
+    }
+
+    /**
+     * 忽略首尾空白比较连接配置字段，避免空值触发 NPE。
+     */
+    private static boolean sameConfigValue(String left, String right) {
+        return Strings.CI.equals(StringUtils.trimToEmpty(left), StringUtils.trimToEmpty(right));
+    }
+
+    /**
+     * 判断两个连接配置是否指向同一个物理数据源。
+     */
+    private static boolean isSameConnection(String type, DatasourceConfiguration left, DatasourceConfiguration right) {
+        if (left == null || right == null) {
+            return false;
+        }
+        if (!sameConfigValue(left.getHost(), right.getHost()) || !Objects.equals(left.getPort(), right.getPort())) {
+            return false;
+        }
+        if (Strings.CI.equalsAny(type,
+                DatasourceConfiguration.DatasourceType.sqlServer.getType(),
+                DatasourceConfiguration.DatasourceType.db2.getType(),
+                DatasourceConfiguration.DatasourceType.oracle.getType(),
+                DatasourceConfiguration.DatasourceType.pg.getType(),
+                DatasourceConfiguration.DatasourceType.redshift.getType())) {
+            return sameConfigValue(left.getDataBase(), right.getDataBase())
+                    && sameConfigValue(left.getSchema(), right.getSchema());
+        }
+        if (Strings.CI.equals(type, DatasourceConfiguration.DatasourceType.obOracle.getType())) {
+            return sameConfigValue(left.getUsername(), right.getUsername())
+                    && sameConfigValue(left.getSchema(), right.getSchema());
+        }
+        if (Strings.CI.equals(type, DatasourceConfiguration.DatasourceType.obMysql.getType())) {
+            return sameConfigValue(left.getUsername(), right.getUsername())
+                    && sameConfigValue(left.getDataBase(), right.getDataBase());
+        }
+        return sameConfigValue(left.getDataBase(), right.getDataBase());
+    }
+
+    /**
      * 数据同步范围，区分全量抽取和追加抽取两类任务
      */
     public enum UpdateType {
@@ -189,8 +240,7 @@ public class DatasourceServer implements DatasourceApi {
             return false;
         }
         dataSourceDTO.setConfiguration(decodeBase64RequestValue(dataSourceDTO.getConfiguration(), "数据源配置"));
-        DatasourceConfiguration configuration = JsonUtil.parseObject(dataSourceDTO.getConfiguration(), DatasourceConfiguration.class);
-        boolean hasRepeat = false;
+        DatasourceConfiguration configuration = parseRepeatConfiguration(dataSourceDTO.getConfiguration(), dataSourceDTO.getType());
         for (CoreDatasource datasource : datasources) {
             if (notFullDs.stream().anyMatch(e -> datasource.getType().contains(e))) {
                 continue;
@@ -198,33 +248,12 @@ public class DatasourceServer implements DatasourceApi {
             if (StringUtils.isEmpty(datasource.getConfiguration())) {
                 continue;
             }
-            DatasourceConfiguration compare = JsonUtil.parseObject(datasource.getConfiguration(), DatasourceConfiguration.class);
-            if (compare == null) {
-                continue;
-            }
-            switch (dataSourceDTO.getType()) {
-                case "sqlServer":
-                case "db2":
-                case "oracle":
-                case "obOracle":
-                case "pg":
-                case "redshift":
-                    if (configuration.getHost().equalsIgnoreCase(compare.getHost()) && Objects.equals(configuration.getPort(), compare.getPort()) && configuration.getDataBase().equalsIgnoreCase(compare.getDataBase()) && configuration.getSchema().equalsIgnoreCase(compare.getSchema())) {
-                        hasRepeat = true;
-                    } else {
-                        hasRepeat = false;
-                    }
-                    break;
-                default:
-                    if (configuration.getHost().equalsIgnoreCase(compare.getHost()) && Objects.equals(configuration.getPort(), compare.getPort()) && configuration.getDataBase().equalsIgnoreCase(compare.getDataBase())) {
-                        hasRepeat = true;
-                    } else {
-                        hasRepeat = false;
-                    }
-                    break;
+            DatasourceConfiguration compare = parseRepeatConfiguration(datasource.getConfiguration(), datasource.getType());
+            if (isSameConnection(dataSourceDTO.getType(), configuration, compare)) {
+                return true;
             }
         }
-        return hasRepeat;
+        return false;
     }
 
     /**
