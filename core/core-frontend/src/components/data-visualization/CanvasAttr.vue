@@ -20,6 +20,7 @@ import { formatterViewInfo } from '@/views/chart/components/js/formatter'
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const { canvasStyleData, canvasViewInfo } = storeToRefs(dvMainStore)
+// 画布属性面板直接操作画布级配置，并负责把全局样式同步到已存在的图表。
 // 初始化完成前不向已有图表批量写入主题属性，避免面板挂载过程覆盖画布初始状态。
 let canvasAttrInit = false
 
@@ -69,6 +70,7 @@ const themeAttrChange = (custom, property, value) => {
       try {
         const viewInfo = canvasViewInfo.value[viewId]
         if (custom === 'formatterCfg') {
+          // 数值格式化需要通过专用方法写入不同图表的 formatter 配置。
           formatterViewInfo(viewInfo, value)
         } else if (custom === 'customAttr') {
           if (viewInfo.type === 'flow-map') {
@@ -83,9 +85,11 @@ const themeAttrChange = (custom, property, value) => {
             }
             merge(viewInfo['customAttr'], tmpValue)
           } else {
+            // 普通图表直接深度合并全局配色和样式默认值。
             merge(viewInfo['customAttr'], value)
           }
         } else {
+          // 非 customAttr 配置按指定 property 局部覆盖，避免丢失其他画布属性。
           Object.keys(value).forEach(function (key) {
             if (viewInfo[custom][property][key] !== undefined) {
               viewInfo[custom][property][key] = value[key]
