@@ -134,16 +134,21 @@ import Icon from '@/components/icon-custom/src/Icon.vue'
 const { t } = useI18n()
 const dvMainStore = dvMainStoreWithOut()
 
+// 声明标题文本样式变更时向父组件派发的事件。
 const emits = defineEmits(['onTextChange'])
 
+// 读取当前仪表板标题样式表单。
 const titleForm = computed<any>(() => dvMainStore.canvasStyleData.component.chartTitle)
+// 保存标题样式面板的临时状态和预设颜色。
 const state = reactive({
   fontSize: [],
   isSetting: false,
   predefineColors: COLOR_PANEL
 })
+// 保存标题样式面板主题。
 const themes = ref('light')
 
+// 生成标题字号下拉选项。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 60; i = i + 2) {
@@ -155,20 +160,24 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+// 标记被修改的标题样式字段并通知父组件。
 const changeTitleStyle = modifyName => {
   titleForm.value['modifyName'] = modifyName
   emits('onTextChange', titleForm.value)
 }
 
+// 切换标题加粗状态。
 function checkBold() {
   titleForm.value.isBolder = !titleForm.value.isBolder
   changeTitleStyle('isBolder')
 }
+// 切换标题斜体状态。
 function checkItalic() {
   titleForm.value.isItalic = !titleForm.value.isItalic
   changeTitleStyle('isItalic')
 }
 
+// 设置标题水平对齐位置。
 function setPosition(p: 'left' | 'center' | 'right') {
   titleForm.value.hPosition = p
   changeTitleStyle('hPosition')
