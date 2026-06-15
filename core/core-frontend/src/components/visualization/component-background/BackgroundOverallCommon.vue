@@ -415,10 +415,13 @@ import ImgViewDialog from '@/custom-component/ImgViewDialog.vue'
 import BorderOptionPrefix from '@/components/visualization/component-background/BorderOptionPrefix.vue'
 const snapshotStore = snapshotStoreWithOut()
 const { t } = useI18n()
+// 定义背景配置变更事件。
 const emits = defineEmits(['onBackgroundChange'])
+// 隐藏文件选择器实例。
 const files = ref(null)
 const maxImageSize = 15000000
 
+// 接收背景配置、主题和控件宽度。
 const props = withDefaults(
   defineProps<{
     componentPosition?: string
@@ -440,6 +443,7 @@ const props = withDefaults(
 import { State } from '@/components/visualization/component-background/Types'
 import { ShorthandMode } from '@/Types'
 
+// 维护背景配置表单、图片上传和预览状态。
 const state = reactive<State>({
   commonBackground: {
     innerPadding: {},
@@ -466,14 +470,17 @@ const cornerModes = Object.values(ShorthandMode).map(item => ({
   value: item
 })) as { label: string; value: ShorthandMode }[]
 
+// 触发隐藏文件选择器。
 const goFile = () => {
   files.value.click()
 }
 
+// 提示上传图片超过大小限制。
 const sizeMessage = () => {
   ElMessage.error('图片大小不能超过15M')
 }
 
+// 重新上传背景图片并同步背景配置。
 const reUpload = e => {
   const file = e.target.files[0]
   if (file.size > maxImageSize) {
@@ -487,12 +494,14 @@ const reUpload = e => {
   })
 }
 
+// 查询系统内置背景展示配置。
 const queryBackground = () => {
   queryVisualizationBackground().then(response => {
     state.BackgroundShowMap = response.data
   })
 }
 
+// 初始化背景表单并兼容旧版简写值。
 const init = () => {
   const commonBackgroundPop = deepCopy(props.commonBackgroundPop)
   const innerPadding = commonBackgroundPop.innerPadding
@@ -525,10 +534,12 @@ const init = () => {
   }
 }
 queryBackground()
+// 记录背景样式快照。
 const commitStyle = () => {
   snapshotStore.recordSnapshotCacheToMobile('commonBackground')
 }
 
+// 移除当前背景图片。
 const handleRemove = () => {
   state.uploadDisabled = false
   state.commonBackground.outerImage = null
@@ -536,10 +547,12 @@ const handleRemove = () => {
   onBackgroundChange()
   commitStyle()
 }
+// 打开背景图片预览弹窗。
 const handlePictureCardPreview = file => {
   state.dialogImageUrl = file.url
   state.dialogVisible = true
 }
+// 上传背景图片并写入配置。
 const upload = file => {
   uploadFileResult(file.file, fileUrl => {
     state.commonBackground.outerImage = fileUrl
@@ -547,6 +560,7 @@ const upload = file => {
   })
 }
 
+// 根据简写模式展开内边距。
 const updateInnerPadding = () => {
   if (state.commonBackground.innerPadding.mode === ShorthandMode.Uniform) {
     state.commonBackground.innerPadding.left = state.commonBackground.innerPadding.top
@@ -558,6 +572,7 @@ const updateInnerPadding = () => {
   }
 }
 
+// 根据简写模式展开圆角。
 const updateBorderRadius = () => {
   if (state.commonBackground.borderRadius.mode === ShorthandMode.Uniform) {
     state.commonBackground.borderRadius.topRight = state.commonBackground.borderRadius.topLeft
@@ -569,15 +584,19 @@ const updateBorderRadius = () => {
   }
 }
 
+// 归一化背景配置后通知父级。
 const onBackgroundChange = () => {
   updateInnerPadding()
   updateBorderRadius()
   emits('onBackgroundChange', state.commonBackground)
 }
 
+// 背景表单容器实例。
 const bgForm = ref()
+// 背景表单容器宽度。
 const containerWidth = ref()
 
+// 根据容器宽度计算颜色选择器宽度。
 const computedBackgroundColorPickerWidth = computed(() => {
   if (containerWidth.value <= 240) {
     return 50
@@ -585,6 +604,7 @@ const computedBackgroundColorPickerWidth = computed(() => {
     return props.backgroundColorPickerWidth
   }
 })
+// 根据容器宽度计算边框选择器宽度。
 const computedBackgroundBorderSelectWidth = computed(() => {
   if (containerWidth.value <= 240) {
     return 108
@@ -604,6 +624,7 @@ onMounted(() => {
   })
 })
 
+// 外部背景配置变化时刷新表单。
 watch(
   () => props.commonBackgroundPop,
   () => {
