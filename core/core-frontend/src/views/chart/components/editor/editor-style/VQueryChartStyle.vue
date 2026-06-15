@@ -134,6 +134,7 @@ const currentSearch = ref({
 // 切换查询组件冻结置顶状态，并保证同画布只保留一个冻结查询组件
 const onFreezeChange = () => {
   if (element.value.freeze) {
+    // 冻结查询组件会置顶到画布顶部，同一画布只能保留一个冻结组件。
     let historyFreezeCount = 0
     dvMainStore.componentData.forEach(item => {
       if (item.innerType === 'VQuery' && item.id !== element.value.id && item.freeze) {
@@ -181,10 +182,12 @@ const handleCurrentPlaceholder = val => {
     placeholder: ''
   }
   if (obj.placeholder === undefined) {
+    // 历史查询条件可能没有占位文案字段，打开面板时补齐默认值。
     obj.placeholder = ''
   }
 
   if (obj.queryConditionWidth === undefined) {
+    // 历史查询条件默认宽度按旧版输入框宽度回填。
     obj.queryConditionWidth = 227
   }
   currentSearch.value = obj
@@ -219,6 +222,7 @@ onMounted(() => {
 const reUpload = e => {
   const file = e.target.files[0]
   if (file.size > 15000000) {
+    // 背景图片限制 15M，避免大图拖慢画布加载和导出。
     ElMessage.error('图片大小不能超过15M')
     return
   }
@@ -261,12 +265,14 @@ const checkItalic = type => {
 // 补齐历史查询组件缺失的样式字段默认值
 const initParams = () => {
   if (!chart.value.customStyle.component.hasOwnProperty('queryConditionHeight')) {
+    // 旧查询组件没有条件高度配置，按当前默认输入框高度补齐。
     chart.value.customStyle.component = {
       ...chart.value.customStyle.component,
       queryConditionHeight: 32
     }
   }
   if (!chart.value.customStyle.component.hasOwnProperty('labelShow')) {
+    // 旧样式缺失名称、按钮和间距配置时一次性补齐完整默认结构。
     chart.value.customStyle.component = {
       ...chart.value.customStyle.component,
       labelShow: true,
@@ -285,6 +291,7 @@ const initParams = () => {
   }
 
   if (!chart.value.customStyle.component.hasOwnProperty('placeholderShow')) {
+    // 占位文案开关是后续版本新增字段，默认保持显示。
     chart.value.customStyle.component = {
       ...chart.value.customStyle.component,
       placeholderShow: true,

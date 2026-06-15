@@ -367,6 +367,7 @@ const fontFamilyList = [
   { name: '楷体', value: 'KaiTi, "Kaiti SC", STKaiti' }
 ]
 
+// 滚动速度枚举直接写入组件样式，0 表示停止滚动。
 const scrollSpeedList = [
   { name: '停止', value: 0 },
   { name: '10', value: 10 },
@@ -383,6 +384,7 @@ const scrollSpeedList = [
   { name: '200', value: 200 }
 ]
 
+// 透明度使用 0.1 步进，和颜色面板中的 alpha 调整粒度保持接近。
 const opacitySizeList = [
   { name: '0', value: 0 },
   { name: '0.1', value: 0.1 },
@@ -396,6 +398,7 @@ const opacitySizeList = [
   { name: '0.9', value: 0.9 },
   { name: '1', value: 1 }
 ]
+// 背景模糊保存为 CSS filter 字符串，渲染层可直接应用。
 const backdropBlurList = [
   { name: '0', value: 'blur(0px)' },
   { name: '1', value: 'blur(1px)' },
@@ -554,6 +557,7 @@ const styleOptionKeyArray = [
 const styleInit = () => {
   if (element.value) {
     Object.keys(styleMounted.value).forEach(key => {
+      // 面板展示值按 100% 画布缩放反算，避免用户看到被缩放后的像素值。
       styleMounted.value[key] = Math.round(
         (element.value.style[key] * 100) / canvasStyleData.value.scale
       )
@@ -652,6 +656,7 @@ watch(
 }
 
 :deep(.ed-checkbox__input) {
+  // 工具条使用图标作为可见交互控件，隐藏原生勾选框。
   display: none;
 }
 
@@ -675,6 +680,7 @@ watch(
 }
 
 :deep(.ed-radio__input) {
+  // 对齐按钮同样隐藏原生 radio，只保留图标态。
   display: none;
 }
 

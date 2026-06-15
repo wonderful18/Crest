@@ -89,6 +89,7 @@ const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
 const desktop = wsCache.get('app.desktop')
 
 onUnmounted(() => {
+  // 抽屉组件卸载时同时释放轮询和通知队列，避免跨页面重复提醒。
   clearInterval(timer)
   exportNoticeQueue.clear()
 })
@@ -142,6 +143,7 @@ const init = (params?: { activeName?: string }) => {
   }
   handleClick()
   timer = setInterval(() => {
+    // 只有全部和进行中标签需要轮询，其余状态通过用户切换时刷新。
     if (['IN_PROGRESS', 'ALL'].includes(activeName.value)) {
       exportTasksRecords().then(res => {
         tabList.value.forEach(item => {
@@ -255,6 +257,7 @@ const callbackExportSuc = () => {
 // 下载当前成功标签下的全部任务，或仅下载已选择任务
 const downLoadAll = () => {
   if (multipleSelection.value.length === 0) {
+    // 未选择任务时下载当前成功列表全部文件。
     tableData.value.forEach(item => {
       generateDownloadUri(item.id).then(uri => {
         window.open(PATH_URL + uri)
@@ -339,6 +342,7 @@ const sizeChange = size => {
 // 删除当前标签下全部任务，或删除已选择的任务
 const delAll = () => {
   if (multipleSelection.value.length === 0) {
+    // 未选择任务时按当前状态标签批量清理。
     ElMessageBox.confirm(t('data_export.sure_del_all'), {
       confirmButtonType: 'danger',
       type: 'warning',
@@ -361,6 +365,7 @@ const delAll = () => {
   }
 
   ElMessageBox.confirm(t('data_export.sure_del'), {
+    // 已选择任务时仅删除选中的任务 ID 列表。
     confirmButtonType: 'danger',
     type: 'warning',
     autofocus: false,
