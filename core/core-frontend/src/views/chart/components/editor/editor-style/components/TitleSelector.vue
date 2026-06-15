@@ -25,7 +25,7 @@ const { batchOptStatus, mobileInPc } = storeToRefs(dvMainStore)
 
 const { t } = useI18n()
 
-// 接收图表、主题和属性显示配置
+// 标题样式面板维护图表标题文本、字体、对齐、阴影和备注说明。
 const props = defineProps({
   chart: {
     type: Object,
@@ -40,13 +40,14 @@ const props = defineProps({
   }
 })
 const appearanceStore = useAppearanceStoreWithOut()
-// 定义标题样式变更事件
+// 标题样式变更由父级写回图表配置并触发重绘。
 const emit = defineEmits(['onTextChange'])
-// 根据主题计算提示框主题
+// 提示框使用反向主题，保证深浅编辑面板下都具备可读对比度。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
 const predefineColors = COLOR_PANEL
+// 字体列表合并系统内置字体和用户上传字体，供标题配置统一选择。
 const fontFamily = CHART_FONT_FAMILY.concat(
   appearanceStore.fontList.map(ele => ({
     name: ele.name,
@@ -55,14 +56,14 @@ const fontFamily = CHART_FONT_FAMILY.concat(
 )
 const fontLetterSpace = CHART_FONT_LETTER_SPACE
 
-// 维护标题样式表单
+// 标题样式表单以默认值初始化，避免旧图表缺字段时面板渲染异常。
 const state = reactive({
   titleForm: JSON.parse(JSON.stringify(DEFAULT_TITLE_STYLE))
 })
 
 const { chart } = toRefs(props)
 
-// 生成标题字号选项
+// 标题字号覆盖普通标题和大屏标题两个区间，避免用户手工输入非法值。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -80,12 +81,12 @@ const fontSizeList = computed(() => {
   return arr
 })
 
-// 通知父级标题样式变化
+// 通知父级标题样式变化，prop 用于父级判断局部刷新范围。
 const changeTitleStyle = prop => {
   emit('onTextChange', state.titleForm, prop)
 }
 
-// 初始化标题样式表单
+// 初始化标题样式表单，并用默认样式补齐历史图表缺失字段。
 const init = () => {
   const customText = defaultsDeep(
     cloneDeep(props.chart?.customStyle?.text),
@@ -94,30 +95,30 @@ const init = () => {
 
   state.titleForm = cloneDeep(customText)
 
-  // 首次颜色可能赋值失败，单独赋值一次
+  // 颜色选择器挂载首帧可能丢失值，延后一帧再同步一次。
   nextTick(() => {
     state.titleForm.color = customText.color
   })
 }
 
-// 控制备注编辑弹窗显隐
+// 控制备注编辑弹窗显隐。
 const showEditRemark = ref<boolean>(false)
-// 临时备注内容
+// 临时备注内容用于取消编辑时回退，不直接污染标题配置。
 const tempRemark = ref<string>('')
 
-// 打开备注编辑弹窗
+// 打开备注编辑弹窗前复制当前备注，避免编辑中途影响图表配置。
 const openEditRemark = () => {
   tempRemark.value = cloneDeep(state.titleForm.remark)
   showEditRemark.value = true
 }
 
-// 关闭备注编辑弹窗
+// 关闭备注编辑弹窗并清理临时内容。
 const closeEditRemark = () => {
   showEditRemark.value = false
   tempRemark.value = ''
 }
 
-// 保存备注编辑内容
+// 保存备注编辑内容后再派发变更，保持备注更新可撤销。
 const saveEditRemark = () => {
   showEditRemark.value = false
   state.titleForm.remark = tempRemark.value
@@ -128,7 +129,7 @@ onMounted(() => {
   init()
 })
 
-// 监听标题样式变化并重新初始化
+// 外部标题样式变化时重新初始化，保证批量操作和单图面板状态一致。
 watch(
   () => props.chart?.customStyle?.text,
   () => {

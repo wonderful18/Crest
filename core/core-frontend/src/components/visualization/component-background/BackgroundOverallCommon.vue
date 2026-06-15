@@ -415,13 +415,14 @@ import ImgViewDialog from '@/custom-component/ImgViewDialog.vue'
 import BorderOptionPrefix from '@/components/visualization/component-background/BorderOptionPrefix.vue'
 const snapshotStore = snapshotStoreWithOut()
 const { t } = useI18n()
-// 定义背景配置变更事件
+// 通用背景面板负责组件/画布背景色、背景图、内边距、圆角和毛玻璃配置。
 const emits = defineEmits(['onBackgroundChange'])
-// 隐藏文件选择器实例
+// 隐藏文件选择器用于重新上传背景图，避免额外展示原生 input。
 const files = ref(null)
+// 背景图上传限制为 15MB，避免大图影响画布加载性能。
 const maxImageSize = 15000000
 
-// 接收背景配置、主题和控件宽度
+// 接收背景配置、主题和控件宽度，宽度会随面板容器动态调整。
 const props = withDefaults(
   defineProps<{
     componentPosition?: string
@@ -443,7 +444,7 @@ const props = withDefaults(
 import { State } from '@/components/visualization/component-background/Types'
 import { ShorthandMode } from '@/Types'
 
-// 维护背景配置表单、图片上传和预览状态
+// 维护背景配置表单、图片上传、预览弹窗和内置边框资源状态。
 const state = reactive<State>({
   commonBackground: {
     innerPadding: {},
@@ -460,27 +461,29 @@ const state = reactive<State>({
   predefineColors: COLOR_PANEL
 })
 
+// 内边距简写模式来自统一枚举，保证画布和组件背景配置语义一致。
 const paddingModes = Object.values(ShorthandMode).map(item => ({
   label: t(`visualization.inner_padding_shorthand_mode_${item}`),
   value: item
 })) as { label: string; value: ShorthandMode }[]
 
+// 圆角简写模式与内边距共用枚举，但展示文案按圆角语义翻译。
 const cornerModes = Object.values(ShorthandMode).map(item => ({
   label: t(`visualization.corner_shorthand_mode_${item}`),
   value: item
 })) as { label: string; value: ShorthandMode }[]
 
-// 触发隐藏文件选择器
+// 触发隐藏文件选择器，复用浏览器原生文件选择能力。
 const goFile = () => {
   files.value.click()
 }
 
-// 提示上传图片超过大小限制
+// 提示上传图片超过大小限制。
 const sizeMessage = () => {
   ElMessage.error('图片大小不能超过15M')
 }
 
-// 重新上传背景图片并同步背景配置
+// 重新上传背景图片并同步背景配置，成功后刷新文件列表预览。
 const reUpload = e => {
   const file = e.target.files[0]
   if (file.size > maxImageSize) {
@@ -494,18 +497,19 @@ const reUpload = e => {
   })
 }
 
-// 查询系统内置背景展示配置
+// 查询系统内置背景展示配置，用于内置边框选择器展示。
 const queryBackground = () => {
   queryVisualizationBackground().then(response => {
     state.BackgroundShowMap = response.data
   })
 }
 
-// 初始化背景表单并兼容旧版简写值
+// 初始化背景表单并兼容旧版数字简写值。
 const init = () => {
   const commonBackgroundPop = deepCopy(props.commonBackgroundPop)
   const innerPadding = commonBackgroundPop.innerPadding
   if (typeof innerPadding === 'number') {
+    // 旧版本 innerPadding 是单个数字，新版转换为统一简写结构。
     commonBackgroundPop.innerPadding = {
       mode: ShorthandMode.Uniform,
       top: innerPadding,
@@ -516,6 +520,7 @@ const init = () => {
   }
   const borderRadius = commonBackgroundPop.borderRadius
   if (typeof borderRadius === 'number') {
+    // 旧版本 borderRadius 是单个数字，新版转换为统一简写结构。
     commonBackgroundPop.borderRadius = {
       mode: ShorthandMode.Uniform,
       topLeft: borderRadius,
@@ -528,18 +533,19 @@ const init = () => {
   updateInnerPadding()
   updateBorderRadius()
   if (state.commonBackground.outerImage) {
+    // 已有背景图需要转换为可访问地址后回填上传组件文件列表。
     state.fileList = [{ name: 'background', url: imgUrlTrans(state.commonBackground.outerImage) }]
   } else {
     state.fileList = []
   }
 }
 queryBackground()
-// 记录背景样式快照
+// 记录背景样式快照，移动端和桌面端共用撤销栈。
 const commitStyle = () => {
   snapshotStore.recordSnapshotCacheToMobile('commonBackground')
 }
 
-// 移除当前背景图片
+// 移除当前背景图片并同步父级配置。
 const handleRemove = () => {
   state.uploadDisabled = false
   state.commonBackground.outerImage = null
@@ -547,12 +553,12 @@ const handleRemove = () => {
   onBackgroundChange()
   commitStyle()
 }
-// 打开背景图片预览弹窗
+// 打开背景图片预览弹窗。
 const handlePictureCardPreview = file => {
   state.dialogImageUrl = file.url
   state.dialogVisible = true
 }
-// 上传背景图片并写入配置
+// 上传背景图片并写入配置，上传组件会负责调用该自定义请求。
 const upload = file => {
   uploadFileResult(file.file, fileUrl => {
     state.commonBackground.outerImage = fileUrl
@@ -560,7 +566,7 @@ const upload = file => {
   })
 }
 
-// 根据简写模式展开内边距
+// 根据简写模式展开内边距，Uniform 同步四边，Axis 同步水平和垂直边。
 const updateInnerPadding = () => {
   if (state.commonBackground.innerPadding.mode === ShorthandMode.Uniform) {
     state.commonBackground.innerPadding.left = state.commonBackground.innerPadding.top
@@ -572,7 +578,7 @@ const updateInnerPadding = () => {
   }
 }
 
-// 根据简写模式展开圆角
+// 根据简写模式展开圆角，Uniform 同步四角，Axis 同步对角。
 const updateBorderRadius = () => {
   if (state.commonBackground.borderRadius.mode === ShorthandMode.Uniform) {
     state.commonBackground.borderRadius.topRight = state.commonBackground.borderRadius.topLeft
@@ -584,19 +590,19 @@ const updateBorderRadius = () => {
   }
 }
 
-// 归一化背景配置后通知父级
+// 归一化背景配置后通知父级，父级负责持久化并触发渲染。
 const onBackgroundChange = () => {
   updateInnerPadding()
   updateBorderRadius()
   emits('onBackgroundChange', state.commonBackground)
 }
 
-// 背景表单容器实例
+// 背景表单容器实例用于监听宽度变化。
 const bgForm = ref()
-// 背景表单容器宽度
+// 背景表单容器宽度会影响颜色选择器和边框选择器尺寸。
 const containerWidth = ref()
 
-// 根据容器宽度计算颜色选择器宽度
+// 根据容器宽度计算颜色选择器宽度，小面板使用紧凑宽度。
 const computedBackgroundColorPickerWidth = computed(() => {
   if (containerWidth.value <= 240) {
     return 50
@@ -604,7 +610,7 @@ const computedBackgroundColorPickerWidth = computed(() => {
     return props.backgroundColorPickerWidth
   }
 })
-// 根据容器宽度计算边框选择器宽度
+// 根据容器宽度计算边框选择器宽度，避免窄面板中控件溢出。
 const computedBackgroundBorderSelectWidth = computed(() => {
   if (containerWidth.value <= 240) {
     return 108
@@ -619,12 +625,13 @@ onMounted(() => {
   containerWidth.value = bgForm.value?.offsetWidth
   erd.listenTo(bgForm.value, () => {
     nextTick(() => {
+      // resize detector 回调中延后一帧读取宽度，避开布局尚未稳定的瞬间。
       containerWidth.value = bgForm.value?.offsetWidth
     })
   })
 })
 
-// 外部背景配置变化时刷新表单
+// 外部背景配置变化时刷新表单，支持主题切换和批量样式操作。
 watch(
   () => props.commonBackgroundPop,
   () => {
