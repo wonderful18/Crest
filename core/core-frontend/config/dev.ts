@@ -9,11 +9,19 @@ const dropBrowserOriginHeader = proxy => {
 
 // 本地开发默认使用当前网卡地址，换网络时无需手工调整代理目标
 const resolveNetworkAddress = () => {
+  const explicitHost = process.env.CREST_DEV_PROXY_HOST
+  if (explicitHost) {
+    return explicitHost
+  }
+
   const preferredInterface = process.env.CREST_DEV_PROXY_INTERFACE
   const interfaces = os.networkInterfaces()
   const allEntries = Object.entries(interfaces)
   const entries = preferredInterface
-    ? [[preferredInterface, interfaces[preferredInterface] || []]]
+    ? preferredInterface.split(',').map(name => {
+        const trimmedName = name.trim()
+        return [trimmedName, interfaces[trimmedName] || []]
+      })
     : [
         ...allEntries.filter(([name]) => /^en\d+$/u.test(name)),
         ...allEntries.filter(([name]) => !/^en\d+$/u.test(name) && !/^lo\d*$/u.test(name))

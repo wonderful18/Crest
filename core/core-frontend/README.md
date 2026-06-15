@@ -35,6 +35,14 @@ pnpm dev
 pnpm dev:fast
 ```
 
+本地开发代理默认转发到当前活动网卡的 `8100` 端口。需要固定到某个网卡或 IP 时，可以按下面方式启动：
+
+```bash
+CREST_DEV_PROXY_INTERFACE=en0 pnpm dev
+CREST_DEV_PROXY_HOST=10.25.25.33 pnpm dev
+CREST_DEV_PROXY_TARGET=http://10.25.25.33:8100 pnpm dev
+```
+
 构建前端：
 
 ```bash
