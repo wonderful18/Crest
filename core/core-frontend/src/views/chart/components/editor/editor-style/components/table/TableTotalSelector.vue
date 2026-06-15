@@ -10,6 +10,7 @@ import CustomAggrEdit from './CustomAggrEdit.vue'
 
 const { t } = useI18n()
 
+// 接收图表、主题和可编辑属性范围。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -23,6 +24,7 @@ const props = defineProps({
     type: Array<string>
   }
 })
+// 监听合计相关配置变化并重新初始化面板状态。
 watch(
   [
     () => props.chart.customAttr.tableTotal,
@@ -44,6 +46,7 @@ const aggregations = [
   { name: t('chart.min'), value: 'MIN' },
   { name: t('commons.custom'), value: 'CUSTOM' }
 ]
+// 维护合计配置面板的表单和当前选择项。
 const state = reactive({
   tableTotalForm: cloneDeep(DEFAULT_TABLE_TOTAL) as ChartTableTotalAttr,
   rowSubTotalItem: {} as DeepPartial<CalcTotalCfg>,
@@ -59,6 +62,7 @@ const state = reactive({
   basicStyleForm: JSON.parse(JSON.stringify(DEFAULT_BASIC_STYLE)) as ChartBasicStyle
 })
 
+// 判断列方向是否需要显示字段合计标签。
 const showColFieldTotalLabel = computed(() => {
   const chart = props.chart
   return (
@@ -68,6 +72,7 @@ const showColFieldTotalLabel = computed(() => {
   )
 })
 
+// 判断行方向是否需要显示字段合计标签。
 const showRowFieldTotalLabel = computed(() => {
   const chart = props.chart
   return (
@@ -79,10 +84,12 @@ const showRowFieldTotalLabel = computed(() => {
   )
 })
 
+// 切换当前正在编辑的小计维度。
 function onSelectedSubTotalDimensionNameChange(name) {
   state.selectedSubTotalDimension = find(state.subTotalDimensionList, d => d.name === name)
 }
 
+// 汇总并保存行小计维度选择。
 function changeRowSubTableTotal() {
   const list = []
   for (let i = 0; i < state.subTotalDimensionList.length; i++) {
@@ -94,11 +101,12 @@ function changeRowSubTableTotal() {
   changeTableTotal('row')
 }
 
+// 初始化可显示小计的维度列表。
 const initSubTotalDimensionList = () => {
   const list = []
   if (props.chart.xAxis.length >= 2) {
     for (let i = 0; i < props.chart.xAxis.length - 1; i++) {
-      //排除最后一个
+      // 排除最后一个明细维度，避免小计与最细粒度重复。
       const old = includes(
         state.tableTotalForm.row.subTotalsDimensions,
         props.chart.xAxis[i].engineFieldName
@@ -128,12 +136,15 @@ const initSubTotalDimensionList = () => {
   }
 }
 
+// 向父级同步合计配置变更。
 const emit = defineEmits(['onTableTotalChange'])
 
+// 提交通知父级更新指定合计属性。
 const changeTableTotal = prop => {
   emit('onTableTotalChange', state.tableTotalForm, prop)
 }
 
+// 初始化合计配置表单和默认聚合字段。
 const init = () => {
   const tableTotal = props.chart?.customAttr?.tableTotal
   if (tableTotal) {
@@ -194,7 +205,9 @@ const init = () => {
 
   initSubTotalDimensionList()
 }
+// 判断指定合计配置项是否可编辑。
 const showProperty = prop => props.propertyInner?.includes(prop)
+// 根据字段选择恢复当前聚合配置。
 const changeTotal = (totalItem, totals) => {
   for (let i = 0; i < totals.length; i++) {
     const item = totals[i]
@@ -206,6 +219,7 @@ const changeTotal = (totalItem, totals) => {
     }
   }
 }
+// 更新聚合方式并触发合计配置变更。
 const changeTotalAggr = (totalItem, totals, colOrNum) => {
   for (let i = 0; i < totals.length; i++) {
     const item = totals[i]
@@ -220,6 +234,7 @@ const changeTotalAggr = (totalItem, totals, colOrNum) => {
   }
   changeTableTotal(colOrNum)
 }
+// 根据当前指标轴补齐或清理合计字段配置。
 const setupTotalCfg = (totalCfg, axis) => {
   if (!totalCfg.length) {
     axis.forEach(i => {
@@ -253,8 +268,11 @@ const setupTotalCfg = (totalCfg, axis) => {
 }
 const quota = inject('quota', () => [])
 const dimension = inject('dimension', () => [])
+// 自定义聚合编辑器实例。
 const calcEdit = ref()
+// 控制自定义聚合编辑弹窗显隐。
 const editCalcField = ref(false)
+// 打开自定义聚合字段编辑器。
 const editField = (totalItem, totalCfg, attr) => {
   editCalcField.value = true
   state.totalCfg = totalCfg
@@ -267,9 +285,11 @@ const editField = (totalItem, totalCfg, attr) => {
     )
   })
 }
+// 关闭自定义聚合字段编辑器。
 const closeEditCalc = () => {
   editCalcField.value = false
 }
+// 保存自定义聚合字段并同步合计配置。
 const confirmEditCalc = () => {
   calcEdit.value.setFieldForm()
   const obj = cloneDeep(calcEdit.value.fieldForm)
@@ -283,6 +303,7 @@ const confirmEditCalc = () => {
   closeEditCalc()
   changeTableTotal(state.totalCfgAttr)
 }
+// 补齐自定义合计字段的图表上下文默认值。
 const setFieldDefaultValue = field => {
   field.extField = 2
   field.chartId = props.chart.id
