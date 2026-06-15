@@ -457,6 +457,7 @@ const setParametersArr = (val, componentId) => {
 
 let currentComponentId = ''
 let currentParameterId = ''
+// 参数类型弹窗通过这两个临时变量记录上下文，确认后再写回当前条件映射。
 // 时间参数类型选择弹窗显示状态
 const timeDialogShow = ref(false)
 // 时间参数类型，0 为单值，1 为开始值，2 为结束值
@@ -478,6 +479,7 @@ const timeTypeChange = () => {
   }
 
   if (timeParameterType.value === 0) {
+    // 单值时间参数会清空起止字段，展示类型回退到单时间选择。
     curComponent.value.checkedFieldsMap[currentComponentId] = currentParameterId
     curComponent.value.checkedFieldsMapArr[currentComponentId] = []
     curComponent.value.checkedFieldsMapStart[currentComponentId] = ''
@@ -485,6 +487,7 @@ const timeTypeChange = () => {
   }
 
   if (timeParameterType.value === 1) {
+    // 开始时间加入范围字段集合，并自动推导结束时间候选。
     curComponent.value.checkedFieldsMapStart[currentComponentId] = currentParameterId
     curComponent.value.checkedFieldsMapArr[currentComponentId] = [
       ...new Set([
@@ -506,6 +509,7 @@ const timeTypeChange = () => {
   }
 
   if (timeParameterType.value === 2) {
+    // 结束时间加入范围字段集合，并自动推导开始时间候选。
     curComponent.value.checkedFieldsMapArr[currentComponentId] = [
       ...new Set([
         ...curComponent.value.checkedFieldsMapArr[currentComponentId],
@@ -582,6 +586,7 @@ const numTypeChange = () => {
   }
 
   if (numParameterType.value === 0) {
+    // 单值数值参数会清空最小值和最大值字段，展示类型回退到普通数值输入。
     curComponent.value.checkedFieldsMap[currentComponentId] = currentParameterId
     curComponent.value.checkedFieldsMapArrNum[currentComponentId] = []
     curComponent.value.checkedFieldsMapStartNum[currentComponentId] = ''
@@ -589,6 +594,7 @@ const numTypeChange = () => {
   }
 
   if (numParameterType.value === 1) {
+    // 最小值字段加入范围集合，并自动维护另一端字段。
     curComponent.value.checkedFieldsMapStartNum[currentComponentId] = currentParameterId
     curComponent.value.checkedFieldsMapArrNum[currentComponentId] = [
       ...new Set([
@@ -610,6 +616,7 @@ const numTypeChange = () => {
   }
 
   if (numParameterType.value === 2) {
+    // 最大值字段加入范围集合，并自动维护另一端字段。
     curComponent.value.checkedFieldsMapArrNum[currentComponentId] = [
       ...new Set([
         ...curComponent.value.checkedFieldsMapArrNum[currentComponentId],
@@ -731,6 +738,7 @@ const duplicateRemoval = arr => {
 // 根据已绑定字段生成参数列表，并在必要时同步同数据集组件的字段选择
 const setParameters = field => {
   const fieldArr = Object.values(curComponent.value.checkedFieldsMap).filter(ele => !!ele) as any[]
+  // 参数列表只保留当前绑定字段中带变量名的字段，避免无参字段进入 SQL 参数配置。
   curComponent.value.parameters = duplicateRemoval(
     (Object.values(field?.fields || {}) as any[])
       .flat()
@@ -757,6 +765,7 @@ const setParameters = field => {
     }) && +curComponent.value.displayType === 7
   nextTick(() => {
     if (isTimeParameter.value && !notChangeType) {
+      // 单时间参数会根据字段格式自动选择 year/month/date/datetime 粒度。
       const timeParameter = curComponent.value.parameters.find(ele => ele.fieldType === 1)
       curComponent.value.timeGranularity =
         typeTimeMap[timeParameter.type[1] || timeParameter.type[0]]
@@ -764,6 +773,7 @@ const setParameters = field => {
     }
 
     if (!!curComponent.value.parameters.length) {
+      // 存在参数字段时默认使用数据集选项，减少手动输入选项与参数查询不一致。
       curComponent.value.conditionType = 0
       if (curComponent.value.optionValueSource === 0) {
         curComponent.value.optionValueSource = 1
@@ -806,6 +816,7 @@ const setType = () => {
 
     if (field?.fieldType !== undefined) {
       let displayType = curComponent.value.displayType
+      // 已配置的范围数值和树形展示类型优先级更高，不被单字段类型推导覆盖。
       if (['22'].includes(curComponent.value.displayType) && [2, 3].includes(field?.fieldType)) {
         return
       }

@@ -148,6 +148,7 @@ watch(
       label-position="top"
       size="small"
     >
+      <!-- 标题文本本身只在单图非移动端编辑，批量和移动端模式只调整样式。 -->
       <el-form-item
         :label="t('chart.title')"
         class="form-item"
@@ -373,6 +374,7 @@ watch(
         </el-checkbox>
       </el-form-item>
 
+      <!-- 备注说明使用弹窗编辑，避免长文本占用右侧样式面板空间。 -->
       <el-form-item class="form-item" :class="'form-item-' + themes">
         <el-checkbox
           size="small"
@@ -429,6 +431,7 @@ watch(
   padding-right: 6px;
 }
 .icon-btn {
+  // 标题样式图标按钮隐藏原生控件，保证加粗、斜体和对齐按钮尺寸一致。
   font-size: 16px;
   line-height: 16px;
   width: 24px;
@@ -463,6 +466,7 @@ watch(
 }
 
 .is-disabled {
+  // 禁用态保留当前 active 状态，让用户能看到已保存样式但不能编辑。
   .icon-btn {
     color: #8f959e;
     cursor: not-allowed;
@@ -514,6 +518,7 @@ watch(
   }
 }
 .position-divider {
+  // 分隔字体样式与对齐方式，仅作为视觉分组，不写入标题配置。
   width: 1px;
   height: 18px;
   margin-bottom: 16px;
@@ -524,6 +529,7 @@ watch(
   }
 }
 .remark-label {
+  // 备注编辑入口使用轻量标签样式，避免和普通表单 label 争夺层级。
   color: var(--N600, #646a73);
   font-family: var(--crest-custom_font, 'PingFang');
   font-size: 12px;

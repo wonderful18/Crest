@@ -336,6 +336,7 @@ const onPlaceholderChange = () => {
       <el-collapse v-model="styleActiveNames" class="style-collapse">
         <el-collapse-item :effect="themes" name="basicStyle" :title="t('chart.basic_style')">
           <el-form size="small" @keydown.stop.prevent.enter label-position="top">
+            <!-- 查询组件标题同时写入元素名称和图表标题，保证图层列表与画布显示一致。 -->
             <el-form-item class="form-item margin-bottom-8" :class="'form-item-' + themes">
               <el-checkbox
                 :effect="themes"
@@ -379,6 +380,7 @@ const onPlaceholderChange = () => {
               :class="'form-item-' + themes"
               :label="t('visualization.query_position')"
             >
+              <!-- 仪表板主画布只允许一个查询组件置顶，切换时在脚本中清理历史置顶组件。 -->
               <el-radio-group
                 v-model="element.freeze"
                 :effect="themes"
@@ -408,6 +410,7 @@ const onPlaceholderChange = () => {
             label-position="top"
             style="padding-bottom: 8px"
           >
+            <!-- 条件外观设置控制输入框边框、背景、间距和每个条件的占位文案。 -->
             <el-row :gutter="8">
               <el-col :span="12">
                 <el-form-item
@@ -561,6 +564,7 @@ const onPlaceholderChange = () => {
           name="legend"
           :title="t('visualization.query_condition_name')"
         >
+          <!-- 查询条件名称样式独立于输入框样式，关闭后仅隐藏名称区而不删除配置。 -->
           <el-form
             :class="!chart.customStyle.component.labelShow && 'is-disabled'"
             :disabled="!chart.customStyle.component.labelShow"
@@ -677,6 +681,7 @@ const onPlaceholderChange = () => {
             label-position="top"
             style="padding-bottom: 8px"
           >
+            <!-- 按钮区配置查询、清空、重置三个动作的显隐和字体样式。 -->
             <el-form-item
               :effect="themes"
               class="form-item"
@@ -805,6 +810,7 @@ const onPlaceholderChange = () => {
 }
 
 .attr-style {
+  // 样式面板在右侧属性栏内滚动，避免长表单撑开编辑器布局。
   overflow-y: auto;
   height: 100%;
   width: 100%;
@@ -946,6 +952,7 @@ const onPlaceholderChange = () => {
 }
 
 .icon-btn {
+  // 字体样式按钮使用固定图标尺寸，深浅主题只切换颜色和激活背景。
   font-size: 16px;
   line-height: 16px;
   width: 24px;
