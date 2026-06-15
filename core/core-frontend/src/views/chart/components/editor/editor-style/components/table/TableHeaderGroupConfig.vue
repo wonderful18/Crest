@@ -36,6 +36,7 @@ import {
 const { t } = useI18n()
 const dvMainStore = dvMainStoreWithOut()
 type ColumnNode = any
+// 定义表头分组配置组件接收的图表和主题参数。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -49,10 +50,13 @@ const props = defineProps({
     type: Array<string>
   }
 })
+// 声明保存或取消表头分组配置时向父组件派发的事件。
 const emits = defineEmits(['onConfigChange', 'onCancelConfig'])
+// 取消表头分组配置并通知父组件。
 const onCancelConfig = () => {
   emits('onCancelConfig')
 }
+// 汇总当前表格中可展示的维度和指标字段。
 const allAxis = computed(() => {
   const axis = [...props.chart.xAxis]
   if (props.chart.type === 'table-normal') {
@@ -60,6 +64,7 @@ const allAxis = computed(() => {
   }
   return axis
 })
+// 提交当前表头分组列和分组元数据。
 const onConfigChange = () => {
   const showAxis = allAxis.value
     ?.map(axis => axis.hide !== true && axis.engineFieldName)
@@ -69,6 +74,7 @@ const onConfigChange = () => {
   emits('onConfigChange', { columns: fields.columns, meta: groupMeta })
 }
 
+// 初始化表头分组配置并渲染预览表格。
 const init = () => {
   const chart = cloneDeep(props.chart)
   const { headerGroupConfig } = chart.customAttr.tableHeader
@@ -98,9 +104,11 @@ const init = () => {
     renderTable(chart)
   })
 }
+// 生成右键菜单容器的唯一 DOM 标识。
 const menuGroupId = computed(() => {
   return 'menu-group-' + props.chart.id
 })
+// 生成表格预览容器的唯一 DOM 标识。
 const containerId = computed(() => {
   return 'table-container-' + props.chart.id
 })
@@ -142,6 +150,7 @@ class CustomColCell extends TableColCell {
     return textStyle
   }
 }
+// 根据当前图表配置渲染可交互的表头分组预览表格。
 const renderTable = (chart: ChartObj) => {
   const data = dvMainStore.getViewDataDetails(chart.id)
   const containerDom = document.getElementById(containerId.value)
@@ -605,6 +614,7 @@ const renderTable = (chart: ChartObj) => {
 const getNonLeafNodes = (tree: Array<ColumnNode>): string[] => {
   const result: string[] = []
 
+  // 深度遍历表头树并收集所有非叶子节点。
   const inorderTraversal = (node: ColumnNode) => {
     // 如果有子节点，则为非叶子节点
     if (node.children?.length > 0) {

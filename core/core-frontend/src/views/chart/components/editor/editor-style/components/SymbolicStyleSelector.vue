@@ -18,8 +18,11 @@ const props = withDefaults(
 )
 
 const { t } = useI18n()
+// 判断当前属性是否需要在符号样式面板中展示。
 const showProperty = prop => props.propertyInner?.includes(prop)
+// 声明基础样式和杂项配置变更时向父组件派发的事件。
 const emit = defineEmits(['onBasicStyleChange', 'onMiscChange'])
+// 保存符号样式表单、自定义颜色和上传文件列表状态。
 const state = reactive({
   basicStyleForm: JSON.parse(JSON.stringify(DEFAULT_BASIC_STYLE)) as ChartBasicStyle,
   customColor: null,
@@ -31,10 +34,12 @@ const state = reactive({
   fileList: []
 })
 
+// 派发基础样式变更，并按需触发数据重新请求。
 const changeBasicStyle = (prop?: string, requestData = false) => {
   emit('onBasicStyleChange', { data: state.basicStyleForm, requestData }, prop)
 }
 
+// 持有自定义图标上传组件实例。
 const iconUpload = ref()
 const acceptedFileType = ['image/svg+xml', 'image/jpeg', 'image/png']
 
@@ -49,6 +54,7 @@ const mapSymbolOptions = [
   { name: t('commons.custom'), value: 'custom' }
 ]
 
+// 校验并读取自定义符号图标文件。
 const onIconChange: UploadProps['onChange'] = async uploadFile => {
   const rawFile = uploadFile.raw
   let validIcon = true
@@ -90,6 +96,7 @@ const onIconChange: UploadProps['onChange'] = async uploadFile => {
   }
 }
 
+// 切换地图符号并同步自定义图标预览。
 const changeMapSymbol = () => {
   const { mapSymbol, customIcon } = state.basicStyleForm
   if (mapSymbol === 'custom' && customIcon) {
@@ -104,10 +111,12 @@ const changeMapSymbol = () => {
   changeBasicStyle('mapSymbol')
 }
 
+// 判断符号地图是否需要使用动态尺寸范围。
 const customSymbolicMapSizeRange = computed(() => {
   let { extBubble } = JSON.parse(JSON.stringify(props.chart))
   return ['symbolic-map'].includes(props.chart.type) && extBubble?.length > 0
 })
+// 校验自定义符号尺寸范围并派发样式变更。
 const mapCustomRangeValidate = prop => {
   const { mapSymbolSizeMax = '0', mapSymbolSizeMin = '1' } = state.basicStyleForm
   let max = parseInt(String(mapSymbolSizeMax))
@@ -121,6 +130,7 @@ const mapCustomRangeValidate = prop => {
   changeBasicStyle(prop)
 }
 
+// 使用图表当前配置初始化符号样式表单。
 const init = () => {
   const basicStyle = cloneDeep(props.chart.customAttr.basicStyle)
   if (
@@ -143,6 +153,7 @@ const init = () => {
 }
 
 const debouncedInit = debounce(init, 500)
+// 监听图表基础样式和坐标轴变化并延迟刷新表单。
 watch(
   [() => props.chart.customAttr.basicStyle, () => props.chart.xAxis, () => props.chart.yAxis],
   debouncedInit,
