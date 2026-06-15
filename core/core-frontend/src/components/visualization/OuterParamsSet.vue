@@ -391,15 +391,22 @@ import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapsho
 import { iconChartMap } from '../icon-group/chart-list'
 import { iconFieldMap } from '../icon-group/field-list'
 import Icon from '../icon-custom/src/Icon.vue'
+/** 可视化主画布状态仓库。 */
 const dvMainStore = dvMainStoreWithOut()
+/** 当前可视化资源和画布组件数据。 */
 const { dvInfo, componentData } = storeToRefs(dvMainStore)
+/** 外部参数树组件引用。 */
 const outerParamsInfoTree = ref(null)
+/** 国际化文本读取方法。 */
 const { t } = useI18n()
+/** 当前正在编辑名称的外部参数 ID。 */
 const curEditDataId = ref(null)
+/** 快照状态仓库。 */
 const snapshotStore = snapshotStoreWithOut()
 import icon_info_outlined from '@/assets/svg/icon_info_outlined.svg'
 import dvInfoSvg from '@/assets/svg/dv-info.svg'
 
+/** 外部参数弹窗的运行状态和表单数据。 */
 const state = reactive<any>({
   filterExpand: true,
   datasetExpand: true,
@@ -471,6 +478,7 @@ const state = reactive<any>({
   }
 })
 
+/** 根据过滤组件匹配方式修正不可用的选中项。 */
 const matchModeChange = baseFilter => {
   if (
     baseFilter.matchMode === 'filter' &&
@@ -484,14 +492,17 @@ const matchModeChange = baseFilter => {
   }
 }
 
+/** 外部参数默认值输入框引用集合。 */
 const argRefs = ref({})
 
+/** 登记外部参数默认值输入框引用。 */
 const setArgRef = (el, id) => {
   if (el) {
     argRefs.value[id] = el
   }
 }
 
+/** 校验外部参数默认值是否为合法 JSON。 */
 const validateArgs = (val, id) => {
   const cref = argRefs.value[id]
   const e = cref.input
@@ -527,6 +538,7 @@ const validateArgs = (val, id) => {
   }
 }
 
+/** 结束参数名称编辑并校验名称长度。 */
 const closeEdit = params => {
   if (!params.paramName || params.paramName.length < 2 || params.paramName.length > 25) {
     ElMessage({
@@ -542,6 +554,7 @@ const closeEdit = params => {
   curEditDataId.value = null
 }
 
+/** 处理参数节点的重命名和删除操作。 */
 const outerParamsOperation = (cmd, node, data) => {
   if (cmd === 'rename') {
     curEditDataId.value = data.paramsInfoId
@@ -550,6 +563,7 @@ const outerParamsOperation = (cmd, node, data) => {
   }
 }
 
+/** 初始化外部参数配置、过滤组件和数据集信息。 */
 const initParams = async () => {
   state.baseFilterInfo = []
   state.baseDatasetInfo = []
@@ -561,7 +575,7 @@ const initParams = async () => {
   state.outerParamsInfoArray = []
   state.mapOuterParamsInfoArray = {}
   state.curNodeId = null
-  // 同步过滤组件信息
+  // 同步过滤组件信息。
   componentData.value.forEach(componentItem => {
     if (componentItem.component === 'VQuery') {
       state.baseFilterInfo.push(componentItem)
@@ -587,11 +601,11 @@ const initParams = async () => {
       })
     }
   })
-  // 同步基础数据集信息
+  // 同步基础数据集信息。
   await queryOuterParamsDsInfo(dvInfo.value.id).then(rsp => {
     state.baseDatasetInfo = rsp.data
   })
-  // 获取当前仪表板外部跳转信息
+  // 获取当前仪表板外部参数信息。
   queryWithVisualizationId(dvInfo.value.id).then(rsp => {
     const outerParams = rsp.data || {}
     const outerParamsInfoArray = Array.isArray(outerParams.outerParamsInfoArray)
@@ -623,6 +637,7 @@ const initParams = async () => {
   getPanelViewList(dvInfo.value.id)
 }
 
+/** 根据字段来源类型筛选数据集参数或普通字段。 */
 const findFields = (type, datasetFields) => {
   if (type === 'parameterList') {
     return datasetFields.filter(field => field.attachId.indexOf('DE') > -1)
@@ -631,6 +646,7 @@ const findFields = (type, datasetFields) => {
   }
 }
 
+/** 同步数据集视图的全选和半选状态。 */
 const datasetInfoChange = datasetInfo => {
   let viewCheckCount = 0
   datasetInfo.datasetViews?.forEach(dsView => {
@@ -643,6 +659,7 @@ const datasetInfoChange = datasetInfo => {
     viewCheckCount > 0 && viewCheckCount < datasetInfo.datasetViews.length
 }
 
+/** 将已保存的外部参数映射回过滤组件和数据集勾选状态。 */
 const paramsCheckedAdaptor = (outerParamsInfo, newBaseFilterInfo, newBaseDatasetInfo) => {
   const dsFieldIdSelected = {}
   const dsFilterMatchMode = {}
@@ -689,10 +706,12 @@ const paramsCheckedAdaptor = (outerParamsInfo, newBaseFilterInfo, newBaseDataset
   outerParamsInfo['datasetInfo'] = newBaseDatasetInfo
 }
 
+/** 关闭外部参数设置弹窗。 */
 const cancel = () => {
   state.outerParamsSetVisible = false
 }
 
+/** 判断文本是否为 JSON 数组。 */
 const jsonArrayCheck = params => {
   try {
     const result = JSON.parse(params)
@@ -702,6 +721,7 @@ const jsonArrayCheck = params => {
   }
 }
 
+/** 校验并保存外部参数配置。 */
 const save = () => {
   const outerParamsCopy = deepCopy(state.outerParams)
   let checkErrorNum = 0
@@ -719,7 +739,7 @@ const save = () => {
     }
     outerParamsInfo.targetViewInfoList = []
     outerParamsInfo.filterInfo?.forEach(baseFilterInfo => {
-      // 存在过滤器选项被选
+      // 存在过滤器选项被选中。
       if (baseFilterInfo.filterSelected) {
         outerParamsInfo.targetViewInfoList.push({
           targetViewId: baseFilterInfo.filterSelected,
@@ -730,7 +750,7 @@ const save = () => {
       }
     })
     outerParamsInfo.datasetInfo?.forEach(baseDatasetInfo => {
-      // 存在数据集字段被选中
+      // 存在数据集字段被选中。
       if (baseDatasetInfo.fieldIdSelected) {
         baseDatasetInfo.datasetViews?.forEach(dsView => {
           if (dsView.checked) {
@@ -771,13 +791,14 @@ const save = () => {
   })
 }
 
+/** 切换外部参数节点时加载当前参数详情。 */
 const nodeClick = data => {
   if (!data?.paramsInfoId) return
   state.outerParamsInfo = state.mapOuterParamsInfoArray[data.paramsInfoId]
   state.curNodeId = data.paramsInfoId
 }
 
-// 获取当前图表字段 关联仪表板的图表信息列表
+/** 获取当前资源内可关联的图表字段和过滤组件列表。 */
 const getPanelViewList = dvId => {
   viewDetailList(dvId).then(rsp => {
     state.viewIdFieldArrayMap = {}
@@ -787,7 +808,7 @@ const getPanelViewList = dvId => {
         state.viewIdFieldArrayMap[view.id] = view.tableFields
       })
     }
-    // 增加过滤组件匹配
+    // 增加过滤组件匹配。
     componentData.value.forEach(componentItem => {
       if (componentItem.component === 'VQuery') {
         componentItem.propValue.forEach(filterItem => {
@@ -806,6 +827,7 @@ const getPanelViewList = dvId => {
   })
 }
 
+/** 选中新建或初始化后的外部参数节点。 */
 const initSelected = data => {
   nextTick(() => {
     outerParamsInfoTree.value?.setCurrentKey(data.paramsInfoId)
@@ -813,6 +835,7 @@ const initSelected = data => {
   })
 }
 
+/** 外部参数启用状态变化后同步当前节点。 */
 const sourceFieldCheckedChange = data => {
   if (data.checked) {
     state.outerParams.checked = true
@@ -823,6 +846,7 @@ const sourceFieldCheckedChange = data => {
   })
 }
 
+/** 新增一条外部参数配置。 */
 const addOuterParamsInfo = () => {
   state.outerParams.checked = true
   const outerParamsInfo = deepCopy(state.defaultOuterParamsInfo)
@@ -836,6 +860,7 @@ const addOuterParamsInfo = () => {
   initSelected(outerParamsInfo)
 }
 
+/** 删除指定外部参数配置。 */
 const removeOuterParamsInfo = (node, data) => {
   const parent = node.parent
   const children = parent.data.children || parent.data
@@ -846,8 +871,9 @@ const removeOuterParamsInfo = (node, data) => {
     state.curNodeId = null
   }
 }
+/** 批量切换数据集下所有图表的选中状态。 */
 const batchSelectChange = (value, baseDatasetInfo) => {
-  // do change
+  // 同步当前数据集下所有图表选中状态。
   baseDatasetInfo.datasetViews?.forEach(viewInfo => {
     viewInfo.checked = value
   })
@@ -855,15 +881,18 @@ const batchSelectChange = (value, baseDatasetInfo) => {
   baseDatasetInfo.checkAllIsIndeterminate = false
 }
 
+/** 打开外部参数设置弹窗并初始化数据。 */
 const optInit = () => {
   initParams()
   state.outerParamsSetVisible = true
 }
 
+/** 根据过滤组件 ID 获取画布中的组件标题。 */
 const findFilterName = id => {
   return dvMainStore.canvasViewInfo[id]?.title
 }
 
+/** 暴露弹窗初始化方法给父组件调用。 */
 defineExpose({
   optInit
 })
