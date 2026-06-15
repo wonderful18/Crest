@@ -26,30 +26,51 @@ public class VisualizationTemplateCategoryMap implements Serializable {
      */
     private String templateId;
 
+    /**
+     * 获取模板分类关系主键。
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * 设置模板分类关系主键。
+     */
     public void setId(String id) {
         this.id = id;
     }
 
+    /**
+     * 获取模板分类编号。
+     */
     public String getCategoryId() {
         return categoryId;
     }
 
+    /**
+     * 设置模板分类编号。
+     */
     public void setCategoryId(String categoryId) {
         this.categoryId = categoryId;
     }
 
+    /**
+     * 获取可视化模板编号。
+     */
     public String getTemplateId() {
         return templateId;
     }
 
+    /**
+     * 设置可视化模板编号。
+     */
     public void setTemplateId(String templateId) {
         this.templateId = templateId;
     }
 
+    /**
+     * 返回模板分类关系的调试字符串。
+     */
     @Override
     public String toString() {
         return "VisualizationTemplateCategoryMap{" +
