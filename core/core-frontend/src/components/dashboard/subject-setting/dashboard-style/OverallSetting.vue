@@ -1,5 +1,6 @@
 <template>
   <el-form size="small" label-position="top">
+    <!-- 仪表板主题色只在 dashboard 类型展示，大屏沿用画布自身主题配置。 -->
     <el-form-item
       class="form-item"
       :class="'form-item-' + themes"
@@ -38,6 +39,7 @@
         />
       </el-select>
     </el-form-item>
+    <!-- 组件间距配置影响仪表板栅格布局，预设模式写入固定间距，自定义模式保留用户输入。 -->
     <template v-if="dvInfo.type === 'dashboard'">
       <el-form-item
         class="form-item"
@@ -77,6 +79,7 @@
         />
       </el-form-item>
     </template>
+    <!-- 仪表板适配方式决定画布缩放策略，变更后需要重新计算画布尺寸。 -->
     <el-form-item
       v-if="dvInfo.type === 'dashboard'"
       class="form-item"
@@ -92,6 +95,7 @@
         }}</el-radio>
       </el-radio-group>
     </el-form-item>
+    <!-- 图表刷新和浏览器刷新分别控制数据重取与整页重载，两个定时器独立配置。 -->
     <el-form-item class="form-item" :class="'form-item-' + themes" style="margin-bottom: 8px">
       <el-checkbox
         :effect="themes"
@@ -186,6 +190,7 @@
       >
     </el-form-item>
 
+    <!-- 结果数量控制图表默认取数范围，自定义模式用于限制单个组件返回量。 -->
     <el-form-item class="form-item" :class="'form-item-' + themes" style="margin-bottom: 8px">
       <template #label>
         <span class="data-area-label">
@@ -216,6 +221,7 @@
         </el-radio>
       </el-radio-group>
     </el-form-item>
+    <!-- 公开链接悬浮按钮仅对仪表板链接生效，桌面端预览不展示该选项。 -->
     <el-form-item
       class="form-item"
       :class="'form-item-' + themes"
@@ -255,6 +261,7 @@
         </span>
       </el-checkbox>
     </el-form-item>
+    <!-- 辅助网格只影响编辑态定位，不写入组件自身样式。 -->
     <el-form-item
       v-show="dvInfo.type === 'dashboard'"
       class="form-item"

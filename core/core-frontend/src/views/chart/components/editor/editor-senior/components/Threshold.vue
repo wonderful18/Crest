@@ -412,7 +412,7 @@ init()
 
 <template>
   <div @keydown.stop @keyup.stop style="width: 100%; margin-bottom: 16px">
-    <!--仪表盘-->
+    <!-- 仪表盘阈值按百分比分段，保存前校验 0 到 100 之间的递增边界。 -->
     <el-col v-show="showProperty('gaugeThreshold')">
       <el-form
         :model="state.thresholdForm"
@@ -480,7 +480,7 @@ init()
       </el-form>
     </el-col>
 
-    <!--文本卡-->
+    <!-- 文本卡阈值预览展示匹配条件、取值和命中后的文本颜色。 -->
     <el-col v-if="props.chart.type && props.chart.type === 'label'">
       <el-col>
         <el-button
@@ -545,7 +545,7 @@ init()
       </el-col>
     </el-col>
 
-    <!--指标卡-->
+    <!-- 指标卡阈值预览同时展示文字色和背景色，编辑前要求总开关已启用。 -->
     <el-col v-if="props.chart.type && props.chart.type === 'indicator'">
       <el-col>
         <div class="inner-container">
@@ -645,7 +645,7 @@ init()
       </el-col>
     </el-col>
 
-    <!--表格-->
+    <!-- 表格和图片组共用字段级阈值结构，渲染结果根据图表类型展示为颜色或图片。 -->
     <el-col v-show="showProperty('tableThreshold')">
       <el-col>
         <div class="inner-container">
@@ -845,7 +845,7 @@ init()
         </div>
       </el-col>
     </el-col>
-    <!--折线-->
+    <!-- 折线阈值按字段分组展示线条颜色，保存时独立写入 lineThreshold。 -->
     <el-col v-show="showProperty('lineThreshold')">
       <el-col>
         <div class="inner-container">
@@ -977,7 +977,7 @@ init()
       </el-col>
     </el-col>
 
-    <!--  symbolic map  -->
+    <!-- 符号地图复用折线阈值编辑器，仅展示气泡颜色相关规则。 -->
     <el-col v-show="showProperty('symbolicBubbleThreshold')">
       <el-col>
         <div class="inner-container">
@@ -1103,7 +1103,7 @@ init()
       </el-col>
     </el-col>
 
-    <!--编辑文本卡阈值-->
+    <!-- 文本卡阈值弹窗编辑副本，确认后才覆盖正式配置。 -->
     <el-dialog
       v-if="state.editTextLabelThresholdDialog"
       v-model="state.editTextLabelThresholdDialog"
@@ -1127,7 +1127,7 @@ init()
       </template>
     </el-dialog>
 
-    <!--编辑指标卡阈值-->
+    <!-- 指标卡阈值弹窗负责数值条件校验和颜色配置。 -->
     <el-dialog
       v-if="state.editLabelThresholdDialog"
       v-model="state.editLabelThresholdDialog"
@@ -1151,7 +1151,7 @@ init()
       </template>
     </el-dialog>
 
-    <!--编辑表格阈值-->
+    <!-- 表格阈值弹窗根据图表类型切换普通表格规则或图片组规则。 -->
     <el-dialog
       v-if="state.editTableThresholdDialog"
       v-model="state.editTableThresholdDialog"
@@ -1183,7 +1183,7 @@ init()
         </div>
       </template>
     </el-dialog>
-    <!--编辑折线阈值-->
+    <!-- 折线阈值弹窗编辑字段条件和线条颜色，确认后同步给父级。 -->
     <el-dialog
       v-if="state.editLineThresholdDialog"
       v-model="state.editLineThresholdDialog"
