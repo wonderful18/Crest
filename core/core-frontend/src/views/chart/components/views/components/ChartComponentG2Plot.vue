@@ -284,6 +284,9 @@ const checkSelected = param => {
   }
 }
 
+/**
+ * 查询图表数据并触发后续渲染流程。
+ */
 const calcData = async (view, callback) => {
   if (view.tableId || view['dataFrom'] === 'template') {
     isError.value = false
@@ -344,7 +347,13 @@ const calcData = async (view, callback) => {
     callback?.()
   }
 }
+/**
+ * 当前正在渲染的图表视图。
+ */
 let curView
+/**
+ * 合并图表配置并按渲染库分发渲染流程。
+ */
 const renderChart = async (view, callback?) => {
   if (!view) {
     return
@@ -375,8 +384,17 @@ const renderChart = async (view, callback?) => {
       break
   }
 }
+/**
+ * 当前 G2Plot 图表实例。
+ */
 let myChart = null
+/**
+ * G2Plot 延迟渲染定时器。
+ */
 let g2Timer: ReturnType<typeof setTimeout>
+/**
+ * 渲染 G2Plot 图表并恢复联动高亮状态。
+ */
 const renderG2Plot = async (chart, chartView: G2PlotChartView<any, any>) => {
   g2Timer && clearTimeout(g2Timer)
   g2Timer = setTimeout(async () => {
@@ -403,12 +421,33 @@ const renderG2Plot = async (chart, chartView: G2PlotChartView<any, any>) => {
   }, 300)
 }
 
+/**
+ * 地图下钻后的动态区域编码。
+ */
 const dynamicAreaId = ref('')
+/**
+ * 当前地图国家或区域编码前缀。
+ */
 const country = ref('')
+/**
+ * 当前地图 GADM 名称。
+ */
 let gadmName
+/**
+ * 图表容器引用。
+ */
 const chartContainer = ref<HTMLElement>(null)
+/**
+ * 当前地图边界范围。
+ */
 let scope
+/**
+ * 地图渲染定时器。
+ */
 let mapTimer: ReturnType<typeof setTimeout>
+/**
+ * 渲染 L7Plot 地图类图表。
+ */
 const renderL7Plot = async (chart: ChartObj, chartView: any, callback) => {
   const map = parseJson(chart.customAttr).map
   let areaId = map.id

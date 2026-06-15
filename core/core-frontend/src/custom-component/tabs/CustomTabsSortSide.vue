@@ -63,8 +63,14 @@ import eventBus from '@/utils/eventBus'
 import dvEyeClose from '@/assets/svg/dv-eye-close.svg'
 import dvShow from '@/assets/svg/dv-show.svg'
 
+/**
+ * 快照仓库，用于记录标签页排序、显示和标题变更。
+ */
 const snapshotStore = snapshotStoreWithOut()
 
+/**
+ * 标签排序侧栏组件入参。
+ */
 const props = withDefaults(
   defineProps<{
     themes?: EditorTheme
@@ -78,14 +84,25 @@ const props = withDefaults(
   }
 )
 
+/**
+ * 标签配置和主题引用。
+ */
 const { config, themes } = toRefs(props)
 
-// 编辑相关状态
+// 编辑相关状态。
 const editingItem = ref<any>(null)
+/**
+ * 当前正在编辑的标题文本。
+ */
 const editingTitle = ref('')
+/**
+ * 标题输入框引用。
+ */
 const titleInput = ref<any>(null)
 
-// 开始编辑标题
+/**
+ * 进入标签标题编辑状态。
+ */
 const startEditTitle = (element: any) => {
   editingItem.value = element
   editingTitle.value = element.title
@@ -93,26 +110,28 @@ const startEditTitle = (element: any) => {
   nextTick(() => {
     if (titleInput.value) {
       titleInput.value.focus()
-      // 选中所有文本
+      // 选中全部标题文本，便于直接覆盖输入。
       titleInput.value.select()
     }
   })
 }
 
-// 保存标题编辑
+/**
+ * 保存标签标题编辑结果。
+ */
 const saveTitleEdit = (element: any) => {
   if (!editingItem.value || editingItem.value !== element) return
 
   const newTitle = editingTitle.value.trim()
 
-  // 如果标题为空，恢复原标题
+  // 标题为空时恢复原状态。
   if (!newTitle) {
     editingItem.value = null
     editingTitle.value = ''
     return
   }
 
-  // 如果标题有变化，保存快照并更新
+  // 标题有变化时保存快照并通知画布更新。
   if (newTitle !== element.title) {
     snapshotStore.recordSnapshotCache('tab-title-edit')
     element.title = newTitle
@@ -122,57 +141,76 @@ const saveTitleEdit = (element: any) => {
     })
   }
   snapshotStore.recordSnapshotCache('tab-title-edit')
-  // 退出编辑模式
+  // 退出编辑模式。
   editingItem.value = null
   editingTitle.value = ''
 }
 
-// 取消编辑
+/**
+ * 取消当前标题编辑。
+ */
 const cancelEdit = () => {
   editingItem.value = null
   editingTitle.value = ''
 }
 
-// 检查并修正当前激活的tab页（传入当前隐藏的tabItem）
+/**
+ * 隐藏当前激活标签页后，自动切换到第一个可见标签页。
+ */
 const checkAndFixCurrentTab = tabItem => {
-  // 如果隐藏的不是当前激活的tab，不需要处理
+  // 如果隐藏的不是当前激活标签页，不需要处理。
   if (tabItem.name !== config.value.editableTabsValue) return
 
-  // 过滤出可见的标签页
+  // 过滤出可见标签页。
   const visibleTabs = config.value.propValue.filter(tab => !tab.hidden)
 
-  // 如果没有可见标签页，不做处理
+  // 没有可见标签页时不做处理。
   if (visibleTabs.length === 0) return
 
-  // 切换到第一个可见的tab
+  // 切换到第一个可见标签页。
   nextTick(() => {
     config.value.editableTabsValue = visibleTabs[0].name
   })
 }
 
+/**
+ * 处理标签排序变更。
+ */
 const onSortChange = () => {
   snapshotStore.recordSnapshotCache('tab-sort-save')
   eventBus.emit('onTabSortChange-' + config.value.id)
 }
 
+/**
+ * 显示指定标签页。
+ */
 const onShow = tabItem => {
   snapshotStore.recordSnapshotCache('tab')
   tabItem['hidden'] = false
   config.value.editableTabsValue = tabItem.name
 }
 
+/**
+ * 隐藏指定标签页。
+ */
 const onHidden = tabItem => {
   snapshotStore.recordSnapshotCache('tab')
   tabItem['hidden'] = true
   checkAndFixCurrentTab(tabItem)
 }
 
+/**
+ * 删除指定标签页。
+ */
 const onDelete = item => {
   snapshotStore.recordSnapshotCache('tab')
   eventBus.emit('onTabDelete-' + config.value.id, deepCopy(item))
   checkAndFixCurrentTab(item)
 }
 
+/**
+ * 复制指定标签页。
+ */
 const onCopy = item => {
   snapshotStore.recordSnapshotCache('tab')
   eventBus.emit('onTabCopy-' + config.value.id, deepCopy(item))
