@@ -3,7 +3,9 @@ import { propTypes } from '@/utils/propTypes'
 import { ElSelect, ElOption } from 'element-plus-secondary'
 import { computed, reactive } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
+// 抽屉筛选项的国际化文案函数。
 const { t } = useI18n()
+// 多选筛选组件属性，包含候选项、标题和占位配置。
 const props = defineProps({
   optionList: propTypes.arrayOf(
     propTypes.shape({
@@ -20,11 +22,14 @@ const props = defineProps({
   }
 })
 
+// 记录当前选中的筛选项。
 const state = reactive({
   activeStatus: []
 })
+// 筛选变化时向父级提交选中 ID。
 const emits = defineEmits(['filter-change'])
 
+// 将选中对象转换为 ID 或值后触发筛选事件。
 const selectStatus = ids => {
   emits(
     'filter-change',
@@ -32,9 +37,11 @@ const selectStatus = ids => {
   )
 }
 
+// 当前可选择项列表，保持独立计算入口便于后续扩展过滤逻辑。
 const optionListNotSelect = computed(() => {
   return [...props.optionList]
 })
+// 清空当前筛选选择。
 const clear = () => {
   state.activeStatus = []
 }
