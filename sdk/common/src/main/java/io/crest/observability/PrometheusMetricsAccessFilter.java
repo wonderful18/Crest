@@ -18,20 +18,41 @@ import java.security.MessageDigest;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Guards Prometheus metrics endpoints behind the configured observability token.
+ */
 public class PrometheusMetricsAccessFilter implements Filter {
 
+    /**
+     * Logger used for one-time security configuration warnings.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusMetricsAccessFilter.class);
 
+    /**
+     * Authorization header prefix for bearer-token authentication.
+     */
     private static final String BEARER_PREFIX = "Bearer ";
 
+    /**
+     * Runtime observability settings that define endpoint and token behavior.
+     */
     private final ObservabilityProperties observabilityProperties;
 
+    /**
+     * Ensures missing-token warnings are written once per process.
+     */
     private final AtomicBoolean tokenMissingLogged = new AtomicBoolean(false);
 
+    /**
+     * Creates the filter with the active observability settings.
+     */
     public PrometheusMetricsAccessFilter(ObservabilityProperties observabilityProperties) {
         this.observabilityProperties = observabilityProperties;
     }
 
+    /**
+     * Allows non-metrics traffic through and validates bearer tokens for metrics traffic.
+     */
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
@@ -67,6 +88,9 @@ public class PrometheusMetricsAccessFilter implements Filter {
         filterChain.doFilter(servletRequest, servletResponse);
     }
 
+    /**
+     * Checks whether the current request targets a configured Prometheus endpoint.
+     */
     private boolean isPrometheusRequest(HttpServletRequest request) {
         String path = normalizePath(request.getRequestURI());
         String contextPath = normalizePath(request.getContextPath());
@@ -79,6 +103,9 @@ public class PrometheusMetricsAccessFilter implements Filter {
                 .anyMatch(path::equals);
     }
 
+    /**
+     * Normalizes endpoint paths so configured and actual servlet paths can be compared.
+     */
     private String normalizePath(String path) {
         if (StringUtils.isBlank(path)) {
             return "";
@@ -93,6 +120,9 @@ public class PrometheusMetricsAccessFilter implements Filter {
         return normalized;
     }
 
+    /**
+     * Extracts the bearer token value from the Authorization header.
+     */
     private String extractBearerToken(String authorization) {
         if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
             return null;
@@ -100,6 +130,9 @@ public class PrometheusMetricsAccessFilter implements Filter {
         return StringUtils.trimToNull(authorization.substring(BEARER_PREFIX.length()));
     }
 
+    /**
+     * Compares tokens using MessageDigest to avoid short-circuit timing differences.
+     */
     private boolean constantTimeEquals(String expectedToken, String presentedToken) {
         if (StringUtils.isBlank(expectedToken) || StringUtils.isBlank(presentedToken)) {
             return false;
@@ -109,6 +142,9 @@ public class PrometheusMetricsAccessFilter implements Filter {
         return MessageDigest.isEqual(expected, presented);
     }
 
+    /**
+     * Writes a compact JSON error response for metrics authentication failures.
+     */
     private void writeJson(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());

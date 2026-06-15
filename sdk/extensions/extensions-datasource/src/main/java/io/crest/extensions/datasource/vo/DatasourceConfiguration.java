@@ -5,11 +5,23 @@ import lombok.Data;
 import java.util.List;
 
 @Data
+/**
+ * Datasource-level configuration for unsupported parameters and metadata SQL.
+ */
 public class DatasourceConfiguration extends Configuration {
+    /**
+     * Parameter names that should be rejected for this datasource type.
+     */
     private List<String> illegalParameters;
+    /**
+     * SQL templates used to list tables for this datasource type.
+     */
     private List<String> showTableSqls;
 
 
+    /**
+     * Built-in datasource type metadata used by driver and quoting logic.
+     */
     static public enum DatasourceType {
         folder("folder", "folder", "folder", null, null, 25),
         API("API", "API", "API", "`", "`", 15),
@@ -32,13 +44,34 @@ public class DatasourceConfiguration extends Configuration {
         sqlServer("sqlServer", "Sqlserver", "DL", "[", "]", 2),
         mongo("mongo", "MongoDB", "DL", "`", "`", 10);
 
+        /**
+         * Internal datasource type code.
+         */
         private String type;
+        /**
+         * Display name shown in datasource selection.
+         */
         private String name;
+        /**
+         * Stable ordering flag used by datasource lists.
+         */
         private Integer flag;
+        /**
+         * Datasource catalog grouping.
+         */
         private String catalog;
+        /**
+         * Identifier quote prefix.
+         */
         private String prefix;
+        /**
+         * Identifier quote suffix.
+         */
         private String suffix;
 
+        /**
+         * Creates a datasource type metadata entry.
+         */
         DatasourceType(String type, String name, String catalog, String prefix, String suffix, Integer flag) {
             this.type = type;
             this.name = name;
@@ -48,26 +81,44 @@ public class DatasourceConfiguration extends Configuration {
             this.flag = flag;
         }
 
+        /**
+         * Returns the internal datasource type code.
+         */
         public String getType() {
             return type;
         }
 
+        /**
+         * Returns the datasource display name.
+         */
         public String getName() {
             return name;
         }
 
+        /**
+         * Returns the datasource catalog grouping.
+         */
         public String getCatalog() {
             return catalog;
         }
 
+        /**
+         * Returns the identifier quote prefix.
+         */
         public String getPrefix() {
             return prefix;
         }
 
+        /**
+         * Returns the identifier quote suffix.
+         */
         public String getSuffix() {
             return suffix;
         }
 
+        /**
+         * Returns the stable ordering flag.
+         */
         public Integer getFlag() {
             return flag;
         }
