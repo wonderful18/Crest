@@ -22,6 +22,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+/**
+ * 描述 ClickHouse 数据源连接配置并生成 JDBC 连接串。
+ */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Component("ck")
@@ -38,6 +41,9 @@ public class CK extends DatasourceConfiguration {
     private List<String> ILLEGAL_PARAMETERS = Arrays.asList("jndi:", "rmi:", "ldap:", "ldaps:", "dns:", "nis:", "corba:",
             "java.naming.factory.initial", "java.naming.provider.url");
 
+    /**
+     * 构建 ClickHouse JDBC URL，并按需追加压缩和 SSL 证书参数。
+     */
     public String getJdbc() {
         String jdbcUrl;
         if (StringUtils.isNotEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
@@ -82,6 +88,9 @@ public class CK extends DatasourceConfiguration {
         return jdbcUrl;
     }
 
+    /**
+     * 将证书内容写入临时文件并追加到 JDBC 参数中。
+     */
     private String appendCertParam(String jdbcUrl, String paramName, String certContent, String filePrefix) {
         if (StringUtils.isBlank(certContent) || containsParam(jdbcUrl, paramName)) {
             return jdbcUrl;
@@ -90,6 +99,9 @@ public class CK extends DatasourceConfiguration {
         return appendParam(jdbcUrl, paramName, certPath);
     }
 
+    /**
+     * 写入并缓存 ClickHouse SSL 证书临时文件。
+     */
     private String writeTempCert(String certContent, String prefix) {
         String cacheKey = prefix + ":" + sha256(certContent);
         String cachedPath = SSL_CERT_PATH_CACHE.get(cacheKey);
@@ -111,6 +123,9 @@ public class CK extends DatasourceConfiguration {
         }
     }
 
+    /**
+     * 计算证书内容的 SHA-256 摘要。
+     */
     private String sha256(String content) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(content.getBytes(StandardCharsets.UTF_8));
@@ -129,15 +144,24 @@ public class CK extends DatasourceConfiguration {
         }
     }
 
+    /**
+     * 向 JDBC URL 追加查询参数。
+     */
     private String appendParam(String jdbcUrl, String paramName, String paramValue) {
         String join = jdbcUrl.contains("?") ? "&" : "?";
         return jdbcUrl + join + paramName + "=" + paramValue;
     }
 
+    /**
+     * 判断 JDBC URL 是否已包含指定参数。
+     */
     private boolean containsParam(String jdbcUrl, String paramName) {
         return Pattern.compile("(?i)([?&])" + Pattern.quote(paramName) + "=").matcher(jdbcUrl).find();
     }
 
+    /**
+     * 检查 JDBC URL 中是否包含高风险参数。
+     */
     private void checkIllegalParameters(String jdbcUrl) {
         String lowerUrl = jdbcUrl.toLowerCase();
         for (String illegalParam : ILLEGAL_PARAMETERS) {
