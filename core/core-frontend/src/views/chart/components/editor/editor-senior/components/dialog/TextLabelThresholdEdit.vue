@@ -5,8 +5,10 @@ import { reactive } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { COLOR_PANEL } from '../../../util/chart'
 
+// 阈值编辑器文案使用当前语言环境。
 const { t } = useI18n()
 
+// 文本标签阈值数组由父级传入。
 const props = defineProps({
   threshold: {
     type: Array,
@@ -14,18 +16,22 @@ const props = defineProps({
   }
 })
 
+// 阈值变化时通知父级刷新文本标签样式。
 const emit = defineEmits(['onTextLabelThresholdChange'])
 
+// 弹窗内维护可编辑的阈值副本。
 const state = reactive({
   thresholdArr: []
 })
 
+// 新增文本阈值时使用的默认条件。
 const thresholdObj = {
   term: 'eq',
   field: '0',
   value: '',
   color: '#ff0000ff'
 }
+// 文本阈值支持的匹配条件分组。
 const textOptions = [
   {
     label: '',
@@ -67,20 +73,25 @@ const textOptions = [
     ]
   }
 ]
+// 颜色选择器预设色板。
 const predefineColors = COLOR_PANEL
 
+// 初始化阈值副本，避免直接修改父级数组。
 const init = () => {
   state.thresholdArr = JSON.parse(JSON.stringify(props.threshold))
 }
+// 添加一条默认文本阈值并触发同步。
 const addThreshold = () => {
   state.thresholdArr.push(JSON.parse(JSON.stringify(thresholdObj)))
   changeThreshold()
 }
+// 删除指定文本阈值并触发同步。
 const removeThreshold = index => {
   state.thresholdArr.splice(index, 1)
   changeThreshold()
 }
 
+// 将当前阈值数组回传给父组件。
 const changeThreshold = () => {
   emit('onTextLabelThresholdChange', state.thresholdArr)
 }

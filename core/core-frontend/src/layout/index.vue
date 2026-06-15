@@ -9,16 +9,25 @@ import CollapseBar from './components/CollapseBar.vue'
 import CrestResourceArrow from '@/views/common/CrestResourceArrow.vue'
 import { ElContainer } from 'element-plus-secondary'
 import { useRoute } from 'vue-router_2'
+// 当前路由决定是否展示系统或设置类布局。
 const route = useRoute()
+// 系统菜单页需要展示左侧组织配置菜单。
 const systemMenu = computed(() => route.path.includes('system'))
+// 系统设置页使用资源树样式侧栏。
 const settingMenu = computed(() => route.path.includes('sys-setting'))
+// 修改密码页属于用户中心独立表面。
 const userCenterPage = computed(() => route.path.includes('/modify-pwd'))
+// 管理类页面共享更紧凑的内容表面样式。
 const adminSurface = computed(() => settingMenu.value || userCenterPage.value)
+// 当前侧边栏是否折叠。
 const isCollapse = ref(false)
+// 系统设置资源侧栏的固定宽度。
 const settingSideWidth = 248
+// 切换普通系统侧边栏折叠状态。
 const setCollapse = () => {
   isCollapse.value = !isCollapse.value
 }
+// 根据资源箭头的显隐状态同步设置侧栏折叠。
 const changeSettingSideStatus = (showSide: boolean) => {
   isCollapse.value = !showSide
 }

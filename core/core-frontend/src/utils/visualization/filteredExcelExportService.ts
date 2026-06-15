@@ -17,9 +17,12 @@ import {
   validateExportTarget
 } from './filteredExcelExport.mjs'
 
+// 导出范围限定为当前筛选结果或全量数据。
 type ExportScope = 'currentFiltered' | 'all'
+// 导出内容限定为视图数据、数据集数据或格式化表格。
 type ExportContent = 'view' | 'dataset' | 'formatted'
 
+// 筛选导出入口所需的目标视图和导出选项。
 interface FilteredExcelExportOptions {
   targetViewId: string | number
   scope?: ExportScope
@@ -29,12 +32,15 @@ interface FilteredExcelExportOptions {
   validateQueries?: boolean
 }
 
+// 将视图 ID 统一转换为字符串，便于和存储中的组件 ID 比较。
 const normalizeId = (id: string | number) => (id === null || id === undefined ? '' : String(id))
 
+// 打开数据导出中心并定位到全部任务页。
 const exportCenterOpen = () => {
   useEmitt().emitter.emit('data-export-center', { activeName: 'ALL' })
 }
 
+// 展示后台导出排队提示，并提供跳转导出中心的入口。
 export const showExportQueuedMessage = (openExportCenter = exportCenterOpen) => {
   ElMessage({
     message: h('p', null, [
@@ -58,16 +64,19 @@ export const showExportQueuedMessage = (openExportCenter = exportCenterOpen) => 
   } as any)
 }
 
+// 确保视图组件拥有完整的 Excel 导出配置。
 export const ensureViewExcelExportConfig = element => {
   element.excelExport = defaultViewExcelExportConfig(element.excelExport)
   return element.excelExport
 }
 
+// 确保导出按钮拥有完整的交互配置。
 export const ensureExportButtonConfig = element => {
   element.exportButton = defaultExportButtonConfig(element.exportButton)
   return element.exportButton
 }
 
+// 兼容接口返回包裹 data 和直接返回数据两种结构。
 const resolveChartData = data => {
   if (!data) {
     return null
@@ -75,6 +84,7 @@ const resolveChartData = data => {
   return data.data || data
 }
 
+// 拉取目标视图数据并同步到大屏状态缓存。
 const fetchChartData = async (targetViewId: string, viewInfo, chartExtRequest) => {
   const dvMainStore = dvMainStoreWithOut()
   const response = await getData({
@@ -88,6 +98,7 @@ const fetchChartData = async (targetViewId: string, viewInfo, chartExtRequest) =
   return resolveChartData((response as any)?.data)
 }
 
+// 按当前筛选条件、导出范围和内容类型执行 Excel 导出。
 export const exportFilteredExcel = async ({
   targetViewId,
   scope = EXCEL_EXPORT_SCOPE.CURRENT_FILTERED,
