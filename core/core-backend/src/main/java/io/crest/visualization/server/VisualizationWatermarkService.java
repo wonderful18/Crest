@@ -24,6 +24,7 @@ public class VisualizationWatermarkService implements VisualizationWatermarkApi 
     private VisualizationWatermarkMapper watermarkMapper;
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public VisualizationWatermarkVO getWatermarkInfo() {
         VisualizationWatermark watermark =  watermarkMapper.selectById(DEFAULT_ID);
         VisualizationWatermarkVO watermarkVO = new VisualizationWatermarkVO();
@@ -31,6 +32,7 @@ public class VisualizationWatermarkService implements VisualizationWatermarkApi 
     }
 
     @Override
+    // 保存当前业务数据
     public void saveWatermarkInfo(VisualizationWatermarkRequest watermarkRequest) {
         VisualizationWatermark watermark =  new VisualizationWatermark();
         BeanUtils.copyBean(watermark,watermarkRequest);

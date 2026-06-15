@@ -24,6 +24,7 @@ export const contextmenuStore = defineStore('contextmenu', {
   }
 })
 
+// 更新状态仓库中的业务数据
 export const contextmenuStoreWithOut = () => {
   return contextmenuStore(store)
 }

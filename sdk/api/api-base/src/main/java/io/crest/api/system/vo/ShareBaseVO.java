@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 @Schema(description = "分享设置参数项")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class ShareBaseVO implements Serializable {
     @Serial
     private static final long serialVersionUID = -8418758128428770485L;

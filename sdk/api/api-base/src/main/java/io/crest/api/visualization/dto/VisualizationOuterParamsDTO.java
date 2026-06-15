@@ -10,6 +10,7 @@ import java.util.Map;
 
 
 @Data
+// 定义接口请求或返回数据的传输结构
 public class VisualizationOuterParamsDTO extends VisualizationOuterParamsVO {
 
     private List<String> targetInfoList;

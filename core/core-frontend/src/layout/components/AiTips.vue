@@ -1,9 +1,12 @@
 <script lang="ts" setup>
 import dvAi from '@/assets/svg/dv-ai.svg'
 import { onMounted, ref } from 'vue'
+// 控制弹窗、面板或区域的展示状态
 const visible = ref(true)
+// 定义组件向父级抛出的事件
 const emits = defineEmits(['confirm'])
 
+// 校验并保存当前配置
 const confirm = () => {
   emits('confirm')
 }

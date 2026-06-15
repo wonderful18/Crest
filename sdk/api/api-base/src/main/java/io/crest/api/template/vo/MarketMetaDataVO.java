@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+// 定义页面展示或接口返回的数据结构
 public class MarketMetaDataVO {
     private String slug;
     private String value;

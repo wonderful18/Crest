@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useEmbedded } from '@/store/modules/embedded'
 const embeddedStore = useEmbedded()
+// 生成跳转地址或资源链接
 const outerUrl = computed(() => {
   return embeddedStore.outerUrl
 })

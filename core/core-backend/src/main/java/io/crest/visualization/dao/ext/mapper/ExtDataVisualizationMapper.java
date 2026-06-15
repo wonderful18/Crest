@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Mapper
+// 定义当前业务对象的核心职责
 public interface ExtDataVisualizationMapper {
 
 

@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
+// 定义接口请求或返回数据的传输结构
 public class BaseReciDTO implements Serializable {
     @Serial
     private static final long serialVersionUID = -1996467050556455121L;

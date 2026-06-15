@@ -1,5 +1,6 @@
 import { Base64 } from 'js-base64'
 
+// 整理输入数据并返回工具处理结果
 const originNameHandle = (arr = []) => {
   arr.forEach(ele => {
     if (ele.extField === 2) {
@@ -8,6 +9,7 @@ const originNameHandle = (arr = []) => {
   })
 }
 
+// 整理输入数据并返回工具处理结果
 const originNameHandleBack = (arr = []) => {
   arr.forEach(ele => {
     if (ele.extField === 2) {
@@ -16,12 +18,14 @@ const originNameHandleBack = (arr = []) => {
   })
 }
 
+// 整理输入数据并返回工具处理结果
 const originNameHandleWithArr = (obj = {}, fields) => {
   fields.forEach(ele => {
     originNameHandle(obj?.[ele] || [])
   })
 }
 
+// 整理输入数据并返回工具处理结果
 const originNameHandleBackWithArr = (obj = {}, fields) => {
   fields.forEach(ele => {
     originNameHandleBack(obj?.[ele] || [])

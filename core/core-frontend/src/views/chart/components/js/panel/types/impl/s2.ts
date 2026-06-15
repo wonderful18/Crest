@@ -152,6 +152,7 @@ export abstract class S2ChartView<P extends SpreadSheet> extends AntVAbstractCha
         if (shape.cfg?.type === 'image') {
           return
         }
+        // 衔接当前组件交互和状态同步
         const callback = () => {
           e.preventDefault()
           e.stopPropagation()

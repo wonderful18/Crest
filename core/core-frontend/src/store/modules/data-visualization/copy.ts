@@ -191,6 +191,7 @@ export const copyStore = defineStore('copy', {
   }
 })
 
+// 复制当前数据并刷新列表状态
 export function deepCopyTabItemHelper(newCanvasId, tabComponentData, idMap) {
   const resultComponentData = []
   tabComponentData.forEach(item => {
@@ -201,6 +202,7 @@ export function deepCopyTabItemHelper(newCanvasId, tabComponentData, idMap) {
   return resultComponentData
 }
 
+// 复制当前数据并刷新列表状态
 function deepCopyHelper(data, idMap) {
   const result = deepCopy(data)
   if (result.freeze) {
@@ -238,6 +240,7 @@ function deepCopyHelper(data, idMap) {
   return result
 }
 
+// 复制当前数据并刷新列表状态
 export const copyStoreWithOut = () => {
   return copyStore(store)
 }

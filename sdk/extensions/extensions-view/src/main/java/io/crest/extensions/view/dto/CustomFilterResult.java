@@ -8,6 +8,7 @@ import java.util.Map;
 
 @Data
 @AllArgsConstructor
+// 定义接口请求或返回数据的传输结构
 public class CustomFilterResult {
     private List<ChartExtFilterDTO> filterList;
     private Map<String, Object> context;

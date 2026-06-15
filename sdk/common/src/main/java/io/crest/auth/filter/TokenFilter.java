@@ -28,10 +28,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 @SuppressWarnings("deprecation")
+// 定义过滤条件的数据结构和匹配信息
 public class TokenFilter implements Filter {
     private static final String headName = "CREST-GATEWAY-FLAG";
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         String method = request.getMethod();
@@ -124,6 +126,7 @@ public class TokenFilter implements Filter {
         }
     }
 
+    // 执行当前服务方法并返回处理结果
     private void sendResponseEntity(HttpServletResponse httpResponse, ResponseEntity<ResultMessage> responseEntity) throws IOException {
         HttpStatusCode statusCode = responseEntity.getStatusCode();
         httpResponse.setStatus(statusCode.value());

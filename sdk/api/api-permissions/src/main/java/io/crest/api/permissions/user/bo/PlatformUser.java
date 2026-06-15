@@ -10,6 +10,7 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义模块接口契约和数据传输结构
 public class PlatformUser implements Serializable {
     @Serial
     private static final long serialVersionUID = 2749044307502902368L;

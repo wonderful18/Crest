@@ -7,16 +7,19 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.stereotype.Component;
 
 @Component
+// 提供当前模块复用的工具能力
 public class IDUtils {
 
 
     private static SnowFlake snowFlake;
 
     @Resource
+    // 执行当前服务方法并返回处理结果
     public void setSnowFlake(SnowFlake snowFlake) {
         IDUtils.snowFlake = snowFlake;
     }
 
+    // 执行当前服务方法并返回处理结果
     public static String randomID(Integer num) {
         num = ObjectUtils.isEmpty(num) ? 16 : num;
         return RandomStringUtils.secure().nextAlphanumeric(num);

@@ -1,3 +1,4 @@
+// 整理输入数据并返回工具处理结果
 function parseUrl(url) {
   const [pathname, params] = url.split('?')
   const [_, path] = pathname.split('#/')

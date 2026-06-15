@@ -12,6 +12,7 @@ import {
 } from '@codemirror/view'
 import { propTypes } from '@/utils/propTypes'
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   domId: propTypes.string.def('editor'),
   height: propTypes.string.def('250px'),
@@ -22,9 +23,12 @@ const props = defineProps({
     default: /\[(.*?)\]/g
   }
 })
+// 定义组件向父级抛出的事件
 const emits = defineEmits(['change'])
 
+// 衔接当前组件交互和状态同步
 const codeComInit = (doc: string, sqlMode?: boolean) => {
+  // 衔接当前组件交互和状态同步
   function _optionalChain(ops) {
     let lastAccessLHS = undefined
     let value = ops[0]

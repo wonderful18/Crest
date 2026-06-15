@@ -9,7 +9,9 @@ defineProps({
     default: false
   }
 })
+// 定义组件向父级抛出的事件
 const emits = defineEmits(['changeSideTreeStatus'])
+// 处理界面事件并同步业务状态
 const handleClick = val => {
   appStore.setArrowSide(val)
   emits('changeSideTreeStatus', val)

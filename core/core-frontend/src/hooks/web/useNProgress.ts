@@ -6,9 +6,11 @@ import { useCssVar } from '@vueuse/core'
 
 const primaryColor = useCssVar('--el-color-primary', document.documentElement)
 
+// 封装可复用的组合式状态和操作
 export const useNProgress = () => {
   NProgress.configure({ showSpinner: false } as NProgressOptions)
 
+  // 计算颜色配置并返回样式结果
   const initColor = async () => {
     await nextTick()
     const bar = document.getElementById('nprogress')?.getElementsByClassName('bar')[0] as ElRef
@@ -19,10 +21,12 @@ export const useNProgress = () => {
 
   initColor()
 
+  // 封装可复用的组合式状态和操作
   const start = () => {
     NProgress.start()
   }
 
+  // 封装可复用的组合式状态和操作
   const done = () => {
     NProgress.done()
   }

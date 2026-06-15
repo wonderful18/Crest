@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
+// 定义页面展示或接口返回的数据结构
 public class FreeVO implements Serializable, TreeResultModel<FreeVO> {
     @Serial
     private static final long serialVersionUID = -7055936995493939929L;

@@ -255,6 +255,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
         return pre
       }, {}) as Record<string, SeriesFormatter>
     const optionsData = cloneDeep(options.data)
+    // 衔接当前组件交互和状态同步
     const yaxisObj = item => {
       const param = item.data
       let yaxis = yAxis[0]
@@ -539,6 +540,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
         })
       }
     }
+    // 更新当前配置并同步相关状态
     const updateValues = (strategy: 'breakLine' | 'setZero', data: any[]) => {
       data.forEach(obj => {
         if (obj['value'] === null) {

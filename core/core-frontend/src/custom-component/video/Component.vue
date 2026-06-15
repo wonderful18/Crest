@@ -77,6 +77,7 @@ const initOption = () => {
   state.pOption = element.value.videoLinks[element.value.videoLinks.videoType]
   state.pOption.height = h.value
 }
+// 监听相关数据变化并同步组件状态
 watch(
   () => h.value,
   () => {

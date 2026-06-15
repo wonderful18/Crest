@@ -7,6 +7,7 @@ import java.io.Serial;
 import java.io.Serializable;
 @Schema(description = "MFA二维码信息")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class MfaQrVO implements Serializable {
     @Serial
     private static final long serialVersionUID = -3465640829593927730L;

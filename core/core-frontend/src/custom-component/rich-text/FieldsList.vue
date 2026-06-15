@@ -17,6 +17,7 @@
 import { PropType, toRefs } from 'vue'
 import { useEmitt } from '@/hooks/web/useEmitt'
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   fields: {
     type: Array as PropType<Array<Record<string, any>>>,
@@ -30,10 +31,12 @@ const props = defineProps({
 
 const { fields, element } = toRefs(props)
 
+// 衔接当前组件交互和状态同步
 const fieldSelect = field => {
   useEmitt().emitter.emit('fieldSelect-' + element.value.id, field)
 }
 
+// 衔接当前组件交互和状态同步
 const fieldsAreaDown = e => {
   e.preventDefault()
 }

@@ -12,10 +12,12 @@ import java.util.Optional;
 
 @Component
 @SuppressWarnings("unchecked")
+// 定义图表处理器，负责轴格式化和结果组装
 public class FlowMapHandler extends GroupChartHandler {
     @Getter
     private String type = "flow-map";
     @Override
+    // 按图表配置整理维度和指标轴信息
     public AxisFormatResult formatAxis(ChartViewDTO view) {
         var result = super.formatAxis(view);
         var xAxis = result.getAxisMap().get(ChartAxis.xAxis);

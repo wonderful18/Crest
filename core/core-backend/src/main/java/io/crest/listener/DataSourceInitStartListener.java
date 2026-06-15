@@ -24,6 +24,7 @@ import java.util.List;
 
 @Component
 @Order(value = 2)
+// 定义当前业务对象的核心职责
 public class DataSourceInitStartListener implements ApplicationListener<ApplicationReadyEvent> {
     @Resource
     private DatasourceSyncManage datasourceSyncManage;
@@ -43,6 +44,7 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
     private SysParameterManage sysParameterManage;
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         try {
             engineManage.initSimpleEngine();

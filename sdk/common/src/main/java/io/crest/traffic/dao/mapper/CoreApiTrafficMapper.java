@@ -4,6 +4,7 @@ import io.crest.traffic.dao.entity.CoreApiTraffic;
 import org.apache.ibatis.annotations.*;
 
 @Mapper
+// 定义当前业务对象的核心职责
 public interface CoreApiTrafficMapper {
 
     @Select("select `alive` from `api_traffic` where `api` = #{api}")

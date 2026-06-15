@@ -2,6 +2,7 @@
 import { computed, toRefs } from 'vue'
 import ComponentHang from '@/custom-component/independent-hang/ComponentHang.vue'
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   componentData: {
     type: Object,
@@ -20,6 +21,7 @@ const props = defineProps({
 
 const { componentData, canvasViewInfo } = toRefs(props)
 
+// 整理当前数据并同步界面状态
 const hangComponentData = computed(() =>
   componentData.value.filter(ele => {
     return ele.component === 'VQuery' && ele.isHang === true

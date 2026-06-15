@@ -47,6 +47,7 @@ const border_style = computed(() => {
   }
 })
 
+// 监听相关数据变化并同步组件状态
 watch(() => props.color, mergeColor, { immediate: true })
 onMounted(mergeColor)
 </script>

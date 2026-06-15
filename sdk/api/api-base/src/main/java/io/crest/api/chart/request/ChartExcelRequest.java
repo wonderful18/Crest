@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
+// 定义接口请求或返回数据的传输结构
 public class ChartExcelRequest extends ChartExcelRequestInner {
     @Serial
     private static final long serialVersionUID = 3829386417457449431L;

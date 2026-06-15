@@ -3,6 +3,7 @@ import { guid } from '@/views/visualized/data/dataset/form/util.js'
 import { ElMessage } from 'element-plus-secondary'
 
 const staticResourcePath = '/static-resource/'
+// 封装接口调用参数并返回请求结果
 export const uploadFile = (fileId: number | string, param) =>
   request.post({
     url: '/static-resource/upload/' + fileId,
@@ -11,6 +12,7 @@ export const uploadFile = (fileId: number | string, param) =>
     data: param
   })
 
+// 校验当前数据是否满足业务规则
 export function beforeUploadCheck(file) {
   const isImage = file.type.startsWith('image/')
   const isSizeValid = file.size / 1024 / 1024 < 15 // 15MB
@@ -26,6 +28,7 @@ export function beforeUploadCheck(file) {
   return true
 }
 
+// 封装接口调用参数并返回请求结果
 export function uploadFileResult(file, callback) {
   const fileId = guid()
   const fileName = file.name
@@ -42,6 +45,7 @@ export function uploadFileResult(file, callback) {
     })
 }
 
+// 封装接口调用参数并返回请求结果
 export function resourceBase64(params) {
   return request.post({
     url: '/static-resource/resource-base64',

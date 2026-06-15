@@ -1,3 +1,4 @@
+// 根据当前数据计算界面可用状态
 export const isPublicLinkHash = hash => String(hash || '').startsWith('#/link/')
 
 export const buildPublicLinkTargetUrl = ({

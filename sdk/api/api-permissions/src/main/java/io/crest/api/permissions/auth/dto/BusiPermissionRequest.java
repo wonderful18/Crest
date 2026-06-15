@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 @Schema(description = "权限查询条件")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class BusiPermissionRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = -2424587989223319563L;

@@ -1,5 +1,6 @@
 import { ElMessage, ElMessageBox } from 'element-plus-secondary'
 
+// 校验当前数据是否满足业务规则
 export const check = (data, id?: string, weight?: number) => {
   if (!weight) {
     weight = 1
@@ -20,6 +21,7 @@ export const check = (data, id?: string, weight?: number) => {
   return true
 }
 
+// 读取当前业务数据并返回处理结果
 const getNode = (data, id: string) => {
   if (!id) {
     return null
@@ -27,6 +29,7 @@ const getNode = (data, id: string) => {
   return data[id]
 }
 
+// 控制弹窗、面板或区域的展示状态
 const showMsg = (msg: string, id: string) => {
   if (window['cross-panel-' + id]) {
     return
@@ -43,6 +46,7 @@ const showMsg = (msg: string, id: string) => {
   })
 }
 
+// 整理输入数据并返回工具处理结果
 export const compareStorage = (oldVal?: string, newVal?: string) => {
   if (oldVal === newVal) {
     return true

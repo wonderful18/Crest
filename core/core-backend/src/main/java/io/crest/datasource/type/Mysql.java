@@ -16,6 +16,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = false)
 @Component("mysql")
 @SuppressWarnings("deprecation")
+// 定义数据源连接参数和元数据匹配规则
 public class Mysql extends DatasourceConfiguration {
     private String driver = "com.mysql.cj.jdbc.Driver";
     private String extraParams = "characterEncoding=UTF-8&connectTimeout=5000&useSSL=false&allowPublicKeyRetrieval=true&zeroDateTimeBehavior=convertToNull";
@@ -23,6 +24,7 @@ public class Mysql extends DatasourceConfiguration {
     private List<String> illegalParameters = Arrays.asList("maxAllowedPacket", "autoDeserialize", "queryInterceptors", "statementInterceptors", "detectCustomCollations", "allowloadlocalinfile", "allowUrlInLocalInfile", "allowLoadLocalInfileInPath", "allowMultiQueries");
     private List<String> showTableSqls = Arrays.asList("show tables");
 
+    // 构建当前数据源的连接地址
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             for (String illegalParameter : illegalParameters) {

@@ -41,6 +41,7 @@ const state = reactive({
 })
 // 样式变化时通知父级更新图表杂项配置
 const emit = defineEmits(['onBasicStyleChange', 'onMiscChange'])
+// 监听相关数据变化并同步组件状态
 watch(
   () => props.chart.customAttr.misc,
   () => {

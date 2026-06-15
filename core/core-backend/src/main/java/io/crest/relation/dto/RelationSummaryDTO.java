@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 @Schema(description = "血缘统计")
+// 定义接口请求或返回数据的传输结构
 public class RelationSummaryDTO {
     @Schema(description = "数据源数量")
     private Integer datasourceCount = 0;

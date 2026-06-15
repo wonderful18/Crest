@@ -13,6 +13,7 @@ import static io.crest.constant.StaticResourceConstants.*;
 import static io.crest.utils.StaticResourceUtils.ensureBoth;
 import static io.crest.utils.StaticResourceUtils.ensureSuffix;
 @Configuration
+// 定义当前功能的配置入口
 public class CrestMvcConfig implements WebMvcConfigurer {
 
     @Resource
@@ -42,6 +43,7 @@ public class CrestMvcConfig implements WebMvcConfigurer {
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(linkInterceptor).addPathPatterns("/**");
     }

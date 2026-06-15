@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @Tag(name = "模版管理:基础")
+// 定义模块接口契约和数据传输结构
 public interface TemplateManageApi {
 
     @PostMapping("/templates")

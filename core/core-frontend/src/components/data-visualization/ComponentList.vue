@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import componentList from '@/custom-component/component-list'
 
+// 处理界面事件并同步业务状态
 const handleDragStart = e => {
   e.dataTransfer.setData('index', e.target.dataset.index)
 }

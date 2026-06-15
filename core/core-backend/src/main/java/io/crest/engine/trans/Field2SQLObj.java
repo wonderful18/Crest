@@ -20,8 +20,10 @@ import java.util.*;
 
 import static io.crest.constant.SQLConstants.FIELD_DOT_FIX;
 
+// 定义当前业务对象的核心职责
 public class Field2SQLObj {
 
+    // 根据输入参数构造查询语句片段
     public static void field2sqlObj(SQLMeta meta, List<DatasetTableFieldDTO> fields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage, boolean forSqlbot) {
         SQLObj tableObj = meta.getTable();
         if (ObjectUtils.isEmpty(tableObj)) {
@@ -99,10 +101,12 @@ public class Field2SQLObj {
         meta.setXFieldsDialect(fieldsDialect);
     }
 
+    // 根据输入参数构造查询语句片段
     public static void field2sqlObj(SQLMeta meta, List<DatasetTableFieldDTO> fields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         field2sqlObj(meta, fields, originFields, isCross, dsMap, fieldParam, chartParam, pluginManage, false);
     }
 
+    // 处理字段结构并补齐查询所需信息
     public static SQLObj getXFields(DatasetTableFieldDTO f, String originField, String fieldAlias, boolean isCross) {
         String fieldName = "";
         if (originField != null) {

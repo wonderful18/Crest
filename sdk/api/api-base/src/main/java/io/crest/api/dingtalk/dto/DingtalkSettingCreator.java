@@ -9,6 +9,7 @@ import java.util.List;
 
 @Schema(description = "钉钉设置构造器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class DingtalkSettingCreator implements Serializable {
     @Schema(description = "corpId", requiredMode = Schema.RequiredMode.REQUIRED)
     private String corpId;

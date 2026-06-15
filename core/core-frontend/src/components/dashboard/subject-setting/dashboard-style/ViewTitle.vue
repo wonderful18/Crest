@@ -76,6 +76,7 @@ import { reactive } from 'vue'
 import { COLOR_PANEL } from '@/views/chart/components/editor/util/chart'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
+// 定义组件向父级抛出的事件
 const emits = defineEmits(['onTextChange'])
 
 interface TitleForm {
@@ -94,6 +95,7 @@ interface FontSizeOption {
   value: number
 }
 
+// 维护组件内部表单、弹窗和临时数据状态
 const state = reactive({
   titleForm: {} as TitleForm,
   fontSize: [] as FontSizeOption[],
@@ -101,6 +103,7 @@ const state = reactive({
   predefineColors: COLOR_PANEL
 })
 
+// 根据当前配置计算界面样式
 const changeTitleStyle = (modifyName: string) => {
   state.titleForm.modifyName = modifyName
   emits('onTextChange', state.titleForm)

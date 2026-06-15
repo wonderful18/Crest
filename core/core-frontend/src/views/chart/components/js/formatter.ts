@@ -356,6 +356,7 @@ export const formatterViewInfo = (viewInfo, value) => {
   )
 }
 
+// 维护表单数据和校验规则
 export const mergeTooltipFormat = (item, type, value) => {
   if (!unShowTooltipsFormatter.includes(type)) {
     item['formatterCfg'] = merge(item['formatterCfg'], value)

@@ -10,6 +10,7 @@ import java.io.Serializable;
 
 @Schema(description = "用户概要")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class UserItem implements Serializable {
     @Serial
     private static final long serialVersionUID = -3423336650739339624L;

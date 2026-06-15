@@ -10,6 +10,7 @@ import java.util.List;
 
 
 @Mapper
+// 定义当前业务对象的核心职责
 public interface ExtVisualizationTemplateMapper{
 
     List<TemplateManageDTO> findTemplateList(TemplateManageRequest request);

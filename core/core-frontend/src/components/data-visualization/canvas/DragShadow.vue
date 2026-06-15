@@ -6,6 +6,7 @@
 
 <script setup lang="ts">
 import { computed, toRefs } from 'vue'
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   baseWidth: {
     required: true,
@@ -39,6 +40,7 @@ const props = defineProps({
 
 const { element, baseWidth, baseHeight, curGap } = toRefs(props)
 
+// 根据当前配置计算界面样式
 const shadowStyle = computed(() => {
   const { x, y, sizeX, sizeY } = element.value
   return {

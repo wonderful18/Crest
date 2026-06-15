@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 @Tag(name = "可视化管理:分享")
+// 定义模块接口契约和数据传输结构
 public interface ShareApi {
 
     @Operation(summary = "查询资源分享状态")

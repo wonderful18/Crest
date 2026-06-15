@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Schema(description = "角色项")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class UserGridRoleItem {
 
     @Schema(description = "角色ID")

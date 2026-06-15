@@ -11,6 +11,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 @Mapper
+// 定义当前业务对象的核心职责
 public interface ShareExtMapper {
 
     @Select("""

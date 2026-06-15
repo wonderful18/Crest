@@ -78,6 +78,7 @@ export class CirclePacking extends G2PlotChartView<CirclePackingOptions, G2Circl
       // 将数据转为圆形填充图数据格式
       const getCirclePackingData = () => {
         const result = [{ name: t('commons.all'), children: [] }]
+        // 创建新数据并写入当前配置
         const addNode = (nodes, item) => {
           const node = { ...item, name: item.name, children: [] }
           nodes.push(node)
@@ -221,6 +222,7 @@ export class CirclePacking extends G2PlotChartView<CirclePackingOptions, G2Circl
   configEmptyDataStrategy(chart: Chart, options: CirclePackingOptions): CirclePackingOptions {
     const { functionCfg } = parseJson(chart.senior)
     const emptyDataStrategy = functionCfg.emptyDataStrategy
+    // 更新当前配置并同步相关状态
     const setChildren = children => {
       if (emptyDataStrategy === 'ignoreData') {
         for (let i = children.length - 1; i >= 0; i--) {

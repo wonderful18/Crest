@@ -1820,11 +1820,13 @@ export const BASE_VIEW_CONFIG = {
   flowMapEndName: []
 }
 
+// 读取当前业务数据并返回处理结果
 export function getScaleValue(propValue, scale) {
   const propValueTemp = Math.round(propValue * scale)
   return propValueTemp > 1 ? propValueTemp : 1
 }
 
+// 读取当前业务数据并返回处理结果
 export function getViewConfig(name) {
   let viewConfigResult = null
   CHART_TYPE_CONFIGS.forEach(category => {

@@ -24,6 +24,7 @@ import java.util.Map;
 
 @Tag(name = "嵌入式")
 @ApiSupport(order = 883, author = "Crest")
+// 定义模块接口契约和数据传输结构
 public interface EmbeddedApi {
 
     @Operation(summary = "查询")

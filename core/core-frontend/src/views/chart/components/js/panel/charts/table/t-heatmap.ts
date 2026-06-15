@@ -241,6 +241,7 @@ export class TableHeatmap extends G2PlotChartView<HeatmapOptions, Heatmap> {
             showTitle: true,
             customItems(originalItems) {
               const items = []
+              // 创建新数据并写入当前配置
               const createItem = (fieldObj, items, originalItems) => {
                 const name = fieldObj?.chartShowName ? fieldObj?.chartShowName : fieldObj?.name
                 let value = originalItems[0].data[fieldObj.engineFieldName]

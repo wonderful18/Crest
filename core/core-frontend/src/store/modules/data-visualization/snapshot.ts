@@ -224,18 +224,22 @@ export const snapshotStore = defineStore('snapshot', {
   }
 })
 
+// 更新当前配置并同步相关状态
 export function setDefaultComponentData(data = []) {
   defaultCanvasInfo.componentData = data
 }
 
+// 读取当前业务数据并返回处理结果
 function getDefaultCanvasInfo() {
   return defaultCanvasInfo
 }
 
+// 更新当前配置并同步相关状态
 export function setDefaultCanvasInfo(data) {
   defaultCanvasInfo = data
 }
 
+// 更新状态仓库中的业务数据
 export const snapshotStoreWithOut = () => {
   return snapshotStore(store)
 }

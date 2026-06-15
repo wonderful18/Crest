@@ -6,5 +6,6 @@ import io.crest.system.dao.auto.mapper.CoreSysSettingMapper;
 import org.springframework.stereotype.Component;
 
 @Component("extCoreSysSettingMapper")
+// 定义当前业务对象的核心职责
 public class ExtCoreSysSettingMapper extends ServiceImpl<CoreSysSettingMapper, CoreSysSetting> {
 }

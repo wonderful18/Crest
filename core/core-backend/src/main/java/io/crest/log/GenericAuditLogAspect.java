@@ -43,6 +43,7 @@ public class GenericAuditLogAspect {
     @Around("within(@org.springframework.web.bind.annotation.RestController *)"
             + " && execution(public * io.crest..*(..))"
             + " && !@annotation(io.crest.log.CrestAudit)")
+    // 执行当前服务方法并返回处理结果
     public Object around(ProceedingJoinPoint point) throws Throwable {
         if (hasCrestAudit(point)) {
             return point.proceed();

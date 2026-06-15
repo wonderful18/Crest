@@ -88,6 +88,7 @@ const onBlur = () => {
   useEmitt().emitter.emit('frameLinksChange-' + curComponent.value.id)
 }
 init()
+// 监听相关数据变化并同步组件状态
 watch(
   () => frameLinks.value,
   () => {

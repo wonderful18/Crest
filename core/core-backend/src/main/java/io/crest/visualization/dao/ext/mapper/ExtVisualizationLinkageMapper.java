@@ -11,6 +11,7 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 @Mapper
+// 定义当前业务对象的核心职责
 public interface ExtVisualizationLinkageMapper {
 
     List<VisualizationLinkageDTO> viewLinkageGather(@Param("dvId") Long dvId, @Param("sourceViewId") Long sourceViewId, @Param("targetViewIds") List<String> targetViewIds);

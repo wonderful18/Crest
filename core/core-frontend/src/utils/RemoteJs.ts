@@ -1,3 +1,4 @@
+// 读取当前业务数据并返回处理结果
 export const loadScript = (url: string, jsId?: string) => {
   return new Promise<void>(function (resolve, reject) {
     const scriptId = jsId || 'crest-remote-script-id'

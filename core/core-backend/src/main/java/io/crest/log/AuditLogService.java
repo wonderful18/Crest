@@ -114,6 +114,7 @@ public class AuditLogService {
         return data;
     }
 
+    // 执行当前服务方法并返回处理结果
     private String truncate(String value, int maxLength) {
         if (value == null || value.length() <= maxLength) {
             return value;

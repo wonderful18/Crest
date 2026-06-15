@@ -6,6 +6,7 @@ import { useLocaleStore } from '@/store/modules/locale'
 // 多语言相关
 const localeStore = useLocaleStore()
 
+// 记录当前选中项和交互焦点
 const currentLocale = computed(() => localeStore.currentLocale)
 </script>
 

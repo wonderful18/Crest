@@ -647,6 +647,7 @@ const handleMouseDownOnShape = e => {
   let lastTime = 0
   const throttleInterval = 25 // 约30FPS，可以根据需要调整
 
+  // 处理拖拽交互并更新目标位置
   const move = moveEvent => {
     const now = Date.now()
 
@@ -745,6 +746,7 @@ const handleMouseDownOnShape = e => {
     })
   }
 
+  // 衔接当前组件交互和状态同步
   const up = () => {
     // 清理动画帧
     if (rafId) {
@@ -873,6 +875,7 @@ const handleMouseDownOnPoint = (point, e) => {
     })
   }
 
+  // 处理拖拽交互并更新目标位置
   const move = moveEvent => {
     // 第一次点击时也会触发 move，所以会有“刚点击组件但未移动，组件的大小却改变了”的情况发生
     // 因此第一次点击时不触发 move 事件
@@ -939,6 +942,7 @@ const handleMouseDownOnPoint = (point, e) => {
     }
   }
 
+  // 衔接当前组件交互和状态同步
   const up = () => {
     // 如果内部组件保持尺寸时，这里在鼠标抬起时，重新计算一下内部组件占比
     if (['Tabs'].includes(element.value.component) && element.value.resizeInnerKeep) {

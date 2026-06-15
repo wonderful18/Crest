@@ -54,6 +54,7 @@ const border_style = computed(() => {
 // 使用立即执行的watch并添加防抖
 // 颜色变化防抖计时器，避免拖拽配置时频繁重算
 let debounceTimer: ReturnType<typeof setTimeout>
+// 监听相关数据变化并同步组件状态
 watch(
   () => props.color,
   () => {

@@ -17,13 +17,16 @@ interface Tree {
   leaf: boolean
   top: boolean
 }
+// 维护树组件实例和选中数据
 const tree = ref()
+// 记录当前选中项和交互焦点
 const currentSelect = ref()
 
 defineProps({
   width: propTypes.string.def('200px')
 })
 
+// 校验当前数据是否满足业务规则
 const filterNodeMethod = (value, data) => data.name.includes(value)
 
 const treeDefaultProps = {
@@ -32,6 +35,7 @@ const treeDefaultProps = {
   isLeaf: data => !data.hasChildren
 }
 
+// 读取当前业务数据并返回处理结果
 const loadNode = (node: Node, resolve: (data: Tree[]) => void) => {
   if (node.level === 0) {
     return setTimeout(() => {

@@ -153,5 +153,6 @@ export const getChartDetail = async (id: string): Promise<IResponse> => {
   })
 }
 
+// 校验当前数据是否满足业务规则
 export const checkSameDataSet = async (viewIdSource, viewIdTarget) =>
   request.get({ url: '/chart/same-dataset-check/' + viewIdSource + '/' + viewIdTarget })

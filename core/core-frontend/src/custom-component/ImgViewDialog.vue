@@ -10,6 +10,7 @@ import {
 } from 'vue'
 import { throttle } from 'lodash-es'
 import { useEventListener } from '@vueuse/core'
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   modelValue: Boolean,
   imageUrl: String

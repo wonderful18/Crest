@@ -17,6 +17,7 @@ const emptyProxyPackages = new Set([
   'tiny-emitter'
 ])
 
+// 衔接当前组件交互和状态同步
 function vendorChunkName(id: string) {
   if (!id.includes('node_modules')) {
     return

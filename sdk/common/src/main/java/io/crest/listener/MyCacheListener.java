@@ -5,6 +5,7 @@ import org.ehcache.event.CacheEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// 定义当前业务对象的核心职责
 public class MyCacheListener implements CacheEventListener<String, Object> {
 
     private static final Logger log = LoggerFactory.getLogger(MyCacheListener.class);
@@ -14,6 +15,7 @@ public class MyCacheListener implements CacheEventListener<String, Object> {
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void onEvent(CacheEvent<? extends String, ?> cacheEvent) {
         log.info("'{}' : [{}] --> {}", cacheEvent.getType(), cacheEvent.getKey(), cacheEvent.getNewValue());
     }

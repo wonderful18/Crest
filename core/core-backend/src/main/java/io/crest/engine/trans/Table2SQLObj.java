@@ -5,7 +5,9 @@ import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
 import io.crest.extensions.datasource.model.SQLMeta;
 import io.crest.extensions.datasource.model.SQLObj;
 
+// 定义当前业务对象的核心职责
 public class Table2SQLObj {
+    // 根据输入参数构造查询语句片段
     public static void table2sqlobj(SQLMeta meta, String tablePrefix, String table, boolean crossDs) {
         String sql;
         if (table.startsWith("(") && table.endsWith(")") && !crossDs) {// SQL片段和关联

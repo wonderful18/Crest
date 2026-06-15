@@ -6,11 +6,14 @@ defineProps({
   }
 })
 
+// 定义组件向父级抛出的事件
 const emit = defineEmits(['change'])
+// 根据当前数据计算界面可用状态
 const hide = () => {
   emit('change')
 }
 
+// 衔接当前组件交互和状态同步
 const stopPropagation = e => {
   e.stopPropagation()
 }

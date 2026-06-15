@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import dvAi from '@/assets/svg/dv-ai.svg'
 import { ref } from 'vue'
+// 控制弹窗、面板或区域的展示状态
 const visible = ref(true)
 </script>
 <template>

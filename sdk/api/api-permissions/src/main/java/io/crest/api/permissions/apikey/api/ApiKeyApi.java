@@ -17,6 +17,7 @@ import java.util.List;
 
 @Tag(name = "API Key")
 @ApiSupport(order = 884, author = "Crest")
+// 定义模块接口契约和数据传输结构
 public interface ApiKeyApi {
 
     @Operation(summary = "生成")

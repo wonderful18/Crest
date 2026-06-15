@@ -12,6 +12,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @Accessors(chain = true)
+// 定义接口请求或返回数据的传输结构
 public class TableFieldWithValue implements Serializable {
     @Serial
     private static final long serialVersionUID = -8852504196142402103L;
@@ -28,6 +29,7 @@ public class TableFieldWithValue implements Serializable {
     private String term = "eq";
     private Integer extractedFieldType;
 
+    // 执行当前服务方法并返回处理结果
     public static TableFieldWithValue copy(TableFieldWithValue tableFieldWithValue) {
         return new TableFieldWithValue()
                 .setValue(tableFieldWithValue.getValue())

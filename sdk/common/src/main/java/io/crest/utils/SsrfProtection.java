@@ -101,6 +101,7 @@ public class SsrfProtection {
         }
     }
 
+    // 执行当前服务方法并返回处理结果
     private static String normalizeHost(String host) {
         String normalized = host.trim().toLowerCase(Locale.ROOT);
         if (normalized.startsWith("[") && normalized.endsWith("]")) {
@@ -112,6 +113,7 @@ public class SsrfProtection {
         return normalized;
     }
 
+    // 判断当前类型是否满足业务分类
     private static boolean isBlockedAddress(InetAddress address) {
         if (address.isAnyLocalAddress()
                 || address.isLoopbackAddress()

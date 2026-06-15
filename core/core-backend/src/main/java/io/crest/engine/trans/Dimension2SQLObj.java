@@ -19,6 +19,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 
+// 定义当前业务对象的核心职责
 public class Dimension2SQLObj {
 
     public static void dimension2sqlObj(SQLMeta meta, List<ChartViewFieldDTO> fields, List<DatasetTableFieldDTO> originFields,
@@ -92,6 +93,7 @@ public class Dimension2SQLObj {
         meta.setXFieldsDialect(fieldsDialect);
     }
 
+    // 处理字段结构并补齐查询所需信息
     public static SQLObj getXFields(ChartViewFieldDTO x, String originField, String fieldAlias, boolean isCross) {
         String fieldName = "";
         if (Objects.equals(x.getExtractedFieldType(), FieldTypeConstants.TIME)) {

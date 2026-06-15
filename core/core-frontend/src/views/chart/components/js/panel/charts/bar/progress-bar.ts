@@ -90,6 +90,7 @@ export class ProgressBar extends G2PlotChartView<BarOptions, G2Progress> {
     if (!chart.data?.data?.length) {
       return
     }
+    // 读取当前业务数据并返回处理结果
     const getCompletionRate = (target: number, current: number) => {
       if (target === 0) {
         return 100

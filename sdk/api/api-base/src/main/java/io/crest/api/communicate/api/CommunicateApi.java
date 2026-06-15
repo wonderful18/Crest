@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Hidden
+// 定义模块接口契约和数据传输结构
 public interface CommunicateApi {
 
     @PostMapping("/send")

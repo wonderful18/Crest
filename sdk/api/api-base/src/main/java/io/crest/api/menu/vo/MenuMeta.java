@@ -10,6 +10,7 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义页面展示或接口返回的数据结构
 public class MenuMeta implements Serializable {
     @Serial
     private static final long serialVersionUID = 1173571493163976261L;

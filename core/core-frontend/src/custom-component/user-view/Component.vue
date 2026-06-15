@@ -3,6 +3,7 @@ import { computed, toRefs, PropType, CSSProperties } from 'vue'
 import Chart from '@/views/chart/components/views/index.vue'
 import { isISOMobile } from '@/utils/utils'
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   // 公共参数集
   commonParams: {
@@ -76,6 +77,7 @@ const props = defineProps({
 })
 
 const { element, view, active, searchCount, scale } = toRefs(props)
+// 根据当前配置计算界面样式
 const autoStyle = computed(() => {
   if (element.value.innerType === 'rich-text') {
     if (isISOMobile()) {
@@ -94,8 +96,10 @@ const autoStyle = computed(() => {
     return {}
   }
 })
+// 定义组件向父级抛出的事件
 const emits = defineEmits(['onPointClick', 'onComponentEvent'])
 
+// 处理界面事件并同步业务状态
 const onPointClick = param => {
   emits('onPointClick', param)
 }

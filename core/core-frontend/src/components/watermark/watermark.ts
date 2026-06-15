@@ -147,6 +147,7 @@ export function getNow() {
   const hour = change(d.getHours())
   const minute = change(d.getMinutes())
 
+  // 更新当前配置并同步相关状态
   function change(t) {
     if (t < 10) {
       return '0' + t

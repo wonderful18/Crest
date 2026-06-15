@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 @Schema(description = "语言切换器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class LangSwitchRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = -6779697711311519431L;

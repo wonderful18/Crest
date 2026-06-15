@@ -8,7 +8,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 
+// 提供当前模块复用的工具能力
 public class DatasourceUtils {
+    // 执行当前服务方法并返回处理结果
     public static void checkDsStatus(Map<Long, DatasourceSchemaDTO> dsMap) {
         if (ObjectUtils.isEmpty(dsMap)) {
             CrestException.throwException(Translator.get("i18n_datasource_delete"));

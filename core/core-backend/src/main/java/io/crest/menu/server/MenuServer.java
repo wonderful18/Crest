@@ -13,12 +13,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/menu")
+// 实现接口服务，衔接业务处理和返回结果
 public class MenuServer implements MenuApi {
 
     @Resource
     private MenuManage menuManage;
 
     @Override
+    // 查询当前业务数据列表
     public List<MenuVO> query() {
         List<CoreMenu> coreMenus = menuManage.coreMenus();
         return menuManage.query(new ArrayList<>(coreMenus));

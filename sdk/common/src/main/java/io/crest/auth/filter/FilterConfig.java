@@ -10,9 +10,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties(ObservabilityProperties.class)
 @SuppressWarnings("unchecked")
+// 定义过滤条件的数据结构和匹配信息
 public class FilterConfig {
 
     @Bean
+    // 执行当前服务方法并返回处理结果
     public FilterRegistrationBean prometheusMetricsAccessFilter(ObservabilityProperties observabilityProperties) {
         FilterRegistrationBean filter = new FilterRegistrationBean<>();
         filter.setName("prometheusMetricsAccessFilter");
@@ -23,6 +25,7 @@ public class FilterConfig {
     }
 
     @Bean
+    // 执行当前服务方法并返回处理结果
     public FilterRegistrationBean orderFilter() {
         FilterRegistrationBean filter = new FilterRegistrationBean<>();
         filter.setName("tokenFilter");
@@ -33,6 +36,7 @@ public class FilterConfig {
     }
 
     @Bean
+    // 执行当前服务方法并返回处理结果
     public FilterRegistrationBean communityFilter() {
         FilterRegistrationBean filter = new FilterRegistrationBean<>();
         filter.setName("communityTokenFilter");

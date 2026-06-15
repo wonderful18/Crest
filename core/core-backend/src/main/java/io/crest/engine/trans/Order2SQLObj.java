@@ -18,8 +18,10 @@ import org.apache.commons.lang3.Strings;
 
 import java.util.*;
 
+// 定义当前业务对象的核心职责
 public class Order2SQLObj {
 
+    // 执行当前服务方法并返回处理结果
     public static void getOrders(SQLMeta meta, List<ChartSortFieldDTO> sortFields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         SQLObj tableObj = meta.getTable();
         List<SQLObj> xOrders = meta.getXOrders() == null ? new ArrayList<>() : meta.getXOrders();
@@ -37,6 +39,7 @@ public class Order2SQLObj {
         }
     }
 
+    // 根据输入参数构造业务结果
     private static SQLObj buildSortField(ChartSortFieldDTO f, SQLObj tableObj, int i, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         Map<String, String> paramMap = Utils.mergeParam(fieldParam, chartParam);
         String originField;

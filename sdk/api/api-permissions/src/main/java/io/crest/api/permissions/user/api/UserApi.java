@@ -29,6 +29,7 @@ import static io.crest.constant.AuthResourceEnum.USER;
 @Tag(name = "用户")
 @ApiSupport(order = 888, author = "Crest")
 @CrestApiPath(value = "/user", rt = USER)
+// 定义模块接口契约和数据传输结构
 public interface UserApi {
 
     @Operation(summary = "查询用户列表")

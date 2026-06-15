@@ -56,6 +56,7 @@ import eventBus from '@/utils/eventBus'
 const { t } = useI18n()
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
+// 根据当前配置计算界面样式
 const seniorStyleSetting = computed<any>(() => {
   return dvMainStore.canvasStyleData.component.seniorStyleSetting
 })
@@ -66,15 +67,18 @@ defineProps({
     default: 'light'
   }
 })
+// 维护组件内部表单、弹窗和临时数据状态
 const state = reactive({
   fontSize: [],
   isSetting: false,
   predefineColors: COLOR_PANEL
 })
 
+// 初始化组件状态和默认配置
 const initForm = () => {
   // do
 }
+// 衔接当前组件交互和状态同步
 const themeChange = () => {
   dvMainStore.canvasStyleData.component.seniorStyleSetting = cloneDeep(seniorStyleSetting.value)
   snapshotStore.recordSnapshotCache('seniorStyleSettingSimpleSelector-themeChange')

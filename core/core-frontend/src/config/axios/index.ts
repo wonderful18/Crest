@@ -4,6 +4,7 @@ import { config } from './config'
 
 const { default_headers } = config
 
+// 衔接当前组件交互和状态同步
 const request = (option: any) => {
   const { url, method, params, data, headersType, responseType, loading } = option
   return service({

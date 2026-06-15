@@ -14,6 +14,7 @@ import java.util.List;
 
 @Tag(name = "认证相关设置")
 @ApiSupport(order = 882)
+// 定义模块接口契约和数据传输结构
 public interface PerSettingApi {
 
     @Operation(summary = "查询设置")

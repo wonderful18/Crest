@@ -60,6 +60,7 @@ const embeddedStore = useEmbedded()
 const previewFrameRef = ref<HTMLIFrameElement | null>(null)
 /** 隐藏追踪菜单浮层，避免弹窗打开时残留在上层 */
 const hideTrackBarMenus = () => {
+  // 根据当前数据计算界面可用状态
   const hide = () => {
     document.querySelectorAll<HTMLElement>('.track_bar_custom').forEach(menu => {
       menu.style.display = 'none'

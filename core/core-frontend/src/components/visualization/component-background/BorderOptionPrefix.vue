@@ -25,6 +25,7 @@ const props = withDefaults(
 
 const { innerImageColor } = toRefs(props)
 
+// 根据当前配置计算界面样式
 const mainIconClass = url => {
   return url.replace('board/', '').replace('.svg', '')
 }

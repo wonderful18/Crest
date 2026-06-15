@@ -1,3 +1,4 @@
+// 处理拖拽交互并更新目标位置
 const dropBrowserOriginHeader = proxy => {
   proxy.on('proxyReq', proxyReq => {
     proxyReq.removeHeader('origin')

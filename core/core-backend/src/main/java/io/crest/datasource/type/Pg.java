@@ -17,12 +17,14 @@ import java.util.regex.Pattern;
 @EqualsAndHashCode(callSuper = false)
 @Component("pg")
 @SuppressWarnings("deprecation")
+// 定义数据源连接参数和元数据匹配规则
 public class Pg extends DatasourceConfiguration {
     private String driver = "org.postgresql.Driver";
     private String extraParams = "";
     @JsonIgnore
     private List<String> illegalParameters = Arrays.asList("socketFactory", "socketFactoryArg", "sslfactory", "sslhostnameverifier", "sslpasswordcallback", "authenticationPluginClassName");
 
+    // 构建当前数据源的连接地址
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             for (String illegalParameter : illegalParameters) {
@@ -67,6 +69,7 @@ public class Pg extends DatasourceConfiguration {
 
     private static final Pattern DB_NAME_PATTERN = Pattern.compile("//[^/]+/([^?]+)");
     @Override
+    // 返回数据库名称解析使用的匹配规则
     protected Pattern databasePattern() {
         return DB_NAME_PATTERN;
     }

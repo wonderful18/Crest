@@ -7,6 +7,7 @@ import java.io.Serial;
 import java.io.Serializable;
 @Schema(description = "导出请求")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class ReportExportRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = -5372551595882128201L;

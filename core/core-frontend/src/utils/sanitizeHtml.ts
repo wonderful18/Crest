@@ -16,4 +16,5 @@ const safeHtmlFilter = new FilterXSS({
   stripIgnoreTagBody: ['script', 'style', 'iframe', 'object', 'embed']
 })
 
+// 整理输入数据并返回工具处理结果
 export const sanitizeHtml = (value?: string | null) => safeHtmlFilter.process(value || '')

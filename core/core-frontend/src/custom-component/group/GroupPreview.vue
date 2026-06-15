@@ -5,8 +5,10 @@ import { toPercent } from '@/utils/translate'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import UserViewEnlarge from '@/components/visualization/UserViewEnlarge.vue'
 const dvMainStore = dvMainStoreWithOut()
+// 衔接当前组件交互和状态同步
 const userViewEnlargeRef = ref(null)
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   propValue: {
     type: Array as PropType<Array<Record<string, any>>>,
@@ -53,6 +55,7 @@ const props = defineProps({
 })
 
 const { propValue, dvInfo, searchCount, scale, canvasViewInfo } = toRefs(props)
+// 根据当前配置计算界面样式
 const customGroupStyle = item => {
   return {
     width: toPercent(item.groupStyle.width),
@@ -62,6 +65,7 @@ const customGroupStyle = item => {
   }
 }
 
+// 衔接当前组件交互和状态同步
 const userViewEnlargeOpen = (opt, item) => {
   userViewEnlargeRef.value.dialogInit(
     dvMainStore.canvasStyleData,

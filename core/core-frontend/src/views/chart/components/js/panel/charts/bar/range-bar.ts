@@ -290,6 +290,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
           isCustom: false
         })
       }
+      // 计算颜色配置并返回样式结果
       const color = obj => {
         const colorObj = find(customColors, o => {
           return o.name === obj.field

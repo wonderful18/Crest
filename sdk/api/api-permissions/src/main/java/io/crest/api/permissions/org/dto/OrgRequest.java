@@ -12,6 +12,7 @@ import java.io.Serializable;
 @Schema(description = "组织列表过滤器")
 @EqualsAndHashCode(callSuper = true)
 @Data
+// 定义接口请求或返回数据的传输结构
 public class OrgRequest extends KeywordRequest implements Serializable {
 
     @Serial

@@ -6,6 +6,7 @@ import { toRefs } from 'vue'
 
 const dvMainStore = dvMainStoreWithOut()
 const { curComponent } = storeToRefs(dvMainStore)
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   themes: {
     type: String,

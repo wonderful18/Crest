@@ -91,6 +91,7 @@ const mergeColor = () => {
 
 // 生命周期和监听
 onMounted(mergeColor)
+// 监听相关数据变化并同步组件状态
 watch(() => props.color, mergeColor, { immediate: true })
 </script>
 

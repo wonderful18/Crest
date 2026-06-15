@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 @Data
+// 定义页面展示或接口返回的数据结构
 public class PluginViewVO implements Serializable {
     @Serial
     private static final long serialVersionUID = 5059944608544058565L;

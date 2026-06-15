@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+// 定义当前业务对象的核心职责
 public class Utils {
 
+    // 判断当前类型是否满足业务分类
     public static boolean isNeedOrder(List<String> dsList) {
         String[] list = {"sqlServer", "db2", "impala"};
         List<String> strings = Arrays.asList(list);
@@ -17,6 +19,7 @@ public class Utils {
         return ObjectUtils.isNotEmpty(collect);
     }
 
+    // 判断当前类型是否满足业务分类
     public static boolean isCrossDs(Map<Long, DatasourceSchemaDTO> dsMap) {
         return dsMap.size() != 1;
     }

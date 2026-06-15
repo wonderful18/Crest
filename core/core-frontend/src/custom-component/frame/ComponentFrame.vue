@@ -35,6 +35,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 
 const { t } = useI18n()
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   propValue: {
     type: String,
@@ -61,11 +62,13 @@ const props = defineProps({
 
 const { element, isEdit, screenShot } = toRefs(props)
 
+// 维护组件内部表单、弹窗和临时数据状态
 const state = reactive({
   pOption: {},
   frameShow: true
 })
 
+// 生成跳转地址或资源链接
 const frameLinksChange = () => {
   state.frameShow = false
   nextTick(() => {
