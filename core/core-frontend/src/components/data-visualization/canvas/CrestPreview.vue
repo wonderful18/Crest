@@ -32,15 +32,25 @@ import LinkOptBar from '@/components/data-visualization/canvas/LinkOptBar.vue'
 import { isDesktop } from '@/utils/ModelUtil'
 import { isMobile } from '@/utils/utils'
 import { useI18n } from '@/hooks/web/useI18n'
+/** 主画布仓库提供预览渲染所需的全局状态。 */
 const dvMainStore = dvMainStoreWithOut()
+/** 画布矩阵、当前组件、移动端和画布状态引用。 */
 const { pcMatrixCount, curComponent, mobileInPc, canvasState, inMobile } = storeToRefs(dvMainStore)
+/** 原生宿主交互句柄。 */
 const openHandler = ref(null)
+/** 自定义数据集参数弹窗实例。 */
 const customDatasetParamsRef = ref(null)
+/** 预览组件向父级通知重置布局事件。 */
 const emits = defineEmits(['onResetLayout'])
+/** 全屏控制组件实例。 */
 const fullScreeRef = ref(null)
+/** 当前预览内容是否超出容器高度。 */
 const isOverSize = ref(false)
+/** 当前运行环境是否为桌面客户端。 */
 const isDesktopFlag = isDesktop()
+/** 国际化翻译函数。 */
 const { t } = useI18n()
+/** 预览画布入参，承接画布样式、组件数据和外部控制参数。 */
 const props = defineProps({
   canvasStyleData: {
     type: Object as PropType<Record<string, any>>,
@@ -122,6 +132,7 @@ const props = defineProps({
   }
 })
 
+/** 将常用入参转换为响应式引用。 */
 const {
   canvasStyleData,
   componentData,
@@ -137,45 +148,64 @@ const {
   fontFamily,
   outerScreenAdaptor
 } = toRefs(props)
+/** 预览画布 DOM 编号。 */
 const domId = 'preview-' + canvasId.value
+/** 按宽度计算的缩放比例。 */
 const scaleWidthPoint = ref(100)
+/** 按高度计算的缩放比例。 */
 const scaleHeightPoint = ref(100)
+/** 当前预览采用的最终缩放比例。 */
 const scaleMin = ref(100)
+/** 预览画布 DOM 引用。 */
 const previewCanvas = ref(null)
+/** 仪表板矩阵单元宽度。 */
 const cellWidth = ref(10)
+/** 仪表板矩阵单元高度。 */
 const cellHeight = ref(10)
+/** 图表放大弹窗实例。 */
 const userViewEnlargeRef = ref(null)
+/** 预览内部刷新计数。 */
 const searchCount = ref(0)
+/** 定时刷新任务句柄。 */
 const refreshTimer = ref(null)
+/** 布局计算是否完成。 */
 const renderReady = ref(false)
+/** 当前预览资源是否为仪表板。 */
 const dashboardActive = computed(() => {
   return dvInfo.value.type === 'dashboard'
 })
+/** 预览运行状态，包含初始化和滚动位置。 */
 const state = reactive({
   initState: true,
   scrollMain: 0
 })
 
+/** 当前大屏自适应策略，优先使用外部覆盖值。 */
 const screenAdaptor = computed(() => {
   return outerScreenAdaptor.value || canvasStyleData.value?.screenAdaptor
 })
 
+/** 当前合并后的刷新计数。 */
 const curSearchCount = computed(() => {
   return outerSearchCount.value + searchCount.value
 })
 // 大屏是否保持宽高比例 非全屏 full 都需要保持宽高比例
+/** 大屏预览是否需要保持宽高比例。 */
 const dataVKeepRadio = computed(() => {
   return screenAdaptor.value !== 'full'
 })
 
 // 仪表板是否跟随宽度缩放 非全屏 full 都需要保持宽高比例
+/** 仪表板是否按宽度缩放。 */
 const dashboardScaleWithWidth = computed(() => {
   return isDashboard() && canvasStyleData.value?.dashboardAdaptor === 'withWidth'
 })
+/** 当前预览是否来自报表页面。 */
 const isReport = computed(() => {
   return !!router.currentRoute.value.query?.report
 })
 
+/** 隐藏区域组件列表，移动端会保留仪表板隐藏组件入口。 */
 const popComponentData = computed(() =>
   componentData.value.filter(
     ele =>
@@ -185,6 +215,7 @@ const popComponentData = computed(() =>
   )
 )
 
+/** 基础画布组件列表，排除隐藏区和框选区域组件。 */
 const baseComponentData = computed(() =>
   componentData.value.filter(
     ele =>
@@ -193,6 +224,7 @@ const baseComponentData = computed(() =>
       (!ele?.dashboardHidden || (ele?.dashboardHidden && isMobile()))
   )
 )
+/** 预览画布容器样式，按资源类型和自适应策略生成。 */
 const canvasStyle = computed<Record<string, any>>(() => {
   let style: Record<string, any> = {}
   if (isMainCanvas(canvasId.value) && !isDashboard()) {
@@ -225,6 +257,7 @@ const canvasStyle = computed<Record<string, any>>(() => {
   return style
 })
 
+/** 下载场景下按子节点样式计算主画布高度。 */
 const getDownloadStatusMainHeightV2 = () => {
   if (!previewCanvas.value?.childNodes) {
     nextTick(() => {
@@ -256,6 +289,7 @@ const getDownloadStatusMainHeightV2 = () => {
   return `${maxBottomPosition}px`
 }
 
+/** 下载场景下按子节点实际占位计算主画布高度。 */
 const getDownloadStatusMainHeight = () => {
   if (!previewCanvas.value?.childNodes) {
     nextTick(() => {
@@ -276,6 +310,7 @@ const getDownloadStatusMainHeight = () => {
   return `${maxHeight}px!important`
 }
 
+/** 预览重新激活时恢复布局。 */
 watch(
   () => previewActive.value,
   () => {
@@ -310,13 +345,14 @@ useEmitt({
   }
 })
 
+/** 重新计算预览容器尺寸、缩放比例和组件样式。 */
 const resetLayout = () => {
   if (downloadStatus.value) {
     return
   }
   nextTick(() => {
     if (previewCanvas.value) {
-      //div容器获取tableBox.value.clientWidth
+      // div 容器获取 tableBox.value.clientWidth。
       let canvasWidth = previewCanvas.value.clientWidth
       let canvasHeight = previewCanvas.value.clientHeight
       scaleWidthPoint.value = (canvasWidth * 100) / canvasStyleData.value.width
@@ -362,6 +398,7 @@ const resetLayout = () => {
     }
   })
 }
+/** 非报表场景恢复预览布局。 */
 const restore = () => {
   if (isReport.value) {
     return
@@ -369,6 +406,7 @@ const restore = () => {
   resetLayout()
 }
 
+/** 获取组件在预览画布中的定位样式。 */
 const getShapeItemShowStyle = item => {
   return getShapeItemStyle(item, {
     dvModel: dvInfo.value.type,
@@ -378,12 +416,14 @@ const getShapeItemShowStyle = item => {
   })
 }
 
+/** 仪表板预览下的组件间距。 */
 const previewCurGap = computed(() => {
   return dashboardActive.value && dvMainStore.canvasStyleData.dashboard?.gap === 'yes'
     ? dvMainStore.canvasStyleData?.dashboard?.gapSize
     : 0
 })
 
+/** 初始化预览定时刷新任务。 */
 const initRefreshTimer = () => {
   // 数据刷新计时器 (仪表开启刷新并且是预览状态才启动刷新)
   if (canvasStyleData.value.refreshViewEnable && showPosition.value === 'preview') {
@@ -403,6 +443,7 @@ const initRefreshTimer = () => {
   }
 }
 
+/** 触发预览数据刷新，并通知主画布其他组件刷新。 */
 const refreshDataV = () => {
   searchCount.value++
   if (isMainCanvas(canvasId.value)) {
@@ -410,13 +451,14 @@ const refreshDataV = () => {
   }
 }
 
+/** 初始化预览水印。 */
 const initWatermark = (waterDomId = 'preview-canvas-main') => {
   if (dvInfo.value.watermarkInfo && isMainCanvas(canvasId.value) && !downloadStatus.value) {
     activeWatermarkCheckUser(waterDomId, canvasId.value, scaleMin.value / 100)
   }
 }
 
-// 目标校验： 需要校验targetSourceId 是否是当前可视化资源ID
+/** 处理外部参数消息，仅接收目标资源匹配的主画布消息。 */
 const winMsgHandle = event => {
   const msgInfo = event.data
   console.info('Received Message: ' + JSON.stringify(msgInfo))
@@ -429,11 +471,13 @@ const winMsgHandle = event => {
     }
 }
 
+/** 将网页参数写入基础组件过滤器。 */
 const winMsgWebParamsHandle = msgInfo => {
   const params = msgInfo.params
   dvMainStore.addWebParamsFilter(params, baseComponentData.value)
 }
 
+/** 将外部附加参数写入基础组件过滤器。 */
 const winMsgOuterParamsHandle = msgInfo => {
   const attachParams = msgInfo.params
   state.initState = false
@@ -441,6 +485,7 @@ const winMsgOuterParamsHandle = msgInfo => {
   state.initState = true
 }
 
+/** 挂载后初始化刷新、布局、尺寸监听和外部消息监听。 */
 onMounted(() => {
   initRefreshTimer()
   resetLayout()
@@ -453,13 +498,15 @@ onMounted(() => {
   window.addEventListener('message', winMsgHandle)
 })
 
+/** 卸载前清理隐藏区状态、刷新计时器和消息监听。 */
 onBeforeUnmount(() => {
-  //初始化隐藏弹框区
+  // 初始化隐藏弹框区。
   dvMainStore.canvasStateChange({ key: 'curPointArea', value: 'base' })
   clearInterval(refreshTimer.value)
   window.removeEventListener('message', winMsgHandle)
 })
 
+/** 打开图表放大弹窗。 */
 const userViewEnlargeOpen = (opt, item) => {
   userViewEnlargeRef.value.dialogInit(
     canvasStyleData.value,
@@ -469,6 +516,7 @@ const userViewEnlargeOpen = (opt, item) => {
     { scale: scaleMin.value / 100 }
   )
 }
+/** 点击预览空白区域时清空当前组件选择。 */
 const handleMouseDown = () => {
   if (showPosition.value !== 'viewDialog') {
     dvMainStore.setCurComponent({ component: null, index: null })
@@ -478,6 +526,7 @@ const handleMouseDown = () => {
   }
 }
 
+/** 将图表点击参数发送到原生宿主或父窗口。 */
 const onPointClick = param => {
   try {
     console.info('crest_inner_params send')
@@ -505,10 +554,12 @@ const onPointClick = param => {
 }
 
 // v-if 使用 内容不渲染 默认参数不起用
+/** 弹框区是否在当前主画布预览中可用。 */
 const popAreaAvailable = computed(
   () => canvasStyleData.value?.popupAvailable && isMainCanvas(canvasId.value)
 )
 
+/** 是否展示隐藏组件弹框按钮。 */
 const filterBtnShow = computed(
   () =>
     popAreaAvailable.value &&
@@ -517,13 +568,16 @@ const filterBtnShow = computed(
     !inMobile.value &&
     canvasStyleData.value.popupButtonAvailable
 )
+/** 打开自定义数据集参数面板。 */
 const datasetParamsInit = item => {
   customDatasetParamsRef.value?.optInit(item)
 }
+/** 当前是否为大屏主画布预览。 */
 const dataVPreview = computed(
   () => dvInfo.value.type === 'dataV' && canvasId.value === 'canvas-main'
 )
 
+/** 是否展示悬浮联动操作栏。 */
 const linkOptBarShow = computed(() => {
   return Boolean(
     canvasStyleData.value.suspensionButtonAvailable &&
@@ -533,21 +587,26 @@ const linkOptBarShow = computed(() => {
   )
 })
 
+/** 预留的 PDF 下载入口。 */
 const downloadAsPDF = () => {
-  // test
+  // 当前由其他下载入口承接，保留方法供模板绑定。
 }
 
+/** 记录预览画布滚动位置。 */
 const scrollPreview = () => {
   state.scrollMain = previewCanvas.value.scrollTop
 }
 
+/** 未发布资源提示是否展示。 */
 const showUnpublishFlag = computed(() => dvInfo.value?.status === 0 && isMainCanvas(canvasId.value))
+/** 获取预览画布可视尺寸。 */
 const getPreviewCanvasSize = () => {
   return {
     innerWidth: previewCanvas.value.clientWidth,
     innerHeight: previewCanvas.value.clientHeight
   }
 }
+/** 预览内容超出且非保持尺寸时使用固定操作栏。 */
 const isFixedFlag = computed(
   () => isOverSize.value && canvasStyleData.value?.screenAdaptor !== 'keep'
 )
