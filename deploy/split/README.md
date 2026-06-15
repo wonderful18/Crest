@@ -52,6 +52,28 @@ http://127.0.0.1:18100/
 
 首次登录后建议立即修改管理员密码。
 
+## OceanBase 元数据库
+
+拆分部署默认启动内置 MySQL。使用 OceanBase 作为 Crest 元数据库时，应移除或停用 `mysql-crest` 服务，并显式覆盖后端数据库配置：
+
+```bash
+CREST_DB_TYPE=ob-oracle \
+CREST_DB_DRIVER_CLASS_NAME=com.oceanbase.jdbc.Driver \
+CREST_DB_HOST=10.0.0.10 \
+CREST_DB_PORT=2883 \
+CREST_DB_URL='jdbc:oceanbase://10.0.0.10:2883' \
+CREST_DB_USERNAME='ob_user@ob_oracle#obcluster' \
+CREST_DB_PASSWORD='ob_password' \
+CREST_FLYWAY_LOCATIONS='classpath:db/migration-ob-oracle' \
+CREST_AES_KEY='<32-character-aes-key>' \
+CREST_AES_IV='<16-character-iv>' \
+CREST_INITIAL_PASSWORD='<initial-admin-password>' \
+CREST_WEB_PORT=18100 \
+docker compose -f deploy/split/docker-compose.yml up -d --no-deps crest-service crest
+```
+
+`ob-mysql` 元数据库使用 `CREST_DB_TYPE=ob-mysql`，URL 形如 `jdbc:oceanbase://10.0.0.10:2883/crest`，Flyway 可继续使用 MySQL 兼容路径。observer 直连时端口使用 `2881`，用户名使用 `用户@租户`。
+
 ## 启用 Prometheus 和 Grafana
 
 准备 Prometheus token 文件：

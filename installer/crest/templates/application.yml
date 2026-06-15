@@ -10,7 +10,7 @@ spring:
       max-request-size: ${CREST_UPLOAD_MAX_REQUEST_SIZE:500MB}
   datasource:
     driver-class-name: ${CREST_DB_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
-    url: jdbc:mysql://${CREST_DB_HOST}:${CREST_DB_PORT}/${CREST_DB_NAME}?${CREST_DB_PARAMS}
+    url: ${CREST_DB_URL}
     username: ${CREST_DB_USERNAME}
     password: ${CREST_DB_PASSWORD}
   flyway:

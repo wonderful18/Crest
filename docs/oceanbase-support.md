@@ -92,6 +92,21 @@ export CREST_DB_URL='jdbc:oceanbase://127.0.0.1:2883/crest'   # ob-mysql
 export CREST_DB_URL='jdbc:oceanbase://127.0.0.1:2883'         # ob-oracle
 ```
 
+The single-node installer generates `CREST_DB_URL`, driver, and Flyway locations from `CREST_DB_TYPE`.
+For OceanBase metadata databases, set `CREST_DB_TYPE`, `CREST_DB_HOST`, `CREST_DB_PORT`, `CREST_DB_USERNAME`, and `CREST_DB_PASSWORD` in `installer/install.conf`; leave `CREST_DB_URL` empty unless a custom JDBC URL is required. OceanBase metadata databases automatically use external database mode and do not start the bundled MySQL container.
+
+For Kubernetes, keep the default manifests on MySQL unless an overlay explicitly sets:
+
+```yaml
+CREST_DB_TYPE=ob-oracle
+CREST_DB_DRIVER_CLASS_NAME=com.oceanbase.jdbc.Driver
+CREST_DB_HOST=<obproxy-or-observer-host>
+CREST_DB_PORT=2883
+CREST_FLYWAY_LOCATIONS=classpath:db/migration-ob-oracle
+```
+
+Use `ob_user@tenant#cluster` through OBProxy and `ob_user@tenant` for observer direct connections.
+
 ## Implementation Rules
 
 - Do not bulk-replace SQL. Each SQL branch must be reviewed and tested.

@@ -51,6 +51,84 @@ function normalize_bool_env() {
    esac
 }
 
+function normalize_metadata_db_env() {
+   CREST_DB_TYPE=${CREST_DB_TYPE:-mysql}
+   CREST_DB_TYPE=$(echo "$CREST_DB_TYPE" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
+   case "$CREST_DB_TYPE" in
+      mysql|ob-mysql|ob-oracle)
+         ;;
+      *)
+         echo "CREST_DB_TYPE 只支持 mysql、ob-mysql 或 ob-oracle"
+         exit 1
+         ;;
+   esac
+   export CREST_DB_TYPE
+
+   if [[ "$CREST_DB_TYPE" != "mysql" && "$CREST_EXTERNAL_MYSQL" == "false" ]]; then
+      CREST_EXTERNAL_MYSQL=true
+      export CREST_EXTERNAL_MYSQL
+      log_content "OceanBase 元数据库使用外部数据库模式，跳过内置 MySQL 容器"
+   fi
+
+   case "$CREST_DB_TYPE" in
+      mysql)
+         CREST_DB_DRIVER_CLASS_NAME=${CREST_DB_DRIVER_CLASS_NAME:-com.mysql.cj.jdbc.Driver}
+         ;;
+      ob-mysql|ob-oracle)
+         if [[ -z "$CREST_DB_DRIVER_CLASS_NAME" || "$CREST_DB_DRIVER_CLASS_NAME" == "com.mysql.cj.jdbc.Driver" ]]; then
+            CREST_DB_DRIVER_CLASS_NAME=com.oceanbase.jdbc.Driver
+         fi
+         ;;
+   esac
+   export CREST_DB_DRIVER_CLASS_NAME
+}
+
+function configure_flyway_locations() {
+   case "$CREST_DB_TYPE" in
+      ob-oracle)
+         CREST_FLYWAY_LOCATIONS="classpath:db/migration-ob-oracle"
+         if [[ "$CREST_LOAD_DEMO" == "true" ]]; then
+            log_content "OceanBase Oracle 元数据库使用独立初始化脚本，跳过 MySQL 演示迁移"
+         fi
+         ;;
+      *)
+         if [[ "$CREST_LOAD_DEMO" == "true" ]]; then
+            CREST_FLYWAY_LOCATIONS="classpath:db/migration,classpath:db/demo-migration"
+            log_content "初始化内置演示资源"
+         else
+            CREST_FLYWAY_LOCATIONS="classpath:db/migration"
+            log_content "跳过内置演示资源"
+         fi
+         ;;
+   esac
+   export CREST_FLYWAY_LOCATIONS
+}
+
+function configure_metadata_db_url() {
+   if [[ -n "$CREST_DB_URL" ]]; then
+      export CREST_DB_URL
+      return
+   fi
+
+   local query=""
+   if [[ -n "$CREST_DB_PARAMS" ]]; then
+      query="?${CREST_DB_PARAMS}"
+   fi
+
+   case "$CREST_DB_TYPE" in
+      mysql)
+         CREST_DB_URL="jdbc:mysql://${CREST_DB_HOST}:${CREST_DB_PORT}/${CREST_DB_NAME}${query}"
+         ;;
+      ob-mysql)
+         CREST_DB_URL="jdbc:oceanbase://${CREST_DB_HOST}:${CREST_DB_PORT}/${CREST_DB_NAME}${query}"
+         ;;
+      ob-oracle)
+         CREST_DB_URL="jdbc:oceanbase://${CREST_DB_HOST}:${CREST_DB_PORT}"
+         ;;
+   esac
+   export CREST_DB_URL
+}
+
 function check_and_prepare_env_params() {
    log "当前时间 : $(date)"
    log_title "检查安装环境并初始化环境变量"
@@ -113,6 +191,7 @@ function check_and_prepare_env_params() {
          ;;
    esac
    export CREST_EXTERNAL_MYSQL
+   normalize_metadata_db_env
    CREST_CRYPTO_MODE=${CREST_CRYPTO_MODE:-standard}
    case "$CREST_CRYPTO_MODE" in
       standard|sm-suite) ;;
@@ -127,13 +206,9 @@ function check_and_prepare_env_params() {
    case "$(echo "$CREST_LOAD_DEMO" | tr '[:upper:]' '[:lower:]')" in
       true|1|yes)
          CREST_LOAD_DEMO=true
-         CREST_FLYWAY_LOCATIONS="classpath:db/migration,classpath:db/demo-migration"
-         log_content "初始化内置演示资源"
          ;;
       false|0|no)
          CREST_LOAD_DEMO=false
-         CREST_FLYWAY_LOCATIONS="classpath:db/migration"
-         log_content "跳过内置演示资源"
          ;;
       *)
          echo "CREST_LOAD_DEMO 只支持 true 或 false"
@@ -141,7 +216,8 @@ function check_and_prepare_env_params() {
          ;;
    esac
    export CREST_LOAD_DEMO
-   export CREST_FLYWAY_LOCATIONS
+   configure_flyway_locations
+   configure_metadata_db_url
 
    if [[ -z "$CREST_DB_PASSWORD" ]]; then
       CREST_DB_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 32)

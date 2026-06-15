@@ -60,7 +60,7 @@ services:
       CREST_DB_USERNAME: root
       CREST_DB_PASSWORD: ${CREST_DB_PASSWORD:?set CREST_DB_PASSWORD}
       CREST_DB_PARAMS: autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
-      CREST_DB_URL: jdbc:mysql://mysql-crest:3306/${CREST_DB_NAME:-crest}?autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      CREST_DB_URL: ${CREST_DB_URL:-jdbc:mysql://mysql-crest:3306/${CREST_DB_NAME:-crest}?autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true}
       CREST_AES_KEY: ${CREST_AES_KEY:?set CREST_AES_KEY}
       CREST_AES_IV: ${CREST_AES_IV:?set CREST_AES_IV}
       CREST_CRYPTO_MODE: standard

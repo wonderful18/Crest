@@ -72,9 +72,14 @@ Crest 单机安装默认采用前后端分离容器：
 | `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v1.5.11` | Crest 前端镜像 |
 | `CREST_MYSQL_IMAGE` | `mysql:8.0.43` | MySQL 镜像 |
 | `CREST_LOAD_DEMO` | `true` | 是否初始化内置演示资源；生产环境不需要示例数据时设为 `false` |
-| `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部 MySQL；默认安装内置 MySQL 容器 |
+| `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部元数据库；默认安装内置 MySQL 容器，`CREST_DB_TYPE=ob-mysql/ob-oracle` 时脚本会自动切换为外部库模式 |
+| `CREST_DB_TYPE` | `mysql` | 元数据库类型，支持 `mysql`、`ob-mysql`、`ob-oracle` |
+| `CREST_DB_HOST` | `mysql-crest` | 元数据库地址；OceanBase 建议填写 OBProxy 地址，直连 observer 时填写 observer 地址 |
+| `CREST_DB_PORT` | `3306` | 元数据库端口；OceanBase 常用 OBProxy `2883`，observer 直连 `2881` |
 | `CREST_DB_NAME` | `crest` | 元数据库名 |
-| `CREST_DB_USERNAME` | `root` | MySQL 用户 |
+| `CREST_DB_DRIVER_CLASS_NAME` | `com.mysql.cj.jdbc.Driver` | JDBC 驱动；OceanBase 类型留空或保持默认时脚本会自动使用 `com.oceanbase.jdbc.Driver` |
+| `CREST_DB_URL` | 空 | JDBC URL 覆盖项；留空时安装脚本按 `CREST_DB_TYPE` 自动生成 |
+| `CREST_DB_USERNAME` | `root` | 元数据库用户；OBProxy 连接 OceanBase 时使用 `用户@租户#集群`，observer 直连时使用 `用户@租户` |
 | `CREST_DB_PASSWORD` | 空 | 留空时安装脚本自动生成 |
 | `CREST_AES_KEY` | 空 | 留空时自动生成 32 位值；升级时不要改 |
 | `CREST_AES_IV` | 空 | 留空时自动生成 16 位值；升级时不要改 |
@@ -91,6 +96,29 @@ Crest 单机安装默认采用前后端分离容器：
 | `CREST_GRAFANA_ADMIN_USER` | `admin` | Grafana 管理员账号 |
 | `CREST_GRAFANA_ADMIN_PASSWORD` | 空 | Grafana 管理员密码；开启后留空自动生成 |
 | `CREST_GRAFANA_PUBLIC_URL` | 空 | Grafana 页面访问地址；留空时安装脚本按本机端口生成 |
+
+OceanBase 元数据库示例：
+
+```bash
+# OceanBase MySQL tenant through OBProxy
+CREST_DB_TYPE=ob-mysql
+CREST_DB_HOST=10.0.0.10
+CREST_DB_PORT=2883
+CREST_DB_NAME=crest
+CREST_DB_USERNAME=ob_user@ob_mysql#obcluster
+CREST_DB_PASSWORD=ob_password
+```
+
+```bash
+# OceanBase Oracle tenant through OBProxy
+CREST_DB_TYPE=ob-oracle
+CREST_DB_HOST=10.0.0.10
+CREST_DB_PORT=2883
+CREST_DB_USERNAME=ob_user@ob_oracle#obcluster
+CREST_DB_PASSWORD=ob_password
+```
+
+如需 observer 直连，把端口改为 `2881`，用户名使用 `用户@租户`，不要带 `#集群`。`CREST_DB_URL` 留空时脚本会自动生成；只有需要追加特殊 JDBC 参数时才手工覆盖。
 
 ## 在线安装
 

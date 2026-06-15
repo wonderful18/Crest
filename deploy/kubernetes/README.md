@@ -104,9 +104,11 @@ docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:main .
 | --- | --- |
 | `CREST_CONTEXT_PATH` | 应用上下文路径，默认空 |
 | `CREST_LOAD_DEMO` | 是否初始化内置演示资源，默认 `true` |
-| `CREST_FLYWAY_LOCATIONS` | Flyway 执行目录；关闭演示资源时设为 `classpath:db/migration` |
-| `CREST_DB_HOST` | MySQL 地址 |
-| `CREST_DB_PORT` | MySQL 端口 |
+| `CREST_FLYWAY_LOCATIONS` | Flyway 执行目录；默认 MySQL 路径，OceanBase Oracle 使用 `classpath:db/migration-ob-oracle` |
+| `CREST_DB_TYPE` | 元数据库类型，支持 `mysql`、`ob-mysql`、`ob-oracle` |
+| `CREST_DB_DRIVER_CLASS_NAME` | JDBC 驱动；OceanBase 使用 `com.oceanbase.jdbc.Driver` |
+| `CREST_DB_HOST` | 元数据库地址；OceanBase 可填写 OBProxy 或 observer 地址 |
+| `CREST_DB_PORT` | 元数据库端口；OceanBase 常用 OBProxy `2883`，observer 直连 `2881` |
 | `CREST_DB_NAME` | 元数据库名 |
 | `CREST_DB_PARAMS` | JDBC 参数 |
 | `CREST_ORIGIN_LIST` | 允许来源列表，正式环境改为实际域名 |
@@ -123,6 +125,29 @@ docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:main .
 | `CREST_DB_USERNAME` | 元数据库账号 |
 | `CREST_DB_PASSWORD` | 元数据库密码 |
 | `MYSQL_ROOT_PASSWORD` | 内置 MySQL 模式需要；外部 MySQL 模式不需要 |
+
+OceanBase Oracle 元数据库示例：
+
+```yaml
+configMapGenerator:
+  - name: crest-env
+    literals:
+      - CREST_DB_TYPE=ob-oracle
+      - CREST_DB_DRIVER_CLASS_NAME=com.oceanbase.jdbc.Driver
+      - CREST_DB_HOST=10.0.0.10
+      - CREST_DB_PORT=2883
+      - CREST_FLYWAY_LOCATIONS=classpath:db/migration-ob-oracle
+```
+
+```yaml
+secretGenerator:
+  - name: crest-db-secret
+    literals:
+      - CREST_DB_USERNAME=ob_user@ob_oracle#obcluster
+      - CREST_DB_PASSWORD=ob_password
+```
+
+OceanBase MySQL 元数据库使用 `CREST_DB_TYPE=ob-mysql`，`CREST_DB_NAME` 填写目标库名，Flyway 可继续使用 MySQL 兼容路径。observer 直连时端口使用 `2881`，用户名使用 `用户@租户`，不要带 `#集群`。
 | `CREST_AES_KEY` | 32 位加密 Key |
 | `CREST_AES_IV` | 16 位加密 IV |
 | `CREST_CRYPTO_MODE` | 加密模式，默认 `standard`；需要 SM2/SM3/SM4 时设为 `sm-suite` |
