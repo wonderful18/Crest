@@ -64,6 +64,11 @@ function normalize_metadata_db_env() {
    esac
    export CREST_DB_TYPE
 
+   if [[ "$CREST_DB_TYPE" != "mysql" && ( -z "$CREST_DB_HOST" || "$CREST_DB_HOST" == "mysql-crest" ) ]]; then
+      echo "CREST_DB_TYPE=${CREST_DB_TYPE} 时必须配置 CREST_DB_HOST 为 OBProxy 或 observer 地址"
+      exit 1
+   fi
+
    if [[ "$CREST_DB_TYPE" != "mysql" && "$CREST_EXTERNAL_MYSQL" == "false" ]]; then
       CREST_EXTERNAL_MYSQL=true
       export CREST_EXTERNAL_MYSQL
