@@ -14,8 +14,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 数据源 Provider 工厂，负责内置和插件 Provider 的查找与注册
+ */
 public class ProviderFactory {
 
+    /**
+     * 按数据源类型获取对应 Provider
+     */
     public static Provider getProvider(String type) throws CrestException {
         if (type.equalsIgnoreCase("es")) {
             return SpringContextUtil.getApplicationContext().getBean("esProvider", Provider.class);
@@ -31,18 +37,30 @@ public class ProviderFactory {
         return instance;
     }
 
+    /**
+     * 获取默认 Calcite Provider
+     */
     public static Provider getDefaultProvider() {
         return SpringContextUtil.getApplicationContext().getBean("calciteProvider", Provider.class);
     }
 
 
+    /**
+     * 已加载插件数据源 Provider 缓存
+     */
     private static final Map<String, CrestDatasourcePlugin> templateMap = new ConcurrentHashMap<>();
 
+    /**
+     * 从插件缓存中获取指定类型 Provider
+     */
     public static Provider getInstance(String type) {
         String key = type;
         return templateMap.get(key);
     }
 
+    /**
+     * 注册插件数据源 Provider，并加载插件模板
+     */
     public static void loadPlugin(String type, CrestDatasourcePlugin plugin) {
         String key = type;
         if (templateMap.containsKey(key)) return;
@@ -56,6 +74,9 @@ public class ProviderFactory {
         }
     }
 
+    /**
+     * 返回所有插件数据源配置
+     */
     public static List<PluginDatasourceVO> getDsConfigList() {
         return templateMap.values().stream().map(CrestDatasourcePlugin::getConfig).toList();
     }

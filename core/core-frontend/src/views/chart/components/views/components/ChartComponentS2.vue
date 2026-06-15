@@ -32,7 +32,9 @@ import { type SpreadSheet } from '@antv/s2'
 import { parseJson } from '../../js/util'
 import { useI18n } from '@/hooks/web/useI18n'
 
+// 大屏主状态提供图表联动、跳转和移动端上下文
 const dvMainStore = dvMainStoreWithOut()
+// 解构 S2 图表渲染需要使用的全局状态
 const {
   nowPanelTrackInfo,
   nowPanelJumpInfo,
@@ -41,9 +43,12 @@ const {
   embeddedCallBack,
   inMobile
 } = storeToRefs(dvMainStore)
+// 全局事件总线用于图表和外部工具栏通信
 const { emitter } = useEmitt()
+// S2 图表组件内置文案的翻译入口
 const { t } = useI18n()
 
+// S2 图表组件入参，包含视图配置、展示位置、终端和下钻层级
 const props = defineProps({
   element: {
     type: Object,
@@ -93,15 +98,22 @@ const props = defineProps({
   }
 })
 
+// S2 图表交互事件透传给父组件处理
 const emit = defineEmits(['onPointClick', 'onChartClick', 'onDrillFilters', 'onJumpClick'])
+// 大屏移动端预览需要使用移动端交互逻辑
 const dataVMobile = !isDashboard() && isMobile()
 
+// 常用入参保持响应式引用，避免在异步渲染中丢失最新值
 const { view, showPosition, scale, terminal, drillLength, suffixId } = toRefs(props)
 
+// 图表渲染错误标记
 const isError = ref(false)
+// 图表渲染错误文案
 const errMsg = ref('')
+// 外部注入的扩展请求参数
 const chartExtRequest = inject('chartExtRequest') as ShallowRef<object>
 
+// S2 图表运行时状态，包含联动、分页、加载和图片放大信息
 const state = reactive({
   curActionId: null,
   curTrackMenu: [],
@@ -126,15 +138,19 @@ const state = reactive({
   imgEnlarge: false,
   imgSrc: ''
 })
+// 支持分页的表格图表类型
 const PAGE_CHARTS = ['table-info', 'table-normal']
-// 图表数据不用全响应式
+// 图表数据体积较大，使用浅响应式避免深层代理开销
 let chartData = shallowRef<Partial<Chart['data']>>({
   fields: []
 })
 
+// 当前图表容器编号，组合展示位置、图表编号和后缀避免冲突
 const containerId = 'container-' + showPosition.value + '-' + view.value.id + '-' + suffixId.value
+// 联动轨迹条组件引用
 const viewTrack = ref(null)
 
+// 拉取图表数据，并根据分页配置更新扩展请求参数
 const calcData = (viewInfo: Chart, callback, resetPageInfo = true) => {
   const customAttr = viewInfo.customAttr as any
   viewInfo.chartExtRequest ||= {}
@@ -173,15 +189,16 @@ const calcData = (viewInfo: Chart, callback, resetPageInfo = true) => {
     callback?.()
   }
 }
-// 图表对象不用响应式
+// S2 图表对象不用响应式，避免第三方实例被代理
 let myChart: SpreadSheet = null
-// 实际渲染的图表信息，适应缩放
+// 实际渲染的图表信息，已按缩放和终端适配
 let actualChart: ChartObj
+// 弹窗回传数据后复用现有渲染入口刷新图表
 const renderChartFromDialog = (viewInfo: Chart, chartDataInfo) => {
   chartData.value = chartDataInfo
   renderChart(viewInfo, false)
 }
-// 处理存量图表的默认值
+// 处理存量图表的默认值，避免旧配置缺字段导致渲染异常
 const handleDefaultVal = (chart: Chart) => {
   const customAttr = parseJson(chart.customAttr)
   // 明细表默认合并单元格，存量的不合并
@@ -212,6 +229,7 @@ const handleDefaultVal = (chart: Chart) => {
     }
   }
 }
+// 组装实际渲染配置并触发防抖渲染
 const renderChart = (viewInfo: Chart, resetPageInfo: boolean) => {
   if (!viewInfo) {
     return
@@ -231,6 +249,7 @@ const renderChart = (viewInfo: Chart, resetPageInfo: boolean) => {
   nextTick(() => debounceRender())
 }
 
+// 防抖销毁旧 S2 实例并创建新图表实例
 const debounceRender = debounce(() => {
   ;(myChart?.facet as any)?.timer?.stop()
   myChart?.facet?.cancelScrollFrame()
@@ -254,6 +273,7 @@ const debounceRender = debounce(() => {
   initScroll()
 }, 500)
 
+// 根据图表类型和样式配置初始化分页显示状态
 const setupPage = (chart: ChartObj, resetPageInfo?: boolean) => {
   const customAttr = chart.customAttr
   if (!PAGE_CHARTS.includes(chart.type) || customAttr.basicStyle.tablePageMode !== 'page') {
@@ -277,15 +297,27 @@ const setupPage = (chart: ChartObj, resetPageInfo?: boolean) => {
   dvMainStore.setViewPageInfo(chart.id, state.pageInfo)
 }
 
+/**
+ * 鼠标移入表格时暂停自动滚动
+ */
 const mouseMove = () => {
   ;(myChart?.facet as any)?.timer?.stop()
 }
 
+/**
+ * 鼠标移出表格后恢复自动滚动
+ */
 const mouseLeave = () => {
   initScroll()
 }
 
+/**
+ * 表格自动滚动定时器
+ */
 let scrollTimer
+/**
+ * 初始化或重置表格自动滚动
+ */
 const initScroll = () => {
   scrollTimer && clearTimeout(scrollTimer)
   scrollTimer = setTimeout(() => {
@@ -378,6 +410,9 @@ const initScroll = () => {
   }, 1500)
 }
 
+/**
+ * 判断当前表格是否展示分页控件
+ */
 const showPage = computed(() => {
   if (!PAGE_CHARTS.includes(view.value.type)) {
     return false
@@ -385,6 +420,9 @@ const showPage = computed(() => {
   return state.showPage
 })
 
+/**
+ * 处理分页页码切换
+ */
 const handleCurrentChange = pageNum => {
   let extReq = { goPage: pageNum }
   if (chartExtRequest.value) {
@@ -394,6 +432,9 @@ const handleCurrentChange = pageNum => {
   calcData(chart, null, false)
 }
 
+/**
+ * 处理分页大小切换
+ */
 const handlePageSizeChange = pageSize => {
   if (state.pageStyle === 'general') {
     state.currentPageSize = pageSize
@@ -408,12 +449,18 @@ const handlePageSizeChange = pageSize => {
   calcData(chart, null, false)
 }
 
+/**
+ * 嵌入模式下转发点位点击事件
+ */
 const pointClickTrans = () => {
   if (embeddedCallBack.value === 'yes') {
     trackClick('pointClick')
   }
 }
 
+/**
+ * 处理触摸端图表操作菜单触发
+ */
 const touchAction = (callback, fieldId) => {
   if (fieldId) {
     state.curActionId = fieldId
@@ -423,6 +470,9 @@ const touchAction = (callback, fieldId) => {
   }
 }
 
+/**
+ * 处理表格单元格点击后的下钻、联动和跳转动作
+ */
 const action = param => {
   state.pointParam = param
   state.curActionId = param.data.name
@@ -452,6 +502,7 @@ const action = param => {
   }
 }
 
+// 执行当前点击菜单对应的联动、下钻、跳转或放大动作
 const trackClick = trackAction => {
   const param = state.pointParam
   if (!param?.data?.dimensionList) {
@@ -544,6 +595,7 @@ const trackClick = trackAction => {
   }
 }
 
+// 根据表格字段和当前点击位置计算实际菜单
 const trackMenu = computed(() => {
   if (['table-info', 'table-normal'].includes(view.value.type) && state.curActionId) {
     return trackMenuCalc(state.curActionId)
@@ -552,6 +604,7 @@ const trackMenu = computed(() => {
   }
 })
 
+// 根据图表配置汇总可用的通用点击菜单
 const trackMenuCmp = computed(() => {
   let trackMenuInfo = []
   if (showPosition.value === 'viewDialog') {
@@ -587,6 +640,7 @@ const trackMenuCmp = computed(() => {
   return trackMenuInfo
 })
 
+// 按指定字段重新计算表格单元格菜单
 const trackMenuCalc = itemId => {
   let trackMenuInfo = []
   if (showPosition.value === 'viewDialog') {
@@ -633,6 +687,7 @@ const trackMenuCalc = itemId => {
   return trackMenuInfo
 }
 
+// 表格列宽调整后写回基础样式配置
 const resizeAction = resizeColumn => {
   // 从头开始滚动
   if ((myChart?.facet as any)?.timer) {
@@ -665,6 +720,7 @@ defineExpose({
 })
 
 let timer
+// 容器尺寸变化后延迟重绘表格或透视表
 const resize = (width, height) => {
   if (timer) {
     clearTimeout(timer)
@@ -714,6 +770,7 @@ onBeforeUnmount(() => {
   }
 })
 
+// 按画布缩放和分页字号计算分页器样式
 const autoStyle = computed(() => {
   const adaptorScale =
     (scale.value * (canvasStyleData.value.component.seniorStyleSetting?.pagerSize || 14)) / 14
@@ -729,10 +786,12 @@ const autoStyle = computed(() => {
   }
 })
 
+// 将分页器颜色透传为样式变量
 const tabStyle = computed(() => [
   { '--crest-pager-color': canvasStyleData.value.component.seniorStyleSetting?.pagerColor }
 ])
 
+// 浅色分页器文字自动切换为深色样式
 const tablePageClass = computed(() => {
   return (
     ['#ffffff', '#ffffffff', '#a6a6a6ff'].includes(

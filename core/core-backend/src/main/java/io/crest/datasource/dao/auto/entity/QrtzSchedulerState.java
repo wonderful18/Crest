@@ -21,38 +21,65 @@ public class QrtzSchedulerState implements Serializable {
 
     private Long checkinInterval;
 
+    /**
+     * 获取调度器名称
+     */
     public String getSchedName() {
         return schedName;
     }
 
+    /**
+     * 设置调度器名称
+     */
     public void setSchedName(String schedName) {
         this.schedName = schedName;
     }
 
+    /**
+     * 获取调度器实例名称
+     */
     public String getInstanceName() {
         return instanceName;
     }
 
+    /**
+     * 设置调度器实例名称
+     */
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
     }
 
+    /**
+     * 获取最后一次心跳时间
+     */
     public Long getLastCheckinTime() {
         return lastCheckinTime;
     }
 
+    /**
+     * 设置最后一次心跳时间
+     */
     public void setLastCheckinTime(Long lastCheckinTime) {
         this.lastCheckinTime = lastCheckinTime;
     }
 
+    /**
+     * 获取心跳间隔
+     */
     public Long getCheckinInterval() {
         return checkinInterval;
     }
 
+    /**
+     * 设置心跳间隔
+     */
     public void setCheckinInterval(Long checkinInterval) {
         this.checkinInterval = checkinInterval;
     }
 
+    /**
+     * 返回调度器状态的调试字符串
+     */
     @Override
     public String toString() {
         return "QrtzSchedulerState{" +

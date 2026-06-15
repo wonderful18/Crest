@@ -5,12 +5,15 @@ import { ref } from 'vue'
 const snowflake = new SnowflakeId()
 const { t } = useI18n()
 
+// 整理输入数据并返回工具处理结果
 const guid = () => {
   return snowflake.generate()
 }
 
+// 整理输入数据并返回工具处理结果
 const num = ref(+new Date())
 
+// 维护表单数据和校验规则
 const timestampFormatDate = (timestamp, showMs?: boolean) => {
   if (!timestamp || timestamp === -1) {
     return '-'
@@ -101,6 +104,7 @@ const fieldOptions = [
   }
 ]
 
+// 读取当前业务数据并返回处理结果
 const getFieldName = (fields, name) => {
   let n = name
   n = n + '_copy'

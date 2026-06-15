@@ -9,8 +9,10 @@ import { ref, onMounted } from 'vue'
 import { useViewSelectorStoreWithOut } from '@/store/modules/data-visualization/viewSelector'
 const viewSelectorStore = useViewSelectorStoreWithOut()
 
+// 校验当前数据是否满足业务规则
 const checked = ref(false)
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   resourceId: {
     type: String,
@@ -21,6 +23,7 @@ onMounted(() => {
   checked.value = viewSelectorStore.getViewIdList.includes(props.resourceId)
 })
 
+// 校验当前数据是否满足业务规则
 const checkChange = val => {
   if (val) {
     viewSelectorStore.add(props.resourceId)

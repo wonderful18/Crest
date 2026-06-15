@@ -37,6 +37,7 @@ import static io.crest.datasource.server.DatasourceTaskServer.ScheduleType.MANUA
 
 @Component
 @SuppressWarnings({"deprecation", "unchecked"})
+// 管理数据源抽取任务、引擎表创建和同步调度
 public class DatasourceSyncManage {
 
     @Resource
@@ -53,6 +54,7 @@ public class DatasourceSyncManage {
     private DatasourceServer datasourceServer;
 
 
+    // 抽取 Excel 数据源的所有表数据
     public void extractExcelData(CoreDatasource coreDatasource, String type) {
         if (coreDatasource == null) {
             LogUtil.error("Can not find CoreDatasource");
@@ -100,6 +102,7 @@ public class DatasourceSyncManage {
     }
 
 
+    // 执行数据源同步任务入口
     public void extractData(Long datasourceId, Long taskId, JobExecutionContext context) {
         CoreDatasource coreDatasource = datasourceMapper.selectById(datasourceId);
         if (coreDatasource == null) {
@@ -142,6 +145,7 @@ public class DatasourceSyncManage {
         }
     }
 
+    // 抽取 API 数据源表数据
     public void extractedData(Long taskId, CoreDatasource coreDatasource, DatasourceServer.UpdateType updateType, String scheduleType) {
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDatasource(transDTO(coreDatasource));
@@ -179,6 +183,7 @@ public class DatasourceSyncManage {
         }
     }
 
+    // 抽取远程 Excel 数据源表数据
     public void extractedExcelData(Long taskId, CoreDatasource coreDatasource, DatasourceServer.UpdateType updateType, String scheduleType) {
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDatasource(transDTO(coreDatasource));
@@ -219,6 +224,7 @@ public class DatasourceSyncManage {
         }
     }
 
+    // 重置数据源任务状态为等待执行
     private void updateDsTaskStatus(Long datasourceId) {
         UpdateWrapper<CoreDatasource> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", datasourceId);
@@ -227,6 +233,7 @@ public class DatasourceSyncManage {
         datasourceMapper.update(record, updateWrapper);
     }
 
+    // 手动抽取指定数据源表
     public void extractDataForTable(Long datasourceId, String name, String tableName, String type) {
         DatasourceServer.UpdateType updateType = DatasourceServer.UpdateType.valueOf(type);
         CoreDatasource coreDatasource = datasourceMapper.selectById(datasourceId);
@@ -273,6 +280,7 @@ public class DatasourceSyncManage {
         }
     }
 
+    // 分页写入 API 抽取数据到引擎表
     private void extractApiData(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType extractType, List<TableField> tableFields) throws Exception {
         Map<String, Object> result = (Map<String, Object>) datasourceServer.invokeMethod(datasourceRequest.getDatasource().getType(), "fetchApiResultField", DatasourceRequest.class, datasourceRequest);
         List<String[]> dataList = (List<String[]>) result.get("dataList");
@@ -280,7 +288,7 @@ public class DatasourceSyncManage {
         EngineRequest engineRequest = new EngineRequest();
         engineRequest.setEngine(engine);
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
-        int pageNumber = 1000; //一次插入 1000条
+        int pageNumber = 1000; // 每批向引擎插入 1000 条数据。
         int totalPage;
         if (dataList.size() % pageNumber > 0) {
             totalPage = dataList.size() / pageNumber + 1;
@@ -293,6 +301,7 @@ public class DatasourceSyncManage {
         }
     }
 
+    // 分页写入 Excel 抽取数据到引擎表
     private void extractExcelData(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType extractType, List<TableField> tableFields) throws Exception {
         ExcelUtils excelUtils = new ExcelUtils();
         List<String[]> dataList = excelUtils.fetchDataList(datasourceRequest);
@@ -300,7 +309,7 @@ public class DatasourceSyncManage {
         EngineRequest engineRequest = new EngineRequest();
         engineRequest.setEngine(engine);
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
-        int pageNumber = 1000; //一次插入 1000条
+        int pageNumber = 1000; // 每批向引擎插入 1000 条数据。
         int totalPage;
         if (dataList.size() % pageNumber > 0) {
             totalPage = dataList.size() / pageNumber + 1;
@@ -313,6 +322,7 @@ public class DatasourceSyncManage {
         }
     }
 
+    // 用临时表替换正式引擎表
     private void replaceTable(String tableName) throws Exception {
         CoreEngine engine = engineManage.info();
         EngineRequest engineRequest = new EngineRequest();
@@ -327,6 +337,7 @@ public class DatasourceSyncManage {
         }
     }
 
+    // 在当前引擎中创建数据表
     public void createEngineTable(String tableName, List<TableField> tableFields) throws Exception {
         CoreEngine engine = engineManage.info();
         EngineRequest engineRequest = new EngineRequest();
@@ -336,6 +347,7 @@ public class DatasourceSyncManage {
         calciteProvider.exec(engineRequest);
     }
 
+    // 删除当前引擎中的数据表
     public void dropEngineTable(String tableName) throws Exception {
         CoreEngine engine = engineManage.info();
         EngineRequest engineRequest = new EngineRequest();
@@ -345,6 +357,7 @@ public class DatasourceSyncManage {
         calciteProvider.exec(engineRequest);
     }
 
+    // 新增或更新数据源同步调度
     public void addSchedule(CoreDatasourceTask datasourceTask) throws CrestException {
         if (Strings.CI.equals(datasourceTask.getSyncRate(), DatasourceTaskServer.ScheduleType.RIGHTNOW.toString())) {
             scheduleManager.addOrUpdateSingleJob(new JobKey(datasourceTask.getId().toString(), datasourceTask.getDsId().toString()), new TriggerKey(datasourceTask.getId().toString(), datasourceTask.getDsId().toString()), ExtractDataJob.class, new Date(datasourceTask.getStartTime()), scheduleManager.getDefaultJobDataMap(datasourceTask.getDsId().toString(), datasourceTask.getCron(), datasourceTask.getId().toString(), datasourceTask.getUpdateType()));
@@ -364,14 +377,17 @@ public class DatasourceSyncManage {
         }
     }
 
+    // 删除数据源同步调度
     public void deleteSchedule(CoreDatasourceTask datasourceTask) {
         scheduleManager.removeJob(new JobKey(datasourceTask.getId().toString(), datasourceTask.getDsId().toString()), new TriggerKey(datasourceTask.getId().toString(), datasourceTask.getDsId().toString()));
     }
 
+    // 立即触发数据源同步调度
     public void fireNow(CoreDatasourceTask datasourceTask) throws Exception {
         scheduleManager.fireNow(datasourceTask.getId().toString(), datasourceTask.getDsId().toString());
     }
 
+    // 将数据源实体转换为 DTO
     private DatasourceDTO transDTO(CoreDatasource record) {
         DatasourceDTO datasourceDTO = new DatasourceDTO();
         BeanUtils.copyBean(datasourceDTO, record);

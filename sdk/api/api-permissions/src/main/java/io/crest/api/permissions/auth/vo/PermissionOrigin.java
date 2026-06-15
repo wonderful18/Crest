@@ -11,6 +11,7 @@ import java.util.List;
 
 @Schema(description = "关联权限")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class PermissionOrigin implements Serializable {
     @Serial
     private static final long serialVersionUID = 1455588932869130794L;

@@ -9,6 +9,7 @@
 import Icon from '@/components/icon-custom/src/Icon.vue'
 import { iconBoardMap } from '@/components/icon-group/board-list'
 import { toRefs } from 'vue'
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   propValue: {
     type: String,

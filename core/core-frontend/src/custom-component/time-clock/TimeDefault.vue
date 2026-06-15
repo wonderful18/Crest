@@ -10,6 +10,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, toRefs } from 'vue'
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   element: {
     type: Object
@@ -17,15 +18,18 @@ const props = defineProps({
 })
 
 const { element } = toRefs(props)
+// 维护组件内部表单、弹窗和临时数据状态
 const state = reactive({
   nowDate: '', // 当前日期
   nowWeek: '',
   timer: null
 })
 
+// 记录当前选中项和交互焦点
 const currentTime = () => {
   state.timer = setInterval(formatDate, 500)
 }
+// 维护表单数据和校验规则
 const formatDate = () => {
   const weekArr = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
   let timeFormat = element.value.formatInfo.timeFormat

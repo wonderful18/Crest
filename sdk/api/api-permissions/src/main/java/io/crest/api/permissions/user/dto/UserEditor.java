@@ -9,6 +9,7 @@ import java.io.Serial;
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "用户编辑器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class UserEditor extends UserCreator{
 
     @Serial

@@ -9,6 +9,7 @@ import java.io.Serializable;
 
 @Schema(description = "角色构造器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class RoleCreator implements Serializable {
     @Serial
     private static final long serialVersionUID = -5311145649863484035L;

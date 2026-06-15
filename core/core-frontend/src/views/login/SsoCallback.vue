@@ -9,11 +9,16 @@ import { interactiveStoreWithOut } from '@/store/modules/interactive'
 import { cleanPlatformFlag } from '@/utils/utils'
 import crestLogo from '@/assets/img/crest-logo-horizontal-192h.png'
 
+// 单点登录成功后需要刷新用户会话状态
 const userStore = useUserStoreWithOut()
+// 权限缓存需要和用户会话一起清空，避免沿用旧菜单
 const permissionStore = usePermissionStoreWithOut()
+// 交互状态包含前端缓存的仪表板上下文，登录切换时需要重置
 const interactiveStore = interactiveStoreWithOut()
+// 回调页状态文案用于提示当前单点登录处理进度
 const statusText = ref('正在完成单点登录')
 
+// 统一读取路由查询参数的首个字符串值
 const firstQueryValue = (value: unknown) => {
   if (Array.isArray(value)) {
     return value[0] || ''
@@ -21,6 +26,7 @@ const firstQueryValue = (value: unknown) => {
   return typeof value === 'string' ? value : ''
 }
 
+// 解析单点登录完成后的跳转地址，并阻止外部地址跳转
 const parseRedirectLocation = (redirectValue: unknown) => {
   let target = firstQueryValue(redirectValue) || '/workbranch/index'
   try {
@@ -48,6 +54,7 @@ const parseRedirectLocation = (redirectValue: unknown) => {
   }
 }
 
+// 清理本地会话和平台标识，确保新票据从干净状态写入
 const resetClientSession = () => {
   userStore.clear()
   userStore.$reset()
@@ -58,6 +65,7 @@ const resetClientSession = () => {
   cleanPlatformFlag()
 }
 
+// 使用单点登录票据换取系统令牌，并跳回原始业务页面
 const finishLogin = async () => {
   const query = router.currentRoute.value.query
   const error = firstQueryValue(query.error || query.ssoError)
@@ -99,6 +107,7 @@ const finishLogin = async () => {
   }
 }
 
+// 页面加载后立即处理身份提供方回调
 onMounted(finishLogin)
 </script>
 

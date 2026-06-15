@@ -3,6 +3,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { PropType } from 'vue'
 const { t } = useI18n()
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   dragList: {
     type: Array,

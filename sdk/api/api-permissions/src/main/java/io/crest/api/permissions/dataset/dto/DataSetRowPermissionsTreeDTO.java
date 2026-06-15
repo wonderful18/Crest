@@ -12,6 +12,7 @@ import java.util.List;
 
 @Getter
 @Setter
+// 定义接口请求或返回数据的传输结构
 public class DataSetRowPermissionsTreeDTO  {
 
     @JsonSerialize(using = ToStringSerializer.class)

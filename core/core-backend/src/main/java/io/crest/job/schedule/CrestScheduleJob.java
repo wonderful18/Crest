@@ -3,6 +3,7 @@ package io.crest.job.schedule;
 import io.crest.utils.LogUtil;
 import org.quartz.*;
 
+// 定义当前业务对象的核心职责
 public abstract class CrestScheduleJob implements Job {
 
     protected Long datasetTableId;
@@ -11,6 +12,7 @@ public abstract class CrestScheduleJob implements Job {
     protected String updateType;
 
     @Override
+    // 执行当前业务请求并写入处理结果
     public void execute(JobExecutionContext context) throws JobExecutionException {
         JobKey jobKey = context.getTrigger().getJobKey();
         JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();

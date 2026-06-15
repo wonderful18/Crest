@@ -1,7 +1,9 @@
+// 根据当前数据计算界面可用状态
 export function isExternal(path) {
   return /^(https?:|mailto:|tel:)/.test(path) || /^(http?:|mailto:|tel:)/.test(path)
 }
 
+// 根据当前数据计算界面可用状态
 export function validUsername(str) {
   const valid_map = ['admin', 'cyw']
   return valid_map.indexOf(str.trim()) >= 0

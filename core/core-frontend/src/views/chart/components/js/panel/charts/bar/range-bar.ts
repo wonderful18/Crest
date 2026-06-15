@@ -29,9 +29,10 @@ const { t } = useI18n()
 const DEFAULT_DATA = []
 
 /**
- * 区间条形图
+ * 区间条形图渲染器，支持数值区间和时间区间两种范围展示。
  */
 export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
+  // 区间条形图使用一个分类维度和两个起止值字段。
   axisConfig = {
     xAxis: {
       name: `${t('chart.drag_block_type_axis')} / ${t('chart.dimension')}`,
@@ -49,6 +50,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
     }
   }
   properties = BAR_RANGE_EDITOR_PROPERTY.filter(p => p !== 'threshold')
+  // 区间图只开放范围标签、范围 tooltip 和坐标轴格式化相关配置。
   propertyInner = {
     ...BAR_EDITOR_PROPERTY_INNER,
     'label-selector': ['hPosition', 'color', 'fontSize', 'labelFormatter', 'showGap'],
@@ -74,6 +76,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
     ]
   }
   axis: AxisType[] = [...BAR_AXIS_TYPE, 'yAxisExt']
+  // G2Plot range bar 使用 values 数组作为区间字段。
   protected baseOptions: any = {
     data: [],
     xField: 'values',
@@ -87,7 +90,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
     if (!chart.data?.data?.length) {
       return
     }
-    // data
+    // 克隆数据后补充临时唯一键，避免相同区间值导致 G2Plot 元数据合并。
     const data: Array<any> = cloneDeep(chart.data.data)
 
     data.forEach(d => {
@@ -96,11 +99,13 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
 
     const ifAggregate = !!chart.aggregate
 
+    // 日期区间和数值区间在 meta、分组模式和格式化方式上不同。
     const isDate = !!chart.data.isDate
 
     const axis = chart.yAxis ?? chart.yAxisExt ?? []
     let dateFormat: string
     const dateSplit = axis[0]?.datePattern === 'date_split' ? '/' : '-'
+    // 时间轴 mask 根据字段日期粒度生成，保证坐标轴与数据字段格式一致。
     switch (axis[0]?.dateStyle) {
       case 'y':
         dateFormat = 'YYYY'
@@ -133,7 +138,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
     const minNumber = chart.data.min
     const maxNumber = chart.data.max
 
-    // options
+    // 日期明细模式按分类堆叠展示，聚合模式和数值模式使用普通区间条。
     const initOptions: BarOptions = {
       ...this.baseOptions,
       appendPadding: getPadding(chart),
@@ -168,7 +173,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
     const options = this.setupOptions(chart, initOptions)
 
     const { Bar: BarClass } = await import('@antv/g2plot/esm/plots/bar')
-    // 开始渲染
+    // 创建图表实例后绑定条形和标签点击，保证联动能拿到原始区间数据。
     const newChart = new BarClass(container, options)
 
     newChart.on('interval:click', action)
@@ -197,6 +202,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
     const axisValue = xAxis.axisValue
     const isDate = !!chart.data.isDate
     if (tmpOptions.xAxis.label) {
+      // 日期轴由 G2Plot time mask 处理，数值轴才使用自定义数值格式化。
       tmpOptions.xAxis.label.formatter = value => {
         if (isDate) {
           return value
@@ -205,12 +211,15 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
       }
     }
     if (tmpOptions.xAxis.position === 'top') {
+      // 横向区间条形图的数值轴位置需要从上下转换为左右。
       tmpOptions.xAxis.position = 'left'
     }
     if (tmpOptions.xAxis.position === 'bottom') {
+      // 编辑器底部位置对应横向区间条形图的右侧轴。
       tmpOptions.xAxis.position = 'right'
     }
     if (!axisValue?.auto) {
+      // 固定数值轴范围时写入 min/max/limit，避免自动范围覆盖用户配置。
       const axis = {
         xAxis: {
           ...tmpOptions.xAxis,
@@ -232,7 +241,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
     let customAttr: DeepPartial<ChartAttr>
     if (chart.customAttr) {
       customAttr = parseJson(chart.customAttr)
-      // tooltip
+      // tooltip 支持展示起止值，也可以按配置展示区间差值。
       if (customAttr.tooltip) {
         const t = JSON.parse(JSON.stringify(customAttr.tooltip))
         if (t.show) {
@@ -241,11 +250,13 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
             formatter: function (param: Datum) {
               let res
               if (isDate) {
+                // 日期区间已由后端按粒度格式化，直接拼接展示。
                 res = param.values[0] + ' ~ ' + param.values[1]
                 if (t.showGap) {
                   res = res + ' (' + param.gap + ')'
                 }
               } else {
+                // 数值区间复用 tooltip 数值格式化配置。
                 res =
                   valueFormatter(param.values[0], t.tooltipFormatter) +
                   ' ~ ' +
@@ -274,6 +285,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
     const basicStyle = parseJson(chart.customAttr).basicStyle
 
     if (isDate && !ifAggregate) {
+      // 日期明细模式按分类字段生成颜色，避免同一分类下多段区间颜色不一致。
       const customColors = []
       const groups = []
       for (let i = 0; i < chart.data.data.length; i++) {
@@ -290,6 +302,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
           isCustom: false
         })
       }
+      // 颜色函数按当前条形所属分类返回透明度和渐变后的颜色。
       const color = obj => {
         const colorObj = find(customColors, o => {
           return o.name === obj.field
@@ -311,6 +324,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
       }
     } else {
       if (basicStyle.gradient) {
+        // 聚合和数值模式使用基础配色数组，并按透明度转换为渐变色。
         let color = basicStyle.colors
         color = color.map(ele => {
           const tmp = hexColorToRGBA(ele, basicStyle.alpha)
@@ -329,6 +343,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
     }
     let barWidthRatio
     const _v = basicStyle.columnWidthRatio ?? DEFAULT_BASIC_STYLE.columnWidthRatio
+    // 编辑器按百分比维护柱宽，渲染层转换为 G2Plot 的 0 到 1 比例。
     if (_v >= 1 && _v <= 100) {
       barWidthRatio = _v / 100.0
     } else if (_v < 1) {
@@ -346,9 +361,11 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
   setupDefaultOptions(chart: ChartObj): ChartObj {
     const { customAttr, senior } = chart
     const { label } = customAttr
+    // 非法标签位置回退到中间，保证区间图首次加载可见且稳定。
     if (!['left', 'middle', 'right'].includes(label.position)) {
       label.position = 'middle'
     }
+    // 区间图默认忽略空数据，避免缺失起止值生成异常区间。
     senior.functionCfg.emptyDataStrategy = 'ignoreData'
     return chart
   }
@@ -367,6 +384,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
     const labelAttr = parseJson(chart.customAttr).label
 
     if (isDate && !ifAggregate) {
+      // 日期明细模式区间可能密集，启用防重叠和绘图区裁剪。
       if (!tmpOptions.label.layout) {
         ;(tmpOptions.label as any).layout = []
       }
@@ -380,12 +398,14 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
       formatter: (param: Datum) => {
         let res
         if (isDate) {
+          // 日期标签可在完整起止范围和区间差值之间切换。
           if (labelAttr.showGap) {
             res = param.gap
           } else {
             res = param.values[0] + ' ~ ' + param.values[1]
           }
         } else {
+          // 数值标签复用标签格式化配置，确保起止值和差值显示一致。
           if (labelAttr.showGap) {
             res = valueFormatter(param.gap, labelAttr.labelFormatter)
           } else {
@@ -425,15 +445,18 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
       return tmpOptions
     }
     if (tmpOptions.yAxis.position === 'left') {
+      // 横向区间条形图的分类轴位置需要从左右语义转换为上下语义。
       tmpOptions.yAxis.position = 'bottom'
     }
     if (tmpOptions.yAxis.position === 'right') {
+      // 编辑器右侧位置对应 G2Plot 横向条形图的顶部分类轴。
       tmpOptions.yAxis.position = 'top'
     }
     return tmpOptions
   }
 
   protected setupOptions(chart: Chart, options: BarOptions): BarOptions {
+    // 配置链按主题、基础样式、标签、提示、图例和坐标轴顺序叠加。
     return flow(
       this.configTheme,
       this.configBasicStyle,

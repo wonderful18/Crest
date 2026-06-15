@@ -10,7 +10,9 @@ defineProps({
     }
   }
 })
+// 定义组件向父级抛出的事件
 const emits = defineEmits(['openBlank'])
+// 打开对应弹窗或操作入口
 const openBlank = () => {
   emits('openBlank')
 }

@@ -26,15 +26,27 @@ import java.time.temporal.ChronoUnit;
 @Service
 public class TemplateLocalParseManage {
 
+    /**
+     * 静态资源服务，用于保存模板内嵌资源
+     */
     @Resource
     private StaticResourceServer staticResourceServer;
 
+    /**
+     * 模板版本 Mapper，用于记录内置模板初始化状态
+     */
     @Resource
     private TemplateVersionMapper templateVersionMapper;
 
+    /**
+     * Spring 资源加载器，用于读取 classpath 内置模板文件
+     */
     @Resource(type = ResourceLoader.class)
     private ResourceLoader resourceLoader;
 
+    /**
+     * 初始化 classpath 中尚未执行过的内置模板脚本
+     */
     public void doInit() throws Exception {
         org.springframework.core.io.Resource[] templateFiles = getAllFilesInResourceDirectory("template");
         if (templateFiles != null && templateFiles.length > 0) {
@@ -65,12 +77,18 @@ public class TemplateLocalParseManage {
         }
     }
 
+    /**
+     * 解析单个模板并落盘其中的静态资源
+     */
     public void parseCore(DataVisualizationBaseRequest template) {
         // 保存模板携带的静态文件，供模板预览和复制后复用。
         staticResourceServer.saveFilesToServe(template.getStaticResource());
     }
 
 
+    /**
+     * 获取内置模板目录下的全部资源文件
+     */
     public org.springframework.core.io.Resource[] getAllFilesInResourceDirectory(String directoryName) throws Exception {
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(resourceLoader);
 
@@ -80,6 +98,9 @@ public class TemplateLocalParseManage {
         return resources;
     }
 
+    /**
+     * 按 UTF-8 读取文件完整内容
+     */
     public static String readFileContent(File file) throws IOException {
         StringBuilder content = new StringBuilder();
         try (InputStream inputStream = Files.newInputStream(file.toPath());

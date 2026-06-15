@@ -11,7 +11,9 @@ interface DatasetField {
 const dvMainStore = dvMainStoreWithOut()
 const { componentData, canvasViewInfo } = storeToRefs(dvMainStore)
 
+// 衔接当前组件交互和状态同步
 export const comInfo = () => {
+  // 整理当前数据并同步界面状态
   const dfsComponentData = () => {
     let arr = componentData.value.filter(
       com => !['VQuery', 'Tabs'].includes(com.innerType) && com.component !== 'Group'
@@ -62,6 +64,7 @@ export const comInfo = () => {
     return arr.flat()
   }
 
+  // 整理当前数据并同步界面状态
   const datasetFieldList = computed(() => {
     return dfsComponentData()
       .map(ele => {

@@ -12,17 +12,28 @@ import eventBus from '@/utils/eventBus'
 import { componentArraySort, getCurInfo } from '@/store/modules/data-visualization/common'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { useI18n } from '@/hooks/web/useI18n'
+/** 主画布仓库提供当前组件和组件列表状态 */
 const dvMainStore = dvMainStoreWithOut()
+/** 复制仓库处理复制、剪切和粘贴操作 */
 const copyStore = copyStoreWithOut()
+/** 锁定仓库处理组件锁定状态 */
 const lockStore = lockStoreWithOut()
+/** 快照仓库记录右键菜单操作后的可撤销节点 */
 const snapshotStore = snapshotStoreWithOut()
+/** 图层仓库处理隐藏、显示和层级调整 */
 const layerStore = layerStoreWithOut()
+/** 组合仓库处理框选区域、组合和拆组操作 */
 const composeStore = composeStoreWithOut()
 
+/** 框选区域内的组件集合 */
 const { areaData } = storeToRefs(composeStore)
+/** 当前选中组件和画布组件列表 */
 const { curComponent, componentData } = storeToRefs(dvMainStore)
+/** 右键菜单向父级通知关闭和重命名事件 */
 const emit = defineEmits(['close', 'rename'])
+/** 全局事件发射器，用于触发查询条件编辑等跨组件行为 */
 const { emitter } = useEmitt()
+/** 菜单入参，区分画布菜单和侧边栏菜单 */
 const props = defineProps({
   activePosition: {
     type: String,
@@ -30,12 +41,16 @@ const props = defineProps({
   }
 })
 
+/** 当前菜单展示位置 */
 const { activePosition } = toRefs(props)
+/** 国际化翻译函数，提供菜单文案 */
 const { t } = useI18n()
+/** 当前隐藏组件数量，用于控制查询组件移动菜单可见性 */
 const popComponentDataLength = computed(
   () => componentData.value.filter(ele => ele.category === 'hidden').length
 )
 
+/** 锁定当前组件或框选区域内所有组件 */
 const lock = () => {
   if (curComponent.value && !isGroupArea.value) {
     lockStore.lock()
@@ -48,6 +63,7 @@ const lock = () => {
   menuOpt('lock')
 }
 
+/** 解锁当前组件或框选区域内所有组件 */
 const unlock = () => {
   if (curComponent.value && !isGroupArea.value) {
     lockStore.unlock()
@@ -60,16 +76,19 @@ const unlock = () => {
 }
 
 // 点击菜单时不取消当前组件的选中状态
+/** 处理菜单鼠标抬起事件，侧边栏场景同步关闭菜单 */
 const handleMouseUp = () => {
   dvMainStore.setClickComponentStatus(true)
   activePosition.value === 'aside' && emit('close')
 }
 
+/** 统一处理菜单操作完成后的关闭事件 */
 const menuOpt = optName => {
   const param = { opt: optName }
   activePosition.value === 'aside' && emit('close', param)
 }
 
+/** 剪切当前组件或框选区域 */
 const cut = () => {
   if (curComponent.value) {
     const curInfo = getCurInfo()
@@ -80,11 +99,13 @@ const cut = () => {
   menuOpt('cut')
 }
 
+/** 复制当前组件或框选区域 */
 const copy = () => {
   copyStore.copy()
   menuOpt('copy')
 }
 
+/** 隐藏当前组件或框选区域内所有组件 */
 const hide = () => {
   if (curComponent.value && !isGroupArea.value) {
     layerStore.hideComponentWithComponent()
@@ -97,6 +118,7 @@ const hide = () => {
   menuOpt('hide')
 }
 
+/** 显示当前组件或框选区域内所有组件 */
 const show = () => {
   if (curComponent.value && !isGroupArea.value) {
     layerStore.showComponent()
@@ -108,6 +130,7 @@ const show = () => {
   snapshotStore.recordSnapshotCache('show')
   menuOpt('show')
 }
+/** 仅在主画布查询组件且无隐藏组件时展示移动菜单 */
 const showMoveMenu = computed(
   () =>
     curComponent?.value?.canvasId === 'canvas-main' &&
@@ -115,6 +138,7 @@ const showMoveMenu = computed(
     curComponent.value?.component === 'VQuery' &&
     popComponentDataLength.value === 0
 )
+/** 切换组件类别，隐藏时同步当前点位区域 */
 const categoryChange = type => {
   if (curComponent.value) {
     snapshotStore.recordSnapshotCache('categoryChange')
@@ -124,16 +148,19 @@ const categoryChange = type => {
     }
   }
 }
+/** 触发组件重命名并关闭菜单 */
 const rename = () => {
   emit('rename')
   menuOpt('rename')
 }
+/** 粘贴组件并记录渲染快照 */
 const paste = () => {
   copyStore.paste(true)
   snapshotStore.recordSnapshotCache('renderChart')
   menuOpt('paste')
 }
 
+/** 删除当前组件或框选区域内所有组件 */
 const deleteComponent = () => {
   if (curComponent.value && !isGroupArea.value) {
     const curInfo = getCurInfo()
@@ -148,6 +175,7 @@ const deleteComponent = () => {
   menuOpt('deleteComponent')
 }
 
+/** 将当前组件或框选组件上移一层 */
 const upComponent = () => {
   if (curComponent.value && !isGroupArea.value) {
     layerStore.upComponent(curComponent.value.id)
@@ -161,6 +189,7 @@ const upComponent = () => {
   menuOpt('upComponent')
 }
 
+/** 将当前组件或框选组件下移一层 */
 const downComponent = () => {
   if (curComponent.value && !isGroupArea.value) {
     layerStore.downComponent(curComponent.value.id)
@@ -174,6 +203,7 @@ const downComponent = () => {
   menuOpt('downComponent')
 }
 
+/** 将当前组件或框选组件置顶 */
 const topComponent = () => {
   if (curComponent.value && !isGroupArea.value) {
     layerStore.topComponent(curComponent.value.id)
@@ -187,6 +217,7 @@ const topComponent = () => {
   menuOpt('topComponent')
 }
 
+/** 将当前组件或框选组件置底 */
 const bottomComponent = () => {
   if (curComponent.value && !isGroupArea.value) {
     layerStore.bottomComponent(curComponent.value.id)
@@ -200,34 +231,40 @@ const bottomComponent = () => {
   menuOpt('bottomComponent')
 }
 
+/** 触发 Tabs 自定义排序弹窗 */
 const customSort = () => {
-  // do customSort
+  // 通过事件总线交给 Tabs 排序面板处理
   eventBus.emit('tabSort')
 }
 
+/** 将框选区域组合为组件组 */
 const componentCompose = () => {
   composeStore.compose()
   snapshotStore.recordSnapshotCache('componentCompose')
   menuOpt('componentCompose')
 }
 
+/** 拆分当前组件组 */
 const decompose = () => {
   composeStore.decompose()
   snapshotStore.recordSnapshotCache('decompose')
   menuOpt('decompose')
 }
 
+/** 对框选区域执行对齐操作 */
 const alignment = params => {
   composeStore.alignment(params)
   snapshotStore.recordSnapshotCache('decompose')
 }
 
 // 阻止事件向父级组件传播调用父级的handleMouseDown 导致areaData 被隐藏
+/** 阻止组合菜单鼠标事件冒泡，避免框选区域被父组件清空 */
 const handleComposeMouseDown = e => {
   e.preventDefault()
   e.stopPropagation()
 }
 
+/** 判断是否展示组合操作分割线 */
 const composeDivider = computed(() => {
   return !(
     !curComponent.value ||
@@ -237,10 +274,12 @@ const composeDivider = computed(() => {
   )
 })
 
+/** 当前选中对象是否为框选区域 */
 const isGroupArea = computed(() => {
   return curComponent.value?.component === 'GroupArea'
 })
 
+/** 打开查询组件的条件编辑入口 */
 const editQueryCriteria = () => {
   emitter.emit(`editQueryCriteria${curComponent.value.id}`)
 }

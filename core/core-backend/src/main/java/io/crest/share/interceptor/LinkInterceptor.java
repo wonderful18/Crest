@@ -18,18 +18,21 @@ import java.util.List;
 
 
 @Component
+// 定义当前业务对象的核心职责
 public class LinkInterceptor implements HandlerInterceptor {
 
     private final static String whiteListText = "/user/ip-info, /dataset-data/enum-values, /dataset-data/enum-values/object, /dataset-data/field-tree, /public-key, /share/validate";
 
     private final static String whiteStartListText = "/data-visualization/type/";
 
+    // 判断当前类型是否满足业务分类
     private boolean isWhiteStart(String url) {
         List<String> whiteStartList = Arrays.stream(StringUtils.split(whiteStartListText, ",")).map(String::trim).toList();
         return whiteStartList.stream().anyMatch(item -> Strings.CS.startsWith(url, item));
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String linkToken = ServletUtils.getHead(AuthConstant.LINK_TOKEN_KEY);
         if (linkToken == null) {

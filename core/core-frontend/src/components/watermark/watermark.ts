@@ -5,10 +5,14 @@ import { ref } from 'vue'
 import { ipInfoApi } from '@/api/user'
 import { isISOMobile } from '@/utils/utils'
 
+// 数据大屏主状态用于读取当前页面水印配置
 const dvMainStore = dvMainStoreWithOut()
 
+// 当前大屏信息中包含水印开关和配置内容
 const { dvInfo } = storeToRefs(dvMainStore)
+// 缓存用户/IP信息，避免重复请求水印所需的登录上下文
 const userInfo = ref(null)
+// 根据配置在指定 DOM 容器内批量生成水印节点
 export function watermark(settings, domId) {
   const watermarkDom = document.getElementById(domId)
   // 默认设置
@@ -134,6 +138,7 @@ export function watermark(settings, domId) {
   watermarkDom.appendChild(oTemp)
 }
 
+// 返回当前年月日时分字符串，用于动态时间水印占位符
 export function getNow() {
   const d = new Date()
   const year = d.getFullYear()
@@ -142,6 +147,7 @@ export function getNow() {
   const hour = change(d.getHours())
   const minute = change(d.getMinutes())
 
+  // 更新当前配置并同步相关状态
   function change(t) {
     if (t < 10) {
       return '0' + t
@@ -153,6 +159,7 @@ export function getNow() {
   const time = year + '-' + month + '-' + day + ' ' + hour + ':' + minute
   return time
 }
+// 激活水印前确保用户信息可用，并复用已缓存的用户上下文
 export function activeWatermarkCheckUser(domId, canvasId, scale = 1) {
   if (dvInfo.value.watermarkInfo) {
     if (userInfo.value && userInfo.value.model !== 'lose') {
@@ -182,6 +189,7 @@ export function activeWatermarkCheckUser(domId, canvasId, scale = 1) {
   }
 }
 
+// 移除指定容器中已经渲染的水印节点
 export function removeActiveWatermark(domId) {
   const historyWatermarkDom = document.getElementById(domId + '-de-watermark-server')
   if (historyWatermarkDom) {
@@ -189,6 +197,7 @@ export function removeActiveWatermark(domId) {
   }
 }
 
+// 按页面配置和用户信息计算水印文本与尺寸，并渲染到画布容器
 export function activeWatermark(
   watermarkForm,
   userLoginInfo,
@@ -240,4 +249,5 @@ export function activeWatermark(
   watermark(settings, domId)
 }
 
+// 保持默认导出兼容旧调用方式
 export default { watermark, getNow, activeWatermark }

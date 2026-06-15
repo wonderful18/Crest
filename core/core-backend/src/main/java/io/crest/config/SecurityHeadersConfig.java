@@ -16,6 +16,7 @@ import java.io.IOException;
 public class SecurityHeadersConfig implements Filter {
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
@@ -54,6 +55,7 @@ public class SecurityHeadersConfig implements Filter {
         chain.doFilter(request, response);
     }
 
+    // 判断当前类型是否满足业务分类
     private boolean isHttpsRequest(HttpServletRequest request) {
         if (request.isSecure()) {
             return true;

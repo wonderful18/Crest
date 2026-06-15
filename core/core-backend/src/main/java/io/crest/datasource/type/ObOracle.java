@@ -18,6 +18,7 @@ import java.util.Locale;
 @EqualsAndHashCode(callSuper = false)
 @Component("obOracle")
 @SuppressWarnings("deprecation")
+// 定义数据源连接参数和元数据匹配规则
 public class ObOracle extends DatasourceConfiguration {
     private String driver = "com.oceanbase.jdbc.Driver";
     private String extraParams = "";
@@ -28,6 +29,7 @@ public class ObOracle extends DatasourceConfiguration {
             "autoDeserialize", "connectionProperties", "initSQL", "dns", "file", "ftp"
     );
 
+    // 构建当前数据源的连接地址
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !Strings.CI.equals(getUrlType(), "hostName")) {
             if (!Strings.CI.startsWith(getJdbcUrl(), "jdbc:oceanbase://")) {
@@ -50,6 +52,7 @@ public class ObOracle extends DatasourceConfiguration {
     }
 
     @Override
+    // 解析当前数据源的默认模式名
     public String getSchema() {
         String schema = super.getSchema();
         if (StringUtils.isNotBlank(schema)) {
@@ -71,6 +74,7 @@ public class ObOracle extends DatasourceConfiguration {
         return username.substring(0, endIndex).toUpperCase(Locale.ROOT);
     }
 
+    // 格式化日期时间并返回统一展示值
     private void validateIllegalParameters(String value) {
         String decodedValue = URLDecoder.decode(StringUtils.defaultString(value), StandardCharsets.UTF_8);
         for (String illegalParameter : ILLEGAL_PARAMETERS) {

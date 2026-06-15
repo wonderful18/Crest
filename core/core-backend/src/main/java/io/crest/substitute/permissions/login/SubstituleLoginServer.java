@@ -26,17 +26,32 @@ import org.springframework.web.bind.annotation.*;
 @ConditionalOnMissingBean(name = "loginServer")
 @RestController
 @RequestMapping
+/**
+ * 默认登录接口实现，负责本地登录、刷新令牌和退出
+ */
 public class SubstituleLoginServer {
 
+    /**
+     * 用户管理服务
+     */
     @Resource
     private CrestUserManage crestUserManage;
 
+    /**
+     * 单点登录配置管理服务
+     */
     @Resource
     private SsoManage ssoManage;
 
+    /**
+     * 平台权限管理服务
+     */
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
+    /**
+     * 本地账号密码登录
+     */
     @CrestAudit(ot = LogOT.LOGIN, st = LogST.USER)
     @PostMapping("/login/local-login")
     public TokenVO localLogin(@RequestBody PwdLoginDTO dto) {
@@ -71,6 +86,9 @@ public class SubstituleLoginServer {
     }
 
 
+    /**
+     * 使用当前用户上下文刷新访问令牌
+     */
     @GetMapping("/login/refresh")
     public TokenVO refresh() {
         // 获取当前用户
@@ -88,17 +106,23 @@ public class SubstituleLoginServer {
         return generate(userBO, user.getPasswordHash());
     }
 
+    /**
+     * 退出登录审计入口
+     */
     @CrestAudit(ot = LogOT.LOGIN, st = LogST.USER)
     @GetMapping("/logout")
     public void logout() {
         LogUtil.info("substitule logout");
     }
 
+    /**
+     * 根据用户上下文和密钥生成签名令牌
+     */
     private TokenVO generate(TokenUserBO bo, String secret) {
         Long userId = bo.getUserId();
         Long defaultOid = bo.getDefaultOid();
 
-        // Token过期时间：24小时
+        // 令牌过期时间为 24 小时
         long expirationMillis = 24 * 60 * 60 * 1000L;
         Date expiresAt = new Date(System.currentTimeMillis() + expirationMillis);
 

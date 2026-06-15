@@ -6,9 +6,11 @@ import org.springframework.context.annotation.Configuration;
 
 
 @Configuration
+// 定义当前功能的配置入口
 public class CommonConfig {
 
     @Bean(destroyMethod = "shutdown")
+    // 执行当前服务方法并返回处理结果
     public CommonThreadPool resourcePoolThreadPool() {
         CommonThreadPool commonThreadPool = new CommonThreadPool();
         commonThreadPool.setCorePoolSize(50);

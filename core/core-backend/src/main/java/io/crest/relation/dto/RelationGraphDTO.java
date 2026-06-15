@@ -8,6 +8,7 @@ import java.util.List;
 
 @Data
 @Schema(description = "血缘关系图")
+// 定义接口请求或返回数据的传输结构
 public class RelationGraphDTO {
     @Schema(description = "节点列表")
     private List<RelationNodeDTO> nodes = new ArrayList<>();

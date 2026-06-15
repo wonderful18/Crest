@@ -22,6 +22,7 @@ import java.util.List;
 
 @Tag(name = "定时报告")
 @ApiSupport(order = 888, author = "Crest")
+// 定义模块接口契约和数据传输结构
 public interface ReportApi {
 
     @Operation(summary = "查询报告列表")

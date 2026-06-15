@@ -27,12 +27,14 @@ import { cloneDeep } from 'lodash-es'
 import type { Table } from '@/api/dataset'
 import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 const appearanceStore = useAppearanceStoreWithOut()
+// 联合编辑器的本地树状态，包含真实节点、拖拽占位节点和当前占位父节点
 const state = reactive({
   nodeList: [],
   visualNode: null,
   visualNodeParent: null,
   visualPath: null
 })
+// 父级数据集表单传入的拖拽遮罩、坐标偏移和数据源名称解析能力
 const props = defineProps({
   maskShow: propTypes.bool.def(false),
   offsetX: propTypes.number.def(0),
@@ -41,6 +43,7 @@ const props = defineProps({
   getDsName: propTypes.func
 })
 
+// 当前主题主色，用于占位节点和拖拽连线高亮
 const primaryColor = computed(() => {
   return appearanceStore.themeColor === 'custom' ? appearanceStore.customColor : getCSSVariable()
 })
@@ -53,16 +56,21 @@ const iconName = {
   full: icon_fullAssociation
 }
 const { t } = useI18n()
+// 自定义 SQL 全屏编辑抽屉的显示状态
 const editSqlField = ref(false)
 
+// 当前字段选择抽屉中展示的字段列表
 const nodeField = ref<Field[]>([])
 
+// 当前正在编辑字段选择的联合节点
 const currentNode = ref<Node>()
 
+// 当前正在编辑的自定义 SQL 节点
 const sqlNode = ref<SqlNode>()
 
 const allfields = inject('allfields') as Ref
 
+// 拉取指定节点的字段元数据，并按已选字段恢复勾选状态
 const getNodeField = ({ datasourceId, id, info, tableName, type, currentDsFields }) => {
   return getTableField({ datasourceId, id, info, tableName, type, isCross: isCross.value })
     .then(res => {
@@ -81,29 +89,35 @@ const getNodeField = ({ datasourceId, id, info, tableName, type, currentDsFields
     })
 }
 
+// 当前联合树中已有的表名和数据源组合，用于外部判断重复节点
 const nodeNameList = computed(() => {
   const arr = []
   dfsNodeNameList(state.nodeList, arr)
   return arr
 })
 
+// 拖拽画布遮罩 DOM 引用，用于点击空白区取消激活节点
 const dragMask = ref()
 
+// 点击画布空白区域时清除当前激活节点
 const handleClickOutside = ev => {
   if (ev.target === dragMask.value) {
     activeNodeId.value = ''
   }
 }
 
+// 当前高亮的节点 ID
 const activeNodeId = ref('')
 
 let shadowWidth = 0
 let shadowHeight = 0
 
+// 根据树布局深度和宽度计算 SVG 画布尺寸
 const setLayOut = () => {
   svgWidth.value = `${shadowWidth * 100 + (shadowWidth + 1) * 200 + 48}px`
   svgHeight.value = `${shadowHeight * 24 + (shadowHeight + 1) * 32 + 48}px`
 }
+// 带坐标信息的树节点列表，供 SVG foreignObject 渲染
 const dfsNodeList = computed(() => {
   let nodeListLocation = []
   shadowWidth = 0
@@ -113,6 +127,7 @@ const dfsNodeList = computed(() => {
   return nodeListLocation
 })
 
+// 深度优先收集节点名和数据源组合，保持联合树中节点引用可检查
 const dfsNodeNameList = (list, arr) => {
   list.forEach(ele => {
     arr.push(`${ele.tableName}${ele.datasourceId}`)
@@ -122,6 +137,7 @@ const dfsNodeNameList = (list, arr) => {
   })
 }
 
+// 判断某棵子树是否全部来自同一个数据源
 const dfsForDsId = (arr, datasourceId) => {
   return arr.every(ele => {
     if (ele.children?.length) {
@@ -134,6 +150,7 @@ const dfsForDsId = (arr, datasourceId) => {
   })
 }
 
+// 判断当前联合树是否跨数据源，父级保存时会用它决定跨源模式
 const crossDatasources = computed(() => {
   const { datasourceId, children = [] } = state.nodeList[0] || {}
   if (datasourceId && !!children.length) {
@@ -144,6 +161,7 @@ const crossDatasources = computed(() => {
 
 let isUpdate = false
 
+// 初始化完成后，任何联合树变化都通知父级进入已变更状态
 watch(
   () => state.nodeList,
   () => {
@@ -154,6 +172,7 @@ watch(
   { deep: true }
 )
 
+// 从父级传入的联合树初始化本地状态，下一轮 tick 后再开启变更通知
 const initState = nodeList => {
   Object.assign(state.nodeList, nodeList)
   nextTick(() => {
@@ -162,11 +181,15 @@ const initState = nodeList => {
   })
 }
 
+// 字段选择抽屉显示状态
 const editUnion = ref(false)
 
+// SVG 画布宽度，随树布局动态扩展
 const svgWidth = ref('200px')
+// SVG 画布高度，随树布局动态扩展
 const svgHeight = ref('260px')
 
+// 从联合树中递归删除指定节点
 const delNode = (id, arr) => {
   arr.some((ele, index) => {
     if (id === ele.id) {
@@ -181,6 +204,7 @@ const delNode = (id, arr) => {
 }
 let fakeDelId = []
 
+// 收集待删除子树内所有字段 ID，用于检查计算字段依赖
 const collectId = arr => {
   arr.forEach(ele => {
     fakeDelId = [...fakeDelId, ...ele.currentDsFields.map(itx => itx.id)]
@@ -190,6 +214,7 @@ const collectId = arr => {
   })
 }
 
+// 预演节点删除，先收集将受影响的字段 ID，不立即修改联合树
 const delNodeFake = (id, arr) => {
   arr.forEach(ele => {
     if (id === ele.id) {
@@ -203,8 +228,11 @@ const delNodeFake = (id, arr) => {
   })
 }
 
+// 已修改 SQL 内容的节点 ID，用于提示关联条件可能需要重建
 const changeSqlId = ref([])
+// 已确认过关联条件变更的节点对，用于避免重复提示
 const changedNodeId = ref([])
+// 保存自定义 SQL 节点，并在新建根节点或占位节点时补齐字段信息
 const saveSqlNode = (val: SqlNode, cb) => {
   const { tableName, id, sql, datasourceId, sqlVariableDetails = null, changeFlag = false } = val
   if (changeFlag) {
@@ -271,11 +299,13 @@ const saveSqlNode = (val: SqlNode, cb) => {
   emits('reGetName')
 }
 
+// 记录某条关联线已经处理过 SQL 变更提示
 const setChangeStatus = (to, from) => {
   if (changedNodeId.value.some(ele => ele.from === from && ele.to === to)) return
   changedNodeId.value.push({ from, to })
 }
 
+// 关闭自定义 SQL 编辑抽屉，并按保存状态恢复占位节点或刷新字段
 const closeSqlNode = () => {
   if (
     state.nodeList.length === 1 &&
@@ -329,10 +359,12 @@ const closeSqlNode = () => {
   confirm()
 }
 
+// 接收字段选择组件返回的字段列表，暂存到当前节点副本
 const changeNodeFields = val => {
   currentNode.value.currentDsFields = val
 }
 
+// 关闭字段选择抽屉，并清理未确认的根占位节点
 const closeEditUnion = () => {
   nodeField.value = []
   currentNode.value = null
@@ -345,6 +377,7 @@ const closeEditUnion = () => {
   editUnion.value = false
 }
 
+// 为新增字段补齐前端临时 ID、数据表 ID 和数据源 ID
 const setGuid = (arr, id, datasourceId) => {
   arr.forEach(ele => {
     if (!ele.id) {
@@ -355,6 +388,7 @@ const setGuid = (arr, id, datasourceId) => {
   })
 }
 
+// 把字段选择结果写回联合树中的真实节点
 const delUpdateDsFields = (id, arr: Node[]) => {
   arr.some(ele => {
     if (id === ele.id) {
@@ -368,6 +402,7 @@ const delUpdateDsFields = (id, arr: Node[]) => {
     return false
   })
 }
+// 预演字段更新，收集原字段 ID 以判断计算字段是否会被删除
 const delUpdateDsFieldsFake = (id, arr: Node[]) => {
   arr.forEach(ele => {
     if (id === ele.id) {
@@ -379,6 +414,7 @@ const delUpdateDsFieldsFake = (id, arr: Node[]) => {
   })
 }
 
+// 确认字段选择变更，若删除字段被计算字段引用则先弹出风险确认
 const confirmEditUnion = () => {
   delUpdateDsFieldsFake(currentNode.value.id, state.nodeList)
   const currentIds = currentNode.value.currentDsFields.map(ele => ele.id)
@@ -445,6 +481,7 @@ const confirmEditUnion = () => {
   })
 }
 
+// 处理节点更多菜单命令，包含字段选择、重命名、编辑 SQL 和删除节点
 const handleCommand = (ele, command) => {
   if (command === 'editorField') {
     getNodeField(ele)
@@ -520,6 +557,7 @@ const handleCommand = (ele, command) => {
   }
 }
 
+// 点击关联线时定位两端节点，并通知父级打开关联条件编辑器
 const handlePathClick = ele => {
   const { from, to } = ele
   const arr = []
@@ -528,6 +566,7 @@ const handlePathClick = ele => {
   emits('joinEditor', arr)
 }
 
+// 按节点 ID 深度优先收集关联线两端节点
 const dfsPath = (arr, idArr, list) => {
   list.forEach(ele => {
     if (idArr.includes(ele.id)) {
@@ -539,6 +578,7 @@ const dfsPath = (arr, idArr, list) => {
   })
 }
 
+// 按节点 ID 将外部保存后的节点信息写回联合树
 const dfsNodeBack = (arr, idArr, list) => {
   list.forEach(ele => {
     if (idArr.includes(ele.id)) {
@@ -552,6 +592,7 @@ const dfsNodeBack = (arr, idArr, list) => {
   })
 }
 
+// 删除某个字段时，从对应数据表节点的已选字段中同步移除
 const dfsNodeFieldBack = (list, { originName, datasetTableId }) => {
   list.forEach(ele => {
     if (datasetTableId === ele.id) {
@@ -564,6 +605,7 @@ const dfsNodeFieldBack = (list, { originName, datasetTableId }) => {
   })
 }
 
+// 对外暴露的字段删除回写入口，父级字段面板删除字段时调用
 const dfsNodeFieldBackReal = ele => {
   dfsNodeFieldBack(state.nodeList, ele)
 }
@@ -594,9 +636,12 @@ const sqlMenu = [
   }
 ]
 
+// 当前拖拽节点相对画布的横向偏移
 const dragOffsetX = ref(0)
+// 当前拖拽节点相对画布的纵向偏移
 const dragOffsetY = ref(0)
 
+// 计算拖拽矩形和候选投放区域的交叠面积
 function elementInteractArea(pos1, pos2) {
   const pos1Width = pos1.right - pos1.left
   const pos1Height = pos1.bottom - pos1.top
@@ -613,12 +658,14 @@ function elementInteractArea(pos1, pos2) {
   return axisOverlap * crossOverlap
 }
 
+// 可投放区域列表，包含节点下方和叶子节点右侧的候选区域
 const possibleNodeAreaList = computed(() => {
   let flatArr = []
   leafNode(dfsNodeList.value, flatArr)
   return flatArr.filter(ele => !ele.isShadow)
 })
 
+// 从布局树中收集可接收拖拽的节点区域
 const leafNode = (arr, leafList) => {
   arr.forEach((ele, index) => {
     const fromX = ele.x * 300 + 24
@@ -646,12 +693,14 @@ const leafNode = (arr, leafList) => {
   })
 }
 
+// 扁平化后的节点列表，用于 SVG 节点渲染
 const flatNodeList = computed(() => {
   let flatArr = []
   flatNode(dfsNodeList.value, flatArr)
   return flatArr
 })
 
+// 深度优先把布局树展开成一维节点数组
 const flatNode = (arr, flatNodeList) => {
   arr.forEach(ele => {
     flatNodeList.push(ele)
@@ -661,6 +710,7 @@ const flatNode = (arr, flatNodeList) => {
   })
 }
 
+// 扁平化后的连线列表，用于 SVG path 和关联按钮渲染
 const flatPathList = computed(() => {
   let flatArr = []
   const [root = {}] = dfsNodeList.value
@@ -668,6 +718,7 @@ const flatPathList = computed(() => {
   return flatArr
 })
 
+// 根据联合树层级计算每个节点的画布坐标和子树高度
 const dfsNode = (arr = [], nodeListLocation, x = 0, y = 0) => {
   arr.map((ele, index) => {
     const pre = nodeListLocation[index - 1]
@@ -720,6 +771,7 @@ const dfsNode = (arr = [], nodeListLocation, x = 0, y = 0) => {
   })
 }
 
+// 在目标节点旁插入拖拽占位节点，position 为 b 表示下方，r 表示右侧子节点
 const dfsNodeShadow = (arr, { tableName, id }, position, parent) => {
   return arr.some((ele, index) => {
     if (ele.tableName === tableName && id === ele.id) {
@@ -747,6 +799,7 @@ const dfsNodeShadow = (arr, { tableName, id }, position, parent) => {
   })
 }
 
+// 将布局树转换成连线渲染数据，并标记 SQL 变更导致的关联提示状态
 const flatLine = (item, flatNodeList) => {
   let sqlChangeFlag = changeSqlId.value.includes(item.id)
   if (item.children?.length) {
@@ -783,11 +836,13 @@ const flatLine = (item, flatNodeList) => {
   })
 }
 
+// 拖拽离开画布时撤销临时占位节点
 const dragleave_handler = ev => {
   ev.preventDefault()
   notConfirm()
 }
 
+// 拖拽悬停时根据交叠面积选择最佳投放位置
 const dragover_handler = ev => {
   ev.preventDefault()
 
@@ -877,10 +932,12 @@ const dragover_handler = ev => {
   }
 }
 
+// 拖拽进入画布时阻止浏览器默认行为，允许后续 drop 生效
 const dragenter_handler = ev => {
   ev.preventDefault()
 }
 
+// 投放数据表或自定义 SQL 节点，并根据位置创建根节点或关联节点
 const drop_handler = ev => {
   ev.preventDefault()
   let data = ev.dataTransfer.getData('text/plain') || ev.dataTransfer.getData('text')
@@ -987,6 +1044,7 @@ const drop_handler = ev => {
   })
 }
 
+// 接收父级关联编辑器保存后的父子节点信息，并写回本地联合树
 const setStateBack = (node, parent) => {
   delete parent.children
   delete node.children
@@ -996,12 +1054,15 @@ const setStateBack = (node, parent) => {
   }
 }
 
+// 重命名弹窗显示状态
 const dialogRename = ref(false)
+// 重命名表单实例引用，用于确认前校验
 const renameForm = ref()
 const defaultParam = {
   name: '',
   id: ''
 }
+// 在联合树中按 ID 更新节点展示名
 const dfsNodeListRename = arr => {
   arr.some(ele => {
     if (ele.id === renameParam.id && ele.tableName !== renameParam.name) {
@@ -1014,7 +1075,9 @@ const dfsNodeListRename = arr => {
     }
   })
 }
+// 重命名弹窗表单数据
 const renameParam = reactive(cloneDeep(defaultParam))
+// 确认重命名，校验通过后写回联合树并通知父级刷新名称缓存
 const confirmRename = () => {
   renameForm.value.validate(val => {
     if (val) {
@@ -1026,11 +1089,13 @@ const confirmRename = () => {
     }
   })
 }
+// 打开重命名弹窗并带入当前节点名称
 const tableRename = ({ name, id }) => {
   renameParam.name = name
   renameParam.id = id
   dialogRename.value = true
 }
+// 确认当前拖拽占位节点，将其转为真实节点并清理占位状态
 const confirm = () => {
   state.visualNode.isShadow = false
   delete state.visualNode.flag
@@ -1038,12 +1103,14 @@ const confirm = () => {
   state.visualNodeParent = null
 }
 
+// 撤销当前拖拽占位节点，常用于拖拽离开或取消关联编辑
 const notConfirm = () => {
   if (!state.visualNodeParent) return
   state.visualNodeParent.children = state.visualNodeParent.children.filter(ele => !ele.isShadow)
   confirm()
 }
 
+// 返回联合树深拷贝，避免父级直接修改本地响应式状态
 const getNodeList = () => {
   return cloneDeep(unref(state.nodeList))
 }
@@ -1059,11 +1126,13 @@ defineExpose({
   crossDatasources
 })
 
+// 激活节点并直接打开字段选择抽屉
 const handleActiveNode = ele => {
   activeNodeId.value = ele.id
   handleCommand(ele, 'editorField')
 }
 
+// 联合编辑器对父级发出的结构、字段和名称变更事件
 const emits = defineEmits([
   'addComplete',
   'joinEditor',

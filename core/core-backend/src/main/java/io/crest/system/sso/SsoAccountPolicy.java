@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+// 定义单点登录相关的业务模型和处理入口
 public final class SsoAccountPolicy {
 
     private static final Pattern ACCOUNT_PATTERN = Pattern.compile("^[A-Za-z0-9._@-]{1,64}$");
@@ -14,6 +15,7 @@ public final class SsoAccountPolicy {
     private SsoAccountPolicy() {
     }
 
+    // 执行当前服务方法并返回处理结果
     public static String normalizeAccount(String account, String fallbackSubject) {
         String value = StringUtils.defaultIfBlank(account, fallbackSubject);
         if (StringUtils.isBlank(value)) {
@@ -26,6 +28,7 @@ public final class SsoAccountPolicy {
         return trimmed;
     }
 
+    // 执行当前服务方法并返回处理结果
     public static String normalizeDisplayName(String displayName, String fallbackAccount) {
         String value = StringUtils.defaultIfBlank(displayName, fallbackAccount);
         if (StringUtils.isBlank(value)) {

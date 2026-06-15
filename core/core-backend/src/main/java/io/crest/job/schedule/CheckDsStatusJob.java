@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 
 @Component
+// 定义当前业务对象的核心职责
 public class CheckDsStatusJob implements Job {
     @Resource
     private DatasourceServer datasourceServer;
@@ -21,6 +22,7 @@ public class CheckDsStatusJob implements Job {
     }
 
     @Override
+    // 执行当前业务请求并写入处理结果
     public void execute(JobExecutionContext context) throws JobExecutionException {
         LogUtil.info("Begin to check ds status...");
         datasourceServer.updateDatasourceStatus();

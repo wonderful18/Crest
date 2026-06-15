@@ -2,6 +2,7 @@ package io.crest.engine.utils;
 
 import java.text.SimpleDateFormat;
 
+// 提供当前模块复用的工具能力
 public class DateUtils {
     private static final String format = "yyyy-MM-dd HH:mm:ss";
     private static final String minuteFormat = "yyyy-MM-dd HH:mm";
@@ -11,6 +12,7 @@ public class DateUtils {
     private static final String yearOnly = "yyyy";
     private static final String timeOnly = "HH:mm:ss";
 
+    // 格式化日期时间并返回统一展示值
     public static String get_date_format(String date) {
         String format1 = format;
         String minuteFormat1 = minuteFormat;

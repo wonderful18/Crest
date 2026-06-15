@@ -6,6 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
+// 定义接口请求或返回数据的传输结构
 public class EnumValueRequest {
     private Long queryId;// 查询字段
     private Long displayId;// 显示字段

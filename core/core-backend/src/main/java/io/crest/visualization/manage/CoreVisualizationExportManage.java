@@ -37,7 +37,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
+/**
+ * 负责核心可视化资源的 Excel 导出编排
+ */
 @Component
 @SuppressWarnings("unchecked")
 public class CoreVisualizationExportManage {
@@ -56,12 +58,18 @@ public class CoreVisualizationExportManage {
     @Resource
     private DatasetFieldServer datasetFieldServer;
 
+    /**
+     * 根据可视化资源标识查询导出资源名称
+     */
     public String getResourceName(Long dvId, String busiFlag) {
         DataVisualizationVO visualization = extDataVisualizationMapper.findDvInfo(dvId, busiFlag, "core");
         if (ObjectUtils.isEmpty(visualization)) CrestException.throwException("资源不存在或已经被删除...");
         return visualization.getName();
     }
 
+    /**
+     * 导出指定可视化资源下的图表数据到 Excel 文件
+     */
     public File exportExcel(Long dvId, String busiFlag, List<Long> viewIdList, boolean onlyDisplay, String filterJson) throws Exception {
         DataVisualizationVO visualization = extDataVisualizationMapper.findDvInfo(dvId, busiFlag, "core");
         if (ObjectUtils.isEmpty(visualization)) CrestException.throwException("资源不存在或已经被删除...");
@@ -102,6 +110,9 @@ public class CoreVisualizationExportManage {
         return VisualizationExcelUtils.exportExcel(sheets, visualization.getName(), visualization.getId().toString());
     }
 
+    /**
+     * 将单个图表结果转换为 Excel 工作表模型
+     */
     private ExcelSheetModel exportSingleData(Map<String, Object> chart, String title) {
         ExcelSheetModel result = new ExcelSheetModel();
         Object objectFields = chart.get("fields");
@@ -153,6 +164,9 @@ public class CoreVisualizationExportManage {
         return result;
     }
 
+    /**
+     * 计算图表数据并转换为一个或多个导出工作表
+     */
     private List<ExcelSheetModel> exportViewData(ChartViewDTO request) {
 
         ChartViewDTO chartViewDTO = null;
@@ -193,6 +207,9 @@ public class CoreVisualizationExportManage {
         return resultList;
     }
 
+    /**
+     * 清理数值字符串末尾无效的小数零
+     */
     private String filterInvalidDecimal(String sourceNumberStr) {
         if (StringUtils.isNotBlank(sourceNumberStr) && Strings.CS.contains(sourceNumberStr, ".")) {
             sourceNumberStr = sourceNumberStr.replaceAll("0+?$", "");
@@ -201,6 +218,9 @@ public class CoreVisualizationExportManage {
         return sourceNumberStr;
     }
 
+    /**
+     * 将图表汇总行追加到导出工作表末尾
+     */
     @SuppressWarnings("unchecked")
     private void appendSummaryToSheet(ExcelSheetModel sheetModel, ChartViewDTO chartViewDTO, Map<String, Object> chart) {
         if (!ChartDataServer.isSummaryEnabled(chartViewDTO)) return;
@@ -273,6 +293,9 @@ public class CoreVisualizationExportManage {
     private final TypeReference<List<Map<String, Object>>> tokenType = new TypeReference<List<Map<String, Object>>>() {
     };
 
+    /**
+     * 将前端传入的筛选条件 JSON 转换为图表请求映射
+     */
     private Map<Long, ChartExtRequest> buildViewRequest(String filterJson) {
         if (StringUtils.isBlank(filterJson)) {
             return new HashMap<>();
@@ -288,6 +311,9 @@ public class CoreVisualizationExportManage {
         return extRequestMap;
     }
 
+    /**
+     * 构建无筛选条件时的默认图表导出请求
+     */
     private ChartExtRequest buildDefaultRequest() {
         ChartExtRequest chartExtRequest = new ChartExtRequest();
         chartExtRequest.setQueryFrom("panel");
@@ -298,6 +324,9 @@ public class CoreVisualizationExportManage {
         return chartExtRequest;
     }
 
+    /**
+     * 根据可视化面板组件配置构建图表筛选请求
+     */
     private Map<String, ChartExtRequest> buildViewRequest(DataVisualizationVO panelDto, Boolean justView) {
         String componentsJson = panelDto.getComponentData();
         List<Map<String, Object>> components = JsonUtil.parseList(componentsJson, tokenType);

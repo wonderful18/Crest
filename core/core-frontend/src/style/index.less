@@ -1,3 +1,4 @@
+// 全局设计变量统一覆盖 Element Plus 与编辑器组件库，保证主题色、字体和圆角在后台与门户中一致。
 :root:root {
   --crest-font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei',
     sans-serif;
@@ -38,10 +39,12 @@
   --ed-popover-border-radius: 6px !important;
 }
 
+// 基础页面背景保持纯白，具体业务页面的灰底或暗色背景由页面容器自行声明。
 body {
   background: #ffffff;
 }
 
+// 后台主布局内的常用交互控件统一动效，避免按钮、输入框和分页在 hover 时节奏不一致。
 .common-layout {
   .ed-button:not(.is-disabled),
   .ed-input__wrapper,
@@ -66,6 +69,7 @@ body {
   }
 }
 
+// 尊重系统减少动态效果设置，降低长列表和大屏编辑场景中的动效干扰。
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -77,12 +81,14 @@ body {
   }
 }
 
+// 全局盒模型归一化，避免第三方组件和业务组件在宽高计算上出现差异。
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+// 查询表格页的顶部操作区规范，主要用于后台列表页的筛选和右侧操作按钮布局。
 .search-table {
   border-radius: 12px !important;
   .top-operate {
@@ -110,12 +116,14 @@ body {
   }
 }
 
+// 通用单行省略工具类，供树节点、列表项和表格内联文本复用。
 .ellipsis {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+// 左侧列表的基础交互样式，active 状态和 hover 状态都使用主题色透明背景。
 .list-item_primary {
   height: 40px;
   border-radius: 6px;
@@ -161,6 +169,7 @@ body {
   }
 }
 
+// 表单分组标题使用左侧色条建立层级，主要用于配置面板和创建弹窗。
 .title-form_primary {
   font-family: var(--crest-custom_font, 'PingFang');
   font-style: normal;
@@ -182,6 +191,7 @@ body {
   }
 }
 
+// 字段类型图标颜色映射，和数据集字段类型在拖拽区、列表区的视觉识别保持一致。
 .field-icon-text {
   color: var(--ed-color-primary, #3B82F6);
 }
@@ -220,6 +230,7 @@ body {
   color: #04b49c;
 }
 
+// 图标按钮的命中区域统一扩展到 24px，便于表格、树和工具栏复用。
 .hover-icon {
   cursor: pointer;
   height: 24px !important;
@@ -277,6 +288,7 @@ body {
   flex-direction: column;
 }
 
+// 图表编辑器工具栏使用暗色背景，按钮 hover 只提供轻量反馈，避免抢占画布视觉焦点。
 .toolbar-hover-icon {
   cursor: pointer;
   font-size: 18px !important;
@@ -304,6 +316,7 @@ body {
   }
 }
 
+// 图表类型选择弹层的明暗主题样式，隐藏箭头以贴合侧边配置面板的浮层形态。
 .chart-type-style-dark {
   background: @side-content-background !important;
   border: 1px solid #434343 !important;
@@ -329,6 +342,7 @@ body {
   min-width: auto !important;
 }
 
+// 圆形图标按钮通过伪元素扩大 hover 背景，不改变图标本身的布局尺寸。
 .circle-button_icon {
   position: relative;
   display: flex;
@@ -453,6 +467,7 @@ em {
   }
 }
 
+// 图片预览弹窗铺满视口，关闭按钮保持在右上角固定位置。
 .img-enlarge-dialog {
   min-width: 100vw;
   max-height: 100vh;
@@ -494,6 +509,7 @@ em {
   height: 12px !important;
 }
 
+// 资源类型色块用于区分仪表板、大屏、数据集和数据源等入口。
 .color-panel {
   background: var(--ed-color-primary, #3b82f6);
 }
@@ -522,6 +538,7 @@ em {
   --ed-table-row-hover-bg-color: #e8e9e9 !important;
 }
 
+// 数据表格统一样式覆盖普通表格和虚拟表格，保证门户、后台列表和资源表格有一致行高与表头。
 .crest-data-table.ed-table,
 .crest-data-table-v2.ed-table-v2 {
   --ed-table-header-bg-color: #ffffff;
@@ -604,6 +621,7 @@ strong {
   justify-content: center;
 }
 
+// 导出中心消息提示承载文件名、下载入口和关闭按钮，需要比普通消息保留更多横向空间。
 .crest-message-export {
   min-width: 20px !important;
   padding: 16px 20px !important;
@@ -653,6 +671,7 @@ strong {
   }
 }
 
+// 加载、错误和成功消息使用业务色边框，保证长任务反馈在浅色背景上足够明确。
 .crest-message-loading {
   border: 1px solid var(--primary, #3B82F6) !important;
   background: #f0f4ff !important;
@@ -695,8 +714,7 @@ strong {
   left: calc(50% - 40px) !important;
 }
 
-// 解决screenfull全屏时 部分嵌入到body中的组件（如 下来框 消息通知框等）被覆盖问题
-// 这里使用的方案为直接将body全屏 区间组件覆盖整个body
+// 全屏模式把 body 提升为固定容器，确保挂载到 body 的下拉框、消息和浮层不会被画布遮挡。
 .screen-full {
   position: fixed !important;
   z-index: 1001 !important;
@@ -714,6 +732,7 @@ strong {
   }
 }
 
+// 预览内容尺寸策略由外层类名控制，分别覆盖铺满、宽度优先、保持原始尺寸和高度优先场景。
 .preview-content-inner-full {
   width: 100%;
   height: 100%;
@@ -764,6 +783,7 @@ strong {
   overflow-x: auto !important;
 }
 
+// 画布和主内容滚动条统一宽度与颜色，避免嵌套滚动区域出现多套视觉样式。
 .de-main_scrollbar {
   ::-webkit-scrollbar-thumb {
     border-radius: 6px;
@@ -922,6 +942,7 @@ strong {
   }
 }
 
+// Element Plus 弹层、选择器、分页和标签页的局部覆盖集中在全局样式末尾，便于后续升级组件库时排查。
 .ed-select__popper {
   padding: 0 4px !important;
   .ed-select-dropdown__item {

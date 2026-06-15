@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @SuppressWarnings("unchecked")
+// 定义图表处理器，负责轴格式化和结果组装
 public class MapHandler extends ExtQuotaChartHandler {
     @Getter
     private String type = "map";

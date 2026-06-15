@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 @Schema(description = "飞书设置构造器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class LarkSettingCreator implements Serializable {
     @Schema(description = "appId", requiredMode = Schema.RequiredMode.REQUIRED)
     private String appId;

@@ -9,6 +9,7 @@ import java.io.Serializable;
 
 @Schema(description = "飞书信息")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class LarkInfoVO implements Serializable {
 
     @Schema(description = "appId")

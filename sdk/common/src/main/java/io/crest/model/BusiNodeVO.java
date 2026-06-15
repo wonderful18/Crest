@@ -11,6 +11,7 @@ import java.util.List;
 
 @Schema(description = "业务资源结点")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class BusiNodeVO implements TreeResultModel<BusiNodeVO>, Serializable {
 
 

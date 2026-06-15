@@ -4,6 +4,7 @@ import { propTypes } from '@/utils/propTypes'
 import Icon from '../icon-custom/src/Icon.vue'
 import { ElCol } from 'element-plus-secondary'
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   title: propTypes.string,
   tips: propTypes.string,
@@ -16,6 +17,7 @@ const props = defineProps({
 })
 
 const { title, tips, iconName, showSplitLine } = toRefs(props)
+// 定义组件向父级抛出的事件
 const emits = defineEmits(['customClick'])
 </script>
 

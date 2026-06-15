@@ -14,23 +14,27 @@ import java.util.List;
 
 @RequestMapping("/store")
 @RestController
+// 实现接口服务，衔接业务处理和返回结果
 public class VisualizationStoreServer implements VisualizationStoreApi {
 
     @Resource
     private VisualizationStoreManage visualizationStoreManage;
 
     @Override
+    // 执行当前业务请求并写入处理结果
     public void execute(VisualizationStoreRequest request) {
         visualizationStoreManage.execute(request);
     }
 
     @Override
+    // 查询当前业务数据列表
     public List<VisualizationStoreVO> query(VisualizationWorkbranchQueryRequest request) {
         IPage<VisualizationStoreVO> iPage = visualizationStoreManage.query(1, 20, request);
         return iPage.getRecords();
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public boolean favorited(Long id) {
         return visualizationStoreManage.favorited(id);
     }

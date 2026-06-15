@@ -88,7 +88,9 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-
+/**
+ * 可视化资源接口实现，负责大屏、仪表板、模板和应用导入导出的核心编排
+ */
 @RestController
 @RequestMapping("/data-visualization")
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -187,6 +189,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
     private DataPortalPermissionManage dataPortalPermissionManage;
 
 
+    /**
+     * 查询复制态资源，仅允许复制根节点临时资源
+     */
     @Override
     public DataVisualizationVO findCopyResource(Long dvId, String busiFlag) {
         DataVisualizationVO result = Objects.requireNonNull(CommonBeanFactory.proxy(this.getClass())).findById(new DataVisualizationBaseRequest(dvId, busiFlag, CommonConstants.RESOURCE_TABLE.SNAPSHOT, DataVisualizationConstants.QUERY_SOURCE.MAIN_EDIT));
@@ -197,6 +202,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 按资源 ID 查询画布详情，并补齐图表、权限、水印和报告过滤信息
+     */
     @CrestLinkPermit("#p0.id")
     @CrestAudit(id = "#p0.id", ot = LogOT.READ, stExp = "#p0.busiFlag")
     @Override
@@ -270,6 +278,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return null;
     }
 
+    /**
+     * 判断组件 JSON 中是否仍引用指定图表视图
+     */
     private boolean componentDataContainsView(String componentData, Long viewId) {
         if (StringUtils.isBlank(componentData) || viewId == null) {
             return false;
@@ -285,6 +296,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 递归检查组件树中的任意层级是否包含目标视图 ID
+     */
     private boolean containsComponentId(Object value, String viewId) {
         if (value instanceof Map<?, ?> map) {
             Object id = map.get("id");
@@ -306,6 +320,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return false;
     }
 
+    /**
+     * 按目标环境匹配应用导入所需的数据集、数据表和字段 ID
+     */
     private void appDatasetMatch(VisualizationExport2AppVO appData, Map<Long, Long> datasourceIdMap, Map<Long, Long> dsGroupIdMap, Map<Long, Long> dsTableIdMap, Map<Long, Long> dsTableFieldsIdMap,Map<String, String> dsTableFieldsDatasetNameMap) {
 
         List<AppCoreDatasetGroupVO> sourceDatasetGroupList = appData.getDatasetGroupsInfo();
@@ -391,6 +408,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     }
 
+    /**
+     * 保存新建可视化资源，并处理应用导入、镜像数据和图表视图写入
+     */
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, stExp = "#p0.type")
     @Override
     @Transactional
@@ -665,10 +685,16 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return newDvId.toString();
     }
 
+    /**
+     * 使用 ID 映射批量替换内容中的资源引用
+     */
     private void replaceMappedIds(AtomicReference<String> content, Map<Long, Long> mapping, String resourceName) {
         mapping.forEach((key, value) -> replaceMappedId(content, key, value, resourceName));
     }
 
+    /**
+     * 替换普通 ID 的同时保护数据集 SQL 中的编码内容
+     */
     private String replaceMappedIdsPreservingDatasetSql(String content, Map<Long, Long> mapping) {
         if (StringUtils.isBlank(content) || MapUtils.isEmpty(mapping)) {
             return content;
@@ -684,6 +710,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return result;
     }
 
+    /**
+     * 将数据集分组中的编码 SQL 暂存为占位符
+     */
     private String maskDatasetGroupEncodedSql(String content, Map<String, String> encodedSqlByToken) {
         try {
             List<UnionDTO> unionDTOList = JsonUtil.parseList(content, new TypeReference<>() {});
@@ -707,6 +736,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 替换单个资源 ID，缺少映射时抛出导入匹配异常
+     */
     private void replaceMappedId(AtomicReference<String> content, Long sourceId, Long targetId, String resourceName) {
         if (sourceId == null || targetId == null) {
             throwAppImportMappingMissing(resourceName, null);
@@ -714,6 +746,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         content.set(content.get().replace(sourceId.toString(), targetId.toString()));
     }
 
+    /**
+     * 生成应用导入时资源映射缺失的统一错误
+     */
     private void throwAppImportMappingMissing(String resourceName, String name) {
         String suffix = StringUtils.isBlank(name) ? "" : "：" + name;
         CrestException.throwException(
@@ -755,6 +790,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         });
     }
 
+    /**
+     * 将 Long 类型 ID 按映射表转换为目标 ID
+     */
     private Long mappedLong(Map<?, ?> mapping, Long value) {
         if (value == null || MapUtils.isEmpty(mapping)) {
             return value;
@@ -773,6 +811,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 将字符串形式的 ID 按映射表转换为目标 ID
+     */
     private String mappedStringId(Map<?, ?> mapping, String value) {
         if (StringUtils.isBlank(value) || MapUtils.isEmpty(mapping)) {
             return value;
@@ -789,6 +830,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 替换文本中的字段 ID 和数据集运行名
+     */
     private String mappedText(String content, Map<Long, Long> fieldIdMap, Map<String, String> datasetNameMap) {
         if (StringUtils.isEmpty(content)) {
             return content;
@@ -825,6 +869,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return result;
     }
 
+    /**
+     * 替换数据集分组配置中的物理表名引用
+     */
     private String replaceDatasetGroupSql(String info, Map<String, String> tableNameMap) {
         if (StringUtils.isBlank(info) || MapUtils.isEmpty(tableNameMap)) {
             return info;
@@ -845,6 +892,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 替换数据表配置及其编码 SQL 中的物理表名
+     */
     private String replaceDatasetTableSql(String info, Map<String, String> tableNameMap) {
         if (StringUtils.isBlank(info) || MapUtils.isEmpty(tableNameMap)) {
             return info;
@@ -865,6 +915,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 按表名长度降序替换文本中的表名，避免短名先替换造成误命中
+     */
     private String replaceTableNames(String content, Map<String, String> tableNameMap) {
         if (StringUtils.isBlank(content) || MapUtils.isEmpty(tableNameMap)) {
             return content;
@@ -880,6 +933,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return mappedContent;
     }
 
+    /**
+     * 校验应用导入时目标数据集文件夹名称是否重复
+     */
     @Override
     public String appCanvasNameCheck(DataVisualizationBaseRequest request) throws Exception {
         Long datasetFolderPid = request.getDatasetFolderPid();
@@ -895,6 +951,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 校验画布内容版本，识别是否存在并发保存冲突
+     */
     @Override
     public String checkCanvasChange(DataVisualizationBaseRequest request) {
         Long dvId = request.getId();
@@ -911,6 +970,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return "Success";
     }
 
+    /**
+     * 更新画布草稿数据，并根据当前发布状态维护未发布状态
+     */
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, stExp = "#p0.type")
     @Override
     @Transactional
@@ -950,6 +1012,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return new DataVisualizationVO(visualizationInfo.getStatus());
     }
 
+    /**
+     * 更新发布状态，并在发布时用镜像数据恢复主表数据
+     */
     @Override
     @Transactional
     public void updatePublishStatus(DataVisualizationBaseRequest request) {
@@ -976,6 +1041,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 将草稿镜像恢复到已发布版本
+     */
     @Override
     public void recoverToPublished(DataVisualizationBaseRequest request) {
         coreVisualizationManage.dvSnapshotRecover(request.getId());
@@ -1011,6 +1079,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         coreVisualizationManage.delete(dvId);
     }
 
+    /**
+     * 递归为资源树节点补充资源类型
+     */
     private void resourceTreeTypeAdaptor(List<BusiNodeVO> tree, String type) {
         if (!CollectionUtils.isEmpty(tree)) {
             tree.forEach(busiNodeVO -> {
@@ -1020,6 +1091,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 查询可视化资源树，并支持仪表板和大屏混合树
+     */
     @CrestAudit(ot = LogOT.READ, st = LogST.PANEL)
     @Override
     public List<BusiNodeVO> tree(BusiNodeRequest request) {
@@ -1065,11 +1139,17 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 查询嵌入式交互场景所需的资源树集合
+     */
     @Override
     public Map<String, List<BusiNodeVO>> interactiveTree(Map<String, BusiNodeRequest> requestMap) {
         return coreBusiManage.interactiveTree(requestMap);
     }
 
+    /**
+     * 移动可视化资源到新的父节点
+     */
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.MODIFY, stExp = "#p0.type")
     @Transactional
     @Override
@@ -1077,6 +1157,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         coreVisualizationManage.move(request);
     }
 
+    /**
+     * 查询当前用户最近访问的可视化资源
+     */
     @Override
     public List<VisualizationResourceVO> findRecent(@RequestBody VisualizationWorkbranchQueryRequest request) {
         request.setQueryFrom("recent");
@@ -1133,6 +1216,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return String.valueOf(newDvId);
     }
 
+    /**
+     * 查询可视化资源类型，资源不存在时抛出业务异常
+     */
     @Override
     public String findDvType(Long dvId) {
         String result = extDataVisualizationMapper.findDvType(dvId);
@@ -1142,6 +1228,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return result;
     }
 
+    /**
+     * 将资源校验版本更新为当前服务版本
+     */
     @Override
     public String updateCheckVersion(Long dvId) {
         DataVisualizationInfo updateInfo = new DataVisualizationInfo();
@@ -1151,6 +1240,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return "";
     }
 
+    /**
+     * 解压模板来源数据，生成新的画布 ID 和图表视图映射
+     */
     @Override
     public DataVisualizationVO decompression(DataVisualizationBaseRequest request) throws Exception {
         try {
@@ -1278,6 +1370,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     }
 
+    /**
+     * 替换模板组件数据中的旧视图 ID
+     */
     private String replaceTemplateComponentViewId(String componentData, String originViewId, String newViewId) {
         if (StringUtils.isBlank(componentData)) {
             return componentData;
@@ -1294,6 +1389,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 .replace(originViewId, newViewId);
     }
 
+    /**
+     * 递归替换模板组件结构中的视图 ID 值
+     */
     @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean replaceViewIdValue(Object value, String originViewId, String newViewId) {
         boolean changed = false;
@@ -1321,6 +1419,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return changed;
     }
 
+    /**
+     * 解析本地上传的模板文件并转换为画布模板数据
+     */
     @Override
     public DataVisualizationVO decompressionLocalFile(MultipartFile file) {
         try {
@@ -1335,6 +1436,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 校验并解析本地模板文件内容
+     */
     private DataVisualizationBaseRequest parseLocalTemplate(MultipartFile file) throws Exception {
         if (file == null || file.isEmpty()) {
             CrestException.throwException("请选择模板文件");
@@ -1374,6 +1478,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return request;
     }
 
+    /**
+     * 读取必填模板字段，缺失时抛出业务异常
+     */
     private String requireTemplateValue(Map<String, Object> templateInfo, String key, String message) {
         String value = templateValue(templateInfo, key);
         if (StringUtils.isBlank(value)) {
@@ -1382,6 +1489,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return value;
     }
 
+    /**
+     * 将模板字段统一转换为字符串形式
+     */
     private String templateValue(Map<String, Object> templateInfo, String key) {
         Object value = templateInfo.get(key);
         if (value == null) {
@@ -1393,6 +1503,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return Objects.requireNonNull(JsonUtil.toJSONString(value)).toString();
     }
 
+    /**
+     * 解析模板版本号并校验数值格式
+     */
     private Integer templateVersion(Object value) {
         if (value == null) {
             return null;
@@ -1412,6 +1525,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 查询画布中仍被组件引用的图表明细
+     */
     @Override
     public List<VisualizationViewTableDTO> detailList(Long dvId) {
         List<VisualizationViewTableDTO> result = extDataVisualizationMapper.getVisualizationViewDetails(dvId);
@@ -1424,6 +1540,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 导出应用前校验并收集图表、数据集、数据源和交互配置
+     */
     @Override
     public VisualizationExport2AppVO export2AppCheck(VisualizationAppExportRequest appExportRequest) {
         List<Long> viewIds = appExportRequest.getViewIds();
@@ -1475,6 +1594,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return new VisualizationExport2AppVO(chartViewVOInfo, datasetGroupVOInfo, datasetTableVOInfo, datasetTableFieldVOInfo, datasourceVOInfo, datasourceTaskVOInfo, linkJumpVOInfo, linkJumpInfoVOInfo, listJumpTargetViewInfoVO, linkageVOInfo, linkageFieldVOInfo);
     }
 
+    /**
+     * 按视图 ID 优先查询发布表，缺失时回退查询镜像表
+     */
     private List<AppCoreChartViewVO> findAppChartViews(List<Long> viewIds) {
         List<AppCoreChartViewVO> publishedViews = appTemplateMapper.findAppViewInfo(viewIds);
         Map<Long, AppCoreChartViewVO> viewMap = new HashMap<>();
@@ -1496,27 +1618,42 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 记录应用模板导出审计日志
+     */
     @CrestAudit(id = "#p0.id", ot = LogOT.APP_TEMPLATE_EXPORT, stExp = "#p0.type")
     public void exportLogApp(DataVisualizationBaseRequest request) {
 
     }
 
+    /**
+     * 记录模板导出审计日志
+     */
     @CrestAudit(id = "#p0.id", ot = LogOT.TEMPLATE_EXPORT, stExp = "#p0.type")
     public void exportLogTemplate(DataVisualizationBaseRequest request) {
 
     }
 
+    /**
+     * 记录 PDF 导出审计日志
+     */
     @CrestAudit(id = "#p0.id", ot = LogOT.PDF_EXPORT, stExp = "#p0.type")
     public void exportLogPDF(DataVisualizationBaseRequest request) {
 
     }
 
+    /**
+     * 记录图片导出审计日志
+     */
     @CrestAudit(id = "#p0.id", ot = LogOT.IMG_EXPORT, stExp = "#p0.type")
     public void exportLogImg(DataVisualizationBaseRequest request) {
 
     }
 
 
+    /**
+     * 校验同级目录下可视化资源名称是否重复
+     */
     @Override
     public void nameCheck(DataVisualizationBaseRequest request) {
         QueryWrapper<DataVisualizationInfo> wrapper = new QueryWrapper<>();
@@ -1544,6 +1681,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 根据图表视图 ID 生成资源层级路径
+     */
     public String getAbsPath(Long id) {
         ChartViewDTO viewDTO = chartViewManege.findChartViewAround(String.valueOf(id));
         if (viewDTO == null) {
@@ -1563,6 +1703,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return stringBuilder.toString();
     }
 
+    /**
+     * 查询指定资源的父级链路
+     */
     public List<DataVisualizationInfo> getParents(Long id) {
         List<DataVisualizationInfo> list = new ArrayList<>();
         DataVisualizationInfo dataVisualizationInfo = visualizationInfoMapper.selectById(id);
@@ -1575,6 +1718,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return list;
     }
 
+    /**
+     * 递归向上收集父级资源节点
+     */
     public void getParent(List<DataVisualizationInfo> list, DataVisualizationInfo dataVisualizationInfo) {
         if (ObjectUtils.isNotEmpty(dataVisualizationInfo) && dataVisualizationInfo.getPid() != null && !dataVisualizationInfo.getPid().equals(dataVisualizationInfo.getId())) {
             DataVisualizationInfo d = visualizationInfoMapper.selectById(dataVisualizationInfo.getPid());
@@ -1583,6 +1729,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 查询画布组件数据中实际启用的图表视图 ID
+     */
     public List<Long> getEnabledViewIds(Long dvId, String resourceTable) {
         List<Long> result = new ArrayList<>();
         DataVisualizationVO dvInfo = extDataVisualizationMapper.findDvInfo(dvId, null, resourceTable);
@@ -1597,6 +1746,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     @Resource
     private ResourcePermissionManage resourcePermissionManage;
+    /**
+     * 查询资源绑定的数据集权限模板
+     */
     @Override
     public List<DatasetPermissionTemplate> queruDatasetPermissionTemplate(Long resourceId) {
         return resourcePermissionManage.queruDatasetPermissionTemplate(resourceId);

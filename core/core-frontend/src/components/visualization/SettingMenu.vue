@@ -155,14 +155,41 @@ import { layerStoreWithOut } from '@/store/modules/data-visualization/layer'
 import { useI18n } from '@/hooks/web/useI18n'
 import TabCarouselDialog from '@/components/visualization/TabCarouselDialog.vue'
 import HyperlinksDialog from '@/components/visualization/HyperlinksDialog.vue'
+/**
+ * 国际化翻译函数
+ */
 const { t } = useI18n()
+/**
+ * 快照仓库，用于菜单操作后记录撤销点
+ */
 const snapshotStore = snapshotStoreWithOut()
+/**
+ * 复制仓库，用于组件复制和粘贴
+ */
 const copyStore = copyStoreWithOut()
+/**
+ * 大屏主仓库，提供当前组件和画布组件数据
+ */
 const dvMainStore = dvMainStoreWithOut()
+/**
+ * 图层仓库，用于调整组件层级
+ */
 const layerStore = layerStoreWithOut()
+/**
+ * 当前组件、组件列表和大屏信息引用
+ */
 const { curComponent, componentData, dvInfo } = storeToRefs(dvMainStore)
+/**
+ * 自定义标签排序组件引用
+ */
 const customTabsSort = ref(null)
+/**
+ * 右键菜单向父级派发的操作事件
+ */
 const emits = defineEmits(['amRemoveItem', 'linkJumpSet', 'boardSet'])
+/**
+ * 组件右键菜单状态
+ */
 const state = reactive({
   tabCarouselVisible: false,
   systemOS: 'Mac',
@@ -194,10 +221,16 @@ const state = reactive({
   editFilter: ['view', 'custom', 'custom-button']
 })
 
+/**
+ * 是否展示标签页轮播设置入口
+ */
 const tabCarouselShow = computed(() => {
   return curComponent.value.component === 'Tabs'
 })
 
+/**
+ * 是否展示跳转设置入口
+ */
 const linkJumpSetShow = computed(() => {
   return (
     curComponent.value.type === 'view' &&
@@ -209,6 +242,9 @@ const linkJumpSetShow = computed(() => {
   )
 })
 
+/**
+ * 是否展示图表联动设置入口
+ */
 const linkageSettingShow = computed(() => {
   return (
     curComponent.value.type === 'view' &&
@@ -220,22 +256,37 @@ const linkageSettingShow = computed(() => {
   )
 })
 
+/**
+ * 打开自定义标签排序弹窗
+ */
 const openCustomSort = () => {
   state.showCustomSort = true
 }
+/**
+ * 关闭自定义标签排序弹窗
+ */
 const closeCustomSort = () => {
   state.showCustomSort = false
 }
+/**
+ * 保存自定义标签排序配置
+ */
 const saveCustomSort = () => {
   customTabsSort.value.save()
   nextTick(() => {
     state.showCustomSort = false
   })
 }
+/**
+ * 打开组件位置调整面板
+ */
 const positionAdjust = () => {
   eventBus.emit('change_panel_right_draw', true)
 }
 
+/**
+ * 根据组件类型打开对应编辑入口
+ */
 const edit = () => {
   if (curComponent.value.type === 'custom') {
     eventBus.emit('component-dialog-edit', 'update')
@@ -257,11 +308,17 @@ const handleMouseUp = () => {
   dvMainStore.setClickComponentStatus(true)
 }
 
+/**
+ * 复制当前组件并立即粘贴
+ */
 const copy = () => {
   copyStore.copy()
   copyStore.paste(false)
 }
 
+/**
+ * 删除当前组件并记录快照
+ */
 const deleteComponent = () => {
   if (
     curComponent.value.type === 'custom-button' &&
@@ -283,6 +340,9 @@ const deleteComponent = () => {
   dvMainStore.setCurComponent({ component: null, index: null })
 }
 
+/**
+ * 删除当前自定义组件关联的筛选条件
+ */
 const deleteCurCondition = () => {
   if (curComponent.value.type === 'custom') {
     dvMainStore.removeViewFilter(curComponent.value.id)
@@ -290,25 +350,40 @@ const deleteCurCondition = () => {
   }
 }
 
+/**
+ * 将当前组件上移一层
+ */
 const upComponent = () => {
   layerStore.upComponent()
   snapshotStore.recordSnapshotCache('SettingMenu-upComponent')
 }
 
+/**
+ * 将当前组件下移一层
+ */
 const downComponent = () => {
   layerStore.downComponent()
   snapshotStore.recordSnapshotCache('SettingMenu-downComponent')
 }
 
+/**
+ * 将当前组件置顶
+ */
 const topComponent = () => {
   layerStore.topComponent()
   snapshotStore.recordSnapshotCache('SettingMenu-topComponent')
 }
 
+/**
+ * 将当前组件置底
+ */
 const bottomComponent = () => {
   layerStore.bottomComponent()
   snapshotStore.recordSnapshotCache('SettingMenu-bottomComponent')
 }
+/**
+ * 查询并打开当前图表的联动设置
+ */
 const linkageSetting = () => {
   // sourceViewId 也加入查询
   const targetViewIds = componentData.value
@@ -325,6 +400,9 @@ const linkageSetting = () => {
     dvMainStore.setLinkageTargetInfo(rsp.data)
   })
 }
+/**
+ * 为当前标签页组件新增标签
+ */
 const addTab = () => {
   eventBus.emit('add-new-tab', curComponent.value.id)
 }

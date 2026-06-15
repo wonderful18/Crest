@@ -16,6 +16,7 @@ import java.util.Map;
 
 @Component
 @SuppressWarnings("unchecked")
+// 定义图表处理器，负责轴格式化和结果组装
 public class GaugeHandler extends NumericalChartHandler {
     @Getter
     private String type = "gauge";
@@ -23,6 +24,7 @@ public class GaugeHandler extends NumericalChartHandler {
     private DatasetTableFieldManage datasetTableFieldManage;
 
     @Override
+    // 按图表配置整理维度和指标轴信息
     public AxisFormatResult formatAxis(ChartViewDTO view) {
         var axisMap = new HashMap<ChartAxis, List<ChartViewFieldDTO>>();
         var yAxis = new ArrayList<>(view.getYAxis());

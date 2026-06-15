@@ -3,10 +3,14 @@ import { onMounted, reactive, ref } from 'vue'
 import request from '@/config/axios'
 import dayjs from 'dayjs'
 
+// 控制审计日志表格加载状态
 const loading = ref(false)
+// 保存审计日志表格数据
 const tableData = ref<any[]>([])
+// 保存审计日志分页状态
 const pager = reactive({ currentPage: 1, pageSize: 15, total: 0 })
 
+// 保存审计日志查询筛选条件
 const filters = reactive({
   operationType: '',
   resourceType: '',
@@ -55,6 +59,7 @@ const resourceTypes = [
   { label: '同步任务日志', value: 'SYNC_TASK_LOG' }
 ]
 
+// 根据操作类型返回表格标签样式
 const getOperationTypeTag = (type: string) => {
   const map: Record<string, string> = {
     LOGIN: 'primary',
@@ -74,6 +79,7 @@ const getOperationTypeTag = (type: string) => {
   return map[type] || 'info'
 }
 
+// 根据操作类型返回中文展示名称
 const getOperationTypeLabel = (type: string) => {
   const map: Record<string, string> = {
     LOGIN: '登录系统',
@@ -107,6 +113,7 @@ const getOperationTypeLabel = (type: string) => {
   return map[type] || type
 }
 
+// 根据资源类型返回中文展示名称
 const getResourceTypeLabel = (type: string) => {
   const map: Record<string, string> = {
     USER: '用户',
@@ -132,6 +139,7 @@ const getResourceTypeLabel = (type: string) => {
   return map[type] || type
 }
 
+// 根据审计记录内容生成用户可读的操作描述
 const getOperationDesc = (row: any) => {
   if (row.operation_desc) return row.operation_desc
   if (row.resource_name) return row.resource_name
@@ -171,6 +179,7 @@ const getOperationDesc = (row: any) => {
   return `${getOperationTypeLabel(op)}${getResourceTypeLabel(res)}`
 }
 
+// 按当前筛选条件加载审计日志分页数据
 const loadTable = async () => {
   loading.value = true
   try {
@@ -191,6 +200,7 @@ const loadTable = async () => {
   }
 }
 
+// 重置筛选条件并重新加载审计日志
 const resetFilters = () => {
   filters.operationType = ''
   filters.resourceType = ''

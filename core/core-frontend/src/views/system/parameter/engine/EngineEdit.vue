@@ -13,9 +13,12 @@ import { Base64 } from 'js-base64'
 import { querySymmetricKey } from '@/api/login'
 import { symmetricDecrypt } from '@/utils/encryption'
 const { t } = useI18n()
+// 引擎编辑弹窗用于维护系统内置计算引擎的数据源连接配置。
 const dialogVisible = ref(false)
+// 引擎编辑加载实例需要手动关闭，避免保存和校验请求结束后遮罩残留。
 const loadingInstance = ref(null)
 
+// 基础字段校验只覆盖引擎名称，连接参数校验由 configRules 单独维护。
 const defaultRule = {
   name: [
     {
@@ -31,6 +34,7 @@ const defaultRule = {
     }
   ]
 }
+// 连接参数校验规则覆盖 JDBC、账号密码、连接池和查询超时等必填项。
 const configRules = {
   'configuration.dataBase': [
     {
@@ -110,25 +114,33 @@ const configRules = {
     }
   ]
 }
+// 合并基础规则和连接规则，保持表单使用单一 rules 对象。
 const rule = { ...cloneDeep(configRules), ...cloneDeep(defaultRule) }
 
+// 保存完成后通知父级刷新引擎配置展示。
 const emits = defineEmits(['saved'])
+// 重置引擎表单时恢复默认值，避免下一次打开沿用旧连接信息。
 const resetForm = () => {
   dialogVisible.value = false
   Object.assign(nodeInfo, cloneDeep(defaultInfo))
 }
 
+// 关闭并重置引擎编辑弹窗。
 const reset = () => {
   resetForm()
 }
 
+// 打开引擎编辑加载遮罩，目标限定在抽屉区域。
 const showLoading = () => {
   loadingInstance.value = ElLoading.service({ target: '.basic-param-drawer' })
 }
+// 关闭引擎编辑加载遮罩。
 const closeLoading = () => {
   loadingInstance.value?.close()
 }
+// 控制连接池和查询超时等高级配置显隐。
 const showPriority = ref(false)
+// 默认引擎配置覆盖基本信息、连接参数和连接池参数。
 const defaultInfo = {
   name: '',
   createBy: '',
@@ -157,7 +169,9 @@ const defaultInfo = {
   apiConfiguration: [],
   weight: 0
 }
+// 当前引擎节点信息直接作为表单模型使用。
 const nodeInfo = reactive(cloneDeep(defaultInfo))
+// 打开引擎编辑弹窗时先获取对称密钥，再解密后端返回的连接配置。
 const edit = () => {
   querySymmetricKey().then(response => {
     getEngineDatasource()
@@ -179,6 +193,7 @@ const edit = () => {
           enableDataFill
         } = res.data
         if (configuration) {
+          // 后端保存的是加密连接配置，前端展示前需要用当前会话密钥解密。
           configuration = JSON.parse(symmetricDecrypt(configuration, response.data))
         }
         Object.assign(nodeInfo, {
@@ -199,12 +214,15 @@ const edit = () => {
         })
       })
       .finally(() => {
+        // 数据加载完成后再展示抽屉，避免用户看到空表单闪烁。
         dialogVisible.value = true
       })
   })
 }
+// 引擎基础表单实例用于触发表单校验。
 const basicForm = ref()
 
+// 提交引擎配置前将连接信息 Base64 编码，由后端继续完成加密和持久化。
 const submitForm = async () => {
   let data = JSON.parse(JSON.stringify(nodeInfo)) as unknown as Omit<
     Node,
@@ -216,6 +234,7 @@ const submitForm = async () => {
   data.configuration = Base64.encode(JSON.stringify(data.configuration))
   basicForm.value.validate(result => {
     if (result) {
+      // 表单校验通过后才提交保存，失败时保留当前表单供用户修正。
       showLoading()
       request
         .post({ url: '/engine/record', data: data })
@@ -234,6 +253,7 @@ const submitForm = async () => {
   })
 }
 
+// 校验引擎连接配置复用同一份表单数据，但只调用 validate 接口不保存。
 const validate = async () => {
   let data = JSON.parse(JSON.stringify(nodeInfo)) as unknown as Omit<
     Node,
@@ -245,6 +265,7 @@ const validate = async () => {
   data.configuration = Base64.encode(JSON.stringify(data.configuration))
   basicForm.value.validate(result => {
     if (result) {
+      // 连接校验请求只反馈连通性，不触发父级刷新。
       showLoading()
       request
         .post({ url: '/engine/validate', data: data })
@@ -262,6 +283,7 @@ const validate = async () => {
 }
 
 defineExpose({
+  // 父组件通过 ref 主动打开编辑弹窗，避免把系统参数列表状态耦合进当前表单。
   edit
 })
 </script>
@@ -297,6 +319,7 @@ defineExpose({
         prop="configuration.jdbc"
         v-if="nodeInfo.type === 'h2'"
       >
+        <!-- H2 引擎直接维护 JDBC 地址，其它引擎拆分为主机和端口字段。 -->
         <el-input
           v-model="nodeInfo.configuration.jdbc"
           :placeholder="t('data_source.jdbc_connection_string')"
@@ -361,6 +384,7 @@ defineExpose({
         />
       </el-form-item>
       <el-form-item>
+        <!-- 高级配置默认收起，减少普通连接维护时的表单噪音。 -->
         <span class="de-expand_engine" @click="showPriority = !showPriority"
           >{{ t('datasource.priority') }}
           <el-icon>
@@ -453,6 +477,7 @@ defineExpose({
 </template>
 <style lang="less">
 .basic-param-drawer {
+  // 抽屉样式限定在参数编辑容器下，避免影响其它全局抽屉。
   .de-expand_engine {
     font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
@@ -472,6 +497,7 @@ defineExpose({
     width: 100%;
   }
   .ed-drawer__footer {
+    // 底部操作区固定高度，保证校验、取消、保存按钮在不同语言下稳定对齐。
     height: 64px !important;
     padding: 16px 24px !important;
     .dialog-footer {
@@ -488,6 +514,7 @@ defineExpose({
 <style scoped lang="less">
 .basic-param-drawer {
   .ed-form-item {
+    // 表单项间距与抽屉宽度匹配，错误态再额外预留提示空间。
     margin-bottom: 16px;
   }
   .is-error {

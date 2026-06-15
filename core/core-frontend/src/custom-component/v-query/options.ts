@@ -3,6 +3,7 @@ import { guid } from '@/views/visualized/data/dataset/form/util.js'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
 
+// 维护表单数据和校验规则
 const infoFormat = (obj: ComponentInfo) => {
   const { id, name, fieldType, type, datasetId } = obj
   return {
@@ -66,6 +67,7 @@ const infoFormat = (obj: ComponentInfo) => {
   }
 }
 
+// 创建新数据并写入当前配置
 const addQueryCriteriaConfig = () => {
   const componentInfo: ComponentInfo = {
     id: '',

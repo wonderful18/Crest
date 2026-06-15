@@ -28,6 +28,7 @@ const dvMainStore = dvMainStoreWithOut()
 
 const { fullscreenFlag } = storeToRefs(dvMainStore)
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   canvasId: {
     type: String,
@@ -41,11 +42,13 @@ const props = defineProps({
   }
 })
 
+// 衔接当前组件交互和状态同步
 const handOptBarMousedown = e => {
   e.preventDefault()
   e.stopPropagation()
 }
 
+// 控制弹窗、面板或区域的展示状态
 const showButton = computed(() => {
   if (isMainCanvas(props.canvasId)) {
     return fullscreenFlag.value && props.showPosition === 'preview'
@@ -54,6 +57,7 @@ const showButton = computed(() => {
   }
 })
 
+// 衔接当前组件交互和状态同步
 const exitFullscreen = () => {
   document.exitFullscreen()
 }

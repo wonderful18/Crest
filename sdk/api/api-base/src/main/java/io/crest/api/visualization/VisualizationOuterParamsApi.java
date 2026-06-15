@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @Tag(name = "可视化管理:外部参数")
+// 定义模块接口契约和数据传输结构
 public interface VisualizationOuterParamsApi {
 
 

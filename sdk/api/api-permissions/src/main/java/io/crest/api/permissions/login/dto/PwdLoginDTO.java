@@ -8,6 +8,7 @@ import lombok.Data;
 
 @Schema(description = "登录DTO")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class PwdLoginDTO {
 
     @Schema(description = "账号(需加密)", requiredMode = Schema.RequiredMode.REQUIRED)

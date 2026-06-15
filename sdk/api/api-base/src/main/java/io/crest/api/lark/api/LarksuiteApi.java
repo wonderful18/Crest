@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "国际飞书设置")
 @ApiSupport(order = 899)
+// 定义模块接口契约和数据传输结构
 public interface LarksuiteApi {
 
     @Operation(summary = "查询国际飞书信息")

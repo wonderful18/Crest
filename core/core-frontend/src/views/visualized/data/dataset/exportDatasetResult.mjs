@@ -6,6 +6,7 @@ export const EXPORT_DATASET_RESULT = {
 
 const DEFAULT_ERROR_MESSAGE = '数据集导出请求失败，请稍后再试'
 
+// 转换当前值并同步表单状态
 const headerValue = (headers, key) => {
   if (!headers) {
     return ''
@@ -18,6 +19,7 @@ const headerValue = (headers, key) => {
   return matchedKey ? headers[matchedKey] : ''
 }
 
+// 衔接当前组件交互和状态同步
 const readBodyText = async body => {
   if (!body) {
     return ''
@@ -34,6 +36,7 @@ const readBodyText = async body => {
   return ''
 }
 
+// 衔接当前组件交互和状态同步
 const parseJsonBody = async response => {
   const data = response?.data
   const contentType = `${headerValue(response?.headers, 'content-type')} ${data?.type || ''}`
@@ -56,6 +59,7 @@ const parseJsonBody = async response => {
   }
 }
 
+// 整理当前数据并同步界面状态
 export const resolveExportDatasetResult = async response => {
   if (response?.canceled || response?.code === 499) {
     return {

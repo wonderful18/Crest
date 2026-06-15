@@ -29,8 +29,15 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"deprecation", "unchecked", "rawtypes"})
 public class VisualizationSubjectService implements VisualizationSubjectApi {
 
+    /**
+     * 可视化主题 Mapper
+     */
     @Resource
     VisualizationSubjectMapper subjectMapper;
+
+    /**
+     * 查询未删除的主题列表
+     */
     @Override
     public List<VisualizationSubjectVO> query(VisualizationSubjectRequest request) {
         QueryWrapper<VisualizationSubject> wrapper = new QueryWrapper<>();
@@ -43,6 +50,9 @@ public class VisualizationSubjectService implements VisualizationSubjectApi {
        }).collect(Collectors.toList());
     }
 
+    /**
+     * 按固定页大小将主题列表分组返回
+     */
     @Override
     public List querySubjectWithGroup(VisualizationSubjectRequest request) {
         List result = new ArrayList();
@@ -56,6 +66,10 @@ public class VisualizationSubjectService implements VisualizationSubjectApi {
         }
         return result;
     }
+
+    /**
+     * 新增或更新自定义主题，并校验名称唯一性
+     */
     @Override
     public synchronized void update(VisualizationSubjectRequest request) {
         if (StringUtils.isEmpty(request.getId())) {
@@ -89,6 +103,9 @@ public class VisualizationSubjectService implements VisualizationSubjectApi {
         }
     }
 
+    /**
+     * 删除指定主题
+     */
     @Override
     public void delete(String id) {
         Assert.notNull(id, "subjectId should not be null");

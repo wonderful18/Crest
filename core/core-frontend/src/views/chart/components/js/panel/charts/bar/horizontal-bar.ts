@@ -42,9 +42,10 @@ const { t } = useI18n()
 const DEFAULT_DATA = []
 
 /**
- * 条形图
+ * 条形图渲染器，将维度映射到纵向分类轴、指标映射到横向数值轴。
  */
 export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
+  // 条形图只需要维度轴和指标轴，横纵轴在渲染阶段会按 G2Plot 的 bar 坐标系转换。
   axisConfig = {
     ...this['axisConfig'],
     xAxis: {
@@ -57,6 +58,7 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
     }
   }
   properties = BAR_EDITOR_PROPERTY
+  // 横向条形图额外开放系列色和数值轴范围配置。
   propertyInner = {
     ...BAR_EDITOR_PROPERTY_INNER,
     'basic-style-selector': [...BAR_EDITOR_PROPERTY_INNER['basic-style-selector'], 'seriesColor'],
@@ -80,6 +82,7 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
     ]
   }
   axis: AxisType[] = [...BAR_AXIS_TYPE]
+  // 基础配置固定为分组条形图，堆叠类型在子类构造函数中覆盖。
   protected baseOptions: BarOptions = {
     data: [],
     xField: 'value',
@@ -93,10 +96,10 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
     if (!chart.data?.data?.length) {
       return
     }
-    // data
+    // 图表数据直接来自后端聚合结果，克隆后交由配置流水线处理。
     const data = cloneDeep(chart.data.data)
 
-    // options
+    // 初始化配置只保留字段映射和内边距，样式、轴和交互在 setupOptions 中叠加。
     const initOptions: BarOptions = {
       ...this.baseOptions,
       appendPadding: getPadding(chart),
@@ -106,7 +109,7 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
     const options = this.setupOptions(chart, initOptions)
 
     const { Bar } = await import('@antv/g2plot/esm/plots/bar')
-    // 开始渲染
+    // 创建图表实例后绑定条形和标签点击，确保联动参数一致。
     const newChart = new Bar(container, options)
 
     newChart.on('interval:click', action)
@@ -121,7 +124,7 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
         })
       })
     }
-    // 只处理条形图，分组和堆叠的阴影部分没有子维度信息
+    // 仅普通条形图通过 active-region 兜底触发点击，分组和堆叠阴影缺少子维度信息。
     if (this.name === 'bar-horizontal' && options.tooltip) {
       newChart.on('plot:click', e => {
         if (e.target?.cfg?.renderer !== 'canvas') {
@@ -164,17 +167,21 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
     const xAxis = parseJson(chart.customStyle).xAxis
     const axisValue = xAxis.axisValue
     if (tmpOptions.xAxis.label) {
+      // 数值轴标签使用统一格式化配置，支持千分位、百分比和小数位设置。
       tmpOptions.xAxis.label.formatter = value => {
         return valueFormatter(value, xAxis.axisLabelFormatter)
       }
     }
     if (tmpOptions.xAxis.position === 'top') {
+      // 条形图坐标系旋转后，编辑器的上方位置对应左侧数值轴。
       tmpOptions.xAxis.position = 'left'
     }
     if (tmpOptions.xAxis.position === 'bottom') {
+      // 条形图坐标系旋转后，编辑器的底部位置对应右侧数值轴。
       tmpOptions.xAxis.position = 'right'
     }
     if (!axisValue?.auto) {
+      // 固定数值轴范围同时写入 min/max/limit，避免自动范围覆盖用户配置。
       const axis = {
         xAxis: {
           ...tmpOptions.xAxis,
@@ -185,7 +192,7 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
           tickCount: axisValue.splitCount
         }
       }
-      // 根据axis的最小值，过滤options中的data数据，过滤掉小于最小值的数据
+      // 条形图固定最小值后过滤小于范围的数据，避免柱形反向穿出坐标轴。
       const { data } = options
       const newData = data.filter(item => item.value >= axisValue.min)
       return { ...tmpOptions, data: newData, ...axis }
@@ -200,6 +207,7 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
   protected configBasicStyle(chart: Chart, options: BarOptions): BarOptions {
     const basicStyle = parseJson(chart.customAttr).basicStyle
     if (basicStyle.gradient) {
+      // 渐变色按基础配色和透明度生成，保持条形方向上的视觉一致性。
       let color = basicStyle.colors
       color = color.map(ele => {
         const tmp = hexColorToRGBA(ele, basicStyle.alpha)
@@ -217,6 +225,7 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
 
     let barWidthRatio
     const _v = basicStyle.columnWidthRatio ?? DEFAULT_BASIC_STYLE.columnWidthRatio
+    // G2Plot 使用 0 到 1 的柱宽比例，编辑器中以 1 到 100 的百分比展示。
     if (_v >= 1 && _v <= 100) {
       barWidthRatio = _v / 100.0
     } else if (_v < 1) {
@@ -234,9 +243,11 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
   setupDefaultOptions(chart: ChartObj): ChartObj {
     const { customAttr, senior } = chart
     const { label } = customAttr
+    // 历史配置中的非法标签位置回退到中间，保证条形图首次渲染稳定。
     if (!['left', 'middle', 'right'].includes(label.position)) {
       label.position = 'middle'
     }
+    // 条形图默认忽略空数据，避免空分类撑开横向空间。
     senior.functionCfg.emptyDataStrategy = 'ignoreData'
     return chart
   }
@@ -254,12 +265,13 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
       pre[next.id] = next
       return pre
     }, {})
-    // 默认灰色
+    // 默认灰色只作为兜底值，系列标签配置存在时会覆盖颜色和字号。
     tmpOptions.label.style.fill = DEFAULT_LABEL.color
     const label = {
       fields: [],
       ...tmpOptions.label,
       formatter: (data: Datum) => {
+        // 没有独立系列标签配置时直接展示原始指标值。
         if (!labelAttr.seriesLabelFormatter?.length) {
           return data.value
         }
@@ -270,6 +282,7 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
         if (!labelCfg.show) {
           return
         }
+        // 返回自定义 Group 以便把原始 data 挂到标签上，支持标签点击联动。
         const value = valueFormatter(data.value, labelCfg.formatterCfg)
         const group = new Group({})
         group.addShape({
@@ -301,15 +314,18 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
       return tmpOptions
     }
     if (tmpOptions.yAxis.position === 'left') {
+      // 横向条形图的分类轴位置需要从左右语义转换为上下语义。
       tmpOptions.yAxis.position = 'bottom'
     }
     if (tmpOptions.yAxis.position === 'right') {
+      // 编辑器右侧位置对应 G2Plot 横向条形图的顶部分类轴。
       tmpOptions.yAxis.position = 'top'
     }
     return tmpOptions
   }
 
   protected setupOptions(chart: Chart, options: BarOptions): BarOptions {
+    // 配置顺序先处理数据和样式，再叠加标签、提示、坐标轴、缩略轴和分析能力。
     return flow(
       this.addConditionsStyleColorToData,
       this.configTheme,
@@ -333,7 +349,7 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
 }
 
 /**
- * 堆叠条形图
+ * 堆叠条形图渲染器，在普通条形图基础上增加堆叠维度和图例排序能力。
  */
 export class HorizontalStackBar extends HorizontalBar {
   properties = BAR_EDITOR_PROPERTY.filter(ele => ele !== 'threshold')
@@ -367,6 +383,7 @@ export class HorizontalStackBar extends HorizontalBar {
     options = { ...options, label }
     const { label: labelAttr } = parseJson(chart.customAttr)
     if (labelAttr.showStackQuota || labelAttr.showStackQuota === undefined) {
+      // showStackQuota 控制堆叠段标签，未配置时按旧版本默认展示。
       ;(options.label as any).style.fill = labelAttr.color
       label = {
         ...options.label,
@@ -394,6 +411,7 @@ export class HorizontalStackBar extends HorizontalBar {
       label = false
     }
     if (labelAttr.showTotal) {
+      // 总计标签按主维度聚合堆叠值，并以 annotation 形式绘制在柱尾。
       const formatterCfg = labelAttr.labelFormatter ?? formatterItem
       each(groupBy(options.data, 'field'), (values, key) => {
         const total = values.reduce((a, b) => a + b.value, 0)
@@ -449,10 +467,10 @@ export class HorizontalStackBar extends HorizontalBar {
     const { sort } = customStyle.legend
     const extStack = chart.extStack[0]
     if ((!sort || sort === 'none') && extStack?.customSort?.length > 0) {
-      // 图例自定义排序
+      // 堆叠维度的自定义排序写入 category 元数据，影响堆叠顺序和图例顺序。
       const sort = extStack.customSort ?? []
       if (sort?.length) {
-        // 用值域限定排序，有可能出现新数据但是未出现在图表上，所以这边要遍历一下子维度，加到后面，让新数据显示出来
+        // 新数据可能不在历史排序中，需要追加到末尾，避免新增系列被隐藏。
         const data = options.data
         const cats: any[] =
           (data as any[])?.reduce((p, n) => {
@@ -486,6 +504,7 @@ export class HorizontalStackBar extends HorizontalBar {
     return this.configStackColor(chart, options)
   }
   public setupSeriesColor(chart: ChartObj, data?: any[]): ChartBasicStyle['seriesColor'] {
+    // 堆叠系列色按 extStack 维度生成，供图例和系列色面板共同使用。
     return setUpStackSeriesColor(chart, data)
   }
 
@@ -494,6 +513,7 @@ export class HorizontalStackBar extends HorizontalBar {
     const mainSort = xAxis.some(axis => axis.sort !== 'none')
     const subSort = extStack.some(axis => axis.sort !== 'none')
     if (mainSort || subSort) {
+      // 维度排序优先级高于指标排序，避免多重排序互相覆盖。
       return options
     }
     const quotaSort = yAxis?.[0]?.sort !== 'none'
@@ -501,6 +521,7 @@ export class HorizontalStackBar extends HorizontalBar {
       return options
     }
     const { data } = options
+    // 指标排序按每个主维度的堆叠合计值排序，保持整根条形的顺序稳定。
     const mainAxisValueMap = data.reduce((p, n) => {
       p[n.field] = p[n.field] ? p[n.field] + n.value : n.value || 0
       return p
@@ -531,6 +552,7 @@ export class HorizontalStackBar extends HorizontalBar {
       size = DEFAULT_LEGEND_STYLE.size
     }
 
+    // 图例 marker 半径跟随图例设置，颜色保持与堆叠系列一致。
     ;(optionTmp.legend.marker as any).style = style => {
       return {
         r: size,
@@ -539,6 +561,7 @@ export class HorizontalStackBar extends HorizontalBar {
     }
     const { sort, customSort, icon } = customStyle.legend
     if (sort && sort !== 'none' && chart.extStack.length) {
+      // 图例排序开启时手工生成图例项，才能同时控制顺序、图标和透明度。
       const customAttr = parseJson(chart.customAttr)
       const { basicStyle } = customAttr
       const seriesMap =
@@ -567,10 +590,12 @@ export class HorizontalStackBar extends HorizontalBar {
         return arr
       }, [])
       if (sort !== 'custom') {
+        // 默认排序按图例名称升降序排列。
         items.sort((a, b) => {
           return sort !== 'desc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
         })
       } else {
+        // 自定义排序命中的项提前展示，其余新增项保留在后面。
         const tmp = []
         ;(customSort || []).forEach(item => {
           const index = items.findIndex(i => i.name === item)
@@ -583,6 +608,7 @@ export class HorizontalStackBar extends HorizontalBar {
       }
       ;(optionTmp.legend as any).items = items
       if (extStack?.customSort?.length > 0) {
+        // 已手工生成图例项后移除 meta 排序，避免二次排序影响图例显示。
         delete optionTmp.meta?.category.values
       }
     }
@@ -591,11 +617,13 @@ export class HorizontalStackBar extends HorizontalBar {
 
   setupDefaultOptions(chart: ChartObj): ChartObj {
     const chartTmp = super.setupDefaultOptions(chart)
+    // 堆叠条形图默认展示堆叠段指标标签，延续旧版可视化行为。
     chartTmp.customAttr.label.showStackQuota = true
     return chartTmp
   }
 
   protected setupOptions(chart: Chart, options: BarOptions): BarOptions {
+    // 堆叠图先完成数据排序和系列色，再应用样式、标签、提示和坐标轴。
     return flow(
       this.configTheme,
       this.configEmptyDataStrategy,
@@ -629,7 +657,7 @@ export class HorizontalStackBar extends HorizontalBar {
 }
 
 /**
- * 百分比堆叠条形图
+ * 百分比堆叠条形图渲染器，将堆叠值归一化后按百分比展示。
  */
 export class HorizontalPercentageStackBar extends HorizontalStackBar {
   propertyInner = {
@@ -647,6 +675,7 @@ export class HorizontalPercentageStackBar extends HorizontalStackBar {
     const label = {
       ...baseLabel,
       formatter: function (data: Datum) {
+        // 百分比堆叠图的 data.value 已是比例值，需要按百分比格式化。
         let value = data.value
         if (value) {
           value = (Math.round(value * 10000) / 100).toFixed(l.reserveDecimalCount) + '%'
@@ -691,6 +720,7 @@ export class HorizontalPercentageStackBar extends HorizontalStackBar {
     const l = parseJson(customAttr).label
     const tooltip = {
       formatter: (param: Datum) => {
+        // tooltip 与标签使用同一小数位配置，保证百分比展示一致。
         const obj = { name: param.category, value: param.value }
         obj.value = (Math.round(param.value * 10000) / 100).toFixed(l.reserveDecimalCount) + '%'
         return obj
@@ -705,6 +735,7 @@ export class HorizontalPercentageStackBar extends HorizontalStackBar {
     }
   }
   protected setupOptions(chart: Chart, options: BarOptions): BarOptions {
+    // 百分比堆叠图复用堆叠配置链，但不执行普通堆叠的数据排序逻辑。
     return flow(
       this.configTheme,
       this.configEmptyDataStrategy,

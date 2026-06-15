@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 
+// 定义插件扩展能力的基础类型
 public abstract class AbstractChartPlugin {
 
     /**

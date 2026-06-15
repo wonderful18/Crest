@@ -210,6 +210,7 @@ export class Liquid extends G2PlotChartView<LiquidOptions, G2Liquid> {
       const { liquidThreshold } = senior?.threshold
       if (liquidThreshold) {
         const { paletteQualitative10: colors } = (options.theme as any).styleSheet
+        // 根据当前配置计算界面样式
         const liquidStyle = () => {
           const thresholdArr = liquidThreshold.split(',')
           let index = 0

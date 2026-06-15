@@ -10,6 +10,7 @@ import {
 } from '@/views/chart/components/js/panel/charts/others/chart-mix-common'
 
 const { t } = useI18n()
+// 双轴基础样式面板分别维护左轴柱/线样式和右轴线样式。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -24,7 +25,9 @@ const props = defineProps({
   }
 })
 
+// 面板项由图表类型传入的 propertyInner 控制，避免展示不支持的样式能力。
 const showProperty = prop => props.propertyInner?.includes(prop)
+// 状态同时承载基础样式、杂项样式、当前配色选择和表格列宽临时值。
 const state = reactive({
   basicStyleForm: JSON.parse(JSON.stringify(CHART_MIX_DEFAULT_BASIC_STYLE)) as MixChartBasicStyle,
   miscForm: JSON.parse(JSON.stringify(DEFAULT_MISC)) as ChartMiscAttr,
@@ -35,6 +38,7 @@ const state = reactive({
     width: 0
   }
 })
+// 字段和样式配置变化后重新初始化表单，确保左右轴设置与当前图表保持同步。
 watch(
   [
     () => props.chart.customAttr.basicStyle,
@@ -48,10 +52,13 @@ watch(
   },
   { deep: true }
 )
+// 父级负责持久化样式并触发图表重绘，这里只派发变更数据。
 const emit = defineEmits(['onBasicStyleChange', 'onMiscChange'])
+// requestData 表示该样式变更是否需要重新查询数据，而不只是重绘图形。
 const changeBasicStyle = (prop?: string, requestData = false) => {
   emit('onBasicStyleChange', { data: state.basicStyleForm, requestData }, prop)
 }
+// 左轴不透明度限制在 0 到 100，非法输入回退到已有配置值。
 const onAlphaChange = v => {
   const _v = parseInt(v)
   if (_v >= 0 && _v <= 100) {
@@ -71,6 +78,7 @@ const onAlphaChange = v => {
   changeBasicStyle('alpha')
 }
 
+// 柱宽比例限制在 1 到 100，避免极端输入导致柱形不可见或溢出。
 const onColumnWidthRatioChange = v => {
   const _v = parseInt(v)
   if (_v >= 1 && _v <= 100) {
@@ -81,12 +89,14 @@ const onColumnWidthRatioChange = v => {
     state.basicStyleForm.columnWidthRatio = 100
   } else {
     const basicStyle = cloneDeep(props.chart.customAttr.basicStyle)
+    // 非数字输入恢复为图表当前配置，避免把 NaN 写入样式表单。
     const oldForm = defaultsDeep(basicStyle, cloneDeep(DEFAULT_BASIC_STYLE)) as ChartBasicStyle
     state.basicStyleForm.columnWidthRatio = oldForm.columnWidthRatio
   }
   changeBasicStyle('columnWidthRatio')
 }
 
+// 右轴不透明度使用独立字段，校验规则与左轴保持一致。
 const onSubAlphaChange = v => {
   const _v = parseInt(v)
   if (_v >= 0 && _v <= 100) {
@@ -97,6 +107,7 @@ const onSubAlphaChange = v => {
     state.basicStyleForm.subAlpha = 100
   } else {
     const basicStyle = cloneDeep(props.chart.customAttr.basicStyle)
+    // 右轴透明度输入非法时，同样回退到历史配置中的 subAlpha。
     const oldForm = defaultsDeep(
       basicStyle,
       cloneDeep(CHART_MIX_DEFAULT_BASIC_STYLE)
@@ -106,16 +117,19 @@ const onSubAlphaChange = v => {
   changeBasicStyle('subAlpha')
 }
 
+// 初始化时合并默认值和历史配置，保证旧图表也能进入新版样式面板。
 const init = () => {
   const basicStyle = cloneDeep(props.chart.customAttr.basicStyle)
   const miscStyle = cloneDeep(props.chart.customAttr.misc)
   configCompat(basicStyle)
+  // 双轴图使用混合图默认样式补齐左右轴独立字段。
   state.basicStyleForm = defaultsDeep(
     basicStyle,
     cloneDeep(CHART_MIX_DEFAULT_BASIC_STYLE)
   ) as MixChartBasicStyle
   state.miscForm = defaultsDeep(miscStyle, cloneDeep(DEFAULT_MISC)) as ChartMiscAttr
   if (!state.customColor) {
+    // 首次进入面板默认选中第一组配色，后续切换时保留用户当前位置。
     state.customColor = state.basicStyleForm.colors[0]
     state.colorIndex = 0
   }
@@ -123,15 +137,17 @@ const init = () => {
     props.chart.type.includes('-stack') &&
     state.basicStyleForm.radiusColumnBar === 'topRoundAngle'
   ) {
+    // 堆叠图不支持顶部圆角，历史配置降级为普通圆角。
     state.basicStyleForm.radiusColumnBar = 'roundAngle'
   }
 }
+// 兼容旧版本 suspension 字段到 showZoom，避免旧图表丢失缩放按钮状态。
 const configCompat = (basicStyle: ChartBasicStyle) => {
-  // 悬浮改为图例和缩放按钮
   if (basicStyle.suspension === false && basicStyle.showZoom === undefined) {
     basicStyle.showZoom = false
   }
 }
+// 折线点形状选项与 G2Plot 支持的 marker 类型保持一致。
 const symbolOptions = [
   { name: t('chart.line_symbol_circle'), value: 'circle' },
   { name: t('chart.line_symbol_rect'), value: 'square' },
@@ -139,6 +155,7 @@ const symbolOptions = [
   { name: t('chart.line_symbol_diamond'), value: 'diamond' }
 ]
 
+// 保存当前激活的左右轴样式页签，避免切换配置时重置用户正在编辑的位置。
 const activeName = ref<'left' | 'right'>('left')
 
 onMounted(() => {
@@ -149,6 +166,7 @@ onMounted(() => {
   <el-form size="small" style="width: 100%">
     <el-tabs v-model="activeName" id="axis-tabs" stretch>
       <el-tab-pane :label="t('chart.yAxisLeft')" name="left">
+        <!-- 左轴承载柱形或左侧折线样式，具体控件由图表类型和 propertyInner 共同决定。 -->
         <template v-if="showProperty('colors')">
           <custom-color-style-select
             :model-value="state"
@@ -348,6 +366,7 @@ onMounted(() => {
         </template>
       </el-tab-pane>
       <el-tab-pane :label="t('chart.yAxisRight')" name="right">
+        <!-- 右轴只维护右侧折线样式，字段命名使用 sub/line 前缀和左轴区分。 -->
         <template v-if="showProperty('colors')">
           <custom-color-style-select
             sub
@@ -476,11 +495,13 @@ onMounted(() => {
 }
 
 .color-picker-style {
+  /* 颜色浮层需要高于右侧属性面板的折叠内容。 */
   cursor: pointer;
   z-index: 1003;
 }
 
 .alpha-setting {
+  /* 透明度和柱宽比例共用横向滑块布局。 */
   display: flex;
   width: 100%;
 
@@ -533,6 +554,7 @@ onMounted(() => {
 }
 .basic-input-number {
   :deep(input) {
+    /* 百分比输入框隐藏浏览器数字步进按钮，保持和滑块组合控件一致。 */
     -webkit-appearance: none;
     -moz-appearance: textfield;
 
@@ -552,6 +574,7 @@ onMounted(() => {
   }
 }
 #axis-tabs {
+  /* 页签上移贴合编辑器分组标题，减少双轴面板的垂直占用。 */
   margin-top: -16px;
   --ed-tabs-header-height: 34px;
 

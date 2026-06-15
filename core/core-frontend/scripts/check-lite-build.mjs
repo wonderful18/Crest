@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..')
 const repoRoot = path.resolve(root, '..', '..')
 const dist = path.join(root, 'dist')
 
+// 内部轻量构建不应包含的文件名特征
 const blockedFileNamePatterns = [
   /mapbox/i,
   /maplibre/i,
@@ -14,6 +15,7 @@ const blockedFileNamePatterns = [
   /l7plot/i,
   /(^|[-_./])l7([-_./]|$)/i
 ]
+// 内部轻量构建不应包含的源码或产物内容特征
 const blockedContentPatterns = [
   /mapbox-gl/i,
   /maplibre-gl/i,
@@ -22,6 +24,7 @@ const blockedContentPatterns = [
   /@antv\/l7plot/i
 ]
 
+// 递归遍历目录下全部文件
 function walk(dir, result = []) {
   for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
     const fullPath = path.join(dir, item.name)
@@ -34,12 +37,14 @@ function walk(dir, result = []) {
   return result
 }
 
+// 输出检查失败信息并终止进程
 function fail(message, details = []) {
   console.error(message)
   details.slice(0, 20).forEach(item => console.error(` - ${path.relative(root, item)}`))
   process.exit(1)
 }
 
+// 断言指定路径不存在
 function assertMissing(relativePath, message) {
   const fullPath = path.join(repoRoot, relativePath)
   if (fs.existsSync(fullPath)) {
@@ -47,6 +52,7 @@ function assertMissing(relativePath, message) {
   }
 }
 
+// 断言指定文件或目录内容不包含目标模式
 function assertFileDoesNotContain(relativePath, patterns, message) {
   const fullPath = path.join(repoRoot, relativePath)
   if (!fs.existsSync(fullPath)) {
@@ -72,6 +78,7 @@ function assertFileDoesNotContain(relativePath, patterns, message) {
   }
 }
 
+// 断言指定文件包含所有目标模式
 function assertFileContains(relativePath, patterns, message) {
   const fullPath = path.join(repoRoot, relativePath)
   if (!fs.existsSync(fullPath)) {

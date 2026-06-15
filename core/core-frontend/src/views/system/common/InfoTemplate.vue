@@ -105,6 +105,7 @@ import useClipboard from 'vue-clipboard3'
 import { ElMessage } from 'element-plus-secondary'
 const { toClipboard } = useClipboard()
 const { t } = useI18n()
+// 接收设置项、标题、操作按钮和复制配置
 const props = defineProps({
   settingKey: {
     type: String,
@@ -139,17 +140,21 @@ const props = defineProps({
     default: () => []
   }
 })
+// 当前执行周期单位文案
 const executeTime = ref(t('system.and_0_seconds'))
+// 当前信息卡片标题
 const curTitle = computed(() => {
   return props.settingTitle || t('system.basic_settings')
 })
 const labelFallback: Record<string, string> = {
   'setting_basic.siteTitle': '系统名称'
 }
+// 获取设置项展示标签
 const settingLabel = (key: string) => {
   const label = t(key)
   return label === key ? labelFallback[key] || key : label
 }
+// 复制设置项值
 const copyVal = async val => {
   try {
     await toClipboard(val)
@@ -158,6 +163,7 @@ const copyVal = async val => {
     ElMessage.warning(t('common.copy_unsupported'), e)
   }
 }
+// 加载可展示的设置项列表
 const loadList = () => {
   settingList.value = []
   if (props.settingData?.length) {
@@ -171,6 +177,7 @@ const loadList = () => {
   }
 }
 
+// 将执行周期单位值转换为文案
 const getExecuteTime = val => {
   const options = [
     { value: 'minute', label: t('system.time_0_seconds') },
@@ -179,17 +186,22 @@ const getExecuteTime = val => {
   return options.find(item => item.value === val)?.label ?? options[0].label
 }
 
+// 判断设置项值是否需要宽布局
 const isLongValue = val => `${val ?? ''}`.length > 56
 
+// 当前展示的设置项列表
 const settingList = ref([] as SettingRecord[])
 
+// 初始化设置项展示数据
 const init = () => {
   if (props.settingData?.length) {
     loadList()
   }
 }
+// 密码字段显隐状态
 const pwdItem = ref({})
 
+// 初始化密码字段隐藏状态
 const formatPwd = () => {
   settingList.value.forEach(setting => {
     if (setting.type === 'pwd') {
@@ -198,7 +210,9 @@ const formatPwd = () => {
   })
 }
 
+// 设置项提示文案映射
 const tooltipItem = ref({})
+// 初始化设置项提示文案
 const formatLabel = () => {
   if (props.labelTooltips?.length) {
     props.labelTooltips.forEach(tooltip => {
@@ -207,15 +221,19 @@ const formatLabel = () => {
   }
 }
 
+// 切换密码字段显隐状态
 const switchPwd = (pkey: string) => {
   pwdItem.value[pkey]['hidden'] = !pwdItem.value[pkey]['hidden']
 }
 
+// 定义编辑和校验事件
 const emits = defineEmits(['edit', 'check'])
+// 触发编辑事件
 const edit = () => {
   emits('edit')
 }
 
+// 触发校验事件
 const check = () => {
   emits('check')
 }

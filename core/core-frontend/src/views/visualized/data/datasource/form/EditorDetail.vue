@@ -26,6 +26,7 @@ import Cron from '@/components/cron/src/Cron.vue'
 import { ComponentPublicInstance } from 'vue'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 const { t } = useI18n()
+// 数据源编辑详情组件入参，承接父组件传入的表单模型、步骤和插件上下文
 const prop = defineProps({
   form: {
     required: false,
@@ -75,12 +76,16 @@ const prop = defineProps({
 
 const { form, activeStep, isSupportSetKey, pluginDs, pluginIndex, isPlugin } = toRefs(prop)
 
+// API 表卡片弹窗引用集合，用于删除确认后关闭对应 Popover
 const state = reactive({
   itemRef: []
 })
 
+// 当前数据源可选 Schema 列表，由连接配置校验通过后从后端加载
 const schemas = ref([])
+// 目标字符集快捷选项，模板中用于常用编码切换
 const targetCharset = ref(['GBK', 'UTF-8'])
+// 数据库连接字符集候选值
 const charset = ref([
   'US7ASCII',
   'GBK',
@@ -93,9 +98,12 @@ const charset = ref([
   'EUC_KR'
 ])
 
+// 数据库连接相关请求加载状态
 const loading = ref(false)
+// 非 API 数据源基础表单引用
 const dsForm = ref<FormInstance>()
 
+// Cron 编辑器是否处于可编辑状态，配合同步频率控制
 const cronEdit = ref(true)
 
 const defaultRule = {
@@ -114,10 +122,14 @@ const defaultRule = {
   ]
 }
 
+// 当前数据源表单校验规则，按数据源类型动态追加连接字段规则
 const rule = ref<FormRules>(cloneDeep(defaultRule))
+// API 表编辑弹窗标题
 const api_table_title = ref('')
+// API 表编辑抽屉组件引用
 const editApiItem = ref()
 const defaultApiItem = {
+  // API 表默认结构覆盖请求、分页、鉴权和字段列表，新增表时由抽屉继续补齐。
   name: '',
   displayTableName: '',
   url: '',
@@ -148,11 +160,13 @@ const defaultApiItem = {
   jsonPath: ''
 }
 let time
+// 初始化数据源表单，按数据源类型补齐默认连接配置或 API 同步配置
 const initForm = (type, pluginDsList, indexPlugin, isPluginDs) => {
   pluginDs.value = pluginDsList
   pluginIndex.value = indexPlugin
   isPlugin.value = isPluginDs
   if (!type.startsWith('API')) {
+    // 非 API 数据源按连接表单初始化，兼容模式默认只读以适配企业连接策略。
     form.value.configuration = {
       dataBase: '',
       jdbcUrl: '',
@@ -178,6 +192,7 @@ const initForm = (type, pluginDsList, indexPlugin, isPluginDs) => {
     setRules()
   }
   if (type.startsWith('API')) {
+    // API 数据源默认启用全量同步和分钟级简单周期，减少新建后的必填项数量。
     form.value.syncSetting = {
       updateType: 'all_scope',
       syncRate: 'SIMPLE_CRON',
@@ -201,6 +216,7 @@ const initForm = (type, pluginDsList, indexPlugin, isPluginDs) => {
   }, 0)
 }
 
+// 判断当前是否需要展示数据库连接配置，排除 API 类数据源
 const notapiexcelconfig = computed(() => form.value && !form.value.type.startsWith('API'))
 
 const authMethodList = [
@@ -214,6 +230,7 @@ const authMethodList = [
   }
 ]
 
+// SSH 主机校验，仅在启用 SSH 隧道时要求填写
 const validateSshHost = (_: any, value: any, callback: any) => {
   if ((value === undefined || value === null || value === '') && form.value.configuration.useSSH) {
     callback(new Error(t('data_source.cannot_be_empty')))
@@ -221,6 +238,7 @@ const validateSshHost = (_: any, value: any, callback: any) => {
   return callback()
 }
 
+// SSH 端口校验，仅在启用 SSH 隧道时要求填写
 const validateSshPort = (_: any, value: any, callback: any) => {
   if ((value === undefined || value === null || value === '') && form.value.configuration.useSSH) {
     callback(new Error(t('data_source.cannot_be_empty_de')))
@@ -228,6 +246,7 @@ const validateSshPort = (_: any, value: any, callback: any) => {
   return callback()
 }
 
+// SSH 用户名校验，仅在启用 SSH 隧道时要求填写
 const validateSshUserName = (_: any, value: any, callback: any) => {
   if ((value === undefined || value === null || value === '') && form.value.configuration.useSSH) {
     callback(new Error(t('data_source.cannot_be_empty_de_name')))
@@ -235,6 +254,7 @@ const validateSshUserName = (_: any, value: any, callback: any) => {
   return callback()
 }
 
+// SSH 密码校验，仅在 SSH 密码认证模式下要求填写
 const validateSshPassword = (_: any, value: any, callback: any) => {
   if (
     (value === undefined || value === null || value === '') &&
@@ -246,6 +266,7 @@ const validateSshPassword = (_: any, value: any, callback: any) => {
   return callback()
 }
 
+// SSH 私钥校验，仅在 SSH 私钥认证模式下要求填写
 const validateSshkey = (_: any, value: any, callback: any) => {
   if (
     (value === null || value === '' || value === undefined) &&
@@ -257,6 +278,7 @@ const validateSshkey = (_: any, value: any, callback: any) => {
   return callback()
 }
 
+// 读取 SSL 证书或密钥文件内容，并写入对应连接配置字段
 const handleSSLFileChange = (e: Event, field: 'sslCA' | 'sslCert' | 'sslKey') => {
   const target = e.target as HTMLInputElement
   const file = target?.files?.[0]
@@ -272,10 +294,14 @@ const handleSSLFileChange = (e: Event, field: 'sslCA' | 'sslCert' | 'sslKey') =>
   target.value = ''
 }
 
+// SSL CA 文件输入框引用
 const sslCAInput = ref<HTMLInputElement>()
+// SSL 客户端证书文件输入框引用
 const sslCertInput = ref<HTMLInputElement>()
+// SSL 客户端私钥文件输入框引用
 const sslKeyInput = ref<HTMLInputElement>()
 
+// 根据目标字段触发隐藏文件输入框，保持文件选择入口统一
 const chooseSSLFile = (field: 'sslCA' | 'sslCert' | 'sslKey') => {
   if (field === 'sslCA') {
     sslCAInput.value?.click()
@@ -286,7 +312,9 @@ const chooseSSLFile = (field: 'sslCA' | 'sslCert' | 'sslKey') => {
   }
 }
 
+// 根据数据源类型生成连接配置校验规则，并合并基础名称规则
 const setRules = () => {
+  // 连接校验规则按字段路径组织，便于 Element Form 直接定位嵌套配置项。
   const configRules = {
     'configuration.jdbcUrl': [
       {
@@ -379,6 +407,7 @@ const setRules = () => {
     'configuration.sshKey': [{ validator: validateSshkey, trigger: 'blur' }]
   }
   if (['oracle', 'sqlServer', 'pg', 'redshift', 'db2'].includes(form.value.type)) {
+    // 需要显式 Schema 的数据库在连接通过后再让用户选择，避免默认库名和 Schema 混用。
     configRules['configuration.schema'] = [
       {
         required: true,
@@ -410,6 +439,7 @@ const setRules = () => {
   rule.value = { ...cloneDeep(configRules), ...cloneDeep(defaultRule) }
 }
 
+// 数据源类型变化后重建非 API 连接表单规则
 watch(
   () => form.value.type,
   val => {
@@ -423,6 +453,7 @@ watch(
   }
 )
 
+// 步骤变化时同步 Cron 编辑器显示状态
 watch(
   () => activeStep.value,
   () => {
@@ -430,12 +461,15 @@ watch(
   }
 )
 
+// 收集 API 表卡片 Popover 引用，便于按索引关闭删除确认层
 const setItemRef = (ele: ComponentPublicInstance | null | Element) => {
   state.itemRef.push(ele)
 }
 
+// 复制 API 表配置，并生成不冲突的副本名称和流水号
 const copyItem = (item?: ApiConfiguration) => {
   const newItem = JSON.parse(JSON.stringify(item))
+  // 副本清空展示表名并重新分配流水号，避免与原接口表冲突。
   newItem.displayTableName = ''
   newItem.serialNumber =
     form.value.apiConfiguration[form.value.apiConfiguration.length - 1].serialNumber + 1
@@ -443,6 +477,7 @@ const copyItem = (item?: ApiConfiguration) => {
   const reg = new RegExp(item.name + '_copy_' + '([0-9]*)', 'gim')
   let number = 0
   for (let i = 1; i < form.value.apiConfiguration.length; i++) {
+    // 复制名称按当前已有副本递增，避免保存时出现接口表名冲突。
     const match = form.value.apiConfiguration[i].name.match(reg)
     if (match !== null) {
       const num = match[0].substring(
@@ -460,11 +495,13 @@ const copyItem = (item?: ApiConfiguration) => {
   form.value.apiConfiguration.push(newItem)
   ElMessage.success(t('datasource.success_copy'))
 }
+// 打开 API 表或参数配置编辑器，新增时按当前页签生成默认配置
 const addApiItem = item => {
   let apiItem = null
   let editItem = false
   api_table_title.value = t('datasource.data_table')
   if (item) {
+    // 编辑时使用副本打开抽屉，只有确认返回后才覆盖原配置。
     apiItem = cloneDeep(item)
     editItem = true
   } else {
@@ -494,38 +531,49 @@ const addApiItem = item => {
   })
 }
 
+// API 配置当前页签，区分数据表接口和接口参数
 const activeName = ref('table')
+// 数据源优先级设置入口开关，由父级或插件配置控制展示
 const showPriority = ref(false)
+// SSH 配置入口开关，由父级或插件配置控制展示
 const showSSH = ref(false)
 
+// 删除 API 表配置，并关闭对应删除确认层
 const deleteItem = (item, idx) => {
   form.value.apiConfiguration.splice(form.value.apiConfiguration.indexOf(item), 1)
   cancelItem(idx)
 }
+// 关闭指定 API 表卡片的删除确认层
 const cancelItem = (index: number | string) => {
   state.itemRef[index].hide()
 }
+// 暴露非 API 数据源表单校验方法给父组件保存流程
 const submitForm = () => {
   dsForm.value.clearValidate()
   return dsForm.value.validate
 }
 
+// 暴露 API 数据源同步配置表单校验方法给父组件保存流程
 const submitApiForm = () => {
   dsApiForm.value.clearValidate()
   return dsApiForm.value.validate
 }
 
+// 清理非 API 数据源表单校验状态
 const clearForm = () => {
   return dsForm.value.clearValidate()
 }
 
+// 重置非 API 数据源表单字段
 const resetForm = () => {
   dsForm.value.resetFields()
 }
 
+// 接收 API 编辑器返回的表配置或参数配置，并按流水号新增或覆盖
 const returnItem = apiItem => {
   let find = false
   if (apiItem.type !== 'params') {
+    // 数据表接口按 serialNumber 覆盖，新增接口保持卡片顺序追加。
     apiItem.status = 'Success'
     for (let i = 0; i < form.value.apiConfiguration.length; i++) {
       if (form.value.apiConfiguration[i].serialNumber === apiItem.serialNumber) {
@@ -538,6 +586,7 @@ const returnItem = apiItem => {
       form.value.apiConfiguration.push(apiItem)
     }
   } else {
+    // 参数接口分组单独维护，当前激活分组被更新时同步右侧字段表格。
     if (form.value.paramsConfiguration) {
       for (let i = 0; i < form.value.paramsConfiguration.length; i++) {
         if (form.value.paramsConfiguration[i].serialNumber === apiItem.serialNumber) {
@@ -558,8 +607,10 @@ const returnItem = apiItem => {
   }
 }
 
+// Cron 表达式编辑器显示状态，仅在自定义 Cron 同步频率下打开
 const showCron = ref(false)
 
+// 同步频率变化时重置结束条件和 Cron 表达式默认值
 const onRateChange = () => {
   if (form.value.syncSetting.syncRate === 'SIMPLE') {
     form.value.syncSetting.endLimit = 0
@@ -578,8 +629,10 @@ const onRateChange = () => {
   })
 }
 
+// 简单周期配置变化时校验取值范围，并同步生成后端 Cron 表达式
 const onSimpleCronChange = () => {
   if (form.value.syncSetting.simpleCronType === 'minute') {
+    // 简单分钟周期限制在 1 到 59，避免生成无效 Cron 表达式。
     if (form.value.syncSetting.simpleCronValue < 1 || form.value.syncSetting.simpleCronValue > 59) {
       ElMessage.warning(t('cron.minute_limit'))
       form.value.syncSetting.simpleCronValue = 59
@@ -588,6 +641,7 @@ const onSimpleCronChange = () => {
     return
   }
   if (form.value.syncSetting.simpleCronType === 'hour') {
+    // 小时周期限制在 1 到 23，避免跨天语义与天周期混淆。
     if (form.value.syncSetting.simpleCronValue < 1 || form.value.syncSetting.simpleCronValue > 23) {
       ElMessage.warning(t('cron.hour_limit'))
       form.value.syncSetting.simpleCronValue = 23
@@ -596,6 +650,7 @@ const onSimpleCronChange = () => {
     return
   }
   if (form.value.syncSetting.simpleCronType === 'day') {
+    // 天周期限制在 1 到 31，和 Cron 日字段取值范围保持一致。
     if (form.value.syncSetting.simpleCronValue < 1 || form.value.syncSetting.simpleCronValue > 31) {
       ElMessage.warning(t('cron.day_limit'))
       form.value.syncSetting.simpleCronValue = 31
@@ -605,14 +660,17 @@ const onSimpleCronChange = () => {
   }
 }
 
+// Schema 读取请求状态，避免重复点击获取 Schema
 const showSchema = ref(false)
 
+// 校验连接配置后获取数据库 Schema 列表，配置会先 Base64 编码后提交
 const getDsSchema = () => {
   showSchema.value = true
   const validateFrom = dsForm.value.validate
   validateFrom(val => {
     showSchema.value = false
     if (val) {
+      // 连接配置包含敏感字段，提交前统一编码，后端再按数据源类型解析。
       const request = JSON.parse(JSON.stringify(form.value))
       request.configuration = Base64.encode(JSON.stringify(request.configuration))
       loading.value = true
@@ -631,10 +689,12 @@ const getDsSchema = () => {
   })
 }
 
+// 单独触发 Schema 字段校验，供 Schema 下拉变化后刷新校验结果
 const validatorSchema = () => {
   dsForm.value.validateField('configuration.schema')
 }
 
+// API 数据源同步配置表单引用
 const dsApiForm = ref()
 const apiRule = {
   'syncSetting.updateType': [
@@ -673,16 +733,22 @@ const apiRule = {
     }
   ]
 }
+// 参数字段重命名弹窗显示状态
 const dialogEditParams = ref(false)
+// 接口参数分组重命名弹窗显示状态
 const dialogRenameApi = ref(false)
+// 当前选中的接口参数分组名称
 const activeParamsName = ref('')
+// 当前选中的接口参数分组流水号
 const activeParamsID = ref(0)
+// 参数字段重命名表单对象
 const paramsObj = ref({
   name: '',
   id: 1,
   fieldType: 0
 })
 
+// 接口参数分组重命名表单对象
 const apiObj = ref({
   name: '',
   serialNumber: 1
@@ -718,15 +784,19 @@ const apiObjRules = {
     }
   ]
 }
+// 切换当前接口参数分组，并刷新右侧参数字段列表
 const setActiveName = val => {
   gridData.value = val.fields
   activeParamsName.value = val.name
   activeParamsID.value = val.serialNumber
 }
 
+// 参数字段重命名表单引用
 const paramsObjRef = ref()
+// 接口参数分组重命名表单引用
 const apiObjRef = ref()
 
+// 保存参数字段名称修改，并同步当前表格数据
 const saveParamsObj = () => {
   paramsObjRef.value.validate(result => {
     if (result) {
@@ -739,6 +809,7 @@ const saveParamsObj = () => {
   })
 }
 
+// 保存接口参数分组名称修改，并同步参数分组列表
 const saveApiObj = () => {
   apiObjRef.value.validate(result => {
     if (result) {
@@ -752,15 +823,19 @@ const saveApiObj = () => {
   })
 }
 
+// 关闭参数字段重命名弹窗
 const paramsResetForm = () => {
   dialogEditParams.value = false
 }
 
+// 关闭接口参数分组重命名弹窗
 const apiResetForm = () => {
   dialogRenameApi.value = false
 }
 
+// 当前接口参数分组下的字段列表
 const gridData = ref([])
+// 处理接口参数分组的重命名、删除和编辑命令
 const handleApiParams = (cmd: string, data) => {
   if (cmd === 'rename') {
     dialogRenameApi.value = true
@@ -791,6 +866,7 @@ const handleApiParams = (cmd: string, data) => {
   }
 }
 
+// 删除接口参数字段，并从当前表格数据中移除
 const delParams = data => {
   ElMessageBox.confirm(t('data_source.sure_to_delete'), {
     confirmButtonType: 'danger',
@@ -1497,9 +1573,10 @@ defineExpose({
             </el-row>
           </template>
 
-          <!--    数据填报      -->
+          <!-- 连接池和查询超时用于控制后端数据源连接资源，保存前由连接表单统一校验。 -->
         </template>
       </el-form>
+      <!-- API 数据源同步设置区只在第二步展示，非 API 数据源由后端连接任务独立处理。 -->
       <el-form
         ref="dsApiForm"
         :model="form"

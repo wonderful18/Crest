@@ -1,53 +1,66 @@
 import type { ManipulateType } from 'dayjs'
 import dayjs from 'dayjs'
+// 获取今年起始时间
 function getThisYear() {
   return new Date(dayjs().startOf('year').format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取去年起始时间
 function getLastYear() {
   return new Date(dayjs().subtract(1, 'year').startOf('year').format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取明年起始时间
 function getNextYear() {
   return new Date(dayjs().add(1, 'year').startOf('year').format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取本月起始时间
 function getThisMonth() {
   return new Date(dayjs().startOf('month').format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取指定时间单位的上一周期起始时间
 function getLastStart(val = 'month' as ManipulateType) {
   return new Date(dayjs().subtract(1, val).startOf(val).format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取上月起始时间
 function getLastMonth() {
   return getLastStart()
 }
 
+// 获取下月起始时间
 function getNextMonth() {
   return new Date(dayjs().add(1, 'month').startOf('month').format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取今天起始时间
 function getToday() {
   return new Date(dayjs().startOf('day').format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取昨天起始时间
 function getYesterday() {
   return new Date(dayjs().subtract(1, 'day').startOf('day').format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取本月月初时间
 function getMonthBeginning() {
   return new Date(dayjs().startOf('month').format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取本月月末时间
 function getMonthEnd() {
   return new Date(dayjs().endOf('month').format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取今年年初时间
 function getYearBeginning() {
   return new Date(dayjs().startOf('year').format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 根据配置转换年或月范围边界
 function getYearMonthRange(result, sort, type) {
   const [direction, scene] = (sort || '').split('-')
   if (direction === 'start') {
@@ -61,6 +74,7 @@ function getYearMonthRange(result, sort, type) {
   }
 }
 
+// 根据相对时间配置生成自定义时间点
 function getCustomTime(
   timeNum: number,
   timeType: ManipulateType | 'date',
@@ -91,6 +105,7 @@ function getCustomTime(
   return new Date(result.startOf(k as ManipulateType).format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 根据动态时间范围配置生成查询时间区间
 function getDynamicRange({
   relativeToCurrent,
   timeNum,

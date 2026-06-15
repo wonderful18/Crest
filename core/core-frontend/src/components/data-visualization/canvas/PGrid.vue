@@ -11,6 +11,7 @@
 <script setup lang="ts">
 import { computed, PropType, toRefs } from 'vue'
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   positionBox: {
     type: Array as PropType<Array<Array<Record<string, any>>>>
@@ -22,6 +23,7 @@ const props = defineProps({
 
 const { positionBox, matrixStyle } = toRefs(props)
 
+// 根据当前配置计算界面样式
 const classInfo = computed(() => {
   return {
     width: matrixStyle.value.width + 'px',

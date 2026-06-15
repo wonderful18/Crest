@@ -14,6 +14,9 @@ import java.util.Locale;
 
 @RestController
 @RequestMapping("/data-portal")
+/**
+ * 数据门户接口控制器，提供资源概览、列表和详情查询
+ */
 public class DataPortalServer {
 
     private static final int MAX_PAGE_SIZE = 100;
@@ -27,6 +30,9 @@ public class DataPortalServer {
     @Resource
     private CoreOptRecentManage coreOptRecentManage;
 
+    /**
+     * 查询当前用户可访问资源的门户概览
+     */
     @GetMapping("/overview")
     public DataPortalOverviewVO overview() {
         Long uid = dataPortalPermissionManage.currentUid();
@@ -50,6 +56,9 @@ public class DataPortalServer {
         return overview == null ? new DataPortalOverviewVO() : overview;
     }
 
+    /**
+     * 分页查询当前用户可访问的数据门户资源
+     */
     @PostMapping("/resources")
     public DataPortalPageVO resources(@RequestBody(required = false) DataPortalResourceRequest request) {
         Long uid = dataPortalPermissionManage.currentUid();
@@ -148,6 +157,9 @@ public class DataPortalServer {
         return page;
     }
 
+    /**
+     * 查询单个门户资源详情并记录最近访问
+     */
     @GetMapping("/resource/{id}")
     public DataPortalResourceVO resource(@PathVariable("id") Long id) {
         if (id == null) {
@@ -227,6 +239,9 @@ public class DataPortalServer {
         return resource;
     }
 
+    /**
+     * 规范化门户资源查询参数
+     */
     private DataPortalResourceRequest normalizeRequest(DataPortalResourceRequest request) {
         DataPortalResourceRequest normalized = request == null ? new DataPortalResourceRequest() : request;
         int page = normalized.getPage() == null || normalized.getPage() < 1 ? 1 : normalized.getPage();
@@ -258,6 +273,9 @@ public class DataPortalServer {
         return normalized;
     }
 
+    /**
+     * 构造门户资源查询的基础 SQL 和参数
+     */
     private QueryParts buildBaseQuery(Long uid, DataPortalResourceRequest request) {
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder("""
@@ -295,6 +313,9 @@ public class DataPortalServer {
         return new QueryParts(sql.toString(), args);
     }
 
+    /**
+     * 复制查询条件并清空资源类型，用于统计全部类型数量
+     */
     private DataPortalResourceRequest copyWithoutType(DataPortalResourceRequest source) {
         DataPortalResourceRequest copy = new DataPortalResourceRequest();
         copy.setKeyword(source.getKeyword());
@@ -305,6 +326,9 @@ public class DataPortalServer {
         return copy;
     }
 
+    /**
+     * 根据查询来源生成排序表达式
+     */
     private String orderExpression(DataPortalResourceRequest request, String direction) {
         if (request != null && "store".equals(request.getQueryFrom())) {
             return "wfr.time " + direction;
@@ -315,6 +339,9 @@ public class DataPortalServer {
         return "deprecated ASC, certified DESC, recommended DESC, v.update_time " + direction;
     }
 
+    /**
+     * 记录门户资源最近访问
+     */
     private void recordRecent(DataPortalResourceVO resource) {
         coreOptRecentManage.saveOpt(
                 resource.getId(),
@@ -323,6 +350,9 @@ public class DataPortalServer {
         );
     }
 
+    /**
+     * 门户资源查询 SQL 片段和参数
+     */
     private static class QueryParts {
         private String fromWhere;
         private final List<Object> args;

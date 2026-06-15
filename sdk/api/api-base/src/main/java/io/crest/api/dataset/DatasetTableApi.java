@@ -13,6 +13,7 @@ import java.util.Map;
 
 @Tag(name = "数据集管理:表")
 @ApiSupport(order = 977)
+// 定义模块接口契约和数据传输结构
 public interface DatasetTableApi {
 
     /**

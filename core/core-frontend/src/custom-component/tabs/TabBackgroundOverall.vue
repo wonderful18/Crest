@@ -2,8 +2,10 @@
 import BackgroundOverallCommon from '@/components/visualization/component-background/BackgroundOverallCommon.vue'
 import { ref, toRefs } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
+// 定义组件向父级抛出的事件
 const emits = defineEmits(['onTitleBackgroundChange'])
 const { t } = useI18n()
+// 记录当前选中项和交互焦点
 const activeName = ref('activeBackground')
 
 const props = withDefaults(
@@ -19,6 +21,7 @@ const props = withDefaults(
 
 const { element } = toRefs(props)
 
+// 处理界面事件并同步业务状态
 const onTitleBackgroundChange = (params, paramsName) => {
   // do change
   if (params) {

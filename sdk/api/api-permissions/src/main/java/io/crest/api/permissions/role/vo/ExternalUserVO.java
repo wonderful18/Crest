@@ -10,6 +10,7 @@ import java.io.Serializable;
 
 @Schema(description = "组织外用户VO")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class ExternalUserVO implements Serializable {
     @Serial
     private static final long serialVersionUID = -5244308239452360019L;

@@ -1,5 +1,6 @@
 import { getCSSVariable } from '@/utils/color'
 
+// 读取当前业务数据并返回处理结果
 export function getItemType(dimensionData, quotaData, item) {
   // Check whether the current view is in template status
   // ( dimensionData and quotaData have no data). If yes, return 'success' directly
@@ -73,6 +74,7 @@ export function getItemType(dimensionData, quotaData, item) {
   }
 }
 
+// 读取当前业务数据并返回处理结果
 export function getOriginFieldName(dimensionList, quotaList, field) {
   let originName = ''
   for (let i = 0; i < dimensionList.length; i++) {
@@ -92,6 +94,7 @@ export function getOriginFieldName(dimensionList, quotaList, field) {
   return originName
 }
 
+// 初始化组件状态和默认配置
 export function resetValueFormatter(item) {
   if (item) {
     item.formatterCfg = {

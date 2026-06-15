@@ -15,10 +15,13 @@ const interactiveStore = interactiveStoreWithOut()
 const permissionStore = usePermissionStoreWithOut()
 const requestStore = useRequestStoreWithOut()
 const { t } = useI18n()
+// 工作台资源统计由交互状态统一提供，权限和数量都从同一份数据派生。
 const busiDataMap = computed(() => interactiveStore.data)
 const { wsCache } = useCache()
 const router = useRouter()
+// 后台内打开保持当前窗口，门户或外部入口打开新窗口，避免打断用户当前上下文。
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
+// 快捷创建基础配置只描述入口形态，权限状态在 computed 中按接口数据补齐。
 const quickCreationBaseList = [
   {
     icon: '/svg/icon_dashboard.svg',
@@ -46,6 +49,7 @@ const quickCreationBaseList = [
   }
 ]
 
+// 合并快捷创建入口和权限状态，模板只消费可直接渲染的数据结构。
 const quickCreationList = computed(() =>
   quickCreationBaseList.map((item, index) => ({
     ...item,
@@ -54,10 +58,12 @@ const quickCreationList = computed(() =>
   }))
 )
 
+// 顶部统计只展示主要业务资源，过滤空数据避免接口未返回时出现占位卡片。
 const busiCountCardList = computed(() =>
   [0, 1, 2].map(index => busiDataMap.value[index]).filter(Boolean)
 )
 
+// 点击快捷入口前先检查创建权限，避免无权限用户触发无效路由跳转。
 const quickCreate = (flag: number, hasAuth: boolean) => {
   if (!hasAuth) {
     return
@@ -80,26 +86,31 @@ const quickCreate = (flag: number, hasAuth: boolean) => {
   }
 }
 
+// 仪表板创建沿用旧路由参数，兼容已有编辑器入口识别逻辑。
 const createPanel = () => {
   const baseUrl = '#/dashboard?opt=create'
   window.open(baseUrl, openType)
 }
 
+// 数据大屏创建需要进入画布编辑器，并通过 opt=create 初始化新资源。
 const createScreen = () => {
   const baseUrl = '#/dvCanvas?opt=create'
   window.open(baseUrl, openType)
 }
+// 数据集表单使用 router.resolve 生成完整 href，适配 hash 路由部署方式。
 const createDataset = () => {
   let routeData = router.resolve({
     path: '/dataset-form'
   })
   window.open(routeData.href, openType)
 }
+// 数据源创建仍使用列表页参数入口，保持与后台菜单行为一致。
 const createDatasource = () => {
   const baseUrl = '#/data/datasource?opt=create'
   window.open(baseUrl, openType)
 }
 
+// 统计树只以叶子资源作为趋势样本，父级目录不参与更新时间计算。
 const getLeafTimes = item => {
   const stack = [...(item?.treeNodes || [])]
   const times: number[] = []
@@ -118,6 +129,7 @@ const getLeafTimes = item => {
   return times
 }
 
+// 将资源更新时间压缩为 7 个采样点，用于左侧统计卡片的迷你趋势线。
 const getSparkValues = item => {
   const times = getLeafTimes(item).sort((a, b) => a - b)
   const total = Number(item?.leafNodeCount || times.length || 0)
@@ -128,6 +140,7 @@ const getSparkValues = item => {
   const min = times[0]
   const max = times[times.length - 1]
   if (min === max) {
+    // 所有资源时间相同时使用固定递增曲线，避免趋势线退化成一条直线。
     return [
       0,
       0,
@@ -141,6 +154,7 @@ const getSparkValues = item => {
 
   let cursor = 0
   return new Array(7).fill(0).map((_, index) => {
+    // 每个采样点统计落在当前时间阈值内的累计资源数。
     const threshold = min + ((max - min) / 6) * index
     while (cursor < times.length && times[cursor] <= threshold) {
       cursor += 1
@@ -149,6 +163,7 @@ const getSparkValues = item => {
   })
 }
 
+// 将趋势图数值映射到固定 46x18 视窗，保证不同卡片的折线尺度一致。
 const getSparkPoints = item => {
   const values = getSparkValues(item)
   const max = Math.max(...values)
@@ -163,6 +178,7 @@ const getSparkPoints = item => {
     .join(' ')
 }
 
+// 最后一个点用于绘制当前累计值标记，解析失败时回落到右侧中位坐标。
 const getSparkLastPoint = item => {
   const point = getSparkPoints(item).split(' ').pop() || '46,9'
   const [x, y] = point.split(',')
@@ -264,6 +280,7 @@ const getSparkLastPoint = item => {
 
 <style lang="less" scoped>
 .workbranch {
+  /* 工作台采用左侧资源概览、右侧常用入口的双栏布局。 */
   display: grid;
   grid-template-columns: clamp(320px, 18vw, 360px) minmax(0, 1fr);
   gap: 18px;
@@ -285,6 +302,7 @@ const getSparkLastPoint = item => {
   }
 
   .work-card {
+    /* 卡片统一使用浅边框和轻阴影，和门户首页资源卡视觉保持一致。 */
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: var(--workbranch-card-radius);
@@ -305,6 +323,7 @@ const getSparkLastPoint = item => {
     }
 
     .user-info {
+      /* 用户资料和资源统计放在同一张卡片内，减少首屏纵向跳动。 */
       display: flex;
       flex-direction: column;
       gap: 11px;
@@ -318,6 +337,7 @@ const getSparkLastPoint = item => {
       }
 
       .user-icon-container {
+        /* 头像右下角状态点仅表示当前登录态，不参与交互。 */
         position: relative;
         flex: none;
         width: 52px !important;
@@ -375,6 +395,7 @@ const getSparkLastPoint = item => {
       }
 
       .stat-item {
+        /* 资源统计行保持固定密度，便于快速比较不同资源数量。 */
         display: flex;
         align-items: center;
         gap: 10px;
@@ -438,6 +459,7 @@ const getSparkLastPoint = item => {
     }
 
     .quick-creation {
+      /* 快捷创建区域填满左侧剩余空间，入口数量变化时仍保持顶部对齐。 */
       display: flex;
       flex: 1;
       flex-direction: column;
@@ -463,6 +485,7 @@ const getSparkLastPoint = item => {
         margin-top: 14px;
 
         .item {
+          /* 入口卡片使用 accent 变量驱动悬浮态，保证图标色和边框反馈一致。 */
           position: relative;
           display: flex;
           align-items: center;
@@ -535,6 +558,7 @@ const getSparkLastPoint = item => {
           }
         }
         .quick-create-disabled {
+          /* 无权限入口保留位置但禁用交互，避免权限变化造成布局重排。 */
           cursor: not-allowed;
           color: var(--ed-color-info-light-5);
           background-color: var(--ed-color-info-light-9);
@@ -567,6 +591,7 @@ const getSparkLastPoint = item => {
   }
 
   .workbranch-content {
+    /* 右侧内容只负责滚动承载，避免外层页面出现双滚动条。 */
     min-width: 0;
     height: 100%;
     min-height: 0;
@@ -588,6 +613,7 @@ const getSparkLastPoint = item => {
 
 @media (max-width: 1180px) {
   .workbranch {
+    /* 中等宽度下压缩左栏，优先保留右侧资源表格的阅读空间。 */
     grid-template-columns: 300px minmax(0, 1fr);
     padding: 20px;
   }
@@ -595,6 +621,7 @@ const getSparkLastPoint = item => {
 
 @media (max-width: 900px) {
   .workbranch {
+    /* 窄屏改为单列布局，允许页面整体滚动。 */
     grid-template-columns: 1fr;
     height: auto;
     min-height: calc(100vh - 60px);

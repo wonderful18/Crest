@@ -14,6 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
+// 定义页面展示或接口返回的数据结构
 public class FreeRelationVO implements Serializable {
     @Serial
     private static final long serialVersionUID = 7087187548660162237L;

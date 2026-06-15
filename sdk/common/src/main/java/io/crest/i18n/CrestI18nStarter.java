@@ -8,12 +8,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Order(1000)
+// 定义当前业务对象的核心职责
 public class CrestI18nStarter implements ApplicationRunner {
 
     @Value("${crest.path.i18n:file:/opt/crest/data/i18n/custom}")
     private String i18nPath;
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void run(ApplicationArguments args) throws Exception {
         DynamicI18nUtils.addOrUpdate(i18nPath);
     }

@@ -16,6 +16,7 @@
     <el-form size="small" label-position="top" style="width: 100%">
       <el-row :gutter="8">
         <el-col :span="24">
+          <!-- 内边距支持统一、轴向和逐边三种简写模式，脚本会在提交前展开为四边值。 -->
           <el-form-item
             :label="t('visualization.inner_padding')"
             class="form-item w100"
@@ -113,6 +114,7 @@
       </el-row>
       <el-row :gutter="8">
         <el-col :span="24">
+          <!-- 圆角同样支持简写模式，保证画布背景和组件背景使用一致的配置结构。 -->
           <el-form-item
             :label="t('visualization.board_radio')"
             class="form-item w100"
@@ -209,6 +211,7 @@
         </el-col>
       </el-row>
       <template v-if="editPosition === 'canvas'">
+        <!-- 毛玻璃只在画布编辑位置开放，避免组件背景在普通卡片中过度消耗渲染性能。 -->
         <el-form-item class="form-item no-margin-bottom" :class="'form-item-' + themes">
           <el-checkbox
             size="small"
@@ -250,6 +253,7 @@
 
       <div class="indented-container">
         <div class="indented-item">
+          <!-- 背景色可独立开关，关闭时保留已选颜色，便于用户再次启用。 -->
           <el-form-item class="form-item" :class="'form-item-' + themes">
             <el-color-picker
               v-if="state.commonBackground.backgroundColor"
@@ -297,6 +301,7 @@
           </el-form-item>
         </div>
         <div class="indented-item" v-if="state.commonBackground.backgroundType === 'innerImage'">
+          <!-- 内置边框使用资源库预设，并允许单独调整边框着色。 -->
           <el-form-item class="form-item" :class="'form-item-' + themes">
             <el-color-picker
               v-model="state.commonBackground.innerImageColor"
@@ -353,6 +358,7 @@
             disabled: !state.commonBackground.backgroundImageEnable || state.uploadDisabled
           }"
         >
+          <!-- 外部图片走上传组件，文件列表只保存当前背景图的预览项。 -->
           <div class="avatar-uploader-container" :class="`img-area_${themes}`">
             <el-upload
               action=""
@@ -415,10 +421,14 @@ import ImgViewDialog from '@/custom-component/ImgViewDialog.vue'
 import BorderOptionPrefix from '@/components/visualization/component-background/BorderOptionPrefix.vue'
 const snapshotStore = snapshotStoreWithOut()
 const { t } = useI18n()
+// 通用背景面板负责组件/画布背景色、背景图、内边距、圆角和毛玻璃配置。
 const emits = defineEmits(['onBackgroundChange'])
+// 隐藏文件选择器用于重新上传背景图，避免额外展示原生 input。
 const files = ref(null)
+// 背景图上传限制为 15MB，避免大图影响画布加载性能。
 const maxImageSize = 15000000
 
+// 接收背景配置、主题和控件宽度，宽度会随面板容器动态调整。
 const props = withDefaults(
   defineProps<{
     componentPosition?: string
@@ -440,6 +450,7 @@ const props = withDefaults(
 import { State } from '@/components/visualization/component-background/Types'
 import { ShorthandMode } from '@/Types'
 
+// 维护背景配置表单、图片上传、预览弹窗和内置边框资源状态。
 const state = reactive<State>({
   commonBackground: {
     innerPadding: {},
@@ -456,24 +467,29 @@ const state = reactive<State>({
   predefineColors: COLOR_PANEL
 })
 
+// 内边距简写模式来自统一枚举，保证画布和组件背景配置语义一致。
 const paddingModes = Object.values(ShorthandMode).map(item => ({
   label: t(`visualization.inner_padding_shorthand_mode_${item}`),
   value: item
 })) as { label: string; value: ShorthandMode }[]
 
+// 圆角简写模式与内边距共用枚举，但展示文案按圆角语义翻译。
 const cornerModes = Object.values(ShorthandMode).map(item => ({
   label: t(`visualization.corner_shorthand_mode_${item}`),
   value: item
 })) as { label: string; value: ShorthandMode }[]
 
+// 触发隐藏文件选择器，复用浏览器原生文件选择能力。
 const goFile = () => {
   files.value.click()
 }
 
+// 提示上传图片超过大小限制。
 const sizeMessage = () => {
   ElMessage.error('图片大小不能超过15M')
 }
 
+// 重新上传背景图片并同步背景配置，成功后刷新文件列表预览。
 const reUpload = e => {
   const file = e.target.files[0]
   if (file.size > maxImageSize) {
@@ -487,16 +503,19 @@ const reUpload = e => {
   })
 }
 
+// 查询系统内置背景展示配置，用于内置边框选择器展示。
 const queryBackground = () => {
   queryVisualizationBackground().then(response => {
     state.BackgroundShowMap = response.data
   })
 }
 
+// 初始化背景表单并兼容旧版数字简写值。
 const init = () => {
   const commonBackgroundPop = deepCopy(props.commonBackgroundPop)
   const innerPadding = commonBackgroundPop.innerPadding
   if (typeof innerPadding === 'number') {
+    // 旧版本 innerPadding 是单个数字，新版转换为统一简写结构。
     commonBackgroundPop.innerPadding = {
       mode: ShorthandMode.Uniform,
       top: innerPadding,
@@ -507,6 +526,7 @@ const init = () => {
   }
   const borderRadius = commonBackgroundPop.borderRadius
   if (typeof borderRadius === 'number') {
+    // 旧版本 borderRadius 是单个数字，新版转换为统一简写结构。
     commonBackgroundPop.borderRadius = {
       mode: ShorthandMode.Uniform,
       topLeft: borderRadius,
@@ -519,16 +539,19 @@ const init = () => {
   updateInnerPadding()
   updateBorderRadius()
   if (state.commonBackground.outerImage) {
+    // 已有背景图需要转换为可访问地址后回填上传组件文件列表。
     state.fileList = [{ name: 'background', url: imgUrlTrans(state.commonBackground.outerImage) }]
   } else {
     state.fileList = []
   }
 }
 queryBackground()
+// 记录背景样式快照，移动端和桌面端共用撤销栈。
 const commitStyle = () => {
   snapshotStore.recordSnapshotCacheToMobile('commonBackground')
 }
 
+// 移除当前背景图片并同步父级配置。
 const handleRemove = () => {
   state.uploadDisabled = false
   state.commonBackground.outerImage = null
@@ -536,10 +559,12 @@ const handleRemove = () => {
   onBackgroundChange()
   commitStyle()
 }
+// 打开背景图片预览弹窗。
 const handlePictureCardPreview = file => {
   state.dialogImageUrl = file.url
   state.dialogVisible = true
 }
+// 上传背景图片并写入配置，上传组件会负责调用该自定义请求。
 const upload = file => {
   uploadFileResult(file.file, fileUrl => {
     state.commonBackground.outerImage = fileUrl
@@ -547,6 +572,7 @@ const upload = file => {
   })
 }
 
+// 根据简写模式展开内边距，Uniform 同步四边，Axis 同步水平和垂直边。
 const updateInnerPadding = () => {
   if (state.commonBackground.innerPadding.mode === ShorthandMode.Uniform) {
     state.commonBackground.innerPadding.left = state.commonBackground.innerPadding.top
@@ -558,6 +584,7 @@ const updateInnerPadding = () => {
   }
 }
 
+// 根据简写模式展开圆角，Uniform 同步四角，Axis 同步对角。
 const updateBorderRadius = () => {
   if (state.commonBackground.borderRadius.mode === ShorthandMode.Uniform) {
     state.commonBackground.borderRadius.topRight = state.commonBackground.borderRadius.topLeft
@@ -569,15 +596,19 @@ const updateBorderRadius = () => {
   }
 }
 
+// 归一化背景配置后通知父级，父级负责持久化并触发渲染。
 const onBackgroundChange = () => {
   updateInnerPadding()
   updateBorderRadius()
   emits('onBackgroundChange', state.commonBackground)
 }
 
+// 背景表单容器实例用于监听宽度变化。
 const bgForm = ref()
+// 背景表单容器宽度会影响颜色选择器和边框选择器尺寸。
 const containerWidth = ref()
 
+// 根据容器宽度计算颜色选择器宽度，小面板使用紧凑宽度。
 const computedBackgroundColorPickerWidth = computed(() => {
   if (containerWidth.value <= 240) {
     return 50
@@ -585,6 +616,7 @@ const computedBackgroundColorPickerWidth = computed(() => {
     return props.backgroundColorPickerWidth
   }
 })
+// 根据容器宽度计算边框选择器宽度，避免窄面板中控件溢出。
 const computedBackgroundBorderSelectWidth = computed(() => {
   if (containerWidth.value <= 240) {
     return 108
@@ -599,11 +631,13 @@ onMounted(() => {
   containerWidth.value = bgForm.value?.offsetWidth
   erd.listenTo(bgForm.value, () => {
     nextTick(() => {
+      // resize detector 回调中延后一帧读取宽度，避开布局尚未稳定的瞬间。
       containerWidth.value = bgForm.value?.offsetWidth
     })
   })
 })
 
+// 外部背景配置变化时刷新表单，支持主题切换和批量样式操作。
 watch(
   () => props.commonBackgroundPop,
   () => {
@@ -618,6 +652,7 @@ watch(
   margin-bottom: 16px;
 }
 .avatar-uploader-container {
+  // 上传区域在深浅主题下复用同一尺寸，只切换边框和图标颜色。
   margin-bottom: 16px;
   :deep(.ed-upload--picture-card) {
     background: #eff0f1;
@@ -709,6 +744,7 @@ watch(
 }
 
 .indented-container {
+  // 子配置统一缩进，和开关项形成父子层级关系。
   margin-top: 8px;
   width: 100%;
   padding-left: 22px;

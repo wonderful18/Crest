@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 @Schema(description = "血缘关系边")
+// 定义接口请求或返回数据的传输结构
 public class RelationEdgeDTO {
     @Schema(description = "起点节点 ID")
     private String source;

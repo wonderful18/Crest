@@ -25,20 +25,30 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 
 /**
- * CrestAudit 注解 AOP 切面
- *
- * 拦截 @CrestAudit 注解的方法，自动记录审计日志
+ * 审计注解切面，拦截标记方法并自动记录操作日志
  */
 @Aspect
 @Component
 public class CrestAuditAspect {
 
+    /**
+     * 审计日志写入服务
+     */
     @Autowired
     private AuditLogService auditLogService;
 
+    /**
+     * SpEL 表达式解析器
+     */
     private final ExpressionParser parser = new SpelExpressionParser();
+    /**
+     * 方法参数名解析器
+     */
     private final ParameterNameDiscoverer discoverer = new DefaultParameterNameDiscoverer();
 
+    /**
+     * 环绕拦截审计方法并在 finally 阶段写入审计日志
+     */
     @Around("@annotation(audit)")
     public Object around(ProceedingJoinPoint point, CrestAudit audit) throws Throwable {
         long startTime = System.currentTimeMillis();
@@ -67,7 +77,7 @@ public class CrestAuditAspect {
             }
         }
 
-        // 解析资源ID
+        // 解析资源 ID
         String resourceId = null;
         try {
             resourceId = parseExpression(audit.id(), point);
@@ -101,7 +111,7 @@ public class CrestAuditAspect {
                 responseMsg = responseMsg == null || "success".equals(responseMsg) ? "failed" : responseMsg;
             }
 
-            // 获取资源名称（从方法名推断）
+            // 生成审计展示用资源名称
             String resourceName = AuditLogText.description(operationType, resourceType, requestUrl);
 
             // 异步记录审计日志
@@ -115,7 +125,7 @@ public class CrestAuditAspect {
     }
 
     /**
-     * 解析 SpEL 表达式
+     * 解析审计注解中的 SpEL 表达式
      */
     private String parseExpression(String expression, ProceedingJoinPoint point) {
         if (expression == null || expression.isEmpty()) {
@@ -146,6 +156,9 @@ public class CrestAuditAspect {
         }
     }
 
+    /**
+     * 根据注解配置和表达式解析资源类型
+     */
     private LogST resolveResourceType(CrestAudit audit, ProceedingJoinPoint point) {
         String stExpression = audit.stExp();
         if (stExpression != null && !stExpression.isBlank()) {
@@ -157,6 +170,9 @@ public class CrestAuditAspect {
         return audit.st();
     }
 
+    /**
+     * 将字符串资源类型转换为日志资源类型枚举
+     */
     private LogST toLogST(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -185,14 +201,14 @@ public class CrestAuditAspect {
     }
 
     /**
-     * 获取客户端IP
+     * 获取客户端 IP
      */
     private String getClientIp(HttpServletRequest request) {
         if (request == null) return "unknown";
 
         String ip = request.getHeader("X-Forwarded-For");
         if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-            // 多次反向代理后会有多个IP，取第一个
+            // 多次反向代理后会有多个 IP，取第一个
             int index = ip.indexOf(',');
             if (index > 0) {
                 ip = ip.substring(0, index);

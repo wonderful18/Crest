@@ -6,11 +6,16 @@ import { storeToRefs } from 'pinia'
 
 const dvMainStore = dvMainStoreWithOut()
 const { fullscreenFlag } = storeToRefs(dvMainStore)
+// 持有预览画布组件实例，便于对外触发恢复操作
 const crestPreviewRef = ref<InstanceType<typeof CrestPreview> | null>(null)
+// 持有预览外层容器元素，用于监听尺寸变化
 const crestPreviewOuterRef = ref<HTMLElement | null>(null)
+// 标记预览数据是否已准备好渲染
 const dataInitState = ref(true)
+// 保存保持比例模式下当前采用的宽高优先策略
 const keepProportion = ref('heightFirst')
 let resizeObserver: ResizeObserver | null = null
+// 定义预览组件接收的画布、资源和显示控制参数
 const props = defineProps({
   canvasStylePreview: {
     required: true,
@@ -55,9 +60,11 @@ const props = defineProps({
   }
 })
 
+// 对外暴露的预览画布恢复入口
 const restore = () => {
   crestPreviewRef.value?.restore()
 }
+// 根据屏幕适配方式计算内层预览容器类名
 const contentInnerClass = computed(() => {
   //屏幕适配方式 widthFirst=宽度优先(默认) heightFirst=高度优先 full=铺满全屏 keepSize=不缩放
   if (screenAdaptor.value === 'heightFirst') {
@@ -71,12 +78,14 @@ const contentInnerClass = computed(() => {
   }
 })
 
+// 根据高度优先模式调整外层容器排列方向
 const outerStyle = computed<CSSProperties>(() => {
   return {
     flexDirection: props.canvasStylePreview.screenAdaptor === 'heightFirst' ? 'row' : 'column'
   }
 })
 
+// 解析最终生效的屏幕适配方式
 const screenAdaptor = computed(() => {
   if (props.canvasStylePreview.screenAdaptor === 'keepProportion') {
     return keepProportion.value
@@ -85,6 +94,7 @@ const screenAdaptor = computed(() => {
   }
 })
 
+// 根据外层容器和画布尺寸判断保持比例时的优先方向
 const keepProportionCheck = outerContentRect => {
   const { width, height } = outerContentRect
   const { innerWidth, innerHeight } = crestPreviewRef.value.getPreviewCanvasSize()

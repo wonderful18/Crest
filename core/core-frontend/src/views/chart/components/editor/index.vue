@@ -94,19 +94,26 @@ let inputComponentName = ref<{ id: string | number | null; name: string | null }
 let componentNameInput = ref<any>(null)
 
 const { t } = useI18n()
+// 字段与图表配置异步加载时的遮罩状态
 const loading = ref(false)
+// 编辑器右侧当前激活的配置页签
 const tabActive = ref('data')
+// 数据集选择器实例，用于按表编号回查树节点
 const datasetSelector = ref(null)
+// 当前数据集在树中的权限权重
 const curDatasetWeight = ref(0)
+// 字段重命名表单实例
 const renameForm = ref<FormInstance>()
 const { emitter } = useEmitt({
   name: 'set-table-column-width',
   callback: args => onTableColumnWidthChange(args)
 })
+// 监听分页条数调整，保持表格配置和画布渲染同步
 useEmitt({
   name: 'set-page-size',
   callback: args => onTablePageSizeChange(args)
 })
+// 编辑器入参承载当前图表、数据集树和主题模式
 const props = defineProps({
   view: {
     type: Object as PropType<ChartObj>,
@@ -125,15 +132,20 @@ const props = defineProps({
   }
 })
 
+// 计算字段编辑弹窗显示状态
 const editCalcField = ref(false)
+// 计算字段弹窗是否处于新增模式
 const isCalcFieldAdd = ref(true)
+// 计算字段编辑组件实例
 const calcEdit = ref()
 const route = useRoute()
 
+// 组件标题输入发生变化时记录快照
 const onComponentNameChange = () => {
   snapshotStore.recordSnapshotCache('onComponentNameChange')
 }
 
+// 结束组件标题编辑，并把合法标题同步到图表和画布组件
 const closeEditComponentName = () => {
   componentNameEdit.value = false
   if (curComponent.value.id !== inputComponentName.value.id) {
@@ -165,6 +177,7 @@ const closeEditComponentName = () => {
   inputComponentName.value.id = ''
 }
 
+// 进入组件标题编辑态并聚焦输入框
 const editComponentName = () => {
   componentNameEdit.value = true
   inputComponentName.value.name = view.value.title
@@ -173,10 +186,12 @@ const editComponentName = () => {
     componentNameInput.value.focus()
   })
 }
+// 根据主题返回提示气泡样式标识
 const toolTip = computed(() => {
   return props.themes || 'dark'
 })
 
+// 判断模板组件状态入口是否需要展示
 const templateStatusShow = computed(() => {
   return (
     view.value['dataFrom'] === 'template' &&
@@ -189,20 +204,24 @@ const { view } = toRefs(props)
 
 let cacheId = ''
 
+// 批量清空指定轴或筛选配置
 const clearRemove = items => {
   if (items) {
     items.forEach(item => removeItems(item))
   }
 }
 
+// 组件挂载前读取路由中的数据集缓存编号
 onBeforeMount(() => {
   cacheId = route.query.id as unknown as string
 })
 
+// 组件卸载前清理数据集缓存编号
 onBeforeUnmount(() => {
   cacheId = ''
 })
 
+// 注册外部清空字段事件
 onMounted(() => {
   useEmitt({
     name: 'clear-remove',
@@ -211,7 +230,9 @@ onMounted(() => {
 })
 
 const appStore = useAppStoreWithOut()
+// 判断当前是否运行在嵌入式分析环境
 const isCrestBi = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
+// 字段重命名表单校验规则
 const itemFormRules = reactive<FormRules>({
   chartShowName: [
     { required: true, message: t('commons.input_content'), trigger: 'change' },
@@ -219,6 +240,7 @@ const itemFormRules = reactive<FormRules>({
   ]
 })
 
+// 编辑器集中状态，保存字段列表、弹窗开关和临时编辑对象
 const state = reactive<any>({
   extData: '',
   moveId: -1,
@@ -253,12 +275,14 @@ const state = reactive<any>({
   useless: null
 })
 
+// 汇总已加入图表的维度和指标字段
 const filedList = computed(() => {
   return [...state.dimension, ...state.quota].filter(ele => ele.id !== 'count' && !!ele.summary)
 })
 
 provide('filedList', () => filedList.value)
 provide('quota', () => state.quota)
+// 数据集编号变化后重新拉取字段，并同步当前数据集权限
 watch(
   [() => view.value['tableId']],
   () => {
@@ -279,6 +303,7 @@ watch(
   },
   { deep: true, immediate: true }
 )
+// 拉取当前图表可用字段，并拆分维度和指标列表
 const getFields = (id, chartId, type) => {
   if (id && chartId) {
     fieldLoading.value = true
@@ -311,6 +336,7 @@ const getFields = (id, chartId, type) => {
   }
 }
 
+// 判断是否展示图表样式配置面板
 const chartStyleShow = computed(() => {
   return (
     !['richText', 'Picture'].includes(view.value.type) &&
@@ -319,11 +345,15 @@ const chartStyleShow = computed(() => {
   )
 })
 
+// 根据当前渲染器和图表类型获取图表视图定义
 const chartViewInstance = computed(() => {
   return chartViewManager.getChartView(view.value.render, view.value.type)
 })
+// 判断当前图表是否支持指定轴配置区
 const showAxis = (axis: AxisType) => chartViewInstance.value?.axis?.includes(axis)
+// 当前图表类型对应的下拉配置
 const currentChartTypeOption = computed(() => state.chartTypeOptions[0])
+// 图表类型变化后刷新类型配置，供轴面板和样式面板读取
 watch(
   () => [view.value.type, view.value],
   newVal => {
@@ -338,21 +368,25 @@ watch(
   { immediate: true, deep: false }
 )
 
+// 标记图表来源为计算配置，并记录对应快照
 const recordSnapshotInfo = type => {
   view.value['dataFrom'] = 'calc'
   snapshotStore.recordSnapshotCache(type, view.value.id)
 }
 
+// 切换数据集后清空计算参数并触发数据重算
 const changeDataset = () => {
   // change dataset, do clear field or other thing
   view.value['calParams'] = []
   recordSnapshotInfo('calcData')
 }
 
+// 合并当前数据集的全部指标和维度字段
 const allFields = computed(() => {
   return concat(state.quotaData, state.dimensionData)
 })
 
+// 收集当前画布内的查询组件，用于条件联动刷新
 const queryList = computed(() => {
   let arr = []
   componentData.value.forEach(com => {
@@ -368,6 +402,7 @@ const queryList = computed(() => {
   return arr
 })
 
+// 指标候选列表，按图表类型和搜索关键字过滤
 const quotaData = computed(() => {
   let result = JSON.parse(JSON.stringify(state.quota))
   if (view.value?.type === 'table-info' || view.value?.type === 'multi-scatter') {
@@ -380,6 +415,7 @@ const quotaData = computed(() => {
   }
   return result
 })
+// 维度候选列表，按搜索关键字过滤
 const dimensionData = computed(() => {
   let result = JSON.parse(JSON.stringify(state.dimensionData))
   if (state.searchField) {
@@ -389,6 +425,7 @@ const dimensionData = computed(() => {
   }
   return result
 })
+// 提供给子组件的真实指标列表，排除占位指标
 const realQuota = computed(() => {
   let result = JSON.parse(JSON.stringify(state.quota))
   if (view.value?.type === 'table-info' || view.value?.type === 'multi-scatter') {
@@ -398,6 +435,7 @@ const realQuota = computed(() => {
 })
 provide('quotaData', realQuota)
 
+// 维度拖拽开始时写入拖拽载荷
 const startToMove = (e: DragEvent, item) => {
   e.dataTransfer.setData(
     'dimension',
@@ -409,6 +447,7 @@ const startToMove = (e: DragEvent, item) => {
   )
 }
 
+// 维度字段配置变化后同步区间条形图的时间格式
 const dimensionItemChange = item => {
   recordSnapshotInfo('calcData')
   // do dimensionItemChange
@@ -426,6 +465,7 @@ const dimensionItemChange = item => {
     }
   }
 }
+// 从对应轴配置中移除维度字段
 const dimensionItemRemove = item => {
   recordSnapshotInfo('calcData')
   if (item.removeType === 'dimension') {
@@ -449,16 +489,19 @@ const dimensionItemRemove = item => {
   }
 }
 
+// 指标字段配置变化后通知图表轴更新
 const quotaItemChange = (axis: Axis, axisType: AxisType) => {
   recordSnapshotInfo('calcData')
   // do quotaItemChange
   emitter.emit('updateAxis', { axisType, axis: [axis], editType: 'update' })
 }
 
+// 聚合配置变化后记录数据重算快照
 const aggregateChange = () => {
   recordSnapshotInfo('calcData')
 }
 
+// 从对应轴配置中移除指标字段，并通知图表轴删除
 const quotaItemRemove = item => {
   recordSnapshotInfo('calcData')
   let axisType: AxisType = item.removeType
@@ -482,9 +525,11 @@ const quotaItemRemove = item => {
   useEmitt().emitter.emit('removeAxis', { axisType, axis, editType: 'remove' })
 }
 
+// 当前图表是否存在结果过滤条件
 const isFilterActive = computed(() => {
   return !!view.value.customFilter?.items?.length
 })
+// 判断结果过滤引用的字段是否已失效
 const isFilterInvalid = computed(() => {
   if (!view.value.customFilter?.items?.length) {
     return false
@@ -497,27 +542,34 @@ const isFilterInvalid = computed(() => {
   return !valid
 })
 
+// 钻取字段变化时记录数据快照
 const drillItemChange = () => {
   recordSnapshotInfo('calcData')
   // temp do nothing
 }
+// 删除指定位置的钻取字段
 const drillItemRemove = item => {
   recordSnapshotInfo('calcData')
   view.value.drillFields.splice(item.index, 1)
 }
 
+// 当前正在配置自定义排序的轴
 const customSortAxis = ref<AxisType>('xAxis')
+// 打开自定义排序弹窗
 const customSort = () => {
   state.showCustomSort = true
 }
+// 接收自定义排序弹窗返回的排序列表
 const customSortChange = val => {
   state.customSortList = val
 }
+// 关闭自定义排序弹窗并清理临时状态
 const closeCustomSort = () => {
   state.showCustomSort = false
   state.customSortField = {}
   state.customSortList = []
 }
+// 将自定义排序写回当前轴字段
 const saveCustomSort = () => {
   view.value[customSortAxis.value].forEach(ele => {
     if (ele.id === state.customSortField.id) {
@@ -527,6 +579,7 @@ const saveCustomSort = () => {
   })
   closeCustomSort()
 }
+// 为主维度轴打开自定义排序
 const onCustomSort = item => {
   recordSnapshotInfo('render')
   state.customSortField = view.value.xAxis[item.index]
@@ -534,6 +587,7 @@ const onCustomSort = item => {
   customSort()
 }
 
+// 为堆叠维度轴打开自定义排序
 const onStackCustomSort = item => {
   recordSnapshotInfo('render')
   state.customSortField = view.value.extStack[item.index]
@@ -541,6 +595,7 @@ const onStackCustomSort = item => {
   customSort()
 }
 
+// 为扩展维度轴打开自定义排序
 const onExtCustomSort = item => {
   recordSnapshotInfo('render')
   state.customSortField = view.value.xAxisExt[item.index]
@@ -548,6 +603,7 @@ const onExtCustomSort = item => {
   customSort()
 }
 
+// 为右侧扩展轴打开自定义排序
 const onExtCustomRightSort = item => {
   recordSnapshotInfo('render')
   state.customSortField = view.value.extBubble[item.index]
@@ -555,6 +611,7 @@ const onExtCustomRightSort = item => {
   customSort()
 }
 
+// 为流向地图起点字段打开自定义排序
 const onCustomFlowMapStartNameSort = item => {
   recordSnapshotInfo('render')
   state.customSortField = view.value.flowMapStartName[item.index]
@@ -562,24 +619,28 @@ const onCustomFlowMapStartNameSort = item => {
   customSort()
 }
 
+// 为流向地图终点字段打开自定义排序
 const onCustomFlowMapEndNameSort = item => {
   recordSnapshotInfo('render')
   state.customSortField = view.value.flowMapEndName[item.index]
   customSortAxis.value = 'flowMapEndName'
   customSort()
 }
+// 为颜色扩展字段打开自定义排序
 const onCustomExtColorSort = item => {
   recordSnapshotInfo('render')
   state.customSortField = view.value.extColor[item.index]
   customSortAxis.value = 'extColor'
   customSort()
 }
+// 为钻取字段打开自定义排序
 const onDrillCustomSort = item => {
   recordSnapshotInfo('render')
   state.customSortField = view.value.drillFields[item.index]
   customSortAxis.value = 'drillFields'
   customSort()
 }
+// 字段拖拽移动时记录当前字段编号
 const onMove = e => {
   recordSnapshotInfo('calcData')
   state.moveId = e.draggedContext.element.id
@@ -605,6 +666,7 @@ const dragCheckType = (list, type) => {
     return valid
   }
 }
+// 拖拽落点存在重复字段时移除新增项
 const dragMoveDuplicate = (list, e, mode) => {
   if (mode === 'ds') {
     list.splice(e.newDraggableIndex, 1)
@@ -618,6 +680,7 @@ const dragMoveDuplicate = (list, e, mode) => {
     }
   }
 }
+// 移除不能聚合的拖拽字段
 const dragRemoveAggField = (list, e) => {
   const dup = list.filter(function (m) {
     return m.id === state.moveId
@@ -629,6 +692,7 @@ const dragRemoveAggField = (list, e) => {
   }
 }
 
+// 判断区间条形图是否需要展示聚合设置
 const showAggregate = computed<boolean>(() => {
   if (view.value.type === 'bar-range') {
     const tempYAxis = view.value.yAxis[0]
@@ -643,6 +707,7 @@ const showAggregate = computed<boolean>(() => {
   return false
 })
 
+// 存在脱敏轴字段时禁用部分更新动作
 const disableUpdate = computed(() => {
   let flag = false
   if (view.value.type === 'table-info') {
@@ -670,6 +735,7 @@ const disableUpdate = computed(() => {
   return flag
 })
 
+// 校验地图类图表拖入字段是否为坐标类型
 const dragCheckMapType = list => {
   if (list && list.length > 0) {
     let valid = true
@@ -690,6 +756,7 @@ const dragCheckMapType = list => {
   }
 }
 
+// 字段拖入轴区域后的统一校验、截断和渲染通知
 const addAxis = (e, axis: AxisType) => {
   recordSnapshotInfo('calcData')
   const axisSpec = chartViewInstance.value?.axisConfig[axis]
@@ -883,30 +950,37 @@ const addAxis = (e, axis: AxisType) => {
   }
 }
 
+// 将拖拽字段加入主维度轴
 const addXaxis = e => {
   addAxis(e, 'xAxis')
 }
 
+// 将拖拽字段加入扩展维度轴
 const addXaxisExt = e => {
   addAxis(e, 'xAxisExt')
 }
 
+// 将拖拽字段加入堆叠维度轴
 const addExtStack = e => {
   addAxis(e, 'extStack')
 }
 
+// 将拖拽字段加入主指标轴
 const addYaxis = e => {
   addAxis(e, 'yAxis')
 }
 
+// 将拖拽字段加入扩展指标轴
 const addYaxisExt = e => {
   addAxis(e, 'yAxisExt')
 }
 
+// 将拖拽字段加入气泡扩展轴
 const addExtBubble = e => {
   addAxis(e, 'extBubble')
 }
 
+// 将维度字段加入钻取配置并去重
 const addDrill = e => {
   recordSnapshotInfo('calcData')
   dragCheckType(view.value.drillFields, 'd')
@@ -914,18 +988,22 @@ const addDrill = e => {
   dragRemoveAggField(view.value.drillFields, e)
 }
 
+// 将拖拽字段加入流向地图起点
 const addFlowMapStartName = e => {
   addAxis(e, 'flowMapStartName')
 }
 
+// 将拖拽字段加入流向地图终点
 const addFlowMapEndName = e => {
   addAxis(e, 'flowMapEndName')
 }
 
+// 将拖拽字段加入颜色扩展配置
 const addExtColor = e => {
   addAxis(e, 'extColor')
 }
 
+// 轴拖拽排序移除时同步通知图表实例
 const onAxisChange = (e, axis: AxisType) => {
   if (e.removed) {
     const { element } = e.removed
@@ -933,6 +1011,7 @@ const onAxisChange = (e, axis: AxisType) => {
   }
 }
 
+// 触发图表数据重算，并按需重置钻取和联动查询
 const calcData = (view, resetDrill = false, updateQuery = '') => {
   if (
     view.refreshTime === '' ||
@@ -964,12 +1043,14 @@ const calcData = (view, resetDrill = false, updateQuery = '') => {
   }
 }
 
+// 字段结构变化后刷新空态校验并重算图表
 const updateChartData = view => {
   curComponent.value['state'] = 'ready'
   useEmitt().emitter.emit('checkShowEmpty', { allFields: allFields.value, view: view })
   calcData(view, true, 'updateQuery')
 }
 
+// 触发当前图表重新渲染，移动端设计模式走统一状态事件
 const renderChart = view => {
   if (mobileInPc.value) {
     //移动端设计
@@ -983,6 +1064,7 @@ const renderChart = view => {
   }
 }
 
+// 切换图表类型时重置默认配置、修剪不兼容轴并重算数据
 const onTypeChange = (render, type) => {
   const viewConf = getViewConfig(type)
   if (!viewConf) return
@@ -1057,6 +1139,7 @@ const onTypeChange = (render, type) => {
   calcData(view.value, true)
 }
 
+// 基础样式表单变化后按需重算或重绘
 const onBasicStyleChange = (chartForm: ChartEditorForm<ChartBasicStyle>, prop: string) => {
   const { data, requestData, render } = chartForm
   const val = get(data, prop)
@@ -1069,6 +1152,7 @@ const onBasicStyleChange = (chartForm: ChartEditorForm<ChartBasicStyle>, prop: s
   }
 }
 
+// 表头样式变化后更新表格配置并重绘
 const onTableHeaderChange = val => {
   view.value.customAttr.tableHeader = val
   renderChart(view.value)
@@ -1076,6 +1160,7 @@ const onTableHeaderChange = val => {
 const renderTableCellChange = debounce(() => {
   renderChart(view.value)
 }, 250)
+// 表格单元格样式变化后处理合并字段的防抖重绘
 const onTableCellChange = (val, prop) => {
   view.value.customAttr.tableCell = val
   if (prop === 'mergeFields') {
@@ -1085,16 +1170,19 @@ const onTableCellChange = (val, prop) => {
   renderTableCellChange.cancel()
   renderChart(view.value)
 }
+// 汇总行样式变化后更新表格配置并重绘
 const onTableTotalChange = val => {
   view.value.customAttr.tableTotal = val
   renderChart(view.value)
 }
 
+// 色彩配置变化后更新图表属性并重绘
 const onColorChange = val => {
   view.value.customAttr.color = val
   renderChart(view.value)
 }
 
+// 杂项配置变化后根据数据依赖选择重算或重绘
 const onMiscChange = val => {
   view.value.customAttr.misc = val.data
   if (val.requestData) {
@@ -1104,6 +1192,7 @@ const onMiscChange = val => {
   }
 }
 
+// 标签配置变化后兼容整对象和单字段两种更新方式
 const onLabelChange = (chartForm: ChartEditorForm<ChartLabelAttr>, prop: string) => {
   const { data, render } = chartForm
   let labelObj = data
@@ -1122,6 +1211,7 @@ const onLabelChange = (chartForm: ChartEditorForm<ChartLabelAttr>, prop: string)
   }
 }
 
+// 指标卡数值样式变化后同步指标配置
 const onIndicatorChange = (val, prop) => {
   if (prop === 'color' || prop === 'suffixColor') {
     view.value.customAttr.basicStyle.alpha = undefined
@@ -1133,6 +1223,7 @@ const onIndicatorChange = (val, prop) => {
   renderChart(view.value)
 }
 
+// 指标卡名称样式变化后同步名称配置
 const onIndicatorNameChange = (val, prop) => {
   if (prop === 'color') {
     view.value.customAttr.basicStyle.alpha = undefined
@@ -1144,6 +1235,7 @@ const onIndicatorNameChange = (val, prop) => {
   renderChart(view.value)
 }
 
+// 提示配置变化后按数据依赖决定重算或重绘
 const onTooltipChange = (chartForm: ChartEditorForm<ChartTooltipAttr>, prop: string) => {
   const { data, requestData, render } = chartForm
   let tooltipObj = data
@@ -1166,26 +1258,31 @@ const onTooltipChange = (chartForm: ChartEditorForm<ChartTooltipAttr>, prop: str
   }
 }
 
+// 更新横轴样式配置并重绘
 const onChangeXAxisForm = val => {
   view.value.customStyle.xAxis = val
   renderChart(view.value)
 }
 
+// 更新纵轴样式配置并重绘
 const onChangeYAxisForm = val => {
   view.value.customStyle.yAxis = val
   renderChart(view.value)
 }
 
+// 更新扩展纵轴样式配置并重绘
 const onChangeYAxisExtForm = val => {
   view.value.customStyle.yAxisExt = val
   renderChart(view.value)
 }
 
+// 更新样式杂项配置并重绘
 const onChangeMiscStyleForm = val => {
   view.value.customStyle.misc = val
   renderChart(view.value)
 }
 
+// 文本样式变化后同步组件标题并通知画布
 const onTextChange = val => {
   view.value.customStyle.text = val
   if (curComponent.value) {
@@ -1204,16 +1301,19 @@ const onTextChange = val => {
   }
 }
 
+// 图例配置变化后更新样式并重绘
 const onLegendChange = val => {
   view.value.customStyle.legend = val
   renderChart(view.value)
 }
 
+// 高级函数配置变化后更新并重绘
 const onFunctionCfgChange = val => {
   view.value.senior.functionCfg = val
   renderChart(view.value)
 }
 
+// 背景配置变化后同步到当前画布组件
 const onBackgroundChange = val => {
   // 修复#13299
   if (curComponent.value.id === view.value?.id) {
@@ -1231,6 +1331,7 @@ const onBackgroundChange = val => {
   }
 }
 
+// 通用样式属性变化后写回画布组件
 const onStyleAttrChange = val => {
   curComponent.value.style[val.property] = val.value
   if (mobileInPc.value) {
@@ -1242,6 +1343,7 @@ const onStyleAttrChange = val => {
   }
 }
 
+// 辅助线配置变化后按数据依赖选择重算或重绘
 const onAssistLineChange = val => {
   view.value.senior.assistLineCfg = val.data
   if (val.requestData) {
@@ -1251,6 +1353,7 @@ const onAssistLineChange = val => {
   }
 }
 
+// 阈值配置变化后判断是否需要重新请求数据
 const onThresholdChange = val => {
   view.value.senior.threshold = val
   let type = undefined
@@ -1268,16 +1371,19 @@ const onThresholdChange = val => {
   }
 }
 
+// 滚动配置变化后更新高级配置并重绘
 const onScrollCfgChange = val => {
   view.value.senior.scrollCfg = val
   renderChart(view.value)
 }
 
+// 气泡动画配置变化后更新高级配置并重绘
 const onBubbleAnimateChange = val => {
   view.value.senior.bubbleCfg = val
   renderChart(view.value)
 }
 
+// 表格列宽变化时仅在编辑态记录渲染快照
 const onTableColumnWidthChange = val => {
   if (editMode.value !== 'edit') {
     return
@@ -1286,6 +1392,7 @@ const onTableColumnWidthChange = val => {
   snapshotStore.recordSnapshotCache('renderChart', view.value.id)
 }
 
+// 表格分页条数变化时仅在编辑态记录渲染快照
 const onTablePageSizeChange = val => {
   if (editMode.value !== 'edit') {
     return
@@ -1294,23 +1401,28 @@ const onTablePageSizeChange = val => {
   snapshotStore.recordSnapshotCache('renderChart', view.value.id)
 }
 
+// 更新扩展提示字段配置
 const onExtTooltipChange = val => {
   view.value.extTooltip = val
 }
+// 更新象限配置并重绘图表
 const onChangeQuadrantForm = val => {
   view.value.customAttr.quadrant = val
   renderChart(view.value)
 }
+// 更新流向地图线条配置的指定属性
 const onChangeFlowMapLineForm = (val, prop) => {
   const value = get(val, prop)
   set(view.value.customAttr.misc.flowMapConfig.lineConfig, prop, value)
   renderChart(view.value)
 }
+// 更新流向地图点位配置并重绘
 const onChangeFlowMapPointForm = val => {
   view.value.customAttr.misc.flowMapConfig.pointConfig = val
   renderChart(view.value)
 }
 
+// 打开字段显示名编辑弹窗并准备表单数据
 const showRename = val => {
   recordSnapshotInfo('render')
   state.itemForm = JSON.parse(JSON.stringify(val))
@@ -1320,6 +1432,7 @@ const showRename = val => {
   state.renameItem = true
 }
 
+// 关闭字段显示名编辑弹窗
 const closeRename = () => {
   state.renameItem = false
 }
@@ -1379,6 +1492,7 @@ const removeItems = (
   axis?.length && emitter.emit('removeAxis', { axisType: _type, axis, editType: 'remove' })
 }
 
+// 校验并保存字段显示名到对应轴配置
 const saveRename = ref => {
   if (!ref) return
   ref.validate(valid => {
@@ -1450,6 +1564,7 @@ const saveRename = ref => {
   })
 }
 
+// 打开指标过滤编辑弹窗并补齐默认逻辑
 const showQuotaEditFilter = item => {
   recordSnapshotInfo('calcData')
   state.quotaItem = JSON.parse(JSON.stringify(item))
@@ -1458,9 +1573,11 @@ const showQuotaEditFilter = item => {
   }
   state.quotaFilterEdit = true
 }
+// 关闭指标过滤编辑弹窗
 const closeQuotaFilter = () => {
   state.quotaFilterEdit = false
 }
+// 校验并保存指标过滤条件
 const saveQuotaFilter = () => {
   for (let i = 0; i < state.quotaItem.filter.length; i++) {
     const f = state.quotaItem.filter[i]
@@ -1482,17 +1599,22 @@ const saveQuotaFilter = () => {
   }
   closeQuotaFilter()
 }
+// 接收结果过滤树回传的过滤结构
 const changeFilterData = customFilter => {
   view.value.customFilter = cloneDeep(customFilter)
 }
+// 结果过滤树组件实例
 const filterTree = ref()
 
+// 打开结果过滤树并注入当前过滤配置
 const openTreeFilter = () => {
   filterTree.value.init(cloneDeep(view.value.customFilter))
 }
+// 关闭结果过滤编辑弹窗
 const closeResultFilter = () => {
   state.resultFilterEdit = false
 }
+// 校验并保存结果过滤条件
 const saveResultFilter = () => {
   if (
     ((state.filterItem.fieldType === 0 || state.filterItem.fieldType === 5) &&
@@ -1522,10 +1644,13 @@ const saveResultFilter = () => {
   closeResultFilter()
 }
 
+// 切换编辑器侧栏折叠状态
 const collapseChange = type => {
   canvasCollapse.value[type] = !canvasCollapse.value[type]
 }
+// 外部窗口句柄代理，用于嵌入式宿主接管新窗口
 const openHandler = ref(null)
+// 初始化外部窗口句柄
 const initOpenHandler = newWindow => {
   if (openHandler?.value) {
     const pm = {
@@ -1535,6 +1660,7 @@ const initOpenHandler = newWindow => {
     openHandler.value.invokeMethod(pm)
   }
 }
+// 打开新增数据集页面，未保存画布时阻止跳转
 const addDsWindow = () => {
   if (!dvInfo.value.id) {
     ElMessage.warning(t('visualization.save_page_tips'))
@@ -1547,6 +1673,7 @@ const addDsWindow = () => {
   const newWindow = window.open(routeData.href, openType)
   initOpenHandler(newWindow)
 }
+// 打开当前数据集编辑页，必要时先保存画布
 const editDs = () => {
   const path =
     embeddedStore.getToken && appStore.getIsIframe ? 'dataset-embedded-form' : '/dataset-form'
@@ -1579,16 +1706,19 @@ const editDs = () => {
   }
 }
 
+// 打开指标同比环比编辑弹窗
 const showQuotaEditCompare = item => {
   recordSnapshotInfo('calcData')
   state.quotaItemCompare = JSON.parse(JSON.stringify(item))
   state.showEditQuotaCompare = true
 }
 
+// 关闭指标同比环比编辑弹窗
 const closeQuotaEditCompare = () => {
   state.showEditQuotaCompare = false
 }
 
+// 保存指标同比环比配置到对应字段
 const saveQuotaEditCompare = () => {
   // 更新指标
   if (state.quotaItemCompare.calcType === 'quota') {
@@ -1605,6 +1735,7 @@ const saveQuotaEditCompare = () => {
   }
   closeQuotaEditCompare()
 }
+// 切换维度或指标字段隐藏状态
 const onToggleHide = item => {
   recordSnapshotInfo('render')
   switch (item.axisType) {
@@ -1619,28 +1750,35 @@ const onToggleHide = item => {
   }
   renderChart(view.value)
 }
+// 打开字段排序优先级弹窗
 const editSortPriority = () => {
   state.showSortPriority = true
 }
+// 关闭字段排序优先级弹窗
 const closeSortPriority = () => {
   state.showSortPriority = false
 }
+// 保存字段排序优先级并记录渲染快照
 const saveSortPriority = () => {
   view.value.sortPriority = state.sortPriority as ChartViewField[]
   recordSnapshotInfo('render')
   closeSortPriority()
 }
+// 接收排序优先级组件的临时结果
 const onPriorityChange = val => {
   state.sortPriority = val
 }
+// 打开数值格式化编辑弹窗
 const valueFormatter = item => {
   recordSnapshotInfo('render')
   state.valueFormatterItem = JSON.parse(JSON.stringify(item))
   state.showValueFormatter = true
 }
+// 关闭数值格式化编辑弹窗
 const closeValueFormatter = () => {
   state.showValueFormatter = false
 }
+// 校验并保存字段数值格式化配置
 const saveValueFormatter = () => {
   const ele = state.valueFormatterItem.formatterCfg.decimalCount
   if (
@@ -1667,12 +1805,14 @@ const saveValueFormatter = () => {
   closeValueFormatter()
 }
 
+// 根据嵌入状态计算编辑器主体高度
 const elRowStyle = computed(() => {
   return {
     height: embeddedStore.getToken ? 'calc(100% - 45px)' : 'calc(100vh - 110px)'
   }
 })
 
+// 新增计算字段并传入当前维度指标上下文
 const addCalcField = groupType => {
   editCalcField.value = true
   isCalcFieldAdd.value = true
@@ -1684,6 +1824,7 @@ const addCalcField = groupType => {
     )
   })
 }
+// 编辑已有计算字段并传入当前维度指标上下文
 const editField = item => {
   editCalcField.value = true
   isCalcFieldAdd.value = false
@@ -1695,9 +1836,11 @@ const editField = item => {
     )
   })
 }
+// 关闭计算字段编辑弹窗
 const closeEditCalc = () => {
   editCalcField.value = false
 }
+// 保存计算字段后刷新字段列表
 const confirmEditCalc = () => {
   calcEdit.value.setFieldForm()
   const obj = cloneDeep(calcEdit.value.fieldForm)
@@ -1708,6 +1851,7 @@ const confirmEditCalc = () => {
   })
 }
 
+// 根据字段类型和计算字段标识选择图标
 const getIconName = (fieldTypeCode, extField, dimension = false) => {
   if (extField === 2) {
     const iconFieldCalculated = dimension ? iconFieldCalculatedMap : iconFieldCalculatedQMap
@@ -1716,6 +1860,7 @@ const getIconName = (fieldTypeCode, extField, dimension = false) => {
   return iconFieldMap[fieldType[fieldTypeCode]]
 }
 
+// 统一处理图表字段复制、编辑和删除操作
 const chartFieldEdit = param => {
   state.currEditField = JSON.parse(JSON.stringify(param.item))
   switch (param.type) {
@@ -1740,12 +1885,14 @@ const chartFieldEdit = param => {
       break
   }
 }
+// 将字段操作菜单转换为统一参数结构
 const handleChartFieldEdit = (item, type) => {
   return {
     type: type,
     item: item
   }
 }
+// 为计算字段补齐保存接口需要的默认属性
 const setFieldDefaultValue = field => {
   field.extField = 2
   field.chartId = view.value.id
@@ -1756,12 +1903,15 @@ const setFieldDefaultValue = field => {
   field.extractedFieldType = field.fieldType
 }
 
+// 字段面板拖拽锚点
 const el = ref<HTMLElement | null>(null)
+// 字段面板拖拽容器
 const elDrag = ref<HTMLElement | null>(null)
 const { y, isDragging } = useDraggable(el, {
   initialValue: { x: 0, y: 400 },
   draggingElement: elDrag
 })
+// 字段面板可拖拽区域高度
 const previewHeight = ref(0)
 const calcEle = debounce(() => {
   nextTick(() => {
@@ -1783,6 +1933,7 @@ const setCacheId = debounce(() => {
     view.value.tableId = cacheId as unknown as number
   })
 }, 500)
+// 当前组件就绪后计算字段面板拖拽范围
 watch(
   () => curComponent.value,
   val => {
@@ -1791,6 +1942,7 @@ watch(
   }
 )
 
+// 当前组件变化后尝试恢复数据集缓存编号
 watch(
   () => curComponent.value,
   val => {
@@ -1799,6 +1951,7 @@ watch(
   }
 )
 
+// 计算字段区域高度并限制拖拽边界
 const fieldDHeight = computed(() => {
   const h = y.value - 200
   if (h < 53) {
@@ -1807,6 +1960,7 @@ const fieldDHeight = computed(() => {
   return h > previewHeight.value - 50 ? previewHeight.value - 50 : h
 })
 
+// 计算拖拽分隔条位置并限制上下边界
 const dragVerticalTop = computed(() => {
   const h = y.value - 200
   if (h < 50) {
@@ -1815,6 +1969,7 @@ const dragVerticalTop = computed(() => {
   return h > previewHeight.value - 53 ? previewHeight.value - 53 : h
 })
 
+// 校验刷新间隔并记录渲染快照
 const onRefreshChange = val => {
   recordSnapshotInfo('render')
   if (val === '' || parseFloat(val).toString() === 'NaN' || parseFloat(val) < 1) {
@@ -1823,13 +1978,18 @@ const onRefreshChange = val => {
   }
 }
 
+// 当前多选是否由控制键触发
 const isCtrl = ref(false)
 
+// 字段列表是否正处于拖拽中
 const isDraggingItem = ref(false)
 
+// 已选中的维度字段集合
 const activeDimension = ref<Axis[]>([])
+// 已选中的指标字段集合
 const activeQuota = ref<Axis[]>([])
 
+// 单击字段时切换选中状态，并清空另一类字段选择
 const setActive = (ele, type = 'dimension') => {
   if (isCtrl.value) {
     isCtrl.value = false
@@ -1841,6 +2001,7 @@ const setActive = (ele, type = 'dimension') => {
   mergeFormatter(activeChild.value)
 }
 
+// 控制键多选字段，支持追加或取消单个字段
 const setActiveCtrl = (ele, type = 'dimension') => {
   isCtrl.value = true
   const activeChild = type === 'dimension' ? activeDimension : activeQuota
@@ -1855,6 +2016,7 @@ const setActiveCtrl = (ele, type = 'dimension') => {
   mergeFormatter(activeChild.value)
 }
 
+// 连续选择字段区间，保持维度和指标互斥
 const setActiveShift = (ele, type = 'dimension') => {
   const activeChild = type === 'dimension' ? activeDimension : activeQuota
   const deactivateChild = type === 'quota' ? activeDimension : activeQuota
@@ -1894,8 +2056,10 @@ const mergeFormatter = (
   })
 }
 
+// 当前字段拖拽流程是否已开始
 const isDrag = ref(false)
 
+// 维度拖拽开始时延迟标记拖拽状态
 const dragStartD = () => {
   isDrag.value = true
   setTimeout(() => {
@@ -1903,6 +2067,7 @@ const dragStartD = () => {
   }, 0)
 }
 
+// 单个维度字段拖拽开始时准备多选载荷
 const singleDragStartD = (e: DragEvent, ele, type) => {
   const activeChild = type === 'dimension' ? activeDimension : activeQuota
   const deactivateChild = type === 'quota' ? activeDimension : activeQuota
@@ -1914,6 +2079,7 @@ const singleDragStartD = (e: DragEvent, ele, type) => {
   startToMove(e, unref(activeDimension.value))
 }
 
+// 指标拖拽开始时延迟标记拖拽状态
 const dragStart = () => {
   isDrag.value = true
   setTimeout(() => {
@@ -1921,6 +2087,7 @@ const dragStart = () => {
   }, 0)
 }
 
+// 单个指标字段拖拽开始时准备多选载荷
 const singleDragStart = (e: DragEvent, ele, type) => {
   const activeChild = type === 'dimension' ? activeDimension : activeQuota
   const deactivateChild = type === 'quota' ? activeDimension : activeQuota
@@ -1939,25 +2106,30 @@ const singleDragStart = (e: DragEvent, ele, type) => {
   )
 }
 
+// 字段拖拽结束后清理拖拽状态
 const dragEnd = () => {
   isDrag.value = false
   isDraggingItem.value = false
 }
 
+// 单个字段拖拽结束后清空选中集合
 const singleDragEnd = () => {
   activeDimension.value = []
   activeQuota.value = []
   dragEnd()
 }
 
+// 拖入轴区域时阻止浏览器默认行为
 const dragEnter = (ev: MouseEvent) => {
   ev.preventDefault()
 }
 
+// 悬停在轴区域时允许后续放置逻辑
 const dragOver = (ev: MouseEvent) => {
   ev.preventDefault()
 }
 
+// 批量字段放置到目标轴，并复用轴添加校验逻辑
 const drop = (ev: MouseEvent, type = 'xAxis') => {
   ev.preventDefault()
   const arr = activeDimension.value.length ? activeDimension.value : activeQuota.value
@@ -1988,8 +2160,10 @@ const drop = (ev: MouseEvent, type = 'xAxis') => {
   }
 }
 
+// 字段复制和删除操作的加载状态
 const fieldLoading = ref(false)
 
+// 复制图表计算字段后刷新字段列表
 const copyChartFieldItem = id => {
   fieldLoading.value = true
   copyChartField(id, view.value.id)
@@ -2001,6 +2175,7 @@ const copyChartFieldItem = id => {
     })
 }
 
+// 删除图表计算字段后刷新字段列表
 const deleteChartFieldItem = id => {
   fieldLoading.value = true
   deleteChartField(id)
@@ -2018,7 +2193,9 @@ const scrollToTop = debounce(() => {
   directionTop = 0
 }, 10)
 
+// 图表样式面板实例
 const chartStyleRef = ref()
+// 控制样式面板滚动位置，避免内部滚动穿透
 const chartStyleScroll = (val: any) => {
   if (chartStyleRef.value) {
     if (directionTop === 0) {

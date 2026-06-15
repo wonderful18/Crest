@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
+// 定义页面展示或接口返回的数据结构
 public class DataSQLBotAssistantVO implements Serializable {
 
     private Long id;

@@ -11,6 +11,7 @@ import java.util.List;
 
 @Schema(description = "用户构造器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class UserCreator implements Serializable {
 
     @Serial

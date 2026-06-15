@@ -54,6 +54,7 @@ const props = defineProps({
 })
 // 与外部 value 保持同步。
 const myValue = ref(props.value)
+// 衔接当前组件交互和状态同步
 const tinymceId = ref('vue-tinymce-' + +new Date() + ((Math.random() * 1000).toFixed(0) + ''))
 // TinyMCE 初始化配置。
 const init = reactive({

@@ -8,11 +8,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+// 定义单点登录相关的业务模型和处理入口
 public class SsoProviderConfigManage {
 
     @Resource
     private JdbcTemplate jdbcTemplate;
 
+    // 执行当前服务方法并返回处理结果
     public static SsoProviderConfig defaultProvider(SsoConfigVO config, String encryptedSecret) {
         SsoProviderConfig provider = new SsoProviderConfig();
         provider.setProviderId(1L);
@@ -39,6 +41,7 @@ public class SsoProviderConfigManage {
     }
 
     @Transactional
+    // 保存或更新当前业务绑定关系
     public void upsert(SsoProviderConfig provider) {
         long now = System.currentTimeMillis();
         jdbcTemplate.update("""

@@ -9,8 +9,14 @@ import { cloneDeep, defaultsDeep } from 'lodash-es'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 
+/**
+ * 国际化翻译函数
+ */
 const { t } = useI18n()
 
+/**
+ * 图表杂项配置面板入参
+ */
 const props = withDefaults(
   defineProps<{
     chart: ChartObj
@@ -22,14 +28,23 @@ const props = withDefaults(
   { themes: 'dark', mobileInPc: false }
 )
 
+/**
+ * 响应词云默认数据范围事件
+ */
 useEmitt({
   name: 'word-cloud-default-data-range',
   callback: args => wordCloudDefaultDataRange(args)
 })
+/**
+ * 响应仪表盘和水波图默认最大值事件
+ */
 useEmitt({
   name: 'gauge-liquid-y-value',
   callback: args => gaugeLiquidYaxisValue(args)
 })
+/**
+ * 图表类型切换后重新初始化杂项配置
+ */
 useEmitt({
   name: 'chart-type-change',
   callback: () => {
@@ -40,10 +55,16 @@ useEmitt({
     }
   }
 })
+/**
+ * 新增轴字段后同步动态字段配置
+ */
 const addAxis = (form: AxisEditForm) => {
   initAxis(form.axis[0]?.id)
 }
 useEmitt({ name: 'addAxis', callback: addAxis })
+/**
+ * 写入词云默认的数值范围
+ */
 const wordCloudDefaultDataRange = ({ data: { max, min } }) => {
   Object.assign(state.miscForm.wordCloudAxisValueRange, {
     max,
@@ -51,7 +72,13 @@ const wordCloudDefaultDataRange = ({ data: { max, min } }) => {
     fieldId: props.chart.yAxis?.[0]?.id
   })
 }
+/**
+ * 仪表盘和水波图默认最大值缓存
+ */
 const gaugeLiquidYaxisDefaultValue = { gaugeMax: undefined, liquidMax: undefined }
+/**
+ * 根据事件回填仪表盘或水波图的默认最大值
+ */
 const gaugeLiquidYaxisValue = args => {
   const { type, max } = args.data
   const key = type === 'gauge' ? 'gaugeMax' : type === 'liquid' ? 'liquidMax' : null
@@ -63,8 +90,12 @@ const gaugeLiquidYaxisValue = args => {
     }
   }
 }
+/**
+ * 杂项配置变更事件
+ */
 const emit = defineEmits(['onMiscChange'])
 
+// 指标字段列表变化后重建杂项表单的可选字段
 watch(
   () => props.quotaFields,
   () => {
@@ -74,24 +105,42 @@ watch(
   { deep: true }
 )
 
+/**
+ * 水波图动态最大值字段是否仍在指标列表中
+ */
 const validLiquidMaxField = computed(() => {
   return isValidField(state.miscForm.liquidMaxField)
 })
+/**
+ * 仪表盘动态最小值字段是否仍在指标列表中
+ */
 const validMinField = computed(() => {
   return isValidField(state.miscForm.gaugeMinField)
 })
+/**
+ * 仪表盘动态最大值字段是否仍在指标列表中
+ */
 const validMaxField = computed(() => {
   return isValidField(state.miscForm.gaugeMaxField)
 })
+/**
+ * 判断字段是否为可选指标字段
+ */
 const isValidField = field => {
   return field.id !== '-1' && quotaData.value.findIndex(ele => ele.id === field.id) !== -1
 }
 
+/**
+ * 面板表单状态和可选指标字段
+ */
 const state = reactive({
   miscForm: JSON.parse(JSON.stringify(DEFAULT_MISC)),
   quotaData: []
 })
 
+/**
+ * 水波图形状选项
+ */
 const liquidShapeOptions = [
   { name: t('chart.liquid_shape_circle'), value: 'circle' },
   { name: t('chart.liquid_shape_diamond'), value: 'diamond' },
@@ -100,15 +149,24 @@ const liquidShapeOptions = [
   { name: t('chart.liquid_shape_rect'), value: 'rect' }
 ]
 
+/**
+ * 向父级提交杂项配置变更
+ */
 const changeMisc = (prop = '', refresh = false) => {
   emit('onMiscChange', { data: state.miscForm, requestData: refresh }, prop)
 }
 
+/**
+ * 使用图表当前配置初始化杂项表单
+ */
 const init = () => {
   const misc = cloneDeep(props.chart.customAttr.misc)
   state.miscForm = defaultsDeep(misc, cloneDeep(DEFAULT_MISC)) as ChartMiscAttr
 }
 
+/**
+ * 根据指标字段初始化可用于动态阈值的字段列表
+ */
 const initField = () => {
   // 数据集字段中，如果没有 y 轴字段，直接返回
   const yAxisInDataset = props.quotaFields.find(ele => ele.id === props.chart.yAxis?.[0]?.id)
@@ -118,13 +176,22 @@ const initField = () => {
   // 过滤掉记录数字段
   state.quotaData = props.quotaFields.filter(ele => ele.id !== '-1')
 }
+/**
+ * 可参与数值校验的字段类型
+ */
 const NUMERIC_FIELD_TYPES = [2, 3]
 
+/**
+ * 获取当前 Y 轴字段或第一个可选指标字段
+ */
 const getDynamicField = () => {
   return (
     quotaData.value?.find(item => item.id === props.chart.yAxis?.[0]?.id) || quotaData.value?.[0]
   )
 }
+/**
+ * 切换动态或固定阈值字段配置
+ */
 const changeQuotaField = (type: string, resetSummary?: boolean) => {
   if (isGauge.value) {
     if (type === 'max') {
@@ -169,10 +236,16 @@ const changeQuotaField = (type: string, resetSummary?: boolean) => {
   }
 }
 
+/**
+ * 根据字段 ID 获取指标字段信息
+ */
 const getQuotaField = id => {
   return quotaData.value.find(ele => ele.id === id) || {}
 }
 
+/**
+ * 判断当前属性是否应在面板中展示
+ */
 const showProperty = prop => props.propertyInner?.includes(prop)
 
 /**
@@ -190,6 +263,9 @@ const changeFixedValidate = prop => {
   }
   changeMisc(prop, true)
 }
+/**
+ * 按当前 Y 轴字段重置仪表盘或水波图的动态阈值配置
+ */
 const initAxis = yAxisId => {
   state.quotaData = []
   if (yAxisId) {
@@ -246,12 +322,17 @@ const initAxis = yAxisId => {
 const validLiquidMaxFieldAgg = computed(() => {
   return isAggField(state.miscForm.liquidMaxField)
 })
+// 仪表盘动态最小值字段是否已配置聚合
 const validMinFieldAgg = computed(() => {
   return isAggField(state.miscForm.gaugeMinField)
 })
+// 仪表盘动态最大值字段是否已配置聚合
 const validMaxFieldAgg = computed(() => {
   return isAggField(state.miscForm.gaugeMaxField)
 })
+/**
+ * 判断字段是否已经包含聚合配置
+ */
 const isAggField = field => {
   return quotaData.value.find(ele => ele.id === field.id)?.agg
 }
@@ -259,12 +340,17 @@ const isAggField = field => {
 const validLiquidMaxFieldCalcAndAgg = computed(() => {
   return isCalcFieldAndAgg(state.miscForm.liquidMaxField)
 })
+// 仪表盘动态最小值字段是否为带聚合的计算字段
 const validMinFieldCalcAndAgg = computed(() => {
   return isCalcFieldAndAgg(state.miscForm.gaugeMinField)
 })
+// 仪表盘动态最大值字段是否为带聚合的计算字段
 const validMaxFieldCalcAndAgg = computed(() => {
   return isCalcFieldAndAgg(state.miscForm.gaugeMaxField)
 })
+/**
+ * 判断字段是否为带聚合的计算字段
+ */
 const isCalcFieldAndAgg = field => {
   return quotaData.value.find(ele => ele.id === field.id && ele.extField === 2 && ele.agg)
 }
@@ -273,13 +359,18 @@ const isCalcFieldAndAgg = field => {
 const validLiquidMaxFieldNum = computed(() => {
   return isNumType(state.miscForm.liquidMaxField)
 })
+// 仪表盘动态最小值字段是否为数值类型
 const validMinFieldNum = computed(() => {
   return isNumType(state.miscForm.gaugeMinField)
 })
+// 仪表盘动态最大值字段是否为数值类型
 const validMaxFieldNum = computed(() => {
   return isNumType(state.miscForm.gaugeMaxField)
 })
 
+/**
+ * 判断字段是否为数值类型
+ */
 const isNumType = field => {
   return quotaData.value.find(
     ele => ele.id === field.id && NUMERIC_FIELD_TYPES.includes(ele.fieldType)
@@ -292,7 +383,13 @@ const isNumType = field => {
 const quotaData = computed(() => {
   return state.quotaData
 })
+/**
+ * 当前图表是否为水波图
+ */
 const isLiquid = computed(() => props.chart.type === 'liquid')
+/**
+ * 当前图表是否为仪表盘
+ */
 const isGauge = computed(() => props.chart.type === 'gauge')
 onMounted(() => {
   init()

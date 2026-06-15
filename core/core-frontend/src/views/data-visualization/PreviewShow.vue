@@ -35,19 +35,27 @@ import {
 import { deepCopy } from '@/utils/utils'
 const userStore = useUserStoreWithOut()
 
+// 当前登录用户名称，用作应用导出默认创建人
 const userName = computed(() => userStore.getName)
 const { t } = useI18n()
 
 const dvMainStore = dvMainStoreWithOut()
 const route = useRoute()
 const { dvInfo, canvasViewDataInfo } = storeToRefs(dvMainStore)
+// 预览画布容器实例，用于截图、PDF 和模板导出
 const previewCanvasContainer = ref(null)
+// 数据大屏预览组件实例，用于加载完成后恢复画布
 const dvPreviewRef = ref(null)
+// 左侧资源树展开状态
 const slideShow = ref(true)
+// 画布数据是否初始化完成
 const dataInitState = ref(true)
+// 导出中的加载状态
 const downloadStatus = ref(false)
 const { width, node } = useMoveLine('DASHBOARD')
+// 应用导出表单实例
 const appExportFormRef = ref(null)
+// 预览页入参，控制打开位置、关闭行为和资源表来源
 const props = defineProps({
   showPosition: {
     required: false,
@@ -66,27 +74,34 @@ const props = defineProps({
   }
 })
 
+// 左侧资源树实例
 const resourceTreeRef = ref()
 
+// 左侧资源树是否有可展示数据
 const hasTreeData = computed(() => {
   return resourceTreeRef.value?.hasData
 })
 
+// 资源树组件是否已挂载完成
 const mounted = computed(() => {
   return resourceTreeRef.value?.mounted
 })
 
+// 当前用户是否具备资源根节点管理权限
 const rootManage = computed(() => {
   return resourceTreeRef.value?.rootManage
 })
 const appStore = useAppStoreWithOut()
 
+// 当前应用是否运行在嵌入式集成模式
 const isCrestBi = computed(() => appStore.getIsCrestBi)
 
+// 触发资源树的新建资源流程
 function createNew() {
   resourceTreeRef.value?.createNewObject()
 }
 
+// 加载指定数据大屏画布，并根据预览或复用模式刷新状态
 const loadCanvasData = (dvId, weight?, ext?) => {
   const initMethod = props.showPosition === 'multiplexing' ? initCanvasDataPrepare : initCanvasData
   dataInitState.value = false
@@ -108,7 +123,7 @@ const loadCanvasData = (dvId, weight?, ext?) => {
       state.dvInfo = dvInfo
       state.curPreviewGap = curPreviewGap
       dataInitState.value = true
-      // 修复铺满全屏模版导出错位问题
+      // 保留原始画布尺寸，避免铺满全屏模板导出时发生位置偏移
       if (props.showPosition !== 'multiplexing') {
         state.canvasDataPreviewSource = deepCopy(canvasDataResult)
         state.canvasStylePreviewSource = deepCopy(canvasStyleResult)
@@ -127,6 +142,7 @@ const loadCanvasData = (dvId, weight?, ext?) => {
     }
   )
 }
+// 将当前预览画布导出为图片或 PDF
 const download = type => {
   downloadStatus.value = true
   const mapElementIds = getMapElementIds(state.canvasDataPreview)
@@ -144,6 +160,7 @@ const download = type => {
     })
   }, 200)
 }
+// 将当前预览画布导出为应用或模板文件
 const fileDownload = (downloadType, attachParams) => {
   downloadStatus.value = true
   const mapElementIds = getMapElementIds(state.canvasDataPreview)
@@ -162,6 +179,7 @@ const fileDownload = (downloadType, attachParams) => {
   }, 1000)
 }
 
+// 根据导出类型进入模板导出或应用导出前置流程
 const downloadAsAppTemplate = downloadType => {
   if (downloadType === 'template') {
     fileDownload(downloadType, null)
@@ -170,6 +188,7 @@ const downloadAsAppTemplate = downloadType => {
   }
 }
 
+// 导出应用前检查模板图表，并初始化应用信息表单
 const downLoadToAppPre = () => {
   const result = checkTemplate()
   if (result && result.length > 0) {
@@ -185,6 +204,7 @@ const downLoadToAppPre = () => {
     })
   }
 }
+// 检查画布中仍依赖模板数据的图表名称
 const checkTemplate = () => {
   let templateViewNames = ','
   Object.keys(canvasViewDataInfo.value).forEach(key => {
@@ -196,22 +216,27 @@ const checkTemplate = () => {
   return templateViewNames.slice(1)
 }
 
+// 切换左侧资源树展开状态
 const slideOpenChange = () => {
   slideShow.value = !slideShow.value
 }
 
+// 按当前资源权限重新加载预览画布
 const reload = id => {
   loadCanvasData(id, state.dvInfo.weight, state.dvInfo.ext)
 }
 
+// 点击资源树节点后加载对应数据大屏
 const resourceNodeClick = data => {
   loadCanvasData(data.id, data.weight, data.ext)
 }
 
+// 当前画布是否使用固定尺寸适配策略
 const dataVKeepSize = computed(() => {
   return state.canvasStylePreview?.screenAdaptor === 'keep'
 })
 
+// 预览页核心状态，保存原始画布、展示画布、视图信息和资源信息
 const state = reactive({
   canvasDataPreviewSource: null,
   canvasStylePreviewSource: null,
@@ -223,15 +248,19 @@ const state = reactive({
   cacheStatusKey: 0
 })
 
+// 右侧资源树是否展开
 const sideTreeStatus = ref(true)
+// 更新右侧资源树展开状态
 const changeSideTreeStatus = val => {
   sideTreeStatus.value = val
 }
 
+// 暴露当前预览状态，供父组件读取
 const getPreviewStateInfo = () => {
   return state
 }
 
+// 应用导出表单提交后执行应用文件导出
 const downLoadApp = appAttachInfo => {
   fileDownload('app', appAttachInfo)
 }

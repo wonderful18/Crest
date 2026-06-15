@@ -10,6 +10,7 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import java.util.List;
 import java.util.Map;
 
+// 定义当前业务对象的核心职责
 public class ErrWriteHandler implements RowWriteHandler {
 
     private List<Map<Integer, String>> errMsgList;
@@ -31,6 +32,7 @@ public class ErrWriteHandler implements RowWriteHandler {
 
     }
 
+    // 执行当前服务方法并返回处理结果
     private void setPostil(Sheet sheet, Integer relativeRowIndex, Integer i, String msg) {
         Workbook workbook = sheet.getWorkbook();
         CellStyle cellStyle = workbook.createCellStyle();
@@ -48,11 +50,13 @@ public class ErrWriteHandler implements RowWriteHandler {
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void beforeRowCreate(WriteSheetHolder writeSheetHolder, WriteTableHolder writeTableHolder, Integer rowIndex, Integer relativeRowIndex, Boolean isHead) {
 
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void afterRowCreate(WriteSheetHolder writeSheetHolder, WriteTableHolder writeTableHolder, Row row, Integer relativeRowIndex, Boolean isHead) {
 
     }

@@ -115,6 +115,7 @@ export const layerStore = defineStore('layer', {
   }
 })
 
+// 更新状态仓库中的业务数据
 export const layerStoreWithOut = () => {
   return layerStore(store)
 }

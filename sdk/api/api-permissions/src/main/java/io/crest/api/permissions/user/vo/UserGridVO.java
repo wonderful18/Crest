@@ -9,6 +9,7 @@ import java.util.List;
 
 @Schema(description = "用户列表VO")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class UserGridVO {
 
     @Schema(description = "ID")

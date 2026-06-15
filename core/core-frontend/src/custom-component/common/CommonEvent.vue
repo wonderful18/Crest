@@ -23,6 +23,7 @@ const props = withDefaults(
 const { themes, eventsInfo } = toRefs(props)
 const isDashboard = dvMainStore.dvInfo.type === 'dashboard'
 
+// 记录当前选中项和交互焦点
 const curSupportEvents = computed(() => {
   if (isDashboard) {
     return ['jump', 'refreshDataV', 'fullScreen', 'download']
@@ -30,13 +31,16 @@ const curSupportEvents = computed(() => {
     return ['jump', 'showHidden', 'refreshDataV', 'fullScreen', 'download']
   }
 })
+// 处理界面事件并同步业务状态
 const onEventChange = () => {
   snapshotStore.recordSnapshotCacheToMobile('events')
 }
 
+// 处理界面事件并同步业务状态
 const onJumpValueChange = () => {
   snapshotStore.recordSnapshotCacheToMobile('events')
 }
+// 读取当前业务数据并返回处理结果
 const getTypeLabel = type => {
   return typeMap[type] || type
 }

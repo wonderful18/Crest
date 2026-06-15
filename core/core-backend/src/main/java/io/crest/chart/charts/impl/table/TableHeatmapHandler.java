@@ -24,12 +24,14 @@ import java.util.Map;
 
 @Component
 @SuppressWarnings("unchecked")
+// 定义图表处理器，负责轴格式化和结果组装
 public class TableHeatmapHandler extends DefaultChartHandler {
 
     @Getter
     private String type = "t-heatmap";
 
     @Override
+    // 按图表配置整理维度和指标轴信息
     public AxisFormatResult formatAxis(ChartViewDTO view) {
         var result =  super.formatAxis(view);
         var xAxis = new ArrayList<ChartViewFieldDTO>(view.getXAxis());
@@ -41,6 +43,7 @@ public class TableHeatmapHandler extends DefaultChartHandler {
         return result;
     }
 
+    // 根据查询结果组装图表返回数据
     public Map<String, Object> buildResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
         var xAxis = formatResult.getAxisMap().get(ChartAxis.xAxis);
         Map<String, Object> result = ChartDataBuild.transChartData( xAxis, new ArrayList<>(), view, data, false);
@@ -48,6 +51,7 @@ public class TableHeatmapHandler extends DefaultChartHandler {
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         var dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
         List<String> dsList = new ArrayList<>();

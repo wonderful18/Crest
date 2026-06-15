@@ -108,6 +108,7 @@ const { wsCache } = useCache()
 const { t } = useI18n()
 const router = useRouter()
 const appStore = useAppStoreWithOut()
+// 数据源管理页的核心状态，集中维护树列表、表格预览分页、排序和过滤结果
 const state = reactive({
   datasourceTree: [] as BusiTreeNode[],
   dsTableData: [],
@@ -120,6 +121,7 @@ const state = reactive({
   filterTable: []
 })
 
+// 同步记录弹窗的分页状态，独立于表格预览分页，避免两个列表互相覆盖页码
 const recordState = reactive({
   paginationConfig: {
     currentPage: 1,
@@ -127,9 +129,12 @@ const recordState = reactive({
     total: 0
   }
 })
+// 当前页面是否运行在嵌入式数据集编辑模式，用于决定创建数据集时走路由还是事件切换
 const isCrestBi = computed(() => appStore.getIsCrestBi)
+// 当前页面是否处于 iframe 宿主中，模板据此调整部分交互入口
 const isIframe = computed(() => appStore.getIsIframe)
 const embedded = useEmbedded()
+// 根据当前数据源和可选表名进入数据集创建流程，并兼容嵌入式与普通路由两种入口
 const createDataset = (tableName?: string) => {
   if (isCrestBi.value) {
     embedded.clearState()
@@ -150,18 +155,28 @@ const createDataset = (tableName?: string) => {
 
 const { width, node } = useMoveLine('DATASOURCE')
 
+// 当前选中表的基础信息，驱动右侧字段明细抽屉的标题和查询参数
 const dsTableDetail = reactive({
   tableName: '',
   name: ''
 })
+// 根目录管理权限标记，用于控制顶层新增与拖拽等管理动作是否可用
 const rootManage = ref(false)
+// 表格搜索关键字，作用于当前数据源下的表清单
 const nickName = ref('')
+// 数据源树搜索关键字，作用于左侧资源树过滤
 const dsName = ref('')
+// 表字段明细抽屉开关，打开时展示当前表的字段列表
 const userDrawer = ref(false)
+// 原始数据源树缓存，排序和过滤前保留一份完整树结构
 const rawDatasourceList = ref([])
+// 数据源优先级设置入口开关，由编辑表单按数据源类型决定是否展示
 const showPriority = ref(false)
+// SSH 配置入口开关，由插件或数据源类型决定是否展示
 const showSSH = ref(true)
+// 数据源编辑表单组件引用，负责新增、编辑、复制和导入后的初始化
 const datasourceEditor = ref()
+// Excel 数据源当前选中的工作表页签
 const activeTab = ref('')
 const menuList = [
   {
@@ -187,6 +202,7 @@ const typeMap = dsTypes.reduce((pre, next) => {
   return pre
 }, {})
 
+// 新建菜单项，根据页面文案和图标配置生成数据源与文件夹入口
 const datasetTypeList = computed(() => {
   return [
     {
@@ -203,7 +219,9 @@ const datasetTypeList = computed(() => {
   ]
 })
 
+// 当前表字段加载状态，避免字段抽屉在异步请求期间显示过期数据
 const dsTableDataLoading = ref(false)
+// 选择数据表后加载字段信息，并打开字段明细抽屉
 const selectDataset = row => {
   Object.assign(dsTableDetail, row)
   userDrawer.value = true
@@ -217,43 +235,53 @@ const selectDataset = row => {
     })
 }
 
+// 数据源树的排序基准数据，排序操作始终从该副本重新计算
 const originResourceTree = shallowRef([])
 
+// 用户显式切换排序方式时，更新树、当前排序状态和本地缓存
 const handleSortTypeChange = sortType => {
   state.datasourceTree = treeSort(originResourceTree.value, sortType)
   state.curSortType = sortType
   wsCache.set('TreeSort-datasource', state.curSortType)
 }
 
+// 按指定排序方式重排树数据，不写入缓存，供初始化和刷新流程复用
 const sortTypeChange = sortType => {
   state.datasourceTree = treeSort(originResourceTree.value, sortType)
   state.curSortType = sortType
 }
+// 表清单页容量变更时重置到第一页，防止当前页越界
 const handleSizeChange = pageSize => {
   state.paginationConfig.currentPage = 1
   state.paginationConfig.pageSize = pageSize
 }
+// 表清单页码变更入口，只维护分页状态，数据来自已加载的过滤结果
 const handleCurrentChange = currentPage => {
   state.paginationConfig.currentPage = currentPage
 }
 
+// 同步记录页容量变更后重新拉取记录，保证弹窗数据与分页一致
 const handleRecordSizeChange = pageSize => {
   recordState.paginationConfig.currentPage = 1
   recordState.paginationConfig.pageSize = pageSize
   getRecord()
 }
+// 同步记录页码变更后重新拉取当前页数据
 const handleRecordCurrentChange = currentPage => {
   recordState.paginationConfig.currentPage = currentPage
   getRecord()
 }
 
 let listScrollTop = 0
+// 记录左侧树滚动位置，刷新树组件后恢复用户所在位置
 const handleScroll = val => {
   listScrollTop = val.scrollTop
 }
 
+// 左侧树滚动容器引用，用于树重建后恢复滚动位置
 const scrollbarRef = ref()
 
+// 将后端字段元数据转换为预览表格列配置，并渲染字段类型图标
 const generateColumns = (arr: Field[]) =>
   arr.map(ele => ({
     key: ele.originName,
@@ -277,8 +305,11 @@ const generateColumns = (arr: Field[]) =>
     )
   }))
 
+// 数据预览加载状态，控制 Excel 表格预览区域的 loading 展示
 const dataPreviewLoading = ref(false)
+// 数据预览表格列配置，由字段元数据动态生成
 const columns = ref([])
+// 加载指定 Excel 工作表的字段与数据预览，并同步页签预览内容
 const handleLoadExcel = data => {
   dataPreviewLoading.value = true
   previewData(data)
@@ -291,6 +322,7 @@ const handleLoadExcel = data => {
     })
 }
 
+// 校验当前数据源连通性，并把 API 子表状态同步回树节点状态
 const validateDS = () => {
   let nodeTmpInfo = reactive<Node>(cloneDeep(defaultInfo))
   Object.assign(nodeTmpInfo, cloneDeep(nodeInfo))
@@ -326,9 +358,12 @@ const validateDS = () => {
     })
 }
 
+// API 表状态错误详情弹窗开关
 const dialogErrorInfo = ref(false)
+// API 表状态错误详情文本
 const dialogMsg = ref('')
 
+// 将同步配置格式化为详情页展示文案，兼容立即执行、Cron 和简单周期三种模式
 const formatSimpleCron = (info?: SyncSetting) => {
   const { syncRate, simpleCronValue, simpleCronType, startTime, endTime, cron } = info
   let start = '-'
@@ -366,18 +401,22 @@ const formatSimpleCron = (info?: SyncSetting) => {
   return strArr
 }
 
+// 打开 API 表错误详情弹窗，并写入当前行的错误信息
 const showErrorInfo = info => {
   dialogMsg.value = info
   dialogErrorInfo.value = true
 }
 
+// 已加载的数据源插件定义，补充内置类型以外的名称、图标和静态配置
 const pluginDs = ref([])
+// 接收插件数据源定义，并写入类型名称映射供详情页展示
 const loadDsPlugin = data => {
   pluginDs.value = data
   pluginDs.value.forEach(ele => {
     typeMap[ele.type] = ele.name
   })
 }
+// 按树节点类型获取插件图标，仅叶子数据源节点需要展示
 const getDsIcon = data => {
   if (pluginDs?.value.length === 0) return null
   if (!data.leaf) return null
@@ -387,6 +426,7 @@ const getDsIcon = data => {
   })
   return arr && arr.length > 0 ? arr[0].icon : null
 }
+// 按数据源类型获取插件图标，供详情面板或菜单中无完整节点数据的场景使用
 const getDsIconType = type => {
   const arr = pluginDs.value.filter(ele => {
     return ele.type === type
@@ -394,18 +434,22 @@ const getDsIconType = type => {
   return arr && arr.length > 0 ? arr[0].icon : null
 }
 
+// 获取树节点图标，文件夹使用固定图标，数据源按内置类型映射
 const getDsIconName = data => {
   if (!data.leaf) return dvFolder
   return iconDatasourceMap[data.type]
 }
 
+// 切换 Excel 工作表页签后加载对应工作表的预览数据
 const handleTabClick = tab => {
   activeTab.value = tab.value
   handleLoadExcel({ table: tab.value, id: nodeInfo.id })
 }
 
+// Excel 数据源的工作表页签列表，由后端表清单转换而来
 const tabList = shallowRef([])
 
+// 根据表名关键字过滤当前数据源表清单，并重置表格分页到第一页
 const initSearch = () => {
   handleCurrentChange(1)
   state.filterTable = tableData.value.filter(ele =>
@@ -414,11 +458,13 @@ const initSearch = () => {
   state.paginationConfig.total = state.filterTable.length
 }
 
+// 当前页展示的表清单数据，从过滤结果中按分页状态切片
 const pagingTable = computed(() => {
   const { currentPage, pageSize } = state.paginationConfig
   return state.filterTable.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 })
 
+// 数据源详情默认结构，重置节点时保持字段完整，避免旧详情残留
 const defaultInfo = {
   name: '',
   createBy: '',
@@ -437,13 +483,16 @@ const defaultInfo = {
   enableDataFill: false,
   extraFlag: 0
 }
+// 当前选中的数据源节点详情，供右侧详情、表清单和编辑动作共享
 const nodeInfo = reactive<Node>(cloneDeep(defaultInfo))
+// 详情面板的基础展示项，统一格式化创建时间
 const infoList = computed(() => {
   return {
     creator: nodeInfo.creator,
     createTime: timestampFormatDate(nodeInfo.createTime)
   }
 })
+// 保存文件夹新增、移动或重命名操作，并在成功后刷新资源树
 const saveDsFolder = (params, successCb, finallyCb, cmd) => {
   let method = move
   let message = t('data_set.moved_successfully')
@@ -476,11 +525,16 @@ const saveDsFolder = (params, successCb, finallyCb, cmd) => {
     })
 }
 
+// 数据源树加载状态，覆盖树刷新和初始化阶段
 const dsLoading = ref(false)
+// 页面是否完成首次数据源树加载，用于控制空态和加载态切换
 const mounted = ref(false)
+// 当前环境是否支持前端设置加密密钥，由后端能力接口决定
 const isSupportSetKey = ref(false)
+// 当前会话使用的对称密钥，用于解密后端返回的敏感配置
 const symmetricKey = ref('')
 
+// 拉取数据源树，处理根节点权限、排序、选中节点恢复和树过滤恢复
 const listDs = () => {
   rawDatasourceList.value = []
   dsLoading.value = true
@@ -519,6 +573,7 @@ const listDs = () => {
     })
 }
 
+// 查询当前部署是否允许设置密钥，失败时只记录警告，不阻断页面加载
 const setSupportSetKey = () => {
   supportSetKey()
     .then(response => {
@@ -528,6 +583,7 @@ const setSupportSetKey = () => {
       console.warn(error?.message)
     })
 }
+// 在树结构中更新指定数据源的连通性状态，保留其它节点引用不变
 const changeDsStatus = (ds, id, extraFlag) => {
   ds.some(ele => {
     if (ele.id === id) {
@@ -541,6 +597,7 @@ const changeDsStatus = (ds, id, extraFlag) => {
   })
 }
 
+// 深度查找数据源树中的目标节点，并触发与用户点击一致的详情加载流程
 const dfsDatasourceTree = (ds, id) => {
   ds.some(ele => {
     if (ele.id === id) {
@@ -554,7 +611,9 @@ const dfsDatasourceTree = (ds, id) => {
   })
 }
 
+// 文件夹创建和移动弹窗组件引用
 const creatDsFolder = ref()
+// 数据源树排序选项，展示文案与排序值保持一一对应
 const sortList = [
   {
     name: t('visualization.time_asc'),
@@ -575,23 +634,30 @@ const sortList = [
   }
 ]
 
+// 读取旧版排序缓存并映射为当前排序值，不可用时回落到默认时间倒序
 const getDefaultSortType = () => {
   const sortIndex = Number(wsCache.get('TreeSort-backend') ?? 1)
   return sortList[Number.isInteger(sortIndex) && sortList[sortIndex] ? sortIndex : 1].value
 }
 
+// 从指定缓存键读取排序值，并校验其仍存在于当前排序选项中
 const getStoredSortType = (cacheKey: string, fallback: string) => {
   const sortType = wsCache.get(cacheKey)
   return sortList.some(ele => ele.value === sortType) ? sortType : fallback
 }
 
+// 当前排序方式的展示文案，用于排序入口提示
 const sortTypeTip = computed(() => {
   return sortList.find(ele => ele.value === state.curSortType)?.name ?? sortList[1].name
 })
+// 当前数据源的完整表清单，搜索和分页都从该数据集派生
 const tableData = shallowRef([])
+// 当前 Excel 工作表的数据预览行
 const tabData = shallowRef([])
 const EXCEL_EDIT_ROW_ID = '_rowId'
+// Excel 编辑器最近一次成功加载的工作表名，用于切表前校验未保存修改
 const excelEditLoadedTableName = ref('')
+// Excel 在线编辑器状态，集中保存分页、字段、行、选中项和脏数据标记
 const excelEditState = reactive({
   visible: false,
   loading: false,
@@ -607,21 +673,26 @@ const excelEditState = reactive({
   dirty: false
 })
 
+// 获取 Excel 字段在行数据中的稳定键名，优先使用标准字段名
 const excelEditFieldKey = (field: Field) => field.name || field.originName
 
+// 根据字段名长度计算编辑器列宽，并限制在可读范围内
 const excelEditColumnWidth = (field: Field) => {
   const title = excelEditFieldKey(field)
   return Math.min(Math.max(title.length * 16 + 72, 160), 320)
 }
 
+// 将字段类型编号转换为编辑器使用的输入类型，未知类型按文本处理
 const excelEditFieldType = (field: Field) => fieldType[field.fieldType] || 'text'
 
+// 清理 Excel 编辑器的脏数据、删除列表和选中行，通常在重新加载数据后调用
 const resetExcelEditChanges = () => {
   excelEditState.dirty = false
   excelEditState.deletedIds = []
   excelEditState.selectedRows = []
 }
 
+// 判断 Excel 编辑器是否存在新增、修改或删除，供切表、刷新和关闭前确认
 const hasExcelEditChanges = () => {
   return (
     excelEditState.deletedIds.length > 0 ||
@@ -629,6 +700,7 @@ const hasExcelEditChanges = () => {
   )
 }
 
+// 在离开 Excel 编辑器当前数据集前确认是否丢弃未保存修改
 const confirmDiscardExcelEditChanges = async () => {
   if (!hasExcelEditChanges()) {
     return true
@@ -647,6 +719,7 @@ const confirmDiscardExcelEditChanges = async () => {
   }
 }
 
+// 按当前工作表和分页加载 Excel 可编辑数据，并重置本地修改状态
 const loadExcelEditData = () => {
   if (!excelEditState.tableName) {
     return
@@ -674,6 +747,7 @@ const loadExcelEditData = () => {
     })
 }
 
+// 刷新 Excel 编辑器数据，刷新前先确认未保存修改是否可以丢弃
 const refreshExcelEditData = async () => {
   const canRefresh = await confirmDiscardExcelEditChanges()
   if (!canRefresh) {
@@ -682,6 +756,7 @@ const refreshExcelEditData = async () => {
   await loadExcelEditData()
 }
 
+// 确保 Excel 工作表列表已加载，编辑器打开前复用已有表清单减少重复请求
 const ensureExcelEditTables = async () => {
   if (tabList.value.length) {
     return
@@ -700,6 +775,7 @@ const ensureExcelEditTables = async () => {
   }
 }
 
+// 打开 Excel 在线编辑器，默认选中当前页签或第一张工作表
 const openExcelEditor = async () => {
   await ensureExcelEditTables()
   if (!tabList.value.length) {
@@ -712,6 +788,7 @@ const openExcelEditor = async () => {
   await loadExcelEditData()
 }
 
+// 切换 Excel 编辑器工作表，切换前校验当前工作表是否存在未保存修改
 const handleExcelEditTableChange = async tableName => {
   if (tableName === excelEditLoadedTableName.value) {
     return
@@ -725,6 +802,7 @@ const handleExcelEditTableChange = async tableName => {
   await loadExcelEditData()
 }
 
+// 切换 Excel 编辑器页码，离开当前页前确认是否丢弃本地修改
 const handleExcelEditPageChange = async page => {
   const canLeave = await confirmDiscardExcelEditChanges()
   if (!canLeave) {
@@ -734,6 +812,7 @@ const handleExcelEditPageChange = async page => {
   await loadExcelEditData()
 }
 
+// 切换 Excel 编辑器页容量，并从第一页重新加载数据
 const handleExcelEditSizeChange = async pageSize => {
   const canLeave = await confirmDiscardExcelEditChanges()
   if (!canLeave) {
@@ -744,6 +823,7 @@ const handleExcelEditSizeChange = async pageSize => {
   await loadExcelEditData()
 }
 
+// 标记 Excel 行已被编辑，新增行保持新增标记，已有行追加修改标记
 const markExcelEditDirty = row => {
   if (!row.__isNew) {
     row.__dirty = true
@@ -751,6 +831,7 @@ const markExcelEditDirty = row => {
   excelEditState.dirty = true
 }
 
+// 在 Excel 编辑器顶部插入一行新数据，并为所有字段初始化空值
 const addExcelEditRow = () => {
   if (excelEditState.loading) {
     return
@@ -767,10 +848,12 @@ const addExcelEditRow = () => {
   excelEditState.dirty = true
 }
 
+// 同步 Excel 编辑器表格选中行，供批量删除动作读取
 const handleExcelEditSelectionChange = rows => {
   excelEditState.selectedRows = rows
 }
 
+// 删除 Excel 编辑器中选中的行，已有行记录行号，新建行只从本地列表移除
 const deleteExcelEditRows = () => {
   if (excelEditState.loading) {
     return
@@ -792,6 +875,7 @@ const deleteExcelEditRows = () => {
   excelEditState.dirty = true
 }
 
+// 将编辑器行数据转换为后端保存载荷，只提交业务字段和已有行标识
 const excelEditPayload = row => {
   const payload = {}
   excelEditState.fields.forEach(field => {
@@ -803,6 +887,7 @@ const excelEditPayload = row => {
   return payload
 }
 
+// 保存 Excel 在线编辑结果，按新增、修改和删除三类操作提交到后端
 const saveExcelEditor = () => {
   if (excelEditState.loading) {
     return
@@ -836,6 +921,7 @@ const saveExcelEditor = () => {
     })
 }
 
+// 关闭 Excel 编辑器前确认未保存修改，并兼容抽屉回调与直接状态关闭两种入口
 const closeExcelEditor = async (done?: () => void) => {
   const canClose = await confirmDiscardExcelEditChanges()
   if (canClose) {
@@ -847,6 +933,7 @@ const closeExcelEditor = async (done?: () => void) => {
   }
 }
 
+// 点击数据源树叶子节点后加载详情，解密敏感配置并刷新右侧关联视图
 const handleNodeClick = data => {
   if (!data.leaf) {
     dsListTree.value.setCurrentKey(null)
@@ -911,16 +998,23 @@ const handleNodeClick = data => {
     handleClick(activeName.value)
   })
 }
+// 打开新建数据源表单，并传入可选父文件夹和当前密钥能力状态
 const createDatasource = (data?: Tree) => {
   datasourceEditor.value.init(null, data?.id, null, isSupportSetKey.value)
 }
+// 同步记录弹窗显示状态
 const showRecord = ref(false)
+// 数据源树组件引用，用于过滤、选中和恢复当前节点
 const dsListTree = ref()
+// 当前展开的树节点键集合，用于折叠和展开事件维护 UI 状态
 const expandedKey = ref([])
+// 控制数据源树组件重建，配合滚动位置恢复解决刷新后的状态丢失
 const dsListTreeShow = ref(true)
+// 数据源树搜索关键字变化时，调用树组件过滤方法刷新可见节点
 watch(dsName, (val: string) => {
   dsListTree.value.filter(val)
 })
+// 短暂重建数据源树组件，并在下一轮渲染后恢复滚动位置
 const updateTreeExpand = () => {
   dsListTreeShow.value = false
   nextTick(() => {
@@ -931,8 +1025,10 @@ const updateTreeExpand = () => {
   })
 }
 
+// 当前数据源同步记录列表
 const recordData = ref([])
 
+// 打开同步记录弹窗并按分页参数加载当前数据源的同步记录
 const getRecord = () => {
   showRecord.value = true
   listSyncRecord(
@@ -945,6 +1041,7 @@ const getRecord = () => {
   })
 }
 
+// 同步单个 API 表，并在请求完成后提示用户
 const updateApiTable = api => {
   syncApiTable({ name: api.name, tableName: api.displayTableName, datasourceId: nodeInfo.id }).then(
     () => {
@@ -953,29 +1050,34 @@ const updateApiTable = api => {
   )
 }
 
+// 同步当前 API 数据源下的全部接口表
 const updateApiDs = () => {
   syncApiDs({ datasourceId: nodeInfo.id }).then(() => {
     ElMessage.success(t('datasource.req_completed'))
   })
 }
 
+// 记录用户展开的树节点，刷新树时用于保留展开状态
 const nodeExpand = data => {
   if (data.id) {
     expandedKey.value.push(data.id)
   }
 }
 
+// 移除用户折叠的树节点键，保持展开状态集合与界面一致
 const nodeCollapse = data => {
   if (data.id) {
     expandedKey.value.splice(expandedKey.value.indexOf(data.id), 1)
   }
 }
 
+// 数据源树节点过滤规则，按节点名称做不区分大小写的包含匹配
 const filterNode = (value: string, data: BusiTreeNode) => {
   if (!value) return true
   return data.name?.toLowerCase().includes(value.toLowerCase())
 }
 
+// 打开当前数据源编辑表单，加载完整详情并解密配置后传入编辑器
 const editDatasource = (editType?: number) => {
   if (nodeInfo.type.startsWith('Excel')) {
     nodeInfo.editType = editType
@@ -1036,11 +1138,13 @@ const editDatasource = (editType?: number) => {
   })
 }
 
+// 从树节点快捷编辑入口加载详情，再进入与详情页一致的编辑流程
 const handleEdit = async data => {
   await handleNodeClick(data)
   editDatasource()
 }
 
+// 数据源树拖拽处理器，封装拖拽开始、放置校验和移动保存逻辑
 const { handleDrop, allowDrop, handleDragStart } = treeDraggble(
   state,
   'datasourceTree',
@@ -1049,6 +1153,7 @@ const { handleDrop, allowDrop, handleDragStart } = treeDraggble(
   originResourceTree
 )
 
+// 复制数据源时加载完整配置，清理主键和 API 表名后打开编辑器
 const handleCopy = async data => {
   getById(data.id).then(res => {
     let {
@@ -1114,6 +1219,7 @@ const handleCopy = async data => {
   })
 }
 
+// 处理数据源树的新建命令，在数据源和文件夹入口之间分发
 const handleDatasourceTree = (cmd: string, data?: Tree) => {
   if (cmd === 'datasource') {
     createDatasource(data)
@@ -1122,7 +1228,9 @@ const handleDatasourceTree = (cmd: string, data?: Tree) => {
     creatDsFolder.value.createInit(cmd, data || {})
   }
 }
+// 血缘关系图组件引用，用于删除数据源前展示影响范围
 const relationChartRef = ref()
+// 处理树节点更多菜单命令，覆盖复制、删除、移动和重命名等操作
 const operation = (cmd: string, data: Tree, nodeType: string) => {
   if (cmd === 'copy') {
     handleCopy(data)
@@ -1147,6 +1255,7 @@ const operation = (cmd: string, data: Tree, nodeType: string) => {
     if (nodeType !== 'folder') {
       perDeleteDatasource(data.id).then(res => {
         if (res === true) {
+          // 删除确认弹窗中的血缘查看动作，延迟到用户主动点击时再查询图数据
           const onClick = () => {
             relationChartRef.value.getChartData({
               queryType: 'datasource',
@@ -1213,6 +1322,7 @@ const operation = (cmd: string, data: Tree, nodeType: string) => {
   }
 }
 
+// 切换详情页签时加载配置页或表清单，并为 API 与远程 Excel 补充表状态
 const handleClick = (tabName: TabPaneName) => {
   switch (tabName) {
     case 'config':
@@ -1265,18 +1375,23 @@ const handleClick = (tabName: TabPaneName) => {
       break
   }
 }
+// 外部刷新入口，统一走数据源树重新加载流程
 const refresh = () => {
   listDs()
 }
 
 let fileList = null
+// 记录用户选择的 Excel 文件，供替换或追加导入时构造 FormData
 const onChange = file => {
   fileList = file
 }
 
+// Excel 替换导入按钮加载状态
 const replaceLoading = ref(false)
+// Excel 追加导入按钮加载状态
 const addLoading = ref(false)
 
+// 上传 Excel 文件并进入导入编辑流程，按 editType 区分替换和追加
 const uploadExcel = editType => {
   const formData = new FormData()
   formData.append('file', fileList.raw)
@@ -1298,16 +1413,20 @@ const uploadExcel = editType => {
       addLoading.value = false
     })
 }
+// 当前详情页签名称，默认展示数据表页签
 const activeName = ref('table')
+// 数据源树组件字段映射，约定子节点和展示名称字段
 const defaultProps = {
   children: 'children',
   label: 'name'
 }
 
+// 页面初始化时恢复缓存中的数据源树排序方式
 const loadInit = () => {
   state.curSortType = getStoredSortType('TreeSort-datasource', state.curSortType)
 }
 
+// 拖拽放置代理，在免费文件夹限制生效时阻止跨类型保存
 const proxyAllowDrop = throttle((arg1, arg2) => {
   const flagArray = ['dashboard', 'dataV', 'dataset', 'datasource']
   const flag = flagArray.findIndex(item => item === 'datasource')
@@ -1317,6 +1436,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
   ElMessage.warning(t('free.save_error'))
   return false
 }, 300)
+// 组件挂载后恢复路由选中节点、加载数据源树、密钥能力和对称密钥
 onMounted(() => {
   const dsId = wsCache.get('ds-info-id') || route.params.id
   nodeInfo.id = (dsId as string) || (route.query.id as string) || ''
@@ -1333,11 +1453,14 @@ onMounted(() => {
   })
 })
 
+// 左侧数据源树展开状态，控制详情区占位和侧栏显示
 const sideTreeStatus = ref(true)
+// 接收侧栏展开收起组件的状态变化
 const changeSideTreeStatus = val => {
   sideTreeStatus.value = val
 }
 
+// 根据节点类型返回更多菜单，文件夹不展示复制动作
 const getMenuList = (val: boolean) => {
   return !val
     ? menuList
@@ -1353,6 +1476,7 @@ const getMenuList = (val: boolean) => {
 
 <template>
   <div class="datasource-manage" v-loading="dsLoading">
+    <!-- 左侧数据源树支持拖拽宽度调整，收起后通过 ArrowSide 保留恢复入口。 -->
     <ArrowSide
       :style="{ left: (sideTreeStatus ? width - 12 : 0) + 'px' }"
       @change-side-tree-status="changeSideTreeStatus"
@@ -1365,6 +1489,7 @@ const getMenuList = (val: boolean) => {
       :style="{ width: width + 'px' }"
     >
       <div class="resource-tree">
+        <!-- 树头部聚合创建、搜索和排序能力，根目录权限不足时隐藏管理入口。 -->
         <div class="tree-header">
           <div class="icon-methods">
             <span class="title"> {{ t('datasource.datasource') }} </span>
@@ -1445,6 +1570,7 @@ const getMenuList = (val: boolean) => {
             </template>
           </el-dropdown>
         </div>
+        <!-- 树节点同时承载文件夹和数据源，叶子节点点击后加载右侧详情。 -->
         <el-scrollbar @scroll="handleScroll" ref="scrollbarRef" class="custom-tree">
           <el-tree
             menu
@@ -1533,6 +1659,7 @@ const getMenuList = (val: boolean) => {
         h100: isCrestBi || isIframe
       }"
     >
+      <!-- 未选中数据源时展示空态；选中后根据节点类型展示配置、表清单和编辑入口。 -->
       <template v-if="!state.datasourceTree.length && mounted">
         <empty-background :description="t('data_source.no_data_source')" img-type="none">
           <el-button v-if="rootManage" @click="() => createDatasource()" type="primary">
@@ -1545,6 +1672,7 @@ const getMenuList = (val: boolean) => {
       </template>
       <template v-else-if="!!nodeInfo.id">
         <div class="datasource-info">
+          <!-- 详情头部展示当前数据源身份、连通状态和可执行操作。 -->
           <div class="info-method">
             <el-icon class="icon-border">
               <Icon :static-content="getDsIconType(nodeInfo.type)"

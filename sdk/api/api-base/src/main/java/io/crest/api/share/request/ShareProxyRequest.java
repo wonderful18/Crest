@@ -12,6 +12,7 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义接口请求或返回数据的传输结构
 public class ShareProxyRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = 7758730984988104057L;

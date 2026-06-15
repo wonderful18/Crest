@@ -71,6 +71,7 @@ const { t } = useI18n()
 const dvMainStore = dvMainStoreWithOut()
 const { curComponent, mobileInPc } = storeToRefs(dvMainStore)
 import dvStyleColor from '@/assets/svg/dv-style-color.svg'
+// 维护组件内部表单、弹窗和临时数据状态
 const state = reactive({
   style: {
     color0: null,
@@ -84,11 +85,13 @@ const state = reactive({
 
 const snapshotStore = snapshotStoreWithOut()
 
+// 根据当前配置计算界面样式
 const onStyleChange = key => {
   curComponent.value.style[key] = state.style[key]
   snapshotStore.recordSnapshotCache('decoration')
 }
 
+// 监听相关数据变化并同步组件状态
 watch(
   [() => curComponent.value],
   () => {
@@ -103,6 +106,7 @@ onMounted(() => {
   init()
 })
 
+// 初始化组件状态和默认配置
 const init = () => {
   setTimeout(() => {
     state.style.color0 = curComponent.value.style.color0

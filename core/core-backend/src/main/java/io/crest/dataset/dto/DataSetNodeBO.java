@@ -11,6 +11,7 @@ import java.io.Serial;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义接口请求或返回数据的传输结构
 public class DataSetNodeBO implements TreeBaseModel {
 
     @Serial

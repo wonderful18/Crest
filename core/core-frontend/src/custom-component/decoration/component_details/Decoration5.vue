@@ -25,6 +25,9 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 尺寸计算
 const width = computed(() => props.curStyle.width)
+/**
+ * 装饰折线画布高度
+ */
 const height = computed(() => props.curStyle.height)
 
 // 样式计算
@@ -38,6 +41,9 @@ const border_style = computed(() => ({
 
 // 颜色配置
 const defaultColor = ref(['#3f96a5', '#3f96a5'])
+/**
+ * 合并默认颜色和用户配置后的颜色
+ */
 const mergedColor = ref<string[]>([])
 
 // 路径数据
@@ -85,12 +91,16 @@ const svgPaths = computed(() => {
   }
 })
 
+/**
+ * 更新折线路径颜色
+ */
 const mergeColor = () => {
   mergedColor.value = customMergeColor(cloneDeep(defaultColor.value), props.color)
 }
 
 // 生命周期和监听
 onMounted(mergeColor)
+// 颜色配置变化后重新合并路径颜色
 watch(() => props.color, mergeColor, { immediate: true })
 </script>
 

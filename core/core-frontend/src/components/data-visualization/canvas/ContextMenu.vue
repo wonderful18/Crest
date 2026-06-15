@@ -15,6 +15,7 @@ const props = withDefaults(
 const contextmenuStore = contextmenuStoreWithOut()
 
 const { menuTop, menuLeft, menuShow, position } = storeToRefs(contextmenuStore)
+// 控制弹窗、面板或区域的展示状态
 const menuDetailsShow = computed(() => menuShow.value && props.showPosition === position.value)
 </script>
 

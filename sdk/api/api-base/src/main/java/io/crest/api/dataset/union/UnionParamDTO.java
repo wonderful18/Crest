@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
+// 定义接口请求或返回数据的传输结构
 public class UnionParamDTO implements Serializable {
     private String unionType;
     private List<UnionItemDTO> unionFields;

@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 
+// 定义单点登录相关的业务模型和处理入口
 public final class SsoClaimMapper {
 
     private SsoClaimMapper() {

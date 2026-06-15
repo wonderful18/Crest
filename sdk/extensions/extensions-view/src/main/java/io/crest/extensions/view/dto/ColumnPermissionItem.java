@@ -5,6 +5,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
+// 定义接口请求或返回数据的传输结构
 public class ColumnPermissionItem {
     private Long id;
     private String name;
@@ -16,6 +17,7 @@ public class ColumnPermissionItem {
 
 
     @Data
+    // 定义接口请求或返回数据的传输结构
     public class DesensitizationRule {
         private BuiltInRule builtInRule;
         private CustomBuiltInRule customBuiltInRule;
@@ -26,6 +28,7 @@ public class ColumnPermissionItem {
         private List<String> specialCharacterList;
     }
 
+    // 定义当前业务支持的枚举取值
     public enum BuiltInRule {
         CompleteDesensitization,
         KeepFirstAndLastThreeCharacters,
@@ -36,6 +39,7 @@ public class ColumnPermissionItem {
     static public String CompleteDesensitization = "******";
     static public String KeepFirstAndLastThreeCharacters = "XXX***XXX";
     static public String KeepMiddleThreeCharacters = "***XXX***";
+    // 定义当前业务支持的枚举取值
     public enum CustomBuiltInRule {
         RetainBeforeMAndAfterN,
         RetainMToN

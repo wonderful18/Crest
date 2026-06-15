@@ -17,10 +17,12 @@ import { storeToRefs } from 'pinia'
 import BackgroundOverallCommon from '@/components/visualization/component-background/BackgroundOverallCommon.vue'
 import { isDashboard, isMainCanvas } from '@/utils/canvasUtils'
 const { t } = useI18n()
+// 样式面板默认展开的折叠项
 const styleActiveNames = ref(['basicStyle'])
 const dvMainStore = dvMainStoreWithOut()
 const { mobileInPc } = storeToRefs(dvMainStore)
 
+// 查询组件样式面板入参，包含组件、图表、通用背景和主题
 const props = defineProps({
   element: {
     type: Object,
@@ -40,6 +42,7 @@ const props = defineProps({
   }
 })
 const { chart, commonBackgroundPop, element } = toRefs(props)
+// 根据面板主题反转提示框主题
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
@@ -52,8 +55,10 @@ for (let i = 10; i <= 60; i = i + 2) {
   })
 }
 const snapshotStore = snapshotStoreWithOut()
+// 背景图片上传 input 实例
 const files = ref(null)
 
+// 查询组件样式状态，包含背景副本、上传文件列表和预览弹窗
 const state = reactive({
   commonBackground: {},
   fileList: [],
@@ -61,9 +66,10 @@ const state = reactive({
   dialogVisible: false
 })
 
+// 移动端 PC 设计模式下同步组件样式变更
 const mobileStyleChange = () => {
   if (mobileInPc.value) {
-    //移动端设计
+    // 移动端设计态通过事件通知外层重新渲染组件
     useEmitt().emitter.emit('onMobileStatusChange', {
       type: 'componentStyleChange',
       value: { type: 'renderChart', component: JSON.parse(JSON.stringify(chart.value)) }
@@ -71,9 +77,10 @@ const mobileStyleChange = () => {
   }
 }
 
+// 移动端 PC 设计模式下同步组件背景变更
 const mobileBackgroundChange = () => {
   if (mobileInPc.value) {
-    //移动端设计
+    // 移动端设计态通过事件通知外层重新渲染背景
     useEmitt().emitter.emit('onMobileStatusChange', {
       type: 'componentStyleChange',
       value: { type: 'commonBackground', component: JSON.parse(JSON.stringify(props.element)) }
@@ -81,6 +88,7 @@ const mobileBackgroundChange = () => {
   }
 }
 
+// 通用背景变化时同步移动端预览
 watch(
   [() => state.commonBackground, () => commonBackgroundPop.value],
   () => {
@@ -89,6 +97,7 @@ watch(
   { deep: true }
 )
 
+// 自定义样式变化时同步移动端预览
 watch(
   [() => chart.value.customStyle],
   () => {
@@ -97,6 +106,7 @@ watch(
   { deep: true }
 )
 
+// 外部背景配置变化时刷新本地背景副本
 watch(
   () => props.commonBackgroundPop,
   () => {
@@ -105,6 +115,7 @@ watch(
   }
 )
 
+// 切换查询组件时重新补齐默认样式参数
 watch(
   () => props.element.id,
   () => {
@@ -112,14 +123,18 @@ watch(
   }
 )
 
+// 当前正在编辑占位文案的查询条件 ID
 const currentPlaceholder = ref()
+// 当前查询条件占位文案和宽度配置
 const currentSearch = ref({
   placeholder: '',
   queryConditionWidth: 227
 })
 
+// 切换查询组件冻结置顶状态，并保证同画布只保留一个冻结查询组件
 const onFreezeChange = () => {
   if (element.value.freeze) {
+    // 冻结查询组件会置顶到画布顶部，同一画布只能保留一个冻结组件。
     let historyFreezeCount = 0
     dvMainStore.componentData.forEach(item => {
       if (item.innerType === 'VQuery' && item.id !== element.value.id && item.freeze) {
@@ -159,6 +174,7 @@ const onFreezeChange = () => {
   }
 }
 
+// 切换当前编辑的查询条件占位配置
 const handleCurrentPlaceholder = val => {
   const obj = props.element.propValue.find(ele => {
     return ele.id === val
@@ -166,16 +182,19 @@ const handleCurrentPlaceholder = val => {
     placeholder: ''
   }
   if (obj.placeholder === undefined) {
+    // 历史查询条件可能没有占位文案字段，打开面板时补齐默认值。
     obj.placeholder = ''
   }
 
   if (obj.queryConditionWidth === undefined) {
+    // 历史查询条件默认宽度按旧版输入框宽度回填。
     obj.queryConditionWidth = 227
   }
   currentSearch.value = obj
   snapshotStore.recordSnapshotCacheToMobile('propValue')
 }
 
+// 初始化背景副本和背景图片预览列表
 const init = () => {
   state.commonBackground = cloneDeep(props.commonBackgroundPop)
   if (state.commonBackground['outerImage']) {
@@ -184,11 +203,13 @@ const init = () => {
     state.fileList = []
   }
 }
+// 通用背景组件变更后记录快照并写回组件背景
 const onBackgroundChangeV2 = val => {
   snapshotStore.recordSnapshotCache('onBackgroundChange')
   element.value.commonBackground = val
 }
 
+// 背景图片变更后写回通用背景配置
 const onBackgroundChange = () => {
   snapshotStore.recordSnapshotCache('onBackgroundChange')
   commonBackgroundPop.value.outerImage = state.commonBackground['outerImage']
@@ -197,9 +218,11 @@ onMounted(() => {
   init()
 })
 
+// 重新上传查询组件背景图片
 const reUpload = e => {
   const file = e.target.files[0]
   if (file.size > 15000000) {
+    // 背景图片限制 15M，避免大图拖慢画布加载和导出。
     ElMessage.error('图片大小不能超过15M')
     return
   }
@@ -210,14 +233,16 @@ const reUpload = e => {
   })
 }
 
+// 切换查询条件名称字体加粗状态
 const checkBold = type => {
   if (!chart.value.customStyle.component.labelShow) return
   chart.value.customStyle.component[type] = chart.value.customStyle.component[type] ? '' : 'bold'
 }
 
+// 占位文案样式变更后同步移动端或记录快照
 const handleCurrentPlaceholderCustomChange = () => {
   if (mobileInPc.value) {
-    //移动端设计
+    // 移动端设计态通过事件通知外层重新渲染组件
     useEmitt().emitter.emit('onMobileStatusChange', {
       type: 'componentStyleChange',
       value: { type: 'renderChart', component: JSON.parse(JSON.stringify(chart.value)) }
@@ -227,22 +252,27 @@ const handleCurrentPlaceholderCustomChange = () => {
   }
 }
 
+// 占位文案配置变更后记录到移动端快照
 const handleCurrentPlaceholderChange = () => {
   snapshotStore.recordSnapshotCacheToMobile('propValue')
 }
 
+// 切换查询条件名称字体斜体状态
 const checkItalic = type => {
   if (!chart.value.customStyle.component.labelShow) return
   chart.value.customStyle.component[type] = chart.value.customStyle.component[type] ? '' : 'italic'
 }
+// 补齐历史查询组件缺失的样式字段默认值
 const initParams = () => {
   if (!chart.value.customStyle.component.hasOwnProperty('queryConditionHeight')) {
+    // 旧查询组件没有条件高度配置，按当前默认输入框高度补齐。
     chart.value.customStyle.component = {
       ...chart.value.customStyle.component,
       queryConditionHeight: 32
     }
   }
   if (!chart.value.customStyle.component.hasOwnProperty('labelShow')) {
+    // 旧样式缺失名称、按钮和间距配置时一次性补齐完整默认结构。
     chart.value.customStyle.component = {
       ...chart.value.customStyle.component,
       labelShow: true,
@@ -261,6 +291,7 @@ const initParams = () => {
   }
 
   if (!chart.value.customStyle.component.hasOwnProperty('placeholderShow')) {
+    // 占位文案开关是后续版本新增字段，默认保持显示。
     chart.value.customStyle.component = {
       ...chart.value.customStyle.component,
       placeholderShow: true,
@@ -274,12 +305,14 @@ const initParams = () => {
   }
 }
 initParams()
+// 标题变更后同步组件标题、名称和图表标题
 const onTitleChange = () => {
   element.value.label = chart.value.customStyle.component.title
   element.value.name = chart.value.customStyle.component.title
   chart.value.title = chart.value.customStyle.component.title
 }
 
+// 占位文案或查询条件宽度变更后写回对应查询条件
 const onPlaceholderChange = () => {
   props.element.propValue.forEach(ele => {
     if (ele.id === currentPlaceholder.value) {
@@ -310,6 +343,7 @@ const onPlaceholderChange = () => {
       <el-collapse v-model="styleActiveNames" class="style-collapse">
         <el-collapse-item :effect="themes" name="basicStyle" :title="t('chart.basic_style')">
           <el-form size="small" @keydown.stop.prevent.enter label-position="top">
+            <!-- 查询组件标题同时写入元素名称和图表标题，保证图层列表与画布显示一致。 -->
             <el-form-item class="form-item margin-bottom-8" :class="'form-item-' + themes">
               <el-checkbox
                 :effect="themes"
@@ -353,6 +387,7 @@ const onPlaceholderChange = () => {
               :class="'form-item-' + themes"
               :label="t('visualization.query_position')"
             >
+              <!-- 仪表板主画布只允许一个查询组件置顶，切换时在脚本中清理历史置顶组件。 -->
               <el-radio-group
                 v-model="element.freeze"
                 :effect="themes"
@@ -382,6 +417,7 @@ const onPlaceholderChange = () => {
             label-position="top"
             style="padding-bottom: 8px"
           >
+            <!-- 条件外观设置控制输入框边框、背景、间距和每个条件的占位文案。 -->
             <el-row :gutter="8">
               <el-col :span="12">
                 <el-form-item
@@ -535,6 +571,7 @@ const onPlaceholderChange = () => {
           name="legend"
           :title="t('visualization.query_condition_name')"
         >
+          <!-- 查询条件名称样式独立于输入框样式，关闭后仅隐藏名称区而不删除配置。 -->
           <el-form
             :class="!chart.customStyle.component.labelShow && 'is-disabled'"
             :disabled="!chart.customStyle.component.labelShow"
@@ -651,6 +688,7 @@ const onPlaceholderChange = () => {
             label-position="top"
             style="padding-bottom: 8px"
           >
+            <!-- 按钮区配置查询、清空、重置三个动作的显隐和字体样式。 -->
             <el-form-item
               :effect="themes"
               class="form-item"
@@ -779,6 +817,7 @@ const onPlaceholderChange = () => {
 }
 
 .attr-style {
+  // 样式面板在右侧属性栏内滚动，避免长表单撑开编辑器布局。
   overflow-y: auto;
   height: 100%;
   width: 100%;
@@ -920,6 +959,7 @@ const onPlaceholderChange = () => {
 }
 
 .icon-btn {
+  // 字体样式按钮使用固定图标尺寸，深浅主题只切换颜色和激活背景。
   font-size: 16px;
   line-height: 16px;
   width: 24px;

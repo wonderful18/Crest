@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Schema(description = "单点登录配置")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class SsoConfigRequest {
 
     @Schema(description = "是否启用")

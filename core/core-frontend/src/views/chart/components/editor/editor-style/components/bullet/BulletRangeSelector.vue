@@ -4,6 +4,7 @@ import { COLOR_PANEL, DEFAULT_MISC } from '@/views/chart/components/editor/util/
 import { cloneDeep, defaultsDeep } from 'lodash-es'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
+// 定义子弹图区间样式选择器依赖的图表和主题配置
 const props = defineProps({
   chart: {
     type: Object,
@@ -23,6 +24,7 @@ const props = defineProps({
 
 const predefineColors = COLOR_PANEL
 
+// 按区间序号生成稳定的默认颜色
 const getRangeDefaultColor = (index: number) => {
   if (!predefineColors?.length) {
     return 'rgba(0,128,255,0.44)'
@@ -30,6 +32,7 @@ const getRangeDefaultColor = (index: number) => {
   return predefineColors[index % predefineColors.length]
 }
 
+// 保存子弹图区间样式表单和固定区间列表
 const state = reactive({
   bulletRangeForm: {
     bar: {
@@ -48,8 +51,10 @@ const state = reactive({
   rangeList: []
 })
 
+// 声明基础样式和杂项样式变更事件
 const emit = defineEmits(['onBasicStyleChange', 'onMiscChange'])
 
+// 监听图表杂项配置变化并刷新区间表单
 watch(
   () => props.chart.customAttr.misc,
   () => {
@@ -58,12 +63,14 @@ watch(
   { deep: true }
 )
 
+// 同步子弹图区间样式变更
 const changeStyle = (prop?) => {
   if (state.bulletRangeForm.bar.ranges.showType === 'fixed' && state.rangeList.length) {
     state.bulletRangeForm.bar.ranges.fixedRange = cloneDeep(state.rangeList)
   }
   emit('onMiscChange', { data: { bullet: { ...state.bulletRangeForm } }, requestData: true }, prop)
 }
+// 根据固定区间数量调整区间列表
 const changeRangeNumber = () => {
   if (state.bulletRangeForm.bar.ranges.fixedRangeNumber === null) {
     state.bulletRangeForm.bar.ranges.fixedRangeNumber = 1
@@ -86,10 +93,12 @@ const changeRangeNumber = () => {
   changeRangeItem()
 }
 
+// 校验区间项后同步样式
 const changeRangeItem = () => {
   validateRangeList() && changeStyle()
 }
 
+// 规范固定区间的名称和值
 const validateRangeList = () => {
   state.rangeList.forEach((item, index) => {
     if (
@@ -106,6 +115,7 @@ const validateRangeList = () => {
   return true
 }
 
+// 从图表配置初始化子弹图区间表单
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customAttr) {
@@ -120,6 +130,7 @@ const init = () => {
   }
 }
 
+// 构造固定区间列表，优先复用已有配置
 const getRangeList = () => {
   const range = []
   if (state.bulletRangeForm.bar.ranges?.fixedRange?.length) {
@@ -136,6 +147,7 @@ const getRangeList = () => {
   }
 }
 
+// 切换动态或固定区间展示模式
 const changeShowType = () => {
   if (state.bulletRangeForm.bar.ranges.showType === 'dynamic') {
     changeStyle()

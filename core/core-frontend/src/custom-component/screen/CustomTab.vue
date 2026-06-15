@@ -6,6 +6,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   hideTitle: Boolean,
   /* 颜色可以单词，如red；也可以是颜色值 */
@@ -25,12 +26,14 @@ const props = defineProps({
   }
 })
 
+// 根据当前配置计算界面样式
 const tabStyle = computed(() => [
   { '--crest-font-color': props.fontColor },
   { '--crest-active-color': props.activeColor },
   { '--crest-border-color': props.borderColor },
   { '--crest-border-active-color': props.borderActiveColor }
 ])
+// 根据当前配置计算界面样式
 const tabClassName = computed(() =>
   props.styleType
     ? [props.styleType, props.fontColor && 'fontColor', props.activeColor && 'activeColor']
@@ -43,6 +46,7 @@ const tabClassName = computed(() =>
       ]
 )
 
+// 衔接当前组件交互和状态同步
 const noBorder = computed(() => props.borderColor === 'none')
 </script>
 

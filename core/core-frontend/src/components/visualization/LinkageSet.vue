@@ -83,7 +83,7 @@
                   <span>
                     <div @click.stop>
                       <span class="auth-span">
-                        <!--？？？-->
+                        <!-- 复选框只切换联动启用状态，避免冒泡触发树节点切换 -->
                         <el-checkbox
                           v-model="data.linkageActive"
                           @change="targetViewCheckedChange('sameDs', data)"
@@ -132,7 +132,7 @@
                   <span>
                     <div @click.stop>
                       <span class="auth-span">
-                        <!--？？？-->
+                        <!-- 复选框只切换联动启用状态，避免冒泡触发树节点切换 -->
                         <el-checkbox
                           v-model="data.linkageActive"
                           @change="targetViewCheckedChange('diffDs', data)"
@@ -320,15 +320,23 @@ import { deepCopy } from '@/utils/utils'
 import { ACTION_SELECTION } from '@/custom-component/component-list'
 const dvMainStore = dvMainStoreWithOut()
 const { dvInfo, canvasViewInfo, componentData, curComponent } = storeToRefs(dvMainStore)
+// 同数据集目标视图树实例，用于当前节点高亮和筛选
 const linkageInfoTree = ref(null)
+// 不同数据集目标视图树实例，和同数据集树保持互斥高亮
 const linkageInfoTreeDiffDs = ref(null)
 const { t } = useI18n()
+// 联动配置弹窗的显隐状态
 const dialogShow = ref(false)
+// 保存联动配置时的加载状态
 const loading = ref(false)
+// 当前源图表可配置的全部目标视图联动信息
 const curLinkageTargetViewsInfo = ref<any[]>([])
+// 与源图表使用同一数据集的目标视图列表
 const curLinkageTargetViewsInfoSameDs = ref<any[]>([])
+// 与源图表使用不同数据集的目标视图列表
 const curLinkageTargetViewsInfoDiffDs = ref<any[]>([])
 const snapshotStore = snapshotStoreWithOut()
+// 弹窗内部状态，保存源字段、当前视图、当前数据集和正在编辑的联动项
 const state = reactive<any>({
   sourceLinkageInfo: {},
   showSelected: false,
@@ -344,16 +352,22 @@ const state = reactive<any>({
   },
   linkageInfo: null
 })
+// 同数据集目标视图的全选状态
 const sameDatasetComponentCheckAll = ref(false)
 
+// 同数据集目标视图的半选状态
 const checkAllIsIndeterminate = ref(false)
 
+// 当前组件联动触发方式的临时副本，保存后再写回组件配置
 const customLinkageActive = ref(deepCopy(ACTION_SELECTION))
 
+// 同数据集目标树的折叠状态
 const toggleSameDs = ref(true)
 
+// 不同数据集目标树的折叠状态
 const toggleDiffDs = ref(true)
 
+// 根据已启用目标视图数量同步全选与半选状态
 const sameDsTreeSelectedChange = () => {
   const checkedCount = curLinkageTargetViewsInfoSameDs.value.filter(
     viewInfo => viewInfo.linkageActive
@@ -363,8 +377,8 @@ const sameDsTreeSelectedChange = () => {
     checkedCount > 0 && checkedCount < curLinkageTargetViewsInfoSameDs.value.length
 }
 
+// 批量切换同数据集目标视图选中状态，并在启用时补齐字段映射
 const batchSelectChange = value => {
-  // do change
   curLinkageTargetViewsInfoSameDs.value.forEach(viewInfo => {
     if (value) {
       viewInfo.linkageActive = true
@@ -378,10 +392,12 @@ const batchSelectChange = value => {
   checkAllIsIndeterminate.value = false
 }
 
+// 是否展示同数据集目标树
 const sameDsShow = computed(
   () => curLinkageTargetViewsInfoSameDs.value && curLinkageTargetViewsInfoSameDs.value.length > 0
 )
 
+// 是否展示不同数据集目标树，指标卡不支持不同数据集联动配置
 const diffDsShow = computed(
   () =>
     curLinkageTargetViewsInfoDiffDs.value &&
@@ -389,6 +405,7 @@ const diffDsShow = computed(
     curComponent.value.innerType !== 'indicator'
 )
 
+// 打开联动配置弹窗并初始化当前图表上下文
 const dialogInit = viewItem => {
   state.showSelected = false
   dialogShow.value = true
@@ -396,12 +413,13 @@ const dialogInit = viewItem => {
   init(viewItem)
 }
 
+// 加载源图表可联动目标视图，并按数据集关系拆分树数据
 const linkageSetting = curViewId => {
-  // sourceViewId 也加入查询
+  // 将源图表也加入查询，用于获取源字段列表和现有联动关系
   const targetViewIds = []
   findAllViewsId(componentData.value, targetViewIds)
 
-  // 获取当前仪表板当前图表联动信息
+  // 查询当前仪表板内源图表关联的全部联动配置
   const requestInfo = {
     dvId: dvInfo.value.id,
     sourceViewId: curViewId,
@@ -410,7 +428,7 @@ const linkageSetting = curViewId => {
     resourceTable: 'snapshot'
   }
   viewLinkageGatherArray(requestInfo).then(rsp => {
-    // 获取当前仪表板的图表(去掉当前图表)
+    // 服务端返回包含源图表自身的数据，后续需要剔除当前源图表
     curLinkageTargetViewsInfo.value = rsp.data || []
     curLinkageTargetViewsInfo.value.forEach(item => {
       if (item.targetViewId === curViewId) {
@@ -456,6 +474,7 @@ const linkageSetting = curViewId => {
   })
 }
 
+// 初始化当前源图表、数据集和联动方式配置
 const init = viewItem => {
   state.initState = false
   state.viewId = viewItem.id
@@ -464,7 +483,7 @@ const init = viewItem => {
   state.curLinkageViewInfo = chartDetails
   if (chartDetails.tableId) {
     state.tableId = chartDetails.tableId
-    // 获取当前数据集信息
+    // 读取当前数据集详情，供字段映射面板展示数据集信息
     datasetDetails(chartDetails.tableId).then(res => {
       state.curDatasetInfo = res || {}
     })
@@ -473,8 +492,9 @@ const init = viewItem => {
   linkageSetting(state.viewId)
 }
 
+// 校验并保存当前图表联动配置
 const saveLinkageSetting = () => {
-  // 字段检查
+  // 已启用的目标视图必须配置完整的源字段和目标字段
   let subCheckCountAll = 0
   curLinkageTargetViewsInfo.value.forEach(linkageInfo => {
     let subCheckCount = 0
@@ -510,12 +530,12 @@ const saveLinkageSetting = () => {
       curComponent.value.actionSelection.linkageActive = customLinkageActive.value.linkageActive
       snapshotStore.recordSnapshotCache('saveLinkageSetting')
       ElMessage.success('保存成功')
-      // 刷新联动信息
+      // 保存后刷新仪表板联动缓存，确保画布立即使用最新配置
       getPanelAllLinkageInfo(dvInfo.value.id).then(rsp => {
         dvMainStore.setNowPanelTrackInfo(rsp.data)
       })
       cancelLinkageSetting()
-      // 刷新跳转信息
+      // 同步刷新跳转缓存，避免联动弹窗关闭后仍使用旧交互信息
       queryVisualizationJumpInfo(dvInfo.value.id).then(rsp => {
         dvMainStore.setNowPanelJumpInfo(rsp.data)
         cancel()
@@ -527,10 +547,12 @@ const saveLinkageSetting = () => {
     })
 }
 
+// 清理当前组件在主状态中的临时联动配置
 const cancelLinkageSetting = () => {
   dvMainStore.clearLinkageSettingInfo()
 }
 
+// 处理树节点点击前的高亮互斥逻辑
 const nodeClickPre = (data, treeName) => {
   if (treeName === 'sameDs') {
     linkageInfoTree.value?.setCurrentKey(data.targetViewId)
@@ -542,10 +564,12 @@ const nodeClickPre = (data, treeName) => {
   nodeClick(data)
 }
 
+// 切换右侧字段映射面板当前编辑的目标视图
 const nodeClick = data => {
   state.linkageInfo = data
 }
 
+// 向指定目标视图追加一组字段映射
 const addLinkageFieldAdaptor = (data, sourceFieldId?, targetFieldId?) => {
   const linkageFieldItem = {
     sourceField: sourceFieldId,
@@ -554,6 +578,7 @@ const addLinkageFieldAdaptor = (data, sourceFieldId?, targetFieldId?) => {
   data.linkageFields.push(linkageFieldItem)
 }
 
+// 向当前编辑的联动目标追加一组字段映射
 const addLinkageField = (sourceFieldId?, targetFieldId?) => {
   const linkageFieldItem = {
     sourceField: sourceFieldId,
@@ -561,17 +586,19 @@ const addLinkageField = (sourceFieldId?, targetFieldId?) => {
   }
   state.linkageInfo.linkageFields.push(linkageFieldItem)
 }
+// 删除当前编辑联动目标中的指定字段映射
 const deleteLinkageField = index => {
   state.linkageInfo.linkageFields.splice(index, 1)
 }
 
+// 启用目标视图时按数据集关系自动初始化字段映射
 const linkageFieldAdaptor = async data => {
   if (data.linkageActive) {
-    // 初始化映射关系 如果当前是相同的数据集且没有关联关系，则自动补充映射关系
+    // 同数据集且尚未配置映射时，优先按同名字段自动补齐映射关系
     const targetChartDetails = canvasViewInfo.value[data.targetViewId]
     if (targetChartDetails && targetChartDetails.tableId && data.linkageFields.length === 0) {
       if (state.curLinkageViewInfo.tableId === targetChartDetails.tableId) {
-        // 只匹配联动字段为0的 避免已经匹配过的重新匹配
+        // 仅处理空映射，避免覆盖用户已经手工调整过的字段关系
         if (data.linkageFields && data.linkageFields.length === 0) {
           const isMultiScatter = state.curLinkageViewInfo.type === 'multi-scatter'
           const curCheckAllAxisStr =
@@ -621,6 +648,7 @@ const linkageFieldAdaptor = async data => {
   }
 }
 
+// 过滤源图表可参与联动的字段，只保留当前图表使用到的字段
 const sourceLinkageInfoFilter = computed(() => {
   if (state.sourceLinkageInfo.targetViewFields) {
     const isMultiScatter = state.curLinkageViewInfo.type === 'multi-scatter'
@@ -648,6 +676,7 @@ const sourceLinkageInfoFilter = computed(() => {
   }
 })
 
+// 响应目标视图复选框变化，切换当前节点并按需初始化字段映射
 const targetViewCheckedChange = (treeName, data) => {
   nextTick(() => {
     if (treeName === 'sameDs') {
@@ -662,15 +691,18 @@ const targetViewCheckedChange = (treeName, data) => {
     sameDsTreeSelectedChange()
   })
 }
+// 关闭弹窗并重置初始化状态
 const cancel = () => {
   dialogShow.value = false
   state.initState = false
 }
 
+// 树节点筛选方法，开启“仅看已选”时只展示已启用目标视图
 const filterNodeMethod = (value, data) => {
   return !value || data.linkageActive
 }
 
+// 监听“仅看已选”状态，同步刷新两棵目标视图树的筛选结果
 watch(
   () => state.showSelected,
   newValue => {

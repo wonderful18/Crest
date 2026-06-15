@@ -10,6 +10,7 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义当前业务对象的核心职责
 public class DataSetNodePO implements Serializable {
 
     @Serial

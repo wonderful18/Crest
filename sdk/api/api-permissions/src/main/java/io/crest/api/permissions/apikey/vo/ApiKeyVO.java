@@ -9,6 +9,7 @@ import java.io.Serializable;
 
 @Schema(description = "API Key VO")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class ApiKeyVO implements Serializable {
 
     @Schema(description = "ID")

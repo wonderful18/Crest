@@ -21,6 +21,7 @@ import java.util.List;
 
 @Tag(name = "权限管理")
 @ApiSupport(order = 885, author = "Crest")
+// 定义模块接口契约和数据传输结构
 public interface AuthApi {
 
     @Operation(summary = "查询资源树")

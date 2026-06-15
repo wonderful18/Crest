@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 @Mapper
+// 定义当前业务对象的核心职责
 public interface CoreStoreExtMapper {
 
     @Select("""

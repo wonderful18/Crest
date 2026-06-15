@@ -4,6 +4,7 @@ import { propTypes } from '@/utils/propTypes'
 import ComponentButton from '@/components/visualization/ComponentButton.vue'
 import ComponentButtonLabel from '@/components/visualization/ComponentButtonLabel.vue'
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   title: propTypes.string,
   iconName: {

@@ -12,96 +12,171 @@ public class CoreOptRecent implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * ID
+     * 最近访问记录主键
      */
     private Long id;
 
     /**
-     * 资源ID
+     * 最近访问的资源 ID
      */
     private Long resourceId;
 
     /**
-     * 资源名称
+     * 最近访问的资源名称
      */
     private String resourceName;
 
     /**
-     * 用户ID
+     * 访问用户 ID
      */
     private Long uid;
 
     /**
-     * 资源类型
+     * 最近访问的资源类型
      */
     private Integer resourceType;
 
     /**
-     * 1 新建 2 修改
+     * 最近访问对应的操作类型，1 表示新建，2 表示修改
      */
     private Integer optType;
 
     /**
-     * 收藏时间
+     * 最近访问时间
      */
     private Long time;
 
+    /**
+     * 获取最近访问记录主键
+     *
+     * @return 最近访问记录主键
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * 设置最近访问记录主键
+     *
+     * @param id 最近访问记录主键
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /**
+     * 获取最近访问的资源 ID
+     *
+     * @return 最近访问的资源 ID
+     */
     public Long getResourceId() {
         return resourceId;
     }
 
+    /**
+     * 设置最近访问的资源 ID
+     *
+     * @param resourceId 最近访问的资源 ID
+     */
     public void setResourceId(Long resourceId) {
         this.resourceId = resourceId;
     }
 
+    /**
+     * 获取最近访问的资源名称
+     *
+     * @return 最近访问的资源名称
+     */
     public String getResourceName() {
         return resourceName;
     }
 
+    /**
+     * 设置最近访问的资源名称
+     *
+     * @param resourceName 最近访问的资源名称
+     */
     public void setResourceName(String resourceName) {
         this.resourceName = resourceName;
     }
 
+    /**
+     * 获取访问用户 ID
+     *
+     * @return 访问用户 ID
+     */
     public Long getUid() {
         return uid;
     }
 
+    /**
+     * 设置访问用户 ID
+     *
+     * @param uid 访问用户 ID
+     */
     public void setUid(Long uid) {
         this.uid = uid;
     }
 
+    /**
+     * 获取最近访问的资源类型
+     *
+     * @return 最近访问的资源类型
+     */
     public Integer getResourceType() {
         return resourceType;
     }
 
+    /**
+     * 设置最近访问的资源类型
+     *
+     * @param resourceType 最近访问的资源类型
+     */
     public void setResourceType(Integer resourceType) {
         this.resourceType = resourceType;
     }
 
+    /**
+     * 获取最近访问对应的操作类型
+     *
+     * @return 最近访问对应的操作类型
+     */
     public Integer getOptType() {
         return optType;
     }
 
+    /**
+     * 设置最近访问对应的操作类型
+     *
+     * @param optType 最近访问对应的操作类型
+     */
     public void setOptType(Integer optType) {
         this.optType = optType;
     }
 
+    /**
+     * 获取最近访问时间
+     *
+     * @return 最近访问时间
+     */
     public Long getTime() {
         return time;
     }
 
+    /**
+     * 设置最近访问时间
+     *
+     * @param time 最近访问时间
+     */
     public void setTime(Long time) {
         this.time = time;
     }
 
+    /**
+     * 返回最近访问记录的调试字符串
+     *
+     * @return 最近访问记录的字符串表示
+     */
     @Override
     public String toString() {
         return "CoreOptRecent{" +

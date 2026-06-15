@@ -19,6 +19,7 @@ final class FieldSqlExpressionUtils {
                 + "ELSE TRIM(" + originField + ") END";
     }
 
+    // 执行当前服务方法并返回处理结果
     private static boolean needsTextNullNormalization(DatasetTableFieldDTO field) {
         if (field == null) {
             return false;

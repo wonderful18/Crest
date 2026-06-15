@@ -22,10 +22,12 @@ const props = withDefaults(
 )
 const { themes, element } = toRefs(props)
 
+// 衔接当前组件交互和状态同步
 const carouselInfo = computed(() => {
   return element.value.carousel
 })
 
+// 处理界面事件并同步业务状态
 const onSettingChange = () => {
   // 如果输入值小于1，强制设置为1
   if (!carouselInfo.value.time || carouselInfo.value.time < 1) {
@@ -41,6 +43,7 @@ const onSettingChange = () => {
   snapshotStore.recordSnapshotCache('renderChart')
 }
 
+// 处理界面事件并同步业务状态
 const handleInput = value => {
   // 使用正则表达式过滤掉小数点和非数字字符，只保留正整数
   const integerValue = String(value).replace(/[^0-9]/g, '')

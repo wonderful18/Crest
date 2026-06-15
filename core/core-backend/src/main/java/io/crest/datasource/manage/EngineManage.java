@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 @Component
 @Transactional(rollbackFor = Exception.class)
 @SuppressWarnings("unchecked")
+// 管理数据引擎配置、校验和内置演示数据源初始化
 public class EngineManage {
     private static final Long DEMO_RETAIL_DATASOURCE_ID = 910001L;
     private static final String DEMO_RETAIL_DATABASE = "crest_demo_retail";
@@ -49,6 +50,7 @@ public class EngineManage {
     @Value("${crest.demo.enabled:true}")
     private boolean demoEnabled;
 
+    // 查询当前数据引擎配置
     public CoreEngine info() throws CrestException {
         List<CoreEngine> engines = engineMapper.selectList(null);
         if (CollectionUtils.isEmpty(engines)) {
@@ -57,6 +59,7 @@ public class EngineManage {
         return engines.get(0);
     }
 
+    // 将当前引擎配置转换为数据源实体
     public CoreDatasource getEngineDatasource() {
         List<CoreEngine> engines = engineMapper.selectList(null);
         if (CollectionUtils.isEmpty(engines)) {
@@ -68,6 +71,7 @@ public class EngineManage {
     }
 
 
+    // 查询当前引擎对应的数据源实体
     public CoreDatasource engineDatasource() {
         List<CoreEngine> engines = engineMapper.selectList(null);
         CoreDatasource coreDatasource = new CoreDatasource();
@@ -78,6 +82,7 @@ public class EngineManage {
         return coreDatasource;
     }
 
+    // 校验引擎连接配置
     public void validate(CoreEngine engine) throws Exception {
         if (StringUtils.isEmpty(engine.getType()) || StringUtils.isEmpty(engine.getConfiguration())) {
             throw new Exception("未完整设置数据引擎");
@@ -94,6 +99,7 @@ public class EngineManage {
         }
     }
 
+    // 保存数据引擎配置
     public ResultMessage save(CoreEngine engine) throws Exception {
         if (engine.getId() == null) {
             engineMapper.insert(engine);
@@ -103,6 +109,7 @@ public class EngineManage {
         return ResultMessage.success(engine);
     }
 
+    // 初始化默认本地数据引擎
     public void initSimpleEngine() throws Exception {
         initLocalDataSource();
         QueryWrapper<CoreEngine> queryWrapper = new QueryWrapper<>();
@@ -152,10 +159,12 @@ public class EngineManage {
         }
     }
 
+    // 判断引擎配置是否为有效 JSON 配置
     private boolean validConfiguration(String configuration) {
         return StringUtils.isNotBlank(configuration) && configuration.trim().startsWith("{");
     }
 
+    // 判断引擎配置是否仍使用旧版字符集参数
     private boolean legacyCharsetConfiguration(String configuration) {
         if (StringUtils.isBlank(configuration)) {
             return false;
@@ -166,6 +175,7 @@ public class EngineManage {
     }
 
 
+    // 内置引擎类型枚举
     public enum engineType {
         mysql("Mysql"),
         h2("h2");
@@ -175,11 +185,13 @@ public class EngineManage {
             this.alias = alias;
         }
 
+        // 查询引擎类型展示名称
         public String getAlias() {
             return alias;
         }
     }
 
+    // 初始化内置演示数据源
     public void initLocalDataSource() {
         if (!demoEnabled) {
             return;

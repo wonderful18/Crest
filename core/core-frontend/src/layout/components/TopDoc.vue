@@ -7,7 +7,9 @@ import { Icon } from '@/components/icon-custom'
 import TopDocCard from '@/layout/components/TopDocCard.vue'
 import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 const appearanceStore = useAppearanceStoreWithOut()
+// 衔接当前组件交互和状态同步
 const navigateBg = computed(() => appearanceStore.getNavigateBg)
+// 衔接当前组件交互和状态同步
 const help = computed(() => appearanceStore.getHelp)
 const { t } = useI18n()
 

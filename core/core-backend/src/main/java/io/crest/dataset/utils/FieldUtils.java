@@ -5,7 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+// 提供当前模块复用的工具能力
 public class FieldUtils {
+    // 处理字段结构并补齐查询所需信息
     public static int resolveFieldType(final String type) {
         if (type == null || type.isBlank()) {
             return 0;
@@ -47,6 +49,7 @@ public class FieldUtils {
         return 0;// 文本
     }
 
+    // 处理字段结构并补齐查询所需信息
     public static String resolveFieldGroup(int fieldType) {
         switch (fieldType) {
             case 0:

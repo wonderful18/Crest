@@ -1,5 +1,6 @@
 package io.crest.engine.sql;
 
+// 定义当前业务对象的核心职责
 public class SqlTemplate {
     public static String QUERY_SQL = "querySql(limitFiled, groups, aggregators, filters, orders, table, notUseAs, useAliasForGroup)\n" +
             "::=<<\n" +

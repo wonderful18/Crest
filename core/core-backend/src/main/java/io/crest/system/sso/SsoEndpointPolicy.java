@@ -7,11 +7,13 @@ import org.apache.commons.lang3.Strings;
 import java.net.URI;
 import java.util.Objects;
 
+// 定义单点登录相关的业务模型和处理入口
 public final class SsoEndpointPolicy {
 
     private SsoEndpointPolicy() {
     }
 
+    // 格式化日期时间并返回统一展示值
     public static String validateEndpoint(String endpoint, Boolean requireHttps, String name) {
         if (StringUtils.isBlank(endpoint)) {
             CrestException.throwException(name + "不能为空");
@@ -46,6 +48,7 @@ public final class SsoEndpointPolicy {
         }
     }
 
+    // 判断当前类型是否满足业务分类
     private static boolean isLocalHost(String host) {
         String normalized = host;
         if (normalized.startsWith("[") && normalized.endsWith("]")) {

@@ -5,6 +5,7 @@ const suffix = `${pkg.version}-${pkg.name}`
 
 const eleArr = []
 
+// 衔接当前组件交互和状态同步
 function produceTag(obj, name) {
   eleArr.push({
     name,
@@ -31,6 +32,7 @@ htmlStream.pipe(parserStream).on('finish', () => {
   let suffix = \`${suffix}\`
 
 
+  // 读取当前业务数据并返回处理结果
   const getPrefix = () => {
     let prefix = ''
     Array.from(document.querySelector('head').children).some(ele => {
@@ -58,6 +60,7 @@ htmlStream.pipe(parserStream).on('finish', () => {
   const eleArr = eleArrStr
   const preUrl = getPrefix()
   
+  // 衔接当前组件交互和状态同步
   function produceTag(obj, name) {
     let element = document.createElement(name)
     Object.entries(obj).forEach(([key, value]) => {

@@ -6,6 +6,7 @@ export interface DragItem {
   name: string
 }
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   dragItems: {
     type: Array as PropType<DragItem[]>,
@@ -13,6 +14,7 @@ const props = defineProps({
   }
 })
 const { dragItems } = toRefs(props)
+// 处理界面事件并同步业务状态
 const handleClose = index => {
   dragItems.value.splice(index, 1)
 }

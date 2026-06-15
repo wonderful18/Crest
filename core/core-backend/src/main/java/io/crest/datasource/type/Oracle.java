@@ -15,9 +15,11 @@ import java.util.regex.Pattern;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Component("oracle")
+// 定义数据源连接参数和元数据匹配规则
 public class Oracle extends DatasourceConfiguration {
     private String driver = "oracle.jdbc.driver.OracleDriver";
     private String extraParams = "";
+    // 执行当前服务方法并返回处理结果
     private List<String> getOracleIllegalParameters() {
         return Arrays.asList(
                 // 原有参数（如RMI相关）
@@ -30,6 +32,7 @@ public class Oracle extends DatasourceConfiguration {
     }
 
 
+    // 构建当前数据源的连接地址
     public String getJdbc() {
         if(StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")){
             if (!getJdbcUrl().startsWith("jdbc:oracle")) {
@@ -58,6 +61,7 @@ public class Oracle extends DatasourceConfiguration {
     private static final Pattern SERVICE_PATTERN = Pattern.compile(":@//[^/]+/([^?]+)");
     private static final Pattern SID_PATTERN = Pattern.compile(":@[^:]+:(\\d+):([^?]+)");
     @Override
+    // 转换输入数据并返回目标格式
     protected void convertDatabase(String jdbcUrl) {
         Matcher serviceMatcher = SERVICE_PATTERN.matcher(jdbcUrl);
         if (serviceMatcher.find()) {

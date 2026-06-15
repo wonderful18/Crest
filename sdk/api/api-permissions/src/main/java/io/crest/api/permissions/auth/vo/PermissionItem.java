@@ -12,6 +12,7 @@ import java.io.Serializable;
 
 @Schema(description = "权限项")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class PermissionItem implements Serializable {
 
     @Serial
