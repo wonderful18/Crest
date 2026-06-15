@@ -149,6 +149,8 @@ pnpm dev
 | `CREST_DB_HOST` | MySQL 地址 |
 | `CREST_DB_PORT` | MySQL 端口 |
 | `CREST_DB_NAME` | 元数据库名 |
+| `CREST_DB_TYPE` | 元数据库类型，默认 `mysql`；OceanBase 适配见 `docs/oceanbase-support.md` |
+| `CREST_DB_URL` | 可选完整 JDBC URL，配置后优先于主机、端口和库名 |
 | `CREST_DB_USERNAME` | 元数据库账号 |
 | `CREST_DB_PASSWORD` | 元数据库密码 |
 | `CREST_INITIAL_PASSWORD` | 管理员初始密码，不能为空 |

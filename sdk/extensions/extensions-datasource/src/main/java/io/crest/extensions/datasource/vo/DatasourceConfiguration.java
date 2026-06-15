@@ -28,6 +28,7 @@ public class DatasourceConfiguration extends Configuration {
         Excel("Excel", "Excel", "LOCALFILE", "`", "`", 16),
         ExcelRemote("ExcelRemote", "ExcelRemote", "LOCALFILE", "`", "`", 29),
         mysql("mysql", "Mysql", "OLTP", "`", "`", 27),
+        obMysql("obMysql", "OceanBase MySQL", "OLTP", "`", "`", 32),
         impala("impala", "Apache Impala", "OLAP", "`", "`", 5),
         mariadb("mariadb", "Mariadb", "OLTP", "`", "`", 6),
         StarRocks("StarRocks", "StarRocks", "OLAP", "`", "`", 7),

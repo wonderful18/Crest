@@ -445,6 +445,7 @@ public abstract class Provider {
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(coreDatasource.getType());
         switch (datasourceType) {
             case mysql:
+            case obMysql:
             case mongo:
             case StarRocks:
             case TiDB:

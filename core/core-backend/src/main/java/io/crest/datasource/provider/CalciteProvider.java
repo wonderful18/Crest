@@ -698,12 +698,15 @@ public class CalciteProvider extends Provider {
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(coreDatasource.getType());
         switch (datasourceType) {
             case mysql:
+            case obMysql:
             case mongo:
             case StarRocks:
             case doris:
             case TiDB:
             case mariadb:
-                configuration = JsonUtil.parseObject(coreDatasource.getConfiguration(), Mysql.class);
+                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                        ? JsonUtil.parseObject(coreDatasource.getConfiguration(), ObMysql.class)
+                        : JsonUtil.parseObject(coreDatasource.getConfiguration(), Mysql.class);
                 break;
             case impala:
                 configuration = JsonUtil.parseObject(coreDatasource.getConfiguration(), Impala.class);
@@ -1167,12 +1170,15 @@ public class CalciteProvider extends Provider {
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasourceDTO.getType());
         switch (datasourceType) {
             case mysql:
+            case obMysql:
             case mongo:
             case mariadb:
             case TiDB:
             case StarRocks:
             case doris:
-                configuration = JsonUtil.parseObject(datasourceDTO.getConfiguration(), Mysql.class);
+                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                        ? JsonUtil.parseObject(datasourceDTO.getConfiguration(), ObMysql.class)
+                        : JsonUtil.parseObject(datasourceDTO.getConfiguration(), Mysql.class);
                 if (StringUtils.isNotEmpty(configuration.getUrlType()) && configuration.getUrlType().equalsIgnoreCase("jdbcUrl")) {
                     if (configuration.getJdbcUrl().contains("password=")) {
                         String[] params = configuration.getJdbcUrl().split("\\?")[1].split("&");
@@ -1440,12 +1446,15 @@ public class CalciteProvider extends Provider {
                         }
                         switch (datasourceType) {
                             case mysql:
+                            case obMysql:
                             case mongo:
                             case mariadb:
                             case TiDB:
                             case StarRocks:
                             case doris:
-                                configuration = JsonUtil.parseObject(ds.getConfiguration(), Mysql.class);
+                                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                                        ? JsonUtil.parseObject(ds.getConfiguration(), ObMysql.class)
+                                        : JsonUtil.parseObject(ds.getConfiguration(), Mysql.class);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1689,10 +1698,13 @@ public class CalciteProvider extends Provider {
                 }
                 break;
             case mysql:
+            case obMysql:
             case mongo:
             case mariadb:
             case TiDB:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
+                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                        ? JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), ObMysql.class)
+                        : JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
                 if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
                     database = configuration.getDataBase();
                 } else {
@@ -1868,9 +1880,12 @@ public class CalciteProvider extends Provider {
                 tableSqls.add(new QueryAndParams("show tables"));
                 break;
             case mysql:
+            case obMysql:
             case mariadb:
             case TiDB:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
+                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                        ? JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), ObMysql.class)
+                        : JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
                 if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
                     database = configuration.getDataBase();
                 } else {

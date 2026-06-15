@@ -7,6 +7,7 @@ spring:
         enabled: true
         server-addr: 127.0.0.1:8848
   datasource:
+    driver-class-name: ${CREST_DB_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
     url: ${CREST_DB_URL:jdbc:mysql://localhost:3306/crest?autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false}
     username: ${CREST_DB_USERNAME:root}
     password: ${CREST_DB_PASSWORD:}

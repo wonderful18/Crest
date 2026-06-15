@@ -1,0 +1,43 @@
+package io.crest.metadata;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.core.Ordered;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * Injects metadata database defaults after CREST_DB_TYPE is known.
+ */
+public class MetadataDbEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
+
+    private static final String PROPERTY_SOURCE_NAME = "crestMetadataDbDefaults";
+
+    @Override
+    public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+        MetadataDbType type = MetadataDbTypeResolver.resolve(environment);
+        Map<String, Object> defaults = new LinkedHashMap<>();
+        defaults.put(MetadataDbTypeResolver.PROPERTY_NAME, type.getCode());
+        defaults.put("spring.datasource.driver-class-name",
+                "${CREST_DB_DRIVER_CLASS_NAME:" + type.getDriverClassName() + "}");
+
+        if (type.isOceanBase()) {
+            defaults.put("spring.datasource.url", "${CREST_DB_URL:" + oceanBaseJdbcUrl() + "}");
+        }
+        defaults.put("spring.flyway.locations",
+                "${CREST_FLYWAY_LOCATIONS:" + type.getDefaultFlywayLocations() + "}");
+        environment.getPropertySources().addFirst(new MapPropertySource(PROPERTY_SOURCE_NAME, defaults));
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.LOWEST_PRECEDENCE;
+    }
+
+    private String oceanBaseJdbcUrl() {
+        return "jdbc:oceanbase://${CREST_DB_HOST:127.0.0.1}:${CREST_DB_PORT:2883}/${CREST_DB_NAME:crest}";
+    }
+}

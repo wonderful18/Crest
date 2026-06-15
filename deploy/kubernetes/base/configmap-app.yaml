@@ -11,6 +11,7 @@ data:
 
     spring:
       datasource:
+        driver-class-name: ${CREST_DB_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
         url: jdbc:mysql://${CREST_DB_HOST}:${CREST_DB_PORT}/${CREST_DB_NAME}?${CREST_DB_PARAMS}
         username: ${CREST_DB_USERNAME}
         password: ${CREST_DB_PASSWORD}
@@ -60,6 +61,8 @@ data:
       mapper-locations: classpath:mybatis/*.xml
 
     crest:
+      metadata-db:
+        type: ${CREST_DB_TYPE:mysql}
       internal-lite:
         enabled: true
       demo:

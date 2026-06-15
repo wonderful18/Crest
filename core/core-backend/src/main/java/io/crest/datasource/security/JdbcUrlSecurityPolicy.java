@@ -22,6 +22,7 @@ public final class JdbcUrlSecurityPolicy {
 
     private static final Map<String, String> JDBC_PREFIXES = Map.ofEntries(
             Map.entry("mysql", "jdbc:mysql"),
+            Map.entry("obmysql", "jdbc:oceanbase"),
             Map.entry("mongo", "jdbc:mysql"),
             Map.entry("mariadb", "jdbc:mysql"),
             Map.entry("starrocks", "jdbc:mysql"),
@@ -40,6 +41,7 @@ public final class JdbcUrlSecurityPolicy {
 
     private static final Map<String, String> DEFAULT_DRIVERS = Map.ofEntries(
             Map.entry("mysql", "com.mysql.cj.jdbc.Driver"),
+            Map.entry("obmysql", "com.oceanbase.jdbc.Driver"),
             Map.entry("mongo", "com.mysql.cj.jdbc.Driver"),
             Map.entry("mariadb", "com.mysql.cj.jdbc.Driver"),
             Map.entry("starrocks", "com.mysql.cj.jdbc.Driver"),
@@ -83,6 +85,7 @@ public final class JdbcUrlSecurityPolicy {
 
     private static final Map<String, Set<String>> TYPE_DANGEROUS_FRAGMENTS = Map.ofEntries(
             Map.entry("mysql", Set.of("maxallowedpacket", "allowloadlocalinfile", "allowurlinlocalinfile", "allowloadlocalinfileinpath", "allowmultiqueries")),
+            Map.entry("obmysql", Set.of("maxallowedpacket", "allowloadlocalinfile", "allowurlinlocalinfile", "allowloadlocalinfileinpath", "allowmultiqueries")),
             Map.entry("mongo", Set.of()),
             Map.entry("mariadb", Set.of("maxallowedpacket", "allowloadlocalinfile", "allowurlinlocalinfile", "allowloadlocalinfileinpath", "allowmultiqueries")),
             Map.entry("starrocks", Set.of("maxallowedpacket", "allowloadlocalinfile", "allowurlinlocalinfile", "allowloadlocalinfileinpath", "allowmultiqueries")),
