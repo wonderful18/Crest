@@ -23,8 +23,10 @@ import { useEmitt } from '@/hooks/web/useEmitt'
 import Icon from '../../../../../../components/icon-custom/src/Icon.vue'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 
+/** 国际化翻译函数。 */
 const { t } = useI18n()
 
+/** 提示框样式面板入参，包含图表配置、主题、字段和可见属性集合。 */
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -42,15 +44,23 @@ const props = defineProps({
     type: Array<string>
   }
 })
+/** 主画布仓库提供批量模式、移动端状态和全局格式化配置。 */
 const dvMainStore = dvMainStoreWithOut()
+/** 批量模式和移动端预览状态引用。 */
 const { batchOptStatus, mobileInPc } = storeToRefs(dvMainStore)
+/** 颜色选择器预设色板。 */
 const predefineColors = COLOR_PANEL
+/** 根据编辑器主题反转 tooltip 主题。 */
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
+/** 向父级同步提示框和扩展提示字段变化。 */
 const emit = defineEmits(['onTooltipChange', 'onExtTooltipChange'])
+/** 当前正在编辑的系列提示格式。 */
 const curSeriesFormatter = ref<DeepPartial<SeriesFormatter>>({})
+/** 注入的指标字段集合。 */
 const quotaData = ref<Axis[]>(inject('quotaData'))
+/** 是否展示多系列 tooltip 格式化配置。 */
 const showSeriesTooltipFormatter = computed(() => {
   return (
     showProperty('seriesTooltipFormatter') &&
@@ -61,6 +71,7 @@ const showSeriesTooltipFormatter = computed(() => {
 })
 
 // 切换图表类型直接重置为默认
+/** 图表类型切换后重建系列 tooltip 配置。 */
 const changeChartType = () => {
   if (!showSeriesTooltipFormatter.value) {
     return
@@ -94,6 +105,7 @@ const changeChartType = () => {
   emit('onExtTooltipChange', extTooltip.value)
 }
 // 切换数据集
+/** 数据集切换后清理失效字段并补齐新增字段。 */
 const changeDataset = () => {
   curSeriesFormatter.value = {}
   const formatter = state.tooltipForm.seriesTooltipFormatter
@@ -124,10 +136,13 @@ const changeDataset = () => {
   }
 }
 
+/** tooltip 默认跟踪的指标轴集合。 */
 const AXIS_PROP: AxisType[] = ['yAxis', 'yAxisExt', 'extBubble']
+/** 当前图表 tooltip 需要监听的轴集合。 */
 const tooltipAxisProp = computed<AxisType[]>(() => {
   return props.chart.type === 'multi-scatter' ? ['xAxis', ...AXIS_PROP] : AXIS_PROP
 })
+/** 当前 tooltip 可配置的指标轴字段。 */
 const quotaAxis = computed(() => {
   let result = []
   const axisList: AxisType[] = tooltipAxisProp.value
@@ -147,10 +162,12 @@ const quotaAxis = computed(() => {
   return result
 })
 
+/** 当前可配置指标轴字段编号集合。 */
 const quotaAxisIds = computed(() => {
   return map(quotaAxis.value, a => a.id)
 })
 
+/** 判断字段选项是否应在当前图表类型中显示。 */
 function showOption(item) {
   if (props.chart.type.includes('chart-mix')) {
     return includes(quotaAxisIds.value, item.id)
@@ -158,13 +175,16 @@ function showOption(item) {
   return true
 }
 
+/** 非当前指标轴但仍展示的扩展 tooltip 字段。 */
 const extTooltip = computed(() => {
   const quotaIds = quotaAxis.value?.map(i => i.id)
   return state.tooltipForm.seriesTooltipFormatter.filter(
     i => !quotaIds.includes(i.id) && i.show && quotaData.value?.findIndex(j => j.id === i.id) !== -1
   )
 })
+/** 当前图表是否为多维散点图。 */
 const isMultiScatter = computed(() => props.chart.type === 'multi-scatter')
+/** 是否展示汇总方式选择。 */
 const showFormatterSummary = computed(() => {
   // 多维散点图不聚合，不显示汇总方式选择
   if (isMultiScatter.value) {
@@ -175,9 +195,11 @@ const showFormatterSummary = computed(() => {
     curSeriesFormatter.value.id !== '-1'
   )
 })
+/** 当前系列名称是否允许编辑。 */
 const formatterNameEditable = computed(() => {
   return quotaAxis.value?.findIndex(i => curSeriesFormatter.value.id === i.id) !== -1
 })
+/** 当前图表是否允许编辑 tooltip 系列格式。 */
 const formatterEditable = computed(() => {
   return (
     showProperty('seriesTooltipFormatter') &&
@@ -186,9 +208,11 @@ const formatterEditable = computed(() => {
       (isMultiScatter.value && props.chart.xAxis?.some(i => i.groupType === 'q')))
   )
 })
+/** 当前图表类型对应的视图实例。 */
 const chartViewInstance = computed(() => {
   return chartViewManager.getChartView(props.chart.render, props.chart.type)
 })
+/** 数值字段可选的聚合方式。 */
 const AGGREGATION_TYPE = [
   { name: t('chart.sum'), value: 'sum' },
   { name: t('chart.avg'), value: 'avg' },
@@ -199,17 +223,21 @@ const AGGREGATION_TYPE = [
   { name: t('chart.count'), value: 'count' },
   { name: t('chart.count_distinct'), value: 'count_distinct' }
 ]
+/** 非数值字段可选的聚合方式。 */
 const COUNT_AGGREGATION_TYPE = [
   { name: t('chart.count'), value: 'count' },
   { name: t('chart.count_distinct'), value: 'count_distinct' }
 ]
+/** 需要按计数类处理的字段类型集合。 */
 const COUNT_FIELD_TYPES = [0, 1, 5]
 
 // 当前选中的指标是否为非数值类型，非数值类型禁用数值格式配置
+/** 当前选中的格式字段是否为非数值类型。 */
 const isNonNumericFormatter = computed(() => {
   return COUNT_FIELD_TYPES.includes(curSeriesFormatter.value?.fieldType)
 })
 
+/** 根据字段类型返回可用聚合方式。 */
 const aggregationList = computed(() => {
   if (COUNT_FIELD_TYPES.includes(curSeriesFormatter.value?.fieldType)) {
     return COUNT_AGGREGATION_TYPE
@@ -217,6 +245,7 @@ const aggregationList = computed(() => {
   return AGGREGATION_TYPE
 })
 
+/** 条形范围图是否使用时间维度。 */
 const isBarRangeTime = computed<boolean>(() => {
   if (props.chart.type === 'bar-range') {
     const tempYAxis = props.chart.yAxis[0]
@@ -231,6 +260,7 @@ const isBarRangeTime = computed<boolean>(() => {
   return false
 })
 
+/** 监听 tooltip 配置变化并刷新表单。 */
 watch(
   [() => props.chart.customAttr.tooltip, () => props.chart.customAttr.tooltip.show],
   () => {
@@ -239,6 +269,7 @@ watch(
   { deep: false }
 )
 
+/** tooltip 表单状态。 */
 const state = reactive({
   tooltipForm: {
     tooltipFormatter: DEFAULT_TOOLTIP.tooltipFormatter,
@@ -246,6 +277,7 @@ const state = reactive({
   } as DeepPartial<ChartTooltipAttr>
 })
 
+/** 字号下拉选项。 */
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -263,6 +295,7 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+/** 通知父级 tooltip 属性变化，并同步扩展 tooltip。 */
 const changeTooltipAttr = (prop: string, requestData = false, render = true) => {
   // 多序列处理 extTooltip
   if (prop === 'seriesTooltipFormatter') {
@@ -271,12 +304,15 @@ const changeTooltipAttr = (prop: string, requestData = false, render = true) => 
   emit('onTooltipChange', { data: state.tooltipForm, requestData, render }, prop)
 }
 
+/** 切换格式单位语言并通知父级刷新。 */
 function changeUnitLanguage(cfg: BaseFormatter, lang, prop: string) {
   onChangeFormatCfgUnitLanguage(cfg, lang)
   changeTooltipAttr(prop)
 }
 
+/** 格式化配置选择器引用。 */
 const formatterSelector = ref()
+/** 初始化 tooltip 表单和系列格式配置。 */
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customAttr) {
@@ -326,6 +362,7 @@ const init = () => {
   }
 }
 
+/** 判断属性是否应在当前图表的 tooltip 面板中展示。 */
 const showProperty = prop => {
   const instance = chartViewManager.getChartView(props.chart.render, props.chart.type)
   if (instance) {
@@ -333,6 +370,7 @@ const showProperty = prop => {
   }
   return props.propertyInner?.includes(prop)
 }
+/** 响应轴字段增删改事件并更新系列 tooltip 配置。 */
 const updateSeriesTooltipFormatter = (form: AxisEditForm) => {
   const { axisType, editType } = form
   if (
@@ -359,6 +397,7 @@ const updateSeriesTooltipFormatter = (form: AxisEditForm) => {
   emit('onTooltipChange', { data: state.tooltipForm, render: false }, 'seriesTooltipFormatter')
   emit('onExtTooltipChange', extTooltip.value)
 }
+/** 轴字段新增时补齐对应 tooltip 系列配置。 */
 const addAxis = (form: AxisEditForm) => {
   const { axis, axisType } = form
   const axisMap = axis.reduce((pre, next) => {
@@ -396,6 +435,7 @@ const addAxis = (form: AxisEditForm) => {
     ele => quotaAxis.value.findIndex(item => item.id === ele.id) !== -1
   ).flat()
 }
+/** 轴字段移除时隐藏或删除对应 tooltip 系列配置。 */
 const removeAxis = (form: AxisEditForm) => {
   const { axis, axisType } = form
   const axisMap = axis.reduce((pre, next) => {
@@ -439,6 +479,7 @@ const removeAxis = (form: AxisEditForm) => {
     curSeriesFormatter.value = state.tooltipForm.seriesTooltipFormatter?.[0]
   }
 }
+/** 轴字段更新时同步展示名和汇总方式。 */
 const updateAxis = (form: AxisEditForm) => {
   const { axis, axisType } = form
   const axisMap = axis.reduce((pre, next) => {
@@ -457,6 +498,7 @@ const updateAxis = (form: AxisEditForm) => {
     }
   })
 }
+/** 可用于自定义 tooltip 文案的全部字段。 */
 const allFields = computed(() => {
   return defaultTo(props.allFields, []).map(item => ({
     key: item.engineFieldName,
@@ -465,6 +507,7 @@ const allFields = computed(() => {
     disabled: false
   }))
 })
+/** 根据选中字段生成 tooltip 默认占位文案。 */
 const defaultPlaceholder = computed(() => {
   if (state.tooltipForm.showFields && state.tooltipForm.showFields.length > 0) {
     return state.tooltipForm.showFields
@@ -477,6 +520,7 @@ const defaultPlaceholder = computed(() => {
   }
   return ''
 })
+/** 字段列表变化时移除已失效的 tooltip 展示字段。 */
 watch(
   () => allFields.value,
   () => {
@@ -495,9 +539,11 @@ watch(
     }
   }
 )
+/** 是否展示总占比配置。 */
 const showTotalPercent = computed(() => {
   return props.chart.type === 'sankey'
 })
+/** 挂载后初始化表单并注册轴字段和数据集变化事件。 */
 onMounted(() => {
   init()
   useEmitt({ name: 'addAxis', callback: updateSeriesTooltipFormatter })
