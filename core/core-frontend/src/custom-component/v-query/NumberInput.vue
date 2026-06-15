@@ -10,8 +10,10 @@ interface SelectConfig {
   defaultNumValueStart: number
   placeholder: string
 }
+// 查询条件占位符显示配置由上层注入。
 const placeholder: Ref = inject('placeholder')
 
+// 根据占位符开关决定是否展示配置中的提示文案。
 const placeholderText = computed(() => {
   if (placeholder?.value?.placeholderShow) {
     return props.config.placeholder
@@ -19,6 +21,7 @@ const placeholderText = computed(() => {
   return ' '
 })
 
+// 数值范围查询组件的配置属性和编辑态标记。
 const props = defineProps({
   config: {
     type: Object as PropType<SelectConfig>,
@@ -40,7 +43,9 @@ const props = defineProps({
   }
 })
 
+// 保持查询配置的响应式引用，便于直接回写起止值。
 const { config } = toRefs(props)
+// 根据默认值开关初始化数值范围查询参数。
 const setParams = () => {
   if (!config.value.defaultValueCheck) {
     config.value.numValueEnd = undefined
@@ -54,10 +59,14 @@ const setParams = () => {
 onBeforeMount(() => {
   setParams()
 })
+// 上层注入的查询条件宽度计算函数。
 const queryConditionWidth = inject('com-width', Function, true)
+// 大屏筛选器注入的背景和边框样式。
 const customStyle = inject<{ background: string; border: string }>('$custom-style-filter')
+// 上层注入的确认查询触发函数。
 const isConfirmSearch = inject('is-confirm-search', Function, true)
 
+// 根据占位符模式和配置宽度计算输入框宽度。
 const getCustomWidth = () => {
   if (placeholder?.value?.placeholderShow) {
     if (props.config.queryConditionWidth === undefined) {
@@ -67,9 +76,11 @@ const getCustomWidth = () => {
   }
   return 227
 }
+// 数字输入框宽度样式。
 const selectStyle = computed(() => {
   return { width: getCustomWidth() + 'px' }
 })
+// 非配置态数值变化后触发确认查询。
 const handleValueChange = () => {
   if (!props.isConfig) {
     nextTick(() => {
@@ -79,6 +90,7 @@ const handleValueChange = () => {
   }
 }
 
+// 输入框控制按钮边框色跟随自定义主题。
 const color = computed(() => {
   return customStyle.border
 })

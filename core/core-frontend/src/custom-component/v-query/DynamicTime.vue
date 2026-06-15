@@ -29,6 +29,7 @@ interface SelectConfig {
   timeGranularity: DatePickType
 }
 
+// 查询条件的动态时间配置属性。
 const props = defineProps({
   config: {
     type: Object as PropType<SelectConfig>,
@@ -48,10 +49,13 @@ const props = defineProps({
     }
   }
 })
+// 日期选择器当前展示的默认时间值。
 const selectValue = ref()
 
+// 保持 config 的响应式引用，便于直接回写默认值。
 const { config } = toRefs(props)
 
+// 抽取会影响动态时间计算的配置项，减少无关字段触发。
 const timeConfig = computed(() => {
   const {
     relativeToCurrent,
@@ -98,6 +102,7 @@ watch(
   }
 )
 
+// 根据动态时间配置计算默认日期，并同步到查询参数。
 const init = () => {
   const {
     relativeToCurrent,
