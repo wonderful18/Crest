@@ -20,11 +20,13 @@ import { formatterViewInfo } from '@/views/chart/components/js/formatter'
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const { canvasStyleData, canvasViewInfo } = storeToRefs(dvMainStore)
+// 初始化完成前不向已有图表批量写入主题属性，避免面板挂载过程覆盖画布初始状态。
 let canvasAttrInit = false
 
-// 保存画布属性面板默认展开项
+// 默认展开尺寸、基础、背景和配色，覆盖创建大屏时最常调整的画布配置。
 const canvasAttrActiveNames = ref(['size', 'baseSetting', 'background', 'color'])
 const { t } = useI18n()
+// 适配方式仅在预览态生效，编辑态仍按画布实际尺寸计算组件坐标。
 const screenAdaptorList = [
   { label: t('visualization.screen_adaptor_width_first'), value: 'widthFirst' },
   { label: t('visualization.screen_adaptor_height_first'), value: 'heightFirst' },
@@ -32,35 +34,35 @@ const screenAdaptorList = [
   { label: t('visualization.screen_adaptor_keep'), value: 'keep' },
   { label: t('visualization.screen_adaptor_keep_proportion'), value: 'keepProportion' }
 ]
-// 标记画布属性面板已完成初始化
+// 延后一帧标记初始化完成，确保 collapse 子组件完成默认值写入后再允许批量同步。
 const init = () => {
   nextTick(() => {
     canvasAttrInit = true
   })
 }
 
-// 同步全局数值格式化配置到视图
+// 全局数值格式化配置会应用到所有图表，用于统一大屏内指标单位和千分位展示。
 const onFormatterItemChange = val => {
   themeAttrChange('formatterCfg', 'formatterCfg', val)
 }
 
-// 同步全局配色配置到视图
+// 全局配色配置会批量合并到图表 customAttr，单图表专属字段在合并时保留。
 const onColorChange = val => {
   themeAttrChange('customAttr', 'color', val)
 }
 
-// 记录画布样式变更快照
+// 画布样式变更只需要重新渲染图表，不改变数据查询条件。
 const onStyleChange = () => {
   snapshotStore.recordSnapshotCache('renderChart')
 }
 
-// 记录基础设置变更并刷新滚动区域
+// 尺寸和适配方式变化后需要刷新滚动容器，保证画布滚动条和缩放区域同步。
 const onBaseChange = () => {
   snapshotStore.recordSnapshotCache('renderChart')
   useEmitt().emitter.emit('initScroll')
 }
 
-// 将主题属性变更批量同步到画布视图
+// 批量主题变更会遍历当前画布视图并触发对应图表重绘，富文本额外触发数据计算保持内容同步。
 const themeAttrChange = (custom, property, value) => {
   if (canvasAttrInit) {
     Object.keys(canvasViewInfo.value).forEach(function (viewId) {
@@ -70,6 +72,7 @@ const themeAttrChange = (custom, property, value) => {
           formatterViewInfo(viewInfo, value)
         } else if (custom === 'customAttr') {
           if (viewInfo.type === 'flow-map') {
+            // 流向图 misc 中包含线路和点位专属配置，批量主题色只覆盖通用字段，保留图表个性化参数。
             const { customAttr } = viewInfo
             const tmpValue = cloneDeep(value)
             const miscObj = cloneDeep(customAttr.misc)
@@ -91,6 +94,7 @@ const themeAttrChange = (custom, property, value) => {
         }
         useEmitt().emitter.emit('renderChart-' + viewId, viewInfo)
         if (viewInfo.type === 'rich-text') {
+          // 富文本渲染内容可能引用全局格式化结果，重绘后还需要重新计算文本数据。
           useEmitt().emitter.emit('calcData-' + viewId, viewInfo)
         }
       } catch (e) {

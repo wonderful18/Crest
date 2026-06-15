@@ -25,7 +25,7 @@ const appearanceStore = useAppearanceStoreWithOut()
 
 const { t } = useI18n()
 
-// 定义指标值样式面板接收的图表和主题参数
+// 指标值样式面板只编辑 customAttr.indicator 和部分基础样式，不直接触发图表数据重新查询。
 const props = defineProps({
   chart: {
     type: Object,
@@ -40,13 +40,14 @@ const props = defineProps({
   }
 })
 
-// 声明指标值样式和基础样式变更时向父组件派发的事件
+// 父组件负责合并样式变更并记录快照，这里只上报变更字段和当前表单值。
 const emit = defineEmits(['onIndicatorChange', 'onBasicStyleChange'])
-// 根据当前主题计算提示框主题
+// 提示框主题与面板主题反向搭配，保证暗色面板上的提示内容可读。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
 const predefineColors = COLOR_PANEL
+// 系统字体和用户上传字体统一进入下拉列表，value 保持字体名称，便于渲染层直接应用。
 const fontFamily = CHART_FONT_FAMILY_ORIGIN.concat(
   appearanceStore.fontList.map(ele => ({
     name: ele.name,
@@ -55,12 +56,12 @@ const fontFamily = CHART_FONT_FAMILY_ORIGIN.concat(
 )
 const fontLetterSpace = CHART_FONT_LETTER_SPACE
 
-// 保存指标值样式表单和基础样式表单
+// 表单状态拆分为指标值样式和基础图表样式，避免后缀设置误写到 basicStyle。
 const state = reactive({
   indicatorValueForm: JSON.parse(JSON.stringify(DEFAULT_INDICATOR_STYLE)),
   basicStyleForm: {} as ChartBasicStyle
 })
-// 生成指标值字号选项
+// 指标卡片字号跨度较大，小字号用细粒度步进，大字号用 10px 步进控制列表长度。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 60; i = i + 2) {
@@ -78,12 +79,12 @@ const fontSizeList = computed(() => {
   return arr
 })
 
-// 派发指标值样式字段变更
+// 每次字段变更都带上字段名，父组件可按字段决定是否立即重绘或仅更新配置。
 const changeLabelTitleStyleStyle = prop => {
   emit('onIndicatorChange', state.indicatorValueForm, prop)
 }
 
-// 使用图表当前配置初始化指标值样式表单
+// 初始化时以图表已保存配置为准，再补齐新增字段默认值，兼容旧版本指标卡配置。
 const init = () => {
   const TEMP_DEFAULT_BASIC_STYLE = cloneDeep(DEFAULT_BASIC_STYLE)
   delete TEMP_DEFAULT_BASIC_STYLE.alpha
@@ -100,19 +101,19 @@ const init = () => {
 
   state.indicatorValueForm = cloneDeep(customText)
 
-  //第一次颜色可能赋值失败，单独赋值一次
+  // 颜色选择器首次挂载时可能晚于表单赋值，下一帧再次同步可保证主值和后缀颜色正确回显。
   nextTick(() => {
     state.indicatorValueForm.color = customText.color
     state.indicatorValueForm.suffixColor = customText.suffixColor
   })
 }
 
-// 挂载后初始化指标值样式
+// 组件挂载后读取当前图表配置，避免编辑面板打开时展示默认值覆盖已有配置。
 onMounted(() => {
   init()
 })
 
-// 监听指标值配置变化并刷新表单
+// 外部撤销、重做或主题切换会替换 indicator 对象，需要重新合并默认值并刷新表单。
 watch(
   () => props.chart?.customAttr?.indicator,
   () => {
@@ -121,7 +122,7 @@ watch(
   { deep: true }
 )
 
-// 返回当前指标值样式表单数据
+// 暴露给父组件的读取入口，用于保存前收集面板内尚未派发的最新表单状态。
 function getFormData() {
   return state.indicatorValueForm
 }

@@ -6,6 +6,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import DynamicTime from './DynamicTimeFiltering.vue'
 import DynamicTimeRange from './DynamicTimeRangeFiltering.vue'
 import { ManipulateType } from 'dayjs'
+// 时间筛选配置由父组件持有，本组件只根据粒度提供固定时间和动态时间的编辑入口。
 const props = withDefaults(
   defineProps<{
     timeRange: TimeRange
@@ -32,6 +33,7 @@ const props = withDefaults(
 )
 
 const { t } = useI18n()
+// 区间类型决定筛选组件展示单端时间、双端区间或完全关闭时间限制。
 const intervalTypeList = [
   {
     label: t('chart.line_symbol_none'),
@@ -51,7 +53,7 @@ const intervalTypeList = [
   }
 ]
 
-// 根据当前区间类型计算固定或动态时间设置的标题
+// 设置区标题跟随区间类型变化，保持开始、结束和区间三种配置语义一致。
 const regularOrTrendsTitle = computed(() => {
   return (
     intervalTypeList.find(ele => ele.value === timeRange.value.intervalType)?.label ||
@@ -59,19 +61,20 @@ const regularOrTrendsTitle = computed(() => {
   )
 })
 const { timeRange } = toRefs(props)
-// 判断当前时间筛选是否启用动态时间模式
+// 动态模式会把保存值解释为相对当前时间，固定模式则直接保存选择器中的具体日期。
 const dynamicTime = computed(() => {
   return timeRange.value.regularOrTrends !== 'fixed'
 })
-// 根据区间类型选择单时间或时间范围筛选组件
+// 区间模式使用范围组件，开始/结束模式使用单时间组件，避免模板中重复维护两套预览逻辑。
 const filterTypeCom = computed(() => {
   const { intervalType } = timeRange.value
   return intervalType === 'timeInterval' ? DynamicTimeRange : DynamicTime
 })
-// 生成范围选择器需要的时间粒度类型
+// Element Plus 的范围选择类型通过粒度后缀拼接得到，例如 monthrange、datetimerange。
 const timeGranularityMultiple = computed<DatePickType>(() => {
   return (props.timeGranularity + 'range') as DatePickType
 })
+// 自定义相对时间使用前后方向描述，实际计算由动态时间组件按该方向解析。
 const aroundList = [
   {
     label: t('dynamic_time.before'),
@@ -82,7 +85,7 @@ const aroundList = [
     value: 'b'
   }
 ]
-// 根据当前粒度生成可选择的相对时间单位
+// 相对时间单位不能细于当前筛选粒度，避免按年筛选时出现按日偏移这类无效配置。
 const relativeToCurrentTypeList = computed(() => {
   if (!timeRange.value) return []
   let index = ['year', 'month', 'date', 'datetime'].indexOf(props.timeGranularity) + 1
@@ -102,7 +105,7 @@ const relativeToCurrentTypeList = computed(() => {
   ].slice(0, index)
 })
 
-// 根据当前粒度生成单点动态时间的快捷范围
+// 单点动态快捷项按当前粒度收敛，保存值是稳定枚举，文案只用于界面展示。
 const relativeToCurrentList = computed(() => {
   let list = []
   if (!timeRange.value) return list
@@ -185,7 +188,7 @@ const relativeToCurrentList = computed(() => {
   ]
 })
 
-// 根据当前粒度生成时间区间动态范围的快捷范围
+// 区间动态快捷项覆盖常用累计窗口，区间两端的自定义配置只在 custom 模式下显示。
 const relativeToCurrentListRange = computed(() => {
   let list = []
   if (!timeRange.value) return list
@@ -272,7 +275,7 @@ const relativeToCurrentListRange = computed(() => {
     }
   ]
 })
-// 监听区间快捷范围列表变化，修正不再可用的已选项
+// 粒度切换后若原区间快捷项不可用，回退到当前列表第一个有效项，避免保存脏值。
 watch(
   () => relativeToCurrentListRange.value,
   val => {
@@ -283,7 +286,7 @@ watch(
   { immediate: true }
 )
 
-// 监听单点快捷范围列表变化，修正不再可用的已选项
+// 单点快捷项同样需要随粒度回退，保证预览组件始终能解析当前枚举值。
 watch(
   () => relativeToCurrentList.value,
   val => {
@@ -294,7 +297,7 @@ watch(
   { immediate: true }
 )
 
-// 监听相对时间单位列表变化，修正不再可用的已选单位
+// 自定义相对单位随粒度收敛后同步修正，避免 dayjs 计算收到当前粒度不支持的单位。
 watch(
   () => relativeToCurrentTypeList.value,
   val => {
