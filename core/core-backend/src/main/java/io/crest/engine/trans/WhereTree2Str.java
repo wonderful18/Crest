@@ -22,7 +22,13 @@ import org.apache.commons.lang3.Strings;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 行权限条件树到 SQL where 片段的转换工具。
+ */
 public class WhereTree2Str {
+    /**
+     * 将多棵行权限过滤树转换为 SQLMeta 的 where 条件。
+     */
     public static void transFilterTrees(SQLMeta meta, List<DataSetRowPermissionsTreeDTO> requestList, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         SQLObj tableObj = meta.getTable();
         if (ObjectUtils.isEmpty(tableObj)) {
@@ -34,9 +40,7 @@ public class WhereTree2Str {
         List<String> res = new ArrayList<>();
         List<String> exportFilters = new ArrayList<>();
         Map<String, String> fieldsDialect = new HashMap<>();
-        // permission trees
-        // 解析每个tree，然后多个tree之间用and拼接
-        // 每个tree，如果是sub tree节点，则使用递归合并成一组条件
+        // 逐棵解析权限树，子树节点通过递归合并为一组条件。
         for (DataSetRowPermissionsTreeDTO request : requestList) {
             DatasetRowPermissionsTreeObj tree = request.getTree();
             if (ObjectUtils.isEmpty(tree)) {
@@ -61,6 +65,9 @@ public class WhereTree2Str {
         meta.setWhereTreesDialect(fieldsDialect);
     }
 
+    /**
+     * 将单棵权限树递归转换为 SQL 条件。
+     */
     private static String transTreeToWhere(SQLObj tableObj, DatasetRowPermissionsTreeObj tree, List<DatasetTableFieldDTO> originFields, Map<String, String> fieldsDialect, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         if (ObjectUtils.isEmpty(tree)) {
             return null;
@@ -69,14 +76,14 @@ public class WhereTree2Str {
         List<DatasetRowPermissionsTreeItem> items = tree.getItems();
         List<String> list = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(items)) {
-            // type is item or tree
+            // 节点类型为条件项或子树。
             for (DatasetRowPermissionsTreeItem item : items) {
                 String exp = null;
                 if (Strings.CI.equals(item.getType(), "item")) {
-                    // 单个item拼接SQL，最后根据logic汇总
+                    // 单个条件项先转换为 SQL，最后按逻辑关系汇总。
                     exp = transTreeItem(tableObj, item, originFields, fieldsDialect, isCross, dsMap, fieldParam, chartParam, pluginManage);
                 } else if (Strings.CI.equals(item.getType(), "tree")) {
-                    // 递归tree
+                    // 子树继续递归转换。
                     exp = transTreeToWhere(tableObj, item.getSubTree(), originFields, fieldsDialect, isCross, dsMap, fieldParam, chartParam, pluginManage);
                 }
                 if (StringUtils.isNotEmpty(exp)) {
@@ -87,6 +94,9 @@ public class WhereTree2Str {
         return CollectionUtils.isNotEmpty(list) ? "(" + String.join(" " + logic + " ", list) + ")" : null;
     }
 
+    /**
+     * 将单个权限树条件项转换为 SQL 条件片段。
+     */
     public static String transTreeItem(SQLObj tableObj, DatasetRowPermissionsTreeItem item, List<DatasetTableFieldDTO> originFields, Map<String, String> fieldsDialect, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         String res = null;
         DatasetTableFieldDTO field = item.getField();
@@ -276,30 +286,48 @@ public class WhereTree2Str {
         return res;
     }
 
+    /**
+     * 校验并转义 SQL 字面量。
+     */
     private static String sanitizeSqlLiteral(String value) {
         String normalized = StringUtils.defaultString(value);
         Utils.validateSqlInjectionRisk(normalized);
         return Utils.transValue(normalized);
     }
 
+    /**
+     * 判断数据源类型是否属于 Oracle 语义。
+     */
     private static boolean isOracleLike(String dsType) {
         return Strings.CI.equalsAny(dsType,
                 DatasourceConfiguration.DatasourceType.oracle.getType(),
                 DatasourceConfiguration.DatasourceType.obOracle.getType());
     }
 
+    /**
+     * 将值包装为普通 SQL 字符串字面量。
+     */
     private static String toQuotedValue(String value) {
         return "'" + sanitizeSqlLiteral(value) + "'";
     }
 
+    /**
+     * 将值包装为普通 SQL like 字面量。
+     */
     private static String toLikeValue(String value) {
         return "'%" + sanitizeSqlLiteral(value) + "%'";
     }
 
+    /**
+     * 将值包装为 SQL Server Unicode 字符串字面量。
+     */
     private static String toSqlServerNQuotedValue(String value) {
         return "'" + SQLConstants.MSSQL_N_PREFIX + sanitizeSqlLiteral(value) + "'";
     }
 
+    /**
+     * 将值包装为 SQL Server Unicode like 字面量。
+     */
     private static String toSqlServerNLikeValue(String value) {
         return "'" + SQLConstants.MSSQL_N_PREFIX + "%" + sanitizeSqlLiteral(value) + "%'";
     }
