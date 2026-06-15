@@ -84,6 +84,7 @@ import { spanSeriesNumberHeader } from './tableSeriesNumber.mjs'
 
 const { t: i18nt } = useI18n()
 
+// 构建 S2 表格主题，合并默认样式和图表自定义样式
 export function getCustomTheme(chart: Chart): S2Theme {
   const headerColor = hexColorToRGBA(
     DEFAULT_TABLE_HEADER.tableHeaderBgColor,
@@ -526,6 +527,7 @@ export function getCustomTheme(chart: Chart): S2Theme {
   return theme
 }
 
+// 根据表格列宽模式生成 S2 布局样式配置
 export function getStyle(chart: Chart, dataConfig: S2DataConfig): Style {
   const style: Style = {}
   let customAttr: DeepPartial<ChartAttr>
@@ -697,6 +699,7 @@ export function getStyle(chart: Chart, dataConfig: S2DataConfig): Style {
   return style
 }
 
+// 在字段配置列表中查找当前字段的完整配置
 export function getCurrentField(valueFieldList: Axis[], field: ChartViewField) {
   let list = []
   let res = null
@@ -718,6 +721,7 @@ export function getCurrentField(valueFieldList: Axis[], field: ChartViewField) {
   return res
 }
 
+// 将普通表格阈值配置转换为文本色和背景色映射规则
 export function getConditions(chart: Chart) {
   const { threshold } = parseJson(chart.senior)
   if (!threshold.enable) {
@@ -832,6 +836,7 @@ export function getConditions(chart: Chart) {
   return res
 }
 
+// 按单个字段的阈值条件计算普通表格颜色
 export function mappingColorCustom(value, defaultColor, field, type, filedValueMap?, rowData?) {
   let color = null
   for (let i = 0; i < field.conditions.length; i++) {
@@ -1015,6 +1020,7 @@ export function mappingColorCustom(value, defaultColor, field, type, filedValueM
   return color
 }
 
+// 按目标列规则计算普通表格单元格颜色
 export function mappingColor(value, defaultColor, rules, type, filedValueMap?, rowData?) {
   let color = null
 
@@ -1222,6 +1228,7 @@ export function mappingColor(value, defaultColor, rules, type, filedValueMap?, r
   return color
 }
 
+// 将透视表阈值配置转换为行头、列头和数据区颜色映射
 export function getPivotConditions(chart: Chart) {
   const { threshold } = parseJson(chart.senior)
   if (!threshold.enable) {
@@ -1376,6 +1383,7 @@ export function getPivotConditions(chart: Chart) {
   return res
 }
 
+// 按透视表单元格上下文计算阈值颜色
 export function mappingPivotColor(value, defaultColor, rules, type, filedValueMap?, rowData?) {
   let color = null
 
@@ -1600,6 +1608,7 @@ export function mappingPivotColor(value, defaultColor, rules, type, filedValueMa
   return color
 }
 
+// 汇总动态辅助字段的取值，供阈值动态条件引用
 function getFieldValueMap(view) {
   const fieldValueMap = {}
   if (view.data && view.data.dynamicAssistLines && view.data.dynamicAssistLines.length > 0) {
@@ -1610,6 +1619,7 @@ function getFieldValueMap(view) {
   return fieldValueMap
 }
 
+// 从当前行或动态字段缓存中读取阈值比较值
 function getValue(field, filedValueMap, rowData) {
   if (field.summary === 'value') {
     // 单元格数据
@@ -1624,6 +1634,7 @@ function getValue(field, filedValueMap, rowData) {
   }
 }
 
+// 按空值策略过滤或保留表格数据行
 export function handleTableEmptyStrategy(chart: Chart) {
   let newData = (chart.data?.tableRow || []) as Record<string, any>[]
   let intersectionArr = []
@@ -1719,10 +1730,12 @@ const SORT_UP =
 const SORT_DOWN =
   '<svg t="1711681879346" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4655" width="200" height="200"><path d="M64 320l448 448 448-448z" fill="{fill}" p-id="4656"></path></svg>'
 
+// 将 SVG 字符串转为可注册到 S2 的 data URL
 function svg2Base64(svg) {
   return `data:image/svg+xml;charset=utf-8;base64,${btoa(svg)}`
 }
 
+// 配置表头排序图标和排序弹层交互
 export function configHeaderInteraction(chart: Chart, option: S2Options) {
   const { tableHeaderFontColor, tableHeaderSort } = parseJson(chart.customAttr).tableHeader
   if (!tableHeaderSort) {
@@ -1805,6 +1818,7 @@ export function configHeaderInteraction(chart: Chart, option: S2Options) {
   ]
 }
 
+// 根据图表 tooltip 样式覆盖 S2 默认提示框样式
 export function configTooltip(chart: Chart, option: S2Options) {
   const { tooltip } = parseJson(chart.customAttr)
   const textFontFamily = chart.fontFamily ? chart.fontFamily : FONT_FAMILY
@@ -1827,6 +1841,7 @@ export function configTooltip(chart: Chart, option: S2Options) {
   }
 }
 
+// 配置表格复制模式，支持可见区域复制和原生格式复制
 export function configTableCopyInteraction(option: S2Options, copyConfig: Record<string, any> = {}) {
   ;(option as Record<string, any>).crestCopy = copyConfig
   const useVisibleTableCopy = copyConfig.visibleTable === true
@@ -1846,6 +1861,7 @@ export function configTableCopyInteraction(option: S2Options, copyConfig: Record
   }
 }
 
+// 绑定右键复制和快捷键复制事件
 export function bindTableCopyEvents(s2Instance: SpreadSheet, fieldMeta) {
   s2Instance.on(S2Event.GLOBAL_CONTEXT_MENU, event => copyContent(s2Instance, event, fieldMeta))
   if (!getTableCopyConfig(s2Instance).visibleTable) {
@@ -1864,6 +1880,7 @@ export function bindTableCopyEvents(s2Instance: SpreadSheet, fieldMeta) {
   })
 }
 
+// 将字段元数据转换为字段名映射
 function getFieldMap(fieldMeta) {
   return fieldMeta?.reduce((p, n) => {
     p[n.field] = n.name
@@ -1871,6 +1888,7 @@ function getFieldMap(fieldMeta) {
   }, {})
 }
 
+// 读取单元格复制值，并按字段格式化器转换展示文本
 function getCellCopyValue(cellMeta, fieldMeta) {
   if (!cellMeta) {
     return ''
@@ -1898,6 +1916,7 @@ function getCellCopyValue(cellMeta, fieldMeta) {
   return normalizeTableCellText(fieldVal)
 }
 
+// 读取单元格对应的复制表头文本
 function getCellCopyHeader(cellMeta, fieldMeta) {
   const fieldMap = getFieldMap(fieldMeta)
   const valueField = cellMeta?.valueField
@@ -1910,10 +1929,12 @@ function getCellCopyHeader(cellMeta, fieldMeta) {
   return fieldMap?.[valueField] ?? cellMeta.value ?? cellMeta.label ?? valueField
 }
 
+// 兼容 S2 单元格对象和原始 meta 对象
 function getCellMeta(cell) {
   return typeof cell?.getMeta === 'function' ? cell.getMeta() : cell
 }
 
+// 判断目标单元格是否位于当前选区
 function isCellInSelection(targetMeta, cells) {
   return cells?.some(cell => {
     const meta = getCellMeta(cell)
@@ -1924,6 +1945,7 @@ function isCellInSelection(targetMeta, cells) {
   })
 }
 
+// 判断键盘事件是否为复制快捷键
 function isCopyShortcut(event) {
   return (
     String(event?.key || '').toLowerCase() === 'c' &&
@@ -1932,6 +1954,7 @@ function isCopyShortcut(event) {
   )
 }
 
+// 判断当前表格是否存在可复制选区
 function hasCopySelection(s2Instance: SpreadSheet) {
   const selectState = s2Instance.interaction.getState()
   return (
@@ -1940,6 +1963,7 @@ function hasCopySelection(s2Instance: SpreadSheet) {
   )
 }
 
+// 同时写入纯文本和 HTML 格式的剪贴板内容
 function copyRowsWithFormat(rows, headerRows = []) {
   const plain = buildTableCopyText(rows, headerRows)
   if (!plain) {
@@ -1957,6 +1981,7 @@ function copyRowsWithFormat(rows, headerRows = []) {
   ]).then(() => ElMessage.success(i18nt('commons.copy_success')))
 }
 
+// 规范化格式化结果中的单元格文本
 function normalizeFormattedResult(result) {
   if (!result) {
     return result
@@ -1971,6 +1996,7 @@ function normalizeFormattedResult(result) {
   }
 }
 
+// 根据选中的索引计算连续复制范围
 function getRangeFromIndexes(indexes: number[], max: number) {
   if (!indexes.length || max < 0) {
     return []
@@ -1980,10 +2006,12 @@ function getRangeFromIndexes(indexes: number[], max: number) {
   return Array.from({ length: end - start + 1 }, (_, index) => start + index)
 }
 
+// 生成从零开始的完整索引列表
 function getAllIndexes(length: number) {
   return Array.from({ length }, (_, index) => index)
 }
 
+// 获取当前表格实际展示的数据行
 function getTableDisplayRows(s2Instance: SpreadSheet) {
   const dataSet = s2Instance.dataSet as Record<string, any>
   if (typeof dataSet?.getDisplayDataSet === 'function') {
@@ -1992,14 +2020,17 @@ function getTableDisplayRows(s2Instance: SpreadSheet) {
   return dataSet?.displayData || dataSet?.originData || []
 }
 
+// 获取当前可见列叶子节点
 function getVisibleColNodes(s2Instance: SpreadSheet) {
   return s2Instance.facet?.getColLeafNodes?.() || []
 }
 
+// 判断单元格是否为辅助表头
 function isAuxiliaryHeaderCellMeta(cellMeta) {
   return Boolean(cellMeta?.extra?.[AUXILIARY_HEADER_FLAG] || cellMeta?.[AUXILIARY_HEADER_FLAG])
 }
 
+// 将 S2 选区状态转换为行列索引范围
 function getCopySelectionIndexes(s2Instance: SpreadSheet) {
   const selectState = s2Instance.interaction.getState()
   const cells = selectState?.cells || []
@@ -2014,7 +2045,9 @@ function getCopySelectionIndexes(s2Instance: SpreadSheet) {
     }
   }
 
+  // 兼容不同版本 S2 的单元格类型字段
   const getCellType = cell => cell?.type || cell?.cellType
+  // 判断选中项是否为数据单元格
   const isDataCell = cell => {
     const type = getCellType(cell)
     return (
@@ -2023,10 +2056,12 @@ function getCopySelectionIndexes(s2Instance: SpreadSheet) {
       (!type || type === 'dataCell' || type === 'mergedCell')
     )
   }
+  // 判断选中项是否为行头单元格
   const isRowCell = cell => {
     const type = getCellType(cell)
     return Number.isInteger(cell?.rowIndex) && (type === 'rowCell' || !Number.isInteger(cell?.colIndex))
   }
+  // 判断选中项是否为列表头单元格
   const isColCell = cell => {
     const type = getCellType(cell)
     return Number.isInteger(cell?.colIndex) && (type === 'colCell' || !Number.isInteger(cell?.rowIndex))
@@ -2071,10 +2106,12 @@ function getCopySelectionIndexes(s2Instance: SpreadSheet) {
   }
 }
 
+// 读取挂载在 S2 options 上的复制配置
 function getTableCopyConfig(s2Instance: SpreadSheet) {
   return ((s2Instance.options as Record<string, any>)?.crestCopy || {}) as Record<string, any>
 }
 
+// 获取可见表格复制时的表头文本
 function getVisibleTableHeader(cellMeta, fieldMeta, s2Instance: SpreadSheet) {
   const copyConfig = getTableCopyConfig(s2Instance)
   if (copyConfig.showSeriesNumber && cellMeta?.colIndex === 0) {
@@ -2083,6 +2120,7 @@ function getVisibleTableHeader(cellMeta, fieldMeta, s2Instance: SpreadSheet) {
   return getCellCopyHeader(cellMeta, fieldMeta)
 }
 
+// 根据可见列索引反查字段名
 function getVisibleFieldByColIndex(s2Instance: SpreadSheet, colIndex: number, sampleRowIndex = 0) {
   const copyConfig = getTableCopyConfig(s2Instance)
   if (copyConfig.showSeriesNumber && colIndex === 0) {
@@ -2092,6 +2130,7 @@ function getVisibleFieldByColIndex(s2Instance: SpreadSheet, colIndex: number, sa
   return cellMeta?.valueField ?? cellMeta?.field ?? cellMeta?.fieldValue ?? ''
 }
 
+// 生成表头单元格复制文本
 function getHeaderCellCopyText(cellMeta, fieldMeta, s2Instance: SpreadSheet) {
   const content = normalizeTableCellText(
     cellMeta?.value ?? cellMeta?.label ?? cellMeta?.fieldValue ?? ''
@@ -2102,6 +2141,7 @@ function getHeaderCellCopyText(cellMeta, fieldMeta, s2Instance: SpreadSheet) {
   return getVisibleTableHeader(cellMeta, fieldMeta, s2Instance)
 }
 
+// 生成可见表格复制需要的多级表头行
 function getVisibleTableHeaderRows(
   s2Instance: SpreadSheet,
   fieldMeta,
@@ -2135,6 +2175,7 @@ function getVisibleTableHeaderRows(
   ]
 }
 
+// 获取可见表格指定行列的复制值
 function getVisibleTableValue(rowIndex: number, colIndex: number, fieldMeta, s2Instance: SpreadSheet) {
   const copyConfig = getTableCopyConfig(s2Instance)
   if (copyConfig.showSeriesNumber && colIndex === 0) {
@@ -2153,6 +2194,7 @@ function getVisibleTableValue(rowIndex: number, colIndex: number, fieldMeta, s2I
   return getTableCellCopyText(getCellCopyValue(cellMeta, fieldMeta))
 }
 
+// 按选区行列构建可见表格复制数据
 function buildVisibleTableCopy(s2Instance: SpreadSheet, fieldMeta, rowIndexes: number[], colIndexes: number[]) {
   if (!colIndexes.length) {
     return null
@@ -2171,6 +2213,7 @@ function buildVisibleTableCopy(s2Instance: SpreadSheet, fieldMeta, rowIndexes: n
   return { rows, headerRows }
 }
 
+// 构建严格辅助表头选区的复制内容
 function buildAuxiliaryHeaderSelectionCopy(s2Instance: SpreadSheet, fieldMeta) {
   const selectState = s2Instance.interaction.getState()
   if (selectState?.stateName === InteractionStateName.ALL_SELECTED) {
@@ -2192,6 +2235,7 @@ function buildAuxiliaryHeaderSelectionCopy(s2Instance: SpreadSheet, fieldMeta) {
   return { rows: [], headerRows }
 }
 
+// 解析辅助表头相关选区的复制文本
 function getAuxiliaryHeaderSelectionText(s2Instance: SpreadSheet, fieldMeta, cellMeta) {
   if (!Number.isInteger(cellMeta?.colIndex)) {
     return ''
@@ -2225,6 +2269,7 @@ function getAuxiliaryHeaderSelectionText(s2Instance: SpreadSheet, fieldMeta, cel
   return auxiliaryText
 }
 
+// 构建混合表头选区中的辅助表头复制内容
 function buildAuxiliaryHeaderLooseSelectionCopy(s2Instance: SpreadSheet, fieldMeta) {
   const selectState = s2Instance.interaction.getState()
   if (selectState?.stateName === InteractionStateName.ALL_SELECTED) {
@@ -2248,6 +2293,7 @@ function buildAuxiliaryHeaderLooseSelectionCopy(s2Instance: SpreadSheet, fieldMe
   return { rows: [], headerRows }
 }
 
+// 复制单个辅助表头单元格
 function copyAuxiliaryHeaderCell(s2Instance: SpreadSheet, cellMeta, fieldMeta) {
   const content = getHeaderCellCopyText(cellMeta, fieldMeta, s2Instance)
   if (content === '') {
@@ -2257,6 +2303,7 @@ function copyAuxiliaryHeaderCell(s2Instance: SpreadSheet, cellMeta, fieldMeta) {
   return true
 }
 
+// 复制当前可见选区，优先处理辅助表头
 function copyVisibleSelection(s2Instance: SpreadSheet, fieldMeta) {
   const auxiliaryHeaderCopy = buildAuxiliaryHeaderSelectionCopy(s2Instance, fieldMeta)
   if (auxiliaryHeaderCopy) {
@@ -2276,6 +2323,7 @@ function copyVisibleSelection(s2Instance: SpreadSheet, fieldMeta) {
   copyRowsWithFormat(copyData.rows, copyData.headerRows)
 }
 
+// 处理右键复制入口，支持单元格、选区和辅助表头
 export function copyContent(s2Instance: SpreadSheet, event, fieldMeta) {
   if (!getTableCopyConfig(s2Instance).visibleTable) {
     return
@@ -2331,6 +2379,7 @@ export function copyContent(s2Instance: SpreadSheet, event, fieldMeta) {
   }
 }
 
+// 计算 tooltip 位置，避免提示框溢出画布
 function getTooltipPosition(event) {
   const s2Instance = event.s2Instance
   const { x, y } = event
@@ -2366,6 +2415,7 @@ function getTooltipPosition(event) {
   return result
 }
 
+// 导出平铺布局透视表，指标位于列方向
 export async function exportGridPivot(instance: PivotSheet, chart: ChartObj) {
   const layoutResult = instance.facet.getLayoutResult()
   const { meta, fields } = instance.dataCfg
@@ -2433,6 +2483,7 @@ export async function exportGridPivot(instance: PivotSheet, chart: ChartObj) {
     }
   })
 
+  // 获取行头节点对应的首个叶子行索引
   const getNodeStartRowIndex = (node: Node) => {
     if (!node.children?.length) {
       return node.rowIndex + 1
@@ -2491,6 +2542,7 @@ export async function exportGridPivot(instance: PivotSheet, chart: ChartObj) {
       bottom: { style: 'thick', color: { argb: '00000000' } }
     }
   })
+  // 获取列头节点对应的首个叶子列索引
   const getNodeStartColIndex = (node: Node) => {
     if (!node.children?.length) {
       return node.colIndex + 1
@@ -2560,6 +2612,7 @@ export async function exportGridPivot(instance: PivotSheet, chart: ChartObj) {
   saveAs(dataBlob, `${chart.title ?? '透视表'}.xlsx`)
 }
 
+// 导出平铺布局透视表，指标位于行方向
 export async function exportRowQuotaGridPivot(instance: PivotSheet, chart: ChartObj) {
   const layoutResult = instance.facet.getLayoutResult()
   const { meta, fields } = instance.dataCfg
@@ -2633,6 +2686,7 @@ export async function exportRowQuotaGridPivot(instance: PivotSheet, chart: Chart
     }
   })
 
+  // 获取行头节点对应的首个叶子行索引
   const getNodeStartRowIndex = (node: Node) => {
     if (!node.children?.length) {
       return node.rowIndex + 1
@@ -2687,6 +2741,7 @@ export async function exportRowQuotaGridPivot(instance: PivotSheet, chart: Chart
       bottom: { style: 'thick', color: { argb: '00000000' } }
     }
   })
+  // 获取列头节点对应的首个叶子列索引
   const getNodeStartColIndex = (node: Node) => {
     if (!node.children?.length) {
       return node.colIndex + 1
@@ -2750,6 +2805,7 @@ export async function exportRowQuotaGridPivot(instance: PivotSheet, chart: Chart
   saveAs(dataBlob, `${chart.title ?? '透视表'}.xlsx`)
 }
 
+// 导出树形布局透视表，指标位于列方向
 export async function exportTreePivot(instance: PivotSheet, chart: ChartObj) {
   const layoutResult = instance.facet.getLayoutResult()
   if (layoutResult.colLeafNodes.length + 1 > 16384) {
@@ -2823,6 +2879,7 @@ export async function exportTreePivot(instance: PivotSheet, chart: ChartObj) {
     }
   })
   const colNodes = layoutResult.colNodes
+  // 获取树形列头节点对应的首个叶子列索引
   const getNodeStartIndex = (node: Node) => {
     if (!node.children?.length) {
       return node.colIndex + 1
@@ -2891,6 +2948,7 @@ export async function exportTreePivot(instance: PivotSheet, chart: ChartObj) {
   saveAs(dataBlob, `${chart.title ?? '透视表'}.xlsx`)
 }
 
+// 导出树形布局透视表，指标位于行方向
 export async function exportRowQuotaTreePivot(instance: PivotSheet, chart: ChartObj) {
   const layoutResult = instance.facet.getLayoutResult()
   if (layoutResult.colLeafNodes.length + 1 > 16384) {
@@ -2971,6 +3029,7 @@ export async function exportRowQuotaTreePivot(instance: PivotSheet, chart: Chart
     }
   })
   const colNodes = layoutResult.colNodes
+  // 获取树形列头节点对应的首个叶子列索引
   const getNodeStartIndex = (node: Node) => {
     if (!node.children?.length) {
       return node.colIndex + 1
@@ -3033,6 +3092,7 @@ export async function exportRowQuotaTreePivot(instance: PivotSheet, chart: Chart
   saveAs(dataBlob, `${chart.title ?? '透视表'}.xlsx`)
 }
 
+// 从格式化展示值中提取数值和 Excel 数字格式
 function extractNumber(
   formattedValue: string,
   formatterCfg: BaseFormatter
@@ -3143,6 +3203,7 @@ function extractNumber(
   }
 }
 
+// 根据透视表布局和指标方向分派 Excel 导出实现
 export async function exportPivotExcel(instance: PivotSheet, chart: ChartObj) {
   const { fields } = instance.dataCfg
   const rowLength = fields?.rows?.length || 0
@@ -3167,6 +3228,7 @@ export async function exportPivotExcel(instance: PivotSheet, chart: ChartObj) {
   }
 }
 
+// 根据表格合并配置生成 S2 合并单元格信息
 export function configMergeCells(chart: Chart, options: S2Options, dataConfig: S2DataConfig) {
   const { mergeCells, mergeFields } = parseJson(chart.customAttr).tableCell
   const { showIndex } = parseJson(chart.customAttr).tableHeader
@@ -3204,6 +3266,7 @@ export function configMergeCells(chart: Chart, options: S2Options, dataConfig: S
   }
 }
 
+// 根据合并单元格信息计算展示序号
 export function getRowIndex(mergedCellsInfo: MergedCellInfo[][], meta: ViewMeta): number {
   if (!mergedCellsInfo?.length) {
     return meta.rowIndex + 1
@@ -3589,6 +3652,7 @@ export const calculateHeaderHeight = (info, newChart, tableHeader, basicStyle, l
 const getWrapText = (sourceText, textStyle, cellWidth, spreadsheet) => {
   if (!sourceText && sourceText !== 0) return ''
   sourceText = sourceText.toString().trim()
+  // 使用 S2 的粗略测量能力估算文本宽度
   const getTextWidth = text => spreadsheet.measureTextWidthRoughly(text, textStyle)
 
   let resultWrapText = ''
@@ -3789,6 +3853,7 @@ export const configEmptyDataStyle = (newChart, basicStyle, newData, container) =
 
 export const getLeafNodes = (tree: Array<ColumnNode>): ColumnNode[] => {
   const result: ColumnNode[] = []
+  // 深度遍历收集叶子节点
   const inorderTraversal = node => {
     if (!node.children?.length) {
       // 叶子节点，添加到结果数组
@@ -3806,6 +3871,7 @@ export const getLeafNodes = (tree: Array<ColumnNode>): ColumnNode[] => {
   return result
 }
 
+// 按字段列表从列树中筛选目标列节点
 export const getColumns = (fields, cols: Array<ColumnNode>) => {
   const result = []
   for (let i = 0; i < cols.length; i++) {
@@ -3819,6 +3885,7 @@ export const getColumns = (fields, cols: Array<ColumnNode>) => {
   return result
 }
 
+// 在图片单元格中按比例绘制图片内容
 export function drawImage() {
   const img = new Image()
   const { x, y, width, height, fieldValue } = this.meta
@@ -3843,6 +3910,7 @@ export function drawImage() {
   }
 }
 
+// 递归计算树形列节点的总宽度
 export function calcTreeWidth(node) {
   if (!node.children?.length) {
     return node.width
@@ -3852,6 +3920,7 @@ export function calcTreeWidth(node) {
   }, 0)
 }
 
+// 获取树形列节点最左侧叶子节点的起始位置
 export function getStartPosition(node) {
   if (!node.children?.length) {
     return node.x
@@ -3859,6 +3928,7 @@ export function getStartPosition(node) {
   return getStartPosition(node.children[0])
 }
 
+// 计算列树最大深度
 function getMaxTreeDepth(nodes) {
   if (!nodes?.length) {
     return 0
@@ -3873,6 +3943,7 @@ function getMaxTreeDepth(nodes) {
   )
 }
 
+// 汇总行存在时根据内容高度调整表格高度
 export function summaryRowStyle(newChart, newData, tableCell, tableHeader, showSummary) {
   if (!showSummary || !newData.length) return
   const columns = newChart.dataCfg.fields.columns
@@ -3890,10 +3961,12 @@ export function summaryRowStyle(newChart, newData, tableCell, tableHeader, showS
   })
 }
 
+// 判断列节点是否为辅助表头节点
 const isAuxiliaryHeaderNode = node => {
   return Boolean(node?.extra?.[AUXILIARY_HEADER_FLAG] || node?.[AUXILIARY_HEADER_FLAG])
 }
 
+// 根据辅助表头行高重排 S2 列头层级布局
 export function configAuxiliaryHeaderLayout(newChart, tableHeader) {
   const auxiliaryHeader = normalizeAuxiliaryHeader(tableHeader?.auxiliaryHeader)
   if (!auxiliaryHeader.enabled || tableHeader?.showTableHeader === false) {
@@ -3914,6 +3987,7 @@ export function configAuxiliaryHeaderLayout(newChart, tableHeader) {
         levelHeights[node.level] = auxiliaryHeader.rowHeight
       }
     })
+    // 按层级累计计算列头 Y 坐标
     const getY = level => {
       let y = 0
       for (let i = 0; i < level; i++) {
