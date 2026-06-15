@@ -45,6 +45,7 @@ const init = () => {
   }
 }
 
+// 当前时间组件背景图变化后刷新上传列表
 watch(
   () => curComponent.value.propValue.url,
   () => {

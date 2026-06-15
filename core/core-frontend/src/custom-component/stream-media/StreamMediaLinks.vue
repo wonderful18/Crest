@@ -118,6 +118,7 @@ const onChange = () => {
 }
 init()
 
+// 外部流媒体链接配置变化后刷新临时编辑态
 watch(
   () => linkInfo.value,
   () => {

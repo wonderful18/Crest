@@ -36,6 +36,7 @@ const { element } = toRefs(props)
 // SVG polygon 的 points 字符串
 const points = ref('')
 
+// 宽度变化后重新计算三角形顶点
 watch(
   () => element.value.style.width,
   () => {
@@ -43,6 +44,7 @@ watch(
   }
 )
 
+// 高度变化后重新计算三角形顶点
 watch(
   () => element.value.style.height,
   () => {
