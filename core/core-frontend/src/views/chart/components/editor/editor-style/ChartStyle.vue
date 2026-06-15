@@ -273,6 +273,7 @@ watch(
   <el-row class="view-panel" :class="'style-' + themes">
     <div class="attr-style">
       <el-row class="de-collapse-style">
+        <!-- 属性区承载位置、基础样式、标题图例和表格属性，所有子组件变更统一向编辑器上层转发。 -->
         <el-collapse v-model="state.attrActiveNames" class="style-collapse">
           <el-collapse-item
             :effect="themes"
@@ -311,6 +312,7 @@ watch(
             />
           </el-collapse-item>
           <div v-if="showProperties('bullet-graph-selector')">
+            <!-- 子弹图拆分目标值、当前值和区间背景，避免不同语义的配置混在同一面板。 -->
             <el-collapse-item :effect="themes" name="bullet" :title="t('chart.progress_target')">
               <bullet-target-selector
                 :themes="themes"
@@ -385,6 +387,7 @@ watch(
             :title="t('visualization.background')"
             v-if="showProperties('background-overall-component') && commonBackgroundPop"
           >
+            <!-- 组件背景和公共边框来自大屏通用配置，样式面板只负责挂载和派发变更。 -->
             <background-overall-common
               :common-background-pop="commonBackgroundPop"
               :themes="themes"
@@ -585,6 +588,7 @@ watch(
           </el-collapse-item>
         </el-collapse>
 
+        <!-- 样式区集中处理坐标轴、双轴和汇总行等图形渲染相关配置。 -->
         <el-collapse v-model="state.styleActiveNames" class="style-collapse">
           <collapse-switch-item
             :themes="themes"
@@ -630,6 +634,7 @@ watch(
             name="yAxis"
             :title="selectorSpec['dual-y-axis-selector']?.title ?? t('chart.yAxis')"
           >
+            <!-- 双轴选择器同时维护主轴和副轴，组合图显隐由上层保持联动。 -->
             <dual-y-axis-selector
               class="attr-selector"
               :property-inner="propertyInnerAll['dual-y-axis-selector']"

@@ -568,6 +568,7 @@ defineExpose({
         </el-radio-group>
       </div>
       <template v-if="dynamicTime && curComponent.displayType === '1'">
+        <!-- 单日期动态默认值先选择快捷规则，自定义规则再补充偏移量和时间点。 -->
         <div class="setting">
           <div :title="t('dynamic_time.relative')" class="setting-label ellipsis">
             {{ t('dynamic_time.relative') }}
@@ -618,6 +619,7 @@ defineExpose({
         </div>
       </template>
       <template v-else-if="dynamicTime && curComponent.displayType === '7'">
+        <!-- 日期范围动态默认值同时维护开始和结束规则，确保范围两端可独立偏移。 -->
         <div class="setting">
           <div class="setting-label">{{ t('dynamic_time.relative') }}</div>
           <div class="setting-value select">
