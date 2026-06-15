@@ -357,6 +357,7 @@ import { useEmitt } from '@/hooks/web/useEmitt'
 const { t } = useI18n()
 const snapshotStore = snapshotStoreWithOut()
 
+// 接收颜色配置面板主题。
 const props = defineProps({
   themes: {
     type: String as PropType<EditorTheme>,
@@ -367,9 +368,12 @@ const props = defineProps({
 let colorAreaInit = ref(false)
 
 const { themes } = toRefs(props)
+// 定义颜色配置变更事件。
 const emits = defineEmits(['onColorChange'])
+// 颜色配置表单实例。
 const colorFormRef = ref(null)
 
+// 生成颜色配置字号选项。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 6; i <= 40; i = i + 2) {
@@ -381,14 +385,17 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+// 当前画布主题颜色配置。
 const colorForm = computed(
   () => canvasStyleData.value.component.chartColor as DeepPartial<ChartAttr>
 )
 
+// 当前画布高级样式配置。
 const seniorForm = computed(() => canvasStyleData.value.component.seniorStyleSetting)
 
 const predefineColors = COLOR_PANEL
 
+// 维护颜色面板表单和自定义颜色状态。
 const state = reactive({
   basicStyleForm: JSON.parse(JSON.stringify(DEFAULT_BASIC_STYLE)) as ChartBasicStyle,
   customColor: null,
@@ -396,6 +403,7 @@ const state = reactive({
 })
 const dvMainStore = dvMainStoreWithOut()
 const { canvasStyleData, canvasViewInfo } = storeToRefs(dvMainStore)
+// 初始化画布颜色配置表单。
 const initForm = () => {
   state.customColor = colorForm.value.basicStyle.colors[0]
   setTimeout(() => {
@@ -406,15 +414,18 @@ const initForm = () => {
   const tableCell = colorForm.value.tableCell
   tableHeader.tableHeaderFontColor = tableHeader.tableHeaderFontColor ?? tableCell.tableFontColor
 }
+// 同步基础颜色配置并触发变更。
 const changeColorOption = (modifyName = 'value') => {
   colorForm.value.basicStyle = state.basicStyleForm
   changeColorCase(modifyName)
 }
 
+// 记录分页颜色变更快照。
 const changePagerColorChange = () => {
   snapshotStore.recordSnapshotCache('changePagerColorChange')
 }
 
+// 通知父级应用颜色配置。
 const changeColorCase = modifyName => {
   colorForm.value['modifyName'] = modifyName
   emits('onColorChange', colorForm.value)
@@ -422,6 +433,7 @@ const changeColorCase = modifyName => {
 
 let canvasAttrInit = false
 
+// 批量同步标签样式到所有图表。
 const changeLabelCase = () => {
   if (canvasAttrInit) {
     const val = colorForm.value.label
@@ -449,6 +461,7 @@ const changeLabelCase = () => {
   }
 }
 
+// 批量同步提示框样式到所有图表。
 const changeTooltipCase = () => {
   if (canvasAttrInit) {
     const val = colorForm.value.tooltip
@@ -478,9 +491,12 @@ const changeTooltipCase = () => {
   }
 }
 
+// 颜色面板容器实例。
 const containerRef = ref()
+// 颜色面板容器宽度。
 const containerWidth = ref()
 
+// 根据容器宽度计算颜色选择器宽度。
 const colorPickerWidth = computed(() => {
   if (containerWidth.value <= 240) {
     return 108
