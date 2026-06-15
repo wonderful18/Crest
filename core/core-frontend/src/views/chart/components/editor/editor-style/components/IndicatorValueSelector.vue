@@ -58,7 +58,9 @@ const fontLetterSpace = CHART_FONT_LETTER_SPACE
 
 // 表单状态拆分为指标值样式和基础图表样式，避免后缀设置误写到 basicStyle。
 const state = reactive({
+  // 指标主值样式包含字体、对齐、阴影和后缀配置，是指标卡最核心的展示配置。
   indicatorValueForm: JSON.parse(JSON.stringify(DEFAULT_INDICATOR_STYLE)),
+  // basicStyle 仅承载指标值周边的图表基础设置，避免和 indicator 对象互相污染。
   basicStyleForm: {} as ChartBasicStyle
 })
 // 指标卡片字号跨度较大，小字号用细粒度步进，大字号用 10px 步进控制列表长度。
@@ -132,6 +134,7 @@ defineExpose({ getFormData })
 
 <template>
   <div>
+    <!-- 主值与后缀共用同一表单，关闭指标显示时整组配置进入只读态。 -->
     <el-form
       ref="indicatorValueForm"
       :disabled="!state.indicatorValueForm.show"
@@ -423,6 +426,7 @@ defineExpose({ getFormData })
 
       <el-divider class="m-divider" :class="{ 'divider-dark': themes === 'dark' }" />
 
+      <!-- 后缀样式独立于主值，便于单位、百分号等短文本使用更轻的字号和颜色。 -->
       <el-form-item class="form-item" :class="'form-item-' + themes">
         <el-checkbox
           size="small"
@@ -606,6 +610,7 @@ defineExpose({ getFormData })
   padding-right: 6px;
 }
 .icon-btn {
+  // 图标按钮通过隐藏原生勾选控件实现，尺寸需要稳定以避免工具栏跳动。
   font-size: 16px;
   line-height: 16px;
   width: 24px;
@@ -640,6 +645,7 @@ defineExpose({ getFormData })
 }
 
 .is-disabled {
+  // 禁用态保留 active 视觉反馈，方便用户理解当前保存值但不能编辑。
   .icon-btn {
     color: #8f959e;
     cursor: not-allowed;
@@ -676,6 +682,7 @@ defineExpose({ getFormData })
 }
 
 .icon-radio-group {
+  // 对齐类选项用图标表达，原生 radio 仅保留可访问状态和 v-model 绑定。
   :deep(.ed-radio) {
     margin-right: 8px;
 
@@ -691,6 +698,7 @@ defineExpose({ getFormData })
   }
 }
 .position-divider {
+  // 粗细和高度保持轻量，只用于区分字体样式按钮与对齐按钮。
   width: 1px;
   height: 18px;
   margin-bottom: 16px;

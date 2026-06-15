@@ -38,6 +38,7 @@ const toolTip = computed(() => {
 })
 // 表单以 DEFAULT_YAXIS_STYLE 为基础，初始化时会被图表已保存的 customStyle.yAxis 覆盖。
 const state = reactive({
+  // Y 轴表单包含轴标题、刻度、网格线和标签格式化，初始化时按图表配置整体覆盖。
   axisForm: JSON.parse(JSON.stringify(DEFAULT_YAXIS_STYLE))
 })
 
@@ -138,6 +139,7 @@ onMounted(() => {
     size="small"
     label-position="top"
   >
+    <!-- 轴位置对不同图表类型有不同语义，子弹图会在脚本中映射为业务文案。 -->
     <el-form-item
       class="form-item"
       :class="'form-item-' + themes"
@@ -246,6 +248,7 @@ onMounted(() => {
     <template v-if="showProperty('axisValue')">
       <el-divider class="m-divider" :class="'m-divider--' + themes" />
 
+      <!-- 固定刻度区只在关闭自动刻度后生效，避免和 G2Plot 自动计算策略冲突。 -->
       <div style="display: flex; flex-direction: row; justify-content: space-between">
         <label class="custom-form-item-label" :class="'custom-form-item-label--' + themes">
           {{ t('chart.axis_value') }}
@@ -343,6 +346,7 @@ onMounted(() => {
         {{ t('chart.axis_show') }}
       </el-checkbox>
     </el-form-item>
+    <!-- 轴线和网格线共用颜色、线型、宽度控件，但分别写入不同的 G2Plot 配置节点。 -->
     <div style="padding-left: 22px" v-if="showProperty('axisLine')">
       <div style="flex: 1; display: flex">
         <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
@@ -538,6 +542,7 @@ onMounted(() => {
         </el-form-item>
 
         <template v-if="showProperty('axisLabelFormatter')">
+          <!-- 标签格式化沿用统一 formatter 配置，保证坐标轴与 tooltip 数值口径一致。 -->
           <el-form-item
             class="form-item"
             :class="'form-item-' + themes"
@@ -673,6 +678,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .custom-form-item-label {
+  // 复合标题行承载说明图标，使用自定义 label 保持和 Element 表单标题对齐。
   margin-bottom: 4px;
   line-height: 20px;
   color: #646a73;
@@ -689,6 +695,7 @@ onMounted(() => {
   margin-bottom: 10px !important;
 }
 .m-divider {
+  // 深浅主题共用分隔线结构，仅切换边框透明度以适配右侧配置面板。
   border-color: rgba(31, 35, 41, 0.15);
   margin: 0 0 16px;
 

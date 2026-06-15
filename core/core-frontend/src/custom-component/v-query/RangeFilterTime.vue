@@ -10,6 +10,7 @@ const props = defineProps({
   timeRange: {
     type: Object as PropType<TimeRange>,
     default: () => ({
+      // 默认不限制时间范围，避免新增筛选组件后立即改变已有查询结果。
       intervalType: 'none',
       dynamicWindow: false,
       maximumSingleQuery: 0,
@@ -328,6 +329,7 @@ watch(
 <template>
   <div class="set-time-filtering-range">
     <div class="title">{{ t('v_query.time_filter_range') }}</div>
+    <!-- 区间类型决定最终生成的过滤表达式结构，必须先于动态/固定时间配置选择。 -->
     <div class="list-item">
       <div class="label">{{ t('v_query.interval_type') }}</div>
       <div class="setting-content">
@@ -472,6 +474,7 @@ watch(
       <div class="parameters" :class="dynamicTime && 'setting'">
         <div class="setting-label" v-if="dynamicTime">{{ t('template_manage.preview') }}</div>
         <div :class="dynamicTime ? 'setting-value' : 'w100'">
+          <!-- 预览组件复用同一份 timeRange，确保用户看到的时间与保存后的过滤条件一致。 -->
           <component
             :config="timeRange as any"
             :timeGranularityMultiple="timeGranularityMultiple as any"
@@ -485,6 +488,7 @@ watch(
       <div class="label">
         <el-checkbox v-model="timeRange.dynamicWindow" :label="t('v_query.query_time_window')" />
       </div>
+      <!-- 动态窗口限制单次查询跨度，用于控制日期范围过大时的查询成本。 -->
       <div v-if="timeRange.dynamicWindow" class="setting-content maximum-single-query">
         {{ t('v_query.maximum_single_query') }}
         <el-input-number
@@ -500,6 +504,7 @@ watch(
 
 <style lang="less">
 .set-time-filtering-range {
+  // 时间筛选配置嵌在查询条件抽屉内，控件高度需要比普通表单更紧凑。
   .ed-radio,
   .ed-checkbox.ed-checkbox--default {
     height: 22px;
@@ -562,6 +567,7 @@ watch(
     }
 
     .parameters {
+      // 固定时间和动态时间共用预览区，宽度按日期选择器的最大形态预留。
       width: 100%;
       margin-top: 8px;
       .w100 {
