@@ -46,6 +46,7 @@ export function isMix(chartType: string) {
   return CHART_CATEGORY.MIX.includes(chartType)
 }
 
+// 判断图表类型是否支持提示轮播
 export function isSupport(chartType: string) {
   return Object.values(CHART_CATEGORY).some(category => category.includes(chartType))
 }
@@ -477,6 +478,7 @@ class ChartCarouselTooltip {
     ]
     let chartElement = null
 
+    // 将元素编号模板中的占位符替换为图表编号
     const sprintf = (fmt: string, ...args: unknown[]) => {
       let i = 0
       return fmt.replace(/%s/g, () => String(args[i++]))
@@ -513,6 +515,7 @@ class ChartCarouselTooltip {
     }
     addMouseEvent(chartElement)
     const showTooltipElement = document.getElementById('tooltip-' + this.chart.id)
+    // 判断鼠标离开提示框后是否仍停留在图表区域
     const isMouseInElement = (ev: MouseEvent, el?: HTMLElement | null) => {
       if (!el) return false
       const rect = el.getBoundingClientRect()

@@ -502,6 +502,7 @@ const action = param => {
   }
 }
 
+// 执行当前点击菜单对应的联动、下钻、跳转或放大动作
 const trackClick = trackAction => {
   const param = state.pointParam
   if (!param?.data?.dimensionList) {
@@ -594,6 +595,7 @@ const trackClick = trackAction => {
   }
 }
 
+// 根据表格字段和当前点击位置计算实际菜单
 const trackMenu = computed(() => {
   if (['table-info', 'table-normal'].includes(view.value.type) && state.curActionId) {
     return trackMenuCalc(state.curActionId)
@@ -602,6 +604,7 @@ const trackMenu = computed(() => {
   }
 })
 
+// 根据图表配置汇总可用的通用点击菜单
 const trackMenuCmp = computed(() => {
   let trackMenuInfo = []
   if (showPosition.value === 'viewDialog') {
@@ -637,6 +640,7 @@ const trackMenuCmp = computed(() => {
   return trackMenuInfo
 })
 
+// 按指定字段重新计算表格单元格菜单
 const trackMenuCalc = itemId => {
   let trackMenuInfo = []
   if (showPosition.value === 'viewDialog') {
@@ -683,6 +687,7 @@ const trackMenuCalc = itemId => {
   return trackMenuInfo
 }
 
+// 表格列宽调整后写回基础样式配置
 const resizeAction = resizeColumn => {
   // 从头开始滚动
   if ((myChart?.facet as any)?.timer) {
@@ -715,6 +720,7 @@ defineExpose({
 })
 
 let timer
+// 容器尺寸变化后延迟重绘表格或透视表
 const resize = (width, height) => {
   if (timer) {
     clearTimeout(timer)
@@ -764,6 +770,7 @@ onBeforeUnmount(() => {
   }
 })
 
+// 按画布缩放和分页字号计算分页器样式
 const autoStyle = computed(() => {
   const adaptorScale =
     (scale.value * (canvasStyleData.value.component.seniorStyleSetting?.pagerSize || 14)) / 14
@@ -779,10 +786,12 @@ const autoStyle = computed(() => {
   }
 })
 
+// 将分页器颜色透传为样式变量
 const tabStyle = computed(() => [
   { '--crest-pager-color': canvasStyleData.value.component.seniorStyleSetting?.pagerColor }
 ])
 
+// 浅色分页器文字自动切换为深色样式
 const tablePageClass = computed(() => {
   return (
     ['#ffffff', '#ffffffff', '#a6a6a6ff'].includes(

@@ -388,6 +388,7 @@ const iconMap = {
   'circle-packing-origin': circlePackingOrigin,
   'bullet-graph-origin': bulletGraphOrigin
 }
+// 根据组件类型选择实时列表中的图标
 const getIconName = item => {
   if (item.component === 'UserView') {
     const viewInfo = canvasViewInfo.value[item.id]
@@ -397,6 +398,7 @@ const getIconName = item => {
   }
 }
 
+// 菜单隐藏后按操作参数触发组件重命名
 const menuAsideHiddenClose = (param, element) => {
   const iconDom = document.getElementById('close-button')
   if (iconDom) {
@@ -409,6 +411,7 @@ const menuAsideHiddenClose = (param, element) => {
   }
 }
 
+// 关闭右键菜单并按索引定位重命名组件
 const menuAsideClose = (param, index) => {
   const iconDom = document.getElementById('close-button')
   if (iconDom) {
@@ -421,6 +424,7 @@ const menuAsideClose = (param, index) => {
   }
 }
 
+// 拦截默认右键菜单并创建临时自定义菜单容器
 const handleContextMenu = e => {
   e.preventDefault()
   // 获取鼠标点击位置
@@ -442,15 +446,18 @@ const handleContextMenu = e => {
   })
 }
 
+// 选中画布区域并清空当前组件选中状态
 const areaClick = area => {
   dvMainStore.setCurComponent({ component: null, index: null })
   dvMainStore.canvasStateChange({ key: 'curPointArea', value: area })
 }
 
+// 弹窗可用状态变化后通知画布配置刷新
 const popupAvailableChange = () => {
   useEmitt().emitter.emit('calcData-all')
   canvasChange()
 }
+// 画布结构变化后记录当前配置
 const canvasChange = () => {
   snapshotStore.recordSnapshotCache('canvasChange')
 }

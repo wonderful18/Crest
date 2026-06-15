@@ -95,6 +95,7 @@ const gaugeLiquidYaxisValue = args => {
  */
 const emit = defineEmits(['onMiscChange'])
 
+// 指标字段列表变化后重建杂项表单的可选字段
 watch(
   () => props.quotaFields,
   () => {
@@ -321,9 +322,11 @@ const initAxis = yAxisId => {
 const validLiquidMaxFieldAgg = computed(() => {
   return isAggField(state.miscForm.liquidMaxField)
 })
+// 仪表盘动态最小值字段是否已配置聚合
 const validMinFieldAgg = computed(() => {
   return isAggField(state.miscForm.gaugeMinField)
 })
+// 仪表盘动态最大值字段是否已配置聚合
 const validMaxFieldAgg = computed(() => {
   return isAggField(state.miscForm.gaugeMaxField)
 })
@@ -337,9 +340,11 @@ const isAggField = field => {
 const validLiquidMaxFieldCalcAndAgg = computed(() => {
   return isCalcFieldAndAgg(state.miscForm.liquidMaxField)
 })
+// 仪表盘动态最小值字段是否为带聚合的计算字段
 const validMinFieldCalcAndAgg = computed(() => {
   return isCalcFieldAndAgg(state.miscForm.gaugeMinField)
 })
+// 仪表盘动态最大值字段是否为带聚合的计算字段
 const validMaxFieldCalcAndAgg = computed(() => {
   return isCalcFieldAndAgg(state.miscForm.gaugeMaxField)
 })
@@ -354,9 +359,11 @@ const isCalcFieldAndAgg = field => {
 const validLiquidMaxFieldNum = computed(() => {
   return isNumType(state.miscForm.liquidMaxField)
 })
+// 仪表盘动态最小值字段是否为数值类型
 const validMinFieldNum = computed(() => {
   return isNumType(state.miscForm.gaugeMinField)
 })
+// 仪表盘动态最大值字段是否为数值类型
 const validMaxFieldNum = computed(() => {
   return isNumType(state.miscForm.gaugeMaxField)
 })
