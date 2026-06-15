@@ -9,6 +9,7 @@ import java.io.Serializable;
 @Schema(description = "设置项VO")
 @Data
 @NoArgsConstructor
+// 定义页面展示或接口返回的数据结构
 public class PerSettingItemVO implements Serializable {
     @Schema(description = "key")
     private String pkey;

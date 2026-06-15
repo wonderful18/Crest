@@ -10,6 +10,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义页面展示或接口返回的数据结构
 public class LogOpVO implements Serializable {
 
     private String value;

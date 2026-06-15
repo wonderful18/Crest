@@ -11,21 +11,25 @@ import java.util.List;
 
 @RestController
 @RequestMapping("dataset-table-sql-log")
+// 实现接口服务，衔接业务处理和返回结果
 public class DatasetTableSqlLogServer implements DatasetTableSqlLogApi {
     @Resource
     private DatasetTableSqlLogManage datasetTableSqlLogManage;
 
     @Override
+    // 保存当前业务数据
     public void save(SqlLogDTO sqlLogDTO) throws Exception {
         datasetTableSqlLogManage.save(sqlLogDTO);
     }
 
     @Override
+    // 查询当前业务数据列表
     public List<SqlLogDTO> listByTableId(SqlLogDTO sqlLogDTO) throws Exception {
         return datasetTableSqlLogManage.listByTableId(sqlLogDTO);
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void tableRemoval(String id) throws Exception {
         datasetTableSqlLogManage.tableRemoval(id);
     }

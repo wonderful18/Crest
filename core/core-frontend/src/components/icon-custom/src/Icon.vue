@@ -6,12 +6,14 @@ defineOptions({
   inheritAttrs: false
 })
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   prefix: propTypes.string.def('icon'),
   name: propTypes.string,
   className: propTypes.string,
   staticContent: propTypes.string
 })
+// 根据当前配置计算界面样式
 const svgClass = computed(() => {
   if (props.className) {
     return `svg-icon ${props.className}`

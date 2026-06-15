@@ -65,6 +65,7 @@ interface SelectConfig {
 
 const { t } = useI18n()
 const dvMainStore = dvMainStoreWithOut()
+// 查询下拉组件入参，config 承载条件配置，isConfig 区分配置态和运行态
 const props = defineProps({
   config: {
     type: Object as PropType<SelectConfig>,
@@ -92,9 +93,13 @@ const props = defineProps({
 })
 const { config } = toRefs(props)
 let enumValueArr: any[] = []
+// 当前下拉选中值，运行态与配置态都会通过它驱动展示
 const selectValue = ref()
+// 选项加载状态，覆盖远程枚举和值来源切换过程
 const loading = ref(false)
+// 当前是否多选，异步同步配置中的 multiple 字段
 const multiple = ref(false)
+// 当前可选项列表，统一转换为 el-select-v2 可消费的 label/value 结构
 const options = shallowRef<any[]>([])
 const unMountSelect: Ref = inject('unmount-select')
 const placeholder: Ref = inject('placeholder')
@@ -106,6 +111,7 @@ const cascadeList = inject('cascade-list', Function, true)
 const setCascadeDefault = inject('set-cascade-default', Function, true)
 const customStyle: any = inject('$custom-style-filter')
 
+// 下拉占位文案，配置隐藏占位时保留空格以维持组件高度
 const placeholderText = computed(() => {
   if (placeholder?.value?.placeholderShow) {
     return ['', undefined].includes(props.config.placeholder) ? ' ' : props.config.placeholder
@@ -113,21 +119,27 @@ const placeholderText = computed(() => {
   return ' '
 })
 
+// 当前是否为移动端数据大屏，用于切换到移动端弹层选择器
 const isMobileDataV = computed(() => {
   return dvMainStore.dvInfo.type === 'dataV' && isMobile()
 })
 
+// 移动端下拉弹层按需加载，避免桌面端增加初始体积
 const VanPopupSelect = defineAsyncComponent(() => import('./VanPopupSelect.vue'))
 
+// 当前查询组件的级联关系列表，由父级查询组件提供
 const cascade = computed(() => {
   return cascadeList() || []
 })
 let time
+// 首项默认值启用且值来源为数据集字段时，配置态禁止手动选择其它项
 const disabledFirstItem = computed(() => {
   const { defaultValueFirstItem, optionValueSource } = props.config
   return defaultValueFirstItem && optionValueSource === 1
 })
+// 当前可视化资源 id，优先从画布状态读取，路由参数作为兼容回退
 const currentVisualizationId = () => dvMainStore.dvInfo?.id || router.currentRoute.value.query.dvId
+// 根据展示值反查真实字段值，用于级联查询时传递字段映射后的值
 const setDefaultMapValue = arr => {
   const { displayId, field } = config.value
   if (config.value.optionValueSource !== 1) {
@@ -154,6 +166,7 @@ onUnmounted(() => {
   enumValueArr = []
 })
 
+// 将当前条件的映射值写回级联链路，供后续条件读取父级选择
 const setCascadeValueBack = val => {
   cascade.value.forEach(ele => {
     ele.forEach(item => {
@@ -167,6 +180,7 @@ const setCascadeValueBack = val => {
   })
 }
 
+// 运行态值变化后触发后续级联条件重新加载选项
 const emitCascade = () => {
   cascade.value.forEach(ele => {
     let trigger = false
@@ -181,6 +195,7 @@ const emitCascade = () => {
   })
 }
 
+// 配置态值变化时返回受影响的后续级联条件 id 列表
 const emitCascadeConfig = () => {
   const arr = []
   cascade.value.forEach(ele => {
@@ -197,6 +212,7 @@ const emitCascadeConfig = () => {
   return arr
 }
 
+// 根据级联链路生成当前远程选项查询需要的过滤条件
 const getCascadeFieldId = () => {
   const filter = []
   cascade.value.forEach(ele => {
@@ -234,11 +250,13 @@ const getCascadeFieldId = () => {
   return filter
 }
 
+// 将级联值统一转换为非空数组，过滤空值后用于接口过滤条件
 const normalizeCascadeValue = (value: any) => {
   const values = Array.isArray(value) ? value : [value]
   return values.filter(ele => ele !== undefined && ele !== null && ele !== '')
 }
 
+// 处理选中值变化，配置态写默认值，运行态写查询值并触发查询确认
 const handleValueChange = () => {
   const value = Array.isArray(selectValue.value) ? [...selectValue.value] : selectValue.value
   if (!props.isConfig) {
@@ -268,6 +286,7 @@ const handleValueChange = () => {
   setCascadeValueBack(config.value.mapValue)
 }
 
+// 展示类型切换后重置默认值和首项默认值设置
 const displayTypeChange = () => {
   if (!props.isConfig) return
   config.value.defaultValue = config.value.multiple ? [] : undefined
@@ -275,6 +294,7 @@ const displayTypeChange = () => {
   config.value.defaultValueFirstItem = false
 }
 
+// 根据绑定字段批量获取默认枚举值，适用于内置字段来源模式
 const handleFieldIdDefaultChange = (val: string[]) => {
   loading.value = true
   getEnumValue({
@@ -317,6 +337,7 @@ const handleFieldIdDefaultChange = (val: string[]) => {
     })
 }
 
+// 按自定义排序列表重排选项，未出现在排序列表中的值排在后面
 const customSort = () => {
   if (config.value.sortList?.length && config.value.sort === 'customSort') {
     const sortList = config.value.sortList
@@ -337,6 +358,7 @@ const customSort = () => {
   }
 }
 
+// 根据远程字段和值来源配置加载枚举选项，并同步默认值、权限过滤和级联值
 const handleFieldIdChange = (val: EnumValue) => {
   let change = false
   loading.value = true
@@ -467,8 +489,10 @@ const handleFieldIdChange = (val: EnumValue) => {
     })
 }
 
+// 下拉弹层显示状态，用于加载态样式和弹层类名
 const visible = ref(false)
 
+// 空值展示配置变化时，重新插入或移除空值选项
 watch(
   () => config.value.showEmpty,
   () => {
@@ -476,6 +500,7 @@ watch(
   }
 )
 
+// 启用首项默认值时，将当前选项第一项写入默认值或运行态选择值
 const setDefaultValueFirstItem = () => {
   if (!options.value.length) return
   selectValue.value = config.value.multiple ? [options.value[0].value] : options.value[0].value
@@ -507,6 +532,7 @@ const setDefaultValueFirstItem = () => {
   setCascadeValueBack(config.value.mapValue)
 }
 
+// 首项默认值开关变化时立即尝试回填第一项
 watch(
   () => config.value.defaultValueFirstItem,
   val => {
@@ -515,6 +541,7 @@ watch(
   }
 )
 
+// 根据空值展示开关维护固定的空数据选项
 const setEmptyData = () => {
   const { showEmpty, displayType, optionValueSource } = config.value
   if (+displayType !== 0 || optionValueSource === 1) return
@@ -530,6 +557,7 @@ const setEmptyData = () => {
   }
 }
 
+// 配置态默认值变化时同步本地选中值和多选状态
 watch(
   () => config.value.defaultValue,
   val => {
@@ -542,6 +570,7 @@ watch(
   }
 )
 
+// 查询条件 id 变化时重新初始化本地值和选项
 watch(
   () => config.value.id,
   () => {
@@ -549,6 +578,7 @@ watch(
   }
 )
 
+// 运行态外部选中值变化时同步本地选择器状态
 watch(
   () => config.value.selectValue,
   val => {
@@ -567,6 +597,7 @@ watch(
   }
 )
 
+// 配置态多选开关变化时重置本地值，并在需要时回填首项默认值
 watch(
   () => config.value.multiple,
   val => {
@@ -588,6 +619,7 @@ watch(
   }
 )
 
+// 字段、展示字段或排序配置变化时，防抖刷新选项
 watch(
   [
     () => config.value.field.id,
@@ -601,11 +633,13 @@ watch(
   }
 )
 
+// 自定义排序列表变化时，在当前选项上立即应用排序
 watch([() => config.value.sortList], val => {
   if (!val?.length || config.value.sort !== 'customSort') return
   customSort()
 })
 
+// 值来源模式变化时重置无效值，并刷新对应来源的选项
 watch(
   () => config.value.optionValueSource,
   (valNew, newOld) => {
@@ -620,6 +654,7 @@ watch(
   }
 )
 
+// 绑定组件和字段映射变化时，刷新内置字段来源选项
 watch(
   [() => config.value.checkedFields, () => config.value.checkedFieldsMap],
   () => {
@@ -630,9 +665,12 @@ watch(
   }
 )
 
+// 远程搜索关键字
 const searchText = ref('')
+// 当前选项刷新是否来自级联远程触发，用于避免覆盖运行态默认值
 const isFromRemote = ref(false)
 
+// 手动值来源列表变化时刷新选项
 watch(
   () => config.value.valueSource,
   () => {
@@ -640,6 +678,7 @@ watch(
   }
 )
 
+// 必填条件在权限过滤后校验选中值是否仍可用，不可用时清空并提示
 const requiredComp = () => {
   if (config.value?.required && config.value?.optionFilter?.length > 0) {
     const isValid = hasIntersection(options.value, selectValue.value)
@@ -654,6 +693,7 @@ const requiredComp = () => {
   }
 }
 
+// 判断当前选中值和可选项是否存在交集，用于必填权限过滤校验
 const hasIntersection = (options, selectValue) => {
   if (!Array.isArray(options) || options.length === 0) {
     return false
@@ -670,6 +710,7 @@ const hasIntersection = (options, selectValue) => {
   return selectedValues.some(value => optionValues.includes(value))
 }
 
+// 根据值来源类型加载选项，支持内置字段、远程数据集字段和手动输入三种来源
 const setOptions = (num: number) => {
   if (num !== config.value.optionValueSource) return
   const {
@@ -742,6 +783,7 @@ const setOptions = (num: number) => {
 
 const debounceOptions = debounce(setOptions, 300)
 
+// 初始化本地选中值和多选状态，并按当前值来源加载选项
 const init = () => {
   const { defaultValueCheck, multiple: plus, defaultValue, optionValueSource } = config.value
   if (defaultValueCheck) {
@@ -757,6 +799,7 @@ const init = () => {
   debounceOptions(optionValueSource)
 }
 
+// 计算运行态查询条件宽度，配置为空时回退到父级提供的组件宽度
 const getCustomWidth = () => {
   if (placeholder?.value?.placeholderShow) {
     if (props.config.queryConditionWidth === undefined) {
@@ -767,26 +810,33 @@ const getCustomWidth = () => {
   return 227
 }
 
+// 标准下拉选择器样式，配置态不固定宽度，运行态使用查询条件宽度
 const selectStyle = computed(() => {
   return props.isConfig ? {} : { width: getCustomWidth() + 'px' }
 })
 
+// 平铺展示模式样式，配置态使用固定宽度，运行态跟随查询条件宽度
 const selectStyleFlat = computed(() => {
   return props.isConfig ? { width: '415px' } : { width: getCustomWidth() + 'px' }
 })
 
+// 多选选择器组件引用，用于外部点击时收起弹层
 const mult = ref()
+// 单选选择器组件引用，用于外部点击时收起弹层
 const single = ref()
 
+// 级联上游变化时刷新远程数据集字段来源选项
 const getOptionFromCascade = () => {
   if (config.value.optionValueSource !== 1 || ![0, 2, 5].includes(+config.value.displayType)) return
   isFromRemote.value = true
   debounceOptions(1)
 }
+// 当前选择器被点击时通知其它选择器收起弹层
 const selectHideClick = () => {
   useEmitt().emitter.emit('select-hide_lick', config.value.id)
 }
 
+// 响应其它选择器点击事件，收起当前单选或多选弹层
 const hideClick = id => {
   if (id === config.value.id) return
   const vnode = single.value || mult.value
@@ -806,8 +856,10 @@ onBeforeMount(() => {
   })
 })
 
+// 当前选择器是否渲染在数据大屏环境中，用于切换弹层滚动条样式
 const isDataV = ref(false)
 
+// 下拉弹层样式类名，按加载状态和大屏环境追加滚动条样式
 const popperClass = computed(() => {
   let str = 'filter-select-popper_class'
   if (visible.value) {
@@ -826,6 +878,7 @@ onMounted(() => {
     Boolean(document.querySelector('.datav-preview'))
 })
 
+// 根据自定义背景色计算标签背景色，保证深色大屏中标签可读
 const tagColor = computed(() => {
   if (
     !customStyle ||
@@ -842,18 +895,22 @@ const tagColor = computed(() => {
     .toRGB()
 })
 
+// 多选标签宽度，按查询条件宽度分配两列展示空间
 const tagWidth = computed(() => {
   return (getCustomWidth() - 65) / 2 + 'px'
 })
 
+// 多选标签文本宽度，预留标签内边距和关闭图标空间
 const tagTextWidth = computed(() => {
   return (getCustomWidth() - 65) / 2 - 20 + 'px'
 })
 
+// 平铺模式当前激活项，统一转为数组供 Flat 组件判断选中状态
 const activeItems = computed(() => {
   return Array.isArray(selectValue.value) ? selectValue.value : [selectValue.value]
 })
 
+// 平铺选项点击处理，按单选或多选模式更新选中值
 const handleItemClick = (item: any) => {
   if (multiple.value) {
     if (selectValue.value.includes(item)) {
@@ -868,6 +925,7 @@ const handleItemClick = (item: any) => {
   handleValueChange()
 }
 
+// 画布组件被点击时收起当前下拉，避免弹层悬停在非当前组件上
 const componentClick = () => {
   mult.value?.blur()
   single.value?.blur()
@@ -880,11 +938,13 @@ onBeforeUnmount(() => {
   eventBus.off('componentClick', componentClick)
 })
 
+// 清空当前选择，并同步配置或运行态查询值
 const onClear = () => {
   selectValue.value = multiple.value ? [] : undefined
   handleValueChange()
 }
 
+// 移动端弹层确认后写回选择值，并复用统一变更处理
 const onConfirm = (val: any) => {
   selectValue.value = multiple.value ? [...val] : val[0]
   handleValueChange()

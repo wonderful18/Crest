@@ -27,11 +27,16 @@ import { isDashboard, trackBarStyleCheck } from '@/utils/canvasUtils'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { useI18n } from '@/hooks/web/useI18n'
 import { configEmptyDataStyle } from '@/views/chart/components/js/panel/common/common_antv'
+// 图表组件内置文案的翻译入口
 const { t } = useI18n()
+// 大屏主状态提供联动、跳转和移动端上下文
 const dvMainStore = dvMainStoreWithOut()
+// 解构当前面板联动、跳转和嵌入式状态
 const { nowPanelTrackInfo, nowPanelJumpInfo, mobileInPc, embeddedCallBack, inMobile } =
   storeToRefs(dvMainStore)
+// 全局事件总线用于图表与画布工具栏通信
 const { emitter } = useEmitt()
+// G2Plot 图表组件入参，包含视图配置、展示位置和终端信息
 const props = defineProps({
   element: {
     type: Object,
@@ -81,6 +86,7 @@ const props = defineProps({
   }
 })
 
+// 图表点击、联动、跳转和加载状态事件透传给父组件
 const emit = defineEmits([
   'onPointClick',
   'onChartClick',
@@ -89,9 +95,13 @@ const emit = defineEmits([
   'resetLoading'
 ])
 
+// 该类图表的系列字段取自 field
 const g2TypeSeries1 = ['bidirectional-bar']
+// 该类图表的系列字段取自 category
 const g2TypeSeries0 = ['bar-range']
+// 树形图表需要按路径和名称判断选中
 const g2TypeTree = ['circle-packing']
+// 堆叠图表需要同时处理维度、扩展维度和堆叠字段
 const g2TypeStack = [
   'bar-stack',
   'bar-group-stack',
@@ -99,16 +109,23 @@ const g2TypeStack = [
   'bar-stack-horizontal',
   'percentage-bar-stack-horizontal'
 ]
+// 分组图表需要按名称和分类组合判断选中
 const g2TypeGroup = ['bar-group']
 
+// 常用入参保持响应式引用
 const { view, showPosition, scale, terminal, suffixId } = toRefs(props)
 
+// 图表渲染错误标记
 const isError = ref(false)
+// 图表渲染错误文案
 const errMsg = ref('')
+// 是否已经应用过联动高亮
 const linkageActiveHistory = ref(false)
 
+// 大屏移动端预览需要走专门的交互分支
 const dataVMobile = !isDashboard() && isMobile()
 
+// 图表运行时状态，包含轨迹条位置、联动参数和渲染数据
 const state = reactive({
   trackBarStyle: {
     position: 'absolute',
@@ -124,13 +141,17 @@ const state = reactive({
   pointParam: null,
   data: { fields: [] } // 图表数据
 })
+// 图表数据体积较大，使用浅响应式避免深层代理开销
 let chartData = shallowRef<Partial<Chart['data']>>({
   fields: []
 })
 
+// 当前图表容器编号，组合展示位置、图表编号和后缀避免冲突
 const containerId = 'container-' + showPosition.value + '-' + view.value.id + '-' + suffixId.value
+// 联动轨迹条组件引用
 const viewTrack = ref(null)
 
+// 清除图表联动高亮状态
 const clearLinkage = () => {
   linkageActiveHistory.value = false
   try {
@@ -141,6 +162,7 @@ const clearLinkage = () => {
     console.warn('clearLinkage error')
   }
 }
+// 需要重新应用联动前，先按图表能力决定是否重绘
 const reDrawView = () => {
   linkageActiveHistory.value = false
   const slider = myChart?.chart?.getController('slider')
@@ -148,6 +170,7 @@ const reDrawView = () => {
     myChart?.render()
   }
 }
+// 等待 DOM 更新后重新应用联动状态
 const linkageActivePre = () => {
   if (linkageActiveHistory.value) {
     reDrawView()
@@ -156,6 +179,7 @@ const linkageActivePre = () => {
     linkageActive()
   })
 }
+// 根据当前联动参数设置图形选中和置灰状态
 const linkageActive = () => {
   linkageActiveHistory.value = true
   myChart?.setState('active', () => true, false)
@@ -183,6 +207,7 @@ const linkageActive = () => {
     }
   })
 }
+// 判断单个图形元素是否命中当前联动条件
 const checkSelected = param => {
   // 获取当前视图的所有联动字段ID
   const mappingFieldIds = Array.from(
@@ -259,6 +284,9 @@ const checkSelected = param => {
   }
 }
 
+/**
+ * 查询图表数据并触发后续渲染流程
+ */
 const calcData = async (view, callback) => {
   if (view.tableId || view['dataFrom'] === 'template') {
     isError.value = false
@@ -319,7 +347,13 @@ const calcData = async (view, callback) => {
     callback?.()
   }
 }
+/**
+ * 当前正在渲染的图表视图
+ */
 let curView
+/**
+ * 合并图表配置并按渲染库分发渲染流程
+ */
 const renderChart = async (view, callback?) => {
   if (!view) {
     return
@@ -350,8 +384,17 @@ const renderChart = async (view, callback?) => {
       break
   }
 }
+/**
+ * 当前 G2Plot 图表实例
+ */
 let myChart = null
+/**
+ * G2Plot 延迟渲染定时器
+ */
 let g2Timer: ReturnType<typeof setTimeout>
+/**
+ * 渲染 G2Plot 图表并恢复联动高亮状态
+ */
 const renderG2Plot = async (chart, chartView: G2PlotChartView<any, any>) => {
   g2Timer && clearTimeout(g2Timer)
   g2Timer = setTimeout(async () => {
@@ -378,12 +421,33 @@ const renderG2Plot = async (chart, chartView: G2PlotChartView<any, any>) => {
   }, 300)
 }
 
+/**
+ * 地图下钻后的动态区域编码
+ */
 const dynamicAreaId = ref('')
+/**
+ * 当前地图国家或区域编码前缀
+ */
 const country = ref('')
+/**
+ * 当前地图 GADM 名称
+ */
 let gadmName
+/**
+ * 图表容器引用
+ */
 const chartContainer = ref<HTMLElement>(null)
+/**
+ * 当前地图边界范围
+ */
 let scope
+/**
+ * 地图渲染定时器
+ */
 let mapTimer: ReturnType<typeof setTimeout>
+/**
+ * 渲染 L7Plot 地图类图表
+ */
 const renderL7Plot = async (chart: ChartObj, chartView: any, callback) => {
   const map = parseJson(chart.customAttr).map
   let areaId = map.id
@@ -421,6 +485,9 @@ const renderL7Plot = async (chart: ChartObj, chartView: any, callback) => {
 }
 
 let mapL7Timer: ReturnType<typeof setTimeout>
+/**
+ * 延迟渲染 L7 图表，避免地图容器频繁重建
+ */
 const renderL7 = async (chart: ChartObj, chartView: any, callback) => {
   mapL7Timer && clearTimeout(mapL7Timer)
   mapL7Timer = setTimeout(async () => {
@@ -437,12 +504,18 @@ const renderL7 = async (chart: ChartObj, chartView: any, callback) => {
   }, 500)
 }
 
+/**
+ * 嵌入模式下转发点位点击事件
+ */
 const pointClickTrans = () => {
   if (embeddedCallBack.value === 'yes') {
     trackClick('pointClick')
   }
 }
 
+/**
+ * 处理图表库上报的默认交互事件
+ */
 const actionDefault = param => {
   if (param.from === 'map') {
     emitter.emit('map-default-range', param)
@@ -455,6 +528,9 @@ const actionDefault = param => {
   }
 }
 
+/**
+ * 处理图表点位点击后的下钻、联动和跳转入口
+ */
 const action = param => {
   if (param.from) {
     actionDefault(param)
@@ -506,6 +582,9 @@ const action = param => {
   }
 }
 
+/**
+ * 根据当前点击点位执行指定追踪动作
+ */
 const trackClick = trackAction => {
   const param = state.pointParam
   if (!param?.data?.dimensionList) {
@@ -627,6 +706,9 @@ const trackClick = trackAction => {
   }
 }
 
+/**
+ * 计算当前点位可展示的追踪操作菜单
+ */
 const trackMenu = computed(() => {
   let trackMenuInfo = []
   // 复用、放大状态的仪表板不进行联动、跳转和下钻的动作
@@ -683,10 +765,16 @@ const trackMenu = computed(() => {
   }
   return trackMenuInfo
 })
+/**
+ * 同步象限图默认基准线
+ */
 const quadrantDefaultBaseline = defaultQuadrant => {
   emitter.emit('quadrant-default-baseline', defaultQuadrant)
 }
 
+/**
+ * 将地图 canvas 临时替换为截图图片
+ */
 const canvas2Picture = (pictureData, online) => {
   const mapDom = document.getElementById(containerId)
   const childNodeList = mapDom.querySelectorAll('.l7-scene')
@@ -711,6 +799,9 @@ const canvas2Picture = (pictureData, online) => {
   imgDom.src = pictureData
   mapDom?.appendChild(imgDom)
 }
+/**
+ * 预处理地图截图所需的图表实例
+ */
 const preparePicture = async id => {
   if (id !== curView?.id) {
     return
@@ -718,6 +809,9 @@ const preparePicture = async id => {
   const chartView = chartViewManager.getChartView(curView.render, curView.type)
   void chartView
 }
+/**
+ * 恢复地图截图前隐藏的地图层
+ */
 const unPreparePicture = id => {
   if (id !== curView?.id) {
     return
@@ -788,6 +882,9 @@ onMounted(() => {
   useEmitt({ name: 'l7-unprepare-picture', callback: unPreparePicture })
 })
 const MAP_CHARTS = ['map', 'bubble-map', 'flow-map', 'heat-map', 'symbolic-map']
+/**
+ * 地图未选中时阻止滚轮事件穿透到画布
+ */
 const onWheel = (e: WheelEvent) => {
   if (!MAP_CHARTS.includes(view.value.type)) {
     return

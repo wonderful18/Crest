@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/auth")
+// 提供资源权限和菜单权限的替代实现接口
 public class SubstituleAuthServer implements AuthApi {
 
     @Resource
@@ -35,6 +36,7 @@ public class SubstituleAuthServer implements AuthApi {
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
+    // 查询指定业务类型的资源列表
     @Override
     public List<ResourceVO> busiResource(String flag) {
         String type = normalizeFlag(flag);
@@ -52,6 +54,7 @@ public class SubstituleAuthServer implements AuthApi {
         }, type);
     }
 
+    // 查询角色或用户在业务资源上的权限
     @Override
     public PermissionVO busiPermission(BusiPermissionRequest request) {
         PermissionVO vo = new PermissionVO();
@@ -72,11 +75,13 @@ public class SubstituleAuthServer implements AuthApi {
         return vo;
     }
 
+    // 查询指定目标在业务资源上的权限
     @Override
     public PermissionVO busiTargetPermission(BusiPermissionRequest request) {
         return busiPermission(request);
     }
 
+    // 查询菜单权限资源树
     @Override
     public List<ResourceVO> menuResource() {
         List<ResourceVO> menus = jdbcTemplate.query("""
@@ -111,6 +116,7 @@ public class SubstituleAuthServer implements AuthApi {
                 .toList();
     }
 
+    // 查询角色菜单权限
     @Override
     public PermissionVO menuPermission(MenuPermissionRequest request) {
         PermissionVO vo = new PermissionVO();
@@ -121,11 +127,13 @@ public class SubstituleAuthServer implements AuthApi {
         return vo;
     }
 
+    // 查询指定目标的菜单权限
     @Override
     public PermissionVO menuTargetPermission(MenuPermissionRequest request) {
         return menuPermission(request);
     }
 
+    // 保存业务资源权限配置
     @Override
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.DATA, id = "#p0.id")
     public void saveBusiPer(BusiPerEditor editor) {
@@ -144,6 +152,7 @@ public class SubstituleAuthServer implements AuthApi {
         }
     }
 
+    // 批量保存业务资源目标权限配置
     @Override
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.DATA)
     public void saveBusiTargetPer(BusiTargetPerCreator creator) {
@@ -164,6 +173,7 @@ public class SubstituleAuthServer implements AuthApi {
         }
     }
 
+    // 保存角色菜单权限配置
     @Override
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.MENU, id = "#p0.id")
     public void saveMenuPer(MenuPerEditor editor) {
@@ -181,6 +191,7 @@ public class SubstituleAuthServer implements AuthApi {
         }
     }
 
+    // 批量保存菜单目标权限配置
     @Override
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.MENU)
     public void saveMenuTargetPer(MenuTargetPerCreator creator) {
@@ -196,6 +207,7 @@ public class SubstituleAuthServer implements AuthApi {
         }
     }
 
+    // 查询业务资源下已授权的全部目标
     @Override
     public List<ResourceItemVO> busiTargetPermissionAll(BusiPermissionRequest request) {
         String targetType = targetType(request.getType());
@@ -229,6 +241,7 @@ public class SubstituleAuthServer implements AuthApi {
         }, normalizeFlag(request.getFlag()), String.valueOf(request.getId()));
     }
 
+    // 写入单条资源权限记录
     private void saveResourcePermission(String resourceType, String resourceId, String targetType, Long targetId, String permission) {
         jdbcTemplate.update("""
                 INSERT IGNORE INTO iam_resource_permission(id, resource_type, resource_id, target_type, target_id, permission, create_time)
@@ -236,10 +249,12 @@ public class SubstituleAuthServer implements AuthApi {
                 """, IDUtils.snowID(), resourceType, resourceId, targetType, targetId, permission, System.currentTimeMillis());
     }
 
+    // 将前端目标类型转换为权限目标类型
     private String targetType(Integer type) {
         return type != null && type == 1 ? "user" : "role";
     }
 
+    // 统一业务资源类型标识
     private String normalizeFlag(String flag) {
         if ("dataV".equalsIgnoreCase(flag)) {
             return "screen";

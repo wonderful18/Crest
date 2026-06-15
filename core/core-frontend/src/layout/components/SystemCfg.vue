@@ -5,8 +5,10 @@ import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 import { computed } from 'vue'
 
 const appearanceStore = useAppearanceStoreWithOut()
+// 衔接当前组件交互和状态同步
 const navigateBg = computed(() => appearanceStore.getNavigateBg)
 const { push, resolve } = useRouter()
+// 衔接当前组件交互和状态同步
 const redirectUser = () => {
   const sysMenu = resolve('/system')
   const kidPath = sysMenu.matched?.[0]?.children?.[0]?.path

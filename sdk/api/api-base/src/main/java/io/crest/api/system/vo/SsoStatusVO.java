@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Schema(description = "单点登录公开状态")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class SsoStatusVO {
 
     @Schema(description = "是否启用")

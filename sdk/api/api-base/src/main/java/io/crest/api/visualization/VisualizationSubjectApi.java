@@ -13,6 +13,7 @@ import java.util.List;
 
 @Tag(name = "可视化管理:主题")
 @ApiSupport(order = 993)
+// 定义模块接口契约和数据传输结构
 public interface VisualizationSubjectApi {
 
     @PostMapping("/list")

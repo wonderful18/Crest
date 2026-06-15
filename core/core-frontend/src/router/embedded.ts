@@ -8,6 +8,7 @@ const router = createRouter({
   routes: routes as RouteRecordRaw[]
 })
 
+// 更新当前配置并同步相关状态
 export const setupRouter = (app: App<Element>) => {
   app.use(router)
 }

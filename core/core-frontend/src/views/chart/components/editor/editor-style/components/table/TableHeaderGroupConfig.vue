@@ -36,6 +36,7 @@ import {
 const { t } = useI18n()
 const dvMainStore = dvMainStoreWithOut()
 type ColumnNode = any
+// 表头分组配置基于当前图表字段结构生成可交互预览。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -49,10 +50,13 @@ const props = defineProps({
     type: Array<string>
   }
 })
+// 父组件负责保存分组结果或关闭弹窗。
 const emits = defineEmits(['onConfigChange', 'onCancelConfig'])
+// 取消编辑时不回写当前 S2 临时状态。
 const onCancelConfig = () => {
   emits('onCancelConfig')
 }
+// 明细表只使用维度轴，普通表需要把指标列追加到可分组字段中。
 const allAxis = computed(() => {
   const axis = [...props.chart.xAxis]
   if (props.chart.type === 'table-normal') {
@@ -60,6 +64,7 @@ const allAxis = computed(() => {
   }
   return axis
 })
+// 提交时只保留分组节点的 meta，真实字段 meta 会在渲染时按字段信息补齐。
 const onConfigChange = () => {
   const showAxis = allAxis.value
     ?.map(axis => axis.hide !== true && axis.engineFieldName)
@@ -69,6 +74,7 @@ const onConfigChange = () => {
   emits('onConfigChange', { columns: fields.columns, meta: groupMeta })
 }
 
+// 初始化表头分组配置并渲染预览表格
 const init = () => {
   const chart = cloneDeep(props.chart)
   const { headerGroupConfig } = chart.customAttr.tableHeader
@@ -84,6 +90,7 @@ const init = () => {
     const leafNodes = getLeafNodes(headerGroupConfig.columns)
     const leafKeys = leafNodes.map(item => item.key)
     if (!isEqual(allAxis, leafKeys)) {
+      // 字段顺序或显隐变化后，旧分组叶子不再可信，直接回退为当前可见字段。
       const { columns, meta } = headerGroupConfig
       columns.splice(0, columns.length, ...showColumns)
       meta.splice(0, meta.length)
@@ -98,13 +105,16 @@ const init = () => {
     renderTable(chart)
   })
 }
+// 生成右键菜单容器的唯一 DOM 标识
 const menuGroupId = computed(() => {
   return 'menu-group-' + props.chart.id
 })
+// 生成表格预览容器的唯一 DOM 标识
 const containerId = computed(() => {
   return 'table-container-' + props.chart.id
 })
 let s2: any
+// 数据单元格读取主题上的字段级对齐配置，兼容表格主体的自定义对齐。
 class CustomDataCell extends TableDataCell {
   protected getTextStyle(): any {
     const textStyle = super.getTextStyle() as any
@@ -121,12 +131,13 @@ class CustomDataCell extends TableDataCell {
     return textStyle
   }
 }
+// 表头单元格需要区分分组节点和叶子字段，分组节点统一居中以强化层级。
 class CustomColCell extends TableColCell {
   protected getTextStyle(): any {
     const textStyle = super.getTextStyle() as any
     const colCellAlignConfig = this.theme.colCellAlignConfig
     if (colCellAlignConfig) {
-      // 分组单元格居中
+      // 分组节点使用居中对齐，叶子字段才读取字段级对齐配置。
       if (this.meta.children?.length) {
         textStyle.textAlign = 'center'
         return textStyle
@@ -142,6 +153,7 @@ class CustomColCell extends TableColCell {
     return textStyle
   }
 }
+// 根据当前图表配置渲染可交互的表头分组预览表格
 const renderTable = (chart: ChartObj) => {
   const data = dvMainStore.getViewDataDetails(chart.id)
   const containerDom = document.getElementById(containerId.value)
@@ -157,6 +169,7 @@ const renderTable = (chart: ChartObj) => {
     return pre
   }, {})
   if (data?.fields?.length) {
+    // 有真实数据字段时优先沿用后端字段元信息，保证展示名和数值格式化与预览一致。
     data.fields.forEach(ele => {
       const f = axisMap[ele.engineFieldName]
       if (f?.hide === true) {
@@ -184,6 +197,7 @@ const renderTable = (chart: ChartObj) => {
       })
     })
   } else {
+    // 无预览数据时退回图表轴字段，仍允许用户配置表头分组结构。
     allAxis.value?.forEach(axis => {
       if (axis.hide !== true) {
         meta.push({
@@ -193,7 +207,7 @@ const renderTable = (chart: ChartObj) => {
       }
     })
   }
-  // // data config
+  // S2 数据配置直接使用当前表头树，预览数据只取前 10 行降低弹窗渲染成本。
   const s2DataConfig: S2DataConfig = {
     fields: {
       columns
@@ -246,6 +260,7 @@ const renderTable = (chart: ChartObj) => {
   const { tableHeader, tableCell } = chart.customAttr
   const theme = getCustomTheme(chart) as any
   if (tableHeader.tableHeaderAlign === 'custom') {
+    // S2 主题扩展字段级对齐映射，供自定义表头单元格读取。
     theme.colCellAlignConfig =
       tableHeader.alignConfig?.reduce((pre, cur) => {
         pre[cur.id] = cur.align
@@ -253,6 +268,7 @@ const renderTable = (chart: ChartObj) => {
       }, {}) || {}
   }
   if (tableCell.tableItemAlign === 'custom') {
+    // 数据单元格对齐独立于表头配置，避免表头分组影响表体展示。
     theme.dataCellAlignConfig =
       tableCell.alignConfig?.reduce((pre, cur) => {
         pre[cur.id] = cur.align
@@ -270,7 +286,8 @@ const renderTable = (chart: ChartObj) => {
     const activeColumns = getColumns(colKeys, curColumns)
     const curCell = s2.getCell(e.target)
     groupMenuContainer.innerText = ''
-    // 右键点击的目标单元格不在已选的单元格中，清空已选单元格，隐藏菜单
+    // 右键菜单基于当前 S2 选区生成，所有操作都直接修改内存中的 columns 和 meta。
+    // 右键目标不在当前选区内时清空选区，避免对非选中列执行分组操作。
     if (activeColumns?.length) {
       const index = activeColumns.findIndex(cell => cell.key === curCell.getMeta().field)
       if (index === -1) {
@@ -279,7 +296,7 @@ const renderTable = (chart: ChartObj) => {
         return
       }
     }
-    //只有一个cell，并且colIndex为-1，那就是组合的，显示取消分组按钮和重命名按钮
+    // 单个分组节点只提供取消分组、取消全部分组和重命名操作。
     if (activeColumns?.length === 1 && curCell.getMeta().colIndex === -1) {
       s2.interaction.clearState()
       s2.interaction.selectHeaderCell({ cell: curCell })
@@ -387,7 +404,7 @@ const renderTable = (chart: ChartObj) => {
           inputPlaceholder: t('chart.group_name_edit_tip'),
           inputValue,
           inputErrorMessage: t('chart.group_name_error_tip'),
-          // 正则校验，长度 1-50
+          // 分组名称长度限制为 1 到 50，保持和后端字段展示名约束一致。
           inputValidator: val => {
             if (val?.length < 1 || val?.length > 50) {
               return t('chart.group_name_error_tip')
@@ -410,7 +427,7 @@ const renderTable = (chart: ChartObj) => {
             s2.render(true)
           })
           .catch(() => {
-            // do nothing
+            // 用户取消重命名时保留当前分组名称。
           })
       }
       s2.showTooltip({
@@ -422,7 +439,7 @@ const renderTable = (chart: ChartObj) => {
       })
       return
     }
-    //如果有多个cell都在同一个层级，并且parent相同，那就是可以进行合并分组操作
+    // 多个同层级且同父节点的表头单元格才允许合并为一个分组。
     if (activeColumns?.length > 1) {
       const sameParent = activeCells.every(
         cell => cell.getMeta().parent.id === curCell.getMeta().parent.id
@@ -432,6 +449,7 @@ const renderTable = (chart: ChartObj) => {
       }
       let upDepth = -1
       let tmpCell = curCell
+      // 计算当前节点到根节点的深度，用于限制新分组后的总层级。
       while (tmpCell?.getMeta?.()?.parent || tmpCell?.parent) {
         upDepth++
         tmpCell = tmpCell?.getMeta?.()?.parent || tmpCell?.parent
@@ -439,7 +457,7 @@ const renderTable = (chart: ChartObj) => {
       let startIndex = -1
       let endIndex = -1
       const parent = curCell.getMeta().parent
-      // 分组的节点
+      // 分组节点和叶子节点的 children 结构不同，需要分别计算选区边界。
       if (parent.colIndex !== -1) {
         activeColumns.forEach(cell => {
           const index = parent.children.findIndex(item => item.getMeta().field === cell.key)
@@ -469,7 +487,7 @@ const renderTable = (chart: ChartObj) => {
         totalColumns.push(...parentColumn.children?.slice(startIndex, endIndex + 1))
       }
       const chiildDepth = getTreesMaxDepth(totalColumns)
-      // 最大分组为 3 级
+      // 表头最多保留三层，避免 S2 表头高度过大影响可读性。
       if (chiildDepth + upDepth > 1) {
         return
       }
@@ -486,7 +504,7 @@ const renderTable = (chart: ChartObj) => {
           inputPlaceholder: t('chart.group_name_edit_tip'),
           inputErrorMessage: t('chart.group_name_error_tip'),
           inputValue: t('chart.group'),
-          // 正则校验，长度 1-50
+          // 新分组名称长度限制为 1 到 50。
           inputValidator: val => {
             if (val?.length < 1 || val?.length > 50) {
               return t('chart.group_name_error_tip')
@@ -534,7 +552,7 @@ const renderTable = (chart: ChartObj) => {
             s2.interaction.clearState()
           })
           .catch(() => {
-            // do nothing
+            // 用户取消合并时不修改当前表头树。
           })
       }
       s2.showTooltip({
@@ -551,6 +569,7 @@ const renderTable = (chart: ChartObj) => {
     const lastCell = s2.store.get('lastClickedCell') as ColCell
     const originEvent = e.originalEvent as MouseEvent
     if (!lastCell || !(originEvent?.ctrlKey || originEvent?.metaKey || originEvent?.shiftKey)) {
+      // 普通点击只记录起点，组合键点击时再进入连续选择逻辑。
       const cell = s2.getCell(e.target)
       s2.store.set('lastClickedCell', cell)
       return
@@ -577,6 +596,7 @@ const renderTable = (chart: ChartObj) => {
       const startIndex = Math.min(lastIndex, curIndex)
       const endIndex = Math.max(lastIndex, curIndex)
       const activeCells = parent.children.slice(startIndex, endIndex + 1)
+      // Shift 选择会补齐同父节点内的连续表头，保证合并分组后的字段顺序稳定。
       s2.interaction.clearState()
       activeCells.forEach(cell => {
         s2.interaction.selectHeaderCell({ cell: cell.belongsCell, isMultiSelection: true })
@@ -586,6 +606,7 @@ const renderTable = (chart: ChartObj) => {
   s2.once(S2Event.LAYOUT_AFTER_HEADER_LAYOUT, (e: LayoutResult) => {
     const initialized = s2.store.get('initialized')
     if (!initialized) {
+      // 首次布局完成后按实际表头宽高修正容器尺寸，避免预览区出现多余空白。
       s2.store.set('initialized', true)
       const colsHierarchy = e?.colsHierarchy
       s2.changeSheetSize(colsHierarchy?.width || containerDom.getBoundingClientRect().width)
@@ -605,19 +626,20 @@ const renderTable = (chart: ChartObj) => {
 const getNonLeafNodes = (tree: Array<ColumnNode>): string[] => {
   const result: string[] = []
 
+  // 深度遍历表头树并收集所有非叶子节点，用于清理分组 meta。
   const inorderTraversal = (node: ColumnNode) => {
-    // 如果有子节点，则为非叶子节点
+    // 存在子节点的表头即为分组节点。
     if (node.children?.length > 0) {
       result.push(node.key)
 
-      // 递归处理子节点
+      // 递归向下清理多层分组节点。
       for (let i = 0; i < node.children.length; i++) {
         inorderTraversal(node.children[i] as ColumnNode)
       }
     }
   }
 
-  // 遍历树中所有节点
+  // 支持一次传入多棵根节点子树。
   tree.forEach(node => inorderTraversal(node))
 
   return result
@@ -628,7 +650,7 @@ const getTreesMaxDepth = (nodes: Array<ColumnNode>): number => {
     return 0
   }
 
-  // 获取单个节点的最大子树深度
+  // 获取单个节点的最大子树深度，叶子节点深度记为 0。
   const getNodeMaxDepth = (node: ColumnNode): number => {
     if (!node.children || node.children.length === 0) {
       return 0
@@ -637,13 +659,14 @@ const getTreesMaxDepth = (nodes: Array<ColumnNode>): number => {
     return Math.max(...childrenDepths) + 1
   }
 
-  // 计算所有根节点的最大深度
+  // 多列选区可能包含多棵子树，需要取最大深度。
   const rootDepths = nodes.map(node => getNodeMaxDepth(node))
   return Math.max(...rootDepths)
 }
 
 const resize = debounce(height => {
   if (s2) {
+    // 外层弹窗高度变化时只调整表格高度，宽度由 S2 首次布局结果控制。
     const tableHeight = s2.container.cfg.height
     if (height > tableHeight) {
       const dom = document.getElementById(containerId.value)
@@ -660,7 +683,7 @@ onMounted(() => {
   init()
   resizeObserver = new ResizeObserver(([entry] = []) => {
     const [size] = entry.borderBoxSize || []
-    // 拖动的时候宽高重新计算，误差范围内不重绘，误差先设置为1
+    // 拖动容器时仅在高度变化超过容差后重绘，降低 ResizeObserver 触发频率。
     if (!(preSize[0] || preSize[1])) {
       preSize[0] = size.inlineSize
       preSize[1] = size.blockSize
@@ -676,6 +699,7 @@ onMounted(() => {
   resizeObserver.observe(document.getElementById(containerId.value))
 })
 onUnmounted(() => {
+  // 弹窗销毁时释放 ResizeObserver，避免重新打开后重复监听同一容器。
   resizeObserver?.disconnect()
 })
 class GroupMenu extends BaseTooltip {

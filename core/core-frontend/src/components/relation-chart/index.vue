@@ -6,11 +6,14 @@ import {
   datasetRelationship as datasetRelation
 } from '@/api/relation/index'
 import RelationGraphView from './GraphView.vue'
+// 控制血缘关系抽屉的显示状态
 const relationDrawer = ref(false)
+// 保存图谱容器的实时尺寸，供关系图组件按抽屉区域渲染
 const chartSize = reactive({
   height: 0,
   width: 0
 })
+// 读取抽屉内容区尺寸并同步给图谱渲染参数
 const getChartSize = () => {
   const dom = document.querySelector('.relation-drawer_content')
   if (!dom) return
@@ -20,7 +23,9 @@ const getChartSize = () => {
   })
 }
 
+// 缓存当前关系接口返回的图谱数据
 let resRef = null
+// 加载指定数据源的血缘关系图数据
 const datasourceRelationship = id => {
   datasourceRelation(id)
     .then(res => {
@@ -30,6 +35,7 @@ const datasourceRelationship = id => {
       tableLoading.value = false
     })
 }
+// 加载指定数据集的血缘关系图数据
 const datasetRelationship = id => {
   datasetRelation(id)
     .then(res => {
@@ -40,12 +46,15 @@ const datasetRelationship = id => {
     })
 }
 
+// 记录本次打开关系图时的查询类型、编号和展示名称
 const current = {
   queryType: '',
   num: '',
   label: ''
 }
+// 标识关系图数据是否仍在加载中
 const tableLoading = ref(false)
+// 对外入口：打开抽屉并按查询类型拉取对应血缘数据
 const getChartData = obj => {
   Object.assign(current, obj || {})
   const { queryType, num } = current

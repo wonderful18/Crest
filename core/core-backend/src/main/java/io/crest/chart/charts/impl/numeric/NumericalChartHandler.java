@@ -27,8 +27,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @SuppressWarnings("unchecked")
+// 定义图表处理器，负责轴格式化和结果组装
 public class NumericalChartHandler extends DefaultChartHandler {
     @Override
+    // 执行当前服务方法并返回处理结果
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         var dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
         List<String> dsList = new ArrayList<>();
@@ -62,6 +64,7 @@ public class NumericalChartHandler extends DefaultChartHandler {
         return calcResult;
     }
 
+    // 处理字段结构并补齐查询所需信息
     protected ChartViewFieldDTO getDynamicField(Map<String, Object> target, String type, String field) {
         String maxType = (String) target.get(type);
         if (Strings.CI.equals("dynamic", maxType)) {

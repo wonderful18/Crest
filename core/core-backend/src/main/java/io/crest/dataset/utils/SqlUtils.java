@@ -13,9 +13,11 @@ import java.util.List;
 
 import static org.apache.calcite.sql.SqlKind.*;
 
+// 提供当前模块复用的工具能力
 public class SqlUtils {
     public static Logger logger = LoggerFactory.getLogger(SqlUtils.class);
 
+    // 执行当前服务方法并返回处理结果
     public static String addSchema(String sql, String schema) {
         sql = sql.trim();
         if (sql.endsWith(";")) {
@@ -43,6 +45,7 @@ public class SqlUtils {
         return sqlRender;
     }
 
+    // 执行当前服务方法并返回处理结果
     private static void addTableSchema(SqlNode sqlNode, Boolean fromOrJoin, String schema, SqlParser.Config config) {
         try {
             if (sqlNode.getKind() == JOIN) {

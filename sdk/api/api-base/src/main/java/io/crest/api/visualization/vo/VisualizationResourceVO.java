@@ -12,6 +12,7 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义页面展示或接口返回的数据结构
 public class VisualizationResourceVO implements Serializable {
     @Serial
     private static final long serialVersionUID = 627770173259978185L;

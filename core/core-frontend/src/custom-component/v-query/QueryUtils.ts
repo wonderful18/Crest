@@ -2,6 +2,7 @@ import { cloneDeep } from 'lodash-es'
 import { useEmitt } from '@/hooks/web/useEmitt'
 const { emitter } = useEmitt()
 
+// 触发组件重新渲染或刷新
 export const reRenderAll = (oldArr, newArr) => {
   const newArrIds = newArr.map(ele => ele.id)
   const emitterList = (oldArr || []).reduce((pre, next) => {
@@ -16,6 +17,7 @@ export const reRenderAll = (oldArr, newArr) => {
   })
 }
 
+// 处理拖拽交互并更新目标位置
 export const checkFilterRemove = componentTarget => {
   if (componentTarget?.component === 'VQuery') {
     reRenderAfterDelete(componentTarget.propValue)
@@ -32,6 +34,7 @@ export const checkFilterRemove = componentTarget => {
   }
 }
 
+// 触发组件重新渲染或刷新
 export const reRenderAfterDelete = oldArr => {
   const emitterList = (oldArr || []).reduce((pre, next) => {
     const keyList = getKeyList(next)
@@ -44,6 +47,7 @@ export const reRenderAfterDelete = oldArr => {
   })
 }
 
+// 读取当前业务数据并返回处理结果
 export const getKeyList = next => {
   const checkedFields = next.checkedFields || []
   const checkedFieldsMap = next.checkedFieldsMap || {}

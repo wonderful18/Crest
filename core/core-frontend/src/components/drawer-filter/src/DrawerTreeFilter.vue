@@ -10,6 +10,7 @@ interface TreeConfig {
   checkOnClickNode: boolean
   placeholder: string
 }
+// 定义抽屉树筛选器接收的选项、标题和树配置
 const props = defineProps({
   optionList: propTypes.arrayOf(
     propTypes.shape({
@@ -24,6 +25,7 @@ const props = defineProps({
 })
 
 const { property } = toRefs(props)
+// 合并默认配置与外部传入的树组件配置
 const treeConfig = computed(() => {
   let obj = Object.assign(
     {
@@ -37,13 +39,17 @@ const treeConfig = computed(() => {
   return obj
 })
 
+// 保存当前选中的节点值和对应节点数据
 const state = reactive({
   currentStatus: [],
   activeStatus: []
 })
 
+// 声明筛选条件变化时向父组件派发的事件
 const emits = defineEmits(['filter-change'])
+// 持有树选择组件实例
 const filterTree = ref()
+// 根据当前选中节点生成筛选值并通知父组件
 const treeChange = () => {
   const nodes = state.currentStatus.map(id => {
     return filterTree.value?.getNode(id).data
@@ -54,12 +60,15 @@ const treeChange = () => {
     state.activeStatus.map(item => item.value)
   )
 }
+// 返回当前可选节点列表
 const optionListNotSelect = computed(() => {
   return [...props.optionList]
 })
+// 清空当前树筛选选中状态
 const clear = () => {
   state.currentStatus = []
 }
+// 监听选中节点变化并同步筛选结果
 watch(
   () => state.currentStatus,
   () => {

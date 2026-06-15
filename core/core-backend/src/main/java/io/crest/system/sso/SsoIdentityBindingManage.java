@@ -10,12 +10,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Component
+// 定义单点登录相关的业务模型和处理入口
 public class SsoIdentityBindingManage {
 
     @Resource
     private JdbcTemplate jdbcTemplate;
 
     @Transactional
+    // 保存或更新当前业务绑定关系
     public void upsertProvider(Long providerId, SsoProviderType providerType, String providerName) {
         long now = System.currentTimeMillis();
         jdbcTemplate.update("""
@@ -36,6 +38,7 @@ public class SsoIdentityBindingManage {
                 now);
     }
 
+    // 根据外部身份查询绑定用户编号
     public Long boundUserId(SsoIdentityProfile profile) {
         List<Long> bySubject = jdbcTemplate.queryForList("""
                 SELECT user_id FROM auth_sso_identity_binding
@@ -57,6 +60,7 @@ public class SsoIdentityBindingManage {
     }
 
     @Transactional
+    // 保存或更新当前业务绑定关系
     public void upsert(Long userId, SsoIdentityProfile profile) {
         long now = System.currentTimeMillis();
         jdbcTemplate.update("""

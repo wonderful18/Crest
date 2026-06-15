@@ -13,6 +13,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
 
 @Configuration
+// 定义当前业务对象的核心职责
 public class CorsConfig implements WebMvcConfigurer {
 
     @Value("${crest.cors-strict:true}")
@@ -25,11 +26,13 @@ public class CorsConfig implements WebMvcConfigurer {
     private CorsRegistration operateCorsRegistration;
 
     @Override
+    // 读取配置并返回当前功能所需参数
     public void configurePathMatch(PathMatchConfigurer configurer) {
         configurer.addPathPrefix(AuthConstant.CREST_API_PREFIX, c -> c.isAnnotationPresent(RestController.class) && c.getPackageName().startsWith("io.crest"));
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void addCorsMappings(CorsRegistry registry) {
         operateCorsRegistration = registry.addMapping("/**")
                 .allowCredentials(false)
@@ -43,6 +46,7 @@ public class CorsConfig implements WebMvcConfigurer {
         operateCorsRegistration.allowedOrigins("*");
     }
 
+    // 执行当前服务方法并返回处理结果
     public void addAllowedOrigins(List<String> origins) {
         if (!corsStrict || CollectionUtils.isEmpty(origins)) {
             return;

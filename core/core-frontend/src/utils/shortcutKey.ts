@@ -9,14 +9,38 @@ import { getCurInfo } from '@/store/modules/data-visualization/common'
 import { isGroupCanvas, isTabCanvas } from '@/utils/canvasUtils'
 import { groupStyleRevert } from '@/utils/style'
 
+/**
+ * 大屏主状态仓库，提供当前组件和编辑模式等信息
+ */
 const dvMainStore = dvMainStoreWithOut()
+/**
+ * 组合状态仓库，维护框选、组合和辅助按键状态
+ */
 const composeStore = composeStoreWithOut()
+/**
+ * 快照仓库，用于快捷键操作后的撤销重做记录
+ */
 const snapshotStore = snapshotStoreWithOut()
+/**
+ * 复制粘贴仓库，封装复制、剪切和粘贴动作
+ */
 const copyStore = copyStoreWithOut()
+/**
+ * 锁定仓库，处理组件锁定与解锁命令
+ */
 const lockStore = lockStoreWithOut()
+/**
+ * 当前组件和编辑模式的响应式引用
+ */
 const { curComponent, editMode } = storeToRefs(dvMainStore)
+/**
+ * 组合区域内组件数据的响应式引用
+ */
 const { areaData } = storeToRefs(composeStore)
 
+/**
+ * 快捷键 keyCode 常量集合，统一映射键盘事件中的编码
+ */
 const ctrlKey = 17,
   shiftKey = 16, // shift
   commandKey = 91, // mac command
@@ -41,6 +65,9 @@ const ctrlKey = 17,
   eKey = 69, // 清空画布
   spaceKey = 32 // 空格键
 
+/**
+ * 编辑器需要拦截处理的按键编码列表
+ */
 export const keycodes = [8, 37, 38, 39, 40, 66, 67, 68, 69, 71, 76, 80, 83, 85, 86, 88, 89, 90]
 
 // 与组件状态无关的操作
@@ -53,7 +80,7 @@ const basemap = {
   [eKey]: clearCanvas
 }
 
-// 当处于大屏状态时 按上下左右键 可以移动位置
+// 当处于大屏状态时，按上下左右键移动组件位置
 const positionMoveKey = {
   [leftKey]: move,
   [upKey]: move,
@@ -103,7 +130,13 @@ const checkDialog = () => {
   return haveDialog
 }
 
+/**
+ * 标记 Ctrl 或 Command 是否处于按下状态
+ */
 let isCtrlOrCommandDown = false
+/**
+ * 标记 Shift 是否处于按下状态
+ */
 let isShiftDown = false
 // 全局监听按键操作并执行相应命令
 export function listenGlobalKeyDown() {
@@ -158,6 +191,9 @@ export function listenGlobalKeyDown() {
   }
 }
 
+/**
+ * 释放外部场景遗留的组合按键状态
+ */
 export function releaseAttachKey() {
   isCtrlOrCommandDown = false
   composeStore.setIsCtrlOrCmdDownStatus(false)
@@ -165,7 +201,7 @@ export function releaseAttachKey() {
   composeStore.setIsShiftDownStatus(false)
 }
 
-//当前不支持同时ctrl + shift操作
+// 当前不支持同时 Ctrl 和 Shift 操作
 function releaseKeyCheck(keyType) {
   if (keyType === 'shift' && isCtrlOrCommandDown) {
     isCtrlOrCommandDown = false
@@ -176,15 +212,24 @@ function releaseKeyCheck(keyType) {
   }
 }
 
+/**
+ * 执行复制当前组件命令
+ */
 function copy() {
   copyStore.copy()
 }
 
+/**
+ * 执行粘贴命令并记录快照
+ */
 function paste() {
   copyStore.paste(false)
   snapshotStore.recordSnapshotCache('key-paste')
 }
 
+/**
+ * 根据方向键移动当前组件或组合区域
+ */
 function move(keyCode) {
   if (curComponent.value) {
     const scale = dvMainStore.canvasStyleData.scale / 100
@@ -205,6 +250,9 @@ function move(keyCode) {
   }
 }
 
+/**
+ * 在移动分组或内嵌画布组件后同步组合区域坐标
+ */
 function groupAreaAdaptor(leftOffset = 0, topOffset = 0) {
   const canvasId = curComponent.value.canvasId
   const parentNode = document.querySelector('#editor-' + canvasId)
@@ -223,18 +271,30 @@ function groupAreaAdaptor(leftOffset = 0, topOffset = 0) {
   }
 }
 
+/**
+ * 执行剪切当前组件命令
+ */
 function cut() {
   copyStore.cut()
 }
 
+/**
+ * 执行重做命令
+ */
 function redo() {
   snapshotStore.redo()
 }
 
+/**
+ * 执行撤销命令
+ */
 function undo() {
   snapshotStore.undo()
 }
 
+/**
+ * 将框选区域中的组件组合为一个组件
+ */
 function compose() {
   if (areaData.value.components.length) {
     composeStore.compose()
@@ -242,6 +302,9 @@ function compose() {
   }
 }
 
+/**
+ * 将当前未锁定组合组件拆分为独立组件
+ */
 function decompose() {
   const curComponentLink = curComponent.value
   if (curComponentLink && !curComponentLink.isLock && curComponentLink.component == 'Group') {
@@ -250,14 +313,23 @@ function decompose() {
   }
 }
 
+/**
+ * 触发大屏保存事件
+ */
 function save() {
   eventBus.emit('save')
 }
 
+/**
+ * 触发大屏预览事件
+ */
 function preview() {
   eventBus.emit('preview')
 }
 
+/**
+ * 删除当前组件或框选区域内的多个组件
+ */
 function deleteComponent() {
   if (curComponent.value && curComponent.value.component !== 'GroupArea') {
     const curInfo = getCurInfo()
@@ -273,14 +345,23 @@ function deleteComponent() {
   snapshotStore.recordSnapshotCache('listenGlobalKeyDown')
 }
 
+/**
+ * 触发清空画布事件
+ */
 function clearCanvas() {
   eventBus.emit('clearCanvas')
 }
 
+/**
+ * 锁定当前组件
+ */
 function lock() {
   lockStore.lock()
 }
 
+/**
+ * 解锁当前组件
+ */
 function unlock() {
   lockStore.unlock()
 }

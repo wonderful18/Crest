@@ -9,6 +9,7 @@ const LEGACY_COMPONENT_NAME_MAP: Record<string, string> = {
   DeVideo: 'Video'
 }
 
+// 整理输入数据并返回工具处理结果
 export function normalizeLegacyComponentName(name?: string) {
   if (!name) {
     return name
@@ -16,6 +17,7 @@ export function normalizeLegacyComponentName(name?: string) {
   return LEGACY_COMPONENT_NAME_MAP[name] || name
 }
 
+// 整理输入数据并返回工具处理结果
 export function normalizeLegacyComponent(component) {
   if (!component || typeof component !== 'object') {
     return component
@@ -35,6 +37,7 @@ export function normalizeLegacyComponent(component) {
   return component
 }
 
+// 整理输入数据并返回工具处理结果
 export function normalizeLegacyComponentData<T>(componentData: T[]): T[] {
   componentData?.forEach(component => normalizeLegacyComponent(component))
   return componentData

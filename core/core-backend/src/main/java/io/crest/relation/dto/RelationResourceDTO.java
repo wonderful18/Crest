@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 @Schema(description = "血缘资源选项")
+// 定义接口请求或返回数据的传输结构
 public class RelationResourceDTO {
     @Schema(description = "资源 ID")
     private String id;

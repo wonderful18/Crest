@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+// 定义单点登录相关的业务模型和处理入口
 public class SsoLoginIdentityManage {
 
     private final SsoIdentityBindingResolver resolver = new SsoIdentityBindingResolver();
@@ -18,6 +19,7 @@ public class SsoLoginIdentityManage {
     private SsoIdentityBindingManage bindingManage;
 
     @Transactional
+    // 执行当前服务方法并返回处理结果
     public CrestUser resolve(SsoIdentityProfile profile, boolean autoCreateUser, String providerName) {
         bindingManage.upsertProvider(profile.getProviderId(), profile.getProviderType(), providerName);
         Long boundUserId = bindingManage.boundUserId(profile);

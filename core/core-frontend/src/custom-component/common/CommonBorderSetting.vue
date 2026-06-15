@@ -21,13 +21,16 @@ const props = withDefaults(
     themes: 'dark'
   }
 )
+// 声明边框样式变更时向父组件派发的事件
 const emits = defineEmits(['onStyleAttrChange'])
 const { themes, styleInfo } = toRefs(props)
+// 保存边框设置面板的临时状态和预设颜色
 const state = reactive({
   fontSize: [],
   isSetting: false,
   predefineColors: COLOR_PANEL
 })
+// 保存按画布比例换算后的边框宽度和圆角
 const styleMounted = ref({
   borderWidth: 0,
   borderRadius: 5
@@ -39,6 +42,7 @@ const borderStyleList = [
   { name: t('visualization.border_style_dotted'), value: 'dotted' }
 ]
 
+// 根据当前画布比例初始化表单展示值
 const styleInit = () => {
   if (styleInfo.value) {
     Object.keys(styleMounted.value).forEach(key => {
@@ -49,26 +53,32 @@ const styleInit = () => {
   }
 }
 
+// 暴露当前边框样式表单对象
 const styleForm = computed<any>(() => styleInfo.value)
 
+// 记录快照并派发边框样式变更
 const changeStyle = params => {
   snapshotStore.recordSnapshotCache('border-changeStyle')
   emits('onStyleAttrChange', params)
 }
 
+// 将指定样式键的当前值派发给父组件
 const changeStylePre = key => {
   changeStyle({ key: key, value: styleInfo.value[key] })
 }
 
+// 将表单尺寸按画布比例换算后写回样式对象
 const sizeChange = key => {
   styleInfo.value[key] = (styleMounted.value[key] * canvasStyleData.value.scale) / 100
   changeStyle({ key: key, value: styleInfo.value[key] })
 }
 
+// 判断当前组件是否为需要特殊边框处理的 SVG 三角形
 const isSvgComponent = computed(
   () => curComponent.value && curComponent.value.component === 'SvgTriangle'
 )
 
+// 监听样式对象变化并刷新按比例换算后的表单值
 watch(
   () => styleInfo.value,
   () => {

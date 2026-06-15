@@ -7,11 +7,16 @@ import { ElMessage } from 'element-plus-secondary'
 import { ref, shallowRef, computed } from 'vue'
 import { cloneDeep } from 'lodash-es'
 
+// 控制树形字段配置弹窗的显示状态
 const dialogVisible = ref(false)
+// 保存当前配置的级联字段列表
 const treeList = ref([])
+// 保存可选的数据集字段副本
 const datasetMap = shallowRef([])
+// 声明保存树形字段配置的事件
 const emits = defineEmits(['saveTree'])
 const { t } = useI18n()
+// 新增一个待选择字段的树形层级
 const addCascadeItem = () => {
   treeList.value.push({
     field: {
@@ -20,22 +25,27 @@ const addCascadeItem = () => {
     id: guid()
   })
 }
+// 关闭树形字段配置弹窗
 const handleBeforeClose = () => {
   dialogVisible.value = false
 }
+// 初始化可选字段和已配置层级，并打开弹窗
 const init = (arr, treeArr) => {
   datasetMap.value = cloneDeep(arr)
   treeList.value = cloneDeep(treeArr).map(ele => ({ field: ele, id: ele.id }))
   dialogVisible.value = true
 }
 
+// 计算已被当前层级占用的字段，避免重复选择
 const disableFieldArr = computed(() => {
   return treeList.value.map(ele => ele.field).map(ele => ele.id)
 })
 
+// 取消配置并关闭弹窗
 const cancelClick = () => {
   handleBeforeClose()
 }
+// 将弹窗中的层级配置转换为保存结构
 const setCascadeArrBack = () => {
   let isError = false
   const arr = cloneDeep(treeList.value).map(item => {
@@ -50,6 +60,7 @@ const setCascadeArrBack = () => {
     isError
   }
 }
+// 校验并提交树形字段配置
 const confirmClick = () => {
   const { isError, arr } = setCascadeArrBack()
   if (isError) {
@@ -67,6 +78,7 @@ const indexNumCascade = [
   t('visualization.number5')
 ]
 
+// 删除指定层级的树形字段配置
 const deleteCascade = idx => {
   treeList.value.splice(idx, 1)
 }

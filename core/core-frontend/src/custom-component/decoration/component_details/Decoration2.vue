@@ -23,6 +23,9 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 尺寸计算
 const width = computed(() => props.curStyle.width)
+/**
+ * 装饰线画布高度
+ */
 const height = computed(() => props.curStyle.height)
 
 // 样式计算
@@ -36,6 +39,9 @@ const border_style = computed(() => ({
 
 // 颜色配置
 const defaultColor = ref(['#3faacb', '#fff'])
+/**
+ * 合并默认颜色和用户配置后的颜色
+ */
 const mergedColor = ref<string[]>([])
 
 // SVG元素位置和尺寸
@@ -46,12 +52,16 @@ const svgElements = computed(() => ({
   h: props.reverse ? height.value : 1
 }))
 
+/**
+ * 更新主线和光点颜色
+ */
 const mergeColor = () => {
   mergedColor.value = customMergeColor(cloneDeep(defaultColor.value), props.color)
 }
 
 // 监听器
 watch(() => props.color, mergeColor, { immediate: true })
+// 方向切换后同步动画颜色配置
 watch(() => props.reverse, mergeColor)
 
 // 生命周期

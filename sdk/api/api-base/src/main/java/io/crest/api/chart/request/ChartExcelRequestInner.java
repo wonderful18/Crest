@@ -9,6 +9,7 @@ import java.util.List;
 
 
 @Data
+// 定义模块接口契约和数据传输结构
 public class ChartExcelRequestInner implements Serializable {
     @Serial
     private static final long serialVersionUID = -8655439241248268940L;

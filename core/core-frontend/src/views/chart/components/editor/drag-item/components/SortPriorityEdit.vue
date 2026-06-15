@@ -4,12 +4,15 @@ import draggable from 'vuedraggable'
 import { reactive, watch, ref } from 'vue'
 import chartViewManager from '../../../js/panel'
 
+// 拖拽列表的加载状态
 const loading = ref(false)
 
+// 保存当前图表可排序字段列表
 const state = reactive({
   sortList: []
 })
 
+// 图表配置用于解析轴字段和已有排序优先级
 const props = defineProps({
   chart: {
     type: Object,
@@ -17,8 +20,10 @@ const props = defineProps({
   }
 })
 
+// 拖拽排序变化后向父级提交新的优先级
 const emit = defineEmits(['onPriorityChange'])
 
+// 监听相关数据变化并同步组件状态
 watch(
   () => props.chart,
   () => {
@@ -27,6 +32,7 @@ watch(
   { deep: true }
 )
 
+// 根据图表轴配置同步排序字段，过滤已不存在的字段并补齐新增字段
 const init = () => {
   const chart = props.chart
   if (!chart.sortPriority?.length) {
@@ -94,6 +100,7 @@ const init = () => {
     })
   }
 }
+// 将拖拽后的排序列表提交给父组件
 const onUpdate = () => {
   emit('onPriorityChange', state.sortList)
 }

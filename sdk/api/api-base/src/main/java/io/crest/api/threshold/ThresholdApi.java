@@ -16,6 +16,7 @@ import java.util.List;
 
 @Tag(name = "阈值告警")
 @ApiSupport(order = 888, author = "Crest")
+// 定义模块接口契约和数据传输结构
 public interface ThresholdApi {
 
     @Operation(summary = "保存")

@@ -26,6 +26,7 @@ import static io.crest.constant.AuthResourceEnum.DATASET;
 @Tag(name = "数据集管理:树")
 @ApiSupport(order = 979)
 @CrestApiPath(value = "/dataset-tree", rt = DATASET)
+// 定义模块接口契约和数据传输结构
 public interface DatasetTreeApi {
 
     /**

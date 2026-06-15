@@ -26,11 +26,20 @@ import static io.crest.constant.AuthResourceEnum.DATA_ASSET;
 @RestController
 @RequestMapping("/data-assets")
 @CrestApiPath(value = "/data-assets", rt = DATA_ASSET)
+/**
+ * 数据资产接口，提供资产检索、详情、影响分析和负责人列表
+ */
 public class DataAssetServer {
 
+    /**
+     * 数据资产领域服务
+     */
     @Resource
     private DataAssetManage dataAssetManage;
 
+    /**
+     * 分页查询数据资产列表
+     */
     @CrestAudit(ot = LogOT.READ, st = LogST.DATA)
     @CrestPermit("m:read")
     @PostMapping("/page/{page}/{pageSize}")
@@ -40,6 +49,9 @@ public class DataAssetServer {
         return dataAssetManage.page(page, pageSize, request);
     }
 
+    /**
+     * 查询指定资产详情
+     */
     @CrestAudit(ot = LogOT.READ, st = LogST.DATA, id = "#p1")
     @CrestPermit("m:read")
     @GetMapping("/{assetType}/{assetId}")
@@ -47,6 +59,9 @@ public class DataAssetServer {
         return dataAssetManage.detail(assetType, assetId);
     }
 
+    /**
+     * 查询指定资产的影响范围
+     */
     @CrestAudit(ot = LogOT.READ, st = LogST.DATA, id = "#p1")
     @CrestPermit("m:read")
     @GetMapping("/{assetType}/{assetId}/impact")
@@ -54,6 +69,9 @@ public class DataAssetServer {
         return dataAssetManage.impact(assetType, assetId);
     }
 
+    /**
+     * 保存资产画像信息
+     */
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA, id = "#p0.assetId")
     @CrestPermit("m:read")
     @PostMapping("/profile")
@@ -61,6 +79,9 @@ public class DataAssetServer {
         return dataAssetManage.saveProfile(request);
     }
 
+    /**
+     * 查询可选资产负责人列表
+     */
     @CrestAudit(ot = LogOT.READ, st = LogST.USER)
     @CrestPermit("m:read")
     @GetMapping("/owners")

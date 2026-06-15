@@ -9,14 +9,18 @@ const dvMainStore = dvMainStoreWithOut()
 const eventStore = eventStoreWithOut()
 const { curComponent } = storeToRefs(dvMainStore)
 
+// 控制弹窗、面板或区域的展示状态
 const isShowEvent = ref(false)
+// 记录当前选中项和交互焦点
 const eventActiveName = ref('redirect')
 
+// 创建新数据并写入当前配置
 const addEvent = (event, param) => {
   isShowEvent.value = false
   eventStore.addEvent({ event, param })
 }
 
+// 移除当前数据并同步关联状态
 const removeEvent = event => {
   eventStore.removeEvent(event)
 }

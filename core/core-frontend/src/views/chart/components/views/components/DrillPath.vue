@@ -3,10 +3,13 @@ import { computed, PropType } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { ArrowRight } from '@element-plus/icons-vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
+// 读取大屏画布状态，用于同步下钻路径的主题颜色
 const dvMainStore = dvMainStoreWithOut()
 
+// 下钻路径展示的多语言翻译入口
 const { t } = useI18n()
 
+// 下钻面包屑接收筛选路径、主题样式和禁用状态
 const props = defineProps({
   drillFilters: {
     type: Array as PropType<Array<Record<string, any>>>,
@@ -24,18 +27,22 @@ const props = defineProps({
   }
 })
 
+// 下钻跳转事件交给父级处理，以复用图表筛选逻辑
 const emit = defineEmits(['onDrillJump'])
 
+// 下钻文字颜色跟随大屏高级样式配置
 const textColor = computed(
   () => dvMainStore.canvasStyleData.component.seniorStyleSetting.drillLayerColor
 )
 
+// 点击面包屑节点时回退到指定下钻层级
 const drillJump = index => {
   if (index < props.drillFilters.length) {
     emit('onDrillJump', index)
   }
 }
 
+// 将主题颜色写入 CSS 变量，供分隔图标和文本统一使用
 const drillPathVar = computed(() => [{ '--drill-color': textColor.value }])
 </script>
 

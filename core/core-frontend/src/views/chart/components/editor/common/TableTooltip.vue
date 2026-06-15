@@ -7,6 +7,7 @@ import { SortUp, SortDown, Sort } from '@element-plus/icons-vue'
 import { cloneDeep } from 'lodash-es'
 
 const { t } = useI18n()
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   table: {
     type: Object as PropType<SpreadSheet>,
@@ -17,6 +18,7 @@ const props = defineProps({
     required: true
   }
 })
+// 处理排序配置并同步展示顺序
 const sortFunc = (sortParams: SortFuncParam) => {
   if (!sortParams.sortMethod) {
     return sortParams.data
@@ -45,6 +47,7 @@ const sortFunc = (sortParams: SortFuncParam) => {
     return aValue > bValue ? -1 : 1
   })
 }
+// 处理排序配置并同步展示顺序
 const sort = (type?) => {
   props.table.updateSortMethodMap(props.meta.field, type, true)
   props.table.emit(S2Event.RANGE_SORT, [

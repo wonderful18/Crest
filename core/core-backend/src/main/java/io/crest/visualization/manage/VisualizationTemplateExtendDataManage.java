@@ -24,6 +24,7 @@ public class VisualizationTemplateExtendDataManage {
     @Resource
     private VisualizationTemplateExtendDataMapper extendDataMapper;
 
+    // 执行当前服务方法并返回处理结果
     public ChartViewDTO getChartDataInfo(Long viewId, ChartViewDTO view) {
         QueryWrapper queryWrapper = new QueryWrapper();
         queryWrapper.eq("view_id",viewId);

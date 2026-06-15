@@ -2,6 +2,7 @@
 import { iconChartDarkMap } from '@/components/icon-group/chart-dark-list-empty'
 import { iconChartMap } from '@/components/icon-group/chart-list-empty'
 import { toRefs } from 'vue'
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   viewIcon: {
     type: String,

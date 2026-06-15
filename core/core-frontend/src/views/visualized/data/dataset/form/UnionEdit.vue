@@ -8,13 +8,16 @@ import { cloneDeep } from 'lodash-es'
 
 const isCross = inject<Ref>('isCross')
 
+// 同步父节点选中字段
 const changeParentFields = val => {
   parent.currentDsFields = val
 }
+// 同步当前节点选中字段
 const changeNodeFields = val => {
   node.currentDsFields = val
 }
 
+// 新增或删除关联字段配置
 const changeUnionFields = (index?: number) => {
   if (index !== undefined) {
     node.unionFields.splice(index, 1)
@@ -39,11 +42,17 @@ const defaultNode = {
   isShadow: false,
   flag: ''
 }
+// 父节点字段列表
 const parentField = ref<Field[]>([])
+// 当前节点字段列表
 const nodeField = ref<Field[]>([])
+// 当前节点配置
 const node = reactive<Node>(cloneDeep(defaultNode))
+// 父节点配置
 const parent = reactive<Node>(cloneDeep(defaultNode))
+// 字段加载状态
 const loading = ref(false)
+// 接收待编辑关联配置
 const props = defineProps({
   editArr: {
     type: Array,
@@ -51,6 +60,7 @@ const props = defineProps({
   }
 })
 
+// 清理关联编辑状态
 const clearState = () => {
   Object.assign(node, cloneDeep(defaultNode))
   Object.assign(parent, cloneDeep(defaultNode))
@@ -58,6 +68,7 @@ const clearState = () => {
   nodeField.value = []
 }
 
+// 初始化关联编辑状态
 const initState = () => {
   node.confirm = false
   node.isShadow = false
@@ -70,6 +81,7 @@ const initState = () => {
   getFields()
 }
 
+// 提取字段查询参数
 const getParams = (obj: Node) => {
   return ['datasourceId', 'id', 'info', 'tableName', 'type'].reduce(
     (pre, next) => {
@@ -81,6 +93,7 @@ const getParams = (obj: Node) => {
     }
   )
 }
+// 加载父节点和当前节点字段
 const getFields = async () => {
   try {
     loading.value = true

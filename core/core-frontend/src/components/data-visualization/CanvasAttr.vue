@@ -20,10 +20,14 @@ import { formatterViewInfo } from '@/views/chart/components/js/formatter'
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const { canvasStyleData, canvasViewInfo } = storeToRefs(dvMainStore)
+// 画布属性面板直接操作画布级配置，并负责把全局样式同步到已存在的图表。
+// 初始化完成前不向已有图表批量写入主题属性，避免面板挂载过程覆盖画布初始状态。
 let canvasAttrInit = false
 
+// 默认展开尺寸、基础、背景和配色，覆盖创建大屏时最常调整的画布配置。
 const canvasAttrActiveNames = ref(['size', 'baseSetting', 'background', 'color'])
 const { t } = useI18n()
+// 适配方式仅在预览态生效，编辑态仍按画布实际尺寸计算组件坐标。
 const screenAdaptorList = [
   { label: t('visualization.screen_adaptor_width_first'), value: 'widthFirst' },
   { label: t('visualization.screen_adaptor_height_first'), value: 'heightFirst' },
@@ -31,38 +35,46 @@ const screenAdaptorList = [
   { label: t('visualization.screen_adaptor_keep'), value: 'keep' },
   { label: t('visualization.screen_adaptor_keep_proportion'), value: 'keepProportion' }
 ]
+// 延后一帧标记初始化完成，确保 collapse 子组件完成默认值写入后再允许批量同步。
 const init = () => {
   nextTick(() => {
     canvasAttrInit = true
   })
 }
 
+// 全局数值格式化配置会应用到所有图表，用于统一大屏内指标单位和千分位展示。
 const onFormatterItemChange = val => {
   themeAttrChange('formatterCfg', 'formatterCfg', val)
 }
 
+// 全局配色配置会批量合并到图表 customAttr，单图表专属字段在合并时保留。
 const onColorChange = val => {
   themeAttrChange('customAttr', 'color', val)
 }
 
+// 画布样式变更只需要重新渲染图表，不改变数据查询条件。
 const onStyleChange = () => {
   snapshotStore.recordSnapshotCache('renderChart')
 }
 
+// 尺寸和适配方式变化后需要刷新滚动容器，保证画布滚动条和缩放区域同步。
 const onBaseChange = () => {
   snapshotStore.recordSnapshotCache('renderChart')
   useEmitt().emitter.emit('initScroll')
 }
 
+// 批量主题变更会遍历当前画布视图并触发对应图表重绘，富文本额外触发数据计算保持内容同步。
 const themeAttrChange = (custom, property, value) => {
   if (canvasAttrInit) {
     Object.keys(canvasViewInfo.value).forEach(function (viewId) {
       try {
         const viewInfo = canvasViewInfo.value[viewId]
         if (custom === 'formatterCfg') {
+          // 数值格式化需要通过专用方法写入不同图表的 formatter 配置。
           formatterViewInfo(viewInfo, value)
         } else if (custom === 'customAttr') {
           if (viewInfo.type === 'flow-map') {
+            // 流向图 misc 中包含线路和点位专属配置，批量主题色只覆盖通用字段，保留图表个性化参数。
             const { customAttr } = viewInfo
             const tmpValue = cloneDeep(value)
             const miscObj = cloneDeep(customAttr.misc)
@@ -73,9 +85,11 @@ const themeAttrChange = (custom, property, value) => {
             }
             merge(viewInfo['customAttr'], tmpValue)
           } else {
+            // 普通图表直接深度合并全局配色和样式默认值。
             merge(viewInfo['customAttr'], value)
           }
         } else {
+          // 非 customAttr 配置按指定 property 局部覆盖，避免丢失其他画布属性。
           Object.keys(value).forEach(function (key) {
             if (viewInfo[custom][property][key] !== undefined) {
               viewInfo[custom][property][key] = value[key]
@@ -84,6 +98,7 @@ const themeAttrChange = (custom, property, value) => {
         }
         useEmitt().emitter.emit('renderChart-' + viewId, viewInfo)
         if (viewInfo.type === 'rich-text') {
+          // 富文本渲染内容可能引用全局格式化结果，重绘后还需要重新计算文本数据。
           useEmitt().emitter.emit('calcData-' + viewId, viewInfo)
         }
       } catch (e) {
@@ -252,6 +267,7 @@ onMounted(() => {
 }
 
 .attr-container {
+  // 画布属性面板固定使用深色底，和编辑器右侧配置区保持一致。
   background-color: rgba(37, 45, 54, 1);
   color: #fff;
   z-index: 20;
@@ -264,6 +280,7 @@ onMounted(() => {
   border-bottom: none;
 }
 :deep(.ed-collapse) {
+  // 折叠面板需要占满右侧属性容器，避免不同设置项切换时宽度抖动。
   width: 100%;
 }
 
@@ -340,12 +357,14 @@ onMounted(() => {
 }
 
 .m-size {
+  // 尺寸输入项采用左右并排布局，覆盖默认表单项的块级排列。
   :deep(.ed-form-item) {
     display: flex !important;
   }
 }
 
 :deep(.ed-form-item) {
+  // 属性面板内控件统一使用紧凑尺寸，减少大屏编辑器右侧栏的滚动成本。
   .ed-radio.ed-radio--small .ed-radio__inner {
     width: 14px;
     height: 14px;

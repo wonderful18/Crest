@@ -23,6 +23,7 @@ const { areaData } = storeToRefs(composeStore)
 
 const { curTabName } = storeToRefs(dvMainStore)
 
+// 定义实时标签组件接收的标签位置和组件列表参数
 const props = defineProps({
   tabPosition: {
     type: String,
@@ -41,9 +42,11 @@ const props = defineProps({
 
 const { componentData, tabElement } = toRefs(props)
 
+// 根据索引获取对应的标签组件
 const getComponent = index => {
   return componentData.value[index]
 }
+// 切换当前标签并清理框选状态
 const onClick = item => {
   if (item) {
     dvMainStore.setCurTabName(item.name)
@@ -59,6 +62,7 @@ let editComponentId = ref('')
 let inputName = ref('')
 let nameInput = ref(null)
 let curEditComponent = null
+// 进入标签名称编辑状态
 const editComponentName = item => {
   curEditComponent = item
   editComponentId.value = `#component-label-${item.name}`
@@ -68,6 +72,7 @@ const editComponentName = item => {
     nameInput.value.focus()
   })
 }
+// 退出标签名称编辑并同步有效修改
 const closeEditComponentName = () => {
   nameEdit.value = false
   if (!inputName.value || !inputName.value.trim()) {
@@ -86,6 +91,7 @@ const closeEditComponentName = () => {
   curEditComponent = null
 }
 
+// 标签拖拽结束后同步排序和快照
 const dragOnEnd = ({ newIndex }) => {
   const source = componentData.value[newIndex]
   dvMainStore.setCurTabName(source.title)
@@ -93,6 +99,7 @@ const dragOnEnd = ({ newIndex }) => {
   snapshotStore.recordSnapshotCache('dragOnEnd')
 }
 
+// 打开标签右键菜单并记录触发位置
 const handleContextMenu = e => {
   e.preventDefault()
   // 获取鼠标点击位置
@@ -114,6 +121,7 @@ const handleContextMenu = e => {
   })
 }
 
+// 展开指定标签对应的组件内容
 const expandClick = component => {
   component['expand'] = !component['expand']
 }

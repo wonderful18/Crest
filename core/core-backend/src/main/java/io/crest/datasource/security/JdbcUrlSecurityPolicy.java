@@ -13,6 +13,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * 校验 JDBC URL、驱动类型和危险参数的安全策略
+ */
 public final class JdbcUrlSecurityPolicy {
 
     private static final String DEFAULT_CUSTOM_DRIVER = "default";
@@ -99,6 +102,9 @@ public final class JdbcUrlSecurityPolicy {
     private JdbcUrlSecurityPolicy() {
     }
 
+    /**
+     * 校验数据源类型、连接地址和附加参数是否合法
+     */
     public static String validate(String type, String jdbcUrl, String extraParams) {
         if (StringUtils.isBlank(jdbcUrl)) {
             CrestException.throwException("Illegal jdbcUrl: " + jdbcUrl);
@@ -120,6 +126,9 @@ public final class JdbcUrlSecurityPolicy {
         return jdbcUrl;
     }
 
+    /**
+     * 获取指定数据源类型的可信默认驱动类
+     */
     public static String trustedDriverClass(String type) {
         String driverClass = DEFAULT_DRIVERS.get(normalizeType(type));
         if (StringUtils.isBlank(driverClass)) {
@@ -128,6 +137,9 @@ public final class JdbcUrlSecurityPolicy {
         return driverClass;
     }
 
+    /**
+     * 根据默认驱动或已注册自定义驱动解析实际驱动类
+     */
     public static String resolveDriverClass(String type, String requestedDriverClass, String customDriver, CoreDriver registeredDriver) {
         if (!isDefaultCustomDriver(customDriver)) {
             if (registeredDriver == null
@@ -144,10 +156,16 @@ public final class JdbcUrlSecurityPolicy {
         return trustedDriverClass;
     }
 
+    /**
+     * 判断自定义驱动配置是否表示默认驱动
+     */
     public static boolean isDefaultCustomDriver(String customDriver) {
         return StringUtils.isBlank(customDriver) || Strings.CI.equals(customDriver, DEFAULT_CUSTOM_DRIVER);
     }
 
+    /**
+     * 对输入值执行解码、标准化和小写化处理
+     */
     private static String canonicalize(String value) {
         if (StringUtils.isBlank(value)) {
             return "";
@@ -170,6 +188,9 @@ public final class JdbcUrlSecurityPolicy {
         return normalized.toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * 规范化数据源类型标识
+     */
     private static String normalizeType(String type) {
         return StringUtils.defaultString(type).toLowerCase(Locale.ROOT);
     }

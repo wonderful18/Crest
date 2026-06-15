@@ -32,10 +32,12 @@ const boardInfoMap = {
   Decoration5: Decoration5
 }
 
+// 衔接当前组件交互和状态同步
 export const findDecoration = name => {
   return boardInfoMap[name]
 }
 
+// 衔接当前组件交互和状态同步
 export const calcTwoPointDistance = (pointA, pointB) => {
   const minusX = Math.abs(pointA[0] - pointB[0])
   const minusY = Math.abs(pointA[1] - pointB[1])
@@ -54,6 +56,7 @@ export function getPointDistances(points) {
     .map((_, i) => calcTwoPointDistance(points[i], points[i + 1]))
 }
 
+// 计算颜色配置并返回样式结果
 export function customMergeColor(defaultColor: string[], newColor: string[] = []) {
   return defaultColor.map((defaultVal, index) => {
     return newColor && newColor[index] !== null ? newColor[index] : defaultVal

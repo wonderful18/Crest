@@ -1,3 +1,4 @@
+// 维护表单数据和校验规则
 function formatEnum(ele) {
   return {
     value: ele,
@@ -5,6 +6,7 @@ function formatEnum(ele) {
   }
 }
 
+// 衔接当前组件交互和状态同步
 function toLine(name) {
   return name.replace(/([A-Z])/g, '_$1').toLowerCase()
 }

@@ -11,6 +11,7 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 @Mapper
+// 定义当前业务对象的核心职责
 public interface ExtVisualizationLinkJumpMapper {
     List<VisualizationLinkJumpDTO> queryWithDvId(@Param("dvId") Long dvId,@Param("uid") Long uid,@Param("isDesktop") Boolean isDesktop);
 

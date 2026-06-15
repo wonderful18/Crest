@@ -10,6 +10,7 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义接口请求或返回数据的传输结构
 public class VisualizationStoreRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = 166667337997303748L;

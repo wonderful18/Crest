@@ -44,6 +44,7 @@ public class TableNormalHandler extends DefaultChartHandler {
     private final String type = "table-normal";
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public <T extends CustomFilterResult> T customFilter(ChartViewDTO view, List<ChartExtFilterDTO> filterList, AxisFormatResult formatResult) {
         var chartExtRequest = view.getChartExtRequest();
         Map<String, Object> mapAttr = view.getCustomAttr();
@@ -84,11 +85,13 @@ public class TableNormalHandler extends DefaultChartHandler {
     }
 
     @Override
+    // 根据查询结果组装图表返回数据
     public Map<String, Object> buildResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
         return new HashMap<>();
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         var chartExtRequest = view.getChartExtRequest();
         var dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");

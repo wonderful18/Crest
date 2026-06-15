@@ -20,6 +20,7 @@ import java.util.List;
 
 @Tag(name = "Webhook 管理")
 @ApiSupport(order = 888, author = "Crest")
+// 定义模块接口契约和数据传输结构
 public interface WebhookApi {
 
     @Operation(summary = "查询列表")

@@ -21,6 +21,7 @@ import static io.crest.constant.AuthResourceEnum.DATASET;
 @Tag(name = "数据集管理:同步")
 @ApiSupport(order = 978)
 @CrestApiPath(value = "/dataset-sync", rt = DATASET)
+// 定义模块接口契约和数据传输结构
 public interface DatasetSyncApi {
 
     @Operation(summary = "分页查询数据集同步任务")

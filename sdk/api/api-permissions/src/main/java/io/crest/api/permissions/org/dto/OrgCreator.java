@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 @Schema(description = "组织构造器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class OrgCreator implements Serializable {
 
     @Serial

@@ -261,10 +261,19 @@ import { canShowDownloadAction } from './componentEditBarState.mjs'
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const copyStore = copyStoreWithOut()
+/**
+ * 标签页排序弹窗引用
+ */
 const customTabsSortRef = ref(null)
+/**
+ * 当前资源导出权限集合
+ */
 const exportPermissions = computed(() =>
   exportPermission(dvInfo.value['weight'], dvInfo.value['ext'])
 )
+/**
+ * 工具条向画布核心转发的操作事件
+ */
 const emits = defineEmits([
   'userViewEnlargeOpen',
   'datasetParamsInit',
@@ -320,6 +329,9 @@ const componentTypeBarShow = {
   default: ['setting', 'delete', 'copy', 'multiplexing', 'batchOpt', 'hidden']
 }
 
+/**
+ * 判断指定按钮是否可在当前组件和位置中展示
+ */
 const barShowCheck = barName => {
   return (
     positionBarShow[showPosition.value] &&
@@ -331,9 +343,15 @@ const barShowCheck = barName => {
   )
 }
 
+/**
+ * 判断工具条是否需要展示主色背景
+ */
 const mainBackgroundShow = computed(() => {
   return !['batchOpt', 'multiplexing'].includes(showPosition.value)
 })
+/**
+ * 组件工具条的目标组件和展示位置入参
+ */
 const props = defineProps({
   element: {
     type: Object,
@@ -372,6 +390,9 @@ const {
   hiddenListStatus
 } = storeToRefs(dvMainStore)
 
+/**
+ * 工具条本地交互状态
+ */
 const state = reactive({
   systemOS: 'Mac',
   maxImageSize: 15000000,
@@ -390,24 +411,42 @@ const state = reactive({
   viewXArray: [],
   batchOptCheckModel: false
 })
+/**
+ * 判断当前主画布是否展示隐藏组件入口
+ */
 const showHiddenIcon = computed(() => hiddenListStatus.value && isMainCanvas(canvasId.value))
 
+/**
+ * 打开当前标签页组件的排序弹窗
+ */
 const tabSort = () => {
   customTabsSortRef.value.sortInit(element.value)
 }
 
+/**
+ * 点击下载按钮时同步当前选中组件
+ */
 const downloadClick = () => {
   dvMainStore.setCurComponent({ component: element.value, index: index.value })
 }
 
+/**
+ * 通知查询组件新增筛选条件
+ */
 const addQueryCriteria = () => {
   emitter.emit(`addQueryCriteria${element.value.id}`)
 }
 
+/**
+ * 通知查询组件编辑筛选条件
+ */
 const editQueryCriteria = () => {
   emitter.emit(`editQueryCriteria${element.value.id}`)
 }
 
+/**
+ * 根据矩阵位置和展示场景计算工具条方向
+ */
 const showEditPosition = computed(() => {
   if (showPosition.value === 'canvas') {
     const baseLeft = element.value.x - 1
@@ -432,6 +471,9 @@ const showEditPosition = computed(() => {
   }
 })
 
+/**
+ * 根据工具条方向计算提示框位置
+ */
 const showBarTooltipPosition = computed(() => {
   if (showEditPosition.value.indexOf('right') >= 0) {
     return 'right'
@@ -440,9 +482,15 @@ const showBarTooltipPosition = computed(() => {
   }
 })
 
+/**
+ * 打开数据导出中心
+ */
 const callbackExport = () => {
   useEmitt().emitter.emit('data-export-center', { activeName: 'ALL' })
 }
+/**
+ * 导出保留表格格式的透视表 Excel
+ */
 const exportAsFormattedExcel = () => {
   const s2Instance = dvMainStore.getViewInstanceInfo(element.value.id)
   if (!s2Instance) {
@@ -452,6 +500,9 @@ const exportAsFormattedExcel = () => {
   exportPivotExcel(s2Instance, chart)
 }
 
+/**
+ * 根据图表类型导出普通 Excel 或筛选结果 Excel
+ */
 const exportAsExcel = () => {
   if (!isExportableTableView(currentViewInfo.value)) {
     const viewDataInfo = dvMainStore.getViewDataDetails(element.value.id)
@@ -476,31 +527,49 @@ const exportAsExcel = () => {
     }
   })
 }
+/**
+ * 触发组件图片导出
+ */
 const exportAsImage = () => {
   emits('componentImageDownload')
 }
+/**
+ * 删除当前组件并记录快照
+ */
 const deleteComponent = () => {
   eventBus.emit('removeMatrixItem-' + canvasId.value, index.value)
   dvMainStore.setCurComponent({ component: null, index: null })
   snapshotStore.recordSnapshotCache('deleteComponent')
 }
 
+/**
+ * 打开数据集参数配置
+ */
 const datasetParamsInit = () => {
   // do init
   emits('datasetParamsInit')
 }
 
+/**
+ * 复制并粘贴当前组件
+ */
 const copyComponent = () => {
   copyStore.copy()
   copyStore.paste(false)
 }
 
+/**
+ * 打开图表放大或明细查看
+ */
 const userViewEnlargeOpen = (e, opt) => {
   e.preventDefault()
   e.stopPropagation()
   emits('userViewEnlargeOpen', opt)
 }
 
+/**
+ * 将当前组件移入隐藏列表
+ */
 const hiddenComponent = () => {
   if (curComponent.value) {
     curComponent.value.dashboardHidden = true
@@ -513,11 +582,17 @@ const hiddenComponent = () => {
 
 // 复用-Begin
 
+/**
+ * 从外部切换当前组件复用勾选状态
+ */
 const multiplexingCheckOut = () => {
   state.multiplexingCheckModel = !state.multiplexingCheckModel
   multiplexingCheck(state.multiplexingCheckModel)
 }
 
+/**
+ * 切换当前组件是否加入复用选择集合
+ */
 const multiplexingCheck = val => {
   if (val) {
     // push
@@ -534,6 +609,9 @@ const multiplexingCheck = val => {
 
 // 批量操作-Begin
 
+/**
+ * 从外部切换当前组件批量操作勾选状态
+ */
 const batchOptCheckOut = () => {
   if (showPosition.value === 'batchOpt') {
     state.batchOptCheckModel = !state.batchOptCheckModel
@@ -541,6 +619,9 @@ const batchOptCheckOut = () => {
   }
 }
 
+/**
+ * 切换当前组件是否加入批量操作集合
+ */
 const batchOptChange = val => {
   if (val) {
     // push
@@ -552,6 +633,9 @@ const batchOptChange = val => {
 }
 // 批量操作-End
 
+/**
+ * 判断目标组件是否存在来自当前组件的联动条件
+ */
 const linkageChange = item => {
   let checkResult = false
   if (item.linkageFilters && item.linkageFilters.length > 0) {
@@ -564,6 +648,9 @@ const linkageChange = item => {
   return checkResult
 }
 
+/**
+ * 统计当前组件作为源视图的联动数量
+ */
 const existLinkage = computed(() => {
   let linkageFiltersCount = 0
   componentData.value.forEach(item => {
@@ -598,12 +685,18 @@ const clearLinkage = () => {
 
 // 富文本-Begin
 
+/**
+ * 阻止富文本字段面板触发画布拖拽
+ */
 const fieldsAreaDown = e => {
   // ignore
   e.stopPropagation()
   e.preventDefault()
 }
 
+/**
+ * 判断富文本字段选择器是否展示
+ */
 const selectFieldShow = computed(() => {
   return (
     ['canvasDataV', 'canvas'].includes(showPosition.value) &&
@@ -613,6 +706,9 @@ const selectFieldShow = computed(() => {
   )
 })
 
+/**
+ * 初始化富文本可插入字段列表
+ */
 const initCurFields = () => {
   if (element.value.component === 'UserView') {
     const chartInfo = canvasViewInfo.value[element.value.id]
@@ -625,19 +721,34 @@ const initCurFields = () => {
   }
 }
 
+/**
+ * 判断当前图表是否展示下载入口
+ */
 const showDownload = computed(() =>
   canShowDownloadAction(canvasViewInfo.value[element.value.id]?.dataFrom)
 )
+/**
+ * 当前组件绑定的图表视图信息
+ */
 const currentViewInfo = computed(() => canvasViewInfo.value[element.value.id])
+/**
+ * 当前图表的 Excel 导出配置
+ */
 const tableExcelConfig = computed(() =>
   defaultViewExcelExportConfig(currentViewInfo.value?.excelExport || element.value?.excelExport)
 )
+/**
+ * 判断 Excel 导出是否启用
+ */
 const excelExportEnabled = computed(() => {
   if (!isExportableTableView(currentViewInfo.value)) {
     return true
   }
   return tableExcelConfig.value.enabled
 })
+/**
+ * 根据导出范围生成 Excel 菜单文案
+ */
 const excelExportLabel = computed(() => {
   if (
     isExportableTableView(currentViewInfo.value) &&
@@ -649,11 +760,20 @@ const excelExportLabel = computed(() => {
 })
 // 富文本-End
 
+/**
+ * 判断数据集参数设置入口是否展示
+ */
 const datasetParamsSetShow = computed(() => {
   return canvasViewInfo.value[element.value.id]?.calParams?.length > 0
 })
 
+/**
+ * 更多操作下拉菜单引用
+ */
 const curDropdown = ref()
+/**
+ * 关闭更多操作下拉菜单
+ */
 const closeItem = () => {
   curDropdown.value.handleClose()
 }
@@ -676,6 +796,7 @@ defineExpose({
   batchOptCheckOut
 })
 
+// 批量状态关闭后重置当前组件勾选态
 watch(
   () => batchOptStatus.value,
   () => {

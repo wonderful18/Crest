@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 @Schema(description = "MFA登录DTO")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class MfaLoginDTO implements Serializable {
     @Serial
     private static final long serialVersionUID = -8218773323394184937L;

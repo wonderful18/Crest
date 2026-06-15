@@ -7,6 +7,7 @@ import java.io.Serial;
 import java.io.Serializable;
 @Schema(description = "删除Ticket")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class TicketDelRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = -3978489349675065507L;

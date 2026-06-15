@@ -3,12 +3,14 @@ import WebStorageCache from 'web-storage-cache'
 
 type CacheType = 'localStorage' | 'sessionStorage'
 
+// 读取当前业务数据并返回处理结果
 const getPathPrefix = () => {
   const pathname = window.location.pathname.replace('mobile.html', '')
   const match = pathname.match(/^\/([^\/]+)/)
   return match ? `${match[1]}_` : 'crest_v1_'
 }
 
+// 封装可复用的组合式状态和操作
 export const useCache = (type: CacheType = 'localStorage') => {
   const originalCache = new WebStorageCache({ storage: type })
   const prefix = getPathPrefix()

@@ -52,6 +52,7 @@
               @node-click="nodeClick"
             >
               <template #default="{ data }">
+                <!-- 左侧字段树以源字段为入口，勾选状态决定该字段是否启用跳转配置。 -->
                 <span class="custom-tree-node">
                   <span>
                     <div @click.stop>
@@ -225,6 +226,7 @@
                           </el-tabs>
                         </div>
                         <template v-if="state.activeCollapse === 'view'">
+                          <!-- 图表联动映射为“源字段 - 目标图表 - 目标字段”的三段式关系。 -->
                           <el-row style="margin-bottom: 8px" :gutter="8">
                             <el-col :span="7"> {{ t('visualization.source_field') }} </el-col>
                             <el-col :span="2"></el-col>
@@ -398,6 +400,7 @@
                             <span>{{ t('visualization.jump_no_banding_tips') }}</span>
                           </template>
                           <template v-else-if="state.currentOutParams.length > 0">
+                            <!-- 过滤参数映射把当前查询组件值传递给目标资源的外部参数。 -->
                             <el-row style="margin-bottom: 8px" :gutter="8">
                               <el-col :span="12"> {{ t('visualization.source_filter') }} </el-col>
                               <el-col :span="1"></el-col>
@@ -550,6 +553,7 @@
                         </div>
                       </el-col>
                       <el-col :span="8" style="height: 100%">
+                        <!-- 外部链接右侧字段列表用于向 URL 模板插入可替换的字段占位符。 -->
                         <div class="url-text">
                           {{ t('visualization.select_world') }}
                           <el-tooltip class="item" effect="dark" placement="bottom">
@@ -656,28 +660,41 @@ import { useCache } from '@/hooks/web/useCache'
 import { useEmbedded } from '@/store/modules/embedded'
 import { guid } from '@/views/visualized/data/dataset/form/util'
 import treeSort from '@/utils/treeSortUtils'
+/** 可视化主画布状态仓库 */
 const dvMainStore = dvMainStoreWithOut()
+/** 当前可视化资源、图表缓存和画布组件数据 */
 const { dvInfo, canvasViewInfo, componentData } = storeToRefs(dvMainStore)
+/** 跳转字段树组件引用 */
 const linkJumpInfoTree = ref(null)
+/** 国际化文本读取方法 */
 const { t } = useI18n()
+/** 跳转设置弹窗显示状态 */
 const dialogShow = ref(false)
+/** 快照状态仓库 */
 const snapshotStore = snapshotStoreWithOut()
+/** 应用运行环境状态仓库 */
 const appStore = useAppStoreWithOut()
+/** 嵌入式运行态状态仓库 */
 const embeddedStore = useEmbedded()
 
+/** 当前目标资源类型的展示名称 */
 const resourceType = computed(() =>
   dvInfo.value.type === 'dashboard' ? t('work_branch.dashboard') : t('work_branch.big_data_screen')
 )
 
+/** 目标资源选择提示文本 */
 const selectSourceTips = t('visualization.select_target_resource')
 
+/** 目标仪表板或数据大屏提示文本 */
 const targetSource = t('visualization.target_dashboard_dataV')
 
+/** 跳转设置弹窗的运行状态和表单数据 */
 const state = reactive<any>({
   curDataVWeight: 0,
   activeCollapse: 'view',
   loading: false,
   showSelected: false,
+  // 当前源图表、源数据集和目标资源配置共同组成跳转编辑上下文。
   curJumpViewInfo: {},
   curDatasetInfo: {},
   tempId: null,
@@ -713,7 +730,7 @@ const state = reactive<any>({
   linkJumpInfoArray: [],
   linkJumpInfoXArray: [],
   linkJumpCurViewFieldArray: [],
-  linkJumpCurFilterFieldArray: [], //当前过滤条件明细
+  linkJumpCurFilterFieldArray: [], // 当前过滤条件明细，用于绑定目标资源外部参数。
   mapJumpInfoArray: {},
   panelList: [],
   linkJumpInfo: null,
@@ -723,6 +740,7 @@ const state = reactive<any>({
     jumpType: '_self',
     targetViewInfoList: []
   },
+  // defaultTargetViewInfo 用于新增字段映射行，确认保存前再写入完整目标信息。
   defaultTargetViewInfo: {
     targetViewId: null,
     targetFieldId: null
@@ -737,11 +755,15 @@ const state = reactive<any>({
   quota: [],
   currentOutParams: []
 })
+/** 本地缓存访问器 */
 const { wsCache } = useCache()
 
+/** 外部链接内容编辑器引用 */
 const outerContentEditor = ref(null)
 
+/** 重置当前图表跳转配置的临时状态 */
 const resetParams = () => {
+  // 切换源图表或重新打开弹窗时清空所有依赖上一个图表的字段缓存。
   state.linkJump = null
   state.linkJumpInfoArray = []
   state.linkJumpInfoXArray = []
@@ -751,6 +773,7 @@ const resetParams = () => {
   state.linkJumpInfo = null
 }
 
+/** 打开跳转设置弹窗并初始化当前图表 */
 const dialogInit = viewItem => {
   resetParams()
   state.showSelected = false
@@ -759,6 +782,7 @@ const dialogInit = viewItem => {
   init(viewItem)
 }
 
+/** 递归收集作用于当前图表的过滤组件字段 */
 const initCurFilterFieldArray = componentDataCheck => {
   componentDataCheck.forEach(componentItem => {
     if (componentItem.component === 'VQuery' && componentItem.propValue instanceof Array) {
@@ -781,8 +805,10 @@ const initCurFilterFieldArray = componentDataCheck => {
   })
 }
 
+/** 当前图表是否为指标卡 */
 const isIndicator = computed(() => 'indicator' === state.viewType)
 
+/** 初始化当前图表的跳转配置数据 */
 const init = viewItem => {
   state.initState = false
   state.viewId = viewItem.id
@@ -795,7 +821,7 @@ const init = viewItem => {
     JSON.stringify(chartDetails.xAxisExt) +
     JSON.stringify(chartDetails.drillFields)
   let checkJumpStr
-  // 堆叠图的可选参数分两种情况 1.如果有堆叠项 则指标只有第一个可选 2.如果没有堆叠项泽所有指标都可以选
+  // 堆叠图的可选参数分两种情况：有堆叠项时仅首个指标可选，无堆叠项时全部指标可选
   if (chartDetails.type.indexOf('stack') > -1 && chartDetails.extStack.length > 2) {
     const yAxisArray = chartDetails.yAxis
     const yAxisNew = yAxisArray.length > 0 ? JSON.stringify(yAxisArray[0]) : '[]'
@@ -824,7 +850,7 @@ const init = viewItem => {
     checkJumpStr = checkAllAxisStr
   }
   const request = { busiFlag: 'dashboard-dataV' } as BusiTreeRequest
-  // 获取可关联的仪表板
+  // 获取可关联的目标资源树，过滤空目录后按当前资源类型的树排序方式展示。
   queryTreeApi(request).then((rsp: any) => {
     const panelList = Array.isArray(rsp) ? rsp : []
     if (panelList[0]?.id === '0') {
@@ -837,7 +863,7 @@ const init = viewItem => {
     state.panelList = treeSort(state.panelList, curSortType)
   })
 
-  // 获取当前过滤条件明细 过滤原则：1.在当前仪表板或者大屏 2.作用于当前图表
+  // 获取当前过滤条件明细，过滤原则为位于当前仪表板或大屏且作用于当前图表
   state.linkJumpCurFilterFieldArray = []
   initCurFilterFieldArray(componentData.value)
 
@@ -857,7 +883,7 @@ const init = viewItem => {
       })
     })
 
-    // 获取当前图表的关联信息
+    // 获取当前图表的关联信息，只展示仍存在于当前字段集合中的跳转字段。
     queryWithViewId(dvInfo.value.id, state.viewId).then(rsp => {
       state.linkJump = rsp.data
       state.linkJumpInfoArray = []
@@ -881,8 +907,9 @@ const init = viewItem => {
   }
 }
 
+/** 校验并保存当前图表的跳转配置 */
 const save = () => {
-  // 字段检查
+  // 保存前校验必填字段，内跳转校验目标资源和字段映射，外跳转校验 URL 内容。
   let subCheckCountAll = 0
   state.linkJump.linkJumpInfoArray.forEach(linkJumpInfo => {
     if (linkJumpInfo.checked) {
@@ -919,8 +946,9 @@ const save = () => {
     .then(() => {
       snapshotStore.recordSnapshotCache('updateJumpSet')
       ElMessage.success(t('common.save_success'))
-      // 刷新跳转信息
+      // 保存成功后重新拉取跳转配置，确保画布缓存和弹窗编辑态保持一致。
       queryVisualizationJumpInfo(dvInfo.value.id).then(rsp => {
+        // 保存后刷新画布缓存，预览和发布态使用最新跳转配置。
         dvMainStore.setNowPanelJumpInfo(rsp.data)
         cancel()
       })
@@ -930,11 +958,13 @@ const save = () => {
       state.loading = false
     })
 }
+/** 切换源字段节点时加载对应跳转详情 */
 const nodeClick = data => {
   if (!data) {
     return
   }
   state.linkJumpInfo = state.mapJumpInfoArray[data.sourceFieldId]
+  // 旧版本配置可能缺少新增字段，进入编辑态时补齐默认值，保证表单控件可直接绑定。
   if (!state.linkJumpInfo.windowSize) {
     state.linkJumpInfo.windowSize = 'middle'
   }
@@ -956,24 +986,25 @@ const nodeClick = data => {
   codeMirrorContentSet(state.linkJumpInfo.content)
 }
 
+/** 将外部链接内容同步到编辑器 */
 const codeMirrorContentSet = content => {
   nextTick(() => {
     outerContentEditor.value?.editorInit(content)
   })
 }
 
-// 获取当前图表字段 关联仪表板的图表信息列表
+/** 获取目标仪表板中的图表字段和外部参数列表 */
 const getPanelViewList = dvId => {
   viewTableDetailList(dvId).then((rsp: any) => {
     state.viewIdFieldArrayMap = {}
     state.currentLinkPanelViewArray = rsp.data.visualizationViewTables
     if (state.currentLinkPanelViewArray) {
       state.currentLinkPanelViewArray.forEach(view => {
+        // 目标图表字段按图表 id 建索引，字段映射下拉按目标图表动态读取。
         state.viewIdFieldArrayMap[view.id] = view.tableFields
       })
     }
-    // 外部参数 currentLinkPanelViewArray 也加入
-    // 在图表侧进行隐藏 保存的时候直接保存currentLinkPanelViewArray 方便处理
+    // 外部参数同步加入目标列表，图表映射页隐藏展示，过滤参数页直接复用该列表。
     state.currentOutParams = rsp.data.outParamsJumpInfo || []
     if (state.currentOutParams && state.currentOutParams.length > 0) {
       state.currentOutParams.forEach(outerParamsItem => {
@@ -983,7 +1014,7 @@ const getPanelViewList = dvId => {
         ]
       })
     }
-    // 增加过滤组件匹配
+    // 目标资源内的查询组件可作为过滤参数目标，和外部参数使用同一套映射结构。
     ;(JSON.parse(rsp.data.bashComponentData) as any[]).forEach(componentItem => {
       if (componentItem.component === 'VQuery' && componentItem.propValue instanceof Array) {
         componentItem.propValue.forEach(filterItem => {
@@ -1002,9 +1033,11 @@ const getPanelViewList = dvId => {
   })
 }
 
+/** 选择目标资源节点后刷新目标图表列表 */
 const dvNodeClick = data => {
   if (data.leaf) {
     state.curDataVWeight = data.weight
+    // 切换目标资源后清空旧映射，防止跨资源保留已失效的图表字段。
     state.linkJumpInfo.targetViewInfoList = []
     if (!isIndicator.value) {
       addLinkJumpField()
@@ -1012,7 +1045,9 @@ const dvNodeClick = data => {
     getPanelViewList(data.id)
   }
 }
+/** 新增一条目标图表或过滤组件映射 */
 const addLinkJumpField = (type = 'view') => {
+  // 新增行先生成稳定 targetId，删除和保存时都依赖该 ID 定位映射项。
   state.linkJumpInfo.targetViewInfoList.push({
     targetId: guid(),
     targetViewId: '',
@@ -1021,6 +1056,7 @@ const addLinkJumpField = (type = 'view') => {
   })
 }
 
+/** 根据目标映射 ID 删除跳转字段映射 */
 const deleteLinkJumpFieldById = targetId => {
   if (targetId) {
     let indexResult
@@ -1035,7 +1071,9 @@ const deleteLinkJumpFieldById = targetId => {
   }
 }
 
+/** 判断目标字段选择器是否应禁用 */
 const fieldIdDisabledCheck = targetViewInfo => {
+  // 外部参数和过滤组件使用占位字段，不需要用户继续选择目标字段。
   return (
     (state.viewIdFieldArrayMap[targetViewInfo.targetViewId] &&
       state.viewIdFieldArrayMap[targetViewInfo.targetViewId].length === 1 &&
@@ -1044,7 +1082,9 @@ const fieldIdDisabledCheck = targetViewInfo => {
   )
 }
 
+/** 目标图表变化后重置或自动填充目标字段 */
 const viewInfoOnChange = targetViewInfo => {
+  // 普通图表切换后必须重新选择字段，占位目标则自动写入固定字段 ID。
   if (
     state.viewIdFieldArrayMap[targetViewInfo.targetViewId] &&
     state.viewIdFieldArrayMap[targetViewInfo.targetViewId].length === 1 &&
@@ -1055,32 +1095,40 @@ const viewInfoOnChange = targetViewInfo => {
     targetViewInfo.targetFieldId = null
   }
 }
+/** 源字段勾选变化后同步树节点选中状态 */
 const sourceFieldCheckedChange = data => {
   nextTick(() => {
     linkJumpInfoTree.value.setCurrentKey(data.sourceFieldId)
     nodeClick(data)
   })
 }
+/** 关闭跳转设置弹窗并清理初始化状态 */
 const cancel = () => {
   dialogShow.value = false
   state.initState = false
 }
 
+/** 向外部链接编辑器插入字段占位符 */
 const insertFieldToCodeMirror = (value: string) => {
   outerContentEditor.value.insertFieldToCodeMirror(value)
 }
 
+/** 当前是否展示外部链接内容编辑器 */
 const outerContentShow = computed(() => {
   return state.linkJumpInfo && state.linkJumpInfo.linkType === 'outer' && dialogShow.value
 })
 
+/** 根据“仅显示已选”开关过滤源字段树节点 */
 const filterNodeMethod = (value, data) => {
   return !value || data.checked
 }
 
+/** 当前页面是否运行在嵌入式场景中 */
 const isEmbedded = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
+/** 新窗口打开目标资源的浏览器目标类型 */
 const openType = '_blank'
 
+/** 打开或切换到目标资源编辑页 */
 const resourceEdit = async resourceId => {
   if (state.curDataVWeight && state.curDataVWeight < 7) {
     ElMessage.error(t('visualization.no_edit_auth'))
@@ -1108,7 +1156,9 @@ const resourceEdit = async resourceId => {
   initOpenHandler(newWindow)
 }
 
+/** 嵌入宿主提供的新窗口处理器引用 */
 const openHandler = ref(null)
+/** 将新窗口句柄传递给宿主处理器 */
 const initOpenHandler = newWindow => {
   if (openHandler?.value) {
     const pm = {
@@ -1119,6 +1169,7 @@ const initOpenHandler = newWindow => {
   }
 }
 
+/** “仅显示已选”状态变化时刷新字段树过滤结果 */
 watch(
   () => state.showSelected,
   newValue => {
@@ -1126,6 +1177,7 @@ watch(
   }
 )
 
+/** 外部链接编辑器显示后重新写入当前链接内容 */
 watch(
   () => outerContentShow.value,
   newValue => {
@@ -1135,6 +1187,7 @@ watch(
   }
 )
 
+/** 暴露弹窗初始化方法给父组件调用 */
 defineExpose({
   dialogInit
 })
@@ -1177,9 +1230,10 @@ defineExpose({
 .ellip {
   margin-left: 10px;
   margin-right: 10px;
-  overflow: hidden; /*超出部分隐藏*/
-  white-space: nowrap; /*不换行*/
-  text-overflow: ellipsis; /*超出部分文字以...显示*/
+  /* 字段标签保持单行省略，避免树节点内容挤占操作区。 */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   text-align: center;
   background-color: #f7f8fa;
   color: #3d4d66;
@@ -1191,9 +1245,10 @@ defineExpose({
 
 .select-filed {
   margin-right: 8px;
-  overflow: hidden; /*超出部分隐藏*/
-  white-space: nowrap; /*不换行*/
-  text-overflow: ellipsis; /*超出部分文字以...显示*/
+  /* 映射字段名称保持稳定宽度，长字段通过省略号提示。 */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: #3d4d66;
   font-size: 12px;
   line-height: 35px;
@@ -1289,7 +1344,7 @@ defineExpose({
   background: #fff;
 
   color: var(--neutral-900, #1f2329);
-  /* 中文/桌面端/正文 14 22 Regular */
+  /* 字段占位符使用正文规格，和外部链接编辑器右侧列表保持一致。 */
   font-family: var(--crest-custom_font, 'PingFang');
   font-size: 14px;
   font-style: normal;

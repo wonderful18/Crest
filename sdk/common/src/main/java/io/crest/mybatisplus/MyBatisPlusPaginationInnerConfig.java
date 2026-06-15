@@ -10,9 +10,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 
 @EnableCaching
+// 定义当前业务对象的核心职责
 public class MyBatisPlusPaginationInnerConfig {
 
     @Bean
+    // 执行当前服务方法并返回处理结果
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));

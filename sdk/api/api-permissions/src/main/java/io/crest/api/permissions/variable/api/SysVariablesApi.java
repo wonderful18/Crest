@@ -23,6 +23,7 @@ import static io.crest.constant.AuthResourceEnum.SYSTEM;
 @Tag(name = "系统变量")
 @ApiSupport(order = 881, author = "Crest")
 @CrestApiPath(value = "/sys-variable", rt = SYSTEM)
+// 定义模块接口契约和数据传输结构
 public interface SysVariablesApi {
 
     @Operation(summary = "创建变量")

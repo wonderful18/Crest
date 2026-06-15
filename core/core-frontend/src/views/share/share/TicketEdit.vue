@@ -13,10 +13,15 @@ import useClipboard from 'vue-clipboard3'
 import { propTypes } from '@/utils/propTypes'
 const { toClipboard } = useClipboard()
 const { t } = useI18n()
+// Ticket 参数弹窗显隐状态
 const dialogVisible = ref(false)
+// 保存时的加载实例
 const loadingInstance = ref(null)
+// Ticket 表单实例
 const ticketForm = ref<FormInstance>()
+// 参数值输入框实例列表，用于手工标记 JSON 校验错误
 const inputRefList = ref<HTMLElement[]>([])
+// 当前分享资源 UUID
 const props = defineProps({
   uuid: propTypes.string.def('')
 })
@@ -29,8 +34,11 @@ interface TicketArg {
   name: string
   val: string
 }
+// 当前弹窗是否为编辑既有 Ticket
 const isEdit = ref(false)
+// 分享链接基础地址，用于复制完整 Ticket URL
 const linkUrl = ref('')
+// Ticket 表单状态和参数键值列表
 const state = reactive({
   form: reactive<TicketItem>({
     ticket: '',
@@ -40,6 +48,7 @@ const state = reactive({
   argList: reactive<TicketArg[]>([{ name: '', val: '' }] as TicketArg[])
 })
 
+// Ticket 表单校验规则
 const rule = reactive<FormRules>({
   exp: [
     {
@@ -50,7 +59,9 @@ const rule = reactive<FormRules>({
   ]
 })
 
+// 保存成功事件
 const emits = defineEmits(['saved'])
+// 校验并提交 Ticket 表单
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
   await formEl.validate(valid => {
@@ -80,23 +91,28 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   })
 }
 
+// 重置表单并关闭弹窗
 const resetForm = (formEl: FormInstance | undefined) => {
   if (!formEl) return
   formEl.resetFields()
   dialogVisible.value = false
 }
 
+// 使用当前表单实例执行重置
 const reset = () => {
   resetForm(ticketForm.value)
 }
 
+// 打开保存加载状态
 const showLoading = () => {
   loadingInstance.value = ElLoading.service({ target: '.ticket-param-drawer' })
 }
+// 关闭保存加载状态
 const closeLoading = () => {
   loadingInstance.value?.close()
 }
 
+// 打开新增或编辑 Ticket 弹窗，并初始化表单数据
 const edit = (row, link) => {
   resetFormData()
   linkUrl.value = link
@@ -117,6 +133,7 @@ const edit = (row, link) => {
   dialogVisible.value = true
 }
 
+// 向后端申请临时 Ticket
 const generateTicket = () => {
   const url = '/ticket/tickets/temporary'
   request.get({ url }).then(res => {
@@ -124,10 +141,12 @@ const generateTicket = () => {
   })
 }
 
+// 新增一行 Ticket 参数
 const addArgRow = () => {
   const row: TicketArg = { name: '', val: '' }
   state.argList.push(row)
 }
+// 删除指定参数行，最后一行只清空内容
 const delArgRow = index => {
   const last = state.argList.length === 1
   if (last) {
@@ -138,6 +157,7 @@ const delArgRow = index => {
   state.argList.splice(index, 1)
 }
 
+// 将后端 JSON 参数字符串展开为可编辑参数行
 const args2ArgList = () => {
   if (!state.form.args) {
     return
@@ -159,6 +179,7 @@ const args2ArgList = () => {
   }
 }
 
+// 将参数行收敛为后端需要的 JSON 字符串
 const argList2Args = () => {
   if (!state.argList?.length) {
     state.form.args = ''
@@ -172,6 +193,7 @@ const argList2Args = () => {
   })
   state.form.args = JSON.stringify(argObj)
 }
+// 设置参数输入框的 JSON 校验状态
 const setErrorStatus = (index, value, status?: boolean) => {
   let valid = !!status
   if (!value?.length) {
@@ -216,11 +238,13 @@ const setErrorStatus = (index, value, status?: boolean) => {
     }
   }
 }
+// 记录参数输入框实例
 const setInputRef = (el, index) => {
   if (el) {
     inputRefList[index] = el
   }
 }
+// 复制带 Ticket 的完整分享链接
 const copyTicket = async ticket => {
   const url = `${linkUrl.value}?ticket=${ticket}`
   try {
@@ -230,6 +254,7 @@ const copyTicket = async ticket => {
     ElMessage.warning(t('common.copy_unsupported'), e)
   }
 }
+// 刷新当前 Ticket，编辑模式下同步保存新 Ticket
 const refreshTicket = () => {
   if (!isEdit.value) {
     generateTicket()
@@ -243,6 +268,7 @@ const refreshTicket = () => {
     emits('saved')
   })
 }
+// 重置弹窗表单数据
 const resetFormData = () => {
   state.form = {
     ticket: '',

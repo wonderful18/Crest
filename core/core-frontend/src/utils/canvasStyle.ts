@@ -9,19 +9,30 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { defaultTo, merge } from 'lodash-es'
 import { formatterViewInfo } from '@/views/chart/components/js/formatter'
+/** 主画布仓库用于读取全局主题、组件列表和视图配置 */
 const dvMainStore = dvMainStoreWithOut()
 
+/** 浅色主题主文本色 */
 export const LIGHT_THEME_COLOR_MAIN = '#000000'
+/** 浅色主题辅助线和次级文本色 */
 export const LIGHT_THEME_COLOR_SLAVE1 = '#CCCCCC'
+/** 浅色主题仪表板默认背景色 */
 export const LIGHT_THEME_DASHBOARD_BACKGROUND = '#f5f6f7'
+/** 浅色主题组件默认背景色 */
 export const LIGHT_THEME_COMPONENT_BACKGROUND = '#FFFFFF'
 
+/** 深色主题主文本色 */
 export const DARK_THEME_COLOR_MAIN = '#FFFFFF'
+/** 深色主题辅助线和次级文本色 */
 export const DARK_THEME_COLOR_SLAVE1 = '#858383'
+/** 深色主题大屏默认背景色 */
 export const DARK_THEME_DASHBOARD_BACKGROUND = '#030B2E'
+/** 深色主题组件默认背景色 */
 export const DARK_THEME_COMPONENT_BACKGROUND = '#131E42'
+/** 深色主题组件反色背景，用于提示层等特殊区域 */
 export const DARK_THEME_COMPONENT_BACKGROUND_BACK = '#5a5c62'
 
+/** 将组件样式转换为可绑定的 CSS 样式对象 */
 export function getStyle(style, filter = []) {
   const needUnit = [
     'fontSize',
@@ -64,6 +75,7 @@ export function getStyle(style, filter = []) {
 }
 
 // 获取一个组件旋转 rotate 后的样式
+/** 计算组件旋转后的外接矩形边界 */
 export function getComponentRotatedStyle(style) {
   style = { ...style }
   if (style.rotate !== 0) {
@@ -87,6 +99,7 @@ export function getComponentRotatedStyle(style) {
   return style
 }
 
+/** 将十六进制颜色和透明度转换为 rgba 表达式 */
 export function colorRgb(color, opacity) {
   const reg = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
   let sColor = color
@@ -114,6 +127,7 @@ export function colorRgb(color, opacity) {
   }
 }
 
+/** 图表属性中需要随组件缩放调整的字段映射 */
 export const customAttrTrans = {
   basicStyle: [
     'barWidth',
@@ -152,6 +166,7 @@ export const customAttrTrans = {
   indicator: ['fontSize', 'suffixFontSize'],
   indicatorName: ['fontSize', 'nameValueSpacing']
 }
+/** 图表样式中需要随组件缩放调整的字段映射 */
 export const customStyleTrans = {
   text: ['fontSize'],
   legend: ['fontSize'],
@@ -200,6 +215,7 @@ export const customStyleTrans = {
   }
 }
 
+/** 主题背景相关的样式颜色映射 */
 export const THEME_STYLE_TRANS_MAIN_BACK = {
   legend: {
     textStyle: ['color']
@@ -240,6 +256,7 @@ export const THEME_STYLE_TRANS_MAIN_BACK = {
   }
 }
 
+/** 主题主色相关的图表样式映射 */
 export const THEME_STYLE_TRANS_MAIN = {
   legend: ['color'],
   xAxis: {
@@ -264,6 +281,7 @@ export const THEME_STYLE_TRANS_MAIN = {
   }
 }
 
+/** 主题辅助色相关的图表样式映射 */
 export const THEME_STYLE_TRANS_SLAVE1 = {
   xAxis: {
     splitLine: {
@@ -290,6 +308,7 @@ export const THEME_STYLE_TRANS_SLAVE1 = {
   }
 }
 
+/** 主题主色相关的图表属性映射 */
 export const THEME_ATTR_TRANS_MAIN = {
   label: {
     color: 'color',
@@ -305,20 +324,24 @@ export const THEME_ATTR_TRANS_MAIN = {
   }
 }
 
+/** 主题主色相关的符号类属性映射 */
 export const THEME_ATTR_TRANS_MAIN_SYMBOL = {
   label: ['color']
 }
 
+/** 主题背景色相关的图表属性映射 */
 export const THEME_ATTR_TRANS_SLAVE1_BACKGROUND = {
   tooltip: ['backgroundColor']
 }
 
 // 移动端特殊属性
+/** 移动端固定值属性，避免线宽和折点随缩放过度变化 */
 export const mobileSpecialProps = {
   lineWidth: 2, // 线宽固定值
   lineSymbolSize: 8 // 折点固定值
 }
 
+/** 按比例缩放数值或数值数组，并保证结果不低于 1 */
 export function getScaleValue(propValue, scale) {
   if (propValue instanceof Array) {
     propValue.forEach((v, i) => {
@@ -330,6 +353,7 @@ export function getScaleValue(propValue, scale) {
   const propValueTemp = Math.round(propValue * scale)
   return propValueTemp > 1 ? propValueTemp : 1
 }
+/** 数组型主题属性映射，用于标识需要逐项处理的系列配置 */
 export const THEME_ATTR_TRANS_ARR_MAIN = {
   label: {
     seriesLabelFormatter: {
@@ -338,6 +362,7 @@ export const THEME_ATTR_TRANS_ARR_MAIN = {
   }
 }
 
+/** 批量设置系列标签和提示框的颜色 */
 export function seriesAdaptor(template, color) {
   template.label?.seriesLabelFormatter?.forEach(series => {
     series['color'] = color
@@ -348,6 +373,7 @@ export function seriesAdaptor(template, color) {
   })
 }
 
+/** 递归缩放图表属性和样式模板中的数值字段 */
 export function recursionTransObj(template, infoObj, scale, terminal) {
   for (const templateKey in template) {
     // 如果是数组 进行赋值计算
@@ -390,6 +416,7 @@ export function recursionTransObj(template, infoObj, scale, terminal) {
   }
 }
 
+/** 递归把主题颜色写入图表属性和样式模板 */
 export function recursionThemTransObj(template, infoObj, color) {
   for (const templateKey in template) {
     // 如果是数组 进行赋值计算
@@ -411,6 +438,7 @@ export function recursionThemTransObj(template, infoObj, color) {
   }
 }
 
+/** 根据组件高宽缩放比例统一缩放图表属性和样式 */
 export function componentScalePublic(chartInfo, heightScale, widthScale) {
   const scale = Math.min(heightScale, widthScale)
   // attr 缩放转换
@@ -420,6 +448,7 @@ export function componentScalePublic(chartInfo, heightScale, widthScale) {
   return chartInfo
 }
 
+/** 按当前画布主题同步图表样式、属性和默认配色 */
 export function adaptCurTheme(customStyle, customAttr) {
   const canvasStyle = dvMainStore.canvasStyleData
   const themeColor = canvasStyle.dashboard.themeColor
@@ -490,11 +519,12 @@ export function adaptCurTheme(customStyle, customAttr) {
   }
 }
 
+/** 将全局字体映射到图表标题和指标卡字体配置 */
 export function adaptTitleFontFamily(fontFamily, viewInfo) {
   if (viewInfo) {
     const _fontFamily = defaultTo(CHART_FONT_FAMILY_MAP_TRANS[fontFamily], fontFamily)
     viewInfo.customStyle['text']['fontFamily'] = _fontFamily
-    //针对指标卡设置字体
+    // 针对指标卡同步数值和后缀字体
     if (viewInfo.type === 'indicator') {
       viewInfo.customAttr['indicator']['fontFamily'] = fontFamily
       viewInfo.customAttr['indicator']['suffixFontFamily'] = fontFamily
@@ -503,6 +533,7 @@ export function adaptTitleFontFamily(fontFamily, viewInfo) {
   }
 }
 
+/** 遍历所有图表组件，同步标题字体并触发重渲染 */
 export function adaptTitleFontFamilyAll(fontFamily) {
   const componentData = dvMainStore.componentData
   componentData.forEach(item => {
@@ -532,11 +563,12 @@ export function adaptTitleFontFamilyAll(fontFamily) {
   })
 }
 
+/** 按当前主题同步单个组件的通用背景、文字颜色和图表配色 */
 export function adaptCurThemeCommonStyle(component) {
   if (['Tabs'].includes(component.component)) {
     component.commonBackground['innerPadding'] = 0
   }
-  // 背景融合-Begin 如果是大屏['CanvasBoard', 'CanvasIcon', 'Picture']组件不需要设置背景
+  // 大屏指定组件不套用统一背景，避免覆盖其自身视觉配置
   if (
     dvMainStore.dvInfo.type === 'dataV' &&
     [
@@ -560,8 +592,7 @@ export function adaptCurThemeCommonStyle(component) {
       component.commonBackground[key] = commonStyle[key]
     }
   }
-  // 背景融合-End
-  // 通用样式-Begin
+  // 通用文字颜色按当前主题切换
   if (component.style.color) {
     if (dvMainStore.canvasStyleData.dashboard.themeColor === 'light') {
       component.style.color = LIGHT_THEME_COLOR_MAIN
@@ -570,12 +601,11 @@ export function adaptCurThemeCommonStyle(component) {
     }
   }
   if (component.component === 'UserView') {
-    // 图表-Begin
+    // 图表组件需要同步主题、格式化规则并触发重渲染
     const curViewInfo = dvMainStore.canvasViewInfo[component.id]
     adaptCurTheme(curViewInfo.customStyle, curViewInfo.customAttr)
     formatterViewInfo(curViewInfo, dvMainStore.canvasStyleData.component.formatterItem)
     useEmitt().emitter.emit('renderChart-' + component.id, curViewInfo)
-    // 图表-Begin
   } else if (component.component === 'Group') {
     component.propValue.forEach(groupItem => {
       adaptCurThemeCommonStyle(groupItem)
@@ -603,6 +633,7 @@ export function adaptCurThemeCommonStyle(component) {
   return component
 }
 
+/** 遍历画布组件并同步当前主题的通用样式 */
 export function adaptCurThemeCommonStyleAll() {
   const componentData = dvMainStore.componentData
   componentData.forEach(item => {
@@ -610,6 +641,7 @@ export function adaptCurThemeCommonStyleAll() {
   })
 }
 
+/** 过滤组件主题同步时只需要的视图信息结构 */
 interface CanvasViewInfo {
   type: string
   customStyle: {
@@ -617,9 +649,12 @@ interface CanvasViewInfo {
   }
 }
 
+/** 筛选器样式中需要同步主题色的字段 */
 const colors = ['labelColor', 'borderColor', 'text', 'bgColor']
+/** 与颜色字段一一对应的启用开关字段 */
 const colorsSwitch = ['borderShow', 'textColorShow', 'bgColorShow']
 
+/** 将当前主题筛选器样式同步到单个查询组件 */
 export function adaptCurThemeFilterStyleAllKeyComponent(component) {
   if (isFilterComponent(component.type)) {
     const filterStyle = dvMainStore.canvasStyleData.component.filterStyle
@@ -633,6 +668,7 @@ export function adaptCurThemeFilterStyleAllKeyComponent(component) {
   }
 }
 
+/** 将指定筛选器样式字段同步到所有查询组件 */
 export function adaptCurThemeFilterStyleAll(styleKey) {
   const componentViewData = Object.values(dvMainStore.canvasViewInfo) as CanvasViewInfo[]
   const filterStyle = dvMainStore.canvasStyleData.component.filterStyle
@@ -647,10 +683,12 @@ export function adaptCurThemeFilterStyleAll(styleKey) {
   })
 }
 
+/** 判断组件类型是否为查询筛选组件 */
 export function isFilterComponent(component) {
   return ['VQuery'].includes(component)
 }
 
+/** 判断组件类型是否为 Tabs 组件 */
 export function isTabComponent(component) {
   return ['Tabs'].includes(component)
 }

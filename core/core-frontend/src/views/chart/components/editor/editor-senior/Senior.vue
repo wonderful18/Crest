@@ -38,14 +38,18 @@ const { nowPanelTrackInfo, nowPanelJumpInfo, dvInfo, curComponent, batchOptStatu
   storeToRefs(dvMainStore)
 
 const { t } = useI18n()
+// 跳转配置弹窗实例
 const linkJumpRef = ref(null)
+// 联动配置弹窗实例
 const linkageRef = ref(null)
 
+// 高级设置折叠面板展开状态
 const state = {
   attrActiveNames: [],
   styleActiveNames: []
 }
 
+// 向父级同步高级配置变更
 const emit = defineEmits([
   'onFunctionCfgChange',
   'onAssistLineChange',
@@ -54,6 +58,7 @@ const emit = defineEmits([
   'onBubbleAnimateChange'
 ])
 
+// 接收图表、高级设置属性和事件上下文
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -96,12 +101,14 @@ const props = defineProps({
 })
 
 const { chart, themes, properties, propertyInnerAll } = toRefs(props)
+// 补齐图表高级配置默认结构
 watch(
   () => chart.value?.senior,
   () => {
     chart.value.senior = defaultsDeep(chart.value?.senior || {}, cloneDeep(BASE_VIEW_CONFIG.senior))
   }
 )
+// 统计当前图表已配置的联动和跳转数量
 const seniorCounts = computed(() => {
   let linkageCount = 0
   let jumpCount = 0
@@ -121,6 +128,7 @@ const seniorCounts = computed(() => {
   }
 })
 
+// 判断通用事件配置是否需要显示
 const eventsShow = computed(() => {
   return (
     !batchOptStatus.value &&
@@ -129,46 +137,54 @@ const eventsShow = computed(() => {
   )
 })
 
+// 转发功能配置变更
 const onFunctionCfgChange = val => {
   emit('onFunctionCfgChange', val)
 }
 
+// 转发辅助线配置变更
 const onAssistLineChange = val => {
   emit('onAssistLineChange', val)
 }
 
+// 转发滚动配置变更
 const onScrollCfgChange = val => {
   emit('onScrollCfgChange', val)
 }
 
+// 转发阈值配置变更
 const onThresholdChange = val => {
   emit('onThresholdChange', val)
 }
 
+// 转发气泡动画配置变更
 const onBubbleAnimateChange = val => {
   emit('onBubbleAnimateChange', val)
 }
 
+// 判断指定高级属性是否开放
 const showProperties = (prop: EditorProperty) => {
   return properties?.value?.includes(prop)
 }
 
+// 打开跳转配置弹窗
 const linkJumpSetOpen = () => {
   if (!dvInfo.value.id) {
     ElMessage.warning(t('visualization.save_page_tips'))
     return
   }
-  //跳转设置需要先触发保存
+  // 保存画布后打开跳转配置，保证目标图表状态已落盘
   canvasSave(() => {
     linkJumpRef.value.dialogInit({ id: chart.value.id, type: chart.value.type })
   })
 }
+// 打开联动配置弹窗
 const linkageSetOpen = () => {
   if (!dvInfo.value.id) {
     ElMessage.warning(t('visualization.save_page_tips'))
     return
   }
-  //跳转设置需要先触发保存
+  // 保存画布后打开联动配置，保证当前图表状态已落盘
   canvasSave(() => {
     linkageRef.value.dialogInit({ id: chart.value.id })
   })
@@ -184,14 +200,16 @@ const SENIOR_PROP: EditorProperty[] = [
   'bubble-animate'
 ]
 const excludeTypeList = ['chart-mix', 'chart-mix-stack', 'chart-mix-group']
+// 判断当前图表是否没有可用的高级设置
 const noSenior = computed(() => {
   return (
     !includesAny(properties.value, ...SENIOR_PROP) && excludeTypeList.includes(chart.value.type)
   )
 })
 
+// 切换跳转配置启用状态
 const linkJumpActiveChange = () => {
-  // 直接触发刷新
+  // 更新后刷新面板缓存中的跳转信息
   const params = {
     sourceDvId: dvInfo.value.id,
     sourceViewId: chart.value.id,
@@ -201,6 +219,7 @@ const linkJumpActiveChange = () => {
     dvMainStore.setNowPanelJumpInfo(rsp.data)
   })
 }
+// 切换联动配置启用状态
 const linkageActiveChange = () => {
   const params = {
     dvId: dvInfo.value.id,
@@ -212,20 +231,23 @@ const linkageActiveChange = () => {
   })
 }
 const appStore = useAppStoreWithOut()
+// 判断当前是否处于嵌入式集成模式
 const isCrestBi = computed(() => appStore.getIsCrestBi)
 
+// 删除当前图表的联动高级配置
 const removeLinkageSenior = () => {
   deleteLinkage({ dvId: dvInfo.value.id, sourceViewId: chart.value.id }).then(() => {
-    // 刷新联动信息
+    // 删除后重新拉取联动信息，避免面板状态滞后
     getPanelAllLinkageInfo(dvInfo.value.id).then(rsp => {
       dvMainStore.setNowPanelTrackInfo(rsp.data)
     })
   })
 }
 
+// 删除当前图表的跳转高级配置
 const removeJumpSenior = () => {
   deleteJumpSet({ sourceDvId: dvInfo.value.id, sourceViewId: chart.value.id }).then(() => {
-    // 刷新跳转信息
+    // 删除后重新拉取跳转信息，避免面板状态滞后
     queryVisualizationJumpInfo(dvInfo.value.id).then(rsp => {
       dvMainStore.setNowPanelJumpInfo(rsp.data)
     })

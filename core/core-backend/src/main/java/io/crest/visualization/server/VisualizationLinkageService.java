@@ -32,30 +32,57 @@ import java.util.stream.Collectors;
 @RequestMapping("linkage")
 public class VisualizationLinkageService implements VisualizationLinkageApi {
 
+    /**
+     * 联动扩展查询 Mapper
+     */
     @Resource
     private ExtVisualizationLinkageMapper extVisualizationLinkageMapper;
 
+    /**
+     * 正式联动字段 Mapper
+     */
     @Resource
     private VisualizationLinkageFieldMapper visualizationLinkageFieldMapper;
 
+    /**
+     * 快照联动字段 Mapper
+     */
     @Resource
     private SnapshotVisualizationLinkageFieldMapper snapshotVisualizationLinkageFieldMapper;
 
+    /**
+     * 正式联动关系 Mapper
+     */
     @Resource
     private VisualizationLinkageMapper visualizationLinkageMapper;
 
+    /**
+     * 快照联动关系 Mapper
+     */
     @Resource
     private SnapshotVisualizationLinkageMapper snapshotVisualizationLinkageMapper;
 
+    /**
+     * 可视化资源信息 Mapper
+     */
     @Resource
     private DataVisualizationInfoMapper dataVisualizationInfoMapper;
 
+    /**
+     * 正式图表视图 Mapper
+     */
     @Resource
     private CoreChartViewMapper coreChartViewMapper;
 
+    /**
+     * 快照图表视图 Mapper
+     */
     @Resource
     private SnapshotCoreChartViewMapper snapshotCoreChartViewMapper;
 
+    /**
+     * 按目标视图编号聚合指定来源视图的联动配置
+     */
     @Override
     public Map<String, VisualizationLinkageDTO> viewLinkageGather(VisualizationLinkageRequest request) {
         if (CollectionUtils.isNotEmpty(request.getTargetViewIds())) {
@@ -70,6 +97,9 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
         return new HashMap<>();
     }
 
+    /**
+     * 以数组形式查询指定来源视图的联动配置
+     */
     @Override
     public List<VisualizationLinkageDTO> viewLinkageGatherArray(VisualizationLinkageRequest request) {
         if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(request.getResourceTable())) {
@@ -79,10 +109,13 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
         }
     }
 
+    /**
+     * 保存来源视图的联动关系到快照表
+     */
     @Override
     @Transactional
     public BaseRspModel saveLinkage(VisualizationLinkageRequest request) {
-        // 向镜像中保存
+        // 向快照中保存
         Long updateTime = System.currentTimeMillis();
         List<VisualizationLinkageDTO> linkageInfo = request.getLinkageInfo();
         Long sourceViewId = request.getSourceViewId();
@@ -95,9 +128,9 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
         extVisualizationLinkageMapper.deleteViewLinkageFieldSnapshot(dvId, sourceViewId);
         extVisualizationLinkageMapper.deleteViewLinkageSnapshot(dvId, sourceViewId);
 
-        //重新建立关系
+        // 重新建立关系
         for (VisualizationLinkageDTO linkageDTO : linkageInfo) {
-            //去掉source view 的信息
+            // 跳过来源视图自身，避免形成自关联
             if (sourceViewId.equals(linkageDTO.getTargetViewId())) {
                 continue;
             }
@@ -125,6 +158,9 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
         return new BaseRspModel();
     }
 
+    /**
+     * 查询可视化资源内所有视图联动的来源和目标关系
+     */
     @CrestLinkPermit
     @Override
     public Map<String, List<String>> getVisualizationAllLinkageInfo(Long dvId, String resourceTable) {
@@ -137,6 +173,9 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
         return Optional.ofNullable(info).orElse(new ArrayList<>()).stream().collect(Collectors.toMap(LinkageInfoDTO::getSourceInfo, LinkageInfoDTO::getTargetInfoList));
     }
 
+    /**
+     * 更新来源视图联动启用状态，并返回最新联动关系
+     */
     @Override
     public Map updateLinkageActive(VisualizationLinkageRequest request) {
         SnapshotCoreChartView coreChartView = new SnapshotCoreChartView();
@@ -146,6 +185,9 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
         return getVisualizationAllLinkageInfo(request.getDvId(),CommonConstants.RESOURCE_TABLE.SNAPSHOT);
     }
 
+    /**
+     * 删除来源视图在快照表中的联动关系
+     */
     @Override
     public void deleteLinkage(VisualizationLinkageRequest request) {
         // 清理原有关系

@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义接口请求或返回数据的传输结构
 public class ExtFormSettings implements Serializable {
 
     @Serial
@@ -26,6 +27,7 @@ public class ExtFormSettings implements Serializable {
     @Builder
     @AllArgsConstructor
     @NoArgsConstructor
+    // 定义接口请求或返回数据的传输结构
     public static class NumberRule implements Serializable {
         @Serial
         private static final long serialVersionUID = -8841727448573594811L;

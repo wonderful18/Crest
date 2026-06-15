@@ -39,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+// 可视化资源管理服务，负责资源树、保存、删除、快照和工作台最近资源查询
 @Component
 @Transactional
 public class CoreVisualizationManage {
@@ -82,6 +83,7 @@ public class CoreVisualizationManage {
 
     @Resource
     private PlatformPermissionManage platformPermissionManage;
+    // 查询当前用户可见的可视化资源树
     public List<BusiNodeVO> tree(BusiNodeRequest request) {
         List<VisualizationNodeBO> nodes = new ArrayList<>();
         if (ObjectUtils.isEmpty(request.getLeaf()) || !request.getLeaf()) {
@@ -102,7 +104,7 @@ public class CoreVisualizationManage {
         if (StringUtils.isNotBlank(scopeSql)) {
             queryWrapper.apply(scopeSql);
         }
-        // 如果是编辑界面 只展示已发布的资源
+        // 快照资源表用于编辑引用场景，只展示已发布或已变更的资源
         if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(request.getResourceTable())) {
             queryWrapper.in("status", Arrays.asList(1, 2));
         }
@@ -114,6 +116,7 @@ public class CoreVisualizationManage {
         return TreeUtils.mergeTree(nodes, BusiNodeVO.class, false);
     }
 
+    // 初始化时清理复制过程中遗留的临时可视化资源
     public void dataVisualizationInit() {
         List<Long> resourceIds= extDataVisualizationMapper.findCopyResource();
         if (CollectionUtils.isNotEmpty(resourceIds)) {
@@ -121,6 +124,7 @@ public class CoreVisualizationManage {
         }
 
     }
+    // 删除指定资源及其子资源，并同步清理核心表、快照表和权限索引
     public void delete(Long id) {
         DataVisualizationInfo info = mapper.selectById(id);
         if (ObjectUtils.isEmpty(info)) {
@@ -145,20 +149,21 @@ public class CoreVisualizationManage {
         }
 
         if(!ModelUtils.isDesktop()){
-            // 删除分享相关资源
+            // 非桌面模式下同步删除分享配置
             shareManage.deleteByResource(id);
         }
 
-        // 删除可视化资源
+        // 删除可视化资源主数据和快照数据
         extDataVisualizationMapper.deleteDataVBatch(delIds, CommonConstants.RESOURCE_TABLE.CORE);
         extDataVisualizationMapper.deleteDataVBatch(delIds, CommonConstants.RESOURCE_TABLE.SNAPSHOT);
-        // 删除图表信息
+        // 删除资源关联的图表信息
         extDataVisualizationMapper.deleteViewsBatch(delIds, CommonConstants.RESOURCE_TABLE.CORE);
         extDataVisualizationMapper.deleteViewsBatch(delIds, CommonConstants.RESOURCE_TABLE.SNAPSHOT);
         delIds.forEach(delId -> platformPermissionManage.deleteResource(resourceType(info.getType()), String.valueOf(delId)));
 
         coreOptRecentManage.saveOpt(id, OptConstants.OPT_RESOURCE_TYPE.VISUALIZATION, OptConstants.OPT_TYPE.DELETE);
     }
+    // 移动资源或更新资源基础位置，并同步核心表和快照表
     public void move(DataVisualizationBaseRequest request) {
         if (!request.getMoveFromUpdate()) {
             requireVisualizationAccess(request.getId());
@@ -178,6 +183,7 @@ public class CoreVisualizationManage {
             snapshotMapper.updateById(snapshotVisualizationInfo);
         }
     }
+    // 内部新建资源入口，先校验父级访问权限再保存
     public Long innerSave(DataVisualizationInfo visualizationInfo) {
         if (ObjectUtils.isNotEmpty(visualizationInfo.getPid()) && !isTopNode(visualizationInfo.getPid()) && !Objects.equals(visualizationInfo.getPid(), -1L)) {
             requireVisualizationAccess(visualizationInfo.getPid());
@@ -186,6 +192,7 @@ public class CoreVisualizationManage {
         return preInnerSave(visualizationInfo);
     }
 
+    // 执行资源新建落库，并创建对应快照和权限索引
     public Long preInnerSave(DataVisualizationInfo visualizationInfo) {
         requireName(visualizationInfo);
         if (visualizationInfo.getId() == null) {
@@ -200,7 +207,7 @@ public class CoreVisualizationManage {
         visualizationInfo.setUpdateTime(System.currentTimeMillis());
         visualizationInfo.setOrgId(AuthUtils.getUser().getDefaultOid());
         mapper.insert(visualizationInfo);
-        // 镜像文件插入
+        // 新建资源时同步插入快照记录
         SnapshotDataVisualizationInfo snapshotVisualizationInfo = new SnapshotDataVisualizationInfo();
         BeanUtils.copyBean(snapshotVisualizationInfo, visualizationInfo);
         snapshotMapper.insert(snapshotVisualizationInfo);
@@ -210,18 +217,19 @@ public class CoreVisualizationManage {
         coreOptRecentManage.saveOpt(visualizationInfo.getId(), OptConstants.OPT_RESOURCE_TYPE.VISUALIZATION, OptConstants.OPT_TYPE.NEW);
         return visualizationInfo.getId();
     }
+    // 编辑资源基础信息，并保持核心表、快照表和权限索引一致
     public void innerEdit(DataVisualizationInfo visualizationInfo) {
         requireVisualizationAccess(visualizationInfo.getId());
         keepExistingNameIfMissing(visualizationInfo);
-        // 镜像和主表保持名称一致
+        // 快照和主表保持资源名称、状态和父级一致
         visualizationInfo.setUpdateTime(System.currentTimeMillis());
         visualizationInfo.setUpdateBy(AuthUtils.getUser().getUserId().toString());
         visualizationInfo.setVersion(3);
-        // 更新镜像
+        // 更新快照表
         SnapshotDataVisualizationInfo snapshotVisualizationInfo = new SnapshotDataVisualizationInfo();
         BeanUtils.copyBean(snapshotVisualizationInfo, visualizationInfo);
         snapshotMapper.updateById(snapshotVisualizationInfo);
-        // 更新主表名称
+        // 更新核心表
         DataVisualizationInfo coreVisualizationInfo = new DataVisualizationInfo();
         coreVisualizationInfo.setId(visualizationInfo.getId());
         coreVisualizationInfo.setStatus(visualizationInfo.getStatus());
@@ -238,16 +246,19 @@ public class CoreVisualizationManage {
         coreOptRecentManage.saveOpt(visualizationInfo.getId(), OptConstants.OPT_RESOURCE_TYPE.VISUALIZATION, OptConstants.OPT_TYPE.UPDATE);
     }
 
+    // 将业务类型转换为权限系统使用的资源类型
     private String resourceType(String type) {
         return Strings.CI.equals(type, "dataV") ? "screen" : "panel";
     }
 
+    // 校验资源名称不能为空
     private void requireName(DataVisualizationInfo visualizationInfo) {
         if (StringUtils.isBlank(visualizationInfo.getName())) {
             CrestException.throwException("资源名称不能为空");
         }
     }
 
+    // 编辑请求缺少名称时回填已有名称，避免历史调用误清空资源名称
     private void keepExistingNameIfMissing(DataVisualizationInfo visualizationInfo) {
         if (StringUtils.isNotBlank(visualizationInfo.getName())) {
             return;
@@ -260,6 +271,7 @@ public class CoreVisualizationManage {
         CrestException.throwException("资源名称不能为空");
     }
 
+    // 校验当前用户对指定资源具有创建者访问权限
     private DataVisualizationInfo requireVisualizationAccess(Long id) {
         if (ObjectUtils.isEmpty(id)) {
             CrestException.throwException("resource not exist");
@@ -272,6 +284,7 @@ public class CoreVisualizationManage {
         return info;
     }
 
+    // 递归校验当前用户对资源树全部节点的访问权限
     private void requireVisualizationTreeAccess(Long id) {
         requireVisualizationAccess(id);
         List<Long> childrenIdList = extMapper.queryChildrenId(id);
@@ -280,19 +293,23 @@ public class CoreVisualizationManage {
         }
     }
 
+    // 判断节点是否为顶层根节点
     private boolean isTopNode(Long pid) {
         return ObjectUtils.isEmpty(pid) || pid.equals(0L);
     }
 
+    // 构造资源树根节点
     private VisualizationNodeBO rootNode() {
         return new VisualizationNodeBO(0L, "root", false, 7, -1L, 0, 1);
     }
 
+    // 将数据库节点转换为前端资源树节点，并附带当前用户权限权重
     private VisualizationNodeBO convert(VisualizationNodePO po) {
         int weight = platformPermissionManage.resourceWeight(resourceType(po.getType()), String.valueOf(po.getId()), po.getCreateBy(), po.getOrgId());
         return new VisualizationNodeBO(po.getId(), po.getName(), Strings.CS.equals(po.getNodeType(), "leaf"), weight, po.getPid(), po.getExtraFlag(), po.getExtraFlag1());
     }
 
+    // 要求当前用户对资源具备管理权限
     public void requireVisualizationManage(DataVisualizationInfo info) {
         if (ObjectUtils.isEmpty(info)) {
             CrestException.throwException("resource not exist");
@@ -303,9 +320,11 @@ public class CoreVisualizationManage {
         }
     }
 
+    // 获取当前服务代理，保证内部事务方法通过代理调用
     public CoreVisualizationManage proxy() {
         return CommonBeanFactory.getBean(this.getClass());
     }
+    // 查询工作台可视化资源分页，并转换为前端视图对象
     public IPage<VisualizationResourceVO> query(int pageNum, int pageSize, VisualizationWorkbranchQueryRequest request) {
         IPage<VisualizationResourcePO> visualizationResourcePOPageIPage = proxy().queryVisualizationPage(pageNum, pageSize, request);
         if (ObjectUtils.isEmpty(visualizationResourcePOPageIPage)) {
@@ -321,6 +340,7 @@ public class CoreVisualizationManage {
         return iPage;
     }
 
+    // 将资源持久化对象转换为工作台资源视图对象
     List<VisualizationResourceVO> formatResult(List<VisualizationResourcePO> pos) {
         if (CollectionUtils.isEmpty(pos)) {
             return new ArrayList<>();
@@ -332,6 +352,7 @@ public class CoreVisualizationManage {
                         po.getFavorite(), 9, po.getExtFlag())).toList();
     }
 
+    // 查询当前用户最近访问的可视化资源分页
     public IPage<VisualizationResourcePO> queryVisualizationPage(int goPage, int pageSize, VisualizationWorkbranchQueryRequest request) {
         Long uid = AuthUtils.getUser().getUserId();
         Map<String, Object> params = new HashMap<>();
@@ -348,6 +369,7 @@ public class CoreVisualizationManage {
         return extDataVisualizationMapper.findRecent(page, uid, request.getKeyword(), params);
     }
 
+    // 校验工作台资源类型是否为系统支持的业务资源
     private void assertBusiResourceType(String type) {
         try {
             BusiResourceEnum.valueOf(type.toUpperCase(Locale.ROOT));
@@ -356,10 +378,11 @@ public class CoreVisualizationManage {
         }
     }
 
+    // 删除指定资源的快照数据
     @Transactional
     public void removeSnapshot(Long dvId) {
         if (dvId != null) {
-            // 清理历史数据
+            // 清理旧快照数据
             Set<Long> dvIds = new HashSet<>();
             dvIds.add(dvId);
             extDataVisualizationMapper.deleteDataVBatch(dvIds, CommonConstants.RESOURCE_TABLE.SNAPSHOT);
@@ -372,16 +395,17 @@ public class CoreVisualizationManage {
             outerParamsMapper.deleteOuterParamsTargetWithVisualizationIdSnapshot(dvId.toString());
             outerParamsMapper.deleteOuterParamsInfoWithVisualizationIdSnapshot(dvId.toString());
             outerParamsMapper.deleteOuterParamsWithVisualizationIdSnapshot(dvId.toString());
-            //阈值告警
+            // 清理快照阈值告警
             chartViewManege.removeThreshold(dvId, CommonConstants.RESOURCE_TABLE.SNAPSHOT);
 
         }
     }
 
+    // 删除指定资源的核心数据
     @Transactional
     public void removeDvCore(Long dvId) {
         if (dvId != null) {
-            // 清理历史数据
+            // 清理核心资源数据
             Set<Long> dvIds = new HashSet<>();
             dvIds.add(dvId);
             extDataVisualizationMapper.deleteDataVBatch(dvIds, CommonConstants.RESOURCE_TABLE.CORE);
@@ -394,14 +418,15 @@ public class CoreVisualizationManage {
             outerParamsMapper.deleteOuterParamsTargetWithVisualizationId(dvId.toString());
             outerParamsMapper.deleteOuterParamsInfoWithVisualizationId(dvId.toString());
             outerParamsMapper.deleteOuterParamsWithVisualizationId(dvId.toString());
-            //阈值告警
+            // 清理核心阈值告警
             chartViewManege.removeThreshold(dvId, CommonConstants.RESOURCE_TABLE.CORE);
         }
     }
 
+    // 用核心数据重建快照数据
     @Transactional
     public void dvSnapshotRecover(Long dvId) {
-        // 清理历史数据
+        // 先清理旧快照数据，再从核心表复制最新数据
         CoreVisualizationManage proxy = CommonBeanFactory.proxy(this.getClass());
         assert proxy != null;
         proxy.removeSnapshot(dvId);
@@ -416,10 +441,11 @@ public class CoreVisualizationManage {
         extDataVisualizationMapper.snapshotOuterParamsTargetViewInfo(dvId);
         extDataVisualizationMapper.snapshotOuterParamsInfo(dvId);
         extDataVisualizationMapper.snapshotOuterParams(dvId);
-        //阈值告警
+        // 恢复快照阈值告警
         chartViewManege.restoreThreshold(dvId, CommonConstants.RESOURCE_TABLE.SNAPSHOT);
     }
 
+    // 将快照数据恢复到核心资源数据
     @Transactional
     public void dvRestore(Long dvId) {
         extDataVisualizationMapper.restoreDataV(dvId);
@@ -432,7 +458,7 @@ public class CoreVisualizationManage {
         extDataVisualizationMapper.restoreOuterParamsTargetViewInfo(dvId);
         extDataVisualizationMapper.restoreOuterParamsInfo(dvId);
         extDataVisualizationMapper.restoreOuterParams(dvId);
-        //阈值告警
+        // 恢复核心阈值告警
         chartViewManege.restoreThreshold(dvId, CommonConstants.RESOURCE_TABLE.CORE);
     }
 

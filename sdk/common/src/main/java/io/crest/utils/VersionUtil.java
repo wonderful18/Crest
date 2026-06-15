@@ -2,9 +2,11 @@ package io.crest.utils;
 
 import org.springframework.core.env.Environment;
 
+// 提供当前模块复用的工具能力
 public class VersionUtil {
 
 
+    // 执行当前服务方法并返回处理结果
     public static String getRandomVersion() {
         Environment environment = CommonBeanFactory.getBean(Environment.class);
         assert environment != null;

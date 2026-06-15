@@ -105,6 +105,7 @@ const fontFamily = CHART_FONT_FAMILY_ORIGIN.concat(
     value: ele.name
   }))
 )
+// 处理界面事件并同步业务状态
 const onFontFamilyChange = () => {
   appearanceStore.setCurrentFont(canvasStyleData.value.fontFamily)
   document.documentElement.style.setProperty(
@@ -114,6 +115,7 @@ const onFontFamilyChange = () => {
   adaptTitleFontFamilyAll(canvasStyleData.value.fontFamily)
   snapshotStore.recordSnapshotCache('renderChart')
 }
+// 处理界面事件并同步业务状态
 const onThemeChange = () => {
   snapshotStore.recordSnapshotCache('onThemeChange')
 }

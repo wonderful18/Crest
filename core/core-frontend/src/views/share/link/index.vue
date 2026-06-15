@@ -47,16 +47,25 @@ const requestStore = useRequestStoreWithOut()
 const permissionStore = usePermissionStoreWithOut()
 const dvMainStore = dvMainStoreWithOut()
 const route = useRoute()
+// 持有公开分享预览画布实例
 const pcanvas = ref(null)
+// 标记当前 iframe 访问环境是否非法
 const iframeError = ref(true)
+// 标记分享链接是否已被禁用
 const disableError = ref(true)
+// 标记分享访问是否缺少必要的嵌入参数
 const peRequireError = ref(true)
+// 标记分享资源是否存在
 const linkExist = ref(false)
+// 控制公开分享页加载状态
 const loading = ref(true)
+// 标记分享链接是否已过期
 const linkExp = ref(false)
+// 标记分享链接密码是否校验通过
 const pwdValid = ref(false)
 const { close } = useLoading()
 const { t } = useI18n()
+// 保存分享票据校验结果和透传参数
 const state = reactive({
   ticketValidVO: {
     ticketValid: false,

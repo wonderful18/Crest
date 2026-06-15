@@ -7,8 +7,14 @@ import {
   compareDayList
 } from '@/views/chart/components/editor/drag-item/components/compare'
 
+/**
+ * 国际化翻译函数
+ */
 const { t } = useI18n()
 
+/**
+ * 同环比编辑组件入参
+ */
 const props = defineProps({
   compareItem: {
     type: Object as PropType<Record<string, any>>,
@@ -28,20 +34,32 @@ const props = defineProps({
   }
 })
 
+/**
+ * 同环比配置项和图表对象引用
+ */
 const { compareItem, chart } = toRefs(props)
 
+/**
+ * 同环比编辑面板状态
+ */
 const state = reactive({
   fieldList: [],
   compareList: [],
   dateFormatter: 'y_M_d'
 })
 
+/**
+ * 指标卡可选日期格式列表
+ */
 const dateFormatterList = [
   { name: t('chart.y'), value: 'y' },
   { name: t('chart.y_M'), value: 'y_M' },
   { name: t('chart.y_M_d'), value: 'y_M_d' }
 ]
 
+/**
+ * 切换日期格式并同步到同环比配置
+ */
 const changeDateFormatter = () => {
   const checkedField = state.fieldList.filter(ele => ele.id === compareItem.value.compareCalc.field)
   if (checkedField && checkedField.length > 0) {
@@ -54,6 +72,9 @@ const changeDateFormatter = () => {
   initCompareType()
 }
 
+/**
+ * 根据已保存配置初始化日期格式
+ */
 const initDateFormatter = () => {
   const timeType = compareItem.value.compareCalc.custom?.timeType
   if (isIndicator.value && timeType) {
@@ -62,6 +83,9 @@ const initDateFormatter = () => {
   }
 }
 
+/**
+ * 当前同环比表达式提示文本
+ */
 const hintStr = computed<string>(() => {
   let dataFormatter = state.dateFormatter
   const checkedField = state.fieldList.filter(ele => ele.id === compareItem.value.compareCalc.field)
@@ -150,6 +174,7 @@ const hintStr = computed<string>(() => {
   return ''
 })
 
+// 监听相关数据变化并同步组件状态
 watch(
   () => props.chart,
   () => {
@@ -160,11 +185,14 @@ watch(
   { deep: true }
 )
 
+/**
+ * 当前图表是否为指标卡
+ */
 const isIndicator = computed(() => {
   return chart.value.type === 'indicator'
 })
 
-// 过滤xaxis，extStack所有日期字段
+// 过滤 x 轴和扩展堆叠中的所有日期字段
 const initFieldList = () => {
   let xAxis = null
   if (Object.prototype.toString.call(chart.value.xAxis) === '[object Array]') {
@@ -232,6 +260,9 @@ const initCompareType = () => {
   }
 }
 
+/**
+ * 格式化字段下拉选项展示文案
+ */
 const fieldFormatter = field => {
   if (isIndicator.value) {
     return field.name

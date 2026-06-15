@@ -1,5 +1,6 @@
 package io.crest.visualization.server;
 
+// 实现接口服务，衔接业务处理和返回结果
 public enum FileType {
 
     /**
@@ -29,10 +30,12 @@ public enum FileType {
         this.ext = ext;
     }
 
+    // 执行当前服务方法并返回处理结果
     public String getExt() {
         return ext;
     }
 
+    // 执行当前服务方法并返回处理结果
     public String getValue() {
         return value;
     }

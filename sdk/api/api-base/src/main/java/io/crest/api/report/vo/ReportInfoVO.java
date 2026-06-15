@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
+// 定义页面展示或接口返回的数据结构
 public class ReportInfoVO implements Serializable {
     @Serial
     private static final long serialVersionUID = 2287397931951305464L;

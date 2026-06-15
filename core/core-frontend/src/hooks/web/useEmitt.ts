@@ -8,6 +8,7 @@ interface Option {
 
 const emitter = mitt()
 
+// 封装可复用的组合式状态和操作
 export const useEmitt = (option?: Option) => {
   if (option) {
     emitter.on(option.name, option.callback)

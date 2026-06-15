@@ -43,11 +43,16 @@ import { checkAddHttp, deepCopy } from '../../utils/utils'
 import { snapshotStoreWithOut } from '../../store/modules/data-visualization/snapshot'
 import { useI18n } from '../../hooks/web/useI18n'
 import { useEmitt } from '@/hooks/web/useEmitt'
+// 大屏主状态用于写回视频链接配置
 const dvMainStore = dvMainStoreWithOut()
+// 当前组件和当前标签页内组件引用
 const { curComponent, curActiveTabInner } = storeToRefs(dvMainStore)
+// 快照仓库用于记录视频链接修改
 const snapshotStore = snapshotStoreWithOut()
+// 视频链接设置文案函数
 const { t } = useI18n()
 
+// 视频链接设置属性
 const props = defineProps({
   themes: {
     type: String,
@@ -66,8 +71,10 @@ const props = defineProps({
   }
 })
 
+// 保持链接配置和属性位置的响应式引用
 const { linkInfo, attrPosition } = toRefs(props)
 
+// 弹窗内维护视频链接临时配置
 const state = reactive({
   linkInfoTemp: null,
   componentType: null,
@@ -75,10 +82,12 @@ const state = reactive({
   editFilter: ['view', 'custom']
 })
 
+// 初始化视频链接临时配置
 const init = () => {
   state.linkInfoTemp = deepCopy(linkInfo.value)
 }
 
+// 写回视频链接配置并通知播放器刷新
 const onChange = () => {
   state.linkInfoTemp[state.linkInfoTemp.videoType].src = checkAddHttp(
     state.linkInfoTemp[state.linkInfoTemp.videoType].src
@@ -97,6 +106,7 @@ const onChange = () => {
 
 init()
 
+// 外部视频链接配置变化后刷新临时编辑态
 watch(
   () => linkInfo.value,
   () => {

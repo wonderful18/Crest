@@ -17,6 +17,7 @@ import java.util.Map;
 
 @Data
 @NoArgsConstructor
+// 定义页面展示或接口返回的数据结构
 public class DataVisualizationVO implements Serializable {
 
     @JsonSerialize(using = ToStringSerializer.class)

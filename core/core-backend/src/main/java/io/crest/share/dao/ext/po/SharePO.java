@@ -10,6 +10,7 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义当前业务对象的核心职责
 public class SharePO implements Serializable {
     @Serial
     private static final long serialVersionUID = 7929343371768885789L;

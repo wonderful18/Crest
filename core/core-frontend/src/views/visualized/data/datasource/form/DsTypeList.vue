@@ -6,6 +6,7 @@ import { iconDatasourceMap } from '@/components/icon-group/datasource-list'
 import { useI18n } from '@/hooks/web/useI18n'
 
 export type DsType = 'OLTP' | 'OLAP' | 'DL' | 'OTHER' | 'LOCAL' | 'latestUse' | 'all'
+// 数据源类型列表的筛选条件和最近使用类型
 const props = defineProps({
   currentType: {
     type: String as PropType<DsType>,
@@ -19,9 +20,12 @@ const props = defineProps({
     type: Array
   }
 })
+// 数据源分类标题使用当前语言环境
 const { t } = useI18n()
 
+// 按目录分组后的数据源类型列表
 const databaseList = shallowRef([])
+// 根据当前分类、搜索文本和最近使用记录生成可展示列表
 const currentTypeList = computed(() => {
   if (props.currentType == 'all') {
     return typeList.map((ele, index) => {
@@ -67,6 +71,7 @@ const currentTypeList = computed(() => {
     }
   ]
 })
+// 初始化内置数据源类型，并按名称排序
 const datasourceTypes = () => {
   const arr = [[], [], [], [], []]
   dsTypes.forEach(item => {
@@ -82,6 +87,7 @@ const datasourceTypes = () => {
   })
 }
 datasourceTypes()
+// 将插件数据源追加到对应目录下
 const loadDsPlugin = data => {
   data.forEach(item => {
     const { name, category, type, icon, extraParams, staticMap } = item
@@ -103,7 +109,9 @@ const loadDsPlugin = data => {
   })
 }
 
+// 选择数据源类型时通知父级
 const emits = defineEmits(['selectDsType'])
+// 触发数据源类型选择事件
 const selectDs = ({ type }) => {
   emits('selectDsType', type)
 }

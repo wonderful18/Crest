@@ -27,6 +27,7 @@ import static io.crest.constant.AuthResourceEnum.DATASOURCE;
 @Tag(name = "数据源管理:基础")
 @ApiSupport(order = 969)
 @CrestApiPath(value = "/datasource", rt = DATASOURCE)
+// 定义模块接口契约和数据传输结构
 public interface DatasourceApi {
     /**
      * 查询数据源树
@@ -156,14 +157,17 @@ public interface DatasourceApi {
 
     @PostMapping("/latest-use")
     @Operation(summary = "最近常用")
+    // 执行当前服务方法并返回处理结果
     public List<String> latestUse();
 
     @GetMapping("finish-page/visible")
     @Operation(summary = "是否显示完成页面")
+    // 执行当前服务方法并返回处理结果
     public boolean showFinishPage() throws CrestException;
 
     @PostMapping("finish-page/visible")
     @Operation(summary = "是否显示完成页面")
+    // 执行当前服务方法并返回处理结果
     public void setShowFinishPage() throws CrestException;
 
     @PostMapping("/sync-records/{dsId}/{goPage}/{pageSize}")

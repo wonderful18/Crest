@@ -35,10 +35,19 @@ import java.util.stream.Collectors;
 
 @Component
 @SuppressWarnings("unchecked")
+/**
+ * 明细表图表处理器，负责分页、明细查询和自定义汇总
+ */
 public class TableInfoHandler extends DefaultChartHandler {
+    /**
+     * 当前处理器对应的图表类型
+     */
     @Getter
     private String type = "table-info";
 
+    /**
+     * 明细表仅保留维度轴，指标轴在格式化阶段置空
+     */
     @Override
     public AxisFormatResult formatAxis(ChartViewDTO view) {
         var result = super.formatAxis(view);
@@ -46,6 +55,9 @@ public class TableInfoHandler extends DefaultChartHandler {
         return result;
     }
 
+    /**
+     * 根据表格分页配置调整查询页码和页大小
+     */
     @Override
     public <T extends CustomFilterResult> T customFilter(ChartViewDTO view, List<ChartExtFilterDTO> filterList, AxisFormatResult formatResult) {
         var chartExtRequest = view.getChartExtRequest();
@@ -77,11 +89,17 @@ public class TableInfoHandler extends DefaultChartHandler {
         return (T) new CustomFilterResult(filterList, formatResult.getContext());
     }
 
+    /**
+     * 明细表结果由计算阶段组装，这里保留可重载入口
+     */
     @Override
     public Map<String, Object> buildResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
         return new HashMap<>();
     }
 
+    /**
+     * 计算明细表查询结果，并处理分页总数、动态阈值和自定义汇总
+     */
     @Override
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         var chartExtRequest = view.getChartExtRequest();

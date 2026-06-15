@@ -24,13 +24,17 @@ import 'tinymce/plugins/directionality'
 import 'tinymce/plugins/nonbreaking'
 import 'tinymce/plugins/pagebreak'
 import { propTypes } from '@/utils/propTypes'
+// 富文本编辑器属性，支持外部 v-model 和内联模式切换
 const props = defineProps({
   modelValue: String,
   inline: propTypes.bool.def(true)
 })
+// 编辑器内部绑定值
 const myValue = ref()
+// 保持外部传入值和内联模式的响应式引用
 const { modelValue, inline } = toRefs(props)
 myValue.value = modelValue
+// 外部 v-model 变化后同步编辑器内部值
 watch(
   () => props.modelValue,
   newValue => {
@@ -38,7 +42,9 @@ watch(
   }
 )
 
+// 编辑器内容变化时同步给父组件
 const emits = defineEmits(['update:modelValue', 'change'])
+// 编辑器内部值变化后向外触发双向绑定和 change 事件
 watch(
   () => myValue.value,
   newValue => {
@@ -47,7 +53,9 @@ watch(
   }
 )
 
+// 当前页面内 TinyMCE 实例 ID
 const tinymceId = 'tinymce-view-pf'
+// TinyMCE 初始化配置，包含本地化、皮肤、插件和工具栏
 const init = ref({
   selector: '#' + tinymceId,
   toolbar_items_size: 'small',

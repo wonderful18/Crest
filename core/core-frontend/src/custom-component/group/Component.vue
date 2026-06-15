@@ -9,6 +9,7 @@ import { groupSizeStyleAdaptor } from '@/utils/style'
 const dvMainStore = dvMainStoreWithOut()
 const { canvasStyleData, curComponent } = storeToRefs(dvMainStore)
 const sourceCanvasStyle = deepCopy(DEFAULT_CANVAS_STYLE_DATA_DARK)
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   propValue: {
     type: Array,
@@ -65,6 +66,7 @@ const props = defineProps({
 })
 
 const { propValue, dvInfo, element, scale, canvasViewInfo, searchCount } = toRefs(props)
+// 根据当前配置计算界面样式
 const customCanvasStyle = computed(() => {
   const result = sourceCanvasStyle
   result.scale = canvasStyleData.value.scale
@@ -73,10 +75,12 @@ const customCanvasStyle = computed(() => {
   return result
 })
 
+// 记录当前选中项和交互焦点
 const setCanvasActive = () => {
   element.value['canvasActive'] = true
 }
 
+// 监听相关数据变化并同步组件状态
 watch(
   () => props.active,
   () => {

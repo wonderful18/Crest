@@ -25,6 +25,7 @@ interface SelectConfig {
   }[]
 }
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   config: {
     type: Object as PropType<SelectConfig>,
@@ -53,6 +54,7 @@ const props = defineProps({
     })
   }
 })
+// 校验当前数据是否满足业务规则
 const filterTypeCom = (displayType: string) => {
   if (displayType === '8') {
     return TextSearch

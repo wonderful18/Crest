@@ -25,6 +25,7 @@ const appearanceStore = useAppearanceStoreWithOut()
 
 const { t } = useI18n()
 
+// 指标值样式面板只编辑 customAttr.indicator 和部分基础样式，不直接触发图表数据重新查询。
 const props = defineProps({
   chart: {
     type: Object,
@@ -39,11 +40,14 @@ const props = defineProps({
   }
 })
 
+// 父组件负责合并样式变更并记录快照，这里只上报变更字段和当前表单值。
 const emit = defineEmits(['onIndicatorChange', 'onBasicStyleChange'])
+// 提示框主题与面板主题反向搭配，保证暗色面板上的提示内容可读。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
 const predefineColors = COLOR_PANEL
+// 系统字体和用户上传字体统一进入下拉列表，value 保持字体名称，便于渲染层直接应用。
 const fontFamily = CHART_FONT_FAMILY_ORIGIN.concat(
   appearanceStore.fontList.map(ele => ({
     name: ele.name,
@@ -52,10 +56,14 @@ const fontFamily = CHART_FONT_FAMILY_ORIGIN.concat(
 )
 const fontLetterSpace = CHART_FONT_LETTER_SPACE
 
+// 表单状态拆分为指标值样式和基础图表样式，避免后缀设置误写到 basicStyle。
 const state = reactive({
+  // 指标主值样式包含字体、对齐、阴影和后缀配置，是指标卡最核心的展示配置。
   indicatorValueForm: JSON.parse(JSON.stringify(DEFAULT_INDICATOR_STYLE)),
+  // basicStyle 仅承载指标值周边的图表基础设置，避免和 indicator 对象互相污染。
   basicStyleForm: {} as ChartBasicStyle
 })
+// 指标卡片字号跨度较大，小字号用细粒度步进，大字号用 10px 步进控制列表长度。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 60; i = i + 2) {
@@ -73,10 +81,13 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+// 每次字段变更都带上字段名，父组件可按字段决定是否立即重绘或仅更新配置。
 const changeLabelTitleStyleStyle = prop => {
+  // 指标值样式变更不经过通用轴样式通道，避免父级误判为坐标系更新。
   emit('onIndicatorChange', state.indicatorValueForm, prop)
 }
 
+// 初始化时以图表已保存配置为准，再补齐新增字段默认值，兼容旧版本指标卡配置。
 const init = () => {
   const TEMP_DEFAULT_BASIC_STYLE = cloneDeep(DEFAULT_BASIC_STYLE)
   delete TEMP_DEFAULT_BASIC_STYLE.alpha
@@ -91,19 +102,22 @@ const init = () => {
     cloneDeep(DEFAULT_INDICATOR_STYLE)
   )
 
+  // 使用深拷贝隔离表单编辑态，避免直接改写 chart.customAttr.indicator。
   state.indicatorValueForm = cloneDeep(customText)
 
-  //第一次颜色可能赋值失败，单独赋值一次
+  // 颜色选择器首次挂载时可能晚于表单赋值，下一帧再次同步可保证主值和后缀颜色正确回显。
   nextTick(() => {
     state.indicatorValueForm.color = customText.color
     state.indicatorValueForm.suffixColor = customText.suffixColor
   })
 }
 
+// 组件挂载后读取当前图表配置，避免编辑面板打开时展示默认值覆盖已有配置。
 onMounted(() => {
   init()
 })
 
+// 外部撤销、重做或主题切换会替换 indicator 对象，需要重新合并默认值并刷新表单。
 watch(
   () => props.chart?.customAttr?.indicator,
   () => {
@@ -112,6 +126,7 @@ watch(
   { deep: true }
 )
 
+// 暴露给父组件的读取入口，用于保存前收集面板内尚未派发的最新表单状态。
 function getFormData() {
   return state.indicatorValueForm
 }
@@ -121,6 +136,7 @@ defineExpose({ getFormData })
 
 <template>
   <div>
+    <!-- 主值与后缀共用同一表单，关闭指标显示时整组配置进入只读态。 -->
     <el-form
       ref="indicatorValueForm"
       :disabled="!state.indicatorValueForm.show"
@@ -150,6 +166,7 @@ defineExpose({ getFormData })
       </el-form-item>
 
       <div style="display: flex">
+        <!-- 主值颜色、字号和字间距在同一行展示，减少指标卡常用样式调整路径。 -->
         <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
           <el-color-picker
             :effect="themes"
@@ -259,6 +276,7 @@ defineExpose({ getFormData })
         <div class="position-divider" :class="'position-divider--' + themes"></div>
 
         <el-form-item class="form-item" :class="'form-item-' + themes">
+          <!-- 主值水平对齐只影响指标值文本块，不改变指标名称或后缀的相对布局。 -->
           <el-radio-group
             :effect="themes"
             class="icon-radio-group"
@@ -330,6 +348,7 @@ defineExpose({ getFormData })
       </el-space>
 
       <el-form-item class="form-item" :class="'form-item-' + themes">
+        <!-- 垂直对齐用于指标值在容器内定位，和画布组件自身位置无关。 -->
         <el-radio-group
           :effect="themes"
           class="icon-radio-group"
@@ -412,6 +431,7 @@ defineExpose({ getFormData })
 
       <el-divider class="m-divider" :class="{ 'divider-dark': themes === 'dark' }" />
 
+      <!-- 后缀样式独立于主值，便于单位、百分号等短文本使用更轻的字号和颜色。 -->
       <el-form-item class="form-item" :class="'form-item-' + themes">
         <el-checkbox
           size="small"
@@ -424,6 +444,7 @@ defineExpose({ getFormData })
       </el-form-item>
 
       <div style="padding-left: 22px">
+        <!-- 后缀配置跟随 suffixEnable 禁用，保留已配置值便于再次启用。 -->
         <el-form-item class="form-item" :class="'form-item-' + themes">
           <el-input
             v-model="state.indicatorValueForm.suffix"
@@ -453,6 +474,7 @@ defineExpose({ getFormData })
         </el-form-item>
 
         <div style="display: flex">
+          <!-- 后缀颜色、字号和字间距独立于主值，适配单位文本弱化展示的常见需求。 -->
           <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
             <el-color-picker
               :disabled="!state.indicatorValueForm.suffixEnable"
@@ -517,6 +539,7 @@ defineExpose({ getFormData })
         </div>
 
         <el-space>
+          <!-- 后缀加粗和斜体沿用图标控件，交互上与主值样式保持一致。 -->
           <el-form-item class="form-item" :class="'form-item-' + themes">
             <el-checkbox
               :disabled="!state.indicatorValueForm.suffixEnable"
@@ -575,6 +598,7 @@ defineExpose({ getFormData })
         </el-space>
 
         <el-form-item class="form-item" :class="'form-item-' + themes">
+          <!-- 后缀阴影单独控制，避免单位文本跟随主值阴影后影响小字号可读性。 -->
           <el-checkbox
             :disabled="!state.indicatorValueForm.suffixEnable"
             size="small"
@@ -595,6 +619,7 @@ defineExpose({ getFormData })
   padding-right: 6px;
 }
 .icon-btn {
+  // 图标按钮通过隐藏原生勾选控件实现，尺寸需要稳定以避免工具栏跳动。
   font-size: 16px;
   line-height: 16px;
   width: 24px;
@@ -629,6 +654,7 @@ defineExpose({ getFormData })
 }
 
 .is-disabled {
+  // 禁用态保留 active 视觉反馈，方便用户理解当前保存值但不能编辑。
   .icon-btn {
     color: #8f959e;
     cursor: not-allowed;
@@ -665,6 +691,7 @@ defineExpose({ getFormData })
 }
 
 .icon-radio-group {
+  // 对齐类选项用图标表达，原生 radio 仅保留可访问状态和 v-model 绑定。
   :deep(.ed-radio) {
     margin-right: 8px;
 
@@ -680,6 +707,7 @@ defineExpose({ getFormData })
   }
 }
 .position-divider {
+  // 粗细和高度保持轻量，只用于区分字体样式按钮与对齐按钮。
   width: 1px;
   height: 18px;
   margin-bottom: 16px;
@@ -702,6 +730,7 @@ defineExpose({ getFormData })
   }
 }
 .m-divider {
+  // 主值和后缀配置之间保留轻量分隔，避免视觉上混为同一组字体项。
   margin: 0 0 16px;
   border-color: rgba(31, 35, 41, 0.15);
 

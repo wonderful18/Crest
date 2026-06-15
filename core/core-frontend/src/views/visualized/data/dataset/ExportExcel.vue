@@ -31,6 +31,7 @@ type ExportTask = {
   exportFromName?: string
   [key: string]: any
 }
+// 导出中心分页状态
 const state = reactive({
   paginationConfig: {
     currentPage: 1,
@@ -38,14 +39,23 @@ const state = reactive({
     total: 0
   }
 })
+// 当前分页下的导出任务列表
 const tableData = ref<ExportTask[]>([])
+// 抽屉列表加载状态
 const drawerLoading = ref(false)
+// 导出中心抽屉显隐状态
 const drawer = ref(false)
+// 失败原因弹窗显隐状态
 const msgDialogVisible = ref(false)
+// 当前失败原因文本
 const msg = ref('')
+// 当前激活的任务状态标签
 const activeName = ref('ALL')
+// 表格多选的导出任务
 const multipleSelection = ref<ExportTask[]>([])
+// 空状态描述文案
 const description = ref(t('data_set.no_tasks_yet'))
+// 导出任务状态标签列表及数量文案
 const tabList = ref([
   {
     label: t('data_set.exporting') + '(0)',
@@ -69,6 +79,7 @@ const tabList = ref([
   }
 ])
 let timer: ReturnType<typeof setInterval> | undefined
+// 关闭导出中心并停止轮询
 const handleClose = () => {
   drawer.value = false
   clearInterval(timer)
@@ -78,9 +89,11 @@ const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
 const desktop = wsCache.get('app.desktop')
 
 onUnmounted(() => {
+  // 抽屉组件卸载时同时释放轮询和通知队列，避免跨页面重复提醒。
   clearInterval(timer)
   exportNoticeQueue.clear()
 })
+// 切换任务状态标签并刷新列表和各状态数量
 const handleClick = (tab?: { paneName?: string | number }, _ev?: Event) => {
   if (tab) {
     activeName.value = String(tab.paneName)
@@ -94,6 +107,7 @@ const handleClick = (tab?: { paneName?: string | number }, _ev?: Event) => {
   }
   drawerLoading.value = true
   exportTasksRecords().then(res => {
+    // 先刷新状态数量，再加载当前分页数据，保证标签计数和表格内容同步。
     tabList.value.forEach(item => {
       if (item.name === 'ALL') {
         item.label = t('data_set.all') + '(' + res.data.ALL + ')'
@@ -122,6 +136,7 @@ const handleClick = (tab?: { paneName?: string | number }, _ev?: Event) => {
     })
 }
 
+// 打开导出中心并启动任务状态轮询
 const init = (params?: { activeName?: string }) => {
   drawer.value = true
   if (params && params.activeName !== undefined) {
@@ -129,6 +144,7 @@ const init = (params?: { activeName?: string }) => {
   }
   handleClick()
   timer = setInterval(() => {
+    // 只有全部和进行中标签需要轮询，其余状态通过用户切换时刷新。
     if (['IN_PROGRESS', 'ALL'].includes(activeName.value)) {
       exportTasksRecords().then(res => {
         tabList.value.forEach(item => {
@@ -162,9 +178,11 @@ const init = (params?: { activeName?: string }) => {
 }
 const linkStore = useLinkStoreWithOut()
 const appStore = useAppStoreWithOut()
+// 当前应用是否运行在嵌入式集成模式
 const isCrestBi = computed(() => appStore.getIsCrestBi)
 const exportNoticeQueue = createExportNoticeQueue({
   emit: notice => {
+    // Web 模式下把短时间内的导出结果聚合成一条提示，减少多任务导出时的消息刷屏。
     const noticeText = formatExportNoticeMessage(
       notice,
       t('data_set.successful_go_to'),
@@ -180,20 +198,23 @@ const exportNoticeQueue = createExportNoticeQueue({
   }
 })
 
+// 接收后端导出任务通知，并在普通 Web 模式下聚合弹出提示
 const taskExportTopicCall = (task: string) => {
   if (!linkStore.getLinkToken && !isCrestBi.value && !appStore.getIsIframe) {
     let exportTask: ExportTask
     try {
       exportTask = JSON.parse(task)
     } catch {
+      // 非标准任务通知直接忽略，避免影响正常导出中心轮询。
       return
     }
     exportNoticeQueue.push(exportTask)
   }
 }
 
+// 弹出导出任务通知，并提供跳转导出中心的操作入口
 const openMessageLoading = (text: string, type = 'success', cb?: () => void) => {
-  // success error loading
+  // 通知类型支持成功、失败和加载态
   const customClass = `crest-message-${type || 'success'} crest-message-export`
   const messageText = String(text)
   ElMessage({
@@ -226,16 +247,20 @@ const openMessageLoading = (text: string, type = 'success', cb?: () => void) => 
   } as any)
 }
 
+// 跳转导出中心失败任务标签
 const callbackExportError = () => {
   useEmitt().emitter.emit('data-export-center', { activeName: 'FAILED' })
 }
 
+// 跳转导出中心成功任务标签
 const callbackExportSuc = () => {
   useEmitt().emitter.emit('data-export-center', { activeName: 'SUCCESS' })
 }
 
+// 下载当前成功标签下的全部任务，或仅下载已选择任务
 const downLoadAll = () => {
   if (multipleSelection.value.length === 0) {
+    // 未选择任务时下载当前成功列表全部文件。
     tableData.value.forEach(item => {
       generateDownloadUri(item.id).then(uri => {
         window.open(PATH_URL + uri)
@@ -244,16 +269,19 @@ const downLoadAll = () => {
     return
   }
   multipleSelection.value.map(ele => {
+    // 已选择任务时按选择顺序逐个生成下载地址。
     generateDownloadUri(ele.id).then(uri => {
       window.open(PATH_URL + uri)
     })
   })
 }
+// 展示导出失败原因
 const showMsg = item => {
   msg.value = ''
   msg.value = item.msg
   msgDialogVisible.value = true
 }
+// 将后端时间戳格式化为本地可读时间
 const timestampFormatDate = value => {
   if (!value) {
     return '-'
@@ -262,18 +290,21 @@ const timestampFormatDate = value => {
 }
 import { PATH_URL } from '@/config/axios/service'
 import GridTable from '../../../../components/grid-table/src/GridTable.vue'
+// 下载单个导出任务文件
 const downloadClick = item => {
   generateDownloadUri(item.id).then(uri => {
     window.open(PATH_URL + uri, openType)
   })
 }
 
+// 重新提交失败的导出任务
 const retry = item => {
   exportRetry(item.id).then(() => {
     handleClick()
   })
 }
 
+// 删除单个导出任务
 const deleteField = item => {
   ElMessageBox.confirm(t('data_export.sure_del'), {
     confirmButtonType: 'danger',
@@ -288,14 +319,16 @@ const deleteField = item => {
       })
     })
     .catch(() => {
-      //   info(t('commons.delete_cancel'))
+      // 用户取消删除时不做处理
     })
 }
 
+// 同步表格多选结果
 const handleSelectionChange = (val: ExportTask[]) => {
   multipleSelection.value = val
 }
 
+// 切换分页页码并刷新任务列表
 const pageChange = index => {
   if (typeof index !== 'number') {
     return
@@ -303,14 +336,17 @@ const pageChange = index => {
   state.paginationConfig.currentPage = index
   handleClick()
 }
+// 切换分页大小并回到第一页
 const sizeChange = size => {
   state.paginationConfig.currentPage = 1
   state.paginationConfig.pageSize = size
   handleClick()
 }
 
+// 删除当前标签下全部任务，或删除已选择的任务
 const delAll = () => {
   if (multipleSelection.value.length === 0) {
+    // 未选择任务时按当前状态标签批量清理。
     ElMessageBox.confirm(t('data_export.sure_del_all'), {
       confirmButtonType: 'danger',
       type: 'warning',
@@ -327,12 +363,13 @@ const delAll = () => {
         })
       })
       .catch(() => {
-        // info(t('commons.delete_cancel'))
+        // 用户取消删除时不做处理
       })
     return
   }
 
   ElMessageBox.confirm(t('data_export.sure_del'), {
+    // 已选择任务时仅删除选中的任务 ID 列表。
     confirmButtonType: 'danger',
     type: 'warning',
     autofocus: false,
@@ -345,13 +382,14 @@ const delAll = () => {
       })
     })
     .catch(() => {
-      //   info(t('commons.delete_cancel'))
+      // 用户取消删除时不做处理
     })
 }
 
 useEmitt({ name: 'task-export-topic-call', callback: taskExportTopicCall })
 
 defineExpose({
+  // 父级通过事件总线或 ref 打开导出中心，并可指定默认激活标签。
   init
 })
 </script>
@@ -367,11 +405,13 @@ defineExpose({
     append-to-body
     :before-close="handleClose"
   >
+    <!-- 导出中心抽屉聚合任务状态、批量操作、下载和失败原因查看。 -->
     <div class="export-center-content" v-loading="drawerLoading">
       <el-tabs v-model="activeName" class="export-tabs" @tab-click="handleClick">
         <el-tab-pane v-for="tab in tabList" :key="tab.name" :label="tab.label" :name="tab.name" />
       </el-tabs>
       <div class="export-toolbar">
+        <!-- 工具栏按钮根据任务状态和选择数量切换文案与操作范围。 -->
         <el-button
           v-if="activeName === 'SUCCESS' && multipleSelection.length === 0"
           class="export-action"
@@ -549,6 +589,7 @@ defineExpose({
 
 <style lang="less">
 .de-export-excel {
+  // 导出中心使用独立 CSS 变量，避免与数据集页面其它抽屉样式相互影响。
   --export-ink: #0f172a;
   --export-ink-2: #334155;
   --export-muted: #64748b;
@@ -671,6 +712,7 @@ defineExpose({
   }
 
   .table-container {
+    // 表格容器占满抽屉剩余高度，分页固定在底部区域内展示。
     flex: 1;
     min-height: 0;
     height: auto;
@@ -830,6 +872,7 @@ defineExpose({
     }
 
     .export-row-actions {
+      // 行操作按钮固定尺寸并右对齐，避免下载、重试、删除组合导致列宽抖动。
       display: inline-flex;
       gap: 6px;
       align-items: center;

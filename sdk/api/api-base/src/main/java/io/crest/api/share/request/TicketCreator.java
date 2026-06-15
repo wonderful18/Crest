@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 @Schema(description = "分享Ticket")
 @Data
+// 定义模块接口契约和数据传输结构
 public class TicketCreator implements Serializable {
     @Serial
     private static final long serialVersionUID = 8661378104009097296L;

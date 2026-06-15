@@ -7,7 +7,9 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+// 定义当前业务对象的核心职责
 public class LinkTokenUtil {
+    // 执行当前服务方法并返回处理结果
     public static String generate(Long uid, Long resourceId, Long exp, String pwd, Long oid) {
         Map<String, Object> claims = new LinkedHashMap<>();
         claims.put("uid", uid);

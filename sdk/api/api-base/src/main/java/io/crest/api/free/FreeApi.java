@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @Hidden
+// 定义模块接口契约和数据传输结构
 public interface FreeApi {
 
     @PostMapping("/list")

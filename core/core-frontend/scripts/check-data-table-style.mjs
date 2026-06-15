@@ -27,6 +27,7 @@ if (failures.length) {
   process.exit(1)
 }
 
+// 衔接当前组件交互和状态同步
 function collectFailures(source, pattern, target, tagName, requiredClass) {
   pattern.lastIndex = 0
   for (const match of source.matchAll(pattern)) {
@@ -37,6 +38,7 @@ function collectFailures(source, pattern, target, tagName, requiredClass) {
   }
 }
 
+// 衔接当前组件交互和状态同步
 function scanVueFiles(dir) {
   const absoluteDir = resolve(dir)
   return readdirSync(absoluteDir).flatMap(name => {

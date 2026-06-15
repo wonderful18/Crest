@@ -14,6 +14,7 @@ import {
 import type { CheckboxValueType } from 'element-plus-secondary'
 import { propTypes } from '@/utils/propTypes'
 
+// 定义列显示控制组件接收的列信息和插件状态
 const props = defineProps({
   columnNames: propTypes.arrayOf(
     propTypes.shape({
@@ -24,15 +25,20 @@ const props = defineProps({
   isPluginLoaded: propTypes.bool.def(false)
 })
 
+// 声明列显示配置变更事件
 const emit = defineEmits(['columnChange'])
 
+// 控制是否全选列
 const checkAll = ref(true)
+// 控制全选框的半选状态
 const isIndeterminate = ref(false)
 
+// 保存当前选中的列字段
 const state = reactive({
   checkedColumnNames: props.columnNames.map(ele => ele.props)
 })
 
+// 处理单列勾选变化并同步选中字段
 const handleCheckedColumnNamesChange = (value: string[]) => {
   const checkedCount = value.length
   checkAll.value = checkedCount === props.columnNames.length
@@ -40,6 +46,7 @@ const handleCheckedColumnNamesChange = (value: string[]) => {
 
   emit('columnChange', toRaw(state.checkedColumnNames))
 }
+// 处理全选状态变化并同步选中字段
 const handleCheckAllChange = (val: CheckboxValueType) => {
   state.checkedColumnNames = val ? props.columnNames.map(ele => ele.props) : []
   if (!props.isPluginLoaded) {

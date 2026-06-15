@@ -20,15 +20,18 @@ import java.util.Map;
 
 @Component
 @SuppressWarnings("unchecked")
+// 定义图表处理器，负责轴格式化和结果组装
 public class BarHandler extends YoyChartHandler {
 
     @Override
+    // 初始化当前处理器的类型和默认配置
     public void init() {
         chartHandlerManager.registerChartHandler(this.getRender(), "bar", this);
         chartHandlerManager.registerChartHandler(this.getRender(), "bar-horizontal", this);
     }
 
     @Override
+    // 按图表配置整理维度和指标轴信息
     public AxisFormatResult formatAxis(ChartViewDTO view) {
         var result = super.formatAxis(view);
         var yAxis = result.getAxisMap().get(ChartAxis.yAxis);
@@ -40,6 +43,7 @@ public class BarHandler extends YoyChartHandler {
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         var dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
         List<String> dsList = new ArrayList<>();

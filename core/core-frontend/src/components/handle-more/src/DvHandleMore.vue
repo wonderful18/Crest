@@ -19,6 +19,7 @@ export interface Menu {
   hidden?: boolean
 }
 
+// 定义更多操作菜单的展示参数和资源上下文
 const props = defineProps({
   menuList: {
     type: Array as PropType<Menu[]>
@@ -39,8 +40,11 @@ const props = defineProps({
   anyManage: propTypes.bool.def(false)
 })
 
+// 计算当前分享功能是否被禁用
 const shareDisable = computed(() => shareStore.getShareDisable)
+// 持有分享处理组件实例
 const shareComponent = ref(null)
+// 根据权限状态生成可展示的菜单项
 const menus = ref([
   ...props.menuList.map(item => {
     if (!props.anyManage && (item.command === 'copy' || item.command === 'move')) {
@@ -49,6 +53,7 @@ const menus = ref([
     return item
   })
 ])
+// 处理菜单命令并分发给分享或父组件
 const handleCommand = (command: string | number | object) => {
   if (command === 'share') {
     shareComponent.value.execute()
@@ -56,6 +61,7 @@ const handleCommand = (command: string | number | object) => {
   }
   emit('handleCommand', command)
 }
+// 在分享可用时将分享菜单追加到资源菜单中
 const callBack = param => {
   if (shareDisable.value) {
     return
@@ -64,8 +70,10 @@ const callBack = param => {
     menus.value.splice(0, 0, param)
   }
 }
+// 声明菜单命令事件
 const emit = defineEmits(['handleCommand'])
 
+// 判断菜单项是否需要禁用
 const menuDisabledCheck = ele => {
   // do return
   return ele.disabled || (props.node.extraFlag1 === 0 && ['share', 'copy'].includes(ele.command))

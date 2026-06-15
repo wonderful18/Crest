@@ -11,9 +11,11 @@ import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 import java.security.Principal;
 import java.util.Map;
 
+// 定义实时消息通道的配置入口
 public class PrincipalHandshakeHandler extends DefaultHandshakeHandler {
 
     @Override
+    // 执行当前服务方法并返回处理结果
     protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler, Map<String, Object> attributes) {
         if (request instanceof ServletServerHttpRequest) {
             ServletServerHttpRequest servletServerHttpRequest = (ServletServerHttpRequest) request;

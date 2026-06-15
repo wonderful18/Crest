@@ -60,6 +60,7 @@ const { t } = useI18n()
 const { wsCache } = useCache()
 const dvMainStore = dvMainStoreWithOut()
 const { componentData, canvasViewInfo } = storeToRefs(dvMainStore)
+// 默认值配置子组件引用，负责同步单选、多选和展示类型切换后的内部状态。
 const defaultConfigurationRef = ref(null)
 interface DatasetField {
   type?: string
@@ -69,6 +70,7 @@ interface DatasetField {
   tableId: string
 }
 
+// 查询组件配置入参，包含当前查询组件标识和已保存的条件配置列表。
 const props = defineProps({
   queryElement: {
     type: Object,
@@ -80,11 +82,17 @@ const props = defineProps({
     }
   }
 })
+// 配置弹窗显示状态。
 const dialogVisible = ref(false)
+// 重命名输入框引用列表，用于进入重命名模式后自动聚焦。
 const renameInput = ref([])
+// 手动输入值来源的临时编辑副本，确认前不直接污染条件配置。
 const valueSource = ref([])
+// 当前弹窗内编辑的查询条件列表。
 const conditions = ref([])
+// 字段组件全选状态，和半选状态共同驱动选择器头部展示。
 const checkAll = ref(false)
+// 当前处于重命名状态的条件信息，保存 id、名称和编辑状态。
 const activeConditionForRename = reactive({
   id: '',
   name: '',
@@ -92,6 +100,7 @@ const activeConditionForRename = reactive({
 })
 const datasetMap = {}
 const snapshotStore = snapshotStoreWithOut()
+// 收集画布中可被查询条件绑定的组件，递归展开页签和分组内的子组件。
 const dfsComponentData = () => {
   let arr = componentData.value.filter(
     com => !['VQuery', 'Tabs'].includes(com.innerType) && com.component !== 'Group'
@@ -108,6 +117,7 @@ const dfsComponentData = () => {
 
         itx.componentData.forEach(j => {
           if (j.component === 'Group') {
+            // 页签内分组还需要继续展开，否则内部图表无法被查询条件绑定。
             arr = [
               ...arr,
               j.propValue.filter(
@@ -118,6 +128,7 @@ const dfsComponentData = () => {
         })
       })
     } else if (ele.component === 'Group') {
+      // 顶层分组中的普通图表直接纳入可绑定组件列表。
       arr = [
         ...arr,
         ele.propValue.filter(
@@ -126,6 +137,7 @@ const dfsComponentData = () => {
       ]
       ele.propValue.forEach(element => {
         if (element.innerType === 'Tabs') {
+          // 分组内的页签需要继续展开到每个页签页面。
           element.propValue.forEach(itx => {
             arr = [
               ...arr,
@@ -142,6 +154,7 @@ const dfsComponentData = () => {
   return arr.flat()
 }
 
+// 查询条件可绑定的数据集字段组件清单，由画布组件和视图元数据联合生成。
 const datasetFieldList = computed(() => {
   return dfsComponentData()
     .map(ele => {
@@ -159,6 +172,7 @@ const datasetFieldList = computed(() => {
     })
     .filter(ele => !!ele)
 })
+// 级联变更时清理受影响条件的默认值和映射值，避免保留失效选择。
 const setCascadeDefault = val => {
   conditions.value.forEach(ele => {
     if (
@@ -174,26 +188,36 @@ const setCascadeDefault = val => {
   })
 }
 let cascadeArr = []
+// 保存级联关系配置结果，等待确认时写回查询组件配置。
 const saveCascade = arr => {
   cascadeArr = arr
 }
+// 向级联配置子组件暴露当前级联关系。
 const getCascadeList = () => {
   return cascadeArr
 }
 provide('set-cascade-default', setCascadeDefault)
 provide('cascade-list', getCascadeList)
 
+// 当前正在编辑的查询条件对象。
 const curComponent = ref()
+// 手动输入值来源弹层引用。
 const manual = ref()
+// 当前激活的查询条件 id，用于左侧条件列表高亮和切换判断。
 const activeCondition = ref('')
+// 字段组件半选状态，和全选状态一起反映选择数量。
 const isIndeterminate = ref(false)
+// 数据集树数据，用于选择条件值来源数据集和树形结构数据集。
 const datasetTree = shallowRef([])
+// 当前画布可绑定组件对应的数据集明细列表。
 const fields = ref<DatasetDetail[]>()
 
 const { queryElement } = toRefs(props)
+// 在扁平化字段集合中查找字段类型，供展示类型和参数兼容性判断。
 const getDetype = (id, arr) => {
   return arr.flat().find(ele => ele.id === id)?.fieldType
 }
+// 判断当前条件是否已经具备可展示的字段配置。
 const showConfiguration = computed(() => {
   if (!curComponent.value) return false
   if (!curComponent.value.checkedFields?.length) return false
@@ -202,11 +226,13 @@ const showConfiguration = computed(() => {
   })
 })
 
+// 判断当前条件是否存在跨组件字段类型冲突，控制错误提示展示。
 const showTypeError = computed(() => {
   if (!curComponent.value) return false
   if (!curComponent.value.checkedFields?.length) return false
   if (!fields.value?.length) return false
   if (!!curComponent.value.parameters.length && isTimeParameter.value) {
+    // 时间参数跨组件绑定时必须保持同一时间粒度结构。
     const timeArr = curComponent.value.parameters.map(ele => ele.type[1])
     const [typeOne] = timeArr
     if (timeArr.some(ele => ele !== typeOne)) {
@@ -228,6 +254,7 @@ const showTypeError = computed(() => {
       curComponent.value.checkedFieldsMapArrNum?.[id]?.length &&
       ['22', '2'].includes(curComponent.value.displayType)
     ) {
+      // 数值范围字段和普通数值字段不能在同一条件中混用。
       if (hasParameterNumArrType === 0) {
         hasParameterNumArrType = 1
       }
@@ -243,6 +270,7 @@ const showTypeError = computed(() => {
       curComponent.value.parameters.some(ele => [2, 3].includes(ele.fieldType)) &&
       curComponent.value.checkedFieldsMap[id]
     ) {
+      // 普通数值参数和范围数值参数混用时需要提示类型冲突。
       if (hasParameterNumArrType === 0) {
         hasParameterNumArrType = 2
       }
@@ -290,12 +318,14 @@ const typeList = [
   }
 ]
 
+// 字段组件全选切换时同步选中列表，并尝试补齐相同数据集字段映射。
 const handleCheckAllChange = (val: boolean) => {
   curComponent.value.checkedFields = val ? fields.value.map(ele => ele.componentId) : []
   isIndeterminate.value = false
   val && setSameId()
 }
 
+// 普通字段组件选择变化后刷新选择状态、关闭弹层并重新推导展示类型。
 const handleCheckedFieldsChange = (value: string[]) => {
   handleDialogClick()
   const checkedCount = value.length
@@ -304,6 +334,7 @@ const handleCheckedFieldsChange = (value: string[]) => {
   if (curComponent.value.displayType === '8') return
   setType()
 }
+// 将已选择的同源字段映射复制到其它同数据集组件，减少重复手动选择。
 const setSameId = () => {
   const comIdMap = {}
   Object.keys(curComponent.value.checkedFieldsMap).forEach(ele => {
@@ -335,6 +366,7 @@ const setSameId = () => {
     }
   })
 }
+// 树形展示字段选择变化后刷新树层级默认值、关系图状态和展示类型。
 const handleCheckedFieldsChangeTree = (value: string[]) => {
   handleDialogClick()
   const checkedCount = value.length
@@ -347,6 +379,7 @@ const handleCheckedFieldsChangeTree = (value: string[]) => {
   setType()
 }
 
+// 判断参数字段是否需要禁用，避免非时间字段参与时间范围参数配置。
 const isParametersDisable = item => {
   let isDisabled = false
   if (!isNumParameter.value && isTimeParameter.value) {
@@ -357,7 +390,9 @@ const isParametersDisable = item => {
   return isDisabled
 }
 
+// 设置数值范围参数字段，并清理同组件下互斥的时间范围配置。
 const setParametersArrNum = (val, componentId) => {
+  // 数值范围和时间范围在同一组件上互斥，切换前先清掉另一套范围映射。
   if (curComponent.value.checkedFieldsMapArr?.[componentId]?.length) {
     curComponent.value.checkedFieldsMapArr[componentId] = []
     curComponent.value.checkedFieldsMapEnd[componentId] = ''
@@ -374,6 +409,7 @@ const setParametersArrNum = (val, componentId) => {
   }
 
   if (!val.length) {
+    // 范围字段清空时同步清理映射、起止字段和参数数组。
     curComponent.value.checkedFieldsMap[componentId] = ''
     curComponent.value.checkedFieldsMapEndNum[componentId] = ''
     curComponent.value.checkedFieldsMapStartNum[componentId] = ''
@@ -386,7 +422,9 @@ const setParametersArrNum = (val, componentId) => {
   setTypeChange()
 }
 
+// 设置时间范围参数字段，并清理同组件下互斥的数值范围配置。
 const setParametersArr = (val, componentId) => {
+  // 时间范围和数值范围共用参数数组结构，切换前要清理数值范围的起止字段。
   if (curComponent.value.checkedFieldsMapArrNum?.[componentId]?.length) {
     curComponent.value.checkedFieldsMapArrNum[componentId] = []
     curComponent.value.checkedFieldsMapEndNum[componentId] = ''
@@ -403,6 +441,7 @@ const setParametersArr = (val, componentId) => {
   }
 
   if (!val.length) {
+    // 时间范围清空后回退到单时间展示类型，并清理粒度配置。
     curComponent.value.checkedFieldsMap[componentId] = ''
     curComponent.value.checkedFieldsMapEnd[componentId] = ''
     curComponent.value.checkedFieldsMapStart[componentId] = ''
@@ -420,20 +459,29 @@ const setParametersArr = (val, componentId) => {
 
 let currentComponentId = ''
 let currentParameterId = ''
+// 参数类型弹窗通过这两个临时变量记录上下文，确认后再写回当前条件映射。
+// 时间参数类型选择弹窗显示状态
 const timeDialogShow = ref(false)
+// 时间参数类型，0 为单值，1 为开始值，2 为结束值
 const timeParameterType = ref(0)
+// 当前正在配置的时间参数名称
 const timeName = ref('')
 
+// 数值参数类型选择弹窗显示状态
 const numDialogShow = ref(false)
+// 数值参数类型，0 为单值，1 为最小值，2 为最大值
 const numParameterType = ref(0)
+// 当前正在配置的数值参数名称
 const numName = ref('')
 
+// 应用时间参数类型选择结果，并同步展示类型与参数数组
 const timeTypeChange = () => {
   if (!curComponent.value.checkedFieldsMapArr[currentComponentId]) {
     curComponent.value.checkedFieldsMapArr[currentComponentId] = []
   }
 
   if (timeParameterType.value === 0) {
+    // 单值时间参数会清空起止字段，展示类型回退到单时间选择。
     curComponent.value.checkedFieldsMap[currentComponentId] = currentParameterId
     curComponent.value.checkedFieldsMapArr[currentComponentId] = []
     curComponent.value.checkedFieldsMapStart[currentComponentId] = ''
@@ -441,6 +489,7 @@ const timeTypeChange = () => {
   }
 
   if (timeParameterType.value === 1) {
+    // 开始时间加入范围字段集合，并自动推导结束时间候选。
     curComponent.value.checkedFieldsMapStart[currentComponentId] = currentParameterId
     curComponent.value.checkedFieldsMapArr[currentComponentId] = [
       ...new Set([
@@ -462,6 +511,7 @@ const timeTypeChange = () => {
   }
 
   if (timeParameterType.value === 2) {
+    // 结束时间加入范围字段集合，并自动推导开始时间候选。
     curComponent.value.checkedFieldsMapArr[currentComponentId] = [
       ...new Set([
         ...curComponent.value.checkedFieldsMapArr[currentComponentId],
@@ -491,6 +541,7 @@ const timeTypeChange = () => {
   timeDialogShow.value = false
 }
 
+// 为树形展示自动选择默认数据集，优先使用已绑定字段所属的数据集
 const setTreeDefault = () => {
   if (curComponent.value.displayType !== '9' || relationshipChartIndex.value !== 0) return
   if (!!curComponent.value.checkedFields.length) {
@@ -511,6 +562,7 @@ const setTreeDefault = () => {
   }
 }
 
+// 批量校验时为树形条件补齐默认数据集，避免未打开配置面板时漏填
 const setTreeDefaultBatch = component => {
   if (!!component.checkedFields.length) {
     let tableId = ''
@@ -529,12 +581,14 @@ const setTreeDefaultBatch = component => {
   }
 }
 
+// 应用数值参数类型选择结果，并同步展示类型与参数数组
 const numTypeChange = () => {
   if (!curComponent.value.checkedFieldsMapArrNum[currentComponentId]) {
     curComponent.value.checkedFieldsMapArrNum[currentComponentId] = []
   }
 
   if (numParameterType.value === 0) {
+    // 单值数值参数会清空最小值和最大值字段，展示类型回退到普通数值输入。
     curComponent.value.checkedFieldsMap[currentComponentId] = currentParameterId
     curComponent.value.checkedFieldsMapArrNum[currentComponentId] = []
     curComponent.value.checkedFieldsMapStartNum[currentComponentId] = ''
@@ -542,6 +596,7 @@ const numTypeChange = () => {
   }
 
   if (numParameterType.value === 1) {
+    // 最小值字段加入范围集合，并自动维护另一端字段。
     curComponent.value.checkedFieldsMapStartNum[currentComponentId] = currentParameterId
     curComponent.value.checkedFieldsMapArrNum[currentComponentId] = [
       ...new Set([
@@ -563,6 +618,7 @@ const numTypeChange = () => {
   }
 
   if (numParameterType.value === 2) {
+    // 最大值字段加入范围集合，并自动维护另一端字段。
     curComponent.value.checkedFieldsMapArrNum[currentComponentId] = [
       ...new Set([
         ...curComponent.value.checkedFieldsMapArrNum[currentComponentId],
@@ -593,7 +649,9 @@ const numTypeChange = () => {
   numDialogShow.value = false
 }
 
+// 根据数值范围起止字段回填参数数组，只保留带变量名的有效参数
 const setParametersNumType = componentId => {
+  // 参数数组只服务后续 SQL 参数绑定，普通字段即使被选中也不进入 parametersArr。
   curComponent.value.parametersArr[componentId] = duplicateRemoval(
     unref(fields)
       .filter(ele => ele.componentId === componentId)
@@ -611,7 +669,9 @@ const setParametersNumType = componentId => {
   )
 }
 
+// 根据时间范围起止字段回填参数数组，并同步时间粒度到范围配置
 const setParametersTimeType = componentId => {
+  // 时间范围参数会额外反推 timeGranularityMultiple，供默认值配置渲染范围控件。
   curComponent.value.parametersArr[componentId] = duplicateRemoval(
     unref(fields)
       .filter(ele => ele.componentId === componentId)
@@ -637,6 +697,7 @@ const setParametersTimeType = componentId => {
   curComponent.value.timeGranularity = typeTimeMap[v2 || v1]
 }
 
+// 打开数值参数类型选择弹窗，并根据当前字段位置预选单值、最小值或最大值
 const numClick = (componentId, timeVal) => {
   numParameterType.value =
     timeVal.id === curComponent.value.checkedFieldsMapStartNum[componentId]
@@ -650,6 +711,7 @@ const numClick = (componentId, timeVal) => {
   numDialogShow.value = true
 }
 
+// 打开时间参数类型选择弹窗，并根据当前字段位置预选单值、开始值或结束值
 const timeClick = (componentId, timeVal) => {
   timeParameterType.value =
     timeVal.id === curComponent.value.checkedFieldsMapStart[componentId]
@@ -663,6 +725,7 @@ const timeClick = (componentId, timeVal) => {
   timeDialogShow.value = true
 }
 
+// 按字段 id 去重，保留输入数组中最后出现的有效字段对象
 const duplicateRemoval = arr => {
   const objList = []
   let idList = arr.map(ele => ele.id)
@@ -676,8 +739,10 @@ const duplicateRemoval = arr => {
   return objList
 }
 
+// 根据已绑定字段生成参数列表，并在必要时同步同数据集组件的字段选择
 const setParameters = field => {
   const fieldArr = Object.values(curComponent.value.checkedFieldsMap).filter(ele => !!ele) as any[]
+  // 参数列表只保留当前绑定字段中带变量名的字段，避免无参字段进入 SQL 参数配置。
   curComponent.value.parameters = duplicateRemoval(
     (Object.values(field?.fields || {}) as any[])
       .flat()
@@ -704,6 +769,7 @@ const setParameters = field => {
     }) && +curComponent.value.displayType === 7
   nextTick(() => {
     if (isTimeParameter.value && !notChangeType) {
+      // 单时间参数会根据字段格式自动选择 year/month/date/datetime 粒度。
       const timeParameter = curComponent.value.parameters.find(ele => ele.fieldType === 1)
       curComponent.value.timeGranularity =
         typeTimeMap[timeParameter.type[1] || timeParameter.type[0]]
@@ -711,6 +777,7 @@ const setParameters = field => {
     }
 
     if (!!curComponent.value.parameters.length) {
+      // 存在参数字段时默认使用数据集选项，减少手动输入选项与参数查询不一致。
       curComponent.value.conditionType = 0
       if (curComponent.value.optionValueSource === 0) {
         curComponent.value.optionValueSource = 1
@@ -741,6 +808,7 @@ const setParameters = field => {
   setRelationBack()
 }
 
+// 根据当前选中字段类型推导查询条件展示类型，保留树形和已配置范围的特殊类型
 const setType = () => {
   if (curComponent.value.checkedFields?.length) {
     const [id] = curComponent.value.checkedFields
@@ -752,6 +820,7 @@ const setType = () => {
 
     if (field?.fieldType !== undefined) {
       let displayType = curComponent.value.displayType
+      // 已配置的范围数值和树形展示类型优先级更高，不被单字段类型推导覆盖。
       if (['22'].includes(curComponent.value.displayType) && [2, 3].includes(field?.fieldType)) {
         return
       }
@@ -790,6 +859,7 @@ const setType = () => {
 
 let oldDisplayType
 
+// 切换展示类型时处理树形类型的降级确认，避免误清空树形配置
 const handleSetTypeChange = () => {
   let displayType = curComponent.value.displayType
   if (oldDisplayType === '9' && ['0', '8'].includes(displayType)) {
@@ -809,9 +879,11 @@ const handleSetTypeChange = () => {
   }
 }
 
+// 展示类型变化后的统一收敛入口，负责清理字段、刷新默认配置和树形状态
 const setTypeChange = () => {
   handleDialogClick()
   nextTick(() => {
+    // 展示类型变化后清空选项字段，避免旧字段类型与新控件类型不匹配。
     curComponent.value.field.id = ''
     defaultConfigurationRef.value?.displayTypeChange?.()
     if (
@@ -832,6 +904,7 @@ const setTypeChange = () => {
   })
 }
 
+// 当前条件是否包含时间参数字段，用于限制时间粒度和范围控件
 const isTimeParameter = computed(() => {
   return curComponent.value.checkedFields.some(ele => {
     return curComponent.value.parameters?.some(
@@ -843,18 +916,21 @@ const isTimeParameter = computed(() => {
   })
 })
 
+// 当前条件是否包含数值参数字段，用于开放数值范围配置
 const isNumParameter = computed(() => {
   return curComponent.value.parameters?.some(
     ele => [2, 3].includes(ele.fieldType) && !!ele.variableName
   )
 })
 
+// 当前条件是否已配置数值范围字段
 const notNumRange = computed(() => {
   return curComponent.value.checkedFields.some(ele => {
     return curComponent.value.checkedFieldsMapArrNum[ele]?.length > 0
   })
 })
 
+// 判断当前选择是否不允许再配置数值范围，防止单值数值参数与范围参数混用
 const canNotNumRange = computed(() => {
   if (
     curComponent.value.checkedFields.every(id => {
@@ -871,12 +947,14 @@ const canNotNumRange = computed(() => {
   }
 })
 
+// 当前条件是否已配置时间范围字段
 const notTimeRange = computed(() => {
   return curComponent.value.checkedFields.some(ele => {
     return curComponent.value.checkedFieldsMapArr[ele]?.length > 0
   })
 })
 
+// 当前时间范围字段的原始时间格式，用于约束可选粒度
 const notTimeRangeType = computed(() => {
   const fieldsArr = unref(fields)
     .map(ele => Object.values(ele?.fields || {}).flat())
@@ -915,6 +993,7 @@ const typeTimeMap = {
   'YYYY/MM/DD HH:mm:ss': 'datetime'
 }
 
+// 根据已选时间参数的格式裁剪可选时间粒度，防止选择高于字段精度的粒度
 const timeParameterList = computed(() => {
   if (!isTimeParameter.value) return timeList
   const timeParameter = curComponent.value.parameters?.find(
@@ -934,11 +1013,13 @@ const timeParameterList = computed(() => {
   }, [])
 })
 
+// 取消配置并关闭弹窗，关闭前同步子弹层状态
 const cancelClick = () => {
   handleDialogClick()
   dialogVisible.value = false
 }
 
+// 初始化数据集树，并过滤掉不可选择的空目录
 const initDataset = () => {
   fetchDatasetTree({}).then(res => {
     const result = (res as unknown as Tree[]) || []
@@ -950,6 +1031,7 @@ const initDataset = () => {
   })
 }
 
+// 按缓存排序方式整理数据集树
 const sortTypeChange = arr => {
   const sortType = wsCache.get('TreeSort-dataset') || 'time_desc'
   datasetTree.value = treeSort(arr, sortType)
@@ -957,6 +1039,7 @@ const sortTypeChange = arr => {
 
 let newDatasetId = ''
 let oldDatasetId = ''
+// 切换数据集树节点时检查是否影响已有级联关系，必要时记录待确认的新旧数据集
 const handleCurrentChange = node => {
   if (!curComponent.value.dataset?.id) return
   let id = `${curComponent.value.dataset?.id}--${curComponent.value.id}`
@@ -972,6 +1055,7 @@ const handleCurrentChange = node => {
   newDatasetId = node.id
 }
 
+// 用户确认切换数据集后清理相关级联关系，并重新加载字段选项
 const confirmIdChange = () => {
   curComponent.value.dataset.id = newDatasetId
   clearCascadeArrDataset(`${oldDatasetId}--${curComponent.value.id}`)
@@ -980,8 +1064,10 @@ const confirmIdChange = () => {
   handleDatasetChange()
 }
 
+// 条件值来源数据集变化时重置字段、展示字段和排序字段，并重新加载可选字段
 const handleDatasetChange = () => {
   if (!!newDatasetId && !!oldDatasetId) {
+    // 已参与级联的数据集切换必须二次确认，否则会留下指向旧数据集的级联边。
     curComponent.value.dataset.id = oldDatasetId
     ElMessageBox.confirm(t('v_query.to_modify_it'), {
       confirmButtonType: 'primary',
@@ -1001,6 +1087,7 @@ const handleDatasetChange = () => {
   getOptions(curComponent.value.dataset.id, curComponent.value)
 }
 
+// 树形结构数据集变化时清空树字段配置，并重新加载树形可选字段
 const handleDatasetTreeChange = () => {
   curComponent.value.treeFieldList = []
   curComponent.value.treeCheckedList = []
@@ -1009,6 +1096,7 @@ const handleDatasetTreeChange = () => {
   getOptions(curComponent.value.treeDatasetId, curComponent.value)
 }
 
+// 条件值字段变化时重置默认值，并在缺省展示字段时同步展示字段
 const handleFieldChange = () => {
   if (!curComponent.value.defaultValueCheck) return
   curComponent.value.defaultValue = curComponent.value.multiple ? [] : undefined
@@ -1017,10 +1105,12 @@ const handleFieldChange = () => {
   }
 }
 
+// 选项值来源变化时重置默认值，并在字段来源模式下自动补齐数据集和字段
 const handleValueSourceChange = () => {
   curComponent.value.defaultValue = curComponent.value.multiple ? [] : undefined
   multipleChange(curComponent.value.multiple)
   if (curComponent.value.optionValueSource === 1 && !curComponent.value.dataset.id) {
+    // 字段来源模式优先复用已绑定图表字段，减少用户重复选择同一个数据集字段。
     let id = ''
     let comId = ''
     Object.keys(curComponent.value.checkedFieldsMap).forEach(ele => {
@@ -1041,6 +1131,7 @@ const handleValueSourceChange = () => {
   }
 }
 
+// 切换单选或多选模式，并按目标模式转换默认值和选中值结构
 const multipleChange = (val: boolean, isMultipleChange = false) => {
   if (isMultipleChange) {
     curComponent.value.defaultValue = val ? [] : undefined
@@ -1059,6 +1150,7 @@ const multipleChange = (val: boolean, isMultipleChange = false) => {
   curComponent.value.multiple = val
 }
 
+// 判断时间范围是否超出动态窗口或固定区间限制，用于默认值校验
 const isInRange = (ele, startWindowTime, timeStamp) => {
   const {
     intervalType,
@@ -1179,8 +1271,11 @@ const isInRange = (ele, startWindowTime, timeStamp) => {
   }
 }
 
+// 级联配置弹窗按需加载，减少查询条件配置弹窗的初始体积
 const CascadeDialog = defineAsyncComponent(() => import('./QueryCascade.vue'))
+// 级联配置弹窗组件引用
 const cascadeDialog = ref()
+// 打开级联配置弹窗，并构造可参与级联的条件字段映射
 const openCascadeDialog = () => {
   const cascadeMap = conditions.value
     .filter(ele => {
@@ -1211,6 +1306,7 @@ const openCascadeDialog = () => {
   cascadeDialog.value.init(cascadeMap, cascadeArr)
 }
 
+// 数据集切换后清理受影响的级联关系，保留仍然有效的另一端条件
 const clearCascadeArrDataset = id => {
   for (let i in cascadeArr) {
     const [fir, sec] = cascadeArr[i]
@@ -1236,6 +1332,7 @@ const validateConditionType = ({
   defaultConditionValueS,
   conditionType
 }) => {
+  // 单条件只校验首个值，双条件必须同时具备左右两侧默认值。
   if (conditionType === 0) {
     return defaultConditionValueF === ''
   } else {
@@ -1243,6 +1340,7 @@ const validateConditionType = ({
   }
 }
 
+// 将默认条件值写入运行态条件值，供文本条件和必填校验复用
 const setParams = ele => {
   const {
     defaultConditionValueOperatorF,
@@ -1256,6 +1354,7 @@ const setParams = ele => {
   ele.conditionValueS = defaultConditionValueS
 }
 
+// 保存前校验所有查询条件，覆盖字段绑定、默认值、树形结构和范围合法性
 const validate = () => {
   return conditions.value.some(ele => {
     if (ele.auto) return false
@@ -1281,6 +1380,7 @@ const validate = () => {
     }
 
     if (ele.displayType === '9') {
+      // 树形条件需要同时校验数据集、层级字段和每一层级的图表字段映射。
       if (
         ele.defaultValueCheck &&
         ((Array.isArray(ele.defaultValue) && !ele.defaultValue.length) || !ele.defaultValue)
@@ -1315,6 +1415,7 @@ const validate = () => {
     }
 
     if (ele.displayType === '22' && ele.defaultValueCheck) {
+      // 数值范围保存前先把默认起止值同步到运行态，预览查询直接读取 numValueStart/End。
       ele.numValueEnd = ele.defaultNumValueEnd
       ele.numValueStart = ele.defaultNumValueStart
       if (
@@ -1531,6 +1632,7 @@ const validate = () => {
       }
       if (!ele.setTimeRange) return false
 
+      // 设置最大查询窗口后，默认时间必须落在动态窗口或固定区间允许范围内。
       if (
         isInRange(
           ele,
@@ -1570,6 +1672,7 @@ const validate = () => {
   })
 }
 
+// 关闭配置弹窗前同步子组件状态，并清理当前条件和关系图索引
 const handleBeforeClose = () => {
   defaultConfigurationRef.value?.mult()
   defaultConfigurationRef.value?.single()
@@ -1580,7 +1683,9 @@ const handleBeforeClose = () => {
   relationshipChartIndex.value = 0
   dialogVisible.value = false
 }
+// 查询条件配置对外事件，分别通知查询数据刷新和画布组件重渲染
 const emits = defineEmits(['queryData', 'reRenderAll'])
+// 校验并确认配置，写回查询组件属性、记录快照并触发外部刷新事件
 const confirmClick = () => {
   if (validate()) return
   defaultConfigurationRef.value?.mult()
@@ -1602,6 +1707,7 @@ const confirmClick = () => {
       cascadeArr.forEach(ele => {
         ele.forEach(item => {
           if (item.datasetId.split('--')[1] === itx.id && itx.defaultValueCheck) {
+            // 确认保存时把当前默认值同步给级联节点，运行态首次查询可直接使用。
             const val = itx.mapValue
             item.selectValue = Array.isArray(val) ? [...val] : val
             item.currentSelectValue = Array.isArray(val) ? [...val] : val
@@ -1622,6 +1728,7 @@ const confirmClick = () => {
   })
 }
 
+// 当前条件值来源可选择的字段列表，按展示类型过滤字段类型兼容项
 const fieldsComputed = computed(() => {
   return curComponent.value.dataset.fields.filter(ele => {
     return (
@@ -1632,6 +1739,7 @@ const fieldsComputed = computed(() => {
   })
 })
 
+// 取消手动值来源编辑，恢复为当前条件已保存的值来源
 const cancelValueSource = () => {
   valueSource.value = cloneDeep(curComponent.value.valueSource)
   if (!valueSource.value.length) {
@@ -1640,6 +1748,7 @@ const cancelValueSource = () => {
   manual.value.hide()
 }
 
+// 确认手动值来源编辑，过滤空值后写回当前条件
 const confirmValueSource = () => {
   if (
     valueSource.value.some(ele => {
@@ -1665,6 +1774,7 @@ const confirmValueSource = () => {
   cancelValueSource()
 }
 
+// 载入已有查询条件并打开指定条件的配置面板
 const setCondition = (queryId: string) => {
   conditions.value = (cloneDeep(props.queryElement.propValue) || []).map(ele =>
     parameterCompletion(ele)
@@ -1672,6 +1782,7 @@ const setCondition = (queryId: string) => {
   init(queryId)
 }
 
+// 从外部新增一个查询条件并立即进入配置
 const setConditionOut = () => {
   conditions.value = (cloneDeep(props.queryElement.propValue) || []).map(ele =>
     parameterCompletion(ele)
@@ -1680,6 +1791,7 @@ const setConditionOut = () => {
   init(conditions.value[conditions.value.length - 1].id)
 }
 
+// 根据字段 id 定位其所在的维度、指标或参数页签
 const setActiveSelectTab = (arr, id) => {
   let activelist = 'dimensionList'
   arr.some((ele, index) => {
@@ -1693,6 +1805,7 @@ const setActiveSelectTab = (arr, id) => {
   return activelist
 }
 
+// 初始化弹窗数据，加载画布字段关联的数据集详情和参数字段
 const init = (queryId: string) => {
   initDataset()
   relationshipChartIndex.value = 0
@@ -1755,10 +1868,12 @@ const init = (queryId: string) => {
     })
 }
 
+// 去重手动值来源，保留用户输入顺序中的唯一值
 const weightlessness = () => {
   valueSource.value = Array.from(new Set(valueSource.value))
 }
 
+// 为旧配置补齐新增属性的默认值，保证后续逻辑可以按完整结构读取
 const parameterCompletion = ele => {
   const attributes = {
     timeType: 'fixed',
@@ -1833,6 +1948,7 @@ const parameterCompletion = ele => {
   return ele
 }
 
+// 切换当前编辑条件，并补齐字段映射、范围映射和树形配置状态
 const handleCondition = (item, idx = 0) => {
   handleDialogClick()
   if (activeConditionForRename.id) return
@@ -1921,6 +2037,7 @@ const handleCondition = (item, idx = 0) => {
     handleCheckedFieldsChange(curComponent.value.checkedFields)
   }
   multipleChange(curComponent.value.multiple)
+  // 手动值来源编辑使用副本，切换条件时重新从当前条件恢复。
   valueSource.value = cloneDeep(curComponent.value.valueSource)
   if (!valueSource.value.length) {
     valueSource.value.push('')
@@ -1942,12 +2059,14 @@ const handleCondition = (item, idx = 0) => {
   })
 }
 
+// 加载指定数据集的可选字段，并写入对应条件配置
 const getOptions = (id, component) => {
   listFieldsWithPermissions(id).then(res => {
     component.dataset.fields = res.data
   })
 }
 
+// 排序字段变化时清理自定义排序，并在排序字段失效时重置排序方式
 const handleSortChange = () => {
   handleFieldChange()
   curComponent.value.sortList = []
@@ -1956,6 +2075,7 @@ const handleSortChange = () => {
   }
 }
 
+// 重置排序相关状态，并在默认值启用时清空已选默认值
 const resetSort = () => {
   if (sortComputed.value) {
     curComponent.value.sort = ''
@@ -1964,12 +2084,15 @@ const resetSort = () => {
   curComponent.value.defaultValue = curComponent.value.multiple ? [] : undefined
 }
 
+// 自定义排序弹窗组件引用
 const customSortFilterRef = ref()
 
+// 保存自定义排序列表到当前条件
 const sortSave = list => {
   curComponent.value.sortList = cloneDeep(list)
 }
 
+// 打开自定义排序配置，首次打开时从枚举接口加载当前字段取值
 const handleCustomClick = async () => {
   if (sortComputed.value || curComponent.value.sort !== 'customSort') return
   let list = cloneDeep(curComponent.value.sortList || [])
@@ -1980,26 +2103,32 @@ const handleCustomClick = async () => {
   customSortFilterRef.value.sortInit([...new Set(list)])
 }
 
+// 判断排序字段与展示字段是否不一致，不一致时禁用自定义排序
 const sortComputed = computed(() => {
   const { sortId, displayId } = curComponent.value
   return sortId && displayId && sortId !== displayId
 })
 
+// 树形字段设计弹窗组件引用
 const treeDialog = ref()
+// 打开树形字段设计，仅允许维度文本字段作为层级字段
 const startTreeDesign = () => {
   treeDialog.value.init(
     curComponent.value.dataset.fields.filter(ele => ele.groupType === 'd' && ele.fieldType === 0),
     curComponent.value.treeFieldList
   )
 }
+// 保存树形层级字段，并同步每个层级的字段映射
 const saveTree = arr => {
   curComponent.value.treeFieldList = arr
   setSameField()
 }
 
+// 根据树形层级字段同步各组件字段映射，保证关系图每层都有可用配置
 const setSameField = () => {
   curComponent.value.treeFieldList.forEach((ele, index) => {
     if (!curComponent.value.treeCheckedList[index]) {
+      // 新增树层级时复制当前绑定关系作为初始值，减少逐层重复选择。
       curComponent.value.treeCheckedList = [
         ...curComponent.value.treeCheckedList,
         {
@@ -2022,6 +2151,7 @@ const setSameField = () => {
     curComponent.value.treeCheckedList[relationshipChartIndex.value].checkedFieldsMap
 }
 
+// 当前条件是否存在必填配置缺失，用于条件列表中的错误标记
 const showError = computed(() => {
   if (!curComponent.value) return false
   const {
@@ -2056,10 +2186,12 @@ const showError = computed(() => {
   }
   return (optionValueSource === 1 && !field.id) || (optionValueSource === 2 && !valueSource.length)
 })
+// 关闭默认值子组件内部弹层，避免点击父弹窗时保留悬浮层
 const handleDialogClick = () => {
   defaultConfigurationRef.value?.handleDialogClick()
 }
 
+// 单时间条件的相对当前时间快捷选项，按当前时间粒度生成
 const relativeToCurrentList = computed(() => {
   let list = []
   if (!curComponent.value) return list
@@ -2150,6 +2282,7 @@ const relativeToCurrentList = computed(() => {
   ]
 })
 
+// 时间范围条件的相对当前时间快捷选项，按范围粒度生成
 const relativeToCurrentListRange = computed(() => {
   let list = []
   if (!curComponent.value) return list
@@ -2237,6 +2370,7 @@ const relativeToCurrentListRange = computed(() => {
   ]
 })
 
+// 单时间粒度变化时同步相对时间单位和默认快捷选项
 const timeGranularityChange = (val: string) => {
   curComponent.value.relativeToCurrentType = ['date', 'datetime'].includes(val) ? 'date' : val
   if (curComponent.value.relativeToCurrent !== 'custom') {
@@ -2244,6 +2378,7 @@ const timeGranularityChange = (val: string) => {
   }
 }
 
+// 时间类型配置变化时，根据单时间或范围模式分发到对应粒度处理
 const handleTimeTypeChange = () => {
   if (curComponent.value.displayType === '1') {
     timeGranularityChange(curComponent.value.timeGranularity)
@@ -2252,6 +2387,7 @@ const handleTimeTypeChange = () => {
   }
 }
 
+// 时间范围粒度变化时同步起止时间单位，并初始化时间范围限制结构
 const timeGranularityMultipleChange = (val: string) => {
   handleDialogClick()
   curComponent.value.relativeToCurrentType = ['daterange', 'datetimerange'].includes(val)
@@ -2280,6 +2416,7 @@ const timeGranularityMultipleChange = (val: string) => {
     aroundRange: 'f'
   }
 }
+// 同步当前条件错误状态到条件对象，供列表和保存逻辑读取
 watch(
   () => showError.value,
   val => {
@@ -2288,10 +2425,13 @@ watch(
   }
 )
 
+// 收集重命名输入框引用，进入重命名后用于聚焦
 const setRenameInput = val => {
   renameInput.value.push(val)
 }
+// 树形关系图当前层级索引
 const relationshipChartIndex = ref(0)
+// 切换条件或树形关系层级，避免重复点击当前条件时丢失层级状态
 const notCurrentEle = (ele, index) => {
   if (activeCondition.value !== ele.id) {
     handleCondition(ele, index)
@@ -2300,12 +2440,14 @@ const notCurrentEle = (ele, index) => {
   }
 }
 
+// 保存当前树形层级的字段选择，切换层级前写回缓存
 const setRelationBack = () => {
   curComponent.value.treeCheckedList[relationshipChartIndex.value] = {
     checkedFields: [...curComponent.value.checkedFields],
     checkedFieldsMap: cloneDeep(curComponent.value.checkedFieldsMap)
   }
 }
+// 切换树形关系图层级，并恢复该层级对应的字段选择状态
 const handleRelationshipChart = (index, initShip = false) => {
   if (curComponent.value.treeCheckedList?.length && !initShip) {
     curComponent.value.treeCheckedList[relationshipChartIndex.value] = {
@@ -2341,6 +2483,7 @@ const handleRelationshipChart = (index, initShip = false) => {
   isIndeterminate.value = checkedCount > 0 && checkedCount < fields.value?.length
 }
 
+// 处理条件列表的删除和重命名命令
 const addOperation = (cmd, condition, index) => {
   switch (cmd) {
     case 'del':
@@ -2361,6 +2504,7 @@ const addOperation = (cmd, condition, index) => {
       break
   }
 }
+// 数据集树选择器字段映射配置
 const dsSelectProps = {
   label: 'name',
   children: 'children',
@@ -2368,6 +2512,7 @@ const dsSelectProps = {
   isLeaf: node => !node.children?.length
 }
 
+// 过滤数据集树中的空目录，只保留可选数据集叶子节点和含叶子的目录
 const dfs = arr => {
   return (arr || []).filter(ele => {
     if (!!ele.children?.length && !ele.leaf) {
@@ -2378,6 +2523,7 @@ const dfs = arr => {
   })
 }
 
+// 重命名输入框失焦后校验名称并写回条件列表
 const renameInputBlur = () => {
   if (activeConditionForRename.name.trim() === '') {
     ElMessage.error(t('v_query.cannot_be_empty_name'))
@@ -2394,16 +2540,19 @@ const renameInputBlur = () => {
   activeConditionForRename.id = ''
 }
 
+// 新增一个查询条件，并补齐当前版本所需的默认属性
 const addQueryCriteria = () => {
   relationshipChartIndex.value = 0
   conditions.value.push(parameterCompletion(addQueryCriteriaConfig()))
 }
 
+// 新增查询条件后立即选中，供弹窗内新增按钮使用
 const addQueryCriteriaAndSelect = () => {
   addQueryCriteria()
   handleCondition(conditions.value[conditions.value.length - 1])
 }
 
+// 对外新增条件并返回新条件 id，供画布工具栏调用后定位条件
 const addCriteriaConfig = () => {
   addQueryCriteria()
   return conditions.value[conditions.value.length - 1].id
@@ -2497,6 +2646,7 @@ defineExpose({
                 </div>
               </div>
               <template v-if="element.treeFieldList">
+                <!-- 树形查询条件在左侧额外展示层级节点，点击层级可维护该层关联图表。 -->
                 <div
                   :class="
                     element.id === activeCondition &&
@@ -2520,6 +2670,7 @@ defineExpose({
         </draggable>
       </div>
       <div v-if="!!curComponent" class="chart-field" :class="curComponent.auto && 'hidden'">
+        <!-- 字段绑定区控制查询条件作用到哪些图表字段，自动模式下只展示不可编辑遮罩。 -->
         <el-scrollbar>
           <div class="mask" v-if="curComponent.auto"></div>
           <div class="title flex-align-center">
@@ -2594,6 +2745,7 @@ defineExpose({
                   v-model="curComponent.checkedFieldsMapArr[field.componentId]"
                   clearable
                 >
+                  <!-- 时间范围参数最多选择两个字段，并通过字段后缀标记开始时间或结束时间。 -->
                   <template v-if="curComponent.checkedFieldsMap[field.componentId]" #prefix>
                     <el-icon>
                       <Icon
@@ -2700,6 +2852,7 @@ defineExpose({
                   v-model="curComponent.checkedFieldsMapArrNum[field.componentId]"
                   clearable
                 >
+                  <!-- 数值范围参数最多选择两个数值字段，并分别映射为最小值和最大值。 -->
                   <template v-if="curComponent.checkedFieldsMap[field.componentId]" #prefix>
                     <el-icon>
                       <Icon
@@ -2899,6 +3052,7 @@ defineExpose({
         class="condition-configuration"
         :class="curComponent.auto && 'condition-configuration_hide'"
       >
+        <!-- 条件配置区按展示类型收敛字段、参数、默认值和选项来源。 -->
         <el-scrollbar>
           <div class="mask condition" v-if="curComponent.auto"></div>
           <div class="title flex-align-center">
@@ -3148,6 +3302,7 @@ defineExpose({
                   </el-radio-group>
                 </div>
                 <template v-if="curComponent.optionValueSource === 1">
+                  <!-- 数据集来源模式通过查询字段、展示字段和排序字段共同定义下拉选项。 -->
                   <div class="value">
                     <el-tree-select
                       :teleported="false"
@@ -3378,6 +3533,7 @@ defineExpose({
                   </div>
                 </template>
                 <div v-if="curComponent.optionValueSource === 2" class="value flex-align-center">
+                  <!-- 手工输入模式先在弹层内编辑临时数组，确认后再写回当前条件。 -->
                   <el-popover
                     placement="bottom-start"
                     popper-class="manual-input"
@@ -3541,6 +3697,7 @@ defineExpose({
     </div>
     <template #footer>
       <div class="dialog-footer">
+        <!-- 级联配置属于跨条件高级行为，放在底部入口避免干扰单条件编辑流程。 -->
         <el-button class="query-cascade" @click="openCascadeDialog">{{
           t('v_query.component_cascade_configuration')
         }}</el-button>

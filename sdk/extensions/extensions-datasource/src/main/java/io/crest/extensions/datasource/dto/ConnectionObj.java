@@ -8,6 +8,7 @@ import lombok.Data;
 import java.sql.Connection;
 
 @Data
+// 定义接口请求或返回数据的传输结构
 public class ConnectionObj implements AutoCloseable {
 
 
@@ -17,6 +18,7 @@ public class ConnectionObj implements AutoCloseable {
     private DatasourceConfiguration configuration;
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void close() throws Exception {
         if (this.connection != null) {
             this.connection.close();

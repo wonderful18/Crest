@@ -48,6 +48,7 @@ const createI18nOptions = async (): Promise<I18nOptions> => {
   }
 }
 
+// 读取当前业务数据并返回处理结果
 const loadRemoteI18n = async (option: any) => {
   const name = option.lang.replace('-', '_')
   const path =
@@ -58,6 +59,7 @@ const loadRemoteI18n = async (option: any) => {
   return await import(/* @vite-ignore */ url)
 }
 
+// 更新当前配置并同步相关状态
 export const setupI18n = async (app: App<Element>) => {
   const options = await createI18nOptions()
   i18n = createI18n(options) as I18n

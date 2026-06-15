@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+// 定义当前业务对象的核心职责
 public class SQLObj {
     private String tableSchema;
     private String tableName;

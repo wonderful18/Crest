@@ -12,6 +12,7 @@ import java.util.List;
 
 @Tag(name = "系统设置:邮件设置")
 @ApiSupport(order = 799)
+// 定义模块接口契约和数据传输结构
 public interface EmailApi {
 
     @Operation(summary = "查询邮件设置")

@@ -7,14 +7,17 @@ import io.crest.plugins.template.CrestPlugin;
 import io.crest.plugins.vo.CrestPluginVO;
 import io.crest.utils.JsonUtil;
 
+// 定义插件扩展能力的基础类型
 public abstract class CrestChartPlugin extends AbstractChartPlugin implements CrestPlugin {
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void loadPlugin() {
         PluginViewVO viewConfig = getConfig();
         PluginsChartFactory.loadPlugin(viewConfig.getRender(), viewConfig.getChartValue(), this);
     }
 
+    // 读取配置并返回当前功能所需参数
     public PluginViewVO getConfig() {
         CrestPluginVO pluginInfo = null;
         try {

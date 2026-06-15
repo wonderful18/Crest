@@ -19,17 +19,24 @@ const props = withDefaults(defineProps<Props>(), {
   })
 })
 
+// 计算装饰边框的实际宽度
 const width = computed(() => props.curStyle.width)
+// 计算装饰边框的实际高度
 const height = computed(() => props.curStyle.height)
+// 控制装饰边框是否反向展示
 const reverse = computed(() => false)
 
+// 保存装饰边框默认渐变颜色
 const defaultColor = ref(['#805151', '#2862b7'])
+// 保存用户配置与默认颜色合并后的结果
 const mergedColor = ref<string[]>([])
 
+// 合并默认颜色和外部传入颜色
 const mergeColor = () => {
   mergedColor.value = customMergeColor(cloneDeep(defaultColor.value), props.color)
 }
 
+// 根据尺寸和缩放比例生成外层样式
 const border_style = computed(() => {
   return {
     width: `${width.value}px`,
@@ -40,6 +47,7 @@ const border_style = computed(() => {
   }
 })
 
+// 监听颜色配置变化并刷新合并颜色
 watch(() => props.color, mergeColor, { immediate: true })
 onMounted(mergeColor)
 </script>

@@ -3,11 +3,13 @@ import { h } from 'vue'
 import icon_expandDown_filled from '@/assets/svg/icon_expand-down_filled.svg'
 import { ElMenuItem, ElSubMenu } from 'element-plus-secondary'
 
+// 衔接当前组件交互和状态同步
 const title = props => {
   const { title } = props?.menu?.meta || {}
   return [h('span', null, { default: () => title })]
 }
 
+// 处理当前节点或条目的交互状态
 const HeaderMenuItem = props => {
   if (!props) return null
   const { children = [], hidden, path } = props?.menu || {}

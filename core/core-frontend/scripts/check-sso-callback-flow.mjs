@@ -3,12 +3,15 @@ import path from 'node:path'
 
 const root = path.resolve(new URL('..', import.meta.url).pathname)
 
+// 衔接当前组件交互和状态同步
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), 'utf8')
+// 衔接当前组件交互和状态同步
 const assertIncludes = (content, expected, label) => {
   if (!content.includes(expected)) {
     throw new Error(`${label}: missing ${expected}`)
   }
 }
+// 衔接当前组件交互和状态同步
 const assertNotIncludes = (content, expected, label) => {
   if (content.includes(expected)) {
     throw new Error(`${label}: should not include ${expected}`)

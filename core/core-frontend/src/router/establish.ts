@@ -2,6 +2,7 @@ import { isExternal } from '@/utils/validate'
 import { cloneDeep } from 'lodash'
 const modules = import.meta.glob('../views/**/*.vue')
 export const Layout = () => import('@/layout/index.vue')
+// 衔接当前组件交互和状态同步
 export const LayoutTransition = () => import('@/layout/components/LayoutTransition.vue')
 // 后端控制路由生成
 export const generateRoutesFn2 = (routes: AppCustomRouteRecordRaw[]): AppRouteRecordRaw[] => {
@@ -86,6 +87,7 @@ export const decorate = (router: AppCustomRouteRecordRaw): AppCustomRouteRecordR
   return parent
 }
 
+// 衔接当前组件交互和状态同步
 export const resolvePath = (item: AppRouteRecordRaw) => {
   // 如果是首页，就返回重定向路由
   if (item.path === '/') {

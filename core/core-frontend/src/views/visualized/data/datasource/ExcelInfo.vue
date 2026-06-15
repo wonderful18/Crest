@@ -14,7 +14,9 @@ withDefaults(
   }
 )
 
+// 定义组件向父级抛出的事件
 const emits = defineEmits(['del'])
+// 衔接当前组件交互和状态同步
 const del = () => {
   emits('del')
 }

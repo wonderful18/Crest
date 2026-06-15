@@ -17,6 +17,7 @@ import java.util.Map;
 
 @Tag(name = "图表管理:查看")
 @ApiSupport(order = 988)
+// 定义模块接口契约和数据传输结构
 public interface ChartViewApi {
     @Operation(summary = "查询图表详情并同时计算数据", hidden = true)
     @PostMapping("detail/{id}")

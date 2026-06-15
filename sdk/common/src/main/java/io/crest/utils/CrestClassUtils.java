@@ -1,7 +1,9 @@
 package io.crest.utils;
 
+// 提供当前模块复用的工具能力
 public class CrestClassUtils {
 
+    // 判断当前类型是否满足业务分类
     public static boolean isPrimitiveOrWrapper(Object obj) {
         if (obj == null) {
             return false;
@@ -17,6 +19,7 @@ public class CrestClassUtils {
         return isPrimitive(objClass);
     }
 
+    // 判断当前类型是否满足业务分类
     private static boolean isPrimitive(Class<?> clazz) {
         if (clazz.isPrimitive()) {
             return true;

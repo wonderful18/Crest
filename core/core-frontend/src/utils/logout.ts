@@ -9,6 +9,7 @@ const permissionStore = usePermissionStoreWithOut()
 const userStore = useUserStoreWithOut()
 const interactiveStore = interactiveStoreWithOut()
 
+// 整理输入数据并返回工具处理结果
 export const logoutHandler = (justClean?: boolean, save_platform_status = false) => {
   userStore.clear()
   userStore.$reset()
@@ -56,6 +57,7 @@ export const logoutHandler = (justClean?: boolean, save_platform_status = false)
   router.push(justClean ? queryRedirectPath : `/login?redirect=${queryRedirectPath}`)
 }
 
+// 移除当前数据并同步关联状态
 const removeCache = () => {
   const keys = Object.keys(wsCache['storage'])
   keys.forEach(key => {

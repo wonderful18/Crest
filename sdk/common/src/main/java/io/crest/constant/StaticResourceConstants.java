@@ -8,6 +8,7 @@ import java.io.File;
 import static io.crest.utils.StaticResourceUtils.ensureSuffix;
 
 
+// 定义当前业务对象的核心职责
 public class StaticResourceConstants {
 
     public static final String FILE_PROTOCOL = "file:";
@@ -35,6 +36,7 @@ public class StaticResourceConstants {
      */
     public static final String URL_SEPARATOR = "/";
 
+    // 执行当前服务方法并返回处理结果
     public static String getHomeData() {
         if (ModelUtils.isDesktop()) {
             return ConfigUtils.getConfig("crest.path.data", "/opt/crest/data");

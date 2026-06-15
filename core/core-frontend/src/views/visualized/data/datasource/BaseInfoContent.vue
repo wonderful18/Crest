@@ -9,6 +9,7 @@ defineProps({
   time: propTypes.number.def(0),
   showTime: propTypes.bool.def(false)
 })
+// 记录当前选中项和交互焦点
 const active = ref(true)
 const { t } = useI18n()
 defineExpose({

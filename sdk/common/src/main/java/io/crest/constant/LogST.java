@@ -2,6 +2,7 @@ package io.crest.constant;
 
 import java.util.Arrays;
 
+// 定义当前业务支持的枚举取值
 public enum LogST {
     PANEL(1, "SOURCE_TYPE_PANEL"),
     SCREEN(2, "SOURCE_TYPE_SCREEN"),
@@ -28,10 +29,12 @@ public enum LogST {
 
     private String name;
 
+    // 执行当前服务方法并返回处理结果
     public Integer getValue() {
         return value;
     }
 
+    // 执行当前服务方法并返回处理结果
     public String getName() {
         return name;
     }
@@ -41,6 +44,7 @@ public enum LogST {
         this.name = name;
     }
 
+    // 执行当前服务方法并返回处理结果
     public static LogST fromValue(Integer value) {
         return Arrays.stream(values()).filter(v -> v.value.equals(value)).findFirst().get();
     }

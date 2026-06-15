@@ -3,19 +3,24 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import type { ManipulateType, QUnitType } from 'dayjs'
 import quarterOfYear from 'dayjs/plugin/quarterOfYear'
+// 扩展 dayjs 的时间单位类型以支持季度快捷项
 type ManipulateTypeWithQuarter = ManipulateType | 'quarter'
+// 快捷项文案使用当前语言环境
 const { t } = useI18n()
 dayjs.extend(quarterOfYear)
 dayjs.locale('zh-cn')
 
+// 获取当前时间单位的起始时间
 function getThisStart(val = 'month' as ManipulateTypeWithQuarter) {
   return new Date(dayjs().startOf(val).format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取当前时间单位的结束时间
 function getThisEnd(val = 'month' as ManipulateTypeWithQuarter) {
   return new Date(dayjs().endOf(val).format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取上一个时间单位的起始时间
 function getLastStart(val = 'month' as ManipulateTypeWithQuarter) {
   return new Date(
     dayjs()
@@ -25,6 +30,7 @@ function getLastStart(val = 'month' as ManipulateTypeWithQuarter) {
   )
 }
 
+// 获取上一个时间单位的结束时间
 function getLastEnd(val = 'month' as ManipulateTypeWithQuarter) {
   return new Date(
     dayjs()
@@ -34,6 +40,7 @@ function getLastEnd(val = 'month' as ManipulateTypeWithQuarter) {
   )
 }
 
+// 获取下一个时间单位的起始时间
 function getNextStart(val = 'month' as ManipulateTypeWithQuarter) {
   return new Date(
     dayjs()
@@ -43,6 +50,7 @@ function getNextStart(val = 'month' as ManipulateTypeWithQuarter) {
   )
 }
 
+// 获取下一个时间单位的结束时间
 function getNextEnd(val = 'month' as ManipulateTypeWithQuarter) {
   return new Date(
     dayjs()
@@ -53,7 +61,9 @@ function getNextEnd(val = 'month' as ManipulateTypeWithQuarter) {
 }
 
 // eslint-disable-next-line
+// 外部传入的回调可拦截默认 pick 行为
 let callback: Function = () => {}
+// 日期范围选择器的预设快捷项列表
 const shortcuts = [
   {
     text: 'dynamic_time.cweek',
@@ -170,6 +180,7 @@ shortcuts.forEach(ele => {
   ele.text = t(ele.text)
 })
 
+// 注册快捷项回调并返回给日期范围选择器使用
 const useShortcuts = cb => {
   callback = cb
   return {

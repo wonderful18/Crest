@@ -12,6 +12,7 @@ import { setElementPlusLocale } from '@/plugins/element-plus'
 const mergeLocaleData = (baseLocale: any, customData: any) => {
   const merged = JSON.parse(JSON.stringify(baseLocale || {}))
 
+  // 更新状态仓库中的业务数据
   const mergeRecursive = (obj: any, source: any) => {
     for (const key of Object.keys(source || {})) {
       if (key === '__proto__' || key === 'prototype' || key === 'constructor') {
@@ -167,6 +168,7 @@ export const useLocaleStore = defineStore('locales', {
   }
 })
 
+// 更新状态仓库中的业务数据
 export const useLocaleStoreWithOut = () => {
   return useLocaleStore(store)
 }

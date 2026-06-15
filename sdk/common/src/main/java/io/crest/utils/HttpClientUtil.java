@@ -48,11 +48,20 @@ import java.util.stream.Collectors;
 
 import static io.crest.result.ResultCode.SYSTEM_INNER_ERROR;
 
+/**
+ * HTTP 客户端工具，封装通用请求、下载、上传和响应解析能力
+ */
 @SuppressWarnings({"deprecation", "unchecked"})
 public class HttpClientUtil {
 
+    /**
+     * 统一记录 HTTP 请求和连接关闭异常
+     */
     private static Logger logger = LoggerFactory.getLogger(HttpClientUtil.class);
 
+    /**
+     * HTTPS 协议前缀，用于选择 TLS 客户端构造路径
+     */
     private static final String HTTPS = "https";
 
     /**
@@ -77,6 +86,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 按是否启用 TLS 构建底层 HTTP 客户端
+     */
     private static CloseableHttpClient buildHttpClient(boolean ssl) {
         try {
             if (ssl) {
@@ -100,6 +112,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 校验目标地址是否可访问，并复用请求配置中的超时和请求头
+     */
     public static boolean validateUrl(String url, HttpClientConfig config) {
         CloseableHttpClient httpClient = null;
         try {
@@ -175,6 +190,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 发送 JSON PATCH 请求并返回响应文本
+     */
     public static String patch(String url, String json, HttpClientConfig config) {
         CloseableHttpClient httpClient = buildHttpClient(url);
         HttpPatch httpPatch = new HttpPatch(url);
@@ -247,6 +265,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 发送 JSON POST 请求并保留完整响应头和状态
+     */
     public static HttpResponse postWithHeaders(String url, String json, HttpClientConfig config) {
         CloseableHttpClient httpClient = null;
         try {
@@ -282,6 +303,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 发送 JSON PUT 请求并返回响应文本
+     */
     public static String put(String url, String json, HttpClientConfig config) {
         CloseableHttpClient httpClient = null;
         try {
@@ -368,6 +392,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 将 HTTP 响应转换为字符串，并把错误状态码转换成异常
+     */
     private static String getResponseStr(HttpResponse response, HttpClientConfig config) throws Exception {
         if (response.getStatusLine().getStatusCode() >= 400) {
             String msg = EntityUtils.toString(response.getEntity(), config.getCharset());
@@ -379,6 +406,9 @@ public class HttpClientUtil {
         return EntityUtils.toString(response.getEntity(), config.getCharset());
     }
 
+    /**
+     * 下载远程文件到指定目录，并返回原始文件名和本地转换文件名
+     */
     public static Map<String, String> downloadFile(String url, HttpClientConfig config, String path) {
         validateRemoteDownloadUrl(url);
         String encodeUIl = url;
@@ -423,6 +453,9 @@ public class HttpClientUtil {
         return name;
     }
 
+    /**
+     * 校验远程下载地址协议和主机范围，阻断本地或私有地址访问
+     */
     public static void validateRemoteDownloadUrl(String url) {
         try {
             URI uri = URI.create(url);
@@ -436,6 +469,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 解析主机地址并校验是否允许远程下载访问
+     */
     public static void assertRemoteHostAllowed(String host) throws UnknownHostException {
         if (StringUtils.isBlank(host) || host.contains("/") || host.contains("\\") || host.contains("@")) {
             throw new UnknownHostException("invalid host");
@@ -458,6 +494,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 规范化主机名，去除 IPv6 方括号或 URL 中携带的端口
+     */
     private static String normalizeLookupHost(String host) {
         String value = host.trim();
         if (value.startsWith("[") && value.contains("]")) {
@@ -471,6 +510,9 @@ public class HttpClientUtil {
         return value;
     }
 
+    /**
+     * 优先从响应头提取文件名，缺失时回退到下载地址路径
+     */
     private static String extractFileName(HttpResponse response, String url) {
         url = URLDecoder.decode(url);
         String fileName = "";
@@ -495,11 +537,17 @@ public class HttpClientUtil {
         return fileName;
     }
 
+    /**
+     * 使用默认配置下载远程资源为字节数组
+     */
     public static byte[] downloadBytes(String url) {
         HttpClientConfig config = new HttpClientConfig();
         return HttpClientUtil.downFromRemote(url, config);
     }
 
+    /**
+     * 按指定请求配置下载远程资源为字节数组
+     */
     public static byte[] downFromRemote(String url, HttpClientConfig config) {
         validateRemoteDownloadUrl(url);
         try (CloseableHttpClient httpClient = buildHttpClient(url)) {
@@ -529,6 +577,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 以 multipart 形式上传字节数组文件和附加表单参数
+     */
     public static String postFile(String fileServer, byte[] bytes, String fileName, Map<String, String> param, HttpClientConfig config) {
         CloseableHttpClient httpClient = buildHttpClient(fileServer);
         HttpPost postRequest = new HttpPost(fileServer);
@@ -566,12 +617,18 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 上传内存中的文件内容，并把对象型请求头转换为字符串请求头
+     */
     public static String upload(String url, byte[] bytes, String name, Map<String, String> paramMap, Map<String, Object> headMap) {
         HttpClientConfig config = new HttpClientConfig();
         addHead(config, headMap);
         return HttpClientUtil.postFile(url, bytes, name, paramMap, config);
     }
 
+    /**
+     * 上传本地文件并携带媒体文件标识
+     */
     public static String upload(String url, File file, String name) {
         HttpClientConfig config = new HttpClientConfig();
         Map<String, String> param = new HashMap<>();
@@ -580,6 +637,9 @@ public class HttpClientUtil {
         return HttpClientUtil.postFile(url, file, param, config);
     }
 
+    /**
+     * 以 multipart 形式上传本地文件和附加表单参数
+     */
     public static String postFile(String fileServer, File file, Map<String, String> param, HttpClientConfig config) {
         CloseableHttpClient httpClient = buildHttpClient(fileServer);
         HttpPost postRequest = new HttpPost(fileServer);
@@ -616,6 +676,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 将外部传入的请求头对象写入 HTTP 配置
+     */
     private static void addHead(HttpClientConfig config, Map<String, Object> headMap) {
         if (MapUtils.isEmpty(headMap)) return;
         for (Map.Entry<String, Object> entry : headMap.entrySet()) {
@@ -623,6 +686,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 发送 DELETE 请求并返回响应文本
+     */
     public static String delete(String url, HttpClientConfig config) {
         CloseableHttpClient httpClient = null;
         try {
@@ -654,6 +720,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 使用轻量 GET 请求检测目标地址是否可达
+     */
     public static boolean isURLReachable(String urlString, Map<String, String> head) {
         try {
             URL url = new URL(urlString);
@@ -678,6 +747,9 @@ public class HttpClientUtil {
         return false; // 如果发生异常或状态码不是200，则URL不可达
     }
 
+    /**
+     * 按内容类型发送 webhook 请求，支持 JSON 和表单编码
+     */
     public static String postWebhook(String url, String contentType, Map<String, Object> param, boolean ssl, HttpClientConfig config) {
 
         CloseableHttpClient httpClient = null;
@@ -727,6 +799,9 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 请求截图服务并解析 multipart 响应中的元数据和图片内容
+     */
     public static MultipartResponse postForScreenshot(
             String url, Map<String,String> body, HttpClientConfig config) throws IOException {
         CloseableHttpClient httpClient = null;
@@ -767,13 +842,22 @@ public class HttpClientUtil {
         }
     }
 
+    /**
+     * 截图服务 multipart 响应内容
+     */
     @Data
     public static class MultipartResponse {
         Map<String,Object> metadata;
         byte[] image;
     }
 
+    /**
+     * multipart 响应解析器，用于拆分元数据和图片二进制内容
+     */
     public class MultipartParser {
+        /**
+         * 按响应边界解析 multipart 响应体
+         */
         public static   MultipartResponse parse(byte[] body, String contentType) throws IOException {
             String boundary = extractBoundary(contentType);
             String delim = "--" + boundary;
@@ -815,6 +899,9 @@ public class HttpClientUtil {
             return resp;
         }
 
+        /**
+         * 从 multipart 内容类型中提取边界字符串
+         */
         private static String extractBoundary(String contentType) {
             Pattern p = Pattern.compile("boundary=(.*)");
             Matcher m = p.matcher(contentType);
@@ -824,6 +911,9 @@ public class HttpClientUtil {
             throw new IllegalArgumentException("No boundary in content-type");
         }
 
+        /**
+         * 在字节数组中查找目标字节序列的位置
+         */
         private static int indexOf(byte[] array, byte[] target, int start) {
             outer:
             for (int i = start; i <= array.length - target.length; i++) {

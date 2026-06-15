@@ -11,15 +11,24 @@ import java.util.Base64;
 
 import static io.crest.constant.StaticResourceConstants.*;
 
+/**
+ * 静态资源路径和图片编码工具
+ */
 @SuppressWarnings("deprecation")
 public class StaticResourceUtils {
 
     private final static String FILE_BASE_PATH = USER_HOME + FILE_SEPARATOR + UPLOAD_URL_PREFIX;
 
+    /**
+     * 确保字符串同时包含相同的前缀和后缀
+     */
     public static String ensureBoth(@NonNull String string, @NonNull String bothfix) {
         return ensureBoth(string, bothfix, bothfix);
     }
 
+    /**
+     * 确保字符串同时包含指定前缀和后缀
+     */
     public static String ensureBoth(@NonNull String string, @NonNull String prefix,
                                     @NonNull String suffix) {
         return ensureSuffix(ensurePrefix(string, prefix), suffix);

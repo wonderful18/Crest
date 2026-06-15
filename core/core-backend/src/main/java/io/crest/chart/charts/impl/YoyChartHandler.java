@@ -27,6 +27,9 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings("unchecked")
 public class YoyChartHandler extends DefaultChartHandler {
+    /**
+     * 扩展同环比过滤器，保留原始过滤条件用于后续数据回收
+     */
     @Override
     public <T extends CustomFilterResult> T customFilter(ChartViewDTO view, List<ChartExtFilterDTO> filterList, AxisFormatResult formatResult) {
         var result = super.customFilter(view, filterList, formatResult);
@@ -44,6 +47,9 @@ public class YoyChartHandler extends DefaultChartHandler {
         return (T) result;
     }
 
+    /**
+     * 构建同环比图表结果，带过滤场景先返回原始数据
+     */
     @Override
     public Map<String, Object> buildResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
         var yoyFiltered = filterResult.getContext().get("yoyFiltered") != null;
@@ -69,6 +75,9 @@ public class YoyChartHandler extends DefaultChartHandler {
         return super.buildResult(view, formatResult, filterResult, data);
     }
 
+    /**
+     * 计算同环比数据，并在过滤场景下回收实际命中的维度数据
+     */
     @Override
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         var dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
@@ -127,6 +136,9 @@ public class YoyChartHandler extends DefaultChartHandler {
         return expandedResult;
     }
 
+    /**
+     * 按图表维度或指标排序设置对同环比原始数据排序
+     */
     public static List<String[]> sortData(ChartViewDTO view, List<String[]> data, AxisFormatResult formatResult) {
         // 维度排序
         List<ChartViewFieldDTO> xAxisSortList = view.getXAxis().stream().filter(x -> !Strings.CI.equals("none", x.getSort())).toList();
@@ -155,6 +167,9 @@ public class YoyChartHandler extends DefaultChartHandler {
 
     }
 
+    /**
+     * 按指定列将数据行转换为数值后排序
+     */
     public static List<String[]> sortData(List<String[]> data, boolean ascending, int index) {
         Comparator<String[]> comparator;
         if (ascending) {
@@ -165,6 +180,9 @@ public class YoyChartHandler extends DefaultChartHandler {
         return data.stream().sorted(comparator).collect(Collectors.toList());
     }
 
+    /**
+     * 将字符串安全转换为 BigDecimal
+     */
     private static BigDecimal toBigDecimal(String value) {
         if (value == null) {
             return null;
@@ -176,6 +194,9 @@ public class YoyChartHandler extends DefaultChartHandler {
         }
     }
 
+    /**
+     * 查找字段 ID 在字段列表中的位置
+     */
     public static int findIndex(List<ChartViewFieldDTO> list, Long id) {
         for (int i = 0; i < list.size(); i++) {
             if (Strings.CI.equals(list.get(i).getId().toString(), id.toString())) {

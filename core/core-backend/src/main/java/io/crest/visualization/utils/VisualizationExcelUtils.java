@@ -21,11 +21,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @SuppressWarnings("deprecation")
+// 提供当前模块复用的工具能力
 public class VisualizationExcelUtils {
 
     private static final String suffix = ".xlsx";
     private static final String BASE_ROOT = getBaseRoot();
 
+    // 执行当前服务方法并返回处理结果
     public static String getBaseRoot() {
         if (ModelUtils.isDesktop()) {
             return ConfigUtils.getConfig("crest.path.report", "/opt/crest/data/report/");
@@ -34,6 +36,7 @@ public class VisualizationExcelUtils {
         }
     }
 
+    // 执行当前服务方法并返回处理结果
     public static File exportExcel(List<ExcelSheetModel> sheets, String fileName, String folderId) throws Exception {
         AtomicReference<String> realFileName = new AtomicReference<>(fileName);
         Workbook wb = new SXSSFWorkbook();

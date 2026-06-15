@@ -43,49 +43,110 @@ import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.Future;
 
+/**
+ * 导出中心管理服务，负责导出任务创建、下载授权、任务清理、重试和导出文件水印处理
+ */
 @Component
 @Transactional(rollbackFor = Exception.class)
 public class ExportCenterManage implements BaseExportApi {
+    /**
+     * 导出任务主表访问器
+     */
     @Resource
     private CoreExportTaskMapper exportTaskMapper;
+    /**
+     * 下载票据临时表访问器
+     */
     @Resource
     private CoreExportDownloadTaskMapper coreExportDownloadTaskMapper;
+    /**
+     * 导出任务扩展查询访问器
+     */
     @Resource
     private ExportTaskExtMapper exportTaskExtMapper;
+    /**
+     * 数据集分组服务，用于导出前补齐数据集名称和 SQL 上下文
+     */
     @Resource
     private DatasetGroupManage datasetGroupManage;
+    /**
+     * 数据集 SQL 服务，用于校验数据集是否具备可导出 SQL
+     */
     @Resource
     private DatasetSQLManage datasetSQLManage;
+    /**
+     * 可视化服务，用于解析图表或面板的完整路径
+     */
     @Resource
     DataVisualizationServer dataVisualizationServer;
+    /**
+     * 导出任务实际执行与文件下载服务
+     */
     @Resource
     private ExportCenterDownLoadManage exportCenterDownLoadManage;
+    /**
+     * 系统参数服务，用于读取导出文件保留时间等配置
+     */
     @Resource
     private SysParameterManage sysParameterManage;
+    /**
+     * 导出线程池核心线程数配置
+     */
     @Value("${crest.export.core.size:10}")
     private int core;
+    /**
+     * 导出线程池最大线程数配置
+     */
     @Value("${crest.export.max.size:10}")
     private int max;
 
+    /**
+     * 导出文件根目录
+     */
     @Value("${crest.path.exportData:/opt/crest/data/exportData/}")
     private String exportData_path;
+    /**
+     * 可视化水印配置访问器
+     */
     @Resource
     private VisualizationWatermarkMapper watermarkMapper;
+    /**
+     * 可视化扩展查询访问器，用于水印中补充当前用户信息
+     */
     @Resource
     private ExtDataVisualizationMapper visualizationMapper;
+    /**
+     * 旧版导出文件按原文件名落盘，该时间点之前的任务需要兼容旧路径
+     */
     private static final long LEGACY_EXPORT_FILE_TIME = 1730277243491L;
+    /**
+     * 导出任务列表允许过滤的状态集合
+     */
     static private List<String> STATUS = Arrays.asList("SUCCESS", "FAILED", "PENDING", "IN_PROGRESS", "ALL");
+    /**
+     * 当前进程持有的运行中任务句柄，用于删除任务时尝试取消执行
+     */
     private Map<String, Future> Running_Task = new HashMap<>();
+
+    /**
+     * 校验一次性下载票据并输出导出文件
+     */
     public void download(String id, String ticket, HttpServletResponse response) throws Exception {
         CoreExportTask exportTask = validateDownloadTask(id, ticket);
         exportCenterDownLoadManage.download(exportTask, response);
     }
 
+    /**
+     * 删除当前用户自己的单个导出任务和对应文件
+     */
     public void delete(String id) {
         CoreExportTask exportTask = getCurrentUserExportTask(id);
         deleteTask(exportTask);
     }
 
+    /**
+     * 按状态批量删除当前用户的导出任务
+     */
     public void deleteAll(String type) {
         if (!STATUS.contains(type)) {
             CrestException.throwException("无效的状态");
@@ -101,10 +162,16 @@ public class ExportCenterManage implements BaseExportApi {
 
     }
 
+    /**
+     * 批量删除指定任务编号列表，仍逐个校验当前用户归属
+     */
     public void delete(List<String> ids) {
         ids.forEach(this::delete);
     }
 
+    /**
+     * 重试失败的导出任务，并按原任务类型重新进入导出执行流程
+     */
     public void retry(String id) {
         CoreExportTask exportTask = getCurrentUserExportTask(id);
         if (!exportTask.getExportStatus().equalsIgnoreCase("FAILED")) {
@@ -139,6 +206,9 @@ public class ExportCenterManage implements BaseExportApi {
         }
     }
 
+    /**
+     * 分页查询当前用户导出任务，并补齐资源路径和组织信息
+     */
     public IPage<ExportTaskDTO> pager(Page<ExportTaskDTO> page, String status) {
         if (!STATUS.contains(status)) {
             CrestException.throwException("Invalid status: " + status);
@@ -167,6 +237,9 @@ public class ExportCenterManage implements BaseExportApi {
         return pager;
     }
 
+    /**
+     * 统计当前用户各状态导出任务数量
+     */
     public Map<String, Long> exportTasks() {
         Long currentUserId = currentUserId();
         expireMissingSuccessTasks(currentUserId);
@@ -197,13 +270,22 @@ public class ExportCenterManage implements BaseExportApi {
         return result;
     }
 
+    /**
+     * 预留的组织信息补全入口，通过代理调用保留事务和扩展点
+     */
     public void setOrg(ExportTaskDTO exportTaskDTO) {
     }
 
+    /**
+     * 获取当前 Spring 代理实例，避免类内调用绕过代理增强
+     */
     private ExportCenterManage proxy() {
         return CommonBeanFactory.getBean(ExportCenterManage.class);
     }
 
+    /**
+     * 按导出来源类型补齐资源完整路径名称
+     */
     private void setExportFromAbsName(ExportTaskDTO exportTaskDTO) {
         if (exportTaskDTO.getExportFromType().equalsIgnoreCase("chart")) {
             exportTaskDTO.setExportFromName(dataVisualizationServer.getAbsPath(exportTaskDTO.getExportFrom()));
@@ -217,6 +299,9 @@ public class ExportCenterManage implements BaseExportApi {
         }
     }
 
+    /**
+     * 读取当前主机名，导出任务会记录执行机器便于排查
+     */
     private String hostName() {
         String hostname = null;
         try {
@@ -228,10 +313,16 @@ public class ExportCenterManage implements BaseExportApi {
         return hostname;
     }
 
+    /**
+     * 根据任务编号生成该任务的导出文件目录
+     */
     private String taskDirectoryPath(String taskId) {
         return new File(exportData_path, taskId).getPath();
     }
 
+    /**
+     * 创建图表或可视化资源导出任务，并立即提交到对应执行入口
+     */
     public void addTask(String exportFrom, String exportFromType, ChartExcelRequest request, String busiFlag) {
         Long currentUserId = currentUserId();
         CoreExportTask exportTask = new CoreExportTask();
@@ -254,6 +345,9 @@ public class ExportCenterManage implements BaseExportApi {
 
     }
 
+    /**
+     * 创建数据集导出任务，提交前会校验数据集 SQL 是否完整
+     */
     public void addTask(Long exportFrom, String exportFromType, DataSetExportRequest request) throws Exception {
         prepareDatasetExportRequest(exportFrom, request);
         Long currentUserId = currentUserId();
@@ -272,6 +366,9 @@ public class ExportCenterManage implements BaseExportApi {
         exportCenterDownLoadManage.startDatasetTask(exportTask, request);
     }
 
+    /**
+     * 补齐数据集导出请求的文件名，并校验数据集能生成导出 SQL
+     */
     private void prepareDatasetExportRequest(Long exportFrom, DataSetExportRequest request) throws Exception {
         DatasetGroupInfoDTO dataset = datasetGroupManage.datasetGroupInfoDTO(exportFrom, null);
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(dataset, null);
@@ -283,6 +380,9 @@ public class ExportCenterManage implements BaseExportApi {
         }
     }
 
+    /**
+     * 对外部 API 创建导出任务，仅入库等待后续调度处理
+     */
     @Override
     public void addTask(String exportFromId, String exportFromType, HashMap<String, Object> request, Long userId, Long org) {
         CoreExportTask exportTask = new CoreExportTask();
@@ -300,6 +400,9 @@ public class ExportCenterManage implements BaseExportApi {
         exportTaskMapper.insert(exportTask);
     }
 
+    /**
+     * 清理超过系统保留期的导出任务和文件
+     */
     public void cleanLog() {
         String key = "basic.exportFileLiveTime";
         String val = sysParameterManage.singleVal(key);
@@ -316,19 +419,26 @@ public class ExportCenterManage implements BaseExportApi {
 
     }
 
+    /**
+     * 按系统默认水印配置给 Excel 工作簿追加水印
+     */
     public void addWatermarkTools(Workbook wb) {
         VisualizationWatermark watermark = watermarkMapper.selectById("system_default");
         WatermarkContentDTO watermarkContent = JsonUtil.parseObject(watermark.getSettingContent(), WatermarkContentDTO.class);
         if (watermarkContent.getEnable() && watermarkContent.getExcelEnable()) {
             UserFormVO userInfo = visualizationMapper.queryInnerUserInfo(currentUserId());
-            // 在主逻辑中添加水印
-            int watermarkPictureIdx = ExcelWatermarkUtils.addWatermarkImage(wb, watermarkContent, userInfo); // 生成水印图片并获取 ID
+            // 水印图片只生成一次，后续复用同一个图片编号写入所有 Sheet
+            int watermarkPictureIdx = ExcelWatermarkUtils.addWatermarkImage(wb, watermarkContent, userInfo);
             for (Sheet sheet : wb) {
-                ExcelWatermarkUtils.addWatermarkToSheet(sheet, watermarkPictureIdx); // 为每个 Sheet 添加水印
+                // 每个 Sheet 都要显式挂载水印，否则多 Sheet 导出只会首个表生效
+                ExcelWatermarkUtils.addWatermarkToSheet(sheet, watermarkPictureIdx);
             }
         }
     }
 
+    /**
+     * 为成功任务生成一次性下载地址，并刷新下载票据有效期
+     */
     public String generateDownloadUri(String id) {
         CoreExportTask exportTask = getCurrentUserExportTask(id);
         ensureDownloadableTask(exportTask);
@@ -351,6 +461,9 @@ public class ExportCenterManage implements BaseExportApi {
     }
 
 
+    /**
+     * 定时清理过期下载票据，下载链接失效后不再允许继续访问文件
+     */
     @Scheduled(fixedRate = 60 * 60 * 1000)
     public void checkDownLoadInfos() {
         coreExportDownloadTaskMapper.selectList(null).forEach(downLoadInfo -> {
@@ -360,13 +473,19 @@ public class ExportCenterManage implements BaseExportApi {
         });
     }
 
+    /**
+     * 下载票据展示对象，validTime 单位为分钟
+     */
     @Data
     public class DownLoadInfo {
         String id;
-        Long validTime; // 单位：minutes
+        Long validTime;
         Long createTime;
     }
 
+    /**
+     * 读取当前用户自己的导出任务，不存在或越权时按不存在处理
+     */
     private CoreExportTask getCurrentUserExportTask(String id) {
         Long currentUserId = currentUserId();
         CoreExportTask exportTask = exportTaskMapper.selectById(id);
@@ -376,6 +495,9 @@ public class ExportCenterManage implements BaseExportApi {
         return exportTask;
     }
 
+    /**
+     * 删除任务记录、导出目录，并尝试取消当前进程中的运行任务
+     */
     private void deleteTask(CoreExportTask exportTask) {
         if (exportTask == null) {
             return;
@@ -393,6 +515,9 @@ public class ExportCenterManage implements BaseExportApi {
         exportTaskMapper.deleteById(id);
     }
 
+    /**
+     * 校验下载票据、任务归属和有效期，校验通过后票据立即失效
+     */
     private CoreExportTask validateDownloadTask(String id, String ticket) {
         if (StringUtils.isBlank(ticket)) {
             CrestException.throwException(Translator.get("i18n_download_link_invalid"));
@@ -429,6 +554,9 @@ public class ExportCenterManage implements BaseExportApi {
         return exportTask;
     }
 
+    /**
+     * 将已成功但文件丢失的任务标记为失败，避免列表继续展示可下载状态
+     */
     private void expireMissingSuccessTasks(Long userId) {
         QueryWrapper<CoreExportTask> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId);
@@ -440,6 +568,9 @@ public class ExportCenterManage implements BaseExportApi {
         });
     }
 
+    /**
+     * 下载前检查成功任务文件是否存在，缺失时同步更新任务状态
+     */
     private void failIfExportFileMissing(CoreExportTask exportTask) {
         if (exportTask != null && "SUCCESS".equalsIgnoreCase(exportTask.getExportStatus()) && !exportFileExists(exportTask)) {
             markExportFileMissing(exportTask);
@@ -447,6 +578,9 @@ public class ExportCenterManage implements BaseExportApi {
         }
     }
 
+    /**
+     * 校验任务是否可下载，失败任务优先返回任务自身错误信息
+     */
     private void ensureDownloadableTask(CoreExportTask exportTask) {
         if ("SUCCESS".equalsIgnoreCase(exportTask.getExportStatus())) {
             failIfExportFileMissing(exportTask);
@@ -458,6 +592,9 @@ public class ExportCenterManage implements BaseExportApi {
         CrestException.throwException(Translator.get("i18n_export_task_not_success"));
     }
 
+    /**
+     * 将文件缺失的成功任务转为失败，并删除对应下载票据
+     */
     private void markExportFileMissing(CoreExportTask exportTask) {
         exportTask.setExportStatus("FAILED");
         exportTask.setExportProgress("100");
@@ -466,10 +603,16 @@ public class ExportCenterManage implements BaseExportApi {
         coreExportDownloadTaskMapper.deleteById(exportTask.getId());
     }
 
+    /**
+     * 判断任务导出文件是否仍存在于文件系统
+     */
     private boolean exportFileExists(CoreExportTask exportTask) {
         return resolveExportFile(exportTask).isFile();
     }
 
+    /**
+     * 根据任务时间兼容新旧导出文件命名规则
+     */
     private File resolveExportFile(CoreExportTask exportTask) {
         String fileName = exportTask.getExportTime() != null && exportTask.getExportTime() < LEGACY_EXPORT_FILE_TIME
                 ? exportTask.getFileName()
@@ -477,6 +620,9 @@ public class ExportCenterManage implements BaseExportApi {
         return new File(taskDirectoryPath(exportTask.getId()), fileName);
     }
 
+    /**
+     * 生成带任务编号、用户编号和创建时间的一次性下载票据
+     */
     private String buildDownloadTicket(CoreExportTask exportTask, long createTime, Long validTime) {
         Map<String, Object> claims = new LinkedHashMap<>();
         claims.put("taskId", exportTask.getId());
@@ -485,10 +631,16 @@ public class ExportCenterManage implements BaseExportApi {
         return SignedTokenUtils.sign(claims, resolveTicketSecret(exportTask), new Date(createTime + validTime * 60 * 1000));
     }
 
+    /**
+     * 根据系统密钥和用户编号派生下载票据密钥，避免不同用户票据互通
+     */
     private String resolveTicketSecret(CoreExportTask exportTask) {
         return SubstituleLoginConfig.getTokenSecret() + ":" + exportTask.getUserId();
     }
 
+    /**
+     * 读取当前登录用户编号，导出中心所有用户态操作都依赖该值隔离任务
+     */
     private Long currentUserId() {
         TokenUserBO user = AuthUtils.getUser();
         if (user == null || user.getUserId() == null) {

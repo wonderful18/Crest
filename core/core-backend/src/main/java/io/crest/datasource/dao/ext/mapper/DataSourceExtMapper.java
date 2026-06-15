@@ -6,6 +6,7 @@ import io.crest.datasource.dao.ext.po.DataSourceNodePO;
 import org.apache.ibatis.annotations.*;
 
 @Mapper
+// 定义当前业务对象的核心职责
 public interface DataSourceExtMapper extends BaseMapper<DataSourceNodePO> {
 
 

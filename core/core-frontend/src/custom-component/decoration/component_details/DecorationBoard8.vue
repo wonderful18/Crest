@@ -3,6 +3,9 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { customMergeColor } from '@/custom-component/decoration/component_details/config'
 import { cloneDeep } from 'lodash-es'
 
+/**
+ * 装饰边框 8 的样式和动画入参
+ */
 interface Props {
   color?: string[]
   backgroundColor?: string
@@ -11,6 +14,9 @@ interface Props {
   duration?: number
 }
 
+/**
+ * 组件属性默认值
+ */
 const props = withDefaults(defineProps<Props>(), {
   color: () => [],
   backgroundColor: 'transparent',
@@ -21,30 +27,66 @@ const props = withDefaults(defineProps<Props>(), {
   duration: 3
 })
 
+/**
+ * 边框实际宽度
+ */
 const width = computed(() => props.curStyle.width)
+/**
+ * 边框实际高度
+ */
 const height = computed(() => props.curStyle.height)
+/**
+ * 动态发光边框动画时长
+ */
 const dur = computed(() => props.duration)
 
+/**
+ * 默认边框配色
+ */
 const defaultColor = ref(['#2862b7', '#2862b7'])
+/**
+ * 与外部配置合并后的最终配色
+ */
 const mergedColor = ref<string[]>([])
 
-// 生成唯一ID
+// 生成唯一 ID，避免同屏多个 SVG 定义互相冲突
 const generateId = () => Math.random().toString(36).substring(2, 11)
+/**
+ * SVG 路径定义 ID
+ */
 const pathId = `path-${generateId()}`
+/**
+ * SVG 渐变定义 ID
+ */
 const gradientId = `gradient-${generateId()}`
+/**
+ * SVG 遮罩定义 ID
+ */
 const maskId = `mask-${generateId()}`
 
+/**
+ * 合并默认配色和组件自定义配色
+ */
 const mergeColor = () => {
   mergedColor.value = customMergeColor(cloneDeep(defaultColor.value), props.color)
 }
 
+/**
+ * 根据当前宽高生成矩形路径
+ */
 const pathD = computed(() => {
   return `M2.5,2.5 L${width.value - 2.5},2.5 L${width.value - 2.5},${height.value - 2.5} L2.5,${
     height.value - 2.5
   } L2.5,2.5`
 })
+/**
+ * 动态边框描边动画使用的路径长度
+ */
 const pathLength = computed(() => Math.max((width.value + height.value - 10) * 2, 0))
 
+/**
+ * 外层边框容器样式
+ */
 const border_style = computed(() => {
   return {
     width: `${width.value}px`,

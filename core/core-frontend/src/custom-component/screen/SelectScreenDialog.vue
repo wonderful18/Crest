@@ -2,16 +2,20 @@
 import { computed, reactive, ref } from 'vue'
 import { queryTreeApi } from '@/api/visualization/dataVisualization'
 import { filterEmptyFolderTree } from '@/utils/canvasUtils'
+// 控制资源选择弹窗的显示状态
 const dialogVisible = ref(false)
 import dvDashboardSpine from '@/assets/svg/dv-dashboard-spine.svg'
 import dvFolder from '@/assets/svg/dv-folder.svg'
 import { useI18n } from '@/hooks/web/useI18n'
+// 处理弹窗关闭事件并同步显示状态
 const closeHandler = () => {
   dialogVisible.value = false
 }
 const { t } = useI18n()
+// 声明资源选中确认时向父组件派发的事件
 const emits = defineEmits(['selectConfirm'])
 
+// 保存弹窗资源树、当前选中资源和资源类型
 const state = reactive<any>({
   panelList: [],
   dvSelectProps: {
@@ -24,10 +28,12 @@ const state = reactive<any>({
   curScreenId: null,
   dvType: 'dashboard'
 })
+// 根据资源类型生成弹窗标题中的资源名称
 const canvasTypeName = computed(() =>
   state.dvType === 'dataV' ? t('work_branch.big_data_screen') : t('work_branch.dashboard')
 )
 
+// 初始化弹窗参数并加载对应资源树
 const init = param => {
   const { dvType, screenId } = param
   state.dvType = dvType
@@ -36,6 +42,7 @@ const init = param => {
   loadRTree(dvType)
 }
 
+// 加载指定业务类型下的资源树并过滤空文件夹
 const loadRTree = dvType => {
   const request = { busiFlag: dvType, resourceTable: 'core' }
   queryTreeApi(request).then((rsp: any) => {
@@ -49,16 +56,19 @@ const loadRTree = dvType => {
   })
 }
 
+// 点击可用叶子节点时更新当前选中的资源
 const dvNodeClick = data => {
   if (data.leaf && data.id !== state.curScreenId) {
     state.curScreenId = data.id
   }
 }
 
+// 关闭资源选择弹窗
 const close = () => {
   dialogVisible.value = false
 }
 
+// 确认当前选择并通知父组件
 const confirm = () => {
   emits('selectConfirm', state.curScreenId)
   close()

@@ -27,6 +27,7 @@ import eventBus from '@/utils/eventBus'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   propValue: {
     type: Object,
@@ -44,6 +45,7 @@ const props = defineProps({
 
 const { propValue, element } = toRefs(props)
 
+// 衔接当前组件交互和状态同步
 const imageAdapter = computed(() => {
   const style = {
     position: 'relative',
@@ -58,6 +60,7 @@ const imageAdapter = computed(() => {
   }
   return style as CSSProperties
 })
+// 衔接当前组件交互和状态同步
 const uploadImg = () => {
   nextTick(() => {
     eventBus.emit('uploadImg')

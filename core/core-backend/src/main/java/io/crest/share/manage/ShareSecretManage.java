@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component("shareSecretManage")
+// 封装当前业务的持久化和查询逻辑
 public class ShareSecretManage {
 
 
@@ -23,6 +24,7 @@ public class ShareSecretManage {
     @Resource
     private CoreShareMapper coreShareMapper;
 
+    // 执行当前服务方法并返回处理结果
     public String getSecret(Long resourceId, Long uid) {
         QueryWrapper<CoreShare> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("creator", uid);

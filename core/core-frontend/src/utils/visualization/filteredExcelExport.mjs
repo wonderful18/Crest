@@ -1,18 +1,22 @@
+// Excel 导出范围枚举
 export const EXCEL_EXPORT_SCOPE = {
   CURRENT_FILTERED: 'currentFiltered',
   ALL: 'all'
 }
 
+// Excel 导出内容类型枚举
 export const EXCEL_EXPORT_CONTENT = {
   VIEW: 'view',
   DATASET: 'dataset',
   FORMATTED: 'formatted'
 }
 
+// 支持导出的表格视图类型
 export const EXCEL_EXPORT_TABLE_TYPES = ['table-info', 'table-normal', 'table-pivot']
 
 const DEFAULT_BUTTON_TEXT = '导出Excel'
 
+// 深拷贝普通配置对象
 export function deepClone(value) {
   if (value === null || value === undefined) {
     return value
@@ -20,18 +24,22 @@ export function deepClone(value) {
   return JSON.parse(JSON.stringify(value))
 }
 
+// 归一化视图 ID 为字符串
 export function normalizeViewId(id) {
   return id === null || id === undefined ? '' : String(id)
 }
 
+// 判断视图是否支持 Excel 导出
 export function isExportableTableView(viewInfo) {
   return EXCEL_EXPORT_TABLE_TYPES.includes(viewInfo?.type)
 }
 
+// 判断视图是否为透视表
 export function isPivotTableView(viewInfo) {
   return viewInfo?.type === 'table-pivot'
 }
 
+// 补齐视图级 Excel 导出默认配置
 export function defaultViewExcelExportConfig(config = {}) {
   return {
     enabled: config.enabled !== false,
@@ -40,6 +48,7 @@ export function defaultViewExcelExportConfig(config = {}) {
   }
 }
 
+// 补齐导出按钮默认配置
 export function defaultExportButtonConfig(config = {}) {
   return {
     targetViewId: normalizeViewId(config.targetViewId),
@@ -49,8 +58,10 @@ export function defaultExportButtonConfig(config = {}) {
   }
 }
 
+// 展平画布组件树，包含分组和标签页子组件
 export function flattenCanvasComponents(components = []) {
   const result = []
+  // 深度遍历画布组件树
   const visit = component => {
     if (!component) {
       return
@@ -72,6 +83,7 @@ export function flattenCanvasComponents(components = []) {
   return result
 }
 
+// 收集画布中可作为导出目标的表格视图
 export function collectExportableTableViews(components = [], canvasViewInfo = {}) {
   return flattenCanvasComponents(components)
     .filter(component => component?.component === 'UserView')
@@ -88,6 +100,7 @@ export function collectExportableTableViews(components = [], canvasViewInfo = {}
     .filter(item => item.id && isExportableTableView(item.viewInfo))
 }
 
+// 解析查询组件影响的目标视图 ID
 export function getQueryTargetIds(queryItem = {}) {
   const checkedFields = queryItem.checkedFields || []
   const checkedFieldsMap = queryItem.checkedFieldsMap || {}
@@ -116,11 +129,13 @@ export function getQueryTargetIds(queryItem = {}) {
   return [...new Set(fieldMaps.filter(([, fieldId]) => !!fieldId).map(([viewId]) => viewId))]
 }
 
+// 判断查询项是否影响指定视图
 export function queryItemAffectsView(queryItem, targetViewId) {
   const targetId = normalizeViewId(targetViewId)
   return getQueryTargetIds(queryItem).some(viewId => normalizeViewId(viewId) === targetId)
 }
 
+// 判断筛选值是否已填写
 function valuePresent(value) {
   if (Array.isArray(value)) {
     return value.length > 0
@@ -128,10 +143,12 @@ function valuePresent(value) {
   return value !== null && value !== undefined && value !== ''
 }
 
+// 统计区间两端已填写的数量
 function pairValueCount(start, end) {
   return [start, end].filter(value => value !== null && value !== undefined && value !== '').length
 }
 
+// 校验查询项是否满足导出前置条件
 export function validateQueryItemValue(queryItem = {}) {
   const displayType = String(queryItem.displayType ?? '')
 
@@ -170,6 +187,7 @@ export function validateQueryItemValue(queryItem = {}) {
   return valuePresent(queryItem.selectValue) ? { valid: true } : { valid: false, reason: 'required' }
 }
 
+// 校验影响目标视图的查询组件
 export function validateQueryComponentsForExport(components = [], targetViewId) {
   const queryComponents = flattenCanvasComponents(components).filter(
     component => component?.component === 'VQuery' || component?.innerType === 'VQuery'
@@ -195,6 +213,7 @@ export function validateQueryComponentsForExport(components = [], targetViewId) 
   return { valid: true }
 }
 
+// 校验导出目标、导出内容和筛选条件
 export function validateExportTarget({
   targetViewId,
   components = [],
@@ -235,6 +254,7 @@ export function validateExportTarget({
   return { valid: true, viewInfo }
 }
 
+// 构建全量导出使用的默认图表请求
 export function buildDefaultChartExtRequest(viewInfo = {}, lastRequest = {}) {
   return {
     user: lastRequest.user,
@@ -248,6 +268,7 @@ export function buildDefaultChartExtRequest(viewInfo = {}, lastRequest = {}) {
   }
 }
 
+// 根据导出范围构建图表扩展请求
 export function buildExportChartExtRequest({
   lastRequest,
   viewInfo,
@@ -270,6 +291,7 @@ export function buildExportChartExtRequest({
   return request
 }
 
+// 将导出校验结果转换为用户提示
 export function explainExportValidation(validation) {
   const queryName = validation?.queryName ? `【${validation.queryName}】` : ''
   switch (validation?.reason) {

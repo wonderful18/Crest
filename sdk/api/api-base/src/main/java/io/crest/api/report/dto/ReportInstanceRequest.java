@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
+// 定义接口请求或返回数据的传输结构
 public class ReportInstanceRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = 6928403022356816279L;

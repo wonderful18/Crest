@@ -15,6 +15,7 @@ import java.util.Map;
 
 @Tag(name = "数据集管理:数据")
 @ApiSupport(order = 978)
+// 定义模块接口契约和数据传输结构
 public interface DatasetDataApi {
     @Operation(summary = "预览数据")
     @PostMapping("preview-data")

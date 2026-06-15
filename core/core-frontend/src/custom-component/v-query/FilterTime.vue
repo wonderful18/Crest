@@ -6,6 +6,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import DynamicTime from './DynamicTimeFiltering.vue'
 import DynamicTimeRange from './DynamicTimeRangeFiltering.vue'
 import { ManipulateType } from 'dayjs'
+// 时间筛选配置由父组件持有，本组件只根据粒度提供固定时间和动态时间的编辑入口。
 const props = withDefaults(
   defineProps<{
     timeRange: TimeRange
@@ -13,6 +14,7 @@ const props = withDefaults(
   }>(),
   {
     timeRange: () => ({
+      // 新建单时间筛选默认不附加时间限制，避免影响已有查询条件结果。
       intervalType: 'none',
       dynamicWindow: false,
       maximumSingleQuery: 0,
@@ -32,6 +34,7 @@ const props = withDefaults(
 )
 
 const { t } = useI18n()
+// 区间类型决定筛选组件展示单端时间、双端区间或完全关闭时间限制。
 const intervalTypeList = [
   {
     label: t('chart.line_symbol_none'),
@@ -51,6 +54,7 @@ const intervalTypeList = [
   }
 ]
 
+// 设置区标题跟随区间类型变化，保持开始、结束和区间三种配置语义一致。
 const regularOrTrendsTitle = computed(() => {
   return (
     intervalTypeList.find(ele => ele.value === timeRange.value.intervalType)?.label ||
@@ -58,16 +62,21 @@ const regularOrTrendsTitle = computed(() => {
   )
 })
 const { timeRange } = toRefs(props)
+// 动态模式会把保存值解释为相对当前时间，固定模式则直接保存选择器中的具体日期。
 const dynamicTime = computed(() => {
   return timeRange.value.regularOrTrends !== 'fixed'
 })
+// 区间模式使用范围组件，开始/结束模式使用单时间组件，避免模板中重复维护两套预览逻辑。
 const filterTypeCom = computed(() => {
   const { intervalType } = timeRange.value
   return intervalType === 'timeInterval' ? DynamicTimeRange : DynamicTime
 })
+// Element Plus 的范围选择类型通过粒度后缀拼接得到，例如 monthrange、datetimerange。
 const timeGranularityMultiple = computed<DatePickType>(() => {
+  // Element 日期范围组件使用 range 后缀命名，按当前单点粒度派生即可。
   return (props.timeGranularity + 'range') as DatePickType
 })
+// 自定义相对时间使用前后方向描述，实际计算由动态时间组件按该方向解析。
 const aroundList = [
   {
     label: t('dynamic_time.before'),
@@ -78,8 +87,10 @@ const aroundList = [
     value: 'b'
   }
 ]
+// 相对时间单位不能细于当前筛选粒度，避免按年筛选时出现按日偏移这类无效配置。
 const relativeToCurrentTypeList = computed(() => {
   if (!timeRange.value) return []
+  // 按粒度列表位置截断单位，避免低粒度筛选保存高精度偏移。
   let index = ['year', 'month', 'date', 'datetime'].indexOf(props.timeGranularity) + 1
   return [
     {
@@ -97,9 +108,11 @@ const relativeToCurrentTypeList = computed(() => {
   ].slice(0, index)
 })
 
+// 单点动态快捷项按当前粒度收敛，保存值是稳定枚举，文案只用于界面展示。
 const relativeToCurrentList = computed(() => {
   let list = []
   if (!timeRange.value) return list
+  // 单点快捷项只表达一个时间点或周期边界，区间窗口放到范围列表处理。
   switch (props.timeGranularity) {
     case 'year':
       list = [
@@ -179,9 +192,11 @@ const relativeToCurrentList = computed(() => {
   ]
 })
 
+// 区间动态快捷项覆盖常用累计窗口，区间两端的自定义配置只在 custom 模式下显示。
 const relativeToCurrentListRange = computed(() => {
   let list = []
   if (!timeRange.value) return list
+  // 区间快捷项覆盖常见累计窗口，保存值保持与范围过滤组件一致。
   switch (props.timeGranularity) {
     case 'year':
       list = [
@@ -265,9 +280,11 @@ const relativeToCurrentListRange = computed(() => {
     }
   ]
 })
+// 粒度切换后若原区间快捷项不可用，回退到当前列表第一个有效项，避免保存脏值。
 watch(
   () => relativeToCurrentListRange.value,
   val => {
+    // 区间快捷项跟随粒度变化，旧值失效时回退到当前粒度的第一个可用项。
     if (!val.some(ele => ele.value === timeRange.value.relativeToCurrentRange)) {
       timeRange.value.relativeToCurrentRange = val[0].value
     }
@@ -275,9 +292,11 @@ watch(
   { immediate: true }
 )
 
+// 单点快捷项同样需要随粒度回退，保证预览组件始终能解析当前枚举值。
 watch(
   () => relativeToCurrentList.value,
   val => {
+    // 单点快捷项独立校验，避免开始/结束模式误用区间枚举。
     if (!val.some(ele => ele.value === timeRange.value.relativeToCurrent)) {
       timeRange.value.relativeToCurrent = val[0].value
     }
@@ -285,9 +304,11 @@ watch(
   { immediate: true }
 )
 
+// 自定义相对单位随粒度收敛后同步修正，避免 dayjs 计算收到当前粒度不支持的单位。
 watch(
   () => relativeToCurrentTypeList.value,
   val => {
+    // 偏移单位必须与当前时间粒度兼容，否则动态时间计算会产生越级偏移。
     if (!val.some(ele => ele.value === timeRange.value.relativeToCurrentType)) {
       timeRange.value.relativeToCurrentType = val[0].value as ManipulateType
     }
@@ -299,6 +320,7 @@ watch(
 <template>
   <div class="set-time-filtering-range">
     <div class="title">{{ t('v_query.time_filter_range') }}</div>
+    <!-- 单时间字段先选择开始、结束或区间语义，再决定固定时间还是动态时间。 -->
     <div class="list-item">
       <div class="label">{{ t('v_query.interval_type') }}</div>
       <div class="setting-content">
@@ -371,6 +393,7 @@ watch(
             </div>
           </div>
           <template v-if="timeRange.relativeToCurrentRange === 'custom'">
+            <!-- 自定义区间需要同时配置起点和终点偏移，预览组件负责换算实际时间。 -->
             <div
               class="setting"
               :class="['year', 'month'].includes(timeGranularity) && 'is-year-month-range'"
@@ -437,6 +460,7 @@ watch(
       <div class="parameters" :class="dynamicTime && 'setting'">
         <div class="setting-label" v-if="dynamicTime">{{ t('template_manage.preview') }}</div>
         <div :class="dynamicTime ? 'setting-value' : 'w100'">
+          <!-- 预览组件直接消费当前配置，便于用户在保存前确认动态时间解析结果。 -->
           <component
             :config="timeRange as any"
             :timeGranularityMultiple="timeGranularityMultiple"
@@ -451,6 +475,7 @@ watch(
 
 <style lang="less">
 .set-time-filtering-range {
+  // 单时间筛选嵌在查询条件配置中，控件高度和间距按紧凑表单处理。
   .ed-radio,
   .ed-checkbox.ed-checkbox--default {
     height: 22px;
@@ -513,6 +538,7 @@ watch(
     }
 
     .parameters {
+      // 固定时间选择器和动态时间预览共用容器，宽度按最大日期控件预留。
       width: 100%;
       margin-top: 8px;
       .w100 {
@@ -521,6 +547,7 @@ watch(
       .ed-date-editor,
       .ed-date-editor--datetime .ed-input__wrapper,
       .ed-select-v2 {
+        // 多种时间控件共用固定宽度，保证固定和动态模式切换时布局稳定。
         width: 415px;
       }
 
@@ -597,6 +624,7 @@ watch(
         justify-content: flex-end;
         align-items: center;
         &.range {
+          // 起止偏移输入不需要左侧缩进，保持与区间标签对齐。
           padding-left: 0px;
           width: 308px;
         }
@@ -606,6 +634,7 @@ watch(
       }
 
       &.is-year-month-range {
+        // 年、月粒度的自定义区间不展示日期输入，只保留偏移量和单位选择。
         .setting-input {
           .ed-date-editor.ed-input {
             display: none;

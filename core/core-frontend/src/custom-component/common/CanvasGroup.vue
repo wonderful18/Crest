@@ -3,6 +3,7 @@ import { toRefs } from 'vue'
 import CanvasCore from '@/components/data-visualization/canvas/CanvasCore.vue'
 import GroupPreview from '@/custom-component/group/GroupPreview.vue'
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   canvasStyleData: {
     type: Object,

@@ -76,6 +76,7 @@
         <el-row id="slider">
           <div class="slider-window" :style="slideWindowHeight">
             <ul v-if="!state.slidersLoading" class="container" :style="containerStyle">
+              <!-- 克隆末页放在队首，配合边界回跳实现首尾连续轮播 -->
               <li>
                 <div class="item-area" style="overflow: hidden">
                   <subject-template-item
@@ -98,6 +99,7 @@
                   />
                 </div>
               </li>
+              <!-- 克隆首页放在队尾，右滑越界后可无感回到真实首页 -->
               <li>
                 <div class="item-area">
                   <subject-template-item
@@ -204,12 +206,15 @@ import { ElMessage } from 'element-plus-secondary'
 import { deepCopy } from '@/utils/utils'
 const dvMainStore = dvMainStoreWithOut()
 const { canvasStyleData } = storeToRefs(dvMainStore)
+// 定义主题列表刷新事件
 const emit = defineEmits(['reload'])
 import { guid } from '@/views/visualized/data/dataset/form/util.js'
 import { useI18n } from '@/hooks/web/useI18n'
 import SubjectEditDialog from '@/components/dashboard/subject-setting/pre-subject/SubjectEditDialog.vue'
 
+// 主题编辑弹窗实例
 const subjectEditDialogRef = ref(null)
+// 接收主题轮播速度和间隔配置
 const props = defineProps({
   initialSpeed: {
     type: Number,
@@ -223,6 +228,7 @@ const props = defineProps({
 
 const { initialSpeed } = toRefs(props)
 const { t } = useI18n()
+// 维护主题轮播列表和动画状态
 const state = reactive({
   temp: null,
   sliders: [],
@@ -236,24 +242,29 @@ const state = reactive({
   saveSubjectVisible: false
 })
 
+// 主题轮播容器位移样式
 const containerStyle = computed(() => {
   return {
     transform: `translate3d(${state.distance}px, 0, 0)`
   }
 })
 
+// 根据主题数量计算轮播窗口高度
 const slideWindowHeight = computed(() => {
   return { height: state.sliders[0]?.length < 3 ? '140px' : '250px' }
 })
 
+// 查询主题分组列表
 const querySubjectWithGroup = () => {
   state.slidersLoading = true
   querySubjectWithGroupApi({})
     .then(response => {
+      // 后端已按轮播页分组返回，前端直接用于页切换和指示点渲染
       state.sliders = []
       state.sliders = response.data
       state.slidersLoading = false
       if (state.sliders.length < state.currentIndex) {
+        // 删除最后一页主题后回到首页，避免当前位置落在空白页
         state.currentIndex = 1
         emit('reload')
       }
@@ -263,6 +274,7 @@ const querySubjectWithGroup = () => {
     })
 }
 
+// 删除指定主题
 const subjectDelete = id => {
   deleteSubject(id).then(() => {
     ElMessage.success(t('chart.delete_success'))
@@ -270,6 +282,7 @@ const subjectDelete = id => {
   })
 }
 
+// 保存主题编辑结果
 const subjectEditFinish = subjectItem => {
   state.slidersLoading = true
   saveOrUpdateSubject(subjectItem)
@@ -283,15 +296,17 @@ const subjectEditFinish = subjectItem => {
     })
 }
 
+// 打开主题编辑或新建弹窗
 const subjectEdit = subjectItem => {
   if (subjectItem && subjectItem.id) {
     subjectEditDialogRef.value.optInit(subjectItem, 'edit')
-    //编辑
+    // 编辑已有主题
   } else {
-    // 新建
+    // 新建主题沿用同一弹窗，初始值由调用方传入
     subjectEditDialogRef.value.optInit(subjectItem, 'new')
   }
 }
+// 将当前画布样式保存为自定义主题
 const saveSelfSubject = () => {
   const canvasStyle = deepCopy(canvasStyleData.value)
   canvasStyle.themeId = guid()
@@ -303,6 +318,7 @@ const saveSelfSubject = () => {
   subjectEdit(subjectItemNew)
 }
 
+// 执行主题轮播位移动画
 const animate = (des, direc, speed) => {
   if (state.temp) {
     window.clearInterval(state.temp)
@@ -315,15 +331,18 @@ const animate = (des, direc, speed) => {
       state.transitionEnd = true
       window.clearInterval(state.temp)
       state.distance = des
+      // 到达克隆页后立即切回对应真实页，视觉上保持连续滑动
       if (des < -state.sliderWidth * state.sliders.length) state.distance = -state.sliderWidth
       if (des > -state.sliderWidth) state.distance = -state.sliderWidth * state.sliders.length
     }
   }, 20)
 }
 
+// 移动到相邻主题项
 const move = (offset, direction, speed) => {
   if (!state.transitionEnd) return
   state.transitionEnd = false
+  // direction 为 -1 表示向右翻页，为 1 表示向左翻页
   direction === -1
     ? (state.currentIndex += offset / state.sliderWidth)
     : (state.currentIndex -= offset / state.sliderWidth)
@@ -334,9 +353,11 @@ const move = (offset, direction, speed) => {
   animate(destination, direction, speed)
 }
 
+// 跳转到指定主题项
 const jump = index => {
   const direction = index - state.currentIndex >= 0 ? -1 : 1
   const offset = Math.abs(index - state.currentIndex) * state.sliderWidth
+  // 跨页跳转按页数放大步进速度，避免长距离切换显得迟滞
   const jumpSpeed =
     Math.abs(index - state.currentIndex) === 0
       ? state.speed
@@ -386,6 +407,7 @@ ul {
   overflow: hidden;
 }
 
+/* 轮播容器必须横向排列所有真实页和克隆页 */
 .container {
   position: absolute;
   display: flex;

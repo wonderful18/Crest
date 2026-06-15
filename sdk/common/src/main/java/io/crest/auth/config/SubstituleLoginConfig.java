@@ -19,6 +19,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * 提供替代登录模式下的默认密码和令牌密钥配置
+ */
 @ConditionalOnMissingBean(name = "loginServer")
 @Configuration
 @SuppressWarnings("unchecked")
@@ -37,6 +40,9 @@ public class SubstituleLoginConfig {
 
     @ConditionalOnMissingBean(name = "loginServer")
     @Bean
+    /**
+     * 初始化替代登录配置数据并补齐缺省值
+     */
     public Map<String, Object> substituleLoginData(ResourceLoader resourceLoader) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         File jsonFile = new File(jsonFilePath);
@@ -62,6 +68,9 @@ public class SubstituleLoginConfig {
         return data;
     }
 
+    /**
+     * 获取替代登录密码
+     */
     public static String getPwd() {
         if (ready && StringUtils.isNotBlank(pwd)) {
             return pwd;
@@ -90,6 +99,9 @@ public class SubstituleLoginConfig {
         }
     }
 
+    /**
+     * 获取替代登录令牌签名密钥
+     */
     public static String getTokenSecret() {
         getPwd();
         if (StringUtils.isBlank(tokenSecret)) {
@@ -98,6 +110,9 @@ public class SubstituleLoginConfig {
         return tokenSecret;
     }
 
+    /**
+     * 修改替代登录密码并写回配置文件
+     */
     public void modifyPwd(String pwd) {
         File file = new File(jsonFilePath);
         Map<String, String> myObject = new HashMap<>();
@@ -112,6 +127,9 @@ public class SubstituleLoginConfig {
         }
     }
 
+    /**
+     * 将替代登录配置写入文件
+     */
     private static void writeConfig(File file, Map<?, ?> config) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         try (FileOutputStream fos = new FileOutputStream(file)) {
@@ -119,11 +137,17 @@ public class SubstituleLoginConfig {
         }
     }
 
+    /**
+     * 从配置映射中读取字符串值
+     */
     private static String readString(Map<String, Object> config, String key) {
         Object value = config.get(key);
         return ObjectUtils.isEmpty(value) ? null : value.toString();
     }
 
+    /**
+     * 生成替代登录令牌签名密钥
+     */
     private static String generateSecret() {
         return UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "");
     }

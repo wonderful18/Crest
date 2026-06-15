@@ -11,6 +11,7 @@ import iconRename from '@/assets/svg/icon_rename_outlined.svg'
 import iconDelete from '@/assets/svg/icon_delete-trash_outlined.svg'
 import iconLeft from '@/assets/svg/icon_left_outlined.svg'
 
+// 接收组织树选择、管理和折叠配置
 const props = withDefaults(
   defineProps<{
     modelValue?: string | number | null
@@ -29,6 +30,7 @@ const props = withDefaults(
   }
 )
 
+// 定义组织树选择和管理事件
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string | number | null): void
   (e: 'change', node: any | null): void
@@ -37,20 +39,29 @@ const emit = defineEmits<{
   (e: 'delete', node: any): void
 }>()
 
+// 组织树加载状态
 const loading = ref(false)
+// 组织搜索关键字
 const keyword = ref('')
+// 组织树数据
 const treeData = ref<any[]>([])
+// 当前选中的组织 ID
 const currentKey = ref<any>(props.modelValue ?? null)
+// Element Plus 树实例
 const treeRef = ref()
+// 当前树节点是否整体展开
 const expanded = ref(true)
+// 侧边组织树是否收起
 const collapsed = ref(false)
 
 const treeProps = { children: 'children', label: 'name' }
+// 当前选中组织的展示名称
 const selectedName = computed(() => {
   if (props.selectableAll && !currentKey.value) return '全部组织'
   return findNode(treeData.value, currentKey.value)?.name || '请选择组织'
 })
 
+// 在组织树中递归查找指定节点
 const findNode = (nodes: any[], id: any): any | null => {
   for (const node of nodes || []) {
     if (String(node.id) === String(id)) return node
@@ -60,8 +71,10 @@ const findNode = (nodes: any[], id: any): any | null => {
   return null
 }
 
+// 计算组织节点的直接子节点数量
 const childCount = (data: any) => (data?.children?.length ? data.children.length : 0)
 
+// 加载组织树数据
 const loadTree = async () => {
   loading.value = true
   try {
@@ -76,18 +89,21 @@ const loadTree = async () => {
   }
 }
 
+// 选择全部组织
 const selectAll = () => {
   currentKey.value = null
   emit('update:modelValue', null)
   emit('change', null)
 }
 
+// 选择指定组织节点
 const selectNode = (node: any) => {
   currentKey.value = node.id
   emit('update:modelValue', node.id)
   emit('change', node)
 }
 
+// 展开或折叠全部组织节点
 const toggleExpand = () => {
   expanded.value = !expanded.value
   const nodesMap = treeRef.value?.store?.nodesMap || {}
@@ -96,6 +112,7 @@ const toggleExpand = () => {
   })
 }
 
+// 外部选中值变化时同步内部选中状态
 watch(
   () => props.modelValue,
   value => {
@@ -103,8 +120,10 @@ watch(
   }
 )
 
+// 搜索关键字变化时过滤组织树
 watch(keyword, value => treeRef.value?.filter(value))
 
+// 判断组织节点是否匹配搜索关键字
 const filterNode = (value: string, data: any) => {
   if (!value) return true
   return String(data.name || '').includes(value)
@@ -117,6 +136,7 @@ onMounted(loadTree)
 
 <template>
   <div class="platform-org-tree" :class="{ collapsed }">
+    <!-- 收起态保留窄轨入口，避免主内容区切换时丢失组织上下文。 -->
     <button
       v-if="collapsible && collapsed"
       class="rail"
@@ -129,6 +149,7 @@ onMounted(loadTree)
       <span class="rail-text">组织架构</span>
     </button>
 
+    <!-- 展开态同时支持只读选择和组织维护，具体能力由 manageable 控制。 -->
     <aside v-show="!collapsed" class="tree-body">
       <div class="tree-head">
         <div class="tree-head-info">
@@ -159,6 +180,7 @@ onMounted(loadTree)
         </div>
       </div>
       <el-input v-model="keyword" clearable placeholder="搜索组织" />
+      <!-- 全部组织是虚拟节点，不进入后端组织树，只通过空值向父组件表达全量范围。 -->
       <button
         v-if="selectableAll"
         class="all-node"
@@ -186,6 +208,7 @@ onMounted(loadTree)
           @node-click="selectNode"
         >
           <template #default="{ node, data }">
+            <!-- 节点内容在只读模式展示子节点数量，在管理模式展示维护操作。 -->
             <span class="org-node">
               <span class="node-icon" :class="{ root: node.level === 1 }">
                 <Icon v-if="node.level === 1" name="organization"
@@ -242,6 +265,7 @@ onMounted(loadTree)
   }
 }
 .rail {
+  /* 收起轨道使用纵向文字，保证 44px 宽度下仍能传达当前面板含义。 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -270,6 +294,7 @@ onMounted(loadTree)
   }
 }
 .tree-body {
+  /* 组织树作为页面侧栏使用固定视觉宽度，内部滚动交给 el-scrollbar 处理。 */
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -407,6 +432,7 @@ onMounted(loadTree)
   border-radius: 9px;
 }
 .node-actions {
+  /* 管理按钮默认隐藏，悬停或选中节点时再展示，降低树列表视觉噪声。 */
   display: none;
   flex: 0 0 auto;
   gap: 2px;

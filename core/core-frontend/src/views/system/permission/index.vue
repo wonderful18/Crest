@@ -5,20 +5,35 @@ import { ElMessage } from 'element-plus-secondary'
 import { Icon } from '@/components/icon-custom'
 import iconRight from '@/assets/svg/icon_right_outlined.svg'
 
+// 页面级加载态，覆盖角色、菜单树、资源树和权限回显
 const loading = ref(false)
+// 保存按钮加载态，菜单权限和资源权限共用
 const saving = ref(false)
+// 当前组织下可配置的角色列表
 const roles = ref<any[]>([])
+// 菜单权限树
 const menuTree = ref<any[]>([])
+// 业务资源权限树，随 resourceType 切换
 const resourceTree = ref<any[]>([])
+// 当前正在配置的角色编号
 const activeRoleId = ref<any>()
+// 当前资源权限类型，默认展示数据大屏资源
 const resourceType = ref('screen')
+// 当前权限页签，menu 表示菜单权限，resource 表示业务资源权限
 const activeTab = ref('menu')
+// 菜单权限树实例引用，用于回显、过滤和批量操作
 const menuTreeRef = ref()
+// 资源权限树实例引用，用于回显、过滤和批量操作
 const resourceTreeRef = ref()
+// 菜单树搜索关键字
 const menuKeyword = ref('')
+// 资源树搜索关键字
 const resourceKeyword = ref('')
+// 菜单树当前是否展开
 const menuExpanded = ref(true)
+// 资源树当前是否展开
 const resourceExpanded = ref(true)
+// 菜单路由名到中文显示名的映射，避免权限树直接暴露内部路由标识
 const menuLabelMap: Record<string, string> = {
   workbranch: '工作台',
   panel: '仪表盘',
@@ -44,19 +59,24 @@ const menuLabelMap: Record<string, string> = {
   association: '数据血缘',
   msg: '消息中心'
 }
+// 权限树节点显示名称，优先使用本地映射
 const nodeLabel = (node: any) => menuLabelMap[node?.name] || node?.name || '-'
 
+// 当前角色名称，标题区使用
 const roleName = computed(
   () => roles.value.find(role => String(role.id) === String(activeRoleId.value))?.name || ''
 )
+// 当前角色完整对象，用于展示只读或系统角色提示
 const activeRole = computed(() =>
   roles.value.find(role => String(role.id) === String(activeRoleId.value))
 )
+// Element Plus 树字段映射，label 使用本地化后的节点名称
 const treeProps = {
   children: 'children',
   label: (node: any) => nodeLabel(node)
 }
 
+// 加载当前组织下角色，并在当前角色失效时自动选中首个角色
 const loadRoles = async () => {
   const res = await request.post({ url: '/role/by-current-org', data: {} })
   roles.value = res.data || []
@@ -65,16 +85,19 @@ const loadRoles = async () => {
   }
 }
 
+// 加载系统菜单资源树
 const loadMenuTree = async () => {
   const res = await request.get({ url: '/auth/menu-resources' })
   menuTree.value = res.data || []
 }
 
+// 加载当前资源类型的业务资源树
 const loadResourceTree = async () => {
   const res = await request.get({ url: `/auth/business-resources/${resourceType.value}` })
   resourceTree.value = res.data || []
 }
 
+// 加载当前角色的菜单和业务资源授权，并回显到两棵树
 const loadPermissions = async () => {
   if (!activeRoleId.value) return
   loading.value = true
@@ -97,6 +120,7 @@ const loadPermissions = async () => {
   }
 }
 
+// 保存当前角色的菜单权限，勾选节点统一写入管理权限权重
 const saveMenu = async () => {
   saving.value = true
   try {
@@ -111,6 +135,7 @@ const saveMenu = async () => {
   }
 }
 
+// 保存当前角色在当前资源类型下的业务资源权限
 const saveResource = async () => {
   saving.value = true
   try {
@@ -130,16 +155,19 @@ const saveResource = async () => {
   }
 }
 
+// 切换业务资源类型后重新加载资源树和权限回显
 const changeResourceType = async () => {
   await loadResourceTree()
   await loadPermissions()
 }
 
+// 选择角色后重新加载该角色权限
 const selectRole = async (role: any) => {
   activeRoleId.value = role.id
   await loadPermissions()
 }
 
+// 收集树中所有节点编号，用于全选操作
 const allKeys = (nodes: any[], acc: any[] = []): any[] => {
   for (const node of nodes || []) {
     acc.push(node.id)
@@ -147,15 +175,18 @@ const allKeys = (nodes: any[], acc: any[] = []): any[] => {
   }
   return acc
 }
+// 勾选指定权限树的全部节点
 const checkAll = (which: 'menu' | 'resource') => {
   const treeRef = which === 'menu' ? menuTreeRef : resourceTreeRef
   const data = which === 'menu' ? menuTree.value : resourceTree.value
   treeRef.value?.setCheckedKeys(allKeys(data))
 }
+// 清空指定权限树的全部勾选
 const clearAll = (which: 'menu' | 'resource') => {
   const treeRef = which === 'menu' ? menuTreeRef : resourceTreeRef
   treeRef.value?.setCheckedKeys([])
 }
+// 批量切换指定权限树的展开状态
 const toggleExpand = (which: 'menu' | 'resource') => {
   const treeRef = which === 'menu' ? menuTreeRef : resourceTreeRef
   const flag =
@@ -165,15 +196,20 @@ const toggleExpand = (which: 'menu' | 'resource') => {
   const nodesMap = treeRef.value?.store?.nodesMap || {}
   Object.keys(nodesMap).forEach(key => (nodesMap[key].expanded = flag))
 }
+// 权限树过滤函数，按展示名称匹配
 const filterNode = (value: string, data: any) => !value || nodeLabel(data).includes(value)
+// 菜单搜索关键字变化时刷新树过滤
 watch(menuKeyword, value => menuTreeRef.value?.filter(value))
+// 资源搜索关键字变化时刷新树过滤
 watch(resourceKeyword, value => resourceTreeRef.value?.filter(value))
 
+// 页面初始化时并行加载基础数据，再加载当前角色权限
 const init = async () => {
   await Promise.all([loadRoles(), loadMenuTree(), loadResourceTree()])
   await loadPermissions()
 }
 
+// 页面挂载后启动权限管理数据初始化
 onMounted(init)
 </script>
 

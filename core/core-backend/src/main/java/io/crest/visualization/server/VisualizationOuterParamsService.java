@@ -38,39 +38,75 @@ import java.util.stream.Collectors;
 @RequestMapping("outer-params")
 public class VisualizationOuterParamsService implements VisualizationOuterParamsApi {
 
+    /**
+     * 外部参数扩展查询 Mapper
+     */
     @Resource
     private ExtVisualizationOuterParamsMapper extOuterParamsMapper;
+    /**
+     * 编辑态外部参数 Mapper
+     */
     @Resource
     private VisualizationOuterParamsMapper outerParamsMapper;
+    /**
+     * 快照态外部参数 Mapper
+     */
     @Resource
     private SnapshotVisualizationOuterParamsMapper snapshotOuterParamsMapper;
 
+    /**
+     * 编辑态外部参数明细 Mapper
+     */
     @Resource
     private VisualizationOuterParamsInfoMapper outerParamsInfoMapper;
 
+    /**
+     * 快照态外部参数明细 Mapper
+     */
     @Resource
     private SnapshotVisualizationOuterParamsInfoMapper snapshotOuterParamsInfoMapper;
 
+    /**
+     * 编辑态目标图表映射 Mapper
+     */
     @Resource
     private VisualizationOuterParamsTargetViewInfoMapper outerParamsTargetViewInfoMapper;
 
+    /**
+     * 快照态目标图表映射 Mapper
+     */
     @Resource
     private SnapshotVisualizationOuterParamsTargetViewInfoMapper snapshotOuterParamsTargetViewInfoMapper;
 
+    /**
+     * 数据集表 Mapper，用于补充 SQL 变量字段
+     */
     @Resource
     private CoreDatasetTableMapper coreDatasetTableMapper;
+    /**
+     * 可视化服务，用于查询当前可用图表
+     */
     @Autowired
     private DataVisualizationServer dataVisualizationServer;
+    /**
+     * 快照可视化信息 Mapper
+     */
     @Autowired
     private SnapshotDataVisualizationInfoMapper snapshotDataVisualizationInfoMapper;
 
 
+    /**
+     * 按可视化 ID 查询快照态外部参数配置
+     */
     @Override
     public VisualizationOuterParamsDTO queryWithVisualizationId(String visualizationId) {
         VisualizationOuterParamsDTO visualizationOuterParamsDTO = extOuterParamsMapper.queryWithVisualizationIdSnapshot(visualizationId);
         return visualizationOuterParamsDTO;
     }
 
+    /**
+     * 更新可视化外部参数设置，并重建快照态参数明细和目标图表关系
+     */
     @Override
     public void updateOuterParamsSet(VisualizationOuterParamsDTO outerParamsDTO) {
         String visualizationId = outerParamsDTO.getVisualizationId();
@@ -118,6 +154,9 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
 
     }
 
+    /**
+     * 查询外部参数映射详情，分享链接访问时会校验资源权限
+     */
     @CrestLinkPermit
     @Override
     public VisualizationOuterParamsBaseResponse getOuterParamsInfo(String visualizationId) {
@@ -127,6 +166,9 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
         );
     }
 
+    /**
+     * 查询可视化关联的数据集字段，并补充 SQL 变量字段
+     */
     @Override
     public List<CoreDatasetGroupVO> queryDsWithVisualizationId(String visualizationId) {
         List<CoreDatasetGroupVO> result = extOuterParamsMapper.queryDsWithVisualizationId(visualizationId);

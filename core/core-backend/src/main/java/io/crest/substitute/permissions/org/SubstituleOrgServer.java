@@ -24,6 +24,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/org")
+/**
+ * 组织管理接口控制器，负责组织树、挂载组织和组织详情操作
+ */
 public class SubstituleOrgServer implements OrgApi {
 
     @Resource
@@ -32,36 +35,54 @@ public class SubstituleOrgServer implements OrgApi {
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
+    /**
+     * 查询组织分页树
+     */
     @Override
     public List<OrgPageVO> pageTree(OrgRequest request) {
         platformPermissionManage.requireSystemAdmin();
         return crestOrgManage.pageTree(request);
     }
 
+    /**
+     * 懒加载查询组织树
+     */
     @Override
     public LazyTreeVO lazyPageTree(OrgLazyRequest request) {
         platformPermissionManage.requireSystemAdmin();
         return crestOrgManage.lazyPageTree(request);
     }
 
+    /**
+     * 创建组织并记录审计日志
+     */
     @Override
     @CrestAudit(ot = LogOT.CREATE, st = LogST.ORG)
     public Long create(OrgCreator creator) {
         return crestOrgManage.create(creator);
     }
 
+    /**
+     * 编辑组织并记录审计日志
+     */
     @Override
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.ORG, id = "#p0.id")
     public void edit(OrgEditor editor) {
         crestOrgManage.edit(editor);
     }
 
+    /**
+     * 删除组织并记录审计日志
+     */
     @Override
     @CrestAudit(ot = LogOT.DELETE, st = LogST.ORG, id = "#p0")
     public void delete(Long id) {
         crestOrgManage.delete(id);
     }
 
+    /**
+     * 查询当前用户可挂载的组织列表
+     */
     @Override
     public List<MountedVO> mounted(KeywordRequest request) {
         Long uid = AuthUtils.getUser() == null ? 1L : AuthUtils.getUser().getUserId();
@@ -69,6 +90,9 @@ public class SubstituleOrgServer implements OrgApi {
         return platformPermissionManage.mountedOrgs(uid, keyword);
     }
 
+    /**
+     * 懒加载查询当前用户可挂载的组织树
+     */
     @Override
     public LazyMountedVO lazyMounted(OrgLazyRequest request) {
         LazyMountedVO vo = new LazyMountedVO();
@@ -78,16 +102,25 @@ public class SubstituleOrgServer implements OrgApi {
         return vo;
     }
 
+    /**
+     * 判断组织下是否存在资源
+     */
     @Override
     public boolean resourceExist(Long oid) {
         return crestOrgManage.resourceExist(oid);
     }
 
+    /**
+     * 查询组织详情
+     */
     @Override
     public OrgDetailVO detail(Long oid) {
         return crestOrgManage.detail(oid);
     }
 
+    /**
+     * 查询当前用户默认组织下的子组织
+     */
     @Override
     public List<String> subOrgs() {
         Long oid = AuthUtils.getUser() == null ? PlatformPermissionManage.ROOT_ORG_ID : AuthUtils.getUser().getDefaultOid();

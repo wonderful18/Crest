@@ -7,6 +7,7 @@ import { useUserStoreWithOut } from '@/store/modules/user'
 
 const userStore = useUserStoreWithOut()
 
+// 接收可视化资源和刷新标识
 const props = defineProps({
   visualizationId: {
     type: [String, Number],
@@ -18,25 +19,34 @@ const props = defineProps({
   }
 })
 
+// 缓存依赖加载状态
 const loading = ref(false)
+// 当前可视化资源关联的数据集同步任务
 const tasks = ref<DatasetSyncTask[]>([])
 
+// 判断当前用户是否可查看缓存状态
 const canView = computed(() => userStore.getAdmin)
+// 弹层内优先展示的数据集任务
 const visibleTasks = computed(() => tasks.value.slice(0, 4))
+// 未展示的数据集任务数量
 const remainingCount = computed(() => Math.max(tasks.value.length - visibleTasks.value.length, 0))
+// 格式化任务最近执行时间
 const formatTime = (time?: number) => (time ? dayjs(time).format('MM-DD HH:mm') : '-')
+// 计算缓存状态触发器样式
 const triggerClass = computed(() => {
   if (tasks.value.some(task => cacheTaskStatusText(task) === '更新失败')) return 'status-error'
   if (tasks.value.some(task => cacheTaskStatusText(task) === '更新中')) return 'status-running'
   if (tasks.value.some(task => cacheTaskStatusText(task) !== '缓存可用')) return 'status-pending'
   return 'status-ready'
 })
+// 压缩展示单个任务状态文本
 const compactStatusText = (task: DatasetSyncTask) => {
   const status = cacheTaskStatusText(task)
   if (status === '缓存可用') return '可用'
   if (status === '更新失败') return '失败'
   return status
 }
+// 计算单个任务状态样式
 const statusClass = (task: DatasetSyncTask) => {
   const status = cacheTaskStatusText(task)
   if (status === '缓存可用') return 'status-ready'
@@ -45,6 +55,7 @@ const statusClass = (task: DatasetSyncTask) => {
   return 'status-pending'
 }
 
+// 加载可视化资源的数据集缓存依赖
 const loadDependencies = async () => {
   if (!canView.value || !props.visualizationId) {
     tasks.value = []
@@ -60,6 +71,7 @@ const loadDependencies = async () => {
   }
 }
 
+// 监听资源或刷新标识变化并重新加载依赖
 watch(() => [props.visualizationId, props.reloadKey, canView.value], loadDependencies, {
   immediate: true
 })

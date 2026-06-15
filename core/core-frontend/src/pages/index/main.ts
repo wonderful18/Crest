@@ -14,6 +14,7 @@ import { installDirective } from '@/directive'
 import '@/utils/DateUtil'
 import '@/permission'
 import WebSocketPlugin from '../../websocket'
+// 更新当前配置并同步相关状态
 const setupAll = async () => {
   const app = createApp(App)
   installDirective(app)

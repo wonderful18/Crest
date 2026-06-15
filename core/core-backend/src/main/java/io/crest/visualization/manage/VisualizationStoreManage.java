@@ -27,6 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * 管理可视化资源收藏的写入、查询和结果转换
+ */
 @Component
 public class VisualizationStoreManage {
 
@@ -39,6 +42,9 @@ public class VisualizationStoreManage {
     @Resource
     private CoreUserManage coreUserManage;
 
+    /**
+     * 切换当前用户对指定可视化资源的收藏状态
+     */
     public void execute(VisualizationStoreRequest request) {
         Long resourceId = request.getId();
         Long uid = AuthUtils.getUser().getUserId();
@@ -60,12 +66,18 @@ public class VisualizationStoreManage {
         coreStoreMapper.insert(coreStore);
     }
 
+    /**
+     * 判断当前用户是否已收藏指定资源
+     */
     public Boolean favorited(Long resourceId) {
         QueryWrapper<CoreStore> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("resource_id", resourceId);
         queryWrapper.eq("uid", AuthUtils.getUser().getUserId());
         return coreStoreMapper.exists(queryWrapper);
     }
+    /**
+     * 分页查询当前用户收藏的可视化资源
+     */
     public IPage<VisualizationStoreVO> query(int pageNum, int pageSize, VisualizationWorkbranchQueryRequest request) {
         IPage<StorePO> storePOIPage = proxy().queryStorePage(pageNum, pageSize, request);
         if (ObjectUtils.isEmpty(storePOIPage)) return null;
@@ -79,10 +91,16 @@ public class VisualizationStoreManage {
         return ipage;
     }
 
+    /**
+     * 获取当前管理类代理实例以保留增强逻辑
+     */
     public VisualizationStoreManage proxy() {
         return CommonBeanFactory.getBean(this.getClass());
     }
 
+    /**
+     * 将收藏查询结果转换为前端展示对象
+     */
     public List<VisualizationStoreVO> formatResult(List<StorePO> pos) {
         if (CollectionUtils.isEmpty(pos)) return new ArrayList<>();
         return pos.stream().map(po ->
@@ -92,6 +110,9 @@ public class VisualizationStoreManage {
                         po.getEditTime(), 9, po.getExtFlag(), po.getExtFlag1())).toList();
     }
 
+    /**
+     * 按筛选条件分页查询收藏资源原始记录
+     */
     public IPage<StorePO> queryStorePage(int goPage, int pageSize, VisualizationWorkbranchQueryRequest request) {
         Long uid = AuthUtils.getUser().getUserId();
         QueryWrapper<Object> queryWrapper = new QueryWrapper<>();
@@ -113,6 +134,9 @@ public class VisualizationStoreManage {
         return coreStoreExtMapper.query(page, queryWrapper);
     }
 
+    /**
+     * 将请求中的资源类型转换为业务资源枚举
+     */
     private BusiResourceEnum busiResourceType(String type) {
         try {
             return BusiResourceEnum.valueOf(type.toUpperCase(Locale.ROOT));

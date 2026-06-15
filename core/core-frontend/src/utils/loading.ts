@@ -1,11 +1,13 @@
 import { useRequestStoreWithOut } from '@/store/modules/request'
 const requestStore = useRequestStoreWithOut()
 
+// 标记异步操作的加载状态
 export const tryShowLoading = identification => {
   if (!identification) return
   requestStore.addLoading(identification)
 }
 
+// 标记异步操作的加载状态
 export const tryHideLoading = identification => {
   if (!identification) return
   const count = requestStore.loadingMap[identification]

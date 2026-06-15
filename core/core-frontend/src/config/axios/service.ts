@@ -51,6 +51,7 @@ export interface AxiosInstanceWithLoading extends AxiosInstance {
   ): Promise<R>
 }
 
+// 读取当前业务数据并返回处理结果
 const getTimeOut = () => {
   let time = 100
   const url = PATH_URL + '/sys-parameter/request-timeout'
@@ -287,6 +288,7 @@ service.interceptors.response.use(
   }
 )
 
+// 控制弹窗、面板或区域的展示状态
 const showMsg = (msg: string, id: string) => {
   if (window['cross-permission-' + id]) {
     return
@@ -308,6 +310,7 @@ const showMsg = (msg: string, id: string) => {
     })
 }
 
+// 衔接当前组件交互和状态同步
 const executeVersionHandler = (response: AxiosResponse) => {
   const key = 'x-crest-execute-version'
   const executeVersion = response.headers[key]
@@ -322,6 +325,7 @@ const executeVersionHandler = (response: AxiosResponse) => {
   }
 }
 
+// 根据当前数据计算界面可用状态
 const cancelRequestBatch = cancelKey => {
   if (cancelKey) {
     if (cancelKey.indexOf('/**') > -1) {

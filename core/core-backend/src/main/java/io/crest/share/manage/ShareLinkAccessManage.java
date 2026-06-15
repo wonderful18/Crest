@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
+// 封装当前业务的持久化和查询逻辑
 public class ShareLinkAccessManage {
 
     private static final String INNER_JUMP_TARGET_COUNT_SQL = """
@@ -36,6 +37,7 @@ public class ShareLinkAccessManage {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    // 执行当前服务方法并返回处理结果
     public boolean canAccessWithShareResource(Long shareResourceId, Long requestResourceId) {
         if (ObjectUtils.anyNull(shareResourceId, requestResourceId)) {
             return false;

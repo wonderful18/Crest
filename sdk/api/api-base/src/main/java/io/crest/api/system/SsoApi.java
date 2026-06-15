@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "系统设置:单点登录")
 @ApiSupport(order = 798)
+// 定义模块接口契约和数据传输结构
 public interface SsoApi {
 
     @GetMapping("/public/status")

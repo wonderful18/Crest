@@ -10,14 +10,17 @@ import { computed } from 'vue'
 import { useEmitt } from '@/hooks/web/useEmitt'
 
 const appearanceStore = useAppearanceStoreWithOut()
+// 衔接当前组件交互和状态同步
 const navigateBg = computed(() => appearanceStore.getNavigateBg)
 const { push, resolve } = useRouter()
+// 衔接当前组件交互和状态同步
 const redirectUser = () => {
   const sysMenu = resolve('/sys-setting')
   const kidPath = sysMenu.matched?.[0]?.children?.[0]?.path
   push(kidPath ? `${sysMenu.path}/${kidPath}` : sysMenu.path)
 }
 
+// 衔接当前组件交互和状态同步
 const downloadClick = () => {
   useEmitt().emitter.emit('data-export-center')
 }

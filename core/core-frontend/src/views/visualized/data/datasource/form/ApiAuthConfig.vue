@@ -8,6 +8,7 @@ export interface AuthConfig {
   password: string
 }
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   request: {
     type: Object as PropType<{ authManager: AuthConfig }>,
@@ -19,6 +20,7 @@ const { t } = useI18n()
 const { request } = toRefs(props)
 
 const options = [{ name: 'No Auth' }, { name: 'Basic Auth' }]
+// 更新当前配置并同步相关状态
 const change = () => {
   const { username, password, verification } = request.value.authManager
   const isBasic = verification === 'Basic Auth'

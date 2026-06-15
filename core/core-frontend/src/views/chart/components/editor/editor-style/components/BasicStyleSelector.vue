@@ -20,10 +20,15 @@ import { useLocaleStoreWithOut } from '@/store/modules/locale'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { find } from 'lodash-es'
 
+/** 主画布仓库提供批量设置和移动端预览状态 */
 const dvMainStore = dvMainStoreWithOut()
+/** 语言仓库用于生成本地化的树表展开层级文案 */
 const localeStore = useLocaleStoreWithOut()
+/** 批量设置和移动端状态引用 */
 const { batchOptStatus, mobileInPc } = storeToRefs(dvMainStore)
+/** 国际化翻译函数 */
 const { t } = useI18n()
+/** 基础样式面板入参，包含图表、主题和可见属性集合 */
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -37,6 +42,7 @@ const props = defineProps({
     type: Array<string>
   }
 })
+/** 判断指定基础样式属性是否应在当前图表中展示 */
 const showProperty = prop => {
   const has = props.propertyInner?.includes(prop)
   if (!has) {
@@ -47,10 +53,13 @@ const showProperty = prop => {
   }
   return has
 }
+/** 树表默认展开层级选项 */
 const tableExpandLevelOptions = reactive<Array<{ name: string; value: string | number }>>([
   { name: t('chart.expand_all'), value: 'all' }
 ])
+/** 颜色选择器预设色板 */
 const predefineColors = COLOR_PANEL
+/** 基础样式面板状态，承载表单、颜色和表格列宽配置 */
 const state = reactive({
   basicStyleForm: JSON.parse(JSON.stringify(DEFAULT_BASIC_STYLE)) as ChartBasicStyle,
   miscForm: JSON.parse(JSON.stringify(DEFAULT_MISC)) as ChartMiscAttr,
@@ -64,12 +73,16 @@ const state = reactive({
   treeRowWidth: 10,
   predefineColors
 })
+/** 向父级同步基础样式和杂项样式变更 */
 const emit = defineEmits(['onBasicStyleChange', 'onMiscChange'])
+/** 通知父级基础样式变更，并携带是否取数和是否渲染标记 */
 const changeBasicStyle = (prop?: string, requestData = false, render = true) => {
   emit('onBasicStyleChange', { data: state.basicStyleForm, requestData, render }, prop)
 }
 
+/** 根据树表行头模式同步行头宽度字段 */
 const changeTreeRowWidth = () => {
+  // 树表行头宽度按当前模式写入不同字段，避免百分比和固定像素同时生效。
   if (state.basicStyleForm.tableRowHeaderMode === 'percent') {
     state.basicStyleForm.tableRowHeaderWidthPercent = state.treeRowWidth
   }
@@ -82,7 +95,9 @@ const changeTreeRowWidth = () => {
       : 'tableRowHeaderWidth'
   )
 }
+/** 校验并同步透明度输入值 */
 const onAlphaChange = v => {
+  // 输入框允许手动编辑透明度，这里统一收敛到 0-100 的合法区间。
   const _v = parseInt(v)
   if (_v >= 0 && _v <= 100) {
     state.basicStyleForm.alpha = _v
@@ -98,7 +113,9 @@ const onAlphaChange = v => {
   changeBasicStyle('alpha')
 }
 
+/** 校验并同步柱宽占比输入值 */
 const onColumnWidthRatioChange = v => {
+  // 柱宽占比影响柱状图系列宽度，非法输入回退到最近的有效边界。
   const _v = parseInt(v)
   if (_v >= 1 && _v <= 100) {
     state.basicStyleForm.columnWidthRatio = _v
@@ -114,9 +131,11 @@ const onColumnWidthRatioChange = v => {
   changeBasicStyle('columnWidthRatio')
 }
 
+/** 通知父级杂项属性变化并触发重新取数 */
 const changeMisc = prop => {
   emit('onMiscChange', { data: state.miscForm, requestData: true }, prop)
 }
+/** 按当前图表配置初始化基础样式表单 */
 const init = () => {
   const basicStyle = cloneDeep(props.chart.customAttr.basicStyle)
   const miscStyle = cloneDeep(props.chart.customAttr.misc)
@@ -125,6 +144,7 @@ const init = () => {
     basicStyle.mapSymbol === 'custom' &&
     state.basicStyleForm.customIcon !== basicStyle.customIcon
   ) {
+    // 自定义地图符号可能是 data URL 或 SVG 文本，进入面板时转换成上传控件预览。
     let file
     if (basicStyle.customIcon?.startsWith('data')) {
       file = basicStyle.customIcon
@@ -136,10 +156,12 @@ const init = () => {
   state.basicStyleForm = defaultsDeep(basicStyle, cloneDeep(DEFAULT_BASIC_STYLE)) as ChartBasicStyle
   const mapStyle = basicStyle.mapStyle
   if (mapStyle && !find(mapStyleOptions.value, s => s.value === mapStyle)) {
+    // 历史或第三方底图样式不存在时回退到普通样式，避免下拉框显示空值。
     state.basicStyleForm.mapStyle = 'normal'
   }
   state.miscForm = defaultsDeep(miscStyle, cloneDeep(DEFAULT_MISC)) as ChartMiscAttr
   if (!state.customColor) {
+    // 首次进入面板默认选中第一组配色，后续响应式刷新不重置用户编辑位置。
     state.customColor = state.basicStyleForm.colors[0]
     state.colorIndex = 0
   }
@@ -147,6 +169,7 @@ const init = () => {
     tableExpandLevelOptions.splice(1)
     let maxLevel = props.chart.xAxis?.length
     if (isNumber(basicStyle.defaultExpandLevel)) {
+      // 已保存展开层级可能大于当前行维度数量，选项需要保留该历史值。
       maxLevel = Math.max(maxLevel, basicStyle.defaultExpandLevel)
     }
     for (let i = 1; i <= maxLevel; i++) {
@@ -159,12 +182,14 @@ const init = () => {
     if (basicStyle.tableRowHeaderMode === 'percent') {
       state.treeRowWidth = basicStyle.tableRowHeaderWidthPercent
       if (basicStyle.tableRowHeaderWidthPercent > 80) {
+        // 百分比模式限制最大 80%，避免树表行头挤占全部内容区域。
         state.treeRowWidth = 80
       }
     }
     if (basicStyle.tableRowHeaderMode === 'fixed') {
       state.treeRowWidth = basicStyle.tableRowHeaderWidth
       if (basicStyle.tableRowHeaderWidth < 10) {
+        // 固定宽度历史值过小时回退到可读默认宽度。
         state.treeRowWidth = 120
       }
     }
@@ -172,6 +197,7 @@ const init = () => {
   const lastPageInfo = dvMainStore.getViewPageInfo(props.chart.id)
   if (lastPageInfo) {
     if (lastPageInfo.pageSize && lastPageInfo.pageSize !== state.basicStyleForm.tablePageSize) {
+      // 表格运行时分页大小优先回填到样式表单，但不触发图表立即重绘。
       state.basicStyleForm.tablePageSize = lastPageInfo.pageSize
       changeBasicStyle('tablePageSize', false, false)
       return
@@ -179,7 +205,9 @@ const init = () => {
   }
   initTableColumnWidth()
 }
+/** 防抖初始化，避免多项图表属性连续变化时重复计算 */
 const debouncedInit = debounce(init, 500)
+/** 监听图表基础样式、杂项和轴字段变化并刷新面板 */
 watch(
   [
     () => props.chart.customAttr.basicStyle,
@@ -191,13 +219,16 @@ watch(
   debouncedInit,
   { deep: true }
 )
+/** 兼容历史配置字段，补齐新版默认值 */
 const configCompat = (basicStyle: ChartBasicStyle) => {
   // 悬浮改为图例和缩放按钮
   if (basicStyle.suspension === false && basicStyle.showZoom === undefined) {
     basicStyle.showZoom = false
   }
 }
+/** 支持自定义列宽的表格图表类型 */
 const COLUMN_WIDTH_TYPE = ['table-info', 'table-normal']
+/** 根据当前轴字段初始化表格列宽配置 */
 const initTableColumnWidth = () => {
   if (!COLUMN_WIDTH_TYPE.includes(props.chart.type)) {
     return
@@ -209,6 +240,7 @@ const initTableColumnWidth = () => {
   }
   const { tableHeader } = customAttr
   if (allAxis.length && tableHeader.showIndex) {
+    // 序号列不是数据集字段，需要使用固定字段名加入列宽配置。
     const indexColumn = {
       engineFieldName: SERIES_NUMBER_FIELD,
       name: tableHeader.indexLabel
@@ -216,6 +248,7 @@ const initTableColumnWidth = () => {
     allAxis.unshift(indexColumn)
   }
   if (!allAxis.length) {
+    // 当前没有可展示字段时清空列宽状态，避免保留已删除字段配置。
     state.basicStyleForm.tableFieldWidth?.splice(0)
     state.fieldColumnWidth.fieldId = ''
     state.fieldColumnWidth.width = 0
@@ -223,6 +256,7 @@ const initTableColumnWidth = () => {
     if (!state.basicStyleForm.tableFieldWidth.length) {
       state.basicStyleForm.tableFieldWidth.splice(0)
       const defaultWidth = parseFloat((100 / allAxis.length).toFixed(2))
+      // 首次进入列宽配置时按字段数量均分宽度。
       allAxis.forEach(item => {
         state.basicStyleForm.tableFieldWidth.push({
           fieldId: item.engineFieldName,
@@ -231,6 +265,7 @@ const initTableColumnWidth = () => {
         })
       })
     } else {
+      // 字段变化时保留同名字段的历史列宽，新字段使用默认宽度。
       const fieldMap = state.basicStyleForm.tableFieldWidth.reduce((p, n) => {
         p[n.fieldId] = n
         return p
@@ -259,7 +294,9 @@ const initTableColumnWidth = () => {
     state.fieldColumnWidth.width = selectedField.width
   }
 }
+/** 选择表格字段后同步当前字段列宽 */
 const changeFieldColumn = () => {
+  // 切换字段后把当前字段已保存列宽回填到输入框。
   const { basicStyleForm, fieldColumnWidth } = state
   const fieldWidth = basicStyleForm.tableFieldWidth?.find(
     i => i.fieldId === fieldColumnWidth.fieldId
@@ -268,7 +305,9 @@ const changeFieldColumn = () => {
     fieldColumnWidth.width = fieldWidth.width
   }
 }
+/** 校验并保存当前字段的列宽设置 */
 const changeFieldColumnWidth = () => {
+  // 列宽配置以百分比保存，校验通过后只更新当前选中字段。
   const { basicStyleForm, fieldColumnWidth } = state
   let { width } = fieldColumnWidth
   let validate = true
@@ -285,6 +324,7 @@ const changeFieldColumnWidth = () => {
   if (!validate) {
     ElMessage.warning('宽度需要在 0-200 之间')
     if (fieldWidth) {
+      // 校验失败恢复当前字段已保存列宽，避免输入框停留在非法值。
       fieldColumnWidth.width = fieldWidth.width
     }
     return
@@ -294,6 +334,7 @@ const changeFieldColumnWidth = () => {
     changeBasicStyle('tableFieldWidth')
   }
 }
+/** 表格分页大小选项 */
 const pageSizeOptions = [
   { name: '10' + t('chart.table_page_size_unit'), value: 10 },
   { name: '20' + t('chart.table_page_size_unit'), value: 20 },
@@ -303,8 +344,10 @@ const pageSizeOptions = [
   { name: '100' + t('chart.table_page_size_unit'), value: 100 }
 ]
 
+/** 仪表盘样式选项 */
 const gaugeStyleOptions = [{ name: '默认', value: 'default' }]
 
+/** 折线和散点符号选项 */
 const symbolOptions = [
   { name: t('chart.line_symbol_circle'), value: 'circle' },
   { name: t('chart.line_symbol_rect'), value: 'square' },
@@ -312,8 +355,10 @@ const symbolOptions = [
   { name: t('chart.line_symbol_diamond'), value: 'diamond' }
 ]
 
+/** 当前地图底图类型 */
 const mapType = ref<string>(undefined)
 
+/** 地图样式选项 */
 const mapStyleOptions = computed(() => {
   return [
     { name: t('chart.map_style_normal'), value: 'normal' },
@@ -321,6 +366,7 @@ const mapStyleOptions = computed(() => {
   ]
 })
 
+/** 热力图渲染类型选项 */
 const heatMapTypeOptions = [
   { name: t('chart.heatmap_classics'), value: 'heatmap' },
   { name: t('chart.heatmap3D'), value: 'heatmap3D' }
@@ -338,13 +384,14 @@ const mergeCell = computed(() => {
   return false
 })
 
+/** 阻止数字输入框录入科学计数法和负号等非法字符 */
 const preventInvalidKeydown = event => {
   const invalidKeys = ['e', 'E', '+', '-', '.']
   if (invalidKeys.includes(event.key)) {
     event.preventDefault()
   }
 }
-// 验证输入值
+/** 将输入值限制在 1 到 100 的有效范围内 */
 const validateInput = (value, field) => {
   if (value === '') {
     state.basicStyleForm[field] = 1
@@ -362,6 +409,7 @@ const validateInput = (value, field) => {
   }
   state.basicStyleForm[field] = num
 }
+/** 挂载后初始化表单，并监听图表类型变更修正圆角配置 */
 onMounted(() => {
   init()
   useEmitt({
@@ -378,6 +426,7 @@ onMounted(() => {
 <template>
   <el-form size="small" style="width: 100%">
     <template v-if="showProperty('colors')">
+      <!-- 自定义色板组件维护系列颜色数组和当前选中色，基础面板只接收变更结果。 -->
       <custom-color-style-select
         :model-value="state"
         @update:model-value="value => Object.assign(state, value)"
@@ -405,6 +454,7 @@ onMounted(() => {
       :label="t('chart.table_layout_mode')"
       :class="'form-item-' + themes"
     >
+      <!-- 表格布局切换会影响树表行头、展开层级和列宽配置，保存后由渲染层重新解释字段轴。 -->
       <el-radio-group
         size="small"
         :effect="themes"
@@ -535,7 +585,7 @@ onMounted(() => {
         <el-radio :effect="themes" label="vertical">{{ t('chart.vertical') }}</el-radio>
       </el-radio-group>
     </el-form-item>
-    <!--flow map begin-->
+    <!-- 地图热力图和流向地图基础渲染参数。 -->
     <el-form-item
       v-if="showProperty('heatMapStyle')"
       :label="t('chart.type')"
@@ -556,6 +606,7 @@ onMounted(() => {
       </el-select>
     </el-form-item>
     <div class="map-style" v-if="showProperty('mapBaseStyle') || showProperty('heatMapStyle')">
+      <!-- 地图底图样式同时服务区域地图和热力图，自定义地址只在 custom 样式下写入。 -->
       <el-row style="flex: 1">
         <el-col>
           <el-form-item
@@ -650,8 +701,7 @@ onMounted(() => {
       </el-row>
     </div>
 
-    <!--flow map end-->
-    <!--map start-->
+    <!-- 区域地图边框、底色和标签显示参数。 -->
     <el-row :gutter="8">
       <el-col :span="12" v-if="showProperty('areaBorderColor')">
         <el-form-item
@@ -737,6 +787,7 @@ onMounted(() => {
       </el-row>
     </div>
     <template v-if="showProperty('mapCenter') && state.basicStyleForm.autoFit === false">
+      <!-- 手动中心点只在关闭自适应后生效，经纬度范围由输入控件限制。 -->
       <el-row :gutter="8">
         <el-col :span="12">
           <el-form-item
@@ -783,6 +834,7 @@ onMounted(() => {
       </el-checkbox>
     </el-form-item>
     <div v-if="showProperty('zoom') && state.basicStyleForm.showZoom">
+      <!-- 缩放控件颜色与地图本体分开保存，便于明暗底图下单独校正按钮可见性。 -->
       <el-form-item
         class="form-item"
         :class="'form-item-' + themes"
@@ -817,9 +869,7 @@ onMounted(() => {
       </el-form-item>
     </div>
 
-    <!--map end-->
-
-    <!--table start-->
+    <!-- 表格边框、滚动条和分页取数方式。 -->
     <el-row :gutter="8">
       <el-col :span="12" v-if="showProperty('tableBorderColor')">
         <el-form-item
@@ -917,9 +967,7 @@ onMounted(() => {
       </el-select>
     </el-form-item>
 
-    <!--table end-->
-
-    <!--table2 start-->
+    <!-- 表格列宽、树表行头和自动换行配置。 -->
     <el-form-item
       :label="t('chart.table_column_width_config')"
       class="form-item"
@@ -963,6 +1011,7 @@ onMounted(() => {
       label=""
       class="form-item table-field-width-config"
     >
+      <!-- 字段级列宽在批量设置中禁用，避免把某张表的字段标识写入其他图表。 -->
       <el-select
         v-model="state.fieldColumnWidth.fieldId"
         :effect="themes"
@@ -1088,8 +1137,7 @@ onMounted(() => {
         {{ t('chart.show_hover_style') }}
       </el-checkbox>
     </el-form-item>
-    <!--table2 end-->
-    <!--gauge start-->
+    <!-- 仪表盘刻度和百分比标签配置。 -->
     <el-form-item
       :label="t('chart.chart_style')"
       class="form-item"
@@ -1137,8 +1185,7 @@ onMounted(() => {
         {{ t('chart.gauge_percentage_tick') }}</el-checkbox
       >
     </el-form-item>
-    <!--gauge end-->
-    <!--bar start-->
+    <!-- 柱形图间距和柱宽占比配置。 -->
     <el-form-item
       v-if="showProperty('barDefault')"
       class="form-item form-item-slider"
@@ -1204,8 +1251,7 @@ onMounted(() => {
         </el-col>
       </el-row>
     </div>
-    <!--bar end-->
-    <!--line area start-->
+    <!-- 折线和面积图线宽、标记点和平滑曲线配置。 -->
     <el-row :gutter="8">
       <el-col :span="12">
         <el-form-item
@@ -1280,8 +1326,7 @@ onMounted(() => {
         {{ t('chart.line_smooth') }}
       </el-checkbox>
     </el-form-item>
-    <!--line area end-->
-    <!--radar begin-->
+    <!-- 雷达图形状、节点和填充区域配置。 -->
     <el-form-item
       :label="t('chart.shape')"
       class="form-item"
@@ -1343,8 +1388,7 @@ onMounted(() => {
         {{ $t('chart.radar_area_color') }}
       </el-checkbox>
     </el-form-item>
-    <!--radar end-->
-    <!--scatter start-->
+    <!-- 散点图气泡形状和尺寸配置。 -->
     <el-form-item
       :label="t('chart.bubble_symbol')"
       class="form-item"
@@ -1380,9 +1424,7 @@ onMounted(() => {
         @change="changeBasicStyle('scatterSymbolSize')"
       />
     </el-form-item>
-    <!--scatter end-->
-
-    <!--symbol map start-->
+    <!-- 符号地图标记形状、尺寸、透明度和描边配置。 -->
     <el-form-item
       :label="t('chart.bubble_symbol')"
       class="form-item"
@@ -1448,9 +1490,10 @@ onMounted(() => {
         @change="changeBasicStyle('mapSymbolStrokeWidth')"
       />
     </el-form-item>
-    <!-- pie/rose start -->
+    <!-- 饼图和玫瑰图 TopN、内外半径配置。 -->
 
     <div v-show="showProperty('topN')" class="top-n-setting">
+      <!-- TopN 会改变数据聚合结果，开启或调整数量时需要让父级重新取数。 -->
       <el-form-item class="form-item" :class="'form-item-' + themes">
         <el-checkbox
           :effect="themes"
@@ -1580,8 +1623,7 @@ onMounted(() => {
         </el-col>
       </el-row>
     </div>
-    <!-- pie/rose end -->
-    <!-- circle-packing start -->
+    <!-- 圆堆图边框、间距和填充配置。 -->
     <div v-if="showProperty('circleBorderStyle')">
       <div class="alpha-setting">
         <el-row style="display: flex; width: 100%">
@@ -1643,7 +1685,6 @@ onMounted(() => {
         </el-form-item>
       </el-row>
     </div>
-    <!-- circle-packing end -->
   </el-form>
 </template>
 <style scoped lang="less">

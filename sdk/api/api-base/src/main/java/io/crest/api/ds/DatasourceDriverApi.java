@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 @Tag(name = "数据源管理:驱动")
 @ApiSupport(order = 968)
+// 定义模块接口契约和数据传输结构
 public interface DatasourceDriverApi {
     /**
      * 查询数据源树

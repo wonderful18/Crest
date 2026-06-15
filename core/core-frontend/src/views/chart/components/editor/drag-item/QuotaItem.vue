@@ -22,15 +22,19 @@ import { iconFieldMap } from '@/components/icon-group/field-list'
 
 const { t } = useI18n()
 
+// 指标字段标签颜色类型
 const tagType = ref('success')
 
+// 指标拖拽项内部状态，保存格式化配置和图表能力开关
 const state = reactive({
   formatterItem: formatterItem,
   disableEditCompare: false,
+  // quotaViews 和 notSupportAccumulateViews 由图表能力表控制菜单可用性。
   quotaViews: quotaViews,
   notSupportAccumulateViews: notSupportAccumulateViews
 })
 
+// 指标拖拽项入参，包含字段、图表上下文和所在轴区域
 const props = defineProps({
   param: {
     type: Object,
@@ -66,6 +70,7 @@ const props = defineProps({
   }
 })
 
+// 指标拖拽项向编辑器上层抛出的操作事件
 const emit = defineEmits([
   'onQuotaItemRemove',
   'onCustomSort',
@@ -79,9 +84,11 @@ const emit = defineEmits([
 ])
 
 const { item, chart } = toRefs(props)
+// 根据当前主题反转提示框主题，保证弹层可读
 const toolTip = computed(() => {
   return props.themes || 'dark'
 })
+// 字段数据或图表类型变化时刷新标签颜色
 watch(
   [() => props.quotaData, () => props.item, () => props.chart.type],
   () => {
@@ -90,11 +97,12 @@ watch(
   { deep: true }
 )
 
+// 图表配置变化时刷新同环比可用性，并清理不支持的快速计算
 watch(
   () => props.chart,
   () => {
     isEnableCompare()
-    // 不支持累加计算的图表，自动设置快速计算为无
+    // 不支持累加计算的图表自动清理快速计算配置
     if (
       state.notSupportAccumulateViews.indexOf(chart.value.type) > -1 &&
       item.value.compareCalc.type === 'accumulate'
@@ -105,21 +113,25 @@ watch(
   { deep: true }
 )
 const AXIS_FORMAT_VIEW = ['table-normal', 'table-info', 'table-pivot', 'indicator', 'rich-text']
+// 当前指标是否展示数值格式化入口
 const showValueFormatter = computed<boolean>(() => {
+  // 只有表格、指标和富文本等轴值展示型图表开放数值格式化入口。
   return (
     AXIS_FORMAT_VIEW.includes(props.chart.type) &&
     (props.item.fieldType === 2 || props.item.fieldType === 3)
   )
 })
 
+// 根据图表类型和时间维度判断同环比配置是否可用
 const isEnableCompare = () => {
-  // 指标卡开放同环比配置
+  // 指标卡始终开放同环比配置
   if (chart.value.type === 'indicator') {
     state.disableEditCompare = false
     return
   }
   let xAxis = null
   if (Object.prototype.toString.call(chart.value.xAxis) === '[object Array]') {
+    // 兼容编辑器内数组态和持久化字符串态两种轴数据结构。
     xAxis = JSON.parse(JSON.stringify(chart.value.xAxis))
   } else {
     xAxis = JSON.parse(chart.value.xAxis)
@@ -131,6 +143,7 @@ const isEnableCompare = () => {
   if (chart.value.type === 'table-pivot') {
     let xAxisExt = null
     if (Object.prototype.toString.call(chart.value.xAxisExt) === '[object Array]') {
+      // 透视表的列维度也可能承载年月字段，需要一并参与同环比能力判断。
       xAxisExt = JSON.parse(JSON.stringify(chart.value.xAxisExt))
     } else {
       xAxisExt = JSON.parse(chart.value.xAxisExt)
@@ -155,6 +168,7 @@ const isEnableCompare = () => {
   }
 }
 
+// 分发指标菜单点击操作
 const clickItem = param => {
   if (!param) {
     return
@@ -183,20 +197,24 @@ const clickItem = param => {
   }
 }
 
+// 构造通用菜单命令对象
 const beforeClickItem = type => {
   return {
     type
   }
 }
 
+// 处理指标排序，普通排序直接更新字段，自定义排序交给上层弹窗
 const sort = param => {
   if (param.type === 'custom_sort') {
+    // 自定义排序需要打开上层弹窗维护排序数组，这里只传递字段位置。
     const item = {
       index: props.index,
       sort: param.type
     }
     emit('onCustomSort', item)
   } else {
+    // 普通升降序直接写回当前字段，并清空历史自定义排序。
     item.value.index = props.index
     item.value.sort = param.type
     item.value.customSort = []
@@ -204,64 +222,70 @@ const sort = param => {
   }
 }
 
+// 构造排序菜单命令对象
 const beforeSort = type => {
   return {
     type: type
   }
 }
 
+// 切换指标汇总方式
 const summary = param => {
   item.value.summary = param.type
   emit('onQuotaItemChange', item.value)
 }
 
+// 构造汇总菜单命令对象
 const beforeSummary = type => {
   return {
     type: type
   }
 }
 
+// 打开指标重命名弹窗
 const showRename = () => {
   item.value.index = props.index
   item.value.renameType = props.type
-  // item.value.dsFieldName = getOriginFieldName(props.dimensionData, props.quotaData, item.value)
   emit('onNameEdit', item.value)
 }
 
+// 删除当前指标字段
 const removeItem = () => {
   item.value.index = props.index
   item.value.removeType = props.type
   emit('onQuotaItemRemove', item.value)
 }
 
+// 根据字段来源和类型刷新标签颜色
 const getItemTagType = () => {
   tagType.value = getItemType(props.dimensionData, props.quotaData, props.item)
 }
 
+// 打开指标过滤配置弹窗
 const editFilter = () => {
   item.value.index = props.index
   item.value.filterType = props.type
   emit('editItemFilter', item.value)
 }
 
+// 处理快速计算类型切换
 const quickCalc = param => {
   switch (param.type) {
     case 'none':
-      // 选择占比外，设置自动
+      // 取消快速计算时恢复默认数值格式
       resetValueFormatter(item.value)
       item.value.compareCalc.type = 'none'
       emit('onQuotaItemChange', item.value)
       break
     case 'setting':
-      // 选择占比外，设置自动
-      // 指标卡不需要重置数值格式
+      // 自定义同环比配置前，非指标卡恢复默认数值格式
       if (chart.value.type !== 'indicator') {
         resetValueFormatter(item.value)
       }
       editCompare()
       break
     case 'percent':
-      // 选择占比，自动将数值格式设置为百分比并保留2位小数
+      // 选择占比时自动切换为百分比并保留两位小数
       item.value.formatterCfg.type = 'percent'
       item.value.formatterCfg.decimalCount = 2
 
@@ -269,6 +293,7 @@ const quickCalc = param => {
       emit('onQuotaItemChange', item.value)
       break
     case 'accumulate':
+      // 累加计算不额外修改格式化配置，由图表渲染层按当前格式输出。
       item.value.compareCalc.type = 'accumulate'
       emit('onQuotaItemChange', item.value)
       break
@@ -277,29 +302,35 @@ const quickCalc = param => {
   }
 }
 
+// 构造快速计算菜单命令对象
 const beforeQuickCalc = type => {
   return {
     type: type
   }
 }
 
+// 打开同环比编辑弹窗
 const editCompare = () => {
   item.value.index = props.index
   item.value.calcType = props.type
   emit('editItemCompare', item.value)
 }
 
+// 打开数值格式化配置弹窗
 const valueFormatter = () => {
   item.value.index = props.index
   item.value.formatterType = props.type
   emit('valueFormatter', item.value)
 }
+// 切换字段隐藏状态
 const toggleHide = () => {
   item.value.index = props.index
   item.value.hide = !item.value.hide
   item.value.axisType = props.type
+  // 隐藏状态由上层按轴类型持久化，表格渲染时再决定是否展示字段。
   emit('onToggleHide', item.value)
 }
+// 表格字段隐藏后在标签上展示隐藏图标
 const showHideIcon = computed(() => {
   return ['tale-info', 'table-normal'].includes(props.chart.type) && item.value.hide
 })
@@ -314,10 +345,12 @@ const NOT_SUPPORT_SORT = [
   'treemap'
 ]
 
+// 判断当前图表和字段区域是否展示排序入口
 const showSort = computed(() => {
   if (chart.value.type === 'multi-scatter') {
     return false
   }
+  // 扩展标签、提示和气泡字段不参与主数据排序。
   return (
     props.type !== 'extLabel' &&
     props.type !== 'extTooltip' &&
@@ -327,7 +360,7 @@ const showSort = computed(() => {
   )
 })
 
-// 同环比计算类型
+// 同环比计算类型白名单
 const yoyLabel = ['day_mom', 'month_yoy', 'year_yoy', 'month_mom', 'year_mom']
 
 onMounted(() => {
@@ -338,6 +371,7 @@ onMounted(() => {
 
 <template>
   <span class="item-style">
+    <!-- 指标标签集成字段类型、排序状态、汇总方式和隐藏状态，点击后展开字段操作菜单。 -->
     <el-dropdown :effect="themes" trigger="click" @command="clickItem">
       <el-tag
         class="item-axis father"
@@ -451,6 +485,7 @@ onMounted(() => {
             @click.prevent
             v-if="!['table-info', 'multi-scatter'].includes(chart.type) && item.summary !== ''"
           >
+            <!-- 汇总方式只对可聚合指标开放，文本和日期字段会隐藏不适用的聚合项。 -->
             <el-dropdown
               :effect="themes"
               placement="right-start"
@@ -615,7 +650,7 @@ onMounted(() => {
             </el-dropdown>
           </el-dropdown-item>
 
-          <!--同比/环比等快速计算-->
+          <!-- 快速计算覆盖无计算、同环比、占比和累加，具体可用性由图表类型和时间维度决定。 -->
           <el-dropdown-item
             @click.prevent
             v-if="
@@ -729,6 +764,7 @@ onMounted(() => {
           </el-dropdown-item>
 
           <el-dropdown-item @click.prevent v-if="showSort" :divided="chart.type !== 'table-info'">
+            <!-- 排序菜单写回当前指标字段，自定义排序由上层弹窗维护完整排序列表。 -->
             <el-dropdown
               :effect="themes"
               placement="right-start"
@@ -819,6 +855,7 @@ onMounted(() => {
             :command="beforeClickItem('filter')"
             :divided="chart.type.includes('chart-mix')"
           >
+            <!-- 指标过滤只作用于当前字段，不改变数据集全局筛选条件。 -->
             <span>{{ t('chart.filter') }}</span>
           </el-dropdown-item>
 

@@ -57,6 +57,9 @@ const contextmenuStore = contextmenuStoreWithOut()
 const { curComponent, dvInfo, editMode, tabMoveOutComponentId, canvasState, mainScrollTop } =
   storeToRefs(dvMainStore)
 const { editorMap, areaData, isCtrlOrCmdDown } = storeToRefs(composeStore)
+/**
+ * 画布核心组件的渲染、拖拽和矩阵配置入参
+ */
 const props = defineProps({
   themes: {
     type: String,
@@ -202,15 +205,33 @@ const {
 } = toRefs(props)
 
 const mainCanvasFlag = isMainCanvas(canvasId.value)
+/**
+ * 当前画布容器在视口中的横向起点
+ */
 const editorX = ref(0)
+/**
+ * 当前画布容器在视口中的纵向起点
+ */
 const editorY = ref(0)
+/**
+ * 框选区域的起点坐标
+ */
 const start = ref({
   // 选中区域的起点
   x: 0,
   y: 0
 })
+/**
+ * 框选区域宽度
+ */
 const width = ref(0)
+/**
+ * 框选区域高度
+ */
 const height = ref(0)
+/**
+ * 是否展示框选区域
+ */
 const isShowArea = ref(false)
 const svgFilterAttrs = [
   'width',
@@ -236,12 +257,28 @@ const commonFilterAttrsFilterBorder = [
   'borderStyle',
   'borderColor'
 ]
+/**
+ * 图表放大弹窗引用
+ */
 const userViewEnlargeRef = ref(null)
+/**
+ * 数据集参数设置弹窗引用
+ */
 const customDatasetParamsRef = ref(null)
+/**
+ * 跳转设置弹窗引用
+ */
 const linkJumpRef = ref(null)
+/**
+ * 联动设置弹窗引用
+ */
 const linkageRef = ref(null)
+/**
+ * 当前画布 DOM ID
+ */
 const mainDomId = ref('editor-' + canvasId.value)
 
+// 资源信息变化后刷新水印状态
 watch(
   () => dvInfo.value,
   () => {
@@ -250,6 +287,7 @@ watch(
   { deep: true }
 )
 
+// 组件数量或画布样式变化后刷新水印状态
 watch(
   [() => componentData.value.length, () => canvasStyleData.value],
   () => {
@@ -260,6 +298,7 @@ watch(
   { deep: true }
 )
 
+// 框选组件集合变化后同步分组占位组件
 watch(
   () => areaData.value.components.length,
   () => {
@@ -267,12 +306,18 @@ watch(
   }
 )
 
+/**
+ * 延迟刷新水印，避开组件渲染时序
+ */
 const watermarkUpdate = () => {
   setTimeout(() => {
     initWatermark()
   })
 }
 
+/**
+ * 根据当前资源水印配置初始化画布水印
+ */
 const initWatermark = (waterDomId = 'editor-canvas-main') => {
   try {
     if (
@@ -287,6 +332,9 @@ const initWatermark = (waterDomId = 'editor-canvas-main') => {
   }
 }
 
+/**
+ * 仪表板矩阵单元基础尺寸
+ */
 const matrixStyle = computed(() => {
   return {
     width: baseWidth.value,
@@ -294,6 +342,9 @@ const matrixStyle = computed(() => {
   }
 })
 
+/**
+ * 判断空仪表板是否展示拖拽提示
+ */
 const dragInfoShow = computed(() => {
   return (
     dvInfo.value.type === 'dashboard' &&
@@ -302,12 +353,18 @@ const dragInfoShow = computed(() => {
   )
 })
 
+/**
+ * 当前选中组件 ID
+ */
 const curComponentId = computed(() => {
   return curComponent.value?.id || ''
 })
 
 const { emitter } = useEmitt()
 
+/**
+ * 当前画布缩放比例，仪表板按展示密度额外放大
+ */
 const curScale = computed(() => {
   if (dashboardActive.value) {
     return (canvasStyleData.value.scale * 1.2) / 100
@@ -316,6 +373,9 @@ const curScale = computed(() => {
   }
 })
 
+/**
+ * 基于主画布配置计算的缩放比例
+ */
 const curBaseScale = computed(() => {
   if (dashboardActive.value) {
     return (dvMainStore.canvasStyleData.scale * 1.2) / 100
@@ -324,6 +384,9 @@ const curBaseScale = computed(() => {
   }
 })
 
+/**
+ * 标签页或分组内组件拖出时的占位阴影开关
+ */
 const pointShadowShow = computed(() => {
   return (
     canvasId.value === 'canvas-main' &&
@@ -333,12 +396,18 @@ const pointShadowShow = computed(() => {
   )
 })
 
+/**
+ * 当前仪表板网格间距
+ */
 const curGap = computed(() => {
   return dashboardActive.value && canvasStyleData.value?.dashboard?.gap === 'yes'
     ? canvasStyleData.value?.dashboard?.gapSize
     : 0
 })
 
+/**
+ * 传递给组件包装器的矩阵单元信息
+ */
 const baseCellInfo = computed(() => {
   return {
     baseWidth: baseWidth.value,
@@ -347,29 +416,62 @@ const baseCellInfo = computed(() => {
   }
 })
 
+/**
+ * 判断当前资源是否为仪表板
+ */
 const dashboardActive = computed(() => {
   return dvInfo.value.type === 'dashboard'
 })
 
+/**
+ * 判断当前画布是否为分组或标签页内部画布
+ */
 const groupCanvasActive = computed(() => {
   return isGroupOrTabCanvas(canvasId.value)
 })
 
 // 融合矩阵设计
 const renderOk = ref(false)
+/**
+ * 矩阵组件移动动画开关
+ */
 const moveAnimate = ref(false)
+/**
+ * 仪表板矩阵单元宽度
+ */
 const cellWidth = ref(0)
+/**
+ * 仪表板矩阵单元高度
+ */
 const cellHeight = ref(0)
+/**
+ * 当前容器可容纳的最大矩阵列数
+ */
 const maxCell = ref(0)
+/**
+ * 当前拖拽或缩放过程中的临时状态
+ */
 const infoBox = ref(null)
+/**
+ * 画布根容器引用
+ */
 const container = ref(null)
+/**
+ * 矩阵占位二维数组
+ */
 const positionBox = ref([])
+/**
+ * 组件矩阵坐标缓存
+ */
 const coordinates = ref([]) //坐标点集合
 
 let lastTask = undefined
 let isOverlay = false //是否正在交换位置
 let moveTime = 100 //移动动画时间
 
+/**
+ * 当前矩阵占用的最大纵向行数
+ */
 const itemMaxY = ref(0)
 let itemMaxX = 0
 let snapshotTimer = ref(null)
@@ -400,6 +502,9 @@ const handleMouseDown = e => {
   // 展示选中区域
   isShowArea.value = true
 
+  /**
+   * 鼠标移动时更新框选区域尺寸
+   */
   const move = moveEvent => {
     width.value = Math.abs(moveEvent.clientX - startX)
     height.value = Math.abs(moveEvent.clientY - startY)
@@ -412,6 +517,9 @@ const handleMouseDown = e => {
     }
   }
 
+  /**
+   * 鼠标抬起时结束框选并尝试创建分组
+   */
   const up = e => {
     document.removeEventListener('mousemove', move)
     document.removeEventListener('mouseup', up)
@@ -428,6 +536,9 @@ const handleMouseDown = e => {
   document.addEventListener('mouseup', up)
 }
 
+/**
+ * 隐藏框选区域并清空临时组合数据
+ */
 const hideArea = () => {
   isShowArea.value = false
   width.value = 0
@@ -443,6 +554,9 @@ const hideArea = () => {
   })
 }
 
+/**
+ * 根据框选区域创建临时分组选择框
+ */
 const createGroup = () => {
   // 获取选中区域的组件数据
   const areaDataLocal = getSelectArea()
@@ -506,6 +620,9 @@ const createGroup = () => {
   }
 }
 
+/**
+ * 获取完全落在框选区域内的组件
+ */
 const getSelectArea = () => {
   const result = []
   // 区域起点坐标
@@ -529,6 +646,9 @@ const getSelectArea = () => {
   return result
 }
 
+/**
+ * 在画布区域展示右键菜单并换算嵌套容器坐标
+ */
 const handleContextMenu = event => {
   // 仪表板和预览状态不显示菜单和组创建
   if (dashboardActive.value || editMode.value === 'preview') {
@@ -582,14 +702,23 @@ const handleContextMenu = event => {
   }
 }
 
+/**
+ * 获取普通组件外层样式
+ */
 const getComponentStyle = style => {
   return getStyle(style, style.borderActive ? commonFilterAttrs : commonFilterAttrsFilterBorder)
 }
 
+/**
+ * 获取 SVG 组件允许透传的样式
+ */
 const getSvgComponentStyle = style => {
   return getStyle(style, svgFilterAttrs)
 }
 
+/**
+ * 获取组件在编辑画布中的定位样式
+ */
 const getShapeItemShowStyle = item => {
   return getShapeItemStyle(item, {
     dvModel: dvInfo.value.type,
@@ -600,6 +729,9 @@ const getShapeItemShowStyle = item => {
   })
 }
 
+/**
+ * 文本组件输入时按内容高度同步外层组件高度
+ */
 const handleInput = (element, value) => {
   if (element.component !== 'VText') {
     return
@@ -614,6 +746,9 @@ const handleInput = (element, value) => {
   })
 }
 
+/**
+ * 根据富文本换行数量计算文本组件高度
+ */
 const getTextareaHeight = (element, text) => {
   let { lineHeight, fontSize, height } = element.style
   if (lineHeight === '') {
@@ -625,6 +760,9 @@ const getTextareaHeight = (element, text) => {
   return height > newHeight ? height : newHeight
 }
 
+/**
+ * 计算当前画布容器样式，兼容主画布和嵌套画布
+ */
 const editStyle = computed(() => {
   if (isGroupOrTabCanvas(canvasId.value)) {
     return {
@@ -667,6 +805,9 @@ function debounce(func, time) {
   }
 }
 
+/**
+ * 拖拽到视口边缘时滚动画布
+ */
 function scrollScreen(e) {
   if (e.clientY + 50 >= window.innerHeight) {
     let body = $(document.body)
@@ -760,6 +901,9 @@ function addItemToPositionBox(item) {
   }
 }
 
+/**
+ * 按最大行数扩展矩阵占位盒子
+ */
 function fillPositionBox(maxY) {
   let pb = positionBox.value
   maxY += 2
@@ -780,6 +924,9 @@ function fillPositionBox(maxY) {
   $(container.value).css('height', (itemMaxY.value + 2) * cellHeight.value + 'px')
 }
 
+/**
+ * 从矩阵占位盒子中清除组件占位
+ */
 function removeItemFromPositionBox(item) {
   let pb = positionBox.value
   if (item.x <= 0 || item.y <= 0) return
@@ -807,6 +954,9 @@ function reCalcCellWidth() {
   maxCell.value = cells
   itemMaxX = maxCell.value
 }
+/**
+ * 按新的矩阵尺寸调整组件并重新整理下方组件
+ */
 function resizePlayer(item, newSize) {
   removeItemFromPositionBox(item)
   let belowItems = findBelowItems(item)
@@ -903,6 +1053,9 @@ function movePlayer(item, position) {
   }
 }
 
+/**
+ * 按组件 ID 删除组件并在嵌套画布中重新初始化矩阵
+ */
 function removeItemById(componentId) {
   if (componentId) {
     componentData.value.forEach((component, index) => {
@@ -918,6 +1071,9 @@ function removeItemById(componentId) {
   }
 }
 
+/**
+ * 删除组件前清理矩阵占位、联动筛选和快照状态
+ */
 function removeItemComponent(item) {
   if (item && isSameCanvas(item, canvasId.value)) {
     if (isDashboard()) {
@@ -947,6 +1103,9 @@ function removeItemComponent(item) {
   }
 }
 
+/**
+ * 按索引从当前画布删除组件
+ */
 function removeItem(index) {
   let item = componentData.value[index]
   if (item && isSameCanvas(item, canvasId.value)) {
@@ -961,6 +1120,9 @@ function removeItem(index) {
   }
 }
 
+/**
+ * 将组件加入矩阵占位盒子并整理可上浮组件
+ */
 function addItem(item, index) {
   if (index < 0) {
     index = componentData.value.length
@@ -978,6 +1140,9 @@ function addItem(item, index) {
   }
 }
 
+/**
+ * 根据矩阵位置刷新组件坐标缓存
+ */
 function changeItemCoordinate(item) {
   let width = cellWidth.value * item.sizeX - baseMarginLeft.value
   let height = cellHeight.value * item.sizeY - baseMarginTop.value
@@ -1054,6 +1219,9 @@ function moveItemDown(item, size) {
   changeItemCoordinate(item)
 }
 
+/**
+ * 设置组件矩阵坐标并扩展最大行高
+ */
 function setPlayerPosition(item, position) {
   position = position || {}
   let targetX = position.x || item.x
@@ -1084,6 +1252,9 @@ function calcDiff(parent, son, size) {
   return size > 0 ? size : 0
 }
 
+/**
+ * 将组件向上移动指定矩阵行数
+ */
 function moveItemUp(item, size) {
   removeItemFromPositionBox(item)
   let belowItems = findBelowItems(item)
@@ -1100,6 +1271,9 @@ function moveItemUp(item, size) {
     }
   })
 }
+/**
+ * 查找与当前组件垂直投影重叠的下方组件
+ */
 function findBelowItems(item) {
   let belowItems = {}
   for (let cell = item.x - 1; cell < item.x - 1 + item.sizeX; cell++) {
@@ -1114,17 +1288,26 @@ function findBelowItems(item) {
   return _.sortBy(_.values(belowItems), 'y')
 }
 
+/**
+ * 结束组件移动后同步当前选中组件
+ */
 const endItemMove = (_, item, index) => {
   dvMainStore.setCurComponent({ component: item, index: index })
   dvMainStore.setClickComponentStatus(true)
   dvMainStore.setInEditorStatus(true)
 }
 
+/**
+ * 组件鼠标抬起时结束移动并清理临时状态
+ */
 const handleMouseUp = (e, item, index) => {
   endItemMove(e, item, index)
   clearInfoBox(e)
 }
 
+/**
+ * 清理拖拽或缩放过程中的临时克隆和事件状态
+ */
 const clearInfoBox = e => {
   if (_.isEmpty(infoBox.value)) return
   if (infoBox.value.cloneItem) {
@@ -1142,9 +1325,15 @@ const clearInfoBox = e => {
   infoBox.value = {}
 }
 
+/**
+ * 判断仪表板是否按宽度适配矩阵高度
+ */
 const dashboardScaleWithWidth = computed(() => {
   return isDashboard() && canvasStyleData.value?.dashboardAdaptor === 'withWidth'
 })
+/**
+ * 初始化仪表板矩阵单元尺寸
+ */
 const cellInit = () => {
   // 此处向下取整 保留1位小数,why: 矩阵模式计算 x,y时 会使用 style.left/cellWidth style.top/cellWidth
   // 当初始状态细微的差距(主要是减少)都会导致 x，y 减少一个矩阵大小造成偏移,
@@ -1156,6 +1345,9 @@ const cellInit = () => {
   }
 }
 
+/**
+ * 初始化画布尺寸、水印和矩阵列数
+ */
 const canvasSizeInit = () => {
   if (isMainCanvas(canvasId.value)) {
     initWatermark()
@@ -1164,6 +1356,9 @@ const canvasSizeInit = () => {
   reCalcCellWidth()
 }
 
+/**
+ * 初始化仪表板矩阵占位数据并逐个加入组件
+ */
 const canvasInit = () => {
   cellInit()
   positionBox.value = []
@@ -1196,6 +1391,9 @@ const canvasInit = () => {
   renderOk.value = true
 }
 
+/**
+ * 等待矩阵动画准备完成后执行回调
+ */
 const afterInitOk = func => {
   let timeId = setInterval(() => {
     if (moveAnimate.value) {
@@ -1205,6 +1403,9 @@ const afterInitOk = func => {
   }, 100)
 }
 
+/**
+ * 通过轻微改变单元高度强制刷新矩阵定位
+ */
 const forceComputed = () => {
   // 这里强制触发复制添加计算，因为位置计算使用的是method 并没有内部样式属性变化
   // 在一些情况下无法触发重新计算导致位置偏移 cellHeight 属性是在监控中的，这里进行强制计算
@@ -1214,6 +1415,9 @@ const forceComputed = () => {
   })
 }
 
+/**
+ * 计算当前组件占用的最大矩阵纵向位置
+ */
 const maxYCount = () => {
   if (componentData.value.length === 0) {
     return 1
@@ -1224,6 +1428,9 @@ const maxYCount = () => {
       .reduce((max, current) => Math.max(max, current), 0)
   }
 }
+/**
+ * 添加新组件到矩阵占位盒子
+ */
 const addItemBox = item => {
   item.y = item.y === undefined ? maxYCount() : item.y
   syncShapeItemStyle(item, baseWidth.value, baseHeight.value)
@@ -1233,6 +1440,9 @@ const addItemBox = item => {
   })
 }
 
+/**
+ * 开始缩放组件时记录矩阵原始状态
+ */
 const onStartResize = (e, item, index) => {
   // 移动时 换算矩阵和悬浮位置大小
   syncShapeItemStyle(item, cellWidth.value, cellHeight.value)
@@ -1258,6 +1468,9 @@ const onStartResize = (e, item, index) => {
   infoBox.value.oldSizeY = item.sizey
 }
 
+/**
+ * 开始移动组件时记录矩阵原始状态
+ */
 const onStartMove = (e, item, index) => {
   // 移动时 换算矩阵和悬浮位置大小
   syncShapeItemStyle(item, cellWidth.value, cellHeight.value)
@@ -1279,6 +1492,9 @@ const onStartMove = (e, item, index) => {
   infoBox.value.oldSizeY = item.sizey
 }
 
+/**
+ * 拖拽过程中将像素位置换算为矩阵坐标
+ */
 const onDragging = (e, item) => {
   // item 中的 style 为当前实时的位置
   const infoBoxTemp = infoBox.value
@@ -1314,6 +1530,9 @@ const onDragging = (e, item) => {
   )
 }
 
+/**
+ * 缩放过程中将像素尺寸换算为矩阵尺寸
+ */
 const onResizing = (e, item) => {
   const { width, height } = item.style
   // item 中的 style 为当前实时的位置
@@ -1362,6 +1581,9 @@ const onResizing = (e, item) => {
   )
 }
 
+/**
+ * 全局鼠标抬起时结束拖拽或缩放过程
+ */
 const onMouseUp = e => {
   // startMove 中组织冒泡会导致移动事件无法传播，在这里设置（鼠标抬起）效果一致
   if (_.isEmpty(infoBox.value)) return
@@ -1381,6 +1603,9 @@ const onMouseUp = e => {
   infoBox.value = {}
 }
 
+/**
+ * 仪表板组件从外部拖入时创建临时占位组件
+ */
 const handleDragStartMoveIn = componentInfo => {
   const moveInItemInfo = findDragComponent(componentInfo)
   // 拖入组件的初始位置避开左侧工具栏。
@@ -1405,6 +1630,9 @@ const handleDragStartMoveIn = componentInfo => {
   infoBox.value.oldY = 1
 }
 
+/**
+ * 外部拖拽结束后清理未落入画布的临时组件
+ */
 const handleDragEnd = e => {
   // 当isShow 是false时，说明未移入画布 则需要进行清理占位
   if (infoBox.value && infoBox.value.moveItem && !infoBox.value.moveItem.isShow) {
@@ -1413,6 +1641,9 @@ const handleDragEnd = e => {
   }
 }
 
+/**
+ * 外部组件拖过画布时同步临时组件位置
+ */
 const handleDragOver = e => {
   if (!infoBox.value || !infoBox.value.moveItem) {
     return
@@ -1422,10 +1653,16 @@ const handleDragOver = e => {
   onDragging(e, infoBox.value.moveItem)
 }
 
+/**
+ * 获取当前正在移动的组件
+ */
 const getMoveItem = () => {
   return infoBox.value.moveItem
 }
 
+/**
+ * 打开图表放大查看弹窗
+ */
 const userViewEnlargeOpen = (opt, item) => {
   userViewEnlargeRef.value.dialogInit(
     canvasStyleData.value,
@@ -1436,22 +1673,34 @@ const userViewEnlargeOpen = (opt, item) => {
   )
 }
 
+/**
+ * 打开数据集参数配置弹窗
+ */
 const datasetParamsInit = item => {
   customDatasetParamsRef.value?.optInit(item)
 }
 
+/**
+ * 初始化画布快照定时缓存
+ */
 const initSnapshotTimer = () => {
   snapshotTimer.value = setInterval(() => {
     snapshotStore.snapshotCatchToStore()
   }, 1000)
 }
 
+/**
+ * 保存画布后打开跳转配置
+ */
 const linkJumpSetOpen = item => {
   //跳转设置需要先触发保存
   canvasSave(() => {
     linkJumpRef.value.dialogInit(item)
   })
 }
+/**
+ * 保存画布后打开联动配置
+ */
 const linkageSetOpen = item => {
   //跳转设置需要先触发保存
   canvasSave(() => {
@@ -1459,12 +1708,21 @@ const linkageSetOpen = item => {
   })
 }
 
+/**
+ * 主画布才展示右键菜单
+ */
 const contextMenuShow = computed(() => {
   return isMainCanvas(canvasId.value)
 })
 
+/**
+ * 主画布才展示辅助对齐线
+ */
 const markLineShow = computed(() => isMainCanvas(canvasId.value))
 
+/**
+ * 判断仪表板网格是否展示
+ */
 const showGrid = computed(() => {
   return (
     Boolean(canvasStyleData.value.dashboard.showGrid) &&
@@ -1473,6 +1731,9 @@ const showGrid = computed(() => {
   )
 })
 
+/**
+ * 判断大屏网格是否展示
+ */
 const showGridScreen = computed(() => {
   return (
     Boolean(canvasStyleData.value.dashboard.showGrid) &&
@@ -1490,6 +1751,9 @@ const dataVBatchOptAdaptor = () => {
   })
 }
 
+/**
+ * 判断组件是否应在当前画布中渲染
+ */
 const itemShow = item => {
   return (
     item.isShow &&
@@ -1497,6 +1761,9 @@ const itemShow = item => {
   )
 }
 
+/**
+ * 判断按住组合键时是否展示分组阴影
+ */
 const groupAreaShadowShow = computed(
   () =>
     componentData.value.length > 0 &&

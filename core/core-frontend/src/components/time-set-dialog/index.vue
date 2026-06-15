@@ -3,18 +3,23 @@ import { ref, reactive } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import dayjs from 'dayjs'
 
+// 提供弹窗内按钮、粒度选项等文案的国际化函数
 const { t } = useI18n()
+// 控制时间设置弹窗的显示状态
 const dialogFormVisible = ref(false)
+// 保存当前选择的时间粒度和值
 const form = reactive({
   type: '',
   value: ''
 })
+// 初始化弹窗表单，并在未传入类型时默认按年选择
 const init = (type, value) => {
   dialogFormVisible.value = true
   form.type = type || 'year'
   form.value = type ? value : ''
 }
 
+// 日期选择器支持的时间粒度列表
 const timeList = [
   {
     label: t('dynamic_time.year'),
@@ -34,6 +39,7 @@ const timeList = [
   }
 ]
 
+// 不同时间粒度对应的格式化模板
 const formatMap = {
   datetime: 'YYYY/MM/DD HH:mm:ss',
   date: 'YYYY/MM/DD',
@@ -41,16 +47,20 @@ const formatMap = {
   year: 'YYYY'
 }
 
+// 关闭弹窗时重置表单，避免下次打开沿用旧状态
 const beforeClose = () => {
   form.type = ''
   form.value = ''
   dialogFormVisible.value = false
 }
+// 向父组件抛出保存后的时间粒度和值
 const emits = defineEmits(['saveTime'])
+// 按当前粒度将日期值格式化为查询参数
 const formatValue = (val: any) => {
   if (!val) return ''
   return dayjs(val).format(formatMap[form.type])
 }
+// 确认当前时间选择并关闭弹窗
 const confirm = () => {
   const value = form.value
   if (value) emits('saveTime', form.type, formatValue(form.value))

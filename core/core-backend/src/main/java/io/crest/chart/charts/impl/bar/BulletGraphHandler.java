@@ -19,11 +19,13 @@ import java.util.Objects;
 
 @Component
 @SuppressWarnings("unchecked")
+// 定义图表处理器，负责轴格式化和结果组装
 public class BulletGraphHandler extends YoyChartHandler {
     @Getter
     private String type = "bullet-graph";
 
     @Override
+    // 按图表配置整理维度和指标轴信息
     public AxisFormatResult formatAxis(ChartViewDTO view) {
         var result = super.formatAxis(view);
         var yAxis = result.getAxisMap().get(ChartAxis.yAxis);
@@ -43,6 +45,7 @@ public class BulletGraphHandler extends YoyChartHandler {
     }
 
     @Override
+    // 根据查询结果组装图表返回数据
     public Map<String, Object> buildNormalResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
         boolean isDrill = filterResult
                 .getFilterList()
@@ -54,6 +57,7 @@ public class BulletGraphHandler extends YoyChartHandler {
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         var dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
         List<String> dsList = new ArrayList<>();

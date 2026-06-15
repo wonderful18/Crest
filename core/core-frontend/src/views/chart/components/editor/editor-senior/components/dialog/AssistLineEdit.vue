@@ -10,6 +10,7 @@ import { iconFieldMap } from '@/components/icon-group/field-list'
 
 const { t } = useI18n()
 
+// 接收辅助线编辑所需图表和字段配置
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -38,6 +39,7 @@ const yAxisTypes = [
   { type: 'right', name: t('chart.drag_block_value_axis_right') }
 ]
 
+// 维护辅助线编辑列表和选项
 const state = reactive<any>({
   lineArr: [],
   lineObj: {
@@ -66,6 +68,7 @@ const state = reactive<any>({
   fontSize: []
 })
 
+// 生成辅助线字号选项
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 60; i = i + 2) {
@@ -77,8 +80,10 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+// 定义辅助线编辑确认事件
 const emit = defineEmits(['onAssistLineChange'])
 
+// 初始化辅助线编辑列表
 const init = () => {
   state.lineArr = JSON.parse(JSON.stringify(props.line))
 
@@ -106,6 +111,7 @@ const init = () => {
   changeAssistLine()
 }
 
+// 新增辅助线配置
 const addLine = () => {
   const obj = {
     ...state.lineObj,
@@ -115,11 +121,13 @@ const addLine = () => {
   state.lineArr.push(JSON.parse(JSON.stringify(obj)))
   changeAssistLine()
 }
+// 移除指定辅助线配置
 const removeLine = index => {
   state.lineArr.splice(index, 1)
   changeAssistLine()
 }
 
+// 切换辅助线所属 Y 轴类型
 const changeYAxisType = item => {
   if (props.useQuotaExt && item.yAxisType === 'right') {
     item.fieldId = props.quotaExtFields ? props.quotaExtFields[0]?.id : null
@@ -131,9 +139,11 @@ const changeYAxisType = item => {
   changeAssistLine()
 }
 
+// 通知父级辅助线列表变化
 const changeAssistLine = () => {
   emit('onAssistLineChange', state.lineArr)
 }
+// 切换辅助线引用字段
 const changeAssistLineField = item => {
   if (props.useQuotaExt && item.yAxisType === 'right') {
     item.curField = getQuotaExtField(item.fieldId)
@@ -143,6 +153,7 @@ const changeAssistLineField = item => {
   changeAssistLine()
 }
 
+// 根据 ID 查询左轴指标字段
 const getQuotaField = id => {
   if (!id) {
     return {}
@@ -157,6 +168,7 @@ const getQuotaField = id => {
   }
 }
 
+// 根据 ID 查询右轴扩展指标字段
 const getQuotaExtField = id => {
   if (!id) {
     return {}
@@ -171,6 +183,7 @@ const getQuotaExtField = id => {
   }
 }
 
+// 根据图表类型计算辅助线字段来源选项
 const getFieldOptions = computed(() => {
   if (['percentage-bar-stack', 'percentage-bar-stack-horizontal'].includes(props.chart.type)) {
     return state.fieldOptions.filter(item => item.value === '0')

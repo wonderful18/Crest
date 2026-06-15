@@ -34,6 +34,7 @@ const props = withDefaults(
 
 const { item, innerImageColor, active, themes } = toRefs(props)
 
+// 根据当前配置计算界面样式
 const mainIconClass = itemUrl => {
   return itemUrl.url.replace('board/', '').replace('.svg', '')
 }

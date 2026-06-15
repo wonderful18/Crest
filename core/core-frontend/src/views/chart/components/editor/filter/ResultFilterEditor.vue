@@ -7,6 +7,7 @@ import { multFieldValuesForPermissions } from '@/api/dataset'
 
 const { t } = useI18n()
 
+// 接收图表和筛选项配置，item 会直接回写到图表字段的结果过滤配置中。
 const props = defineProps({
   chart: {
     type: Object,
@@ -20,8 +21,10 @@ const props = defineProps({
 
 const { item } = toRefs(props)
 
+// 标记是否需要请求枚举值，避免枚举筛选切换时重复请求同一字段。
 const needRequestEnum = ref(true)
 
+// 维护结果筛选编辑状态
 const state = reactive({
   textOptions: [
     {
@@ -177,6 +180,7 @@ const state = reactive({
       ]
     }
   ],
+  // options 按字段类型在 text/date/value 三组操作符之间切换。
   options: [],
   logic: '',
   filterType: '',
@@ -184,6 +188,7 @@ const state = reactive({
   fieldOptions: []
 })
 
+// 监听筛选项变化并刷新可选条件，字段类型切换时操作符集合需要同步更新。
 watch(
   [props.item],
   () => {
@@ -192,17 +197,22 @@ watch(
   { deep: true }
 )
 
+// 初始化筛选条件选项
 const initOptions = () => {
   if (item?.value) {
     if (item.value.fieldType === 0 || item.value.fieldType === 5) {
+      // 文本和地理字段使用文本匹配操作符。
       state.options = JSON.parse(JSON.stringify(state.textOptions))
     } else if (item.value.fieldType === 1) {
+      // 日期字段只开放等值和大小比较，不在结果过滤内处理日期区间控件。
       state.options = JSON.parse(JSON.stringify(state.dateOptions))
     } else {
+      // 数值字段使用数值比较操作符。
       state.options = JSON.parse(JSON.stringify(state.valueOptions))
     }
   }
 }
+// 初始化筛选编辑状态
 const init = () => {
   state.logic = item.value.logic
   state.filterType = item.value.filterType
@@ -211,8 +221,9 @@ const init = () => {
     initEnumOptions()
   }
 }
+// 初始化枚举筛选选项
 const initEnumOptions = () => {
-  // 查找枚举值
+  // 查找枚举值，当前只对文本和地理字段请求后端枚举。
   if (item.value.fieldType === 0 || item.value.fieldType === 5) {
     multFieldValuesForPermissions({ fieldIds: [item.value.id] }).then(res => {
       state.fieldOptions = optionData(res.data)
@@ -220,8 +231,10 @@ const initEnumOptions = () => {
     })
   }
 }
+// 将接口返回值转换为枚举选项
 const optionData = data => {
   if (!data) return null
+  // 枚举选择器使用 id/text 结构，保留原始值作为提交值。
   return data
     .filter(item => !!item)
     .map(item => {
@@ -231,25 +244,32 @@ const optionData = data => {
       }
     })
 }
+// 新增筛选条件
 const addFilter = () => {
+  // 新增条件默认使用等值匹配，由用户继续选择操作符和值。
   item.value.filter.push({
     fieldId: item.value.id,
     term: 'eq',
     value: ''
   })
 }
+// 删除筛选条件
 const removeFilter = index => {
   item.value.filter.splice(index, 1)
 }
+// 同步筛选逻辑关系
 const logicChange = val => {
   item.value.logic = val
 }
+// 同步筛选类型变化
 const filterTypeChange = val => {
   item.value.filterType = val
+  // 首次切换到枚举筛选时再请求枚举值，减少普通条件筛选的接口调用。
   if (val === 'enum' && needRequestEnum.value) {
     initEnumOptions()
   }
 }
+// 同步枚举勾选字段
 const enumChange = () => {
   item.value.enumCheckField = state.enumCheckField
 }

@@ -218,10 +218,12 @@ export const userStore = defineStore('embedded', {
   }
 })
 
+// 更新状态仓库中的业务数据
 export const useEmbeddedWithOut = () => {
   return userStore(store)
 }
 
+// 更新状态仓库中的业务数据
 export const useEmbedded = () => {
   return useEmbeddedWithOut()
 }
