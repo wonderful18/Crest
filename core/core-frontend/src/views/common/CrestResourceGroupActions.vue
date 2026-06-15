@@ -17,7 +17,7 @@ import {
 } from '@/api/visualization/dataVisualization'
 import { ElMessage } from 'element-plus-secondary'
 import { cutTargetTree, filterFreeFolder, nameTrim } from '@/utils/utils'
-// 当前组件服务仪表板和大屏两类资源，父级传入类型决定接口参数和展示文案。
+// 当前组件服务仪表板和大屏两类资源，父级传入类型决定接口参数和展示文案
 const props = defineProps({
   curCanvasType: {
     type: String,
@@ -29,7 +29,7 @@ const { curCanvasType } = toRefs(props)
 const { wsCache } = useCache('localStorage')
 const { t } = useI18n()
 
-// 弹窗状态集合，保存目录树、当前目标资源和外部附加参数。
+// 弹窗状态集合，保存目录树、当前目标资源和外部附加参数
 const state = reactive({
   tData: [],
   nameList: [],
@@ -37,45 +37,45 @@ const state = reactive({
   attachParams: null
 })
 
-// 是否展示父目录选择，由保存场景和父组件参数共同控制。
+// 是否展示父目录选择，由保存场景和父组件参数共同控制
 const showParentSelected = ref(false)
-// 保存中状态，防止重复提交和展示按钮加载。
+// 保存中状态，防止重复提交和展示按钮加载
 const loading = ref(false)
-// 当前操作节点类型，folder 表示目录，leaf 表示资源。
+// 当前操作节点类型，folder 表示目录，leaf 表示资源
 const nodeType = ref()
-// 当前父目录编号，创建和重命名时复用。
+// 当前父目录编号，创建和重命名时复用
 const pid = ref()
-// 当前资源或目录编号，移动、复制、重命名时使用。
+// 当前资源或目录编号，移动、复制、重命名时使用
 const id = ref()
-// 当前操作命令，驱动标题、字段显隐和后端接口选择。
+// 当前操作命令，驱动标题、字段显隐和后端接口选择
 const cmd = ref('')
-// 移动目录树实例，用于关键字过滤和空态读取。
+// 移动目录树实例，用于关键字过滤和空态读取
 const treeRef = ref()
-// 移动目标目录搜索关键字。
+// 移动目标目录搜索关键字
 const filterText = ref('')
-// 名称字段标签，随资源类型和操作类型切换。
+// 名称字段标签，随资源类型和操作类型切换
 const resourceFormNameLabel = ref('')
-// 弹窗表单模型，保存目标父级、父级名称和资源名称。
+// 弹窗表单模型，保存目标父级、父级名称和资源名称
 const resourceForm = reactive({
   pid: '',
   pName: null,
   name: '新建'
 })
-// 当前画布类型对应的资源名称，用于标题、按钮和复制文案。
+// 当前画布类型对应的资源名称，用于标题、按钮和复制文案
 const sourceLabel = computed(() =>
   curCanvasType.value === 'dataV' ? t('work_branch.big_data_screen') : t('work_branch.dashboard')
 )
 
-// 后端操作方法映射，未命中的命令会走基础信息更新接口。
+// 后端操作方法映射，未命中的命令会走基础信息更新接口
 const methodMap = {
   move: moveResource,
   copy: copyResource,
   newFolder: saveCanvas
 }
-// 搜索后目录树是否为空，用于展示自定义空态。
+// 搜索后目录树是否为空，用于展示自定义空态
 const searchEmpty = ref(false)
 
-// 目录树过滤函数，同时同步树组件的空态。
+// 目录树过滤函数，同时同步树组件的空态
 const filterNode = (value: string, data: BusiTreeNode) => {
   nextTick(() => {
     searchEmpty.value = treeRef.value.isEmpty
@@ -84,19 +84,19 @@ const filterNode = (value: string, data: BusiTreeNode) => {
   return data.name.includes(value)
 }
 
-// 搜索关键字变化时刷新移动目录树过滤结果。
+// 搜索关键字变化时刷新移动目录树过滤结果
 watch(filterText, val => {
   treeRef.value.filter(val)
 })
 
-// 判断同级名称是否重复，名称列表由当前弹窗初始化阶段准备。
+// 判断同级名称是否重复，名称列表由当前弹窗初始化阶段准备
 const nameRepeat = value => {
   if (!nameList || nameList.length === 0) {
     return false
   }
   return nameList.some(name => name === value)
 }
-// 表单名称校验器，向 Element Plus 回传重复名称错误。
+// 表单名称校验器，向 Element Plus 回传重复名称错误
 const nameValidator = (_, value, callback) => {
   if (nameRepeat(value)) {
     callback(new Error(t('visualization.name_repeat')))
@@ -105,34 +105,34 @@ const nameValidator = (_, value, callback) => {
   }
 }
 
-// 只有创建、复制和保存后归档资源时才需要展示父目录选择。
+// 只有创建、复制和保存后归档资源时才需要展示父目录选择
 const showPid = computed(() => {
   return ['newLeaf', 'copy', 'newLeafAfter'].includes(cmd.value) && showParentSelected.value
 })
 
-// 移动和保存后归档不编辑名称，其余操作展示名称输入框。
+// 移动和保存后归档不编辑名称，其余操作展示名称输入框
 const showName = computed(() => {
   return !['newLeafAfter', 'move'].includes(cmd.value)
 })
 
-// 当前目录下已有名称列表，用于本地重复校验。
+// 当前目录下已有名称列表，用于本地重复校验
 let nameList = []
-// 表单校验规则在初始化时按操作动态生成。
+// 表单校验规则在初始化时按操作动态生成
 const resourceFormRules = ref()
 
-// 表单实例引用，用于校验和清理校验提示。
+// 表单实例引用，用于校验和清理校验提示
 const resource = ref()
-// 弹窗显隐状态。
+// 弹窗显隐状态
 const resourceDialogShow = ref(false)
-// 弹窗标题，由操作类型和资源类型共同决定。
+// 弹窗标题，由操作类型和资源类型共同决定
 const dialogTitle = ref('')
-// 原始目录树缓存，用于搜索过滤时恢复全量目录。
+// 原始目录树缓存，用于搜索过滤时恢复全量目录
 let tData = []
-// tree-select 搜索过滤，保留当前关键字命中的目录。
+// tree-select 搜索过滤，保留当前关键字命中的目录
 const filterMethod = value => {
   state.tData = [...tData].filter(item => item.name.includes(value))
 }
-// 关闭弹窗时恢复基础表单状态，下一次初始化重新灌入上下文。
+// 关闭弹窗时恢复基础表单状态，下一次初始化重新灌入上下文
 const resetForm = () => {
   dialogTitle.value = null
   resourceFormNameLabel.value = ''
@@ -141,7 +141,7 @@ const resetForm = () => {
   resourceDialogShow.value = false
 }
 
-// 为目录树补齐 value 字段，并递归处理所有子目录。
+// 为目录树补齐 value 字段，并递归处理所有子目录
 const dfs = (arr: BusiTreeNode[]) => {
   arr.forEach(ele => {
     ele['value'] = ele.id
@@ -151,7 +151,7 @@ const dfs = (arr: BusiTreeNode[]) => {
   })
 }
 
-// 根据命令类型返回弹窗标题，资源类型差异在这里集中处理。
+// 根据命令类型返回弹窗标题，资源类型差异在这里集中处理
 const getDialogTitle = exec => {
   return {
     newFolder: t('visualization.new_folder'),
@@ -165,10 +165,10 @@ const getDialogTitle = exec => {
     newLeafAfter: t('visualization.belong_folder')
   }[exec]
 }
-// 名称输入占位文案，按目录、大屏或仪表板切换。
+// 名称输入占位文案，按目录、大屏或仪表板切换
 const placeholder = ref('')
 
-// 初始化资源操作弹窗，加载可选目录并准备表单、标题和校验规则。
+// 初始化资源操作弹窗，加载可选目录并准备表单、标题和校验规则
 const optInit = (type, data: BusiTreeNode, exec, parentSelect = false, attachParams?) => {
   showParentSelected.value = parentSelect
   state.targetInfo = data
@@ -250,37 +250,37 @@ const optInit = (type, data: BusiTreeNode, exec, parentSelect = false, attachPar
   }, 50)
 }
 
-// 编辑入口只回填当前节点和父级，具体操作由 optInit 的命令驱动。
+// 编辑入口只回填当前节点和父级，具体操作由 optInit 的命令驱动
 const editeInit = (param: BusiTreeNode) => {
   pid.value = param['pid']
   id.value = param.id
 }
 
-// 目录树字段映射，el-tree 和 tree-select 共用同一套结构。
+// 目录树字段映射，el-tree 和 tree-select 共用同一套结构
 const propsTree = {
   label: 'name',
   children: 'children',
   isLeaf: node => !node.children?.length
 }
 
-// 点击目录节点后写回目标父级和父级名称，后续校验会使用名称判断搜索命中。
+// 点击目录节点后写回目标父级和父级名称，后续校验会使用名称判断搜索命中
 const nodeClick = (data: BusiTreeNode) => {
   resourceForm.pid = data.id as string
   resourceForm.pName = data.name as string
 }
 
-// 校验移动或复制目标目录，防止空目标、搜索后未重新选择以及选择自身。
+// 校验移动或复制目标目录，防止空目标、搜索后未重新选择以及选择自身
 const checkParent = params => {
   if (params.pid !== 0 && !params.pid) {
     ElMessage.error(t('visualization.select_target_folder'))
     return false
   }
-  // 搜索后必须重新点击命中目录，避免旧父级在过滤结果之外仍被提交。
+  // 搜索后必须重新点击命中目录，避免旧父级在过滤结果之外仍被提交
   if (filterText.value && !resourceForm.pName.includes(filterText.value)) {
     ElMessage.error(t('visualization.select_target_folder'))
     return false
   }
-  // 移动时不能把资源放到自身下面。
+  // 移动时不能把资源放到自身下面
   if (params.pid === params.id) {
     ElMessage.warning(t('visualization.select_target_tips'))
     return
@@ -288,7 +288,7 @@ const checkParent = params => {
   return true
 }
 
-// 保存入口统一处理新建、移动、复制、重命名和保存后归档。
+// 保存入口统一处理新建、移动、复制、重命名和保存后归档
 const saveResource = () => {
   resource.value.validate(async result => {
     if (result) {
@@ -358,7 +358,7 @@ defineExpose({
   editeInit
 })
 
-// 向父组件声明操作完成事件，父级负责刷新资源树或继续保存画布。
+// 向父组件声明操作完成事件，父级负责刷新资源树或继续保存画布
 const emits = defineEmits(['finish'])
 </script>
 

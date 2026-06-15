@@ -23,19 +23,19 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-// 将自定义筛选树转换为 SQL WHERE 片段。
+// 将自定义筛选树转换为 SQL WHERE 片段
 public class CustomWhere2Str {
     private static final Pattern NUMBER_PATTERN = Pattern.compile("^[-+]?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$");
 
-    // 将自定义筛选树写入 SQL 元数据。
+    // 将自定义筛选树写入 SQL 元数据
     public static void customWhere2sqlObj(SQLMeta meta, FilterTreeObj tree, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         SQLObj tableObj = meta.getTable();
         if (ObjectUtils.isEmpty(tableObj)) {
             return;
         }
         List<String> res = new ArrayList<>();
-        // 解析每个筛选树，并将多个筛选树以 AND 连接。
-        // 子树节点递归合并为一组条件。
+        // 解析每个筛选树，并将多个筛选树以 AND 连接
+        // 子树节点递归合并为一组条件
         if (ObjectUtils.isEmpty(tree)) {
             return;
         }
@@ -48,7 +48,7 @@ public class CustomWhere2Str {
         meta.setCustomWheresDialect(fieldsDialect);
     }
 
-    // 递归转换筛选树为 WHERE 表达式。
+    // 递归转换筛选树为 WHERE 表达式
     private static String transTreeToWhere(SQLObj tableObj, FilterTreeObj tree, Map<String, String> fieldsDialect, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         if (ObjectUtils.isEmpty(tree)) {
             return null;
@@ -57,14 +57,14 @@ public class CustomWhere2Str {
         List<FilterTreeItem> items = tree.getItems();
         List<String> list = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(items)) {
-            // 根据节点类型转换单个筛选项或递归子树。
+            // 根据节点类型转换单个筛选项或递归子树
             for (FilterTreeItem item : items) {
                 String exp = null;
                 if (Strings.CI.equals(item.getType(), "item")) {
-                    // 单个筛选项先拼接 SQL，最后按逻辑关系汇总。
+                    // 单个筛选项先拼接 SQL，最后按逻辑关系汇总
                     exp = transTreeItem(tableObj, item, fieldsDialect, originFields, isCross, dsMap, fieldParam, chartParam, pluginManage);
                 } else if (Strings.CI.equals(item.getType(), "tree")) {
-                    // 递归转换子树。
+                    // 递归转换子树
                     exp = transTreeToWhere(tableObj, item.getSubTree(), fieldsDialect, originFields, isCross, dsMap, fieldParam, chartParam, pluginManage);
                 }
                 if (StringUtils.isNotEmpty(exp)) {
@@ -75,7 +75,7 @@ public class CustomWhere2Str {
         return CollectionUtils.isNotEmpty(list) ? "(" + String.join(" " + logic + " ", list) + ")" : null;
     }
 
-    // 转换单个筛选项为 SQL 条件。
+    // 转换单个筛选项为 SQL 条件
     private static String transTreeItem(SQLObj tableObj, FilterTreeItem item, Map<String, String> fieldsDialect, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         String res = null;
         DatasetTableFieldDTO field = item.getField();
@@ -94,9 +94,9 @@ public class CustomWhere2Str {
         String whereName = "";
         String originName;
         if (ObjectUtils.isNotEmpty(field.getExtField()) && field.getExtField() == 2) {
-            // 解析原始字段中的关联字段并生成 SQL 表达式。
+            // 解析原始字段中的关联字段并生成 SQL 表达式
             String calcFieldExp = Utils.calcFieldRegex(field, tableObj, originFields, isCross, dsMap, paramMap, pluginManage);
-            // 为计算字段保留占位符，后续 SQL 方言转换后再替换。
+            // 为计算字段保留占位符，后续 SQL 方言转换后再替换
             originName = String.format(SqlPlaceholderConstants.CALC_FIELD_PLACEHOLDER, field.getId());
             fieldsDialect.put(originName, calcFieldExp);
             if (isCross) {
@@ -110,7 +110,7 @@ public class CustomWhere2Str {
             }
         } else if (ObjectUtils.isNotEmpty(field.getExtField()) && field.getExtField() == 3) {
             String groupFieldExp = Utils.transGroupFieldToSql(field, originFields, isCross, dsMap, pluginManage);
-            // 为分组字段保留占位符，后续 SQL 方言转换后再替换。
+            // 为分组字段保留占位符，后续 SQL 方言转换后再替换
             originName = String.format(SqlPlaceholderConstants.CALC_FIELD_PLACEHOLDER, field.getId());
             fieldsDialect.put(originName, groupFieldExp);
             if (isCross) {
@@ -281,41 +281,41 @@ public class CustomWhere2Str {
         return res;
     }
 
-    // 判断数据源类型是否为 Oracle 兼容方言。
+    // 判断数据源类型是否为 Oracle 兼容方言
     private static boolean isOracleLike(String dsType) {
         return Strings.CI.equalsAny(dsType,
                 DatasourceConfiguration.DatasourceType.oracle.getType(),
                 DatasourceConfiguration.DatasourceType.obOracle.getType());
     }
 
-    // 清理并校验 SQL 字符串字面量。
+    // 清理并校验 SQL 字符串字面量
     private static String sanitizeSqlLiteral(String value) {
         String normalized = StringUtils.defaultString(value);
         Utils.validateSqlInjectionRisk(normalized);
         return Utils.transValue(normalized);
     }
 
-    // 转换为带引号的 SQL 字符串值。
+    // 转换为带引号的 SQL 字符串值
     private static String toQuotedValue(String value) {
         return "'" + sanitizeSqlLiteral(value) + "'";
     }
 
-    // 转换为 LIKE 条件使用的 SQL 字符串值。
+    // 转换为 LIKE 条件使用的 SQL 字符串值
     private static String toLikeValue(String value) {
         return "'%" + sanitizeSqlLiteral(value) + "%'";
     }
 
-    // 转换为 SQL Server Unicode 字符串值。
+    // 转换为 SQL Server Unicode 字符串值
     private static String toSqlServerNQuotedValue(String value) {
         return "'" + SQLConstants.MSSQL_N_PREFIX + sanitizeSqlLiteral(value) + "'";
     }
 
-    // 转换为 SQL Server Unicode LIKE 字符串值。
+    // 转换为 SQL Server Unicode LIKE 字符串值
     private static String toSqlServerNLikeValue(String value) {
         return "'" + SQLConstants.MSSQL_N_PREFIX + "%" + sanitizeSqlLiteral(value) + "%'";
     }
 
-    // 校验并清理数值筛选值。
+    // 校验并清理数值筛选值
     private static String sanitizeNumberLiteral(String value) {
         String normalized = StringUtils.trimToEmpty(value);
         if (!NUMBER_PATTERN.matcher(normalized).matches()) {
@@ -324,7 +324,7 @@ public class CustomWhere2Str {
         return normalized;
     }
 
-    // 修正动态时间筛选值。
+    // 修正动态时间筛选值
     private static String fixValue(FilterTreeItem item) {
         if (StringUtils.isNotEmpty(item.getFilterTypeTime()) && Strings.CI.equals(item.getFilterTypeTime(), "dynamicDate")) {
             DynamicTimeSetting dynamicTimeSetting = item.getDynamicTimeSetting();

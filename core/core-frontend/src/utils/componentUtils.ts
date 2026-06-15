@@ -1,17 +1,17 @@
 import { EnumValue, enumValueObj } from '@/api/dataset'
 
 /**
- * 查询组件字段值到实际查询值的映射缓存。
+ * 查询组件字段值到实际查询值的映射缓存
  */
 let filterEnumMap = {}
 
 /**
- * 预留的字段 ID 与名称映射缓存。
+ * 预留的字段 ID 与名称映射缓存
  */
 const filterIdNameEnumMap = {}
 
 /**
- * 查询并构建展示值到查询值的枚举映射。
+ * 查询并构建展示值到查询值的枚举映射
  */
 const findFilterEnum = async (val: EnumValue) => {
   const queryId = val.queryId
@@ -24,7 +24,7 @@ const findFilterEnum = async (val: EnumValue) => {
 }
 
 /**
- * 将筛选参数中的展示值转换为真实查询值。
+ * 将筛选参数中的展示值转换为真实查询值
  */
 export const filterEnumParams = (queryParams, fieldId: string) => {
   const resultMap = filterEnumMap[fieldId]
@@ -40,7 +40,7 @@ export const filterEnumParams = (queryParams, fieldId: string) => {
 }
 
 /**
- * 将筛选参数中的真实查询值反向转换为展示值。
+ * 将筛选参数中的真实查询值反向转换为展示值
  */
 export const filterEnumParamsReduce = (queryParams, fieldId: string) => {
   const resultMap = filterEnumMap[fieldId]
@@ -59,7 +59,7 @@ export const filterEnumParamsReduce = (queryParams, fieldId: string) => {
 }
 
 /**
- * 同步查询组件中所有需要枚举映射的字段缓存。
+ * 同步查询组件中所有需要枚举映射的字段缓存
  */
 export const filterEnumMapSync = async componentData => {
   filterEnumMap = {}
@@ -80,7 +80,7 @@ export const filterEnumMapSync = async componentData => {
 }
 
 /**
- * 根据参数选项过滤当前参数值，支持层级参数的父子级匹配。
+ * 根据参数选项过滤当前参数值，支持层级参数的父子级匹配
  */
 export function filterParamsOptions(params, paramsOption: string[]) {
   // 如果 params 为空，直接返回 null
@@ -108,7 +108,7 @@ export function filterParamsOptions(params, paramsOption: string[]) {
 
   // 检查一个值是否在 paramsOption 中存在（考虑层级关系）
   /**
-   * 判断单个参数值是否存在于可选项或其层级关系中。
+   * 判断单个参数值是否存在于可选项或其层级关系中
    */
   function checkValueExists(value: string) {
     // 直接存在

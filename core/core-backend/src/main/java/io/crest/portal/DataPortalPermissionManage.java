@@ -12,44 +12,44 @@ import java.util.List;
 
 @Component
 /**
- * 数据门户发布资源的读权限判断组件。
+ * 数据门户发布资源的读权限判断组件
  */
 public class DataPortalPermissionManage {
 
     /**
-     * 查询发布资源和权限数据的 JDBC 模板。
+     * 查询发布资源和权限数据的 JDBC 模板
      */
     @Resource
     private JdbcTemplate jdbcTemplate;
 
     /**
-     * 平台权限管理器，用于读取组织和角色范围。
+     * 平台权限管理器，用于读取组织和角色范围
      */
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
     /**
-     * 用户管理器，用于判断管理员身份。
+     * 用户管理器，用于判断管理员身份
      */
     @Resource
     private CrestUserManage crestUserManage;
 
     /**
-     * 返回当前登录用户 ID。
+     * 返回当前登录用户 ID
      */
     public Long currentUid() {
         return AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
     }
 
     /**
-     * 判断用户是否拥有后台访问权限。
+     * 判断用户是否拥有后台访问权限
      */
     public boolean hasBackendAccess(Long uid) {
         return uid != null && (crestUserManage.isAdmin(uid) || platformPermissionManage.isSystemAdmin(uid));
     }
 
     /**
-     * 判断当前用户是否可读取指定已发布可视化资源。
+     * 判断当前用户是否可读取指定已发布可视化资源
      */
     public boolean canReadPublishedVisualization(Long id, String type) {
         if (id == null) {
@@ -79,7 +79,7 @@ public class DataPortalPermissionManage {
     }
 
     /**
-     * 判断已发布可视化是否引用指定数据集。
+     * 判断已发布可视化是否引用指定数据集
      */
     public boolean canReadPublishedVisualizationDataset(Long id, Long datasetGroupId) {
         if (id == null || datasetGroupId == null || !canReadPublishedVisualization(id, null)) {
@@ -95,7 +95,7 @@ public class DataPortalPermissionManage {
     }
 
     /**
-     * 为已发布可视化查询追加当前用户的可读权限范围。
+     * 为已发布可视化查询追加当前用户的可读权限范围
      */
     public void appendReadScope(StringBuilder sql, List<Object> args, Long uid) {
         if (uid == null || hasBackendAccess(uid)) {

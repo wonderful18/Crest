@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 @Component
 /**
- * 组织数据管理组件，负责组织树查询和组织增删改。
+ * 组织数据管理组件，负责组织树查询和组织增删改
  */
 public class CrestOrgManage {
 
@@ -34,7 +34,7 @@ public class CrestOrgManage {
     private PlatformPermissionManage platformPermissionManage;
 
     /**
-     * 查询完整组织树。
+     * 查询完整组织树
      */
     public List<OrgPageVO> pageTree(OrgRequest request) {
         List<OrgPageVO> orgs = jdbcTemplate.query("""
@@ -72,7 +72,7 @@ public class CrestOrgManage {
     }
 
     /**
-     * 懒加载查询指定父组织下的组织树节点。
+     * 懒加载查询指定父组织下的组织树节点
      */
     public LazyTreeVO lazyPageTree(OrgLazyRequest request) {
         Long pid = request == null || request.getPid() == null ? 0L : request.getPid();
@@ -83,7 +83,7 @@ public class CrestOrgManage {
     }
 
     /**
-     * 创建组织。
+     * 创建组织
      */
     @Transactional
     public Long create(OrgCreator creator) {
@@ -112,7 +112,7 @@ public class CrestOrgManage {
     }
 
     /**
-     * 编辑组织名称。
+     * 编辑组织名称
      */
     @Transactional
     public void edit(OrgEditor editor) {
@@ -125,7 +125,7 @@ public class CrestOrgManage {
     }
 
     /**
-     * 删除空组织。
+     * 删除空组织
      */
     @Transactional
     public void delete(Long id) {
@@ -140,7 +140,7 @@ public class CrestOrgManage {
     }
 
     /**
-     * 判断组织下是否存在子组织、用户或资源。
+     * 判断组织下是否存在子组织、用户或资源
      */
     public boolean resourceExist(Long oid) {
         Integer count = jdbcTemplate.queryForObject("""
@@ -153,7 +153,7 @@ public class CrestOrgManage {
     }
 
     /**
-     * 查询组织详情。
+     * 查询组织详情
      */
     public OrgDetailVO detail(Long oid) {
         List<OrgDetailVO> list = jdbcTemplate.query("""
@@ -164,7 +164,7 @@ public class CrestOrgManage {
     }
 
     /**
-     * 查询指定组织及其下级组织 ID。
+     * 查询指定组织及其下级组织 ID
      */
     public List<String> subOrgs(Long oid) {
         OrgDetailVO org = detail(oid);
@@ -176,7 +176,7 @@ public class CrestOrgManage {
     }
 
     /**
-     * 查询指定父组织下的懒加载节点。
+     * 查询指定父组织下的懒加载节点
      */
     private List<LazyOrgTreeNode> children(Long pid) {
         return jdbcTemplate.query("""

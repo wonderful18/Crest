@@ -2,7 +2,7 @@
 import { propTypes } from '@/utils/propTypes'
 import { reactive } from 'vue'
 
-// 枚举筛选组件属性。
+// 枚举筛选组件属性
 const props = defineProps({
   optionList: propTypes.arrayOf(
     propTypes.shape({
@@ -13,13 +13,13 @@ const props = defineProps({
   title: propTypes.string
 })
 
-// 当前选中枚举值和预留选项状态。
+// 当前选中枚举值和预留选项状态
 const state = reactive({
   activeStatus: [],
   optionList: []
 })
 
-// 切换枚举项选中状态并通知父级。
+// 切换枚举项选中状态并通知父级
 const nodeChange = (id: string | number) => {
   const len = state.activeStatus.indexOf(id)
   if (len >= 0) {
@@ -29,11 +29,11 @@ const nodeChange = (id: string | number) => {
   }
   emits('filter-change', state.activeStatus)
 }
-// 清空枚举筛选状态。
+// 清空枚举筛选状态
 const clear = () => {
   state.activeStatus = []
 }
-// 筛选变化事件。
+// 筛选变化事件
 const emits = defineEmits(['filter-change'])
 defineExpose({
   clear

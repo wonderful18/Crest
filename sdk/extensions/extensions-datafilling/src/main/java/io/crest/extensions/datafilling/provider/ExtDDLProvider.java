@@ -12,45 +12,45 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 数据填报 DDL 提供器，定义各类数据源的建表、改表和数据写入 SQL 生成能力。
+ * 数据填报 DDL 提供器，定义各类数据源的建表、改表和数据写入 SQL 生成能力
  */
 public abstract class ExtDDLProvider {
 
     /**
-     * 默认日期时间格式，供字段查询和写入 SQL 复用。
+     * 默认日期时间格式，供字段查询和写入 SQL 复用
      */
     public final String DEFAULT_DATE_FORMAT_STR = "yyyy-MM-dd HH:mm:ss";
 
     /**
-     * 指示当前数据源是否支持在建表语句中直接携带注释。
+     * 指示当前数据源是否支持在建表语句中直接携带注释
      */
     public boolean useCreateSqlWithComment() {
         return false;
     }
 
     /**
-     * 生成带表注释和字段注释的建表 SQL。
+     * 生成带表注释和字段注释的建表 SQL
      */
     public String createTableSqlWithComment(String table, List<ExtTableField> formFields, String tableComment) throws Exception {
         throw new Exception("method not implemented");
     }
 
     /**
-     * 生成不包含注释的建表 SQL。
+     * 生成不包含注释的建表 SQL
      */
     public String createTableSql(String table, List<ExtTableField> formFields) throws Exception {
         throw new Exception("method not implemented");
     }
 
     /**
-     * 生成表注释和字段注释 SQL，供不支持内联注释的数据源使用。
+     * 生成表注释和字段注释 SQL，供不支持内联注释的数据源使用
      */
     public List<String> createComment(String table, List<ExtTableField> formFields, String tableComment) {
         return new ArrayList<>();
     }
 
     /**
-     * 生成读取表字段元数据的 SQL。
+     * 生成读取表字段元数据的 SQL
      */
     @Deprecated
     public String getTableFieldsSql(String table) {
@@ -59,17 +59,17 @@ public abstract class ExtDDLProvider {
     }
 
     /**
-     * 生成新增或修改表字段的 SQL。
+     * 生成新增或修改表字段的 SQL
      */
     public abstract String addTableColumnSql(String table, List<ExtTableField> formFieldsToCreate, List<ExtTableField> formFieldsToModify);
 
     /**
-     * 生成删除表字段的 SQL。
+     * 生成删除表字段的 SQL
      */
     public abstract String dropTableColumnSql(String table, List<ExtTableField> formFields);
 
     /**
-     * 生成带筛选和分页的旧版查询 SQL。
+     * 生成带筛选和分页的旧版查询 SQL
      */
     @Deprecated
     public String searchSql(String table, List<TableField> formFields, String whereSql, long limit, long offset) {
@@ -90,14 +90,14 @@ public abstract class ExtDDLProvider {
     }
 
     /**
-     * 将查询字段转换为 SQL SELECT 字段片段。
+     * 将查询字段转换为 SQL SELECT 字段片段
      */
     private String convertSearchFields(List<TableField> formFields) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < formFields.size(); i++) {
             TableField f = formFields.get(i);
             if (Strings.CI.equalsAny(f.getType(), "datetime")) {
-                // 日期时间字段统一格式化输出，避免不同数据库默认格式不一致。
+                // 日期时间字段统一格式化输出，避免不同数据库默认格式不一致
                 builder.append("DATE_FORMAT(`").append(f.getOriginName()).append("`,'%Y-%m-%d %H:%i:%S')");
             } else {
                 builder.append("`").append(f.getOriginName()).append("`");
@@ -110,7 +110,7 @@ public abstract class ExtDDLProvider {
     }
 
     /**
-     * 生成查询指定列去重值的旧版 SQL。
+     * 生成查询指定列去重值的旧版 SQL
      */
     @Deprecated
     public String searchColumnData(String table, String column, String order) {
@@ -125,7 +125,7 @@ public abstract class ExtDDLProvider {
     }
 
     /**
-     * 生成按指定字段值查询单行数据的旧版 SQL。
+     * 生成按指定字段值查询单行数据的旧版 SQL
      */
     @Deprecated
     public String searchColumnRowDataOne(String table, List<TableField> searchFields, TableFieldWithValue tableFieldWithValue) {
@@ -138,7 +138,7 @@ public abstract class ExtDDLProvider {
     }
 
     /**
-     * 生成统计记录数的旧版 SQL。
+     * 生成统计记录数的旧版 SQL
      */
     @Deprecated
     public String countSql(String table, String whereSql) {
@@ -153,37 +153,37 @@ public abstract class ExtDDLProvider {
     }
 
     /**
-     * 生成删除数据表的 SQL。
+     * 生成删除数据表的 SQL
      */
     public abstract String dropTableSql(String table);
 
     /**
-     * 生成创建索引的 SQL 列表。
+     * 生成创建索引的 SQL 列表
      */
     public abstract List<String> createTableIndexSql(String table, List<ExtIndexField> indexFields);
 
     /**
-     * 生成删除索引的 SQL 列表。
+     * 生成删除索引的 SQL 列表
      */
     public abstract List<String> dropTableIndexSql(String table, List<ExtIndexField> indexFields);
 
     /**
-     * 生成按主键集合删除数据的 SQL。
+     * 生成按主键集合删除数据的 SQL
      */
     public abstract String deleteDataByIdsSql(String table, List<TableFieldWithValue> pks);
 
     /**
-     * 生成批量插入数据的 SQL。
+     * 生成批量插入数据的 SQL
      */
     public abstract String insertDataSql(String tableName, List<TableFieldWithValue> fields, int count);
 
     /**
-     * 生成按主键更新数据的 SQL。
+     * 生成按主键更新数据的 SQL
      */
     public abstract String updateDataByIdSql(String tableName, List<TableFieldWithValue> fields, TableFieldWithValue pk);
 
     /**
-     * 生成检查字段唯一性的旧版 SQL。
+     * 生成检查字段唯一性的旧版 SQL
      */
     @Deprecated
     public String checkUniqueValueSql(String tableName, TableFieldWithValue field, TableFieldWithValue pk) {
@@ -200,7 +200,7 @@ public abstract class ExtDDLProvider {
     }
 
     /**
-     * 根据查询字段生成旧版 WHERE 条件片段。
+     * 根据查询字段生成旧版 WHERE 条件片段
      */
     @Deprecated
     public String whereSql(String tableName, List<TableField> searchFields) {
@@ -247,7 +247,7 @@ public abstract class ExtDDLProvider {
     }
 
     /**
-     * 生成读取数据库表名大小写配置的 SQL。
+     * 生成读取数据库表名大小写配置的 SQL
      */
     @Deprecated
     public String getLowerCaseTaleNames() {
@@ -255,17 +255,17 @@ public abstract class ExtDDLProvider {
     }
 
     /**
-     * 将字段类型名称映射为数据源内部列类型。
+     * 将字段类型名称映射为数据源内部列类型
      */
     public abstract Integer getColumnType(String name);
 
     /**
-     * 生成清空数据表的 SQL。
+     * 生成清空数据表的 SQL
      */
     public abstract String truncateTable(String table);
 
     /**
-     * 生成查询全部主键值的 SQL。
+     * 生成查询全部主键值的 SQL
      */
     public abstract String listAllIds(String table, String keyColumn);
 

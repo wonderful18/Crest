@@ -14,15 +14,15 @@ import CommonBorderSetting from '@/custom-component/common/CommonBorderSetting.v
 import CollapseSwitchItem from '../../components/collapse-switch-item/src/CollapseSwitchItem.vue'
 import TabBackgroundOverall from '@/custom-component/tabs/TabBackgroundOverall.vue'
 import CustomTabsSortSide from '@/custom-component/tabs/CustomTabsSortSide.vue'
-/** 快照仓库用于在通用属性变更后记录可撤销节点。 */
+/** 快照仓库用于在通用属性变更后记录可撤销节点 */
 const snapshotStore = snapshotStoreWithOut()
 
-/** 国际化翻译函数，统一属性面板标题。 */
+/** 国际化翻译函数，统一属性面板标题 */
 const { t } = useI18n()
-/** 属性面板向上通知通用属性变化。 */
+/** 属性面板向上通知通用属性变化 */
 const emits = defineEmits(['onAttrChange'])
 
-/** 通用属性面板入参，控制主题、目标组件和局部控件宽度。 */
+/** 通用属性面板入参，控制主题、目标组件和局部控件宽度 */
 const props = withDefaults(
   defineProps<{
     type?: 'light' | 'dark'
@@ -40,61 +40,61 @@ const props = withDefaults(
   }
 )
 
-/** 将主题和当前组件转为响应式引用，便于面板内部联动。 */
+/** 将主题和当前组件转为响应式引用，便于面板内部联动 */
 const { themes, element } = toRefs(props)
-/** 主画布仓库提供当前资源类型、批量模式和移动端预览状态。 */
+/** 主画布仓库提供当前资源类型、批量模式和移动端预览状态 */
 const dvMainStore = dvMainStoreWithOut()
-/** 画布状态引用，决定通用属性分组的可见性。 */
+/** 画布状态引用，决定通用属性分组的可见性 */
 const { dvInfo, batchOptStatus, mobileInPc } = storeToRefs(dvMainStore)
-/** 当前展开的折叠面板名称，同步回组件配置。 */
+/** 当前展开的折叠面板名称，同步回组件配置 */
 const activeName = ref(element.value.collapseName)
 
-/** 折叠面板切换后把当前分组写回组件配置。 */
+/** 折叠面板切换后把当前分组写回组件配置 */
 const onChange = () => {
   element.value.collapseName = activeName
 }
 
-/** 非批量编辑且非仪表板组件时显示位置设置。 */
+/** 非批量编辑且非仪表板组件时显示位置设置 */
 const positionComponentShow = computed(() => {
   return !batchOptStatus.value && !dashboardActive.value
 })
 
-/** 当前资源是否为仪表板。 */
+/** 当前资源是否为仪表板 */
 const dashboardActive = computed(() => {
   return dvInfo.value.type === 'dashboard'
 })
 
-/** 更新组件通用背景并记录快照。 */
+/** 更新组件通用背景并记录快照 */
 const onBackgroundChange = val => {
   element.value.commonBackground = val
   snapshotStore.recordSnapshotCacheToMobile('commonBackground')
   emits('onAttrChange', { custom: 'commonBackground' })
 }
 
-/** 标题背景启用状态变化后记录移动端快照。 */
+/** 标题背景启用状态变化后记录移动端快照 */
 const onTitleBackgroundEnableChange = (_val?: boolean) => {
   snapshotStore.recordSnapshotCacheToMobile('titleBackground')
 }
 
-/** 更新标题背景配置并通知父级刷新。 */
+/** 更新标题背景配置并通知父级刷新 */
 const onTitleBackgroundChange = val => {
   element.value.titleBackground = val
   snapshotStore.recordSnapshotCacheToMobile('titleBackground')
   emits('onAttrChange', { custom: 'titleBackground' })
 }
 
-/** 更新组件样式字段，并把具体属性透传给父级处理。 */
+/** 更新组件样式字段，并把具体属性透传给父级处理 */
 const onStyleAttrChange = ({ key, value }) => {
   snapshotStore.recordSnapshotCacheToMobile('style')
   emits('onAttrChange', { custom: 'style', property: key, value: value })
 }
 
-/** 面板容器引用，用于监听属性栏宽度变化。 */
+/** 面板容器引用，用于监听属性栏宽度变化 */
 const containerRef = ref()
-/** 属性面板当前宽度，供内部控件做紧凑布局适配。 */
+/** 属性面板当前宽度，供内部控件做紧凑布局适配 */
 const containerWidth = ref()
 
-/** 仅对存在边框样式且非装饰类组件展示边框配置。 */
+/** 仅对存在边框样式且非装饰类组件展示边框配置 */
 const borderSettingShow = computed(() => {
   return (
     !!element.value.style['borderStyle'] &&
@@ -103,7 +103,7 @@ const borderSettingShow = computed(() => {
 })
 
 // 当前仅保留事件配置的可见性规则，不在属性面板展开独立开关。
-/** 判断当前组件是否支持通用事件配置。 */
+/** 判断当前组件是否支持通用事件配置 */
 const eventsShow = computed(() => {
   return (
     ['Picture', 'CanvasIcon', 'CircleShape', 'SvgTriangle', 'RectShape', 'ScrollText'].includes(
@@ -112,7 +112,7 @@ const eventsShow = computed(() => {
   )
 })
 
-/** Tabs 和大屏组件在非移动端预览下展示轮播设置。 */
+/** Tabs 和大屏组件在非移动端预览下展示轮播设置 */
 const carouselShow = computed(() => {
   return (
     ['Tabs', 'Screen'].includes(element.value.component) &&
@@ -121,7 +121,7 @@ const carouselShow = computed(() => {
   )
 })
 
-/** 根据资源类型和组件类型判断是否展示自定义背景。 */
+/** 根据资源类型和组件类型判断是否展示自定义背景 */
 const backgroundCustomShow = computed(() => {
   return (
     dashboardActive.value ||
@@ -137,19 +137,19 @@ const backgroundCustomShow = computed(() => {
   )
 })
 
-/** 标题背景配置仅在 Tabs 和大屏组件开启标题背景时展示。 */
+/** 标题背景配置仅在 Tabs 和大屏组件开启标题背景时展示 */
 const titleBackgroundShow = computed(
   () => ['Tabs', 'Screen'].includes(element.value.component) && element.value.titleBackground
 )
 
-/** Tabs 和大屏组件使用独立的标题样式配置区。 */
+/** Tabs 和大屏组件使用独立的标题样式配置区 */
 const tabTitleShow = computed(() => {
   return (
     element.value && element.value.style && ['Tabs', 'Screen'].includes(element.value.component)
   )
 })
 
-/** 常规样式区排除装饰、动态背景、Tabs 和大屏等特殊组件。 */
+/** 常规样式区排除装饰、动态背景、Tabs 和大屏等特殊组件 */
 const styleShow = computed(() => {
   return (
     element.value &&
@@ -159,7 +159,7 @@ const styleShow = computed(() => {
   )
 })
 
-/** 挂载后监听属性面板宽度，驱动内部选择器宽度自适应。 */
+/** 挂载后监听属性面板宽度，驱动内部选择器宽度自适应 */
 onMounted(() => {
   const erd = elementResizeDetectorMaker()
   containerWidth.value = containerRef.value?.offsetWidth

@@ -5,7 +5,7 @@ import { COLOR_PANEL, COLOR_CASES } from '@/views/chart/components/editor/util/c
 
 const { t } = useI18n()
 
-// 定义颜色方案选择器依赖的图表和主题配置。
+// 定义颜色方案选择器依赖的图表和主题配置
 const props = defineProps({
   chart: {
     type: Object,
@@ -21,7 +21,7 @@ const colorCases = COLOR_CASES
 
 const predefineColors = COLOR_PANEL
 
-// 获取默认颜色方案及默认透明度。
+// 获取默认颜色方案及默认透明度
 const getDefaultColorCase = () => {
   const defaultCase = colorCases.find(ele => ele.value === 'default') || colorCases[0]
   return {
@@ -31,17 +31,17 @@ const getDefaultColorCase = () => {
   }
 }
 
-// 保存颜色方案表单和当前自定义颜色状态。
+// 保存颜色方案表单和当前自定义颜色状态
 const state = reactive({
   colorForm: getDefaultColorCase(),
   customColor: null,
   colorIndex: 0
 })
 
-// 声明颜色方案变更事件。
+// 声明颜色方案变更事件
 const emit = defineEmits(['onColorChange'])
 
-// 监听图表配置变化并刷新颜色表单。
+// 监听图表配置变化并刷新颜色表单
 watch(
   () => props.chart,
   () => {
@@ -49,7 +49,7 @@ watch(
   }
 )
 
-// 切换系统颜色方案并重置当前自定义颜色。
+// 切换系统颜色方案并重置当前自定义颜色
 const changeColorOption = (_prop?: string) => {
   const selectedColorCase =
     colorCases.find(ele => ele.value === state.colorForm.value) || colorCases[0]
@@ -62,28 +62,28 @@ const changeColorOption = (_prop?: string) => {
   changeColorCase()
 }
 
-// 重置自定义颜色为当前系统方案。
+// 重置自定义颜色为当前系统方案
 const resetCustomColor = () => {
   changeColorOption()
 }
 
-// 切换当前正在编辑的颜色下标。
+// 切换当前正在编辑的颜色下标
 const switchColor = index => {
   state.colorIndex = index
 }
 
-// 将自定义颜色写入颜色方案。
+// 将自定义颜色写入颜色方案
 const switchColorCase = () => {
   state.colorForm.colors[state.colorIndex] = state.customColor
   changeColorCase()
 }
 
-// 向父组件同步颜色方案变更。
+// 向父组件同步颜色方案变更
 const changeColorCase = (_prop?: string) => {
   emit('onColorChange', state.colorForm)
 }
 
-// 从图表自定义属性初始化颜色方案表单。
+// 从图表自定义属性初始化颜色方案表单
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customAttr) {

@@ -29,7 +29,7 @@ import java.util.UUID;
 
 @Component
 /**
- * 字体管理服务，负责字体元数据维护和字体文件上传下载。
+ * 字体管理服务，负责字体元数据维护和字体文件上传下载
  */
 public class FontManage {
 
@@ -42,7 +42,7 @@ public class FontManage {
     private ResourceLoader resourceLoader;
 
     /**
-     * 查询全部字体配置。
+     * 查询全部字体配置
      */
     public List<FontDto> list() {
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
@@ -58,7 +58,7 @@ public class FontManage {
     }
 
     /**
-     * 创建字体元数据。
+     * 创建字体元数据
      */
     public FontDto create(FontDto fontDto) {
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
@@ -76,7 +76,7 @@ public class FontManage {
 
 
     /**
-     * 编辑字体元数据，默认字体会同步清理其他默认标记。
+     * 编辑字体元数据，默认字体会同步清理其他默认标记
      */
     public FontDto edit(FontDto fontDto) {
         if (ObjectUtils.isEmpty(fontDto.getId())) {
@@ -97,7 +97,7 @@ public class FontManage {
     }
 
     /**
-     * 删除字体元数据和对应字体文件。
+     * 删除字体元数据和对应字体文件
      */
     public void delete(Long id) {
         CoreFont coreFont = coreFontMapper.selectById(id);
@@ -111,7 +111,7 @@ public class FontManage {
     }
 
     /**
-     * 更新字体默认状态。
+     * 更新字体默认状态
      */
     public void changeDefault(FontDto fontDto) {
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
@@ -122,7 +122,7 @@ public class FontManage {
     }
 
     /**
-     * 上传字体文件并返回字体信息。
+     * 上传字体文件并返回字体信息
      */
     public FontDto upload(MultipartFile file) {
         String fileUuid = UUID.randomUUID().toString();
@@ -130,7 +130,7 @@ public class FontManage {
     }
 
     /**
-     * 下载指定转换文件名的字体文件。
+     * 下载指定转换文件名的字体文件
      */
     public void download(String file, HttpServletResponse response) {
 
@@ -159,7 +159,7 @@ public class FontManage {
     }
 
     /**
-     * 查询当前默认字体。
+     * 查询当前默认字体
      */
     public List<FontDto> defaultFont() {
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
@@ -175,7 +175,7 @@ public class FontManage {
     }
 
     /**
-     * 校验并保存上传的字体文件。
+     * 校验并保存上传的字体文件
      */
     @SuppressWarnings("java/path-injection")
     private FontDto saveFile(MultipartFile file, String fileNameUUID) throws CrestException {

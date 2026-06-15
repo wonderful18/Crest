@@ -12,42 +12,42 @@ public class CoreDatasetTableSqlLog implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * SQL 日志主键。
+     * SQL 日志主键
      */
     private String id;
 
     /**
-     * 数据集 SQL 节点 ID。
+     * 数据集 SQL 节点 ID
      */
     private String tableId;
 
     /**
-     * SQL 执行开始时间。
+     * SQL 执行开始时间
      */
     private Long startTime;
 
     /**
-     * SQL 执行结束时间。
+     * SQL 执行结束时间
      */
     private Long endTime;
 
     /**
-     * SQL 执行耗时，单位为毫秒。
+     * SQL 执行耗时，单位为毫秒
      */
     private Long spend;
 
     /**
-     * SQL 语句或执行详情。
+     * SQL 语句或执行详情
      */
     private String sql;
 
     /**
-     * SQL 执行状态。
+     * SQL 执行状态
      */
     private String status;
 
     /**
-     * 获取 SQL 日志主键。
+     * 获取 SQL 日志主键
      *
      * @return SQL 日志主键
      */
@@ -56,7 +56,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 设置 SQL 日志主键。
+     * 设置 SQL 日志主键
      *
      * @param id SQL 日志主键
      */
@@ -65,7 +65,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 获取数据集 SQL 节点 ID。
+     * 获取数据集 SQL 节点 ID
      *
      * @return 数据集 SQL 节点 ID
      */
@@ -74,7 +74,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 设置数据集 SQL 节点 ID。
+     * 设置数据集 SQL 节点 ID
      *
      * @param tableId 数据集 SQL 节点 ID
      */
@@ -83,7 +83,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 获取 SQL 执行开始时间。
+     * 获取 SQL 执行开始时间
      *
      * @return SQL 执行开始时间
      */
@@ -92,7 +92,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 设置 SQL 执行开始时间。
+     * 设置 SQL 执行开始时间
      *
      * @param startTime SQL 执行开始时间
      */
@@ -101,7 +101,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 获取 SQL 执行结束时间。
+     * 获取 SQL 执行结束时间
      *
      * @return SQL 执行结束时间
      */
@@ -110,7 +110,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 设置 SQL 执行结束时间。
+     * 设置 SQL 执行结束时间
      *
      * @param endTime SQL 执行结束时间
      */
@@ -119,7 +119,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 获取 SQL 执行耗时。
+     * 获取 SQL 执行耗时
      *
      * @return SQL 执行耗时，单位为毫秒
      */
@@ -128,7 +128,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 设置 SQL 执行耗时。
+     * 设置 SQL 执行耗时
      *
      * @param spend SQL 执行耗时，单位为毫秒
      */
@@ -137,7 +137,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 获取 SQL 语句或执行详情。
+     * 获取 SQL 语句或执行详情
      *
      * @return SQL 语句或执行详情
      */
@@ -146,7 +146,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 设置 SQL 语句或执行详情。
+     * 设置 SQL 语句或执行详情
      *
      * @param sql SQL 语句或执行详情
      */
@@ -155,7 +155,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 获取 SQL 执行状态。
+     * 获取 SQL 执行状态
      *
      * @return SQL 执行状态
      */
@@ -164,7 +164,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 设置 SQL 执行状态。
+     * 设置 SQL 执行状态
      *
      * @param status SQL 执行状态
      */
@@ -173,7 +173,7 @@ public class CoreDatasetTableSqlLog implements Serializable {
     }
 
     /**
-     * 返回 SQL 日志的调试字符串。
+     * 返回 SQL 日志的调试字符串
      *
      * @return SQL 日志的字符串表示
      */

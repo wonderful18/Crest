@@ -15,23 +15,23 @@ const props = withDefaults(
   { themes: 'dark' }
 )
 
-// 根据当前主题计算提示框使用的反色主题。
+// 根据当前主题计算提示框使用的反色主题
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
 
 const predefineColors = COLOR_PANEL
 
-// 保存杂项样式表单和辅助字号数据。
+// 保存杂项样式表单和辅助字号数据
 const state = reactive({
   miscForm: JSON.parse(JSON.stringify(DEFAULT_MISC_STYLE)),
   fontSize: []
 })
 
-// 声明杂项样式变更事件。
+// 声明杂项样式变更事件
 const emit = defineEmits(['onChangeMiscStyleForm'])
 
-// 监听图表样式变化并刷新杂项表单。
+// 监听图表样式变化并刷新杂项表单
 watch(
   () => props.chart.customStyle.xAxis,
   () => {
@@ -40,7 +40,7 @@ watch(
   { deep: true }
 )
 
-// 生成杂项样式可选字号列表。
+// 生成杂项样式可选字号列表
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -58,12 +58,12 @@ const fontSizeList = computed(() => {
   return arr
 })
 
-// 同步杂项样式配置。
+// 同步杂项样式配置
 const changeMiscStyle = prop => {
   emit('onChangeMiscStyleForm', state.miscForm, prop)
 }
 
-// 从图表样式配置中初始化杂项表单。
+// 从图表样式配置中初始化杂项表单
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customStyle) {
@@ -82,7 +82,7 @@ const init = () => {
   }
 }
 
-// 判断指定属性是否在当前配置面板中展示。
+// 判断指定属性是否在当前配置面板中展示
 const showProperty = prop => props.propertyInner?.includes(prop)
 
 onMounted(() => {

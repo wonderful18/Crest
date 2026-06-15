@@ -12,7 +12,7 @@ import router from '@/router'
 import { useCache } from '@/hooks/web/useCache'
 import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 const appearanceStore = useAppearanceStoreWithOut()
-// 当前导航栏背景模式。
+// 当前导航栏背景模式
 const navigateBg = computed(() => appearanceStore.getNavigateBg)
 const { wsCache } = useCache()
 const userStore = useUserStoreWithOut()
@@ -24,57 +24,57 @@ interface LinkItem {
   link?: string
   method?: string
 }
-// 用户菜单链接列表。
+// 用户菜单链接列表
 const linkList = ref([] as LinkItem[])
 
-// 判断是否处于平台客户端内。
+// 判断是否处于平台客户端内
 const inPlatformClient = computed(() => !!wsCache.get('crest-platform-client'))
 
-// 执行退出登录。
+// 执行退出登录
 const logout = async () => {
   await logoutApi()
   logoutHandler()
 }
 
-// 加载并排序用户菜单链接。
+// 加载并排序用户菜单链接
 const linkLoaded = items => {
   items.forEach(item => linkList.value.push(item))
   linkList.value.sort(compare('id'))
 }
 
-// 生成按指定属性升序排序的比较器。
+// 生成按指定属性升序排序的比较器
 const compare = (property: string) => {
   return (a, b) => a[property] - b[property]
 }
 
-// 执行用户菜单项动作。
+// 执行用户菜单项动作
 const executeMethod = (item: LinkItem) => {
   if (item.link) {
     router.push(item.link)
   }
 }
 
-// 当前用户名称。
+// 当前用户名称
 const name = computed(() => userStore.getName)
-// 当前用户 ID。
+// 当前用户 ID
 const uid = computed(() => userStore.getUid)
 
-// 用户菜单按钮引用。
+// 用户菜单按钮引用
 const buttonRef = ref()
-// 用户菜单弹层引用。
+// 用户菜单弹层引用
 const popoverRef = ref()
 
-// 语言菜单触发元素引用。
+// 语言菜单触发元素引用
 const divLanguageRef = ref()
-// 语言菜单弹层引用。
+// 语言菜单弹层引用
 const popoverLanguageRef = ref()
 
-// 保持语言弹层显示。
+// 保持语言弹层显示
 const openLanguage = () => {
   unref(popoverLanguageRef).popperRef?.delayHide?.()
 }
 
-// 保持用户菜单弹层显示。
+// 保持用户菜单弹层显示
 const openPopover = () => {
   unref(popoverRef).popperRef?.delayHide?.()
 }

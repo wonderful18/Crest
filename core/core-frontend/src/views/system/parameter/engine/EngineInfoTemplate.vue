@@ -51,18 +51,18 @@ const typeMap = dsTypes.reduce((pre, next) => {
   pre[next.type] = next.name
   return pre
 }, {})
-// 控制是否展示连接池和超时优先级配置。
+// 控制是否展示连接池和超时优先级配置
 const showPriority = ref(true)
 let nodeInfoId
-// 持有基础配置展示组件实例。
+// 持有基础配置展示组件实例
 const infoTemplate = ref()
-// 持有连接池配置展示组件实例。
+// 持有连接池配置展示组件实例
 const infoTemplateTime = ref()
-// 保存基础配置展示数据。
+// 保存基础配置展示数据
 const templateList = ref<SettingRecord[]>([])
-// 保存连接池和超时配置展示数据。
+// 保存连接池和超时配置展示数据
 const templateListTime = ref<SettingRecord[]>([])
-// 加载引擎数据源配置并填充展示模板。
+// 加载引擎数据源配置并填充展示模板
 const getEngine = () => {
   querySymmetricKey().then(response => {
     getEngineDatasource().then(res => {
@@ -148,14 +148,14 @@ getEngine()
 defineExpose({
   getEngine
 })
-// 声明编辑引擎配置时向父组件派发的事件。
+// 声明编辑引擎配置时向父组件派发的事件
 const emits = defineEmits(['edit'])
-// 通知父组件进入引擎配置编辑流程。
+// 通知父组件进入引擎配置编辑流程
 const edit = () => {
   emits('edit')
 }
 
-// 触发当前引擎配置连通性校验。
+// 触发当前引擎配置连通性校验
 const validateById = async () => {
   request.post({ url: '/engine/validate/' + nodeInfoId }).then(res => {
     if (res !== undefined) {

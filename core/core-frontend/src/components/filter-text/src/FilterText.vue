@@ -9,27 +9,27 @@ import { ElButton, ElDivider, ElIcon } from 'element-plus-secondary'
 import { propTypes } from '@/utils/propTypes'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
-// 定义筛选文本条接收的筛选文案和结果总数。
+// 定义筛选文本条接收的筛选文案和结果总数
 const props = defineProps({
   filterTexts: propTypes.arrayOf(propTypes.string),
   total: propTypes.number.def(0)
 })
 
-// 声明清空筛选时向父组件派发的事件。
+// 声明清空筛选时向父组件派发的事件
 const emits = defineEmits(['clearFilter'])
-// 持有筛选文本滚动容器实例。
+// 持有筛选文本滚动容器实例
 const container = ref(null)
 
-// 控制左右滚动按钮是否展示。
+// 控制左右滚动按钮是否展示
 const showScroll = ref(false)
-// 将筛选文本列表向左滚动。
+// 将筛选文本列表向左滚动
 const scrollPre = () => {
   container.value.scrollLeft -= 10
   if (container.value.scrollLeft <= 0) {
     container.value.scrollLeft = 0
   }
 }
-// 将筛选文本列表向右滚动。
+// 将筛选文本列表向右滚动
 const scrollNext = () => {
   container.value.scrollLeft += 10
   const width = container.value.scrollWidth - container.value.offsetWidth
@@ -37,17 +37,17 @@ const scrollNext = () => {
     container.value.scrollLeft = width
   }
 }
-// 清空指定索引的筛选条件。
+// 清空指定索引的筛选条件
 const clearFilter = (index?: number) => {
   emits('clearFilter', index)
 }
 
-// 清空全部筛选条件。
+// 清空全部筛选条件
 const clearFilterAll = () => {
   emits('clearFilter', 'empty')
 }
 
-// 监听筛选文本变化并判断是否需要启用横向滚动。
+// 监听筛选文本变化并判断是否需要启用横向滚动
 watch(
   () => props.filterTexts,
   () => {

@@ -12,32 +12,32 @@ public class CoreSysSetting implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 系统配置主键。
+     * 系统配置主键
      */
     private Long id;
 
     /**
-     * 系统配置键。
+     * 系统配置键
      */
     private String pkey;
 
     /**
-     * 系统配置值。
+     * 系统配置值
      */
     private String pval;
 
     /**
-     * 系统配置类型。
+     * 系统配置类型
      */
     private String type;
 
     /**
-     * 系统配置排序值。
+     * 系统配置排序值
      */
     private Integer sort;
 
     /**
-     * 获取系统配置主键。
+     * 获取系统配置主键
      *
      * @return 系统配置主键
      */
@@ -46,7 +46,7 @@ public class CoreSysSetting implements Serializable {
     }
 
     /**
-     * 设置系统配置主键。
+     * 设置系统配置主键
      *
      * @param id 系统配置主键
      */
@@ -55,7 +55,7 @@ public class CoreSysSetting implements Serializable {
     }
 
     /**
-     * 获取系统配置键。
+     * 获取系统配置键
      *
      * @return 系统配置键
      */
@@ -64,7 +64,7 @@ public class CoreSysSetting implements Serializable {
     }
 
     /**
-     * 设置系统配置键。
+     * 设置系统配置键
      *
      * @param pkey 系统配置键
      */
@@ -73,7 +73,7 @@ public class CoreSysSetting implements Serializable {
     }
 
     /**
-     * 获取系统配置值。
+     * 获取系统配置值
      *
      * @return 系统配置值
      */
@@ -82,7 +82,7 @@ public class CoreSysSetting implements Serializable {
     }
 
     /**
-     * 设置系统配置值。
+     * 设置系统配置值
      *
      * @param pval 系统配置值
      */
@@ -91,7 +91,7 @@ public class CoreSysSetting implements Serializable {
     }
 
     /**
-     * 获取系统配置类型。
+     * 获取系统配置类型
      *
      * @return 系统配置类型
      */
@@ -100,7 +100,7 @@ public class CoreSysSetting implements Serializable {
     }
 
     /**
-     * 设置系统配置类型。
+     * 设置系统配置类型
      *
      * @param type 系统配置类型
      */
@@ -109,7 +109,7 @@ public class CoreSysSetting implements Serializable {
     }
 
     /**
-     * 获取系统配置排序值。
+     * 获取系统配置排序值
      *
      * @return 系统配置排序值
      */
@@ -118,7 +118,7 @@ public class CoreSysSetting implements Serializable {
     }
 
     /**
-     * 设置系统配置排序值。
+     * 设置系统配置排序值
      *
      * @param sort 系统配置排序值
      */
@@ -127,7 +127,7 @@ public class CoreSysSetting implements Serializable {
     }
 
     /**
-     * 返回系统配置的调试字符串。
+     * 返回系统配置的调试字符串
      *
      * @return 系统配置的字符串表示
      */

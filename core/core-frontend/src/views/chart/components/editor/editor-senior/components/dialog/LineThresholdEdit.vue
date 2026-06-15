@@ -10,7 +10,7 @@ import { iconFieldMap } from '@/components/icon-group/field-list'
 
 const { t } = useI18n()
 
-// 折线类阈值编辑弹窗入参，包含图表上下文和阈值列表。
+// 折线类阈值编辑弹窗入参，包含图表上下文和阈值列表
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -23,7 +23,7 @@ const props = defineProps({
   }
 })
 
-// 阈值配置变更事件。
+// 阈值配置变更事件
 const emit = defineEmits(['onLineThresholdChange'])
 type LineThreshold = TableThreshold & { options?: typeof expressionList }
 
@@ -87,7 +87,7 @@ const expressionList = [
     ]
   }
 ]
-// 按允许的表达式值过滤操作符分组。
+// 按允许的表达式值过滤操作符分组
 const filterExpressionListByValue = (list, values) => {
   return list
     .map(group => ({
@@ -96,7 +96,7 @@ const filterExpressionListByValue = (list, values) => {
     }))
     .filter(group => group.options.length > 0)
 }
-// 当前图表可用的阈值表达式选项。
+// 当前图表可用的阈值表达式选项
 const valueOptions = computed(() => {
   if (props.chart.type === 'symbolic-map') {
     return filterExpressionListByValue(expressionList, [
@@ -113,7 +113,7 @@ const valueOptions = computed(() => {
 })
 const predefineColors = COLOR_PANEL
 
-// 阈值编辑状态，包含阈值列表、可选字段和当前空白模板。
+// 阈值编辑状态，包含阈值列表、可选字段和当前空白模板
 const state = reactive<any>({
   thresholdArr: [] as LineThreshold[],
   fields: [],
@@ -124,12 +124,12 @@ const state = reactive<any>({
   } as LineThreshold
 })
 
-// 初始化阈值列表和字段候选项。
+// 初始化阈值列表和字段候选项
 const init = () => {
   state.thresholdArr = JSON.parse(JSON.stringify(props.threshold)) as LineThreshold[]
   initFields()
 }
-// 字段变更后重置该字段下的条件表达式。
+// 字段变更后重置该字段下的条件表达式
 const initOptions = (item, fieldObj) => {
   if (fieldObj) {
     item.options = JSON.parse(JSON.stringify(valueOptions.value))
@@ -140,27 +140,27 @@ const initOptions = (item, fieldObj) => {
   }
 }
 
-// 当前图表是否为符号地图。
+// 当前图表是否为符号地图
 const isSymbolicMap = computed(() => {
   return props.chart.type === 'symbolic-map'
 })
 
-// 当前图表是否为进度条。
+// 当前图表是否为进度条
 const isProgressBar = computed(() => {
   return props.chart.type === 'progress-bar'
 })
 
-// 当前图表是否为对称条形图。
+// 当前图表是否为对称条形图
 const isBidirectionalBar = computed(() => {
   return props.chart.type === 'bidirectional-bar'
 })
 
-// 当前图表是否为区间条形图。
+// 当前图表是否为区间条形图
 const isRangeBar = computed(() => {
   return props.chart.type === 'bar-range'
 })
 
-// 当前图表是否属于条形图或横向条形图族。
+// 当前图表是否属于条形图或横向条形图族
 const isBarOrHorizontal = computed(() => {
   return [
     'bar',
@@ -172,7 +172,7 @@ const isBarOrHorizontal = computed(() => {
   ].includes(props.chart.type)
 })
 
-// 根据图表类型初始化可配置阈值字段。
+// 根据图表类型初始化可配置阈值字段
 const initFields = () => {
   let fields = []
   if (isSymbolicMap.value) {
@@ -190,7 +190,7 @@ const initFields = () => {
     fields = [...yAxis]
   }
   state.fields.splice(0, state.fields.length, ...fields)
-  // 已配置阈值字段不存在时清空字段并触发同步。
+  // 已配置阈值字段不存在时清空字段并触发同步
   let change = false
   state.thresholdArr.forEach(item => {
     item.options = JSON.parse(JSON.stringify(valueOptions.value))
@@ -204,35 +204,35 @@ const initFields = () => {
     changeThreshold()
   }
 }
-// 新增一组字段阈值配置。
+// 新增一组字段阈值配置
 const addThreshold = () => {
   state.thresholdArr.push(JSON.parse(JSON.stringify(state.thresholdObj)))
   changeThreshold()
 }
-// 删除指定字段阈值配置。
+// 删除指定字段阈值配置
 const removeThreshold = index => {
   state.thresholdArr.splice(index, 1)
   changeThreshold()
 }
 
-// 向父组件同步阈值配置。
+// 向父组件同步阈值配置
 const changeThreshold = () => {
   emit('onLineThresholdChange', state.thresholdArr)
 }
 
-// 为字段阈值新增一个条件。
+// 为字段阈值新增一个条件
 const addConditions = item => {
   const newCondition = JSON.parse(JSON.stringify(thresholdCondition))
   item.conditions.push(newCondition)
   changeThreshold()
 }
-// 删除字段阈值中的指定条件。
+// 删除字段阈值中的指定条件
 const removeCondition = (item, index) => {
   item.conditions.splice(index, 1)
   changeThreshold()
 }
 
-// 字段变更时写入字段详情并刷新表达式选项。
+// 字段变更时写入字段详情并刷新表达式选项
 const addField = item => {
   if (state.fields && state.fields.length > 0) {
     state.fields.forEach(ele => {
@@ -247,22 +247,22 @@ const addField = item => {
 
 const fieldOptions = [{ label: t('chart.field_fixed'), value: 'fixed' }]
 
-// 判断条件是否需要配置非空固定值。
+// 判断条件是否需要配置非空固定值
 const isNotEmptyAndNull = item => {
   return !item.term.includes('null') && !item.term.includes('empty')
 }
 
-// 判断条件是否为区间表达式。
+// 判断条件是否为区间表达式
 const isBetween = item => {
   return item.term === 'between'
 }
 
-// 判断条件值是否来自动态字段。
+// 判断条件值是否来自动态字段
 const isDynamic = item => {
   return item.type === 'dynamic'
 }
 
-// 根据字段类型返回可用的值来源选项。
+// 根据字段类型返回可用的值来源选项
 const getFieldOptions = fieldItem => {
   const fieldType = state.fields.filter(ele => ele.id === fieldItem.fieldId)?.[0]?.fieldType
   if (fieldType === 1) {

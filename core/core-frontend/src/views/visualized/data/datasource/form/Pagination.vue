@@ -3,14 +3,14 @@ import { onBeforeMount, PropType, ref, toRefs } from 'vue'
 import { cloneDeep } from 'lodash-es'
 import { useI18n } from '@/hooks/web/useI18n'
 
-// 接口分页配置，描述分页类型以及请求、响应字段映射。
+// 接口分页配置，描述分页类型以及请求、响应字段映射
 export interface PageSetting {
   pageType: string
   requestData: requestItem[]
   responseData: responseItem[]
 }
 
-// 分页请求参数行，记录内置变量和实际请求参数的绑定。
+// 分页请求参数行，记录内置变量和实际请求参数的绑定
 export interface requestItem {
   parameterName: string
   builtInParameterName: string
@@ -18,13 +18,13 @@ export interface requestItem {
   parameterDefaultValue: string
 }
 
-// 分页响应解析行，记录总数或游标字段的解析路径。
+// 分页响应解析行，记录总数或游标字段的解析路径
 export interface responseItem {
   parameterName: string
   resolutionPath: string
   resolutionPathType: string
 }
-// 分页表单直接修改传入的 page 对象以保持父级配置同步。
+// 分页表单直接修改传入的 page 对象以保持父级配置同步
 const props = defineProps({
   page: {
     type: Object as PropType<PageSetting>,
@@ -35,11 +35,11 @@ const props = defineProps({
     })
   }
 })
-// 解构为响应式引用，避免编辑表格时丢失父级对象关联。
+// 解构为响应式引用，避免编辑表格时丢失父级对象关联
 const { page } = toRefs(props)
-// 分页表单的多语言翻译入口。
+// 分页表单的多语言翻译入口
 const { t } = useI18n()
-// 分页类型下拉选项，覆盖页码、游标和无分页三种模式。
+// 分页类型下拉选项，覆盖页码、游标和无分页三种模式
 const options = [
   {
     value: 'pageNumber',
@@ -55,7 +55,7 @@ const options = [
   }
 ]
 
-// 页码和游标分页共用的默认请求参数模板。
+// 页码和游标分页共用的默认请求参数模板
 const requestData = ref([
   {
     parameterName: t('api_pagination.page_number'),
@@ -71,7 +71,7 @@ const requestData = ref([
   }
 ])
 
-// 页码分页响应字段的可选解析类型。
+// 页码分页响应字段的可选解析类型
 const defaultPathArr = [
   {
     value: 'totalNumber',
@@ -83,7 +83,7 @@ const defaultPathArr = [
   }
 ]
 
-// 游标分页响应字段的可选解析类型。
+// 游标分页响应字段的可选解析类型
 const cursorPathArr = [
   {
     value: 'cursor',
@@ -91,10 +91,10 @@ const cursorPathArr = [
   }
 ]
 
-// 当前响应解析类型选项会随分页模式切换。
+// 当前响应解析类型选项会随分页模式切换
 const resolutionPathOptions = ref(cloneDeep(defaultPathArr))
 
-// 默认响应解析模板，进入页面时会补齐到配置对象。
+// 默认响应解析模板，进入页面时会补齐到配置对象
 const responseData = ref([
   {
     parameterName: t('api_pagination.total_number'),
@@ -103,7 +103,7 @@ const responseData = ref([
   }
 ])
 
-// 初始化缺省分页配置，并同步当前分页类型对应的字段文案。
+// 初始化缺省分页配置，并同步当前分页类型对应的字段文案
 onBeforeMount(() => {
   if (!page.value.requestData || page.value.requestData.length === 0) {
     page.value.requestData = requestData.value
@@ -117,7 +117,7 @@ onBeforeMount(() => {
   handleNumberSizeChange()
 })
 
-// 根据分页类型切换请求变量、响应解析字段和候选路径。
+// 根据分页类型切换请求变量、响应解析字段和候选路径
 const handleNumberSizeChange = () => {
   if (page.value.pageType === 'pageNumber') {
     page.value.responseData[0].resolutionPathType = 'totalNumber'

@@ -16,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/dataset-sync")
 /**
- * 数据集同步任务接口控制器，负责任务配置、执行和日志查询。
+ * 数据集同步任务接口控制器，负责任务配置、执行和日志查询
  */
 public class DatasetSyncServer implements DatasetSyncApi {
 
@@ -26,7 +26,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     private DatasetSyncManage syncManage;
 
     /**
-     * 分页查询数据集同步任务。
+     * 分页查询数据集同步任务
      */
     @Override
     public DatasetSyncTaskPageVO page(Integer page, Integer pageSize, DatasetSyncTaskRequest request) {
@@ -34,7 +34,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     }
 
     /**
-     * 查询指定可视化资源依赖的同步任务。
+     * 查询指定可视化资源依赖的同步任务
      */
     @Override
     public List<DatasetSyncTaskDTO> dependencies(Long visualizationId) {
@@ -42,7 +42,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     }
 
     /**
-     * 保存数据集同步任务配置。
+     * 保存数据集同步任务配置
      */
     @Override
     public DatasetSyncTaskDTO save(DatasetSyncTaskDTO task) {
@@ -50,7 +50,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     }
 
     /**
-     * 查询指定数据集分组的同步任务。
+     * 查询指定数据集分组的同步任务
      */
     @Override
     public DatasetSyncTaskDTO task(Long datasetGroupId) {
@@ -58,7 +58,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     }
 
     /**
-     * 立即执行指定数据集分组的同步任务。
+     * 立即执行指定数据集分组的同步任务
      */
     @Override
     public DatasetSyncTaskDTO execute(Long datasetGroupId) throws Exception {
@@ -66,7 +66,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     }
 
     /**
-     * 停止指定数据集分组的同步任务。
+     * 停止指定数据集分组的同步任务
      */
     @Override
     public void stop(Long datasetGroupId) {
@@ -74,7 +74,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     }
 
     /**
-     * 暂停指定数据集分组的同步任务。
+     * 暂停指定数据集分组的同步任务
      */
     @Override
     public DatasetSyncTaskDTO pause(Long datasetGroupId) {
@@ -82,7 +82,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     }
 
     /**
-     * 恢复指定数据集分组的同步任务。
+     * 恢复指定数据集分组的同步任务
      */
     @Override
     public DatasetSyncTaskDTO resume(Long datasetGroupId) {
@@ -90,7 +90,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     }
 
     /**
-     * 重试指定数据集分组的同步任务。
+     * 重试指定数据集分组的同步任务
      */
     @Override
     public DatasetSyncTaskDTO retry(Long datasetGroupId) throws Exception {
@@ -98,7 +98,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     }
 
     /**
-     * 查询指定数据集分组的同步日志。
+     * 查询指定数据集分组的同步日志
      */
     @Override
     public List<DatasetSyncLogDTO> logs(Long datasetGroupId) {

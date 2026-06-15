@@ -59,13 +59,13 @@ import { useI18n } from '@/hooks/web/useI18n'
 const dvMainStore = dvMainStoreWithOut()
 const { curComponent, curActiveTabInner } = storeToRefs(dvMainStore)
 const snapshotStore = snapshotStoreWithOut()
-// 声明关闭流媒体链接设置时向父组件派发的事件。
+// 声明关闭流媒体链接设置时向父组件派发的事件
 const emits = defineEmits(['close'])
-// 持有流媒体链接弹层实例。
+// 持有流媒体链接弹层实例
 const popover = ref(null)
 const { t } = useI18n()
 
-// 定义流媒体链接设置接收的链接信息和属性位置。
+// 定义流媒体链接设置接收的链接信息和属性位置
 const props = defineProps({
   linkInfo: {
     type: Object,
@@ -81,7 +81,7 @@ const props = defineProps({
 
 const { linkInfo, attrPosition } = toRefs(props)
 
-// 保存流媒体链接编辑态和组件上下文状态。
+// 保存流媒体链接编辑态和组件上下文状态
 const state = reactive({
   streamMediaInfoTemp: null,
   componentType: null,
@@ -89,12 +89,12 @@ const state = reactive({
   editFilter: ['view', 'custom']
 })
 
-// 使用外部链接信息初始化编辑态。
+// 使用外部链接信息初始化编辑态
 const init = () => {
   state.streamMediaInfoTemp = deepCopy(linkInfo.value)
 }
 
-// 保存流媒体链接配置并通知画布刷新。
+// 保存流媒体链接配置并通知画布刷新
 const onSubmit = () => {
   state.streamMediaInfoTemp[state.streamMediaInfoTemp.videoType].url = checkAddHttp(
     state.streamMediaInfoTemp[state.streamMediaInfoTemp.videoType].url
@@ -108,17 +108,17 @@ const onSubmit = () => {
   eventBus.emit('streamMediaLinksChange-' + curComponent.value.id)
   popoverClose()
 }
-// 取消编辑并关闭弹层。
+// 取消编辑并关闭弹层
 const onClose = () => {
   emits('close')
   popoverClose()
 }
-// 关闭流媒体链接弹层。
+// 关闭流媒体链接弹层
 const popoverClose = () => {
   popover.value.showPopper = false
 }
 init()
-// 监听外部链接信息变化并刷新编辑态。
+// 监听外部链接信息变化并刷新编辑态
 watch(
   linkInfo,
   () => {

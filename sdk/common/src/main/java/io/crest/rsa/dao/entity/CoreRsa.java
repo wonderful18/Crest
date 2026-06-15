@@ -12,47 +12,47 @@ public class CoreRsa implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 密钥记录主键。
+     * 密钥记录主键
      */
     private Integer id;
 
     /**
-     * RSA 私钥内容。
+     * RSA 私钥内容
      */
     private String privateKey;
 
     /**
-     * RSA 公钥内容。
+     * RSA 公钥内容
      */
     private String publicKey;
 
     /**
-     * AES 对称加密密钥。
+     * AES 对称加密密钥
      */
     private String aesKey;
 
     /**
-     * SM2 私钥内容。
+     * SM2 私钥内容
      */
     private String sm2PrivateKey;
 
     /**
-     * SM2 公钥内容。
+     * SM2 公钥内容
      */
     private String sm2PublicKey;
 
     /**
-     * SM2 密钥生成时间。
+     * SM2 密钥生成时间
      */
     private Long sm2CreateTime;
 
     /**
-     * RSA 密钥生成时间。
+     * RSA 密钥生成时间
      */
     private Long createTime;
 
     /**
-     * 获取密钥记录主键。
+     * 获取密钥记录主键
      *
      * @return 密钥记录主键
      */
@@ -61,7 +61,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 设置密钥记录主键。
+     * 设置密钥记录主键
      *
      * @param id 密钥记录主键
      */
@@ -70,7 +70,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 获取 RSA 私钥内容。
+     * 获取 RSA 私钥内容
      *
      * @return RSA 私钥内容
      */
@@ -79,7 +79,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 设置 RSA 私钥内容。
+     * 设置 RSA 私钥内容
      *
      * @param privateKey RSA 私钥内容
      */
@@ -88,7 +88,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 获取 RSA 公钥内容。
+     * 获取 RSA 公钥内容
      *
      * @return RSA 公钥内容
      */
@@ -97,7 +97,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 设置 RSA 公钥内容。
+     * 设置 RSA 公钥内容
      *
      * @param publicKey RSA 公钥内容
      */
@@ -106,7 +106,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 获取 RSA 密钥生成时间。
+     * 获取 RSA 密钥生成时间
      *
      * @return RSA 密钥生成时间
      */
@@ -115,7 +115,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 设置 RSA 密钥生成时间。
+     * 设置 RSA 密钥生成时间
      *
      * @param createTime RSA 密钥生成时间
      */
@@ -124,7 +124,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 获取 AES 对称加密密钥。
+     * 获取 AES 对称加密密钥
      *
      * @return AES 对称加密密钥
      */
@@ -133,7 +133,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 设置 AES 对称加密密钥。
+     * 设置 AES 对称加密密钥
      *
      * @param aesKey AES 对称加密密钥
      */
@@ -142,7 +142,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 获取 SM2 私钥内容。
+     * 获取 SM2 私钥内容
      *
      * @return SM2 私钥内容
      */
@@ -151,7 +151,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 设置 SM2 私钥内容。
+     * 设置 SM2 私钥内容
      *
      * @param sm2PrivateKey SM2 私钥内容
      */
@@ -160,7 +160,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 获取 SM2 公钥内容。
+     * 获取 SM2 公钥内容
      *
      * @return SM2 公钥内容
      */
@@ -169,7 +169,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 设置 SM2 公钥内容。
+     * 设置 SM2 公钥内容
      *
      * @param sm2PublicKey SM2 公钥内容
      */
@@ -178,7 +178,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 获取 SM2 密钥生成时间。
+     * 获取 SM2 密钥生成时间
      *
      * @return SM2 密钥生成时间
      */
@@ -187,7 +187,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 设置 SM2 密钥生成时间。
+     * 设置 SM2 密钥生成时间
      *
      * @param sm2CreateTime SM2 密钥生成时间
      */
@@ -196,7 +196,7 @@ public class CoreRsa implements Serializable {
     }
 
     /**
-     * 返回密钥记录的调试字符串。
+     * 返回密钥记录的调试字符串
      *
      * @return 密钥记录的字符串表示
      */

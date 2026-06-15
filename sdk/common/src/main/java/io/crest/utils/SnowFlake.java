@@ -4,14 +4,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * 雪花算法 ID 生成器，按时间戳、数据中心、机器号和序列号生成长整型 ID。
+ * 雪花算法 ID 生成器，按时间戳、数据中心、机器号和序列号生成长整型 ID
  */
 @Component
 public class SnowFlake {
 
 
     /**
-     * 从配置注入机器号。
+     * 从配置注入机器号
      */
     @Value("${crest.machine-id:1}")
     public void setMachineId(long machineId) {
@@ -45,24 +45,24 @@ public class SnowFlake {
     private final static long TIMESTAMP_LEFT = DATACENTER_LEFT + DATACENTER_BIT;
 
     /**
-     * 数据中心编号。
+     * 数据中心编号
      */
     private long datacenterId;  // 数据中心编号。
     /**
-     * 机器编号。
+     * 机器编号
      */
     private long machineId;     // 机器编号。
     /**
-     * 同毫秒内递增序列号。
+     * 同毫秒内递增序列号
      */
     private long sequence = 0L; // 同毫秒内递增序列号。
     /**
-     * 上一次生成 ID 的时间戳。
+     * 上一次生成 ID 的时间戳
      */
     private long lastStmp = -1L;// 上一次生成 ID 的时间戳。
 
     /**
-     * 使用指定数据中心和机器编号创建生成器。
+     * 使用指定数据中心和机器编号创建生成器
      */
     public SnowFlake(long datacenterId, long machineId) {
         if (datacenterId > MAX_DATACENTER_NUM || datacenterId < 0) {
@@ -76,7 +76,7 @@ public class SnowFlake {
     }
 
     /**
-     * 使用默认数据中心编号创建生成器。
+     * 使用默认数据中心编号创建生成器
      */
     public SnowFlake() {
         this.datacenterId = 1;
@@ -114,7 +114,7 @@ public class SnowFlake {
     }
 
     /**
-     * 等待并返回下一毫秒时间戳。
+     * 等待并返回下一毫秒时间戳
      */
     private long getNextMill() {
         long mill = getNewstmp();
@@ -125,7 +125,7 @@ public class SnowFlake {
     }
 
     /**
-     * 获取当前系统毫秒时间戳。
+     * 获取当前系统毫秒时间戳
      */
     private long getNewstmp() {
         return System.currentTimeMillis();

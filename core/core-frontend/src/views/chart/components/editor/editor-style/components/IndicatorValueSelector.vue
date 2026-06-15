@@ -25,7 +25,7 @@ const appearanceStore = useAppearanceStoreWithOut()
 
 const { t } = useI18n()
 
-// 定义指标值样式面板接收的图表和主题参数。
+// 定义指标值样式面板接收的图表和主题参数
 const props = defineProps({
   chart: {
     type: Object,
@@ -40,9 +40,9 @@ const props = defineProps({
   }
 })
 
-// 声明指标值样式和基础样式变更时向父组件派发的事件。
+// 声明指标值样式和基础样式变更时向父组件派发的事件
 const emit = defineEmits(['onIndicatorChange', 'onBasicStyleChange'])
-// 根据当前主题计算提示框主题。
+// 根据当前主题计算提示框主题
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
@@ -55,12 +55,12 @@ const fontFamily = CHART_FONT_FAMILY_ORIGIN.concat(
 )
 const fontLetterSpace = CHART_FONT_LETTER_SPACE
 
-// 保存指标值样式表单和基础样式表单。
+// 保存指标值样式表单和基础样式表单
 const state = reactive({
   indicatorValueForm: JSON.parse(JSON.stringify(DEFAULT_INDICATOR_STYLE)),
   basicStyleForm: {} as ChartBasicStyle
 })
-// 生成指标值字号选项。
+// 生成指标值字号选项
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 60; i = i + 2) {
@@ -78,12 +78,12 @@ const fontSizeList = computed(() => {
   return arr
 })
 
-// 派发指标值样式字段变更。
+// 派发指标值样式字段变更
 const changeLabelTitleStyleStyle = prop => {
   emit('onIndicatorChange', state.indicatorValueForm, prop)
 }
 
-// 使用图表当前配置初始化指标值样式表单。
+// 使用图表当前配置初始化指标值样式表单
 const init = () => {
   const TEMP_DEFAULT_BASIC_STYLE = cloneDeep(DEFAULT_BASIC_STYLE)
   delete TEMP_DEFAULT_BASIC_STYLE.alpha
@@ -107,12 +107,12 @@ const init = () => {
   })
 }
 
-// 挂载后初始化指标值样式。
+// 挂载后初始化指标值样式
 onMounted(() => {
   init()
 })
 
-// 监听指标值配置变化并刷新表单。
+// 监听指标值配置变化并刷新表单
 watch(
   () => props.chart?.customAttr?.indicator,
   () => {
@@ -121,7 +121,7 @@ watch(
   { deep: true }
 )
 
-// 返回当前指标值样式表单数据。
+// 返回当前指标值样式表单数据
 function getFormData() {
   return state.indicatorValueForm
 }

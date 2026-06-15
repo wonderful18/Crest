@@ -43,8 +43,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 数据集同步任务管理器，负责同步任务配置、任务中心列表、执行状态流转、调度注册和缓存表清理。
- * 该类只维护任务元数据和调度边界，具体数据抽取、校验和缓存写入由同步执行流程承担。
+ * 数据集同步任务管理器，负责同步任务配置、任务中心列表、执行状态流转、调度注册和缓存表清理
+ * 该类只维护任务元数据和调度边界，具体数据抽取、校验和缓存写入由同步执行流程承担
  */
 @Component
 public class DatasetSyncTaskManage {
@@ -69,14 +69,14 @@ public class DatasetSyncTaskManage {
     private PlatformPermissionManage platformPermissionManage;
 
     /**
-     * 按任务主键读取同步任务实体，供执行器和状态更新流程使用。
+     * 按任务主键读取同步任务实体，供执行器和状态更新流程使用
      */
     public CoreDatasetSyncTask selectById(Long id) {
         return taskMapper.selectById(id);
     }
 
     /**
-     * 按数据集 ID 读取唯一同步任务，数据集和同步任务保持一对一关系。
+     * 按数据集 ID 读取唯一同步任务，数据集和同步任务保持一对一关系
      */
     public CoreDatasetSyncTask selectByDatasetGroupId(Long datasetGroupId) {
         QueryWrapper<CoreDatasetSyncTask> wrapper = new QueryWrapper<>();
@@ -86,14 +86,14 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 返回全部同步任务，通常用于系统启动后的调度恢复。
+     * 返回全部同步任务，通常用于系统启动后的调度恢复
      */
     public List<CoreDatasetSyncTask> listAll() {
         return taskMapper.selectList(null);
     }
 
     /**
-     * 查询指定可视化依赖的同步数据集，结果带上最近一次同步日志和权限过滤条件。
+     * 查询指定可视化依赖的同步数据集，结果带上最近一次同步日志和权限过滤条件
      */
     public List<DatasetSyncTaskDTO> dependencies(Long visualizationId) {
         if (visualizationId == null) {
@@ -166,7 +166,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 查询同步任务中心分页列表，包含数据集、任务配置、最近日志和失败原因。
+     * 查询同步任务中心分页列表，包含数据集、任务配置、最近日志和失败原因
      */
     public DatasetSyncTaskPageVO page(Integer page, Integer pageSize, DatasetSyncTaskRequest request) {
         int normalizedPage = normalizePage(page);
@@ -234,7 +234,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 保存或更新同步任务配置。增量字段或同步模式变化时会清理增量水位和结构哈希。
+     * 保存或更新同步任务配置。增量字段或同步模式变化时会清理增量水位和结构哈希
      */
     @Transactional(rollbackFor = Exception.class)
     public DatasetSyncTaskDTO save(DatasetSyncTaskDTO task) {
@@ -290,7 +290,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 读取单个数据集的同步任务配置，未配置时返回空值。
+     * 读取单个数据集的同步任务配置，未配置时返回空值
      */
     public DatasetSyncTaskDTO task(Long datasetGroupId) {
         CoreDatasetSyncTask task = selectByDatasetGroupId(datasetGroupId);
@@ -298,7 +298,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 查询数据集最近二十条同步日志，按开始时间倒序返回给任务详情页。
+     * 查询数据集最近二十条同步日志，按开始时间倒序返回给任务详情页
      */
     public List<DatasetSyncLogDTO> logs(Long datasetGroupId) {
         QueryWrapper<CoreDatasetSyncTaskLog> wrapper = new QueryWrapper<>();
@@ -309,7 +309,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 尝试把任务标记为执行中。返回值表示当前是否已有执行中任务占用该任务。
+     * 尝试把任务标记为执行中。返回值表示当前是否已有执行中任务占用该任务
      */
     public synchronized boolean markUnderExecution(CoreDatasetSyncTask task) {
         recoverIfStale(task);
@@ -325,7 +325,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 刷新执行中任务心跳，后台恢复逻辑用它判断任务是否已经僵死。
+     * 刷新执行中任务心跳，后台恢复逻辑用它判断任务是否已经僵死
      */
     public void touchHeartbeat(Long taskId) {
         CoreDatasetSyncTask record = new CoreDatasetSyncTask();
@@ -337,7 +337,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 创建一次同步执行日志，日志初始状态固定为执行中。
+     * 创建一次同步执行日志，日志初始状态固定为执行中
      */
     public CoreDatasetSyncTaskLog initLog(CoreDatasetSyncTask task, String triggerType) {
         long now = System.currentTimeMillis();
@@ -358,14 +358,14 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 更新同步日志实体，执行器会在过程中写入行数、状态和说明。
+     * 更新同步日志实体，执行器会在过程中写入行数、状态和说明
      */
     public void updateLog(CoreDatasetSyncTaskLog log) {
         logMapper.updateById(log);
     }
 
     /**
-     * 收尾一次同步执行，写回状态、水位、结构哈希、校验结果和下一轮可执行状态。
+     * 收尾一次同步执行，写回状态、水位、结构哈希、校验结果和下一轮可执行状态
      */
     public void finishTask(CoreDatasetSyncTask task, TaskStatus status, String incrementalLastValue, String schemaHash,
                            boolean fullSync, DatasetSyncUtils.ReconcileResult reconcileResult, Long sourceRowCount, Long cacheRowCount) {
@@ -408,7 +408,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 应用启动后恢复仍停留在执行中的任务，防止重启后任务中心长期显示运行中。
+     * 应用启动后恢复仍停留在执行中的任务，防止重启后任务中心长期显示运行中
      */
     public void recoverInterruptedTasks() {
         QueryWrapper<CoreDatasetSyncTask> wrapper = new QueryWrapper<>();
@@ -420,7 +420,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 停止同步任务并删除调度，正在执行的任务会在执行完成后保持停止态。
+     * 停止同步任务并删除调度，正在执行的任务会在执行完成后保持停止态
      */
     public void stop(Long datasetGroupId) {
         CoreDatasetSyncTask task = selectByDatasetGroupId(datasetGroupId);
@@ -437,7 +437,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 暂停周期同步任务，保留配置和日志但移除调度。
+     * 暂停周期同步任务，保留配置和日志但移除调度
      */
     public DatasetSyncTaskDTO pause(Long datasetGroupId) {
         CoreDatasetSyncTask task = selectByDatasetGroupId(datasetGroupId);
@@ -455,7 +455,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 恢复同步任务。一次性任务恢复为停止态，周期任务恢复为等待执行并重新注册调度。
+     * 恢复同步任务。一次性任务恢复为停止态，周期任务恢复为等待执行并重新注册调度
      */
     public DatasetSyncTaskDTO resume(Long datasetGroupId) {
         CoreDatasetSyncTask task = selectByDatasetGroupId(datasetGroupId);
@@ -479,7 +479,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 删除数据集对应的同步任务、日志、调度和缓存表，供数据集删除流程调用。
+     * 删除数据集对应的同步任务、日志、调度和缓存表，供数据集删除流程调用
      */
     public void deleteByDatasetGroupId(Long datasetGroupId) {
         CoreDatasetSyncTask task = selectByDatasetGroupId(datasetGroupId);
@@ -503,7 +503,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 根据任务同步频率刷新调度。一次性任务不保留 Quartz 调度。
+     * 根据任务同步频率刷新调度。一次性任务不保留 Quartz 调度
      */
     public void refreshSchedule(CoreDatasetSyncTask task) {
         if (Strings.CI.equals(task.getSyncRate(), DatasourceTaskServer.ScheduleType.RIGHTNOW.name())) {
@@ -514,7 +514,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 判断启动恢复时是否需要重建调度，停止和暂停状态不会自动恢复。
+     * 判断启动恢复时是否需要重建调度，停止和暂停状态不会自动恢复
      */
     public boolean shouldRestoreSchedule(CoreDatasetSyncTask task) {
         if (task == null || Strings.CI.equals(task.getSyncRate(), DatasourceTaskServer.ScheduleType.RIGHTNOW.name())) {
@@ -524,7 +524,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 注册或更新 Quartz 同步任务，结束时间已过时会直接清理调度。
+     * 注册或更新 Quartz 同步任务，结束时间已过时会直接清理调度
      */
     public void addSchedule(CoreDatasetSyncTask task) {
         Date endTime = null;
@@ -549,7 +549,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 删除同步任务对应的 Quartz job 和 trigger，不存在时保持幂等。
+     * 删除同步任务对应的 Quartz job 和 trigger，不存在时保持幂等
      */
     public void deleteSchedule(CoreDatasetSyncTask task) {
         String taskId = task.getId().toString();
@@ -562,7 +562,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 检查数据集缓存表是否存在，使用空查询验证引擎侧表可访问。
+     * 检查数据集缓存表是否存在，使用空查询验证引擎侧表可访问
      */
     public boolean cacheTableExists(Long datasetGroupId) {
         try {
@@ -584,7 +584,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 规范化同步任务配置，补齐默认值并清理不适用的增量字段。
+     * 规范化同步任务配置，补齐默认值并清理不适用的增量字段
      */
     private CoreDatasetSyncTask normalize(DatasetSyncTaskDTO task) {
         CoreDatasetSyncTask record = new CoreDatasetSyncTask();
@@ -642,7 +642,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 将简单周期配置转换为 Quartz cron 表达式，并限制周期值在可执行范围内。
+     * 将简单周期配置转换为 Quartz cron 表达式，并限制周期值在可执行范围内
      */
     private String simpleCron(CoreDatasetSyncTask task) {
         long value = Objects.requireNonNullElse(task.getSimpleCronValue(), 30L);
@@ -660,7 +660,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 将任务实体转换为接口对象，并补充缓存过期和失败预警状态。
+     * 将任务实体转换为接口对象，并补充缓存过期和失败预警状态
      */
     private DatasetSyncTaskDTO toDTO(CoreDatasetSyncTask task) {
         DatasetSyncTaskDTO dto = new DatasetSyncTaskDTO();
@@ -672,7 +672,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 规范化任务中心查询条件，空字符串统一转为空值。
+     * 规范化任务中心查询条件，空字符串统一转为空值
      */
     private DatasetSyncTaskRequest normalizeRequest(DatasetSyncTaskRequest request) {
         DatasetSyncTaskRequest normalized = request == null ? new DatasetSyncTaskRequest() : request;
@@ -684,7 +684,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 组装任务中心查询的 FROM、WHERE 和参数列表，权限范围在此处合入。
+     * 组装任务中心查询的 FROM、WHERE 和参数列表，权限范围在此处合入
      */
     private QueryParts taskCenterQuery(DatasetSyncTaskRequest request) {
         List<Object> args = new ArrayList<>();
@@ -731,7 +731,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 构造可视化依赖查询的权限条件，仪表板和数据大屏使用不同资源类型判断。
+     * 构造可视化依赖查询的权限条件，仪表板和数据大屏使用不同资源类型判断
      */
     private String visualizationPermissionClause(String alias) {
         if (platformPermissionManage == null) {
@@ -752,7 +752,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 将任务中心查询结果行映射为 DTO，未配置任务的数据集会使用默认任务视图。
+     * 将任务中心查询结果行映射为 DTO，未配置任务的数据集会使用默认任务视图
      */
     private DatasetSyncTaskDTO mapTaskCenterRow(ResultSet rs) throws SQLException {
         CoreDatasetSyncTask task = new CoreDatasetSyncTask();
@@ -802,7 +802,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 计算最近一次同步耗时。执行中任务使用当前时间作为临时结束时间。
+     * 计算最近一次同步耗时。执行中任务使用当前时间作为临时结束时间
      */
     private Long durationMillis(Long startTime, Long endTime, String taskStatus) {
         if (startTime == null || startTime <= 0) {
@@ -818,7 +818,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 提取任务中心可展示的失败原因，优先使用最近日志，其次使用校验消息。
+     * 提取任务中心可展示的失败原因，优先使用最近日志，其次使用校验消息
      */
     private String failureReason(DatasetSyncTaskDTO task) {
         if (!Strings.CI.equalsAny(task.getLastExecStatus(), TaskStatus.Error.name(), TaskStatus.Warning.name())
@@ -831,7 +831,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 从结果集中读取可空 long，避免 JDBC 默认值 0 混淆真实空值。
+     * 从结果集中读取可空 long，避免 JDBC 默认值 0 混淆真实空值
      */
     private Long longOrNull(ResultSet rs, String column) throws SQLException {
         long value = rs.getLong(column);
@@ -839,7 +839,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 从结果集中读取可空 int，避免 JDBC 默认值 0 混淆真实空值。
+     * 从结果集中读取可空 int，避免 JDBC 默认值 0 混淆真实空值
      */
     private Integer intOrNull(ResultSet rs, String column) throws SQLException {
         int value = rs.getInt(column);
@@ -847,14 +847,14 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 规范化页码，最小页码固定为 1。
+     * 规范化页码，最小页码固定为 1
      */
     private int normalizePage(Integer page) {
         return page == null || page < 1 ? 1 : page;
     }
 
     /**
-     * 规范化分页大小，限制最大页容量避免任务中心查询过重。
+     * 规范化分页大小，限制最大页容量避免任务中心查询过重
      */
     private int normalizePageSize(Integer pageSize) {
         if (pageSize == null || pageSize < 1) {
@@ -864,7 +864,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 保存配置时解析任务状态，执行中的任务保持执行中，一次性任务保存后保持停止态。
+     * 保存配置时解析任务状态，执行中的任务保持执行中，一次性任务保存后保持停止态
      */
     private String resolveTaskStatus(CoreDatasetSyncTask record, CoreDatasetSyncTask exists) {
         if (Strings.CI.equals(exists.getTaskStatus(), TaskStatus.UnderExecution.name())) {
@@ -877,7 +877,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 清理增量同步水位和结构哈希，避免配置变化后继续沿用旧缓存状态。
+     * 清理增量同步水位和结构哈希，避免配置变化后继续沿用旧缓存状态
      */
     private void clearIncrementalState(CoreDatasetSyncTask task) {
         UpdateWrapper<CoreDatasetSyncTask> wrapper = new UpdateWrapper<>();
@@ -891,14 +891,14 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 在两个候选值中返回第一个非空值，用于保留历史任务状态。
+     * 在两个候选值中返回第一个非空值，用于保留历史任务状态
      */
     private <T> T firstNonNull(T preferred, T fallback) {
         return preferred != null ? preferred : fallback;
     }
 
     /**
-     * 在两个候选值均为空时返回默认值。
+     * 在两个候选值均为空时返回默认值
      */
     private <T> T firstNonNull(T preferred, T fallback, T defaultValue) {
         T value = firstNonNull(preferred, fallback);
@@ -906,7 +906,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 将同步日志实体转换为接口对象。
+     * 将同步日志实体转换为接口对象
      */
     private DatasetSyncLogDTO toLogDTO(CoreDatasetSyncTaskLog log) {
         DatasetSyncLogDTO dto = new DatasetSyncLogDTO();
@@ -915,20 +915,20 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 生成数据集同步任务的 Quartz 分组名，按数据集隔离调度键。
+     * 生成数据集同步任务的 Quartz 分组名，按数据集隔离调度键
      */
     private String jobGroup(String datasetGroupId) {
         return JOB_GROUP_PREFIX + datasetGroupId;
     }
 
     /**
-     * 任务中心查询片段和参数，调用方负责拼接 SELECT、排序和分页。
+     * 任务中心查询片段和参数，调用方负责拼接 SELECT、排序和分页
      */
     private record QueryParts(String fromWhere, List<Object> args) {
     }
 
     /**
-     * 执行前检查任务是否长时间无心跳，超过阈值时先恢复再允许重新抢占。
+     * 执行前检查任务是否长时间无心跳，超过阈值时先恢复再允许重新抢占
      */
     private void recoverIfStale(CoreDatasetSyncTask task) {
         CoreDatasetSyncTask latest = selectById(task.getId());
@@ -944,7 +944,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 将中断或僵死任务恢复为等待执行，并把最后一条执行中日志标记为失败。
+     * 将中断或僵死任务恢复为等待执行，并把最后一条执行中日志标记为失败
      */
     private void markRecovered(CoreDatasetSyncTask task, String message) {
         CoreDatasetSyncTask record = new CoreDatasetSyncTask();
@@ -968,7 +968,7 @@ public class DatasetSyncTaskManage {
     }
 
     /**
-     * 删除同步缓存表，失败只记录告警，避免影响数据集删除主流程。
+     * 删除同步缓存表，失败只记录告警，避免影响数据集删除主流程
      */
     private void dropCacheTable(String tableName) {
         try {

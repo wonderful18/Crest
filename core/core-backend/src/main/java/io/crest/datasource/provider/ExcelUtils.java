@@ -45,8 +45,8 @@ import java.util.stream.Collectors;
 
 
 /**
- * Excel 数据源工具，负责本地上传、远程下载、工作表识别、字段推断和数据读取。
- * 该类只处理文件形态和字段结构转换，不负责数据源权限、任务调度和持久化事务。
+ * Excel 数据源工具，负责本地上传、远程下载、工作表识别、字段推断和数据读取
+ * 该类只处理文件形态和字段结构转换，不负责数据源权限、任务调度和持久化事务
  */
 @SuppressWarnings({"deprecation", "unchecked"})
 public class ExcelUtils {
@@ -61,7 +61,7 @@ public class ExcelUtils {
     private static ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * 返回 Excel 临时文件和上传文件的根目录，并保证调用方拿到以分隔符结尾的路径。
+     * 返回 Excel 临时文件和上传文件的根目录，并保证调用方拿到以分隔符结尾的路径
      */
     public static String getExcelPath() {
         String configuredPath = ConfigUtils.getConfig("crest.path.excel", "/opt/crest/data/excel/");
@@ -72,7 +72,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 将文件名限制在 Excel 根目录下，防止调用方通过相对路径访问目录外文件。
+     * 将文件名限制在 Excel 根目录下，防止调用方通过相对路径访问目录外文件
      */
     private static File excelTempFile(String filename) {
         try {
@@ -90,14 +90,14 @@ public class ExcelUtils {
     };
 
     /**
-     * 将展示表头转换为内部字段名，保持与数据集字段命名规则一致。
+     * 将展示表头转换为内部字段名，保持与数据集字段命名规则一致
      */
     static String excelDbFieldName(String header) {
         return TableUtils.fieldNameShort(StringUtils.defaultString(header).trim());
     }
 
     /**
-     * 根据首行表头生成字段列表，同时处理展示名和内部字段名的重复问题。
+     * 根据首行表头生成字段列表，同时处理展示名和内部字段名的重复问题
      */
     private List<TableField> excelTableFields(List<String> headers) {
         List<TableField> fields = new ArrayList<>();
@@ -111,7 +111,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 创建单个 Excel 字段描述，字段类型会在预览数据扫描阶段再推断。
+     * 创建单个 Excel 字段描述，字段类型会在预览数据扫描阶段再推断
      */
     private TableField excelTableField(String displayName, Set<String> usedDbFieldNames) {
         TableField tableField = new TableField();
@@ -122,7 +122,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 为重复表头生成稳定的展示名，避免前端字段选择和 JSON 行数据出现同名键。
+     * 为重复表头生成稳定的展示名，避免前端字段选择和 JSON 行数据出现同名键
      */
     private String uniqueExcelDisplayName(String displayName, Map<String, Integer> displayNameCounts, Set<String> usedDisplayNames) {
         int count = displayNameCounts.getOrDefault(displayName, 0) + 1;
@@ -137,7 +137,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 生成重复表头后缀，并在最大长度内保留后缀，确保字段名仍可区分。
+     * 生成重复表头后缀，并在最大长度内保留后缀，确保字段名仍可区分
      */
     private String excelDuplicateDisplayName(String displayName, int count) {
         String suffix = "_" + count;
@@ -148,7 +148,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 为内部字段名追加序号直到唯一，避免建表或查询时出现列名冲突。
+     * 为内部字段名追加序号直到唯一，避免建表或查询时出现列名冲突
      */
     private String uniqueExcelDbFieldName(String displayName, Set<String> usedDbFieldNames) {
         String dbFieldName = excelDbFieldName(displayName);
@@ -161,7 +161,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 补齐字段类型、原生类型和抽取类型，保证旧配置和新推断字段都能进入统一数据集流程。
+     * 补齐字段类型、原生类型和抽取类型，保证旧配置和新推断字段都能进入统一数据集流程
      */
     private static void normalizeExcelTableField(TableField field) {
         String type = StringUtils.firstNonBlank(field.getType(), field.getNativeType(), DEFAULT_EXCEL_FIELD_TYPE);
@@ -179,7 +179,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 校验并整理表头文本。空表头和超长表头会直接阻断导入，避免生成不可维护字段。
+     * 校验并整理表头文本。空表头和超长表头会直接阻断导入，避免生成不可维护字段
      */
     private String normalizeExcelHeader(String header) {
         String displayName = StringUtils.trim(header);
@@ -193,7 +193,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 判断工作表是否可导入，并给出跳过原因，供预览界面直接展示。
+     * 判断工作表是否可导入，并给出跳过原因，供预览界面直接展示
      */
     private ExcelSheetInspection inspectSheet(List<String> header) {
         if (CollectionUtils.isEmpty(header)) {
@@ -212,7 +212,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 识别首行疑似 SQL 或说明文本的工作表，避免把说明页误当成业务数据表。
+     * 识别首行疑似 SQL 或说明文本的工作表，避免把说明页误当成业务数据表
      */
     private boolean isSqlDescriptionSheet(List<String> header) {
         List<String> cells = header.stream()
@@ -241,7 +241,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 合并编辑请求和历史配置中的工作表，保留用户未在本次提交中触达的旧表。
+     * 合并编辑请求和历史配置中的工作表，保留用户未在本次提交中触达的旧表
      */
     public static void mergeSheets(CoreDatasource requestDatasource, DatasourceDTO sourceData) {
         if (requestDatasource.getType().equalsIgnoreCase("Excel")) {
@@ -271,7 +271,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 从数据源配置中提取可导入工作表，转换为数据集侧可选择的数据表描述。
+     * 从数据源配置中提取可导入工作表，转换为数据集侧可选择的数据表描述
      */
     public static List<DatasetTableDTO> tables(DatasourceRequest datasourceRequest) throws CrestException {
         List<DatasetTableDTO> tableDescs = new ArrayList<>();
@@ -302,12 +302,12 @@ public class ExcelUtils {
     }
 
     /**
-     * 构建内部表名到展示表名的映射，兼容本地 Excel 和远程 Excel 的配置结构。
+     * 构建内部表名到展示表名的映射，兼容本地 Excel 和远程 Excel 的配置结构
      */
     public static Map<String, String> getTableNamesMap(String type, String configuration) throws CrestException {
         Map<String, String> result = new HashMap<>();
         JsonNode rootNode = null;
-        // 历史配置可能未加密，解密失败后回退读取明文配置。
+        // 历史配置可能未加密，解密失败后回退读取明文配置
         String sheets = configuration;
         try {
             if (type.equalsIgnoreCase("ExcelRemote")) {
@@ -333,14 +333,14 @@ public class ExcelUtils {
     }
 
     /**
-     * 判断配置节点是否允许作为数据表导入，缺省值按历史配置的可导入语义处理。
+     * 判断配置节点是否允许作为数据表导入，缺省值按历史配置的可导入语义处理
      */
     private static boolean isImportableSheet(JsonNode sheetNode) {
         return sheetNode == null || sheetNode.get("sheet") == null || sheetNode.get("sheet").asBoolean(true);
     }
 
     /**
-     * 读取数据源配置中的原始文件名，列表接口用它展示用户上传或远程解析的文件。
+     * 读取数据源配置中的原始文件名，列表接口用它展示用户上传或远程解析的文件
      */
     public static String getFileName(CoreDatasource datasource) throws CrestException {
         if (datasource.getType().equalsIgnoreCase("ExcelRemote")) {
@@ -368,7 +368,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 读取配置中保存的文件大小文本；远程 Excel 从封装配置读取，本地 Excel 从工作表节点读取。
+     * 读取配置中保存的文件大小文本；远程 Excel 从封装配置读取，本地 Excel 从工作表节点读取
      */
     public static String getSize(CoreDatasource datasource) throws CrestException {
         if (datasource.getType().equalsIgnoreCase("ExcelRemote")) {
@@ -389,7 +389,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 读取指定工作表的数据行。远程文件会先下载到临时目录，本地文件直接从配置路径读取。
+     * 读取指定工作表的数据行。远程文件会先下载到临时目录，本地文件直接从配置路径读取
      */
     public List<String[]> fetchDataList(DatasourceRequest datasourceRequest) throws CrestException, IOException {
         List<String[]> dataList = new ArrayList<>();
@@ -403,7 +403,7 @@ public class ExcelUtils {
                     try (InputStream inputStream = new FileInputStream(excelTempFile(fileNames.get("tranName")))) {
                         if (Strings.CI.equals(suffix, "csv")) {
                             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-                                // 跳过 CSV 表头，后续只读取数据行。
+                                // 跳过 CSV 表头，后续只读取数据行
                                 reader.readLine();
                                 dataList = csvData(reader, false, tableFields.size());
                             }
@@ -426,7 +426,7 @@ public class ExcelUtils {
                         try (InputStream inputStream = new FileInputStream(rootNode.get(i).get("path").asText())) {
                             if (Strings.CI.equals(suffix, "csv")) {
                                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-                                    // 跳过 CSV 表头，后续只读取数据行。
+                                    // 跳过 CSV 表头，后续只读取数据行
                                     reader.readLine();
                                     dataList = csvData(reader, false, tableFields.size());
                                 }
@@ -444,7 +444,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 从 Excel 工作簿中读取指定工作表的数据行，工作表名称按用户配置匹配。
+     * 从 Excel 工作簿中读取指定工作表的数据行，工作表名称按用户配置匹配
      */
     private List<String[]> fetchExcelDataList(String sheetName, InputStream inputStream) {
         NoModelDataListener noModelDataListener = new NoModelDataListener();
@@ -466,7 +466,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 返回指定工作表保存的字段配置，并补齐旧版本配置中缺失的字段类型信息。
+     * 返回指定工作表保存的字段配置，并补齐旧版本配置中缺失的字段类型信息
      */
     public static List<TableField> getTableFields(DatasourceRequest datasourceRequest) throws CrestException {
         List<TableField> tableFields = new ArrayList<>();
@@ -493,7 +493,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 保存用户上传文件并解析预览结构，返回文件元数据、工作表清单和字段定义。
+     * 保存用户上传文件并解析预览结构，返回文件元数据、工作表清单和字段定义
      */
     public ExcelFileData excelSaveAndParse(MultipartFile file, String createBy) throws CrestException {
         String filename = file.getOriginalFilename();
@@ -506,7 +506,7 @@ public class ExcelUtils {
         }
         List<ExcelSheetData> returnSheetDataList = new ArrayList<>();
         returnSheetDataList = excelSheetDataList;
-        // 先持久化原始文件，后续配置只保存生成的本地路径。
+        // 先持久化原始文件，后续配置只保存生成的本地路径
         String excelId = UUID.randomUUID().toString();
         String filePath = saveFile(file, excelId);
 
@@ -545,7 +545,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 通过下载远程文件验证远程 Excel 配置可用性，验证结束后清理临时文件。
+     * 通过下载远程文件验证远程 Excel 配置可用性，验证结束后清理临时文件
      */
     public static String checkStatus(DatasourceRequest datasourceRequest) throws FileNotFoundException {
         ExcelConfiguration excelConfiguration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), ExcelConfiguration.class);
@@ -563,7 +563,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 下载并解析远程 Excel 文件，返回与本地上传一致的预览数据结构。
+     * 下载并解析远程 Excel 文件，返回与本地上传一致的预览数据结构
      */
     @SuppressWarnings("java/path-injection")
     public ExcelFileData parseRemoteExcel(RemoteExcelRequest remoteExcelRequest) throws CrestException, FileNotFoundException {
@@ -614,7 +614,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 按远程地址协议选择下载方式，HTTP 和 FTP 下载都会返回原文件名与临时文件名。
+     * 按远程地址协议选择下载方式，HTTP 和 FTP 下载都会返回原文件名与临时文件名
      */
     private static Map<String, String> downLoadRemoteExcel(ExcelConfiguration remoteExcelRequest) throws CrestException, FileNotFoundException {
         Map<String, String> fileNames = new HashMap<>();
@@ -635,7 +635,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 确保 Excel 根目录存在，所有上传和远程下载文件都落在该目录下。
+     * 确保 Excel 根目录存在，所有上传和远程下载文件都落在该目录下
      */
     private static File ensureExcelDirectory() {
         try {
@@ -647,7 +647,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 保存上传文件到受控目录，文件名使用生成标识和原始扩展名，避免暴露用户文件名为路径。
+     * 保存上传文件到受控目录，文件名使用生成标识和原始扩展名，避免暴露用户文件名为路径
      */
     private static String saveFile(MultipartFile file, String fileNameUUID) throws CrestException {
         String filePath = null;
@@ -669,7 +669,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 判断 CSV 行是否没有有效单元格内容，用于读取数据时跳过空行。
+     * 判断 CSV 行是否没有有效单元格内容，用于读取数据时跳过空行
      */
     private static boolean isEmpty(List<String> cells) {
         if (CollectionUtils.isEmpty(cells)) {
@@ -687,7 +687,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 解析 CSV 数据行，按字段数量截断多余列，并把约定的空值占位符转成空值。
+     * 解析 CSV 数据行，按字段数量截断多余列，并把约定的空值占位符转成空值
      */
     public static List<String[]> csvData(BufferedReader reader, boolean isPreview, int size) throws CrestException {
         List<String[]> data = new ArrayList<>();
@@ -712,7 +712,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 按 CSV 引号规则拆分单行文本，支持双引号转义和逗号内容。
+     * 按 CSV 引号规则拆分单行文本，支持双引号转义和逗号内容
      */
     private static List<String> parseCsvLine(String line) {
         List<String> cells = new ArrayList<>();
@@ -739,7 +739,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 根据文本内容推断基础字段类型，长数字、前导零和非数字内容统一保留为文本。
+     * 根据文本内容推断基础字段类型，长数字、前导零和非数字内容统一保留为文本
      */
     private String cellType(String value) {
         String text = StringUtils.trimToEmpty(value);
@@ -767,7 +767,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 使用预览数据逐行修正字段类型，遇到文本值时优先保证后续导入不丢失格式。
+     * 使用预览数据逐行修正字段类型，遇到文本值时优先保证后续导入不丢失格式
      */
     private void cellType(String value, int i, TableField tableFiled) {
         if (StringUtils.isBlank(value) || isNullPlaceholder(value)) {
@@ -799,7 +799,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 判断字段名是否更适合使用小数类型，避免金额、均值等列被首批整数样本误判为长整型。
+     * 判断字段名是否更适合使用小数类型，避免金额、均值等列被首批整数样本误判为长整型
      */
     private boolean shouldPreferExcelFieldAsDouble(TableField tableField) {
         if (tableField == null) {
@@ -810,14 +810,14 @@ public class ExcelUtils {
     }
 
     /**
-     * 判断推断类型是否属于 Excel 导入支持的数值类型。
+     * 判断推断类型是否属于 Excel 导入支持的数值类型
      */
     private boolean isExcelNumericType(String type) {
         return Strings.CI.equals(type, "LONG") || Strings.CI.equals(type, "DOUBLE");
     }
 
     /**
-     * 判断数字文本是否带前导零，此类内容通常是编码或账号，必须按文本保留。
+     * 判断数字文本是否带前导零，此类内容通常是编码或账号，必须按文本保留
      */
     private boolean hasLeadingZeroNumericText(String value) {
         String text = StringUtils.trimToEmpty(value);
@@ -826,7 +826,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 根据字段名识别编码、日期、标识符等敏感格式列，这些列不参与数值类型自动收敛。
+     * 根据字段名识别编码、日期、标识符等敏感格式列，这些列不参与数值类型自动收敛
      */
     private boolean shouldKeepExcelFieldAsText(TableField tableField) {
         if (tableField == null) {
@@ -841,7 +841,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 判断字段名是否包含任一业务关键词，用于字段类型推断的名称规则。
+     * 判断字段名是否包含任一业务关键词，用于字段类型推断的名称规则
      */
     private boolean containsAny(String value, String... keywords) {
         if (StringUtils.isBlank(value)) {
@@ -856,7 +856,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 判断英文标识符是否作为独立词出现，避免把普通单词中的片段误判为编码字段。
+     * 判断英文标识符是否作为独立词出现，避免把普通单词中的片段误判为编码字段
      */
     private boolean hasEnglishIdentifierToken(String lowerName, String token) {
         if (StringUtils.isBlank(lowerName)) {
@@ -870,7 +870,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 规范化 Excel 单元格值，把约定空值占位符转为空值。
+     * 规范化 Excel 单元格值，把约定空值占位符转为空值
      */
     private static String normalizeExcelCellValue(String value) {
         if (StringUtils.isEmpty(value) || isNullPlaceholder(value)) {
@@ -880,7 +880,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 规范化 CSV 单元格值，仅替换约定空值占位符，保留其他原始文本。
+     * 规范化 CSV 单元格值，仅替换约定空值占位符，保留其他原始文本
      */
     private static String normalizeNullPlaceholder(String value) {
         if (isNullPlaceholder(value)) {
@@ -890,7 +890,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 识别导入文件中表示数据库空值的占位符。
+     * 识别导入文件中表示数据库空值的占位符
      */
     private static boolean isNullPlaceholder(String value) {
         String text = StringUtils.trimToEmpty(value);
@@ -898,7 +898,7 @@ public class ExcelUtils {
     }
 
     /**
-     * EasyExcel 无模型读取监听器，按表头列顺序收集数据行，保证空列不会导致列偏移。
+     * EasyExcel 无模型读取监听器，按表头列顺序收集数据行，保证空列不会导致列偏移
      */
     @Data
     @EqualsAndHashCode(callSuper = false)
@@ -908,7 +908,7 @@ public class ExcelUtils {
         private List<Integer> headerKey = new ArrayList<>();
 
         /**
-         * 读取表头并记录最小列到最大列的完整列序号，保留中间空列位置。
+         * 读取表头并记录最小列到最大列的完整列序号，保留中间空列位置
          */
         @Override
         public void invokeHead(Map<Integer, ReadCellData<?>> headMap, AnalysisContext context) {
@@ -926,7 +926,7 @@ public class ExcelUtils {
         }
 
         /**
-         * 将表头单元格转换为文本，只接受字符串和数字类型作为可用表头。
+         * 将表头单元格转换为文本，只接受字符串和数字类型作为可用表头
          */
         private String headCellValue(ReadCellData<?> cellData) {
             if (cellData == null) {
@@ -942,7 +942,7 @@ public class ExcelUtils {
         }
 
         /**
-         * 按表头列序号读取一行数据，缺失列用空值占位，保持字段和数据列对齐。
+         * 按表头列序号读取一行数据，缺失列用空值占位，保持字段和数据列对齐
          */
         @Override
         public void invoke(Map<Integer, String> dataMap, AnalysisContext context) {
@@ -954,14 +954,14 @@ public class ExcelUtils {
         }
 
         /**
-         * EasyExcel 回调入口保留为空，数据收集在逐行回调中完成。
+         * EasyExcel 回调入口保留为空，数据收集在逐行回调中完成
          */
         @Override
         public void doAfterAllAnalysed(AnalysisContext analysisContext) {
         }
 
         /**
-         * 复用监听器读取下一个工作表前清空当前工作表的表头和数据缓存。
+         * 复用监听器读取下一个工作表前清空当前工作表的表头和数据缓存
          */
         public void clear() {
             data.clear();
@@ -971,7 +971,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 工作表导入检查结果，封装是否导入、状态码和给用户展示的跳过原因。
+     * 工作表导入检查结果，封装是否导入、状态码和给用户展示的跳过原因
      */
     @Data
     private static class ExcelSheetInspection {
@@ -980,7 +980,7 @@ public class ExcelUtils {
         private String message;
 
         /**
-         * 创建可导入工作表的检查结果。
+         * 创建可导入工作表的检查结果
          */
         private static ExcelSheetInspection normal() {
             ExcelSheetInspection inspection = new ExcelSheetInspection();
@@ -991,7 +991,7 @@ public class ExcelUtils {
         }
 
         /**
-         * 创建跳过导入的工作表检查结果，并保留可展示的原因。
+         * 创建跳过导入的工作表检查结果，并保留可展示的原因
          */
         private static ExcelSheetInspection skipped(String message) {
             ExcelSheetInspection inspection = new ExcelSheetInspection();
@@ -1004,7 +1004,7 @@ public class ExcelUtils {
 
 
     /**
-     * 解析 Excel 或 CSV 输入流，生成工作表字段、预览数据和面向前端的 JSON 行结构。
+     * 解析 Excel 或 CSV 输入流，生成工作表字段、预览数据和面向前端的 JSON 行结构
      */
     private List<ExcelSheetData> parseExcel(String filename, InputStream inputStream, boolean isPreview, String originFilename) throws IOException {
         List<ExcelSheetData> excelSheetDataList = new ArrayList<>();
@@ -1065,7 +1065,7 @@ public class ExcelUtils {
         if (Strings.CI.equals(suffix, "csv")) {
             List<TableField> fields = new ArrayList<>();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-            // 读取 CSV 首行作为表头，后续数据行由 csvData 统一解析。
+            // 读取 CSV 首行作为表头，后续数据行由 csvData 统一解析
             String s = reader.readLine();
             List<String> header = new ArrayList<>();
             if (StringUtils.isNotEmpty(s)) {
@@ -1142,7 +1142,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 从 FTP 地址下载远程文件到临时目录，下载前校验协议、主机和文件扩展名。
+     * 从 FTP 地址下载远程文件到临时目录，下载前校验协议、主机和文件扩展名
      */
     @SuppressWarnings("java/ssrf")
     public static Map<String, String> downLoadFromFtp(ExcelConfiguration remoteExcelRequest) {

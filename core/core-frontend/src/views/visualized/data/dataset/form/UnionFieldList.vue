@@ -9,7 +9,7 @@ import { type Field } from './util'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 
 const { t } = useI18n()
-// 接收字段列表和节点信息。
+// 接收字段列表和节点信息
 const props = defineProps({
   fieldList: {
     type: Array as PropType<Field[]>,
@@ -17,17 +17,17 @@ const props = defineProps({
   },
   node: propTypes.object.def({})
 })
-// 定义字段勾选事件。
+// 定义字段勾选事件
 const emit = defineEmits(['checkedFields'])
-// 多选表格实例。
+// 多选表格实例
 const multipleTableRef = ref<InstanceType<typeof ElTable>>()
-// 字段搜索关键字。
+// 字段搜索关键字
 const search = ref('')
-// 全选状态。
+// 全选状态
 const checkAll = ref(false)
-// 半选状态。
+// 半选状态
 const isIndeterminate = ref(true)
-// 同步当前搜索结果全选变化。
+// 同步当前搜索结果全选变化
 const handleCheckAllChange = (val: boolean) => {
   fieldSearchList.value.forEach(ele => {
     ele.checked = val
@@ -45,16 +45,16 @@ const handleCheckAllChange = (val: boolean) => {
   emit('checkedFields', multipleSelection.value)
 }
 
-// 当前搜索后的字段列表。
+// 当前搜索后的字段列表
 const fieldSearchList = ref([])
 
-// 当前已选字段列表。
+// 当前已选字段列表
 const multipleSelection = ref<Field[]>([])
-// 同步单个字段勾选变化。
+// 同步单个字段勾选变化
 const checkChange = () => {
   handleSelectionChange(fieldSearchList.value.filter(ele => ele.checked))
 }
-// 同步表格选择变化。
+// 同步表格选择变化
 const handleSelectionChange = val => {
   const checkedCount = val.length
   checkAll.value = checkedCount === fieldSearchList.value.length
@@ -62,7 +62,7 @@ const handleSelectionChange = val => {
   multipleSelection.value = props.fieldList.filter(ele => ele.checked)
   emit('checkedFields', multipleSelection.value)
 }
-// 监听搜索关键字并过滤字段。
+// 监听搜索关键字并过滤字段
 watch(
   search,
   val => {
@@ -80,7 +80,7 @@ watch(
   }
 )
 
-// 监听字段列表变化并重置选择状态。
+// 监听字段列表变化并重置选择状态
 watch(
   () => props.fieldList,
   () => {

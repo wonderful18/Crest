@@ -39,17 +39,17 @@ import DashboardHiddenComponent from '@/components/dashboard/DashboardHiddenComp
 import { recoverToPublished } from '@/api/visualization/dataVisualization'
 import { contextmenuStoreWithOut } from '@/store/modules/data-visualization/contextmenu'
 import { ElMessage } from 'element-plus-secondary'
-/** 交互仓库负责写入嵌入式访问校验所需的业务上下文。 */
+/** 交互仓库负责写入嵌入式访问校验所需的业务上下文 */
 const contextmenuStore = contextmenuStoreWithOut()
-/** 嵌入式仓库承接外部容器传入的资源、模板和操作参数。 */
+/** 嵌入式仓库承接外部容器传入的资源、模板和操作参数 */
 const embeddedStore = useEmbedded()
-/** 本地缓存封装用于读取画布缓存、权限缓存和模板暂存数据。 */
+/** 本地缓存封装用于读取画布缓存、权限缓存和模板暂存数据 */
 const { wsCache } = useCache()
-/** 画布缓存弹窗实例，用于询问是否恢复未保存编辑内容。 */
+/** 画布缓存弹窗实例，用于询问是否恢复未保存编辑内容 */
 const canvasCacheOutRef = ref(null)
-/** 画布渲染器实例，供隐藏组件恢复和重新初始化画布时调用。 */
+/** 画布渲染器实例，供隐藏组件恢复和重新初始化画布时调用 */
 const canvasRendererRef = ref(null)
-/** 监听跨标签页权限缓存变化，并在当前资源仍可编辑时触发权限校验。 */
+/** 监听跨标签页权限缓存变化，并在当前资源仍可编辑时触发权限校验 */
 const eventCheck = e => {
   if (e.key === 'panel-weight' && !compareStorage(e.oldValue, e.newValue)) {
     const resourceId = embeddedStore.resourceId || router.currentRoute.value.query.resourceId
@@ -59,15 +59,15 @@ const eventCheck = e => {
     }
   }
 }
-/** 仪表板主画布仓库，集中维护组件、画布和编辑模式状态。 */
+/** 仪表板主画布仓库，集中维护组件、画布和编辑模式状态 */
 const dvMainStore = dvMainStoreWithOut()
-/** 快照仓库负责记录编辑过程中的撤销、恢复和缓存节点。 */
+/** 快照仓库负责记录编辑过程中的撤销、恢复和缓存节点 */
 const snapshotStore = snapshotStoreWithOut()
-/** 请求仓库提供页面级加载状态，避免权限和数据初始化时重复操作。 */
+/** 请求仓库提供页面级加载状态，避免权限和数据初始化时重复操作 */
 const requestStore = useRequestStoreWithOut()
-/** 权限仓库提供当前路由标识，用于匹配加载状态和操作权限。 */
+/** 权限仓库提供当前路由标识，用于匹配加载状态和操作权限 */
 const permissionStore = usePermissionStoreWithOut()
-/** 从画布仓库拆出的响应式编辑状态，供模板和属性面板联动使用。 */
+/** 从画布仓库拆出的响应式编辑状态，供模板和属性面板联动使用 */
 const {
   fullscreenFlag,
   componentData,
@@ -80,16 +80,16 @@ const {
   lastHiddenComponent,
   dvInfo
 } = storeToRefs(dvMainStore)
-/** 画布数据是否已经完成初始化，控制渲染器挂载时机。 */
+/** 画布数据是否已经完成初始化，控制渲染器挂载时机 */
 const dataInitState = ref(false)
-/** 应用仓库提供产品形态标识，用于适配嵌入式尺寸。 */
+/** 应用仓库提供产品形态标识，用于适配嵌入式尺寸 */
 const appStore = useAppStoreWithOut()
-/** 当前是否运行在 CrestBi 容器内。 */
+/** 当前是否运行在嵌入式容器内 */
 const isCrestBi = computed(() => appStore.getIsCrestBi)
-/** 国际化翻译函数，统一页面标题和提示文案。 */
+/** 国际化翻译函数，统一页面标题和提示文案 */
 const { t } = useI18n()
 
-/** 仪表板编辑页的本地状态，承载数据集树、资源编号和操作类型。 */
+/** 仪表板编辑页的本地状态，承载数据集树、资源编号和操作类型 */
 const state = reactive({
   datasetTree: [],
   sourcePid: null,
@@ -98,14 +98,14 @@ const state = reactive({
   resourceId: null
 })
 
-/** 加载数据集分组树，供右侧图表编辑器选择数据来源。 */
+/** 加载数据集分组树，供右侧图表编辑器选择数据来源 */
 const initDataset = () => {
   datasetTree({}).then(res => {
     state.datasetTree = (res as unknown as Tree[]) || []
   })
 }
 
-/** 是否展示非图表类组件属性面板。 */
+/** 是否展示非图表类组件属性面板 */
 const otherEditorShow = computed(() => {
   return Boolean(
     curComponent.value &&
@@ -117,14 +117,14 @@ const otherEditorShow = computed(() => {
   )
 })
 
-/** 非图表类组件属性面板标题，图片组使用通用属性文案。 */
+/** 非图表类组件属性面板标题，图片组使用通用属性文案 */
 const otherEditorTitle = computed(() => {
   return curComponent.value?.component === 'UserView'
     ? t('visualization.attribute')
     : curComponent.value?.label || t('visualization.attribute')
 })
 
-/** 是否展示图表或查询组件的视图编辑器。 */
+/** 是否展示图表或查询组件的视图编辑器 */
 const viewEditorShow = computed(() => {
   return Boolean(
     curComponent.value &&
@@ -134,7 +134,7 @@ const viewEditorShow = computed(() => {
       !hiddenListStatus.value
   )
 })
-/** 校验当前资源的编辑权限，嵌入式场景会先写入交互上下文。 */
+/** 校验当前资源的编辑权限，嵌入式场景会先写入交互上下文 */
 const checkPer = async resourceId => {
   if (!window.CrestBi || !resourceId) {
     return true
@@ -144,12 +144,12 @@ const checkPer = async resourceId => {
   return check(wsCache.get('panel-weight'), resourceId, 4)
 }
 
-/** 页面基础初始化完成标记，避免布局在关键参数解析前提前渲染。 */
+/** 页面基础初始化完成标记，避免布局在关键参数解析前提前渲染 */
 const loadFinish = ref(false)
-/** 标记是否从独立窗口地址进入仪表板编辑页。 */
+/** 标记是否从独立窗口地址进入仪表板编辑页 */
 const newWindowFromDiv = ref(false)
 
-/** 根据用户选择恢复本地画布缓存，或丢弃缓存并重新加载服务端数据。 */
+/** 根据用户选择恢复本地画布缓存，或丢弃缓存并重新加载服务端数据 */
 const doUseCache = flag => {
   const canvasCache = wsCache.get('CREST-DV-CACHE-' + state.resourceId)
   if (flag && canvasCache) {
@@ -167,7 +167,7 @@ const doUseCache = flag => {
   }
 }
 
-/** 按当前资源和操作类型初始化本地画布数据，并在复制场景补齐来源信息。 */
+/** 按当前资源和操作类型初始化本地画布数据，并在复制场景补齐来源信息 */
 const initLocalCanvasData = (callBack?) => {
   const { resourceId, opt, sourcePid } = state
   const busiFlag = opt === 'copy' ? 'dashboard-copy' : 'dashboard'
@@ -189,7 +189,7 @@ const initLocalCanvasData = (callBack?) => {
     }
   )
 }
-/** 页面挂载时解析路由和嵌入参数，完成权限、缓存、模板和画布数据初始化。 */
+/** 页面挂载时解析路由和嵌入参数，完成权限、缓存、模板和画布数据初始化 */
 onMounted(async () => {
   document.body.style.overflow = 'hidden'
   dvMainStore.setCurComponent({ component: null, index: null })
@@ -229,7 +229,7 @@ onMounted(async () => {
       canvasCacheOutRef.value?.dialogInit({ canvasType: 'dashboard', resourceId: resourceId })
     } else {
       initLocalCanvasData(() => {
-        // 初始化完成后的回调占位。
+        // 初始化完成后的回调占位
       })
     }
   } else if (opt && opt === 'create') {
@@ -280,7 +280,7 @@ onMounted(async () => {
         }
       }
       dataInitState.value = true
-      // 新建仪表板默认使用浅色标题。
+      // 新建仪表板默认使用浅色标题
       canvasStyleData.value.component.chartTitle.color = '#000000'
     })
   } else {
@@ -289,7 +289,7 @@ onMounted(async () => {
   }
 })
 
-/** 处理外部窗口消息，仅接收目标资源与当前仪表板一致的参数更新。 */
+/** 处理外部窗口消息，仅接收目标资源与当前仪表板一致的参数更新 */
 const winMsgHandle = event => {
   const msgInfo = event.data
   if (msgInfo?.targetSourceId === dvInfo.value.id + '')
@@ -299,18 +299,18 @@ const winMsgHandle = event => {
     }
 }
 
-/** 将外部传入的网页参数写入画布过滤器。 */
+/** 将外部传入的网页参数写入画布过滤器 */
 const winMsgWebParamsHandle = msgInfo => {
   const params = msgInfo.params
   dvMainStore.addWebParamsFilter(params)
 }
 
-/** 过滤被隐藏的组件，确保画布只渲染当前可见组件。 */
+/** 过滤被隐藏的组件，确保画布只渲染当前可见组件 */
 const dashboardComponentData = computed(() =>
   componentData.value.filter(item => !item.dashboardHidden)
 )
 
-/** 从隐藏列表恢复组件，并在必要时清空纵向坐标重新参与布局。 */
+/** 从隐藏列表恢复组件，并在必要时清空纵向坐标重新参与布局 */
 const cancelHidden = item => {
   if (canvasRendererRef.value) {
     if (!(lastHiddenComponent.value?.length && lastHiddenComponent.value.includes(item.id))) {
@@ -324,7 +324,7 @@ const cancelHidden = item => {
   }
 }
 
-/** 恢复到已发布版本后重新加载画布，并触发全量数据重算。 */
+/** 恢复到已发布版本后重新加载画布，并触发全量数据重算 */
 const doRecoverToPublished = () => {
   recoverToPublished({ id: dvInfo.value.id, type: 'dashboard', name: dvInfo.value.name }).then(
     () => {
@@ -342,7 +342,7 @@ const doRecoverToPublished = () => {
   )
 }
 
-/** 页面卸载时恢复全局滚动并移除跨窗口事件监听。 */
+/** 页面卸载时恢复全局滚动并移除跨窗口事件监听 */
 onUnmounted(() => {
   document.body.style.overflow = ''
   window.removeEventListener('storage', eventCheck)

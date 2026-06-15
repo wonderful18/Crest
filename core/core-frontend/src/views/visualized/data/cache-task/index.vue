@@ -25,7 +25,7 @@ import {
 const POLL_INTERVAL = 1200
 const MAX_POLL_ATTEMPTS = 100
 
-// 维护缓存任务列表的筛选、分页和操作状态。
+// 维护缓存任务列表的筛选、分页和操作状态
 const state = reactive({
   loading: false,
   keyword: '',
@@ -40,7 +40,7 @@ const state = reactive({
 
 const pollingTimers = new Map<string | number, number>()
 
-// 缓存任务表格分页配置。
+// 缓存任务表格分页配置
 const paginationConfig = reactive({
   currentPage: state.page,
   pageSize: state.pageSize,
@@ -50,25 +50,25 @@ const paginationConfig = reactive({
   total: state.total
 })
 
-// 将筛选状态转换为接口查询参数。
+// 将筛选状态转换为接口查询参数
 const requestParams = computed(() => ({
   keyword: state.keyword || undefined,
   updateType: state.updateType === 'all' ? undefined : state.updateType,
   syncRate: state.syncRate === 'all' ? undefined : state.syncRate
 }))
 
-// 格式化任务时间。
+// 格式化任务时间
 const formatTime = (time?: number) => (time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '-')
-// 格式化可为空的统计数值。
+// 格式化可为空的统计数值
 const formatCount = (count?: number) => (count === null || count === undefined ? '-' : count)
-// 转换更新类型文案。
+// 转换更新类型文案
 const updateTypeLabel = (type?: string) => (type === 'add_scope' ? '增量' : '全量')
-// 转换同步频率文案。
+// 转换同步频率文案
 const syncRateLabel = (rate?: string) => {
   if (rate === 'SIMPLE_CRON' || rate === 'CRON') return '定时'
   return '手动'
 }
-// 根据任务状态选择标签类型。
+// 根据任务状态选择标签类型
 const statusTagType = (task: DatasetSyncTask) => {
   const status = cacheTaskStatusText(task)
   if (status === '缓存可用') return 'success'
@@ -76,15 +76,15 @@ const statusTagType = (task: DatasetSyncTask) => {
   if (status === '更新失败') return 'danger'
   return 'info'
 }
-// 判断指定行动按钮是否处于加载态。
+// 判断指定行动按钮是否处于加载态
 const actionLoading = (row: DatasetSyncTask, action: string) =>
   state.actionKey === `${action}-${row.datasetGroupId}`
 
-// 按数据集 ID 查找当前列表记录。
+// 按数据集 ID 查找当前列表记录
 const findRecord = (datasetGroupId?: string | number) =>
   state.records.find(record => String(record.datasetGroupId) === String(datasetGroupId))
 
-// 合并更新当前列表中的指定任务记录。
+// 合并更新当前列表中的指定任务记录
 const updateRecord = (datasetGroupId: string | number, patch: Partial<DatasetSyncTask>) => {
   const record = findRecord(datasetGroupId)
   if (record) {
@@ -92,7 +92,7 @@ const updateRecord = (datasetGroupId: string | number, patch: Partial<DatasetSyn
   }
 }
 
-// 加载缓存任务分页数据。
+// 加载缓存任务分页数据
 const loadTasks = async ({ showLoading = true } = {}) => {
   if (showLoading) {
     state.loading = true
@@ -111,7 +111,7 @@ const loadTasks = async ({ showLoading = true } = {}) => {
   }
 }
 
-// 停止指定任务的轮询。
+// 停止指定任务的轮询
 const stopPolling = (datasetGroupId: string | number) => {
   const timer = pollingTimers.get(datasetGroupId)
   if (timer) {
@@ -120,7 +120,7 @@ const stopPolling = (datasetGroupId: string | number) => {
   }
 }
 
-// 安排指定任务的状态轮询。
+// 安排指定任务的状态轮询
 const schedulePolling = (datasetGroupId: string | number, attempts = 0) => {
   stopPolling(datasetGroupId)
   if (attempts >= MAX_POLL_ATTEMPTS) {
@@ -152,13 +152,13 @@ const schedulePolling = (datasetGroupId: string | number, attempts = 0) => {
   pollingTimers.set(datasetGroupId, timer)
 }
 
-// 按当前筛选条件重新查询第一页。
+// 按当前筛选条件重新查询第一页
 const search = () => {
   state.page = 1
   loadTasks()
 }
 
-// 重置筛选条件并重新查询。
+// 重置筛选条件并重新查询
 const resetFilters = () => {
   state.keyword = ''
   state.updateType = 'all'
@@ -166,14 +166,14 @@ const resetFilters = () => {
   search()
 }
 
-// 切换分页页码。
+// 切换分页页码
 const pageChange = (page: number) => {
   state.page = page
   paginationConfig.currentPage = page
   loadTasks()
 }
 
-// 切换分页大小。
+// 切换分页大小
 const sizeChange = (pageSize: number) => {
   state.pageSize = pageSize
   state.page = 1
@@ -182,7 +182,7 @@ const sizeChange = (pageSize: number) => {
   loadTasks()
 }
 
-// 执行缓存任务操作并按需启动轮询。
+// 执行缓存任务操作并按需启动轮询
 const runAction = async (
   row: DatasetSyncTask,
   action: 'execute' | 'pause' | 'resume' | 'retry',

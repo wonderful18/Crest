@@ -6,37 +6,37 @@ import jakarta.annotation.PreDestroy;
 import java.util.concurrent.*;
 
 /**
- * 通用定时线程池封装，提供普通任务、延迟任务和超时任务提交能力。
+ * 通用定时线程池封装，提供普通任务、延迟任务和超时任务提交能力
  */
 public class CommonThreadPool {
 
     /**
-     * 核心线程数。
+     * 核心线程数
      */
     private int corePoolSize = 10;
 
     /**
-     * 最大等待队列长度阈值。
+     * 最大等待队列长度阈值
      */
     private int maxQueueSize = 10;
 
     /**
-     * 最大线程数配置。
+     * 最大线程数配置
      */
     private int maximumPoolSize = 10;
 
     /**
-     * 空闲线程保活时间。
+     * 空闲线程保活时间
      */
     private int keepAliveSeconds = 600;
 
     /**
-     * 实际执行任务的定时线程池。
+     * 实际执行任务的定时线程池
      */
     private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
 
     /**
-     * 初始化定时线程池。
+     * 初始化定时线程池
      */
     @PostConstruct
     public void init() {
@@ -46,7 +46,7 @@ public class CommonThreadPool {
     }
 
     /**
-     * 容器销毁前关闭线程池。
+     * 容器销毁前关闭线程池
      */
     @PreDestroy
     public void shutdown() {
@@ -110,21 +110,21 @@ public class CommonThreadPool {
     }
 
     /**
-     * 设置核心线程数。
+     * 设置核心线程数
      */
     public void setCorePoolSize(int corePoolSize) {
         this.corePoolSize = corePoolSize;
     }
 
     /**
-     * 设置最大等待队列长度阈值。
+     * 设置最大等待队列长度阈值
      */
     public void setMaxQueueSize(int maxQueueSize) {
         this.maxQueueSize = maxQueueSize;
     }
 
     /**
-     * 设置空闲线程保活时间。
+     * 设置空闲线程保活时间
      */
     public void setKeepAliveSeconds(int keepAliveSeconds) {
         this.keepAliveSeconds = keepAliveSeconds;

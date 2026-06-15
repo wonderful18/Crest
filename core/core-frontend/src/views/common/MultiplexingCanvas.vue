@@ -74,25 +74,25 @@ import { useI18n } from '@/hooks/web/useI18n'
 import ChartCarouselTooltip from '@/views/chart/components/js/g2plot_tooltip_carousel'
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
-// 控制复用画布弹窗显示状态。
+// 控制复用画布弹窗显示状态
 const dialogShow = ref(false)
 const copyStore = copyStoreWithOut()
-// 持有复用预览组件实例。
+// 持有复用预览组件实例
 const multiplexingPreviewShowRef = ref(null)
 const { multiplexingStyleAdapt, curMultiplexingComponents } = storeToRefs(dvMainStore)
-// 保存当前复用资源类型。
+// 保存当前复用资源类型
 const curDvType = ref('dashboard')
 const { t } = useI18n()
-// 计算当前选中的复用组件数量。
+// 计算当前选中的复用组件数量
 const selectComponentCount = computed(() => Object.keys(curMultiplexingComponents.value).length)
-// 保存复用画布弹窗的选项配置。
+// 保存复用画布弹窗的选项配置
 const state = reactive({
   copyOptions: [
     { label: t('visualization.adapt_new_subject'), value: true },
     { label: t('visualization.keep_subject'), value: false }
   ]
 })
-// 初始化复用画布弹窗并暂停轮播提示。
+// 初始化复用画布弹窗并暂停轮播提示
 const dialogInit = (dvType = 'dashboard') => {
   ChartCarouselTooltip.paused()
   curDvType.value = dvType
@@ -100,7 +100,7 @@ const dialogInit = (dvType = 'dashboard') => {
   dvMainStore.initCurMultiplexingComponents()
 }
 
-// 保存复用组件并记录快照。
+// 保存复用组件并记录快照
 const saveMultiplexing = () => {
   dialogShow.value = false
   const previewStateInfo = multiplexingPreviewShowRef.value.getPreviewStateInfo()
@@ -116,7 +116,7 @@ const saveMultiplexing = () => {
     snapshotStore.recordSnapshotCache('saveMultiplexing')
   })
 }
-// 关闭复用弹窗时清理放大提示状态。
+// 关闭复用弹窗时清理放大提示状态
 const handleClose = () => {
   ChartCarouselTooltip.closeEnlargeDialogDestroy()
 }

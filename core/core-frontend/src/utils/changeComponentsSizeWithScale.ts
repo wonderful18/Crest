@@ -22,17 +22,17 @@ const needToChangeDirectionAttrs = {
   height: ['top', 'height']
 }
 
-// 兼容旧调用入口，将缩放适配委托给统一缩放逻辑。
+// 兼容旧调用入口，将缩放适配委托给统一缩放逻辑
 export function changeSizeWithScaleAdaptor(scale) {
   return changeComponentsSizeWithScale(scale)
 }
 
-// 根据新的画布缩放比例调整组件尺寸。
+// 根据新的画布缩放比例调整组件尺寸
 export function changeSizeWithScale(scale) {
   return changeComponentsSizeWithScale(scale)
 }
 
-// 递归调整组件、分组和页签内部组件的缩放尺寸。
+// 递归调整组件、分组和页签内部组件的缩放尺寸
 function changeComponentsSizeWithScaleCircle(componentDataCopy, scale) {
   if (!componentDataCopy || !Array.isArray(componentDataCopy)) {
     return
@@ -90,7 +90,7 @@ function changeComponentsSizeWithScaleCircle(componentDataCopy, scale) {
   })
 }
 
-// 克隆当前画布组件并按比例更新样式尺寸。
+// 克隆当前画布组件并按比例更新样式尺寸
 function changeComponentsSizeWithScale(scale) {
   const componentDataCopy = deepCopy(componentData.value)
   changeComponentsSizeWithScaleCircle(componentDataCopy, scale)
@@ -109,7 +109,7 @@ function changeComponentsSizeWithScale(scale) {
     scale
   })
 }
-// 根据外部传入的组件引用和画布样式同步缩放尺寸。
+// 根据外部传入的组件引用和画布样式同步缩放尺寸
 export function changeRefComponentsSizeWithScale(componentDataRef, canvasStyleDataRef, scale) {
   componentDataRef.forEach(component => {
     Object.keys(component.style).forEach(key => {
@@ -127,7 +127,7 @@ export function changeRefComponentsSizeWithScale(componentDataRef, canvasStyleDa
   canvasStyleDataRef.scale = scale
 }
 
-// 按宽高两个方向递归调整引用组件的尺寸。
+// 按宽高两个方向递归调整引用组件的尺寸
 export function changeRefComponentsSizeWithScalePointCircle(
   componentDataRef,
   canvasStyleDataRef,
@@ -165,7 +165,7 @@ export function changeRefComponentsSizeWithScalePointCircle(
   })
 }
 
-// 根据独立宽高缩放比例更新引用组件和画布缩放状态。
+// 根据独立宽高缩放比例更新引用组件和画布缩放状态
 export function changeRefComponentsSizeWithScalePoint(
   componentDataRef,
   canvasStyleDataRef,
@@ -186,7 +186,7 @@ export function changeRefComponentsSizeWithScalePoint(
 }
 
 const needToChangeAttrs2 = ['width', 'height', 'fontSize']
-// 按当前画布比例调整单个组件的基础尺寸样式。
+// 按当前画布比例调整单个组件的基础尺寸样式
 export function changeComponentSizeWithScale(component, scale = canvasStyleData.value.scale) {
   Object.keys(component.style).forEach(key => {
     if (needToChangeAttrs2.includes(key)) {
@@ -196,12 +196,12 @@ export function changeComponentSizeWithScale(component, scale = canvasStyleData.
   })
 }
 
-// 将原始数值按目标缩放比例转换为展示数值。
+// 将原始数值按目标缩放比例转换为展示数值
 function format(value, scale) {
   return multiply(value, divide(parseFloat(scale), 100))
 }
 
-// 根据当前缩放比例反推组件样式的原始数值。
+// 根据当前缩放比例反推组件样式的原始数值
 function getOriginStyle(value = 0, scale) {
   if (!value) {
     value = 0

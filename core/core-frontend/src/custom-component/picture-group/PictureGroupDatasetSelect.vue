@@ -12,22 +12,22 @@ import { useEmbedded } from '@/store/modules/embedded'
 import { useAppStoreWithOut } from '@/store/modules/app'
 import { useRouter } from 'vue-router_2'
 import { useCache } from '@/hooks/web/useCache'
-// 快照仓库用于记录图片组数据集切换后的撤销点。
+// 快照仓库用于记录图片组数据集切换后的撤销点
 const snapshotStore = snapshotStoreWithOut()
-// 大屏主状态用于读取页面保存状态。
+// 大屏主状态用于读取页面保存状态
 const dvMainStore = dvMainStoreWithOut()
-// 数据集选择器文案函数。
+// 数据集选择器文案函数
 const { t } = useI18n()
-// 嵌入式状态用于决定数据集创建入口。
+// 嵌入式状态用于决定数据集创建入口
 const embeddedStore = useEmbedded()
-// 应用状态用于判断 iframe 场景。
+// 应用状态用于判断 iframe 场景
 const appStore = useAppStoreWithOut()
-// 路由实例用于解析数据集创建地址。
+// 路由实例用于解析数据集创建地址
 const router = useRouter()
-// 本地缓存用于读取后台打开方式。
+// 本地缓存用于读取后台打开方式
 const { wsCache } = useCache('localStorage')
 
-// 图片组数据集选择器属性。
+// 图片组数据集选择器属性
 const props = defineProps({
   themes: {
     type: String as PropType<EditorTheme>,
@@ -41,12 +41,12 @@ const props = defineProps({
     }
   }
 })
-// 当前图片组视图配置引用。
+// 当前图片组视图配置引用
 const { view } = toRefs(props)
-// 透传给数据集选择器的辅助状态对象。
+// 透传给数据集选择器的辅助状态对象
 const state = reactive({})
 
-// 数据集变更后重新拉取字段并触发图表计算。
+// 数据集变更后重新拉取字段并触发图表计算
 const onDatasetUpdate = () => {
   nextTick(() => {
     if (view.value.tableId && view.value.id) {
@@ -60,7 +60,7 @@ const onDatasetUpdate = () => {
           snapshotStore.recordSnapshotCache('calc', view.value.id)
         })
         .catch(() => {
-          // 字段刷新失败时保持当前轴配置不变。
+          // 字段刷新失败时保持当前轴配置不变
         })
     } else {
       view.value.xAxis = []
@@ -68,7 +68,7 @@ const onDatasetUpdate = () => {
   })
 }
 
-// 打开数据集创建页面，未保存大屏时先提示保存。
+// 打开数据集创建页面，未保存大屏时先提示保存
 const addDsWindow = () => {
   if (!dvMainStore.dvInfo.id) {
     ElMessage.warning(t('visualization.save_page_tips'))
@@ -82,9 +82,9 @@ const addDsWindow = () => {
   initOpenHandler(newWindow)
 }
 
-// 外部宿主打开窗口处理器。
+// 外部宿主打开窗口处理器
 const openHandler = ref(null)
-// 嵌入式宿主存在时委托宿主处理新窗口。
+// 嵌入式宿主存在时委托宿主处理新窗口
 const initOpenHandler = newWindow => {
   if (openHandler?.value) {
     const pm = {

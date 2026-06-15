@@ -4,9 +4,9 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { COLOR_PANEL, DEFAULT_MISC } from '@/views/chart/components/editor/util/chart'
 import { cloneDeep, defaultsDeep } from 'lodash-es'
 
-// 子弹图度量条设置面板的国际化文案函数。
+// 子弹图度量条设置面板的国际化文案函数
 const { t } = useI18n()
-// 度量条样式选择器属性。
+// 度量条样式选择器属性
 const props = defineProps({
   chart: {
     type: Object,
@@ -24,10 +24,10 @@ const props = defineProps({
   }
 })
 
-// 颜色选择器预设色板。
+// 颜色选择器预设色板
 const predefineColors = COLOR_PANEL
 
-// 子弹图度量条样式表单状态。
+// 子弹图度量条样式表单状态
 const state = reactive({
   bulletMeasureForm: {
     bar: {
@@ -39,7 +39,7 @@ const state = reactive({
     }
   }
 })
-// 样式变化时通知父级更新图表杂项配置。
+// 样式变化时通知父级更新图表杂项配置
 const emit = defineEmits(['onBasicStyleChange', 'onMiscChange'])
 watch(
   () => props.chart.customAttr.misc,
@@ -48,7 +48,7 @@ watch(
   },
   { deep: true }
 )
-// 提交度量条样式变更。
+// 提交度量条样式变更
 const changeStyle = (prop?) => {
   emit(
     'onMiscChange',
@@ -57,7 +57,7 @@ const changeStyle = (prop?) => {
   )
 }
 
-// 从图表配置中读取子弹图度量条样式，并补齐默认值。
+// 从图表配置中读取子弹图度量条样式，并补齐默认值
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customAttr) {

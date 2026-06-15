@@ -4,7 +4,7 @@ import { loadScript } from '@/utils/RemoteJs'
 import { ElMessage } from 'element-plus-secondary'
 
 const { wsCache } = useCache()
-// 深拷贝普通对象、数组和日期对象，用于隔离编辑态和展示态数据。
+// 深拷贝普通对象、数组和日期对象，用于隔离编辑态和展示态数据
 export function deepCopy(target) {
   if (target === null || target === undefined) {
     return target
@@ -14,7 +14,7 @@ export function deepCopy(target) {
       if (target[key] === null || target[key] === undefined) {
         result[key] = target[key]
       } else if (target[key] instanceof Date) {
-        // 日期对象需要复制实例，避免共享引用。
+        // 日期对象需要复制实例，避免共享引用
         result[key] = new Date(target[key])
       } else if (typeof target[key] == 'object') {
         result[key] = deepCopy(target[key])
@@ -27,30 +27,30 @@ export function deepCopy(target) {
   return target
 }
 
-// 交换数组中两个位置的元素。
+// 交换数组中两个位置的元素
 export function swap(arr, i, j) {
   const temp = arr[i]
   arr[i] = arr[j]
   arr[j] = temp
 }
 
-// 查询单个 DOM 节点，保留历史命名入口。
+// 查询单个 DOM 节点，保留历史命名入口
 export function _$(selector) {
   return document.querySelector(selector)
 }
 
-// 查询单个 DOM 节点。
+// 查询单个 DOM 节点
 export function $(selector) {
   return document.querySelector(selector)
 }
 
 const components = ['VText', 'RectShape', 'CircleShape']
-// 判断组件是否禁止直接拖放到画布。
+// 判断组件是否禁止直接拖放到画布
 export function isPreventDrop(component) {
   return !components.includes(component) && !component.startsWith('SVG')
 }
 
-// 为缺少协议的地址补齐 HTTP 协议。
+// 为缺少协议的地址补齐 HTTP 协议
 export function checkAddHttp(url) {
   if (!url) {
     return url
@@ -61,7 +61,7 @@ export function checkAddHttp(url) {
   }
 }
 
-// 给匹配关键字的名称生成高亮 HTML 片段。
+// 给匹配关键字的名称生成高亮 HTML 片段
 export const setColorName = (obj, keyword: string, key?: string, colorKey?: string) => {
   key = key || 'name'
   colorKey = colorKey || 'colorName'
@@ -84,22 +84,22 @@ export const setColorName = (obj, keyword: string, key?: string, colorKey?: stri
   obj[colorKey] = null
 }
 
-// 从当前页面查询串中读取指定参数。
+// 从当前页面查询串中读取指定参数
 export const getQueryString = (name: string) => {
   return new URLSearchParams(window.location.search).get(name)
 }
 
-// 判断当前回调参数是否来自飞书平台登录。
+// 判断当前回调参数是否来自飞书平台登录
 export const isLarkPlatform = () => {
   return !!getQueryString('state') && !!getQueryString('code')
 }
 
-// 判断当前回调参数是否来自第三方客户端登录。
+// 判断当前回调参数是否来自第三方客户端登录
 export const isPlatformClient = () => {
   return !!getQueryString('client') || getQueryString('state')?.includes('client')
 }
 
-// 校验当前访问路径是否属于外部认证平台流程。
+// 校验当前访问路径是否属于外部认证平台流程
 export const checkPlatform = () => {
   const flagArray = ['/casbi', 'oidcbi']
   const pathname = window.location.pathname
@@ -112,13 +112,13 @@ export const checkPlatform = () => {
   }
   return true
 }
-// 清理外部认证平台缓存标记。
+// 清理外部认证平台缓存标记
 export const cleanPlatformFlag = () => {
   const platformKey = 'out_auth_platform'
   wsCache.delete(platformKey)
   return false
 }
-// 判断当前页面是否运行在 iframe 内。
+// 判断当前页面是否运行在 iframe 内
 export const isInIframe = () => {
   try {
     return window.top !== window.self
@@ -128,7 +128,7 @@ export const isInIframe = () => {
   }
 }
 
-// 根据配置值判断按钮是否应展示。
+// 根据配置值判断按钮是否应展示
 export const isBtnShow = (val: string) => {
   if (!val || val === '0') {
     return true
@@ -138,7 +138,7 @@ export const isBtnShow = (val: string) => {
     return !isInIframe()
   }
 }
-// 判断当前设备是否为手机端。
+// 判断当前设备是否为手机端
 export function isMobile() {
   return (
     navigator.userAgent.match(
@@ -147,14 +147,14 @@ export function isMobile() {
   )
 }
 
-// 判断当前设备是否为 iOS 移动设备。
+// 判断当前设备是否为 iOS 移动设备
 export function isISOMobile() {
   return navigator.userAgent.match(/(iPhone|iPad|iPod)/i) && !isTablet()
 }
 
 export const isDingTalk = window.navigator.userAgent.toLowerCase().includes('dingtalk')
 
-// 设置页面标题，钉钉环境优先调用钉钉导航 API。
+// 设置页面标题，钉钉环境优先调用钉钉导航 API
 export const setTitle = (title?: string) => {
   if (!isDingTalk) {
     document.title = title || 'Crest'
@@ -182,13 +182,13 @@ export const setTitle = (title?: string) => {
     })
 }
 
-// 判断当前设备是否为平板。
+// 判断当前设备是否为平板
 export function isTablet() {
   const userAgent = navigator.userAgent
   const tabletRegex = /iPad|Silk|Galaxy Tab|PlayBook|BlackBerry|(tablet|ipad|playbook)/i
   return tabletRegex.test(userAgent)
 }
-// 从树结构中移除指定目标节点。
+// 从树结构中移除指定目标节点
 export function cutTargetTree(tree: BusiTreeNode[], targetId: string | number) {
   tree.forEach((node, index) => {
     if (node.id === targetId) {
@@ -200,12 +200,12 @@ export function cutTargetTree(tree: BusiTreeNode[], targetId: string | number) {
   })
 }
 
-// 判断值是否为空值或字符串形式的 null。
+// 判断值是否为空值或字符串形式的 null
 export const isNull = arg => {
   return typeof arg === 'undefined' || arg === null || arg === 'null'
 }
 
-// 根据资源权重和扩展位计算导出权限数组。
+// 根据资源权重和扩展位计算导出权限数组
 export const exportPermission = (weight, ext) => {
   const result = [0, 0, 0]
   if (!weight || weight === 1) {
@@ -223,7 +223,7 @@ export const exportPermission = (weight, ext) => {
   return result
 }
 
-// 将扩展权限数字拆解为倒序权限位数组。
+// 将扩展权限数字拆解为倒序权限位数组
 export const formatExt = (num: number): number[] | null => {
   if (!num) {
     return null
@@ -233,7 +233,7 @@ export const formatExt = (num: number): number[] | null => {
   return reversedNumArray
 }
 
-// 读取浏览器语言并转换为系统使用的语言标识。
+// 读取浏览器语言并转换为系统使用的语言标识
 export const getBrowserLocale = () => {
   const language = navigator.language
   if (!language) {
@@ -248,12 +248,12 @@ export const getBrowserLocale = () => {
   }
   return language
 }
-// 获取当前用户语言，优先使用缓存配置。
+// 获取当前用户语言，优先使用缓存配置
 export const getLocale = () => {
   return wsCache.get('user.language') || getBrowserLocale() || 'zh-CN'
 }
 
-// 判断资源树节点是否位于当前组织的自由目录下。
+// 判断资源树节点是否位于当前组织的自由目录下
 export const isFreeFolder = (node, flag) => {
   const oid = wsCache.get('user.oid')
   if (!oid) {
@@ -272,7 +272,7 @@ export const isFreeFolder = (node, flag) => {
   return false
 }
 
-// 从资源树列表中过滤当前组织的自由目录。
+// 从资源树列表中过滤当前组织的自由目录
 export const filterFreeFolder = (list, flagText) => {
   const flagArray = ['dashboard', 'dataV', 'dataset', 'datasource']
   const index = flagArray.findIndex(item => item === flagText)
@@ -301,7 +301,7 @@ export const filterFreeFolder = (list, flagText) => {
     }
   }
 }
-// 修剪名称并校验 1 到 64 个字符长度。
+// 修剪名称并校验 1 到 64 个字符长度
 export const nameTrim = (target: Record<string, any>, msg = '名称字段长度1-64个字符') => {
   if (target.name) {
     target.name = target.name.trim()
@@ -312,7 +312,7 @@ export const nameTrim = (target: Record<string, any>, msg = '名称字段长度1
   }
 }
 
-// 统计内容中启用展示的分类名称集合。
+// 统计内容中启用展示的分类名称集合
 export const getActiveCategories = contents => {
   const result = ['最近使用']
   if (contents) {

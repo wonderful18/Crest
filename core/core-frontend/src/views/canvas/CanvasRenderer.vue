@@ -12,7 +12,7 @@ import { adaptCurThemeCommonStyle } from '@/utils/canvasStyle'
 import CanvasCore from '@/components/data-visualization/canvas/CanvasCore.vue'
 import { isMainCanvas, isDashboard } from '@/utils/canvasUtils'
 
-/** 画布渲染器入参，承接画布样式、组件列表和当前画布上下文。 */
+/** 画布渲染器入参，承接画布样式、组件列表和当前画布上下文 */
 const props = defineProps({
   canvasStyleData: {
     type: Object,
@@ -53,55 +53,55 @@ const props = defineProps({
     default: 'main'
   }
 })
-/** 将画布入参转为响应式引用，便于监听和传递给子组件。 */
+/** 将画布入参转为响应式引用，便于监听和传递给子组件 */
 const { canvasStyleData, componentData, canvasViewInfo, canvasId, canvasActive, canvasPosition } =
   toRefs(props)
-/** 画布滚动容器的 DOM 编号。 */
+/** 画布滚动容器的 DOM 编号 */
 const domId = ref('de-canvas-' + canvasId.value)
 
-/** 主画布仓库提供矩阵、主题和移动端状态。 */
+/** 主画布仓库提供矩阵、主题和移动端状态 */
 const dvMainStore = dvMainStoreWithOut()
-/** 快照仓库记录新增、拖拽和初始化后的画布状态。 */
+/** 快照仓库记录新增、拖拽和初始化后的画布状态 */
 const snapshotStore = snapshotStoreWithOut()
-/** 画布矩阵、主题和移动端预览状态引用。 */
+/** 画布矩阵、主题和移动端预览状态引用 */
 const { pcMatrixCount, curOriginThemes, mobileInPc } = storeToRefs(dvMainStore)
-/** 外层画布容器引用，用于计算可用尺寸。 */
+/** 外层画布容器引用，用于计算可用尺寸 */
 const canvasOut = ref(null)
-/** 内层滚动画布引用，用于滚动定位和记录滚动位置。 */
+/** 内层滚动画布引用，用于滚动定位和记录滚动位置 */
 const canvasInner = ref(null)
-/** 画布核心是否可以挂载。 */
+/** 画布核心是否可以挂载 */
 const canvasInitStatus = ref(false)
-/** 按宽度计算出的缩放百分比。 */
+/** 按宽度计算出的缩放百分比 */
 const scaleWidth = ref(100)
-/** 按高度计算出的缩放百分比。 */
+/** 按高度计算出的缩放百分比 */
 const scaleHeight = ref(100)
-/** 宽高缩放中的最小值，作为仪表板实际缩放。 */
+/** 宽高缩放中的最小值，作为仪表板实际缩放 */
 const scaleMin = ref(100)
 
-/** 画布容器尺寸和滚动状态。 */
+/** 画布容器尺寸和滚动状态 */
 const state = reactive({
   screenWidth: 1920,
   screenHeight: 1080,
   curScrollTop: 0
 })
 
-// 仪表板矩阵信息适配。
-/** 仪表板单个矩阵单元宽度。 */
+// 仪表板矩阵信息适配
+/** 仪表板单个矩阵单元宽度 */
 const baseWidth = ref(0)
-/** 仪表板单个矩阵单元高度。 */
+/** 仪表板单个矩阵单元高度 */
 const baseHeight = ref(0)
-/** 仪表板渲染中状态，用于控制初始化阶段样式。 */
+/** 仪表板渲染中状态，用于控制初始化阶段样式 */
 const renderState = ref(false) // 仪表板默认
-/** 仪表板矩阵左侧边距。 */
+/** 仪表板矩阵左侧边距 */
 const baseMarginLeft = ref(0)
-/** 仪表板矩阵顶部边距。 */
+/** 仪表板矩阵顶部边距 */
 const baseMarginTop = ref(0)
-/** 栅格画布核心组件实例。 */
+/** 栅格画布核心组件实例 */
 const cyGridster = ref(null)
-/** 画布编辑区 DOM 编号。 */
+/** 画布编辑区 DOM 编号 */
 const editDomId = ref('edit-' + canvasId.value)
 
-/** 主画布编辑容器样式，非主画布使用空样式。 */
+/** 主画布编辑容器样式，非主画布使用空样式 */
 const editStyle = computed(() => {
   if (canvasStyleData.value && isMainCanvas(canvasId.value)) {
     return {
@@ -113,7 +113,7 @@ const editStyle = computed(() => {
 })
 
 // 通过实时监听的方式直接添加组件
-/** 从画布主区域事件创建新组件并加入栅格布局。 */
+/** 从画布主区域事件创建新组件并加入栅格布局 */
 const handleNewFromCanvasMain = newComponentInfo => {
   const { componentName, innerType, staticMap } = newComponentInfo
   if (componentName) {
@@ -137,7 +137,7 @@ const handleNewFromCanvasMain = newComponentInfo => {
   }
 }
 
-/** 处理组件拖入主画布后的放置和快照记录。 */
+/** 处理组件拖入主画布后的放置和快照记录 */
 const handleDrop = e => {
   if (isMainCanvas(canvasId.value)) {
     e.preventDefault()
@@ -151,7 +151,7 @@ const handleDrop = e => {
   }
 }
 
-/** 处理拖拽悬停，驱动栅格占位预览。 */
+/** 处理拖拽悬停，驱动栅格占位预览 */
 const handleDragOver = e => {
   if (isMainCanvas(canvasId.value)) {
     e.preventDefault()
@@ -160,7 +160,7 @@ const handleDragOver = e => {
   }
 }
 
-/** 点击画布空白区域时清空当前组件选择。 */
+/** 点击画布空白区域时清空当前组件选择 */
 const handleMouseDown = e => {
   if (isMainCanvas(canvasId.value)) {
     e.stopPropagation()
@@ -170,12 +170,12 @@ const handleMouseDown = e => {
   }
 }
 
-/** 立即触发栅格画布初始化。 */
+/** 立即触发栅格画布初始化 */
 const canvasInitImmediately = () => {
   cyGridster.value.canvasInit()
 }
 
-/** 初始化画布尺寸和栅格布局，首次加载时记录渲染快照。 */
+/** 初始化画布尺寸和栅格布局，首次加载时记录渲染快照 */
 const canvasInit = (isFistLoad = true) => {
   if (canvasActive.value || canvasPosition.value === 'tab') {
     renderState.value = true
@@ -189,7 +189,7 @@ const canvasInit = (isFistLoad = true) => {
           })
         })
       }
-      // 初始化完成后标记数据准备状态。
+      // 初始化完成后标记数据准备状态
       dvMainStore.setDataPrepareState(true)
       if (isMainCanvas(canvasId.value) && isFistLoad) {
         snapshotStore.recordSnapshotCache('renderChart')
@@ -198,11 +198,11 @@ const canvasInit = (isFistLoad = true) => {
   }
 }
 
-/** 重新计算画布尺寸并刷新栅格布局。 */
+/** 重新计算画布尺寸并刷新栅格布局 */
 const canvasSizeInit = () => {
   nextTick(() => {
     if (canvasOut.value) {
-      // div 容器获取 tableBox.value.clientWidth。
+      // div 容器获取 tableBox.value.clientWidth
       dashboardCanvasSizeInit()
       nextTick(() => {
         cyGridster.value.canvasSizeInit() // 在适当的时候初始化布局组件。
@@ -213,11 +213,11 @@ const canvasSizeInit = () => {
   })
 }
 
-/** 根据画布容器与设计尺寸计算缩放比例。 */
+/** 根据画布容器与设计尺寸计算缩放比例 */
 const scaleInit = () => {
   nextTick(() => {
     if (canvasOut.value) {
-      // div 容器获取 tableBox.value.clientWidth。
+      // div 容器获取 tableBox.value.clientWidth
       let canvasWidth = canvasOut.value.clientWidth
       let canvasHeight = canvasOut.value.clientHeight
       scaleWidth.value = Math.floor((canvasWidth * 100) / canvasStyleData.value.width)
@@ -231,9 +231,9 @@ const scaleInit = () => {
   })
 }
 
-/** 计算仪表板矩阵单元尺寸，并同步到主画布仓库。 */
+/** 计算仪表板矩阵单元尺寸，并同步到主画布仓库 */
 const dashboardCanvasSizeInit = () => {
-  // div 容器获取 tableBox.value.clientWidth。
+  // div 容器获取 tableBox.value.clientWidth
   state.screenWidth = canvasOut.value.clientWidth - 4
   state.screenHeight = canvasOut.value.clientHeight
   baseWidth.value = state.screenWidth / pcMatrixCount.value.x
@@ -250,12 +250,12 @@ const dashboardCanvasSizeInit = () => {
     })
   }
 }
-/** 将组件盒子加入当前栅格实例。 */
+/** 将组件盒子加入当前栅格实例 */
 const addItemBox = component => {
   cyGridster.value.addItemBox(component)
 }
 
-/** 将 Tabs 内组件移出到当前画布并重新初始化布局。 */
+/** 将 Tabs 内组件移出到当前画布并重新初始化布局 */
 const moveOutFromTab = component => {
   setTimeout(() => {
     component.canvasId = canvasId.value
@@ -269,7 +269,7 @@ const moveOutFromTab = component => {
   }, 500)
 }
 
-/** 挂载后注册窗口、尺寸和画布事件监听。 */
+/** 挂载后注册窗口、尺寸和画布事件监听 */
 onMounted(() => {
   window.addEventListener('resize', canvasSizeInit)
   const erd = elementResizeDetectorMaker()
@@ -285,7 +285,7 @@ onMounted(() => {
   eventBus.on('matrix-canvasInit', canvasInit)
 })
 
-/** 卸载前移除画布事件监听，避免重复触发。 */
+/** 卸载前移除画布事件监听，避免重复触发 */
 onBeforeUnmount(() => {
   if (isMainCanvas(canvasId.value)) {
     eventBus.off('handleNew', handleNewFromCanvasMain)
@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
   eventBus.off('matrix-canvasInit', canvasInit)
 })
 
-/** 返回当前仪表板矩阵单元尺寸。 */
+/** 返回当前仪表板矩阵单元尺寸 */
 const getBaseMatrixSize = () => {
   return {
     baseWidth: baseWidth.value,
@@ -303,7 +303,7 @@ const getBaseMatrixSize = () => {
   }
 }
 
-/** 滚动画布到指定矩阵行，并同步刷新水印。 */
+/** 滚动画布到指定矩阵行，并同步刷新水印 */
 const scrollTo = (y = 1) => {
   setTimeout(() => {
     canvasInner.value.scrollTo({
@@ -314,14 +314,14 @@ const scrollTo = (y = 1) => {
   })
 }
 
-/** 记录主画布滚动位置，供其他面板保持同步。 */
+/** 记录主画布滚动位置，供其他面板保持同步 */
 const scrollCanvas = () => {
   if (isMainCanvas(canvasId.value)) {
     dvMainStore.mainScrollTop = canvasInner.value.scrollTop
   }
 }
 
-/** 画布重新激活时刷新尺寸，保证 Tabs 场景尺寸正确。 */
+/** 画布重新激活时刷新尺寸，保证 Tabs 场景尺寸正确 */
 watch(
   () => canvasActive.value,
   () => {

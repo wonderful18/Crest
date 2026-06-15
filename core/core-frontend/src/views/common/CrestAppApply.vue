@@ -214,14 +214,14 @@ import { filterFreeFolder } from '@/utils/utils'
 
 const { wsCache } = useCache('localStorage')
 const { t } = useI18n()
-// 定义应用保存抽屉事件。
+// 定义应用保存抽屉事件
 const emits = defineEmits(['closeDraw', 'saveAppCanvas'])
-// 应用保存表单实例。
+// 应用保存表单实例
 const appSaveForm = ref(null)
 const dvMainStore = dvMainStoreWithOut()
 const { dvInfo, appData } = storeToRefs(dvMainStore)
 const snapshotStore = snapshotStoreWithOut()
-// 接收应用保存所需的画布和主题信息。
+// 接收应用保存所需的画布和主题信息
 const props = defineProps({
   componentData: {
     type: Object,
@@ -244,29 +244,29 @@ const props = defineProps({
 const { curCanvasType } = toRefs(props)
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
 
-// 根据画布类型生成预览名称。
+// 根据画布类型生成预览名称
 const dvPreName = computed(() =>
   curCanvasType.value === 'dashboard'
     ? t('work_branch.dashboard')
     : t('work_branch.big_data_screen')
 )
-// 判断当前是否按数据源匹配。
+// 判断当前是否按数据源匹配
 const isDatasourceMatch = computed(() => state.form.dataType === 'datasource')
-// 打开新增数据源窗口。
+// 打开新增数据源窗口
 const addDatasourceWindow = () => {
-  // 跳转到数据源创建页。
+  // 跳转到数据源创建页
   const url = '#/data/datasource?opt=create'
   window.open(url, openType)
 }
 
-// 打开新增数据集窗口。
+// 打开新增数据集窗口
 const addDatasetWindow = () => {
-  // 跳转到数据集创建页。
+  // 跳转到数据集创建页
   const url = '#/data/dataset?opt=create'
   window.open(url, openType)
 }
 
-// 维护应用保存抽屉、树数据和表单状态。
+// 维护应用保存抽屉、树数据和表单状态
 const state = reactive({
   appApplyDrawer: false,
   dvTree: [],
@@ -351,12 +351,12 @@ const state = reactive({
   }
 })
 
-// 返回上一页。
+// 返回上一页
 const goBack = () => {
   window.history.back()
 }
 
-// 初始化可选仪表板目录和数据集目录。
+// 初始化可选仪表板目录和数据集目录
 const initData = () => {
   const request = { busiFlag: curCanvasType.value, resourceTable: 'core', leaf: false, weight: 7 }
   queryTreeApi(request).then(res => {
@@ -383,7 +383,7 @@ const initData = () => {
   })
 }
 
-// 为业务树节点补充选择器 value。
+// 为业务树节点补充选择器 value
 const dfs = (arr: BusiTreeNode[]) => {
   arr.forEach(ele => {
     ele['value'] = ele.id
@@ -393,7 +393,7 @@ const dfs = (arr: BusiTreeNode[]) => {
   })
 }
 
-// 打开应用保存抽屉并装载当前应用数据。
+// 打开应用保存抽屉并装载当前应用数据
 const init = params => {
   state.appApplyDrawer = true
   state.form = params.base
@@ -403,24 +403,24 @@ const init = params => {
   initData()
 }
 
-// 记录画布目录选择结果。
+// 记录画布目录选择结果
 const dvTreeSelect = element => {
   state.form.pid = element.id
 }
 
-// 记录数据集目录选择结果。
+// 记录数据集目录选择结果
 const dsTreeSelect = element => {
   state.form.datasetFolderPid = element.id
 }
 
-// 关闭应用保存抽屉。
+// 关闭应用保存抽屉
 const close = () => {
   emits('closeDraw')
   snapshotStore.recordSnapshotCache('renderChart')
   state.appApplyDrawer = false
 }
 
-// 校验数据匹配关系并保存为应用。
+// 校验数据匹配关系并保存为应用
 const saveApp = () => {
   let datasourceMatchReady = true
   let datasetMatchReady = true
@@ -446,7 +446,7 @@ const saveApp = () => {
   }
   appSaveForm.value?.validate(async valid => {
     if (valid) {
-      // 还原数据源和数据集匹配关系。
+      // 还原数据源和数据集匹配关系
       appData.value['datasourceInfo'] = state.appData.datasourceInfo
       appData.value['datasetGroupsInfo'] = state.appData.datasetGroupsInfo
       dvInfo.value['pid'] = state.form.pid

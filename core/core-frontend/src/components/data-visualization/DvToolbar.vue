@@ -51,34 +51,34 @@ import TabsGroup from '@/custom-component/component-group/TabsGroup.vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { updatePublishStatus } from '@/api/visualization/dataVisualization'
 
-// 画布名称是否处于内联编辑状态。
+// 画布名称是否处于内联编辑状态
 let nameEdit = ref(false)
-// 画布名称编辑框的临时输入值。
+// 画布名称编辑框的临时输入值
 let inputName = ref('')
-// 画布名称输入框实例，用于进入编辑后自动聚焦。
+// 画布名称输入框实例，用于进入编辑后自动聚焦
 let nameInput = ref(null)
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const { styleChangeTimes, snapshotIndex } = storeToRefs(snapshotStore)
-// 资源分组选择弹窗实例，用于新建数据大屏资源。
+// 资源分组选择弹窗实例，用于新建数据大屏资源
 const resourceGroupOpt = ref(null)
-// 应用保存弹窗实例，用于将当前大屏保存为应用。
+// 应用保存弹窗实例，用于将当前大屏保存为应用
 const resourceAppOpt = ref(null)
-// 工具栏根节点实例，用于计算预览缩放比例。
+// 工具栏根节点实例，用于计算预览缩放比例
 const dvToolbarMain = ref(null)
 const { componentData, canvasStyleData, canvasViewInfo, dvInfo, editMode, appData } =
   storeToRefs(dvMainStore)
-// 进入预览前的编辑缩放比例，退出预览时恢复。
+// 进入预览前的编辑缩放比例，退出预览时恢复
 let scaleEdit = 100
 const { wsCache } = useCache('localStorage')
 const dvModel = 'dataV'
-// 外部参数设置弹窗实例。
+// 外部参数设置弹窗实例
 const outerParamsSetRef = ref(null)
-// 全屏预览组件实例。
+// 全屏预览组件实例
 const fullScreeRef = ref(null)
 const userStore = useUserStoreWithOut()
 const { t } = useI18n()
-// 工具栏向父级通知恢复已发布版本。
+// 工具栏向父级通知恢复已发布版本
 const emits = defineEmits(['recoverToPublished'])
 
 defineProps({
@@ -87,7 +87,7 @@ defineProps({
     default: 'create'
   }
 })
-// 结束画布名称编辑，并在名称有效且变更时写回状态。
+// 结束画布名称编辑，并在名称有效且变更时写回状态
 const closeEditCanvasName = () => {
   nameEdit.value = false
   if (!inputName.value || !inputName.value.trim()) {
@@ -105,24 +105,24 @@ const closeEditCanvasName = () => {
   inputName.value = ''
 }
 
-// 通知父级恢复到当前已发布版本。
+// 通知父级恢复到当前已发布版本
 const recoverToPublished = () => {
   emits('recoverToPublished')
 }
 
-// 回退画布快照。
+// 回退画布快照
 const undo = () => {
   snapshotStore.undo()
 }
 
-// 前进画布快照。
+// 前进画布快照
 const redo = () => {
   snapshotStore.redo()
 }
 
-// 切换到预览模式，并按工具栏宽度重新计算画布缩放。
+// 切换到预览模式，并按工具栏宽度重新计算画布缩放
 const preview = () => {
-  // 记录编辑模式缩放比例，便于退出预览后恢复。
+  // 记录编辑模式缩放比例，便于退出预览后恢复
   dvMainStore.setEditMode('preview')
   nextTick(() => {
     scaleEdit = canvasStyleData.value.scale
@@ -131,13 +131,13 @@ const preview = () => {
   })
 }
 
-// 退出预览模式并恢复进入预览前的缩放比例。
+// 退出预览模式并恢复进入预览前的缩放比例
 const edit = () => {
   dvMainStore.setEditMode('edit')
   changeSizeWithScale(scaleEdit)
 }
 
-// 资源新建完成后写入基础信息并继续保存画布。
+// 资源新建完成后写入基础信息并继续保存画布
 const resourceOptFinish = param => {
   if (param && param.opt === 'newLeaf') {
     dvInfo.value.dataState = 'ready'
@@ -147,7 +147,7 @@ const resourceOptFinish = param => {
   }
 }
 
-// 保存前检查组织权限和资源状态，必要时先打开资源创建流程。
+// 保存前检查组织权限和资源状态，必要时先打开资源创建流程
 const saveCanvasWithCheck = (withPublish = false, status?) => {
   if (userStore.getOid && wsCache.get('user.oid') && userStore.getOid !== wsCache.get('user.oid')) {
     ElMessageBox.confirm('已切换至新组织，无权保存其他组织的资源', {
@@ -164,7 +164,7 @@ const saveCanvasWithCheck = (withPublish = false, status?) => {
   }
   if (dvInfo.value.dataState === 'prepare') {
     if (appData.value) {
-      // 新应用保存时需要先收集应用基础信息。
+      // 新应用保存时需要先收集应用基础信息
       const params = {
         base: {
           pid: '',
@@ -193,7 +193,7 @@ const saveCanvasWithCheck = (withPublish = false, status?) => {
   })
 }
 
-// 执行画布保存，并在保存成功后刷新缓存、应用状态和发布状态。
+// 执行画布保存，并在保存成功后刷新缓存、应用状态和发布状态
 const saveResource = (checkParams?) => {
   if (styleChangeTimes.value > 0 || checkParams.withPublish) {
     eventBus.emit('hideArea-canvas-main')
@@ -231,14 +231,14 @@ const saveResource = (checkParams?) => {
   }
 }
 
-// 清空当前画布组件并记录快照。
+// 清空当前画布组件并记录快照
 const clearCanvas = () => {
   dvMainStore.setCurComponent({ component: null, index: null })
   dvMainStore.setComponentData([])
   snapshotStore.recordSnapshotCache('renderChart')
 }
 
-// 进入画布名称编辑状态。
+// 进入画布名称编辑状态
 const editCanvasName = () => {
   nameEdit.value = true
   inputName.value = dvInfo.value.name
@@ -247,7 +247,7 @@ const editCanvasName = () => {
   })
 }
 
-// 返回大屏列表前检查未保存变更。
+// 返回大屏列表前检查未保存变更
 const backToMain = () => {
   let url = '#/screen/index'
   if (dvInfo.value.id) {
@@ -267,10 +267,10 @@ const backToMain = () => {
   }
 }
 const embeddedStore = useEmbedded()
-// 当前编辑器是否运行在嵌入式环境。
+// 当前编辑器是否运行在嵌入式环境
 const isEmbedded = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
 
-// 执行返回逻辑，嵌入式环境走宿主回调，普通环境走浏览器导航。
+// 执行返回逻辑，嵌入式环境走宿主回调，普通环境走浏览器导航
 const backHandler = (url: string) => {
   if (isEmbedded.value) {
     wsCache.set(`dv-info-id`, dvInfo.value.id)
@@ -298,21 +298,21 @@ const backHandler = (url: string) => {
     window.open(url, '_self')
   }
 }
-// 嵌入式宿主开放的交互句柄。
+// 嵌入式宿主开放的交互句柄
 const openHandler = ref(null)
 
-// 画布名称变更后记录快照。
+// 画布名称变更后记录快照
 const onDvNameChange = () => {
   snapshotStore.recordSnapshotCache('onDvNameChange')
 }
 
-// 根据当前工具栏宽度计算画布完整展示所需缩放比例。
+// 根据当前工具栏宽度计算画布完整展示所需缩放比例
 const getFullScale = () => {
   const curWidth = dvToolbarMain.value.clientWidth
   return (curWidth * 100) / canvasStyleData.value.width
 }
 const appStore = useAppStoreWithOut()
-// 复用画布弹窗实例。
+// 复用画布弹窗实例
 const multiplexingRef = ref(null)
 
 onMounted(() => {
@@ -328,7 +328,7 @@ onBeforeUnmount(() => {
   dvMainStore.setAppDataInfo(null)
 })
 
-// 保存当前画布后打开外部参数设置。
+// 保存当前画布后打开外部参数设置
 const openOuterParamsSet = () => {
   if (componentData.value.length === 0) {
     ElMessage.warning(t('components.add_components_first'))
@@ -338,22 +338,22 @@ const openOuterParamsSet = () => {
     ElMessage.warning(t('components.current_page_first'))
     return
   }
-  // 外部参数依赖已保存资源，打开设置前先落库当前画布。
+  // 外部参数依赖已保存资源，打开设置前先落库当前画布
   canvasSave(() => {
     outerParamsSetRef.value.optInit()
   })
 }
 
-// 打开大屏复用弹窗。
+// 打开大屏复用弹窗
 const multiplexingCanvasOpen = () => {
   multiplexingRef.value.dialogInit('dataV')
 }
 
-// 更新发布状态，并同步当前画布中的活跃视图列表。
+// 更新发布状态，并同步当前画布中的活跃视图列表
 const publishStatusChange = status => {
   const targetViewIds = []
   findAllViewsId(componentData.value, targetViewIds)
-  // 发布状态变更需要携带当前画布视图范围，供后端刷新可见资源。
+  // 发布状态变更需要携带当前画布视图范围，供后端刷新可见资源
   updatePublishStatus({
     id: dvInfo.value.id,
     name: dvInfo.value.name,
@@ -372,9 +372,9 @@ const publishStatusChange = status => {
   })
 }
 
-// 是否处于 iframe 容器内，用于隐藏不适合嵌入态的全屏入口。
+// 是否处于 iframe 容器内，用于隐藏不适合嵌入态的全屏入口
 const isIframe = computed(() => appStore.getIsIframe)
-// 进入全屏预览前先清理当前选区。
+// 进入全屏预览前先清理当前选区
 const fullScreenPreview = () => {
   dvMainStore.canvasStateChange({ key: 'curPointArea', value: 'base' })
   fullScreeRef.value.toggleFullscreen()

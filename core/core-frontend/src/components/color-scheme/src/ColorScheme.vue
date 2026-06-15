@@ -8,18 +8,18 @@ const colorCases = COLOR_CASES
 const { t } = useI18n()
 const predefineColors = COLOR_PANEL
 
-// 保存当前正在编辑的颜色值。
+// 保存当前正在编辑的颜色值
 const activeColor = ref('')
-// 保存当前配色方案名称和颜色列表。
+// 保存当前配色方案名称和颜色列表
 const colorScheme = ref({
   name: '',
   colors: []
 })
-// 根据方案值获取配色方案配置，未命中时使用默认方案。
+// 根据方案值获取配色方案配置，未命中时使用默认方案
 const getSelectedColorCase = (value?: string) => {
   return colorCases.find(ele => ele.value === value) || colorCases[0]
 }
-// 切换预设配色方案并刷新颜色列表。
+// 切换预设配色方案并刷新颜色列表
 const changeColorOption = () => {
   activeColor.value = ''
   const selectedColorCase = getSelectedColorCase(colorScheme.value.name)
@@ -27,29 +27,29 @@ const changeColorOption = () => {
   colorScheme.value.colors = JSON.parse(JSON.stringify(selectedColorCase?.colors || []))
 }
 
-// 控制自定义配色区域显示状态。
+// 控制自定义配色区域显示状态
 const showCustom = ref(false)
 
-// 展开或收起自定义配色区域。
+// 展开或收起自定义配色区域
 const changeShowCustom = () => {
   showCustom.value = !showCustom.value
   colorPicker.value?.hide()
 }
 
-// 保存颜色选择器当前值。
+// 保存颜色选择器当前值
 const customColor = ref()
-// 保存当前编辑的颜色下标。
+// 保存当前编辑的颜色下标
 let colorIndex = ref(0)
 
-// 保存颜色选择器实例。
+// 保存颜色选择器实例
 const colorPicker = ref()
 
-// 将颜色选择器的当前颜色写回配色方案。
+// 将颜色选择器的当前颜色写回配色方案
 const switchColorCase = () => {
   colorScheme.value.colors[colorIndex.value] = customColor.value
 }
 
-// 激活指定颜色并打开颜色选择器。
+// 激活指定颜色并打开颜色选择器
 const changeActive = (color: string, index: number) => {
   activeColor.value = color
   colorIndex.value = index
@@ -60,7 +60,7 @@ const changeActive = (color: string, index: number) => {
   }, 200)
 }
 
-// 重置自定义颜色为当前预设方案。
+// 重置自定义颜色为当前预设方案
 const resetCustomColor = () => {
   changeColorOption()
 }

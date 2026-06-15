@@ -12,19 +12,19 @@ import {
 } from '@/utils/changeComponentsSizeWithScale'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { useI18n } from '@/hooks/web/useI18n'
-/** 主画布仓库提供当前画布缩放和编辑模式。 */
+/** 主画布仓库提供当前画布缩放和编辑模式 */
 const dvMainStore = dvMainStoreWithOut()
-/** 画布样式和编辑模式引用。 */
+/** 画布样式和编辑模式引用 */
 const { canvasStyleData, editMode } = storeToRefs(dvMainStore)
-/** 快照仓库用于记录缩放变化后的撤销节点。 */
+/** 快照仓库用于记录缩放变化后的撤销节点 */
 const snapshotStore = snapshotStoreWithOut()
-/** 当前画布缩放百分比。 */
+/** 当前画布缩放百分比 */
 const scale = ref(60)
-/** 缩放节流标记，避免滚轮连续触发时重复处理。 */
+/** 缩放节流标记，避免滚轮连续触发时重复处理 */
 const scaleChangeReady = ref(true)
-/** 国际化翻译函数，提供定位按钮提示。 */
+/** 国际化翻译函数，提供定位按钮提示 */
 const { t } = useI18n()
-/** 应用缩放变更并同步组件尺寸适配。 */
+/** 应用缩放变更并同步组件尺寸适配 */
 const handleScaleChange = () => {
   if (scaleChangeReady.value) {
     scaleChangeReady.value = false
@@ -41,7 +41,7 @@ const handleScaleChange = () => {
   }
 }
 
-/** 按指定步长缩小画布比例。 */
+/** 按指定步长缩小画布比例 */
 const scaleDecrease = (speed = 1) => {
   if (scale.value > 10) {
     scale.value = scale.value - speed
@@ -49,7 +49,7 @@ const scaleDecrease = (speed = 1) => {
   }
 }
 
-/** 按指定步长放大画布比例。 */
+/** 按指定步长放大画布比例 */
 const scaleIncrease = (speed = 1) => {
   if (scale.value < 200) {
     scale.value = scale.value + speed
@@ -57,14 +57,14 @@ const scaleIncrease = (speed = 1) => {
   }
 }
 
-/** 触发画布滚动位置重新定位。 */
+/** 触发画布滚动位置重新定位 */
 const reposition = () => {
   useEmitt().emitter.emit('initScroll')
 }
 
 // 记录瞬时wheel值 防止放大操作和滚动操作冲突
 // 检查当前页面是否有弹框
-/** 判断当前页面是否存在弹窗或富文本对话框。 */
+/** 判断当前页面是否存在弹窗或富文本对话框 */
 const checkDialog = () => {
   let haveDialog = false
   document.querySelectorAll('.ed-overlay').forEach(element => {
@@ -85,7 +85,7 @@ const checkDialog = () => {
   return haveDialog
 }
 
-/** 处理 Ctrl + 滚轮缩放画布，预览或弹窗场景下跳过。 */
+/** 处理 Ctrl + 滚轮缩放画布，预览或弹窗场景下跳过 */
 const handleMouseWheel = e => {
   if (
     editMode.value === 'preview' ||
@@ -110,7 +110,7 @@ const handleMouseWheel = e => {
   }
 }
 
-/** 挂载后注册滚轮缩放，并按画布样式恢复初始缩放。 */
+/** 挂载后注册滚轮缩放，并按画布样式恢复初始缩放 */
 onMounted(() => {
   window.addEventListener('wheel', handleMouseWheel, { passive: false })
   setTimeout(() => {
@@ -128,7 +128,7 @@ onMounted(() => {
   })
 })
 
-/** 卸载时移除全局滚轮监听。 */
+/** 卸载时移除全局滚轮监听 */
 onUnmounted(() => {
   window.removeEventListener('wheel', handleMouseWheel)
 })

@@ -2,19 +2,19 @@
 import { ref, reactive, computed, watch, onBeforeMount } from 'vue'
 import { propTypes } from '@/utils/propTypes'
 import { useI18n } from '@/hooks/web/useI18n'
-// 定义日期 Cron 片段的双向绑定值。
+// 定义日期 Cron 片段的双向绑定值
 const props = defineProps({
   modelValue: propTypes.string.def('?')
 })
 const { t } = useI18n()
 
-// 保存当前日期规则类型。
+// 保存当前日期规则类型
 const type = ref('5')
-// 保存工作日规则的日期值。
+// 保存工作日规则的日期值
 const work = ref(0)
-// 保存最后一天规则的偏移值。
+// 保存最后一天规则的偏移值
 const last = ref(0)
-// 保存不同日期规则的输入状态。
+// 保存不同日期规则的输入状态
 const state = reactive({
   cycle: {
     // 周期
@@ -34,7 +34,7 @@ const state = reactive({
   appoint: []
 })
 
-// 根据当前规则状态生成日期 Cron 表达式片段。
+// 根据当前规则状态生成日期 Cron 表达式片段
 const resultValue = computed(() => {
   const result = []
   switch (type.value) {
@@ -70,7 +70,7 @@ onBeforeMount(() => {
   updateVal()
 })
 
-// 监听外部绑定值变化并回填本地规则状态。
+// 监听外部绑定值变化并回填本地规则状态
 watch(
   () => props.modelValue,
   () => {
@@ -78,7 +78,7 @@ watch(
   }
 )
 
-// 监听本地规则结果变化并同步给父组件。
+// 监听本地规则结果变化并同步给父组件
 watch(
   () => resultValue.value,
   () => {
@@ -86,55 +86,55 @@ watch(
   }
 )
 
-// 将外部 Cron 日期片段解析为本地规则状态。
+// 将外部 Cron 日期片段解析为本地规则状态
 const updateVal = () => {
   if (!props.modelValue) {
     return
   }
-  // 将输入片段转换为数字，非法值按 0 处理。
+  // 将输入片段转换为数字，非法值按 0 处理
   const toNumber = (value: string) => Number(value) || 0
   if (props.modelValue === '?') {
     type.value = '5'
   } else if (props.modelValue.indexOf('-') !== -1) {
-    // 周期范围。
+    // 周期范围
     if (props.modelValue.split('-').length === 2) {
       type.value = '2'
       state.cycle.start = toNumber(props.modelValue.split('-')[0])
       state.cycle.end = toNumber(props.modelValue.split('-')[1])
     }
   } else if (props.modelValue.indexOf('/') !== -1) {
-    // 循环间隔。
+    // 循环间隔
     if (props.modelValue.split('/').length === 2) {
       type.value = '3'
       state.loop.start = toNumber(props.modelValue.split('/')[0])
       state.loop.end = toNumber(props.modelValue.split('/')[1])
     }
   } else if (props.modelValue.indexOf('*') !== -1) {
-    // 每天。
+    // 每天
     type.value = '1'
   } else if (props.modelValue.indexOf('L') !== -1) {
-    // 最后一天。
+    // 最后一天
     type.value = '6'
     last.value = toNumber(props.modelValue.replace('L', ''))
   } else if (props.modelValue.indexOf('#') !== -1) {
-    // 指定周。
+    // 指定周
     if (props.modelValue.split('#').length === 2) {
       type.value = '7'
       state.week.start = toNumber(props.modelValue.split('#')[0])
       state.week.end = toNumber(props.modelValue.split('#')[1])
     }
   } else if (props.modelValue.indexOf('W') !== -1) {
-    // 工作日。
+    // 工作日
     type.value = '8'
     work.value = toNumber(props.modelValue.replace('W', ''))
   } else {
-    // 指定日期。
+    // 指定日期
     type.value = '4'
     state.appoint = props.modelValue.split(',')
   }
 }
 
-// 声明日期 Cron 片段更新事件。
+// 声明日期 Cron 片段更新事件
 const emits = defineEmits(['update:modelValue'])
 </script>
 

@@ -12,37 +12,37 @@ public class VisualizationTemplateExtendData implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 模板扩展数据主键。
+     * 模板扩展数据主键
      */
     private Long id;
 
     /**
-     * 关联的仪表板 ID。
+     * 关联的仪表板 ID
      */
     private Long dvId;
 
     /**
-     * 关联的图表 ID。
+     * 关联的图表 ID
      */
     private Long viewId;
 
     /**
-     * 图表扩展详情数据。
+     * 图表扩展详情数据
      */
     private String viewDetails;
 
     /**
-     * 复制来源类型或标识。
+     * 复制来源类型或标识
      */
     private String copyFrom;
 
     /**
-     * 复制来源记录 ID。
+     * 复制来源记录 ID
      */
     private String copyId;
 
     /**
-     * 获取模板扩展数据主键。
+     * 获取模板扩展数据主键
      *
      * @return 模板扩展数据主键
      */
@@ -51,7 +51,7 @@ public class VisualizationTemplateExtendData implements Serializable {
     }
 
     /**
-     * 设置模板扩展数据主键。
+     * 设置模板扩展数据主键
      *
      * @param id 模板扩展数据主键
      */
@@ -60,7 +60,7 @@ public class VisualizationTemplateExtendData implements Serializable {
     }
 
     /**
-     * 获取关联的仪表板 ID。
+     * 获取关联的仪表板 ID
      *
      * @return 关联的仪表板 ID
      */
@@ -69,7 +69,7 @@ public class VisualizationTemplateExtendData implements Serializable {
     }
 
     /**
-     * 设置关联的仪表板 ID。
+     * 设置关联的仪表板 ID
      *
      * @param dvId 关联的仪表板 ID
      */
@@ -78,7 +78,7 @@ public class VisualizationTemplateExtendData implements Serializable {
     }
 
     /**
-     * 获取关联的图表 ID。
+     * 获取关联的图表 ID
      *
      * @return 关联的图表 ID
      */
@@ -87,7 +87,7 @@ public class VisualizationTemplateExtendData implements Serializable {
     }
 
     /**
-     * 设置关联的图表 ID。
+     * 设置关联的图表 ID
      *
      * @param viewId 关联的图表 ID
      */
@@ -96,7 +96,7 @@ public class VisualizationTemplateExtendData implements Serializable {
     }
 
     /**
-     * 获取图表扩展详情数据。
+     * 获取图表扩展详情数据
      *
      * @return 图表扩展详情数据
      */
@@ -105,7 +105,7 @@ public class VisualizationTemplateExtendData implements Serializable {
     }
 
     /**
-     * 设置图表扩展详情数据。
+     * 设置图表扩展详情数据
      *
      * @param viewDetails 图表扩展详情数据
      */
@@ -114,7 +114,7 @@ public class VisualizationTemplateExtendData implements Serializable {
     }
 
     /**
-     * 获取复制来源类型或标识。
+     * 获取复制来源类型或标识
      *
      * @return 复制来源类型或标识
      */
@@ -123,7 +123,7 @@ public class VisualizationTemplateExtendData implements Serializable {
     }
 
     /**
-     * 设置复制来源类型或标识。
+     * 设置复制来源类型或标识
      *
      * @param copyFrom 复制来源类型或标识
      */
@@ -132,7 +132,7 @@ public class VisualizationTemplateExtendData implements Serializable {
     }
 
     /**
-     * 获取复制来源记录 ID。
+     * 获取复制来源记录 ID
      *
      * @return 复制来源记录 ID
      */
@@ -141,7 +141,7 @@ public class VisualizationTemplateExtendData implements Serializable {
     }
 
     /**
-     * 设置复制来源记录 ID。
+     * 设置复制来源记录 ID
      *
      * @param copyId 复制来源记录 ID
      */
@@ -150,7 +150,7 @@ public class VisualizationTemplateExtendData implements Serializable {
     }
 
     /**
-     * 返回模板扩展数据的调试字符串。
+     * 返回模板扩展数据的调试字符串
      *
      * @return 模板扩展数据的字符串表示
      */

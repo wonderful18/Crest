@@ -10,7 +10,7 @@ import DualYAxisSelectorInner from './DualYAxisSelectorInner.vue'
 
 const { t } = useI18n()
 
-// 定义双轴样式面板接收的图表和主题参数。
+// 定义双轴样式面板接收的图表和主题参数
 const props = defineProps({
   themes: {
     type: String as PropType<EditorTheme>,
@@ -25,19 +25,19 @@ const props = defineProps({
   }
 })
 
-// 保存当前激活的轴配置页签。
+// 保存当前激活的轴配置页签
 const activeName = ref('left')
 
-// 保存主轴和副轴的本地样式表单。
+// 保存主轴和副轴的本地样式表单
 const state = reactive<any>({
   axisForm: JSON.parse(JSON.stringify(DEFAULT_YAXIS_STYLE)),
   subAxisForm: JSON.parse(JSON.stringify(DEFAULT_YAXIS_EXT_STYLE))
 })
 
-// 声明主轴和副轴样式变更事件。
+// 声明主轴和副轴样式变更事件
 const emit = defineEmits(['onChangeYAxisForm', 'onChangeYAxisExtForm'])
 
-// 监听图表 Y 轴配置变化并刷新本地表单。
+// 监听图表 Y 轴配置变化并刷新本地表单
 watch(
   () => props.chart.customStyle.yAxis,
   () => {
@@ -46,17 +46,17 @@ watch(
   { deep: true }
 )
 
-// 同步主轴样式变更。
+// 同步主轴样式变更
 const changeAxisStyle = (val, prop) => {
   emit('onChangeYAxisForm', val, prop)
 }
 
-// 同步副轴样式变更。
+// 同步副轴样式变更
 const changeSubAxisStyle = (val, prop) => {
   emit('onChangeYAxisExtForm', val, prop)
 }
 
-// 从图表样式配置初始化双轴表单。
+// 从图表样式配置初始化双轴表单
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customStyle) {

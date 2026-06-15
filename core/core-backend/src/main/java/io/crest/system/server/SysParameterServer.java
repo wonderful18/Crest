@@ -31,7 +31,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/sys-parameter")
-// 提供系统参数查询和保存接口。
+// 提供系统参数查询和保存接口
 public class SysParameterServer implements SysParameterApi {
 
     @Resource
@@ -40,13 +40,13 @@ public class SysParameterServer implements SysParameterApi {
     @Value("${crest.internal-lite.enabled:false}")
     private boolean internalLiteEnabled;
 
-    // 查询单个系统参数值。
+    // 查询单个系统参数值
     @Override
     public String singleVal(String key) {
         return sysParameterManage.singleVal(key);
     }
 
-    // 查询基础系统设置。
+    // 查询基础系统设置
     @Override
     public List<SettingItemVO> queryBasicSetting() {
         String key = "basic.";
@@ -54,7 +54,7 @@ public class SysParameterServer implements SysParameterApi {
         return sysParameterManage.convert(coreSysSettings);
     }
 
-    // 保存基础系统设置。
+    // 保存基础系统设置
     @Override
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA)
     public void saveBasicSetting(List<SettingItemVO> settingItemVOS) {
@@ -62,7 +62,7 @@ public class SysParameterServer implements SysParameterApi {
         sysParameterManage.saveBasic(settingItemVOS);
     }
 
-    // 查询前端请求超时时间。
+    // 查询前端请求超时时间
     @Override
     public Integer RequestTimeOut() {
         int frontTimeOut = 60;
@@ -75,7 +75,7 @@ public class SysParameterServer implements SysParameterApi {
         return frontTimeOut;
     }
 
-    // 查询默认排序和打开方式设置。
+    // 查询默认排序和打开方式设置
     @Override
     public Map<String, Object> defaultSettings() {
         Map<String, Object> map = new HashMap<>();
@@ -93,25 +93,25 @@ public class SysParameterServer implements SysParameterApi {
         return map;
     }
 
-    // 查询界面配置列表。
+    // 查询界面配置列表
     @Override
     public List<Object> ui() {
         return sysParameterManage.getUiList();
     }
 
-    // 查询默认登录方式。
+    // 查询默认登录方式
     @Override
     public Integer defaultLogin() {
         return sysParameterManage.defaultLogin();
     }
 
-    // 查询分享基础设置。
+    // 查询分享基础设置
     @Override
     public ShareBaseVO shareBase() {
         return sysParameterManage.shareBase();
     }
 
-    // 查询自定义国际化选项。
+    // 查询自定义国际化选项
     @Override
     public Map<String, String> i18nOptions() {
         File dir = new File(StaticResourceConstants.I18N_DIR);
@@ -131,7 +131,7 @@ public class SysParameterServer implements SysParameterApi {
         return result;
     }
 
-    // 查询 SQL 助手配置。
+    // 查询 SQL 助手配置
     @Override
     public SQLBotConfigVO sqlBotConfig() {
         assertFullModeFeature();
@@ -155,7 +155,7 @@ public class SysParameterServer implements SysParameterApi {
         return null;
     }
 
-    // 保存 SQL 助手配置。
+    // 保存 SQL 助手配置
     @Override
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA)
     public void saveSqlBotConfig(SQLBotConfigCreator creator) {
@@ -163,7 +163,7 @@ public class SysParameterServer implements SysParameterApi {
         sysParameterManage.saveSqlBotConfig(creator);
     }
 
-    // 校验当前模式是否允许使用完整功能。
+    // 校验当前模式是否允许使用完整功能
     private void assertFullModeFeature() {
         if (internalLiteEnabled) {
             CrestException.throwException("当前版本未启用该功能");

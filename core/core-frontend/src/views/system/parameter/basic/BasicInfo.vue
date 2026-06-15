@@ -73,17 +73,17 @@ import { isDesktop } from '@/utils/ModelUtil'
 import { cloneDeep } from 'lodash-es'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
-// 基础设置编辑弹窗实例。
+// 基础设置编辑弹窗实例
 const editor = ref()
-// 基础设置展示模板实例。
+// 基础设置展示模板实例
 const infoTemplate = ref()
-// 账号安全设置展示模板实例。
+// 账号安全设置展示模板实例
 const securityTemplate = ref()
-// 登录设置展示模板实例。
+// 登录设置展示模板实例
 const loginTemplate = ref()
-// 第三方平台设置展示模板实例。
+// 第三方平台设置展示模板实例
 const thirdTemplate = ref()
-// 是否展示默认登录方式配置。
+// 是否展示默认登录方式配置
 const showDefaultLogin = ref(false)
 const desktop = isDesktop()
 const pvpOptions = [
@@ -128,7 +128,7 @@ const thirdSettings = [
   'setting_basic.platformOid',
   'setting_basic.platformRid'
 ]
-// 基础设置页面状态，包含配置列表、组织角色选项和枚举选项。
+// 基础设置页面状态，包含配置列表、组织角色选项和枚举选项
 const state = reactive({
   templateList: [] as SettingRecord[],
   orgOptions: [],
@@ -166,18 +166,18 @@ const state = reactive({
   ]
 })
 let originData = []
-// 当前选择的默认组织 ID。
+// 当前选择的默认组织 ID
 const selectedOid = ref('')
-// 当前选择的默认组织名称。
+// 当前选择的默认组织名称
 const selectedOName = ref('')
-// 当前选择的默认角色 ID 列表。
+// 当前选择的默认角色 ID 列表
 const selectedRid = ref<string[]>([])
-// 当前选择的默认角色名称列表。
+// 当前选择的默认角色名称列表
 const selectedRName = ref<string[]>([])
-// 当前选择的密码有效期选项。
+// 当前选择的密码有效期选项
 const selectedPvp = ref('0')
 
-// 基础设置分组，排除登录、安全、第三方和桌面端不适用配置。
+// 基础设置分组，排除登录、安全、第三方和桌面端不适用配置
 const baseInfoSettings = computed(() =>
   state.templateList.filter(
     item =>
@@ -188,22 +188,22 @@ const baseInfoSettings = computed(() =>
   )
 )
 
-// 账号安全设置分组。
+// 账号安全设置分组
 const securityInfoSettings = computed(() =>
   state.templateList.filter(item => securitySettings.includes(item.pkey))
 )
 
-// 第三方平台设置分组。
+// 第三方平台设置分组
 const thirdInfoSettings = computed(() =>
   state.templateList.filter(item => thirdSettings.includes(item.pkey))
 )
-// 登录设置分组。
+// 登录设置分组
 const loginInoSettings = computed(() => {
   const list = state.templateList.filter(item => loginSettings.includes(item.pkey))
   return list
 })
 
-// 查询基础设置，并将存储值转换为页面展示文案。
+// 查询基础设置，并将存储值转换为页面展示文案
 const search = cb => {
   const url = '/sys-parameter/basic/list'
   originData = []
@@ -293,7 +293,7 @@ const search = cb => {
     cb && cb()
   })
 }
-// 刷新设置列表并重置各展示模板状态。
+// 刷新设置列表并重置各展示模板状态
 const refresh = () => {
   search(() => {
     nextTick(() => {
@@ -306,7 +306,7 @@ const refresh = () => {
 }
 refresh()
 
-// 打开基础设置编辑弹窗，并传入原始配置和选项数据。
+// 打开基础设置编辑弹窗，并传入原始配置和选项数据
 const edit = (val, arr) => {
   editor?.value.edit(
     cloneDeep(originData),
@@ -319,14 +319,14 @@ const edit = (val, arr) => {
     arr
   )
 }
-// 加载可选组织并转换为级联选择器选项。
+// 加载可选组织并转换为级联选择器选项
 const loadOrgOptions = async () => {
   const res = await request.post({ url: '/org/mounted', data: {} })
   const data = res.data
   formatOrg(data)
   state.orgOptions = data
 }
-// 加载当前组织下的角色并按只读角色分组。
+// 加载当前组织下的角色并按只读角色分组
 const loadRoleOptions = async () => {
   const res = await request.get({ url: `/role/organization/${selectedOid.value}` })
   const data = res.data
@@ -334,7 +334,7 @@ const loadRoleOptions = async () => {
   state.roleOptions[0].children = map.get(false)
   state.roleOptions[1].children = map.get(true)
 }
-// 将组织树节点转换为级联选择器节点，并记录当前组织名称。
+// 将组织树节点转换为级联选择器节点，并记录当前组织名称
 const formatOrg = list => {
   const stack = [...list]
   while (stack.length) {
@@ -351,7 +351,7 @@ const formatOrg = list => {
   }
 }
 
-// 按只读标记分组角色选项，并记录当前角色名称。
+// 按只读标记分组角色选项，并记录当前角色名称
 const groupBy = list => {
   const map = new Map()
   selectedRName.value = []
@@ -369,7 +369,7 @@ const groupBy = list => {
   })
   return map
 }
-// 查询已启用认证方式，并决定是否展示默认登录方式配置。
+// 查询已启用认证方式，并决定是否展示默认登录方式配置
 const queryCategoryStatus = async () => {
   const url = `/setting/authentication/status`
   const res = await request.get({ url })
@@ -396,7 +396,7 @@ const queryCategoryStatus = async () => {
     }
   }
 }
-// 当默认登录方式失效时重置为普通登录。
+// 当默认登录方式失效时重置为普通登录
 const resetDefaultLogin = () => {
   let len = originData.length
   while (len--) {

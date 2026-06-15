@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 提供平台配置化的 AES、SM4 和 MD5 加解密工具入口。
+ * 提供平台配置化的 AES、SM4 和 MD5 加解密工具入口
  */
 public class EncryptUtils extends CodingUtil {
 
@@ -16,7 +16,7 @@ public class EncryptUtils extends CodingUtil {
     private static final String AES_IV_PROPERTY = "crest.crypto.aes-iv";
 
     /**
-     * 读取并校验 AES 密钥配置。
+     * 读取并校验 AES 密钥配置
      */
     private static String configuredSecretKey() {
         String value = ConfigUtils.getConfig(AES_KEY_PROPERTY, null);
@@ -27,7 +27,7 @@ public class EncryptUtils extends CodingUtil {
     }
 
     /**
-     * 读取并校验 AES 初始化向量配置。
+     * 读取并校验 AES 初始化向量配置
      */
     private static String iv() {
         String value = ConfigUtils.getConfig(AES_IV_PROPERTY, null);
@@ -38,7 +38,7 @@ public class EncryptUtils extends CodingUtil {
     }
 
     /**
-     * 判断配置值长度是否满足 AES 密钥要求。
+     * 判断配置值长度是否满足 AES 密钥要求
      */
     private static boolean isValidAesValue(String value) {
         int length = StringUtils.length(value);
@@ -47,7 +47,7 @@ public class EncryptUtils extends CodingUtil {
 
 
     /**
-     * 按当前密码套件对单个值进行加密。
+     * 按当前密码套件对单个值进行加密
      */
     public static Object aesEncrypt(Object o) {
         if (o == null) {
@@ -60,7 +60,7 @@ public class EncryptUtils extends CodingUtil {
     }
 
     /**
-     * 按密文格式对单个值进行解密。
+     * 按密文格式对单个值进行解密
      */
     public static Object aesDecrypt(Object o) {
         if (o == null) {
@@ -74,7 +74,7 @@ public class EncryptUtils extends CodingUtil {
     }
 
     /**
-     * 批量解密集合中指定属性的值。
+     * 批量解密集合中指定属性的值
      */
     public static <T> Object aesDecrypt(List<T> o, String attrName) {
         if (o == null) {
@@ -87,7 +87,7 @@ public class EncryptUtils extends CodingUtil {
     }
 
     /**
-     * 对指定值生成 MD5 摘要。
+     * 对指定值生成 MD5 摘要
      */
     public static Object md5Encrypt(Object o) {
         if (o == null) {

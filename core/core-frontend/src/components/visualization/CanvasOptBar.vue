@@ -24,12 +24,12 @@ import { isMainCanvas } from '@/utils/canvasUtils'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { isMobile } from '@/utils/utils'
 import { storeToRefs } from 'pinia'
-// 大屏主状态用于读取联动和预览模式。
+// 大屏主状态用于读取联动和预览模式
 const dvMainStore = dvMainStoreWithOut()
-// 全屏标记决定预览操作栏位置。
+// 全屏标记决定预览操作栏位置
 const { fullscreenFlag } = storeToRefs(dvMainStore)
 
-// 画布操作栏属性。
+// 画布操作栏属性
 const props = defineProps({
   canvasStyleData: {
     type: Object,
@@ -50,24 +50,24 @@ const props = defineProps({
   }
 })
 
-// 阻止操作栏鼠标事件冒泡到画布。
+// 阻止操作栏鼠标事件冒泡到画布
 const handOptBarMousedown = e => {
   e.preventDefault()
   e.stopPropagation()
 }
 
-// 清空当前面板全部联动条件。
+// 清空当前面板全部联动条件
 const clearAllLinkage = () => {
   dvMainStore.clearPanelLinkageInfo()
   useEmitt().emitter.emit('clearPanelLinkage', { viewId: 'all' })
 }
 
-// 判断是否为数据大屏预览固定模式。
+// 判断是否为数据大屏预览固定模式
 const dvPreviewMode = computed(() => {
   return dvMainStore.dvInfo.type === 'dataV' && props.isFixed
 })
 
-// 判断主画布中是否存在联动筛选条件。
+// 判断主画布中是否存在联动筛选条件
 const existLinkage = computed(() => {
   if (isMainCanvas(props.canvasId)) {
     let linkageFiltersCount = 0

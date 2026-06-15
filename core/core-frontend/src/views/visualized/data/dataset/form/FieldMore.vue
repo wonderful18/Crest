@@ -25,7 +25,7 @@ export interface Menu {
 }
 const { t } = useI18n()
 
-// 定义字段更多菜单接收的字段类型和时间转换配置。
+// 定义字段更多菜单接收的字段类型和时间转换配置
 const props = defineProps({
   extField: {
     type: Number,
@@ -40,7 +40,7 @@ const props = defineProps({
     default: ''
   }
 })
-// 将可选时间格式转换为级联菜单节点。
+// 将可选时间格式转换为级联菜单节点
 const timeTypesChildren = timeTypes.map(ele => {
   return {
     label: ele === 'custom' ? t('data_set.customize') : ele,
@@ -48,7 +48,7 @@ const timeTypesChildren = timeTypes.map(ele => {
   }
 })
 
-// 根据字段扩展类型生成可用的菜单项。
+// 根据字段扩展类型生成可用的菜单项
 const options = computed(() => {
   const optionArr = [
     {
@@ -125,21 +125,21 @@ const options = computed(() => {
   }
   return optionArr
 })
-// 保存级联菜单当前选择的字段操作路径。
+// 保存级联菜单当前选择的字段操作路径
 const fieldTypeSelectionValue = ref([])
-// 持有更多菜单弹层实例。
+// 持有更多菜单弹层实例
 const popover = ref()
-// 保存级联菜单展开层级，用于计算弹层宽度。
+// 保存级联菜单展开层级，用于计算弹层宽度
 const level = ref(1)
-// 持有级联面板实例。
+// 持有级联面板实例
 const cascaderPanel = ref()
-// 根据级联面板展开信息更新当前层级。
+// 根据级联面板展开信息更新当前层级
 const handleExpand = val => {
   level.value = val.left + 1
 }
-// 声明菜单命令触发时向父组件派发的事件。
+// 声明菜单命令触发时向父组件派发的事件
 const emit = defineEmits(['handleCommand'])
-// 解析当前选择并派发字段菜单命令。
+// 解析当前选择并派发字段菜单命令
 const handleCommand = () => {
   const [translate, fieldType, timeType] = fieldTypeSelectionValue.value
   popover.value.hide()
@@ -148,7 +148,7 @@ const handleCommand = () => {
     fieldTypeSelectionValue.value = []
   })
 }
-// 级联选择变化后立即执行当前命令。
+// 级联选择变化后立即执行当前命令
 const handleChange = () => {
   handleCommand()
 }

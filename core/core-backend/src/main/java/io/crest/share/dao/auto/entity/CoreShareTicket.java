@@ -12,37 +12,37 @@ public class CoreShareTicket implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 分享票据记录主键。
+     * 分享票据记录主键
      */
     private Long id;
 
     /**
-     * 分享资源 UUID。
+     * 分享资源 UUID
      */
     private String uuid;
 
     /**
-     * 分享访问 ticket。
+     * 分享访问 ticket
      */
     private String ticket;
 
     /**
-     * 分享访问 ticket 有效期。
+     * 分享访问 ticket 有效期
      */
     private Long exp;
 
     /**
-     * 分享访问 ticket 参数。
+     * 分享访问 ticket 参数
      */
     private String args;
 
     /**
-     * 分享链接首次访问时间。
+     * 分享链接首次访问时间
      */
     private Long accessTime;
 
     /**
-     * 获取分享票据记录主键。
+     * 获取分享票据记录主键
      *
      * @return 分享票据记录主键
      */
@@ -51,7 +51,7 @@ public class CoreShareTicket implements Serializable {
     }
 
     /**
-     * 设置分享票据记录主键。
+     * 设置分享票据记录主键
      *
      * @param id 分享票据记录主键
      */
@@ -60,7 +60,7 @@ public class CoreShareTicket implements Serializable {
     }
 
     /**
-     * 获取分享资源 UUID。
+     * 获取分享资源 UUID
      *
      * @return 分享资源 UUID
      */
@@ -69,7 +69,7 @@ public class CoreShareTicket implements Serializable {
     }
 
     /**
-     * 设置分享资源 UUID。
+     * 设置分享资源 UUID
      *
      * @param uuid 分享资源 UUID
      */
@@ -78,7 +78,7 @@ public class CoreShareTicket implements Serializable {
     }
 
     /**
-     * 获取分享访问 ticket。
+     * 获取分享访问 ticket
      *
      * @return 分享访问 ticket
      */
@@ -87,7 +87,7 @@ public class CoreShareTicket implements Serializable {
     }
 
     /**
-     * 设置分享访问 ticket。
+     * 设置分享访问 ticket
      *
      * @param ticket 分享访问 ticket
      */
@@ -96,7 +96,7 @@ public class CoreShareTicket implements Serializable {
     }
 
     /**
-     * 获取分享访问 ticket 有效期。
+     * 获取分享访问 ticket 有效期
      *
      * @return 分享访问 ticket 有效期
      */
@@ -105,7 +105,7 @@ public class CoreShareTicket implements Serializable {
     }
 
     /**
-     * 设置分享访问 ticket 有效期。
+     * 设置分享访问 ticket 有效期
      *
      * @param exp 分享访问 ticket 有效期
      */
@@ -114,7 +114,7 @@ public class CoreShareTicket implements Serializable {
     }
 
     /**
-     * 获取分享访问 ticket 参数。
+     * 获取分享访问 ticket 参数
      *
      * @return 分享访问 ticket 参数
      */
@@ -123,7 +123,7 @@ public class CoreShareTicket implements Serializable {
     }
 
     /**
-     * 设置分享访问 ticket 参数。
+     * 设置分享访问 ticket 参数
      *
      * @param args 分享访问 ticket 参数
      */
@@ -132,7 +132,7 @@ public class CoreShareTicket implements Serializable {
     }
 
     /**
-     * 获取分享链接首次访问时间。
+     * 获取分享链接首次访问时间
      *
      * @return 分享链接首次访问时间
      */
@@ -141,7 +141,7 @@ public class CoreShareTicket implements Serializable {
     }
 
     /**
-     * 设置分享链接首次访问时间。
+     * 设置分享链接首次访问时间
      *
      * @param accessTime 分享链接首次访问时间
      */
@@ -150,7 +150,7 @@ public class CoreShareTicket implements Serializable {
     }
 
     /**
-     * 返回分享票据记录的调试字符串。
+     * 返回分享票据记录的调试字符串
      *
      * @return 分享票据记录的字符串表示
      */

@@ -21,13 +21,13 @@ import java.util.List;
 public class TemplateMarketService implements TemplateMarketApi {
 
     /**
-     * 模板中心管理器，承接模板市场的聚合查询逻辑。
+     * 模板中心管理器，承接模板市场的聚合查询逻辑
      */
     @Resource
     private TemplateCenterManage templateCenterManage;
 
     /**
-     * 查询模板市场完整列表。
+     * 查询模板市场完整列表
      */
     @Override
     public MarketBaseResponse searchTemplate() {
@@ -35,7 +35,7 @@ public class TemplateMarketService implements TemplateMarketApi {
     }
 
     /**
-     * 查询模板市场推荐列表。
+     * 查询模板市场推荐列表
      */
     @Override
     public MarketBaseResponse searchTemplateRecommend() {
@@ -43,7 +43,7 @@ public class TemplateMarketService implements TemplateMarketApi {
     }
 
     /**
-     * 查询模板市场预览分组数据。
+     * 查询模板市场预览分组数据
      */
     @Override
     public MarketPreviewBaseResponse searchTemplatePreview() {
@@ -51,7 +51,7 @@ public class TemplateMarketService implements TemplateMarketApi {
     }
 
     /**
-     * 查询模板分类名称列表。
+     * 查询模板分类名称列表
      */
     @Override
     public List<String> categories() {
@@ -59,7 +59,7 @@ public class TemplateMarketService implements TemplateMarketApi {
     }
 
     /**
-     * 查询模板分类对象列表。
+     * 查询模板分类对象列表
      */
     @Override
     public List<MarketMetaDataVO> categoriesObject() {

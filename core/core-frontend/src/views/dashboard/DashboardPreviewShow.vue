@@ -33,25 +33,25 @@ import {
 import { useRoute } from 'vue-router_2'
 const userStore = useUserStoreWithOut()
 
-// 当前登录用户名称，用作应用导出默认创建人。
+// 当前登录用户名称，用作应用导出默认创建人
 const userName = computed(() => userStore.getName)
-// 应用导出表单实例。
+// 应用导出表单实例
 const appExportFormRef = ref(null)
 const route = useRoute()
 
 const dvMainStore = dvMainStoreWithOut()
-// 预览画布容器实例，用于截图和模板导出。
+// 预览画布容器实例，用于截图和模板导出
 const previewCanvasContainer = ref(null)
-// 预览画布组件实例，用于数据初始化后恢复渲染。
+// 预览画布组件实例，用于数据初始化后恢复渲染
 const dashboardPreview = ref(null)
-// 左侧资源树展开状态。
+// 左侧资源树展开状态
 const slideShow = ref(true)
 const appStore = useAppStoreWithOut()
-// 画布数据是否初始化完成。
+// 画布数据是否初始化完成
 const dataInitState = ref(true)
-// 导出中的加载状态。
+// 导出中的加载状态
 const downloadStatus = ref(false)
-// 预览页核心状态，保存画布数据、样式、视图信息和导出偏移。
+// 预览页核心状态，保存画布数据、样式、视图信息和导出偏移
 const state = reactive({
   canvasDataPreview: null,
   canvasStylePreview: null,
@@ -70,7 +70,7 @@ const { fullscreenFlag, canvasViewDataInfo } = storeToRefs(dvMainStore)
 const { width, node } = useMoveLine('DASHBOARD')
 const { t } = useI18n()
 
-// 预览页入参，控制打开位置、关闭行为和资源表来源。
+// 预览页入参，控制打开位置、关闭行为和资源表来源
 const props = defineProps({
   showPosition: {
     required: false,
@@ -91,21 +91,21 @@ const props = defineProps({
 
 const { showPosition, resourceTable } = toRefs(props)
 
-// 左侧资源树实例。
+// 左侧资源树实例
 const resourceTreeRef = ref()
 
-// 左侧资源树是否有可展示数据。
+// 左侧资源树是否有可展示数据
 const hasTreeData = computed(() => {
   return resourceTreeRef.value?.hasData
 })
-// 当前应用是否运行在 Crest BI 集成模式。
+// 当前应用是否运行在嵌入式集成模式
 const isCrestBi = computed(() => appStore.getIsCrestBi)
 
-// 当前用户是否具备资源根节点管理权限。
+// 当前用户是否具备资源根节点管理权限
 const rootManage = computed(() => {
   return resourceTreeRef.value?.rootManage
 })
-// 资源树组件是否已挂载完成。
+// 资源树组件是否已挂载完成
 const mounted = computed(() => {
   return resourceTreeRef.value?.mounted
 })
@@ -123,14 +123,14 @@ onMounted(() => {
   }
 })
 
-// 触发资源树的新建资源流程。
+// 触发资源树的新建资源流程
 function createNew() {
   resourceTreeRef.value?.createNewObject()
 }
 
-// 加载指定大屏的画布数据，并刷新预览画布状态。
+// 加载指定大屏的画布数据，并刷新预览画布状态
 const loadCanvasData = (dvId, weight?) => {
-  // 复用模式只准备预览数据，不写入 dvMain 的编辑态画布信息。
+  // 复用模式只准备预览数据，不写入 dvMain 的编辑态画布信息
   const initMethod = showPosition.value === 'multiplexing' ? initCanvasDataPrepare : initCanvasData
   dataInitState.value = false
   initMethod(
@@ -159,7 +159,7 @@ const loadCanvasData = (dvId, weight?) => {
   )
 }
 
-// 将当前预览画布导出为图片或 PDF。
+// 将当前预览画布导出为图片或 PDF
 const downloadH2 = type => {
   downloadStatus.value = true
   const mapElementIds = getMapElementIds(state.canvasDataPreview)
@@ -178,7 +178,7 @@ const downloadH2 = type => {
   }, 1000)
 }
 
-// 根据导出类型进入模板导出或应用导出前置流程。
+// 根据导出类型进入模板导出或应用导出前置流程
 const downloadAsAppTemplate = downloadType => {
   if (downloadType === 'template') {
     fileDownload(downloadType, null)
@@ -187,7 +187,7 @@ const downloadAsAppTemplate = downloadType => {
   }
 }
 
-// 导出应用前检查模板图表，并初始化应用信息表单。
+// 导出应用前检查模板图表，并初始化应用信息表单
 const downLoadToAppPre = () => {
   const result = checkTemplate()
   if (result && result.length > 0) {
@@ -204,7 +204,7 @@ const downLoadToAppPre = () => {
   }
 }
 
-// 检查画布中仍依赖模板数据的图表名称。
+// 检查画布中仍依赖模板数据的图表名称
 const checkTemplate = () => {
   let templateViewNames = ','
   Object.keys(canvasViewDataInfo.value).forEach(key => {
@@ -216,7 +216,7 @@ const checkTemplate = () => {
   return templateViewNames.slice(1)
 }
 
-// 将当前预览画布导出为应用或模板文件。
+// 将当前预览画布导出为应用或模板文件
 const fileDownload = (downloadType, attachParams) => {
   downloadStatus.value = true
   const mapElementIds = getMapElementIds(state.canvasDataPreview)
@@ -235,22 +235,22 @@ const fileDownload = (downloadType, attachParams) => {
   }, 1000)
 }
 
-// 切换左侧资源树展开状态。
+// 切换左侧资源树展开状态
 const slideOpenChange = () => {
   slideShow.value = !slideShow.value
 }
 
-// 暴露当前预览状态，供父组件读取。
+// 暴露当前预览状态，供父组件读取
 const getPreviewStateInfo = () => {
   return state
 }
 
-// 按当前资源权限重新加载预览画布。
+// 按当前资源权限重新加载预览画布
 const reload = id => {
   loadCanvasData(id, state.dvInfo.weight)
 }
 
-// 点击资源树节点后加载对应画布，复用模式下同步初始化复用组件状态。
+// 点击资源树节点后加载对应画布，复用模式下同步初始化复用组件状态
 const resourceNodeClick = data => {
   loadCanvasData(data.id, data.weight)
   if (showPosition.value === 'multiplexing') {
@@ -258,7 +258,7 @@ const resourceNodeClick = data => {
   }
 }
 
-// 当前主状态中是否存在可预览资源名称。
+// 当前主状态中是否存在可预览资源名称
 const previewShowFlag = computed(() => !!dvMainStore.dvInfo?.name)
 
 onBeforeMount(() => {
@@ -266,19 +266,19 @@ onBeforeMount(() => {
     dvMainStore.canvasDataInit()
   }
 })
-// 右侧资源树是否展开。
+// 右侧资源树是否展开
 const sideTreeStatus = ref(true)
-// 更新右侧资源树展开状态。
+// 更新右侧资源树展开状态
 const changeSideTreeStatus = val => {
   sideTreeStatus.value = val
 }
 
-// 应用导出表单提交后执行应用文件导出。
+// 应用导出表单提交后执行应用文件导出
 const downLoadApp = appAttachInfo => {
   fileDownload('app', appAttachInfo)
 }
 
-// 预览冻结层偏移样式，和当前画布展示位置保持一致。
+// 预览冻结层偏移样式，和当前画布展示位置保持一致
 const freezeStyle = computed(() => [
   { '--top-show-offset': state.showOffset.top },
   { '--left-show-offset': state.showOffset.left }

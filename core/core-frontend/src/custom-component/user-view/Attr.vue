@@ -9,7 +9,7 @@ import {
   defaultViewExcelExportConfig,
   isExportableTableView
 } from '@/utils/visualization/filteredExcelExport.mjs'
-// 定义用户视图属性面板接收的主题参数。
+// 定义用户视图属性面板接收的主题参数
 const props = defineProps({
   themes: {
     type: String,
@@ -22,11 +22,11 @@ const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const { curComponent, canvasViewInfo } = storeToRefs(dvMainStore)
 
-// 获取当前组件对应的视图配置。
+// 获取当前组件对应的视图配置
 const currentViewInfo = computed(() => canvasViewInfo.value[curComponent.value?.id])
-// 判断当前视图是否展示 Excel 导出配置。
+// 判断当前视图是否展示 Excel 导出配置
 const excelExportShow = computed(() => isExportableTableView(currentViewInfo.value))
-// 初始化当前视图的 Excel 导出配置。
+// 初始化当前视图的 Excel 导出配置
 const initExcelExportConfig = () => {
   if (!curComponent.value) {
     return
@@ -39,12 +39,12 @@ const initExcelExportConfig = () => {
   }
 }
 
-// 计算当前组件使用的 Excel 导出配置。
+// 计算当前组件使用的 Excel 导出配置
 const excelExport = computed(
   () => curComponent.value?.excelExport || defaultViewExcelExportConfig()
 )
 
-// 同步 Excel 导出配置并记录快照。
+// 同步 Excel 导出配置并记录快照
 const onExcelExportChange = () => {
   if (currentViewInfo.value) {
     currentViewInfo.value.excelExport = curComponent.value.excelExport
@@ -52,14 +52,14 @@ const onExcelExportChange = () => {
   snapshotStore.recordSnapshotCache('excelExport')
 }
 
-// 监听当前组件切换并初始化导出配置。
+// 监听当前组件切换并初始化导出配置
 watch(
   () => curComponent.value?.id,
   () => initExcelExportConfig(),
   { immediate: true }
 )
 
-// 监听视图导出配置变化并同步到当前组件。
+// 监听视图导出配置变化并同步到当前组件
 watch(
   () => currentViewInfo.value?.excelExport,
   value => {

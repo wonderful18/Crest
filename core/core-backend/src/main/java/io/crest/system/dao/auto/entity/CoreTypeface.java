@@ -12,32 +12,32 @@ public class CoreTypeface implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 字体资源主键。
+     * 字体资源主键
      */
     private Long id;
 
     /**
-     * 字体显示名称。
+     * 字体显示名称
      */
     private String name;
 
     /**
-     * 字体文件原始名称。
+     * 字体文件原始名称
      */
     private String fileName;
 
     /**
-     * 字体文件转换后的存储名称。
+     * 字体文件转换后的存储名称
      */
     private String fileTransName;
 
     /**
-     * 是否为默认字体。
+     * 是否为默认字体
      */
     private Boolean isDefault;
 
     /**
-     * 获取字体资源主键。
+     * 获取字体资源主键
      *
      * @return 字体资源主键
      */
@@ -46,7 +46,7 @@ public class CoreTypeface implements Serializable {
     }
 
     /**
-     * 设置字体资源主键。
+     * 设置字体资源主键
      *
      * @param id 字体资源主键
      */
@@ -55,7 +55,7 @@ public class CoreTypeface implements Serializable {
     }
 
     /**
-     * 获取字体显示名称。
+     * 获取字体显示名称
      *
      * @return 字体显示名称
      */
@@ -64,7 +64,7 @@ public class CoreTypeface implements Serializable {
     }
 
     /**
-     * 设置字体显示名称。
+     * 设置字体显示名称
      *
      * @param name 字体显示名称
      */
@@ -73,7 +73,7 @@ public class CoreTypeface implements Serializable {
     }
 
     /**
-     * 获取字体文件原始名称。
+     * 获取字体文件原始名称
      *
      * @return 字体文件原始名称
      */
@@ -82,7 +82,7 @@ public class CoreTypeface implements Serializable {
     }
 
     /**
-     * 设置字体文件原始名称。
+     * 设置字体文件原始名称
      *
      * @param fileName 字体文件原始名称
      */
@@ -91,7 +91,7 @@ public class CoreTypeface implements Serializable {
     }
 
     /**
-     * 获取字体文件转换后的存储名称。
+     * 获取字体文件转换后的存储名称
      *
      * @return 字体文件转换后的存储名称
      */
@@ -100,7 +100,7 @@ public class CoreTypeface implements Serializable {
     }
 
     /**
-     * 设置字体文件转换后的存储名称。
+     * 设置字体文件转换后的存储名称
      *
      * @param fileTransName 字体文件转换后的存储名称
      */
@@ -109,7 +109,7 @@ public class CoreTypeface implements Serializable {
     }
 
     /**
-     * 获取是否为默认字体。
+     * 获取是否为默认字体
      *
      * @return 是否为默认字体
      */
@@ -118,7 +118,7 @@ public class CoreTypeface implements Serializable {
     }
 
     /**
-     * 设置是否为默认字体。
+     * 设置是否为默认字体
      *
      * @param isDefault 是否为默认字体
      */
@@ -127,7 +127,7 @@ public class CoreTypeface implements Serializable {
     }
 
     /**
-     * 返回字体资源的调试字符串。
+     * 返回字体资源的调试字符串
      *
      * @return 字体资源的字符串表示
      */

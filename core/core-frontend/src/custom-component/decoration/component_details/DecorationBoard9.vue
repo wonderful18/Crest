@@ -4,7 +4,7 @@ import { customMergeColor } from '@/custom-component/decoration/component_detail
 import { cloneDeep } from 'lodash-es'
 
 /**
- * 装饰边框 9 的样式和动画入参。
+ * 装饰边框 9 的样式和动画入参
  */
 interface Props {
   color?: string[]
@@ -15,7 +15,7 @@ interface Props {
 }
 
 /**
- * 组件属性默认值。
+ * 组件属性默认值
  */
 const props = withDefaults(defineProps<Props>(), {
   color: () => [],
@@ -28,43 +28,43 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 /**
- * 边框实际宽度。
+ * 边框实际宽度
  */
 const width = computed(() => props.curStyle.width)
 /**
- * 边框实际高度。
+ * 边框实际高度
  */
 const height = computed(() => props.curStyle.height)
 
-// 生成更简洁的 ID，避免同屏 SVG 定义冲突。
+// 生成更简洁的 ID，避免同屏 SVG 定义冲突
 const generateId = () => Math.random().toString(36).substring(2, 8)
 /**
- * SVG 渐变定义 ID。
+ * SVG 渐变定义 ID
  */
 const gradientId = `grad-${generateId()}`
 /**
- * SVG 遮罩定义 ID。
+ * SVG 遮罩定义 ID
  */
 const maskId = `mask-${generateId()}`
 
 /**
- * 默认边框配色。
+ * 默认边框配色
  */
 const defaultColor = ref(['#11eefd', '#0078d2'])
 /**
- * 合并后的最终配色。
+ * 合并后的最终配色
  */
 const mergedColor = ref<string[]>([])
 
 /**
- * 合并默认配色和组件自定义配色。
+ * 合并默认配色和组件自定义配色
  */
 const mergeColor = () => {
   mergedColor.value = customMergeColor(cloneDeep(defaultColor.value), props.color)
 }
 
 /**
- * 外层边框容器样式。
+ * 外层边框容器样式
  */
 const border_style = computed(() => {
   return {
@@ -77,7 +77,7 @@ const border_style = computed(() => {
 })
 
 /**
- * 背景和遮罩多边形关键点坐标。
+ * 背景和遮罩多边形关键点坐标
  */
 const points = computed(() => ({
   // 背景多边形点

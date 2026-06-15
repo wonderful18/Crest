@@ -31,13 +31,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 数据源 Provider 抽象基类，封装连接、SQL 方言转换和 SSH 隧道等通用能力。
+ * 数据源 Provider 抽象基类，封装连接、SQL 方言转换和 SSH 隧道等通用能力
  */
 @SuppressWarnings("deprecation")
 public abstract class Provider {
 
     /**
-     * Provider 通用日志对象。
+     * Provider 通用日志对象
      */
     public static Logger logger = LoggerFactory.getLogger(Provider.class);
 
@@ -101,14 +101,14 @@ public abstract class Provider {
     public abstract void hidePW(DatasourceDTO datasourceDTO);
 
     /**
-     * 执行无返回数据的自定义数据源操作。
+     * 执行无返回数据的自定义数据源操作
      */
     public void exec(DatasourceRequest datasourceRequest) {
 
     }
 
     /**
-     * 执行更新语句并返回执行结果。
+     * 执行更新语句并返回执行结果
      */
     public ExecuteResult executeUpdate(DatasourceRequest datasourceRequest, String autoIncrementPkName) {
         return new ExecuteResult();
@@ -116,18 +116,18 @@ public abstract class Provider {
 
 
     /**
-     * 数据源 SSH 本地端口缓存。
+     * 数据源 SSH 本地端口缓存
      */
     @Getter
     private static final Map<Long, Integer> lPorts = new HashMap<>();
     /**
-     * 数据源 SSH 会话缓存。
+     * 数据源 SSH 会话缓存
      */
     @Getter
     private static final Map<Long, Session> sessions = new HashMap<>();
 
     /**
-     * 创建带查询超时时间的 Statement。
+     * 创建带查询超时时间的 Statement
      */
     public Statement getStatement(Connection connection, int queryTimeout) {
         if (connection == null) {
@@ -144,13 +144,13 @@ public abstract class Provider {
     }
 
     /**
-     * 重建适配目标数据源的 SQL。
+     * 重建适配目标数据源的 SQL
      */
     public String rebuildSQL(String sql, SQLMeta sqlMeta, boolean crossDs, Map<Long, DatasourceSchemaDTO> dsMap) {
         return rebuildSQL(sql, sqlMeta, crossDs, dsMap, false);
     }
     /**
-     * 重建适配目标数据源的 SQL，并支持 SQLBot 场景跳过真实连接。
+     * 重建适配目标数据源的 SQL，并支持 SQLBot 场景跳过真实连接
      */
     public String rebuildSQL(String sql, SQLMeta sqlMeta, boolean crossDs, Map<Long, DatasourceSchemaDTO> dsMap, boolean forSqlbot) {
         logger.debug("calcite sql: " + sql);
@@ -167,7 +167,7 @@ public abstract class Provider {
     }
 
     /**
-     * 将 Crest 内置 SQL 函数翻译为目标数据源函数。
+     * 将内置 SQL 函数翻译为目标数据源函数
      */
     private String translateCrestSqlFunctions(String sql, Map<Long, DatasourceSchemaDTO> dsMap) {
         if (dsMap == null || dsMap.isEmpty()) {
@@ -178,13 +178,13 @@ public abstract class Provider {
     }
 
     /**
-     * 将 SQL 转换为目标数据源方言。
+     * 将 SQL 转换为目标数据源方言
      */
     public String transSqlDialect(String sql, Map<Long, DatasourceSchemaDTO> dsMap) throws CrestException {
         return transSqlDialect(sql, dsMap, false);
     }
     /**
-     * 将 SQL 转换为目标数据源方言，并可选择 SQLBot 轻量转换模式。
+     * 将 SQL 转换为目标数据源方言，并可选择 SQLBot 轻量转换模式
      */
     public String transSqlDialect(String sql, Map<Long, DatasourceSchemaDTO> dsMap, boolean forSqlbot) throws CrestException {
         DatasourceSchemaDTO value = dsMap.entrySet().iterator().next().getValue();
@@ -220,7 +220,7 @@ public abstract class Provider {
     }
 
     /**
-     * 替换 SQL 中的数据表占位符。
+     * 替换 SQL 中的数据表占位符
      */
     public String replaceTablePlaceHolder(String s, String placeholder) {
         s = s.replaceAll("\r\n", " ")
@@ -232,7 +232,7 @@ public abstract class Provider {
     }
 
     /**
-     * 还原 Calcite 转换后的 Unicode 字符串字面量。
+     * 还原 Calcite 转换后的 Unicode 字符串字面量
      */
     protected static String restoreUnicodeStringLiterals(String sql) {
         if (StringUtils.isEmpty(sql)) {
@@ -259,7 +259,7 @@ public abstract class Provider {
     }
 
     /**
-     * 判断当前位置是否为 Unicode 字符串字面量起点。
+     * 判断当前位置是否为 Unicode 字符串字面量起点
      */
     private static boolean isUnicodeStringLiteralStart(String sql, int index) {
         if (index + 2 >= sql.length()) {
@@ -273,7 +273,7 @@ public abstract class Provider {
     }
 
     /**
-     * 解析并追加 Unicode 字符串字面量。
+     * 解析并追加 Unicode 字符串字面量
      */
     private static int appendUnicodeStringLiteral(String sql, int start, StringBuilder result) {
         StringBuilder literal = new StringBuilder();
@@ -303,7 +303,7 @@ public abstract class Provider {
                         index += 5;
                         continue;
                     } catch (NumberFormatException ignored) {
-                        // 转义序列异常时保留原始文本继续处理。
+                        // 转义序列异常时保留原始文本继续处理
                     }
                 }
             }
@@ -314,7 +314,7 @@ public abstract class Provider {
     }
 
     /**
-     * 解析并追加普通单引号字符串。
+     * 解析并追加普通单引号字符串
      */
     private static int appendQuotedString(String sql, int start, StringBuilder result) {
         result.append('\'');
@@ -336,7 +336,7 @@ public abstract class Provider {
     }
 
     /**
-     * 判断指定位置后四位是否为十六进制序列。
+     * 判断指定位置后四位是否为十六进制序列
      */
     private static boolean isHexSequence(String value, int start) {
         for (int index = start; index < start + 4; index++) {
@@ -348,14 +348,14 @@ public abstract class Provider {
     }
 
     /**
-     * 判断字符是否可作为 SQL 标识符的一部分。
+     * 判断字符是否可作为 SQL 标识符的一部分
      */
     private static boolean isIdentifierCharacter(char value) {
         return Character.isLetterOrDigit(value) || value == '_' || value == '$';
     }
 
     /**
-     * 为 SQL Server 中文字符串补充 N 前缀。
+     * 为 SQL Server 中文字符串补充 N 前缀
      */
     public String replaceMssqlN(String s) {
         Pattern compile = Pattern.compile("'-DENS-.*?'");
@@ -368,7 +368,7 @@ public abstract class Provider {
     }
 
     /**
-     * 替换 SQL 中计算字段和过滤条件占位符。
+     * 替换 SQL 中计算字段和过滤条件占位符
      */
     public String replaceCalcFieldPlaceHolder(String s, SQLMeta sqlMeta) {
         Map<String, String> fieldsDialect = new HashMap<>();
@@ -397,7 +397,7 @@ public abstract class Provider {
     }
 
     /**
-     * 移除 SQL 中的块注释和行注释。
+     * 移除 SQL 中的块注释和行注释
      */
     public String replaceComment(String s) {
         StringBuilder result = new StringBuilder(s.length());
@@ -438,7 +438,7 @@ public abstract class Provider {
     }
 
     /**
-     * 根据数据源类型获取 Calcite SQL 方言。
+     * 根据数据源类型获取 Calcite SQL 方言
      */
     public SqlDialect getDialect(DatasourceSchemaDTO coreDatasource) {
         SqlDialect sqlDialect = null;
@@ -489,7 +489,7 @@ public abstract class Provider {
     }
 
     /**
-     * 分配可用的本地 SSH 转发端口。
+     * 分配可用的本地 SSH 转发端口
      */
     synchronized public Integer getLport(Long datasourceId) throws Exception {
         for (int i = 10000; i < 20000; i++) {
@@ -506,10 +506,10 @@ public abstract class Provider {
     }
 
     /**
-     * 检查本机端口是否可用。
+     * 检查本机端口是否可用
      */
     public boolean isPortAvailable(int port) {
-        // 仅探测本机端口，不发送应用数据或凭据。
+        // 仅探测本机端口，不发送应用数据或凭据
         try (Socket socket = new Socket("127.0.0.1", port)) { // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
             return false;
         } catch (IOException e) {
@@ -518,7 +518,7 @@ public abstract class Provider {
     }
 
     /**
-     * 按数据源配置初始化或复用 SSH 隧道会话。
+     * 按数据源配置初始化或复用 SSH 隧道会话
      */
     public void startSshSession(DatasourceConfiguration configuration, ConnectionObj connectionObj, Long datasourceId) throws Exception {
         if (configuration.isUseSSH()) {
@@ -547,7 +547,7 @@ public abstract class Provider {
     }
 
     /**
-     * 创建并连接 JSch 会话，同时建立本地端口转发。
+     * 创建并连接 JSch 会话，同时建立本地端口转发
      */
     public Session initSession(DatasourceConfiguration configuration) throws Exception {
         JSch jsch = new JSch();

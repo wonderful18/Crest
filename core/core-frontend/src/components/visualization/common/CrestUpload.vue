@@ -42,13 +42,13 @@ import { beforeUploadCheck, uploadFileResult } from '@/api/staticResource'
 import { ElMessage } from 'element-plus-secondary'
 import ImgViewDialog from '@/custom-component/ImgViewDialog.vue'
 const snapshotStore = snapshotStoreWithOut()
-// 定义图片变更事件。
+// 定义图片变更事件
 const emits = defineEmits(['onImgChange'])
-// 文件选择器引用。
+// 文件选择器引用
 const files = ref(null)
 const maxImageSize = 15000000
 
-// 接收图片地址和主题配置。
+// 接收图片地址和主题配置
 const props = defineProps({
   imgUrl: {
     type: String
@@ -60,10 +60,10 @@ const props = defineProps({
 })
 
 const { themes, imgUrl } = toRefs(props)
-// 组件内部图片地址。
+// 组件内部图片地址
 const imgUrlInner = ref(null)
 
-// 维护上传列表和预览弹窗状态。
+// 维护上传列表和预览弹窗状态
 const state = reactive({
   fileList: [],
   dialogImageUrl: '',
@@ -71,7 +71,7 @@ const state = reactive({
   uploadDisabled: false
 })
 
-// 初始化上传列表。
+// 初始化上传列表
 const init = () => {
   imgUrlInner.value = imgUrl.value
   if (imgUrlInner.value) {
@@ -81,19 +81,19 @@ const init = () => {
   }
 }
 
-// 移除当前图片。
+// 移除当前图片
 const handleRemove = () => {
   state.uploadDisabled = false
   imgUrlInner.value = null
   state.fileList = []
   emits('onImgChange')
 }
-// 打开图片预览弹窗。
+// 打开图片预览弹窗
 const handlePictureCardPreview = file => {
   state.dialogImageUrl = file.url
   state.dialogVisible = true
 }
-// 上传图片并通知父级。
+// 上传图片并通知父级
 const upload = file => {
   uploadFileResult(file.file, fileUrl => {
     snapshotStore.recordSnapshotCache('upload')
@@ -102,7 +102,7 @@ const upload = file => {
   })
 }
 
-// 重新上传图片。
+// 重新上传图片
 const reUpload = e => {
   const file = e.target.files[0]
   if (file.size > maxImageSize) {
@@ -116,7 +116,7 @@ const reUpload = e => {
   })
 }
 
-// 提示图片大小超过限制。
+// 提示图片大小超过限制
 const sizeMessage = () => {
   ElMessage.error('图片大小不能超过15M')
 }
@@ -125,7 +125,7 @@ onMounted(() => {
   init()
 })
 
-// 监听外部图片地址变化。
+// 监听外部图片地址变化
 watch(
   () => imgUrl.value,
   () => {

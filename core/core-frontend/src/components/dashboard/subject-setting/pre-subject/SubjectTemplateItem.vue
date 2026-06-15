@@ -63,7 +63,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 
 const { canvasStyleData } = storeToRefs(dvMainStore)
 
-// 保存主题模板详情和编辑权限状态。
+// 保存主题模板详情和编辑权限状态
 const state = reactive({
   defaultSubject: {},
   subjectItemDetails: null,
@@ -71,7 +71,7 @@ const state = reactive({
 })
 const { t } = useI18n()
 
-// 定义主题模板项接收的模板数据。
+// 定义主题模板项接收的模板数据
 const props = defineProps({
   subjectItem: {
     type: Object,
@@ -80,15 +80,15 @@ const props = defineProps({
 })
 const { subjectItem } = toRefs(props)
 
-// 判断当前模板是否为已选主题。
+// 判断当前模板是否为已选主题
 const themeSelected = computed(() => {
   return (
     state.subjectItemDetails && state.subjectItemDetails.themeId === canvasStyleData.value.themeId
   )
 })
-// 声明主题模板删除、切换和编辑事件。
+// 声明主题模板删除、切换和编辑事件
 const emit = defineEmits(['subjectDelete', 'onSubjectChange', 'subjectEdit'])
-// 确认并删除当前主题模板。
+// 确认并删除当前主题模板
 const subjectDelete = () => {
   ElMessageBox.confirm(t('components.to_delete_', [subjectItem.value.name]), {
     confirmButtonType: 'danger',
@@ -100,12 +100,12 @@ const subjectDelete = () => {
   })
 }
 
-// 进入主题模板编辑流程。
+// 进入主题模板编辑流程
 const subjectEdit = () => {
   emit('subjectEdit')
 }
 
-// 应用当前主题模板到画布。
+// 应用当前主题模板到画布
 const subjectChange = () => {
   if (!themeSelected.value) {
     const canvasStyleTemp = JSON.parse(subjectItem.value.details)

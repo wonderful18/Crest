@@ -51,7 +51,7 @@ const intervalTypeList = [
   }
 ]
 
-// 根据当前区间类型计算固定或动态时间设置的标题。
+// 根据当前区间类型计算固定或动态时间设置的标题
 const regularOrTrendsTitle = computed(() => {
   return (
     intervalTypeList.find(ele => ele.value === timeRange.value.intervalType)?.label ||
@@ -59,16 +59,16 @@ const regularOrTrendsTitle = computed(() => {
   )
 })
 const { timeRange } = toRefs(props)
-// 判断当前时间筛选是否启用动态时间模式。
+// 判断当前时间筛选是否启用动态时间模式
 const dynamicTime = computed(() => {
   return timeRange.value.regularOrTrends !== 'fixed'
 })
-// 根据区间类型选择单时间或时间范围筛选组件。
+// 根据区间类型选择单时间或时间范围筛选组件
 const filterTypeCom = computed(() => {
   const { intervalType } = timeRange.value
   return intervalType === 'timeInterval' ? DynamicTimeRange : DynamicTime
 })
-// 生成范围选择器需要的时间粒度类型。
+// 生成范围选择器需要的时间粒度类型
 const timeGranularityMultiple = computed<DatePickType>(() => {
   return (props.timeGranularity + 'range') as DatePickType
 })
@@ -82,7 +82,7 @@ const aroundList = [
     value: 'b'
   }
 ]
-// 根据当前粒度生成可选择的相对时间单位。
+// 根据当前粒度生成可选择的相对时间单位
 const relativeToCurrentTypeList = computed(() => {
   if (!timeRange.value) return []
   let index = ['year', 'month', 'date', 'datetime'].indexOf(props.timeGranularity) + 1
@@ -102,7 +102,7 @@ const relativeToCurrentTypeList = computed(() => {
   ].slice(0, index)
 })
 
-// 根据当前粒度生成单点动态时间的快捷范围。
+// 根据当前粒度生成单点动态时间的快捷范围
 const relativeToCurrentList = computed(() => {
   let list = []
   if (!timeRange.value) return list
@@ -185,7 +185,7 @@ const relativeToCurrentList = computed(() => {
   ]
 })
 
-// 根据当前粒度生成时间区间动态范围的快捷范围。
+// 根据当前粒度生成时间区间动态范围的快捷范围
 const relativeToCurrentListRange = computed(() => {
   let list = []
   if (!timeRange.value) return list
@@ -272,7 +272,7 @@ const relativeToCurrentListRange = computed(() => {
     }
   ]
 })
-// 监听区间快捷范围列表变化，修正不再可用的已选项。
+// 监听区间快捷范围列表变化，修正不再可用的已选项
 watch(
   () => relativeToCurrentListRange.value,
   val => {
@@ -283,7 +283,7 @@ watch(
   { immediate: true }
 )
 
-// 监听单点快捷范围列表变化，修正不再可用的已选项。
+// 监听单点快捷范围列表变化，修正不再可用的已选项
 watch(
   () => relativeToCurrentList.value,
   val => {
@@ -294,7 +294,7 @@ watch(
   { immediate: true }
 )
 
-// 监听相对时间单位列表变化，修正不再可用的已选单位。
+// 监听相对时间单位列表变化，修正不再可用的已选单位
 watch(
   () => relativeToCurrentTypeList.value,
   val => {

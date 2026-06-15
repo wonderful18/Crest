@@ -16,9 +16,9 @@ import { storeToRefs } from 'pinia'
 import { isDashboard, trackBarStyleCheck } from '@/utils/canvasUtils'
 import ViewTrackBar from '@/components/visualization/ViewTrackBar.vue'
 
-// 指标卡组件入参，覆盖数据上下文、渲染位置、终端类型和字体配置。
+// 指标卡组件入参，覆盖数据上下文、渲染位置、终端类型和字体配置
 const props = defineProps({
-  // 组件事件等公共运行参数。
+  // 组件事件等公共运行参数
   commonParams: {
     type: Object,
     required: false
@@ -53,7 +53,7 @@ const props = defineProps({
     type: String,
     default: 'pc'
   },
-  // 图表渲染 ID 后缀，用于区分同一视图在不同容器中的实例。
+  // 图表渲染 ID 后缀，用于区分同一视图在不同容器中的实例
   suffixId: {
     type: String,
     required: false,
@@ -72,15 +72,15 @@ const dvMainStore = dvMainStoreWithOut()
 const dataVMobile = !isDashboard() && isMobile()
 const { embeddedCallBack, nowPanelTrackInfo, nowPanelJumpInfo, mobileInPc, inMobile } =
   storeToRefs(dvMainStore)
-// 交互菜单组件实例，用于展示联动、跳转和下钻操作。
+// 交互菜单组件实例，用于展示联动、跳转和下钻操作
 const viewTrack = ref(null)
-// 指标卡根节点实例，用于换算点击坐标。
+// 指标卡根节点实例，用于换算点击坐标
 const indicatorRef = ref(null)
-// 数据加载或渲染失败时展示的错误信息。
+// 数据加载或渲染失败时展示的错误信息
 const errMsg = ref('')
-// 指标卡是否处于错误展示状态。
+// 指标卡是否处于错误展示状态
 const isError = ref(false)
-// 指标卡运行态，保存点击参数、数据加载状态和交互菜单位置。
+// 指标卡运行态，保存点击参数、数据加载状态和交互菜单位置
 const state = reactive({
   pointParam: null,
   data: null,
@@ -93,12 +93,12 @@ const state = reactive({
   }
 })
 
-// 指标卡原始数据，使用浅层引用避免大数据对象触发深层响应式开销。
+// 指标卡原始数据，使用浅层引用避免大数据对象触发深层响应式开销
 const chartData = shallowRef<Partial<Chart['data']>>({
   fields: []
 })
 
-// 当前指标卡第一组序列数据。
+// 当前指标卡第一组序列数据
 const resultObject = computed(() => {
   const list = chartData.value?.series
   if (list && list.length > 0) {
@@ -107,7 +107,7 @@ const resultObject = computed(() => {
   return undefined
 })
 
-// 指标字段展示名称，优先使用图表配置中的别名。
+// 指标字段展示名称，优先使用图表配置中的别名
 const resultName = computed(() => {
   if (view.value?.yAxis?.length) {
     const axis = view.value.yAxis[0]
@@ -116,7 +116,7 @@ const resultName = computed(() => {
   return undefined
 })
 
-// 指标卡最终展示值，空值按高级配置决定是否补零。
+// 指标卡最终展示值，空值按高级配置决定是否补零
 const result = computed(() => {
   const list = resultObject.value?.data
   let _result = undefined
@@ -133,9 +133,9 @@ const result = computed(() => {
   return _result
 })
 
-// 指标默认颜色，阈值命中后会参与计算展示颜色。
+// 指标默认颜色，阈值命中后会参与计算展示颜色
 const indicatorColor = ref(DEFAULT_INDICATOR_STYLE.color)
-// 根据阈值配置计算指标文字色和背景色。
+// 根据阈值配置计算指标文字色和背景色
 const thresholdColor = computed(() => {
   let color: string = indicatorColor.value
   let backgroundColor: string = DEFAULT_INDICATOR_STYLE.backgroundColor
@@ -204,7 +204,7 @@ const thresholdColor = computed(() => {
   return { color, backgroundColor }
 })
 
-// 指标值格式化结果，优先使用度量字段的格式化配置。
+// 指标值格式化结果，优先使用度量字段的格式化配置
 const formattedResult = computed(() => {
   let _result = result.value
 
@@ -212,14 +212,14 @@ const formattedResult = computed(() => {
     return _result
   }
 
-  // 按度量字段配置格式化数值展示。
+  // 按度量字段配置格式化数值展示
   if (view.value.yAxis && view.value.yAxis.length > 0 && view.value.yAxis[0].formatterCfg) {
     return valueFormatter(_result, view.value.yAxis[0].formatterCfg)
   }
   return _result
 })
 
-// 指标卡向上抛出的点击、下钻、跳转和组件事件。
+// 指标卡向上抛出的点击、下钻、跳转和组件事件
 const emit = defineEmits([
   'onPointClick',
   'onChartClick',
@@ -227,7 +227,7 @@ const emit = defineEmits([
   'onJumpClick',
   'onComponentEvent'
 ])
-// 指标卡内容容器样式，承载水平和垂直对齐配置。
+// 指标卡内容容器样式，承载水平和垂直对齐配置
 const contentStyle = ref<CSSProperties>({
   display: 'flex',
   'flex-direction': 'column',
@@ -237,7 +237,7 @@ const contentStyle = ref<CSSProperties>({
   'background-color': thresholdColor.value.backgroundColor
 })
 
-// 指标主数值样式，渲染时会被视图自定义样式覆盖。
+// 指标主数值样式，渲染时会被视图自定义样式覆盖
 const indicatorClass = ref<CSSProperties>({
   color: thresholdColor.value.color,
   'font-size': DEFAULT_INDICATOR_STYLE.fontSize + 'px',
@@ -252,7 +252,7 @@ const indicatorClass = ref<CSSProperties>({
   'font-synthesis': 'weight style'
 })
 
-// 指标后缀样式，保持和主数值相同的字体族兜底逻辑。
+// 指标后缀样式，保持和主数值相同的字体族兜底逻辑
 const indicatorSuffixClass = ref<CSSProperties>({
   color: DEFAULT_INDICATOR_STYLE.suffixColor,
   'font-size': DEFAULT_INDICATOR_STYLE.suffixFontSize + 'px',
@@ -267,23 +267,23 @@ const indicatorSuffixClass = ref<CSSProperties>({
   'font-synthesis': 'weight style'
 })
 
-// 是否展示指标后缀。
+// 是否展示指标后缀
 const showSuffix = ref<boolean>(DEFAULT_INDICATOR_STYLE.suffixEnable)
 
-// 指标后缀文本内容。
+// 指标后缀文本内容
 const suffixContent = ref('')
 
-// 是否展示指标名称。
+// 是否展示指标名称
 const indicatorNameShow = ref(false)
-// 指标名称是否展示在数值下方。
+// 指标名称是否展示在数值下方
 const indicatorNamePositionBottom = ref(true)
 
-// 指标名称外层样式，主要控制名称与数值间距。
+// 指标名称外层样式，主要控制名称与数值间距
 const indicatorNameWrapperStyle = reactive<CSSProperties>({
   'margin-top': DEFAULT_INDICATOR_NAME_STYLE.nameValueSpacing + 'px'
 })
 
-// 指标名称文本样式，渲染时会被视图自定义样式覆盖。
+// 指标名称文本样式，渲染时会被视图自定义样式覆盖
 const indicatorNameClass = ref<CSSProperties>({
   color: DEFAULT_INDICATOR_NAME_STYLE.color,
   'font-size': DEFAULT_INDICATOR_NAME_STYLE.fontSize + 'px',
@@ -298,7 +298,7 @@ const indicatorNameClass = ref<CSSProperties>({
   'font-synthesis': 'weight style'
 })
 
-// 根据视图配置刷新指标卡样式和名称展示状态。
+// 根据视图配置刷新指标卡样式和名称展示状态
 const renderChart = async view => {
   if (!view) {
     return
@@ -402,7 +402,7 @@ const renderChart = async view => {
   }
 }
 
-// 请求指标卡数据并在成功后刷新图表状态。
+// 请求指标卡数据并在成功后刷新图表状态
 const calcData = (view, callback) => {
   if (view.tableId || view['dataFrom'] === 'template') {
     state.loading = true
@@ -430,7 +430,7 @@ const calcData = (view, callback) => {
   }
 }
 
-// 执行交互菜单中的单项动作，包括联动、下钻、跳转和组件事件。
+// 执行交互菜单中的单项动作，包括联动、下钻、跳转和组件事件
 const trackClick = trackAction => {
   const param = state.pointParam
   if (!param?.data?.dimensionList && !param?.data?.quotaList) {
@@ -497,7 +497,7 @@ const trackClick = trackAction => {
   }
 }
 
-// 计算当前指标卡可用的交互菜单项。
+// 计算当前指标卡可用的交互菜单项
 const trackMenu = computed(() => {
   let trackMenuInfo = []
   if (showPosition.value === 'viewDialog') {
@@ -520,7 +520,7 @@ const trackMenu = computed(() => {
     trackMenuInfo.push('jump')
   linkageCount && view.value?.linkageActive && trackMenuInfo.push('linkage')
   view.value.drillFields.length && trackMenuInfo.push('drill')
-  // 跳转、联动、下钻同时存在且联动模式为自动时，合并为“跳转”和“联动并下钻”两个入口。
+  // 跳转、联动、下钻同时存在且联动模式为自动时，合并为“跳转”和“联动并下钻”两个入口
   if (trackMenuInfo.length === 3 && props.element.actionSelection.linkageActive === 'auto') {
     trackMenuInfo = ['jump', 'linkageAndDrill']
   } else if (
@@ -536,24 +536,24 @@ const trackMenu = computed(() => {
   return trackMenuInfo
 })
 
-// 是否展示可点击光标，嵌入式回调模式即使无菜单也需要保留点击提示。
+// 是否展示可点击光标，嵌入式回调模式即使无菜单也需要保留点击提示
 const showCursor = computed(() => {
   return trackMenu.value.length || embeddedCallBack.value === 'yes'
 })
 
-// 嵌入式回调模式下直接触发点选事件。
+// 嵌入式回调模式下直接触发点选事件
 const pointClickTrans = () => {
   if (embeddedCallBack.value === 'yes') {
     trackClick('pointClick')
   }
 }
 
-// 统一处理指标卡点击，根据菜单数量直接执行或展示交互菜单。
+// 统一处理指标卡点击，根据菜单数量直接执行或展示交互菜单
 const action = param => {
   state.pointParam = param
-  // 先处理嵌入式点选回调。
+  // 先处理嵌入式点选回调
   pointClickTrans()
-  // 只有一个交互入口时直接执行，多个入口时展示选择菜单。
+  // 只有一个交互入口时直接执行，多个入口时展示选择菜单
   if (trackMenu.value.length < 2) {
     trackClick(trackMenu.value[0])
   } else {
@@ -575,23 +575,23 @@ const action = param => {
   }
 }
 
-// 将指标卡 DOM 点击事件转换为图表通用点击参数。
+// 将指标卡 DOM 点击事件转换为图表通用点击参数
 const onPointClick = event => {
   if (view.value?.yAxis?.length) {
     const axis = view.value.yAxis[0]
-    // 读取鼠标在视口中的点击坐标。
+    // 读取鼠标在视口中的点击坐标
     const mouseX = event.clientX
     const mouseY = event.clientY
 
-    // 获取指标卡根节点相对视口的位置。
+    // 获取指标卡根节点相对视口的位置
     const rect = indicatorRef.value.getBoundingClientRect()
     const offsetX = rect.left
     const offsetY = rect.top
 
-    // 换算为指标卡内部坐标，供交互菜单定位使用。
+    // 换算为指标卡内部坐标，供交互菜单定位使用
     const left = mouseX - offsetX
     let top = mouseY - offsetY
-    // 构造与图表点选一致的参数结构。
+    // 构造与图表点选一致的参数结构
     const params = {
       x: left,
       y: top,

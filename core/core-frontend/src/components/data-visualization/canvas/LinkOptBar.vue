@@ -83,7 +83,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from '@/hooks/web/useI18n'
 import { isMobile } from '@/utils/utils'
 const dvMainStore = dvMainStoreWithOut()
-// 定义公开链接操作栏接收的画布样式数据。
+// 定义公开链接操作栏接收的画布样式数据
 const props = defineProps({
   canvasStyleData: {
     type: Object,
@@ -95,14 +95,14 @@ const { canvasStyleData } = toRefs(props)
 const { fullscreenFlag } = storeToRefs(dvMainStore)
 const { t } = useI18n()
 
-// 保存操作栏全屏元素和展开状态。
+// 保存操作栏全屏元素和展开状态
 const state = reactive({
   fullscreenElement: null,
   barActive: false,
   fullWidth: router.currentRoute.value.query?.fromLink === 'true' ? 126 : 94
 })
 
-// 根据画布主题计算操作栏样式类名。
+// 根据画布主题计算操作栏样式类名
 const functionClass = computed(() => {
   let result = 'link-bar-main-light'
   if (canvasStyleData.value?.dashboard?.themeColor === 'dark') {
@@ -111,16 +111,16 @@ const functionClass = computed(() => {
   return result
 })
 
-// 判断当前页面是否来自公开链接跳转。
+// 判断当前页面是否来自公开链接跳转
 const fromLink = computed(() => {
   return router.currentRoute.value.query?.fromLink === 'true'
 })
 
-// 切换操作栏展开状态。
+// 切换操作栏展开状态
 const firstBarClick = () => {
   state.barActive = !state.barActive
 }
-// 切换画布全屏状态。
+// 切换画布全屏状态
 const toggleFullscreen = () => {
   if (!document.fullscreenElement) {
     // 如果当前不是全屏状态，则启动全屏
@@ -132,14 +132,14 @@ const toggleFullscreen = () => {
     })
   }
 }
-// 返回跳转前记录的页面地址。
+// 返回跳转前记录的页面地址
 const back2Last = () => {
   const parentUrl = localStorage.getItem('beforeJumpUrl')
   localStorage.removeItem('beforeJumpUrl')
   window.location.href = parentUrl
   window.location.reload()
 }
-// 触发画布 PDF 导出。
+// 触发画布 PDF 导出
 const exportPDF = () => {
   useEmitt().emitter.emit('canvasDownload', 'pdf')
 }

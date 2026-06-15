@@ -14,17 +14,17 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 数据集字段工具类，负责树结构合并和计算字段表达式编解码。
+ * 数据集字段工具类，负责树结构合并和计算字段表达式编解码
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class DatasetUtils {
     /**
-     * 节点类型路径分隔符。
+     * 节点类型路径分隔符
      */
     public final static String SEPARATOR = "-de-";
 
     /**
-     * 按节点类型路径合并可能重复 ID 的数据集树。
+     * 按节点类型路径合并可能重复 ID 的数据集树
      */
     public static List<BaseTreeNodeDTO> mergeDuplicateTree(List<BaseTreeNodeDTO> tree, String... rootPid) {
         Assert.notNull(rootPid, "Root Pid cannot be null");
@@ -32,7 +32,7 @@ public class DatasetUtils {
             return null;
         }
         List<BaseTreeNodeDTO> result = new ArrayList<>();
-        // 构建节点类型到节点的映射。
+        // 构建节点类型到节点的映射
         Map<String, BaseTreeNodeDTO> treePidMap = tree.stream().collect(Collectors.toMap(node -> node.getNodeType(), t -> t));
         tree.stream().filter(item -> ObjectUtils.isNotEmpty(item.getId())).forEach(node -> {
 
@@ -44,7 +44,7 @@ public class DatasetUtils {
             if (Arrays.asList(rootPid).contains(node.getPid()) && 0 == level) {
                 result.add(node);
             } else {
-                // 找到父元素。
+                // 找到父元素
                 String[] pLinks = new String[level];
                 System.arraycopy(links, 0, pLinks, 0, level);
                 String parentType = Arrays.stream(pLinks).collect(Collectors.joining(SEPARATOR)) + TreeUtils.SEPARATOR + (level - 1);
@@ -63,14 +63,14 @@ public class DatasetUtils {
     }
 
     /**
-     * 将字符串编码为 Base64。
+     * 将字符串编码为 Base64
      */
     public static String getEncode(String str) {
         return Base64.getEncoder().encodeToString(str.getBytes());
     }
 
     /**
-     * 将 Base64 字符串解码为原始文本。
+     * 将 Base64 字符串解码为原始文本
      */
     public static String getDecode(String str) {
         return new String(Base64.getDecoder().decode(str));
@@ -135,7 +135,7 @@ public class DatasetUtils {
     }
 
     /**
-     * 解码图表所有字段轴中的计算字段表达式。
+     * 解码图表所有字段轴中的计算字段表达式
      */
     public static void viewDecode(ChartViewDTO view) {
         DatasetUtils.listDecode(view.getXAxis());
@@ -150,7 +150,7 @@ public class DatasetUtils {
     }
 
     /**
-     * 编码图表所有字段轴中的计算字段表达式。
+     * 编码图表所有字段轴中的计算字段表达式
      */
     public static void viewEncode(ChartViewDTO view) {
         DatasetUtils.listEncode(view.getXAxis());

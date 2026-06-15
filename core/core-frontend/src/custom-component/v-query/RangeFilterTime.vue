@@ -5,7 +5,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import DynamicTime from './DynamicTimeFiltering.vue'
 import DynamicTimeRange from './DynamicTimeRangeFiltering.vue'
 import { ManipulateType } from 'dayjs'
-// 定义时间范围过滤组件的配置和粒度。
+// 定义时间范围过滤组件的配置和粒度
 const props = defineProps({
   timeRange: {
     type: Object as PropType<TimeRange>,
@@ -51,7 +51,7 @@ const intervalTypeList = [
   }
 ]
 
-// 根据区间类型显示固定或动态时间配置标题。
+// 根据区间类型显示固定或动态时间配置标题
 const regularOrTrendsTitle = computed(() => {
   return (
     intervalTypeList.find(ele => ele.value === timeRange.value.intervalType)?.label ||
@@ -59,11 +59,11 @@ const regularOrTrendsTitle = computed(() => {
   )
 })
 const { timeRange } = toRefs(props)
-// 判断当前时间范围是否使用动态时间。
+// 判断当前时间范围是否使用动态时间
 const dynamicTime = computed(() => {
   return timeRange.value.regularOrTrends !== 'fixed'
 })
-// 根据区间类型选择单点时间或时间范围输入组件。
+// 根据区间类型选择单点时间或时间范围输入组件
 const filterTypeCom = computed(() => {
   const { intervalType } = timeRange.value
   return intervalType === 'timeInterval' ? DynamicTimeRange : DynamicTime
@@ -79,7 +79,7 @@ const aroundList = [
     value: 'b'
   }
 ]
-// 根据当前时间粒度生成可选择的相对时间单位。
+// 根据当前时间粒度生成可选择的相对时间单位
 const relativeToCurrentTypeList = computed(() => {
   if (!timeRange.value) return []
   let index =
@@ -102,11 +102,11 @@ const relativeToCurrentTypeList = computed(() => {
   ].slice(0, index)
 })
 
-// 生成动态窗口最大查询范围的单位提示。
+// 生成动态窗口最大查询范围的单位提示
 const relativeToCurrentTypeListTips = computed(() => {
   return (relativeToCurrentTypeList.value[relativeToCurrentTypeList.value.length - 1] || {}).label
 })
-// 生成单点动态时间可选择的相对当前时间列表。
+// 生成单点动态时间可选择的相对当前时间列表
 const relativeToCurrentList = computed(() => {
   let list = []
   if (!timeRange.value) return list
@@ -197,7 +197,7 @@ const relativeToCurrentList = computed(() => {
   ]
 })
 
-// 生成区间动态时间可选择的相对当前时间列表。
+// 生成区间动态时间可选择的相对当前时间列表
 const relativeToCurrentListRange = computed(() => {
   let list = []
   if (!timeRange.value) return list
@@ -285,7 +285,7 @@ const relativeToCurrentListRange = computed(() => {
   ]
 })
 
-// 在区间相对时间选项变化时修正无效选中值。
+// 在区间相对时间选项变化时修正无效选中值
 watch(
   () => relativeToCurrentListRange.value,
   val => {
@@ -296,7 +296,7 @@ watch(
   { immediate: true }
 )
 
-// 在单点相对时间选项变化时修正无效选中值。
+// 在单点相对时间选项变化时修正无效选中值
 watch(
   () => relativeToCurrentList.value,
   val => {
@@ -307,7 +307,7 @@ watch(
   { immediate: true }
 )
 
-// 在相对时间单位变化时修正起止时间单位。
+// 在相对时间单位变化时修正起止时间单位
 watch(
   () => relativeToCurrentTypeList.value,
   val => {

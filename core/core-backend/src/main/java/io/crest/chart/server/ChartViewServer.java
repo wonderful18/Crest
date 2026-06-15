@@ -20,14 +20,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("chart")
 /**
- * 图表视图接口控制器，负责转发图表数据、字段和基础信息请求。
+ * 图表视图接口控制器，负责转发图表数据、字段和基础信息请求
  */
 public class ChartViewServer implements ChartViewApi {
     @Resource
     private ChartViewManege chartViewManege;
 
     /**
-     * 获取指定图表在核心资源表中的完整数据。
+     * 获取指定图表在核心资源表中的完整数据
      */
     @Override
     public ChartViewDTO getData(Long id) throws Exception {
@@ -40,7 +40,7 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     /**
-     * 获取图表可用的维度和指标字段，并对字段信息做输出编码。
+     * 获取图表可用的维度和指标字段，并对字段信息做输出编码
      */
     @Override
     public Map<String, List<ChartViewFieldDTO>> listByDQ(Long id, Long chartId, ChartViewDTO dto) {
@@ -51,7 +51,7 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     /**
-     * 保存图表视图配置。
+     * 保存图表视图配置
      */
     @Override
     public ChartViewDTO save(ChartViewDTO dto) throws Exception {
@@ -59,7 +59,7 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     /**
-     * 校验两个视图是否使用同一数据集。
+     * 校验两个视图是否使用同一数据集
      */
     @Override
     public String checkSameDataSet(String viewIdSource, String viewIdTarget) {
@@ -67,7 +67,7 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     /**
-     * 获取指定资源表中的图表详情。
+     * 获取指定资源表中的图表详情
      */
     @Override
     public ChartViewDTO getDetail(Long id, String resourceTable) {
@@ -75,7 +75,7 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     /**
-     * 获取资源下可供选择的图表视图。
+     * 获取资源下可供选择的图表视图
      */
     @Override
     public List<ViewSelectorVO> viewOption(Long resourceId) {
@@ -83,7 +83,7 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     /**
-     * 复制图表字段配置。
+     * 复制图表字段配置
      */
     @Override
     public void copyField(Long id, Long chartId) {
@@ -91,7 +91,7 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     /**
-     * 移除视图字段引用。
+     * 移除视图字段引用
      */
     @Override
     public void fieldRemoval(Long id) {
@@ -99,7 +99,7 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     /**
-     * 按图表移除字段引用。
+     * 按图表移除字段引用
      */
     @Override
     public void chartFieldRemoval(Long chartId) {
@@ -107,7 +107,7 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     /**
-     * 获取图表基础信息。
+     * 获取图表基础信息
      */
     @Override
     public ChartBaseVO chartBaseInfo(Long id, String resourceTable) {

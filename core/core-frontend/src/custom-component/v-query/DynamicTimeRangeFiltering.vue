@@ -4,7 +4,7 @@ import { Calendar } from '@element-plus/icons-vue'
 import { type DatePickType } from 'element-plus-secondary'
 import type { ManipulateType } from 'dayjs'
 import { getAround, getCustomRange, getAroundStart } from './time-format-dayjs'
-// 动态时间范围查询配置。
+// 动态时间范围查询配置
 interface SelectConfig {
   regularOrTrends: string
   regularOrTrendsValue: [Date, Date]
@@ -19,7 +19,7 @@ interface SelectConfig {
   aroundRange: string
 }
 
-// 时间范围过滤组件属性。
+// 时间范围过滤组件属性
 const props = defineProps({
   config: {
     type: Object as PropType<SelectConfig>,
@@ -47,10 +47,10 @@ const props = defineProps({
     }
   }
 })
-// 保持配置对象的响应式引用，便于直接回写默认时间范围。
+// 保持配置对象的响应式引用，便于直接回写默认时间范围
 const { config } = toRefs(props)
 
-// 抽取会影响动态范围计算的配置项。
+// 抽取会影响动态范围计算的配置项
 const timeConfig = computed(() => {
   const {
     timeNum,
@@ -78,7 +78,7 @@ const timeConfig = computed(() => {
     timeGranularityMultiple: props.timeGranularityMultiple
   }
 })
-// 根据区间模式计算日期选择器类型。
+// 根据区间模式计算日期选择器类型
 const timeInterval = computed<DatePickType>(() => {
   const noTime = props.timeGranularityMultiple.split('time').join('')
   return config.value.intervalType === 'timeInterval'
@@ -95,7 +95,7 @@ watch(
   }
 )
 
-// 根据固定或动态规则初始化时间范围。
+// 根据固定或动态规则初始化时间范围
 const init = () => {
   const {
     timeNum,
@@ -144,7 +144,7 @@ onBeforeMount(() => {
   init()
 })
 
-// 年范围选择时使用年份格式，其它类型沿用组件默认格式。
+// 年范围选择时使用年份格式，其它类型沿用组件默认格式
 const formatDate = computed(() => {
   return (props.timeGranularityMultiple as string) === 'yearrange' ? 'YYYY' : undefined
 })

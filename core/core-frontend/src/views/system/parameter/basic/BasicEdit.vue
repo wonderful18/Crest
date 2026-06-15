@@ -7,7 +7,7 @@ import request from '@/config/axios'
 import dvInfo from '@/assets/svg/dv-info.svg'
 const { t } = useI18n()
 
-// 接收基础参数标签提示配置。
+// 接收基础参数标签提示配置
 const props = defineProps({
   labelTooltips: {
     type: Array as PropType<any[]>,
@@ -15,11 +15,11 @@ const props = defineProps({
   }
 })
 
-// 控制基础参数抽屉显隐。
+// 控制基础参数抽屉显隐
 const dialogVisible = ref(false)
-// 保存全屏加载实例。
+// 保存全屏加载实例
 const loadingInstance = ref(null)
-// 基础参数表单实例。
+// 基础参数表单实例
 const basicForm = ref<FormInstance>()
 const options = [
   { value: 'minute', label: t('system.time_0_seconds') },
@@ -43,7 +43,7 @@ const requireKeys = [
   'loginLimitRate',
   'thresholdLimit'
 ]
-// 维护基础参数表单和下拉选项。
+// 维护基础参数表单和下拉选项
 const state = reactive({
   form: reactive({
     dsIntervalTime: '30',
@@ -74,9 +74,9 @@ const state = reactive({
   ]
 })
 
-// 参数提示文案映射。
+// 参数提示文案映射
 const tooltipItem = ref({})
-// 初始化参数提示文案映射。
+// 初始化参数提示文案映射
 const formatLabel = () => {
   props.labelTooltips?.length &&
     props.labelTooltips.forEach(tooltip => {
@@ -84,7 +84,7 @@ const formatLabel = () => {
     })
 }
 
-// 基础参数表单校验规则。
+// 基础参数表单校验规则
 const rule = reactive<FormRules>({
   dsIntervalTime: [
     {
@@ -95,7 +95,7 @@ const rule = reactive<FormRules>({
   ]
 })
 
-// 将表单值转换为后端参数保存结构。
+// 将表单值转换为后端参数保存结构
 const buildSettingList = () => {
   return state.settingList.map(item => {
     const pkey = item.pkey.startsWith('basic.') ? item.pkey : `basic.${item.pkey}`
@@ -108,9 +108,9 @@ const buildSettingList = () => {
     return { pkey, pval, type, sort }
   })
 }
-// 定义保存成功事件。
+// 定义保存成功事件
 const emits = defineEmits(['saved'])
-// 校验并提交基础参数表单。
+// 校验并提交基础参数表单
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
   await formEl.validate(valid => {
@@ -151,7 +151,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   })
 }
 
-// 重置基础参数表单和抽屉状态。
+// 重置基础参数表单和抽屉状态
 const resetForm = (formEl: FormInstance | undefined) => {
   state.settingList = []
   settingList.value = []
@@ -160,24 +160,24 @@ const resetForm = (formEl: FormInstance | undefined) => {
   dialogVisible.value = false
 }
 
-// 使用当前表单实例执行重置。
+// 使用当前表单实例执行重置
 const reset = () => {
   resetForm(basicForm.value)
 }
 
-// 显示基础参数保存加载态。
+// 显示基础参数保存加载态
 const showLoading = () => {
   loadingInstance.value = ElLoading.service({ target: '.basic-param-drawer' })
 }
-// 关闭基础参数保存加载态。
+// 关闭基础参数保存加载态
 const closeLoading = () => {
   loadingInstance.value?.close()
 }
-// 当前抽屉标题。
+// 当前抽屉标题
 const title = ref()
-// 当前抽屉显示的参数项。
+// 当前抽屉显示的参数项
 const settingList = ref([])
-// 打开基础参数编辑抽屉并填充表单。
+// 打开基础参数编辑抽屉并填充表单
 const edit = (
   list,
   orgOptions,
@@ -239,7 +239,7 @@ const edit = (
   settingList.value = state.settingList.filter(ele => settingListVal.includes(ele.pkey))
   dialogVisible.value = true
 }
-// 根据平台组织加载角色选项。
+// 根据平台组织加载角色选项
 const loadRoleOptions = async () => {
   const oid = state.form['platformOid']
   if (!oid) {
@@ -251,7 +251,7 @@ const loadRoleOptions = async () => {
   state.roleOptions[0].children = map.get(false)
   state.roleOptions[1].children = map.get(true)
 }
-// 按只读状态分组角色选项。
+// 按只读状态分组角色选项
 const groupBy = list => {
   const map = new Map()
   list.forEach(item => {
@@ -265,7 +265,7 @@ const groupBy = list => {
   })
   return map
 }
-// 组织切换时清空角色并重新加载。
+// 组织切换时清空角色并重新加载
 const oidChange = () => {
   state.form['platformRid'] = []
   loadRoleOptions()

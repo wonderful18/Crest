@@ -1,7 +1,7 @@
 package io.crest.api.dataset.engine;
 
 /**
- * SQL 函数元数据枚举，用于描述函数展示名称、表达式和适用字段类型。
+ * SQL 函数元数据枚举，用于描述函数展示名称、表达式和适用字段类型
  */
 public enum SQLFunctionsEnum {
     SUBSTRING("SUBSTRING", "SUBSTRING(s,n,len)", 0, "获取从字符串s中的第n个位置开始长度为len的字符串", false),
@@ -23,7 +23,7 @@ public enum SQLFunctionsEnum {
     private boolean isCustom;// 是否为自定义函数。
 
     /**
-     * 构造 SQL 函数元数据。
+     * 构造 SQL 函数元数据
      */
     SQLFunctionsEnum(String name, String func, int type, String desc, boolean isCustom) {
         this.name = name;
@@ -34,70 +34,70 @@ public enum SQLFunctionsEnum {
     }
 
     /**
-     * 获取函数显示名称。
+     * 获取函数显示名称
      */
     public String getName() {
         return name;
     }
 
     /**
-     * 设置函数显示名称。
+     * 设置函数显示名称
      */
     public void setName(String name) {
         this.name = name;
     }
 
     /**
-     * 获取函数表达式。
+     * 获取函数表达式
      */
     public String getFunc() {
         return func;
     }
 
     /**
-     * 设置函数表达式。
+     * 设置函数表达式
      */
     public void setFunc(String func) {
         this.func = func;
     }
 
     /**
-     * 获取函数适用字段类型。
+     * 获取函数适用字段类型
      */
     public int getType() {
         return type;
     }
 
     /**
-     * 设置函数适用字段类型。
+     * 设置函数适用字段类型
      */
     public void setType(int type) {
         this.type = type;
     }
 
     /**
-     * 获取函数说明。
+     * 获取函数说明
      */
     public String getDesc() {
         return desc;
     }
 
     /**
-     * 设置函数说明。
+     * 设置函数说明
      */
     public void setDesc(String desc) {
         this.desc = desc;
     }
 
     /**
-     * 判断是否为自定义函数。
+     * 判断是否为自定义函数
      */
     public boolean isCustom() {
         return isCustom;
     }
 
     /**
-     * 设置是否为自定义函数。
+     * 设置是否为自定义函数
      */
     public void setCustom(boolean custom) {
         isCustom = custom;

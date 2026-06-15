@@ -41,11 +41,11 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 import ChartCarouselTooltip from '@/views/chart/components/js/g2plot_tooltip_carousel'
 import dvPreviewDownload from '@/assets/svg/icon_download_outlined.svg'
-/** 主画布仓库提供弹窗主题色配置。 */
+/** 主画布仓库提供弹窗主题色配置 */
 const dvMainStore = dvMainStoreWithOut()
-/** 画布样式引用，用于弹窗背景和按钮颜色。 */
+/** 画布样式引用，用于弹窗背景和按钮颜色 */
 const { canvasStyleData } = storeToRefs(dvMainStore)
-/** 预览弹窗状态，包含地址、尺寸和显示状态。 */
+/** 预览弹窗状态，包含地址、尺寸和显示状态 */
 const state = reactive({
   dialogShow: false,
   name: '',
@@ -54,11 +54,11 @@ const state = reactive({
   width: '70vw',
   height: '70%'
 })
-/** 嵌入式仓库占位引用，保证预览弹窗初始化时嵌入上下文可用。 */
+/** 嵌入式仓库占位引用，保证预览弹窗初始化时嵌入上下文可用 */
 const embeddedStore = useEmbedded()
-/** 预览 iframe 引用，用于向内部页面发送下载消息。 */
+/** 预览 iframe 引用，用于向内部页面发送下载消息 */
 const previewFrameRef = ref<HTMLIFrameElement | null>(null)
-/** 隐藏追踪菜单浮层，避免弹窗打开时残留在上层。 */
+/** 隐藏追踪菜单浮层，避免弹窗打开时残留在上层 */
 const hideTrackBarMenus = () => {
   const hide = () => {
     document.querySelectorAll<HTMLElement>('.track_bar_custom').forEach(menu => {
@@ -70,7 +70,7 @@ const hideTrackBarMenus = () => {
   window.setTimeout(hide, 0)
   window.setTimeout(hide, 100)
 }
-/** 根据全屏状态生成弹窗样式变量。 */
+/** 根据全屏状态生成弹窗样式变量 */
 const dialogStyle = computed(() => {
   if (state.fullscreen) {
     return [
@@ -86,7 +86,7 @@ const dialogStyle = computed(() => {
   }
 })
 
-/** 初始化预览弹窗地址、尺寸和标题。 */
+/** 初始化预览弹窗地址、尺寸和标题 */
 const previewInit = params => {
   hideTrackBarMenus()
   state.name = params.name || ''
@@ -111,7 +111,7 @@ const previewInit = params => {
   void embeddedStore
 }
 
-/** 通知预览 iframe 下载当前数据。 */
+/** 通知预览 iframe 下载当前数据 */
 const downloadData = () => {
   previewFrameRef.value?.contentWindow?.postMessage(
     { type: 'crest:preview-pop-download-data' },
@@ -119,7 +119,7 @@ const downloadData = () => {
   )
 }
 // 监听弹窗显示隐藏，控制tooltip显示隐藏，避免遮挡弹窗
-/** 监听弹窗显隐，控制图表 tooltip 和轮播 tooltip 的清理。 */
+/** 监听弹窗显隐，控制图表 tooltip 和轮播 tooltip 的清理 */
 watch(
   () => state.dialogShow,
   show => {

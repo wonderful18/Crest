@@ -6,7 +6,7 @@ import { ElScrollbar } from 'element-plus-secondary'
 import { iconChartDarkMap } from '@/components/icon-group/chart-dark-list'
 import { iconChartMap } from '@/components/icon-group/chart-list'
 
-// 定义图表类型选择器接收的图表和主题参数。
+// 定义图表类型选择器接收的图表和主题参数
 const props = defineProps({
   propValue: {
     type: Array,
@@ -30,37 +30,37 @@ const props = defineProps({
   }
 })
 
-// 声明图表类型切换事件。
+// 声明图表类型切换事件
 const emit = defineEmits(['onTypeChange'])
 
 const { themes } = toRefs(props)
 
-// 持有图表类型分组滚动容器实例。
+// 持有图表类型分组滚动容器实例
 const userViewGroup = ref<InstanceType<typeof ElScrollbar>>()
 
-// 保存当前激活分类和图表类型分组列表。
+// 保存当前激活分类和图表类型分组列表
 const state = reactive({
   curCategory: 'quota',
   chartGroupList: CHART_TYPE_CONFIGS
 })
 
-// 滚动到指定图表类型分组。
+// 滚动到指定图表类型分组
 const scrollTo = offsetTop => {
   userViewGroup?.value.setScrollTop(offsetTop)
 }
 
-// 根据锚点选择器定位图表类型分组。
+// 根据锚点选择器定位图表类型分组
 const anchorPosition = anchor => {
   const element = document.querySelector(anchor)
   scrollTo(element.offsetTop)
 }
 
-// 通知父组件切换图表渲染类型。
+// 通知父组件切换图表渲染类型
 const newComponent = (render, innerType) => {
   emit('onTypeChange', render, innerType)
 }
 
-// 切换激活分类并滚动到对应分组。
+// 切换激活分类并滚动到对应分组
 const groupActiveChange = category => {
   state.curCategory = category
   anchorPosition('#' + category + '-edit')

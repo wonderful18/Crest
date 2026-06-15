@@ -34,16 +34,16 @@ import { checkAddHttp, deepCopy } from '../../utils/utils'
 import { snapshotStoreWithOut } from '../../store/modules/data-visualization/snapshot'
 import { useI18n } from '../../hooks/web/useI18n'
 import { useEmitt } from '@/hooks/web/useEmitt'
-// 大屏主状态用于读取当前框架组件。
+// 大屏主状态用于读取当前框架组件
 const dvMainStore = dvMainStoreWithOut()
-// 当前正在编辑的框架组件。
+// 当前正在编辑的框架组件
 const { curComponent } = storeToRefs(dvMainStore)
-// 快照仓库用于记录链接编辑后的撤销点。
+// 快照仓库用于记录链接编辑后的撤销点
 const snapshotStore = snapshotStoreWithOut()
-// 链接设置面板的国际化文案函数。
+// 链接设置面板的国际化文案函数
 const { t } = useI18n()
 
-// 框架链接设置属性。
+// 框架链接设置属性
 const props = defineProps({
   canvasId: {
     type: String,
@@ -60,15 +60,15 @@ const props = defineProps({
   }
 })
 
-// 保持框架链接配置的响应式引用。
+// 保持框架链接配置的响应式引用
 const { frameLinks } = toRefs(props)
 
-// tooltip 主题与当前编辑器主题反向匹配。
+// tooltip 主题与当前编辑器主题反向匹配
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
 
-// 框架链接编辑的临时状态。
+// 框架链接编辑的临时状态
 const state = reactive({
   linkInfoTemp: null,
   componentType: null,
@@ -76,11 +76,11 @@ const state = reactive({
   editFilter: ['view', 'custom']
 })
 
-// 初始化临时链接状态，避免输入过程直接污染外部配置。
+// 初始化临时链接状态，避免输入过程直接污染外部配置
 const init = () => {
   state.linkInfoTemp = deepCopy(frameLinks.value)
 }
-// 输入框失焦后补齐协议、写回组件并通知画布刷新。
+// 输入框失焦后补齐协议、写回组件并通知画布刷新
 const onBlur = () => {
   state.linkInfoTemp.src = checkAddHttp(state.linkInfoTemp.src)
   curComponent.value.frameLinks.src = state.linkInfoTemp.src

@@ -3,11 +3,11 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus-secondary'
 import { saveSsoConfigApi, ssoConfigApi, validateSsoConfigApi } from '@/api/sso'
 
-// 页面加载配置时的遮罩状态。
+// 页面加载配置时的遮罩状态
 const loading = ref(false)
-// 保存按钮的提交状态。
+// 保存按钮的提交状态
 const saving = ref(false)
-// SSO 表单模型，包含身份提供方端点、字段映射和登录策略。
+// SSO 表单模型，包含身份提供方端点、字段映射和登录策略
 const form = reactive<any>({
   enabled: false,
   providerName: '统一身份认证',
@@ -33,7 +33,7 @@ const form = reactive<any>({
   secretConfigured: false
 })
 
-// 加载当前 SSO 配置，并清空密钥输入避免前端回显。
+// 加载当前 SSO 配置，并清空密钥输入避免前端回显
 const loadConfig = async () => {
   loading.value = true
   try {
@@ -45,7 +45,7 @@ const loadConfig = async () => {
   }
 }
 
-// 保存 SSO 配置，成功后重新加载以刷新回调地址和密钥状态。
+// 保存 SSO 配置，成功后重新加载以刷新回调地址和密钥状态
 const save = async () => {
   saving.value = true
   try {
@@ -57,13 +57,13 @@ const save = async () => {
   }
 }
 
-// 请求后端校验当前 SSO 配置的必填项和端点规则。
+// 请求后端校验当前 SSO 配置的必填项和端点规则
 const validate = async () => {
   await validateSsoConfigApi(form)
   ElMessage.success('配置校验通过')
 }
 
-// 复制后端计算出的登录回调地址。
+// 复制后端计算出的登录回调地址
 const copyCallback = async () => {
   await navigator.clipboard.writeText(form.callbackUrl || '')
   ElMessage.success('回调地址已复制')

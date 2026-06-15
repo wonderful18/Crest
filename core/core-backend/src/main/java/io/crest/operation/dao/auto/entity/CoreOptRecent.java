@@ -12,42 +12,42 @@ public class CoreOptRecent implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 最近访问记录主键。
+     * 最近访问记录主键
      */
     private Long id;
 
     /**
-     * 最近访问的资源 ID。
+     * 最近访问的资源 ID
      */
     private Long resourceId;
 
     /**
-     * 最近访问的资源名称。
+     * 最近访问的资源名称
      */
     private String resourceName;
 
     /**
-     * 访问用户 ID。
+     * 访问用户 ID
      */
     private Long uid;
 
     /**
-     * 最近访问的资源类型。
+     * 最近访问的资源类型
      */
     private Integer resourceType;
 
     /**
-     * 最近访问对应的操作类型，1 表示新建，2 表示修改。
+     * 最近访问对应的操作类型，1 表示新建，2 表示修改
      */
     private Integer optType;
 
     /**
-     * 最近访问时间。
+     * 最近访问时间
      */
     private Long time;
 
     /**
-     * 获取最近访问记录主键。
+     * 获取最近访问记录主键
      *
      * @return 最近访问记录主键
      */
@@ -56,7 +56,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 设置最近访问记录主键。
+     * 设置最近访问记录主键
      *
      * @param id 最近访问记录主键
      */
@@ -65,7 +65,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 获取最近访问的资源 ID。
+     * 获取最近访问的资源 ID
      *
      * @return 最近访问的资源 ID
      */
@@ -74,7 +74,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 设置最近访问的资源 ID。
+     * 设置最近访问的资源 ID
      *
      * @param resourceId 最近访问的资源 ID
      */
@@ -83,7 +83,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 获取最近访问的资源名称。
+     * 获取最近访问的资源名称
      *
      * @return 最近访问的资源名称
      */
@@ -92,7 +92,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 设置最近访问的资源名称。
+     * 设置最近访问的资源名称
      *
      * @param resourceName 最近访问的资源名称
      */
@@ -101,7 +101,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 获取访问用户 ID。
+     * 获取访问用户 ID
      *
      * @return 访问用户 ID
      */
@@ -110,7 +110,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 设置访问用户 ID。
+     * 设置访问用户 ID
      *
      * @param uid 访问用户 ID
      */
@@ -119,7 +119,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 获取最近访问的资源类型。
+     * 获取最近访问的资源类型
      *
      * @return 最近访问的资源类型
      */
@@ -128,7 +128,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 设置最近访问的资源类型。
+     * 设置最近访问的资源类型
      *
      * @param resourceType 最近访问的资源类型
      */
@@ -137,7 +137,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 获取最近访问对应的操作类型。
+     * 获取最近访问对应的操作类型
      *
      * @return 最近访问对应的操作类型
      */
@@ -146,7 +146,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 设置最近访问对应的操作类型。
+     * 设置最近访问对应的操作类型
      *
      * @param optType 最近访问对应的操作类型
      */
@@ -155,7 +155,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 获取最近访问时间。
+     * 获取最近访问时间
      *
      * @return 最近访问时间
      */
@@ -164,7 +164,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 设置最近访问时间。
+     * 设置最近访问时间
      *
      * @param time 最近访问时间
      */
@@ -173,7 +173,7 @@ public class CoreOptRecent implements Serializable {
     }
 
     /**
-     * 返回最近访问记录的调试字符串。
+     * 返回最近访问记录的调试字符串
      *
      * @return 最近访问记录的字符串表示
      */

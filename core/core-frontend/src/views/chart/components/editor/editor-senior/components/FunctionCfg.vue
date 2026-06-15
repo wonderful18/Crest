@@ -8,7 +8,7 @@ import icon_info_outlined from '@/assets/svg/icon_info_outlined.svg'
 
 const { t } = useI18n()
 
-// 接收图表、主题和属性显示配置。
+// 接收图表、主题和属性显示配置
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -23,10 +23,10 @@ const props = defineProps({
   }
 })
 
-// 定义高级功能配置变更事件。
+// 定义高级功能配置变更事件
 const emit = defineEmits(['onFunctionCfgChange'])
 
-// 监听高级功能配置并同步表单。
+// 监听高级功能配置并同步表单
 watch(
   () => props.chart.senior.functionCfg,
   () => {
@@ -35,22 +35,22 @@ watch(
   { deep: true }
 )
 
-// 维护高级功能配置表单。
+// 维护高级功能配置表单
 const state = reactive({
   functionForm: JSON.parse(JSON.stringify(DEFAULT_FUNCTION_CFG)),
   predefineColors: COLOR_PANEL,
   showEmptyStrategy: false
 })
 
-// 通知父级高级功能配置变化。
+// 通知父级高级功能配置变化
 const changeFunctionCfg = () => {
   emit('onFunctionCfgChange', state.functionForm)
 }
 
-// 判断指定属性是否应显示。
+// 判断指定属性是否应显示
 const showProperty = prop => props.propertyInner?.includes(prop)
 
-// 初始化高级功能配置表单。
+// 初始化高级功能配置表单
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.senior) {
@@ -61,7 +61,7 @@ const init = () => {
     initFieldCtrl()
   }
 }
-// 判断是否显示空值忽略策略。
+// 判断是否显示空值忽略策略
 const showIgnoreOption = computed(() => {
   return !(
     equalsAny(props.chart.type, 'table-pivot', 'table-info', 'indicator') ||
@@ -69,12 +69,12 @@ const showIgnoreOption = computed(() => {
   )
 })
 
-// 判断当前图表是否为富文本。
+// 判断当前图表是否为富文本
 const isRichText = computed(() => {
   return equalsAny(props.chart.type, 'rich-text')
 })
 
-// 判断是否显示空数据字段控制。
+// 判断是否显示空数据字段控制
 const showEmptyDataFieldCtrl = computed(() => {
   return (
     showProperty('emptyDataStrategy') &&
@@ -83,9 +83,9 @@ const showEmptyDataFieldCtrl = computed(() => {
   )
 })
 
-// 空数据策略字段选项。
+// 空数据策略字段选项
 const fieldOptions = ref([])
-// 初始化空数据策略字段选项。
+// 初始化空数据策略字段选项
 const initFieldCtrl = () => {
   if (showEmptyDataFieldCtrl.value) {
     fieldOptions.value = []
@@ -106,7 +106,7 @@ const initFieldCtrl = () => {
     })
   }
 }
-// 判断当前图表是否为圆堆积图。
+// 判断当前图表是否为圆堆积图
 const isCirclePacking = computed(() => {
   return equalsAny(props.chart.type, 'circle-packing')
 })

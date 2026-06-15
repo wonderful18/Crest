@@ -12,21 +12,21 @@ import Select from '@/custom-component/v-query/Select.vue'
 import Tree from '@/custom-component/v-query/Tree.vue'
 const { t } = useI18n()
 
-// 时间范围配置弹层显隐状态。
+// 时间范围配置弹层显隐状态
 const visiblePopover = ref(false)
 
-// 关闭时间范围配置弹层。
+// 关闭时间范围配置弹层
 const handleDialogClick = () => {
   visiblePopover.value = false
 }
 
-// 切换时间范围配置弹层，并阻止事件冒泡。
+// 切换时间范围配置弹层，并阻止事件冒泡
 const handleVisiblePopover = ev => {
   ev.stopPropagation()
   visiblePopover.value = !visiblePopover.value
 }
 
-// 根据查询组件展示类型选择默认值输入组件。
+// 根据查询组件展示类型选择默认值输入组件
 const filterTypeCom = computed(() => {
   const { displayType, timeType = 'fixed' } = curComponent.value
   return ['1', '7'].includes(displayType)
@@ -40,17 +40,17 @@ const filterTypeCom = computed(() => {
     : Select
 })
 
-// 通知父组件查询时间类型切换为动态时间。
+// 通知父组件查询时间类型切换为动态时间
 const emits = defineEmits(['handleTimeTypeChange'])
 
-// 动态时间启用时触发父组件同步处理。
+// 动态时间启用时触发父组件同步处理
 const handleTimeTypeChange = val => {
   if (val === 'dynamic') {
     emits('handleTimeTypeChange')
   }
 }
 
-// 查询条件默认值配置入参。
+// 查询条件默认值配置入参
 const props = defineProps({
   curComponent: {
     type: Object,
@@ -62,12 +62,12 @@ const props = defineProps({
   }
 })
 
-// 是否展示仅主画布可见的配置项。
+// 是否展示仅主画布可见的配置项
 const showFlag = computed(() => props.showPosition === 'main')
 const { curComponent } = toRefs(props)
-// 切换组件时临时隐藏默认值编辑器，避免旧组件状态残留。
+// 切换组件时临时隐藏默认值编辑器，避免旧组件状态残留
 const loadingDefault = ref(true)
-// 监听当前查询组件变化并重置默认值编辑器挂载状态。
+// 监听当前查询组件变化并重置默认值编辑器挂载状态
 watch(
   () => curComponent.value.id,
   val => {
@@ -79,7 +79,7 @@ watch(
   },
   { immediate: true }
 )
-// 动态时间自定义偏移支持的粒度列表。
+// 动态时间自定义偏移支持的粒度列表
 const relativeToCurrentTypeList = computed(() => {
   if (!curComponent.value) return []
   let index = ['year', 'month', 'date', 'datetime'].indexOf(curComponent.value.timeGranularity) + 1
@@ -105,7 +105,7 @@ const relativeToCurrentTypeList = computed(() => {
   ].slice(0, index)
 })
 
-// 单日期动态时间快捷选项。
+// 单日期动态时间快捷选项
 const relativeToCurrentList = computed(() => {
   let list = []
   if (!curComponent.value) return list
@@ -196,7 +196,7 @@ const relativeToCurrentList = computed(() => {
   ]
 })
 
-// 日期范围动态时间快捷选项。
+// 日期范围动态时间快捷选项
 const relativeToCurrentListRange = computed(() => {
   let list = []
   if (!curComponent.value) return list
@@ -296,7 +296,7 @@ const relativeToCurrentListRange = computed(() => {
   ]
 })
 
-// 下拉选项来自自定义选项时是否展示首项默认值入口。
+// 下拉选项来自自定义选项时是否展示首项默认值入口
 const defaultValueFirstItemShow = computed(() => {
   const { displayType, optionValueSource } = curComponent.value
   return +displayType === 0 && optionValueSource === 1
@@ -313,7 +313,7 @@ const aroundList = [
   }
 ]
 
-// 当前默认值是否为动态时间配置。
+// 当前默认值是否为动态时间配置
 const dynamicTime = computed(() => {
   const { displayType, timeType } = curComponent.value
   return timeType === 'dynamic' && [1, 7].includes(+displayType)
@@ -330,10 +330,10 @@ const operators = [
   }
 ]
 
-// 当前查询组件是否为多选。
+// 当前查询组件是否为多选
 const multiple = ref(false)
 
-// 切换单双选，并同步默认值和选中值结构。
+// 切换单双选，并同步默认值和选中值结构
 const multipleChange = (val: boolean, isMultipleChange = false) => {
   if (isMultipleChange) {
     curComponent.value.defaultValue = val ? [] : undefined
@@ -357,23 +357,23 @@ const multipleChange = (val: boolean, isMultipleChange = false) => {
   curComponent.value.multiple = val
 }
 
-// 同步子组件的多选状态。
+// 同步子组件的多选状态
 const changeMultiple = val => {
   multiple.value = val
 }
-// 当前默认值输入组件实例。
+// 当前默认值输入组件实例
 const inputCom = ref()
-// 通知子组件展示类型已变化。
+// 通知子组件展示类型已变化
 const displayTypeChange = () => {
   inputCom.value?.displayTypeChange?.()
 }
 
-// 关闭多选默认值下拉面板。
+// 关闭多选默认值下拉面板
 const mult = () => {
   inputCom.value?.mult?.handleClickOutside?.()
 }
 
-// 关闭单选默认值下拉面板。
+// 关闭单选默认值下拉面板
 const single = () => {
   inputCom.value?.single?.handleClickOutside?.()
 }

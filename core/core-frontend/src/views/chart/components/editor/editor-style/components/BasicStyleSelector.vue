@@ -20,15 +20,15 @@ import { useLocaleStoreWithOut } from '@/store/modules/locale'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { find } from 'lodash-es'
 
-/** 主画布仓库提供批量设置和移动端预览状态。 */
+/** 主画布仓库提供批量设置和移动端预览状态 */
 const dvMainStore = dvMainStoreWithOut()
-/** 语言仓库用于生成本地化的树表展开层级文案。 */
+/** 语言仓库用于生成本地化的树表展开层级文案 */
 const localeStore = useLocaleStoreWithOut()
-/** 批量设置和移动端状态引用。 */
+/** 批量设置和移动端状态引用 */
 const { batchOptStatus, mobileInPc } = storeToRefs(dvMainStore)
-/** 国际化翻译函数。 */
+/** 国际化翻译函数 */
 const { t } = useI18n()
-/** 基础样式面板入参，包含图表、主题和可见属性集合。 */
+/** 基础样式面板入参，包含图表、主题和可见属性集合 */
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -42,7 +42,7 @@ const props = defineProps({
     type: Array<string>
   }
 })
-/** 判断指定基础样式属性是否应在当前图表中展示。 */
+/** 判断指定基础样式属性是否应在当前图表中展示 */
 const showProperty = prop => {
   const has = props.propertyInner?.includes(prop)
   if (!has) {
@@ -53,13 +53,13 @@ const showProperty = prop => {
   }
   return has
 }
-/** 树表默认展开层级选项。 */
+/** 树表默认展开层级选项 */
 const tableExpandLevelOptions = reactive<Array<{ name: string; value: string | number }>>([
   { name: t('chart.expand_all'), value: 'all' }
 ])
-/** 颜色选择器预设色板。 */
+/** 颜色选择器预设色板 */
 const predefineColors = COLOR_PANEL
-/** 基础样式面板状态，承载表单、颜色和表格列宽配置。 */
+/** 基础样式面板状态，承载表单、颜色和表格列宽配置 */
 const state = reactive({
   basicStyleForm: JSON.parse(JSON.stringify(DEFAULT_BASIC_STYLE)) as ChartBasicStyle,
   miscForm: JSON.parse(JSON.stringify(DEFAULT_MISC)) as ChartMiscAttr,
@@ -73,14 +73,14 @@ const state = reactive({
   treeRowWidth: 10,
   predefineColors
 })
-/** 向父级同步基础样式和杂项样式变更。 */
+/** 向父级同步基础样式和杂项样式变更 */
 const emit = defineEmits(['onBasicStyleChange', 'onMiscChange'])
-/** 通知父级基础样式变更，并携带是否取数和是否渲染标记。 */
+/** 通知父级基础样式变更，并携带是否取数和是否渲染标记 */
 const changeBasicStyle = (prop?: string, requestData = false, render = true) => {
   emit('onBasicStyleChange', { data: state.basicStyleForm, requestData, render }, prop)
 }
 
-/** 根据树表行头模式同步行头宽度字段。 */
+/** 根据树表行头模式同步行头宽度字段 */
 const changeTreeRowWidth = () => {
   if (state.basicStyleForm.tableRowHeaderMode === 'percent') {
     state.basicStyleForm.tableRowHeaderWidthPercent = state.treeRowWidth
@@ -94,7 +94,7 @@ const changeTreeRowWidth = () => {
       : 'tableRowHeaderWidth'
   )
 }
-/** 校验并同步透明度输入值。 */
+/** 校验并同步透明度输入值 */
 const onAlphaChange = v => {
   const _v = parseInt(v)
   if (_v >= 0 && _v <= 100) {
@@ -111,7 +111,7 @@ const onAlphaChange = v => {
   changeBasicStyle('alpha')
 }
 
-/** 校验并同步柱宽占比输入值。 */
+/** 校验并同步柱宽占比输入值 */
 const onColumnWidthRatioChange = v => {
   const _v = parseInt(v)
   if (_v >= 1 && _v <= 100) {
@@ -128,11 +128,11 @@ const onColumnWidthRatioChange = v => {
   changeBasicStyle('columnWidthRatio')
 }
 
-/** 通知父级杂项属性变化并触发重新取数。 */
+/** 通知父级杂项属性变化并触发重新取数 */
 const changeMisc = prop => {
   emit('onMiscChange', { data: state.miscForm, requestData: true }, prop)
 }
-/** 按当前图表配置初始化基础样式表单。 */
+/** 按当前图表配置初始化基础样式表单 */
 const init = () => {
   const basicStyle = cloneDeep(props.chart.customAttr.basicStyle)
   const miscStyle = cloneDeep(props.chart.customAttr.misc)
@@ -195,9 +195,9 @@ const init = () => {
   }
   initTableColumnWidth()
 }
-/** 防抖初始化，避免多项图表属性连续变化时重复计算。 */
+/** 防抖初始化，避免多项图表属性连续变化时重复计算 */
 const debouncedInit = debounce(init, 500)
-/** 监听图表基础样式、杂项和轴字段变化并刷新面板。 */
+/** 监听图表基础样式、杂项和轴字段变化并刷新面板 */
 watch(
   [
     () => props.chart.customAttr.basicStyle,
@@ -209,16 +209,16 @@ watch(
   debouncedInit,
   { deep: true }
 )
-/** 兼容历史配置字段，补齐新版默认值。 */
+/** 兼容历史配置字段，补齐新版默认值 */
 const configCompat = (basicStyle: ChartBasicStyle) => {
   // 悬浮改为图例和缩放按钮
   if (basicStyle.suspension === false && basicStyle.showZoom === undefined) {
     basicStyle.showZoom = false
   }
 }
-/** 支持自定义列宽的表格图表类型。 */
+/** 支持自定义列宽的表格图表类型 */
 const COLUMN_WIDTH_TYPE = ['table-info', 'table-normal']
-/** 根据当前轴字段初始化表格列宽配置。 */
+/** 根据当前轴字段初始化表格列宽配置 */
 const initTableColumnWidth = () => {
   if (!COLUMN_WIDTH_TYPE.includes(props.chart.type)) {
     return
@@ -280,7 +280,7 @@ const initTableColumnWidth = () => {
     state.fieldColumnWidth.width = selectedField.width
   }
 }
-/** 选择表格字段后同步当前字段列宽。 */
+/** 选择表格字段后同步当前字段列宽 */
 const changeFieldColumn = () => {
   const { basicStyleForm, fieldColumnWidth } = state
   const fieldWidth = basicStyleForm.tableFieldWidth?.find(
@@ -290,7 +290,7 @@ const changeFieldColumn = () => {
     fieldColumnWidth.width = fieldWidth.width
   }
 }
-/** 校验并保存当前字段的列宽设置。 */
+/** 校验并保存当前字段的列宽设置 */
 const changeFieldColumnWidth = () => {
   const { basicStyleForm, fieldColumnWidth } = state
   let { width } = fieldColumnWidth
@@ -317,7 +317,7 @@ const changeFieldColumnWidth = () => {
     changeBasicStyle('tableFieldWidth')
   }
 }
-/** 表格分页大小选项。 */
+/** 表格分页大小选项 */
 const pageSizeOptions = [
   { name: '10' + t('chart.table_page_size_unit'), value: 10 },
   { name: '20' + t('chart.table_page_size_unit'), value: 20 },
@@ -327,10 +327,10 @@ const pageSizeOptions = [
   { name: '100' + t('chart.table_page_size_unit'), value: 100 }
 ]
 
-/** 仪表盘样式选项。 */
+/** 仪表盘样式选项 */
 const gaugeStyleOptions = [{ name: '默认', value: 'default' }]
 
-/** 折线和散点符号选项。 */
+/** 折线和散点符号选项 */
 const symbolOptions = [
   { name: t('chart.line_symbol_circle'), value: 'circle' },
   { name: t('chart.line_symbol_rect'), value: 'square' },
@@ -338,10 +338,10 @@ const symbolOptions = [
   { name: t('chart.line_symbol_diamond'), value: 'diamond' }
 ]
 
-/** 当前地图底图类型。 */
+/** 当前地图底图类型 */
 const mapType = ref<string>(undefined)
 
-/** 地图样式选项。 */
+/** 地图样式选项 */
 const mapStyleOptions = computed(() => {
   return [
     { name: t('chart.map_style_normal'), value: 'normal' },
@@ -349,7 +349,7 @@ const mapStyleOptions = computed(() => {
   ]
 })
 
-/** 热力图渲染类型选项。 */
+/** 热力图渲染类型选项 */
 const heatMapTypeOptions = [
   { name: t('chart.heatmap_classics'), value: 'heatmap' },
   { name: t('chart.heatmap3D'), value: 'heatmap3D' }
@@ -367,7 +367,7 @@ const mergeCell = computed(() => {
   return false
 })
 
-/** 阻止数字输入框录入科学计数法和负号等非法字符。 */
+/** 阻止数字输入框录入科学计数法和负号等非法字符 */
 const preventInvalidKeydown = event => {
   const invalidKeys = ['e', 'E', '+', '-', '.']
   if (invalidKeys.includes(event.key)) {
@@ -375,7 +375,7 @@ const preventInvalidKeydown = event => {
   }
 }
 // 验证输入值
-/** 将输入值限制在 1 到 100 的有效范围内。 */
+/** 将输入值限制在 1 到 100 的有效范围内 */
 const validateInput = (value, field) => {
   if (value === '') {
     state.basicStyleForm[field] = 1
@@ -393,7 +393,7 @@ const validateInput = (value, field) => {
   }
   state.basicStyleForm[field] = num
 }
-/** 挂载后初始化表单，并监听图表类型变更修正圆角配置。 */
+/** 挂载后初始化表单，并监听图表类型变更修正圆角配置 */
 onMounted(() => {
   init()
   useEmitt({

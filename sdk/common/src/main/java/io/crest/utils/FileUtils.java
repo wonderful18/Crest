@@ -17,12 +17,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 文件路径校验、上传、复制和读取工具。
+ * 文件路径校验、上传、复制和读取工具
  */
 public class FileUtils {
 
     /**
-     * 校验上传文件名，阻止路径穿越、空字节和控制字符。
+     * 校验上传文件名，阻止路径穿越、空字节和控制字符
      */
     public static void validateUploadFilename(String filename) {
         if (StringUtils.isBlank(filename)
@@ -36,7 +36,7 @@ public class FileUtils {
     }
 
     /**
-     * 确保目录存在并返回规范化目录对象。
+     * 确保目录存在并返回规范化目录对象
      */
     public static File ensureDirectory(String directoryPath) throws IOException {
         if (StringUtils.isBlank(directoryPath) || directoryPath.indexOf('\0') >= 0) {
@@ -53,7 +53,7 @@ public class FileUtils {
     }
 
     /**
-     * 在指定目录下解析文件名，并确保结果不会逃逸目录边界。
+     * 在指定目录下解析文件名，并确保结果不会逃逸目录边界
      */
     public static File resolveUnderDirectory(String directoryPath, String filename) throws IOException {
         validateUploadFilename(filename);
@@ -66,7 +66,7 @@ public class FileUtils {
     }
 
     /**
-     * 判断文件名是否包含控制字符。
+     * 判断文件名是否包含控制字符
      */
     private static boolean containsControlCharacter(String filename) {
         for (int i = 0; i < filename.length(); i++) {
@@ -78,13 +78,13 @@ public class FileUtils {
     }
 
     /**
-     * 创建不存在的目录路径。
+     * 创建不存在的目录路径
      */
     public static void createIfAbsent(@NonNull Path path) throws IOException {
         Assert.notNull(path, "Path must not be null");
 
         if (Files.notExists(path)) {
-            // 创建目录。
+            // 创建目录
             Files.createDirectories(path);
             LogUtil.debug("Created directory: [{}]", path);
         }
@@ -118,7 +118,7 @@ public class FileUtils {
     }
 
     /**
-     * 确保指定路径存在，不存在时创建目录。
+     * 确保指定路径存在，不存在时创建目录
      */
     public static void validateExist(String path) {
         File dir = new File(path);
@@ -151,12 +151,12 @@ public class FileUtils {
     }
 
     /**
-     * 递归复制文件夹到目标路径。
+     * 递归复制文件夹到目标路径
      */
     public static void copyFolder(String sourcePath, String targetPath) throws Exception {
-        // 源文件夹路径。
+        // 源文件夹路径
         File sourceFile = new File(sourcePath);
-        // 目标文件夹路径。
+        // 目标文件夹路径
         File targetFile = new File(targetPath);
 
         if (!sourceFile.exists()) {
@@ -178,13 +178,13 @@ public class FileUtils {
         }
 
         for (File file : files) {
-            // 文件要复制到的路径。
+            // 文件要复制到的路径
             String movePath = targetFile + File.separator + file.getName();
             if (file.isDirectory()) {
-                // 目录节点递归复制。
+                // 目录节点递归复制
                 copyFolder(file.getAbsolutePath(), movePath);
             } else {
-                // 文件节点直接复制内容。
+                // 文件节点直接复制内容
                 BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
                 BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(movePath));
 
@@ -201,7 +201,7 @@ public class FileUtils {
 
 
     /**
-     * 复制单个文件到目标目录并返回目标路径。
+     * 复制单个文件到目标目录并返回目标路径
      */
     public static String copy(File source, String targetDir) throws IOException {
         String name = source.getName();
@@ -220,7 +220,7 @@ public class FileUtils {
     }
 
     /**
-     * 使用 NIO 通道复制文件内容。
+     * 使用 NIO 通道复制文件内容
      */
     private static void copyFileUsingFileChannels(File source, File dest) throws IOException {
         FileChannel inputChannel = null;
@@ -236,7 +236,7 @@ public class FileUtils {
     }
 
     /**
-     * 读取 JSON 文件内容。
+     * 读取 JSON 文件内容
      */
     @SuppressWarnings("java/path-injection")
     public static String readJson(File file) {
@@ -255,7 +255,7 @@ public class FileUtils {
     }
 
     /**
-     * 删除文件或递归删除目录。
+     * 删除文件或递归删除目录
      */
     @SuppressWarnings("java/path-injection")
     public static void deleteFile(String path) {
@@ -278,7 +278,7 @@ public class FileUtils {
     }
 
     /**
-     * 判断路径是否存在。
+     * 判断路径是否存在
      */
     public static boolean exist(String path) {
         File file = new File(path);
@@ -286,7 +286,7 @@ public class FileUtils {
     }
 
     /**
-     * 列出目录下的文件名。
+     * 列出目录下的文件名
      */
     public static List<String> listFileNames(String path) {
         File file = new File(path);
@@ -302,21 +302,21 @@ public class FileUtils {
     }
 
     /**
-     * 获取文件后缀名。
+     * 获取文件后缀名
      */
     public static String getSuffix(String fileName) {
         return fileName.substring(fileName.lastIndexOf(".") + 1);
     }
 
     /**
-     * 获取不含后缀的文件名前缀。
+     * 获取不含后缀的文件名前缀
      */
     public static String getPrefix(String fileName) {
         return fileName.substring(0, fileName.lastIndexOf("."));
     }
 
     /**
-     * 读取文件字节内容。
+     * 读取文件字节内容
      */
     @SuppressWarnings("java/path-injection")
     public static byte[] readBytes(String path) {
@@ -347,7 +347,7 @@ public class FileUtils {
 
 
     /**
-     * 递归删除目录及其内容。
+     * 递归删除目录及其内容
      */
     @SuppressWarnings("java/path-injection")
     public static boolean deleteDirectoryRecursively(String directoryPath) {

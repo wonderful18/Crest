@@ -55,7 +55,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * 图表数据查询、明细导出和导出表头渲染的服务入口。
+ * 图表数据查询、明细导出和导出表头渲染的服务入口
  */
 @RestController
 @RequestMapping("/chart-data")
@@ -81,13 +81,13 @@ public class ChartDataServer implements ChartDataApi {
 
 
     /**
-     * 获取图表数据，并在模板数据和数据集实时计算之间分流。
+     * 获取图表数据，并在模板数据和数据集实时计算之间分流
      */
     @CrestLinkPermit("#p0.sceneId")
     @Override
     public ChartViewDTO getData(ChartViewDTO chartViewDTO) throws Exception {
         try {
-            // 模板来源的数据直接读取扩展数据，普通数据集视图走实时计算。
+            // 模板来源的数据直接读取扩展数据，普通数据集视图走实时计算
             if (CommonConstants.VIEW_DATA_FROM.TEMPLATE.equalsIgnoreCase(chartViewDTO.getDataFrom())) {
                 return extendDataManage.getChartDataInfo(chartViewDTO.getId(), chartViewDTO);
             } else {
@@ -104,7 +104,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 查询 Excel 导出所需的图表明细数据，并填充导出请求上下文。
+     * 查询 Excel 导出所需的图表明细数据，并填充导出请求上下文
      */
     public ChartViewDTO findExcelData(ChartExcelRequest request) {
         ChartViewDTO chartViewInfo = new ChartViewDTO();
@@ -113,7 +113,7 @@ public class ChartDataServer implements ChartDataApi {
             viewDTO.setIsExcelExport(true);
             String[] dsHeader = null;
             Integer[] dsTypes = null;
-            // 数据集原始导出复用明细表图表的导出结构。
+            // 数据集原始导出复用明细表图表的导出结构
             if ("dataset".equals(request.getDownloadType())) {
                 viewDTO.setExportDatasetOriginData(true);
                 viewDTO.setResultMode(ChartConstants.VIEW_RESULT_MODE.ALL);
@@ -145,7 +145,7 @@ public class ChartDataServer implements ChartDataApi {
             if (CommonConstants.VIEW_DATA_FROM.TEMPLATE.equalsIgnoreCase(viewDTO.getDataFrom())) {
                 chartViewInfo = extendDataManage.getChartDataInfo(viewDTO.getId(), viewDTO);
             } else {
-                // 非模板数据按明细表逻辑计算导出结果。
+                // 非模板数据按明细表逻辑计算导出结果
                 viewDTO.setIsPlugin(false);
                 chartViewInfo = chartDataManage.calcData(viewDTO);
             }
@@ -164,7 +164,7 @@ public class ChartDataServer implements ChartDataApi {
 
 
     /**
-     * 按图表格式化配置把数值转换为展示文本。
+     * 按图表格式化配置把数值转换为展示文本
      */
     public static String valueFormatter(BigDecimal value, FormatterCfgDTO formatter) {
         if (value == null) {
@@ -185,14 +185,14 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 按配置单位缩放数值。
+     * 按配置单位缩放数值
      */
     private static BigDecimal transUnit(BigDecimal value, FormatterCfgDTO formatter) {
         return value.divide(BigDecimal.valueOf(formatter.getUnit()));
     }
 
     /**
-     * 按小数位配置格式化数值。
+     * 按小数位配置格式化数值
      */
     private static String transDecimal(BigDecimal value, FormatterCfgDTO formatter) {
         DecimalFormat df = new DecimalFormat("0." + new String(new char[formatter.getDecimalCount()]).replace('\0', '0'));
@@ -200,7 +200,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 为格式化后的数值追加千分位、单位和后缀。
+     * 为格式化后的数值追加千分位、单位和后缀
      */
     private static String transSeparatorAndSuffix(String value, FormatterCfgDTO formatter) {
         StringBuilder sb = new StringBuilder(value);
@@ -244,7 +244,7 @@ public class ChartDataServer implements ChartDataApi {
 
 
     /**
-     * 为整数字符串添加千分位分隔符。
+     * 为整数字符串添加千分位分隔符
      */
     private static String addThousandSeparator(String numStr, Pattern pattern) {
         Matcher matcher = pattern.matcher(numStr);
@@ -258,7 +258,7 @@ public class ChartDataServer implements ChartDataApi {
 
 
     /**
-     * 导出图表或数据集明细，支持直连下载和后台任务两种模式。
+     * 导出图表或数据集明细，支持直连下载和后台任务两种模式
      */
     @CrestLinkPermit("#p0.dvId")
     @Override
@@ -271,18 +271,18 @@ public class ChartDataServer implements ChartDataApi {
             OutputStream outputStream = response.getOutputStream();
             try {
                 Workbook wb = new SXSSFWorkbook();
-                // 构建导出表头的基础单元格样式。
+                // 构建导出表头的基础单元格样式
                 CellStyle cellStyle = wb.createCellStyle();
                 Font font = wb.createFont();
-                // 表头字体保持统一字号。
+                // 表头字体保持统一字号
                 font.setFontHeightInPoints((short) 12);
-                // 表头字体使用加粗样式。
+                // 表头字体使用加粗样式
                 font.setBold(true);
-                // 将字体配置写入单元格样式。
+                // 将字体配置写入单元格样式
                 cellStyle.setFont(font);
-                // 表头使用浅灰背景，便于和数据行区分。
+                // 表头使用浅灰背景，便于和数据行区分
                 cellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-                // 表头背景采用纯色填充。
+                // 表头背景采用纯色填充
                 cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
                 if ("dataset".equals(request.getDownloadType()) || request.getViewInfo().getType().equalsIgnoreCase("table-info") || request.getViewInfo().getType().equalsIgnoreCase("table-normal")) {
@@ -374,7 +374,7 @@ public class ChartDataServer implements ChartDataApi {
                 }
                 exportCenterManage.addWatermarkTools(wb);
                 response.setContentType("application/vnd.ms-excel");
-                // 通过响应头写入导出文件名。
+                // 通过响应头写入导出文件名
                 response.setHeader("Content-disposition", "attachment;filename=" + URLEncoder.encode(request.getViewName(), StandardCharsets.UTF_8) + ".xlsx");
                 wb.write(outputStream);
                 outputStream.flush();
@@ -398,14 +398,14 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 判断当前导出是否应直接写入 HTTP 响应。
+     * 判断当前导出是否应直接写入 HTTP 响应
      */
     public static boolean shouldWriteDirectExport(String linkToken, boolean embeddedExport) {
         return StringUtils.isNotEmpty(linkToken) || embeddedExport;
     }
 
     /**
-     * 导出表格类视图前统一修正分页模式，避免导出场景沿用前端滚动模式。
+     * 导出表格类视图前统一修正分页模式，避免导出场景沿用前端滚动模式
      */
     public static void prepareTableViewForExport(ChartExcelRequest request) {
         if (request == null || request.getViewInfo() == null) {
@@ -424,7 +424,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 兼容数据集明细导出接口，复用图表明细导出流程。
+     * 兼容数据集明细导出接口，复用图表明细导出流程
      */
     @CrestLinkPermit("#p0.dvId")
     @Override
@@ -433,7 +433,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 校验导出请求并补齐图表扩展请求的默认筛选容器。
+     * 校验导出请求并补齐图表扩展请求的默认筛选容器
      */
     private void ensureExportRequest(ChartExcelRequest request) {
         if (request == null || request.getViewInfo() == null) {
@@ -452,7 +452,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 使用默认批注配置写入 Excel 明细数据。
+     * 使用默认批注配置写入 Excel 明细数据
      */
     public static void setExcelData(Sheet detailsSheet, CellStyle cellStyle, Object[] header, List<Object[]> details, ViewDetailField[] detailFields, Integer[] excelTypes, ChartViewDTO viewInfo, Workbook wb) {
         setExcelData(detailsSheet, cellStyle, header, details, detailFields, excelTypes, null, viewInfo, wb);
@@ -460,7 +460,7 @@ public class ChartDataServer implements ChartDataApi {
 
 
     /**
-     * 将导出明细、复杂表头、字段格式和合并单元格配置写入工作表。
+     * 将导出明细、复杂表头、字段格式和合并单元格配置写入工作表
      */
     public static void setExcelData(Sheet detailsSheet, CellStyle cellStyle, Object[] header, List<Object[]> details, ViewDetailField[] detailFields, Integer[] excelTypes, Comment comment, ChartViewDTO viewInfo, Workbook wb) {
         List<CellStyle> styles = new ArrayList<>();
@@ -641,10 +641,10 @@ public class ChartDataServer implements ChartDataApi {
 
                         Cell cell = row.createCell(j);
                         if (i == 0) {
-                            // 首行作为普通表头写入并应用表头样式。
+                            // 首行作为普通表头写入并应用表头样式
                             cell.setCellValue(cellValObj.toString());
                             cell.setCellStyle(cellStyle);
-                            // 普通导出列使用固定宽度。
+                            // 普通导出列使用固定宽度
                             detailsSheet.setColumnWidth(j, 255 * 20);
                         } else if (cellValObj != null) {
                             try {
@@ -692,7 +692,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 根据相邻行的同列值计算表格明细导出时的纵向合并区域。
+     * 根据相邻行的同列值计算表格明细导出时的纵向合并区域
      */
     private static List<CellRangeAddress> getMergeConfig(List<Object[]> data, int colIndex, int offsetHeight) {
         var result = new ArrayList<CellRangeAddress>();
@@ -740,7 +740,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 校验复杂表头叶子列是否与导出字段顺序一致。
+     * 校验复杂表头叶子列是否与导出字段顺序一致
      */
     private static boolean validateHeaderGroup(TableHeader header, List<ChartViewFieldDTO> fields) {
         if (header == null) {
@@ -768,7 +768,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 按表头树顺序收集所有叶子字段标识。
+     * 按表头树顺序收集所有叶子字段标识
      */
     private static List<String> getHeaderLeafColumn(List<TableHeader.ColumnInfo> columns) {
         var result = new ArrayList<String>();
@@ -783,14 +783,14 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 判断是否启用辅助表头说明。
+     * 判断是否启用辅助表头说明
      */
     private static boolean isAuxiliaryHeaderEnabled(TableHeader tableHeader) {
         return tableHeader != null && tableHeader.getAuxiliaryHeader() != null && tableHeader.getAuxiliaryHeader().isEnabled();
     }
 
     /**
-     * 在没有复杂表头时为字段列表构造辅助表头分组。
+     * 在没有复杂表头时为字段列表构造辅助表头分组
      */
     private static TableHeader buildAuxiliaryHeader(TableHeader sourceHeader, List<ChartViewFieldDTO> fields) {
         TableHeader tableHeader = sourceHeader == null ? new TableHeader() : sourceHeader;
@@ -809,7 +809,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 在已有复杂表头上补齐辅助说明需要的根分组。
+     * 在已有复杂表头上补齐辅助说明需要的根分组
      */
     private static void applyAuxiliaryHeader(TableHeader tableHeader, List<ChartViewFieldDTO> fields) {
         if (tableHeader == null || tableHeader.getHeaderGroupConfig() == null || CollectionUtils.isEmpty(tableHeader.getHeaderGroupConfig().getColumns())) {
@@ -823,7 +823,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 递归处理单列表头节点，必要时把根字段包装为辅助分组。
+     * 递归处理单列表头节点，必要时把根字段包装为辅助分组
      */
     private static TableHeader.ColumnInfo applyAuxiliaryColumn(TableHeader.ColumnInfo column, boolean root, Set<String> fieldNames) {
         if (column == null || StringUtils.isBlank(column.getKey())) {
@@ -846,7 +846,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 获取叶子表头显示名称，辅助表头优先使用说明文本。
+     * 获取叶子表头显示名称，辅助表头优先使用说明文本
      */
     private static String getLeafHeaderName(TableHeader tableHeader, List<ChartViewFieldDTO> xAxis, String key) {
         if (isAuxiliaryHeaderEnabled(tableHeader)) {
@@ -856,7 +856,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 查询辅助表头中指定字段的说明文本。
+     * 查询辅助表头中指定字段的说明文本
      */
     private static String getAuxiliaryDescription(TableHeader tableHeader, String key) {
         if (tableHeader == null || tableHeader.getAuxiliaryHeader() == null || CollectionUtils.isEmpty(tableHeader.getAuxiliaryHeader().getDescriptions())) {
@@ -871,7 +871,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 创建辅助表头单元格样式。
+     * 创建辅助表头单元格样式
      */
     private static CellStyle createAuxiliaryHeaderCellStyle(Workbook workbook, TableHeader tableHeader) {
         CellStyle cellStyle = workbook.createCellStyle();
@@ -894,7 +894,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 将辅助表头对齐配置转换为 Excel 单元格对齐方式。
+     * 将辅助表头对齐配置转换为 Excel 单元格对齐方式
      */
     private static HorizontalAlignment resolveAuxiliaryHeaderAlignment(TableHeader tableHeader) {
         if (tableHeader == null || tableHeader.getAuxiliaryHeader() == null || StringUtils.isBlank(tableHeader.getAuxiliaryHeader().getAlign())) {
@@ -908,7 +908,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 按辅助表头配置设置末级表头行高度。
+     * 按辅助表头配置设置末级表头行高度
      */
     private static void setHeaderRowHeight(Row row, TableHeader tableHeader, Integer rowIndex, Integer totalDepth) {
         if (!isAuxiliaryHeaderEnabled(tableHeader) || !Objects.equals(rowIndex, totalDepth - 1)) {
@@ -921,7 +921,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 计算表头树的最大深度。
+     * 计算表头树的最大深度
      */
     private static Integer getDepth(TableHeader.ColumnInfo column, Integer parentDepth) {
         if (org.springframework.util.CollectionUtils.isEmpty(column.getChildren())) {
@@ -936,7 +936,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 递归创建复杂表头单元格和合并区域。
+     * 递归创建复杂表头单元格和合并区域
      */
     private static void createCell(TableHeader tableHeader, TableHeader.ColumnInfo column, Integer width, Integer depth, Sheet sheet, CellStyle cellStyle, CellStyle auxiliaryHeaderCellStyle, Integer totalDepth, Map<String, Row> rowMap, List<ChartViewFieldDTO> xAxis) {
         if (org.springframework.util.CollectionUtils.isEmpty(column.getChildren())) {
@@ -989,7 +989,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 获取复杂表头分组名称。
+     * 获取复杂表头分组名称
      */
     private static String getGroupName(TableHeader tableHeader, String key, List<ChartViewFieldDTO> xAxis) {
         if (key != null && key.startsWith(AUXILIARY_HEADER_GROUP_PREFIX)) {
@@ -1004,7 +1004,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 根据字段标识获取导出展示名称。
+     * 根据字段标识获取导出展示名称
      */
     private static String getDeFieldName(List<ChartViewFieldDTO> xAxis, String key) {
         for (ChartViewFieldDTO xAxi : xAxis) {
@@ -1016,7 +1016,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 递归计算复杂表头每个节点占用的叶子列宽度。
+     * 递归计算复杂表头每个节点占用的叶子列宽度
      */
     private static Integer setWidth(TableHeader.ColumnInfo column, Integer parentWidth) {
         if (org.springframework.util.CollectionUtils.isEmpty(column.getChildren())) {
@@ -1033,7 +1033,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 将导出数值按单位转换为 Excel 可用的原始值。
+     * 将导出数值按单位转换为 Excel 可用的原始值
      */
     private static String cellValue(FormatterCfgDTO formatterCfgDTO, BigDecimal value) {
         if (formatterCfgDTO.getType().equalsIgnoreCase("percent")) {
@@ -1044,7 +1044,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 根据图表字段格式化配置创建 Excel 数值格式样式。
+     * 根据图表字段格式化配置创建 Excel 数值格式样式
      */
     private static CellStyle createCellStyle(Workbook workbook, FormatterCfgDTO formatter, String value) {
         CellStyle cellStyle = workbook.createCellStyle();
@@ -1144,7 +1144,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 查询指定字段的可选值。
+     * 查询指定字段的可选值
      */
     @Override
     public List<String> getFieldData(ChartViewDTO view, Long fieldId, String fieldType) throws Exception {
@@ -1152,7 +1152,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 查询钻取字段的可选值。
+     * 查询钻取字段的可选值
      */
     @Override
     public List<String> getDrillFieldData(ChartViewDTO view, Long fieldId) throws Exception {
@@ -1160,21 +1160,21 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 记录仪表板视图导出审计日志。
+     * 记录仪表板视图导出审计日志
      */
     @CrestAudit(id = "#p0", ot = LogOT.EXPORT, st = LogST.PANEL)
     public void exportPanelViewLog(Long id) {
     }
 
     /**
-     * 记录数据大屏视图导出审计日志。
+     * 记录数据大屏视图导出审计日志
      */
     @CrestAudit(id = "#p0", ot = LogOT.EXPORT, st = LogST.SCREEN)
     public void exportScreenViewLog(Long id) {
     }
 
     /**
-     * 判断表格类图表是否开启汇总行导出。
+     * 判断表格类图表是否开启汇总行导出
      */
     public static boolean isSummaryEnabled(ChartViewDTO viewInfo) {
         if (viewInfo == null || viewInfo.getCustomAttr() == null) return false;
@@ -1186,7 +1186,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 解析汇总行配置，生成字段级汇总类型和显示开关。
+     * 解析汇总行配置，生成字段级汇总类型和显示开关
      */
     public static SummaryConfig parseSummaryConfig(ChartViewDTO viewInfo) {
         SummaryConfig config = new SummaryConfig();
@@ -1227,7 +1227,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 累加单页导出明细的汇总统计数据。
+     * 累加单页导出明细的汇总统计数据
      */
     public static void accumulatePageStats(SummaryAccumulator acc, List<Object[]> pageDetails,
                                            List<ChartViewFieldDTO> allColumns, SummaryConfig config) {
@@ -1268,7 +1268,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 根据汇总配置和统计结果构造导出汇总行。
+     * 根据汇总配置和统计结果构造导出汇总行
      */
     @SuppressWarnings("unchecked")
     public static Object[] buildSummaryRow(List<ChartViewFieldDTO> allColumns, SummaryConfig config,
@@ -1322,7 +1322,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 计算样本方差或样本标准差。
+     * 计算样本方差或样本标准差
      */
     private static String calcVariance(SummaryAccumulator acc, String fName, boolean isSqrt) {
         Long cnt = acc.countMap.get(fName);
@@ -1342,7 +1342,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 汇总表格导出时参与计算的所有字段列。
+     * 汇总表格导出时参与计算的所有字段列
      */
     public static List<ChartViewFieldDTO> getAllExportColumns(ChartViewDTO viewInfo) {
         List<ChartViewFieldDTO> allColumns = new ArrayList<>();
@@ -1355,7 +1355,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 汇总行的字段配置。
+     * 汇总行的字段配置
      */
     public static class SummaryConfig {
         public String summaryLabel;
@@ -1364,7 +1364,7 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     /**
-     * 分页导出过程中的汇总统计累加器。
+     * 分页导出过程中的汇总统计累加器
      */
     public static class SummaryAccumulator {
         public long totalCount = 0;

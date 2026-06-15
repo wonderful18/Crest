@@ -48,70 +48,70 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 单点登录管理服务，负责配置保存、OIDC 登录跳转、回调换票和本地用户身份解析。
+ * 单点登录管理服务，负责配置保存、OIDC 登录跳转、回调换票和本地用户身份解析
  */
 @Component
 public class SsoManage {
 
     /**
-     * 系统参数表中的 SSO 配置键前缀。
+     * 系统参数表中的 SSO 配置键前缀
      */
     private static final String KEY_PREFIX = "sso.";
     /**
-     * 未配置供应商名称时展示的默认名称。
+     * 未配置供应商名称时展示的默认名称
      */
     private static final String DEFAULT_PROVIDER_NAME = "统一身份认证";
     /**
-     * OIDC 默认授权范围。
+     * OIDC 默认授权范围
      */
     private static final String DEFAULT_SCOPE = "openid profile email";
     /**
-     * 默认用户唯一标识声明字段。
+     * 默认用户唯一标识声明字段
      */
     private static final String DEFAULT_USER_ID_ATTRIBUTE = "sub";
     /**
-     * 默认账号声明字段。
+     * 默认账号声明字段
      */
     private static final String DEFAULT_ACCOUNT_ATTRIBUTE = "preferred_username";
     /**
-     * 默认显示名声明字段。
+     * 默认显示名声明字段
      */
     private static final String DEFAULT_NAME_ATTRIBUTE = "name";
     /**
-     * 默认邮箱声明字段。
+     * 默认邮箱声明字段
      */
     private static final String DEFAULT_EMAIL_ATTRIBUTE = "email";
     /**
-     * SSO 登录完成后的默认前端落点。
+     * SSO 登录完成后的默认前端落点
      */
     private static final String DEFAULT_REDIRECT = "/workbranch/index";
 
     /**
-     * 系统参数服务，负责读取和保存 SSO 配置项。
+     * 系统参数服务，负责读取和保存 SSO 配置项
      */
     @Resource
     private SysParameterManage sysParameterManage;
 
     /**
-     * SSO 身份解析服务，负责绑定或创建本地用户。
+     * SSO 身份解析服务，负责绑定或创建本地用户
      */
     @Resource
     private SsoLoginIdentityManage ssoLoginIdentityManage;
 
     /**
-     * SSO 供应商配置服务，保持系统参数和供应商表同步。
+     * SSO 供应商配置服务，保持系统参数和供应商表同步
      */
     @Resource
     private SsoProviderConfigManage ssoProviderConfigManage;
 
     /**
-     * 平台权限服务，用于生成本地令牌时解析默认组织。
+     * 平台权限服务，用于生成本地令牌时解析默认组织
      */
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
     /**
-     * 返回登录页需要的 SSO 开关和展示状态，不暴露敏感配置。
+     * 返回登录页需要的 SSO 开关和展示状态，不暴露敏感配置
      */
     public SsoStatusVO status() {
         SsoConfigVO config = config(null);
@@ -124,7 +124,7 @@ public class SsoManage {
     }
 
     /**
-     * 读取 SSO 配置并补齐默认值，客户端密钥只返回是否已配置。
+     * 读取 SSO 配置并补齐默认值，客户端密钥只返回是否已配置
      */
     public SsoConfigVO config(HttpServletRequest request) {
         Map<String, String> values = sysParameterManage.groupVal(KEY_PREFIX);
@@ -156,7 +156,7 @@ public class SsoManage {
     }
 
     /**
-     * 判断当前环境是否允许本地账号登录。
+     * 判断当前环境是否允许本地账号登录
      */
     public boolean localLoginAllowed() {
         SsoConfigVO config = config(null);
@@ -164,7 +164,7 @@ public class SsoManage {
     }
 
     /**
-     * 保存 SSO 配置，客户端密钥加密后落库并同步默认供应商配置。
+     * 保存 SSO 配置，客户端密钥加密后落库并同步默认供应商配置
      */
     @Transactional
     public void save(SsoConfigRequest request) {
@@ -180,7 +180,7 @@ public class SsoManage {
     }
 
     /**
-     * 仅校验待保存配置，不写入系统参数。
+     * 仅校验待保存配置，不写入系统参数
      */
     public void validate(SsoConfigRequest request) {
         Map<String, String> existing = sysParameterManage.groupVal(KEY_PREFIX);
@@ -189,7 +189,7 @@ public class SsoManage {
     }
 
     /**
-     * 发起 SSO 登录，生成 state 和 nonce 后跳转到授权端点。
+     * 发起 SSO 登录，生成 state 和 nonce 后跳转到授权端点
      */
     public void login(String redirect, HttpServletRequest request, HttpServletResponse response) {
         SsoConfigVO config = runtimeConfig(request);
@@ -216,7 +216,7 @@ public class SsoManage {
     }
 
     /**
-     * 处理 SSO 回调，完成 code 换 token、用户信息解析和一次性登录票据生成。
+     * 处理 SSO 回调，完成 code 换 token、用户信息解析和一次性登录票据生成
      */
     public void callback(String code, String state, String error, String errorDescription,
                          HttpServletRequest request, HttpServletResponse response) {
@@ -254,7 +254,7 @@ public class SsoManage {
     }
 
     /**
-     * 消费前端回传的一次性 SSO 票据，成功后立即删除缓存票据。
+     * 消费前端回传的一次性 SSO 票据，成功后立即删除缓存票据
      */
     public TokenVO token(String ticket) {
         Object cached = CacheUtils.get(CacheConstant.UserCacheConstant.SSO_TICKET_CACHE, ticket);
@@ -267,7 +267,7 @@ public class SsoManage {
     }
 
     /**
-     * 获取运行态配置，启用时会校验完整性并解密客户端密钥。
+     * 获取运行态配置，启用时会校验完整性并解密客户端密钥
      */
     private SsoConfigVO runtimeConfig(HttpServletRequest request) {
         SsoConfigVO config = config(request);
@@ -286,7 +286,7 @@ public class SsoManage {
     }
 
     /**
-     * 规范化配置请求，统一默认值、空白字符串和布尔开关语义。
+     * 规范化配置请求，统一默认值、空白字符串和布尔开关语义
      */
     private SsoConfigVO normalize(SsoConfigRequest request) {
         SsoConfigVO vo = new SsoConfigVO();
@@ -313,7 +313,7 @@ public class SsoManage {
     }
 
     /**
-     * 校验启用状态下的必填项和端点安全策略。
+     * 校验启用状态下的必填项和端点安全策略
      */
     private void validateConfig(SsoConfigVO config, String secret) {
         if (!Boolean.TRUE.equals(config.getEnabled())) {
@@ -336,14 +336,14 @@ public class SsoManage {
     }
 
     /**
-     * 按配置要求校验端点地址，HTTPS 要求由配置开关控制。
+     * 按配置要求校验端点地址，HTTPS 要求由配置开关控制
      */
     private void validateEndpoint(String value, Boolean requireHttps, String name) {
         SsoEndpointPolicy.validateEndpoint(value, requireHttps, name);
     }
 
     /**
-     * 将配置对象转换为系统参数保存项，并保持固定排序。
+     * 将配置对象转换为系统参数保存项，并保持固定排序
      */
     private List<SettingItemVO> settingItems(SsoConfigVO config, String encryptedSecret) {
         List<SettingItemVO> items = new ArrayList<>();
@@ -371,7 +371,7 @@ public class SsoManage {
     }
 
     /**
-     * 添加单个系统参数项，空值统一保存为空字符串。
+     * 添加单个系统参数项，空值统一保存为空字符串
      */
     private void add(List<SettingItemVO> items, String key, Object value, int sort) {
         SettingItemVO item = new SettingItemVO();
@@ -383,7 +383,7 @@ public class SsoManage {
     }
 
     /**
-     * 使用授权码向令牌端点换取 token 响应。
+     * 使用授权码向令牌端点换取 token 响应
      */
     private Map<String, Object> exchangeToken(String code, HttpServletRequest request, SsoConfigVO config) {
         Map<String, String> body = Map.of(
@@ -404,7 +404,7 @@ public class SsoManage {
     }
 
     /**
-     * 使用 access token 调用用户信息端点。
+     * 使用 access token 调用用户信息端点
      */
     private Map<String, Object> fetchUserInfo(String userInfoEndpoint, String accessToken) {
         HttpClientConfig clientConfig = new HttpClientConfig();
@@ -419,7 +419,7 @@ public class SsoManage {
     }
 
     /**
-     * 合并 id_token、access_token 和 userinfo 中的身份声明。
+     * 合并 id_token、access_token 和 userinfo 中的身份声明
      */
     private Map<String, Object> identityClaims(SsoConfigVO config, Map<String, Object> token, String accessToken) {
         Map<String, Object> claims = new HashMap<>();
@@ -436,7 +436,7 @@ public class SsoManage {
     }
 
     /**
-     * 解析 JWT 载荷声明，无法解析时返回空声明集合。
+     * 解析 JWT 载荷声明，无法解析时返回空声明集合
      */
     private Map<String, Object> jwtClaims(String token) {
         if (StringUtils.isBlank(token)) {
@@ -456,7 +456,7 @@ public class SsoManage {
     }
 
     /**
-     * 将非空声明合并到目标集合，后写入来源可覆盖先前值。
+     * 将非空声明合并到目标集合，后写入来源可覆盖先前值
      */
     private void mergeNonBlank(Map<String, Object> target, Map<String, Object> source) {
         if (source == null || source.isEmpty()) {
@@ -470,7 +470,7 @@ public class SsoManage {
     }
 
     /**
-     * 根据配置的声明字段映射生成标准 SSO 身份画像。
+     * 根据配置的声明字段映射生成标准 SSO 身份画像
      */
     private SsoIdentityProfile profile(SsoConfigVO config, Map<String, Object> claims) {
         return SsoClaimMapper.map(
@@ -486,7 +486,7 @@ public class SsoManage {
     }
 
     /**
-     * 获取供应商类型，优先使用显式配置，缺失时根据配置内容推断。
+     * 获取供应商类型，优先使用显式配置，缺失时根据配置内容推断
      */
     private SsoProviderType providerType(SsoConfigVO config) {
         if (StringUtils.isNotBlank(config.getProviderType())) {
@@ -496,7 +496,7 @@ public class SsoManage {
     }
 
     /**
-     * 根据供应商名称和 issuer 推断供应商类型。
+     * 根据供应商名称和 issuer 推断供应商类型
      */
     private SsoProviderType derivedProviderType(SsoConfigVO config) {
         if (Strings.CI.contains(config.getProviderName(), "casdoor")
@@ -507,14 +507,14 @@ public class SsoManage {
     }
 
     /**
-     * 将任意声明值转换为字符串。
+     * 将任意声明值转换为字符串
      */
     private String asText(Object value) {
         return value == null ? null : value.toString();
     }
 
     /**
-     * 为 SSO 登录用户生成本系统访问令牌。
+     * 为 SSO 登录用户生成本系统访问令牌
      */
     private TokenVO generate(CrestUser user) {
         TokenUserBO bo = new TokenUserBO();
@@ -528,7 +528,7 @@ public class SsoManage {
     }
 
     /**
-     * 生成回调地址，显式配置优先，否则根据代理头和请求上下文推导。
+     * 生成回调地址，显式配置优先，否则根据代理头和请求上下文推导
      */
     private String callbackUrl(HttpServletRequest request, SsoConfigVO config) {
         if (config != null && StringUtils.isNotBlank(config.getRedirectUri())) {
@@ -552,14 +552,14 @@ public class SsoManage {
     }
 
     /**
-     * 将一次性票据和目标地址带回前端 SSO 回调页。
+     * 将一次性票据和目标地址带回前端 SSO 回调页
      */
     private void redirectTicket(HttpServletRequest request, HttpServletResponse response, String ticket, String redirect) throws IOException {
         response.sendRedirect(request.getContextPath() + "/#/sso/callback?ticket=" + encode(ticket) + "&redirect=" + encode(redirect));
     }
 
     /**
-     * 将错误信息带回前端 SSO 回调页。
+     * 将错误信息带回前端 SSO 回调页
      */
     private void redirectError(HttpServletRequest request, HttpServletResponse response, String message) {
         try {
@@ -570,7 +570,7 @@ public class SsoManage {
     }
 
     /**
-     * 规范化登录后跳转地址，禁止外部 URL 进入 redirect 参数。
+     * 规范化登录后跳转地址，禁止外部 URL 进入 redirect 参数
      */
     private String normalizeRedirect(String redirect) {
         if (StringUtils.isBlank(redirect)) {
@@ -584,21 +584,21 @@ public class SsoManage {
     }
 
     /**
-     * URL 编码回调参数。
+     * URL 编码回调参数
      */
     private String encode(String value) {
         return URLEncoder.encode(StringUtils.defaultString(value), StandardCharsets.UTF_8);
     }
 
     /**
-     * 读取带前缀的文本配置项。
+     * 读取带前缀的文本配置项
      */
     private String text(Map<String, String> values, String key, String defaultValue) {
         return StringUtils.defaultIfBlank(values.get(KEY_PREFIX + key), defaultValue);
     }
 
     /**
-     * 读取带前缀的布尔配置项。
+     * 读取带前缀的布尔配置项
      */
     private Boolean bool(Map<String, String> values, String key, boolean defaultValue) {
         String value = values.get(KEY_PREFIX + key);
@@ -606,7 +606,7 @@ public class SsoManage {
     }
 
     /**
-     * SSO 登录发起时缓存的 state 上下文，保存目标跳转地址和 nonce。
+     * SSO 登录发起时缓存的 state 上下文，保存目标跳转地址和 nonce
      */
     private record SsoState(String redirect, String nonce) implements Serializable {
         @Serial

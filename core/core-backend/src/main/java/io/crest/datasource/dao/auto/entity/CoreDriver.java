@@ -14,38 +14,38 @@ public class CoreDriver implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 驱动记录主键。
+     * 驱动记录主键
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     /**
-     * 驱动名称。
+     * 驱动名称
      */
     private String name;
 
     /**
-     * 驱动创建时间。
+     * 驱动创建时间
      */
     private Long createTime;
 
     /**
-     * 适配的数据源类型。
+     * 适配的数据源类型
      */
     private String type;
 
     /**
-     * JDBC 驱动类名。
+     * JDBC 驱动类名
      */
     private String driverClass;
 
     /**
-     * 驱动描述。
+     * 驱动描述
      */
     private String description;
 
     /**
-     * 获取驱动记录主键。
+     * 获取驱动记录主键
      *
      * @return 驱动记录主键
      */
@@ -54,7 +54,7 @@ public class CoreDriver implements Serializable {
     }
 
     /**
-     * 设置驱动记录主键。
+     * 设置驱动记录主键
      *
      * @param id 驱动记录主键
      */
@@ -63,7 +63,7 @@ public class CoreDriver implements Serializable {
     }
 
     /**
-     * 获取驱动名称。
+     * 获取驱动名称
      *
      * @return 驱动名称
      */
@@ -72,7 +72,7 @@ public class CoreDriver implements Serializable {
     }
 
     /**
-     * 设置驱动名称。
+     * 设置驱动名称
      *
      * @param name 驱动名称
      */
@@ -81,7 +81,7 @@ public class CoreDriver implements Serializable {
     }
 
     /**
-     * 获取驱动创建时间。
+     * 获取驱动创建时间
      *
      * @return 驱动创建时间
      */
@@ -90,7 +90,7 @@ public class CoreDriver implements Serializable {
     }
 
     /**
-     * 设置驱动创建时间。
+     * 设置驱动创建时间
      *
      * @param createTime 驱动创建时间
      */
@@ -99,7 +99,7 @@ public class CoreDriver implements Serializable {
     }
 
     /**
-     * 获取适配的数据源类型。
+     * 获取适配的数据源类型
      *
      * @return 适配的数据源类型
      */
@@ -108,7 +108,7 @@ public class CoreDriver implements Serializable {
     }
 
     /**
-     * 设置适配的数据源类型。
+     * 设置适配的数据源类型
      *
      * @param type 适配的数据源类型
      */
@@ -117,7 +117,7 @@ public class CoreDriver implements Serializable {
     }
 
     /**
-     * 获取 JDBC 驱动类名。
+     * 获取 JDBC 驱动类名
      *
      * @return JDBC 驱动类名
      */
@@ -126,7 +126,7 @@ public class CoreDriver implements Serializable {
     }
 
     /**
-     * 设置 JDBC 驱动类名。
+     * 设置 JDBC 驱动类名
      *
      * @param driverClass JDBC 驱动类名
      */
@@ -135,7 +135,7 @@ public class CoreDriver implements Serializable {
     }
 
     /**
-     * 获取驱动描述。
+     * 获取驱动描述
      *
      * @return 驱动描述
      */
@@ -144,7 +144,7 @@ public class CoreDriver implements Serializable {
     }
 
     /**
-     * 设置驱动描述。
+     * 设置驱动描述
      *
      * @param description 驱动描述
      */
@@ -153,7 +153,7 @@ public class CoreDriver implements Serializable {
     }
 
     /**
-     * 返回驱动记录的调试字符串。
+     * 返回驱动记录的调试字符串
      *
      * @return 驱动记录的字符串表示
      */

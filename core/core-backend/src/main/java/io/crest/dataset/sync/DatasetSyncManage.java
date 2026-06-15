@@ -45,8 +45,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 数据集缓存同步执行器，负责把单源数据集查询结果写入引擎缓存表，并维护全量、增量和校验结果。
- * 任务配置、调度注册和日志持久化由 DatasetSyncTaskManage 管理，本类只编排单次执行过程。
+ * 数据集缓存同步执行器，负责把单源数据集查询结果写入引擎缓存表，并维护全量、增量和校验结果
+ * 任务配置、调度注册和日志持久化由 DatasetSyncTaskManage 管理，本类只编排单次执行过程
  */
 @Component
 @SuppressWarnings("unchecked")
@@ -71,7 +71,7 @@ public class DatasetSyncManage {
     private CommonThreadPool commonThreadPool;
 
     /**
-     * 手动触发数据集同步。未配置任务时会创建一次性任务，再异步进入执行流程。
+     * 手动触发数据集同步。未配置任务时会创建一次性任务，再异步进入执行流程
      */
     public DatasetSyncTaskDTO executeNow(Long datasetGroupId) throws Exception {
         assertDatasetSyncModeEnabled(datasetGroupId);
@@ -95,7 +95,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * Quartz 调度入口，按任务 ID 或数据集 ID 找到任务后执行，异常只记录日志。
+     * Quartz 调度入口，按任务 ID 或数据集 ID 找到任务后执行，异常只记录日志
      */
     public void execute(Long datasetGroupId, Long taskId, JobExecutionContext context) {
         try {
@@ -113,7 +113,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 执行一次同步任务，负责抢占执行锁、选择全量或增量策略、记录日志并回写任务状态。
+     * 执行一次同步任务，负责抢占执行锁、选择全量或增量策略、记录日志并回写任务状态
      */
     private void execute(Long datasetGroupId, Long taskId, String triggerType, JobExecutionContext context, boolean manual) throws Exception {
         CoreDatasetSyncTask task = taskManage.selectById(taskId);
@@ -176,7 +176,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 准备同步上下文，校验数据集模式、单源约束、SQL 参数限制和可同步字段。
+     * 准备同步上下文，校验数据集模式、单源约束、SQL 参数限制和可同步字段
      */
     @SuppressWarnings("unchecked")
     private SyncContext prepareContext(Long datasetGroupId) throws Exception {
@@ -213,7 +213,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 校验数据集存在且已开启同步模式，缓存同步只面向同步模式数据集。
+     * 校验数据集存在且已开启同步模式，缓存同步只面向同步模式数据集
      */
     private DatasetGroupInfoDTO assertDatasetSyncModeEnabled(Long datasetGroupId) throws Exception {
         DatasetGroupInfoDTO dataset = datasetGroupManage.getForCount(datasetGroupId);
@@ -227,7 +227,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 执行全量同步。数据先写入临时缓存表，成功后再替换正式缓存表。
+     * 执行全量同步。数据先写入临时缓存表，成功后再替换正式缓存表
      */
     private SyncResult syncFull(SyncContext context, CoreDatasetSyncTask task, long syncStartTime) throws Exception {
         assertTaskRunnable(task, syncStartTime);
@@ -265,7 +265,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 执行增量同步。先保留旧缓存中未超过水位的行，再追加源端水位之后的数据。
+     * 执行增量同步。先保留旧缓存中未超过水位的行，再追加源端水位之后的数据
      */
     private SyncResult syncIncremental(SyncContext context, CoreDatasetSyncTask task, long syncStartTime) throws Exception {
         assertTaskRunnable(task, syncStartTime);
@@ -325,7 +325,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 按分页从源库读取数据，瞬时连接异常会有限次数重试。
+     * 按分页从源库读取数据，瞬时连接异常会有限次数重试
      */
     private List<String[]> fetchSourcePage(SyncContext context, String sql, int offset) {
         for (int attempt = 1; attempt <= FETCH_RETRY_TIMES; attempt++) {
@@ -360,14 +360,14 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 判断源库异常是否属于可重试的连接类异常。
+     * 判断源库异常是否属于可重试的连接类异常
      */
     private boolean isTransientDatasourceConnection(CrestException e) {
         return Strings.CI.contains(e.getMessage(), "Datasource connection exception");
     }
 
     /**
-     * 按重试次数递增等待时间，中断时恢复线程中断标记并抛出业务异常。
+     * 按重试次数递增等待时间，中断时恢复线程中断标记并抛出业务异常
      */
     private void sleepBeforeRetry(int attempt) {
         try {
@@ -379,7 +379,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 将一批源端行写入引擎缓存表，具体 INSERT SQL 由引擎 provider 生成。
+     * 将一批源端行写入引擎缓存表，具体 INSERT SQL 由引擎 provider 生成
      */
     private void insertRows(SyncContext context, String tableName, DatasourceServer.UpdateType updateType, List<String[]> rows) throws Exception {
         if (rows == null || rows.isEmpty()) {
@@ -401,7 +401,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 增量同步时把旧缓存中小于当前水位的行复制到临时表。
+     * 增量同步时把旧缓存中小于当前水位的行复制到临时表
      */
     private void copyRetainedCacheRows(SyncContext context, String tableName, DatasetTableFieldDTO incrementalField, String lastValue) throws Exception {
         DatasourceConfiguration.DatasourceType engineType = DatasourceConfiguration.DatasourceType.valueOf(context.engine.getType());
@@ -420,7 +420,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 在引擎库创建缓存表，字段结构来自当前数据集已选中的普通字段。
+     * 在引擎库创建缓存表，字段结构来自当前数据集已选中的普通字段
      */
     private void createEngineTable(SyncContext context, String tableName) throws Exception {
         EngineRequest request = new EngineRequest();
@@ -430,7 +430,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 校验缓存表是否可访问，失败时允许调用方回退到全量同步。
+     * 校验缓存表是否可访问，失败时允许调用方回退到全量同步
      */
     private boolean cacheTableExists(SyncContext context, String tableName) {
         try {
@@ -447,7 +447,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 对比源端和缓存端的行数及水位，校验失败不会中断同步，只写入告警结果。
+     * 对比源端和缓存端的行数及水位，校验失败不会中断同步，只写入告警结果
      */
     private void reconcile(SyncContext context, String tableName, DatasetTableFieldDTO incrementalField,
                            CoreDatasetSyncTask task, SyncResult result) {
@@ -475,7 +475,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 从源库读取单个数值结果。
+     * 从源库读取单个数值结果
      */
     private Long sourceLong(SyncContext context, String sql) {
         String value = sourceString(context, sql);
@@ -483,7 +483,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 从源库读取单个字符串结果，查询始终以只读方式执行。
+     * 从源库读取单个字符串结果，查询始终以只读方式执行
      */
     @SuppressWarnings("unchecked")
     private String sourceString(SyncContext context, String sql) {
@@ -497,7 +497,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 从引擎库读取单个数值结果。
+     * 从引擎库读取单个数值结果
      */
     private Long engineLong(SyncContext context, String sql) throws Exception {
         String value = engineString(context, sql);
@@ -505,7 +505,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 从引擎库读取单个字符串结果。
+     * 从引擎库读取单个字符串结果
      */
     @SuppressWarnings("unchecked")
     private String engineString(SyncContext context, String sql) throws Exception {
@@ -517,7 +517,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 提取查询结果第一行第一列，空结果返回空值。
+     * 提取查询结果第一行第一列，空结果返回空值
      */
     private String firstCell(List<String[]> rows) {
         if (rows == null || rows.isEmpty() || rows.get(0) == null || rows.get(0).length == 0) {
@@ -527,7 +527,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 按引擎数据库类型转义缓存表名。
+     * 按引擎数据库类型转义缓存表名
      */
     private String quotedEngineTable(SyncContext context, String tableName) {
         DatasourceConfiguration.DatasourceType engineType = DatasourceConfiguration.DatasourceType.valueOf(context.engine.getType());
@@ -535,7 +535,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 按引擎数据库类型转义缓存字段名。
+     * 按引擎数据库类型转义缓存字段名
      */
     private String quotedEngineColumn(SyncContext context, String columnName) {
         DatasourceConfiguration.DatasourceType engineType = DatasourceConfiguration.DatasourceType.valueOf(context.engine.getType());
@@ -543,7 +543,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 删除引擎缓存表，具体 DROP SQL 由引擎 provider 生成。
+     * 删除引擎缓存表，具体 DROP SQL 由引擎 provider 生成
      */
     private void dropEngineTable(SyncContext context, String tableName) throws Exception {
         EngineRequest request = new EngineRequest();
@@ -553,7 +553,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 用临时缓存表替换正式缓存表，provider 可能返回多条 SQL，因此逐条执行。
+     * 用临时缓存表替换正式缓存表，provider 可能返回多条 SQL，因此逐条执行
      */
     private void replaceTable(SyncContext context, String tableName) throws Exception {
         String[] sqls = context.engineProvider.replaceTable(tableName).split(";");
@@ -569,7 +569,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 解析增量字段。优先使用用户配置字段，缺省时选择已勾选的时间字段或数值字段。
+     * 解析增量字段。优先使用用户配置字段，缺省时选择已勾选的时间字段或数值字段
      */
     private DatasetTableFieldDTO incrementalField(DatasetGroupInfoDTO dataset, CoreDatasetSyncTask task) {
         if (!Strings.CI.equals(task.getUpdateType(), DatasourceServer.UpdateType.add_scope.name())
@@ -601,7 +601,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 返回增量字段在同步字段列表中的位置，用于从源端行数据中读取水位值。
+     * 返回增量字段在同步字段列表中的位置，用于从源端行数据中读取水位值
      */
     private int incrementalIndex(List<DatasetTableFieldDTO> fields, DatasetTableFieldDTO incrementalField) {
         if (incrementalField == null) {
@@ -616,7 +616,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 构造增量查询排序字段，先按水位字段排序，再按其他字段稳定排序。
+     * 构造增量查询排序字段，先按水位字段排序，再按其他字段稳定排序
      */
     private String incrementalOrderBy(List<DatasetTableFieldDTO> fields, String firstFieldName, DatasourceConfiguration.DatasourceType datasourceType) {
         LinkedHashSet<String> orderFields = new LinkedHashSet<>();
@@ -635,7 +635,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 执行过程中校验任务仍可运行，超时、停止或删除都会中断当前同步。
+     * 执行过程中校验任务仍可运行，超时、停止或删除都会中断当前同步
      */
     private void assertTaskRunnable(CoreDatasetSyncTask task, long syncStartTime) {
         if (DatasetSyncUtils.isTaskTimedOut(task, syncStartTime, System.currentTimeMillis())) {
@@ -649,7 +649,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 从一批源端行中计算新的最大增量水位。
+     * 从一批源端行中计算新的最大增量水位
      */
     private String maxWatermark(String current, List<String[]> rows, int index, DatasetTableFieldDTO field) {
         if (index < 0 || field == null || rows == null) {
@@ -666,7 +666,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 比较两个水位值，数值字段按数值比较，其他字段按字符串顺序比较。
+     * 比较两个水位值，数值字段按数值比较，其他字段按字符串顺序比较
      */
     private String maxWatermark(String current, String candidate, DatasetTableFieldDTO field) {
         if (StringUtils.isBlank(candidate)) {
@@ -683,7 +683,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 更新数据集同步状态和调度实例标识，供数据集列表和恢复逻辑展示。
+     * 更新数据集同步状态和调度实例标识，供数据集列表和恢复逻辑展示
      */
     private void updateDatasetSyncStatus(Long datasetGroupId, TaskStatus status, JobExecutionContext context) {
         CoreDatasetGroup record = new CoreDatasetGroup();
@@ -698,7 +698,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 单次同步执行上下文，集中保存源端 SQL、源端 provider、引擎 provider 和字段映射。
+     * 单次同步执行上下文，集中保存源端 SQL、源端 provider、引擎 provider 和字段映射
      */
     private static class SyncContext {
         private final DatasetGroupInfoDTO dataset;
@@ -711,7 +711,7 @@ public class DatasetSyncManage {
         private final List<TableField> tableFields;
 
         /**
-         * 创建同步上下文，字段列表必须已经过滤为可同步的普通字段。
+         * 创建同步上下文，字段列表必须已经过滤为可同步的普通字段
          */
         private SyncContext(DatasetGroupInfoDTO dataset, String sourceSql, Map<Long, DatasourceSchemaDTO> dsMap,
                             Provider sourceProvider, CoreEngine engine, EngineProvider engineProvider,
@@ -728,7 +728,7 @@ public class DatasetSyncManage {
     }
 
     /**
-     * 单次同步执行结果，记录写入行数、水位、结构哈希和一致性校验结果。
+     * 单次同步执行结果，记录写入行数、水位、结构哈希和一致性校验结果
      */
     private static class SyncResult {
         private long rowCount = 0L;

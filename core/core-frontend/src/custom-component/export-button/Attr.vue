@@ -12,7 +12,7 @@ import {
   isPivotTableView
 } from '@/utils/visualization/filteredExcelExport.mjs'
 
-// 定义导出按钮属性面板接收的主题参数。
+// 定义导出按钮属性面板接收的主题参数
 const props = defineProps({
   themes: {
     type: String,
@@ -25,7 +25,7 @@ const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const { curComponent, componentData, canvasViewInfo } = storeToRefs(dvMainStore)
 
-// 初始化当前组件的导出按钮配置。
+// 初始化当前组件的导出按钮配置
 const initExportButtonConfig = () => {
   if (!curComponent.value) {
     return
@@ -33,22 +33,22 @@ const initExportButtonConfig = () => {
   curComponent.value.exportButton = defaultExportButtonConfig(curComponent.value.exportButton)
 }
 
-// 获取当前组件的导出按钮配置。
+// 获取当前组件的导出按钮配置
 const exportButton = computed(() => curComponent.value?.exportButton || defaultExportButtonConfig())
 
-// 生成可作为导出目标的表格视图选项。
+// 生成可作为导出目标的表格视图选项
 const tableOptions = computed(() =>
   collectExportableTableViews(componentData.value, canvasViewInfo.value)
 )
-// 获取当前选中的目标表格视图。
+// 获取当前选中的目标表格视图
 const selectedView = computed(
   () =>
     tableOptions.value.find(item => item.id === String(exportButton.value.targetViewId))?.viewInfo
 )
-// 判断是否禁用带格式导出选项。
+// 判断是否禁用带格式导出选项
 const formattedExportDisabled = computed(() => !isPivotTableView(selectedView.value))
 
-// 记录导出按钮配置变更并修正不可用的导出内容选项。
+// 记录导出按钮配置变更并修正不可用的导出内容选项
 const onExportButtonChange = () => {
   if (
     formattedExportDisabled.value &&
@@ -59,14 +59,14 @@ const onExportButtonChange = () => {
   snapshotStore.recordSnapshotCache('exportButton')
 }
 
-// 监听当前组件变化并补齐导出按钮默认配置。
+// 监听当前组件变化并补齐导出按钮默认配置
 watch(
   () => curComponent.value?.id,
   () => initExportButtonConfig(),
   { immediate: true }
 )
 
-// 目标表格唯一时自动选中并记录快照。
+// 目标表格唯一时自动选中并记录快照
 watch(
   tableOptions,
   options => {

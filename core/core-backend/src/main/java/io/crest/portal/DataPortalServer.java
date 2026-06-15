@@ -15,7 +15,7 @@ import java.util.Locale;
 @RestController
 @RequestMapping("/data-portal")
 /**
- * 数据门户接口控制器，提供资源概览、列表和详情查询。
+ * 数据门户接口控制器，提供资源概览、列表和详情查询
  */
 public class DataPortalServer {
 
@@ -31,7 +31,7 @@ public class DataPortalServer {
     private CoreOptRecentManage coreOptRecentManage;
 
     /**
-     * 查询当前用户可访问资源的门户概览。
+     * 查询当前用户可访问资源的门户概览
      */
     @GetMapping("/overview")
     public DataPortalOverviewVO overview() {
@@ -57,7 +57,7 @@ public class DataPortalServer {
     }
 
     /**
-     * 分页查询当前用户可访问的数据门户资源。
+     * 分页查询当前用户可访问的数据门户资源
      */
     @PostMapping("/resources")
     public DataPortalPageVO resources(@RequestBody(required = false) DataPortalResourceRequest request) {
@@ -158,7 +158,7 @@ public class DataPortalServer {
     }
 
     /**
-     * 查询单个门户资源详情并记录最近访问。
+     * 查询单个门户资源详情并记录最近访问
      */
     @GetMapping("/resource/{id}")
     public DataPortalResourceVO resource(@PathVariable("id") Long id) {
@@ -240,7 +240,7 @@ public class DataPortalServer {
     }
 
     /**
-     * 规范化门户资源查询参数。
+     * 规范化门户资源查询参数
      */
     private DataPortalResourceRequest normalizeRequest(DataPortalResourceRequest request) {
         DataPortalResourceRequest normalized = request == null ? new DataPortalResourceRequest() : request;
@@ -274,7 +274,7 @@ public class DataPortalServer {
     }
 
     /**
-     * 构造门户资源查询的基础 SQL 和参数。
+     * 构造门户资源查询的基础 SQL 和参数
      */
     private QueryParts buildBaseQuery(Long uid, DataPortalResourceRequest request) {
         List<Object> args = new ArrayList<>();
@@ -314,7 +314,7 @@ public class DataPortalServer {
     }
 
     /**
-     * 复制查询条件并清空资源类型，用于统计全部类型数量。
+     * 复制查询条件并清空资源类型，用于统计全部类型数量
      */
     private DataPortalResourceRequest copyWithoutType(DataPortalResourceRequest source) {
         DataPortalResourceRequest copy = new DataPortalResourceRequest();
@@ -327,7 +327,7 @@ public class DataPortalServer {
     }
 
     /**
-     * 根据查询来源生成排序表达式。
+     * 根据查询来源生成排序表达式
      */
     private String orderExpression(DataPortalResourceRequest request, String direction) {
         if (request != null && "store".equals(request.getQueryFrom())) {
@@ -340,7 +340,7 @@ public class DataPortalServer {
     }
 
     /**
-     * 记录门户资源最近访问。
+     * 记录门户资源最近访问
      */
     private void recordRecent(DataPortalResourceVO resource) {
         coreOptRecentManage.saveOpt(
@@ -351,7 +351,7 @@ public class DataPortalServer {
     }
 
     /**
-     * 门户资源查询 SQL 片段和参数。
+     * 门户资源查询 SQL 片段和参数
      */
     private static class QueryParts {
         private String fromWhere;

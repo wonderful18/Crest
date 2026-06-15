@@ -15,7 +15,7 @@ import {
 
 const { t } = useI18n()
 
-// 接收当前图表和已有表格阈值配置。
+// 接收当前图表和已有表格阈值配置
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -27,7 +27,7 @@ const props = defineProps({
   }
 })
 
-// 向父级同步表格阈值配置。
+// 向父级同步表格阈值配置
 const emit = defineEmits(['onTableThresholdChange'])
 
 const thresholdCondition = {
@@ -211,7 +211,7 @@ const targetOptions = [
   { label: t('chart.custom'), value: 'custom' }
 ]
 
-// 维护阈值编辑弹窗的字段和条件状态。
+// 维护阈值编辑弹窗的字段和条件状态
 const state = reactive<any>({
   thresholdArr: [] as TableThreshold[],
   fields: [],
@@ -222,12 +222,12 @@ const state = reactive<any>({
   } as TableThreshold
 })
 
-// 初始化阈值配置副本和可选字段。
+// 初始化阈值配置副本和可选字段
 const init = () => {
   state.thresholdArr = JSON.parse(JSON.stringify(props.threshold)) as TableThreshold[]
   initFields()
 }
-// 根据字段类型初始化可用条件选项。
+// 根据字段类型初始化可用条件选项
 const initOptions = (item, fieldObj) => {
   if (fieldObj) {
     if ([0, 5, 7].includes(fieldObj.fieldType)) {
@@ -243,7 +243,7 @@ const initOptions = (item, fieldObj) => {
       })
   }
 }
-// 按表格类型汇总阈值可选择字段。
+// 按表格类型汇总阈值可选择字段
 const initFields = () => {
   let fields = []
   if (props.chart.type === 'table-info') {
@@ -259,7 +259,7 @@ const initFields = () => {
     fields = [...xAxis, ...yAxis]
   }
   state.fields.splice(0, state.fields.length, ...fields)
-  // 字段列表变化时清空失效的阈值字段。
+  // 字段列表变化时清空失效的阈值字段
   let change = false
   state.thresholdArr.forEach(item => {
     const fieldItemObj = state.fields.filter(ele => ele.id === item.fieldId)
@@ -272,23 +272,23 @@ const initFields = () => {
     changeThreshold()
   }
 }
-// 新增一个字段阈值配置。
+// 新增一个字段阈值配置
 const addThreshold = () => {
   state.thresholdArr.push(JSON.parse(JSON.stringify(state.thresholdObj)))
   changeThreshold()
 }
-// 删除指定字段阈值配置。
+// 删除指定字段阈值配置
 const removeThreshold = index => {
   state.thresholdArr.splice(index, 1)
   changeThreshold()
 }
 
-// 通知父级保存最新阈值配置。
+// 通知父级保存最新阈值配置
 const changeThreshold = () => {
   emit('onTableThresholdChange', state.thresholdArr)
 }
 
-// 为字段阈值新增一条条件规则。
+// 为字段阈值新增一条条件规则
 const addConditions = item => {
   const newCondition = JSON.parse(JSON.stringify(thresholdCondition))
   if (item.field.dateStyle === 'H_m_s') {
@@ -302,15 +302,15 @@ const addConditions = item => {
   item.conditions.push(newCondition)
   changeThreshold()
 }
-// 删除字段阈值中的指定条件规则。
+// 删除字段阈值中的指定条件规则
 const removeCondition = (item, index) => {
   item.conditions.splice(index, 1)
   changeThreshold()
 }
 
-// 绑定阈值配置中选择的字段对象。
+// 绑定阈值配置中选择的字段对象
 const addField = item => {
-  // 根据字段 ID 回填字段快照。
+  // 根据字段 ID 回填字段快照
   if (state.fields && state.fields.length > 0) {
     state.fields.forEach(ele => {
       if (item.fieldId === ele.id) {
@@ -357,7 +357,7 @@ const dynamicSummaryOptions = [
   }
 ]
 
-// 根据主字段类型筛选动态条件可用字段。
+// 根据主字段类型筛选动态条件可用字段
 const getConditionsFields = (fieldItem, conditionItem, conditionItemField) => {
   const fieldItemObj = state.fields.filter(ele => ele.id === fieldItem.fieldId)
 
@@ -392,7 +392,7 @@ const getConditionsFields = (fieldItem, conditionItem, conditionItemField) => {
   return result
 }
 
-// 根据字段类型限制动态汇总方式。
+// 根据字段类型限制动态汇总方式
 const getDynamicSummaryOptions = itemId => {
   const fieldType = state.fields.filter(ele => ele.id === itemId)?.[0]?.fieldType
   if (fieldType === 1) {
@@ -410,21 +410,21 @@ const getDynamicSummaryOptions = itemId => {
   }
 }
 
-// 判断条件是否需要录入比较值。
+// 判断条件是否需要录入比较值
 const isNotEmptyAndNull = item => {
   return !item.term.includes('null') && !item.term.includes('empty')
 }
 
-// 判断当前条件是否为区间比较。
+// 判断当前条件是否为区间比较
 const isBetween = item => {
   return item.term === 'between'
 }
 
-// 判断当前条件是否使用动态字段。
+// 判断当前条件是否使用动态字段
 const isDynamic = item => {
   return item.type === 'dynamic'
 }
-// 动态条件切换时重置汇总方式。
+// 动态条件切换时重置汇总方式
 const changeConditionItemType = item => {
   if (item.type === 'dynamic') {
     item.dynamicField.summary = 'value'
@@ -432,17 +432,17 @@ const changeConditionItemType = item => {
     item.dynamicMaxField.summary = 'value'
   }
 }
-// 获取字段来源选项。
+// 获取字段来源选项
 const getFieldOptions = (_fieldItem?: TableThreshold) => {
   return fieldOptions
 }
 
-// 转换日期字段的选择器显示格式。
+// 转换日期字段的选择器显示格式
 const datePickerFormat = (fieldItem: { dateStyle: any; datePattern: any }) => {
   return transDateFormat(fieldItem.dateStyle, fieldItem.datePattern)
 }
 
-// 转换日期字段的选择器类型。
+// 转换日期字段的选择器类型
 const datePickerType = (fieldItem: { dateStyle: string }) => {
   return transDatePickerType(fieldItem.dateStyle)
 }

@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-// 管理数据源同步任务、任务日志和任务状态流转。
+// 管理数据源同步任务、任务日志和任务状态流转
 public class DatasourceTaskServer {
 
     @Resource
@@ -37,17 +37,17 @@ public class DatasourceTaskServer {
     private DatasourceSyncManage datasourceSyncManage;
 
 
-    // 按任务 ID 查询数据源同步任务。
+    // 按任务 ID 查询数据源同步任务
     public CoreDatasourceTask selectById(Long taskId) {
         return datasourceTaskMapper.selectById(taskId);
     }
 
-    // 查询所有数据源同步任务。
+    // 查询所有数据源同步任务
     public List<CoreDatasourceTask> listAll() {
         return datasourceTaskMapper.selectList(null);
     }
 
-    // 按数据源 ID 查询同步任务。
+    // 按数据源 ID 查询同步任务
     public CoreDatasourceTask selectByDSId(Long dsId) {
         QueryWrapper<CoreDatasourceTask> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("ds_id", dsId);
@@ -55,7 +55,7 @@ public class DatasourceTaskServer {
         return CollectionUtils.isEmpty(coreDatasourceTasks) ? new CoreDatasourceTask() : coreDatasourceTasks.get(0);
     }
 
-    // 查询指定数据源表的最近同步日志。
+    // 查询指定数据源表的最近同步日志
     public CoreDatasourceTaskLog lastSyncLogForTable(Long dsId, String tableName) {
         List<CoreDatasourceTaskLog> coreDatasourceTaskLogs = new ArrayList<>();
         QueryWrapper<CoreDatasourceTaskLog> queryWrapper = new QueryWrapper<>();
@@ -71,7 +71,7 @@ public class DatasourceTaskServer {
         }
     }
 
-    // 删除数据源下的同步任务和调度。
+    // 删除数据源下的同步任务和调度
     public void deleteByDSId(Long dsId) {
         QueryWrapper<CoreDatasourceTask> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("ds_id", dsId);
@@ -82,18 +82,18 @@ public class DatasourceTaskServer {
         datasourceTaskMapper.delete(queryWrapper);
     }
 
-    // 新增数据源同步任务。
+    // 新增数据源同步任务
     public void insert(CoreDatasourceTask coreDatasourceTask) {
         coreDatasourceTask.setId(IDUtils.snowID());
         datasourceTaskMapper.insert(coreDatasourceTask);
     }
 
-    // 按任务 ID 删除同步任务。
+    // 按任务 ID 删除同步任务
     public void delete(Long id) {
         datasourceTaskMapper.deleteById(id);
     }
 
-    // 新增或更新同步任务。
+    // 新增或更新同步任务
     public void update(CoreDatasourceTask coreDatasourceTask) {
         if (coreDatasourceTask.getId() == null) {
             datasourceTaskMapper.insert(coreDatasourceTask);
@@ -105,7 +105,7 @@ public class DatasourceTaskServer {
 
     }
 
-    // 批量重置数据源同步任务状态。
+    // 批量重置数据源同步任务状态
     public void updateByDsIds(List<Long> dsIds) {
         UpdateWrapper<CoreDatasourceTask> updateWrapper = new UpdateWrapper<>();
         updateWrapper.in("ds_id", dsIds);
@@ -114,7 +114,7 @@ public class DatasourceTaskServer {
         datasourceTaskMapper.update(record, updateWrapper);
     }
 
-    // 根据结束时间和下一次触发时间判断任务是否停止。
+    // 根据结束时间和下一次触发时间判断任务是否停止
     public void checkTaskIsStopped(CoreDatasourceTask coreDatasourceTask) {
         if (coreDatasourceTask.getEndTime() != null && coreDatasourceTask.getEndTime() > 0) {
             List<CoreDatasourceTaskDTO> dataSetTaskDTOS = taskWithTriggers(coreDatasourceTask.getId());
@@ -135,14 +135,14 @@ public class DatasourceTaskServer {
         }
     }
 
-    // 查询任务关联的调度触发器。
+    // 查询任务关联的调度触发器
     public List<CoreDatasourceTaskDTO> taskWithTriggers(Long taskId) {
         QueryWrapper<CoreDatasourceTaskDTO> wrapper = new QueryWrapper<>();
         wrapper.eq("QRTZ_TRIGGERS.TRIGGER_NAME", String.valueOf(taskId));
         return extDatasourceTaskMapper.taskWithTriggers(wrapper);
     }
 
-    // 尝试标记任务执行中并判断是否已有执行任务。
+    // 尝试标记任务执行中并判断是否已有执行任务
     public synchronized boolean existUnderExecutionTask(Long datasourceId, Long taskId) {
         UpdateWrapper<CoreDatasource> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", datasourceId);
@@ -161,7 +161,7 @@ public class DatasourceTaskServer {
         return existSyncTask;
     }
 
-    // 初始化数据源同步任务日志。
+    // 初始化数据源同步任务日志
     public CoreDatasourceTaskLog initTaskLog(Long datasourceId, Long taskId, String tableName, String triggerType) {
         Long startTime = System.currentTimeMillis();
         CoreDatasourceTaskLog coreDatasourceTaskLog = new CoreDatasourceTaskLog();
@@ -178,12 +178,12 @@ public class DatasourceTaskServer {
         return coreDatasourceTaskLog;
     }
 
-    // 保存同步任务日志。
+    // 保存同步任务日志
     public void saveLog(CoreDatasourceTaskLog coreDatasourceTaskLog) {
         coreDatasourceTaskLogMapper.updateById(coreDatasourceTaskLog);
     }
 
-    // 根据调度类型和触发器状态更新任务状态。
+    // 根据调度类型和触发器状态更新任务状态
     public void updateTaskStatus(CoreDatasourceTask coreDatasourceTask) {
         CoreDatasourceTask record = new CoreDatasourceTask();
         if (coreDatasourceTask.getSyncRate().equalsIgnoreCase(ScheduleType.RIGHTNOW.name())) {
@@ -209,7 +209,7 @@ public class DatasourceTaskServer {
         datasourceTaskMapper.update(record, updateTaskWrapper);
     }
 
-    // 清理过期数据源同步日志。
+    // 清理过期数据源同步日志
     public void cleanLog() {
         long expTime = Long.parseLong("30") * 24L * 3600L * 1000L;
         long threshold = System.currentTimeMillis() - expTime;
@@ -219,7 +219,7 @@ public class DatasourceTaskServer {
     }
 
 
-    // 数据源同步任务调度类型。
+    // 数据源同步任务调度类型
     public enum ScheduleType {
         CRON, RIGHTNOW, SIMPLE_CRON, MANUAL
     }

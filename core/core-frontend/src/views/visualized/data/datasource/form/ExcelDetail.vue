@@ -49,7 +49,7 @@ export interface Field {
   primaryKey: boolean
   length: number
 }
-// 本地 Excel 数据源表单的外部输入属性。
+// 本地 Excel 数据源表单的外部输入属性
 const props = defineProps({
   param: {
     required: false,
@@ -81,16 +81,16 @@ const { param, isSupportSetKey } = toRefs(props)
 const { t } = useI18n()
 const { emitter } = useEmitt()
 
-// 本地 Excel 上传和保存的加载状态。
+// 本地 Excel 上传和保存的加载状态
 const loading = ref(false)
-// 当前工作表的字段列配置。
+// 当前工作表的字段列配置
 const columns = shallowRef([])
-// 当前工作表已选中的字段列。
+// 当前工作表已选中的字段列
 const multipleSelection = shallowRef([])
-// 字段选择表格引用。
+// 字段选择表格引用
 const multipleTable = ref()
 
-// 单个工作表的默认状态，用于切换和清空预览。
+// 单个工作表的默认状态，用于切换和清空预览
 const defaultSheetObj = {
   tableName: ' ',
   sheetExcelId: '',
@@ -103,9 +103,9 @@ const defaultSheetObj = {
   empty: '',
   overLength: false
 }
-// 当前选中工作表的字段、预览数据和检测状态。
+// 当前选中工作表的字段、预览数据和检测状态
 const sheetObj = reactive(cloneDeep(defaultSheetObj))
-// 上传文件解析后的整体 Excel 状态。
+// 上传文件解析后的整体 Excel 状态
 const state = reactive({
   excelData: [],
   defaultExpandedKeys: [],
@@ -114,7 +114,7 @@ const state = reactive({
   sheets: []
 })
 
-// 当前上传文件的展示信息。
+// 当前上传文件的展示信息
 const sheetFile = computed(() => {
   const [sheet = {}] = state.excelData
   return {
@@ -123,10 +123,10 @@ const sheetFile = computed(() => {
   }
 })
 
-// 上传过程状态。
+// 上传过程状态
 const uploading = ref(false)
 
-// 后端字段类型到前端图标类型的映射。
+// 后端字段类型到前端图标类型的映射
 const fieldType = {
   TEXT: 'text',
   DATETIME: 'time',
@@ -134,14 +134,14 @@ const fieldType = {
   DOUBLE: 'value'
 }
 
-// 前端字段类型值到后端字段类型编码的映射。
+// 前端字段类型值到后端字段类型编码的映射
 const fieldTypeToStr = {
   0: 'TEXT',
   2: 'LONG',
   3: 'DOUBLE'
 }
 
-// 根据本地 Excel 字段生成虚拟表格列配置。
+// 根据本地 Excel 字段生成虚拟表格列配置
 const generateColumns = (arr: Field[]) =>
   arr.map(ele => ({
     key: ele.originName,
@@ -169,7 +169,7 @@ const generateColumns = (arr: Field[]) =>
     )
   }))
 
-// 选中工作表后生成预览列和字段选择状态。
+// 选中工作表后生成预览列和字段选择状态
 const handleNodeClick = data => {
   Object.assign(sheetObj, data || cloneDeep(defaultSheetObj))
   if (!data?.sheet) {
@@ -183,19 +183,19 @@ const handleNodeClick = data => {
   currentMode.value = 'preview'
 }
 
-// 上传前标记上传状态。
+// 上传前标记上传状态
 const beforeUpload = () => {
   uploading.value = true
 }
 
-// 切换工作表页签时刷新当前工作表字段和预览。
+// 切换工作表页签时刷新当前工作表字段和预览
 const handleTabClick = tab => {
   activeTab.value = tab.value
   const sheet = state.excelData[0]?.sheets.find(ele => ele.sheetId === tab.value)
   handleNodeClick(sheet)
 }
 
-// 上传失败时清空解析状态。
+// 上传失败时清空解析状态
 const uploadFail = response => {
   state.excelData = []
   activeTab.value = ''
@@ -204,12 +204,12 @@ const uploadFail = response => {
   let myError = response.toString()
   myError.replace('Error: ', '')
 }
-// 工作表页签列表。
+// 工作表页签列表
 const tabList = shallowRef([])
-// 当前选中的工作表页签。
+// 当前选中的工作表页签
 const activeTab = ref('')
 
-// 删除当前已上传的 Excel 文件和解析结果。
+// 删除当前已上传的 Excel 文件和解析结果
 const handleExcelDel = () => {
   state.excelData = []
   activeTab.value = ''
@@ -217,7 +217,7 @@ const handleExcelDel = () => {
   Object.assign(sheetObj, cloneDeep(defaultSheetObj))
 }
 
-// 处理本地 Excel 解析结果，初始化文件信息、页签和当前工作表。
+// 处理本地 Excel 解析结果，初始化文件信息、页签和当前工作表
 const uploadSuccess = response => {
   if (!response) {
     return
@@ -253,7 +253,7 @@ const uploadSuccess = response => {
 
   sheet && handleTabClick(sheet)
 }
-// 保存本地 Excel 数据源前校验工作表、字段和主键长度。
+// 保存本地 Excel 数据源前校验工作表、字段和主键长度
 const saveExcelDs = (params, successCb, finallyCb) => {
   let validate = true
   let selectedSheet = []
@@ -355,7 +355,7 @@ const saveExcelDs = (params, successCb, finallyCb) => {
   }
 }
 
-// 提交本地 Excel 数据源保存或更新请求。
+// 提交本地 Excel 数据源保存或更新请求
 const saveExcelData = (sheetFileMd5, table, params, successCb, finallyCb) => {
   for (let i = 0; i < table.sheets.length; i++) {
     table.sheets[i].data = []
@@ -386,14 +386,14 @@ const saveExcelData = (sheetFileMd5, table, params, successCb, finallyCb) => {
     })
 }
 
-// 记录上传组件选中的本地文件。
+// 记录上传组件选中的本地文件
 const onChange = file => {
   state.fileList = file
 }
-// 表格自适应刷新开关，用于窗口尺寸变化后重建表格。
+// 表格自适应刷新开关，用于窗口尺寸变化后重建表格
 const isResize = ref(true)
 
-// 窗口尺寸变化后延迟重建表格，并在字段选择模式恢复勾选状态。
+// 窗口尺寸变化后延迟重建表格，并在字段选择模式恢复勾选状态
 const handleResize = debounce(() => {
   isResize.value = false
   nextTick(() => {
@@ -411,22 +411,22 @@ const handleResize = debounce(() => {
     }
   })
 }, 500)
-// 监听页面尺寸变化，驱动预览表格重新计算。
+// 监听页面尺寸变化，驱动预览表格重新计算
 onMounted(() => {
   window.addEventListener('resize', handleResize)
 })
 
-// 组件卸载时移除窗口尺寸监听。
+// 组件卸载时移除窗口尺寸监听
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
 })
 
-// 首次上传组件引用。
+// 首次上传组件引用
 const upload = ref()
-// 重新上传组件引用。
+// 重新上传组件引用
 const uploadAgain = ref()
 
-// 上传本地 Excel 文件并解析工作表结构。
+// 上传本地 Excel 文件并解析工作表结构
 const uploadExcel = () => {
   const formData = new FormData()
   formData.append('file', state.fileList.raw)
@@ -456,36 +456,36 @@ const uploadExcel = () => {
       loading.value = false
     })
 }
-// 本地 Excel 基础表单引用。
+// 本地 Excel 基础表单引用
 const excelForm = ref()
-// 暴露基础表单校验函数给父组件。
+// 暴露基础表单校验函数给父组件
 const submitForm = () => {
   return excelForm.value.validate
 }
 
-// 数据源名称输入框显示状态。
+// 数据源名称输入框显示状态
 const showName = ref(true)
 
-// 使用替换上传结果刷新当前 Excel 数据源状态。
+// 使用替换上传结果刷新当前 Excel 数据源状态
 const appendReplaceExcel = response => {
   showName.value = false
   uploadSuccess(response)
 }
 
-// 上传必填校验状态。
+// 上传必填校验状态
 const status = ref(false)
-// 标记字段表格正在初始化勾选状态，避免触发选择回写。
+// 标记字段表格正在初始化勾选状态，避免触发选择回写
 const initMultipleTable = ref(false)
-// 当前工作表区域展示模式：预览或字段选择。
+// 当前工作表区域展示模式：预览或字段选择
 const currentMode = ref('preview')
-// 当前工作表是否被检测为不可导入。
+// 当前工作表是否被检测为不可导入
 const currentSheetSkipped = computed(() => sheetObj.sheet === false)
-// 当前工作表不可导入时的提示文案。
+// 当前工作表不可导入时的提示文案
 const sheetInspectionMessage = computed(
   () => sheetObj.inspectionMessage || '该工作表未检测到可导入的数据表。'
 )
 
-// 切换字段提取类型时同步列配置和工作表字段类型。
+// 切换字段提取类型时同步列配置和工作表字段类型
 const extractedFieldTypeChange = item => {
   item.fieldType = item.extractedFieldType
   const sheet = state.excelData[0]?.sheets.find(ele => ele.sheetId === activeTab.value)
@@ -498,7 +498,7 @@ const extractedFieldTypeChange = item => {
   })
 }
 
-// 更新当前工作表中指定字段的文本长度。
+// 更新当前工作表中指定字段的文本长度
 const lengthChange = val => {
   const sheet = state.excelData[0]?.sheets.find(ele => ele.sheetId === activeTab.value)
   sheet.fields.forEach(row => {
@@ -507,7 +507,7 @@ const lengthChange = val => {
     }
   })
 }
-// 更新当前工作表中指定字段的主键标记。
+// 更新当前工作表中指定字段的主键标记
 const primaryKeyChange = val => {
   const sheet = state.excelData[0]?.sheets.find(ele => ele.sheetId === activeTab.value)
   sheet.fields.forEach(row => {
@@ -517,7 +517,7 @@ const primaryKeyChange = val => {
   })
 }
 
-// 字段类型下拉选项。
+// 字段类型下拉选项
 const fieldOptions = [
   { label: t('dataset.text'), value: 0 },
   { label: t('dataset.value'), value: 2 },
@@ -527,7 +527,7 @@ const fieldOptions = [
   }
 ]
 
-// 字段选择变化时同步列配置和当前工作表字段勾选状态。
+// 字段选择变化时同步列配置和当前工作表字段勾选状态
 const handleSelectionChange = val => {
   if (!initMultipleTable.value) {
     multipleSelection.value = val
@@ -565,7 +565,7 @@ const handleSelectionChange = val => {
   }
 }
 
-// 判断字段长度输入框是否禁用。
+// 判断字段长度输入框是否禁用
 const disabledFieldLength = item => {
   if (!item.checked) {
     return true
@@ -575,7 +575,7 @@ const disabledFieldLength = item => {
   }
 }
 
-// 切换工作表区域的预览模式和字段选择模式。
+// 切换工作表区域的预览模式和字段选择模式
 const changeCurrentMode = val => {
   currentMode.value = val
   if (val === 'select') {
@@ -594,11 +594,11 @@ const changeCurrentMode = val => {
   }
 }
 
-// 更新上传必填校验状态。
+// 更新上传必填校验状态
 const uploadStatus = val => {
   status.value = val
 }
-// 暴露给父组件的本地 Excel 表单操作入口。
+// 暴露给父组件的本地 Excel 表单操作入口
 defineExpose({
   saveExcelDs,
   submitForm,

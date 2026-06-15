@@ -3,33 +3,33 @@ package io.crest.substitute.permissions.auth;
 import java.util.Set;
 
 /**
- * 平台权限策略，封装当前用户和资源范围的授权判断。
+ * 平台权限策略，封装当前用户和资源范围的授权判断
  */
 public class PlatformPermissionPolicy {
 
     /**
-     * 当前用户是否为系统管理员。
+     * 当前用户是否为系统管理员
      */
     private final boolean systemAdmin;
     /**
-     * 当前用户 ID。
+     * 当前用户 ID
      */
     private final Long currentUserId;
     /**
-     * 直接授予用户的权限集合。
+     * 直接授予用户的权限集合
      */
     private final Set<String> userGrants;
     /**
-     * 用户角色授予的权限集合。
+     * 用户角色授予的权限集合
      */
     private final Set<String> roleGrants;
     /**
-     * 资源所属组织 ID。
+     * 资源所属组织 ID
      */
     private final Long resourceOrgId;
 
     /**
-     * 创建平台权限策略上下文。
+     * 创建平台权限策略上下文
      */
     public PlatformPermissionPolicy(boolean systemAdmin, Long currentUserId, Set<String> userGrants,
                                     Set<String> roleGrants, Long resourceOrgId) {
@@ -41,7 +41,7 @@ public class PlatformPermissionPolicy {
     }
 
     /**
-     * 判断当前策略下是否允许访问指定动作。
+     * 判断当前策略下是否允许访问指定动作
      */
     public boolean canAccess(Long creatorId, Set<Long> roleIds, String action) {
         if (systemAdmin) {
@@ -55,21 +55,21 @@ public class PlatformPermissionPolicy {
     }
 
     /**
-     * 返回资源所属组织 ID。
+     * 返回资源所属组织 ID
      */
     public Long resourceOrgId() {
         return resourceOrgId;
     }
 
     /**
-     * 判断权限集合是否包含指定动作或管理权限。
+     * 判断权限集合是否包含指定动作或管理权限
      */
     private boolean hasGrant(Set<String> grants, String action) {
         return grants.contains("manage") || grants.contains(action);
     }
 
     /**
-     * 标准化权限动作，空动作默认按读取处理。
+     * 标准化权限动作，空动作默认按读取处理
      */
     private String normalize(String action) {
         if (action == null || action.isBlank()) {

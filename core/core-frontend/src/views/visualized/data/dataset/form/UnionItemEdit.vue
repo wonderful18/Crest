@@ -12,18 +12,18 @@ import { useI18n } from '@/hooks/web/useI18n'
 import type { Field } from './util'
 import { fieldType } from '@/utils/attr'
 import { iconFieldMap } from '@/components/icon-group/field-list'
-// 当前关联类型的本地选择值，初始化自父节点配置。
+// 当前关联类型的本地选择值，初始化自父节点配置
 const unionTypeFromParent = ref('left')
-// 数据集关联编辑器文案函数。
+// 数据集关联编辑器文案函数
 const { t } = useI18n()
-// 关联类型对应的图标。
+// 关联类型对应的图标
 const iconName = {
   left: icon_leftAssociation,
   right: icon_rightAssociation,
   inner: icon_intersect,
   full: icon_fullAssociation
 }
-// 数据表关联编辑器属性。
+// 数据表关联编辑器属性
 const props = defineProps({
   tableName: {
     type: String,
@@ -43,7 +43,7 @@ const props = defineProps({
   }
 })
 
-// 支持选择的表关联类型列表。
+// 支持选择的表关联类型列表
 const unionOptions = [
   { label: t('dataset.left_join'), value: 'left' },
   { label: t('dataset.right_join'), value: 'right' },
@@ -51,20 +51,20 @@ const unionOptions = [
   { label: t('dataset.full_join'), value: 'full' }
 ]
 
-// 初始化关联类型，并保证至少存在一条关联字段配置。
+// 初始化关联类型，并保证至少存在一条关联字段配置
 const init = () => {
   unionTypeFromParent.value = props.node.unionType
   if (props.node.unionFields.length < 1) {
     addUnion()
   }
 }
-// 关联字段和关联类型变化时通知父级。
+// 关联字段和关联类型变化时通知父级
 const emit = defineEmits(['changeUnionFields', 'changeUnionType'])
-// 新增一条关联字段配置。
+// 新增一条关联字段配置
 const addUnion = () => {
   emit('changeUnionFields')
 }
-// 删除指定关联字段配置。
+// 删除指定关联字段配置
 const removeUnionItem = index => {
   emit('changeUnionFields', index)
 }

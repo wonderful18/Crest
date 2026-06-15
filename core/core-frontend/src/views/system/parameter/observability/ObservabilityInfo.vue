@@ -132,20 +132,20 @@ interface GrafanaStatus {
   provisionedDashboards?: string[]
 }
 
-// 页面加载状态，刷新监控配置时用于展示遮罩。
+// 页面加载状态，刷新监控配置时用于展示遮罩
 const loading = ref(false)
-// 后端返回的 Prometheus 与 Grafana 当前配置状态。
+// 后端返回的 Prometheus 与 Grafana 当前配置状态
 const status = ref<{ prometheus?: PrometheusStatus; grafana?: GrafanaStatus }>({})
 
-// Prometheus 状态对象，未返回时使用空对象避免模板空判断。
+// Prometheus 状态对象，未返回时使用空对象避免模板空判断
 const prometheus = computed(() => status.value.prometheus || {})
-// Grafana 状态对象，补齐默认看板列表。
+// Grafana 状态对象，补齐默认看板列表
 const grafana = computed(() => ({
   provisionedDashboards: [],
   ...(status.value.grafana || {})
 }))
 
-// 从后端加载当前可观测性配置状态。
+// 从后端加载当前可观测性配置状态
 const loadStatus = async () => {
   loading.value = true
   try {
@@ -156,7 +156,7 @@ const loadStatus = async () => {
   }
 }
 
-// 复制端点地址，并在浏览器权限不足时提示失败。
+// 复制端点地址，并在浏览器权限不足时提示失败
 const copyValue = async (value?: string) => {
   if (!value) {
     return
@@ -169,7 +169,7 @@ const copyValue = async (value?: string) => {
   }
 }
 
-// 在新窗口打开 Grafana 公开访问地址。
+// 在新窗口打开 Grafana 公开访问地址
 const openGrafana = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer')
 }

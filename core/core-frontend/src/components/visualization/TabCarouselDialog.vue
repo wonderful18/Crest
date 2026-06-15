@@ -32,26 +32,26 @@ import { storeToRefs } from 'pinia'
 import { reactive } from 'vue'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import { useI18n } from '@/hooks/web/useI18n'
-// 标签页轮播设置弹窗文案函数。
+// 标签页轮播设置弹窗文案函数
 const { t } = useI18n()
-// 大屏主状态用于读取当前组件。
+// 大屏主状态用于读取当前组件
 const dvMainStore = dvMainStoreWithOut()
-// 当前正在编辑的组件。
+// 当前正在编辑的组件
 const { curComponent } = storeToRefs(dvMainStore)
-// 快照仓库用于记录轮播配置修改。
+// 快照仓库用于记录轮播配置修改
 const snapshotStore = snapshotStoreWithOut()
-// 弹窗内维护轮播开关和切换时间。
+// 弹窗内维护轮播开关和切换时间
 const state = reactive({
   carouselEnable: false,
   switchTime: 50
 })
 
-// 关闭弹窗事件。
+// 关闭弹窗事件
 const emits = defineEmits(['onClose'])
 state.carouselEnable = curComponent.value.style.carouselEnable
 state.switchTime = curComponent.value.style.switchTime
 
-// 限制轮播切换时间在允许范围内。
+// 限制轮播切换时间在允许范围内
 const switchTimeChange = () => {
   if (!state.switchTime || state.switchTime < 2) {
     state.switchTime = 2
@@ -60,7 +60,7 @@ const switchTimeChange = () => {
   }
 }
 
-// 保存轮播配置并关闭弹窗。
+// 保存轮播配置并关闭弹窗
 const onSubmit = () => {
   curComponent.value.style.carouselEnable = state.carouselEnable
   curComponent.value.style.switchTime = state.switchTime
@@ -68,7 +68,7 @@ const onSubmit = () => {
   onClose()
 }
 
-// 通知父级关闭弹窗。
+// 通知父级关闭弹窗
 const onClose = () => {
   emits('onClose')
 }

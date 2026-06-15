@@ -24,25 +24,25 @@ const props = withDefaults(
     filterOptions: () => []
   }
 )
-// 抽屉内筛选组件引用列表。
+// 抽屉内筛选组件引用列表
 const myRefs = ref<any[]>([])
-// 当前筛选组件配置列表。
+// 当前筛选组件配置列表
 const componentList = computed<any[]>(() => {
   return props.filterOptions as any[]
 })
 
-// 维护抽屉筛选条件状态。
+// 维护抽屉筛选条件状态
 const state = reactive<{ conditions: any[] }>({
   conditions: []
 })
-// 控制筛选抽屉显隐。
+// 控制筛选抽屉显隐
 const userDrawer = ref(false)
 
-// 打开筛选抽屉。
+// 打开筛选抽屉
 const init = () => {
   userDrawer.value = true
 }
-// 清理指定筛选组件的内部值。
+// 清理指定筛选组件的内部值
 const cleanrInnerValue = (index: number) => {
   const field = componentList.value[index]?.field
   if (!field) {
@@ -55,7 +55,7 @@ const cleanrInnerValue = (index: number) => {
     }
   }
 }
-// 清理指定筛选标签对应组件的内部值。
+// 清理指定筛选标签对应组件的内部值
 const clearInnerTag = (index?: number) => {
   if (isNaN(index)) {
     for (let i = 0; i < componentList.value.length; i++) {
@@ -71,7 +71,7 @@ const clearInnerTag = (index?: number) => {
     }
   }
 }
-// 清理筛选条件并触发变更。
+// 清理筛选条件并触发变更
 const clearFilter = (id?: number) => {
   clearInnerTag(id)
   if (isNaN(id)) {
@@ -82,7 +82,7 @@ const clearFilter = (id?: number) => {
   }
   trigger()
 }
-// 同步筛选条件变化。
+// 同步筛选条件变化
 const filterChange = (value, field, operator) => {
   let exits = false
   let len = state.conditions.length
@@ -101,22 +101,22 @@ const filterChange = (value, field, operator) => {
   }
   treeFilterChange(value, field, operator)
 }
-// 重置筛选条件并关闭抽屉。
+// 重置筛选条件并关闭抽屉
 const reset = () => {
   clearFilter()
   userDrawer.value = false
 }
-// 关闭筛选抽屉。
+// 关闭筛选抽屉
 const close = () => {
   userDrawer.value = false
 }
-// 定义筛选抽屉事件。
+// 定义筛选抽屉事件
 const emits = defineEmits(['trigger-filter', 'tree-filter-change'])
-// 通知父级筛选条件变化。
+// 通知父级筛选条件变化
 const trigger = () => {
   emits('trigger-filter', state.conditions)
 }
-// 通知父级树筛选条件变化。
+// 通知父级树筛选条件变化
 const treeFilterChange = (value, field, operator) => {
   emits('tree-filter-change', {
     value,

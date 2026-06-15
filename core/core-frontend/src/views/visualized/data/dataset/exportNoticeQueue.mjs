@@ -1,13 +1,13 @@
 const DEFAULT_DELAY = 1000
 const DEFAULT_TTL = 60 * 1000
 
-// 规范化导出任务状态。
+// 规范化导出任务状态
 const toStatus = task => String(task?.exportStatus || '').toUpperCase()
 
-// 生成导出任务去重键。
+// 生成导出任务去重键
 const toTaskKey = task => `task:${task?.id || ''}:${toStatus(task)}`
 
-// 清理超过有效期的任务缓存。
+// 清理超过有效期的任务缓存
 const prune = (cache, now, ttl) => {
   cache.forEach((time, key) => {
     if (now - time > ttl) {
@@ -16,13 +16,13 @@ const prune = (cache, now, ttl) => {
   })
 }
 
-// 创建导出结果通知队列。
+// 创建导出结果通知队列
 export const createExportNoticeQueue = ({ delay = DEFAULT_DELAY, ttl = DEFAULT_TTL, now = Date.now, emit }) => {
   const seen = new Map()
   const pending = []
   let timer
 
-  // 延迟触发队列刷新。
+  // 延迟触发队列刷新
   const schedule = () => {
     if (timer) {
       return
@@ -36,7 +36,7 @@ export const createExportNoticeQueue = ({ delay = DEFAULT_DELAY, ttl = DEFAULT_T
     }, delay)
   }
 
-  // 合并待通知任务并派发通知。
+  // 合并待通知任务并派发通知
   const flush = () => {
     if (timer) {
       clearTimeout(timer)
@@ -65,7 +65,7 @@ export const createExportNoticeQueue = ({ delay = DEFAULT_DELAY, ttl = DEFAULT_T
     })
   }
 
-  // 添加导出任务并按状态去重。
+  // 添加导出任务并按状态去重
   const push = task => {
     const status = toStatus(task)
     if (!['SUCCESS', 'FAILED'].includes(status)) {
@@ -84,7 +84,7 @@ export const createExportNoticeQueue = ({ delay = DEFAULT_DELAY, ttl = DEFAULT_T
     return true
   }
 
-  // 清空队列、定时器和去重缓存。
+  // 清空队列、定时器和去重缓存
   const clear = () => {
     if (timer) {
       clearTimeout(timer)

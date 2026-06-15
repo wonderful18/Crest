@@ -37,13 +37,13 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unchecked")
 public class MultiScatterHandler extends DefaultChartHandler {
     /**
-     * 处理器对应图表类型。
+     * 处理器对应图表类型
      */
     @Getter
     private String type = "multi-scatter";
 
     /**
-     * 注册多维散点图和指标矩阵处理器。
+     * 注册多维散点图和指标矩阵处理器
      */
     @Override
     public void init() {
@@ -52,7 +52,7 @@ public class MultiScatterHandler extends DefaultChartHandler {
     }
 
     /**
-     * 将多维散点图的所有展示字段整理为明细查询字段。
+     * 将多维散点图的所有展示字段整理为明细查询字段
      */
     @Override
     public AxisFormatResult formatAxis(ChartViewDTO view) {
@@ -91,7 +91,7 @@ public class MultiScatterHandler extends DefaultChartHandler {
     }
 
     /**
-     * 以明细维度方式查询多维散点图数据。
+     * 以明细维度方式查询多维散点图数据
      */
     @Override
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
@@ -137,7 +137,7 @@ public class MultiScatterHandler extends DefaultChartHandler {
     }
 
     /**
-     * 构建 AntV 多维散点图数据结构。
+     * 构建 AntV 多维散点图数据结构
      */
     @Override
     public Map<String, Object> buildResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {

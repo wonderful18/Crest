@@ -3,20 +3,20 @@ import { onMounted, reactive, ref } from 'vue'
 import request from '@/config/axios'
 import { ElMessage, ElMessageBox } from 'element-plus-secondary'
 
-// 控制角色列表和弹窗操作的加载状态。
+// 控制角色列表和弹窗操作的加载状态
 const loading = ref(false)
-// 保存角色名称搜索关键字。
+// 保存角色名称搜索关键字
 const keyword = ref('')
-// 保存当前组织下的角色列表。
+// 保存当前组织下的角色列表
 const tableData = ref<any[]>([])
-// 控制角色编辑弹窗显示状态。
+// 控制角色编辑弹窗显示状态
 const dialogVisible = ref(false)
-// 标记当前弹窗是否处于编辑模式。
+// 标记当前弹窗是否处于编辑模式
 const isEdit = ref(false)
-// 保存角色表单数据。
+// 保存角色表单数据
 const form = reactive<any>({ id: null, name: '', desc: '', typeCode: 0 })
 
-// 加载当前组织下的角色列表。
+// 加载当前组织下的角色列表
 const loadTable = async () => {
   loading.value = true
   try {
@@ -33,14 +33,14 @@ const loadTable = async () => {
   }
 }
 
-// 打开新建角色弹窗并重置表单。
+// 打开新建角色弹窗并重置表单
 const openCreate = () => {
   Object.assign(form, { id: null, name: '', desc: '', typeCode: 0 })
   isEdit.value = false
   dialogVisible.value = true
 }
 
-// 加载角色详情并打开编辑弹窗。
+// 加载角色详情并打开编辑弹窗
 const openEdit = async (row: any) => {
   const res = await request.get({ url: `/role/detail/${row.id}` })
   Object.assign(form, res.data || row)
@@ -48,7 +48,7 @@ const openEdit = async (row: any) => {
   dialogVisible.value = true
 }
 
-// 校验并保存角色表单。
+// 校验并保存角色表单
 const save = async () => {
   if (!form.name?.trim()) {
     ElMessage.warning('请输入角色名称')
@@ -61,7 +61,7 @@ const save = async () => {
   await loadTable()
 }
 
-// 删除指定角色并刷新列表。
+// 删除指定角色并刷新列表
 const remove = async (row: any) => {
   await ElMessageBox.confirm(`删除角色「${row.name}」后不可恢复，确认删除？`, '删除角色', {
     confirmButtonText: '删除',
@@ -73,7 +73,7 @@ const remove = async (row: any) => {
   await loadTable()
 }
 
-// 生成角色列表中的说明文案。
+// 生成角色列表中的说明文案
 const roleDesc = (row: any) => {
   if (row.desc) return row.desc
   if (String(row.id) === '3') return '用于审计与巡检，仅可查看授权范围内的资源'

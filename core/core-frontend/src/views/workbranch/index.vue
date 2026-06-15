@@ -15,7 +15,7 @@ const interactiveStore = interactiveStoreWithOut()
 const permissionStore = usePermissionStoreWithOut()
 const requestStore = useRequestStoreWithOut()
 const { t } = useI18n()
-// 映射当前用户可访问的业务资源统计数据。
+// 映射当前用户可访问的业务资源统计数据
 const busiDataMap = computed(() => interactiveStore.data)
 const { wsCache } = useCache()
 const router = useRouter()
@@ -47,7 +47,7 @@ const quickCreationBaseList = [
   }
 ]
 
-// 合并快捷创建入口和权限状态。
+// 合并快捷创建入口和权限状态
 const quickCreationList = computed(() =>
   quickCreationBaseList.map((item, index) => ({
     ...item,
@@ -56,12 +56,12 @@ const quickCreationList = computed(() =>
   }))
 )
 
-// 提取工作台顶部需要展示的业务统计卡片。
+// 提取工作台顶部需要展示的业务统计卡片
 const busiCountCardList = computed(() =>
   [0, 1, 2].map(index => busiDataMap.value[index]).filter(Boolean)
 )
 
-// 根据快捷入口类型跳转到对应的新建页面。
+// 根据快捷入口类型跳转到对应的新建页面
 const quickCreate = (flag: number, hasAuth: boolean) => {
   if (!hasAuth) {
     return
@@ -84,31 +84,31 @@ const quickCreate = (flag: number, hasAuth: boolean) => {
   }
 }
 
-// 打开仪表板新建页面。
+// 打开仪表板新建页面
 const createPanel = () => {
   const baseUrl = '#/dashboard?opt=create'
   window.open(baseUrl, openType)
 }
 
-// 打开数据大屏新建页面。
+// 打开数据大屏新建页面
 const createScreen = () => {
   const baseUrl = '#/dvCanvas?opt=create'
   window.open(baseUrl, openType)
 }
-// 打开数据集新建页面。
+// 打开数据集新建页面
 const createDataset = () => {
   let routeData = router.resolve({
     path: '/dataset-form'
   })
   window.open(routeData.href, openType)
 }
-// 打开数据源新建页面。
+// 打开数据源新建页面
 const createDatasource = () => {
   const baseUrl = '#/data/datasource?opt=create'
   window.open(baseUrl, openType)
 }
 
-// 收集业务资源叶子节点的创建或更新时间。
+// 收集业务资源叶子节点的创建或更新时间
 const getLeafTimes = item => {
   const stack = [...(item?.treeNodes || [])]
   const times: number[] = []
@@ -127,7 +127,7 @@ const getLeafTimes = item => {
   return times
 }
 
-// 将资源更新时间转换为迷你趋势图数值。
+// 将资源更新时间转换为迷你趋势图数值
 const getSparkValues = item => {
   const times = getLeafTimes(item).sort((a, b) => a - b)
   const total = Number(item?.leafNodeCount || times.length || 0)
@@ -159,7 +159,7 @@ const getSparkValues = item => {
   })
 }
 
-// 将趋势图数值转换为 SVG 折线点位。
+// 将趋势图数值转换为 SVG 折线点位
 const getSparkPoints = item => {
   const values = getSparkValues(item)
   const max = Math.max(...values)
@@ -174,7 +174,7 @@ const getSparkPoints = item => {
     .join(' ')
 }
 
-// 获取迷你趋势图最后一个点的位置。
+// 获取迷你趋势图最后一个点的位置
 const getSparkLastPoint = item => {
   const point = getSparkPoints(item).split(' ').pop() || '46,9'
   const [x, y] = point.split(',')

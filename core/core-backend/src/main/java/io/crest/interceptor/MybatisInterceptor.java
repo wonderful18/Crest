@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 })
 @SuppressWarnings({"deprecation", "unchecked", "rawtypes"})
 /**
- * MyBatis 加解密拦截器，按配置在写入前加密、查询后解密字段。
+ * MyBatis 加解密拦截器，按配置在写入前加密、查询后解密字段
  */
 public class MybatisInterceptor implements Interceptor {
 
@@ -32,7 +32,7 @@ public class MybatisInterceptor implements Interceptor {
     private ConcurrentHashMap<String, Map<String, Map<String, MybatisInterceptorConfig>>> interceptorConfigMap = new ConcurrentHashMap<>();
 
     /**
-     * 拦截 MyBatis 更新和查询调用，执行字段加密或解密处理。
+     * 拦截 MyBatis 更新和查询调用，执行字段加密或解密处理
      */
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
@@ -65,7 +65,7 @@ public class MybatisInterceptor implements Interceptor {
     }
 
     /**
-     * 获取当前对象类型对应的字段拦截配置，并缓存解析结果。
+     * 获取当前对象类型对应的字段拦截配置，并缓存解析结果
      */
     private Map<String, Map<String, MybatisInterceptorConfig>> getConfig(Object p) {
         Map<String, Map<String, MybatisInterceptorConfig>> result = new HashMap<>();
@@ -109,7 +109,7 @@ public class MybatisInterceptor implements Interceptor {
     }
 
     /**
-     * 在写入数据库前按配置加密对象字段。
+     * 在写入数据库前按配置加密对象字段
      */
     private Object process(Object obj) throws Throwable {
         if (obj instanceof Map) {
@@ -155,7 +155,7 @@ public class MybatisInterceptor implements Interceptor {
 
 
     /**
-     * 在查询返回后按配置解密对象字段。
+     * 在查询返回后按配置解密对象字段
      */
     private Object undo(Object obj) throws Throwable {
         Map<String, Map<String, MybatisInterceptorConfig>> localDecryptConfigMap = getConfig(obj);
@@ -181,7 +181,7 @@ public class MybatisInterceptor implements Interceptor {
                 Object undoValue;
                 if (fieldValue instanceof List) {
                     Method method = processClazz.getMethod(interceptorConfig.getUndoMethod(), List.class, String.class);
-                    // List 属性已通过引用更新，无需再次写回字段。
+                    // List 属性已通过引用更新，无需再次写回字段
                     method.invoke(null, fieldValue, interceptorConfig.getAttrNameForList());
                 } else {
                     Method method = processClazz.getMethod(interceptorConfig.getUndoMethod(), Object.class);
@@ -198,7 +198,7 @@ public class MybatisInterceptor implements Interceptor {
     }
 
     /**
-     * 让 MyBatis 为目标对象创建插件代理。
+     * 让 MyBatis 为目标对象创建插件代理
      */
     @Override
     public Object plugin(Object target) {
@@ -206,35 +206,35 @@ public class MybatisInterceptor implements Interceptor {
     }
 
     /**
-     * 接收 MyBatis 插件属性配置。
+     * 接收 MyBatis 插件属性配置
      */
     @Override
     public void setProperties(Properties properties) {
     }
 
     /**
-     * 获取字段拦截配置列表。
+     * 获取字段拦截配置列表
      */
     public List<MybatisInterceptorConfig> getInterceptorConfigList() {
         return interceptorConfigList;
     }
 
     /**
-     * 设置字段拦截配置列表。
+     * 设置字段拦截配置列表
      */
     public void setInterceptorConfigList(List<MybatisInterceptorConfig> interceptorConfigList) {
         this.interceptorConfigList = interceptorConfigList;
     }
 
     /**
-     * 字段处理方法类型。
+     * 字段处理方法类型
      */
     private enum Methods {
         encrypt, decrypt
     }
 
     /**
-     * 判断配置映射是否为空。
+     * 判断配置映射是否为空
      */
     private boolean isEmpty(Map<?, ?> map) {
         return map == null || map.isEmpty();

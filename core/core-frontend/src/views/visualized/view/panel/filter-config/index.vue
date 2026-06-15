@@ -8,47 +8,47 @@ import { fieldType } from '@/utils/attr'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 const initials = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
 
-// 当前下拉组件选中值。
+// 当前下拉组件选中值
 const selectValue = ref()
 const options = Array.from({ length: 10 }).map((_, idx) => ({
   value: `Option ${idx + 1}`,
   label: `${initials[idx % 10]}${idx}`
 }))
-// 控制下拉组件是否多选。
+// 控制下拉组件是否多选
 const multiple = ref(false)
-// 当前配置页签。
+// 当前配置页签
 const activeName = ref('setting')
-// 当前选项值来源页签。
+// 当前选项值来源页签
 const activeNameData = ref('dataset')
-// 可绑定的参数列表。
+// 可绑定的参数列表
 const allParams = shallowRef([])
-// 当前可控制的图表视图列表。
+// 当前可控制的图表视图列表
 const curTableViews = shallowRef([])
-// 过滤组件自定义样式。
+// 过滤组件自定义样式
 const customStyle = reactive({
   border: '',
   background: '',
   text: ''
 })
 provide('$custom-style-filter', customStyle)
-// 维度字段分组是否展开。
+// 维度字段分组是否展开
 const expandedD = ref(false)
-// 指标字段分组是否展开。
+// 指标字段分组是否展开
 const expandedQ = ref(false)
 
-// 下拉面板加载态。
+// 下拉面板加载态
 const loading = ref(true)
 
-// 根据下拉面板显隐更新加载态。
+// 根据下拉面板显隐更新加载态
 const visibleChange = (val: boolean) => {
   setTimeout(() => {
     loading.value = !val
   }, 50)
 }
 
-// 可拖拽指标字段列表。
+// 可拖拽指标字段列表
 const quota = shallowRef([])
-// 可拖拽维度字段列表。
+// 可拖拽维度字段列表
 const dimensions = shallowRef([])
 
 dimensions.value = [
@@ -72,15 +72,15 @@ quota.value = [
   }
 ]
 
-// 示例计数值。
+// 示例计数值
 const num = ref(0)
-// 数据集选项列表。
+// 数据集选项列表
 const datasetList = shallowRef([])
-// 图表选项列表。
+// 图表选项列表
 const chartList = shallowRef([])
-// 过滤条件标签列表。
+// 过滤条件标签列表
 const tagList = ref([])
-// 过滤组件属性配置。
+// 过滤组件属性配置
 const attrs = reactive({
   multiple: false,
   showTime: false,
@@ -93,15 +93,15 @@ const attrs = reactive({
   viewIds: []
 })
 
-// 切换多选时重置当前选中值。
+// 切换多选时重置当前选中值
 const multipleChange = (val: boolean) => {
   multiple.value = val
   selectValue.value = val ? [] : undefined
 }
 
-// 处理选项值来源页签切换。
+// 处理选项值来源页签切换
 const handleTabClick = () => {
-  // 预留页签切换处理入口。
+  // 预留页签切换处理入口
 }
 </script>
 

@@ -12,20 +12,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Spring 上下文工具类，提供运行时获取 Bean 和 BeanFactory 的能力。
+ * Spring 上下文工具类，提供运行时获取 Bean 和 BeanFactory 的能力
  */
 @Component
 public class SpringContextUtil implements ApplicationContextAware {
 
-    // 获取 bean 工厂，用来实现动态注入 bean。
-    // 不能使用其他类加载器加载 bean，否则会出现类未找到或类未定义异常。
+    // 获取 bean 工厂，用来实现动态注入 bean
+    // 不能使用其他类加载器加载 bean，否则会出现类未找到或类未定义异常
     public static DefaultListableBeanFactory getBeanFactory(){
         return (DefaultListableBeanFactory) getApplicationContext().getAutowireCapableBeanFactory();
     }
 
 
     /**
-     * 获取当前 Spring 容器中的全部 Bean 元信息。
+     * 获取当前 Spring 容器中的全部 Bean 元信息
      */
     public static List<Map<String, Object>> getAllBean() {
 
@@ -62,7 +62,7 @@ public class SpringContextUtil implements ApplicationContextAware {
 
 
     /**
-     * 保存 Spring 注入的应用上下文。
+     * 保存 Spring 注入的应用上下文
      */
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
@@ -79,21 +79,21 @@ public class SpringContextUtil implements ApplicationContextAware {
 
 
     /**
-     * 按 Bean 名称获取实例。
+     * 按 Bean 名称获取实例
      */
     public static Object getBean(String name) {
         return getApplicationContext().getBean(name);
     }
 
     /**
-     * 按 Bean 类型获取实例。
+     * 按 Bean 类型获取实例
      */
     public static <T> T getBean(Class<T> clazz) {
         return getApplicationContext().getBean(clazz);
     }
 
     /**
-     * 按 Bean 名称和类型获取实例。
+     * 按 Bean 名称和类型获取实例
      */
     public static <T> T getBean(String name, Class<T> clazz) {
         return getApplicationContext().getBean(name, clazz);

@@ -10,12 +10,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Bean 属性复制、反射访问和 Map 转 Bean 工具。
+ * Bean 属性复制、反射访问和 Map 转 Bean 工具
  */
 public class BeanUtils {
 
     /**
-     * 将源对象属性复制到目标对象。
+     * 将源对象属性复制到目标对象
      */
     public static <T> T copyBean(T target, Object source) {
         try {
@@ -27,7 +27,7 @@ public class BeanUtils {
     }
 
     /**
-     * 将源对象属性复制到目标对象，并忽略指定属性。
+     * 将源对象属性复制到目标对象，并忽略指定属性
      */
     public static <T> T copyBean(T target, Object source, String... ignoreProperties) {
         try {
@@ -39,7 +39,7 @@ public class BeanUtils {
     }
 
     /**
-     * 通过字段名读取 Bean 的属性值。
+     * 通过字段名读取 Bean 的属性值
      */
     public static Object getFieldValueByName(String fieldName, Object bean) {
         try {
@@ -57,7 +57,7 @@ public class BeanUtils {
     }
 
     /**
-     * 通过字段名写入 Bean 的属性值。
+     * 通过字段名写入 Bean 的属性值
      */
     public static void setFieldValueByName(Object bean, String fieldName, Object value, Class<?> type) {
         try {
@@ -74,7 +74,7 @@ public class BeanUtils {
     }
 
     /**
-     * 获取指定字段对应的 setter 方法。
+     * 获取指定字段对应的 setter 方法
      */
     public static Method getMethod(Object bean, String fieldName, Class<?> type) {
         try {
@@ -90,7 +90,7 @@ public class BeanUtils {
     }
 
     /**
-     * 获取类中声明的字段名称列表。
+     * 获取类中声明的字段名称列表
      */
     public static List<String> getFieldNames(Class<?> clazz) {
         List<String> fieldNames = new ArrayList<>();
@@ -102,7 +102,7 @@ public class BeanUtils {
     }
 
     /**
-     * 将下划线命名转换为驼峰命名。
+     * 将下划线命名转换为驼峰命名
      */
     private static String underscoreToCamel(String underscore) {
         StringBuilder result = new StringBuilder();
@@ -122,7 +122,7 @@ public class BeanUtils {
 
 
     /**
-     * 将 Map 数据转换为指定类型的 Bean 实例。
+     * 将 Map 数据转换为指定类型的 Bean 实例
      */
     public static <T> T mapToBean(Map<String, Object> map, Class<T> clazz) {
         try {
@@ -157,7 +157,7 @@ public class BeanUtils {
     }
 
     /**
-     * 在必要时执行常见基础类型转换。
+     * 在必要时执行常见基础类型转换
      */
     private static Object convertTypeIfNeeded(Object value, Class<?> targetType) {
         if (value == null) {
@@ -208,7 +208,7 @@ public class BeanUtils {
     }
 
     /**
-     * 按原始字段名、下划线字段名和驼峰转换结果查找 Map 值。
+     * 按原始字段名、下划线字段名和驼峰转换结果查找 Map 值
      */
     private static Object findValueInMap(Map<String, Object> map, String propertyName) {
         Object value = map.get(propertyName);
@@ -229,7 +229,7 @@ public class BeanUtils {
     }
 
     /**
-     * 将驼峰命名转换为下划线命名。
+     * 将驼峰命名转换为下划线命名
      */
     private static String camelToUnderscore(String camel) {
         return camel.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();

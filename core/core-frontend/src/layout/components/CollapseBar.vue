@@ -4,13 +4,13 @@ import icon_sideExpand_outlined from '@/assets/svg/icon_side-expand_outlined.svg
 import { useCache } from '@/hooks/web/useCache'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { ref, onMounted } from 'vue'
-// 折叠栏属性。
+// 折叠栏属性
 const props = defineProps({
   isCollapse: Boolean
 })
-// 侧边栏折叠切换事件。
+// 侧边栏折叠切换事件
 const emits = defineEmits(['setCollapse'])
-// 切换侧边栏折叠状态，并恢复或收起宽度。
+// 切换侧边栏折叠状态，并恢复或收起宽度
 const setCollapse = () => {
   if (props.isCollapse) {
     setWidth()
@@ -19,11 +19,11 @@ const setCollapse = () => {
   }
   emits('setCollapse', !props.isCollapse)
 }
-// 折叠栏当前宽度。
+// 折叠栏当前宽度
 const width = ref(280)
-// 本地缓存保存拖拽后的侧栏宽度。
+// 本地缓存保存拖拽后的侧栏宽度
 const { wsCache } = useCache('localStorage')
-// 从缓存恢复侧栏宽度。
+// 从缓存恢复侧栏宽度
 const setWidth = () => {
   const num = wsCache.get('current-collapse_bar')
   if (!num) return

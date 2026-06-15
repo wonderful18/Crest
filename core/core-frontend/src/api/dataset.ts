@@ -228,7 +228,7 @@ export const delDatasetTree = async (id): Promise<IResponse> => {
   })
 }
 
-// 导出数据集文件。
+// 导出数据集文件
 export const exportDatasetData = (data = {}) => {
   return request.post({
     url: '/dataset-tree/export-dataset',
@@ -412,19 +412,19 @@ export const datasetSyncLogs = async (datasetGroupId): Promise<DatasetSyncLog[]>
     return res?.data || []
   })
 }
-// 分页查询行权限规则。
+// 分页查询行权限规则
 export const rowPermissionList = (page: number, limit: number, datasetId: number) =>
   request.get({ url: '/dataset/row-permissions/page/' + datasetId + '/' + page + '/' + limit })
 
-// 分页查询列权限规则。
+// 分页查询列权限规则
 export const columnPermissionList = (page: number, limit: number, datasetId: number) =>
   request.get({ url: '/dataset/column-permissions/page/' + datasetId + '/' + page + '/' + limit })
 
-// 查询行权限可授权对象。
+// 查询行权限可授权对象
 export const rowPermissionTargetObjList = (datasetId: number, type: string) =>
   request.get({ url: '/dataset/row-permissions/authorized-objects/' + datasetId + '/' + type })
 
-// 查询数据集字段列表。
+// 查询数据集字段列表
 export const listFieldByDatasetGroup = (datasetId: number) => {
   return request.post({ url: '/dataset-field/by-dataset-group/' + datasetId }).then(res => {
     originNameHandleBack(res?.data)
@@ -432,12 +432,12 @@ export const listFieldByDatasetGroup = (datasetId: number) => {
   })
 }
 
-// 批量查询权限字段取值。
+// 批量查询权限字段取值
 export const multFieldValuesForPermissions = (data = {}) => {
   return request.post({ url: '/dataset-field/permission-field-values', data })
 }
 
-// 查询带权限信息的数据集字段。
+// 查询带权限信息的数据集字段
 export const listFieldsWithPermissions = (datasetId: number) => {
   return request.get({ url: '/dataset-field/with-permissions/' + datasetId }).then(res => {
     originNameHandleBack(res?.data)
@@ -445,32 +445,32 @@ export const listFieldsWithPermissions = (datasetId: number) => {
   })
 }
 
-// 查询智能助手可用字段。
+// 查询智能助手可用字段
 export const copilotFields = (datasetId: number) => {
   return request.post({ url: '/dataset-field/copilot-fields/' + datasetId })
 }
 
-// 保存行权限规则。
+// 保存行权限规则
 export const saveRowPermission = (data = {}) => {
   return request.post({ url: '/dataset/row-permissions/record', data })
 }
 
-// 保存列权限规则。
+// 保存列权限规则
 export const saveColumnPermission = (data = {}) => {
   return request.post({ url: '/dataset/column-permissions/record', data })
 }
 
-// 删除行权限规则。
+// 删除行权限规则
 export const deleteRowPermission = (data = {}) => {
   return request.delete({ url: '/dataset/row-permissions', data })
 }
 
-// 删除列权限规则。
+// 删除列权限规则
 export const deleteColumnPermission = (data = {}) => {
   return request.delete({ url: '/dataset/column-permissions', data })
 }
 
-// 查询行权限白名单用户。
+// 查询行权限白名单用户
 export const whiteListUsersForPermissions = (data = {}) => {
   return request.post({ url: '/dataset/row-permissions/allowlist-users', data })
 }
@@ -505,11 +505,11 @@ export const getFunction = async (): Promise<DatasetDetail[]> => {
   })
 }
 
-// 查询导出任务统计记录。
+// 查询导出任务统计记录
 export const exportTasksRecords = () =>
   request.post({ url: `/export-center/export-tasks/records`, data: {} })
 
-// 分页查询导出任务列表。
+// 分页查询导出任务列表
 export const exportTasks = (page = 1, limit = 10, status = 'ALL') =>
   request.post({ url: `/export-center/export-tasks/${status}/${page}/${limit}`, data: {} })
 
