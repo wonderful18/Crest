@@ -5,6 +5,7 @@ import io.crest.commons.utils.MybatisInterceptorConfig;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
 import io.crest.datasource.dao.auto.entity.CoreEngine;
 import io.crest.interceptor.MybatisInterceptor;
+import io.crest.interceptor.ObOracleReservedIdentifierInterceptor;
 import io.crest.metadata.MetadataDbTypeResolver;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -32,5 +33,12 @@ public class MybatisConfig {
         interceptor.setUseAssignedKeysWithoutJdbcGeneratedKeys(
                 MetadataDbTypeResolver.resolve(environment).isOracleCompatible());
         return interceptor;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ObOracleReservedIdentifierInterceptor obOracleReservedIdentifierInterceptor(Environment environment) {
+        return new ObOracleReservedIdentifierInterceptor(
+                MetadataDbTypeResolver.resolve(environment).isOracleCompatible());
     }
 }
