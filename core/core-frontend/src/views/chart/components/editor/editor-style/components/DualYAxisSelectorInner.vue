@@ -14,6 +14,7 @@ import { ElFormItem, ElMessage } from 'element-plus-secondary'
 
 const { t } = useI18n()
 
+// 定义双向柱状图内层 Y 轴样式表单的输入参数。
 const props = withDefaults(
   defineProps<{
     themes?: EditorTheme
@@ -31,13 +32,16 @@ const props = withDefaults(
 
 const predefineColors = COLOR_PANEL
 const typeList = formatterType
+// 根据当前主题计算提示浮层主题。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
+// 保存当前 Y 轴样式表单。
 const state = reactive({
   axisForm: JSON.parse(JSON.stringify(DEFAULT_YAXIS_STYLE))
 })
 
+// 声明 Y 轴样式变更事件。
 const emit = defineEmits(['onChangeYAxisForm'])
 
 const splitLineStyle = [
@@ -46,6 +50,7 @@ const splitLineStyle = [
   { label: t('chart.line_type_dotted'), value: 'dotted' }
 ]
 
+// 监听外部表单变化并同步到内部状态。
 watch(
   () => props.form,
   () => {
@@ -54,6 +59,7 @@ watch(
   { deep: true }
 )
 
+// 生成字号选项列表。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -71,6 +77,7 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+// 校验刻度数量并同步 Y 轴样式。
 const changeAxisStyle = prop => {
   if (
     state.axisForm.axisValue.splitCount &&
@@ -82,22 +89,27 @@ const changeAxisStyle = prop => {
   emit('onChangeYAxisForm', state.axisForm, prop)
 }
 
+// 切换数值格式化单位语言并同步样式。
 function changeUnitLanguage(cfg: BaseFormatter, lang, prop: string) {
   onChangeFormatCfgUnitLanguage(cfg, lang)
   changeAxisStyle(prop)
 }
 
+// 使用外部表单初始化内部 Y 轴样式。
 const init = () => {
   state.axisForm = JSON.parse(JSON.stringify(props.form))
   initFormatCfgUnit(state.axisForm.axisLabelFormatter)
 }
 
+// 判断指定样式属性是否需要展示。
 const showProperty = prop => props.propertyInner?.includes(prop)
 
+// 判断当前图表是否为双向柱状图。
 const isBidirectionalBar = computed(() => {
   return props.chartType === 'bidirectional-bar'
 })
 
+// 判断双向柱状图是否为纵向布局。
 const isVerticalLayout = computed(() => {
   return props.layout === 'vertical'
 })
