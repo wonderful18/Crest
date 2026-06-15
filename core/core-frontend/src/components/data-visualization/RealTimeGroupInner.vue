@@ -72,7 +72,7 @@ import circlePackingOrigin from '@/assets/svg/circle-packing-origin.svg'
 import bulletGraphOrigin from '@/assets/svg/bullet-graph-origin.svg'
 import { syncViewTitle } from '@/utils/canvasUtils'
 import { useI18n } from '@/hooks/web/useI18n'
-// 更多操作下拉实例
+// 图层更多操作下拉实例，供右键菜单关闭和重命名流程复用
 const dropdownMore = ref(null)
 const lockStore = lockStoreWithOut()
 const { t } = useI18n()
@@ -81,11 +81,12 @@ const snapshotStore = snapshotStoreWithOut()
 const layerStore = layerStoreWithOut()
 const composeStore = composeStoreWithOut()
 
+// 框选区域和当前组件状态分别来自组合、画布仓库，图层列表只负责同步选择结果
 const { areaData } = storeToRefs(composeStore)
 
 const { curComponent, canvasViewInfo } = storeToRefs(dvMainStore)
 
-// 接收图层列表位置和组件数据
+// 接收图层列表位置和组件数据；内层列表只展示当前分组或标签页下的子组件
 const props = defineProps({
   tabPosition: {
     type: String,
@@ -257,7 +258,7 @@ const iconMap = {
   'circle-packing-origin': circlePackingOrigin,
   'bullet-graph-origin': bulletGraphOrigin
 }
-// 根据组件类型解析图层图标
+// 根据组件类型解析图层图标，图表组件需要从画布视图信息反查真实图表类型
 const getIconName = item => {
   if (item.component === 'UserView') {
     const viewInfo = canvasViewInfo.value[item.id]
@@ -267,7 +268,7 @@ const getIconName = item => {
   }
 }
 
-// 关闭右键菜单并按需进入重命名状态
+// 关闭右键菜单并按需进入重命名状态，延迟执行用于等待下拉层销毁完成
 const menuAsideClose = (param, index) => {
   const iconDom = document.getElementById('close-button')
   if (iconDom) {
@@ -280,7 +281,7 @@ const menuAsideClose = (param, index) => {
   }
 }
 
-// 拦截原生右键菜单
+// 拦截原生右键菜单，右键操作由组件内的下拉菜单统一承接
 const handleContextMenu = e => {
   e.preventDefault()
   // 记录鼠标点击位置以定位临时菜单容器
@@ -299,14 +300,14 @@ const handleContextMenu = e => {
     document.body.removeChild(customContextMenu)
   })
 }
-// 切换分组图层展开状态
+// 切换分组图层展开状态，展开后由上层列表继续递归渲染子图层
 const expandClick = component => {
   component['expand'] = !component['expand']
 }
 </script>
 
 <template>
-  <!--为了保持图层视觉上的一致性 这里进行数组的倒序排列 相应的展示和移动按照倒序处理-->
+  <!-- 图层面板按视觉层级倒序展示，拖拽和选中索引需要同步转换到真实组件数组。 -->
   <div class="real-time-component-list">
     <button hidden="true" id="close-button"></button>
     <el-row class="list-wrap">
@@ -441,12 +442,14 @@ const expandClick = component => {
 .real-time-component-list {
   white-space: nowrap;
   .list-wrap {
+    // 图层列表高度跟随工具栏预留空间，避免长列表覆盖底部操作区。
     max-height: calc(100% - @component-toolbar-height);
     overflow-y: auto;
     width: 100%;
     .list-container {
       width: 100%;
       .component-item {
+        // 单行图层项固定高度，避免图标显示、编辑输入框和拖拽态造成列表抖动。
         position: relative;
         height: 30px;
         width: 100%;
@@ -496,6 +499,7 @@ const expandClick = component => {
           background-color: rgba(235, 235, 235, 0.1);
 
           .icon-container {
+            // 操作区默认收起，悬停时展开显示锁定、显隐和更多操作。
             .component-base {
               opacity: 1;
             }
@@ -537,6 +541,7 @@ const expandClick = component => {
 }
 
 .component-base {
+  // 统一图层操作按钮尺寸，保证内层列表与主图层列表视觉一致。
   cursor: pointer;
   height: 22px !important;
   width: 22px !important;
@@ -569,6 +574,7 @@ const expandClick = component => {
 }
 
 .container-item-not-show {
+  // 隐藏图层使用低亮文本和图标，保留可识别层级但降低视觉权重。
   color: #5f5f5f !important;
   :deep(.component-icon) {
     color: #5f5f5f !important;

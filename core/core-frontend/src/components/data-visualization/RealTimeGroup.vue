@@ -475,12 +475,14 @@ const expandClick = component => {
 .real-time-component-list {
   white-space: nowrap;
   .list-wrap {
+    // 图层列表高度跟随工具栏预留空间，避免长列表覆盖底部操作区。
     max-height: calc(100% - @component-toolbar-height);
     overflow-y: auto;
     width: 100%;
     .list-container {
       width: 100%;
       .component-item {
+        // 单行图层项固定高度，避免图标显示、编辑输入框和拖拽态造成列表抖动。
         position: relative;
         height: 30px;
         width: 100%;
@@ -530,6 +532,7 @@ const expandClick = component => {
           background-color: rgba(235, 235, 235, 0.1);
 
           .icon-container {
+            // 操作区默认收起，悬停时展开显示锁定、显隐和更多操作。
             .component-base {
               opacity: 1;
             }
@@ -571,6 +574,7 @@ const expandClick = component => {
 }
 
 .component-base {
+  // 统一图层操作按钮尺寸，保证主图层列表与递归子列表视觉一致。
   cursor: pointer;
   height: 22px !important;
   width: 22px !important;
@@ -603,6 +607,7 @@ const expandClick = component => {
 }
 
 .container-item-not-show {
+  // 隐藏图层使用低亮文本和图标，保留可识别层级但降低视觉权重。
   color: #5f5f5f !important;
   :deep(.component-icon) {
     color: #5f5f5f !important;
