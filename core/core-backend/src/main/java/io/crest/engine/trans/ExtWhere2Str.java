@@ -23,9 +23,15 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * 将图表外部筛选条件转换为 SQL 元数据中的扩展 WHERE 条件。
+ */
 public class ExtWhere2Str {
     private static final Pattern NUMBER_PATTERN = Pattern.compile("^[-+]?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$");
 
+    /**
+     * 解析外部筛选字段并写入 SQLMeta 的扩展 WHERE 条件。
+     */
     public static void extWhere2sqlOjb(SQLMeta meta, List<ChartExtFilterDTO> fields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         SQLObj tableObj = meta.getTable();
         if (ObjectUtils.isEmpty(tableObj)) {
@@ -301,6 +307,9 @@ public class ExtWhere2Str {
         meta.setExtWheresDialect(fieldsDialect);
     }
 
+    /**
+     * 根据比较操作符生成对应的 SQL 字面量片段。
+     */
     private static String getValue(String term, String value) {
         switch (term) {
             case "like":
@@ -311,28 +320,46 @@ public class ExtWhere2Str {
         return null;
     }
 
+    /**
+     * 校验并转义普通字符串 SQL 字面量。
+     */
     private static String sanitizeSqlLiteral(String value) {
         String normalized = StringUtils.defaultString(value);
         Utils.validateSqlInjectionRisk(normalized);
         return Utils.transValue(normalized);
     }
 
+    /**
+     * 将普通字符串转换为单引号包裹的 SQL 值。
+     */
     private static String toQuotedValue(String value) {
         return "'" + sanitizeSqlLiteral(value) + "'";
     }
 
+    /**
+     * 将普通字符串转换为 LIKE 查询值。
+     */
     private static String toLikeValue(String value) {
         return "'%" + sanitizeSqlLiteral(value) + "%'";
     }
 
+    /**
+     * 将字符串转换为 SQL Server Unicode 字符串值。
+     */
     private static String toSqlServerNQuotedValue(String value) {
         return "'" + SQLConstants.MSSQL_N_PREFIX + sanitizeSqlLiteral(value) + "'";
     }
 
+    /**
+     * 将字符串转换为 SQL Server Unicode LIKE 查询值。
+     */
     private static String toSqlServerNLikeValue(String value) {
         return "'" + SQLConstants.MSSQL_N_PREFIX + "%" + sanitizeSqlLiteral(value) + "%'";
     }
 
+    /**
+     * 校验并返回安全的数值 SQL 字面量。
+     */
     private static String sanitizeNumberLiteral(String value) {
         String normalized = StringUtils.trimToEmpty(value);
         if (!NUMBER_PATTERN.matcher(normalized).matches()) {

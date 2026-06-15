@@ -21,9 +21,15 @@ import org.springframework.util.CollectionUtils;
 import java.util.*;
 import java.util.regex.Pattern;
 
+/**
+ * 将图表指标字段转换为 SQL 元数据中的纵轴字段、过滤和排序配置。
+ */
 public class Quota2SQLObj {
     private static final Pattern NUMBER_PATTERN = Pattern.compile("^[-+]?\\d+(\\.\\d+)?([eE][-+]?\\d+)?$");
 
+    /**
+     * 解析指标字段并写入 SQLMeta 的纵轴字段、过滤和排序信息。
+     */
     public static void quota2sqlObj(SQLMeta meta, List<ChartViewFieldDTO> fields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         SQLObj tableObj = meta.getTable();
         if (ObjectUtils.isEmpty(tableObj)) {
@@ -105,6 +111,9 @@ public class Quota2SQLObj {
         meta.setYFieldsDialect(fieldsDialect);
     }
 
+    /**
+     * 根据指标字段类型和汇总方式生成纵轴 SQL 字段。
+     */
     private static SQLObj getYFields(ChartViewFieldDTO y, String originField, String fieldAlias) {
         String fieldName = "";
         if (Strings.CI.equals(y.getOriginName(), "*")) {
@@ -141,6 +150,9 @@ public class Quota2SQLObj {
                 .build();
     }
 
+    /**
+     * 将指标字段上的过滤配置转换为 SQL 条件。
+     */
     private static String getYWheres(ChartViewFieldDTO y, String originField, String fieldAlias) {
         List<SQLObj> list = new ArrayList<>();
         if (!CollectionUtils.isEmpty(y.getFilter()) && y.getFilter().size() > 0) {
@@ -186,26 +198,41 @@ public class Quota2SQLObj {
         return !CollectionUtils.isEmpty(list) ? "(" + String.join(" " + Utils.getLogic(y.getLogic()) + " ", strList) + ")" : null;
     }
 
+    /**
+     * 判断字段是否应按数值字面量处理。
+     */
     private static boolean isNumberLikeField(ChartViewFieldDTO field) {
         return Objects.equals(field.getFieldType(), FieldTypeConstants.INTEGER)
                 || Objects.equals(field.getFieldType(), FieldTypeConstants.FLOAT)
                 || Objects.equals(field.getFieldType(), FieldTypeConstants.BOOLEAN);
     }
 
+    /**
+     * 校验并转义普通字符串 SQL 字面量。
+     */
     private static String sanitizeSqlLiteral(String value) {
         String normalized = StringUtils.defaultString(value);
         Utils.validateSqlInjectionRisk(normalized);
         return Utils.transValue(normalized);
     }
 
+    /**
+     * 将普通字符串转换为单引号包裹的 SQL 值。
+     */
     private static String toQuotedValue(String value) {
         return "'" + sanitizeSqlLiteral(value) + "'";
     }
 
+    /**
+     * 将普通字符串转换为 LIKE 查询值。
+     */
     private static String toLikeValue(String value) {
         return "'%" + sanitizeSqlLiteral(value) + "%'";
     }
 
+    /**
+     * 校验并返回安全的数值 SQL 字面量。
+     */
     private static String sanitizeNumberLiteral(String value) {
         String normalized = StringUtils.trimToEmpty(value);
         if (!NUMBER_PATTERN.matcher(normalized).matches()) {
