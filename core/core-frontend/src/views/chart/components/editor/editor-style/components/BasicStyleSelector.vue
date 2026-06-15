@@ -141,6 +141,7 @@ const init = () => {
     basicStyle.mapSymbol === 'custom' &&
     state.basicStyleForm.customIcon !== basicStyle.customIcon
   ) {
+    // 自定义地图符号可能是 data URL 或 SVG 文本，进入面板时转换成上传控件预览。
     let file
     if (basicStyle.customIcon?.startsWith('data')) {
       file = basicStyle.customIcon
@@ -152,10 +153,12 @@ const init = () => {
   state.basicStyleForm = defaultsDeep(basicStyle, cloneDeep(DEFAULT_BASIC_STYLE)) as ChartBasicStyle
   const mapStyle = basicStyle.mapStyle
   if (mapStyle && !find(mapStyleOptions.value, s => s.value === mapStyle)) {
+    // 历史或第三方底图样式不存在时回退到普通样式，避免下拉框显示空值。
     state.basicStyleForm.mapStyle = 'normal'
   }
   state.miscForm = defaultsDeep(miscStyle, cloneDeep(DEFAULT_MISC)) as ChartMiscAttr
   if (!state.customColor) {
+    // 首次进入面板默认选中第一组配色，后续响应式刷新不重置用户编辑位置。
     state.customColor = state.basicStyleForm.colors[0]
     state.colorIndex = 0
   }
@@ -163,6 +166,7 @@ const init = () => {
     tableExpandLevelOptions.splice(1)
     let maxLevel = props.chart.xAxis?.length
     if (isNumber(basicStyle.defaultExpandLevel)) {
+      // 已保存展开层级可能大于当前行维度数量，选项需要保留该历史值。
       maxLevel = Math.max(maxLevel, basicStyle.defaultExpandLevel)
     }
     for (let i = 1; i <= maxLevel; i++) {
@@ -175,12 +179,14 @@ const init = () => {
     if (basicStyle.tableRowHeaderMode === 'percent') {
       state.treeRowWidth = basicStyle.tableRowHeaderWidthPercent
       if (basicStyle.tableRowHeaderWidthPercent > 80) {
+        // 百分比模式限制最大 80%，避免树表行头挤占全部内容区域。
         state.treeRowWidth = 80
       }
     }
     if (basicStyle.tableRowHeaderMode === 'fixed') {
       state.treeRowWidth = basicStyle.tableRowHeaderWidth
       if (basicStyle.tableRowHeaderWidth < 10) {
+        // 固定宽度历史值过小时回退到可读默认宽度。
         state.treeRowWidth = 120
       }
     }
@@ -188,6 +194,7 @@ const init = () => {
   const lastPageInfo = dvMainStore.getViewPageInfo(props.chart.id)
   if (lastPageInfo) {
     if (lastPageInfo.pageSize && lastPageInfo.pageSize !== state.basicStyleForm.tablePageSize) {
+      // 表格运行时分页大小优先回填到样式表单，但不触发图表立即重绘。
       state.basicStyleForm.tablePageSize = lastPageInfo.pageSize
       changeBasicStyle('tablePageSize', false, false)
       return
@@ -230,6 +237,7 @@ const initTableColumnWidth = () => {
   }
   const { tableHeader } = customAttr
   if (allAxis.length && tableHeader.showIndex) {
+    // 序号列不是数据集字段，需要使用固定字段名加入列宽配置。
     const indexColumn = {
       engineFieldName: SERIES_NUMBER_FIELD,
       name: tableHeader.indexLabel
@@ -237,6 +245,7 @@ const initTableColumnWidth = () => {
     allAxis.unshift(indexColumn)
   }
   if (!allAxis.length) {
+    // 当前没有可展示字段时清空列宽状态，避免保留已删除字段配置。
     state.basicStyleForm.tableFieldWidth?.splice(0)
     state.fieldColumnWidth.fieldId = ''
     state.fieldColumnWidth.width = 0
@@ -244,6 +253,7 @@ const initTableColumnWidth = () => {
     if (!state.basicStyleForm.tableFieldWidth.length) {
       state.basicStyleForm.tableFieldWidth.splice(0)
       const defaultWidth = parseFloat((100 / allAxis.length).toFixed(2))
+      // 首次进入列宽配置时按字段数量均分宽度。
       allAxis.forEach(item => {
         state.basicStyleForm.tableFieldWidth.push({
           fieldId: item.engineFieldName,
@@ -252,6 +262,7 @@ const initTableColumnWidth = () => {
         })
       })
     } else {
+      // 字段变化时保留同名字段的历史列宽，新字段使用默认宽度。
       const fieldMap = state.basicStyleForm.tableFieldWidth.reduce((p, n) => {
         p[n.fieldId] = n
         return p
@@ -308,6 +319,7 @@ const changeFieldColumnWidth = () => {
   if (!validate) {
     ElMessage.warning('宽度需要在 0-200 之间')
     if (fieldWidth) {
+      // 校验失败恢复当前字段已保存列宽，避免输入框停留在非法值。
       fieldColumnWidth.width = fieldWidth.width
     }
     return

@@ -690,6 +690,7 @@ const state = reactive<any>({
   activeCollapse: 'view',
   loading: false,
   showSelected: false,
+  // 当前源图表、源数据集和目标资源配置共同组成跳转编辑上下文。
   curJumpViewInfo: {},
   curDatasetInfo: {},
   tempId: null,
@@ -725,7 +726,7 @@ const state = reactive<any>({
   linkJumpInfoArray: [],
   linkJumpInfoXArray: [],
   linkJumpCurViewFieldArray: [],
-  linkJumpCurFilterFieldArray: [], //当前过滤条件明细
+  linkJumpCurFilterFieldArray: [], // 当前过滤条件明细，用于绑定目标资源外部参数。
   mapJumpInfoArray: {},
   panelList: [],
   linkJumpInfo: null,
@@ -735,6 +736,7 @@ const state = reactive<any>({
     jumpType: '_self',
     targetViewInfoList: []
   },
+  // defaultTargetViewInfo 用于新增字段映射行，确认保存前再写入完整目标信息。
   defaultTargetViewInfo: {
     targetViewId: null,
     targetFieldId: null
@@ -757,6 +759,7 @@ const outerContentEditor = ref(null)
 
 /** 重置当前图表跳转配置的临时状态 */
 const resetParams = () => {
+  // 切换源图表或重新打开弹窗时清空所有依赖上一个图表的字段缓存。
   state.linkJump = null
   state.linkJumpInfoArray = []
   state.linkJumpInfoXArray = []
@@ -843,7 +846,7 @@ const init = viewItem => {
     checkJumpStr = checkAllAxisStr
   }
   const request = { busiFlag: 'dashboard-dataV' } as BusiTreeRequest
-  // 获取可关联的仪表板
+  // 获取可关联的目标资源树，过滤空目录后按当前资源类型的树排序方式展示。
   queryTreeApi(request).then((rsp: any) => {
     const panelList = Array.isArray(rsp) ? rsp : []
     if (panelList[0]?.id === '0') {
@@ -876,7 +879,7 @@ const init = viewItem => {
       })
     })
 
-    // 获取当前图表的关联信息
+    // 获取当前图表的关联信息，只展示仍存在于当前字段集合中的跳转字段。
     queryWithViewId(dvInfo.value.id, state.viewId).then(rsp => {
       state.linkJump = rsp.data
       state.linkJumpInfoArray = []
@@ -902,7 +905,7 @@ const init = viewItem => {
 
 /** 校验并保存当前图表的跳转配置 */
 const save = () => {
-  // 保存前校验必填字段
+  // 保存前校验必填字段，内跳转校验目标资源和字段映射，外跳转校验 URL 内容。
   let subCheckCountAll = 0
   state.linkJump.linkJumpInfoArray.forEach(linkJumpInfo => {
     if (linkJumpInfo.checked) {
@@ -941,6 +944,7 @@ const save = () => {
       ElMessage.success(t('common.save_success'))
       // 刷新跳转信息
       queryVisualizationJumpInfo(dvInfo.value.id).then(rsp => {
+        // 保存后刷新画布缓存，预览和发布态使用最新跳转配置。
         dvMainStore.setNowPanelJumpInfo(rsp.data)
         cancel()
       })
@@ -991,6 +995,7 @@ const getPanelViewList = dvId => {
     state.currentLinkPanelViewArray = rsp.data.visualizationViewTables
     if (state.currentLinkPanelViewArray) {
       state.currentLinkPanelViewArray.forEach(view => {
+        // 目标图表字段按图表 id 建索引，字段映射下拉按目标图表动态读取。
         state.viewIdFieldArrayMap[view.id] = view.tableFields
       })
     }
@@ -1027,6 +1032,7 @@ const getPanelViewList = dvId => {
 const dvNodeClick = data => {
   if (data.leaf) {
     state.curDataVWeight = data.weight
+    // 切换目标资源后清空旧映射，防止跨资源保留已失效的图表字段。
     state.linkJumpInfo.targetViewInfoList = []
     if (!isIndicator.value) {
       addLinkJumpField()
