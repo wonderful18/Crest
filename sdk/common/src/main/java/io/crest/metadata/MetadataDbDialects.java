@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Factory and built-in implementations for metadata database dialects.
+ * 元数据库方言工厂及内置实现。
  */
 public final class MetadataDbDialects {
 

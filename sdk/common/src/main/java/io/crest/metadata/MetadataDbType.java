@@ -6,7 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Locale;
 
 /**
- * Crest metadata database type. MySQL remains the default runtime path.
+ * Crest 元数据库类型，MySQL 始终保持默认运行路径。
  */
 public enum MetadataDbType {
     MYSQL("mysql", "com.mysql.cj.jdbc.Driver", DbType.MYSQL, "mysql",

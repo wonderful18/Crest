@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 /**
- * Supplies MyBatis databaseId from Crest metadata database configuration.
+ * 根据 Crest 元数据库配置向 MyBatis 提供 databaseId。
  */
 public class MetadataDatabaseIdProvider implements DatabaseIdProvider {
 
@@ -20,7 +20,7 @@ public class MetadataDatabaseIdProvider implements DatabaseIdProvider {
 
     @Override
     public void setProperties(Properties p) {
-        // Configuration is read from Spring Environment.
+        // 配置统一从 Spring Environment 读取。
     }
 
     @Override

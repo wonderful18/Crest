@@ -3,7 +3,7 @@ package io.crest.metadata;
 import java.util.List;
 
 /**
- * SQL fragments that differ between supported Crest metadata databases.
+ * Crest 支持的元数据库差异 SQL 片段。
  */
 public interface MetadataDbDialect {
 

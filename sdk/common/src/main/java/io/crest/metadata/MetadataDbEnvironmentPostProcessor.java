@@ -10,7 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Injects metadata database defaults after CREST_DB_TYPE is known.
+ * 在识别 CREST_DB_TYPE 后注入元数据库默认配置。
  */
 public class MetadataDbEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 

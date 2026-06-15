@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 
 /**
- * Resolves the configured Crest metadata database type.
+ * 解析当前配置的 Crest 元数据库类型。
  */
 public final class MetadataDbTypeResolver {
 
