@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * 提供 H2 抽取引擎的建表、写入和表替换 SQL 生成能力。
+ */
 @Service("h2Engine")
 public class H2EngineProvider extends EngineProvider {
 
@@ -19,11 +22,17 @@ public class H2EngineProvider extends EngineProvider {
                     "Column_Fields;";
 
 
+    /**
+     * 生成 H2 创建或替换视图的 SQL。
+     */
     @Override
     public String createView(String name, String viewSQL) {
         return "CREATE or replace view " + name + " AS (" + viewSQL + ")";
     }
 
+    /**
+     * 生成向 H2 引擎表批量插入抽取数据的 SQL。
+     */
     @Override
     public String insertSql(String dsType, String tableName, DatasourceServer.UpdateType extractType, List<String[]> dataList, int page, int pageNumber, List<TableField> tableFields) {
         String engineTableName;
@@ -60,22 +69,34 @@ public class H2EngineProvider extends EngineProvider {
     }
 
 
+    /**
+     * 生成 H2 删除物理表的 SQL。
+     */
     @Override
     public String dropTable(String name) {
         return "DROP TABLE IF EXISTS `" + name + "`";
     }
 
+    /**
+     * 生成 H2 删除视图的 SQL。
+     */
     @Override
     public String dropView(String name) {
         return "DROP VIEW IF EXISTS `" + name + "`";
     }
 
+    /**
+     * 生成 H2 临时表替换正式表的 SQL。
+     */
     @Override
     public String replaceTable(String name) {
         return "ALTER TABLE `FROM_TABLE` rename to `FROM_TABLE_tmp`; ALTER TABLE `TO_TABLE` rename to `FROM_TABLE`; DROP TABLE IF EXISTS `FROM_TABLE_tmp`;".replace("FROM_TABLE", name).replace("TO_TABLE", TableUtils.tmpName(name));
     }
 
 
+    /**
+     * 生成 H2 创建抽取表的完整 SQL。
+     */
     @Override
     public String createTableSql(String tableName, List<TableField> tableFields, CoreEngine engine) {
         validateSqlInjectionRisk(tableName);
@@ -83,6 +104,9 @@ public class H2EngineProvider extends EngineProvider {
         return creatTableSql.replace("TABLE_NAME", tableName).replace("Column_Fields", dorisTableColumnSql);
     }
 
+    /**
+     * 根据字段元数据生成 H2 建表字段定义。
+     */
     private String createTableSql(final List<TableField> tableFields) {
         StringBuilder columnFields = new StringBuilder("\"");
         StringBuilder key = new StringBuilder();
