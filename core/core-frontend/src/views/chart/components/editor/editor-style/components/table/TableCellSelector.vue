@@ -98,6 +98,7 @@ const emit = defineEmits(['onTableCellChange'])
 // 合并单元格会影响冻结和斑马纹等能力，payload 需要由专门工具统一规整。
 const changeTableCell = prop => {
   if (prop === 'alignConfig') {
+    // 自定义对齐只更新当前选中字段，其余字段沿用原配置。
     state.tableCellForm.alignConfig = alignConfigOptions.map(item => ({
       id: item.id,
       align: item.id === alignConfig.id ? alignConfig.align : item.align
@@ -105,6 +106,7 @@ const changeTableCell = prop => {
   }
   const payload = createTableCellChangePayload(state.tableCellForm, prop, mergeFieldOptions)
   if (prop === 'mergeCells' || prop === 'mergeFields') {
+    // 工具函数会根据合并字段状态反向修正开关和字段列表。
     state.tableCellForm.mergeCells = payload.mergeCells
     state.tableCellForm.mergeFields = payload.mergeFields
   }
@@ -169,6 +171,7 @@ const init = () => {
         })
       }
       axis.forEach(item => {
+        // 新增字段默认左对齐，已有字段沿用保存的独立对齐配置。
         const align = alignCfgMap[item.engineFieldName] || 'left'
         alignConfigOptions.push({
           id: item.engineFieldName,
@@ -177,6 +180,7 @@ const init = () => {
         })
       })
       if (alignConfigOptions.length) {
+        // 当前选中字段不存在时回退到第一项，避免下拉框引用失效字段。
         const exist = alignConfigOptions.findIndex(item => item.id === alignConfig.id) !== -1
         if (!exist) {
           alignConfig.id = alignConfigOptions[0].id

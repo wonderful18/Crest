@@ -18,11 +18,11 @@ import EmptyBackground from '../../components/empty-background/src/EmptyBackgrou
 import { iconChartMap } from '@/components/icon-group/chart-list'
 import { useI18n } from '@/hooks/web/useI18n'
 const dvMainStore = dvMainStoreWithOut()
-// 控制复用预览区域重新渲染
+// 控制复用预览区域重新渲染，切换组件时通过短暂卸载清理旧组件状态。
 const viewShow = ref(true)
 const { t } = useI18n()
 
-// 接收画布、组件和视图数据
+// 接收画布、组件和视图数据，用于在复用弹窗内渲染接近真实画布的预览。
 const props = defineProps({
   canvasStyleData: {
     type: Object,
@@ -44,15 +44,15 @@ const props = defineProps({
 
 const { canvasStyleData, componentData, canvasViewInfo, dvInfo } = toRefs(props)
 
-// 当前画布样式
+// 当前画布样式复用画布渲染工具，保证预览尺寸和背景与正式画布一致。
 const canvasStyle = computed(() => getCanvasStyle(canvasStyleData.value))
 
-// 过滤只显示已选组件
+// 过滤树节点时只保留已勾选组件，空筛选值表示展示全部。
 const filterNodeMethod = (value, data) => {
   return !value || data.multiplexActive
 }
 
-// 切换当前预览组件
+// 切换当前预览组件，并强制预览区重新挂载，避免组件内部缓存串台。
 const nodeClick = data => {
   const components = componentData.value.filter(ele => ele.id === data.id)
   state.multiplexInfo = components[0]
@@ -62,10 +62,10 @@ const nodeClick = data => {
   })
 }
 
-// 复用信息树实例
+// 复用信息树实例用于过滤和设置当前选中节点。
 const multiplexInfoTree = ref(null)
 
-// 维护复用预览选择状态
+// 维护复用预览选择状态，sourceMultiplexInfo 保留来源组件信息。
 const state = reactive({
   sourceMultiplexInfo: {},
   showSelected: false,
@@ -80,10 +80,10 @@ const state = reactive({
   },
   multiplexInfo: null
 })
-// 当前可复用目标组件列表
+// 当前可复用目标组件列表，由画布组件数据初始化生成。
 const curMultiplexTargetComponentsInfo = ref([])
 
-// 同步复用目标勾选变化
+// 同步复用目标勾选变化，勾选后立即预览该组件。
 const targetViewCheckedChange = (val, data) => {
   nextTick(() => {
     multiplexingCheck(val, data)
@@ -92,6 +92,7 @@ const targetViewCheckedChange = (val, data) => {
   })
 }
 
+// 非图表组件使用固定图标映射，图表组件使用图表类型图标。
 const iconMap = {
   bar: bar,
   'db-more-web': dbMoreWeb,
@@ -107,7 +108,7 @@ const iconMap = {
   'scroll-text': scrollText
 }
 
-// 获取组件在树节点中展示的图标
+// 获取组件在树节点中展示的图标，用户图表从视图元数据中读取图表类型。
 const getIconName = item => {
   if (item.component === 'UserView') {
     const viewInfo = canvasViewInfo.value[item.id]
@@ -117,7 +118,7 @@ const getIconName = item => {
   }
 }
 
-// 监听画布信息变化并重新初始化
+// 监听画布信息变化并重新初始化，支持复用弹窗中切换不同画布来源。
 watch(
   () => dvInfo.value,
   () => {
@@ -127,7 +128,7 @@ watch(
   }
 )
 
-// 监听只看已选开关并过滤树节点
+// 监听只看已选开关并过滤树节点。
 watch(
   () => state.showSelected,
   newValue => {
@@ -135,7 +136,7 @@ watch(
   }
 )
 
-// 初始化可复用组件树
+// 初始化可复用组件树，并清空当前 store 中暂存的复用组件集合。
 const init = () => {
   dvMainStore.initCurMultiplexingComponents()
   curMultiplexTargetComponentsInfo.value = []
@@ -150,17 +151,17 @@ const init = () => {
   })
 }
 
-// 同步复用组件选中状态
+// 同步复用组件选中状态，store 中只保存最终确认时需要的组件和组件 id。
 const multiplexingCheck = (val, data) => {
   if (val) {
     const components = componentData.value.filter(ele => ele.id === data.id)
-    // 添加复用组件
+    // 添加复用组件。
     dvMainStore.addCurMultiplexingComponent({
       component: components[0],
       componentId: data.id
     })
   } else {
-    // 移除复用组件
+    // 移除复用组件。
     dvMainStore.removeCurMultiplexingComponentWithId(data.id)
   }
 }
