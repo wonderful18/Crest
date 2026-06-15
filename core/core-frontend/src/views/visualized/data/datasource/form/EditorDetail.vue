@@ -407,6 +407,7 @@ const setRules = () => {
     'configuration.sshKey': [{ validator: validateSshkey, trigger: 'blur' }]
   }
   if (['oracle', 'sqlServer', 'pg', 'redshift', 'db2'].includes(form.value.type)) {
+    // 需要显式 Schema 的数据库在连接通过后再让用户选择，避免默认库名和 Schema 混用。
     configRules['configuration.schema'] = [
       {
         required: true,
@@ -476,6 +477,7 @@ const copyItem = (item?: ApiConfiguration) => {
   const reg = new RegExp(item.name + '_copy_' + '([0-9]*)', 'gim')
   let number = 0
   for (let i = 1; i < form.value.apiConfiguration.length; i++) {
+    // 复制名称按当前已有副本递增，避免保存时出现接口表名冲突。
     const match = form.value.apiConfiguration[i].name.match(reg)
     if (match !== null) {
       const num = match[0].substring(
@@ -499,6 +501,7 @@ const addApiItem = item => {
   let editItem = false
   api_table_title.value = t('datasource.data_table')
   if (item) {
+    // 编辑时使用副本打开抽屉，只有确认返回后才覆盖原配置。
     apiItem = cloneDeep(item)
     editItem = true
   } else {
@@ -667,6 +670,7 @@ const getDsSchema = () => {
   validateFrom(val => {
     showSchema.value = false
     if (val) {
+      // 连接配置包含敏感字段，提交前统一编码，后端再按数据源类型解析。
       const request = JSON.parse(JSON.stringify(form.value))
       request.configuration = Base64.encode(JSON.stringify(request.configuration))
       loading.value = true

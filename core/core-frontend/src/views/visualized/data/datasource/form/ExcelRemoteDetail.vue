@@ -409,6 +409,7 @@ const handleTabClick = tab => {
 const handleNodeClick = data => {
   Object.assign(sheetObj, data || cloneDeep(defaultSheetObj))
   if (!data?.sheet) {
+    // 不可导入工作表只展示检测信息，不进入字段选择流程。
     columns.value = []
     multipleSelection.value = []
     currentMode.value = 'preview'
@@ -459,6 +460,7 @@ const loadData = () => {
   remoteExcelForm.value.validate(val => {
     if (val) {
       const request = JSON.parse(JSON.stringify(form.value.configuration))
+      // 远程文件凭证只在加载接口中使用，提交前编码避免明文出现在请求体日志中。
       request.userName = Base64.encode(request.userName)
       request.passwd = Base64.encode(request.passwd)
       request.datasourceId = form.value.id || 0
@@ -491,6 +493,7 @@ const loadData = () => {
 // 处理远程 Excel 解析结果，初始化工作表页签和当前工作表
 const uploadSuccess = response => {
   if (!response) {
+    // 解析失败时必须清空旧工作表，避免用户误保存上一次加载结果。
     state.excelData = []
     activeTab.value = ''
     tabList.value = []
@@ -534,6 +537,7 @@ const changeCurrentMode = val => {
   currentMode.value = val
   if (val === 'select') {
     nextTick(() => {
+      // 进入字段选择模式时恢复后端检测结果中的默认勾选状态。
       initMultipleTable.value = true
       for (let i = 0; i < columns.value.length; i++) {
         if (columns.value[i].checked) {
@@ -555,6 +559,7 @@ const handleSelectionChange = val => {
     multipleSelection.value.forEach(row => {
       row.checked = true
     })
+    // 先同步虚拟表格列，再回写原始 sheet 字段，保证预览和保存使用同一份勾选结果。
     columns.value.forEach(row => {
       let item
       for (let i = 0; i < multipleSelection.value.length; i++) {
@@ -700,6 +705,7 @@ const saveExcelDs = (params, successCb, finallyCb) => {
   }
   table.syncSetting = form.value.syncSetting
   if (props.form.editType === 0 && props.form.id && (effectExtField || changeFiled)) {
+    // 已被数据集引用的字段发生变化时，需要用户确认是否替换下游数据。
     ElMessageBox.confirm(t('datasetUi.replace_the_data'), {
       confirmButtonText: t('dataset.confirm'),
       tip: t('data_source.to_replace_it'),
