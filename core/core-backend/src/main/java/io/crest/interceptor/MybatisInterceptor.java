@@ -164,9 +164,8 @@ public class MybatisInterceptor implements Interceptor {
     }
 
     /**
-     * OB Oracle JDBC treats preparedStatement(sql, keyColumns) as an extra bind slot.
-     * For entities whose Long id is supplied by the application, disable generated-key
-     * retrieval and make sure null ids are assigned before MyBatis builds SQL.
+     * OB Oracle JDBC 会把 preparedStatement(sql, keyColumns) 当成额外绑定位。
+     * 对应用侧分配 Long 主键的实体，写入前补齐空 ID，并关闭 JDBC 自增主键回填。
      */
     private MappedStatement mappedStatementWithAssignedKeys(MappedStatement mappedStatement, Object parameter) {
         if (!useAssignedKeysWithoutJdbcGeneratedKeys

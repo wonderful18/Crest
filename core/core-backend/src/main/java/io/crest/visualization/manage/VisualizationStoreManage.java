@@ -8,6 +8,8 @@ import io.crest.api.visualization.request.VisualizationWorkbranchQueryRequest;
 import io.crest.api.visualization.vo.VisualizationStoreVO;
 import io.crest.constant.BusiResourceEnum;
 import io.crest.exception.CrestException;
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.system.manage.CoreUserManage;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.CommonBeanFactory;
@@ -21,6 +23,7 @@ import jakarta.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -41,6 +44,9 @@ public class VisualizationStoreManage {
 
     @Resource
     private CoreUserManage coreUserManage;
+
+    @Resource
+    private Environment environment;
 
     /**
      * 切换当前用户对指定可视化资源的收藏状态
@@ -123,7 +129,7 @@ public class VisualizationStoreManage {
             queryWrapper.eq("s.resource_type", busiResourceEnum.getFlag());
         }
         if (StringUtils.isNotBlank(request.getKeyword())) {
-            queryWrapper.apply("LOWER(v.name) LIKE LOWER(CONCAT('%', {0}, '%'))", request.getKeyword());
+            queryWrapper.apply(dialect().caseInsensitiveLike("v.name", "{0}"), request.getKeyword());
         }
         String info = CommunityUtils.getInfo();
         if (StringUtils.isNotBlank(info)) {
@@ -144,5 +150,12 @@ public class VisualizationStoreManage {
             CrestException.throwException("type is invalid");
             return null;
         }
+    }
+
+    /**
+     * 收藏检索运行在系统元数据库上，关键字拼接语法必须跟随当前元库方言。
+     */
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
     }
 }
