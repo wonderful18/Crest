@@ -25,6 +25,7 @@ const options = [
   { value: 'minute', label: t('system.time_0_seconds') },
   { value: 'hour', label: t('system.and_0_seconds_de') }
 ]
+// 平台有效期选项和后端参数值保持字符串枚举，避免保存时出现类型差异。
 const pvpOptions = [
   { value: '0', label: t('commons.date.permanent') },
   { value: '1', label: t('commons.date.one_year') },
@@ -197,6 +198,7 @@ const edit = (
   state.settingList = list.map(item => {
     const pkey = item.pkey
     if (requireKeys.some(requireKey => `basic.${requireKey}` === pkey)) {
+      // 后端返回的参数集合是动态的，必填规则需要按本次抽屉展示项实时补齐。
       rule[pkey.split('.')[1]] = [
         {
           required: true,
@@ -212,6 +214,7 @@ const edit = (
     if (item.pkey.includes('platformRid') && pval?.length) {
       pval = pval.split(',')
       if (!rule['platformRid']) {
+        // 默认角色支持多选保存，编辑时从逗号分隔值还原为数组并补齐必填校验。
         rule['platformRid'] = [
           {
             required: true,
@@ -223,6 +226,7 @@ const edit = (
     }
     if (item.pkey.includes('platformOid')) {
       if (!rule['platformOid']) {
+        // 平台组织是默认角色的上级约束，展示组织字段时同步纳入必填校验。
         rule['platformOid'] = [
           {
             required: true,
@@ -284,6 +288,7 @@ defineExpose({
     size="600px"
     direction="rtl"
   >
+    <!-- 基础参数表单按后端返回的参数列表动态渲染，不同 pkey 对应不同输入控件。 -->
     <el-form
       ref="basicForm"
       require-asterisk-position="right"
@@ -475,6 +480,7 @@ defineExpose({
       </el-form-item>
     </el-form>
     <template #footer>
+      <!-- 抽屉底部只提交当前分组参数，保存成功后由父页面刷新参数列表。 -->
       <span class="dialog-footer">
         <el-button secondary @click="resetForm(basicForm)">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitForm(basicForm)">
