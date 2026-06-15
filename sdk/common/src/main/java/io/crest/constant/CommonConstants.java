@@ -1,5 +1,8 @@
 package io.crest.constant;
 
+/**
+ * 通用业务常量集合，按资源操作、图表查询和模板来源分组
+ */
 public class CommonConstants {
 
 
@@ -76,6 +79,7 @@ public class CommonConstants {
 
     }
 
+    //模板来源
     public static final class TEMPLATE_SOURCE {
         //模板市场
         public static final String MARKET = "market";
@@ -85,6 +89,7 @@ public class CommonConstants {
         public static final String PUBLIC = "public";
     }
 
+    //资源表类型
     public static final class RESOURCE_TABLE {
         //主表
         public static final String CORE = "core";
@@ -93,6 +98,7 @@ public class CommonConstants {
     }
 
 
+    //可视化资源发布状态
     public static final class DV_STATUS {
         //未发布
         public static final int UNPUBLISHED = 0;
