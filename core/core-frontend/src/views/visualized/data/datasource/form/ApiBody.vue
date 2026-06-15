@@ -21,6 +21,7 @@ export interface Item {
   description: string
   type: string
 }
+// 定义 API 请求体编辑器的只读、启用项和请求体数据。
 const props = defineProps({
   isReadOnly: propTypes.bool.def(false),
   isShowEnable: propTypes.bool.def(false),
@@ -50,6 +51,7 @@ const hasOwnProperty = Object.prototype.hasOwnProperty
 const propIsEnumerable = Object.prototype.propertyIsEnumerable
 const { body: apiBody, headers } = toRefs(props)
 
+// 监听原始 JSON 内容变化并同步生成 JSON Schema。
 watch(
   () => apiBody.value.raw,
   () => {
@@ -82,11 +84,13 @@ onBeforeMount(() => {
   }
 })
 
+// 判断值是否为可合并的对象或函数。
 const isObj = x => {
   const type = typeof x
   return x !== null && (type === 'object' || type === 'function')
 }
 
+// 将非空值转换为对象包装。
 const toObject = val => {
   if (val === null || val === undefined) {
     return
@@ -94,6 +98,7 @@ const toObject = val => {
   return Object(val)
 }
 
+// 将指定键从来源对象合并到目标对象。
 const assignKey = (to, from, key) => {
   const val = from[key]
   if (val === undefined || val === null) {
@@ -107,6 +112,7 @@ const assignKey = (to, from, key) => {
   }
 }
 
+// 深度合并来源对象的可枚举属性。
 const assign = (to, from) => {
   if (to === from) {
     return to
@@ -131,6 +137,7 @@ const assign = (to, from) => {
   return to
 }
 
+// 合并多个对象并返回目标对象。
 const deepAssign = function (target) {
   target = toObject(target)
   for (let s = 1; s < arguments.length; s++) {
@@ -138,6 +145,7 @@ const deepAssign = function (target) {
   }
   return target
 }
+// 根据请求体类型同步 Content-Type 请求头。
 const modeChange = () => {
   switch (apiBody.value.type) {
     case 'JSON':
@@ -158,6 +166,7 @@ const modeChange = () => {
   }
 }
 
+// 设置或追加 Content-Type 请求头。
 const setContentType = value => {
   let isType = false
   headers.value.forEach(item => {
@@ -170,6 +179,7 @@ const setContentType = value => {
     headers.value.unshift(new KeyValue({ name: 'Content-Type', value: value }))
   }
 }
+// 移除 Content-Type 请求头。
 const removeContentType = () => {
   for (const index in headers.value) {
     if (headers.value[index].name === 'Content-Type') {
@@ -179,6 +189,7 @@ const removeContentType = () => {
     }
   }
 }
+// 新增或删除请求体参数。
 const changeParameters = val => {
   if (!isNaN(val)) {
     apiBody.value.kvs.splice(val, 1)
@@ -187,6 +198,7 @@ const changeParameters = val => {
   }
 }
 
+// 声明请求头变化事件。
 const emits = defineEmits(['headersChange'])
 </script>
 

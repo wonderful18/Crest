@@ -7,6 +7,7 @@ import { getMapColorCases } from '@/views/chart/components/js/util'
 
 const { t } = useI18n()
 
+// 定义渐变配色选择器的主题、表单和属性范围。
 const props = withDefaults(
   defineProps<{
     themes?: EditorTheme
@@ -24,7 +25,9 @@ const props = withDefaults(
 )
 const colorCases = JSON.parse(JSON.stringify(COLOR_CASES))
 
+// 声明配色表单更新和方案选择事件。
 const emits = defineEmits(['update:modelValue', 'selectColorCase'])
+// 代理父组件传入的配色状态，保持双向绑定。
 const state = computed({
   get() {
     return props.modelValue
@@ -34,6 +37,7 @@ const state = computed({
   }
 })
 
+// 保存配色选择器当前页签和可选方案。
 const form = reactive({
   value: null,
   activeName: 'simple',
@@ -51,6 +55,7 @@ const form = reactive({
     }
   ]
 })
+// 打开面板时滚动到当前已选配色方案。
 const scrollToSelected = () => {
   const index = form.activeName === 'simple' ? 0 : 1
   const parents = document.getElementById('color-tab-content-' + index)
@@ -62,11 +67,13 @@ const scrollToSelected = () => {
   }
 }
 
+// 切换页签时关闭自定义颜色浮层并定位已选项。
 const handleClick = () => {
   form.enableCustom = false
   nextTick(() => {
     scrollToSelected()
   })
+  // 获取颜色选择器组件引用并关闭其浮层。
   const widget = ref['de-color-picker']
   if (!widget) return
   if (Array.isArray(widget)) {
@@ -78,18 +85,23 @@ const handleClick = () => {
   widget.triggerHide && widget.triggerHide()
 }
 
+// 选择配色方案并同步给父组件。
 const selectNode = option => {
   state.value.basicStyleForm.colors = option.colors
   state.value.basicStyleForm.colorScheme = option.value
   emits('selectColorCase', option)
 }
 
+// 保存配色方案弹出层实例。
 const colorCaseSelectorRef = ref<InstanceType<typeof ElPopover>>()
 
+// 标记配色方案弹出层是否打开。
 const _popoverShow = ref(false)
+// 记录弹出层打开状态。
 function onPopoverShow() {
   _popoverShow.value = true
 }
+// 记录弹出层关闭状态。
 function onPopoverHide() {
   _popoverShow.value = false
 }
