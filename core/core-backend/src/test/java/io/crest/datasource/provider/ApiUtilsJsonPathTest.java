@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// 验证 API JSONPath 解析和固定请求头处理。
 public class ApiUtilsJsonPathTest {
 
     private static final String RESPONSE = """
@@ -32,11 +33,13 @@ public class ApiUtilsJsonPathTest {
             }
             """;
 
+    // 重置 API 工具的 JSON 解析器。
     @BeforeEach
     public void setUp() {
         ApiUtils.objectMapper = new ObjectMapper();
     }
 
+    // 校验无点号 JSONPath 能解析嵌套字段。
     @Test
     public void jsonPathModeAcceptsDollarPathWithoutDotAndBuildsNestedFields() throws Exception {
         ApiDefinition definition = new ApiDefinition();
@@ -61,6 +64,7 @@ public class ApiUtilsJsonPathTest {
         assertEquals(List.of("vip", "new"), tagCode.get("value"));
     }
 
+    // 校验结构预览在 JSONPath 模式下只展示选中行字段。
     @Test
     public void apiStructurePreviewUsesJsonPathRowsWhenJsonPathIsEnabled() throws Exception {
         ApiDefinition definition = new ApiDefinition();
@@ -78,6 +82,7 @@ public class ApiUtilsJsonPathTest {
         assertEquals(null, field(checked.getJsonFields(), "data"));
     }
 
+    // 校验 JSONPath 模式能从选中行提取嵌套字段。
     @Test
     public void jsonPathModeFetchesNestedFieldsFromSelectedRows() throws Exception {
         ApiDefinition definition = new ApiDefinition();
@@ -100,6 +105,7 @@ public class ApiUtilsJsonPathTest {
         assertEquals("new", rows.get(1)[2]);
     }
 
+    // 校验当前行内的多个嵌套值会保留为数组文本。
     @Test
     public void jsonPathModeKeepsMultipleNestedValuesInCurrentRow() throws Exception {
         String response = """
@@ -129,6 +135,7 @@ public class ApiUtilsJsonPathTest {
         assertEquals("new", rows.get(1)[1]);
     }
 
+    // 校验固定 Authorization 请求头会被发送。
     @Test
     public void execHttpRequestSendsFixedAuthorizationHeader() throws Exception {
         AtomicReference<String> authorization = new AtomicReference<>();
@@ -162,12 +169,14 @@ public class ApiUtilsJsonPathTest {
         }
     }
 
+    // 反射调用 API 定义检查方法。
     private ApiDefinition invokeCheckApiDefinition(ApiDefinition definition, String response) throws Exception {
         Method method = ApiUtils.class.getDeclaredMethod("checkApiDefinition", ApiDefinition.class, String.class);
         method.setAccessible(true);
         return (ApiDefinition) method.invoke(null, definition, response);
     }
 
+    // 反射调用 API 结果提取方法。
     @SuppressWarnings("unchecked")
     private List<String[]> invokeFetchResult(String response, ApiDefinition definition) throws Exception {
         Method method = ApiUtils.class.getDeclaredMethod("fetchResult", String.class, ApiDefinition.class);
@@ -175,11 +184,13 @@ public class ApiUtilsJsonPathTest {
         return (List<String[]>) method.invoke(null, response, definition);
     }
 
+    // 读取字段节点的子节点。
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> children(Map<String, Object> field) {
         return (List<Map<String, Object>>) field.get("children");
     }
 
+    // 按原始字段名查找字段节点。
     private Map<String, Object> field(List<Map<String, Object>> fields, String originName) {
         for (Map<String, Object> field : fields) {
             if (originName.equals(field.get("originName"))) {
@@ -189,6 +200,7 @@ public class ApiUtilsJsonPathTest {
         return null;
     }
 
+    // 构造测试用表字段。
     private TableField tableField(String name, String jsonPath) {
         TableField field = new TableField();
         field.setName(name);
