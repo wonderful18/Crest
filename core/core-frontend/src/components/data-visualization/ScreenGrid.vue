@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+// 定义屏幕网格接收的矩阵样式和主题参数。
 const props = defineProps({
   matrixStyle: {
     type: Object
@@ -37,26 +38,32 @@ const props = defineProps({
   }
 })
 
+// 计算外层网格路径。
 const pathD = computed(() => {
   return 'M ' + gridW.value + ' 0 L 0 0 0 ' + gridH.value
 })
 
+// 计算外层网格宽度。
 const gridW = computed(() => {
   return props.matrixStyle.width * 5
 })
 
+// 计算外层网格高度。
 const gridH = computed(() => {
   return props.matrixStyle.height * 5
 })
 
+// 计算内层网格路径。
 const middleGridPathD = computed(() => {
   return 'M ' + middleGridW.value + ' 0 L 0 0 0 ' + middleGridH.value
 })
 
+// 计算内层网格宽度。
 const middleGridW = computed(() => {
   return props.matrixStyle.width
 })
 
+// 计算内层网格高度。
 const middleGridH = computed(() => {
   return props.matrixStyle.height
 })

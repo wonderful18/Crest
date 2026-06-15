@@ -22,6 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * 提供引擎数据源配置的查询、保存和校验接口。
+ */
 @RestController
 @RequestMapping("/engine")
 @Transactional(rollbackFor = Exception.class)
@@ -33,6 +36,9 @@ public class EngineServer implements EngineApi {
     @Resource
     private CalciteProvider calciteProvider;
 
+    /**
+     * 查询当前引擎数据源配置。
+     */
     @Override
     public DatasourceDTO getEngine() {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
@@ -48,6 +54,9 @@ public class EngineServer implements EngineApi {
         return datasourceDTO;
     }
 
+    /**
+     * 保存引擎数据源配置并刷新计算引擎。
+     */
     @Override
     public void save(DatasourceDTO datasourceDTO) {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
@@ -68,6 +77,9 @@ public class EngineServer implements EngineApi {
         calciteProvider.update(datasourceDTO);
     }
 
+    /**
+     * 校验提交的引擎数据源配置。
+     */
     @Override
     public void validate(DatasourceDTO datasourceDTO) throws Exception {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
@@ -79,6 +91,9 @@ public class EngineServer implements EngineApi {
         engineManage.validate(coreEngine);
     }
 
+    /**
+     * 根据配置编号校验引擎数据源。
+     */
     @Override
     public void validateById(Long id) throws Exception {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
@@ -87,6 +102,9 @@ public class EngineServer implements EngineApi {
         engineManage.validate(engineMapper.selectById(id));
     }
 
+    /**
+     * 判断当前引擎是否支持设置加密密钥。
+     */
     @Override
     public boolean supportSetKey() throws Exception {
         List<CoreEngine> engines = engineMapper.selectList(null);
@@ -98,6 +116,9 @@ public class EngineServer implements EngineApi {
 
     }
 
+    /**
+     * 解码前端提交的 Base64 配置字段。
+     */
     private static String decodeBase64RequestValue(String value, String fieldName) {
         if (StringUtils.isBlank(value)) {
             return "";
