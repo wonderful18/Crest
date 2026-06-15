@@ -73,6 +73,7 @@ export function itemCanvasPathCheck(item, checkType) {
   return false
 }
 
+// 根据当前数据计算界面可用状态
 export function canvasIdMapCheck(item, pItem, pathMap) {
   pathMap[item.id] = pItem
   if (item.component === 'Tabs') {

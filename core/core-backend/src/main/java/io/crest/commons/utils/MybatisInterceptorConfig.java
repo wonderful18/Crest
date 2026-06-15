@@ -6,6 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
+// 提供当前模块复用的工具能力
 public class MybatisInterceptorConfig {
     private String modelName;
     private String attrName;

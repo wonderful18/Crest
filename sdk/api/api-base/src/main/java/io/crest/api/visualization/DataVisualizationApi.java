@@ -29,6 +29,7 @@ import static io.crest.constant.AuthResourceEnum.PANEL;
 @Tag(name = "可视化管理:基础")
 @ApiSupport(order = 999)
 @CrestApiPath(value = "/data-visualization", rt = PANEL)
+// 定义模块接口契约和数据传输结构
 public interface DataVisualizationApi {
     /**
      * 查询数据可视化大屏

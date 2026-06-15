@@ -8,6 +8,7 @@ import java.io.Serial;
 import java.io.Serializable;
 
 @Data
+// 定义接口请求或返回数据的传输结构
 public class DataAssetVO implements Serializable {
     @Serial
     private static final long serialVersionUID = 3935874682962965418L;

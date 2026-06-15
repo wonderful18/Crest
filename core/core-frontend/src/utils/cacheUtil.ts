@@ -1,5 +1,6 @@
 import { useCache } from '@/hooks/web/useCache'
 const { wsCache } = useCache()
+// 移除当前数据并同步关联状态
 export const clearCache = () => {
   const keys = [
     'CrestKey',

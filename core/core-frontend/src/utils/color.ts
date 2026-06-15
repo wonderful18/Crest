@@ -1,3 +1,4 @@
+// 整理输入数据并返回工具处理结果
 function rgbToHex(r, g, b) {
   // 确保数值在0-255范围内
   r = Math.max(0, Math.min(255, r))
@@ -11,6 +12,7 @@ function rgbToHex(r, g, b) {
 
   return `#${hexR}${hexG}${hexB}`.toUpperCase()
 }
+// 整理输入数据并返回工具处理结果
 function rgbaToHex(r, g, b, a) {
   // 处理RGB部分
   const hexR = Math.max(0, Math.min(255, r)).toString(16).padStart(2, '0')
@@ -28,6 +30,7 @@ function rgbaToHex(r, g, b, a) {
   return `#${hexR}${hexG}${hexB}${hexA}`.toUpperCase()
 }
 
+// 计算颜色配置并返回样式结果
 export function colorStringToHex(colorStr) {
   // 提取颜色值
   const rgbRegex =
@@ -43,6 +46,7 @@ export function colorStringToHex(colorStr) {
   return a !== undefined ? rgbaToHex(r, g, b, a) : rgbToHex(r, g, b)
 }
 
+// 读取当前业务数据并返回处理结果
 export function getCSSVariable(element = document.body, property = '--ed-color-primary') {
   const style = window.getComputedStyle(element)
   return style.getPropertyValue(property) || '#3B82F6'

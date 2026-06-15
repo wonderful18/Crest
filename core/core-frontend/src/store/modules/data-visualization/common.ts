@@ -3,6 +3,7 @@ import { dvMainStoreWithOut } from './dvMain'
 const dvMainStore = dvMainStoreWithOut()
 const { curComponent, componentData } = storeToRefs(dvMainStore)
 
+// 读取当前业务数据并返回处理结果
 export const getComponentById = (componentId?) => {
   const curInfo = getCurInfo(componentId)
   if (curInfo) {
@@ -10,6 +11,7 @@ export const getComponentById = (componentId?) => {
   } else return null
 }
 
+// 读取当前业务数据并返回处理结果
 export const getCurInfo = (componentId?) => {
   if (componentId) {
     return getCurInfoById(componentId)
@@ -18,6 +20,7 @@ export const getCurInfo = (componentId?) => {
   }
 }
 
+// 读取当前业务数据并返回处理结果
 export const getCurInfoById = curComponentId => {
   if (curComponentId) {
     let curIndex = 0
@@ -60,6 +63,7 @@ export const getCurInfoById = curComponentId => {
   }
 }
 
+// 处理排序配置并同步展示顺序
 export const componentArraySort = (sortArray, direction = 'down') => {
   sortArray.sort((a, b) => {
     // 在 componentData 中找到 a 和 b 的索引位置

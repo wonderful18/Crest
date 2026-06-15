@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import java.util.List;
 
 @Tag(name = "菜单")
+// 定义模块接口契约和数据传输结构
 public interface MenuApi {
 
     @Operation(summary = "请求菜单")

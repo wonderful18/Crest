@@ -2,6 +2,7 @@
 import { PropType, toRefs } from 'vue'
 import Icon from '@/components/icon-custom/src/Icon.vue'
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   icon: {
     type: [Object, String, Function] as PropType<any>,
@@ -28,8 +29,10 @@ const props = defineProps({
 })
 
 const { icon, name, label, dragInfo, themes } = toRefs(props)
+// 定义组件向父级抛出的事件
 const emit = defineEmits(['click'])
 
+// 处理界面事件并同步业务状态
 const handleClick = (event: MouseEvent | KeyboardEvent) => {
   emit('click', event)
 }

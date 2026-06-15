@@ -11,6 +11,7 @@ import eventBus from '@/utils/eventBus'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 const dvMainStore = dvMainStoreWithOut()
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   item: {
     required: true,
@@ -37,6 +38,7 @@ const props = defineProps({
 
 const { item, index } = toRefs(props)
 
+// 处理拖拽交互并更新目标位置
 const dragUp = () => {
   // 将当前点击组件的事件传播出去
   nextTick(() => eventBus.emit('componentClick'))

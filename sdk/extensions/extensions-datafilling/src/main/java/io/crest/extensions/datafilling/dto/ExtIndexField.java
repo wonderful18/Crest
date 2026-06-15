@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义接口请求或返回数据的传输结构
 public class ExtIndexField implements Serializable {
     @Serial
     private static final long serialVersionUID = -3169849285437114316L;
@@ -27,6 +28,7 @@ public class ExtIndexField implements Serializable {
     @Builder
     @AllArgsConstructor
     @NoArgsConstructor
+    // 定义接口请求或返回数据的传输结构
     public static class ColumnSetting {
         private String column;
         private String order;

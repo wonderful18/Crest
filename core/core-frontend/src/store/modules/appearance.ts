@@ -229,6 +229,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
           font?.name,
           font?.fileTransName
         )
+        // 更新当前配置并同步相关状态
         function setDefaultFont(url, name, fileTransName) {
           let fontStyleElement = document.querySelector('#crest-custom_font')
           if (!fontStyleElement) {
@@ -356,6 +357,7 @@ export const useAppearanceStore = defineStore('appearanceStore', {
   }
 })
 
+// 更新当前配置并同步相关状态
 const applyDocumentTitle = (siteTitle?: string) => {
   const normalized = siteTitle?.trim()
   const title = normalized || 'Crest'
@@ -363,6 +365,7 @@ const applyDocumentTitle = (siteTitle?: string) => {
   setTitle(title)
 }
 
+// 更新当前配置并同步相关状态
 const setLinkIcon = (linkWeb?: string) => {
   let link = document.querySelector('link[rel="icon"]')
   if (!link) {
@@ -390,6 +393,7 @@ const setLinkIcon = (linkWeb?: string) => {
   }
 }
 
+// 更新状态仓库中的业务数据
 export const useAppearanceStoreWithOut = () => {
   return useAppearanceStore(store)
 }

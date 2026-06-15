@@ -20,6 +20,7 @@ import java.util.Map;
 
 @Tag(name = "系统设置:系统参数")
 @ApiSupport(order = 799)
+// 定义模块接口契约和数据传输结构
 public interface SysParameterApi {
 
     @Operation(summary = "查询单个配置值")
@@ -37,10 +38,12 @@ public interface SysParameterApi {
 
     @Operation(summary = "查询超时时间(社区版)")
     @GetMapping("/request-timeout")
+    // 格式化日期时间并返回统一展示值
     public Integer RequestTimeOut();
 
     @Operation(summary = "系统默认配置(社区版)")
     @GetMapping("/default-settings")
+    // 执行当前服务方法并返回处理结果
     public Map<String, Object> defaultSettings();
 
     @Hidden

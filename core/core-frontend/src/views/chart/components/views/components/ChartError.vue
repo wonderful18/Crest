@@ -12,7 +12,9 @@ defineProps({
   }
 })
 
+// 控制弹窗、面板或区域的展示状态
 const dialogVisible = ref(false)
+// 控制弹窗、面板或区域的展示状态
 function showInfo() {
   dialogVisible.value = true
 }

@@ -54,6 +54,7 @@ const iconMap = {
   log
 }
 
+// 衔接当前组件交互和状态同步
 const titleWithIcon = props => {
   const { title, icon } = props.menu?.meta || {}
   return [
@@ -62,6 +63,7 @@ const titleWithIcon = props => {
   ]
 }
 
+// 处理当前节点或条目的交互状态
 const MenuItem = props => {
   const { children, hidden, path } = props.menu
   if (hidden) {

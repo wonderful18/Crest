@@ -23,6 +23,7 @@ const props = defineProps({
 // 滚动配置变化时通知父级
 const emit = defineEmits(['onScrollCfgChange'])
 
+// 监听相关数据变化并同步组件状态
 watch(
   () => props.chart.senior.scrollCfg,
   () => {

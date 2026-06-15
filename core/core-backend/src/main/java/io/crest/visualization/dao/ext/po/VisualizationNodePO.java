@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 
 @Data
+// 定义当前业务对象的核心职责
 public class VisualizationNodePO implements Serializable {
 
     private Long id;

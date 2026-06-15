@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Order(value = 10)
+// 定义当前业务对象的核心职责
 public class DatasetCrossListener implements ApplicationListener<ApplicationReadyEvent> {
     private final Logger logger = LoggerFactory.getLogger(DatasetCrossListener.class);
     public static final String JOB_ID = "datasetCrossListener";
@@ -27,6 +28,7 @@ public class DatasetCrossListener implements ApplicationListener<ApplicationRead
     private DatasetSQLManage datasetSQLManage;
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         logger.info("====dataset cross listener [start]====");
 

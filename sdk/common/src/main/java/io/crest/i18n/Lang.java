@@ -9,6 +9,7 @@ import org.apache.commons.lang3.Strings;
 import static io.crest.constant.CacheConstant.UserCacheConstant.USER_COMMUNITY_LANGUAGE;
 
 @Getter
+// 定义当前业务支持的枚举取值
 public enum Lang {
 
     zh_CN("zh-CN"), zh_TW("zh-TW"), en_US("en-US");
@@ -19,6 +20,7 @@ public enum Lang {
         this.desc = desc;
     }
 
+    // 执行当前服务方法并返回处理结果
     public static Lang getLang(String lang) {
         Lang result = getLangWithoutDefault(lang);
         if (result == null) {
@@ -27,6 +29,7 @@ public enum Lang {
         return result;
     }
 
+    // 执行当前服务方法并返回处理结果
     public static Lang getLangWithoutDefault(String lang) {
         if (StringUtils.isBlank(lang)) {
             return null;
@@ -48,6 +51,7 @@ public enum Lang {
         return null;
     }
 
+    // 判断当前类型是否满足业务分类
     public static boolean isChinese() {
         String lang = null;
         Object langObj = CacheUtils.get(USER_COMMUNITY_LANGUAGE, "de");

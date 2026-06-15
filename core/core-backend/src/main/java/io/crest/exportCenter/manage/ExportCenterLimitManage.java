@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component("exportCenterLimitManage")
+// 封装当前业务的持久化和查询逻辑
 public class ExportCenterLimitManage {
 
     @Value("${crest.export.dataset.limit:100000}")
@@ -14,6 +15,7 @@ public class ExportCenterLimitManage {
     @Value("${crest.export.views.limit:100000}")
     private Long viewLimit;
 
+    // 执行当前服务方法并返回处理结果
     public Long getExportLimit(String type) {
         if (StringUtils.isBlank(type) || Strings.CS.equals("view", type)) {
             return viewLimit;

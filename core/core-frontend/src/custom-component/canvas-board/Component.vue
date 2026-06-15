@@ -5,6 +5,7 @@
 <script setup lang="ts">
 import { toRefs } from 'vue'
 import Board from '@/components/visual-board/Board.vue'
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   propValue: {
     type: String,

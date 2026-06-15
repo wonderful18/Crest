@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 @Schema(description = "嵌入式应用编辑器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class EmbeddedEditor implements Serializable {
     @Schema(description = "ID")
     private Long id;

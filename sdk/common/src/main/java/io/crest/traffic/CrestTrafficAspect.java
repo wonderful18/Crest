@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
 
 @Aspect
 @Component
+// 定义当前业务对象的核心职责
 public class CrestTrafficAspect {
 
     @Resource
@@ -28,6 +29,7 @@ public class CrestTrafficAspect {
     final private static String errorMsg = "当前API【%s】设定并发阈值为【%s】，现已经达到限流阈值，请稍后再试！";
 
     @Around(value = "@annotation(io.crest.traffic.CrestTraffic)")
+    // 执行当前服务方法并返回处理结果
     public Object trafficAround(ProceedingJoinPoint point) throws Throwable {
         MethodSignature ms = (MethodSignature) point.getSignature();
         Method method = ms.getMethod();

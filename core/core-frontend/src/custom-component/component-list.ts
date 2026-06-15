@@ -714,6 +714,7 @@ for (let i = 0, len = list.length; i < len; i++) {
   list[i] = { ...commonAttr, ...item }
 }
 
+// 衔接当前组件交互和状态同步
 export function findNewComponentFromList(
   componentName,
   innerType,
@@ -749,6 +750,7 @@ export function findNewComponentFromList(
   return newComponent
 }
 
+// 衔接当前组件交互和状态同步
 export function findBaseDefaultAttr(componentName) {
   let result = {}
   list.forEach(comp => {

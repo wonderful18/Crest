@@ -5,11 +5,14 @@ import { ElMessage } from 'element-plus-secondary'
 import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 
 const appearanceStore = useAppearanceStoreWithOut()
+// 标记异步操作的加载状态
 const loading = ref(false)
+// 维护表单数据和校验规则
 const form = reactive({
   title: 'Crest'
 })
 
+// 读取当前业务数据并返回处理结果
 const load = async () => {
   loading.value = true
   try {
@@ -21,6 +24,7 @@ const load = async () => {
   }
 }
 
+// 校验并保存当前配置
 const save = async () => {
   const title = form.title.trim() || 'Crest'
   await request.post({

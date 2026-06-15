@@ -25,6 +25,7 @@ import static io.crest.constant.AuthResourceEnum.ROLE;
 @Tag(name = "角色")
 @ApiSupport(order = 887, author = "Crest")
 @CrestApiPath(value = "/role", rt = ROLE)
+// 定义模块接口契约和数据传输结构
 public interface RoleApi {
 
     @Operation(summary = "查询")

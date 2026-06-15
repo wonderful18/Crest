@@ -109,6 +109,7 @@ public class AuditLogController {
     @Operation(summary = "审计日志统计")
     @CrestPermit("m:read")
     @GetMapping("/statistics")
+    // 执行当前服务方法并返回处理结果
     public Map<String, Object> statistics() {
         requireAuditAccess();
         Map<String, Object> stats = new HashMap<>();
@@ -136,12 +137,14 @@ public class AuditLogController {
     @Operation(summary = "获取操作类型列表")
     @CrestPermit("m:read")
     @GetMapping("/operation-types")
+    // 执行当前服务方法并返回处理结果
     public List<Map<String, Object>> operationTypes() {
         requireAuditAccess();
         return jdbcTemplate.queryForList(
                 "SELECT DISTINCT operation_type as value, operation_type as label FROM audit_log ORDER BY operation_type");
     }
 
+    // 执行当前服务方法并返回处理结果
     private void requireAuditAccess() {
         Long uid = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
         if (uid == null) {

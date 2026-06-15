@@ -281,6 +281,7 @@ export class BulletGraph extends G2PlotChartView<G2BulletOptions, G2Bullet> {
     const customStyleLegend = parseJson(chart.customStyle).legend
     const items = []
 
+    // 创建新数据并写入当前配置
     const createLegendItem = (value, name, symbol, fill, size = 4) => ({
       value,
       name,

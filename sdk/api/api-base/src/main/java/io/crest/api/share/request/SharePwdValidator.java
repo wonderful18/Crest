@@ -12,6 +12,7 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义模块接口契约和数据传输结构
 public class SharePwdValidator implements Serializable {
     @Serial
     private static final long serialVersionUID = 5723073697210793005L;

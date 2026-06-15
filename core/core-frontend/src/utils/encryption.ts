@@ -15,6 +15,7 @@ const smSuitePublicKeyPrefix = 'sm-suite:v1:sm2-public:'
 const sm2CipherPrefix = 'sm-suite:v1:sm2:'
 const sm4CipherPrefix = 'sm-suite:v1:sm4:'
 
+// 整理输入数据并返回工具处理结果
 const aesDecrypt = (word, keyStr) => {
   const keyHex = CryptoJS.enc.Utf8.parse(keyStr) //
   const ivHex = CryptoJS.enc.Utf8.parse('0000000000000000')
@@ -26,6 +27,7 @@ const aesDecrypt = (word, keyStr) => {
   return decrypt.toString(CryptoJS.enc.Utf8)
 }
 
+// 整理输入数据并返回工具处理结果
 export const rsaEncryp = word => {
   const clientKey = wsCache.get(appStore.getClientKey)
   if (typeof clientKey === 'string' && clientKey.startsWith(smSuitePublicKeyPrefix)) {
@@ -41,6 +43,7 @@ export const rsaEncryp = word => {
   return crypt.encrypt(word)
 }
 
+// 整理输入数据并返回工具处理结果
 export const symmetricDecrypt = (data, keyStr) => {
   if (typeof data === 'string' && data.startsWith(sm4CipherPrefix)) {
     const [iv, ciphertext, mac] = data.substring(sm4CipherPrefix.length).split(':')
@@ -64,6 +67,7 @@ export const symmetricDecrypt = (data, keyStr) => {
   return decrypted.toString(CryptoJS.enc.Utf8)
 }
 
+// 整理输入数据并返回工具处理结果
 const constantTimeEqualsHex = (left: string, right: string) => {
   if (left.length !== right.length) {
     return false

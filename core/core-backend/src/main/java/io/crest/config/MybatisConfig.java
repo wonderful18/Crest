@@ -15,10 +15,12 @@ import java.util.List;
 
 @Configuration
 @EnableTransactionManagement
+// 定义当前功能的配置入口
 public class MybatisConfig {
 
     @Bean
     @ConditionalOnMissingBean
+    // 执行当前服务方法并返回处理结果
     public MybatisInterceptor dbInterceptor() {
         MybatisInterceptor interceptor = new MybatisInterceptor();
         List<MybatisInterceptorConfig> configList = new ArrayList<>();

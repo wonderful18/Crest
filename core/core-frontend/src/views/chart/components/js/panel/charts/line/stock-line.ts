@@ -460,6 +460,7 @@ export class StockLine extends G2PlotChartView<MixOptions, Mix> {
     }
 
     const showFiled = chart.data.fields
+    // 处理当前节点或条目的交互状态
     const customTooltipItems = originalItems => {
       const formattedItems = originalItems.map(item => {
         const fieldObj = showFiled.find(q => q.engineFieldName === item.name)
@@ -486,6 +487,7 @@ export class StockLine extends G2PlotChartView<MixOptions, Mix> {
           ]
         : formattedItems
     }
+    // 维护表单数据和校验规则
     const formatTooltipItem = (item: any) => {
       const size = item.name.startsWith('MA') || !item.value ? 10 : 5
       const markerMarginRight = item.name.startsWith('MA') || !item.value ? 5 : 9
@@ -511,6 +513,7 @@ export class StockLine extends G2PlotChartView<MixOptions, Mix> {
         </li>
       `
     }
+    // 衔接当前组件交互和状态同步
     const generateCustomTooltipContent = (title: string, items: Array<any>) => {
       return `
         <div style="padding: 10px 0;">
@@ -644,6 +647,7 @@ export class StockLine extends G2PlotChartView<MixOptions, Mix> {
         })
       }
     }
+    // 更新当前配置并同步相关状态
     const updateValues = (strategy: 'breakLine' | 'setZero', data: any[]) => {
       data.forEach(obj => {
         Object.keys(obj).forEach(key => {

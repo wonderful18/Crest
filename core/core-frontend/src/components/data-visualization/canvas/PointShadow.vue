@@ -23,6 +23,7 @@ defineProps({
   }
 })
 
+// 根据当前配置计算界面样式
 const tipsStyleInfo = computed(() => {
   return {
     fontSize: (16 * canvasStyleData.value.scale) / 100 + 'px',
@@ -31,6 +32,7 @@ const tipsStyleInfo = computed(() => {
   }
 })
 
+// 根据当前配置计算界面样式
 const styleInfo = computed(() => {
   return {
     left: mousePointShadowMap.value.mouseX - mousePointShadowMap.value.width / 2 + 'px',

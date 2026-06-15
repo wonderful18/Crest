@@ -54,6 +54,7 @@ import { DropdownProps } from '@/custom-component/tabs/types'
 import generateID from '@/utils/generateID'
 defineOptions({ name: 'FuTabs' })
 type TabPanelName = string | number
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   addType: {
     type: String,
@@ -76,8 +77,10 @@ const props = defineProps({
   addButtonLabel: String,
   addable: Boolean
 })
+// 定义组件向父级抛出的事件
 const emit = defineEmits(['command'])
 
+// 处理界面事件并同步业务状态
 function handleCommand(e: any) {
   const name = generateID()
   let obj = null

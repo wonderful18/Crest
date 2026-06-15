@@ -31,6 +31,7 @@ export function useScrollTo({
   duration = 500,
   callback
 }: ScrollToParams) {
+  // 记录当前选中项和交互焦点
   const isActiveRef = ref(false)
   const start = el[position]
   const change = to - start

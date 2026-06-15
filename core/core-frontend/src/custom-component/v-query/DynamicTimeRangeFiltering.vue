@@ -85,6 +85,7 @@ const timeInterval = computed<DatePickType>(() => {
     ? (noTime as DatePickType)
     : (noTime.split('range')[0] as DatePickType)
 })
+// 监听相关数据变化并同步组件状态
 watch(
   () => timeConfig.value,
   () => {

@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+// 定义页面展示或接口返回的数据结构
 public class MarketCategoryVO {
     private String id;
     private String name;

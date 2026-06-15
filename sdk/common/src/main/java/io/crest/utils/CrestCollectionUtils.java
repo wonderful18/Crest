@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+// 提供当前模块复用的工具能力
 public class CrestCollectionUtils {
     public static <K, V> Map<K, List<V>> groupBy(List<V> list,
                                                  Function<V, K> keyExtractor) {

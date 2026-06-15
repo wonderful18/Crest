@@ -3,10 +3,12 @@ import { Datum } from '@antv/g2plot/esm/types/common'
 import { parseJson } from '@/views/chart/components/js/util'
 import { MultiScatter } from './scatter-multi'
 
+// 转换当前值并同步表单状态
 const numericValues = (data: Record<string, unknown>[], field: string) => {
   return data.map(item => Number(item[field])).filter(value => Number.isFinite(value))
 }
 
+// 转换当前值并同步表单状态
 const middleValue = (values: number[]) => {
   if (!values.length) {
     return 0
@@ -16,6 +18,7 @@ const middleValue = (values: number[]) => {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
 }
 
+// 转换当前值并同步表单状态
 const resolveReferenceValue = (configured: unknown, values: number[]) => {
   const value = Number(configured)
   if (Number.isFinite(value)) {
@@ -24,6 +27,7 @@ const resolveReferenceValue = (configured: unknown, values: number[]) => {
   return middleValue(values)
 }
 
+// 衔接当前组件交互和状态同步
 const rangeMidpoint = (start: number, end: number) => start + (end - start) / 2
 
 const resolveSizeRange = (configured: unknown): [number, number] | undefined => {

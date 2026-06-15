@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "角色详情VO")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class RoleDetailVO extends RoleCreator {
 
     @Schema(description = "ID")

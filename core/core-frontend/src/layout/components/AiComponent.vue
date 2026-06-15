@@ -3,8 +3,10 @@ import dvAiWindowMax from '@/assets/svg/dv-ai-window-max.svg'
 import dvAiWindowMin from '@/assets/svg/dv-ai-window-min.svg'
 import { onMounted, ref } from 'vue'
 import { useEmitt } from '@/hooks/web/useEmitt'
+// 控制弹窗、面板或区域的展示状态
 const aiDialogShow = ref(false)
 
+// 关闭对应弹窗并清理临时状态
 const closeAi = () => {
   aiDialogShow.value = false
 }
@@ -14,10 +16,12 @@ defineProps({
   }
 })
 
+// 计算尺寸数据并同步界面布局
 const sizeChange = () => {
   sizeState.value = sizeState.value === 'min' ? 'max' : 'min'
 }
 
+// 维护组件内部表单、弹窗和临时数据状态
 const sizeState = ref('min')
 
 onMounted(() => {

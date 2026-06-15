@@ -24,6 +24,7 @@ export const animationStore = defineStore('animation', {
   }
 })
 
+// 更新状态仓库中的业务数据
 export const animationStoreWithOut = () => {
   return animationStore(store)
 }

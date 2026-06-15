@@ -19,6 +19,7 @@ import java.util.List;
 
 @Tag(name = "工具箱:日志管理")
 @ApiSupport(order = 2)
+// 定义模块接口契约和数据传输结构
 public interface LogApi {
 
     @Operation(summary = "查询日志列表")

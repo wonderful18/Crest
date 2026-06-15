@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component("coreBusiManage")
+// 封装当前业务的持久化和查询逻辑
 public class CoreBusiManage {
 
     @Resource
@@ -26,6 +27,7 @@ public class CoreBusiManage {
     @Resource
     private DatasetGroupManage datasetGroupManage;
 
+    // 执行当前服务方法并返回处理结果
     public Map<String, List<BusiNodeVO>> interactiveTree(Map<String, BusiNodeRequest> requestMap) {
         Map<String, List<BusiNodeVO>> result = new HashMap<>();
         for (Map.Entry<String, BusiNodeRequest> entry : requestMap.entrySet()) {

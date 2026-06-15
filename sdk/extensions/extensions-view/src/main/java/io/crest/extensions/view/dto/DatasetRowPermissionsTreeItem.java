@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
+// 定义接口请求或返回数据的传输结构
 public class DatasetRowPermissionsTreeItem implements Serializable {
     private String type;// 'item' or 'tree'
     // item
@@ -23,6 +24,7 @@ public class DatasetRowPermissionsTreeItem implements Serializable {
     private String filterType;// 'logic' or 'enum'
     private String term;//'eq','not_eq','lt','le','gt','ge','in','not in','like','not like','null','not_null','empty','not_empty','between
 
+    // 执行当前服务方法并返回处理结果
     public String getValue() {
         if (StringUtils.isNotEmpty(timeValue)) {
             return timeValue;

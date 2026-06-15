@@ -10,7 +10,9 @@ const permissionStore = usePermissionStoreWithOut()
 const userStore = useUserStoreWithOut()
 const localeStore = useLocaleStoreWithOut()
 
+// 衔接当前组件交互和状态同步
 const language = ref(null)
+// 处理界面事件并同步业务状态
 const handleSetLanguage = lang => {
   const param = { lang }
   switchLangApi(param).then(res => {
@@ -23,6 +25,7 @@ const handleSetLanguage = lang => {
   })
 }
 
+// 衔接当前组件交互和状态同步
 const options = reactive([])
 
 onMounted(async () => {

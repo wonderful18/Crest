@@ -11,11 +11,13 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 @Configuration
+// 定义当前业务对象的核心职责
 public class JacksonConfig {
 
     @Bean
     @Primary
     @ConditionalOnMissingBean(ObjectMapper.class)
+    // 执行当前服务方法并返回处理结果
     public ObjectMapper jacksonObjectMapper(Jackson2ObjectMapperBuilder builder) {
         ObjectMapper objectMapper = builder.createXmlMapper(false).build();
         /*SimpleModule simpleModule = new SimpleModule();
@@ -26,6 +28,7 @@ public class JacksonConfig {
     }
 
     @Bean
+    // 执行当前服务方法并返回处理结果
     public Jackson2ObjectMapperBuilderCustomizer customJackson() {
         return jacksonObjectMapperBuilder -> {
             // 增大最大字符串长度限制到 350000000（或根据需要设置）

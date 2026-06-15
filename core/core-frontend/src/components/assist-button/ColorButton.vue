@@ -16,7 +16,9 @@
 <script setup lang="ts">
 import { computed, toRefs } from 'vue'
 
+// 定义组件向父级抛出的事件
 const emits = defineEmits(['onClick'])
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   colorType: {
     type: String,
@@ -29,8 +31,10 @@ const props = defineProps({
 })
 
 const { colorType, label } = toRefs(props)
+// 记录当前选中项和交互焦点
 const active = computed(() => label.value === colorType.value)
 
+// 计算颜色配置并返回样式结果
 const colorButtonClick = () => {
   emits('onClick', colorType.value)
 }

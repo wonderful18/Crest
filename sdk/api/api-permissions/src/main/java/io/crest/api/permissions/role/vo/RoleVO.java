@@ -10,6 +10,7 @@ import java.io.Serializable;
 
 @Schema(description = "角色VO")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class RoleVO implements Serializable {
 
     @Serial

@@ -23,6 +23,7 @@ const props = defineProps({
 // 拖拽排序变化后向父级提交新的优先级
 const emit = defineEmits(['onPriorityChange'])
 
+// 监听相关数据变化并同步组件状态
 watch(
   () => props.chart,
   () => {

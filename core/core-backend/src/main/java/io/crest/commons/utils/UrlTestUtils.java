@@ -6,8 +6,10 @@ import java.net.URL;
 import java.net.URLConnection;
 
 @SuppressWarnings("deprecation")
+// 提供当前模块复用的工具能力
 public class UrlTestUtils {
 
+    // 格式化日期时间并返回统一展示值
     public static boolean testUrlWithTimeOut(String urlString, int timeOutMillSeconds) {
         try {
             URL url = new URL(urlString);
@@ -21,6 +23,7 @@ public class UrlTestUtils {
         }
     }
 
+    // 判断当前类型是否满足业务分类
     public static boolean isURLAvailable(String urlString) {
         try {
             URL url = new URL(urlString);

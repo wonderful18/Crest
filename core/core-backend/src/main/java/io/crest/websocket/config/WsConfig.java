@@ -11,10 +11,12 @@ import org.springframework.web.socket.config.annotation.WebSocketTransportRegist
 
 @Configuration
 @EnableWebSocketMessageBroker
+// 定义实时消息通道的配置入口
 public class WsConfig implements WebSocketMessageBrokerConfigurer {
 
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/websocket")
                 .setAllowedOriginPatterns("*")
@@ -23,12 +25,14 @@ public class WsConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     @Override
+    // 读取配置并返回当前功能所需参数
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableSimpleBroker("/topic", "/user");
         registry.setUserDestinationPrefix("/user");
     }
 
     @Override
+    // 读取配置并返回当前功能所需参数
     public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
         registry.addDecoratorFactory(new CrestWebSocketHandlerFactory());
         registry.setMessageSizeLimit(8192) //设置消息字节数大小

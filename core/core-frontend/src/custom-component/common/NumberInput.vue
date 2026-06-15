@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toRefs, PropType } from 'vue'
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   value: Number,
   name: String,

@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 @Data
+// 定义页面展示或接口返回的数据结构
 public class SQLBotAssistantField implements Serializable {
     private String name;
     private String comment;

@@ -26,6 +26,7 @@ import { useEmitt } from '@/hooks/web/useEmitt'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   propValue: {
     type: String,
@@ -58,6 +59,7 @@ const props = defineProps({
 const { element } = toRefs(props)
 let currentInstance
 
+// 维护组件内部表单、弹窗和临时数据状态
 const state = reactive({
   pOption: element.value.streamMediaLinks[element.value.streamMediaLinks.videoType],
   flvPlayer: null,
@@ -75,6 +77,7 @@ onMounted(() => {
   initOption()
 })
 
+// 初始化组件状态和默认配置
 const initOption = () => {
   state.pOption = element.value.streamMediaLinks[element.value.streamMediaLinks.videoType]
   delete state.pOption.segments
@@ -101,6 +104,7 @@ const initOption = () => {
   })
 }
 
+// 衔接当前组件交互和状态同步
 const destroyPlayer = () => {
   // Destroy
   if (state.flvPlayer) {

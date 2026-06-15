@@ -10,6 +10,7 @@ import java.io.Serializable;
 
 @Schema(description = "当前登录人信息VO")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class CurUserVO implements Serializable {
     @Serial
     private static final long serialVersionUID = 1190164294672439979L;

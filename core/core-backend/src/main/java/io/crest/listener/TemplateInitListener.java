@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Order(value = 3)
+// 定义当前业务对象的核心职责
 public class TemplateInitListener implements ApplicationListener<ApplicationReadyEvent> {
 
     @Resource
@@ -20,6 +21,7 @@ public class TemplateInitListener implements ApplicationListener<ApplicationRead
     private boolean internalLiteEnabled;
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         if (internalLiteEnabled) {
             LogUtil.info("=====Template init skipped in internal lite mode=====");

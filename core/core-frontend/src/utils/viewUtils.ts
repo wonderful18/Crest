@@ -1,6 +1,7 @@
 import { getRange } from '@/utils/timeUitils'
 import { union } from 'lodash-es'
 
+// 整理输入数据并返回工具处理结果
 export function viewFieldTimeTrans(viewDataInfo, params) {
   if (viewDataInfo && params && params.dimensionList) {
     const fields = viewDataInfo.fields
@@ -34,6 +35,7 @@ export function viewFieldTimeTrans(viewDataInfo, params) {
   }
 }
 
+// 校验当前数据是否满足业务规则
 export function checkIsSameDs(canvasViewInfo, sourceViewId, targetViewId) {
   return canvasViewInfo[sourceViewId]['tableId'] === canvasViewInfo[targetViewId]['tableId']
 }

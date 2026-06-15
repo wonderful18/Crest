@@ -1,5 +1,6 @@
 package io.crest.engine.func;
 
+// 定义当前业务对象的核心职责
 public class FunctionConstant {
     /**
      * 所有聚合函数数组

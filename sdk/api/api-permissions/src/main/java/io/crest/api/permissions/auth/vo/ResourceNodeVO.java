@@ -11,6 +11,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
+// 定义页面展示或接口返回的数据结构
 public class ResourceNodeVO implements Serializable {
 
     @JsonSerialize(using= ToStringSerializer.class)

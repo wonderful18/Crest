@@ -180,6 +180,7 @@ export class Quadrant extends G2PlotChartView<ScatterOptions, G2Scatter> {
       defaultBaselineQuadrant.xBaseline = xBaseline
       defaultBaselineQuadrant.yBaseline = yBaseline
     }
+    // 读取当前业务数据并返回处理结果
     const getQuotaList = d => {
       const eQuotaList = eData.find(item => item.field === d.field)?.quotaList
       const yQuotaList = yData.find(item => item.field === d.field)?.quotaList

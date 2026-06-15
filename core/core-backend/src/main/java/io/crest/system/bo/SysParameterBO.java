@@ -5,6 +5,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
+// 定义当前业务对象的核心职责
 public class SysParameterBO implements Serializable {
 
     private String key;

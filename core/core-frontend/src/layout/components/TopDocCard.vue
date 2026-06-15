@@ -3,6 +3,7 @@ import { toRefs } from 'vue'
 import { useCache } from '@/hooks/web/useCache'
 
 const { wsCache } = useCache('localStorage')
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   cardInfo: {
     type: Object,
@@ -17,6 +18,7 @@ const props = defineProps({
 })
 const { cardInfo } = toRefs(props)
 
+// 打开对应弹窗或操作入口
 const openBlank = () => {
   if (cardInfo.value.url) {
     const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'

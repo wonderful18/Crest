@@ -2,6 +2,7 @@ import { interactiveStoreWithOut } from '@/store/modules/interactive'
 const interactiveStore = interactiveStoreWithOut()
 const flagArray = ['panel', 'screen', 'dataset', 'datasource']
 
+// 校验当前数据是否满足业务规则
 export const checkPermission = (el, binding) => {
   const { value } = binding
   const data = interactiveStore.data

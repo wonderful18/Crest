@@ -18,14 +18,18 @@ import { ref } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 
 const { t } = useI18n()
+// 控制弹窗、面板或区域的展示状态
 const dialogVisible = ref(false)
 
+// 处理界面事件并同步业务状态
 const handleClose = done => {
   done()
 }
+// 打开对应弹窗或操作入口
 const open = () => {
   dialogVisible.value = true
 }
+// 关闭对应弹窗并清理临时状态
 const close = () => {
   dialogVisible.value = false
 }

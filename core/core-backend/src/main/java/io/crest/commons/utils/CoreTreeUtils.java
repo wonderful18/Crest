@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
  */
 public class CoreTreeUtils {
 
+    // 执行当前服务方法并返回处理结果
     public static List<VisualizationNodeBO> customSortBO(List<VisualizationNodeBO> list, String sortType) {
         Collator collator = Collator.getInstance(Locale.CHINA);
         if (Strings.CI.equals(SortConstants.NAME_DESC, sortType)) {

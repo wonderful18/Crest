@@ -9,6 +9,7 @@ import java.util.List;
 
 @Schema(description = "权限结点")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class PermissionVO implements Serializable {
     @Serial
     private static final long serialVersionUID = 7951267541124410580L;

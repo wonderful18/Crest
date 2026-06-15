@@ -20,6 +20,7 @@ const { t } = useI18n()
 
 const DEFAULT_LIGHTNESS_RANGE: [number, number] = [0.2, 1]
 
+// 衔接当前组件交互和状态同步
 function normalizeRatio(val: number, min: number, max: number): number {
   if (max === min) {
     return 0.5
@@ -27,11 +28,13 @@ function normalizeRatio(val: number, min: number, max: number): number {
   return (val - min) / (max - min)
 }
 
+// 衔接当前组件交互和状态同步
 function safeToNumber(value: unknown): number | undefined {
   const result = Number(value)
   return Number.isFinite(result) ? result : undefined
 }
 
+// 读取当前业务数据并返回处理结果
 function getScatterTooltipFormatter(
   itemName: string,
   quotaList: Array<{ id: string }>,

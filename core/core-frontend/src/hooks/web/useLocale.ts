@@ -2,6 +2,7 @@ import { i18n } from '@/plugins/vue-i18n'
 import { useLocaleStoreWithOut } from '@/store/modules/locale'
 import { setHtmlPageLang } from '@/plugins/vue-i18n/helper'
 import { PATH_URL } from '@/config/axios/service'
+// 更新当前配置并同步相关状态
 const setI18nLanguage = (locale: LocaleType) => {
   const localeStore = useLocaleStoreWithOut()
 
@@ -16,6 +17,7 @@ const setI18nLanguage = (locale: LocaleType) => {
   setHtmlPageLang(locale)
 }
 
+// 读取当前业务数据并返回处理结果
 const loadRemoteI18n = async (option: any) => {
   const name = option.lang.replace('-', '_')
   const path =
@@ -26,6 +28,7 @@ const loadRemoteI18n = async (option: any) => {
   return await import(/* @vite-ignore */ url)
 }
 
+// 封装可复用的组合式状态和操作
 export const useLocale = () => {
   // Switching the language will change the locale of useI18n
   // And submit to configuration modification

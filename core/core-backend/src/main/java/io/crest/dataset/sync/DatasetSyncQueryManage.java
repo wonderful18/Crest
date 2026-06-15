@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+// 定义当前业务对象的核心职责
 public class DatasetSyncQueryManage {
 
     @Resource
@@ -26,6 +27,7 @@ public class DatasetSyncQueryManage {
     private DatasetSyncTaskManage taskManage;
 
     @SuppressWarnings("unchecked")
+    // 执行当前服务方法并返回处理结果
     public Map<String, Object> routeIfSynced(DatasetGroupInfoDTO dataset, Map<String, Object> sqlMap) {
         if (!DatasetSyncUtils.shouldRouteToCache(dataset, sqlMap)) {
             return sqlMap;

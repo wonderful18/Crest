@@ -14,6 +14,7 @@ import { computed } from 'vue'
 const composeStore = composeStoreWithOut()
 const { areaData } = storeToRefs(composeStore)
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   element: {
     required: true,
@@ -29,8 +30,10 @@ const props = defineProps({
   }
 })
 
+// 记录当前选中项和交互焦点
 const isComposeSelected = computed(() => areaData.value.components.includes(props.element))
 
+// 处理界面事件并同步业务状态
 const handleMouseDown = e => {
   // 右键返回
   if (e.buttons === 2) {

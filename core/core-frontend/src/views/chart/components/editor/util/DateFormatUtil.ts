@@ -1,3 +1,4 @@
+// 维护表单数据和校验规则
 export function transDateFormat(dateStyle: string, datePattern: string): string {
   const split = datePattern?.toLowerCase() === 'date_split' ? '/' : '-'
 
@@ -38,6 +39,7 @@ type DatePickerType =
   | 'monthrange'
   | 'yearrange'
 
+// 整理输入数据并返回工具处理结果
 export function transDatePickerType(dateStyle: string | undefined): DatePickerType {
   if (!dateStyle) {
     return 'datetime'

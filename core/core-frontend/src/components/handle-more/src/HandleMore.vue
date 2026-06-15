@@ -26,10 +26,12 @@ withDefaults(
   }
 )
 
+// 处理界面事件并同步业务状态
 const handleCommand = (command: string | number | object) => {
   emit('handleCommand', command)
 }
 
+// 定义组件向父级抛出的事件
 const emit = defineEmits(['handleCommand'])
 </script>
 

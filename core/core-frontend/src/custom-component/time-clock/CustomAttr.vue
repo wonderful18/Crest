@@ -6,6 +6,7 @@ import { storeToRefs } from 'pinia'
 import { onMounted, reactive } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 
+// 维护组件内部表单、弹窗和临时数据状态
 const state = reactive({})
 const { t } = useI18n()
 

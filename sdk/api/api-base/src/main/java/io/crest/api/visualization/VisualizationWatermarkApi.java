@@ -13,6 +13,7 @@ import java.util.List;
 
 @Tag(name = "可视化管理:水印")
 @ApiSupport(order = 994)
+// 定义模块接口契约和数据传输结构
 public interface VisualizationWatermarkApi {
 
 

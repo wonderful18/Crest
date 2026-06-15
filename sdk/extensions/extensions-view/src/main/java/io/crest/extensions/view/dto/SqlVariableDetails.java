@@ -7,6 +7,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
+// 定义接口请求或返回数据的传输结构
 public class SqlVariableDetails {
     private String variableName;
     private String alias;
@@ -25,6 +26,7 @@ public class SqlVariableDetails {
     private String operator;
     private List<String> value;
     private String datasetFullName;
+    // 定义当前业务支持的枚举取值
     public enum DefaultValueScope {
         EDIT("EDIT"),
         ALLSCOPE("ALLSCOPE");
@@ -32,6 +34,7 @@ public class SqlVariableDetails {
         DefaultValueScope(String type){
             this.type = type;
         }
+        // 执行当前服务方法并返回处理结果
         public String getType(){
             return type;
         }

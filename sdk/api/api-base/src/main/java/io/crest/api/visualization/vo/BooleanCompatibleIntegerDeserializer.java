@@ -7,9 +7,11 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 
 import java.io.IOException;
 
+// 定义页面展示或接口返回的数据结构
 public class BooleanCompatibleIntegerDeserializer extends JsonDeserializer<Integer> {
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public Integer deserialize(JsonParser parser, DeserializationContext context) throws IOException {
         JsonToken token = parser.currentToken();
         if (token == JsonToken.VALUE_TRUE) {

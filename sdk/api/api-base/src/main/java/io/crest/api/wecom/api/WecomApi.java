@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "企微设置")
 @ApiSupport(order = 899)
+// 定义模块接口契约和数据传输结构
 public interface WecomApi {
 
     @Operation(summary = "查询企微信息")

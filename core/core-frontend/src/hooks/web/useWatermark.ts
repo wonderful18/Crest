@@ -1,8 +1,10 @@
 const domSymbol = Symbol('watermark-dom')
 
+// 封装可复用的组合式状态和操作
 export function useWatermark(appendEl: HTMLElement | null = document.body) {
   let func: Fn = () => ({})
   const id = domSymbol.toString()
+  // 移除当前数据并同步关联状态
   const clear = () => {
     const domId = document.getElementById(id)
     if (domId) {
@@ -11,6 +13,7 @@ export function useWatermark(appendEl: HTMLElement | null = document.body) {
     }
     window.removeEventListener('resize', func)
   }
+  // 创建新数据并写入当前配置
   const createWatermark = (str: string) => {
     clear()
 
@@ -43,6 +46,7 @@ export function useWatermark(appendEl: HTMLElement | null = document.body) {
     return id
   }
 
+  // 更新当前配置并同步相关状态
   function setWatermark(str: string) {
     createWatermark(str)
     func = () => {

@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 @Schema(description = "分享UUID编辑器")
 @Data
+// 定义模块接口契约和数据传输结构
 public class ShareUuidEditor implements Serializable {
 
     @Schema(description = "资源ID", requiredMode = Schema.RequiredMode.REQUIRED)

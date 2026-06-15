@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
+// 提供当前模块复用的工具能力
 public class SqlVariableHandleResult {
     private String sql;
     private List<TableFieldWithValue> tableFieldWithValues = new ArrayList<>();

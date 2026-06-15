@@ -4,7 +4,9 @@ import { ref, onMounted } from 'vue'
 import { Icon } from '@/components/icon-custom'
 import { useUserStoreWithOut } from '@/store/modules/user'
 const userStore = useUserStoreWithOut()
+// 衔接当前组件交互和状态同步
 const language = ref(null)
+// 处理界面事件并同步业务状态
 const handleSetLanguage = lang => lang
 onMounted(() => {
   language.value = userStore.getLanguage
