@@ -1262,6 +1262,7 @@ const isProgressBar = computed(() => {
       </el-select>
     </el-form-item>
     <div v-if="showSeriesLabelFormatter">
+      <!-- 系列标签按指标逐项配置，混合图通过稳定 seriesId 区分左右轴同名指标。 -->
       <el-form-item class="form-item" :class="'form-item-' + themes">
         <el-select
           v-model="curSeriesFormatter"
@@ -1525,6 +1526,7 @@ const isProgressBar = computed(() => {
       </template>
     </div>
     <template v-if="isGroupBar">
+      <!-- 分组柱状图的子项标签使用独立开关，避免影响普通柱状图标签配置。 -->
       <el-form-item class="form-item form-item-checkbox" :class="'form-item-' + themes">
         <el-checkbox
           :effect="themes"
@@ -1822,6 +1824,7 @@ const isProgressBar = computed(() => {
       </el-row>
     </div>
     <template v-if="isGauge">
+      <!-- 仪表盘同时包含指标值和占比值，两类标签分别维护格式与样式。 -->
       <el-form-item class="form-item form-item-checkbox" :class="'form-item-' + themes">
         <el-checkbox
           :effect="themes"

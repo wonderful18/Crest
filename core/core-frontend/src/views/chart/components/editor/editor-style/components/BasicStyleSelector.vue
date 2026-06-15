@@ -386,7 +386,6 @@ const preventInvalidKeydown = event => {
     event.preventDefault()
   }
 }
-// 验证输入值
 /** 将输入值限制在 1 到 100 的有效范围内 */
 const validateInput = (value, field) => {
   if (value === '') {
@@ -579,7 +578,7 @@ onMounted(() => {
         <el-radio :effect="themes" label="vertical">{{ t('chart.vertical') }}</el-radio>
       </el-radio-group>
     </el-form-item>
-    <!--flow map begin-->
+    <!-- 地图热力图和流向地图基础渲染参数。 -->
     <el-form-item
       v-if="showProperty('heatMapStyle')"
       :label="t('chart.type')"
@@ -694,8 +693,7 @@ onMounted(() => {
       </el-row>
     </div>
 
-    <!--flow map end-->
-    <!--map start-->
+    <!-- 区域地图边框、底色和标签显示参数。 -->
     <el-row :gutter="8">
       <el-col :span="12" v-if="showProperty('areaBorderColor')">
         <el-form-item
@@ -861,9 +859,7 @@ onMounted(() => {
       </el-form-item>
     </div>
 
-    <!--map end-->
-
-    <!--table start-->
+    <!-- 表格边框、滚动条和分页取数方式。 -->
     <el-row :gutter="8">
       <el-col :span="12" v-if="showProperty('tableBorderColor')">
         <el-form-item
@@ -961,9 +957,7 @@ onMounted(() => {
       </el-select>
     </el-form-item>
 
-    <!--table end-->
-
-    <!--table2 start-->
+    <!-- 表格列宽、树表行头和自动换行配置。 -->
     <el-form-item
       :label="t('chart.table_column_width_config')"
       class="form-item"
@@ -1132,8 +1126,7 @@ onMounted(() => {
         {{ t('chart.show_hover_style') }}
       </el-checkbox>
     </el-form-item>
-    <!--table2 end-->
-    <!--gauge start-->
+    <!-- 仪表盘刻度和百分比标签配置。 -->
     <el-form-item
       :label="t('chart.chart_style')"
       class="form-item"
@@ -1181,8 +1174,7 @@ onMounted(() => {
         {{ t('chart.gauge_percentage_tick') }}</el-checkbox
       >
     </el-form-item>
-    <!--gauge end-->
-    <!--bar start-->
+    <!-- 柱形图间距和柱宽占比配置。 -->
     <el-form-item
       v-if="showProperty('barDefault')"
       class="form-item form-item-slider"
@@ -1248,8 +1240,7 @@ onMounted(() => {
         </el-col>
       </el-row>
     </div>
-    <!--bar end-->
-    <!--line area start-->
+    <!-- 折线和面积图线宽、标记点和平滑曲线配置。 -->
     <el-row :gutter="8">
       <el-col :span="12">
         <el-form-item
@@ -1324,8 +1315,7 @@ onMounted(() => {
         {{ t('chart.line_smooth') }}
       </el-checkbox>
     </el-form-item>
-    <!--line area end-->
-    <!--radar begin-->
+    <!-- 雷达图形状、节点和填充区域配置。 -->
     <el-form-item
       :label="t('chart.shape')"
       class="form-item"
@@ -1387,8 +1377,7 @@ onMounted(() => {
         {{ $t('chart.radar_area_color') }}
       </el-checkbox>
     </el-form-item>
-    <!--radar end-->
-    <!--scatter start-->
+    <!-- 散点图气泡形状和尺寸配置。 -->
     <el-form-item
       :label="t('chart.bubble_symbol')"
       class="form-item"
@@ -1424,9 +1413,7 @@ onMounted(() => {
         @change="changeBasicStyle('scatterSymbolSize')"
       />
     </el-form-item>
-    <!--scatter end-->
-
-    <!--symbol map start-->
+    <!-- 符号地图标记形状、尺寸、透明度和描边配置。 -->
     <el-form-item
       :label="t('chart.bubble_symbol')"
       class="form-item"
@@ -1492,7 +1479,7 @@ onMounted(() => {
         @change="changeBasicStyle('mapSymbolStrokeWidth')"
       />
     </el-form-item>
-    <!-- pie/rose start -->
+    <!-- 饼图和玫瑰图 TopN、内外半径配置。 -->
 
     <div v-show="showProperty('topN')" class="top-n-setting">
       <el-form-item class="form-item" :class="'form-item-' + themes">
@@ -1624,8 +1611,7 @@ onMounted(() => {
         </el-col>
       </el-row>
     </div>
-    <!-- pie/rose end -->
-    <!-- circle-packing start -->
+    <!-- 圆堆图边框、间距和填充配置。 -->
     <div v-if="showProperty('circleBorderStyle')">
       <div class="alpha-setting">
         <el-row style="display: flex; width: 100%">
@@ -1687,7 +1673,6 @@ onMounted(() => {
         </el-form-item>
       </el-row>
     </div>
-    <!-- circle-packing end -->
   </el-form>
 </template>
 <style scoped lang="less">
