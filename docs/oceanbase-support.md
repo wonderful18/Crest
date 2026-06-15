@@ -41,12 +41,14 @@ obclient -h127.0.0.1 -P2883 -uob_user@ob_oracle#obcluster -pob_password
 Observer direct connections must also be covered:
 
 ```bash
-obclient -h127.0.0.1 -P2881 -uob_user@ob_mysql#obcluster -pob_password
+obclient -h127.0.0.1 -P2881 -uob_user@ob_mysql -pob_password
 ```
 
 ```bash
-obclient -h127.0.0.1 -P2881 -uob_user@ob_oracle#obcluster -pob_password
+obclient -h127.0.0.1 -P2881 -uob_user@ob_oracle -pob_password
 ```
+
+For JDBC datasource checks, use `jdbc:oceanbase://127.0.0.1:2883` through OBProxy and `jdbc:oceanbase://127.0.0.1:2881` for observer direct connections. OBProxy usernames include the cluster suffix, for example `ob_user@ob_oracle#obcluster`; observer direct usernames use the tenant suffix without the cluster, for example `ob_user@ob_oracle`.
 
 ## Metadata Database Configuration
 

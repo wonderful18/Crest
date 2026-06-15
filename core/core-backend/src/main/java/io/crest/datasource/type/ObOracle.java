@@ -39,11 +39,9 @@ public class ObOracle extends DatasourceConfiguration {
             return getJdbcUrl();
         }
 
-        String database = StringUtils.defaultString(getDataBase()).trim();
-        String jdbcUrl = "jdbc:oceanbase://HOSTNAME:PORT/DATABASE"
+        String jdbcUrl = "jdbc:oceanbase://HOSTNAME:PORT"
                 .replace("HOSTNAME", getLHost().trim())
-                .replace("PORT", getLPort().toString().trim())
-                .replace("DATABASE", database);
+                .replace("PORT", getLPort().toString().trim());
         if (StringUtils.isNotBlank(getExtraParams())) {
             jdbcUrl = jdbcUrl + "?" + getExtraParams().trim();
         }
