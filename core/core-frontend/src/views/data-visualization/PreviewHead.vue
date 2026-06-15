@@ -28,6 +28,7 @@ const { wsCache } = useCache('localStorage')
 const dvMainStore = dvMainStoreWithOut()
 const appStore = useAppStoreWithOut()
 const { dvInfo } = storeToRefs(dvMainStore)
+// 定义预览页头部操作事件。
 const emit = defineEmits(['reload', 'download', 'downloadAsAppTemplate'])
 defineProps({
   cacheReloadKey: {
@@ -38,7 +39,9 @@ defineProps({
 const { t } = useI18n()
 const embeddedStore = useEmbedded()
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
+// 收藏状态标记。
 const favorited = ref(false)
+// 打开当前画布预览页。
 const preview = () => {
   const baseUrl = isCrestBi.value ? embeddedStore.baseUrl : ''
   const url =
@@ -51,23 +54,31 @@ const preview = () => {
   const newWindow = window.open(url, '_blank')
   initOpenHandler(newWindow)
 }
+// 判断是否处于嵌入式应用模式。
 const isCrestBi = computed(() => appStore.getIsCrestBi)
+// 判断当前页面是否在 iframe 中运行。
 const isIframe = computed(() => appStore.getIsIframe)
+// 判断分享能力是否被禁用。
 const shareDisable = computed(() => shareStore.getShareDisable)
+// 计算当前画布的导出权限。
 const exportPermissions = computed(() =>
   exportPermission(dvInfo.value['weight'], dvInfo.value['ext'])
 )
+// 触发当前画布重新加载。
 const reload = () => {
   emit('reload', dvInfo.value.id)
 }
 
+// 触发当前画布下载。
 const download = type => {
   emit('download', type)
 }
+// 触发当前画布另存为应用模板。
 const downloadAsAppTemplate = downloadType => {
   emit('downloadAsAppTemplate', downloadType)
 }
 
+// 打开当前画布编辑页。
 const dvEdit = () => {
   if (isCrestBi.value || isIframe.value) {
     embeddedStore.clearState()
@@ -87,6 +98,7 @@ const dvEdit = () => {
   initOpenHandler(newWindow)
 }
 
+// 切换当前画布收藏状态。
 const executeStore = () => {
   const param = {
     id: dvInfo.value.id,
@@ -96,6 +108,7 @@ const executeStore = () => {
     storeQuery()
   })
 }
+// 查询当前画布收藏状态。
 const storeQuery = () => {
   if (!dvInfo?.value?.id) return
   storeStatusApi(dvInfo.value.id).then(res => {
@@ -103,6 +116,7 @@ const storeQuery = () => {
   })
 }
 storeQuery()
+// 监听画布切换并刷新收藏状态。
 watch(
   () => dvInfo.value.id,
   () => {
@@ -110,7 +124,9 @@ watch(
   }
 )
 
+// 嵌入式新窗口处理器引用。
 const openHandler = ref(null)
+// 将新窗口句柄同步给嵌入式容器。
 const initOpenHandler = newWindow => {
   if (openHandler?.value) {
     const pm = {
