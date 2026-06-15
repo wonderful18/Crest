@@ -59,7 +59,7 @@ Common variables:
 | `CREST_DB_URL` | Optional full JDBC URL. If set, it has priority. | Empty |
 | `CREST_DB_HOST` | Database host | `127.0.0.1` |
 | `CREST_DB_PORT` | Database port | MySQL `3306`, OceanBase usually `2883` |
-| `CREST_DB_NAME` | Metadata database or schema name | `crest` |
+| `CREST_DB_NAME` | Metadata database name for MySQL-compatible metadata databases | `crest` |
 | `CREST_FLYWAY_LOCATIONS` | Optional Flyway location override | Type-specific |
 
 Example OB MySQL metadata database:
@@ -79,7 +79,6 @@ Example OB Oracle metadata database:
 export CREST_DB_TYPE=ob-oracle
 export CREST_DB_HOST=127.0.0.1
 export CREST_DB_PORT=2883
-export CREST_DB_NAME=crest
 export CREST_DB_USERNAME='ob_user@ob_oracle#obcluster'
 export CREST_DB_PASSWORD='ob_password'
 ```
@@ -87,7 +86,8 @@ export CREST_DB_PASSWORD='ob_password'
 When running with Docker Compose files that set `CREST_DB_URL`, provide an explicit OceanBase URL:
 
 ```bash
-export CREST_DB_URL='jdbc:oceanbase://127.0.0.1:2883/crest'
+export CREST_DB_URL='jdbc:oceanbase://127.0.0.1:2883/crest'   # ob-mysql
+export CREST_DB_URL='jdbc:oceanbase://127.0.0.1:2883'         # ob-oracle
 ```
 
 ## Implementation Rules

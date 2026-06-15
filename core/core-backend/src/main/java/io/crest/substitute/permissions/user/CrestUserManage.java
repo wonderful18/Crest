@@ -15,6 +15,8 @@ import io.crest.api.permissions.user.vo.UserImportVO;
 import io.crest.api.permissions.user.vo.UserItem;
 import io.crest.constant.SystemSettingConstants;
 import io.crest.exception.CrestException;
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.substitute.permissions.user.model.CrestUser;
 import io.crest.substitute.permissions.user.model.SsoUserProfile;
@@ -32,6 +34,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.springframework.core.env.Environment;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -58,6 +61,9 @@ public class CrestUserManage {
 
     @Resource
     private JdbcTemplate jdbcTemplate;
+
+    @Resource
+    private Environment environment;
 
     @Resource
     private PlatformPermissionManage platformPermissionManage;
@@ -116,13 +122,13 @@ public class CrestUserManage {
 
     // 按账号查询单个用户，登录和账号唯一性校验共用此入口
     public CrestUser queryByAccount(String account) {
-        List<CrestUser> users = jdbcTemplate.query("SELECT * FROM iam_user WHERE account = ? LIMIT 1", rowMapper, account);
+        List<CrestUser> users = jdbcTemplate.query(limitOne("SELECT * FROM iam_user WHERE account = ?"), rowMapper, account);
         return users.isEmpty() ? null : users.get(0);
     }
 
     // 按用户 ID 查询单个用户
     public CrestUser queryById(Long id) {
-        List<CrestUser> users = jdbcTemplate.query("SELECT * FROM iam_user WHERE id = ? LIMIT 1", rowMapper, id);
+        List<CrestUser> users = jdbcTemplate.query(limitOne("SELECT * FROM iam_user WHERE id = ?"), rowMapper, id);
         return users.isEmpty() ? null : users.get(0);
     }
 
@@ -131,9 +137,13 @@ public class CrestUserManage {
         List<CrestUser> users = jdbcTemplate.query("""
                 SELECT * FROM iam_user
                 WHERE auth_type = ? AND external_id = ?
-                LIMIT 1
-                """, rowMapper, authType, externalId);
+                """.transform(this::limitOne), rowMapper, authType, externalId);
         return users.isEmpty() ? null : users.get(0);
+    }
+
+    private String limitOne(String sql) {
+        MetadataDbDialect dialect = MetadataDbDialects.current(environment);
+        return dialect.limitOffset(sql.stripTrailing(), 1, 0);
     }
 
     // 返回用户当前密码密文，供认证流程读取凭据版本

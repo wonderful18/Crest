@@ -25,7 +25,7 @@ public class MetadataDbEnvironmentPostProcessor implements EnvironmentPostProces
                 "${CREST_DB_DRIVER_CLASS_NAME:" + type.getDriverClassName() + "}");
 
         if (type.isOceanBase()) {
-            defaults.put("spring.datasource.url", "${CREST_DB_URL:" + oceanBaseJdbcUrl() + "}");
+            defaults.put("spring.datasource.url", "${CREST_DB_URL:" + oceanBaseJdbcUrl(type) + "}");
         }
         defaults.put("spring.flyway.locations",
                 "${CREST_FLYWAY_LOCATIONS:" + type.getDefaultFlywayLocations() + "}");
@@ -37,7 +37,10 @@ public class MetadataDbEnvironmentPostProcessor implements EnvironmentPostProces
         return Ordered.LOWEST_PRECEDENCE;
     }
 
-    private String oceanBaseJdbcUrl() {
+    private String oceanBaseJdbcUrl(MetadataDbType type) {
+        if (type == MetadataDbType.OB_ORACLE) {
+            return "jdbc:oceanbase://${CREST_DB_HOST:127.0.0.1}:${CREST_DB_PORT:2883}";
+        }
         return "jdbc:oceanbase://${CREST_DB_HOST:127.0.0.1}:${CREST_DB_PORT:2883}/${CREST_DB_NAME:crest}";
     }
 }
