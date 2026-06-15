@@ -28,6 +28,7 @@ import { computed, toRefs } from 'vue'
 import { hexColorToRGBA } from '@/views/chart/components/js/util'
 import { iconBoardMap } from '@/components/icon-group/board-list'
 
+// 背景模板项属性，包含模板信息和公共背景配置。
 const props = defineProps({
   template: {
     type: Object,
@@ -41,9 +42,12 @@ const props = defineProps({
   }
 })
 
+// 保持模板和背景配置的响应式引用。
 const { template, commonBackground } = toRefs(props)
+// 背景模板切换时通知父级刷新边框配置。
 const emits = defineEmits(['borderChange'])
 
+// 根据背景色配置生成模板预览样式。
 const itemStyle = computed(() => {
   if (commonBackground.value.backgroundColorSelect) {
     return {
@@ -54,13 +58,16 @@ const itemStyle = computed(() => {
   }
 })
 
+// 从模板 SVG 路径中解析图标组件名称。
 const mainIconClass = computed(() => {
   return template.value.url.replace('board/', '').replace('.svg', '')
 })
+// 判断当前模板是否为已选背景图。
 const itemActive = computed(() => {
   return commonBackground.value && commonBackground.value.innerImage === template.value.url
 })
 
+// 设置当前背景模板并通知父级。
 const setBoard = () => {
   commonBackground.value.innerImage = template.value.url
   emits('borderChange')
