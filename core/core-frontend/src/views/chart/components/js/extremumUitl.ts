@@ -231,6 +231,7 @@ const findMinMax = (data): { minItem; maxItem } => {
     { minItem: undefined, maxItem: undefined }
   )
 }
+// 根据图表数据创建最大值和最小值标注节点
 export const createExtremumPoint = (chart, ev) => {
   // 获取标注样式
   const { label: labelAttr = {}, basicStyle = {} } = parseJson(chart.customAttr)
@@ -257,6 +258,7 @@ export const createExtremumPoint = (chart, ev) => {
     containerElement.insertBefore(divParent, containerElement.firstChild)
     // 处理最值闪烁的问题
     let opacity = 0
+    // 渐显标注父容器，降低重绘时的闪烁感
     const animate = () => {
       // 增加不透明度
       opacity += 0.19
@@ -385,6 +387,7 @@ export const createExtremumPoint = (chart, ev) => {
   })
 }
 
+// 按节点编号移除单个最值标注
 function removeDivElement(key) {
   const element = document.getElementById(key)
   if (element) {
@@ -426,6 +429,7 @@ function performChunk(dataList, taskHandler) {
   }
   if (dataList.length === 0) return
   let i = 0
+  // 在浏览器空闲片段中继续处理下一批数据
   function _run() {
     if (i >= dataList.length) return
     // 请求浏览器空闲期间执行的回调函数

@@ -243,6 +243,7 @@ export function antVCustomColor(chart) {
   return colors
 }
 
+// 从标题样式中提取图表备注展示配置
 export function getRemark(chart) {
   const remark = {} as any
   if (chart.customStyle) {
@@ -609,6 +610,7 @@ const getExcelDownloadRequest = (data, type?) => {
  */
 function getChartExcelTitle(preFix, viewTitle) {
   const now = new Date()
+  // 将时间片段补齐为两位数字
   const pad = n => n.toString().padStart(2, '0')
   const year = now.getFullYear()
   const month = pad(now.getMonth() + 1) // 月份从 0 开始
@@ -802,6 +804,7 @@ export const getMaxAndMinValueByData = (
   }
 }
 
+// 按起止颜色生成渐变色阶
 export const stepsColor = (start, end, steps, gamma) => {
   let i
   let j
@@ -823,6 +826,7 @@ export const stepsColor = (start, end, steps, gamma) => {
     }
     output.push('#' + so.join(''))
   }
+  // 将十六进制颜色拆分为 RGB 通道
   function parseColor(hexStr) {
     return hexStr.length === 4
       ? hexStr
@@ -835,12 +839,14 @@ export const stepsColor = (start, end, steps, gamma) => {
           return parseInt(s, 16)
         })
   }
+  // 补齐单字符颜色通道
   function pad(s) {
     return s.length === 1 ? '0' + s : s
   }
   return output
 }
 
+// 将地图配色方案转换为分段渐变色配置
 export const getMapColorCases = colorCases => {
   const cloneColorCases = JSON.parse(JSON.stringify(colorCases))
   return cloneColorCases.map(colorItem => {
@@ -861,6 +867,7 @@ export const getMapColorCases = colorCases => {
   })
 }
 
+// 根据指标系列自定义色覆盖基础色板
 export function getColor(chart: Chart) {
   const basicStyle = parseJson(chart.customAttr).basicStyle
   const { seriesColor } = basicStyle
@@ -885,6 +892,7 @@ export function getColor(chart: Chart) {
   }
 }
 
+// 初始化单指标系列颜色配置
 export function setupSeriesColor(chart: ChartObj): ChartBasicStyle['seriesColor'] {
   const result: ChartBasicStyle['seriesColor'] = []
   const seriesSet = new Set<string>()
@@ -904,6 +912,7 @@ export function setupSeriesColor(chart: ChartObj): ChartBasicStyle['seriesColor'
   return result
 }
 
+// 根据分组维度或指标轴计算当前分组色板
 export function getGroupColor<O extends PickOptions = Options>(chart: Chart, options: O) {
   const { basicStyle } = parseJson(chart.customAttr)
   const { seriesColor } = basicStyle
@@ -946,6 +955,7 @@ export function getGroupColor<O extends PickOptions = Options>(chart: Chart, opt
   return color
 }
 
+// 初始化分组图表的系列颜色列表
 export function setUpGroupSeriesColor(
   chart: ChartObj,
   data?: any[]
@@ -982,6 +992,7 @@ export function setUpGroupSeriesColor(
   return result
 }
 
+// 根据堆叠维度或指标轴计算当前堆叠色板
 export function getStackColor<O extends PickOptions = Options>(chart: Chart, options: O) {
   const { basicStyle } = parseJson(chart.customAttr)
   const { seriesColor } = basicStyle
@@ -1028,6 +1039,7 @@ export function getStackColor<O extends PickOptions = Options>(chart: Chart, opt
   return color
 }
 
+// 初始化堆叠图表的系列颜色列表
 export function setUpStackSeriesColor(
   chart: ChartObj,
   data?: any[]
@@ -1075,6 +1087,7 @@ export function setUpStackSeriesColor(
   return result
 }
 
+// 根据单维度数据字段计算系列色板
 export function getSingleDimensionColor<O extends PickOptions = Options>(chart: Chart, options: O) {
   const { basicStyle } = parseJson(chart.customAttr)
   const { seriesColor } = basicStyle
@@ -1106,6 +1119,7 @@ export function getSingleDimensionColor<O extends PickOptions = Options>(chart: 
   return color
 }
 
+// 初始化单维度图表的系列颜色列表
 export function setUpSingleDimensionSeriesColor(
   chart: ChartObj,
   data?: any[]
@@ -1131,6 +1145,7 @@ export function setUpSingleDimensionSeriesColor(
   return result
 }
 
+// 判断颜色字符串是否包含透明度通道
 export function isAlphaColor(color: string): boolean {
   if (!color?.trim()) {
     return false
@@ -1144,6 +1159,7 @@ export function isAlphaColor(color: string): boolean {
   return false
 }
 
+// 从透明色中提取不透明基础颜色
 export function getColorFormAlphaColor(color: string): string {
   if (isAlphaColor(color)) {
     if (color.startsWith('#')) {
@@ -1157,6 +1173,7 @@ export function getColorFormAlphaColor(color: string): string {
   return color
 }
 
+// 判断颜色是否为完全透明
 export function isTransparent(color: string): boolean {
   if (!color?.trim()) {
     return true
@@ -1181,6 +1198,7 @@ export function isTransparent(color: string): boolean {
   return false
 }
 
+// 将普通颜色转换为带透明度的颜色
 export function convertToAlphaColor(color: string, alpha: number): string {
   if (!color?.trim()) {
     return 'rgba(255,255,255,1)'
@@ -1206,6 +1224,7 @@ export function convertToAlphaColor(color: string, alpha: number): string {
   return 'rgba(255,255,255,1)'
 }
 
+// 将 SVG 字符串转换为可预览的对象地址
 export function svgStrToUrl(svgStr: string): string {
   let file = ''
   try {
