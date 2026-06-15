@@ -3,7 +3,9 @@ import { ref, computed } from 'vue'
 import DynamicTime from '@/custom-component/v-query/DynamicTimeForViewFilter.vue'
 import { type DatePickType } from 'element-plus-secondary'
 import { useI18n } from '@/hooks/web/useI18n'
+// 时间筛选弹窗文案函数。
 const { t } = useI18n()
+// 时间筛选配置结构。
 export interface SelectConfig {
   relativeToCurrent: string
   timeNum: number
@@ -13,6 +15,7 @@ export interface SelectConfig {
   timeGranularity: DatePickType
 }
 
+// 时间筛选默认配置。
 const defaultValue: SelectConfig = {
   relativeToCurrent: 'custom', //相对当前 thisYear ｜ lastYear ｜ thisMonth ｜ lastMonth ｜ today ｜ yesterday ｜ monthBeginning ｜ yearBeginning
   timeGranularity: 'year', //时间粒度 year ｜ month ｜ date ｜ datetime
@@ -21,8 +24,10 @@ const defaultValue: SelectConfig = {
   around: 'b', // 前 b ｜ 后 f
   arbitraryTime: new Date() //timeGranularity = datetime时 取时分秒
 }
+// 当前正在编辑的时间配置。
 const curComponent = ref<SelectConfig>({ ...defaultValue })
 
+// 使用传入配置初始化弹窗状态。
 const init = (val: SelectConfig) => {
   curComponent.value = {
     ...defaultValue,
@@ -30,6 +35,7 @@ const init = (val: SelectConfig) => {
   }
 }
 
+// 相对当前时间的前后方向选项。
 const aroundList = [
   {
     label: '前',
@@ -40,6 +46,7 @@ const aroundList = [
     value: 'b'
   }
 ]
+// 根据时间粒度生成相对当前时间预设列表。
 const relativeToCurrentList = computed(() => {
   let list = []
   if (!curComponent.value) return list
@@ -122,6 +129,7 @@ const relativeToCurrentList = computed(() => {
   ]
 })
 
+// 根据当前粒度生成可选相对单位。
 const relativeToCurrentTypeList = computed(() => {
   if (!curComponent.value) return []
   let index = ['year', 'month', 'date', 'datetime'].indexOf(curComponent.value.timeGranularity) + 1
@@ -141,6 +149,7 @@ const relativeToCurrentTypeList = computed(() => {
   ].slice(0, index)
 })
 
+// 粒度变更时校正相对单位和预设值。
 const timeGranularityChange = (val: string) => {
   if (
     ['year', 'month', 'date', 'datetime'].indexOf(val) <
@@ -153,6 +162,7 @@ const timeGranularityChange = (val: string) => {
   }
 }
 
+// 时间粒度选项。
 const timeList = [
   {
     label: '年',

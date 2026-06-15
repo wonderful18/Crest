@@ -11,16 +11,22 @@ import AccountOperator from '@/layout/components/AccountOperator.vue'
 import { useCache } from '@/hooks/web/useCache'
 import { useI18n } from '@/hooks/web/useI18n'
 
+// 路由跳转函数。
 const { push } = useRouter()
+// 当前路由信息。
 const route = useRoute()
+// 本地缓存用于读取后台打开方式。
 const { wsCache } = useCache('localStorage')
+// 顶部导航文案函数。
 const { t } = useI18n()
 
+// 点击 Logo 返回工作台首页。
 const handleIconClick = () => {
   if (route.path === '/workbranch/index') return
   push('/workbranch/index')
 }
 
+// 根据当前路由计算顶部菜单激活项。
 const activeIndex = computed(() => {
   if (route.path.includes('system')) {
     return '/system/user'
@@ -28,14 +34,19 @@ const activeIndex = computed(() => {
   return route.path
 })
 
+// 权限路由仓库提供顶部菜单数据。
 const permissionStore = usePermissionStore()
+// 顶部可见路由列表。
 const routers: any[] = formatRoute(permissionStore.getRoutersNotHidden as AppCustomRouteRecordRaw[])
+// 等待客户端挂载后再显示账户操作区。
 const ready = ref(false)
 
+// 打开数据导出中心。
 const downloadClick = () => {
   useEmitt().emitter.emit('data-export-center')
 }
 
+// 处理顶部菜单选择，外链按配置打开。
 const handleSelect = (index: string) => {
   if (isExternal(index)) {
     const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'

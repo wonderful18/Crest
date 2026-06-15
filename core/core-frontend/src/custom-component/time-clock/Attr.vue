@@ -7,7 +7,9 @@ import { imgUrlTrans } from '@/utils/imgUtils'
 import eventBus from '@/utils/eventBus'
 import TimeClockFormat from '@/custom-component/time-clock/TimeClockFormat.vue'
 import { useI18n } from '@/hooks/web/useI18n'
+// 时间组件属性面板文案函数。
 const { t } = useI18n()
+// 时间组件属性面板接收编辑器主题。
 withDefaults(
   defineProps<{
     themes?: EditorTheme
@@ -17,18 +19,24 @@ withDefaults(
   }
 )
 
+// 大屏主状态用于读取当前时间组件。
 const dvMainStore = dvMainStoreWithOut()
 
+// 当前正在编辑的时间组件。
 const { curComponent } = storeToRefs(dvMainStore)
 
+// 上传组件展示的文件列表。
 const fileList = ref([])
 
+// 隐藏文件选择器引用。
 const files = ref(null)
 
+// 打开文件选择器。
 const goFile = () => {
   files.value.click()
 }
 
+// 根据当前背景图片地址初始化上传文件列表。
 const init = () => {
   if (curComponent.value.propValue.url) {
     fileList.value = [{ url: imgUrlTrans(curComponent.value.propValue.url) }]

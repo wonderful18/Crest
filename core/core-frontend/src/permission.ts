@@ -17,25 +17,41 @@ import { ElMessageBox } from 'element-plus-secondary'
 import { clearCache } from '@/utils/cacheUtil'
 import { resolveAuthFailureNavigation } from '@/router/authFailureNavigation.mjs'
 import { isReadOnlyRoute, shouldBypassAuthenticatedMenuGuard } from '@/router/routeAccessPolicy.mjs'
+// 外观设置仓库用于路由切换前加载主题与字体。
 const appearanceStore = useAppearanceStoreWithOut()
+// 浏览器缓存访问对象。
 const { wsCache } = useCache()
+// 权限路由仓库。
 const permissionStore = usePermissionStoreWithOut()
+// 交互状态仓库。
 const interactiveStore = interactiveStoreWithOut()
+// 用户状态仓库。
 const userStore = useUserStoreWithOut()
+// 应用状态仓库。
 const appStore = useAppStoreWithOut()
 
+// 顶部进度条控制函数。
 const { start, done } = useNProgress()
+// 页面级加载遮罩。
 const { open } = useLoading()
+// 路由切换加载状态。
 const { loadStart, loadDone } = usePageLoading()
 
 const whiteList = ['/login', '/sso/callback', '/chart-view', '/admin-login', '/401'] // 不重定向白名单
+// 嵌入窗口可直接访问的路径。
 const embeddedWindowWhiteList = ['/dvCanvas', '/dashboard', '/preview', '/dataset-embedded-form']
+// 嵌入式路由白名单。
 const embeddedRouteWhiteList = ['/dataset-embedded', '/dataset-form', '/dataset-embedded-form']
+// 门户首页路径。
 const portalHome = '/portal'
+// 后台首页路径。
 const backendHome = '/workbranch/index'
 
+// 判断是否为门户路由。
 const isPortalRoute = (path: string) => path === portalHome || path.startsWith(`${portalHome}/`)
+// 判断是否为账号中心路由。
 const isAccountRoute = (path: string) => path.startsWith('/modify-pwd')
+// 判断是否为需要后台权限的路由。
 const isBackendRoute = (path: string, name?: string | symbol) =>
   !isPortalRoute(path) &&
   !isReadOnlyRoute(path, name) &&
@@ -43,6 +59,7 @@ const isBackendRoute = (path: string, name?: string | symbol) =>
   !whiteList.includes(path) &&
   !embeddedRouteWhiteList.includes(path)
 
+// 解析 redirect 参数中的路径和查询参数。
 const parseRedirectLocation = (redirectPath: string) => {
   let target = redirectPath || portalHome
   try {
@@ -54,7 +71,7 @@ const parseRedirectLocation = (redirectPath: string) => {
       target = nextTarget
     }
   } catch {
-    // keep the original path when an invalid escape sequence is passed in
+    // 解码失败时保留原始路径。
   }
   const [path, search = ''] = target.split('?')
   const query: Record<string, string> = {}
@@ -67,6 +84,7 @@ const parseRedirectLocation = (redirectPath: string) => {
   }
 }
 
+// 全局前置路由守卫，负责登录态、权限路由和嵌入式访问控制。
 router.beforeEach(async (to, from, next) => {
   if (['/chart-view'].includes(to.path)) {
     open()
@@ -217,6 +235,7 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 })
+// 无管理员权限访问系统设置时提示并等待确认。
 const noAdminPermission = async () => {
   const promise = new Promise<void>((resolve, reject) => {
     ElMessageBox.confirm('当前页面仅对 admin 开放, 即将跳转首页', {

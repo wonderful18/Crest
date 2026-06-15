@@ -13,6 +13,7 @@ import {
   getYearBeginning,
   getCustomTime
 } from './time-format'
+// 视图筛选中的动态时间配置。
 interface SelectConfig {
   relativeToCurrent: string
   timeNum: number
@@ -22,6 +23,7 @@ interface SelectConfig {
   timeGranularity: DatePickType
 }
 
+// 视图筛选动态时间组件属性。
 const props = defineProps({
   config: {
     type: Object as PropType<SelectConfig>,
@@ -37,10 +39,13 @@ const props = defineProps({
     }
   }
 })
+// 日期选择器当前展示值。
 const selectValue = ref()
 
+// 保持动态时间配置的响应式引用。
 const { config } = toRefs(props)
 
+// 抽取会影响动态时间计算的配置项。
 const timeConfig = computed(() => {
   const {
     relativeToCurrent,
@@ -60,6 +65,7 @@ const timeConfig = computed(() => {
   }
 })
 
+// 配置变化时重新计算展示值。
 watch(
   () => timeConfig.value,
   () => {
@@ -70,6 +76,7 @@ watch(
   }
 )
 
+// 根据预设或自定义相对时间生成展示值。
 const init = () => {
   const {
     relativeToCurrent,
