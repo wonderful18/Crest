@@ -174,6 +174,7 @@ onBeforeMount(() => {
 <template>
   <el-row class="preview">
     <el-col :span="6" style="height: 100%; overflow-y: auto">
+      <!-- 左侧树用于选择复用目标，筛选开关只影响展示，不改变已勾选状态。 -->
       <el-row class="tree-head">
         <span class="head-text">{{ t('visualization.to_select_view') }}</span>
         <span class="head-filter"
@@ -223,6 +224,7 @@ onBeforeMount(() => {
     <el-col :span="18" class="preview-show">
       <div class="view-show-content-outer">
         <div class="view-show-content">
+          <!-- 预览区复用正式画布组件包装器，确保复用前看到的样式和运行态一致。 -->
           <ComponentWrapper
             v-if="viewShow && state.multiplexInfo && state.multiplexInfo.id"
             class="wrapper-content"
@@ -252,6 +254,7 @@ onBeforeMount(() => {
 }
 
 .preview {
+  // 复用弹窗主体固定左右布局，内部滚动由树和预览区域各自承担。
   border-radius: 6px;
   width: 100%;
   height: 100% !important;
@@ -319,6 +322,7 @@ onBeforeMount(() => {
   overflow-y: auto;
 }
 .custom-tree-node {
+  // 树节点同时包含勾选框、图标和名称，宽度不足时由名称区域省略。
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -332,6 +336,7 @@ onBeforeMount(() => {
 }
 
 .tree-head {
+  // 树头部固定高度，右侧筛选开关保持和标题在同一行。
   height: 40px;
   line-height: 40px;
   font-size: 12px;

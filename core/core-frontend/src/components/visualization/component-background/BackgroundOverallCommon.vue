@@ -16,6 +16,7 @@
     <el-form size="small" label-position="top" style="width: 100%">
       <el-row :gutter="8">
         <el-col :span="24">
+          <!-- 内边距支持统一、轴向和逐边三种简写模式，脚本会在提交前展开为四边值。 -->
           <el-form-item
             :label="t('visualization.inner_padding')"
             class="form-item w100"
@@ -113,6 +114,7 @@
       </el-row>
       <el-row :gutter="8">
         <el-col :span="24">
+          <!-- 圆角同样支持简写模式，保证画布背景和组件背景使用一致的配置结构。 -->
           <el-form-item
             :label="t('visualization.board_radio')"
             class="form-item w100"
@@ -209,6 +211,7 @@
         </el-col>
       </el-row>
       <template v-if="editPosition === 'canvas'">
+        <!-- 毛玻璃只在画布编辑位置开放，避免组件背景在普通卡片中过度消耗渲染性能。 -->
         <el-form-item class="form-item no-margin-bottom" :class="'form-item-' + themes">
           <el-checkbox
             size="small"
@@ -250,6 +253,7 @@
 
       <div class="indented-container">
         <div class="indented-item">
+          <!-- 背景色可独立开关，关闭时保留已选颜色，便于用户再次启用。 -->
           <el-form-item class="form-item" :class="'form-item-' + themes">
             <el-color-picker
               v-if="state.commonBackground.backgroundColor"
@@ -297,6 +301,7 @@
           </el-form-item>
         </div>
         <div class="indented-item" v-if="state.commonBackground.backgroundType === 'innerImage'">
+          <!-- 内置边框使用资源库预设，并允许单独调整边框着色。 -->
           <el-form-item class="form-item" :class="'form-item-' + themes">
             <el-color-picker
               v-model="state.commonBackground.innerImageColor"
@@ -353,6 +358,7 @@
             disabled: !state.commonBackground.backgroundImageEnable || state.uploadDisabled
           }"
         >
+          <!-- 外部图片走上传组件，文件列表只保存当前背景图的预览项。 -->
           <div class="avatar-uploader-container" :class="`img-area_${themes}`">
             <el-upload
               action=""
@@ -646,6 +652,7 @@ watch(
   margin-bottom: 16px;
 }
 .avatar-uploader-container {
+  // 上传区域在深浅主题下复用同一尺寸，只切换边框和图标颜色。
   margin-bottom: 16px;
   :deep(.ed-upload--picture-card) {
     background: #eff0f1;
@@ -737,6 +744,7 @@ watch(
 }
 
 .indented-container {
+  // 子配置统一缩进，和开关项形成父子层级关系。
   margin-top: 8px;
   width: 100%;
   padding-left: 22px;

@@ -129,6 +129,7 @@ const api_table_title = ref('')
 // API 表编辑抽屉组件引用
 const editApiItem = ref()
 const defaultApiItem = {
+  // API 表默认结构覆盖请求、分页、鉴权和字段列表，新增表时由抽屉继续补齐。
   name: '',
   displayTableName: '',
   url: '',
@@ -165,6 +166,7 @@ const initForm = (type, pluginDsList, indexPlugin, isPluginDs) => {
   pluginIndex.value = indexPlugin
   isPlugin.value = isPluginDs
   if (!type.startsWith('API')) {
+    // 非 API 数据源按连接表单初始化，兼容模式默认只读以适配企业连接策略。
     form.value.configuration = {
       dataBase: '',
       jdbcUrl: '',
@@ -190,6 +192,7 @@ const initForm = (type, pluginDsList, indexPlugin, isPluginDs) => {
     setRules()
   }
   if (type.startsWith('API')) {
+    // API 数据源默认启用全量同步和分钟级简单周期，减少新建后的必填项数量。
     form.value.syncSetting = {
       updateType: 'all_scope',
       syncRate: 'SIMPLE_CRON',
@@ -311,6 +314,7 @@ const chooseSSLFile = (field: 'sslCA' | 'sslCert' | 'sslKey') => {
 
 // 根据数据源类型生成连接配置校验规则，并合并基础名称规则
 const setRules = () => {
+  // 连接校验规则按字段路径组织，便于 Element Form 直接定位嵌套配置项。
   const configRules = {
     'configuration.jdbcUrl': [
       {
@@ -464,6 +468,7 @@ const setItemRef = (ele: ComponentPublicInstance | null | Element) => {
 // 复制 API 表配置，并生成不冲突的副本名称和流水号
 const copyItem = (item?: ApiConfiguration) => {
   const newItem = JSON.parse(JSON.stringify(item))
+  // 副本清空展示表名并重新分配流水号，避免与原接口表冲突。
   newItem.displayTableName = ''
   newItem.serialNumber =
     form.value.apiConfiguration[form.value.apiConfiguration.length - 1].serialNumber + 1
@@ -565,6 +570,7 @@ const resetForm = () => {
 const returnItem = apiItem => {
   let find = false
   if (apiItem.type !== 'params') {
+    // 数据表接口按 serialNumber 覆盖，新增接口保持卡片顺序追加。
     apiItem.status = 'Success'
     for (let i = 0; i < form.value.apiConfiguration.length; i++) {
       if (form.value.apiConfiguration[i].serialNumber === apiItem.serialNumber) {
@@ -577,6 +583,7 @@ const returnItem = apiItem => {
       form.value.apiConfiguration.push(apiItem)
     }
   } else {
+    // 参数接口分组单独维护，当前激活分组被更新时同步右侧字段表格。
     if (form.value.paramsConfiguration) {
       for (let i = 0; i < form.value.paramsConfiguration.length; i++) {
         if (form.value.paramsConfiguration[i].serialNumber === apiItem.serialNumber) {
@@ -622,6 +629,7 @@ const onRateChange = () => {
 // 简单周期配置变化时校验取值范围，并同步生成后端 Cron 表达式
 const onSimpleCronChange = () => {
   if (form.value.syncSetting.simpleCronType === 'minute') {
+    // 简单分钟周期限制在 1 到 59，避免生成无效 Cron 表达式。
     if (form.value.syncSetting.simpleCronValue < 1 || form.value.syncSetting.simpleCronValue > 59) {
       ElMessage.warning(t('cron.minute_limit'))
       form.value.syncSetting.simpleCronValue = 59
@@ -630,6 +638,7 @@ const onSimpleCronChange = () => {
     return
   }
   if (form.value.syncSetting.simpleCronType === 'hour') {
+    // 小时周期限制在 1 到 23，避免跨天语义与天周期混淆。
     if (form.value.syncSetting.simpleCronValue < 1 || form.value.syncSetting.simpleCronValue > 23) {
       ElMessage.warning(t('cron.hour_limit'))
       form.value.syncSetting.simpleCronValue = 23
@@ -638,6 +647,7 @@ const onSimpleCronChange = () => {
     return
   }
   if (form.value.syncSetting.simpleCronType === 'day') {
+    // 天周期限制在 1 到 31，和 Cron 日字段取值范围保持一致。
     if (form.value.syncSetting.simpleCronValue < 1 || form.value.syncSetting.simpleCronValue > 31) {
       ElMessage.warning(t('cron.day_limit'))
       form.value.syncSetting.simpleCronValue = 31
