@@ -15,6 +15,7 @@ configMapGenerator:
       - CREST_DB_NAME=crest_k8s_external
       - CREST_DB_TYPE=mysql
       - CREST_DB_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - CREST_DB_URL=jdbc:mysql://host.docker.internal:13306/crest_k8s_external?autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
       - CREST_DB_PARAMS=autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
       - CREST_ORIGIN_LIST=http://localhost:18101,http://127.0.0.1:18101,http://localhost:8100
       - CREST_LOGIN_TIMEOUT=960
