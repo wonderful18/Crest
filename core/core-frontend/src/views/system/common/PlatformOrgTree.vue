@@ -136,6 +136,7 @@ onMounted(loadTree)
 
 <template>
   <div class="platform-org-tree" :class="{ collapsed }">
+    <!-- 收起态保留窄轨入口，避免主内容区切换时丢失组织上下文。 -->
     <button
       v-if="collapsible && collapsed"
       class="rail"
@@ -148,6 +149,7 @@ onMounted(loadTree)
       <span class="rail-text">组织架构</span>
     </button>
 
+    <!-- 展开态同时支持只读选择和组织维护，具体能力由 manageable 控制。 -->
     <aside v-show="!collapsed" class="tree-body">
       <div class="tree-head">
         <div class="tree-head-info">
@@ -178,6 +180,7 @@ onMounted(loadTree)
         </div>
       </div>
       <el-input v-model="keyword" clearable placeholder="搜索组织" />
+      <!-- 全部组织是虚拟节点，不进入后端组织树，只通过空值向父组件表达全量范围。 -->
       <button
         v-if="selectableAll"
         class="all-node"
@@ -205,6 +208,7 @@ onMounted(loadTree)
           @node-click="selectNode"
         >
           <template #default="{ node, data }">
+            <!-- 节点内容在只读模式展示子节点数量，在管理模式展示维护操作。 -->
             <span class="org-node">
               <span class="node-icon" :class="{ root: node.level === 1 }">
                 <Icon v-if="node.level === 1" name="organization"
@@ -261,6 +265,7 @@ onMounted(loadTree)
   }
 }
 .rail {
+  /* 收起轨道使用纵向文字，保证 44px 宽度下仍能传达当前面板含义。 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -289,6 +294,7 @@ onMounted(loadTree)
   }
 }
 .tree-body {
+  /* 组织树作为页面侧栏使用固定视觉宽度，内部滚动交给 el-scrollbar 处理。 */
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -426,6 +432,7 @@ onMounted(loadTree)
   border-radius: 9px;
 }
 .node-actions {
+  /* 管理按钮默认隐藏，悬停或选中节点时再展示，降低树列表视觉噪声。 */
   display: none;
   flex: 0 0 auto;
   gap: 2px;

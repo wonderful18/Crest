@@ -207,6 +207,7 @@ onMounted(() => {
       </el-radio-group>
     </el-form-item>
 
+    <!-- 轴名称开关控制名称文本、颜色和字号，关闭后保留配置但禁止继续编辑。 -->
     <el-form-item class="form-item" :class="'form-item-' + themes" v-if="!isBidirectionalBar">
       <el-checkbox
         size="small"
@@ -479,6 +480,7 @@ onMounted(() => {
       </div>
     </div>
     <el-divider class="m-divider" :class="'m-divider--' + themes" />
+    <!-- 轴标签包含文字样式、旋转、长度限制和数值格式化，是坐标轴可读性的主要配置区。 -->
     <el-form-item
       class="form-item form-item-checkbox"
       :class="{
@@ -696,6 +698,7 @@ onMounted(() => {
           </el-row>
         </template>
 
+        <!-- 千分位只作为显示层格式化选项，不改变底层度量值。 -->
         <el-form-item class="form-item" :class="'form-item-' + themes">
           <el-checkbox
             :disabled="!state.axisForm.axisLabel.show"
