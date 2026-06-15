@@ -10,11 +10,20 @@ import java.util.List;
 
 import static io.crest.result.ResultCode.INTERFACE_ADDRESS_INVALID;
 
+/**
+ * 匿名访问白名单工具，负责标准化请求路径并判断是否跳过鉴权。
+ */
 public class WhitelistUtils {
 
+    /**
+     * 服务上下文路径缓存，首次读取后复用环境配置。
+     */
     private static String contextPath;
 
 
+    /**
+     * 获取服务上下文路径，环境未配置时返回空字符串。
+     */
     public static String getContextPath() {
         if (StringUtils.isBlank(contextPath)) {
             Environment environment = CommonBeanFactory.getBean(Environment.class);
@@ -23,6 +32,9 @@ public class WhitelistUtils {
         return contextPath;
     }
 
+    /**
+     * 固定白名单路径，主要覆盖登录、健康检查、公开配置和静态入口。
+     */
     public static List<String> WHITE_PATH = List.of(
             "/login/local-login",
             "/apisix/check",
@@ -61,6 +73,9 @@ public class WhitelistUtils {
             "/perSetting/hmac/info",
             "/");
 
+    /**
+     * 判断请求路径是否命中白名单或静态资源规则。
+     */
     public static boolean match(String requestURI) {
         invalidUrl(requestURI);
         if (Strings.CS.startsWith(requestURI, getContextPath())) {
@@ -100,6 +115,9 @@ public class WhitelistUtils {
                 || Strings.CS.startsWithAny(requestURI, "/communicate/down/");
     }
 
+    /**
+     * 根据回调地址拼接后端基础接口地址。
+     */
     public static String getBaseApiUrl(String redirect_uri) {
         if (Strings.CS.endsWith(redirect_uri, "/")) {
             redirect_uri = redirect_uri.substring(0, redirect_uri.length() - 1);
@@ -111,6 +129,9 @@ public class WhitelistUtils {
         return redirect_uri + AuthConstant.CREST_API_PREFIX + "/";
     }
 
+    /**
+     * 拦截包含路径穿越或异常分号的非法接口地址。
+     */
     private static void invalidUrl(String requestURI) {
         if (requestURI.contains("./") || requestURI.contains(".%") || requestURI.toLowerCase().contains("%2e") || (requestURI.contains(";") && !requestURI.contains("?"))) {
             CrestException.throwException(INTERFACE_ADDRESS_INVALID.code(), String.format("%s [%s]", INTERFACE_ADDRESS_INVALID.message(), requestURI));
