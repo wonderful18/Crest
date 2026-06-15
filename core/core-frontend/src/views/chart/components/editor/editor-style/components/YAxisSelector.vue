@@ -14,7 +14,7 @@ import { ElFormItem, ElMessage } from 'element-plus-secondary'
 
 const { t } = useI18n()
 
-// 定义 Y 轴样式选择器依赖的主题、图表和属性范围
+// Y 轴选择器同时服务普通图表、混合图和子弹图，propertyInner 控制当前图表开放的轴配置项。
 const props = defineProps({
   themes: {
     type: String as PropType<EditorTheme>,
@@ -30,20 +30,21 @@ const props = defineProps({
 })
 
 const predefineColors = COLOR_PANEL
+// 数值格式化类型来自统一格式化配置，保证轴标签、tooltip 和导出展示口径一致。
 const typeList = formatterType
-// 根据编辑器主题计算提示浮层主题
+// 提示浮层使用反向主题，避免暗色配置面板内的说明文字对比度不足。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
-// 保存 Y 轴样式编辑表单
+// 表单以 DEFAULT_YAXIS_STYLE 为基础，初始化时会被图表已保存的 customStyle.yAxis 覆盖。
 const state = reactive({
   axisForm: JSON.parse(JSON.stringify(DEFAULT_YAXIS_STYLE))
 })
 
-// 声明 Y 轴样式变更事件
+// 父级负责把轴样式写回图表配置并触发重绘，本组件只提交当前表单和变更字段。
 const emit = defineEmits(['onChangeYAxisForm'])
 
-// 监听图表 Y 轴样式变化并刷新表单
+// 撤销、重做或切换图表时会替换 yAxis 对象，需要重新解析并刷新格式化单位。
 watch(
   () => props.chart.customStyle.yAxis,
   () => {
@@ -52,7 +53,7 @@ watch(
   { deep: true }
 )
 
-// 生成可选字号列表
+// 轴标题和轴标签共用字号候选，大屏放大展示需要覆盖到较大字号。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -70,13 +71,14 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+// 轴线和网格线共用线型枚举，value 需要和 G2Plot lineStyle.style 保持一致。
 const splitLineStyle = [
   { label: t('chart.line_type_solid'), value: 'solid' },
   { label: t('chart.line_type_dashed'), value: 'dashed' },
   { label: t('chart.line_type_dotted'), value: 'dotted' }
 ]
 
-// 校验刻度数量并同步 Y 轴样式变更
+// 固定刻度数量直接影响坐标轴渲染，提交前限制范围，避免异常配置拖慢图表绘制。
 const changeAxisStyle = prop => {
   if (
     state.axisForm.axisValue.splitCount &&
@@ -88,13 +90,13 @@ const changeAxisStyle = prop => {
   emit('onChangeYAxisForm', state.axisForm, prop)
 }
 
-// 切换数值格式化单位语言并同步样式
+// 切换单位语言时同步修正单位枚举，再通过普通轴样式事件通知父组件保存。
 function changeUnitLanguage(cfg: BaseFormatter, lang, prop: string) {
   onChangeFormatCfgUnitLanguage(cfg, lang)
   changeAxisStyle(prop)
 }
 
-// 从图表配置初始化 Y 轴样式表单
+// customStyle 可能是对象或字符串，初始化时统一转为对象并补齐格式化单位默认值。
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customStyle) {
@@ -111,14 +113,14 @@ const init = () => {
   }
 }
 
-// 判断当前 Y 轴属性是否需要在面板中展示
+// 属性显示由图表类型配置决定，隐藏项不应被用户编辑或提交。
 const showProperty = prop => props.propertyInner?.includes(prop)
-// 判断当前图表是否为子弹图
+// 子弹图的轴位置文案和普通直角坐标图不同，需要单独处理。
 const isBulletGraph = computed(() => {
   return ['bullet-graph'].includes(props.chart.type)
 })
 
-// 判断子弹图是否使用横向布局
+// 横向子弹图会把上下位置映射到左右轴值，保持界面文案和视觉方向一致。
 const isHorizontalLayout = computed(() => {
   return props.chart.customAttr.basicStyle.layout === 'horizontal'
 })
