@@ -31,6 +31,7 @@ const props = defineProps({
 const emit = defineEmits(['onTableThresholdChange'])
 
 const thresholdCondition = {
+  // 条件默认值同时覆盖固定值和动态字段两种模式，新增规则时会按字段类型再修正。
   term: '',
   field: '0',
   value: '0',
@@ -230,6 +231,7 @@ const init = () => {
 // 根据字段类型初始化可用条件选项
 const initOptions = (item, fieldObj) => {
   if (fieldObj) {
+    // 主字段类型决定条件操作符集合，切换字段后必须清空已选操作符。
     if ([0, 5, 7].includes(fieldObj.fieldType)) {
       item.options = JSON.parse(JSON.stringify(textOptions))
     } else if (fieldObj.fieldType === 1) {
@@ -331,6 +333,7 @@ const addField = item => {
       }
     })
   }
+  // 保存字段快照后立即通知父级，保证关闭弹窗前也能拿到最新阈值结构。
   changeThreshold()
 }
 
@@ -372,6 +375,7 @@ const getConditionsFields = (fieldItem, conditionItem, conditionItemField) => {
     return []
   }
 
+  // 动态阈值只允许和主字段可比较的字段参与，避免渲染时出现跨类型比较。
   const fieldItemDeType = fieldItemObj[0]?.fieldType
   const result =
     state.fields.filter(item => {
@@ -427,6 +431,7 @@ const isDynamic = item => {
 // 动态条件切换时重置汇总方式
 const changeConditionItemType = item => {
   if (item.type === 'dynamic') {
+    // 从固定值切到动态字段时恢复默认汇总方式，避免复用旧字段的聚合配置。
     item.dynamicField.summary = 'value'
     item.dynamicMinField.summary = 'value'
     item.dynamicMaxField.summary = 'value'

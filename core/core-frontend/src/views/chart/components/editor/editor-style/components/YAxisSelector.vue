@@ -102,6 +102,7 @@ function changeUnitLanguage(cfg: BaseFormatter, lang, prop: string) {
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customStyle) {
+    // 旧图表可能把 customStyle 持久化为字符串，这里统一反序列化后再读取 yAxis。
     let customStyle = null
     if (Object.prototype.toString.call(chart.customStyle) === '[object Object]') {
       customStyle = JSON.parse(JSON.stringify(chart.customStyle))
@@ -186,6 +187,7 @@ onMounted(() => {
       </el-checkbox>
     </el-form-item>
     <div style="margin-left: 22px">
+      <!-- 轴标题关闭时保留标题文本和样式值，重新开启后可直接恢复。 -->
       <el-form-item
         class="form-item"
         :class="'form-item-' + themes"
@@ -280,6 +282,7 @@ onMounted(() => {
       </div>
 
       <template v-if="showProperty('axisValue') && !state.axisForm.axisValue.auto">
+        <!-- 固定最大值、最小值和刻度数量作为一组提交，避免半自动刻度配置混用。 -->
         <el-row :gutter="8">
           <el-col :span="12">
             <el-form-item
@@ -475,6 +478,7 @@ onMounted(() => {
     </el-form-item>
     <div style="padding-left: 22px" v-if="showProperty('axisLabel')">
       <div style="flex: 1">
+        <!-- 轴标签样式独立于轴标题，关闭标签后仍保留格式化配置用于恢复。 -->
         <div style="display: flex">
           <el-form-item
             class="form-item"
