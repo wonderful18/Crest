@@ -82,6 +82,7 @@ const changeBasicStyle = (prop?: string, requestData = false, render = true) => 
 
 /** 根据树表行头模式同步行头宽度字段 */
 const changeTreeRowWidth = () => {
+  // 树表行头宽度按当前模式写入不同字段，避免百分比和固定像素同时生效。
   if (state.basicStyleForm.tableRowHeaderMode === 'percent') {
     state.basicStyleForm.tableRowHeaderWidthPercent = state.treeRowWidth
   }
@@ -96,6 +97,7 @@ const changeTreeRowWidth = () => {
 }
 /** 校验并同步透明度输入值 */
 const onAlphaChange = v => {
+  // 输入框允许手动编辑透明度，这里统一收敛到 0-100 的合法区间。
   const _v = parseInt(v)
   if (_v >= 0 && _v <= 100) {
     state.basicStyleForm.alpha = _v
@@ -113,6 +115,7 @@ const onAlphaChange = v => {
 
 /** 校验并同步柱宽占比输入值 */
 const onColumnWidthRatioChange = v => {
+  // 柱宽占比影响柱状图系列宽度，非法输入回退到最近的有效边界。
   const _v = parseInt(v)
   if (_v >= 1 && _v <= 100) {
     state.basicStyleForm.columnWidthRatio = _v
@@ -293,6 +296,7 @@ const initTableColumnWidth = () => {
 }
 /** 选择表格字段后同步当前字段列宽 */
 const changeFieldColumn = () => {
+  // 切换字段后把当前字段已保存列宽回填到输入框。
   const { basicStyleForm, fieldColumnWidth } = state
   const fieldWidth = basicStyleForm.tableFieldWidth?.find(
     i => i.fieldId === fieldColumnWidth.fieldId
@@ -303,6 +307,7 @@ const changeFieldColumn = () => {
 }
 /** 校验并保存当前字段的列宽设置 */
 const changeFieldColumnWidth = () => {
+  // 列宽配置以百分比保存，校验通过后只更新当前选中字段。
   const { basicStyleForm, fieldColumnWidth } = state
   let { width } = fieldColumnWidth
   let validate = true

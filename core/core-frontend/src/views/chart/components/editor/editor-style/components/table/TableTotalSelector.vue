@@ -66,6 +66,7 @@ const state = reactive({
 
 // 多指标按列展开时才需要独立的列字段合计标签。
 const showColFieldTotalLabel = computed(() => {
+  // 多指标列展开时，字段合计标签需要单独展示，避免和总计标签混淆。
   const chart = props.chart
   return (
     chart.customAttr.basicStyle.quotaPosition !== 'row' &&
@@ -76,6 +77,7 @@ const showColFieldTotalLabel = computed(() => {
 
 // 多指标按行展开且非树形布局时才需要独立的行字段合计标签。
 const showRowFieldTotalLabel = computed(() => {
+  // 多指标行展开时，行字段合计标签只在非树表布局下展示。
   const chart = props.chart
   return (
     chart.customAttr.basicStyle.quotaPosition === 'row' &&
@@ -94,6 +96,7 @@ function onSelectedSubTotalDimensionNameChange(name) {
 
 // 汇总已勾选的小计维度并保存到行小计配置。
 function changeRowSubTableTotal() {
+  // 小计维度列表只保存字段名，渲染层再按当前维度轴顺序恢复。
   const list = []
   for (let i = 0; i < state.subTotalDimensionList.length; i++) {
     if (state.subTotalDimensionList[i].checked) {
@@ -231,6 +234,7 @@ const changeTotal = (totalItem, totals) => {
 }
 // 更新聚合方式并触发合计配置变更，自定义聚合未配置字段时暂不提交。
 const changeTotalAggr = (totalItem, totals, colOrNum) => {
+  // 聚合方式按字段粒度保存，同一行列方向下不同指标可以使用不同聚合。
   for (let i = 0; i < totals.length; i++) {
     const item = totals[i]
     if (item.engineFieldName === totalItem.engineFieldName) {
@@ -287,6 +291,7 @@ const calcEdit = ref()
 const editCalcField = ref(false)
 // 打开自定义聚合字段编辑器，并过滤占位指标后初始化可选字段。
 const editField = (totalItem, totalCfg, attr) => {
+  // 自定义聚合编辑器复用指标字段上下文，只编辑当前选中合计项。
   editCalcField.value = true
   state.totalCfg = totalCfg
   state.totalCfgAttr = attr
