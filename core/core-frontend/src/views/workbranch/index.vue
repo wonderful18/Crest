@@ -280,6 +280,7 @@ const getSparkLastPoint = item => {
 
 <style lang="less" scoped>
 .workbranch {
+  /* 工作台采用左侧资源概览、右侧常用入口的双栏布局。 */
   display: grid;
   grid-template-columns: clamp(320px, 18vw, 360px) minmax(0, 1fr);
   gap: 18px;
@@ -301,6 +302,7 @@ const getSparkLastPoint = item => {
   }
 
   .work-card {
+    /* 卡片统一使用浅边框和轻阴影，和门户首页资源卡视觉保持一致。 */
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: var(--workbranch-card-radius);
@@ -321,6 +323,7 @@ const getSparkLastPoint = item => {
     }
 
     .user-info {
+      /* 用户资料和资源统计放在同一张卡片内，减少首屏纵向跳动。 */
       display: flex;
       flex-direction: column;
       gap: 11px;
@@ -334,6 +337,7 @@ const getSparkLastPoint = item => {
       }
 
       .user-icon-container {
+        /* 头像右下角状态点仅表示当前登录态，不参与交互。 */
         position: relative;
         flex: none;
         width: 52px !important;
@@ -391,6 +395,7 @@ const getSparkLastPoint = item => {
       }
 
       .stat-item {
+        /* 资源统计行保持固定密度，便于快速比较不同资源数量。 */
         display: flex;
         align-items: center;
         gap: 10px;
@@ -454,6 +459,7 @@ const getSparkLastPoint = item => {
     }
 
     .quick-creation {
+      /* 快捷创建区域填满左侧剩余空间，入口数量变化时仍保持顶部对齐。 */
       display: flex;
       flex: 1;
       flex-direction: column;
@@ -479,6 +485,7 @@ const getSparkLastPoint = item => {
         margin-top: 14px;
 
         .item {
+          /* 入口卡片使用 accent 变量驱动悬浮态，保证图标色和边框反馈一致。 */
           position: relative;
           display: flex;
           align-items: center;
@@ -551,6 +558,7 @@ const getSparkLastPoint = item => {
           }
         }
         .quick-create-disabled {
+          /* 无权限入口保留位置但禁用交互，避免权限变化造成布局重排。 */
           cursor: not-allowed;
           color: var(--ed-color-info-light-5);
           background-color: var(--ed-color-info-light-9);
@@ -583,6 +591,7 @@ const getSparkLastPoint = item => {
   }
 
   .workbranch-content {
+    /* 右侧内容只负责滚动承载，避免外层页面出现双滚动条。 */
     min-width: 0;
     height: 100%;
     min-height: 0;
@@ -604,6 +613,7 @@ const getSparkLastPoint = item => {
 
 @media (max-width: 1180px) {
   .workbranch {
+    /* 中等宽度下压缩左栏，优先保留右侧资源表格的阅读空间。 */
     grid-template-columns: 300px minmax(0, 1fr);
     padding: 20px;
   }
@@ -611,6 +621,7 @@ const getSparkLastPoint = item => {
 
 @media (max-width: 900px) {
   .workbranch {
+    /* 窄屏改为单列布局，允许页面整体滚动。 */
     grid-template-columns: 1fr;
     height: auto;
     min-height: calc(100vh - 60px);

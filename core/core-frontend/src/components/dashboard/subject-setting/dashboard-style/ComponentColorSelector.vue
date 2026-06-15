@@ -407,6 +407,7 @@ const { canvasStyleData, canvasViewInfo } = storeToRefs(dvMainStore)
 const initForm = () => {
   state.customColor = colorForm.value.basicStyle.colors[0]
   setTimeout(() => {
+    // 自定义颜色选择器依赖默认基础样式，延迟到画布样式完成回填后再渲染。
     state.basicStyleForm = canvasStyleData.value.component.chartColor.basicStyle
     colorAreaInit.value = true
   }, 1000)
@@ -441,6 +442,7 @@ const changeLabelCase = () => {
     Object.keys(canvasViewInfo.value).forEach(function (viewId) {
       const viewInfo = canvasViewInfo.value[viewId]
       try {
+        // 图表自身标签配置和系列标签格式化配置都需要同步画布级标签样式。
         const label = viewInfo.customAttr?.label
         if (label) {
           label.color = val.color
@@ -470,6 +472,7 @@ const changeTooltipCase = () => {
     Object.keys(canvasViewInfo.value).forEach(function (viewId) {
       const viewInfo = canvasViewInfo.value[viewId]
       try {
+        // tooltip 的基础样式和系列格式化样式分开存储，需要同时更新。
         const tooltip = viewInfo.customAttr?.tooltip
         if (tooltip) {
           tooltip.color = val.color
@@ -502,6 +505,7 @@ const containerWidth = ref()
 // 根据容器宽度计算颜色选择器宽度，小面板使用紧凑布局。
 const colorPickerWidth = computed(() => {
   if (containerWidth.value <= 240) {
+    // 折叠面板较窄时使用紧凑宽度，避免颜色选择器挤压右侧表单项。
     return 108
   } else {
     return 197
@@ -509,6 +513,7 @@ const colorPickerWidth = computed(() => {
 })
 
 onMounted(() => {
+  // 初始化、主题切换和容器缩放都可能改变配色面板展示状态。
   initForm()
   eventBus.on('onThemeColorChange', initForm)
 
@@ -516,11 +521,13 @@ onMounted(() => {
   containerWidth.value = containerRef.value?.offsetWidth
   erd.listenTo(containerRef.value, () => {
     nextTick(() => {
+      // 宽度更新延迟到 DOM 完成布局后读取，避免折叠动画期间读到旧尺寸。
       containerWidth.value = containerRef.value?.offsetWidth
     })
   })
 
   nextTick(() => {
+    // 首次挂载完成后才允许批量同步图表，防止初始化过程触发无效快照。
     canvasAttrInit = true
   })
 })
@@ -528,6 +535,7 @@ onMounted(() => {
 
 <style scoped lang="less">
 .form-item-slider :deep(.ed-form-item__label) {
+  /* 滑块标签与控件垂直居中，保持和编辑器其它数值项一致。 */
   font-size: 12px;
   line-height: 38px;
   justify-content: flex-start;
@@ -552,6 +560,7 @@ onMounted(() => {
 }
 
 .color-type :deep(.ed-radio__input) {
+  /* 颜色类型切换使用自定义色块样式，隐藏原生单选圆点。 */
   display: none;
 }
 
