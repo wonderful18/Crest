@@ -22,6 +22,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
+/**
+ * 组织数据管理组件，负责组织树查询和组织增删改。
+ */
 public class CrestOrgManage {
 
     @Resource
@@ -30,6 +33,9 @@ public class CrestOrgManage {
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
+    /**
+     * 查询完整组织树。
+     */
     public List<OrgPageVO> pageTree(OrgRequest request) {
         List<OrgPageVO> orgs = jdbcTemplate.query("""
                 SELECT id, pid, name, create_time, readonly
@@ -65,6 +71,9 @@ public class CrestOrgManage {
                 .toList();
     }
 
+    /**
+     * 懒加载查询指定父组织下的组织树节点。
+     */
     public LazyTreeVO lazyPageTree(OrgLazyRequest request) {
         Long pid = request == null || request.getPid() == null ? 0L : request.getPid();
         LazyTreeVO vo = new LazyTreeVO();
@@ -73,6 +82,9 @@ public class CrestOrgManage {
         return vo;
     }
 
+    /**
+     * 创建组织。
+     */
     @Transactional
     public Long create(OrgCreator creator) {
         platformPermissionManage.requireSystemAdmin();
@@ -99,6 +111,9 @@ public class CrestOrgManage {
         return id;
     }
 
+    /**
+     * 编辑组织名称。
+     */
     @Transactional
     public void edit(OrgEditor editor) {
         platformPermissionManage.requireSystemAdmin();
@@ -109,6 +124,9 @@ public class CrestOrgManage {
                 editor.getName().trim(), System.currentTimeMillis(), editor.getId());
     }
 
+    /**
+     * 删除空组织。
+     */
     @Transactional
     public void delete(Long id) {
         platformPermissionManage.requireSystemAdmin();
@@ -121,6 +139,9 @@ public class CrestOrgManage {
         jdbcTemplate.update("DELETE FROM iam_org WHERE id = ? AND readonly = 0", id);
     }
 
+    /**
+     * 判断组织下是否存在子组织、用户或资源。
+     */
     public boolean resourceExist(Long oid) {
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT
@@ -131,6 +152,9 @@ public class CrestOrgManage {
         return count != null && count > 0;
     }
 
+    /**
+     * 查询组织详情。
+     */
     public OrgDetailVO detail(Long oid) {
         List<OrgDetailVO> list = jdbcTemplate.query("""
                 SELECT id, name, pid, path FROM iam_org WHERE id = ? LIMIT 1
@@ -139,6 +163,9 @@ public class CrestOrgManage {
         return list.isEmpty() ? null : list.get(0);
     }
 
+    /**
+     * 查询指定组织及其下级组织 ID。
+     */
     public List<String> subOrgs(Long oid) {
         OrgDetailVO org = detail(oid);
         if (org == null) {
@@ -148,6 +175,9 @@ public class CrestOrgManage {
                 String.class, org.getRootPath() + "%");
     }
 
+    /**
+     * 查询指定父组织下的懒加载节点。
+     */
     private List<LazyOrgTreeNode> children(Long pid) {
         return jdbcTemplate.query("""
                 SELECT o.id, o.pid, o.name, o.create_time, o.readonly,
