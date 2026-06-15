@@ -189,45 +189,56 @@ export interface IDsTable {
   datasetPath: string
 }
 
+// 按数据源类型查询可用于同步的数据源列表。
 export const datasourceListByTypeApi = (type: string) => {
   return request.get({ url: `/sync/datasource/list/${type}` })
 }
+// 分页查询同步任务列表。
 export const getTaskInfoListApi = (current: number, size: number, data) => {
   return request.post({ url: `/sync/task/page/${current}/${size}`, data: data })
 }
 
+// 立即执行单个同步任务。
 export const executeOneApi = (id: string) => {
   return request.get({ url: `/sync/task/runs/${id}` })
 }
 
+// 启动指定同步任务。
 export const startTaskApi = (id: string) => {
   return request.get({ url: `/sync/task/lifecycle/start/${id}` })
 }
 
+// 停止指定同步任务。
 export const stopTaskApi = (id: string) => {
   return request.get({ url: `/sync/task/lifecycle/stop/${id}` })
 }
 
+// 新增同步任务。
 export const addApi = (data: ITaskInfoInsertReq) => {
   return request.post({ url: `/sync/task`, data: data })
 }
 
+// 删除单个同步任务。
 export const removeApi = (taskId: string) => {
   return request.delete({ url: `/sync/task/${taskId}` })
 }
 
+// 批量删除同步任务。
 export const batchRemoveApi = (taskIds: string[]) => {
   return request.delete({ url: `/sync/task/batch`, data: taskIds })
 }
 
+// 修改同步任务配置。
 export const modifyApi = (data: ITaskInfoUpdateReq) => {
   return request.put({ url: `/sync/task`, data: data })
 }
 
+// 根据任务 ID 查询同步任务详情。
 export const findTaskInfoByIdApi = (taskId: string) => {
   return request.get({ url: `/sync/task/detail/${taskId}` })
 }
 
+// 查询指定数据源下可同步的数据表列表。
 export const datasourceTableListApi = (dsId: string) => {
   return request.get({ url: `/sync/datasource/table/list/${dsId}` })
 }
