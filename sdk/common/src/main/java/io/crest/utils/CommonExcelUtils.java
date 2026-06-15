@@ -20,14 +20,23 @@ import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Excel 通用读写工具，封装导出响应、样式和导入读取入口。
+ */
 public class CommonExcelUtils {
 
+    /**
+     * 使用文件名作为工作表名称导出 Excel。
+     */
     public static void writeExcel(HttpServletResponse response, List objects, Class clazz,List<Map<Integer, String>> errMsgList, String fileName) throws IOException {
         String sheetName = fileName;
         writeExcel(response, objects, clazz, errMsgList, fileName, sheetName);
     }
 
 
+    /**
+     * 写入浏览器下载响应，并指定 Excel 文件名和工作表名称。
+     */
     public static void writeExcel(HttpServletResponse response, List objects, Class clazz, List<Map<Integer, String>> errMsgList, String fileName, String sheetName) throws IOException {
         response.addHeader("responseType", "blob");
         response.setContentType("application/vnd.ms-excel");
@@ -42,6 +51,9 @@ public class CommonExcelUtils {
         }
     }
 
+    /**
+     * 将数据写入输出流，附加表头样式、列宽自适应和错误单元格标记。
+     */
     public static void writeOutputStream(OutputStream outputStream, Class clazz, List objects, List<Map<Integer, String>> errMsgList, String sheetName) {
         WriteCellStyle headCellStyle = new WriteCellStyle();
         headCellStyle.setFillForegroundColor(Short.valueOf(IndexedColors.WHITE.getIndex()));
@@ -66,6 +78,9 @@ public class CommonExcelUtils {
         }
     }
 
+    /**
+     * 从输入流读取 Excel，并交给调用方提供的监听器处理行数据。
+     */
     public static void importExcel(InputStream inputStream, Class clazsz, AnalysisEventListener analysisEventListener) throws Exception {
         EasyExcel.read(inputStream, clazsz, analysisEventListener).sheet().headRowNumber(0).doRead();
     }
