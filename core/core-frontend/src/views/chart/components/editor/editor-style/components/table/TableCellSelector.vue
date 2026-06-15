@@ -244,6 +244,7 @@ onMounted(() => {
       v-if="showProperty('enableTableCrossBG')"
       label=""
     >
+      <!-- 斑马纹和合并单元格同时开启会破坏连续行判断，合并开启时禁用斑马纹。 -->
       <el-checkbox
         v-model="state.tableCellForm.enableTableCrossBG"
         :effect="themes"
@@ -603,6 +604,7 @@ onMounted(() => {
           :class="'form-item-' + themes"
           v-if="showProperty('tableColumnFreezeHead')"
         >
+          <!-- 冻结列数只在冻结开关开启且未合并单元格时生效。 -->
           <el-input-number
             :effect="themes"
             controls-position="right"
@@ -670,7 +672,7 @@ onMounted(() => {
       :class="'form-item-' + themes"
       v-if="showProperty('mergeFields') && state.tableCellForm.mergeCells"
     >
-      <!-- 合并字段顺序与表格维度顺序一致，渲染层按连续相同值合并 -->
+      <!-- 合并字段顺序与表格维度顺序一致，渲染层按连续相同值合并。 -->
       <el-select
         :effect="themes"
         v-model="state.tableCellForm.mergeFields"

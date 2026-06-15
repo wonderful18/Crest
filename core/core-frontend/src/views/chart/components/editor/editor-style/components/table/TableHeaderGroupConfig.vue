@@ -90,6 +90,7 @@ const init = () => {
     const leafNodes = getLeafNodes(headerGroupConfig.columns)
     const leafKeys = leafNodes.map(item => item.key)
     if (!isEqual(allAxis, leafKeys)) {
+      // 字段顺序或显隐变化后，旧分组叶子不再可信，直接回退为当前可见字段。
       const { columns, meta } = headerGroupConfig
       columns.splice(0, columns.length, ...showColumns)
       meta.splice(0, meta.length)
@@ -279,6 +280,7 @@ const renderTable = (chart: ChartObj) => {
     const activeColumns = getColumns(colKeys, curColumns)
     const curCell = s2.getCell(e.target)
     groupMenuContainer.innerText = ''
+    // 右键菜单基于当前 S2 选区生成，所有操作都直接修改内存中的 columns 和 meta。
     // 右键目标不在当前选区内时清空选区，避免对非选中列执行分组操作。
     if (activeColumns?.length) {
       const index = activeColumns.findIndex(cell => cell.key === curCell.getMeta().field)
@@ -441,6 +443,7 @@ const renderTable = (chart: ChartObj) => {
       }
       let upDepth = -1
       let tmpCell = curCell
+      // 计算当前节点到根节点的深度，用于限制新分组后的总层级。
       while (tmpCell?.getMeta?.()?.parent || tmpCell?.parent) {
         upDepth++
         tmpCell = tmpCell?.getMeta?.()?.parent || tmpCell?.parent
