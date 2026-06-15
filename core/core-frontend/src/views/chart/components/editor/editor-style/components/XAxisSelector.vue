@@ -14,6 +14,7 @@ import { ElFormItem, ElMessage } from 'element-plus-secondary'
 
 const { t } = useI18n()
 
+// 接收图表、主题和属性显示配置。
 const props = defineProps({
   chart: {
     type: Object,
@@ -31,14 +32,18 @@ const props = defineProps({
 const predefineColors = COLOR_PANEL
 const typeList = formatterType
 
+// 维护 X 轴样式表单。
 const state = reactive({
   axisForm: JSON.parse(JSON.stringify(DEFAULT_XAXIS_STYLE))
 })
+// 根据主题计算提示框主题。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
+// 定义 X 轴样式变更事件。
 const emit = defineEmits(['onChangeXAxisForm'])
 
+// 监听图表 X 轴配置并同步表单。
 watch(
   () => props.chart.customStyle.xAxis,
   () => {
@@ -47,6 +52,7 @@ watch(
   { deep: true }
 )
 
+// 生成 X 轴字号选项。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -70,6 +76,7 @@ const splitLineStyle = [
   { label: t('chart.line_type_dotted'), value: 'dotted' }
 ]
 
+// 判断当前图表是否为横向时间范围柱图。
 const isBarRangeTime = computed<boolean>(() => {
   if (props.chart.type === 'bar-range') {
     const tempYAxis = props.chart.yAxis[0]
@@ -84,6 +91,7 @@ const isBarRangeTime = computed<boolean>(() => {
   return false
 })
 
+// 校验并提交 X 轴样式变更。
 const changeAxisStyle = prop => {
   if (
     state.axisForm.axisValue.splitCount &&
@@ -95,11 +103,13 @@ const changeAxisStyle = prop => {
   emit('onChangeXAxisForm', state.axisForm, prop)
 }
 
+// 切换格式化单位语言并提交样式变更。
 function changeUnitLanguage(cfg: BaseFormatter, lang, prop: string) {
   onChangeFormatCfgUnitLanguage(cfg, lang)
   changeAxisStyle(prop)
 }
 
+// 初始化 X 轴样式表单。
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customStyle) {
@@ -116,16 +126,20 @@ const init = () => {
   }
 }
 
+// 判断指定属性是否应显示。
 const showProperty = prop => props.propertyInner?.includes(prop)
 
+// 判断当前图表是否为双向柱图。
 const isBidirectionalBar = computed(() => {
   return props.chart.type === 'bidirectional-bar'
 })
 
+// 判断当前图表是否为子弹图。
 const isBulletGraph = computed(() => {
   return ['bullet-graph'].includes(props.chart.type)
 })
 
+// 判断当前图表是否为横向布局。
 const isHorizontalLayout = computed(() => {
   return props.chart.customAttr.basicStyle.layout === 'horizontal'
 })

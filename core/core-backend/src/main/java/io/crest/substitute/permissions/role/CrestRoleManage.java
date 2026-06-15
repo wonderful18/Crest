@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Component
+// 管理角色查询、授权绑定和基础信息维护。
 public class CrestRoleManage {
 
     @Resource
@@ -26,15 +27,18 @@ public class CrestRoleManage {
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
+    // 查询当前组织角色列表。
     public List<RoleVO> query(String keyword) {
         Long oid = currentOid();
         return platformPermissionManage.roles(oid, keyword);
     }
 
+    // 查询指定组织角色列表。
     public List<RoleVO> queryByOid(Long oid, String keyword) {
         return platformPermissionManage.roles(oid == null ? currentOid() : oid, keyword);
     }
 
+    // 查询用户已绑定角色。
     public List<RoleVO> selectedForUser(Long uid, String keyword) {
         List<Object> args = new java.util.ArrayList<>();
         StringBuilder sql = new StringBuilder("""
@@ -59,6 +63,7 @@ public class CrestRoleManage {
         }, args.toArray());
     }
 
+    // 搜索可加入当前组织的外部用户。
     public ExternalUserVO searchExternalUser(String keyword) {
         if (StringUtils.isBlank(keyword)) {
             return null;
@@ -86,6 +91,7 @@ public class CrestRoleManage {
         return users.isEmpty() ? null : users.get(0);
     }
 
+    // 创建角色。
     @Transactional
     public Long create(RoleCreator creator) {
         platformPermissionManage.requireSystemAdmin();
@@ -102,6 +108,7 @@ public class CrestRoleManage {
         return id;
     }
 
+    // 编辑角色基础信息。
     @Transactional
     public void edit(RoleEditor editor) {
         platformPermissionManage.requireSystemAdmin();
@@ -115,6 +122,7 @@ public class CrestRoleManage {
                 """, editor.getName().trim(), editor.getDesc(), System.currentTimeMillis(), editor.getId());
     }
 
+    // 删除角色及其权限绑定。
     @Transactional
     public void delete(Long rid) {
         platformPermissionManage.requireSystemAdmin();
@@ -127,6 +135,7 @@ public class CrestRoleManage {
         jdbcTemplate.update("DELETE FROM iam_role WHERE id = ? AND readonly = 0", rid);
     }
 
+    // 查询角色详情。
     public RoleDetailVO detail(Long rid) {
         List<RoleDetailVO> list = jdbcTemplate.query("""
                 SELECT id, name, description, type_code FROM iam_role WHERE id = ? LIMIT 1
@@ -141,6 +150,7 @@ public class CrestRoleManage {
         return list.isEmpty() ? null : list.get(0);
     }
 
+    // 绑定用户到角色。
     @Transactional
     public void mountUsers(Long rid, List<Long> uids) {
         platformPermissionManage.requireSystemAdmin();
@@ -154,18 +164,21 @@ public class CrestRoleManage {
         }
     }
 
+    // 从角色中解绑用户。
     @Transactional
     public void unmountUser(Long rid, Long uid) {
         platformPermissionManage.requireSystemAdmin();
         jdbcTemplate.update("DELETE FROM iam_user_role WHERE uid = ? AND rid = ?", uid, rid);
     }
 
+    // 查询解绑用户前的绑定数量。
     public Integer beforeUnmountInfo(Long rid, Long uid) {
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM iam_user_role WHERE rid = ? AND uid = ?",
                 Integer.class, rid, uid);
         return count == null ? 0 : count;
     }
 
+    // 获取当前组织 ID。
     private Long currentOid() {
         if (AuthUtils.getUser() == null) {
             return PlatformPermissionManage.ROOT_ORG_ID;
