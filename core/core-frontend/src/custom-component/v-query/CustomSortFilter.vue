@@ -36,20 +36,27 @@ import draggable from 'vuedraggable'
 import { ref, unref } from 'vue'
 import { cloneDeep } from 'lodash-es'
 
+// 弹窗内可拖拽排序的候选值列表。
 const sortList = ref([])
+// 控制自定义排序弹窗显示状态。
 const dialogShow = ref(false)
+// 对外入口：复制传入列表并打开排序弹窗。
 const sortInit = list => {
   init(list)
   dialogShow.value = true
 }
+// 将传入列表复制为弹窗临时排序数据，避免直接修改父级状态。
 const init = list => {
   sortList.value = cloneDeep(list)
 }
 
+// 保存时向父组件回传新的排序列表。
 const emits = defineEmits(['save'])
+// 关闭排序弹窗但不提交变更。
 const closeDialog = () => {
   dialogShow.value = false
 }
+// 提交当前排序并关闭弹窗。
 const save = () => {
   emits('save', unref(sortList))
   closeDialog()
