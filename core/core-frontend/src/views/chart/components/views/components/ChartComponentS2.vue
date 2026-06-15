@@ -297,15 +297,27 @@ const setupPage = (chart: ChartObj, resetPageInfo?: boolean) => {
   dvMainStore.setViewPageInfo(chart.id, state.pageInfo)
 }
 
+/**
+ * 鼠标移入表格时暂停自动滚动。
+ */
 const mouseMove = () => {
   ;(myChart?.facet as any)?.timer?.stop()
 }
 
+/**
+ * 鼠标移出表格后恢复自动滚动。
+ */
 const mouseLeave = () => {
   initScroll()
 }
 
+/**
+ * 表格自动滚动定时器。
+ */
 let scrollTimer
+/**
+ * 初始化或重置表格自动滚动。
+ */
 const initScroll = () => {
   scrollTimer && clearTimeout(scrollTimer)
   scrollTimer = setTimeout(() => {
