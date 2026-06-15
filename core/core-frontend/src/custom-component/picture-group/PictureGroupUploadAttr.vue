@@ -17,6 +17,7 @@ const { t } = useI18n()
 let uploadCount = 0
 let totalUploads = 0
 
+// 接收图片组组件配置。
 const props = defineProps({
   themes: {
     type: String as PropType<EditorTheme>,
@@ -44,17 +45,24 @@ const { element } = toRefs(props)
 
 const { curComponent } = storeToRefs(dvMainStore)
 
+// 图片组上传列表。
 const fileList = ref([])
+// 图片预览地址。
 const dialogImageUrl = ref('')
+// 图片预览弹窗显隐状态。
 const dialogVisible = ref(false)
+// 图片上传禁用状态。
 const uploadDisabled = ref(false)
+// 文件选择器引用。
 const files = ref(null)
 
+// 打开图片预览弹窗。
 const handlePictureCardPreview = file => {
   dialogImageUrl.value = file.url
   dialogVisible.value = true
 }
 
+// 移除图片组中的指定图片。
 const handleRemove = file => {
   uploadDisabled.value = false
   let file_static_part = file.url.split('static-resource/')[1]
@@ -67,6 +75,7 @@ const handleRemove = file => {
   }
   snapshotStore.recordSnapshotCache('picture-handleRemove')
 }
+// 上传图片并刷新图片组列表。
 async function upload(file) {
   if (element.value.propValue.urlList.length < 10) {
     // 增加总任务数
@@ -100,14 +109,17 @@ async function upload(file) {
   }
 }
 
+// 记录图片组样式变更快照。
 const onStyleChange = () => {
   snapshotStore.recordSnapshotCache('pic-onStyleChange')
 }
 
+// 触发文件选择器。
 const goFile = () => {
   files.value.click()
 }
 
+// 初始化图片组上传列表。
 const fileListInit = () => {
   fileList.value = []
   if (element.value.propValue.urlList && element.value.propValue.urlList.length > 0) {
@@ -116,10 +128,12 @@ const fileListInit = () => {
     })
   }
 }
+// 初始化图片组属性面板。
 const init = () => {
   fileListInit()
 }
 
+// 监听图片组地址列表变化。
 watch(
   () => element.value.propValue['urlList'],
   () => {
