@@ -1,5 +1,8 @@
 package io.crest.api.visualization.vo;
 
+/**
+ * 可视化水印配置视图对象。
+ */
 public class VisualizationWatermarkVO{
 
     /**
@@ -27,46 +30,79 @@ public class VisualizationWatermarkVO{
      */
     private Long createTime;
 
+    /**
+     * 获取水印配置主键。
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * 设置水印配置主键。
+     */
     public void setId(String id) {
         this.id = id;
     }
 
+    /**
+     * 获取水印配置版本号。
+     */
     public String getVersion() {
         return version;
     }
 
+    /**
+     * 设置水印配置版本号。
+     */
     public void setVersion(String version) {
         this.version = version;
     }
 
+    /**
+     * 获取水印设置内容。
+     */
     public String getSettingContent() {
         return settingContent;
     }
 
+    /**
+     * 设置水印设置内容。
+     */
     public void setSettingContent(String settingContent) {
         this.settingContent = settingContent;
     }
 
+    /**
+     * 获取水印配置创建人。
+     */
     public String getCreateBy() {
         return createBy;
     }
 
+    /**
+     * 设置水印配置创建人。
+     */
     public void setCreateBy(String createBy) {
         this.createBy = createBy;
     }
 
+    /**
+     * 获取水印配置创建时间。
+     */
     public Long getCreateTime() {
         return createTime;
     }
 
+    /**
+     * 设置水印配置创建时间。
+     */
     public void setCreateTime(Long createTime) {
         this.createTime = createTime;
     }
 
+    /**
+     * 生成水印配置的调试字符串。
+     */
     @Override
     public String toString() {
         return "VisualizationWatermark{" +
