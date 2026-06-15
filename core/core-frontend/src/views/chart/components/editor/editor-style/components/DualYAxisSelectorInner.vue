@@ -14,7 +14,7 @@ import { ElFormItem, ElMessage } from 'element-plus-secondary'
 
 const { t } = useI18n()
 
-// 定义双向柱状图内层 Y 轴样式表单的输入参数
+// 双 Y 轴内层表单由外层轴配置面板复用，负责单侧轴的展示、刻度和标签格式。
 const props = withDefaults(
   defineProps<{
     themes?: EditorTheme
@@ -31,26 +31,28 @@ const props = withDefaults(
 )
 
 const predefineColors = COLOR_PANEL
+// 数值格式化类型与普通 X/Y 轴面板保持一致，避免双向柱图独立维护格式口径。
 const typeList = formatterType
-// 根据当前主题计算提示浮层主题
+// 提示浮层使用反向主题，保证暗色面板中的说明文字有足够对比度。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
-// 保存当前 Y 轴样式表单
+// 内部表单复制外部传入值，避免用户编辑中途直接改写父组件状态。
 const state = reactive({
   axisForm: JSON.parse(JSON.stringify(DEFAULT_YAXIS_STYLE))
 })
 
-// 声明 Y 轴样式变更事件
+// 父组件负责把单侧轴配置合并回完整双轴配置并触发图表重绘。
 const emit = defineEmits(['onChangeYAxisForm'])
 
+// 轴线和网格线共用线型枚举，value 需要和 G2Plot lineStyle.style 对齐。
 const splitLineStyle = [
   { label: t('chart.line_type_solid'), value: 'solid' },
   { label: t('chart.line_type_dashed'), value: 'dashed' },
   { label: t('chart.line_type_dotted'), value: 'dotted' }
 ]
 
-// 监听外部表单变化并同步到内部状态
+// 外部切换左右轴、撤销或重做时会替换 form，需要重新复制并初始化单位配置。
 watch(
   () => props.form,
   () => {
@@ -59,7 +61,7 @@ watch(
   { deep: true }
 )
 
-// 生成字号选项列表
+// 轴标题和轴标签共用字号候选，大屏场景允许使用更大字号。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -77,7 +79,7 @@ const fontSizeList = computed(() => {
   return arr
 })
 
-// 校验刻度数量并同步 Y 轴样式
+// 固定刻度数量会直接影响坐标轴渲染，提交前限制范围，避免异常配置进入图表实例。
 const changeAxisStyle = prop => {
   if (
     state.axisForm.axisValue.splitCount &&
@@ -89,27 +91,27 @@ const changeAxisStyle = prop => {
   emit('onChangeYAxisForm', state.axisForm, prop)
 }
 
-// 切换数值格式化单位语言并同步样式
+// 切换单位语言时同步修正单位枚举，再通过普通轴样式变更事件保存。
 function changeUnitLanguage(cfg: BaseFormatter, lang, prop: string) {
   onChangeFormatCfgUnitLanguage(cfg, lang)
   changeAxisStyle(prop)
 }
 
-// 使用外部表单初始化内部 Y 轴样式
+// 初始化时深拷贝外部表单，随后补齐格式化单位默认值。
 const init = () => {
   state.axisForm = JSON.parse(JSON.stringify(props.form))
   initFormatCfgUnit(state.axisForm.axisLabelFormatter)
 }
 
-// 判断指定样式属性是否需要展示
+// 属性显示由外层面板传入，隐藏项不提交，避免双向柱图收到不支持的轴字段。
 const showProperty = prop => props.propertyInner?.includes(prop)
 
-// 判断当前图表是否为双向柱状图
+// 双向柱图需要根据方向重写轴位置文案，与普通直角坐标系不同。
 const isBidirectionalBar = computed(() => {
   return props.chartType === 'bidirectional-bar'
 })
 
-// 判断双向柱状图是否为纵向布局
+// 纵向双向柱图保留左右轴语义，横向布局则把上下文案映射到左右轴值。
 const isVerticalLayout = computed(() => {
   return props.layout === 'vertical'
 })

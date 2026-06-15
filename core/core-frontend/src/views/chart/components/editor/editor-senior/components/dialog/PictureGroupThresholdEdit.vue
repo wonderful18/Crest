@@ -11,7 +11,7 @@ import PictureOptionPrefix from '@/custom-component/picture-group/PictureOptionP
 
 const { t } = useI18n()
 
-// 定义图片组阈值编辑器依赖的图表、元素和阈值配置
+// 图片组阈值编辑器根据图表字段命中条件后切换展示图片，不直接修改图表数据。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -31,9 +31,10 @@ const props = defineProps({
   }
 })
 
-// 声明阈值配置变更事件
+// 父组件负责保存阈值数组，本组件每次增删改后都同步完整配置。
 const emit = defineEmits(['onTableThresholdChange'])
 
+// 新增条件的默认结构保留颜色字段，兼容旧阈值模型中的表格样式条件。
 const thresholdCondition = {
   term: 'eq',
   field: '0',
@@ -43,6 +44,7 @@ const thresholdCondition = {
   min: '0',
   max: '1'
 }
+// 文本字段只开放等值、包含、空值和默认分支，避免数值区间条件误用于字符串。
 const textOptions = [
   {
     label: '',
@@ -93,6 +95,7 @@ const textOptions = [
     ]
   }
 ]
+// 日期字段支持等值和大小比较，日期区间由外层筛选器负责处理。
 const dateOptions = [
   {
     label: '',
@@ -143,6 +146,7 @@ const dateOptions = [
     ]
   }
 ]
+// 数值字段支持大小比较和 between 区间，作为图片切换的主要判断条件。
 const valueOptions = [
   {
     label: '',
@@ -203,7 +207,7 @@ const valueOptions = [
   }
 ]
 
-// 保存阈值列表、可选字段以及新增阈值的默认结构
+// 状态保存可编辑阈值副本、字段候选和新增字段级阈值的初始结构。
 const state = reactive<any>({
   thresholdArr: [] as TableThreshold[],
   fields: [],
@@ -214,12 +218,12 @@ const state = reactive<any>({
   } as TableThreshold
 })
 
-// 初始化阈值配置和可选字段
+// 初始化时复制父级阈值，避免编辑过程直接改写外部数组引用。
 const init = () => {
   state.thresholdArr = JSON.parse(JSON.stringify(props.threshold)) as TableThreshold[]
   initFields()
 }
-// 根据字段类型初始化可用的阈值条件操作符
+// 字段类型决定操作符集合，切换字段后清空条件操作符，要求用户重新确认规则。
 const initOptions = item => {
   if (item.field) {
     if ([0, 5, 7].includes(item.field.fieldType)) {
@@ -235,7 +239,7 @@ const initOptions = item => {
       })
   }
 }
-// 根据图表类型汇总图片组阈值可绑定的字段
+// 不同表格图表的字段分布不同，透视表需要合并行、列和指标字段作为候选。
 const initFields = () => {
   let fields = []
   if (props.chart.type === 'table-info') {
@@ -252,34 +256,34 @@ const initFields = () => {
   }
   state.fields.splice(0, state.fields.length, ...fields)
 }
-// 新增一个字段级阈值配置
+// 新增字段级阈值时先插入空规则，再通知父组件刷新保存状态。
 const addThreshold = () => {
   state.thresholdArr.push(JSON.parse(JSON.stringify(state.thresholdObj)))
   changeThreshold()
 }
-// 删除指定字段级阈值配置
+// 删除字段级阈值后立即同步，避免弹窗关闭时保留已删除规则。
 const removeThreshold = index => {
   state.thresholdArr.splice(index, 1)
   changeThreshold()
 }
 
-// 向父组件同步最新阈值配置
+// 所有条件变化都上报完整阈值数组，父组件不需要推断局部变更。
 const changeThreshold = () => {
   emit('onTableThresholdChange', state.thresholdArr)
 }
 
-// 为字段阈值新增一个条件行
+// 条件行使用默认模板深拷贝，避免多行共享同一对象引用。
 const addConditions = item => {
   item.conditions.push(JSON.parse(JSON.stringify(thresholdCondition)))
   changeThreshold()
 }
-// 删除字段阈值中的指定条件行
+// 删除条件行后保留字段级阈值本身，允许用户继续为同一字段添加新条件。
 const removeCondition = (item, index) => {
   item.conditions.splice(index, 1)
   changeThreshold()
 }
 
-// 选择字段后回填字段详情并刷新条件选项
+// 选择字段后回填完整字段信息，并按字段类型刷新操作符候选。
 const addField = item => {
   if (state.fields && state.fields.length > 0) {
     state.fields.forEach(ele => {

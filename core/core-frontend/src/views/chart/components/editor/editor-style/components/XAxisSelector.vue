@@ -14,7 +14,7 @@ import { ElFormItem, ElMessage } from 'element-plus-secondary'
 
 const { t } = useI18n()
 
-// 接收图表、主题和属性显示配置
+// X 轴样式面板同时服务直角坐标图、横向图、子弹图和区间柱图。
 const props = defineProps({
   chart: {
     type: Object,
@@ -30,20 +30,21 @@ const props = defineProps({
 })
 
 const predefineColors = COLOR_PANEL
+// 数值格式化类型复用统一配置，保证轴标签、tooltip 和导出展示口径一致。
 const typeList = formatterType
 
-// 维护 X 轴样式表单
+// 表单以 DEFAULT_XAXIS_STYLE 为基础，初始化时由图表已保存的 customStyle.xAxis 覆盖。
 const state = reactive({
   axisForm: JSON.parse(JSON.stringify(DEFAULT_XAXIS_STYLE))
 })
-// 根据主题计算提示框主题
+// 提示浮层使用反向主题，避免暗色配置面板内说明文字对比度不足。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
-// 定义 X 轴样式变更事件
+// 父级负责把轴样式写回图表配置并触发重绘，本组件只提交表单和变更字段。
 const emit = defineEmits(['onChangeXAxisForm'])
 
-// 监听图表 X 轴配置并同步表单
+// 撤销、重做或切换图表时会替换 xAxis 样式对象，需要重新解析并刷新格式化单位。
 watch(
   () => props.chart.customStyle.xAxis,
   () => {
@@ -52,7 +53,7 @@ watch(
   { deep: true }
 )
 
-// 生成 X 轴字号选项
+// 轴标题和轴标签共用字号候选，大屏放大展示需要覆盖较大字号。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -70,13 +71,14 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+// 轴线和网格线共用线型枚举，value 需要和 G2Plot lineStyle.style 保持一致。
 const splitLineStyle = [
   { label: t('chart.line_type_solid'), value: 'solid' },
   { label: t('chart.line_type_dashed'), value: 'dashed' },
   { label: t('chart.line_type_dotted'), value: 'dotted' }
 ]
 
-// 判断当前图表是否为横向时间范围柱图
+// 横向时间范围柱图的 X 轴承载时间值，不能按普通数值轴套用格式化配置。
 const isBarRangeTime = computed<boolean>(() => {
   if (props.chart.type === 'bar-range') {
     const tempYAxis = props.chart.yAxis[0]
@@ -91,7 +93,7 @@ const isBarRangeTime = computed<boolean>(() => {
   return false
 })
 
-// 校验并提交 X 轴样式变更
+// 固定刻度数量直接影响坐标轴渲染，提交前限制范围，避免异常配置拖慢图表绘制。
 const changeAxisStyle = prop => {
   if (
     state.axisForm.axisValue.splitCount &&
@@ -103,13 +105,13 @@ const changeAxisStyle = prop => {
   emit('onChangeXAxisForm', state.axisForm, prop)
 }
 
-// 切换格式化单位语言并提交样式变更
+// 切换单位语言时同步修正单位枚举，再通过普通轴样式事件通知父组件保存。
 function changeUnitLanguage(cfg: BaseFormatter, lang, prop: string) {
   onChangeFormatCfgUnitLanguage(cfg, lang)
   changeAxisStyle(prop)
 }
 
-// 初始化 X 轴样式表单
+// customStyle 可能是对象或字符串，初始化时统一转为对象并补齐格式化单位默认值。
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customStyle) {
@@ -126,20 +128,20 @@ const init = () => {
   }
 }
 
-// 判断指定属性是否应显示
+// 属性显示由图表类型配置决定，隐藏项不应被用户编辑或提交。
 const showProperty = prop => props.propertyInner?.includes(prop)
 
-// 判断当前图表是否为双向柱图
+// 双向柱图的 X 轴位置文案与普通图表不同，需要按布局重新映射。
 const isBidirectionalBar = computed(() => {
   return props.chart.type === 'bidirectional-bar'
 })
 
-// 判断当前图表是否为子弹图
+// 子弹图使用轴位置表达目标值方向，需要单独处理文案。
 const isBulletGraph = computed(() => {
   return ['bullet-graph'].includes(props.chart.type)
 })
 
-// 判断当前图表是否为横向布局
+// 横向布局会交换视觉方向，轴位置文案需要随之调整。
 const isHorizontalLayout = computed(() => {
   return props.chart.customAttr.basicStyle.layout === 'horizontal'
 })
