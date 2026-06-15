@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Stack;
 
 @Component
+// 管理数据源树、数据源保存编辑和数据源基础查询。
 public class DataSourceManage {
 
     @Resource
@@ -61,10 +62,12 @@ public class DataSourceManage {
     @Autowired(required = false)
     private PluginManageApi pluginManage;
 
+    // 构造数据源树根节点。
     private DatasourceNodeBO rootNode() {
         return new DatasourceNodeBO(0L, "root", false, 7, -1L, 0, "mysql");
     }
 
+    // 根据数据源类型解析节点图标标识。
     private Integer getFlag(String type) {
         Integer flag = null;
         for (DatasourceConfiguration.DatasourceType datasourceType : DatasourceConfiguration.DatasourceType.values()) {
@@ -92,11 +95,13 @@ public class DataSourceManage {
         return flag;
     }
 
+    // 将数据库节点转换为业务树节点。
     private DatasourceNodeBO convert(DataSourceNodePO po) {
         Integer flag = getFlag(po.getType());
         int extraFlag = Strings.CI.equals("error", po.getStatus()) ? Math.negateExact(flag) : flag;
         return new DatasourceNodeBO(po.getId(), po.getName(), !Strings.CS.equals(po.getType(), "folder"), 9, po.getPid(), extraFlag, po.getType());
     }
+    // 查询当前用户可见的数据源树。
     public List<BusiNodeVO> tree(BusiNodeRequest request) {
 
         QueryWrapper<DataSourceNodePO> queryWrapper = new QueryWrapper<>();
@@ -120,6 +125,7 @@ public class DataSourceManage {
         }
         return TreeUtils.mergeTree(nodes, BusiNodeVO.class, false);
     }
+    // 保存数据源并登记权限和最近操作。
     public void innerSave(DatasourceDTO dataSourceDTO) {
         CoreDatasource coreDatasource = new CoreDatasource();
         coreDatasource.setTaskStatus(TaskStatus.WaitingForExecution.name());
@@ -132,6 +138,7 @@ public class DataSourceManage {
         coreOptRecentManage.saveOpt(coreDatasource.getId(), OptConstants.OPT_RESOURCE_TYPE.DATASOURCE, OptConstants.OPT_TYPE.NEW);
     }
 
+    // 校验同级数据源或文件夹名称。
     public void checkName(DatasourceDTO dto) {
         if (StringUtils.isEmpty(dto.getName()) || StringUtils.isEmpty(dto.getName().trim())) {
             CrestException.throwException(Translator.get("i18n_df_name_can_not_empty"));
@@ -163,9 +170,11 @@ public class DataSourceManage {
             CrestException.throwException(Translator.get("i18n_ds_name_exists"));
         }
     }
+    // 预留租户访问令牌获取入口。
     public String getTenantAccessToken() {
         return null;
     }
+    // 更新数据源信息并重置任务状态。
     public void innerEdit(CoreDatasource coreDatasource) {
         UpdateWrapper<CoreDatasource> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", coreDatasource.getId());
@@ -178,6 +187,7 @@ public class DataSourceManage {
                 coreDatasource.getCreateTime(), coreDatasource.getUpdateTime());
         coreOptRecentManage.saveOpt(coreDatasource.getId(), OptConstants.OPT_RESOURCE_TYPE.DATASOURCE, OptConstants.OPT_TYPE.UPDATE);
     }
+    // 更新数据源名称并记录最近操作。
     public void innerEditName(CoreDatasource coreDatasource) {
         UpdateWrapper<CoreDatasource> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", coreDatasource.getId());
@@ -187,12 +197,14 @@ public class DataSourceManage {
         coreDatasourceMapper.update(coreDatasource, updateWrapper);
         coreOptRecentManage.saveOpt(coreDatasource.getId(), OptConstants.OPT_RESOURCE_TYPE.DATASOURCE, OptConstants.OPT_TYPE.UPDATE);
     }
+    // 更新数据源连接状态。
     public void innerEditStatus(CoreDatasource coreDatasource) {
         UpdateWrapper<CoreDatasource> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", coreDatasource.getId());
         updateWrapper.set("status", coreDatasource.getStatus());
         coreDatasourceMapper.update(null, updateWrapper);
     }
+    // 移动数据源节点到新的父级。
     public void move(DatasourceDTO dataSourceDTO) {
         Long id = dataSourceDTO.getId();
         CoreDatasource sourceData = null;
@@ -213,6 +225,7 @@ public class DataSourceManage {
     }
 
 
+    // 批量触发合法数据源配置的更新流程。
     public void encryptDsConfig() {
         coreDatasourceMapper.selectList(null).forEach(dataSource -> {
             if (!validConfiguration(dataSource.getConfiguration())) {
@@ -222,10 +235,12 @@ public class DataSourceManage {
         });
     }
 
+    // 判断数据源配置是否为 JSON 对象文本。
     private boolean validConfiguration(String configuration) {
         return StringUtils.isNotBlank(configuration) && configuration.trim().startsWith("{");
     }
 
+    // 查询数据源，特殊 ID 返回当前引擎数据源。
     public CoreDatasource getCoreDatasource(Long id) {
         if (id == -1L) {
             return engineManage.getEngineDatasource();
@@ -233,6 +248,7 @@ public class DataSourceManage {
         return coreDatasourceMapper.selectById(id);
     }
 
+    // 自底向上查询父级数据源节点 ID 列表。
     public List<Long> getPidList(Long pid) {
         if (ObjectUtils.isEmpty(pid) || pid.equals(0L)) {
             return null;
@@ -254,10 +270,12 @@ public class DataSourceManage {
         return result;
     }
 
+    // 查询数据源实体。
     public CoreDatasource datasource(Long id) {
         return getCoreDatasource(id);
     }
 
+    // 查询数据源并转换为 DTO。
     public DatasourceDTO getDs(Long id) {
         CoreDatasource coreDatasource = getCoreDatasource(id);
         DatasourceDTO dto = new DatasourceDTO();
