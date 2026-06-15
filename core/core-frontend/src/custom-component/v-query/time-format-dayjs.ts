@@ -1,21 +1,26 @@
 import dayjs from 'dayjs'
 import type { ManipulateType } from 'dayjs'
+// 获取当前时间单位的起始时间。
 function getThisStart(val = 'month' as ManipulateType | 'quarter') {
   return new Date(dayjs().startOf(val).format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取当前时间单位的结束时间。
 function getThisEnd(val = 'month' as ManipulateType | 'quarter') {
   return new Date(dayjs().endOf(val).format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取上一时间单位的起始时间。
 function getLastStart(val = 'month' as ManipulateType) {
   return new Date(dayjs().subtract(1, val).startOf(val).format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取上一时间单位的结束时间。
 function getLastEnd(val = 'month' as ManipulateType) {
   return new Date(dayjs().subtract(1, val).endOf(val).format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取相对当前时间偏移后的结束时间。
 function getAround(val = 'month' as ManipulateType, type = 'add', num = 0) {
   if (val === 'week') {
     return new Date(dayjs().endOf('week').add(1, 'day').endOf('day').format('YYYY/MM/DD HH:mm:ss'))
@@ -23,6 +28,7 @@ function getAround(val = 'month' as ManipulateType, type = 'add', num = 0) {
   return new Date(dayjs()[type](num, val).endOf('day').format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取相对当前时间偏移后的起始时间。
 function getAroundStart(val = 'month' as ManipulateType, type = 'add', num = 0) {
   if (val === 'week') {
     return new Date(
@@ -32,6 +38,7 @@ function getAroundStart(val = 'month' as ManipulateType, type = 'add', num = 0) 
   return new Date(dayjs()[type](num, val).startOf('day').format('YYYY/MM/DD HH:mm:ss'))
 }
 
+// 获取本周的起止时间范围。
 function getThisWeek(): [Date, Date] {
   return [
     new Date(dayjs().startOf('week').add(1, 'day').startOf('day').format('YYYY/MM/DD HH:mm:ss')),
@@ -39,6 +46,7 @@ function getThisWeek(): [Date, Date] {
   ]
 }
 
+// 根据预设范围标识计算自定义时间范围。
 function getCustomRange(relativeToCurrentRange: string): [Date, Date] {
   switch (relativeToCurrentRange) {
     case 'thisYear':
