@@ -336,12 +336,32 @@ public class PlatformPermissionManage {
             return;
         }
         long now = System.currentTimeMillis();
+        Long effectiveOid = oid == null ? ROOT_ORG_ID : oid;
+        Long effectiveCreateTime = createTime == null ? now : createTime;
+        Long effectiveUpdateTime = updateTime == null ? now : updateTime;
+        if (isObOracle()) {
+            jdbcTemplate.update("""
+                    MERGE INTO iam_resource_index target
+                    USING (SELECT ? AS resource_id, ? AS resource_type FROM DUAL) source
+                    ON (target.resource_id = source.resource_id AND target.resource_type = source.resource_type)
+                    WHEN MATCHED THEN UPDATE SET
+                        target.oid = ?,
+                        target.creator = ?,
+                        target.name = ?,
+                        target.update_time = ?
+                    WHEN NOT MATCHED THEN INSERT
+                        (id, resource_id, resource_type, oid, creator, name, create_time, update_time)
+                        VALUES (?, source.resource_id, source.resource_type, ?, ?, ?, ?, ?)
+                    """, resourceId, resourceType, effectiveOid, creator, name, effectiveUpdateTime,
+                    IDUtils.snowID(), effectiveOid, creator, name, effectiveCreateTime, effectiveUpdateTime);
+            return;
+        }
         jdbcTemplate.update("""
                 INSERT INTO iam_resource_index(id, resource_id, resource_type, oid, creator, name, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE oid = VALUES(oid), creator = VALUES(creator), name = VALUES(name), update_time = VALUES(update_time)
-                """, IDUtils.snowID(), resourceId, resourceType, oid == null ? ROOT_ORG_ID : oid, creator,
-                name, createTime == null ? now : createTime, updateTime == null ? now : updateTime);
+                """, IDUtils.snowID(), resourceId, resourceType, effectiveOid, creator,
+                name, effectiveCreateTime, effectiveUpdateTime);
     }
 
     // 删除资源索引及其显式授权记录
