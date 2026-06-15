@@ -31,12 +31,17 @@ export interface CalcFieldType {
 }
 const { t } = useI18n()
 
+// SQL 编辑器组件实例。
 const myCm = ref()
+// 引用字段搜索关键字。
 const searchField = ref('')
+// 函数列表搜索关键字。
 const searchFunction = ref('')
 
+// CodeMirror 编辑器实例。
 const mirror = ref()
 
+// 计算字段编辑器入参，控制是否为跨数据源表达式。
 const props = defineProps({
   crossDs: {
     type: Boolean,
@@ -68,18 +73,22 @@ const defaultForm = {
   checked: true
 }
 
+// 编辑器右侧候选数据，包含函数、维度和指标字段。
 const state = reactive({
   functionData: [],
   dimensionData: [],
   dimensionList: [],
   quotaData: []
 })
+// 计算参数表单实例。
 const formQuotaRef = ref()
+// 当前正在新增或编辑的计算参数。
 const formQuota = reactive({
   id: null,
   name: '',
   value: null
 })
+// 计算参数弹窗显隐状态。
 const dialogFormVisible = ref(false)
 const formQuotaRules = {
   name: [
@@ -89,11 +98,13 @@ const formQuotaRules = {
   value: [{ required: true, message: t('data_set.parameter_default_value'), trigger: 'blur' }]
 }
 
+// 关闭计算参数弹窗并重置表单。
 const formQuotaClose = () => {
   formQuotaRef.value.resetFields()
   dialogFormVisible.value = false
 }
 
+// 校验并保存计算参数，同时同步编辑器中的字段引用。
 const formQuotaConfirm = () => {
   formQuotaRef.value.validate(val => {
     if (val) {
@@ -128,14 +139,17 @@ const formQuotaConfirm = () => {
   })
 }
 
+// 当前计算字段表单数据。
 const fieldForm = reactive<CalcFieldType>({ ...(defaultForm as CalcFieldType) })
 
+// 将编辑器中展示名称格式的表达式转换为提交用字段 ID 表达式。
 const setFieldForm = () => {
   const str = mirror.value.state.doc.toString()
   const name2Auto = []
   fieldForm.originName = setNameIdTrans('name', 'id', str, name2Auto)
 }
 
+// 在表达式中批量替换字段展示名和字段 ID。
 const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
   let name2Id = originName
   const nameIdMap = [...dimensionDataList, ...quotaDataList].reduce((pre, next) => {
@@ -157,6 +171,7 @@ const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
 
 let quotaDataList = []
 let dimensionDataList = []
+// 初始化编辑态数据，并把持久化字段 ID 表达式还原为可读名称。
 const initEdit = (obj, dimensionData, quotaData) => {
   formQuota.id = null
   Object.assign(fieldForm, { ...defaultForm, ...obj })
@@ -188,6 +203,7 @@ const initEdit = (obj, dimensionData, quotaData) => {
   })
 }
 
+// 将字段引用插入到 CodeMirror 当前光标位置。
 const insertFieldToCodeMirror = (value: string) => {
   if (!mirror.value) return
   const from = getCursor(mirror.value)
@@ -197,6 +213,7 @@ const insertFieldToCodeMirror = (value: string) => {
   })
 }
 
+// 读取 CodeMirror 当前光标位置，兼容不同版本状态结构。
 const getCursor = view => {
   return (
     view?.state?.selection?.main?.from ??
@@ -214,6 +231,7 @@ onBeforeUnmount(() => {
   mirror.value.destroy?.()
 })
 
+// 将函数或计算参数插入到 CodeMirror 当前光标位置。
 const insertParamToCodeMirror = (value: string) => {
   if (!mirror.value) return
   const from = getCursor(mirror.value)
@@ -223,12 +241,14 @@ const insertParamToCodeMirror = (value: string) => {
   })
 }
 let functions = []
+// 加载数据库函数列表并初始化筛选源数据。
 const initFunction = () => {
   getFunction().then(res => {
     functions = cloneDeep(res)
     state.functionData = cloneDeep(res)
   })
 }
+// 根据字段搜索关键字过滤维度和指标候选列表。
 watch(
   () => searchField.value,
   val => {
@@ -256,6 +276,7 @@ watch(
   }
 )
 
+// 根据函数搜索关键字过滤函数候选列表。
 watch(
   () => searchFunction.value,
   val => {
@@ -273,6 +294,7 @@ watch(
   }
 )
 
+// 计算字段表单实例。
 const formField = ref()
 
 defineExpose({
@@ -281,7 +303,9 @@ defineExpose({
   fieldForm,
   formField
 })
+// 计算参数弹窗标题。
 const paramsTitle = ref('')
+// 打开新增计算参数弹窗。
 const addParamsToQuota = () => {
   if (disableCaParams.value) return
   paramsTitle.value = t('data_set.add_calculation_parameters')
@@ -291,6 +315,7 @@ const addParamsToQuota = () => {
   dialogFormVisible.value = true
 }
 
+// 打开编辑计算参数弹窗。
 const updateParamsToQuota = () => {
   const [o] = fieldForm.params
   paramsTitle.value = t('data_set.edit_calculation_parameters')
@@ -298,10 +323,12 @@ const updateParamsToQuota = () => {
   dialogFormVisible.value = true
 }
 
+// 是否禁用新增计算参数，当前只允许维护一个参数。
 const disableCaParams = computed(() => {
   return !!fieldForm.params?.length
 })
 
+// 删除计算参数，并同步移除表达式中的参数引用。
 const delParamsToQuota = () => {
   const [o] = fieldForm.params
   fieldForm.params = []

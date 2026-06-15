@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+// 平台权限管理服务，集中处理组织、角色、资源权限和菜单权限的持久化规则。
 @Component
 public class PlatformPermissionManage {
 
@@ -30,6 +31,7 @@ public class PlatformPermissionManage {
     @Resource
     private JdbcTemplate jdbcTemplate;
 
+    // 查询用户默认组织，没有绑定时自动补齐根组织和普通用户角色。
     public Long defaultOrgId(Long uid) {
         if (uid == null) {
             return ROOT_ORG_ID;
@@ -48,6 +50,7 @@ public class PlatformPermissionManage {
         return ROOT_ORG_ID;
     }
 
+    // 查询用户在指定组织下拥有的角色 ID。
     public List<Long> roleIds(Long uid, Long oid) {
         if (uid == null) {
             return List.of();
@@ -59,6 +62,7 @@ public class PlatformPermissionManage {
                 """, Long.class, uid, oid == null ? defaultOrgId(uid) : oid);
     }
 
+    // 查询用户角色列表，未配置角色时返回普通用户兜底角色。
     public List<UserGridRoleItem> userRoleItems(Long uid) {
         List<UserGridRoleItem> roles = jdbcTemplate.query("""
                 SELECT r.id, r.name
@@ -75,10 +79,12 @@ public class PlatformPermissionManage {
         return roles.isEmpty() ? defaultMemberRoleItem() : roles;
     }
 
+    // 查询用户角色 ID 字符串列表，供前端表单直接回显。
     public List<String> userRoleIdStrings(Long uid) {
         return userRoleItems(uid).stream().map(item -> String.valueOf(item.getId())).toList();
     }
 
+    // 判断用户是否拥有系统管理员权限。
     public boolean isSystemAdmin(Long uid) {
         if (uid == null) {
             return false;
@@ -90,6 +96,7 @@ public class PlatformPermissionManage {
         return (count != null && count > 0) || AuthUtils.isSysAdmin(uid);
     }
 
+    // 判断用户是否为指定组织管理员，系统管理员自动拥有组织管理权。
     public boolean isOrgAdmin(Long uid, Long oid) {
         if (isSystemAdmin(uid)) {
             return true;
@@ -103,11 +110,13 @@ public class PlatformPermissionManage {
         return count != null && count > 0;
     }
 
+    // 替换用户默认组织下的全部角色。
     @Transactional
     public void replaceUserRoles(Long uid, List<Long> roleIds) {
         replaceUserRoles(uid, defaultOrgId(uid), roleIds);
     }
 
+    // 替换用户在指定组织下的全部角色，空角色列表使用普通用户角色兜底。
     @Transactional
     public void replaceUserRoles(Long uid, Long oid, List<Long> roleIds) {
         oid = oid == null ? defaultOrgId(uid) : oid;
@@ -118,17 +127,20 @@ public class PlatformPermissionManage {
         }
     }
 
+    // 替换用户默认组织。
     @Transactional
     public void replaceUserDefaultOrg(Long uid, Long oid) {
         bindUserToOrg(uid, oid == null ? ROOT_ORG_ID : oid, true);
     }
 
+    // 查询组织名称。
     public String orgName(Long oid) {
         List<String> names = jdbcTemplate.queryForList("SELECT name FROM iam_org WHERE id = ? LIMIT 1",
                 String.class, oid == null ? ROOT_ORG_ID : oid);
         return names.isEmpty() ? null : names.get(0);
     }
 
+    // 将用户绑定到组织，并在需要时设置为默认组织。
     @Transactional
     public void bindUserToOrg(Long uid, Long oid, boolean defaultOrg) {
         long now = System.currentTimeMillis();
@@ -144,6 +156,7 @@ public class PlatformPermissionManage {
         }
     }
 
+    // 将用户绑定到组织角色，空入参直接忽略。
     @Transactional
     public void bindUserToRole(Long uid, Long oid, Long rid) {
         if (uid == null || oid == null || rid == null) {
@@ -155,6 +168,7 @@ public class PlatformPermissionManage {
                 """, IDUtils.snowID(), uid, oid, rid, System.currentTimeMillis());
     }
 
+    // 查询指定组织下的角色列表，可按名称模糊过滤。
     public List<RoleVO> roles(Long oid, String keyword) {
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT id, name, readonly, system_role FROM iam_role WHERE oid = ?");
@@ -174,6 +188,7 @@ public class PlatformPermissionManage {
         }, args.toArray());
     }
 
+    // 查询用户挂载的可访问组织，系统管理员可访问全部启用组织。
     public List<MountedVO> mountedOrgs(Long uid, String keyword) {
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder("""
@@ -201,6 +216,7 @@ public class PlatformPermissionManage {
         }, args.toArray());
     }
 
+    // 生成资源数据范围 SQL 片段，限制普通用户只能读取有权限的资源。
     public String resourceScopeSql(String resourceType, String resourceIdColumn, String creatorColumn, String orgColumn) {
         Long uid = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
         Long oid = AuthUtils.getUser() == null ? ROOT_ORG_ID : AuthUtils.getUser().getDefaultOid();
@@ -231,6 +247,7 @@ public class PlatformPermissionManage {
         return sql.toString();
     }
 
+    // 计算用户对资源的权重，9 为所有者或系统管理员，7 为管理，1 为只读。
     public int resourceWeight(String resourceType, String resourceId, String creator, Long resourceOrgId) {
         Long uid = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
         if (uid == null) {
@@ -254,6 +271,7 @@ public class PlatformPermissionManage {
         return 1;
     }
 
+    // 查询用户、组织和角色维度授予的资源权限集合。
     private Set<String> resourcePermissions(String resourceType, String resourceId, Long uid, Long oid) {
         if (StringUtils.isBlank(resourceType) || StringUtils.isBlank(resourceId) || uid == null) {
             return Set.of();
@@ -282,6 +300,7 @@ public class PlatformPermissionManage {
                 .collect(Collectors.toSet());
     }
 
+    // 将资源权重转换为权限集合。
     public Set<String> permissionsFromWeight(int weight) {
         if (weight >= 7) {
             return Set.of("read", "manage");
@@ -292,6 +311,7 @@ public class PlatformPermissionManage {
         return Set.of();
     }
 
+    // 新增或更新资源索引，用于后续资源范围过滤和授权查询。
     @Transactional
     public void upsertResource(String resourceType, String resourceId, Long oid, Long creator, String name, Long createTime, Long updateTime) {
         if (resourceType == null || resourceId == null) {
@@ -306,20 +326,24 @@ public class PlatformPermissionManage {
                 name, createTime == null ? now : createTime, updateTime == null ? now : updateTime);
     }
 
+    // 删除资源索引及其显式授权记录。
     @Transactional
     public void deleteResource(String resourceType, String resourceId) {
         jdbcTemplate.update("DELETE FROM iam_resource_index WHERE resource_type = ? AND resource_id = ?", resourceType, resourceId);
         jdbcTemplate.update("DELETE FROM iam_resource_permission WHERE resource_type = ? AND resource_id = ?", resourceType, resourceId);
     }
 
+    // 将资源权重转换为单个最高权限。
     public String permissionByWeight(int weight) {
         return weight >= 7 ? "manage" : "read";
     }
 
+    // 将权限字符串转换为资源权重。
     public int weightByPermission(String permission) {
         return "manage".equalsIgnoreCase(permission) ? 7 : 1;
     }
 
+    // 要求当前用户必须具备系统管理员权限。
     public void requireSystemAdmin() {
         Long uid = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
         if (!isSystemAdmin(uid)) {
@@ -327,6 +351,7 @@ public class PlatformPermissionManage {
         }
     }
 
+    // 查询角色菜单权限，并转换为前端使用的权限权重。
     public List<PermissionItem> roleMenuPermissions(Long rid) {
         return jdbcTemplate.query("""
                 SELECT menu_id, MAX(CASE WHEN permission = 'manage' THEN 7 ELSE 1 END) AS weight
@@ -341,6 +366,7 @@ public class PlatformPermissionManage {
         }, rid);
     }
 
+    // 构造普通用户兜底角色项。
     private List<UserGridRoleItem> defaultMemberRoleItem() {
         UserGridRoleItem role = new UserGridRoleItem();
         role.setId(MEMBER_ROLE_ID);
