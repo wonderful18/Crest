@@ -273,6 +273,7 @@ onMounted(() => {
     label-position="top"
     size="small"
   >
+    <!-- 普通表头区域覆盖明细表、普通表和透视表行头的基础样式。 -->
     <el-form-item
       :label="
         chart.type === 'table-pivot' ? t('chart.rowBackgroundColor') : t('chart.backgroundColor')
@@ -472,6 +473,7 @@ onMounted(() => {
     <el-row
       v-if="showProperty('tableHeaderAlign') && state.tableHeaderForm.tableHeaderAlign === 'custom'"
     >
+      <!-- 自定义对齐按字段逐个维护，提交时合并回 alignConfig 数组。 -->
       <el-col :span="12">
         <el-select :effect="themes" v-model="alignConfig.id" @change="changeAlignConfig">
           <el-option
@@ -553,6 +555,7 @@ onMounted(() => {
     </el-row>
     <template v-if="chart.type === 'table-pivot' && showProperty('tableHeaderBgColor')">
       <el-divider class="m-divider" :class="{ 'divider-dark': themes === 'dark' }" />
+      <!-- 透视表列头、角头与行头独立配置，避免一套样式无法区分三类表头区域。 -->
       <el-form-item
         :label="t('chart.colBackgroundColor')"
         class="form-item"
@@ -1007,6 +1010,7 @@ onMounted(() => {
       :class="'form-item-' + themes"
       :disabled="!state.tableHeaderForm.showTableHeader"
     >
+      <!-- 复杂表头会改变列结构，批量编辑时关闭入口以避免跨图表字段错配。 -->
       <el-checkbox
         size="small"
         :effect="themes"
@@ -1122,6 +1126,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .icon-btn {
+  // 表头样式按钮隐藏原生控件，只保留稳定尺寸的图标态，减少配置面板抖动。
   font-size: 16px;
   line-height: 16px;
   width: 24px;
@@ -1170,6 +1175,7 @@ onMounted(() => {
   }
 }
 .position-divider {
+  // 分隔线用于区分字体样式和对齐方式，不参与表头配置数据保存。
   width: 1px;
   height: 18px;
   margin-bottom: 8px;
@@ -1188,9 +1194,11 @@ onMounted(() => {
   }
 }
 .mobile-style {
+  // PC 内移动端预览会压缩控件间距，额外留白避免第一行按钮贴边。
   margin-top: 25px;
 }
 .m-divider {
+  // 透视表多段表头配置共用分隔线，深浅主题只切换边框透明度。
   margin: 0 0 16px;
   border-color: rgba(31, 35, 41, 0.15);
 

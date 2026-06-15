@@ -129,6 +129,7 @@ onMounted(() => {
     size="small"
     label-position="top"
   >
+    <!-- 轴位置在双向柱图中会随布局方向映射为上下或左右文案。 -->
     <el-form-item
       class="form-item"
       :class="'form-item-' + themes"
@@ -236,6 +237,7 @@ onMounted(() => {
     <template v-if="showProperty('axisValue')">
       <el-divider class="m-divider" :class="'m-divider--' + themes" />
 
+      <!-- 关闭自动刻度后才允许编辑最大值、最小值和分割数，避免覆盖图表自适应刻度。 -->
       <div style="display: flex; flex-direction: row; justify-content: space-between">
         <label class="custom-form-item-label" :class="'custom-form-item-label--' + themes">
           {{ t('chart.axis_value') }}
@@ -329,6 +331,7 @@ onMounted(() => {
         {{ t('chart.axis_show') }}
       </el-checkbox>
     </el-form-item>
+    <!-- 轴线和网格线写入不同配置分支，但共享颜色、线型、线宽三类控件。 -->
     <div style="padding-left: 22px" v-if="showProperty('axisLine')">
       <div style="flex: 1; display: flex">
         <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
@@ -503,6 +506,7 @@ onMounted(() => {
         </el-form-item>
 
         <template v-if="showProperty('axisLabelFormatter')">
+          <!-- 双轴标签格式化仍走统一 formatter，确保左右轴单位和小数规则可独立保存。 -->
           <el-form-item
             class="form-item"
             :class="'form-item-' + themes"
@@ -638,6 +642,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .custom-form-item-label {
+  // 自定义标题用于容纳说明图标，并与 Element 表单 label 的视觉节奏保持一致。
   margin-bottom: 4px;
   line-height: 20px;
   color: #646a73;
@@ -654,6 +659,7 @@ onMounted(() => {
   margin-bottom: 10px !important;
 }
 .m-divider {
+  // 分隔线在深浅主题中共用布局，仅通过透明边框区分层级。
   border-color: rgba(31, 35, 41, 0.15);
   margin: 0 0 16px;
 

@@ -14,6 +14,7 @@ const props = withDefaults(
   }>(),
   {
     timeRange: () => ({
+      // 新建单时间筛选默认不附加时间限制，避免影响已有查询条件结果。
       intervalType: 'none',
       dynamicWindow: false,
       maximumSingleQuery: 0,
@@ -312,6 +313,7 @@ watch(
 <template>
   <div class="set-time-filtering-range">
     <div class="title">{{ t('v_query.time_filter_range') }}</div>
+    <!-- 单时间字段先选择开始、结束或区间语义，再决定固定时间还是动态时间。 -->
     <div class="list-item">
       <div class="label">{{ t('v_query.interval_type') }}</div>
       <div class="setting-content">
@@ -450,6 +452,7 @@ watch(
       <div class="parameters" :class="dynamicTime && 'setting'">
         <div class="setting-label" v-if="dynamicTime">{{ t('template_manage.preview') }}</div>
         <div :class="dynamicTime ? 'setting-value' : 'w100'">
+          <!-- 预览组件直接消费当前配置，便于用户在保存前确认动态时间解析结果。 -->
           <component
             :config="timeRange as any"
             :timeGranularityMultiple="timeGranularityMultiple"
@@ -464,6 +467,7 @@ watch(
 
 <style lang="less">
 .set-time-filtering-range {
+  // 单时间筛选嵌在查询条件配置中，控件高度和间距按紧凑表单处理。
   .ed-radio,
   .ed-checkbox.ed-checkbox--default {
     height: 22px;
@@ -526,6 +530,7 @@ watch(
     }
 
     .parameters {
+      // 固定时间选择器和动态时间预览共用容器，宽度按最大日期控件预留。
       width: 100%;
       margin-top: 8px;
       .w100 {
@@ -619,6 +624,7 @@ watch(
       }
 
       &.is-year-month-range {
+        // 年、月粒度的自定义区间不展示日期输入，只保留偏移量和单位选择。
         .setting-input {
           .ed-date-editor.ed-input {
             display: none;
