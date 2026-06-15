@@ -1004,6 +1004,7 @@ const autoStyle = computed(() => {
 
 <template>
   <div class="v-query-container" ref="vQueryRef" :style="autoStyle" @keydown.stop @keyup.stop>
+    <!-- 标题由组件样式统一控制，隐藏标题时查询条件区域占满组件高度。 -->
     <p v-if="customStyle.titleShow" class="title" :style="titleStyle">
       {{ customStyle.title }}
     </p>
@@ -1012,6 +1013,7 @@ const autoStyle = computed(() => {
       @dragover.prevent.stop="dragover"
       @drop.prevent.stop="drop"
     >
+      <!-- 编辑态空列表支持点击新增或拖入字段；预览和移动端禁用直接新增。 -->
       <div v-if="!listVisible.length" class="no-list-label flex-align-center">
         <div class="container flex-align-center">
           {{ t('v_query.here_or_click') }}
@@ -1026,6 +1028,7 @@ const autoStyle = computed(() => {
         </div>
       </div>
       <div class="query-fields-container">
+        <!-- 查询条件按可见配置渲染，隐藏条件仍保留在 propValue 中参与配置管理。 -->
         <div
           class="query-item"
           :style="{ marginRight: `${customStyle.queryConditionSpacing}px` }"
@@ -1056,6 +1059,7 @@ const autoStyle = computed(() => {
                   editMode === 'edit'
                 "
               >
+                <!-- 编辑态快捷操作只修改当前查询条件，不触发画布选中状态切换。 -->
                 <el-tooltip
                   effect="dark"
                   :content="t('v_query.set_filter_condition')"
@@ -1083,6 +1087,7 @@ const autoStyle = computed(() => {
             </div>
           </div>
         </div>
+        <!-- 按钮区根据样式配置展示清空、重置和查询，是否立即查询由 componentWithSure 决定。 -->
         <div class="query-button" v-if="!!listVisible.length">
           <el-button
             @click.stop="clearData"
@@ -1114,6 +1119,7 @@ const autoStyle = computed(() => {
     </div>
   </div>
   <Teleport to="body">
+    <!-- 配置弹窗挂到 body，避免被画布缩放和组件 overflow 裁剪。 -->
     <QueryConditionConfiguration
       :query-element="element"
       @queryData="queryData"

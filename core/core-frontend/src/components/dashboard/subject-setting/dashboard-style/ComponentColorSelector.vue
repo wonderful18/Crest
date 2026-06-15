@@ -1,5 +1,6 @@
 <template>
   <div style="width: 100%" ref="containerRef">
+    <!-- 组件配色面板按系列色、透明度、标签、提示框和表格样式分区维护。 -->
     <el-form
       ref="colorFormRef"
       :model="colorForm"
@@ -7,6 +8,7 @@
       style="width: 100%; padding-bottom: 8px"
     >
       <div style="width: 100%; padding: 16px 8px 0">
+        <!-- 系列色选择器维护画布级默认配色，变更后会影响所有使用默认色板的图表。 -->
         <custom-color-style-select
           v-if="colorAreaInit"
           class="custom-color-pick"
@@ -17,6 +19,7 @@
           @change-basic-style="changeColorOption('value')"
         />
 
+        <!-- 渐变和透明度属于基础图表色板配置，直接写回 basicStyle。 -->
         <el-form-item class="form-item" :class="'form-item-' + themes">
           <el-checkbox
             size="small"
@@ -67,6 +70,7 @@
         <el-divider class="m-divider" :class="'m-divider-' + themes"></el-divider>
       </div>
 
+      <!-- 标签样式是全局同步项，修改后会批量刷新每个图表的标签配置。 -->
       <el-collapse-item
         :title="t('visualization.chart_label')"
         name="chart_label"
@@ -111,6 +115,7 @@
         </div>
       </el-collapse-item>
 
+      <!-- tooltip 样式同样按全局同步处理，包括系列级 tooltip formatter。 -->
       <el-collapse-item
         :title="t('visualization.chart_tooltip')"
         name="chart_tooltip"
@@ -168,6 +173,7 @@
         </div>
       </el-collapse-item>
 
+      <!-- 表格配色覆盖表头、明细行、条纹、分页器和滚动条等表格专属样式。 -->
       <el-collapse-item
         :title="t('visualization.table_color_matching')"
         name="table_color_matching"
