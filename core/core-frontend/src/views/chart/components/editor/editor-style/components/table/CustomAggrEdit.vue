@@ -31,12 +31,17 @@ export interface CalcFieldType {
 }
 const { t } = useI18n()
 
+// 计算表达式编辑器实例。
 const myCm = ref()
+// 字段搜索关键字。
 const searchField = ref('')
+// 函数搜索关键字。
 const searchFunction = ref('')
 
+// CodeMirror 运行时视图实例。
 const mirror = ref()
 
+// 接收跨数据集计算开关。
 const props = defineProps({
   crossDs: {
     type: Boolean,
@@ -56,25 +61,31 @@ const defaultForm = {
   checked: true
 }
 
+// 维护函数列表和可引用指标列表。
 const state = reactive({
   functionData: [],
   quotaData: []
 })
+// 临时保存计算参数字段。
 const formQuota = reactive({
   id: null,
   name: '',
   value: null
 })
+// 控制计算参数编辑弹窗显隐。
 const dialogFormVisible = ref(false)
 
+// 当前正在编辑的自定义汇总字段。
 const fieldForm = reactive<CalcFieldType>({ ...(defaultForm as CalcFieldType) })
 
+// 从编辑器内容生成字段表达式。
 const setFieldForm = () => {
   const str = mirror.value.state.doc.toString()
   const name2Auto = []
   fieldForm.originName = setNameIdTrans('name', 'id', str, name2Auto)
 }
 
+// 在字段显示名和字段 ID 之间转换表达式引用。
 const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
   let name2Id = originName
   const nameIdMap = [...quotaDataList].reduce((pre, next) => {
@@ -95,6 +106,7 @@ const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
 }
 
 let quotaDataList = []
+// 初始化自定义汇总编辑状态。
 const initEdit = (obj, quotaData) => {
   formQuota.id = null
   Object.assign(fieldForm, { ...defaultForm, ...obj })
@@ -121,6 +133,7 @@ const initEdit = (obj, quotaData) => {
   })
 }
 
+// 将字段引用插入到当前光标位置。
 const insertFieldToCodeMirror = (value: string) => {
   if (!mirror.value) return
   const from = getCursor(mirror.value)
@@ -130,6 +143,7 @@ const insertFieldToCodeMirror = (value: string) => {
   })
 }
 
+// 兼容不同 CodeMirror 状态结构获取光标位置。
 const getCursor = view => {
   return (
     view?.state?.selection?.main?.from ??
@@ -147,6 +161,7 @@ onBeforeUnmount(() => {
   mirror.value.destroy?.()
 })
 
+// 将函数片段插入到当前光标位置。
 const insertParamToCodeMirror = (value: string) => {
   if (!mirror.value) return
   const from = getCursor(mirror.value)
@@ -156,12 +171,14 @@ const insertParamToCodeMirror = (value: string) => {
   })
 }
 let functions = []
+// 加载可用计算函数。
 const initFunction = () => {
   getFunction().then(res => {
     functions = cloneDeep(res)
     state.functionData = cloneDeep(res)
   })
 }
+// 按字段关键字过滤可引用指标。
 watch(
   () => searchField.value,
   val => {
@@ -180,6 +197,7 @@ watch(
   }
 )
 
+// 按函数关键字过滤函数列表。
 watch(
   () => searchFunction.value,
   val => {
@@ -202,8 +220,10 @@ defineExpose({
   setFieldForm,
   fieldForm
 })
+// 计算参数弹窗标题。
 const paramsTitle = ref('')
 
+// 打开计算参数编辑弹窗。
 const updateParamsToQuota = () => {
   const [o] = fieldForm.params
   paramsTitle.value = t('data_set.edit_calculation_parameters')
@@ -211,6 +231,7 @@ const updateParamsToQuota = () => {
   dialogFormVisible.value = true
 }
 
+// 删除计算参数并同步表达式内容。
 const delParamsToQuota = () => {
   const [o] = fieldForm.params
   fieldForm.params = []
