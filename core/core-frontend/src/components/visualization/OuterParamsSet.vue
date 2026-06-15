@@ -412,6 +412,7 @@ const state = reactive<any>({
   datasetExpand: true,
   loading: false,
   outerParamsSetVisible: false,
+  // 左侧树节点操作菜单，当前只支持重命名和删除参数。
   optMenu: [
     {
       label: t('visualization.rename'),
@@ -448,6 +449,7 @@ const state = reactive<any>({
     targetViewInfoList: [],
     paramsInfoId: null
   },
+  // defaultOuterParamsInfo 用于新增参数时生成干净副本，避免复用当前编辑对象。
   currentFiledTreeNode: null,
   defaultOuterParamsInfo: {
     paramName: '',
@@ -487,6 +489,7 @@ const matchModeChange = baseFilter => {
   ) {
     const matchedItem = baseFilter.propValue.find(item => item.id === baseFilter.filterSelected)
     if (matchedItem && !['0', '9', '2'].includes(matchedItem.displayType.toString())) {
+      // 过滤器联动模式只支持可作为查询条件的控件类型，切换后清理非法选项。
       baseFilter.filterSelected = undefined
     }
   }
@@ -507,6 +510,7 @@ const validateArgs = (val, id) => {
   const cref = argRefs.value[id]
   const e = cref.input
   if (val === null || val === '' || typeof val === 'undefined') {
+    // 默认值为空时表示不启用默认参数，不需要 JSON 校验。
     e.style.color = null
     e.parentNode.removeAttribute('style')
     const child = e.parentNode.querySelector('.error-msg')
@@ -517,6 +521,7 @@ const validateArgs = (val, id) => {
   }
   try {
     JSON.parse(val)
+    // 默认值必须是合法 JSON，保存阶段还会进一步要求数组结构。
     e.style.color = null
     e.parentNode.removeAttribute('style')
     const child = e.parentNode.querySelector('.error-msg')
@@ -575,7 +580,7 @@ const initParams = async () => {
   state.outerParamsInfoArray = []
   state.mapOuterParamsInfoArray = {}
   state.curNodeId = null
-  // 同步过滤组件信息
+  // 同步画布、分组和 Tab 内的过滤组件，外部参数可以联动这些查询组件。
   componentData.value.forEach(componentItem => {
     if (componentItem.component === 'VQuery') {
       state.baseFilterInfo.push(componentItem)
@@ -601,11 +606,11 @@ const initParams = async () => {
       })
     }
   })
-  // 同步基础数据集信息
+  // 同步数据集、字段、参数和视图关系，用于绑定参数到目标图表。
   await queryOuterParamsDsInfo(dvInfo.value.id).then(rsp => {
     state.baseDatasetInfo = rsp.data
   })
-  // 获取当前仪表板外部参数信息
+  // 获取当前仪表板已保存的外部参数信息，并映射回当前画布组件结构。
   queryWithVisualizationId(dvInfo.value.id).then(rsp => {
     const outerParams = rsp.data || {}
     const outerParamsInfoArray = Array.isArray(outerParams.outerParamsInfoArray)
@@ -666,6 +671,7 @@ const paramsCheckedAdaptor = (outerParamsInfo, newBaseFilterInfo, newBaseDataset
   const viewMatchIds = []
   const targetViewInfoList = outerParamsInfo.targetViewInfoList || []
   targetViewInfoList.forEach(targetViewInfo => {
+    // targetViewInfo 同时承载过滤组件和数据集视图绑定，需要先按目标 id 建索引。
     viewMatchIds.push(targetViewInfo.targetViewId)
     dsFilterMatchMode[targetViewInfo.targetDsId] = targetViewInfo.matchMode || 'self'
     dsFieldIdSelected[targetViewInfo.targetDsId] =
@@ -678,6 +684,7 @@ const paramsCheckedAdaptor = (outerParamsInfo, newBaseFilterInfo, newBaseDataset
       datasetInfo['fieldIdSelected'] = dsFieldIdSelected[datasetInfo.id]
       datasetInfo['viewExpand'] = true
       let viewCheckCount = 0
+      // 根据已保存目标视图回填勾选状态，并同步全选/半选标记。
       datasetInfo.datasetViews?.forEach(dsView => {
         if (viewMatchIds.includes(dsView.chartId)) {
           dsView['checked'] = true
@@ -690,6 +697,7 @@ const paramsCheckedAdaptor = (outerParamsInfo, newBaseFilterInfo, newBaseDataset
       datasetInfo['checkAllIsIndeterminate'] =
         viewCheckCount > 0 && viewCheckCount < datasetInfo.datasetViews.length
       if (datasetInfo['fieldIdSelected'] && datasetInfo['fieldIdSelected'].indexOf('DE') > -1) {
+        // DE 前缀表示数据集参数，非 DE 表示普通字段。
         datasetInfo['activelist'] = 'parameterList'
       } else {
         datasetInfo['activelist'] = 'dimensionList'
@@ -698,6 +706,7 @@ const paramsCheckedAdaptor = (outerParamsInfo, newBaseFilterInfo, newBaseDataset
   }
   if (newBaseFilterInfo) {
     newBaseFilterInfo.forEach(filterInfo => {
+      // 过滤组件的 targetFieldId 固定为 empty，实际选中项记录在 targetViewId。
       filterInfo['filterSelected'] = dsFieldIdSelected[filterInfo.id]
       filterInfo['matchMode'] = dsFilterMatchMode[filterInfo.id] || 'self'
     })
@@ -729,17 +738,19 @@ const save = () => {
   let checkMessage = ''
   const paramNameArray = []
   outerParamsCopy.outerParamsInfoArray?.forEach(outerParamsInfo => {
+    // 参数名称不能为空且不能重复，避免外部调用时无法唯一定位参数。
     if (!outerParamsInfo.paramName || paramNameArray.includes(outerParamsInfo.paramName)) {
       checkNullErrorNum++
     }
     paramNameArray.push(outerParamsInfo.paramName)
     if (outerParamsInfo.defaultValue && !jsonArrayCheck(outerParamsInfo.defaultValue)) {
+      // 默认值保存要求 JSON 数组，便于后端和前端统一按多值参数处理。
       checkErrorNum++
       checkMessage = checkMessage + `【${outerParamsInfo.paramName}】`
     }
     outerParamsInfo.targetViewInfoList = []
     outerParamsInfo.filterInfo?.forEach(baseFilterInfo => {
-      // 存在过滤器选项被选中
+      // 存在过滤器选项被选中时写入过滤组件目标，字段 id 使用 empty 占位。
       if (baseFilterInfo.filterSelected) {
         outerParamsInfo.targetViewInfoList.push({
           targetViewId: baseFilterInfo.filterSelected,
@@ -750,7 +761,7 @@ const save = () => {
       }
     })
     outerParamsInfo.datasetInfo?.forEach(baseDatasetInfo => {
-      // 存在数据集字段被选中
+      // 数据集字段被选中时，再按已勾选视图生成具体目标图表绑定。
       if (baseDatasetInfo.fieldIdSelected) {
         baseDatasetInfo.datasetViews?.forEach(dsView => {
           if (dsView.checked) {

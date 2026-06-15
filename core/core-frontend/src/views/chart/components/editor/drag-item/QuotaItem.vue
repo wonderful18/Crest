@@ -29,6 +29,7 @@ const tagType = ref('success')
 const state = reactive({
   formatterItem: formatterItem,
   disableEditCompare: false,
+  // quotaViews 和 notSupportAccumulateViews 由图表能力表控制菜单可用性。
   quotaViews: quotaViews,
   notSupportAccumulateViews: notSupportAccumulateViews
 })
@@ -114,6 +115,7 @@ watch(
 const AXIS_FORMAT_VIEW = ['table-normal', 'table-info', 'table-pivot', 'indicator', 'rich-text']
 // 当前指标是否展示数值格式化入口
 const showValueFormatter = computed<boolean>(() => {
+  // 只有表格、指标和富文本等轴值展示型图表开放数值格式化入口。
   return (
     AXIS_FORMAT_VIEW.includes(props.chart.type) &&
     (props.item.fieldType === 2 || props.item.fieldType === 3)
@@ -129,6 +131,7 @@ const isEnableCompare = () => {
   }
   let xAxis = null
   if (Object.prototype.toString.call(chart.value.xAxis) === '[object Array]') {
+    // 兼容编辑器内数组态和持久化字符串态两种轴数据结构。
     xAxis = JSON.parse(JSON.stringify(chart.value.xAxis))
   } else {
     xAxis = JSON.parse(chart.value.xAxis)
@@ -140,6 +143,7 @@ const isEnableCompare = () => {
   if (chart.value.type === 'table-pivot') {
     let xAxisExt = null
     if (Object.prototype.toString.call(chart.value.xAxisExt) === '[object Array]') {
+      // 透视表的列维度也可能承载年月字段，需要一并参与同环比能力判断。
       xAxisExt = JSON.parse(JSON.stringify(chart.value.xAxisExt))
     } else {
       xAxisExt = JSON.parse(chart.value.xAxisExt)
@@ -203,12 +207,14 @@ const beforeClickItem = type => {
 // 处理指标排序，普通排序直接更新字段，自定义排序交给上层弹窗
 const sort = param => {
   if (param.type === 'custom_sort') {
+    // 自定义排序需要打开上层弹窗维护排序数组，这里只传递字段位置。
     const item = {
       index: props.index,
       sort: param.type
     }
     emit('onCustomSort', item)
   } else {
+    // 普通升降序直接写回当前字段，并清空历史自定义排序。
     item.value.index = props.index
     item.value.sort = param.type
     item.value.customSort = []
@@ -287,6 +293,7 @@ const quickCalc = param => {
       emit('onQuotaItemChange', item.value)
       break
     case 'accumulate':
+      // 累加计算不额外修改格式化配置，由图表渲染层按当前格式输出。
       item.value.compareCalc.type = 'accumulate'
       emit('onQuotaItemChange', item.value)
       break
@@ -320,6 +327,7 @@ const toggleHide = () => {
   item.value.index = props.index
   item.value.hide = !item.value.hide
   item.value.axisType = props.type
+  // 隐藏状态由上层按轴类型持久化，表格渲染时再决定是否展示字段。
   emit('onToggleHide', item.value)
 }
 // 表格字段隐藏后在标签上展示隐藏图标
@@ -342,6 +350,7 @@ const showSort = computed(() => {
   if (chart.value.type === 'multi-scatter') {
     return false
   }
+  // 扩展标签、提示和气泡字段不参与主数据排序。
   return (
     props.type !== 'extLabel' &&
     props.type !== 'extTooltip' &&

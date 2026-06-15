@@ -261,6 +261,7 @@ const loadResources = async () => {
   const requestSeq = ++resourceRequestSeq
   state.loading = true
   try {
+    // 请求参数由页签、类型、关键字和排序共同决定，保持表格状态和后端查询一致。
     const res = await portalResourcesApi({
       keyword: state.keyword,
       type: state.type,
@@ -270,6 +271,7 @@ const loadResources = async () => {
       queryFrom: resourceQueryFrom()
     })
     if (requestSeq !== resourceRequestSeq) {
+      // 用户快速切换筛选条件时丢弃旧响应，避免列表被后返回的旧数据覆盖。
       return
     }
     state.records = res?.data?.records || []
@@ -317,6 +319,7 @@ const selectType = (type: string) => {
 // 进入全部资源页签并按指定资源类型筛选
 const openAllResources = (type: string) => {
   const shouldReload = activeName.value !== ALL_RESOURCES || state.type !== type
+  // 常用入口会切换到全部资源页签，并携带指定资源类型作为筛选条件。
   activeName.value = ALL_RESOURCES
   state.type = type
   state.page = 1
@@ -357,6 +360,7 @@ const toggleFavorite = async (resource: PortalResource) => {
   if (favoriteLoadingId.value === resource.id) {
     return
   }
+  // 单条收藏操作加锁，防止连续点击导致收藏状态来回抖动。
   favoriteLoadingId.value = resource.id
   try {
     await storeApi({
@@ -379,6 +383,7 @@ const quickCreate = (index: number) => {
   if (!backendAccess.value) {
     return
   }
+  // 后台用户的快捷入口直接复用管理端 hash 路由，保持新建流程一致。
   const routes = [
     '#/dashboard?opt=create',
     '#/dvCanvas?opt=create',
@@ -396,6 +401,7 @@ const openExportCenter = () => {
 // 根据权限分流快捷入口：后台创建、导出中心或资源筛选
 const openPortalEntry = (action: string, index: number) => {
   if (backendAccess.value) {
+    // 管理员看到的是快速创建入口，普通用户看到的是门户访问入口。
     quickCreate(index)
     return
   }
@@ -684,6 +690,7 @@ onMounted(reload)
 
 <style scoped lang="less">
 .portal-page {
+  /* 门户首页采用全屏工作台布局，避免浏览器页面出现外层滚动条。 */
   min-height: 100vh;
   overflow: hidden;
   color: #0f172a;
@@ -692,6 +699,7 @@ onMounted(reload)
 }
 
 .portal-header {
+  /* 顶栏保持固定高度，和大屏、后台页面的品牌区域形成统一基线。 */
   position: relative;
   display: flex;
   align-items: center;
@@ -718,6 +726,7 @@ onMounted(reload)
 }
 
 .brand {
+  /* 品牌区只承载 logo 和系统名，点击回到门户首页。 */
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -742,6 +751,7 @@ onMounted(reload)
 }
 
 .portal-title {
+  /* 系统名称使用固定行高，保证与 logo 在视觉中心线上对齐。 */
   display: block;
   flex: none;
   color: #0f172a;
