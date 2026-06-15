@@ -292,6 +292,7 @@ const cancelPreRequest = () => {
   cancelRequestBatch('/link-jump/visualization-jump-info/**')
 }
 
+// 处理资源树节点点击，切换当前资源并同步地址参数
 const nodeClick = (data: BusiTreeNode, node) => {
   dvMainStore.setCurComponent({ component: null, index: null })
   if (showPosition.value !== 'multiplexing') {
@@ -340,6 +341,7 @@ const nodeClick = (data: BusiTreeNode, node) => {
   }
 }
 
+// 拉取当前资源类型的树数据，并同步权限、排序和回选状态
 const getTree = async (notOpen = false) => {
   const request = {
     busiFlag: curCanvasType.value,
@@ -371,12 +373,15 @@ const getTree = async (notOpen = false) => {
   afterTreeInit(notOpen)
 }
 
+// 展平资源树中的叶子资源，供空态和外部状态判断使用
 const flattedTree = computed<BusiTreeNode[]>(() => {
   return _.filter(flatTree(state.resourceTree), node => node.leaf)
 })
 
+// 是否存在可选择的资源叶子节点
 const hasData = computed<boolean>(() => flattedTree.value.length > 0)
 
+// 递归展平树节点，保留目录和叶子节点顺序
 function flatTree(tree: BusiTreeNode[]) {
   let result = _.cloneDeep(tree)
   _.forEach(tree, node => {
@@ -387,6 +392,7 @@ function flatTree(tree: BusiTreeNode[]) {
   return result
 }
 
+// 树数据刷新后的收尾流程，恢复展开、选中和过滤状态
 const afterTreeInit = (notOpen = false) => {
   state.pWeightMap = treeParentWeight(state.originResourceTree, rootManage.value ? 9 : 0)
   mounted.value = true
@@ -405,10 +411,13 @@ const afterTreeInit = (notOpen = false) => {
   })
 }
 
+// 复制资源操作的加载状态
 const copyLoading = ref(false)
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
+// 向父组件抛出资源节点点击事件
 const emit = defineEmits(['nodeClick'])
 
+// 导入前校验模板文件扩展名
 const beforeImportTemplateUpload = file => {
   if (!/\.(det2|det2app)$/i.test(file.name || '')) {
     ElMessage.error(t('visualization.template_file_type_limit'))
@@ -417,6 +426,7 @@ const beforeImportTemplateUpload = file => {
   return true
 }
 
+// 上传并解析本地模板包，成功后进入模板编辑流程
 const importTemplateFile = uploadFile => {
   const formData = new FormData()
   formData.append('file', uploadFile.file)
@@ -440,6 +450,7 @@ const importTemplateFile = uploadFile => {
     })
 }
 
+// 根据运行环境打开导入模板的新建编辑入口
 const openImportedTemplateEditor = cacheKey => {
   if (isEmbedded.value) {
     embeddedStore.clearState()
@@ -460,6 +471,7 @@ const openImportedTemplateEditor = cacheKey => {
   initOpenHandler(newWindow)
 }
 
+// 统一处理资源和目录的右键菜单命令
 const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
   if (cmd === 'delete') {
     const msg = data.leaf ? '' : t('visualization.delete_tips')
@@ -574,10 +586,12 @@ const addOperation = (
   }
 }
 
+// 触发父级创建空白资源流程
 function createNewObject() {
   return addOperation('newLeaf', null, 'leaf', true)
 }
 
+// 根据当前资源类型打开编辑页面
 const resourceEdit = resourceId => {
   const baseUrl = curCanvasType.value === 'dataV' ? '#/dvCanvas?dvId=' : '#/dashboard?resourceId='
   if (isEmbedded.value) {
@@ -598,10 +612,12 @@ const resourceEdit = resourceId => {
   initOpenHandler(newWindow)
 }
 
+// 资源操作完成后刷新树并保持当前打开状态
 const resourceOptFinish = () => {
   getTree(true)
 }
 
+// 递归查找目标节点的父级路径
 const getParentKeys = (tree, targetKey, parentKeys = []) => {
   for (const node of tree) {
     if (node.id === targetKey) {
@@ -618,6 +634,7 @@ const getParentKeys = (tree, targetKey, parentKeys = []) => {
   return null
 }
 
+// 计算默认展开节点，优先展开当前选中资源的父路径
 const getDefaultExpandedKeys = () => {
   const parentKeys = getParentKeys(state.resourceTree, selectedNodeKey.value)
   if (parentKeys) {
@@ -647,26 +664,31 @@ const sortList = [
   }
 ]
 
+// 根据资源类型返回默认排序方式
 const getDefaultSortType = () => {
   const sortIndex = Number(wsCache.get('TreeSort-backend') ?? 1)
   return sortList[Number.isInteger(sortIndex) && sortList[sortIndex] ? sortIndex : 1].value
 }
 
+// 读取缓存排序方式，异常时回退到默认值
 const getStoredSortType = (cacheKey: string, fallback: string) => {
   const sortType = wsCache.get(cacheKey)
   return sortList.some(ele => ele.value === sortType) ? sortType : fallback
 }
 
+// 当前排序方式的展示文案
 const sortTypeTip = computed(() => {
   return sortList.find(ele => ele.value === state.curSortType)?.name ?? sortList[1].name
 })
 
+// 处理排序菜单切换并写入本地缓存
 const handleSortTypeChange = sortType => {
   state.resourceTree = treeSort(state.originResourceTree, sortType)
   state.curSortType = sortType
   wsCache.set('TreeSort-' + curCanvasType.value, state.curSortType)
 }
 
+// 按排序方式重建资源树
 const sortTypeChange = sortType => {
   state.resourceTree = treeSort(state.originResourceTree, sortType)
   state.curSortType = sortType
@@ -682,11 +704,14 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
   return false
 }, 300)
 
+// 搜索关键字变化后过滤树节点
 watch(filterText, val => {
   resourceListTree.value.filter(val)
 })
 
+// 外部窗口句柄代理，用于嵌入式宿主接管新窗口
 const openHandler = ref(null)
+// 初始化外部窗口句柄
 const initOpenHandler = newWindow => {
   if (openHandler?.value) {
     const pm = {
@@ -697,6 +722,7 @@ const initOpenHandler = newWindow => {
   }
 }
 
+// 初始化资源树排序缓存状态
 const loadInit = () => {
   const historyTreeSort = wsCache.get('TreeSort-' + curCanvasType.value)
   if (historyTreeSort) {
@@ -704,6 +730,7 @@ const loadInit = () => {
   }
 }
 
+// 加载分享基础配置并写入共享状态
 const loadShareBase = () => {
   queryShareBaseApi().then(res => {
     const param = {
