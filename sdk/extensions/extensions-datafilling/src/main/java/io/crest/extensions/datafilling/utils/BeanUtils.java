@@ -8,8 +8,14 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Reflection and bean-copy helpers used by data-filling extension models.
+ */
 public class BeanUtils {
 
+    /**
+     * Copies matching bean properties from source to target.
+     */
     public static <T> T copyBean(T target, Object source) {
         try {
             org.springframework.beans.BeanUtils.copyProperties(source, target);
@@ -19,6 +25,9 @@ public class BeanUtils {
         }
     }
 
+    /**
+     * Copies matching bean properties while excluding named properties.
+     */
     public static <T> T copyBean(T target, Object source, String... ignoreProperties) {
         try {
             org.springframework.beans.BeanUtils.copyProperties(source, target, ignoreProperties);
@@ -28,6 +37,9 @@ public class BeanUtils {
         }
     }
 
+    /**
+     * Reads a bean property through its getter method.
+     */
     public static Object getFieldValueByName(String fieldName, Object bean) {
         try {
             if (StringUtils.isBlank(fieldName)) {
@@ -43,6 +55,9 @@ public class BeanUtils {
         }
     }
 
+    /**
+     * Writes a bean property through its setter method.
+     */
     public static void setFieldValueByName(Object bean, String fieldName, Object value, Class<?> type) {
         try {
             if (StringUtils.isBlank(fieldName)) {
@@ -57,6 +72,9 @@ public class BeanUtils {
         }
     }
 
+    /**
+     * Resolves a setter method for the named field and value type.
+     */
     public static Method getMethod(Object bean, String fieldName, Class<?> type) {
         try {
             if (StringUtils.isBlank(fieldName)) {
@@ -70,6 +88,9 @@ public class BeanUtils {
         }
     }
 
+    /**
+     * Returns declared field names for the supplied class.
+     */
     public static List<String> getFieldNames(Class<?> clazz) {
         List<String> fieldNames = new ArrayList<>();
         Field[] fields = clazz.getDeclaredFields();
