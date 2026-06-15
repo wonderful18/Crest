@@ -44,6 +44,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Component("shareManage")
+// 管理资源分享链接、分享密码、ticket 和分享代理信息。
 public class ShareManage {
 
     @Resource(name = "coreShareMapper")
@@ -64,6 +65,7 @@ public class ShareManage {
     @Resource
     private ShareSecretManage shareSecretManage;
 
+    // 删除资源关联的分享链接和 ticket。
     public void deleteByResource(Long resourceId) {
         if (resourceId == null) {
             return;
@@ -82,6 +84,7 @@ public class ShareManage {
         coreShareTicketMapper.delete(ticketQueryWrapper);
     }
 
+    // 查询当前用户可管理的资源分享记录。
     public CoreShare queryByResource(Long resourceId) {
         Long userId = AuthUtils.getUser().getUserId();
         QueryWrapper<CoreShare> queryWrapper = new QueryWrapper<>();
@@ -93,6 +96,7 @@ public class ShareManage {
     }
 
 
+    // 开启或关闭资源公共分享链接。
     @Transactional
     public void switcher(Long resourceId) {
         CoreShare originData = queryByResource(resourceId);
@@ -115,6 +119,7 @@ public class ShareManage {
         coreShareMapper.insert(coreShare);
     }
 
+    // 修改资源分享链接 UUID。
     @Transactional
     public String editUuid(ShareUuidEditor editor) {
         Long resourceId = editor.getResourceId();
@@ -146,6 +151,7 @@ public class ShareManage {
         return "";
     }
 
+    // 修改分享链接过期时间。
     public void editExp(Long resourceId, Long exp) {
         CoreShare originData = queryByResource(resourceId);
         if (ObjectUtils.isEmpty(originData)) {
@@ -158,6 +164,7 @@ public class ShareManage {
         coreShareMapper.updateById(originData);
     }
 
+    // 修改分享链接密码配置。
     public void editPwd(Long resourceId, String pwd, Boolean autoPwd) {
         CoreShare originData = queryByResource(resourceId);
         if (ObjectUtils.isEmpty(originData)) {
@@ -169,6 +176,7 @@ public class ShareManage {
     }
 
 
+    // 分页查询分享资源原始记录。
     public IPage<SharePO> querySharePage(int goPage, int pageSize, VisualizationWorkbranchQueryRequest request) {
         Long uid = AuthUtils.getUser().getUserId();
         QueryWrapper<Object> queryWrapper = new QueryWrapper<>();
@@ -197,6 +205,7 @@ public class ShareManage {
         return shareExtMapper.query(page, queryWrapper);
     }
 
+    // 将业务标识转换为可视化资源类型。
     private String convertResourceType(String busiFlag) {
         return switch (busiFlag) {
             case "panel" -> "dashboard";
@@ -204,6 +213,7 @@ public class ShareManage {
             default -> null;
         };
     }
+    // 分页查询分享资源列表视图。
     public IPage<ShareGridVO> query(int pageNum, int pageSize, VisualizationWorkbranchQueryRequest request) {
         IPage<SharePO> poiPage = proxy().querySharePage(pageNum, pageSize, request);
         List<ShareGridVO> vos = proxy().formatResult(poiPage.getRecords());
@@ -221,6 +231,7 @@ public class ShareManage {
         return ipage;
     }
 
+    // 将分享查询结果转换为前端表格数据。
     public List<ShareGridVO> formatResult(List<SharePO> pos) {
         if (CollectionUtils.isEmpty(pos)) return new ArrayList<>();
         return pos.stream().map(po ->
@@ -229,10 +240,12 @@ public class ShareManage {
                         po.getTime(), po.getExp(), 9, po.getExtFlag(), po.getExtFlag1(), po.getType())).toList();
     }
 
+    // 获取当前类代理以触发事务增强。
     private ShareManage proxy() {
         return CommonBeanFactory.getBean(this.getClass());
     }
 
+    // 校验公开环境下分享链接是否满足密码和过期时间要求。
     private boolean peRequireValid(ShareBaseVO sharedBase, CoreShare share) {
         if (ObjectUtils.isEmpty(sharedBase) || !sharedBase.isPeRequire()) return true;
         Long exp = share.getExp();
@@ -240,6 +253,7 @@ public class ShareManage {
         return StringUtils.isNotBlank(pwd) && ObjectUtils.isNotEmpty(exp) && exp > 0L;
     }
 
+    // 查询分享访问代理信息并写入链接 token。
     public ShareProxyVO proxyInfo(ShareProxyRequest request) {
         ShareBaseVO sharedBase = sysParameterManage.shareBase();
         if (ObjectUtils.isNotEmpty(sharedBase) && sharedBase.isDisable()) {
@@ -273,11 +287,13 @@ public class ShareManage {
         return new ShareProxyVO(coreShare.getResourceId(), coreShare.getCreator(), linkExp(coreShare), pwdValid(coreShare, request.getCiphertext()), typeText, inIframeError, false, true, validVO);
     }
 
+    // 判断分享链接是否已过期。
     private boolean linkExp(CoreShare coreShare) {
         if (ObjectUtils.isEmpty(coreShare.getExp()) || coreShare.getExp().equals(0L)) return false;
         return System.currentTimeMillis() > coreShare.getExp();
     }
 
+    // 校验分享访问密码密文。
     private boolean pwdValid(CoreShare coreShare, String ciphertext) {
         if (StringUtils.isBlank(coreShare.getPwd())) return true;
         if (StringUtils.isBlank(ciphertext)) return false;
@@ -294,6 +310,7 @@ public class ShareManage {
         return Strings.CS.equals(coreShare.getUuid(), uuid) && Strings.CS.equals(coreShare.getPwd(), pwd);
     }
 
+    // 单独校验分享密码密文。
     public boolean validatePwd(SharePwdValidator validator) {
         String ciphertext = RsaUtils.decryptStr(validator.getCiphertext());
         String pwd;
@@ -314,6 +331,7 @@ public class ShareManage {
         return Strings.CS.equals(coreShare.getUuid(), uuid) && Strings.CS.equals(coreShare.getPwd(), pwd);
     }
 
+    // 查询用户创建资源与分享 UUID 的关系。
     public Map<String, String> queryRelationByUserId(Long uid) {
         QueryWrapper<CoreShare> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("creator", uid);

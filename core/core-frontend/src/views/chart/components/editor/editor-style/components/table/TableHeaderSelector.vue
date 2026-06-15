@@ -24,6 +24,7 @@ const dvMainStore = dvMainStoreWithOut()
 const { batchOptStatus, mobileInPc } = storeToRefs(dvMainStore)
 const { t } = useI18n()
 
+// 接收图表、主题和可编辑属性范围。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -38,6 +39,7 @@ const props = defineProps({
   }
 })
 
+// 监听表头配置和字段变化并刷新表单。
 watch(
   [() => props.chart.customAttr.tableHeader, () => props.chart.xAxis, () => props.chart.yAxis],
   () => {
@@ -48,6 +50,7 @@ watch(
 
 const predefineColors = COLOR_PANEL
 
+// 生成表头字号选项。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -65,14 +68,17 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+// 维护表头配置表单和弹窗显隐状态。
 const state = reactive({
   tableHeaderForm: {} as ChartTableHeaderAttr,
   showTableHeaderGroupConfig: false,
   showTableHeaderDescriptionConfig: false
 })
 
+// 定义表头配置变更事件。
 const emit = defineEmits(['onTableHeaderChange'])
 
+// 提交表头配置变更。
 const changeTableHeader = prop => {
   if (prop === 'alignConfig') {
     state.tableHeaderForm.alignConfig = alignConfigOptions.map(item => ({
@@ -83,18 +89,21 @@ const changeTableHeader = prop => {
   emit('onTableHeaderChange', state.tableHeaderForm, prop)
 }
 
+// 保存表头分组配置。
 const changeHeaderGroupConfig = (headerGroupConfig: ChartTableHeaderAttr['headerGroupConfig']) => {
   state.tableHeaderForm.headerGroupConfig = headerGroupConfig
   state.showTableHeaderGroupConfig = false
   changeTableHeader('headerGroupConfig')
 }
 
+// 保存辅助表头描述配置。
 const changeAuxiliaryHeaderConfig = (auxiliaryHeader: ChartTableHeaderAttr['auxiliaryHeader']) => {
   state.tableHeaderForm.auxiliaryHeader = auxiliaryHeader
   state.showTableHeaderDescriptionConfig = false
   changeTableHeader('auxiliaryHeader')
 }
 
+// 判断表头分组配置入口是否可用。
 const enableGroupConfig = computed(() => {
   return (
     !batchOptStatus.value &&
@@ -104,6 +113,7 @@ const enableGroupConfig = computed(() => {
   )
 })
 
+// 计算当前可见的表格字段。
 const visibleTableFields = computed(() => {
   const axis = [...(props.chart?.xAxis || [])]
   if (props.chart?.type === 'table-normal') {
@@ -112,6 +122,7 @@ const visibleTableFields = computed(() => {
   return axis.filter(item => item.hide !== true)
 })
 
+// 判断辅助表头配置入口是否可用。
 const enableAuxiliaryConfig = computed(() => {
   return (
     !batchOptStatus.value &&
@@ -121,6 +132,7 @@ const enableAuxiliaryConfig = computed(() => {
   )
 })
 
+// 判断辅助表头描述是否有效。
 const auxiliaryConfigValid = computed(() => {
   return hasAuxiliaryDescription(
     state.tableHeaderForm.auxiliaryHeader,
@@ -128,6 +140,7 @@ const auxiliaryConfigValid = computed(() => {
   )
 })
 
+// 判断表头分组字段结构是否匹配当前可见字段。
 const groupConfigValid = computed(() => {
   const columns = props.chart?.customAttr?.tableHeader?.headerGroupConfig?.columns
   if (!columns?.length) {
@@ -154,24 +167,29 @@ const groupConfigValid = computed(() => {
   return isEqual(showColumnFields, leafKeys)
 })
 
+// 当前正在编辑的字段对齐配置。
 const alignConfig = reactive({
   id: '',
   align: 'left'
 })
+// 字段对齐配置候选项。
 const alignConfigOptions = reactive([])
+// 切换字段时同步对齐方式。
 const changeAlignConfig = () => {
   const selected = state.tableHeaderForm.alignConfig.find(item => item.id === alignConfig.id)
   if (selected) {
     alignConfig.align = selected.align
   }
 }
+// 判断当前表格类型是否支持自定义对齐。
 const showCustomAlign = computed(() => {
   return ['table-info', 'table-normal'].includes(props.chart.type)
 })
+// 初始化表头配置并兼容存量透视表配置。
 const init = () => {
   const tableHeader = props.chart?.customAttr?.tableHeader
   if (tableHeader) {
-    // 存量透视表处理
+    // 将存量透视表的单表头配置迁移到行、列、角头配置。
     if (!tableHeader.tableHeaderColBgColor) {
       tableHeader.tableHeaderColBgColor = tableHeader.tableHeaderBgColor
       tableHeader.tableHeaderColFontColor = tableHeader.tableHeaderFontColor
@@ -234,6 +252,7 @@ const init = () => {
     }
   }
 }
+// 判断指定表头属性是否可编辑。
 const showProperty = prop => props.propertyInner?.includes(prop)
 
 onMounted(() => {
