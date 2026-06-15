@@ -492,6 +492,7 @@ const emits = defineEmits(['update:item', 'del'])
 
 <template>
   <div class="white-nowrap">
+    <!-- 单条权限筛选条件按字段、筛选方式、操作符和值横向排列，便于权限规则快速扫描。 -->
     <div class="filed" @mouseover="showDel = true" @mouseleave="showDel = false">
       <span class="filed-title">{{ t('auth.filter_fields') }}</span>
 
@@ -504,6 +505,7 @@ const emits = defineEmits(['update:item', 'del'])
         >
         </el-input>
         <template #dropdown>
+          <!-- 字段候选来自上层注入的字段字典，搜索只影响本地下拉展示。 -->
           <el-dropdown-menu class="de-el-dropdown-menu">
             <el-input
               @keydown.stop
@@ -544,6 +546,7 @@ const emits = defineEmits(['update:item', 'del'])
         </template>
       </el-dropdown>
       <div class="white-nowrap flex-align-center" style="position: relative" v-if="item.fieldId">
+        <!-- 非时间字段支持逻辑筛选和枚举筛选，时间字段单独走固定/动态时间配置。 -->
         <template v-if="item.fieldType !== 1">
           <span class="filed-title">{{ t('auth.screen_method') }}</span>
           <el-select
@@ -684,6 +687,7 @@ const emits = defineEmits(['update:item', 'del'])
             </el-input>
           </template>
           <div class="de-panel clearfix">
+            <!-- 枚举筛选左侧负责候选值搜索，右侧负责已选值和批量手工录入。 -->
             <div class="mod-left">
               <el-input :placeholder="t('auth.enter_keywords')" v-model="filterFiled"> </el-input>
               <ul class="autochecker-list" style="height: 260px">
@@ -785,14 +789,17 @@ const emits = defineEmits(['update:item', 'del'])
       </template>
     </el-dialog>
   </div>
+  <!-- 固定时间选择器独立挂载，避免和动态时间弹窗互相复用状态。 -->
   <TimeSetDialog @saveTime="saveTime" ref="timeDialogRef"></TimeSetDialog>
 </template>
 
 <style lang="less" scoped>
 .white-nowrap {
+  /* 筛选条件行不换行，保持权限规则在横向轴上连续展示。 */
   white-space: nowrap;
 }
 .filed {
+  /* 条件项宽度随内容增长，便于多条条件并排时保留完整字段和值区域。 */
   width: fit-content;
   height: 41.4px;
   padding: 1px 3px 1px 10px;
@@ -1340,7 +1347,7 @@ const emits = defineEmits(['update:item', 'del'])
 }
 
 .clearfix {
-  /* 触发 hasLayout */
+  /* 兼容浮动布局的清除方式，保证枚举面板底部按钮不被两栏内容覆盖。 */
   zoom: 1;
 }
 </style>

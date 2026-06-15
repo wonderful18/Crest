@@ -109,6 +109,7 @@
         </template>
 
         <template v-for="styleOptionKey in styleOptionKeyArray">
+          <!-- 普通选项直接写入组件 style，不需要根据画布缩放做像素换算。 -->
           <el-tooltip
             :key="styleOptionKey.value"
             v-if="styleForm[styleOptionKey.value] !== undefined"
@@ -140,6 +141,7 @@
             </el-form-item>
           </el-tooltip>
         </template>
+        <!-- 字重、斜体和下划线使用图标按钮表达二态切换，减少文本工具条宽度。 -->
         <el-tooltip v-if="styleForm.fontWeight !== undefined" effect="dark" placement="bottom">
           <template #content>
             {{ t('chart.bolder') }}
@@ -238,6 +240,7 @@
           </div>
         </template>
         <template v-if="styleForm.headHorizontalPosition">
+          <!-- 表头横向位置使用独立字段，避免覆盖组件主体文本的 textAlign。 -->
           <div class="m-divider"></div>
           <el-tooltip effect="dark" placement="bottom">
             <template #content>
