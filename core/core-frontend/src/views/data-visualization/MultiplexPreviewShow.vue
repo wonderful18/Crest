@@ -112,6 +112,7 @@ const iconMap = {
 const getIconName = item => {
   if (item.component === 'UserView') {
     const viewInfo = canvasViewInfo.value[item.id]
+    // 用户视图图标跟随真实图表类型，避免复用列表只显示通用组件图标。
     return iconChartMap[`${viewInfo.type}`]
   } else {
     return iconMap[item.icon]
@@ -155,13 +156,13 @@ const init = () => {
 const multiplexingCheck = (val, data) => {
   if (val) {
     const components = componentData.value.filter(ele => ele.id === data.id)
-    // 添加复用组件。
+    // 勾选后写入待复用集合，确认弹窗时由父级一次性落盘。
     dvMainStore.addCurMultiplexingComponent({
       component: components[0],
       componentId: data.id
     })
   } else {
-    // 移除复用组件。
+    // 取消勾选只移除暂存集合，不影响画布上的原组件。
     dvMainStore.removeCurMultiplexingComponentWithId(data.id)
   }
 }
@@ -280,9 +281,10 @@ onBeforeMount(() => {
 .ellip {
   margin-left: 10px;
   margin-right: 10px;
-  overflow: hidden; /*超出部分隐藏*/
-  white-space: nowrap; /*不换行*/
-  text-overflow: ellipsis; /*超出部分文字以...显示*/
+  /* 复用弹窗中的字段标题保持单行省略，避免挤压右侧预览区域。 */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   text-align: center;
   background-color: #f7f8fa;
   color: #3d4d66;
@@ -293,9 +295,10 @@ onBeforeMount(() => {
 }
 
 .select-filed {
-  overflow: hidden; /*超出部分隐藏*/
-  white-space: nowrap; /*不换行*/
-  text-overflow: ellipsis; /*超出部分文字以...显示*/
+  /* 选择项名称沿用单行省略，和树节点展示规则保持一致。 */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: #3d4d66;
   font-size: 12px;
   border-radius: 3px;

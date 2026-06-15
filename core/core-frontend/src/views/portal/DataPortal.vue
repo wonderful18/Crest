@@ -423,6 +423,7 @@ onMounted(reload)
 
 <template>
   <main class="portal-page">
+    <!-- 门户顶栏只保留品牌、后台入口和账号菜单，避免普通用户入口被管理能力干扰。 -->
     <header class="portal-header">
       <button class="brand" type="button" @click="backHome">
         <img class="brand-mark" :src="crestMark" alt="" aria-hidden="true" />
@@ -434,6 +435,7 @@ onMounted(reload)
       </div>
     </header>
 
+    <!-- 左侧区域汇总用户身份、资源统计和常用入口，右侧承载可筛选资源列表。 -->
     <section class="workbranch portal-workbranch">
       <div class="info-quick-creation">
         <div class="user-info work-card">
@@ -501,6 +503,7 @@ onMounted(reload)
       <div class="workbranch-content">
         <el-scrollbar class="workbranch-content-scroll">
           <div class="dashboard-type border-radius-12" v-loading="state.loading">
+            <!-- 页签对应后端 queryFrom，收藏、全部和最近使用保持同一套筛选与分页能力。 -->
             <el-tabs v-model="activeName" class="dashboard-type-tabs" @tab-click="handleTabClick">
               <el-tab-pane
                 v-for="item in paneList"
@@ -511,6 +514,7 @@ onMounted(reload)
             </el-tabs>
 
             <div class="asset-toolbar">
+              <!-- 类型筛选只改变资源类型，不改变当前页签来源。 -->
               <div class="type-chip-list">
                 <button
                   v-for="item in typeFilters"
@@ -554,6 +558,7 @@ onMounted(reload)
             </div>
 
             <div class="panel-table">
+              <!-- 门户表格隐藏创建人等后台字段，突出普通用户关心的名称、类型、时间和操作。 -->
               <GridTable
                 :show-pagination="false"
                 :table-data="state.records"
@@ -622,6 +627,7 @@ onMounted(reload)
                   label-class-name="operation-column-header"
                 >
                   <template #default="{ row }">
+                    <!-- 操作按钮保持固定宽度并居中，避免收藏状态切换造成列内跳动。 -->
                     <div class="table-actions">
                       <el-tooltip
                         effect="dark"
