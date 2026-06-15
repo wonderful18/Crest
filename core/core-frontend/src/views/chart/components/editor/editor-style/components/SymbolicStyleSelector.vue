@@ -31,6 +31,7 @@ const state = reactive({
     fieldId: '',
     width: 0
   },
+  // 上传控件的预览列表独立维护，实际自定义图标内容存储在 basicStyleForm.customIcon。
   fileList: []
 })
 
@@ -41,8 +42,10 @@ const changeBasicStyle = (prop?: string, requestData = false) => {
 
 // 持有自定义图标上传组件实例
 const iconUpload = ref()
+// 自定义符号只允许 SVG、JPEG 和 PNG，避免地图渲染层处理未知媒体类型。
 const acceptedFileType = ['image/svg+xml', 'image/jpeg', 'image/png']
 
+// 地图符号选项值需要与渲染层 G2/G2Plot symbol 名称保持一致。
 const mapSymbolOptions = [
   { name: t('chart.line_symbol_circle'), value: 'circle' },
   { name: t('chart.line_symbol_rect'), value: 'square' },
@@ -67,6 +70,7 @@ const onIconChange: UploadProps['onChange'] = async uploadFile => {
     validIcon = false
   }
   if (!validIcon) {
+    // 校验失败时恢复已有自定义图标预览，避免上传控件停留在无效文件状态。
     iconUpload.value?.clearFiles()
     state.fileList.splice(0)
     const customIcon = state.basicStyleForm.customIcon
@@ -83,9 +87,11 @@ const onIconChange: UploadProps['onChange'] = async uploadFile => {
     }
   } else {
     if (rawFile.type === 'image/svg+xml') {
+      // SVG 保留原始文本，渲染时可继续按符号路径或图片资源处理。
       state.basicStyleForm.customIcon = await rawFile.text()
       changeBasicStyle('customIcon')
     } else {
+      // 位图转成 data URL 存储，避免额外依赖静态资源上传流程。
       const fileReader = new FileReader()
       fileReader.onloadend = () => {
         state.basicStyleForm.customIcon = fileReader.result as string
@@ -100,6 +106,7 @@ const onIconChange: UploadProps['onChange'] = async uploadFile => {
 const changeMapSymbol = () => {
   const { mapSymbol, customIcon } = state.basicStyleForm
   if (mapSymbol === 'custom' && customIcon) {
+    // 从内置符号切回自定义符号时恢复上一次上传的预览图。
     let file
     if (customIcon.startsWith('data')) {
       file = customIcon
@@ -114,6 +121,7 @@ const changeMapSymbol = () => {
 // 判断符号地图是否需要使用动态尺寸范围
 const customSymbolicMapSizeRange = computed(() => {
   let { extBubble } = JSON.parse(JSON.stringify(props.chart))
+  // 绑定气泡指标后，符号尺寸由指标值映射范围控制，禁用固定尺寸滑块。
   return ['symbolic-map'].includes(props.chart.type) && extBubble?.length > 0
 })
 // 校验自定义符号尺寸范围并派发样式变更
@@ -121,6 +129,7 @@ const mapCustomRangeValidate = prop => {
   const { mapSymbolSizeMax = '0', mapSymbolSizeMin = '1' } = state.basicStyleForm
   let max = parseInt(String(mapSymbolSizeMax))
   let min = parseInt(String(mapSymbolSizeMin))
+  // 尺寸范围使用非负最小值和正数最大值，避免渲染出不可见符号。
   state.basicStyleForm.mapSymbolSizeMin = Math.max(min, 0)
   state.basicStyleForm.mapSymbolSizeMax = Math.max(max, 1)
   if (max < min) {
@@ -137,6 +146,7 @@ const init = () => {
     basicStyle.mapSymbol === 'custom' &&
     state.basicStyleForm.customIcon !== basicStyle.customIcon
   ) {
+    // 自定义图标可能是 data URL 或 SVG 文本，预览前统一转换为可访问 URL。
     let file
     if (basicStyle.customIcon?.startsWith('data')) {
       file = basicStyle.customIcon
@@ -147,6 +157,7 @@ const init = () => {
   }
   state.basicStyleForm = defaultsDeep(basicStyle, cloneDeep(DEFAULT_BASIC_STYLE)) as ChartBasicStyle
   if (!state.customColor) {
+    // 首次初始化保留默认颜色索引，后续图表配置变更不覆盖用户正在编辑的颜色位置。
     state.customColor = state.basicStyleForm.colors[0]
     state.colorIndex = 0
   }
@@ -319,11 +330,13 @@ onMounted(() => {
 
 <style scoped lang="less">
 .color-picker-style {
+  /* 颜色选择器浮层层级高于属性面板，避免被折叠容器遮挡。 */
   cursor: pointer;
   z-index: 1003;
 }
 
 .alpha-setting {
+  /* 滑块设置项使用标签加控件的横向布局，和其它编辑器样式面板保持一致。 */
   display: flex;
   width: 100%;
 
@@ -362,6 +375,7 @@ onMounted(() => {
 }
 .avatar-uploader-container {
   :deep(.ed-upload--picture-card) {
+    /* 自定义符号上传入口复用背景图上传的图片卡片视觉。 */
     background: #eff0f1;
     border: 1px dashed #dee0e3;
     border-radius: 6px;

@@ -243,13 +243,16 @@ const initOptions = item => {
 const initFields = () => {
   let fields = []
   if (props.chart.type === 'table-info') {
+    // 明细表只使用维度字段作为图片切换条件，URL 字段在模板中禁用。
     fields = JSON.parse(JSON.stringify(props.chart.xAxis))
   } else if (props.chart.type === 'table-pivot') {
+    // 透视表条件需要覆盖行维度、列维度和指标，保持与表格展示结构一致。
     const xAxis = JSON.parse(JSON.stringify(props.chart.xAxis))
     const xAxisExt = JSON.parse(JSON.stringify(props.chart.xAxisExt))
     const yAxis = JSON.parse(JSON.stringify(props.chart.yAxis))
     fields = [...xAxis, ...xAxisExt, ...yAxis]
   } else {
+    // 普通图表按维度和指标合并生成条件字段候选。
     const xAxis = JSON.parse(JSON.stringify(props.chart.xAxis))
     const yAxis = JSON.parse(JSON.stringify(props.chart.yAxis))
     fields = [...xAxis, ...yAxis]
@@ -524,6 +527,7 @@ init()
 
 <style lang="less" scoped>
 .field-item {
+  /* 每个字段级阈值独立成块，方便用户分辨字段和条件行的层级。 */
   width: 100%;
   border-radius: 6px;
   padding: 10px 16px;
@@ -532,6 +536,7 @@ init()
 }
 
 .line-item {
+  /* 条件行横向排列操作符、取值、图片选择和删除按钮。 */
   width: 100%;
   display: flex;
   justify-content: left;
@@ -586,6 +591,7 @@ span {
 }
 
 .color-title {
+  /* 展示图片标签跟随条件行展示，提示用户当前规则命中后的图片结果。 */
   color: #646a73;
   font-size: 14px;
   font-style: normal;
@@ -595,6 +601,7 @@ span {
 }
 
 .tip {
+  /* 顶部提示强调阈值只影响图片展示，不改变图表原始数据。 */
   font-size: 12px;
   background: #d6e2ff;
   border-radius: 6px;
@@ -626,6 +633,7 @@ span {
 }
 
 .series-select-option {
+  /* 字段下拉项对齐字段图标和名称，和图表编辑器字段列表保持一致。 */
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -638,6 +646,7 @@ span {
   min-width: 50px !important;
   width: 304px;
   .ed-scrollbar__view {
+    /* 图片候选以三列网格展示，减少图片较多时的纵向滚动距离。 */
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
   }

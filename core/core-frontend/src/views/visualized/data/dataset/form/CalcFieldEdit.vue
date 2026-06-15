@@ -61,6 +61,7 @@ const fields = [
   { label: 'URL', value: 7 }
 ]
 
+// 新建计算字段默认按文本维度处理，保存时再由用户选择的字段类型覆盖。
 const defaultForm = {
   originName: '', // 物理字段名
   name: '', // 字段显示名
@@ -109,6 +110,7 @@ const formQuotaConfirm = () => {
   formQuotaRef.value.validate(val => {
     if (val) {
       if (!formQuota.id) {
+        // 计算参数使用独立前缀，避免和真实字段 id 冲突。
         formQuota.id = `params_${guid()}`
       }
       const q = cloneDeep(unref(formQuota))
@@ -118,10 +120,12 @@ const formQuotaConfirm = () => {
       if (i) {
         const str = mirror.value.state.doc.toString()
         const name2Auto = []
+        // 编辑参数前先把表达式转换为 id 形态，避免展示名修改后丢失引用关系。
         fieldForm.originName = setNameIdTrans('name', 'id', str, name2Auto)
         Object.assign(i, cloneDeep(unref(formQuota)))
 
         nextTick(() => {
+          // 参数名称更新后重新把 id 表达式转换回展示名，保持编辑器内容可读。
           mirror.value.dispatch({
             changes: {
               from: 0,
@@ -152,6 +156,7 @@ const setFieldForm = () => {
 // 在表达式中批量替换字段展示名和字段 ID
 const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
   let name2Id = originName
+  // 维度、指标和计算参数共用同一套引用映射，表达式统一使用中括号标记字段。
   const nameIdMap = [...dimensionDataList, ...quotaDataList].reduce((pre, next) => {
     pre[next[from]] = next[to]
     return pre
@@ -161,6 +166,7 @@ const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
     on.forEach(itm => {
       const ele = itm.slice(1, -1)
       if (name2Auto) {
+        // 调用方传入数组时，同时收集自动识别到的字段 id。
         name2Auto.push(nameIdMap[ele])
       }
       name2Id = name2Id.replace(`[${ele}]`, `[${nameIdMap[ele]}]`)
@@ -175,6 +181,7 @@ let dimensionDataList = []
 const initEdit = (obj, dimensionData, quotaData) => {
   formQuota.id = null
   Object.assign(fieldForm, { ...defaultForm, ...obj })
+  // 参数在编辑器右侧按指标展示，便于和普通指标一起插入表达式。
   state.dimensionData = dimensionData
   state.quotaData = quotaData.concat(fieldForm.params || [])
   quotaDataList = cloneDeep(quotaData.concat(fieldForm.params || []))
@@ -183,6 +190,7 @@ const initEdit = (obj, dimensionData, quotaData) => {
     formField.value.clearValidate()
   }, 100)
   if (!obj.originName) {
+    // 新建字段没有表达式时清空编辑器，防止复用上一次弹窗内容。
     mirror.value.dispatch({
       changes: {
         from: 0,
@@ -193,6 +201,7 @@ const initEdit = (obj, dimensionData, quotaData) => {
     return
   }
   nextTick(() => {
+    // 已保存表达式使用字段 id，进入编辑态时转换成展示名方便用户阅读。
     mirror.value.dispatch({
       changes: {
         from: 0,
@@ -224,10 +233,12 @@ const getCursor = view => {
 }
 
 onMounted(() => {
+  // CodeMirror 实例由子组件初始化，父组件只保存引用用于插入和整体替换文本。
   mirror.value = myCm.value.codeComInit()
 })
 
 onBeforeUnmount(() => {
+  // 弹窗销毁时释放编辑器实例，避免重复打开后保留旧监听器。
   mirror.value.destroy?.()
 })
 
@@ -318,6 +329,7 @@ const addParamsToQuota = () => {
 // 打开编辑计算参数弹窗
 const updateParamsToQuota = () => {
   const [o] = fieldForm.params
+  // 当前交互只允许一个计算参数，编辑时直接回填第一项。
   paramsTitle.value = t('data_set.edit_calculation_parameters')
   Object.assign(formQuota, o || {})
   dialogFormVisible.value = true
@@ -325,6 +337,7 @@ const updateParamsToQuota = () => {
 
 // 是否禁用新增计算参数，当前只允许维护一个参数
 const disableCaParams = computed(() => {
+  // 计算字段暂只支持一个参数，避免表达式参数管理和默认值保存复杂化。
   return !!fieldForm.params?.length
 })
 
@@ -334,6 +347,7 @@ const delParamsToQuota = () => {
   fieldForm.params = []
   const str = mirror.value.state.doc.toString()
   const name2Auto = []
+  // 删除参数时同步移除表达式中的参数引用，再把剩余 id 表达式还原成展示名。
   fieldForm.originName = setNameIdTrans('name', 'id', str, name2Auto).replaceAll(`[${o.id}]`, '')
   state.quotaData = state.quotaData.filter(ele => ele.id !== o.id)
   mirror.value.dispatch({
@@ -678,6 +692,7 @@ initFunction()
 <style lang="less" scoped>
 .calcu-field {
   .calcu-cont {
+    /* 主编辑区和字段/函数候选区横向排列，保证表达式编辑时能并排参考。 */
     color: #606266;
     font-size: 14px;
     box-sizing: border-box;
@@ -698,6 +713,7 @@ initFunction()
   }
 
   .btn-select {
+    /* 维度/指标切换使用分段按钮视觉，区别于普通单选控件。 */
     width: 100px;
     height: 32px;
     display: flex;
