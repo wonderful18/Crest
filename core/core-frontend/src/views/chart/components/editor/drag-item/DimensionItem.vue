@@ -631,6 +631,7 @@ onMounted(() => {
             </el-dropdown>
           </el-dropdown-item>
           <el-dropdown-item @click.prevent v-if="item.fieldType === 1">
+            <!-- 日期显示格式独立于日期粒度，主要控制标签和表格中的日期文本呈现。 -->
             <el-dropdown
               :effect="themes"
               placement="right-start"
@@ -709,6 +710,7 @@ onMounted(() => {
             v-if="['table-normal', 'table-info'].includes(chart.type)"
             :command="beforeClickItem('toggleHide')"
           >
+            <!-- 表格维度支持临时隐藏字段，保留字段配置但不参与最终列展示。 -->
             <el-icon>
               <icon
                 ><icon_visible_outlined v-if="item.hide === true" class="svg-icon" />
@@ -723,6 +725,7 @@ onMounted(() => {
             :divided="!showValueFormatter"
             :command="beforeClickItem('formatter')"
           >
+            <!-- 数值型维度在明细表中可单独配置展示格式，避免影响原始字段定义。 -->
             <el-icon />
             <span>{{ t('chart.value_formatter') }}...</span>
           </el-dropdown-item>

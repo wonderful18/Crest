@@ -52,6 +52,7 @@
               @node-click="nodeClick"
             >
               <template #default="{ data }">
+                <!-- 左侧字段树以源字段为入口，勾选状态决定该字段是否启用跳转配置。 -->
                 <span class="custom-tree-node">
                   <span>
                     <div @click.stop>
@@ -225,6 +226,7 @@
                           </el-tabs>
                         </div>
                         <template v-if="state.activeCollapse === 'view'">
+                          <!-- 图表联动映射为“源字段 - 目标图表 - 目标字段”的三段式关系。 -->
                           <el-row style="margin-bottom: 8px" :gutter="8">
                             <el-col :span="7"> {{ t('visualization.source_field') }} </el-col>
                             <el-col :span="2"></el-col>
@@ -398,6 +400,7 @@
                             <span>{{ t('visualization.jump_no_banding_tips') }}</span>
                           </template>
                           <template v-else-if="state.currentOutParams.length > 0">
+                            <!-- 过滤参数映射把当前查询组件值传递给目标资源的外部参数。 -->
                             <el-row style="margin-bottom: 8px" :gutter="8">
                               <el-col :span="12"> {{ t('visualization.source_filter') }} </el-col>
                               <el-col :span="1"></el-col>
@@ -550,6 +553,7 @@
                         </div>
                       </el-col>
                       <el-col :span="8" style="height: 100%">
+                        <!-- 外部链接右侧字段列表用于向 URL 模板插入可替换的字段占位符。 -->
                         <div class="url-text">
                           {{ t('visualization.select_world') }}
                           <el-tooltip class="item" effect="dark" placement="bottom">
@@ -960,6 +964,7 @@ const nodeClick = data => {
     return
   }
   state.linkJumpInfo = state.mapJumpInfoArray[data.sourceFieldId]
+  // 旧版本配置可能缺少新增字段，进入编辑态时补齐默认值，保证表单控件可直接绑定。
   if (!state.linkJumpInfo.windowSize) {
     state.linkJumpInfo.windowSize = 'middle'
   }
@@ -1042,6 +1047,7 @@ const dvNodeClick = data => {
 }
 /** 新增一条目标图表或过滤组件映射 */
 const addLinkJumpField = (type = 'view') => {
+  // 新增行先生成稳定 targetId，删除和保存时都依赖该 ID 定位映射项。
   state.linkJumpInfo.targetViewInfoList.push({
     targetId: guid(),
     targetViewId: '',
@@ -1067,6 +1073,7 @@ const deleteLinkJumpFieldById = targetId => {
 
 /** 判断目标字段选择器是否应禁用 */
 const fieldIdDisabledCheck = targetViewInfo => {
+  // 外部参数和过滤组件使用占位字段，不需要用户继续选择目标字段。
   return (
     (state.viewIdFieldArrayMap[targetViewInfo.targetViewId] &&
       state.viewIdFieldArrayMap[targetViewInfo.targetViewId].length === 1 &&
@@ -1077,6 +1084,7 @@ const fieldIdDisabledCheck = targetViewInfo => {
 
 /** 目标图表变化后重置或自动填充目标字段 */
 const viewInfoOnChange = targetViewInfo => {
+  // 普通图表切换后必须重新选择字段，占位目标则自动写入固定字段 ID。
   if (
     state.viewIdFieldArrayMap[targetViewInfo.targetViewId] &&
     state.viewIdFieldArrayMap[targetViewInfo.targetViewId].length === 1 &&
