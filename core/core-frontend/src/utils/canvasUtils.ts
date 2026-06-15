@@ -51,11 +51,17 @@ import { normalizeLegacyComponent, normalizeLegacyComponentData } from '@/utils/
 const { t } = useI18n()
 const appearanceStore = useAppearanceStoreWithOut()
 const { wsCache } = useCache()
+/**
+ * 保持画布数据结构为对象形态，兼容旧调用中的 copy 标记
+ */
 export function chartTransStr2Object(targetIn, copy) {
   const target = copy === 'Y' ? cloneDeep(targetIn) : targetIn
   return target
 }
 
+/**
+ * 生成统一模式的组件内边距配置
+ */
 const getNewInnerPadding = (commonGap = 0) => {
   return {
     mode: ShorthandMode.Uniform,
@@ -66,6 +72,9 @@ const getNewInnerPadding = (commonGap = 0) => {
   }
 }
 
+/**
+ * 生成统一模式的组件圆角配置
+ */
 const getNewBorderRadius = (commonGap = 0) => {
   return {
     mode: ShorthandMode.Uniform,
@@ -76,11 +85,17 @@ const getNewBorderRadius = (commonGap = 0) => {
   }
 }
 
+/**
+ * 保持画布数据结构为对象形态，供保存前的旧接口适配使用
+ */
 export function chartTransObject2Str(targetIn, copy) {
   const target = copy === 'Y' ? cloneDeep(targetIn) : targetIn
   return target
 }
 
+/**
+ * 根据拖拽数据解析组件类型并创建组件配置
+ */
 export function findDragComponent(componentInfo) {
   const componentInfoArray = componentInfo.split('&')
   const componentName = componentInfoArray[0]
@@ -88,6 +103,9 @@ export function findDragComponent(componentInfo) {
   return findNewComponent(componentName, innerType)
 }
 
+/**
+ * 从组件清单中克隆新组件，并按主题、插件和特殊组件补齐默认配置
+ */
 export function findNewComponent(componentName, innerType, staticMap?) {
   let newComponent
   componentList.forEach(comp => {
@@ -126,6 +144,9 @@ export function findNewComponent(componentName, innerType, staticMap?) {
   return newComponent
 }
 
+/**
+ * 按画布类型启动拖拽数据传输
+ */
 export function commonHandleDragStart(e, dvModel) {
   const componentInfo = e.target.dataset.id
   if (dvModel === 'dashboard') {
@@ -136,6 +157,9 @@ export function commonHandleDragStart(e, dvModel) {
     e.dataTransfer.setData('id', componentInfo)
   }
 }
+/**
+ * 按画布类型结束拖拽传输并清理仪表板拖拽状态
+ */
 export function commonHandleDragEnd(e, dvModel) {
   if (dvModel === 'dashboard') {
     // 仪表板结束消息传输方式(用来清理未移入的组件)
@@ -143,10 +167,16 @@ export function commonHandleDragEnd(e, dvModel) {
   }
 }
 
+/**
+ * 判断值是否为有效 number 类型
+ */
 function isNumber(value) {
   return !isNaN(value) && typeof value === 'number'
 }
 
+/**
+ * 将旧仪表板矩阵坐标放大到新版基础密度
+ */
 function matrixAdaptor(componentItem) {
   componentItem.x = 1 + (componentItem.x - 1) * 2
   componentItem.y = 1 + (componentItem.y - 1) * 2
@@ -169,6 +199,9 @@ function matrixAdaptor(componentItem) {
   }
 }
 
+/**
+ * 适配单个历史组件的坐标、样式、事件和嵌套子组件配置
+ */
 export function historyItemAdaptor(
   componentItem,
   reportFilterInfo,
@@ -290,6 +323,9 @@ export function historyItemAdaptor(
   }
 }
 
+/**
+ * 适配历史画布样式、组件数据和版本差异
+ */
 export function historyAdaptor(
   canvasStyleResult,
   canvasDataResult,
@@ -414,6 +450,9 @@ export function refreshOtherComponent(dvId, busiFlag) {
   }
 }
 
+/**
+ * 加载画布详情并在回调前完成水印、版本和历史字段适配
+ */
 export function initCanvasDataPrepare(dvId, params, callBack) {
   const busiFlag = params.busiFlag
   const copyFlag = busiFlag != null && busiFlag.includes('-copy')
@@ -480,6 +519,9 @@ export function initCanvasDataPrepare(dvId, params, callBack) {
   })
 }
 
+/**
+ * 解析水印配置字符串，异常时返回空配置
+ */
 const parseWatermarkSetting = (settingContent?: string) => {
   if (!settingContent) {
     return {}
@@ -491,6 +533,9 @@ const parseWatermarkSetting = (settingContent?: string) => {
   }
 }
 
+/**
+ * 初始化画布编辑数据并刷新联动、跳转缓存
+ */
 export async function initCanvasData(dvId, params, callBack) {
   initCanvasDataPrepare(
     dvId,
@@ -515,6 +560,9 @@ export async function initCanvasData(dvId, params, callBack) {
   )
 }
 
+/**
+ * 从桌面画布数据回写移动端组件位置和样式
+ */
 export async function backCanvasData(dvId, mobileViewInfo, busiFlag, callBack) {
   initCanvasDataPrepare(
     dvId,
@@ -563,6 +611,9 @@ export async function backCanvasData(dvId, mobileViewInfo, busiFlag, callBack) {
   )
 }
 
+/**
+ * 初始化移动端画布数据并切换为移动端专用样式字段
+ */
 export function initCanvasDataMobile(dvId, params, callBack) {
   initCanvasDataPrepare(
     dvId,
@@ -638,6 +689,9 @@ export function initCanvasDataMobile(dvId, params, callBack) {
   )
 }
 
+/**
+ * 保存前检查当前画布是否被其他用户或窗口更新
+ */
 export function checkCanvasChangePre(callBack) {
   // do pre
   const isUpdate = curDvInfo.value.id && curDvInfo.value.optType !== 'copy'
@@ -667,10 +721,16 @@ export function checkCanvasChangePre(callBack) {
   }
 }
 
+/**
+ * 使用当前画布状态执行默认保存
+ */
 export async function canvasSave(callBack) {
   await canvasSaveWithParams(null, callBack)
 }
 
+/**
+ * 组装画布保存参数，清理运行态联动数据后创建或更新画布
+ */
 export async function canvasSaveWithParams(params, callBack) {
   dvMainStore.removeGroupArea()
   const componentDataToSave = cloneDeep(componentData.value)
@@ -739,6 +799,9 @@ export async function canvasSaveWithParams(params, callBack) {
   })
 }
 
+/**
+ * 为缺少协议的外部链接补齐 http 协议
+ */
 export function checkAddHttp(url) {
   if (!url) {
     return url
@@ -749,6 +812,9 @@ export function checkAddHttp(url) {
   }
 }
 
+/**
+ * 将字段表达式中的显示名替换为字段 ID
+ */
 export function setIdValueTrans(from, to, content, colList) {
   if (!content) {
     return content
@@ -768,6 +834,9 @@ export function setIdValueTrans(from, to, content, colList) {
   return name2Id
 }
 
+/**
+ * 判断画布 ID 是否指向主画布
+ */
 export function isMainCanvas(canvasId) {
   return canvasId === 'canvas-main'
 }
@@ -839,6 +908,9 @@ export function itemCanvasPathCheck(item, checkType) {
   return false
 }
 
+/**
+ * 递归记录组件到父容器的映射关系
+ */
 export function canvasIdMapCheck(item, pItem, pathMap) {
   pathMap[item.id] = pItem
   if (item.component === 'Tabs') {
@@ -854,22 +926,37 @@ export function canvasIdMapCheck(item, pItem, pathMap) {
   }
 }
 
+/**
+ * 判断组件是否属于指定画布容器
+ */
 export function isSameCanvas(item, canvasId) {
   return item.canvasId === canvasId
 }
 
+/**
+ * 判断画布 ID 是否属于分组或标签页容器
+ */
 export function isGroupOrTabCanvas(canvasId) {
   return isGroupCanvas(canvasId) || isTabCanvas(canvasId)
 }
 
+/**
+ * 判断画布 ID 是否属于分组容器
+ */
 export function isGroupCanvas(canvasId) {
   return canvasId && canvasId.includes('Group')
 }
 
+/**
+ * 判断画布 ID 是否属于标签页容器
+ */
 export function isTabCanvas(canvasId) {
   return canvasId && !canvasId.includes('Group') && !isMainCanvas(canvasId)
 }
 
+/**
+ * 在可见组件列表中查找组件索引
+ */
 export function findComponentIndexByIdWithFilterHidden(
   componentId,
   componentDataMatch = componentData.value
@@ -885,6 +972,9 @@ export function findComponentIndexByIdWithFilterHidden(
   return indexResult
 }
 
+/**
+ * 在完整组件列表中查找组件索引
+ */
 export function findComponentIndexById(componentId, componentDataMatch = componentData.value) {
   let indexResult = -1
   componentDataMatch.forEach((component, index) => {
@@ -895,6 +985,9 @@ export function findComponentIndexById(componentId, componentDataMatch = compone
   return indexResult
 }
 
+/**
+ * 根据实际 DOM 尺寸回写仪表板矩阵坐标和样式尺寸
+ */
 export function canvasChangeAdaptor(component, matrixBase, usePointShadow = false) {
   const targetDomComponent = document.querySelector(
     usePointShadow ? '#point-shadow-main' : '#shape-id-' + component.id
@@ -915,6 +1008,9 @@ export function canvasChangeAdaptor(component, matrixBase, usePointShadow = fals
   }
 }
 
+/**
+ * 收集画布及嵌套容器中的视图组件 ID
+ */
 export function findAllViewsId(componentData, idArray) {
   componentData.forEach(item => {
     if (item.component === 'UserView' && item.innerType != 'VQuery') {
@@ -933,6 +1029,9 @@ export function findAllViewsId(componentData, idArray) {
   })
 }
 
+/**
+ * 标记资源树文件夹节点为不可选
+ */
 export function markTreeFolder(elementInfo) {
   if (elementInfo) {
     if (elementInfo instanceof Array) {
@@ -948,6 +1047,9 @@ export function markTreeFolder(elementInfo) {
   }
 }
 
+/**
+ * 过滤资源树中的空文件夹节点
+ */
 export function filterEmptyFolderTree(nodes) {
   // 递归过滤树节点数据，只显示包含子文件夹或文件的文件夹
   return nodes.filter(node => {
@@ -963,7 +1065,13 @@ export function filterEmptyFolderTree(nodes) {
   })
 }
 
+/**
+ * 在树结构中递归查找目标子节点的父节点 ID
+ */
 export function findParentIdByChildIdRecursive(tree, targetChildId) {
+  /**
+   * 从单个节点向下查找目标子节点所属父级
+   */
   function findParentId(node, targetChildId) {
     if (node.children) {
       for (const childNode of node.children) {
@@ -989,6 +1097,9 @@ export function findParentIdByChildIdRecursive(tree, targetChildId) {
   return null // 没有找到匹配的子节点
 }
 
+/**
+ * 标准化模板载荷，转换为画布初始化可直接使用的数据结构
+ */
 export function normalizeTemplatePayload(templatePayloadRaw) {
   if (!templatePayloadRaw) {
     return null
@@ -1022,6 +1133,9 @@ export function normalizeTemplatePayload(templatePayloadRaw) {
   }
 }
 
+/**
+ * 解压模板文件并输出标准化后的模板数据
+ */
 export async function decompressionPre(params, callBack) {
   let templatePayload
   await decompression(params)
@@ -1034,10 +1148,16 @@ export async function decompressionPre(params, callBack) {
   callBack(templatePayload)
 }
 
+/**
+ * 处理已上传模板的标准化回调
+ */
 export function uploadedTemplatePre(templatePayloadRaw, callBack) {
   callBack(normalizeTemplatePayload(templatePayloadRaw))
 }
 
+/**
+ * 从会话缓存中读取并移除上传模板载荷
+ */
 export function consumeUploadedTemplatePayload(cacheKey) {
   const key = cacheKey ? String(cacheKey) : ''
   if (!key) {
@@ -1051,10 +1171,16 @@ export function consumeUploadedTemplatePayload(cacheKey) {
   return JSON.parse(payload)
 }
 
+/**
+ * 判断当前编辑资源是否为仪表板
+ */
 export function isDashboard() {
   return curDvInfo.value.type === 'dashboard'
 }
 
+/**
+ * 修正悬浮操作条位置，避免菜单超出画布可视区域
+ */
 export function trackBarStyleCheck(element, trackbarStyle, _scale, trackMenuNumber) {
   const { width, height } = element.style
   const widthReal = width
@@ -1095,6 +1221,9 @@ export function componentPreSort(componentData) {
   }
 }
 
+/**
+ * 计算仪表板组件占用的最大纵向矩阵位置
+ */
 export function maxYComponentCount() {
   if (componentData.value.length === 0) {
     return 1
@@ -1106,10 +1235,16 @@ export function maxYComponentCount() {
   }
 }
 
+/**
+ * 按组件 ID 遍历匹配待切换组件
+ */
 export function componentSwitch(componentData, changeComponent) {
   componentData.map(obj => (obj.id === changeComponent.id ? changeComponent : obj))
 }
 
+/**
+ * 在主画布、分组和标签页中查找指定组件
+ */
 export function findComponentById(componentId) {
   let result
   componentData.value.forEach(item => {
@@ -1134,6 +1269,9 @@ export function findComponentById(componentId) {
   return result
 }
 
+/**
+ * 向嵌入父页面发送画布初始化完成事件
+ */
 export function onInitReady(params, eventName = 'canvas_init_ready') {
   try {
     console.info('event:' + eventName)
@@ -1151,6 +1289,9 @@ export function onInitReady(params, eventName = 'canvas_init_ready') {
   }
 }
 
+/**
+ * 将移动端组件的视图样式同步回画布视图信息
+ */
 export function mobileViewStyleSwitch(component) {
   if (component) {
     const viewInfo = canvasViewInfo.value[component.id]
@@ -1161,6 +1302,9 @@ export function mobileViewStyleSwitch(component) {
   }
 }
 
+/**
+ * 同步视图组件或查询组件在画布视图信息中的标题
+ */
 export function syncViewTitle(element) {
   if (element && canvasViewInfo.value[element.id]) {
     if (['UserView'].includes(element.component)) {
