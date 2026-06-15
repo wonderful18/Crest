@@ -23,21 +23,42 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
+/**
+ * 分享链接访问切面，校验带链接令牌的资源访问权限。
+ */
 @Aspect
 @Component
 public class CrestLinkAspect {
 
+    /**
+     * SpEL 参数变量名前缀。
+     */
     private static final String PARAM_VARIABLE_PREFIX = "p";
+    /**
+     * SpEL 表达式起始标记。
+     */
     private static final String SPRING_EL_FLAG = "#";
 
+    /**
+     * SpEL 表达式解析器。
+     */
     private final ExpressionParser parser = new SpelExpressionParser();
+    /**
+     * 分享链接访问权限管理器。
+     */
     private final ShareLinkAccessManage shareLinkAccessManage;
 
+    /**
+     * 构造分享链接访问切面。
+     */
     public CrestLinkAspect(ShareLinkAccessManage shareLinkAccessManage) {
         this.shareLinkAccessManage = shareLinkAccessManage;
     }
 
 
+    /**
+     * 环绕拦截带分享链接许可注解的方法，并校验资源 ID 是否可访问。
+     */
     @Around(value = "@annotation(io.crest.auth.CrestLinkPermit)")
     public Object logAround(ProceedingJoinPoint point) throws Throwable {
         Object[] params = point.getArgs();
@@ -69,6 +90,9 @@ public class CrestLinkAspect {
         }
     }
 
+    /**
+     * 从方法参数和注解表达式中解析资源 ID。
+     */
     public Long getExpression(Object[] params, String expression) {
         StandardEvaluationContext context = buildContext(params);
         Object o = resolveValue(expression, context);
@@ -76,6 +100,9 @@ public class CrestLinkAspect {
         return null;
     }
 
+    /**
+     * 构建 SpEL 解析上下文并注入方法参数。
+     */
     private StandardEvaluationContext buildContext(Object[] params) {
         StandardEvaluationContext context = new StandardEvaluationContext();
         if (params != null && params.length == 1) {
@@ -88,6 +115,7 @@ public class CrestLinkAspect {
         return context;
     }
 
+    // 表达式来源于内部注解配置，保留 semgrep 例外声明。
     // nosemgrep: java.spring.security.audit.spel-injection.spel-injection
     private Object resolveValue(String exp, EvaluationContext context) {
         if (Strings.CS.contains(exp, SPRING_EL_FLAG)) {
