@@ -25,6 +25,7 @@ import 'tinymce/plugins/directionality'
 import 'tinymce/plugins/nonbreaking'
 import 'tinymce/plugins/pagebreak'
 import { propTypes } from '@/utils/propTypes'
+// 定义告警富文本编辑器接收的字段和内容参数。
 const props = defineProps({
   modelValue: String,
   fieldList: propTypes.arrayOf(
@@ -36,9 +37,11 @@ const props = defineProps({
     })
   )
 })
+// 保存编辑器当前内容。
 const myValue = ref()
 const { modelValue } = toRefs(props)
 myValue.value = modelValue
+// 监听外部内容变化并同步到编辑器。
 watch(
   () => props.modelValue,
   newValue => {
@@ -46,7 +49,9 @@ watch(
   }
 )
 
+// 声明内容更新和变更事件。
 const emits = defineEmits(['update:modelValue', 'change'])
+// 监听编辑器内容变化并通知父组件。
 watch(
   () => myValue.value,
   newValue => {
@@ -56,6 +61,7 @@ watch(
 )
 
 const tinymceId = 'tinymce-view-alarm'
+// 保存 TinyMCE 初始化配置。
 const init = ref({
   selector: '#' + tinymceId,
   toolbar_items_size: 'small',
@@ -136,9 +142,11 @@ const init = ref({
     })
   }
 })
+// 初始化 TinyMCE 视图实例。
 const viewInit = () => {
   tinymce.init({})
 }
+// 将选中的字段插入到富文本内容中。
 const fieldSelect = name => {
   const ed = tinymce.editors[tinymceId]
   const obj = props.fieldList.find(ele => ele.name === name)
@@ -161,6 +169,7 @@ const fieldSelect = name => {
   ed.insertContent(value)
   ed.insertContent(attachValue)
 }
+// 触发更多工具栏按钮的点击行为。
 const moreBarElementClick = () => {
   if (!moreBarElement) return
   if (!document.querySelector('.tox.tox-tinymce-aux')?.children.length) return

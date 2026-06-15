@@ -24,6 +24,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * 管理菜单树查询、权限过滤和菜单视图转换。
+ */
 @Component
 public class MenuManage {
 
@@ -47,6 +50,9 @@ public class MenuManage {
 
     @Value("${crest.internal-lite.enabled:false}")
     private boolean internalLiteEnabled;
+    /**
+     * 查询当前用户可访问的菜单树。
+     */
     public List<MenuVO> query(List<CoreMenu> coreMenus) {
         List<CoreMenu> menus = internalLiteEnabled
                 ? coreMenus.stream().filter(menu -> INTERNAL_LITE_MENU_IDS.contains(menu.getId())).toList()
@@ -62,6 +68,9 @@ public class MenuManage {
         return convertTree(treeNodes);
     }
 
+    /**
+     * 查询按排序字段排列的全部菜单。
+     */
     public List<CoreMenu> coreMenus() {
         QueryWrapper<CoreMenu> wrapper = new QueryWrapper<>();
         wrapper.orderByAsc("menu_sort");
@@ -69,6 +78,9 @@ public class MenuManage {
     }
 
 
+    /**
+     * 将菜单列表组装为父子层级树。
+     */
     private List<MenuTreeNode> buildPOTree(List<MenuTreeNode> coreMenus) {
         List<MenuTreeNode> result = new ArrayList<>();
         Map<Long, List<MenuTreeNode>> childMap = coreMenus.stream().collect(Collectors.groupingBy(CoreMenu::getPid));
@@ -81,6 +93,9 @@ public class MenuManage {
         return result;
     }
 
+    /**
+     * 将菜单树节点递归转换为前端菜单视图对象。
+     */
     private List<MenuVO> convertTree(List<MenuTreeNode> roots) {
         List<MenuVO> result = new ArrayList<>();
         for (MenuTreeNode menuTreeNode : roots) {
@@ -96,6 +111,9 @@ public class MenuManage {
         return result;
     }
 
+    /**
+     * 转换单个菜单节点并补充展示元信息。
+     */
     private MenuVO convert(CoreMenu coreMenu) {
 
         if (ROOTID != coreMenu.getPid() && Strings.CS.startsWith(coreMenu.getPath(), "/")) {
@@ -112,6 +130,9 @@ public class MenuManage {
         return menuVO;
     }
 
+    /**
+     * 判断菜单是否属于需要插件标识的商业功能。
+     */
     private boolean isCommercialMenu(CoreMenu coreMenu) {
         if (coreMenu.getId().equals(21L)) return false;
         return coreMenu.getId().equals(7L)
@@ -135,6 +156,9 @@ public class MenuManage {
                 || coreMenu.getPid().equals(70L);
     }
 
+    /**
+     * 查询用户角色允许访问的菜单编号集合。
+     */
     private Set<Long> allowedMenuIds(Long uid) {
         if (uid == null) {
             return Set.of();
