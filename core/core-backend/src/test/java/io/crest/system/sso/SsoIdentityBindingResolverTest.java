@@ -8,10 +8,12 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
+// 验证单点登录身份绑定决策逻辑。
 public class SsoIdentityBindingResolverTest {
 
     private final SsoIdentityBindingResolver resolver = new SsoIdentityBindingResolver();
 
+    // 已绑定外部身份时更新绑定用户。
     @Test
     public void updatesUserWhenProviderSubjectIsAlreadyBound() {
         CrestUser bound = user(1L, "old.account", true);
@@ -22,6 +24,7 @@ public class SsoIdentityBindingResolverTest {
         assertEquals(1L, decision.getUserId().longValue());
     }
 
+    // 已绑定用户禁用时拒绝登录。
     @Test
     public void rejectsDisabledBoundUser() {
         CrestUser bound = user(1L, "zhang.san", false);
@@ -29,6 +32,7 @@ public class SsoIdentityBindingResolverTest {
         assertThrows(CrestException.class, () -> resolver.resolve(profile("zhang.san"), bound, null, true));
     }
 
+    // 已绑定用户与同账号用户不一致时拒绝登录。
     @Test
     public void rejectsAccountConflictWhenBoundUserDiffersFromAccountUser() {
         CrestUser bound = user(1L, "old.account", true);
@@ -37,6 +41,7 @@ public class SsoIdentityBindingResolverTest {
         assertThrows(CrestException.class, () -> resolver.resolve(profile("zhang.san"), bound, accountUser, true));
     }
 
+    // 本地账号匹配时绑定已有用户。
     @Test
     public void bindsExistingLocalUserWhenAccountMatches() {
         CrestUser accountUser = user(2L, "zhang.san", true);
@@ -47,6 +52,7 @@ public class SsoIdentityBindingResolverTest {
         assertEquals(2L, decision.getUserId().longValue());
     }
 
+    // 待绑定本地账号禁用时拒绝登录。
     @Test
     public void rejectsDisabledAccountUserBeforeBinding() {
         CrestUser accountUser = user(2L, "zhang.san", false);
@@ -54,6 +60,7 @@ public class SsoIdentityBindingResolverTest {
         assertThrows(CrestException.class, () -> resolver.resolve(profile("zhang.san"), null, accountUser, true));
     }
 
+    // 未匹配用户且允许自动创建时创建用户。
     @Test
     public void createsUserWhenNoBindingAndAutoCreateEnabled() {
         SsoIdentityDecision decision = resolver.resolve(profile("zhang.san"), null, null, true);
@@ -62,11 +69,13 @@ public class SsoIdentityBindingResolverTest {
         assertEquals("zhang.san", decision.getProfile().getAccount());
     }
 
+    // 未知用户且不允许自动创建时拒绝登录。
     @Test
     public void rejectsUnknownUserWhenAutoCreateDisabled() {
         assertThrows(CrestException.class, () -> resolver.resolve(profile("zhang.san"), null, null, false));
     }
 
+    // 已绑定用户与本地账号为同一用户时允许更新绑定。
     @Test
     public void acceptsSameUserForBoundAndAccountMatch() {
         CrestUser bound = user(1L, "zhang.san", true);
@@ -78,6 +87,7 @@ public class SsoIdentityBindingResolverTest {
         assertEquals(1L, decision.getUserId().longValue());
     }
 
+    // 身份资料缺少提供方 ID 时拒绝处理。
     @Test
     public void rejectsProfileWithoutProviderId() {
         SsoIdentityProfile profile = profile("zhang.san");
@@ -86,6 +96,7 @@ public class SsoIdentityBindingResolverTest {
         assertThrows(CrestException.class, () -> resolver.resolve(profile, null, null, true));
     }
 
+    // 身份资料缺少提供方类型时拒绝处理。
     @Test
     public void rejectsProfileWithoutProviderType() {
         SsoIdentityProfile profile = profile("zhang.san");
@@ -94,6 +105,7 @@ public class SsoIdentityBindingResolverTest {
         assertThrows(CrestException.class, () -> resolver.resolve(profile, null, null, true));
     }
 
+    // 身份资料缺少外部主体时拒绝处理。
     @Test
     public void rejectsProfileWithoutSubject() {
         SsoIdentityProfile profile = profile("zhang.san");
@@ -102,6 +114,7 @@ public class SsoIdentityBindingResolverTest {
         assertThrows(CrestException.class, () -> resolver.resolve(profile, null, null, true));
     }
 
+    // 决策前补齐账号和展示名称。
     @Test
     public void normalizesAccountAndDisplayNameBeforeDecision() {
         SsoIdentityProfile profile = profile("zhang.san");
@@ -113,6 +126,7 @@ public class SsoIdentityBindingResolverTest {
         assertEquals("zhang.san", decision.getProfile().getName());
     }
 
+    // 构造测试用身份资料。
     private SsoIdentityProfile profile(String account) {
         SsoIdentityProfile profile = new SsoIdentityProfile();
         profile.setProviderId(100L);
@@ -124,6 +138,7 @@ public class SsoIdentityBindingResolverTest {
         return profile;
     }
 
+    // 构造测试用本地用户。
     private CrestUser user(Long id, String account, boolean enable) {
         CrestUser user = new CrestUser();
         user.setId(id);
