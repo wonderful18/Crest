@@ -6,22 +6,6 @@ import { useEmitt } from '@/hooks/web/useEmitt'
 const { wsCache } = useCache()
 // 当前 STOMP 客户端实例，断线重连时会复用或重建
 let stompClient: Stomp.Client
-import dev from '../../config/dev'
-// Vite 环境变量决定 WebSocket 的接口基路径
-const env = import.meta.env
-// 后端接口基础路径用于匹配开发代理配置
-const basePath = env.VITE_API_BASEPATH
-
-// 开发环境下从代理配置中推导真实后端地址
-const devProxyTarget = () => {
-  const proxy = dev.server.proxy
-  const exactProxy = proxy[basePath]
-  if (exactProxy?.target) {
-    return exactProxy.target
-  }
-  const matchedProxy = Object.entries(proxy).find(([path]) => basePath?.startsWith(path))?.[1]
-  return matchedProxy?.target
-}
 
 // WebSocket 插件在应用启动时安装并维护订阅连接
 export default {
@@ -61,9 +45,6 @@ export default {
           ? location.pathname
           : location.pathname.replace(/\/[^/]*$/, '/')
         prefix = location.origin + path
-        if (env.MODE === 'dev') {
-          prefix = (devProxyTarget() || location.origin) + '/'
-        }
       }
       if (!prefix.endsWith('/')) {
         prefix += '/'

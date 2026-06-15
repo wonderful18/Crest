@@ -1,12 +1,12 @@
 import common from './config/common';
 import base from './config/base';
-import dev from './config/dev';
 import lib from './config/lib';
 import pages from './config/pages';
 import { defineConfig, mergeConfig } from 'vite'
 
-export default defineConfig(({mode}) => {
+export default defineConfig(async ({mode}) => {
   if (mode === 'dev') {
+    const { default: dev } = await import('./config/dev')
     return mergeConfig(common , mergeConfig(dev, pages))
   }
 
