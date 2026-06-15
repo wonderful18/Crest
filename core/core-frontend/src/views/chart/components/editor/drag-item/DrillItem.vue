@@ -15,8 +15,10 @@ import { iconFieldMap } from '@/components/icon-group/field-list'
 
 const { t } = useI18n()
 
+// 保存字段标签颜色类型。
 const tagType = ref('success')
 
+// 定义钻取字段项所需的字段、图表和主题配置。
 const props = defineProps({
   param: {
     type: Object,
@@ -48,6 +50,7 @@ const props = defineProps({
   }
 })
 
+// 声明钻取字段项的删除、排序和重命名事件。
 const emit = defineEmits([
   'onDimensionItemRemove',
   'onCustomSort',
@@ -58,6 +61,7 @@ const emit = defineEmits([
 
 const { item } = toRefs(props)
 
+// 监听字段和图表类型变化，刷新字段标签类型。
 watch(
   [() => props.dimensionData, () => props.item, () => props.chart.type],
   () => {
@@ -66,6 +70,7 @@ watch(
   { deep: true }
 )
 
+// 处理字段项下拉菜单命令。
 const clickItem = param => {
   if (!param) {
     return
@@ -84,25 +89,30 @@ const clickItem = param => {
       break
   }
 }
+// 构造字段项菜单命令参数。
 const beforeClickItem = type => {
   return {
     type: type
   }
 }
+// 删除当前钻取字段项。
 const removeItem = () => {
   item.value.index = props.index
   emit('onDimensionItemRemove', item.value)
 }
+// 根据字段维度和指标归属刷新标签类型。
 const getItemTagType = () => {
   tagType.value = getItemType(props.dimensionData, props.quotaData, props.item)
 }
 
+// 打开字段显示名编辑。
 const showRename = () => {
   item.value.index = props.index
   item.value.renameType = 'drillFields'
   emit('onNameEdit', item.value)
 }
 
+// 处理排序方式变更。
 const sort = param => {
   if (param.type === 'custom_sort') {
     const item = {
@@ -119,6 +129,7 @@ const sort = param => {
   }
 }
 
+// 构造排序菜单命令参数。
 const beforeSort = type => {
   return {
     type: type

@@ -4,6 +4,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { deepCopy } from '@/utils/utils'
 import CrestUpload from '@/components/visualization/common/CrestUpload.vue'
 const { t } = useI18n()
+// 控制主题编辑弹窗的加载状态。
 const loading = ref(false)
 
 const rules = {
@@ -27,25 +28,33 @@ const rules = {
     }
   ]
 }
+// 保存表单实例，用于校验和重置。
 const subject = ref()
+// 控制主题编辑弹窗显示状态。
 const subjectDialogShow = ref(false)
+// 标记当前操作是新建还是编辑。
 const optType = ref('new')
 
+// 重置表单校验并关闭弹窗。
 const resetForm = () => {
   subject.value.clearValidate()
   subjectDialogShow.value = false
 }
+// 保存主题表单数据。
 const subjectForm = ref(null)
+// 根据操作类型生成弹窗标题。
 const title = computed(() =>
   optType.value === 'new' ? t('components.a_new_theme') : t('components.edit_theme')
 )
 
+// 初始化主题编辑弹窗。
 const optInit = (subjectItem, opt) => {
   optType.value = opt
   subjectDialogShow.value = true
   subjectForm.value = deepCopy(subjectItem)
 }
 
+// 校验主题表单并提交保存事件。
 const saveSubject = () => {
   subject.value.validate(result => {
     if (result) {
@@ -59,7 +68,9 @@ defineExpose({
   resetForm
 })
 
+// 声明主题保存完成事件。
 const emits = defineEmits(['finish'])
+// 回填封面图片上传结果。
 const onImgChange = imgUrl => {
   subjectForm.value.coverUrl = imgUrl
 }
