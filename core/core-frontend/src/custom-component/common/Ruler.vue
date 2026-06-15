@@ -2,8 +2,11 @@
 import { computed, ref, watch } from 'vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
+/** 主画布仓库提供标尺所需的画布尺寸和当前组件状态。 */
 const dvMainStore = dvMainStoreWithOut()
+/** 标尺滚动容器引用，用于与画布滚动保持同步。 */
 const wRuleRef = ref(null)
+/** 标尺组件入参，控制方向、尺寸和刻度文本格式化。 */
 const props = defineProps({
   tickLabelFormatter: {
     type: Function,
@@ -19,16 +22,21 @@ const props = defineProps({
   }
 })
 
+/** 每隔多少个刻度显示一次长刻度标签。 */
 const labelInterval = 5
+/** 向父级同步当前缩放后的刻度间距。 */
 const emits = defineEmits(['update:tickSize'])
 
+/** 画布尺寸、当前组件和组件列表状态引用。 */
 const { canvasStyleData, curComponent, componentData } = storeToRefs(dvMainStore)
 
+/** 标尺在当前方向上的逻辑长度。 */
 const rulerSize = computed(() =>
   props.direction === 'horizontal' ? canvasStyleData.value.width : canvasStyleData.value.height
 )
 
 // 计算复合画布内部组件偏移量
+/** 计算当前组件所在分组、Tabs 或屏幕内的父级偏移。 */
 const parentStyle = computed(() => {
   const style = { left: 0, top: 0 }
   if (curComponent.value && curComponent.value.canvasId !== 'canvas-main') {
@@ -46,6 +54,7 @@ const parentStyle = computed(() => {
   return style
 })
 
+/** 当前组件在标尺上的投影区域。 */
 const curComponentShadow = computed(() => {
   if (curComponent.value) {
     return {
@@ -63,6 +72,7 @@ const curComponentShadow = computed(() => {
   }
 })
 
+/** 根据画布缩放和刻度间距生成标尺刻度集合。 */
 const ticks = computed(() => {
   const result = []
   let currentValue = 0
@@ -75,13 +85,16 @@ const ticks = computed(() => {
   return result
 })
 
+/** 标尺内部滚动层宽度，预留长画布的滚动空间。 */
 const wStyle = computed(() => {
   return {
     width: rulerSize.value * 1.5 + 'px'
   }
 })
 
+/** 当前方向长度与画布宽度的比例，用于估算刻度密度。 */
 const radio = computed(() => rulerSize.value / canvasStyleData.value.width)
+/** 依据画布缩放动态计算基础刻度间距。 */
 const tickSize = computed(
   () =>
     10 *
@@ -91,23 +104,29 @@ const tickSize = computed(
     )
 )
 
+/** 标尺在当前缩放下的可视宽度。 */
 const scaleWidth = computed(() => (rulerSize.value * canvasStyleData.value.scale) / 100)
 
+/** 同步外部画布滚动位置到标尺滚动容器。 */
 const rulerScroll = e => {
   const left = props.direction === 'vertical' ? e.scrollTop : e.scrollLeft
   wRuleRef.value.scrollTo(left, 0)
 }
 
+/** 标尺外层尺寸样式，纵向标尺需要扣除头部留白。 */
 const outerStyle = computed(() => {
   return {
     width: props.direction === 'vertical' ? props.size - 30 + 'px' : '100%'
   }
 })
 
+/** 当前组件未隐藏时展示组件投影。 */
 const curShadowShow = computed(() => curComponent.value && curComponent.value.category !== 'hidden')
 
+/** 缩放后的刻度间距，供父级辅助线计算使用。 */
 const tickSizeScale = computed(() => (tickSize.value * canvasStyleData.value.scale) / 100)
 
+/** 刻度间距变化时立即同步给父组件。 */
 watch(
   () => tickSizeScale.value,
   () => {
