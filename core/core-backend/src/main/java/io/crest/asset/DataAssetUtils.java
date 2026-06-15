@@ -6,6 +6,9 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * 数据资产类型、分页和治理状态工具。
+ */
 public final class DataAssetUtils {
 
     public static final int DEFAULT_PAGE_SIZE = 20;
@@ -33,15 +36,24 @@ public final class DataAssetUtils {
     private DataAssetUtils() {
     }
 
+    /**
+     * 规范化页码，确保页码从 1 开始。
+     */
     public static int normalizePage(Integer page) {
         return page == null || page < 1 ? 1 : page;
     }
 
+    /**
+     * 规范化分页大小，并限制最大页大小。
+     */
     public static int normalizePageSize(Integer pageSize) {
         int size = pageSize == null || pageSize < 1 ? DEFAULT_PAGE_SIZE : pageSize;
         return Math.min(size, MAX_PAGE_SIZE);
     }
 
+    /**
+     * 规范化资产类型别名。
+     */
     public static String normalizeAssetType(String assetType) {
         if (StringUtils.isBlank(assetType) || "all".equalsIgnoreCase(assetType)) {
             return null;
@@ -59,6 +71,9 @@ public final class DataAssetUtils {
         return normalized;
     }
 
+    /**
+     * 获取必填资产类型，缺失时抛出业务异常。
+     */
     public static String requireAssetType(String assetType) {
         String normalized = normalizeAssetType(assetType);
         if (normalized == null) {
@@ -67,6 +82,9 @@ public final class DataAssetUtils {
         return normalized;
     }
 
+    /**
+     * 将资产类型转换为资源类型。
+     */
     public static String resourceTypeForAsset(String assetType) {
         if (TYPE_SCREEN.equals(assetType)) {
             return TYPE_SCREEN;
@@ -80,6 +98,9 @@ public final class DataAssetUtils {
         return null;
     }
 
+    /**
+     * 获取资产类型的中文显示名称。
+     */
     public static String assetTypeLabel(String assetType) {
         return switch (StringUtils.defaultString(assetType)) {
             case TYPE_DATASOURCE -> "数据源";
@@ -94,6 +115,9 @@ public final class DataAssetUtils {
         };
     }
 
+    /**
+     * 根据认证、推荐和废弃标记规范化治理状态。
+     */
     public static GovernanceStatus normalizeGovernanceStatus(Boolean certified, Boolean recommended, Boolean deprecated) {
         boolean deprecatedStatus = Boolean.TRUE.equals(deprecated);
         if (deprecatedStatus) {
@@ -102,10 +126,16 @@ public final class DataAssetUtils {
         return new GovernanceStatus(Boolean.TRUE.equals(certified), Boolean.TRUE.equals(recommended), false);
     }
 
+    /**
+     * 返回空治理状态。
+     */
     public static GovernanceStatus emptyGovernanceStatus() {
         return new GovernanceStatus(false, false, false);
     }
 
+    /**
+     * 数据资产治理状态。
+     */
     public record GovernanceStatus(boolean certified, boolean recommended, boolean deprecated) {
     }
 }
