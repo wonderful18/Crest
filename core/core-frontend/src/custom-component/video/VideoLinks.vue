@@ -106,6 +106,7 @@ const onChange = () => {
 
 init()
 
+// 外部视频链接配置变化后刷新临时编辑态
 watch(
   () => linkInfo.value,
   () => {

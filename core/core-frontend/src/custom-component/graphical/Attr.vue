@@ -43,6 +43,7 @@ const init = () => {
   }
 }
 
+// 当前图形图片地址变化后刷新上传列表
 watch(
   () => curComponent.value.propValue.url,
   () => {

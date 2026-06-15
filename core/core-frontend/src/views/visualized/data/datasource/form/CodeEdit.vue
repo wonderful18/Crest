@@ -22,10 +22,12 @@ const props = defineProps({
 
 // 编辑器展示和回传的格式化文本
 const formatData = ref('')
+// 编辑内容变化后同步到父组件 v-model
 watch(formatData, () => {
   emits('update:modelValue', formatData.value)
 })
 
+// 主题变化时重新格式化编辑器展示内容
 watch([props.theme], () => {
   format()
 })
