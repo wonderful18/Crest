@@ -85,6 +85,7 @@ const changeAxisStyle = prop => {
     state.axisForm.axisValue.splitCount &&
     (state.axisForm.axisValue.splitCount > 100 || state.axisForm.axisValue.splitCount < 0)
   ) {
+    // splitCount 过大会造成刻度过密和渲染性能下降，保存前统一拦截。
     ElMessage.error(t('chart.splitCount_less_100'))
     return
   }
@@ -113,6 +114,7 @@ const isBidirectionalBar = computed(() => {
 
 // 纵向双向柱图保留左右轴语义，横向布局则把上下文案映射到左右轴值。
 const isVerticalLayout = computed(() => {
+  // 横向双向柱图会交换视觉方向，轴位置文案需要按布局重新解释。
   return props.layout === 'vertical'
 })
 
@@ -142,6 +144,7 @@ onMounted(() => {
         @change="changeAxisStyle('position')"
       >
         <div v-if="isBidirectionalBar">
+          <!-- 双向柱图的左右轴语义随布局变化，不能直接复用普通 Y 轴文案。 -->
           <div v-if="isVerticalLayout">
             <el-radio :effect="props.themes" value="left">{{ t('chart.text_pos_left') }}</el-radio>
             <el-radio :effect="props.themes" value="right">{{
@@ -552,6 +555,7 @@ onMounted(() => {
               state.axisForm.axisLabel.show && state.axisForm.axisLabelFormatter.type !== 'percent'
             "
           >
+            <!-- 百分比格式不展示单位配置，其余数值格式可继续叠加单位和后缀。 -->
             <el-row :gutter="8">
               <el-col :span="12" v-if="!isEnLocal">
                 <el-form-item

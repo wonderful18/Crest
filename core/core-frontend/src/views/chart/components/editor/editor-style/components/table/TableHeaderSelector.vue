@@ -81,6 +81,7 @@ const emit = defineEmits(['onTableHeaderChange'])
 // 自定义对齐需要把当前字段选择器里的临时值写回完整 alignConfig 后再上报。
 const changeTableHeader = prop => {
   if (prop === 'alignConfig') {
+    // 字段级对齐只更新当前选中字段，其余字段沿用原配置。
     state.tableHeaderForm.alignConfig = alignConfigOptions.map(item => ({
       id: item.id,
       align: item.id === alignConfig.id ? alignConfig.align : item.align
@@ -150,6 +151,7 @@ const groupConfigValid = computed(() => {
   if (noGroup) {
     return false
   }
+  // 复杂表头叶子节点必须与当前可见字段一一对应。
   const allAxis = [...props.chart?.xAxis]
   if (props.chart.type === 'table-normal') {
     allAxis.push(...props.chart?.yAxis)
@@ -237,7 +239,7 @@ const init = () => {
       })
     }
     axis.forEach(item => {
-      // 隐藏字段仍可能存在于轴配置中，表头对齐候选保持与当前轴顺序一致。
+      // 候选项按轴顺序生成，字段隐藏后的有效性由渲染层和分组校验处理。
       const align = alignCfgMap[item.engineFieldName] || 'left'
       alignConfigOptions.push({
         id: item.engineFieldName,
@@ -1021,6 +1023,7 @@ onMounted(() => {
       </el-checkbox>
     </el-form-item>
     <el-form-item v-if="enableGroupConfig" class="form-item" :class="'form-item-' + themes">
+      <!-- 复杂表头配置保存后按叶子字段顺序校验，失效时不展示已配置状态。 -->
       <div class="header-group-config">
         <span>{{ t('chart.table_header_group_config') }}</span>
         <div class="group-icon">
@@ -1060,6 +1063,7 @@ onMounted(() => {
       </el-checkbox>
     </el-form-item>
     <el-form-item v-if="enableAuxiliaryConfig" class="form-item" :class="'form-item-' + themes">
+      <!-- 辅助说明只附加到叶子字段，不改变复杂表头分组结构。 -->
       <div class="header-group-config">
         <span>{{ t('chart.table_header_description_config') }}</span>
         <div class="group-icon">
