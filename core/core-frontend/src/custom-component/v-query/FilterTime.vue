@@ -284,6 +284,7 @@ const relativeToCurrentListRange = computed(() => {
 watch(
   () => relativeToCurrentListRange.value,
   val => {
+    // 区间快捷项跟随粒度变化，旧值失效时回退到当前粒度的第一个可用项。
     if (!val.some(ele => ele.value === timeRange.value.relativeToCurrentRange)) {
       timeRange.value.relativeToCurrentRange = val[0].value
     }
@@ -295,6 +296,7 @@ watch(
 watch(
   () => relativeToCurrentList.value,
   val => {
+    // 单点快捷项独立校验，避免开始/结束模式误用区间枚举。
     if (!val.some(ele => ele.value === timeRange.value.relativeToCurrent)) {
       timeRange.value.relativeToCurrent = val[0].value
     }
@@ -306,6 +308,7 @@ watch(
 watch(
   () => relativeToCurrentTypeList.value,
   val => {
+    // 偏移单位必须与当前时间粒度兼容，否则动态时间计算会产生越级偏移。
     if (!val.some(ele => ele.value === timeRange.value.relativeToCurrentType)) {
       timeRange.value.relativeToCurrentType = val[0].value as ManipulateType
     }

@@ -295,6 +295,7 @@ const relativeToCurrentListRange = computed(() => {
 watch(
   () => relativeToCurrentListRange.value,
   val => {
+    // 当前粒度不再支持原快捷项时，立即回退到首个有效区间，避免预览组件解析失败。
     if (!val.some(ele => ele.value === timeRange.value.relativeToCurrentRange)) {
       timeRange.value.relativeToCurrentRange = val[0].value
     }
@@ -306,6 +307,7 @@ watch(
 watch(
   () => relativeToCurrentList.value,
   val => {
+    // 开始/结束模式的快捷项随粒度变化独立校验，不复用区间快捷项。
     if (!val.some(ele => ele.value === timeRange.value.relativeToCurrent)) {
       timeRange.value.relativeToCurrent = val[0].value
     }
@@ -317,6 +319,7 @@ watch(
 watch(
   () => relativeToCurrentTypeList.value,
   val => {
+    // 起点和终点的偏移单位都要落在当前粒度允许范围内。
     if (!val.some(ele => ele.value === timeRange.value.relativeToCurrentType)) {
       timeRange.value.relativeToCurrentType = val[0].value as ManipulateType
     }
@@ -496,6 +499,7 @@ watch(
       </div>
       <!-- 动态窗口限制单次查询跨度，用于控制日期范围过大时的查询成本。 -->
       <div v-if="timeRange.dynamicWindow" class="setting-content maximum-single-query">
+        <!-- 最大查询窗口按当前粒度最细单位解释，例如按日或按月限制范围跨度。 -->
         {{ t('v_query.maximum_single_query') }}
         <el-input-number
           v-model="timeRange.maximumSingleQuery"
