@@ -29,6 +29,7 @@ const handleVisiblePopover = ev => {
 // 根据查询组件展示类型和时间类型选择默认值编辑组件。
 const filterTypeCom = computed(() => {
   const { displayType, timeType = 'fixed' } = curComponent.value
+  // displayType 1/7 是日期类组件，动态默认值需要切换到专用预览组件。
   return ['1', '7'].includes(displayType)
     ? timeType === 'dynamic'
       ? displayType === '1'
@@ -82,6 +83,7 @@ watch(
 // 动态时间自定义偏移只允许选择不高于当前时间粒度的单位。
 const relativeToCurrentTypeList = computed(() => {
   if (!curComponent.value) return []
+  // 单日期和日期范围分别按自己的粒度字段裁剪可选偏移单位。
   let index = ['year', 'month', 'date', 'datetime'].indexOf(curComponent.value.timeGranularity) + 1
   if (+curComponent.value.displayType === 7) {
     index =
@@ -338,6 +340,7 @@ const multiple = ref(false)
 // 切换单双选时同步 defaultValue/selectValue 结构，避免单值和数组混用。
 const multipleChange = (val: boolean, isMultipleChange = false) => {
   if (isMultipleChange) {
+    // 用户主动切换单双选时重置默认值，避免旧类型残留。
     curComponent.value.defaultValue = val ? [] : undefined
   }
   const { defaultValue } = curComponent.value
@@ -468,6 +471,7 @@ defineExpose({
   >
     <div class="label">{{ t('v_query.option_type') }}</div>
     <div class="value">
+      <!-- 单选和多选共用默认值组件，切换时同步 selectValue 的值类型。 -->
       <el-radio-group
         class="larger-radio"
         @change="val => multipleChange(val as boolean, true)"
@@ -636,6 +640,7 @@ defineExpose({
             ) && 'is-year-month-range'
           "
         >
+          <!-- 日期范围自定义默认值分别保存开始和结束偏移。 -->
           <div class="setting-label">{{ t('datasource.start_time') }}</div>
           <div class="setting-input with-date range">
             <el-input-number
@@ -786,6 +791,7 @@ defineExpose({
   .value {
     width: 321px;
     .condition-type {
+      // 文本双条件默认值使用无边框输入，底线模拟旧版配置样式。
       margin-top: 3px !important;
       display: flex;
       position: relative;
@@ -982,6 +988,7 @@ defineExpose({
     }
 
     &.is-year-month-range {
+      // 年、月和日期范围不需要单独时间选择器，只保留偏移量和单位。
       .setting-input {
         &.with-date {
           .ed-input-number,

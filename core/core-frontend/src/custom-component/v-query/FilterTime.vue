@@ -73,6 +73,7 @@ const filterTypeCom = computed(() => {
 })
 // Element Plus 的范围选择类型通过粒度后缀拼接得到，例如 monthrange、datetimerange。
 const timeGranularityMultiple = computed<DatePickType>(() => {
+  // Element 日期范围组件使用 range 后缀命名，按当前单点粒度派生即可。
   return (props.timeGranularity + 'range') as DatePickType
 })
 // 自定义相对时间使用前后方向描述，实际计算由动态时间组件按该方向解析。
@@ -89,6 +90,7 @@ const aroundList = [
 // 相对时间单位不能细于当前筛选粒度，避免按年筛选时出现按日偏移这类无效配置。
 const relativeToCurrentTypeList = computed(() => {
   if (!timeRange.value) return []
+  // 按粒度列表位置截断单位，避免低粒度筛选保存高精度偏移。
   let index = ['year', 'month', 'date', 'datetime'].indexOf(props.timeGranularity) + 1
   return [
     {
@@ -110,6 +112,7 @@ const relativeToCurrentTypeList = computed(() => {
 const relativeToCurrentList = computed(() => {
   let list = []
   if (!timeRange.value) return list
+  // 单点快捷项只表达一个时间点或周期边界，区间窗口放到范围列表处理。
   switch (props.timeGranularity) {
     case 'year':
       list = [
@@ -193,6 +196,7 @@ const relativeToCurrentList = computed(() => {
 const relativeToCurrentListRange = computed(() => {
   let list = []
   if (!timeRange.value) return list
+  // 区间快捷项覆盖常见累计窗口，保存值保持与范围过滤组件一致。
   switch (props.timeGranularity) {
     case 'year':
       list = [
@@ -386,6 +390,7 @@ watch(
             </div>
           </div>
           <template v-if="timeRange.relativeToCurrentRange === 'custom'">
+            <!-- 自定义区间需要同时配置起点和终点偏移，预览组件负责换算实际时间。 -->
             <div
               class="setting"
               :class="['year', 'month'].includes(timeGranularity) && 'is-year-month-range'"
@@ -539,6 +544,7 @@ watch(
       .ed-date-editor,
       .ed-date-editor--datetime .ed-input__wrapper,
       .ed-select-v2 {
+        // 多种时间控件共用固定宽度，保证固定和动态模式切换时布局稳定。
         width: 415px;
       }
 
@@ -615,6 +621,7 @@ watch(
         justify-content: flex-end;
         align-items: center;
         &.range {
+          // 起止偏移输入不需要左侧缩进，保持与区间标签对齐。
           padding-left: 0px;
           width: 308px;
         }

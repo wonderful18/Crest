@@ -85,6 +85,7 @@ const aroundList = [
 // 相对时间单位不能细于当前范围粒度，例如 yearrange 只允许按年偏移。
 const relativeToCurrentTypeList = computed(() => {
   if (!timeRange.value) return []
+  // 通过粒度在有序列表中的位置裁剪单位，保证范围字段和单点字段规则一致。
   let index =
     ['yearrange', 'monthrange', 'daterange', 'datetimerange'].indexOf(
       props.timeGranularityMultiple
@@ -113,6 +114,7 @@ const relativeToCurrentTypeListTips = computed(() => {
 const relativeToCurrentList = computed(() => {
   let list = []
   if (!timeRange.value) return list
+  // 年、月、日和日期时间的快捷值分别映射到后端可识别的稳定枚举。
   switch (props.timeGranularityMultiple) {
     case 'yearrange':
       list = [
@@ -204,6 +206,7 @@ const relativeToCurrentList = computed(() => {
 const relativeToCurrentListRange = computed(() => {
   let list = []
   if (!timeRange.value) return list
+  // 区间快捷项比单点快捷项多滚动窗口和累计到当前周期的业务语义。
   switch (props.timeGranularityMultiple) {
     case 'yearrange':
       list = [
@@ -402,6 +405,7 @@ watch(
             </div>
           </div>
           <template v-if="timeRange.relativeToCurrentRange === 'custom'">
+            <!-- 自定义区间分别配置起点和终点偏移，最终由动态范围组件计算实际边界。 -->
             <div
               class="setting"
               :class="
@@ -576,6 +580,7 @@ watch(
       .ed-date-editor,
       .ed-date-editor--datetime .ed-input__wrapper,
       .ed-select-v2 {
+        // 宽度覆盖 Element 日期选择器和虚拟选择器，避免不同控件切换时抖动。
         width: 415px;
       }
 
@@ -655,6 +660,7 @@ watch(
           width: auto;
         }
         &.range {
+          // 自定义区间的起止行各自独占右侧输入区。
           padding-left: 0px;
           width: 308px;
         }
