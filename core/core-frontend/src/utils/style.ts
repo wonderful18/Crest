@@ -3,7 +3,9 @@ import { imgUrlTrans } from '@/utils/imgUtils'
 import { hexColorToRGBA } from '@/views/chart/components/js/util'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { isMainCanvas, isTabCanvas } from '@/utils/canvasUtils'
+/** 主画布仓库提供画布模式、移动端状态和主题配置。 */
 const dvMainStore = dvMainStoreWithOut()
+/** 生成基础形状在画布上的定位和旋转样式。 */
 export function getShapeStyle(style) {
   const result = {}
   ;['width', 'height', 'top', 'left', 'rotate'].forEach(attr => {
@@ -17,6 +19,7 @@ export function getShapeStyle(style) {
   return result
 }
 
+/** 根据仪表板栅格或大屏自由布局生成组件容器样式。 */
 export function getShapeItemStyle(
   item,
   { dvModel, cellWidth, cellHeight, curGap, showPosition = 'preview' }
@@ -51,6 +54,7 @@ export function getShapeItemStyle(
   return result
 }
 
+/** 将仪表板栅格位置同步回组件的像素样式。 */
 export function syncShapeItemStyle(item, cellWidth, cellHeight) {
   item.style.left = cellWidth * (item.x - 1)
   item.style.top = cellHeight * (item.y - 1)
@@ -58,6 +62,7 @@ export function syncShapeItemStyle(item, cellWidth, cellHeight) {
   item.style.height = cellHeight * item.sizeY
 }
 
+/** 需要追加像素单位的样式字段集合。 */
 const needUnit = [
   'fontSize',
   'width',
@@ -69,6 +74,7 @@ const needUnit = [
   'borderRadius'
 ]
 
+/** 生成 SVG 类组件可直接绑定的样式对象。 */
 export function getSVGStyle(style, filter = []) {
   const result = {}
 
@@ -104,6 +110,7 @@ export function getSVGStyle(style, filter = []) {
   return result
 }
 
+/** 汇总组件基础样式和通用背景样式。 */
 export function getItemAllStyle(item, filter = []) {
   const style = item.style
   const commonBackground = item.commonBackground
@@ -124,7 +131,7 @@ export function getItemAllStyle(item, filter = []) {
     }
 
     if (commonBackground) {
-      //附加背景样式
+      // 附加背景样式
       let colorRGBA = ''
       if (commonBackground.backgroundColorSelect) {
         colorRGBA = hexColorToRGBA(commonBackground.backgroundColor, commonBackground.alpha)
@@ -149,6 +156,7 @@ export function getItemAllStyle(item, filter = []) {
   return result
 }
 
+/** 生成普通组件可直接绑定的样式对象。 */
 export function getStyle(style, filter = []) {
   const result = {}
   Object.keys(style).forEach(key => {
@@ -170,6 +178,7 @@ export function getStyle(style, filter = []) {
 }
 
 // 获取一个组件旋转 rotate 后的样式
+/** 计算组件旋转后的外接矩形位置和尺寸。 */
 export function getComponentRotatedStyle(style) {
   style = { ...style }
   if (style.rotate != 0) {
@@ -193,6 +202,7 @@ export function getComponentRotatedStyle(style) {
   return style
 }
 
+/** 根据画布背景、移动端配置和字体生成画布容器样式。 */
 export function getCanvasStyle(canvasStyleData, canvasId = 'canvas-main') {
   const {
     backgroundColorSelect,
@@ -232,6 +242,7 @@ export function getCanvasStyle(canvasStyleData, canvasId = 'canvas-main') {
   return style
 }
 
+/** 建立分组内部组件相对父级的比例坐标，并转换为组内局部坐标。 */
 export function createGroupStyle(groupComponent) {
   const parentStyle = groupComponent.style
   groupComponent.propValue.forEach(component => {
@@ -249,6 +260,7 @@ export function createGroupStyle(groupComponent) {
   })
 }
 
+/** 根据 Tabs 可视区域尺寸还原内部组件样式。 */
 function dataVTabSizeStyleAdaptor(tabComponent) {
   const parentStyleAdaptor = { ...tabComponent.style }
   const offset = parentStyleAdaptor.showTabTitle ? 46 : 0
@@ -274,6 +286,7 @@ function dataVTabSizeStyleAdaptor(tabComponent) {
   })
 }
 
+/** 按父级尺寸和比例坐标还原分组内部组件的像素样式。 */
 export function groupItemStyleAdaptor(component, parentStyle) {
   // 分组还原逻辑
   // 当发上分组缩放是，要将内部组件按照比例转换
@@ -284,6 +297,7 @@ export function groupItemStyleAdaptor(component, parentStyle) {
   component.style.height = parentStyle.height * styleScale.height
 }
 
+/** 批量刷新 Tabs 内部组件的分组比例坐标。 */
 export function groupStyleRevertBatch(groupComponent, parentStyle) {
   if (groupComponent.component === 'Tabs') {
     groupComponent.propValue?.forEach(tabItem => {
@@ -294,6 +308,7 @@ export function groupStyleRevertBatch(groupComponent, parentStyle) {
   }
 }
 
+/** Tabs 容器尺寸变化时重新计算各页内部组件比例坐标。 */
 export function tabInnerStyleRevert(tabOuterComponent) {
   const parentStyle = {
     width: tabOuterComponent.style.width,
@@ -306,6 +321,7 @@ export function tabInnerStyleRevert(tabOuterComponent) {
   })
 }
 
+/** 将内部组件当前像素样式转换为相对父级的比例样式。 */
 export function groupStyleRevert(innerComponent, parentStyle) {
   const innerStyle = { ...innerComponent.style }
   innerComponent.groupStyle.left = innerStyle.left / parentStyle.width
@@ -314,6 +330,7 @@ export function groupStyleRevert(innerComponent, parentStyle) {
   innerComponent.groupStyle.height = innerStyle.height / parentStyle.height
 }
 
+/** 分组或 Tabs 尺寸变化时刷新内部组件样式。 */
 export function groupSizeStyleAdaptor(groupComponent) {
   if (groupComponent.component === 'Group') {
     const parentStyle = groupComponent.style
@@ -325,8 +342,9 @@ export function groupSizeStyleAdaptor(groupComponent) {
   }
 }
 
+/** 新增组件到大屏 Tabs 时初始化位置并记录比例坐标。 */
 export function dataVTabComponentAdd(innerComponent, parentComponent) {
-  //do dataVTabComponentAdd
+  // 新增到 Tabs 的组件先贴齐内容区域左上角。
   innerComponent.style.top = 0
   innerComponent.style.left = 0
   const parentStyleAdaptor = { ...parentComponent.style }

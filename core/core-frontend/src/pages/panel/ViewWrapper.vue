@@ -11,16 +11,27 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { useI18n } from '@/hooks/web/useI18n'
 import EmptyBackground from '../../components/empty-background/src/EmptyBackground.vue'
 import exeRequest from '@/config/axios'
+/** 本地缓存用于读取嵌入式权限缓存。 */
 const { wsCache } = useCache()
+/** 交互仓库用于写入嵌入式资源校验上下文。 */
 const interactiveStore = interactiveStoreWithOut()
+/** 嵌入式仓库承接外部容器传入的资源参数。 */
 const embeddedStore = useEmbedded()
+/** div 嵌入时由上层注入的参数对象。 */
 const embeddedParamsDiv = inject('embeddedParams') as Record<string, any>
+/** 当前要预览的组件配置。 */
 const config = ref<Record<string, any>>({})
+/** 当前要预览的图表视图信息。 */
 const viewInfo = ref()
+/** 图表放大弹窗实例。 */
 const userViewEnlargeRef = ref()
+/** 主画布仓库用于写入外部参数过滤器。 */
 const dvMainStore = dvMainStoreWithOut()
+/** 国际化翻译函数，用于外部参数解析错误提示。 */
 const { t } = useI18n()
+/** 原生宿主的交互调用句柄。 */
 const openHandler = ref(null)
+/** 嵌入式单图预览状态，缓存画布数据、资源信息和缩放比例。 */
 const state = reactive({
   canvasDataPreview: null,
   canvasStylePreview: null,
@@ -32,9 +43,10 @@ const state = reactive({
   scale: 100
 })
 
+/** 统一选择 div 注入参数或全局嵌入式仓库参数。 */
 const embeddedParams = embeddedParamsDiv?.chartId ? embeddedParamsDiv : embeddedStore
 
-// 目标校验： 需要校验targetSourceId 是否是当前可视化资源ID
+/** 处理外部附加参数消息，只接收目标资源和后缀匹配的消息。 */
 const winMsgHandle = event => {
   const msgInfo = event.data
 
@@ -52,6 +64,7 @@ const winMsgHandle = event => {
   }
 }
 
+/** 校验嵌入式资源查看权限，CrestBi 外部环境默认放行。 */
 const checkPer = async resourceId => {
   if (!window.CrestBi || !resourceId) {
     return true
@@ -61,6 +74,7 @@ const checkPer = async resourceId => {
   const key = embeddedParams.busiFlag === 'dataV' ? 'screen-weight' : 'panel-weight'
   return check(wsCache.get(key), resourceId, 1)
 }
+/** 挂载前完成权限校验、外部参数解析和单图画布数据初始化。 */
 onBeforeMount(async () => {
   const checkResult = await checkPer(embeddedParams.dvId)
   if (!checkResult) {
@@ -153,10 +167,12 @@ onBeforeMount(async () => {
     }
   )
 })
+/** 打开单图放大弹窗。 */
 const userViewEnlargeOpen = opt => {
   userViewEnlargeRef.value.dialogInit(state.canvasStylePreview, viewInfo.value, config.value, opt)
 }
 
+/** 将图表点击参数发送给原生宿主或父窗口。 */
 const onPointClick = param => {
   try {
     console.info('crest_inner_params send')
@@ -182,12 +198,14 @@ const onPointClick = param => {
     console.warn('crest_inner_params send error')
   }
 }
+/** 单图预览容器引用，用于计算缩放比例。 */
 const previewViewCanvas = ref(null)
 
+/** 根据容器宽度和原始组件宽度重算嵌入式单图缩放比例。 */
 const resetLayout = () => {
   nextTick(() => {
     if (previewViewCanvas.value) {
-      //div容器获取tableBox.value.clientWidth
+      // div 容器获取 tableBox.value.clientWidth。
       const widthSource = state.canvasDataPreview?.find(item => item.id === embeddedParams?.chartId)
         ?.style.width
       if (widthSource) {
@@ -197,6 +215,7 @@ const resetLayout = () => {
     }
   })
 }
+/** 页面挂载后补算一次布局，兼容容器宽度延迟稳定的场景。 */
 onMounted(() => {
   resetLayout()
 })
