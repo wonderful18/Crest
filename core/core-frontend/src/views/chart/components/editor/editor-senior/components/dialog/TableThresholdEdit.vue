@@ -259,7 +259,7 @@ const initFields = () => {
     fields = [...xAxis, ...yAxis]
   }
   state.fields.splice(0, state.fields.length, ...fields)
-  // 字段列表变化时清空失效的阈值字段
+  // 字段列表变化时清空失效阈值字段，避免保存已删除或隐藏字段的条件。
   let change = false
   state.thresholdArr.forEach(item => {
     const fieldItemObj = state.fields.filter(ele => ele.id === item.fieldId)
@@ -294,7 +294,7 @@ const addConditions = item => {
   if (item.field.dateStyle === 'H_m_s') {
     newCondition.value = '00:00:00'
   }
-  // 获取单元格默认背景颜色
+  // 新条件默认继承表格单元格底色，用户未设置背景时保持原表格视觉。
   const tableCell = props.chart?.customAttr?.tableCell
   if (tableCell) {
     newCondition.backgroundColor = cloneDeep(tableCell.tableItemBgColor)
@@ -375,11 +375,11 @@ const getConditionsFields = (fieldItem, conditionItem, conditionItemField) => {
   const fieldItemDeType = fieldItemObj[0]?.fieldType
   const result =
     state.fields.filter(item => {
-      // 文本、时间、boole、地理位置时，需要同类型的字段
+      // 文本、时间、布尔和地理字段只允许同类型动态比较，避免不同类型值被错误比较。
       if ([0, 1, 4, 5].includes(fieldItemDeType)) {
         return item.fieldType === fieldItemDeType
       } else if ([2, 3].includes(fieldItemDeType)) {
-        // 整型浮点型时，需要整型或者浮点型类型的字段
+        // 数值字段允许整型和浮点互相比较，和表格指标计算口径一致。
         return item.fieldType === 2 || item.fieldType === 3
       } else {
         return false
@@ -396,12 +396,12 @@ const getConditionsFields = (fieldItem, conditionItem, conditionItemField) => {
 const getDynamicSummaryOptions = itemId => {
   const fieldType = state.fields.filter(ele => ele.id === itemId)?.[0]?.fieldType
   if (fieldType === 1) {
-    // 时间
+    // 时间字段不支持平均值汇总，避免日期值被转换成无业务含义的数值均值。
     return dynamicSummaryOptions.filter(ele => {
       return ele.id !== 'avg'
     })
   } else if (fieldType === 0 || fieldType === 5) {
-    // 文本、地理位置
+    // 文本和地理字段只能取原值参与比较，不能执行数值型汇总。
     return dynamicSummaryOptions.filter(ele => {
       return ele.id === 'value'
     })
@@ -556,7 +556,7 @@ init()
                 </el-select>
               </el-form-item>
             </el-col>
-            <!--不是between 不是动态值-->
+            <!-- 固定单值条件直接录入比较值，控件类型跟随主字段类型切换。 -->
             <el-col
               v-if="isNotEmptyAndNull(item) && !isBetween(item) && !isDynamic(item)"
               :span="6"
@@ -609,8 +609,7 @@ init()
                 />
               </el-form-item>
             </el-col>
-            <!--不是between 是动态值-->
-            <!--动态值 字段-->
+            <!-- 动态单值条件从同类型字段中选择比较字段。 -->
             <el-col v-if="isNotEmptyAndNull(item) && !isBetween(item) && isDynamic(item)" :span="3">
               <el-form-item class="form-item">
                 <el-select
@@ -646,7 +645,7 @@ init()
                 </el-select>
               </el-form-item>
             </el-col>
-            <!--动态值聚合方式-->
+            <!-- 动态单值条件可选择原值、最大值、最小值等汇总方式。 -->
             <el-col
               v-if="isNotEmptyAndNull(item) && !isBetween(item) && isDynamic(item)"
               :span="3"
@@ -668,8 +667,7 @@ init()
                 </el-select>
               </el-form-item>
             </el-col>
-            <!--是between 不是动态值-->
-            <!--between 开始值-->
+            <!-- 固定区间条件分别录入最小值和最大值。 -->
             <el-col
               v-if="isNotEmptyAndNull(item) && isBetween(item) && !isDynamic(item)"
               :span="2"
@@ -695,7 +693,7 @@ init()
                 ≤&nbsp;{{ t('chart.drag_block_label_value') }}&nbsp;≤
               </span>
             </el-col>
-            <!--between 结束值-->
+            <!-- 固定区间条件的最大值输入。 -->
             <el-col
               v-if="isNotEmptyAndNull(item) && isBetween(item) && !isDynamic(item)"
               :span="2"
@@ -713,8 +711,7 @@ init()
               </el-form-item>
             </el-col>
 
-            <!--是between 动态值-->
-            <!--开始值 动态值字段-->
+            <!-- 动态区间条件的最小值字段。 -->
             <el-col
               v-if="isNotEmptyAndNull(item) && isBetween(item) && isDynamic(item)"
               class="minField"
@@ -750,7 +747,7 @@ init()
                 </el-select>
               </el-form-item>
             </el-col>
-            <!--开始值 动态值聚合方式-->
+            <!-- 动态区间最小值字段的汇总方式。 -->
             <el-col
               v-if="isNotEmptyAndNull(item) && isBetween(item) && isDynamic(item)"
               class="minValue"
@@ -778,7 +775,7 @@ init()
                 ≤&nbsp;{{ t('chart.drag_block_label_value') }}&nbsp;≤
               </span>
             </el-col>
-            <!--结束值 动态值字段-->
+            <!-- 动态区间条件的最大值字段。 -->
             <el-col
               v-if="isNotEmptyAndNull(item) && isBetween(item) && isDynamic(item)"
               class="maxField"
@@ -814,7 +811,7 @@ init()
                 </el-select>
               </el-form-item>
             </el-col>
-            <!--结束值 动态值聚合方式-->
+            <!-- 动态区间最大值字段的汇总方式。 -->
             <el-col
               v-if="isNotEmptyAndNull(item) && isBetween(item) && isDynamic(item)"
               class="maxValue"
