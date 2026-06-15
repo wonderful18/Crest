@@ -474,6 +474,7 @@ defineExpose({ getFormData })
         </el-form-item>
 
         <div style="display: flex">
+          <!-- 后缀颜色、字号和字间距独立于主值，适配单位文本弱化展示的常见需求。 -->
           <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
             <el-color-picker
               :disabled="!state.indicatorValueForm.suffixEnable"
@@ -538,6 +539,7 @@ defineExpose({ getFormData })
         </div>
 
         <el-space>
+          <!-- 后缀加粗和斜体沿用图标控件，交互上与主值样式保持一致。 -->
           <el-form-item class="form-item" :class="'form-item-' + themes">
             <el-checkbox
               :disabled="!state.indicatorValueForm.suffixEnable"
@@ -596,6 +598,7 @@ defineExpose({ getFormData })
         </el-space>
 
         <el-form-item class="form-item" :class="'form-item-' + themes">
+          <!-- 后缀阴影单独控制，避免单位文本跟随主值阴影后影响小字号可读性。 -->
           <el-checkbox
             :disabled="!state.indicatorValueForm.suffixEnable"
             size="small"

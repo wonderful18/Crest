@@ -929,6 +929,7 @@ onMounted(() => {
     </el-row>
 
     <el-form-item class="form-item" :class="'form-item-' + themes" v-if="showProperty('showIndex')">
+      <!-- 序号列作为虚拟字段参与渲染和对齐配置，开启后会同步加入字段候选项。 -->
       <el-checkbox
         size="small"
         :effect="themes"
@@ -944,6 +945,7 @@ onMounted(() => {
       :class="'form-item-' + themes"
       v-if="showProperty('showIndex') && state.tableHeaderForm.showIndex"
     >
+      <!-- 序号列表头文案独立保存，便于导出和预览保持同一列名。 -->
       <el-input
         :effect="themes"
         v-model="state.tableHeaderForm.indexLabel"
@@ -955,6 +957,7 @@ onMounted(() => {
       :class="'form-item-' + themes"
       v-if="showProperty('tableHeaderSort')"
     >
+      <!-- 表头排序仅开放给支持列排序的表格渲染器，避免图表类型间配置串用。 -->
       <el-checkbox
         size="small"
         :effect="themes"
@@ -997,6 +1000,7 @@ onMounted(() => {
       :class="'form-item-' + themes"
       v-if="showProperty('rowHeaderFreeze')"
     >
+      <!-- 透视表行头冻结由 S2 表格布局处理，配置面板只负责保存开关状态。 -->
       <el-checkbox
         size="small"
         :effect="themes"
@@ -1117,6 +1121,7 @@ onMounted(() => {
     width="760px"
     :class="themes === 'dark' ? 'table-header-group-config-dialog' : ''"
   >
+    <!-- 辅助说明配置宽度固定，保证字段、说明内容和操作区在侧栏外完整展示。 -->
     <template #header>
       {{ t('chart.table_header_description_config') }}
     </template>
