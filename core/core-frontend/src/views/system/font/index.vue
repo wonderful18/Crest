@@ -11,16 +11,22 @@ import { cloneDeep } from 'lodash-es'
 
 const appearanceStore = useAppearanceStoreWithOut()
 const { t } = useI18n()
+// 保存字体名称搜索关键字。
 const fontKeyword = ref('')
+// 保存当前可展示的字体列表。
 const fontList = ref([])
 const basePath = import.meta.env.VITE_API_BASEPATH
 
+// 保存字体上传详情弹窗实例。
 const uploadDetail = ref()
+// 控制字体管理页面的加载状态。
 const loading = ref(false)
+// 打开字体新增、编辑或上传详情弹窗。
 const uploadFont = (title, type, item) => {
   uploadDetail.value.init(title, type, item)
 }
 
+// 从外观配置仓库加载字体列表。
 const listFont = async () => {
   loading.value = true
   await appearanceStore.setFontList()
@@ -28,12 +34,14 @@ const listFont = async () => {
   loading.value = false
 }
 
+// 根据搜索关键字过滤字体列表。
 const fontListComputed = computed(() => {
   return fontList.value.filter(ele => {
     return ele.name?.toLocaleLowerCase().includes(fontKeyword.value.trim().toLocaleLowerCase())
   })
 })
 
+// 删除非默认字体，并刷新默认字体状态。
 const deleteFont = item => {
   if (item.isDefault) {
     ElMessage.warning(t('system.fonts_before_deleting'))
@@ -58,6 +66,7 @@ const deleteFont = item => {
   })
 }
 
+// 将指定字体设置为默认字体。
 const setToDefault = item => {
   item.isDefault = 1
   loading.value = true
@@ -71,6 +80,7 @@ const setToDefault = item => {
       loading.value = false
     })
 }
+// 将默认字体写入页面样式变量。
 const setDefaultFont = (url, name, fileTransName) => {
   let fontStyleElement = document.querySelector('#crest-custom_font')
   if (!fontStyleElement && name) {
@@ -90,6 +100,7 @@ const setDefaultFont = (url, name, fileTransName) => {
   document.documentElement.style.setProperty('--crest-custom_font', `${name ? name : ''}`)
   document.documentElement.style.setProperty('--van-base-font', `${name ? name : ''}`)
 }
+// 查询默认字体并应用到当前页面。
 const getDefaultFont = () => {
   defaultFont().then(res => {
     const [font] = res || []
@@ -100,6 +111,7 @@ const getDefaultFont = () => {
     )
   })
 }
+// 字体上传完成后刷新列表和默认字体。
 const uploadFilish = async () => {
   loading.value = true
   await appearanceStore.setFontList()
