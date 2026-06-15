@@ -13,7 +13,9 @@ import { Base64 } from 'js-base64'
 import { querySymmetricKey } from '@/api/login'
 import { symmetricDecrypt } from '@/utils/encryption'
 const { t } = useI18n()
+// 引擎编辑弹窗显隐状态。
 const dialogVisible = ref(false)
+// 引擎编辑加载实例。
 const loadingInstance = ref(null)
 
 const defaultRule = {
@@ -112,22 +114,28 @@ const configRules = {
 }
 const rule = { ...cloneDeep(configRules), ...cloneDeep(defaultRule) }
 
+// 定义引擎保存完成事件。
 const emits = defineEmits(['saved'])
+// 重置引擎表单。
 const resetForm = () => {
   dialogVisible.value = false
   Object.assign(nodeInfo, cloneDeep(defaultInfo))
 }
 
+// 关闭并重置引擎编辑弹窗。
 const reset = () => {
   resetForm()
 }
 
+// 打开引擎编辑加载遮罩。
 const showLoading = () => {
   loadingInstance.value = ElLoading.service({ target: '.basic-param-drawer' })
 }
+// 关闭引擎编辑加载遮罩。
 const closeLoading = () => {
   loadingInstance.value?.close()
 }
+// 控制优先级配置显隐。
 const showPriority = ref(false)
 const defaultInfo = {
   name: '',
@@ -157,7 +165,9 @@ const defaultInfo = {
   apiConfiguration: [],
   weight: 0
 }
+// 当前引擎节点信息。
 const nodeInfo = reactive(cloneDeep(defaultInfo))
+// 打开引擎编辑弹窗并加载数据。
 const edit = () => {
   querySymmetricKey().then(response => {
     getEngineDatasource()
@@ -203,8 +213,10 @@ const edit = () => {
       })
   })
 }
+// 引擎基础表单实例。
 const basicForm = ref()
 
+// 提交引擎配置。
 const submitForm = async () => {
   let data = JSON.parse(JSON.stringify(nodeInfo)) as unknown as Omit<
     Node,
@@ -234,6 +246,7 @@ const submitForm = async () => {
   })
 }
 
+// 校验引擎连接配置。
 const validate = async () => {
   let data = JSON.parse(JSON.stringify(nodeInfo)) as unknown as Omit<
     Node,
