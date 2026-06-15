@@ -8,6 +8,7 @@ defineOptions({
   inheritAttrs: false
 })
 
+// Excel 导出按钮组件属性。
 const props = defineProps({
   element: {
     type: Object,
@@ -25,9 +26,13 @@ const props = defineProps({
   }
 })
 
+// 保持组件配置和显示位置的响应式引用。
 const { element, showPosition } = toRefs(props)
+// 合并后的导出按钮配置。
 const exportButton = computed(() => defaultExportButtonConfig(element.value?.exportButton))
+// 仅预览场景允许点击导出。
 const isPreview = computed(() => showPosition.value.includes('preview'))
+// 根据组件样式生成按钮样式。
 const buttonStyle = computed(() => {
   const style = element.value?.style || {}
   return {
@@ -43,6 +48,7 @@ const buttonStyle = computed(() => {
   }
 })
 
+// 预览状态下触发筛选 Excel 导出。
 const handleClick = () => {
   if (!isPreview.value) {
     return

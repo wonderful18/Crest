@@ -4,6 +4,7 @@ import { Calendar } from '@element-plus/icons-vue'
 import { type DatePickType } from 'element-plus-secondary'
 import type { ManipulateType } from 'dayjs'
 import { getThisStart, getThisEnd, getLastStart, getAroundStart } from './time-format-dayjs'
+// 单值动态时间查询配置。
 interface SelectConfig {
   intervalType: string
   regularOrTrendsValue: Date
@@ -14,6 +15,7 @@ interface SelectConfig {
   around: string
 }
 
+// 单值动态时间过滤组件属性。
 const props = defineProps({
   config: {
     type: Object as PropType<SelectConfig>,
@@ -37,8 +39,10 @@ const props = defineProps({
   }
 })
 
+// 保持动态时间配置的响应式引用。
 const { config } = toRefs(props)
 
+// 抽取会影响动态时间计算的配置项。
 const timeConfig = computed(() => {
   const {
     relativeToCurrent,
@@ -59,6 +63,7 @@ const timeConfig = computed(() => {
   }
 })
 
+// 根据配置变化重新计算默认时间。
 watch(
   () => timeConfig.value,
   () => {
@@ -69,6 +74,7 @@ watch(
   }
 )
 
+// 根据区间模式计算日期选择器类型。
 const timeInterval = computed<DatePickType>(() => {
   const noTime = props.timeGranularityMultiple.split('time').join('')
   return config.value.intervalType === 'timeInterval'
@@ -76,6 +82,7 @@ const timeInterval = computed<DatePickType>(() => {
     : (noTime.split('range')[0] as DatePickType)
 })
 
+// 初始化固定或相对当前的时间值。
 const init = () => {
   const { relativeToCurrent, regularOrTrends, timeNum, relativeToCurrentType, around } =
     timeConfig.value
