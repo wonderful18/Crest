@@ -421,6 +421,7 @@ onMounted(() => {
 <template>
   <el-form size="small" style="width: 100%">
     <template v-if="showProperty('colors')">
+      <!-- 自定义色板组件维护系列颜色数组和当前选中色，基础面板只接收变更结果。 -->
       <custom-color-style-select
         :model-value="state"
         @update:model-value="value => Object.assign(state, value)"
@@ -448,6 +449,7 @@ onMounted(() => {
       :label="t('chart.table_layout_mode')"
       :class="'form-item-' + themes"
     >
+      <!-- 表格布局切换会影响树表行头、展开层级和列宽配置，保存后由渲染层重新解释字段轴。 -->
       <el-radio-group
         size="small"
         :effect="themes"
@@ -599,6 +601,7 @@ onMounted(() => {
       </el-select>
     </el-form-item>
     <div class="map-style" v-if="showProperty('mapBaseStyle') || showProperty('heatMapStyle')">
+      <!-- 地图底图样式同时服务区域地图和热力图，自定义地址只在 custom 样式下写入。 -->
       <el-row style="flex: 1">
         <el-col>
           <el-form-item
@@ -779,6 +782,7 @@ onMounted(() => {
       </el-row>
     </div>
     <template v-if="showProperty('mapCenter') && state.basicStyleForm.autoFit === false">
+      <!-- 手动中心点只在关闭自适应后生效，经纬度范围由输入控件限制。 -->
       <el-row :gutter="8">
         <el-col :span="12">
           <el-form-item
@@ -825,6 +829,7 @@ onMounted(() => {
       </el-checkbox>
     </el-form-item>
     <div v-if="showProperty('zoom') && state.basicStyleForm.showZoom">
+      <!-- 缩放控件颜色与地图本体分开保存，便于明暗底图下单独校正按钮可见性。 -->
       <el-form-item
         class="form-item"
         :class="'form-item-' + themes"
@@ -1001,6 +1006,7 @@ onMounted(() => {
       label=""
       class="form-item table-field-width-config"
     >
+      <!-- 字段级列宽在批量设置中禁用，避免把某张表的字段标识写入其他图表。 -->
       <el-select
         v-model="state.fieldColumnWidth.fieldId"
         :effect="themes"
@@ -1482,6 +1488,7 @@ onMounted(() => {
     <!-- 饼图和玫瑰图 TopN、内外半径配置。 -->
 
     <div v-show="showProperty('topN')" class="top-n-setting">
+      <!-- TopN 会改变数据聚合结果，开启或调整数量时需要让父级重新取数。 -->
       <el-form-item class="form-item" :class="'form-item-' + themes">
         <el-checkbox
           :effect="themes"

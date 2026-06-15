@@ -253,6 +253,7 @@ export const DEFAULT_TAB_COLOR_CASE_BASE = {
   headPosition: 'left'
 }
 
+// 暗色选项卡默认融入深色画布，边框色沿用历史字段以兼容旧组件读取。
 export const DEFAULT_TAB_COLOR_CASE_DARK = {
   ...DEFAULT_TAB_COLOR_CASE_BASE,
   headFontColor: '#FFFFFF',
@@ -261,6 +262,7 @@ export const DEFAULT_TAB_COLOR_CASE_DARK = {
   headBorderActiveColor: '#131E42'
 }
 
+// 浅色选项卡字段结构与暗色配置保持一致，便于主题切换时整块替换。
 export const DEFAULT_TAB_COLOR_CASE_LIGHT = {
   ...DEFAULT_TAB_COLOR_CASE_BASE,
   headFontColor: '#OOOOOO',
@@ -659,6 +661,7 @@ export const DEFAULT_LEGEND_STYLE_BASE: ChartLegendStyle = {
   customSort: []
 }
 
+// 兼容旧图表的通用图例默认值，新图表主题初始化优先使用明暗主题版本。
 export const DEFAULT_LEGEND_STYLE: ChartLegendStyle = {
   show: true,
   hPosition: 'center',
@@ -673,12 +676,14 @@ export const DEFAULT_LEGEND_STYLE: ChartLegendStyle = {
   customSort: []
 }
 
+// 浅色图例强调正文可读性，保留基础布局和排序配置。
 export const DEFAULT_LEGEND_STYLE_LIGHT: ChartLegendStyle = {
   ...DEFAULT_LEGEND_STYLE_BASE,
   color: '#333333',
   fontSize: 12
 }
 
+// 深色图例只覆盖文字颜色，避免主题切换影响图例位置和交互排序。
 export const DEFAULT_LEGEND_STYLE_DARK: ChartLegendStyle = {
   ...DEFAULT_LEGEND_STYLE_BASE,
   color: '#ffffff',
@@ -1031,6 +1036,7 @@ export const COLOR_CASES = [
     ]
   },
   {
+    // 复古色板用于对比度更高的经营类图表，保留既有顺序以避免系列颜色漂移。
     name: t('chart.color_retro'),
     value: 'retro',
     colors: [
@@ -1136,6 +1142,7 @@ export const COLOR_CASES = [
     ]
   },
   {
+    // 科技色板主要服务暗色大屏，前几项颜色需要保持高亮度和高饱和度。
     name: t('chart.color_technology'),
     value: 'technology',
     colors: [
