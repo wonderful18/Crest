@@ -1,30 +1,30 @@
 package io.crest.utils;
 
 /**
- * Generic pagination wrapper carrying records and total counts.
+ * 通用分页包装对象，携带分页记录和总量信息。
  */
 public class Pager<T> {
     /**
-     * Page records or any list-like payload returned to callers.
+     * 返回给调用方的分页记录或列表型载荷。
      */
     private T listObject;
     /**
-     * Total number of records across all pages.
+     * 所有分页中的记录总数。
      */
     private long itemCount;
     /**
-     * Total number of pages.
+     * 分页总页数。
      */
     private long pageCount;
 
     /**
-     * Creates an empty pager for frameworks that require a no-args constructor.
+     * 为需要无参构造的框架创建空分页对象。
      */
     public Pager() {
     }
 
     /**
-     * Creates a pager with records, item count, and page count.
+     * 使用记录、记录总数和页数创建分页对象。
      */
     public Pager(T listObject, long itemCount, long pageCount) {
         this.listObject = listObject;
@@ -33,14 +33,14 @@ public class Pager<T> {
     }
 
     /**
-     * Returns the total number of pages.
+     * 返回分页总页数。
      */
     public long getPageCount() {
         return pageCount;
     }
 
     /**
-     * Sets the total number of pages.
+     * 设置分页总页数。
      */
     public void setPageCount(long pageCount) {
         this.pageCount = pageCount;
@@ -48,28 +48,28 @@ public class Pager<T> {
 
 
     /**
-     * Returns the total number of records.
+     * 返回记录总数。
      */
     public long getItemCount() {
         return itemCount;
     }
 
     /**
-     * Sets the total number of records.
+     * 设置记录总数。
      */
     public void setItemCount(long itemCount) {
         this.itemCount = itemCount;
     }
 
     /**
-     * Returns the page records payload.
+     * 返回分页记录载荷。
      */
     public T getListObject() {
         return listObject;
     }
 
     /**
-     * Sets the page records payload.
+     * 设置分页记录载荷。
      */
     public void setListObject(T listObject) {
         this.listObject = listObject;

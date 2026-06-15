@@ -7,23 +7,23 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 /**
- * URL class loader that prefers extension JDBC driver classes before parent classes.
+ * 优先加载扩展 JDBC 驱动类的 URL 类加载器。
  */
 public class ExtendedJdbcClassLoader extends URLClassLoader {
 
     /**
-     * Fully qualified JDBC driver class name associated with this loader.
+     * 当前类加载器关联的 JDBC 驱动完整类名。
      */
     private String driver;
     /**
-     * Returns the configured JDBC driver class name.
+     * 返回已配置的 JDBC 驱动完整类名。
      */
     public String getDriver() {
         return driver;
     }
 
     /**
-     * Sets the JDBC driver class name for later datasource registration.
+     * 设置后续数据源注册使用的 JDBC 驱动完整类名。
      */
     public void setDriver(String driver) {
         this.driver = driver;
@@ -31,19 +31,19 @@ public class ExtendedJdbcClassLoader extends URLClassLoader {
 
 
     /**
-     * Creates a class loader for the supplied driver URLs.
+     * 使用驱动 URL 列表创建类加载器。
      */
     public ExtendedJdbcClassLoader(URL[] urls, ClassLoader parent) {
         super(urls, parent);
     }
 
     /**
-     * Loads classes child-first so bundled JDBC driver dependencies can override parent classes.
+     * 优先从子加载器加载类，让随驱动携带的依赖可以覆盖父加载器类。
      */
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         synchronized (getClassLoadingLock(name)) {
-            // First, check if the class has already been loaded
+            // 先检查目标类是否已经被当前加载器加载。
             Class<?> c = findLoadedClass(name);
 
             if (c != null) {
@@ -61,7 +61,7 @@ public class ExtendedJdbcClassLoader extends URLClassLoader {
                     return c;
                 }
             } catch (ClassNotFoundException e) {
-                // Ignore
+                // 忽略未找到异常，继续尝试父加载器。
             }
 
 
@@ -76,7 +76,7 @@ public class ExtendedJdbcClassLoader extends URLClassLoader {
                     }
                 }
             } catch (ClassNotFoundException e) {
-                // Ignore
+                // 忽略未找到异常，继续尝试系统类加载器。
             }
             try {
                 c = findSystemClass(name);
@@ -87,7 +87,7 @@ public class ExtendedJdbcClassLoader extends URLClassLoader {
                     return c;
                 }
             } catch (ClassNotFoundException e) {
-                // Ignore
+                // 忽略未找到异常，统一在末尾抛出目标类缺失。
             }
             throw new ClassNotFoundException(name);
         }
@@ -96,7 +96,7 @@ public class ExtendedJdbcClassLoader extends URLClassLoader {
 
 
     /**
-     * Adds a file path to the class loader search URLs.
+     * 将文件路径加入类加载器搜索 URL。
      */
     public void addFile(String s) throws IOException {
         File f = new File(s);
@@ -104,14 +104,14 @@ public class ExtendedJdbcClassLoader extends URLClassLoader {
     }
 
     /**
-     * Adds a local file to the class loader search URLs.
+     * 将本地文件加入类加载器搜索 URL。
      */
     public void addFile(File f) throws IOException {
         addFile(f.toURI().toURL());
     }
 
     /**
-     * Adds a URL to the class loader search path.
+     * 将 URL 加入类加载器搜索路径。
      */
     public void addFile(URL u) throws IOException {
         try {

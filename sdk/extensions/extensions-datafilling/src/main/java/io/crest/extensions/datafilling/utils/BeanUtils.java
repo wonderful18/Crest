@@ -9,12 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Reflection and bean-copy helpers used by data-filling extension models.
+ * 数据填报扩展模型使用的反射和 Bean 拷贝工具。
  */
 public class BeanUtils {
 
     /**
-     * Copies matching bean properties from source to target.
+     * 将来源对象中的同名属性复制到目标对象。
      */
     public static <T> T copyBean(T target, Object source) {
         try {
@@ -26,7 +26,7 @@ public class BeanUtils {
     }
 
     /**
-     * Copies matching bean properties while excluding named properties.
+     * 复制同名属性，并排除指定属性。
      */
     public static <T> T copyBean(T target, Object source, String... ignoreProperties) {
         try {
@@ -38,7 +38,7 @@ public class BeanUtils {
     }
 
     /**
-     * Reads a bean property through its getter method.
+     * 通过 getter 方法读取 Bean 属性值。
      */
     public static Object getFieldValueByName(String fieldName, Object bean) {
         try {
@@ -56,7 +56,7 @@ public class BeanUtils {
     }
 
     /**
-     * Writes a bean property through its setter method.
+     * 通过 setter 方法写入 Bean 属性值。
      */
     public static void setFieldValueByName(Object bean, String fieldName, Object value, Class<?> type) {
         try {
@@ -73,7 +73,7 @@ public class BeanUtils {
     }
 
     /**
-     * Resolves a setter method for the named field and value type.
+     * 根据字段名和值类型解析对应的 setter 方法。
      */
     public static Method getMethod(Object bean, String fieldName, Class<?> type) {
         try {
@@ -89,7 +89,7 @@ public class BeanUtils {
     }
 
     /**
-     * Returns declared field names for the supplied class.
+     * 返回指定类中声明的字段名称列表。
      */
     public static List<String> getFieldNames(Class<?> clazz) {
         List<String> fieldNames = new ArrayList<>();

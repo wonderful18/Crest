@@ -19,39 +19,39 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Guards Prometheus metrics endpoints behind the configured observability token.
+ * 使用可观测性配置中的令牌保护 Prometheus 指标端点。
  */
 public class PrometheusMetricsAccessFilter implements Filter {
 
     /**
-     * Logger used for one-time security configuration warnings.
+     * 用于输出安全配置告警的日志器。
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusMetricsAccessFilter.class);
 
     /**
-     * Authorization header prefix for bearer-token authentication.
+     * 认证请求头中的固定令牌前缀。
      */
     private static final String BEARER_PREFIX = "Bearer ";
 
     /**
-     * Runtime observability settings that define endpoint and token behavior.
+     * 运行时可观测性配置，决定端点路径和令牌校验策略。
      */
     private final ObservabilityProperties observabilityProperties;
 
     /**
-     * Ensures missing-token warnings are written once per process.
+     * 保证缺少令牌的告警在进程内只输出一次。
      */
     private final AtomicBoolean tokenMissingLogged = new AtomicBoolean(false);
 
     /**
-     * Creates the filter with the active observability settings.
+     * 使用当前可观测性配置创建过滤器。
      */
     public PrometheusMetricsAccessFilter(ObservabilityProperties observabilityProperties) {
         this.observabilityProperties = observabilityProperties;
     }
 
     /**
-     * Allows non-metrics traffic through and validates bearer tokens for metrics traffic.
+     * 放行非指标请求，并为指标请求校验 Bearer 令牌。
      */
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
@@ -89,7 +89,7 @@ public class PrometheusMetricsAccessFilter implements Filter {
     }
 
     /**
-     * Checks whether the current request targets a configured Prometheus endpoint.
+     * 判断当前请求是否命中已配置的 Prometheus 指标端点。
      */
     private boolean isPrometheusRequest(HttpServletRequest request) {
         String path = normalizePath(request.getRequestURI());
@@ -104,7 +104,7 @@ public class PrometheusMetricsAccessFilter implements Filter {
     }
 
     /**
-     * Normalizes endpoint paths so configured and actual servlet paths can be compared.
+     * 规范化端点路径，便于比较配置路径和实际 Servlet 路径。
      */
     private String normalizePath(String path) {
         if (StringUtils.isBlank(path)) {
@@ -121,7 +121,7 @@ public class PrometheusMetricsAccessFilter implements Filter {
     }
 
     /**
-     * Extracts the bearer token value from the Authorization header.
+     * 从 Authorization 请求头中提取 Bearer 令牌值。
      */
     private String extractBearerToken(String authorization) {
         if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
@@ -131,7 +131,7 @@ public class PrometheusMetricsAccessFilter implements Filter {
     }
 
     /**
-     * Compares tokens using MessageDigest to avoid short-circuit timing differences.
+     * 使用 MessageDigest 比较令牌，避免短路比较带来的计时差异。
      */
     private boolean constantTimeEquals(String expectedToken, String presentedToken) {
         if (StringUtils.isBlank(expectedToken) || StringUtils.isBlank(presentedToken)) {
@@ -143,7 +143,7 @@ public class PrometheusMetricsAccessFilter implements Filter {
     }
 
     /**
-     * Writes a compact JSON error response for metrics authentication failures.
+     * 为指标认证失败写入简洁的 JSON 错误响应。
      */
     private void writeJson(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
