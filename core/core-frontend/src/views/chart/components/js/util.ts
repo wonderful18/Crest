@@ -11,11 +11,20 @@ import { useLinkStoreWithOut } from '@/store/modules/link'
 import { useAppStoreWithOut } from '@/store/modules/app'
 import { Decimal } from 'decimal.js'
 
+/**
+ * 应用状态仓库，用于判断嵌入和产品模式。
+ */
 const appStore = useAppStoreWithOut()
+/**
+ * 是否为 Crest BI 模式。
+ */
 const isCrestBi = computed(() => appStore.getIsCrestBi)
 
+/**
+ * 国际化翻译函数。
+ */
 const { t } = useI18n()
-// 同时支持将hex和rgb，转换成rgba
+// 同时支持将 hex 和 rgb 转换成 rgba。
 export function hexColorToRGBA(hex, alpha) {
   let rgb = [] // 定义rgb数组
   if (hex.indexOf('#') > -1) {
@@ -42,6 +51,9 @@ export function hexColorToRGBA(hex, alpha) {
   }
 }
 
+/**
+ * 将百分比透明度转换为两位十六进制值。
+ */
 export function digToHex(dig) {
   let prefix = ''
   const num = parseInt((dig * 2.55).toString())
@@ -51,6 +63,9 @@ export function digToHex(dig) {
   return prefix.concat(num.toString(16).toUpperCase())
 }
 
+/**
+ * 按自定义顺序重排数据。
+ */
 export function customSort(custom, data) {
   const indexArr = []
   const joinArr = []
@@ -84,6 +99,9 @@ export function customSort(custom, data) {
   return joinArr.concat(subArr)
 }
 
+/**
+ * 合并自定义颜色和默认颜色。
+ */
 export function customColor(custom, res) {
   const result = []
   for (let i = 0; i < res.length; i++) {
@@ -103,6 +121,9 @@ export function customColor(custom, res) {
   return result
 }
 
+/**
+ * 根据图表类型和配色方案生成系列颜色。
+ */
 export function getColors(chart, colors, reset) {
   // 自定义颜色，先按照没有设定的情况，并排好序，当做最终结果
   let seriesColors = []
@@ -202,6 +223,9 @@ export function getColors(chart, colors, reset) {
   return seriesColors
 }
 
+/**
+ * 获取 AntV 图表使用的自定义 rgba 配色。
+ */
 export function antVCustomColor(chart) {
   const colors = []
   if (chart.customAttr) {
@@ -235,6 +259,9 @@ export function getRemark(chart) {
   return remark
 }
 
+/**
+ * 只包含指标值展示的图表类型。
+ */
 export const quotaViews = ['label', 'richTextView', 'indicator', 'gauge', 'liquid']
 // 地图
 const mapChartTypes = ['bubble-map', 'flow-map', 'heat-map', 'map', 'symbolic-map']
@@ -260,6 +287,9 @@ const relationChartTypes = [
   'circle-packing'
 ]
 // 不支持指标累加的图表
+/**
+ * 不支持指标累加的图表类型。
+ */
 export const notSupportAccumulateViews = [
   ...quotaViews,
   ...mapChartTypes,
@@ -273,6 +303,9 @@ export const notSupportAccumulateViews = [
   'stock-line'
 ]
 
+/**
+ * 按图表高级配置处理空数据策略。
+ */
 export function handleEmptyDataStrategy<O extends PickOptions>(chart: Chart, options: O): O {
   const { data } = options as unknown as Options
   const isChartMix = chart.type.includes('chart-mix')
@@ -346,6 +379,9 @@ export function handleEmptyDataStrategy<O extends PickOptions>(chart: Chart, opt
   return options
 }
 
+/**
+ * 多维度场景下补齐断线数据点。
+ */
 function handleBreakLineMultiDimension(data) {
   const dimensionInfoMap = new Map()
   const subDimensionSet = new Set()
@@ -382,6 +418,9 @@ function handleBreakLineMultiDimension(data) {
   })
 }
 
+/**
+ * 多维度场景下补齐并置零缺失数据点。
+ */
 function handleSetZeroMultiDimension(data: Record<string, any>[], isExt = false) {
   const dimensionInfoMap = new Map()
   const subDimensionSet = new Set()
@@ -428,6 +467,9 @@ function handleSetZeroMultiDimension(data: Record<string, any>[], isExt = false)
   })
 }
 
+/**
+ * 单维度场景下将空值置零。
+ */
 function handleSetZeroSingleDimension(data: Record<string, any>[], isExt = false) {
   data.forEach(item => {
     if (item.value === null) {
@@ -440,6 +482,9 @@ function handleSetZeroSingleDimension(data: Record<string, any>[], isExt = false
   })
 }
 
+/**
+ * 移除空值数据点。
+ */
 function handleIgnoreData(data: Record<string, any>[]) {
   for (let i = data.length - 1; i >= 0; i--) {
     const item = data[i]
@@ -449,6 +494,9 @@ function handleIgnoreData(data: Record<string, any>[]) {
   }
 }
 
+/**
+ * 按倍数调整 rgba 颜色透明度。
+ */
 export function resetRgbOpacity(sourceColor: string, times: number): string {
   if (sourceColor?.startsWith('rgb')) {
     const numbers = sourceColor.match(/(\d(\.\d+)?)+/g)
@@ -467,6 +515,9 @@ export function resetRgbOpacity(sourceColor: string, times: number): string {
   return sourceColor
 }
 
+/**
+ * 兼容对象和 JSON 字符串的解析工具。
+ */
 export function parseJson<T>(str: T | JSONString<T>): T {
   if (typeof str !== 'string') {
     return str as T
@@ -474,8 +525,14 @@ export function parseJson<T>(str: T | JSONString<T>): T {
   return JSON.parse(str) as T
 }
 
+/**
+ * 串联处理函数类型。
+ */
 type FlowFunction<P, R> = (param: P, result: R, context?: Record<string, any>, thisArg?: any) => R
 
+/**
+ * 将多个处理函数组合为顺序执行的管道。
+ */
 export function flow<P, R>(...flows: FlowFunction<P, R>[]): FlowFunction<P, R> {
   return (param: P, result: R, context?: Record<string, any>, thisArg?: any) => {
     return flows.reduce((result: R, flow: FlowFunction<P, R>) => {
@@ -488,6 +545,9 @@ export function flow<P, R>(...flows: FlowFunction<P, R>[]): FlowFunction<P, R> {
   }
 }
 
+/**
+ * 判断类型原型链中是否包含指定父类型。
+ */
 export const isParent = (type: any, parentType: any) => {
   let _type = type
   while (_type) {
@@ -499,6 +559,9 @@ export const isParent = (type: any, parentType: any) => {
   return false
 }
 
+/**
+ * 构建图表明细导出的请求数据。
+ */
 const getExcelDownloadRequest = (data, type?) => {
   let fields = JSON.parse(JSON.stringify(data.fields))
   // liquid gauge 只需要导出一个字段
@@ -541,6 +604,9 @@ const getExcelDownloadRequest = (data, type?) => {
   }
 }
 
+/**
+ * 生成带时间戳的 Excel 文件名。
+ */
 function getChartExcelTitle(preFix, viewTitle) {
   const now = new Date()
   const pad = n => n.toString().padStart(2, '0')
@@ -553,6 +619,9 @@ function getChartExcelTitle(preFix, viewTitle) {
   return `${preFix}_${viewTitle}_${year}${month}${day}_${hour}${minute}${second}`
 }
 
+/**
+ * 导出图表明细或数据集明细 Excel。
+ */
 export const exportExcelDownload = (chart, preFix, callBack?) => {
   const excelName = getChartExcelTitle(preFix, chart.title)
   let request: any = {
@@ -616,6 +685,9 @@ export const exportExcelDownload = (chart, preFix, callBack?) => {
     })
 }
 
+/**
+ * 复制字符串到剪贴板，必要时使用 textarea 兼容方案。
+ */
 export const copyString = (content: string, notify = false) => {
   let clipboard = navigator.clipboard as Pick<Clipboard, 'writeText'>
   if (!clipboard || window.top !== window.self) {
