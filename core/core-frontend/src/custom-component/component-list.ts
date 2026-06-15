@@ -282,6 +282,7 @@ export const commonAttr = {
 // 编辑器左侧组件列表决定可拖入画布的组件类型、初始尺寸和默认属性。
 const list: any[] = [
   {
+    // Group 是普通分组容器，只负责聚合已有组件，不额外绑定业务属性。
     component: 'Group',
     name: t('visualization.view_group'),
     label: t('visualization.view_group'),
@@ -294,6 +295,7 @@ const list: any[] = [
     }
   },
   {
+    // GroupArea 用固定 id 区分区域分组，便于画布序列化时保持兼容。
     id: 100000001,
     component: 'GroupArea',
     name: 'group_area',
@@ -307,6 +309,7 @@ const list: any[] = [
     }
   },
   {
+    // 查询组件默认挂载在画布顶部区域，freeze 控制是否固定展示。
     component: 'VQuery',
     name: t('visualization.query_component'),
     label: t('visualization.query_component'),
@@ -335,6 +338,7 @@ const list: any[] = [
     matrixStyle: {}
   },
   {
+    // UserView 承载图表视图，默认尺寸按仪表板常用半屏卡片设置。
     component: 'UserView',
     name: t('visualization.view'),
     label: t('visualization.view'),
@@ -356,6 +360,7 @@ const list: any[] = [
     matrixStyle: {}
   },
   {
+    // 导出按钮默认导出当前过滤后的图表 Excel，目标视图由属性面板绑定。
     component: 'ExportButton',
     name: '导出按钮',
     label: '导出按钮',
@@ -385,6 +390,7 @@ const list: any[] = [
     matrixStyle: {}
   },
   {
+    // 视频组件使用完整播放器配置，适合用户上传视频或外部 Web 视频。
     component: 'Video',
     name: t('visualization.video'),
     label: t('visualization.video'),
@@ -404,6 +410,7 @@ const list: any[] = [
     matrixStyle: {}
   },
   {
+    // 流媒体组件面向实时监控流，默认采用 StreamMedia 独立配置。
     component: 'StreamMedia',
     name: t('visualization.stream_media'),
     label: t('visualization.stream_media'),
@@ -423,6 +430,7 @@ const list: any[] = [
     matrixStyle: {}
   },
   {
+    // Frame 组件同时保留超链接和嵌套页面配置，兼容旧版属性面板。
     component: 'Frame',
     name: t('visualization.web'),
     label: t('visualization.web'),
@@ -443,6 +451,7 @@ const list: any[] = [
     matrixStyle: {}
   },
   {
+    // 时间组件默认展示日期和时分秒，格式化规则由 formatInfo 保存。
     component: 'TimeClock',
     name: t('visualization.time_component'),
     label: t('visualization.time_component'),
@@ -474,6 +483,7 @@ const list: any[] = [
     matrixStyle: {}
   },
   {
+    // 图片组件默认自适应容器，并保留水平、垂直翻转状态。
     component: 'Picture',
     name: t('visualization.picture'),
     label: t('visualization.picture'),

@@ -165,8 +165,9 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 const snapshotStore = snapshotStoreWithOut()
 const { t } = useI18n()
-// 背景图片文件选择器引用
+// 背景图片文件选择器引用，重新上传按钮通过它触发系统文件选择框。
 const files = ref(null)
+// 背景图限制为 15MB，和上传前校验保持一致。
 const maxImageSize = 15000000
 
 const dvMainStore = dvMainStoreWithOut()
@@ -186,6 +187,7 @@ const state = reactive({
   BackgroundShowMap: {},
   checked: false,
   backgroundOrigin: {},
+  // 上传组件使用 fileList 展示当前背景图，真实地址仍写在 canvasStyleData.background。
   fileList: [],
   dialogImageUrl: '',
   dialogVisible: false,
@@ -195,6 +197,7 @@ const state = reactive({
 
 // 判断是否显示水印自定义设置
 const showWatermarkSetting = computed(() => {
+  // 只有系统水印启用且允许面板级自定义时，才展示当前资源的水印开关。
   return (
     dvInfo.value.watermarkInfo &&
     dvInfo.value.watermarkInfo?.settingContent?.enable &&
@@ -220,6 +223,7 @@ const reUpload = e => {
     return
   }
   uploadFileResult(file, fileUrl => {
+    // 上传完成后写回画布背景地址，并刷新上传列表的可预览 URL。
     canvasStyleData.value.background = fileUrl
     state.fileList = [{ url: imgUrlTrans(canvasStyleData.value.background) }]
     onBackgroundChange()
@@ -229,6 +233,7 @@ const reUpload = e => {
 // 初始化背景图片上传列表
 const init = () => {
   if (canvasStyleData.value.background) {
+    // 后端保存的是资源地址，上传控件展示前需要转换为浏览器可访问地址。
     state.fileList.push({ url: imgUrlTrans(canvasStyleData.value.background) })
   } else {
     state.fileList = []
@@ -250,6 +255,7 @@ const handlePictureCardPreview = file => {
 // 上传背景图片
 const upload = file => {
   uploadFileResult(file.file, fileUrl => {
+    // el-upload 自定义上传入口只负责更新背景地址，快照由统一变更方法记录。
     canvasStyleData.value.background = fileUrl
     onBackgroundChange()
   })
@@ -260,16 +266,17 @@ const onBackgroundChange = () => {
   snapshotStore.recordSnapshotCache('onBackgroundChange')
 }
 
-// 背景设置表单实例
+// 背景设置表单实例，供后续扩展校验或滚动定位使用。
 const bgForm = ref()
 
+// 背景色选择器在侧边栏内使用固定宽度，避免随文本长度跳动。
 const computedBackgroundColorPickerWidth = 50
 
 onMounted(() => {
   init()
 })
 
-// 监听背景图片地址变化
+// 监听背景图片地址变化，兼容外部主题切换或撤销操作导致的背景回填。
 watch(
   () => canvasStyleData.value.background,
   () => {
@@ -280,11 +287,13 @@ watch(
 
 <style scoped lang="less">
 :deep(.ed-form-item) {
+  /* 背景面板使用纵向表单布局，控件之间保持固定间距。 */
   display: block;
   margin-bottom: 16px;
 }
 .avatar-uploader-container {
   :deep(.ed-upload--picture-card) {
+    /* 上传入口使用虚线边框，和 Element Plus 图片卡片态保持一致。 */
     background: #eff0f1;
     border: 1px dashed #dee0e3;
     border-radius: 6px;
@@ -374,6 +383,7 @@ watch(
 }
 
 .indented-container {
+  /* 子配置统一缩进，突出它们依赖上方开关启用。 */
   width: 100%;
   padding-left: 22px;
   margin-top: 8px;
@@ -387,6 +397,7 @@ watch(
     }
 
     &.disabled {
+      /* 禁用态阻止图片上传交互，同时保留当前背景预览。 */
       cursor: not-allowed;
       color: #8f959e;
 
