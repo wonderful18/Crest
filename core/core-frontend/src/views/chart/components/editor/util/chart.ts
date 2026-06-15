@@ -498,6 +498,7 @@ export const DEFAULT_TABLE_TOTAL: ChartTableTotalAttr = {
 }
 // 表头配置包含普通表头、分组表头和辅助说明表头，默认值要兼容旧版明细表和透视表。
 export const DEFAULT_TABLE_HEADER: ChartTableHeaderAttr = {
+  // 序号列表头使用国际化文案，避免导出时出现固定中文列名。
   indexLabel: t('relation.index'),
   showIndex: false,
   tableHeaderAlign: 'left',
@@ -527,10 +528,12 @@ export const DEFAULT_TABLE_HEADER: ChartTableHeaderAttr = {
   isColBolder: true,
   headerGroup: false,
   headerGroupConfig: {
+    // columns 描述树形表头结构，meta 保存字段级补充信息，二者由配置弹窗共同维护。
     columns: [],
     meta: []
   },
   auxiliaryHeader: {
+    // 辅助表头默认关闭，开启后按字段维度保存说明文本和单独样式。
     enabled: false,
     rowHeight: 120,
     backgroundColor: '#FFFFFF',
@@ -557,6 +560,7 @@ export const DEFAULT_TABLE_CELL: ChartTableCellAttr = {
   isItalic: false,
   isBolder: false,
   tableFreeze: false,
+  // 冻结行列数量默认从 0 开始，避免新建表格出现不可预期的固定区域。
   tableColumnFreezeHead: 0,
   tableRowFreezeHead: 0,
   mergeCells: true,
@@ -635,12 +639,14 @@ export const DEFAULT_TITLE_STYLE_BASE: ChartTextStyle = {
 }
 
 export const DEFAULT_TITLE_STYLE_LIGHT = {
+  // 浅色主题标题默认使用深色文字，备注弹层保持白底以贴合编辑器表单视觉。
   ...DEFAULT_TITLE_STYLE_BASE,
   color: '#000000',
   remarkBackgroundColor: '#ffffff'
 }
 
 export const DEFAULT_TITLE_STYLE_DARK = {
+  // 深色主题标题默认使用白色文字，备注背景与暗色提示框保持一致。
   ...DEFAULT_TITLE_STYLE_BASE,
   color: '#FFFFFF',
   remarkBackgroundColor: '#5A5C62'
@@ -910,6 +916,7 @@ export const DEFAULT_FUNCTION_CFG: ChartFunctionCfg = {
   sliderTextColor: '#999999',
   emptyDataStrategy: 'breakLine',
   emptyDataCustomValue: '',
+  // 字段级空值策略只在用户显式配置后生效，默认不改变任何字段数据。
   emptyDataFieldCtrl: []
 }
 // 辅助线默认只保留容器，具体线条由编辑器按字段和固定值规则追加。
@@ -1021,6 +1028,7 @@ export const COLOR_PANEL = [
 // 图表色板注册表用于样式面板展示和默认系列配色，value 是持久化标识，不应随文案调整。
 export const COLOR_CASES = [
   {
+    // default 是历史默认色板标识，新增色板不能复用该 value。
     name: t('chart.color_default'),
     value: 'default',
     colors: [
@@ -1067,6 +1075,7 @@ export const COLOR_CASES = [
     ]
   },
   {
+    // future 色板提供较柔和的多系列配色，适合浅色仪表板中的密集指标。
     name: t('chart.color_future'),
     value: 'future',
     colors: [
@@ -1320,6 +1329,7 @@ export const CHART_FONT_LETTER_SPACE = [
 
 // 以下数据源暂不支持分页查询，图表查询需要走非分页或引擎侧兼容路径。
 export const NOT_SUPPORT_PAGE_DATASET = [
+  // 这些数据源的分页语义或驱动能力不一致，前端分页开关需避开它们。
   'kylin',
   'sqlServer',
   'es',
