@@ -2,8 +2,11 @@
 import { computed, ref } from 'vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
+// 读取大屏画布尺寸和缩放比例。
 const dvMainStore = dvMainStoreWithOut()
+// 垂直尺子滚动容器引用，用于跟随画布滚动。
 const wRuleRef = ref(null)
+// 尺子刻度文案和方向配置。
 const props = defineProps({
   tickLabelFormatter: {
     type: Function,
@@ -15,10 +18,13 @@ const props = defineProps({
   }
 })
 
+// 每隔固定数量的小刻度显示一次长刻度标签。
 const labelInterval = 5
 
+// 画布样式数据决定尺子的高度、缩放和刻度密度。
 const { canvasStyleData } = storeToRefs(dvMainStore)
 
+// 根据画布高度和缩放比例生成所有刻度位置。
 const ticks = computed(() => {
   const result = []
   let currentValue = 0
@@ -31,21 +37,25 @@ const ticks = computed(() => {
   return result
 })
 
+// 外层滚动区高度略高于画布，保证底部刻度可见。
 const hStyle = computed(() => {
   return {
     height: canvasStyleData.value.height * 1.5 + 'px'
   }
 })
+// 根据画布缩放动态调整小刻度间隔，避免缩放后刻度过密。
 const tickSize = computed(
   () =>
     10 *
     Math.max(Math.floor(200000 / (canvasStyleData.value.height * canvasStyleData.value.scale)), 1)
 )
 
+// 缩放后的尺子可视高度。
 const scaleHeight = computed(
   () => (canvasStyleData.value.height * canvasStyleData.value.scale) / 100
 )
 
+// 将尺子滚动位置同步到画布滚动高度。
 const rulerScroll = e => {
   wRuleRef.value.scrollTo(0, e.scrollHeight)
 }

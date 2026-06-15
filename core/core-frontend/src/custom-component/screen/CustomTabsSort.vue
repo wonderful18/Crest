@@ -39,24 +39,32 @@ import { deepCopy } from '@/utils/utils'
 import { ElButton } from 'element-plus-secondary'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import eventBus from '@/utils/eventBus'
+// 快照仓库用于保存排序变更后的可撤销状态。
 const snapshotStore = snapshotStoreWithOut()
 
+// 当前正在配置排序的组件实例。
 const config = ref(null)
 
+// 弹窗内可拖拽排序的标签项列表。
 const sortList = ref([])
+// 控制自定义排序弹窗显示状态。
 const dialogShow = ref(false)
+// 对外入口：初始化目标组件并打开排序弹窗。
 const sortInit = component => {
   init(component)
   dialogShow.value = true
 }
+// 将目标组件的标签配置复制为临时排序列表。
 const init = component => {
   config.value = component
   sortList.value = deepCopy(config.value.propValue)
 }
 
+// 关闭排序弹窗但不写回配置。
 const closeDialog = () => {
   dialogShow.value = false
 }
+// 保存拖拽后的顺序，记录快照并通知组件刷新。
 const save = () => {
   config.value.propValue = deepCopy(sortList.value)
   snapshotStore.recordSnapshotCache('tab-sort-save')
@@ -64,6 +72,7 @@ const save = () => {
   closeDialog()
 }
 import { useI18n } from '@/hooks/web/useI18n'
+// 排序弹窗标题使用当前语言环境。
 const { t } = useI18n()
 
 defineExpose({
