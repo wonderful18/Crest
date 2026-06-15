@@ -22,15 +22,27 @@ import java.util.stream.Collectors;
 
 @Component
 @SuppressWarnings("unchecked")
+/**
+ * 可视化资源权限模板管理器。
+ */
 public class ResourcePermissionManage {
 
 
+    /**
+     * 资源权限数据访问对象。
+     */
     @Resource
     private ResourcePermissionMapper resourcePermissionMapper;
 
 
+    /**
+     * 系统变量占位符匹配表达式。
+     */
     public static final String regex2 = "\\$crest\\[(.*?)\\]";
 
+    /**
+     * 查询资源中用户视图涉及的数据集权限模板。
+     */
     public List<DatasetPermissionTemplate> queruDatasetPermissionTemplate(Long resourceId) {
         String componentDataText = resourcePermissionMapper.queryResourceData(resourceId);
         TypeReference<List<Map<String, Object>>> tokenType = new TypeReference<>() {
@@ -42,6 +54,9 @@ public class ResourcePermissionManage {
         return datasetPermissionTemplate(datasetGroups);
     }
 
+    /**
+     * 判断参数标识是否为系统变量或参数 ID。
+     */
     private static boolean isParams(String paramId) {
         if (Arrays.asList("sysParams.userId", "sysParams.userEmail", "sysParams.userName").contains(paramId)) {
             return true;
@@ -59,6 +74,9 @@ public class ResourcePermissionManage {
         return false;
     }
 
+    /**
+     * 从组件树中收集用户视图组件。
+     */
     private List<Map<String, Object>> getUserViewList(List<Map<String, Object>> componentData) {
         List<Map<String, Object>> userViewList = new ArrayList<>();
 
@@ -89,6 +107,9 @@ public class ResourcePermissionManage {
     }
 
 
+    /**
+     * 根据数据集关联信息生成权限模板。
+     */
     private List<DatasetPermissionTemplate> datasetPermissionTemplate(List<CoreDatasetGroup> datasetGroups) {
         TypeReference<List<UnionDTO>> typeReference = new TypeReference<>() {
         };

@@ -18,19 +18,34 @@ import java.util.stream.Collectors;
 
 
 @Component
+/**
+ * 最近操作记录管理器。
+ */
 public class CoreOptRecentManage {
 
+    /**
+     * 最近操作记录数据访问对象。
+     */
     @Autowired
     private CoreOptRecentMapper coreStoreMapper;
 
+    /**
+     * 按资源 ID 保存最近操作。
+     */
     public void saveOpt(Long resourceId, int resourceType, int optType) {
         saveOpt(resourceId, null, resourceType, optType);
     }
 
+    /**
+     * 按资源名称保存最近操作。
+     */
     public void saveOpt(String resourceName, int resourceType, int optType) {
         saveOpt(null, resourceName, resourceType, optType);
     }
 
+    /**
+     * 保存或更新当前用户的最近操作记录。
+     */
     public void saveOpt(Long resourceId, String resourceName, int resourceType, int optType) {
         if (AuthUtils.getUser() == null) {
             return;
@@ -61,6 +76,9 @@ public class CoreOptRecentManage {
         }
     }
 
+    /**
+     * 查询当前用户最近使用模板的时间映射。
+     */
     public Map<String, Long> findTemplateRecentUseTime() {
         Long uid = AuthUtils.getUser().getUserId();
         QueryWrapper<CoreOptRecent> queryWrapper = new QueryWrapper<>();
