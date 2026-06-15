@@ -27,6 +27,7 @@ import java.util.Base64;
 import static io.crest.constant.CacheConstant.UserCacheConstant.Symmetric_Key;
 
 @Component
+// 提供 RSA、SM2 和对称加密相关的统一工具方法。
 public class RsaUtils {
 
     static {
@@ -45,11 +46,13 @@ public class RsaUtils {
 
     private static RsaManage rsaManage;
 
+    // 注入 RSA 密钥管理服务。
     @Resource
     public void setRsaManage(RsaManage rsaManage) {
         RsaUtils.rsaManage = rsaManage;
     }
 
+    // 生成 RSA 密钥对。
     private static KeyPair getKeyPair() {
         KeyPairGenerator generator = null;
         try {
@@ -62,6 +65,7 @@ public class RsaUtils {
         return generator.generateKeyPair();
     }
 
+    // 从 Base64 文本恢复 RSA 私钥。
     private static PrivateKey getPrivateKey(String privateKey) {
         KeyFactory keyFactory = null;
         try {
@@ -75,6 +79,7 @@ public class RsaUtils {
         }
     }
 
+    // 从 Base64 文本恢复 RSA 公钥。
     private static PublicKey getPublicKey(String publicKey) {
         KeyFactory keyFactory = null;
         try {
@@ -88,6 +93,7 @@ public class RsaUtils {
         }
     }
 
+    // 使用 RSA 公钥分段加密明文。
     private static String encrypt(String data, PublicKey publicKey) throws Exception {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
@@ -111,6 +117,7 @@ public class RsaUtils {
         return Base64.getEncoder().encodeToString(encryptedData);
     }
 
+    // 使用 RSA 私钥分段解密密文。
     private static String decrypt(String data, PrivateKey privateKey) throws Exception {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
@@ -134,6 +141,7 @@ public class RsaUtils {
         return out.toString(StandardCharsets.UTF_8);
     }
 
+    // 生成 RSA 密钥和 AES 密钥组合。
     public static RSAModel generate() {
         KeyPair keyPair = getKeyPair();
         String privateKey = new String(Base64.getEncoder().encode(keyPair.getPrivate().getEncoded()));
@@ -145,6 +153,7 @@ public class RsaUtils {
         return rsaModel;
     }
 
+    // 使用指定私钥解密密文字符串。
     public static String decryptStr(String data, String privateKey) {
         if (StringUtils.isBlank(data) || StringUtils.isBlank(privateKey)) {
             CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
@@ -167,6 +176,7 @@ public class RsaUtils {
         }
     }
 
+    // 使用当前系统私钥解密密文字符串。
     public static String decryptStr(String data) {
         if (SmCryptoUtils.isSm2Ciphertext(data)) {
             CoreRsa coreRsa = rsaManage.ensureSmSuiteKey();
@@ -175,6 +185,7 @@ public class RsaUtils {
         return decryptStr(data, privateKey());
     }
 
+    // 使用当前系统公钥加密字符串。
     public static String encryptStr(String data) {
         if (CryptoMode.isSmSuite()) {
             CoreRsa coreRsa = rsaManage.ensureSmSuiteKey();
@@ -188,11 +199,13 @@ public class RsaUtils {
         }
     }
 
+    // 查询当前 RSA 私钥。
     public static String privateKey() {
         CoreRsa coreRsa = rsaManage.query();
         return coreRsa.getPrivateKey();
     }
 
+    // 查询前端可用的公钥载荷。
     public static String publicKey() {
         if (CryptoMode.isSmSuite()) {
             CoreRsa coreRsa = rsaManage.ensureSmSuiteKey();
@@ -208,10 +221,12 @@ public class RsaUtils {
 
     public static final String IV_KEY = "0000000000000000";
 
+    // 生成 AES 密钥文本。
     private static String generateAesKey() {
         return RandomStringUtils.secure().nextAlphanumeric(16);
     }
 
+    // 使用 AES 加密公钥载荷。
     @SuppressWarnings("java/weak-cryptographic-algorithm")
     private static String ascEncrypt(String message, String key) {
         Cipher cipher = null;
@@ -238,6 +253,7 @@ public class RsaUtils {
     private static final int KEY_SIZE = 128;
 
 
+    // 生成或读取缓存中的对称密钥。
     public static String generateSymmetricKey() {
         try {
             if (!CacheUtils.keyExist(Symmetric_Key, SYMMETRIC_KEY_CACHE_ENTRY)) {
@@ -256,6 +272,7 @@ public class RsaUtils {
         }
     }
 
+    // 使用当前对称密钥加密字符串。
     @SuppressWarnings("java/weak-cryptographic-algorithm")
     public static String symmetricEncrypt(String data) {
         if (CryptoMode.isSmSuite()) {
@@ -274,6 +291,7 @@ public class RsaUtils {
         }
     }
 
+    // 使用当前对称密钥解密字符串。
     @SuppressWarnings("java/weak-cryptographic-algorithm")
     public static String symmetricDecrypt(String data) {
         if (SmCryptoUtils.isSm4Ciphertext(data)) {

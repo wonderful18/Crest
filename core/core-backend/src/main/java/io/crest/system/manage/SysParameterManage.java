@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 @Component
 @SuppressWarnings("deprecation")
+// 管理系统参数读取、保存和默认参数补齐。
 public class SysParameterManage {
 
     @Value("${crest.show-demo-tips:false}")
@@ -46,6 +47,7 @@ public class SysParameterManage {
     @Resource
     private DatasourceServer datasourceServer;
 
+    // 按参数键查询单个参数值。
     public String singleVal(String key) {
         QueryWrapper<CoreSysSetting> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("pkey", key);
@@ -56,6 +58,7 @@ public class SysParameterManage {
         return null;
     }
 
+    // 按参数组查询键值映射。
     public Map<String, String> groupVal(String groupKey) {
         QueryWrapper<CoreSysSetting> queryWrapper = new QueryWrapper<>();
         queryWrapper.likeRight("pkey", groupKey);
@@ -67,6 +70,7 @@ public class SysParameterManage {
         return new HashMap<>();
     }
 
+    // 按参数组查询参数列表。
     public List<CoreSysSetting> groupList(String groupKey) {
         QueryWrapper<CoreSysSetting> queryWrapper = new QueryWrapper<>();
         queryWrapper.likeRight("pkey", groupKey);
@@ -78,6 +82,7 @@ public class SysParameterManage {
         return sysSettings;
     }
 
+    // 为基础设置补齐缺失的默认参数。
     private void appendBasicDefaults(List<CoreSysSetting> sysSettings) {
         if (sysSettings.stream().noneMatch(item -> SystemSettingConstants.INITIAL_PASSWORD.equals(item.getPkey()))) {
             sysSettings.add(buildCoreSetting(SystemSettingConstants.INITIAL_PASSWORD, configuredInitialPassword, "pwd", 15));
@@ -95,12 +100,14 @@ public class SysParameterManage {
         sysSettings.sort(Comparator.comparing(CoreSysSetting::getSort));
     }
 
+    // 参数不存在时追加默认设置项。
     private void appendIfMissing(List<CoreSysSetting> sysSettings, String pkey, String pval, String type, int sort) {
         if (sysSettings.stream().noneMatch(item -> pkey.equals(item.getPkey()))) {
             sysSettings.add(buildCoreSetting(pkey, pval, type, sort));
         }
     }
 
+    // 构造系统参数实体。
     private CoreSysSetting buildCoreSetting(String pkey, String pval, String type, int sort) {
         CoreSysSetting sysSetting = new CoreSysSetting();
         sysSetting.setId(IDUtils.snowID());
@@ -110,9 +117,11 @@ public class SysParameterManage {
         sysSetting.setSort(sort);
         return sysSetting;
     }
+    // 将系统参数实体转换为前端设置项。
     public List<SettingItemVO> convert(List<CoreSysSetting> sysSettings) {
         return sysSettings.stream().sorted(Comparator.comparing(CoreSysSetting::getSort)).map(item -> BeanUtils.copyBean(new SettingItemVO(), item)).toList();
     }
+    // 查询前端初始化所需的 UI 参数。
     public List<Object> getUiList() {
         List<Object> result = new ArrayList<>();
         result.add(buildSettingItem("community", true));
@@ -122,10 +131,12 @@ public class SysParameterManage {
         result.add(buildSettingItem("siteTitle", StringUtils.defaultIfBlank(siteTitle, "Crest")));
         return result;
     }
+    // 查询默认登录方式。
     public Integer defaultLogin() {
         return 0;
     }
 
+    // 构造 UI 参数项。
     private Map<String, Object> buildSettingItem(String pkey, Object pval) {
         Map<String, Object> item = new HashMap<>();
         item.put("pkey", pkey);
@@ -134,6 +145,7 @@ public class SysParameterManage {
     }
 
 
+    // 保存指定参数组。
     @Transactional
     public void saveGroup(List<SettingItemVO> vos, String groupKey) {
         List<CoreSysSetting> sysSettings = vos.stream().filter(vo -> !SystemSettingUtils.restrictedSetting(vo.getPkey())).map(item -> {
@@ -153,6 +165,7 @@ public class SysParameterManage {
         datasourceServer.addJob(sysSettings);
     }
 
+    // 保存 SQL Bot 配置。
     public void saveSqlBotConfig(SQLBotConfigCreator configVO) {
         List<CoreSysSetting> configList = new ArrayList<>();
         String key = "sqlbot.";
@@ -195,16 +208,19 @@ public class SysParameterManage {
 
         extCoreSysSettingMapper.saveBatch(configList);
     }
+    // 保存基础参数组。
     @Transactional
     public void saveBasic(List<SettingItemVO> vos) {
         String key = "basic.";
         proxy().saveGroup(vos, key);
     }
 
+    // 获取当前类代理以触发事务增强。
     private SysParameterManage proxy() {
         return CommonBeanFactory.getBean(SysParameterManage.class);
     }
 
+    // 查询分享基础设置。
     public ShareBaseVO shareBase() {
         String disableText = singleVal("basic.shareDisable");
         String requireText = singleVal("basic.sharePeRequire");
@@ -218,6 +234,7 @@ public class SysParameterManage {
         return vo;
     }
 
+    // 新增系统参数。
     public void insert(CoreSysSetting coreSysSetting) {
         coreSysSettingMapper.insert(coreSysSetting);
     }

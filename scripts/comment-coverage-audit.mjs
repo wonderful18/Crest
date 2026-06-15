@@ -34,6 +34,7 @@ const bannedCommentPatterns = [
   ...readBanlistPatterns(banlistFile)
 ]
 
+// 读取外部注释禁用词配置。
 function readBanlistPatterns(file) {
   if (!file || !existsSync(file)) {
     return []
@@ -45,6 +46,7 @@ function readBanlistPatterns(file) {
     .map(line => new RegExp(line, 'i'))
 }
 
+// 获取仓库中已跟踪的文件列表。
 function gitFiles() {
   return execFileSync('git', ['ls-files'], { encoding: 'utf8' })
     .split('\n')
@@ -52,11 +54,13 @@ function gitFiles() {
     .filter(Boolean)
 }
 
+// 判断文件是否需要纳入注释审计。
 function isAuditedSource(file) {
   const extension = file.split('.').pop()
   return SOURCE_EXTENSIONS.has(extension) && !EXCLUDED_PATTERNS.some(pattern => pattern.test(file))
 }
 
+// 将文件路径归类到统计区域。
 function areaFor(file) {
   if (file.startsWith('core/core-backend/src/main/java/io/crest/')) {
     return `backend/${file.split('/')[7] || 'root'}`
@@ -73,6 +77,7 @@ function areaFor(file) {
   return file.split('/')[0]
 }
 
+// 统计文件中的代码行、注释行和空行。
 function commentStats(text, extension) {
   const lines = text.split(/\r?\n/)
   let code = 0
@@ -129,6 +134,7 @@ function commentStats(text, extension) {
   return { lines: lines.length, code, comment, blank, comments }
 }
 
+// 统计声明数量和声明前注释覆盖情况。
 function declarationStats(text, extension) {
   const lines = text.split(/\r?\n/)
   const declarations = []
@@ -156,6 +162,7 @@ function declarationStats(text, extension) {
   return { total, documented, mechanical, undocumented }
 }
 
+// 判断单行代码是否为需要注释覆盖的声明。
 function isDeclaration(line, extension) {
   if (extension === 'java') {
     if (/^(if|for|while|switch|catch)\s*\(/.test(line)) {
@@ -187,6 +194,7 @@ function isDeclaration(line, extension) {
   return false
 }
 
+// 判断声明上方是否存在相邻注释。
 function hasNearbyComment(lines, index, extension) {
   let cursor = index - 1
   while (cursor >= 0 && lines[cursor].trim() === '') {
@@ -217,6 +225,7 @@ function hasNearbyComment(lines, index, extension) {
   return false
 }
 
+// 在声明附近向上查找块注释起点。
 function findBlockStart(lines, index, startMarker, endMarker) {
   for (let cursor = index; cursor >= Math.max(0, index - 80); cursor -= 1) {
     if (lines[cursor].includes(startMarker)) {
@@ -229,10 +238,12 @@ function findBlockStart(lines, index, startMarker, endMarker) {
   return false
 }
 
+// 判断 Java 声明是否为机械 getter、setter 或 is 方法。
 function isMechanicalAccessor(line) {
   return /\b(get|set|is)[A-Z][A-Za-z0-9_$]*\s*\(/.test(line)
 }
 
+// 检查注释内容是否命中禁用词。
 function commentIssues(comments) {
   return comments.flatMap(comment => {
     const matches = bannedCommentPatterns.filter(pattern => pattern.test(comment.text))
@@ -244,6 +255,7 @@ function commentIssues(comments) {
   })
 }
 
+// 构造空统计聚合对象。
 function emptyAggregate() {
   return {
     files: 0,
@@ -257,6 +269,7 @@ function emptyAggregate() {
   }
 }
 
+// 将单文件统计合并到聚合桶。
 function addAggregate(map, key, stats) {
   const aggregate = map.get(key) || emptyAggregate()
   aggregate.files += 1
@@ -270,6 +283,7 @@ function addAggregate(map, key, stats) {
   map.set(key, aggregate)
 }
 
+// 安全计算比例。
 function ratio(numerator, denominator) {
   if (!denominator) {
     return 0
@@ -350,6 +364,7 @@ if (options.strict && (issueList.length > 0 || report.totals.declarationCoverage
   process.exitCode = 1
 }
 
+// 将聚合 Map 转换为排序后的行数据。
 function mapToRows(map) {
   return [...map.entries()]
     .map(([name, value]) => ({
@@ -361,6 +376,7 @@ function mapToRows(map) {
     .sort((left, right) => right.code - left.code)
 }
 
+// 输出人类可读的审计报告。
 function printReport(report) {
   console.log('Comment coverage audit')
   console.log('======================')
@@ -397,6 +413,7 @@ function printReport(report) {
   }
 }
 
+// 输出分组统计表。
 function printTable(title, rows) {
   console.log(title)
   rows.forEach(row => {
@@ -409,6 +426,7 @@ function printTable(title, rows) {
   })
 }
 
+// 格式化百分比。
 function formatPercent(value) {
   return `${(value * 100).toFixed(1)}%`
 }
