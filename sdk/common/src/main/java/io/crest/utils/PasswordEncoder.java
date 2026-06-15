@@ -139,10 +139,16 @@ public class PasswordEncoder {
         }
     }
 
+    /**
+     * 判断编码结果是否为国密 SM3 格式
+     */
     private static boolean isSm3Encoded(String[] parts) {
         return parts.length == 4 && SM3_PREFIX.equals(parts[0]);
     }
 
+    /**
+     * 校验国密 SM3 编码密码
+     */
     private static boolean matchesSm3(String rawPassword, String[] parts) {
         int iterations = Integer.parseInt(parts[1]);
         byte[] salt = Base64.getDecoder().decode(parts[2]);
