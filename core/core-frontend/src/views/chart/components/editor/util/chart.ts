@@ -271,6 +271,7 @@ export const DEFAULT_TAB_COLOR_CASE_LIGHT = {
 
 // 杂项配置承载非坐标轴类图表的尺寸、范围和专属行为，新图表类型优先在对应子对象下扩展。
 export const DEFAULT_MISC: ChartMiscAttr = {
+  // 半径和角度类字段覆盖饼图、仪表盘和液态图，默认值尽量保证新建图表可直接渲染。
   pieInnerRadius: 0,
   pieOuterRadius: 80,
   radarShape: 'polygon',
@@ -326,6 +327,7 @@ export const DEFAULT_MISC: ChartMiscAttr = {
   mapLegendNumber: 9,
   mapLegendRangeType: 'quantize',
   mapLegendCustomRange: [],
+  // 流向地图的线和点分开配置，便于只调整线路动画或点位样式时不影响另一类图元。
   flowMapConfig: {
     lineConfig: {
       mapLineAnimate: true,
@@ -356,6 +358,7 @@ export const DEFAULT_MISC: ChartMiscAttr = {
     max: 0,
     fieldId: undefined
   },
+  // 子弹图保留 ranges、measures、target 三段结构，和渲染层的语义分区保持一致。
   bullet: {
     bar: {
       ranges: {
@@ -642,6 +645,7 @@ export const DEFAULT_TITLE_STYLE_DARK = {
 }
 
 export const DEFAULT_LEGEND_STYLE_BASE: ChartLegendStyle = {
+  // 图例基础结构不区分明暗主题，主题配置只覆盖文字颜色等视觉字段。
   show: true,
   hPosition: 'center',
   vPosition: 'bottom',
@@ -730,6 +734,7 @@ export const DEFAULT_XAXIS_STYLE: ChartAxisStyle = {
     splitCount: 10
   },
   axisLabelFormatter: {
+    // 单位语言随当前语言环境初始化，后续由格式化面板按用户选择持久化。
     type: 'auto',
     unitLanguage: isEnLocal ? 'en' : 'ch',
     unit: 1,
@@ -778,6 +783,7 @@ export const DEFAULT_YAXIS_STYLE: ChartAxisStyle = {
     splitCount: 10
   },
   axisLabelFormatter: {
+    // Y 轴默认开启千分位，适配指标类图表的常见数值展示。
     type: 'auto',
     unitLanguage: isEnLocal ? 'en' : 'ch',
     unit: 1,
@@ -824,6 +830,7 @@ export const DEFAULT_YAXIS_EXT_STYLE: ChartAxisStyle = {
     splitCount: 10
   },
   axisLabelFormatter: {
+    // 扩展轴保留独立格式化配置，混合图左右轴可以使用不同单位。
     type: 'auto',
     unitLanguage: isEnLocal ? 'en' : 'ch',
     unit: 1,

@@ -2,6 +2,7 @@
   <el-row class="custom-row">
     <el-row class="custom-row-inner">
       <el-space wrap>
+        <!-- 前置选择项通常是字体族，优先展示可以减少用户在常用文本设置中的查找成本。 -->
         <template v-for="styleOptionKey in styleOptionKeyArrayPre">
           <el-tooltip
             :key="styleOptionKey.value"
@@ -38,6 +39,7 @@
         </template>
 
         <template v-for="styleColorKey in styleColorKeyArray">
+          <!-- 颜色项按当前组件 style 中存在的字段动态出现，避免工具条展示无效控件。 -->
           <el-tooltip
             :key="styleColorKey.value"
             v-if="styleForm[styleColorKey.value] !== undefined"
@@ -69,6 +71,7 @@
         </template>
 
         <template v-for="styleOptionMountedKey in styleOptionMountedKeyArray">
+          <!-- 尺寸类控件展示反算后的画布值，写回时再按缩放比例转换为真实像素。 -->
           <el-tooltip
             :key="styleOptionMountedKey.value"
             v-if="styleForm[styleOptionMountedKey.value] !== undefined"
@@ -181,6 +184,7 @@
           </div>
         </el-tooltip>
         <template v-if="styleForm.textAlign">
+          <!-- 横向对齐按钮直接写入 CSS text-align，适用于文本、指标和部分标题组件。 -->
           <div class="m-divider" :class="'custom-divider-' + themes"></div>
           <div style="display: flex">
             <el-tooltip effect="dark" placement="bottom">
@@ -627,6 +631,7 @@ watch(
 
 <style lang="less">
 .custom-style-option::after {
+  // 下拉项不展示默认选中伪元素，避免与自定义图标前缀形成重复视觉。
   display: none;
 }
 </style>
@@ -694,6 +699,7 @@ watch(
 }
 
 .icon-btn {
+  // 工具条按钮固定 24px 尺寸，保证不同图标切换 active 时不改变布局。
   font-size: 16px;
   width: 24px;
   height: 24px;
@@ -726,6 +732,7 @@ watch(
   }
 }
 .m-divider {
+  // 工具条内分隔线只做功能分组，不参与组件样式配置。
   width: 1px;
   height: 18px;
   background: rgba(31, 35, 41, 0.15);

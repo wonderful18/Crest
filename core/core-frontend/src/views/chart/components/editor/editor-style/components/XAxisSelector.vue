@@ -159,6 +159,7 @@ onMounted(() => {
     size="small"
     label-position="top"
   >
+    <!-- 轴位置在双向柱图、子弹图和普通图表中语义不同，文案由脚本按图表类型映射。 -->
     <el-form-item
       class="form-item"
       :class="'form-item-' + themes"
@@ -275,6 +276,7 @@ onMounted(() => {
 
     <template v-if="showProperty('axisValue')">
       <el-divider class="m-divider" :class="'m-divider--' + themes" />
+      <!-- 固定刻度仅在关闭自动刻度后生效，避免覆盖图表库的自适应坐标范围。 -->
       <div style="display: flex; flex-direction: row; justify-content: space-between">
         <label class="custom-form-item-label" :class="'custom-form-item-label--' + themes">
           {{ t('chart.axis_value') }}
@@ -368,6 +370,7 @@ onMounted(() => {
         {{ t('chart.axis_show') }}
       </el-checkbox>
     </el-form-item>
+    <!-- 轴线与网格线共享颜色、线型和线宽控件，但分别写入 axisLine 与 splitLine。 -->
     <div style="padding-left: 22px" v-if="showProperty('axisLine')">
       <div style="flex: 1; display: flex">
         <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
@@ -575,6 +578,7 @@ onMounted(() => {
         />
       </el-form-item>
       <template v-if="showProperty('axisLabelFormatter') && !isBarRangeTime">
+        <!-- 时间范围柱图跳过数值格式化，其余图表沿用统一 formatter 规则。 -->
         <el-form-item
           class="form-item"
           :class="'form-item-' + themes"
@@ -703,6 +707,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .custom-form-item-label {
+  // 自定义标题承载说明图标，视觉上与 Element 表单 label 保持同一层级。
   margin-bottom: 4px;
   line-height: 20px;
   color: #646a73;
@@ -720,6 +725,7 @@ onMounted(() => {
   margin-bottom: 10px !important;
 }
 .m-divider {
+  // 分隔线只表达配置分区，深浅主题通过边框透明度区分层次。
   border-color: rgba(31, 35, 41, 0.15);
   margin: 0 0 16px;
 
