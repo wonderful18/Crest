@@ -127,11 +127,10 @@
     </delete>
 
     <delete id="deleteOuterParamsWithVisualizationId" >
-        DELETE pop
-        FROM
-            visualization_outer_params pop
+        DELETE FROM
+            visualization_outer_params
         WHERE
-            pop.visualization_id = #{visualizationId}
+            visualization_id = #{visualizationId}
     </delete>
 
 
@@ -167,11 +166,10 @@
     </delete>
 
     <delete id="deleteOuterParamsWithVisualizationIdSnapshot" >
-        DELETE pop
-        FROM
-            snapshot_visualization_outer_params pop
+        DELETE FROM
+            snapshot_visualization_outer_params
         WHERE
-            pop.visualization_id = #{visualizationId}
+            visualization_id = #{visualizationId}
     </delete>
 
     <select id="getVisualizationOuterParamsInfo" resultMap="AllOuterParamsMap">
@@ -180,7 +178,14 @@
             popi.required AS required,
             popi.default_value AS default_value,
             popi.enabled_default AS enabled_default,
-            CONCAT( poptvi.target_view_id, '#', poptvi.target_field_id, '#', poptvi.match_mode ) AS targetInfo
+            <choose>
+                <when test="_databaseId == 'ob-oracle'">
+                    TO_CHAR(poptvi.target_view_id) || '#' || TO_CHAR(poptvi.target_field_id) || '#' || poptvi.match_mode AS targetInfo
+                </when>
+                <otherwise>
+                    CONCAT( poptvi.target_view_id, '#', poptvi.target_field_id, '#', poptvi.match_mode ) AS targetInfo
+                </otherwise>
+            </choose>
         FROM
             visualization_outer_params pop
             LEFT JOIN visualization_outer_params_info popi ON pop.params_id = popi.params_id
@@ -226,9 +231,16 @@
           WHERE
               ccv.scene_id = #{visualizationId}
               AND dvi.id = #{visualizationId}
-              AND LOCATE(
-              ccv.id,
-              dvi.component_data)
+              <choose>
+                  <when test="_databaseId == 'ob-oracle'">
+                      AND INSTR(dvi.component_data, TO_CHAR(ccv.id)) > 0
+                  </when>
+                  <otherwise>
+                      AND LOCATE(
+                      ccv.id,
+                      dvi.component_data)
+                  </otherwise>
+              </choose>
       </select>
 
        <select id="getDsFieldInfo"  resultType="io.crest.api.dataset.vo.CoreDatasetTableFieldVO">
@@ -245,7 +257,14 @@
               ccv.table_id = #{dataset_group_id}
               AND ccv.type != 'VQuery'
               AND dvi.id = #{visualizationId}
-              AND LOCATE(ccv.id, dvi.component_data)
+              <choose>
+                  <when test="_databaseId == 'ob-oracle'">
+                      AND INSTR(dvi.component_data, TO_CHAR(ccv.id)) > 0
+                  </when>
+                  <otherwise>
+                      AND LOCATE(ccv.id, dvi.component_data)
+                  </otherwise>
+              </choose>
       </select>
 
 </mapper>

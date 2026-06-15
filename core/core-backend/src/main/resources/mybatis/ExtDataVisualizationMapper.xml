@@ -266,9 +266,16 @@
                  INNER JOIN workspace_recent_resource ON dvResource.resource_id = workspace_recent_resource.resource_id
             AND workspace_recent_resource.uid = #{uid}
             AND dvResource.name IS NOT NULL
-            AND TRIM(dvResource.name) != ''
+             AND TRIM(dvResource.name) != ''
              <if test="keyword">
-                AND LOWER(dvResource.name) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+                <choose>
+                    <when test="_databaseId == 'ob-oracle'">
+                        AND LOWER(dvResource.name) LIKE LOWER('%' || #{keyword} || '%')
+                    </when>
+                    <otherwise>
+                        AND LOWER(dvResource.name) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+                    </otherwise>
+                </choose>
              </if>
              <if test="ew.type != null">
                 AND dvResource.type = #{ew.type}

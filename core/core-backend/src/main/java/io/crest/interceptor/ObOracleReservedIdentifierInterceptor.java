@@ -74,8 +74,8 @@ public class ObOracleReservedIdentifierInterceptor implements Interceptor {
         if (sql == null || sql.isBlank()) {
             return sql;
         }
-        String rewrittenSql = sql;
-        String lowerSql = sql.toLowerCase(Locale.ROOT);
+        String rewrittenSql = normalizeMysqlSql(rewriteMysqlFunctions(sql));
+        String lowerSql = rewrittenSql.toLowerCase(Locale.ROOT);
         for (Map.Entry<String, List<String>> entry : RESERVED_COLUMNS_BY_TABLE.entrySet()) {
             if (!lowerSql.contains(entry.getKey())) {
                 continue;
@@ -85,6 +85,44 @@ public class ObOracleReservedIdentifierInterceptor implements Interceptor {
             }
         }
         return rewrittenSql;
+    }
+
+    private String normalizeMysqlSql(String sql) {
+        StringBuilder result = new StringBuilder(sql.length());
+        for (int index = 0; index < sql.length(); index++) {
+            char current = sql.charAt(index);
+            if (current == '\'' || current == '"') {
+                int quotedEnd = consumeQuotedSegment(sql, index, current);
+                result.append(sql, index, quotedEnd + 1);
+                index = quotedEnd;
+                continue;
+            }
+            if (current == '`') {
+                int quotedEnd = consumeQuotedSegment(sql, index, current);
+                result.append(normalizeIdentifier(sql.substring(index + 1, quotedEnd)));
+                index = quotedEnd;
+                continue;
+            }
+            result.append(current);
+        }
+        return result.toString();
+    }
+
+    private String normalizeIdentifier(String identifier) {
+        String value = identifier.replace("``", "`");
+        if (value.matches("[A-Za-z_][A-Za-z0-9_]*")) {
+            return value;
+        }
+        return "\"" + value.replace("\"", "\"\"").toUpperCase(Locale.ROOT) + "\"";
+    }
+
+    private String rewriteMysqlFunctions(String sql) {
+        String rewrittenSql = rewriteOutsideQuotedSegments(sql,
+                Pattern.compile("(?i)\\buuid\\s*\\(\\s*\\)"),
+                "LOWER(RAWTOHEX(SYS_GUID()))");
+        return rewriteOutsideQuotedSegments(rewrittenSql,
+                Pattern.compile("(?i)\\bifnull\\s*\\("),
+                "NVL(");
     }
 
     private String quoteIdentifier(String sql, String identifier) {
@@ -127,6 +165,24 @@ public class ObOracleReservedIdentifierInterceptor implements Interceptor {
 
     private String quoteSegment(String sql, Pattern pattern, String replacement) {
         return pattern.matcher(sql).replaceAll(Matcher.quoteReplacement(replacement));
+    }
+
+    private String rewriteOutsideQuotedSegments(String sql, Pattern pattern, String replacement) {
+        StringBuilder result = new StringBuilder(sql.length());
+        int segmentStart = 0;
+        for (int index = 0; index < sql.length(); index++) {
+            char current = sql.charAt(index);
+            if (!isSqlQuote(current)) {
+                continue;
+            }
+            result.append(quoteSegment(sql.substring(segmentStart, index), pattern, replacement));
+            int quotedEnd = consumeQuotedSegment(sql, index, current);
+            result.append(sql, index, quotedEnd + 1);
+            index = quotedEnd;
+            segmentStart = quotedEnd + 1;
+        }
+        result.append(quoteSegment(sql.substring(segmentStart), pattern, replacement));
+        return result.toString();
     }
 
     private void setSql(StatementHandler statementHandler, String sql) {
