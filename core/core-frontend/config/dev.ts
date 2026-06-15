@@ -5,18 +5,20 @@ const dropBrowserOriginHeader = proxy => {
   })
 }
 
+const backendProxyTarget = process.env.CREST_DEV_PROXY_TARGET || 'http://10.25.25.33:8100'
+
 export default {
   server: {
     proxy: {
       '/api/f': {
-        target: 'http://localhost:8100',
+        target: backendProxyTarget,
         changeOrigin: true,
         configure: dropBrowserOriginHeader,
         rewrite: path => path.replace(/^\/api\/f/, '')
       },
       // 使用 proxy 实例
       '/api': {
-        target: 'http://localhost:8100',
+        target: backendProxyTarget,
         changeOrigin: true,
         configure: dropBrowserOriginHeader
       }
