@@ -18,6 +18,7 @@ export type Relation = {
 } & Item
 const { t } = useI18n()
 
+// 定义图表权限条件树接收的关系和逻辑参数。
 const props = defineProps({
   relationList: {
     type: Array as PropType<Relation[]>,
@@ -33,12 +34,14 @@ const props = defineProps({
   }
 })
 
+// 根据条件层级计算左侧缩进。
 const marginLeft = computed(() => {
   return {
     marginLeft: props.x ? '20px' : 0
   }
 })
 
+// 声明条件树增删和逻辑切换事件。
 const emits = defineEmits([
   'addCondReal',
   'changeAndOrDfs',
@@ -49,17 +52,21 @@ const emits = defineEmits([
 
 const { relationList } = toRefs(props)
 
+// 处理条件组逻辑切换。
 const handleCommand = type => {
   emits('update:logic', type)
   emits('changeAndOrDfs', type)
 }
 
+// 删除当前层级的条件关系。
 const removeRelationList = index => {
   relationList.value.splice(index, 1)
 }
+// 向父级请求新增条件或条件组。
 const addCondReal = type => {
   emits('addCondReal', type, props.logic === 'or' ? 'and' : 'or')
 }
+// 在指定子节点下新增条件或条件组。
 const add = (type, child, logic) => {
   child.push(
     type === 'condition'
@@ -79,6 +86,7 @@ const add = (type, child, logic) => {
       : { child: [], logic }
   )
 }
+// 删除指定子节点条件。
 const del = (index, child) => {
   child.splice(index, 1)
 }

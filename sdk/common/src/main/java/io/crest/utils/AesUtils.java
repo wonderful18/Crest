@@ -13,10 +13,16 @@ import java.security.SecureRandom;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * 提供 AES 和国密模式下的加解密工具方法。
+ */
 public class AesUtils {
     private static final String AES_KEY_PROPERTY = "crest.crypto.aes-key";
     private static final String AES_IV_PROPERTY = "crest.crypto.aes-iv";
 
+    /**
+     * 读取并校验 AES 密钥配置。
+     */
     private static String configuredSecretKey() {
         String value = ConfigUtils.getConfig(AES_KEY_PROPERTY, null);
         int length = StringUtils.length(value);
@@ -26,6 +32,9 @@ public class AesUtils {
         return value;
     }
 
+    /**
+     * 读取并校验 AES 初始化向量配置。
+     */
     private static String configuredIv() {
         String value = ConfigUtils.getConfig(AES_IV_PROPERTY, null);
         if (StringUtils.length(value) != 16) {
@@ -35,6 +44,9 @@ public class AesUtils {
     }
 
     @SuppressWarnings("java/weak-cryptographic-algorithm")
+    /**
+     * 使用指定密钥和初始化向量解密文本。
+     */
     public static String aesDecrypt(String src, String secretKey, String iv) {
         if (StringUtils.isBlank(secretKey)) {
             throw new RuntimeException("secretKey is empty");
@@ -57,6 +69,9 @@ public class AesUtils {
     }
 
     @SuppressWarnings("java/weak-cryptographic-algorithm")
+    /**
+     * 使用指定密钥和初始化向量加密文本。
+     */
     public static String aesEncrypt(String src, String secretKey, String iv) {
         if (StringUtils.isBlank(secretKey)) {
             throw new RuntimeException("secretKey is empty");
@@ -78,6 +93,9 @@ public class AesUtils {
     }
 
     @SuppressWarnings("java/weak-cryptographic-algorithm")
+    /**
+     * 使用当前加密模式加密对象文本值。
+     */
     public static Object aesEncrypt(Object o) {
 
         if (o == null) {
@@ -89,6 +107,9 @@ public class AesUtils {
         return aesEncrypt(o.toString(), configuredSecretKey(), configuredIv());
     }
 
+    /**
+     * 使用当前加密模式解密对象文本值。
+     */
     public static Object aesDecrypt(Object o) {
         if (o == null) {
             return null;
@@ -101,6 +122,9 @@ public class AesUtils {
     }
 
     @SuppressWarnings("java/weak-cryptographic-algorithm")
+    /**
+     * 使用随机初始化向量加密文本并拼接向量。
+     */
     public static String aesEncryptWithIv(String src, String secretKey) {
         if (StringUtils.isBlank(secretKey)) {
             throw new RuntimeException("secretKey is empty");
