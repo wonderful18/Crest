@@ -1476,6 +1476,7 @@ const getMenuList = (val: boolean) => {
 
 <template>
   <div class="datasource-manage" v-loading="dsLoading">
+    <!-- 左侧数据源树支持拖拽宽度调整，收起后通过 ArrowSide 保留恢复入口。 -->
     <ArrowSide
       :style="{ left: (sideTreeStatus ? width - 12 : 0) + 'px' }"
       @change-side-tree-status="changeSideTreeStatus"
@@ -1488,6 +1489,7 @@ const getMenuList = (val: boolean) => {
       :style="{ width: width + 'px' }"
     >
       <div class="resource-tree">
+        <!-- 树头部聚合创建、搜索和排序能力，根目录权限不足时隐藏管理入口。 -->
         <div class="tree-header">
           <div class="icon-methods">
             <span class="title"> {{ t('datasource.datasource') }} </span>
@@ -1568,6 +1570,7 @@ const getMenuList = (val: boolean) => {
             </template>
           </el-dropdown>
         </div>
+        <!-- 树节点同时承载文件夹和数据源，叶子节点点击后加载右侧详情。 -->
         <el-scrollbar @scroll="handleScroll" ref="scrollbarRef" class="custom-tree">
           <el-tree
             menu
@@ -1656,6 +1659,7 @@ const getMenuList = (val: boolean) => {
         h100: isCrestBi || isIframe
       }"
     >
+      <!-- 未选中数据源时展示空态；选中后根据节点类型展示配置、表清单和编辑入口。 -->
       <template v-if="!state.datasourceTree.length && mounted">
         <empty-background :description="t('data_source.no_data_source')" img-type="none">
           <el-button v-if="rootManage" @click="() => createDatasource()" type="primary">
@@ -1668,6 +1672,7 @@ const getMenuList = (val: boolean) => {
       </template>
       <template v-else-if="!!nodeInfo.id">
         <div class="datasource-info">
+          <!-- 详情头部展示当前数据源身份、连通状态和可执行操作。 -->
           <div class="info-method">
             <el-icon class="icon-border">
               <Icon :static-content="getDsIconType(nodeInfo.type)"

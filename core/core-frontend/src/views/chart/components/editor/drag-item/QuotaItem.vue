@@ -371,6 +371,7 @@ onMounted(() => {
 
 <template>
   <span class="item-style">
+    <!-- 指标标签集成字段类型、排序状态、汇总方式和隐藏状态，点击后展开字段操作菜单。 -->
     <el-dropdown :effect="themes" trigger="click" @command="clickItem">
       <el-tag
         class="item-axis father"
@@ -484,6 +485,7 @@ onMounted(() => {
             @click.prevent
             v-if="!['table-info', 'multi-scatter'].includes(chart.type) && item.summary !== ''"
           >
+            <!-- 汇总方式只对可聚合指标开放，文本和日期字段会隐藏不适用的聚合项。 -->
             <el-dropdown
               :effect="themes"
               placement="right-start"
@@ -648,7 +650,7 @@ onMounted(() => {
             </el-dropdown>
           </el-dropdown-item>
 
-          <!--同比/环比等快速计算-->
+          <!-- 快速计算覆盖无计算、同环比、占比和累加，具体可用性由图表类型和时间维度决定。 -->
           <el-dropdown-item
             @click.prevent
             v-if="
@@ -762,6 +764,7 @@ onMounted(() => {
           </el-dropdown-item>
 
           <el-dropdown-item @click.prevent v-if="showSort" :divided="chart.type !== 'table-info'">
+            <!-- 排序菜单写回当前指标字段，自定义排序由上层弹窗维护完整排序列表。 -->
             <el-dropdown
               :effect="themes"
               placement="right-start"
@@ -852,6 +855,7 @@ onMounted(() => {
             :command="beforeClickItem('filter')"
             :divided="chart.type.includes('chart-mix')"
           >
+            <!-- 指标过滤只作用于当前字段，不改变数据集全局筛选条件。 -->
             <span>{{ t('chart.filter') }}</span>
           </el-dropdown-item>
 
