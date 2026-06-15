@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * 描述通用数据源连接配置及 JDBC URL 解析能力。
+ */
 @Data
 @SuppressWarnings("deprecation")
 public class Configuration {
@@ -53,6 +56,9 @@ public class Configuration {
     private String url;
 
 
+    /**
+     * 获取实际连接主机，启用 SSH 时使用本地隧道地址。
+     */
     public String getLHost(){
         if(useSSH){
             return "127.0.0.1";
@@ -61,6 +67,9 @@ public class Configuration {
         }
     }
 
+    /**
+     * 获取实际连接端口，启用 SSH 时使用本地转发端口。
+     */
     public Integer getLPort(){
         if(useSSH && lPort != null){
             return lPort;
@@ -73,6 +82,9 @@ public class Configuration {
     protected static final Pattern PARAMETERS_PATTERN = Pattern.compile("([^&=]+)=([^&]*)");
     private static final Pattern DB_NAME_PATTERN = Pattern.compile("//[^/]+/([^?]+)");
     private Map<String, String> parameters = new HashMap<>();
+    /**
+     * 从 JDBC URL 中解析主机和端口。
+     */
     protected void parseHostAndPort(String jdbcUrl) {
         Matcher matcher = HOST_PORT_PATTERN.matcher(jdbcUrl);
         if (matcher.find()) {
@@ -83,6 +95,9 @@ public class Configuration {
         }
     }
 
+    /**
+     * 解析 JDBC URL 查询参数到参数映射。
+     */
     protected void parseParameters(String jdbcUrl) {
         int paramStart = jdbcUrl.indexOf('?');
         if (paramStart > 0) {
@@ -94,6 +109,9 @@ public class Configuration {
         }
     }
 
+    /**
+     * 将常见连接参数转换为配置字段。
+     */
     protected void convertParameters(){
         if (ObjectUtils.isEmpty(parameters)) {
             return;
@@ -110,6 +128,9 @@ public class Configuration {
         }
     }
 
+    /**
+     * 从 JDBC URL 中解析数据库名称。
+     */
     protected void convertDatabase(String jdbcUrl) {
         Matcher matcher = databasePattern().matcher(jdbcUrl);
         if (matcher.find()) {
@@ -117,10 +138,16 @@ public class Configuration {
         }
     }
 
+    /**
+     * 返回用于解析数据库名称的正则表达式。
+     */
     protected Pattern databasePattern() {
         return DB_NAME_PATTERN;
     }
 
+    /**
+     * 当使用 JDBC URL 模式时解析并回填连接配置。
+     */
     public void convertJdbcUrl() {
         if (StringUtils.isNotBlank(urlType) && Strings.CI.equalsAny(this.urlType, "jdbcUrl")) {
             parseHostAndPort(jdbcUrl);
