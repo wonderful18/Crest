@@ -77,6 +77,7 @@ const timeConfig = computed(() => {
   }
 })
 
+// 动态时间配置变化后重新计算默认日期
 watch(
   () => timeConfig.value,
   () => {
@@ -87,6 +88,7 @@ watch(
   }
 )
 
+// 日期值变化后同步到查询条件配置
 watch(
   () => selectValue.value,
   val => {
@@ -95,6 +97,7 @@ watch(
   }
 )
 
+// 查询项切换后重新初始化默认日期
 watch(
   () => config.value.id,
   () => {

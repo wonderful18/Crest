@@ -21,6 +21,9 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 尺寸计算
 const width = computed(() => props.curStyle.width)
+/**
+ * 装饰点阵画布高度
+ */
 const height = computed(() => props.curStyle.height)
 
 // 样式计算
@@ -34,16 +37,25 @@ const border_style = computed(() => ({
 
 // 点阵配置
 const pointSideLength = 7
+/**
+ * SVG 原始坐标系尺寸
+ */
 const svgWH = ref([300, 35])
 const rowNum = 2
 const rowPoints = 25
 
 // 颜色配置
 const defaultColor = ref(['#7acaec', 'transparent'])
+/**
+ * 合并默认颜色和用户配置后的颜色
+ */
 const mergedColor = ref<string[]>([])
 
 // 计算属性
 const halfPointSideLength = computed(() => pointSideLength / 2)
+/**
+ * 根据组件尺寸计算 SVG 缩放比例
+ */
 const svgScale = computed(() => [width.value / svgWH.value[0], height.value / svgWH.value[1]])
 
 // 点阵位置
@@ -58,6 +70,9 @@ const animationConfigs = computed(() => {
   }))
 })
 
+/**
+ * 更新点阵动画颜色
+ */
 const mergeColor = () => {
   mergedColor.value = customMergeColor(cloneDeep(defaultColor.value), props.color)
 }
@@ -84,7 +99,9 @@ onMounted(() => {
   updateLayout()
 })
 
+// 颜色配置变化后重新合并颜色
 watch(() => props.color, mergeColor, { immediate: true })
+// 组件尺寸变化后重新计算点阵坐标
 watch([width, height], updateLayout)
 </script>
 
