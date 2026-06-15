@@ -315,6 +315,7 @@ import eventBus from '@/utils/eventBus'
 const appearanceStore = useAppearanceStoreWithOut()
 const isDesktopFlag = isDesktop()
 const snapshotStore = snapshotStoreWithOut()
+// 定义整体样式设置面板接收的主题参数。
 const props = defineProps({
   themes: {
     type: String,
@@ -328,14 +329,17 @@ const fontFamily = CHART_FONT_FAMILY_ORIGIN.concat(
   }))
 )
 
+// 根据当前画布主题计算提示框使用的反色主题。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
 
+// 根据资源类型生成结果数量说明中的资源名称。
 const resourceType = computed(() =>
   dvInfo.value.type === 'dashboard' ? t('work_branch.dashboard') : t('work_branch.big_data_screen')
 )
 
+// 校验刷新间隔并同步主题配置变更。
 const onRefreshChange = val => {
   if (val === '' || parseFloat(val).toString() === 'NaN' || parseFloat(val) < 1) {
     canvasStyleData.value.refreshTime = 1
@@ -345,6 +349,7 @@ const onRefreshChange = val => {
   }
   themeChange()
 }
+// 切换画布字体并同步所有标题字体。
 const fontFamilyChange = () => {
   appearanceStore.setCurrentFont(canvasStyleData.value.fontFamily)
   document.documentElement.style.setProperty(
@@ -355,10 +360,12 @@ const fontFamilyChange = () => {
   snapshotStore.recordSnapshotCache('renderChart')
 }
 
+// 切换仪表板适配方式后重新初始化画布尺寸。
 const onKeepSizeChange = () => {
   eventBus.emit('event-canvas-size-init')
   snapshotStore.recordSnapshotCache('renderChart')
 }
+// 根据间距模式设置默认间距并记录快照。
 const onGapModeChange = () => {
   snapshotStore.recordSnapshotCache('renderChart')
   switch (canvasStyleData.value.dashboard.gapMode) {
@@ -376,6 +383,7 @@ const onGapModeChange = () => {
   }
 }
 
+// 应用主题相关的画布和组件默认样式。
 const themeChange = (modifyName?) => {
   if (modifyName === 'themeColor') {
     // 主题变更
@@ -402,6 +410,7 @@ const themeChange = (modifyName?) => {
   }
   snapshotStore.recordSnapshotCache('renderChart')
 }
+// 处理主题色按钮点击并触发主题切换。
 const colorButtonClick = val => {
   if (val !== canvasStyleData.value.dashboard.themeColor) {
     canvasStyleData.value.dashboard.themeColor = val
