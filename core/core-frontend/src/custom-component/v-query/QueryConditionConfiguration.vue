@@ -392,6 +392,7 @@ const isParametersDisable = item => {
 
 // 设置数值范围参数字段，并清理同组件下互斥的时间范围配置。
 const setParametersArrNum = (val, componentId) => {
+  // 数值范围和时间范围在同一组件上互斥，切换前先清掉另一套范围映射。
   if (curComponent.value.checkedFieldsMapArr?.[componentId]?.length) {
     curComponent.value.checkedFieldsMapArr[componentId] = []
     curComponent.value.checkedFieldsMapEnd[componentId] = ''
@@ -423,6 +424,7 @@ const setParametersArrNum = (val, componentId) => {
 
 // 设置时间范围参数字段，并清理同组件下互斥的数值范围配置。
 const setParametersArr = (val, componentId) => {
+  // 时间范围和数值范围共用参数数组结构，切换前要清理数值范围的起止字段。
   if (curComponent.value.checkedFieldsMapArrNum?.[componentId]?.length) {
     curComponent.value.checkedFieldsMapArrNum[componentId] = []
     curComponent.value.checkedFieldsMapEndNum[componentId] = ''
@@ -649,6 +651,7 @@ const numTypeChange = () => {
 
 // 根据数值范围起止字段回填参数数组，只保留带变量名的有效参数
 const setParametersNumType = componentId => {
+  // 参数数组只服务后续 SQL 参数绑定，普通字段即使被选中也不进入 parametersArr。
   curComponent.value.parametersArr[componentId] = duplicateRemoval(
     unref(fields)
       .filter(ele => ele.componentId === componentId)
@@ -668,6 +671,7 @@ const setParametersNumType = componentId => {
 
 // 根据时间范围起止字段回填参数数组，并同步时间粒度到范围配置
 const setParametersTimeType = componentId => {
+  // 时间范围参数会额外反推 timeGranularityMultiple，供默认值配置渲染范围控件。
   curComponent.value.parametersArr[componentId] = duplicateRemoval(
     unref(fields)
       .filter(ele => ele.componentId === componentId)
@@ -879,6 +883,7 @@ const handleSetTypeChange = () => {
 const setTypeChange = () => {
   handleDialogClick()
   nextTick(() => {
+    // 展示类型变化后清空选项字段，避免旧字段类型与新控件类型不匹配。
     curComponent.value.field.id = ''
     defaultConfigurationRef.value?.displayTypeChange?.()
     if (
@@ -1062,6 +1067,7 @@ const confirmIdChange = () => {
 // 条件值来源数据集变化时重置字段、展示字段和排序字段，并重新加载可选字段
 const handleDatasetChange = () => {
   if (!!newDatasetId && !!oldDatasetId) {
+    // 已参与级联的数据集切换必须二次确认，否则会留下指向旧数据集的级联边。
     curComponent.value.dataset.id = oldDatasetId
     ElMessageBox.confirm(t('v_query.to_modify_it'), {
       confirmButtonType: 'primary',
@@ -1104,6 +1110,7 @@ const handleValueSourceChange = () => {
   curComponent.value.defaultValue = curComponent.value.multiple ? [] : undefined
   multipleChange(curComponent.value.multiple)
   if (curComponent.value.optionValueSource === 1 && !curComponent.value.dataset.id) {
+    // 字段来源模式优先复用已绑定图表字段，减少用户重复选择同一个数据集字段。
     let id = ''
     let comId = ''
     Object.keys(curComponent.value.checkedFieldsMap).forEach(ele => {

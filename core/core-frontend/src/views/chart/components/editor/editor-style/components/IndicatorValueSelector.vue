@@ -166,6 +166,7 @@ defineExpose({ getFormData })
       </el-form-item>
 
       <div style="display: flex">
+        <!-- 主值颜色、字号和字间距在同一行展示，减少指标卡常用样式调整路径。 -->
         <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
           <el-color-picker
             :effect="themes"
@@ -275,6 +276,7 @@ defineExpose({ getFormData })
         <div class="position-divider" :class="'position-divider--' + themes"></div>
 
         <el-form-item class="form-item" :class="'form-item-' + themes">
+          <!-- 主值水平对齐只影响指标值文本块，不改变指标名称或后缀的相对布局。 -->
           <el-radio-group
             :effect="themes"
             class="icon-radio-group"
@@ -346,6 +348,7 @@ defineExpose({ getFormData })
       </el-space>
 
       <el-form-item class="form-item" :class="'form-item-' + themes">
+        <!-- 垂直对齐用于指标值在容器内定位，和画布组件自身位置无关。 -->
         <el-radio-group
           :effect="themes"
           class="icon-radio-group"
