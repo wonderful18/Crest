@@ -15,8 +15,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * 校验 OceanBase Oracle 兼容模式下的字段注释和只读连接策略。
+ */
 public class CalciteProviderObOracleCommentsTest {
 
+    /**
+     * 验证 Oracle 字典注释会覆盖字段展示名称。
+     */
     @Test
     public void applyColumnCommentsUsesOracleDictionaryName() {
         TableField id = field("ID", "ID");
@@ -31,6 +37,9 @@ public class CalciteProviderObOracleCommentsTest {
         assertEquals("用户名称", name.getName());
     }
 
+    /**
+     * 验证空白注释不会覆盖字段原有展示名称。
+     */
     @Test
     public void applyColumnCommentsKeepsFallbackNameWhenCommentIsBlank() {
         TableField amount = field("AMOUNT", "AMOUNT");
@@ -42,6 +51,9 @@ public class CalciteProviderObOracleCommentsTest {
         assertEquals("AMOUNT", amount.getName());
     }
 
+    /**
+     * 验证未显式配置 schema 时使用 OceanBase 用户名中的默认 schema。
+     */
     @Test
     public void parseDatasourceConfigurationUsesObOracleDefaultSchema() throws Exception {
         CalciteProvider provider = new CalciteProvider();
@@ -58,6 +70,9 @@ public class CalciteProviderObOracleCommentsTest {
         assertTrue(((ObOracle) configuration).getReadOnly());
     }
 
+    /**
+     * 验证 OceanBase Oracle 数据源会保留显式配置的只读开关。
+     */
     @Test
     public void parseDatasourceConfigurationKeepsObOracleReadOnlySwitch() throws Exception {
         CalciteProvider provider = new CalciteProvider();
@@ -73,6 +88,9 @@ public class CalciteProviderObOracleCommentsTest {
         assertFalse(((ObOracle) configuration).getReadOnly());
     }
 
+    /**
+     * 验证 OceanBase Oracle 默认使用只读连接。
+     */
     @Test
     public void shouldUseReadOnlyConnectionForObOracleByDefault() {
         CalciteProvider provider = new CalciteProvider();
@@ -80,6 +98,9 @@ public class CalciteProviderObOracleCommentsTest {
         assertTrue(provider.shouldUseReadOnlyConnection(new DatasourceRequest(), new ObOracle(), "obOracle"));
     }
 
+    /**
+     * 验证 OceanBase Oracle 可以通过数据源配置关闭只读连接。
+     */
     @Test
     public void shouldRespectObOracleReadOnlySwitch() {
         CalciteProvider provider = new CalciteProvider();
@@ -89,6 +110,9 @@ public class CalciteProviderObOracleCommentsTest {
         assertFalse(provider.shouldUseReadOnlyConnection(new DatasourceRequest(), obOracle, "obOracle"));
     }
 
+    /**
+     * 验证请求级只读标记优先于数据源只读开关。
+     */
     @Test
     public void explicitReadOnlyRequestOverridesDatasourceSwitch() {
         CalciteProvider provider = new CalciteProvider();
@@ -100,6 +124,9 @@ public class CalciteProviderObOracleCommentsTest {
         assertTrue(provider.shouldUseReadOnlyConnection(request, obOracle, "obOracle"));
     }
 
+    /**
+     * 验证 OceanBase Oracle 的只读策略不会影响普通 Oracle 数据源。
+     */
     @Test
     public void shouldNotApplyObOracleSwitchToOracle() {
         CalciteProvider provider = new CalciteProvider();
@@ -107,6 +134,9 @@ public class CalciteProviderObOracleCommentsTest {
         assertFalse(provider.shouldUseReadOnlyConnection(new DatasourceRequest(), new Oracle(), "oracle"));
     }
 
+    /**
+     * 构造用于注释覆盖测试的字段描述对象。
+     */
     private TableField field(String originName, String name) {
         TableField field = new TableField();
         field.setOriginName(originName);
