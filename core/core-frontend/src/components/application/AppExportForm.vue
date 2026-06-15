@@ -56,9 +56,12 @@ import { reactive, ref, toRefs } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { export2AppCheck } from '@/api/visualization/dataVisualization'
 const { t } = useI18n()
+// 声明抽屉关闭和应用下载事件。
 const emits = defineEmits(['closeDraw', 'downLoadApp'])
+// 持有应用下载表单实例。
 const applyDownloadForm = ref(null)
 
+// 定义应用导出表单所需的组件、视图和资源信息。
 const props = defineProps({
   componentData: {
     type: Object,
@@ -76,6 +79,7 @@ const props = defineProps({
 
 const { componentData, canvasViewInfo, dvInfo } = toRefs(props)
 
+// 保存应用导出抽屉状态、表单数据和校验规则。
 const state = reactive({
   applyDownloadDrawer: false,
   form: {
@@ -126,16 +130,19 @@ const state = reactive({
   }
 })
 
+// 使用外部参数初始化应用导出表单。
 const init = params => {
   state.applyDownloadDrawer = true
   state.form = params
 }
 
+// 关闭应用导出抽屉并通知父组件。
 const close = () => {
   emits('closeDraw')
   state.applyDownloadDrawer = false
 }
 
+// 汇总应用依赖的视图、数据源和组件信息。
 const gatherAppInfo = (viewIds, dsIds, componentDataCheck) => {
   componentDataCheck.forEach(item => {
     if (item.component === 'VQuery' && item.propValue?.length) {
@@ -158,6 +165,7 @@ const gatherAppInfo = (viewIds, dsIds, componentDataCheck) => {
     }
   })
 }
+// 校验应用导出内容并触发下载。
 const downloadApp = () => {
   applyDownloadForm.value?.validate(valid => {
     if (valid) {

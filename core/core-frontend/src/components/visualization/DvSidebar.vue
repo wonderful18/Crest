@@ -17,6 +17,7 @@ import dvInfoSvg from '@/assets/svg/dv-info.svg'
 import { useI18n } from '@/hooks/web/useI18n'
 const snapshotStore = snapshotStoreWithOut()
 const { t } = useI18n()
+// 定义侧边栏接收的布局、主题和组件上下文参数。
 const props = defineProps({
   element: {
     type: Object as PropType<Record<string, any>>,
@@ -66,17 +67,22 @@ const props = defineProps({
 })
 
 const { width, asidePosition, sideName, themeInfo, view, themes, element } = toRefs(props)
+// 切换当前侧边栏折叠状态。
 const collapseChange = () => {
   canvasCollapse.value[sideName.value] = !canvasCollapse.value[sideName.value]
 }
+// 计算折叠或展开状态下的侧边栏宽度。
 const widthShow = computed(() => `${canvasCollapse.value[sideName.value] ? 36 : width.value}px`)
 
+// 判断当前视图是否使用组件标题作为视图标题。
 const isViewTitle = computed(() => view.value && ['picture-group'].includes(view.value.type))
 
+// 生成侧边栏滚动宽度和整体宽度样式。
 const slideStyle = computed(() => {
   return { '--crest-scroll-width': props.scrollWidth + 'px', width: widthShow.value }
 })
 
+// 结束组件名称编辑并保存有效名称。
 const closeEditComponentName = () => {
   componentNameEdit.value = false
   if (props.element.id !== inputComponentName.value.id) {
@@ -107,6 +113,7 @@ const closeEditComponentName = () => {
   inputComponentName.value.name = ''
 }
 
+// 打开组件名称编辑输入框。
 const editComponentName = () => {
   if (element.value?.id || view.value?.id) {
     componentNameEdit.value = true
@@ -123,6 +130,7 @@ const editComponentName = () => {
   }
 }
 
+// 记录组件名称变更快照。
 const onComponentNameChange = () => {
   snapshotStore.recordSnapshotCache('onComponentNameChange')
 }

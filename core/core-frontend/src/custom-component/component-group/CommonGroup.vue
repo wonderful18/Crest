@@ -21,35 +21,43 @@ defineProps({
   }
 })
 
+// 持有组件分组滚动容器实例。
 const commonGroup = ref<InstanceType<typeof ElScrollbar>>()
 
+// 保存当前激活分类和组件分组列表。
 const state = reactive({
   curCategory: 'CanvasBoard',
   groupList: CANVAS_MATERIAL as any[]
 })
 
+// 滚动到指定的分组位置。
 const scrollTo = offsetTop => {
   commonGroup?.value.setScrollTop(offsetTop)
 }
 
+// 根据锚点选择器定位对应分组。
 const anchorPosition = anchor => {
   const element = document.querySelector(anchor)
   scrollTo(element.offsetTop)
 }
 
+// 创建指定分类和内部类型的新组件。
 const newComponent = ({ category, innerType }) => {
   eventBus.emit('handleNew', { componentName: category, innerType: innerType })
 }
 
+// 记录拖拽组件的标识。
 const handleDragStart = e => {
   e.dataTransfer.setData('id', e.target.dataset.id)
 }
 
+// 切换激活分类并滚动到对应分组。
 const groupActiveChange = category => {
   state.curCategory = category
   anchorPosition('#' + category)
 }
 
+// 解析动态背景资源地址。
 const findUrl = name => {
   return new URL(`/src/assets/dynamic-background/${name}`, import.meta.url).href
 }
