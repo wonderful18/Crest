@@ -17,9 +17,12 @@ import { iconFieldMap } from '@/components/icon-group/field-list'
 
 const { t } = useI18n()
 
+// 维度字段标签颜色类型。
 const tagType = ref('success')
+// 是否展示日期扩展菜单。
 const showDateExt = ref(false)
 
+// 维度拖拽项入参，包含字段、图表上下文和所在轴区域。
 const props = defineProps({
   param: {
     type: Object,
@@ -55,6 +58,7 @@ const props = defineProps({
   }
 })
 
+// 维度拖拽项向编辑器上层抛出的操作事件。
 const emit = defineEmits([
   'onDimensionItemRemove',
   'onCustomSort',
@@ -66,9 +70,11 @@ const emit = defineEmits([
 ])
 
 const { item } = toRefs(props)
+// 根据当前主题反转提示框主题，保证弹层可读。
 const toolTip = computed(() => {
   return props.themes || 'dark'
 })
+// 当前维度是否展示数值格式化入口。
 const showValueFormatter = computed<boolean>(() => {
   return (
     (props.chart.type === 'table-normal' || props.chart.type === 'table-info') &&
@@ -76,6 +82,7 @@ const showValueFormatter = computed<boolean>(() => {
   )
 })
 
+// 字段数据或图表类型变化时刷新标签颜色。
 watch(
   [() => props.dimensionData, () => props.item, () => props.chart.type],
   () => {
@@ -84,6 +91,7 @@ watch(
   { deep: true }
 )
 
+// 分发维度菜单点击操作。
 const clickItem = param => {
   if (!param) {
     return
@@ -96,7 +104,6 @@ const clickItem = param => {
       removeItem()
       break
     case 'filter':
-      // editFilter()
       break
     case 'formatter':
       valueFormatter()
@@ -112,12 +119,14 @@ const clickItem = param => {
   }
 }
 
+// 构造通用菜单命令对象。
 const beforeClickItem = type => {
   return {
     type
   }
 }
 
+// 处理维度排序，普通排序直接更新字段，自定义排序交给上层弹窗。
 const sort = param => {
   if (param.type === 'custom_sort') {
     const item = {
@@ -134,58 +143,67 @@ const sort = param => {
   }
 }
 
+// 构造排序菜单命令对象。
 const beforeSort = type => {
   return {
     type: type
   }
 }
 
+// 切换日期粒度。
 const dateStyle = param => {
   item.value.dateStyle = param.type
   item.value.axisType = props.type
   emit('onDimensionItemChange', item.value)
 }
 
+// 构造日期粒度菜单命令对象。
 const beforeDateStyle = type => {
   return {
     type: type
   }
 }
 
+// 切换日期展示格式。
 const datePattern = param => {
   item.value.datePattern = param.type
   item.value.axisType = props.type
   emit('onDimensionItemChange', item.value)
 }
 
+// 构造日期展示格式菜单命令对象。
 const beforeDatePattern = type => {
   return {
     type: type
   }
 }
 
+// 打开维度重命名弹窗。
 const showRename = () => {
   item.value.index = props.index
   item.value.renameType = props.type
-  // item.value.dsFieldName = getOriginFieldName(props.dimensionData, props.quotaData, item.value)
   emit('onNameEdit', item.value)
 }
 
+// 删除当前维度字段。
 const removeItem = () => {
   item.value.index = props.index
   item.value.removeType = props.type
   emit('onDimensionItemRemove', item.value)
 }
 
+// 根据字段来源和类型刷新标签颜色。
 const getItemTagType = () => {
   tagType.value = getItemType(props.dimensionData, props.quotaData, props.item)
 }
 
+// 打开数值格式化配置弹窗。
 const valueFormatter = () => {
   item.value.index = props.index
   item.value.formatterType = props.type
   emit('valueFormatter', item.value)
 }
+// 判断当前维度字段是否支持自定义排序。
 const showCustomSort = item => {
   if (props.chart.type === 'symbolic-map' || props.chart.type === 'flow-map') {
     return false
@@ -194,6 +212,7 @@ const showCustomSort = item => {
 }
 
 const NOT_SUPPORT_SORT = ['word-cloud', 'stock-line', 'treemap', 'circle-packing']
+// 判断当前图表和字段区域是否展示排序入口。
 const showSort = computed(() => {
   const { type: chartType } = props.chart
   const { type: propType } = props
@@ -205,18 +224,21 @@ const showSort = computed(() => {
   const isDimensionType = ['dimension', 'dimensionStack', 'dimensionExt'].includes(propType)
   return !isChartMix || isDimensionType
 })
+// 判断当前图表是否展示排序优先级入口。
 const showSortPriority = computed(() => {
   if (props.chart.type.includes('chart-mix')) {
     return false
   }
   return showSort.value
 })
+// 切换字段隐藏状态。
 const toggleHide = () => {
   item.value.index = props.index
   item.value.hide = !item.value.hide
   item.value.axisType = props.type
   emit('onToggleHide', item.value)
 }
+// 表格字段隐藏后在标签上展示隐藏图标。
 const showHideIcon = computed(() => {
   return ['table-info', 'table-normal'].includes(props.chart.type) && item.value.hide
 })
