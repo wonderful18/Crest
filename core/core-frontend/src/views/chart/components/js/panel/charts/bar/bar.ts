@@ -43,10 +43,12 @@ import { getItemsOfView } from '@antv/g2/lib/interaction/action/active-region'
 const { t } = useI18n()
 const DEFAULT_DATA: any[] = []
 /**
- * 柱状图
+ * 柱状图渲染器，负责把编辑器中的轴、样式、标签和交互配置转换为 G2Plot Column 配置。
  */
 export class Bar extends G2PlotChartView<ColumnOptions, Column> {
+  // 编辑面板的一级能力列表，和 propertyInner 一起决定右侧配置面板可见项。
   properties = BAR_EDITOR_PROPERTY
+  // 柱状图只开放本图表族支持的配置项，避免通用面板暴露无效字段。
   propertyInner = {
     ...BAR_EDITOR_PROPERTY_INNER,
     'x-axis-selector': [...BAR_EDITOR_PROPERTY_INNER['x-axis-selector'], 'showLengthLimit'],
@@ -62,6 +64,7 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
     ],
     'y-axis-selector': [...BAR_EDITOR_PROPERTY_INNER['y-axis-selector'], 'axisLabelFormatter']
   }
+  // Column 的基础字段映射固定为 field/value/category，后续配置函数只追加行为和样式。
   protected baseOptions: ColumnOptions = {
     xField: 'field',
     yField: 'value',
@@ -70,7 +73,9 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
     data: []
   }
 
+  // 轴槽位定义同时驱动拖拽区域和后端查询字段分组。
   axis: AxisType[] = [...BAR_AXIS_TYPE]
+  // 轴配置中的文案和类型限制会展示在字段拖拽面板。
   axisConfig = {
     ...this['axisConfig'],
     xAxis: {
@@ -83,6 +88,7 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
     }
   }
 
+  // 绘制流程先构造 G2Plot 实例，再挂接点击、极值和 tooltip 相关事件。
   async drawChart(drawOptions: G2PlotDrawOptions<Column>): Promise<Column> {
     const { chart, container, action } = drawOptions
     chart.container = container
@@ -104,7 +110,7 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
     const { Column: ColumnClass } = await import('@antv/g2plot/esm/plots/column')
     newChart = new ColumnClass(container, options)
     newChart.on('interval:click', action)
-    // 只处理柱状图，分组和堆叠的阴影部分没有子维度信息
+    // 只处理普通柱状图的背景点击，分组和堆叠阴影区域无法稳定反推出子维度。
     if (this.name === 'bar' && options.tooltip) {
       newChart.on('plot:click', e => {
         if (e.target?.cfg?.renderer !== 'canvas') {
@@ -140,6 +146,7 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
     return newChart
   }
 
+  // 标签配置支持按指标系列分别设置格式；极值辅助点不参与普通标签展示。
   protected configLabel(chart: Chart, options: ColumnOptions): ColumnOptions {
     const tmpOptions = super.configLabel(chart, options)
     if (!tmpOptions.label) {
@@ -208,10 +215,12 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
     }
   }
 
+  // 多系列 tooltip 复用父类统一逻辑，保证指标格式化和轮播提示行为一致。
   protected configTooltip(chart: Chart, options: ColumnOptions): ColumnOptions {
     return super.configMultiSeriesTooltip(chart, options)
   }
 
+  // 基础样式负责渐变、圆角和柱宽，输入值会被限制在 G2Plot 可接受范围内。
   protected configBasicStyle(chart: Chart, options: ColumnOptions): ColumnOptions {
     const basicStyle = parseJson(chart.customAttr).basicStyle
     if (basicStyle.gradient) {
@@ -231,6 +240,7 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
     }
     let columnWidthRatio
     const _v = basicStyle.columnWidthRatio ?? DEFAULT_BASIC_STYLE.columnWidthRatio
+    // 配置面板按百分比保存柱宽，渲染层需要转换为 0 到 1 的比例。
     if (_v >= 1 && _v <= 100) {
       columnWidthRatio = _v / 100.0
     } else if (_v < 1) {
@@ -245,6 +255,7 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
     return options
   }
 
+  // X 轴标签长度限制只在轴标签存在时追加，避免覆盖上游图表类型关闭轴标签的配置。
   protected configXAxis(chart: Chart, options: ColumnOptions): ColumnOptions {
     const tmpOptions = super.configXAxis(chart, options)
     if (!tmpOptions.xAxis) {
@@ -262,6 +273,7 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
     return tmpOptions
   }
 
+  // Y 轴格式化和固定范围在同一层处理；固定范围会过滤低于最小值的数据点。
   protected configYAxis(chart: Chart, options: ColumnOptions): ColumnOptions {
     const tmpOptions = super.configYAxis(chart, options)
     if (!tmpOptions.yAxis) {
@@ -285,7 +297,7 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
           tickCount: axisValue.splitCount
         }
       }
-      // 根据axis的最小值，过滤options中的data数据，过滤掉小于最小值的数据
+      // G2Plot 固定最小值不会自动隐藏越界柱体，这里同步裁剪数据，避免图形越过坐标轴边界。
       const { data } = options
       const newData = data.filter(item => item.value >= axisValue.min)
       return { ...tmpOptions, data: newData, ...axis }
@@ -293,6 +305,7 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
     return tmpOptions
   }
 
+  // 配置管线按数据、主题、样式、交互的顺序执行，后续步骤可以覆盖前一步的默认值。
   protected setupOptions(chart: Chart, options: ColumnOptions): ColumnOptions {
     return flow(
       this.addConditionsStyleColorToData,
@@ -311,6 +324,7 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
     )(chart, options, {}, this)
   }
 
+  // 柱状图默认忽略空值，避免断点策略在离散类目上生成误导性的零值柱。
   setupDefaultOptions(chart: ChartObj): ChartObj {
     chart.senior.functionCfg.emptyDataStrategy = 'ignoreData'
     return chart
@@ -322,7 +336,7 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
 }
 
 /**
- * 堆叠柱状图
+ * 堆叠柱状图在普通柱状图基础上增加子维度堆叠、汇总标签和排序图例。
  */
 export class StackBar extends Bar {
   properties: EditorProperty[] = BAR_EDITOR_PROPERTY.filter(ele => ele !== 'threshold')
@@ -347,6 +361,7 @@ export class StackBar extends Bar {
     ],
     'legend-selector': [...BAR_EDITOR_PROPERTY_INNER['legend-selector'], 'legendSort']
   }
+  // 堆叠标签支持显示每段数值，也支持在柱顶追加分组汇总。
   protected configLabel(chart: Chart, options: ColumnOptions): ColumnOptions {
     let label = getLabel(chart)
     if (!label) {
@@ -367,6 +382,7 @@ export class StackBar extends Bar {
     }
     if (labelAttr.showTotal) {
       const formatterCfg = labelAttr.labelFormatter ?? formatterItem
+      // 按主维度汇总堆叠段数值，使用注解实现柱顶总计，避免修改原始数据结构。
       each(groupBy(options.data, 'field'), (values, key) => {
         const total = values.reduce((a, b) => a + b.value, 0)
         const value = valueFormatter(total, formatterCfg)
@@ -395,6 +411,7 @@ export class StackBar extends Bar {
     }
   }
 
+  // 堆叠 tooltip 使用子维度名称作为展示名，空子维度时回退到主维度名称。
   protected configTooltip(chart: Chart, options: ColumnOptions): ColumnOptions {
     const tooltipAttr = parseJson(chart.customAttr).tooltip
     if (!tooltipAttr.show) {
@@ -421,15 +438,16 @@ export class StackBar extends Bar {
     }
   }
 
+  // 图例和堆叠顺序需要同步，否则用户自定义排序后颜色、图例和柱体顺序会不一致。
   protected configColor(chart: Chart, options: ColumnOptions): ColumnOptions {
     const customStyle = parseJson(chart.customStyle)
     const { sort } = customStyle.legend
     const extStack = chart.extStack[0]
     if ((!sort || sort === 'none') && extStack?.customSort?.length > 0) {
-      // 图例自定义排序
+      // 图例未单独排序时，优先使用子维度自定义顺序作为堆叠顺序。
       const sort = extStack.customSort ?? []
       if (sort?.length) {
-        // 用值域限定排序，有可能出现新数据但是未出现在图表上，所以这边要遍历一下子维度，加到后面，让新数据显示出来
+        // 新数据可能不在历史自定义顺序中，需要追加到末尾，避免数据被隐藏。
         const data = options.data
         const cats: any[] =
           (data as any[])?.reduce((p, n) => {
@@ -462,6 +480,7 @@ export class StackBar extends Bar {
     return this.configStackColor(chart, options)
   }
 
+  // 未设置主维度或子维度排序时，允许按指标汇总值调整主维度展示顺序。
   protected configData(chart: Chart, options: ColumnOptions): ColumnOptions {
     const { xAxis, extStack, yAxis } = chart
     const mainSort = xAxis.some(axis => axis.sort !== 'none')
@@ -489,6 +508,7 @@ export class StackBar extends Bar {
     return options
   }
 
+  // 排序图例需要显式生成 items，才能同时控制顺序、颜色、透明度和图标形状。
   protected configSortedLegend(chart: Chart, options: ColumnOptions): ColumnOptions {
     const optionTmp = super.configLegend(chart, options)
     if (!optionTmp.legend) {
@@ -561,16 +581,19 @@ export class StackBar extends Bar {
     return optionTmp
   }
 
+  // 堆叠图按子维度生成系列颜色，保证同一子维度在不同主维度下颜色一致。
   public setupSeriesColor(chart: ChartObj, data?: any[]): ChartBasicStyle['seriesColor'] {
     return setUpStackSeriesColor(chart, data)
   }
 
+  // 堆叠图默认显示分段值，保持和历史图表的标签展示行为一致。
   setupDefaultOptions(chart: ChartObj): ChartObj {
     const chartTmp = super.setupDefaultOptions(chart)
     chartTmp.customAttr.label.showStackQuota = true
     return chartTmp
   }
 
+  // 堆叠图先处理排序和配色，再进入通用轴、缩略轴和分析线配置。
   protected setupOptions(chart: Chart, options: ColumnOptions): ColumnOptions {
     return flow(
       this.configTheme,
@@ -605,7 +628,7 @@ export class StackBar extends Bar {
 }
 
 /**
- * 分组柱状图
+ * 分组柱状图增加第二个类目轴，适合在同一主维度下比较多个子维度。
  */
 export class GroupBar extends StackBar {
   properties = BAR_EDITOR_PROPERTY
@@ -623,6 +646,7 @@ export class GroupBar extends StackBar {
     }
   }
 
+  // 分组图在 G2Plot 映射前调整组内顺序，确保指标排序只影响同一主维度内的柱子。
   async drawChart(drawOptions: G2PlotDrawOptions<Column>): Promise<Column> {
     const plot = await super.drawChart(drawOptions)
     if (!plot) {
@@ -694,6 +718,7 @@ export class GroupBar extends StackBar {
     return plot
   }
 
+  // 分组标签遵循 childrenShow 开关，支持只展示极值或完全隐藏子柱标签。
   protected configLabel(chart: Chart, options: ColumnOptions): ColumnOptions {
     const tmpLabel = getLabel(chart)
     if (!tmpLabel) {
@@ -718,14 +743,17 @@ export class GroupBar extends StackBar {
     }
   }
 
+  // 分组图按子分组生成系列颜色，避免和堆叠图的子维度配色逻辑混用。
   protected configColor(chart: Chart, options: ColumnOptions): ColumnOptions {
     return this.configGroupColor(chart, options)
   }
 
+  // 分组图的系列颜色来源于分组字段，数据缺失时由通用色板兜底。
   public setupSeriesColor(chart: ChartObj, data?: any[]): ChartBasicStyle['seriesColor'] {
     return setUpGroupSeriesColor(chart, data)
   }
 
+  // 分组图保留普通柱状图的条件色和极值能力，再叠加组内排序。
   protected setupOptions(chart: Chart, options: ColumnOptions): ColumnOptions {
     return flow(
       this.addConditionsStyleColorToData,
@@ -762,7 +790,7 @@ export class GroupBar extends StackBar {
 }
 
 /**
- * 分组堆叠柱状图
+ * 分组堆叠柱状图同时使用分组字段和堆叠字段，配置缺失时会降级为分组或堆叠展示。
  */
 export class GroupStackBar extends StackBar {
   propertyInner = {
@@ -770,6 +798,7 @@ export class GroupStackBar extends StackBar {
     'label-selector': [...BAR_EDITOR_PROPERTY_INNER['label-selector'], 'vPosition'],
     'legend-selector': BAR_EDITOR_PROPERTY_INNER['legend-selector']
   }
+  // 分组堆叠的内部标签需要居中贴近柱体，避免堆叠段较小时文字脱离图形。
   protected configTheme(chart: Chart, options: ColumnOptions): ColumnOptions {
     const baseOptions = super.configTheme(chart, options)
     const baseTheme = baseOptions.theme as object
@@ -785,6 +814,7 @@ export class GroupStackBar extends StackBar {
     }
   }
 
+  // 分组堆叠标签直接使用当前段值，汇总值由堆叠图的总计逻辑单独处理。
   protected configLabel(chart: Chart, options: ColumnOptions): ColumnOptions {
     const tmpLabel = getLabel(chart)
     if (!tmpLabel) {
@@ -805,6 +835,7 @@ export class GroupStackBar extends StackBar {
     }
   }
 
+  // tooltip 同时展示堆叠子维度和分组维度，帮助用户定位具体柱段。
   protected configTooltip(chart: Chart, options: ColumnOptions): ColumnOptions {
     const tooltipAttr = parseJson(chart.customAttr).tooltip
     if (!tooltipAttr.show) {
@@ -830,6 +861,7 @@ export class GroupStackBar extends StackBar {
     }
   }
 
+  // 当分组轴或堆叠轴缺失时降级渲染，避免空字段导致 G2Plot 初始化失败。
   protected configData(chart: Chart, options: ColumnOptions): ColumnOptions {
     if (!chart.xAxisExt?.length) {
       ;(options as any).isGroup = false
@@ -841,6 +873,7 @@ export class GroupStackBar extends StackBar {
     return options
   }
 
+  // 分组堆叠先完成降级判断，再执行样式和交互配置。
   protected setupOptions(chart: Chart, options: ColumnOptions): ColumnOptions {
     return flow(
       this.configData,
@@ -870,7 +903,7 @@ export class GroupStackBar extends StackBar {
 }
 
 /**
- * 百分比堆叠柱状图
+ * 百分比堆叠柱状图展示各堆叠段占比，数据值由上游转换为 0 到 1 的比例。
  */
 export class PercentageStackBar extends GroupStackBar {
   propertyInner = {
@@ -878,6 +911,7 @@ export class PercentageStackBar extends GroupStackBar {
     'label-selector': ['color', 'fontSize', 'vPosition', 'reserveDecimalCount'],
     'tooltip-selector': ['color', 'fontSize', 'backgroundColor', 'show', 'carousel']
   }
+  // 百分比标签只格式化比例，不再套用普通数值单位，避免出现“万元%”等错误展示。
   protected configLabel(chart: Chart, options: ColumnOptions): ColumnOptions {
     const baseOptions = super.configLabel(chart, options)
     if (!baseOptions.label) {
@@ -900,6 +934,7 @@ export class PercentageStackBar extends GroupStackBar {
     }
   }
 
+  // 百分比 tooltip 和标签共用精度设置，关闭 tooltip 时保留空配置以避免默认 tooltip 回退。
   protected configTooltip(chart: Chart, options: ColumnOptions): ColumnOptions {
     const tooltipAttr = parseJson(chart.customAttr).tooltip
     if (!tooltipAttr.show) {
