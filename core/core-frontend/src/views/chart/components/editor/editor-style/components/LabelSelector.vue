@@ -19,8 +19,10 @@ import { storeToRefs } from 'pinia'
 import Icon from '../../../../../../components/icon-custom/src/Icon.vue'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 
+/** 国际化文本读取方法。 */
 const { t } = useI18n()
 
+/** 标签样式面板的输入属性。 */
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -46,11 +48,15 @@ const props = defineProps({
     type: Array<string>
   }
 })
+/** 可视化主画布状态仓库。 */
 const dvMainStore = dvMainStoreWithOut()
+/** 根据当前主题选择 Tooltip 的反色主题。 */
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
+/** 当前是否处于批量设置状态。 */
 const { batchOptStatus } = storeToRefs(dvMainStore)
+/** 标签配置变化时重新初始化面板状态。 */
 watch(
   [() => props.chart.customAttr.label, () => props.chart.customAttr.label.show],
   () => {
@@ -58,6 +64,7 @@ watch(
   },
   { deep: false }
 )
+/** 当前图表参与标签配置的指标系列。 */
 const yAxis = computed(() => {
   if (props.chart.type.includes('chart-mix') || props.chart.type.includes('bidirectional-bar')) {
     return union(
@@ -84,10 +91,12 @@ const yAxis = computed(() => {
   }
 })
 
+/** 当前指标系列的稳定标识集合。 */
 const yAxisIds = computed(() => {
   return map(yAxis.value, y => y.seriesId)
 })
 
+/** 指标系列或图表类型变化时同步系列标签配置。 */
 watch(
   [() => yAxisIds.value, () => props.chart.type],
   () => {
@@ -96,6 +105,7 @@ watch(
   { deep: true }
 )
 
+/** 混合图使用 seriesId 作为系列键，普通图使用字段 id。 */
 const computedIdKey = computed(() => {
   if (props.chart.type.includes('chart-mix')) {
     return 'seriesId'
@@ -103,14 +113,17 @@ const computedIdKey = computed(() => {
   return 'id'
 })
 
+/** 当前正在编辑的系列标签格式配置。 */
 const curSeriesFormatter = ref<Partial<SeriesFormatter>>({})
+/** 当前是否允许编辑系列标签格式。 */
 const formatterEditable = computed(() => {
   return showProperty('seriesLabelFormatter') && yAxis.value?.length
 })
+/** 系列标签格式选择器引用。 */
 const formatterSelector = ref()
-// 初始化系列标签
+/** 初始化并补齐每个指标系列的标签配置。 */
 const initSeriesLabel = () => {
-  // 批量设置阶段 没有此标签
+  // 批量设置阶段不显示系列标签配置。
   if (!showProperty('seriesLabelFormatter') || batchOptStatus.value) {
     return
   }
@@ -176,7 +189,7 @@ const initSeriesLabel = () => {
     pre[next[computedIdKey.value]] = tmp
     return pre
   }, {})
-  // 初始化一下序列数组，用于主题适配
+  // 初始化系列数组，用于主题适配。
   if (initFlag) {
     changeLabelAttr('seriesLabelFormatter', false)
   }
@@ -187,21 +200,25 @@ const initSeriesLabel = () => {
   curSeriesFormatter.value = axisMap[curSeriesFormatter.value[computedIdKey.value]]
 }
 
+/** 径向图表标签位置选项。 */
 const labelPositionR = [
   { name: t('chart.inside'), value: 'inner' },
   { name: t('chart.outside'), value: 'outer' }
 ]
+/** 水平标签位置选项。 */
 const labelPositionH = [
   { name: t('chart.text_pos_left'), value: 'left' },
   { name: t('chart.center'), value: 'middle' },
   { name: t('chart.text_pos_right'), value: 'right' }
 ]
+/** 垂直标签位置选项。 */
 const labelPositionVList = [
   { name: t('chart.text_pos_top'), value: 'top' },
   { name: t('chart.center'), value: 'middle' },
   { name: t('chart.text_pos_bottom'), value: 'bottom' }
 ]
 
+/** 当前图表可用的垂直标签位置选项。 */
 const labelPositionV = computed(() => {
   if (['line', 'area-stack', 'area'].includes(chartType.value)) {
     return labelPositionVList.filter(item => item.value !== 'middle')
@@ -209,11 +226,13 @@ const labelPositionV = computed(() => {
   return labelPositionVList
 })
 
+/** 当前图表类型。 */
 const chartType = computed(() => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   return chart?.type
 })
 
+/** 标签字号候选项。 */
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -234,6 +253,7 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+/** 根据图表类型修正后的默认标签配置。 */
 const COMPUTED_DEFAULT_LABEL = computed(() => {
   if (chartType.value === 'liquid') {
     return {
@@ -244,6 +264,7 @@ const COMPUTED_DEFAULT_LABEL = computed(() => {
   return DEFAULT_LABEL
 })
 
+/** 标签表单的可编辑状态。 */
 const state = reactive<{ labelForm: DeepPartial<ChartLabelAttr> }>({
   labelForm: {
     quotaLabelFormatter: DEFAULT_LABEL.quotaLabelFormatter,
@@ -255,16 +276,20 @@ const state = reactive<{ labelForm: DeepPartial<ChartLabelAttr> }>({
   }
 })
 
+/** 标签配置变更事件。 */
 const emit = defineEmits(['onLabelChange'])
+/** 将单个标签属性变更同步给父级编辑器。 */
 const changeLabelAttr = (prop: string, render = true) => {
   emit('onLabelChange', { data: state.labelForm, render }, prop)
 }
 
+/** 切换格式化单位语言并同步对应标签属性。 */
 function changeLabelUnitLanguage(cfg: BaseFormatter, lang, prop: string, render = true) {
   onChangeFormatCfgUnitLanguage(cfg, lang)
   changeLabelAttr(prop, render)
 }
 
+/** 用当前图表配置初始化标签表单。 */
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customAttr) {
@@ -272,7 +297,7 @@ const init = () => {
     if (customAttr.label) {
       configCompat(customAttr.label)
       state.labelForm = defaultsDeep(customAttr.label, cloneDeep(COMPUTED_DEFAULT_LABEL.value))
-      //初始化format单位语言
+      // 初始化格式化单位语言。
       initFormatCfgUnit(state.labelForm.labelFormatter)
       initFormatCfgUnit(state.labelForm.quotaLabelFormatter)
       initFormatCfgUnit(state.labelForm.totalFormatter)
@@ -282,15 +307,17 @@ const init = () => {
       initSeriesLabel()
       formatterSelector.value?.blur()
     }
-    //初始化标签位置
+    // 初始化标签位置。
     initPosition()
   }
 }
+/** 兼容旧版本标签配置中的堆叠指标显示字段。 */
 const configCompat = (labelAttr: DeepPartial<ChartLabelAttr>) => {
   if (labelAttr.showStackQuota === undefined) {
     labelAttr.showStackQuota = labelAttr.show
   }
 }
+/** 判断标签内容选项是否是当前唯一启用项，避免全部内容被关闭。 */
 const checkLabelContent = contentProp => {
   if (['funnel', 'liquid'].includes(chartType.value)) {
     return false
@@ -309,19 +336,23 @@ const checkLabelContent = contentProp => {
   })
   return trueCount === 1 && state.labelForm?.[contentProp]
 }
+/** 判断当前属性是否在面板可配置范围内。 */
 const showProperty = prop => {
   return props.propertyInner?.includes(prop)
 }
 
+/** 当前是否展示空配置提示。 */
 const showEmpty = computed(() => {
   return (
     props.propertyInner.length === 0 ||
     (batchOptStatus.value && showProperty('seriesLabelFormatter'))
   )
 })
+/** 当前是否展示系列标签格式配置。 */
 const showSeriesLabelFormatter = computed(() => {
   return !batchOptStatus.value && showProperty('seriesLabelFormatter')
 })
+/** 当前是否展示标签内容分隔区域。 */
 const showDivider = computed(() => {
   const DIVIDER_PROPS = ['labelFormatter', 'showDimension', 'showQuota', 'showProportion']
   return (
@@ -332,6 +363,7 @@ const showDivider = computed(() => {
   )
 })
 
+/** 当前图表是否为时间范围条形图。 */
 const isBarRangeTime = computed<boolean>(() => {
   if (props.chart.type === 'bar-range') {
     const tempYAxis = props.chart.yAxis[0]
@@ -345,6 +377,7 @@ const isBarRangeTime = computed<boolean>(() => {
   }
   return false
 })
+/** 当前是否展示水平位置配置。 */
 const showPositionH = computed(() => {
   if (showProperty('hPosition')) {
     if (props.chart.type !== 'bidirectional-bar') {
@@ -354,6 +387,7 @@ const showPositionH = computed(() => {
   }
   return false
 })
+/** 当前是否展示垂直位置配置。 */
 const showPositionV = computed(() => {
   if (showProperty('vPosition')) {
     if (props.chart.type !== 'bidirectional-bar' && props.chart.type !== 'bar-group') {
@@ -363,6 +397,7 @@ const showPositionV = computed(() => {
   }
   return false
 })
+/** 根据双向柱状图布局修正标签位置。 */
 function initBidirectionalBarPosition() {
   if (chartType.value === 'bidirectional-bar') {
     const layout = props.chart.customAttr.basicStyle.layout
@@ -392,6 +427,7 @@ function initBidirectionalBarPosition() {
   }
 }
 
+/** 根据图表类型和可配置属性修正标签位置。 */
 function initPosition() {
   if (chartType.value === 'bidirectional-bar') {
     initBidirectionalBarPosition()
@@ -424,6 +460,7 @@ function initPosition() {
   }
 }
 
+/** 双向柱状图布局变化时同步标签位置。 */
 watch(
   () => props.chart.customAttr.basicStyle.layout,
   () => {
@@ -432,10 +469,12 @@ watch(
   { deep: true }
 )
 
+/** 图表类型变化时同步标签位置。 */
 watch(chartType, () => {
   initPosition()
 })
 
+/** 可用于自定义标签内容的字段选项。 */
 const allFields = computed(() => {
   return defaultTo(props.allFields, []).map(item => ({
     key: item.engineFieldName,
@@ -445,6 +484,7 @@ const allFields = computed(() => {
   }))
 })
 
+/** 自定义标签内容输入框的默认占位文本。 */
 const defaultPlaceholder = computed(() => {
   if (state.labelForm.showFields && state.labelForm.showFields.length > 0) {
     return state.labelForm.showFields
@@ -456,6 +496,7 @@ const defaultPlaceholder = computed(() => {
   }
   return ''
 })
+/** 字段列表变化时清理已失效的自定义标签字段。 */
 watch(
   () => allFields.value,
   () => {
@@ -474,23 +515,29 @@ watch(
     }
   }
 )
+/** 组件挂载后初始化标签配置。 */
 onMounted(() => {
   init()
 })
+/** 当前图表是否为分组柱状图。 */
 const isGroupBar = computed(() => {
   return props.chart.type === 'bar-group'
 })
+/** 转化率精度选项。 */
 const conversionPrecision = [
   { name: t('chart.reserve_zero'), value: 0 },
   { name: t('chart.reserve_one'), value: 1 },
   { name: t('chart.reserve_two'), value: 2 }
 ]
+/** 当前图表是否允许完整显示标签。 */
 const noFullDisplay = computed(() => {
   return !['liquid', 'gauge', 'indicator'].includes(props.chart.type)
 })
+/** 当前图表是否为仪表盘。 */
 const isGauge = computed(() => {
   return props.chart.type === 'gauge'
 })
+/** 当前图表是否为进度条。 */
 const isProgressBar = computed(() => {
   return props.chart.type === 'progress-bar'
 })
