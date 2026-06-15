@@ -9,10 +9,13 @@ import io.crest.api.permissions.org.vo.LazyTreeVO;
 import io.crest.api.permissions.org.vo.OrgDetailVO;
 import io.crest.api.permissions.org.vo.OrgPageVO;
 import io.crest.exception.CrestException;
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.IDUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +35,9 @@ public class CrestOrgManage {
 
     @Resource
     private PlatformPermissionManage platformPermissionManage;
+
+    @Resource
+    private Environment environment;
 
     /**
      * 查询完整组织树
@@ -157,8 +163,8 @@ public class CrestOrgManage {
      */
     public OrgDetailVO detail(Long oid) {
         List<OrgDetailVO> list = jdbcTemplate.query("""
-                SELECT id, name, pid, path FROM iam_org WHERE id = ? LIMIT 1
-                """, (rs, rowNum) -> new OrgDetailVO(rs.getLong("id"), rs.getString("name"),
+                SELECT id, name, pid, path FROM iam_org WHERE id = ?
+                """.transform(this::limitOne), (rs, rowNum) -> new OrgDetailVO(rs.getLong("id"), rs.getString("name"),
                 rs.getLong("pid"), rs.getString("path")), oid);
         return list.isEmpty() ? null : list.get(0);
     }
@@ -171,8 +177,17 @@ public class CrestOrgManage {
         if (org == null) {
             return List.of();
         }
-        return jdbcTemplate.queryForList("SELECT CAST(id AS CHAR) FROM iam_org WHERE path LIKE ?",
+        return jdbcTemplate.queryForList("SELECT " + dialect().stringCast("id") + " FROM iam_org WHERE path LIKE ?",
                 String.class, org.getRootPath() + "%");
+    }
+
+    // 组织详情接口只需要一条记录，分页语法交给元数据库方言保持 MySQL/OB Oracle 兼容。
+    private String limitOne(String sql) {
+        return dialect().limitOne(sql.stripTrailing());
+    }
+
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
     }
 
     /**

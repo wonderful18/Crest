@@ -20,18 +20,16 @@ public class MetadataDbEnvironmentPostProcessor implements EnvironmentPostProces
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
         MetadataDbType type = MetadataDbTypeResolver.resolve(environment);
         Map<String, Object> defaults = new LinkedHashMap<>();
-        defaults.put(MetadataDbTypeResolver.PROPERTY_NAME, type.getCode());
-        defaults.put("spring.datasource.driver-class-name",
-                "${CREST_DB_DRIVER_CLASS_NAME:" + type.getDriverClassName() + "}");
+        defaults.put("CREST_DB_TYPE", type.getCode());
+        defaults.put("CREST_DB_DRIVER_CLASS_NAME", type.getDriverClassName());
 
         if (type.isOceanBase()) {
-            defaults.put("spring.datasource.url", "${CREST_DB_URL:" + oceanBaseJdbcUrl(type) + "}");
+            defaults.put("CREST_DB_URL", oceanBaseJdbcUrl(type));
         }
         boolean demoEnabled = environment.getProperty("CREST_LOAD_DEMO", Boolean.class,
                 environment.getProperty("crest.demo.enabled", Boolean.class, true));
-        defaults.put("spring.flyway.locations",
-                "${CREST_FLYWAY_LOCATIONS:" + type.getDefaultFlywayLocations(demoEnabled) + "}");
-        environment.getPropertySources().addFirst(new MapPropertySource(PROPERTY_SOURCE_NAME, defaults));
+        defaults.put("CREST_FLYWAY_LOCATIONS", type.getDefaultFlywayLocations(demoEnabled));
+        environment.getPropertySources().addLast(new MapPropertySource(PROPERTY_SOURCE_NAME, defaults));
     }
 
     @Override

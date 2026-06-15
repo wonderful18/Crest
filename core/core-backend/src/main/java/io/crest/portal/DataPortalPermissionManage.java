@@ -1,9 +1,12 @@
 package io.crest.portal;
 
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.substitute.permissions.user.CrestUserManage;
 import io.crest.utils.AuthUtils;
 import jakarta.annotation.Resource;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +36,9 @@ public class DataPortalPermissionManage {
      */
     @Resource
     private CrestUserManage crestUserManage;
+
+    @Resource
+    private Environment environment;
 
     /**
      * 返回当前登录用户 ID
@@ -110,7 +116,7 @@ public class DataPortalPermissionManage {
                   OR v.org_id = ?
                   OR EXISTS (
                     SELECT 1 FROM iam_resource_permission p
-                    WHERE CAST(p.resource_id AS UNSIGNED) = v.id
+                    WHERE %s = v.id
                       AND (
                         (v.type = 'dataV' AND p.resource_type = 'screen')
                         OR (v.type = 'dashboard' AND p.resource_type = 'panel')
@@ -119,7 +125,7 @@ public class DataPortalPermissionManage {
                       AND (
                         (p.target_type = 'user' AND p.target_id = ?)
                         OR (p.target_type = 'org' AND p.target_id = ?)
-                """);
+                """.formatted(dialect().numberCast("p.resource_id")));
         args.add(String.valueOf(uid));
         args.add(oid);
         args.add(uid);
@@ -136,5 +142,9 @@ public class DataPortalPermissionManage {
                   )
                 )
                 """);
+    }
+
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
     }
 }

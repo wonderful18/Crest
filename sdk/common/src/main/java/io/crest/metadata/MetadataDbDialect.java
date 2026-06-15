@@ -1,5 +1,7 @@
 package io.crest.metadata;
 
+import java.util.List;
+
 /**
  * SQL fragments that differ between supported Crest metadata databases.
  */
@@ -11,6 +13,10 @@ public interface MetadataDbDialect {
 
     String limitOffset(String sql, long limit, long offset);
 
+    default String limitOne(String sql) {
+        return limitOffset(sql, 1, 0);
+    }
+
     String ifNull(String expression, String fallback);
 
     String concat(String... expressions);
@@ -18,4 +24,28 @@ public interface MetadataDbDialect {
     String currentTimestamp();
 
     String caseInsensitiveLike(String expression, String parameterExpression);
+
+    String stringLiteral(String value);
+
+    String stringCast(String expression);
+
+    String nullableString();
+
+    String collate(String expression);
+
+    default String stringEquals(String leftExpression, String rightExpression) {
+        return collate(leftExpression) + " = " + collate(rightExpression);
+    }
+
+    default String stringNotEquals(String leftExpression, String rightExpression) {
+        return collate(leftExpression) + " <> " + collate(rightExpression);
+    }
+
+    String numberCast(String expression);
+
+    String insertIgnore(String table, String columns, String values);
+
+    String mergeIfMissing(String table, String columns, String values, String conflictPredicate);
+
+    String upsert(String table, String columns, String values, String conflictPredicate, List<String> updateAssignments);
 }

@@ -253,11 +253,13 @@ public class PlatformPermissionManage {
             sql.append(" OR ").append(orgColumn).append(" = '").append(oidValue).append("'");
         } else {
             sql.append(" OR EXISTS (SELECT 1 FROM iam_resource_index cri WHERE cri.resource_type = '")
-                    .append(resourceType).append("' AND cri.resource_id = CAST(").append(resourceIdColumn)
-                    .append(" AS CHAR) AND cri.oid = ").append(oidValue).append(")");
+                    .append(resourceType).append("' AND cri.resource_id = ")
+                    .append(MetadataDbDialects.current(environment).stringCast(resourceIdColumn))
+                    .append(" AND cri.oid = ").append(oidValue).append(")");
         }
         sql.append(" OR EXISTS (SELECT 1 FROM iam_resource_permission crp WHERE crp.resource_type = '")
-                .append(resourceType).append("' AND crp.resource_id = CAST(").append(resourceIdColumn).append(" AS CHAR)")
+                .append(resourceType).append("' AND crp.resource_id = ")
+                .append(MetadataDbDialects.current(environment).stringCast(resourceIdColumn))
                 .append(" AND crp.permission IN ('read', 'manage') AND ((crp.target_type = 'user' AND crp.target_id = ")
                 .append(uidValue).append(") OR (crp.target_type = 'role' AND crp.target_id IN (").append(roleIds)
                 .append(")) OR (crp.target_type = 'org' AND crp.target_id = ").append(oidValue).append(")))");
