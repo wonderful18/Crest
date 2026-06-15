@@ -588,6 +588,7 @@ const parseVariable = () => {
   const variableReg = new RegExp('\\$CREST_PARAM{(.*?)}', 'gim')
   const variableMatch = codeCom.value.state.doc.toString().match(variableReg)
   if (variableMatch !== null) {
+    // 新版参数语法允许一个参数块内声明多个变量，逐个提取并去重
     const names = []
     const reg = new RegExp('\\$\\[[^\\]]+\\]', 'gim')
     for (let index = 0; index < variableMatch.length; index++) {
@@ -608,6 +609,7 @@ const parseVariable = () => {
               }
             }
             if (obj === undefined) {
+              // 首次出现的参数默认按文本类型处理，后续可在参数抽屉中调整
               obj = {
                 variableName: name,
                 alias: '',
@@ -625,6 +627,7 @@ const parseVariable = () => {
       }
     }
   } else {
+    // 兼容旧版 ${name} 参数写法，避免历史 SQL 打开后丢失参数配置
     const reg = new RegExp('\\${(.*?)}', 'gim')
     const match = codeCom.value.state.doc.toString().match(reg)
     const names = []
@@ -643,6 +646,7 @@ const parseVariable = () => {
             }
           }
           if (obj === undefined) {
+            // 历史参数没有保存类型时按文本参数补齐默认结构
             obj = {
               variableName: name,
               alias: '',
@@ -659,6 +663,7 @@ const parseVariable = () => {
       }
     }
   }
+  // 使用深拷贝断开临时表格和已保存变量配置的引用
   state.variables = JSON.parse(JSON.stringify(state.variablesTmp))
 }
 
@@ -785,6 +790,7 @@ const mousedownDrag = () => {
         </div>
       </div>
       <div v-else class="table-checkbox-list">
+        <!-- 数据表数量可能较多，使用固定高度虚拟列表降低左侧面板渲染成本 -->
         <FixedSizeList
           :itemSize="40"
           :data="datasourceTableData"
@@ -1042,6 +1048,7 @@ const mousedownDrag = () => {
             </template>
           </el-input>
           <div class="system-list">
+            <!-- 移动端侧栏将内置变量和自定义变量分组展示，点击后写入当前光标位置 -->
             <div class="built-in">
               {{ t('system.system_built_in_variable') }}
             </div>
@@ -1239,10 +1246,12 @@ const mousedownDrag = () => {
 <style lang="less" scoped>
 @import '@/style/mixin.less';
 .sql-eidtor {
+  /* SQL 编辑器占满剩余视口高度，左右分栏和底部结果区都在该容器内计算 */
   width: 100%;
   height: calc(100vh - 156px);
   position: relative;
   .drag-left {
+    /* 左侧数据表面板拖拽手柄，仅负责捕获横向拖动事件 */
     position: absolute;
     height: calc(100vh - 156px);
     width: 2px;
@@ -1252,6 +1261,7 @@ const mousedownDrag = () => {
   }
 
   .arrow-right {
+    /* 左侧面板收起后的展开入口，贴边展示避免遮挡编辑器内容 */
     position: absolute;
     top: 15px;
     z-index: 5;

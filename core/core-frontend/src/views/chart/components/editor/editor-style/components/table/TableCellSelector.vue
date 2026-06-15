@@ -466,6 +466,7 @@ onMounted(() => {
       v-if="showProperty('tableItemAlign') && state.tableCellForm.tableItemAlign === 'custom'"
     >
       <el-col :span="12">
+        <!-- 字段级对齐先选字段，再对该字段写入独立对齐方式 -->
         <el-select :effect="themes" v-model="alignConfig.id" @change="changeAlignConfig">
           <el-option
             v-for="item in alignConfigOptions"
@@ -568,6 +569,7 @@ onMounted(() => {
       :class="'form-item-' + themes"
       v-if="showProperty('tableFreeze')"
     >
+      <!-- 合并单元格会改变行列定位，开启后冻结配置需禁用 -->
       <el-checkbox
         size="small"
         :effect="themes"
@@ -668,6 +670,7 @@ onMounted(() => {
       :class="'form-item-' + themes"
       v-if="showProperty('mergeFields') && state.tableCellForm.mergeCells"
     >
+      <!-- 合并字段顺序与表格维度顺序一致，渲染层按连续相同值合并 -->
       <el-select
         :effect="themes"
         v-model="state.tableCellForm.mergeFields"
