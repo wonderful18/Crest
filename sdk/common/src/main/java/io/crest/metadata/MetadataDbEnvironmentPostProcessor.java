@@ -27,8 +27,10 @@ public class MetadataDbEnvironmentPostProcessor implements EnvironmentPostProces
         if (type.isOceanBase()) {
             defaults.put("spring.datasource.url", "${CREST_DB_URL:" + oceanBaseJdbcUrl(type) + "}");
         }
+        boolean demoEnabled = environment.getProperty("CREST_LOAD_DEMO", Boolean.class,
+                environment.getProperty("crest.demo.enabled", Boolean.class, true));
         defaults.put("spring.flyway.locations",
-                "${CREST_FLYWAY_LOCATIONS:" + type.getDefaultFlywayLocations() + "}");
+                "${CREST_FLYWAY_LOCATIONS:" + type.getDefaultFlywayLocations(demoEnabled) + "}");
         environment.getPropertySources().addFirst(new MapPropertySource(PROPERTY_SOURCE_NAME, defaults));
     }
 

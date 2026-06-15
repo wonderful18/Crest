@@ -51,6 +51,13 @@ public enum MetadataDbType {
         return defaultFlywayLocations;
     }
 
+    public String getDefaultFlywayLocations(boolean demoEnabled) {
+        if (demoEnabled) {
+            return defaultFlywayLocations;
+        }
+        return defaultFlywayLocations.replace(",classpath:db/demo-migration", "");
+    }
+
     public boolean isOceanBase() {
         return this == OB_MYSQL || this == OB_ORACLE;
     }

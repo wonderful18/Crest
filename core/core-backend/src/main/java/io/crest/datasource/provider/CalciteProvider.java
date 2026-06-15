@@ -1425,6 +1425,10 @@ public class CalciteProvider extends Provider {
         Map<Long, DatasourceSchemaDTO> dsList = datasourceRequest.getDsList();
         for (Map.Entry<Long, DatasourceSchemaDTO> next : dsList.entrySet()) {
             DatasourceSchemaDTO ds = next.getValue();
+            if (StringUtils.isBlank(ds.getConfiguration())) {
+                LogUtil.info("Skip datasource pool with empty configuration: " + ds.getName());
+                continue;
+            }
             try {
                     BasicDataSource dataSource = new BasicDataSource();
                     dataSource.setMaxWaitMillis(5 * 1000);
