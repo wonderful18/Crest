@@ -19,14 +19,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// 覆盖数据集同步工具的缓存命名、路由判断和同步 SQL 生成规则。
 public class DatasetSyncUtilsTest {
 
+    // 验证缓存表名使用数据集 ID 作为命名空间。
     @Test
     public void cacheTableNameUsesDatasetIdNamespace() {
         assertEquals("dataset_sync_12345", DatasetSyncUtils.cacheTableName(12345L));
         assertEquals("tmp_dataset_sync_12345", DatasetSyncUtils.tmpCacheTableName(12345L));
     }
 
+    // 验证引擎字段生成时跳过计算字段并保留引擎字段名。
     @Test
     public void toEngineTableFieldsUsesEngineFieldNamesAndSkipsCalculatedFields() {
         DatasetTableFieldDTO normal = field(1L, "USER_ID", "用户ID", "f_user_id", 2, ExtFieldConstant.EXT_NORMAL);
@@ -42,6 +45,7 @@ public class DatasetSyncUtilsTest {
         assertEquals(Integer.valueOf(2), fields.get(0).getExtractedFieldType());
     }
 
+    // 验证增量谓词按字段类型格式化比较值。
     @Test
     public void buildIncrementalPredicateFormatsValuesByFieldType() {
         DatasetTableFieldDTO numberField = field(1L, "ID", "ID", "f_id", 2, ExtFieldConstant.EXT_NORMAL);
@@ -56,6 +60,7 @@ public class DatasetSyncUtilsTest {
         );
     }
 
+    // 验证 MySQL 时间字段使用普通字符串时间字面量。
     @Test
     public void buildIncrementalPredicateUsesMysqlLiteralForMysqlTimeField() {
         DatasetTableFieldDTO timeField = field(3L, "UPDATED_AT", "更新时间", "f_updated_at", 1, ExtFieldConstant.EXT_NORMAL);
@@ -66,6 +71,7 @@ public class DatasetSyncUtilsTest {
         );
     }
 
+    // 验证增量回放可包含上一批水位值。
     @Test
     public void buildIncrementalPredicateCanReplayLastWatermarkBucket() {
         DatasetTableFieldDTO timeField = field(3L, "UPDATED_AT", "更新时间", "f_updated_at", 1, ExtFieldConstant.EXT_NORMAL);
@@ -84,6 +90,7 @@ public class DatasetSyncUtilsTest {
         );
     }
 
+    // 验证数值字段遇到旧格式非数值水位时按字符串兜底。
     @Test
     public void cacheWatermarkPredicateQuotesStaleNonNumericWatermarkForNumericField() {
         DatasetTableFieldDTO numberField = field(1L, "ID", "主键ID", "f_id", 2, ExtFieldConstant.EXT_NORMAL);
@@ -96,6 +103,7 @@ public class DatasetSyncUtilsTest {
         );
     }
 
+    // 验证字段结构变化会影响 Schema 哈希。
     @Test
     public void schemaHashChangesWhenSelectedFieldShapeChanges() {
         DatasetTableFieldDTO id = field(1L, "ID", "ID", "f_id", 2, ExtFieldConstant.EXT_NORMAL);
@@ -108,6 +116,7 @@ public class DatasetSyncUtilsTest {
         assertFalse(schemaHash.equals(DatasetSyncUtils.schemaHash(List.of(id, renamed))));
     }
 
+    // 验证缓存查询 SQL 读取缓存表中的引擎字段。
     @Test
     public void buildCacheSelectSqlReadsEngineColumnsFromCacheTable() {
         DatasetTableFieldDTO id = field(1L, "ID", "ID", "f_id", 2, ExtFieldConstant.EXT_NORMAL);
@@ -121,6 +130,7 @@ public class DatasetSyncUtilsTest {
         );
     }
 
+    // 验证 Oracle 分页 SQL 仅保留可同步列并隐藏行号列。
     @Test
     public void buildOraclePageSqlKeepsOnlySyncableColumnsAndHidesRowNumber() {
         DatasetTableFieldDTO id = field(1L, "ID", "ID", "f_id", 2, ExtFieldConstant.EXT_NORMAL);
@@ -141,6 +151,7 @@ public class DatasetSyncUtilsTest {
         );
     }
 
+    // 验证 MySQL 分页 SQL 使用稳定排序并仅保留可同步列。
     @Test
     public void buildMysqlPageSqlUsesStableOrderAndKeepsOnlySyncableColumns() {
         DatasetTableFieldDTO id = field(1L, "ID", "ID", "f_id", 2, ExtFieldConstant.EXT_NORMAL);
@@ -162,6 +173,7 @@ public class DatasetSyncUtilsTest {
         );
     }
 
+    // 验证只有单数据源且支持抽取的数据集才路由到缓存。
     @Test
     public void shouldRouteToCacheOnlyForSingleSupportedExtractDataset() {
         assertTrue(DatasetSyncUtils.shouldRouteToCache(dataset(1, false), sqlMap("obOracle")));
@@ -176,6 +188,7 @@ public class DatasetSyncUtilsTest {
         assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset(1, false), null));
     }
 
+    // 验证带参数值的 SQL 数据集不会路由到缓存。
     @Test
     public void shouldNotRouteParameterizedSqlDatasetToCache() {
         Map<String, Object> sqlMap = sqlMap("mysql");
@@ -184,6 +197,7 @@ public class DatasetSyncUtilsTest {
         assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset(1, false), sqlMap));
     }
 
+    // 验证未准备变量值的 SQL 变量数据集不会路由到缓存。
     @Test
     public void shouldNotRouteSqlVariableDatasetToCacheWithoutPreparedValues() {
         DatasetGroupInfoDTO dataset = dataset(1, false);
@@ -192,6 +206,7 @@ public class DatasetSyncUtilsTest {
         assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset, sqlMap("mysql")));
     }
 
+    // 验证同步校验能识别 SQL 参数值。
     @Test
     public void detectsParameterizedSqlValuesForSyncValidation() {
         assertFalse(DatasetSyncUtils.hasSqlParameterValues(null));
@@ -203,6 +218,7 @@ public class DatasetSyncUtilsTest {
         assertTrue(DatasetSyncUtils.hasSqlParameterValues(sqlMap));
     }
 
+    // 验证缓存就绪状态依赖成功物化表和匹配的 Schema。
     @Test
     public void cacheReadyRequiresSuccessfulMaterializedTable() {
         CoreDatasetSyncTask task = new CoreDatasetSyncTask();
@@ -220,6 +236,7 @@ public class DatasetSyncUtilsTest {
         assertFalse(DatasetSyncUtils.isCacheReady(task, "schema-v2"));
     }
 
+    // 验证只有存在且运行中的任务才允许执行。
     @Test
     public void taskRunnableRequiresExistingActiveTask() {
         CoreDatasetSyncTask task = new CoreDatasetSyncTask();
@@ -236,6 +253,7 @@ public class DatasetSyncUtilsTest {
         assertFalse(DatasetSyncUtils.isTaskRunnable(task));
     }
 
+    // 验证增量执行依赖水位、缓存就绪和匹配的 Schema。
     @Test
     public void incrementalRequiresWatermarkReadyCacheAndMatchingSchema() {
         CoreDatasetSyncTask task = new CoreDatasetSyncTask();
@@ -262,6 +280,7 @@ public class DatasetSyncUtilsTest {
         assertFalse(DatasetSyncUtils.canRunIncremental(task, "schema-v1"));
     }
 
+    // 验证全量校准只在增量任务超过配置间隔后触发。
     @Test
     public void fullCalibrationRunsOnlyWhenIncrementalTaskExceedsConfiguredInterval() {
         CoreDatasetSyncTask task = new CoreDatasetSyncTask();
@@ -280,6 +299,7 @@ public class DatasetSyncUtilsTest {
         assertFalse(DatasetSyncUtils.shouldRunFullCalibration(task, 1_000L + 48 * 60 * 60 * 1000L));
     }
 
+    // 验证缓存超过配置阈值后被判定为过期。
     @Test
     public void cacheExpiresWhenLastSuccessfulSyncIsOlderThanConfiguredThreshold() {
         CoreDatasetSyncTask task = new CoreDatasetSyncTask();
@@ -294,6 +314,7 @@ public class DatasetSyncUtilsTest {
         assertFalse(DatasetSyncUtils.isCacheExpired(task, 1_000L + 48 * 60 * 60 * 1000L));
     }
 
+    // 验证对账结果能报告行数和水位不一致。
     @Test
     public void reconcileStatusReportsRowCountAndWatermarkMismatches() {
         DatasetSyncUtils.ReconcileResult passed = DatasetSyncUtils.reconcile(10L, 10L, "2026-05-15 10:00:00.0", "2026-05-15 10:00:00.0");
@@ -309,6 +330,7 @@ public class DatasetSyncUtilsTest {
         assertEquals("源数据最大增量值 2026-05-15 10:00:00.0 与缓存最大增量值 2026-05-15 09:59:00.0 不一致", watermarkMismatch.message());
     }
 
+    // 构造测试用数据集字段。
     private DatasetTableFieldDTO field(Long id, String originName, String name, String engineFieldName, Integer fieldType, Integer extField) {
         DatasetTableFieldDTO field = new DatasetTableFieldDTO();
         field.setId(id);
@@ -323,6 +345,7 @@ public class DatasetSyncUtilsTest {
         return field;
     }
 
+    // 构造测试用数据集基础信息。
     private DatasetGroupInfoDTO dataset(Integer mode, Boolean isCross) {
         DatasetGroupInfoDTO dataset = new DatasetGroupInfoDTO();
         dataset.setMode(mode);
@@ -330,6 +353,7 @@ public class DatasetSyncUtilsTest {
         return dataset;
     }
 
+    // 构造带 SQL 变量详情的 union 节点。
     private UnionDTO unionWithSqlVariables(String sqlVariableDetails) {
         DatasetTableDTO table = new DatasetTableDTO();
         table.setSqlVariableDetails(sqlVariableDetails);
@@ -338,6 +362,7 @@ public class DatasetSyncUtilsTest {
         return union;
     }
 
+    // 构造数据源类型映射。
     private Map<String, Object> sqlMap(String... types) {
         Map<Long, DatasourceSchemaDTO> dsMap = new LinkedHashMap<>();
         long id = 1L;
