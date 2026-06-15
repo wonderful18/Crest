@@ -2,11 +2,16 @@ import { divide, multiply, floor } from 'mathjs'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 
+/**
+ * 大屏主状态仓库
+ */
 const dvMainStore = dvMainStoreWithOut()
+/**
+ * 当前画布样式数据
+ */
 const { canvasStyleData } = storeToRefs(dvMainStore)
 
-// 角度转弧度
-// Math.PI = 180 度
+// 将角度转换为弧度，180 度对应 Math.PI
 function angleToRadian(angle) {
   return (angle * Math.PI) / 180
 }
@@ -21,11 +26,8 @@ function angleToRadian(angle) {
  */
 export function calculateRotatedPointCoordinate(point, center, rotate) {
   /**
-   * 旋转公式：
-   *  点a(x, y)
-   *  旋转中心c(x, y)
-   *  旋转后点n(x, y)
-   *  旋转角度θ                tan ??
+   * 标准二维旋转矩阵：
+   * 原点 a(x, y)，旋转中心 c(x, y)，旋转后坐标 n(x, y)，旋转角度为 θ
    * nx = cosθ * (ax - cx) - sinθ * (ay - cy) + cx
    * ny = sinθ * (ax - cx) + cosθ * (ay - cy) + cy
    */
@@ -121,22 +123,37 @@ export function getCenterPoint(p1, p2) {
   }
 }
 
+/**
+ * 获取旋转角对应正弦值的绝对值
+ */
 export function sin(rotate) {
   return Math.abs(Math.sin(angleToRadian(rotate)))
 }
 
+/**
+ * 获取旋转角对应余弦值的绝对值
+ */
 export function cos(rotate) {
   return Math.abs(Math.cos(angleToRadian(rotate)))
 }
 
+/**
+ * 将角度归一化到 0 到 359 度区间
+ */
 export function mod360(deg) {
   return (deg + 360) % 360
 }
 
+/**
+ * 按画布缩放比例换算样式数值
+ */
 export function changeStyleWithScale(value, scale = canvasStyleData.value.scale) {
   return floor(multiply(value, divide(parseInt(scale + ''), 100)))
 }
 
+/**
+ * 将小数转换为百分比字符串
+ */
 export function toPercent(val) {
   return val * 100 + '%'
 }
