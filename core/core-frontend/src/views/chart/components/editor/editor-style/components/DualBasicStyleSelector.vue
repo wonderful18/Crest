@@ -10,7 +10,7 @@ import {
 } from '@/views/chart/components/js/panel/charts/others/chart-mix-common'
 
 const { t } = useI18n()
-// 定义双轴基础样式选择器需要的图表和主题配置
+// 双轴基础样式面板分别维护左轴柱/线样式和右轴线样式。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -25,9 +25,9 @@ const props = defineProps({
   }
 })
 
-// 判断当前样式属性是否需要在面板中展示
+// 面板项由图表类型传入的 propertyInner 控制，避免展示不支持的样式能力。
 const showProperty = prop => props.propertyInner?.includes(prop)
-// 保存双轴基础样式、杂项样式和颜色选择状态
+// 状态同时承载基础样式、杂项样式、当前配色选择和表格列宽临时值。
 const state = reactive({
   basicStyleForm: JSON.parse(JSON.stringify(CHART_MIX_DEFAULT_BASIC_STYLE)) as MixChartBasicStyle,
   miscForm: JSON.parse(JSON.stringify(DEFAULT_MISC)) as ChartMiscAttr,
@@ -38,7 +38,7 @@ const state = reactive({
     width: 0
   }
 })
-// 监听图表样式数据变化并刷新编辑表单
+// 字段和样式配置变化后重新初始化表单，确保左右轴设置与当前图表保持同步。
 watch(
   [
     () => props.chart.customAttr.basicStyle,
@@ -52,13 +52,13 @@ watch(
   },
   { deep: true }
 )
-// 声明基础样式和杂项样式变更事件
+// 父级负责持久化样式并触发图表重绘，这里只派发变更数据。
 const emit = defineEmits(['onBasicStyleChange', 'onMiscChange'])
-// 向父组件同步基础样式变更
+// requestData 表示该样式变更是否需要重新查询数据，而不只是重绘图形。
 const changeBasicStyle = (prop?: string, requestData = false) => {
   emit('onBasicStyleChange', { data: state.basicStyleForm, requestData }, prop)
 }
-// 校正左轴不透明度并同步变更
+// 左轴不透明度限制在 0 到 100，非法输入回退到已有配置值。
 const onAlphaChange = v => {
   const _v = parseInt(v)
   if (_v >= 0 && _v <= 100) {
@@ -78,7 +78,7 @@ const onAlphaChange = v => {
   changeBasicStyle('alpha')
 }
 
-// 校正柱宽比例并同步变更
+// 柱宽比例限制在 1 到 100，避免极端输入导致柱形不可见或溢出。
 const onColumnWidthRatioChange = v => {
   const _v = parseInt(v)
   if (_v >= 1 && _v <= 100) {
@@ -95,7 +95,7 @@ const onColumnWidthRatioChange = v => {
   changeBasicStyle('columnWidthRatio')
 }
 
-// 校正右轴不透明度并同步变更
+// 右轴不透明度使用独立字段，校验规则与左轴保持一致。
 const onSubAlphaChange = v => {
   const _v = parseInt(v)
   if (_v >= 0 && _v <= 100) {
@@ -115,7 +115,7 @@ const onSubAlphaChange = v => {
   changeBasicStyle('subAlpha')
 }
 
-// 从图表配置初始化双轴基础样式表单
+// 初始化时合并默认值和历史配置，保证旧图表也能进入新版样式面板。
 const init = () => {
   const basicStyle = cloneDeep(props.chart.customAttr.basicStyle)
   const miscStyle = cloneDeep(props.chart.customAttr.misc)
@@ -126,6 +126,7 @@ const init = () => {
   ) as MixChartBasicStyle
   state.miscForm = defaultsDeep(miscStyle, cloneDeep(DEFAULT_MISC)) as ChartMiscAttr
   if (!state.customColor) {
+    // 首次进入面板默认选中第一组配色，后续切换时保留用户当前位置。
     state.customColor = state.basicStyleForm.colors[0]
     state.colorIndex = 0
   }
@@ -133,15 +134,17 @@ const init = () => {
     props.chart.type.includes('-stack') &&
     state.basicStyleForm.radiusColumnBar === 'topRoundAngle'
   ) {
+    // 堆叠图不支持顶部圆角，历史配置降级为普通圆角。
     state.basicStyleForm.radiusColumnBar = 'roundAngle'
   }
 }
-// 兼容旧版本悬浮配置到缩放按钮配置
+// 兼容旧版本 suspension 字段到 showZoom，避免旧图表丢失缩放按钮状态。
 const configCompat = (basicStyle: ChartBasicStyle) => {
   if (basicStyle.suspension === false && basicStyle.showZoom === undefined) {
     basicStyle.showZoom = false
   }
 }
+// 折线点形状选项与 G2Plot 支持的 marker 类型保持一致。
 const symbolOptions = [
   { name: t('chart.line_symbol_circle'), value: 'circle' },
   { name: t('chart.line_symbol_rect'), value: 'square' },
@@ -149,7 +152,7 @@ const symbolOptions = [
   { name: t('chart.line_symbol_diamond'), value: 'diamond' }
 ]
 
-// 保存当前激活的左右轴样式页签
+// 保存当前激活的左右轴样式页签，避免切换配置时重置用户正在编辑的位置。
 const activeName = ref<'left' | 'right'>('left')
 
 onMounted(() => {

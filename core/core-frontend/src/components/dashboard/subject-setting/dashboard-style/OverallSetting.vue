@@ -315,13 +315,14 @@ import eventBus from '@/utils/eventBus'
 const appearanceStore = useAppearanceStoreWithOut()
 const isDesktopFlag = isDesktop()
 const snapshotStore = snapshotStoreWithOut()
-// 定义整体样式设置面板接收的主题参数
+// 整体设置面板管理仪表板主题、字体、刷新和结果数量等全局画布配置。
 const props = defineProps({
   themes: {
     type: String,
     default: 'light'
   }
 })
+// 字体列表合并系统默认字体和用户上传字体，value 直接写入画布字体变量。
 const fontFamily = CHART_FONT_FAMILY_ORIGIN.concat(
   appearanceStore.fontList.map(ele => ({
     name: ele.name,
@@ -329,17 +330,17 @@ const fontFamily = CHART_FONT_FAMILY_ORIGIN.concat(
   }))
 )
 
-// 根据当前画布主题计算提示框使用的反色主题
+// 提示浮层使用反向主题，保证深浅背景下都有足够的文字对比度。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
 
-// 根据资源类型生成结果数量说明中的资源名称
+// 结果数量说明需要根据仪表板/大屏使用不同资源名。
 const resourceType = computed(() =>
   dvInfo.value.type === 'dashboard' ? t('work_branch.dashboard') : t('work_branch.big_data_screen')
 )
 
-// 校验刷新间隔并同步主题配置变更
+// 刷新间隔限制在 1 到 3600，避免无效值导致定时器异常。
 const onRefreshChange = val => {
   if (val === '' || parseFloat(val).toString() === 'NaN' || parseFloat(val) < 1) {
     canvasStyleData.value.refreshTime = 1
@@ -349,7 +350,7 @@ const onRefreshChange = val => {
   }
   themeChange()
 }
-// 切换画布字体并同步所有标题字体
+// 字体切换需要同步 CSS 变量、所有标题样式和快照。
 const fontFamilyChange = () => {
   appearanceStore.setCurrentFont(canvasStyleData.value.fontFamily)
   document.documentElement.style.setProperty(
@@ -360,12 +361,12 @@ const fontFamilyChange = () => {
   snapshotStore.recordSnapshotCache('renderChart')
 }
 
-// 切换仪表板适配方式后重新初始化画布尺寸
+// 适配方式变化后重新计算画布尺寸，并记录可撤销快照。
 const onKeepSizeChange = () => {
   eventBus.emit('event-canvas-size-init')
   snapshotStore.recordSnapshotCache('renderChart')
 }
-// 根据间距模式设置默认间距并记录快照
+// 预设间距模式写入固定像素值，自定义模式保留用户输入。
 const onGapModeChange = () => {
   snapshotStore.recordSnapshotCache('renderChart')
   switch (canvasStyleData.value.dashboard.gapMode) {
@@ -383,10 +384,10 @@ const onGapModeChange = () => {
   }
 }
 
-// 应用主题相关的画布和组件默认样式
+// 主题切换会批量替换画布背景、组件背景、图表标题、配色、筛选器和高级样式。
 const themeChange = (modifyName?) => {
   if (modifyName === 'themeColor') {
-    // 主题变更
+    // 主题色切换需要打开背景色选择开关，确保渲染层读取新的主题值。
     canvasStyleData.value.component.chartCommonStyle.backgroundColorSelect = true
     canvasStyleData.value.backgroundColorSelect = true
     if (canvasStyleData.value.dashboard.themeColor === 'light') {
@@ -410,7 +411,7 @@ const themeChange = (modifyName?) => {
   }
   snapshotStore.recordSnapshotCache('renderChart')
 }
-// 处理主题色按钮点击并触发主题切换
+// 重复点击当前主题只保持当前值，不重复记录快照。
 const colorButtonClick = val => {
   if (val !== canvasStyleData.value.dashboard.themeColor) {
     canvasStyleData.value.dashboard.themeColor = val
