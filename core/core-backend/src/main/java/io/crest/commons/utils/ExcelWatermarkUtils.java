@@ -17,10 +17,19 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/**
+ * Excel 水印工具，负责生成文字水印图片并铺设到工作表中。
+ */
 public class ExcelWatermarkUtils {
+    /**
+     * 水印时间占位符使用的统一格式。
+     */
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 
+    /**
+     * 将水印配置中的占位符转换为当前用户、IP 和时间等实际内容。
+     */
     public static String transContent(WatermarkContentDTO watermarkContent, UserFormVO userInfo) {
         String content = "";
         switch (watermarkContent.getType()) {
@@ -47,6 +56,9 @@ public class ExcelWatermarkUtils {
         return wb.addPicture(imageBytes, Workbook.PICTURE_TYPE_PNG); // 添加到工作簿并返回 ID
     }
 
+    /**
+     * 按固定间距将已注册的水印图片铺满指定工作表。
+     */
     public static void addWatermarkToSheet(Sheet sheet, Integer pictureIdx) {
         Drawing<?> drawing = sheet.createDrawingPatriarch();
         CreationHelper helper = sheet.getWorkbook().getCreationHelper();
@@ -75,6 +87,9 @@ public class ExcelWatermarkUtils {
         }
     }
 
+    /**
+     * 在指定单元格区域创建一张水印图片锚点。
+     */
     public static void addWater(CreationHelper helper, Drawing<?> drawing, int picCount, int pictureIdx, int col1, int row1, int col2, int row2) {
         ClientAnchor anchor = helper.createClientAnchor();
         // 创建水印图片位置
@@ -88,6 +103,9 @@ public class ExcelWatermarkUtils {
         picture.resize(1 + (0.000001 * picCount));
     }
 
+    /**
+     * 根据文字、字体大小和颜色生成透明背景的 PNG 水印图片。
+     */
     public static byte[] createTextImage(String text, WatermarkContentDTO watermarkContent) {
         double radians = Math.toRadians(15);// 15度偏转
         int width = watermarkContent.getWatermark_fontsize() * text.length();
