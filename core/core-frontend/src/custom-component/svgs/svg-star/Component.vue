@@ -15,6 +15,7 @@
 <script setup lang="ts">
 import { onMounted, ref, toRefs, watch } from 'vue'
 
+// 五角星组件的文本值和元素样式配置。
 const props = defineProps({
   propValue: {
     type: String,
@@ -30,7 +31,9 @@ const props = defineProps({
     }
   }
 })
+// 保留属性响应式引用，便于监听尺寸变化。
 const { propValue, element } = toRefs(props)
+// SVG polygon 的 points 字符串。
 const points = ref('')
 
 watch(
@@ -51,11 +54,13 @@ onMounted(() => {
   draw()
 })
 
+// 根据元素样式中的宽高重绘五角星。
 const draw = () => {
   const { width, height } = element.value.style
   drawPolygon(width, height)
 }
 
+// 按容器宽高计算五角星十个顶点坐标。
 const drawPolygon = (width, height) => {
   // 五角星十个坐标点的比例集合
   const pointsArray = [

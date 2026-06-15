@@ -4,7 +4,9 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { COLOR_PANEL, DEFAULT_MISC } from '@/views/chart/components/editor/util/chart'
 import { cloneDeep, defaultsDeep } from 'lodash-es'
 
+// 子弹图目标线设置面板的国际化文案函数。
 const { t } = useI18n()
+// 目标线样式选择器属性。
 const props = defineProps({
   chart: {
     type: Object,
@@ -22,8 +24,10 @@ const props = defineProps({
   }
 })
 
+// 颜色选择器预设色板。
 const predefineColors = COLOR_PANEL
 
+// 子弹图目标线样式表单状态。
 const state = reactive({
   bulletTargetForm: {
     bar: {
@@ -37,6 +41,7 @@ const state = reactive({
     }
   }
 })
+// 样式变化时通知父级更新图表杂项配置。
 const emit = defineEmits(['onBasicStyleChange', 'onMiscChange'])
 watch(
   () => props.chart.customAttr.misc,
@@ -45,6 +50,7 @@ watch(
   },
   { deep: true }
 )
+// 提交目标线样式变更，并保证固定目标值不为空。
 const changeStyle = (prop?) => {
   if (state.bulletTargetForm.bar.target.value === null) {
     state.bulletTargetForm.bar.target.value = 1
@@ -52,6 +58,7 @@ const changeStyle = (prop?) => {
   emit('onMiscChange', { data: { bullet: { ...state.bulletTargetForm } }, requestData: true }, prop)
 }
 
+// 从图表配置中读取子弹图目标线样式，并补齐默认值。
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customAttr) {
