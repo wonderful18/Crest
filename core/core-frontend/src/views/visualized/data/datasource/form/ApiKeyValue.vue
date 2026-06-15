@@ -16,6 +16,7 @@ export interface Item {
   nameType?: string
   originName?: string
 }
+// 定义 API 键值编辑器接收的参数列表和展示配置。
 const props = defineProps({
   keyPlaceholder: propTypes.string.def(''),
   valuePlaceholder: propTypes.string.def(''),
@@ -38,9 +39,11 @@ const props = defineProps({
 })
 
 const { t } = useI18n()
+// 计算参数名输入框的占位文案。
 const keyText = computed(() => {
   return props.keyPlaceholder || t('datasource.key')
 })
+// 计算参数值输入框的占位文案。
 const valueText = computed(() => {
   return props.valuePlaceholder || t('datasource.value')
 })
@@ -60,17 +63,21 @@ onBeforeMount(() => {
 
 const activeName = inject('api-active-name')
 
+// 删除指定参数行。
 const remove = (index: number) => {
   if (isDisable()) return
   // 移除整行输入控件及内容
   items.value.splice(index, 1)
 }
+// 追加一行默认键值参数。
 const change = () => {
   items.value.push(new KeyValue({ enable: true, nameType: 'fixed' }))
 }
+// 判断当前参数列表是否禁止删除。
 const isDisable = () => {
   return items.value.length === 1
 }
+// 根据输入内容查询参数名候选项。
 const querySearch = (queryString, cb) => {
   const results = queryString
     ? suggestions.value.filter(createFilter(queryString))
@@ -78,9 +85,11 @@ const querySearch = (queryString, cb) => {
   cb(results)
 }
 
+// 切换参数名来源类型时清空参数值。
 const changeNameType = element => {
   element.value = ''
 }
+// 创建参数名候选项的前缀匹配过滤器。
 const createFilter = (queryString: string) => {
   return restaurant => {
     return restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0

@@ -7,6 +7,7 @@ import { getCustomRange } from '@/custom-component/v-query/time-format-dayjs'
 const dvMainStore = dvMainStoreWithOut()
 const { componentData, canvasStyleData } = storeToRefs(dvMainStore)
 
+// 根据动态时间筛选配置计算时间范围。
 const getDynamicRangeTime = (type: number, selectValue: any, timeGranularityMultiple: string) => {
   const timeType = (timeGranularityMultiple || '').split('range')[0]
 
@@ -45,6 +46,7 @@ const getDynamicRangeTime = (type: number, selectValue: any, timeGranularityMult
   ]
 }
 
+// 将不同筛选类型的原始值格式化为统一数组值。
 const forMatterValue = (
   type: number,
   selectValue: any,
@@ -59,6 +61,7 @@ const forMatterValue = (
     : getRange(selectValue, timeGranularity)
 }
 
+// 根据时间粒度计算固定时间范围。
 export const getRange = (selectValue, timeGranularity) => {
   switch (timeGranularity) {
     case 'year':
@@ -73,6 +76,7 @@ export const getRange = (selectValue, timeGranularity) => {
       break
   }
 }
+// 计算指定时间所在年份的起止时间。
 const getYearEnd = timestamp => {
   return [
     +new Date(dayjs(timestamp).startOf('year').format('YYYY/MM/DD HH:mm:ss')),
@@ -80,6 +84,7 @@ const getYearEnd = timestamp => {
   ]
 }
 
+// 计算指定时间所在月份的起止时间。
 const getMonthEnd = timestamp => {
   return [
     +new Date(dayjs(timestamp).startOf('month').format('YYYY/MM/DD HH:mm:ss')),
@@ -87,6 +92,7 @@ const getMonthEnd = timestamp => {
   ]
 }
 
+// 计算指定日期的起止时间。
 const getDayEnd = timestamp => {
   return [
     +new Date(dayjs(timestamp).startOf('day').format('YYYY/MM/DD HH:mm:ss')),
@@ -94,6 +100,7 @@ const getDayEnd = timestamp => {
   ]
 }
 
+// 根据树形筛选结果解析目标字段 ID 和筛选值。
 const getFieldId = (arr, result, relationshipChartIndex, ids) => {
   const [obj] = [...result].reverse()
   const valArr = obj.split(',')
@@ -112,6 +119,7 @@ const getFieldId = (arr, result, relationshipChartIndex, ids) => {
   }
 }
 
+// 根据默认值、首次加载状态和当前选择值计算实际筛选值。
 const getValueByDefaultValueCheckOrFirstLoad = (
   defaultValueCheck: boolean,
   defaultValue: any,
@@ -155,6 +163,7 @@ const getValueByDefaultValueCheckOrFirstLoad = (
   return selectValue ? selectValue : multiple ? [] : ''
 }
 
+// 收集当前组件关联的查询组件筛选条件。
 export const useFilter = (curComponentId: string, firstLoad = false) => {
   // 弹窗区域过滤组件是否生效
   const popupAvailable = canvasStyleData.value.popupAvailable
@@ -224,6 +233,7 @@ export const useFilter = (curComponentId: string, firstLoad = false) => {
   }
 }
 
+// 获取文本条件筛选的实际值。
 const getResult = (
   conditionType,
   defaultConditionValueF,
@@ -240,6 +250,7 @@ const getResult = (
   return [valueF || '', valueS || ''].filter(ele => ele !== '')
 }
 
+// 获取数值范围筛选的实际值。
 const getResultNum = (
   defaultNumValueEnd,
   numValueEnd,
@@ -256,6 +267,7 @@ const getResultNum = (
   return [valueS ?? '', valueE ?? ''].filter(ele => ele !== '')
 }
 
+// 根据筛选组件类型和条件配置计算查询操作符。
 const getOperator = (
   displayType,
   multiple,
@@ -298,6 +310,7 @@ const getOperator = (
   return [1, 7].includes(+displayType) ? 'between' : 'in'
 }
 
+// 根据字段 ID 对参数数组去重。
 const duplicateRemoval = arr => {
   const objList = []
   let idList = arr.map(ele => ele.id)
@@ -311,6 +324,7 @@ const duplicateRemoval = arr => {
   return objList
 }
 
+// 将查询组件配置转换为图表查询筛选条件。
 export const searchQuery = (queryComponentList, filter, curComponentId, firstLoad) => {
   queryComponentList.forEach(ele => {
     if (!!ele.propValue?.length) {
