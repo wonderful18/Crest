@@ -485,6 +485,9 @@ const renderL7Plot = async (chart: ChartObj, chartView: any, callback) => {
 }
 
 let mapL7Timer: ReturnType<typeof setTimeout>
+/**
+ * 延迟渲染 L7 图表，避免地图容器频繁重建
+ */
 const renderL7 = async (chart: ChartObj, chartView: any, callback) => {
   mapL7Timer && clearTimeout(mapL7Timer)
   mapL7Timer = setTimeout(async () => {
@@ -501,12 +504,18 @@ const renderL7 = async (chart: ChartObj, chartView: any, callback) => {
   }, 500)
 }
 
+/**
+ * 嵌入模式下转发点位点击事件
+ */
 const pointClickTrans = () => {
   if (embeddedCallBack.value === 'yes') {
     trackClick('pointClick')
   }
 }
 
+/**
+ * 处理图表库上报的默认交互事件
+ */
 const actionDefault = param => {
   if (param.from === 'map') {
     emitter.emit('map-default-range', param)
@@ -519,6 +528,9 @@ const actionDefault = param => {
   }
 }
 
+/**
+ * 处理图表点位点击后的下钻、联动和跳转入口
+ */
 const action = param => {
   if (param.from) {
     actionDefault(param)
@@ -570,6 +582,9 @@ const action = param => {
   }
 }
 
+/**
+ * 根据当前点击点位执行指定追踪动作
+ */
 const trackClick = trackAction => {
   const param = state.pointParam
   if (!param?.data?.dimensionList) {
@@ -691,6 +706,9 @@ const trackClick = trackAction => {
   }
 }
 
+/**
+ * 计算当前点位可展示的追踪操作菜单
+ */
 const trackMenu = computed(() => {
   let trackMenuInfo = []
   // 复用、放大状态的仪表板不进行联动、跳转和下钻的动作
@@ -747,10 +765,16 @@ const trackMenu = computed(() => {
   }
   return trackMenuInfo
 })
+/**
+ * 同步象限图默认基准线
+ */
 const quadrantDefaultBaseline = defaultQuadrant => {
   emitter.emit('quadrant-default-baseline', defaultQuadrant)
 }
 
+/**
+ * 将地图 canvas 临时替换为截图图片
+ */
 const canvas2Picture = (pictureData, online) => {
   const mapDom = document.getElementById(containerId)
   const childNodeList = mapDom.querySelectorAll('.l7-scene')
@@ -775,6 +799,9 @@ const canvas2Picture = (pictureData, online) => {
   imgDom.src = pictureData
   mapDom?.appendChild(imgDom)
 }
+/**
+ * 预处理地图截图所需的图表实例
+ */
 const preparePicture = async id => {
   if (id !== curView?.id) {
     return
@@ -782,6 +809,9 @@ const preparePicture = async id => {
   const chartView = chartViewManager.getChartView(curView.render, curView.type)
   void chartView
 }
+/**
+ * 恢复地图截图前隐藏的地图层
+ */
 const unPreparePicture = id => {
   if (id !== curView?.id) {
     return
@@ -852,6 +882,9 @@ onMounted(() => {
   useEmitt({ name: 'l7-unprepare-picture', callback: unPreparePicture })
 })
 const MAP_CHARTS = ['map', 'bubble-map', 'flow-map', 'heat-map', 'symbolic-map']
+/**
+ * 地图未选中时阻止滚轮事件穿透到画布
+ */
 const onWheel = (e: WheelEvent) => {
   if (!MAP_CHARTS.includes(view.value.type)) {
     return

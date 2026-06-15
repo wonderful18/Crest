@@ -348,6 +348,9 @@ const onWrapperClickCur = e => {
   onWrapperClick(e)
 }
 
+/**
+ * 根据组件事件配置执行弹框、跳转、刷新、全屏或下载动作
+ */
 const onWrapperClick = e => {
   if (eventEnable.value && !['edit-preview'].includes(showPositionActive.value)) {
     if (config.value.events.type === 'showHidden') {
@@ -385,7 +388,13 @@ const onWrapperClick = e => {
   }
 }
 
+/**
+ * 嵌入式窗口调用句柄
+ */
 const openHandler = ref(null)
+/**
+ * 将新窗口句柄同步给嵌入式宿主
+ */
 const initOpenHandler = newWindow => {
   if (openHandler?.value) {
     const pm = {
@@ -395,10 +404,16 @@ const initOpenHandler = newWindow => {
     openHandler.value.invokeMethod(pm)
   }
 }
+/**
+ * 组件深层缩放比例
+ */
 const deepScale = computed(() => scale.value / 100)
 //const showActive = computed(() => props.popActive || (dvMainStore.mobileInPc && props.active))
 const showActive = false
 
+/**
+ * 判断主画布滚动时组件是否进入冻结状态
+ */
 const freezeFlag = computed(() => {
   return (
     isMainCanvas(props.canvasId) &&
@@ -408,6 +423,9 @@ const freezeFlag = computed(() => {
   )
 })
 
+/**
+ * 传递给内部组件的公共事件参数
+ */
 const commonParams = computed(() => {
   return {
     eventEnable: eventEnable.value,
@@ -415,10 +433,16 @@ const commonParams = computed(() => {
   }
 })
 
+/**
+ * 判断移动端编辑态是否展示同步入口
+ */
 const showCheck = computed(() => {
   return dvMainStore.mobileInPc && showPositionActive.value === 'edit'
 })
 
+/**
+ * 触发移动端状态同步到编辑器
+ */
 const updateFromMobile = (e, type) => {
   if (type === 'syncPcDesign') {
     e.preventDefault()
@@ -430,10 +454,19 @@ const updateFromMobile = (e, type) => {
   })
 }
 
+/**
+ * 将编辑预览态映射为内部组件使用的预览态
+ */
 const showPositionActive = computed(() =>
   showPosition.value === 'edit-preview' ? 'preview' : showPosition.value
 )
+/**
+ * 当前包装器是否已经进入可视区域
+ */
 const isIntersecting = ref(false)
+/**
+ * 移动端懒加载可视区域监听器
+ */
 const observer = ref<IntersectionObserver | null>(null)
 // 移动端懒加载开关
 const isMobileLazyLoadEnabled = computed(() => {
