@@ -10,6 +10,7 @@ import {
 } from '@/views/chart/components/js/panel/charts/others/chart-mix-common'
 
 const { t } = useI18n()
+// 定义双轴基础样式选择器需要的图表和主题配置。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -24,7 +25,9 @@ const props = defineProps({
   }
 })
 
+// 判断当前样式属性是否需要在面板中展示。
 const showProperty = prop => props.propertyInner?.includes(prop)
+// 保存双轴基础样式、杂项样式和颜色选择状态。
 const state = reactive({
   basicStyleForm: JSON.parse(JSON.stringify(CHART_MIX_DEFAULT_BASIC_STYLE)) as MixChartBasicStyle,
   miscForm: JSON.parse(JSON.stringify(DEFAULT_MISC)) as ChartMiscAttr,
@@ -35,6 +38,7 @@ const state = reactive({
     width: 0
   }
 })
+// 监听图表样式数据变化并刷新编辑表单。
 watch(
   [
     () => props.chart.customAttr.basicStyle,
@@ -48,10 +52,13 @@ watch(
   },
   { deep: true }
 )
+// 声明基础样式和杂项样式变更事件。
 const emit = defineEmits(['onBasicStyleChange', 'onMiscChange'])
+// 向父组件同步基础样式变更。
 const changeBasicStyle = (prop?: string, requestData = false) => {
   emit('onBasicStyleChange', { data: state.basicStyleForm, requestData }, prop)
 }
+// 校正左轴不透明度并同步变更。
 const onAlphaChange = v => {
   const _v = parseInt(v)
   if (_v >= 0 && _v <= 100) {
@@ -71,6 +78,7 @@ const onAlphaChange = v => {
   changeBasicStyle('alpha')
 }
 
+// 校正柱宽比例并同步变更。
 const onColumnWidthRatioChange = v => {
   const _v = parseInt(v)
   if (_v >= 1 && _v <= 100) {
@@ -87,6 +95,7 @@ const onColumnWidthRatioChange = v => {
   changeBasicStyle('columnWidthRatio')
 }
 
+// 校正右轴不透明度并同步变更。
 const onSubAlphaChange = v => {
   const _v = parseInt(v)
   if (_v >= 0 && _v <= 100) {
@@ -106,6 +115,7 @@ const onSubAlphaChange = v => {
   changeBasicStyle('subAlpha')
 }
 
+// 从图表配置初始化双轴基础样式表单。
 const init = () => {
   const basicStyle = cloneDeep(props.chart.customAttr.basicStyle)
   const miscStyle = cloneDeep(props.chart.customAttr.misc)
@@ -126,8 +136,8 @@ const init = () => {
     state.basicStyleForm.radiusColumnBar = 'roundAngle'
   }
 }
+// 兼容旧版本悬浮配置到缩放按钮配置。
 const configCompat = (basicStyle: ChartBasicStyle) => {
-  // 悬浮改为图例和缩放按钮
   if (basicStyle.suspension === false && basicStyle.showZoom === undefined) {
     basicStyle.showZoom = false
   }
@@ -139,6 +149,7 @@ const symbolOptions = [
   { name: t('chart.line_symbol_diamond'), value: 'diamond' }
 ]
 
+// 保存当前激活的左右轴样式页签。
 const activeName = ref<'left' | 'right'>('left')
 
 onMounted(() => {

@@ -10,6 +10,7 @@ useEmitt({
 })
 const { t } = useI18n()
 const dvMainStore = dvMainStoreWithOut()
+// 定义象限样式选择器依赖的图表、主题和属性范围。
 const props = defineProps({
   chart: {
     type: Object,
@@ -42,6 +43,7 @@ for (let i = 0; i < 4; i++) {
     }
   })
 }
+// 保存象限线、区域和标签样式表单。
 const state = reactive({
   quadrantForm: {
     ...JSON.parse(JSON.stringify(DEFAULT_QUADRANT_STYLE)),
@@ -49,11 +51,14 @@ const state = reactive({
     labels
   }
 })
+// 根据当前主题计算提示浮层主题。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
+// 声明象限样式变更事件。
 const emit = defineEmits(['onChangeQuadrantForm'])
 
+// 监听图表象限配置变化并刷新表单。
 watch(
   () => props.chart.customAttr.quadrant,
   () => {
@@ -62,6 +67,7 @@ watch(
   { deep: true }
 )
 
+// 生成可选字号列表。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -79,6 +85,7 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+// 生成可选透明度列表。
 const fillOpacityList = computed(() => {
   const arr = []
   for (let i = 0; i <= 1; i = i + 0.1) {
@@ -91,14 +98,17 @@ const fillOpacityList = computed(() => {
   return arr
 })
 
+// 向父组件同步象限样式配置。
 const changeStyle = () => {
   emit('onChangeQuadrantForm', state.quadrantForm)
 }
+// 接收图表默认基准线并写回象限表单。
 const quadrantDefaultBaseline = quadrant => {
   state.quadrantForm.xBaseline = quadrant.xBaseline
   state.quadrantForm.yBaseline = quadrant.yBaseline
 }
 
+// 从图表配置初始化象限样式表单。
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customAttr) {
@@ -111,7 +121,7 @@ const init = () => {
     if (customAttr.quadrant) {
       state.quadrantForm = customAttr.quadrant
     } else {
-      // 新增图表
+      // 新增图表时写入默认象限样式。
       state.quadrantForm = {
         ...JSON.parse(JSON.stringify(DEFAULT_QUADRANT_STYLE)),
         regionStyle,
@@ -124,7 +134,9 @@ const init = () => {
   }
 }
 
+// 判断当前象限属性是否需要在面板中展示。
 const showProperty = prop => props.propertyInner?.includes(prop)
+// 保存当前激活的象限配置页签。
 const tabActive = ref(1)
 onMounted(() => {
   init()
