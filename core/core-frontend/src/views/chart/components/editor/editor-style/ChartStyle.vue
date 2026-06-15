@@ -44,6 +44,7 @@ const state = {
   initReady: true
 }
 
+// 图表样式面板入参，包含当前图表、主题、字段列表和可用配置项。
 const props = defineProps({
   commonBackgroundPop: {
     type: Object,
@@ -105,6 +106,7 @@ const {
   commonBorderPop,
   selectorSpec
 } = toRefs(props)
+// 样式面板向编辑器上层转发的各类样式变更事件。
 const emit = defineEmits([
   'onColorChange',
   'onMiscChange',
@@ -128,31 +130,40 @@ const emit = defineEmits([
   'onChangeQuadrantForm'
 ])
 
+// 指标值样式子组件实例，用于名称颜色变更时读取指标值配置。
 const indicatorValueRef = ref()
+// 指标名称样式子组件实例，用于指标值颜色变更时读取名称配置。
 const indicatorNameRef = ref()
 
+// 非批量操作且非仪表板时才展示组件位置设置。
 const positionComponentShow = computed(() => {
   return !batchOptStatus.value && dvInfo.value.type !== 'dashboard'
 })
 
+// 判断当前图表是否支持某个样式属性分组。
 const showProperties = (property: EditorProperty) => properties.value?.includes(property)
 
+// 转发杂项配置变更。
 const onMiscChange = (val, prop) => {
   emit('onMiscChange', val, prop)
 }
 
+// 转发标签配置变更，初始化阶段不触发外部更新。
 const onLabelChange = (val, prop) => {
   state.initReady && emit('onLabelChange', val, prop)
 }
 
+// 转发提示框配置变更，初始化阶段不触发外部更新。
 const onTooltipChange = (val, prop) => {
   state.initReady && emit('onTooltipChange', val, prop)
 }
 
+// 转发 X 轴配置变更。
 const onChangeXAxisForm = (val, prop) => {
   state.initReady && emit('onChangeXAxisForm', val, prop)
 }
 
+// 转发 Y 轴配置变更，组合图显隐需要同步副轴显隐。
 const onChangeYAxisForm = (val, prop) => {
   if (prop === 'show' && chart.value.type.includes('chart-mix')) {
     chart.value.customStyle.yAxisExt.show = val.show
@@ -161,14 +172,17 @@ const onChangeYAxisForm = (val, prop) => {
   state.initReady && emit('onChangeYAxisForm', val, prop)
 }
 
+// 转发组合图副 Y 轴配置变更。
 const onChangeYAxisExtForm = (val, prop) => {
   state.initReady && emit('onChangeYAxisExtForm', val, prop)
 }
 
+// 转发文本样式配置变更。
 const onTextChange = (val, prop) => {
   state.initReady && emit('onTextChange', val, prop)
 }
 
+// 转发指标值样式变更，颜色变更时同时带上指标名称配置。
 const onIndicatorChange = (val, prop) => {
   const value = { indicatorValue: val, indicatorName: undefined }
   if (prop === 'color' || prop === 'suffixColor') {
@@ -177,6 +191,7 @@ const onIndicatorChange = (val, prop) => {
   state.initReady && emit('onIndicatorChange', value, prop)
 }
 
+// 转发指标名称样式变更，颜色变更时同时带上指标值配置。
 const onIndicatorNameChange = (val, prop) => {
   const value = { indicatorName: val, indicatorValue: undefined }
   if (prop === 'color') {
@@ -185,18 +200,22 @@ const onIndicatorNameChange = (val, prop) => {
   state.initReady && emit('onIndicatorNameChange', value, prop)
 }
 
+// 转发图例配置变更。
 const onLegendChange = (val, prop) => {
   state.initReady && emit('onLegendChange', val, prop)
 }
+// 转发基础样式配置变更。
 const onBasicStyleChange = (val, prop) => {
   state.initReady && emit('onBasicStyleChange', val, prop)
 }
 
+// 转发组件背景配置变更，并记录样式快照。
 const onBackgroundChange = (val, prop) => {
   snapshotStore.recordSnapshotCache('onBackgroundChange')
   state.initReady && emit('onBackgroundChange', val, prop)
 }
 
+// 转发公共边框启用状态变更，并记录样式快照。
 const onActiveChange = (_val?: boolean) => {
   snapshotStore.recordSnapshotCache('onActiveChange')
   state.initReady &&
@@ -207,29 +226,37 @@ const onActiveChange = (_val?: boolean) => {
     })
 }
 
+// 转发公共边框单项样式变更。
 const onStyleAttrChange = ({ key, value }) => {
   state.initReady && emit('onStyleAttrChange', { custom: 'style', property: key, value: value })
 }
 
+// 转发表头样式配置变更。
 const onTableHeaderChange = (val, prop) => {
   emit('onTableHeaderChange', val, prop)
 }
+// 转发表格单元格样式配置变更。
 const onTableCellChange = (val, prop) => {
   emit('onTableCellChange', val, prop)
 }
+// 转发表格汇总样式配置变更。
 const onTableTotalChange = (val, prop) => {
   emit('onTableTotalChange', val, prop)
 }
+// 转发图表杂项样式表单变更。
 const onChangeMiscStyleForm = (val, prop) => {
   emit('onChangeMiscStyleForm', val, prop)
 }
 
+// 转发扩展提示字段配置变更。
 const onExtTooltipChange = val => {
   emit('onExtTooltipChange', val)
 }
+// 转发象限配置变更。
 const onChangeQuadrantForm = val => {
   emit('onChangeQuadrantForm', val)
 }
+// 图表切换期间暂停事件转发，避免初始化表单误触发外部保存。
 watch(
   () => props.chart.id,
   () => {
