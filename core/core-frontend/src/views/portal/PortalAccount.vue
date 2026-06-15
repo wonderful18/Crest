@@ -11,21 +11,29 @@ import { useCache } from '@/hooks/web/useCache'
 
 const userStore = useUserStoreWithOut()
 const { wsCache } = useCache()
+// 持有账户入口按钮实例。
 const buttonRef = ref()
+// 持有账户弹出层实例。
 const popoverRef = ref()
 
+// 计算当前用户展示名称。
 const name = computed(() => userStore.getName || '用户')
+// 计算当前用户编号。
 const uid = computed(() => userStore.getUid || '-')
+// 判断当前是否运行在平台客户端中。
 const inPlatformClient = computed(() => !!wsCache.get('crest-platform-client'))
 
+// 点击外部时延迟隐藏账户弹出层。
 const openPopover = () => {
   unref(popoverRef).popperRef?.delayHide?.()
 }
 
+// 跳转到修改密码页面。
 const changePassword = () => {
   router.push('/modify-pwd/index')
 }
 
+// 执行退出登录流程。
 const logout = async () => {
   await logoutApi()
   logoutHandler()
