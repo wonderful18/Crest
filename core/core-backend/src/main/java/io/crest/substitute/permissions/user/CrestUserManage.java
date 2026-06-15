@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+// Crest 内置用户管理服务，负责本地用户、单点登录用户和权限绑定的持久化操作。
 @Component("crestUserManage")
 public class CrestUserManage {
 
@@ -67,6 +68,7 @@ public class CrestUserManage {
     @Value("${crest.user.initial-password:}")
     private String configuredInitialPassword;
 
+    // 用户表行映射器，集中维护数据库字段到领域模型的转换规则。
     private final RowMapper<CrestUser> rowMapper = (rs, rowNum) -> {
         CrestUser user = new CrestUser();
         user.setId(rs.getLong("id"));
@@ -88,6 +90,7 @@ public class CrestUserManage {
         return user;
     };
 
+    // 初始化内置管理员，首次启动创建账号，并兼容旧版 MD5 管理员密码升级。
     @PostConstruct
     public void initAdmin() {
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM iam_user WHERE id = 1", Integer.class);
@@ -111,16 +114,19 @@ public class CrestUserManage {
         }
     }
 
+    // 按账号查询单个用户，登录和账号唯一性校验共用此入口。
     public CrestUser queryByAccount(String account) {
         List<CrestUser> users = jdbcTemplate.query("SELECT * FROM iam_user WHERE account = ? LIMIT 1", rowMapper, account);
         return users.isEmpty() ? null : users.get(0);
     }
 
+    // 按用户 ID 查询单个用户。
     public CrestUser queryById(Long id) {
         List<CrestUser> users = jdbcTemplate.query("SELECT * FROM iam_user WHERE id = ? LIMIT 1", rowMapper, id);
         return users.isEmpty() ? null : users.get(0);
     }
 
+    // 按认证类型和外部身份 ID 查询单点登录用户。
     public CrestUser queryByExternalId(String authType, String externalId) {
         List<CrestUser> users = jdbcTemplate.query("""
                 SELECT * FROM iam_user
@@ -130,11 +136,13 @@ public class CrestUserManage {
         return users.isEmpty() ? null : users.get(0);
     }
 
+    // 返回用户当前密码密文，供认证流程读取凭据版本。
     public String secretByUid(Long uid) {
         CrestUser user = queryById(uid);
         return user == null ? null : user.getPasswordHash();
     }
 
+    // 校验本地密码，兼容旧 MD5 密文，并在成功登录后升级为新密文格式。
     public boolean passwordMatches(CrestUser user, String rawPassword) {
         if (user == null || rawPassword == null) {
             return false;
@@ -142,15 +150,15 @@ public class CrestUserManage {
 
         String storedHash = user.getPasswordHash();
 
-        // 1. 尝试新格式（PBKDF2）
+        // 优先尝试新格式密码密文。
         if (storedHash != null && storedHash.contains(":")) {
             return PasswordEncoder.matches(rawPassword, storedHash);
         }
 
-        // 2. 兼容旧格式（MD5）
+        // 兼容旧格式 MD5 密文。
         boolean matches = Strings.CS.equals(storedHash, Md5Utils.md5(rawPassword));
 
-        // 3. 如果匹配且是旧格式，自动升级到新格式
+        // 旧密文校验成功后立即重写为新格式，减少后续兼容面。
         if (matches && PasswordEncoder.needsReEncoding(storedHash)) {
             String newHash = PasswordEncoder.encode(rawPassword);
             jdbcTemplate.update("UPDATE iam_user SET password_hash = ? WHERE id = ?",
@@ -160,11 +168,13 @@ public class CrestUserManage {
         return matches;
     }
 
+    // 判断指定用户是否为管理员。
     public boolean isAdmin(Long uid) {
         CrestUser user = queryById(uid);
         return user != null && Boolean.TRUE.equals(user.getAdmin());
     }
 
+    // 创建或更新单点登录用户，并按自动创建开关决定是否补齐本地用户记录。
     @Transactional
     public CrestUser createOrUpdateSsoUser(SsoUserProfile profile, boolean autoCreateUser) {
         if (profile == null || StringUtils.isBlank(profile.getExternalId())) {
@@ -210,6 +220,7 @@ public class CrestUserManage {
         return queryById(user.getId());
     }
 
+    // 应用单点登录身份决策，支持创建新用户或更新既有 SSO 用户资料。
     @Transactional
     public CrestUser applySsoIdentity(SsoIdentityDecision decision) {
         SsoIdentityProfile profile = decision.getProfile();
@@ -246,6 +257,7 @@ public class CrestUserManage {
         return queryById(userId);
     }
 
+    // 记录用户登录成功时间。
     @Transactional
     public void markLoginSuccess(Long id) {
         if (id == null) return;
@@ -253,6 +265,7 @@ public class CrestUserManage {
         jdbcTemplate.update("UPDATE iam_user SET last_login_time = ?, update_time = ? WHERE id = ?", now, now, id);
     }
 
+    // 分页查询用户列表，支持关键字、状态和组织范围过滤。
     public IPage<UserGridVO> pager(int goPage, int pageSize, UserGridRequest request) {
         String keyword = request == null ? null : request.getKeyword();
         List<Object> args = new ArrayList<>();
@@ -291,6 +304,7 @@ public class CrestUserManage {
         return page;
     }
 
+    // 查询当前组织下可选用户，用于授权和成员选择控件。
     public List<UserItem> usersByCurrentOrg(String keyword) {
         Long oid = AuthUtils.getUser() == null ? PlatformPermissionManage.ROOT_ORG_ID : AuthUtils.getUser().getDefaultOid();
         List<Object> args = new ArrayList<>();
@@ -318,6 +332,7 @@ public class CrestUserManage {
         }, args.toArray());
     }
 
+    // 批量导入用户，逐行统计成功和失败数量。
     @Transactional
     public UserImportVO importUsers(MultipartFile file) throws Exception {
         if (file == null || file.isEmpty()) {
@@ -349,6 +364,7 @@ public class CrestUserManage {
         return new UserImportVO("user-import", success, failed);
     }
 
+    // 读取 Excel 或 CSV 导入文件并转换为用户导入行。
     private List<UserImportRow> readImportRows(MultipartFile file) throws Exception {
         String filename = StringUtils.defaultString(file.getOriginalFilename()).toLowerCase();
         if (filename.endsWith(".xlsx") || filename.endsWith(".xls")) {
@@ -376,6 +392,7 @@ public class CrestUserManage {
         return result;
     }
 
+    // 创建本地用户，并写入默认组织和角色绑定。
     @Transactional
     public Long create(UserCreator creator) {
         validate(creator.getAccount(), creator.getName());
@@ -383,7 +400,7 @@ public class CrestUserManage {
             CrestException.throwException("账号已存在");
         }
 
-        // RBAC权限检查：只有管理员可以创建管理员账户
+        // 权限校验：只有管理员可以创建管理员账户。
         boolean requestAdminRole = hasAdminRole(creator.getRoleIds());
         if (requestAdminRole) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
@@ -392,7 +409,7 @@ public class CrestUserManage {
             }
         }
 
-        // 使用传入密码或默认初始密码，并验证策略
+        // 使用传入密码或默认初始密码，并执行统一密码策略校验。
         String password = StringUtils.isNotBlank(creator.getPassword()) ? creator.getPassword().trim() : initialPassword();
         PasswordValidator.validate(password);
 
@@ -412,6 +429,7 @@ public class CrestUserManage {
         return id;
     }
 
+    // 编辑本地用户基础信息、启用状态、默认组织、角色和可选密码。
     @Transactional
     public void edit(UserEditor editor) {
         CrestUser user = queryById(editor.getId());
@@ -419,7 +437,7 @@ public class CrestUserManage {
             CrestException.throwException("用户不存在");
         }
 
-        // RBAC权限检查：编辑管理员账户需要当前用户是管理员；编辑系统管理员需要系统管理员权限
+        // 权限校验：编辑管理员账户需要管理员权限，编辑内置管理员需要系统管理员权限。
         if (editor.getId() == 1L) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
             if (currentUserId == null || !AuthUtils.isSysAdmin(currentUserId)) {
@@ -444,7 +462,7 @@ public class CrestUserManage {
         if (sameAccount != null && !sameAccount.getId().equals(editor.getId())) {
             CrestException.throwException("账号已存在");
         }
-        // 如果传入了新密码则更新
+        // 仅在传入新密码时执行密码策略校验和密文更新。
         if (newPassword != null) {
             PasswordValidator.validate(newPassword);
         }
@@ -470,13 +488,14 @@ public class CrestUserManage {
         platformPermissionManage.replaceUserRoles(editor.getId(), oid, editor.getRoleIds());
     }
 
+    // 删除用户及其组织、角色绑定，内置管理员不允许删除。
     @Transactional
     public void delete(Long id) {
         if (id == 1L) {
             CrestException.throwException("内置管理员不能删除");
         }
 
-        // RBAC权限检查：删除管理员账户需要当前用户是管理员
+        // 权限校验：删除管理员账户需要当前用户具备管理员权限。
         CrestUser targetUser = queryById(id);
         if (targetUser != null && Boolean.TRUE.equals(targetUser.getAdmin())) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
@@ -490,13 +509,14 @@ public class CrestUserManage {
         jdbcTemplate.update("DELETE FROM iam_user_role WHERE uid = ?", id);
     }
 
+    // 切换用户启用状态，内置管理员不允许停用。
     @Transactional
     public void enable(EnableSwitchRequest request) {
         if (request.getId() == 1L && Boolean.FALSE.equals(request.getEnable())) {
             CrestException.throwException("内置管理员不能停用");
         }
 
-        // RBAC权限检查：修改管理员状态需要当前用户是管理员
+        // 权限校验：修改管理员状态需要当前用户具备管理员权限。
         CrestUser targetUser = queryById(request.getId());
         if (targetUser != null && Boolean.TRUE.equals(targetUser.getAdmin())) {
             Long currentUserId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
@@ -509,6 +529,7 @@ public class CrestUserManage {
                 request.getEnable(), System.currentTimeMillis(), request.getId());
     }
 
+    // 重置本地用户密码并返回新生成的临时密码。
     @Transactional
     public String resetPwd(Long id) {
         CrestUser user = queryById(id);
@@ -524,6 +545,7 @@ public class CrestUserManage {
         return password;
     }
 
+    // 校验旧密码后修改当前用户本地密码。
     @Transactional
     public void modifyPwd(Long id, String oldPwd, String newPwd) {
         CrestUser user = queryById(id);
@@ -537,13 +559,14 @@ public class CrestUserManage {
             CrestException.throwException("原密码不正确");
         }
 
-        // 使用密码策略验证器
+        // 修改密码同样复用统一密码策略。
         PasswordValidator.validate(newPwd);
 
         jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, update_time = ? WHERE id = ?",
                 PasswordEncoder.encode(newPwd), System.currentTimeMillis(), id);
     }
 
+    // 将用户模型转换为表单详情视图对象。
     public UserFormVO toForm(CrestUser user) {
         if (user == null) return null;
         UserFormVO vo = new UserFormVO();
@@ -566,6 +589,7 @@ public class CrestUserManage {
         return vo;
     }
 
+    // 将用户模型转换为列表视图对象。
     public UserGridVO toGrid(CrestUser user) {
         UserGridVO vo = new UserGridVO();
         vo.setId(user.getId());
@@ -587,6 +611,7 @@ public class CrestUserManage {
         return vo;
     }
 
+    // 将用户模型转换为当前登录用户上下文视图对象。
     public CurUserVO toCurrent(CrestUser user) {
         if (user == null) return null;
         CurUserVO vo = new CurUserVO();
@@ -600,6 +625,7 @@ public class CrestUserManage {
         return vo;
     }
 
+    // 校验账号和展示名称的必填、长度和安全字符约束。
     private void validate(String account, String name) {
         if (StringUtils.isBlank(account)) {
             CrestException.throwException("账号不能为空");
@@ -619,14 +645,17 @@ public class CrestUserManage {
         }
     }
 
+    // 判断角色列表中是否包含管理员角色。
     private boolean hasAdminRole(List<Long> roleIds) {
         return roleIds != null && roleIds.stream().anyMatch(roleId -> Long.valueOf(1L).equals(roleId));
     }
 
+    // 返回当前系统初始密码配置。
     public String defaultPwd() {
         return initialPassword();
     }
 
+    // 优先读取系统参数中的初始密码，其次使用配置文件兜底。
     private String initialPassword() {
         String settingPassword = sysParameterManage == null
                 ? null
@@ -638,6 +667,7 @@ public class CrestUserManage {
         return password;
     }
 
+    // 生成满足复杂度要求的临时密码，并避免连续三位字符相同。
     private String generateSecurePassword() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
         StringBuilder sb = new StringBuilder();
