@@ -89,6 +89,7 @@ const onColumnWidthRatioChange = v => {
     state.basicStyleForm.columnWidthRatio = 100
   } else {
     const basicStyle = cloneDeep(props.chart.customAttr.basicStyle)
+    // 非数字输入恢复为图表当前配置，避免把 NaN 写入样式表单。
     const oldForm = defaultsDeep(basicStyle, cloneDeep(DEFAULT_BASIC_STYLE)) as ChartBasicStyle
     state.basicStyleForm.columnWidthRatio = oldForm.columnWidthRatio
   }
@@ -106,6 +107,7 @@ const onSubAlphaChange = v => {
     state.basicStyleForm.subAlpha = 100
   } else {
     const basicStyle = cloneDeep(props.chart.customAttr.basicStyle)
+    // 右轴透明度输入非法时，同样回退到历史配置中的 subAlpha。
     const oldForm = defaultsDeep(
       basicStyle,
       cloneDeep(CHART_MIX_DEFAULT_BASIC_STYLE)
@@ -120,6 +122,7 @@ const init = () => {
   const basicStyle = cloneDeep(props.chart.customAttr.basicStyle)
   const miscStyle = cloneDeep(props.chart.customAttr.misc)
   configCompat(basicStyle)
+  // 双轴图使用混合图默认样式补齐左右轴独立字段。
   state.basicStyleForm = defaultsDeep(
     basicStyle,
     cloneDeep(CHART_MIX_DEFAULT_BASIC_STYLE)
@@ -163,6 +166,7 @@ onMounted(() => {
   <el-form size="small" style="width: 100%">
     <el-tabs v-model="activeName" id="axis-tabs" stretch>
       <el-tab-pane :label="t('chart.yAxisLeft')" name="left">
+        <!-- 左轴承载柱形或左侧折线样式，具体控件由图表类型和 propertyInner 共同决定。 -->
         <template v-if="showProperty('colors')">
           <custom-color-style-select
             :model-value="state"
@@ -362,6 +366,7 @@ onMounted(() => {
         </template>
       </el-tab-pane>
       <el-tab-pane :label="t('chart.yAxisRight')" name="right">
+        <!-- 右轴只维护右侧折线样式，字段命名使用 sub/line 前缀和左轴区分。 -->
         <template v-if="showProperty('colors')">
           <custom-color-style-select
             sub
@@ -490,11 +495,13 @@ onMounted(() => {
 }
 
 .color-picker-style {
+  /* 颜色浮层需要高于右侧属性面板的折叠内容。 */
   cursor: pointer;
   z-index: 1003;
 }
 
 .alpha-setting {
+  /* 透明度和柱宽比例共用横向滑块布局。 */
   display: flex;
   width: 100%;
 
@@ -547,6 +554,7 @@ onMounted(() => {
 }
 .basic-input-number {
   :deep(input) {
+    /* 百分比输入框隐藏浏览器数字步进按钮，保持和滑块组合控件一致。 */
     -webkit-appearance: none;
     -moz-appearance: textfield;
 
@@ -566,6 +574,7 @@ onMounted(() => {
   }
 }
 #axis-tabs {
+  /* 页签上移贴合编辑器分组标题，减少双轴面板的垂直占用。 */
   margin-top: -16px;
   --ed-tabs-header-height: 34px;
 

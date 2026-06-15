@@ -6,21 +6,21 @@ import { parseJson } from '@/views/chart/components/js/util'
 
 const DEFAULT_COLORS = ['#2563eb', '#0891b2', '#16a34a', '#f59e0b', '#f97316', '#e11d48', '#7c3aed']
 
-// 转义 SVG 文本节点中的特殊字符
+// 转义 SVG 文本节点中的特殊字符，防止字段名进入 innerHTML 时破坏 SVG 结构。
 const escapeSvgText = (value: unknown) =>
   String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
 
-// 转义 SVG 属性值中的特殊字符
+// 转义 SVG 属性值中的特殊字符，供 aria-label、title 等属性安全使用。
 const escapeSvgAttribute = (value: unknown) =>
   escapeSvgText(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
 // 将数值限制在指定区间内
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
-// 格式化阶段指标展示值
+// 格式化阶段指标展示值，大数使用千分位，小数保留一位便于阶段内短文本展示。
 const formatMetricValue = (value: unknown) => {
   const numberValue = Number(value)
   if (!Number.isFinite(numberValue)) {
@@ -86,6 +86,7 @@ class StageFunnelDomChart {
   private getSortedData() {
     const data = [...((this.chart.data?.data || []) as any[])]
     const customSort = getDimensionAxis(this.chart)?.customSort
+    // 优先按维度自定义排序展示阶段，否则使用数据返回顺序作为阶段顺序。
     const stageOrder = Array.isArray(customSort)
       ? customSort
       : data.map(item => item.field || item.name).filter(Boolean)
@@ -105,6 +106,7 @@ class StageFunnelDomChart {
     const customAttr: DeepPartial<ChartAttr> = parseJson(this.chart.customAttr)
     const basicStyle = customAttr.basicStyle as any
     const metricLimit = Number(basicStyle?.stageFunnel?.metricLimit)
+    // 阶段漏斗的扩展配置挂在 basicStyle.stageFunnel，缺省值保证旧图表可直接渲染。
     return {
       colors: basicStyle?.colors?.length ? basicStyle.colors : DEFAULT_COLORS,
       periodLabel: basicStyle?.stageFunnel?.periodLabel || '时间周期',
@@ -122,6 +124,7 @@ class StageFunnelDomChart {
     const quotaAlias = metricAliases[quotaName] || quotaName
     const metrics = [`${quotaAlias}${formatMetricValue(item.value)}`]
     const tooltipFields = this.chart.extTooltip || []
+    // 扩展 tooltip 字段复用为阶段副指标，数量受 metricLimit 控制以避免文本拥挤。
     tooltipFields.slice(0, Math.max(0, metricLimit - 1)).forEach((field, index) => {
       const dynamicValue = item.dynamicTooltipValue?.[index]
       const tooltipValue = dynamicValue?.stringValue ?? dynamicValue?.value
@@ -143,6 +146,7 @@ class StageFunnelDomChart {
 
   private buildStageTitle(item: any) {
     const quotaName = getQuotaAxis(this.chart)?.name || '数量'
+    // SVG title 提供原始阶段、主指标和扩展指标，补足图内省略信息。
     const tooltipLines = (this.chart.extTooltip || [])
       .map((field, index) => {
         const tooltipValue = item.dynamicTooltipValue?.[index]?.value
@@ -166,6 +170,7 @@ class StageFunnelDomChart {
 
   private buildMetricNoteLines(metricTitle: string) {
     const [title, metrics] = metricTitle.split(/[：:]/)
+    // 说明文本支持用中英文冒号拆成两行，适配右侧窄说明区域。
     if (!metrics) {
       return [metricTitle]
     }
@@ -194,6 +199,7 @@ class StageFunnelDomChart {
       noteTitleColor,
       noteTextColor
     } = this.getStageFunnelConfig()
+    // 根据容器尺寸动态收缩左右说明区，窄容器只保留核心漏斗主体。
     const width = Math.max(container.clientWidth || 0, 320)
     const height = Math.max(container.clientHeight || 0, 160)
     const sideVisible = width >= 620 && height >= 190
@@ -213,6 +219,7 @@ class StageFunnelDomChart {
     const metricVisible = bodyHeight >= 34 && maxWidth >= 260
     const gradientIdPrefix = `stage-funnel-${this.chart.id}`
 
+    // 每个阶段使用独立渐变，保证多阶段颜色和立体椭圆效果互不串扰。
     const defs = data
       .map((item, index) => {
         const color = colors[index % colors.length]
@@ -233,6 +240,7 @@ class StageFunnelDomChart {
 
     const stages = data
       .map((item, index) => {
+        // 阶段宽度逐级递减形成漏斗视觉，具体高度由容器和阶段数量共同决定。
         const stageWidth = maxWidth - widthStep * index
         const x = centerX - stageWidth / 2
         const y = top + index * (bodyHeight + gap)
@@ -250,6 +258,7 @@ class StageFunnelDomChart {
           }`,
           'Z'
         ].join(' ')
+        // 前缘路径模拟底部椭圆，可在纯 SVG 中形成轻量立体效果。
         const frontRimPath = [
           `M ${x} ${y + bodyHeight - ellipseHeight / 2}`,
           `C ${x} ${y + bodyHeight} ${x + stageWidth} ${y + bodyHeight} ${x + stageWidth} ${
@@ -300,6 +309,7 @@ class StageFunnelDomChart {
       .join('')
 
     const periodBlock = sideVisible
+      // 宽屏展示左侧周期块，窄屏隐藏以保证阶段主体可读。
       ? `<g>
           <rect x="12" y="${height / 2 - 28}" width="94" height="46" rx="10" fill="${colorWithAlpha(
           periodColor,
@@ -318,6 +328,7 @@ class StageFunnelDomChart {
       : ''
     const noteLines = this.buildMetricNoteLines(metricTitle)
     const noteBlock = sideVisible
+      // 右侧指标说明只在空间足够时展示，避免压缩阶段标签。
       ? `<g>
           ${noteLines
             .map(
@@ -359,6 +370,7 @@ class StageFunnelDomChart {
         if (!item || !this.action) {
           return
         }
+        // 点击事件对齐 G2Plot 图表的 action 参数结构，便于联动和跳转复用。
         this.action({
           x: (event as MouseEvent).offsetX,
           y: (event as MouseEvent).offsetY,
@@ -390,6 +402,7 @@ class StageFunnelDomChart {
  * 阶段漏斗
  */
 export class StageFunnel extends G2PlotChartView<any, any> {
+  // 阶段漏斗是 DOM/SVG 自绘图表，只开放通用背景、边框、标题、提示和联动配置。
   properties: EditorProperty[] = [
     'background-overall-component',
     'border-style',
@@ -420,6 +433,7 @@ export class StageFunnel extends G2PlotChartView<any, any> {
       'fontShadow'
     ]
   }
+  // 仅声明一个阶段维度和一个主指标，扩展 tooltip 字段用于展示副指标。
   axis: AxisType[] = ['xAxis', 'yAxis', 'filter', 'drill', 'extTooltip']
   axisConfig: AxisConfig = {
     xAxis: {

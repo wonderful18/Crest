@@ -51,6 +51,7 @@ watch(
 // 阈值编辑状态，分别缓存文本、指标、表格和折线阈值弹窗数据
 const state = reactive({
   thresholdForm: {} as ChartThreshold,
+  // 各弹窗维护独立数组副本，确认保存前不直接改写 thresholdForm。
   editTextLabelThresholdDialog: false,
   textThresholdArr: [],
   editLabelThresholdDialog: false,
@@ -67,8 +68,10 @@ const init = () => {
   if (chart.senior) {
     const senior = chart.senior
     if (senior.threshold) {
+      // 使用默认阈值补齐历史配置，防止旧图表缺少新字段时弹窗报错。
       state.thresholdForm = defaultsDeep(senior.threshold, DEFAULT_THRESHOLD)
     }
+    // 弹窗数据深拷贝自表单，用户取消时不会影响已保存阈值。
     state.textThresholdArr = JSON.parse(JSON.stringify(state.thresholdForm.textLabelThreshold))
     state.thresholdArr = JSON.parse(JSON.stringify(state.thresholdForm.labelThreshold))
     state.tableThresholdArr = JSON.parse(JSON.stringify(state.thresholdForm.tableThreshold))
@@ -77,6 +80,7 @@ const init = () => {
 }
 // 将当前阈值表单提交给父组件
 const changeThreshold = () => {
+  // 父组件统一保存高级阈值配置并触发图表重绘。
   emit('onThresholdChange', state.thresholdForm)
 }
 // 校验仪表盘或水波图的百分比分割阈值
@@ -147,6 +151,7 @@ const changeLabelThreshold = () => {
     }
   }
   state.thresholdForm.labelThreshold = JSON.parse(JSON.stringify(state.thresholdArr))
+  // 校验通过后才覆盖正式表单，避免弹窗中的半成品规则进入图表配置。
   changeThreshold()
   closeLabelThreshold()
 }
@@ -178,6 +183,7 @@ const changeTextLabelThreshold = () => {
     }
   }
   state.thresholdForm.textLabelThreshold = JSON.parse(JSON.stringify(state.textThresholdArr))
+  // 文本卡阈值只影响文字颜色，不参与数值字段校验。
   changeThreshold()
   closeTextLabelThreshold()
 }
@@ -214,6 +220,7 @@ const changeTableThreshold = () => {
     for (let j = 0; j < field.conditions.length; j++) {
       const ele = field.conditions[j]
       if (props.chart.type === 'picture-group' && !ele.url) {
+        // 图片组复用表格阈值结构，但每条命中规则必须绑定展示图片。
         ElMessage.error(t('visualization.img_can_not_null'))
         return
       }
@@ -222,6 +229,7 @@ const changeTableThreshold = () => {
         return
       }
       if (ele.type !== 'dynamic') {
+        // 固定阈值直接校验当前输入值，数值字段额外校验数字合法性。
         if (ele.term === 'between') {
           if (
             !ele.term.includes('null') &&
@@ -267,6 +275,7 @@ const changeTableThreshold = () => {
           }
         }
       } else {
+        // 动态阈值比较的是另一个字段，保存前必须确认参照字段已经配置。
         if (ele.term === 'between') {
           if (
             !ele.term.includes('null') &&
@@ -290,6 +299,7 @@ const changeTableThreshold = () => {
     }
   }
   state.thresholdForm.tableThreshold = JSON.parse(JSON.stringify(state.tableThresholdArr))
+  // 表格和图片组阈值共享保存字段，由图表类型决定渲染为颜色还是图片。
   changeThreshold()
   closeTableThreshold()
 }
@@ -370,6 +380,7 @@ const changeLineThreshold = () => {
     }
   }
   state.thresholdForm.lineThreshold = JSON.parse(JSON.stringify(state.lineThresholdArr ?? []))
+  // 折线阈值单独保存，避免和表格阈值互相覆盖。
   changeThreshold()
   closeLineThreshold()
 }
@@ -392,6 +403,7 @@ const getDynamicStyleLabel = (item, fieldObj) => {
     }
   }
   if (item.type === 'dynamic') {
+    // 只有动态阈值需要展示参照字段摘要，固定阈值直接展示输入值。
     return handleSummary(fieldObj)
   }
 }
