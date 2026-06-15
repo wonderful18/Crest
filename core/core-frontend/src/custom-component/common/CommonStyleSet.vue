@@ -340,7 +340,9 @@ const props = withDefaults(
   }
 )
 const { themes, element } = toRefs(props)
+// 定义通用样式变更事件。
 const emits = defineEmits(['onStyleAttrChange'])
+// 保存随画布缩放换算后的样式值。
 const styleMounted = ref({
   opacity: 1,
   fontSize: 22,
@@ -423,7 +425,9 @@ const backdropBlurList = [
   { name: '30', value: 'blur(30px)' }
 ]
 
+// 当前组件样式表单。
 const styleForm = computed<any>(() => element.value.style)
+// 维护样式面板临时状态。
 const state = reactive({
   fontSize: [],
   isSetting: false,
@@ -452,6 +456,7 @@ const styleColorKeyArray = [
   }
 ]
 
+// 生成字间距选项。
 const letterSpacingList = computed(() => {
   const arr = []
   for (let i = 0; i <= 60; i = i + 1) {
@@ -463,6 +468,7 @@ const letterSpacingList = computed(() => {
   return arr
 })
 
+// 生成字号选项。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 60; i = i + 1) {
@@ -539,6 +545,7 @@ const styleOptionKeyArray = [
   }
 ]
 
+// 初始化随画布缩放显示的样式值。
 const styleInit = () => {
   if (element.value) {
     Object.keys(styleMounted.value).forEach(key => {
@@ -549,10 +556,12 @@ const styleInit = () => {
   }
 }
 
+// 预处理无需缩放的样式变更。
 const changeStylePre = key => {
   changeStyle({ key: key, value: element.value.style[key] })
 }
 
+// 将面板尺寸值按画布缩放回写到组件样式。
 const sizeChange = key => {
   element.value.style[key] = Math.round(
     (styleMounted.value[key] * canvasStyleData.value.scale) / 100
@@ -560,11 +569,13 @@ const sizeChange = key => {
   changeStyle({ key: key, value: element.value.style[key] })
 }
 
+// 记录样式快照并通知父级。
 const changeStyle = params => {
   snapshotStore.recordSnapshotCache('changeStyle')
   emits('onStyleAttrChange', params)
 }
 
+// 切换加粗样式。
 const checkBold = () => {
   if (styleForm.value.fontWeight === 'normal') {
     styleForm.value.fontWeight = 'bold'
@@ -574,6 +585,7 @@ const checkBold = () => {
   changeStyle({ key: 'fontWeight', value: styleForm.value.fontWeight })
 }
 
+// 切换斜体样式。
 const checkItalic = () => {
   if (styleForm.value.fontStyle === 'normal') {
     styleForm.value.fontStyle = 'italic'
@@ -583,6 +595,7 @@ const checkItalic = () => {
   changeStyle({ key: 'fontStyle', value: styleForm.value.fontStyle })
 }
 
+// 切换下划线样式。
 const checkTextDecoration = () => {
   if (styleForm.value.textDecoration === 'none') {
     styleForm.value.textDecoration = 'underline'
@@ -592,11 +605,13 @@ const checkTextDecoration = () => {
   changeStyle({ key: 'textDecoration', value: styleForm.value.textDecoration })
 }
 
+// 设置文本对齐位置。
 function setPosition(key, p: 'left' | 'center' | 'right') {
   styleForm.value[key] = p
   changeStyle({ key: key, value: p })
 }
 
+// 监听组件变化并重新初始化样式面板。
 watch(
   () => element.value,
   () => {
