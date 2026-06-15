@@ -86,6 +86,7 @@ const checkListWithFilter = computed(() => {
 
 // 根据字段选择和值输入状态计算当前筛选项宽度
 const computedWidth = computed(() => {
+  // 宽度随字段和操作符变化，空值类操作符不展示值输入框，因此使用较短布局。
   const { term, fieldId, filterType } = item.value
   const isNull = ['null', 'empty', 'not_null', 'not_empty'].includes(term) && filterType === 'logic'
   return {
@@ -300,6 +301,7 @@ let oldList = []
 watch(
   () => checkListWithFilter.value,
   val => {
+    // 搜索枚举时保留搜索前已勾选列表，恢复全量列表后再清空临时快照。
     if (!oldList.length && val.length !== enumList.value.length) {
       oldList = [...checkboxlist.value]
     }
@@ -315,6 +317,7 @@ watch(
 )
 // 枚举勾选变化时合并跨搜索结果的选择，并刷新全选状态
 const selectedChange = () => {
+  // 勾选结果需要跨搜索关键字累积，未出现在当前搜索结果中的值不能被误删。
   const notSelectList = checkListWithFilter.value.filter(ele => !checkboxlist.value.includes(ele))
   const newCheckboxlist = [...checkboxlist.value]
   checklist.value = [...new Set(checklist.value.concat(checkboxlist.value))].filter(
@@ -360,6 +363,7 @@ const addFields = () => {
 const timeDialog = ref()
 // 打开固定时间选择弹窗，非时间字段不触发
 const showTimeDialog = (obj: any) => {
+  // 日期字段的固定值统一交给时间弹窗维护，避免手工输入格式不一致。
   if (obj.fieldType !== 1) return
   timeDialog.value.init(obj.timeType, obj.value)
 }
