@@ -27,13 +27,14 @@ import { Group } from '@antv/g-canvas'
 
 const { t } = useI18n()
 /**
- * 对称柱状图
+ * 对称柱状图渲染器，将两组指标映射为左右或上下两个方向的柱形序列。
  */
 
 export class BidirectionalHorizontalBar extends G2PlotChartView<
   BidirectionalBarOptions,
   G2BidirectionalBar
 > {
+  // 双向柱状图固定使用一个维度和两个指标，两个指标分别对应主轴和扩展轴。
   axisConfig = {
     ...this['axisConfig'],
     xAxis: {
@@ -52,7 +53,9 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
       limit: 1
     }
   }
+  // 字段槽位保留筛选、下钻、扩展标签和扩展提示，满足常规交互配置。
   axis: AxisType[] = ['xAxis', 'yAxis', 'yAxisExt', 'filter', 'drill', 'extLabel', 'extTooltip']
+  // 编辑面板覆盖背景、坐标轴、标签、提示、阈值和联动等双向柱图能力。
   properties: EditorProperty[] = [
     'background-overall-component',
     'border-style',
@@ -68,6 +71,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
     'linkage',
     'threshold'
   ]
+  // 仅开放双向柱图可用的样式项，防止通用面板展示无效控制项。
   propertyInner = {
     'background-overall-component': ['all'],
     'border-style': ['all'],
@@ -118,7 +122,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
     if (!chart.data?.data?.length) {
       return
     }
-    // data
+    // 后端返回两组指标序列，这里按维度字段合并为 value/valueExt。
     const data = cloneDeep(chart.data.data)
     const data1 = defaultTo(data[0]?.data, [])
     const data2 = map(defaultTo(data[1]?.data, []), d => {
@@ -129,7 +133,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
         valueExt: d.value
       }
     })
-    // options
+    // 初始化配置只设置字段映射和基础坐标轴，样式细节交给 setupOptions 叠加。
     const initOptions: BidirectionalBarOptions = {
       xField: 'field',
       data: data2,
@@ -153,6 +157,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
     }
     const xAxis = chart.xAxis
     if (xAxis?.length === 1 && xAxis[0].fieldType === 1) {
+      // 日期维度按当前数据顺序反向展示，保持双向柱图从上到下的时间阅读顺序。
       const values = data2.map(item => item.field)
       options.meta = {
         field: {
@@ -164,11 +169,12 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
     const { BidirectionalBar: BidirectionalBarClass } = await import(
       '@antv/g2plot/esm/plots/bidirectional-bar'
     )
-    // 开始渲染
+    // 创建图表实例后再绑定事件，确保交互回调能拿到完整的 G2Plot 数据结构。
     const newChart = new BidirectionalBarClass(container, options)
 
     newChart.on('interval:click', action)
     newChart.on('element:click', ev => {
+      // 点击事件中的系列数据不完整，需要回填原始行以支持跳转和联动参数。
       const sourceData = newChart.options.data.filter(
         item =>
           item.field === ev.data.data.field &&
@@ -190,10 +196,11 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
   ): BidirectionalBarOptions {
     const basicStyle = parseJson(chart.customAttr).basicStyle
     if (basicStyle.gradient) {
+      // 两侧柱形使用相反渐变角度，垂直布局时按视觉方向重新修正角度。
       const color = basicStyle.colors?.map((ele, index) => {
         const tmp = hexColorToRGBA(ele, basicStyle.alpha)
         let angle = 180 - index * 180
-        // 垂直固定角度
+        // 垂直布局下固定渐变方向，避免上下柱形出现反向高光。
         if (basicStyle.layout === 'vertical') {
           if (index === 0) {
             angle = 280
@@ -226,6 +233,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
       return tmpOptions
     }
     if (tmpOptions.xAxis.label) {
+      // 双向柱图的维度轴不使用居中对齐，避免长标签截断后错位。
       delete (tmpOptions.xAxis.label.style as Record<string, any>).textAlign
       const { lengthLimit } = parseJson(chart.customStyle).xAxis.axisLabel
       defaults(tmpOptions.xAxis.label, {
@@ -255,7 +263,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
         return pre
       }, {}) as Record<string, SeriesFormatter>
     const optionsData = cloneDeep(options.data)
-    // 衔接当前组件交互和状态同步
+    // 根据当前柱形所属序列解析对应指标字段，供 tooltip 格式化和命名使用。
     const yaxisObj = item => {
       const param = item.data
       let yaxis = yAxis[0]
@@ -320,6 +328,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
   protected configLegend(chart: Chart, options: BidirectionalBarOptions): BidirectionalBarOptions {
     const o = super.configLegend(chart, options)
     if (o.legend) {
+      // 图例名称直接使用左右两组指标的展示名，避免出现内部 value/valueExt 字段名。
       o.legend.itemName.formatter = (_text: string, _item: any, index: number) => {
         const yaxis = chart.yAxis[0]
         const yaxisExt = chart.yAxisExt[0]
@@ -336,12 +345,13 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
     const yAxis = getYAxis(chart)
     let yAxisExt = getYAxisExt(chart)
 
+    // G2Plot 的双向柱图使用 value/valueExt 两个轴配置承载左右指标。
     const tempOption = {
       ...options
     }
 
     if (!yAxis) {
-      //左右轴都要隐藏
+      // 主轴隐藏时两个数值轴都隐藏，保持左右轴展示状态一致。
       yAxisExt = false
       tempOption['yAxis'] = {
         value: false,
@@ -354,7 +364,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
       }
     }
     const layoutHorizontal = options.layout === 'horizontal'
-    // 处理横轴标题方向不对
+    // 横向布局下禁用标题自动旋转，避免轴标题被 G2Plot 转成竖排。
     if (yAxis && yAxis['title'] && layoutHorizontal) {
       yAxis['title'].autoRotate = false
     }
@@ -366,6 +376,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
     }
     const axisValue = yAxisTmp.axisValue
     if (!axisValue?.auto) {
+      // 固定主轴范围时同步 min/max/limit，避免自动范围影响左右对称效果。
       tempOption.yAxis.value = {
         ...yAxis,
         min: axisValue.min,
@@ -386,6 +397,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
     }
     const axisExtValue = yAxisExtTmp.axisValue
     if (!axisExtValue?.auto) {
+      // 扩展轴使用独立范围配置，满足左右指标量级不同的场景。
       tempOption.yAxis.valueExt = {
         ...yAxisExt,
         min: axisExtValue.min,
@@ -402,6 +414,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
   }
 
   setupDefaultOptions(chart: ChartObj): ChartObj {
+    // 双向柱图默认左侧双轴和右侧标签，符合对称柱状图的阅读方向。
     chart.customStyle.yAxis = {
       ...chart.customStyle.yAxis,
       position: 'left'
@@ -432,7 +445,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
     const layoutHorizontal = options.layout === 'horizontal'
     if (chart.customAttr) {
       customAttr = parseJson(chart.customAttr)
-      // label
+      // 标签按所属指标读取独立格式化配置，并在水平/垂直布局间修正偏移方向。
       if (customAttr.label) {
         const l = customAttr.label
         if (l.show) {
@@ -507,6 +520,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
       }
     }
     if (!layoutHorizontal) {
+      // 垂直布局的标签位置需要从左右语义转换为上下语义。
       if (label.position === 'left') {
         label.position = 'bottom'
       }
@@ -527,6 +541,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
     }
     const strategy = parseJson(chart.senior).functionCfg.emptyDataStrategy
     if (strategy === 'ignoreData') {
+      // 忽略空值时按维度整行剔除，避免左右两侧只显示其中一根柱。
       const emptyFields = data
         .filter(obj => obj['value'] === null || obj['valueExt'] === null)
         .map(obj => obj['field'])
@@ -540,7 +555,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
         })
       }
     }
-    // 更新当前配置并同步相关状态
+    // breakLine 保留空值断点，setZero 将空值归零以维持完整分类。
     const updateValues = (strategy: 'breakLine' | 'setZero', data: any[]) => {
       data.forEach(obj => {
         if (obj['value'] === null) {
@@ -558,6 +573,7 @@ export class BidirectionalHorizontalBar extends G2PlotChartView<
   }
 
   protected setupOptions(chart: Chart, options: BidirectionalBarOptions) {
+    // 先处理数据条件色和基础样式，再叠加坐标轴、分析线、空值策略和柱形条件色。
     return flow(
       this.addConditionsStyleColorToData,
       this.configTheme,

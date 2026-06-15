@@ -15,11 +15,13 @@ const interactiveStore = interactiveStoreWithOut()
 const permissionStore = usePermissionStoreWithOut()
 const requestStore = useRequestStoreWithOut()
 const { t } = useI18n()
-// 映射当前用户可访问的业务资源统计数据
+// 工作台资源统计由交互状态统一提供，权限和数量都从同一份数据派生。
 const busiDataMap = computed(() => interactiveStore.data)
 const { wsCache } = useCache()
 const router = useRouter()
+// 后台内打开保持当前窗口，门户或外部入口打开新窗口，避免打断用户当前上下文。
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
+// 快捷创建基础配置只描述入口形态，权限状态在 computed 中按接口数据补齐。
 const quickCreationBaseList = [
   {
     icon: '/svg/icon_dashboard.svg',
@@ -47,7 +49,7 @@ const quickCreationBaseList = [
   }
 ]
 
-// 合并快捷创建入口和权限状态
+// 合并快捷创建入口和权限状态，模板只消费可直接渲染的数据结构。
 const quickCreationList = computed(() =>
   quickCreationBaseList.map((item, index) => ({
     ...item,
@@ -56,12 +58,12 @@ const quickCreationList = computed(() =>
   }))
 )
 
-// 提取工作台顶部需要展示的业务统计卡片
+// 顶部统计只展示主要业务资源，过滤空数据避免接口未返回时出现占位卡片。
 const busiCountCardList = computed(() =>
   [0, 1, 2].map(index => busiDataMap.value[index]).filter(Boolean)
 )
 
-// 根据快捷入口类型跳转到对应的新建页面
+// 点击快捷入口前先检查创建权限，避免无权限用户触发无效路由跳转。
 const quickCreate = (flag: number, hasAuth: boolean) => {
   if (!hasAuth) {
     return
@@ -84,31 +86,31 @@ const quickCreate = (flag: number, hasAuth: boolean) => {
   }
 }
 
-// 打开仪表板新建页面
+// 仪表板创建沿用旧路由参数，兼容已有编辑器入口识别逻辑。
 const createPanel = () => {
   const baseUrl = '#/dashboard?opt=create'
   window.open(baseUrl, openType)
 }
 
-// 打开数据大屏新建页面
+// 数据大屏创建需要进入画布编辑器，并通过 opt=create 初始化新资源。
 const createScreen = () => {
   const baseUrl = '#/dvCanvas?opt=create'
   window.open(baseUrl, openType)
 }
-// 打开数据集新建页面
+// 数据集表单使用 router.resolve 生成完整 href，适配 hash 路由部署方式。
 const createDataset = () => {
   let routeData = router.resolve({
     path: '/dataset-form'
   })
   window.open(routeData.href, openType)
 }
-// 打开数据源新建页面
+// 数据源创建仍使用列表页参数入口，保持与后台菜单行为一致。
 const createDatasource = () => {
   const baseUrl = '#/data/datasource?opt=create'
   window.open(baseUrl, openType)
 }
 
-// 收集业务资源叶子节点的创建或更新时间
+// 统计树只以叶子资源作为趋势样本，父级目录不参与更新时间计算。
 const getLeafTimes = item => {
   const stack = [...(item?.treeNodes || [])]
   const times: number[] = []
@@ -127,7 +129,7 @@ const getLeafTimes = item => {
   return times
 }
 
-// 将资源更新时间转换为迷你趋势图数值
+// 将资源更新时间压缩为 7 个采样点，用于左侧统计卡片的迷你趋势线。
 const getSparkValues = item => {
   const times = getLeafTimes(item).sort((a, b) => a - b)
   const total = Number(item?.leafNodeCount || times.length || 0)
@@ -138,6 +140,7 @@ const getSparkValues = item => {
   const min = times[0]
   const max = times[times.length - 1]
   if (min === max) {
+    // 所有资源时间相同时使用固定递增曲线，避免趋势线退化成一条直线。
     return [
       0,
       0,
@@ -151,6 +154,7 @@ const getSparkValues = item => {
 
   let cursor = 0
   return new Array(7).fill(0).map((_, index) => {
+    // 每个采样点统计落在当前时间阈值内的累计资源数。
     const threshold = min + ((max - min) / 6) * index
     while (cursor < times.length && times[cursor] <= threshold) {
       cursor += 1
@@ -159,7 +163,7 @@ const getSparkValues = item => {
   })
 }
 
-// 将趋势图数值转换为 SVG 折线点位
+// 将趋势图数值映射到固定 46x18 视窗，保证不同卡片的折线尺度一致。
 const getSparkPoints = item => {
   const values = getSparkValues(item)
   const max = Math.max(...values)
@@ -174,7 +178,7 @@ const getSparkPoints = item => {
     .join(' ')
 }
 
-// 获取迷你趋势图最后一个点的位置
+// 最后一个点用于绘制当前累计值标记，解析失败时回落到右侧中位坐标。
 const getSparkLastPoint = item => {
   const point = getSparkPoints(item).split(' ').pop() || '46,9'
   const [x, y] = point.split(',')
