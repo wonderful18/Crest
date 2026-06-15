@@ -16,15 +16,24 @@ interface PortalResource {
 
 const route = useRoute()
 const appearanceStore = useAppearanceStoreWithOut()
+// 当前门户资源详情。
 const resource = ref<PortalResource | null>(null)
+// 门户资源加载状态。
 const loading = ref(false)
+// 门户资源加载错误信息。
 const error = ref('')
+// 预览 iframe 重载键。
 const frameKey = ref(0)
+// 预览 iframe 引用。
 const frameRef = ref<HTMLIFrameElement>()
 
+// 当前路由资源 ID。
 const resourceId = computed(() => String(route.params.id || ''))
+// 系统展示标题。
 const systemTitle = computed(() => appearanceStore.getSiteTitle)
+// 当前资源预览类型。
 const dvType = computed(() => resource.value?.type || String(route.query.dvType || 'dataV'))
+// 当前资源预览地址。
 const previewUrl = computed(
   () =>
     `/#/preview?dvId=${encodeURIComponent(resourceId.value)}&dvType=${encodeURIComponent(
@@ -32,6 +41,7 @@ const previewUrl = computed(
     )}&ignoreParams=true&portal=true`
 )
 
+// 加载门户资源详情。
 const loadResource = async () => {
   if (!resourceId.value) {
     error.value = '资源不存在'
@@ -50,18 +60,22 @@ const loadResource = async () => {
   }
 }
 
+// 返回门户首页。
 const back = () => {
   router.push('/portal')
 }
 
+// 重新加载预览 iframe。
 const reload = () => {
   frameKey.value += 1
 }
 
+// 进入预览 iframe 全屏模式。
 const fullScreen = () => {
   frameRef.value?.requestFullscreen?.()
 }
 
+// 监听资源 ID 变化并重新加载资源。
 watch(resourceId, loadResource)
 onMounted(loadResource)
 </script>

@@ -5,24 +5,33 @@ import { useEmitt } from '@/hooks/web/useEmitt'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus-secondary'
+// 参数弹窗加载状态。
 const loading = ref(false)
+// 参数表单实例。
 const subject = ref()
+// 参数弹窗显隐状态。
 const subjectDialogShow = ref(false)
 const dvMainStore = dvMainStoreWithOut()
 const { canvasViewInfo } = storeToRefs(dvMainStore)
 
+// 当前参数弹窗状态。
 const state = reactive({
   viewId: null
 })
+// 当前数据集参数列表。
 const curDataSetParamsInfo = ref([])
 
+// 重置参数表单并关闭弹窗。
 const resetForm = () => {
   subject.value.clearValidate()
   subjectDialogShow.value = false
 }
+// 参数表单模型。
 const subjectForm = ref(null)
+// 参数表单校验规则。
 const rules = ref({})
 
+// 初始化参数弹窗数据。
 const optInit = item => {
   if (item) {
     state.viewId = item.id
@@ -32,6 +41,7 @@ const optInit = item => {
   }
 }
 
+// 保存数据集计算参数。
 const saveSubject = () => {
   if (disabledCheck.value) {
     ElMessage.error('请输入正确参数')
@@ -42,6 +52,7 @@ const saveSubject = () => {
   resetForm()
 }
 
+// 判断参数是否存在未填写项。
 const disabledCheck = computed(() => {
   return (
     !curDataSetParamsInfo.value ||
@@ -51,10 +62,12 @@ const disabledCheck = computed(() => {
   )
 })
 
+// 判断参数弹窗是否打开。
 const statesCheck = () => {
   return subjectDialogShow.value
 }
 
+// 阻止弹窗点击事件冒泡。
 const handleDialogClick = e => {
   e.preventDefault()
   e.stopPropagation()

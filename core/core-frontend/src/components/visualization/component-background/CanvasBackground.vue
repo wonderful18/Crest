@@ -165,6 +165,7 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 const snapshotStore = snapshotStoreWithOut()
 const { t } = useI18n()
+// 背景图片文件选择器引用。
 const files = ref(null)
 const maxImageSize = 15000000
 
@@ -180,6 +181,7 @@ withDefaults(
   }
 )
 
+// 维护画布背景配置状态。
 const state = reactive({
   BackgroundShowMap: {},
   checked: false,
@@ -191,6 +193,7 @@ const state = reactive({
   predefineColors: COLOR_PANEL
 })
 
+// 判断是否显示水印自定义设置。
 const showWatermarkSetting = computed(() => {
   return (
     dvInfo.value.watermarkInfo &&
@@ -199,14 +202,17 @@ const showWatermarkSetting = computed(() => {
   )
 })
 
+// 触发背景图片文件选择器。
 const goFile = () => {
   files.value.click()
 }
 
+// 提示背景图片大小超过限制。
 const sizeMessage = () => {
   ElMessage.success(t('visualization.pic_size_error'))
 }
 
+// 重新上传背景图片。
 const reUpload = e => {
   const file = e.target.files[0]
   if (file.size > maxImageSize) {
@@ -220,6 +226,7 @@ const reUpload = e => {
   })
 }
 
+// 初始化背景图片上传列表。
 const init = () => {
   if (canvasStyleData.value.background) {
     state.fileList.push({ url: imgUrlTrans(canvasStyleData.value.background) })
@@ -228,16 +235,19 @@ const init = () => {
   }
 }
 
+// 移除当前背景图片。
 const handleRemove = () => {
   state.uploadDisabled = false
   canvasStyleData.value.background = null
   state.fileList = []
   onBackgroundChange()
 }
+// 打开背景图片预览弹窗。
 const handlePictureCardPreview = file => {
   state.dialogImageUrl = file.url
   state.dialogVisible = true
 }
+// 上传背景图片。
 const upload = file => {
   uploadFileResult(file.file, fileUrl => {
     canvasStyleData.value.background = fileUrl
@@ -245,10 +255,12 @@ const upload = file => {
   })
 }
 
+// 记录背景配置变更快照。
 const onBackgroundChange = () => {
   snapshotStore.recordSnapshotCache('onBackgroundChange')
 }
 
+// 背景设置表单实例。
 const bgForm = ref()
 
 const computedBackgroundColorPickerWidth = 50
@@ -257,6 +269,7 @@ onMounted(() => {
   init()
 })
 
+// 监听背景图片地址变化。
 watch(
   () => canvasStyleData.value.background,
   () => {
