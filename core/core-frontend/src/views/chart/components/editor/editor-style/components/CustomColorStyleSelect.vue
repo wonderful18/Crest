@@ -35,7 +35,9 @@ const props = withDefaults(
 )
 const dvMainStore = dvMainStoreWithOut()
 const { batchOptStatus } = storeToRefs(dvMainStore)
+// 向父组件同步颜色配置和基础样式变更。
 const emits = defineEmits(['update:modelValue', 'changeBasicStyle'])
+// 图表类型切换时重置不再适用的渐变配色方案。
 const changeChartType = () => {
   if (isColorGradient.value) {
     state.value.basicStyleForm[colorSchemeName.value] = 'default'
@@ -43,7 +45,9 @@ const changeChartType = () => {
   }
 }
 
+// 系列颜色选择器实例。
 const seriesColorPickerRef = ref<InstanceType<typeof ElColorPicker>>()
+// 系列颜色编辑状态，记录当前系列、颜色和弹出层挂载位置。
 const seriesColorState = reactive({
   seriesColor: [],
   curSeriesColor: {
@@ -55,18 +59,23 @@ const seriesColorState = reactive({
   seriesColorPickerId: 'body'
 })
 
+// 当前图表视图实现实例，用于读取图表支持的颜色配置能力。
 const instance = ref<G2PlotChartView | undefined>()
 
+// 当前面板编辑的颜色数组字段名。
 const colorsName = computed(() => {
   return props.sub ? 'subColors' : 'colors'
 })
+// 当前面板编辑的配色方案字段名。
 const colorSchemeName = computed(() => {
   return props.sub ? 'subColorScheme' : 'colorScheme'
 })
+// 当前面板编辑的系列色字段名。
 const seriesColorName = computed(() => {
   return props.sub ? 'subSeriesColor' : 'seriesColor'
 })
 
+// 当前图表主轴是否支持按系列单独配色。
 const needSetSeriesColor = computed(() => {
   return (
     instance.value?.propertyInner?.['basic-style-selector']?.includes('seriesColor') ||
@@ -74,10 +83,12 @@ const needSetSeriesColor = computed(() => {
   )
 })
 
+// 当前图表副轴是否支持按系列单独配色。
 const needSetSubSeriesColor = computed(() => {
   return instance.value?.propertyInner?.['dual-basic-style-selector']?.includes('subSeriesColor')
 })
 
+// 根据图表原始数据初始化系列颜色配置。
 const setupSeriesColor = () => {
   if (batchOptStatus.value || !props.chart) {
     return
@@ -141,11 +152,12 @@ const setupSeriesColor = () => {
     seriesColorState.curSeriesColor = seriesColorState.seriesColor[seriesColorState.curColorIndex]
     nextTick(() => {
       customColorPickerRef.value?.hide()
-      // 防止 teleport 失效还有选框飘到左上角
+      // 颜色选择器必须挂载到稳定插槽，避免 teleport 失效时漂移到页面左上角。
       seriesColorState.seriesColorPickerId = `#seriesr-picker-slot-${props.sub ? 1 : 0}`
     })
   }
 }
+// 切换当前正在编辑的系列颜色，并把颜色选择器挂载到对应系列。
 const switchSeriesColor = (seriesColor, index) => {
   seriesColorPickerRef.value?.hide()
   seriesColorState.curSeriesColor = cloneDeep(seriesColor)
@@ -160,6 +172,7 @@ const switchSeriesColor = (seriesColor, index) => {
   })
 }
 
+// 将当前系列颜色写回样式表单，并通知父组件刷新图表。
 const changeSeriesColor = () => {
   let changed = false
   seriesColorState.seriesColor.forEach(c => {
@@ -176,6 +189,7 @@ const changeSeriesColor = () => {
     changeBasicStyle(seriesColorName.value)
   }
 }
+// 监听图表类型、TopN 和原始数据变化，重新计算可编辑系列颜色。
 watch(
   [
     () => props.chart,
@@ -192,6 +206,7 @@ onMounted(() => {
   useEmitt({ name: 'chart-data-change', callback: setupSeriesColor })
   setupSeriesColor()
 })
+// 当前颜色配置的双向绑定代理。
 const state = computed({
   get() {
     return props.modelValue
@@ -204,11 +219,15 @@ const state = computed({
 const colorCases = COLOR_CASES
 const predefineColors = COLOR_PANEL
 
+// 自定义配色扩展区是否展开。
 const customColorExtendSettingOpened = ref<boolean>(false)
+// 配色方案下拉弹层实例。
 const colorCaseSelectorRef = ref<InstanceType<typeof ElPopover>>()
 
+// 自定义颜色选择器实例。
 const customColorPickerRef = ref<InstanceType<typeof ElColorPicker>>()
 
+// 选择预设配色方案并刷新基础样式。
 function selectColorCase(option) {
   state.value.basicStyleForm[colorSchemeName.value] = option.value
   changeBasicStyle(colorSchemeName.value)
@@ -216,6 +235,7 @@ function selectColorCase(option) {
   changeColorOption(option)
 }
 
+// 根据当前配色方案写入颜色数组，并同步系列色默认值。
 const changeColorOption = (option?) => {
   let isGradient = option?.value?.endsWith('_split_gradient') || isColorGradient.value
   const getColorItems = isGradient ? getMapColorCases(colorCases) : colorCases
@@ -235,6 +255,7 @@ const changeColorOption = (option?) => {
     setupSeriesColor()
   }
 }
+// 重置当前自定义配色，地图保留渐变逻辑，普通图表回到预设色板。
 const resetCustomColor = () => {
   const type = props.chart?.type
   const { basicStyleForm } = state.value
@@ -252,6 +273,7 @@ const resetCustomColor = () => {
   }
 }
 
+// 应用单个自定义颜色；渐变模式下根据首尾颜色重新生成色阶。
 const switchColorCase = () => {
   const { colorIndex, customColor, basicStyleForm } = state.value
   const colors = basicStyleForm[colorsName.value]
@@ -265,12 +287,15 @@ const switchColorCase = () => {
   }
   changeBasicStyle()
 }
+// 当前配色方案是否为渐变色方案。
 const isColorGradient = computed(() =>
   state.value.basicStyleForm[colorSchemeName.value].endsWith('_split_gradient')
 )
+// 渐变模式只允许编辑首尾两个颜色点。
 const showColorGradientIndex = index => {
   return index === 0 || index === state.value.basicStyleForm[colorsName.value].length - 1
 }
+// 切换当前编辑的颜色块并打开颜色选择器。
 const switchColor = (index, c) => {
   if (isColorGradient.value && !showColorGradientIndex(index)) {
     return
@@ -280,30 +305,36 @@ const switchColor = (index, c) => {
   customColorPickerRef.value?.show()
 }
 
+// 通知父组件指定基础样式字段发生变化。
 function changeBasicStyle(prop = colorsName.value) {
   emits('changeBasicStyle', prop)
 }
 
+// 配色方案下拉弹层是否展开。
 const _popoverShow = ref(false)
+// 标记配色方案下拉弹层已打开。
 function onPopoverShow() {
   _popoverShow.value = true
 }
+// 标记配色方案下拉弹层已关闭。
 function onPopoverHide() {
   _popoverShow.value = false
 }
+// 判断当前样式项是否在图表属性白名单内。
 const showProperty = prop => props.propertyInner?.includes(prop)
+// 计算颜色块边框颜色，渐变中间色弱化为不可编辑态。
 const colorItemBorderColor = (index, state) => {
   const isCurrentColorActive = state.colorIndex === index
   if (isColorGradient.value) {
     if (showColorGradientIndex(index)) {
-      // 渐变色的第一个和最后一个颜色
+      // 渐变色首尾颜色可编辑，需要突出当前选中态。
       return isCurrentColorActive ? 'var(--ed-color-primary)' : 'rgb(230,230,230)'
     } else {
-      // 渐变色中非边缘的颜色
+      // 渐变中间色由算法生成，不暴露手工编辑入口。
       return 'rgb(230,230,230,0.01)'
     }
   }
-  // 非渐变色情况
+  // 普通配色直接标记当前选中的颜色块。
   return isCurrentColorActive ? 'var(--ed-color-primary)' : ''
 }
 </script>
