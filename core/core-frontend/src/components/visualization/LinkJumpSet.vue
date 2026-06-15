@@ -942,7 +942,7 @@ const save = () => {
     .then(() => {
       snapshotStore.recordSnapshotCache('updateJumpSet')
       ElMessage.success(t('common.save_success'))
-      // 刷新跳转信息
+      // 保存成功后重新拉取跳转配置，确保画布缓存和弹窗编辑态保持一致。
       queryVisualizationJumpInfo(dvInfo.value.id).then(rsp => {
         // 保存后刷新画布缓存，预览和发布态使用最新跳转配置。
         dvMainStore.setNowPanelJumpInfo(rsp.data)
@@ -999,7 +999,7 @@ const getPanelViewList = dvId => {
         state.viewIdFieldArrayMap[view.id] = view.tableFields
       })
     }
-    // 外部参数同步加入 currentLinkPanelViewArray，图表侧隐藏展示，保存时直接复用该列表
+    // 外部参数同步加入目标列表，图表映射页隐藏展示，过滤参数页直接复用该列表。
     state.currentOutParams = rsp.data.outParamsJumpInfo || []
     if (state.currentOutParams && state.currentOutParams.length > 0) {
       state.currentOutParams.forEach(outerParamsItem => {
@@ -1009,7 +1009,7 @@ const getPanelViewList = dvId => {
         ]
       })
     }
-    // 增加过滤组件匹配
+    // 目标资源内的查询组件可作为过滤参数目标，和外部参数使用同一套映射结构。
     ;(JSON.parse(rsp.data.bashComponentData) as any[]).forEach(componentItem => {
       if (componentItem.component === 'VQuery' && componentItem.propValue instanceof Array) {
         componentItem.propValue.forEach(filterItem => {
@@ -1222,9 +1222,10 @@ defineExpose({
 .ellip {
   margin-left: 10px;
   margin-right: 10px;
-  overflow: hidden; /*超出部分隐藏*/
-  white-space: nowrap; /*不换行*/
-  text-overflow: ellipsis; /*超出部分文字以...显示*/
+  /* 字段标签保持单行省略，避免树节点内容挤占操作区。 */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   text-align: center;
   background-color: #f7f8fa;
   color: #3d4d66;
@@ -1236,9 +1237,10 @@ defineExpose({
 
 .select-filed {
   margin-right: 8px;
-  overflow: hidden; /*超出部分隐藏*/
-  white-space: nowrap; /*不换行*/
-  text-overflow: ellipsis; /*超出部分文字以...显示*/
+  /* 映射字段名称保持稳定宽度，长字段通过省略号提示。 */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: #3d4d66;
   font-size: 12px;
   line-height: 35px;
@@ -1334,7 +1336,7 @@ defineExpose({
   background: #fff;
 
   color: var(--neutral-900, #1f2329);
-  /* 中文/桌面端/正文 14 22 Regular */
+  /* 字段占位符使用正文规格，和外部链接编辑器右侧列表保持一致。 */
   font-family: var(--crest-custom_font, 'PingFang');
   font-size: 14px;
   font-style: normal;

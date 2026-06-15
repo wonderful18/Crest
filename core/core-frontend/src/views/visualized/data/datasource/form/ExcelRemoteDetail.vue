@@ -808,6 +808,7 @@ defineExpose({
       <div class="title-form_primary base-info" v-show="activeStep !== 2">
         {{ t('datasource.basic_info') }}
       </div>
+      <!-- 基础配置区负责远程文件地址和凭据，加载成功后才进入工作表预览与字段选择。 -->
       <el-form
         ref="remoteExcelForm"
         @submit.prevent
@@ -863,6 +864,7 @@ defineExpose({
         </el-form-item>
       </el-form>
       <template v-if="activeTab">
+        <!-- 工作表预览区展示解析结果，并允许在新建数据源时调整导入字段、主键和字段类型。 -->
         <div class="title-form_primary" v-show="activeStep !== 2">
           {{ t('chart.data_preview') }}
         </div>
@@ -1035,6 +1037,7 @@ defineExpose({
           </el-table>
         </div>
       </template>
+      <!-- 同步设置区在第二步展示，负责增量策略、执行频率和任务有效期配置。 -->
       <el-form
         ref="dsApiForm"
         :model="form"

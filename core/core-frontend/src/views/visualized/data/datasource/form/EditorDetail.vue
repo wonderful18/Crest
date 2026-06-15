@@ -1569,9 +1569,10 @@ defineExpose({
             </el-row>
           </template>
 
-          <!--    数据填报      -->
+          <!-- 连接池和查询超时用于控制后端数据源连接资源，保存前由连接表单统一校验。 -->
         </template>
       </el-form>
+      <!-- API 数据源同步设置区只在第二步展示，非 API 数据源由后端连接任务独立处理。 -->
       <el-form
         ref="dsApiForm"
         :model="form"
