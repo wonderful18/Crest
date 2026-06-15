@@ -323,6 +323,7 @@ onMounted(loadAssets)
   <div class="asset-manage">
     <div class="asset-content">
       <div class="asset-table-info">
+        <!-- 筛选区组合关键字、资产类型、治理状态和负责人，查询时统一转换为接口参数。 -->
         <div class="search-operate">
           <el-input
             v-model.trim="state.keyword"
@@ -374,6 +375,7 @@ onMounted(loadAssets)
           <el-button :icon="Refresh" @click="loadAssets">刷新</el-button>
         </div>
 
+        <!-- 资产列表展示治理标识、负责人、上下游数量和维护入口。 -->
         <div class="info-table">
           <grid-table
             class="asset-grid-table"
@@ -455,6 +457,7 @@ onMounted(loadAssets)
       </div>
     </div>
 
+    <!-- 详情抽屉按基础信息、上下游和影响范围分区，避免列表页承载过多关系数据。 -->
     <el-drawer
       v-model="detailDrawerVisible"
       size="560px"
@@ -492,6 +495,7 @@ onMounted(loadAssets)
             </span>
           </div>
 
+          <!-- 页签数量徽标来自当前详情数据，切换只改变本地展示状态。 -->
           <div class="detail-tabs" role="tablist" aria-label="资产详情">
             <button
               v-for="tab in detailTabOptions"
@@ -605,6 +609,7 @@ onMounted(loadAssets)
       </div>
     </el-drawer>
 
+    <!-- 资产维护弹窗同时保存负责人、说明、标签和数据集治理状态。 -->
     <el-dialog v-model="profileDialogVisible" title="资产信息" width="560px">
       <el-form label-width="96px" class="profile-form">
         <el-form-item label="资产名称">
@@ -648,6 +653,7 @@ onMounted(loadAssets)
             </el-checkbox>
           </div>
         </el-form-item>
+        <!-- 废弃数据集前展示下游引用，帮助维护人评估影响范围。 -->
         <el-form-item v-if="profileIsDataset && profileForm.deprecated" label="影响范围">
           <div v-loading="profileImpactLoading" class="profile-impact">
             <div v-if="!profileImpact.length" class="profile-impact-empty">暂无下游影响</div>

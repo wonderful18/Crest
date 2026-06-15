@@ -317,6 +317,7 @@ init()
         :key="fieldIndex"
         class="field-item"
       >
+        <!-- 字段级阈值先选择匹配字段，再在其下维护多条图片切换规则。 -->
         <el-row style="margin-top: 6px; align-items: center; justify-content: space-between">
           <el-form-item class="form-item">
             <el-select
@@ -387,6 +388,7 @@ init()
                 </el-select>
               </el-form-item>
             </el-col>
+            <!-- 非区间条件使用单值输入，命中后切换到所选图片。 -->
             <el-col
               v-if="
                 !item.term.includes('null') &&
@@ -418,6 +420,7 @@ init()
               </el-form-item>
             </el-col>
 
+            <!-- 区间条件拆分最小值和最大值，适用于数值字段图片分档。 -->
             <el-col v-if="item.term === 'between'" :span="4" style="text-align: center">
               <el-form-item class="form-item">
                 <el-input-number
@@ -449,6 +452,7 @@ init()
                 />
               </el-form-item>
             </el-col>
+            <!-- 每条条件必须选择展示图片，渲染层按条件顺序匹配。 -->
             <div
               style="display: flex; align-items: center; justify-content: center; margin-left: 8px"
             >
