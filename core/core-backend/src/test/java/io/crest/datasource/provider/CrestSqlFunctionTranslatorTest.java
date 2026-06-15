@@ -7,8 +7,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+// 覆盖 Crest 日期函数到 MySQL 兼容 SQL 的翻译规则。
 public class CrestSqlFunctionTranslatorTest {
 
+    // 验证指标聚合中的字符串日期转换会先翻译再参与类型转换。
     @Test
     public void mysqlTranslationRewritesStringDateConversionBeforeMetricCast() {
         String sql = "SELECT SUM(CAST(DE_STR_TO_DATE(t.`date_text`,'yyyy-MM-dd') AS DECIMAL(26,8))) AS f_ay_0 FROM t";
@@ -22,6 +24,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证嵌套日期函数会被递归翻译。
     @Test
     public void mysqlTranslationRewritesNestedDateFunctions() {
         String sql = "SELECT DE_CAST_DATE_FORMAT(DE_STR_TO_DATE(t.`day`,'yyyy-MM-dd HH:mm:ss'),'yyyy-MM-dd HH:mm:ss','yyyy-MM') AS month_key FROM t";
@@ -36,6 +39,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证小写函数名、空白和 NULL 日期格式化都能翻译。
     @Test
     public void mysqlTranslationHandlesLowercaseWhitespaceAndNullDateFormatting() {
         String sql = "SELECT de_cast_date_format ( de_str_to_date ( t.`compact_day` , 'yyyyMMdd' ) , 'yyyy-MM-dd HH:mm:ss' , 'yyyy/MM' ) AS month_key, "
@@ -52,6 +56,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证字符串字面量中的函数文本保持不变。
     @Test
     public void mysqlTranslationKeepsQuotedTextUnchanged() {
         String sql = "SELECT 'DE_STR_TO_DATE(t,''yyyy-MM-dd'')' AS label, DE_UNIX_TIMESTAMP(t.`day`) AS ts FROM t";
@@ -64,6 +69,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证 NULL 值和多种日期格式都能转换为 MySQL 格式。
     @Test
     public void mysqlTranslationCoversNullValuesAndMultipleDateFormats() {
         String sql = "SELECT DE_STR_TO_DATE(NULL,'yyyyMMdd') AS empty_day, "
@@ -84,6 +90,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证 SELECT、WHERE 和 ORDER BY 中的函数都会翻译。
     @Test
     public void mysqlTranslationRewritesFunctionsInSelectWhereAndOrder() {
         String sql = "SELECT DE_DATE_FORMAT(DE_STR_TO_DATE(t.`day`,'yyyy/MM/dd'),'yyyy-MM') AS month_key "
@@ -103,6 +110,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证宽表达式中的空值和嵌套函数翻译。
     @Test
     public void mysqlTranslationRewritesWideCalculatedExpressionsWithNullsAndNestedFunctions() {
         String sql = "SELECT "
@@ -128,6 +136,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证中文字段名和 NULLIF 表达式中的日期函数翻译。
     @Test
     public void mysqlTranslationHandlesNullIfEmptyStringsAndChineseFieldNames() {
         String sql = "SELECT "
@@ -151,6 +160,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证带引号分隔符的日期格式和指标类型转换。
     @Test
     public void mysqlTranslationHandlesQuotedDateFormatSeparatorsAndMetricCasts() {
         String sql = "SELECT "
@@ -170,6 +180,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证 Excel 数据源中的空值占位符转换表达式。
     @Test
     public void mysqlTranslationHandlesNullPlaceholdersInExcelBackedConversionExpressions() {
         String sql = "SELECT "
@@ -193,6 +204,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证宽需求数据集中的日期转换表达式。
     @Test
     public void mysqlTranslationHandlesWideRequirementDatasetConversionExpressions() {
         String sql = "SELECT "
@@ -222,6 +234,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证 MySQL 格式和反引号 schema 限定符处理。
     @Test
     public void mysqlTranslationPreservesMysqlFormatsAndHandlesBacktickSchemaQualifier() {
         String sql = "SELECT `crest`.de_str_to_date(t.`day`,'%Y-%m-%d') AS day_value, "
@@ -236,6 +249,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证 Calcite 生成的反引号函数名可以被识别。
     @Test
     public void mysqlTranslationHandlesBacktickQuotedFunctionNamesProducedByCalcite() {
         String sql = "SELECT `DE_STR_TO_DATE`(t.`release_day`, 'yyyy/MM/dd') AS day_value, "
@@ -253,6 +267,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证相似但不匹配的函数名不会被误改写。
     @Test
     public void mysqlTranslationDoesNotRewriteSimilarFunctionNames() {
         String sql = "SELECT MY_DE_STR_TO_DATE(t.`day`, 'yyyy-MM-dd') AS custom_value, "
@@ -263,6 +278,7 @@ public class CrestSqlFunctionTranslatorTest {
         assertEquals(sql, translated);
     }
 
+    // 验证 Crest 函数的 schema 限定符会被移除。
     @Test
     public void mysqlTranslationDropsSchemaQualifierFromCrestFunctions() {
         String sql = "SELECT crest.DE_STR_TO_DATE(t.`day`,'yyyy/MM/dd') AS day_value FROM t";
@@ -275,6 +291,7 @@ public class CrestSqlFunctionTranslatorTest {
         );
     }
 
+    // 验证非 MySQL 数据源保留 Crest 函数给后续方言处理。
     @Test
     public void nonMysqlDatasourceKeepsCrestFunctionsForProviderSpecificHandling() {
         String sql = "SELECT DE_STR_TO_DATE(t.`day`,'yyyy/MM/dd') AS day_value FROM t";
@@ -284,6 +301,7 @@ public class CrestSqlFunctionTranslatorTest {
         assertEquals(sql, translated);
     }
 
+    // 验证空 SQL 或空数据源会原样返回。
     @Test
     public void blankSqlOrDatasourceIsIgnored() {
         assertEquals("", CrestSqlFunctionTranslator.translate("", datasource("mysql")));
@@ -292,6 +310,7 @@ public class CrestSqlFunctionTranslatorTest {
         assertEquals(sql, CrestSqlFunctionTranslator.translate(sql, null));
     }
 
+    // 构造指定类型的数据源元信息。
     private DatasourceSchemaDTO datasource(String type) {
         DatasourceSchemaDTO datasource = new DatasourceSchemaDTO();
         datasource.setType(type);
