@@ -14,9 +14,18 @@ import java.util.stream.Collectors;
 
 @Component
 @SuppressWarnings("unchecked")
+/**
+ * 堆叠柱状图处理器。
+ */
 public class StackBarHandler extends BarHandler {
+    /**
+     * 当前处理器对应的主图表类型。
+     */
     @Getter
     private String type = "bar-stack";
+    /**
+     * 注册堆叠柱状图及其横向、百分比变体。
+     */
     @Override
     public void init() {
         chartHandlerManager.registerChartHandler(this.getRender(), "bar-stack", this);
@@ -24,6 +33,9 @@ public class StackBarHandler extends BarHandler {
         chartHandlerManager.registerChartHandler(this.getRender(), "percentage-bar-stack", this);
         chartHandlerManager.registerChartHandler(this.getRender(), "percentage-bar-stack-horizontal", this);
     }
+    /**
+     * 将堆叠维度合并到 X 轴格式化结果。
+     */
     @Override
     public AxisFormatResult formatAxis(ChartViewDTO view) {
         var result = super.formatAxis(view);
@@ -32,6 +44,9 @@ public class StackBarHandler extends BarHandler {
         result.getAxisMap().put(ChartAxis.extStack, view.getExtStack());
         return result;
     }
+    /**
+     * 处理堆叠维度下钻时的过滤条件和轴字段。
+     */
     @Override
     public <T extends CustomFilterResult> T customFilter(ChartViewDTO view, List<ChartExtFilterDTO> filterList, AxisFormatResult formatResult) {
         var result = super.customFilter(view, filterList, formatResult);
@@ -60,6 +75,9 @@ public class StackBarHandler extends BarHandler {
         }
         return (T) result;
     }
+    /**
+     * 构建堆叠柱状图前端数据结构。
+     */
     @Override
     public Map<String, Object> buildNormalResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
         boolean isDrill = filterResult.getFilterList().stream().anyMatch(ele -> ele.getFilterType() == 1);
