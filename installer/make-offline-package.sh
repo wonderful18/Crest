@@ -212,10 +212,30 @@ bash install.sh
 - \`CREST_BACKEND_IMAGE\`：Crest 后端镜像，已固定为本包内镜像
 - \`CREST_FRONTEND_IMAGE\`：Crest 前端镜像，已固定为本包内镜像
 - \`CREST_MYSQL_IMAGE\`：MySQL 镜像，已固定为本包内镜像
+- \`CREST_DB_TYPE\`：元数据库类型，默认 \`mysql\`，可选 \`ob-mysql\` 或 \`ob-oracle\`
+- \`CREST_DB_HOST\` / \`CREST_DB_PORT\`：元数据库地址和端口；OceanBase 可填写 OBProxy 或 observer 地址
+- \`CREST_DB_USERNAME\` / \`CREST_DB_PASSWORD\`：元数据库账号和密码；OBProxy 用户名使用 \`用户@租户#集群\`，observer 直连使用 \`用户@租户\`
+- \`CREST_DB_URL\`：自定义 JDBC URL；留空时安装脚本按 \`CREST_DB_TYPE\` 自动生成
 - \`CREST_INITIAL_PASSWORD\`：管理员初始密码；留空时安装脚本会随机生成并在安装完成后输出
 - \`CREST_LOAD_DEMO\`：是否初始化内置演示资源，默认 \`true\`；生产环境不需要示例数据时设为 \`false\`
 - \`CREST_PROMETHEUS_ENABLED\`：是否启用 Prometheus 指标采集，默认 \`false\`
 - \`CREST_GRAFANA_ENABLED\`：是否启用 Grafana 看板，默认 \`false\`
+
+## OceanBase 元数据库
+
+使用 OceanBase 作为 Crest 元数据库时，在 \`install.conf\` 中设置 \`CREST_DB_TYPE=ob-mysql\` 或 \`CREST_DB_TYPE=ob-oracle\`，并填写真实的 OBProxy 或 observer 地址。安装脚本会自动切换为外部元数据库模式，不会启动包内 MySQL 容器。
+
+OBProxy 示例：
+
+\`\`\`bash
+CREST_DB_TYPE=ob-oracle
+CREST_DB_HOST=10.0.0.10
+CREST_DB_PORT=2883
+CREST_DB_USERNAME=ob_user@ob_oracle#obcluster
+CREST_DB_PASSWORD=ob_password
+\`\`\`
+
+observer 直连时端口通常为 \`2881\`，用户名使用 \`用户@租户\`，不要带 \`#集群\`。
 
 已加载演示资源的环境可执行：
 
@@ -247,6 +267,14 @@ docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_N
 \`\`\`
 
 如安装时修改过 \`CREST_BASE\`，请把 \`/opt/crest/.env\` 换成实际运行目录中的 \`.env\`。外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 元数据库。
+
+OceanBase MySQL 元数据库可使用 OceanBase 客户端执行 MySQL 兼容升级 SQL：
+
+\`\`\`bash
+obclient -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' <database> < upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}
+\`\`\`
+
+OceanBase Oracle 元数据库使用独立 Flyway migration 路径。除非发布说明明确提供 OB Oracle 专用升级 SQL，不要把 MySQL 兼容升级 SQL 执行到 OB Oracle 租户。
 
 ## 镜像
 
