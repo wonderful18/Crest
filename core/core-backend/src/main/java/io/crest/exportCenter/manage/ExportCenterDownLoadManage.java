@@ -80,6 +80,7 @@ import java.util.stream.Collectors;
 @Component
 @Transactional(rollbackFor = Exception.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
+// 管理导出任务调度、Excel 文件生成和下载响应。
 public class ExportCenterDownLoadManage {
     @Resource
     private CoreExportTaskMapper exportTaskMapper;
@@ -121,6 +122,8 @@ public class ExportCenterDownLoadManage {
     @Resource
     private DatasetDataManage datasetDataManage;
     private final Long sheetLimit = 1000000L;
+
+    // 初始化导出任务线程池。
     @PostConstruct
     public void init() {
         scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(core);
@@ -128,6 +131,7 @@ public class ExportCenterDownLoadManage {
         scheduledThreadPoolExecutor.setMaximumPoolSize(max);
     }
 
+    // 检查已完成的导出任务并推送通知。
     @Scheduled(fixedRate = 5000)
     public void checkRunningTask() {
         Iterator<Map.Entry<String, Future>> iterator = Running_Task.entrySet().iterator();
@@ -148,6 +152,7 @@ public class ExportCenterDownLoadManage {
         }
     }
 
+    // 回填导出来源名称。
     private void setExportFromName(ExportTaskDTO exportTaskDTO) {
         if (exportTaskDTO.getExportFromType().equalsIgnoreCase("chart")) {
             exportTaskDTO.setExportFromName(coreChartViewMapper.selectById(exportTaskDTO.getExportFrom()).getTitle());
@@ -157,6 +162,7 @@ public class ExportCenterDownLoadManage {
         }
     }
 
+    // 异步启动数据集导出任务。
     @CrestAudit(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.DATASET)
     public void startDatasetTask(CoreExportTask exportTask, DataSetExportRequest request) {
         File directory = prepareTaskDirectory(exportTask.getId());
@@ -393,16 +399,19 @@ public class ExportCenterDownLoadManage {
         Running_Task.put(exportTask.getId(), future);
     }
 
+    // 启动仪表板图表导出任务。
     @CrestAudit(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.PANEL)
     public void startPanelViewTask(CoreExportTask exportTask, ChartExcelRequest request) {
         startViewTask(exportTask, request);
     }
 
+    // 启动数据大屏图表导出任务。
     @CrestAudit(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.SCREEN)
     public void startDataVViewTask(CoreExportTask exportTask, ChartExcelRequest request) {
         startViewTask(exportTask, request);
     }
 
+    // 从二维数据中移除指定列。
     public static void removeColumn(List<Object[]> list, List<Integer> columnIndexs) {
         if (list == null || list.isEmpty() || columnIndexs == null || columnIndexs.isEmpty()) {
             return;
@@ -420,10 +429,12 @@ public class ExportCenterDownLoadManage {
         }
     }
 
+    // 判断导出字段是否为数值类型。
     private boolean isNumericExportField(Integer fieldType) {
         return Objects.equals(fieldType, FieldTypeConstants.INTEGER) || Objects.equals(fieldType, FieldTypeConstants.FLOAT);
     }
 
+    // 异步启动图表视图导出任务。
     public void startViewTask(CoreExportTask exportTask, ChartExcelRequest request) {
         File directory = prepareTaskDirectory(exportTask.getId());
         String dataPath = directory.getAbsolutePath();
@@ -538,6 +549,7 @@ public class ExportCenterDownLoadManage {
         Running_Task.put(exportTask.getId(), future);
     }
 
+    // 写入非明细表导出数据。
     private void downloadNotTableInfoData(ChartExcelRequest request, Workbook wb) {
         chartDataServer.findExcelData(request);
         //给单元格设置样式
@@ -585,6 +597,7 @@ public class ExportCenterDownLoadManage {
         }
     }
 
+    // 回填导出文件大小信息。
     private void setFileSize(String filePath, CoreExportTask exportTask) {
         File file = new File(filePath);
         long length = file.length();
@@ -606,6 +619,7 @@ public class ExportCenterDownLoadManage {
         exportTask.setFileSizeUnit(unit);
     }
 
+    // 准备导出任务文件目录。
     private File prepareTaskDirectory(String taskId) {
         File directory = new File(exportData_path, taskId);
         if (directory.exists()) {
@@ -620,6 +634,7 @@ public class ExportCenterDownLoadManage {
         return directory;
     }
 
+    // 为工作簿添加水印工具。
     public void addWatermarkTools(Workbook wb) {
         VisualizationWatermark watermark = watermarkMapper.selectById("system_default");
         WatermarkContentDTO watermarkContent = JsonUtil.parseObject(watermark.getSettingContent(), WatermarkContentDTO.class);
@@ -633,6 +648,7 @@ public class ExportCenterDownLoadManage {
         }
     }
 
+    // 下载已生成的导出文件。
     public void download(CoreExportTask exportTask, HttpServletResponse response) throws Exception {
         File exportFile;
         if (exportTask.getExportTime() != null && exportTask.getExportTime() < 1730277243491L) {
@@ -658,6 +674,7 @@ public class ExportCenterDownLoadManage {
         }
     }
 
+    // 直接下载数据集导出文件。
     @CrestAudit(id = "#p0.id", ot = LogOT.EXPORT, st = LogST.DATASET)
     public void downloadDataset(DataSetExportRequest request, HttpServletResponse response) throws Exception {
         OutputStream outputStream = response.getOutputStream();
