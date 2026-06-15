@@ -20,6 +20,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 图表查询结果转换工具，负责把 SQL 行数据组织为前端图表可消费的数据结构
+ */
 @SuppressWarnings("unchecked")
 public class ChartDataBuild {
 
@@ -119,6 +122,9 @@ public class ChartDataBuild {
         return map;
     }
 
+    /**
+     * 转换热力图数据，并把前两列维度映射为 x、y 坐标
+     */
     public static Map<String, Object> transHeatMapChartDataAntV(List<ChartViewFieldDTO> xAxisBase, List<ChartViewFieldDTO> xAxis, List<ChartViewFieldDTO> yAxis, ChartViewDTO view, List<String[]> data, boolean isDrill) {
         Map<String, Object> map = new HashMap<>();
         List<Map<String, Object>> dataList = new ArrayList<>();
@@ -190,6 +196,9 @@ public class ChartDataBuild {
         return map;
     }
 
+    /**
+     * 转换分组图表数据，基础维度作为字段，扩展维度作为分组类别
+     */
     public static Map<String, Object> transBaseGroupDataAntV(List<ChartViewFieldDTO> xAxisBase, List<ChartViewFieldDTO> xAxis, List<ChartViewFieldDTO> xAxisExt, List<ChartViewFieldDTO> yAxis, ChartViewDTO view, List<String[]> data, boolean isDrill) {
         Map<String, Object> map = new HashMap<>();
 
@@ -735,6 +744,9 @@ public class ChartDataBuild {
         return transMixChartDataAntV(xAxisBase, xAxis, xAxisExt, yAxis, view, data, isDrill, false);
     }
 
+    /**
+     * 转换组合图表数据，并按指标拆分为多个系列
+     */
     public static Map<String, Object> transMixChartDataAntV(List<ChartViewFieldDTO> xAxisBase, List<ChartViewFieldDTO> xAxis, List<ChartViewFieldDTO> xAxisExt, List<ChartViewFieldDTO> yAxis, ChartViewDTO view, List<String[]> data, boolean isDrill, boolean isLine) {
 
         Map<String, Object> map = new HashMap<>();
@@ -829,6 +841,9 @@ public class ChartDataBuild {
         return map;
     }
 
+    /**
+     * 转换组合堆叠图数据，存在堆叠字段时按系列和堆叠类别组织
+     */
     public static Map<String, Object> transMixChartStackDataAntV(List<ChartViewFieldDTO> xAxisBase, List<ChartViewFieldDTO> xAxis, List<ChartViewFieldDTO> extStack, List<ChartViewFieldDTO> yAxis, ChartViewDTO view, List<String[]> data, boolean isDrill) {
 
         if (CollectionUtils.isEmpty(extStack)) {
@@ -1391,6 +1406,9 @@ public class ChartDataBuild {
         return transTableNormal(fields, view, data, desensitizationList);
     }
 
+    /**
+     * 转换带明细行的普通表格数据，并按维度键挂载 details
+     */
     public static Map<String, Object> transTableNormalWithDetail(List<ChartViewFieldDTO> xAxis, List<ChartViewFieldDTO> yAxis, List<String[]> data, List<ChartViewFieldDTO> detailFields, List<String[]> detailData, Map<String, ColumnPermissionItem> desensitizationList) {
         int detailIndex = xAxis.size();
 
@@ -1462,6 +1480,9 @@ public class ChartDataBuild {
         return transTableNormal(fields, view, data, desensitizationList);
     }
 
+    /**
+     * 根据列权限脱敏规则生成展示值
+     */
     public static String desensitizationValue(ColumnPermissionItem columnPermissionItem, String originStr) {
         String desensitizationStr = "";
         if (!columnPermissionItem.getDesensitizationRule().getBuiltInRule().toString().equalsIgnoreCase("custom")) {
@@ -1520,6 +1541,9 @@ public class ChartDataBuild {
         return desensitizationStr;
     }
 
+    /**
+     * 转换普通表格行数据，并根据字段类型保留字符串或数值语义
+     */
     public static Map<String, Object> transTableNormal(List<ChartViewFieldDTO> fields, ChartViewDTO view, List<String[]> data, Map<String, ColumnPermissionItem> desensitizationList) {
         Map<String, Object> map = new TreeMap<>();
         List<Map<String, Object>> tableRow = new ArrayList<>();
@@ -1552,6 +1576,9 @@ public class ChartDataBuild {
         return map;
     }
 
+    /**
+     * 按字段组合自动分派堆叠、分组或分组堆叠图数据转换
+     */
     public static Map<String, Object> transGroupStackDataAntV(List<ChartViewFieldDTO> xAxisBase, List<ChartViewFieldDTO> xAxis, List<ChartViewFieldDTO> xAxisExt, List<ChartViewFieldDTO> yAxis, List<ChartViewFieldDTO> extStack, List<String[]> data, ChartViewDTO view, boolean isDrill) {
         // 堆叠柱状图
         if (ObjectUtils.isEmpty(xAxisExt)) {
@@ -1739,6 +1766,9 @@ public class ChartDataBuild {
         return map;
     }
 
+    /**
+     * 转换区间条形图数据，支持日期区间和数值区间两种模式
+     */
     public static Map<String, Object> transBarRangeDataAntV(boolean skipBarRange, boolean isDate, List<ChartViewFieldDTO> xAxisBase, List<ChartViewFieldDTO> xAxis, List<ChartViewFieldDTO> yAxis, ChartViewDTO view, List<String[]> data, boolean isDrill) {
 
         Map<String, Object> map = new HashMap<>();
@@ -1872,6 +1902,9 @@ public class ChartDataBuild {
 
     }
 
+    /**
+     * 根据日期粒度和分隔符配置生成解析格式
+     */
     private static String getDateFormat(String dateStyle, String datePattern) {
         String split;
         if (Strings.CI.equals(datePattern, "date_split")) {
@@ -1901,6 +1934,9 @@ public class ChartDataBuild {
         }
     }
 
+    /**
+     * 按日期粒度计算起止时间的展示间隔
+     */
     private static String getTimeGap(Date from, Date to, String dateStyle) {
         if (from == null || to == null) {
             return "";
@@ -2006,6 +2042,9 @@ public class ChartDataBuild {
         }
     }
 
+    /**
+     * 转换符号地图表格数据，并把明细行按维度键挂载到主行
+     */
     public static Map<String, Object> transSymbolicMapNormalWithDetail(ChartViewDTO view, List<ChartViewFieldDTO> xAxis, List<ChartViewFieldDTO> yAxis, List<ChartViewFieldDTO> extBubble, List<String[]> data, List<ChartViewFieldDTO> detailFields, List<String[]> detailData) {
         int detailIndex = xAxis.size();
 
