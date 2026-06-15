@@ -19,9 +19,15 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 图表历史数据兼容服务，负责旧版过滤器结构迁移。
+ */
 @Service
 public class ChartViewOldDataMergeService {
 
+    /**
+     * 图表视图 Mapper。
+     */
     @Resource
     private CoreChartViewMapper coreChartViewMapper;
 
@@ -63,12 +69,15 @@ public class ChartViewOldDataMergeService {
             try {
                 coreChartViewMapper.updateById(view);
             } catch (Exception e) {
-                // do nothing,to continue
+                // 单条更新失败时继续处理其他视图。
                 io.crest.utils.LogUtil.error(e.getMessage(), e);
             }
         }
     }
 
+    /**
+     * 将旧版过滤器数组转换为过滤器树对象。
+     */
     public FilterTreeObj transArr2Obj(List<ChartFieldCustomFilterDTO> fieldCustomFilter) {
         FilterTreeObj tree = new FilterTreeObj();
         tree.setItems(new ArrayList<>());
@@ -177,17 +186,23 @@ public class ChartViewOldDataMergeService {
             try {
                 coreChartViewMapper.updateById(view);
             } catch (Exception e) {
-                // do nothing,to continue
+                // 单条更新失败时继续处理其他视图。
                 io.crest.utils.LogUtil.error(e.getMessage(), e);
             }
         }
     }
 
+    /**
+     * 修复过滤器树中的动态时间类型。
+     */
     public FilterTreeObj fixFilter(FilterTreeObj filterTreeObj) {
         doFix(filterTreeObj.getItems());
         return filterTreeObj;
     }
 
+    /**
+     * 递归为过滤器节点补充动态时间类型。
+     */
     public void doFix(List<FilterTreeItem> items) {
         if (ObjectUtils.isEmpty(items)) {
             return;
