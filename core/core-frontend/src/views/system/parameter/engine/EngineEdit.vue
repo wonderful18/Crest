@@ -283,6 +283,7 @@ const validate = async () => {
 }
 
 defineExpose({
+  // 父组件通过 ref 主动打开编辑弹窗，避免把系统参数列表状态耦合进当前表单。
   edit
 })
 </script>
@@ -318,6 +319,7 @@ defineExpose({
         prop="configuration.jdbc"
         v-if="nodeInfo.type === 'h2'"
       >
+        <!-- H2 引擎直接维护 JDBC 地址，其它引擎拆分为主机和端口字段。 -->
         <el-input
           v-model="nodeInfo.configuration.jdbc"
           :placeholder="t('data_source.jdbc_connection_string')"
@@ -382,6 +384,7 @@ defineExpose({
         />
       </el-form-item>
       <el-form-item>
+        <!-- 高级配置默认收起，减少普通连接维护时的表单噪音。 -->
         <span class="de-expand_engine" @click="showPriority = !showPriority"
           >{{ t('datasource.priority') }}
           <el-icon>
@@ -474,6 +477,7 @@ defineExpose({
 </template>
 <style lang="less">
 .basic-param-drawer {
+  // 抽屉样式限定在参数编辑容器下，避免影响其它全局抽屉。
   .de-expand_engine {
     font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
@@ -493,6 +497,7 @@ defineExpose({
     width: 100%;
   }
   .ed-drawer__footer {
+    // 底部操作区固定高度，保证校验、取消、保存按钮在不同语言下稳定对齐。
     height: 64px !important;
     padding: 16px 24px !important;
     .dialog-footer {
@@ -509,6 +514,7 @@ defineExpose({
 <style scoped lang="less">
 .basic-param-drawer {
   .ed-form-item {
+    // 表单项间距与抽屉宽度匹配，错误态再额外预留提示空间。
     margin-bottom: 16px;
   }
   .is-error {

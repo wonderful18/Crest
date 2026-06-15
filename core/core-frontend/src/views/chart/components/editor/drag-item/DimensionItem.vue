@@ -17,7 +17,7 @@ import { iconFieldMap } from '@/components/icon-group/field-list'
 
 const { t } = useI18n()
 
-// 维度字段标签颜色类型
+// 维度字段标签颜色类型，颜色由字段来源和字段类型共同决定
 const tagType = ref('success')
 // 是否展示日期扩展菜单
 const showDateExt = ref(false)
@@ -208,7 +208,7 @@ const valueFormatter = () => {
   item.value.formatterType = props.type
   emit('valueFormatter', item.value)
 }
-// 判断当前维度字段是否支持自定义排序
+// 判断当前维度字段是否支持自定义排序，地图类图表和计算字段不开放手工排序。
 const showCustomSort = item => {
   if (props.chart.type === 'symbolic-map' || props.chart.type === 'flow-map') {
     return false
@@ -232,6 +232,7 @@ const showSort = computed(() => {
 })
 // 判断当前图表是否展示排序优先级入口
 const showSortPriority = computed(() => {
+  // 混合图存在多轴组合，排序优先级由整体图表配置控制。
   if (props.chart.type.includes('chart-mix')) {
     return false
   }
@@ -250,6 +251,7 @@ const showHideIcon = computed(() => {
 })
 
 onMounted(() => {
+  // 首次挂载时根据字段配置同步标签颜色，后续变化由 watch 接管。
   getItemTagType()
 })
 </script>
@@ -302,6 +304,7 @@ onMounted(() => {
         </span>
         <el-tooltip :effect="toolTip" placement="top">
           <template #content>
+            <!-- 提示同时展示原始字段名和图表展示名，便于定位重命名后的字段来源。 -->
             <table>
               <tbody>
                 <tr>
@@ -443,6 +446,7 @@ onMounted(() => {
             :command="beforeClickItem('sortPriority')"
             class="menu-item-padding"
           >
+            <!-- 排序优先级只打开配置入口，实际优先级列表由编辑器上层统一维护。 -->
             <el-icon />
             <span>{{ t('chart.sort_priority') }}</span>
           </el-dropdown-item>
@@ -771,6 +775,7 @@ onMounted(() => {
 }
 
 .item-axis {
+  // 字段标签固定高度，保证拖拽排序时轴槽列表不会因内容变化跳动。
   padding: 1px 8px;
   margin-bottom: 3px;
   height: 28px;
@@ -916,6 +921,7 @@ span {
 }
 
 .father {
+  // 快捷删除和展开图标默认隐藏，仅在悬停当前字段时暴露。
   &.dark_icon-right {
     .child {
       color: #a6a6a6;

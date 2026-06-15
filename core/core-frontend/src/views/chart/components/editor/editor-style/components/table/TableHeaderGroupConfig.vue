@@ -114,6 +114,7 @@ const containerId = computed(() => {
   return 'table-container-' + props.chart.id
 })
 let s2: any
+// 数据单元格读取主题上的字段级对齐配置，兼容表格主体的自定义对齐。
 class CustomDataCell extends TableDataCell {
   protected getTextStyle(): any {
     const textStyle = super.getTextStyle() as any
@@ -130,6 +131,7 @@ class CustomDataCell extends TableDataCell {
     return textStyle
   }
 }
+// 表头单元格需要区分分组节点和叶子字段，分组节点统一居中以强化层级。
 class CustomColCell extends TableColCell {
   protected getTextStyle(): any {
     const textStyle = super.getTextStyle() as any
@@ -167,6 +169,7 @@ const renderTable = (chart: ChartObj) => {
     return pre
   }, {})
   if (data?.fields?.length) {
+    // 有真实数据字段时优先沿用后端字段元信息，保证展示名和数值格式化与预览一致。
     data.fields.forEach(ele => {
       const f = axisMap[ele.engineFieldName]
       if (f?.hide === true) {
@@ -194,6 +197,7 @@ const renderTable = (chart: ChartObj) => {
       })
     })
   } else {
+    // 无预览数据时退回图表轴字段，仍允许用户配置表头分组结构。
     allAxis.value?.forEach(axis => {
       if (axis.hide !== true) {
         meta.push({
@@ -256,6 +260,7 @@ const renderTable = (chart: ChartObj) => {
   const { tableHeader, tableCell } = chart.customAttr
   const theme = getCustomTheme(chart) as any
   if (tableHeader.tableHeaderAlign === 'custom') {
+    // S2 主题扩展字段级对齐映射，供自定义表头单元格读取。
     theme.colCellAlignConfig =
       tableHeader.alignConfig?.reduce((pre, cur) => {
         pre[cur.id] = cur.align
@@ -263,6 +268,7 @@ const renderTable = (chart: ChartObj) => {
       }, {}) || {}
   }
   if (tableCell.tableItemAlign === 'custom') {
+    // 数据单元格对齐独立于表头配置，避免表头分组影响表体展示。
     theme.dataCellAlignConfig =
       tableCell.alignConfig?.reduce((pre, cur) => {
         pre[cur.id] = cur.align
@@ -563,6 +569,7 @@ const renderTable = (chart: ChartObj) => {
     const lastCell = s2.store.get('lastClickedCell') as ColCell
     const originEvent = e.originalEvent as MouseEvent
     if (!lastCell || !(originEvent?.ctrlKey || originEvent?.metaKey || originEvent?.shiftKey)) {
+      // 普通点击只记录起点，组合键点击时再进入连续选择逻辑。
       const cell = s2.getCell(e.target)
       s2.store.set('lastClickedCell', cell)
       return
@@ -589,6 +596,7 @@ const renderTable = (chart: ChartObj) => {
       const startIndex = Math.min(lastIndex, curIndex)
       const endIndex = Math.max(lastIndex, curIndex)
       const activeCells = parent.children.slice(startIndex, endIndex + 1)
+      // Shift 选择会补齐同父节点内的连续表头，保证合并分组后的字段顺序稳定。
       s2.interaction.clearState()
       activeCells.forEach(cell => {
         s2.interaction.selectHeaderCell({ cell: cell.belongsCell, isMultiSelection: true })
@@ -598,6 +606,7 @@ const renderTable = (chart: ChartObj) => {
   s2.once(S2Event.LAYOUT_AFTER_HEADER_LAYOUT, (e: LayoutResult) => {
     const initialized = s2.store.get('initialized')
     if (!initialized) {
+      // 首次布局完成后按实际表头宽高修正容器尺寸，避免预览区出现多余空白。
       s2.store.set('initialized', true)
       const colsHierarchy = e?.colsHierarchy
       s2.changeSheetSize(colsHierarchy?.width || containerDom.getBoundingClientRect().width)
@@ -657,6 +666,7 @@ const getTreesMaxDepth = (nodes: Array<ColumnNode>): number => {
 
 const resize = debounce(height => {
   if (s2) {
+    // 外层弹窗高度变化时只调整表格高度，宽度由 S2 首次布局结果控制。
     const tableHeight = s2.container.cfg.height
     if (height > tableHeight) {
       const dom = document.getElementById(containerId.value)
@@ -689,6 +699,7 @@ onMounted(() => {
   resizeObserver.observe(document.getElementById(containerId.value))
 })
 onUnmounted(() => {
+  // 弹窗销毁时释放 ResizeObserver，避免重新打开后重复监听同一容器。
   resizeObserver?.disconnect()
 })
 class GroupMenu extends BaseTooltip {
