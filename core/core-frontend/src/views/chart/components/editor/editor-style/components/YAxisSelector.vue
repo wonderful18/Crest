@@ -85,6 +85,7 @@ const changeAxisStyle = prop => {
     state.axisForm.axisValue.splitCount &&
     (state.axisForm.axisValue.splitCount > 100 || state.axisForm.axisValue.splitCount < 0)
   ) {
+    // splitCount 过大时图表库会生成密集刻度，直接在配置层拦截。
     ElMessage.error(t('chart.splitCount_less_100'))
     return
   }
@@ -123,6 +124,7 @@ const isBulletGraph = computed(() => {
 
 // 横向子弹图会把上下位置映射到左右轴值，保持界面文案和视觉方向一致。
 const isHorizontalLayout = computed(() => {
+  // 子弹图横向布局下，Y 轴视觉方向与普通直角坐标图相反。
   return props.chart.customAttr.basicStyle.layout === 'horizontal'
 })
 
@@ -152,6 +154,7 @@ onMounted(() => {
         @change="changeAxisStyle('position')"
       >
         <div v-if="isBulletGraph">
+          <!-- 子弹图轴位置表达目标值方向，和普通 Y 轴左右位置不同。 -->
           <div v-if="isHorizontalLayout">
             <el-radio :effect="props.themes" value="right">{{ t('chart.text_pos_top') }}</el-radio>
             <el-radio :effect="props.themes" value="left">{{
@@ -588,6 +591,7 @@ onMounted(() => {
               state.axisForm.axisLabel.show && state.axisForm.axisLabelFormatter.type !== 'percent'
             "
           >
+            <!-- 百分比格式不展示单位配置，其余格式可继续叠加单位和后缀。 -->
             <el-row :gutter="8">
               <el-col :span="12" v-if="!isEnLocal">
                 <el-form-item

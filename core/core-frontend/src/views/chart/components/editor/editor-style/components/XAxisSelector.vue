@@ -81,6 +81,7 @@ const splitLineStyle = [
 // 横向时间范围柱图的 X 轴承载时间值，不能按普通数值轴套用格式化配置。
 const isBarRangeTime = computed<boolean>(() => {
   if (props.chart.type === 'bar-range') {
+    // 区间柱图存在日期型 Y 轴时，横轴实际展示时间跨度而非普通数值。
     const tempYAxis = props.chart.yAxis[0]
     const tempYAxisExt = props.chart.yAxisExt[0]
     if (
@@ -99,6 +100,7 @@ const changeAxisStyle = prop => {
     state.axisForm.axisValue.splitCount &&
     (state.axisForm.axisValue.splitCount > 100 || state.axisForm.axisValue.splitCount < 0)
   ) {
+    // splitCount 过大会造成刻度过密和渲染性能下降，保存前统一拦截。
     ElMessage.error(t('chart.splitCount_less_100'))
     return
   }
@@ -143,6 +145,7 @@ const isBulletGraph = computed(() => {
 
 // 横向布局会交换视觉方向，轴位置文案需要随之调整。
 const isHorizontalLayout = computed(() => {
+  // 横向布局会交换 X/Y 视觉方向，位置文案需要按布局重新解释。
   return props.chart.customAttr.basicStyle.layout === 'horizontal'
 })
 
@@ -172,6 +175,7 @@ onMounted(() => {
         @change="changeAxisStyle('position')"
       >
         <div v-if="isBidirectionalBar">
+          <!-- 双向柱图的 X 轴用于中线方向，顶部/底部文案按布局映射。 -->
           <el-radio :effect="props.themes" value="top">{{
             isHorizontalLayout ? t('chart.text_pos_left') : t('chart.text_pos_top')
           }}</el-radio>
@@ -180,6 +184,7 @@ onMounted(() => {
           }}</el-radio>
         </div>
         <div v-else-if="isBulletGraph">
+          <!-- 子弹图位置表达目标值方向，横向布局下需转换成左右文案。 -->
           <div v-if="isHorizontalLayout">
             <el-radio :effect="props.themes" value="bottom">{{
               t('chart.text_pos_left')
@@ -624,6 +629,7 @@ onMounted(() => {
             state.axisForm.axisLabel.show && state.axisForm.axisLabelFormatter.type !== 'percent'
           "
         >
+          <!-- 百分比格式不展示单位配置，其余数值格式可叠加单位语言和后缀。 -->
           <el-row :gutter="8">
             <el-col :span="12" v-if="!isEnLocal">
               <el-form-item

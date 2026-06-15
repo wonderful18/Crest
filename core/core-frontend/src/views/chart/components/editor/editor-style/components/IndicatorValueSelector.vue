@@ -83,6 +83,7 @@ const fontSizeList = computed(() => {
 
 // 每次字段变更都带上字段名，父组件可按字段决定是否立即重绘或仅更新配置。
 const changeLabelTitleStyleStyle = prop => {
+  // 指标值样式变更不经过通用轴样式通道，避免父级误判为坐标系更新。
   emit('onIndicatorChange', state.indicatorValueForm, prop)
 }
 
@@ -101,6 +102,7 @@ const init = () => {
     cloneDeep(DEFAULT_INDICATOR_STYLE)
   )
 
+  // 使用深拷贝隔离表单编辑态，避免直接改写 chart.customAttr.indicator。
   state.indicatorValueForm = cloneDeep(customText)
 
   // 颜色选择器首次挂载时可能晚于表单赋值，下一帧再次同步可保证主值和后缀颜色正确回显。
@@ -439,6 +441,7 @@ defineExpose({ getFormData })
       </el-form-item>
 
       <div style="padding-left: 22px">
+        <!-- 后缀配置跟随 suffixEnable 禁用，保留已配置值便于再次启用。 -->
         <el-form-item class="form-item" :class="'form-item-' + themes">
           <el-input
             v-model="state.indicatorValueForm.suffix"
@@ -721,6 +724,7 @@ defineExpose({ getFormData })
   }
 }
 .m-divider {
+  // 主值和后缀配置之间保留轻量分隔，避免视觉上混为同一组字体项。
   margin: 0 0 16px;
   border-color: rgba(31, 35, 41, 0.15);
 
