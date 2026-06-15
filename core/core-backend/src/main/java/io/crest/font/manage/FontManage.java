@@ -28,6 +28,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Component
+/**
+ * 字体管理服务，负责字体元数据维护和字体文件上传下载。
+ */
 public class FontManage {
 
     @Value("${crest.path.font:/opt/crest/data/font/}")
@@ -38,6 +41,9 @@ public class FontManage {
     @Autowired
     private ResourceLoader resourceLoader;
 
+    /**
+     * 查询全部字体配置。
+     */
     public List<FontDto> list() {
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
         List<CoreFont> coreFonts = coreFontMapper.selectList(queryWrapper);
@@ -51,6 +57,9 @@ public class FontManage {
         return fontDtos;
     }
 
+    /**
+     * 创建字体元数据。
+     */
     public FontDto create(FontDto fontDto) {
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("name", fontDto.getName());
@@ -66,6 +75,9 @@ public class FontManage {
     }
 
 
+    /**
+     * 编辑字体元数据，默认字体会同步清理其他默认标记。
+     */
     public FontDto edit(FontDto fontDto) {
         if (ObjectUtils.isEmpty(fontDto.getId())) {
             return create(fontDto);
@@ -84,6 +96,9 @@ public class FontManage {
         return fontDto;
     }
 
+    /**
+     * 删除字体元数据和对应字体文件。
+     */
     public void delete(Long id) {
         CoreFont coreFont = coreFontMapper.selectById(id);
         if (coreFont != null) {
@@ -95,6 +110,9 @@ public class FontManage {
 
     }
 
+    /**
+     * 更新字体默认状态。
+     */
     public void changeDefault(FontDto fontDto) {
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("id", fontDto.getId());
@@ -103,11 +121,17 @@ public class FontManage {
         coreFontMapper.update(record, queryWrapper);
     }
 
+    /**
+     * 上传字体文件并返回字体信息。
+     */
     public FontDto upload(MultipartFile file) {
         String fileUuid = UUID.randomUUID().toString();
         return saveFile(file, fileUuid);
     }
 
+    /**
+     * 下载指定转换文件名的字体文件。
+     */
     public void download(String file, HttpServletResponse response) {
 
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
@@ -134,6 +158,9 @@ public class FontManage {
         }
     }
 
+    /**
+     * 查询当前默认字体。
+     */
     public List<FontDto> defaultFont() {
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("is_default", 1);
@@ -147,6 +174,9 @@ public class FontManage {
         return fontDtos;
     }
 
+    /**
+     * 校验并保存上传的字体文件。
+     */
     @SuppressWarnings("java/path-injection")
     private FontDto saveFile(MultipartFile file, String fileNameUUID) throws CrestException {
         FontDto fontDto = new FontDto();
