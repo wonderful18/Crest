@@ -8,6 +8,7 @@ import { commonHandleDragEnd, commonHandleDragStart } from '@/utils/canvasUtils'
 import { ElScrollbar } from 'element-plus-secondary'
 import { iconChartDarkMap } from '@/components/icon-group/chart-dark-list'
 
+// 定义图表组件分组面板的外部配置。
 const props = defineProps({
   propValue: {
     type: Array,
@@ -33,34 +34,42 @@ const props = defineProps({
 
 const { dvModel } = toRefs(props)
 
+// 保存右侧图表列表滚动条实例，用于分类定位。
 const userViewGroup = ref<InstanceType<typeof ElScrollbar>>()
 
+// 维护当前选中的分类和可展示的图表分组。
 const state = reactive({
   curCategory: 'quota',
   chartGroupList: CHART_TYPE_CONFIGS
 })
 
+// 将图表列表滚动到指定的纵向位置。
 const scrollTo = offsetTop => {
   userViewGroup?.value.setScrollTop(offsetTop)
 }
 
+// 根据分类锚点定位对应的图表分组。
 const anchorPosition = anchor => {
   const element = document.querySelector(anchor)
   scrollTo(element.offsetTop)
 }
 
+// 向画布新增指定类型的用户视图组件。
 const newComponent = (innerType, staticMap) => {
   eventBus.emit('handleNew', { componentName: 'UserView', innerType: innerType, staticMap })
 }
 
+// 开始拖拽图表组件时同步画布模型。
 const handleDragStart = e => {
   commonHandleDragStart(e, dvModel.value)
 }
 
+// 结束拖拽图表组件时清理画布拖拽状态。
 const handleDragEnd = e => {
   commonHandleDragEnd(e, dvModel.value)
 }
 
+// 计算每个图表分类在滚动容器中的起始位置。
 const chartGroupListScroll = computed(() => {
   return state.chartGroupList.reduce(
     (pre, next) => {
@@ -81,6 +90,7 @@ const chartGroupListScroll = computed(() => {
   )
 })
 
+// 根据右侧滚动位置同步左侧分类高亮。
 const handleScroll = val => {
   let scrollTop: string | number = 0
   for (const key in chartGroupListScroll.value) {
@@ -91,10 +101,12 @@ const handleScroll = val => {
   state.curCategory = chartGroupListScroll.value[scrollTop]
 }
 
+// 点击左侧分类时更新高亮并跳转到对应分组。
 const groupActiveChange = category => {
   state.curCategory = category
   anchorPosition('#' + category)
 }
+// 将插件注册的图表类型合并到现有分组中。
 const loadPluginCategory = data => {
   data.forEach(item => {
     const { category, title, render, chartValue, chartTitle, icon, staticMap } = item

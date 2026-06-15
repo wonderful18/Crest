@@ -14,6 +14,7 @@ import { ElFormItem, ElMessage } from 'element-plus-secondary'
 
 const { t } = useI18n()
 
+// 定义 Y 轴样式选择器依赖的主题、图表和属性范围。
 const props = defineProps({
   themes: {
     type: String as PropType<EditorTheme>,
@@ -30,15 +31,19 @@ const props = defineProps({
 
 const predefineColors = COLOR_PANEL
 const typeList = formatterType
+// 根据编辑器主题计算提示浮层主题。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
+// 保存 Y 轴样式编辑表单。
 const state = reactive({
   axisForm: JSON.parse(JSON.stringify(DEFAULT_YAXIS_STYLE))
 })
 
+// 声明 Y 轴样式变更事件。
 const emit = defineEmits(['onChangeYAxisForm'])
 
+// 监听图表 Y 轴样式变化并刷新表单。
 watch(
   () => props.chart.customStyle.yAxis,
   () => {
@@ -47,6 +52,7 @@ watch(
   { deep: true }
 )
 
+// 生成可选字号列表。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -70,6 +76,7 @@ const splitLineStyle = [
   { label: t('chart.line_type_dotted'), value: 'dotted' }
 ]
 
+// 校验刻度数量并同步 Y 轴样式变更。
 const changeAxisStyle = prop => {
   if (
     state.axisForm.axisValue.splitCount &&
@@ -81,11 +88,13 @@ const changeAxisStyle = prop => {
   emit('onChangeYAxisForm', state.axisForm, prop)
 }
 
+// 切换数值格式化单位语言并同步样式。
 function changeUnitLanguage(cfg: BaseFormatter, lang, prop: string) {
   onChangeFormatCfgUnitLanguage(cfg, lang)
   changeAxisStyle(prop)
 }
 
+// 从图表配置初始化 Y 轴样式表单。
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customStyle) {
@@ -102,11 +111,14 @@ const init = () => {
   }
 }
 
+// 判断当前 Y 轴属性是否需要在面板中展示。
 const showProperty = prop => props.propertyInner?.includes(prop)
+// 判断当前图表是否为子弹图。
 const isBulletGraph = computed(() => {
   return ['bullet-graph'].includes(props.chart.type)
 })
 
+// 判断子弹图是否使用横向布局。
 const isHorizontalLayout = computed(() => {
   return props.chart.customAttr.basicStyle.layout === 'horizontal'
 })

@@ -11,6 +11,7 @@ import PictureOptionPrefix from '@/custom-component/picture-group/PictureOptionP
 
 const { t } = useI18n()
 
+// 定义图片组阈值编辑器依赖的图表、元素和阈值配置。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -30,6 +31,7 @@ const props = defineProps({
   }
 })
 
+// 声明阈值配置变更事件。
 const emit = defineEmits(['onTableThresholdChange'])
 
 const thresholdCondition = {
@@ -201,6 +203,7 @@ const valueOptions = [
   }
 ]
 
+// 保存阈值列表、可选字段以及新增阈值的默认结构。
 const state = reactive<any>({
   thresholdArr: [] as TableThreshold[],
   fields: [],
@@ -211,10 +214,12 @@ const state = reactive<any>({
   } as TableThreshold
 })
 
+// 初始化阈值配置和可选字段。
 const init = () => {
   state.thresholdArr = JSON.parse(JSON.stringify(props.threshold)) as TableThreshold[]
   initFields()
 }
+// 根据字段类型初始化可用的阈值条件操作符。
 const initOptions = item => {
   if (item.field) {
     if ([0, 5, 7].includes(item.field.fieldType)) {
@@ -230,6 +235,7 @@ const initOptions = item => {
       })
   }
 }
+// 根据图表类型汇总图片组阈值可绑定的字段。
 const initFields = () => {
   let fields = []
   if (props.chart.type === 'table-info') {
@@ -246,30 +252,35 @@ const initFields = () => {
   }
   state.fields.splice(0, state.fields.length, ...fields)
 }
+// 新增一个字段级阈值配置。
 const addThreshold = () => {
   state.thresholdArr.push(JSON.parse(JSON.stringify(state.thresholdObj)))
   changeThreshold()
 }
+// 删除指定字段级阈值配置。
 const removeThreshold = index => {
   state.thresholdArr.splice(index, 1)
   changeThreshold()
 }
 
+// 向父组件同步最新阈值配置。
 const changeThreshold = () => {
   emit('onTableThresholdChange', state.thresholdArr)
 }
 
+// 为字段阈值新增一个条件行。
 const addConditions = item => {
   item.conditions.push(JSON.parse(JSON.stringify(thresholdCondition)))
   changeThreshold()
 }
+// 删除字段阈值中的指定条件行。
 const removeCondition = (item, index) => {
   item.conditions.splice(index, 1)
   changeThreshold()
 }
 
+// 选择字段后回填字段详情并刷新条件选项。
 const addField = item => {
-  // get field
   if (state.fields && state.fields.length > 0) {
     state.fields.forEach(ele => {
       if (item.fieldId === ele.id) {
