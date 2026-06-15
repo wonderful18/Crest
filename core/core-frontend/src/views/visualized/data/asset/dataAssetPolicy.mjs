@@ -16,8 +16,10 @@ export const governanceFilterOptions = [
   { label: '已废弃', value: 'deprecated' }
 ]
 
+// 将不同来源的布尔值归一为布尔真值。
 const truthy = value => value === true || value === 1 || value === '1'
 
+// 归一化资产治理状态，废弃状态优先级最高。
 export const normalizeGovernanceStatus = asset => {
   const deprecated = truthy(asset?.deprecated)
   if (deprecated) {
@@ -34,6 +36,7 @@ export const normalizeGovernanceStatus = asset => {
   }
 }
 
+// 返回当前资产可编辑的治理状态。
 export const editableGovernanceStatus = asset => {
   if (asset?.assetType !== 'dataset') {
     return {
@@ -45,6 +48,7 @@ export const editableGovernanceStatus = asset => {
   return normalizeGovernanceStatus(asset)
 }
 
+// 根据用户切换的字段生成下一份治理状态。
 export const updateGovernanceStatus = (current, field, value) => {
   const next = normalizeGovernanceStatus(current)
   const checked = truthy(value)
@@ -72,6 +76,7 @@ export const updateGovernanceStatus = (current, field, value) => {
   return next
 }
 
+// 生成资产列表中展示的治理状态徽标。
 export const assetGovernanceBadges = asset => {
   const badges = []
   const status = normalizeGovernanceStatus(asset)
@@ -87,6 +92,7 @@ export const assetGovernanceBadges = asset => {
   return badges
 }
 
+// 生成门户资源展示用的可信状态徽标。
 export const portalTrustBadges = resource => {
   const badges = []
   const status = normalizeGovernanceStatus(resource)
@@ -102,10 +108,13 @@ export const portalTrustBadges = resource => {
   return badges
 }
 
+// 判断当前用户是否可编辑资产基础信息。
 export const canEditProfile = asset => asset?.canManage === true || asset?.canManage === 1
 
+// 判断当前用户是否可编辑数据集治理状态。
 export const canEditGovernance = asset => asset?.assetType === 'dataset' && canEditProfile(asset)
 
+// 将治理状态筛选值转换为接口请求参数。
 export const governanceFilterToRequest = filter => {
   if (filter === 'certified') {
     return { certified: true }
