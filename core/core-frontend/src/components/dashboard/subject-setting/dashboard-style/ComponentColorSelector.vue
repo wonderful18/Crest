@@ -357,7 +357,7 @@ import { useEmitt } from '@/hooks/web/useEmitt'
 const { t } = useI18n()
 const snapshotStore = snapshotStoreWithOut()
 
-// 接收颜色配置面板主题
+// 组件配色面板维护画布级图表、表格、标签、提示框和分页样式。
 const props = defineProps({
   themes: {
     type: String as PropType<EditorTheme>,
@@ -368,12 +368,12 @@ const props = defineProps({
 let colorAreaInit = ref(false)
 
 const { themes } = toRefs(props)
-// 定义颜色配置变更事件
+// 配色变更由父级统一应用到画布配置和组件重渲染。
 const emits = defineEmits(['onColorChange'])
-// 颜色配置表单实例
+// 颜色配置表单实例预留给后续校验和滚动定位。
 const colorFormRef = ref(null)
 
-// 生成颜色配置字号选项
+// 字号选项覆盖 6 到 40 的偶数字号，适配标签和 tooltip 的常用范围。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 6; i <= 40; i = i + 2) {
@@ -385,17 +385,17 @@ const fontSizeList = computed(() => {
   return arr
 })
 
-// 当前画布主题颜色配置
+// 当前画布主题颜色配置，所有图表默认配色都从这里读取。
 const colorForm = computed(
   () => canvasStyleData.value.component.chartColor as DeepPartial<ChartAttr>
 )
 
-// 当前画布高级样式配置
+// 当前画布高级样式配置承载分页器等非基础图表样式。
 const seniorForm = computed(() => canvasStyleData.value.component.seniorStyleSetting)
 
 const predefineColors = COLOR_PANEL
 
-// 维护颜色面板表单和自定义颜色状态
+// 维护颜色面板表单和当前选中的自定义颜色序号。
 const state = reactive({
   basicStyleForm: JSON.parse(JSON.stringify(DEFAULT_BASIC_STYLE)) as ChartBasicStyle,
   customColor: null,
@@ -403,7 +403,7 @@ const state = reactive({
 })
 const dvMainStore = dvMainStoreWithOut()
 const { canvasStyleData, canvasViewInfo } = storeToRefs(dvMainStore)
-// 初始化画布颜色配置表单
+// 初始化时同步默认系列色，并补齐历史表头字体色缺省值。
 const initForm = () => {
   state.customColor = colorForm.value.basicStyle.colors[0]
   setTimeout(() => {
@@ -412,20 +412,21 @@ const initForm = () => {
   }, 1000)
   const tableHeader = colorForm.value.tableHeader
   const tableCell = colorForm.value.tableCell
+  // 老配置可能没有独立表头字体色，默认继承单元格字体色。
   tableHeader.tableHeaderFontColor = tableHeader.tableHeaderFontColor ?? tableCell.tableFontColor
 }
-// 同步基础颜色配置并触发变更
+// 自定义颜色选择器变更后先回写基础样式，再触发统一颜色变更流程。
 const changeColorOption = (modifyName = 'value') => {
   colorForm.value.basicStyle = state.basicStyleForm
   changeColorCase(modifyName)
 }
 
-// 记录分页颜色变更快照
+// 分页颜色属于高级样式，单独记录快照即可由画布渲染时读取。
 const changePagerColorChange = () => {
   snapshotStore.recordSnapshotCache('changePagerColorChange')
 }
 
-// 通知父级应用颜色配置
+// modifyName 标记本次变更来源，父级可按需执行局部或全量刷新。
 const changeColorCase = modifyName => {
   colorForm.value['modifyName'] = modifyName
   emits('onColorChange', colorForm.value)
@@ -433,7 +434,7 @@ const changeColorCase = modifyName => {
 
 let canvasAttrInit = false
 
-// 批量同步标签样式到所有图表
+// 批量同步标签样式到所有图表，包括系列标签格式化中的独立颜色和字号。
 const changeLabelCase = () => {
   if (canvasAttrInit) {
     const val = colorForm.value.label
@@ -447,6 +448,7 @@ const changeLabelCase = () => {
         }
         const labelFormatter = viewInfo.customAttr?.label?.seriesLabelFormatter
         if (labelFormatter && Array.isArray(labelFormatter)) {
+          // 系列标签配置会覆盖默认标签样式，需要同步更新每一项。
           labelFormatter.forEach(item => {
             item.color = val.color
             item.fontSize = val.fontSize
@@ -461,7 +463,7 @@ const changeLabelCase = () => {
   }
 }
 
-// 批量同步提示框样式到所有图表
+// 批量同步提示框样式到所有图表，包括系列 tooltip 格式化配置。
 const changeTooltipCase = () => {
   if (canvasAttrInit) {
     const val = colorForm.value.tooltip
@@ -476,6 +478,7 @@ const changeTooltipCase = () => {
         }
         const tooltipFormatter = viewInfo.customAttr?.tooltip?.seriesTooltipFormatter
         if (tooltipFormatter && Array.isArray(tooltipFormatter)) {
+          // 系列 tooltip 配置同样需要同步，否则会继续使用旧颜色和字号。
           tooltipFormatter.forEach(item => {
             item.color = val.color
             item.fontSize = val.fontSize
@@ -491,12 +494,12 @@ const changeTooltipCase = () => {
   }
 }
 
-// 颜色面板容器实例
+// 颜色面板容器实例用于监听宽度变化，动态调整颜色选择器宽度。
 const containerRef = ref()
-// 颜色面板容器宽度
+// 容器宽度由 resize detector 更新，避免折叠面板宽度变化后控件溢出。
 const containerWidth = ref()
 
-// 根据容器宽度计算颜色选择器宽度
+// 根据容器宽度计算颜色选择器宽度，小面板使用紧凑布局。
 const colorPickerWidth = computed(() => {
   if (containerWidth.value <= 240) {
     return 108

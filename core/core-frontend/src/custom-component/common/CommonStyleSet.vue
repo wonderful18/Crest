@@ -330,6 +330,7 @@ const snapshotStore = snapshotStoreWithOut()
 
 const { canvasStyleData } = storeToRefs(dvMainStore)
 
+// 通用样式工具条根据传入组件的 style 字段动态展示可编辑项。
 const props = withDefaults(
   defineProps<{
     themes?: EditorTheme
@@ -340,9 +341,9 @@ const props = withDefaults(
   }
 )
 const { themes, element } = toRefs(props)
-// 定义通用样式变更事件
+// 样式变更由父级统一落盘和刷新组件，这里只派发变更字段。
 const emits = defineEmits(['onStyleAttrChange'])
-// 保存随画布缩放换算后的样式值
+// 保存按画布缩放反算后的显示值，避免面板中直接展示缩放后的实际像素。
 const styleMounted = ref({
   opacity: 1,
   fontSize: 22,
@@ -425,9 +426,9 @@ const backdropBlurList = [
   { name: '30', value: 'blur(30px)' }
 ]
 
-// 当前组件样式表单
+// 当前组件样式表单直接指向组件 style，面板修改会即时反映到画布元素。
 const styleForm = computed<any>(() => element.value.style)
-// 维护样式面板临时状态
+// 维护颜色预设和面板内部状态，避免每次渲染重复创建颜色列表。
 const state = reactive({
   fontSize: [],
   isSetting: false,
@@ -456,7 +457,7 @@ const styleColorKeyArray = [
   }
 ]
 
-// 生成字间距选项
+// 字间距固定提供 0 到 60，覆盖普通文本和数字卡片的常见间距范围。
 const letterSpacingList = computed(() => {
   const arr = []
   for (let i = 0; i <= 60; i = i + 1) {
@@ -468,7 +469,7 @@ const letterSpacingList = computed(() => {
   return arr
 })
 
-// 生成字号选项
+// 字号先按 1px 精度覆盖常用区间，再按 10px 覆盖大屏标题区间。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 60; i = i + 1) {
@@ -495,7 +496,7 @@ const styleOptionKeyArrayPre = [
   }
 ]
 
-//大小随画布缩放动态变化
+// 这些尺寸属性会随画布缩放，需要通过 styleMounted 做显示值和真实值转换。
 const styleOptionMountedKeyArray = [
   {
     value: 'letterSpacing',
@@ -520,7 +521,7 @@ const styleOptionMountedKeyArray = [
   }
 ]
 
-//大小不变
+// 这些样式值不随画布缩放，直接写入组件 style 即可。
 const styleOptionKeyArray = [
   {
     value: 'scrollSpeed',
@@ -545,7 +546,7 @@ const styleOptionKeyArray = [
   }
 ]
 
-// 初始化随画布缩放显示的样式值
+// 初始化时将真实样式按当前画布缩放反算，保证面板值符合用户认知。
 const styleInit = () => {
   if (element.value) {
     Object.keys(styleMounted.value).forEach(key => {
@@ -556,12 +557,12 @@ const styleInit = () => {
   }
 }
 
-// 预处理无需缩放的样式变更
+// 无需缩放的样式直接透传当前 style 值，保持事件结构一致。
 const changeStylePre = key => {
   changeStyle({ key: key, value: element.value.style[key] })
 }
 
-// 将面板尺寸值按画布缩放回写到组件样式
+// 尺寸类属性按画布缩放换算回真实像素，再通知父级记录和刷新。
 const sizeChange = key => {
   element.value.style[key] = Math.round(
     (styleMounted.value[key] * canvasStyleData.value.scale) / 100
@@ -569,13 +570,13 @@ const sizeChange = key => {
   changeStyle({ key: key, value: element.value.style[key] })
 }
 
-// 记录样式快照并通知父级
+// 每次样式变更都记录快照，保证撤销/重做能覆盖工具条操作。
 const changeStyle = params => {
   snapshotStore.recordSnapshotCache('changeStyle')
   emits('onStyleAttrChange', params)
 }
 
-// 切换加粗样式
+// 加粗按钮在 normal/bold 之间切换，避免写入浏览器兼容性不稳定的数值字重。
 const checkBold = () => {
   if (styleForm.value.fontWeight === 'normal') {
     styleForm.value.fontWeight = 'bold'
@@ -585,7 +586,7 @@ const checkBold = () => {
   changeStyle({ key: 'fontWeight', value: styleForm.value.fontWeight })
 }
 
-// 切换斜体样式
+// 斜体按钮在 normal/italic 之间切换，保持与 CSS font-style 取值一致。
 const checkItalic = () => {
   if (styleForm.value.fontStyle === 'normal') {
     styleForm.value.fontStyle = 'italic'
@@ -595,7 +596,7 @@ const checkItalic = () => {
   changeStyle({ key: 'fontStyle', value: styleForm.value.fontStyle })
 }
 
-// 切换下划线样式
+// 下划线按钮只控制 underline/none，避免影响删除线等未暴露的装饰样式。
 const checkTextDecoration = () => {
   if (styleForm.value.textDecoration === 'none') {
     styleForm.value.textDecoration = 'underline'
@@ -605,13 +606,13 @@ const checkTextDecoration = () => {
   changeStyle({ key: 'textDecoration', value: styleForm.value.textDecoration })
 }
 
-// 设置文本对齐位置
+// 文本对齐类按钮统一走 setPosition，便于横向位置和表头位置复用。
 function setPosition(key, p: 'left' | 'center' | 'right') {
   styleForm.value[key] = p
   changeStyle({ key: key, value: p })
 }
 
-// 监听组件变化并重新初始化样式面板
+// 组件切换或外部样式变化后重新计算面板显示值，避免缩放值滞留。
 watch(
   () => element.value,
   () => {

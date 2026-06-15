@@ -12,21 +12,21 @@ import Select from '@/custom-component/v-query/Select.vue'
 import Tree from '@/custom-component/v-query/Tree.vue'
 const { t } = useI18n()
 
-// 时间范围配置弹层显隐状态
+// 时间范围配置弹层由本组件控制，避免默认值区域点击影响外层面板收起逻辑。
 const visiblePopover = ref(false)
 
-// 关闭时间范围配置弹层
+// 子级选择框聚焦时主动关闭范围弹层，防止多个浮层同时覆盖。
 const handleDialogClick = () => {
   visiblePopover.value = false
 }
 
-// 切换时间范围配置弹层，并阻止事件冒泡
+// 切换时间范围配置弹层时阻止冒泡，避免触发外层点击关闭。
 const handleVisiblePopover = ev => {
   ev.stopPropagation()
   visiblePopover.value = !visiblePopover.value
 }
 
-// 根据查询组件展示类型选择默认值输入组件
+// 根据查询组件展示类型和时间类型选择默认值编辑组件。
 const filterTypeCom = computed(() => {
   const { displayType, timeType = 'fixed' } = curComponent.value
   return ['1', '7'].includes(displayType)
@@ -40,17 +40,17 @@ const filterTypeCom = computed(() => {
     : Select
 })
 
-// 通知父组件查询时间类型切换为动态时间
+// 动态时间切换需要父级补齐动态时间默认结构，因此单独暴露事件。
 const emits = defineEmits(['handleTimeTypeChange'])
 
-// 动态时间启用时触发父组件同步处理
+// 只有切换到动态时间时才触发父级同步，固定时间不需要重建结构。
 const handleTimeTypeChange = val => {
   if (val === 'dynamic') {
     emits('handleTimeTypeChange')
   }
 }
 
-// 查询条件默认值配置入参
+// 查询条件默认值配置直接编辑当前查询组件，showPosition 控制主/侧栏差异。
 const props = defineProps({
   curComponent: {
     type: Object,
@@ -62,12 +62,12 @@ const props = defineProps({
   }
 })
 
-// 是否展示仅主画布可见的配置项
+// 部分选项只在主配置区展示，避免弹层或侧栏重复出现高级配置。
 const showFlag = computed(() => props.showPosition === 'main')
 const { curComponent } = toRefs(props)
-// 切换组件时临时隐藏默认值编辑器，避免旧组件状态残留
+// 切换组件时临时隐藏默认值编辑器，避免旧组件状态残留。
 const loadingDefault = ref(true)
-// 监听当前查询组件变化并重置默认值编辑器挂载状态
+// 监听当前查询组件变化并重新挂载默认值编辑器，确保内部缓存被清理。
 watch(
   () => curComponent.value.id,
   val => {
@@ -79,7 +79,7 @@ watch(
   },
   { immediate: true }
 )
-// 动态时间自定义偏移支持的粒度列表
+// 动态时间自定义偏移只允许选择不高于当前时间粒度的单位。
 const relativeToCurrentTypeList = computed(() => {
   if (!curComponent.value) return []
   let index = ['year', 'month', 'date', 'datetime'].indexOf(curComponent.value.timeGranularity) + 1
@@ -105,7 +105,7 @@ const relativeToCurrentTypeList = computed(() => {
   ].slice(0, index)
 })
 
-// 单日期动态时间快捷选项
+// 单日期动态时间快捷选项随时间粒度变化，避免展示无效的年/月/日选项。
 const relativeToCurrentList = computed(() => {
   let list = []
   if (!curComponent.value) return list
@@ -196,7 +196,7 @@ const relativeToCurrentList = computed(() => {
   ]
 })
 
-// 日期范围动态时间快捷选项
+// 日期范围动态时间快捷选项按范围粒度区分，兼容年、月、日期和日期时间范围。
 const relativeToCurrentListRange = computed(() => {
   let list = []
   if (!curComponent.value) return list
@@ -296,12 +296,13 @@ const relativeToCurrentListRange = computed(() => {
   ]
 })
 
-// 下拉选项来自自定义选项时是否展示首项默认值入口
+// 下拉选项来自自定义选项时才展示“首项默认值”，接口选项不保证稳定顺序。
 const defaultValueFirstItemShow = computed(() => {
   const { displayType, optionValueSource } = curComponent.value
   return +displayType === 0 && optionValueSource === 1
 })
 
+// 自定义动态时间偏移方向，f 表示向前，b 表示向后。
 const aroundList = [
   {
     label: t('dynamic_time.before'),
@@ -313,12 +314,13 @@ const aroundList = [
   }
 ]
 
-// 当前默认值是否为动态时间配置
+// 当前默认值是否为动态时间配置，用于切换预览和相对时间表单。
 const dynamicTime = computed(() => {
   const { displayType, timeType } = curComponent.value
   return timeType === 'dynamic' && [1, 7].includes(+displayType)
 })
 
+// 文本条件默认值支持精确匹配和模糊匹配两种操作符。
 const operators = [
   {
     label: t('v_query.exact_match'),
@@ -330,10 +332,10 @@ const operators = [
   }
 ]
 
-// 当前查询组件是否为多选
+// 当前查询组件是否为多选，和组件配置分离以便子组件同步。
 const multiple = ref(false)
 
-// 切换单双选，并同步默认值和选中值结构
+// 切换单双选时同步 defaultValue/selectValue 结构，避免单值和数组混用。
 const multipleChange = (val: boolean, isMultipleChange = false) => {
   if (isMultipleChange) {
     curComponent.value.defaultValue = val ? [] : undefined
@@ -357,23 +359,23 @@ const multipleChange = (val: boolean, isMultipleChange = false) => {
   curComponent.value.multiple = val
 }
 
-// 同步子组件的多选状态
+// 子组件内部变更多选状态后回写到父组件局部状态。
 const changeMultiple = val => {
   multiple.value = val
 }
-// 当前默认值输入组件实例
+// 当前默认值输入组件实例用于调用子组件暴露的清理和刷新方法。
 const inputCom = ref()
-// 通知子组件展示类型已变化
+// 展示类型变化后通知子组件重置内部选项和默认值状态。
 const displayTypeChange = () => {
   inputCom.value?.displayTypeChange?.()
 }
 
-// 关闭多选默认值下拉面板
+// 外层关闭时同步关闭多选默认值下拉面板，避免浮层残留。
 const mult = () => {
   inputCom.value?.mult?.handleClickOutside?.()
 }
 
-// 关闭单选默认值下拉面板
+// 外层关闭时同步关闭单选默认值下拉面板，避免浮层残留。
 const single = () => {
   inputCom.value?.single?.handleClickOutside?.()
 }
