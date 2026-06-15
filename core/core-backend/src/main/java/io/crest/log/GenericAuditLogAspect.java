@@ -21,15 +21,25 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 
 /**
- * Audit fallback for REST endpoints that have not been annotated with CrestAudit.
+ * 为未显式标注 {@link CrestAudit} 的 REST 接口补充通用审计日志。
  */
 @Aspect
 @Component
 public class GenericAuditLogAspect {
 
+    /**
+     * 审计日志写入服务。
+     */
     @Autowired
     private AuditLogService auditLogService;
 
+    /**
+     * 拦截 REST 控制器的公开方法，并在缺少专用审计注解时记录通用审计日志。
+     *
+     * @param point 被拦截的控制器方法调用
+     * @return 控制器方法的原始返回值
+     * @throws Throwable 控制器方法抛出的原始异常
+     */
     @Around("within(@org.springframework.web.bind.annotation.RestController *)"
             + " && execution(public * io.crest..*(..))"
             + " && !@annotation(io.crest.log.CrestAudit)")
@@ -72,6 +82,13 @@ public class GenericAuditLogAspect {
         }
     }
 
+    /**
+     * 判断当前请求是否需要进入通用审计流程。
+     *
+     * @param request 当前 HTTP 请求
+     * @param methodName 控制器方法名称
+     * @return 需要记录审计日志时返回 true
+     */
     private boolean shouldAudit(HttpServletRequest request, String methodName) {
         if (request == null || request.getMethod() == null || request.getRequestURI() == null) {
             return false;
@@ -99,6 +116,12 @@ public class GenericAuditLogAspect {
                 || uri.contains("/sso/callback") || uri.contains("/sso/token/");
     }
 
+    /**
+     * 判断请求路径是否已有专用审计处理，避免重复记录。
+     *
+     * @param uri 请求路径
+     * @return 已有专用审计处理时返回 true
+     */
     private boolean hasDedicatedAudit(String uri) {
         return uri.contains("/sso/config")
                 || uri.contains("/sso/validate")
@@ -108,6 +131,12 @@ public class GenericAuditLogAspect {
                 || uri.contains("/chartdata/innerexport");
     }
 
+    /**
+     * 判断方法声明或目标实现上是否存在 {@link CrestAudit} 注解。
+     *
+     * @param point 被拦截的控制器方法调用
+     * @return 存在专用审计注解时返回 true
+     */
     private boolean hasCrestAudit(ProceedingJoinPoint point) {
         if (!(point.getSignature() instanceof MethodSignature signature)) {
             return false;
@@ -124,6 +153,14 @@ public class GenericAuditLogAspect {
         }
     }
 
+    /**
+     * 根据请求方法、路径和方法名推断审计操作类型。
+     *
+     * @param method HTTP 请求方法
+     * @param uri 请求路径
+     * @param methodName 控制器方法名称
+     * @return 推断出的审计操作类型
+     */
     private LogOT operationType(String method, String uri, String methodName) {
         String normalizedUri = uri == null ? "" : uri.toLowerCase(Locale.ROOT);
         String normalizedName = methodName == null ? "" : methodName.toLowerCase(Locale.ROOT);
@@ -162,6 +199,12 @@ public class GenericAuditLogAspect {
         return LogOT.MODIFY;
     }
 
+    /**
+     * 根据请求路径推断审计资源类型。
+     *
+     * @param uri 请求路径
+     * @return 推断出的审计资源类型
+     */
     private LogST resourceType(String uri) {
         String value = uri == null ? "" : uri.toLowerCase(Locale.ROOT);
         if (value.contains("/user/")) return LogST.USER;
@@ -186,10 +229,23 @@ public class GenericAuditLogAspect {
         return LogST.DATA;
     }
 
+    /**
+     * 生成审计日志描述文本。
+     *
+     * @param operationType 审计操作类型
+     * @param resourceType 审计资源类型
+     * @param requestUrl 请求路径
+     * @return 审计描述文本
+     */
     private String description(LogOT operationType, String resourceType, String requestUrl) {
         return AuditLogText.description(operationType, resourceType, requestUrl);
     }
 
+    /**
+     * 获取当前登录操作人的审计身份信息。
+     *
+     * @return 当前操作人信息
+     */
     private Operator currentOperator() {
         Long operatorId = AuthUtils.getUser() != null ? AuthUtils.getUser().getUserId() : null;
         if (operatorId == null) {
@@ -206,6 +262,12 @@ public class GenericAuditLogAspect {
         return new Operator(operatorId, null, null);
     }
 
+    /**
+     * 获取用于审计记录的客户端 IP。
+     *
+     * @param request 当前 HTTP 请求
+     * @return 客户端 IP 地址
+     */
     private String clientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
         if (ip != null && !ip.isBlank() && !"unknown".equalsIgnoreCase(ip)) {
@@ -223,6 +285,13 @@ public class GenericAuditLogAspect {
         return ip == null ? "unknown" : ip;
     }
 
+    /**
+     * 判断文本中是否包含任一指定片段。
+     *
+     * @param value 待匹配文本
+     * @param parts 候选片段
+     * @return 命中任一片段时返回 true
+     */
     private boolean containsAny(String value, String... parts) {
         for (String part : parts) {
             if (value.contains(part)) {
@@ -232,6 +301,14 @@ public class GenericAuditLogAspect {
         return false;
     }
 
+    /**
+     * 判断请求是否属于权限授权类变更。
+     *
+     * @param method HTTP 请求方法
+     * @param uri 请求路径
+     * @param methodName 控制器方法名称
+     * @return 属于权限变更时返回 true
+     */
     private boolean isPermissionMutation(String method, String uri, String methodName) {
         if (containsAny(uri, "savebusiper", "savebusitargetper", "savemenuper", "savemenutargetper")
                 || containsAny(methodName, "savebusiper", "savebusitargetper", "savemenuper", "savemenutargetper")) {
@@ -244,6 +321,12 @@ public class GenericAuditLogAspect {
                 "/auth/menu-target-permissions");
     }
 
+    /**
+     * 判断请求是否属于需要审计的管理类读取接口。
+     *
+     * @param uri 请求路径
+     * @return 属于管理类读取接口时返回 true
+     */
     private boolean isManagementReadEndpoint(String uri) {
         return containsAny(uri,
                 "/sys-parameter/", "/sysparameter/", "/engine/", "/export-center/export-tasks", "/export-center/export-limit",
@@ -255,6 +338,13 @@ public class GenericAuditLogAspect {
                 "/user/by-current-org", "/user/bycurorg", "/user/default-password", "/user/defaultpwd", "/org/mounted");
     }
 
+    /**
+     * 判断请求是否属于普通读取操作。
+     *
+     * @param uri 请求路径
+     * @param methodName 控制器方法名称
+     * @return 属于读取操作时返回 true
+     */
     private boolean isReadOperation(String uri, String methodName) {
         return containsAny(uri,
                 "/list", "/pager", "/tree", "/info", "/detail", "/status", "/option", "/selected",
@@ -264,6 +354,13 @@ public class GenericAuditLogAspect {
                 "selected", "permission", "resource", "validate");
     }
 
+    /**
+     * 审计日志中的操作人快照。
+     *
+     * @param id 操作人 ID
+     * @param name 操作人姓名
+     * @param account 操作人账号
+     */
     private record Operator(Long id, String name, String account) {
     }
 }
