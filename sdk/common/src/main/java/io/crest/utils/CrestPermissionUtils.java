@@ -11,12 +11,12 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Method;
 
 /**
- * Shared helpers for checking current-user permissions in community deployments.
+ * 社区版当前用户权限判断的共享工具方法。
  */
 public class CrestPermissionUtils {
 
     /**
-     * Returns whether the current user has administrator permissions.
+     * 判断当前用户是否拥有管理员权限。
      */
     public static boolean currentUserIsAdmin() {
         Long uid = currentUserId();
@@ -36,7 +36,7 @@ public class CrestPermissionUtils {
     }
 
     /**
-     * Throws a permission exception when the current user is not an administrator.
+     * 当前用户不是管理员时抛出权限异常。
      */
     public static void requireAdmin() {
         if (!currentUserIsAdmin()) {
@@ -45,7 +45,7 @@ public class CrestPermissionUtils {
     }
 
     /**
-     * Allows administrators or the original creator to access creator-scoped resources.
+     * 判断管理员或资源创建人是否可访问创建人范围资源。
      */
     public static boolean canAccessCreator(String createBy) {
         if (currentUserIsAdmin()) {
@@ -56,7 +56,7 @@ public class CrestPermissionUtils {
     }
 
     /**
-     * Throws a permission exception when the current user cannot access the creator scope.
+     * 当前用户不能访问创建人范围资源时抛出权限异常。
      */
     public static void requireCreator(String createBy) {
         if (currentUserId() == null) {
@@ -68,7 +68,7 @@ public class CrestPermissionUtils {
     }
 
     /**
-     * Reads the current authenticated user ID from the token context.
+     * 从令牌上下文读取当前认证用户 ID。
      */
     public static Long currentUserId() {
         TokenUserBO user = AuthUtils.getUser();
@@ -76,7 +76,7 @@ public class CrestPermissionUtils {
     }
 
     /**
-     * Builds the SQL predicate used to hide resources owned by other users.
+     * 构建用于隐藏其他用户资源的 SQL 过滤片段。
      */
     public static String communityScopeSql() {
         Long uid = currentUserId();
