@@ -17,7 +17,7 @@ import java.util.Set;
 
 @Component
 /**
- * API 路由清单指标注册器，用于把已注册路由暴露为观测指标。
+ * API 路由清单指标注册器，用于把已注册路由暴露为观测指标
  */
 public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
 
@@ -28,7 +28,7 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
     private final ObservabilityProperties observabilityProperties;
 
     /**
-     * 构造 API 路由指标注册器。
+     * 构造 API 路由指标注册器
      */
     public ApiRouteInventoryMetrics(MeterRegistry meterRegistry,
                                     RequestMappingHandlerMapping requestMappingHandlerMapping,
@@ -39,7 +39,7 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
     }
 
     /**
-     * 在单例初始化完成后注册路由清单指标。
+     * 在单例初始化完成后注册路由清单指标
      */
     @Override
     public void afterSingletonsInstantiated() {
@@ -63,7 +63,7 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
     }
 
     /**
-     * 收集符合前缀和 API 范围的路由指标信息。
+     * 收集符合前缀和 API 范围的路由指标信息
      */
     private List<RouteMetric> collectRoutes(String routePrefix) {
         Set<RouteMetric> result = new LinkedHashSet<>();
@@ -88,7 +88,7 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
     }
 
     /**
-     * 兼容不同 Spring 路径匹配模式下的路由表达式。
+     * 兼容不同 Spring 路径匹配模式下的路由表达式
      */
     private Set<String> routePatterns(RequestMappingInfo info) {
         Set<String> patterns = new LinkedHashSet<>();
@@ -102,7 +102,7 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
     }
 
     /**
-     * 将处理器方法转换为指标标签对象。
+     * 将处理器方法转换为指标标签对象
      */
     private RouteMetric toMetric(String method, String uri, HandlerMethod handlerMethod) {
         String controller = handlerMethod.getBeanType().getSimpleName();
@@ -111,7 +111,7 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
     }
 
     /**
-     * 根据路由首段归类 API 所属模块。
+     * 根据路由首段归类 API 所属模块
      */
     private String classifyModule(String uri) {
         String segment = firstRouteSegment(uri);
@@ -134,7 +134,7 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
     }
 
     /**
-     * 提取 API 路由中的第一个业务路径片段。
+     * 提取 API 路由中的第一个业务路径片段
      */
     private String firstRouteSegment(String uri) {
         String normalized = normalizePath(uri);
@@ -148,7 +148,7 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
     }
 
     /**
-     * 合并路由前缀和控制器路径。
+     * 合并路由前缀和控制器路径
      */
     private String normalizeUri(String routePrefix, String pattern) {
         String path = normalizePath(pattern);
@@ -160,7 +160,7 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
     }
 
     /**
-     * 将路径标准化为以斜杠开头的单斜杠形式。
+     * 将路径标准化为以斜杠开头的单斜杠形式
      */
     private String normalizePath(String value) {
         if (StringUtils.isBlank(value)) {
@@ -174,7 +174,7 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
     }
 
     /**
-     * 判断路径是否属于需要统计的业务 API。
+     * 判断路径是否属于需要统计的业务 API
      */
     private boolean isApiRoute(String uri) {
         return uri.startsWith("/api/v1/")
@@ -186,7 +186,7 @@ public class ApiRouteInventoryMetrics implements SmartInitializingSingleton {
     }
 
     /**
-     * 路由指标标签数据。
+     * 路由指标标签数据
      */
     private record RouteMetric(String method, String uri, String module, String controller, String handler) {
     }

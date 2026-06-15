@@ -27,25 +27,25 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 数据资产管理入口，负责聚合数据源、数据集、图表、可视化和分享资源，并统一套用权限与治理画像规则。
+ * 数据资产管理入口，负责聚合数据源、数据集、图表、可视化和分享资源，并统一套用权限与治理画像规则
  */
 @Component
 public class DataAssetManage {
 
     /**
-     * 数据资产页直接使用 JDBC 拼接聚合查询，便于跨多张历史表保持一致字段。
+     * 数据资产页直接使用 JDBC 拼接聚合查询，便于跨多张历史表保持一致字段
      */
     @Resource
     private JdbcTemplate jdbcTemplate;
 
     /**
-     * 资产查询和管理判断依赖平台资源权限，所有列表与血缘查询都要复用同一套范围条件。
+     * 资产查询和管理判断依赖平台资源权限，所有列表与血缘查询都要复用同一套范围条件
      */
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
     /**
-     * 查询当前用户可见的数据资产分页，并补齐治理状态、负责人、权限和上下游数量。
+     * 查询当前用户可见的数据资产分页，并补齐治理状态、负责人、权限和上下游数量
      */
     public DataAssetPageVO page(Integer page, Integer pageSize, DataAssetRequest request) {
         int normalizedPage = DataAssetUtils.normalizePage(page);
@@ -101,7 +101,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 读取单个资产详情，并同时返回它的直接上下游和影响面摘要。
+     * 读取单个资产详情，并同时返回它的直接上下游和影响面摘要
      */
     public DataAssetDetailVO detail(String assetType, String assetId) {
         DataAssetVO asset = loadAsset(assetType, assetId);
@@ -114,14 +114,14 @@ public class DataAssetManage {
     }
 
     /**
-     * 对外提供影响分析入口，先按权限加载资产，再计算该资产的下游影响。
+     * 对外提供影响分析入口，先按权限加载资产，再计算该资产的下游影响
      */
     public DataAssetImpactVO impact(String assetType, String assetId) {
         return impact(loadAsset(assetType, assetId));
     }
 
     /**
-     * 保存资产治理画像；只有具备管理权限的用户才能更新说明、标签、负责人和治理状态。
+     * 保存资产治理画像；只有具备管理权限的用户才能更新说明、标签、负责人和治理状态
      */
     @Transactional
     public DataAssetDetailVO saveProfile(DataAssetProfileRequest request) {
@@ -175,7 +175,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 返回可作为资产负责人的启用用户列表，供治理画像编辑表单选择。
+     * 返回可作为资产负责人的启用用户列表，供治理画像编辑表单选择
      */
     public List<DataAssetOwnerVO> owners() {
         return jdbcTemplate.query("""
@@ -193,7 +193,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 规范化查询参数，保证空请求、空关键字和非法资产类型在进入 SQL 前被统一处理。
+     * 规范化查询参数，保证空请求、空关键字和非法资产类型在进入 SQL 前被统一处理
      */
     private DataAssetRequest normalizeRequest(DataAssetRequest request) {
         DataAssetRequest normalized = request == null ? new DataAssetRequest() : request;
@@ -203,7 +203,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 按资产类型和编号加载单个资产，并在同一查询中应用当前用户权限。
+     * 按资产类型和编号加载单个资产，并在同一查询中应用当前用户权限
      */
     private DataAssetVO loadAsset(String assetType, String assetId) {
         DataAssetRequest request = new DataAssetRequest();
@@ -245,7 +245,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 构造资产列表的 FROM 和 WHERE 片段，集中处理关键字、治理状态、负责人和资产类型过滤。
+     * 构造资产列表的 FROM 和 WHERE 片段，集中处理关键字、治理状态、负责人和资产类型过滤
      */
     private QueryParts filteredAssets(DataAssetRequest request) {
         List<Object> args = new ArrayList<>();
@@ -305,7 +305,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 将不同来源的资产统一投影为相同列结构，供列表、详情和过滤逻辑复用。
+     * 将不同来源的资产统一投影为相同列结构，供列表、详情和过滤逻辑复用
      */
     private String assetUnionSql() {
         List<String> selects = new ArrayList<>();
@@ -404,7 +404,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 生成仪表板或大屏资源的资产查询片段，并按资源类型套用对应权限条件。
+     * 生成仪表板或大屏资源的资产查询片段，并按资源类型套用对应权限条件
      */
     private String visualizationSelect(String assetType, String visualizationType) {
         String resourceType = DataAssetUtils.TYPE_SCREEN.equals(assetType) ? "screen" : "panel";
@@ -428,7 +428,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 补齐资产展示标签、管理权限和上下游数量，保持列表与详情中的资产摘要一致。
+     * 补齐资产展示标签、管理权限和上下游数量，保持列表与详情中的资产摘要一致
      */
     private void fillAssetAccessAndCounts(DataAssetVO asset) {
         asset.setAssetTypeLabel(DataAssetUtils.assetTypeLabel(asset.getAssetType()));
@@ -438,7 +438,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 判断当前用户是否可维护资产画像，优先识别系统管理员、创建人和组织管理员。
+     * 判断当前用户是否可维护资产画像，优先识别系统管理员、创建人和组织管理员
      */
     private boolean canManage(DataAssetVO asset) {
         Long uid = currentUid();
@@ -464,7 +464,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 查询资产的直接上游，方向表示当前资产依赖哪些数据或可视化资源。
+     * 查询资产的直接上游，方向表示当前资产依赖哪些数据或可视化资源
      */
     private List<DataAssetImpactItemVO> upstream(DataAssetVO asset) {
         Long id = longId(asset.getAssetId());
@@ -494,7 +494,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 查询资产的直接下游，方向表示当前资产被哪些资源继续使用或分享。
+     * 查询资产的直接下游，方向表示当前资产被哪些资源继续使用或分享
      */
     private List<DataAssetImpactItemVO> downstream(DataAssetVO asset) {
         Long id = longId(asset.getAssetId());
@@ -510,7 +510,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 汇总资产下游影响列表，并按资产类型生成影响面数量摘要。
+     * 汇总资产下游影响列表，并按资产类型生成影响面数量摘要
      */
     private DataAssetImpactVO impact(DataAssetVO asset) {
         DataAssetImpactVO vo = new DataAssetImpactVO();
@@ -527,7 +527,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 数据集上游包含原始数据源和组成该数据集的物理表。
+     * 数据集上游包含原始数据源和组成该数据集的物理表
      */
     private List<DataAssetImpactItemVO> datasetUpstream(Long datasetId) {
         List<DataAssetImpactItemVO> items = new ArrayList<>();
@@ -551,7 +551,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 数据集下游覆盖图表、包含这些图表的可视化资源、分享链接和缓存任务。
+     * 数据集下游覆盖图表、包含这些图表的可视化资源、分享链接和缓存任务
      */
     private List<DataAssetImpactItemVO> datasetDownstream(Long datasetId) {
         List<DataAssetImpactItemVO> items = new ArrayList<>();
@@ -612,7 +612,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 数据源下游只统计引用该数据源表的数据集，并继续沿用数据集资源权限。
+     * 数据源下游只统计引用该数据源表的数据集，并继续沿用数据集资源权限
      */
     private List<DataAssetImpactItemVO> datasourceDownstream(Long datasourceId) {
         return queryItems("""
@@ -629,7 +629,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 可视化资源上游包含自身图表，以及这些图表使用的数据集。
+     * 可视化资源上游包含自身图表，以及这些图表使用的数据集
      */
     private List<DataAssetImpactItemVO> panelUpstream(Long visualizationId) {
         List<DataAssetImpactItemVO> items = new ArrayList<>();
@@ -655,7 +655,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 仪表板或大屏下游当前只包含基于该资源生成的分享链接。
+     * 仪表板或大屏下游当前只包含基于该资源生成的分享链接
      */
     private List<DataAssetImpactItemVO> visualizationDownstream(Long visualizationId) {
         return queryItems("""
@@ -671,7 +671,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 分享链接上游回溯到被分享的仪表板或大屏，并按可视化权限过滤。
+     * 分享链接上游回溯到被分享的仪表板或大屏，并按可视化权限过滤
      */
     private List<DataAssetImpactItemVO> shareUpstream(Long shareId) {
         return queryItems("""
@@ -687,7 +687,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 计算直接上游数量，和 upstream 方法保持同一资产类型分支。
+     * 计算直接上游数量，和 upstream 方法保持同一资产类型分支
      */
     private Integer upstreamCount(DataAssetVO asset) {
         Long id = longId(asset.getAssetId());
@@ -733,7 +733,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 计算直接下游数量，和 downstream 方法保持同一资产类型分支。
+     * 计算直接下游数量，和 downstream 方法保持同一资产类型分支
      */
     private Integer downstreamCount(DataAssetVO asset) {
         Long id = longId(asset.getAssetId());
@@ -755,7 +755,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 数据集下游数量需要合并图表、可视化资源、分享链接和缓存任务四类影响。
+     * 数据集下游数量需要合并图表、可视化资源、分享链接和缓存任务四类影响
      */
     private Integer datasetDownstreamCount(Long datasetId) {
         String visualizationScope = permissionClause(visualizationScopeSql("v"));
@@ -788,7 +788,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 执行计数查询并将空结果归零，统一处理 COUNT 查询的返回类型。
+     * 执行计数查询并将空结果归零，统一处理 COUNT 查询的返回类型
      */
     private Integer count(String sql, Object... args) {
         Long value = jdbcTemplate.queryForObject(sql, Long.class, args);
@@ -796,7 +796,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 执行影响项查询，并把资产类型、关系说明和更新时间映射为统一 VO。
+     * 执行影响项查询，并把资产类型、关系说明和更新时间映射为统一 VO
      */
     private List<DataAssetImpactItemVO> queryItems(String sql, Object... args) {
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
@@ -812,7 +812,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 将聚合资产查询结果映射为资产摘要对象，并规范化治理状态。
+     * 将聚合资产查询结果映射为资产摘要对象，并规范化治理状态
      */
     private DataAssetVO mapAsset(ResultSet rs) throws SQLException {
         DataAssetVO vo = new DataAssetVO();
@@ -845,7 +845,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 根据可视化类型组合仪表板和大屏权限 SQL，避免大屏用户看到无权限仪表板资源。
+     * 根据可视化类型组合仪表板和大屏权限 SQL，避免大屏用户看到无权限仪表板资源
      */
     private String visualizationScopeSql(String alias) {
         String panelScope = platformPermissionManage.resourceScopeSql("panel", alias + ".id", alias + ".create_by", alias + ".org_id");
@@ -862,21 +862,21 @@ public class DataAssetManage {
     }
 
     /**
-     * 将可选权限范围转换成可直接拼接到 WHERE 后的 AND 片段。
+     * 将可选权限范围转换成可直接拼接到 WHERE 后的 AND 片段
      */
     private String permissionClause(String scopeSql) {
         return StringUtils.isBlank(scopeSql) ? "" : "\n AND " + scopeSql;
     }
 
     /**
-     * 读取当前登录用户编号，未登录上下文返回空值供权限逻辑兜底。
+     * 读取当前登录用户编号，未登录上下文返回空值供权限逻辑兜底
      */
     private Long currentUid() {
         return AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
     }
 
     /**
-     * 将资产编号转换为长整型，非数字编号在血缘查询中按无结果处理。
+     * 将资产编号转换为长整型，非数字编号在血缘查询中按无结果处理
      */
     private Long longId(String value) {
         try {
@@ -887,7 +887,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 读取可空长整型字段，保留数据库 NULL 和数字 0 的语义差异。
+     * 读取可空长整型字段，保留数据库 NULL 和数字 0 的语义差异
      */
     private Long nullableLong(ResultSet rs, String column) throws SQLException {
         long value = rs.getLong(column);
@@ -895,14 +895,14 @@ public class DataAssetManage {
     }
 
     /**
-     * 将布尔治理状态转换成数据库中的 0/1 表示。
+     * 将布尔治理状态转换成数据库中的 0/1 表示
      */
     private int bool(Boolean value) {
         return Boolean.TRUE.equals(value) ? 1 : 0;
     }
 
     /**
-     * 统一裁剪画像文本并校验最大长度，避免不同字段各自实现限制。
+     * 统一裁剪画像文本并校验最大长度，避免不同字段各自实现限制
      */
     private String trimToLength(String value, int max, String label) {
         String trimmed = StringUtils.trimToNull(value);
@@ -913,7 +913,7 @@ public class DataAssetManage {
     }
 
     /**
-     * 保存动态 SQL 片段和对应参数，避免拼接 WHERE 时丢失参数顺序。
+     * 保存动态 SQL 片段和对应参数，避免拼接 WHERE 时丢失参数顺序
      */
     private static class QueryParts {
         private String fromWhere;

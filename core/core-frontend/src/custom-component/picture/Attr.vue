@@ -25,32 +25,32 @@ const snapshotStore = snapshotStoreWithOut()
 
 const { curComponent, mobileInPc } = storeToRefs(dvMainStore)
 
-// 图片上传列表。
+// 图片上传列表
 const fileList = ref([])
-// 图片预览地址。
+// 图片预览地址
 const dialogImageUrl = ref('')
-// 图片预览弹窗显隐状态。
+// 图片预览弹窗显隐状态
 const dialogVisible = ref(false)
-// 图片上传禁用状态。
+// 图片上传禁用状态
 const uploadDisabled = ref(false)
-// 文件选择器引用。
+// 文件选择器引用
 const files = ref(null)
 const maxImageSize = 15000000
 
-// 打开图片预览弹窗。
+// 打开图片预览弹窗
 const handlePictureCardPreview = file => {
   dialogImageUrl.value = file.url
   dialogVisible.value = true
 }
 
-// 移除当前图片。
+// 移除当前图片
 const handleRemove = (_, fileList) => {
   uploadDisabled.value = false
   curComponent.value.propValue.url = null
   fileList.value = []
   snapshotStore.recordSnapshotCache('handleRemove')
 }
-// 上传当前图片。
+// 上传当前图片
 async function upload(file) {
   uploadFileResult(file.file, fileUrl => {
     snapshotStore.recordSnapshotCache('pic-upload')
@@ -58,17 +58,17 @@ async function upload(file) {
   })
 }
 
-// 记录图片样式变更快照。
+// 记录图片样式变更快照
 const onStyleChange = () => {
   snapshotStore.recordSnapshotCache('pic-onStyleChange')
 }
 
-// 触发文件选择器。
+// 触发文件选择器
 const goFile = () => {
   files.value.click()
 }
 
-// 重新上传当前图片。
+// 重新上传当前图片
 const reUpload = e => {
   const file = e.target.files[0]
   if (file.size > maxImageSize) {
@@ -82,11 +82,11 @@ const reUpload = e => {
   })
 }
 
-// 提示图片大小超过限制。
+// 提示图片大小超过限制
 const sizeMessage = () => {
   ElMessage.error('图片大小不能超过15M')
 }
-// 初始化图片属性面板。
+// 初始化图片属性面板
 const init = () => {
   if (curComponent.value.propValue.url) {
     fileList.value = [{ url: imgUrlTrans(curComponent.value.propValue.url) }]
@@ -95,7 +95,7 @@ const init = () => {
   }
 }
 
-// 监听当前图片地址变化。
+// 监听当前图片地址变化
 watch(
   () => curComponent.value.propValue.url,
   () => {

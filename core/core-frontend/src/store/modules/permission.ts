@@ -6,12 +6,12 @@ import { store } from '../index'
 import { cloneDeep } from 'lodash-es'
 
 /**
- * 兜底 404 页面，作为动态路由匹配失败时的最终入口。
+ * 兜底 404 页面，作为动态路由匹配失败时的最终入口
  */
 const NotFoundPage = () => import('@/views/404/index.vue')
 
 /**
- * 权限路由模块在 Pinia 中维护的状态结构。
+ * 权限路由模块在 Pinia 中维护的状态结构
  */
 export interface PermissionState {
   routers: AppRouteRecordRaw[]
@@ -21,7 +21,7 @@ export interface PermissionState {
 }
 
 /**
- * 权限路由状态仓库，负责保存动态路由、菜单路由和当前访问路径。
+ * 权限路由状态仓库，负责保存动态路由、菜单路由和当前访问路径
  */
 export const usePermissionStore = defineStore('permission', {
   state: (): PermissionState => ({
@@ -83,14 +83,14 @@ export const usePermissionStore = defineStore('permission', {
 })
 
 /**
- * 在组件 setup 外部获取权限路由仓库实例。
+ * 在组件 setup 外部获取权限路由仓库实例
  */
 export const usePermissionStoreWithOut = () => {
   return usePermissionStore(store)
 }
 
 /**
- * 校验给定路径是否存在于当前权限路由树中。
+ * 校验给定路径是否存在于当前权限路由树中
  */
 export const pathValid = path => {
   path = String(path || '').split('?')[0]
@@ -108,7 +108,7 @@ export const pathValid = path => {
   return hasCurrentRouter(locations, routers, 0)
 }
 /**
- * 按层级递归校验路径片段是否能匹配到路由节点。
+ * 按层级递归校验路径片段是否能匹配到路由节点
  */
 const hasCurrentRouter = (locations, routers, index) => {
   if (!routers?.length) {
@@ -128,7 +128,7 @@ const hasCurrentRouter = (locations, routers, index) => {
 }
 
 /**
- * 获取当前权限下第一个可访问菜单路径。
+ * 获取当前权限下第一个可访问菜单路径
  */
 export const getFirstAuthMenu = () => {
   const permissionStore = usePermissionStore(store)
@@ -143,7 +143,7 @@ export const getFirstAuthMenu = () => {
 }
 
 /**
- * 深度优先查找第一个未隐藏的叶子菜单并记录路径。
+ * 深度优先查找第一个未隐藏的叶子菜单并记录路径
  */
 const getPathway = (tree, nodePathArray) => {
   for (let index = 0; index < tree.length; index++) {

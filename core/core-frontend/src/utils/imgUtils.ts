@@ -8,21 +8,21 @@ import FileSaver from 'file-saver'
 import { deepCopy } from '@/utils/utils'
 import { domToPng } from 'modern-screenshot'
 import { initCanvasDataPrepare } from '@/utils/canvasUtils'
-/** 嵌入式仓库提供外部访问基础地址。 */
+/** 嵌入式仓库提供外部访问基础地址 */
 const embeddedStore = useEmbedded()
-/** 主画布仓库提供导出所需的画布、组件和视图数据。 */
+/** 主画布仓库提供导出所需的画布、组件和视图数据 */
 const dvMainStore = dvMainStoreWithOut()
-/** 导出流程依赖的画布样式、组件、视图数据和资源信息。 */
+/** 导出流程依赖的画布样式、组件、视图数据和资源信息 */
 const { canvasStyleData, componentData, canvasViewInfo, canvasViewDataInfo, dvInfo } =
   storeToRefs(dvMainStore)
-/** API 基础路径，用于拼接静态资源访问地址。 */
+/** API 基础路径，用于拼接静态资源访问地址 */
 const basePath = import.meta.env.VITE_API_BASEPATH
 
-/** 规范化接口路径中重复的 api 前缀。 */
+/** 规范化接口路径中重复的 api 前缀 */
 export function formatterUrl(url: string) {
   return url.replace('//api/v1', '/api/v1')
 }
-/** 将静态资源路径转换为当前部署环境可访问的图片地址。 */
+/** 将静态资源路径转换为当前部署环境可访问的图片地址 */
 export function imgUrlTrans(url) {
   if (url) {
     if (typeof url === 'string' && url.indexOf('static-resource') > -1) {
@@ -42,7 +42,7 @@ export function imgUrlTrans(url) {
   }
 }
 
-/** 准备模板导出的基础画布数据，满屏大屏会重新读取适配后的数据。 */
+/** 准备模板导出的基础画布数据，满屏大屏会重新读取适配后的数据 */
 function prePareTemplateBaseData(dvId, callback) {
   if (dvInfo.value.type === 'dataV' && canvasStyleData.value.screenAdaptor === 'full') {
     initCanvasDataPrepare(
@@ -63,7 +63,7 @@ function prePareTemplateBaseData(dvId, callback) {
   }
 }
 
-/** 导出应用模板或普通模板，包含缩略图、静态资源和动态数据快照。 */
+/** 导出应用模板或普通模板，包含缩略图、静态资源和动态数据快照 */
 export function download2AppTemplate(downloadType, canvasDom, name, attachParams, callBack?) {
   try {
     findStaticSource(function (staticResource) {
@@ -115,7 +115,7 @@ export function download2AppTemplate(downloadType, canvasDom, name, attachParams
   }
 }
 
-/** 使用 html2canvas 导出画布图片或 PDF。 */
+/** 使用 html2canvas 导出画布图片或 PDF */
 export function downloadCanvas(type, canvasDom, name, callBack?) {
   // const canvasDom = document.getElementById(canvasId)
   if (canvasDom) {
@@ -153,7 +153,7 @@ export function downloadCanvas(type, canvasDom, name, callBack?) {
   }
 }
 
-/** 使用 modern-screenshot 导出高清画布图片或 PDF。 */
+/** 使用 modern-screenshot 导出高清画布图片或 PDF */
 export function downloadCanvas2(type, canvasDom, name, callBack?) {
   domToPng(canvasDom, { scale: 3 })
     .then(dataUrl => {
@@ -184,9 +184,9 @@ export function downloadCanvas2(type, canvasDom, name, callBack?) {
     })
 }
 
-/** 将 dataURL 图片数据转换为 Blob 对象。 */
+/** 将 dataURL 图片数据转换为 Blob 对象 */
 export function dataURLToBlob(dataUrl) {
-  // IE 图片转格式。
+  // IE 图片转格式
   const arr = dataUrl.split(',')
   const mime = arr[0].match(/:(.*?);/)[1]
   const bStr = atob(arr[1])
@@ -198,7 +198,7 @@ export function dataURLToBlob(dataUrl) {
   return new Blob([u8arr], { type: mime })
 }
 
-/** 递归收集组件、分组和 Tabs 内引用的静态资源路径。 */
+/** 递归收集组件、分组和 Tabs 内引用的静态资源路径 */
 function findStaticSourceInner(componentDataInfo, staticResource) {
   componentDataInfo?.forEach(item => {
     if (
@@ -236,7 +236,7 @@ function findStaticSourceInner(componentDataInfo, staticResource) {
 }
 
 // 解析静态文件
-/** 解析当前画布依赖的静态资源并转换为 base64 数据。 */
+/** 解析当前画布依赖的静态资源并转换为 base64 数据 */
 export function findStaticSource(callBack) {
   const staticResource = []
   // 系统背景文件

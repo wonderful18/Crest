@@ -5,14 +5,14 @@ import AuthTree from './AuthTree.vue'
 
 const { t } = useI18n()
 
-// 保存当前权限树校验错误。
+// 保存当前权限树校验错误
 const errorMessage = ref('')
-// 保存根节点逻辑关系。
+// 保存根节点逻辑关系
 const logic = ref<'or' | 'and'>('or')
-// 保存权限条件树节点。
+// 保存权限条件树节点
 const relationList = ref([])
 
-// 计算实线连接路径。
+// 计算实线连接路径
 const svgRealinePath = computed(() => {
   const lg = relationList.value.length
   let a = { x: 0, y: 0, child: relationList.value }
@@ -22,7 +22,7 @@ const svgRealinePath = computed(() => {
   return path
 })
 
-// 计算虚线连接路径。
+// 计算虚线连接路径
 const svgDashinePath = computed(() => {
   const lg = relationList.value.length
   let a = { x: 0, y: 0, child: relationList.value }
@@ -32,13 +32,13 @@ const svgDashinePath = computed(() => {
   return path
 })
 
-// 将表达式树初始化为组件内部树结构。
+// 将表达式树初始化为组件内部树结构
 const init = expressionTree => {
   const { items } = expressionTree
   logic.value = expressionTree.logic || 'or'
   relationList.value = dfsInit(items || [])
 }
-// 提交前转换树结构并输出校验结果。
+// 提交前转换树结构并输出校验结果
 const submit = () => {
   errorMessage.value = ''
   emits('save', {
@@ -47,7 +47,7 @@ const submit = () => {
     errorMessage: errorMessage.value
   })
 }
-// 校验单个条件节点的必填项和值类型。
+// 校验单个条件节点的必填项和值类型
 const errorDetected = ({ enumValue, fieldType, filterType, term, value, name, timeValue }) => {
   if (!name) {
     errorMessage.value = t('data_set.cannot_be_empty_')
@@ -92,7 +92,7 @@ const errorDetected = ({ enumValue, fieldType, filterType, term, value, name, ti
   }
 }
 
-// 递归转换后端表达式树为前端编辑树。
+// 递归转换后端表达式树为前端编辑树
 const dfsInit = arr => {
   const elementList = []
   arr.forEach(ele => {
@@ -119,7 +119,7 @@ const dfsInit = arr => {
   })
   return elementList
 }
-// 递归转换前端编辑树为后端表达式树。
+// 递归转换前端编辑树为后端表达式树
 const dfsSubmit = arr => {
   const items = []
   arr.forEach(ele => {
@@ -159,11 +159,11 @@ const dfsSubmit = arr => {
   })
   return items
 }
-// 清空所有条件节点。
+// 清空所有条件节点
 const removeRelationList = () => {
   relationList.value = []
 }
-// 获取子树首个叶子节点的纵向坐标。
+// 获取子树首个叶子节点的纵向坐标
 const getY = arr => {
   const [a] = arr
   if (a.child?.length) {
@@ -171,7 +171,7 @@ const getY = arr => {
   }
   return a.y
 }
-// 递归生成空分组虚线连接路径。
+// 递归生成空分组虚线连接路径
 const calculateDepthDash = obj => {
   const lg = obj.child?.length
   let path = ''
@@ -192,7 +192,7 @@ const calculateDepthDash = obj => {
 
   return path
 }
-// 递归生成条件节点实线连接路径。
+// 递归生成条件节点实线连接路径
 const calculateDepth = obj => {
   const lg = obj.child.length
   if (!lg) return ''
@@ -243,7 +243,7 @@ const calculateDepth = obj => {
   })
   return path
 }
-// 递归切换子分组的与或关系。
+// 递归切换子分组的与或关系
 const changeAndOrDfs = (arr, logic) => {
   arr.forEach(ele => {
     if (ele.child) {
@@ -252,7 +252,7 @@ const changeAndOrDfs = (arr, logic) => {
     }
   })
 }
-// 统计子树叶子节点数量。
+// 统计子树叶子节点数量
 const dfs = (arr, count) => {
   arr.forEach(ele => {
     if (ele.child?.length) {
@@ -264,7 +264,7 @@ const dfs = (arr, count) => {
   count += 1
   return count
 }
-// 计算子树中的最大纵向坐标。
+// 计算子树中的最大纵向坐标
 const dfsY = (obj, count) => {
   obj.child.forEach(ele => {
     if (ele.child?.length) {
@@ -275,7 +275,7 @@ const dfsY = (obj, count) => {
   })
   return count
 }
-// 递归写入树节点坐标。
+// 递归写入树节点坐标
 const dfsXY = (obj, count) => {
   obj.child.forEach(ele => {
     ele.x = obj.x + 1
@@ -291,7 +291,7 @@ const dfsXY = (obj, count) => {
   count += 1
   return count
 }
-// 添加条件节点或逻辑分组。
+// 添加条件节点或逻辑分组
 const addCondReal = (type, logic) => {
   relationList.value.push(
     type === 'condition'
@@ -309,7 +309,7 @@ const addCondReal = (type, logic) => {
       : { child: [], logic }
   )
 }
-// 删除指定条件节点。
+// 删除指定条件节点
 const del = index => {
   relationList.value.splice(index, 1)
 }
@@ -318,7 +318,7 @@ defineExpose({
   init,
   submit
 })
-// 定义保存事件。
+// 定义保存事件
 const emits = defineEmits(['save'])
 </script>
 

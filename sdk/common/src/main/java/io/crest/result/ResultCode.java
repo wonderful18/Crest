@@ -1,7 +1,7 @@
 package io.crest.result;
 
 /**
- * 统一结果码枚举，定义常用错误码和默认提示。
+ * 统一结果码枚举，定义常用错误码和默认提示
  */
 public enum ResultCode {
     /* 成功状态码 */
@@ -50,17 +50,17 @@ public enum ResultCode {
 
 
     /**
-     * 业务结果码。
+     * 业务结果码
      */
     private Integer code;
 
     /**
-     * 结果码默认提示。
+     * 结果码默认提示
      */
     private String message;
 
     /**
-     * 创建结果码枚举项。
+     * 创建结果码枚举项
      */
     ResultCode(Integer code, String message) {
         this.code = code;
@@ -68,21 +68,21 @@ public enum ResultCode {
     }
 
     /**
-     * 返回业务结果码。
+     * 返回业务结果码
      */
     public Integer code() {
         return this.code;
     }
 
     /**
-     * 返回结果码默认提示。
+     * 返回结果码默认提示
      */
     public String message() {
         return this.message;
     }
 
     /**
-     * 根据枚举名称获取默认提示。
+     * 根据枚举名称获取默认提示
      */
     public static String getMessage(String name) {
         for (ResultCode item : ResultCode.values()) {
@@ -94,7 +94,7 @@ public enum ResultCode {
     }
 
     /**
-     * 根据枚举名称获取业务结果码。
+     * 根据枚举名称获取业务结果码
      */
     public static Integer getCode(String name) {
         for (ResultCode item : ResultCode.values()) {
@@ -106,7 +106,7 @@ public enum ResultCode {
     }
 
     /**
-     * 返回枚举名称作为字符串表示。
+     * 返回枚举名称作为字符串表示
      */
     @Override
     public String toString() {

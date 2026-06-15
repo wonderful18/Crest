@@ -3,7 +3,7 @@ import icon_expandLeft_filled from '@/assets/svg/icon_expand-left_filled.svg'
 import icon_expandRight_filled from '@/assets/svg/icon_expand-right_filled.svg'
 import { toRefs, ref, watch, nextTick } from 'vue'
 import { propTypes } from '@/utils/propTypes'
-// 定义工作表页签组件接收的页签列表和当前页签。
+// 定义工作表页签组件接收的页签列表和当前页签
 const props = defineProps({
   tabList: propTypes.arrayOf(
     propTypes.shape({
@@ -17,13 +17,13 @@ const props = defineProps({
   activeTab: propTypes.string.def('')
 })
 
-// 保存当前激活页签在列表中的索引。
+// 保存当前激活页签在列表中的索引
 const activeTabIndex = ref(0)
 
-// 声明页签点击时向父组件派发的事件。
+// 声明页签点击时向父组件派发的事件
 const emits = defineEmits(['TabClick'])
 const { activeTab } = toRefs(props)
-// 处理页签点击并滚动到可见区域。
+// 处理页签点击并滚动到可见区域
 const handleTabClick = tab => {
   let tabDom = document.getElementById(`tab-${tab.value}`)
   if (tabDom.offsetLeft + tabDom.offsetWidth > tabWrapper.value.offsetWidth) {
@@ -34,11 +34,11 @@ const handleTabClick = tab => {
   }
   emits('TabClick', tab)
 }
-// 持有页签滚动容器实例。
+// 持有页签滚动容器实例
 const tabWrapper = ref()
-// 控制左右滚动按钮是否展示。
+// 控制左右滚动按钮是否展示
 const showBtn = ref(false)
-// 监听当前激活页签并同步索引。
+// 监听当前激活页签并同步索引
 watch(
   () => activeTab.value,
   val => {
@@ -47,7 +47,7 @@ watch(
   { immediate: true }
 )
 
-// 监听页签列表变化并判断是否需要显示滚动按钮。
+// 监听页签列表变化并判断是否需要显示滚动按钮
 watch(
   () => props.tabList,
   () => {
@@ -58,14 +58,14 @@ watch(
   { immediate: true }
 )
 
-// 向左滚动页签列表。
+// 向左滚动页签列表
 const prevClick = () => {
   let domWrapper = tabWrapper.value
   if (!domWrapper.scrollLeft) return
   domWrapper.scrollLeft -= 30
 }
 
-// 向右滚动页签列表。
+// 向右滚动页签列表
 const nextClick = () => {
   let domWrapper = tabWrapper.value
   domWrapper.scrollLeft += 30

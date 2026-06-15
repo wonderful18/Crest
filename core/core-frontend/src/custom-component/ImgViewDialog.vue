@@ -15,18 +15,18 @@ const props = defineProps({
   imageUrl: String
 })
 
-// 图片预览支持的缩放和旋转动作类型。
+// 图片预览支持的缩放和旋转动作类型
 type ImageViewerAction = 'zoomIn' | 'zoomOut' | 'clockwise' | 'anticlockwise'
 
-// 图片预览当前变换状态。
+// 图片预览当前变换状态
 const transform = ref({
   scale: 1
 })
-// 独立事件作用域，便于组件卸载时统一清理监听。
+// 独立事件作用域，便于组件卸载时统一清理监听
 const scopeEventListener = effectScope()
-// 保持弹窗显示状态和图片地址的响应式引用。
+// 保持弹窗显示状态和图片地址的响应式引用
 const { modelValue, imageUrl } = toRefs(props)
-// 根据缩放比例生成图片内联样式。
+// 根据缩放比例生成图片内联样式
 const imgStyle = computed(() => {
   const { scale } = transform.value
   const style: CSSProperties = {
@@ -35,7 +35,7 @@ const imgStyle = computed(() => {
   return style
 })
 
-// 执行图片缩放动作，并限制最小和最大缩放比例。
+// 执行图片缩放动作，并限制最小和最大缩放比例
 const handleActions = (action: ImageViewerAction, options = {}) => {
   const { zoomRate } = {
     zoomRate: 1.4,
@@ -55,7 +55,7 @@ const handleActions = (action: ImageViewerAction, options = {}) => {
   }
 }
 
-// 鼠标滚轮缩放图片，节流后避免连续滚动造成过量渲染。
+// 鼠标滚轮缩放图片，节流后避免连续滚动造成过量渲染
 const mousewheelHandler = throttle((e: WheelEvent | any /* 兼容旧浏览器的 wheelDelta 字段。 */) => {
   const delta = e.wheelDelta ? e.wheelDelta : -e.detail
   if (delta > 0) {
@@ -79,9 +79,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   scopeEventListener.stop()
 })
-// 弹窗关闭时同步父组件的 v-model。
+// 弹窗关闭时同步父组件的 v-model
 const emits = defineEmits(['update:modelValue'])
-// 关闭预览弹窗并重置缩放比例。
+// 关闭预览弹窗并重置缩放比例
 const HandleBeforeClose = () => {
   transform.value.scale = 1
   modelValue.value = false

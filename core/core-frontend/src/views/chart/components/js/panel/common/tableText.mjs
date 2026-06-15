@@ -17,7 +17,7 @@ const entityMap = {
   '&apos;': "'"
 }
 
-// 将表格单元格内容归一化为可复制的纯文本。
+// 将表格单元格内容归一化为可复制的纯文本
 export function normalizeTableCellText(value) {
   if (value === null || value === undefined) {
     return ''
@@ -42,7 +42,7 @@ export function normalizeTableCellText(value) {
     .trim()
 }
 
-// 解码字符串中的转义换行和制表符。
+// 解码字符串中的转义换行和制表符
 function decodeEscapedWhitespace(value) {
   let result = ''
   for (let index = 0; index < value.length; index += 1) {
@@ -74,7 +74,7 @@ function decodeEscapedWhitespace(value) {
   return result
 }
 
-// 统一真实换行符和制表符，保证复制文本格式稳定。
+// 统一真实换行符和制表符，保证复制文本格式稳定
 function normalizeActualNewlines(value) {
   let result = ''
   for (let index = 0; index < value.length; index += 1) {
@@ -91,7 +91,7 @@ function normalizeActualNewlines(value) {
   return result
 }
 
-// 移除复制内容中不应保留的危险 HTML 标签。
+// 移除复制内容中不应保留的危险 HTML 标签
 function stripDangerousHtml(value) {
   let result = value
   for (const tagName of ['script', 'style', 'iframe']) {
@@ -100,7 +100,7 @@ function stripDangerousHtml(value) {
   return result
 }
 
-// 按标签名剥离成对或未闭合的危险 HTML 片段。
+// 按标签名剥离成对或未闭合的危险 HTML 片段
 function stripDangerousTag(value, tagName) {
   let result = ''
   let searchFrom = 0
@@ -131,12 +131,12 @@ function stripDangerousTag(value, tagName) {
   return result
 }
 
-// 判断标签名后续字符是否构成合法标签边界。
+// 判断标签名后续字符是否构成合法标签边界
 function isTagBoundary(char) {
   return char === undefined || char === '>' || char === '/' || char === ' ' || char === '\n' || char === '\t'
 }
 
-// 根据复制选项生成单元格文本。
+// 根据复制选项生成单元格文本
 export function getTableCellCopyText(value, options = {}) {
   const text = normalizeTableCellText(value)
   if (options.preserveLineBreaks) {
@@ -145,14 +145,14 @@ export function getTableCellCopyText(value, options = {}) {
   return text.replace(/\n+/g, ' ').replace(/\t/g, '  ')
 }
 
-// 将二维表格数据构造成纯文本复制内容。
+// 将二维表格数据构造成纯文本复制内容
 export function buildTableCopyText(rows, headerRows = []) {
   return [...headerRows, ...rows]
     .map(row => row.map(value => getTableCellCopyText(value)).join('\t'))
     .join('\n')
 }
 
-// 将二维表格数据构造成 HTML 表格复制内容。
+// 将二维表格数据构造成 HTML 表格复制内容
 export function buildTableCopyHtml(rows, headerRows = []) {
   const header = headerRows
     .map(row => `<tr>${row.map(cell => `<th>${escapeHtml(getTableCellCopyText(cell))}</th>`).join('')}</tr>`)
@@ -163,9 +163,9 @@ export function buildTableCopyHtml(rows, headerRows = []) {
   return `<meta charset="utf-8"><table><tbody>${header}${body}</tbody></table>`
 }
 
-// 创建剪贴板多格式转换器。
+// 创建剪贴板多格式转换器
 export function createTableCopyTransformer(transformers = {}) {
-  // 归一化矩阵中的每一个单元格文本。
+  // 归一化矩阵中的每一个单元格文本
   const normalizeMatrix = dataMatrix =>
     dataMatrix.map(row => row.map(value => getTableCellCopyText(value)))
 
@@ -190,7 +190,7 @@ export function createTableCopyTransformer(transformers = {}) {
   }
 }
 
-// 转义 HTML 特殊字符，避免复制内容破坏表格结构。
+// 转义 HTML 特殊字符，避免复制内容破坏表格结构
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')

@@ -17,12 +17,12 @@ import { storeToRefs } from 'pinia'
 import BackgroundOverallCommon from '@/components/visualization/component-background/BackgroundOverallCommon.vue'
 import { isDashboard, isMainCanvas } from '@/utils/canvasUtils'
 const { t } = useI18n()
-// 样式面板默认展开的折叠项。
+// 样式面板默认展开的折叠项
 const styleActiveNames = ref(['basicStyle'])
 const dvMainStore = dvMainStoreWithOut()
 const { mobileInPc } = storeToRefs(dvMainStore)
 
-// 查询组件样式面板入参，包含组件、图表、通用背景和主题。
+// 查询组件样式面板入参，包含组件、图表、通用背景和主题
 const props = defineProps({
   element: {
     type: Object,
@@ -42,7 +42,7 @@ const props = defineProps({
   }
 })
 const { chart, commonBackgroundPop, element } = toRefs(props)
-// 根据面板主题反转提示框主题。
+// 根据面板主题反转提示框主题
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
@@ -55,10 +55,10 @@ for (let i = 10; i <= 60; i = i + 2) {
   })
 }
 const snapshotStore = snapshotStoreWithOut()
-// 背景图片上传 input 实例。
+// 背景图片上传 input 实例
 const files = ref(null)
 
-// 查询组件样式状态，包含背景副本、上传文件列表和预览弹窗。
+// 查询组件样式状态，包含背景副本、上传文件列表和预览弹窗
 const state = reactive({
   commonBackground: {},
   fileList: [],
@@ -66,10 +66,10 @@ const state = reactive({
   dialogVisible: false
 })
 
-// 移动端 PC 设计模式下同步组件样式变更。
+// 移动端 PC 设计模式下同步组件样式变更
 const mobileStyleChange = () => {
   if (mobileInPc.value) {
-    // 移动端设计态通过事件通知外层重新渲染组件。
+    // 移动端设计态通过事件通知外层重新渲染组件
     useEmitt().emitter.emit('onMobileStatusChange', {
       type: 'componentStyleChange',
       value: { type: 'renderChart', component: JSON.parse(JSON.stringify(chart.value)) }
@@ -77,10 +77,10 @@ const mobileStyleChange = () => {
   }
 }
 
-// 移动端 PC 设计模式下同步组件背景变更。
+// 移动端 PC 设计模式下同步组件背景变更
 const mobileBackgroundChange = () => {
   if (mobileInPc.value) {
-    // 移动端设计态通过事件通知外层重新渲染背景。
+    // 移动端设计态通过事件通知外层重新渲染背景
     useEmitt().emitter.emit('onMobileStatusChange', {
       type: 'componentStyleChange',
       value: { type: 'commonBackground', component: JSON.parse(JSON.stringify(props.element)) }
@@ -88,7 +88,7 @@ const mobileBackgroundChange = () => {
   }
 }
 
-// 通用背景变化时同步移动端预览。
+// 通用背景变化时同步移动端预览
 watch(
   [() => state.commonBackground, () => commonBackgroundPop.value],
   () => {
@@ -97,7 +97,7 @@ watch(
   { deep: true }
 )
 
-// 自定义样式变化时同步移动端预览。
+// 自定义样式变化时同步移动端预览
 watch(
   [() => chart.value.customStyle],
   () => {
@@ -106,7 +106,7 @@ watch(
   { deep: true }
 )
 
-// 外部背景配置变化时刷新本地背景副本。
+// 外部背景配置变化时刷新本地背景副本
 watch(
   () => props.commonBackgroundPop,
   () => {
@@ -115,7 +115,7 @@ watch(
   }
 )
 
-// 切换查询组件时重新补齐默认样式参数。
+// 切换查询组件时重新补齐默认样式参数
 watch(
   () => props.element.id,
   () => {
@@ -123,15 +123,15 @@ watch(
   }
 )
 
-// 当前正在编辑占位文案的查询条件 ID。
+// 当前正在编辑占位文案的查询条件 ID
 const currentPlaceholder = ref()
-// 当前查询条件占位文案和宽度配置。
+// 当前查询条件占位文案和宽度配置
 const currentSearch = ref({
   placeholder: '',
   queryConditionWidth: 227
 })
 
-// 切换查询组件冻结置顶状态，并保证同画布只保留一个冻结查询组件。
+// 切换查询组件冻结置顶状态，并保证同画布只保留一个冻结查询组件
 const onFreezeChange = () => {
   if (element.value.freeze) {
     let historyFreezeCount = 0
@@ -173,7 +173,7 @@ const onFreezeChange = () => {
   }
 }
 
-// 切换当前编辑的查询条件占位配置。
+// 切换当前编辑的查询条件占位配置
 const handleCurrentPlaceholder = val => {
   const obj = props.element.propValue.find(ele => {
     return ele.id === val
@@ -191,7 +191,7 @@ const handleCurrentPlaceholder = val => {
   snapshotStore.recordSnapshotCacheToMobile('propValue')
 }
 
-// 初始化背景副本和背景图片预览列表。
+// 初始化背景副本和背景图片预览列表
 const init = () => {
   state.commonBackground = cloneDeep(props.commonBackgroundPop)
   if (state.commonBackground['outerImage']) {
@@ -200,13 +200,13 @@ const init = () => {
     state.fileList = []
   }
 }
-// 通用背景组件变更后记录快照并写回组件背景。
+// 通用背景组件变更后记录快照并写回组件背景
 const onBackgroundChangeV2 = val => {
   snapshotStore.recordSnapshotCache('onBackgroundChange')
   element.value.commonBackground = val
 }
 
-// 背景图片变更后写回通用背景配置。
+// 背景图片变更后写回通用背景配置
 const onBackgroundChange = () => {
   snapshotStore.recordSnapshotCache('onBackgroundChange')
   commonBackgroundPop.value.outerImage = state.commonBackground['outerImage']
@@ -215,7 +215,7 @@ onMounted(() => {
   init()
 })
 
-// 重新上传查询组件背景图片。
+// 重新上传查询组件背景图片
 const reUpload = e => {
   const file = e.target.files[0]
   if (file.size > 15000000) {
@@ -229,16 +229,16 @@ const reUpload = e => {
   })
 }
 
-// 切换查询条件名称字体加粗状态。
+// 切换查询条件名称字体加粗状态
 const checkBold = type => {
   if (!chart.value.customStyle.component.labelShow) return
   chart.value.customStyle.component[type] = chart.value.customStyle.component[type] ? '' : 'bold'
 }
 
-// 占位文案样式变更后同步移动端或记录快照。
+// 占位文案样式变更后同步移动端或记录快照
 const handleCurrentPlaceholderCustomChange = () => {
   if (mobileInPc.value) {
-    // 移动端设计态通过事件通知外层重新渲染组件。
+    // 移动端设计态通过事件通知外层重新渲染组件
     useEmitt().emitter.emit('onMobileStatusChange', {
       type: 'componentStyleChange',
       value: { type: 'renderChart', component: JSON.parse(JSON.stringify(chart.value)) }
@@ -248,17 +248,17 @@ const handleCurrentPlaceholderCustomChange = () => {
   }
 }
 
-// 占位文案配置变更后记录到移动端快照。
+// 占位文案配置变更后记录到移动端快照
 const handleCurrentPlaceholderChange = () => {
   snapshotStore.recordSnapshotCacheToMobile('propValue')
 }
 
-// 切换查询条件名称字体斜体状态。
+// 切换查询条件名称字体斜体状态
 const checkItalic = type => {
   if (!chart.value.customStyle.component.labelShow) return
   chart.value.customStyle.component[type] = chart.value.customStyle.component[type] ? '' : 'italic'
 }
-// 补齐历史查询组件缺失的样式字段默认值。
+// 补齐历史查询组件缺失的样式字段默认值
 const initParams = () => {
   if (!chart.value.customStyle.component.hasOwnProperty('queryConditionHeight')) {
     chart.value.customStyle.component = {
@@ -298,14 +298,14 @@ const initParams = () => {
   }
 }
 initParams()
-// 标题变更后同步组件标题、名称和图表标题。
+// 标题变更后同步组件标题、名称和图表标题
 const onTitleChange = () => {
   element.value.label = chart.value.customStyle.component.title
   element.value.name = chart.value.customStyle.component.title
   chart.value.title = chart.value.customStyle.component.title
 }
 
-// 占位文案或查询条件宽度变更后写回对应查询条件。
+// 占位文案或查询条件宽度变更后写回对应查询条件
 const onPlaceholderChange = () => {
   props.element.propValue.forEach(ele => {
     if (ele.id === currentPlaceholder.value) {

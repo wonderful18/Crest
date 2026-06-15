@@ -18,49 +18,49 @@ public class CoreExportDownloadTask implements Serializable {
     private Long validTime;
 
     /**
-     * 获取下载任务主键。
+     * 获取下载任务主键
      */
     public String getId() {
         return id;
     }
 
     /**
-     * 设置下载任务主键。
+     * 设置下载任务主键
      */
     public void setId(String id) {
         this.id = id;
     }
 
     /**
-     * 获取任务创建时间。
+     * 获取任务创建时间
      */
     public Long getCreateTime() {
         return createTime;
     }
 
     /**
-     * 设置任务创建时间。
+     * 设置任务创建时间
      */
     public void setCreateTime(Long createTime) {
         this.createTime = createTime;
     }
 
     /**
-     * 获取任务有效期时间。
+     * 获取任务有效期时间
      */
     public Long getValidTime() {
         return validTime;
     }
 
     /**
-     * 设置任务有效期时间。
+     * 设置任务有效期时间
      */
     public void setValidTime(Long validTime) {
         this.validTime = validTime;
     }
 
     /**
-     * 返回导出下载任务的调试字符串。
+     * 返回导出下载任务的调试字符串
      */
     @Override
     public String toString() {

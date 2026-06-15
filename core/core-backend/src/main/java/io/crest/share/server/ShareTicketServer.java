@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 提供分享票据的创建、删除、开关和查询接口。
+ * 提供分享票据的创建、删除、开关和查询接口
  */
 @RestController
 @RequestMapping("/ticket")
@@ -24,7 +24,7 @@ public class ShareTicketServer implements ShareTicketApi {
     private ShareTicketManage shareTicketManage;
 
     /**
-     * 保存分享票据并返回票据标识。
+     * 保存分享票据并返回票据标识
      */
     @Override
     @SuppressWarnings("java/xss")
@@ -33,7 +33,7 @@ public class ShareTicketServer implements ShareTicketApi {
     }
 
     /**
-     * 删除指定分享票据。
+     * 删除指定分享票据
      */
     @Override
     public void deleteTicket(TicketDelRequest request) {
@@ -41,7 +41,7 @@ public class ShareTicketServer implements ShareTicketApi {
     }
 
     /**
-     * 切换分享票据的访问要求。
+     * 切换分享票据的访问要求
      */
     @Override
     public void switchRequire(TicketSwitchRequest request) {
@@ -49,7 +49,7 @@ public class ShareTicketServer implements ShareTicketApi {
     }
 
     /**
-     * 分页查询资源的分享票据。
+     * 分页查询资源的分享票据
      */
     @Override
     public IPage<TicketVO> pager(Long resourceId, int goPage, int pageSize) {
@@ -58,7 +58,7 @@ public class ShareTicketServer implements ShareTicketApi {
     }
 
     /**
-     * 生成临时分享票据。
+     * 生成临时分享票据
      */
     @Override
     public String tempTicket() {
@@ -66,7 +66,7 @@ public class ShareTicketServer implements ShareTicketApi {
     }
 
     /**
-     * 查询分享票据数量限制。
+     * 查询分享票据数量限制
      */
     @Override
     public Integer limit() {

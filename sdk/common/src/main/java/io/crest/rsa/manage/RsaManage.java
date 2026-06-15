@@ -18,19 +18,19 @@ import static io.crest.constant.CacheConstant.CommonCacheConstant.RSA_CACHE;
 
 @Component
 /**
- * RSA 与国密密钥初始化和查询管理器。
+ * RSA 与国密密钥初始化和查询管理器
  */
 public class RsaManage {
 
     /**
-     * RSA 密钥持久化访问对象。
+     * RSA 密钥持久化访问对象
      */
     @Resource
     private CoreRsaMapper coreRsaMapper;
 
 
     /**
-     * 检查系统密钥是否存在，并在国密模式下补齐 SM2 密钥。
+     * 检查系统密钥是否存在，并在国密模式下补齐 SM2 密钥
      */
     public void check() {
         RsaManage proxy = proxy();
@@ -44,7 +44,7 @@ public class RsaManage {
     }
 
     /**
-     * 生成并保存默认 RSA/AES 密钥。
+     * 生成并保存默认 RSA/AES 密钥
      */
     @CacheEvict(value = RSA_CACHE, key = "'-de-'")
     public void save() {
@@ -59,7 +59,7 @@ public class RsaManage {
     }
 
     /**
-     * 确保国密模式所需的 SM2 密钥已生成。
+     * 确保国密模式所需的 SM2 密钥已生成
      */
     @CacheEvict(value = RSA_CACHE, key = "'-de-'")
     public CoreRsa ensureSmSuiteKey() {
@@ -82,7 +82,7 @@ public class RsaManage {
     }
 
     /**
-     * 查询系统密钥配置。
+     * 查询系统密钥配置
      */
     @Cacheable(value = RSA_CACHE, key = "'-de-'", unless = "#result == null")
     public CoreRsa query() {
@@ -90,7 +90,7 @@ public class RsaManage {
     }
 
     /**
-     * 获取 Spring 代理对象，确保缓存注解生效。
+     * 获取 Spring 代理对象，确保缓存注解生效
      */
     private RsaManage proxy() {
         return CommonBeanFactory.getBean(RsaManage.class);

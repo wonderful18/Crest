@@ -7,12 +7,12 @@ import { CollapseSwitchItem } from '@/components/collapse-switch-item'
 import { useI18n } from '@/hooks/web/useI18n'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { ElMessage } from 'element-plus-secondary'
-// 快照仓库用于记录图片组阈值和刷新设置修改。
+// 快照仓库用于记录图片组阈值和刷新设置修改
 const snapshotStore = snapshotStoreWithOut()
-// 图片组阈值设置文案函数。
+// 图片组阈值设置文案函数
 const { t } = useI18n()
 
-// 图片组阈值面板属性。
+// 图片组阈值面板属性
 const props = defineProps({
   themes: {
     type: String as PropType<EditorTheme>,
@@ -36,12 +36,12 @@ const props = defineProps({
     }
   }
 })
-// 当前图表视图和图片组组件配置引用。
+// 当前图表视图和图片组组件配置引用
 const { view, element } = toRefs(props)
 
-// 阈值变化后刷新图表并关闭图片轮播。
+// 阈值变化后刷新图表并关闭图片轮播
 const onThresholdChange = val => {
-  // 阈值启用时优先使用阈值展示，避免与轮播冲突。
+  // 阈值启用时优先使用阈值展示，避免与轮播冲突
   view.value.senior.threshold = val
   if (val.enable) {
     element.value.carousel.enable = false
@@ -52,12 +52,12 @@ const onThresholdChange = val => {
   snapshotStore.recordSnapshotCache('calcData', view.value.id)
 }
 
-// 记录样式或刷新配置修改。
+// 记录样式或刷新配置修改
 const onStyleChange = () => {
   snapshotStore.recordSnapshotCache('onStyleChange')
 }
 
-// 校验刷新间隔，必须为大于等于 1 的数字。
+// 校验刷新间隔，必须为大于等于 1 的数字
 const onRefreshChange = val => {
   onStyleChange()
   if (val === '' || parseFloat(val).toString() === 'NaN' || parseFloat(val) < 1) {
@@ -66,7 +66,7 @@ const onRefreshChange = val => {
   }
 }
 
-// 关闭阈值开关。
+// 关闭阈值开关
 const closeThreshold = () => {
   view.value.senior.threshold.enable = false
 }

@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 处理透视表图表的数据计算、辅助字段和自定义汇总。
+ * 处理透视表图表的数据计算、辅助字段和自定义汇总
  */
 @Component
 @SuppressWarnings("unchecked")
@@ -40,7 +40,7 @@ public class TablePivotHandler extends GroupChartHandler {
     private String type = "table-pivot";
 
     /**
-     * 计算透视表图表结果并补充动态辅助字段数据。
+     * 计算透视表图表结果并补充动态辅助字段数据
      */
     @Override
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
@@ -94,7 +94,7 @@ public class TablePivotHandler extends GroupChartHandler {
     }
 
     /**
-     * 生成透视表基础结果数据。
+     * 生成透视表基础结果数据
      */
     @Override
     public Map<String, Object> buildResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
@@ -108,7 +108,7 @@ public class TablePivotHandler extends GroupChartHandler {
     }
 
     /**
-     * 计算透视表自定义汇总表达式。
+     * 计算透视表自定义汇总表达式
      */
     private Map<String, Object> calcCustomExpr(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         Object totalStr = JsonUtil.toJSONString(view.getCustomAttr().get("tableTotal"));
@@ -319,7 +319,7 @@ public class TablePivotHandler extends GroupChartHandler {
     }
 
     /**
-     * 组装自定义汇总结果。
+     * 组装自定义汇总结果
      */
     private Map<String, Object> buildCustomCalcResult(List<String[]> data, List<ChartViewFieldDTO> dimAxis, List<ChartViewFieldDTO> quotaAxis) {
         var rootResult = new HashMap<String, Object>();
@@ -371,7 +371,7 @@ public class TablePivotHandler extends GroupChartHandler {
     }
 
     /**
-     * 将结果数据中的空值统一转换为空字符串。
+     * 将结果数据中的空值统一转换为空字符串
      */
     private void nullToBlank(List<String[]> data) {
         data.forEach(r -> {
@@ -384,7 +384,7 @@ public class TablePivotHandler extends GroupChartHandler {
     }
 
     /**
-     * 根据自定义汇总配置构造计算字段。
+     * 根据自定义汇总配置构造计算字段
      */
     private List<ChartViewFieldDTO> getCustomFields(ChartViewDTO view, List<TableCalcTotalCfg> cfgList) {
         var quotaIds = view.getYAxis().stream().map(ChartViewFieldDTO::getEngineFieldName).collect(Collectors.toSet());

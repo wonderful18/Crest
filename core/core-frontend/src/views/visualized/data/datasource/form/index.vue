@@ -58,20 +58,20 @@ interface Form {
 }
 
 const { t } = useI18n()
-// 新建文件夹弹窗引用，保存 Excel 或新数据源时复用其目录选择流程。
+// 新建文件夹弹窗引用，保存 Excel 或新数据源时复用其目录选择流程
 const creatDsFolder = ref()
 const router = useRouter()
 const { wsCache } = useCache()
-// 数据源保存或校验加载状态，覆盖整个抽屉。
+// 数据源保存或校验加载状态，覆盖整个抽屉
 const dsLoading = ref(false)
 let isFormUpdate = false
 let isForm2Update = false
 let isUpdate = false
-// 标记表单是否发生过用户修改，关闭抽屉时据此确认是否离开。
+// 标记表单是否发生过用户修改，关闭抽屉时据此确认是否离开
 const changeUpdate = val => {
   isUpdate = val
 }
-// 左侧数据源类型目录树，按大类组织内置数据源类型。
+// 左侧数据源类型目录树，按大类组织内置数据源类型
 const state = reactive({
   datasourceTree: []
 })
@@ -82,32 +82,32 @@ state.datasourceTree = typeList.map(ele => {
   }
 })
 
-// 抽屉当前步骤，0 为类型选择，1 为配置编辑。
+// 抽屉当前步骤，0 为类型选择，1 为配置编辑
 const activeStep = ref(0)
-// 通用数据源详情表单引用。
+// 通用数据源详情表单引用
 const detail = ref()
-// 插件数据源桥接组件引用，通过 invokeMethod 调用插件表单方法。
+// 插件数据源桥接组件引用，通过 invokeMethod 调用插件表单方法
 const pluginBridge = ref()
-// 本地 Excel 数据源表单引用。
+// 本地 Excel 数据源表单引用
 const excel = ref()
-// 远程 Excel 数据源表单引用。
+// 远程 Excel 数据源表单引用
 const excelRemote = ref()
-// 最近使用的数据源类型，展示在类型选择首页。
+// 最近使用的数据源类型，展示在类型选择首页
 const latestUseTypes = ref([])
-// 当前左侧类型大类。
+// 当前左侧类型大类
 const currentType = ref<DsType>('OLTP')
-// 类型搜索关键字。
+// 类型搜索关键字
 const filterText = ref('')
-// 当前选择的具体数据源类型。
+// 当前选择的具体数据源类型
 const currentDsType = ref('')
-// 保存完成后通知父级刷新数据源列表。
+// 保存完成后通知父级刷新数据源列表
 const emits = defineEmits(['refresh'])
 const { emitter } = useEmitt()
-// 当前选择的数据源是否来自插件。
+// 当前选择的数据源是否来自插件
 const isPlugin = ref(false)
-// 当前部署是否支持前端设置密钥。
+// 当前部署是否支持前端设置密钥
 const isSupportSetKey = ref(false)
-// 选择具体数据源类型后进入配置步骤，并初始化对应表单。
+// 选择具体数据源类型后进入配置步骤，并初始化对应表单
 const selectDsType = (type: string) => {
   currentDsType.value = type
   activeStep.value = 1
@@ -134,45 +134,45 @@ const selectDsType = (type: string) => {
   })
 }
 
-// 点击数据源类型树叶子节点时更新插件标记并进入对应配置表单。
+// 点击数据源类型树叶子节点时更新插件标记并进入对应配置表单
 const handleDsNodeClick = data => {
   if (!data.type) return
   isPlugin.value = data['isPlugin']
   selectDsType(data.type)
 }
-// 点击左侧类型大类时切换当前类型筛选。
+// 点击左侧类型大类时切换当前类型筛选
 const handleNodeClick = (data: Node) => {
   currentType.value = data.type
 }
 
-// 类型搜索关键字变化时过滤第二步的数据源类型树。
+// 类型搜索关键字变化时过滤第二步的数据源类型树
 watch(filterText, val => {
   if (activeStep.value === 1) {
     dsTree.value.filter(val.toLocaleLowerCase())
   }
 })
 
-// 数据源类型树组件引用。
+// 数据源类型树组件引用
 const dsTree = ref()
 const defaultProps = {
   children: 'dbList',
   label: 'name'
 }
-// 类型树过滤规则，按名称做不区分大小写匹配。
+// 类型树过滤规则，按名称做不区分大小写匹配
 const filterNode = (value: string, data: Tree) => {
   if (!value) return true
   return data.name.toLowerCase().includes(value)
 }
-// 按大类分组后的数据源类型列表。
+// 按大类分组后的数据源类型列表
 const databaseList = ref([])
-// 当前可展示的数据源类型树数据。
+// 当前可展示的数据源类型树数据
 const currentTypeList = computed(() => {
   return typeList.map((ele, index) => {
     return { name: nameMap[ele], dbList: databaseList.value[index] }
   })
 })
 
-// 初始化内置数据源类型分组，并按名称排序。
+// 初始化内置数据源类型分组，并按名称排序
 const datasourceTypes = () => {
   const arr = [[], [], [], [], []]
   dsTypes.forEach(item => {
@@ -189,11 +189,11 @@ const datasourceTypes = () => {
 }
 datasourceTypes()
 
-// 当前插件数据源的静态资源索引。
+// 当前插件数据源的静态资源索引
 const pluginIndex = ref('')
-// 已加载的数据源插件列表。
+// 已加载的数据源插件列表
 const pluginDs = ref([])
-// 接收插件数据源定义，并追加到对应数据源类型大类中。
+// 接收插件数据源定义，并追加到对应数据源类型大类中
 const loadDsPlugin = data => {
   pluginDs.value = data
   data.forEach(item => {
@@ -213,7 +213,7 @@ const loadDsPlugin = data => {
     }
   })
 }
-// 获取插件数据源静态资源索引，优先使用当前插件上下文。
+// 获取插件数据源静态资源索引，优先使用当前插件上下文
 const getPluginStatic = type => {
   const arr = pluginDs.value.filter(ele => {
     return ele.type === type
@@ -225,7 +225,7 @@ const getPluginStatic = type => {
     : null
 }
 
-// 加载最近使用的数据源类型，供类型选择首页展示。
+// 加载最近使用的数据源类型，供类型选择首页展示
 const getLatestUseTypes = () => {
   latestUse({}).then(res => {
     latestUseTypes.value = res.data
@@ -233,10 +233,10 @@ const getLatestUseTypes = () => {
 }
 getLatestUseTypes()
 
-// API 和远程 Excel 的内部步骤，区分基础配置与同步配置。
+// API 和远程 Excel 的内部步骤，区分基础配置与同步配置
 const activeApiStep = ref(0)
 
-// 进入下一步，并处理 API 与远程 Excel 的双层步骤规则。
+// 进入下一步，并处理 API 与远程 Excel 的双层步骤规则
 const setNextStep = () => {
   activeApiStep.value = activeStep.value + 1
   if (
@@ -247,7 +247,7 @@ const setNextStep = () => {
   activeStep.value = activeStep.value + 1
 }
 
-// 下一步按钮处理，先校验当前类型和当前步骤必填内容。
+// 下一步按钮处理，先校验当前类型和当前步骤必填内容
 const next = () => {
   if (currentDsType.value === '') {
     ElMessage.error(t('datasource.select_type'))
@@ -284,7 +284,7 @@ const next = () => {
   setNextStep()
 }
 
-// 完成 Excel 类数据源保存后回写父目录，并执行目录弹窗回调。
+// 完成 Excel 类数据源保存后回写父目录，并执行目录弹窗回调
 const complete = (params?: { id?: any; name?: any; pid?: any } | null, successCb?, finallyCb?) => {
   excel?.value?.saveExcelDs(
     params,
@@ -305,15 +305,15 @@ const complete = (params?: { id?: any; name?: any; pid?: any } | null, successCb
   return
 }
 
-// 新建成功完成页显示状态。
+// 新建成功完成页显示状态
 const showFinishPage = ref(false)
-// 完成页展示的数据源基础信息。
+// 完成页展示的数据源基础信息
 const dsInfo = reactive({
   name: '',
   id: ''
 })
 
-// 从完成页进入数据集创建流程，并携带刚创建的数据源 id。
+// 从完成页进入数据集创建流程，并携带刚创建的数据源 id
 const createDataset = () => {
   router.push({
     path: '/dataset-form',
@@ -322,19 +322,19 @@ const createDataset = () => {
     }
   })
 }
-// 从完成页返回数据源列表，并通知父级刷新。
+// 从完成页返回数据源列表，并通知父级刷新
 const backToDatasourceList = () => {
   visible.value = false
   emits('refresh')
   showFinishPage.value = false
 }
-// 从完成页继续创建数据源，保留上一次的父目录。
+// 从完成页继续创建数据源，保留上一次的父目录
 const continueCreating = () => {
   showFinishPage.value = false
   init(null, pid.value)
 }
 
-// 根据系统配置决定保存后展示完成页还是直接关闭并刷新列表。
+// 根据系统配置决定保存后展示完成页还是直接关闭并刷新列表
 const handleShowFinishPage = ({
   id,
   name,
@@ -362,12 +362,12 @@ const handleShowFinishPage = ({
 
 emitter.on('showFinishPage', handleShowFinishPage)
 
-// 上一步按钮入口，统一走确认和步骤回退逻辑。
+// 上一步按钮入口，统一走确认和步骤回退逻辑
 const prev = () => {
   prevConfirm()
 }
 
-// 处理步骤回退，API 和远程 Excel 的第二步会先回到配置步骤。
+// 处理步骤回退，API 和远程 Excel 的第二步会先回到配置步骤
 const prevConfirm = () => {
   if (
     (currentDsType.value.includes('API') || currentDsType.value === 'ExcelRemote') &&
@@ -384,7 +384,7 @@ const prevConfirm = () => {
   activeStep.value = activeStep.value - 1
 }
 
-// 接收插件表单提交事件，并根据事件名分发到保存或校验。
+// 接收插件表单提交事件，并根据事件名分发到保存或校验
 const handleSubmit = param => {
   const validateFrom = param.validate
   if (param.eventName === 'saveDs') {
@@ -402,7 +402,7 @@ const handleSubmit = param => {
   }
 }
 
-// 发起数据源连通性校验，按 API、插件、远程 Excel 和普通数据源分别组装请求。
+// 发起数据源连通性校验，按 API、插件、远程 Excel 和普通数据源分别组装请求
 const validateDS = () => {
   const request = JSON.parse(JSON.stringify(form)) as any
   if (currentDsType.value.includes('API')) {
@@ -439,7 +439,7 @@ const validateDS = () => {
   }
 }
 
-// 执行数据源连通性校验请求，并把 API 子表状态回写到表单。
+// 执行数据源连通性校验请求，并把 API 子表状态回写到表单
 const doValidateDs = request => {
   dsLoading.value = true
   if (currentDsType.value === 'ExcelRemote') {
@@ -496,7 +496,7 @@ const doValidateDs = request => {
     })
 }
 
-// 当前选择的数据源类型标题，展示在配置步骤顶部。
+// 当前选择的数据源类型标题，展示在配置步骤顶部
 const typeTitle = computed(() => {
   if (!currentDsType.value) {
     return ''
@@ -514,7 +514,7 @@ const typeTitle = computed(() => {
   return str
 })
 
-// 保存数据源主流程，按 Excel、远程 Excel、API、插件和普通数据库分支处理。
+// 保存数据源主流程，按 Excel、远程 Excel、API、插件和普通数据库分支处理
 const saveDS = () => {
   isUpdate = false
   const request = JSON.parse(JSON.stringify(form)) as any
@@ -609,7 +609,7 @@ const saveDS = () => {
   }
 }
 
-// 执行数据源保存；编辑时校验重复名称，新建时先选择目标文件夹。
+// 执行数据源保存；编辑时校验重复名称，新建时先选择目标文件夹
 const doSaveDs = request => {
   if (editDs.value && form.id) {
     let options = {
@@ -679,21 +679,21 @@ const defaultForm2 = {
   creator: '',
   configuration: {}
 }
-// 非 Excel 数据源原始表单副本，用于关闭抽屉时判断是否有未保存修改。
+// 非 Excel 数据源原始表单副本，用于关闭抽屉时判断是否有未保存修改
 const origin = reactive<Form>(cloneDeep(defaultForm))
-// 非 Excel 数据源表单模型，覆盖数据库、API 和插件数据源。
+// 非 Excel 数据源表单模型，覆盖数据库、API 和插件数据源
 const form = reactive<Form>(cloneDeep(defaultForm))
-// Excel 和远程 Excel 数据源表单模型。
+// Excel 和远程 Excel 数据源表单模型
 const form2 = reactive<Param>(cloneDeep(defaultForm2))
 
-// 数据源编辑抽屉显示状态。
+// 数据源编辑抽屉显示状态
 const visible = ref(false)
-// 当前是否为编辑已有数据源。
+// 当前是否为编辑已有数据源
 const editDs = ref(false)
-// 当前新建数据源的父目录 id。
+// 当前新建数据源的父目录 id
 const pid = ref('0')
 
-// 监听非 Excel 表单变化，并标记抽屉存在未保存修改。
+// 监听非 Excel 表单变化，并标记抽屉存在未保存修改
 watch(
   () => form,
   () => {
@@ -704,7 +704,7 @@ watch(
   { deep: true }
 )
 
-// 监听 Excel 表单变化，并标记抽屉存在未保存修改。
+// 监听 Excel 表单变化，并标记抽屉存在未保存修改
 watch(
   () => form2,
   () => {
@@ -715,7 +715,7 @@ watch(
   { deep: true }
 )
 
-// 初始化抽屉，按新增、编辑、复制和导入结果恢复对应表单状态。
+// 初始化抽屉，按新增、编辑、复制和导入结果恢复对应表单状态
 const init = (nodeInfo: Form | Param | null, id?: string, res?: object, supportSetKey = false) => {
   isPlugin.value = nodeInfo?.isPlugin
   pluginIndex.value = isPlugin.value ? nodeInfo?.staticMap?.index : null
@@ -779,7 +779,7 @@ const init = (nodeInfo: Form | Param | null, id?: string, res?: object, supportS
   }
 }
 
-// 抽屉标题，按新建、编辑、复制、追加和替换场景生成。
+// 抽屉标题，按新建、编辑、复制、追加和替换场景生成
 const drawTitle = computed(() => {
   const { id, editType, creator } = form2
   if (creator && id && currentDsType.value == 'Excel') {
@@ -799,7 +799,7 @@ const drawTitle = computed(() => {
     : t('data_source.create_data_source')
 })
 
-// 关闭抽屉前检查未保存修改，必要时弹出离开确认。
+// 关闭抽屉前检查未保存修改，必要时弹出离开确认
 const beforeClose = () => {
   if (wsCache.get('ds-new-success')) {
     emits('refresh')

@@ -25,7 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/org")
 /**
- * 组织管理接口控制器，负责组织树、挂载组织和组织详情操作。
+ * 组织管理接口控制器，负责组织树、挂载组织和组织详情操作
  */
 public class SubstituleOrgServer implements OrgApi {
 
@@ -36,7 +36,7 @@ public class SubstituleOrgServer implements OrgApi {
     private PlatformPermissionManage platformPermissionManage;
 
     /**
-     * 查询组织分页树。
+     * 查询组织分页树
      */
     @Override
     public List<OrgPageVO> pageTree(OrgRequest request) {
@@ -45,7 +45,7 @@ public class SubstituleOrgServer implements OrgApi {
     }
 
     /**
-     * 懒加载查询组织树。
+     * 懒加载查询组织树
      */
     @Override
     public LazyTreeVO lazyPageTree(OrgLazyRequest request) {
@@ -54,7 +54,7 @@ public class SubstituleOrgServer implements OrgApi {
     }
 
     /**
-     * 创建组织并记录审计日志。
+     * 创建组织并记录审计日志
      */
     @Override
     @CrestAudit(ot = LogOT.CREATE, st = LogST.ORG)
@@ -63,7 +63,7 @@ public class SubstituleOrgServer implements OrgApi {
     }
 
     /**
-     * 编辑组织并记录审计日志。
+     * 编辑组织并记录审计日志
      */
     @Override
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.ORG, id = "#p0.id")
@@ -72,7 +72,7 @@ public class SubstituleOrgServer implements OrgApi {
     }
 
     /**
-     * 删除组织并记录审计日志。
+     * 删除组织并记录审计日志
      */
     @Override
     @CrestAudit(ot = LogOT.DELETE, st = LogST.ORG, id = "#p0")
@@ -81,7 +81,7 @@ public class SubstituleOrgServer implements OrgApi {
     }
 
     /**
-     * 查询当前用户可挂载的组织列表。
+     * 查询当前用户可挂载的组织列表
      */
     @Override
     public List<MountedVO> mounted(KeywordRequest request) {
@@ -91,7 +91,7 @@ public class SubstituleOrgServer implements OrgApi {
     }
 
     /**
-     * 懒加载查询当前用户可挂载的组织树。
+     * 懒加载查询当前用户可挂载的组织树
      */
     @Override
     public LazyMountedVO lazyMounted(OrgLazyRequest request) {
@@ -103,7 +103,7 @@ public class SubstituleOrgServer implements OrgApi {
     }
 
     /**
-     * 判断组织下是否存在资源。
+     * 判断组织下是否存在资源
      */
     @Override
     public boolean resourceExist(Long oid) {
@@ -111,7 +111,7 @@ public class SubstituleOrgServer implements OrgApi {
     }
 
     /**
-     * 查询组织详情。
+     * 查询组织详情
      */
     @Override
     public OrgDetailVO detail(Long oid) {
@@ -119,7 +119,7 @@ public class SubstituleOrgServer implements OrgApi {
     }
 
     /**
-     * 查询当前用户默认组织下的子组织。
+     * 查询当前用户默认组织下的子组织
      */
     @Override
     public List<String> subOrgs() {

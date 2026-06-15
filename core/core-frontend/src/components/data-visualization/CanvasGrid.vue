@@ -36,7 +36,7 @@
 import { computed } from 'vue'
 const matrixBase = 2
 
-// 定义网格组件接收的矩阵样式和主题参数。
+// 定义网格组件接收的矩阵样式和主题参数
 const props = defineProps({
   matrixStyle: {
     type: Object
@@ -47,47 +47,47 @@ const props = defineProps({
   }
 })
 
-// 生成最外层网格路径。
+// 生成最外层网格路径
 const pathD = computed(() => {
   return 'M ' + gridW.value + ' 0 L 0 0 0 ' + gridH.value
 })
 
-// 生成中层网格路径。
+// 生成中层网格路径
 const middleGridPathD = computed(() => {
   return 'M ' + middleGridW.value + ' 0 L 0 0 0 ' + middleGridH.value
 })
 
-// 生成小网格路径。
+// 生成小网格路径
 const smallGridPathD = computed(() => {
   return 'M ' + smallGridW.value + ' 0 L 0 0 0 ' + smallGridH.value
 })
 
-// 计算最外层网格宽度。
+// 计算最外层网格宽度
 const gridW = computed(() => {
   return props.matrixStyle.width * 2 * matrixBase
 })
 
-// 计算最外层网格高度。
+// 计算最外层网格高度
 const gridH = computed(() => {
   return props.matrixStyle.height * 2 * matrixBase
 })
 
-// 计算中层网格宽度。
+// 计算中层网格宽度
 const middleGridW = computed(() => {
   return props.matrixStyle.width * matrixBase
 })
 
-// 计算中层网格高度。
+// 计算中层网格高度
 const middleGridH = computed(() => {
   return props.matrixStyle.height * matrixBase
 })
 
-// 计算小网格宽度。
+// 计算小网格宽度
 const smallGridW = computed(() => {
   return props.matrixStyle.width
 })
 
-// 计算小网格高度。
+// 计算小网格高度
 const smallGridH = computed(() => {
   return props.matrixStyle.height
 })

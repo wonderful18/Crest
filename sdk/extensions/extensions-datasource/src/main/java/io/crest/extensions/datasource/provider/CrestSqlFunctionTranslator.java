@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-// 将 Crest 内部日期函数翻译为指定数据源可执行的 SQL 函数。
+// 将内置日期函数翻译为指定数据源可执行的 SQL 函数
 public final class CrestSqlFunctionTranslator {
     private static final List<String> DATE_FUNCTIONS = List.of(
             "DE_CAST_DATE_FORMAT",
@@ -29,7 +29,7 @@ public final class CrestSqlFunctionTranslator {
     private CrestSqlFunctionTranslator() {
     }
 
-    // 按数据源类型翻译 SQL 中的 Crest 日期函数。
+    // 按数据源类型翻译 SQL 中的内置日期函数
     public static String translate(String sql, DatasourceSchemaDTO datasource) {
         if (StringUtils.isBlank(sql) || datasource == null || !isMysqlFamily(datasource.getType())) {
             return sql;
@@ -37,7 +37,7 @@ public final class CrestSqlFunctionTranslator {
         return rewriteMysql(sql);
     }
 
-    // 判断数据源类型是否属于 MySQL 兼容语法族。
+    // 判断数据源类型是否属于 MySQL 兼容语法族
     private static boolean isMysqlFamily(String type) {
         if (StringUtils.isBlank(type)) {
             return false;
@@ -45,7 +45,7 @@ public final class CrestSqlFunctionTranslator {
         return MYSQL_FAMILY.stream().anyMatch(item -> Strings.CI.equals(item, type));
     }
 
-    // 重写 MySQL 兼容 SQL 中的 Crest 日期函数调用。
+    // 重写 MySQL 兼容 SQL 中的内置日期函数调用
     private static String rewriteMysql(String sql) {
         StringBuilder result = new StringBuilder(sql.length());
         int index = 0;
@@ -76,7 +76,7 @@ public final class CrestSqlFunctionTranslator {
         return result.toString();
     }
 
-    // 移除函数名前的 schema 或反引号限定符。
+    // 移除函数名前的 schema 或反引号限定符
     private static void removeTrailingQualifier(String sql, int functionStart, StringBuilder result) {
         if (functionStart < 2 || sql.charAt(functionStart - 1) != '.') {
             return;
@@ -91,7 +91,7 @@ public final class CrestSqlFunctionTranslator {
         }
     }
 
-    // 定位函数限定符的起始位置。
+    // 定位函数限定符的起始位置
     private static int findQualifierStart(String sql, int end) {
         if (sql.charAt(end) == '`') {
             int start = sql.lastIndexOf('`', end - 1);
@@ -104,7 +104,7 @@ public final class CrestSqlFunctionTranslator {
         return index + 1 <= end ? index + 1 : -1;
     }
 
-    // 将单个 Crest 日期函数转换为 MySQL 兼容函数。
+    // 将单个内置日期函数转换为 MySQL 兼容函数
     private static String rewriteMysqlFunction(String functionName, List<String> args) {
         String normalized = functionName.toUpperCase();
         if (Strings.CS.equals(normalized, "DE_STR_TO_DATE") && args.size() >= 2) {
@@ -128,7 +128,7 @@ public final class CrestSqlFunctionTranslator {
         return null;
     }
 
-    // 从当前位置匹配支持翻译的函数名。
+    // 从当前位置匹配支持翻译的函数名
     private static FunctionMatch matchFunctionName(String sql, int start) {
         for (String functionName : DATE_FUNCTIONS) {
             FunctionMatch match = matchUnquotedFunctionName(sql, start, functionName);
@@ -143,7 +143,7 @@ public final class CrestSqlFunctionTranslator {
         return null;
     }
 
-    // 匹配未加反引号的函数名。
+    // 匹配未加反引号的函数名
     private static FunctionMatch matchUnquotedFunctionName(String sql, int start, String functionName) {
         if (start > 0 && isIdentifierChar(sql.charAt(start - 1))) {
             return null;
@@ -156,7 +156,7 @@ public final class CrestSqlFunctionTranslator {
         return next < sql.length() && sql.charAt(next) == '(' ? new FunctionMatch(functionName, end) : null;
     }
 
-    // 匹配 Calcite 生成的反引号函数名。
+    // 匹配 Calcite 生成的反引号函数名
     private static FunctionMatch matchBacktickQuotedFunctionName(String sql, int start, String functionName) {
         if (sql.charAt(start) != '`') {
             return null;
@@ -172,7 +172,7 @@ public final class CrestSqlFunctionTranslator {
         return next < sql.length() && sql.charAt(next) == '(' ? new FunctionMatch(functionName, end) : null;
     }
 
-    // 跳过当前位置后的空白字符。
+    // 跳过当前位置后的空白字符
     private static int skipWhitespace(String sql, int start) {
         int index = start;
         while (index < sql.length() && Character.isWhitespace(sql.charAt(index))) {
@@ -181,7 +181,7 @@ public final class CrestSqlFunctionTranslator {
         return index;
     }
 
-    // 原样追加 SQL 字符串字面量。
+    // 原样追加 SQL 字符串字面量
     private static int appendQuoted(String sql, int start, StringBuilder result) {
         result.append(sql.charAt(start));
         int index = start + 1;
@@ -201,7 +201,7 @@ public final class CrestSqlFunctionTranslator {
         return index;
     }
 
-    // 跳过 SQL 字符串字面量。
+    // 跳过 SQL 字符串字面量
     private static int skipQuoted(String sql, int start) {
         int index = start + 1;
         while (index < sql.length()) {
@@ -218,7 +218,7 @@ public final class CrestSqlFunctionTranslator {
         return index;
     }
 
-    // 查找与起始括号匹配的结束括号。
+    // 查找与起始括号匹配的结束括号
     private static int findClosingParen(String sql, int openParen) {
         if (openParen >= sql.length() || sql.charAt(openParen) != '(') {
             return -1;
@@ -244,7 +244,7 @@ public final class CrestSqlFunctionTranslator {
         return -1;
     }
 
-    // 按顶层逗号拆分函数参数。
+    // 按顶层逗号拆分函数参数
     private static List<String> splitArguments(String text) {
         List<String> args = new ArrayList<>();
         int depth = 0;
@@ -270,12 +270,12 @@ public final class CrestSqlFunctionTranslator {
         return args;
     }
 
-    // 将日期格式参数转换为 MySQL 格式字面量。
+    // 将日期格式参数转换为 MySQL 格式字面量
     private static String mysqlFormat(String sqlFormat) {
         return "'" + javaDateFormatToMysql(stripSqlLiteral(sqlFormat)).replace("'", "''") + "'";
     }
 
-    // 去掉 SQL 字符串字面量外层引号。
+    // 去掉 SQL 字符串字面量外层引号
     private static String stripSqlLiteral(String value) {
         String text = StringUtils.trimToEmpty(value);
         if (text.length() >= 2 && text.charAt(0) == '\'' && text.charAt(text.length() - 1) == '\'') {
@@ -284,7 +284,7 @@ public final class CrestSqlFunctionTranslator {
         return text;
     }
 
-    // 将 Java 风格日期格式转换为 MySQL 日期格式。
+    // 将 Java 风格日期格式转换为 MySQL 日期格式
     private static String javaDateFormatToMysql(String format) {
         if (Strings.CS.contains(format, "%")) {
             return format;
@@ -304,12 +304,12 @@ public final class CrestSqlFunctionTranslator {
                 .replace("SS", "%s");
     }
 
-    // 判断字符是否可作为函数标识符的一部分。
+    // 判断字符是否可作为函数标识符的一部分
     private static boolean isIdentifierChar(char value) {
         return Character.isLetterOrDigit(value) || value == '_' || value == '$';
     }
 
-    // 保存匹配到的函数名和结束位置。
+    // 保存匹配到的函数名和结束位置
     private record FunctionMatch(String name, int endIndex) {
     }
 }

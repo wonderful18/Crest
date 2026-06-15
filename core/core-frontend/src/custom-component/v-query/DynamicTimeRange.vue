@@ -24,7 +24,7 @@ interface SelectConfig {
   arbitraryTimeRange: Date
 }
 
-// 定义动态时间范围组件接收的配置参数。
+// 定义动态时间范围组件接收的配置参数
 const props = defineProps({
   config: {
     type: Object as PropType<SelectConfig>,
@@ -49,11 +49,11 @@ const props = defineProps({
     }
   }
 })
-// 保存当前选择的时间范围。
+// 保存当前选择的时间范围
 const selectValue = ref<[Date, Date]>([new Date(), new Date()])
 const { config } = toRefs(props)
 
-// 提取会影响默认时间范围计算的配置项。
+// 提取会影响默认时间范围计算的配置项
 const timeConfig = computed(() => {
   const {
     timeNum,
@@ -85,7 +85,7 @@ const timeConfig = computed(() => {
   }
 })
 
-// 监听时间配置变化并重新初始化选择值。
+// 监听时间配置变化并重新初始化选择值
 watch(
   () => timeConfig.value,
   () => {
@@ -96,7 +96,7 @@ watch(
   }
 )
 
-// 监听选择值变化并回写到外部配置。
+// 监听选择值变化并回写到外部配置
 watch(
   () => selectValue.value,
   val => {
@@ -105,7 +105,7 @@ watch(
   }
 )
 
-// 监听配置编号变化并重新初始化组件状态。
+// 监听配置编号变化并重新初始化组件状态
 watch(
   () => config.value.id,
   () => {
@@ -113,7 +113,7 @@ watch(
   }
 )
 
-// 根据固定时间或相对时间配置初始化选择范围。
+// 根据固定时间或相对时间配置初始化选择范围
 const init = () => {
   const {
     timeNum,
@@ -165,7 +165,7 @@ onBeforeMount(() => {
   init()
 })
 
-// 根据时间粒度计算日期选择器类型。
+// 根据时间粒度计算日期选择器类型
 const formatDate = computed(() => {
   return (config.value.timeGranularityMultiple as string) === 'yearrange' ? 'YYYY' : undefined
 })

@@ -2,7 +2,7 @@
 import { ref, reactive, computed, watch, onBeforeMount } from 'vue'
 import { propTypes } from '@/utils/propTypes'
 import { useI18n } from '@/hooks/web/useI18n'
-// 定义小时字段组件接收的 cron 表达式片段。
+// 定义小时字段组件接收的 cron 表达式片段
 const props = defineProps({
   modelValue: propTypes.string.def('?')
 })
@@ -24,13 +24,13 @@ export interface Corn {
 }
 const { t } = useI18n()
 
-// 记录当前选中的小时配置类型。
+// 记录当前选中的小时配置类型
 const type = ref('1')
-// 保存工作日语法解析时的占位值，保持字段结构和其他 cron 组件一致。
+// 保存工作日语法解析时的占位值，保持字段结构和其他 cron 组件一致
 const work = ref<string | number>(0)
-// 保存最后一小时语法中的偏移值。
+// 保存最后一小时语法中的偏移值
 const last = ref<string | number>(0)
-// 保存周期、循环、指定周和指定值的编辑状态。
+// 保存周期、循环、指定周和指定值的编辑状态
 const state = reactive<Corn>({
   cycle: {
     // 周期
@@ -50,7 +50,7 @@ const state = reactive<Corn>({
   appoint: []
 })
 
-// 根据当前编辑状态生成小时字段对应的 cron 片段。
+// 根据当前编辑状态生成小时字段对应的 cron 片段
 const resultValue = computed(() => {
   const result = []
   switch (type.value) {
@@ -80,7 +80,7 @@ onBeforeMount(() => {
   updateVal()
 })
 
-// 监听外部传入值变化并同步到本地编辑状态。
+// 监听外部传入值变化并同步到本地编辑状态
 watch(
   () => props.modelValue,
   () => {
@@ -88,7 +88,7 @@ watch(
   }
 )
 
-// 监听本地计算结果并向父组件回写小时字段。
+// 监听本地计算结果并向父组件回写小时字段
 watch(
   () => resultValue.value,
   () => {
@@ -96,7 +96,7 @@ watch(
   }
 )
 
-// 将外部 cron 片段解析为组件内部的编辑状态。
+// 将外部 cron 片段解析为组件内部的编辑状态
 const updateVal = () => {
   if (!props.modelValue) {
     return
@@ -142,7 +142,7 @@ const updateVal = () => {
   }
 }
 
-// 声明小时字段变更时向父组件派发的事件。
+// 声明小时字段变更时向父组件派发的事件
 const emits = defineEmits(['update:modelValue'])
 </script>
 

@@ -17,14 +17,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("dataset-data")
 /**
- * 数据集数据接口控制器，负责预览、枚举和统计数据查询。
+ * 数据集数据接口控制器，负责预览、枚举和统计数据查询
  */
 public class DatasetDataServer implements DatasetDataApi {
     @Resource
     private DatasetDataManage datasetDataManage;
 
     /**
-     * 预览数据集前 100 条数据。
+     * 预览数据集前 100 条数据
      */
     @Override
     public Map<String, Object> previewData(DatasetGroupInfoDTO datasetGroupInfoDTO) throws Exception {
@@ -32,7 +32,7 @@ public class DatasetDataServer implements DatasetDataApi {
     }
 
     /**
-     * 查询数据表字段信息。
+     * 查询数据表字段信息
      */
     @Override
     public List<DatasetTableFieldDTO> tableField(DatasetTableDTO datasetTableDTO) throws Exception {
@@ -40,7 +40,7 @@ public class DatasetDataServer implements DatasetDataApi {
     }
 
     /**
-     * 执行 SQL 预览并记录日志。
+     * 执行 SQL 预览并记录日志
      */
     @Override
     public Map<String, Object> previewSql(PreviewSqlDTO dto) throws Exception {
@@ -48,7 +48,7 @@ public class DatasetDataServer implements DatasetDataApi {
     }
 
     /**
-     * 执行 SQL 预览校验。
+     * 执行 SQL 预览校验
      */
     @Override
     public Map<String, Object> previewSqlCheck(PreviewSqlDTO dto) throws Exception {
@@ -56,7 +56,7 @@ public class DatasetDataServer implements DatasetDataApi {
     }
 
     /**
-     * 获取数据集字段的枚举值。
+     * 获取数据集字段的枚举值
      */
     @Override
     public List<String> getFieldEnumDs(EnumObj map) throws Exception {
@@ -69,7 +69,7 @@ public class DatasetDataServer implements DatasetDataApi {
     }
 
     /**
-     * 按多个字段值请求获取字段枚举值。
+     * 按多个字段值请求获取字段枚举值
      */
     @Override
     public List<String> getFieldEnum(MultFieldValuesRequest multFieldValuesRequest) {
@@ -82,7 +82,7 @@ public class DatasetDataServer implements DatasetDataApi {
     }
 
     /**
-     * 获取字段枚举对象列表。
+     * 获取字段枚举对象列表
      */
     @Override
     public List<Map<String, Object>> getFieldEnumObj(EnumValueRequest request) throws Exception {
@@ -95,7 +95,7 @@ public class DatasetDataServer implements DatasetDataApi {
     }
 
     /**
-     * 统计数据集基础数据量。
+     * 统计数据集基础数据量
      */
     @Override
     public Long datasetCount(DatasetGroupInfoDTO datasetGroupInfoDTO) throws Exception {
@@ -103,7 +103,7 @@ public class DatasetDataServer implements DatasetDataApi {
     }
 
     /**
-     * 统计带筛选条件的数据集数据量。
+     * 统计带筛选条件的数据集数据量
      */
     @Override
     public Long datasetTotal(DatasetGroupInfoDTO datasetGroupInfoDTO) throws Exception {
@@ -111,7 +111,7 @@ public class DatasetDataServer implements DatasetDataApi {
     }
 
     /**
-     * 获取字段值树结构。
+     * 获取字段值树结构
      */
     @Override
     public List<BaseTreeNodeDTO> getFieldValueTree(MultFieldValuesRequest multFieldValuesRequest) throws Exception {

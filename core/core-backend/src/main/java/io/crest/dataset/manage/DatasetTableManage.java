@@ -16,7 +16,7 @@ import org.springframework.util.CollectionUtils;
 import java.util.List;
 
 /**
- * 管理数据集物理表元数据的保存、查询和清理。
+ * 管理数据集物理表元数据的保存、查询和清理
  */
 @Component
 public class DatasetTableManage {
@@ -24,7 +24,7 @@ public class DatasetTableManage {
     private CoreDatasetTableMapper coreDatasetTableMapper;
 
     /**
-     * 保存或更新数据集表实体。
+     * 保存或更新数据集表实体
      */
     public void save(CoreDatasetTable coreDatasetTable) {
         checkNameLength(coreDatasetTable.getName());
@@ -38,7 +38,7 @@ public class DatasetTableManage {
     }
 
     /**
-     * 根据数据集表 DTO 保存或更新数据集表实体。
+     * 根据数据集表 DTO 保存或更新数据集表实体
      */
     public void save(DatasetTableDTO currentDs) {
         checkNameLength(currentDs.getName());
@@ -54,7 +54,7 @@ public class DatasetTableManage {
     }
 
     /**
-     * 查询指定数据集分组下的全部表。
+     * 查询指定数据集分组下的全部表
      */
     public List<CoreDatasetTable> selectByDatasetGroupId(Long datasetGroupId) {
         QueryWrapper<CoreDatasetTable> wrapper = new QueryWrapper<>();
@@ -63,14 +63,14 @@ public class DatasetTableManage {
     }
 
     /**
-     * 根据主键查询数据集表。
+     * 根据主键查询数据集表
      */
     public CoreDatasetTable selectById(Long id) {
         return coreDatasetTableMapper.selectById(id);
     }
 
     /**
-     * 删除数据集分组中不再保留的表记录。
+     * 删除数据集分组中不再保留的表记录
      */
     public void deleteByDatasetGroupUpdate(Long datasetGroupId, List<Long> ids) {
         if (!CollectionUtils.isEmpty(ids)) {
@@ -82,7 +82,7 @@ public class DatasetTableManage {
     }
 
     /**
-     * 删除指定数据集分组下的全部表记录。
+     * 删除指定数据集分组下的全部表记录
      */
     public void deleteByDatasetGroupDelete(Long datasetGroupId) {
         QueryWrapper<CoreDatasetTable> wrapper = new QueryWrapper<>();
@@ -91,7 +91,7 @@ public class DatasetTableManage {
     }
 
     /**
-     * 校验数据集表名称长度。
+     * 校验数据集表名称长度
      */
     private void checkNameLength(String name) {
         if (name != null && name.length() > 100) {

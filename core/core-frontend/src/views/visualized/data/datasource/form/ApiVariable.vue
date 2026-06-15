@@ -21,7 +21,7 @@ export interface Item {
   required?: boolean
   uuid?: string
 }
-// 定义 API 参数编辑器接收的参数列表、占位符和候选项。
+// 定义 API 参数编辑器接收的参数列表、占位符和候选项
 const props = defineProps({
   keyPlaceholder: propTypes.string.def(''),
   valuePlaceholder: propTypes.string.def(''),
@@ -44,18 +44,18 @@ const props = defineProps({
 })
 
 const { t } = useI18n()
-// 计算参数名输入框的展示占位符。
+// 计算参数名输入框的展示占位符
 const keyText = computed(() => {
   return props.keyPlaceholder || t('datasource.key')
 })
-// 计算参数值输入框的展示占位符。
+// 计算参数值输入框的展示占位符
 const valueText = computed(() => {
   return props.valuePlaceholder || t('datasource.value')
 })
 
 const { parameters, suggestions } = toRefs(props)
 
-// 初始化参数列表，确保末尾存在一行可编辑参数。
+// 初始化参数列表，确保末尾存在一行可编辑参数
 onBeforeMount(() => {
   if (parameters.value.length === 0 || parameters.value[parameters.value.length - 1].name) {
     parameters.value.push(
@@ -71,7 +71,7 @@ onBeforeMount(() => {
   }
 })
 
-// 根据参数类型同步请求体内容类型。
+// 根据参数类型同步请求体内容类型
 const typeChange = item => {
   if (item.type === 'file') {
     item.contentType = 'application/octet-stream'
@@ -82,13 +82,13 @@ const typeChange = item => {
   }
 }
 
-// 删除指定参数行。
+// 删除指定参数行
 const remove = (index: number) => {
   if (isDisable()) return
   // 移除整行输入控件及内容
   parameters.value.splice(index, 1)
 }
-// 追加一行默认文本参数。
+// 追加一行默认文本参数
 const change = () => {
   parameters.value.push(
     new KeyValue({
@@ -100,24 +100,24 @@ const change = () => {
     })
   )
 }
-// 判断当前参数列表是否禁止删除。
+// 判断当前参数列表是否禁止删除
 const isDisable = () => {
   return parameters.value.length === 1
 }
-// 按输入内容过滤参数名候选项。
+// 按输入内容过滤参数名候选项
 const querySearch = (queryString, cb) => {
   const results = queryString
     ? suggestions.value.filter(createFilter(queryString))
     : suggestions.value
   cb(results)
 }
-// 创建参数名候选项的前缀匹配过滤器。
+// 创建参数名候选项的前缀匹配过滤器
 const createFilter = (queryString: string) => {
   return restaurant => {
     return restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0
   }
 }
-// 切换参数名来源类型时清空参数值。
+// 切换参数名来源类型时清空参数值
 const changeNameType = element => {
   element.value = ''
 }

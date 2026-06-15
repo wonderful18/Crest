@@ -21,27 +21,27 @@ interface Cascade {
 type cascadeMap = Record<string, Cascade>
 const { t } = useI18n()
 let fieldTypeMap = shallowRef({})
-// 定义级联配置保存事件。
+// 定义级联配置保存事件
 const emits = defineEmits(['saveCascade'])
 
-// 控制级联配置弹窗显隐。
+// 控制级联配置弹窗显隐
 const dialogVisible = ref(false)
-// 关闭级联配置弹窗。
+// 关闭级联配置弹窗
 const handleBeforeClose = () => {
   dialogVisible.value = false
 }
-// 当前编辑中的级联配置列表。
+// 当前编辑中的级联配置列表
 const cascadeList = ref([])
-// 数据集字段选项映射。
+// 数据集字段选项映射
 const optionsMap = shallowRef({})
-// 可参与级联的数据集条件列表。
+// 可参与级联的数据集条件列表
 const datasetMap = shallowRef([])
-// 取消并关闭级联配置。
+// 取消并关闭级联配置
 const cancelClick = () => {
   handleBeforeClose()
 }
 
-// 校验并保存级联配置。
+// 校验并保存级联配置
 const confirmClick = () => {
   const { isError, arr } = setCascadeArrBack()
   if (isError) {
@@ -52,7 +52,7 @@ const confirmClick = () => {
   handleBeforeClose()
 }
 
-// 生成保存用级联配置并校验必填项。
+// 生成保存用级联配置并校验必填项
 const setCascadeArrBack = () => {
   let isError = false
   const arr = cloneDeep(cascadeList.value)
@@ -74,7 +74,7 @@ const setCascadeArrBack = () => {
   }
 }
 
-// 初始化级联配置弹窗数据。
+// 初始化级联配置弹窗数据
 const init = (cascadeMap: cascadeMap, arr) => {
   cascadeList.value = cloneDeep(arr)
   datasetMap.value = Object.values(cascadeMap).map(ele => ({
@@ -97,10 +97,10 @@ const init = (cascadeMap: cascadeMap, arr) => {
     })
 }
 
-// 当前选择器中需要禁用的数据集条件。
+// 当前选择器中需要禁用的数据集条件
 const disabledDatasetId = shallowRef([])
 
-// 展开选择器时计算不可选的数据集条件。
+// 展开选择器时计算不可选的数据集条件
 const visibleChange = (val, index, idx) => {
   let topId = ''
   let topIdArr = []
@@ -151,7 +151,7 @@ const visibleChange = (val, index, idx) => {
   }
 }
 
-// 添加单级级联条件。
+// 添加单级级联条件
 const addCascadeItem = item => {
   item.push({
     datasetId: '',
@@ -161,7 +161,7 @@ const addCascadeItem = item => {
   })
 }
 
-// 根据上下级数据集关系更新字段选择占位提示。
+// 根据上下级数据集关系更新字段选择占位提示
 const setPlaceholder = () => {
   cascadeList.value.forEach(ele => {
     ele.forEach((item, idx) => {
@@ -181,7 +181,7 @@ const setPlaceholder = () => {
   })
 }
 
-// 删除单级级联条件。
+// 删除单级级联条件
 const deleteCascade = (idx, item) => {
   item.splice(idx, 1)
   item[0].fieldId = ''
@@ -189,12 +189,12 @@ const deleteCascade = (idx, item) => {
   setPlaceholder()
 }
 
-// 删除一组级联配置。
+// 删除一组级联配置
 const deleteCascadeBlock = idx => {
   cascadeList.value.splice(idx, 1)
 }
 
-// 新增一组级联配置。
+// 新增一组级联配置
 const addCascadeBlock = () => {
   const arr = []
   addCascadeItem(arr)

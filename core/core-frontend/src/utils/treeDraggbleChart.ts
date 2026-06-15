@@ -1,6 +1,6 @@
 import { dvNameCheck, moveResource } from '@/api/visualization/dataVisualization'
 import { cloneDeep } from 'lodash-es'
-// 创建图表资源树拖拽处理器。
+// 创建图表资源树拖拽处理器
 const treeDraggbleChart = (state, key, type) => {
   let dragNodeParentId = ''
   let dragNodeId = ''
@@ -8,7 +8,7 @@ const treeDraggbleChart = (state, key, type) => {
 
   let rawData = []
 
-  // 查找拖拽节点原始父节点和索引。
+  // 查找拖拽节点原始父节点和索引
   const dfsTreeNode = (arr, parentId) => {
     arr.forEach((element, index) => {
       if (element.id === dragNodeId) {
@@ -21,7 +21,7 @@ const treeDraggbleChart = (state, key, type) => {
     })
   }
 
-  // 判断拖拽节点和目标节点是否处于可移动层级。
+  // 判断拖拽节点和目标节点是否处于可移动层级
   const dfsTreeNodeSaveLevel = (arr, idArr) => {
     arr.forEach(element => {
       const index = idArr.findIndex(ele => {
@@ -36,7 +36,7 @@ const treeDraggbleChart = (state, key, type) => {
     })
   }
 
-  // 根据当前树结构回填移动参数的父节点。
+  // 根据当前树结构回填移动参数的父节点
   const dfsTreeNodeBack = (arr, parentId, params) => {
     arr.forEach(element => {
       if (element.id === params.id) {
@@ -48,7 +48,7 @@ const treeDraggbleChart = (state, key, type) => {
     })
   }
 
-  // 将拖拽失败的节点恢复到原始位置。
+  // 将拖拽失败的节点恢复到原始位置
   const dfsTreeNodeReset = (arr, node) => {
     arr.forEach(element => {
       if (element.id === dragNodeParentId) {
@@ -60,7 +60,7 @@ const treeDraggbleChart = (state, key, type) => {
     })
   }
 
-  // 从树中删除指定拖拽节点。
+  // 从树中删除指定拖拽节点
   const dfsTreeNodeDel = (arr, node) => {
     arr.forEach((element, index) => {
       if (element.id === node.id) {
@@ -72,19 +72,19 @@ const treeDraggbleChart = (state, key, type) => {
     })
   }
 
-  // 记录拖拽开始时的节点位置和原始树快照。
+  // 记录拖拽开始时的节点位置和原始树快照
   const handleDragStart = node => {
     dragNodeId = node.data.id
     rawData = cloneDeep(state[key])
     dfsTreeNode(state[key], '0')
   }
 
-  // 禁止拖入叶子节点。
+  // 禁止拖入叶子节点
   const allowDrop = (_, dropNode) => {
     return !dropNode.data?.leaf
   }
 
-  // 校验图表资源名称并执行拖拽移动。
+  // 校验图表资源名称并执行拖拽移动
   const handleDrop = async (draggingNode, dropNode, dropType) => {
     const params = {
       id: draggingNode.data?.id,

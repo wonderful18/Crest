@@ -1067,7 +1067,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
     super('table-pivot', [])
   }
 }
-// 根据透视表总计配置执行内置或自定义聚合计算。
+// 根据透视表总计配置执行内置或自定义聚合计算
 function customCalcFunc(query, data, status, chart, totalCfgMap, axisMap, customCalc) {
   if (!data?.length || !query[EXTRA_FIELD]) {
     return '-'
@@ -1115,7 +1115,7 @@ function customCalcFunc(query, data, status, chart, totalCfgMap, axisMap, custom
   }
 }
 
-// 读取树形透视表在不同总计、小计位置的自定义计算结果。
+// 读取树形透视表在不同总计、小计位置的自定义计算结果
 function getTreeCustomCalcResult(query, axisMap, status: TotalStatus, customCalc) {
   const quotaField = query[EXTRA_FIELD]
   const { row, col } = axisMap
@@ -1230,7 +1230,7 @@ function getTreeCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
   return '-'
 }
 
-// 读取平铺透视表在不同总计、小计位置的自定义计算结果。
+// 读取平铺透视表在不同总计、小计位置的自定义计算结果
 function getGridCustomCalcResult(query, axisMap, status: TotalStatus, customCalc) {
   const quotaField = query[EXTRA_FIELD]
   const { row, col } = axisMap
@@ -1341,7 +1341,7 @@ function getGridCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
     return val
   }
 }
-// 根据透视表布局模式选择自定义计算结果读取策略。
+// 根据透视表布局模式选择自定义计算结果读取策略
 function getCustomCalcResult(query, axisMap, chart: ChartObj, status: TotalStatus, customCalc) {
   const { tableLayoutMode } = chart.customAttr.basicStyle
   if (tableLayoutMode === 'tree') {
@@ -1350,7 +1350,7 @@ function getCustomCalcResult(query, axisMap, chart: ChartObj, status: TotalStatu
   return getGridCustomCalcResult(query, axisMap, status, customCalc)
 }
 
-// 计算当前查询命中的行列维度小计层级。
+// 计算当前查询命中的行列维度小计层级
 function getSubLevel(query, axis) {
   const fields: [] = axis.map(a => a.engineFieldName)
   let subLevel = -1
@@ -1365,7 +1365,7 @@ function getSubLevel(query, axis) {
   return subLevel
 }
 
-// 根据查询对象和轴字段生成自定义计算结果的访问路径。
+// 根据查询对象和轴字段生成自定义计算结果的访问路径
 function getTreePath(query, axis) {
   const path = []
   const fields = keys(query)
@@ -1378,14 +1378,14 @@ function getTreePath(query, axis) {
   return path
 }
 
-// 根据当前总计状态解析聚合方式或自定义计算函数。
+// 根据当前总计状态解析聚合方式或自定义计算函数
 function getAggregationAndCalcFuncByQuery(totalsStatus, totalsOptions) {
   const { isRowTotal, isRowSubTotal, isColTotal, isColSubTotal } = totalsStatus
   const { row, col } = totalsOptions || {}
   const { calcTotals: rowCalcTotals = {}, calcSubTotals: rowCalcSubTotals = {} } = row || {}
   const { calcTotals: colCalcTotals = {}, calcSubTotals: colCalcSubTotals = {} } = col || {}
 
-  // 在命中总计或小计状态时返回对应维度的计算配置。
+  // 在命中总计或小计状态时返回对应维度的计算配置
   const getCalcTotals = (dimensionTotals: CalcTotals, isTotal: boolean) => {
     if ((dimensionTotals.aggregation || dimensionTotals.calcFunc) && isTotal) {
       return {
@@ -1404,7 +1404,7 @@ function getAggregationAndCalcFuncByQuery(totalsStatus, totalsOptions) {
   )
 }
 
-// 判断值是否不能作为数字参与聚合计算。
+// 判断值是否不能作为数字参与聚合计算
 export const isNotNumber = (value: unknown) => {
   if (typeof value === 'number') {
     return Number.isNaN(value)
@@ -1418,7 +1418,7 @@ export const isNotNumber = (value: unknown) => {
   return true
 }
 
-// 将指定字段的值转换为 Decimal 列表，必要时过滤非法值。
+// 将指定字段的值转换为 Decimal 列表，必要时过滤非法值
 const processFieldValues = (data: DataItem[], field: string, filterIllegalValue = false) => {
   if (!data?.length) {
     return []
@@ -1440,7 +1440,7 @@ const processFieldValues = (data: DataItem[], field: string, filterIllegalValue 
   }, [])
 }
 
-// 计算指定字段的数值总和。
+// 计算指定字段的数值总和
 export const dataSumByField = (data: DataItem[], field: string): number => {
   const fieldValues = processFieldValues(data, field)
   if (!fieldValues.length) {
@@ -1450,7 +1450,7 @@ export const dataSumByField = (data: DataItem[], field: string): number => {
   return Decimal.sum(...fieldValues).toNumber()
 }
 
-// 计算指定字段的最大值或最小值。
+// 计算指定字段的最大值或最小值
 export const dataExtremumByField = (
   method: 'min' | 'max',
   data: DataItem[],
@@ -1465,7 +1465,7 @@ export const dataExtremumByField = (
   return Decimal[method](...fieldValues).toNumber()
 }
 
-// 计算指定字段的平均值。
+// 计算指定字段的平均值
 export const dataAvgByField = (data: DataItem[], field: string): number => {
   const fieldValues = processFieldValues(data, field)
   if (!fieldValues?.length) {
@@ -1516,7 +1516,7 @@ class EmptyDataCell extends MergedCell {
   }
 }
 
-// 按指定透明度重写颜色字符串。
+// 按指定透明度重写颜色字符串
 export function setColorOpacity(color: string, opacity: number) {
   if (color.indexOf('rgba') !== -1) {
     const colorArr = color.split(',')
@@ -1537,7 +1537,7 @@ export function setColorOpacity(color: string, opacity: number) {
   return color
 }
 
-// 在空数据透视表中配置占位单元格样式。
+// 在空数据透视表中配置占位单元格样式
 function configEmptyDataStyle(instance: PivotSheet, data: any[]) {
   if (data?.length) {
     return

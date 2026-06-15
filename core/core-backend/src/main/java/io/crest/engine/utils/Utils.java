@@ -23,11 +23,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * SQL 构造、字段表达式解析与时间格式转换工具。
+ * SQL 构造、字段表达式解析与时间格式转换工具
  */
 public class Utils {
     /**
-     * 通用 SQL 注入风险检测正则。
+     * 通用 SQL 注入风险检测正则
      */
     public static final List<Pattern> SQL_INJECTION_PATTERNS = Arrays.asList(
             Pattern.compile("[\\'\";`]"),
@@ -38,7 +38,7 @@ public class Utils {
     );
 
     /**
-     * 过滤值专用 SQL 注入检测正则，允许 Arkhangel'sk、O'Brien 等包含单引号的合法数据。
+     * 过滤值专用 SQL 注入检测正则，允许 Arkhangel'sk、O'Brien 等包含单引号的合法数据
      */
   public static final List<Pattern> SQL_INJECTION_PATTERNS_FOR_VALUES =
       Arrays.asList(
@@ -51,7 +51,7 @@ public class Utils {
           Pattern.compile("\\b1'\\s*=\\s*'1\\b", Pattern.CASE_INSENSITIVE));
 
     /**
-     * 判断排序方式是否需要参与 SQL 排序拼接。
+     * 判断排序方式是否需要参与 SQL 排序拼接
      *
      * @param sort 排序方式
      * @return 升序或降序时返回 true
@@ -61,7 +61,7 @@ public class Utils {
     }
 
     /**
-     * 解析跨源或单源场景下的计算字段表达式。
+     * 解析跨源或单源场景下的计算字段表达式
      *
      * @param chartField 当前计算字段
      * @param tableObj SQL 表对象
@@ -88,7 +88,7 @@ public class Utils {
     }
 
     /**
-     * 使用简化的数据源类型映射解析计算字段表达式。
+     * 使用简化的数据源类型映射解析计算字段表达式
      *
      * @param chartField 当前计算字段
      * @param tableObj SQL 表对象
@@ -114,7 +114,7 @@ public class Utils {
     }
 
     /**
-     * 递归展开计算字段中的字段引用和参数引用。
+     * 递归展开计算字段中的字段引用和参数引用
      *
      * @param chartField 当前计算字段
      * @param tableObj SQL 表对象
@@ -171,7 +171,7 @@ public class Utils {
     }
 
     /**
-     * 获取计算字段的原始表达式。
+     * 获取计算字段的原始表达式
      *
      * @param ele 当前字段
      * @param originFields 原始字段列表
@@ -193,7 +193,7 @@ public class Utils {
     }
 
     /**
-     * 将前端逻辑连接符转换为 SQL 连接符。
+     * 将前端逻辑连接符转换为 SQL 连接符
      *
      * @param logic 前端逻辑连接符
      * @return SQL 逻辑连接符
@@ -211,7 +211,7 @@ public class Utils {
     }
 
     /**
-     * 将日期分组样式转换为 SQL 日期格式模板。
+     * 将日期分组样式转换为 SQL 日期格式模板
      *
      * @param dateStyle 日期分组样式
      * @param datePattern 日期连接符模式
@@ -258,7 +258,7 @@ public class Utils {
     }
 
     /**
-     * 将过滤操作符转换为 SQL 条件片段。
+     * 将过滤操作符转换为 SQL 条件片段
      *
      * @param term 过滤操作符
      * @return SQL 条件片段
@@ -301,7 +301,7 @@ public class Utils {
     }
 
     /**
-     * 检查计算字段表达式是否存在循环引用。
+     * 检查计算字段表达式是否存在循环引用
      *
      * @param originField 原始字段表达式
      * @param fields 字段列表
@@ -326,7 +326,7 @@ public class Utils {
     }
 
     /**
-     * 递归检查字段引用链是否存在重复引用。
+     * 递归检查字段引用链是否存在重复引用
      *
      * @param ids 已访问字段 ID 集合
      * @param originField 当前字段表达式
@@ -351,7 +351,7 @@ public class Utils {
     }
 
     /**
-     * 判断字段表达式是否调用了指定函数。
+     * 判断字段表达式是否调用了指定函数
      *
      * @param func 函数名称
      * @param originField 字段表达式
@@ -368,7 +368,7 @@ public class Utils {
     }
 
     /**
-     * 判断数据源列表是否需要强制生成排序。
+     * 判断数据源列表是否需要强制生成排序
      *
      * @param dsList 数据源类型列表
      * @return 存在需要排序的数据源时返回 true
@@ -381,7 +381,7 @@ public class Utils {
     }
 
     /**
-     * 判断数据源映射是否表示跨源查询。
+     * 判断数据源映射是否表示跨源查询
      *
      * @param dsMap 数据源映射
      * @return 数据源数量不为 1 时返回 true
@@ -391,7 +391,7 @@ public class Utils {
     }
 
     /**
-     * 在无显式 schema 配置时移除 SQL 中的 schema 别名前缀。
+     * 在无显式 schema 配置时移除 SQL 中的 schema 别名前缀
      *
      * @param sql 原始 SQL
      * @param dsMap 数据源映射
@@ -408,7 +408,7 @@ public class Utils {
     }
 
     /**
-     * 移除表达式中的换行和制表符。
+     * 移除表达式中的换行和制表符
      *
      * @param value 原始文本
      * @return 去除换行后的文本
@@ -418,7 +418,7 @@ public class Utils {
     }
 
     /**
-     * 提取表达式方括号中的字段或参数标识。
+     * 提取表达式方括号中的字段或参数标识
      *
      * @param value 原始表达式
      * @return 方括号内容集合
@@ -445,7 +445,7 @@ public class Utils {
     }
 
     /**
-     * 将常见日期时间文本转换为毫秒时间戳。
+     * 将常见日期时间文本转换为毫秒时间戳
      *
      * @param value 日期时间文本
      * @return 解析成功后的时间戳，失败时返回 0
@@ -494,7 +494,7 @@ public class Utils {
     }
 
     /**
-     * 根据源格式和目标格式处理时间文本。
+     * 根据源格式和目标格式处理时间文本
      *
      * @param time 原始时间文本
      * @param sourceFormat 源格式
@@ -514,7 +514,7 @@ public class Utils {
     }
 
     /**
-     * 将日期时间文本解析为对应时间粒度的起止时间戳。
+     * 将日期时间文本解析为对应时间粒度的起止时间戳
      *
      * @param value 日期时间文本
      * @return 包含 startTime 和 endTime 的时间范围
@@ -613,7 +613,7 @@ public class Utils {
     }
 
     /**
-     * 将毫秒时间戳转换为完整日期时间文本。
+     * 将毫秒时间戳转换为完整日期时间文本
      *
      * @param ts 毫秒时间戳
      * @return 日期时间文本
@@ -625,7 +625,7 @@ public class Utils {
     }
 
     /**
-     * 将毫秒时间戳转换为日期文本。
+     * 将毫秒时间戳转换为日期文本
      *
      * @param ts 毫秒时间戳
      * @return 日期文本
@@ -637,7 +637,7 @@ public class Utils {
     }
 
     /**
-     * 收集计算字段中声明的参数。
+     * 收集计算字段中声明的参数
      *
      * @param list 数据集字段列表
      * @return 计算字段参数列表
@@ -654,7 +654,7 @@ public class Utils {
     }
 
     /**
-     * 合并字段参数和图表参数，图表参数可覆盖同名字段参数。
+     * 合并字段参数和图表参数，图表参数可覆盖同名字段参数
      *
      * @param fieldParam 字段级参数
      * @param chartParam 图表级参数
@@ -676,7 +676,7 @@ public class Utils {
     }
 
     /**
-     * 获取内置或插件数据源的 SQL 标识符配置。
+     * 获取内置或插件数据源的 SQL 标识符配置
      *
      * @param pluginManage 插件数据源管理器
      * @param type 数据源类型
@@ -709,7 +709,7 @@ public class Utils {
     }
 
     /**
-     * 将字段分组配置转换为 SQL CASE 表达式。
+     * 将字段分组配置转换为 SQL CASE 表达式
      *
      * @param dto 分组字段配置
      * @param fields 数据集字段列表
@@ -727,7 +727,7 @@ public class Utils {
                 break;
             }
         }
-        // 获取被分组字段的原始字段配置。
+        // 获取被分组字段的原始字段配置
         DatasetTableFieldDTO originField = null;
         for (DatasetTableFieldDTO ele : fields) {
             if (Objects.equals(ele.getId(), Long.valueOf(dto.getOriginName()))) {
@@ -791,7 +791,7 @@ public class Utils {
     }
 
     /**
-     * 转义用于 SQL 字面量的普通文本。
+     * 转义用于 SQL 字面量的普通文本
      *
      * @param value 原始文本
      * @return 转义后的文本
@@ -801,9 +801,9 @@ public class Utils {
     }
 
     /**
-     * 检测过滤值中的 SQL 注入风险，该方法允许合法单引号。
+     * 检测过滤值中的 SQL 注入风险，该方法允许合法单引号
      *
-     * 使用该方法后，必须在后续调用 {@link #transValue(String)} 进行字面量转义。
+     * 使用该方法后，必须在后续调用 {@link #transValue(String)} 进行字面量转义
      *
      * @param value 待检测的过滤值
      */

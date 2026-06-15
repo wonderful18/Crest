@@ -156,39 +156,39 @@ import { useI18n } from '@/hooks/web/useI18n'
 import TabCarouselDialog from '@/components/visualization/TabCarouselDialog.vue'
 import HyperlinksDialog from '@/components/visualization/HyperlinksDialog.vue'
 /**
- * 国际化翻译函数。
+ * 国际化翻译函数
  */
 const { t } = useI18n()
 /**
- * 快照仓库，用于菜单操作后记录撤销点。
+ * 快照仓库，用于菜单操作后记录撤销点
  */
 const snapshotStore = snapshotStoreWithOut()
 /**
- * 复制仓库，用于组件复制和粘贴。
+ * 复制仓库，用于组件复制和粘贴
  */
 const copyStore = copyStoreWithOut()
 /**
- * 大屏主仓库，提供当前组件和画布组件数据。
+ * 大屏主仓库，提供当前组件和画布组件数据
  */
 const dvMainStore = dvMainStoreWithOut()
 /**
- * 图层仓库，用于调整组件层级。
+ * 图层仓库，用于调整组件层级
  */
 const layerStore = layerStoreWithOut()
 /**
- * 当前组件、组件列表和大屏信息引用。
+ * 当前组件、组件列表和大屏信息引用
  */
 const { curComponent, componentData, dvInfo } = storeToRefs(dvMainStore)
 /**
- * 自定义标签排序组件引用。
+ * 自定义标签排序组件引用
  */
 const customTabsSort = ref(null)
 /**
- * 右键菜单向父级派发的操作事件。
+ * 右键菜单向父级派发的操作事件
  */
 const emits = defineEmits(['amRemoveItem', 'linkJumpSet', 'boardSet'])
 /**
- * 组件右键菜单状态。
+ * 组件右键菜单状态
  */
 const state = reactive({
   tabCarouselVisible: false,
@@ -222,14 +222,14 @@ const state = reactive({
 })
 
 /**
- * 是否展示标签页轮播设置入口。
+ * 是否展示标签页轮播设置入口
  */
 const tabCarouselShow = computed(() => {
   return curComponent.value.component === 'Tabs'
 })
 
 /**
- * 是否展示跳转设置入口。
+ * 是否展示跳转设置入口
  */
 const linkJumpSetShow = computed(() => {
   return (
@@ -243,7 +243,7 @@ const linkJumpSetShow = computed(() => {
 })
 
 /**
- * 是否展示图表联动设置入口。
+ * 是否展示图表联动设置入口
  */
 const linkageSettingShow = computed(() => {
   return (
@@ -257,19 +257,19 @@ const linkageSettingShow = computed(() => {
 })
 
 /**
- * 打开自定义标签排序弹窗。
+ * 打开自定义标签排序弹窗
  */
 const openCustomSort = () => {
   state.showCustomSort = true
 }
 /**
- * 关闭自定义标签排序弹窗。
+ * 关闭自定义标签排序弹窗
  */
 const closeCustomSort = () => {
   state.showCustomSort = false
 }
 /**
- * 保存自定义标签排序配置。
+ * 保存自定义标签排序配置
  */
 const saveCustomSort = () => {
   customTabsSort.value.save()
@@ -278,14 +278,14 @@ const saveCustomSort = () => {
   })
 }
 /**
- * 打开组件位置调整面板。
+ * 打开组件位置调整面板
  */
 const positionAdjust = () => {
   eventBus.emit('change_panel_right_draw', true)
 }
 
 /**
- * 根据组件类型打开对应编辑入口。
+ * 根据组件类型打开对应编辑入口
  */
 const edit = () => {
   if (curComponent.value.type === 'custom') {
@@ -303,13 +303,13 @@ const edit = () => {
   }
 }
 
-// 点击菜单时不取消当前组件的选中状态。
+// 点击菜单时不取消当前组件的选中状态
 const handleMouseUp = () => {
   dvMainStore.setClickComponentStatus(true)
 }
 
 /**
- * 复制当前组件并立即粘贴。
+ * 复制当前组件并立即粘贴
  */
 const copy = () => {
   copyStore.copy()
@@ -317,7 +317,7 @@ const copy = () => {
 }
 
 /**
- * 删除当前组件并记录快照。
+ * 删除当前组件并记录快照
  */
 const deleteComponent = () => {
   if (
@@ -341,7 +341,7 @@ const deleteComponent = () => {
 }
 
 /**
- * 删除当前自定义组件关联的筛选条件。
+ * 删除当前自定义组件关联的筛选条件
  */
 const deleteCurCondition = () => {
   if (curComponent.value.type === 'custom') {
@@ -351,7 +351,7 @@ const deleteCurCondition = () => {
 }
 
 /**
- * 将当前组件上移一层。
+ * 将当前组件上移一层
  */
 const upComponent = () => {
   layerStore.upComponent()
@@ -359,7 +359,7 @@ const upComponent = () => {
 }
 
 /**
- * 将当前组件下移一层。
+ * 将当前组件下移一层
  */
 const downComponent = () => {
   layerStore.downComponent()
@@ -367,7 +367,7 @@ const downComponent = () => {
 }
 
 /**
- * 将当前组件置顶。
+ * 将当前组件置顶
  */
 const topComponent = () => {
   layerStore.topComponent()
@@ -375,14 +375,14 @@ const topComponent = () => {
 }
 
 /**
- * 将当前组件置底。
+ * 将当前组件置底
  */
 const bottomComponent = () => {
   layerStore.bottomComponent()
   snapshotStore.recordSnapshotCache('SettingMenu-bottomComponent')
 }
 /**
- * 查询并打开当前图表的联动设置。
+ * 查询并打开当前图表的联动设置
  */
 const linkageSetting = () => {
   // sourceViewId 也加入查询
@@ -401,24 +401,24 @@ const linkageSetting = () => {
   })
 }
 /**
- * 为当前标签页组件新增标签。
+ * 为当前标签页组件新增标签
  */
 const addTab = () => {
   eventBus.emit('add-new-tab', curComponent.value.id)
 }
-// 跳转设置。
+// 跳转设置
 const linkJumpSet = () => {
   emits('linkJumpSet')
 }
-// 设置边框。
+// 设置边框
 const boardSet = () => {
   emits('boardSet')
 }
-// 超链接设置。
+// 超链接设置
 const hyperlinksSet = () => {
   state.hyperlinksSetVisible = true
 }
-// 轮播设置。
+// 轮播设置
 const tabCarouselSet = () => {
   state.tabCarouselVisible = true
 }

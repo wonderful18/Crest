@@ -106,15 +106,15 @@ import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapsho
 import { groupSizeStyleAdaptor, groupStyleRevert } from '@/utils/style'
 import { isGroupCanvas, isTabCanvas } from '@/utils/canvasUtils'
 import { useI18n } from '@/hooks/web/useI18n'
-// 保存当前组件所属画布的父节点。
+// 保存当前组件所属画布的父节点
 const parentNode = ref(null)
-// 保存当前组件所属画布 ID。
+// 保存当前组件所属画布 ID
 const canvasId = ref('canvas-main')
 const snapshotStore = snapshotStoreWithOut()
 const { t } = useI18n()
 const dvMainStore = dvMainStoreWithOut()
 const { curComponent, canvasStyleData } = storeToRefs(dvMainStore)
-// 保存面板中展示的宽高和坐标值。
+// 保存面板中展示的宽高和坐标值
 const positionMounted = ref({
   width: 0,
   height: 0,
@@ -129,7 +129,7 @@ withDefaults(
   { themes: 'dark' }
 )
 
-// 过滤当前组件支持编辑的位置字段。
+// 过滤当前组件支持编辑的位置字段
 const positionKeys = computed(() => {
   if (curComponent.value) {
     const curComponentStyleKeys = Object.keys(curComponent.value.style)
@@ -139,7 +139,7 @@ const positionKeys = computed(() => {
   }
 })
 
-// 将位置字段拆分为两列展示。
+// 将位置字段拆分为两列展示
 const positionKeysGroup = computed(() => {
   const _list = []
   _.forEach(positionKeys.value, (x, i) => {
@@ -152,7 +152,7 @@ const positionKeysGroup = computed(() => {
   return _list
 })
 
-// 同步单个位置字段变更，并处理等比缩放和分组画布适配。
+// 同步单个位置字段变更，并处理等比缩放和分组画布适配
 const onPositionChange = key => {
   if (!positionMounted.value[key]) {
     positionMounted.value[key] = 0
@@ -178,7 +178,7 @@ const onPositionChange = key => {
     curComponent.value.style[key] = (positionMounted.value[key] * canvasStyleData.value.scale) / 100
   }
 
-  // 分组或 Tab 内部画布需要把定位值还原到分组样式中。
+  // 分组或 Tab 内部画布需要把定位值还原到分组样式中
   if (isGroupCanvas(canvasId.value) || isTabCanvas(canvasId.value)) {
     groupStyleRevert(curComponent.value, {
       width: parentNode.value.offsetWidth,
@@ -187,29 +187,29 @@ const onPositionChange = key => {
   }
 
   if (['Group', 'Tabs'].includes(curComponent.value.component)) {
-    // 分组和 Tab 组件需要同步内部组件尺寸。
+    // 分组和 Tab 组件需要同步内部组件尺寸
     groupSizeStyleAdaptor(curComponent.value)
   }
 
   snapshotStore.recordSnapshotCache('onPositionChange')
 }
 
-// 开启等比缩放时记录当前组件宽高比例。
+// 开启等比缩放时记录当前组件宽高比例
 const maintainRadioChange = () => {
   curComponent.value.aspectRatio = curComponent.value.style.width / curComponent.value.style.height
   snapshotStore.recordSnapshotCache('maintainRadioChange')
 }
-// 记录 3D 旋转配置变更。
+// 记录 3D 旋转配置变更
 const multiDimensionalChange = () => {
   snapshotStore.recordSnapshotCache('multiDimensionalChange')
 }
 
-// 记录普通位置设置变更。
+// 记录普通位置设置变更
 const snapshotChange = () => {
   snapshotStore.recordSnapshotCache('snapshotChange')
 }
 
-// 根据当前组件样式初始化位置面板值。
+// 根据当前组件样式初始化位置面板值
 const positionInit = () => {
   if (curComponent.value) {
     canvasId.value = curComponent.value.canvasId
@@ -227,7 +227,7 @@ const positionInit = () => {
   }
 }
 
-// 监听当前组件变化并刷新位置面板。
+// 监听当前组件变化并刷新位置面板
 watch(
   () => curComponent.value,
   () => {

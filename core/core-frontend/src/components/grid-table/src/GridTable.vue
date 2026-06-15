@@ -6,7 +6,7 @@ import TableBody from './TableBody.vue'
 import { propTypes } from '@/utils/propTypes'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
-// 接收表格列、分页、选择和空状态配置。
+// 接收表格列、分页、选择和空状态配置
 const props = defineProps({
   columns: propTypes.arrayOf(propTypes.string),
   isSearch: propTypes.bool.def(false),
@@ -25,7 +25,7 @@ const props = defineProps({
 
 const attrs = useAttrs()
 
-// 拆分透传属性中的表格事件和分页事件。
+// 拆分透传属性中的表格事件和分页事件
 const handleListeners = () => {
   Object.keys(attrs).forEach(key => {
     if (key.startsWith('on')) {
@@ -39,23 +39,23 @@ const handleListeners = () => {
     }
   })
 }
-// 选中指定表格行。
+// 选中指定表格行
 const toggleRowSelection = row => {
   table.value.toggleRowSelection(row, true)
 }
-// 切换全部行选择状态。
+// 切换全部行选择状态
 const toggleAllSelection = () => {
   table.value.toggleAllSelection()
 }
-// 清空表格选择状态。
+// 清空表格选择状态
 const clearSelection = () => {
   table.value.clearSelection()
 }
-// 合并跨页保留的选择项。
+// 合并跨页保留的选择项
 const handlerSelected = multipleSelection => {
   state.multipleSelectionCache = [...state.multipleSelectionCache, ...multipleSelection]
   const flags = state.multipleSelectionCache.map(ele => ele[props.selectedFlags])
-  // 当前页的选中项索引。
+  // 当前页的选中项索引
   const notCurrentArr = []
   props.tableData.forEach(ele => {
     const resultIndex = flags.indexOf(ele[props.selectedFlags])
@@ -73,7 +73,7 @@ onBeforeMount(() => {
   handleListeners()
 })
 
-// 维护表格分页、事件和选择缓存状态。
+// 维护表格分页、事件和选择缓存状态
 const state = reactive({
   paginationEvent: {},
   paginationDefault: {
@@ -89,19 +89,19 @@ const state = reactive({
 })
 
 type EmptyImageType = 'input' | 'select' | 'table' | 'none' | 'noneWhite' | 'tree' | 'error'
-// 计算空状态图片类型。
+// 计算空状态图片类型
 const imgType = computed<EmptyImageType>(() => {
   return props.emptyImg ? (props.emptyImg as EmptyImageType) : props.isSearch ? 'tree' : 'noneWhite'
 })
-// 表格实例。
+// 表格实例
 const table = ref(null)
 
-// 合并当前页和跨页选择项。
+// 合并当前页和跨页选择项
 const multipleSelectionAll = computed(() => [
   ...state.multipleSelectionCache,
   ...props.multipleSelection
 ])
-// 监听分页配置并同步默认分页。
+// 监听分页配置并同步默认分页
 watch(
   () => props.pagination,
   () => {
@@ -113,7 +113,7 @@ watch(
   { deep: true, immediate: true }
 )
 
-// 监听表格数据变化并恢复跨页选择。
+// 监听表格数据变化并恢复跨页选择
 watch(
   () => props.tableData,
   () => {
@@ -121,7 +121,7 @@ watch(
       table.value?.doLayout()
     })
     if (!props.isRememberSelected) return
-    // 先拷贝，重新加载数据会触发选择变化并清空当前选择。
+    // 先拷贝，重新加载数据会触发选择变化并清空当前选择
     const multipleSelection = [...props.multipleSelection]
     nextTick(() => {
       handlerSelected(multipleSelection)

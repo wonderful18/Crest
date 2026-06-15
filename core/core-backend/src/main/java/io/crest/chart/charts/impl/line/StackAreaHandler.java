@@ -25,17 +25,17 @@ import java.util.stream.Collectors;
 @Component
 @SuppressWarnings("unchecked")
 /**
- * 堆叠面积图处理器，兼容累计流图的图表注册和数据构建。
+ * 堆叠面积图处理器，兼容累计流图的图表注册和数据构建
  */
 public class StackAreaHandler extends YoyChartHandler {
     /**
-     * 当前处理器对应的图表类型。
+     * 当前处理器对应的图表类型
      */
     @Getter
     private String type = "area-stack";
 
     /**
-     * 注册堆叠面积图和累计流图的处理器实例。
+     * 注册堆叠面积图和累计流图的处理器实例
      */
     @Override
     public void init() {
@@ -44,7 +44,7 @@ public class StackAreaHandler extends YoyChartHandler {
     }
 
     /**
-     * 将堆叠、标签和提示字段补充到轴格式化结果中。
+     * 将堆叠、标签和提示字段补充到轴格式化结果中
      */
     @Override
     public AxisFormatResult formatAxis(ChartViewDTO view) {
@@ -61,7 +61,7 @@ public class StackAreaHandler extends YoyChartHandler {
     }
 
     /**
-     * 根据轴配置和堆叠维度构建前端堆叠图数据。
+     * 根据轴配置和堆叠维度构建前端堆叠图数据
      */
     @Override
     public Map<String, Object> buildNormalResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
@@ -78,7 +78,7 @@ public class StackAreaHandler extends YoyChartHandler {
     }
 
     /**
-     * 处理堆叠维度下钻时的过滤条件和轴字段关系。
+     * 处理堆叠维度下钻时的过滤条件和轴字段关系
      */
     @Override
     public <T extends CustomFilterResult> T customFilter(ChartViewDTO view, List<ChartExtFilterDTO> filterList, AxisFormatResult formatResult) {
@@ -110,7 +110,7 @@ public class StackAreaHandler extends YoyChartHandler {
     }
 
     /**
-     * 计算图表结果，并补充同环比辅助字段的原始查询数据。
+     * 计算图表结果，并补充同环比辅助字段的原始查询数据
      */
     @Override
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {

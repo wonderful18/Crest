@@ -13,13 +13,13 @@ import java.util.Calendar;
 import java.util.Date;
 
 /**
- * Cron 表达式转换和触发时间工具。
+ * Cron 表达式转换和触发时间工具
  */
 public class CronUtils {
 
 
     /**
-     * 根据 Cron 表达式创建 Quartz 触发器。
+     * 根据 Cron 表达式创建 Quartz 触发器
      */
     public static CronTrigger getCronTrigger(String cron) {
         if (!CronExpression.isValidExpression(cron)) {
@@ -29,7 +29,7 @@ public class CronUtils {
     }
 
     /**
-     * 获取指定 Cron 表达式的下一次触发时间。
+     * 获取指定 Cron 表达式的下一次触发时间
      */
     public static Date getNextTriggerTime(String cron) {
         Date date = null;
@@ -44,7 +44,7 @@ public class CronUtils {
     }
 
     /**
-     * 生成五秒后触发的一次性临时 Cron 表达式。
+     * 生成五秒后触发的一次性临时 Cron 表达式
      */
     public static String tempCron() {
         Calendar instance = Calendar.getInstance();
@@ -55,7 +55,7 @@ public class CronUtils {
     }
 
     /**
-     * 根据频率类型和时间值生成调度 Cron 表达式。
+     * 根据频率类型和时间值生成调度 Cron 表达式
      */
     public static String cron(Integer rateType, String rateVal) {
         if (rateType == 0) {
@@ -96,7 +96,7 @@ public class CronUtils {
 
 
     /**
-     * 将 Java 周序号转换为 Quartz 周字段。
+     * 将 Java 周序号转换为 Quartz 周字段
      */
     private static String getDayOfWeek(Calendar instance) {
         int index = instance.get(Calendar.DAY_OF_WEEK);
@@ -105,7 +105,7 @@ public class CronUtils {
     }
 
     /**
-     * 判断任务截止时间是否已经过期。
+     * 判断任务截止时间是否已经过期
      */
     public static Boolean taskExpire(Long endTime) {
         if (ObjectUtils.isEmpty(endTime))

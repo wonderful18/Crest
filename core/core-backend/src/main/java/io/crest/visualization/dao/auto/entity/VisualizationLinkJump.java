@@ -12,42 +12,42 @@ public class VisualizationLinkJump implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 跳转配置记录主键。
+     * 跳转配置记录主键
      */
     private Long id;
 
     /**
-     * 来源仪表板 ID。
+     * 来源仪表板 ID
      */
     private Long sourceDvId;
 
     /**
-     * 来源图表 ID。
+     * 来源图表 ID
      */
     private Long sourceViewId;
 
     /**
-     * 图表跳转配置详情。
+     * 图表跳转配置详情
      */
     private String linkJumpInfo;
 
     /**
-     * 是否启用该跳转配置。
+     * 是否启用该跳转配置
      */
     private Boolean checked;
 
     /**
-     * 复制来源类型或标识。
+     * 复制来源类型或标识
      */
     private Long copyFrom;
 
     /**
-     * 复制来源记录 ID。
+     * 复制来源记录 ID
      */
     private Long copyId;
 
     /**
-     * 获取跳转配置记录主键。
+     * 获取跳转配置记录主键
      *
      * @return 跳转配置记录主键
      */
@@ -56,7 +56,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 设置跳转配置记录主键。
+     * 设置跳转配置记录主键
      *
      * @param id 跳转配置记录主键
      */
@@ -65,7 +65,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 获取来源仪表板 ID。
+     * 获取来源仪表板 ID
      *
      * @return 来源仪表板 ID
      */
@@ -74,7 +74,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 设置来源仪表板 ID。
+     * 设置来源仪表板 ID
      *
      * @param sourceDvId 来源仪表板 ID
      */
@@ -83,7 +83,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 获取来源图表 ID。
+     * 获取来源图表 ID
      *
      * @return 来源图表 ID
      */
@@ -92,7 +92,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 设置来源图表 ID。
+     * 设置来源图表 ID
      *
      * @param sourceViewId 来源图表 ID
      */
@@ -101,7 +101,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 获取图表跳转配置详情。
+     * 获取图表跳转配置详情
      *
      * @return 图表跳转配置详情
      */
@@ -110,7 +110,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 设置图表跳转配置详情。
+     * 设置图表跳转配置详情
      *
      * @param linkJumpInfo 图表跳转配置详情
      */
@@ -119,7 +119,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 获取是否启用该跳转配置。
+     * 获取是否启用该跳转配置
      *
      * @return 是否启用该跳转配置
      */
@@ -128,7 +128,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 设置是否启用该跳转配置。
+     * 设置是否启用该跳转配置
      *
      * @param checked 是否启用该跳转配置
      */
@@ -137,7 +137,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 获取复制来源类型或标识。
+     * 获取复制来源类型或标识
      *
      * @return 复制来源类型或标识
      */
@@ -146,7 +146,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 设置复制来源类型或标识。
+     * 设置复制来源类型或标识
      *
      * @param copyFrom 复制来源类型或标识
      */
@@ -155,7 +155,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 获取复制来源记录 ID。
+     * 获取复制来源记录 ID
      *
      * @return 复制来源记录 ID
      */
@@ -164,7 +164,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 设置复制来源记录 ID。
+     * 设置复制来源记录 ID
      *
      * @param copyId 复制来源记录 ID
      */
@@ -173,7 +173,7 @@ public class VisualizationLinkJump implements Serializable {
     }
 
     /**
-     * 返回跳转配置记录的调试字符串。
+     * 返回跳转配置记录的调试字符串
      *
      * @return 跳转配置记录的字符串表示
      */

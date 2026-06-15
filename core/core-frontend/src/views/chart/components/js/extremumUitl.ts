@@ -3,7 +3,7 @@ import { hexToRgba, parseJson } from '@/views/chart/components/js/util'
 import { isEmpty } from 'lodash-es'
 
 /**
- * 清除当前图表的最值标注容器。
+ * 清除当前图表的最值标注容器
  */
 export const clearExtremum = chart => {
   // 清除图表标注
@@ -55,7 +55,7 @@ const getRgbaColorLastRgba = (rgbaString: string) => {
 }
 
 /**
- * 创建并挂载单个最值标注节点。
+ * 创建并挂载单个最值标注节点
  */
 function createExtremumDiv(id, value, formatterCfg, chart) {
   // 空值不处理
@@ -121,21 +121,21 @@ export const supportExtremumChartType = chart => {
 }
 
 /**
- * 获取图表容器 ID 前缀。
+ * 获取图表容器 ID 前缀
  */
 const chartContainerId = chart => {
   return chart.container + '_'
 }
 
 /**
- * 获取最值标注父容器 ID。
+ * 获取最值标注父容器 ID
  */
 const chartPointParentId = chart => {
   return chart.container + '_point_' + chart.id + '_'
 }
 
 /**
- * 删除指定父容器下匹配前缀的子 div。
+ * 删除指定父容器下匹配前缀的子 div
  */
 function removeDivsWithPrefix(parentDivId, prefix) {
   const parentDiv = document.getElementById(parentDivId)
@@ -153,7 +153,7 @@ function removeDivsWithPrefix(parentDivId, prefix) {
 }
 
 /**
- * 在图表渲染生命周期中计算并绘制最值标注。
+ * 在图表渲染生命周期中计算并绘制最值标注
  */
 export const extremumEvt = (newChart, chart, _options, container) => {
   chart.container = container

@@ -14,7 +14,7 @@ if (!existsSync(sourceRoot)) {
 
 let copied = 0
 
-// 按私有测试仓库中的原始目录结构恢复测试文件。
+// 按私有测试仓库中的原始目录结构恢复测试文件
 const restoreDirectory = (sourceDir, targetDir) => {
   for (const entry of readdirSync(sourceDir)) {
     const sourcePath = join(sourceDir, entry)

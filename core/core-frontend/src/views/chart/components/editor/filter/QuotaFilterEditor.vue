@@ -4,10 +4,10 @@ import icon_add_outlined from '@/assets/svg/icon_add_outlined.svg'
 import { useI18n } from '@/hooks/web/useI18n'
 import { reactive, toRefs } from 'vue'
 
-// 指标过滤编辑器文案函数。
+// 指标过滤编辑器文案函数
 const { t } = useI18n()
 
-// 指标过滤项配置属性。
+// 指标过滤项配置属性
 const props = defineProps({
   item: {
     type: Object,
@@ -15,10 +15,10 @@ const props = defineProps({
   }
 })
 
-// 保持过滤项响应式引用，便于直接维护条件数组。
+// 保持过滤项响应式引用，便于直接维护条件数组
 const { item } = toRefs(props)
 
-// 指标过滤器状态，包含条件选项和逻辑关系。
+// 指标过滤器状态，包含条件选项和逻辑关系
 const state = reactive({
   options: [
     {
@@ -73,22 +73,22 @@ const state = reactive({
   logic: ''
 })
 
-// 初始化条件之间的逻辑关系。
+// 初始化条件之间的逻辑关系
 const init = () => {
   state.logic = props.item.logic
 }
-// 新增一条默认等于条件。
+// 新增一条默认等于条件
 const addFilter = () => {
   item.value.filter.push({
     term: 'eq',
     value: ''
   })
 }
-// 删除指定条件。
+// 删除指定条件
 const removeFilter = index => {
   item.value.filter.splice(index, 1)
 }
-// 更新条件组逻辑关系。
+// 更新条件组逻辑关系
 const logicChange = val => {
   item.value.logic = val
 }

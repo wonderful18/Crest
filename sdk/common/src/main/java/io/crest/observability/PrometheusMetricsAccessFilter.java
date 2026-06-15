@@ -19,39 +19,39 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 使用可观测性配置中的令牌保护 Prometheus 指标端点。
+ * 使用可观测性配置中的令牌保护 Prometheus 指标端点
  */
 public class PrometheusMetricsAccessFilter implements Filter {
 
     /**
-     * 用于输出安全配置告警的日志器。
+     * 用于输出安全配置告警的日志器
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusMetricsAccessFilter.class);
 
     /**
-     * 认证请求头中的固定令牌前缀。
+     * 认证请求头中的固定令牌前缀
      */
     private static final String BEARER_PREFIX = "Bearer ";
 
     /**
-     * 运行时可观测性配置，决定端点路径和令牌校验策略。
+     * 运行时可观测性配置，决定端点路径和令牌校验策略
      */
     private final ObservabilityProperties observabilityProperties;
 
     /**
-     * 保证缺少令牌的告警在进程内只输出一次。
+     * 保证缺少令牌的告警在进程内只输出一次
      */
     private final AtomicBoolean tokenMissingLogged = new AtomicBoolean(false);
 
     /**
-     * 使用当前可观测性配置创建过滤器。
+     * 使用当前可观测性配置创建过滤器
      */
     public PrometheusMetricsAccessFilter(ObservabilityProperties observabilityProperties) {
         this.observabilityProperties = observabilityProperties;
     }
 
     /**
-     * 放行非指标请求，并为指标请求校验 Bearer 令牌。
+     * 放行非指标请求，并为指标请求校验 Bearer 令牌
      */
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
@@ -89,7 +89,7 @@ public class PrometheusMetricsAccessFilter implements Filter {
     }
 
     /**
-     * 判断当前请求是否命中已配置的 Prometheus 指标端点。
+     * 判断当前请求是否命中已配置的 Prometheus 指标端点
      */
     private boolean isPrometheusRequest(HttpServletRequest request) {
         String path = normalizePath(request.getRequestURI());
@@ -104,7 +104,7 @@ public class PrometheusMetricsAccessFilter implements Filter {
     }
 
     /**
-     * 规范化端点路径，便于比较配置路径和实际 Servlet 路径。
+     * 规范化端点路径，便于比较配置路径和实际 Servlet 路径
      */
     private String normalizePath(String path) {
         if (StringUtils.isBlank(path)) {
@@ -121,7 +121,7 @@ public class PrometheusMetricsAccessFilter implements Filter {
     }
 
     /**
-     * 从 Authorization 请求头中提取 Bearer 令牌值。
+     * 从认证请求头中提取令牌值
      */
     private String extractBearerToken(String authorization) {
         if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
@@ -131,7 +131,7 @@ public class PrometheusMetricsAccessFilter implements Filter {
     }
 
     /**
-     * 使用 MessageDigest 比较令牌，避免短路比较带来的计时差异。
+     * 使用 MessageDigest 比较令牌，避免短路比较带来的计时差异
      */
     private boolean constantTimeEquals(String expectedToken, String presentedToken) {
         if (StringUtils.isBlank(expectedToken) || StringUtils.isBlank(presentedToken)) {
@@ -143,7 +143,7 @@ public class PrometheusMetricsAccessFilter implements Filter {
     }
 
     /**
-     * 为指标认证失败写入简洁的 JSON 错误响应。
+     * 为指标认证失败写入简洁的 JSON 错误响应
      */
     private void writeJson(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);

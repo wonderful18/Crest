@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 提供单点登录状态、配置、登录回调和令牌兑换接口。
+ * 提供单点登录状态、配置、登录回调和令牌兑换接口
  */
 @RestController
 @RequestMapping("/sso")
@@ -27,7 +27,7 @@ public class SsoServer implements SsoApi {
     private SsoManage ssoManage;
 
     /**
-     * 查询单点登录启用状态。
+     * 查询单点登录启用状态
      */
     @Override
     public SsoStatusVO status() {
@@ -35,7 +35,7 @@ public class SsoServer implements SsoApi {
     }
 
     /**
-     * 查询单点登录配置。
+     * 查询单点登录配置
      */
     @Override
     public SsoConfigVO config(HttpServletRequest request) {
@@ -44,7 +44,7 @@ public class SsoServer implements SsoApi {
     }
 
     /**
-     * 保存单点登录配置。
+     * 保存单点登录配置
      */
     @Override
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA)
@@ -54,7 +54,7 @@ public class SsoServer implements SsoApi {
     }
 
     /**
-     * 校验单点登录配置。
+     * 校验单点登录配置
      */
     @Override
     @CrestAudit(ot = LogOT.READ, st = LogST.DATA)
@@ -64,7 +64,7 @@ public class SsoServer implements SsoApi {
     }
 
     /**
-     * 发起单点登录跳转。
+     * 发起单点登录跳转
      */
     @Override
     @CrestAudit(ot = LogOT.LOGIN, st = LogST.USER)
@@ -73,7 +73,7 @@ public class SsoServer implements SsoApi {
     }
 
     /**
-     * 处理单点登录回调。
+     * 处理单点登录回调
      */
     @Override
     @CrestAudit(ot = LogOT.LOGIN, st = LogST.USER)
@@ -83,7 +83,7 @@ public class SsoServer implements SsoApi {
     }
 
     /**
-     * 使用登录票据兑换系统令牌。
+     * 使用登录票据兑换系统令牌
      */
     @Override
     @CrestAudit(ot = LogOT.LOGIN, st = LogST.USER)

@@ -170,21 +170,21 @@ import ChartCarouselTooltip from '@/views/chart/components/js/g2plot_tooltip_car
 import { debounce } from 'lodash-es'
 import PreviewCanvas from '@/views/data-visualization/PreviewCanvas.vue'
 import SelectScreenDialog from '@/custom-component/screen/SelectScreenDialog.vue'
-/** 可视化主画布状态仓库。 */
+/** 可视化主画布状态仓库 */
 const dvMainStore = dvMainStoreWithOut()
-/** 快照状态仓库。 */
+/** 快照状态仓库 */
 const snapshotStore = snapshotStoreWithOut()
-/** 标签拖入状态、画布矩阵和编辑模式等全局状态。 */
+/** 标签拖入状态、画布矩阵和编辑模式等全局状态 */
 const { tabMoveInActiveId, bashMatrixInfo, editMode, mobileInPc } = storeToRefs(dvMainStore)
-/** 标签组件根节点引用。 */
+/** 标签组件根节点引用 */
 const tabComponentRef = ref(null)
-/** 标签自动轮播计时器。 */
+/** 标签自动轮播计时器 */
 let carouselTimer = null
-/** 国际化文本读取方法。 */
+/** 国际化文本读取方法 */
 const { t } = useI18n()
-/** 选择仪表板弹窗引用。 */
+/** 选择仪表板弹窗引用 */
 const selectScreenDialogRef = ref(null)
-/** 内嵌仪表板组件输入属性。 */
+/** 内嵌仪表板组件输入属性 */
 const props = defineProps({
   canvasStyleData: {
     type: Object,
@@ -220,13 +220,13 @@ const props = defineProps({
     required: false,
     default: 1
   },
-  // 仪表板刷新计时器。
+  // 仪表板刷新计时器
   searchCount: {
     type: Number,
     required: false,
     default: 0
   },
-  // 仪表板字体。
+  // 仪表板字体
   fontFamily: {
     type: String,
     required: false,
@@ -244,12 +244,12 @@ const {
   searchCount
 } = toRefs(props)
 
-/** 当前组件内的标签页列表。 */
+/** 当前组件内的标签页列表 */
 const tabItems = computed(() =>
   Array.isArray(element.value?.propValue) ? element.value.propValue : []
 )
 
-/** 确保标签页数据始终是数组。 */
+/** 确保标签页数据始终是数组 */
 const ensureTabItems = () => {
   if (!Array.isArray(element.value.propValue)) {
     element.value.propValue = []
@@ -257,21 +257,21 @@ const ensureTabItems = () => {
   return element.value.propValue
 }
 
-/** 当前资源类型的展示名称。 */
+/** 当前资源类型的展示名称 */
 const screenType =
   dvInfo.value.type === 'dataV' ? t('work_branch.big_data_screen') : t('work_branch.dashboard')
 
-/** 激活态标题内置背景图片名称。 */
+/** 激活态标题内置背景图片名称 */
 const titleBackgroundActiveSvgInner = computed(() => {
   return element.value.titleBackground.active.innerImage.replace('board/', '').replace('.svg', '')
 })
 
-/** 非激活态标题内置背景图片名称。 */
+/** 非激活态标题内置背景图片名称 */
 const titleBackgroundInActiveSvgInner = computed(() => {
   return element.value.titleBackground.inActive.innerImage.replace('board/', '').replace('.svg', '')
 })
 
-/** 判断非激活标签是否启用内置 SVG 背景。 */
+/** 判断非激活标签是否启用内置 SVG 背景 */
 const svgInnerInActiveEnable = itemName => {
   const { backgroundImageEnable, backgroundType, innerImage } =
     element.value.titleBackground.inActive
@@ -285,7 +285,7 @@ const svgInnerInActiveEnable = itemName => {
   )
 }
 
-/** 判断激活标签是否启用内置 SVG 背景。 */
+/** 判断激活标签是否启用内置 SVG 背景 */
 const svgInnerActiveEnable = itemName => {
   const { backgroundImageEnable, backgroundType, innerImage } = element.value.titleBackground.active
   return (
@@ -297,7 +297,7 @@ const svgInnerActiveEnable = itemName => {
   )
 }
 
-/** 根据当前激活标签暂停或恢复图表 Tooltip 轮播。 */
+/** 根据当前激活标签暂停或恢复图表 Tooltip 轮播 */
 const viewToolTipsChange = () => {
   element.value.propValue?.forEach(tabItem => {
     const tMethod =
@@ -314,16 +314,16 @@ const viewToolTipsChange = () => {
   })
 }
 
-/** 鼠标进入组件时标记悬停态。 */
+/** 鼠标进入组件时标记悬停态 */
 const handleMouseEnter = () => {
   state.hoverFlag = true
 }
 
-/** 鼠标离开组件时清除悬停态。 */
+/** 鼠标离开组件时清除悬停态 */
 const handleMouseLeave = () => {
   state.hoverFlag = false
 }
-/** 标签组件内部运行状态。 */
+/** 标签组件内部运行状态 */
 const state = reactive<any>({
   activeTabName: '',
   curItem: {},
@@ -333,15 +333,15 @@ const state = reactive<any>({
   hoverFlag: false,
   panelList: []
 })
-/** 标签标题区域是否出现横向滚动。 */
+/** 标签标题区域是否出现横向滚动 */
 const tabsAreaScroll = ref(false)
 
-// 无边框颜色占位。
+// 无边框颜色占位
 const noBorderColor = ref('none')
-/** 当前组件实例引用。 */
+/** 当前组件实例引用 */
 let currentInstance
 
-/** 是否显示标签标题。 */
+/** 是否显示标签标题 */
 const showTabTitleFlag = computed(() => {
   if (element.value && element.value.style && element.value.style?.showTabTitle === false) {
     return false
@@ -350,11 +350,11 @@ const showTabTitleFlag = computed(() => {
   }
 })
 
-/** 当前是否处于可编辑模式。 */
+/** 当前是否处于可编辑模式 */
 const isEditMode = computed(() => editMode.value === 'edit' && isEdit.value && !mobileInPc.value)
-/** 当前组件主题。 */
+/** 当前组件主题 */
 const curThemes = isDashboard() ? 'light' : 'dark'
-/** 计算标签标题是否需要启用滚动区域。 */
+/** 计算标签标题是否需要启用滚动区域 */
 const calcTabLength = () => {
   setTimeout(() => {
     const tabs = tabItems.value
@@ -370,28 +370,28 @@ const calcTabLength = () => {
   })
 }
 
-/** 统一包装下拉命令和命令参数。 */
+/** 统一包装下拉命令和命令参数 */
 const beforeHandleCommand = (item, param) => {
   return {
     command: item,
     param: param
   }
 }
-/** 仪表板预览模式下的组件间距。 */
+/** 仪表板预览模式下的组件间距 */
 const curPreviewGap = computed(() =>
   dvInfo.value.type === 'dashboard' && canvasStyleData.value['dashboard'].gap === 'yes'
     ? canvasStyleData.value['dashboard'].gapSize
     : 0
 )
 
-/** 确认当前标签标题修改并记录快照。 */
+/** 确认当前标签标题修改并记录快照 */
 function sureCurTitle() {
   state.curItem.title = state.textarea
   state.dialogVisible = false
   snapshotStore.recordSnapshotCache('sureCurTitle')
 }
 
-/** 新增一个内嵌仪表板标签页。 */
+/** 新增一个内嵌仪表板标签页 */
 function addTab() {
   const newName = guid()
   const newTab = {
@@ -405,7 +405,7 @@ function addTab() {
   snapshotStore.recordSnapshotCache('addTab')
 }
 
-/** 删除指定标签页并切换到相邻标签。 */
+/** 删除指定标签页并切换到相邻标签 */
 function deleteCur(param) {
   state.curItem = param
   const tabs = ensureTabItems()
@@ -426,7 +426,7 @@ function deleteCur(param) {
     }
   }
 }
-/** 复制指定标签页及其内部组件。 */
+/** 复制指定标签页及其内部组件 */
 function copyCur(param) {
   addTab()
   const tabs = ensureTabItems()
@@ -438,7 +438,7 @@ function copyCur(param) {
   dvMainStore.updateCopyCanvasView(idMap)
 }
 
-/** 打开当前标签标题编辑弹窗。 */
+/** 打开当前标签标题编辑弹窗 */
 function editCurTitle(param) {
   state.activeTabName = param.name
   state.curItem = param
@@ -446,7 +446,7 @@ function editCurTitle(param) {
   state.dialogVisible = true
 }
 
-/** 分发标签操作菜单命令。 */
+/** 分发标签操作菜单命令 */
 function handleCommand(command) {
   switch (command.command) {
     case 'editTitle':
@@ -466,9 +466,9 @@ function handleCommand(command) {
   }
 }
 
-/** 刷新当前资源的图表联动信息。 */
+/** 刷新当前资源的图表联动信息 */
 const reloadLinkage = () => {
-  // 刷新联动信息。
+  // 刷新联动信息
   if (dvInfo.value.id) {
     const resourceTable = ['canvas', 'canvasDataV', 'edit'].includes(showPosition.value)
       ? 'snapshot'
@@ -479,11 +479,11 @@ const reloadLinkage = () => {
   }
 }
 
-/** 将主画布组件移入当前激活标签页。 */
+/** 将主画布组件移入当前激活标签页 */
 const componentMoveIn = component => {
   element.value.propValue.forEach((tabItem, index) => {
     if (element.value.editableTabsValue === tabItem.name) {
-      // 获取主画布当前组件的索引。
+      // 获取主画布当前组件的索引
       if (isDashboard()) {
         eventBus.emit('removeMatrixItemById-canvas-main', component.id)
         dvMainStore.setCurComponent({ component: null, index: null })
@@ -517,15 +517,15 @@ const componentMoveIn = component => {
   reloadLinkage()
 }
 
-/** 将标签页内组件移回主画布。 */
+/** 将标签页内组件移回主画布 */
 const componentMoveOut = component => {
   if (isDashboard()) {
     canvasChangeAdaptor(component, bashMatrixInfo.value, true)
   }
-  // 从标签页画布中移除。
+  // 从标签页画布中移除
   eventBus.emit('removeMatrixItemById-' + component.canvasId, component.id)
   dvMainStore.setCurComponent({ component: null, index: null })
-  // 添加回主画布。
+  // 添加回主画布
   if (isDashboard()) {
     eventBus.emit('moveOutFromTab-canvas-main', component)
   } else {
@@ -534,7 +534,7 @@ const componentMoveOut = component => {
   reloadLinkage()
 }
 
-/** 将数据大屏标签页组件添加回主画布。 */
+/** 将数据大屏标签页组件添加回主画布 */
 const addToMain = component => {
   const { left, top } = element.value.style
   component.style.left = component.style.left + left
@@ -547,12 +547,12 @@ const addToMain = component => {
   })
 }
 
-/** 当前标签组件是否处于拖入激活态。 */
+/** 当前标签组件是否处于拖入激活态 */
 const moveActive = computed(() => {
   return tabMoveInActiveId.value && tabMoveInActiveId.value === element.value.id
 })
 
-/** 标签标题区域的对齐样式类。 */
+/** 标签标题区域的对齐样式类 */
 const headClass = computed(() => {
   if (tabsAreaScroll.value) {
     return 'tab-head-left'
@@ -561,7 +561,7 @@ const headClass = computed(() => {
   }
 })
 
-/** 根据标题背景配置生成样式对象。 */
+/** 根据标题背景配置生成样式对象 */
 const backgroundStyle = backgroundParams => {
   if (backgroundParams) {
     const {
@@ -600,7 +600,7 @@ const backgroundStyle = backgroundParams => {
   return {}
 }
 
-/** 根据标签激活状态生成标题样式。 */
+/** 根据标签激活状态生成标题样式 */
 const titleStyle = itemName => {
   let style = {}
   if (element.value.editableTabsValue === itemName) {
@@ -639,7 +639,7 @@ const titleStyle = itemName => {
   return style
 }
 
-/** 标签标题默认字体颜色。 */
+/** 标签标题默认字体颜色 */
 const fontColor = computed(() => {
   if (
     element.value &&
@@ -653,7 +653,7 @@ const fontColor = computed(() => {
   }
 })
 
-/** 标签标题激活态字体颜色。 */
+/** 标签标题激活态字体颜色 */
 const activeColor = computed(() => {
   if (
     element.value &&
@@ -667,7 +667,7 @@ const activeColor = computed(() => {
   }
 })
 
-/** 标签标题激活态边框颜色。 */
+/** 标签标题激活态边框颜色 */
 const borderActiveColor = computed(() => {
   if (
     element.value &&
@@ -681,24 +681,24 @@ const borderActiveColor = computed(() => {
   }
 })
 
-/** 当前编辑标题是否有效。 */
+/** 当前编辑标题是否有效 */
 const titleValid = computed(() => {
   return !!state.textarea && !!state.textarea.trim()
 })
 
-/** 防抖刷新图表 Tooltip 轮播状态。 */
+/** 防抖刷新图表 Tooltip 轮播状态 */
 const viewToolTipsChangeDebounce = debounce(() => {
   viewToolTipsChange()
 }, 500)
 
-/** 打开选择仪表板弹窗并传入当前资源类型。 */
+/** 打开选择仪表板弹窗并传入当前资源类型 */
 const selectDashboard = screenId => {
-  // 打开选择弹窗。
+  // 打开选择弹窗
   const params = { screenId: screenId, dvType: dvInfo.value.type }
   selectScreenDialogRef.value.init(params)
 }
 
-/** 画布缩放变化时刷新 Tooltip 轮播状态。 */
+/** 画布缩放变化时刷新 Tooltip 轮播状态 */
 watch(
   () => scale.value,
   () => {
@@ -706,7 +706,7 @@ watch(
   }
 )
 
-/** 组件配置变化时刷新标题滚动和 Tooltip 轮播状态。 */
+/** 组件配置变化时刷新标题滚动和 Tooltip 轮播状态 */
 watch(
   () => element.value,
   () => {
@@ -716,7 +716,7 @@ watch(
   { deep: true }
 )
 
-/** 强制重建标签内容区域。 */
+/** 强制重建标签内容区域 */
 const reShow = () => {
   state.tabShow = false
   nextTick(() => {
@@ -724,13 +724,13 @@ const reShow = () => {
   })
 }
 
-/** 为当前标签页选择新的内嵌仪表板。 */
+/** 为当前标签页选择新的内嵌仪表板 */
 const selectNewScreen = screenId => {
   element.value.propValue.forEach(tabItem => {
     if (element.value.editableTabsValue === tabItem.name) {
       tabItem.screenId = null
       nextTick(() => {
-        // 获取主画布当前组件的索引。
+        // 获取主画布当前组件的索引
         tabItem.screenId = screenId
         snapshotStore.recordSnapshotCache('selectNewScreen')
       })
@@ -738,7 +738,7 @@ const selectNewScreen = screenId => {
   })
 }
 
-/** 编辑模式变化时同步自动轮播状态。 */
+/** 编辑模式变化时同步自动轮播状态 */
 watch(
   () => isEditMode.value,
   () => {
@@ -746,7 +746,7 @@ watch(
   }
 )
 
-/** 初始化非编辑态下的标签自动轮播。 */
+/** 初始化非编辑态下的标签自动轮播 */
 const initCarousel = () => {
   carouselTimer && clearInterval(carouselTimer)
   carouselTimer = null
@@ -756,9 +756,9 @@ const initCarousel = () => {
       const tabs = element.value.propValue || []
       if (!tabs.length) return
       let switchCount = 1
-      // 轮播定时器。
+      // 轮播定时器
       carouselTimer = setInterval(() => {
-        // 鼠标移入时停止轮播。
+        // 鼠标移入时停止轮播
         if (!state.hoverFlag) {
           const nowIndex = switchCount % tabs.length
           switchCount++
@@ -770,7 +770,7 @@ const initCarousel = () => {
     }
   }
 }
-/** 组件挂载后注册事件并初始化标签状态。 */
+/** 组件挂载后注册事件并初始化标签状态 */
 onMounted(() => {
   document.addEventListener('visibilitychange', viewToolTipsChange)
   const tabs = tabItems.value
@@ -792,7 +792,7 @@ onMounted(() => {
     viewToolTipsChange()
   }, 1000)
 })
-/** 组件卸载前解绑事件监听。 */
+/** 组件卸载前解绑事件监听 */
 onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', viewToolTipsChange)
   if (['canvas', 'canvasDataV', 'edit'].includes(showPosition.value) && !mobileInPc.value) {
@@ -801,7 +801,7 @@ onBeforeUnmount(() => {
     eventBus.off('onTabSortChange-' + element.value.id, reShow)
   }
 })
-/** 组件挂载前清理可能遗留的轮播计时器。 */
+/** 组件挂载前清理可能遗留的轮播计时器 */
 onBeforeMount(() => {
   if (carouselTimer) {
     clearInterval(carouselTimer)

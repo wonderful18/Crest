@@ -10,7 +10,7 @@ import CustomAggrEdit from './CustomAggrEdit.vue'
 const dvMainStore = dvMainStoreWithOut()
 const { batchOptStatus } = storeToRefs(dvMainStore)
 const { t } = useI18n()
-// 接收图表、主题和可编辑属性范围。
+// 接收图表、主题和可编辑属性范围
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -24,10 +24,10 @@ const props = defineProps({
     type: Array<string>
   }
 })
-// 判断指定汇总属性是否可编辑。
+// 判断指定汇总属性是否可编辑
 const showProperty = prop => props.propertyInner?.includes(prop)
 
-// 维护汇总配置表单和当前字段选择。
+// 维护汇总配置表单和当前字段选择
 const state = reactive({
   basicStyleForm: JSON.parse(JSON.stringify(DEFAULT_BASIC_STYLE)) as ChartBasicStyle,
   currentAxis: undefined as string,
@@ -39,20 +39,20 @@ const state = reactive({
   }
 })
 
-// 定义基础样式变更事件。
+// 定义基础样式变更事件
 const emit = defineEmits(['onBasicStyleChange'])
-// 提交汇总配置变更。
+// 提交汇总配置变更
 const changeBasicStyle = (prop?: string, requestData = false) => {
   emit('onBasicStyleChange', { data: state.basicStyleForm, requestData }, prop)
 }
-// 切换汇总方式并处理自定义汇总校验。
+// 切换汇总方式并处理自定义汇总校验
 const changeSummaryType = () => {
   if (state.currentAxisSummary.summary === 'custom' && !state.currentAxisSummary.originName) {
     return
   }
   changeBasicStyle('seriesSummary')
 }
-// 监听汇总开关和字段变化并刷新配置。
+// 监听汇总开关和字段变化并刷新配置
 watch(
   [
     () => props.chart.customAttr.basicStyle.showSummary,
@@ -67,14 +67,14 @@ watch(
   }
 )
 
-// 获取可参与汇总的轴字段列表。
+// 获取可参与汇总的轴字段列表
 function getAxisList() {
   return props.chart.type === 'table-info'
     ? filter(props.chart.xAxis, axis => [2, 3, 4].includes(axis.fieldType))
     : props.chart.yAxis
 }
 
-// 计算当前可选汇总字段。
+// 计算当前可选汇总字段
 const computedAxis = computed(() => {
   return getAxisList()
 })
@@ -86,18 +86,18 @@ const summaryTypes = [
   { key: 'custom', name: t('commons.custom') }
 ]
 
-// 切换当前正在编辑的汇总字段。
+// 切换当前正在编辑的汇总字段
 function onSelectAxis(value) {
   state.currentAxisSummary = find(state.basicStyleForm.seriesSummary, s => s.field === value)
 }
 
-// 自定义聚合编辑器实例。
+// 自定义聚合编辑器实例
 const calcEdit = ref()
-// 控制自定义聚合编辑弹窗显隐。
+// 控制自定义聚合编辑弹窗显隐
 const editCalcField = ref(false)
 const dimension = inject('dimension', () => [])
 const quota = inject('quota', () => [])
-// 打开自定义汇总字段编辑器。
+// 打开自定义汇总字段编辑器
 const editField = () => {
   editCalcField.value = true
   nextTick(() => {
@@ -107,11 +107,11 @@ const editField = () => {
     )
   })
 }
-// 关闭自定义汇总字段编辑器。
+// 关闭自定义汇总字段编辑器
 const closeEditCalc = () => {
   editCalcField.value = false
 }
-// 保存自定义汇总字段并同步汇总配置。
+// 保存自定义汇总字段并同步汇总配置
 const confirmEditCalc = () => {
   calcEdit.value.setFieldForm()
   const obj = cloneDeep(calcEdit.value.fieldForm)
@@ -120,7 +120,7 @@ const confirmEditCalc = () => {
   closeEditCalc()
   changeSummaryType()
 }
-// 初始化汇总配置并补齐字段默认值。
+// 初始化汇总配置并补齐字段默认值
 const init = () => {
   const basicStyle = cloneDeep(props.chart.customAttr.basicStyle)
 
@@ -159,7 +159,7 @@ const init = () => {
     state.currentAxisSummary = undefined
   }
 }
-// 补齐自定义汇总字段的图表上下文默认值。
+// 补齐自定义汇总字段的图表上下文默认值
 const setFieldDefaultValue = field => {
   field.extField = 2
   field.chartId = props.chart.id

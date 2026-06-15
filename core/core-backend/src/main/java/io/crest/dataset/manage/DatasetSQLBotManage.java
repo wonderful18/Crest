@@ -63,7 +63,7 @@ import java.util.stream.Collectors;
 
 @Component
 @SuppressWarnings("unchecked")
-// 管理 SQL 助手可访问的数据源、数据集和字段结构。
+// 管理 SQL 助手可访问的数据源、数据集和字段结构
 public class DatasetSQLBotManage {
 
 
@@ -103,7 +103,7 @@ public class DatasetSQLBotManage {
     @Resource
     private ExtChartViewMapper extChartViewMapper;
 
-    // 按配置对 SQL 助手敏感信息加密。
+    // 按配置对 SQL 助手敏感信息加密
     private String aesEncrypt(String text) {
         if (StringUtils.isBlank(aesKey) || StringUtils.isBlank(aesIv)) {
             throw new IllegalStateException("crest.sqlbot.aes-key and crest.sqlbot.aes-iv are required when crest.sqlbot.encrypt is enabled");
@@ -122,7 +122,7 @@ public class DatasetSQLBotManage {
     TypeReference<List<Long>> listTypeReference = new TypeReference<List<Long>>() {
     };
 
-    // 查询用户及角色的数据集列权限。
+    // 查询用户及角色的数据集列权限
     private Map<Long, List<DataSetColumnPermissionsDTO>> getColPermission(Long uid, List<Long> roleIds) {
         ColumnPermissionsApi columnPermissionsApi = CommonBeanFactory.getBean(ColumnPermissionsApi.class);
         Objects.requireNonNull(columnPermissionsApi);
@@ -155,19 +155,19 @@ public class DatasetSQLBotManage {
         return dataSetColumnPermissionsDTOS.stream().collect(Collectors.groupingBy(DataSetColumnPermissionsDTO::getDatasetId));
     }
 
-    // 查询用户的数据集行权限。
+    // 查询用户的数据集行权限
     private Map<Long, List<DataSetRowPermissionsTreeDTO>> getRowPermission(Long uid, List<Long> roleIds) {
         List<DataSetRowPermissionsTreeDTO> datasetRowPermissions = permissionManage.getRowPermissionsTree(null, uid);
         return datasetRowPermissions.stream().collect(Collectors.groupingBy(DataSetRowPermissionsTreeDTO::getDatasetId));
     }
 
 
-    // 查询指定画布关联的数据集列表。
+    // 查询指定画布关联的数据集列表
     public List<DataSQLBotDatasetVO> datasetList(String dvInfo) {
         return extChartViewMapper.findDataSQLBotDatasetDvId(dvInfo);
     }
 
-    // 查询 SQL 助手可用的数据源结构。
+    // 查询 SQL 助手可用的数据源结构
     public List<DataSQLBotAssistantVO> datasourceList(Long dsId, Long datasetId) {
         TokenUserBO user = Objects.requireNonNull(AuthUtils.getUser());
         Long oid = user.getDefaultOid();
@@ -248,9 +248,9 @@ public class DatasetSQLBotManage {
         return result;
     }
 
-    // 补齐数据集字段的引擎字段名。
+    // 补齐数据集字段的引擎字段名
     public void buildFieldName(Map<String, Object> sqlMap, List<DatasetTableFieldDTO> fields) {
-        // 获取内层 union SQL 和字段映射。
+        // 获取内层 union SQL 和字段映射
         List<DatasetTableFieldDTO> unionFields = (List<DatasetTableFieldDTO>) sqlMap.get("field");
         for (DatasetTableFieldDTO datasetTableFieldDTO : fields) {
             if (Objects.equals(datasetTableFieldDTO.getExtField(), ExtFieldConstant.EXT_NORMAL)) {
@@ -279,7 +279,7 @@ public class DatasetSQLBotManage {
         }
     }
 
-    // 为行权限树节点回填字段对象。
+    // 为行权限树节点回填字段对象
     public void getField(DatasetRowPermissionsTreeObj tree, Map<Long, DatasetTableFieldDTO> fieldMap) {
         if (ObjectUtils.isNotEmpty(tree)) {
             if (ObjectUtils.isNotEmpty(tree.getItems())) {
@@ -301,7 +301,7 @@ public class DatasetSQLBotManage {
     TypeReference<List<CalParam>> typeToken = new TypeReference<>() {
     };
 
-    // 基于数据集配置重建 SQL 助手表结构。
+    // 基于数据集配置重建 SQL 助手表结构
     private void rebuildTable(SQLBotAssistanTable table, List<DataSetColumnPermissionsDTO> columnPermissionsDTOS, List<DataSetRowPermissionsTreeDTO> rowPermissionsTree, Map<String, Object> dsRowData) {
         Map<String, Object> rowData = table.getRowData();
         CoreDatasetGroup coreDatasetGroup = BeanUtils.mapToBean(rowData, CoreDatasetGroup.class);
@@ -475,7 +475,7 @@ public class DatasetSQLBotManage {
         });*/
     }
 
-    // 将查询行转换为 SQL 助手字段。
+    // 将查询行转换为 SQL 助手字段
     private SQLBotAssistantField buildField(Map<String, Object> row) {
         SQLBotAssistantField field = new SQLBotAssistantField();
         if (ObjectUtils.isNotEmpty(row.get("cdtf_id"))) {
@@ -504,7 +504,7 @@ public class DatasetSQLBotManage {
     }
 
 
-    // 将查询行转换为 SQL 助手数据源。
+    // 将查询行转换为 SQL 助手数据源
     private DataSQLBotAssistantVO buildDs(Map<String, Object> row) {
         Object dsConfig = row.get("cd_configuration");
         if (ObjectUtils.isEmpty(dsConfig) || StringUtils.isBlank(dsConfig.toString())) {
@@ -557,7 +557,7 @@ public class DatasetSQLBotManage {
         return vo;
     }
 
-    // 按层级前缀提取原始行数据。
+    // 按层级前缀提取原始行数据
     private Map<String, Object> buildRowData(Map<String, Object> row, int level) {
         String[] levels = {"cd_", "cdg_", "cdt_", "cdtf_"};
         String alias = levels[level];
@@ -570,7 +570,7 @@ public class DatasetSQLBotManage {
         return filteredMap;
     }
 
-    // 加密 SQL 助手数据源敏感字段。
+    // 加密 SQL 助手数据源敏感字段
     private void aesVO(DataSQLBotAssistantVO vo) {
         if (StringUtils.isNotBlank(vo.getHost())) {
             vo.setHost(aesEncrypt(vo.getHost()));
@@ -589,7 +589,7 @@ public class DatasetSQLBotManage {
         }
     }
 
-    // 将查询行转换为 SQL 助手表。
+    // 将查询行转换为 SQL 助手表
     private SQLBotAssistanTable buildTable(Map<String, Object> row) {
         SQLBotAssistanTable table = new SQLBotAssistanTable();
         table.setName(row.get("cdg_name").toString());

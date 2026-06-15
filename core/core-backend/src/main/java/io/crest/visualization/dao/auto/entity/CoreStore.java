@@ -12,32 +12,32 @@ public class CoreStore implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 收藏记录主键。
+     * 收藏记录主键
      */
     private Long id;
 
     /**
-     * 收藏资源 ID。
+     * 收藏资源 ID
      */
     private Long resourceId;
 
     /**
-     * 收藏用户 ID。
+     * 收藏用户 ID
      */
     private Long uid;
 
     /**
-     * 收藏资源类型。
+     * 收藏资源类型
      */
     private Integer resourceType;
 
     /**
-     * 收藏时间。
+     * 收藏时间
      */
     private Long time;
 
     /**
-     * 获取收藏记录主键。
+     * 获取收藏记录主键
      *
      * @return 收藏记录主键
      */
@@ -46,7 +46,7 @@ public class CoreStore implements Serializable {
     }
 
     /**
-     * 设置收藏记录主键。
+     * 设置收藏记录主键
      *
      * @param id 收藏记录主键
      */
@@ -55,7 +55,7 @@ public class CoreStore implements Serializable {
     }
 
     /**
-     * 获取收藏资源 ID。
+     * 获取收藏资源 ID
      *
      * @return 收藏资源 ID
      */
@@ -64,7 +64,7 @@ public class CoreStore implements Serializable {
     }
 
     /**
-     * 设置收藏资源 ID。
+     * 设置收藏资源 ID
      *
      * @param resourceId 收藏资源 ID
      */
@@ -73,7 +73,7 @@ public class CoreStore implements Serializable {
     }
 
     /**
-     * 获取收藏用户 ID。
+     * 获取收藏用户 ID
      *
      * @return 收藏用户 ID
      */
@@ -82,7 +82,7 @@ public class CoreStore implements Serializable {
     }
 
     /**
-     * 设置收藏用户 ID。
+     * 设置收藏用户 ID
      *
      * @param uid 收藏用户 ID
      */
@@ -91,7 +91,7 @@ public class CoreStore implements Serializable {
     }
 
     /**
-     * 获取收藏资源类型。
+     * 获取收藏资源类型
      *
      * @return 收藏资源类型
      */
@@ -100,7 +100,7 @@ public class CoreStore implements Serializable {
     }
 
     /**
-     * 设置收藏资源类型。
+     * 设置收藏资源类型
      *
      * @param resourceType 收藏资源类型
      */
@@ -109,7 +109,7 @@ public class CoreStore implements Serializable {
     }
 
     /**
-     * 获取收藏时间。
+     * 获取收藏时间
      *
      * @return 收藏时间
      */
@@ -118,7 +118,7 @@ public class CoreStore implements Serializable {
     }
 
     /**
-     * 设置收藏时间。
+     * 设置收藏时间
      *
      * @param time 收藏时间
      */
@@ -127,7 +127,7 @@ public class CoreStore implements Serializable {
     }
 
     /**
-     * 返回收藏记录的调试字符串。
+     * 返回收藏记录的调试字符串
      *
      * @return 收藏记录的字符串表示
      */

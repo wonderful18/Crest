@@ -15,7 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 为前端静态资源应用缓存和安全响应头策略。
+ * 为前端静态资源应用缓存和安全响应头策略
  */
 @Component
 public class HtmlResourceFilter implements Filter, Ordered {
@@ -45,7 +45,7 @@ public class HtmlResourceFilter implements Filter, Ordered {
     private String configuredVersion;
 
     /**
-     * 设置过滤器执行顺序。
+     * 设置过滤器执行顺序
      */
     @Override
     public int getOrder() {
@@ -53,14 +53,14 @@ public class HtmlResourceFilter implements Filter, Ordered {
     }
 
     /**
-     * 初始化过滤器配置。
+     * 初始化过滤器配置
      */
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
     }
 
     /**
-     * 处理前端资源版本兼容转发并应用响应头。
+     * 处理前端资源版本兼容转发并应用响应头
      */
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
@@ -77,7 +77,7 @@ public class HtmlResourceFilter implements Filter, Ordered {
     }
 
     /**
-     * 将带旧版本号的前端资源转发到当前版本资源。
+     * 将带旧版本号的前端资源转发到当前版本资源
      */
     private boolean forwardStaleFrontendAsset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String method = request.getMethod();
@@ -117,7 +117,7 @@ public class HtmlResourceFilter implements Filter, Ordered {
     }
 
     /**
-     * 获取当前前端资源版本号。
+     * 获取当前前端资源版本号
      */
     private String currentVersion() {
         if (configuredVersion != null && !configuredVersion.isBlank()) {
@@ -128,7 +128,7 @@ public class HtmlResourceFilter implements Filter, Ordered {
     }
 
     /**
-     * 为前端资源响应设置禁用缓存和安全响应头。
+     * 为前端资源响应设置禁用缓存和安全响应头
      */
     private void applyNoCache(HttpServletResponse response) {
         applySecurityHeaders(response);
@@ -140,7 +140,7 @@ public class HtmlResourceFilter implements Filter, Ordered {
     }
 
     /**
-     * 设置前端页面所需的基础安全响应头。
+     * 设置前端页面所需的基础安全响应头
      */
     private void applySecurityHeaders(HttpServletResponse response) {
         response.setHeader("X-Frame-Options", "SAMEORIGIN");
@@ -152,7 +152,7 @@ public class HtmlResourceFilter implements Filter, Ordered {
     }
 
     /**
-     * 销毁过滤器并执行默认清理逻辑。
+     * 销毁过滤器并执行默认清理逻辑
      */
     @Override
     public void destroy() {

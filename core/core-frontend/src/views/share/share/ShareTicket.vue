@@ -148,18 +148,18 @@ import TicketEdit from './TicketEdit.vue'
 const embeddedStore = useEmbedded()
 const { toClipboard } = useClipboard()
 const { t } = useI18n()
-// 接收分享资源和 ticket 开关状态。
+// 接收分享资源和 ticket 开关状态
 const props = defineProps({
   uuid: propTypes.string.def(''),
   resourceId: propTypes.string.def(null),
   ticketRequire: propTypes.bool
 })
-// Ticket 编辑弹窗实例。
+// Ticket 编辑弹窗实例
 const ticketEditor = ref()
 const { ticketRequire } = toRefs(props)
-// 当前资源允许创建的 ticket 上限。
+// 当前资源允许创建的 ticket 上限
 const ticketLimit = ref(0)
-// 维护 ticket 表格和分页状态。
+// 维护 ticket 表格和分页状态
 const state = reactive({
   tableData: [],
   paginationConfig: {
@@ -168,15 +168,15 @@ const state = reactive({
     total: 0
   }
 })
-// 定义关闭和开关变更事件。
+// 定义关闭和开关变更事件
 const emits = defineEmits(['close', 'requireChange'])
 
-// 关闭 ticket 管理面板。
+// 关闭 ticket 管理面板
 const close = () => {
   emits('close')
 }
 
-// 更新资源是否要求 ticket 访问。
+// 更新资源是否要求 ticket 访问
 const requireTicketChange = val => {
   const url = '/ticket/tickets/enabled'
   const data = {
@@ -187,7 +187,7 @@ const requireTicketChange = val => {
     emits('requireChange', val)
   })
 }
-// 判断 ticket 数量是否达到创建上限。
+// 判断 ticket 数量是否达到创建上限
 const createLimit = () => {
   const realCount = state.paginationConfig.total
   if (ticketLimit.value && realCount >= ticketLimit.value) {
@@ -205,7 +205,7 @@ const createLimit = () => {
   }
   return false
 }
-// 解析 ticket 参数数量。
+// 解析 ticket 参数数量
 const getArgCount = row => {
   const args = row.args
   if (!args) {
@@ -219,18 +219,18 @@ const getArgCount = row => {
     return 0
   }
 }
-// 新增 ticket 前检查数量限制。
+// 新增 ticket 前检查数量限制
 const addRow = () => {
   if (createLimit()) {
     return
   }
   ticketEditor.value.edit(null, formatLinkAddr())
 }
-// 生成当前资源的分享链接。
+// 生成当前资源的分享链接
 const formatLinkAddr = () => {
   return formatLinkBase() + props.uuid
 }
-// 生成适配嵌入模式的分享链接前缀。
+// 生成适配嵌入模式的分享链接前缀
 const formatLinkBase = () => {
   let prefix = '/'
   if (embeddedStore.baseUrl) {
@@ -244,7 +244,7 @@ const formatLinkBase = () => {
   }
   return prefix + SHARE_BASE
 }
-// 复制带 ticket 参数的分享链接。
+// 复制带 ticket 参数的分享链接
 const copyTicket = async ticket => {
   const url = `${formatLinkAddr()}?ticket=${ticket}`
   try {
@@ -254,7 +254,7 @@ const copyTicket = async ticket => {
     ElMessage.warning(t('common.copy_unsupported'), e)
   }
 }
-// 刷新指定行的 ticket 值。
+// 刷新指定行的 ticket 值
 const refreshTicket = row => {
   const url = '/ticket/tickets'
   const param = JSON.parse(JSON.stringify(row))
@@ -264,7 +264,7 @@ const refreshTicket = row => {
   })
 }
 
-// 删除指定 ticket 并刷新列表。
+// 删除指定 ticket 并刷新列表
 const deleteTicket = row => {
   const param = { ticket: row.ticket }
   const url = '/ticket/tickets'
@@ -273,16 +273,16 @@ const deleteTicket = row => {
   })
 }
 
-// 打开指定 ticket 的编辑弹窗。
+// 打开指定 ticket 的编辑弹窗
 const editRow = row => {
   ticketEditor.value.edit(row, formatLinkAddr())
 }
 
-// 完成 ticket 配置并关闭面板。
+// 完成 ticket 配置并关闭面板
 const finish = () => {
   close()
 }
-// 分页加载当前资源的 ticket 列表。
+// 分页加载当前资源的 ticket 列表
 const loadTicketData = () => {
   const resourceId = props.resourceId
   const url = `/ticket/page/${resourceId}/${state.paginationConfig.currentPage}/${state.paginationConfig.pageSize}`
@@ -291,7 +291,7 @@ const loadTicketData = () => {
     state.paginationConfig.total = res.data.total
   })
 }
-// 切换 ticket 表格页码。
+// 切换 ticket 表格页码
 const pageChange = index => {
   if (typeof index !== 'number') {
     return
@@ -299,14 +299,14 @@ const pageChange = index => {
   state.paginationConfig.currentPage = index
   loadTicketData()
 }
-// 切换 ticket 表格分页大小。
+// 切换 ticket 表格分页大小
 const sizeChange = size => {
   state.paginationConfig.pageSize = size
   state.paginationConfig.currentPage = 1
   loadTicketData()
 }
 
-// 查询系统配置的 ticket 创建上限。
+// 查询系统配置的 ticket 创建上限
 const getLimit = () => {
   const url = '/ticket/limit'
   request.get({ url }).then(res => {

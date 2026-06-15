@@ -79,7 +79,7 @@ import {
 const { t } = useI18n()
 const predefineColors = COLOR_PANEL
 
-// 定义表头描述配置面板接收的图表和表头参数。
+// 定义表头描述配置面板接收的图表和表头参数
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -95,10 +95,10 @@ const props = defineProps({
   }
 })
 
-// 声明表头描述配置确认和取消事件。
+// 声明表头描述配置确认和取消事件
 const emits = defineEmits(['onConfigChange', 'onCancelConfig'])
 
-// 计算当前可展示表头描述的字段轴。
+// 计算当前可展示表头描述的字段轴
 const visibleAxis = computed(() => {
   const axis = [...(props.chart?.xAxis || [])]
   if (props.chart?.type === 'table-normal') {
@@ -107,7 +107,7 @@ const visibleAxis = computed(() => {
   return axis.filter(item => item.hide !== true)
 })
 
-// 生成表头描述编辑行。
+// 生成表头描述编辑行
 const descriptionRows = computed(() =>
   visibleAxis.value.map(item => ({
     field: item.engineFieldName,
@@ -120,14 +120,14 @@ const normalizedHeader = defaultsDeep(
   cloneDeep(DEFAULT_TABLE_HEADER)
 ) as ChartTableHeaderAttr
 const auxiliaryHeader = normalizeAuxiliaryHeader(normalizedHeader.auxiliaryHeader)
-// 保存辅助表头描述配置表单。
+// 保存辅助表头描述配置表单
 const state = reactive({
   form: {
     ...auxiliaryHeader,
     enabled: true
   }
 })
-// 保存字段与描述文案的映射。
+// 保存字段与描述文案的映射
 const descriptionMap = reactive(
   normalizeAuxiliaryDescriptions(
     state.form,
@@ -138,12 +138,12 @@ const descriptionMap = reactive(
   }, {})
 )
 
-// 取消表头描述配置。
+// 取消表头描述配置
 const onCancelConfig = () => {
   emits('onCancelConfig')
 }
 
-// 提交表头描述配置。
+// 提交表头描述配置
 const onConfigChange = () => {
   emits('onConfigChange', {
     ...state.form,

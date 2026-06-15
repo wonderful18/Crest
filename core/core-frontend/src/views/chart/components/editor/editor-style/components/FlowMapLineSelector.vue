@@ -9,7 +9,7 @@ import {
 import { cloneDeep, defaultsDeep } from 'lodash-es'
 
 const { t } = useI18n()
-// 定义流向地图线条样式面板接收的图表和主题参数。
+// 定义流向地图线条样式面板接收的图表和主题参数
 const props = defineProps({
   chart: {
     type: Object,
@@ -29,15 +29,15 @@ const flowLineTypeOptions = [
   { name: t('chart.map_line_type_arc'), value: 'arc' },
   { name: t('chart.map_line_type_arc_3d'), value: 'arc3d' }
 ]
-// 保存流向线条表单和基础配色表单。
+// 保存流向线条表单和基础配色表单
 const state = reactive({
   lineForm: {} as DeepPartial<ChartMiscAttr['flowMapConfig']['lineConfig']>,
   basicStyleForm: {} as ChartBasicStyle
 })
-// 声明流向线条和基础样式变更事件。
+// 声明流向线条和基础样式变更事件
 const emit = defineEmits(['onChangeFlowMapLineForm', 'onBasicStyleChange'])
 
-// 监听流向线条配置变化并刷新本地表单。
+// 监听流向线条配置变化并刷新本地表单
 watch(
   () => props.chart.customAttr.misc.flowMapConfig.lineConfig,
   () => {
@@ -46,14 +46,14 @@ watch(
   { deep: true }
 )
 
-// 同步流向线条样式和基础配色。
+// 同步流向线条样式和基础配色
 const changeStyle = (prop?: string) => {
   state.basicStyleForm.colors[0] = state.lineForm.mapLineSourceColor
   state.basicStyleForm.colors[1] = state.lineForm.mapLineTargetColor
   emit('onBasicStyleChange', { data: state.basicStyleForm, requestData: false }, 'colors')
   emit('onChangeFlowMapLineForm', state.lineForm, prop)
 }
-// 校验并更新流向线条透明度。
+// 校验并更新流向线条透明度
 const onAlphaChange = v => {
   const _v = parseInt(v)
   if (_v >= 0 && _v <= 100) {
@@ -72,7 +72,7 @@ const onAlphaChange = v => {
   }
   changeStyle('alpha')
 }
-// 从图表配置中初始化流向线条样式。
+// 从图表配置中初始化流向线条样式
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customAttr) {
@@ -101,7 +101,7 @@ const init = () => {
     }
   }
 }
-// 兼容旧配置中缺失的流向线条颜色。
+// 兼容旧配置中缺失的流向线条颜色
 const configCompat = (basicStyle: ChartBasicStyle) => {
   // 悬浮改为图例和缩放按钮
   if (basicStyle.suspension === false && basicStyle.showZoom === undefined) {

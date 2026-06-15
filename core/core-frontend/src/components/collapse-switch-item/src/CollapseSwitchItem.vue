@@ -2,7 +2,7 @@
 import { ElCollapseItem, ElSwitch } from 'element-plus-secondary'
 import { computed, PropType, ref, toRefs } from 'vue'
 
-// 可折叠开关项属性。
+// 可折叠开关项属性
 const props = defineProps({
   modelValue: {
     type: Boolean
@@ -21,14 +21,14 @@ const props = defineProps({
     default: true
   }
 })
-// 开关值和模型变化事件。
+// 开关值和模型变化事件
 const emit = defineEmits(['update:modelValue', 'modelChange'])
-// 保持标题、主题和模型配置的响应式引用。
+// 保持标题、主题和模型配置的响应式引用
 const { changeModel, title, themes } = toRefs(props)
 
-// 折叠项实例引用，用于在开关变化时同步展开状态。
+// 折叠项实例引用，用于在开关变化时同步展开状态
 const collapseItem = ref()
-// 开关点击时同步模型变化并切换折叠状态。
+// 开关点击时同步模型变化并切换折叠状态
 const onSwitchChange = () => {
   emit('modelChange', changeModel.value)
   if (!props.modelValue && !collapseItem.value.isActive) {
@@ -39,7 +39,7 @@ const onSwitchChange = () => {
     collapseItem.value.handleHeaderClick()
   }
 }
-// 对外 v-model 的双向计算值。
+// 对外 v-model 的双向计算值
 const switchValue = computed({
   get() {
     return props.modelValue

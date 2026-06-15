@@ -79,8 +79,8 @@ import static io.crest.datasource.server.DatasourceTaskServer.ScheduleType.RIGHT
 
 
 /**
- * 数据源服务入口，负责数据源目录、连接配置、Excel/API 同步表和状态检查的应用层编排。
- * 该类会触发连接探测、引擎表创建、同步任务调度和权限校验，但不直接实现各数据源协议细节。
+ * 数据源服务入口，负责数据源目录、连接配置、Excel/API 同步表和状态检查的应用层编排
+ * 该类会触发连接探测、引擎表创建、同步任务调度和权限校验，但不直接实现各数据源协议细节
  */
 @RestController
 @RequestMapping("/datasource")
@@ -126,7 +126,7 @@ public class DatasourceServer implements DatasourceApi {
     private RelationApi relationManage;
 
     /**
-     * 解码前端提交的 Base64 字段，统一把格式错误转换为参数异常。
+     * 解码前端提交的 Base64 字段，统一把格式错误转换为参数异常
      */
     private static String decodeBase64RequestValue(String value, String fieldName) {
         if (StringUtils.isBlank(value)) {
@@ -141,7 +141,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 数据同步范围，区分全量抽取和追加抽取两类任务。
+     * 数据同步范围，区分全量抽取和追加抽取两类任务
      */
     public enum UpdateType {
         all_scope, add_scope
@@ -158,7 +158,7 @@ public class DatasourceServer implements DatasourceApi {
 
 
     /**
-     * 查询入口暂未承载业务逻辑，保留接口实现以兼容数据源 API 契约。
+     * 查询入口暂未承载业务逻辑，保留接口实现以兼容数据源 API 契约
      */
     @Override
     public List<DatasourceDTO> query(String keyWord) {
@@ -166,7 +166,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 检查同类型连接型数据源是否重复，目录、Excel 和 API 类型不参与重复连接判断。
+     * 检查同类型连接型数据源是否重复，目录、Excel 和 API 类型不参与重复连接判断
      */
     public boolean checkRepeat(@RequestBody BusiDsRequest dataSourceDTO) {
         if (Arrays.asList("folder", "es").contains(dataSourceDTO.getType()) || dataSourceDTO.getType().contains("API") || dataSourceDTO.getType().contains("Excel")) {
@@ -228,7 +228,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 移动数据源或目录到新的父节点，并校验目标目录不会形成循环引用。
+     * 移动数据源或目录到新的父节点，并校验目标目录不会形成循环引用
      */
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, st = LogST.DATASOURCE)
     @Transactional
@@ -254,7 +254,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 重命名数据源或目录，名称唯一性由数据源管理层按同级目录规则校验。
+     * 重命名数据源或目录，名称唯一性由数据源管理层按同级目录规则校验
      */
     @Transactional
     public DatasourceDTO reName(BusiRenameRequest busiDsRequest) {
@@ -273,7 +273,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 创建数据源目录节点。目录没有连接配置，只维护树形结构和审计信息。
+     * 创建数据源目录节点。目录没有连接配置，只维护树形结构和审计信息
      */
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, st = LogST.DATASOURCE)
     @Transactional
@@ -293,7 +293,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 创建数据源并完成类型特定的初始化：连接型数据源更新连接池，Excel/API 创建引擎表和同步任务。
+     * 创建数据源并完成类型特定的初始化：连接型数据源更新连接池，Excel/API 创建引擎表和同步任务
      */
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, st = LogST.DATASOURCE)
     @Transactional
@@ -424,7 +424,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 更新数据源配置，并根据表结构变化创建或删除对应的引擎表和同步调度。
+     * 更新数据源配置，并根据表结构变化创建或删除对应的引擎表和同步调度
      */
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, st = LogST.DATASOURCE)
     @Transactional
@@ -561,7 +561,7 @@ public class DatasourceServer implements DatasourceApi {
 
 
     /**
-     * 返回系统内置的数据源类型枚举，插件数据源由保存前校验阶段补充识别。
+     * 返回系统内置的数据源类型枚举，插件数据源由保存前校验阶段补充识别
      */
     @Override
     public List<DatasourceConfiguration.DatasourceType> datasourceTypes() {
@@ -569,7 +569,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 校验未持久化的数据源连接配置，返回连接状态而不创建数据源记录。
+     * 校验未持久化的数据源连接配置，返回连接状态而不创建数据源记录
      */
     @Override
     public DatasourceDTO validate(BusiDsRequest busiDsRequest) throws CrestException {
@@ -587,7 +587,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 根据未持久化的数据源配置读取 schema 列表，用于创建表单中的 schema 选择。
+     * 根据未持久化的数据源配置读取 schema 列表，用于创建表单中的 schema 选择
      */
     @Override
     public List<String> getSchema(BusiDsRequest busiDsRequest) throws CrestException {
@@ -603,7 +603,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 读取数据源详情并隐藏敏感凭证，供前端编辑和展示场景使用。
+     * 读取数据源详情并隐藏敏感凭证，供前端编辑和展示场景使用
      */
     @Override
     public DatasourceDTO hidePw(Long datasourceId) throws CrestException {
@@ -611,7 +611,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 返回不含连接配置的简化数据源信息，避免列表或引用场景泄露凭证。
+     * 返回不含连接配置的简化数据源信息，避免列表或引用场景泄露凭证
      */
     @Override
     public DatasourceDTO getSimpleDs(Long datasourceId) throws CrestException {
@@ -631,7 +631,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 返回完整数据源详情，调用前会校验当前用户是否拥有创建者权限。
+     * 返回完整数据源详情，调用前会校验当前用户是否拥有创建者权限
      */
     @Override
     public DatasourceDTO get(Long datasourceId) throws CrestException {
@@ -639,7 +639,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 内部调用的数据源详情读取入口，保持与公开详情接口一致的权限边界。
+     * 内部调用的数据源详情读取入口，保持与公开详情接口一致的权限边界
      */
     @Override
     public DatasourceDTO innerGet(Long datasourceId) throws CrestException {
@@ -647,7 +647,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 读取数据源名称，供其他模块展示引用名称时使用。
+     * 读取数据源名称，供其他模块展示引用名称时使用
      */
     @Override
     public String getName(Long datasourceId) throws CrestException {
@@ -659,7 +659,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 按数据源 ID 和类型批量读取内部数据源信息，并补齐 API 数据源的整体状态。
+     * 按数据源 ID 和类型批量读取内部数据源信息，并补齐 API 数据源的整体状态
      */
     @Override
     public List<DatasourceDTO> innerList(List<Long> ids, List<String> types) throws CrestException {
@@ -724,7 +724,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 判断数据源是否被资源血缘引用，删除前用它提示用户存在依赖。
+     * 判断数据源是否被资源血缘引用，删除前用它提示用户存在依赖
      */
     @Override
     public boolean perDelete(Long id) {
@@ -738,7 +738,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 删除数据源或目录。目录删除会递归清理子节点，Excel/API 会同步删除引擎表和任务配置。
+     * 删除数据源或目录。目录删除会递归清理子节点，Excel/API 会同步删除引擎表和任务配置
      */
     @Transactional
     @CrestAudit(id = "#p0", ot = LogOT.DELETE, st = LogST.DATASOURCE)
@@ -749,7 +749,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 执行递归删除的主体逻辑，删除顺序保证派生引擎表和子节点不会留下孤儿数据。
+     * 执行递归删除的主体逻辑，删除顺序保证派生引擎表和子节点不会留下孤儿数据
      */
     public void recursionDel(Long datasourceId) throws CrestException {
         CoreDatasource coreDatasource = dataSourceManage.datasource(datasourceId);
@@ -806,7 +806,7 @@ public class DatasourceServer implements DatasourceApi {
 
 
     /**
-     * 重新校验已存在数据源的连接状态，并返回脱敏后的状态结果。
+     * 重新校验已存在数据源的连接状态，并返回脱敏后的状态结果
      */
     @Override
     public DatasourceDTO validate(Long datasourceId) throws CrestException {
@@ -820,7 +820,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 根据系统设置注册数据源状态检查任务，默认按分钟级周期执行。
+     * 根据系统设置注册数据源状态检查任务，默认按分钟级周期执行
      */
     public void addJob(List<CoreSysSetting> sysSettings) {
         String type = "minute";
@@ -848,7 +848,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 读取数据源树，树节点权限和过滤规则委托给数据源管理层处理。
+     * 读取数据源树，树节点权限和过滤规则委托给数据源管理层处理
      */
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASOURCE)
     @Override
@@ -857,7 +857,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 返回指定数据源可选择的数据表。API、Excel 和连接型数据源分别走各自的表发现逻辑。
+     * 返回指定数据源可选择的数据表。API、Excel 和连接型数据源分别走各自的表发现逻辑
      */
     @Override
     public List<DatasetTableDTO> tables(DatasetTableDTO datasetTableDTO) throws CrestException {
@@ -885,7 +885,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 判断 Oracle 表描述是否属于回收站表，避免系统临时表出现在业务选择列表中。
+     * 判断 Oracle 表描述是否属于回收站表，避免系统临时表出现在业务选择列表中
      */
     private boolean isOracleRecycleBinTable(DatasetTableDTO table) {
         if (table == null) {
@@ -895,7 +895,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 按 Oracle 回收站命名规则判断表名，兼容带双引号的元数据返回值。
+     * 按 Oracle 回收站命名规则判断表名，兼容带双引号的元数据返回值
      */
     private boolean isOracleRecycleBinName(String tableName) {
         if (StringUtils.isBlank(tableName)) {
@@ -906,7 +906,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 返回 API 或远程 Excel 数据表的最近同步状态，状态来自同步任务日志。
+     * 返回 API 或远程 Excel 数据表的最近同步状态，状态来自同步任务日志
      */
     @Override
     public List<DatasetTableDTO> tableStatus(DatasetTableDTO datasetTableDTO) throws CrestException {
@@ -936,7 +936,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 获取指定表字段。Excel/API 同步表会从引擎表或保存配置中读取，并过滤系统行标识字段。
+     * 获取指定表字段。Excel/API 同步表会从引擎表或保存配置中读取，并过滤系统行标识字段
      */
     @Override
     public List<TableField> getTableField(Map<String, String> req) throws CrestException {
@@ -980,7 +980,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 手动同步 API 数据源中的单个表，使用该数据源任务配置中的更新范围。
+     * 手动同步 API 数据源中的单个表，使用该数据源任务配置中的更新范围
      */
     @Override
     public void syncApiTable(Map<String, String> req) throws CrestException {
@@ -991,7 +991,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 手动同步整个 API 数据源，按任务配置的全量或追加策略执行。
+     * 手动同步整个 API 数据源，按任务配置的全量或追加策略执行
      */
     @Override
     public void syncApiDs(Map<String, String> req) throws Exception {
@@ -1006,7 +1006,7 @@ public class DatasourceServer implements DatasourceApi {
     private static final Integer append = 1;
 
     /**
-     * 上传并解析本地 Excel 文件。追加模式只保留能按工作表名称和字段结构匹配的旧表。
+     * 上传并解析本地 Excel 文件。追加模式只保留能按工作表名称和字段结构匹配的旧表
      */
     public ExcelFileData uploadFile(@RequestParam("file") MultipartFile file, @RequestParam("id") long datasourceId, @RequestParam("editType") Integer editType) throws CrestException {
         validateExcelUploadFile(file);
@@ -1018,7 +1018,7 @@ public class DatasourceServer implements DatasourceApi {
         ExcelFileData excelFileData = excelUtils.excelSaveAndParse(file, String.valueOf(AuthUtils.getUser().getUserId()));
 
         if (Objects.equals(editType, append)) {
-            // 追加模式按工作表名称匹配旧表，并要求字段结构一致后才允许复用展示表名。
+            // 追加模式按工作表名称匹配旧表，并要求字段结构一致后才允许复用展示表名
             if (coreDatasource != null) {
                 DatasourceRequest datasourceRequest = new DatasourceRequest();
                 datasourceRequest.setDatasource(transDTO(coreDatasource));
@@ -1044,7 +1044,7 @@ public class DatasourceServer implements DatasourceApi {
                 excelFileData.setSheets(excelSheetDataList);
             }
         } else {
-            // 替换模式允许新工作表继承同名旧表的展示表名，保存时会重建对应引擎表。
+            // 替换模式允许新工作表继承同名旧表的展示表名，保存时会重建对应引擎表
             if (coreDatasource != null) {
                 DatasourceRequest datasourceRequest = new DatasourceRequest();
                 datasourceRequest.setDatasource(transDTO(coreDatasource));
@@ -1078,10 +1078,10 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 下载并解析远程 Excel 文件，返回与本地上传一致的工作表和字段预览结构。
+     * 下载并解析远程 Excel 文件，返回与本地上传一致的工作表和字段预览结构
      */
     public ExcelFileData loadRemoteFile(RemoteExcelRequest remoteExcelRequest) throws CrestException, IOException {
-        // 远程地址在下载前先做 SSRF 校验，后续解析只使用校验通过的地址。
+        // 远程地址在下载前先做 SSRF 校验，后续解析只使用校验通过的地址
         SsrfProtection.validateUrl(remoteExcelRequest.getUrl());
 
         remoteExcelRequest.setUserName(decodeBase64RequestValue(remoteExcelRequest.getUserName(), "远程 Excel 用户名"));
@@ -1122,7 +1122,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 校验上传文件名和扩展名，只允许 Excel 数据源支持的文件格式进入解析流程。
+     * 校验上传文件名和扩展名，只允许 Excel 数据源支持的文件格式进入解析流程
      */
     private void validateExcelUploadFile(MultipartFile file) {
         String fileName = file == null ? null : file.getOriginalFilename();
@@ -1135,7 +1135,7 @@ public class DatasourceServer implements DatasourceApi {
 
 
     /**
-     * 判断追加上传的工作表字段是否能复用旧表结构，并把旧字段的勾选和主键信息带到新字段上。
+     * 判断追加上传的工作表字段是否能复用旧表结构，并把旧字段的勾选和主键信息带到新字段上
      */
     private boolean isEqual(List<TableField> newTableFields, List<TableField> oldTableFields) {
         if (CollectionUtils.isEmpty(newTableFields) || CollectionUtils.isEmpty(oldTableFields)) {
@@ -1168,7 +1168,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 合并旧字段配置到新字段列表，保留用户在历史配置中的勾选、主键和长度设置。
+     * 合并旧字段配置到新字段列表，保留用户在历史配置中的勾选、主键和长度设置
      */
     private void mergeFields(List<TableField> oldFields, List<TableField> newFields) {
         newFields.forEach(tableField -> tableField.setChecked(false));
@@ -1188,7 +1188,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 判断文件名是否为 CSV，用于选择文本解析路径。
+     * 判断文件名是否为 CSV，用于选择文本解析路径
      */
     private boolean isCsv(String fileName) {
         String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
@@ -1196,7 +1196,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 预检单个 API 定义，解析字段结构并对 Basic Auth 凭证重新编码后返回给前端。
+     * 预检单个 API 定义，解析字段结构并对 Basic Auth 凭证重新编码后返回给前端
      */
     public ApiDefinition checkApiDatasource(Map<String, String> request) throws CrestException {
         ApiDefinition apiDefinition = JsonUtil.parseObject(decodeBase64RequestValue(request.get("data"), "API 数据源配置"), ApiDefinition.class);
@@ -1220,7 +1220,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 解析访问令牌接口返回值，并把非成功返回转换为业务异常。
+     * 解析访问令牌接口返回值，并把非成功返回转换为业务异常
      */
     private Map<String, Object> buildAccessTokenResult(String json) {
         if (ObjectUtils.isEmpty(json)) {
@@ -1234,7 +1234,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 构造访问令牌请求体，调用方负责把结果发送到对应鉴权接口。
+     * 构造访问令牌请求体，调用方负责把结果发送到对应鉴权接口
      */
     private String buildAccessTokenParam(String appId, String appSecret) {
         Map<String, String> param = new HashMap<>();
@@ -1244,7 +1244,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 校验数据源类型是否受支持，内置类型和已加载插件类型都视为合法。
+     * 校验数据源类型是否受支持，内置类型和已加载插件类型都视为合法
      */
     private void preCheckDs(DatasourceDTO datasource) throws CrestException {
         List<String> list = datasourceTypes().stream().map(DatasourceConfiguration.DatasourceType::getType).collect(Collectors.toList());
@@ -1259,7 +1259,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 探测数据源连通性并写回状态。文件夹和本地 Excel 不需要远程连接检查。
+     * 探测数据源连通性并写回状态。文件夹和本地 Excel 不需要远程连接检查
      */
     public void checkDatasourceStatus(DatasourceDTO coreDatasource) {
         if (coreDatasource.getType().equals(DatasourceConfiguration.DatasourceType.Excel.name()) || coreDatasource.getType().equals(DatasourceConfiguration.DatasourceType.folder.name())) {
@@ -1288,7 +1288,7 @@ public class DatasourceServer implements DatasourceApi {
 
 
     /**
-     * 预览指定数据表的有限行数据。Excel 表会按用户字段名做别名映射，隐藏系统行标识。
+     * 预览指定数据表的有限行数据。Excel 表会按用户字段名做别名映射，隐藏系统行标识
      */
     @Override
     public Map<String, Object> previewDataWithLimit(Map<String, Object> req) throws CrestException {
@@ -1325,7 +1325,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 分页读取本地 Excel 引擎表数据，并补充在线编辑需要的稳定行标识。
+     * 分页读取本地 Excel 引擎表数据，并补充在线编辑需要的稳定行标识
      */
     @Override
     public ExcelDataPageVO excelDataPage(ExcelDataPageRequest request) throws CrestException {
@@ -1380,7 +1380,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 保存 Excel 在线编辑的增删改批次，所有变更在同一个引擎事务中执行。
+     * 保存 Excel 在线编辑的增删改批次，所有变更在同一个引擎事务中执行
      */
     @Override
     public void saveExcelData(ExcelDataSaveRequest request) throws CrestException {
@@ -1412,7 +1412,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 构建 Excel 在线编辑上下文，校验数据源类型、表名合法性，并按需补齐系统行标识列。
+     * 构建 Excel 在线编辑上下文，校验数据源类型、表名合法性，并按需补齐系统行标识列
      */
     private ExcelEditContext buildExcelEditContext(Long datasourceId, String tableName, boolean ensureRowId) {
         if (ObjectUtils.isEmpty(datasourceId) || StringUtils.isBlank(tableName)) {
@@ -1444,7 +1444,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 返回可编辑的 Excel 字段。历史配置没有勾选状态时，默认使用除系统字段外的全部字段。
+     * 返回可编辑的 Excel 字段。历史配置没有勾选状态时，默认使用除系统字段外的全部字段
      */
     private List<TableField> checkedExcelFields(List<TableField> tableFields) {
         if (CollectionUtils.isEmpty(tableFields)) {
@@ -1463,7 +1463,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 确保 Excel 引擎表存在稳定行标识列，并为历史数据补齐行标识。
+     * 确保 Excel 引擎表存在稳定行标识列，并为历史数据补齐行标识
      */
     private void ensureExcelRowId(CoreEngine engine, String tableName) {
         if (!hasEngineColumn(engine, tableName, EXCEL_ROW_ID_FIELD)) {
@@ -1478,7 +1478,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 通过空结果查询判断引擎表是否存在指定列，避免依赖不同数据库的元数据接口。
+     * 通过空结果查询判断引擎表是否存在指定列，避免依赖不同数据库的元数据接口
      */
     private boolean hasEngineColumn(CoreEngine engine, String tableName, String columnName) {
         try {
@@ -1494,7 +1494,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 读取 Excel 在线编辑表的总行数，分页接口用它返回前端总量。
+     * 读取 Excel 在线编辑表的总行数，分页接口用它返回前端总量
      */
     private Long fetchExcelEditTotal(CoreEngine engine, String tableName) {
         try {
@@ -1512,7 +1512,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 执行内部引擎 SQL，并统一把底层异常转换为业务异常。
+     * 执行内部引擎 SQL，并统一把底层异常转换为业务异常
      */
     private void executeEngineSql(CoreEngine engine, String sql) {
         try {
@@ -1523,7 +1523,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 构造只面向内部引擎的请求对象，调用方负责保证 SQL 已经过标识符校验。
+     * 构造只面向内部引擎的请求对象，调用方负责保证 SQL 已经过标识符校验
      */
     private EngineRequest buildEngineRequest(CoreEngine engine, String sql) {
         EngineRequest engineRequest = new EngineRequest();
@@ -1533,14 +1533,14 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 批量删除 Excel 在线编辑行。表名和行标识列只能通过受控标识符拼接，行值使用参数绑定。
+     * 批量删除 Excel 在线编辑行。表名和行标识列只能通过受控标识符拼接，行值使用参数绑定
      */
     @SuppressWarnings("java/sql-injection")
     private void executeExcelDeletes(Connection connection, int queryTimeout, String tableName, List<String> deletes) throws Exception {
         if (CollectionUtils.isEmpty(deletes)) {
             return;
         }
-        // 表名和列名已由 quoteIdentifier 校验和转义；JDBC 占位符不能绑定标识符。
+        // 表名和列名已由 quoteIdentifier 校验和转义；JDBC 占位符不能绑定标识符
         // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
         String sql = "DELETE FROM " + quoteIdentifier(tableName)
                 + " WHERE " + quoteIdentifier(EXCEL_ROW_ID_FIELD) + " = ?";
@@ -1559,7 +1559,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 批量更新 Excel 在线编辑行，字段值使用参数绑定，字段名使用保存配置中的受控字段。
+     * 批量更新 Excel 在线编辑行，字段值使用参数绑定，字段名使用保存配置中的受控字段
      */
     @SuppressWarnings("java/sql-injection")
     private void executeExcelUpdates(Connection connection, int queryTimeout, String tableName, List<TableField> fields, List<Map<String, Object>> updates) throws Exception {
@@ -1592,7 +1592,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 批量插入 Excel 在线编辑行，并为每一行生成新的系统行标识。
+     * 批量插入 Excel 在线编辑行，并为每一行生成新的系统行标识
      */
     @SuppressWarnings("java/sql-injection")
     private void executeExcelInserts(Connection connection, int queryTimeout, String tableName, List<TableField> fields, List<Map<String, Object>> inserts) throws Exception {
@@ -1625,7 +1625,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 按字段顺序绑定 Excel 行值，并返回下一个可用的 JDBC 参数位置。
+     * 按字段顺序绑定 Excel 行值，并返回下一个可用的 JDBC 参数位置
      */
     private int bindExcelFieldValues(PreparedStatement statement, List<TableField> fields, Map<String, Object> row, int startIndex) throws Exception {
         int index = startIndex;
@@ -1637,7 +1637,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 按展示名优先读取编辑行中的单元格值，兼容历史字段原始名。
+     * 按展示名优先读取编辑行中的单元格值，兼容历史字段原始名
      */
     private Object excelCellValue(Map<String, Object> row, TableField field) {
         if (row == null) {
@@ -1650,7 +1650,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 按字段类型把编辑值转换为引擎可写入的值，数值和布尔字段会做格式校验。
+     * 按字段类型把编辑值转换为引擎可写入的值，数值和布尔字段会做格式校验
      */
     private Object normalizeExcelCellValue(TableField field, Object value) {
         if (value == null) {
@@ -1684,7 +1684,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 校验并转换在线编辑行标识，缺失行标识时要求前端刷新后重试。
+     * 校验并转换在线编辑行标识，缺失行标识时要求前端刷新后重试
      */
     private String normalizeRowId(Object rowId) {
         if (rowId == null || StringUtils.isBlank(String.valueOf(rowId))) {
@@ -1694,7 +1694,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 校验并转义引擎表名或系统列名，所有内部 SQL 拼接都必须通过该方法处理标识符。
+     * 校验并转义引擎表名或系统列名，所有内部 SQL 拼接都必须通过该方法处理标识符
      */
     private String quoteIdentifier(String identifier) {
         if (StringUtils.isBlank(identifier)) {
@@ -1705,7 +1705,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 转义 Excel 字段名为引擎 SQL 标识符，字段名来源于保存后的受控配置。
+     * 转义 Excel 字段名为引擎 SQL 标识符，字段名来源于保存后的受控配置
      */
     private String quoteExcelIdentifier(String identifier) {
         if (StringUtils.isBlank(identifier)) {
@@ -1715,14 +1715,14 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 获取 Excel 字段对应的引擎列名，旧配置缺少内部列名时回退到展示名。
+     * 获取 Excel 字段对应的引擎列名，旧配置缺少内部列名时回退到展示名
      */
     private String excelDbFieldName(TableField field) {
         return StringUtils.defaultIfBlank(field.getDbFieldName(), field.getName());
     }
 
     /**
-     * Excel 在线编辑上下文，集中保存引擎配置、目标表名和可编辑字段。
+     * Excel 在线编辑上下文，集中保存引擎配置、目标表名和可编辑字段
      */
     private static class ExcelEditContext {
         private final CoreEngine engine;
@@ -1730,7 +1730,7 @@ public class DatasourceServer implements DatasourceApi {
         private final List<TableField> fields;
 
         /**
-         * 创建一次在线编辑请求使用的不可变上下文。
+         * 创建一次在线编辑请求使用的不可变上下文
          */
         private ExcelEditContext(CoreEngine engine, String tableName, List<TableField> fields) {
             this.engine = engine;
@@ -1740,7 +1740,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 返回当前用户最近使用过的非目录数据源类型，最多保留五种。
+     * 返回当前用户最近使用过的非目录数据源类型，最多保留五种
      */
     @Override
     public List<String> latestUse() {
@@ -1762,7 +1762,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 分页读取数据源同步日志，并把任务日志中的内部表名补充为展示名称。
+     * 分页读取数据源同步日志，并把任务日志中的内部表名补充为展示名称
      */
     public IPage<CoreDatasourceTaskLogDTO> listSyncRecord(int goPage, int pageSize, Long dsId) {
         QueryWrapper<CoreDatasourceTaskLogDTO> wrapper = new QueryWrapper<>();
@@ -1791,7 +1791,7 @@ public class DatasourceServer implements DatasourceApi {
 
 
     /**
-     * 异步刷新所有非文件夹、非本地 Excel 数据源状态，避免同一数据源重复入队。
+     * 异步刷新所有非文件夹、非本地 Excel 数据源状态，避免同一数据源重复入队
      */
     public void updateDatasourceStatus() {
         QueryWrapper<CoreDatasource> wrapper = new QueryWrapper<>();
@@ -1814,7 +1814,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 修复调度节点异常停止后的数据源任务状态，单实例内用标记避免并发执行。
+     * 修复调度节点异常停止后的数据源任务状态，单实例内用标记避免并发执行
      */
     public void updateStopJobStatus() {
         if (this.isUpdatingStatus) {
@@ -1833,7 +1833,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 查找已经不在活跃调度实例上的执行中任务，并回滚为等待执行状态。
+     * 查找已经不在活跃调度实例上的执行中任务，并回滚为等待执行状态
      */
     private void doUpdate() {
         List<QrtzSchedulerState> qrtzSchedulerStates = qrtzSchedulerStateMapper.selectList(null);
@@ -1862,12 +1862,12 @@ public class DatasourceServer implements DatasourceApi {
         CoreDatasource record = new CoreDatasource();
         record.setTaskStatus(TaskStatus.WaitingForExecution.name());
         datasourceMapper.update(record, queryWrapper);
-        // 同步任务状态要和数据源任务状态一起回滚，避免页面继续显示执行中。
+        // 同步任务状态要和数据源任务状态一起回滚，避免页面继续显示执行中
         datasourceTaskServer.updateByDsIds(jobStoppedCoreDatasources.stream().map(CoreDatasource::getId).collect(Collectors.toList()));
     }
 
     /**
-     * 判断当前用户是否还需要展示数据源引导完成页。
+     * 判断当前用户是否还需要展示数据源引导完成页
      */
     public boolean showFinishPage() throws CrestException {
         return coreDsFinishPageMapper.selectById(AuthUtils.getUser().getUserId()) == null;
@@ -1875,7 +1875,7 @@ public class DatasourceServer implements DatasourceApi {
 
 
     /**
-     * 记录当前用户已经看过数据源引导完成页。
+     * 记录当前用户已经看过数据源引导完成页
      */
     public void setShowFinishPage() throws CrestException {
         CoreDsFinishPage coreDsFinishPage = new CoreDsFinishPage();
@@ -1884,7 +1884,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 把持久化实体复制为接口传输对象，供 provider 和前端流程共用。
+     * 把持久化实体复制为接口传输对象，供 provider 和前端流程共用
      */
     private DatasourceDTO transDTO(CoreDatasource record) {
         DatasourceDTO datasourceDTO = new DatasourceDTO();
@@ -1894,7 +1894,7 @@ public class DatasourceServer implements DatasourceApi {
 
 
     /**
-     * 在数据源树中递归收集同类型节点 ID，重复连接检查会排除当前正在编辑的节点。
+     * 在数据源树中递归收集同类型节点 ID，重复连接检查会排除当前正在编辑的节点
      */
     private void filterDs(List<BusiNodeVO> busiNodeVOS, List<Long> ids, String type, Long id) {
         for (BusiNodeVO busiNodeVO : busiNodeVOS) {
@@ -1914,7 +1914,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 校验连接池配置的数值关系，防止保存后创建不可用的连接池。
+     * 校验连接池配置的数值关系，防止保存后创建不可用的连接池
      */
     private static void checkParams(String configurationStr) {
         DatasourceConfiguration configuration = JsonUtil.parseObject(configurationStr, DatasourceConfiguration.class);
@@ -1936,7 +1936,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 校验连接型数据源的必填连接配置。自定义 JDBC 地址模式只要求 JDBC 地址存在。
+     * 校验连接型数据源的必填连接配置。自定义 JDBC 地址模式只要求 JDBC 地址存在
      */
     private static void checkDatasourceConfigurationComplete(DatasourceDTO datasource) {
         String type = datasource.getType();
@@ -1970,7 +1970,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 校验同一 API 或 Excel 数据源内的展示表名不能重复。
+     * 校验同一 API 或 Excel 数据源内的展示表名不能重复
      */
     private static void checkName(List<String> tables) {
         for (int i = 0; i < tables.size() - 1; i++) {
@@ -1983,14 +1983,14 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 从系统生成的 Excel 引擎表名中还原工作表名称，用于上传时匹配旧表。
+     * 从系统生成的 Excel 引擎表名中还原工作表名称，用于上传时匹配旧表
      */
     private String excelDataTableName(String name) {
         return StringUtils.substring(name, 6, name.length() - 11);
     }
 
     /**
-     * 按 ID 读取数据源并转换为接口对象，可按调用场景决定是否隐藏凭证。
+     * 按 ID 读取数据源并转换为接口对象，可按调用场景决定是否隐藏凭证
      */
     private DatasourceDTO datasourceDTOById(Long datasourceId, boolean hidePw) throws CrestException {
         CoreDatasource datasource = requireDatasourceAccess(datasourceId);
@@ -2001,7 +2001,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 将持久化数据源转换为前端详情对象，补齐 API 状态、同步设置、文件信息和创建人名称。
+     * 将持久化数据源转换为前端详情对象，补齐 API 状态、同步设置、文件信息和创建人名称
      */
     private DatasourceDTO convertCoreDatasource(Long datasourceId, boolean hidePw, CoreDatasource datasource) {
         DatasourceDTO datasourceDTO = new DatasourceDTO();
@@ -2083,7 +2083,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 校验持久化数据源状态并写回数据库，连接型数据源校验成功后会刷新连接池。
+     * 校验持久化数据源状态并写回数据库，连接型数据源校验成功后会刷新连接池
      */
     private DatasourceDTO validate(CoreDatasource coreDatasource) {
         DatasourceDTO datasourceDTO = new DatasourceDTO();
@@ -2108,7 +2108,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 返回数据源简要信息，尽量只暴露名称、类型、描述和主机地址。
+     * 返回数据源简要信息，尽量只暴露名称、类型、描述和主机地址
      */
     @Override
     public DsSimpleVO simple(Long id) {
@@ -2133,7 +2133,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 读取数据源并校验当前用户创建者权限，所有修改和敏感读取入口都应先调用该方法。
+     * 读取数据源并校验当前用户创建者权限，所有修改和敏感读取入口都应先调用该方法
      */
     private CoreDatasource requireDatasourceAccess(Long datasourceId) {
         CoreDatasource datasource = dataSourceManage.getCoreDatasource(datasourceId);
@@ -2145,7 +2145,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 预览 API 数据源的多维表或视图列表，具体实现由对应 API provider 提供。
+     * 预览 API 数据源的多维表或视图列表，具体实现由对应 API provider 提供
      */
     @Override
     public List<Map<String, String>> multidimensionalTables(Map<String, String> request) throws CrestException {
@@ -2167,7 +2167,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 查找 API provider 的静态方法或插件 provider 方法，作为 API 数据源适配层的统一入口。
+     * 查找 API provider 的静态方法或插件 provider 方法，作为 API 数据源适配层的统一入口
      */
     private Method getMethod(String dsType, String methodName, Class<?> classes) {
         Method method = null;
@@ -2188,7 +2188,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 调用数据源 provider 方法，并把反射异常还原为业务异常消息。
+     * 调用数据源 provider 方法，并把反射异常还原为业务异常消息
      */
     public Object invokeMethod(String dsType, String methodName, Class<?> classes, Object object) {
         Object resObj = null;
@@ -2202,7 +2202,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     /**
-     * 展开反射调用异常链，优先返回最接近业务异常的错误消息。
+     * 展开反射调用异常链，优先返回最接近业务异常的错误消息
      */
     private String msg(Throwable e) {
         Throwable exception = e;

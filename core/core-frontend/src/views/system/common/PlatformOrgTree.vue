@@ -11,7 +11,7 @@ import iconRename from '@/assets/svg/icon_rename_outlined.svg'
 import iconDelete from '@/assets/svg/icon_delete-trash_outlined.svg'
 import iconLeft from '@/assets/svg/icon_left_outlined.svg'
 
-// 接收组织树选择、管理和折叠配置。
+// 接收组织树选择、管理和折叠配置
 const props = withDefaults(
   defineProps<{
     modelValue?: string | number | null
@@ -30,7 +30,7 @@ const props = withDefaults(
   }
 )
 
-// 定义组织树选择和管理事件。
+// 定义组织树选择和管理事件
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string | number | null): void
   (e: 'change', node: any | null): void
@@ -39,29 +39,29 @@ const emit = defineEmits<{
   (e: 'delete', node: any): void
 }>()
 
-// 组织树加载状态。
+// 组织树加载状态
 const loading = ref(false)
-// 组织搜索关键字。
+// 组织搜索关键字
 const keyword = ref('')
-// 组织树数据。
+// 组织树数据
 const treeData = ref<any[]>([])
-// 当前选中的组织 ID。
+// 当前选中的组织 ID
 const currentKey = ref<any>(props.modelValue ?? null)
-// Element Plus 树实例。
+// Element Plus 树实例
 const treeRef = ref()
-// 当前树节点是否整体展开。
+// 当前树节点是否整体展开
 const expanded = ref(true)
-// 侧边组织树是否收起。
+// 侧边组织树是否收起
 const collapsed = ref(false)
 
 const treeProps = { children: 'children', label: 'name' }
-// 当前选中组织的展示名称。
+// 当前选中组织的展示名称
 const selectedName = computed(() => {
   if (props.selectableAll && !currentKey.value) return '全部组织'
   return findNode(treeData.value, currentKey.value)?.name || '请选择组织'
 })
 
-// 在组织树中递归查找指定节点。
+// 在组织树中递归查找指定节点
 const findNode = (nodes: any[], id: any): any | null => {
   for (const node of nodes || []) {
     if (String(node.id) === String(id)) return node
@@ -71,10 +71,10 @@ const findNode = (nodes: any[], id: any): any | null => {
   return null
 }
 
-// 计算组织节点的直接子节点数量。
+// 计算组织节点的直接子节点数量
 const childCount = (data: any) => (data?.children?.length ? data.children.length : 0)
 
-// 加载组织树数据。
+// 加载组织树数据
 const loadTree = async () => {
   loading.value = true
   try {
@@ -89,21 +89,21 @@ const loadTree = async () => {
   }
 }
 
-// 选择全部组织。
+// 选择全部组织
 const selectAll = () => {
   currentKey.value = null
   emit('update:modelValue', null)
   emit('change', null)
 }
 
-// 选择指定组织节点。
+// 选择指定组织节点
 const selectNode = (node: any) => {
   currentKey.value = node.id
   emit('update:modelValue', node.id)
   emit('change', node)
 }
 
-// 展开或折叠全部组织节点。
+// 展开或折叠全部组织节点
 const toggleExpand = () => {
   expanded.value = !expanded.value
   const nodesMap = treeRef.value?.store?.nodesMap || {}
@@ -112,7 +112,7 @@ const toggleExpand = () => {
   })
 }
 
-// 外部选中值变化时同步内部选中状态。
+// 外部选中值变化时同步内部选中状态
 watch(
   () => props.modelValue,
   value => {
@@ -120,10 +120,10 @@ watch(
   }
 )
 
-// 搜索关键字变化时过滤组织树。
+// 搜索关键字变化时过滤组织树
 watch(keyword, value => treeRef.value?.filter(value))
 
-// 判断组织节点是否匹配搜索关键字。
+// 判断组织节点是否匹配搜索关键字
 const filterNode = (value: string, data: any) => {
   if (!value) return true
   return String(data.name || '').includes(value)

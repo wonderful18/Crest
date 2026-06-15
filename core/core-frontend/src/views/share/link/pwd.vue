@@ -54,19 +54,19 @@ const { wsCache } = useCache()
 const appStore = useAppStoreWithOut()
 
 const { t } = useI18n()
-// 保存密码校验失败时展示的提示信息。
+// 保存密码校验失败时展示的提示信息
 const msg = ref('')
-// 控制分享密码页的加载状态。
+// 控制分享密码页的加载状态
 const loading = ref(true)
-// 持有密码表单实例以触发表单校验。
+// 持有密码表单实例以触发表单校验
 const pwdForm = ref<FormInstance>()
-// 保存当前分享链接标识。
+// 保存当前分享链接标识
 const vid = ref('')
-// 保存用户输入的分享访问密码。
+// 保存用户输入的分享访问密码
 const form = ref({
   password: ''
 })
-// 定义分享访问密码的表单校验规则。
+// 定义分享访问密码的表单校验规则
 const rule = reactive<FormRules>({
   password: [
     { required: true, message: t('pblink.key_pwd'), trigger: 'blur' },
@@ -79,7 +79,7 @@ const rule = reactive<FormRules>({
   ]
 })
 
-// 校验分享密码并在通过后缓存加密票据。
+// 校验分享密码并在通过后缓存加密票据
 const refresh = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
   await formEl.validate((valid, fields) => {
@@ -101,7 +101,7 @@ const refresh = async (formEl: FormInstance | undefined) => {
     }
   })
 }
-// 兼容 URL 中经过编码的分享密码。
+// 兼容 URL 中经过编码的分享密码
 const formatPwd = (pwdText: string) => {
   try {
     return decodeURIComponent(pwdText)
@@ -109,7 +109,7 @@ const formatPwd = (pwdText: string) => {
     return pwdText
   }
 }
-// 从当前 URL 中解析分享标识和可选密码并准备校验。
+// 从当前 URL 中解析分享标识和可选密码并准备校验
 const prepare = () => {
   const curLocation = window.location.href
   const pmIndex = curLocation.lastIndexOf('?')
@@ -135,7 +135,7 @@ const prepare = () => {
     refresh(pwdForm.value)
   }
 }
-// 初始化公钥缓存后准备分享密码校验。
+// 初始化公钥缓存后准备分享密码校验
 onMounted(() => {
   if (!wsCache.get(appStore.getClientKey)) {
     queryPublicKey()

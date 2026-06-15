@@ -1,10 +1,10 @@
-// 将标准模板占位格式替换为目标内容，例如 $panelName$。
+// 将标准模板占位格式替换为目标内容，例如 $panelName$
 export function pdfTemplateReplaceAll(content, source, target) {
   return String(content).split(`$${source}$`).join(target)
 }
 
 /**
- * 生成指定长度范围内的随机字符串。
+ * 生成指定长度范围内的随机字符串
  */
 export function randomRange(min, max) {
   let returnStr = ''
@@ -19,7 +19,7 @@ export function randomRange(min, max) {
 }
 
 /**
- * 判断目标值是否等于任一候选值。
+ * 判断目标值是否等于任一候选值
  */
 export function equalsAny(target, ...sources) {
   for (let i = 0; i < sources.length; i++) {
@@ -31,7 +31,7 @@ export function equalsAny(target, ...sources) {
 }
 
 /**
- * 判断目标字符串是否包含任一候选片段。
+ * 判断目标字符串是否包含任一候选片段
  */
 export function includesAny(target, ...sources) {
   if (!target || !sources) {
@@ -45,7 +45,7 @@ export function includesAny(target, ...sources) {
   return false
 }
 
-// 替换字符串中的国际化内容，格式为 $t('xxx')。
+// 替换字符串中的国际化内容，格式为 $t('xxx')
 export function replaceInlineI18n(rawString) {
   const res = []
   const reg = /\$t\('([\w.]+)'\)/gm

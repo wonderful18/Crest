@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 提供 H2 抽取引擎的建表、写入和表替换 SQL 生成能力。
+ * 提供 H2 抽取引擎的建表、写入和表替换 SQL 生成能力
  */
 @Service("h2Engine")
 public class H2EngineProvider extends EngineProvider {
@@ -23,7 +23,7 @@ public class H2EngineProvider extends EngineProvider {
 
 
     /**
-     * 生成 H2 创建或替换视图的 SQL。
+     * 生成 H2 创建或替换视图的 SQL
      */
     @Override
     public String createView(String name, String viewSQL) {
@@ -31,7 +31,7 @@ public class H2EngineProvider extends EngineProvider {
     }
 
     /**
-     * 生成向 H2 引擎表批量插入抽取数据的 SQL。
+     * 生成向 H2 引擎表批量插入抽取数据的 SQL
      */
     @Override
     public String insertSql(String dsType, String tableName, DatasourceServer.UpdateType extractType, List<String[]> dataList, int page, int pageNumber, List<TableField> tableFields) {
@@ -70,7 +70,7 @@ public class H2EngineProvider extends EngineProvider {
 
 
     /**
-     * 生成 H2 删除物理表的 SQL。
+     * 生成 H2 删除物理表的 SQL
      */
     @Override
     public String dropTable(String name) {
@@ -78,7 +78,7 @@ public class H2EngineProvider extends EngineProvider {
     }
 
     /**
-     * 生成 H2 删除视图的 SQL。
+     * 生成 H2 删除视图的 SQL
      */
     @Override
     public String dropView(String name) {
@@ -86,7 +86,7 @@ public class H2EngineProvider extends EngineProvider {
     }
 
     /**
-     * 生成 H2 临时表替换正式表的 SQL。
+     * 生成 H2 临时表替换正式表的 SQL
      */
     @Override
     public String replaceTable(String name) {
@@ -95,7 +95,7 @@ public class H2EngineProvider extends EngineProvider {
 
 
     /**
-     * 生成 H2 创建抽取表的完整 SQL。
+     * 生成 H2 创建抽取表的完整 SQL
      */
     @Override
     public String createTableSql(String tableName, List<TableField> tableFields, CoreEngine engine) {
@@ -105,7 +105,7 @@ public class H2EngineProvider extends EngineProvider {
     }
 
     /**
-     * 根据字段元数据生成 H2 建表字段定义。
+     * 根据字段元数据生成 H2 建表字段定义
      */
     private String createTableSql(final List<TableField> tableFields) {
         StringBuilder columnFields = new StringBuilder("\"");

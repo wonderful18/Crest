@@ -37,7 +37,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 /**
- * 静态资源服务，负责图片资源上传、模板资源落盘和 Base64 读取。
+ * 静态资源服务，负责图片资源上传、模板资源落盘和 Base64 读取
  */
 @RestController
 @RequestMapping("/static-resource")
@@ -45,14 +45,14 @@ import java.util.*;
 public class StaticResourceServer implements StaticResourceApi {
 
     /**
-     * 允许上传和保存的图片扩展名。
+     * 允许上传和保存的图片扩展名
      */
     private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = Set.of(
             ".gif", ".svg", ".png", ".jpeg", ".jpg"
     );
 
     /**
-     * 允许的 SVG MIME 类型。
+     * 允许的 SVG MIME 类型
      */
     private static final Set<String> ALLOWED_SVG_MIME_TYPES = Set.of(
             "image/svg+xml",
@@ -61,17 +61,17 @@ public class StaticResourceServer implements StaticResourceApi {
     );
 
     /**
-     * 静态资源落盘目录。
+     * 静态资源落盘目录
      */
     @Value("${crest.path.static-resource:/opt/crest/data/static-resource/}")
     private String staticDir;
 
     /**
-     * 上传单个静态图片资源。
+     * 上传单个静态图片资源
      */
     @Override
     public void upload(String fileId, MultipartFile file) {
-        // 校验上传文件并确保写入路径不会逃逸静态资源目录。
+        // 校验上传文件并确保写入路径不会逃逸静态资源目录
         Assert.notNull(file, "Multipart file must not be null");
         try {
             String originName = file.getOriginalFilename();
@@ -92,7 +92,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 判断上传文件是否为允许的图片或 SVG。
+     * 判断上传文件是否为允许的图片或 SVG
      */
     private boolean isImage(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -110,7 +110,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 校验文件名是否包含允许的图片后缀。
+     * 校验文件名是否包含允许的图片后缀
      */
     private boolean hasValidImageExtension(String filename) {
         if (StringUtils.isEmpty(filename)) {
@@ -127,7 +127,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 使用 ImageIO 校验非 SVG 图片内容。
+     * 使用 ImageIO 校验非 SVG 图片内容
      */
     private boolean isImageOther(MultipartFile file) {
         BufferedImage image = null;
@@ -144,7 +144,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 保存模板中携带的静态资源集合。
+     * 保存模板中携带的静态资源集合
      */
     public void saveFilesToServe(String staticResource) {
         if (StringUtils.isNotEmpty(staticResource)) {
@@ -161,7 +161,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 保存单个 Base64 静态资源文件。
+     * 保存单个 Base64 静态资源文件
      */
     public void saveSingleFileToServe(String fileName, String content) {
         try {
@@ -181,7 +181,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 按路径列表读取静态资源并返回 Base64 内容。
+     * 按路径列表读取静态资源并返回 Base64 内容
      */
     @Override
     public Map<String, String> resourceBase64(StaticResourceRequest resourceRequest) {
@@ -196,7 +196,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 校验静态资源文件名和图片后缀。
+     * 校验静态资源文件名和图片后缀
      */
     private void validateImageFilename(String filename) {
         FileUtils.validateUploadFilename(filename);
@@ -206,14 +206,14 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 从资源路径中提取文件名。
+     * 从资源路径中提取文件名
      */
     private String extractFileName(String path) {
         return StringUtils.substringAfterLast(path.replace("\\", "/"), "/");
     }
 
     /**
-     * 在静态资源目录内读取文件并转换为 Base64。
+     * 在静态资源目录内读取文件并转换为 Base64
      */
     private String readResourceAsBase64(String fileName) {
         if (StringUtils.isBlank(fileName) || !hasValidImageExtension(fileName)) {
@@ -236,7 +236,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 解码 Base64 静态资源内容。
+     * 解码 Base64 静态资源内容
      */
     private byte[] decodeBase64Content(String content) {
         try {
@@ -248,7 +248,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 当目标文件不存在时写入静态资源内容。
+     * 当目标文件不存在时写入静态资源内容
      */
     private void writeFileIfAbsent(String fileName, byte[] content) throws IOException {
         Path basePath = Paths.get(staticDir.toString());
@@ -265,7 +265,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 根据文件类型校验图片内容是否合法。
+     * 根据文件类型校验图片内容是否合法
      */
     private void validateImageContent(String fileName, byte[] content, String mimeType, boolean checkSvgMimeType) {
         if (content == null || content.length == 0) {
@@ -281,7 +281,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 使用字节内容校验非 SVG 图片。
+     * 使用字节内容校验非 SVG 图片
      */
     private boolean isImageOther(byte[] content) {
         try (InputStream input = new ByteArrayInputStream(content)) {
@@ -294,7 +294,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 解析并校验 SVG 内容，阻断外部实体和脚本类风险。
+     * 解析并校验 SVG 内容，阻断外部实体和脚本类风险
      */
     private void validateSvgContent(byte[] content, String mimeType, boolean checkSvgMimeType) {
         if (checkSvgMimeType && !isValidSvgMimeType(mimeType)) {
@@ -328,7 +328,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 校验上传的 SVG 文件 MIME、结构和危险内容。
+     * 校验上传的 SVG 文件 MIME、结构和危险内容
      */
     private static boolean isValidSVG(MultipartFile file){
         if (file == null || file.isEmpty()) {
@@ -384,7 +384,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 校验上传文件的 SVG MIME 类型。
+     * 校验上传文件的 SVG MIME 类型
      */
     private static boolean isValidSvgMimeType(MultipartFile file) {
         String contentType = file.getContentType();
@@ -392,7 +392,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 校验字符串形式的 SVG MIME 类型。
+     * 校验字符串形式的 SVG MIME 类型
      */
     private static boolean isValidSvgMimeType(String contentType) {
         if (contentType == null) {
@@ -548,7 +548,7 @@ public class StaticResourceServer implements StaticResourceApi {
         return false;
     }
     /**
-     * 根据文件头魔数识别文件类型。
+     * 根据文件头魔数识别文件类型
      */
     public static FileType getFileType(InputStream is) throws IOException {
         byte[] src = new byte[28];
@@ -575,7 +575,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 使用文件头魔数判断上传内容是否为已知图片类型。
+     * 使用文件头魔数判断上传内容是否为已知图片类型
      */
     private static Boolean isImageCheckType(MultipartFile file) {
         try {
@@ -587,7 +587,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     /**
-     * 根据图片流前 10 个字节推断常见图片类型。
+     * 根据图片流前 10 个字节推断常见图片类型
      */
     public static String getImageType(InputStream fileInputStream) {
         byte[] b = new byte[10];

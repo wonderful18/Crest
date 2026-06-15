@@ -32,9 +32,9 @@ import { type SpreadSheet } from '@antv/s2'
 import { parseJson } from '../../js/util'
 import { useI18n } from '@/hooks/web/useI18n'
 
-// 大屏主状态提供图表联动、跳转和移动端上下文。
+// 大屏主状态提供图表联动、跳转和移动端上下文
 const dvMainStore = dvMainStoreWithOut()
-// 解构 S2 图表渲染需要使用的全局状态。
+// 解构 S2 图表渲染需要使用的全局状态
 const {
   nowPanelTrackInfo,
   nowPanelJumpInfo,
@@ -43,12 +43,12 @@ const {
   embeddedCallBack,
   inMobile
 } = storeToRefs(dvMainStore)
-// 全局事件总线用于图表和外部工具栏通信。
+// 全局事件总线用于图表和外部工具栏通信
 const { emitter } = useEmitt()
-// S2 图表组件内置文案的翻译入口。
+// S2 图表组件内置文案的翻译入口
 const { t } = useI18n()
 
-// S2 图表组件入参，包含视图配置、展示位置、终端和下钻层级。
+// S2 图表组件入参，包含视图配置、展示位置、终端和下钻层级
 const props = defineProps({
   element: {
     type: Object,
@@ -98,22 +98,22 @@ const props = defineProps({
   }
 })
 
-// S2 图表交互事件透传给父组件处理。
+// S2 图表交互事件透传给父组件处理
 const emit = defineEmits(['onPointClick', 'onChartClick', 'onDrillFilters', 'onJumpClick'])
-// 大屏移动端预览需要使用移动端交互逻辑。
+// 大屏移动端预览需要使用移动端交互逻辑
 const dataVMobile = !isDashboard() && isMobile()
 
-// 常用入参保持响应式引用，避免在异步渲染中丢失最新值。
+// 常用入参保持响应式引用，避免在异步渲染中丢失最新值
 const { view, showPosition, scale, terminal, drillLength, suffixId } = toRefs(props)
 
-// 图表渲染错误标记。
+// 图表渲染错误标记
 const isError = ref(false)
-// 图表渲染错误文案。
+// 图表渲染错误文案
 const errMsg = ref('')
-// 外部注入的扩展请求参数。
+// 外部注入的扩展请求参数
 const chartExtRequest = inject('chartExtRequest') as ShallowRef<object>
 
-// S2 图表运行时状态，包含联动、分页、加载和图片放大信息。
+// S2 图表运行时状态，包含联动、分页、加载和图片放大信息
 const state = reactive({
   curActionId: null,
   curTrackMenu: [],
@@ -138,19 +138,19 @@ const state = reactive({
   imgEnlarge: false,
   imgSrc: ''
 })
-// 支持分页的表格图表类型。
+// 支持分页的表格图表类型
 const PAGE_CHARTS = ['table-info', 'table-normal']
-// 图表数据体积较大，使用浅响应式避免深层代理开销。
+// 图表数据体积较大，使用浅响应式避免深层代理开销
 let chartData = shallowRef<Partial<Chart['data']>>({
   fields: []
 })
 
-// 当前图表容器编号，组合展示位置、图表编号和后缀避免冲突。
+// 当前图表容器编号，组合展示位置、图表编号和后缀避免冲突
 const containerId = 'container-' + showPosition.value + '-' + view.value.id + '-' + suffixId.value
-// 联动轨迹条组件引用。
+// 联动轨迹条组件引用
 const viewTrack = ref(null)
 
-// 拉取图表数据，并根据分页配置更新扩展请求参数。
+// 拉取图表数据，并根据分页配置更新扩展请求参数
 const calcData = (viewInfo: Chart, callback, resetPageInfo = true) => {
   const customAttr = viewInfo.customAttr as any
   viewInfo.chartExtRequest ||= {}
@@ -189,16 +189,16 @@ const calcData = (viewInfo: Chart, callback, resetPageInfo = true) => {
     callback?.()
   }
 }
-// S2 图表对象不用响应式，避免第三方实例被代理。
+// S2 图表对象不用响应式，避免第三方实例被代理
 let myChart: SpreadSheet = null
-// 实际渲染的图表信息，已按缩放和终端适配。
+// 实际渲染的图表信息，已按缩放和终端适配
 let actualChart: ChartObj
-// 弹窗回传数据后复用现有渲染入口刷新图表。
+// 弹窗回传数据后复用现有渲染入口刷新图表
 const renderChartFromDialog = (viewInfo: Chart, chartDataInfo) => {
   chartData.value = chartDataInfo
   renderChart(viewInfo, false)
 }
-// 处理存量图表的默认值，避免旧配置缺字段导致渲染异常。
+// 处理存量图表的默认值，避免旧配置缺字段导致渲染异常
 const handleDefaultVal = (chart: Chart) => {
   const customAttr = parseJson(chart.customAttr)
   // 明细表默认合并单元格，存量的不合并
@@ -229,7 +229,7 @@ const handleDefaultVal = (chart: Chart) => {
     }
   }
 }
-// 组装实际渲染配置并触发防抖渲染。
+// 组装实际渲染配置并触发防抖渲染
 const renderChart = (viewInfo: Chart, resetPageInfo: boolean) => {
   if (!viewInfo) {
     return
@@ -249,7 +249,7 @@ const renderChart = (viewInfo: Chart, resetPageInfo: boolean) => {
   nextTick(() => debounceRender())
 }
 
-// 防抖销毁旧 S2 实例并创建新图表实例。
+// 防抖销毁旧 S2 实例并创建新图表实例
 const debounceRender = debounce(() => {
   ;(myChart?.facet as any)?.timer?.stop()
   myChart?.facet?.cancelScrollFrame()
@@ -273,7 +273,7 @@ const debounceRender = debounce(() => {
   initScroll()
 }, 500)
 
-// 根据图表类型和样式配置初始化分页显示状态。
+// 根据图表类型和样式配置初始化分页显示状态
 const setupPage = (chart: ChartObj, resetPageInfo?: boolean) => {
   const customAttr = chart.customAttr
   if (!PAGE_CHARTS.includes(chart.type) || customAttr.basicStyle.tablePageMode !== 'page') {
@@ -298,25 +298,25 @@ const setupPage = (chart: ChartObj, resetPageInfo?: boolean) => {
 }
 
 /**
- * 鼠标移入表格时暂停自动滚动。
+ * 鼠标移入表格时暂停自动滚动
  */
 const mouseMove = () => {
   ;(myChart?.facet as any)?.timer?.stop()
 }
 
 /**
- * 鼠标移出表格后恢复自动滚动。
+ * 鼠标移出表格后恢复自动滚动
  */
 const mouseLeave = () => {
   initScroll()
 }
 
 /**
- * 表格自动滚动定时器。
+ * 表格自动滚动定时器
  */
 let scrollTimer
 /**
- * 初始化或重置表格自动滚动。
+ * 初始化或重置表格自动滚动
  */
 const initScroll = () => {
   scrollTimer && clearTimeout(scrollTimer)

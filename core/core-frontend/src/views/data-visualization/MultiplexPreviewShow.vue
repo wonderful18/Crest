@@ -18,11 +18,11 @@ import EmptyBackground from '../../components/empty-background/src/EmptyBackgrou
 import { iconChartMap } from '@/components/icon-group/chart-list'
 import { useI18n } from '@/hooks/web/useI18n'
 const dvMainStore = dvMainStoreWithOut()
-// 控制复用预览区域重新渲染。
+// 控制复用预览区域重新渲染
 const viewShow = ref(true)
 const { t } = useI18n()
 
-// 接收画布、组件和视图数据。
+// 接收画布、组件和视图数据
 const props = defineProps({
   canvasStyleData: {
     type: Object,
@@ -44,15 +44,15 @@ const props = defineProps({
 
 const { canvasStyleData, componentData, canvasViewInfo, dvInfo } = toRefs(props)
 
-// 当前画布样式。
+// 当前画布样式
 const canvasStyle = computed(() => getCanvasStyle(canvasStyleData.value))
 
-// 过滤只显示已选组件。
+// 过滤只显示已选组件
 const filterNodeMethod = (value, data) => {
   return !value || data.multiplexActive
 }
 
-// 切换当前预览组件。
+// 切换当前预览组件
 const nodeClick = data => {
   const components = componentData.value.filter(ele => ele.id === data.id)
   state.multiplexInfo = components[0]
@@ -62,10 +62,10 @@ const nodeClick = data => {
   })
 }
 
-// 复用信息树实例。
+// 复用信息树实例
 const multiplexInfoTree = ref(null)
 
-// 维护复用预览选择状态。
+// 维护复用预览选择状态
 const state = reactive({
   sourceMultiplexInfo: {},
   showSelected: false,
@@ -80,10 +80,10 @@ const state = reactive({
   },
   multiplexInfo: null
 })
-// 当前可复用目标组件列表。
+// 当前可复用目标组件列表
 const curMultiplexTargetComponentsInfo = ref([])
 
-// 同步复用目标勾选变化。
+// 同步复用目标勾选变化
 const targetViewCheckedChange = (val, data) => {
   nextTick(() => {
     multiplexingCheck(val, data)
@@ -107,7 +107,7 @@ const iconMap = {
   'scroll-text': scrollText
 }
 
-// 获取组件在树节点中展示的图标。
+// 获取组件在树节点中展示的图标
 const getIconName = item => {
   if (item.component === 'UserView') {
     const viewInfo = canvasViewInfo.value[item.id]
@@ -117,7 +117,7 @@ const getIconName = item => {
   }
 }
 
-// 监听画布信息变化并重新初始化。
+// 监听画布信息变化并重新初始化
 watch(
   () => dvInfo.value,
   () => {
@@ -127,7 +127,7 @@ watch(
   }
 )
 
-// 监听只看已选开关并过滤树节点。
+// 监听只看已选开关并过滤树节点
 watch(
   () => state.showSelected,
   newValue => {
@@ -135,7 +135,7 @@ watch(
   }
 )
 
-// 初始化可复用组件树。
+// 初始化可复用组件树
 const init = () => {
   dvMainStore.initCurMultiplexingComponents()
   curMultiplexTargetComponentsInfo.value = []
@@ -150,17 +150,17 @@ const init = () => {
   })
 }
 
-// 同步复用组件选中状态。
+// 同步复用组件选中状态
 const multiplexingCheck = (val, data) => {
   if (val) {
     const components = componentData.value.filter(ele => ele.id === data.id)
-    // 添加复用组件。
+    // 添加复用组件
     dvMainStore.addCurMultiplexingComponent({
       component: components[0],
       componentId: data.id
     })
   } else {
-    // 移除复用组件。
+    // 移除复用组件
     dvMainStore.removeCurMultiplexingComponentWithId(data.id)
   }
 }

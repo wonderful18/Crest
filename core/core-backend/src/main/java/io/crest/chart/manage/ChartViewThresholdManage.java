@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 @Component("chartViewThresholdManage")
 @SuppressWarnings("unchecked")
-// 图表阈值管理服务，负责阈值条件文案转换、告警模板预览和阈值数据过滤。
+// 图表阈值管理服务，负责阈值条件文案转换、告警模板预览和阈值数据过滤
 public class ChartViewThresholdManage {
 
 
@@ -39,13 +39,13 @@ public class ChartViewThresholdManage {
     private ChartViewManege chartViewManege;
 
 
-    // 根据图表 ID 查询图表字段，并将阈值规则转换为可读文案。
+    // 根据图表 ID 查询图表字段，并将阈值规则转换为可读文案
     public String convertThresholdRules(Long chartId, String thresholdRules, String resourceTable) {
         ChartViewDTO details = chartViewManege.getDetails(chartId, resourceTable);
         return convertThresholdRules(details, thresholdRules);
     }
 
-    // 根据图表详情和阈值规则构建可读阈值表达式。
+    // 根据图表详情和阈值规则构建可读阈值表达式
     private String convertThresholdRules(ChartViewDTO chart, String thresholdRules) {
         List<DatasetTableFieldDTO> fieldList = chartFields(chart);
         FilterTreeObj filterTreeObj = JsonUtil.parseObject(thresholdRules, FilterTreeObj.class);
@@ -58,7 +58,7 @@ public class ChartViewThresholdManage {
         return convertTree(filterTreeObj, fieldMap);
     }
 
-    // 收集图表所有可能参与阈值判断的字段。
+    // 收集图表所有可能参与阈值判断的字段
     private List<DatasetTableFieldDTO> chartFields(ChartViewDTO details) {
         List<DatasetTableFieldDTO> result = new ArrayList<>();
         List<ChartViewFieldDTO> xAxis = details.getXAxis();
@@ -108,7 +108,7 @@ public class ChartViewThresholdManage {
         return result;
     }
 
-    // 递归转换阈值条件树。
+    // 递归转换阈值条件树
     private String convertTree(FilterTreeObj filterTreeObj, Map<String, DatasetTableFieldDTO> fieldMap) {
         String logic = filterTreeObj.getLogic();
         String logicText = translateLogic(logic);
@@ -134,7 +134,7 @@ public class ChartViewThresholdManage {
         return null;
     }
 
-    // 将单个阈值条件转换为可读文案。
+    // 将单个阈值条件转换为可读文案
     private String convertItem(FilterTreeItem item, Map<String, DatasetTableFieldDTO> fieldMap) {
         String filterType = item.getFilterType();
         Long fieldId = item.getFieldId();
@@ -151,7 +151,7 @@ public class ChartViewThresholdManage {
         }
     }
 
-    // 按固定值、动态统计值或动态时间格式化阈值条件值。
+    // 按固定值、动态统计值或动态时间格式化阈值条件值
     private String formatFieldValue(String value, String valueType, Integer fieldType) {
         if (StringUtils.isBlank(valueType)) {
             valueType = "fixed";
@@ -172,7 +172,7 @@ public class ChartViewThresholdManage {
         }
     }
 
-    // 将动态时间配置转换为用户可读的时间描述。
+    // 将动态时间配置转换为用户可读的时间描述
     private String formatDynamicTimeLabel(String value) {
         if (StringUtils.isBlank(value)) {
             return value;
@@ -237,7 +237,7 @@ public class ChartViewThresholdManage {
         }
     }
 
-    // 翻译阈值比较运算符。
+    // 翻译阈值比较运算符
     private String translateTerm(String term) {
         if (Strings.CS.equals(term, "not in")) {
             return Translator.get("i18n_threshold_logic_not_in");
@@ -248,13 +248,13 @@ public class ChartViewThresholdManage {
         }
     }
 
-    // 翻译条件树逻辑关系。
+    // 翻译条件树逻辑关系
     private String translateLogic(String logic) {
         if (Strings.CS.equals(logic, "and")) return String.format(" %s ", Translator.get("i18n_threshold_logic_and"));
         return String.format(" %s ", Translator.get("i18n_threshold_logic_or"));
     }
 
-    // 调整告警模板中的内联样式，保证邮件或通知内容可读。
+    // 调整告警模板中的内联样式，保证邮件或通知内容可读
     private String convertStyle(String htmlString) {
         String regex = "<span\\s+id=\"(changeText-0|changeText-1)\"\\s+style=\"([^\"]*)\">";
         Pattern pattern = Pattern.compile(regex);
@@ -268,7 +268,7 @@ public class ChartViewThresholdManage {
         return htmlString;
     }
 
-    // 检查阈值规则是否命中当前图表数据，并生成告警模板预览内容。
+    // 检查阈值规则是否命中当前图表数据，并生成告警模板预览内容
     public ThresholdCheckVO checkThreshold(ThresholdCheckRequest request) throws Exception {
         String thresholdTemplate = request.getThresholdTemplate();
         String thresholdRules = request.getThresholdRules();
@@ -330,7 +330,7 @@ public class ChartViewThresholdManage {
             }
 
             matcher.appendTail(sb);
-            // 得到字段占位符替换后的 HTML 内容。
+            // 得到字段占位符替换后的 HTML 内容
             String result = sb.toString();
 
             if (withThresholdData) {
@@ -401,7 +401,7 @@ public class ChartViewThresholdManage {
         }
     }
 
-    // 将 BigDecimal 数字转换为去除多余零的字符串。
+    // 将 BigDecimal 数字转换为去除多余零的字符串
     private String stripTrailingZeros2String(Object value) {
         if (ObjectUtils.isEmpty(value)) {
             return null;
@@ -410,7 +410,7 @@ public class ChartViewThresholdManage {
         return ((BigDecimal) value).stripTrailingZeros().toPlainString();
     }
 
-    // 从阈值条件树中递归收集字段 ID。
+    // 从阈值条件树中递归收集字段 ID
     private void getThresholdFieldIdList(FilterTreeObj conditionTree, Set<Long> fieldIdSet) {
         List<FilterTreeItem> items = conditionTree.getItems();
         items.forEach(item -> {
@@ -423,7 +423,7 @@ public class ChartViewThresholdManage {
         });
     }
 
-    // 将动态阈值条件替换为基于当前数据计算出的固定值。
+    // 将动态阈值条件替换为基于当前数据计算出的固定值
     private void chartDynamicMap(List<Map<String, Object>> rows, FilterTreeObj conditionTree, Map<Long, DatasetTableFieldDTO> fieldMap) {
         List<FilterTreeItem> items = conditionTree.getItems();
         items.forEach(item -> {
@@ -443,7 +443,7 @@ public class ChartViewThresholdManage {
         });
     }
 
-    // 计算动态时间阈值对应的实际时间字符串。
+    // 计算动态时间阈值对应的实际时间字符串
     private String dynamicFormatValue(FilterTreeItem item) {
         String value = item.getValue();
 
@@ -498,7 +498,7 @@ public class ChartViewThresholdManage {
         }
     }
 
-    // 根据格式、单位、方向和数量计算自定义动态时间。
+    // 根据格式、单位、方向和数量计算自定义动态时间
     private String getCustomTimeValue(String format, int unit, int suffix, int count, boolean hasTime) {
         LocalDateTime now = LocalDateTime.now();
         String fullFormat = "yyyy-MM-dd HH:mm:ss";
@@ -536,7 +536,7 @@ public class ChartViewThresholdManage {
     }
 
 
-    // 根据当前数据行计算动态数值阈值。
+    // 根据当前数据行计算动态数值阈值
     private String formatValue(List<Map<String, Object>> rows, FilterTreeItem item) {
         DatasetTableFieldDTO field = item.getField();
         String engineFieldName = field.getEngineFieldName();
@@ -571,7 +571,7 @@ public class ChartViewThresholdManage {
         return String.valueOf(tempFVal);
     }
 
-    // 按阈值条件树过滤图表数据行。
+    // 按阈值条件树过滤图表数据行
     public List<Map<String, Object>> filterRows(List<Map<String, Object>> rows, FilterTreeObj conditionTree, Map<Long, DatasetTableFieldDTO> fieldMap) {
         chartDynamicMap(rows, conditionTree, fieldMap);
         List<Map<String, Object>> filteredRows = new ArrayList<>();
@@ -583,10 +583,10 @@ public class ChartViewThresholdManage {
         return filteredRows;
     }
 
-    // 判断数据行是否匹配条件树。
+    // 判断数据行是否匹配条件树
     private boolean matchesConditionTree(Map<String, Object> row, FilterTreeObj conditionTree, Map<Long, DatasetTableFieldDTO> fieldMap) {
         if (conditionTree == null || conditionTree.getItems().isEmpty()) {
-            // 没有条件树或条件列表为空时，默认保留所有行。
+            // 没有条件树或条件列表为空时，默认保留所有行
             return true;
         }
         List<FilterTreeItem> items = conditionTree.getItems();
@@ -596,7 +596,7 @@ public class ChartViewThresholdManage {
         return matchesAllItems(row, items, fieldMap);
     }
 
-    // 判断数据行是否匹配全部条件。
+    // 判断数据行是否匹配全部条件
     private boolean matchesAllItems(Map<String, Object> row, List<FilterTreeItem> items, Map<Long, DatasetTableFieldDTO> fieldMap) {
         for (FilterTreeItem item : items) {
             if (!matchesConditionItem(row, item, fieldMap)) {
@@ -606,7 +606,7 @@ public class ChartViewThresholdManage {
         return true;
     }
 
-    // 判断数据行是否匹配任一条件。
+    // 判断数据行是否匹配任一条件
     private boolean matchesAnyItem(Map<String, Object> row, List<FilterTreeItem> items, Map<Long, DatasetTableFieldDTO> fieldMap) {
         for (FilterTreeItem item : items) {
             if (matchesConditionItem(row, item, fieldMap)) {
@@ -616,7 +616,7 @@ public class ChartViewThresholdManage {
         return false;
     }
 
-    // 判断数据行是否匹配单个条件项或子条件树。
+    // 判断数据行是否匹配单个条件项或子条件树
     private boolean matchesConditionItem(Map<String, Object> row, FilterTreeItem item, Map<Long, DatasetTableFieldDTO> fieldMap) {
         if ("item".equals(item.getType())) {
             DatasetTableFieldDTO fieldDTO = fieldMap.get(item.getFieldId());
@@ -624,11 +624,11 @@ public class ChartViewThresholdManage {
         } else if ("tree".equals(item.getType()) && item.getSubTree() != null) {
             return matchesConditionTree(row, item.getSubTree(), fieldMap);
         }
-        // 类型不匹配或没有子树时不命中。
+        // 类型不匹配或没有子树时不命中
         return false;
     }
 
-    // 按字段类型执行单个阈值条件匹配。
+    // 按字段类型执行单个阈值条件匹配
     private boolean rowMatch(Map<String, Object> row, FilterTreeItem item, DatasetTableFieldDTO fieldDTO) {
         String engineFieldName = fieldDTO.getEngineFieldName();
         String filterType = item.getFilterType();
@@ -689,7 +689,7 @@ public class ChartViewThresholdManage {
                     return Strings.CS.equals(item.getValue(), valueObj.toString());
                 }
             } else if (Objects.equals(fieldType, FieldTypeConstants.TIME)) {
-                // 时间字段使用统一时间比较逻辑。
+                // 时间字段使用统一时间比较逻辑
                 return timeMatch(item, valueObj);
             } else {
                 return true;
@@ -697,7 +697,7 @@ public class ChartViewThresholdManage {
         }
     }
 
-    // 将时间值和目标值标准化为数字后按运算符比较。
+    // 将时间值和目标值标准化为数字后按运算符比较
     private boolean timeMatch(FilterTreeItem item, Object valueObj) {
         if (ObjectUtils.isEmpty(valueObj)) return false;
         String valueText = valueObj.toString();

@@ -2,7 +2,7 @@ import FilterText from './src/FilterText.vue'
 
 export { FilterText }
 
-// 根据字段名查找筛选字段展示名称。
+// 根据字段名查找筛选字段展示名称
 const fieldText = (field, options) => {
   for (let index = 0; index < options.length; index++) {
     const element = options[index]
@@ -11,7 +11,7 @@ const fieldText = (field, options) => {
     }
   }
 }
-// 从树形选项中查找筛选值展示名称。
+// 从树形选项中查找筛选值展示名称
 const valueTextFormTree = (val, options) => {
   let result = null
   const stack = [...options]
@@ -27,14 +27,14 @@ const valueTextFormTree = (val, options) => {
   }
   return result || val
 }
-// 将时间戳格式化为本地时间字符串。
+// 将时间戳格式化为本地时间字符串
 const timestampFormatDate = value => {
   if (!value) {
     return '-'
   }
   return new Date(value).toLocaleString()
 }
-// 根据字段配置将筛选值转换为展示文案。
+// 根据字段配置将筛选值转换为展示文案
 const valueText = (field, val, options) => {
   for (let index = 0; index < options.length; index++) {
     const element = options[index]
@@ -61,7 +61,7 @@ const valueText = (field, val, options) => {
   }
   return val
 }
-// 将筛选条件数组转换为可读的文本列表。
+// 将筛选条件数组转换为可读的文本列表
 export const convertFilterText = (conditions, options) => {
   const result = []
   conditions.forEach(condition => {

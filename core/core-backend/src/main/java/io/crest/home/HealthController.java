@@ -16,29 +16,29 @@ import java.util.Map;
 @RestController
 @RequestMapping("/actuator/health")
 /**
- * 应用健康检查控制器，提供存活和就绪检查端点。
+ * 应用健康检查控制器，提供存活和就绪检查端点
  */
 public class HealthController {
 
     /**
-     * 数据库连接有效性检查的超时时间。
+     * 数据库连接有效性检查的超时时间
      */
     private static final int DATABASE_VALIDATION_TIMEOUT_SECONDS = 2;
 
     /**
-     * 可选数据源，用于就绪检查数据库连通性。
+     * 可选数据源，用于就绪检查数据库连通性
      */
     private final DataSource dataSource;
 
     /**
-     * 创建健康检查控制器，数据源缺失时就绪检查会失败。
+     * 创建健康检查控制器，数据源缺失时就绪检查会失败
      */
     public HealthController(@Autowired(required = false) DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     /**
-     * 默认健康端点复用就绪检查结果。
+     * 默认健康端点复用就绪检查结果
      */
     @GetMapping
     public ResponseEntity<ResultMessage> health() {
@@ -46,7 +46,7 @@ public class HealthController {
     }
 
     /**
-     * 返回 JVM 存活状态，不依赖外部资源。
+     * 返回 JVM 存活状态，不依赖外部资源
      */
     @GetMapping("/liveness")
     public ResponseEntity<ResultMessage> liveness() {
@@ -56,7 +56,7 @@ public class HealthController {
     }
 
     /**
-     * 返回服务就绪状态，并检查数据库是否可连接。
+     * 返回服务就绪状态，并检查数据库是否可连接
      */
     @GetMapping("/readiness")
     public ResponseEntity<ResultMessage> readiness() {
@@ -72,7 +72,7 @@ public class HealthController {
     }
 
     /**
-     * 校验数据库连接是否可用。
+     * 校验数据库连接是否可用
      */
     private boolean databaseAvailable() {
         if (dataSource == null) {
@@ -86,7 +86,7 @@ public class HealthController {
     }
 
     /**
-     * 组装健康检查响应体。
+     * 组装健康检查响应体
      */
     private Map<String, Object> status(String status, Map<String, Object> checks) {
         Map<String, Object> body = new LinkedHashMap<>();

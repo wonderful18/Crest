@@ -63,25 +63,25 @@ import { parseJson } from '@/views/chart/components/js/util'
 import { mappingColorCustom } from '@/views/chart/components/js/panel/common/common_table'
 import { CHART_FONT_FAMILY_ORIGIN } from '@/views/chart/components/editor/util/chart'
 import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
-/** 快照状态仓库。 */
+/** 快照状态仓库 */
 const snapshotStore = snapshotStoreWithOut()
-/** 图表渲染错误提示。 */
+/** 图表渲染错误提示 */
 const errMsg = ref('')
-/** 可视化主画布状态仓库。 */
+/** 可视化主画布状态仓库 */
 const dvMainStore = dvMainStoreWithOut()
-/** 画布图表缓存和移动端预览状态。 */
+/** 画布图表缓存和移动端预览状态 */
 const { canvasViewInfo, mobileInPc } = storeToRefs(dvMainStore)
-/** 当前富文本是否处于渲染错误状态。 */
+/** 当前富文本是否处于渲染错误状态 */
 const isError = ref(false)
-/** 外观配置状态仓库。 */
+/** 外观配置状态仓库 */
 const appearanceStore = useAppearanceStoreWithOut()
 import { useUserStoreWithOut } from '@/store/modules/user'
-/** 当前用户状态仓库。 */
+/** 当前用户状态仓库 */
 const userStore = useUserStoreWithOut()
 import { useI18n } from '@/hooks/web/useI18n'
-/** 国际化文本读取方法。 */
+/** 国际化文本读取方法 */
 const { t } = useI18n()
-/** 富文本组件输入属性。 */
+/** 富文本组件输入属性 */
 const props = defineProps({
   scale: {
     type: Number,
@@ -101,7 +101,7 @@ const props = defineProps({
     require: false,
     default: false
   },
-  // 是否禁用编辑器。
+  // 是否禁用编辑器
   disabled: {
     type: Boolean,
     default: false
@@ -115,7 +115,7 @@ const props = defineProps({
     type: String as PropType<EditorTheme>,
     default: 'dark'
   },
-  // 图表渲染 ID 后缀。
+  // 图表渲染 ID 后缀
   suffixId: {
     type: String,
     required: false,
@@ -123,10 +123,10 @@ const props = defineProps({
   }
 })
 
-/** 从属性中解构可响应的富文本上下文。 */
+/** 从属性中解构可响应的富文本上下文 */
 const { element, editMode, active, disabled, showPosition, suffixId } = toRefs(props)
 
-/** 富文本渲染和数据绑定状态。 */
+/** 富文本渲染和数据绑定状态 */
 const state = reactive({
   emptyValue: '-',
   data: null,
@@ -135,38 +135,38 @@ const state = reactive({
   firstRender: true,
   previewFirstRender: true
 })
-/** TinyMCE 语言包映射。 */
+/** TinyMCE 语言包映射 */
 const language_map = {
   en: 'en_US',
   tw: 'zh_TW',
   'zh-CN': 'zh_CN'
 }
 
-/** 当前 TinyMCE 使用的语言标识。 */
+/** 当前 TinyMCE 使用的语言标识 */
 const language = language_map[userStore.getLanguage]
-/** 字段值映射，用于占位符替换。 */
+/** 字段值映射，用于占位符替换 */
 const dataRowSelect = ref({})
-/** 字段展示名到格式化值的映射。 */
+/** 字段展示名到格式化值的映射 */
 const dataRowNameSelect = ref({})
-/** 字段展示名到原始值的映射。 */
+/** 字段展示名到原始值的映射 */
 const dataRowNameSelectSource = ref({})
-/** 当前可插入字段名称列表。 */
+/** 当前可插入字段名称列表 */
 const dataRowFiledName = ref([])
-/** 编辑器是否完成初始化。 */
+/** 编辑器是否完成初始化 */
 const initReady = ref(false)
-/** 是否显示 TinyMCE 编辑器实例。 */
+/** 是否显示 TinyMCE 编辑器实例 */
 const editShow = ref(true)
-/** 当前富文本是否处于可编辑状态。 */
+/** 当前富文本是否处于可编辑状态 */
 const canEdit = ref(false)
-// 初始化编辑器 ID。
+// 初始化编辑器 ID
 const tinymceId =
   'tinymce-view-' + element.value.id + '-' + suffixId.value + '-' + showPosition.value
-/** 富文本编辑器内容。 */
+/** 富文本编辑器内容 */
 const myValue = ref('')
 
-/** 系统内置字体名称列表。 */
+/** 系统内置字体名称列表 */
 const systemFontFamily = appearanceStore.fontList.map(item => item.name)
-/** 组装 TinyMCE 字体下拉配置。 */
+/** 组装 TinyMCE 字体下拉配置 */
 const curFontFamily = () => {
   let result = ''
   CHART_FONT_FAMILY_ORIGIN.concat(
@@ -179,9 +179,9 @@ const curFontFamily = () => {
   })
   return result
 }
-/** 富文本为空时的提示文本。 */
+/** 富文本为空时的提示文本 */
 const outerPlaceholder = t('visualization.component_input_tips')
-/** TinyMCE 编辑器初始化配置。 */
+/** TinyMCE 编辑器初始化配置 */
 const init = ref({
   selector: '#' + tinymceId,
   toolbar_items_size: 'small',
@@ -302,19 +302,19 @@ const init = ref({
           target.style.width = `${width}px`
           target.style.height = `${height}px`
         } else if (target.nodeName === 'TABLE' && origin.indexOf('bar-col') > -1) {
-          // 列拖拽场景保持 TinyMCE 默认处理。
+          // 列拖拽场景保持 TinyMCE 默认处理
         }
       })
     })
   }
 })
 
-/** 当前是否处于编辑模式。 */
+/** 当前是否处于编辑模式 */
 const editStatus = computed(() => {
   return editMode.value === 'edit'
 })
 
-/** 选中状态失效时退出富文本编辑并同步内容。 */
+/** 选中状态失效时退出富文本编辑并同步内容 */
 watch(
   () => active.value,
   val => {
@@ -332,7 +332,7 @@ watch(
   }
 )
 
-/** 富文本内容变化时同步组件属性并记录快照。 */
+/** 富文本内容变化时同步组件属性并记录快照 */
 watch(
   () => myValue.value,
   () => {
@@ -346,7 +346,7 @@ watch(
     }
   }
 )
-/** TinyMCE 垂直对齐方式到容器样式的映射。 */
+/** TinyMCE 垂直对齐方式到容器样式的映射 */
 const ALIGN_MAP = {
   'top-align': {},
   'center-align': {
@@ -356,7 +356,7 @@ const ALIGN_MAP = {
     'margin-top': 'auto'
   }
 }
-/** 富文本编辑器外层对齐样式。 */
+/** 富文本编辑器外层对齐样式 */
 const wrapperStyle = computed(() => {
   const align = element.value.propValue.verticalAlign
   if (!align) {
@@ -364,7 +364,7 @@ const wrapperStyle = computed(() => {
   }
   return ALIGN_MAP[align]
 })
-/** 接收垂直对齐插件事件并写回组件配置。 */
+/** 接收垂直对齐插件事件并写回组件配置 */
 useEmitt({
   name: 'vertical-change-' + tinymceId,
   callback: align => {
@@ -372,7 +372,7 @@ useEmitt({
   }
 })
 
-/** 初始化富文本编辑器事件和占位符内容。 */
+/** 初始化富文本编辑器事件和占位符内容 */
 const viewInit = () => {
   useEmitt({
     name: 'fieldSelect-' + element.value.id,
@@ -383,7 +383,7 @@ const viewInit = () => {
   tinymce.init({})
   myValue.value = assignment(element.value.propValue.textValue)
 }
-/** 在非编辑状态下刷新字段占位符替换结果。 */
+/** 在非编辑状态下刷新字段占位符替换结果 */
 const initCurFieldsChange = () => {
   if (!canEdit.value) {
     myValue.value = assignment(element.value.propValue.textValue)
@@ -392,25 +392,25 @@ const initCurFieldsChange = () => {
   }
 }
 
-/** 为富文本中的链接段落补充点击阻断，避免触发画布事件。 */
+/** 为富文本中的链接段落补充点击阻断，避免触发画布事件 */
 const jumpTargetAdaptor = () => {
   setTimeout(() => {
     const paragraphs = document.querySelectorAll('p')
     paragraphs.forEach(p => {
-      // 如果 p 标签已经有 onclick 且包含 event.stopPropagation，则跳过。
+      // 如果 p 标签已经有 onclick 且包含 event.stopPropagation，则跳过
       if (
         p.getAttribute('onclick') &&
         p.getAttribute('onclick').includes('event.stopPropagation()')
       ) {
         return // 已经有 stopPropagation，跳过。
       }
-      // 否则添加 onclick 事件。
+      // 否则添加 onclick 事件
       p.setAttribute('onclick', 'event.stopPropagation()')
     })
   }, 1000)
 }
 
-/** 将富文本模板中的字段占位符替换为当前图表数据。 */
+/** 将富文本模板中的字段占位符替换为当前图表数据 */
 const assignment = content => {
   if (content) {
     const on = content?.match(/\[(.+?)\]/g) || []
@@ -435,7 +435,7 @@ const assignment = content => {
       })
     }
     content = content.replace('class="base-selected"', '')
-    // 兼容本地跳转在富文本中的路径写法。
+    // 兼容本地跳转在富文本中的路径写法
     content = content.replace(/href="#\//g, 'href="/#/')
     content = content.replace(/href=\\"#\//g, 'href=\\"/#/')
     content = content.replace(/href=\\"#\//g, 'href=\\"/#/')
@@ -447,7 +447,7 @@ const assignment = content => {
   return content
 }
 
-/** 解码 HTML 实体，便于和字段占位符匹配。 */
+/** 解码 HTML 实体，便于和字段占位符匹配 */
 const decodeHTMLEntities = text => {
   if (!text) return text
 
@@ -456,7 +456,7 @@ const decodeHTMLEntities = text => {
   return textarea.value
 }
 
-/** 编码 HTML 实体，避免插入字段时破坏富文本结构。 */
+/** 编码 HTML 实体，避免插入字段时破坏富文本结构 */
 const encodeHTMLEntities = text => {
   if (!text) return text
 
@@ -464,7 +464,7 @@ const encodeHTMLEntities = text => {
   textarea.textContent = text
   return textarea.innerHTML
 }
-/** 根据富文本内容中的字体样式同步当前字体。 */
+/** 根据富文本内容中的字体样式同步当前字体 */
 const initFontFamily = htmlText => {
   const regex = /font-family:\s*([^;"]+);/g
   let match
@@ -475,7 +475,7 @@ const initFontFamily = htmlText => {
     }
   }
 }
-/** 向 TinyMCE 当前光标处插入字段占位符。 */
+/** 向 TinyMCE 当前光标处插入字段占位符 */
 const fieldSelect = field => {
   const ed = tinymce.editors[tinymceId]
   const fieldId = 'changeText-' + guid()
@@ -492,14 +492,14 @@ const fieldSelect = field => {
   ed.insertContent(attachValue)
   snapshotStore.resetStyleChangeTimes()
 }
-/** 编辑器点击时更新字段占位符选中态。 */
+/** 编辑器点击时更新字段占位符选中态 */
 const onClick = () => {
   if (canEdit.value) {
     const node = tinymce.activeEditor.selection.getNode()
     resetSelect(node)
   }
 }
-/** 清理并设置字段占位符选中态。 */
+/** 清理并设置字段占位符选中态 */
 const resetSelect = (node?) => {
   const edInner = tinymce.get(tinymceId)
   if (edInner?.dom) {
@@ -521,7 +521,7 @@ const resetSelect = (node?) => {
   }
 }
 
-/** 当前是否允许进入富文本编辑。 */
+/** 当前是否允许进入富文本编辑 */
 const computedCanEdit = computed<boolean>(() => {
   return (
     ['canvas', 'canvasDataV', 'edit'].includes(showPosition.value) &&
@@ -533,14 +533,14 @@ const computedCanEdit = computed<boolean>(() => {
   )
 })
 
-/** 当前是否展示富文本空内容占位提示。 */
+/** 当前是否展示富文本空内容占位提示 */
 const showPlaceHolder = computed<boolean>(() => {
   return (
     computedCanEdit.value && (myValue.value == undefined || myValue.value == '') && !isError.value
   )
 })
 
-/** 当前组件激活状态是否允许编辑。 */
+/** 当前组件激活状态是否允许编辑 */
 const editActive = computed<boolean>(() => {
   if (element.value.canvasId.includes('Group') && !active.value) {
     return false
@@ -549,7 +549,7 @@ const editActive = computed<boolean>(() => {
   }
 })
 
-/** 双击后进入富文本编辑态。 */
+/** 双击后进入富文本编辑态 */
 const setEdit = () => {
   setTimeout(() => {
     if (computedCanEdit.value && editActive.value) {
@@ -562,7 +562,7 @@ const setEdit = () => {
     }
   })
 }
-/** 重新渲染 TinyMCE 实例并恢复光标。 */
+/** 重新渲染 TinyMCE 实例并恢复光标 */
 const reShow = () => {
   editShow.value = false
   nextTick(() => {
@@ -571,11 +571,11 @@ const reShow = () => {
   })
 }
 
-/** 将编辑光标移动到富文本末尾。 */
+/** 将编辑光标移动到富文本末尾 */
 const editCursor = () => {
   setTimeout(() => {
     const myDiv = document.getElementById(tinymceId)
-    // 让光标聚焦到文本末尾。
+    // 让光标聚焦到文本末尾
     const range = document.createRange()
     const sel = window.getSelection()
     if (myDiv.childNodes) {
@@ -584,7 +584,7 @@ const editCursor = () => {
       sel.removeAllRanges()
       sel.addRange(range)
     }
-    // 对于部分浏览器，需要额外聚焦到编辑器节点。
+    // 对于部分浏览器，需要额外聚焦到编辑器节点
     if (myDiv.focus) {
       myDiv.focus()
     }
@@ -600,7 +600,7 @@ const editCursor = () => {
   }, 100)
 }
 
-/** 根据图表空值策略更新富文本字段缺省展示值。 */
+/** 根据图表空值策略更新富文本字段缺省展示值 */
 const updateEmptyValue = view => {
   state.emptyValue =
     view?.senior?.functionCfg?.emptyDataStrategy === 'custom'
@@ -608,7 +608,7 @@ const updateEmptyValue = view => {
       : '-'
 }
 
-/** 判断指标中是否包含对比计算。 */
+/** 判断指标中是否包含对比计算 */
 const checkCompareCalc = view => {
   let compareCount = 0
   view.yAxis?.forEach(item => {
@@ -619,7 +619,7 @@ const checkCompareCalc = view => {
   return compareCount > 0
 }
 
-/** 拉取图表数据并刷新富文本字段占位符数据源。 */
+/** 拉取图表数据并刷新富文本字段占位符数据源 */
 const calcData = (view: Chart, callback) => {
   isError.value = false
   updateEmptyValue(view)
@@ -682,7 +682,7 @@ const calcData = (view: Chart, callback) => {
   }
 }
 
-/** 根据图表详情初始化可插入字段和字段值映射。 */
+/** 根据图表详情初始化可插入字段和字段值映射 */
 const initCurFields = chartDetails => {
   dataRowFiledName.value = []
   dataRowSelect.value = {}
@@ -707,7 +707,7 @@ const initCurFields = chartDetails => {
     }
     const dataFields = Array.isArray(chartDetails.data?.fields) ? chartDetails.data.fields : []
     const rowData = chartDetails.data?.tableRow?.[0] || {}
-    // 建立引擎字段名与字段 ID 的对应关系。
+    // 建立引擎字段名与字段 ID 的对应关系
     const nameIdMap = dataFields.reduce((pre, next) => {
       pre[next['engineFieldName']] = next['id']
       return pre
@@ -750,16 +750,16 @@ const initCurFields = chartDetails => {
   })
 }
 
-// 初始化此处不必刷新。
-/** 使用已有数据刷新富文本字段占位符。 */
+// 初始化此处不必刷新
+/** 使用已有数据刷新富文本字段占位符 */
 const renderChart = viewInfo => {
-  // 刷新富文本字段视图。
+  // 刷新富文本字段视图
   updateEmptyValue(viewInfo)
   initCurFieldsChange()
   eventBus.emit('initCurFields-' + element.value.id)
 }
 
-/** 将表格阈值配置转换为富文本字段的前景色和背景色。 */
+/** 将表格阈值配置转换为富文本字段的前景色和背景色 */
 const conditionAdaptor = (chart: Chart) => {
   if (!chart || !chart.senior) {
     return
@@ -794,15 +794,15 @@ const conditionAdaptor = (chart: Chart) => {
   return res
 }
 
-/** 传递给富文本编辑器的画布缩放变量。 */
+/** 传递给富文本编辑器的画布缩放变量 */
 const richTextStyle = computed(() => [{ '--crest-canvas-scale': props.scale }])
 
-/** 组件挂载后初始化编辑器并渲染当前图表数据。 */
+/** 组件挂载后初始化编辑器并渲染当前图表数据 */
 onMounted(() => {
   viewInit()
 })
 
-/** 暴露图表渲染和取数方法给父组件调用。 */
+/** 暴露图表渲染和取数方法给父组件调用 */
 defineExpose({
   calcData,
   renderChart

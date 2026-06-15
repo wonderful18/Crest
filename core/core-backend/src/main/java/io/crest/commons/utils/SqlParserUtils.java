@@ -29,7 +29,7 @@ import java.util.*;
 
 import static io.crest.chart.manage.ChartDataManage.START_END_SEPARATOR;
 
-// 处理 SQL 变量默认值、系统变量和预编译参数。
+// 处理 SQL 变量默认值、系统变量和预编译参数
 public class SqlParserUtils {
     private static final String CREST_PARAM_PREFIX = "$CREST_PARAM{";
     public static final String SQL_PARAM_PREFIX = "$[";
@@ -42,12 +42,12 @@ public class SqlParserUtils {
     };
     private List<SqlVariableDetails> defaultsSqlVariableDetails = new ArrayList<>();
 
-    // 用变量默认值和用户上下文替换 SQL 占位符。
+    // 用变量默认值和用户上下文替换 SQL 占位符
     public String handleVariableDefaultValue(String sql, String sqlVariableDetails, boolean isEdit, boolean isFromDataSet, List<SqlVariableDetails> parameters, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, PluginManageApi pluginManage, UserFormVO userEntity) {
         return handleVariableDefaultValueWithPreparedParams(sql, sqlVariableDetails, isEdit, isFromDataSet, parameters, isCross, dsMap, pluginManage, userEntity).getSql();
     }
 
-    // 替换 SQL 占位符并返回可绑定的预编译参数。
+    // 替换 SQL 占位符并返回可绑定的预编译参数
     public SqlVariableHandleResult handleVariableDefaultValueWithPreparedParams(String sql, String sqlVariableDetails, boolean isEdit, boolean isFromDataSet, List<SqlVariableDetails> parameters, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, PluginManageApi pluginManage, UserFormVO userEntity) {
         DatasourceSchemaDTO ds = dsMap.entrySet().iterator().next().getValue();
         if (StringUtils.isEmpty(sql)) {
@@ -205,7 +205,7 @@ public class SqlParserUtils {
         return result;
     }
 
-    // 查找指定分隔符包裹的变量片段。
+    // 查找指定分隔符包裹的变量片段
     private static List<DelimitedToken> findDelimitedTokens(String text, String prefix, char suffix) {
         List<DelimitedToken> tokens = new ArrayList<>();
         if (StringUtils.isEmpty(text) || StringUtils.isEmpty(prefix)) {
@@ -229,7 +229,7 @@ public class SqlParserUtils {
         return tokens;
     }
 
-    // 判断系统变量标识是否允许参与替换。
+    // 判断系统变量标识是否允许参与替换
     private static boolean isParams(String paramId) {
         if (Arrays.asList("sysParams.userId", "sysParams.userEmail", "sysParams.userName", "sysParams.userPhone").contains(paramId)) {
             return true;
@@ -248,7 +248,7 @@ public class SqlParserUtils {
     }
 
 
-    // 按变量名查找 SQL 变量配置。
+    // 按变量名查找 SQL 变量配置
     private SqlVariableDetails findSqlVariableDetail(List<SqlVariableDetails> sqlVariableDetails, String variableName) {
         if (CollectionUtils.isEmpty(sqlVariableDetails)) {
             return null;
@@ -261,7 +261,7 @@ public class SqlParserUtils {
         return null;
     }
 
-    // 判断变量占位符是否已被单引号包裹。
+    // 判断变量占位符是否已被单引号包裹
     private boolean isQuotedVariable(String sqlItem, int start, int end) {
         return start > 0
                 && end < sqlItem.length()
@@ -269,7 +269,7 @@ public class SqlParserUtils {
                 && sqlItem.charAt(end) == '\'';
     }
 
-    // 构建用户传入变量的预编译 SQL 片段。
+    // 构建用户传入变量的预编译 SQL 片段
     private PreparedSqlFragment buildPreparedSqlFragment(SqlVariableDetails sqlVariableDetails) {
         List<TableFieldWithValue> values = new ArrayList<>();
         List<String> replacements = new ArrayList<>();
@@ -281,7 +281,7 @@ public class SqlParserUtils {
         return new PreparedSqlFragment(String.join(",", replacements), values);
     }
 
-    // 构建默认变量值的预编译 SQL 片段。
+    // 构建默认变量值的预编译 SQL 片段
     private PreparedSqlFragment buildPreparedSqlFragmentForDefaultValue(SqlVariableDetails sqlVariableDetails) {
         SqlVariableDetails defaultValueDetail = new SqlVariableDetails();
         defaultValueDetail.setVariableName(sqlVariableDetails.getVariableName());
@@ -293,7 +293,7 @@ public class SqlParserUtils {
         return buildPreparedSqlFragment(defaultValueDetail);
     }
 
-    // 解析变量值并按字段类型转换日期范围值。
+    // 解析变量值并按字段类型转换日期范围值
     private List<String> resolvePreparedValues(SqlVariableDetails sqlVariableDetails) {
         if (Strings.CS.equals(sqlVariableDetails.getOperator(), "in")) {
             if (sqlVariableDetails.getFieldType() == 1) {
@@ -321,7 +321,7 @@ public class SqlParserUtils {
         return CollectionUtils.isEmpty(sqlVariableDetails.getValue()) ? Collections.emptyList() : Collections.singletonList(sqlVariableDetails.getValue().get(0));
     }
 
-    // 将变量值转换为引擎可绑定字段值。
+    // 将变量值转换为引擎可绑定字段值
     private TableFieldWithValue buildPreparedValue(SqlVariableDetails sqlVariableDetails, String value) {
         TableFieldWithValue tableFieldWithValue = new TableFieldWithValue();
         tableFieldWithValue.setFiledName(sqlVariableDetails.getVariableName());
@@ -357,15 +357,15 @@ public class SqlParserUtils {
         return tableFieldWithValue;
     }
 
-    // 记录分隔符变量片段的位置和内容。
+    // 记录分隔符变量片段的位置和内容
     private record DelimitedToken(int start, int end, String content) {
     }
 
-    // 记录预编译替换片段及其绑定值。
+    // 记录预编译替换片段及其绑定值
     private record PreparedSqlFragment(String replacement, List<TableFieldWithValue> tableFieldWithValues) {
     }
 
-    // 将单值系统变量转换为 SQL 字面量。
+    // 将单值系统变量转换为 SQL 字面量
     private String handleSubstitutedSql(String sysVariableId) {
         if (userEntity != null) {
             if (sysVariableId.equalsIgnoreCase("sysParams.userId")) {
@@ -404,7 +404,7 @@ public class SqlParserUtils {
     }
 
 
-    // 将多值系统变量转换为 IN 条件字面量。
+    // 将多值系统变量转换为 IN 条件字面量
     private String handleSubstitutedSqlForIn(String sysVariableId) {
         if (userEntity != null) {
             for (SysVariableValueItem variable : userEntity.getVariables()) {

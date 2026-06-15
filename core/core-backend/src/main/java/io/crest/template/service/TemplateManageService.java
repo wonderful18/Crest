@@ -40,34 +40,34 @@ import static io.crest.constant.StaticResourceConstants.UPLOAD_URL_PREFIX;
 public class TemplateManageService implements TemplateManageApi {
 
     /**
-     * 模板主表 Mapper。
+     * 模板主表 Mapper
      */
     @Resource
     private VisualizationTemplateMapper templateMapper;
 
     /**
-     * 模板分类 Mapper。
+     * 模板分类 Mapper
      */
     @Resource
     private VisualizationTemplateCategoryMapper templateCategoryMapper;
     /**
-     * 模板与分类关系 Mapper。
+     * 模板与分类关系 Mapper
      */
     @Resource
     private VisualizationTemplateCategoryMapMapper categoryMapMapper;
     /**
-     * 模板扩展查询 Mapper。
+     * 模板扩展查询 Mapper
      */
     @Resource
     private ExtVisualizationTemplateMapper extTemplateMapper;
     /**
-     * 静态资源服务，用于保存模板依赖资源。
+     * 静态资源服务，用于保存模板依赖资源
      */
     @Resource
     private StaticResourceServer staticResourceServer;
 
     /**
-     * 查询模板树或模板列表。
+     * 查询模板树或模板列表
      */
     @Override
     public List<TemplateManageDTO> templateList(TemplateManageRequest request) {
@@ -80,7 +80,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 递归补全模板目录树子节点。
+     * 递归补全模板目录树子节点
      */
     public void getTreeChildren(List<TemplateManageDTO> parentTemplateList, String dvType) {
         Optional.ofNullable(parentTemplateList).ifPresent(parent -> parent.forEach(parentTemplate -> {
@@ -91,7 +91,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 查询系统模板类型列表。
+     * 查询系统模板类型列表
      */
     public List<TemplateManageDTO> getSystemTemplateType(TemplateManageRequest request) {
         return extTemplateMapper.findTemplateList(request);
@@ -99,7 +99,7 @@ public class TemplateManageService implements TemplateManageApi {
 
 
     /**
-     * 保存模板分类或模板节点，并同步模板静态资源。
+     * 保存模板分类或模板节点，并同步模板静态资源
      */
     @Transactional
     @Override
@@ -190,7 +190,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 按操作类型校验模板名称是否重复。
+     * 按操作类型校验模板名称是否重复
      */
     public String nameCheck(String optType, String name, String id) {
         QueryWrapper<VisualizationTemplate> wrapper = new QueryWrapper<>();
@@ -209,7 +209,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 校验指定分类下模板名称是否重复。
+     * 校验指定分类下模板名称是否重复
      */
     @Override
     public String categoryTemplateNameCheck(TemplateManageRequest request) {
@@ -222,7 +222,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 批量校验分类下模板名称是否重复。
+     * 批量校验分类下模板名称是否重复
      */
     @Override
     public String checkCategoryTemplateBatchNames(TemplateManageRequest request) {
@@ -235,7 +235,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 按操作类型校验分类名称是否重复。
+     * 按操作类型校验分类名称是否重复
      */
     public String categoryNameCheck(String optType, String name, String id) {
         QueryWrapper<VisualizationTemplateCategory> wrapper = new QueryWrapper<>();
@@ -254,7 +254,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 按请求对象校验模板名称。
+     * 按请求对象校验模板名称
      */
     @Override
     public String nameCheck(TemplateManageRequest request) {
@@ -262,7 +262,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 从指定分类中删除模板引用，必要时删除模板本体。
+     * 从指定分类中删除模板引用，必要时删除模板本体
      */
     @Override
     public void delete(String id, String categoryId) {
@@ -272,7 +272,7 @@ public class TemplateManageService implements TemplateManageApi {
         queryWrapper.eq("template_id", id);
         queryWrapper.eq("category_id", categoryId);
         categoryMapMapper.delete(queryWrapper);
-        // 如果是最后一个分类引用，则实际模板也需要删除。
+        // 如果是最后一个分类引用，则实际模板也需要删除
         Long result = extTemplateMapper.checkRepeatTemplateId(categoryId, id);
         if (result == 0) {
             templateMapper.deleteById(id);
@@ -280,7 +280,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 删除模板分类，存在共享模板时返回重复标识。
+     * 删除模板分类，存在共享模板时返回重复标识
      */
     @Override
     public String deleteCategory(String id) {
@@ -300,7 +300,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 查询单个模板详情及其分类列表。
+     * 查询单个模板详情及其分类列表
      */
     @Override
     public VisualizationTemplateVO findOne(String templateId) {
@@ -318,7 +318,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 查询一组模板共同关联的分类。
+     * 查询一组模板共同关联的分类
      */
     @Override
     public List<String> findCategoriesByTemplateIds(TemplateManageRequest request) throws Exception {
@@ -332,7 +332,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 按条件查询模板列表。
+     * 按条件查询模板列表
      */
     @Override
     public List<TemplateManageDTO> find(TemplateManageRequest request) {
@@ -340,7 +340,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 按条件查询模板分类。
+     * 按条件查询模板分类
      */
     @Override
     public List<TemplateManageDTO> findCategories(TemplateManageRequest request) {
@@ -348,7 +348,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 批量更新模板所属分类。
+     * 批量更新模板所属分类
      */
     @Override
     public void batchUpdate(TemplateManageBatchRequest request) {
@@ -367,7 +367,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     /**
-     * 批量从分类中删除模板引用。
+     * 批量从分类中删除模板引用
      */
     @Override
     public void batchDelete(TemplateManageBatchRequest request) {

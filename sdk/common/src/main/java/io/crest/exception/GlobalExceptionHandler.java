@@ -20,7 +20,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
- * 统一处理控制器层抛出的业务异常和系统异常。
+ * 统一处理控制器层抛出的业务异常和系统异常
  */
 @RestControllerAdvice
 @SuppressWarnings("deprecation")
@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
 
 
     /**
-     * 处理参数校验失败异常并返回本地化提示。
+     * 处理参数校验失败异常并返回本地化提示
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResultMessage MethodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e) {
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理业务异常并保留业务错误码。
+     * 处理业务异常并保留业务错误码
      */
     @ExceptionHandler(CrestException.class)
     public ResultMessage crestExceptionHandler(CrestException e) {
@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理客户端主动断开连接的异常。
+     * 处理客户端主动断开连接的异常
      */
     @ExceptionHandler(ClientAbortException.class)
     public void clientAbortExceptionHandler(ClientAbortException e) {
@@ -57,7 +57,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理异步请求通道不可用的异常。
+     * 处理异步请求通道不可用的异常
      */
     @ExceptionHandler(AsyncRequestNotUsableException.class)
     public void asyncRequestNotUsableExceptionHandler(AsyncRequestNotUsableException e) {
@@ -65,7 +65,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理静态资源或接口资源不存在的异常。
+     * 处理静态资源或接口资源不存在的异常
      */
     @ExceptionHandler(NoResourceFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -76,7 +76,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理请求方法不被当前接口支持的异常。
+     * 处理请求方法不被当前接口支持的异常
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
@@ -86,7 +86,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理上传文件超过限制的异常。
+     * 处理上传文件超过限制的异常
      */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
@@ -96,7 +96,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理空指针异常中可识别的未登录场景。
+     * 处理空指针异常中可识别的未登录场景
      */
     @ExceptionHandler(NullPointerException.class)
     public ResultMessage noUserExceptionHandler(Exception e) {
@@ -110,7 +110,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理未被更具体处理器捕获的系统异常。
+     * 处理未被更具体处理器捕获的系统异常
      */
     @ExceptionHandler(Exception.class)
     public ResultMessage exceptionHandler(Exception e) {

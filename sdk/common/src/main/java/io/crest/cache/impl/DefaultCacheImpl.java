@@ -17,7 +17,7 @@ import javax.cache.expiry.ModifiedExpiryPolicy;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 基于 JCache 的默认缓存服务实现。
+ * 基于 JCache 的默认缓存服务实现
  */
 @ConditionalOnExpression("'${spring.cache.type}'.equals('jcache')")
 @Component("crestCacheService")
@@ -31,7 +31,7 @@ public class DefaultCacheImpl implements CrestCacheService {
 
 
     /**
-     * 写入指定缓存键，并按传入时间配置过期策略。
+     * 写入指定缓存键，并按传入时间配置过期策略
      */
     @Override
     public void put(String cacheName, String key, Object value, Long expTime, TimeUnit unit) {
@@ -52,7 +52,7 @@ public class DefaultCacheImpl implements CrestCacheService {
     }
 
     /**
-     * 获取指定缓存键对应的值。
+     * 获取指定缓存键对应的值
      */
     @Override
     public Object get(String cacheName, String key) {
@@ -64,7 +64,7 @@ public class DefaultCacheImpl implements CrestCacheService {
     }
 
     /**
-     * 判断指定缓存区域是否存在。
+     * 判断指定缓存区域是否存在
      */
     @Override
     public boolean cacheExist(String cacheName) {
@@ -72,7 +72,7 @@ public class DefaultCacheImpl implements CrestCacheService {
     }
 
     /**
-     * 判断指定缓存键是否存在。
+     * 判断指定缓存键是否存在
      */
     @Override
     public boolean keyExist(String cacheName, String key) {
@@ -84,7 +84,7 @@ public class DefaultCacheImpl implements CrestCacheService {
     }
 
     /**
-     * 构建默认的一分钟过期缓存配置。
+     * 构建默认的一分钟过期缓存配置
      */
     private MutableConfiguration<String, Object> defaultConfiguration() {
         MutableConfiguration<String, Object> configuration =
@@ -96,7 +96,7 @@ public class DefaultCacheImpl implements CrestCacheService {
     }
 
     /**
-     * 根据过期时间构建缓存配置。
+     * 根据过期时间构建缓存配置
      */
     private MutableConfiguration<String, Object> configuration(Long expTime, TimeUnit unit) {
         if (expTime <= 0) return defaultConfiguration();
@@ -112,7 +112,7 @@ public class DefaultCacheImpl implements CrestCacheService {
     }
 
     /**
-     * 移除指定缓存键。
+     * 移除指定缓存键
      */
     @Override
     public void keyRemove(String cacheName, String key) {
@@ -123,7 +123,7 @@ public class DefaultCacheImpl implements CrestCacheService {
     }
 
     /**
-     * 初始化底层 JCache 缓存管理器。
+     * 初始化底层 JCache 缓存管理器
      */
     @PostConstruct
     public void init() {

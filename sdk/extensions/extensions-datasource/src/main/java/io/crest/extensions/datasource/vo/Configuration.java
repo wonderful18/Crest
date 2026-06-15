@@ -11,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 描述通用数据源连接配置及 JDBC URL 解析能力。
+ * 描述通用数据源连接配置及 JDBC URL 解析能力
  */
 @Data
 @SuppressWarnings("deprecation")
@@ -57,7 +57,7 @@ public class Configuration {
 
 
     /**
-     * 获取实际连接主机，启用 SSH 时使用本地隧道地址。
+     * 获取实际连接主机，启用 SSH 时使用本地隧道地址
      */
     public String getLHost(){
         if(useSSH){
@@ -68,7 +68,7 @@ public class Configuration {
     }
 
     /**
-     * 获取实际连接端口，启用 SSH 时使用本地转发端口。
+     * 获取实际连接端口，启用 SSH 时使用本地转发端口
      */
     public Integer getLPort(){
         if(useSSH && lPort != null){
@@ -83,7 +83,7 @@ public class Configuration {
     private static final Pattern DB_NAME_PATTERN = Pattern.compile("//[^/]+/([^?]+)");
     private Map<String, String> parameters = new HashMap<>();
     /**
-     * 从 JDBC URL 中解析主机和端口。
+     * 从 JDBC URL 中解析主机和端口
      */
     protected void parseHostAndPort(String jdbcUrl) {
         Matcher matcher = HOST_PORT_PATTERN.matcher(jdbcUrl);
@@ -96,7 +96,7 @@ public class Configuration {
     }
 
     /**
-     * 解析 JDBC URL 查询参数到参数映射。
+     * 解析 JDBC URL 查询参数到参数映射
      */
     protected void parseParameters(String jdbcUrl) {
         int paramStart = jdbcUrl.indexOf('?');
@@ -110,7 +110,7 @@ public class Configuration {
     }
 
     /**
-     * 将常见连接参数转换为配置字段。
+     * 将常见连接参数转换为配置字段
      */
     protected void convertParameters(){
         if (ObjectUtils.isEmpty(parameters)) {
@@ -129,7 +129,7 @@ public class Configuration {
     }
 
     /**
-     * 从 JDBC URL 中解析数据库名称。
+     * 从 JDBC URL 中解析数据库名称
      */
     protected void convertDatabase(String jdbcUrl) {
         Matcher matcher = databasePattern().matcher(jdbcUrl);
@@ -139,14 +139,14 @@ public class Configuration {
     }
 
     /**
-     * 返回用于解析数据库名称的正则表达式。
+     * 返回用于解析数据库名称的正则表达式
      */
     protected Pattern databasePattern() {
         return DB_NAME_PATTERN;
     }
 
     /**
-     * 当使用 JDBC URL 模式时解析并回填连接配置。
+     * 当使用 JDBC URL 模式时解析并回填连接配置
      */
     public void convertJdbcUrl() {
         if (StringUtils.isNotBlank(urlType) && Strings.CI.equalsAny(this.urlType, "jdbcUrl")) {

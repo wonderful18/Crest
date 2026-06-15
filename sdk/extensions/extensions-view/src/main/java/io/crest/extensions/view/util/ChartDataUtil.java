@@ -12,12 +12,12 @@ import java.math.RoundingMode;
 import java.util.*;
 
 /**
- * 图表数据转换工具，负责排序、脱敏和 AntV 数据结构转换。
+ * 图表数据转换工具，负责排序、脱敏和 AntV 数据结构转换
  */
 @SuppressWarnings("deprecation")
 public class ChartDataUtil {
     /**
-     * 按图表排序优先级对查询结果排序。
+     * 按图表排序优先级对查询结果排序
      */
     public static List<String[]> resultCustomSort(List<ChartViewFieldDTO> xAxis,List<ChartViewFieldDTO> yAxis, List<SortAxis> sortPriority, List<String[]> data) {
         List<String[]> res = new ArrayList<>(data);
@@ -90,7 +90,7 @@ public class ChartDataUtil {
     }
 
     /**
-     * 按自定义值顺序调整指定列的数据行顺序。
+     * 按自定义值顺序调整指定列的数据行顺序
      */
     public static List<String[]> customSort(List<String> custom, List<String[]> data, int index) {
         List<String[]> res = new ArrayList<>();
@@ -132,7 +132,7 @@ public class ChartDataUtil {
     }
 
     /**
-     * 将查询结果转换为普通表格数据结构，并处理列脱敏。
+     * 将查询结果转换为普通表格数据结构，并处理列脱敏
      */
     public static Map<String, Object> transTableNormal(List<ChartViewFieldDTO> fields, ChartViewDTO view, List<String[]> data, Map<String, ColumnPermissionItem> desensitizationList) {
         Map<String, Object> map = new TreeMap<>();
@@ -160,7 +160,7 @@ public class ChartDataUtil {
     }
 
     /**
-     * 按列权限规则生成脱敏后的字符串。
+     * 按列权限规则生成脱敏后的字符串
      */
     public static String desensitizationValue(ColumnPermissionItem columnPermissionItem, String originStr) {
         String desensitizationStr = "";
@@ -221,7 +221,7 @@ public class ChartDataUtil {
     }
 
     /**
-     * 将查询结果转换为通用图表数据结构。
+     * 将查询结果转换为通用图表数据结构
      */
     public static Map<String, Object> transChartData(List<ChartViewFieldDTO> xAxis, List<ChartViewFieldDTO> yAxis, ChartViewDTO view, List<String[]> data, boolean isDrill) {
         Map<String, Object> map = new HashMap<>();
@@ -282,7 +282,7 @@ public class ChartDataUtil {
     }
 
     /**
-     * 计算动态标签和提示字段值。
+     * 计算动态标签和提示字段值
      */
     private static void buildDynamicValue(ChartViewDTO view, AxisChartDataAntVDTO axisChartDataDTO, String[] row, int size, int extSize) {
         List<DynamicValueDTO> dynamicLabelValue = new ArrayList<>();

@@ -31,23 +31,23 @@ import java.util.stream.Collectors;
 @Component
 @SuppressWarnings("unchecked")
 /**
- * 符号地图图表处理器。
+ * 符号地图图表处理器
  */
 public class SymbolicMapHandler extends GroupChartHandler {
     /**
-     * 数据集明细数据查询服务。
+     * 数据集明细数据查询服务
      */
     @Resource
     private DatasetDataManage datasetDataManage;
 
     /**
-     * 当前处理器对应的图表类型。
+     * 当前处理器对应的图表类型
      */
     @Getter
     private String type = "symbolic-map";
 
     /**
-     * 将气泡字段写入轴格式化结果。
+     * 将气泡字段写入轴格式化结果
      */
     @Override
     public AxisFormatResult formatAxis(ChartViewDTO view) {
@@ -58,7 +58,7 @@ public class SymbolicMapHandler extends GroupChartHandler {
 
 
     /**
-     * 按普通数据和明细数据组装符号地图结果。
+     * 按普通数据和明细数据组装符号地图结果
      */
     private Map<String, Object> customBuildResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data, List<ChartViewFieldDTO> detailFields, List<String[]> detailData) {
         var xAxis = formatResult.getAxisMap().get(ChartAxis.xAxis);
@@ -68,7 +68,7 @@ public class SymbolicMapHandler extends GroupChartHandler {
     }
 
     /**
-     * 计算符号地图数据，并补充地图点位的明细字段数据。
+     * 计算符号地图数据，并补充地图点位的明细字段数据
      */
     @Override
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
@@ -142,7 +142,7 @@ public class SymbolicMapHandler extends GroupChartHandler {
     }
 
     /**
-     * 将符号地图计算结果写回视图对象。
+     * 将符号地图计算结果写回视图对象
      */
     @Override
     public ChartViewDTO buildChart(ChartViewDTO view, ChartCalcDataResult calcResult, AxisFormatResult formatResult, CustomFilterResult filterResult) {

@@ -75,7 +75,7 @@ import RealTimeTab from '@/components/data-visualization/RealTimeTab.vue'
 import bulletGraphOrigin from '@/assets/svg/bullet-graph-origin.svg'
 import { syncViewTitle } from '@/utils/canvasUtils'
 import { useI18n } from '@/hooks/web/useI18n'
-// 更多操作下拉实例。
+// 更多操作下拉实例
 const dropdownMore = ref(null)
 const lockStore = lockStoreWithOut()
 const { t } = useI18n()
@@ -88,7 +88,7 @@ const { areaData } = storeToRefs(composeStore)
 
 const { curComponent, canvasViewInfo } = storeToRefs(dvMainStore)
 
-// 接收图层列表位置和组件数据。
+// 接收图层列表位置和组件数据
 const props = defineProps({
   tabPosition: {
     type: String,
@@ -103,23 +103,23 @@ const props = defineProps({
 
 const { componentData } = toRefs(props)
 
-// 按视觉倒序获取组件。
+// 按视觉倒序获取组件
 const getComponent = index => {
   return componentData.value[componentData.value.length - 1 - index]
 }
-// 将视觉索引转换为真实组件索引。
+// 将视觉索引转换为真实组件索引
 const transformIndex = index => {
   return componentData.value.length - 1 - index
 }
 
-// 选择当前图层组件。
+// 选择当前图层组件
 const onClick = index => {
   setCurComponent(index)
-  // 点击图层时清理框选区域。
+  // 点击图层时清理框选区域
   areaData.value.components.splice(0, areaData.value.components.length)
 }
 
-// 设置当前选中组件。
+// 设置当前选中组件
 const setCurComponent = index => {
   dvMainStore.setCurComponent({ component: componentData.value[index], index })
 }
@@ -129,7 +129,7 @@ let editComponentId = ref('')
 let inputName = ref('')
 let nameInput = ref(null)
 let curEditComponent = null
-// 进入图层名称编辑状态。
+// 进入图层名称编辑状态
 const editComponentName = item => {
   curEditComponent = curComponent.value
   editComponentId.value = `#component-label-${item.id}`
@@ -139,7 +139,7 @@ const editComponentName = item => {
     nameInput.value.focus()
   })
 }
-// 保存图层名称并退出编辑状态。
+// 保存图层名称并退出编辑状态
 const closeEditComponentName = () => {
   nameEdit.value = false
   if (!inputName.value || !inputName.value.trim()) {
@@ -158,7 +158,7 @@ const closeEditComponentName = () => {
   curEditComponent = null
 }
 
-// 锁定当前组件。
+// 锁定当前组件
 const lock = () => {
   setTimeout(() => {
     lockStore.lock()
@@ -166,7 +166,7 @@ const lock = () => {
   })
 }
 
-// 解锁当前组件。
+// 解锁当前组件
 const unlock = () => {
   setTimeout(() => {
     lockStore.unlock()
@@ -174,7 +174,7 @@ const unlock = () => {
   })
 }
 
-// 隐藏当前组件。
+// 隐藏当前组件
 const hideComponent = () => {
   setTimeout(() => {
     layerStore.hideComponent()
@@ -182,7 +182,7 @@ const hideComponent = () => {
   })
 }
 
-// 显示当前组件。
+// 显示当前组件
 const showComponent = () => {
   setTimeout(() => {
     layerStore.showComponent()
@@ -190,15 +190,15 @@ const showComponent = () => {
   })
 }
 
-// 拖拽结束后同步倒序图层顺序。
+// 拖拽结束后同步倒序图层顺序
 const dragOnEnd = ({ oldIndex, newIndex }) => {
   const source = componentData.value[newIndex]
   const comLength = componentData.value.length
-  // 先还原拖拽库调整过的数组顺序。
+  // 先还原拖拽库调整过的数组顺序
   componentData.value.splice(newIndex, 1)
   componentData.value.splice(oldIndex, 0, source)
   const target = componentData.value[comLength - 1 - oldIndex]
-  // 再按图层视觉倒序移动真实目标组件。
+  // 再按图层视觉倒序移动真实目标组件
   componentData.value.splice(comLength - 1 - oldIndex, 1)
   componentData.value.splice(comLength - 1 - newIndex, 0, target)
   dvMainStore.setCurComponent({ component: target, index: transformIndex(comLength - oldIndex) })
@@ -260,7 +260,7 @@ const iconMap = {
   'circle-packing-origin': circlePackingOrigin,
   'bullet-graph-origin': bulletGraphOrigin
 }
-// 根据组件类型解析图层图标。
+// 根据组件类型解析图层图标
 const getIconName = item => {
   if (item.component === 'UserView') {
     const viewInfo = canvasViewInfo.value[item.id]
@@ -270,7 +270,7 @@ const getIconName = item => {
   }
 }
 
-// 关闭右键菜单并按需进入重命名状态。
+// 关闭右键菜单并按需进入重命名状态
 const menuAsideClose = (param, index) => {
   const iconDom = document.getElementById('close-button')
   if (iconDom) {
@@ -283,10 +283,10 @@ const menuAsideClose = (param, index) => {
   }
 }
 
-// 拦截原生右键菜单。
+// 拦截原生右键菜单
 const handleContextMenu = e => {
   e.preventDefault()
-  // 记录鼠标点击位置以定位临时菜单容器。
+  // 记录鼠标点击位置以定位临时菜单容器
   const x = e.clientX
   const y = e.clientY
   const customContextMenu = document.createElement('div')
@@ -294,15 +294,15 @@ const handleContextMenu = e => {
   customContextMenu.style.left = x + 'px'
   customContextMenu.style.top = y + 'px'
 
-  // 将临时菜单容器添加到页面。
+  // 将临时菜单容器添加到页面
   document.body.appendChild(customContextMenu)
 
-  // 点击临时菜单后清理容器。
+  // 点击临时菜单后清理容器
   customContextMenu.addEventListener('click', () => {
     document.body.removeChild(customContextMenu)
   })
 }
-// 切换分组或标签页图层展开状态。
+// 切换分组或标签页图层展开状态
 const expandClick = component => {
   component['expand'] = !component['expand']
 }

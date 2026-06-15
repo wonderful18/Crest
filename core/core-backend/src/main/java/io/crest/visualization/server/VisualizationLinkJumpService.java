@@ -39,74 +39,74 @@ import java.util.stream.Collectors;
 public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
 
     /**
-     * 联动扩展 Mapper，用于查询图表字段。
+     * 联动扩展 Mapper，用于查询图表字段
      */
     @Resource
     private ExtVisualizationLinkageMapper extVisualizationLinkageMapper;
 
     /**
-     * 跳转扩展 Mapper，封装编辑态与快照态复杂查询。
+     * 跳转扩展 Mapper，封装编辑态与快照态复杂查询
      */
     @Resource
     private ExtVisualizationLinkJumpMapper extVisualizationLinkJumpMapper;
 
     /**
-     * 编辑态跳转主表 Mapper。
+     * 编辑态跳转主表 Mapper
      */
     @Resource
     private VisualizationLinkJumpMapper visualizationLinkJumpMapper;
 
     /**
-     * 编辑态跳转明细 Mapper。
+     * 编辑态跳转明细 Mapper
      */
     @Resource
     private VisualizationLinkJumpInfoMapper visualizationLinkJumpInfoMapper;
 
     /**
-     * 编辑态跳转目标图表 Mapper。
+     * 编辑态跳转目标图表 Mapper
      */
     @Resource
     private VisualizationLinkJumpTargetViewInfoMapper visualizationLinkJumpTargetViewInfoMapper;
 
     /**
-     * 快照态跳转主表 Mapper。
+     * 快照态跳转主表 Mapper
      */
     @Resource
     private SnapshotVisualizationLinkJumpMapper snapshotVisualizationLinkJumpMapper;
 
     /**
-     * 快照态跳转明细 Mapper。
+     * 快照态跳转明细 Mapper
      */
     @Resource
     private SnapshotVisualizationLinkJumpInfoMapper snapshotVisualizationLinkJumpInfoMapper;
 
     /**
-     * 快照态跳转目标图表 Mapper。
+     * 快照态跳转目标图表 Mapper
      */
     @Resource
     private SnapshotVisualizationLinkJumpTargetViewInfoMapper snapshotVisualizationLinkJumpTargetViewInfoMapper;
 
     /**
-     * 编辑态图表 Mapper。
+     * 编辑态图表 Mapper
      */
     @Resource
     private CoreChartViewMapper coreChartViewMapper;
 
     /**
-     * 快照态图表 Mapper。
+     * 快照态图表 Mapper
      */
     @Resource
     private SnapshotCoreChartViewMapper snapshotCoreChartViewMapper;
 
 
     /**
-     * 可视化主信息 Mapper。
+     * 可视化主信息 Mapper
      */
     @Resource
     private DataVisualizationInfoMapper dataVisualizationInfoMapper;
 
     /**
-     * 查询指定图表可用于跳转映射的数据集字段。
+     * 查询指定图表可用于跳转映射的数据集字段
      */
     @Override
     public List<DatasetTableFieldDTO> getTableFieldWithViewId(Long viewId) {
@@ -114,7 +114,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     }
 
     /**
-     * 查询仪表板或大屏的组件跳转配置。
+     * 查询仪表板或大屏的组件跳转配置
      */
     @CrestLinkPermit
     @Override
@@ -149,7 +149,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     }
 
     /**
-     * 查询指定图表的跳转配置。
+     * 查询指定图表的跳转配置
      */
     @Override
     public VisualizationLinkJumpDTO queryWithViewId(Long dvId, Long viewId) {
@@ -157,7 +157,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     }
 
     /**
-     * 更新图表跳转设置，并重建快照态跳转关系。
+     * 更新图表跳转设置，并重建快照态跳转关系
      */
     @Transactional
     @Override
@@ -196,7 +196,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     }
 
     /**
-     * 查询目标可视化接收到的跳转配置。
+     * 查询目标可视化接收到的跳转配置
      */
     @CrestLinkPermit("#p0.targetDvId")
     @Override
@@ -211,7 +211,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     }
 
     /**
-     * 查询大屏内图表明细和外部参数跳转信息。
+     * 查询大屏内图表明细和外部参数跳转信息
      */
     @Override
     public VisualizationComponentDTO viewTableDetailList(Long dvId) {
@@ -233,7 +233,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     }
 
     /**
-     * 更新图表跳转启用状态并返回最新配置。
+     * 更新图表跳转启用状态并返回最新配置
      */
     @Override
     public VisualizationLinkJumpBaseResponse updateJumpSetActive(VisualizationLinkJumpBaseRequest request) {
@@ -245,7 +245,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     }
 
     /**
-     * 删除指定图表的跳转设置。
+     * 删除指定图表的跳转设置
      */
     @Override
     public void deleteJumpSet(VisualizationLinkJumpDTO jumpDTO) {

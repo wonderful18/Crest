@@ -24,17 +24,17 @@ import java.util.stream.Collectors;
 @Component
 @SuppressWarnings("unchecked")
 /**
- * 双轴混合图处理器。
+ * 双轴混合图处理器
  */
 public class MixHandler extends YoyChartHandler {
     /**
-     * 当前处理器对应的图表类型。
+     * 当前处理器对应的图表类型
      */
     @Getter
     private final String type = "chart-mix";
 
     /**
-     * 分别整理混合图左轴、右轴和公共维度的轴配置。
+     * 分别整理混合图左轴、右轴和公共维度的轴配置
      */
     @Override
     public AxisFormatResult formatAxis(ChartViewDTO view) {
@@ -65,7 +65,7 @@ public class MixHandler extends YoyChartHandler {
     }
 
     /**
-     * 按左右轴标记构建混合图单侧数据结构。
+     * 按左右轴标记构建混合图单侧数据结构
      */
     @Override
     public Map<String, Object> buildNormalResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
@@ -90,7 +90,7 @@ public class MixHandler extends YoyChartHandler {
     }
 
     /**
-     * 分别计算混合图左轴和右轴数据，并保留两侧结果。
+     * 分别计算混合图左轴和右轴数据，并保留两侧结果
      */
     @Override
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
@@ -217,7 +217,7 @@ public class MixHandler extends YoyChartHandler {
     }
 
     /**
-     * 合并左右轴计算结果并写回图表视图。
+     * 合并左右轴计算结果并写回图表视图
      */
     @Override
     public ChartViewDTO buildChart(ChartViewDTO view, ChartCalcDataResult calcResult, AxisFormatResult formatResult, CustomFilterResult filterResult) {

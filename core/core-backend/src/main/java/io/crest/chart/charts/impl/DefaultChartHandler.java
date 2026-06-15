@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 
 @Component
 @SuppressWarnings("unchecked")
-// 默认图表处理器，负责通用图表字段格式化、SQL 构建、结果组装和快速计算。
+// 默认图表处理器，负责通用图表字段格式化、SQL 构建、结果组装和快速计算
 public class DefaultChartHandler extends AbstractChartPlugin {
     public static Logger logger = LoggerFactory.getLogger(ChartDataManage.class);
     @Resource
@@ -66,13 +66,13 @@ public class DefaultChartHandler extends AbstractChartPlugin {
     @Autowired(required = false)
     public PluginManageApi pluginManage;
 
-    // 将默认处理器注册为 antv 下的兜底图表处理器。
+    // 将默认处理器注册为 antv 下的兜底图表处理器
     @PostConstruct
     public void init() {
         chartHandlerManager.registerChartHandler(this.getRender(), this.getType(), this);
     }
 
-    // 格式化默认图表轴字段，基础图表只保留 X 轴、Y 轴和下钻字段。
+    // 格式化默认图表轴字段，基础图表只保留 X 轴、Y 轴和下钻字段
     @Override
     public AxisFormatResult formatAxis(ChartViewDTO view) {
         var axisMap = new HashMap<ChartAxis, List<ChartViewFieldDTO>>();
@@ -84,7 +84,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return result;
     }
 
-    // 应用自定义过滤上下文，字段脱敏时同步移除不可见字段。
+    // 应用自定义过滤上下文，字段脱敏时同步移除不可见字段
     @Override
     public <T extends CustomFilterResult> T customFilter(ChartViewDTO view, List<ChartExtFilterDTO> filterList, AxisFormatResult formatResult) {
         var desensitizationList = (Map<String, ColumnPermissionItem>) formatResult.getContext().get("desensitizationList");
@@ -96,7 +96,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return (T) new CustomFilterResult(filterList, formatResult.getContext());
     }
 
-    // 填充数据源查询请求，包含跨数据源标记、数据源清单和字段值上下文。
+    // 填充数据源查询请求，包含跨数据源标记、数据源清单和字段值上下文
     protected void fillDatasourceRequest(DatasourceRequest datasourceRequest, boolean crossDs, Map<Long, DatasourceSchemaDTO> dsMap, Map<String, Object> sqlMap) {
         datasourceRequest.setIsCross(crossDs);
         datasourceRequest.setDsList(dsMap);
@@ -106,12 +106,12 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         }
     }
 
-    // 从 SQL 上下文中读取表字段和值信息。
+    // 从 SQL 上下文中读取表字段和值信息
     protected List<TableFieldWithValue> getTableFieldWithValues(Map<String, Object> sqlMap) {
         return (List<TableFieldWithValue>) sqlMap.get("tableFieldWithValues");
     }
 
-    // 将查询结果转换为图表通用数据结构。
+    // 将查询结果转换为图表通用数据结构
     public Map<String, Object> buildResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
         boolean isDrill = filterResult
                 .getFilterList()
@@ -123,7 +123,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return result;
     }
 
-    // 计算图表数据，完成 SQL 构建、数据查询、排序、快速计算和结果封装。
+    // 计算图表数据，完成 SQL 构建、数据查询、排序、快速计算和结果封装
     @Override
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         var dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
@@ -145,13 +145,13 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         datasourceRequest.setQuery(querySql);
         logger.debug("calcite chart sql: " + querySql);
         List<String[]> data = (List<String[]>) provider.fetchResultField(datasourceRequest).get("data");
-        // 查询结果按图表配置执行自定义排序。
+        // 查询结果按图表配置执行自定义排序
         data = ChartDataUtil.resultCustomSort(xAxis, yAxis, view.getSortPriority(), data);
-        // 对指标字段执行占比、累加和同环比等快速计算。
+        // 对指标字段执行占比、累加和同环比等快速计算
         var extStack = formatResult.getAxisMap().get(ChartAxis.extStack);
         var xAxisExt = formatResult.getAxisMap().get(ChartAxis.xAxisExt);
         quickCalc(xAxis, yAxis, xAxisExt, extStack, view.getType(), data);
-        // 数据重组逻辑允许具体图表处理器覆写。
+        // 数据重组逻辑允许具体图表处理器覆写
         var result = this.buildResult(view, formatResult, filterResult, data);
         T calcResult = (T) new ChartCalcDataResult();
         calcResult.setData(result);
@@ -161,14 +161,14 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return calcResult;
     }
 
-    // 将计算结果写回图表对象，表格导出和普通渲染使用不同数据结构。
+    // 将计算结果写回图表对象，表格导出和普通渲染使用不同数据结构
     @Override
     public ChartViewDTO buildChart(ChartViewDTO view, ChartCalcDataResult calcResult, AxisFormatResult formatResult, CustomFilterResult filterResult) {
         var desensitizationList = (Map<String, ColumnPermissionItem>) filterResult.getContext().get("desensitizationList");
         var allFields = (List<ChartViewFieldDTO>) filterResult.getContext().get("allFields");
         var xAxis = formatResult.getAxisMap().get(ChartAxis.xAxis);
         var yAxis = formatResult.getAxisMap().get(ChartAxis.yAxis);
-        // 表格导出场景只需要表格源数据，避免继续构建渲染数据。
+        // 表格导出场景只需要表格源数据，避免继续构建渲染数据
         var extStack = formatResult.getAxisMap().get(ChartAxis.extStack);
         if (CollectionUtils.isNotEmpty(extStack) && xAxis.size() > extStack.size()) {
             xAxis = xAxis.subList(0, xAxis.size() - extStack.size());
@@ -176,7 +176,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         if (view.getIsExcelExport()) {
             Map<String, Object> sourceInfo = ChartDataBuild.transTableNormal(xAxis, yAxis, view, calcResult.getOriginData(), extStack, desensitizationList);
             sourceInfo.put("sourceData", calcResult.getOriginData());
-            // 将汇总计算结果传递到导出数据中。
+            // 将汇总计算结果传递到导出数据中
             if (calcResult.getData() != null && calcResult.getData().get("customSumResult") != null) {
                 sourceInfo.put("customSumResult", calcResult.getData().get("customSumResult"));
             }
@@ -186,14 +186,14 @@ public class DefaultChartHandler extends AbstractChartPlugin {
 
         Map<String, Object> mapTableNormal = ChartDataBuild.transTableNormal(xAxis, yAxis, view, calcResult.getOriginData(), extStack, desensitizationList);
         var drillFilters = filterResult.getFilterList().stream().filter(f -> f.getFilterType() == 1).collect(Collectors.toList());
-        // 日期下钻展示时恢复原始值，避免前端拿到时间戳范围。
+        // 日期下钻展示时恢复原始值，避免前端拿到时间戳范围
         drillFilters.forEach(f -> {
             if (CollectionUtils.isNotEmpty(f.getOriginValue())) {
                 f.setValue(f.getOriginValue());
             }
         });
         var isDrill = CollectionUtils.isNotEmpty(drillFilters);
-        // 合并图表数据、表格源数据和动态辅助线。
+        // 合并图表数据、表格源数据和动态辅助线
         Map<String, Object> dataMap = new HashMap<>();
         dataMap.putAll(calcResult.getData());
         dataMap.putAll(mapTableNormal);
@@ -207,7 +207,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return view;
     }
 
-    // 合并动态辅助线字段查询结果和原始明细查询结果。
+    // 合并动态辅助线字段查询结果和原始明细查询结果
     protected List<ChartSeniorAssistDTO> mergeAssistField(List<ChartSeniorAssistDTO> dynamicAssistFields, List<String[]> assistData, List<ChartSeniorAssistDTO> dynamicAssistFieldsOriginList, List<String[]> assistDataOriginList) {
         List<ChartSeniorAssistDTO> list = new ArrayList<>();
         if (ObjectUtils.isNotEmpty(assistData)) {
@@ -222,7 +222,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         }
 
         if (ObjectUtils.isNotEmpty(assistDataOriginList)) {
-            // 原始明细查询当前只取最后一行，后续如需其他聚合逻辑可扩展此处。
+            // 原始明细查询当前只取最后一行，后续如需其他聚合逻辑可扩展此处
             String[] stringsOriginList = assistDataOriginList.getLast();
             for (int i = 0; i < dynamicAssistFieldsOriginList.size(); i++) {
                 if (i < stringsOriginList.length) {
@@ -235,7 +235,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return list;
     }
 
-    // 从高级配置中提取启用的动态辅助线字段。
+    // 从高级配置中提取启用的动态辅助线字段
     protected List<ChartSeniorAssistDTO> getDynamicAssistFields(ChartViewDTO view) {
         List<ChartSeniorAssistDTO> list = new ArrayList<>();
 
@@ -274,12 +274,12 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return list;
     }
 
-    // 根据 Y 轴字段生成辅助线查询字段。
+    // 根据 Y 轴字段生成辅助线查询字段
     protected List<ChartViewFieldDTO> getAssistFields(List<ChartSeniorAssistDTO> list, List<ChartViewFieldDTO> axis) {
         return getAssistFields(list, axis, SQLConstants.FIELD_ALIAS_Y_PREFIX);
     }
 
-    // 根据轴字段和别名前缀生成辅助线查询字段。
+    // 根据轴字段和别名前缀生成辅助线查询字段
     protected List<ChartViewFieldDTO> getAssistFields(List<ChartSeniorAssistDTO> list, List<ChartViewFieldDTO> axis, String prefix) {
         List<ChartViewFieldDTO> res = new ArrayList<>();
         for (ChartSeniorAssistDTO dto : list) {
@@ -301,14 +301,14 @@ public class DefaultChartHandler extends AbstractChartPlugin {
             ChartViewFieldDTO chartViewFieldDTO = new ChartViewFieldDTO();
             BeanUtils.copyBean(chartViewFieldDTO, curField);
             chartViewFieldDTO.setSummary(dto.getSummary());
-            // 使用轴字段别名作为辅助线 SQL 的查找字段名。
+            // 使用轴字段别名作为辅助线 SQL 的查找字段名
             chartViewFieldDTO.setOriginName(alias);
             res.add(chartViewFieldDTO);
         }
         return res;
     }
 
-    // 在 Y 轴和 X 轴中查找辅助线字段，并生成对应查询字段。
+    // 在 Y 轴和 X 轴中查找辅助线字段，并生成对应查询字段
     protected List<ChartViewFieldDTO> getAssistFields(List<ChartSeniorAssistDTO> list, List<ChartViewFieldDTO> yAxis, List<ChartViewFieldDTO> xAxis) {
         List<ChartViewFieldDTO> res = new ArrayList<>();
         for (ChartSeniorAssistDTO dto : list) {
@@ -340,14 +340,14 @@ public class DefaultChartHandler extends AbstractChartPlugin {
             ChartViewFieldDTO chartViewFieldDTO = new ChartViewFieldDTO();
             BeanUtils.copyBean(chartViewFieldDTO, curField);
             chartViewFieldDTO.setSummary(dto.getSummary());
-            // 使用轴字段别名作为辅助线 SQL 的查找字段名。
+            // 使用轴字段别名作为辅助线 SQL 的查找字段名
             chartViewFieldDTO.setOriginName(alias);
             res.add(chartViewFieldDTO);
         }
         return res;
     }
 
-    // 从表格阈值动态条件中提取需要额外查询的字段。
+    // 从表格阈值动态条件中提取需要额外查询的字段
     public List<ChartSeniorAssistDTO> getDynamicThresholdFields(ChartViewDTO view) {
         List<ChartSeniorAssistDTO> list = new ArrayList<>();
         Map<String, Object> senior = view.getSenior();
@@ -382,7 +382,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return list;
     }
 
-    // 校验阈值动态字段是否存在，并补齐字段详情和汇总方式。
+    // 校验阈值动态字段是否存在，并补齐字段详情和汇总方式
     private boolean solveThresholdCondition(ChartSeniorAssistDTO fieldDTO) {
         Long fieldId = fieldDTO.getFieldId();
         String summary = fieldDTO.getValue();
@@ -401,7 +401,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return true;
     }
 
-    // 从单个阈值条件中提取动态字段引用。
+    // 从单个阈值条件中提取动态字段引用
     private List<ChartSeniorAssistDTO> getConditionFields(ChartSeniorThresholdDTO condition) {
         List<ChartSeniorAssistDTO> list = new ArrayList<>();
         if ("between".equals(condition.getTerm())) {
@@ -420,7 +420,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return list;
     }
 
-    // 将动态阈值字段转换为辅助字段描述。
+    // 将动态阈值字段转换为辅助字段描述
     private ChartSeniorAssistDTO of(ThresholdDynamicFieldDTO dynamicField) {
         ChartSeniorAssistDTO conditionField = new ChartSeniorAssistDTO();
         conditionField.setFieldId(Long.parseLong(dynamicField.getFieldId()));
@@ -428,9 +428,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return conditionField;
     }
 
-    // 构建动态辅助线聚合 SQL。
+    // 构建动态辅助线聚合 SQL
     protected String assistSQL(String sql, List<ChartViewFieldDTO> assistFields, Map<Long, DatasourceSchemaDTO> dsMap, boolean crossDs) {
-        // 根据数据源类型补齐字段引用前后缀。
+        // 根据数据源类型补齐字段引用前后缀
         String dsType = dsMap.entrySet().iterator().next().getValue().getType();
         String prefix = "";
         String suffix = "";
@@ -465,9 +465,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return "SELECT " + String.join(",", fieldList) + " FROM (" + sql + ") tmp";
     }
 
-    // 构建 last_item 辅助线原始明细 SQL。
+    // 构建 last_item 辅助线原始明细 SQL
     protected String assistSQLOriginList(String sql, List<ChartViewFieldDTO> assistFields, Map<Long, DatasourceSchemaDTO> dsMap, boolean crossDs) {
-        // 根据数据源类型补齐字段引用前后缀。
+        // 根据数据源类型补齐字段引用前后缀
         String dsType = dsMap.entrySet().iterator().next().getValue().getType();
         String prefix = "";
         String suffix = "";
@@ -501,7 +501,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return "SELECT " + String.join(",", fieldList) + " FROM (" + sql + ") tmp";
     }
 
-    // 合并扩展 X 轴和堆叠字段 ID，用于累加计算分组。
+    // 合并扩展 X 轴和堆叠字段 ID，用于累加计算分组
     protected List<String> mergeIds(List<ChartViewFieldDTO> xAxisExt, List<ChartViewFieldDTO> extStack) {
         Set<String> idSet = new HashSet<>();
         if (xAxisExt != null) {
@@ -513,7 +513,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return new ArrayList<>(idSet);
     }
 
-    // 对指标结果执行占比、累加、同比和环比等快速计算。
+    // 对指标结果执行占比、累加、同比和环比等快速计算
     protected void quickCalc(List<ChartViewFieldDTO> xAxis, List<ChartViewFieldDTO> yAxis
             , List<ChartViewFieldDTO> xAxisExt, List<ChartViewFieldDTO> extStack, String chartType, List<String[]> data) {
         for (int i = 0; i < yAxis.size(); i++) {
@@ -524,14 +524,14 @@ public class DefaultChartHandler extends AbstractChartPlugin {
             }
             if (StringUtils.isNotEmpty(compareCalc.getType())
                     && !Strings.CI.equals(compareCalc.getType(), "none")) {
-                // 同环比计算使用用户选中的时间字段作为对比基准。
+                // 同环比计算使用用户选中的时间字段作为对比基准
                 Long compareFieldId = compareCalc.getField();
-                // 当前指标在查询结果中的字段下标。
+                // 当前指标在查询结果中的字段下标
                 int dataIndex = xAxis.size() + i;
                 if (Arrays.asList(ChartConstants.M_Y).contains(compareCalc.getType())) {
-                    // 结果模式决定输出上一期值、差值或变化率。
+                    // 结果模式决定输出上一期值、差值或变化率
                     String resultData = compareCalc.getResultData();
-                    // 获取对比时间字段及其在维度中的下标。
+                    // 获取对比时间字段及其在维度中的下标
                     List<ChartViewFieldDTO> checkedField = new ArrayList<>(xAxis);
                     int timeIndex = 0;
                     ChartViewFieldDTO timeField = null;
@@ -541,14 +541,14 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                             timeField = checkedField.get(j);
                         }
                     }
-                    // 对比时间字段缺失或日期粒度不支持时，当前指标无法计算同环比。
+                    // 对比时间字段缺失或日期粒度不支持时，当前指标无法计算同环比
                     if (ObjectUtils.isEmpty(timeField) || !checkCalcType(timeField.getDateStyle(), compareCalc.getType())) {
-                        // 将无法计算的指标值置空。
+                        // 将无法计算的指标值置空
                         for (String[] item : data) {
                             item[dataIndex] = null;
                         }
                     } else {
-                        // 同环比计算分三步：缓存当期数据、计算上一期时间、按配置输出差值或比例。
+                        // 同环比计算分三步：缓存当期数据、计算上一期时间、按配置输出差值或比例
                         Map<String, String> currentMap = new LinkedHashMap<>();
                         for (String[] item : data) {
                             String[] dimension = Arrays.copyOfRange(item, 0, checkedField.size());
@@ -560,7 +560,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                             String cTime = item[timeIndex];
                             String cValue = item[dataIndex];
 
-                            // 用上一期时间替换当前时间维度，并拼接其它维度定位上一期值。
+                            // 用上一期时间替换当前时间维度，并拼接其它维度定位上一期值
                             String lastTime = calcLastTime(cTime, compareCalc.getType(), timeField.getDateStyle(), timeField.getDatePattern());
                             String[] dimension = Arrays.copyOfRange(item, 0, checkedField.size());
                             dimension[timeIndex] = lastTime;
@@ -588,7 +588,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                         }
                     }
                 } else if (Strings.CI.equals(compareCalc.getType(), "percent")) {
-                    // 先计算当前指标总和。
+                    // 先计算当前指标总和
                     BigDecimal sum = new BigDecimal(0);
                     for (int index = 0; index < data.size(); index++) {
                         String[] item = data.get(index);
@@ -598,7 +598,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                         }
                         sum = sum.add(new BigDecimal(cValue));
                     }
-                    // 再将每行指标值转换为总量占比。
+                    // 再将每行指标值转换为总量占比
                     for (int index = 0; index < data.size(); index++) {
                         String[] item = data.get(index);
                         String cValue = item[dataIndex];
@@ -610,7 +610,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                                 .toString();
                     }
                 } else if (Strings.CI.equals(compareCalc.getType(), "accumulate")) {
-                    // 对指标值执行累计求和。
+                    // 对指标值执行累计求和
                     if (CollectionUtils.isEmpty(data)) {
                         break;
                     }
@@ -629,7 +629,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                         }
                         final Map<String, Integer> mainIndexMap = new HashMap<>();
                         final List<List<String[]>> mainMatrix = new ArrayList<>();
-                        // 累加主分组排除分组和堆叠字段。
+                        // 累加主分组排除分组和堆叠字段
                         List<String> groupStackAxisIds = mergeIds(xAxisExt, extStack);
                         List<ChartViewFieldDTO> xAxisBase = xAxis.stream().filter(ele -> !groupStackAxisIds.contains(String.valueOf(ele.getId()))).collect(Collectors.toList());
                         if (CollectionUtils.isEmpty(xAxisBase) && CollectionUtils.isNotEmpty(xAxis)) {
@@ -660,9 +660,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                             subEndIndex += extStack.size();
                         }
                         int finalSubEndIndex = subEndIndex;
-                        // 缓存上一组中各分组堆叠组合的累计值。
+                        // 缓存上一组中各分组堆叠组合的累计值
                         Map<String, BigDecimal> preDataMap = new HashMap<>();
-                        // 按主分组顺序进行滑动累加。
+                        // 按主分组顺序进行滑动累加
                         for (int k = 1; k < mainMatrix.size(); k++) {
                             List<String[]> preDataItems = mainMatrix.get(k - 1);
                             List<String[]> curDataItems = mainMatrix.get(k);
@@ -711,7 +711,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         }
     }
 
-    // 根据同环比类型计算上一期时间字符串。
+    // 根据同环比类型计算上一期时间字符串
     private String calcLastTime(String cTime, String type, String dateStyle, String datePattern) {
         try {
             String lastTime = null;
@@ -789,7 +789,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         }
     }
 
-    // 校验日期粒度是否支持指定同环比计算类型。
+    // 校验日期粒度是否支持指定同环比计算类型
     private boolean checkCalcType(String dateStyle, String calcType) {
         switch (dateStyle) {
             case "y":
@@ -805,7 +805,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         return false;
     }
 
-    // 对同环比筛选条件做上一期时间平移，并返回是否发生变更。
+    // 对同环比筛选条件做上一期时间平移，并返回是否发生变更
     protected boolean checkYoyFilter(List<ChartExtFilterDTO> filter, List<ChartViewFieldDTO> yoyAxis) {
         boolean flag = false;
         for (ChartExtFilterDTO filterDTO : filter) {
@@ -819,7 +819,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                     if (Arrays.asList(ChartConstants.M_Y).contains(compareCalc.getType())) {
                         if (Strings.CI.equals(compareCalc.getField() + "", filterDTO.getFieldId())
                                 && (filterDTO.getFilterType() == 0 || filterDTO.getFilterType() == 2)) {
-                            // 将筛选时间回退一年以匹配同比查询。
+                            // 将筛选时间回退一年以匹配同比查询
                             try {
                                 Calendar calendar = Calendar.getInstance();
                                 calendar.setTime(new Date(Long.parseLong(filterDTO.getValue().getFirst())));
@@ -838,7 +838,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
 
     ;
 
-    // 处理分组或堆叠图的下钻字段和过滤条件。
+    // 处理分组或堆叠图的下钻字段和过滤条件
     protected void groupStackDrill(List<ChartViewFieldDTO> xAxis,
                                    List<ChartExtFilterDTO> filterList,
                                    List<ChartViewFieldDTO> fieldsToFilter,
@@ -853,7 +853,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
             ChartDrillRequest request = drillRequestList.get(i);
             ChartViewFieldDTO chartViewFieldDTO = drillFields.get(i);
             for (ChartDimensionDTO requestDimension : request.getDimensionList()) {
-                // 将钻取值作为过滤条件，并把当前和下一层钻取字段补入 X 轴。
+                // 将钻取值作为过滤条件，并把当前和下一层钻取字段补入 X 轴
                 if (Objects.equals(requestDimension.getId(), chartViewFieldDTO.getId())) {
                     fieldsToFilter.add(chartViewFieldDTO);
                     dimValMap.put(requestDimension.getId(), requestDimension.getValue());
@@ -866,7 +866,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                     if (i == drillRequestList.size() - 1) {
                         ChartViewFieldDTO nextDrillField = drillFields.get(i + 1);
                         if (!fields.contains(nextDrillField.getId())) {
-                            // 下一层钻取字段沿用首层钻取字段排序。
+                            // 下一层钻取字段沿用首层钻取字段排序
                             nextDrillField.setSort(getDrillSort(xAxis, drillFields.get(0)));
                             nextDrillField.setSource(FieldSource.DRILL);
                             xAxis.add(nextDrillField);
@@ -888,7 +888,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
             if (datasetTableField.getFieldType() == 1) {
                 tmpFilter.setOriginValue(Collections.singletonList(dimValMap.get(tmpField.getId())));
                 tmpFilter.setOperator("between");
-                // 时间字段钻取值按过滤组件规则转换为起止时间范围。
+                // 时间字段钻取值按过滤组件规则转换为起止时间范围
                 Map<String, Long> stringLongMap = Utils.parseDateTimeValue(dimValMap.get(tmpField.getId()));
                 tmpFilter.setValue(Arrays.asList(String.valueOf(stringLongMap.get("startTime")), String.valueOf(stringLongMap.get("endTime"))));
             } else {
@@ -899,7 +899,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         }
     }
 
-    // 获取下钻字段在当前 X 轴中的排序方式。
+    // 获取下钻字段在当前 X 轴中的排序方式
     private String getDrillSort(List<ChartViewFieldDTO> xAxis, ChartViewFieldDTO field) {
         String res = "";
         for (ChartViewFieldDTO f : xAxis) {

@@ -34,19 +34,19 @@ import { ref, reactive } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 
 const { t } = useI18n()
-// 控制密码修改弹窗的显示状态。
+// 控制密码修改弹窗的显示状态
 const dialogVisible = ref(false)
-// 持有密码表单实例以便触发校验和重置。
+// 持有密码表单实例以便触发校验和重置
 const pwdForm = ref()
-// 保存打开弹窗时的原始密码，用于判断是否发生变更。
+// 保存打开弹窗时的原始密码，用于判断是否发生变更
 const originPwd = ref('')
-// 保存密码修改表单数据。
+// 保存密码修改表单数据
 const state = reactive({
   form: reactive<any>({
     pwd: ''
   })
 })
-// 定义分享链接密码的表单校验规则。
+// 定义分享链接密码的表单校验规则
 const rule = reactive<any>({
   pwd: [
     { required: true, message: t('work_branch.password_null_hint'), trigger: 'blur' },
@@ -58,23 +58,23 @@ const rule = reactive<any>({
   ]
 })
 
-// 关闭弹窗前清空表单并执行外部关闭回调。
+// 关闭弹窗前清空表单并执行外部关闭回调
 const handleClose = done => {
   state.form.pwd = ''
   originPwd.value = ''
   pwdForm.value.resetFields()
   done()
 }
-// 取消编辑并重置弹窗状态。
+// 取消编辑并重置弹窗状态
 const cancel = () => {
   state.form.pwd = ''
   originPwd.value = ''
   pwdForm.value.resetFields()
   dialogVisible.value = false
 }
-// 声明密码变更时向父组件派发的事件。
+// 声明密码变更时向父组件派发的事件
 const emits = defineEmits(['pwdChange'])
-// 校验密码表单并在密码变化时通知父组件。
+// 校验密码表单并在密码变化时通知父组件
 const save = () => {
   const formEl = pwdForm.value
   if (!formEl) return
@@ -87,7 +87,7 @@ const save = () => {
     }
   })
 }
-// 打开弹窗并填充当前密码。
+// 打开弹窗并填充当前密码
 const open = (pwd: string) => {
   state.form.pwd = pwd
   originPwd.value = pwd

@@ -30,7 +30,7 @@ import java.util.Set;
 @RestController
 @RequestMapping("/export-center")
 @Transactional(rollbackFor = Exception.class)
-// 提供导出任务查询、下载和重试接口。
+// 提供导出任务查询、下载和重试接口
 public class ExportCenterServer implements ExportCenterApi {
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_PAGE_SIZE = 10;
@@ -40,13 +40,13 @@ public class ExportCenterServer implements ExportCenterApi {
     @Resource
     private ExportCenterManage exportCenterManage;
 
-    // 查询导出任务状态统计。
+    // 查询导出任务状态统计
     @Override
     public Map<String, Long> exportTasks() {
         return exportCenterManage.exportTasks();
     }
 
-    // 分页查询导出任务。
+    // 分页查询导出任务
     @Override
     public IPage<ExportTaskDTO> pager(String goPage, String pageSize, String status) {
         Page<ExportTaskDTO> page = new Page<>(
@@ -57,7 +57,7 @@ public class ExportCenterServer implements ExportCenterApi {
         return exportCenterManage.pager(page, normalizeStatus(status));
     }
 
-    // 将字符串页码解析为正整数。
+    // 将字符串页码解析为正整数
     private int positiveIntOrDefault(String value, int defaultValue) {
         try {
             int parsed = Integer.parseInt(value);
@@ -67,7 +67,7 @@ public class ExportCenterServer implements ExportCenterApi {
         }
     }
 
-    // 规范化导出任务状态筛选值。
+    // 规范化导出任务状态筛选值
     private String normalizeStatus(String status) {
         if (status == null || status.isBlank() || "undefined".equalsIgnoreCase(status) || "null".equalsIgnoreCase(status)) {
             return DEFAULT_STATUS;
@@ -79,28 +79,28 @@ public class ExportCenterServer implements ExportCenterApi {
         return status;
     }
 
-    // 删除单个导出任务。
+    // 删除单个导出任务
     @Override
     @CrestAudit(id = "#p0", ot = LogOT.DELETE, st = LogST.DATA)
     public void delete(String id) {
         exportCenterManage.delete(id);
     }
 
-    // 批量删除导出任务。
+    // 批量删除导出任务
     @Override
     @CrestAudit(ot = LogOT.DELETE, st = LogST.DATA)
     public void delete(List<String> ids) {
         exportCenterManage.delete(ids);
     }
 
-    // 清空指定类型的导出任务。
+    // 清空指定类型的导出任务
     @Override
     @CrestAudit(ot = LogOT.CLEAR, st = LogST.DATA)
     public void deleteAll(String type) {
         exportCenterManage.deleteAll(type);
     }
 
-    // 下载导出文件。
+    // 下载导出文件
     @Override
     @CrestAudit(id = "#p0", ot = LogOT.DOWNLOAD, st = LogST.DATA)
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -112,7 +112,7 @@ public class ExportCenterServer implements ExportCenterApi {
         }
     }
 
-    // 将下载鉴权失败写为禁止访问响应。
+    // 将下载鉴权失败写为禁止访问响应
     @SuppressWarnings("java/xss")
     private void writeForbidden(HttpServletResponse response, CrestException e) throws Exception {
         if (response.isCommitted()) {
@@ -128,21 +128,21 @@ public class ExportCenterServer implements ExportCenterApi {
         response.getWriter().write(JsonUtil.toJSONString(new ResultMessage(e.getCode(), message)).toString());
     }
 
-    // 生成导出文件下载地址。
+    // 生成导出文件下载地址
     @Override
     @CrestAudit(id = "#p0", ot = LogOT.READ, st = LogST.DATA)
     public String generateDownloadUri(String id) throws Exception {
         return exportCenterManage.generateDownloadUri(id);
     }
 
-    // 重试导出任务。
+    // 重试导出任务
     @Override
     @CrestAudit(id = "#p0", ot = LogOT.MODIFY, st = LogST.DATA)
     public void retry(String id) {
         exportCenterManage.retry(id);
     }
 
-    // 查询数据集导出数量上限。
+    // 查询数据集导出数量上限
     public String exportLimit() {
         return String.valueOf(ExportCenterUtils.getExportLimit("dataset"));
     }

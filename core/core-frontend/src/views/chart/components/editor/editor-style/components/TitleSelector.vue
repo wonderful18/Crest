@@ -25,7 +25,7 @@ const { batchOptStatus, mobileInPc } = storeToRefs(dvMainStore)
 
 const { t } = useI18n()
 
-// 接收图表、主题和属性显示配置。
+// 接收图表、主题和属性显示配置
 const props = defineProps({
   chart: {
     type: Object,
@@ -40,9 +40,9 @@ const props = defineProps({
   }
 })
 const appearanceStore = useAppearanceStoreWithOut()
-// 定义标题样式变更事件。
+// 定义标题样式变更事件
 const emit = defineEmits(['onTextChange'])
-// 根据主题计算提示框主题。
+// 根据主题计算提示框主题
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
@@ -55,14 +55,14 @@ const fontFamily = CHART_FONT_FAMILY.concat(
 )
 const fontLetterSpace = CHART_FONT_LETTER_SPACE
 
-// 维护标题样式表单。
+// 维护标题样式表单
 const state = reactive({
   titleForm: JSON.parse(JSON.stringify(DEFAULT_TITLE_STYLE))
 })
 
 const { chart } = toRefs(props)
 
-// 生成标题字号选项。
+// 生成标题字号选项
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -80,12 +80,12 @@ const fontSizeList = computed(() => {
   return arr
 })
 
-// 通知父级标题样式变化。
+// 通知父级标题样式变化
 const changeTitleStyle = prop => {
   emit('onTextChange', state.titleForm, prop)
 }
 
-// 初始化标题样式表单。
+// 初始化标题样式表单
 const init = () => {
   const customText = defaultsDeep(
     cloneDeep(props.chart?.customStyle?.text),
@@ -94,30 +94,30 @@ const init = () => {
 
   state.titleForm = cloneDeep(customText)
 
-  // 首次颜色可能赋值失败，单独赋值一次。
+  // 首次颜色可能赋值失败，单独赋值一次
   nextTick(() => {
     state.titleForm.color = customText.color
   })
 }
 
-// 控制备注编辑弹窗显隐。
+// 控制备注编辑弹窗显隐
 const showEditRemark = ref<boolean>(false)
-// 临时备注内容。
+// 临时备注内容
 const tempRemark = ref<string>('')
 
-// 打开备注编辑弹窗。
+// 打开备注编辑弹窗
 const openEditRemark = () => {
   tempRemark.value = cloneDeep(state.titleForm.remark)
   showEditRemark.value = true
 }
 
-// 关闭备注编辑弹窗。
+// 关闭备注编辑弹窗
 const closeEditRemark = () => {
   showEditRemark.value = false
   tempRemark.value = ''
 }
 
-// 保存备注编辑内容。
+// 保存备注编辑内容
 const saveEditRemark = () => {
   showEditRemark.value = false
   state.titleForm.remark = tempRemark.value
@@ -128,7 +128,7 @@ onMounted(() => {
   init()
 })
 
-// 监听标题样式变化并重新初始化。
+// 监听标题样式变化并重新初始化
 watch(
   () => props.chart?.customStyle?.text,
   () => {

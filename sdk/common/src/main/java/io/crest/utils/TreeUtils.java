@@ -14,27 +14,27 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
- * 树结构工具类，负责列表转树、树节点转换和自定义排序。
+ * 树结构工具类，负责列表转树、树节点转换和自定义排序
  */
 @SuppressWarnings({"deprecation", "unchecked"})
 public class TreeUtils {
 
     /**
-     * 默认根节点标识。
+     * 默认根节点标识
      */
     public final static String DEFAULT_ROOT = "root";
     /**
-     * 层级路径分隔符。
+     * 层级路径分隔符
      */
     public final static String SEPARATOR = "-de-";
 
     /**
-     * 权限菜单国际化 key 前缀。
+     * 权限菜单国际化 key 前缀
      */
     private final static String I18N_PREFIX = "i18n_auth_menu.";
 
     /**
-     * 将基础树模型列表合并为树并转换为目标结果类型。
+     * 将基础树模型列表合并为树并转换为目标结果类型
      */
     public static <T extends TreeResultModel, R extends TreeBaseModel> List<T> mergeTree(List<R> list, Class<T> tClass, boolean appendI18nPrefix) {
         AtomicBoolean rootExist = new AtomicBoolean(false);
@@ -77,14 +77,14 @@ public class TreeUtils {
     }
 
     /**
-     * 判断节点是否为默认根节点。
+     * 判断节点是否为默认根节点
      */
     private static boolean isRoot(TreeModel node) {
         return node.getId().equals(0L) && (ObjectUtils.isEmpty(node.getPid()) || node.getPid().equals(-1L));
     }
 
     /**
-     * 将内部树节点递归转换为指定结果模型。
+     * 将内部树节点递归转换为指定结果模型
      */
     public static <T extends TreeResultModel> List<T> convertTree(List<TreeModel> roots, Class<T> tClass, boolean appendI18nPrefix) {
         List<T> result = new ArrayList<>();
@@ -152,7 +152,7 @@ public class TreeUtils {
 
 
     /**
-     * 按节点类型路径合并可能重复 ID 的树结构。
+     * 按节点类型路径合并可能重复 ID 的树结构
      */
     public static <T extends ITreeBase> List<T> mergeDuplicateTree(List<T> tree, Long... rootPid) {
         Assert.notNull(rootPid, "Root Pid cannot be null");
@@ -191,7 +191,7 @@ public class TreeUtils {
     }
 
     /**
-     * 按名称或时间规则排序业务节点。
+     * 按名称或时间规则排序业务节点
      */
     public static List<BusiNodeVO> customSortVO(List<BusiNodeVO> list, String sortType) {
         Collator collator = Collator.getInstance(Locale.CHINA);

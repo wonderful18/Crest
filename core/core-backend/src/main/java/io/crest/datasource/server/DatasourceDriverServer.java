@@ -32,7 +32,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/datasource-driver")
 /**
- * 数据源驱动接口控制器，负责驱动配置和驱动包管理。
+ * 数据源驱动接口控制器，负责驱动配置和驱动包管理
  */
 public class DatasourceDriverServer implements DatasourceDriverApi {
 
@@ -46,7 +46,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     private CoreDriverJarMapper coreDriverJarMapper;
 
     /**
-     * 按关键字查询数据源驱动。
+     * 按关键字查询数据源驱动
      */
     @Override
     public List<DatasourceDTO> query(String keyWord) {
@@ -54,7 +54,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     }
 
     /**
-     * 查询全部驱动配置。
+     * 查询全部驱动配置
      */
     @Override
     public List<DriveDTO> list() {
@@ -69,7 +69,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     }
 
     /**
-     * 按数据源类型查询驱动配置。
+     * 按数据源类型查询驱动配置
      */
     @Override
     public List<DriveDTO> listByDsType(String dsType) {
@@ -85,7 +85,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     }
 
     /**
-     * 新增驱动配置。
+     * 新增驱动配置
      */
     @Override
     public DriveDTO save(DriveDTO datasourceDrive) {
@@ -96,7 +96,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     }
 
     /**
-     * 更新驱动配置。
+     * 更新驱动配置
      */
     @Override
     public DriveDTO update(DriveDTO datasourceDrive) {
@@ -107,7 +107,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     }
 
     /**
-     * 删除驱动配置及其驱动包记录。
+     * 删除驱动配置及其驱动包记录
      */
     @Override
     public void delete(String driverId) {
@@ -119,7 +119,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
 
 
     /**
-     * 查询指定驱动下的驱动包列表。
+     * 查询指定驱动下的驱动包列表
      */
     @Override
     public List<DriveJarDTO> listDriverJar(String driverId) {
@@ -135,7 +135,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     }
 
     /**
-     * 删除指定驱动包文件和数据库记录。
+     * 删除指定驱动包文件和数据库记录
      */
     @Override
     public void deleteDriverJar(String jarId) {
@@ -147,7 +147,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     }
 
     /**
-     * 上传驱动 Jar 包并写入驱动包记录。
+     * 上传驱动 Jar 包并写入驱动包记录
      */
     @Override
     public DriveJarDTO uploadJar(@RequestParam("driverId") String driverId, @RequestParam("jarFile") MultipartFile jarFile) throws Exception {
@@ -186,7 +186,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     }
 
     /**
-     * 将上传的驱动 Jar 安全保存到驱动目录。
+     * 将上传的驱动 Jar 安全保存到驱动目录
      */
     @SuppressWarnings("java/path-injection")
     private String saveJarFile(MultipartFile file, String dirPath, String filePath) throws Exception {

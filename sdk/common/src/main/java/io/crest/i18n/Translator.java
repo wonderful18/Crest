@@ -22,29 +22,29 @@ import java.util.HashSet;
 import java.util.Map;
 
 /**
- * 国际化翻译工具，支持字符串、集合、分页和 Crest 对象字段递归翻译。
+ * 国际化翻译工具，支持字符串、集合、分页和平台对象字段递归翻译
  */
 @Component
 @SuppressWarnings("unchecked")
 public class Translator {
 
     /**
-     * JSON 字符串快速识别符号。
+     * JSON 字符串快速识别符号
      */
     private static final String JSON_SYMBOL = "\":";
 
     /**
-     * 翻译对象时跳过的敏感字段名。
+     * 翻译对象时跳过的敏感字段名
      */
     private static final HashSet<String> IGNORE_KEYS = new HashSet<>(Arrays.asList("id", "password", "passwd"));
 
     /**
-     * Spring 国际化消息源。
+     * Spring 国际化消息源
      */
     private static MessageSource messageSource;
 
     /**
-     * 注入国际化消息源。
+     * 注入国际化消息源
      */
     @Resource
     public void setMessageSource(MessageSource messageSource) {
@@ -70,7 +70,7 @@ public class Translator {
     }
 
     /**
-     * 翻译单个原始字符串，并按字段名跳过敏感字段。
+     * 翻译单个原始字符串，并按字段名跳过敏感字段
      */
     private static Object translateRawString(String key, String rawString) {
         if (StringUtils.isBlank(rawString)) {
@@ -92,7 +92,7 @@ public class Translator {
     }
 
     /**
-     * 递归翻译对象中的可翻译字符串字段。
+     * 递归翻译对象中的可翻译字符串字段
      */
     public static Object translateObject(Object javaObject) {
         if (javaObject == null) {

@@ -6,11 +6,11 @@ import { formatterItem, isEnLocal } from '@/views/chart/components/js/formatter-
 export { formatterItem, isEnLocal }
 
 /**
- * 国际化翻译函数。
+ * 国际化翻译函数
  */
 const { t } = useI18n()
 
-// 单位列表。
+// 单位列表
 export const unitType = [
   { name: t('chart.unit_none'), value: 1 },
   { name: t('chart.unit_thousand'), value: 1000 },
@@ -19,7 +19,7 @@ export const unitType = [
   { name: t('chart.unit_hundred_million'), value: 100000000 }
 ]
 /**
- * 英文单位列表。
+ * 英文单位列表
  */
 export const unitEnType = [
   { name: 'None', value: 1 },
@@ -29,7 +29,7 @@ export const unitEnType = [
 ]
 
 /**
- * 按语言获取单位列表。
+ * 按语言获取单位列表
  */
 export function getUnitTypeList(lang) {
   if (isEnLocal) {
@@ -42,7 +42,7 @@ export function getUnitTypeList(lang) {
 }
 
 /**
- * 校验并返回当前语言可用的单位值。
+ * 校验并返回当前语言可用的单位值
  */
 export function getUnitTypeValue(lang, value) {
   const list = getUnitTypeList(lang)
@@ -54,7 +54,7 @@ export function getUnitTypeValue(lang, value) {
 }
 
 /**
- * 初始化格式化配置中的单位语言。
+ * 初始化格式化配置中的单位语言
  */
 export function initFormatCfgUnit(cfg) {
   if (cfg && cfg.unitLanguage === undefined) {
@@ -67,13 +67,13 @@ export function initFormatCfgUnit(cfg) {
 }
 
 /**
- * 切换格式化配置的单位语言。
+ * 切换格式化配置的单位语言
  */
 export function onChangeFormatCfgUnitLanguage(cfg, lang) {
   cfg.unit = getUnitTypeValue(lang, cfg.unit)
 }
 
-// 格式化方式。
+// 格式化方式
 export const formatterType = [
   { name: 'value_formatter_auto', value: 'auto' },
   { name: 'value_formatter_value', value: 'value' },
@@ -81,7 +81,7 @@ export const formatterType = [
 ]
 
 /**
- * 按格式化配置处理数值显示。
+ * 按格式化配置处理数值显示
  */
 export function valueFormatter(value, formatter) {
   if (value === null || value === undefined) {
@@ -106,7 +106,7 @@ export function valueFormatter(value, formatter) {
 }
 
 /**
- * 按单位缩放数值。
+ * 按单位缩放数值
  */
 function transUnit(value, formatter) {
   initFormatCfgUnit(formatter)
@@ -114,7 +114,7 @@ function transUnit(value, formatter) {
 }
 
 /**
- * 按小数位配置保留数值。
+ * 按小数位配置保留数值
  */
 function transDecimal(value, formatter) {
   const resultV = retain(value, formatter.decimalCount) as string
@@ -125,7 +125,7 @@ function transDecimal(value, formatter) {
 }
 
 /**
- * 四舍五入并补齐指定小数位。
+ * 四舍五入并补齐指定小数位
  */
 function retain(value, n) {
   if (!n) return Math.round(value)
@@ -142,7 +142,7 @@ function retain(value, n) {
 }
 
 /**
- * 添加千分位分隔符和单位后缀。
+ * 添加千分位分隔符和单位后缀
  */
 function transSeparatorAndSuffix(value, formatter) {
   let str = value + ''

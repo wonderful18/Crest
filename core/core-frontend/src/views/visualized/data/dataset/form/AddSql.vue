@@ -63,7 +63,7 @@ export interface SqlNode {
   sqlVariableDetails?: string
 }
 
-// 当前编辑的 SQL 节点，由父级数据集表单负责传入和保存。
+// 当前编辑的 SQL 节点，由父级数据集表单负责传入和保存
 const props = defineProps({
   sqlNode: {
     type: Object as PropType<SqlNode>,
@@ -74,30 +74,30 @@ const props = defineProps({
 const { sqlNode } = toRefs(props)
 const { toClipboard } = useClipboard()
 const { t } = useI18n()
-// 当前左侧数据表列表中选中的表名。
+// 当前左侧数据表列表中选中的表名
 const activeName = ref('')
-// SQL 编辑器组件实例，用于初始化 CodeMirror。
+// SQL 编辑器组件实例，用于初始化 CodeMirror
 const myCm = ref()
-// CodeMirror 编辑器运行时实例，用于插入文本和读取 SQL。
+// CodeMirror 编辑器运行时实例，用于插入文本和读取 SQL
 const codeCom = ref()
 const dialogTitle = t('sql_variable.variable_mgm') + ' '
-// 下方结果区域的当前标签页。
+// 下方结果区域的当前标签页
 const tabActive = ref('result')
-// 左侧数据表搜索关键字。
+// 左侧数据表搜索关键字
 const searchTable = ref('')
-// SQL 参数管理抽屉的显示状态。
+// SQL 参数管理抽屉的显示状态
 const showVariableMgm = ref(false)
-// 左侧数据源表加载状态。
+// 左侧数据源表加载状态
 const dsLoading = ref(false)
-// 预留的执行日志加载状态，保持与模板表格绑定一致。
+// 预留的执行日志加载状态，保持与模板表格绑定一致
 const loading = ref(false)
-// 左侧数据表面板宽度，拖拽时在安全范围内更新。
+// 左侧数据表面板宽度，拖拽时在安全范围内更新
 const LeftWidth = ref(240)
-// 左侧数据表面板是否展开。
+// 左侧数据表面板是否展开
 const showLeft = ref(true)
-// 表名输入框引用，供后续聚焦或校验扩展使用。
+// 表名输入框引用，供后续聚焦或校验扩展使用
 const editorName = ref()
-// SQL 编辑器主状态，集中保存预览数据、变量、字段和数据源列表。
+// SQL 编辑器主状态，集中保存预览数据、变量、字段和数据源列表
 const state = reactive({
   plxTableData: [],
   variables: [],
@@ -114,24 +114,24 @@ const state = reactive({
   }
 })
 
-// 虚拟列表的数据源表数据，搜索时会替换为过滤结果。
+// 虚拟列表的数据源表数据，搜索时会替换为过滤结果
 const datasourceTableData = shallowRef([])
 const isCross = inject<Ref>('isCross')
-// 执行日志表格分页配置。
+// 执行日志表格分页配置
 const paginationConfig = reactive({
   currentPage: 1,
   pageSize: 10,
   total: 0
 })
 
-// 切换左侧表选中状态，只允许可检查的表进入激活态。
+// 切换左侧表选中状态，只允许可检查的表进入激活态
 const setActiveName = ({ name, enableCheck }) => {
   if (!enableCheck) return
   activeName.value = name
 }
 const { height: windowHeight } = useWindowSize()
 
-// 根据后端字段元数据生成预览表格列，并保留字段类型图标。
+// 根据后端字段元数据生成预览表格列，并保留字段类型图标
 const generateColumns = (arr: Field[]) =>
   arr.map(ele => ({
     key: ele.originName,
@@ -155,15 +155,15 @@ const generateColumns = (arr: Field[]) =>
     )
   }))
 
-// 打开 SQL 变量设置抽屉，并先同步编辑器中最新变量。
+// 打开 SQL 变量设置抽屉，并先同步编辑器中最新变量
 const referenceSetting = () => {
   showVariableMgm.value = true
   parseVariable()
 }
-// 自定义系统变量列表，桌面端和移动端右侧变量面板共用。
+// 自定义系统变量列表，桌面端和移动端右侧变量面板共用
 const fieldFormList = ref([])
 
-// 内置系统变量列表，写入 SQL 时会以 $crest[...] 占位符表示。
+// 内置系统变量列表，写入 SQL 时使用系统占位符表示
 const builtInList = ref([
   {
     id: 'sysParams.userId',
@@ -183,7 +183,7 @@ const builtInList = ref([
   }
 ])
 
-// 根据变量类型选择变量面板中的图标资源。
+// 根据变量类型选择变量面板中的图标资源
 const iconName = type => {
   if (type === 'text') {
     return field_text
@@ -196,7 +196,7 @@ const iconName = type => {
   }
 }
 
-// 根据变量类型选择变量面板中的图标样式。
+// 根据变量类型选择变量面板中的图标样式
 const iconClassName = type => {
   if (type === 'text') {
     return 'field-icon-text'
@@ -209,24 +209,24 @@ const iconClassName = type => {
   }
 }
 
-// 按搜索关键字过滤自定义变量，保持内置变量不参与该过滤。
+// 按搜索关键字过滤自定义变量，保持内置变量不参与该过滤
 const fieldFormListComputed = computed(() => {
   return fieldFormList.value.filter(ele =>
     ele.name.toLowerCase().includes(searchField.value.toLowerCase())
   )
 })
 const desktop = isDesktop()
-// 移动端系统参数侧栏显示状态。
+// 移动端系统参数侧栏显示状态
 const showSysParams = ref(false)
-// 系统参数侧栏中的自定义变量搜索关键字。
+// 系统参数侧栏中的自定义变量搜索关键字
 const searchField = ref('')
-// 打开移动端系统参数面板，并懒加载自定义变量。
+// 打开移动端系统参数面板，并懒加载自定义变量
 const sysParams = () => {
   showSysParams.value = true
   handleSearchVariableApi()
 }
 
-// 兼容不同 CodeMirror 版本的光标位置读取。
+// 兼容不同 CodeMirror 版本的光标位置读取
 const getCursor = view => {
   return (
     view?.state?.selection?.main?.from ??
@@ -236,7 +236,7 @@ const getCursor = view => {
   )
 }
 
-// 在当前光标位置插入系统变量或自定义变量占位符。
+// 在当前光标位置插入系统变量或自定义变量占位符
 const insertFieldToCodeMirror = (value: string) => {
   if (!codeCom.value) return
   const from = getCursor(codeCom.value)
@@ -246,7 +246,7 @@ const insertFieldToCodeMirror = (value: string) => {
   })
 }
 
-// 在保存和展示之间转换 $crest[...] 中的变量 ID 与名称。
+// 在保存和展示之间转换系统变量 ID 与名称
 const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
   let name2Id = originName
   const ids = [...builtInList.value, ...fieldFormList.value].map(item => item.id)
@@ -272,15 +272,15 @@ const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
   }
   return name2Id
 }
-// 拉取可引用的自定义系统变量列表。
+// 拉取可引用的自定义系统变量列表
 const handleSearchVariableApi = async () => {
   return searchVariableApi({}).then(res => {
     fieldFormList.value = res?.data || []
   })
 }
-// 移动端系统参数入口是否可见，接口失败时隐藏入口。
+// 移动端系统参数入口是否可见，接口失败时隐藏入口
 const showSystemParams = ref(true)
-// 初始化数据源表、移动端变量列表和 CodeMirror 实例。
+// 初始化数据源表、移动端变量列表和 CodeMirror 实例
 onMounted(async () => {
   dsChange(sqlNode.value.datasourceId)
   if (!desktop) {
@@ -298,17 +298,17 @@ onMounted(async () => {
   )
 })
 
-// 组件卸载时销毁 CodeMirror 实例，避免残留编辑器监听器。
+// 组件卸载时销毁 CodeMirror 实例，避免残留编辑器监听器
 onBeforeUnmount(() => {
   codeCom.value.destroy?.()
 })
 
-// 当前表字段弹窗的字段列表。
+// 当前表字段弹窗的字段列表
 const gridData = ref([])
-// 当前表字段弹窗的加载状态。
+// 当前表字段弹窗的加载状态
 const gridDataLoading = ref(false)
 
-// 加载左侧表信息弹窗中的字段元数据。
+// 加载左侧表信息弹窗中的字段元数据
 const getNodeField = ({ datasourceId, tableName }) => {
   gridDataLoading.value = true
   let info = {
@@ -330,7 +330,7 @@ const getNodeField = ({ datasourceId, tableName }) => {
     })
 }
 
-// 加载数据源树，并兼容后端返回的虚拟根节点结构。
+// 加载数据源树，并兼容后端返回的虚拟根节点结构
 const datasource = () => {
   datasourceList().then(res => {
     const _list = (res as unknown as DataSource[]) || []
@@ -341,15 +341,15 @@ const datasource = () => {
     }
   })
 }
-// SQL 编辑器上半区高度，拖拽时在安全范围内更新。
+// SQL 编辑器上半区高度，拖拽时在安全范围内更新
 const dragHeight = ref(260)
 
-// 开始纵向拖拽，监听编辑器容器内的鼠标移动。
+// 开始纵向拖拽，监听编辑器容器内的鼠标移动
 const mousedownDragH = () => {
   document.querySelector('.sql-eidtor').addEventListener('mousemove', calculateHeight)
 }
 
-// 根据鼠标纵坐标计算 SQL 编辑器高度，并限制最小和最大高度。
+// 根据鼠标纵坐标计算 SQL 编辑器高度，并限制最小和最大高度
 const calculateHeight = (e: MouseEvent) => {
   if (e.pageY - 164 < 64) {
     dragHeight.value = 64
@@ -362,7 +362,7 @@ const calculateHeight = (e: MouseEvent) => {
   dragHeight.value = e.pageY - 164
 }
 
-// 根据鼠标横坐标计算左侧数据表面板宽度。
+// 根据鼠标横坐标计算左侧数据表面板宽度
 const calculateWidth = (e: MouseEvent) => {
   if (e.pageX < 240) {
     LeftWidth.value = 240
@@ -375,7 +375,7 @@ const calculateWidth = (e: MouseEvent) => {
   LeftWidth.value = e.pageX
 }
 
-// 用指定 SQL 全量替换编辑器内容，常用于切换节点或关闭重置。
+// 用指定 SQL 全量替换编辑器内容，常用于切换节点或关闭重置
 const insertParamToCodeMirror = (value: string) => {
   if (!codeCom.value) return
   const to = codeCom.value.state?.doc?.length ?? codeCom.value.state?.doc?.toString().length ?? 0
@@ -385,7 +385,7 @@ const insertParamToCodeMirror = (value: string) => {
   })
 }
 
-// 切换数据源时刷新左侧表列表。
+// 切换数据源时刷新左侧表列表
 watch(
   () => sqlNode.value.datasourceId,
   val => {
@@ -393,7 +393,7 @@ watch(
   }
 )
 
-// 切换 SQL 节点时同步变量配置，并恢复编辑器展示用变量名称。
+// 切换 SQL 节点时同步变量配置，并恢复编辑器展示用变量名称
 watch(
   () => sqlNode.value.id,
   () => {
@@ -414,20 +414,20 @@ const treeProps = {
 
 datasource()
 
-// 关闭和保存事件由父级数据集表单统一处理。
+// 关闭和保存事件由父级数据集表单统一处理
 const emits = defineEmits(['close', 'save'])
 
 let changeFlag = false
-// SQL 或表名是否有未保存变更，用于控制保存按钮和关闭确认。
+// SQL 或表名是否有未保存变更，用于控制保存按钮和关闭确认
 const changeFlagCode = ref(false)
-// 标记当前编辑内容已发生变化。
+// 标记当前编辑内容已发生变化
 const setFlag = () => {
   changeFlag = true
   changeFlagCode.value = true
 }
 let sql = ''
 
-// 保存 SQL 节点，提交前把展示名称占位符转换回变量 ID 并序列化参数配置。
+// 保存 SQL 节点，提交前把展示名称占位符转换回变量 ID 并序列化参数配置
 const save = () => {
   if (!sqlNode.value.tableName.trim()) {
     ElMessage.error(t('data_set.cannot_be_empty'))
@@ -456,7 +456,7 @@ const save = () => {
   changeFlag = false
 }
 
-// 关闭编辑器并恢复局部预览状态。
+// 关闭编辑器并恢复局部预览状态
 const close = () => {
   searchTable.value = ''
   state.plxTableData = []
@@ -467,7 +467,7 @@ const close = () => {
   emits('close')
 }
 
-// 关闭前检查未保存变更，必要时弹出二次确认。
+// 关闭前检查未保存变更，必要时弹出二次确认
 const handleClose = () => {
   let sqlNew = setNameIdTrans('name', 'id', codeCom.value.state.doc.toString())
 
@@ -489,9 +489,9 @@ const handleClose = () => {
   }
 }
 
-// SQL 预览按钮加载状态。
+// SQL 预览按钮加载状态
 const dataPreviewLoading = ref(false)
-// 执行当前 SQL 预览，并把后端字段和数据转成表格展示结构。
+// 执行当前 SQL 预览，并把后端字段和数据转成表格展示结构
 const getSQLPreview = () => {
   parseVariable()
   dataPreviewLoading.value = true
@@ -511,14 +511,14 @@ const getSQLPreview = () => {
 }
 
 let tableList = []
-// 左侧表搜索只过滤本地已加载表列表，避免频繁请求后端。
+// 左侧表搜索只过滤本地已加载表列表，避免频繁请求后端
 watch(searchTable, val => {
   datasourceTableData.value = tableList.filter(ele =>
     ele.tableName.toLowerCase().includes(val.toLowerCase())
   )
 })
 
-// 根据字段类型映射通用字段图标类型。
+// 根据字段类型映射通用字段图标类型
 const getIconName = (type: string) => {
   if (
     ['DATETIME-YEAR', 'DATETIME-YEAR-MONTH', 'DATETIME', 'DATETIME-YEAR-MONTH-DAY'].includes(type)
@@ -535,18 +535,18 @@ const getIconName = (type: string) => {
   }
 }
 
-// 执行日志耗时列格式化，空值以占位符展示。
+// 执行日志耗时列格式化，空值以占位符展示
 const formatter = (_, __, cellValue) => {
   return cellValue ? `${cellValue} ${t(`commons.millisecond`)}` : '-'
 }
 
-// 展开或收起左侧数据表面板，并同步宽度。
+// 展开或收起左侧数据表面板，并同步宽度
 const handleShowLeft = () => {
   showLeft.value = !showLeft.value
   LeftWidth.value = showLeft.value ? 240 : 0
 }
 
-// 防抖加载当前数据源下的数据表列表。
+// 防抖加载当前数据源下的数据表列表
 const dsChange = debounce((val: string) => {
   dsLoading.value = true
   tables({ datasourceId: val })
@@ -559,13 +559,13 @@ const dsChange = debounce((val: string) => {
     })
 }, 300)
 
-// 数据源选择变化时标记未保存，并刷新数据表列表。
+// 数据源选择变化时标记未保存，并刷新数据表列表
 const handleDsChange = () => {
   setFlag()
   dsChange(sqlNode.value.datasourceId)
 }
 
-// 复制表名、字段名或 SQL 内容，并根据浏览器能力提示结果。
+// 复制表名、字段名或 SQL 内容，并根据浏览器能力提示结果
 const copyInfo = async (value: string) => {
   try {
     await toClipboard(value)
@@ -575,14 +575,14 @@ const copyInfo = async (value: string) => {
   }
 }
 
-// 结束横向或纵向拖拽，清理临时鼠标移动监听。
+// 结束横向或纵向拖拽，清理临时鼠标移动监听
 const mouseupDrag = () => {
   const dom = document.querySelector('.sql-eidtor')
   dom.removeEventListener('mousemove', calculateWidth)
   dom.removeEventListener('mousemove', calculateHeight)
 }
 
-// 从编辑器 SQL 中解析参数占位符，并保留已配置的参数默认值。
+// 从编辑器 SQL 中解析参数占位符，并保留已配置的参数默认值
 const parseVariable = () => {
   state.variablesTmp = []
   const variableReg = new RegExp('\\$CREST_PARAM{(.*?)}', 'gim')
@@ -662,14 +662,14 @@ const parseVariable = () => {
   state.variables = JSON.parse(JSON.stringify(state.variablesTmp))
 }
 
-// 保存参数管理抽屉中的临时变量配置。
+// 保存参数管理抽屉中的临时变量配置
 const saveVariable = () => {
   state.variables = JSON.parse(JSON.stringify(state.variablesTmp))
   showVariableMgm.value = false
   changeFlagCode.value = true
   ElMessage.success(t('data_set.parameters_set_successfully'))
 }
-// 开始横向拖拽，监听编辑器容器内的鼠标移动。
+// 开始横向拖拽，监听编辑器容器内的鼠标移动
 const mousedownDrag = () => {
   document.querySelector('.sql-eidtor').addEventListener('mousemove', calculateWidth)
 }

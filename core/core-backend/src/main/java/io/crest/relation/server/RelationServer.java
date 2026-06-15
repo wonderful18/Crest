@@ -22,18 +22,18 @@ import java.util.List;
 @RequestMapping("/relation")
 @Tag(name = "数据血缘")
 /**
- * 数据血缘查询接口，提供全局、单资源和资源列表查询。
+ * 数据血缘查询接口，提供全局、单资源和资源列表查询
  */
 public class RelationServer {
 
     /**
-     * 血缘关系领域服务。
+     * 血缘关系领域服务
      */
     @Resource
     private RelationManage relationManage;
 
     /**
-     * 查询全局血缘关系图。
+     * 查询全局血缘关系图
      */
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASOURCE)
     @PostMapping("/overview")
@@ -43,7 +43,7 @@ public class RelationServer {
     }
 
     /**
-     * 查询指定数据源的血缘关系图。
+     * 查询指定数据源的血缘关系图
      */
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASOURCE, id = "#p0")
     @PostMapping("/datasource/{id}")
@@ -53,7 +53,7 @@ public class RelationServer {
     }
 
     /**
-     * 查询指定数据集的血缘关系图。
+     * 查询指定数据集的血缘关系图
      */
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASET, id = "#p0")
     @PostMapping("/dataset/{id}")
@@ -63,7 +63,7 @@ public class RelationServer {
     }
 
     /**
-     * 查询指定仪表板或大屏的血缘关系图。
+     * 查询指定仪表板或大屏的血缘关系图
      */
     @CrestAudit(ot = LogOT.READ, st = LogST.PANEL, id = "#p0")
     @PostMapping("/dv/{id}")
@@ -73,7 +73,7 @@ public class RelationServer {
     }
 
     /**
-     * 按资源类型查询血缘图可选择的资源列表。
+     * 按资源类型查询血缘图可选择的资源列表
      */
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASOURCE)
     @PostMapping("/resources/{type}")

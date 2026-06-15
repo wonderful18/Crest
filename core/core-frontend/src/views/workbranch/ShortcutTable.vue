@@ -23,32 +23,32 @@ const embeddedStore = useEmbedded()
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 const { push } = useRouter()
-// expand 控制工作台快捷表格的展开样式，不影响数据加载逻辑。
+// expand 控制工作台快捷表格的展开样式，不影响数据加载逻辑
 defineProps({
   expand: {
     type: Boolean,
     default: false
   }
 })
-// 搜索关键字，作用于当前 tab 和当前资源类型过滤结果。
+// 搜索关键字，作用于当前 tab 和当前资源类型过滤结果
 const panelKeyword = ref()
-// 当前快捷列表 tab，store 表示收藏，recent 表示最近使用。
+// 当前快捷列表 tab，store 表示收藏，recent 表示最近使用
 const activeName = ref('store')
-// 当前资源类型筛选，all_types 表示不过滤类型。
+// 当前资源类型筛选，all_types 表示不过滤类型
 const activeCommand = ref('all_types')
-// 时间排序方向，true 表示按接口约定的倒序查询。
+// 时间排序方向，true 表示按接口约定的倒序查询
 const orderDesc = ref(true)
-// 表格加载态。
+// 表格加载态
 const loading = ref(false)
-// 表格数据、当前类型列表和列定义由 shortcutOption 根据 tab 动态生成。
+// 表格数据、当前类型列表和列定义由 shortcutOption 根据 tab 动态生成
 const state = reactive({
   tableData: [],
   curTypeList: [],
   tableColumn: []
 })
-// 交互 store 中的菜单权限数据，用于判断用户可见的资源类型。
+// 交互 store 中的菜单权限数据，用于判断用户可见的资源类型
 const busiDataMap = computed(() => interactiveStore.data)
-// 资源类型到图标的映射，兼容历史 panel 和新版 dashboard 命名。
+// 资源类型到图标的映射，兼容历史 panel 和新版 dashboard 命名
 const iconMap = {
   panel: '/svg/icon_dashboard.svg',
   panelMobile: '/svg/icon_dashboard.svg',
@@ -60,7 +60,7 @@ const iconMap = {
   dataset: '/svg/icon_dataset.svg',
   datasource: '/svg/icon_database.svg'
 }
-// 资源类型到主题色的映射，用于列表图标和筛选按钮。
+// 资源类型到主题色的映射，用于列表图标和筛选按钮
 const typeColorMap = {
   panel: '#3B82F6',
   panelMobile: '#3B82F6',
@@ -71,12 +71,12 @@ const typeColorMap = {
   datasource: '#F5A623'
 }
 
-// 只有可视化资源名称支持点击跳转预览。
+// 只有可视化资源名称支持点击跳转预览
 const jumpActiveCheck = row => {
   return row && ['dashboard', 'panel', 'dataV', 'screen'].includes(row.type)
 }
 
-// 切换收藏或最近使用 tab 时刷新类型筛选、列定义和表格数据。
+// 切换收藏或最近使用 tab 时刷新类型筛选、列定义和表格数据
 const handleClick = (ele: TabsPaneContext) => {
   if (ele.paneName === 'recent' || ele.paneName === 'store') {
     loading.value = true
@@ -88,7 +88,7 @@ const handleClick = (ele: TabsPaneContext) => {
     loadTableData()
   }
 }
-// 根据菜单权限转换可访问的业务资源类型列表。
+// 根据菜单权限转换可访问的业务资源类型列表
 const getBusiListWithPermission = () => {
   const baseFlagList = ['panel', 'screen', 'dataset', 'datasource']
   const busiFlagList = []
@@ -99,18 +99,18 @@ const getBusiListWithPermission = () => {
   }
   return busiFlagList
 }
-// 搜索框变更后重新加载当前列表。
+// 搜索框变更后重新加载当前列表
 const triggerFilterPanel = () => {
   loadTableData()
 }
-// 切换资源类型筛选并刷新列表。
+// 切换资源类型筛选并刷新列表
 const selectType = item => {
   activeCommand.value = item
   loadTableData()
 }
-// 打开方式沿用后台配置，部分部署要求在当前窗口打开。
+// 打开方式沿用后台配置，部分部署要求在当前窗口打开
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
-// 预览可视化资源，收藏列表和最近使用列表的资源编号字段不同。
+// 预览可视化资源，收藏列表和最近使用列表的资源编号字段不同
 const preview = (row, disabled = false) => {
   if (!disabled) {
     const id = activeName.value === 'recent' ? row.id : row.resourceId
@@ -123,7 +123,7 @@ const preview = (row, disabled = false) => {
   }
 }
 
-// 在新窗口或当前窗口打开数据集编辑页。
+// 在新窗口或当前窗口打开数据集编辑页
 const openDataset = id => {
   const routeUrl = resolve({
     path: '/dataset-form',
@@ -131,18 +131,18 @@ const openDataset = id => {
   })
   window.open(routeUrl.href, openType)
 }
-// 格式化绝对时间列。
+// 格式化绝对时间列
 const formatterTime = (_, _column, cellValue) => {
   if (!cellValue) return '-'
   return dayjs(new Date(cellValue)).format('YYYY-MM-DD HH:mm:ss')
 }
-// 格式化相对时间列。
+// 格式化相对时间列
 const formatterRelativeTime = cellValue => {
   if (!cellValue) return '-'
   return dayjs(new Date(cellValue)).fromNow()
 }
 
-// 资源类型本地化名称映射，兼容历史类型别名。
+// 资源类型本地化名称映射，兼容历史类型别名
 const typeMap = {
   screen: t('work_branch.big_data_screen'),
   dataV: t('work_branch.big_data_screen'),
@@ -152,24 +152,24 @@ const typeMap = {
   datasource: t('work_branch.data_source')
 }
 
-// 获取资源类型主题色，未知类型回退到仪表板蓝色。
+// 获取资源类型主题色，未知类型回退到仪表板蓝色
 const getTypeColor = type => {
   return typeColorMap[type] || '#3B82F6'
 }
 
-// 获取资源编号展示值，收藏列表使用 resourceId，最近使用列表使用 id。
+// 获取资源编号展示值，收藏列表使用 resourceId，最近使用列表使用 id
 const getAssetCode = row => {
   const id = activeName.value === 'recent' ? row.id : row.resourceId
   return id ? String(id) : '-'
 }
 
-// 格式化负责人字段，空值统一展示占位符。
+// 格式化负责人字段，空值统一展示占位符
 const formatOwner = value => {
   if (value === undefined || value === null || value === '') return '-'
   return String(value).trim() || '-'
 }
 
-// 按当前 tab、类型、关键字和排序方向加载表格数据。
+// 按当前 tab、类型、关键字和排序方向加载表格数据
 const loadTableData = () => {
   loading.value = true
   const queryType = activeCommand.value === 'all_types' ? '' : activeCommand.value
@@ -185,10 +185,10 @@ const loadTableData = () => {
     })
 }
 
-// 当前用户有权限访问的业务类型列表。
+// 当前用户有权限访问的业务类型列表
 const busiAuthList = computed(() => getBusiListWithPermission())
 
-// 基础 tab 列表根据权限动态禁用，最近使用只在有可视化权限时可用。
+// 基础 tab 列表根据权限动态禁用，最近使用只在有可视化权限时可用
 const baseTablePaneList = computed(() => {
   const hasBusiAuth = !!busiAuthList.value.length
   const hasVisualizationAuth =
@@ -200,10 +200,10 @@ const baseTablePaneList = computed(() => {
   ]
 })
 
-// 预留给外部扩展的 tab 列表。
+// 预留给外部扩展的 tab 列表
 const dfTablePaneList = ref([])
 
-// 合并基础 tab 和扩展 tab，用户无任何业务权限时不展示列表。
+// 合并基础 tab 和扩展 tab，用户无任何业务权限时不展示列表
 const tablePaneList = computed(() => {
   const list = !!busiAuthList.value.length ? [...baseTablePaneList.value] : []
   for (const valueElement of dfTablePaneList.value) {
@@ -212,12 +212,12 @@ const tablePaneList = computed(() => {
   return list
 })
 
-// 标记是否已经根据权限自动选中过第一个 tab。
+// 标记是否已经根据权限自动选中过第一个 tab
 const firstChangeActiveName = ref(false)
-// 标记初次数据是否已加载，避免 tablePaneList 变化时重复拉取。
+// 标记初次数据是否已加载，避免 tablePaneList 变化时重复拉取
 const initialDataLoaded = ref(false)
 
-// 权限 tab 列表准备好后自动选中第一个可用 tab，并触发首次加载。
+// 权限 tab 列表准备好后自动选中第一个可用 tab，并触发首次加载
 watch(
   () => tablePaneList.value,
   () => {
@@ -243,7 +243,7 @@ watch(
     immediate: true
   }
 )
-// 表头排序变化时转换为接口需要的升降序参数并重新加载。
+// 表头排序变化时转换为接口需要的升降序参数并重新加载
 const sortChange = param => {
   orderDesc.value = true
   const type = param.order.substring(0, param.order.indexOf('ending'))
@@ -251,7 +251,7 @@ const sortChange = param => {
   loadTableData()
 }
 
-// 点击表格单元格时按资源类型进入对应编辑或管理页面。
+// 点击表格单元格时按资源类型进入对应编辑或管理页面
 const handleCellClick = row => {
   if (row && !checkDisabled(row)) {
     const sourceId = activeName.value === 'recent' ? row.id : row.resourceId
@@ -275,7 +275,7 @@ const handleCellClick = row => {
   }
 }
 
-// 收藏或取消收藏最近使用资源，并在本地切换收藏状态。
+// 收藏或取消收藏最近使用资源，并在本地切换收藏状态
 const executeStore = rowInfo => {
   const param = {
     id: rowInfo.id,
@@ -286,12 +286,12 @@ const executeStore = rowInfo => {
   })
 }
 
-// 收藏列表中的失效资源不允许继续打开或取消收藏。
+// 收藏列表中的失效资源不允许继续打开或取消收藏
 const checkDisabled = row => {
   return activeName.value === 'store' && !row.extFlag1
 }
 
-// 取消收藏当前资源，完成后刷新收藏列表。
+// 取消收藏当前资源，完成后刷新收藏列表
 const executeCancelStore = rowInfo => {
   if (!checkDisabled(rowInfo)) {
     const param = {
@@ -304,11 +304,11 @@ const executeCancelStore = rowInfo => {
   }
 }
 
-// 当前空态图片类型。
+// 当前空态图片类型
 const imgType = ref()
-// 当前空态文案。
+// 当前空态文案
 const emptyDesc = ref('')
-// 根据是否存在搜索关键字决定空态图片。
+// 根据是否存在搜索关键字决定空态图片
 const getEmptyImg = (): string => {
   if (panelKeyword.value) {
     return 'tree'
@@ -316,7 +316,7 @@ const getEmptyImg = (): string => {
   return 'noneWhite'
 }
 
-// 根据当前 tab 和搜索状态返回空态文案。
+// 根据当前 tab 和搜索状态返回空态文案
 const getEmptyDesc = (): string => {
   if (panelKeyword.value) {
     return t('work_branch.relevant_content_found')

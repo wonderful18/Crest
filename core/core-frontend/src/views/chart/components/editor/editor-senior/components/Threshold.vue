@@ -19,7 +19,7 @@ const dvMainStore = dvMainStoreWithOut()
 const { curComponent } = storeToRefs(dvMainStore)
 const { t } = useI18n()
 
-// 阈值配置组件入参，包含当前图表、主题和可展示属性集合。
+// 阈值配置组件入参，包含当前图表、主题和可展示属性集合
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -33,13 +33,13 @@ const props = defineProps({
     type: Array<string>
   }
 })
-// 判断当前阈值配置项是否在图表属性白名单内。
+// 判断当前阈值配置项是否在图表属性白名单内
 const showProperty = prop => props.propertyInner?.includes(prop)
 
-// 阈值配置变更事件。
+// 阈值配置变更事件
 const emit = defineEmits(['onThresholdChange'])
 
-// 监听外部阈值配置变化，重新初始化本地编辑副本。
+// 监听外部阈值配置变化，重新初始化本地编辑副本
 watch(
   () => props.chart.senior.threshold,
   () => {
@@ -48,7 +48,7 @@ watch(
   { deep: true }
 )
 
-// 阈值编辑状态，分别缓存文本、指标、表格和折线阈值弹窗数据。
+// 阈值编辑状态，分别缓存文本、指标、表格和折线阈值弹窗数据
 const state = reactive({
   thresholdForm: {} as ChartThreshold,
   editTextLabelThresholdDialog: false,
@@ -61,7 +61,7 @@ const state = reactive({
   lineThresholdArr: []
 })
 
-// 从图表高级配置初始化阈值表单和各弹窗编辑数组。
+// 从图表高级配置初始化阈值表单和各弹窗编辑数组
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.senior) {
@@ -75,13 +75,13 @@ const init = () => {
     state.lineThresholdArr = JSON.parse(JSON.stringify(state.thresholdForm.lineThreshold ?? []))
   }
 }
-// 将当前阈值表单提交给父组件。
+// 将当前阈值表单提交给父组件
 const changeThreshold = () => {
   emit('onThresholdChange', state.thresholdForm)
 }
-// 校验仪表盘或水波图的百分比分割阈值。
+// 校验仪表盘或水波图的百分比分割阈值
 const changeSplitThreshold = (threshold: string) => {
-  // 分割阈值只能填写 0 到 100 之间的递增数字序列。
+  // 分割阈值只能填写 0 到 100 之间的递增数字序列
   if (threshold) {
     const regex = /^(\d+(?:\.\d+)?)(,\d+(?:\.\d+)?)*$/
     if (!regex.test(threshold)) {
@@ -105,17 +105,17 @@ const changeSplitThreshold = (threshold: string) => {
   }
   changeThreshold()
 }
-// 打开指标标签阈值编辑弹窗。
+// 打开指标标签阈值编辑弹窗
 const editLabelThreshold = () => {
   state.editLabelThresholdDialog = true
 }
-// 关闭指标标签阈值编辑弹窗。
+// 关闭指标标签阈值编辑弹窗
 const closeLabelThreshold = () => {
   state.editLabelThresholdDialog = false
 }
-// 校验并保存指标标签阈值配置。
+// 校验并保存指标标签阈值配置
 const changeLabelThreshold = () => {
-  // 指标标签阈值必须配置表达式，并按表达式类型校验数值边界。
+  // 指标标签阈值必须配置表达式，并按表达式类型校验数值边界
   for (let i = 0; i < state.thresholdArr.length; i++) {
     const ele = state.thresholdArr[i]
     if (ele.term === undefined || ele.term === '') {
@@ -150,22 +150,22 @@ const changeLabelThreshold = () => {
   changeThreshold()
   closeLabelThreshold()
 }
-// 同步指标标签阈值弹窗编辑结果。
+// 同步指标标签阈值弹窗编辑结果
 const thresholdChange = val => {
   state.thresholdArr = val
 }
 
-// 打开文本标签阈值编辑弹窗。
+// 打开文本标签阈值编辑弹窗
 const editTextLabelThreshold = () => {
   state.editTextLabelThresholdDialog = true
 }
-// 关闭文本标签阈值编辑弹窗。
+// 关闭文本标签阈值编辑弹窗
 const closeTextLabelThreshold = () => {
   state.editTextLabelThresholdDialog = false
 }
-// 校验并保存文本标签阈值配置。
+// 校验并保存文本标签阈值配置
 const changeTextLabelThreshold = () => {
-  // 文本标签阈值必须配置表达式和值。
+  // 文本标签阈值必须配置表达式和值
   for (let i = 0; i < state.textThresholdArr.length; i++) {
     const ele = state.textThresholdArr[i]
     if (!ele.term || ele.term === '') {
@@ -181,26 +181,26 @@ const changeTextLabelThreshold = () => {
   changeThreshold()
   closeTextLabelThreshold()
 }
-// 同步文本标签阈值弹窗编辑结果。
+// 同步文本标签阈值弹窗编辑结果
 const thresholdTextChange = val => {
   state.textThresholdArr = val
 }
 
-// 同步表格阈值弹窗编辑结果。
+// 同步表格阈值弹窗编辑结果
 const tableThresholdChange = val => {
   state.tableThresholdArr = val
 }
-// 打开表格阈值编辑弹窗。
+// 打开表格阈值编辑弹窗
 const editTableThreshold = () => {
   state.editTableThresholdDialog = true
 }
-// 关闭表格阈值编辑弹窗。
+// 关闭表格阈值编辑弹窗
 const closeTableThreshold = () => {
   state.editTableThresholdDialog = false
 }
-// 校验并保存表格阈值配置。
+// 校验并保存表格阈值配置
 const changeTableThreshold = () => {
-  // 表格阈值按字段分组校验条件，动态条件需要配置参照字段。
+  // 表格阈值按字段分组校验条件，动态条件需要配置参照字段
   for (let i = 0; i < state.tableThresholdArr.length; i++) {
     const field = state.tableThresholdArr[i]
     if (!field.fieldId) {
@@ -294,21 +294,21 @@ const changeTableThreshold = () => {
   closeTableThreshold()
 }
 
-// 同步折线阈值弹窗编辑结果。
+// 同步折线阈值弹窗编辑结果
 const lineThresholdChange = val => {
   state.lineThresholdArr = val
 }
-// 打开折线阈值编辑弹窗。
+// 打开折线阈值编辑弹窗
 const editLineThreshold = () => {
   state.editLineThresholdDialog = true
 }
-// 关闭折线阈值编辑弹窗。
+// 关闭折线阈值编辑弹窗
 const closeLineThreshold = () => {
   state.editLineThresholdDialog = false
 }
-// 校验并保存折线阈值配置。
+// 校验并保存折线阈值配置
 const changeLineThreshold = () => {
-  // 折线阈值必须配置字段和条件，数值字段需要额外校验数值合法性。
+  // 折线阈值必须配置字段和条件，数值字段需要额外校验数值合法性
   for (let i = 0; i < state.lineThresholdArr?.length; i++) {
     const field = state.lineThresholdArr[i]
     if (!field.fieldId) {
@@ -374,12 +374,12 @@ const changeLineThreshold = () => {
   closeLineThreshold()
 }
 
-// 计算字段展示名称，优先使用图表展示别名。
+// 计算字段展示名称，优先使用图表展示别名
 const getFieldName = field => (field.chartShowName ? field.chartShowName : field.name)
 
-// 生成动态阈值条件的字段摘要文案。
+// 生成动态阈值条件的字段摘要文案
 const getDynamicStyleLabel = (item, fieldObj) => {
-  // 按字段汇总方式生成条件标签。
+  // 按字段汇总方式生成条件标签
   const handleSummary = field => {
     if (!field?.field) {
       return ''

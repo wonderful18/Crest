@@ -13,38 +13,38 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 外部参数配置主键。
+     * 外部参数配置主键
      */
     @TableId("params_id")
     private String paramsId;
 
     /**
-     * 可视化资源 ID。
+     * 可视化资源 ID
      */
     private String visualizationId;
 
     /**
-     * 是否启用外部参数配置。
+     * 是否启用外部参数配置
      */
     private Boolean checked;
 
     /**
-     * 外部参数配置备注。
+     * 外部参数配置备注
      */
     private String remark;
 
     /**
-     * 复制来源类型或标识。
+     * 复制来源类型或标识
      */
     private String copyFrom;
 
     /**
-     * 复制来源记录 ID。
+     * 复制来源记录 ID
      */
     private String copyId;
 
     /**
-     * 获取外部参数配置主键。
+     * 获取外部参数配置主键
      *
      * @return 外部参数配置主键
      */
@@ -53,7 +53,7 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     }
 
     /**
-     * 设置外部参数配置主键。
+     * 设置外部参数配置主键
      *
      * @param paramsId 外部参数配置主键
      */
@@ -62,7 +62,7 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     }
 
     /**
-     * 获取可视化资源 ID。
+     * 获取可视化资源 ID
      *
      * @return 可视化资源 ID
      */
@@ -71,7 +71,7 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     }
 
     /**
-     * 设置可视化资源 ID。
+     * 设置可视化资源 ID
      *
      * @param visualizationId 可视化资源 ID
      */
@@ -80,7 +80,7 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     }
 
     /**
-     * 获取是否启用外部参数配置。
+     * 获取是否启用外部参数配置
      *
      * @return 是否启用外部参数配置
      */
@@ -89,7 +89,7 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     }
 
     /**
-     * 设置是否启用外部参数配置。
+     * 设置是否启用外部参数配置
      *
      * @param checked 是否启用外部参数配置
      */
@@ -98,7 +98,7 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     }
 
     /**
-     * 获取外部参数配置备注。
+     * 获取外部参数配置备注
      *
      * @return 外部参数配置备注
      */
@@ -107,7 +107,7 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     }
 
     /**
-     * 设置外部参数配置备注。
+     * 设置外部参数配置备注
      *
      * @param remark 外部参数配置备注
      */
@@ -116,7 +116,7 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     }
 
     /**
-     * 获取复制来源类型或标识。
+     * 获取复制来源类型或标识
      *
      * @return 复制来源类型或标识
      */
@@ -125,7 +125,7 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     }
 
     /**
-     * 设置复制来源类型或标识。
+     * 设置复制来源类型或标识
      *
      * @param copyFrom 复制来源类型或标识
      */
@@ -134,7 +134,7 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     }
 
     /**
-     * 获取复制来源记录 ID。
+     * 获取复制来源记录 ID
      *
      * @return 复制来源记录 ID
      */
@@ -143,7 +143,7 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     }
 
     /**
-     * 设置复制来源记录 ID。
+     * 设置复制来源记录 ID
      *
      * @param copyId 复制来源记录 ID
      */
@@ -152,7 +152,7 @@ public class SnapshotVisualizationOuterParams implements Serializable {
     }
 
     /**
-     * 返回外部参数配置快照的调试字符串。
+     * 返回外部参数配置快照的调试字符串
      *
      * @return 外部参数配置快照的字符串表示
      */

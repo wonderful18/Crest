@@ -8,24 +8,24 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 /**
- * 日志工具类，按调用方类名创建 Logger 并统一拼接调用方法信息。
+ * 日志工具类，按调用方类名创建 Logger 并统一拼接调用方法信息
  */
 public class LogUtil {
 
     /**
-     * 调试级别标识。
+     * 调试级别标识
      */
     private static final String DEBUG = "DEBUG";
     /**
-     * 信息级别标识。
+     * 信息级别标识
      */
     private static final String INFO = "INFO";
     /**
-     * 警告级别标识。
+     * 警告级别标识
      */
     private static final String WARN = "WARN";
     /**
-     * 错误级别标识。
+     * 错误级别标识
      */
     private static final String ERROR = "ERROR";
 
@@ -39,7 +39,7 @@ public class LogUtil {
     }
 
     /**
-     * 根据传入级别写入日志。
+     * 根据传入级别写入日志
      */
     public static void writeLog(Object msg, String level) {
         Logger logger = LogUtil.getLogger();
@@ -68,7 +68,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入 info 日志。
+     * 写入 info 日志
      */
     public static void info(Object msg) {
         Logger logger = LogUtil.getLogger();
@@ -78,7 +78,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带单个参数的 info 日志。
+     * 写入带单个参数的 info 日志
      */
     public static void info(Object msg, Object o1) {
         Logger logger = LogUtil.getLogger();
@@ -88,7 +88,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带两个参数的 info 日志。
+     * 写入带两个参数的 info 日志
      */
     public static void info(Object msg, Object o1, Object o2) {
         Logger logger = LogUtil.getLogger();
@@ -98,7 +98,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带参数数组的 info 日志。
+     * 写入带参数数组的 info 日志
      */
     public static void info(Object msg, Object[] obj) {
         Logger logger = LogUtil.getLogger();
@@ -108,7 +108,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入 debug 日志。
+     * 写入 debug 日志
      */
     public static void debug(Object msg) {
         Logger logger = LogUtil.getLogger();
@@ -118,7 +118,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带单个参数的 debug 日志。
+     * 写入带单个参数的 debug 日志
      */
     public static void debug(Object msg, Object o) {
         Logger logger = LogUtil.getLogger();
@@ -128,7 +128,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带两个参数的 debug 日志。
+     * 写入带两个参数的 debug 日志
      */
     public static void debug(Object msg, Object o1, Object o2) {
         Logger logger = LogUtil.getLogger();
@@ -138,7 +138,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带参数数组的 debug 日志。
+     * 写入带参数数组的 debug 日志
      */
     public static void debug(Object msg, Object[] obj) {
         Logger logger = LogUtil.getLogger();
@@ -148,7 +148,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入 warn 日志。
+     * 写入 warn 日志
      */
     public static void warn(Object msg) {
         Logger logger = LogUtil.getLogger();
@@ -158,7 +158,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带单个参数的 warn 日志。
+     * 写入带单个参数的 warn 日志
      */
     public static void warn(Object msg, Object o) {
         Logger logger = LogUtil.getLogger();
@@ -168,7 +168,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带两个参数的 warn 日志。
+     * 写入带两个参数的 warn 日志
      */
     public static void warn(Object msg, Object o1, Object o2) {
         Logger logger = LogUtil.getLogger();
@@ -178,7 +178,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带参数数组的 warn 日志。
+     * 写入带参数数组的 warn 日志
      */
     public static void warn(Object msg, Object[] obj) {
         Logger logger = LogUtil.getLogger();
@@ -188,7 +188,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入 error 日志。
+     * 写入 error 日志
      */
     public static void error(Object msg) {
         Logger logger = LogUtil.getLogger();
@@ -198,7 +198,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带单个参数的 error 日志。
+     * 写入带单个参数的 error 日志
      */
     public static void error(Object msg, Object o) {
         Logger logger = LogUtil.getLogger();
@@ -208,7 +208,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带两个参数的 error 日志。
+     * 写入带两个参数的 error 日志
      */
     public static void error(Object msg, Object o1, Object o2) {
         Logger logger = LogUtil.getLogger();
@@ -218,7 +218,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带参数数组的 error 日志。
+     * 写入带参数数组的 error 日志
      */
     public static void error(Object msg, Object[] obj) {
         Logger logger = LogUtil.getLogger();
@@ -228,7 +228,7 @@ public class LogUtil {
     }
 
     /**
-     * 写入带异常堆栈的 error 日志。
+     * 写入带异常堆栈的 error 日志
      */
     public static void error(Object msg, Throwable ex) {
         Logger logger = LogUtil.getLogger();
@@ -238,7 +238,7 @@ public class LogUtil {
     }
 
     /**
-     * 拼接带调用方法名和异常信息的日志正文。
+     * 拼接带调用方法名和异常信息的日志正文
      */
     public static String getMsg(Object msg, Throwable ex) {
         String str = "";
@@ -256,7 +256,7 @@ public class LogUtil {
     }
 
     /**
-     * 拼接只包含调用方法名的日志正文。
+     * 拼接只包含调用方法名的日志正文
      */
     public static String getMsg(Object msg) {
         return LogUtil.getMsg(msg, null);
@@ -297,7 +297,7 @@ public class LogUtil {
     }
 
     /**
-     * 将异常堆栈转换为字符串。
+     * 将异常堆栈转换为字符串
      */
     public static String toString(Throwable e) {
         StringWriter sw = null;
@@ -325,7 +325,7 @@ public class LogUtil {
     }
 
     /**
-     * 将异常及其堆栈明细拼接为字符串。
+     * 将异常及其堆栈明细拼接为字符串
      */
     public static String getExceptionDetailsToStr(Exception e) {
         StringBuilder sb = new StringBuilder(e.toString());

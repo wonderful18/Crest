@@ -11,13 +11,13 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Method;
 
 /**
- * Token 解析与校验工具，负责从令牌中恢复当前用户身份。
+ * Token 解析与校验工具，负责从令牌中恢复当前用户身份
  */
 public class TokenUtils {
 
 
     /**
-     * 验证令牌签名并解析用户和组织信息。
+     * 验证令牌签名并解析用户和组织信息
      */
     public static TokenUserBO userBOByToken(String token) {
         String secret = userSecret(token);
@@ -31,7 +31,7 @@ public class TokenUtils {
     }
 
     /**
-     * 校验业务请求令牌的基本格式并返回用户身份。
+     * 校验业务请求令牌的基本格式并返回用户身份
      */
     public static TokenUserBO validate(String token) {
         if (StringUtils.isBlank(token)) {
@@ -45,7 +45,7 @@ public class TokenUtils {
     }
 
     /**
-     * 根据令牌中的用户编号查找用户专属密钥。
+     * 根据令牌中的用户编号查找用户专属密钥
      */
     private static String userSecret(String token) {
         try {
@@ -74,7 +74,7 @@ public class TokenUtils {
 
 
     /**
-     * 链接令牌必须由过滤器验证，此处仅作为禁止直接调用的保护入口。
+     * 链接令牌必须由过滤器验证，此处仅作为禁止直接调用的保护入口
      */
     public static TokenUserBO validateLinkToken(String linkToken) {
         CrestException.throwException("link token must be verified by TokenFilter");

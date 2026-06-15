@@ -23,7 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- * 提供引擎数据源配置的查询、保存和校验接口。
+ * 提供引擎数据源配置的查询、保存和校验接口
  */
 @RestController
 @RequestMapping("/engine")
@@ -37,7 +37,7 @@ public class EngineServer implements EngineApi {
     private CalciteProvider calciteProvider;
 
     /**
-     * 查询当前引擎数据源配置。
+     * 查询当前引擎数据源配置
      */
     @Override
     public DatasourceDTO getEngine() {
@@ -55,7 +55,7 @@ public class EngineServer implements EngineApi {
     }
 
     /**
-     * 保存引擎数据源配置并刷新计算引擎。
+     * 保存引擎数据源配置并刷新计算引擎
      */
     @Override
     public void save(DatasourceDTO datasourceDTO) {
@@ -78,7 +78,7 @@ public class EngineServer implements EngineApi {
     }
 
     /**
-     * 校验提交的引擎数据源配置。
+     * 校验提交的引擎数据源配置
      */
     @Override
     public void validate(DatasourceDTO datasourceDTO) throws Exception {
@@ -92,7 +92,7 @@ public class EngineServer implements EngineApi {
     }
 
     /**
-     * 根据配置编号校验引擎数据源。
+     * 根据配置编号校验引擎数据源
      */
     @Override
     public void validateById(Long id) throws Exception {
@@ -103,7 +103,7 @@ public class EngineServer implements EngineApi {
     }
 
     /**
-     * 判断当前引擎是否支持设置加密密钥。
+     * 判断当前引擎是否支持设置加密密钥
      */
     @Override
     public boolean supportSetKey() throws Exception {
@@ -117,7 +117,7 @@ public class EngineServer implements EngineApi {
     }
 
     /**
-     * 解码前端提交的 Base64 配置字段。
+     * 解码前端提交的 Base64 配置字段
      */
     private static String decodeBase64RequestValue(String value, String fieldName) {
         if (StringUtils.isBlank(value)) {

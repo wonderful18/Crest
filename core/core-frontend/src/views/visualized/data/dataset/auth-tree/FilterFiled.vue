@@ -46,29 +46,29 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const { t } = useI18n()
-// 枚举输入框组件引用，用于主动触发下拉展开和收起。
+// 枚举输入框组件引用，用于主动触发下拉展开和收起
 const enumInput = ref()
-// 固定枚举下拉菜单引用，保留给模板定位和浮层控制使用。
+// 固定枚举下拉菜单引用，保留给模板定位和浮层控制使用
 const dropdownMenuFixedRef = ref()
-// 控制删除按钮在筛选项 hover 时显示。
+// 控制删除按钮在筛选项 hover 时显示
 const showDel = ref(false)
-// 字段下拉列表的关键字搜索内容。
+// 字段下拉列表的关键字搜索内容
 const keywords = ref('')
-// 当前已选字段名称，用于回显和高亮候选字段。
+// 当前已选字段名称，用于回显和高亮候选字段
 const activeName = ref('')
-// 枚举值下拉列表的本地过滤关键字。
+// 枚举值下拉列表的本地过滤关键字
 const filterFiled = ref('')
-// 当前字段可选的枚举值集合。
+// 当前字段可选的枚举值集合
 const enumList = ref<string[]>([])
-// 是否显示批量输入枚举值的文本框。
+// 是否显示批量输入枚举值的文本框
 const showTextArea = ref()
-// 标记文本框键盘事件是否已被拦截，避免重复处理。
+// 标记文本框键盘事件是否已被拦截，避免重复处理
 const keydownCanceled = ref(false)
-// 已确认选择的枚举值集合。
+// 已确认选择的枚举值集合
 const checklist = ref<string[]>([])
-// 当前字段类型可用的筛选方式列表。
+// 当前字段类型可用的筛选方式列表
 const filterList = ref<any[]>([])
-// 批量输入枚举值时的原始文本。
+// 批量输入枚举值时的原始文本
 const textareaValue = ref('')
 
 const { item } = toRefs(props)
@@ -78,13 +78,13 @@ const getAuthTargetType = inject<{ authTargetType: string }>('getAuthTargetType'
 })
 const filedList = inject('filedList', ref<Record<string, any>>({}))
 
-// 根据枚举搜索关键字过滤当前可展示的枚举值。
+// 根据枚举搜索关键字过滤当前可展示的枚举值
 const checkListWithFilter = computed(() => {
   if (!filterFiled.value) return enumList.value
   return enumList.value.filter(ele => ele.includes(filterFiled.value))
 })
 
-// 根据字段选择和值输入状态计算当前筛选项宽度。
+// 根据字段选择和值输入状态计算当前筛选项宽度
 const computedWidth = computed(() => {
   const { term, fieldId, filterType } = item.value
   const isNull = ['null', 'empty', 'not_null', 'not_empty'].includes(term) && filterType === 'logic'
@@ -93,7 +93,7 @@ const computedWidth = computed(() => {
   }
 })
 
-// 系统参数模式下的内置参数选项，角色参数仅在包含类操作符下开放。
+// 系统参数模式下的内置参数选项，角色参数仅在包含类操作符下开放
 const sysParamsIln = computed(() => {
   if (['in', 'not in'].includes(item.value.term)) {
     return [
@@ -106,7 +106,7 @@ const sysParamsIln = computed(() => {
     return sysParamsIlns
   }
 })
-// 根据字段类型和授权目标类型计算可选操作符。
+// 根据字段类型和授权目标类型计算可选操作符
 const operators = computed(() => {
   const { fieldType } = item.value
   if (authTargetType.value === 'sysParams') {
@@ -120,20 +120,20 @@ const operators = computed(() => {
     return valueOptions
   }
 })
-// 字段下拉列表的搜索结果。
+// 字段下拉列表的搜索结果
 const dimensions = computed(() => {
   if (!keywords.value) return computedFiledList.value
   return computedFiledList.value.filter(ele => ele.name.includes(keywords.value))
 })
-// 将注入的字段字典转换为模板可遍历的数组。
+// 将注入的字段字典转换为模板可遍历的数组
 const computedFiledList = computed(() => {
   return Object.values(filedList.value || {}) as any[]
 })
 
-// 当前授权目标类型，来自上层注入并驱动筛选方式限制。
+// 当前授权目标类型，来自上层注入并驱动筛选方式限制
 const authTargetType = ref('')
 
-// 同步上层授权目标类型，首次挂载时立即初始化本地状态。
+// 同步上层授权目标类型，首次挂载时立即初始化本地状态
 watch(
   () => getAuthTargetType?.authTargetType,
   value => {
@@ -150,13 +150,13 @@ onBeforeMount(() => {
   filterListInit(item.value.fieldType)
 })
 
-// 下拉确认时先恢复枚举值，再关闭枚举选择框。
+// 下拉确认时先恢复枚举值，再关闭枚举选择框
 const confirm = () => {
   cancelfixValue()
   enumInput.value.$el.click()
 }
 
-// 取消枚举选择时回滚到已保存的枚举值状态。
+// 取消枚举选择时回滚到已保存的枚举值状态
 const cancelSelect = () => {
   const { enumValue } = item.value
   checklist.value = [...enumValue]
@@ -173,7 +173,7 @@ const cancelSelect = () => {
   enumInput.value.$el.click()
 }
 
-// 初始化字段名称和枚举选择状态，用于编辑已有筛选条件。
+// 初始化字段名称和枚举选择状态，用于编辑已有筛选条件
 const initNameEnumName = () => {
   const { name, enumValue, fieldId } = item.value
   if (!name && fieldId) {
@@ -184,20 +184,20 @@ const initNameEnumName = () => {
   activeName.value = item.value.name
   checklist.value = [...enumValue]
 }
-// 打开批量输入区域，并只在首次进入时拦截键盘事件。
+// 打开批量输入区域，并只在首次进入时拦截键盘事件
 const cancelKeyDow = () => {
   if (!showTextArea.value && !keydownCanceled.value) {
     keydownCanceled.value = true
   }
   showTextArea.value = true
 }
-// 切换字段筛选方式时清空操作符和值，并刷新枚举选项。
+// 切换字段筛选方式时清空操作符和值，并刷新枚举选项
 const filterTypeChange = () => {
   item.value.term = ''
   item.value.value = null
   initEnumOptions()
 }
-// 按当前字段和筛选方式加载枚举值，并同步勾选状态。
+// 按当前字段和筛选方式加载枚举值，并同步勾选状态
 const initEnumOptions = () => {
   if (authTargetType.value === 'sysParams') {
     return
@@ -220,27 +220,27 @@ const initEnumOptions = () => {
   }
 }
 
-// 过滤后端返回的空枚举项。
+// 过滤后端返回的空枚举项
 const optionData = data => {
   if (!data) return null
   return data.filter(item => !!item)
 }
-// 字段输入框失焦或清空时恢复已选字段名称。
+// 字段输入框失焦或清空时恢复已选字段名称
 const cancel = () => {
   item.value.name = activeName.value || ''
 }
-// 将本次枚举勾选结果写回筛选项。
+// 将本次枚举勾选结果写回筛选项
 const cancelfixValue = () => {
   item.value.enumValue = [...checklist.value]
 }
-// 删除单个已选枚举值，并重新计算全选状态。
+// 删除单个已选枚举值，并重新计算全选状态
 const delChecks = (idx, i) => {
   checklist.value.splice(idx, 1)
   checkboxlist.value = checkboxlist.value.filter(ele => ele !== i)
   selectedChange()
 }
 
-// 选择字段后重置筛选条件，并按字段类型初始化筛选方式。
+// 选择字段后重置筛选条件，并按字段类型初始化筛选方式
 const selectItem = ({ name, id, fieldType }) => {
   activeName.value = name
   Object.assign(item.value, {
@@ -255,7 +255,7 @@ const selectItem = ({ name, id, fieldType }) => {
   filterListInit(fieldType)
   checklist.value = []
 }
-// 根据字段类型和授权目标类型初始化普通/枚举筛选入口。
+// 根据字段类型和授权目标类型初始化普通/枚举筛选入口
 const filterListInit = fieldType => {
   filterList.value = [
     {
@@ -271,7 +271,7 @@ const filterListInit = fieldType => {
     filterList.value = [filterList.value[0]]
   }
 }
-// 清空当前字段下所有已选枚举值。
+// 清空当前字段下所有已选枚举值
 const clearAll = () => {
   checklist.value = []
   checkboxlist.value = []
@@ -279,7 +279,7 @@ const clearAll = () => {
   isIndeterminate.value = false
 }
 
-// 将当前过滤结果中的枚举值全部加入已选集合。
+// 将当前过滤结果中的枚举值全部加入已选集合
 const selectAll = () => {
   checkListWithFilter.value.forEach(ele => {
     if (!checklist.value.includes(ele)) {
@@ -289,14 +289,14 @@ const selectAll = () => {
   checkboxlist.value = [...new Set([...checkListWithFilter.value, ...checkboxlist.value])]
 }
 
-// 枚举多选框的半选状态。
+// 枚举多选框的半选状态
 const isIndeterminate = ref(false)
-// 枚举多选框的全选状态。
+// 枚举多选框的全选状态
 const checkAll = ref(false)
-// 当前下拉视图中勾选的枚举值集合。
+// 当前下拉视图中勾选的枚举值集合
 const checkboxlist = ref([])
 let oldList = []
-// 枚举过滤结果变化时同步全选和半选状态。
+// 枚举过滤结果变化时同步全选和半选状态
 watch(
   () => checkListWithFilter.value,
   val => {
@@ -313,7 +313,7 @@ watch(
     checkAll.value = val.length && result
   }
 )
-// 枚举勾选变化时合并跨搜索结果的选择，并刷新全选状态。
+// 枚举勾选变化时合并跨搜索结果的选择，并刷新全选状态
 const selectedChange = () => {
   const notSelectList = checkListWithFilter.value.filter(ele => !checkboxlist.value.includes(ele))
   const newCheckboxlist = [...checkboxlist.value]
@@ -333,7 +333,7 @@ const selectedChange = () => {
     isIndeterminate.value = false
   }
 }
-// 切换全选时仅影响当前过滤结果范围内的枚举值。
+// 切换全选时仅影响当前过滤结果范围内的枚举值
 const checkAllChange = val => {
   if (val) {
     selectAll()
@@ -343,7 +343,7 @@ const checkAllChange = val => {
   }
   isIndeterminate.value = false
 }
-// 将文本框中的多行内容按行去重后加入枚举选择。
+// 将文本框中的多行内容按行去重后加入枚举选择
 const addFields = () => {
   const list = textareaValue.value.split('\n').reduce((pre, next) => {
     const str = next.trim()
@@ -356,20 +356,20 @@ const addFields = () => {
   }
   showTextArea.value = false
 }
-// 固定时间选择弹窗组件引用。
+// 固定时间选择弹窗组件引用
 const timeDialog = ref()
-// 打开固定时间选择弹窗，非时间字段不触发。
+// 打开固定时间选择弹窗，非时间字段不触发
 const showTimeDialog = (obj: any) => {
   if (obj.fieldType !== 1) return
   timeDialog.value.init(obj.timeType, obj.value)
 }
-// 保存固定时间选择结果到当前筛选项。
+// 保存固定时间选择结果到当前筛选项
 const saveTime = (type, value) => {
   item.value.timeType = type
   item.value.value = value
 }
 
-// 向父组件同步筛选项更新和删除事件。
+// 向父组件同步筛选项更新和删除事件
 const emits = defineEmits(['update:item', 'del'])
 </script>
 

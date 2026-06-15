@@ -37,16 +37,16 @@ import { clearExtremum, extremumEvt } from '@/views/chart/components/js/extremum
 import { Group } from '@antv/g-canvas'
 
 const { t } = useI18n()
-// 面积图无数据时复用同一个空数组，避免渲染配置里产生无意义的新引用。
+// 面积图无数据时复用同一个空数组，避免渲染配置里产生无意义的新引用
 const DEFAULT_DATA = []
 
-// 判断当前面积图是否启用了累计流逻辑，兼容图表类型和历史自定义属性两种来源。
+// 判断当前面积图是否启用了累计流逻辑，兼容图表类型和历史自定义属性两种来源
 const isCumulativeFlowChart = (chart: Chart) => {
   const customAttr: DeepPartial<ChartAttr> = parseJson(chart.customAttr)
   return chart.type === 'cumulative-flow' || Boolean((customAttr.basicStyle as any)?.cumulativeFlow)
 }
 
-// 读取累计流阶段顺序，优先使用用户自定义排序，缺省时按数据出现顺序推导。
+// 读取累计流阶段顺序，优先使用用户自定义排序，缺省时按数据出现顺序推导
 const getCumulativeFlowStageOrder = (chart: Chart, data: any[] = []) => {
   const customSort = (chart.extStack?.[0] as any)?.customSort
   if (Array.isArray(customSort) && customSort.length) {
@@ -61,18 +61,18 @@ const getCumulativeFlowStageOrder = (chart: Chart, data: any[] = []) => {
   }, [] as string[])
 }
 
-// 获取阶段在累计流排序中的位置，未知阶段排到末尾以保持可预期展示。
+// 获取阶段在累计流排序中的位置，未知阶段排到末尾以保持可预期展示
 const getStageIndex = (stageOrder: string[], stage: string) => {
   const index = stageOrder.indexOf(stage)
   return index === -1 ? Number.MAX_SAFE_INTEGER : index
 }
 
-// 比较两个累计流阶段在配置顺序中的先后关系。
+// 比较两个累计流阶段在配置顺序中的先后关系
 const compareCumulativeFlowStage = (stageOrder: string[], left: string, right: string) => {
   return getStageIndex(stageOrder, left) - getStageIndex(stageOrder, right)
 }
 
-// 累计流数据先按阶段排序，再按维度字段兜底排序，保证堆叠区域稳定。
+// 累计流数据先按阶段排序，再按维度字段兜底排序，保证堆叠区域稳定
 const cumulativeFlowSort = (left, right, stageOrder: string[]) => {
   const stageCompare =
     compareCumulativeFlowStage(stageOrder, left.category, right.category) ||
@@ -83,11 +83,11 @@ const cumulativeFlowSort = (left, right, stageOrder: string[]) => {
   return `${left.field}`.localeCompare(`${right.field}`)
 }
 
-// 面积图视图封装 G2Plot 的渲染、样式配置和交互事件。
+// 面积图视图封装 G2Plot 的渲染、样式配置和交互事件
 export class Area extends G2PlotChartView<AreaOptions, G2Area> {
-  // 面积图在编辑器中开放的属性面板集合。
+  // 面积图在编辑器中开放的属性面板集合
   properties = LINE_EDITOR_PROPERTY
-  // 面积图对通用折线属性面板的增量扩展。
+  // 面积图对通用折线属性面板的增量扩展
   propertyInner = {
     ...LINE_EDITOR_PROPERTY_INNER,
     'basic-style-selector': [
@@ -102,9 +102,9 @@ export class Area extends G2PlotChartView<AreaOptions, G2Area> {
       'carousel'
     ]
   }
-  // 面积图支持的字段轴类型，沿用折线图的维度和指标轴配置。
+  // 面积图支持的字段轴类型，沿用折线图的维度和指标轴配置
   axis: AxisType[] = [...LINE_AXIS_TYPE]
-  // 轴字段拖拽区域的名称和字段类型限制。
+  // 轴字段拖拽区域的名称和字段类型限制
   axisConfig = {
     ...this['axisConfig'],
     xAxis: {
@@ -116,7 +116,7 @@ export class Area extends G2PlotChartView<AreaOptions, G2Area> {
       type: 'q'
     }
   }
-  // G2Plot 面积图的基础配置，业务数据和样式会在渲染前合并进去。
+  // G2Plot 面积图的基础配置，业务数据和样式会在渲染前合并进去
   baseOptions: AreaOptions = {
     data: [],
     xField: 'field',
@@ -157,7 +157,7 @@ export class Area extends G2PlotChartView<AreaOptions, G2Area> {
     ]
   }
 
-  // 根据图表数据和编辑器配置创建面积图实例。
+  // 根据图表数据和编辑器配置创建面积图实例
   async drawChart(drawOptions: G2PlotDrawOptions<G2Area>): Promise<G2Area> {
     const { chart, container, action } = drawOptions
     chart.container = container
@@ -190,7 +190,7 @@ export class Area extends G2PlotChartView<AreaOptions, G2Area> {
     return newChart
   }
 
-  // 配置面积图标签内容、位置和条件颜色。
+  // 配置面积图标签内容、位置和条件颜色
   protected configLabel(chart: Chart, options: AreaOptions): AreaOptions {
     const tmpOptions = super.configLabel(chart, options)
     if (!tmpOptions.label) {

@@ -9,13 +9,13 @@ import { fieldType } from '@/utils/attr'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 import { getCSSVariable } from '@/utils/color'
 
-// 保存筛选字段标签的格式化配置和颜色状态。
+// 保存筛选字段标签的格式化配置和颜色状态
 const state = reactive({
   formatterItem: formatterItem,
   tagColor: getCSSVariable()
 })
 
-// 定义筛选字段标签接收的字段、索引和主题参数。
+// 定义筛选字段标签接收的字段、索引和主题参数
 const props = defineProps({
   param: {
     type: Object,
@@ -43,12 +43,12 @@ const props = defineProps({
   }
 })
 
-// 声明删除字段和编辑字段筛选时向父组件派发的事件。
+// 声明删除字段和编辑字段筛选时向父组件派发的事件
 const emit = defineEmits(['onFilterItemRemove', 'editItemFilter'])
 
 const { item } = toRefs(props)
 
-// 监听字段集合变化并刷新标签颜色。
+// 监听字段集合变化并刷新标签颜色
 watch(
   [() => props.dimensionData, () => props.quotaData, props.item, item],
   () => {
@@ -57,7 +57,7 @@ watch(
   { deep: true }
 )
 
-// 根据下拉菜单命令执行删除或编辑筛选操作。
+// 根据下拉菜单命令执行删除或编辑筛选操作
 const clickItem = param => {
   if (!param) {
     return
@@ -74,31 +74,31 @@ const clickItem = param => {
   }
 }
 
-// 将点击类型包装为下拉菜单命令对象。
+// 将点击类型包装为下拉菜单命令对象
 const beforeClickItem = type => {
   return {
     type: type
   }
 }
 
-// 打开当前字段的筛选编辑。
+// 打开当前字段的筛选编辑
 const editFilter = () => {
   item.value.index = props.index
   emit('editItemFilter', item.value)
 }
 
-// 删除当前筛选字段。
+// 删除当前筛选字段
 const removeItem = () => {
   item.value.index = props.index
   emit('onFilterItemRemove', item.value)
 }
 
-// 根据字段类型计算标签展示颜色。
+// 根据字段类型计算标签展示颜色
 const getItemTagColor = () => {
   state.tagColor = getItemType(props.dimensionData, props.quotaData, props.item)
 }
 
-// 挂载时初始化字段标签颜色。
+// 挂载时初始化字段标签颜色
 onMounted(() => {
   getItemTagColor()
 })

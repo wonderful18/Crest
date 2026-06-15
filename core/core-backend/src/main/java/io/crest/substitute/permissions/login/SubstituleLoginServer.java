@@ -27,30 +27,30 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping
 /**
- * 默认登录接口实现，负责本地登录、刷新令牌和退出。
+ * 默认登录接口实现，负责本地登录、刷新令牌和退出
  */
 public class SubstituleLoginServer {
 
     /**
-     * 用户管理服务。
+     * 用户管理服务
      */
     @Resource
     private CrestUserManage crestUserManage;
 
     /**
-     * 单点登录配置管理服务。
+     * 单点登录配置管理服务
      */
     @Resource
     private SsoManage ssoManage;
 
     /**
-     * 平台权限管理服务。
+     * 平台权限管理服务
      */
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
     /**
-     * 本地账号密码登录。
+     * 本地账号密码登录
      */
     @CrestAudit(ot = LogOT.LOGIN, st = LogST.USER)
     @PostMapping("/login/local-login")
@@ -87,7 +87,7 @@ public class SubstituleLoginServer {
 
 
     /**
-     * 使用当前用户上下文刷新访问令牌。
+     * 使用当前用户上下文刷新访问令牌
      */
     @GetMapping("/login/refresh")
     public TokenVO refresh() {
@@ -107,7 +107,7 @@ public class SubstituleLoginServer {
     }
 
     /**
-     * 退出登录审计入口。
+     * 退出登录审计入口
      */
     @CrestAudit(ot = LogOT.LOGIN, st = LogST.USER)
     @GetMapping("/logout")
@@ -116,13 +116,13 @@ public class SubstituleLoginServer {
     }
 
     /**
-     * 根据用户上下文和密钥生成签名令牌。
+     * 根据用户上下文和密钥生成签名令牌
      */
     private TokenVO generate(TokenUserBO bo, String secret) {
         Long userId = bo.getUserId();
         Long defaultOid = bo.getDefaultOid();
 
-        // 令牌过期时间为 24 小时。
+        // 令牌过期时间为 24 小时
         long expirationMillis = 24 * 60 * 60 * 1000L;
         Date expiresAt = new Date(System.currentTimeMillis() + expirationMillis);
 

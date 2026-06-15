@@ -2,7 +2,7 @@
 import { inject, computed, PropType } from 'vue'
 import { getCSSVariable } from '@/utils/color'
 
-// 平铺筛选组件的选项、禁用状态和自定义样式属性。
+// 平铺筛选组件的选项、禁用状态和自定义样式属性
 const props = defineProps({
   options: {
     type: Array as PropType<Array<Record<string, any>>>,
@@ -21,36 +21,36 @@ const props = defineProps({
     default: () => ({})
   }
 })
-// 大屏筛选器注入的统一主题样式。
+// 大屏筛选器注入的统一主题样式
 const customStyle: any = inject('$custom-style-filter')
 
-// 合并组件自带样式与全局筛选器背景色。
+// 合并组件自带样式与全局筛选器背景色
 const customSelectStyle = computed(() => {
   return customStyle
     ? { ...props.selectStyle, background: customStyle.background }
     : props.selectStyle
 })
 
-// 计算选项文字颜色和字号。
+// 计算选项文字颜色和字号
 const customColor = computed(() => {
   return customStyle
     ? { color: customStyle.text, fontSize: customStyle.placeholderSize + 'px' }
     : {}
 })
 
-// 筛选项高度跟随查询条件配置。
+// 筛选项高度跟随查询条件配置
 const boxHeight = computed(() => {
   return `${customStyle?.queryConditionHeight || 32}px`
 })
 
-// 激活下划线颜色优先使用自定义按钮色。
+// 激活下划线颜色优先使用自定义按钮色
 const btnColor = computed(() => {
   return customStyle ? customStyle.btnColor : getCSSVariable()
 })
 
-// 选中项点击时向父组件提交值。
+// 选中项点击时向父组件提交值
 const emits = defineEmits(['handleItemClick'])
-// 处理平铺项点击，并在禁用状态下阻止交互。
+// 处理平铺项点击，并在禁用状态下阻止交互
 const handleItemClick = (item: any) => {
   if (props.disabled) return
   emits('handleItemClick', item.value)

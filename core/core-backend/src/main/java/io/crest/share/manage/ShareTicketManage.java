@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Component
-// 管理分享访问口令的创建、校验和查询。
+// 管理分享访问口令的创建、校验和查询
 public class ShareTicketManage {
     private static final int MIN_TICKET_LENGTH = 6;
     private static final int MAX_TICKET_LENGTH = 64;
@@ -44,14 +44,14 @@ public class ShareTicketManage {
     private ShareExtMapper shareExtMapper;
 
 
-    // 按口令查询分享口令记录。
+    // 按口令查询分享口令记录
     public CoreShareTicket getByTicket(String ticket) {
         QueryWrapper<CoreShareTicket> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("ticket", ticket);
         return coreShareTicketMapper.selectOne(queryWrapper);
     }
 
-    // 保存或更新分享访问口令。
+    // 保存或更新分享访问口令
     @Transactional
     public String saveTicket(TicketCreator creator) {
         String ticket = creator.getTicket();
@@ -87,7 +87,7 @@ public class ShareTicketManage {
         return ticket;
     }
 
-    // 校验分享访问口令格式。
+    // 校验分享访问口令格式
     private void validateTicket(String ticket) {
         if (StringUtils.isBlank(ticket)) {
             return;
@@ -103,12 +103,12 @@ public class ShareTicketManage {
         }
     }
 
-    // 保存分享口令实体。
+    // 保存分享口令实体
     public void saveDao(CoreShareTicket ticket) {
         coreShareTicketMapper.insert(ticket);
     }
 
-    // 删除指定分享口令。
+    // 删除指定分享口令
     public void deleteTicket(TicketDelRequest request) {
         String ticket = request.getTicket();
         if (StringUtils.isBlank(ticket)) {
@@ -119,7 +119,7 @@ public class ShareTicketManage {
         coreShareTicketMapper.delete(queryWrapper);
     }
 
-    // 切换分享是否需要口令。
+    // 切换分享是否需要口令
     public void switchRequire(TicketSwitchRequest request) {
         String resourceId = request.getResourceId();
         Boolean require = request.getRequire();
@@ -131,7 +131,7 @@ public class ShareTicketManage {
         coreShareMapper.updateById(coreShare);
     }
 
-    // 分页查询资源分享口令。
+    // 分页查询资源分享口令
     public IPage<TicketVO> query(Long resourceId, Page<TicketVO> page) {
         QueryWrapper<CoreShare> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("resource_id", resourceId);
@@ -154,13 +154,13 @@ public class ShareTicketManage {
         return iPage;
     }
 
-    // 分享 UUID 变更后同步口令归属。
+    // 分享 UUID 变更后同步口令归属
     @Transactional
     public void updateByUuidChange(String originalUuid, String newUuid) {
         shareExtMapper.updateTicketUuid(originalUuid, newUuid);
     }
 
-    // 删除指定分享下的全部口令。
+    // 删除指定分享下的全部口令
     @Transactional
     public void deleteByShare(String uuid) {
         QueryWrapper<CoreShareTicket> ticketQueryWrapper = new QueryWrapper<>();
@@ -168,7 +168,7 @@ public class ShareTicketManage {
         coreShareTicketMapper.delete(ticketQueryWrapper);
     }
 
-    // 校验分享访问口令是否可用。
+    // 校验分享访问口令是否可用
     public TicketValidVO validateTicket(String ticket, CoreShare share) {
         TicketValidVO vo = new TicketValidVO();
         if (StringUtils.isBlank(ticket)) {
@@ -202,12 +202,12 @@ public class ShareTicketManage {
         return vo;
     }
 
-    // 查询可创建口令数量上限。
+    // 查询可创建口令数量上限
     public Integer getLimit() {
         return 0;
     }
 
-    // 查询指定分享的口令数量。
+    // 查询指定分享的口令数量
     public long ticketCount(String uuid) {
         QueryWrapper<CoreShareTicket> ticketQueryWrapper = new QueryWrapper<>();
         ticketQueryWrapper.eq("uuid", uuid);

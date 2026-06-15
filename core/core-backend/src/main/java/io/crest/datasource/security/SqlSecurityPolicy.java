@@ -7,19 +7,19 @@ import java.text.Normalizer;
 import java.util.Locale;
 
 /**
- * 在用户 SQL 进入 Calcite 或 JDBC 连接前执行最后一层进程内安全检查。
- * 这里只做词法级边界判断；数据源权限、参数绑定和方言校验仍由调用方负责。
+ * 在用户 SQL 进入 Calcite 或 JDBC 连接前执行最后一层进程内安全检查
+ * 这里只做词法级边界判断；数据源权限、参数绑定和方言校验仍由调用方负责
  */
 public final class SqlSecurityPolicy {
 
     /**
-     * 工具类不保存请求上下文，所有检查都必须保持无状态。
+     * 工具类不保存请求上下文，所有检查都必须保持无状态
      */
     private SqlSecurityPolicy() {
     }
 
     /**
-     * 校验只读查询入口。允许的前缀覆盖数据预览和字段发现使用的查询、元数据查看命令。
+     * 校验只读查询入口。允许的前缀覆盖数据预览和字段发现使用的查询、元数据查看命令
      *
      * @param sql 请求中的原始 SQL 文本
      * @return 原始 SQL 文本，保留调用方已有格式
@@ -39,7 +39,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * 规范化 SQL，并拒绝会改变语句边界的输入。字符串、引用标识符和注释中的分号不视为新语句。
+     * 规范化 SQL，并拒绝会改变语句边界的输入。字符串、引用标识符和注释中的分号不视为新语句
      *
      * @param sql 请求中的原始 SQL 文本
      * @return 用于后续安全判断的规范化 SQL 文本
@@ -59,7 +59,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * 判断顶层分号之后是否还有可执行内容。末尾分号后只有空白或注释时，按单语句兼容处理。
+     * 判断顶层分号之后是否还有可执行内容。末尾分号后只有空白或注释时，按单语句兼容处理
      */
     private static boolean containsExecutableSqlAfterTopLevelSemicolon(String sql) {
         int semicolonIndex = findTopLevelSemicolon(sql, 0);
@@ -74,7 +74,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * 查找不在引号和注释内部的分号。这里不是完整 SQL 解析器，只跟踪会隐藏分号的常见结构。
+     * 查找不在引号和注释内部的分号。这里不是完整 SQL 解析器，只跟踪会隐藏分号的常见结构
      */
     private static int findTopLevelSemicolon(String sql, int start) {
         char quote = 0;
@@ -117,7 +117,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * 检查分号后的剩余文本是否包含可执行内容，空白和注释会被忽略。
+     * 检查分号后的剩余文本是否包含可执行内容，空白和注释会被忽略
      */
     private static boolean hasExecutableContent(String sql, int start) {
         for (int i = start; i < sql.length(); i++) {
@@ -144,7 +144,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * 跳过行注释，避免注释中的分号被误判为语句分隔符。
+     * 跳过行注释，避免注释中的分号被误判为语句分隔符
      */
     private static int skipLineComment(String sql, int start) {
         int lineEnd = sql.indexOf('\n', start);
@@ -152,7 +152,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * 跳过块注释。未闭合块注释会直接消耗到 SQL 末尾，避免暴露后续伪造语句。
+     * 跳过块注释。未闭合块注释会直接消耗到 SQL 末尾，避免暴露后续伪造语句
      */
     private static int skipBlockComment(String sql, int start) {
         int blockEnd = sql.indexOf("*/", start);
@@ -160,7 +160,7 @@ public final class SqlSecurityPolicy {
     }
 
     /**
-     * 拒绝可能干扰日志、预览结果或驱动行为的控制字符；标准 SQL 空白字符仍然允许。
+     * 拒绝可能干扰日志、预览结果或驱动行为的控制字符；标准 SQL 空白字符仍然允许
      */
     private static boolean containsControlCharacter(String value) {
         for (int i = 0; i < value.length(); i++) {

@@ -21,7 +21,7 @@ const { wsCache } = useCache('localStorage')
 const userStore = useUserStoreWithOut()
 const { t } = useI18n()
 
-// 数据集选择器属性同时支持数据集和数据源两类资源选择场景。
+// 数据集选择器属性同时支持数据集和数据源两类资源选择场景
 const props = withDefaults(
   defineProps<{
     themes?: EditorTheme
@@ -39,42 +39,42 @@ const props = withDefaults(
   }
 )
 
-// 树组件引用，用于执行关键字过滤和暴露节点查询能力。
+// 树组件引用，用于执行关键字过滤和暴露节点查询能力
 const datasetSelector = ref(null)
 
-// 资源树加载态，控制弹窗内加载占位和空态判断。
+// 资源树加载态，控制弹窗内加载占位和空态判断
 const loadingDatasetTree = ref(false)
 
-// 当前组织是否仍允许访问已选资源，切换组织后用于阻止跨组织引用。
+// 当前组织是否仍允许访问已选资源，切换组织后用于阻止跨组织引用
 const orgCheck = ref(true)
 
-// 可选资源树数据，数据集和数据源接口返回后统一写入。
+// 可选资源树数据，数据集和数据源接口返回后统一写入
 const datasetTree = ref<Tree[]>([])
 
-// 选择框提示文案按资源类型区分，避免数据集和数据源入口混淆。
+// 选择框提示文案按资源类型区分，避免数据集和数据源入口混淆
 const selectSource =
   props.sourceType === 'datasource'
     ? t('visualization.select_datasource')
     : t('visualization.select_dataset')
 
-// 新建按钮文案按资源类型切换，并由父组件接管实际创建流程。
+// 新建按钮文案按资源类型切换，并由父组件接管实际创建流程
 const newSource =
   props.sourceType === 'datasource'
     ? t('visualization.new_datasource')
     : t('visualization.new_dataset')
 
-// 资源类型名称用于空态、校验和展示文案。
+// 资源类型名称用于空态、校验和展示文案
 const sourceName = computed(() =>
   props.sourceType === 'datasource' ? t('datasource.datasource') : t('visualization.dataset')
 )
 
-// 资源树排序沿用用户在数据集树中的排序偏好，接口返回后统一排序。
+// 资源树排序沿用用户在数据集树中的排序偏好，接口返回后统一排序
 const sortTypeChange = arr => {
   const sortType = wsCache.get('TreeSort-dataset') || 'time_desc'
   datasetTree.value = treeSort(arr, sortType)
 }
 
-// 拉取数据集或数据源树，并在结束后触发表单校验刷新选中状态。
+// 拉取数据集或数据源树，并在结束后触发表单校验刷新选中状态
 const initDataset = () => {
   loadingDatasetTree.value = true
   const method = props.sourceType === 'datasource' ? datasourceList : fetchDatasetTree
@@ -92,7 +92,7 @@ const initDataset = () => {
     })
 }
 
-// 组件对外事件覆盖双向绑定、状态同步、资源变更和新增弹窗。
+// 组件对外事件覆盖双向绑定、状态同步、资源变更和新增弹窗
 const emits = defineEmits([
   'update:modelValue',
   'update:stateObj',
@@ -100,7 +100,7 @@ const emits = defineEmits([
   'addDsWindow'
 ])
 
-// modelValue 的本地代理，所有选择变更都通过 update:modelValue 回传父级。
+// modelValue 的本地代理，所有选择变更都通过 update:modelValue 回传父级
 const _modelValue = computed({
   get() {
     return props.modelValue
@@ -110,7 +110,7 @@ const _modelValue = computed({
   }
 })
 
-// Element Plus 树字段映射，叶子节点代表可被图表选择的真实资源。
+// Element Plus 树字段映射，叶子节点代表可被图表选择的真实资源
 const dsSelectProps = {
   label: 'name',
   children: 'children',
@@ -118,34 +118,34 @@ const dsSelectProps = {
   isLeaf: node => !node.children?.length
 }
 
-// 表单引用用于在资源树刷新后重新校验当前选择是否仍存在。
+// 表单引用用于在资源树刷新后重新校验当前选择是否仍存在
 const formRef = ref<FormInstance>()
-// 弹窗内搜索关键字。
+// 弹窗内搜索关键字
 const searchStr = ref<string>()
 
-// 搜索关键字变化时直接驱动树组件过滤。
+// 搜索关键字变化时直接驱动树组件过滤
 watch(searchStr, val => {
   datasetSelector.value.filter(val)
 })
 
-// 有可访问资源且加载完成时才展示树，组织失效时转为空态提示。
+// 有可访问资源且加载完成时才展示树，组织失效时转为空态提示
 const showTree = computed(() => {
   return (
     datasetTree.value && datasetTree.value.length > 0 && !loadingDatasetTree.value && orgCheck.value
   )
 })
 
-// 空态文案区分无数据和切换组织导致的权限失效。
+// 空态文案区分无数据和切换组织导致的权限失效
 const emptyMsg = computed(() => {
   return orgCheck.value ? '暂无' + sourceName.value : '已切换至新组织，无权访问其他组织的资源'
 })
 
-// 只有组织权限失效时展示显式空态，普通无数据沿用树组件自身空态。
+// 只有组织权限失效时展示显式空态，普通无数据沿用树组件自身空态
 const showEmptyInfo = computed(() => {
   return !showTree.value && !loadingDatasetTree.value && !orgCheck.value
 })
 
-// 后端返回 root 包裹节点时剥离 root，使弹窗只展示业务目录。
+// 后端返回 root 包裹节点时剥离 root，使弹窗只展示业务目录
 const computedTree = computed(() => {
   if (showTree.value) {
     if (datasetTree.value[0]?.id === '0') {
@@ -155,17 +155,17 @@ const computedTree = computed(() => {
   return datasetTree.value
 })
 
-// 扁平化后的叶子节点列表，用于快速定位当前选中资源。
+// 扁平化后的叶子节点列表，用于快速定位当前选中资源
 const flattedTree = computed(() => {
   return _.filter(flatTree(computedTree.value), node => node.leaf)
 })
 
-// 当前 modelValue 对应的资源节点，找不到时代表已删除或无权限。
+// 当前 modelValue 对应的资源节点，找不到时代表已删除或无权限
 const selectedNode = computed(() => {
   return _.find(flattedTree.value, node => node.id === _modelValue.value)
 })
 
-// 判断当前选择是否仍存在于可访问资源树中。
+// 判断当前选择是否仍存在于可访问资源树中
 const exist = computed(() => {
   if (_modelValue.value) {
     if (selectedNode.value === undefined) {
@@ -175,7 +175,7 @@ const exist = computed(() => {
   return true
 })
 
-// 输入框展示当前资源名称；资源缺失时展示明确失效提示。
+// 输入框展示当前资源名称；资源缺失时展示明确失效提示
 const selectedNodeName = computed(() => {
   if (!exist.value) {
     return sourceName.value + '不存在'
@@ -183,12 +183,12 @@ const selectedNodeName = computed(() => {
   return selectedNode.value?.name
 })
 
-// 表单模型只承载名称字段，配合自定义校验提示资源失效。
+// 表单模型只承载名称字段，配合自定义校验提示资源失效
 const form = computed(() => {
   return { name: selectedNodeName.value }
 })
 
-// 校验规则用于阻止保存已删除或无权限的数据集引用。
+// 校验规则用于阻止保存已删除或无权限的数据集引用
 const rules = ref([
   {
     validator: (...params) => {
@@ -202,7 +202,7 @@ const rules = ref([
   }
 ])
 
-// 将目录树展开为扁平列表，保留原节点结构供后续选择使用。
+// 将目录树展开为扁平列表，保留原节点结构供后续选择使用
 function flatTree(tree: Tree[] = []) {
   let result = _.cloneDeep(tree)
   _.forEach(tree, node => {
@@ -212,57 +212,57 @@ function flatTree(tree: Tree[] = []) {
   })
   return result
 }
-// 向父组件通知资源切换，父级负责刷新字段、图表配置和联动状态。
+// 向父组件通知资源切换，父级负责刷新字段、图表配置和联动状态
 const onDatasetChange = val => {
   emits('onDatasetChange', val)
 }
-// 树节点过滤只匹配名称，空关键字保留全部节点。
+// 树节点过滤只匹配名称，空关键字保留全部节点
 const filterNode = (value: string, data: Tree) => {
   if (!value) return true
   return data.name?.includes(value)
 }
 
-// 手动刷新资源树，供弹窗刷新按钮和外部事件复用。
+// 手动刷新资源树，供弹窗刷新按钮和外部事件复用
 const refresh = () => {
   initDataset()
 }
-// 打开新增数据集或数据源窗口，实际创建流程由父级承接。
+// 打开新增数据集或数据源窗口，实际创建流程由父级承接
 const addDataset = () => {
   emits('addDsWindow')
 }
 
-// 选择器弹窗引用，用于选中叶子节点后主动关闭。
+// 选择器弹窗引用，用于选中叶子节点后主动关闭
 const datasetSelectorPopover = ref()
 
-// 只允许叶子资源被选中；变化时先通知父级，再写回双向绑定并关闭弹窗。
+// 只允许叶子资源被选中；变化时先通知父级，再写回双向绑定并关闭弹窗
 const dsClick = (data: Tree) => {
   if (data.leaf) {
     if (_modelValue.value !== data.id) {
       onDatasetChange(data.id)
     }
-    // 选中值写回后，输入框和表单校验会自动使用新的资源名称。
+    // 选中值写回后，输入框和表单校验会自动使用新的资源名称
     _modelValue.value = data.id
-    // 叶子节点选择完成即收起弹窗，避免用户继续误点目录节点。
+    // 叶子节点选择完成即收起弹窗，避免用户继续误点目录节点
     datasetSelectorPopover.value?.hide()
   }
 }
-// 弹窗显隐状态用于驱动输入框右侧箭头方向。
+// 弹窗显隐状态用于驱动输入框右侧箭头方向
 const _popoverShow = ref(false)
-// 弹窗打开时标记展开状态。
+// 弹窗打开时标记展开状态
 function onPopoverShow() {
   _popoverShow.value = true
 }
-// 弹窗关闭时恢复折叠状态。
+// 弹窗关闭时恢复折叠状态
 function onPopoverHide() {
   _popoverShow.value = false
 }
 
-// 暴露给父级按节点编号读取树节点，常用于编辑器回显资源信息。
+// 暴露给父级按节点编号读取树节点，常用于编辑器回显资源信息
 function getNode(nodeId: number) {
   return datasetSelector?.value?.getNode(nodeId)
 }
 
-// 特定组件允许清空数据集绑定，用于纯文本或图片组等非强依赖数据组件。
+// 特定组件允许清空数据集绑定，用于纯文本或图片组等非强依赖数据组件
 const clearShow = computed(
   () =>
     props.sourceType === 'dataset' &&
@@ -270,7 +270,7 @@ const clearShow = computed(
     ['rich-text', 'picture-group'].includes(dvMainStore.curComponent.innerType)
 )
 
-// 清空当前数据集绑定，并通知图表轴和下钻字段清理关联配置。
+// 清空当前数据集绑定，并通知图表轴和下钻字段清理关联配置
 const handleClear = e => {
   e.preventDefault()
   e.stopPropagation()
@@ -278,7 +278,7 @@ const handleClear = e => {
   useEmitt().emitter.emit('clear-remove', ['xAxis', 'yAxis', 'drillFields'])
 }
 
-// 聚焦时检查当前组织是否和资源树缓存一致，防止跨组织访问历史资源。
+// 聚焦时检查当前组织是否和资源树缓存一致，防止跨组织访问历史资源
 const handleFocus = () => {
   if (
     props.sourceType === 'dataset' &&
@@ -292,13 +292,13 @@ const handleFocus = () => {
   }
 }
 
-// 对外暴露节点读取能力，方便编辑器其他区域复用当前树实例。
+// 对外暴露节点读取能力，方便编辑器其他区域复用当前树实例
 defineExpose({ getNode })
-// 嵌入式环境下不展示新增入口，避免宿主页面越权创建资源。
+// 嵌入式环境下不展示新增入口，避免宿主页面越权创建资源
 const appStore = useAppStoreWithOut()
-// 产品内嵌和 iframe 都按嵌入式模式处理新增入口。
+// 产品内嵌和 iframe 都按嵌入式模式处理新增入口
 const isCrestBi = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
-// 挂载后加载资源树，并监听外部保存应用后触发的资源刷新事件。
+// 挂载后加载资源树，并监听外部保存应用后触发的资源刷新事件
 onMounted(() => {
   initDataset()
   useEmitt({

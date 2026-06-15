@@ -13,7 +13,7 @@ import java.util.Map;
 
 @Component("dataFillingTaskExecutor")
 /**
- * 数据填报调度任务执行器，负责维护正式、临时和重试调度任务。
+ * 数据填报调度任务执行器，负责维护正式、临时和重试调度任务
  */
 public class DataFillingTaskExecutor {
 
@@ -27,19 +27,19 @@ public class DataFillingTaskExecutor {
     @Resource
     private ScheduleManager scheduleManager;
     /**
-     * 执行数据填报任务。
+     * 执行数据填报任务
      */
     public boolean execute(Map<String, Object> taskData) {
         return false;
     }
     /**
-     * 初始化数据填报调度执行器。
+     * 初始化数据填报调度执行器
      */
     public void init() {
     }
 
     /**
-     * 新增或更新数据填报定时任务。
+     * 新增或更新数据填报定时任务
      */
     public void addOrUpdateTask(Long taskId, String cron, Long startTime, Long endTime) {
         if (CronUtils.taskExpire(endTime)) {
@@ -57,7 +57,7 @@ public class DataFillingTaskExecutor {
     }
 
     /**
-     * 新增数据填报重试任务。
+     * 新增数据填报重试任务
      */
     public void addRetryTask(Long taskId, Integer retryLimit, Integer retryInterval) {
         long saltTime = 3000L;
@@ -81,7 +81,7 @@ public class DataFillingTaskExecutor {
     }
 
     /**
-     * 立即触发指定数据填报任务。
+     * 立即触发指定数据填报任务
      */
     public boolean fireNow(Long taskId) throws Exception {
         String key = taskId.toString();
@@ -94,7 +94,7 @@ public class DataFillingTaskExecutor {
     }
 
     /**
-     * 新增一次性临时数据填报任务。
+     * 新增一次性临时数据填报任务
      */
     public void addTempTask(Long taskId, Long startTime) {
         String key = taskId.toString();
@@ -108,7 +108,7 @@ public class DataFillingTaskExecutor {
     }
 
     /**
-     * 删除正式或临时数据填报任务。
+     * 删除正式或临时数据填报任务
      */
     public void removeTask(Long taskId, boolean isTemp) {
         String key = taskId.toString();
@@ -118,7 +118,7 @@ public class DataFillingTaskExecutor {
     }
 
     /**
-     * 删除数据填报重试任务。
+     * 删除数据填报重试任务
      */
     public void removeRetryTask(Long taskId) {
         String key = taskId.toString();
@@ -128,7 +128,7 @@ public class DataFillingTaskExecutor {
     }
 
     /**
-     * 清理全部数据填报重试任务。
+     * 清理全部数据填报重试任务
      */
     public void clearRetryTask() throws Exception {
         scheduleManager.clearByGroup(RETRY_JOB_GROUP);

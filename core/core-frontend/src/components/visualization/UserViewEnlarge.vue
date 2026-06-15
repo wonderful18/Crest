@@ -188,34 +188,34 @@ import {
 import ChartCarouselTooltip from '@/views/chart/components/js/g2plot_tooltip_carousel'
 import html2canvas from 'html2canvas'
 import { getData } from '@/api/chart'
-// 截图下载期间的临时渲染状态，用于固定导出尺寸并隐藏不适合截图的动态效果。
+// 截图下载期间的临时渲染状态，用于固定导出尺寸并隐藏不适合截图的动态效果
 const downLoading = ref(false)
 const dvMainStore = dvMainStoreWithOut()
-// 放大和明细弹窗的显隐状态。
+// 放大和明细弹窗的显隐状态
 const dialogShow = ref(false)
 const requestStore = useRequestStoreWithOut()
 const permissionStore = usePermissionStoreWithOut()
-// 当前弹窗内使用的图表配置副本。
+// 当前弹窗内使用的图表配置副本
 let viewInfo = ref<any>(null)
-// 当前弹窗内使用的画布组件配置副本。
+// 当前弹窗内使用的画布组件配置副本
 const config = ref<any>(null)
-// 弹窗内容容器实例，用于截图导出。
+// 弹窗内容容器实例，用于截图导出
 const viewContainer = ref(null)
 const { t } = useI18n()
-// 当前弹窗操作类型，区分放大、明细等入口。
+// 当前弹窗操作类型，区分放大、明细等入口
 const optType = ref(null)
-// 明细弹窗主图表组件实例。
+// 明细弹窗主图表组件实例
 const chartComponentDetails = ref(null)
-// 组合图明细弹窗右侧图表组件实例。
+// 组合图明细弹窗右侧图表组件实例
 const chartComponentDetails2 = ref(null)
 const { dvInfo, isIframe, canvasStyleData } = storeToRefs(dvMainStore)
-// 明细导出接口调用期间的加载状态。
+// 明细导出接口调用期间的加载状态
 const exportLoading = ref(false)
-// 源图表类型，明细渲染时需要保留原图类型判断。
+// 源图表类型，明细渲染时需要保留原图类型判断
 const sourceViewType = ref()
-// 组合图明细弹窗当前激活的左右标签页。
+// 组合图明细弹窗当前激活的左右标签页
 const activeName = ref('left')
-// 明细数据或渲染失败状态。
+// 明细数据或渲染失败状态
 const detailsError = ref(false)
 const DETAIL_CHART_ATTR: DeepPartial<ChartObj> = {
   render: 'antv',
@@ -247,7 +247,7 @@ const DETAIL_CHART_ATTR: DeepPartial<ChartObj> = {
   showPosition: 'dialog'
 }
 
-// 弹窗运行态参数，保存缩放比例、源组件类型和数据来源。
+// 弹窗运行态参数，保存缩放比例、源组件类型和数据来源
 const state = reactive<any>({
   scale: 0.5,
   componentSourceType: null,
@@ -262,7 +262,7 @@ const DETAIL_TABLE_ATTR: DeepPartial<ChartObj> = {
   showPosition: 'dialog'
 }
 
-// 将画布主题色同步到 Element Plus 弹窗变量。
+// 将画布主题色同步到 Element Plus 弹窗变量
 const dialogStyle = computed(() => {
   return [
     { '--ed-dialog-bg-color': canvasStyleData.value.dialogBackgroundColor },
@@ -270,11 +270,11 @@ const dialogStyle = computed(() => {
   ]
 })
 
-// 当前仪表板的导出权限集合。
+// 当前仪表板的导出权限集合
 const exportPermissions = computed(() =>
   exportPermission(dvInfo.value['weight'], dvInfo.value['ext'])
 )
-// 判断当前表格类图表是否允许使用格式化 Excel 导出。
+// 判断当前表格类图表是否允许使用格式化 Excel 导出
 const excelExportEnabled = computed(() => {
   if (!isExportableTableView(viewInfo.value)) {
     return true
@@ -282,7 +282,7 @@ const excelExportEnabled = computed(() => {
   return defaultViewExcelExportConfig(config.value?.excelExport).enabled
 })
 
-// 截图导出时临时覆盖弹窗画布样式，保证图片尺寸和画布主题一致。
+// 截图导出时临时覆盖弹窗画布样式，保证图片尺寸和画布主题一致
 const customExport = computed(() => {
   const style =
     canvasStyleData.value && optType.value === 'enlarge'
@@ -298,7 +298,7 @@ const customExport = computed(() => {
   }
 })
 
-// 默认截图分辨率，用户可在导出前切换。
+// 默认截图分辨率，用户可在导出前切换
 const pixel = ref('1280 * 720')
 
 const pixelOptions = [
@@ -337,7 +337,7 @@ const pixelOptions = [
     ]
   }
 ]
-// 初始化放大或明细弹窗上下文，并按入口类型准备图表副本。
+// 初始化放大或明细弹窗上下文，并按入口类型准备图表副本
 const dialogInit = (canvasStyle, view, item, opt, params = { scale: 0.5 }) => {
   state.scale = params.scale
   sourceViewType.value = view.type || ''
@@ -370,7 +370,7 @@ const dialogInit = (canvasStyle, view, item, opt, params = { scale: 0.5 }) => {
   })
 }
 
-// 优先复用主状态中的明细数据，缺失时再发起明细查询。
+// 优先复用主状态中的明细数据，缺失时再发起明细查询
 const dataDetailsOpt = () => {
   nextTick(() => {
     const viewDataInfo = dvMainStore.getViewDataDetails(viewInfo.value.id)
@@ -382,7 +382,7 @@ const dataDetailsOpt = () => {
   })
 }
 
-// 将明细数据渲染到弹窗图表，组合图需要分别渲染左右图表实例。
+// 将明细数据渲染到弹窗图表，组合图需要分别渲染左右图表实例
 const renderDetailsChart = (viewDataInfo, retry = 0) => {
   if (!viewDataInfo) {
     detailsError.value = true
@@ -408,7 +408,7 @@ const renderDetailsChart = (viewDataInfo, retry = 0) => {
   chartComponentDetails.value.renderChartFromDialog(viewInfo.value, viewDataInfo)
 }
 
-// 等待弹窗内图表组件挂载完成，超过重试次数后标记为明细错误。
+// 等待弹窗内图表组件挂载完成，超过重试次数后标记为明细错误
 const retryRenderDetails = (viewDataInfo, retry) => {
   if (retry >= 6) {
     detailsError.value = true
@@ -417,7 +417,7 @@ const retryRenderDetails = (viewDataInfo, retry) => {
   window.requestAnimationFrame(() => renderDetailsChart(viewDataInfo, retry + 1))
 }
 
-// 根据源图表最近一次查询参数重新拉取明细数据。
+// 根据源图表最近一次查询参数重新拉取明细数据
 const queryDetailsData = async () => {
   const sourceViewInfo = deepCopy(dvMainStore.getViewDetails(viewInfo.value.id) || viewInfo.value)
   if (!sourceViewInfo?.tableId && sourceViewInfo?.dataFrom !== 'template') {
@@ -451,7 +451,7 @@ const queryDetailsData = async () => {
   }
 }
 
-// 组合图明细切换左右标签页时，重绘对应图表。
+// 组合图明细切换左右标签页时，重绘对应图表
 const handleClick = tab => {
   nextTick(() => {
     const viewDataInfo = dvMainStore.getViewDataDetails(viewInfo.value.id)
@@ -463,12 +463,12 @@ const handleClick = tab => {
   })
 }
 
-// 触发当前弹窗图表截图下载。
+// 触发当前弹窗图表截图下载
 const downloadViewImage = () => {
   htmlToImage()
 }
 
-// 导出当前图表明细数据，保留最近一次查询上下文。
+// 导出当前图表明细数据，保留最近一次查询上下文
 const downloadViewDetails = (downloadType = 'view') => {
   const viewDataInfo = dvMainStore.getViewDataDetails(viewInfo.value.id)
   const viewInfoSource = deepCopy(dvMainStore.getViewDetails(viewInfo.value.id))
@@ -492,7 +492,7 @@ const downloadViewDetails = (downloadType = 'view') => {
   exportLoading.value = false
 }
 
-// 使用透视表实例导出带格式的 Excel。
+// 使用透视表实例导出带格式的 Excel
 const exportAsFormattedExcel = () => {
   const s2Instance = dvMainStore.getViewInstanceInfo(viewInfo.value.id)
   if (!s2Instance) {
@@ -501,12 +501,12 @@ const exportAsFormattedExcel = () => {
   const chart = dvMainStore.getViewDetails(viewInfo.value.id)
   exportPivotExcel(s2Instance, chart)
 }
-// 打开数据导出中心并定位到全部任务页。
+// 打开数据导出中心并定位到全部任务页
 const exportData = () => {
   useEmitt().emitter.emit('data-export-center', { activeName: 'ALL' })
 }
 
-// 提示用户导出任务已提交，并提供跳转导出中心的入口。
+// 提示用户导出任务已提交，并提供跳转导出中心的入口
 const openMessageLoading = cb => {
   const iconClass = `el-icon-loading`
   const customClass = `crest-message-loading crest-message-export`
@@ -533,14 +533,14 @@ const openMessageLoading = cb => {
     customClass
   } as any)
 }
-// 地图类图表截图前需要额外等待地图渲染事件，不直接进入全局下载遮罩。
+// 地图类图表截图前需要额外等待地图渲染事件，不直接进入全局下载遮罩
 const mapChartTypes = ['bubble-map', 'flow-map', 'heat-map', 'map', 'symbolic-map']
-// 将弹窗内容渲染为图片并触发浏览器下载。
+// 将弹窗内容渲染为图片并触发浏览器下载
 const htmlToImage = () => {
   downLoading.value = mapChartTypes.includes(viewInfo.value.type) ? false : true
   useEmitt().emitter.emit('renderChart-viewDialog-' + viewInfo.value.id)
   useEmitt().emitter.emit('l7-prepare-picture', viewInfo.value.id)
-  // 表格和支持最值标记的图表渲染链路更长，需要预留更充分的截图等待时间。
+  // 表格和支持最值标记的图表渲染链路更长，需要预留更充分的截图等待时间
   const renderTime =
     viewInfo.value.type?.includes('table') ||
     supportExtremumChartType({ type: viewInfo.value.type })
@@ -573,11 +573,11 @@ const htmlToImage = () => {
   }, renderTime)
 }
 
-// 按弹窗缩放比例重新初始化水印，保证截图和预览一致。
+// 按弹窗缩放比例重新初始化水印，保证截图和预览一致
 const initWatermark = () => {
   activeWatermarkCheckUser('enlarge-inner-content', 'canvas-main', state.scale)
 }
-// 关闭弹窗时同步外部悬浮提示状态，并销毁放大图提示实例。
+// 关闭弹窗时同步外部悬浮提示状态，并销毁放大图提示实例
 const handleClose = () => {
   useEmitt().emitter.emit('showEnlargeDialog', false)
   ChartCarouselTooltip.closeEnlargeDialogDestroy(viewInfo.value.id)

@@ -51,21 +51,21 @@ import treeSort, { treeParentWeight } from '@/utils/treeSortUtils'
 import router from '@/router'
 import { cancelRequestBatch } from '@/config/axios/service'
 import { isFreeFolder } from '@/utils/utils'
-// 缓存用于恢复上次选中的仪表板或大屏资源。
+// 缓存用于恢复上次选中的仪表板或大屏资源
 const { wsCache } = useCache()
 
-// 大屏主状态，提供当前资源和画布上下文。
+// 大屏主状态，提供当前资源和画布上下文
 const dvMainStore = dvMainStoreWithOut()
-// 应用状态用于判断嵌入式运行环境。
+// 应用状态用于判断嵌入式运行环境
 const appStore = useAppStoreWithOut()
-// 嵌入式状态可携带外部传入的资源编号。
+// 嵌入式状态可携带外部传入的资源编号
 const embeddedStore = useEmbedded()
-// 当前大屏或仪表板详情的响应式引用。
+// 当前大屏或仪表板详情的响应式引用
 const { dvInfo } = storeToRefs(dvMainStore)
-// 资源树文案的多语言翻译入口。
+// 资源树文案的多语言翻译入口
 const { t } = useI18n()
 
-// 资源树入参决定资源类型、展示场景和数据表来源。
+// 资源树入参决定资源类型、展示场景和数据表来源
 const props = defineProps({
   curCanvasType: {
     type: String,
@@ -82,40 +82,40 @@ const props = defineProps({
     default: 'core'
   }
 })
-// Element 树组件的字段映射和禁用规则。
+// Element 树组件的字段映射和禁用规则
 const defaultProps = {
   children: 'children',
   label: 'name',
   disabled: (data: any) => data.extraFlag1 === 0
 }
-// 标记资源树是否完成首次挂载。
+// 标记资源树是否完成首次挂载
 const mounted = ref(false)
-// 根目录管理权限标记。
+// 根目录管理权限标记
 const rootManage = ref(false)
-// 任意资源管理权限标记。
+// 任意资源管理权限标记
 const anyManage = ref(false)
-// 当前画布类型和展示位置保持响应式引用。
+// 当前画布类型和展示位置保持响应式引用
 const { curCanvasType, showPosition } = toRefs(props)
-// 根据资源类型生成业务侧展示名称。
+// 根据资源类型生成业务侧展示名称
 const resourceLabel =
   curCanvasType.value === 'dataV' ? t('work_branch.big_data_screen') : t('work_branch.dashboard')
-// 当前选中的树节点编号。
+// 当前选中的树节点编号
 const selectedNodeKey = ref(null)
-// 资源树搜索关键字。
+// 资源树搜索关键字
 const filterText = ref(null)
-// 已展开节点编号集合。
+// 已展开节点编号集合
 const expandedArray = ref([])
-// 资源树组件实例引用。
+// 资源树组件实例引用
 const resourceListTree = ref()
-// 批量操作组件实例引用。
+// 批量操作组件实例引用
 const resourceGroupOpt = ref()
-// 导入上传组件实例引用。
+// 导入上传组件实例引用
 const importUploadRef = ref()
-// 是否需要在挂载后回选缓存资源。
+// 是否需要在挂载后回选缓存资源
 const returnMounted = ref(false)
-// 导入资源时的加载状态。
+// 导入资源时的加载状态
 const importLoading = ref(false)
-// 资源树页面状态，包含排序、树数据和右键菜单配置。
+// 资源树页面状态，包含排序、树数据和右键菜单配置
 const state = reactive({
   pWeightMap: {},
   curSortType: 'time_desc',
@@ -159,15 +159,15 @@ const state = reactive({
   ]
 })
 
-// 新建资源菜单图标根据画布类型切换。
+// 新建资源菜单图标根据画布类型切换
 const dvSvgType = computed(() =>
   curCanvasType.value === 'dashboard' ? dvDashboardSpine : dvScreenSpine
 )
 
-// 嵌入式场景需要隐藏部分资源操作。
+// 嵌入式场景需要隐藏部分资源操作
 const isEmbedded = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
 
-// 新建按钮的菜单项，区分空白资源和文件夹。
+// 新建按钮的菜单项，区分空白资源和文件夹
 const resourceTypeList = computed(() => {
   const list = [
     {
@@ -190,12 +190,12 @@ const { handleDrop, allowDrop, handleDragStart } = treeDraggbleChart(
   curCanvasType.value
 )
 
-// 根据父级权重决定是否允许复制等资源操作。
+// 根据父级权重决定是否允许复制等资源操作
 const menuListWeight = id => {
   const pWeight = state.pWeightMap[id]
   return pWeight < 7 ? menuList : menuListWithCopy
 }
-// 权重允许时展示包含复制的资源操作菜单。
+// 权重允许时展示包含复制的资源操作菜单
 const menuListWithCopy = [
   {
     label: t('visualization.cancel_publish'), //取消发布
@@ -225,7 +225,7 @@ const menuListWithCopy = [
     divided: true
   }
 ]
-// 基础资源操作菜单。
+// 基础资源操作菜单
 const menuList = [
   {
     label: t('visualization.cancel_publish'), //取消发布
@@ -251,32 +251,32 @@ const menuList = [
   }
 ]
 
-// 从缓存中恢复最近访问的资源编号。
+// 从缓存中恢复最近访问的资源编号
 const infoId = wsCache.get(curCanvasType.value === 'dashboard' ? 'db-info-id' : 'dv-info-id')
-// 路由参数中的资源编号作为回选兜底来源。
+// 路由参数中的资源编号作为回选兜底来源
 const routerDvId = router.currentRoute.value.query.dvId
-// 最终用于回选的资源编号。
+// 最终用于回选的资源编号
 const dvId = embeddedStore.dvId || infoId || routerDvId
 wsCache.delete(curCanvasType.value === 'dashboard' ? 'db-info-id' : 'dv-info-id')
 if (dvId && showPosition.value === 'preview') {
   selectedNodeKey.value = dvId
   returnMounted.value = true
 }
-// 记录展开节点，刷新树数据后可恢复展开状态。
+// 记录展开节点，刷新树数据后可恢复展开状态
 const nodeExpand = data => {
   if (data.id) {
     expandedArray.value.push(data.id)
   }
 }
 
-// 节点收起时从展开集合移除对应编号。
+// 节点收起时从展开集合移除对应编号
 const nodeCollapse = data => {
   if (data.id) {
     expandedArray.value.splice(expandedArray.value.indexOf(data.id), 1)
   }
 }
 
-// 搜索树节点，同时避免复用当前正在编辑的资源。
+// 搜索树节点，同时避免复用当前正在编辑的资源
 const filterNode = (value: string, data: BusiTreeNode) => {
   if (showPosition.value === 'multiplexing' && data.id === dvInfo.value?.id) {
     return false
@@ -284,7 +284,7 @@ const filterNode = (value: string, data: BusiTreeNode) => {
   if (!value) return true
   return data.name?.toLocaleLowerCase().includes(value.toLocaleLowerCase())
 }
-// 切换资源前取消上一资源的详情、数据和联动请求。
+// 切换资源前取消上一资源的详情、数据和联动请求
 const cancelPreRequest = () => {
   cancelRequestBatch('/data-visualization/detail')
   cancelRequestBatch('/chart-data/data')

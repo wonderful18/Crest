@@ -47,55 +47,55 @@ import java.util.stream.Collectors;
 
 @Component
 /**
- * 关系图管理服务，负责把数据源、数据集、图表和可视化资源整理为前端可渲染的节点与边。
+ * 关系图管理服务，负责把数据源、数据集、图表和可视化资源整理为前端可渲染的节点与边
  */
 public class RelationManage implements RelationApi {
 
-    /** 数据源节点类型。 */
+    /** 数据源节点类型 */
     private static final String TYPE_DATASOURCE = "datasource";
-    /** 物理表节点类型。 */
+    /** 物理表节点类型 */
     private static final String TYPE_TABLE = "table";
-    /** 物理表字段节点类型。 */
+    /** 物理表字段节点类型 */
     private static final String TYPE_TABLE_FIELD = "table_field";
-    /** 数据集字段节点类型。 */
+    /** 数据集字段节点类型 */
     private static final String TYPE_DATASET_FIELD = "dataset_field";
-    /** 图表字段节点类型。 */
+    /** 图表字段节点类型 */
     private static final String TYPE_CHART_FIELD = "chart_field";
-    /** 数据集节点类型。 */
+    /** 数据集节点类型 */
     private static final String TYPE_DATASET = "dataset";
-    /** 图表节点类型。 */
+    /** 图表节点类型 */
     private static final String TYPE_CHART = "chart";
-    /** 可视化资源节点类型。 */
+    /** 可视化资源节点类型 */
     private static final String TYPE_DV = "dv";
-    /** 解析计算字段公式中形如 [123] 的字段引用。 */
+    /** 解析计算字段公式中形如 [123] 的字段引用 */
     private static final Pattern FIELD_REF_PATTERN = Pattern.compile("\\[(\\d+)]");
-    /** 解析图表历史 JSON 配置中 id 或 fieldId 字段引用。 */
+    /** 解析图表历史 JSON 配置中 id 或 fieldId 字段引用 */
     private static final Pattern JSON_FIELD_ID_PATTERN = Pattern.compile("\"(?:id|fieldId)\"\\s*:\\s*\"?(\\d+)\"?");
-    /** 图表字段配置反序列化类型，避免每次解析时重复构造泛型描述。 */
+    /** 图表字段配置反序列化类型，避免每次解析时重复构造泛型描述 */
     private static final TypeReference<List<ChartViewFieldDTO>> CHART_FIELD_LIST_TYPE = new TypeReference<>() {
     };
 
-    /** 数据源元数据读取 Mapper。 */
+    /** 数据源元数据读取 Mapper */
     @Resource
     private CoreDatasourceMapper coreDatasourceMapper;
-    /** 数据集物理表关系读取 Mapper。 */
+    /** 数据集物理表关系读取 Mapper */
     @Resource
     private CoreDatasetTableMapper coreDatasetTableMapper;
-    /** 数据集字段读取 Mapper。 */
+    /** 数据集字段读取 Mapper */
     @Resource
     private CoreDatasetTableFieldMapper coreDatasetTableFieldMapper;
-    /** 数据集分组和数据集节点读取 Mapper。 */
+    /** 数据集分组和数据集节点读取 Mapper */
     @Resource
     private CoreDatasetGroupMapper coreDatasetGroupMapper;
-    /** 图表视图读取 Mapper。 */
+    /** 图表视图读取 Mapper */
     @Resource
     private CoreChartViewMapper coreChartViewMapper;
-    /** 可视化资源读取 Mapper。 */
+    /** 可视化资源读取 Mapper */
     @Resource
     private DataVisualizationInfoMapper dataVisualizationInfoMapper;
 
     /**
-     * 构建全局关系概览，只展示资源级节点和资源间依赖，不展开字段级血缘。
+     * 构建全局关系概览，只展示资源级节点和资源间依赖，不展开字段级血缘
      */
     public RelationGraphDTO overview() {
         RelationContext context = loadContext();
@@ -110,7 +110,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 构建指定数据源的关系图，范围包含其下游数据集、图表、可视化和字段血缘。
+     * 构建指定数据源的关系图，范围包含其下游数据集、图表、可视化和字段血缘
      */
     public RelationGraphDTO datasource(Long id) {
         RelationContext context = loadContext();
@@ -122,7 +122,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 构建指定数据集的关系图，范围包含上游数据表字段和下游图表、可视化资源。
+     * 构建指定数据集的关系图，范围包含上游数据表字段和下游图表、可视化资源
      */
     public RelationGraphDTO dataset(Long id) {
         RelationContext context = loadContext();
@@ -134,7 +134,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 构建指定可视化资源的关系图，范围收敛到资源内图表及其依赖的数据集字段。
+     * 构建指定可视化资源的关系图，范围收敛到资源内图表及其依赖的数据集字段
      */
     public RelationGraphDTO dv(Long id) {
         RelationContext context = loadContext();
@@ -146,7 +146,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 查询可作为关系图入口的资源列表，支持按资源类型和名称关键字过滤。
+     * 查询可作为关系图入口的资源列表，支持按资源类型和名称关键字过滤
      */
     public List<RelationResourceDTO> resources(String type, RelationResourceRequest request) {
         RelationContext context = loadContext();
@@ -171,7 +171,7 @@ public class RelationManage implements RelationApi {
 
     @Override
     /**
-     * 统计指定数据源关联的非数据源节点数量，用于删除前影响范围提示。
+     * 统计指定数据源关联的非数据源节点数量，用于删除前影响范围提示
      */
     public Long getDsResource(Long id) {
         RelationGraphDTO graph = datasource(id);
@@ -182,7 +182,7 @@ public class RelationManage implements RelationApi {
 
     @Override
     /**
-     * 统计指定数据集关联的图表和可视化节点数量，用于删除前影响范围提示。
+     * 统计指定数据集关联的图表和可视化节点数量，用于删除前影响范围提示
      */
     public Long datasetResource(Long id) {
         RelationGraphDTO graph = dataset(id);
@@ -193,14 +193,14 @@ public class RelationManage implements RelationApi {
 
     @Override
     /**
-     * 关系图接口权限检查入口，当前实现依赖资源读取时的创建人权限过滤。
+     * 关系图接口权限检查入口，当前实现依赖资源读取时的创建人权限过滤
      */
     public void checkAuth() throws CrestException {
-        // 资源读取阶段已经按创建人权限过滤，这里不再追加额外授权逻辑。
+        // 资源读取阶段已经按创建人权限过滤，这里不再追加额外授权逻辑
     }
 
     /**
-     * 在指定资源范围内补充关系边，支持全局概览和单资源钻取两种粒度。
+     * 在指定资源范围内补充关系边，支持全局概览和单资源钻取两种粒度
      */
     private void addAllEdges(GraphBuilder builder, RelationContext context, Long datasourceId, Long datasetId, Long dvId, boolean includeFields) {
         Set<Long> datasetScope = new HashSet<>();
@@ -279,7 +279,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 一次性加载关系图所需的元数据，并按当前用户可访问资源构建索引。
+     * 一次性加载关系图所需的元数据，并按当前用户可访问资源构建索引
      */
     private RelationContext loadContext() {
         RelationContext context = new RelationContext();
@@ -340,7 +340,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 添加数据源节点，空数据源直接忽略，保证调用方无需重复判空。
+     * 添加数据源节点，空数据源直接忽略，保证调用方无需重复判空
      */
     private void addDatasourceNode(GraphBuilder builder, CoreDatasource datasource) {
         if (datasource == null) {
@@ -350,7 +350,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 添加物理表节点，资源标识优先使用数据源与表名组合，便于跨数据集合并同一物理表。
+     * 添加物理表节点，资源标识优先使用数据源与表名组合，便于跨数据集合并同一物理表
      */
     private void addPhysicalTableNode(GraphBuilder builder, CoreDatasetTable table) {
         if (table == null) {
@@ -363,7 +363,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 递归补充数据集字段血缘，包含物理字段映射和计算字段依赖。
+     * 递归补充数据集字段血缘，包含物理字段映射和计算字段依赖
      */
     private void addDatasetFieldLineage(GraphBuilder builder, RelationContext context, CoreDatasetTableField field, Set<Long> visiting) {
         if (field == null || field.getId() == null) {
@@ -403,7 +403,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 解析图表中使用的数据集字段，并连接字段、图表字段和图表节点。
+     * 解析图表中使用的数据集字段，并连接字段、图表字段和图表节点
      */
     private void addChartFieldLineage(GraphBuilder builder, RelationContext context, CoreChartView chart) {
         if (chart == null || chart.getId() == null) {
@@ -426,7 +426,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 添加物理表字段节点，节点描述保留字段备注和源字段名。
+     * 添加物理表字段节点，节点描述保留字段备注和源字段名
      */
     private void addTableFieldNode(GraphBuilder builder, CoreDatasetTable table, CoreDatasetTableField field) {
         if (field == null) {
@@ -436,7 +436,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 添加数据集字段节点，包含字段分组、类型和计算公式说明。
+     * 添加数据集字段节点，包含字段分组、类型和计算公式说明
      */
     private void addDatasetFieldNode(GraphBuilder builder, RelationContext context, CoreDatasetTableField field) {
         if (field == null || field.getId() == null) {
@@ -446,7 +446,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 为图表配置中存在但数据集字段表缺失的历史字段补充占位节点。
+     * 为图表配置中存在但数据集字段表缺失的历史字段补充占位节点
      */
     private void addDatasetFieldNode(GraphBuilder builder, ChartFieldUsage usage, Long datasetId) {
         if (usage.fieldId() == null) {
@@ -457,7 +457,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 添加图表字段节点，描述该字段在图表中的用途和聚合方式。
+     * 添加图表字段节点，描述该字段在图表中的用途和聚合方式
      */
     private void addChartFieldNode(GraphBuilder builder, CoreChartView chart, ChartFieldUsage usage, CoreDatasetTableField datasetField) {
         if (chart == null || usage.fieldId() == null) {
@@ -468,7 +468,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 添加数据集节点。
+     * 添加数据集节点
      */
     private void addDatasetNode(GraphBuilder builder, CoreDatasetGroup dataset) {
         if (dataset == null) {
@@ -478,7 +478,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 添加图表节点。
+     * 添加图表节点
      */
     private void addChartNode(GraphBuilder builder, CoreChartView chart) {
         if (chart == null) {
@@ -488,7 +488,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 添加可视化资源节点。
+     * 添加可视化资源节点
      */
     private void addDvNode(GraphBuilder builder, DataVisualizationInfo dv) {
         if (dv == null) {
@@ -498,7 +498,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 将数据源实体转换为资源选择列表项。
+     * 将数据源实体转换为资源选择列表项
      */
     private RelationResourceDTO toResource(CoreDatasource datasource) {
         RelationResourceDTO dto = new RelationResourceDTO();
@@ -511,7 +511,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 将数据集实体转换为资源选择列表项。
+     * 将数据集实体转换为资源选择列表项
      */
     private RelationResourceDTO toResource(CoreDatasetGroup dataset) {
         RelationResourceDTO dto = new RelationResourceDTO();
@@ -524,7 +524,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 将可视化资源实体转换为资源选择列表项。
+     * 将可视化资源实体转换为资源选择列表项
      */
     private RelationResourceDTO toResource(DataVisualizationInfo dv) {
         RelationResourceDTO dto = new RelationResourceDTO();
@@ -537,7 +537,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 获取物理表展示名称，优先使用业务名称，其次使用真实表名。
+     * 获取物理表展示名称，优先使用业务名称，其次使用真实表名
      */
     private String safeTableLabel(CoreDatasetTable table) {
         if (StringUtils.isNotBlank(table.getName())) {
@@ -550,21 +550,21 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 获取字段原始名称，缺失时回退到字段展示名。
+     * 获取字段原始名称，缺失时回退到字段展示名
      */
     private String safeOriginName(CoreDatasetTableField field) {
         return StringUtils.defaultIfBlank(field.getOriginName(), StringUtils.defaultIfBlank(field.getName(), "字段"));
     }
 
     /**
-     * 获取物理字段展示名称，优先使用字段名，缺失时使用原始字段名。
+     * 获取物理字段展示名称，优先使用字段名，缺失时使用原始字段名
      */
     private String tableFieldLabel(CoreDatasetTableField field) {
         return StringUtils.defaultIfBlank(StringUtils.trimToNull(field.getName()), safeOriginName(field));
     }
 
     /**
-     * 生成物理字段说明，组合字段备注和源字段信息。
+     * 生成物理字段说明，组合字段备注和源字段信息
      */
     private String tableFieldDescription(CoreDatasetTableField field) {
         if (field == null) {
@@ -581,7 +581,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 生成数据集字段名称，计算字段优先显示业务名，普通字段保留源字段和别名。
+     * 生成数据集字段名称，计算字段优先显示业务名，普通字段保留源字段和别名
      */
     private String safeDatasetFieldLabel(CoreDatasetTableField field) {
         String originName = safeOriginName(field);
@@ -596,7 +596,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 生成数据集字段子类型，组合维度指标分组和字段物理类型。
+     * 生成数据集字段子类型，组合维度指标分组和字段物理类型
      */
     private String fieldSubType(CoreDatasetTableField field) {
         String groupType = Strings.CI.equals(field.getGroupType(), "q") ? "指标" : "维度";
@@ -604,7 +604,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 生成数据集字段说明，计算字段会额外格式化公式中的字段引用。
+     * 生成数据集字段说明，计算字段会额外格式化公式中的字段引用
      */
     private String datasetFieldDescription(CoreDatasetTableField field, RelationContext context) {
         if (field == null) {
@@ -621,7 +621,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 生成图表字段说明，包含图表角色和聚合方式。
+     * 生成图表字段说明，包含图表角色和聚合方式
      */
     private String chartFieldDescription(ChartFieldUsage usage) {
         List<String> parts = new ArrayList<>();
@@ -635,7 +635,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 将计算字段公式中的字段 id 替换为可读字段名称，解析失败时保留原始片段。
+     * 将计算字段公式中的字段 id 替换为可读字段名称，解析失败时保留原始片段
      */
     private String formatFieldFormula(String formula, RelationContext context) {
         if (StringUtils.isBlank(formula)) {
@@ -651,7 +651,7 @@ public class RelationManage implements RelationApi {
                     replacement = "[" + safeDatasetFieldLabel(source) + "]";
                 }
             } catch (NumberFormatException ignored) {
-                // 历史公式中存在异常字段引用时保留原始占位符。
+                // 历史公式中存在异常字段引用时保留原始占位符
             }
             matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
         }
@@ -660,7 +660,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 将图表聚合关键字转换为中文展示名称。
+     * 将图表聚合关键字转换为中文展示名称
      */
     private String summaryLabel(String summary) {
         if (StringUtils.isBlank(summary)) {
@@ -678,7 +678,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 汇总图表配置中所有字段使用位置，覆盖轴、标签、提示、颜色、钻取和过滤条件。
+     * 汇总图表配置中所有字段使用位置，覆盖轴、标签、提示、颜色、钻取和过滤条件
      */
     private List<ChartFieldUsage> collectChartFieldUsages(CoreChartView chart) {
         Map<String, ChartFieldUsage> usages = new LinkedHashMap<>();
@@ -701,7 +701,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 从单段图表字段 JSON 中提取字段使用信息，并按角色和顺序生成去重键。
+     * 从单段图表字段 JSON 中提取字段使用信息，并按角色和顺序生成去重键
      */
     private void addChartFieldUsages(Map<String, ChartFieldUsage> usages, String json, String role) {
         List<ChartViewFieldDTO> fields = JsonUtil.parseList(json, CHART_FIELD_LIST_TYPE);
@@ -719,7 +719,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 解析数据集建模信息中的表关联结构，并补充表级或字段级 JOIN 血缘。
+     * 解析数据集建模信息中的表关联结构，并补充表级或字段级 JOIN 血缘
      */
     private void addDatasetJoinLineage(GraphBuilder builder, RelationContext context, CoreDatasetGroup dataset, boolean includeFields) {
         if (dataset == null || StringUtils.isBlank(dataset.getInfo())) {
@@ -737,7 +737,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 递归解析数据集建模树中的单个关联节点。
+     * 递归解析数据集建模树中的单个关联节点
      */
     private void addDatasetJoinLineageNode(GraphBuilder builder, RelationContext context, JsonNode node, boolean includeFields) {
         if (node == null || node.isMissingNode() || node.isNull()) {
@@ -767,7 +767,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 根据数据集建模节点定位物理表，优先使用表 id，缺失时回退到数据源和表名。
+     * 根据数据集建模节点定位物理表，优先使用表 id，缺失时回退到数据源和表名
      */
     private CoreDatasetTable findDatasetTable(RelationContext context, JsonNode dsNode) {
         Long id = readLong(dsNode, "id");
@@ -787,7 +787,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 添加 JOIN 条件字段之间的血缘边，并确保两端字段血缘节点已展开。
+     * 添加 JOIN 条件字段之间的血缘边，并确保两端字段血缘节点已展开
      */
     private void addJoinFieldLineage(GraphBuilder builder, RelationContext context, CoreDatasetTable parent, CoreDatasetTable current, JsonNode unionToParent) {
         JsonNode unionFields = unionToParent.path("unionFields");
@@ -808,7 +808,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 生成数据集表关联边的展示文案，最多展示前三组关联字段。
+     * 生成数据集表关联边的展示文案，最多展示前三组关联字段
      */
     private String joinLabel(JsonNode unionToParent) {
         String joinType = joinTypeLabel(readText(unionToParent, "unionType"));
@@ -830,14 +830,14 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 读取关联字段展示名，优先使用名称，其次使用原始字段名。
+     * 读取关联字段展示名，优先使用名称，其次使用原始字段名
      */
     private String readFieldLabel(JsonNode node) {
         return StringUtils.defaultIfBlank(readText(node, "name"), readText(node, "originName"));
     }
 
     /**
-     * 将关联类型转换为标准 JOIN 展示名称。
+     * 将关联类型转换为标准 JOIN 展示名称
      */
     private String joinTypeLabel(String joinType) {
         if (StringUtils.isBlank(joinType)) {
@@ -853,7 +853,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 从 JSON 节点中读取 Long 字段，兼容数字和数字字符串两种历史格式。
+     * 从 JSON 节点中读取 Long 字段，兼容数字和数字字符串两种历史格式
      */
     private Long readLong(JsonNode node, String field) {
         if (node == null || node.isMissingNode() || node.isNull()) {
@@ -873,7 +873,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 从 JSON 节点中读取文本字段，缺失或 null 时返回空值。
+     * 从 JSON 节点中读取文本字段，缺失或 null 时返回空值
      */
     private String readText(JsonNode node, String field) {
         if (node == null || node.isMissingNode() || node.isNull()) {
@@ -884,7 +884,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 从公式、过滤和排序等文本中提取字段 id 引用。
+     * 从公式、过滤和排序等文本中提取字段 id 引用
      */
     private Set<Long> extractFieldRefs(String... texts) {
         Set<Long> result = new LinkedHashSet<>();
@@ -902,27 +902,27 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 将正则匹配到的字段 id 写入结果集合，异常历史值直接忽略。
+     * 将正则匹配到的字段 id 写入结果集合，异常历史值直接忽略
      */
     private void collectFieldRefs(Set<Long> result, Matcher matcher) {
         while (matcher.find()) {
             try {
                 result.add(Long.valueOf(matcher.group(1)));
             } catch (NumberFormatException ignored) {
-                // 历史图表配置中存在异常字段引用时直接忽略。
+                // 历史图表配置中存在异常字段引用时直接忽略
             }
         }
     }
 
     /**
-     * 生成资源节点 id，按类型和业务 id 保持全图唯一。
+     * 生成资源节点 id，按类型和业务 id 保持全图唯一
      */
     private static String nodeId(String type, Long id) {
         return type + ":" + id;
     }
 
     /**
-     * 生成物理表节点 id，优先使用数据源和表名合并同一物理表。
+     * 生成物理表节点 id，优先使用数据源和表名合并同一物理表
      */
     private static String tableNodeId(CoreDatasetTable table) {
         if (table == null) {
@@ -936,7 +936,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 生成物理表字段节点 id，优先使用数据源、表名和源字段名组成稳定标识。
+     * 生成物理表字段节点 id，优先使用数据源、表名和源字段名组成稳定标识
      */
     private static String tableFieldNodeId(CoreDatasetTable table, CoreDatasetTableField field) {
         String originName = StringUtils.defaultIfBlank(field.getOriginName(), field.getName());
@@ -948,7 +948,7 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 生成物理表字段资源 id，用于前端关联真实物理字段。
+     * 生成物理表字段资源 id，用于前端关联真实物理字段
      */
     private static String tableFieldResourceId(CoreDatasetTable table, CoreDatasetTableField field) {
         if (table == null) {
@@ -958,80 +958,80 @@ public class RelationManage implements RelationApi {
     }
 
     /**
-     * 获取可用于节点 id 的表名，缺失时回退到表记录 id。
+     * 获取可用于节点 id 的表名，缺失时回退到表记录 id
      */
     private static String safeTableNameForId(CoreDatasetTable table) {
         return StringUtils.defaultIfBlank(table.getTableName(), StringUtils.defaultIfBlank(table.getName(), String.valueOf(table.getId())));
     }
 
     /**
-     * 生成数据集字段节点 id。
+     * 生成数据集字段节点 id
      */
     private static String datasetFieldNodeId(Long fieldId) {
         return TYPE_DATASET_FIELD + ":" + fieldId;
     }
 
     /**
-     * 生成图表字段节点 id，同一字段在不同角色中保留独立节点。
+     * 生成图表字段节点 id，同一字段在不同角色中保留独立节点
      */
     private static String chartFieldNodeId(CoreChartView chart, ChartFieldUsage usage) {
         return TYPE_CHART_FIELD + ":" + chart.getId() + ":" + usage.role() + ":" + usage.fieldId();
     }
 
     /**
-     * 图表字段使用信息，记录字段 id、展示名、角色、分组和聚合方式。
+     * 图表字段使用信息，记录字段 id、展示名、角色、分组和聚合方式
      */
     private record ChartFieldUsage(Long fieldId, String name, String role, String groupType, String summary) {
     }
 
     /**
-     * 关系图加载上下文，集中缓存实体索引和按外键分组后的集合。
+     * 关系图加载上下文，集中缓存实体索引和按外键分组后的集合
      */
     private static class RelationContext {
-        /** 可访问的数据源索引。 */
+        /** 可访问的数据源索引 */
         private Map<Long, CoreDatasource> datasources = Map.of();
-        /** 可访问的数据集物理表索引。 */
+        /** 可访问的数据集物理表索引 */
         private Map<Long, CoreDatasetTable> tables = Map.of();
-        /** 可访问的数据集索引。 */
+        /** 可访问的数据集索引 */
         private Map<Long, CoreDatasetGroup> datasets = Map.of();
-        /** 可访问的数据集字段索引。 */
+        /** 可访问的数据集字段索引 */
         private Map<Long, CoreDatasetTableField> fields = Map.of();
-        /** 可访问的图表索引。 */
+        /** 可访问的图表索引 */
         private Map<Long, CoreChartView> charts = Map.of();
-        /** 可访问的可视化资源索引。 */
+        /** 可访问的可视化资源索引 */
         private Map<Long, DataVisualizationInfo> visualizations = Map.of();
-        /** 按数据集分组的物理表列表。 */
+        /** 按数据集分组的物理表列表 */
         private Map<Long, List<CoreDatasetTable>> tablesByDataset = Map.of();
-        /** 按数据源分组的物理表列表。 */
+        /** 按数据源分组的物理表列表 */
         private Map<Long, List<CoreDatasetTable>> tablesByDatasource = Map.of();
-        /** 按数据集分组的字段列表。 */
+        /** 按数据集分组的字段列表 */
         private Map<Long, List<CoreDatasetTableField>> fieldsByDataset = Map.of();
-        /** 按物理表分组的字段列表。 */
+        /** 按物理表分组的字段列表 */
         private Map<Long, List<CoreDatasetTableField>> fieldsByDatasetTable = Map.of();
-        /** 按数据集分组的图表列表。 */
+        /** 按数据集分组的图表列表 */
         private Map<Long, List<CoreChartView>> chartsByDataset = Map.of();
-        /** 按可视化资源分组的图表列表。 */
+        /** 按可视化资源分组的图表列表 */
         private Map<Long, List<CoreChartView>> chartsByDv = Map.of();
     }
 
     /**
-     * 关系图构建器，负责节点去重、边去重和汇总信息生成。
+     * 关系图构建器，负责节点去重、边去重和汇总信息生成
      */
     private static class GraphBuilder {
-        /** 按节点 id 去重后的关系图节点。 */
+        /** 按节点 id 去重后的关系图节点 */
         private final Map<String, RelationNodeDTO> nodes = new LinkedHashMap<>();
-        /** 按源点、终点和类型去重后的关系图边。 */
+        /** 按源点、终点和类型去重后的关系图边 */
         private final Map<String, RelationEdgeDTO> edges = new LinkedHashMap<>();
 
         /**
-         * 添加使用 Long 资源 id 的节点，并统一转为字符串资源 id。
+         * 添加使用 Long 资源 id 的节点，并统一转为字符串资源 id
          */
         private void addNode(String id, Long resourceId, String name, String type, String subType, String description, Long createTime, Long updateTime, Integer level) {
             addNode(id, resourceId == null ? null : String.valueOf(resourceId), name, type, subType, description, createTime, updateTime, level);
         }
 
         /**
-         * 添加节点；节点 id 为空或重复时忽略，保证构建过程幂等。
+         * 添加节点；节点 id 为空或重复时忽略，保证构建过程幂等
          */
         private void addNode(String id, String resourceId, String name, String type, String subType, String description, Long createTime, Long updateTime, Integer level) {
             if (StringUtils.isBlank(id) || nodes.containsKey(id)) {
@@ -1051,7 +1051,7 @@ public class RelationManage implements RelationApi {
         }
 
         /**
-         * 添加边；源点、终点为空或重复边会被忽略。
+         * 添加边；源点、终点为空或重复边会被忽略
          */
         private void addEdge(String source, String target, String type, String label) {
             if (StringUtils.isAnyBlank(source, target)) {
@@ -1070,7 +1070,7 @@ public class RelationManage implements RelationApi {
         }
 
         /**
-         * 输出关系图 DTO，并根据节点类型和边数量生成汇总信息。
+         * 输出关系图 DTO，并根据节点类型和边数量生成汇总信息
          */
         private RelationGraphDTO build() {
             RelationGraphDTO graph = new RelationGraphDTO();

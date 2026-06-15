@@ -10,10 +10,10 @@ import {
   initFormatCfgUnit
 } from '@/views/chart/components/js/formatter'
 
-// 数值格式编辑器文案函数。
+// 数值格式编辑器文案函数
 const { t } = useI18n()
 
-// 数值格式编辑器属性。
+// 数值格式编辑器属性
 const props = defineProps({
   formatterItem: {
     type: Object,
@@ -25,22 +25,22 @@ const props = defineProps({
   }
 })
 
-// 保持格式化配置项的响应式引用。
+// 保持格式化配置项的响应式引用
 const { formatterItem } = toRefs(props)
 
-// 格式化类型列表和示例结果。
+// 格式化类型列表和示例结果
 const state = reactive({
   typeList: formatterType,
   exampleResult: '20000000'
 })
 
-// 切换单位语言后刷新示例值。
+// 切换单位语言后刷新示例值
 function changeUnitLanguage(cfg: BaseFormatter, lang) {
   onChangeFormatCfgUnitLanguage(cfg, lang)
   getExampleValue()
 }
 
-// 初始化格式化配置，补齐单位配置。
+// 初始化格式化配置，补齐单位配置
 const init = () => {
   if (!formatterItem.value.formatterCfg) {
     formatterItem.value.formatterCfg = formatterItem
@@ -48,7 +48,7 @@ const init = () => {
     initFormatCfgUnit(formatterItem.value.formatterCfg)
   }
 }
-// 根据当前配置生成示例格式化结果。
+// 根据当前配置生成示例格式化结果
 const getExampleValue = () => {
   state.exampleResult = valueFormatter(20000000, formatterItem.value.formatterCfg)
 }

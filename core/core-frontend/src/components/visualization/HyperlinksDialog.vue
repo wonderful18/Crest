@@ -30,13 +30,13 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import { checkAddHttp, deepCopy } from '@/utils/utils'
 import { useI18n } from '@/hooks/web/useI18n'
-// 超链接设置弹窗文案函数。
+// 超链接设置弹窗文案函数
 const { t } = useI18n()
-// 快照仓库用于记录超链接修改。
+// 快照仓库用于记录超链接修改
 const snapshotStore = snapshotStoreWithOut()
-// 关闭弹窗事件。
+// 关闭弹窗事件
 const emits = defineEmits(['onClose'])
-// 超链接配置属性。
+// 超链接配置属性
 const props = defineProps({
   linkInfo: {
     type: Object,
@@ -44,17 +44,17 @@ const props = defineProps({
   }
 })
 
-// 弹窗内维护超链接配置副本。
+// 弹窗内维护超链接配置副本
 const state = reactive({
   componentType: null,
   linkInfo: deepCopy(props.linkInfo),
   linkageActiveStatus: false
 })
 
-// 大屏主状态用于写回当前组件配置。
+// 大屏主状态用于写回当前组件配置
 const dvMainStore = dvMainStoreWithOut()
 
-// 保存超链接配置并关闭弹窗。
+// 保存超链接配置并关闭弹窗
 const onSubmit = () => {
   state.linkInfo.content = checkAddHttp(state.linkInfo.content)
   dvMainStore.curComponent.hyperlinks = deepCopy(state.linkInfo)
@@ -62,7 +62,7 @@ const onSubmit = () => {
   onClose()
 }
 
-// 通知父级关闭弹窗。
+// 通知父级关闭弹窗
 const onClose = () => {
   emits('onClose')
 }

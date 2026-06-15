@@ -11,13 +11,13 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 饼图处理器，注册饼图系列并过滤不适合展示的负数数据。
+ * 饼图处理器，注册饼图系列并过滤不适合展示的负数数据
  */
 @Component
 @SuppressWarnings("unchecked")
 public class PieHandler extends YoyChartHandler {
     /**
-     * 注册饼图、玫瑰图和环图处理器。
+     * 注册饼图、玫瑰图和环图处理器
      */
     @Override
     public void init() {
@@ -28,7 +28,7 @@ public class PieHandler extends YoyChartHandler {
     }
 
     /**
-     * 为饼图补充扩展标签和提示字段轴。
+     * 为饼图补充扩展标签和提示字段轴
      */
     @Override
     public AxisFormatResult formatAxis(ChartViewDTO view) {
@@ -42,7 +42,7 @@ public class PieHandler extends YoyChartHandler {
     }
 
     /**
-     * 构建饼图配置并过滤负数指标数据。
+     * 构建饼图配置并过滤负数指标数据
      */
     @Override
     public ChartViewDTO buildChart(ChartViewDTO view, ChartCalcDataResult calcResult, AxisFormatResult formatResult, CustomFilterResult filterResult) {
@@ -102,7 +102,7 @@ public class PieHandler extends YoyChartHandler {
     }
 
     /**
-     * 判断值是否为非负数。
+     * 判断值是否为非负数
      */
     private boolean isPositive(Object value) {
         if (value instanceof String) {

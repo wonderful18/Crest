@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 提供 MySQL 抽取引擎的建表、写入和表替换 SQL 生成能力。
+ * 提供 MySQL 抽取引擎的建表、写入和表替换 SQL 生成能力
  */
 @Service("mysqlEngine")
 public class MysqlEngineProvider extends EngineProvider {
@@ -28,7 +28,7 @@ public class MysqlEngineProvider extends EngineProvider {
 
 
     /**
-     * 生成 MySQL 创建或替换视图的 SQL。
+     * 生成 MySQL 创建或替换视图的 SQL
      */
     @Override
     public String createView(String name, String viewSQL) {
@@ -37,7 +37,7 @@ public class MysqlEngineProvider extends EngineProvider {
     }
 
     /**
-     * 生成向 MySQL 引擎表批量插入抽取数据的 SQL。
+     * 生成向 MySQL 引擎表批量插入抽取数据的 SQL
      */
     @Override
     public String insertSql(String dsType, String tableName, DatasourceServer.UpdateType extractType, List<String[]> dataList, int page, int pageNumber, List<TableField> tableFields) {
@@ -92,7 +92,7 @@ public class MysqlEngineProvider extends EngineProvider {
 
 
     /**
-     * 生成 MySQL 删除物理表的 SQL。
+     * 生成 MySQL 删除物理表的 SQL
      */
     @Override
     public String dropTable(String name) {
@@ -100,7 +100,7 @@ public class MysqlEngineProvider extends EngineProvider {
     }
 
     /**
-     * 生成 MySQL 删除视图的 SQL。
+     * 生成 MySQL 删除视图的 SQL
      */
     @Override
     public String dropView(String name) {
@@ -108,7 +108,7 @@ public class MysqlEngineProvider extends EngineProvider {
     }
 
     /**
-     * 生成 MySQL 临时表和正式表互换的 SQL。
+     * 生成 MySQL 临时表和正式表互换的 SQL
      */
     @Override
     public String replaceTable(String name) {
@@ -119,7 +119,7 @@ public class MysqlEngineProvider extends EngineProvider {
     }
 
     /**
-     * 生成 MySQL 创建抽取表的完整 SQL。
+     * 生成 MySQL 创建抽取表的完整 SQL
      */
     @Override
     public String createTableSql(String tableName, List<TableField> tableFields, CoreEngine engine) {
@@ -129,7 +129,7 @@ public class MysqlEngineProvider extends EngineProvider {
     }
 
     /**
-     * 根据字段元数据生成 MySQL 建表字段定义。
+     * 根据字段元数据生成 MySQL 建表字段定义
      */
     private String createTableSql(final List<TableField> tableFields) {
         StringBuilder columnFields = new StringBuilder("`");

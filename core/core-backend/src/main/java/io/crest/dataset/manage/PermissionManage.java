@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 @Service
 /**
- * 数据集行列权限管理服务，负责权限过滤和权限树变量替换。
+ * 数据集行列权限管理服务，负责权限过滤和权限树变量替换
  */
 public class PermissionManage {
 
@@ -43,7 +43,7 @@ public class PermissionManage {
     private DatasetTableFieldManage datasetTableFieldManage;
 
     /**
-     * 获取行权限接口实例。
+     * 获取行权限接口实例
      */
     private RowPermissionsApi getRowPermissionsApi() {
 
@@ -51,7 +51,7 @@ public class PermissionManage {
     }
 
     /**
-     * 获取列权限接口实例。
+     * 获取列权限接口实例
      */
     private ColumnPermissionsApi getColumnPermissionsApi() {
 
@@ -59,7 +59,7 @@ public class PermissionManage {
     }
 
     /**
-     * 根据用户和列权限配置过滤字段，并收集脱敏字段。
+     * 根据用户和列权限配置过滤字段，并收集脱敏字段
      */
     public List<DatasetTableFieldDTO> filterColumnPermissions(List<DatasetTableFieldDTO> fields, Map<String, ColumnPermissionItem> desensitizationList, Long datasetTableId, Long user) {
         List<DatasetTableFieldDTO> result = new ArrayList<>();
@@ -104,7 +104,7 @@ public class PermissionManage {
     }
 
     /**
-     * 查询当前用户在指定数据集上的列权限。
+     * 查询当前用户在指定数据集上的列权限
      */
     private List<DataSetColumnPermissionsDTO> columnPermissions(Long datasetId, Long userId) {
         List<DataSetColumnPermissionsDTO> datasetColumnPermissions = new ArrayList<>();
@@ -151,12 +151,12 @@ public class PermissionManage {
     }
 
     /**
-     * 获取当前用户可用的数据集行权限树。
+     * 获取当前用户可用的数据集行权限树
      */
     public List<DataSetRowPermissionsTreeDTO> getRowPermissionsTree(Long datasetId, Long user) {
         // 获取当前数据集下，当前用户、角色、组织所有的行权限（非白名单，非禁用）
         List<DataSetRowPermissionsTreeDTO> records = rowPermissionsTree(datasetId, user);
-        // 构建权限树中的字段对象，字段不存在时置为 null。
+        // 构建权限树中的字段对象，字段不存在时置为 null
         if (ObjectUtils.isNotEmpty(datasetId)) {
             for (DataSetRowPermissionsTreeDTO record : records) {
                 getField(record.getTree());
@@ -166,7 +166,7 @@ public class PermissionManage {
     }
 
     /**
-     * 汇总用户、角色和系统变量维度的行权限树。
+     * 汇总用户、角色和系统变量维度的行权限树
      */
     private List<DataSetRowPermissionsTreeDTO> rowPermissionsTree(Long datasetId, Long userId) {
         List<DataSetRowPermissionsTreeDTO> datasetRowPermissions = new ArrayList<>();
@@ -265,7 +265,7 @@ public class PermissionManage {
     }
 
     /**
-     * 将系统变量权限项解析为当前用户对应的实际值。
+     * 将系统变量权限项解析为当前用户对应的实际值
      */
     private String handleSysVariable(UserFormVO userEntity, DatasetRowPermissionsTreeItem datasetRowPermissionsTreeItem) {
         String value = null;
@@ -301,7 +301,7 @@ public class PermissionManage {
     }
 
     /**
-     * 计算两个 ID 列表的交集。
+     * 计算两个 ID 列表的交集
      */
     private List<Long> intersectionForList(List<Long> list1, List<Long> list2) {
         List<Long> result = new ArrayList<>();
@@ -314,7 +314,7 @@ public class PermissionManage {
     }
 
     /**
-     * 递归补齐权限树节点中的字段详情。
+     * 递归补齐权限树节点中的字段详情
      */
     public void getField(DatasetRowPermissionsTreeObj tree) {
         if (ObjectUtils.isNotEmpty(tree)) {
