@@ -68,19 +68,32 @@ const props = withDefaults(
   }
 )
 
+// ECharts 容器 DOM 引用。
 const chartRef = ref<HTMLDivElement>()
+// 当前 ECharts 实例。
 let chart: any = null
+// 监听容器尺寸变化的观察器。
 let resizeObserver: ResizeObserver | null = null
+// 图表渲染的动画帧句柄。
 let renderFrame: number | null = null
+// 图表尺寸调整的动画帧句柄。
 let resizeFrame: number | null = null
+// 尺寸调整后的延迟重绘计时器。
 let resizeTimer: number | null = null
+// 上一次已渲染的容器宽度。
 let lastWidth = 0
+// 上一次已渲染的容器高度。
 let lastHeight = 0
+// 下一次渲染是否需要重置 ECharts 视图状态。
 let resetViewOnNextRender = false
+// 知识图谱布局缓存键，用于避免重复执行力导计算。
 let knowledgeLayoutCacheKey = ''
+// 知识图谱节点位置缓存。
 let knowledgeLayoutCache = new Map<string, { x: number; y: number; degree: number }>()
+// 当前聚焦的节点 id。
 const selectedNodeId = ref<string>()
 
+// 节点类型的展示文案、颜色和默认层级配置。
 const typeMeta: Record<string, { label: string; color: string; level: number; symbol: string }> = {
   datasource: { label: '数据源', color: '#f5a623', level: 0, symbol: 'circle' },
   table: { label: '物理表', color: '#3b82f6', level: 1, symbol: 'circle' },
@@ -92,6 +105,7 @@ const typeMeta: Record<string, { label: string; color: string; level: number; sy
   dv: { label: '仪表盘/大屏', color: '#10b981', level: 7, symbol: 'circle' }
 }
 
+// 使用虚线展示的关系类型。
 const dashedEdgeTypes = new Set([
   'table_table_field',
   'table_field_dataset_field',
@@ -101,14 +115,17 @@ const dashedEdgeTypes = new Set([
   'chart_field_chart'
 ])
 
+// 需要高亮展示的关键关系类型。
 const highlightedEdgeTypes = new Set([
   'dataset_table_join',
   'table_field_join',
   'dataset_field_calc_field'
 ])
 
+// 分层布局允许的最大层级。
 const maxLevel = 7
 
+// 转义提示框中的文本，避免节点描述注入 HTML。
 const escapeHtml = (value: string) =>
   value
     .replace(/&/g, '&amp;')
@@ -117,27 +134,34 @@ const escapeHtml = (value: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
 
+// 当前图谱是否有节点数据。
 const hasData = computed(() => !!props.graph?.nodes?.length)
+// 当前图谱节点列表。
 const graphNodes = computed(() => props.graph?.nodes || [])
+// 当前图谱边列表。
 const graphEdges = computed(() => props.graph?.edges || [])
+// 判断是否为大规模图，用于降低动画和边宽开销。
 const isLargeGraph = computed(() => {
   const nodeCount = graphNodes.value.length
   const edgeCount = graphEdges.value.length
   return nodeCount > 220 || edgeCount > 420
 })
 
+// 判断是否为密集图，用于控制标签和节点尺寸。
 const isDenseGraph = computed(() => {
   const nodeCount = graphNodes.value.length
   const edgeCount = graphEdges.value.length
   return nodeCount > 60 || edgeCount > 120
 })
 
+// 判断是否需要更保守的渲染策略。
 const isRenderHeavyGraph = computed(() => {
   const nodeCount = graphNodes.value.length
   const edgeCount = graphEdges.value.length
   return nodeCount > 120 || edgeCount > 240
 })
 
+// 当前节点类型对应的图例分类。
 const categoryMeta = computed(() => {
   const categoryNames = new Set(
     graphNodes.value.map(node => (typeMeta[node.type] || typeMeta.dataset).label)
@@ -145,6 +169,7 @@ const categoryMeta = computed(() => {
   return Object.values(typeMeta).filter(item => categoryNames.has(item.label))
 })
 
+// 节点 id 到节点对象的索引。
 const nodeLookup = computed(() =>
   graphNodes.value.reduce<Record<string, RelationNode>>((acc, node) => {
     acc[node.id] = node
@@ -152,6 +177,7 @@ const nodeLookup = computed(() =>
   }, {})
 )
 
+// 当前聚焦节点及其一跳邻居节点集合。
 const neighborIds = computed(() => {
   if (!selectedNodeId.value) return new Set<string>()
   const ids = new Set<string>([selectedNodeId.value])
@@ -166,10 +192,12 @@ const neighborIds = computed(() => {
   return ids
 })
 
+// 当前聚焦节点对象。
 const selectedNode = computed(() => {
   return selectedNodeId.value ? nodeLookup.value[selectedNodeId.value] : undefined
 })
 
+// 当前聚焦节点的上下游数量。
 const selectedStats = computed(() => {
   if (!selectedNodeId.value) return { upstream: 0, downstream: 0 }
   return graphEdges.value.reduce(
@@ -186,11 +214,13 @@ const selectedStats = computed(() => {
   )
 })
 
+// 读取当前图表容器尺寸。
 const getChartSize = () => ({
   width: chartRef.value?.clientWidth || 0,
   height: chartRef.value?.clientHeight || 0
 })
 
+// 将 ECharts 实例尺寸同步到容器，并在尺寸变化时清理布局缓存。
 const resizeChartToContainer = (force = false) => {
   const { width, height } = getChartSize()
   if (!width || !height || !chart) {
@@ -210,6 +240,7 @@ const resizeChartToContainer = (force = false) => {
   return true
 }
 
+// 确保图表实例存在，并绑定点击交互。
 const ensureChart = async () => {
   await nextTick()
   if (!chartRef.value) return
@@ -228,11 +259,13 @@ const ensureChart = async () => {
   resizeChartToContainer()
 }
 
+// 清除当前聚焦节点并重新渲染。
 const clearFocus = () => {
   selectedNodeId.value = undefined
   scheduleRender()
 }
 
+// 处理图表点击，节点点击切换聚焦，空白点击取消聚焦。
 const handleChartClick = (params: any) => {
   if (params.dataType === 'node' && params.data?.id) {
     selectedNodeId.value = selectedNodeId.value === params.data.id ? undefined : params.data.id
@@ -244,6 +277,7 @@ const handleChartClick = (params: any) => {
   }
 }
 
+// 将节点 id 转换为稳定哈希，用于布局抖动。
 const hashNode = (id: string) => {
   let hash = 0
   for (let i = 0; i < id.length; i++) {
@@ -253,6 +287,7 @@ const hashNode = (id: string) => {
   return Math.abs(hash)
 }
 
+// 统计每个节点的连接度。
 const getNodeDegree = () => {
   return graphEdges.value.reduce<Record<string, number>>((acc, edge) => {
     acc[edge.source] = (acc[edge.source] || 0) + 1
@@ -261,16 +296,20 @@ const getNodeDegree = () => {
   }, {})
 }
 
+// 将数值限制在指定区间内。
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
 
+// 获取节点在分层布局中的层级。
 const getNodeLevel = (node: RelationNode) =>
   clamp(node.level ?? typeMeta[node.type]?.level ?? 0, 0, maxLevel)
 
+// 根据层级计算节点横向锚点。
 const getLevelX = (level: number, width: number, paddingX: number) => {
   const usableWidth = Math.max(1, width - paddingX * 2)
   return paddingX + (usableWidth * clamp(level, 0, maxLevel)) / maxLevel
 }
 
+// 生成由中间向两侧扩展的槽位顺序，减少同层节点拥挤。
 const getBalancedSlots = (total: number) => {
   const middle = (total - 1) / 2
   return Array.from({ length: total }, (_, index) => index).sort((left, right) => {
@@ -318,10 +357,12 @@ const fitNodesToViewport = (
   })
 }
 
+// 判断节点是否属于当前聚焦上下文。
 const isSelectedContext = (id: string) => {
   return !selectedNodeId.value || neighborIds.value.has(id)
 }
 
+// 根据节点类型、连接度和聚焦状态生成 ECharts 节点视觉配置。
 const getNodeVisual = (node: RelationNode, degree = 0) => {
   const meta = typeMeta[node.type] || typeMeta.dataset
   const isField = node.type?.includes('field')
@@ -379,6 +420,7 @@ const getNodeVisual = (node: RelationNode, degree = 0) => {
   }
 }
 
+// 生成固定层级布局节点坐标。
 const layoutLayeredNodes = () => {
   const nodes = graphNodes.value
   const width = chartRef.value?.clientWidth || 1000
@@ -405,6 +447,7 @@ const layoutLayeredNodes = () => {
   })
 }
 
+// 生成知识图谱布局缓存键。
 const getKnowledgeLayoutCacheKey = (width: number, height: number) => {
   const roundedWidth = Math.round(width / 20) * 20
   const roundedHeight = Math.round(height / 20) * 20
@@ -417,6 +460,7 @@ const getKnowledgeLayoutCacheKey = (width: number, height: number) => {
   return `${roundedWidth}x${roundedHeight}|${nodeKey}|${edgeKey}`
 }
 
+// 从缓存恢复知识图谱节点坐标。
 const getKnowledgeNodesFromCache = (centerX: number, centerY: number) => {
   if (!knowledgeLayoutCache.size) return null
   const nodes = graphNodes.value.map(node => {
@@ -441,6 +485,7 @@ const getKnowledgeNodesFromCache = (centerX: number, centerY: number) => {
   }))
 }
 
+// 使用力导布局计算知识图谱节点坐标。
 const layoutKnowledgeNodes = () => {
   const width = chartRef.value?.clientWidth || 1000
   const height = chartRef.value?.clientHeight || 560
@@ -583,10 +628,12 @@ const layoutKnowledgeNodes = () => {
   return layoutNodes
 }
 
+// 根据当前布局模式生成最终节点列表。
 const layoutNodes = () => {
   return props.layoutMode === 'knowledge' ? layoutKnowledgeNodes() : layoutLayeredNodes()
 }
 
+// 将关系边转换为 ECharts 边配置。
 const formatLinks = () => {
   return graphEdges.value.map(edge => {
     const isHighlighted = highlightedEdgeTypes.has(edge.type || '')
@@ -624,6 +671,7 @@ const formatLinks = () => {
   })
 }
 
+// 根据当前数据和布局模式渲染关系图。
 const renderChart = async () => {
   await ensureChart()
   if (!chart) return
@@ -735,6 +783,7 @@ const renderChart = async () => {
   resizeChartToContainer(true)
 }
 
+// 合并同一帧内的多次渲染请求。
 const scheduleRender = () => {
   if (renderFrame !== null) {
     cancelAnimationFrame(renderFrame)
@@ -745,6 +794,7 @@ const scheduleRender = () => {
   })
 }
 
+// 合并尺寸变化并在容器稳定后触发重绘。
 const scheduleResize = () => {
   if (resizeFrame !== null) {
     cancelAnimationFrame(resizeFrame)
@@ -762,6 +812,7 @@ const scheduleResize = () => {
   })
 }
 
+// 挂载后初始化渲染，并监听容器尺寸变化。
 onMounted(() => {
   scheduleRender()
   window.setTimeout(scheduleResize, 120)
@@ -771,6 +822,7 @@ onMounted(() => {
   }
 })
 
+// 卸载时释放观察器、动画帧、计时器和 ECharts 实例。
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   if (renderFrame !== null) {
@@ -786,6 +838,7 @@ onBeforeUnmount(() => {
   chart = null
 })
 
+// 图谱数据变化时清理无效选中状态和布局缓存。
 watch(
   () => props.graph,
   () => {
@@ -798,6 +851,7 @@ watch(
   }
 )
 
+// 布局模式变化时重置聚焦状态并重新布局。
 watch(
   () => props.layoutMode,
   () => {
@@ -808,6 +862,7 @@ watch(
   }
 )
 
+// 外部高度变化时重置视图并重新适配容器。
 watch(
   () => props.height,
   () => {
