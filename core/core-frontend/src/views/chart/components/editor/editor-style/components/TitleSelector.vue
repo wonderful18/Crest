@@ -188,6 +188,7 @@ watch(
       </el-form-item>
 
       <div style="display: flex">
+        <!-- 标题颜色、字号和字间距是最高频样式项，保持一行布局便于快速调整。 -->
         <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
           <el-color-picker
             :effect="themes"
@@ -296,6 +297,7 @@ watch(
         <div class="position-divider" :class="'position-divider--' + themes"></div>
 
         <el-form-item class="form-item" :class="'form-item-' + themes">
+          <!-- 标题水平对齐只影响图表标题块内部排布，不改变组件在画布中的位置。 -->
           <el-radio-group
             :effect="themes"
             class="icon-radio-group"
@@ -386,6 +388,7 @@ watch(
         </el-checkbox>
       </el-form-item>
       <el-form-item class="form-item" :class="'form-item-' + themes" style="margin-left: 22px">
+        <!-- 备注编辑入口不受 remarkShow 限制，方便先编辑内容再决定是否展示。 -->
         <label class="remark-label" :class="{ 'remark-label--dark': themes === 'dark' }">
           {{ t('chart.remark_edit') }}
         </label>
@@ -404,6 +407,7 @@ watch(
       width="420px"
       :close-on-click-modal="false"
     >
+      <!-- 备注弹窗阻止键盘事件冒泡，避免触发画布层快捷键。 -->
       <div @keydown.stop @keyup.stop>
         <el-form-item :label="t('chart.remark')" class="form-item" prop="chartShowName">
           <el-input

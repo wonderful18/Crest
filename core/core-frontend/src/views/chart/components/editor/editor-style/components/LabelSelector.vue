@@ -666,6 +666,7 @@ const isProgressBar = computed(() => {
         </el-select>
       </el-form-item>
       <el-form-item v-if="showProperty('customContent')" :class="'form-item-' + themes">
+        <!-- 自定义内容使用字段占位符拼接，保存的是表达式模板而不是最终显示文本。 -->
         <template #label>
           <span class="data-area-label">
             <span style="margin-right: 4px">
@@ -1279,6 +1280,7 @@ const isProgressBar = computed(() => {
           class="series-select"
           size="small"
         >
+          <!-- 选中项前缀展示字段类型图标，帮助区分同名指标在不同轴侧的标签配置。 -->
           <template #prefix>
             <el-icon v-if="curSeriesFormatter[computedIdKey]" style="font-size: 14px">
               <Icon :className="`field-icon-${fieldType[curSeriesFormatter.fieldType]}`"
@@ -1526,6 +1528,7 @@ const isProgressBar = computed(() => {
             v-model="curSeriesFormatter.showExtremum"
             label="quota"
           >
+            <!-- 系列极值跟随当前指标保存，避免多指标图表只能统一开关。 -->
             {{ t('chart.show_extremum') }}
           </el-checkbox>
         </el-form-item>
@@ -1632,6 +1635,7 @@ const isProgressBar = computed(() => {
           class="form-item"
           :class="'form-item-' + themes"
         >
+          <!-- 分组柱子项标签复用普通标签格式化结构，但受 childrenShow 独立开关控制。 -->
           <el-select
             :disabled="!state.labelForm.childrenShow"
             size="small"
@@ -1764,6 +1768,7 @@ const isProgressBar = computed(() => {
       </el-checkbox>
     </el-form-item>
     <el-form-item class="form-item" :class="'form-item-' + themes" v-show="showProperty('showGap')">
+      <!-- 间隔值标签只在支持差值展示的图表类型中渲染，配置项按属性列表显隐。 -->
       <el-checkbox
         :effect="themes"
         size="small"
