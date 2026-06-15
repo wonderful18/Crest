@@ -50,6 +50,7 @@ const aggregations = [
 // 面板状态缓存当前编辑项，避免行/列、总计/小计之间切换时互相覆盖。
 const state = reactive({
   tableTotalForm: cloneDeep(DEFAULT_TABLE_TOTAL) as ChartTableTotalAttr,
+  // 四类合计编辑项分别缓存当前字段和聚合方式，避免共用状态造成互相污染。
   rowSubTotalItem: {} as DeepPartial<CalcTotalCfg>,
   rowTotalItem: {} as DeepPartial<CalcTotalCfg>,
   colSubTotalItem: {} as DeepPartial<CalcTotalCfg>,
@@ -87,6 +88,7 @@ const showRowFieldTotalLabel = computed(() => {
 
 // 切换当前正在编辑的小计维度，后续勾选状态直接写回该维度项。
 function onSelectedSubTotalDimensionNameChange(name) {
+  // 小计维度下拉切换时只改变当前编辑项，实际启用状态由 checkbox 保存。
   state.selectedSubTotalDimension = find(state.subTotalDimensionList, d => d.name === name)
 }
 
@@ -151,6 +153,7 @@ const init = () => {
   const tableTotal = props.chart?.customAttr?.tableTotal
   if (tableTotal) {
     if (tableTotal.row) {
+      // subTotalsDimensionsNew 标记是否已经迁移到显式小计维度配置。
       tableTotal.row.subTotalsDimensionsNew = !!tableTotal.row?.subTotalsDimensionsNew
     }
     state.tableTotalForm = defaultsDeep(cloneDeep(tableTotal), cloneDeep(DEFAULT_TABLE_TOTAL))
@@ -218,6 +221,7 @@ const changeTotal = (totalItem, totals) => {
   for (let i = 0; i < totals.length; i++) {
     const item = totals[i]
     if (item.engineFieldName === totalItem.engineFieldName) {
+      // 字段切换后恢复该字段自己的聚合方式和自定义表达式。
       totalItem.aggregation = item.aggregation
       totalItem.originName = item.originName
       totalItem.label = item.label
@@ -236,6 +240,7 @@ const changeTotalAggr = (totalItem, totals, colOrNum) => {
     }
   }
   if (totalItem.aggregation == 'CUSTOM' && !totalItem.originName) {
+    // 自定义聚合必须先配置表达式，避免提交空计算字段。
     return
   }
   changeTableTotal(colOrNum)
@@ -301,6 +306,7 @@ const closeEditCalc = () => {
 const confirmEditCalc = () => {
   calcEdit.value.setFieldForm()
   const obj = cloneDeep(calcEdit.value.fieldForm)
+  // 只更新当前选中指标对应的自定义聚合表达式。
   state.totalCfg?.forEach(item => {
     if (item.engineFieldName === obj.engineFieldName) {
       item.originName = obj.originName
@@ -313,6 +319,7 @@ const confirmEditCalc = () => {
 }
 // 补齐自定义合计字段的图表上下文默认值，供后续计算和字段定位使用。
 const setFieldDefaultValue = field => {
+  // 自定义合计字段按计算字段保存，需要补齐图表和数据集上下文。
   field.extField = 2
   field.chartId = props.chart.id
   field.datasetGroupId = props.chart.tableId

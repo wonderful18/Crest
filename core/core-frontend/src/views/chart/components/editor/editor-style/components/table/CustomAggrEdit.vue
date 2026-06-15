@@ -61,7 +61,7 @@ const defaultForm = {
   checked: true
 }
 
-// 维护函数列表和可引用指标列表
+// 维护函数列表和可引用指标列表，自定义聚合只能引用当前表格指标字段。
 const state = reactive({
   functionData: [],
   quotaData: []
@@ -88,6 +88,7 @@ const setFieldForm = () => {
 // 在字段显示名和字段 ID 之间转换表达式引用
 const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
   let name2Id = originName
+  // 自定义聚合表达式用中括号引用字段，保存时使用字段 id，编辑时展示字段名。
   const nameIdMap = [...quotaDataList].reduce((pre, next) => {
     pre[next[from]] = next[to]
     return pre
@@ -97,6 +98,7 @@ const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
     on.forEach(itm => {
       const ele = itm.slice(1, -1)
       if (name2Auto) {
+        // 调用方需要时同步收集表达式中出现的字段 id。
         name2Auto.push(nameIdMap[ele])
       }
       name2Id = name2Id.replace(`[${ele}]`, `[${nameIdMap[ele]}]`)
@@ -110,9 +112,11 @@ let quotaDataList = []
 const initEdit = (obj, quotaData) => {
   formQuota.id = null
   Object.assign(fieldForm, { ...defaultForm, ...obj })
+  // 当前字段的计算参数也放入指标候选，保证表达式回显和删除都能定位。
   state.quotaData = quotaData.concat(fieldForm.params || [])
   quotaDataList = cloneDeep(quotaData.concat(fieldForm.params || []))
   if (!obj.originName) {
+    // 新建自定义聚合没有表达式时清空编辑器。
     mirror.value.dispatch({
       changes: {
         from: 0,
@@ -123,6 +127,7 @@ const initEdit = (obj, quotaData) => {
     return
   }
   nextTick(() => {
+    // 已保存表达式以字段 id 存储，打开编辑器时转换成字段名提升可读性。
     mirror.value.dispatch({
       changes: {
         from: 0,
@@ -154,10 +159,12 @@ const getCursor = view => {
 }
 
 onMounted(() => {
+  // CodeMirror 初始化由子组件完成，当前组件保存视图引用用于插入和替换内容。
   mirror.value = myCm.value.codeComInit()
 })
 
 onBeforeUnmount(() => {
+  // 弹窗销毁时释放编辑器视图，避免重复打开残留监听器。
   mirror.value.destroy?.()
 })
 
@@ -237,6 +244,7 @@ const delParamsToQuota = () => {
   fieldForm.params = []
   const str = mirror.value.state.doc.toString()
   const name2Auto = []
+  // 删除参数时同步移除表达式中的参数引用，并回写剩余可读表达式。
   fieldForm.originName = setNameIdTrans('name', 'id', str, name2Auto).replaceAll(`[${o.id}]`, '')
   state.quotaData = state.quotaData.filter(ele => ele.id !== o.id)
   mirror.value.dispatch({

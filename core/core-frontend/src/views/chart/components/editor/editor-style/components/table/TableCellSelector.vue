@@ -215,6 +215,7 @@ const init = () => {
 const showProperty = prop => props.propertyInner?.includes(prop)
 
 onMounted(() => {
+  // 挂载后立即根据当前图表字段重建对齐、合并和颜色兼容配置。
   init()
 })
 </script>
