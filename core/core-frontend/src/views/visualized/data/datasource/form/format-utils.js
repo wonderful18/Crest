@@ -1,3 +1,6 @@
+/**
+ * 将 JSON 字符串格式化为带缩进的可读文本。
+ */
 export function formatJson(json) {
   let i = 0
   let il = 0
@@ -83,10 +86,16 @@ export function formatJson(json) {
   return newJson
 }
 
+/**
+ * 重复拼接指定字符串。
+ */
 function repeat(s, count) {
   return new Array(count + 1).join(s)
 }
 
+/**
+ * 将 XML 字符串格式化为带缩进的可读文本。
+ */
 export function formatXml(text) {
   // 去掉多余的空格
   text =
@@ -175,6 +184,9 @@ export function formatTime(time, cFormat) {
   })
 }
 
+/**
+ * 按缩进层级生成 XML 前缀空格。
+ */
 function getPrefix(prefixIndex) {
   var span = ' '
   var output = []
