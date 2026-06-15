@@ -58,6 +58,7 @@ const { batchOptComponentInfo, batchOptComponentType, mixProperties, mixProperti
   storeToRefs(dvMainStore)
 const param = { id: 'mixId', optType: 'edit' }
 
+// 批量样式面板使用的字段占位数据。
 const state = reactive({
   dimensionData: [],
   quotaData: []
@@ -72,63 +73,80 @@ withDefaults(
   }
 )
 
+// 同步杂项属性变更。
 const onMiscChange = (val, prop) => {
   batchOptChange('customAttr', 'misc', val.data, prop)
 }
 
+// 同步标签属性变更。
 const onLabelChange = (val, prop) => {
   batchOptChange('customAttr', 'label', val.data, prop)
 }
+// 同步提示框属性变更。
 const onTooltipChange = (val, prop) => {
   batchOptChange('customAttr', 'tooltip', val.data, prop)
 }
 
+// 同步 X 轴样式变更。
 const onChangeXAxisForm = (val, prop) => {
   batchOptChange('customStyle', 'xAxis', val, prop)
 }
 
+// 同步 Y 轴样式变更。
 const onChangeYAxisForm = (val, prop) => {
   batchOptChange('customStyle', 'yAxis', val, prop)
 }
+// 同步扩展 Y 轴样式变更。
 const onChangeYAxisExtForm = (val, prop) => {
   batchOptChange('customStyle', 'yAxisExt', val, prop)
 }
 
+// 同步指标值样式变更。
 const onIndicatorChange = (val, prop) => {
   batchOptChange('customAttr', 'indicator', val.indicatorValue, prop)
 }
 
+// 同步指标名称样式变更。
 const onIndicatorNameChange = (val, prop) => {
   batchOptChange('customAttr', 'indicatorName', val.indicatorName, prop)
 }
 
+// 同步杂项样式表单变更。
 const onChangeMiscStyleForm = (val, prop) => {
   batchOptChange('customStyle', 'misc', val, prop)
 }
+// 同步文本样式变更。
 const onTextChange = (val, prop) => {
   batchOptChange('customStyle', 'text', val, prop)
 }
+// 同步图例样式变更。
 const onLegendChange = (val, prop) => {
   batchOptChange('customStyle', 'legend', val, prop)
 }
 
+// 同步背景样式并记录快照。
 const onBackgroundChange = val => {
   dvMainStore.setBatchChangeBackground(val)
   snapshotStore.recordSnapshotCache('onBackgroundChange')
 }
+// 同步基础样式属性变更。
 const onBasicStyleChange = (val, prop) => {
-  //基础样式差异化处理
+  // 基础样式按 customAttr 路径做差异化处理。
   batchOptChange('customAttr', 'basicStyle', val.data, prop)
 }
+// 同步表头属性变更。
 const onTableHeaderChange = (val, prop) => {
   batchOptChange('customAttr', 'tableHeader', val, prop)
 }
+// 同步表格单元格属性变更。
 const onTableCellChange = (val, prop) => {
   batchOptChange('customAttr', 'tableCell', val, prop)
 }
+// 同步表格合计属性变更。
 const onTableTotalChange = (val, prop) => {
   batchOptChange('customAttr', 'tableTotal', val.data, prop)
 }
+// 统一写入批量操作属性并记录渲染快照。
 const batchOptChange = (custom, property, value, subProp?) => {
   dvMainStore.setChangeProperties({
     custom: custom,
@@ -139,6 +157,7 @@ const batchOptChange = (custom, property, value, subProp?) => {
   snapshotStore.recordSnapshotCache('renderChart')
 }
 
+// 同步通用组件样式属性变更。
 const onStyleAttrChange = params => {
   batchOptChange(params.custom, params.property, params.value)
 }
