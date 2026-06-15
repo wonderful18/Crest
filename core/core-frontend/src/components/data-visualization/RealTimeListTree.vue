@@ -81,26 +81,39 @@ import circlePackingOrigin from '@/assets/svg/circle-packing-origin.svg'
 import bulletGraphOrigin from '@/assets/svg/bullet-graph-origin.svg'
 import { checkJoinGroup, syncViewTitle } from '@/utils/canvasUtils'
 import { useEmitt } from '@/hooks/web/useEmitt'
+// 更多操作下拉菜单引用。
 const dropdownMore = ref(null)
+// 锁定状态仓库用于控制图层是否可编辑。
 const lockStore = lockStoreWithOut()
 
+// 大屏主状态仓库，保存画布组件和当前选中项。
 const dvMainStore = dvMainStoreWithOut()
+// 快照仓库用于记录图层操作历史。
 const snapshotStore = snapshotStoreWithOut()
+// 图层仓库负责显示、锁定和层级操作。
 const layerStore = layerStoreWithOut()
+// 组合仓库维护框选、多选和组合状态。
 const composeStore = composeStoreWithOut()
+// 右键菜单仓库用于隐藏或显示图层菜单。
 const contextmenuStore = contextmenuStoreWithOut()
+// 图层列表文案的多语言翻译入口。
 const { t } = useI18n()
 
+// 多选区域和快捷键状态来自组合仓库。
 const { areaData, isCtrlOrCmdDown, isShiftDown, laterIndex } = storeToRefs(composeStore)
 
+// 当前画布组件、样式和选中状态来自主仓库。
 const { componentData, canvasStyleData, curComponent, canvasViewInfo, canvasState } =
   storeToRefs(dvMainStore)
+// 图层列表按视觉层级反向展示，索引需要转换回原数组位置。
 const getComponent = index => {
   return componentData.value[componentData.value.length - 1 - index]
 }
+// 将反向列表索引转换为组件数组真实索引。
 const transformIndex = index => {
   return componentData.value.length - 1 - index
 }
+// 将满足条件的组件加入多选区域。
 const areaDataPush = component => {
   if (
     component &&
@@ -114,9 +127,11 @@ const areaDataPush = component => {
   }
 }
 
+// 隐藏区域被选中且没有当前组件时高亮隐藏分组。
 const hiddenAreaActive = computed(
   () => canvasState.value.curPointArea === 'hidden' && !curComponent.value
 )
+// 基础区域被选中且没有当前组件时高亮基础分组。
 const baseAreaActive = computed(
   () => canvasState.value.curPointArea === 'base' && !curComponent.value
 )
@@ -125,6 +140,7 @@ const baseAreaActive = computed(
 // 2.获取当前index curClickIndex;
 // 3.比较laterIndex 和 curClickIndex之间的大小;
 // 4.将[laterIndex,curClickIndex] 或者 [curClickIndex,laterIndex]区域的图层加入areaData.value.components(已包含的不再重复加入);
+// 根据上次点击位置和当前点击位置批量加入连续图层。
 const shiftDataPush = curClickIndex => {
   const areaDataIdArray = areaData.value.components.map(com => com.id)
   let indexBegin, indexEnd
@@ -149,6 +165,7 @@ const shiftDataPush = curClickIndex => {
   dvMainStore.setCurComponent({ component: null, index: null })
 }
 
+// 点击隐藏区域中的图层时恢复该组件为当前选中项。
 const hiddenAreaOnClick = (e, element) => {
   let indexResult
   componentData.value.forEach((component, index) => {
@@ -159,6 +176,7 @@ const hiddenAreaOnClick = (e, element) => {
   dvMainStore.setCurComponent({ component: element, index: indexResult })
 }
 
+// 处理图层点击，兼容单选、组合多选和连续多选。
 const onClick = (e, index) => {
   contextmenuStore.hideContextMenu()
   // 初始化点击是 laterIndex=0
@@ -187,19 +205,27 @@ const onClick = (e, index) => {
   setCurComponent(index)
   composeStore.setLaterIndex(index)
 }
+// 根据真实索引设置当前选中组件。
 const setCurComponent = index => {
   dvMainStore.setCurComponent({ component: componentData.value[index], index })
 }
 
+// 展开或收起组合、标签页等可嵌套图层。
 const expandClick = component => {
   component['expand'] = !component['expand']
 }
 
+// 图层名称是否处于编辑状态。
 let nameEdit = ref(false)
+// 当前编辑名称的组件标签选择器。
 let editComponentId = ref('')
+// 图层名称输入值。
 let inputName = ref('')
+// 图层名称输入框引用。
 let nameInput = ref(null)
+// 当前正在重命名的组件。
 let curEditComponent = null
+// 打开图层名称编辑状态并聚焦输入框。
 const editComponentName = item => {
   curEditComponent = curComponent.value
   editComponentId.value = `#component-label-${item.id}`
@@ -209,6 +235,7 @@ const editComponentName = item => {
     nameInput.value.focus()
   })
 }
+// 关闭图层名称编辑，并在名称变化时同步组件标题。
 const closeEditComponentName = () => {
   nameEdit.value = false
   if (!inputName.value || !inputName.value.trim()) {
