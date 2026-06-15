@@ -1,5 +1,7 @@
+// 标记 S2 列是否为辅助表头描述列。
 export const AUXILIARY_HEADER_FLAG = 'crestAuxiliaryHeader'
 
+// 辅助表头默认配置。
 export const DEFAULT_AUXILIARY_HEADER = {
   enabled: false,
   rowHeight: 120,
@@ -12,6 +14,7 @@ export const DEFAULT_AUXILIARY_HEADER = {
 
 const GENERATED_GROUP_PREFIX = '__crest_aux_header_group__'
 
+// 将空值安全转换为文本。
 function toText(value) {
   if (value === null || value === undefined) {
     return ''
@@ -19,6 +22,7 @@ function toText(value) {
   return String(value)
 }
 
+// 从列配置中读取字段标识。
 function getColumnField(column) {
   if (typeof column === 'string') {
     return column
@@ -26,6 +30,7 @@ function getColumnField(column) {
   return column?.key ?? column?.field ?? ''
 }
 
+// 解析列标题，优先使用列配置和分组名称。
 function getColumnTitle(column, groupNameMap, fieldNameMap) {
   if (typeof column === 'string') {
     return fieldNameMap[column] ?? column
@@ -34,6 +39,7 @@ function getColumnTitle(column, groupNameMap, fieldNameMap) {
   return column?.title ?? groupNameMap[field] ?? fieldNameMap[field] ?? field
 }
 
+// 归一化辅助表头描述列表。
 function normalizeDescriptions(descriptions) {
   if (!Array.isArray(descriptions)) {
     return []
@@ -46,6 +52,7 @@ function normalizeDescriptions(descriptions) {
     }))
 }
 
+// 合并辅助表头配置并补齐默认值。
 export function normalizeAuxiliaryHeader(auxiliaryHeader) {
   return {
     ...DEFAULT_AUXILIARY_HEADER,
@@ -56,10 +63,12 @@ export function normalizeAuxiliaryHeader(auxiliaryHeader) {
   }
 }
 
+// 判断辅助表头是否启用。
 export function isAuxiliaryHeaderEnabled(auxiliaryHeader) {
   return normalizeAuxiliaryHeader(auxiliaryHeader).enabled === true
 }
 
+// 构建字段到辅助描述的映射。
 export function getAuxiliaryDescriptionMap(auxiliaryHeader) {
   return normalizeAuxiliaryHeader(auxiliaryHeader).descriptions.reduce((pre, cur) => {
     pre[cur.field] = cur.text
@@ -67,6 +76,7 @@ export function getAuxiliaryDescriptionMap(auxiliaryHeader) {
   }, {})
 }
 
+// 按字段列表生成稳定顺序的辅助描述。
 export function normalizeAuxiliaryDescriptions(auxiliaryHeader, fields) {
   const descMap = getAuxiliaryDescriptionMap(auxiliaryHeader)
   return fields.map(field => ({
@@ -75,13 +85,16 @@ export function normalizeAuxiliaryDescriptions(auxiliaryHeader, fields) {
   }))
 }
 
+// 判断字段列表中是否存在有效辅助描述。
 export function hasAuxiliaryDescription(auxiliaryHeader, fields) {
   const descMap = getAuxiliaryDescriptionMap(auxiliaryHeader)
   return fields.some(field => toText(descMap[field]).trim().length > 0)
 }
 
+// 收集列树中的叶子字段。
 export function getLeafColumnFields(columns) {
   const result = []
+  // 深度遍历列树以保留展示顺序。
   const walk = list => {
     ;(list || []).forEach(column => {
       if (typeof column !== 'string' && column?.children?.length) {
@@ -98,12 +111,14 @@ export function getLeafColumnFields(columns) {
   return result
 }
 
+// 判断指定字段是否为辅助表头描述列。
 export function isAuxiliaryHeaderField(columns, field) {
   const targetField = toText(field)
   if (!targetField) {
     return false
   }
   let matched = false
+  // 深度遍历叶子列并在命中后短路。
   const walk = list => {
     ;(list || []).forEach(column => {
       if (matched) {
@@ -123,8 +138,10 @@ export function isAuxiliaryHeaderField(columns, field) {
   return matched
 }
 
+// 构建叶子字段到完整表头路径的映射。
 function getLeafColumnPaths(columns, fieldNameMap = {}) {
   const result = {}
+  // 递归记录每个叶子字段经过的表头层级。
   const walk = (list, path) => {
     ;(list || []).forEach(column => {
       const field = getColumnField(column)
@@ -144,6 +161,7 @@ function getLeafColumnPaths(columns, fieldNameMap = {}) {
   return result
 }
 
+// 将表头路径补齐到统一深度。
 function alignHeaderPath(path, depth) {
   if (!depth) {
     return []
@@ -158,6 +176,7 @@ function alignHeaderPath(path, depth) {
   return [...Array.from({ length: depth - path.length }, () => first), ...path]
 }
 
+// 构建复制表头时使用的二维行数据。
 export function buildHeaderCopyRows(columns, fields, fieldNameMap = {}) {
   const leafPaths = getLeafColumnPaths(columns, fieldNameMap)
   const paths = (fields || []).map(field => {
@@ -174,6 +193,7 @@ export function buildHeaderCopyRows(columns, fields, fieldNameMap = {}) {
   )
 }
 
+// 创建 S2 列配置对象。
 function createS2Column(field, title, children, extra = {}) {
   const column = {
     key: field,
@@ -187,12 +207,14 @@ function createS2Column(field, title, children, extra = {}) {
   return column
 }
 
+// 创建辅助表头描述叶子列。
 function createAuxiliaryLeaf(field, description) {
   return createS2Column(field, description, undefined, {
     [AUXILIARY_HEADER_FLAG]: true
   })
 }
 
+// 根据辅助表头配置构建 S2 可渲染列树。
 export function buildS2HeaderColumns(columns, meta = [], fieldNameMap = {}, auxiliaryHeader) {
   const groupNameMap = meta.reduce((pre, cur) => {
     if (cur?.field) {
@@ -208,6 +230,7 @@ export function buildS2HeaderColumns(columns, meta = [], fieldNameMap = {}, auxi
     return [...sourceColumns]
   }
 
+  // 递归转换原始列树并插入辅助描述列。
   const walk = (column, isRoot) => {
     const field = getColumnField(column)
     const title = getColumnTitle(column, groupNameMap, fieldNameMap)
