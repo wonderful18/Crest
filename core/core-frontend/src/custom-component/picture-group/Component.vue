@@ -34,8 +34,11 @@ import { storeToRefs } from 'pinia'
 import ChartEmptyInfo from '@/views/chart/components/views/components/ChartEmptyInfo.vue'
 import ChartError from '@/views/chart/components/views/components/ChartError.vue'
 import { deepCopy } from '@/utils/utils'
+/** 主画布仓库提供图片组渲染所需的视图数据和预览状态。 */
 const dvMainStore = dvMainStoreWithOut()
+/** 画布状态引用，用于判断编辑态、全屏态和写回数据明细。 */
 const { canvasViewInfo, mobileInPc, fullscreenFlag } = storeToRefs(dvMainStore)
+/** 图片组运行态数据，包含当前图片地址、数据结果和首屏标记。 */
 const state = reactive<any>({
   emptyValue: '-',
   data: null,
@@ -45,7 +48,9 @@ const state = reactive<any>({
   previewFirstRender: true,
   curImgList: []
 })
+/** 数据初始化完成标记，避免异步刷新时重复渲染。 */
 const initReady = ref(true)
+/** 图片组组件入参，承接画布元素、预览位置、刷新计数和视图配置。 */
 const props = defineProps({
   element: {
     type: Object,
@@ -75,29 +80,41 @@ const props = defineProps({
     }
   }
 })
+/** 数据加载是否出现错误。 */
 const isError = ref(false)
+/** 数据加载失败时展示的错误信息。 */
 const errMsg = ref('')
+/** 条件样式计算时选中的原始行数据。 */
 const dataRowSelect = ref({})
+/** 条件样式计算时按字段名称索引的行数据。 */
 const dataRowNameSelect = ref({})
+/** 当前参与条件样式判断的字段显示名。 */
 const dataRowFiledName = ref([])
+/** 图片轮播定时器句柄。 */
 let carouselTimer = null
+/** 将常用入参转换为响应式引用，便于监听和计算。 */
 const { element, view, showPosition } = toRefs(props)
+/** 组件内部自动刷新定时器句柄。 */
 let innerRefreshTimer = null
+/** 内部自动刷新累计次数。 */
 let innerSearchCount = 0
+/** 当前是否处于 PC 画布编辑态，编辑态下禁用自动轮播。 */
 const isEditMode = computed(
   () => showPosition.value.includes('canvas') && !mobileInPc.value && !fullscreenFlag.value
 )
 
+/** 监听外部刷新计数，在未启用内部刷新时触发数据重算。 */
 watch([() => props.searchCount], () => {
   // 内部计时器启动 忽略外部计时器
   if (!innerRefreshTimer) {
     calcData(view.value, () => {
-      // do searchCount
+      // 外部刷新完成后的回调占位。
     })
   }
 })
 
 // 编辑状态下 不启动刷新
+/** 构建预览场景下的内部定时刷新任务。 */
 const buildInnerRefreshTimer = (
   refreshViewEnable = false,
   refreshUnit = 'minute',
@@ -108,13 +125,14 @@ const buildInnerRefreshTimer = (
     const timerRefreshTime = refreshUnit === 'second' ? refreshTime * 1000 : refreshTime * 60000
     innerRefreshTimer = setInterval(() => {
       calcData(view.value, () => {
-        // do innerRefreshTimer
+        // 内部定时刷新完成后的回调占位。
       })
       innerSearchCount++
     }, timerRefreshTime)
   }
 }
 
+/** 编辑态切换时重新评估图片轮播状态。 */
 watch(
   () => isEditMode.value,
   () => {
@@ -122,6 +140,7 @@ watch(
   }
 )
 
+/** 初始化图片轮播，条件样式启用或编辑态下会保持静态首图。 */
 const initCarousel = () => {
   carouselTimer && clearInterval(carouselTimer)
   carouselTimer = null
@@ -142,6 +161,7 @@ const initCarousel = () => {
   }
 }
 
+/** 根据适配方式生成图片容器样式。 */
 const imageAdapter = computed(() => {
   const style = {
     position: 'relative',
@@ -157,6 +177,7 @@ const imageAdapter = computed(() => {
   return style as CSSProperties
 })
 
+/** 初始化当前数据字段映射，供条件样式按字段名读取行值。 */
 const initCurFields = chartDetails => {
   dataRowFiledName.value = []
   dataRowSelect.value = {}
@@ -191,6 +212,7 @@ const initCurFields = chartDetails => {
   conditionAdaptor(view.value)
 }
 
+/** 根据条件样式规则选择最终展示的图片地址。 */
 const conditionAdaptor = (chart: Chart) => {
   state.showUrl = null
   if (!chart || !chart.senior) {
@@ -226,6 +248,7 @@ const conditionAdaptor = (chart: Chart) => {
   }
 }
 
+/** 使用组件配置中的首张图片作为默认展示内容。 */
 const withInit = () => {
   if (element.value.propValue['urlList'] && element.value.propValue['urlList'].length > 0) {
     state.showUrl = element.value.propValue['urlList'][0].url
@@ -236,6 +259,7 @@ const withInit = () => {
   initCarousel()
 }
 
+/** 计算图片组数据，支持条件样式取数和无数据源时的静态图片展示。 */
 const calcData = (viewCalc: Chart, callback) => {
   isError.value = false
   const { threshold } = parseJson(viewCalc.senior)
@@ -298,10 +322,12 @@ const calcData = (viewCalc: Chart, callback) => {
 }
 
 // 初始化此处不必刷新
+/** 暴露给画布渲染器的渲染入口，图片组当前无需额外刷新动作。 */
 const renderChart = () => {
-  //do renderView
+  // 图片组初始化阶段无需额外刷新。
 }
 
+/** 挂载前清理旧轮播并准备内部刷新定时器。 */
 onBeforeMount(() => {
   if (carouselTimer) {
     clearInterval(carouselTimer)
