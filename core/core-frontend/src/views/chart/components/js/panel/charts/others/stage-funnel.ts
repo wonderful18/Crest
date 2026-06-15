@@ -6,17 +6,21 @@ import { parseJson } from '@/views/chart/components/js/util'
 
 const DEFAULT_COLORS = ['#2563eb', '#0891b2', '#16a34a', '#f59e0b', '#f97316', '#e11d48', '#7c3aed']
 
+// 转义 SVG 文本节点中的特殊字符。
 const escapeSvgText = (value: unknown) =>
   String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
 
+// 转义 SVG 属性值中的特殊字符。
 const escapeSvgAttribute = (value: unknown) =>
   escapeSvgText(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
+// 将数值限制在指定区间内。
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
+// 格式化阶段指标展示值。
 const formatMetricValue = (value: unknown) => {
   const numberValue = Number(value)
   if (!Number.isFinite(numberValue)) {
@@ -28,6 +32,7 @@ const formatMetricValue = (value: unknown) => {
   return numberValue.toLocaleString('zh-CN', { maximumFractionDigits: 1 })
 }
 
+// 将十六进制颜色转换为 RGB 通道。
 const hexToRgb = (hex: string) => {
   const clean = hex.replace('#', '')
   if (!/^[0-9a-fA-F]{6}$/.test(clean)) {
@@ -40,15 +45,18 @@ const hexToRgb = (hex: string) => {
   }
 }
 
+// 对十六进制颜色进行明暗调整。
 const adjustColor = (hex: string, amount: number) => {
   const rgb = hexToRgb(hex)
   if (!rgb) {
     return hex
   }
+  // 按通道调整颜色并限制在合法范围内。
   const channel = (value: number) => clamp(value + amount, 0, 255)
   return `rgb(${channel(rgb.r)}, ${channel(rgb.g)}, ${channel(rgb.b)})`
 }
 
+// 将十六进制颜色转换为带透明度的 RGBA 表达式。
 const colorWithAlpha = (hex: string, alpha: number) => {
   const rgb = hexToRgb(hex)
   if (!rgb) {
@@ -57,7 +65,9 @@ const colorWithAlpha = (hex: string, alpha: number) => {
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`
 }
 
+// 获取阶段漏斗使用的维度轴字段。
 const getDimensionAxis = (chart: Chart) => chart.xAxis?.[0] || chart['xaxis']?.[0]
+// 获取阶段漏斗使用的指标轴字段。
 const getQuotaAxis = (chart: Chart) => chart.yAxis?.[0] || chart['yaxis']?.[0]
 
 class StageFunnelDomChart {
