@@ -254,6 +254,9 @@ const closeEditComponentName = () => {
   curEditComponent = null
 }
 
+/**
+ * 延后锁定当前选中组件，避开菜单点击收起时序
+ */
 const lock = () => {
   setTimeout(() => {
     lockStore.lock()
@@ -261,6 +264,9 @@ const lock = () => {
   })
 }
 
+/**
+ * 延后解锁当前选中组件，避开菜单点击收起时序
+ */
 const unlock = () => {
   setTimeout(() => {
     lockStore.unlock()
@@ -268,6 +274,9 @@ const unlock = () => {
   })
 }
 
+/**
+ * 隐藏当前选中组件并暂停其提示轮播
+ */
 const hideComponent = () => {
   setTimeout(() => {
     layerStore.hideComponent()
@@ -276,6 +285,9 @@ const hideComponent = () => {
   })
 }
 
+/**
+ * 显示当前选中组件并恢复其提示轮播
+ */
 const showComponent = () => {
   setTimeout(() => {
     layerStore.showComponent()
@@ -284,14 +296,23 @@ const showComponent = () => {
   })
 }
 
+/**
+ * 隐藏分组中的弹出层组件列表
+ */
 const popComponentData = computed(() =>
   componentData.value.filter(ele => ele.category && ele.category === 'hidden')
 )
 
+/**
+ * 主图层列表中可展示的基础组件
+ */
 const baseComponentData = computed(() =>
   componentData.value.filter(ele => ele?.category !== 'hidden' && ele.component !== 'GroupArea')
 )
 
+/**
+ * 图层拖拽结束后同步画布组件顺序
+ */
 const dragOnEnd = ({ oldIndex, newIndex }) => {
   const source = componentData.value[newIndex]
   const comLength = componentData.value.length
@@ -305,6 +326,9 @@ const dragOnEnd = ({ oldIndex, newIndex }) => {
   dvMainStore.setCurComponent({ component: target, index: transformIndex(comLength - oldIndex) })
   snapshotStore.recordSnapshotCache('dragOnEnd')
 }
+/**
+ * 组件类型到图层图标的映射
+ */
 const iconMap = {
   bar: bar,
   'db-more-web': dbMoreWeb,

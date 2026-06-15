@@ -410,6 +410,9 @@ const initScroll = () => {
   }, 1500)
 }
 
+/**
+ * 判断当前表格是否展示分页控件
+ */
 const showPage = computed(() => {
   if (!PAGE_CHARTS.includes(view.value.type)) {
     return false
@@ -417,6 +420,9 @@ const showPage = computed(() => {
   return state.showPage
 })
 
+/**
+ * 处理分页页码切换
+ */
 const handleCurrentChange = pageNum => {
   let extReq = { goPage: pageNum }
   if (chartExtRequest.value) {
@@ -426,6 +432,9 @@ const handleCurrentChange = pageNum => {
   calcData(chart, null, false)
 }
 
+/**
+ * 处理分页大小切换
+ */
 const handlePageSizeChange = pageSize => {
   if (state.pageStyle === 'general') {
     state.currentPageSize = pageSize
@@ -440,12 +449,18 @@ const handlePageSizeChange = pageSize => {
   calcData(chart, null, false)
 }
 
+/**
+ * 嵌入模式下转发点位点击事件
+ */
 const pointClickTrans = () => {
   if (embeddedCallBack.value === 'yes') {
     trackClick('pointClick')
   }
 }
 
+/**
+ * 处理触摸端图表操作菜单触发
+ */
 const touchAction = (callback, fieldId) => {
   if (fieldId) {
     state.curActionId = fieldId
@@ -455,6 +470,9 @@ const touchAction = (callback, fieldId) => {
   }
 }
 
+/**
+ * 处理表格单元格点击后的下钻、联动和跳转动作
+ */
 const action = param => {
   state.pointParam = param
   state.curActionId = param.data.name

@@ -263,11 +263,17 @@ const componentBackgroundStyle = computed(() => {
   return {}
 })
 
+/**
+ * 判断公共背景是否使用内置 SVG 图片
+ */
 const svgInnerEnable = computed(() => {
   const { backgroundImageEnable, backgroundType, innerImage } = config.value.commonBackground
   return backgroundImageEnable && backgroundType === 'innerImage' && typeof innerImage === 'string'
 })
 
+/**
+ * 获取公共背景内置 SVG 的资源名称
+ */
 const commonBackgroundSvgInner = computed(() => {
   if (svgInnerEnable.value) {
     return config.value.commonBackground.innerImage.replace('board/', '').replace('.svg', '')
@@ -276,6 +282,9 @@ const commonBackgroundSvgInner = computed(() => {
   }
 })
 
+/**
+ * 计算 3D 旋转效果需要的插槽补偿样式
+ */
 const slotStyle = computed(() => {
   // 3d效果支持
   if (config.value['multiDimensional'] && config.value['multiDimensional']?.enable) {
@@ -304,10 +313,16 @@ const slotStyle = computed(() => {
   }
 })
 
+/**
+ * 向外转发组件内部点位点击事件
+ */
 const onPointClick = param => {
   emits('onPointClick', param)
 }
 
+/**
+ * 判断当前组件在预览态是否允许触发事件
+ */
 const eventEnable = computed(
   () =>
     showPositionActive.value.includes('preview') &&
@@ -320,6 +335,9 @@ const eventEnable = computed(
     showPositionActive.value !== 'canvas-multiplexing'
 )
 
+/**
+ * 处理包装器点击事件，指标卡点击由内部组件接管
+ */
 const onWrapperClickCur = e => {
   // 指标卡为内部触发
   if (['indicator'].includes(config.value.innerType)) {
