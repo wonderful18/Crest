@@ -391,6 +391,7 @@ defineExpose({
 </script>
 
 <template>
+  <!-- 文本条件支持双条件默认值，展示类型 8 使用独立结构保存操作符和值。 -->
   <div class="list-item top-item" v-if="curComponent.displayType === '8'" @click.stop>
     <div class="label">{{ t('dynamic_time.set_default') }}</div>
     <div class="value" :class="curComponent.hideConditionSwitching && 'hide-condition_switching'">
@@ -436,6 +437,7 @@ defineExpose({
     </div>
   </div>
   <div class="list-item top-item" v-if="curComponent.displayType === '22'" @click.stop>
+    <!-- 数值范围默认值需要显式开启，避免空最小值或最大值被误当作过滤边界。 -->
     <div class="label">
       <el-checkbox
         v-model="curComponent.defaultValueCheck"
@@ -477,6 +479,7 @@ defineExpose({
     </div>
   </div>
   <div v-if="['7', '1'].includes(curComponent.displayType) && showFlag" class="list-item">
+    <!-- 时间范围限制属于查询条件约束，不等同于默认值，因此独立放在默认值开关之前。 -->
     <div class="label">
       <el-checkbox v-model="curComponent.setTimeRange" :label="t('v_query.time_filter_range')" />
     </div>
@@ -553,6 +556,7 @@ defineExpose({
       class="setting-content"
       v-if="curComponent.defaultValueCheck && ['1', '7'].includes(curComponent.displayType)"
     >
+      <!-- 日期默认值支持固定时间和相对当前时间，两类配置共享下方预览区域。 -->
       <div class="setting">
         <el-radio-group @change="handleTimeTypeChange" v-model="curComponent.timeType">
           <el-radio value="fixed">{{ t('dynamic_time.fix') }}</el-radio>
@@ -702,6 +706,7 @@ defineExpose({
       class="parameters"
       :class="dynamicTime && 'setting'"
     >
+      <!-- 默认值编辑组件按 displayType 动态挂载，切换组件时通过 loadingDefault 清理内部缓存。 -->
       <div class="setting-label" v-if="dynamicTime">{{ t('template_manage.preview') }}</div>
       <div v-if="defaultValueFirstItemShow" class="first-item" style="margin-bottom: 8px">
         <el-checkbox v-model="curComponent.defaultValueFirstItem">{{
@@ -722,6 +727,7 @@ defineExpose({
 
 <style lang="less" scoped>
 .list-item {
+  // 默认值配置嵌入查询条件设置面板，采用左右标签加可换行内容区的紧凑布局。
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -865,6 +871,7 @@ defineExpose({
     }
   }
   .parameters {
+    // 固定默认值和动态时间预览共用参数区，宽度按日期选择器最大形态预留。
     margin-left: auto;
     margin-top: 8px;
 

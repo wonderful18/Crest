@@ -19,10 +19,10 @@ import { storeToRefs } from 'pinia'
 import Icon from '../../../../../../components/icon-custom/src/Icon.vue'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 
-/** 国际化文本读取方法 */
+// 标签面板覆盖普通标签、系列标签、总计标签和自定义内容，文案统一从国际化资源读取。
 const { t } = useI18n()
 
-/** 标签样式面板的输入属性 */
+// 标签样式面板的可见项由当前图表类型的 propertyInner 决定，避免展示渲染器不支持的配置。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -48,7 +48,7 @@ const props = defineProps({
     type: Array<string>
   }
 })
-/** 可视化主画布状态仓库 */
+// 画布状态用于判断批量编辑模式和当前主题色，系列标签默认颜色会随主题初始化。
 const dvMainStore = dvMainStoreWithOut()
 /** 根据当前主题选择 Tooltip 的反色主题 */
 const toolTip = computed(() => {
@@ -123,7 +123,7 @@ const formatterEditable = computed(() => {
 const formatterSelector = ref()
 /** 初始化并补齐每个指标系列的标签配置 */
 const initSeriesLabel = () => {
-  // 批量设置阶段不显示系列标签配置
+  // 批量设置阶段不展示系列级配置，避免把某张图的指标列表写入多张图。
   if (!showProperty('seriesLabelFormatter') || batchOptStatus.value) {
     return
   }
@@ -131,6 +131,7 @@ const initSeriesLabel = () => {
 
   const seriesAxisMap = formatter.reduce((pre, next) => {
     const id = next.seriesId ?? next.id
+    // 混合图左右轴可能引用同一指标，seriesId 用于区分轴侧并保持配置稳定。
     pre[next[computedIdKey.value]] = { ...next, seriesId: id }
     return pre
   }, {})
@@ -189,7 +190,7 @@ const initSeriesLabel = () => {
     pre[next[computedIdKey.value]] = tmp
     return pre
   }, {})
-  // 初始化系列数组，用于主题适配
+  // 新增指标系列时立即同步默认配置，保证主题切换和首次渲染使用同一套颜色。
   if (initFlag) {
     changeLabelAttr('seriesLabelFormatter', false)
   }
@@ -296,6 +297,7 @@ const init = () => {
     const customAttr = chart.customAttr
     if (customAttr.label) {
       configCompat(customAttr.label)
+      // 深度合并默认值可以补齐新增字段，同时保留旧图表已经保存的标签样式。
       state.labelForm = defaultsDeep(customAttr.label, cloneDeep(COMPUTED_DEFAULT_LABEL.value))
       // 初始化格式化单位语言
       initFormatCfgUnit(state.labelForm.labelFormatter)
@@ -433,6 +435,7 @@ function initPosition() {
     initBidirectionalBarPosition()
   } else {
     const oldPosition = state?.labelForm?.position
+    // 不同图表族支持的标签位置枚举不同，打开面板时要把历史值迁移到当前可用范围。
     if (showProperty('rPosition')) {
       if (state?.labelForm?.position !== 'inner') {
         state.labelForm.position = 'outer'
@@ -555,6 +558,7 @@ const isProgressBar = computed(() => {
       {{ t('chart.no_other_configurable_properties') }}</el-row
     >
     <div>
+      <!-- 顶部开关类配置只控制标签内容范围，不影响下面的字体和格式化配置。 -->
       <el-form-item v-if="noFullDisplay" class="form-item" :class="'form-item-' + themes">
         <el-checkbox
           size="small"
@@ -638,6 +642,7 @@ const isProgressBar = computed(() => {
       </el-space>
     </div>
     <div v-if="showProperty('showFields') && !batchOptStatus">
+      <!-- 自定义标签字段来自当前数据集字段，批量编辑时不开放以避免字段不一致。 -->
       <el-form-item :label="t('chart.label')" class="form-item" :class="'form-item-' + themes">
         <el-select
           size="small"
@@ -767,6 +772,7 @@ const isProgressBar = computed(() => {
       v-if="showDivider"
     />
     <template v-if="showProperty('labelFormatter') && !isBarRangeTime && !isGroupBar && !isGauge">
+      <!-- 标签值格式化复用统一 formatter，时间范围、分组柱和仪表盘走各自渲染逻辑。 -->
       <el-form-item
         :label="$t('chart.value_formatter_type')"
         class="form-item"

@@ -96,6 +96,7 @@ const clickItem = param => {
   if (!param) {
     return
   }
+  // 菜单命令只负责分派操作，具体字段更新逻辑放在对应方法中，便于控制 axisType 和 index。
   switch (param.type) {
     case 'rename':
       showRename()
@@ -129,12 +130,14 @@ const beforeClickItem = type => {
 // 处理维度排序，普通排序直接更新字段，自定义排序交给上层弹窗
 const sort = param => {
   if (param.type === 'custom_sort') {
+    // 自定义排序需要打开上层弹窗编辑顺序，当前组件只传递字段位置和排序类型。
     const item = {
       index: props.index,
       sort: param.type
     }
     emit('onCustomSort', item)
   } else {
+    // 普通排序直接写回字段配置，并清理自定义排序列表，避免两类排序规则同时生效。
     item.value.index = props.index
     item.value.sort = param.type
     item.value.customSort = []
@@ -152,6 +155,7 @@ const beforeSort = type => {
 
 // 切换日期粒度
 const dateStyle = param => {
+  // 日期粒度会影响查询字段表达式，必须带上当前轴区域让父级更新正确槽位。
   item.value.dateStyle = param.type
   item.value.axisType = props.type
   emit('onDimensionItemChange', item.value)
@@ -166,6 +170,7 @@ const beforeDateStyle = type => {
 
 // 切换日期展示格式
 const datePattern = param => {
+  // 日期展示格式只影响前端展示和后续渲染配置，不改变字段原始类型。
   item.value.datePattern = param.type
   item.value.axisType = props.type
   emit('onDimensionItemChange', item.value)
@@ -222,6 +227,7 @@ const showSort = computed(() => {
   }
   const isChartMix = chartType.includes('chart-mix')
   const isDimensionType = ['dimension', 'dimensionStack', 'dimensionExt'].includes(propType)
+  // 混合图只允许维度侧排序，指标扩展槽位排序会破坏左右轴数据对齐。
   return !isChartMix || isDimensionType
 })
 // 判断当前图表是否展示排序优先级入口
@@ -250,6 +256,7 @@ onMounted(() => {
 
 <template>
   <span class="item-style">
+    <!-- 维度标签同时承载字段类型、排序状态、隐藏状态和快捷删除入口。 -->
     <el-dropdown :effect="themes" trigger="click" @command="clickItem">
       <el-tag
         class="item-axis father"
@@ -345,6 +352,7 @@ onMounted(() => {
           :class="themes === 'dark' ? 'dark-dimension-quota' : ''"
         >
           <el-dropdown-item @click.prevent v-if="showSort">
+            <!-- 排序二级菜单保持当前排序摘要，避免用户打开菜单前无法判断字段排序状态。 -->
             <el-dropdown
               :effect="themes"
               popper-class="data-dropdown_popper_mr9"
@@ -447,6 +455,7 @@ onMounted(() => {
                 (type === 'dimension' || type === 'dimensionStack' || type === 'dimensionExt'))
             "
           >
+            <!-- 日期字段提供粒度菜单，不同图表槽位会限制可选粒度。 -->
             <el-dropdown
               :effect="themes"
               placement="right-start"
@@ -743,6 +752,7 @@ onMounted(() => {
   padding: 5px 16px;
 }
 .item-style {
+  // 拖拽项需要占满轴槽宽度，内部名称再做省略，保证拖拽命中区域稳定。
   position: relative;
   width: 100%;
   display: block;
@@ -822,6 +832,7 @@ span {
 }
 
 .item-span-style {
+  // 排序和隐藏图标会占用右侧空间，名称区域按状态缩短避免覆盖操作图标。
   display: flex;
   max-width: 170px;
   color: #1f2329;
@@ -854,6 +865,7 @@ span {
 }
 
 .drop-style {
+  // 二级菜单宽度固定，保证排序、日期粒度和日期格式菜单在暗色主题下对齐。
   :deep(.ed-dropdown-menu__item) {
     height: 32px;
     min-width: 218px;
