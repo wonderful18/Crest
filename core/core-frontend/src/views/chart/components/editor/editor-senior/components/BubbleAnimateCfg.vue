@@ -4,6 +4,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 
 const { t } = useI18n()
 
+// 定义气泡动画配置面板接收的图表和主题参数。
 const props = defineProps({
   chart: {
     type: Object,
@@ -18,8 +19,10 @@ const props = defineProps({
   }
 })
 
+// 声明气泡动画配置变更事件。
 const emit = defineEmits(['onBubbleAnimateChange'])
 
+// 监听图表气泡配置变化并刷新本地表单。
 watch(
   () => props.chart.senior.bubbleCfg,
   () => {
@@ -28,15 +31,18 @@ watch(
   { deep: true }
 )
 
+// 保存气泡动画表单和辅助状态。
 const state = reactive({
   bubbleAnimateForm: {} as BubbleCfg,
   isAutoBreakLine: false
 })
 
+// 向父组件同步气泡动画配置。
 const onBubbleAnimateChange = () => {
   emit('onBubbleAnimateChange', state.bubbleAnimateForm)
 }
 
+// 校验并更新气泡动画速度。
 const changeSpeedSize = v => {
   let _v = parseFloat(v)
   if (isNaN(_v) || _v < 0.1) _v = 0.1
@@ -45,6 +51,7 @@ const changeSpeedSize = v => {
   onBubbleAnimateChange()
 }
 
+// 校验并更新气泡动画圈数。
 const changeRingsSize = v => {
   let _v = parseFloat(v)
   if (isNaN(_v) || _v < 0.1) _v = 0.1
@@ -53,6 +60,7 @@ const changeRingsSize = v => {
   onBubbleAnimateChange()
 }
 
+// 从图表高级配置中初始化气泡动画表单。
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.senior) {

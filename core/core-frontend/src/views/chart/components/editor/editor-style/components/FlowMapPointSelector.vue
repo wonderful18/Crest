@@ -6,6 +6,7 @@ import { ElSpace } from 'element-plus-secondary'
 import { cloneDeep } from 'lodash-es'
 
 const { t } = useI18n()
+// 定义流向地图点位样式面板接收的图表和主题参数。
 const props = defineProps({
   chart: {
     type: Object,
@@ -20,6 +21,7 @@ const props = defineProps({
   }
 })
 const predefineColors = COLOR_PANEL
+// 生成点位标签可选字号列表。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -36,16 +38,20 @@ const fontSizeList = computed(() => {
   }
   return arr
 })
+// 保存流向点位样式表单。
 const state = reactive({
   pointForm: {
     ...JSON.parse(JSON.stringify(DEFAULT_MISC.flowMapConfig.pointConfig))
   }
 })
+// 根据当前主题计算提示框使用的反色主题。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
+// 声明流向点位样式变更事件。
 const emit = defineEmits(['onChangeFlowMapPointForm'])
 
+// 监听流向点位配置变化并刷新本地表单。
 watch(
   () => props.chart.customAttr.misc.flowMapConfig.pointConfig,
   () => {
@@ -54,10 +60,12 @@ watch(
   { deep: true }
 )
 
+// 同步流向点位样式配置。
 const changeStyle = () => {
   emit('onChangeFlowMapPointForm', state.pointForm)
 }
 
+// 从图表配置中初始化流向点位样式。
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customAttr) {
