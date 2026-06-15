@@ -54,7 +54,7 @@ http://127.0.0.1:18100/
 
 ## OceanBase 元数据库
 
-拆分部署默认启动内置 MySQL。使用 OceanBase 作为 Crest 元数据库时，应移除或停用 `mysql-crest` 服务，并显式覆盖后端数据库配置：
+拆分部署默认启动内置 MySQL，默认 JDBC URL 指向 `mysql-crest:3306`。使用 OceanBase 作为 Crest 元数据库时，应通过 `--no-deps` 停用内置 MySQL 依赖，并显式覆盖后端数据库配置，尤其是 `CREST_DB_URL` 和 `CREST_DB_USERNAME`：
 
 ```bash
 CREST_DB_TYPE=ob-oracle \
@@ -72,7 +72,7 @@ CREST_WEB_PORT=18100 \
 docker compose -f deploy/split/docker-compose.yml up -d --no-deps crest-service crest
 ```
 
-`ob-mysql` 元数据库使用 `CREST_DB_TYPE=ob-mysql`，URL 形如 `jdbc:oceanbase://10.0.0.10:2883/crest`，Flyway 可继续使用 MySQL 兼容路径。observer 直连时端口使用 `2881`，用户名使用 `用户@租户`。
+`ob-mysql` 元数据库使用 `CREST_DB_TYPE=ob-mysql`，URL 形如 `jdbc:oceanbase://10.0.0.10:2883/crest`，Flyway 可继续使用 MySQL 兼容路径。OBProxy/ODP 连接用户名使用 `用户@租户#集群`，observer 直连端口通常使用 `2881`，用户名使用 `用户@租户`。
 
 ## 启用 Prometheus 和 Grafana
 

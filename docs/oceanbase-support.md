@@ -58,9 +58,9 @@ Common variables:
 | --- | --- | --- |
 | `CREST_DB_TYPE` | Metadata database type: `mysql`, `ob-mysql`, or `ob-oracle` | `mysql` |
 | `CREST_DB_DRIVER_CLASS_NAME` | Optional JDBC driver override | Type-specific |
-| `CREST_DB_URL` | Optional full JDBC URL. If set, it has priority. | Empty |
-| `CREST_DB_HOST` | Database host | `127.0.0.1` |
-| `CREST_DB_PORT` | Database port | MySQL `3306`, OceanBase usually `2883` |
+| `CREST_DB_URL` | Optional full JDBC URL. If set, it has priority. Docker Compose deployments should set it explicitly for OceanBase. | Empty |
+| `CREST_DB_HOST` | Database host. Use an OBProxy/ODP host or an observer host for OceanBase. | `127.0.0.1` |
+| `CREST_DB_PORT` | Database port. OBProxy/ODP usually uses `2883`; observer direct connections usually use `2881`. | MySQL `3306`, OceanBase `2883` |
 | `CREST_DB_NAME` | Metadata database name for MySQL-compatible metadata databases | `crest` |
 | `CREST_FLYWAY_LOCATIONS` | Optional Flyway location override | Type-specific |
 
@@ -85,7 +85,7 @@ export CREST_DB_USERNAME='ob_user@ob_oracle#obcluster'
 export CREST_DB_PASSWORD='ob_password'
 ```
 
-When running with Docker Compose files that set `CREST_DB_URL`, provide an explicit OceanBase URL:
+When running with Docker Compose files, provide an explicit OceanBase URL so the MySQL default URL is not used:
 
 ```bash
 export CREST_DB_URL='jdbc:oceanbase://127.0.0.1:2883/crest'   # ob-mysql
