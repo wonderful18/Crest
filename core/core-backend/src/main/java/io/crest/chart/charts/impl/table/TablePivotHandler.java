@@ -30,12 +30,18 @@ import reactor.util.function.Tuples;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 处理透视表图表的数据计算、辅助字段和自定义汇总。
+ */
 @Component
 @SuppressWarnings("unchecked")
 public class TablePivotHandler extends GroupChartHandler {
     @Getter
     private String type = "table-pivot";
 
+    /**
+     * 计算透视表图表结果并补充动态辅助字段数据。
+     */
     @Override
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         T result = super.calcChartResult(view, formatResult, filterResult, sqlMap, sqlMeta, provider);
@@ -87,6 +93,9 @@ public class TablePivotHandler extends GroupChartHandler {
         return result;
     }
 
+    /**
+     * 生成透视表基础结果数据。
+     */
     @Override
     public Map<String, Object> buildResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
         var result = new HashMap<String, Object>();
@@ -98,6 +107,9 @@ public class TablePivotHandler extends GroupChartHandler {
         return result;
     }
 
+    /**
+     * 计算透视表自定义汇总表达式。
+     */
     private Map<String, Object> calcCustomExpr(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         Object totalStr = JsonUtil.toJSONString(view.getCustomAttr().get("tableTotal"));
         TableTotal tableTotal = JsonUtil.parseObject((String) totalStr, TableTotal.class);
@@ -306,6 +318,9 @@ public class TablePivotHandler extends GroupChartHandler {
         return dataMap;
     }
 
+    /**
+     * 组装自定义汇总结果。
+     */
     private Map<String, Object> buildCustomCalcResult(List<String[]> data, List<ChartViewFieldDTO> dimAxis, List<ChartViewFieldDTO> quotaAxis) {
         var rootResult = new HashMap<String, Object>();
         if (CollectionUtils.isEmpty(dimAxis)) {
@@ -355,6 +370,9 @@ public class TablePivotHandler extends GroupChartHandler {
         return Tuples.of(querySql, data);
     }
 
+    /**
+     * 将结果数据中的空值统一转换为空字符串。
+     */
     private void nullToBlank(List<String[]> data) {
         data.forEach(r -> {
             for (int i = 0; i < r.length; i++) {
@@ -365,6 +383,9 @@ public class TablePivotHandler extends GroupChartHandler {
         });
     }
 
+    /**
+     * 根据自定义汇总配置构造计算字段。
+     */
     private List<ChartViewFieldDTO> getCustomFields(ChartViewDTO view, List<TableCalcTotalCfg> cfgList) {
         var quotaIds = view.getYAxis().stream().map(ChartViewFieldDTO::getEngineFieldName).collect(Collectors.toSet());
         var customFields = new ArrayList<ChartViewFieldDTO>();

@@ -22,6 +22,7 @@ const snapshotStore = snapshotStoreWithOut()
 const { canvasStyleData, canvasViewInfo } = storeToRefs(dvMainStore)
 let canvasAttrInit = false
 
+// 保存画布属性面板默认展开项。
 const canvasAttrActiveNames = ref(['size', 'baseSetting', 'background', 'color'])
 const { t } = useI18n()
 const screenAdaptorList = [
@@ -31,29 +32,35 @@ const screenAdaptorList = [
   { label: t('visualization.screen_adaptor_keep'), value: 'keep' },
   { label: t('visualization.screen_adaptor_keep_proportion'), value: 'keepProportion' }
 ]
+// 标记画布属性面板已完成初始化。
 const init = () => {
   nextTick(() => {
     canvasAttrInit = true
   })
 }
 
+// 同步全局数值格式化配置到视图。
 const onFormatterItemChange = val => {
   themeAttrChange('formatterCfg', 'formatterCfg', val)
 }
 
+// 同步全局配色配置到视图。
 const onColorChange = val => {
   themeAttrChange('customAttr', 'color', val)
 }
 
+// 记录画布样式变更快照。
 const onStyleChange = () => {
   snapshotStore.recordSnapshotCache('renderChart')
 }
 
+// 记录基础设置变更并刷新滚动区域。
 const onBaseChange = () => {
   snapshotStore.recordSnapshotCache('renderChart')
   useEmitt().emitter.emit('initScroll')
 }
 
+// 将主题属性变更批量同步到画布视图。
 const themeAttrChange = (custom, property, value) => {
   if (canvasAttrInit) {
     Object.keys(canvasViewInfo.value).forEach(function (viewId) {
