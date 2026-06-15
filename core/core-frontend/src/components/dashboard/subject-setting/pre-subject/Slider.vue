@@ -76,6 +76,7 @@
         <el-row id="slider">
           <div class="slider-window" :style="slideWindowHeight">
             <ul v-if="!state.slidersLoading" class="container" :style="containerStyle">
+              <!-- 克隆末页放在队首，配合边界回跳实现首尾连续轮播 -->
               <li>
                 <div class="item-area" style="overflow: hidden">
                   <subject-template-item
@@ -98,6 +99,7 @@
                   />
                 </div>
               </li>
+              <!-- 克隆首页放在队尾，右滑越界后可无感回到真实首页 -->
               <li>
                 <div class="item-area">
                   <subject-template-item
@@ -257,10 +259,12 @@ const querySubjectWithGroup = () => {
   state.slidersLoading = true
   querySubjectWithGroupApi({})
     .then(response => {
+      // 后端已按轮播页分组返回，前端直接用于页切换和指示点渲染
       state.sliders = []
       state.sliders = response.data
       state.slidersLoading = false
       if (state.sliders.length < state.currentIndex) {
+        // 删除最后一页主题后回到首页，避免当前位置落在空白页
         state.currentIndex = 1
         emit('reload')
       }
@@ -298,7 +302,7 @@ const subjectEdit = subjectItem => {
     subjectEditDialogRef.value.optInit(subjectItem, 'edit')
     // 编辑已有主题
   } else {
-    // 新建
+    // 新建主题沿用同一弹窗，初始值由调用方传入
     subjectEditDialogRef.value.optInit(subjectItem, 'new')
   }
 }
@@ -327,6 +331,7 @@ const animate = (des, direc, speed) => {
       state.transitionEnd = true
       window.clearInterval(state.temp)
       state.distance = des
+      // 到达克隆页后立即切回对应真实页，视觉上保持连续滑动
       if (des < -state.sliderWidth * state.sliders.length) state.distance = -state.sliderWidth
       if (des > -state.sliderWidth) state.distance = -state.sliderWidth * state.sliders.length
     }
@@ -337,6 +342,7 @@ const animate = (des, direc, speed) => {
 const move = (offset, direction, speed) => {
   if (!state.transitionEnd) return
   state.transitionEnd = false
+  // direction 为 -1 表示向右翻页，为 1 表示向左翻页
   direction === -1
     ? (state.currentIndex += offset / state.sliderWidth)
     : (state.currentIndex -= offset / state.sliderWidth)
@@ -351,6 +357,7 @@ const move = (offset, direction, speed) => {
 const jump = index => {
   const direction = index - state.currentIndex >= 0 ? -1 : 1
   const offset = Math.abs(index - state.currentIndex) * state.sliderWidth
+  // 跨页跳转按页数放大步进速度，避免长距离切换显得迟滞
   const jumpSpeed =
     Math.abs(index - state.currentIndex) === 0
       ? state.speed
@@ -400,6 +407,7 @@ ul {
   overflow: hidden;
 }
 
+/* 轮播容器必须横向排列所有真实页和克隆页 */
 .container {
   position: absolute;
   display: flex;

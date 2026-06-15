@@ -20,7 +20,7 @@ const { t } = useI18n()
 
 const DEFAULT_LIGHTNESS_RANGE: [number, number] = [0.2, 1]
 
-// 衔接当前组件交互和状态同步
+// 将亮度指标归一化到 0 到 1，极差为 0 时使用中间值
 function normalizeRatio(val: number, min: number, max: number): number {
   if (max === min) {
     return 0.5
@@ -28,13 +28,13 @@ function normalizeRatio(val: number, min: number, max: number): number {
   return (val - min) / (max - min)
 }
 
-// 衔接当前组件交互和状态同步
+// 仅保留可参与坐标、气泡和亮度计算的有限数值
 function safeToNumber(value: unknown): number | undefined {
   const result = Number(value)
   return Number.isFinite(result) ? result : undefined
 }
 
-// 读取当前业务数据并返回处理结果
+// 根据散点内部字段定位对应指标格式化配置
 function getScatterTooltipFormatter(
   itemName: string,
   quotaList: Array<{ id: string }>,
@@ -266,7 +266,9 @@ export class MultiScatter extends G2PlotChartView<ScatterOptions, G2Scatter> {
     const customAttr = parseJson(chart.customAttr)
     const basicStyle = customAttr.basicStyle
     const data = (options.data || []) as Record<string, unknown>[]
+    // 气泡指标存在时交给 G2Plot 按 sizeField 映射，否则使用固定点大小
     const hasBubbleMetric = data.some(item => Number.isFinite(Number(item.popSize)))
+    // 亮度指标存在时映射为透明度，避免额外颜色通道影响系列颜色
     const hasLightnessMetric = data.some(item => Number.isFinite(Number(item.lightness)))
     let nextOptions: ScatterOptions
     if (chart.extBubble?.length || hasBubbleMetric) {
@@ -291,6 +293,7 @@ export class MultiScatter extends G2PlotChartView<ScatterOptions, G2Scatter> {
     const lightValues = data
       .map(item => safeToNumber(item.lightness))
       .filter((v): v is number => Number.isFinite(v))
+    // 按当前数据范围计算透明度，保证不同筛选结果下仍有可见层次
     const min = Math.min(...lightValues)
     const max = Math.max(...lightValues)
     const [opacityMin, opacityMax] = DEFAULT_LIGHTNESS_RANGE
@@ -322,6 +325,7 @@ export class MultiScatter extends G2PlotChartView<ScatterOptions, G2Scatter> {
     }
     const axisValue = yAxis.axisValue
     if (!axisValue?.auto) {
+      // 手动轴值同时写入 min/max 和 limit，避免图形库自动扩展边界
       const axis = {
         yAxis: {
           ...tmpOptions.yAxis,
@@ -364,7 +368,7 @@ export class MultiScatter extends G2PlotChartView<ScatterOptions, G2Scatter> {
         pre[next.seriesId] = next
         return pre
       }, {}) as Record<string, SeriesFormatter>
-    // 构建的字段列表
+    // tooltip 固定字段顺序与多维散点字段槽位保持一致
     const manualFields = ['x', 'y', 'popSize', 'lightness'] as const
     const tooltip: ScatterOptions['tooltip'] = {
       showTitle: true,
@@ -459,6 +463,7 @@ export class MultiScatter extends G2PlotChartView<ScatterOptions, G2Scatter> {
       size = DEFAULT_LEGEND_STYLE.size
     }
     ;(optionTmp.legend.marker as Record<string, any>).style = style => {
+      // 图例图标尺寸跟随编辑器配置，填充色仍使用系列色
       return {
         r: size,
         fill: style.fill
@@ -475,6 +480,7 @@ export class MultiScatter extends G2PlotChartView<ScatterOptions, G2Scatter> {
     const { label: labelAttr } = parseJson(chart.customAttr)
     const layout = []
     if (!labelAttr.fullDisplay) {
+      // 默认启用避让策略，防止密集散点标签相互遮挡
       layout.push({ type: 'hide-overlap' })
       layout.push({ type: 'limit-in-shape' })
     }
@@ -503,6 +509,7 @@ export class MultiScatter extends G2PlotChartView<ScatterOptions, G2Scatter> {
     }
   }
   setupDefaultOptions(chart: ChartObj): ChartObj {
+    // 多维散点默认强调坐标轴，不展示横向分割线
     chart.customStyle.yAxis.splitLine = {
       ...chart.customStyle.yAxis.splitLine,
       show: false
@@ -529,6 +536,7 @@ export class MultiScatter extends G2PlotChartView<ScatterOptions, G2Scatter> {
   }
 
   protected buildScatterDataContext(sourceData: Record<string, unknown>[]) {
+    // xLabel 表示后端已按时间维度格式化，前端保留其展示顺序
     const hasTimeX = sourceData.some(row => row.xLabel != null)
 
     const multiData = sourceData
@@ -543,6 +551,7 @@ export class MultiScatter extends G2PlotChartView<ScatterOptions, G2Scatter> {
         if (x === undefined || !Number.isFinite(y)) {
           return undefined
         }
+        // 兼容不同查询链路输出的字段别名，统一为 G2Plot 所需字段
         const color = String(row.category ?? row.genre ?? row.field ?? row.color ?? 'default')
         const popSize = safeToNumber(row.popSize ?? row.extBubble ?? row.size)
         const lightness = safeToNumber(row.lightness ?? row.extColor)
@@ -558,6 +567,7 @@ export class MultiScatter extends G2PlotChartView<ScatterOptions, G2Scatter> {
       .filter(item => !!item)
 
     if (!multiData.length) {
+      // 没有可归一化数据时回退到通用字段，避免空配置导致图表初始化失败
       return {
         data: sourceData,
         xField: 'field',

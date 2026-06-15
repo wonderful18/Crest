@@ -61,7 +61,7 @@ const emit = defineEmits([
 
 const { item } = toRefs(props)
 
-// 监听字段和图表类型变化，刷新字段标签类型
+// 字段归属或图表类型变化后重新计算标签颜色，保持维度/指标识别一致
 watch(
   [() => props.dimensionData, () => props.item, () => props.chart.type],
   () => {
@@ -91,6 +91,7 @@ const clickItem = param => {
 }
 // 构造字段项菜单命令参数
 const beforeClickItem = type => {
+  // Element 下拉菜单只透传 command，这里统一封装命令类型
   return {
     type: type
   }
@@ -115,6 +116,7 @@ const showRename = () => {
 // 处理排序方式变更
 const sort = param => {
   if (param.type === 'custom_sort') {
+    // 自定义排序需要打开专用配置面板，不直接改写字段排序状态
     const item = {
       index: props.index,
       sort: param.type
@@ -124,6 +126,7 @@ const sort = param => {
     item.value.index = props.index
     item.value.sort = param.type
     item.value.customSort = []
+    // 普通排序切换时清理旧轴类型，避免沿用日期层级排序设置
     delete item.value.axisType
     emit('onDimensionItemChange', item.value)
   }
@@ -131,6 +134,7 @@ const sort = param => {
 
 // 构造排序菜单命令参数
 const beforeSort = type => {
+  // 排序子菜单和字段操作菜单保持同一 command 结构
   return {
     type: type
   }
@@ -355,6 +359,7 @@ onMounted(() => {
 }
 
 .item-axis {
+  /* 钻取字段项宽度固定，避免排序和删除图标出现时挤压编辑区布局 */
   padding: 1px 8px;
   margin-bottom: 3px;
   height: 28px;
@@ -425,6 +430,7 @@ span {
   margin-left: 4px;
 
   &.sort-status {
+    /* 已排序状态需要预留排序图标空间 */
     max-width: 150px;
   }
 
@@ -517,6 +523,7 @@ span {
 }
 
 .father:hover .item-span-style {
+  /* hover 时展示操作图标，字段名区域同步收窄 */
   max-width: 140px;
   &.sort-status {
     max-width: 120px;
