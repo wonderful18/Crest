@@ -24,7 +24,7 @@ const dvMainStore = dvMainStoreWithOut()
 const { batchOptStatus, mobileInPc } = storeToRefs(dvMainStore)
 const { t } = useI18n()
 
-// 接收图表、主题和可编辑属性范围
+// 表头面板同时服务明细表、普通表和透视表，propertyInner 控制当前图表类型可编辑的字段集合。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -39,7 +39,7 @@ const props = defineProps({
   }
 })
 
-// 监听表头配置和字段变化并刷新表单
+// 表头配置依赖字段顺序，字段显隐或指标轴变化后需要重新计算分组、辅助说明和对齐候选项。
 watch(
   [() => props.chart.customAttr.tableHeader, () => props.chart.xAxis, () => props.chart.yAxis],
   () => {
@@ -50,7 +50,7 @@ watch(
 
 const predefineColors = COLOR_PANEL
 
-// 生成表头字号选项
+// 表头字号覆盖普通表头和透视表行、列、角头，区间上限需要满足大屏展示场景。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -68,17 +68,17 @@ const fontSizeList = computed(() => {
   return arr
 })
 
-// 维护表头配置表单和弹窗显隐状态
+// 表单状态保存当前编辑值，两个弹窗分别管理复杂表头分组和辅助说明配置。
 const state = reactive({
   tableHeaderForm: {} as ChartTableHeaderAttr,
   showTableHeaderGroupConfig: false,
   showTableHeaderDescriptionConfig: false
 })
 
-// 定义表头配置变更事件
+// 父组件负责持久化表头配置并触发图表重绘，本面板只提交变更后的表单对象。
 const emit = defineEmits(['onTableHeaderChange'])
 
-// 提交表头配置变更
+// 自定义对齐需要把当前字段选择器里的临时值写回完整 alignConfig 后再上报。
 const changeTableHeader = prop => {
   if (prop === 'alignConfig') {
     state.tableHeaderForm.alignConfig = alignConfigOptions.map(item => ({
@@ -89,21 +89,21 @@ const changeTableHeader = prop => {
   emit('onTableHeaderChange', state.tableHeaderForm, prop)
 }
 
-// 保存表头分组配置
+// 保存复杂表头分组后关闭弹窗，并通过同一事件链路触发表格重新渲染。
 const changeHeaderGroupConfig = (headerGroupConfig: ChartTableHeaderAttr['headerGroupConfig']) => {
   state.tableHeaderForm.headerGroupConfig = headerGroupConfig
   state.showTableHeaderGroupConfig = false
   changeTableHeader('headerGroupConfig')
 }
 
-// 保存辅助表头描述配置
+// 辅助表头描述独立于复杂分组，可在无分组表头时为叶子字段追加说明行。
 const changeAuxiliaryHeaderConfig = (auxiliaryHeader: ChartTableHeaderAttr['auxiliaryHeader']) => {
   state.tableHeaderForm.auxiliaryHeader = auxiliaryHeader
   state.showTableHeaderDescriptionConfig = false
   changeTableHeader('auxiliaryHeader')
 }
 
-// 判断表头分组配置入口是否可用
+// 批量编辑模式不允许打开结构化配置弹窗，避免一次操作写入多张表格的字段结构。
 const enableGroupConfig = computed(() => {
   return (
     !batchOptStatus.value &&
@@ -113,7 +113,7 @@ const enableGroupConfig = computed(() => {
   )
 })
 
-// 计算当前可见的表格字段
+// 当前可见字段用于校验复杂表头和辅助说明，普通表需要同时包含维度列和指标列。
 const visibleTableFields = computed(() => {
   const axis = [...(props.chart?.xAxis || [])]
   if (props.chart?.type === 'table-normal') {
@@ -122,7 +122,7 @@ const visibleTableFields = computed(() => {
   return axis.filter(item => item.hide !== true)
 })
 
-// 判断辅助表头配置入口是否可用
+// 辅助表头只有在表头显示且配置开关开启时可编辑，隐藏表头时保留配置但不开放入口。
 const enableAuxiliaryConfig = computed(() => {
   return (
     !batchOptStatus.value &&
@@ -132,7 +132,7 @@ const enableAuxiliaryConfig = computed(() => {
   )
 })
 
-// 判断辅助表头描述是否有效
+// 描述有效性按当前可见字段校验，字段被隐藏或重命名后需要重新确认说明配置。
 const auxiliaryConfigValid = computed(() => {
   return hasAuxiliaryDescription(
     state.tableHeaderForm.auxiliaryHeader,
@@ -140,7 +140,7 @@ const auxiliaryConfigValid = computed(() => {
   )
 })
 
-// 判断表头分组字段结构是否匹配当前可见字段
+// 复杂表头必须完整覆盖当前叶子字段并保持顺序一致，否则导出和渲染会出现列错位。
 const groupConfigValid = computed(() => {
   const columns = props.chart?.customAttr?.tableHeader?.headerGroupConfig?.columns
   if (!columns?.length) {
@@ -167,29 +167,29 @@ const groupConfigValid = computed(() => {
   return isEqual(showColumnFields, leafKeys)
 })
 
-// 当前正在编辑的字段对齐配置
+// 当前正在编辑的字段对齐配置是表单内的临时游标，保存时会合并回 alignConfig 数组。
 const alignConfig = reactive({
   id: '',
   align: 'left'
 })
-// 字段对齐配置候选项
+// 字段对齐候选项来自当前可见列，序号列开启时会作为特殊字段加入列表。
 const alignConfigOptions = reactive([])
-// 切换字段时同步对齐方式
+// 切换字段时同步该字段已保存的对齐方式，避免用户误以为所有字段共用一个值。
 const changeAlignConfig = () => {
   const selected = state.tableHeaderForm.alignConfig.find(item => item.id === alignConfig.id)
   if (selected) {
     alignConfig.align = selected.align
   }
 }
-// 判断当前表格类型是否支持自定义对齐
+// 自定义列对齐只对普通表格有效，透视表的行列头由 S2 布局统一控制。
 const showCustomAlign = computed(() => {
   return ['table-info', 'table-normal'].includes(props.chart.type)
 })
-// 初始化表头配置并兼容存量透视表配置
+// 初始化时合并默认值，并为旧版透视表补齐行头、列头、角头三套独立样式字段。
 const init = () => {
   const tableHeader = props.chart?.customAttr?.tableHeader
   if (tableHeader) {
-    // 将存量透视表的单表头配置迁移到行、列、角头配置
+    // 旧配置只有一套表头样式，打开编辑器时映射到透视表三块区域，避免历史图表样式丢失。
     if (!tableHeader.tableHeaderColBgColor) {
       tableHeader.tableHeaderColBgColor = tableHeader.tableHeaderBgColor
       tableHeader.tableHeaderColFontColor = tableHeader.tableHeaderFontColor
@@ -207,6 +207,7 @@ const init = () => {
     }
     state.tableHeaderForm = defaultsDeep(cloneDeep(tableHeader), cloneDeep(DEFAULT_TABLE_HEADER))
     if (!isAlphaColor(state.tableHeaderForm.tableHeaderBgColor)) {
+      // 旧图表保存的是纯色值，补上透明度后才能和当前颜色选择器及导出渲染保持一致。
       const alpha = props.chart.customAttr.basicStyle.alpha
       state.tableHeaderForm.tableHeaderBgColor = convertToAlphaColor(
         state.tableHeaderForm.tableHeaderBgColor,
@@ -215,17 +216,20 @@ const init = () => {
     }
   }
   if (['table-info', 'table-normal'].includes(props.chart.type)) {
+    // 明细表和普通表的自定义对齐按字段维护，字段顺序变化后要重建候选项。
     const axis = [...props.chart?.xAxis]
     if (props.chart?.type === 'table-normal') {
       axis.push(...props.chart?.yAxis)
     }
     const alignCfg = props.chart?.customAttr?.tableHeader?.alignConfig || []
+    // 将已保存的字段对齐数组转换为 Map，便于对新增字段设置默认对齐。
     const alignCfgMap = alignCfg?.reduce((p, n) => {
       p[n.id] = n.align
       return p
     }, {})
     alignConfigOptions.splice(0, alignConfigOptions.length)
     if (tableHeader?.showIndex) {
+      // 序号列使用 S2 固定字段名，需要和真实字段一起参与自定义对齐。
       alignConfigOptions.push({
         id: SERIES_NUMBER_FIELD,
         label: tableHeader.indexLabel,
@@ -233,6 +237,7 @@ const init = () => {
       })
     }
     axis.forEach(item => {
+      // 隐藏字段仍可能存在于轴配置中，表头对齐候选保持与当前轴顺序一致。
       const align = alignCfgMap[item.engineFieldName] || 'left'
       alignConfigOptions.push({
         id: item.engineFieldName,
@@ -252,7 +257,7 @@ const init = () => {
     }
   }
 }
-// 判断指定表头属性是否可编辑
+// 属性显示由图表类型定义，避免面板展示当前渲染器不支持的表头设置。
 const showProperty = prop => props.propertyInner?.includes(prop)
 
 onMounted(() => {

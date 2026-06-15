@@ -22,7 +22,7 @@ const { mobileInPc } = storeToRefs(dvMainStore)
 
 const { t } = useI18n()
 
-// 接收图表、主题和属性显示配置
+// 单元格面板控制数据区样式、冻结、字段级对齐和合并规则，propertyInner 决定当前图表开放项。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -37,7 +37,7 @@ const props = defineProps({
   }
 })
 
-// 监听表格单元格相关配置并同步表单
+// 单元格配置依赖表头序号列、维度轴和指标轴，任一变化都需要重建字段候选项。
 watch(
   [
     () => props.chart.customAttr.tableCell,
@@ -53,7 +53,7 @@ watch(
 
 const predefineColors = COLOR_PANEL
 
-// 生成表格单元格字号选项
+// 单元格字号与表头保持同一档位，既覆盖后台表格，也覆盖大屏表格放大展示。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -71,31 +71,31 @@ const fontSizeList = computed(() => {
   return arr
 })
 
-// 维护表格单元格样式表单
+// 表单状态保存当前单元格样式快照，提交前会根据合并字段规则生成最终 payload。
 const state = reactive({
   tableCellForm: {} as ChartTableCellAttr
 })
 
-// 当前字段对齐配置
+// 当前字段对齐配置只表示下拉框选中的字段，完整配置仍保存在 tableCellForm.alignConfig。
 const alignConfig = reactive({
   id: '',
   align: 'left'
 })
 
-// 判断是否显示自定义对齐配置
+// 自定义字段对齐只适用于明细表和普通表，透视表由 S2 统一计算单元格布局。
 const showCustomAlign = computed(() => {
   return ['table-info', 'table-normal'].includes(props.chart.type)
 })
 
-// 可配置对齐字段选项
+// 对齐字段候选来自可见字段和可选序号列，顺序需要和表格列顺序保持一致。
 const alignConfigOptions = reactive([])
-// 可合并字段选项
+// 可合并字段只包含连续相同值可合并的维度字段，指标列不进入该列表。
 const mergeFieldOptions = reactive([])
 
-// 定义表格单元格变更事件
+// 父组件负责落盘和重绘，本组件只负责生成表格单元格配置变更事件。
 const emit = defineEmits(['onTableCellChange'])
 
-// 处理表格单元格样式变化
+// 合并单元格会影响冻结和斑马纹等能力，payload 需要由专门工具统一规整。
 const changeTableCell = prop => {
   if (prop === 'alignConfig') {
     state.tableCellForm.alignConfig = alignConfigOptions.map(item => ({
@@ -111,7 +111,7 @@ const changeTableCell = prop => {
   emit('onTableCellChange', payload, prop)
 }
 
-// 切换当前字段对齐配置
+// 切换字段时回显该字段已保存的对齐方式，避免覆盖其他字段配置。
 const changeAlignConfig = () => {
   const selected = state.tableCellForm.alignConfig.find(item => item.id === alignConfig.id)
   if (selected) {
@@ -119,17 +119,19 @@ const changeAlignConfig = () => {
   }
 }
 
-// 初始化表格单元格样式表单
+// 初始化时兼容历史配置、补齐透明度，并根据当前字段结构重建对齐和合并候选。
 const init = () => {
   const tableCell = props.chart?.customAttr?.tableCell
   if (tableCell) {
     state.tableCellForm = defaultsDeep(cloneDeep(tableCell), cloneDeep(DEFAULT_TABLE_CELL))
     if (tableCell.mergeCells === undefined) {
+      // 旧图表没有显式保存合并开关，默认关闭，避免打开编辑器后自动改变表格布局。
       state.tableCellForm.mergeCells = false
     }
     const alpha = props.chart.customAttr.basicStyle.alpha
 
     if (!isAlphaColor(state.tableCellForm.tableItemBgColor)) {
+      // 旧版纯色背景按图表透明度补成 rgba，保证颜色选择器和渲染层使用同一格式。
       state.tableCellForm.tableItemBgColor = convertToAlphaColor(
         state.tableCellForm.tableItemBgColor,
         alpha
@@ -137,6 +139,7 @@ const init = () => {
     }
 
     if (!isAlphaColor(state.tableCellForm.tableItemSubBgColor)) {
+      // 斑马纹背景同样需要补齐透明度，避免启用后与主背景透明度不一致。
       state.tableCellForm.tableItemSubBgColor = convertToAlphaColor(
         state.tableCellForm.tableItemSubBgColor,
         alpha
@@ -144,11 +147,13 @@ const init = () => {
     }
 
     if (['table-info', 'table-normal'].includes(props.chart.type)) {
+      // 明细表和普通表支持按列对齐，普通表需要把维度和指标字段都纳入候选。
       const axis = [...props.chart?.xAxis]
       if (props.chart?.type === 'table-normal') {
         axis.push(...props.chart?.yAxis)
       }
       const alignCfg = props.chart?.customAttr?.tableCell?.alignConfig || []
+      // 已保存对齐配置转为 Map，便于新增字段使用默认左对齐。
       const alignCfgMap = alignCfg?.reduce((p, n) => {
         p[n.id] = n.align
         return p
@@ -156,6 +161,7 @@ const init = () => {
       alignConfigOptions.splice(0, alignConfigOptions.length)
       const tableHeader = props.chart?.customAttr?.tableHeader
       if (tableHeader?.showIndex) {
+        // 序号列不是业务字段，使用固定字段名参与对齐配置。
         alignConfigOptions.push({
           id: SERIES_NUMBER_FIELD,
           label: tableHeader.indexLabel,
@@ -183,21 +189,25 @@ const init = () => {
     }
     mergeFieldOptions.splice(0, mergeFieldOptions.length)
     if (props.chart.type === 'table-info') {
+      // 明细表合并只允许选择可合并维度字段，字段被隐藏后要清理失效配置。
       const options = getMergeableFieldOptions(props.chart?.xAxis || [])
       mergeFieldOptions.push(...options)
       const optionIds = new Set(options.map(item => item.id))
       if (state.tableCellForm.mergeCells && !options.length) {
+        // 没有可合并字段时强制关闭合并，防止保存不可执行的合并规则。
         state.tableCellForm.mergeCells = false
         state.tableCellForm.mergeFields = []
       } else if (Array.isArray(tableCell.mergeFields)) {
+        // 保留仍然存在的字段，清理已经从图表中移除的历史字段。
         state.tableCellForm.mergeFields = tableCell.mergeFields.filter(id => optionIds.has(id))
       } else if (state.tableCellForm.mergeCells) {
+        // 老配置只保存了开关时，默认使用所有可合并字段恢复历史行为。
         state.tableCellForm.mergeFields = options.map(item => item.id)
       }
     }
   }
 }
-// 判断指定属性是否应显示
+// 属性显示由图表类型和编辑器配置决定，避免提交当前渲染器不支持的单元格字段。
 const showProperty = prop => props.propertyInner?.includes(prop)
 
 onMounted(() => {
