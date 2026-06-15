@@ -25,16 +25,28 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 @SuppressWarnings("deprecation")
+/**
+ * 数据源插件基类，负责插件注册和驱动 Jar 装载。
+ */
 public abstract class CrestDatasourcePlugin extends Provider implements CrestPlugin {
+    /**
+     * 插件驱动默认释放目录。
+     */
     private final String DEFAULT_FILE_PATH = "/opt/crest/drivers/plugin";
 
 
+    /**
+     * 插件默认不返回 schema 列表，由具体插件按需覆盖。
+     */
     @Override
     public List<String> getSchema(DatasourceRequest datasourceRequest) {
         return new ArrayList<>();
     }
 
 
+    /**
+     * 加载插件配置并释放插件内置驱动。
+     */
     @Override
     public void loadPlugin() {
         PluginDatasourceVO datasourceConfig = getConfig();
@@ -46,6 +58,9 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
         }
     }
 
+    /**
+     * 从插件 Jar 中释放内嵌驱动 Jar 到本地目录。
+     */
     @SuppressWarnings("java/zipslip")
     private void loadDriver() throws Exception {
         PluginDatasourceVO config = getConfig();
@@ -73,6 +88,9 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
         }
     }
 
+    /**
+     * 解析插件元信息中的数据源配置。
+     */
     public PluginDatasourceVO getConfig() {
         CrestPluginVO pluginInfo = null;
         try {
@@ -86,6 +104,9 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
         return vo;
     }
 
+    /**
+     * 卸载插件时删除释放到默认目录的驱动 Jar。
+     */
     @Override
     @SuppressWarnings("java/zipslip")
     public void unloadPlugin() {
