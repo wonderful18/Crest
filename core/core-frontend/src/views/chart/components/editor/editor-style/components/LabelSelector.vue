@@ -554,6 +554,7 @@ const isProgressBar = computed(() => {
     label-position="top"
     size="small"
   >
+    <!-- 空态提示覆盖无可配置属性和批量设置禁用系列标签两种场景。 -->
     <el-row v-show="showEmpty" style="margin-bottom: 12px">
       {{ t('chart.no_other_configurable_properties') }}</el-row
     >
@@ -598,6 +599,7 @@ const isProgressBar = computed(() => {
       </el-form-item>
     </div>
     <div v-if="!isGroupBar && !isGauge">
+      <!-- 普通图表的基础标签样式直接写入 labelForm，分组柱和仪表盘在各自分支单独维护。 -->
       <el-space>
         <el-form-item
           class="form-item"
@@ -696,6 +698,7 @@ const isProgressBar = computed(() => {
       class="form-item"
       :class="'form-item-' + themes"
     >
+      <!-- 径向、水平和垂直位置枚举互斥，初始化阶段会把历史值迁移到当前枚举内。 -->
       <el-select
         size="small"
         :effect="themes"
@@ -1075,6 +1078,7 @@ const isProgressBar = computed(() => {
       </el-form-item>
 
       <div style="padding-left: 22px">
+        <!-- 指标标签格式只在指标内容启用时生效，但配置值会保留以支持再次开启。 -->
         <el-form-item
           :label="t('chart.value_formatter_type')"
           class="form-item"
@@ -1225,6 +1229,7 @@ const isProgressBar = computed(() => {
         </el-checkbox>
       </el-form-item>
       <div style="padding-left: 22px">
+        <!-- 占比标签只暴露精度设置，具体百分号和计算口径由图表渲染层统一处理。 -->
         <el-form-item
           :label="t('chart.label_reserve_decimal_count')"
           class="form-item"
@@ -1315,6 +1320,7 @@ const isProgressBar = computed(() => {
         </el-form-item>
 
         <div style="padding-left: 22px">
+          <!-- 当前系列的样式和格式化写回 seriesLabelFormatter 数组，依赖 value-key 保持选中项稳定。 -->
           <el-form-item
             v-if="showProperty('seriesLabelVPosition')"
             class="form-item"
@@ -1746,6 +1752,7 @@ const isProgressBar = computed(() => {
       :class="'form-item-' + themes"
       v-if="showProperty('showExtremum') && !showSeriesLabelFormatter"
     >
+      <!-- 无系列级配置的图表使用全局极值开关，避免同一能力出现两套保存入口。 -->
       <el-checkbox
         :effect="themes"
         size="small"
@@ -1781,6 +1788,7 @@ const isProgressBar = computed(() => {
       </el-checkbox>
     </el-form-item>
     <div style="padding-left: 22px" v-if="showProperty('conversionTag')">
+      <!-- 转化率标签与普通占比标签独立保存，名称和精度需要随漏斗类指标口径调整。 -->
       <el-row :gutter="8">
         <el-col :span="12">
           <el-form-item
@@ -2001,6 +2009,7 @@ const isProgressBar = computed(() => {
         </el-form-item>
       </div>
       <el-form-item class="form-item form-item-checkbox" :class="'form-item-' + themes">
+        <!-- 仪表盘占比文本使用 proportionSeriesFormatter，不能复用上方指标值格式。 -->
         <el-checkbox
           :effect="themes"
           size="small"

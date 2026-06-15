@@ -1053,6 +1053,7 @@ onMounted(() => {
       :class="'form-item-' + themes"
       :disabled="!state.tableHeaderForm.showTableHeader"
     >
+      <!-- 辅助说明开关只控制说明行渲染，说明内容在下方弹窗中按字段维护。 -->
       <el-checkbox
         size="small"
         :effect="themes"
@@ -1094,6 +1095,7 @@ onMounted(() => {
     :show-close="false"
     :class="themes === 'dark' ? 'table-header-group-config-dialog' : ''"
   >
+    <!-- 分组配置弹窗挂载到 body，避免编辑器侧栏滚动容器裁剪拖拽区域。 -->
     <template #header>
       {{ t('chart.table_header_group_config') }}
       <span style="font-size: 12px">({{ t('chart.table_header_group_config_tip') }})</span>
