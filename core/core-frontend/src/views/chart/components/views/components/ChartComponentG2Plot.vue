@@ -27,11 +27,16 @@ import { isDashboard, trackBarStyleCheck } from '@/utils/canvasUtils'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { useI18n } from '@/hooks/web/useI18n'
 import { configEmptyDataStyle } from '@/views/chart/components/js/panel/common/common_antv'
+// 图表组件内置文案的翻译入口。
 const { t } = useI18n()
+// 大屏主状态提供联动、跳转和移动端上下文。
 const dvMainStore = dvMainStoreWithOut()
+// 解构当前面板联动、跳转和嵌入式状态。
 const { nowPanelTrackInfo, nowPanelJumpInfo, mobileInPc, embeddedCallBack, inMobile } =
   storeToRefs(dvMainStore)
+// 全局事件总线用于图表与画布工具栏通信。
 const { emitter } = useEmitt()
+// G2Plot 图表组件入参，包含视图配置、展示位置和终端信息。
 const props = defineProps({
   element: {
     type: Object,
@@ -81,6 +86,7 @@ const props = defineProps({
   }
 })
 
+// 图表点击、联动、跳转和加载状态事件透传给父组件。
 const emit = defineEmits([
   'onPointClick',
   'onChartClick',
@@ -89,9 +95,13 @@ const emit = defineEmits([
   'resetLoading'
 ])
 
+// 该类图表的系列字段取自 field。
 const g2TypeSeries1 = ['bidirectional-bar']
+// 该类图表的系列字段取自 category。
 const g2TypeSeries0 = ['bar-range']
+// 树形图表需要按路径和名称判断选中。
 const g2TypeTree = ['circle-packing']
+// 堆叠图表需要同时处理维度、扩展维度和堆叠字段。
 const g2TypeStack = [
   'bar-stack',
   'bar-group-stack',
@@ -99,16 +109,23 @@ const g2TypeStack = [
   'bar-stack-horizontal',
   'percentage-bar-stack-horizontal'
 ]
+// 分组图表需要按名称和分类组合判断选中。
 const g2TypeGroup = ['bar-group']
 
+// 常用入参保持响应式引用。
 const { view, showPosition, scale, terminal, suffixId } = toRefs(props)
 
+// 图表渲染错误标记。
 const isError = ref(false)
+// 图表渲染错误文案。
 const errMsg = ref('')
+// 是否已经应用过联动高亮。
 const linkageActiveHistory = ref(false)
 
+// 大屏移动端预览需要走专门的交互分支。
 const dataVMobile = !isDashboard() && isMobile()
 
+// 图表运行时状态，包含轨迹条位置、联动参数和渲染数据。
 const state = reactive({
   trackBarStyle: {
     position: 'absolute',
@@ -124,13 +141,17 @@ const state = reactive({
   pointParam: null,
   data: { fields: [] } // 图表数据
 })
+// 图表数据体积较大，使用浅响应式避免深层代理开销。
 let chartData = shallowRef<Partial<Chart['data']>>({
   fields: []
 })
 
+// 当前图表容器编号，组合展示位置、图表编号和后缀避免冲突。
 const containerId = 'container-' + showPosition.value + '-' + view.value.id + '-' + suffixId.value
+// 联动轨迹条组件引用。
 const viewTrack = ref(null)
 
+// 清除图表联动高亮状态。
 const clearLinkage = () => {
   linkageActiveHistory.value = false
   try {
@@ -141,6 +162,7 @@ const clearLinkage = () => {
     console.warn('clearLinkage error')
   }
 }
+// 需要重新应用联动前，先按图表能力决定是否重绘。
 const reDrawView = () => {
   linkageActiveHistory.value = false
   const slider = myChart?.chart?.getController('slider')
@@ -148,6 +170,7 @@ const reDrawView = () => {
     myChart?.render()
   }
 }
+// 等待 DOM 更新后重新应用联动状态。
 const linkageActivePre = () => {
   if (linkageActiveHistory.value) {
     reDrawView()
@@ -156,6 +179,7 @@ const linkageActivePre = () => {
     linkageActive()
   })
 }
+// 根据当前联动参数设置图形选中和置灰状态。
 const linkageActive = () => {
   linkageActiveHistory.value = true
   myChart?.setState('active', () => true, false)
@@ -183,6 +207,7 @@ const linkageActive = () => {
     }
   })
 }
+// 判断单个图形元素是否命中当前联动条件。
 const checkSelected = param => {
   // 获取当前视图的所有联动字段ID
   const mappingFieldIds = Array.from(
