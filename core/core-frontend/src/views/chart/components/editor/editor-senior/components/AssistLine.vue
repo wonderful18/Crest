@@ -10,8 +10,10 @@ import { DEFAULT_ASSIST_LINE_CFG } from '../../util/chart'
 
 const { t } = useI18n()
 
+// 定义辅助线配置变更事件。
 const emit = defineEmits(['onAssistLineChange'])
 
+// 接收图表、字段和主题配置。
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -34,18 +36,22 @@ const props = defineProps({
   }
 })
 
+// 可用于辅助线的指标字段。
 const quotaFields = computed<Array<any>>(() => {
   return props.quotaData.filter(ele => ele.summary !== '' && ele.id !== '-1')
 })
 
+// 可用于辅助线的扩展指标字段。
 const quotaExtFields = computed<Array<any>>(() => {
   return props.quotaExtData.filter(ele => ele.summary !== '' && ele.id !== '-1')
 })
 
+// 判断当前图表是否使用扩展指标。
 const useQuotaExt = computed<boolean>(() => {
   return props.chart.type.includes('chart-mix')
 })
 
+// 维护辅助线配置和编辑弹窗状态。
 const state = reactive({
   assistLineCfg: {
     enable: false,
@@ -56,6 +62,7 @@ const state = reactive({
   quotaFields: []
 })
 
+// 监听图表辅助线配置变化并重新初始化。
 watch(
   () => props.chart.senior.assistLineCfg,
   () => {
@@ -64,24 +71,29 @@ watch(
   { deep: true }
 )
 
+// 通知父级辅助线配置变化。
 const changeAssistLine = () => {
   const flag = state.assistLineCfg.assistLine.findIndex(ele => ele.field === '1') !== -1
   emit('onAssistLineChange', { data: state.assistLineCfg, requestData: flag })
 }
 
+// 同步编辑中的辅助线列表。
 const lineChange = val => {
   state.lineArr = val
 }
 
+// 打开辅助线编辑弹窗。
 const editLine = () => {
   state.editLineDialog = true
 }
+// 关闭辅助线编辑弹窗。
 const closeEditLine = () => {
   state.editLineDialog = false
 }
 
+// 保存辅助线编辑结果。
 const changeLine = () => {
-  // check line config
+  // 校验辅助线配置。
   for (let i = 0; i < state.lineArr.length; i++) {
     const ele = state.lineArr[i]
     if (!ele.name || ele.name === '') {
@@ -113,6 +125,7 @@ const changeLine = () => {
   closeEditLine()
 }
 
+// 判断辅助线引用字段是否仍然存在。
 function existField(line) {
   if (useQuotaExt.value) {
     return (
@@ -124,6 +137,7 @@ function existField(line) {
   }
 }
 
+// 初始化辅助线配置。
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.senior) {

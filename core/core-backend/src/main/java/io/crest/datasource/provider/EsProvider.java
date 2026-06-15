@@ -23,13 +23,16 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service("esProvider")
+// 提供 Elasticsearch 数据源访问能力。
 public class EsProvider extends Provider {
 
+    // 返回 Elasticsearch 数据源 schema 列表。
     @Override
     public List<String> getSchema(DatasourceRequest datasourceRequest) {
         return new ArrayList<>();
     }
 
+    // 查询 Elasticsearch 可用索引表。
     @Override
     public List<DatasetTableDTO> tables(DatasourceRequest datasourceRequest) {
         List<DatasetTableDTO> tables = new ArrayList<>();
@@ -47,11 +50,13 @@ public class EsProvider extends Provider {
         return tables;
     }
 
+    // 获取 Elasticsearch 连接对象占位。
     @Override
     public ConnectionObj getConnection(DatasourceDTO coreDatasource) throws Exception {
         return null;
     }
 
+    // 检测 Elasticsearch 数据源连接状态。
     @Override
     public String checkStatus(DatasourceRequest datasourceRequest) throws Exception {
         Es es = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Es.class);
@@ -75,6 +80,7 @@ public class EsProvider extends Provider {
         return "Success";
     }
 
+    // 执行查询并返回数据和字段。
     @Override
     public Map<String, Object> fetchResultField(DatasourceRequest datasourceRequest) {
         Map<String, Object> result = new HashMap<>();
@@ -89,6 +95,7 @@ public class EsProvider extends Provider {
         return result;
     }
 
+    // 获取 Elasticsearch 表或 SQL 的字段信息。
     @Override
     public List<TableField> fetchTableField(DatasourceRequest datasourceRequest) {
         List<TableField> tableFields = new ArrayList<>();
@@ -111,16 +118,19 @@ public class EsProvider extends Provider {
     }
 
 
+    // 隐藏数据源敏感配置。
     @Override
     public void hidePW(DatasourceDTO datasourceDTO) {
     }
 
 
+    // 解析查询响应中的数据行。
     private List<String[]> fetchResultData(String response) throws Exception {
         EsResponse esResponse = new Gson().fromJson(response, EsResponse.class);
         return fetchResultData(esResponse);
     }
 
+    // 从 Elasticsearch 响应对象提取数据行。
     private List<String[]> fetchResultData(EsResponse esResponse) throws Exception {
         List<String[]> list = new LinkedList<>();
         if (esResponse.getError() != null) {
@@ -130,6 +140,7 @@ public class EsProvider extends Provider {
         return list;
     }
 
+    // 从 SQL 查询响应解析字段元数据。
     private List<TableField> fetchResultField4Sql(String response) throws Exception {
         List<TableField> fieldList = new ArrayList<>();
         EsResponse esResponse = new Gson().fromJson(response, EsResponse.class);
@@ -152,6 +163,7 @@ public class EsProvider extends Provider {
         return fieldList;
     }
 
+    // 从查询响应解析表列表。
     private List<DatasetTableDTO> fetchTables(String response) throws Exception {
         List<DatasetTableDTO> tables = new ArrayList<>();
         EsResponse esResponse = new Gson().fromJson(response, EsResponse.class);
@@ -178,6 +190,7 @@ public class EsProvider extends Provider {
     }
 
 
+    // 执行 Elasticsearch SQL POST 查询。
     private String execQuery(DatasourceRequest datasourceRequest, String sql, String uri) {
         Es es = null;
         if (datasourceRequest.getDatasource() == null) {
@@ -202,6 +215,7 @@ public class EsProvider extends Provider {
 
     }
 
+    // 执行 Elasticsearch 状态 GET 查询。
     private String execGetQuery(DatasourceRequest datasourceRequest) {
         Es es = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Es.class);
         HttpClientConfig httpClientConfig = new HttpClientConfig();
