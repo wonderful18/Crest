@@ -4,10 +4,14 @@ import { inject, computed, ref, nextTick, provide } from 'vue'
 import RowAuth from '@/views/chart/components/editor/filter/auth-tree-chart/RowAuth.vue'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 
+// 声明筛选条件保存时向父组件派发的事件。
 const emits = defineEmits(['filter-data'])
 const filedList = inject('filedList', () => [])
+// 持有行权限筛选树组件实例。
 const rowAuth = ref()
+// 控制筛选弹窗的显示状态。
 const dialogVisible = ref(false)
+// 将字段列表转换为按字段 ID 索引的映射。
 const computedFiledList = computed(() => {
   return filedList().reduce((pre, next) => {
     if (next.id !== '-1') {
@@ -19,15 +23,18 @@ const computedFiledList = computed(() => {
 
 provide('filedList', computedFiledList)
 
+// 关闭筛选配置弹窗。
 const closeFilter = () => {
   dialogVisible.value = false
 }
 const snapshotStore = snapshotStoreWithOut()
 
+// 触发行权限筛选树提交。
 const submit = () => {
   rowAuth.value.submit()
 }
 
+// 校验并保存筛选树配置。
 const changeFilter = val => {
   const { logic, items, errorMessage } = val
   if (errorMessage) {
@@ -44,6 +51,7 @@ const changeFilter = val => {
   dialogVisible.value = false
 }
 
+// 删除筛选树节点中用于展示的字段详情，避免提交冗余数据。
 const dfsTreeDelete = arr => {
   arr.forEach(ele => {
     if (ele?.subTree?.items?.length) {
@@ -56,6 +64,7 @@ const dfsTreeDelete = arr => {
   })
 }
 
+// 根据字段 ID 回填筛选树节点中的字段详情。
 const dfsTree = arr => {
   arr.forEach(ele => {
     if (ele?.subTree?.items?.length) {
@@ -68,6 +77,7 @@ const dfsTree = arr => {
   })
 }
 
+// 初始化筛选弹窗并回填当前筛选树。
 const init = tree => {
   dialogVisible.value = true
   nextTick(() => {
