@@ -195,6 +195,7 @@ const L7PositionType = {
   BOTTOMRIGHT: 'bottomright'
 }
 
+// 从 GeoJSON 几何体中提取可用中心点，缺失时回退到零点
 function getGeometryCenter(geometry: any): [number, number] {
   const coordinates = geometry?.coordinates
   if (Array.isArray(coordinates?.[0]?.[0])) {
@@ -228,6 +229,7 @@ const qqMapStyleOptions = [
   { name: tI18n('commons.custom'), value: 'custom' }
 ]
 
+// 根据是否存在下钻路径调整图表内边距，给底部路径预留空间
 export function getPadding(chart: Chart): number[] {
   if (chart.drill) {
     return [0, 10, 22, 10]
@@ -448,6 +450,7 @@ export function getTooltip(chart: Chart) {
   return tooltip
 }
 
+// 生成多指标图表的提示框配置，并按指标独立格式化展示值
 export function getMultiSeriesTooltip(chart: Chart) {
   const customAttr: DeepPartial<ChartAttr> = parseJson(chart.customAttr)
   const tooltipAttr = customAttr.tooltip
@@ -794,6 +797,7 @@ export function getYAxis(chart: Chart) {
   return axis
 }
 
+// 构建双轴图表的扩展 Y 轴配置
 export function getYAxisExt(chart: Chart) {
   let axis: Record<string, any> | boolean = {}
   const yAxis = parseJson(chart.customStyle).yAxisExt
@@ -891,6 +895,7 @@ export function getYAxisExt(chart: Chart) {
   return axis
 }
 
+// 根据高级配置生成图表缩略滑块样式
 export function getSlider(chart: Chart) {
   let cfg
   const senior = parseJson(chart.senior)
@@ -931,6 +936,7 @@ export function getSlider(chart: Chart) {
   return cfg
 }
 
+// 将纵向图表辅助线配置转换为图表库 annotations
 export function getAnalyse(chart: Chart) {
   const assistLine = []
   const senior = parseJson(chart.senior)
@@ -1013,6 +1019,7 @@ export function getAnalyse(chart: Chart) {
   return assistLine
 }
 
+// 将横向图表辅助线配置转换为图表库 annotations
 export function getAnalyseHorizontal(chart: Chart) {
   const assistLine = []
   const senior = parseJson(chart.senior)
@@ -1072,6 +1079,7 @@ export function getAnalyseHorizontal(chart: Chart) {
   return assistLine
 }
 
+// 将业务线型转换为图表库需要的虚线数组
 export function getLineDash(type) {
   switch (type) {
     case 'solid':
@@ -1108,6 +1116,7 @@ export function setGradientColor(rawColor: string, show = false, angle = 0, star
   return show ? color : rawColor
 }
 
+// 将轴位置转换为横纵坐标互换后的对应位置
 export function transAxisPosition(position: string): string {
   switch (position) {
     case 'top':
@@ -1123,6 +1132,7 @@ export function transAxisPosition(position: string): string {
   }
 }
 
+// 根据标签配置生成地图图层文字样式
 export function configL7Label(chart: Chart): false | L7LabelOptions {
   const customAttr = parseJson(chart.customAttr)
   const label = customAttr.label
@@ -1145,6 +1155,7 @@ export function configL7Label(chart: Chart): false | L7LabelOptions {
   }
 }
 
+// 根据基础样式生成地图区域边界样式
 export function configL7Style(chart: Chart): L7StyleOptions {
   const customAttr = parseJson(chart.customAttr)
   return {
@@ -1152,6 +1163,7 @@ export function configL7Style(chart: Chart): L7StyleOptions {
   }
 }
 
+// 根据提示框配置生成地图图层 tooltip 选项
 export function configL7Tooltip(chart: Chart): L7TooltipOptions {
   const customAttr = parseJson(chart.customAttr)
   const tooltip = customAttr.tooltip
@@ -1239,6 +1251,7 @@ export function configL7Tooltip(chart: Chart): L7TooltipOptions {
   }
 }
 
+// 补齐地图要素中心点并按名称映射修正区域展示名
 export function handleGeoJson(
   geoJson: GeoFeatureCollection,
   nameMapping?: Record<string, string>,
@@ -1264,6 +1277,7 @@ export function handleGeoJson(
   })
 }
 
+// 汇总动态提示字段的总值，供占比类提示格式化使用
 export function getTooltipSeriesTotalMap(data: any[]): Record<string, number> {
   const result = {}
   data?.forEach(item => {
@@ -1293,6 +1307,7 @@ const LEGEND_SHAPE_STYLE_MAP = {
     transform: 'rotate(45deg)'
   }
 }
+// 生成地图图例配置，并限制过长图例对页面渲染的影响
 export function configL7Legend(chart: Chart): L7LegendOptions | false {
   const { basicStyle } = parseJson(chart.customAttr)
   if (basicStyle.suspension === false && basicStyle.showZoom === undefined) {
@@ -1446,6 +1461,7 @@ export class CustomZoom extends LiteZoom {
     } as L7ZoomControlOption
   }
 }
+// 配置地图缩放控件，并同步底图交互开关
 export function configL7Zoom(
   chart: Chart,
   scene: Scene,
@@ -1586,10 +1602,12 @@ export function calculateBounds(coordinates: number[][]): number[][] {
   ]
 }
 
+// 移动端编辑态禁用地图触摸穿透，避免画布拖拽和地图手势冲突
 function mobileEv(chart: Chart, plot: L7Plot) {
   if (!isMobile()) return
   const containerDiv = document.getElementById(chart.container)
   const active = containerDiv?.getAttribute('de-chart-active') === 'true'
+  // 按当前组件激活态切换地图容器的指针事件
   const setTouchAction = () => {
     const sceneEl = plot.scene
       .getServiceContainer?.()
@@ -1601,6 +1619,7 @@ function mobileEv(chart: Chart, plot: L7Plot) {
   plot.scene.loaded ? setTouchAction() : plot.scene.once('loaded', setTouchAction)
 }
 
+// 为地图图表实例配置缩放控件和手势开关
 export function configL7PlotZoom(chart: Chart, plot: L7Plot) {
   const { basicStyle } = parseJson(chart.customAttr)
   mobileEv(chart, plot)
@@ -1628,12 +1647,14 @@ export function configL7PlotZoom(chart: Chart, plot: L7Plot) {
   })
 }
 
+// 批量设置缩放控件按钮样式
 function setStyle(elements: HTMLElement[], styleProp: string, value) {
   elements.forEach(e => {
     e.style[styleProp] = value
   })
 }
 
+// 标记地图容器正在渲染
 export function mapRendering(dom: HTMLElement | string) {
   if (typeof dom === 'string') {
     dom = document.getElementById(dom)
@@ -1641,6 +1662,7 @@ export function mapRendering(dom: HTMLElement | string) {
   dom.classList.add('de-map-rendering')
 }
 
+// 腾讯地图渲染后缓存自动适配得到的缩放和中心点
 export function qqMapRendered(scene?: Scene) {
   if (scene?.map && scene.map.mapProvider === 'qq') {
     setTimeout(() => {
@@ -1653,6 +1675,7 @@ export function qqMapRendered(scene?: Scene) {
   }
 }
 
+// 标记地图容器完成渲染
 export function mapRendered(dom: HTMLElement | string) {
   if (typeof dom === 'string') {
     dom = document.getElementById(dom)
@@ -1660,6 +1683,7 @@ export function mapRendered(dom: HTMLElement | string) {
   dom.classList.add('de-map-rendered')
 }
 
+// 根据自动适配开关计算地图初始中心点
 export function getMapCenter(basicStyle: ChartBasicStyle) {
   let center: [number, number]
   if (basicStyle.autoFit === false) {
@@ -1672,6 +1696,7 @@ export function getMapCenter(basicStyle: ChartBasicStyle) {
   return center
 }
 
+// 按地图供应商转换底图样式配置
 export function getMapStyle(
   mapKey: { key: string; securityCode: string; mapType: string },
   basicStyle: ChartBasicStyle
@@ -1708,6 +1733,7 @@ export function getMapStyle(
   return mapStyle
 }
 
+// 创建或复用地图场景，并同步底图样式、图层和渲染状态
 export async function getMapScene(
   chart: Chart,
   scene: Scene,
@@ -1821,6 +1847,7 @@ export async function getMapScene(
   return scene
 }
 
+// 根据地图供应商创建底图对象
 export function getMapObject(
   mapKey: { key: string; securityCode: string; mapType: string },
   basicStyle: ChartBasicStyle,
@@ -1879,6 +1906,7 @@ function shouldHideZoom(basicStyle: any): boolean {
 }
 
 const G2_TOOLTIP_WRAPPER = 'g2-tooltip-wrapper'
+// 创建或复用图表 tooltip 容器，兼容全屏和普通画布场景
 export function getTooltipContainer(id, chartContainer?: string) {
   let wrapperDom = document.getElementById(G2_TOOLTIP_WRAPPER)
   if (!wrapperDom) {
@@ -1983,6 +2011,7 @@ function calculateTooltipPosition(chart, isCarousel, tooltipCtl, chartElement, e
     return { x: event.clientX, y: event.clientY }
   }
 }
+// 按展示场景查找图表容器，供 tooltip 定位使用
 const getChartElements = chart => {
   return (
     document.getElementById('container-viewDialog-' + chart.id + '-common') ||
@@ -1991,6 +2020,7 @@ const getChartElements = chart => {
     document.getElementById('shape-id-' + chart.id)
   )
 }
+// 绑定图表 tooltip 事件，处理轮播、悬停保持和容器定位
 export function configPlotTooltipEvent(chart: Chart, plot: any) {
   const { tooltip } = parseJson(chart.customAttr)
   if (!tooltip.show) {
@@ -2128,6 +2158,7 @@ export const TOOLTIP_TPL =
   '<span class="g2-tooltip-value">{value}</span>' +
   '</li>'
 
+// 将阈值条件转换为区域过滤和中线标注
 export function getConditions(chart: Chart) {
   const { threshold } = parseJson(chart.senior)
   const annotations = []
@@ -2193,6 +2224,7 @@ const AXIS_LABEL_TOOLTIP_STYLE = {
 }
 const AXIS_LABEL_TOOLTIP_TPL =
   '<div class="g2-axis-label-tooltip">' + '<div class="g2-tooltip-title">{title}</div>' + '</div>'
+// 为被截断的轴标签或轴标题补充悬浮完整文本
 export function configAxisLabelLengthLimit(chart, plot, triggerObjName = 'axis-label') {
   // 设置触发事件的名称，如果未传入，则默认为 'axis-label'
   const triggerName = triggerObjName
@@ -2312,6 +2344,7 @@ export function configAxisLabelLengthLimit(chart, plot, triggerObjName = 'axis-l
   })
 }
 
+// 为 X 轴省略标签绑定悬浮完整文本
 export function configXAxisLengthLimit(chart: any, chartObj: any): void {
   const xAxis = parseJson(chart.customStyle).xAxis
   if (!xAxis.show || !xAxis.axisLabel?.show) {
@@ -2800,6 +2833,7 @@ export const configRoundAngle = (chart: Chart, styleName: string, callBack?: (da
     }
   }
 }
+// 等地图场景加载后再切换底图交互状态
 function onlineMapStatusOption(chart: Chart, mapType: string, scene: Scene, enable = false) {
   if (!scene.loaded) {
     return scene.once('loaded', () => setMapStatusOption(chart, mapType, scene, enable))
