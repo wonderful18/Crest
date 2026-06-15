@@ -19,11 +19,17 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+/**
+ * 统一处理控制器层抛出的业务异常和系统异常。
+ */
 @RestControllerAdvice
 @SuppressWarnings("deprecation")
 public class GlobalExceptionHandler {
 
 
+    /**
+     * 处理参数校验失败异常并返回本地化提示。
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResultMessage MethodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e) {
         ObjectError objectError = e.getBindingResult().getAllErrors().get(0);
@@ -33,22 +39,34 @@ public class GlobalExceptionHandler {
         return new ResultMessage(ResultCode.PARAM_IS_INVALID.code(), msg);
     }
 
+    /**
+     * 处理业务异常并保留业务错误码。
+     */
     @ExceptionHandler(CrestException.class)
     public ResultMessage crestExceptionHandler(CrestException e) {
         LogUtil.info(e.getMessage());
         return new ResultMessage(e.getCode(), e.getMessage());
     }
 
+    /**
+     * 处理客户端主动断开连接的异常。
+     */
     @ExceptionHandler(ClientAbortException.class)
     public void clientAbortExceptionHandler(ClientAbortException e) {
         LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
     }
 
+    /**
+     * 处理异步请求通道不可用的异常。
+     */
     @ExceptionHandler(AsyncRequestNotUsableException.class)
     public void asyncRequestNotUsableExceptionHandler(AsyncRequestNotUsableException e) {
         LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
     }
 
+    /**
+     * 处理静态资源或接口资源不存在的异常。
+     */
     @ExceptionHandler(NoResourceFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ResultMessage noResourceFoundExceptionHandler(NoResourceFoundException e) {
@@ -57,6 +75,9 @@ public class GlobalExceptionHandler {
         return new ResultMessage(ResultCode.RESOURCE_NOT_FOUND.code(), message);
     }
 
+    /**
+     * 处理请求方法不被当前接口支持的异常。
+     */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
     public ResultMessage methodNotSupportedExceptionHandler(HttpRequestMethodNotSupportedException e) {
@@ -64,6 +85,9 @@ public class GlobalExceptionHandler {
         return new ResultMessage(HttpStatus.METHOD_NOT_ALLOWED.value(), "请求方法不支持");
     }
 
+    /**
+     * 处理上传文件超过限制的异常。
+     */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
     public ResultMessage maxUploadSizeExceededExceptionHandler(MaxUploadSizeExceededException e) {
@@ -71,6 +95,9 @@ public class GlobalExceptionHandler {
         return new ResultMessage(ResultCode.PARAM_IS_INVALID.code(), "文件大小超过上传限制，请压缩文件或拆分后重新上传");
     }
 
+    /**
+     * 处理空指针异常中可识别的未登录场景。
+     */
     @ExceptionHandler(NullPointerException.class)
     public ResultMessage noUserExceptionHandler(Exception e) {
         String message = e.getMessage();
@@ -82,6 +109,9 @@ public class GlobalExceptionHandler {
         return new ResultMessage(ResultCode.PARAM_IS_BLANK.code(), "参数错误");
     }
 
+    /**
+     * 处理未被更具体处理器捕获的系统异常。
+     */
     @ExceptionHandler(Exception.class)
     public ResultMessage exceptionHandler(Exception e) {
         // 记录完整错误日志
