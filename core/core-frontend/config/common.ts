@@ -1,4 +1,5 @@
 import path from 'path'
+import fs from 'node:fs'
 import { resolve } from 'path'
 import Vue from '@vitejs/plugin-vue'
 import eslintPlugin from 'vite-plugin-eslint'
@@ -14,6 +15,19 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components-secondary/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components-secondary/resolvers'
 const root = process.cwd()
+// 根据当前配置计算界面样式
+const elementPlusSecondaryStyleDeps = (() => {
+  const componentsDir = path.resolve(root, 'node_modules/element-plus-secondary/es/components')
+  if (!fs.existsSync(componentsDir)) {
+    return []
+  }
+  return fs
+    .readdirSync(componentsDir, { withFileTypes: true })
+    .filter(item => {
+      return item.isDirectory() && fs.existsSync(path.join(componentsDir, item.name, 'style/css.mjs'))
+    })
+    .map(item => `element-plus-secondary/es/components/${item.name}/style/css`)
+})()
 const skipViteLint = process.env.CREST_SKIP_VITE_LINT === 'true'
 const lintPlugins = skipViteLint
   ? []
@@ -33,6 +47,7 @@ const lintPlugins = skipViteLint
       viteStylelint()
     ]
 
+// 衔接当前组件交互和状态同步
 const patchElementPlusSecondaryTypes = (code: string) =>
   code
     .replace("import { inject } from 'vue';", "import { getCurrentInstance, inject } from 'vue';")
@@ -41,6 +56,7 @@ const patchElementPlusSecondaryTypes = (code: string) =>
       'const customStyle = getCurrentInstance() ? inject("$custom-style-filter", {}) : {};'
     )
 
+// 衔接当前组件交互和状态同步
 const elementPlusSecondaryTypesPatch = () => ({
   name: 'crest-element-plus-secondary-types-patch',
   enforce: 'pre',
@@ -81,6 +97,7 @@ const elementPlusSecondaryTypesPatch = () => ({
   }
 })
 
+// 衔接当前组件交互和状态同步
 export function pathResolve(dir: string) {
   // nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
   return resolve(root, '.', dir)
@@ -147,7 +164,8 @@ export default {
       'element-plus-secondary/es/locale/lang/zh-cn',
       'element-plus-secondary/es/locale/lang/en',
       '@vueuse/core',
-      'axios'
+      'axios',
+      ...elementPlusSecondaryStyleDeps
     ]
   }
 }

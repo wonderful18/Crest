@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 @Tag(name = "可视化管理:静态文件")
 @ApiSupport(order = 998)
+// 定义模块接口契约和数据传输结构
 public interface StaticResourceApi {
     @PostMapping("upload/{fileId}")
     @Operation(summary = "上传静态文件")

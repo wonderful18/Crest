@@ -6,11 +6,9 @@ import lombok.Setter;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @Author gin
- */
 @Getter
 @Setter
+// 定义接口请求或返回数据的传输结构
 public class Series {
     private String name;
     private String type;

@@ -15,11 +15,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 
-/**
- * @Author Junjun
- */
 @Component
 @Order(value = 9)
+// 定义当前业务对象的核心职责
 public class ChartFilterDynamicListener implements ApplicationListener<ApplicationReadyEvent> {
     private final Logger logger = LoggerFactory.getLogger(ChartFilterDynamicListener.class);
     public static final String JOB_ID = "chartFilterDynamic";
@@ -29,6 +27,7 @@ public class ChartFilterDynamicListener implements ApplicationListener<Applicati
     private ChartViewOldDataMergeService chartViewOldDataMergeService;
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         logger.info("====chart filter dynamic [start]====");
 

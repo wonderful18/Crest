@@ -14,6 +14,7 @@ import { ElFormItem, ElMessage } from 'element-plus-secondary'
 
 const { t } = useI18n()
 
+// X 轴样式面板同时服务直角坐标图、横向图、子弹图和区间柱图。
 const props = defineProps({
   chart: {
     type: Object,
@@ -29,16 +30,21 @@ const props = defineProps({
 })
 
 const predefineColors = COLOR_PANEL
+// 数值格式化类型复用统一配置，保证轴标签、tooltip 和导出展示口径一致。
 const typeList = formatterType
 
+// 表单以 DEFAULT_XAXIS_STYLE 为基础，初始化时由图表已保存的 customStyle.xAxis 覆盖。
 const state = reactive({
   axisForm: JSON.parse(JSON.stringify(DEFAULT_XAXIS_STYLE))
 })
+// 提示浮层使用反向主题，避免暗色配置面板内说明文字对比度不足。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
+// 父级负责把轴样式写回图表配置并触发重绘，本组件只提交表单和变更字段。
 const emit = defineEmits(['onChangeXAxisForm'])
 
+// 撤销、重做或切换图表时会替换 xAxis 样式对象，需要重新解析并刷新格式化单位。
 watch(
   () => props.chart.customStyle.xAxis,
   () => {
@@ -47,6 +53,7 @@ watch(
   { deep: true }
 )
 
+// 轴标题和轴标签共用字号候选，大屏放大展示需要覆盖较大字号。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -64,14 +71,17 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+// 轴线和网格线共用线型枚举，value 需要和 G2Plot lineStyle.style 保持一致。
 const splitLineStyle = [
   { label: t('chart.line_type_solid'), value: 'solid' },
   { label: t('chart.line_type_dashed'), value: 'dashed' },
   { label: t('chart.line_type_dotted'), value: 'dotted' }
 ]
 
+// 横向时间范围柱图的 X 轴承载时间值，不能按普通数值轴套用格式化配置。
 const isBarRangeTime = computed<boolean>(() => {
   if (props.chart.type === 'bar-range') {
+    // 区间柱图存在日期型 Y 轴时，横轴实际展示时间跨度而非普通数值。
     const tempYAxis = props.chart.yAxis[0]
     const tempYAxisExt = props.chart.yAxisExt[0]
     if (
@@ -84,22 +94,26 @@ const isBarRangeTime = computed<boolean>(() => {
   return false
 })
 
+// 固定刻度数量直接影响坐标轴渲染，提交前限制范围，避免异常配置拖慢图表绘制。
 const changeAxisStyle = prop => {
   if (
     state.axisForm.axisValue.splitCount &&
     (state.axisForm.axisValue.splitCount > 100 || state.axisForm.axisValue.splitCount < 0)
   ) {
+    // splitCount 过大会造成刻度过密和渲染性能下降，保存前统一拦截。
     ElMessage.error(t('chart.splitCount_less_100'))
     return
   }
   emit('onChangeXAxisForm', state.axisForm, prop)
 }
 
+// 切换单位语言时同步修正单位枚举，再通过普通轴样式事件通知父组件保存。
 function changeUnitLanguage(cfg: BaseFormatter, lang, prop: string) {
   onChangeFormatCfgUnitLanguage(cfg, lang)
   changeAxisStyle(prop)
 }
 
+// customStyle 可能是对象或字符串，初始化时统一转为对象并补齐格式化单位默认值。
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.customStyle) {
@@ -116,17 +130,22 @@ const init = () => {
   }
 }
 
+// 属性显示由图表类型配置决定，隐藏项不应被用户编辑或提交。
 const showProperty = prop => props.propertyInner?.includes(prop)
 
+// 双向柱图的 X 轴位置文案与普通图表不同，需要按布局重新映射。
 const isBidirectionalBar = computed(() => {
   return props.chart.type === 'bidirectional-bar'
 })
 
+// 子弹图使用轴位置表达目标值方向，需要单独处理文案。
 const isBulletGraph = computed(() => {
   return ['bullet-graph'].includes(props.chart.type)
 })
 
+// 横向布局会交换视觉方向，轴位置文案需要随之调整。
 const isHorizontalLayout = computed(() => {
+  // 横向布局会交换 X/Y 视觉方向，位置文案需要按布局重新解释。
   return props.chart.customAttr.basicStyle.layout === 'horizontal'
 })
 
@@ -143,6 +162,7 @@ onMounted(() => {
     size="small"
     label-position="top"
   >
+    <!-- 轴位置在双向柱图、子弹图和普通图表中语义不同，文案由脚本按图表类型映射。 -->
     <el-form-item
       class="form-item"
       :class="'form-item-' + themes"
@@ -155,6 +175,7 @@ onMounted(() => {
         @change="changeAxisStyle('position')"
       >
         <div v-if="isBidirectionalBar">
+          <!-- 双向柱图的 X 轴用于中线方向，顶部/底部文案按布局映射。 -->
           <el-radio :effect="props.themes" value="top">{{
             isHorizontalLayout ? t('chart.text_pos_left') : t('chart.text_pos_top')
           }}</el-radio>
@@ -163,6 +184,7 @@ onMounted(() => {
           }}</el-radio>
         </div>
         <div v-else-if="isBulletGraph">
+          <!-- 子弹图位置表达目标值方向，横向布局下需转换成左右文案。 -->
           <div v-if="isHorizontalLayout">
             <el-radio :effect="props.themes" value="bottom">{{
               t('chart.text_pos_left')
@@ -185,6 +207,7 @@ onMounted(() => {
       </el-radio-group>
     </el-form-item>
 
+    <!-- 轴名称开关控制名称文本、颜色和字号，关闭后保留配置但禁止继续编辑。 -->
     <el-form-item class="form-item" :class="'form-item-' + themes" v-if="!isBidirectionalBar">
       <el-checkbox
         size="small"
@@ -259,6 +282,7 @@ onMounted(() => {
 
     <template v-if="showProperty('axisValue')">
       <el-divider class="m-divider" :class="'m-divider--' + themes" />
+      <!-- 固定刻度仅在关闭自动刻度后生效，避免覆盖图表库的自适应坐标范围。 -->
       <div style="display: flex; flex-direction: row; justify-content: space-between">
         <label class="custom-form-item-label" :class="'custom-form-item-label--' + themes">
           {{ t('chart.axis_value') }}
@@ -352,6 +376,7 @@ onMounted(() => {
         {{ t('chart.axis_show') }}
       </el-checkbox>
     </el-form-item>
+    <!-- 轴线与网格线共享颜色、线型和线宽控件，但分别写入 axisLine 与 splitLine。 -->
     <div style="padding-left: 22px" v-if="showProperty('axisLine')">
       <div style="flex: 1; display: flex">
         <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
@@ -455,6 +480,7 @@ onMounted(() => {
       </div>
     </div>
     <el-divider class="m-divider" :class="'m-divider--' + themes" />
+    <!-- 轴标签包含文字样式、旋转、长度限制和数值格式化，是坐标轴可读性的主要配置区。 -->
     <el-form-item
       class="form-item form-item-checkbox"
       :class="{
@@ -559,6 +585,7 @@ onMounted(() => {
         />
       </el-form-item>
       <template v-if="showProperty('axisLabelFormatter') && !isBarRangeTime">
+        <!-- 时间范围柱图跳过数值格式化，其余图表沿用统一 formatter 规则。 -->
         <el-form-item
           class="form-item"
           :class="'form-item-' + themes"
@@ -604,6 +631,7 @@ onMounted(() => {
             state.axisForm.axisLabel.show && state.axisForm.axisLabelFormatter.type !== 'percent'
           "
         >
+          <!-- 百分比格式不展示单位配置，其余数值格式可叠加单位语言和后缀。 -->
           <el-row :gutter="8">
             <el-col :span="12" v-if="!isEnLocal">
               <el-form-item
@@ -670,6 +698,7 @@ onMounted(() => {
           </el-row>
         </template>
 
+        <!-- 千分位只作为显示层格式化选项，不改变底层度量值。 -->
         <el-form-item class="form-item" :class="'form-item-' + themes">
           <el-checkbox
             :disabled="!state.axisForm.axisLabel.show"
@@ -687,6 +716,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .custom-form-item-label {
+  // 自定义标题承载说明图标，视觉上与 Element 表单 label 保持同一层级。
   margin-bottom: 4px;
   line-height: 20px;
   color: #646a73;
@@ -704,6 +734,7 @@ onMounted(() => {
   margin-bottom: 10px !important;
 }
 .m-divider {
+  // 分隔线只表达配置分区，深浅主题通过边框透明度区分层次。
   border-color: rgba(31, 35, 41, 0.15);
   margin: 0 0 16px;
 

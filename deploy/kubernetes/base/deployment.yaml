@@ -30,14 +30,35 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: wait-for-database
-          image: ghcr.io/sevoniva/crest-service:v1.5.7
+          image: ghcr.io/sevoniva/crest-service:v1.5.12
           imagePullPolicy: IfNotPresent
           command:
             - sh
             - -ec
             - |
-              until nc -z "$CREST_DB_HOST" "$CREST_DB_PORT"; do
-                echo "waiting for database ${CREST_DB_HOST}:${CREST_DB_PORT}"
+              DB_HOST="${CREST_DB_HOST:-}"
+              DB_PORT="${CREST_DB_PORT:-}"
+              if [ -z "$DB_HOST" ] && [ -n "${CREST_DB_URL:-}" ]; then
+                DB_ENDPOINT="${CREST_DB_URL#*://}"
+                DB_ENDPOINT="${DB_ENDPOINT%%/*}"
+                DB_ENDPOINT="${DB_ENDPOINT%%\?*}"
+                DB_HOST="${DB_ENDPOINT%%:*}"
+                if [ "$DB_ENDPOINT" != "$DB_HOST" ]; then
+                  DB_PORT="${DB_ENDPOINT##*:}"
+                fi
+              fi
+              if [ -z "$DB_PORT" ]; then
+                case "${CREST_DB_TYPE:-mysql}" in
+                  ob-*) DB_PORT=2883 ;;
+                  *) DB_PORT=3306 ;;
+                esac
+              fi
+              if [ -z "$DB_HOST" ]; then
+                echo "CREST_DB_HOST or CREST_DB_URL host is required"
+                exit 1
+              fi
+              until nc -z "$DB_HOST" "$DB_PORT"; do
+                echo "waiting for database ${DB_HOST}:${DB_PORT}"
                 sleep 2
               done
           envFrom:
@@ -52,7 +73,7 @@ spec:
               drop:
                 - ALL
         - name: seed-static-resource
-          image: ghcr.io/sevoniva/crest-service:v1.5.7
+          image: ghcr.io/sevoniva/crest-service:v1.5.12
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -72,7 +93,7 @@ spec:
               subPath: static-resource
       containers:
         - name: crest-service
-          image: ghcr.io/sevoniva/crest-service:v1.5.7
+          image: ghcr.io/sevoniva/crest-service:v1.5.12
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -225,7 +246,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: crest
-          image: ghcr.io/sevoniva/crest-web:v1.5.7
+          image: ghcr.io/sevoniva/crest-web:v1.5.12
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

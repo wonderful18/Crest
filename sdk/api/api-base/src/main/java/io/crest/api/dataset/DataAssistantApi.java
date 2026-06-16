@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
+// 定义模块接口契约和数据传输结构
 public interface DataAssistantApi {
     @GetMapping("/datasource")
     List<DataSQLBotAssistantVO> datasourceList(@RequestParam(required = false) Long dsId, @RequestParam(required = false) Long tableId);

@@ -1,5 +1,6 @@
 package io.crest.constant;
 
+// 定义当前业务对象的核心职责
 public class SystemSettingConstants {
 
     public static final String AUTO_CREATE_USER = "basic.autoCreateUser";

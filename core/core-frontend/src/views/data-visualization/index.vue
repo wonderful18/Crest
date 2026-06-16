@@ -19,11 +19,13 @@ import { guid } from '@/views/visualized/data/dataset/form/util.js'
 import { datasetTree } from '@/api/dataset'
 import { Tree } from '@/views/visualized/data/dataset/form/CreatDsGroup.vue'
 import {
+  consumeUploadedTemplatePayload,
   decompressionPre,
   findDragComponent,
   findNewComponent,
   initCanvasData,
-  onInitReady
+  onInitReady,
+  uploadedTemplatePre
 } from '@/utils/canvasUtils'
 import CanvasCore from '@/components/data-visualization/canvas/CanvasCore.vue'
 import { listenGlobalKeyDown, releaseAttachKey } from '@/utils/shortcutKey'
@@ -47,11 +49,18 @@ import ChartStyleBatchSet from '@/views/chart/components/editor/editor-style/Cha
 import CustomTabsSort from '@/custom-component/tabs/CustomTabsSort.vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { recoverToPublished } from '@/api/visualization/dataVisualization'
+import { ElMessage } from 'element-plus-secondary'
 const interactiveStore = interactiveStoreWithOut()
 const embeddedStore = useEmbedded()
 const { wsCache } = useCache()
+/**
+ * 全屏预览组件引用
+ */
 const dvPreviewRef = ref(null)
 const { t } = useI18n()
+/**
+ * 监听跨窗口权限缓存变化并触发编辑权限校验
+ */
 const eventCheck = e => {
   if (e.key === 'screen-weight' && !compareStorage(e.oldValue, e.newValue)) {
     const opt = embeddedStore.opt || router.currentRoute.value.query.opt
@@ -64,16 +73,34 @@ const eventCheck = e => {
     }
   }
 }
+/**
+ * 主画布核心组件引用
+ */
 const mainCanvasCoreRef = ref(null)
+/**
+ * 标签页排序弹窗引用
+ */
 const customTabsSortRef = ref(null)
 const appStore = useAppStoreWithOut()
+/**
+ * 是否处于嵌入式分析环境
+ */
 const isCrestBi = computed(() => appStore.getIsCrestBi)
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const contextmenuStore = contextmenuStoreWithOut()
 const composeStore = composeStoreWithOut()
+/**
+ * 本地缓存恢复弹窗引用
+ */
 const canvasCacheOutRef = ref(null)
+/**
+ * 横向标尺组件引用
+ */
 const widthRulerRef = ref(null)
+/**
+ * 纵向标尺组件引用
+ */
 const heightRulerRef = ref(null)
 const requestStore = useRequestStoreWithOut()
 const permissionStore = usePermissionStoreWithOut()
@@ -90,15 +117,36 @@ const {
   batchOptStatus
 } = storeToRefs(dvMainStore)
 const { editorMap, isSpaceDown } = storeToRefs(composeStore)
+/**
+ * 画布滚动容器引用
+ */
 const canvasOut = ref(null)
+/**
+ * 画布内容容器引用
+ */
 const canvasInner = ref(null)
+/**
+ * 右侧属性面板外层引用
+ */
 const leftSidebarRef = ref(null)
+/**
+ * 整体编辑布局引用
+ */
 const dvLayout = ref(null)
+/**
+ * 画布中间区域引用
+ */
 const canvasCenterRef = ref(null)
+/**
+ * 纵向标尺可用高度
+ */
 const mainHeight = ref(300)
 let createType = null
 let isDragging = false // 标记是否在拖动
 let startX, startY, scrollLeft, scrollTop
+/**
+ * 大屏编辑页的本地运行状态
+ */
 const state = reactive({
   sideShow: true,
   countTime: 0,
@@ -113,6 +161,9 @@ const state = reactive({
   baseHeight: 10
 })
 
+/**
+ * 打开当前标签页组件的排序配置
+ */
 const tabSort = () => {
   if (curComponent.value) {
     customTabsSortRef.value.sortInit(curComponent.value)
@@ -151,6 +202,9 @@ const disableDragging = () => {
   isDragging = false
 }
 
+/**
+ * 根据编辑模式计算画布内容区尺寸
+ */
 const contentStyle = computed(() => {
   const { width, height } = canvasStyleData.value
   if (editMode.value === 'preview') {
@@ -205,6 +259,9 @@ const handleNew = newComponentInfo => {
   }
 }
 
+/**
+ * 处理从组件栏拖入画布后的落点和组件创建
+ */
 const handleDrop = e => {
   e.preventDefault()
   e.stopPropagation()
@@ -222,11 +279,17 @@ const handleDrop = e => {
   }
 }
 
+/**
+ * 允许组件以复制方式拖入画布
+ */
 const handleDragOver = e => {
   e.preventDefault()
   e.dataTransfer.dropEffect = 'copy'
 }
 
+/**
+ * 处理画布空白区域鼠标按下并准备框选或拖拽
+ */
 const handleMouseDown = e => {
   // e.stopPropagation()
   if (isSpaceDown.value) {
@@ -239,6 +302,9 @@ const handleMouseDown = e => {
   mainCanvasCoreRef.value.handleMouseDown(e)
 }
 
+/**
+ * 点击画布空白处时取消当前组件选择并关闭右键菜单
+ */
 const deselectCurComponent = e => {
   if (isSpaceDown.value) {
     return
@@ -253,17 +319,26 @@ const deselectCurComponent = e => {
   }
 }
 
+/**
+ * 加载数据集树供图表编辑器选择数据来源
+ */
 const initDataset = () => {
   datasetTree({}).then(res => {
     state.datasetTree = (res as unknown as Tree[]) || []
   })
 }
 
+/**
+ * 根据画布缩放比例计算编辑区滚动留白倍数
+ */
 const scrollOffset = computed(() => (canvasStyleData.value.scale < 150 ? 1.5 : 2))
 
 // 全局监听按键事件
 listenGlobalKeyDown()
 
+/**
+ * 将画布滚动条初始化到内容中心位置
+ */
 const initScroll = () => {
   nextTick(() => {
     if (canvasCenterRef.value) {
@@ -277,6 +352,9 @@ const initScroll = () => {
     }
   })
 }
+/**
+ * 根据用户选择恢复本地缓存或重新加载远端画布
+ */
 const doUseCache = flag => {
   const canvasCache = wsCache.get('CREST-DV-CACHE-' + state.resourceId)
   if (flag && canvasCache) {
@@ -299,6 +377,9 @@ const doUseCache = flag => {
   }
 }
 
+/**
+ * 初始化当前大屏的本地编辑数据和快照状态
+ */
 const initLocalCanvasData = async callback => {
   const { opt, sourcePid, resourceId } = state
   const busiFlag = opt === 'copy' ? 'dataV-copy' : 'dataV'
@@ -326,6 +407,9 @@ const initLocalCanvasData = async callback => {
   )
 }
 
+/**
+ * 进入预览模式时按布局宽度临时调整画布缩放
+ */
 const previewScaleChange = () => {
   state.scaleHistory = canvasStyleData.value.scale
   nextTick(() => {
@@ -335,6 +419,7 @@ const previewScaleChange = () => {
   })
 }
 
+// 切换编辑和预览模式时恢复或重算画布缩放
 watch(
   () => editMode.value,
   val => {
@@ -348,6 +433,9 @@ watch(
     }
   }
 )
+/**
+ * 校验当前用户是否仍具备大屏编辑权限
+ */
 const checkPer = async resourceId => {
   if (!window.CrestBi || !resourceId) {
     return true
@@ -366,12 +454,21 @@ const winMsgHandle = event => {
     }
 }
 
+/**
+ * 接收嵌入父页面传入的网络参数并写入筛选条件
+ */
 const winMsgWebParamsHandle = msgInfo => {
   const params = msgInfo.params
   dvMainStore.addWebParamsFilter(params)
 }
 
+/**
+ * 控制主编辑布局在初始化前不渲染
+ */
 const loadFinish = ref(false)
+/**
+ * 标记当前页面是否从大屏编辑窗口独立打开
+ */
 const newWindowFromDiv = ref(false)
 onMounted(async () => {
   document.body.style.overflow = 'hidden'
@@ -390,6 +487,10 @@ onMounted(async () => {
   const pid = embeddedStore.pid || router.currentRoute.value.query.pid
   const templateParams =
     embeddedStore.templateParams || router.currentRoute.value.query.templateParams
+  const templatePayloadKey =
+    embeddedStore.templateParams ||
+    router.currentRoute.value.query.templatePayloadKey ||
+    router.currentRoute.value.query.templateParams
   createType = embeddedStore.createType || router.currentRoute.value.query.createType
   const opt = embeddedStore.opt || router.currentRoute.value.query.opt
   const checkDvId = opt && opt === 'copy' ? null : dvId
@@ -430,6 +531,17 @@ onMounted(async () => {
         templatePayload = result
         preName = templatePayload.baseInfo?.preName
       })
+    } else if (createType === 'uploadedTemplate') {
+      const uploadedTemplatePayload = consumeUploadedTemplatePayload(templatePayloadKey)
+      if (!uploadedTemplatePayload) {
+        ElMessage.error(t('visualization.import_template_expired'))
+        window.open('#/screen/index', '_self')
+        return
+      }
+      uploadedTemplatePre(uploadedTemplatePayload, result => {
+        templatePayload = result
+        preName = templatePayload.baseInfo?.preName
+      })
     }
     dvMainStore.createInit('dataV', null, pid, watermarkBaseInfo, preName)
     nextTick(() => {
@@ -437,7 +549,7 @@ onMounted(async () => {
       dvMainStore.setDataPrepareState(true)
       snapshotStore.recordSnapshotCache('renderChart')
       // 从模板新建
-      if (createType === 'template') {
+      if (createType === 'template' || createType === 'uploadedTemplate') {
         dvMainStore.setComponentData(templatePayload['componentData'])
         dvMainStore.setCanvasStyle(templatePayload['canvasStyleData'])
         dvMainStore.setCanvasViewInfo(templatePayload['canvasViewInfo'])
@@ -471,8 +583,14 @@ onUnmounted(() => {
   eventBus.off('tabSort', tabSort)
 })
 
+/**
+ * 判断当前是否处于预览模式
+ */
 const previewStatus = computed(() => editMode.value === 'preview')
 
+/**
+ * 判断是否展示普通组件属性编辑面板
+ */
 const otherEditorShow = computed(() => {
   return Boolean(
     curComponent.value &&
@@ -482,9 +600,15 @@ const otherEditorShow = computed(() => {
       !batchOptStatus.value
   )
 })
+/**
+ * 判断是否展示画布属性编辑面板
+ */
 const canvasPropertiesShow = computed(
   () => !curComponent.value || ['GroupArea'].includes(curComponent.value.component)
 )
+/**
+ * 判断是否展示图表视图属性编辑器
+ */
 const viewsPropertiesShow = computed(() => {
   return Boolean(
     curComponent.value &&
@@ -494,19 +618,31 @@ const viewsPropertiesShow = computed(() => {
   )
 })
 
+/**
+ * 同步画布滚动位置到横向和纵向标尺
+ */
 const scrollCanvas = e => {
   widthRulerRef.value.rulerScroll(e)
   heightRulerRef.value.rulerScroll(e)
 }
 
+/**
+ * 主画布区域中可直接渲染的组件列表
+ */
 const coreComponentData = computed(() =>
   componentData.value.filter(ele => !ele.category || ele.category !== 'hidden')
 )
 
+/**
+ * 弹框区域中独立渲染的隐藏组件列表
+ */
 const popComponentData = computed(() =>
   componentData.value.filter(ele => ele.category && ele.category === 'hidden')
 )
 
+/**
+ * 将当前草稿恢复到已发布版本并刷新画布数据
+ */
 const doRecoverToPublished = () => {
   recoverToPublished({ id: dvInfo.value.id, type: 'dataV', name: dvInfo.value.name }).then(() => {
     state.resourceId = dvInfo.value.id

@@ -16,6 +16,7 @@ import { propTypes } from '@/utils/propTypes'
 import ShareHandler from './ShareHandler.vue'
 import { interactiveStoreWithOut } from '@/store/modules/interactive'
 
+// 接收当前工作台激活页签
 const props = defineProps({
   activeName: propTypes.string.def('')
 })
@@ -23,9 +24,13 @@ const props = defineProps({
 const { t } = useI18n()
 const interactiveStore = interactiveStoreWithOut()
 
+// 读取当前用户可访问的业务模块
 const busiDataMap = computed(() => interactiveStore.data)
+// 分享列表搜索关键字
 const panelKeyword = ref()
+// 当前资源类型筛选项
 const activeCommand = ref('all_types')
+// 维护分享列表表格状态
 const state = reactive({
   tableData: [],
   curTypeList: ['all_types', 'panel', 'screen'],
@@ -36,20 +41,24 @@ const state = reactive({
   ]
 })
 
+// 切换资源类型筛选
 const handleCommand = (command: string) => {
   activeCommand.value = command
   loadTableData()
 }
 
+// 根据搜索条件刷新分享列表
 const triggerFilterPanel = () => {
   loadTableData()
 }
+// 在新页面预览可访问资源
 const preview = (id, disabled = false) => {
   if (!disabled) {
     const routeUrl = `/#/preview?dvId=${id}`
     window.open(routeUrl, '_blank')
   }
 }
+// 格式化表格中的时间字段
 const formatterTime = (_, _column, cellValue) => {
   if (!cellValue) {
     return '-'
@@ -57,13 +66,17 @@ const formatterTime = (_, _column, cellValue) => {
   return dayjs(new Date(cellValue)).format('YYYY-MM-DD HH:mm:ss')
 }
 
+// 通知父级显示加载态
 const showLoading = () => {
   emits('setLoading', true)
 }
+// 通知父级关闭加载态
 const closeLoading = () => {
   emits('setLoading', false)
 }
+// 定义加载态事件
 const emits = defineEmits(['setLoading'])
+// 加载当前筛选条件下的分享资源列表
 const loadTableData = () => {
   showLoading()
   const queryType = activeCommand.value === 'all_types' ? '' : activeCommand.value
@@ -81,13 +94,16 @@ const loadTableData = () => {
       closeLoading()
     })
 }
+// 当前列表排序是否为倒序
 const orderDesc = ref(true)
+// 处理表格排序变化
 const sortChange = param => {
   orderDesc.value = true
   const type = param.order.substring(0, param.order.indexOf('ending'))
   orderDesc.value = type === 'desc'
   loadTableData()
 }
+// 计算当前用户有权限查看的业务类型
 const getBusiListWithPermission = () => {
   const baseFlagList: string[] = ['panel', 'screen']
   const busiFlagList: string[] = []
@@ -98,10 +114,14 @@ const getBusiListWithPermission = () => {
   }
   return busiFlagList
 }
+// 可展示的业务类型集合
 const busiAuthList = computed(() => getBusiListWithPermission())
 
+// 空状态图片类型
 const imgType = ref()
+// 空状态描述文案
 const emptyDesc = ref('')
+// 根据搜索状态选择空图片类型
 const getEmptyImg = (): string => {
   if (panelKeyword.value) {
     return 'tree'
@@ -109,6 +129,7 @@ const getEmptyImg = (): string => {
   return 'noneWhite'
 }
 
+// 根据搜索状态生成空描述
 const getEmptyDesc = (): string => {
   if (panelKeyword.value) {
     return t('work_branch.relevant_content_found')
@@ -117,6 +138,7 @@ const getEmptyDesc = (): string => {
   return ''
 }
 
+// 点击资源行时进入对应编辑页面
 const handleCellClick = row => {
   if (row && row.extFlag1) {
     const sourceId = row.resourceId
@@ -141,6 +163,7 @@ const iconMap = {
   datasource: icon_database_outlined
 }
 
+// 分享页签激活时刷新列表
 watch(
   () => props.activeName,
   () => {

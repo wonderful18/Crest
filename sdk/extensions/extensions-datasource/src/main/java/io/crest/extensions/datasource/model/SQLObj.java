@@ -5,14 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * @Author gin
- * @Date 2023/3/23 16:12 下午
- */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+// 定义当前业务对象的核心职责
 public class SQLObj {
     private String tableSchema;
     private String tableName;

@@ -49,8 +49,8 @@ deploy/kubernetes
 默认应用镜像：
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.7
-ghcr.io/sevoniva/crest-web:v1.5.7
+ghcr.io/sevoniva/crest-service:v1.5.12
+ghcr.io/sevoniva/crest-web:v1.5.12
 ```
 
 后端镜像以 Alpine 为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime。前端镜像基于 Nginx Alpine，负责静态资源、API 转发和 WebSocket 转发。两个应用容器都以固定非 root 用户运行：
@@ -104,9 +104,13 @@ docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:main .
 | --- | --- |
 | `CREST_CONTEXT_PATH` | 应用上下文路径，默认空 |
 | `CREST_LOAD_DEMO` | 是否初始化内置演示资源，默认 `true` |
-| `CREST_FLYWAY_LOCATIONS` | Flyway 执行目录；关闭演示资源时设为 `classpath:db/migration` |
-| `CREST_DB_HOST` | MySQL 地址 |
-| `CREST_DB_PORT` | MySQL 端口 |
+| `CREST_FLYWAY_ENABLED` | 是否由应用启动时执行 Flyway；MySQL 默认开启，OceanBase 生产环境建议关闭并先手工执行初始化 SQL |
+| `CREST_FLYWAY_LOCATIONS` | Flyway 执行目录；默认 MySQL 路径，OceanBase Oracle 使用 `classpath:db/migration-ob-oracle` |
+| `CREST_DB_TYPE` | 元数据库类型，支持 `mysql`、`ob-mysql`、`ob-oracle` |
+| `CREST_DB_DRIVER_CLASS_NAME` | JDBC 驱动；OceanBase 使用 `com.oceanbase.jdbc.Driver` |
+| `CREST_DB_URL` | 可选完整 JDBC URL；配置后优先于主机、端口和库名，OceanBase Oracle 推荐显式配置；initContainer 可从 URL 解析等待地址 |
+| `CREST_DB_HOST` | 元数据库地址；OceanBase 可填写 OBProxy 或 observer 地址；生产环境建议显式配置，便于探针和排障 |
+| `CREST_DB_PORT` | 元数据库端口；OceanBase 常用 OBProxy `2883`，observer 直连 `2881`；未配置时 MySQL 默认 `3306`、OceanBase 默认 `2883` |
 | `CREST_DB_NAME` | 元数据库名 |
 | `CREST_DB_PARAMS` | JDBC 参数 |
 | `CREST_ORIGIN_LIST` | 允许来源列表，正式环境改为实际域名 |
@@ -128,6 +132,31 @@ docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:main .
 | `CREST_CRYPTO_MODE` | 加密模式，默认 `standard`；需要 SM2/SM3/SM4 时设为 `sm-suite` |
 | `CREST_SM4_KEY` | SM4 使用的 16 位 Key；`CREST_CRYPTO_MODE=sm-suite` 时必填，服务启动会校验 |
 | `CREST_INITIAL_PASSWORD` | 管理员初始密码 |
+
+OceanBase Oracle 元数据库示例：
+
+```yaml
+configMapGenerator:
+  - name: crest-env
+    literals:
+      - CREST_DB_TYPE=ob-oracle
+      - CREST_DB_DRIVER_CLASS_NAME=com.oceanbase.jdbc.Driver
+      - CREST_DB_HOST=10.0.0.10
+      - CREST_DB_PORT=2883
+      - CREST_DB_URL=jdbc:oceanbase://10.0.0.10:2883
+      - CREST_FLYWAY_ENABLED=false
+      - CREST_FLYWAY_LOCATIONS=classpath:db/migration-ob-oracle
+```
+
+```yaml
+secretGenerator:
+  - name: crest-db-secret
+    literals:
+      - CREST_DB_USERNAME=<user>@<tenant>#<cluster>
+      - CREST_DB_PASSWORD=<password>
+```
+
+生产环境的 OceanBase 元数据库应先由 DBA 执行离线包 `init-sql/ob-mysql/` 或 `init-sql/ob-oracle/` 下的初始化 SQL，再以 `CREST_FLYWAY_ENABLED=false` 启动服务。OceanBase MySQL 元数据库使用 `CREST_DB_TYPE=ob-mysql`，`CREST_DB_NAME` 填写目标库名。OBProxy/ODP 连接用户名使用 `用户@租户#集群`，observer 直连时端口使用 `2881`，用户名使用 `用户@租户`，不要带 `#集群`。
 
 `crest-db-secret` 不由 Kustomize 生成，部署前必须在目标 namespace 中创建。不要把生产密码、证书或 kubeconfig 提交到仓库。
 
@@ -323,10 +352,10 @@ curl -i http://127.0.0.1:18100/api/v1/actuator/prometheus
 
 ```bash
 mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true -Dcrest.copy.frontend.skip=true
-docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:v1.5.7 .
-docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:v1.5.7 .
-kind load docker-image ghcr.io/sevoniva/crest-service:v1.5.7 --name crest-kind
-kind load docker-image ghcr.io/sevoniva/crest-web:v1.5.7 --name crest-kind
+docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:v1.5.12 .
+docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:v1.5.12 .
+kind load docker-image ghcr.io/sevoniva/crest-service:v1.5.12 --name crest-kind
+kind load docker-image ghcr.io/sevoniva/crest-web:v1.5.12 --name crest-kind
 kind load docker-image mysql:8.0.43 --name crest-kind
 ```
 
@@ -414,7 +443,7 @@ installer/crest/bin/mysql/cleanup-demo-data.sql
 
 ## 迁移和同发布线升级
 
-全新环境可直接使用 Kubernetes 清单部署 v1.5.7。已有 v1.5.5 或 v1.5.6 环境升级到 v1.5.7 时，请更新前后端镜像；本补丁不包含数据库变更，不需要执行新增升级 SQL。更早版本迁移到 v1.5.7 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
+全新环境可直接使用 Kubernetes 清单部署 v1.5.12。已有 v1.5.x 环境升级到 v1.5.12 时，请先备份元数据库和持久化目录，再按 v1.5.12 发布说明执行对应升级步骤；更早版本迁移到 v1.5.12 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
 
 同一发布线的小版本升级前：
 
@@ -426,8 +455,8 @@ installer/crest/bin/mysql/cleanup-demo-data.sql
 确认 release notes 明确支持原地升级后，更新镜像：
 
 ```bash
-kubectl -n crest-internal set image deployment/crest-service crest-service=ghcr.io/sevoniva/crest-service:v1.5.7
-kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest-web:v1.5.7
+kubectl -n crest-internal set image deployment/crest-service crest-service=ghcr.io/sevoniva/crest-service:v1.5.12
+kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest-web:v1.5.12
 kubectl -n crest-internal rollout status deployment/crest-service --timeout=300s
 kubectl -n crest-internal rollout status deployment/crest --timeout=300s
 ```

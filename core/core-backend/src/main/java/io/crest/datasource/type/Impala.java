@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 @EqualsAndHashCode(callSuper = false)
 @Component("impala")
 @SuppressWarnings("deprecation")
+// 定义数据源连接参数和元数据匹配规则
 public class Impala extends DatasourceConfiguration {
     private String driver = "com.cloudera.impala.jdbc.Driver";
     private String extraParams = "";
@@ -33,6 +34,8 @@ public class Impala extends DatasourceConfiguration {
     );
     private List<String> showTableSqls = Arrays.asList("show tables");
 
+    // 构建当前数据源的连接地址
+    @Override
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             for (String illegalParameter : illegalParameters) {
@@ -70,12 +73,14 @@ public class Impala extends DatasourceConfiguration {
     private static final Pattern DB_NAME_PATTERN = Pattern.compile("//[^/]+/([^?;]+)");
 
     @Override
+    // 返回数据库名称解析使用的匹配规则
     protected Pattern databasePattern() {
         return DB_NAME_PATTERN;
     }
 
 
     @Override
+    // 执行当前服务方法并返回处理结果
     protected void parseParameters(String jdbcUrl) {
         if (jdbcUrl.contains(";")) {
             String[] parts = jdbcUrl.split(";");

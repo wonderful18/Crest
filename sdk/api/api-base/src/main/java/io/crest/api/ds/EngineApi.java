@@ -12,6 +12,7 @@ import static io.crest.constant.AuthResourceEnum.DATASOURCE;
 @Tag(name = "引擎管理:基础")
 @ApiSupport(order = 970)
 @CrestApiPath(value = "/engine", rt = DATASOURCE)
+// 定义模块接口契约和数据传输结构
 public interface EngineApi {
 
     @Operation(summary = "查询")

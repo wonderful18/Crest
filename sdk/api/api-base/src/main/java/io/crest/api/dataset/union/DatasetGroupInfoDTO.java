@@ -8,10 +8,8 @@ import lombok.Data;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @Author Junjun
- */
 @Data
+// 定义接口请求或返回数据的传输结构
 public class DatasetGroupInfoDTO extends DatasetNodeDTO {
     private List<UnionDTO> union;// 关联数据集
 

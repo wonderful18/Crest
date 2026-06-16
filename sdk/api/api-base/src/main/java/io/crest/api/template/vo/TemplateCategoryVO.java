@@ -2,12 +2,8 @@ package io.crest.api.template.vo;
 
 import lombok.Data;
 
-/**
- * Author: wangjiahao
- * Date: 2022/7/18
- * Description:
- */
 @Data
+// 定义页面展示或接口返回的数据结构
 public class TemplateCategoryVO {
     private Integer id;
 

@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
+// 定义接口请求或返回数据的传输结构
 public class TemplateMarketDTO implements Comparable<TemplateMarketDTO> {
     private String id;
     private String title;
@@ -88,6 +89,7 @@ public class TemplateMarketDTO implements Comparable<TemplateMarketDTO> {
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public int compareTo(TemplateMarketDTO other) {
         return Long.compare(other.recentUseTime, this.recentUseTime);
     }

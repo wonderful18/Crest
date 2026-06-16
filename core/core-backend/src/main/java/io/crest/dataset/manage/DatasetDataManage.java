@@ -37,6 +37,7 @@ import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
 import io.crest.extensions.datasource.dto.*;
 import io.crest.extensions.datasource.factory.ProviderFactory;
 import io.crest.extensions.datasource.model.SQLMeta;
+import io.crest.extensions.datasource.provider.CrestSqlFunctionTranslator;
 import io.crest.extensions.datasource.provider.Provider;
 import io.crest.extensions.datasource.utils.SqlPlaceholderUtils;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
@@ -69,7 +70,8 @@ import static io.crest.chart.manage.ChartDataManage.START_END_SEPARATOR;
 import static io.crest.dataset.utils.TableUtils.format;
 
 /**
- * @Author Junjun
+ * 数据集数据读取服务，负责字段探测、预览查询、统计查询和筛选枚举值生成
+ * 该类只组装并执行读取请求，不持久化数据集定义；字段权限、行权限和同步表路由会在查询前统一注入
  */
 @Component
 @SuppressWarnings("unchecked")
@@ -103,12 +105,21 @@ public class DatasetDataManage {
 
     private static Logger logger = LoggerFactory.getLogger(DatasetDataManage.class);
 
+    /**
+     * 返回可选的行权限服务，未启用权限模块时允许为空
+     */
     private RowPermissionsApi getRowPermissionsApi() {
         return rowPermissionsApi;
     }
 
-    public static final List<String> notFullDs = List.of("mysql", "mariadb", "Excel", "API", "H2", "h2");
+    /**
+     * 不支持 FULL JOIN 的数据源类型列表，预览前需要提前阻断
+     */
+    public static final List<String> notFullDs = List.of("mysql", "obMysql", "mariadb", "Excel", "API", "H2", "h2");
 
+    /**
+     * 根据数据表配置读取字段元数据，兼容物理表、自定义 SQL、ES、Excel 和 API 同步表
+     */
     public List<DatasetTableFieldDTO> getTableFields(DatasetTableDTO datasetTableDTO) throws Exception {
         List<DatasetTableFieldDTO> list = null;
         List<TableField> tableFields = null;
@@ -142,9 +153,9 @@ public class DatasetDataManage {
             datasourceRequest.setDsList(Map.of(datasourceSchemaDTO.getId(), datasourceSchemaDTO));
             String sql;
             if (Strings.CI.equals(type, DatasetTableType.DB)) {
-                // add table schema
+                // 物理表探测只取元数据，LIMIT 0 可以避免读取真实业务数据
                 sql = TableUtils.tableName2Sql(datasourceSchemaDTO, tableInfoDTO.getTable()) + " LIMIT 0 OFFSET 0";
-                // replace schema alias, trans dialect
+                // 单源查询需要把内部 schema 别名转换为真实 schema 后再做方言转换
                 Map map = JsonUtil.parseObject(datasourceSchemaDTO.getConfiguration(), Map.class);
                 if (!datasourceRequest.getIsCross()) {
                     if (ObjectUtils.isNotEmpty(map.get("schema"))) {
@@ -159,18 +170,17 @@ public class DatasetDataManage {
                     sql = SqlUtils.addSchema(sql, tableSchema);
                 }
             } else {
-                // parser sql params and replace default value
+                // 自定义 SQL 先解析变量默认值，再以子查询方式探测字段结构
                 String s = new String(Base64.getDecoder().decode(tableInfoDTO.getSql()));
                 SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(s, datasetTableDTO.getSqlVariableDetails(), true, false, null, datasourceRequest.getIsCross(), datasourceRequest.getDsList(), pluginManage, getUserEntity());
                 String originSql = sqlResult.getSql();
                 datasourceRequest.setTableFieldWithValues(sqlResult.getTableFieldWithValues());
                 originSql = provider.replaceComment(originSql);
-                // add sql table schema
 
                 if (!datasourceRequest.getIsCross()) {
                     sql = SQLUtils.buildOriginPreviewSql(SqlPlaceholderConstants.TABLE_PLACEHOLDER, 0, 0);
                     sql = provider.transSqlDialect(sql, datasourceRequest.getDsList());
-                    // replace placeholder
+                    // 方言转换完成后再替换占位符，避免原始 SQL 被错误改写
                     sql = provider.replaceTablePlaceHolder(sql, originSql);
                 } else {
                     String tableSchema = datasetSQLManage.putObj2Map(datasourceRequest.getDsList(), datasetTableDTO, datasourceRequest.getIsCross());
@@ -179,7 +189,7 @@ public class DatasetDataManage {
             }
             datasourceRequest.setQuery(sql.replaceAll("\r\n", " ").replaceAll("\n", " "));
             logger.debug("calcite data table field sql: " + datasourceRequest.getQuery());
-            // 获取数据源表的原始字段
+            // DB 类型还需要传入原始表名，部分 provider 会用它补充字段原始名称
             if (Strings.CI.equals(type, DatasetTableType.DB)) {
                 datasourceRequest.setTable(tableInfoDTO.getTable());
             }
@@ -195,7 +205,7 @@ public class DatasetDataManage {
             datasourceRequest.setTable(datasetTableDTO.getTableName());
             tableFields = provider.fetchTableField(datasourceRequest);
         } else {
-            // excel,api
+            // Excel 和 API 最终落在引擎库，字段探测按同步后的物理表处理
             CoreDatasource sourceDatasource = dataSourceManage.getCoreDatasource(datasetTableDTO.getDatasourceId());
             if (sourceDatasource != null && sourceDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name())) {
                 DatasourceRequest datasourceRequest = new DatasourceRequest();
@@ -215,7 +225,7 @@ public class DatasetDataManage {
             DatasourceRequest datasourceRequest = new DatasourceRequest();
             datasourceRequest.setDsList(Map.of(datasourceSchemaDTO.getId(), datasourceSchemaDTO));
             String sql = TableUtils.tableName2Sql(datasourceSchemaDTO, tableInfoDTO.getTable()) + " LIMIT 0 OFFSET 0";
-            // replace schema alias, trans dialect
+            // 引擎库表使用默认 provider 做 schema 替换和方言转换
             sql = Utils.replaceSchemaAlias(sql, datasourceRequest.getDsList());
             sql = provider.transSqlDialect(sql, datasourceRequest.getDsList());
             datasourceRequest.setQuery(sql);
@@ -225,15 +235,23 @@ public class DatasetDataManage {
         return transFields(tableFields, true);
     }
 
+    /**
+     * 将 provider 返回的字段元数据转换为数据集字段 DTO，并补齐字段类型和维度指标分组
+     */
     public List<DatasetTableFieldDTO> transFields(List<TableField> tableFields, boolean defaultStatus) {
         return tableFields.stream().map(ele -> {
             DatasetTableFieldDTO dto = new DatasetTableFieldDTO();
             dto.setName(StringUtils.isNotEmpty(ele.getName()) ? ele.getName() : ele.getOriginName());
             dto.setOriginName(ele.getOriginName());
             dto.setDbFieldName(ele.getDbFieldName());
+            if (StringUtils.isNotBlank(ele.getDbFieldName())) {
+                dto.setEngineFieldName(ele.getDbFieldName());
+                dto.setFieldShortName(ele.getDbFieldName());
+            }
             dto.setChecked(defaultStatus);
-            dto.setType(ele.getType());
-            int fieldType = FieldUtils.resolveFieldType(ele.getType());
+            String type = StringUtils.firstNonBlank(ele.getType(), ele.getNativeType(), "TEXT");
+            dto.setType(type);
+            int fieldType = FieldUtils.resolveFieldType(type);
             dto.setExtractedFieldType(ObjectUtils.isEmpty(ele.getExtractedFieldType()) ? fieldType : ele.getExtractedFieldType());
             dto.setFieldType(ObjectUtils.isEmpty(ele.getFieldType()) ? fieldType : ele.getFieldType());
             dto.setGroupType(FieldUtils.resolveFieldGroup(dto.getFieldType()));
@@ -243,12 +261,15 @@ public class DatasetDataManage {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * 构造数据集预览查询，应用列权限、行权限、同步表路由和分页限制后返回字段与数据
+     */
     public Map<String, Object> previewDataWithLimit(DatasetGroupInfoDTO datasetGroupInfoDTO, Integer start, Integer count, boolean checkPermission, boolean encode) throws Exception {
         if (encode) {
             DatasetUtils.dsDecode(datasetGroupInfoDTO);
         }
 
-        // 获取allFields
+        // allFields 是外层 SELECT 的字段契约，空字段无法生成稳定预览结构
         List<DatasetTableFieldDTO> fields = datasetGroupInfoDTO.getAllFields();
         if (ObjectUtils.isEmpty(fields)) {
             CrestException.throwException(Translator.get("i18n_no_fields"));
@@ -294,7 +315,7 @@ public class DatasetDataManage {
             provider = ProviderFactory.getProvider(dsList.getFirst());
         }
 
-        // build query sql
+        // 以联合 SQL 为临时表，再叠加字段选择、行权限过滤和排序
         SQLMeta sqlMeta = new SQLMeta();
         Table2SQLObj.table2sqlobj(sqlMeta, null, "(" + sql + ")", crossDs);
         Field2SQLObj.field2sqlObj(sqlMeta, fields, fields, crossDs, dsMap, Utils.getParams(fields), null, pluginManage);
@@ -309,8 +330,7 @@ public class DatasetDataManage {
         querySQL = provider.rebuildSQL(querySQL, sqlMeta, crossDs, dsMap);
         logger.debug("calcite data preview sql: " + querySQL);
 
-        // 通过数据源请求数据
-        // 调用数据源的calcite获得data
+        // 预编译参数需要随查询请求传给 provider，避免自定义 SQL 参数丢失
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setQuery(querySQL);
         datasourceRequest.setDsList(dsMap);
@@ -319,7 +339,7 @@ public class DatasetDataManage {
         Map<String, Object> data = provider.fetchResultField(datasourceRequest);
 
         Map<String, Object> map = new LinkedHashMap<>();
-        // 重新构造data
+        // provider 返回数组结构，这里按字段别名恢复为前端可读对象结构
         Map<String, Object> previewData = buildPreviewData(data, fields, desensitizationList, encode);
         map.put("data", previewData);
         if (ObjectUtils.isEmpty(datasetGroupInfoDTO.getId())) {
@@ -335,6 +355,9 @@ public class DatasetDataManage {
         return map;
     }
 
+    /**
+     * 查询数据集总行数，目录节点或不存在的数据集返回 0
+     */
     public Long datasetTotal(Long datasetGroupId) throws Exception {
         DatasetGroupInfoDTO dto = datasetGroupManage.getForCount(datasetGroupId);
         if (ObjectUtils.isEmpty(dto)) return 0L;
@@ -344,6 +367,9 @@ public class DatasetDataManage {
         return 0L;
     }
 
+    /**
+     * 查询带当前行权限过滤的数据集行数，异常时返回空值供调用方降级处理
+     */
     public Long datasetCountWithWhere(Long datasetGroupId) {
         try {
             DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.getForCount(datasetGroupId);
@@ -351,7 +377,7 @@ public class DatasetDataManage {
             sqlMap = datasetSyncQueryManage.routeIfSynced(datasetGroupInfoDTO, sqlMap);
             String sql = (String) sqlMap.get("sql");
 
-            // 获取allFields
+            // 计数前仍需准备字段别名，行权限和排序构造依赖完整字段列表
             List<DatasetTableFieldDTO> fields = datasetGroupInfoDTO.getAllFields();
             if (ObjectUtils.isEmpty(fields)) {
                 CrestException.throwException(Translator.get("i18n_no_fields"));
@@ -386,7 +412,7 @@ public class DatasetDataManage {
                 provider = ProviderFactory.getProvider(dsList.getFirst());
             }
 
-            // build query sql
+            // 先构造权限过滤后的明细 SQL，再交给通用计数入口包装 COUNT
             SQLMeta sqlMeta = new SQLMeta();
             Table2SQLObj.table2sqlobj(sqlMeta, null, "(" + sql + ")", crossDs);
             Field2SQLObj.field2sqlObj(sqlMeta, fields, fields, crossDs, dsMap, Utils.getParams(fields), null, pluginManage);
@@ -399,6 +425,9 @@ public class DatasetDataManage {
         }
     }
 
+    /**
+     * 对给定数据集 SQL 包装 COUNT 查询，可复用外部已加过滤的 SQL
+     */
     public Long datasetTotal(DatasetGroupInfoDTO datasetGroupInfoDTO, String s, ChartExtRequest request) throws Exception {
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, request);
         sqlMap = datasetSyncQueryManage.routeIfSynced(datasetGroupInfoDTO, sqlMap);
@@ -416,8 +445,7 @@ public class DatasetDataManage {
         String querySQL = "SELECT COUNT(*) FROM (" + sql + ") t_a_0";
         logger.debug("calcite data count sql: " + querySQL);
 
-        // 通过数据源请求数据
-        // 调用数据源的calcite获得data
+        // COUNT 查询同样需要携带自定义 SQL 参数的预编译值
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setQuery(querySQL);
         datasourceRequest.setDsList(dsMap);
@@ -438,6 +466,9 @@ public class DatasetDataManage {
         return 0L;
     }
 
+    /**
+     * 预览自定义 SQL 并记录执行日志，日志只在带表 ID 的编辑场景写入
+     */
     public Map<String, Object> previewSqlWithLog(PreviewSqlDTO dto) {
         if (dto == null) {
             return null;
@@ -464,6 +495,9 @@ public class DatasetDataManage {
         return map;
     }
 
+    /**
+     * 把 SQL 变量解析出的预编译参数复制到数据源请求，避免 provider 修改共享对象
+     */
     private void applyPreparedParams(DatasourceRequest datasourceRequest, Map<String, Object> sqlMap) {
         if (sqlMap == null) {
             return;
@@ -475,6 +509,9 @@ public class DatasetDataManage {
         datasourceRequest.setTableFieldWithValues(tableFieldWithValues.stream().map(TableFieldWithValue::copy).toList());
     }
 
+    /**
+     * 返回当前用户信息，SQL 变量默认值解析会用它计算用户相关变量
+     */
     private UserFormVO getUserEntity() {
         if (getRowPermissionsApi() == null) {
             return null;
@@ -482,6 +519,9 @@ public class DatasetDataManage {
         return getRowPermissionsApi().getUserById(AuthUtils.getUser().getUserId());
     }
 
+    /**
+     * 预览单段自定义 SQL，负责变量解析、方言转换、分页包装和结果字段还原
+     */
     public Map<String, Object> previewSql(PreviewSqlDTO dto) throws CrestException {
         CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(dto.getDatasourceId());
         DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
@@ -505,15 +545,14 @@ public class DatasetDataManage {
         datasourceRequest.setIsCross(dto.getIsCross());
         Provider provider = ProviderFactory.getProvider(datasourceSchemaDTO.getType());
 
-        // parser sql params and replace default value
-
+        // 先解析 SQL 参数并替换默认值，跨源时还要保留预编译参数上下文
         String s = new String(Base64.getDecoder().decode(dto.getSql()));
         SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(datasetSQLManage.subPrefixSuffixChar(s), dto.getSqlVariableDetails(), true, true, null, dto.getIsCross(), dsMap, pluginManage, getUserEntity());
         String originSql = sqlResult.getSql();
         datasourceRequest.setTableFieldWithValues(sqlResult.getTableFieldWithValues());
         originSql = provider.replaceComment(originSql);
 
-        // sql 作为临时表，外层加上limit
+        // 将自定义 SQL 包装为临时表，再在外层追加分页限制。
         String sql;
         if (dto.getIsCross()) {
             DatasetTableDTO currentDs = new DatasetTableDTO();
@@ -521,12 +560,13 @@ public class DatasetDataManage {
             currentDs.setType("sql");
             String tableSchema = datasetSQLManage.putObj2Map(dsMap, currentDs, dto.getIsCross());
             sql = SqlUtils.addSchema(originSql, tableSchema);
+            sql = translatePreviewSql(sql, datasourceSchemaDTO);
             if (Utils.isNeedOrder(List.of(datasourceSchemaDTO.getType()))) {
-                // 先根据sql获取表字段
+                // 需要稳定排序的数据源先探测首个字段，再用它构造预览排序
                 String sqlField = SQLUtils.buildOriginPreviewSql(sql, 0, 0);
+                sqlField = translatePreviewSql(sqlField, datasourceSchemaDTO);
                 datasourceRequest.setQuery(sqlField);
 
-                // 获取数据源表的原始字段
                 List<TableField> list = provider.fetchTableField(datasourceRequest);
                 if (ObjectUtils.isEmpty(list)) {
                     return null;
@@ -537,15 +577,14 @@ public class DatasetDataManage {
             }
         } else {
             if (Utils.isNeedOrder(List.of(datasourceSchemaDTO.getType()))) {
-                // 先根据sql获取表字段
+                // 单源 SQL 先通过占位符包装探测字段，避免直接拼接影响方言转换
                 String sqlField = SQLUtils.buildOriginPreviewSql(SqlPlaceholderConstants.TABLE_PLACEHOLDER, 0, 0);
 
                 sqlField = provider.transSqlDialect(sqlField, datasourceRequest.getDsList());
-                // replace placeholder
-                sqlField = provider.replaceTablePlaceHolder(sqlField, originSql);
+                // 方言转换完成后再替换为原始 SQL，并执行函数翻译
+                sqlField = replacePreviewTablePlaceholderAndTranslate(provider, sqlField, originSql, datasourceSchemaDTO);
                 datasourceRequest.setQuery(sqlField);
 
-                // 获取数据源表的原始字段
                 List<TableField> list = provider.fetchTableField(datasourceRequest);
                 if (ObjectUtils.isEmpty(list)) {
                     return null;
@@ -555,14 +594,14 @@ public class DatasetDataManage {
                 sql = SQLUtils.buildOriginPreviewSql(SqlPlaceholderConstants.TABLE_PLACEHOLDER, 100, 0);
             }
             sql = provider.transSqlDialect(sql, datasourceRequest.getDsList());
-            // replace placeholder
-            sql = provider.replaceTablePlaceHolder(sql, originSql);
+            // 最终预览 SQL 使用同一占位符替换路径，保证函数翻译规则一致
+            sql = replacePreviewTablePlaceholderAndTranslate(provider, sql, originSql, datasourceSchemaDTO);
         }
 
         logger.debug("calcite data preview sql: " + sql);
         datasourceRequest.setQuery(sql);
         Map<String, Object> data = provider.fetchResultField(datasourceRequest);
-        // 重新构造data
+        // 自定义 SQL 的字段来自 provider 探测结果，需转回数据集字段 DTO
         List<TableField> fList = (List<TableField>) data.get("fields");
         List<DatasetTableFieldDTO> fields = transFields(fList, false);
         Map<String, Object> previewData = buildPreviewData(data, fields, new HashMap<>(), false);
@@ -572,6 +611,23 @@ public class DatasetDataManage {
         return map;
     }
 
+    /**
+     * 替换预览 SQL 的表占位符，并执行数据源函数翻译
+     */
+    String replacePreviewTablePlaceholderAndTranslate(Provider provider, String sql, String originSql, DatasourceSchemaDTO datasource) {
+        return translatePreviewSql(provider.replaceTablePlaceHolder(sql, originSql), datasource);
+    }
+
+    /**
+     * 按数据源类型翻译自定义 SQL 中的平台函数
+     */
+    private String translatePreviewSql(String sql, DatasourceSchemaDTO datasource) {
+        return CrestSqlFunctionTranslator.translate(sql, datasource);
+    }
+
+    /**
+     * 将 provider 的二维数组结果转为字段名对象列表，并按列权限规则执行脱敏
+     */
     public Map<String, Object> buildPreviewData(Map<String, Object> data, List<DatasetTableFieldDTO> fields, Map<String, ColumnPermissionItem> desensitizationList, boolean isEncode) {
         Map<String, Object> map = new LinkedHashMap<>();
         List<String[]> dataList = (List<String[]>) data.get("data");
@@ -583,7 +639,7 @@ public class DatasetDataManage {
                 if (row.length > 0) {
                     for (int j = 0; j < fields.size(); j++) {
                         String res = row[j];
-                        // 如果字段类型是数值类型的小数，则去除科学计数
+                        // 小数值统一展开科学计数法，避免前端枚举和预览展示不一致
                         if (fields.get(j).getFieldType() == 3 && Strings.CI.contains(res, "E")) {
                             BigDecimal bigDecimal = new BigDecimal(res);
                             res = String.format("%.8f", bigDecimal);
@@ -608,8 +664,11 @@ public class DatasetDataManage {
         return map;
     }
 
+    /**
+     * 为字段列表补齐引擎字段名，新增字段沿用联合 SQL 的字段别名规则
+     */
     public void buildFieldName(Map<String, Object> sqlMap, List<DatasetTableFieldDTO> fields) {
-        // 获取内层union sql和字段
+        // 联合 SQL 返回的字段列表是普通字段别名的权威来源
         List<DatasetTableFieldDTO> unionFields = (List<DatasetTableFieldDTO>) sqlMap.get("field");
         for (DatasetTableFieldDTO datasetTableFieldDTO : fields) {
             DatasetTableFieldDTO dto = datasetTableFieldManage.selectById(datasetTableFieldDTO.getId());
@@ -643,6 +702,9 @@ public class DatasetDataManage {
         }
     }
 
+    /**
+     * 根据编辑态数据集和字段配置查询单字段枚举值，不额外应用列权限过滤
+     */
     public List<String> getFieldEnumDs(EnumObj map) throws Exception {
         DatasetTableFieldDTO field = map.getField();
         DatasetGroupInfoDTO datasetGroupInfoDTO = map.getDataset();
@@ -663,11 +725,11 @@ public class DatasetDataManage {
             sql = Utils.replaceSchemaAlias(sql, dsMap);
         }
 
-        // build query sql
+        // 枚举查询只选择目标字段，并在 provider 支持时使用 DISTINCT 降低返回量
         SQLMeta sqlMeta = new SQLMeta();
         Table2SQLObj.table2sqlobj(sqlMeta, null, "(" + sql + ")", crossDs);
 
-        // 获取allFields
+        // 查询字段需要先补齐引擎字段名，后续 SQL 生成依赖别名
         List<DatasetTableFieldDTO> fields = Collections.singletonList(field);
         buildFieldName(sqlMap, fields);
 
@@ -698,8 +760,7 @@ public class DatasetDataManage {
         querySQL = provider.rebuildSQL(querySQL, sqlMeta, crossDs, dsMap);
         logger.debug("calcite data enum sql: " + querySQL);
 
-        // 通过数据源请求数据
-        // 调用数据源的calcite获得data
+        // 枚举值查询复用 provider 读取路径，并携带自定义 SQL 参数值
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setQuery(querySQL);
         datasourceRequest.setDsList(dsMap);
@@ -736,11 +797,14 @@ public class DatasetDataManage {
         return previewData;
     }
 
+    /**
+     * 查询多个字段的枚举值并合并去重，适用于查询组件的备选项加载
+     */
     public List<String> getFieldEnum(MultFieldValuesRequest multFieldValuesRequest) throws Exception {
         if (CollectionUtils.isEmpty(multFieldValuesRequest.getFieldIds())) {
             return Collections.emptyList();
         }
-        // 根据前端传的查询组件field ids，获取所有字段枚举值并去重合并
+        // 每个字段独立生成枚举 SQL，最后按出现顺序合并去重
         List<List<String>> list = new ArrayList<>();
         for (Long id : new LinkedHashSet<>(multFieldValuesRequest.getFieldIds())) {
             DatasetTableFieldDTO field = datasetTableFieldManage.selectById(id);
@@ -748,10 +812,10 @@ public class DatasetDataManage {
                 CrestException.throwException(Translator.get("i18n_no_field"));
             }
             List<DatasetTableFieldDTO> allFields = new ArrayList<>();
-            // 根据图表计算字段，获取数据集
+            // 图表计算字段会参与表达式解析，需要并入可引用字段列表
             Long datasetGroupId = field.getDatasetGroupId();
 
-            // check permission
+            // 查询组件可能来自门户发布页，门户授权命中时允许读取对应数据集
             BusiPerCheckDTO dto = new BusiPerCheckDTO();
             dto.setId(datasetGroupId);
             dto.setAuthEnum(AuthEnum.READ);
@@ -779,11 +843,11 @@ public class DatasetDataManage {
                 sql = Utils.replaceSchemaAlias(sql, dsMap);
             }
 
-            // build query sql
+            // 枚举 SQL 以数据集 SQL 为临时表，并叠加行权限过滤
             SQLMeta sqlMeta = new SQLMeta();
             Table2SQLObj.table2sqlobj(sqlMeta, null, "(" + sql + ")", crossDs);
 
-            // 获取allFields
+            // 字段权限会返回脱敏规则，后续结果值需要按同一规则处理
             List<DatasetTableFieldDTO> fields = Collections.singletonList(field);
             Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
             fields = permissionManage.filterColumnPermissions(fields, desensitizationList, datasetGroupInfoDTO.getId(), null);
@@ -829,8 +893,7 @@ public class DatasetDataManage {
             querySQL = provider.rebuildSQL(querySQL, sqlMeta, crossDs, dsMap);
             logger.debug("calcite data enum sql: " + querySQL);
 
-            // 通过数据源请求数据
-            // 调用数据源的calcite获得data
+            // 枚举查询同样要携带预编译参数，保障自定义 SQL 过滤条件生效
             DatasourceRequest datasourceRequest = new DatasourceRequest();
             datasourceRequest.setQuery(querySQL);
             datasourceRequest.setDsList(dsMap);
@@ -873,7 +936,7 @@ public class DatasetDataManage {
             }
         }
 
-        // 重新构造data
+        // 多字段枚举合并为单一列表，LinkedHashSet 保留原始查询顺序
         Set<String> result = new LinkedHashSet<>();
         for (List<String> l : list) {
             result.addAll(l);
@@ -881,6 +944,9 @@ public class DatasetDataManage {
         return result.stream().toList();
     }
 
+    /**
+     * 查询联动组件的键值对象枚举，支持查询字段、展示字段、排序字段和组件过滤条件
+     */
     public List<Map<String, Object>> getFieldEnumObj(EnumValueRequest request) throws Exception {
         List<Long> ids = new ArrayList<>();
         if (ObjectUtils.isNotEmpty(request.getQueryId())) {
@@ -905,7 +971,7 @@ public class DatasetDataManage {
         Map<Long, DatasourceSchemaDTO> dsMap = null;
 
         if (ObjectUtils.isNotEmpty(request.getSortId())) {
-            // 如果排序字段和查询字段显示字段不一致，则加入到查询列表中
+            // 排序字段不在查询或展示字段内时，也要加入 SELECT 才能参与排序
             if (!request.getSortId().equals(request.getQueryId()) && !request.getSortId().equals(request.getDisplayId())) {
                 ids.add(request.getSortId());
             }
@@ -919,10 +985,10 @@ public class DatasetDataManage {
                 CrestException.throwException(Translator.get("i18n_no_field"));
             }
 
-            // 根据图表计算字段，获取数据集
+            // 每个请求字段都必须来自同一个数据集，后续 SQLMeta 会累积字段表达式
             Long datasetGroupId = field.getDatasetGroupId();
 
-            // check permission
+            // 发布门户读取和普通数据集读取共用同一权限入口
             BusiPerCheckDTO dto = new BusiPerCheckDTO();
             dto.setId(datasetGroupId);
             dto.setAuthEnum(AuthEnum.READ);
@@ -951,12 +1017,12 @@ public class DatasetDataManage {
                 sql = Utils.replaceSchemaAlias(sql, dsMap);
             }
 
-            // build query sql
+            // 所有字段共享同一个数据集 SQL 临时表
             Table2SQLObj.table2sqlobj(sqlMeta, null, "(" + sql + ")", crossDs);
             fields.add(field);
         }
 
-        // 获取allFields
+        // 列权限过滤可能删除字段，也可能要求对返回值脱敏
         Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
         fields = permissionManage.filterColumnPermissions(fields, desensitizationList, datasetGroupInfoDTO.getId(), null);
         if (ObjectUtils.isEmpty(fields)) {
@@ -976,11 +1042,11 @@ public class DatasetDataManage {
             rowPermissionsTree = permissionManage.getRowPermissionsTree(datasetGroupInfoDTO.getId(), user.getUserId());
         }
 
-        //组件过滤条件
+        // 组件过滤条件只保留当前数据集内的字段，SQL 参数型过滤交由变量解析阶段处理
         List<ChartExtFilterDTO> extFilterList = new ArrayList<>();
         if (ObjectUtils.isNotEmpty(request.getFilter())) {
             for (ChartExtFilterDTO filterDTO : request.getFilter()) {
-                // 解析多个fieldId,fieldId是一个逗号分隔的字符串
+                // fieldId 可能是逗号分隔的多个字段，树形过滤和普通过滤分别展开
                 String fieldId = filterDTO.getFieldId();
                 if (filterDTO.getIsTree() == null) {
                     filterDTO.setIsTree(false);
@@ -1040,7 +1106,7 @@ public class DatasetDataManage {
             }
         }
 
-        // 搜索备选项
+        // 搜索词作为展示字段的 like 条件追加，用于远程搜索备选项
         if (StringUtils.isNotEmpty(request.getSearchText())) {
             ChartExtFilterDTO dto = new ChartExtFilterDTO();
             DatasetTableFieldDTO field = null;
@@ -1057,7 +1123,7 @@ public class DatasetDataManage {
             extFilterList.add(dto);
         }
 
-        // 排序
+        // 指定排序字段时不再对单字段结果强制 DISTINCT，避免排序字段被折叠
         boolean sortDistinct = true;
         if (ObjectUtils.isNotEmpty(request.getSortId())) {
             DatasetTableFieldDTO field = datasetTableFieldManage.selectById(request.getSortId());
@@ -1097,8 +1163,7 @@ public class DatasetDataManage {
         querySQL = provider.rebuildSQL(querySQL, sqlMeta, crossDs, dsMap);
         logger.debug("calcite data enum sql: " + querySQL);
 
-        // 通过数据源请求数据
-        // 调用数据源的calcite获得data
+        // 联动枚举请求同样走统一 provider，跨源时由默认 provider 分发
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setQuery(querySQL);
         datasourceRequest.setDsList(dsMap);
@@ -1154,16 +1219,19 @@ public class DatasetDataManage {
         return previewData;
     }
 
+    /**
+     * 查询多级树形筛选值，按字段顺序构建层级节点并合并重复路径
+     */
     public List<BaseTreeNodeDTO> getFieldValueTree(MultFieldValuesRequest multFieldValuesRequest) throws Exception {
         List<Long> ids = multFieldValuesRequest.getFieldIds();
         if (ids.isEmpty()) {
             CrestException.throwException("no field selected.");
         }
-        // 根据前端传的查询组件field ids，获取所有字段枚举值并去重合并
+        // 多级树要求每一列代表一层，后续会按行逐层生成节点
         List<List<String>> list = new ArrayList<>();
         List<DatasetTableFieldDTO> fields = new ArrayList<>();
 
-        // 根据图表计算字段，获取数据集
+        // 以第一个字段确定数据集，再加载图表计算字段作为表达式解析上下文
         List<DatasetTableFieldDTO> allFields = new ArrayList<>();
         DatasetTableFieldDTO field = datasetTableFieldManage.selectById(ids.getFirst());
         Long datasetGroupId = field.getDatasetGroupId();
@@ -1185,7 +1253,7 @@ public class DatasetDataManage {
             sql = Utils.replaceSchemaAlias(sql, dsMap);
         }
 
-        // build query sql
+        // 树形值查询仍以数据集 SQL 为临时表，并按字段顺序选择层级列
         SQLMeta sqlMeta = new SQLMeta();
         Table2SQLObj.table2sqlobj(sqlMeta, null, "(" + sql + ")", crossDs);
 
@@ -1194,7 +1262,6 @@ public class DatasetDataManage {
             if (f == null) {
                 CrestException.throwException(Translator.get("i18n_no_field"));
             }
-            // 获取allFields
             fields.add(f);
         }
 
@@ -1224,11 +1291,11 @@ public class DatasetDataManage {
             provider = ProviderFactory.getProvider(dsList.getFirst());
         }
 
-        //组件过滤条件
+        // 外部组件过滤会裁剪树形值，参数型过滤跳过以避免重复绑定 SQL 变量
         List<ChartExtFilterDTO> extFilterList = new ArrayList<>();
         if (ObjectUtils.isNotEmpty(multFieldValuesRequest.getFilter())) {
             for (ChartExtFilterDTO filterDTO : multFieldValuesRequest.getFilter()) {
-                // 解析多个fieldId,fieldId是一个逗号分隔的字符串
+                // fieldId 可能包含多个字段，树形过滤保留字段列表，普通过滤拆成单字段条件
                 String fieldId = filterDTO.getFieldId();
                 if (filterDTO.getIsTree() == null) {
                     filterDTO.setIsTree(false);
@@ -1302,8 +1369,7 @@ public class DatasetDataManage {
         querySQL = provider.rebuildSQL(querySQL, sqlMeta, crossDs, dsMap);
         logger.debug("filter tree sql: " + querySQL);
 
-        // 通过数据源请求数据
-        // 调用数据源的calcite获得data
+        // 树形枚举请求携带预编译参数，保持自定义 SQL 参数过滤一致
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setQuery(querySQL);
         datasourceRequest.setDsList(dsMap);
@@ -1313,7 +1379,7 @@ public class DatasetDataManage {
         Map<String, Object> data = provider.fetchResultField(datasourceRequest);
         List<String[]> rows = (List<String[]>) data.get("data");
 
-        // 重新构造data
+        // 空值只能出现在路径尾部，中间层为空后又出现非空值的行会破坏树结构
         Set<String> pkSet = new HashSet<>();
         rows = rows.stream().filter(row -> {
             boolean hasEmpty = false;
@@ -1321,9 +1387,11 @@ public class DatasetDataManage {
             for (String s : row) {
                 if (StringUtils.isBlank(s)) {
                     emptyCount++;
-                    hasEmpty = true; // 标记已遇到第一个null
+                    // 标记已遇到第一个空层级
+                    hasEmpty = true;
                 } else if (hasEmpty) {
-                    return false; // 在null后出现非null元素，不符合要求
+                    // 空层级之后又出现非空层级，说明路径不连续
+                    return false;
                 }
             }
             return emptyCount != row.length;
@@ -1333,6 +1401,9 @@ public class DatasetDataManage {
         return tree;
     }
 
+    /**
+     * 将一行层级值拆成树节点，使用累积路径生成稳定主键并去重
+     */
     private List<BaseTreeNodeDTO> buildTreeNode(String[] row, Set<String> pkSet) {
         List<BaseTreeNodeDTO> nodes = new ArrayList<>();
         List<String> parentPkList = new ArrayList<>();
@@ -1354,10 +1425,16 @@ public class DatasetDataManage {
 
     }
 
+    /**
+     * 用真实 schema 标识替换 SQL 中的内部 schema 别名
+     */
     private static String replaceSchemaAlias(String sql, String schemaAlias, String replacement) {
         return SqlPlaceholderUtils.replaceIdentifier(sql, schemaAlias, replacement);
     }
 
+    /**
+     * 移除 SQL 中的内部 schema 前缀，适用于无显式 schema 的单源查询
+     */
     private static String removeSchemaAliasPrefix(String sql, String schemaAlias) {
         return SqlPlaceholderUtils.removeIdentifierPrefix(sql, schemaAlias);
     }

@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/11/6 17:43
+ * 模板市场预览响应。
  */
 @Data
 @NoArgsConstructor

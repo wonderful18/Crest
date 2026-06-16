@@ -14,6 +14,9 @@ import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * 为前端静态资源应用缓存和安全响应头策略
+ */
 @Component
 public class HtmlResourceFilter implements Filter, Ordered {
 
@@ -41,15 +44,24 @@ public class HtmlResourceFilter implements Filter, Ordered {
     @Value("${crest.version:}")
     private String configuredVersion;
 
+    /**
+     * 设置过滤器执行顺序
+     */
     @Override
     public int getOrder() {
         return 99;
     }
 
+    /**
+     * 初始化过滤器配置
+     */
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
     }
 
+    /**
+     * 处理前端资源版本兼容转发并应用响应头
+     */
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         if (servletRequest instanceof HttpServletRequest request
@@ -64,6 +76,9 @@ public class HtmlResourceFilter implements Filter, Ordered {
         filterChain.doFilter(servletRequest, httpResponse);
     }
 
+    /**
+     * 将带旧版本号的前端资源转发到当前版本资源
+     */
     private boolean forwardStaleFrontendAsset(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String method = request.getMethod();
         if (!"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method)) {
@@ -101,6 +116,9 @@ public class HtmlResourceFilter implements Filter, Ordered {
         return true;
     }
 
+    /**
+     * 获取当前前端资源版本号
+     */
     private String currentVersion() {
         if (configuredVersion != null && !configuredVersion.isBlank()) {
             return configuredVersion.trim();
@@ -109,6 +127,9 @@ public class HtmlResourceFilter implements Filter, Ordered {
         return pkg == null ? null : pkg.getImplementationVersion();
     }
 
+    /**
+     * 为前端资源响应设置禁用缓存和安全响应头
+     */
     private void applyNoCache(HttpServletResponse response) {
         applySecurityHeaders(response);
         if (httpCache == null || !httpCache) {
@@ -118,6 +139,9 @@ public class HtmlResourceFilter implements Filter, Ordered {
         }
     }
 
+    /**
+     * 设置前端页面所需的基础安全响应头
+     */
     private void applySecurityHeaders(HttpServletResponse response) {
         response.setHeader("X-Frame-Options", "SAMEORIGIN");
         response.setHeader("X-Content-Type-Options", "nosniff");
@@ -127,6 +151,9 @@ public class HtmlResourceFilter implements Filter, Ordered {
         response.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=()");
     }
 
+    /**
+     * 销毁过滤器并执行默认清理逻辑
+     */
     @Override
     public void destroy() {
         Filter.super.destroy();

@@ -13,12 +13,24 @@ import java.util.*;
 
 @Component
 @SuppressWarnings("unchecked")
+/**
+ * 指标卡图表处理器
+ */
 public class IndicatorHandler extends YoyChartHandler {
+    /**
+     * 指标卡使用自定义渲染器
+     */
     @Getter
     private String render = "custom";
+    /**
+     * 当前处理器对应的图表类型
+     */
     @Getter
     private String type = "indicator";
 
+    /**
+     * 构建指标卡普通数据结果
+     */
     @Override
     public Map<String, Object> buildNormalResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
         boolean isDrill = filterResult.getFilterList().stream().anyMatch(ele -> ele.getFilterType() == 1);
@@ -27,12 +39,18 @@ public class IndicatorHandler extends YoyChartHandler {
         return ChartDataBuild.transNormalChartData(xAxis, yAxis, view, data, isDrill);
     }
 
+    /**
+     * 计算指标卡数据前补齐同环比所需的 X 轴字段
+     */
     @Override
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         this.setIndicatorHandlerXAxis(formatResult, filterResult);
         return (T) super.calcChartResult(view, formatResult, filterResult, sqlMap, sqlMeta, provider);
     }
 
+    /**
+     * 指标卡默认只保留指标轴，维度轴按同环比配置动态补齐
+     */
     @Override
     public AxisFormatResult formatAxis(ChartViewDTO view) {
         var axisMap = new HashMap<ChartAxis, List<ChartViewFieldDTO>>();
@@ -43,6 +61,9 @@ public class IndicatorHandler extends YoyChartHandler {
         return new AxisFormatResult(axisMap, context);
     }
 
+    /**
+     * 根据同环比配置从全部字段中选择指标卡维度字段
+     */
     private void setIndicatorHandlerXAxis(AxisFormatResult formatResult, CustomFilterResult filterResult) {
         var xAxis = formatResult.getAxisMap().get(ChartAxis.xAxis);
         var yAxis = formatResult.getAxisMap().get(ChartAxis.yAxis);

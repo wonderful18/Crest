@@ -10,6 +10,7 @@ import java.util.List;
 
 
 @Mapper
+// 定义当前业务对象的核心职责
 public interface ExtVisualizationTemplateMapper{
 
     List<TemplateManageDTO> findTemplateList(TemplateManageRequest request);
@@ -34,6 +35,8 @@ public interface ExtVisualizationTemplateMapper{
 
     List<AppCoreChartViewVO> findAppViewInfo(@Param("viewIds") List<Long> viewIds);
 
+    List<AppCoreChartViewVO> findAppSnapshotViewInfo(@Param("viewIds") List<Long> viewIds);
+
     List<AppCoreDatasetGroupVO> findAppDatasetGroupInfo(@Param("dsIds") List<Long> dsIds);
 
     List<AppCoreDatasetTableVO> findAppDatasetTableInfo(@Param("dsIds") List<Long> dsIds);
@@ -53,5 +56,15 @@ public interface ExtVisualizationTemplateMapper{
     List<VisualizationLinkJumpInfoVO> findAppLinkJumpInfoInfo(@Param("dvId") Long dvId);
 
     List<VisualizationLinkJumpTargetViewInfoVO> findAppLinkJumpTargetViewInfoInfo(@Param("dvId") Long dvId);
+
+    List<VisualizationLinkageVO> findAppSnapshotLinkageInfo(@Param("dvId") Long dvId);
+
+    List<VisualizationLinkageFieldVO> findAppSnapshotLinkageFieldInfo(@Param("dvId") Long dvId);
+
+    List<VisualizationLinkJumpVO> findAppSnapshotLinkJumpInfo(@Param("dvId") Long dvId);
+
+    List<VisualizationLinkJumpInfoVO> findAppSnapshotLinkJumpInfoInfo(@Param("dvId") Long dvId);
+
+    List<VisualizationLinkJumpTargetViewInfoVO> findAppSnapshotLinkJumpTargetViewInfoInfo(@Param("dvId") Long dvId);
 
 }

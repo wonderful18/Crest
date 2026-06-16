@@ -18,9 +18,11 @@ import EmptyBackground from '../../components/empty-background/src/EmptyBackgrou
 import { iconChartMap } from '@/components/icon-group/chart-list'
 import { useI18n } from '@/hooks/web/useI18n'
 const dvMainStore = dvMainStoreWithOut()
+// 控制复用预览区域重新渲染，切换组件时通过短暂卸载清理旧组件状态。
 const viewShow = ref(true)
 const { t } = useI18n()
 
+// 接收画布、组件和视图数据，用于在复用弹窗内渲染接近真实画布的预览。
 const props = defineProps({
   canvasStyleData: {
     type: Object,
@@ -42,12 +44,15 @@ const props = defineProps({
 
 const { canvasStyleData, componentData, canvasViewInfo, dvInfo } = toRefs(props)
 
+// 当前画布样式复用画布渲染工具，保证预览尺寸和背景与正式画布一致。
 const canvasStyle = computed(() => getCanvasStyle(canvasStyleData.value))
 
+// 过滤树节点时只保留已勾选组件，空筛选值表示展示全部。
 const filterNodeMethod = (value, data) => {
   return !value || data.multiplexActive
 }
 
+// 切换当前预览组件，并强制预览区重新挂载，避免组件内部缓存串台。
 const nodeClick = data => {
   const components = componentData.value.filter(ele => ele.id === data.id)
   state.multiplexInfo = components[0]
@@ -57,8 +62,10 @@ const nodeClick = data => {
   })
 }
 
+// 复用信息树实例用于过滤和设置当前选中节点。
 const multiplexInfoTree = ref(null)
 
+// 维护复用预览选择状态，sourceMultiplexInfo 保留来源组件信息。
 const state = reactive({
   sourceMultiplexInfo: {},
   showSelected: false,
@@ -73,8 +80,10 @@ const state = reactive({
   },
   multiplexInfo: null
 })
+// 当前可复用目标组件列表，由画布组件数据初始化生成。
 const curMultiplexTargetComponentsInfo = ref([])
 
+// 同步复用目标勾选变化，勾选后立即预览该组件。
 const targetViewCheckedChange = (val, data) => {
   nextTick(() => {
     multiplexingCheck(val, data)
@@ -83,6 +92,7 @@ const targetViewCheckedChange = (val, data) => {
   })
 }
 
+// 非图表组件使用固定图标映射，图表组件使用图表类型图标。
 const iconMap = {
   bar: bar,
   'db-more-web': dbMoreWeb,
@@ -98,15 +108,18 @@ const iconMap = {
   'scroll-text': scrollText
 }
 
+// 获取组件在树节点中展示的图标，用户图表从视图元数据中读取图表类型。
 const getIconName = item => {
   if (item.component === 'UserView') {
     const viewInfo = canvasViewInfo.value[item.id]
+    // 用户视图图标跟随真实图表类型，避免复用列表只显示通用组件图标。
     return iconChartMap[`${viewInfo.type}`]
   } else {
     return iconMap[item.icon]
   }
 }
 
+// 监听画布信息变化并重新初始化，支持复用弹窗中切换不同画布来源。
 watch(
   () => dvInfo.value,
   () => {
@@ -116,6 +129,7 @@ watch(
   }
 )
 
+// 监听只看已选开关并过滤树节点。
 watch(
   () => state.showSelected,
   newValue => {
@@ -123,6 +137,7 @@ watch(
   }
 )
 
+// 初始化可复用组件树，并清空当前 store 中暂存的复用组件集合。
 const init = () => {
   dvMainStore.initCurMultiplexingComponents()
   curMultiplexTargetComponentsInfo.value = []
@@ -137,16 +152,17 @@ const init = () => {
   })
 }
 
+// 同步复用组件选中状态，store 中只保存最终确认时需要的组件和组件 id。
 const multiplexingCheck = (val, data) => {
   if (val) {
     const components = componentData.value.filter(ele => ele.id === data.id)
-    // push
+    // 勾选后写入待复用集合，确认弹窗时由父级一次性落盘。
     dvMainStore.addCurMultiplexingComponent({
       component: components[0],
       componentId: data.id
     })
   } else {
-    // remove
+    // 取消勾选只移除暂存集合，不影响画布上的原组件。
     dvMainStore.removeCurMultiplexingComponentWithId(data.id)
   }
 }
@@ -159,6 +175,7 @@ onBeforeMount(() => {
 <template>
   <el-row class="preview">
     <el-col :span="6" style="height: 100%; overflow-y: auto">
+      <!-- 左侧树用于选择复用目标，筛选开关只影响展示，不改变已勾选状态。 -->
       <el-row class="tree-head">
         <span class="head-text">{{ t('visualization.to_select_view') }}</span>
         <span class="head-filter"
@@ -208,6 +225,7 @@ onBeforeMount(() => {
     <el-col :span="18" class="preview-show">
       <div class="view-show-content-outer">
         <div class="view-show-content">
+          <!-- 预览区复用正式画布组件包装器，确保复用前看到的样式和运行态一致。 -->
           <ComponentWrapper
             v-if="viewShow && state.multiplexInfo && state.multiplexInfo.id"
             class="wrapper-content"
@@ -237,6 +255,7 @@ onBeforeMount(() => {
 }
 
 .preview {
+  // 复用弹窗主体固定左右布局，内部滚动由树和预览区域各自承担。
   border-radius: 6px;
   width: 100%;
   height: 100% !important;
@@ -262,9 +281,10 @@ onBeforeMount(() => {
 .ellip {
   margin-left: 10px;
   margin-right: 10px;
-  overflow: hidden; /*超出部分隐藏*/
-  white-space: nowrap; /*不换行*/
-  text-overflow: ellipsis; /*超出部分文字以...显示*/
+  /* 复用弹窗中的字段标题保持单行省略，避免挤压右侧预览区域。 */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   text-align: center;
   background-color: #f7f8fa;
   color: #3d4d66;
@@ -275,9 +295,10 @@ onBeforeMount(() => {
 }
 
 .select-filed {
-  overflow: hidden; /*超出部分隐藏*/
-  white-space: nowrap; /*不换行*/
-  text-overflow: ellipsis; /*超出部分文字以...显示*/
+  /* 选择项名称沿用单行省略，和树节点展示规则保持一致。 */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: #3d4d66;
   font-size: 12px;
   border-radius: 3px;
@@ -304,6 +325,7 @@ onBeforeMount(() => {
   overflow-y: auto;
 }
 .custom-tree-node {
+  // 树节点同时包含勾选框、图标和名称，宽度不足时由名称区域省略。
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -317,6 +339,7 @@ onBeforeMount(() => {
 }
 
 .tree-head {
+  // 树头部固定高度，右侧筛选开关保持和标题在同一行。
   height: 40px;
   line-height: 40px;
   font-size: 12px;

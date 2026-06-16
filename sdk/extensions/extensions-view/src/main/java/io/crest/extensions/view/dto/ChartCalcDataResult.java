@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
+// 定义接口请求或返回数据的传输结构
 public class ChartCalcDataResult {
     private Map<String, Object> data;
     private List<String[]> originData;
@@ -14,6 +15,6 @@ public class ChartCalcDataResult {
     private List<String[]> assistDataOriginList;
     private List<ChartSeniorAssistDTO> dynamicAssistFieldsOriginList;
     private Map<String, Object> context;
-    // TODO 数据源插件化之后换成整个请求对象
+    // 插件图表计算时保留最终查询 SQL，供后续执行链路复用。
     private String querySql;
 }

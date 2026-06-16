@@ -12,10 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 图表base dto，与core_table_view一致
- *
- * @author fit2cloud
- * @since 2023-04-23
+ * 图表基础数据对象，与 core_chart_view 表结构保持一致。
  */
 @Data
 public class ChartViewBaseDTO implements Serializable {

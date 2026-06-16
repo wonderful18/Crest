@@ -35,18 +35,28 @@ import { ProxyInfo, shareProxy } from './ShareProxy'
 import PwdTips from './pwd.vue'
 import ErrorTemplate from './ErrorTemplate.vue'
 import { useRoute } from 'vue-router_2'
+// 标记分享链接是否已被禁用
 const disableError = ref(true)
+// 标记移动端访问是否缺少必要的嵌入参数
 const peRequireError = ref(true)
+// 标记分享资源是否存在
 const linkExist = ref(false)
+// 控制移动端分享页加载状态
 const loading = ref(true)
+// 标记分享链接是否已过期
 const linkExp = ref(false)
+// 标记当前 iframe 访问环境是否非法
 const iframeError = ref(true)
+// 标记分享链接密码是否校验通过
 const pwdValid = ref(false)
 const dvMainStore = dvMainStoreWithOut()
+// 持有移动端预览画布实例
 const pcanvas = ref(null)
+// 保存当前分享资源类型
 const curType = ref('')
 const { t } = useI18n()
 const route = useRoute()
+// 保存分享票据校验结果和透传参数
 const state = reactive({
   ticketValidVO: {
     ticketValid: false,
@@ -54,6 +64,7 @@ const state = reactive({
     args: ''
   }
 })
+// 初始化移动端分享访问状态并加载可视化资源
 onMounted(async () => {
   const proxyInfo = (await shareProxy.loadProxy()) as ProxyInfo
   curType.value = route.query.targetDvType

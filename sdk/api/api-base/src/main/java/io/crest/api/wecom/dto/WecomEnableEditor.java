@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 @Schema(description = "开启状态切换器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class WecomEnableEditor implements Serializable {
 
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED)

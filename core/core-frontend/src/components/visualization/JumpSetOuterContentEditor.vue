@@ -10,20 +10,26 @@
 <script setup lang="ts">
 import { onBeforeUnmount, PropType, reactive, ref, toRefs } from 'vue'
 import CodeMirror from '@/views/visualized/data/dataset/form/SqlCodeEditor.vue'
+// 持有 CodeMirror 封装组件实例
 const myCm = ref(null)
+// 持有真实 CodeMirror 编辑器实例
 const mirror = ref(null)
+// 定义跳转内容编辑器接收的字段映射和跳转配置
 const props = defineProps({
   linkJumpInfoArray: Array as PropType<Array<Record<string, any>>>,
   linkJumpInfo: Object as PropType<Record<string, any>>
 })
 
 const { linkJumpInfo } = toRefs(props)
+// 保存字段名称自动补全映射和编辑器内容
 const state = reactive({
   name2Auto: [],
   content: ''
 })
+// 保存定时同步编辑器内容的任务句柄
 const timer = ref(null)
 
+// 获取当前编辑器光标位置
 const getCursor = view => {
   return (
     view?.state?.selection?.main?.from ??
@@ -33,6 +39,7 @@ const getCursor = view => {
   )
 }
 
+// 在当前光标位置插入字段占位符
 const insertFieldToCodeMirror = (value: string) => {
   if (!mirror.value) return
   const from = getCursor(mirror.value)
@@ -42,6 +49,7 @@ const insertFieldToCodeMirror = (value: string) => {
   })
 }
 
+// 在字段名称和字段 ID 之间转换跳转表达式内容
 const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
   if (!originName) {
     return originName
@@ -64,6 +72,7 @@ const setNameIdTrans = (from, to, originName, name2Auto?: string[]) => {
   return name2Id
 }
 
+// 初始化编辑器内容并定时同步跳转表达式
 const editorInit = content => {
   state.name2Auto = []
   if (!mirror.value) {

@@ -19,6 +19,7 @@ import java.util.List;
 @Tag(name = "内部资源交互")
 @ApiSupport(order = 998)
 @Hidden
+// 定义模块接口契约和数据传输结构
 public interface InteractiveAuthApi {
 
     @Operation(summary = "查询菜单ID")

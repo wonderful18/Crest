@@ -16,8 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/6/12 19:31
+ * 查询可视化背景资源，并按分类返回给编辑器使用。
  */
 @RestController
 @RequestMapping("/visualization-background")
@@ -26,6 +25,7 @@ public class VisualizationBackgroundService implements VisualizationBackgroundAp
     VisualizationBackgroundMapper mapper;
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public Map<String, List<VisualizationBackgroundVO>> findAll() {
         List<VisualizationBackground> result = mapper.selectList(new QueryWrapper<>());
         return result.stream().map(vb ->{

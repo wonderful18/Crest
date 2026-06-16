@@ -16,6 +16,7 @@ defineProps({
   }
 })
 
+// 生成跳转地址或资源链接
 const findUrl = name => {
   return new URL(`/src/assets/dynamic-background/${name}`, import.meta.url).href
 }

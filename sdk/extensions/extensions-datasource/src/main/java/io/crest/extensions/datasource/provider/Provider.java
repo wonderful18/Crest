@@ -31,11 +31,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @Author Junjun
+ * 数据源 Provider 抽象基类，封装连接、SQL 方言转换和 SSH 隧道等通用能力
  */
 @SuppressWarnings("deprecation")
 public abstract class Provider {
 
+    /**
+     * Provider 通用日志对象
+     */
     public static Logger logger = LoggerFactory.getLogger(Provider.class);
 
     /**
@@ -97,20 +100,35 @@ public abstract class Provider {
      */
     public abstract void hidePW(DatasourceDTO datasourceDTO);
 
+    /**
+     * 执行无返回数据的自定义数据源操作
+     */
     public void exec(DatasourceRequest datasourceRequest) {
 
     }
 
+    /**
+     * 执行更新语句并返回执行结果
+     */
     public ExecuteResult executeUpdate(DatasourceRequest datasourceRequest, String autoIncrementPkName) {
         return new ExecuteResult();
     }
 
 
+    /**
+     * 数据源 SSH 本地端口缓存
+     */
     @Getter
     private static final Map<Long, Integer> lPorts = new HashMap<>();
+    /**
+     * 数据源 SSH 会话缓存
+     */
     @Getter
     private static final Map<Long, Session> sessions = new HashMap<>();
 
+    /**
+     * 创建带查询超时时间的 Statement
+     */
     public Statement getStatement(Connection connection, int queryTimeout) {
         if (connection == null) {
             CrestException.throwException("Failed to get connection!");
@@ -125,9 +143,15 @@ public abstract class Provider {
         return stat;
     }
 
+    /**
+     * 重建适配目标数据源的 SQL
+     */
     public String rebuildSQL(String sql, SQLMeta sqlMeta, boolean crossDs, Map<Long, DatasourceSchemaDTO> dsMap) {
         return rebuildSQL(sql, sqlMeta, crossDs, dsMap, false);
     }
+    /**
+     * 重建适配目标数据源的 SQL，并支持 SQLBot 场景跳过真实连接
+     */
     public String rebuildSQL(String sql, SQLMeta sqlMeta, boolean crossDs, Map<Long, DatasourceSchemaDTO> dsMap, boolean forSqlbot) {
         logger.debug("calcite sql: " + sql);
         if (crossDs) {
@@ -138,12 +162,30 @@ public abstract class Provider {
         String tableDialect = sqlMeta.getTableDialect();
         s = replaceTablePlaceHolder(s, tableDialect);
         s = replaceCalcFieldPlaceHolder(s, sqlMeta);
+        s = translateCrestSqlFunctions(s, dsMap);
         return replaceMssqlN(s);
     }
 
+    /**
+     * 将内置 SQL 函数翻译为目标数据源函数
+     */
+    private String translateCrestSqlFunctions(String sql, Map<Long, DatasourceSchemaDTO> dsMap) {
+        if (dsMap == null || dsMap.isEmpty()) {
+            return sql;
+        }
+        DatasourceSchemaDTO value = dsMap.entrySet().iterator().next().getValue();
+        return CrestSqlFunctionTranslator.translate(sql, value);
+    }
+
+    /**
+     * 将 SQL 转换为目标数据源方言
+     */
     public String transSqlDialect(String sql, Map<Long, DatasourceSchemaDTO> dsMap) throws CrestException {
         return transSqlDialect(sql, dsMap, false);
     }
+    /**
+     * 将 SQL 转换为目标数据源方言，并可选择 SQLBot 轻量转换模式
+     */
     public String transSqlDialect(String sql, Map<Long, DatasourceSchemaDTO> dsMap, boolean forSqlbot) throws CrestException {
         DatasourceSchemaDTO value = dsMap.entrySet().iterator().next().getValue();
         ConnectionObj connection = null;
@@ -158,6 +200,7 @@ public abstract class Provider {
             SqlParser parser = SqlParser.create(sql, SqlParser.Config.DEFAULT.withLex(Lex.JAVA));
             SqlNode sqlNode = parser.parseStmt();
             String dialect = restoreUnicodeStringLiterals(sqlNode.toSqlString(getDialect(value)).toString());
+            dialect = CrestSqlFunctionTranslator.translate(dialect, value);
             if (Strings.CI.equals(value.getType(), "sqlServer")) {
                 dialect = dialect.replaceAll("\\[CONCAT]", "CONCAT");
             }
@@ -176,6 +219,9 @@ public abstract class Provider {
         return null;
     }
 
+    /**
+     * 替换 SQL 中的数据表占位符
+     */
     public String replaceTablePlaceHolder(String s, String placeholder) {
         s = s.replaceAll("\r\n", " ")
                 .replaceAll("\n", " ")
@@ -185,6 +231,9 @@ public abstract class Provider {
         return s;
     }
 
+    /**
+     * 还原 Calcite 转换后的 Unicode 字符串字面量
+     */
     protected static String restoreUnicodeStringLiterals(String sql) {
         if (StringUtils.isEmpty(sql)) {
             return sql;
@@ -209,6 +258,9 @@ public abstract class Provider {
         return result.toString();
     }
 
+    /**
+     * 判断当前位置是否为 Unicode 字符串字面量起点
+     */
     private static boolean isUnicodeStringLiteralStart(String sql, int index) {
         if (index + 2 >= sql.length()) {
             return false;
@@ -220,6 +272,9 @@ public abstract class Provider {
                 && (index == 0 || !isIdentifierCharacter(sql.charAt(index - 1)));
     }
 
+    /**
+     * 解析并追加 Unicode 字符串字面量
+     */
     private static int appendUnicodeStringLiteral(String sql, int start, StringBuilder result) {
         StringBuilder literal = new StringBuilder();
         literal.append('\'');
@@ -248,7 +303,7 @@ public abstract class Provider {
                         index += 5;
                         continue;
                     } catch (NumberFormatException ignored) {
-                        // Fall through and keep the original escape text when the sequence is malformed.
+                        // 转义序列异常时保留原始文本继续处理
                     }
                 }
             }
@@ -258,6 +313,9 @@ public abstract class Provider {
         return start;
     }
 
+    /**
+     * 解析并追加普通单引号字符串
+     */
     private static int appendQuotedString(String sql, int start, StringBuilder result) {
         result.append('\'');
         int index = start + 1;
@@ -277,6 +335,9 @@ public abstract class Provider {
         return index;
     }
 
+    /**
+     * 判断指定位置后四位是否为十六进制序列
+     */
     private static boolean isHexSequence(String value, int start) {
         for (int index = start; index < start + 4; index++) {
             if (Character.digit(value.charAt(index), 16) < 0) {
@@ -286,10 +347,16 @@ public abstract class Provider {
         return true;
     }
 
+    /**
+     * 判断字符是否可作为 SQL 标识符的一部分
+     */
     private static boolean isIdentifierCharacter(char value) {
         return Character.isLetterOrDigit(value) || value == '_' || value == '$';
     }
 
+    /**
+     * 为 SQL Server 中文字符串补充 N 前缀
+     */
     public String replaceMssqlN(String s) {
         Pattern compile = Pattern.compile("'-DENS-.*?'");
         Matcher matcher = compile.matcher(s);
@@ -300,6 +367,9 @@ public abstract class Provider {
         return s;
     }
 
+    /**
+     * 替换 SQL 中计算字段和过滤条件占位符
+     */
     public String replaceCalcFieldPlaceHolder(String s, SQLMeta sqlMeta) {
         Map<String, String> fieldsDialect = new HashMap<>();
         if (sqlMeta.getXFieldsDialect() != null && !sqlMeta.getXFieldsDialect().isEmpty()) {
@@ -326,6 +396,9 @@ public abstract class Provider {
         return s;
     }
 
+    /**
+     * 移除 SQL 中的块注释和行注释
+     */
     public String replaceComment(String s) {
         StringBuilder result = new StringBuilder(s.length());
         boolean blockComment = false;
@@ -364,11 +437,15 @@ public abstract class Provider {
         return result.toString();
     }
 
+    /**
+     * 根据数据源类型获取 Calcite SQL 方言
+     */
     public SqlDialect getDialect(DatasourceSchemaDTO coreDatasource) {
         SqlDialect sqlDialect = null;
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(coreDatasource.getType());
         switch (datasourceType) {
             case mysql:
+            case obMysql:
             case mongo:
             case StarRocks:
             case TiDB:
@@ -412,6 +489,9 @@ public abstract class Provider {
         return sqlDialect;
     }
 
+    /**
+     * 分配可用的本地 SSH 转发端口
+     */
     synchronized public Integer getLport(Long datasourceId) throws Exception {
         for (int i = 10000; i < 20000; i++) {
             if (isPortAvailable(i) && !lPorts.values().contains(i)) {
@@ -426,8 +506,11 @@ public abstract class Provider {
         throw new Exception("localhost无可用端口！");
     }
 
+    /**
+     * 检查本机端口是否可用
+     */
     public boolean isPortAvailable(int port) {
-        // Localhost-only port probe; no application data or credentials are sent.
+        // 仅探测本机端口，不发送应用数据或凭据
         try (Socket socket = new Socket("127.0.0.1", port)) { // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
             return false;
         } catch (IOException e) {
@@ -435,6 +518,9 @@ public abstract class Provider {
         }
     }
 
+    /**
+     * 按数据源配置初始化或复用 SSH 隧道会话
+     */
     public void startSshSession(DatasourceConfiguration configuration, ConnectionObj connectionObj, Long datasourceId) throws Exception {
         if (configuration.isUseSSH()) {
             if (datasourceId == null) {
@@ -461,6 +547,9 @@ public abstract class Provider {
         }
     }
 
+    /**
+     * 创建并连接 JSch 会话，同时建立本地端口转发
+     */
     public Session initSession(DatasourceConfiguration configuration) throws Exception {
         JSch jsch = new JSch();
         Session session = jsch.getSession(configuration.getSshUserName(), configuration.getSshHost(), configuration.getSshPort());

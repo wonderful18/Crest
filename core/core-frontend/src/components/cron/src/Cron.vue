@@ -9,6 +9,7 @@ import day from './Day.vue'
 import month from './Month.vue'
 import week from './Week.vue'
 import year from './Year.vue'
+// 定义 Cron 编辑器接收的表达式和值类型参数
 const props = defineProps({
   modelValue: propTypes.string.def('?'),
   isRate: propTypes.bool.def(false)
@@ -16,6 +17,7 @@ const props = defineProps({
 
 const { t } = useI18n()
 
+// 保存 Cron 各时间段的编辑值
 const state = reactive({
   activeName: 's',
   sVal: '',
@@ -27,6 +29,7 @@ const state = reactive({
   yearVal: ''
 })
 
+// 将当前 Cron 编辑值组合为表格数据
 const tableData = computed(() => {
   return [
     {
@@ -41,6 +44,7 @@ const tableData = computed(() => {
   ]
 })
 
+// 计算完整 Cron 表达式并校验日和周字段互斥关系
 const resultValue = computed(() => {
   if (!state.dVal && !state.weekVal) {
     return ''
@@ -59,6 +63,7 @@ onBeforeMount(() => {
   updateVal()
 })
 
+// 监听外部表达式变化并刷新内部编辑值
 watch(
   () => props.modelValue,
   () => {
@@ -70,6 +75,7 @@ watch(
   }
 )
 
+// 监听计算结果变化并同步到父组件
 watch(
   () => resultValue.value,
   () => {
@@ -77,6 +83,7 @@ watch(
   }
 )
 
+// 将表达式拆分到各时间段编辑字段
 const updateVal = () => {
   if (!props.modelValue) {
     return
@@ -91,6 +98,7 @@ const updateVal = () => {
   state.yearVal = arrays[6]
 }
 
+// 声明 Cron 表达式更新事件
 const emits = defineEmits(['update:modelValue'])
 </script>
 

@@ -6,12 +6,15 @@ import { reactive, watch, ref } from 'vue'
 import { useCache } from '@/hooks/web/useCache'
 
 const { wsCache } = useCache()
+// 控制自定义排序列表加载状态
 const loading = ref(false)
 
+// 保存可拖拽排序项
 const state = reactive({
   sortList: []
 })
 
+// 定义自定义排序编辑器接收的图表、字段和原始排序参数
 const props = defineProps({
   chart: {
     type: Object,
@@ -32,8 +35,10 @@ const props = defineProps({
   }
 })
 
+// 声明排序变化时向父组件派发的事件
 const emit = defineEmits(['onSortChange'])
 
+// 监听图表配置变化并重新加载排序候选值
 watch(
   () => props.chart,
   () => {
@@ -42,6 +47,7 @@ watch(
   { deep: true }
 )
 
+// 加载字段值并按已有排序结果初始化拖拽列表
 const init = () => {
   loading.value = true
   const chart = props.chart
@@ -82,6 +88,7 @@ const init = () => {
       loading.value = false
     })
 }
+// 将当前拖拽列表转换为字符串数组并派发
 const onUpdate = () => {
   const strArr = state.sortList.map(ele => {
     return transObj2Str(ele)
@@ -89,10 +96,12 @@ const onUpdate = () => {
   emit('onSortChange', strArr)
 }
 
+// 将字段值转换为拖拽列表项对象
 const transStr2Obj = str => {
   return { name: 'name', value: str }
 }
 
+// 将拖拽列表项对象转换回字段值
 const transObj2Str = obj => {
   return obj.value
 }

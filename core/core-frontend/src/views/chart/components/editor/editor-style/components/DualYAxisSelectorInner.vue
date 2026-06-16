@@ -14,6 +14,7 @@ import { ElFormItem, ElMessage } from 'element-plus-secondary'
 
 const { t } = useI18n()
 
+// 双 Y 轴内层表单由外层轴配置面板复用，负责单侧轴的展示、刻度和标签格式。
 const props = withDefaults(
   defineProps<{
     themes?: EditorTheme
@@ -30,22 +31,28 @@ const props = withDefaults(
 )
 
 const predefineColors = COLOR_PANEL
+// 数值格式化类型与普通 X/Y 轴面板保持一致，避免双向柱图独立维护格式口径。
 const typeList = formatterType
+// 提示浮层使用反向主题，保证暗色面板中的说明文字有足够对比度。
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
+// 内部表单复制外部传入值，避免用户编辑中途直接改写父组件状态。
 const state = reactive({
   axisForm: JSON.parse(JSON.stringify(DEFAULT_YAXIS_STYLE))
 })
 
+// 父组件负责把单侧轴配置合并回完整双轴配置并触发图表重绘。
 const emit = defineEmits(['onChangeYAxisForm'])
 
+// 轴线和网格线共用线型枚举，value 需要和 G2Plot lineStyle.style 对齐。
 const splitLineStyle = [
   { label: t('chart.line_type_solid'), value: 'solid' },
   { label: t('chart.line_type_dashed'), value: 'dashed' },
   { label: t('chart.line_type_dotted'), value: 'dotted' }
 ]
 
+// 外部切换左右轴、撤销或重做时会替换 form，需要重新复制并初始化单位配置。
 watch(
   () => props.form,
   () => {
@@ -54,6 +61,7 @@ watch(
   { deep: true }
 )
 
+// 轴标题和轴标签共用字号候选，大屏场景允许使用更大字号。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -71,34 +79,43 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+// 固定刻度数量会直接影响坐标轴渲染，提交前限制范围，避免异常配置进入图表实例。
 const changeAxisStyle = prop => {
   if (
     state.axisForm.axisValue.splitCount &&
     (state.axisForm.axisValue.splitCount > 100 || state.axisForm.axisValue.splitCount < 0)
   ) {
+    // splitCount 过大会造成刻度过密和渲染性能下降，保存前统一拦截。
     ElMessage.error(t('chart.splitCount_less_100'))
     return
   }
   emit('onChangeYAxisForm', state.axisForm, prop)
 }
 
+// 切换单位语言时同步修正单位枚举，再通过普通轴样式变更事件保存。
 function changeUnitLanguage(cfg: BaseFormatter, lang, prop: string) {
   onChangeFormatCfgUnitLanguage(cfg, lang)
   changeAxisStyle(prop)
 }
 
+// 初始化时深拷贝外部表单，随后补齐格式化单位默认值。
 const init = () => {
+  // 双轴外层会传入左轴或右轴对象，内层只维护当前侧的编辑副本。
   state.axisForm = JSON.parse(JSON.stringify(props.form))
   initFormatCfgUnit(state.axisForm.axisLabelFormatter)
 }
 
+// 属性显示由外层面板传入，隐藏项不提交，避免双向柱图收到不支持的轴字段。
 const showProperty = prop => props.propertyInner?.includes(prop)
 
+// 双向柱图需要根据方向重写轴位置文案，与普通直角坐标系不同。
 const isBidirectionalBar = computed(() => {
   return props.chartType === 'bidirectional-bar'
 })
 
+// 纵向双向柱图保留左右轴语义，横向布局则把上下文案映射到左右轴值。
 const isVerticalLayout = computed(() => {
+  // 横向双向柱图会交换视觉方向，轴位置文案需要按布局重新解释。
   return props.layout === 'vertical'
 })
 
@@ -115,6 +132,7 @@ onMounted(() => {
     size="small"
     label-position="top"
   >
+    <!-- 轴位置在双向柱图中会随布局方向映射为上下或左右文案。 -->
     <el-form-item
       class="form-item"
       :class="'form-item-' + themes"
@@ -127,6 +145,7 @@ onMounted(() => {
         @change="changeAxisStyle('position')"
       >
         <div v-if="isBidirectionalBar">
+          <!-- 双向柱图的左右轴语义随布局变化，不能直接复用普通 Y 轴文案。 -->
           <div v-if="isVerticalLayout">
             <el-radio :effect="props.themes" value="left">{{ t('chart.text_pos_left') }}</el-radio>
             <el-radio :effect="props.themes" value="right">{{
@@ -157,6 +176,7 @@ onMounted(() => {
       </el-checkbox>
     </el-form-item>
     <div style="margin-left: 22px">
+      <!-- 轴标题关闭后仍保留标题文本和样式，便于用户再次开启时恢复配置。 -->
       <el-form-item
         class="form-item"
         :class="'form-item-' + themes"
@@ -222,6 +242,7 @@ onMounted(() => {
     <template v-if="showProperty('axisValue')">
       <el-divider class="m-divider" :class="'m-divider--' + themes" />
 
+      <!-- 关闭自动刻度后才允许编辑最大值、最小值和分割数，避免覆盖图表自适应刻度。 -->
       <div style="display: flex; flex-direction: row; justify-content: space-between">
         <label class="custom-form-item-label" :class="'custom-form-item-label--' + themes">
           {{ t('chart.axis_value') }}
@@ -250,6 +271,7 @@ onMounted(() => {
       </div>
 
       <template v-if="showProperty('axisValue') && !state.axisForm.axisValue.auto">
+        <!-- 固定刻度三项必须成组保存，防止单侧轴出现半自动刻度。 -->
         <el-row :gutter="8">
           <el-col :span="12">
             <el-form-item
@@ -315,6 +337,7 @@ onMounted(() => {
         {{ t('chart.axis_show') }}
       </el-checkbox>
     </el-form-item>
+    <!-- 轴线和网格线写入不同配置分支，但共享颜色、线型、线宽三类控件。 -->
     <div style="padding-left: 22px" v-if="showProperty('axisLine')">
       <div style="flex: 1; display: flex">
         <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
@@ -375,6 +398,7 @@ onMounted(() => {
       </el-checkbox>
     </el-form-item>
     <div style="padding-left: 22px" v-if="showProperty('splitLine')">
+      <!-- 网格线配置只影响当前侧轴，另一侧轴由外层独立保存。 -->
       <div style="flex: 1; display: flex">
         <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
           <el-color-picker
@@ -436,6 +460,7 @@ onMounted(() => {
     </el-form-item>
     <div style="padding-left: 22px" v-if="showProperty('axisLabel')">
       <div style="flex: 1">
+        <!-- 轴标签颜色和字号独立于轴标题，关闭标签时保留格式化规则。 -->
         <div style="display: flex">
           <el-form-item
             class="form-item"
@@ -489,6 +514,7 @@ onMounted(() => {
         </el-form-item>
 
         <template v-if="showProperty('axisLabelFormatter')">
+          <!-- 双轴标签格式化仍走统一 formatter，确保左右轴单位和小数规则可独立保存。 -->
           <el-form-item
             class="form-item"
             :class="'form-item-' + themes"
@@ -534,6 +560,7 @@ onMounted(() => {
               state.axisForm.axisLabel.show && state.axisForm.axisLabelFormatter.type !== 'percent'
             "
           >
+            <!-- 百分比格式不展示单位配置，其余数值格式可继续叠加单位和后缀。 -->
             <el-row :gutter="8">
               <el-col :span="12" v-if="!isEnLocal">
                 <el-form-item
@@ -624,6 +651,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .custom-form-item-label {
+  // 自定义标题用于容纳说明图标，并与 Element 表单 label 的视觉节奏保持一致。
   margin-bottom: 4px;
   line-height: 20px;
   color: #646a73;
@@ -640,6 +668,7 @@ onMounted(() => {
   margin-bottom: 10px !important;
 }
 .m-divider {
+  // 分隔线在深浅主题中共用布局，仅通过透明边框区分层级。
   border-color: rgba(31, 35, 41, 0.15);
   margin: 0 0 16px;
 

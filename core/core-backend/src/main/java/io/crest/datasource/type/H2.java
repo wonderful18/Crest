@@ -15,9 +15,12 @@ import java.util.Locale;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Component("h2")
+// 定义数据源连接参数和元数据匹配规则
 public class H2 extends DatasourceConfiguration {
     private String driver = "org.h2.Driver";
 
+    // 构建当前数据源的连接地址
+    @Override
     public String getJdbc() {
         for (String illegalParameter : getH2IllegalParameters()) {
             if (jdbc.toUpperCase(Locale.ENGLISH).replace("\\", "").contains(illegalParameter)) {
@@ -31,6 +34,7 @@ public class H2 extends DatasourceConfiguration {
     }
 
     @JsonIgnore
+    // 执行当前服务方法并返回处理结果
     private List<String> getH2IllegalParameters() {
         return Arrays.asList("INIT", "RUNSCRIPT");
     }

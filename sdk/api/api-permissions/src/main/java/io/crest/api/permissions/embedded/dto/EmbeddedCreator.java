@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 @Schema(description = "嵌入式应用构造器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class EmbeddedCreator implements Serializable {
     @Schema(description = "应用名称")
     private String name;

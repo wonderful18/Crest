@@ -12,6 +12,7 @@ const funcs = {
   l: calculateLeft
 }
 
+// 根据左上控制点拖拽结果计算组件位置和尺寸
 function calculateLeftTop(style, curPosition, proportion, needLockProportion, pointInfo) {
   const { symmetricPoint } = pointInfo
   let newCenterPoint = getCenterPoint(curPosition, symmetricPoint)
@@ -66,6 +67,7 @@ function calculateLeftTop(style, curPosition, proportion, needLockProportion, po
   }
 }
 
+// 根据右上控制点拖拽结果计算组件位置和尺寸
 function calculateRightTop(style, curPosition, proportion, needLockProportion, pointInfo) {
   const { symmetricPoint } = pointInfo
   let newCenterPoint = getCenterPoint(curPosition, symmetricPoint)
@@ -117,6 +119,7 @@ function calculateRightTop(style, curPosition, proportion, needLockProportion, p
   }
 }
 
+// 根据右下控制点拖拽结果计算组件位置和尺寸
 function calculateRightBottom(style, curPosition, proportion, needLockProportion, pointInfo) {
   const { symmetricPoint } = pointInfo
   let newCenterPoint = getCenterPoint(curPosition, symmetricPoint)
@@ -168,6 +171,7 @@ function calculateRightBottom(style, curPosition, proportion, needLockProportion
   }
 }
 
+// 根据左下控制点拖拽结果计算组件位置和尺寸
 function calculateLeftBottom(style, curPosition, proportion, needLockProportion, pointInfo) {
   const { symmetricPoint } = pointInfo
   let newCenterPoint = getCenterPoint(curPosition, symmetricPoint)
@@ -223,6 +227,7 @@ function calculateLeftBottom(style, curPosition, proportion, needLockProportion,
   }
 }
 
+// 根据上边控制点拖拽结果计算组件位置和尺寸
 function calculateTop(style, curPosition, proportion, needLockProportion, pointInfo) {
   const { symmetricPoint, curPoint } = pointInfo
   // 由于用户拉伸时是以任意角度拉伸的，所以在求得旋转前的坐标时，只取 y 坐标（这里的 x 坐标可能是任意值），x 坐标用 curPoint 的。
@@ -262,6 +267,7 @@ function calculateTop(style, curPosition, proportion, needLockProportion, pointI
   style.left = Math.round(newCenter.x - style.width / 2)
 }
 
+// 根据右边控制点拖拽结果计算组件位置和尺寸
 function calculateRight(style, curPosition, proportion, needLockProportion, pointInfo) {
   const { symmetricPoint, curPoint } = pointInfo
   const rotatedcurposition = calculateRotatedPointCoordinate(curPosition, curPoint, -style.rotate)
@@ -296,6 +302,7 @@ function calculateRight(style, curPosition, proportion, needLockProportion, poin
   style.left = Math.round(newCenter.x - newWidth / 2)
 }
 
+// 根据下边控制点拖拽结果计算组件位置和尺寸
 function calculateBottom(style, curPosition, proportion, needLockProportion, pointInfo) {
   const { symmetricPoint, curPoint } = pointInfo
   const rotatedcurposition = calculateRotatedPointCoordinate(curPosition, curPoint, -style.rotate)
@@ -330,6 +337,7 @@ function calculateBottom(style, curPosition, proportion, needLockProportion, poi
   style.left = Math.round(newCenter.x - style.width / 2)
 }
 
+// 根据左边控制点拖拽结果计算组件位置和尺寸
 function calculateLeft(style, curPosition, proportion, needLockProportion, pointInfo) {
   const { symmetricPoint, curPoint } = pointInfo
   const rotatedcurposition = calculateRotatedPointCoordinate(curPosition, curPoint, -style.rotate)
@@ -363,6 +371,7 @@ function calculateLeft(style, curPosition, proportion, needLockProportion, point
   style.left = Math.round(newCenter.x - newWidth / 2)
 }
 
+// 根据控制点名称分发到对应的自由缩放计算函数
 export default function calculateComponentPositionAndSize(
   name,
   style,
@@ -374,6 +383,7 @@ export default function calculateComponentPositionAndSize(
   funcs[name](style, curPosition, proportion, needLockProportion, pointInfo)
 }
 
+// 根据控制点名称计算保持固定尺寸时的位置变化
 export function calculateRadioComponentPositionAndSize(name, style, symmetricPoint) {
   if (['b'].includes(name)) {
     style.left = Math.round(symmetricPoint.x - style.width / 2)

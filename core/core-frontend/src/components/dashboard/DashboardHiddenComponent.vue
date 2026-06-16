@@ -8,11 +8,14 @@ import Icon from '../icon-custom/src/Icon.vue'
 import EmptyBackground from '../empty-background/src/EmptyBackground.vue'
 const dvMainStore = dvMainStoreWithOut()
 const { componentData, canvasStyleData, canvasViewInfo, dvInfo } = storeToRefs(dvMainStore)
+// 定义组件向父级抛出的事件
 const emit = defineEmits(['cancelHidden'])
+// 衔接当前组件交互和状态同步
 const componentsHidden = computed(() => {
   return componentData.value.filter(ele => ele.dashboardHidden)
 })
 
+// 创建新数据并写入当前配置
 const addToDashboard = item => {
   item.dashboardHidden = false
   emit('cancelHidden', item)

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Order(value = 4)
+// 定义当前业务对象的核心职责
 public class DataSyncTaskStarter implements ApplicationRunner {
 
     @Resource
@@ -24,6 +25,7 @@ public class DataSyncTaskStarter implements ApplicationRunner {
     private DataSyncTaskExecutor dataSyncTaskExecutor;
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void run(ApplicationArguments args) {
         try {
             taskExecutor.init();

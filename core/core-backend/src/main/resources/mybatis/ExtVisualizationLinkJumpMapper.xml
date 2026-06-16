@@ -70,7 +70,7 @@
             <result column="field_id" jdbcType="BIGINT" property="id"/>
             <result column="origin_name" jdbcType="VARCHAR" property="originName"/>
             <result column="field_name" jdbcType="VARCHAR" property="name"/>
-            <result column="field_type" jdbcType="VARCHAR" property="type"/>
+            <result column="raw_field_type" jdbcType="VARCHAR" property="type"/>
             <result column="field_type" jdbcType="VARCHAR" property="fieldType"/>
         </collection>
     </resultMap>
@@ -219,8 +219,8 @@
             dataset_field.id AS field_id,
             dataset_field.origin_name,
             dataset_field.`name` AS field_name,
-            dataset_field.type AS field_type,
-            dataset_field.field_type
+            dataset_field.type AS raw_field_type,
+            dataset_field.field_type AS field_type
         FROM
             bi_chart
             LEFT JOIN dataset_field ON bi_chart.table_id = dataset_field.dataset_group_id
@@ -230,9 +230,16 @@
             AND bi_chart.type != 'VQuery'
             AND bi_chart.table_id IS NOT NULL
             AND dvi.id = #{dvId}
-            AND LOCATE(
-            bi_chart.id,
-            dvi.component_data)
+            <choose>
+                <when test="_databaseId == 'ob-oracle'">
+                    AND INSTR(dvi.component_data, TO_CHAR(bi_chart.id)) > 0
+                </when>
+                <otherwise>
+                    AND LOCATE(
+                    bi_chart.id,
+                    dvi.component_data)
+                </otherwise>
+            </choose>
     </select>
 
     <select id="queryWithViewId" resultMap="BaseResultMapDTOSnapshot">
@@ -339,8 +346,16 @@
 
     <select id="getTargetVisualizationJumpInfo" resultMap="AllJumpMap">
         SELECT DISTINCT
-        concat( lj.source_view_id, '#', jtvi.source_field_active_id, '#', lji.source_field_id ) AS sourceInfo,
-        concat( jtvi.target_view_id, '#', jtvi.target_field_id ) AS targetInfo
+        <choose>
+            <when test="_databaseId == 'ob-oracle'">
+                TO_CHAR(lj.source_view_id) || '#' || TO_CHAR(jtvi.source_field_active_id) || '#' || TO_CHAR(lji.source_field_id) AS sourceInfo,
+                TO_CHAR(jtvi.target_view_id) || '#' || TO_CHAR(jtvi.target_field_id) AS targetInfo
+            </when>
+            <otherwise>
+                concat( lj.source_view_id, '#', jtvi.source_field_active_id, '#', lji.source_field_id ) AS sourceInfo,
+                concat( jtvi.target_view_id, '#', jtvi.target_field_id ) AS targetInfo
+            </otherwise>
+        </choose>
         FROM
         visualization_link_jump_target_view_info jtvi
         LEFT JOIN visualization_link_jump_info lji ON jtvi.link_jump_info_id = lji.id
@@ -357,8 +372,16 @@
 
     <select id="getTargetVisualizationJumpInfoSnapshot" resultMap="AllJumpMap">
             SELECT DISTINCT
-            concat( lj.source_view_id, '#', jtvi.source_field_active_id, '#', lji.source_field_id ) AS sourceInfo,
-            concat( jtvi.target_view_id, '#', jtvi.target_field_id ) AS targetInfo
+            <choose>
+                <when test="_databaseId == 'ob-oracle'">
+                    TO_CHAR(lj.source_view_id) || '#' || TO_CHAR(jtvi.source_field_active_id) || '#' || TO_CHAR(lji.source_field_id) AS sourceInfo,
+                    TO_CHAR(jtvi.target_view_id) || '#' || TO_CHAR(jtvi.target_field_id) AS targetInfo
+                </when>
+                <otherwise>
+                    concat( lj.source_view_id, '#', jtvi.source_field_active_id, '#', lji.source_field_id ) AS sourceInfo,
+                    concat( jtvi.target_view_id, '#', jtvi.target_field_id ) AS targetInfo
+                </otherwise>
+            </choose>
             FROM
             snapshot_visualization_link_jump_target_view_info jtvi
             LEFT JOIN snapshot_visualization_link_jump_info lji ON jtvi.link_jump_info_id = lji.id

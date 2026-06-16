@@ -6,12 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author fit2cloud
- * @since 2023-10-08
+ * 数据源完成页配置实体。
  */
 @TableName("data_source_finish_page")
 public class CoreDsFinishPage implements Serializable {
@@ -24,15 +19,18 @@ public class CoreDsFinishPage implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
+    // 执行当前服务方法并返回处理结果
     public Long getId() {
         return id;
     }
 
+    // 执行当前服务方法并返回处理结果
     public void setId(Long id) {
         this.id = id;
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public String toString() {
         return "CoreDsFinishPage{" +
         "id = " + id +

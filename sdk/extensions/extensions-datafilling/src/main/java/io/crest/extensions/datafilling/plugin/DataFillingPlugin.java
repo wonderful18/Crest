@@ -8,15 +8,18 @@ import io.crest.plugins.template.CrestPlugin;
 import io.crest.plugins.vo.CrestPluginVO;
 import io.crest.utils.JsonUtil;
 
+// 定义插件扩展能力的基础类型
 public abstract class DataFillingPlugin extends ExtDDLProvider implements CrestPlugin {
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void loadPlugin() {
         PluginDataFillingVO viewConfig = getConfig();
         ExtDDLProviderFactory.loadPlugin(viewConfig.getType(), this);
     }
 
 
+    // 读取配置并返回当前功能所需参数
     public PluginDataFillingVO getConfig() {
         CrestPluginVO pluginInfo = null;
         try {
@@ -31,6 +34,7 @@ public abstract class DataFillingPlugin extends ExtDDLProvider implements CrestP
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void unloadPlugin() {
 
     }

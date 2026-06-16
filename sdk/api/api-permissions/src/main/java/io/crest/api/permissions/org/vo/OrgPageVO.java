@@ -11,6 +11,7 @@ import java.util.List;
 
 @Schema(description = "组织列表VO")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class OrgPageVO implements Serializable {
 
     @Serial

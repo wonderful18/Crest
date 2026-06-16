@@ -7,14 +7,17 @@ import { getCustomRange } from '@/custom-component/v-query/time-format-dayjs'
 const dvMainStore = dvMainStoreWithOut()
 const { componentData, canvasStyleData } = storeToRefs(dvMainStore)
 
+// 根据动态时间筛选配置计算时间范围，最终统一转换为毫秒时间戳数组。
 const getDynamicRangeTime = (type: number, selectValue: any, timeGranularityMultiple: string) => {
   const timeType = (timeGranularityMultiple || '').split('range')[0]
 
   if ('datetimerange' === timeGranularityMultiple || type === 1 || !timeType) {
+    // 日期时间范围和单日期组件保留用户选择的精确时间。
     return selectValue.map(ele => +new Date(ele))
   }
 
   if (timeGranularityMultiple.includes('range') && type === 7) {
+    // 年/月/日范围需要扩展到对应粒度的完整起止时间。
     return [
       +new Date(
         dayjs(selectValue[0])
@@ -31,6 +34,7 @@ const getDynamicRangeTime = (type: number, selectValue: any, timeGranularityMult
 
   const [start] = selectValue
 
+  // 单点范围以起始时间为准，结束时间取该粒度的自然结束点。
   return [
     +new Date(start),
     +getCustomTime(
@@ -45,6 +49,7 @@ const getDynamicRangeTime = (type: number, selectValue: any, timeGranularityMult
   ]
 }
 
+// 将不同筛选类型的原始值格式化为统一数组值，方便后续构造查询条件。
 const forMatterValue = (
   type: number,
   selectValue: any,
@@ -52,6 +57,7 @@ const forMatterValue = (
   timeGranularityMultiple: string
 ) => {
   if (![1, 7].includes(type)) {
+    // 非时间组件统一转成数组，保持查询参数结构稳定。
     return Array.isArray(selectValue) ? selectValue : [selectValue]
   }
   return Array.isArray(selectValue)
@@ -59,6 +65,7 @@ const forMatterValue = (
     : getRange(selectValue, timeGranularity)
 }
 
+// 根据时间粒度计算固定时间范围，单日期筛选会扩展为完整自然周期。
 export const getRange = (selectValue, timeGranularity) => {
   switch (timeGranularity) {
     case 'year':
@@ -73,6 +80,7 @@ export const getRange = (selectValue, timeGranularity) => {
       break
   }
 }
+// 计算指定时间所在年份的起止时间。
 const getYearEnd = timestamp => {
   return [
     +new Date(dayjs(timestamp).startOf('year').format('YYYY/MM/DD HH:mm:ss')),
@@ -80,6 +88,7 @@ const getYearEnd = timestamp => {
   ]
 }
 
+// 计算指定时间所在月份的起止时间。
 const getMonthEnd = timestamp => {
   return [
     +new Date(dayjs(timestamp).startOf('month').format('YYYY/MM/DD HH:mm:ss')),
@@ -87,6 +96,7 @@ const getMonthEnd = timestamp => {
   ]
 }
 
+// 计算指定日期的起止时间。
 const getDayEnd = timestamp => {
   return [
     +new Date(dayjs(timestamp).startOf('day').format('YYYY/MM/DD HH:mm:ss')),
@@ -94,14 +104,17 @@ const getDayEnd = timestamp => {
   ]
 }
 
+// 根据树形筛选结果解析目标字段 ID 和筛选值，支持多层级字段映射到不同图表字段。
 const getFieldId = (arr, result, relationshipChartIndex, ids) => {
   const [obj] = [...result].reverse()
   const valArr = obj.split(',')
   const idArr = arr.map(ele => ele.id)
   const indexArr = relationshipChartIndex.filter(ele => valArr[ele])
   if (!relationshipChartIndex.length) {
+    // 未配置层级映射时按结果层级顺序拼接字段 ID。
     return [idArr.slice(0, valArr.length).join(','), [...new Set(result)]]
   } else {
+    // 配置层级映射时只保留目标图表关联的层级值。
     for (const key in result) {
       result[key] = indexArr.map(ele => result[key].split(',')[ele]).join(',')
     }
@@ -112,6 +125,7 @@ const getFieldId = (arr, result, relationshipChartIndex, ids) => {
   }
 }
 
+// 根据默认值、首次加载状态和当前选择值计算实际筛选值。
 const getValueByDefaultValueCheckOrFirstLoad = (
   defaultValueCheck: boolean,
   defaultValue: any,
@@ -125,6 +139,7 @@ const getValueByDefaultValueCheckOrFirstLoad = (
   displayId: string
 ) => {
   if (+displayType === 9) {
+    // 树形值使用 -de- 转义逗号，生成查询前需要还原层级分隔符。
     if (firstLoad) {
       return defaultValueCheck
         ? multiple
@@ -143,6 +158,7 @@ const getValueByDefaultValueCheckOrFirstLoad = (
     (defaultMapValue?.length || displayId) &&
     ![1, 7].includes(+displayType)
   ) {
+    // 自定义选项默认值使用映射值，避免展示值和实际查询值混用。
     if (firstLoad) {
       return defaultValueCheck ? defaultMapValue : multiple ? [] : ''
     }
@@ -150,13 +166,15 @@ const getValueByDefaultValueCheckOrFirstLoad = (
   }
 
   if (firstLoad) {
+    // 首次加载按默认值开关决定是否带入默认筛选。
     return defaultValueCheck ? defaultValue : multiple ? [] : ''
   }
   return selectValue ? selectValue : multiple ? [] : ''
 }
 
+// 收集当前组件关联的查询组件筛选条件，覆盖画布、分组和标签页中的查询组件。
 export const useFilter = (curComponentId: string, firstLoad = false) => {
-  // 弹窗区域过滤组件是否生效
+  // popupAvailable 控制隐藏区域查询组件是否参与筛选。
   const popupAvailable = canvasStyleData.value.popupAvailable
   const filter = []
   const queryComponentList = componentData.value.filter(
@@ -167,6 +185,7 @@ export const useFilter = (curComponentId: string, firstLoad = false) => {
   searchQuery(queryComponentList, filter, curComponentId, firstLoad)
   componentData.value.forEach(ele => {
     if (ele.component === 'Group') {
+      // 分组组件中的查询组件需要按内部 propValue 继续遍历。
       const list = ele.propValue.filter(
         item =>
           item.innerType === 'VQuery' &&
@@ -176,6 +195,7 @@ export const useFilter = (curComponentId: string, firstLoad = false) => {
 
       list.forEach(element => {
         if (element.innerType === 'Tabs') {
+          // 分组内标签页还会嵌套查询组件，需要继续下钻到页签内容。
           element.propValue.forEach(itx => {
             const elementArr = itx.componentData.filter(
               item =>
@@ -202,6 +222,7 @@ export const useFilter = (curComponentId: string, firstLoad = false) => {
     }
 
     if (ele.innerType === 'Tabs') {
+      // 顶层标签页中的分组和查询组件也需要纳入筛选条件收集。
       ele.propValue.forEach(itx => {
         itx.componentData.forEach(v => {
           if (v.component === 'Group') {
@@ -224,6 +245,7 @@ export const useFilter = (curComponentId: string, firstLoad = false) => {
   }
 }
 
+// 获取文本条件筛选的实际值，支持单条件和双条件组合。
 const getResult = (
   conditionType,
   defaultConditionValueF,
@@ -240,6 +262,7 @@ const getResult = (
   return [valueF || '', valueS || ''].filter(ele => ele !== '')
 }
 
+// 获取数值范围筛选的实际值，首次加载且未启用默认值时不生成筛选条件。
 const getResultNum = (
   defaultNumValueEnd,
   numValueEnd,
@@ -256,6 +279,7 @@ const getResultNum = (
   return [valueS ?? '', valueE ?? ''].filter(ele => ele !== '')
 }
 
+// 根据筛选组件类型和条件配置计算查询操作符。
 const getOperator = (
   displayType,
   multiple,
@@ -271,10 +295,12 @@ const getOperator = (
   firstLoad
 ) => {
   if (+displayType === 9) {
+    // 树形筛选始终使用 in 查询多个层级值。
     return 'in'
   }
 
   if (+displayType === 22) {
+    // 数值范围固定使用 between。
     return 'between'
   }
 
@@ -290,6 +316,7 @@ const getOperator = (
       ele => ele !== ''
     )
     if (operatorArr.length === 2) {
+      // 双条件根据 AND/OR 配置拼接组合操作符。
       return operatorArr.join(`-${conditionType === 1 ? 'and' : 'or'}-`)
     }
     return valueF === '' ? operatorS : operatorF
@@ -298,6 +325,7 @@ const getOperator = (
   return [1, 7].includes(+displayType) ? 'between' : 'in'
 }
 
+// 根据字段 ID 对参数数组去重，保留每个字段最后一次出现的参数配置。
 const duplicateRemoval = arr => {
   const objList = []
   let idList = arr.map(ele => ele.id)
@@ -311,6 +339,7 @@ const duplicateRemoval = arr => {
   return objList
 }
 
+// 将查询组件配置转换为图表查询筛选条件。
 export const searchQuery = (queryComponentList, filter, curComponentId, firstLoad) => {
   queryComponentList.forEach(ele => {
     if (!!ele.propValue?.length) {
@@ -319,6 +348,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
         const relationshipChartIndex = []
         const ids = Array(5).fill(1)
         if (item.displayType === '9' && item.treeCheckedList?.length) {
+          // 树形筛选允许不同层级绑定不同图表字段，需要记录命中的层级索引。
           item.treeCheckedList.forEach((itx, idx) => {
             if (
               itx.checkedFields.includes(curComponentId) &&
@@ -334,6 +364,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
             item.checkedFields.includes(curComponentId) && item.checkedFieldsMap[curComponentId]
         }
         if (shouldSearch || relationshipChartIndex.length) {
+          // 只有当前图表字段被查询组件绑定时，才生成对应筛选条件。
           let selectValue
           const {
             id,
@@ -369,6 +400,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
 
           const isTree = +displayType === 9
           if (optionFilter) {
+            // 选项过滤来自候选值过滤，作为独立筛选条件先写入。
             let fieldIdOption = item.checkedFieldsMap[curComponentId]
             const optionFilterValue = isTree
               ? optionFilter.map(itemOption => itemOption.replace(/-de-/g, ','))
@@ -400,6 +432,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
             firstLoad &&
             defaultValueCheck
           ) {
+            // 首次加载动态时间默认值时即时计算时间范围，并回写组件当前值。
             if (+displayType === 1) {
               selectValue = getDynamicRange(item)
               item.defaultValue = new Date(selectValue[0])
@@ -439,6 +472,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
               )
 
               if (!!relativeToCurrentRange && relativeToCurrentRange !== 'custom') {
+                // 非自定义范围直接使用快捷范围计算结果。
                 ;[startTime, endTime] = getCustomRange(relativeToCurrentRange)
               }
               item.defaultValue = [startTime, endTime]
@@ -484,6 +518,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
             ) ||
             displayType === '8'
           ) {
+            // 只有存在有效筛选值时才继续组装查询条件，文本条件允许空值参与判断。
             let result = forMatterValue(
               +displayType,
               selectValue,
@@ -507,6 +542,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
             if (result?.length) {
               let fieldId = item.checkedFieldsMap[curComponentId]
               if (isTree) {
+                // 树形筛选需要根据层级映射重新计算字段 ID 和结果值。
                 const [i, r] = getFieldId(treeFieldList, result, relationshipChartIndex, ids)
                 fieldId = i
                 result = r
@@ -521,6 +557,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
               )
 
               if (item.checkedFieldsMapArr?.[curComponentId]?.length) {
+                // 时间范围绑定两个字段时，为结束字段额外生成 END 条件。
                 const endTimeFieldId = item.checkedFieldsMapArr?.[curComponentId].find(
                   element => element !== fieldId
                 )
@@ -554,6 +591,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
               }
 
               if (item.checkedFieldsMapArrNum?.[curComponentId]?.length) {
+                // 数值范围绑定两个字段时，同样拆成起始字段和结束字段两个条件。
                 const endTimeFieldId = item.checkedFieldsMapArrNum?.[curComponentId].find(
                   element => element !== fieldId
                 )
@@ -586,6 +624,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
                 })
               }
 
+              // 主筛选条件最后写入，保证 END 条件先被后端识别为范围补充。
               filter.push({
                 filterId: id,
                 componentId: ele.id,

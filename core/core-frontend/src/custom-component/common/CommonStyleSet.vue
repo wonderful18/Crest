@@ -2,6 +2,7 @@
   <el-row class="custom-row">
     <el-row class="custom-row-inner">
       <el-space wrap>
+        <!-- 前置选择项通常是字体族，优先展示可以减少用户在常用文本设置中的查找成本。 -->
         <template v-for="styleOptionKey in styleOptionKeyArrayPre">
           <el-tooltip
             :key="styleOptionKey.value"
@@ -38,6 +39,7 @@
         </template>
 
         <template v-for="styleColorKey in styleColorKeyArray">
+          <!-- 颜色项按当前组件 style 中存在的字段动态出现，避免工具条展示无效控件。 -->
           <el-tooltip
             :key="styleColorKey.value"
             v-if="styleForm[styleColorKey.value] !== undefined"
@@ -69,6 +71,7 @@
         </template>
 
         <template v-for="styleOptionMountedKey in styleOptionMountedKeyArray">
+          <!-- 尺寸类控件展示反算后的画布值，写回时再按缩放比例转换为真实像素。 -->
           <el-tooltip
             :key="styleOptionMountedKey.value"
             v-if="styleForm[styleOptionMountedKey.value] !== undefined"
@@ -106,6 +109,7 @@
         </template>
 
         <template v-for="styleOptionKey in styleOptionKeyArray">
+          <!-- 普通选项直接写入组件 style，不需要根据画布缩放做像素换算。 -->
           <el-tooltip
             :key="styleOptionKey.value"
             v-if="styleForm[styleOptionKey.value] !== undefined"
@@ -137,6 +141,7 @@
             </el-form-item>
           </el-tooltip>
         </template>
+        <!-- 字重、斜体和下划线使用图标按钮表达二态切换，减少文本工具条宽度。 -->
         <el-tooltip v-if="styleForm.fontWeight !== undefined" effect="dark" placement="bottom">
           <template #content>
             {{ t('chart.bolder') }}
@@ -181,6 +186,7 @@
           </div>
         </el-tooltip>
         <template v-if="styleForm.textAlign">
+          <!-- 横向对齐按钮直接写入 CSS text-align，适用于文本、指标和部分标题组件。 -->
           <div class="m-divider" :class="'custom-divider-' + themes"></div>
           <div style="display: flex">
             <el-tooltip effect="dark" placement="bottom">
@@ -234,6 +240,7 @@
           </div>
         </template>
         <template v-if="styleForm.headHorizontalPosition">
+          <!-- 表头横向位置使用独立字段，避免覆盖组件主体文本的 textAlign。 -->
           <div class="m-divider"></div>
           <el-tooltip effect="dark" placement="bottom">
             <template #content>
@@ -330,6 +337,7 @@ const snapshotStore = snapshotStoreWithOut()
 
 const { canvasStyleData } = storeToRefs(dvMainStore)
 
+// 通用样式工具条根据传入组件的 style 字段动态展示可编辑项。
 const props = withDefaults(
   defineProps<{
     themes?: EditorTheme
@@ -340,7 +348,9 @@ const props = withDefaults(
   }
 )
 const { themes, element } = toRefs(props)
+// 样式变更由父级统一落盘和刷新组件，这里只派发变更字段。
 const emits = defineEmits(['onStyleAttrChange'])
+// 保存按画布缩放反算后的显示值，避免面板中直接展示缩放后的实际像素。
 const styleMounted = ref({
   opacity: 1,
   fontSize: 22,
@@ -360,6 +370,7 @@ const fontFamilyList = [
   { name: '楷体', value: 'KaiTi, "Kaiti SC", STKaiti' }
 ]
 
+// 滚动速度枚举直接写入组件样式，0 表示停止滚动。
 const scrollSpeedList = [
   { name: '停止', value: 0 },
   { name: '10', value: 10 },
@@ -376,6 +387,7 @@ const scrollSpeedList = [
   { name: '200', value: 200 }
 ]
 
+// 透明度使用 0.1 步进，和颜色面板中的 alpha 调整粒度保持接近。
 const opacitySizeList = [
   { name: '0', value: 0 },
   { name: '0.1', value: 0.1 },
@@ -389,6 +401,7 @@ const opacitySizeList = [
   { name: '0.9', value: 0.9 },
   { name: '1', value: 1 }
 ]
+// 背景模糊保存为 CSS filter 字符串，渲染层可直接应用。
 const backdropBlurList = [
   { name: '0', value: 'blur(0px)' },
   { name: '1', value: 'blur(1px)' },
@@ -423,7 +436,9 @@ const backdropBlurList = [
   { name: '30', value: 'blur(30px)' }
 ]
 
+// 当前组件样式表单直接指向组件 style，面板修改会即时反映到画布元素。
 const styleForm = computed<any>(() => element.value.style)
+// 维护颜色预设和面板内部状态，避免每次渲染重复创建颜色列表。
 const state = reactive({
   fontSize: [],
   isSetting: false,
@@ -452,6 +467,7 @@ const styleColorKeyArray = [
   }
 ]
 
+// 字间距固定提供 0 到 60，覆盖普通文本和数字卡片的常见间距范围。
 const letterSpacingList = computed(() => {
   const arr = []
   for (let i = 0; i <= 60; i = i + 1) {
@@ -463,6 +479,7 @@ const letterSpacingList = computed(() => {
   return arr
 })
 
+// 字号先按 1px 精度覆盖常用区间，再按 10px 覆盖大屏标题区间。
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 60; i = i + 1) {
@@ -489,7 +506,7 @@ const styleOptionKeyArrayPre = [
   }
 ]
 
-//大小随画布缩放动态变化
+// 这些尺寸属性会随画布缩放，需要通过 styleMounted 做显示值和真实值转换。
 const styleOptionMountedKeyArray = [
   {
     value: 'letterSpacing',
@@ -514,7 +531,7 @@ const styleOptionMountedKeyArray = [
   }
 ]
 
-//大小不变
+// 这些样式值不随画布缩放，直接写入组件 style 即可。
 const styleOptionKeyArray = [
   {
     value: 'scrollSpeed',
@@ -539,9 +556,11 @@ const styleOptionKeyArray = [
   }
 ]
 
+// 初始化时将真实样式按当前画布缩放反算，保证面板值符合用户认知。
 const styleInit = () => {
   if (element.value) {
     Object.keys(styleMounted.value).forEach(key => {
+      // 面板展示值按 100% 画布缩放反算，避免用户看到被缩放后的像素值。
       styleMounted.value[key] = Math.round(
         (element.value.style[key] * 100) / canvasStyleData.value.scale
       )
@@ -549,10 +568,12 @@ const styleInit = () => {
   }
 }
 
+// 无需缩放的样式直接透传当前 style 值，保持事件结构一致。
 const changeStylePre = key => {
   changeStyle({ key: key, value: element.value.style[key] })
 }
 
+// 尺寸类属性按画布缩放换算回真实像素，再通知父级记录和刷新。
 const sizeChange = key => {
   element.value.style[key] = Math.round(
     (styleMounted.value[key] * canvasStyleData.value.scale) / 100
@@ -560,11 +581,13 @@ const sizeChange = key => {
   changeStyle({ key: key, value: element.value.style[key] })
 }
 
+// 每次样式变更都记录快照，保证撤销/重做能覆盖工具条操作。
 const changeStyle = params => {
   snapshotStore.recordSnapshotCache('changeStyle')
   emits('onStyleAttrChange', params)
 }
 
+// 加粗按钮在 normal/bold 之间切换，避免写入浏览器兼容性不稳定的数值字重。
 const checkBold = () => {
   if (styleForm.value.fontWeight === 'normal') {
     styleForm.value.fontWeight = 'bold'
@@ -574,6 +597,7 @@ const checkBold = () => {
   changeStyle({ key: 'fontWeight', value: styleForm.value.fontWeight })
 }
 
+// 斜体按钮在 normal/italic 之间切换，保持与 CSS font-style 取值一致。
 const checkItalic = () => {
   if (styleForm.value.fontStyle === 'normal') {
     styleForm.value.fontStyle = 'italic'
@@ -583,6 +607,7 @@ const checkItalic = () => {
   changeStyle({ key: 'fontStyle', value: styleForm.value.fontStyle })
 }
 
+// 下划线按钮只控制 underline/none，避免影响删除线等未暴露的装饰样式。
 const checkTextDecoration = () => {
   if (styleForm.value.textDecoration === 'none') {
     styleForm.value.textDecoration = 'underline'
@@ -592,11 +617,13 @@ const checkTextDecoration = () => {
   changeStyle({ key: 'textDecoration', value: styleForm.value.textDecoration })
 }
 
+// 文本对齐类按钮统一走 setPosition，便于横向位置和表头位置复用。
 function setPosition(key, p: 'left' | 'center' | 'right') {
   styleForm.value[key] = p
   changeStyle({ key: key, value: p })
 }
 
+// 组件切换或外部样式变化后重新计算面板显示值，避免缩放值滞留。
 watch(
   () => element.value,
   () => {
@@ -611,6 +638,7 @@ watch(
 
 <style lang="less">
 .custom-style-option::after {
+  // 下拉项不展示默认选中伪元素，避免与自定义图标前缀形成重复视觉。
   display: none;
 }
 </style>
@@ -631,6 +659,7 @@ watch(
 }
 
 :deep(.ed-checkbox__input) {
+  // 工具条使用图标作为可见交互控件，隐藏原生勾选框。
   display: none;
 }
 
@@ -654,6 +683,7 @@ watch(
 }
 
 :deep(.ed-radio__input) {
+  // 对齐按钮同样隐藏原生 radio，只保留图标态。
   display: none;
 }
 
@@ -678,6 +708,7 @@ watch(
 }
 
 .icon-btn {
+  // 工具条按钮固定 24px 尺寸，保证不同图标切换 active 时不改变布局。
   font-size: 16px;
   width: 24px;
   height: 24px;
@@ -710,6 +741,7 @@ watch(
   }
 }
 .m-divider {
+  // 工具条内分隔线只做功能分组，不参与组件样式配置。
   width: 1px;
   height: 18px;
   background: rgba(31, 35, 41, 0.15);

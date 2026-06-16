@@ -36,23 +36,41 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @Author Junjun
+ * 数据集字段管理组件，负责字段保存、删除、权限过滤和 DTO 转换
  */
 @Component
 @Transactional
 @SuppressWarnings("unchecked")
 public class DatasetTableFieldManage {
+    /**
+     * 数据集字段表的基础 Mapper
+     */
     @Resource
     private CoreDatasetTableFieldMapper coreDatasetTableFieldMapper;
+    /**
+     * 字段权限管理器，用于按用户过滤字段可见性
+     */
     @Resource
     private PermissionManage permissionManage;
+    /**
+     * 数据集 SQL 管理器，用于获取联合数据集编辑 SQL
+     */
     @Resource
     private DatasetSQLManage datasetSQLManage;
+    /**
+     * 数据集分组管理器，用于读取数据集分组上下文
+     */
     @Resource
     private DatasetGroupManage datasetGroupManage;
+    /**
+     * 可选数据源插件管理器，用于计算字段表达式解析
+     */
     @Autowired(required = false)
     private PluginManageApi pluginManage;
 
+    /**
+     * 保存基础字段记录，按主键存在性决定新增或更新
+     */
     public void save(CoreDatasetTableField coreDatasetTableField) {
         checkNameLength(coreDatasetTableField.getName());
         if (ObjectUtils.isEmpty(coreDatasetTableField.getId())) {
@@ -63,6 +81,9 @@ public class DatasetTableFieldManage {
         }
     }
 
+    /**
+     * 保存图表计算字段，并校验同图表下字段名称是否重复
+     */
     public DatasetTableFieldDTO chartFieldSave(DatasetTableFieldDTO datasetTableFieldDTO) {
         checkNameLength(datasetTableFieldDTO.getName());
         CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldMapper.selectById(datasetTableFieldDTO.getId());
@@ -103,6 +124,9 @@ public class DatasetTableFieldManage {
         return datasetTableFieldDTO;
     }
 
+    /**
+     * 保存字段 DTO 到基础字段表
+     */
     public DatasetTableFieldDTO saveField(DatasetTableFieldDTO datasetTableFieldDTO) {
         CoreDatasetTableField record = new CoreDatasetTableField();
         if (ObjectUtils.isEmpty(datasetTableFieldDTO.getId())) {
@@ -116,16 +140,25 @@ public class DatasetTableFieldManage {
         return datasetTableFieldDTO;
     }
 
+    /**
+     * 查询指定图表下的计算字段列表
+     */
     public List<DatasetTableFieldDTO> getChartCalcFields(Long chartId) {
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
         wrapper.eq("chart_id", chartId);
         return transDTO(coreDatasetTableFieldMapper.selectList(wrapper));
     }
 
+    /**
+     * 根据字段 ID 删除字段记录
+     */
     public void deleteById(Long id) {
         coreDatasetTableFieldMapper.deleteById(id);
     }
 
+    /**
+     * 数据集表更新时，删除不在保留列表中的字段
+     */
     public void deleteByDatasetTableUpdate(Long datasetTableId, List<Long> fieldIds) {
         if (!CollectionUtils.isEmpty(fieldIds)) {
             QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
@@ -135,6 +168,9 @@ public class DatasetTableFieldManage {
         }
     }
 
+    /**
+     * 数据集分组更新时，删除不在保留列表中的非图表复制字段
+     */
     public void deleteByDatasetGroupUpdate(Long datasetGroupId, List<Long> fieldIds) {
         if (!CollectionUtils.isEmpty(fieldIds)) {
             // chartCopyFields不删除
@@ -164,24 +200,36 @@ public class DatasetTableFieldManage {
         return list.stream().map(CoreDatasetTableField::getId).collect(Collectors.toList());
     }
 
+    /**
+     * 数据集分组删除时，清理该分组下全部字段
+     */
     public void deleteByDatasetGroupDelete(Long datasetGroupId) {
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
         wrapper.eq("dataset_group_id", datasetGroupId);
         coreDatasetTableFieldMapper.delete(wrapper);
     }
 
+    /**
+     * 删除指定图表下的字段
+     */
     public void deleteChartFields(Long chartId) {
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
         wrapper.eq("chart_id", chartId);
         coreDatasetTableFieldMapper.delete(wrapper);
     }
 
+    /**
+     * 查询指定数据集表下的字段列表
+     */
     public List<DatasetTableFieldDTO> selectByDatasetTableId(Long id) {
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
         wrapper.eq("dataset_table_id", id);
         return transDTO(coreDatasetTableFieldMapper.selectList(wrapper));
     }
 
+    /**
+     * 查询指定数据集分组下已勾选的基础字段
+     */
     public List<DatasetTableFieldDTO> selectByDatasetGroupId(Long id) {
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
         wrapper.eq("dataset_group_id", id);
@@ -190,6 +238,9 @@ public class DatasetTableFieldManage {
         return transDTO(coreDatasetTableFieldMapper.selectList(wrapper));
     }
 
+    /**
+     * 批量查询多个数据集分组下的已勾选基础字段
+     */
     public Map<String, List<DatasetTableFieldDTO>> selectByDatasetGroupIds(List<Long> ids) {
         Map<String, List<DatasetTableFieldDTO>> map = new HashMap<>();
         for (Long id : ids) {
@@ -203,12 +254,18 @@ public class DatasetTableFieldManage {
         return map;
     }
 
+    /**
+     * 根据字段 ID 列表查询字段 DTO
+     */
     public List<DatasetTableFieldDTO> selectByFieldIds(List<Long> ids) {
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
         wrapper.in("id", ids);
         return transDTO(coreDatasetTableFieldMapper.selectList(wrapper));
     }
 
+    /**
+     * 根据字段 ID 查询单个字段 DTO
+     */
     public DatasetTableFieldDTO selectById(Long id) {
         CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldMapper.selectById(id);
         if (coreDatasetTableField == null) return null;
@@ -233,6 +290,9 @@ public class DatasetTableFieldManage {
         return map;
     }
 
+    /**
+     * 查询 Copilot 可使用的维度和指标字段，并应用列权限过滤
+     */
     public Map<String, List<DatasetTableFieldDTO>> copilotFields(Long id) throws Exception {
         DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTO(id, null);
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null);
@@ -262,6 +322,9 @@ public class DatasetTableFieldManage {
         return map;
     }
 
+    /**
+     * 查询带列权限和脱敏标记的字段列表
+     */
     public List<DatasetTableFieldDTO> listFieldsWithPermissions(Long id) {
         List<DatasetTableFieldDTO> fields = selectByDatasetGroupId(id);
         Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
@@ -275,6 +338,9 @@ public class DatasetTableFieldManage {
         return tmp;
     }
 
+    /**
+     * 查询带权限的字段列表，并剔除聚合函数型计算字段
+     */
     public List<DatasetTableFieldDTO> listFieldsWithPermissionsRemoveAgg(Long id) {
         List<DatasetTableFieldDTO> fields = selectByDatasetGroupId(id);
         Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
@@ -304,6 +370,9 @@ public class DatasetTableFieldManage {
         return tmp;
     }
 
+    /**
+     * 将字段记录转换为字段 DTO，并还原 JSON 结构字段
+     */
     public DatasetTableFieldDTO transObj(CoreDatasetTableField ele) {
         DatasetTableFieldDTO dto = new DatasetTableFieldDTO();
         if (ele == null) return null;
@@ -323,6 +392,9 @@ public class DatasetTableFieldManage {
         return dto;
     }
 
+    /**
+     * 批量将字段记录列表转换为 DTO 列表
+     */
     public List<DatasetTableFieldDTO> transDTO(List<CoreDatasetTableField> list) {
         if (!CollectionUtils.isEmpty(list)) {
             return list.stream().map(this::transObj).collect(Collectors.toList());
@@ -331,6 +403,9 @@ public class DatasetTableFieldManage {
         }
     }
 
+    /**
+     * 将字段 DTO 转换为数据库记录，并序列化复杂字段
+     */
     private CoreDatasetTableField transDTO2Record(DatasetTableFieldDTO dto) {
         CoreDatasetTableField record = new CoreDatasetTableField();
         BeanUtils.copyBean(record, dto);
@@ -343,14 +418,20 @@ public class DatasetTableFieldManage {
         return record;
     }
 
+    /**
+     * 校验字段名称长度不超过数据库约束
+     */
     private void checkNameLength(String name) {
         if (name != null && name.length() > 100) {
             CrestException.throwException(Translator.get("i18n_field_name_limit_100"));
         }
     }
 
+    /**
+     * 判断当前数据源类型是否支持 Copilot 字段能力
+     */
     public boolean isCopilotSupport(Map<Long, DatasourceSchemaDTO> dsMap) {
         DatasourceSchemaDTO value = dsMap.entrySet().iterator().next().getValue();
-        return Strings.CI.equals(value.getType(), "mysql");
+        return Strings.CI.equalsAny(value.getType(), "mysql", "obMysql");
     }
 }

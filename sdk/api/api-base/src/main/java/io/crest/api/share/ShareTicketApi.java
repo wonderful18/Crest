@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "可视化管理:分享:TICKET")
+// 定义模块接口契约和数据传输结构
 public interface ShareTicketApi {
 
     @PostMapping("/tickets")

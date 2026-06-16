@@ -17,8 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * @Author gin
- * @Date 2021/5/17 4:27 下午
+ * 提供 MySQL 抽取引擎的建表、写入和表替换 SQL 生成能力
  */
 @Service("mysqlEngine")
 public class MysqlEngineProvider extends EngineProvider {
@@ -28,12 +27,18 @@ public class MysqlEngineProvider extends EngineProvider {
                     "Column_Fields;";
 
 
+    /**
+     * 生成 MySQL 创建或替换视图的 SQL
+     */
     @Override
     public String createView(String name, String viewSQL) {
         validateSqlInjectionRisk(name);
         return "CREATE or replace view " + name + " AS (" + viewSQL + ")";
     }
 
+    /**
+     * 生成向 MySQL 引擎表批量插入抽取数据的 SQL
+     */
     @Override
     public String insertSql(String dsType, String tableName, DatasourceServer.UpdateType extractType, List<String[]> dataList, int page, int pageNumber, List<TableField> tableFields) {
         String engineTableName;
@@ -86,16 +91,25 @@ public class MysqlEngineProvider extends EngineProvider {
     }
 
 
+    /**
+     * 生成 MySQL 删除物理表的 SQL
+     */
     @Override
     public String dropTable(String name) {
         return "DROP TABLE IF EXISTS `" + name + "`";
     }
 
+    /**
+     * 生成 MySQL 删除视图的 SQL
+     */
     @Override
     public String dropView(String name) {
         return "DROP VIEW IF EXISTS `" + name + "`";
     }
 
+    /**
+     * 生成 MySQL 临时表和正式表互换的 SQL
+     */
     @Override
     public String replaceTable(String name) {
         String replaceTableSql = "rename table `FROM_TABLE` to `FROM_TABLE_tmp`, `TO_TABLE` to `FROM_TABLE`, `FROM_TABLE_tmp` to `TO_TABLE`"
@@ -104,6 +118,9 @@ public class MysqlEngineProvider extends EngineProvider {
         return replaceTableSql + ";" + dropTableSql;
     }
 
+    /**
+     * 生成 MySQL 创建抽取表的完整 SQL
+     */
     @Override
     public String createTableSql(String tableName, List<TableField> tableFields, CoreEngine engine) {
         validateSqlInjectionRisk(tableName);
@@ -111,6 +128,9 @@ public class MysqlEngineProvider extends EngineProvider {
         return creatTableSql.replace("TABLE_NAME", tableName).replace("Column_Fields", dorisTableColumnSql);
     }
 
+    /**
+     * 根据字段元数据生成 MySQL 建表字段定义
+     */
     private String createTableSql(final List<TableField> tableFields) {
         StringBuilder columnFields = new StringBuilder("`");
         StringBuilder key = new StringBuilder();

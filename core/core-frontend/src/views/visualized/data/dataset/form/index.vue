@@ -105,28 +105,51 @@ const { push } = useRouter() || {
     window.location.href = val as string
   }
 }
+// 指标表格区域的初始高度，随下方面板拖拽动态调整
 const quotaTableHeight = ref(238)
+// 数据集目录创建弹窗实例
 const creatDsFolder = ref()
+// 计算字段编辑弹窗显示状态
 const editCalcField = ref(false)
+// 计算字段编辑组件实例
 const calcEdit = ref()
+// 联合关系编辑弹窗显示状态
 const editUnion = ref(false)
+// 联合树画布组件实例
 const datasetDrag = ref()
+// 当前数据集名称，未命名时使用默认展示名
 const datasetName = ref(t('data_set.unnamed_dataset'))
+// 预览和批量管理页签当前值
 const tabActive = ref('preview')
+// 左侧数据表列表当前激活表名
 const activeName = ref('')
+// 当前选择的数据源 ID
 const dataSource = ref('')
+// 左侧数据表搜索关键字
 const searchTable = ref('')
+// 数据集名称是否处于输入编辑态
 const showInput = ref(false)
+// 左侧数据表加载状态
 const dsLoading = ref(false)
+// 左侧数据源面板宽度
 const LeftWidth = ref(240)
+// 拖拽数据表时记录鼠标横向偏移
 const offsetX = ref(0)
+// 拖拽数据表时记录鼠标纵向偏移
 const offsetY = ref(0)
+// 左侧数据源面板是否展开
 const showLeft = ref(true)
+// 联合画布拖拽遮罩显示状态
 const maskShow = ref(false)
+// 保存和初始化加载状态
 const loading = ref(false)
+// 自定义时间格式弹窗显示状态
 const updateCustomTime = ref(false)
+// 数据集名称输入框实例
 const editorName = ref()
+// 数据表 ID 到展示名称的缓存映射
 const nameMap = ref({})
+// 当前正在编辑时间格式或批量时间格式的字段上下文
 const currentField = ref({
   dateFormat: '',
   id: '',
@@ -134,12 +157,16 @@ const currentField = ref({
   name: '',
   idArr: []
 })
+// 当前数据集是否跨源
 const isCross = ref(false)
+// 数据集读取模式，0 为直连，1 为缓存
 const syncMode = ref(0)
+// 同步支持状态刷新触发器，用于强制重新计算 SQL 参数依赖
 const syncSupportRefreshKey = ref(0)
 let isUpdate = false
 let pendingSyncSave: Promise<void> | null = null
 
+// 创建同步任务默认配置，供新建数据集和无任务数据集初始化
 const defaultSyncTask = (): DatasetSyncTask => ({
   updateType: 'all_scope',
   syncRate: 'RIGHTNOW',
@@ -152,12 +179,17 @@ const defaultSyncTask = (): DatasetSyncTask => ({
   taskTimeoutMinutes: 360,
   failureWarnThreshold: 1
 })
+// 当前数据集同步任务配置
 const syncTask = reactive<DatasetSyncTask>(defaultSyncTask())
+// 当前数据集同步日志列表
 const syncLogs = ref<DatasetSyncLog[]>([])
+// 手动同步按钮提交状态
 const syncSubmitting = ref(false)
+// 同步高级设置面板展开状态
 const syncAdvancedVisible = ref(false)
 let syncPollTimer: number | null = null
 
+// 将字段类型编码转换为界面展示文案
 const fieldTypes = index => {
   return [
     t('dataset.text'),
@@ -169,6 +201,7 @@ const fieldTypes = index => {
   ][index]
 }
 
+// 标记数据集配置已修改，并触发同步支持状态重算
 const changeUpdate = () => {
   isUpdate = true
   syncSupportRefreshKey.value += 1
@@ -226,7 +259,9 @@ const fieldOptionsText = [
   { label: 'URL', value: 7 }
 ]
 
+// 自定义时间格式表单实例
 const ruleFormRef = ref<FormInstance>()
+// 普通字段重命名表单实例
 const ruleFormFieldRef = ref<FormInstance>()
 
 const rules = {
@@ -237,6 +272,7 @@ const fieldRules = {
   name: [{ required: true, message: t('dataset.input_edit_name'), trigger: 'blur' }]
 }
 
+// 新建自定义 SQL 节点的临时表配置
 const sqlNode = reactive<Table>({
   datasourceId: '',
   name: '',
@@ -249,16 +285,19 @@ let nodeInfo = {
   pid: '',
   name: ''
 }
+// 当前已保存数据集 ID，新建前为空
 const currentDatasetId = ref('')
 
 const defaultProps = {
   children: 'children',
   label: 'label'
 }
+// 联合画布高度，拖拽时同步影响预览区域高度
 const dragHeight = ref(260)
 
 let tableList = []
 
+// 在数据源树中按 ID 递归查找数据源名称
 const dfsName = (arr, id) => {
   let name = ''
   arr.some(ele => {
@@ -278,6 +317,7 @@ const dfsName = (arr, id) => {
 
 const { height } = useWindowSize()
 
+// 裁剪数据源树，只保留目录或可选叶子节点
 const dfsChild = arr => {
   return arr.filter(ele => {
     if (ele.leaf) {
@@ -290,10 +330,12 @@ const dfsChild = arr => {
   })
 }
 
+// 根据数据源 ID 获取数据源展示名
 const getDsName = (id: string) => {
   return dfsName(state.dataSourceList, id)
 }
 
+// 返回数据集列表页，并兼容嵌入式模式和浏览器历史栈
 const pushDataset = () => {
   wsCache.set(`dataset-info-id`, nodeInfo.id)
   if (appStore.isCrestBi) {
@@ -314,6 +356,7 @@ const pushDataset = () => {
   }
 }
 
+// 返回主列表前检查未保存变更，必要时弹出确认
 const backToMain = () => {
   if (isUpdate) {
     ElMessageBox.confirm(t('data_set.want_to_exit'), {
@@ -332,6 +375,7 @@ const backToMain = () => {
   }
 }
 
+// 取消自定义时间格式编辑，并恢复字段原始类型选择
 const closeCustomTime = () => {
   if (!!currentField.value.idArr.length) {
     const { idArr } = currentField.value
@@ -357,6 +401,7 @@ const closeCustomTime = () => {
   updateCustomTime.value = false
 }
 
+// 确认自定义时间格式，支持单字段和批量字段两种入口
 const confirmCustomTime = () => {
   if (!!currentField.value.idArr.length) {
     const { name, idArr } = currentField.value
@@ -391,11 +436,13 @@ const confirmCustomTime = () => {
   }
 }
 
+// 按本地已加载表列表过滤左侧数据表
 watch(searchTable, val => {
   datasourceTableData.value = tableList.filter(ele =>
     ele.tableName.toLowerCase().includes(val.toLowerCase())
   )
 })
+// 编辑态保存数据集，并在需要时保存同步配置和返回列表
 const editeSave = () => {
   if (!validateSyncSetting()) {
     return
@@ -415,6 +462,7 @@ const editeSave = () => {
     })
 }
 
+// 处理字段更多菜单中的类型转换、复制、删除、编辑和重命名命令
 const handleFieldMore = (ele, type) => {
   changeUpdate()
   if (tabActive.value === 'manage') {
@@ -472,11 +520,13 @@ const handleFieldMore = (ele, type) => {
   }
 }
 
+// 在维度和指标之间切换字段分组类型
 const dqTrans = id => {
   const obj = allfields.value.find(ele => ele.id === id)
   obj.groupType = obj.groupType === 'd' ? 'q' : 'd'
 }
 
+// 批量设置已选字段的维度或指标分组类型
 const dqTransArr = groupType => {
   const idArr = fieldSelection.value.map(ele => ele.id)
   allfields.value.forEach(ele => {
@@ -487,6 +537,7 @@ const dqTransArr = groupType => {
   recoverSelection()
 }
 
+// 复制普通字段或计算字段，复制后作为计算字段参与后续编辑
 const copyField = item => {
   const param = cloneDeep(item)
   param.id = guid()
@@ -499,8 +550,10 @@ const copyField = item => {
   allfields.value.splice(index + 1, 0, param)
 }
 
+// 批量选择时禁止选中分组字段
 const selectable = row => ![3].includes(row.extField)
 
+// 复制分组字段，并生成新的前端临时 ID
 const copyGroupField = item => {
   const param = cloneDeep(item)
   param.id = guid()
@@ -509,6 +562,7 @@ const copyGroupField = item => {
   allfields.value.splice(index + 1, 0, param)
 }
 
+// 按字段 ID 删除字段，并递归删除依赖缺失的计算字段和分组字段
 const delFieldById = arr => {
   const delId = [...arr]
   while (delId.length) {
@@ -539,6 +593,7 @@ const delFieldById = arr => {
   delGroupIds()
 }
 
+// 模拟删除字段，返回会受影响的计算字段或分组字段 ID
 const delFieldByIdFake = (arr, fakeAllfields) => {
   const delId = [...arr]
   let idList = []
@@ -569,6 +624,7 @@ const delFieldByIdFake = (arr, fakeAllfields) => {
   return idList
 }
 
+// 删除字段前确认依赖影响，并同步联合树中的字段选择
 const deleteField = item => {
   let tip = ''
   const idArr = allfields.value.reduce((pre, next) => {
@@ -604,6 +660,7 @@ const deleteField = item => {
   })
 }
 
+// 新增计算字段，并把当前维度和指标字段作为可引用上下文传入编辑器
 const addCalcField = groupType => {
   editCalcField.value = true
   calcTitle.value = t('dataset.add_calc_field')
@@ -616,12 +673,15 @@ const addCalcField = groupType => {
   })
 }
 
+// 普通字段重命名弹窗显示状态
 const editNormalField = ref(false)
+// 当前正在重命名的普通字段
 const currentNormalField = ref({
   id: '',
   name: ''
 })
 
+// 打开普通字段重命名弹窗
 const renameField = item => {
   const { id, name } = item
   currentNormalField.value = {
@@ -631,8 +691,10 @@ const renameField = item => {
   editNormalField.value = true
 }
 
+// 计算字段弹窗标题
 const calcTitle = ref('')
 
+// 打开计算字段编辑弹窗，并加载待编辑字段
 const editField = item => {
   editCalcField.value = true
   nextTick(() => {
@@ -645,12 +707,14 @@ const editField = item => {
   })
 }
 
+// 关闭普通字段重命名弹窗并清空临时状态
 const closeNormalField = () => {
   currentNormalField.value.id = ''
   currentNormalField.value.name = ''
   editNormalField.value = false
 }
 
+// 确认普通字段重命名，并写回全量字段列表
 const confirmNormalField = () => {
   ruleFormFieldRef.value.validate(val => {
     if (val) {
@@ -666,10 +730,12 @@ const confirmNormalField = () => {
   })
 }
 
+// 关闭计算字段编辑弹窗
 const closeEditCalc = () => {
   editCalcField.value = false
 }
 
+// 确认计算字段编辑，规范化时间字段格式后写入全量字段列表
 const confirmEditCalc = () => {
   calcEdit.value.formField.validate(val => {
     if (val) {
@@ -695,6 +761,7 @@ const confirmEditCalc = () => {
   })
 }
 
+// 根据预览字段生成虚拟表格列配置
 const generateColumns = (arr: Field[]) =>
   arr.map(ele => ({
     key: ele.engineFieldName,
@@ -718,6 +785,7 @@ const generateColumns = (arr: Field[]) =>
     )
   }))
 
+// 加载指定数据源下的数据表，并同步自定义 SQL 节点的数据源 ID
 const dsChange = (val: string) => {
   dsLoading.value = true
   sqlNode.datasourceId = dataSource.value
@@ -731,14 +799,18 @@ const dsChange = (val: string) => {
     })
 }
 
+// 初始化指定数据源和表名，常用于从路由参数进入创建页
 const getTableName = async (datasourceId, tableName) => {
   await dsChange(datasourceId)
   if (!!tableName) {
     searchTable.value = tableName
   }
 }
+// 当前页面是否处于编辑或复制已有数据集状态
 const isEdit = ref(false)
+// 外部数据源树检查组件实例
 const datasetCheckRef = ref()
+// 初始化编辑或复制数据集，恢复联合树、字段、同步配置和左侧数据源
 const initEdite = async () => {
   let { id, datasourceId, tableName, copyId } = route.query
   const { id: legacyCopyId } = route.params
@@ -799,6 +871,7 @@ const initEdite = async () => {
   }
 }
 
+// 打开关联条件编辑器，并把当前父子节点传给关联编辑组件
 const joinEditor = (arr: []) => {
   state.editArr = cloneDeep(arr)
   editUnion.value = true
@@ -807,16 +880,21 @@ const joinEditor = (arr: []) => {
   })
 }
 
+// 数据预览表格列配置
 const columns = shallowRef([])
+// 数据预览表格数据
 const tableData = shallowRef([])
+// 指标字段列表，由全量字段按 groupType 派生
 const quota = computed(() => {
   return allfields.value.filter(ele => ele.groupType === 'q')
 })
 
+// 维度字段列表，由全量字段按 groupType 派生
 const dimensions = computed(() => {
   return allfields.value.filter(ele => ele.groupType === 'd')
 })
 
+// 深度优先生成数据表 ID 到表名的映射
 const dfsGetName = (list, name) => {
   list.forEach(ele => {
     name[ele.id] = ele.tableName
@@ -826,6 +904,7 @@ const dfsGetName = (list, name) => {
   })
 }
 
+// 切换到批量管理页签时，补齐字段类型选择值并刷新表名缓存
 const tabChange = val => {
   if (val === 'preview') return
   reGetName()
@@ -844,6 +923,7 @@ const tabChange = val => {
   })
 }
 
+// 联合树结构变化后的统一回调，刷新字段名称、取消预览请求并标记已更新
 const addComplete = () => {
   state.nodeNameList = [...datasetDrag.value.nodeNameList]
   changeUpdate()
@@ -856,10 +936,12 @@ const addComplete = () => {
   reGetName()
 }
 
+// 重新从联合树生成表名映射
 const reGetName = () => {
   dfsGetName(datasetDrag.value.getNodeList(), nameMap.value)
 }
 
+// 数据集表单主状态，保存联合编辑、数据源树和字段折叠状态
 const state = reactive({
   nodeNameList: [],
   editArr: [],
@@ -867,7 +949,9 @@ const state = reactive({
   fieldCollapse: ['dimension', 'quota']
 })
 
+// 左侧当前数据源的数据表列表
 const datasourceTableData = shallowRef([])
+// 根据字段类型编码选择字段图标类型
 const getIconName = (type: number) => {
   if (type === 1) {
     return 'time'
@@ -888,11 +972,13 @@ const getIconName = (type: number) => {
   }
 }
 
+// 当前数据集的全量字段列表，包含物理字段、计算字段和分组字段
 const allfields = ref([])
 
 provide('allfields', allfields)
 provide('isCross', isCross)
 
+// 在数据源树中查找指定 ID 的数据源节点
 const findDatasource = (list, id) => {
   for (const item of list || []) {
     if (`${item.id}` === `${id}`) {
@@ -905,6 +991,7 @@ const findDatasource = (list, id) => {
   }
 }
 
+// 判断 SQL 参数配置是否非空，兼容字符串、数组和对象三种来源
 const hasSqlVariableDetails = value => {
   if (!value) {
     return false
@@ -933,6 +1020,7 @@ const hasSqlVariableDetails = value => {
   return true
 }
 
+// 判断联合树节点或其子节点是否包含 SQL 参数
 const nodeHasSqlVariables = node => {
   if (!node) {
     return false
@@ -952,16 +1040,20 @@ const nodeHasSqlVariables = node => {
   return children.some(child => nodeHasSqlVariables(child))
 }
 
+// 当前左侧选中的数据源节点
 const currentDatasource = computed(() => findDatasource(state.dataSourceList, dataSource.value))
-const syncSupportedDatasourceTypes = ['mysql', 'obOracle']
+const syncSupportedDatasourceTypes = ['mysql', 'obMysql', 'obOracle']
+// 当前数据源类型是否具备缓存同步基础能力
 const syncBaseSupportedDataset = computed(
   () => !!dataSource.value && syncSupportedDatasourceTypes.includes(currentDatasource.value?.type)
 )
+// 当前联合树中是否存在带 SQL 参数的自定义 SQL 节点
 const hasDatasetSqlVariables = computed(() => {
   const refreshVersion = syncSupportRefreshKey.value
   const nodes = datasetDrag.value?.getNodeList?.() || []
   return refreshVersion >= 0 && nodes.some(node => nodeHasSqlVariables(node))
 })
+// 当前数据集不能使用缓存同步的具体原因
 const syncUnsupportedReason = computed(() => {
   if (!syncBaseSupportedDataset.value) {
     return ''
@@ -974,24 +1066,31 @@ const syncUnsupportedReason = computed(() => {
   }
   return ''
 })
+// 是否显示缓存同步配置区域
 const showSyncSetting = computed(() => syncBaseSupportedDataset.value)
+// 当前数据集是否真正支持开启缓存模式
 const syncSupportedDataset = computed(
   () => syncBaseSupportedDataset.value && !syncUnsupportedReason.value
 )
+// 最终保存到后端的数据集读取模式
 const datasetMode = computed(() => (syncSupportedDataset.value && syncMode.value === 1 ? 1 : 0))
+// 可作为增量字段的普通选中字段
 const incrementalFieldOptions = computed(() =>
   allfields.value.filter(ele => ele.extField === 0 && ele.checked !== false)
 )
+// 时间类型增量候选字段
 const timeIncrementalFields = computed(() =>
   incrementalFieldOptions.value.filter(
     field => Number(field.extractedFieldType ?? field.fieldType) === 1
   )
 )
+// 数值类型增量候选字段
 const numberIncrementalFields = computed(() =>
   incrementalFieldOptions.value.filter(field =>
     [2, 3].includes(Number(field.extractedFieldType ?? field.fieldType))
   )
 )
+// 自动推荐增量字段，优先选择更新时间类字段，再回退到 ID 类数值字段
 const autoIncrementalField = computed(() => {
   const keyword = ['更新', '修改', '时间', 'update', 'modify', 'time', 'date']
   return (
@@ -1007,13 +1106,17 @@ const autoIncrementalField = computed(() => {
     numberIncrementalFields.value[0]
   )
 })
+// 当前同步任务选择的增量字段
 const currentIncrementalField = computed(() =>
   incrementalFieldOptions.value.find(field => `${field.id}` === `${syncTask.incrementalFieldId}`)
 )
+// 当前表单是否已经拥有可用于同步的后端数据集 ID
 const hasCurrentDatasetId = computed(() => !!currentDatasetId.value)
+// 增量同步不可用的原因
 const incrementalDisabledReason = computed(() =>
   getIncrementalDisabledReason(incrementalFieldOptions.value)
 )
+// 同步方式摘要文案
 const syncMethodText = computed(() => {
   if (syncTask.updateType === 'add_scope') {
     return currentIncrementalField.value?.name
@@ -1022,7 +1125,9 @@ const syncMethodText = computed(() => {
   }
   return '全量'
 })
+// 同步任务是否正在执行
 const syncRunning = computed(() => syncTask.taskStatus === 'UnderExecution')
+// 同步状态展示文案
 const syncStatusText = computed(() =>
   getDatasetSyncStatusText({
     ...toRaw(syncTask),
@@ -1030,18 +1135,24 @@ const syncStatusText = computed(() =>
     hasDatasetId: hasCurrentDatasetId.value
   })
 )
+// 立即同步按钮禁用原因
 const syncNowDisabledReason = computed(() =>
   getDatasetSyncNowDisabledReason({
     hasDatasetId: hasCurrentDatasetId.value,
     syncRunning: syncRunning.value
   })
 )
+// 立即同步按钮是否禁用
 const syncNowDisabled = computed(() => !!syncNowDisabledReason.value)
+// 最新一条同步日志
 const latestSyncLog = computed(() => syncLogs.value[0])
+// 最新同步日志中的标准化详情
 const latestSyncInfo = computed(() =>
   normalizeDatasetSyncInfo(latestSyncLog.value?.info || syncTask.lastVerifyMessage || '')
 )
+// 最新同步日志中的行数摘要
 const latestSyncRowCountText = computed(() => formatDatasetSyncRowCount(latestSyncLog.value))
+// 同步详情入口或最终状态文案
 const syncDetailText = computed(() => {
   const info = String(latestSyncInfo.value || '')
   if (!info) return ''
@@ -1053,6 +1164,7 @@ const syncDetailText = computed(() => {
   return info
 })
 
+// 根据同步方式补齐或清空增量字段默认值
 const applyIncrementalDefaults = () => {
   if (syncTask.updateType !== 'add_scope') {
     syncTask.incrementalFieldId = null
@@ -1066,6 +1178,7 @@ const applyIncrementalDefaults = () => {
   }
 }
 
+// 切换直连和缓存模式时校验支持状态，并自动推荐增量字段
 const syncModeChange = () => {
   if (syncMode.value !== 1) {
     return
@@ -1081,6 +1194,7 @@ const syncModeChange = () => {
   applyIncrementalDefaults()
 }
 
+// 切换全量或增量更新方式时校验字段条件
 const syncUpdateTypeChange = () => {
   if (syncTask.updateType === 'add_scope' && incrementalDisabledReason.value) {
     syncTask.updateType = 'all_scope'
@@ -1090,18 +1204,21 @@ const syncUpdateTypeChange = () => {
   applyIncrementalDefaults()
 }
 
+// 增量字段候选变化或缓存模式变化时，自动刷新增量默认字段
 watch([autoIncrementalField, () => syncMode.value], () => {
   if (datasetMode.value === 1) {
     applyIncrementalDefaults()
   }
 })
 
+// 缓存模式不再支持时自动回退到直连
 watch(syncUnsupportedReason, reason => {
   if (reason && syncMode.value === 1) {
     syncMode.value = 0
   }
 })
 
+// 根据简单定时配置生成后端 cron 表达式
 const refreshSimpleCron = () => {
   const value = Number(syncTask.simpleCronValue || 30)
   if (syncTask.simpleCronType === 'hour') {
@@ -1118,6 +1235,7 @@ const refreshSimpleCron = () => {
   syncTask.cron = `0 0/${syncTask.simpleCronValue} * * * ? *`
 }
 
+// 切换同步频率时刷新 cron 或清空手动同步 cron
 const syncRateChange = () => {
   if (syncTask.syncRate === 'SIMPLE_CRON') {
     refreshSimpleCron()
@@ -1127,6 +1245,7 @@ const syncRateChange = () => {
   }
 }
 
+// 保存或执行同步前校验同步配置，并修正不再支持的模式
 const validateSyncSetting = () => {
   if (syncMode.value === 1 && syncUnsupportedReason.value) {
     syncMode.value = 0
@@ -1139,6 +1258,7 @@ const validateSyncSetting = () => {
   return true
 }
 
+// 加载数据集同步任务和日志，并根据运行状态启动轮询
 const loadDatasetSyncTask = async id => {
   Object.assign(syncTask, defaultSyncTask())
   const task = await datasetSyncTask(id)
@@ -1154,6 +1274,7 @@ const loadDatasetSyncTask = async id => {
   }
 }
 
+// 刷新同步任务和日志状态，任务结束后停止轮询
 const refreshDatasetSyncState = async () => {
   if (!currentDatasetId.value) {
     return
@@ -1169,6 +1290,7 @@ const refreshDatasetSyncState = async () => {
   }
 }
 
+// 启动同步任务轮询，避免重复创建定时器
 const startSyncPolling = () => {
   if (syncPollTimer) {
     return
@@ -1178,6 +1300,7 @@ const startSyncPolling = () => {
   }, 3000)
 }
 
+// 停止同步任务轮询并清空定时器引用
 const stopSyncPolling = () => {
   if (!syncPollTimer) {
     return
@@ -1186,6 +1309,7 @@ const stopSyncPolling = () => {
   syncPollTimer = null
 }
 
+// 保存数据集同步配置，直连模式下会停止已有同步任务
 const persistDatasetSync = async id => {
   if (!id) {
     return
@@ -1211,6 +1335,7 @@ const persistDatasetSync = async id => {
   )
 }
 
+// 保存当前数据集定义，并回写后端返回的 ID、名称和字段列表
 const saveCurrentDataset = async () => {
   const union = []
   dfsNodeList(union, datasetDrag.value.getNodeList())
@@ -1236,6 +1361,7 @@ const saveCurrentDataset = async () => {
   return saved
 }
 
+// 立即执行一次数据集同步，必要时先保存数据集和同步配置
 const executeDatasetSyncNow = async () => {
   if (!validateSyncSetting()) {
     return
@@ -1263,8 +1389,11 @@ const executeDatasetSyncNow = async () => {
   }
 }
 
+// 维度区域是否展开
 const expandedD = ref(true)
+// 指标区域是否展开
 const expandedQ = ref(true)
+// 为联合节点新增字段补齐 ID、数据表 ID 和数据源 ID
 const setGuid = (arr, id, datasourceId, oldArr) => {
   arr.forEach(ele => {
     if (!ele.id) {
@@ -1275,6 +1404,7 @@ const setGuid = (arr, id, datasourceId, oldArr) => {
   })
 }
 
+// 从联合树中收集所有节点的当前选中字段
 const dfsFields = (arr, list) => {
   list.forEach(ele => {
     if (ele.children?.length) {
@@ -1285,6 +1415,7 @@ const dfsFields = (arr, list) => {
   })
 }
 
+// 计算新字段集合中已删除的旧字段和扩展字段
 const getDelIdArr = (newArr, oldArr) => {
   const idMapNew = newArr.map(ele => ele.id)
   return [
@@ -1295,6 +1426,7 @@ const getDelIdArr = (newArr, oldArr) => {
   ]
 }
 
+// 合并新旧字段列表，保留计算字段和分组字段，再追加新增普通字段
 const diffArr = (newArr, oldArr) => {
   const idMapNew = newArr.map(ele => ele.id)
   const idMapOld = oldArr.map(ele => ele.id)
@@ -1306,13 +1438,16 @@ const diffArr = (newArr, oldArr) => {
   ])
 }
 
+// 关闭关联编辑器并撤销未确认的联合画布占位状态
 const closeEditUnion = () => {
   notConfirmEditUnion()
   fieldUnion.value.clearState()
   editUnion.value = false
 }
+// 关联条件编辑组件实例
 const fieldUnion = ref()
 
+// 根据联合树字段选择重建全量字段列表，并清理失效分组字段
 const setFieldAll = () => {
   const arr = []
   dfsFields(arr, datasetDrag.value.getNodeList())
@@ -1323,6 +1458,7 @@ const setFieldAll = () => {
   fieldUnion.value?.clearState()
 }
 
+// 清理原始字段不存在后失效的分组字段
 const delGroupIds = () => {
   const delIds = []
   const fields = allfields.value.map(ele => ele.id)
@@ -1335,6 +1471,7 @@ const delGroupIds = () => {
   allfields.value = allfields.value.filter(ele => !delIds.includes(ele.id))
 }
 
+// 在联合树中查找指定节点的当前字段列表
 const dfsNode = (arr, id) => {
   return arr.reduce((pre, next) => {
     if (next.id === id) {
@@ -1346,6 +1483,7 @@ const dfsNode = (arr, id) => {
   }, [])
 }
 
+// 收集除指定节点外的其他节点字段，用于关联编辑时计算删除影响
 const dfsFieldsTips = (arr, list, idArr) => {
   list.forEach(ele => {
     if (ele.children?.length) {
@@ -1357,6 +1495,7 @@ const dfsFieldsTips = (arr, list, idArr) => {
     }
   })
 }
+// 确认关联条件编辑，并在删除字段会影响计算字段时弹出确认
 const confirmEditUnion = () => {
   const { node, parent } = fieldUnion.value
   const to = node.id
@@ -1428,6 +1567,7 @@ const confirmEditUnion = () => {
   datasetDrag.value.setChangeStatus(to, from)
 }
 
+// 联合树子组件通知字段变更时，重新生成全量字段
 const updateAllfields = () => {
   setFieldAll()
 }
@@ -1443,6 +1583,7 @@ const equalMin = [
   }
 ]
 
+// 分组字段校验器，确保每个分组项都有取值条件
 const validatePass = (_: any, value: any, callback: any) => {
   if (!value || !value.length) {
     callback(new Error(t('chart.value_can_not_empty')))
@@ -1450,6 +1591,7 @@ const validatePass = (_: any, value: any, callback: any) => {
     callback()
   }
 }
+// 分组字段子表单实例列表，用于逐个校验分组规则
 const refsForm = ref([])
 
 const fieldGroupRules = {
@@ -1482,12 +1624,19 @@ const defaultObj = {
     }
   ]
 }
+// 当前分组字段编辑表单数据
 const currentGroupField = reactive(cloneDeep(defaultObj))
+// 分组字段主表单实例
 const ruleGroupFieldRef = ref()
+// 分组字段编辑弹窗显示状态
 const editGroupField = ref(false)
+// 枚举值加载状态
 const enumValueLoading = ref(false)
+// 可作为分组来源的字段列表
 const groupFields = shallowRef([])
+// 文本分组字段的枚举值候选
 const enumValue = shallowRef([])
+// 新建分组字段，并初始化默认分组规则
 const addGroupField = () => {
   groupFields.value = allfields.value.filter(ele => ![2, 3].includes(ele.extField))
   Object.assign(currentGroupField, cloneDeep(defaultObj))
@@ -1495,6 +1644,7 @@ const addGroupField = () => {
   titleForGroup.value = t('dataset.create_grouping_field')
   editGroupField.value = true
 }
+// 切换分组来源字段时重置分组规则，并按文本字段加载枚举值
 const handleFieldschange = val => {
   const field = groupFields.value.find(ele => ele.id === val)
   const { fieldType } = field
@@ -1526,20 +1676,25 @@ const handleFieldschange = val => {
       enumValueLoading.value = false
     })
 }
+// 关闭分组字段编辑弹窗
 const closeGroupField = () => {
   editGroupField.value = false
 }
 
+// 已被当前分组规则占用的枚举值
 const disabledEnumArr = computed(() => {
   return currentGroupField.groupList?.map(ele => ele.text).flat()
 })
 
+// 判断枚举值是否已被其他分组占用
 const disabledEnum = (item, arr) => {
   return disabledEnumArr.value.includes(item) && !arr.includes(item)
 }
 
+// 分组字段弹窗标题
 const titleForGroup = ref(t('dataset.create_grouping_field'))
 
+// 打开分组字段编辑弹窗，并把后端结构转换为表单结构
 const initGroupField = val => {
   groupFields.value = allfields.value.filter(ele => ![2, 3].includes(ele.extField))
   Object.assign(currentGroupField, val)
@@ -1568,6 +1723,7 @@ const initGroupField = val => {
   editGroupField.value = true
 }
 
+// 确认分组字段编辑，校验所有分组规则后写回全量字段列表
 const confirmGroupField = () => {
   ruleGroupFieldRef.value.validate(val => {
     let count = 0
@@ -1615,10 +1771,12 @@ const confirmGroupField = () => {
   })
 }
 
+// 撤销关联编辑器中的未确认占位节点
 const notConfirmEditUnion = () => {
   datasetDrag.value.notConfirm()
 }
 
+// 新增一个分组字段规则行
 const addGroupFields = () => {
   currentGroupField.groupList.push({
     name: '',
@@ -1631,22 +1789,26 @@ const addGroupFields = () => {
   })
 }
 
+// 删除一个分组字段规则行，并同步移除对应表单引用
 const removeGroupFields = index => {
   currentGroupField.groupList.splice(index, 1)
   refsForm.value.splice(index, 1)
 }
 
+// 开始从左侧拖拽数据表或自定义 SQL 节点
 const dragstart = (e: DragEvent, ele) => {
   offsetX.value = e.offsetX
   offsetY.value = e.offsetY
   e.dataTransfer.setData('text/plain', JSON.stringify(ele))
   maskShow.value = true
 }
+// 设置左侧表列表的当前激活表
 const setActiveName = (data: Table) => {
   if (data.unableCheck) return
   activeName.value = data.tableName
 }
 
+// 校验计算字段表达式能否生成预览 SQL
 const verify = () => {
   if (datasetPreviewLoading.value) return
   calcEdit.value.formField.validate(val => {
@@ -1683,13 +1845,16 @@ const verify = () => {
   })
 }
 
+// 左侧面板是否正在横向拖拽
 const isDragging = ref(false)
 
+// 开始拖拽左侧面板宽度，并临时禁用页面文本选择
 const mousedownDrag = () => {
   isDragging.value = true
   document.querySelector('body').style.userSelect = 'none'
   document.querySelector('.dataset-db').addEventListener('mousemove', calculateWidth)
 }
+// 结束横向或纵向拖拽，清理鼠标移动监听
 const mouseupDrag = () => {
   isDragging.value = false
   document.querySelector('body').style.userSelect = 'auto'
@@ -1698,9 +1863,11 @@ const mouseupDrag = () => {
   dom.removeEventListener('mousemove', calculateHeight)
 }
 
+// 联合树中是否存在跨数据源关联
 const crossDatasources = computed(() => {
   return datasetDrag.value?.crossDatasources
 })
+// 根据鼠标横坐标调整左侧面板宽度
 const calculateWidth = (e: MouseEvent) => {
   if (e.pageX < 240) {
     LeftWidth.value = 240
@@ -1713,9 +1880,11 @@ const calculateWidth = (e: MouseEvent) => {
   LeftWidth.value = e.pageX
 }
 
+// 开始拖拽联合画布高度
 const mousedownDragH = () => {
   document.querySelector('.dataset-db').addEventListener('mousemove', calculateHeight)
 }
+// 根据鼠标纵坐标调整联合画布和 SQL 结果区域高度
 const calculateHeight = (e: MouseEvent) => {
   const clientHeight = document.documentElement.clientHeight
   if (e.pageY - 56 < 64) {
@@ -1733,6 +1902,7 @@ const calculateHeight = (e: MouseEvent) => {
   quotaTableHeight.value = sqlResultHeight.value - 242
 }
 
+// SQL 结果区域高度，窗口变化和拖拽时共同维护
 const sqlResultHeight = ref(0)
 const handleResize = debounce(() => {
   const clientHeight = document.documentElement.clientHeight
@@ -1744,6 +1914,7 @@ const handleResize = debounce(() => {
   dragHeight.value = clientHeight - sqlResultHeight.value - 56
 }, 60)
 let willBack = false
+// 保存完成且存在待处理同步配置后，再返回数据集列表
 const saveAndBack = async () => {
   if (!willBack) return
   if (pendingSyncSave) {
@@ -1768,10 +1939,12 @@ onBeforeUnmount(() => {
   stopSyncPolling()
   window.removeEventListener('resize', handleResize)
 })
+// 读取 SQL 结果区域实际高度，用于初始化拖拽布局
 const getSqlResultHeight = () => {
   const sqlResult = document.querySelector('.sql-result') as HTMLElement | null
   sqlResultHeight.value = sqlResult?.offsetHeight || 0
 }
+// 加载数据源树，并触发外部数据源检查组件刷新
 const datasource = (weight?: number) => {
   datasourceList(weight).then(res => {
     const _list = (res as unknown as DataSource[]) || []
@@ -1790,6 +1963,7 @@ const datasource = (weight?: number) => {
   })
 }
 
+// 复制或新建数据集时，递归重置联合树中的数据表 ID
 const resetDfsFields = (arr, idMap) => {
   for (let i in arr) {
     const id = guid()
@@ -1801,6 +1975,7 @@ const resetDfsFields = (arr, idMap) => {
   }
 }
 
+// 复制数据集时重置字段 ID，并记录旧 ID 到新 ID 的映射
 const resetAllfieldsId = arr => {
   const idMap = {}
   for (let i in allfields.value) {
@@ -1813,6 +1988,7 @@ const resetAllfieldsId = arr => {
   return idMap
 }
 
+// 用新的字段和节点 ID 重写联合树、画布状态和字段列表
 const resetAllfieldsUnionId = (arr, idMap) => {
   let strUnion = JSON.stringify(arr) as string
   let strNodeList = JSON.stringify(toRaw(datasetDrag.value.getNodeList())) as string
@@ -1827,6 +2003,7 @@ const resetAllfieldsUnionId = (arr, idMap) => {
   return JSON.parse(strUnion)
 }
 
+// 保存数据集；新建时先打开目录选择，编辑时直接保存
 const datasetSave = () => {
   if (!validateSyncSetting()) {
     return
@@ -1859,13 +2036,16 @@ const datasetSave = () => {
     datasetName.value
   )
 }
+// 保存数据集并在保存完成后返回列表页
 const datasetSaveAndBack = () => {
   willBack = true
   datasetSave()
 }
 
+// 数据集预览加载状态
 const datasetPreviewLoading = ref(false)
 
+// 按当前联合树和字段配置请求数据预览
 const datasetPreview = () => {
   if (datasetPreviewLoading.value) return
   const arr = []
@@ -1881,6 +2061,7 @@ const datasetPreview = () => {
     })
 }
 
+// 将前端联合树转换为后端保存接口需要的 union 结构
 const dfsNodeList = (arr, list) => {
   list.forEach(ele => {
     const childrenDs = []
@@ -1917,27 +2098,37 @@ const dfsNodeList = (arr, list) => {
   })
 }
 
+// 指标批量管理表格实例
 const quotaTable = ref()
+// 维度批量管理表格实例
 const dimensionsTable = ref()
 
+// 当前维度表格选中字段 ID
 const dimensionsSelection = ref([])
+// 当前指标表格选中字段 ID
 const quotaSelection = ref([])
 
+// 当前批量选中字段的原始类型集合
 const fieldTypeSelection = ref([])
+// 当前批量选中的字段对象集合
 const fieldSelection = ref([])
 
+// 批量类型选择器是否可展示，只有选中字段原始类型一致时展示
 const showCascaderBatch = computed(() => {
   return (
     !!fieldTypeSelection.value.length && Array.from(new Set(fieldTypeSelection.value)).length === 1
   )
 })
 
+// 清空维度和指标表格的选中状态
 const clearSelection = () => {
   dimensionsTable.value.clearSelection()
   quotaTable.value.clearSelection()
 }
+// 批量字段类型选择器当前值
 const fieldTypeSelectionValue = ref([])
 
+// 汇总维度和指标表格选中字段，并计算批量类型选择器状态
 const setFieldTypeSelection = () => {
   fieldSelection.value = [
     ...dimensionsTable.value.getSelectionRows(),
@@ -1958,6 +2149,7 @@ const setFieldTypeSelection = () => {
     obj.fieldType === 1 && obj.extractedFieldType === 0 ? [1, obj.dateFormatType] : [obj.fieldType]
 }
 
+// 切换批量管理表格行的操作按钮显示状态
 const rowClick = (_, __, event) => {
   const element = event.target.parentNode.parentNode
   if ([...element.classList].includes('no-hide')) {
@@ -1969,6 +2161,7 @@ const rowClick = (_, __, event) => {
 
 let oldArrValue = []
 
+// 批量修改字段类型，遇到自定义时间格式时转入弹窗编辑
 const cascaderChangeArr = val => {
   const [fieldType, dateFormat] = val
   dimensionsSelection.value = dimensionsTable.value.getSelectionRows().map(ele => ele.id)
@@ -1998,10 +2191,12 @@ const cascaderChangeArr = val => {
   recoverSelection()
 }
 
+// 数据源树过滤函数
 const filterNode = (value: string, data: BusiTreeNode) => {
   if (!value) return true
   return data.name?.toLowerCase().includes(value.toLowerCase())
 }
+// 批量操作后恢复维度和指标表格的选中状态
 const recoverSelection = () => {
   nextTick(() => {
     quota.value.forEach(ele => {
@@ -2017,10 +2212,12 @@ const recoverSelection = () => {
   })
 }
 
+// 左侧拖拽结束后关闭联合画布遮罩
 const dragEnd = () => {
   maskShow.value = false
 }
 
+// 单字段修改字段类型，遇到自定义时间格式时转入弹窗编辑
 const cascaderChange = (row, val) => {
   const [fieldType, dateFormat] = val
   if (dateFormat === 'custom') {
@@ -2034,6 +2231,7 @@ const cascaderChange = (row, val) => {
   row.dateFormatType = fieldType === 1 ? dateFormat : ''
 }
 
+// 将后端 union 结构转换为前端联合树结构
 const dfsUnion = (arr, list) => {
   list.forEach(ele => {
     const children = []
@@ -2057,6 +2255,7 @@ const dfsUnion = (arr, list) => {
     })
   })
 }
+// 进入数据集名称编辑状态并聚焦输入框
 const handleClick = () => {
   showInput.value = true
   nextTick(() => {
@@ -2064,6 +2263,7 @@ const handleClick = () => {
   })
 }
 
+// 切换为单源时，如当前联合树已经跨源则提示确认
 const sourceChange = val => {
   if (val) return
   if (crossDatasources.value) {
@@ -2082,6 +2282,7 @@ const sourceChange = val => {
   }
 }
 
+// 目录选择弹窗完成后回写数据集基本信息，并异步保存同步配置
 const finish = res => {
   const { id, pid, name } = res
   isUpdate = false
@@ -2098,8 +2299,10 @@ const finish = res => {
   })
 }
 
+// 数据集名称校验错误文案
 const errorTips = ref('')
 
+// 校验数据集名称并控制名称输入框是否保持编辑态
 const handleDatasetName = () => {
   errorTips.value = ''
   if (!datasetName.value.trim()) {
@@ -2120,10 +2323,13 @@ const treeProps = {
   }
 }
 
+// 插件数据源元数据列表，用于显示自定义图标
 const pluginDs = ref([])
+// 接收数据源插件列表
 const loadDsPlugin = data => {
   pluginDs.value = data
 }
+// 获取插件数据源图标静态内容
 const getDsIcon = data => {
   if (pluginDs?.value.length === 0) return null
   if (!data.leaf) return null
@@ -2134,11 +2340,13 @@ const getDsIcon = data => {
   return arr && arr.length > 0 ? arr[0].icon : null
 }
 
+// 获取内置数据源图标组件
 const getDsIconName = data => {
   if (!data.leaf) return dvFolder
   return iconDatasourceMap[data.type]
 }
 
+// 根据字段类型、扩展字段类型和维度指标方向选择字段图标
 const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
   if (extField === 2) {
     const iconFieldCalculated = dimension ? iconFieldCalculatedMap : iconFieldCalculatedQMap

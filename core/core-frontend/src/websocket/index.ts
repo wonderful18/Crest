@@ -2,24 +2,15 @@ import SockJS from 'sockjs-client/dist/sockjs.min.js'
 import Stomp from 'stompjs'
 import { useCache } from '@/hooks/web/useCache'
 import { useEmitt } from '@/hooks/web/useEmitt'
+// 复用应用缓存读取登录态和桌面端标识
 const { wsCache } = useCache()
+// 当前 STOMP 客户端实例，断线重连时会复用或重建
 let stompClient: Stomp.Client
-import dev from '../../config/dev'
-const env = import.meta.env
-const basePath = env.VITE_API_BASEPATH
 
-const devProxyTarget = () => {
-  const proxy = dev.server.proxy
-  const exactProxy = proxy[basePath]
-  if (exactProxy?.target) {
-    return exactProxy.target
-  }
-  const matchedProxy = Object.entries(proxy).find(([path]) => basePath?.startsWith(path))?.[1]
-  return matchedProxy?.target
-}
-
+// WebSocket 插件在应用启动时安装并维护订阅连接
 export default {
   install() {
+    // 统一维护后端主题和前端事件名的映射
     const channels = [
       {
         topic: '/task-export-topic',
@@ -30,6 +21,7 @@ export default {
         event: 'report-notice-call'
       }
     ]
+    // 登录态包含桌面端免登录场景和普通用户令牌场景
     function isLoginStatus() {
       if (wsCache.get('app.desktop')) {
         return true
@@ -37,6 +29,7 @@ export default {
       return wsCache.get('user.token') && wsCache.get('user.uid')
     }
 
+    // 建立 STOMP 连接并订阅当前用户的通知主题
     function connection() {
       if (!isLoginStatus()) {
         return
@@ -52,9 +45,6 @@ export default {
           ? location.pathname
           : location.pathname.replace(/\/[^/]*$/, '/')
         prefix = location.origin + path
-        if (env.MODE === 'dev') {
-          prefix = (devProxyTarget() || location.origin) + '/'
-        }
       }
       if (!prefix.endsWith('/')) {
         prefix += '/'
@@ -81,6 +71,7 @@ export default {
       )
     }
 
+    // 主动断开当前 STOMP 连接并清空客户端引用
     function disconnect() {
       if (stompClient && stompClient.connected) {
         stompClient.disconnect(
@@ -95,6 +86,7 @@ export default {
       stompClient = null
     }
 
+    // 初始化连接并周期性检查登录态和连接状态
     function initialize() {
       connection()
       const timeInterval = setInterval(() => {

@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
- *
- * @author fit2cloud
- * @since 2023-09-22
+ * 组件联动主配置 Mapper。
  */
 @Mapper
 public interface VisualizationLinkageMapper extends BaseMapper<VisualizationLinkage> {

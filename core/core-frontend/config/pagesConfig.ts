@@ -7,6 +7,7 @@ export interface Page {
   template?: string
 }
 
+// 衔接当前组件交互和状态同步
 function readPages(srcDir: string): Page[] {
   // nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
   const pagesDir = path.resolve(srcDir, 'pages')

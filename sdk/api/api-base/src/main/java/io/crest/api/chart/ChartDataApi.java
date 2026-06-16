@@ -16,12 +16,10 @@ import java.util.List;
 
 import static io.crest.constant.AuthResourceEnum.PANEL;
 
-/**
- * @Author Junjun
- */
 @Tag(name = "图表管理:数据")
 @ApiSupport(order = 989)
 @CrestApiPath(value = "/chart-data", rt = PANEL)
+// 定义模块接口契约和数据传输结构
 public interface ChartDataApi {
     @Operation(summary = "获取图表数据")
     @PostMapping("data")

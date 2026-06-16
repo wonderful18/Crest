@@ -114,6 +114,7 @@ export const interactiveStore = defineStore('interactive', {
   }
 })
 
+// 记录当前选中项和交互焦点
 export const interactiveStoreWithOut = () => interactiveStore(store)
 
 const convertInteractive = (list): InnerInteractive => {
@@ -157,6 +158,7 @@ const hasMenuAuth = (flag: number): boolean => {
   return valid
 }
 
+// 更新状态仓库中的业务数据
 const convertLocalStorage = (data?: InnerInteractive) => {
   if (!data?.leafNodeCount) {
     return {}

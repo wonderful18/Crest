@@ -40,6 +40,12 @@ SOURCE_BACKEND_IMAGE=${SOURCE_BACKEND_IMAGE:-"${BACKEND_IMAGE}"}
 SOURCE_FRONTEND_IMAGE=${SOURCE_FRONTEND_IMAGE:-"${FRONTEND_IMAGE}"}
 PACKAGE_NAME="crest-offline-${VERSION}-${TARGET_PLATFORM}"
 PACKAGE_DIR="${OUTPUT_DIR}/${PACKAGE_NAME}"
+UPGRADE_SQL_FROM_1_5_7="v1.5.7_to_${VERSION}.sql"
+if [ ! -f "${INSTALLER_DIR}/upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}" ]; then
+  UPGRADE_SQL_FROM_1_5_7="v1.5.7_to_v1.5.8.sql"
+fi
+UPGRADE_SQL_TARGET_VERSION="${UPGRADE_SQL_FROM_1_5_7#v1.5.7_to_}"
+UPGRADE_SQL_TARGET_VERSION="${UPGRADE_SQL_TARGET_VERSION%.sql}"
 
 log() {
   echo "[offline-package] $*"
@@ -134,6 +140,11 @@ cp -R "${INSTALLER_DIR}/crest" "${PACKAGE_DIR}/crest"
 if [ -d "${INSTALLER_DIR}/upgrade-sql" ]; then
   cp -R "${INSTALLER_DIR}/upgrade-sql" "${PACKAGE_DIR}/upgrade-sql"
 fi
+log "Copy metadata initialization SQL"
+mkdir -p "${PACKAGE_DIR}/init-sql"
+cp -R "${REPO_DIR}/core/core-backend/src/main/resources/db/migration" "${PACKAGE_DIR}/init-sql/mysql"
+cp -R "${REPO_DIR}/core/core-backend/src/main/resources/db/migration-ob-mysql" "${PACKAGE_DIR}/init-sql/ob-mysql"
+cp -R "${REPO_DIR}/core/core-backend/src/main/resources/db/migration-ob-oracle" "${PACKAGE_DIR}/init-sql/ob-oracle"
 mkdir -p "${PACKAGE_DIR}/images"
 
 log "Pin install.conf image names"
@@ -206,10 +217,39 @@ bash install.sh
 - \`CREST_BACKEND_IMAGE\`：Crest 后端镜像，已固定为本包内镜像
 - \`CREST_FRONTEND_IMAGE\`：Crest 前端镜像，已固定为本包内镜像
 - \`CREST_MYSQL_IMAGE\`：MySQL 镜像，已固定为本包内镜像
+- \`CREST_DB_TYPE\`：元数据库类型，默认 \`mysql\`，可选 \`ob-mysql\` 或 \`ob-oracle\`
+- \`CREST_DB_HOST\` / \`CREST_DB_PORT\`：元数据库地址和端口；OceanBase 可填写 OBProxy 或 observer 地址
+- \`CREST_DB_USERNAME\` / \`CREST_DB_PASSWORD\`：元数据库账号和密码；OBProxy 用户名使用 \`用户@租户#集群\`，observer 直连使用 \`用户@租户\`
+- \`CREST_DB_URL\`：自定义 JDBC URL；留空时安装脚本按 \`CREST_DB_TYPE\` 自动生成
+- \`CREST_FLYWAY_ENABLED\`：应用启动时是否执行 Flyway；留空时 MySQL 默认 \`true\`，OceanBase 默认 \`false\`
 - \`CREST_INITIAL_PASSWORD\`：管理员初始密码；留空时安装脚本会随机生成并在安装完成后输出
 - \`CREST_LOAD_DEMO\`：是否初始化内置演示资源，默认 \`true\`；生产环境不需要示例数据时设为 \`false\`
 - \`CREST_PROMETHEUS_ENABLED\`：是否启用 Prometheus 指标采集，默认 \`false\`
 - \`CREST_GRAFANA_ENABLED\`：是否启用 Grafana 看板，默认 \`false\`
+
+## OceanBase 元数据库
+
+使用 OceanBase 作为 Crest 元数据库时，在 \`install.conf\` 中设置 \`CREST_DB_TYPE=ob-mysql\` 或 \`CREST_DB_TYPE=ob-oracle\`，并填写真实的 OBProxy 或 observer 地址。安装脚本会自动切换为外部元数据库模式，不会启动包内 MySQL 容器。
+
+生产环境建议由 DBA 先执行包内 \`init-sql/\` 目录中的初始化 SQL，再启动 Crest：
+
+- \`init-sql/ob-mysql/\`：OceanBase MySQL 租户初始化 SQL，按文件名顺序在目标数据库中执行；
+- \`init-sql/ob-oracle/\`：OceanBase Oracle 租户初始化 SQL，使用 Crest 目标 schema 用户执行；
+- \`CREST_FLYWAY_ENABLED\`：OceanBase 默认 \`false\`，服务启动时只连接已初始化的元数据库；开发或验证环境需要应用自动初始化时，可显式设为 \`true\`。
+
+默认 MySQL 安装仍使用原有迁移目录和自动初始化行为。
+
+OBProxy 示例：
+
+\`\`\`bash
+CREST_DB_TYPE=ob-oracle
+CREST_DB_HOST=10.0.0.10
+CREST_DB_PORT=2883
+CREST_DB_USERNAME=ob_user@ob_oracle#obcluster
+CREST_DB_PASSWORD=ob_password
+\`\`\`
+
+observer 直连时端口通常为 \`2881\`，用户名使用 \`用户@租户\`，不要带 \`#集群\`。
 
 已加载演示资源的环境可执行：
 
@@ -221,16 +261,34 @@ bash cleanup-demo-data.sh --yes
 
 本包会携带 \`upgrade-sql/\` 目录。全新安装不需要手动执行 SQL；从旧版本升级已有环境时，请先备份元数据库，再按发布说明执行对应版本的 SQL。
 
-v1.5.4 升级到 ${VERSION} 时执行：
+v1.5.7 升级到 ${VERSION} 时执行 ${UPGRADE_SQL_TARGET_VERSION} 元数据库升级 SQL：
+
+\`\`\`bash
+set -a
+source /opt/crest/.env
+set +a
+docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}
+\`\`\`
+
+v1.5.4 升级到 ${VERSION} 时，先执行 v1.5.4 到 v1.5.5 的升级 SQL，再执行 v1.5.7 到 ${UPGRADE_SQL_TARGET_VERSION} 的升级 SQL：
 
 \`\`\`bash
 set -a
 source /opt/crest/.env
 set +a
 docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.4_to_v1.5.5.sql
+docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}
 \`\`\`
 
 如安装时修改过 \`CREST_BASE\`，请把 \`/opt/crest/.env\` 换成实际运行目录中的 \`.env\`。外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 元数据库。
+
+OceanBase MySQL 元数据库可使用 OceanBase 客户端执行 MySQL 兼容升级 SQL：
+
+\`\`\`bash
+obclient -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' <database> < upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}
+\`\`\`
+
+OceanBase Oracle 元数据库使用独立 Flyway migration 路径。除非发布说明明确提供 OB Oracle 专用升级 SQL，不要把 MySQL 兼容升级 SQL 执行到 OB Oracle 租户。
 
 ## 镜像
 

@@ -10,6 +10,7 @@ import java.io.Serializable;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// 定义当前业务对象的核心职责
 public class TokenUserBO implements Serializable {
 
     @Serial

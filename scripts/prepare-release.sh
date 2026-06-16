@@ -56,6 +56,24 @@ replace_package_version() {
     "${current_version}" "${target_version}" "${file}"
 }
 
+update_kubernetes_image_tags() {
+  local file="deploy/kubernetes/base/deployment.yaml"
+
+  perl -0pi -e 'BEGIN { $tag = shift @ARGV } s#(ghcr\.io/sevoniva/crest-service:)v[0-9]+\.[0-9]+\.[0-9]+#$1$tag#g; s#(ghcr\.io/sevoniva/crest-web:)v[0-9]+\.[0-9]+\.[0-9]+#$1$tag#g' \
+    "${target_tag}" "${file}"
+}
+
+update_workflow_release_defaults() {
+  local files=(
+    ".github/workflows/docker-publish.yml"
+    ".github/workflows/release-app-image-packages.yml"
+    ".github/workflows/release-offline-packages.yml"
+  )
+
+  perl -0pi -e 'BEGIN { $tag = shift @ARGV } s/(default:\s*)v[0-9]+\.[0-9]+\.[0-9]+/${1}${tag}/g; s/(example\s+)v[0-9]+\.[0-9]+\.[0-9]+/${1}${tag}/g; s/(github\.ref_name \|\| \x27)v[0-9]+\.[0-9]+\.[0-9]+(\x27)/${1}${tag}${2}/g' \
+    "${target_tag}" "${files[@]}"
+}
+
 pom_files=(
   "pom.xml"
   "sdk/pom.xml"
@@ -99,6 +117,8 @@ replace_package_version "core/core-frontend/package.json"
 for file in "${tag_files[@]}"; do
   replace_literal "${file}" "${current_tag}" "${target_tag}"
 done
+update_kubernetes_image_tags
+update_workflow_release_defaults
 
 for file in "${doc_files[@]}"; do
   replace_tag_in_current_docs "${file}"

@@ -51,6 +51,7 @@
 import { reactive, toRefs } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
+// 维护组件内部表单、弹窗和临时数据状态
 const state = reactive({
   timeOptions: [
     { value: 'hh:mm:ss', label: 'hh:mm:ss' },
@@ -64,6 +65,7 @@ const state = reactive({
   ]
 })
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   canvasId: {
     type: String,
@@ -82,6 +84,7 @@ const props = defineProps({
 
 const { formatInfo } = toRefs(props)
 
+// 处理界面事件并同步业务状态
 const onFormatChange = () => {
   // doFormatChange
 }

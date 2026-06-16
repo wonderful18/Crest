@@ -19,6 +19,7 @@ const dvMainStore = dvMainStoreWithOut()
 const { curComponent } = storeToRefs(dvMainStore)
 const { t } = useI18n()
 
+// 阈值配置组件入参，包含当前图表、主题和可展示属性集合
 const props = defineProps({
   chart: {
     type: Object as PropType<ChartObj>,
@@ -32,10 +33,13 @@ const props = defineProps({
     type: Array<string>
   }
 })
+// 判断当前阈值配置项是否在图表属性白名单内
 const showProperty = prop => props.propertyInner?.includes(prop)
 
+// 阈值配置变更事件
 const emit = defineEmits(['onThresholdChange'])
 
+// 监听外部阈值配置变化，重新初始化本地编辑副本
 watch(
   () => props.chart.senior.threshold,
   () => {
@@ -44,8 +48,10 @@ watch(
   { deep: true }
 )
 
+// 阈值编辑状态，分别缓存文本、指标、表格和折线阈值弹窗数据
 const state = reactive({
   thresholdForm: {} as ChartThreshold,
+  // 各弹窗维护独立数组副本，确认保存前不直接改写 thresholdForm。
   editTextLabelThresholdDialog: false,
   textThresholdArr: [],
   editLabelThresholdDialog: false,
@@ -56,24 +62,30 @@ const state = reactive({
   lineThresholdArr: []
 })
 
+// 从图表高级配置初始化阈值表单和各弹窗编辑数组
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.senior) {
     const senior = chart.senior
     if (senior.threshold) {
+      // 使用默认阈值补齐历史配置，防止旧图表缺少新字段时弹窗报错。
       state.thresholdForm = defaultsDeep(senior.threshold, DEFAULT_THRESHOLD)
     }
+    // 弹窗数据深拷贝自表单，用户取消时不会影响已保存阈值。
     state.textThresholdArr = JSON.parse(JSON.stringify(state.thresholdForm.textLabelThreshold))
     state.thresholdArr = JSON.parse(JSON.stringify(state.thresholdForm.labelThreshold))
     state.tableThresholdArr = JSON.parse(JSON.stringify(state.thresholdForm.tableThreshold))
     state.lineThresholdArr = JSON.parse(JSON.stringify(state.thresholdForm.lineThreshold ?? []))
   }
 }
+// 将当前阈值表单提交给父组件
 const changeThreshold = () => {
+  // 父组件统一保存高级阈值配置并触发图表重绘。
   emit('onThresholdChange', state.thresholdForm)
 }
+// 校验仪表盘或水波图的百分比分割阈值
 const changeSplitThreshold = (threshold: string) => {
-  // check input
+  // 分割阈值只能填写 0 到 100 之间的递增数字序列
   if (threshold) {
     const regex = /^(\d+(?:\.\d+)?)(,\d+(?:\.\d+)?)*$/
     if (!regex.test(threshold)) {
@@ -97,14 +109,17 @@ const changeSplitThreshold = (threshold: string) => {
   }
   changeThreshold()
 }
+// 打开指标标签阈值编辑弹窗
 const editLabelThreshold = () => {
   state.editLabelThresholdDialog = true
 }
+// 关闭指标标签阈值编辑弹窗
 const closeLabelThreshold = () => {
   state.editLabelThresholdDialog = false
 }
+// 校验并保存指标标签阈值配置
 const changeLabelThreshold = () => {
-  // check line config
+  // 指标标签阈值必须配置表达式，并按表达式类型校验数值边界
   for (let i = 0; i < state.thresholdArr.length; i++) {
     const ele = state.thresholdArr[i]
     if (ele.term === undefined || ele.term === '') {
@@ -136,21 +151,26 @@ const changeLabelThreshold = () => {
     }
   }
   state.thresholdForm.labelThreshold = JSON.parse(JSON.stringify(state.thresholdArr))
+  // 校验通过后才覆盖正式表单，避免弹窗中的半成品规则进入图表配置。
   changeThreshold()
   closeLabelThreshold()
 }
+// 同步指标标签阈值弹窗编辑结果
 const thresholdChange = val => {
   state.thresholdArr = val
 }
 
+// 打开文本标签阈值编辑弹窗
 const editTextLabelThreshold = () => {
   state.editTextLabelThresholdDialog = true
 }
+// 关闭文本标签阈值编辑弹窗
 const closeTextLabelThreshold = () => {
   state.editTextLabelThresholdDialog = false
 }
+// 校验并保存文本标签阈值配置
 const changeTextLabelThreshold = () => {
-  // check line config
+  // 文本标签阈值必须配置表达式和值
   for (let i = 0; i < state.textThresholdArr.length; i++) {
     const ele = state.textThresholdArr[i]
     if (!ele.term || ele.term === '') {
@@ -163,24 +183,30 @@ const changeTextLabelThreshold = () => {
     }
   }
   state.thresholdForm.textLabelThreshold = JSON.parse(JSON.stringify(state.textThresholdArr))
+  // 文本卡阈值只影响文字颜色，不参与数值字段校验。
   changeThreshold()
   closeTextLabelThreshold()
 }
+// 同步文本标签阈值弹窗编辑结果
 const thresholdTextChange = val => {
   state.textThresholdArr = val
 }
 
+// 同步表格阈值弹窗编辑结果
 const tableThresholdChange = val => {
   state.tableThresholdArr = val
 }
+// 打开表格阈值编辑弹窗
 const editTableThreshold = () => {
   state.editTableThresholdDialog = true
 }
+// 关闭表格阈值编辑弹窗
 const closeTableThreshold = () => {
   state.editTableThresholdDialog = false
 }
+// 校验并保存表格阈值配置
 const changeTableThreshold = () => {
-  // check line config
+  // 表格阈值按字段分组校验条件，动态条件需要配置参照字段
   for (let i = 0; i < state.tableThresholdArr.length; i++) {
     const field = state.tableThresholdArr[i]
     if (!field.fieldId) {
@@ -194,6 +220,7 @@ const changeTableThreshold = () => {
     for (let j = 0; j < field.conditions.length; j++) {
       const ele = field.conditions[j]
       if (props.chart.type === 'picture-group' && !ele.url) {
+        // 图片组复用表格阈值结构，但每条命中规则必须绑定展示图片。
         ElMessage.error(t('visualization.img_can_not_null'))
         return
       }
@@ -202,6 +229,7 @@ const changeTableThreshold = () => {
         return
       }
       if (ele.type !== 'dynamic') {
+        // 固定阈值直接校验当前输入值，数值字段额外校验数字合法性。
         if (ele.term === 'between') {
           if (
             !ele.term.includes('null') &&
@@ -247,6 +275,7 @@ const changeTableThreshold = () => {
           }
         }
       } else {
+        // 动态阈值比较的是另一个字段，保存前必须确认参照字段已经配置。
         if (ele.term === 'between') {
           if (
             !ele.term.includes('null') &&
@@ -270,21 +299,26 @@ const changeTableThreshold = () => {
     }
   }
   state.thresholdForm.tableThreshold = JSON.parse(JSON.stringify(state.tableThresholdArr))
+  // 表格和图片组阈值共享保存字段，由图表类型决定渲染为颜色还是图片。
   changeThreshold()
   closeTableThreshold()
 }
 
+// 同步折线阈值弹窗编辑结果
 const lineThresholdChange = val => {
   state.lineThresholdArr = val
 }
+// 打开折线阈值编辑弹窗
 const editLineThreshold = () => {
   state.editLineThresholdDialog = true
 }
+// 关闭折线阈值编辑弹窗
 const closeLineThreshold = () => {
   state.editLineThresholdDialog = false
 }
+// 校验并保存折线阈值配置
 const changeLineThreshold = () => {
-  // check line config
+  // 折线阈值必须配置字段和条件，数值字段需要额外校验数值合法性
   for (let i = 0; i < state.lineThresholdArr?.length; i++) {
     const field = state.lineThresholdArr[i]
     if (!field.fieldId) {
@@ -346,13 +380,17 @@ const changeLineThreshold = () => {
     }
   }
   state.thresholdForm.lineThreshold = JSON.parse(JSON.stringify(state.lineThresholdArr ?? []))
+  // 折线阈值单独保存，避免和表格阈值互相覆盖。
   changeThreshold()
   closeLineThreshold()
 }
 
+// 计算字段展示名称，优先使用图表展示别名
 const getFieldName = field => (field.chartShowName ? field.chartShowName : field.name)
 
+// 生成动态阈值条件的字段摘要文案
 const getDynamicStyleLabel = (item, fieldObj) => {
+  // 按字段汇总方式生成条件标签
   const handleSummary = field => {
     if (!field?.field) {
       return ''
@@ -365,6 +403,7 @@ const getDynamicStyleLabel = (item, fieldObj) => {
     }
   }
   if (item.type === 'dynamic') {
+    // 只有动态阈值需要展示参照字段摘要，固定阈值直接展示输入值。
     return handleSummary(fieldObj)
   }
 }
@@ -373,7 +412,7 @@ init()
 
 <template>
   <div @keydown.stop @keyup.stop style="width: 100%; margin-bottom: 16px">
-    <!--仪表盘-->
+    <!-- 仪表盘阈值按百分比分段，保存前校验 0 到 100 之间的递增边界。 -->
     <el-col v-show="showProperty('gaugeThreshold')">
       <el-form
         :model="state.thresholdForm"
@@ -441,7 +480,7 @@ init()
       </el-form>
     </el-col>
 
-    <!--文本卡-->
+    <!-- 文本卡阈值预览展示匹配条件、取值和命中后的文本颜色。 -->
     <el-col v-if="props.chart.type && props.chart.type === 'label'">
       <el-col>
         <el-button
@@ -506,7 +545,7 @@ init()
       </el-col>
     </el-col>
 
-    <!--指标卡-->
+    <!-- 指标卡阈值预览同时展示文字色和背景色，编辑前要求总开关已启用。 -->
     <el-col v-if="props.chart.type && props.chart.type === 'indicator'">
       <el-col>
         <div class="inner-container">
@@ -606,7 +645,7 @@ init()
       </el-col>
     </el-col>
 
-    <!--表格-->
+    <!-- 表格和图片组共用字段级阈值结构，渲染结果根据图表类型展示为颜色或图片。 -->
     <el-col v-show="showProperty('tableThreshold')">
       <el-col>
         <div class="inner-container">
@@ -806,7 +845,7 @@ init()
         </div>
       </el-col>
     </el-col>
-    <!--折线-->
+    <!-- 折线阈值按字段分组展示线条颜色，保存时独立写入 lineThreshold。 -->
     <el-col v-show="showProperty('lineThreshold')">
       <el-col>
         <div class="inner-container">
@@ -938,7 +977,7 @@ init()
       </el-col>
     </el-col>
 
-    <!--  symbolic map  -->
+    <!-- 符号地图复用折线阈值编辑器，仅展示气泡颜色相关规则。 -->
     <el-col v-show="showProperty('symbolicBubbleThreshold')">
       <el-col>
         <div class="inner-container">
@@ -1064,7 +1103,7 @@ init()
       </el-col>
     </el-col>
 
-    <!--编辑文本卡阈值-->
+    <!-- 文本卡阈值弹窗编辑副本，确认后才覆盖正式配置。 -->
     <el-dialog
       v-if="state.editTextLabelThresholdDialog"
       v-model="state.editTextLabelThresholdDialog"
@@ -1088,7 +1127,7 @@ init()
       </template>
     </el-dialog>
 
-    <!--编辑指标卡阈值-->
+    <!-- 指标卡阈值弹窗负责数值条件校验和颜色配置。 -->
     <el-dialog
       v-if="state.editLabelThresholdDialog"
       v-model="state.editLabelThresholdDialog"
@@ -1112,7 +1151,7 @@ init()
       </template>
     </el-dialog>
 
-    <!--编辑表格阈值-->
+    <!-- 表格阈值弹窗根据图表类型切换普通表格规则或图片组规则。 -->
     <el-dialog
       v-if="state.editTableThresholdDialog"
       v-model="state.editTableThresholdDialog"
@@ -1144,7 +1183,7 @@ init()
         </div>
       </template>
     </el-dialog>
-    <!--编辑折线阈值-->
+    <!-- 折线阈值弹窗编辑字段条件和线条颜色，确认后同步给父级。 -->
     <el-dialog
       v-if="state.editLineThresholdDialog"
       v-model="state.editLineThresholdDialog"

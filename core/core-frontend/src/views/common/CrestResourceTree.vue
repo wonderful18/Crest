@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import icon_add_outlined from '@/assets/svg/icon_add_outlined.svg'
+import icon_upload_outlined from '@/assets/svg/icon_upload_outlined.svg'
 import dvCopyDark from '@/assets/svg/dv-copy-dark.svg'
 import dvDelete from '@/assets/svg/dv-delete.svg'
 import dvMove from '@/assets/svg/dv-move.svg'
@@ -22,6 +23,7 @@ import { onMounted, reactive, ref, toRefs, watch, nextTick, computed } from 'vue
 import {
   copyResource,
   deleteLogic,
+  decompressionLocalFile,
   queryShareBaseApi,
   ResourceOrFolder,
   updateBase
@@ -49,14 +51,21 @@ import treeSort, { treeParentWeight } from '@/utils/treeSortUtils'
 import router from '@/router'
 import { cancelRequestBatch } from '@/config/axios/service'
 import { isFreeFolder } from '@/utils/utils'
+// 缓存用于恢复上次选中的仪表板或大屏资源
 const { wsCache } = useCache()
 
+// 大屏主状态，提供当前资源和画布上下文
 const dvMainStore = dvMainStoreWithOut()
+// 应用状态用于判断嵌入式运行环境
 const appStore = useAppStoreWithOut()
+// 嵌入式状态可携带外部传入的资源编号
 const embeddedStore = useEmbedded()
+// 当前大屏或仪表板详情的响应式引用
 const { dvInfo } = storeToRefs(dvMainStore)
+// 资源树文案的多语言翻译入口
 const { t } = useI18n()
 
+// 资源树入参决定资源类型、展示场景和数据表来源
 const props = defineProps({
   curCanvasType: {
     type: String,
@@ -73,23 +82,40 @@ const props = defineProps({
     default: 'core'
   }
 })
+// Element 树组件的字段映射和禁用规则
 const defaultProps = {
   children: 'children',
   label: 'name',
   disabled: (data: any) => data.extraFlag1 === 0
 }
+// 标记资源树是否完成首次挂载
 const mounted = ref(false)
+// 根目录管理权限标记
 const rootManage = ref(false)
+// 任意资源管理权限标记
 const anyManage = ref(false)
+// 当前画布类型和展示位置保持响应式引用
 const { curCanvasType, showPosition } = toRefs(props)
+// 根据资源类型生成业务侧展示名称
 const resourceLabel =
   curCanvasType.value === 'dataV' ? t('work_branch.big_data_screen') : t('work_branch.dashboard')
+// 当前选中的树节点编号
 const selectedNodeKey = ref(null)
+// 资源树搜索关键字
 const filterText = ref(null)
+// 已展开节点编号集合
 const expandedArray = ref([])
+// 资源树组件实例引用
 const resourceListTree = ref()
+// 批量操作组件实例引用
 const resourceGroupOpt = ref()
+// 导入上传组件实例引用
+const importUploadRef = ref()
+// 是否需要在挂载后回选缓存资源
 const returnMounted = ref(false)
+// 导入资源时的加载状态
+const importLoading = ref(false)
+// 资源树页面状态，包含排序、树数据和右键菜单配置
 const state = reactive({
   pWeightMap: {},
   curSortType: 'time_desc',
@@ -133,12 +159,15 @@ const state = reactive({
   ]
 })
 
+// 新建资源菜单图标根据画布类型切换
 const dvSvgType = computed(() =>
   curCanvasType.value === 'dashboard' ? dvDashboardSpine : dvScreenSpine
 )
 
+// 嵌入式场景需要隐藏部分资源操作
 const isEmbedded = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
 
+// 新建按钮的菜单项，区分空白资源和文件夹
 const resourceTypeList = computed(() => {
   const list = [
     {
@@ -161,10 +190,12 @@ const { handleDrop, allowDrop, handleDragStart } = treeDraggbleChart(
   curCanvasType.value
 )
 
+// 根据父级权重决定是否允许复制等资源操作
 const menuListWeight = id => {
   const pWeight = state.pWeightMap[id]
   return pWeight < 7 ? menuList : menuListWithCopy
 }
+// 权重允许时展示包含复制的资源操作菜单
 const menuListWithCopy = [
   {
     label: t('visualization.cancel_publish'), //取消发布
@@ -194,6 +225,7 @@ const menuListWithCopy = [
     divided: true
   }
 ]
+// 基础资源操作菜单
 const menuList = [
   {
     label: t('visualization.cancel_publish'), //取消发布
@@ -219,26 +251,32 @@ const menuList = [
   }
 ]
 
+// 从缓存中恢复最近访问的资源编号
 const infoId = wsCache.get(curCanvasType.value === 'dashboard' ? 'db-info-id' : 'dv-info-id')
+// 路由参数中的资源编号作为回选兜底来源
 const routerDvId = router.currentRoute.value.query.dvId
+// 最终用于回选的资源编号
 const dvId = embeddedStore.dvId || infoId || routerDvId
 wsCache.delete(curCanvasType.value === 'dashboard' ? 'db-info-id' : 'dv-info-id')
 if (dvId && showPosition.value === 'preview') {
   selectedNodeKey.value = dvId
   returnMounted.value = true
 }
+// 记录展开节点，刷新树数据后可恢复展开状态
 const nodeExpand = data => {
   if (data.id) {
     expandedArray.value.push(data.id)
   }
 }
 
+// 节点收起时从展开集合移除对应编号
 const nodeCollapse = data => {
   if (data.id) {
     expandedArray.value.splice(expandedArray.value.indexOf(data.id), 1)
   }
 }
 
+// 搜索树节点，同时避免复用当前正在编辑的资源
 const filterNode = (value: string, data: BusiTreeNode) => {
   if (showPosition.value === 'multiplexing' && data.id === dvInfo.value?.id) {
     return false
@@ -246,7 +284,7 @@ const filterNode = (value: string, data: BusiTreeNode) => {
   if (!value) return true
   return data.name?.toLocaleLowerCase().includes(value.toLocaleLowerCase())
 }
-//取消之前请求
+// 切换资源前取消上一资源的详情、数据和联动请求
 const cancelPreRequest = () => {
   cancelRequestBatch('/data-visualization/detail')
   cancelRequestBatch('/chart-data/data')
@@ -254,6 +292,7 @@ const cancelPreRequest = () => {
   cancelRequestBatch('/link-jump/visualization-jump-info/**')
 }
 
+// 处理资源树节点点击，切换当前资源并同步地址参数
 const nodeClick = (data: BusiTreeNode, node) => {
   dvMainStore.setCurComponent({ component: null, index: null })
   if (showPosition.value !== 'multiplexing') {
@@ -302,6 +341,7 @@ const nodeClick = (data: BusiTreeNode, node) => {
   }
 }
 
+// 拉取当前资源类型的树数据，并同步权限、排序和回选状态
 const getTree = async (notOpen = false) => {
   const request = {
     busiFlag: curCanvasType.value,
@@ -333,12 +373,15 @@ const getTree = async (notOpen = false) => {
   afterTreeInit(notOpen)
 }
 
+// 展平资源树中的叶子资源，供空态和外部状态判断使用
 const flattedTree = computed<BusiTreeNode[]>(() => {
   return _.filter(flatTree(state.resourceTree), node => node.leaf)
 })
 
+// 是否存在可选择的资源叶子节点
 const hasData = computed<boolean>(() => flattedTree.value.length > 0)
 
+// 递归展平树节点，保留目录和叶子节点顺序
 function flatTree(tree: BusiTreeNode[]) {
   let result = _.cloneDeep(tree)
   _.forEach(tree, node => {
@@ -349,6 +392,7 @@ function flatTree(tree: BusiTreeNode[]) {
   return result
 }
 
+// 树数据刷新后的收尾流程，恢复展开、选中和过滤状态
 const afterTreeInit = (notOpen = false) => {
   state.pWeightMap = treeParentWeight(state.originResourceTree, rootManage.value ? 9 : 0)
   mounted.value = true
@@ -367,10 +411,67 @@ const afterTreeInit = (notOpen = false) => {
   })
 }
 
+// 复制资源操作的加载状态
 const copyLoading = ref(false)
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
+// 向父组件抛出资源节点点击事件
 const emit = defineEmits(['nodeClick'])
 
+// 导入前校验模板文件扩展名
+const beforeImportTemplateUpload = file => {
+  if (!/\.(det2|det2app)$/i.test(file.name || '')) {
+    ElMessage.error(t('visualization.template_file_type_limit'))
+    return false
+  }
+  return true
+}
+
+// 上传并解析本地模板包，成功后进入模板编辑流程
+const importTemplateFile = uploadFile => {
+  const formData = new FormData()
+  formData.append('file', uploadFile.file)
+  importLoading.value = true
+  return decompressionLocalFile(formData)
+    .then(res => {
+      const payload = res?.data
+      if (!payload || payload.type !== curCanvasType.value) {
+        ElMessage.error(t('visualization.template_type_mismatch'))
+        return
+      }
+      const cacheKey = `CREST-VISUALIZATION-IMPORT-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}`
+      window.sessionStorage.setItem(cacheKey, JSON.stringify(payload))
+      openImportedTemplateEditor(cacheKey)
+    })
+    .finally(() => {
+      importUploadRef.value?.clearFiles()
+      importLoading.value = false
+    })
+}
+
+// 根据运行环境打开导入模板的新建编辑入口
+const openImportedTemplateEditor = cacheKey => {
+  if (isEmbedded.value) {
+    embeddedStore.clearState()
+    embeddedStore.setOpt('create')
+    embeddedStore.setCreateType('uploadedTemplate')
+    embeddedStore.setTemplateParams(cacheKey)
+    useEmitt().emitter.emit(
+      'changeCurrentComponent',
+      curCanvasType.value === 'dataV' ? 'VisualizationEditor' : 'DashboardEditor'
+    )
+    return
+  }
+  const query = `opt=create&createType=uploadedTemplate&templatePayloadKey=${encodeURIComponent(
+    cacheKey
+  )}`
+  const baseUrl = curCanvasType.value === 'dataV' ? `#/dvCanvas?${query}` : `#/dashboard?${query}`
+  const newWindow = window.open(baseUrl, openType)
+  initOpenHandler(newWindow)
+}
+
+// 统一处理资源和目录的右键菜单命令
 const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
   if (cmd === 'delete') {
     const msg = data.leaf ? '' : t('visualization.delete_tips')
@@ -485,10 +586,12 @@ const addOperation = (
   }
 }
 
+// 触发父级创建空白资源流程
 function createNewObject() {
   return addOperation('newLeaf', null, 'leaf', true)
 }
 
+// 根据当前资源类型打开编辑页面
 const resourceEdit = resourceId => {
   const baseUrl = curCanvasType.value === 'dataV' ? '#/dvCanvas?dvId=' : '#/dashboard?resourceId='
   if (isEmbedded.value) {
@@ -509,10 +612,12 @@ const resourceEdit = resourceId => {
   initOpenHandler(newWindow)
 }
 
+// 资源操作完成后刷新树并保持当前打开状态
 const resourceOptFinish = () => {
   getTree(true)
 }
 
+// 递归查找目标节点的父级路径
 const getParentKeys = (tree, targetKey, parentKeys = []) => {
   for (const node of tree) {
     if (node.id === targetKey) {
@@ -529,6 +634,7 @@ const getParentKeys = (tree, targetKey, parentKeys = []) => {
   return null
 }
 
+// 计算默认展开节点，优先展开当前选中资源的父路径
 const getDefaultExpandedKeys = () => {
   const parentKeys = getParentKeys(state.resourceTree, selectedNodeKey.value)
   if (parentKeys) {
@@ -558,26 +664,31 @@ const sortList = [
   }
 ]
 
+// 根据资源类型返回默认排序方式
 const getDefaultSortType = () => {
   const sortIndex = Number(wsCache.get('TreeSort-backend') ?? 1)
   return sortList[Number.isInteger(sortIndex) && sortList[sortIndex] ? sortIndex : 1].value
 }
 
+// 读取缓存排序方式，异常时回退到默认值
 const getStoredSortType = (cacheKey: string, fallback: string) => {
   const sortType = wsCache.get(cacheKey)
   return sortList.some(ele => ele.value === sortType) ? sortType : fallback
 }
 
+// 当前排序方式的展示文案
 const sortTypeTip = computed(() => {
   return sortList.find(ele => ele.value === state.curSortType)?.name ?? sortList[1].name
 })
 
+// 处理排序菜单切换并写入本地缓存
 const handleSortTypeChange = sortType => {
   state.resourceTree = treeSort(state.originResourceTree, sortType)
   state.curSortType = sortType
   wsCache.set('TreeSort-' + curCanvasType.value, state.curSortType)
 }
 
+// 按排序方式重建资源树
 const sortTypeChange = sortType => {
   state.resourceTree = treeSort(state.originResourceTree, sortType)
   state.curSortType = sortType
@@ -593,11 +704,14 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
   return false
 }, 300)
 
+// 搜索关键字变化后过滤树节点
 watch(filterText, val => {
   resourceListTree.value.filter(val)
 })
 
+// 外部窗口句柄代理，用于嵌入式宿主接管新窗口
 const openHandler = ref(null)
+// 初始化外部窗口句柄
 const initOpenHandler = newWindow => {
   if (openHandler?.value) {
     const pm = {
@@ -608,6 +722,7 @@ const initOpenHandler = newWindow => {
   }
 }
 
+// 初始化资源树排序缓存状态
 const loadInit = () => {
   const historyTreeSort = wsCache.get('TreeSort-' + curCanvasType.value)
   if (historyTreeSort) {
@@ -615,6 +730,7 @@ const loadInit = () => {
   }
 }
 
+// 加载分享基础配置并写入共享状态
 const loadShareBase = () => {
   queryShareBaseApi().then(res => {
     const param = {
@@ -646,12 +762,12 @@ defineExpose({
         <span class="title"> {{ resourceLabel }} </span>
         <div v-if="rootManage" class="flex-align-center">
           <el-tooltip
-            offset="14"
+            :offset="14"
             :content="t('work_branch.new_folder')"
             placement="top"
             popper-class="new-folder_tip"
             effect="dark"
-            arrow-offset="10"
+            :arrow-offset="10"
           >
             <el-icon
               class="custom-icon btn"
@@ -674,6 +790,25 @@ defineExpose({
                   </el-icon>
                   {{ t('work_branch.new_empty') }}
                 </el-dropdown-item>
+                <el-dropdown-item @click.stop>
+                  <el-upload
+                    ref="importUploadRef"
+                    class="resource-import-upload"
+                    :show-file-list="false"
+                    accept=".DET2,.DET2APP,.det2,.det2app"
+                    :before-upload="beforeImportTemplateUpload"
+                    :http-request="importTemplateFile"
+                  >
+                    <div class="resource-import-entry">
+                      <el-icon :class="`handle-icon color-${curCanvasType}`">
+                        <Icon name="icon_upload_outlined">
+                          <icon_upload_outlined class="svg-icon" />
+                        </Icon>
+                      </el-icon>
+                      <span>{{ t('visualization.import_app_template') }}</span>
+                    </div>
+                  </el-upload>
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -694,18 +829,18 @@ defineExpose({
         </template>
       </el-input>
       <el-dropdown @command="handleSortTypeChange" trigger="click">
-        <el-icon class="filter-icon-span">
+        <span class="filter-icon-trigger">
           <el-tooltip :offset="16" effect="dark" :content="sortTypeTip" placement="top">
-            <Icon v-if="state.curSortType.includes('asc')" name="dv-sort-asc" class="opt-icon"
-              ><dvSortAsc class="svg-icon opt-icon"
-            /></Icon>
+            <el-icon class="filter-icon-span">
+              <Icon v-if="state.curSortType.includes('asc')" name="dv-sort-asc" class="opt-icon"
+                ><dvSortAsc class="svg-icon opt-icon"
+              /></Icon>
+              <Icon v-else name="dv-sort-desc" class="opt-icon"
+                ><dvSortDesc class="svg-icon opt-icon"
+              /></Icon>
+            </el-icon>
           </el-tooltip>
-          <el-tooltip :offset="16" effect="dark" :content="sortTypeTip" placement="top">
-            <Icon v-if="state.curSortType.includes('desc')" name="dv-sort-desc" class="opt-icon"
-              ><dvSortDesc class="svg-icon opt-icon"
-            /></Icon>
-          </el-tooltip>
-        </el-icon>
+        </span>
         <template #dropdown>
           <el-dropdown-menu style="width: 246px">
             <template :key="ele.value" v-for="ele in sortList">
@@ -722,7 +857,7 @@ defineExpose({
         </template>
       </el-dropdown>
     </div>
-    <el-scrollbar class="custom-tree" v-loading="copyLoading">
+    <el-scrollbar class="custom-tree" v-loading="copyLoading || importLoading">
       <el-tree
         menu
         ref="resourceListTree"
@@ -767,7 +902,7 @@ defineExpose({
                 class="box-item"
                 effect="dark"
                 :content="t('visualization.publish_tips1')"
-                :disabled="data.extraFlag1"
+                :disabled="!!data.extraFlag1"
                 placement="top-start"
               >
                 {{ node.label }}
@@ -950,6 +1085,20 @@ defineExpose({
 .custom-tree {
   height: calc(100vh - 158px);
   padding: 10px 0 0;
+}
+
+.resource-import-upload {
+  width: 100%;
+
+  :deep(.ed-upload) {
+    width: 100%;
+  }
+}
+
+.resource-import-entry {
+  width: 100%;
+  display: flex;
+  align-items: center;
 }
 
 .custom-tree-node {

@@ -1,8 +1,6 @@
 package io.crest.engine.constant;
 
-/**
- * @Author Junjun
- */
+// 定义当前业务对象的核心职责
 public class ExtFieldConstant {
     public final static Integer EXT_NORMAL = 0;
 

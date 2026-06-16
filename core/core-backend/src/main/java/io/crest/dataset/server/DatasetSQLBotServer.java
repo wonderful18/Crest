@@ -14,16 +14,19 @@ import java.util.List;
 @RestController
 @RequestMapping("/sqlbot")
 @ConditionalOnProperty(prefix = "crest.internal-lite", name = "enabled", havingValue = "false", matchIfMissing = true)
+// 实现接口服务，衔接业务处理和返回结果
 public class DatasetSQLBotServer implements DataAssistantApi {
 
     @Resource
     private DatasetSQLBotManage datasetSQLBotManage;
     @Override
+    // 执行当前服务方法并返回处理结果
     public List<DataSQLBotAssistantVO> datasourceList(Long dsId, Long tableId) {
         return datasetSQLBotManage.datasourceList(dsId, tableId);
     }
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public List<DataSQLBotDatasetVO> datasetList(String dvInfo) {
         return datasetSQLBotManage.datasetList(dvInfo);
     }

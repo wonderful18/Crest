@@ -20,12 +20,15 @@ import static java.awt.SystemColor.info;
 @EqualsAndHashCode(callSuper = false)
 @Component("redshift")
 @SuppressWarnings("deprecation")
+// 定义数据源连接参数和元数据匹配规则
 public class Redshift extends DatasourceConfiguration {
     private String driver = "com.amazon.redshift.jdbc42.Driver";
     private String extraParams = "";
     @JsonIgnore
     private List<String> illegalParameters = Arrays.asList("socketFactory", "socketFactoryArg", "sslfactory", "sslhostnameverifier", "sslpasswordcallback", "authenticationPluginClassName", "IniFile");
 
+    // 构建当前数据源的连接地址
+    @Override
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             for (String illegalParameter : illegalParameters) {
@@ -53,11 +56,13 @@ public class Redshift extends DatasourceConfiguration {
     private static final Pattern DB_NAME_PATTERN = Pattern.compile("//[^/]+/([^?]+)");
 
     @Override
+    // 返回数据库名称解析使用的匹配规则
     protected Pattern databasePattern() {
         return DB_NAME_PATTERN;
     }
 
     @Override
+    // 转换输入数据并返回目标格式
     protected void convertParameters() {
         Map<String, String> parameters = getParameters();
         if (parameters.containsKey("UID")) {

@@ -27,12 +27,14 @@ import EngineInfo from '@/views/system/parameter/engine/EngineInfo.vue'
 import ObservabilityInfo from '@/views/system/parameter/observability/ObservabilityInfo.vue'
 const { t } = useI18n()
 
+// 衔接当前组件交互和状态同步
 const tabArray = ref([
   { label: t('system.basic_settings'), name: 'basic' },
   { label: t('system.engine_settings'), name: 'engine' },
   { label: '可观测性', name: 'observability' }
 ])
 
+// 记录当前选中项和交互焦点
 const activeName = ref('basic')
 </script>
 <style lang="less">

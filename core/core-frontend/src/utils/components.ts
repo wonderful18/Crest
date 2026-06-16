@@ -115,6 +115,7 @@ export default function findComponent(key) {
   return componentsMap[key]
 }
 
+// 整理输入数据并返回工具处理结果
 export function findComponentAttr(component) {
   const key =
     component.component === 'UserView' && component.innerType === 'picture-group'

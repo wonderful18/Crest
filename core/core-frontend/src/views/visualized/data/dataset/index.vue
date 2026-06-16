@@ -105,13 +105,21 @@ interface Node {
   ext?: number
 }
 const appStore = useAppStoreWithOut()
+// 根目录管理权限标记，用于控制顶层新增、移动和删除等管理动作
 const rootManage = ref(false)
+// 数据集导出弹窗显示状态
 const showExport = ref(false)
+// 行权限配置组件引用，导出前用于收集过滤表达式
 const rowAuth = ref()
+// 数据集导出请求加载状态，防止重复提交
 const exportDatasetLoading = ref(false)
+// 数据集导出行数上限展示值，由后端配置接口返回
 const limit = ref<any>(t('data_set.ten_wan'))
+// 数据集导出表单数据，包含文件名和行权限表达式
 const exportForm = ref<any>({})
+// 导出请求载荷缓存，保存数据集、文件名、行数和表达式树
 const table = ref<any>({})
+// 导出表单引用，用于提交前触发表单校验
 const exportFormRef = ref()
 const exportFormRules = {
   name: [
@@ -127,50 +135,64 @@ const exportFormRules = {
     }
   ]
 }
+// 数据集字段清单，提供给行权限组件作为可选字段来源
 const datasetTableFiled = ref([])
 provide('filedList', datasetTableFiled)
 
+// 数据集树搜索关键字
 const nickName = ref('')
 const router = useRouter()
 const route = useRoute()
+// 数据集管理页核心状态，维护资源树和当前排序方式
 const state = reactive({
   datasetTree: [] as BusiTreeNode[],
   curSortType: 'time_desc'
 })
 
+// 当前要新建的可视化资源类型，创建仪表板或大屏时由资源组件写入
 const curCanvasType = ref('')
+// 页面是否完成首次资源树加载，用于区分加载态和空态
 const mounted = ref(false)
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
+// 当前是否处于嵌入式数据集编辑模式，决定跳转方式
 const isCrestBi = computed(() => appStore.getIsCrestBi)
+// 当前页面是否运行在 iframe 宿主中，影响高度和嵌入式导出处理
 const isIframe = computed(() => appStore.getIsIframe)
+// 当前数据集的导出权限，结合节点权重和扩展权限位计算
 const exportPermissions = computed(() => exportPermission(nodeInfo.weight, nodeInfo.ext))
+// 根据当前数据集上下文打开新建可视化面板，并缓存来源数据集 id
 const createPanel = path => {
   const baseUrl = `#/${path}?opt=create&id=${nodeInfo.id}`
   wsCache.set('dataset-info-id', nodeInfo.id)
   window.open(baseUrl, openType)
 }
 
+// 资源分组组件完成新建叶子资源后，创建对应的可视化资源记录
 const resourceOptFinish = param => {
   if (param && param.opt === 'newLeaf') {
     resourceCreate(param.pid, param.name)
   }
 }
 
+// 数据集树排序前的原始副本，排序操作始终基于该副本重新计算
 const originResourceTree = shallowRef([])
 
+// 用户切换排序方式时重排资源树，并写入本地缓存
 const handleSortTypeChange = sortType => {
   state.datasetTree = treeSort(originResourceTree.value, sortType)
   state.curSortType = sortType
   wsCache.set('TreeSort-dataset', state.curSortType)
 }
 
+// 按指定排序方式重排资源树，不写缓存，供初始化和刷新流程复用
 const sortTypeChange = sortType => {
   state.datasetTree = treeSort(originResourceTree.value, sortType)
   state.curSortType = sortType
 }
 
+// 新建仪表板或大屏资源，并以当前数据集作为初始数据来源
 const resourceCreate = (pid, name) => {
-  // 新建基础信息
+  // 可视化资源基础信息与画布初始配置必须在同一次保存中提交
   const newResourceId = guid()
   const bashResourceInfo = {
     dataState: 'ready',
@@ -197,6 +219,7 @@ const resourceCreate = (pid, name) => {
   })
 }
 
+// 数据集文件夹创建和移动弹窗组件引用
 const creatDsFolder = ref()
 const defaultNode = {
   name: '',
@@ -208,6 +231,7 @@ const defaultNode = {
   weight: 0
 }
 
+// 当前选中的数据集节点详情，驱动右侧预览、导出和编辑入口
 const nodeInfo = reactive<Node>(cloneDeep(defaultNode))
 
 let allFields = []
@@ -248,9 +272,11 @@ const allFieldsColumns = [
   }
 ]
 
+// 数据预览加载状态，覆盖数据预览页签的异步请求阶段
 const dataPreviewLoading = ref(false)
 const { width, node } = useMoveLine('DATASOURCE')
 
+// 详情面板基础信息，统一格式化创建时间
 const infoList = computed(() => {
   return {
     creator: nodeInfo.creator,
@@ -266,6 +292,7 @@ const { handleDrop, allowDrop, handleDragStart } = treeDraggble(
   originResourceTree
 )
 
+// 将数据集字段元数据转换为预览表格列，并渲染字段类型图标
 const generateColumns = (arr: Field[]) =>
   arr.map(ele => ({
     key: ele.engineFieldName,
@@ -289,8 +316,11 @@ const generateColumns = (arr: Field[]) =>
     )
   }))
 
+// 数据集树加载状态，覆盖首次加载、刷新和排序恢复阶段
 const dtLoading = ref(false)
+// 首次恢复选中节点的标记，避免刷新树时重复设置当前节点
 const isCreated = ref(false)
+// 加载数据集资源树，处理根目录权限、排序、搜索过滤和选中节点恢复
 const getData = () => {
   dtLoading.value = true
   const curSortType = getStoredSortType('TreeSort-dataset', getDefaultSortType())
@@ -331,6 +361,7 @@ const getData = () => {
     })
 }
 
+// 深度查找数据集树中的目标节点，并触发与用户点击一致的详情加载流程
 const dfsDatasetTree = (ds, id) => {
   ds.some(ele => {
     if (ele.id === id) {
@@ -355,10 +386,14 @@ onBeforeMount(() => {
   getLimit()
 })
 
+// 数据预览或结构预览的表格列配置
 const columns = shallowRef([])
+// 数据预览或结构预览的表格行数据
 const tableData = shallowRef([])
+// 当前数据集总行数，预览页签异步补充展示
 const total = ref(null)
 
+// 点击数据集树叶子节点后加载详情，并重置预览缓存
 const handleNodeClick = (data: BusiTreeNode) => {
   if (!data.leaf) {
     datasetListTree.value.setCurrentKey(null)
@@ -376,6 +411,7 @@ const handleNodeClick = (data: BusiTreeNode) => {
   })
 }
 
+// 打开导出弹窗，并初始化行权限表达式组件
 const exportDataset = () => {
   showExport.value = true
   exportForm.value.name = nodeInfo.name
@@ -387,10 +423,12 @@ const exportDataset = () => {
   })
 }
 
+// 关闭导出弹窗
 const closeExport = () => {
   showExport.value = false
 }
 
+// 接收行权限组件提交结果，组装导出载荷并处理下载或导出中心提示
 const save = ({ logic, items, errorMessage }: any) => {
   if (exportDatasetLoading.value) {
     return
@@ -447,6 +485,7 @@ const save = ({ logic, items, errorMessage }: any) => {
     })
 }
 
+// 提交导出表单，表单校验通过后交由行权限组件生成表达式树
 const exportDatasetRequest = () => {
   if (exportDatasetLoading.value) {
     return
@@ -460,10 +499,12 @@ const exportDatasetRequest = () => {
   })
 }
 
+// 通知导出中心切换到进行中列表，方便用户查看异步导出进度
 const exportData = () => {
   useEmitt().emitter.emit('data-export-center', { activeName: 'IN_PROGRESS' })
 }
 
+// 展开或收起字段说明单元格，解决长文本在表格内的临时查看需求
 const rowClick = (_, __, event) => {
   const element = event.target.parentNode.parentNode
   if ([...element.classList].includes('no-hide')) {
@@ -473,6 +514,7 @@ const rowClick = (_, __, event) => {
   element.classList.add('no-hide')
 }
 
+// 展示导出进度提示，并提供跳转导出中心的快捷动作
 const openMessageLoading = cb => {
   const iconClass = `el-icon-loading`
   const customClass = `crest-message-loading crest-message-export`
@@ -500,11 +542,13 @@ const openMessageLoading = cb => {
   } as any)
 }
 
+// 从详情页编辑当前数据集
 const editorDataset = () => {
   handleEdit(nodeInfo.id)
 }
 const embedded = useEmbedded()
 
+// 打开数据集编辑页，兼容嵌入式模式和普通路由模式
 const handleEdit = id => {
   if (isCrestBi.value) {
     embedded.clearState()
@@ -520,6 +564,7 @@ const handleEdit = id => {
   })
 }
 
+// 打开新建数据集流程，并携带可选父文件夹
 const createDataset = (data?: BusiTreeNode) => {
   if (isCrestBi.value) {
     embedded.clearState()
@@ -534,6 +579,7 @@ const createDataset = (data?: BusiTreeNode) => {
   })
 }
 
+// 切换详情页签，按需加载数据预览、结构预览和统计信息
 const handleClick = (tabName: TabPaneName) => {
   switch (tabName) {
     case 'dataPreview':
@@ -572,7 +618,9 @@ const handleClick = (tabName: TabPaneName) => {
       break
   }
 }
+// 血缘关系图组件引用，用于删除数据集前展示影响范围
 const relationChartRef = ref()
+// 处理数据集树更多菜单命令，覆盖复制、删除、移动和重命名等操作
 const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
   if (cmd === 'copy') {
     if (isCrestBi.value) {
@@ -605,6 +653,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
     if (nodeType !== 'folder') {
       perDelete(data.id).then(res => {
         if (res === true) {
+          // 删除确认弹窗中的血缘查看动作，延迟到用户主动点击时再查询图数据
           const onClick = () => {
             relationChartRef.value.getChartData({
               queryType: 'dataset',
@@ -662,6 +711,7 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
   }
 }
 
+// 处理数据集树的新建命令，在数据集和文件夹入口之间分发
 const handleDatasetTree = (cmd: string, data?: BusiTreeNode) => {
   if (cmd === 'dataset') {
     createDataset(data)
@@ -671,6 +721,7 @@ const handleDatasetTree = (cmd: string, data?: BusiTreeNode) => {
   }
 }
 
+// 当前详情页签，默认展示数据预览
 const activeName = ref('dataPreview')
 
 const menuList = [
@@ -691,20 +742,24 @@ const menuList = [
     command: 'delete'
   }
 ]
+// 当前展开的数据集树节点键集合
 const expandedKey = ref([])
 
+// 记录用户展开的树节点，刷新后用于保留展开状态
 const nodeExpand = data => {
   if (data.id) {
     expandedKey.value.push(data.id)
   }
 }
 
+// 移除用户折叠的树节点键，保持展开状态集合与界面一致
 const nodeCollapse = data => {
   if (data.id) {
     expandedKey.value.splice(expandedKey.value.indexOf(data.id), 1)
   }
 }
 
+// 新建菜单项，提供数据集和文件夹两个入口
 const datasetTypeList = computed(() => {
   return [
     {
@@ -721,6 +776,7 @@ const datasetTypeList = computed(() => {
   ]
 })
 
+// 数据集树组件字段映射，约定子节点和展示名称字段
 const defaultProps = {
   children: 'children',
   label: 'name'
@@ -757,51 +813,65 @@ const sortList = [
   }
 ]
 
+// 读取旧版排序缓存并映射为当前排序值，不可用时回落到默认时间倒序
 const getDefaultSortType = () => {
   const sortIndex = Number(wsCache.get('TreeSort-backend') ?? 1)
   return sortList[Number.isInteger(sortIndex) && sortList[sortIndex] ? sortIndex : 1].value
 }
 
+// 从指定缓存键读取排序值，并校验其仍存在于当前排序选项中
 const getStoredSortType = (cacheKey: string, fallback: string) => {
   const sortType = wsCache.get(cacheKey)
   return sortList.some(ele => ele.value === sortType) ? sortType : fallback
 }
 
+// 页面初始化时恢复缓存中的数据集树排序方式
 const loadInit = () => {
   state.curSortType = getStoredSortType('TreeSort-dataset', state.curSortType)
 }
 
+// 读取数据集导出行数上限，用于导出弹窗提示
 const getLimit = () => {
   exportLimit().then(res => {
     limit.value = res
   })
 }
 
+// 当前排序方式的展示文案，用于排序入口提示
 const sortTypeTip = computed(() => {
   return sortList.find(ele => ele.value === state.curSortType)?.name ?? sortList[1].name
 })
 
+// 由详情扩展组件动态注入的页签列表
 const tablePanes = ref([])
+// 当前可展示的详情页签，低权限节点只展示默认页签
 const tablePaneList = computed(() => {
   return nodeInfo.weight >= 7 ? [...defaultTab, ...tablePanes.value] : [...defaultTab]
 })
+// 接收详情扩展组件加载出的页签配置
 const panelLoad = paneInfo => {
   tablePanes.value = paneInfo
 }
+// 数据集树组件引用，用于过滤和设置当前节点
 const datasetListTree = ref()
 
+// 数据集树搜索关键字变化时，调用树组件过滤方法刷新可见节点
 watch(nickName, (val: string) => {
   datasetListTree.value.filter(val)
 })
+// 左侧数据集树展开状态，控制侧栏显示和箭头位置
 const sideTreeStatus = ref(true)
+// 接收侧栏展开收起组件的状态变化
 const changeSideTreeStatus = val => {
   sideTreeStatus.value = val
 }
 
+// 数据集树节点过滤规则，按节点名称做不区分大小写的包含匹配
 const filterNode = (value: string, data: BusiTreeNode) => {
   if (!value) return true
   return data.name?.toLowerCase().includes(value.toLowerCase())
 }
+// 根据节点类型返回更多菜单，文件夹不展示复制动作
 const getMenuList = (val: boolean) => {
   return !val
     ? menuList
@@ -814,6 +884,7 @@ const getMenuList = (val: boolean) => {
       ].concat(menuList)
 }
 
+// 拖拽放置代理，在免费文件夹限制生效时阻止跨类型保存
 const proxyAllowDrop = throttle((arg1, arg2) => {
   const flagArray = ['dashboard', 'dataV', 'dataset', 'datasource']
   const flag = flagArray.findIndex(item => item === 'dataset')

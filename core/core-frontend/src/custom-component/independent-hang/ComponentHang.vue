@@ -16,6 +16,7 @@
 <script setup lang="ts">
 import { computed, toRefs } from 'vue'
 import findComponent from '@/utils/components'
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   hangComponentData: {
     type: Object,
@@ -33,6 +34,7 @@ const props = defineProps({
 })
 
 const { hangComponentData, scale } = toRefs(props)
+// 衔接当前组件交互和状态同步
 const deepScale = computed(() => scale.value / 100)
 </script>
 

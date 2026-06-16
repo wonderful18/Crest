@@ -17,9 +17,12 @@ import { iconFieldMap } from '@/components/icon-group/field-list'
 
 const { t } = useI18n()
 
+// 维度字段标签颜色类型，颜色由字段来源和字段类型共同决定
 const tagType = ref('success')
+// 是否展示日期扩展菜单
 const showDateExt = ref(false)
 
+// 维度拖拽项入参，包含字段、图表上下文和所在轴区域
 const props = defineProps({
   param: {
     type: Object,
@@ -55,6 +58,7 @@ const props = defineProps({
   }
 })
 
+// 维度拖拽项向编辑器上层抛出的操作事件
 const emit = defineEmits([
   'onDimensionItemRemove',
   'onCustomSort',
@@ -66,9 +70,11 @@ const emit = defineEmits([
 ])
 
 const { item } = toRefs(props)
+// 根据当前主题反转提示框主题，保证弹层可读
 const toolTip = computed(() => {
   return props.themes || 'dark'
 })
+// 当前维度是否展示数值格式化入口
 const showValueFormatter = computed<boolean>(() => {
   return (
     (props.chart.type === 'table-normal' || props.chart.type === 'table-info') &&
@@ -76,6 +82,7 @@ const showValueFormatter = computed<boolean>(() => {
   )
 })
 
+// 字段数据或图表类型变化时刷新标签颜色
 watch(
   [() => props.dimensionData, () => props.item, () => props.chart.type],
   () => {
@@ -84,10 +91,12 @@ watch(
   { deep: true }
 )
 
+// 分发维度菜单点击操作
 const clickItem = param => {
   if (!param) {
     return
   }
+  // 菜单命令只负责分派操作，具体字段更新逻辑放在对应方法中，便于控制 axisType 和 index。
   switch (param.type) {
     case 'rename':
       showRename()
@@ -96,7 +105,6 @@ const clickItem = param => {
       removeItem()
       break
     case 'filter':
-      // editFilter()
       break
     case 'formatter':
       valueFormatter()
@@ -112,20 +120,24 @@ const clickItem = param => {
   }
 }
 
+// 构造通用菜单命令对象
 const beforeClickItem = type => {
   return {
     type
   }
 }
 
+// 处理维度排序，普通排序直接更新字段，自定义排序交给上层弹窗
 const sort = param => {
   if (param.type === 'custom_sort') {
+    // 自定义排序需要打开上层弹窗编辑顺序，当前组件只传递字段位置和排序类型。
     const item = {
       index: props.index,
       sort: param.type
     }
     emit('onCustomSort', item)
   } else {
+    // 普通排序直接写回字段配置，并清理自定义排序列表，避免两类排序规则同时生效。
     item.value.index = props.index
     item.value.sort = param.type
     item.value.customSort = []
@@ -134,58 +146,69 @@ const sort = param => {
   }
 }
 
+// 构造排序菜单命令对象
 const beforeSort = type => {
   return {
     type: type
   }
 }
 
+// 切换日期粒度
 const dateStyle = param => {
+  // 日期粒度会影响查询字段表达式，必须带上当前轴区域让父级更新正确槽位。
   item.value.dateStyle = param.type
   item.value.axisType = props.type
   emit('onDimensionItemChange', item.value)
 }
 
+// 构造日期粒度菜单命令对象
 const beforeDateStyle = type => {
   return {
     type: type
   }
 }
 
+// 切换日期展示格式
 const datePattern = param => {
+  // 日期展示格式只影响前端展示和后续渲染配置，不改变字段原始类型。
   item.value.datePattern = param.type
   item.value.axisType = props.type
   emit('onDimensionItemChange', item.value)
 }
 
+// 构造日期展示格式菜单命令对象
 const beforeDatePattern = type => {
   return {
     type: type
   }
 }
 
+// 打开维度重命名弹窗
 const showRename = () => {
   item.value.index = props.index
   item.value.renameType = props.type
-  // item.value.dsFieldName = getOriginFieldName(props.dimensionData, props.quotaData, item.value)
   emit('onNameEdit', item.value)
 }
 
+// 删除当前维度字段
 const removeItem = () => {
   item.value.index = props.index
   item.value.removeType = props.type
   emit('onDimensionItemRemove', item.value)
 }
 
+// 根据字段来源和类型刷新标签颜色
 const getItemTagType = () => {
   tagType.value = getItemType(props.dimensionData, props.quotaData, props.item)
 }
 
+// 打开数值格式化配置弹窗
 const valueFormatter = () => {
   item.value.index = props.index
   item.value.formatterType = props.type
   emit('valueFormatter', item.value)
 }
+// 判断当前维度字段是否支持自定义排序，地图类图表和计算字段不开放手工排序。
 const showCustomSort = item => {
   if (props.chart.type === 'symbolic-map' || props.chart.type === 'flow-map') {
     return false
@@ -194,6 +217,7 @@ const showCustomSort = item => {
 }
 
 const NOT_SUPPORT_SORT = ['word-cloud', 'stock-line', 'treemap', 'circle-packing']
+// 判断当前图表和字段区域是否展示排序入口
 const showSort = computed(() => {
   const { type: chartType } = props.chart
   const { type: propType } = props
@@ -203,31 +227,38 @@ const showSort = computed(() => {
   }
   const isChartMix = chartType.includes('chart-mix')
   const isDimensionType = ['dimension', 'dimensionStack', 'dimensionExt'].includes(propType)
+  // 混合图只允许维度侧排序，指标扩展槽位排序会破坏左右轴数据对齐。
   return !isChartMix || isDimensionType
 })
+// 判断当前图表是否展示排序优先级入口
 const showSortPriority = computed(() => {
+  // 混合图存在多轴组合，排序优先级由整体图表配置控制。
   if (props.chart.type.includes('chart-mix')) {
     return false
   }
   return showSort.value
 })
+// 切换字段隐藏状态
 const toggleHide = () => {
   item.value.index = props.index
   item.value.hide = !item.value.hide
   item.value.axisType = props.type
   emit('onToggleHide', item.value)
 }
+// 表格字段隐藏后在标签上展示隐藏图标
 const showHideIcon = computed(() => {
   return ['table-info', 'table-normal'].includes(props.chart.type) && item.value.hide
 })
 
 onMounted(() => {
+  // 首次挂载时根据字段配置同步标签颜色，后续变化由 watch 接管。
   getItemTagType()
 })
 </script>
 
 <template>
   <span class="item-style">
+    <!-- 维度标签同时承载字段类型、排序状态、隐藏状态和快捷删除入口。 -->
     <el-dropdown :effect="themes" trigger="click" @command="clickItem">
       <el-tag
         class="item-axis father"
@@ -273,6 +304,7 @@ onMounted(() => {
         </span>
         <el-tooltip :effect="toolTip" placement="top">
           <template #content>
+            <!-- 提示同时展示原始字段名和图表展示名，便于定位重命名后的字段来源。 -->
             <table>
               <tbody>
                 <tr>
@@ -323,6 +355,7 @@ onMounted(() => {
           :class="themes === 'dark' ? 'dark-dimension-quota' : ''"
         >
           <el-dropdown-item @click.prevent v-if="showSort">
+            <!-- 排序二级菜单保持当前排序摘要，避免用户打开菜单前无法判断字段排序状态。 -->
             <el-dropdown
               :effect="themes"
               popper-class="data-dropdown_popper_mr9"
@@ -413,6 +446,7 @@ onMounted(() => {
             :command="beforeClickItem('sortPriority')"
             class="menu-item-padding"
           >
+            <!-- 排序优先级只打开配置入口，实际优先级列表由编辑器上层统一维护。 -->
             <el-icon />
             <span>{{ t('chart.sort_priority') }}</span>
           </el-dropdown-item>
@@ -425,6 +459,7 @@ onMounted(() => {
                 (type === 'dimension' || type === 'dimensionStack' || type === 'dimensionExt'))
             "
           >
+            <!-- 日期字段提供粒度菜单，不同图表槽位会限制可选粒度。 -->
             <el-dropdown
               :effect="themes"
               placement="right-start"
@@ -600,6 +635,7 @@ onMounted(() => {
             </el-dropdown>
           </el-dropdown-item>
           <el-dropdown-item @click.prevent v-if="item.fieldType === 1">
+            <!-- 日期显示格式独立于日期粒度，主要控制标签和表格中的日期文本呈现。 -->
             <el-dropdown
               :effect="themes"
               placement="right-start"
@@ -678,6 +714,7 @@ onMounted(() => {
             v-if="['table-normal', 'table-info'].includes(chart.type)"
             :command="beforeClickItem('toggleHide')"
           >
+            <!-- 表格维度支持临时隐藏字段，保留字段配置但不参与最终列展示。 -->
             <el-icon>
               <icon
                 ><icon_visible_outlined v-if="item.hide === true" class="svg-icon" />
@@ -692,6 +729,7 @@ onMounted(() => {
             :divided="!showValueFormatter"
             :command="beforeClickItem('formatter')"
           >
+            <!-- 数值型维度在明细表中可单独配置展示格式，避免影响原始字段定义。 -->
             <el-icon />
             <span>{{ t('chart.value_formatter') }}...</span>
           </el-dropdown-item>
@@ -721,6 +759,7 @@ onMounted(() => {
   padding: 5px 16px;
 }
 .item-style {
+  // 拖拽项需要占满轴槽宽度，内部名称再做省略，保证拖拽命中区域稳定。
   position: relative;
   width: 100%;
   display: block;
@@ -736,6 +775,7 @@ onMounted(() => {
 }
 
 .item-axis {
+  // 字段标签固定高度，保证拖拽排序时轴槽列表不会因内容变化跳动。
   padding: 1px 8px;
   margin-bottom: 3px;
   height: 28px;
@@ -800,6 +840,7 @@ span {
 }
 
 .item-span-style {
+  // 排序和隐藏图标会占用右侧空间，名称区域按状态缩短避免覆盖操作图标。
   display: flex;
   max-width: 170px;
   color: #1f2329;
@@ -832,6 +873,7 @@ span {
 }
 
 .drop-style {
+  // 二级菜单宽度固定，保证排序、日期粒度和日期格式菜单在暗色主题下对齐。
   :deep(.ed-dropdown-menu__item) {
     height: 32px;
     min-width: 218px;
@@ -879,6 +921,7 @@ span {
 }
 
 .father {
+  // 快捷删除和展开图标默认隐藏，仅在悬停当前字段时暴露。
   &.dark_icon-right {
     .child {
       color: #a6a6a6;

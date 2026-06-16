@@ -14,6 +14,7 @@ defineProps({
   }
 })
 
+// 控制弹窗、面板或区域的展示状态
 const otherEditorShow = computed(() => {
   return Boolean(
     curComponent.value &&
@@ -24,6 +25,7 @@ const otherEditorShow = computed(() => {
   )
 })
 
+// 控制弹窗、面板或区域的展示状态
 const viewEditorShow = computed(() => {
   return Boolean(
     curComponent.value &&

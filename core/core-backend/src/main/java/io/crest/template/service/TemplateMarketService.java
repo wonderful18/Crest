@@ -13,35 +13,54 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/11/17 13:20
+ * 对外提供模板市场查询接口，封装模板中心的数据读取能力。
  */
 @RestController
 @RequestMapping("/template-market")
 @ConditionalOnProperty(prefix = "crest.internal-lite", name = "enabled", havingValue = "false", matchIfMissing = true)
 public class TemplateMarketService implements TemplateMarketApi {
 
+    /**
+     * 模板中心管理器，承接模板市场的聚合查询逻辑
+     */
     @Resource
     private TemplateCenterManage templateCenterManage;
+
+    /**
+     * 查询模板市场完整列表
+     */
     @Override
     public MarketBaseResponse searchTemplate() {
         return templateCenterManage.searchTemplate();
     }
+
+    /**
+     * 查询模板市场推荐列表
+     */
     @Override
     public MarketBaseResponse searchTemplateRecommend() {
         return templateCenterManage.searchTemplateRecommend();
     }
 
+    /**
+     * 查询模板市场预览分组数据
+     */
     @Override
     public MarketPreviewBaseResponse searchTemplatePreview() {
         return templateCenterManage.searchTemplatePreview();
     }
 
+    /**
+     * 查询模板分类名称列表
+     */
     @Override
     public List<String> categories() {
         return templateCenterManage.getCategories();
     }
 
+    /**
+     * 查询模板分类对象列表
+     */
     @Override
     public List<MarketMetaDataVO> categoriesObject() {
         return templateCenterManage.getCategoriesObject();

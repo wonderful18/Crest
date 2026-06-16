@@ -33,6 +33,7 @@ interface SelectConfig {
 const placeholder: Ref = inject('placeholder')
 const { t } = useI18n()
 
+// 根据占位符开关决定查询输入框的展示文本
 const placeholderText = computed(() => {
   if (placeholder?.value?.placeholderShow) {
     return props.config.placeholder
@@ -52,6 +53,7 @@ const operators = [
 ]
 const dvMainStore = dvMainStoreWithOut()
 const { dvInfo } = storeToRefs(dvMainStore)
+// 定义文本查询条件组件的配置和编辑态标识
 const props = defineProps({
   config: {
     type: Object as PropType<SelectConfig>,
@@ -78,6 +80,7 @@ const props = defineProps({
 })
 
 const { config } = toRefs(props)
+// 将查询条件恢复为默认操作符和值
 const setParams = () => {
   const {
     defaultConditionValueOperatorF,
@@ -97,6 +100,7 @@ const queryConditionWidth = inject('com-width', Function, true)
 const customStyle = inject<{ background: string; border: string }>('$custom-style-filter')
 const isConfirmSearch = inject('is-confirm-search', Function, true)
 
+// 计算查询条件组件在预览和编辑场景下的宽度
 const getCustomWidth = () => {
   if (placeholder?.value?.placeholderShow) {
     if (props.config.queryConditionWidth === undefined) {
@@ -106,9 +110,11 @@ const getCustomWidth = () => {
   }
   return 227
 }
+// 生成输入框宽度样式
 const selectStyle = computed(() => {
   return { width: getCustomWidth() + 'px' }
 })
+// 在非配置态提交当前查询条件变化
 const handleValueChange = () => {
   if (!props.isConfig) {
     nextTick(() => {
@@ -117,10 +123,12 @@ const handleValueChange = () => {
     return
   }
 }
+// 生成输入框底部分隔线宽度和颜色
 const lineWidth = computed(() => {
   return { width: getCustomWidth() - 15 + 'px', background: customStyle.border }
 })
 
+// 响应回车查询，并忽略输入法组合中的按键事件
 const handleKeyEnter = ($event: any = {}) => {
   if ($event?.isComposing) {
     return
@@ -128,12 +136,16 @@ const handleKeyEnter = ($event: any = {}) => {
   handleValueChange()
 }
 
+// 阻止内部输入区域触发画布拖拽或选中逻辑
 const handleInnerMouseDown = e => {
   e.stopPropagation()
 }
+// 保存第一个条件输入框实例，便于外部点击时失焦
 const pre = ref()
+// 保存第二个条件输入框实例，便于外部点击时失焦
 const next = ref()
 
+// 画布组件点击时主动收起当前查询输入焦点
 const componentClick = () => {
   pre.value?.blur()
   next.value?.blur()

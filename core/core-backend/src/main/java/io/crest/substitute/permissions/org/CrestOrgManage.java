@@ -9,10 +9,13 @@ import io.crest.api.permissions.org.vo.LazyTreeVO;
 import io.crest.api.permissions.org.vo.OrgDetailVO;
 import io.crest.api.permissions.org.vo.OrgPageVO;
 import io.crest.exception.CrestException;
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.IDUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
+/**
+ * 组织数据管理组件，负责组织树查询和组织增删改
+ */
 public class CrestOrgManage {
 
     @Resource
@@ -30,6 +36,12 @@ public class CrestOrgManage {
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
+    @Resource
+    private Environment environment;
+
+    /**
+     * 查询完整组织树
+     */
     public List<OrgPageVO> pageTree(OrgRequest request) {
         List<OrgPageVO> orgs = jdbcTemplate.query("""
                 SELECT id, pid, name, create_time, readonly
@@ -65,6 +77,9 @@ public class CrestOrgManage {
                 .toList();
     }
 
+    /**
+     * 懒加载查询指定父组织下的组织树节点
+     */
     public LazyTreeVO lazyPageTree(OrgLazyRequest request) {
         Long pid = request == null || request.getPid() == null ? 0L : request.getPid();
         LazyTreeVO vo = new LazyTreeVO();
@@ -73,6 +88,9 @@ public class CrestOrgManage {
         return vo;
     }
 
+    /**
+     * 创建组织
+     */
     @Transactional
     public Long create(OrgCreator creator) {
         platformPermissionManage.requireSystemAdmin();
@@ -99,6 +117,9 @@ public class CrestOrgManage {
         return id;
     }
 
+    /**
+     * 编辑组织名称
+     */
     @Transactional
     public void edit(OrgEditor editor) {
         platformPermissionManage.requireSystemAdmin();
@@ -109,6 +130,9 @@ public class CrestOrgManage {
                 editor.getName().trim(), System.currentTimeMillis(), editor.getId());
     }
 
+    /**
+     * 删除空组织
+     */
     @Transactional
     public void delete(Long id) {
         platformPermissionManage.requireSystemAdmin();
@@ -121,6 +145,9 @@ public class CrestOrgManage {
         jdbcTemplate.update("DELETE FROM iam_org WHERE id = ? AND readonly = 0", id);
     }
 
+    /**
+     * 判断组织下是否存在子组织、用户或资源
+     */
     public boolean resourceExist(Long oid) {
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT
@@ -131,23 +158,41 @@ public class CrestOrgManage {
         return count != null && count > 0;
     }
 
+    /**
+     * 查询组织详情
+     */
     public OrgDetailVO detail(Long oid) {
         List<OrgDetailVO> list = jdbcTemplate.query("""
-                SELECT id, name, pid, path FROM iam_org WHERE id = ? LIMIT 1
-                """, (rs, rowNum) -> new OrgDetailVO(rs.getLong("id"), rs.getString("name"),
+                SELECT id, name, pid, path FROM iam_org WHERE id = ?
+                """.transform(this::limitOne), (rs, rowNum) -> new OrgDetailVO(rs.getLong("id"), rs.getString("name"),
                 rs.getLong("pid"), rs.getString("path")), oid);
         return list.isEmpty() ? null : list.get(0);
     }
 
+    /**
+     * 查询指定组织及其下级组织 ID
+     */
     public List<String> subOrgs(Long oid) {
         OrgDetailVO org = detail(oid);
         if (org == null) {
             return List.of();
         }
-        return jdbcTemplate.queryForList("SELECT CAST(id AS CHAR) FROM iam_org WHERE path LIKE ?",
+        return jdbcTemplate.queryForList("SELECT " + dialect().stringCast("id") + " FROM iam_org WHERE path LIKE ?",
                 String.class, org.getRootPath() + "%");
     }
 
+    // 组织详情接口只需要一条记录，分页语法交给元数据库方言保持 MySQL/OB Oracle 兼容。
+    private String limitOne(String sql) {
+        return dialect().limitOne(sql.stripTrailing());
+    }
+
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
+    }
+
+    /**
+     * 查询指定父组织下的懒加载节点
+     */
     private List<LazyOrgTreeNode> children(Long pid) {
         return jdbcTemplate.query("""
                 SELECT o.id, o.pid, o.name, o.create_time, o.readonly,

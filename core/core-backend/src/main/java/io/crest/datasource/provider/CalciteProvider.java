@@ -16,6 +16,7 @@ import io.crest.datasource.type.*;
 import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.*;
 import io.crest.extensions.datasource.provider.DriverShim;
+import io.crest.extensions.datasource.provider.CrestSqlFunctionTranslator;
 import io.crest.extensions.datasource.provider.ExtendedJdbcClassLoader;
 import io.crest.extensions.datasource.provider.Provider;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
@@ -56,6 +57,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
+/**
+ * Calcite 数据源 provider，负责 JDBC 连接、方言转换、表字段探测、跨源查询和引擎连接池维护
+ * 该类只处理数据访问和元数据读取，不负责数据源权限、前端参数解码和同步任务编排
+ */
 @Component("calciteProvider")
 @SuppressWarnings({"deprecation", "unchecked"})
 public class CalciteProvider extends Provider {
@@ -77,16 +82,25 @@ public class CalciteProvider extends Provider {
     @Resource
     private CommonThreadPool commonThreadPool;
 
+    /**
+     * 判断数据源类型是否使用 Oracle 兼容路径，包含原生 Oracle 和 OceanBase Oracle 模式
+     */
     private boolean isOracleLike(String type) {
         return Strings.CI.equalsAny(type,
                 DatasourceConfiguration.DatasourceType.oracle.getType(),
                 DatasourceConfiguration.DatasourceType.obOracle.getType());
     }
 
+    /**
+     * 判断数据源类型是否为 OceanBase Oracle 模式，用于只读连接和兼容 SQL 分支
+     */
     private boolean isObOracle(String type) {
         return Strings.CI.equals(type, DatasourceConfiguration.DatasourceType.obOracle.getType());
     }
 
+    /**
+     * 判断当前请求是否需要只读连接。显式只读优先，其次使用 OceanBase Oracle 的默认只读策略
+     */
     boolean shouldUseReadOnlyConnection(
             DatasourceRequest datasourceRequest,
             DatasourceConfiguration datasourceConfiguration,
@@ -100,6 +114,9 @@ public class CalciteProvider extends Provider {
                 && !Boolean.FALSE.equals(obOracle.getReadOnly());
     }
 
+    /**
+     * 在执行源库只读查询前开启 JDBC 只读标记，驱动不支持时转为业务异常
+     */
     private void setConnectionReadOnly(Connection connection, boolean readOnly) {
         if (!readOnly || connection == null) {
             return;
@@ -111,6 +128,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 查询结束后恢复连接只读标记，恢复失败只记录日志，避免覆盖原始查询结果
+     */
     private void resetConnectionReadOnly(Connection connection, boolean readOnly) {
         if (!readOnly || connection == null) {
             return;
@@ -122,6 +142,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 按 Oracle 兼容数据源类型解析配置，保证 OceanBase Oracle 使用专属配置类
+     */
     private DatasourceConfiguration parseOracleLikeConfiguration(String configuration, String type) {
         if (isObOracle(type)) {
             return JsonUtil.parseObject(configuration, ObOracle.class);
@@ -129,6 +152,9 @@ public class CalciteProvider extends Provider {
         return JsonUtil.parseObject(configuration, Oracle.class);
     }
 
+    /**
+     * 按数据源类型解析配置对象，Oracle 兼容类型走独立配置解析分支
+     */
     private DatasourceConfiguration parseDatasourceConfiguration(String configuration, String type) {
         if (isOracleLike(type)) {
             return parseOracleLikeConfiguration(configuration, type);
@@ -136,6 +162,19 @@ public class CalciteProvider extends Provider {
         return JsonUtil.parseObject(configuration, DatasourceConfiguration.class);
     }
 
+    /**
+     * 数据源配置解析失败时返回清晰业务错误，避免后续连接池初始化继续触发空指针。
+     */
+    private DatasourceConfiguration requireDatasourceConfiguration(DatasourceConfiguration configuration) {
+        if (configuration == null) {
+            CrestException.throwException("数据源配置不完整或无法连接");
+        }
+        return configuration;
+    }
+
+    /**
+     * 初始化默认驱动类加载器，把驱动目录下的 JDBC 包加入运行时搜索路径
+     */
     @PostConstruct
     public void init() throws Exception {
         try {
@@ -160,6 +199,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 读取数据源 schema 列表。支持只读连接策略，并过滤 PostgreSQL 系统 schema
+     */
     @Override
     public List<String> getSchema(DatasourceRequest datasourceRequest) {
         List<String> schemas = new ArrayList<>();
@@ -194,6 +236,9 @@ public class CalciteProvider extends Provider {
         return schemas;
     }
 
+    /**
+     * 探测数据源连接状态，并通过一次表元数据查询验证 schema 和驱动可用性
+     */
     @Override
     public String checkStatus(DatasourceRequest datasourceRequest) throws Exception {
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasourceRequest.getDatasource().getType());
@@ -238,6 +283,9 @@ public class CalciteProvider extends Provider {
         return "Success";
     }
 
+    /**
+     * 读取连接型数据源的表清单，表元数据 SQL 由具体数据库类型决定
+     */
     @Override
     public List<DatasetTableDTO> tables(DatasourceRequest datasourceRequest) {
         List<DatasetTableDTO> tables = new ArrayList<>();
@@ -273,10 +321,13 @@ public class CalciteProvider extends Provider {
         return tables;
     }
 
+    /**
+     * 获取查询字段和预览数据。非跨源查询直接走 JDBC，跨源查询通过 Calcite 执行
+     */
     @Override
     @SuppressWarnings("java/sql-injection")
     public Map<String, Object> fetchResultField(DatasourceRequest datasourceRequest) throws CrestException {
-        // 不跨数据源
+        // 非跨源查询使用源库 JDBC，避免不必要的 Calcite 解析和 schema 注册成本
         if (datasourceRequest.getIsCross() == null || !datasourceRequest.getIsCross()) {
             return jdbcFetchResultField(datasourceRequest);
         }
@@ -326,23 +377,30 @@ public class CalciteProvider extends Provider {
         return map;
     }
 
+    /**
+     * 将通用 SQL 转换为目标数据源方言，并补充自定义函数的兼容翻译
+     */
     @Override
     public String transSqlDialect(String sql, Map<Long, DatasourceSchemaDTO> dsMap) throws CrestException {
         DatasourceSchemaDTO value = dsMap.entrySet().iterator().next().getValue();
         try (Connection connection = getConnectionFromPool(value.getId());) {
-            // 获取数据库version
+            // 方言转换依赖部分数据库版本差异，转换前先读取当前源库版本
             if (connection != null) {
                 value.setDsVersion(connection.getMetaData().getDatabaseMajorVersion());
             }
             SqlParser parser = SqlParser.create(sql, SqlParser.Config.DEFAULT.withLex(Lex.JAVA));
             SqlNode sqlNode = parser.parseStmt();
-            return restoreUnicodeStringLiterals(sqlNode.toSqlString(getDialect(value)).toString());
+            String dialect = restoreUnicodeStringLiterals(sqlNode.toSqlString(getDialect(value)).toString());
+            return CrestSqlFunctionTranslator.translate(dialect, value);
         } catch (Exception e) {
             CrestException.throwException(e.getMessage());
         }
         return null;
     }
 
+    /**
+     * 从查询结果元数据构建字段列表，字段类型同时写入原生类型和平台字段类型
+     */
     private List<TableField> fetchResultField(ResultSet rs) throws Exception {
         List<TableField> fieldList = new ArrayList<>();
         ResultSetMetaData metaData = rs.getMetaData();
@@ -363,10 +421,14 @@ public class CalciteProvider extends Provider {
         return fieldList;
     }
 
+    /**
+     * 通过空结果查询获取表字段 JDBC 类型编号，后续字段描述会用它补充类型精度信息
+     */
     private Map<String, Integer> getTableTypeMap(DatasourceRequest datasourceRequest, DatasourceConfiguration datasourceConfiguration, String tableName) throws CrestException {
         Map<String, Integer> map = new HashMap<>();
         String schemaTable = (ObjectUtils.isNotEmpty(datasourceConfiguration.getSchema()) ? (quoteIdentifierPart(datasourceConfiguration.getSchema()) + ".") : "") + quoteIdentifierPart(tableName);
-        // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string - SQL identifiers cannot be bound as parameters; each part is escaped by quoteIdentifierPart.
+        // 表名由 quoteIdentifierPart 逐段转义，JDBC 占位符不能绑定标识符
+        // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
         String sql = "SELECT * FROM " + schemaTable + " LIMIT 0 OFFSET 0";
         sql = transSqlDialect(sql, datasourceRequest.getDsList());
         ResultSet resultSet = null;
@@ -380,7 +442,8 @@ public class CalciteProvider extends Provider {
             setConnectionReadOnly(con, readOnly);
             try {
                 statement.setQueryTimeout(30);
-                // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string - table identifiers were already quoted and escaped before preparing the statement.
+                // 表标识符已在构造 SQL 时完成校验和转义
+                // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 resultSet = statement.executeQuery();
 
                 ResultSetMetaData metaData = resultSet.getMetaData();
@@ -407,6 +470,9 @@ public class CalciteProvider extends Provider {
         return map;
     }
 
+    /**
+     * 转义单段 SQL 标识符，调用方负责按数据库上下文判断该标识符是否允许出现
+     */
     private String quoteIdentifierPart(String identifier) {
         if (StringUtils.isBlank(identifier)) {
             CrestException.throwException("Illegal empty identifier");
@@ -414,6 +480,9 @@ public class CalciteProvider extends Provider {
         return "`" + identifier.replace("`", "``") + "`";
     }
 
+    /**
+     * 转义带点号的多段 SQL 标识符，保留 schema、catalog 或表名的层级结构
+     */
     private String quoteQualifiedIdentifier(String identifier) {
         if (StringUtils.isBlank(identifier)) {
             CrestException.throwException("Illegal empty identifier");
@@ -435,10 +504,16 @@ public class CalciteProvider extends Provider {
         return result.toString();
     }
 
+    /**
+     * 转义 SQL 字符串字面量，用于只能拼接常量的元数据查询模板
+     */
     private String sqlLiteral(String value) {
         return "'" + StringUtils.defaultString(value).replace("'", "''") + "'";
     }
 
+    /**
+     * 按字段类型绑定预编译参数，CLOB 字符串使用字符流写入以兼容大文本字段
+     */
     private void bindPreparedStatementValues(PreparedStatement statement, List<TableFieldWithValue> tableFieldWithValues) throws SQLException {
         if (statement == null || CollectionUtils.isEmpty(tableFieldWithValues)) {
             return;
@@ -457,6 +532,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 获取表字段信息。跨源查询读取结果元数据，单源表读取数据库系统表或 desc 结果
+     */
     @Override
     @SuppressWarnings("java/sql-injection")
     public List<TableField> fetchTableField(DatasourceRequest datasourceRequest) throws CrestException {
@@ -499,7 +577,7 @@ public class CalciteProvider extends Provider {
             try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId());
                  Statement statement = getStatement(con, 30)) {
                 if (isOracleLike(datasourceSchemaDTO.getType())) {
-                    statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + datasourceConfiguration.getSchema());
+                    statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + oracleSchemaIdentifier(datasourceConfiguration.getSchema()));
                 }
                 boolean readOnly = shouldUseReadOnlyConnection(datasourceRequest, datasourceConfiguration, datasourceSchemaDTO.getType());
                 setConnectionReadOnly(con, readOnly);
@@ -579,6 +657,9 @@ public class CalciteProvider extends Provider {
         return datasetTableFields;
     }
 
+    /**
+     * 判断 Doris/StarRocks 是否使用 catalog.database 形式，决定字段读取走 desc 还是 information_schema
+     */
     private boolean isDorisCatalog(DatasourceRequest datasourceRequest) {
         if (!datasourceRequest.getDatasource().getType().equalsIgnoreCase("doris")) {
             return false;
@@ -593,6 +674,9 @@ public class CalciteProvider extends Provider {
         return database.contains(".");
     }
 
+    /**
+     * 从 JDBC URL 中提取数据库名，忽略 query 参数和分号参数
+     */
     private String databaseFromJdbcUrl(String jdbcUrl) {
         if (StringUtils.isBlank(jdbcUrl)) {
             CrestException.throwException(Translator.get("i18n_invalid_connection"));
@@ -614,6 +698,9 @@ public class CalciteProvider extends Provider {
         return jdbcUrl.substring(databaseStart + 1, databaseEnd);
     }
 
+    /**
+     * 创建单个源库 JDBC 连接，完成配置解析、驱动选择、SSH 隧道和 JDBC URL 安全校验
+     */
     @Override
     public ConnectionObj getConnection(DatasourceDTO coreDatasource) throws Exception {
         ConnectionObj connectionObj = new ConnectionObj();
@@ -621,12 +708,15 @@ public class CalciteProvider extends Provider {
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(coreDatasource.getType());
         switch (datasourceType) {
             case mysql:
+            case obMysql:
             case mongo:
             case StarRocks:
             case doris:
             case TiDB:
             case mariadb:
-                configuration = JsonUtil.parseObject(coreDatasource.getConfiguration(), Mysql.class);
+                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                        ? JsonUtil.parseObject(coreDatasource.getConfiguration(), ObMysql.class)
+                        : JsonUtil.parseObject(coreDatasource.getConfiguration(), Mysql.class);
                 break;
             case impala:
                 configuration = JsonUtil.parseObject(coreDatasource.getConfiguration(), Impala.class);
@@ -656,6 +746,7 @@ public class CalciteProvider extends Provider {
             default:
                 configuration = JsonUtil.parseObject(coreDatasource.getConfiguration(), Mysql.class);
         }
+        configuration = requireDatasourceConfiguration(configuration);
         CoreDriver customDriver = resolveCustomDriver(coreDatasource.getType(), configuration.getCustomDriver());
         String driverClassName = JdbcUrlSecurityPolicy.resolveDriverClass(coreDatasource.getType(), configuration.getDriver(), configuration.getCustomDriver(), customDriver);
         configuration.setDriver(driverClassName);
@@ -681,6 +772,9 @@ public class CalciteProvider extends Provider {
         return connectionObj;
     }
 
+    /**
+     * 校验并读取自定义驱动配置，默认驱动返回空值，由默认类加载器处理
+     */
     private CoreDriver resolveCustomDriver(String datasourceType, String customDriver) {
         if (JdbcUrlSecurityPolicy.isDefaultCustomDriver(customDriver)) {
             return null;
@@ -699,6 +793,9 @@ public class CalciteProvider extends Provider {
         return coreDriver;
     }
 
+    /**
+     * 将表清单查询结果转换为数据集表描述，第二列存在时作为展示名称
+     */
     private DatasetTableDTO getTableDesc(DatasourceRequest datasourceRequest, ResultSet resultSet) throws SQLException {
         DatasetTableDTO tableDesc = new DatasetTableDTO();
         tableDesc.setDatasourceId(datasourceRequest.getDatasource().getId());
@@ -712,6 +809,9 @@ public class CalciteProvider extends Provider {
         return tableDesc;
     }
 
+    /**
+     * 收集所有内置数据源配置声明的驱动类，用于启动时注册默认驱动
+     */
     private List<String> getDriver() {
         List<String> drivers = new ArrayList<>();
         Map<String, DatasourceConfiguration> beansOfType = CommonBeanFactory.getApplicationContext().getBeansOfType((DatasourceConfiguration.class));
@@ -719,6 +819,9 @@ public class CalciteProvider extends Provider {
         return drivers;
     }
 
+    /**
+     * 直接在源库执行查询并返回字段和数据，主要用于非跨源预览和字段发现
+     */
     @SuppressWarnings("java/sql-injection")
     public Map<String, Object> jdbcFetchResultField(DatasourceRequest datasourceRequest) throws CrestException {
         DatasourceSchemaDTO value = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
@@ -730,7 +833,7 @@ public class CalciteProvider extends Provider {
         List<TableField> fieldList = new ArrayList<>();
         List<String[]> dataList = new LinkedList<>();
 
-        // schema
+        // 查询前准备 schema、只读状态和 Oracle 字符集转换上下文
         ResultSet resultSet = null;
         String oracleCharset = normalizeOracleCharset(datasourceConfiguration.getCharset());
         String oracleTargetCharset = normalizeOracleCharset(datasourceConfiguration.getTargetCharset());
@@ -749,7 +852,7 @@ public class CalciteProvider extends Provider {
 
                             if (valueObject instanceof String && isOracleLike(value.getType())) {
                                 if (StringUtils.isNotEmpty(oracleCharset) && StringUtils.isNotEmpty(oracleTargetCharset)) {
-                                    //转换为数据库的字符集
+                                    // Oracle 兼容库按目标库字符集写入参数，避免中文或大文本参数乱码
                                     valueObject = convertOracleText((String) valueObject, oracleTargetCharset, oracleCharset);
                                 }
                                 if (datasourceRequest.getTableFieldWithValues().get(i).getType().equals(Types.CLOB)) {
@@ -794,12 +897,15 @@ public class CalciteProvider extends Provider {
         return map;
     }
 
+    /**
+     * 在源库执行无返回值 SQL，支持预编译参数和 Oracle 字符集转换
+     */
     @Override
     public void exec(DatasourceRequest datasourceRequest) throws CrestException {
         DatasourceSchemaDTO value = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
         datasourceRequest.setDatasource(value);
         DatasourceConfiguration datasourceConfiguration = parseDatasourceConfiguration(datasourceRequest.getDatasource().getConfiguration(), value.getType());
-        // schema
+        // 执行前准备 schema、参数字符集和结果集清理上下文
         ResultSet resultSet = null;
         String oracleCharset = normalizeOracleCharset(datasourceConfiguration.getCharset());
         String oracleTargetCharset = normalizeOracleCharset(datasourceConfiguration.getTargetCharset());
@@ -815,7 +921,7 @@ public class CalciteProvider extends Provider {
                         Object valueObject = datasourceRequest.getTableFieldWithValues().get(i).getValue();
                         if (valueObject instanceof String && isOracleLike(value.getType())) {
                             if (StringUtils.isNotEmpty(oracleCharset) && StringUtils.isNotEmpty(oracleTargetCharset)) {
-                                //转换为数据库的字符集
+                                // Oracle 兼容库按目标库字符集写入参数，避免中文或大文本参数乱码
                                 valueObject = convertOracleText((String) valueObject, oracleTargetCharset, oracleCharset);
                             }
                             if (datasourceRequest.getTableFieldWithValues().get(i).getType().equals(Types.CLOB)) {
@@ -853,17 +959,17 @@ public class CalciteProvider extends Provider {
     }
 
     /**
-     * 针对Oracle特殊处理
+     * 创建当前请求使用的 Statement。Oracle 兼容库需要先设置 schema、时间格式和字符集
      */
     private Statement getStatement(DatasourceSchemaDTO value, Connection con, DatasourceRequest datasourceRequest, DatasourceConfiguration datasourceConfiguration, String autoIncrementPkName) throws Exception {
         Statement statement;
         if (isOracleLike(value.getType())) {
             statement = getStatement(con, datasourceConfiguration.getQueryTimeout());
             if (StringUtils.isNotBlank(datasourceConfiguration.getSchema())) {
-                statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + datasourceConfiguration.getSchema());
+                statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + oracleSchemaIdentifier(datasourceConfiguration.getSchema()));
             }
             statement.executeUpdate("ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS'");
-            //调整字符集
+            // 查询文本按目标库字符集转换，避免 Oracle 兼容库解析中文 SQL 条件失败
             String oracleCharset = normalizeOracleCharset(datasourceConfiguration.getCharset());
             String oracleTargetCharset = normalizeOracleCharset(datasourceConfiguration.getTargetCharset());
             if (StringUtils.isNotEmpty(oracleCharset) && StringUtils.isNotEmpty(oracleTargetCharset)) {
@@ -874,12 +980,15 @@ public class CalciteProvider extends Provider {
         return statement;
     }
 
+    /**
+     * 执行源库更新 SQL，并在需要时返回数据库生成的自增主键
+     */
     @Override
     public ExecuteResult executeUpdate(DatasourceRequest datasourceRequest, String autoIncrementPkName) throws CrestException {
         DatasourceSchemaDTO value = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
         datasourceRequest.setDatasource(value);
         DatasourceConfiguration datasourceConfiguration = parseDatasourceConfiguration(datasourceRequest.getDatasource().getConfiguration(), value.getType());
-        // schema
+        // 更新前准备 schema、参数字符集和生成主键读取上下文
         ResultSet resultSet = null;
         String oracleCharset = normalizeOracleCharset(datasourceConfiguration.getCharset());
         String oracleTargetCharset = normalizeOracleCharset(datasourceConfiguration.getTargetCharset());
@@ -896,7 +1005,7 @@ public class CalciteProvider extends Provider {
 
                         if (valueObject instanceof String && isOracleLike(value.getType())) {
                             if (StringUtils.isNotEmpty(oracleCharset) && StringUtils.isNotEmpty(oracleTargetCharset)) {
-                                //转换为数据库的字符集
+                                // Oracle 兼容库按目标库字符集写入参数，避免中文或大文本参数乱码
                                 valueObject = convertOracleText((String) valueObject, oracleTargetCharset, oracleCharset);
                             }
                             if (datasourceRequest.getTableFieldWithValues().get(i).getType().equals(Types.CLOB)) {
@@ -948,6 +1057,9 @@ public class CalciteProvider extends Provider {
         return new ExecuteResult();
     }
 
+    /**
+     * 从查询结果元数据生成字段列表，并过滤 Oracle ROWNUM 这类分页辅助列
+     */
     private List<TableField> getField(ResultSet rs, DatasourceRequest datasourceRequest) throws Exception {
         List<TableField> fieldList = new ArrayList<>();
         ResultSetMetaData metaData = rs.getMetaData();
@@ -969,6 +1081,9 @@ public class CalciteProvider extends Provider {
         return fieldList;
     }
 
+    /**
+     * 将查询结果转换为字符串二维数组，按 JDBC 类型处理日期、布尔、数值和 Oracle 字符集
+     */
     private List<String[]> data(ResultSet rs, DatasourceRequest datasourceRequest) throws Exception {
         String targetCharset = null;
         String originCharset = null;
@@ -1031,6 +1146,9 @@ public class CalciteProvider extends Provider {
         return list;
     }
 
+    /**
+     * 规范化 Oracle 字符集名称，Default 表示不做额外转换
+     */
     private String normalizeOracleCharset(String charset) {
         if (StringUtils.isBlank(charset) || Strings.CI.equals(charset, "Default")) {
             return null;
@@ -1044,6 +1162,9 @@ public class CalciteProvider extends Provider {
         return null;
     }
 
+    /**
+     * 在两个字符集之间转换 Oracle 文本参数或结果值
+     */
     private String convertOracleText(String value, String fromCharset, String toCharset) throws UnsupportedEncodingException {
         if (StringUtils.isEmpty(value) || StringUtils.isBlank(fromCharset) || StringUtils.isBlank(toCharset)) {
             return value;
@@ -1051,18 +1172,24 @@ public class CalciteProvider extends Provider {
         return new String(value.getBytes(fromCharset), toCharset);
     }
 
+    /**
+     * 隐藏数据源配置中的密码，主要处理自定义 JDBC URL 中显式携带的 password 参数
+     */
     @Override
     public void hidePW(DatasourceDTO datasourceDTO) {
         DatasourceConfiguration configuration = null;
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasourceDTO.getType());
         switch (datasourceType) {
             case mysql:
+            case obMysql:
             case mongo:
             case mariadb:
             case TiDB:
             case StarRocks:
             case doris:
-                configuration = JsonUtil.parseObject(datasourceDTO.getConfiguration(), Mysql.class);
+                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                        ? JsonUtil.parseObject(datasourceDTO.getConfiguration(), ObMysql.class)
+                        : JsonUtil.parseObject(datasourceDTO.getConfiguration(), Mysql.class);
                 if (StringUtils.isNotEmpty(configuration.getUrlType()) && configuration.getUrlType().equalsIgnoreCase("jdbcUrl")) {
                     if (configuration.getJdbcUrl().contains("password=")) {
                         String[] params = configuration.getJdbcUrl().split("\\?")[1].split("&");
@@ -1162,6 +1289,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 将 Oracle 字段注释应用为字段展示名，字段原始名仍保留用于实际查询
+     */
     static void applyOracleColumnComments(List<TableField> fields, Map<String, String> columnComments) {
         if (CollectionUtils.isEmpty(fields) || columnComments == null || columnComments.isEmpty()) {
             return;
@@ -1174,6 +1304,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 读取 Oracle 字段注释，返回值使用大写字段名作为匹配键
+     */
     private Map<String, String> getOracleColumnComments(Connection connection, String schema, String table) throws SQLException {
         Map<String, String> comments = new HashMap<>();
         if (StringUtils.isBlank(schema) || StringUtils.isBlank(table)) {
@@ -1192,10 +1325,27 @@ public class CalciteProvider extends Provider {
         return comments;
     }
 
+    /**
+     * 规范化 Oracle 元数据名称，避免大小写差异导致注释匹配失败
+     */
     private static String normalizeOracleName(String name) {
         return StringUtils.trimToEmpty(name).toUpperCase(Locale.ROOT);
     }
 
+    /**
+     * 格式化 Oracle schema 标识符，CURRENT_SCHEMA 不支持用 JDBC 参数绑定。
+     */
+    private String oracleSchemaIdentifier(String schema) {
+        String normalized = normalizeOracleName(schema);
+        if (!normalized.matches("[A-Z][A-Z0-9_$#]*")) {
+            CrestException.throwException("Illegal schema: " + schema);
+        }
+        return "\"" + normalized + "\"";
+    }
+
+    /**
+     * 将数据库字段元数据行转换为 TableField，并补充主键、自增和 JDBC 类型编号
+     */
     private TableField getTableFieldDesc(DatasourceRequest datasourceRequest, ResultSet resultSet, int commentIndex, Map<String, Integer> tableTypeMap) throws SQLException {
         TableField tableField = new TableField();
         tableField.setOriginName(resultSet.getString(1));
@@ -1226,6 +1376,9 @@ public class CalciteProvider extends Provider {
         return tableField;
     }
 
+    /**
+     * 初始化一组数据源 schema 到 Calcite 连接中，并返回可复用的 Calcite 连接
+     */
     public Connection initConnection(Map<Long, DatasourceSchemaDTO> dsMap) throws SQLException {
         Connection connection = take();
         CalciteConnection calciteConnection = null;
@@ -1236,6 +1389,9 @@ public class CalciteProvider extends Provider {
         return connection;
     }
 
+    /**
+     * 注册内置 JDBC 驱动，无法加载的驱动会跳过，避免影响其他可用数据源
+     */
     private void registerDriver() {
         for (String driverClass : getDriver()) {
             try {
@@ -1247,6 +1403,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 创建 Calcite 连接，并设置解析、函数和空值排序等全局查询行为
+     */
     private Connection getCalciteConnection() {
         registerDriver();
         Properties info = new Properties();
@@ -1266,6 +1425,9 @@ public class CalciteProvider extends Provider {
         return connection;
     }
 
+    /**
+     * 为连接池写入驱动类、类加载器和经过安全校验的 JDBC URL
+     */
     private void applyDatasourceUrl(BasicDataSource dataSource, DatasourceSchemaDTO ds, DatasourceConfiguration configuration) {
         CoreDriver customDriver = resolveCustomDriver(ds.getType(), configuration.getCustomDriver());
         String driverClassName = JdbcUrlSecurityPolicy.resolveDriverClass(ds.getType(), configuration.getDriver(), configuration.getCustomDriver(), customDriver);
@@ -1277,12 +1439,18 @@ public class CalciteProvider extends Provider {
         dataSource.setUrl(JdbcUrlSecurityPolicy.validate(ds.getType(), configuration.getJdbc(), configuration.getExtraParams()));
     }
 
-    // 构建root schema
+    /**
+     * 构建或刷新 Calcite root schema 下的数据源子 schema，并为每个数据源创建独立连接池
+     */
     private synchronized SchemaPlus buildSchema(DatasourceRequest datasourceRequest, CalciteConnection calciteConnection) {
         SchemaPlus rootSchema = calciteConnection.getRootSchema();
         Map<Long, DatasourceSchemaDTO> dsList = datasourceRequest.getDsList();
         for (Map.Entry<Long, DatasourceSchemaDTO> next : dsList.entrySet()) {
             DatasourceSchemaDTO ds = next.getValue();
+            if (StringUtils.isBlank(ds.getConfiguration())) {
+                LogUtil.info("Skip datasource pool with empty configuration: " + ds.getName());
+                continue;
+            }
             try {
                     BasicDataSource dataSource = new BasicDataSource();
                     dataSource.setMaxWaitMillis(5 * 1000);
@@ -1304,12 +1472,16 @@ public class CalciteProvider extends Provider {
                         }
                         switch (datasourceType) {
                             case mysql:
+                            case obMysql:
                             case mongo:
                             case mariadb:
                             case TiDB:
                             case StarRocks:
                             case doris:
-                                configuration = JsonUtil.parseObject(ds.getConfiguration(), Mysql.class);
+                                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                                        ? JsonUtil.parseObject(ds.getConfiguration(), ObMysql.class)
+                                        : JsonUtil.parseObject(ds.getConfiguration(), Mysql.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1327,6 +1499,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case impala:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Impala.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1344,6 +1517,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case sqlServer:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Sqlserver.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1363,6 +1537,7 @@ public class CalciteProvider extends Provider {
                             case obOracle:
                                 dataSource.setValidationQuery("SELECT 1 FROM DUAL");
                                 configuration = parseOracleLikeConfiguration(ds.getConfiguration(), ds.getType());
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1380,6 +1555,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case db2:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Db2.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 dataSource.setValidationQuery("select 1 from syscat.tables  WHERE TABSCHEMA ='CREST_SCHEMA' AND \"TYPE\" = 'T'".replace("CREST_SCHEMA", configuration.getSchema()));
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
@@ -1398,6 +1574,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case ck:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), CK.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1415,6 +1592,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case pg:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Pg.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1432,6 +1610,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case redshift:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Redshift.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1449,6 +1628,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case h2:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), H2.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1466,6 +1646,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             default:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Mysql.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1491,6 +1672,9 @@ public class CalciteProvider extends Provider {
         return rootSchema;
     }
 
+    /**
+     * 将 Calcite 查询结果转换为字符串二维数组，保持与普通 JDBC 预览返回形态一致
+     */
     private List<String[]> dataResult(ResultSet rs) {
         List<String[]> list = new LinkedList<>();
         try {
@@ -1526,6 +1710,9 @@ public class CalciteProvider extends Provider {
         return list;
     }
 
+    /**
+     * 按数据库类型生成字段元数据查询 SQL，返回列顺序固定为字段名、类型、注释、主键和自增标识
+     */
     private String getTableFiledSql(DatasourceRequest datasourceRequest) {
         String sql = "";
         DatasourceConfiguration configuration = null;
@@ -1547,10 +1734,13 @@ public class CalciteProvider extends Provider {
                 }
                 break;
             case mysql:
+            case obMysql:
             case mongo:
             case mariadb:
             case TiDB:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
+                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                        ? JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), ObMysql.class)
+                        : JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
                 if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
                     database = configuration.getDataBase();
                 } else {
@@ -1699,6 +1889,9 @@ public class CalciteProvider extends Provider {
         return sql;
     }
 
+    /**
+     * 按数据库类型生成表清单查询 SQL，多种对象类型会拆成多条查询顺序执行
+     */
     private List<QueryAndParams> tablesSql(DatasourceRequest datasourceRequest) throws CrestException {
         List<QueryAndParams> tableSqls = new ArrayList<>();
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasourceRequest.getDatasource().getType());
@@ -1723,9 +1916,12 @@ public class CalciteProvider extends Provider {
                 tableSqls.add(new QueryAndParams("show tables"));
                 break;
             case mysql:
+            case obMysql:
             case mariadb:
             case TiDB:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
+                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                        ? JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), ObMysql.class)
+                        : JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
                 if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
                     database = configuration.getDataBase();
                 } else {
@@ -1795,6 +1991,9 @@ public class CalciteProvider extends Provider {
 
     }
 
+    /**
+     * 创建表清单或字段清单查询使用的 PreparedStatement，并按顺序绑定查询参数
+     */
     private PreparedStatement prepareStatement(Connection connection, QueryAndParams queryAndParams, int queryTimeout) throws SQLException {
         PreparedStatement statement = connection.prepareStatement(queryAndParams.sql());
         statement.setQueryTimeout(queryTimeout);
@@ -1805,16 +2004,28 @@ public class CalciteProvider extends Provider {
         return statement;
     }
 
+    /**
+     * 元数据查询和参数的不可变组合，避免把标识符和普通值混在同一字符串处理
+     */
     private record QueryAndParams(String sql, List<Object> params) {
+        /**
+         * 创建无参数元数据查询
+         */
         private QueryAndParams(String sql) {
             this(sql, Collections.emptyList());
         }
 
+        /**
+         * 创建带参数元数据查询，参数会在 prepareStatement 中按顺序绑定
+         */
         private QueryAndParams(String sql, Object... params) {
             this(sql, Arrays.asList(params));
         }
     }
 
+    /**
+     * 按数据库类型生成 schema 列表查询 SQL
+     */
     private String getSchemaSql(DatasourceDTO datasource) throws CrestException {
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasource.getType());
         switch (datasourceType) {
@@ -1835,6 +2046,10 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 创建普通 Statement 并设置查询超时，用于无参数 SQL 或数据库会话设置语句
+     */
+    @Override
     public Statement getStatement(Connection connection, int queryTimeout) {
         if (connection == null) {
             CrestException.throwException("Failed to get connection!");
@@ -1849,10 +2064,16 @@ public class CalciteProvider extends Provider {
         return stat;
     }
 
+    /**
+     * 创建预编译语句，默认不读取自增主键
+     */
     public Statement getPreparedStatement(Connection connection, int queryTimeout, String sql, List<TableFieldWithValue> values) throws Exception {
         return getPreparedStatement(connection, queryTimeout, sql, values, null, null);
     }
 
+    /**
+     * 根据是否存在参数选择 PreparedStatement 或普通 Statement，并对单语句边界做安全校验
+     */
     @SuppressWarnings("java/sql-injection")
     public Statement getPreparedStatement(Connection connection, int queryTimeout, String sql, List<TableFieldWithValue> values, String autoIncrementPkName, DatasourceConfiguration datasourceConfiguration) throws Exception {
         if (connection == null) {
@@ -1878,10 +2099,16 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 判断是否使用默认驱动类加载器，空值和 default 都走内置驱动路径
+     */
     protected boolean isDefaultClassLoader(String customDriver) {
         return StringUtils.isEmpty(customDriver) || customDriver.equalsIgnoreCase("default");
     }
 
+    /**
+     * 获取指定自定义驱动的类加载器，驱动类变化时会重建缓存
+     */
     protected ExtendedJdbcClassLoader getCustomJdbcClassLoader(CoreDriver coreDriver) {
         if (coreDriver == null) {
             CrestException.throwException("Can not found custom Driver");
@@ -1899,6 +2126,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 加载自定义驱动目录下的 jar 包，并缓存成独立类加载器
+     */
     private synchronized ExtendedJdbcClassLoader addCustomJdbcClassLoader(CoreDriver coreDriver) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         while (classLoader.getParent() != null) {
@@ -1933,6 +2163,9 @@ public class CalciteProvider extends Provider {
 
     private volatile Connection connection = null;
 
+    /**
+     * 启动时为可用连接型数据源和引擎数据源异步初始化 Calcite schema
+     */
     public void initConnectionPool() {
         LogUtil.info("Begin to init datasource pool...");
         QueryWrapper<CoreDatasource> datasourceQueryWrapper = new QueryWrapper();
@@ -1962,6 +2195,9 @@ public class CalciteProvider extends Provider {
 
     }
 
+    /**
+     * 在数据源新增或保存后刷新对应的 Calcite schema 和底层连接池
+     */
     public void update(DatasourceDTO datasourceDTO) throws CrestException {
         DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
         BeanUtils.copyBean(datasourceSchemaDTO, datasourceDTO);
@@ -1977,6 +2213,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 连接状态校验成功后确保连接池已注册，并在 SSH 配置变更时重建隧道
+     */
     public void updateDsPoolAfterCheckStatus(DatasourceDTO datasourceDTO) throws CrestException {
         DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
         BeanUtils.copyBean(datasourceSchemaDTO, datasourceDTO);
@@ -2002,6 +2241,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 删除数据源对应的 Calcite schema、连接池和 SSH 隧道缓存
+     */
     public void delete(CoreDatasource datasource) throws CrestException {
         DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
         BeanUtils.copyBean(datasourceSchemaDTO, datasource);
@@ -2026,6 +2268,9 @@ public class CalciteProvider extends Provider {
         Provider.getSessions().remove(datasource.getId());
     }
 
+    /**
+     * 获取全局 Calcite 连接，首次调用时延迟创建并缓存
+     */
     public Connection take() {
         Connection currentConnection = connection;
         if (currentConnection == null) {
@@ -2040,10 +2285,16 @@ public class CalciteProvider extends Provider {
         return currentConnection;
     }
 
+    /**
+     * 从 Calcite root schema 中移除指定子 schema，用于刷新或删除数据源
+     */
     private void removeSubSchema(SchemaPlus rootSchema, String schemaAlias) {
         CalciteSchema.from(rootSchema).removeSubSchema(schemaAlias);
     }
 
+    /**
+     * 读取可进入连接池的数据源，过滤目录、API、Excel 和状态异常的数据源
+     */
     private CoreDatasource selectPoolDatasource(Long dsId) {
         CoreDatasource engine = engineManage.engineDatasource();
         if (engine != null && Objects.equals(engine.getId(), dsId)) {
@@ -2057,6 +2308,9 @@ public class CalciteProvider extends Provider {
         return datasource;
     }
 
+    /**
+     * 确保指定数据源已经注册到 Calcite root schema，缺失时按当前数据库配置即时构建
+     */
     private void ensureSchemaRegistered(CalciteConnection calciteConnection, Long dsId) {
         SchemaPlus rootSchema = calciteConnection.getRootSchema();
         String schemaAlias = String.format(SQLConstants.SCHEMA, dsId);
@@ -2075,6 +2329,9 @@ public class CalciteProvider extends Provider {
         buildSchema(datasourceRequest, calciteConnection);
     }
 
+    /**
+     * 从指定数据源的 Calcite 子 schema 连接池中获取 JDBC 连接
+     */
     private Connection getConnectionFromPool(Long dsId) {
         try {
             Connection connection = take();
@@ -2099,6 +2356,9 @@ public class CalciteProvider extends Provider {
         return null;
     }
 
+    /**
+     * 在引擎数据源上执行只读查询，返回字段和数据结果
+     */
     @SuppressWarnings("java/sql-injection")
     public Map<String, Object> fetchResultField(EngineRequest engineRequest) throws Exception {
         DatasourceConfiguration configuration = JsonUtil.parseObject(engineRequest.getEngine().getConfiguration(), DatasourceConfiguration.class);
@@ -2117,6 +2377,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 在引擎数据源上执行单条非查询 SQL
+     */
     @SuppressWarnings("java/sql-injection")
     public void exec(EngineRequest engineRequest) throws Exception {
         DatasourceConfiguration configuration = JsonUtil.parseObject(engineRequest.getEngine().getConfiguration(), DatasourceConfiguration.class);
@@ -2132,6 +2395,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 在引擎数据源连接上执行事务回调，回调异常时回滚并恢复原自动提交状态
+     */
     public void execWithEngineTransaction(EngineRequest engineRequest, EngineConnectionExecutor executor) throws Exception {
         DatasourceConfiguration configuration = JsonUtil.parseObject(engineRequest.getEngine().getConfiguration(), DatasourceConfiguration.class);
         int queryTimeout = configuration.getQueryTimeout();
@@ -2152,6 +2418,9 @@ public class CalciteProvider extends Provider {
         }
     }
 
+    /**
+     * 引擎连接事务回调，调用方在回调内复用同一个连接和查询超时时间
+     */
     @FunctionalInterface
     public interface EngineConnectionExecutor {
         void execute(Connection connection, int queryTimeout) throws Exception;

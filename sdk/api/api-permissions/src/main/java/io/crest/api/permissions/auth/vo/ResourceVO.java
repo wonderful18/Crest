@@ -12,6 +12,7 @@ import java.util.List;
 
 @Data
 @Schema(description = "资源结点")
+// 定义页面展示或接口返回的数据结构
 public class ResourceVO implements TreeResultModel<ResourceVO>, Serializable {
 
     @Serial

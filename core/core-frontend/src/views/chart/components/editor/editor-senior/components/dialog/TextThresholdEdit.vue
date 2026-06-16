@@ -6,8 +6,10 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { COLOR_PANEL } from '../../../util/chart'
 import { ElSpace } from 'element-plus-secondary'
 
+// 阈值编辑器文案使用当前语言环境
 const { t } = useI18n()
 
+// 数值标签阈值数组由父级传入
 const props = defineProps({
   threshold: {
     type: Array,
@@ -15,12 +17,15 @@ const props = defineProps({
   }
 })
 
+// 阈值变化时通知父级刷新标签样式
 const emit = defineEmits(['onLabelThresholdChange'])
 
+// 弹窗内维护可编辑的阈值副本
 const state = reactive({
   thresholdArr: []
 })
 
+// 新增数值阈值时使用的默认条件
 const thresholdObj = {
   term: 'eq',
   field: '0',
@@ -30,6 +35,7 @@ const thresholdObj = {
   min: '0',
   max: '1'
 }
+// 数值阈值支持的比较条件分组
 const valueOptions = [
   {
     label: '',
@@ -80,20 +86,25 @@ const valueOptions = [
     ]
   }
 ]
+// 颜色选择器预设色板
 const predefineColors = COLOR_PANEL
 
+// 初始化阈值副本，避免直接修改父级数组
 const init = () => {
   state.thresholdArr = JSON.parse(JSON.stringify(props.threshold))
 }
+// 添加一条默认数值阈值并触发同步
 const addThreshold = () => {
   state.thresholdArr.push(JSON.parse(JSON.stringify(thresholdObj)))
   changeThreshold()
 }
+// 删除指定数值阈值并触发同步
 const removeThreshold = index => {
   state.thresholdArr.splice(index, 1)
   changeThreshold()
 }
 
+// 将当前阈值数组回传给父组件
 const changeThreshold = () => {
   emit('onLabelThresholdChange', state.thresholdArr)
 }

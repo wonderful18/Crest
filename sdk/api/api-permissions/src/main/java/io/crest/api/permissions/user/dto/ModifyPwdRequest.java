@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 @Schema(description = "密码修改器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class ModifyPwdRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = -6583458043271002864L;

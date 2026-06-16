@@ -1,5 +1,5 @@
 <template>
-  <!--此区域暂时放到类似图表和分组平行的组件作为后续扩展使用，但当前版本只作为类似MarkLine 和canvasCore平行组件 仅做区域显示使用-->
+  <!-- 弹层画布区域，用于承载独立于主画布的浮层组件。 -->
   <div
     class="pop-area"
     :style="popCanvasStyle"
@@ -9,7 +9,7 @@
   >
     <div style="width: 100%; height: 100%">
       <div v-if="popComponentData && popComponentData.length > 0" class="pop-content">
-        <!--使用ComponentWrapper 保留扩展能力-->
+        <!-- 复用组件包装器，保持与主画布一致的渲染能力。 -->
         <ComponentWrapper
           v-for="(item, index) in popComponentData"
           :id="'component-pop-' + item.id"
@@ -54,9 +54,11 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from '@/hooks/web/useI18n'
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
+// 标记弹层拖拽投放区域是否处于激活状态
 const areaActive = ref(false)
 const { t } = useI18n()
 
+// 定义弹层画布渲染所需的数据和显示场景
 const props = defineProps({
   dvInfo: {
     type: Object as PropType<Record<string, any>>,
@@ -97,6 +99,7 @@ const props = defineProps({
 
 const { canvasStyleData, popComponentData, canvasViewInfo, scale, canvasState } = toRefs(props)
 const { curComponent } = storeToRefs(dvMainStore)
+// 计算空弹层投放区域的基础样式
 const baseStyle = computed(() => {
   return {
     fontSize: 30 * props.scale + 'px',
@@ -104,27 +107,32 @@ const baseStyle = computed(() => {
   }
 })
 
+// 根据预览或编辑场景计算内部缩放值
 const innerScale = computed(() =>
   props.showPosition === 'preview' ? props.scale : props.scale * 100
 )
 
+// 判断弹层组件是否为当前编辑激活项
 const curActive = item => {
   return curComponent.value?.id === item.id && props.showPosition === 'popEdit'
 }
 
+// 进入拖拽区域时激活投放状态
 const handleDragOver = e => {
   areaActive.value = true
   e.preventDefault()
   e.dataTransfer.dropEffect = 'copy'
 }
 
+// 离开拖拽区域时取消投放状态
 const handleDragLeave = () => {
   areaActive.value = false
 }
 
+// 处理查询组件拖入弹层区域
 const handleDrop = e => {
   areaActive.value = false
-  // 判断当前区域师傅已经有隐藏组件
+  // 仅当弹层区域尚未存在隐藏组件时允许投放
   if (!popComponentData.value || popComponentData.value.length === 0) {
     e.preventDefault()
     e.stopPropagation()
@@ -148,10 +156,12 @@ const handleDrop = e => {
   }
 }
 
+// 画布拖拽结束时重置投放激活状态
 const handleDragEnd = () => {
   areaActive.value = false
 }
 
+// 弹层组件包装器占满弹层区域
 const customPopStyle = computed(() => {
   return {
     width: '100%',
@@ -159,6 +169,7 @@ const customPopStyle = computed(() => {
   }
 })
 
+// 根据隐藏查询组件数量计算弹层画布高度
 const popCanvasStyle = computed(() => {
   if (canvasState.value.curPointArea === 'hidden') {
     let queryCount = 0

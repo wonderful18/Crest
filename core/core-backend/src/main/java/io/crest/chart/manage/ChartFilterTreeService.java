@@ -18,14 +18,13 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/**
- * @Author Junjun
- */
 @Service
+// 封装当前业务的持久化和查询逻辑
 public class ChartFilterTreeService {
     @Resource
     private CoreDatasetTableFieldMapper coreDatasetTableFieldMapper;
 
+    // 处理字段结构并补齐查询所需信息
     public void searchFieldAndSet(FilterTreeObj tree) {
         if (ObjectUtils.isNotEmpty(tree)) {
             if (ObjectUtils.isNotEmpty(tree.getItems())) {
@@ -57,6 +56,7 @@ public class ChartFilterTreeService {
         }
     }
 
+    // 执行当前服务方法并返回处理结果
     public FilterTreeObj charReplace(FilterTreeObj tree) {
         if (ObjectUtils.isNotEmpty(tree)) {
             if (ObjectUtils.isNotEmpty(tree.getItems())) {

@@ -5,8 +5,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * @author : wangjiahao
- * @date : 2023/6/9 14:57
+ * 可视化主题视图对象。
  */
 @Data
 public class VisualizationSubjectVO implements Serializable {

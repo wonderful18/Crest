@@ -11,6 +11,7 @@ type I18nGlobalTranslation = {
 
 type I18nTranslationRestParameters = [string, any]
 
+// 读取当前业务数据并返回处理结果
 const getKey = (namespace: string | undefined, key: string) => {
   if (!namespace) {
     return key
@@ -52,4 +53,5 @@ export const useI18n = (
   }
 }
 
+// 封装可复用的组合式状态和操作
 export const t = (key: string) => key

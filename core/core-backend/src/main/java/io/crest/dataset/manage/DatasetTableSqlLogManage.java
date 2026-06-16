@@ -14,15 +14,14 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * @Author Junjun
- */
 @Component
 @Transactional(rollbackFor = Exception.class)
+// 封装当前业务的持久化和查询逻辑
 public class DatasetTableSqlLogManage {
     @Resource
     private CoreDatasetTableSqlLogMapper coreDatasetTableSqlLogMapper;
 
+    // 保存当前业务数据
     public void save(SqlLogDTO dto) {
         if (dto == null) {
             return;
@@ -37,6 +36,7 @@ public class DatasetTableSqlLogManage {
         }
     }
 
+    // 查询当前业务数据列表
     public List<SqlLogDTO> listByTableId(SqlLogDTO dto) {
         if (dto == null || ObjectUtils.isEmpty(dto.getTableId())) {
             return null;
@@ -51,6 +51,7 @@ public class DatasetTableSqlLogManage {
         }).collect(Collectors.toList());
     }
 
+    // 执行当前服务方法并返回处理结果
     public void tableRemoval(String id) {
         QueryWrapper<CoreDatasetTableSqlLog> wrapper = new QueryWrapper<>();
         wrapper.eq("table_id", id);

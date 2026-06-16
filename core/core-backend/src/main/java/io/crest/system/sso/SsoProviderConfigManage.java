@@ -8,11 +8,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+// 定义单点登录相关的业务模型和处理入口
 public class SsoProviderConfigManage {
 
     @Resource
     private JdbcTemplate jdbcTemplate;
 
+    // 执行当前服务方法并返回处理结果
     public static SsoProviderConfig defaultProvider(SsoConfigVO config, String encryptedSecret) {
         SsoProviderConfig provider = new SsoProviderConfig();
         provider.setProviderId(1L);
@@ -39,34 +41,62 @@ public class SsoProviderConfigManage {
     }
 
     @Transactional
+    // 保存或更新当前业务绑定关系
     public void upsert(SsoProviderConfig provider) {
         long now = System.currentTimeMillis();
+        int updated = jdbcTemplate.update("""
+                UPDATE auth_sso_provider
+                SET provider_type = ?,
+                    name = ?,
+                    enabled = ?,
+                    client_id = ?,
+                    client_secret = ?,
+                    authorization_endpoint = ?,
+                    token_endpoint = ?,
+                    user_info_endpoint = ?,
+                    issuer = ?,
+                    scope = ?,
+                    redirect_uri = ?,
+                    user_id_attribute = ?,
+                    account_attribute = ?,
+                    name_attribute = ?,
+                    email_attribute = ?,
+                    union_id_attribute = ?,
+                    auto_create_user = ?,
+                    require_https = ?,
+                    update_time = ?
+                WHERE id = ?
+                """,
+                provider.getProviderType().name(),
+                provider.getName(),
+                provider.getEnabled(),
+                provider.getClientId(),
+                provider.getClientSecret(),
+                provider.getAuthorizationEndpoint(),
+                provider.getTokenEndpoint(),
+                provider.getUserInfoEndpoint(),
+                provider.getIssuer(),
+                provider.getScope(),
+                provider.getRedirectUri(),
+                provider.getUserIdAttribute(),
+                provider.getAccountAttribute(),
+                provider.getNameAttribute(),
+                provider.getEmailAttribute(),
+                provider.getUnionIdAttribute(),
+                provider.getAutoCreateUser(),
+                provider.getRequireHttps(),
+                now,
+                provider.getProviderId());
+        if (updated > 0) {
+            return;
+        }
+        // 新增路径只在首次启用 SSO 时执行，更新路径避免依赖 MySQL 专有 upsert 语法。
         jdbcTemplate.update("""
                 INSERT INTO auth_sso_provider(id, provider_key, provider_type, name, enabled, client_id, client_secret,
                     authorization_endpoint, token_endpoint, user_info_endpoint, issuer, scope, redirect_uri,
                     user_id_attribute, account_attribute, name_attribute, email_attribute, union_id_attribute,
                     auto_create_user, require_https, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                    provider_type = VALUES(provider_type),
-                    name = VALUES(name),
-                    enabled = VALUES(enabled),
-                    client_id = VALUES(client_id),
-                    client_secret = VALUES(client_secret),
-                    authorization_endpoint = VALUES(authorization_endpoint),
-                    token_endpoint = VALUES(token_endpoint),
-                    user_info_endpoint = VALUES(user_info_endpoint),
-                    issuer = VALUES(issuer),
-                    scope = VALUES(scope),
-                    redirect_uri = VALUES(redirect_uri),
-                    user_id_attribute = VALUES(user_id_attribute),
-                    account_attribute = VALUES(account_attribute),
-                    name_attribute = VALUES(name_attribute),
-                    email_attribute = VALUES(email_attribute),
-                    union_id_attribute = VALUES(union_id_attribute),
-                    auto_create_user = VALUES(auto_create_user),
-                    require_https = VALUES(require_https),
-                    update_time = VALUES(update_time)
                 """,
                 provider.getProviderId(),
                 provider.getProviderKey(),

@@ -1,8 +1,6 @@
 package io.crest.chart.constant;
 
-/**
- * @Author gin
- */
+// 定义当前业务对象的核心职责
 public class ChartConstants {
     public static final String YEAR_MOM = "year_mom";
     public static final String MONTH_MOM = "month_mom";

@@ -49,6 +49,7 @@ export interface Field {
   length: number
 }
 
+// 远程 Excel 数据源表单的外部输入属性
 const props = defineProps({
   form: {
     required: false,
@@ -81,6 +82,7 @@ const props = defineProps({
 })
 
 const { form, isSupportSetKey, activeStep } = toRefs(props)
+// 单个工作表的默认状态，用于切换和清空预览
 const defaultSheetObj = {
   tableName: ' ',
   sheetExcelId: '',
@@ -93,7 +95,9 @@ const defaultSheetObj = {
   empty: '',
   overLength: false
 }
+// 当前选中工作表的字段、预览数据和检测状态
 const sheetObj = reactive(cloneDeep(defaultSheetObj))
+// 远程文件加载后的整体 Excel 状态
 const state = reactive({
   excelData: [],
   defaultExpandedKeys: [],
@@ -102,18 +106,30 @@ const state = reactive({
   sheets: []
 })
 
+// 当前工作表区域展示模式：预览或字段选择
 const currentMode = ref('preview')
+// 远程 Excel 基础配置表单引用
 const remoteExcelForm = ref<FormInstance>()
+// 远程文件加载过程状态
 const uploading = ref(false)
+// 当前工作表已选中的字段列
 const multipleSelection = shallowRef([])
+// 表格自适应刷新开关，用于窗口尺寸变化后重建表格
 const isResize = ref(true)
+// 标记字段表格正在初始化勾选状态，避免触发选择回写
 const initMultipleTable = ref(false)
+// 字段选择表格引用
 const multipleTable = ref()
 const { emitter } = useEmitt()
+// 当前工作表的字段列配置
 const columns = shallowRef([])
+// 工作表页签列表
 const tabList = shallowRef([])
+// 保存或加载远程 Excel 的加载状态
 const loading = ref(false)
+// Cron 表达式编辑状态
 const cronEdit = ref(true)
+// 远程 Excel 基础信息表单默认校验规则
 const defaultRule = {
   name: [
     {
@@ -137,13 +153,18 @@ const defaultRule = {
   ]
 }
 
+// 当前表单校验规则，部分数据源类型切换时会重置
 const rule = ref<FormRules>(cloneDeep(defaultRule))
+// 当前选中的工作表页签
 const activeTab = ref('')
+// 当前工作表是否被检测为不可导入
 const currentSheetSkipped = computed(() => sheetObj.sheet === false)
+// 当前工作表不可导入时的提示文案
 const sheetInspectionMessage = computed(
   () => sheetObj.inspectionMessage || '该工作表未检测到可导入的数据表。'
 )
 let time
+// 初始化远程 Excel 表单配置和默认同步策略
 const initForm = type => {
   form.value.configuration = {
     url: '',
@@ -168,6 +189,7 @@ const initForm = type => {
   }, 0)
 }
 
+// 窗口尺寸变化后延迟重建表格，避免虚拟表格尺寸异常
 const handleResize = debounce(() => {
   isResize.value = false
   nextTick(() => {
@@ -175,14 +197,17 @@ const handleResize = debounce(() => {
   })
 }, 500)
 
+// 监听页面尺寸变化，驱动预览表格重新计算
 onMounted(() => {
   window.addEventListener('resize', handleResize)
 })
 
+// 组件卸载时移除窗口尺寸监听
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
 })
 
+// 数据源类型变化时恢复远程 Excel 的基础校验规则
 watch(
   () => form.value.type,
   val => {
@@ -195,6 +220,7 @@ watch(
   }
 )
 
+// 步骤变化时同步 Cron 编辑区显示状态
 watch(
   () => activeStep.value,
   () => {
@@ -202,16 +228,19 @@ watch(
   }
 )
 
+// 暴露基础配置表单校验函数给父组件
 const submitForm = () => {
   remoteExcelForm.value.clearValidate()
   return remoteExcelForm.value.validate
 }
 
+// 暴露同步配置表单校验函数给父组件
 const submitSyncSettingForm = () => {
   dsApiForm.value.clearValidate()
   return dsApiForm.value.validate
 }
 
+// 校验至少存在一个可导入工作表，并检查字段和主键长度配置
 const validateExcel = () => {
   let selectedSheet = []
   let sheetFileMd5 = []
@@ -264,6 +293,7 @@ const validateExcel = () => {
   return true
 }
 
+// 清空远程文件解析结果并重置当前工作表状态
 const clearForm = () => {
   state.excelData = []
   activeTab.value = ''
@@ -272,12 +302,15 @@ const clearForm = () => {
   return remoteExcelForm.value.clearValidate()
 }
 
+// 重置基础配置表单字段
 const resetForm = () => {
   remoteExcelForm.value.resetFields()
 }
 
+// Cron 表达式编辑器显示状态
 const showCron = ref(false)
 
+// 切换同步频率时重置相关时间和 Cron 配置
 const onRateChange = () => {
   if (form.value.syncSetting.syncRate === 'SIMPLE') {
     form.value.syncSetting.endLimit = 0
@@ -296,6 +329,7 @@ const onRateChange = () => {
   })
 }
 
+// 根据简单周期类型生成对应 Cron 表达式，并限制取值范围
 const onSimpleCronChange = () => {
   if (form.value.syncSetting.simpleCronType === 'minute') {
     if (form.value.syncSetting.simpleCronValue < 1 || form.value.syncSetting.simpleCronValue > 59) {
@@ -323,7 +357,9 @@ const onSimpleCronChange = () => {
   }
 }
 
+// 同步设置表单引用
 const dsApiForm = ref()
+// 同步设置表单校验规则
 const apiRule = {
   'syncSetting.updateType': [
     {
@@ -362,15 +398,18 @@ const apiRule = {
   ]
 }
 
+// 切换工作表页签时刷新当前工作表字段和预览
 const handleTabClick = tab => {
   activeTab.value = tab.value
   const sheet = state.excelData[0]?.sheets.find(ele => ele.sheetId === tab.value)
   handleNodeClick(sheet)
 }
 
+// 选中工作表后生成预览列和字段选择状态
 const handleNodeClick = data => {
   Object.assign(sheetObj, data || cloneDeep(defaultSheetObj))
   if (!data?.sheet) {
+    // 不可导入工作表只展示检测信息，不进入字段选择流程。
     columns.value = []
     multipleSelection.value = []
     currentMode.value = 'preview'
@@ -380,6 +419,7 @@ const handleNodeClick = data => {
   multipleSelection.value = columns.value.filter(item => item.checked)
   currentMode.value = 'preview'
 }
+// 后端字段类型到前端图标类型的映射
 const fieldType = {
   TEXT: 'text',
   DATETIME: 'time',
@@ -387,6 +427,7 @@ const fieldType = {
   DOUBLE: 'value'
 }
 
+// 根据远程 Excel 字段生成虚拟表格列配置
 const generateColumns = (arr: Field[]) =>
   arr.map(ele => ({
     key: ele.originName,
@@ -414,10 +455,12 @@ const generateColumns = (arr: Field[]) =>
     )
   }))
 
+// 校验基础配置后加载远程 Excel 文件并解析工作表结构
 const loadData = () => {
   remoteExcelForm.value.validate(val => {
     if (val) {
       const request = JSON.parse(JSON.stringify(form.value.configuration))
+      // 远程文件凭证只在加载接口中使用，提交前编码避免明文出现在请求体日志中。
       request.userName = Base64.encode(request.userName)
       request.passwd = Base64.encode(request.passwd)
       request.datasourceId = form.value.id || 0
@@ -447,8 +490,10 @@ const loadData = () => {
   })
 }
 
+// 处理远程 Excel 解析结果，初始化工作表页签和当前工作表
 const uploadSuccess = response => {
   if (!response) {
+    // 解析失败时必须清空旧工作表，避免用户误保存上一次加载结果。
     state.excelData = []
     activeTab.value = ''
     tabList.value = []
@@ -487,10 +532,12 @@ const uploadSuccess = response => {
   sheet && handleTabClick(sheet)
 }
 
+// 切换工作表区域的预览模式和字段选择模式
 const changeCurrentMode = val => {
   currentMode.value = val
   if (val === 'select') {
     nextTick(() => {
+      // 进入字段选择模式时恢复后端检测结果中的默认勾选状态。
       initMultipleTable.value = true
       for (let i = 0; i < columns.value.length; i++) {
         if (columns.value[i].checked) {
@@ -505,12 +552,14 @@ const changeCurrentMode = val => {
   }
 }
 
+// 字段选择变化时同步列配置和当前工作表字段勾选状态
 const handleSelectionChange = val => {
   if (!initMultipleTable.value) {
     multipleSelection.value = val
     multipleSelection.value.forEach(row => {
       row.checked = true
     })
+    // 先同步虚拟表格列，再回写原始 sheet 字段，保证预览和保存使用同一份勾选结果。
     columns.value.forEach(row => {
       let item
       for (let i = 0; i < multipleSelection.value.length; i++) {
@@ -542,6 +591,7 @@ const handleSelectionChange = val => {
   }
 }
 
+// 更新当前工作表中指定字段的文本长度
 const lengthChange = val => {
   const sheet = state.excelData[0]?.sheets.find(ele => ele.sheetId === activeTab.value)
   sheet.fields.forEach(row => {
@@ -551,6 +601,7 @@ const lengthChange = val => {
   })
 }
 
+// 更新当前工作表中指定字段的主键标记
 const primaryKeyChange = val => {
   const sheet = state.excelData[0]?.sheets.find(ele => ele.sheetId === activeTab.value)
   sheet.fields.forEach(row => {
@@ -560,6 +611,7 @@ const primaryKeyChange = val => {
   })
 }
 
+// 判断字段长度输入框是否禁用
 const disabledFieldLength = item => {
   if (!item.checked) {
     return true
@@ -569,6 +621,7 @@ const disabledFieldLength = item => {
   }
 }
 
+// 保存远程 Excel 数据源前组装工作表和同步配置
 const saveExcelDs = (params, successCb, finallyCb) => {
   let validate = true
   let selectedSheet = []
@@ -652,6 +705,7 @@ const saveExcelDs = (params, successCb, finallyCb) => {
   }
   table.syncSetting = form.value.syncSetting
   if (props.form.editType === 0 && props.form.id && (effectExtField || changeFiled)) {
+    // 已被数据集引用的字段发生变化时，需要用户确认是否替换下游数据。
     ElMessageBox.confirm(t('datasetUi.replace_the_data'), {
       confirmButtonText: t('dataset.confirm'),
       tip: t('data_source.to_replace_it'),
@@ -671,6 +725,7 @@ const saveExcelDs = (params, successCb, finallyCb) => {
   }
 }
 
+// 字段类型下拉选项
 const fieldOptions = [
   { label: t('dataset.text'), value: 0 },
   { label: t('dataset.value'), value: 2 },
@@ -680,6 +735,7 @@ const fieldOptions = [
   }
 ]
 
+// 切换字段提取类型时同步列配置和工作表字段类型
 const extractedFieldTypeChange = item => {
   item.fieldType = item.extractedFieldType
   const sheet = state.excelData[0]?.sheets.find(ele => ele.sheetId === activeTab.value)
@@ -692,11 +748,13 @@ const extractedFieldTypeChange = item => {
   })
 }
 
+// 前端字段类型值到后端字段类型编码的映射
 const fieldTypeToStr = {
   0: 'TEXT',
   2: 'LONG',
   3: 'DOUBLE'
 }
+// 提交远程 Excel 数据源保存或更新请求
 const saveExcelData = (sheetFileMd5, table, params, successCb, finallyCb) => {
   for (let i = 0; i < table.configuration.sheets.length; i++) {
     table.configuration.sheets[i].data = []
@@ -729,6 +787,7 @@ const saveExcelData = (sheetFileMd5, table, params, successCb, finallyCb) => {
     })
 }
 
+// 暴露给父组件的远程 Excel 表单操作入口
 defineExpose({
   submitForm,
   resetForm,
@@ -755,6 +814,7 @@ defineExpose({
       <div class="title-form_primary base-info" v-show="activeStep !== 2">
         {{ t('datasource.basic_info') }}
       </div>
+      <!-- 基础配置区负责远程文件地址和凭据，加载成功后才进入工作表预览与字段选择。 -->
       <el-form
         ref="remoteExcelForm"
         @submit.prevent
@@ -810,6 +870,7 @@ defineExpose({
         </el-form-item>
       </el-form>
       <template v-if="activeTab">
+        <!-- 工作表预览区展示解析结果，并允许在新建数据源时调整导入字段、主键和字段类型。 -->
         <div class="title-form_primary" v-show="activeStep !== 2">
           {{ t('chart.data_preview') }}
         </div>
@@ -982,6 +1043,7 @@ defineExpose({
           </el-table>
         </div>
       </template>
+      <!-- 同步设置区在第二步展示，负责增量策略、执行频率和任务有效期配置。 -->
       <el-form
         ref="dsApiForm"
         :model="form"

@@ -16,9 +16,8 @@ import java.util.List;
 import static io.crest.constant.AuthResourceEnum.TASK;
 
 /**
- * @author fit2cloud
- * @date 2023/11/20 10:14
- **/
+ * 数据同步任务管理接口。
+ */
 @Tag(name = "同步管理:任务管理")
 @ApiSupport(order = 888, author = "Crest")
 @CrestApiPath(value = "/sync/task", rt = TASK)

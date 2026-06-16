@@ -5,12 +5,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * <p>
- * 外部参数联动视图字段信息表
- * </p>
- *
- * @author fit2cloud
- * @since 2024-03-08
+ * 外部参数目标视图字段映射。
  */
 @Data
 public class VisualizationOuterParamsTargetViewInfoVO implements Serializable {

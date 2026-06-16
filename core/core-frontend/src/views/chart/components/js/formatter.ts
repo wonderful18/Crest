@@ -5,9 +5,12 @@ import { formatterItem, isEnLocal } from '@/views/chart/components/js/formatter-
 
 export { formatterItem, isEnLocal }
 
+/**
+ * 国际化翻译函数
+ */
 const { t } = useI18n()
 
-// 单位list
+// 单位列表
 export const unitType = [
   { name: t('chart.unit_none'), value: 1 },
   { name: t('chart.unit_thousand'), value: 1000 },
@@ -15,6 +18,9 @@ export const unitType = [
   { name: t('chart.unit_million'), value: 1000000 },
   { name: t('chart.unit_hundred_million'), value: 100000000 }
 ]
+/**
+ * 英文单位列表
+ */
 export const unitEnType = [
   { name: 'None', value: 1 },
   { name: 'Thousand (K)', value: 1000 },
@@ -22,6 +28,9 @@ export const unitEnType = [
   { name: 'Billion (B)', value: 1000000000 }
 ]
 
+/**
+ * 按语言获取单位列表
+ */
 export function getUnitTypeList(lang) {
   if (isEnLocal) {
     return unitEnType
@@ -32,6 +41,9 @@ export function getUnitTypeList(lang) {
   return unitEnType
 }
 
+/**
+ * 校验并返回当前语言可用的单位值
+ */
 export function getUnitTypeValue(lang, value) {
   const list = getUnitTypeList(lang)
   const item = find(list, l => l.value === value)
@@ -41,6 +53,9 @@ export function getUnitTypeValue(lang, value) {
   return 1
 }
 
+/**
+ * 初始化格式化配置中的单位语言
+ */
 export function initFormatCfgUnit(cfg) {
   if (cfg && cfg.unitLanguage === undefined) {
     cfg.unitLanguage = 'ch'
@@ -51,6 +66,9 @@ export function initFormatCfgUnit(cfg) {
   onChangeFormatCfgUnitLanguage(cfg, cfg.unitLanguage)
 }
 
+/**
+ * 切换格式化配置的单位语言
+ */
 export function onChangeFormatCfgUnitLanguage(cfg, lang) {
   cfg.unit = getUnitTypeValue(lang, cfg.unit)
 }
@@ -62,6 +80,9 @@ export const formatterType = [
   { name: 'value_formatter_percent', value: 'percent' }
 ]
 
+/**
+ * 按格式化配置处理数值显示
+ */
 export function valueFormatter(value, formatter) {
   if (value === null || value === undefined) {
     return null
@@ -84,11 +105,17 @@ export function valueFormatter(value, formatter) {
   return result
 }
 
+/**
+ * 按单位缩放数值
+ */
 function transUnit(value, formatter) {
   initFormatCfgUnit(formatter)
   return value / formatter.unit
 }
 
+/**
+ * 按小数位配置保留数值
+ */
 function transDecimal(value, formatter) {
   const resultV = retain(value, formatter.decimalCount) as string
   if (Object.is(parseFloat(resultV), -0)) {
@@ -97,6 +124,9 @@ function transDecimal(value, formatter) {
   return resultV
 }
 
+/**
+ * 四舍五入并补齐指定小数位
+ */
 function retain(value, n) {
   if (!n) return Math.round(value)
   const tran = Math.round(value * Math.pow(10, n)) / Math.pow(10, n)
@@ -111,6 +141,9 @@ function retain(value, n) {
   return tranV
 }
 
+/**
+ * 添加千分位分隔符和单位后缀
+ */
 function transSeparatorAndSuffix(value, formatter) {
   let str = value + ''
   if (str.match(/^(\d)(\.\d)?e-(\d)/)) {
@@ -323,6 +356,7 @@ export const formatterViewInfo = (viewInfo, value) => {
   )
 }
 
+// 维护表单数据和校验规则
 export const mergeTooltipFormat = (item, type, value) => {
   if (!unShowTooltipsFormatter.includes(type)) {
     item['formatterCfg'] = merge(item['formatterCfg'], value)

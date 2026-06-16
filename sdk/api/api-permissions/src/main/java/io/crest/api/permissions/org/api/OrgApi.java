@@ -25,6 +25,7 @@ import static io.crest.constant.AuthResourceEnum.ORG;
 @Tag(name = "组织")
 @ApiSupport(order = 886, author = "Crest")
 @CrestApiPath(value = "/org", rt = ORG)
+// 定义模块接口契约和数据传输结构
 public interface OrgApi {
 
     @Operation(summary = "查询组织树")

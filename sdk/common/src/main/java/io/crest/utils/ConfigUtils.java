@@ -8,13 +8,12 @@ import org.springframework.core.io.Resource;
 import java.io.File;
 import java.util.Objects;
 
-/**
- * @Author Junjun
- */
+// 提供当前模块复用的工具能力
 public class ConfigUtils {
 
     public static String configPath = "opt" + File.separator + "crest" + File.separator + "conf" + File.separator + "application.yml";
 
+    // 读取配置并返回当前功能所需参数
     public static String getConfig(String key, String defaultValue) {
         String runtimeProperty = getRuntimeProperty(key);
         if (runtimeProperty != null) {
@@ -37,6 +36,7 @@ public class ConfigUtils {
         return defaultValue;
     }
 
+    // 格式化日期时间并返回统一展示值
     private static String getRuntimeProperty(String key) {
         String systemProperty = System.getProperty(key);
         if (systemProperty != null && !systemProperty.isBlank()) {

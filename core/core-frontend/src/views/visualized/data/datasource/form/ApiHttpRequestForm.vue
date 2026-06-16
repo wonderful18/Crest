@@ -20,6 +20,7 @@ export interface ApiRequest {
   body: ApiBodyItem
   page: PageSetting
 }
+// HTTP API 数据源请求配置表单属性
 const props = defineProps({
   showScript: {
     type: Boolean,
@@ -62,9 +63,13 @@ const props = defineProps({
   }
 })
 
+// 请求配置表单的国际化文案函数
 const { t } = useI18n()
+// 根据是否展示脚本区域调整表单栅格跨度
 const spanCount = ref(21)
+// 当前激活的请求配置页签
 const activeName = ref('headers')
+// 请求头名称自动补全建议列表
 const headerSuggestions = [
   { value: 'Accept' },
   { value: 'Accept-Charset' },
@@ -99,8 +104,10 @@ const headerSuggestions = [
   { value: 'Via' },
   { value: 'Warning' }
 ]
+// 请求体编辑组件引用
 const bodyRef = ref()
 
+// 保持请求对象的响应式引用，便于监听 changeId
 const { request: apiRequest } = toRefs(props)
 onBeforeMount(() => {
   if (!props.referenced && props.showScript) {
@@ -111,6 +118,7 @@ onBeforeMount(() => {
   init()
 })
 
+// 监听相关数据变化并同步组件状态
 watch(
   () => apiRequest.value.changeId,
   () => {
@@ -130,6 +138,7 @@ watch(
   }
 )
 
+// 补齐请求配置中的 body、rest 和 query 参数数组
 const init = () => {
   if (!apiRequest.value.body) {
     apiRequest.value.body = new Body()
@@ -144,6 +153,7 @@ const init = () => {
     apiRequest.value.arguments = []
   }
 }
+// 请求配置变化时通知父级同步 changeId
 const emits = defineEmits(['changeId'])
 </script>
 

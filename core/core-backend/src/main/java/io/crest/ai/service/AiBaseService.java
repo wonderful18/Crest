@@ -12,8 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author : WangJiaHao
- * @date : 2024/3/27 09:47
+ * 提供智能组件相关的基础配置查询能力。
  */
 @RestController
 @RequestMapping("ai-base")
@@ -22,6 +21,7 @@ public class AiBaseService implements AiComponentApi {
     private SysParameterManage sysParameterManage;
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public Map<String, String> targetUrl() {
         Map<String, String> templateParams = sysParameterManage.groupVal("ai.");
         if (templateParams != null && StringUtils.isNotEmpty(templateParams.get("ai.baseUrl"))) {

@@ -53,6 +53,7 @@ import io.crest.model.BusiNodeRequest;
 import io.crest.model.BusiNodeVO;
 import io.crest.operation.manage.CoreOptRecentManage;
 import io.crest.portal.DataPortalPermissionManage;
+import io.crest.result.ResultCode;
 import io.crest.system.manage.CoreUserManage;
 import io.crest.template.dao.auto.entity.VisualizationTemplate;
 import io.crest.template.dao.auto.entity.VisualizationTemplateExtendData;
@@ -82,11 +83,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-
+/**
+ * 可视化资源接口实现，负责大屏、仪表板、模板和应用导入导出的核心编排
+ */
 @RestController
 @RequestMapping("/data-visualization")
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -185,6 +189,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
     private DataPortalPermissionManage dataPortalPermissionManage;
 
 
+    /**
+     * 查询复制态资源，仅允许复制根节点临时资源
+     */
     @Override
     public DataVisualizationVO findCopyResource(Long dvId, String busiFlag) {
         DataVisualizationVO result = Objects.requireNonNull(CommonBeanFactory.proxy(this.getClass())).findById(new DataVisualizationBaseRequest(dvId, busiFlag, CommonConstants.RESOURCE_TABLE.SNAPSHOT, DataVisualizationConstants.QUERY_SOURCE.MAIN_EDIT));
@@ -195,6 +202,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 按资源 ID 查询画布详情，并补齐图表、权限、水印和报告过滤信息
+     */
     @CrestLinkPermit("#p0.id")
     @CrestAudit(id = "#p0.id", ot = LogOT.READ, stExp = "#p0.busiFlag")
     @Override
@@ -268,6 +278,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return null;
     }
 
+    /**
+     * 判断组件 JSON 中是否仍引用指定图表视图
+     */
     private boolean componentDataContainsView(String componentData, Long viewId) {
         if (StringUtils.isBlank(componentData) || viewId == null) {
             return false;
@@ -283,6 +296,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 递归检查组件树中的任意层级是否包含目标视图 ID
+     */
     private boolean containsComponentId(Object value, String viewId) {
         if (value instanceof Map<?, ?> map) {
             Object id = map.get("id");
@@ -304,6 +320,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return false;
     }
 
+    /**
+     * 按目标环境匹配应用导入所需的数据集、数据表和字段 ID
+     */
     private void appDatasetMatch(VisualizationExport2AppVO appData, Map<Long, Long> datasourceIdMap, Map<Long, Long> dsGroupIdMap, Map<Long, Long> dsTableIdMap, Map<Long, Long> dsTableFieldsIdMap,Map<String, String> dsTableFieldsDatasetNameMap) {
 
         List<AppCoreDatasetGroupVO> sourceDatasetGroupList = appData.getDatasetGroupsInfo();
@@ -323,6 +342,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         sourceDatasetGroupList.forEach(sourceDatasetGroup -> {
             Long systemDatasetGroupId = sourceDatasetGroup.getSystemDatasetId();
             Long sourceDatasetGroupId = sourceDatasetGroup.getId();
+            if (systemDatasetGroupId == null) {
+                throwAppImportMappingMissing("数据集", sourceDatasetGroup.getName());
+            }
             // 获取 dsGroupIdMap
             dsGroupIdMap.put(sourceDatasetGroup.getId(), systemDatasetGroupId);
             CoreDatasetGroup systemDatasetGroup = coreDatasetGroupMapper.selectById(systemDatasetGroupId);
@@ -386,6 +408,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     }
 
+    /**
+     * 保存新建可视化资源，并处理应用导入、镜像数据和图表视图写入
+     */
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, stExp = "#p0.type")
     @Override
     @Transactional
@@ -411,12 +436,10 @@ public class DataVisualizationServer implements DataVisualizationApi {
         Map<Long, Long> datasourceIdMap = new HashMap<>();
         Map<Long, Map<String, String>> dsTableNamesMap = new HashMap<>();
         List<Long> newDatasourceId = new ArrayList<>();
-        List<Long> excelDatasourceId = new ArrayList<>();
         Map<Long, Long> linkageIdMap = new HashMap<>();
         Map<Long, Long> linkageFieldIdMap = new HashMap<>();
         Map<Long, Long> linkJumpIdMap = new HashMap<>();
         Map<Long, Long> linkJumpInfoIdMap = new HashMap<>();
-        Map<String, String> excelTableNamesMap = new HashMap<>();
         if (appData != null) {
             isAppSave = true;
             if ("dataset".equals(request.getDataType())) {
@@ -426,6 +449,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     List<AppCoreDatasourceVO> appCoreDatasourceVO = appData.getDatasourceInfo();
                     //  app 数据源 excel 表名映射
                     appCoreDatasourceVO.forEach(datasourceOld -> {
+                        if (datasourceOld.getSystemDatasourceId() == null) {
+                            throwAppImportMappingMissing("数据源", datasourceOld.getName());
+                        }
                         newDatasourceId.add(datasourceOld.getSystemDatasourceId());
                         // Excel 数据表明映射
                         if (StringUtils.isNotEmpty(datasourceOld.getConfiguration())) {
@@ -445,13 +471,13 @@ public class DataVisualizationServer implements DataVisualizationApi {
                         if (StringUtils.isNotEmpty(datasourceNew.getConfiguration())) {
                             if (datasourceNew.getType().equals(DatasourceConfiguration.DatasourceType.Excel.name()) || datasourceNew.getType().equals(DatasourceConfiguration.DatasourceType.ExcelRemote.name())) {
                                 dsTableNamesMap.put(datasourceNew.getId(), ExcelUtils.getTableNamesMap(datasourceNew.getType(), datasourceNew.getConfiguration()));
-                                excelDatasourceId.add(datasourceNew.getId());
                             } else if (datasourceNew.getType().contains(DatasourceConfiguration.DatasourceType.API.name())) {
                                 dsTableNamesMap.put(datasourceNew.getId(), (Map<String, String>) datasourceServer.invokeMethod(datasourceNew.getType(), "getTableNamesMap", String.class, datasourceNew.getConfiguration()));
                             }
                         }
                     });
                     datasourceIdMap.putAll(appData.getDatasourceInfo().stream().collect(Collectors.toMap(AppCoreDatasourceVO::getId, AppCoreDatasourceVO::getSystemDatasourceId)));
+                    Map<String, String> datasourceTableNameMap = buildDatasourceTableNameMap(appData.getDatasourceInfo(), dsTableNamesMap, datasourceIdMap);
                     Long datasetFolderPid = request.getDatasetFolderPid();
                     String datasetFolderName = request.getDatasetFolderName();
                     //新建数据集分组
@@ -492,6 +518,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
                         datasetTable.setDatasetGroupId(dsGroupIdMap.get(datasetTable.getDatasetGroupId()));
                         datasetTable.setId(newId);
                         datasetTable.setDatasourceId(datasourceIdMap.get(datasetTable.getDatasourceId()));
+                        datasetTable.setInfo(replaceDatasetTableSql(datasetTable.getInfo(), datasourceTableNameMap));
+                        datasetTable.setTableName(replaceTableNames(datasetTable.getTableName(), datasourceTableNameMap));
                         coreDatasetTableMapper.insert(datasetTable);
                         dsTableIdMap.put(oldId, newId);
 
@@ -521,40 +549,11 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     List<String> dsGroupNameSave = new ArrayList<>();
                     // 持久化数据集
                     newDsGroupInfo.forEach(dsGroup -> {
-                        dsTableIdMap.forEach((key, value) -> {
-                            dsGroup.setInfo(dsGroup.getInfo().replace(key.toString(), value.toString()));
-                        });
-
-                        dsTableFieldsIdMap.forEach((key, value) -> {
-                            dsGroup.setInfo(dsGroup.getInfo().replace(key.toString(), value.toString()));
-                        });
-
-                        datasourceIdMap.forEach((key, value) -> {
-                            dsGroup.setInfo(dsGroup.getInfo().replace(key.toString(), value.toString()));
-                            //表名映射更新
-                            Map<String, String> appDsTableNamesMap = dsTableNamesMap.get(key);
-                            Map<String, String> systemDsTableNamesMap = dsTableNamesMap.get(value);
-                            if (MapUtils.isNotEmpty(appDsTableNamesMap)) {
-                                appDsTableNamesMap.forEach((keyName, valueName) -> {
-                                    // 检查是否都只有一个元素
-                                    boolean bothHaveSingleEntry = appDsTableNamesMap.size() == 1 &&
-                                            systemDsTableNamesMap != null &&
-                                            systemDsTableNamesMap.size() == 1;
-                                    if (bothHaveSingleEntry) {
-                                        // 直接使用 systemDsTableNamesMap 的第一个值
-                                        String firstSystemValue = systemDsTableNamesMap.values().iterator().next();
-                                        dsGroup.setInfo(dsGroup.getInfo().replace(valueName, firstSystemValue));
-                                        excelTableNamesMap.put(valueName, firstSystemValue);
-                                    } else if (MapUtils.isNotEmpty(systemDsTableNamesMap) &&
-                                            StringUtils.isNotEmpty(systemDsTableNamesMap.get(keyName))) {
-                                        dsGroup.setInfo(dsGroup.getInfo().replace(valueName, systemDsTableNamesMap.get(keyName)));
-                                        excelTableNamesMap.put(valueName, systemDsTableNamesMap.get(keyName));
-                                    } else {
-                                        dsGroup.setInfo(dsGroup.getInfo().replace(valueName, "excel_can_not_find"));
-                                    }
-                                });
-                            }
-                        });
+                        dsGroup.setInfo(replaceMappedIdsPreservingDatasetSql(dsGroup.getInfo(), dsTableIdMap));
+                        dsGroup.setInfo(replaceMappedIdsPreservingDatasetSql(dsGroup.getInfo(), dsTableFieldsIdMap));
+                        dsGroup.setInfo(replaceMappedIdsPreservingDatasetSql(dsGroup.getInfo(), datasourceIdMap));
+                        dsGroup.setInfo(replaceDatasetGroupSql(dsGroup.getInfo(), datasourceTableNameMap));
+                        dsGroup.setUnionSql(replaceTableNames(dsGroup.getUnionSql(), datasourceTableNameMap));
                         if (dsGroupNameSave.contains(dsGroup.getName())) {
                             dsGroup.setName(dsGroup.getName() + "-" + UUID.randomUUID().toString());
                         }
@@ -566,31 +565,24 @@ public class DataVisualizationServer implements DataVisualizationApi {
                             }
                             datasetSQLManage.mergeDatasetCrossDefault(dsGroup);
                         }
-                        excelAdaptor(dsGroup, excelTableNamesMap, excelDatasourceId);
                         datasetGroupManage.innerSave(dsGroup);
                     });
 
+                } catch (CrestException e) {
+                    throw e;
                 } catch (Exception e) {
-                    LogUtil.error(e);
+                    LogUtil.error("应用导入保存失败", e);
                     CrestException.throwException(e);
                 }
             }
 
             // 更换主数据内容
             AtomicReference<String> componentDataStr = new AtomicReference<>(request.getComponentData());
-            dsGroupIdMap.forEach((key, value) -> {
-                componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
-            });
-            dsTableIdMap.forEach((key, value) -> {
-                componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
-            });
-
-            dsTableFieldsIdMap.forEach((key, value) -> {
-                componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
-            });
-
+            replaceMappedIds(componentDataStr, dsGroupIdMap, "数据集");
+            replaceMappedIds(componentDataStr, dsTableIdMap, "数据表");
+            replaceMappedIds(componentDataStr, dsTableFieldsIdMap, "字段");
             datasourceIdMap.forEach((key, value) -> {
-                componentDataStr.set(componentDataStr.get().replace(key.toString(), value.toString()));
+                replaceMappedId(componentDataStr, key, value, "数据源");
                 //表名映射更新
                 Map<String, String> appDsTableNamesMap = dsTableNamesMap.get(key);
                 Map<String, String> systemDsTableNamesMap = dsTableNamesMap.get(value);
@@ -629,18 +621,10 @@ public class DataVisualizationServer implements DataVisualizationApi {
             Map<Long, String> canvasViewsStr = VisualizationUtils.viewTransToStr(canvasViews);
             canvasViewsStr.forEach((viewId, viewInfoStr) -> {
                 AtomicReference<String> mutableViewInfoStr = new AtomicReference<>(viewInfoStr);
-                datasourceIdMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key.toString(), value.toString()));
-                });
-                dsTableIdMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key.toString(), value.toString()));
-                });
-                dsTableFieldsIdMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key.toString(), value.toString()));
-                });
-                dsGroupIdMap.forEach((key, value) -> {
-                    mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key.toString(), value.toString()));
-                });
+                replaceMappedIds(mutableViewInfoStr, datasourceIdMap, "数据源");
+                replaceMappedIds(mutableViewInfoStr, dsTableIdMap, "数据表");
+                replaceMappedIds(mutableViewInfoStr, dsTableFieldsIdMap, "字段");
+                replaceMappedIds(mutableViewInfoStr, dsGroupIdMap, "数据集");
                 dsTableFieldsDatasetNameMap.forEach((key, value) -> {
                     mutableViewInfoStr.set(mutableViewInfoStr.get().replace(key, value));
                 });
@@ -648,6 +632,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
             });
             canvasViews = VisualizationUtils.viewTransToObj(canvasViewsStr);
             canvasViews.forEach((key, viewInfo) -> {
+                viewInfo.setId(key);
                 viewInfo.setDataFrom("dataset");
                 if (viewInfo.getTableId() == null) {
                     viewInfo.setTableId(viewInfo.getSourceTableId());
@@ -688,61 +673,269 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 BeanUtils.copyBean(visualizationLinkJump, visualizationLinkJumpVO);
                 visualizationLinkJump.setId(newId);
                 visualizationLinkJump.setSourceDvId(newDvId);
+                visualizationLinkJump.setSourceViewId(mappedLong(viewIdMap, visualizationLinkJump.getSourceViewId()));
                 linkJumpIdMap.put(oldId, newId);
                 snapshotVisualizationLinkJumpMapper.insert(visualizationLinkJump);
             });
 
-            appData.getLinkJumpInfos().forEach(visualizationLinkJumpInfoVO -> {
-                if("outer".equals(visualizationLinkJumpInfoVO.getLinkType())){
-                    Long oldId = visualizationLinkJumpInfoVO.getId();
-                    Long newId = IDUtils.snowID();
-                    SnapshotVisualizationLinkJumpInfo visualizationLinkJumpInfo = new SnapshotVisualizationLinkJumpInfo();
-                    BeanUtils.copyBean(visualizationLinkJumpInfo, visualizationLinkJumpInfoVO);
-                    visualizationLinkJumpInfo.setId(newId);
-                    visualizationLinkJumpInfo.setLinkJumpId(linkJumpIdMap.get(visualizationLinkJumpInfo.getLinkJumpId()));
-                    visualizationLinkJumpInfo.setSourceFieldId(dsTableFieldsIdMap.get(visualizationLinkJumpInfo.getSourceFieldId()));
-                    linkJumpInfoIdMap.put(oldId, newId);
-
-
-                    dsTableFieldsIdMap.forEach((key, value) -> {
-                        if(StringUtils.isNotEmpty(visualizationLinkJumpInfo.getContent())){
-                            visualizationLinkJumpInfo.setContent(visualizationLinkJumpInfo.getContent().replace(key.toString(), value.toString()));
-                        }
-                    });
-                    dsTableFieldsDatasetNameMap.forEach((key, value) -> {
-                        if(StringUtils.isNotEmpty(visualizationLinkJumpInfo.getContent())){
-                            visualizationLinkJumpInfo.setContent(visualizationLinkJumpInfo.getContent().replace(key, value));
-                        }
-                    });
-                    snapshotVisualizationLinkJumpInfoMapper.insert(visualizationLinkJumpInfo);
-                }
-            });
+            saveAppLinkJumpInfos(appData, linkJumpIdMap, linkJumpInfoIdMap, dsTableFieldsIdMap, dsTableFieldsDatasetNameMap, viewIdMap);
         }
         //保存图表信息
         chartDataManage.saveChartViewFromVisualization(request.getComponentData(), newDvId, canvasViews);
         return newDvId.toString();
     }
 
-    private void excelAdaptor(DatasetGroupInfoDTO dsInfo, Map<String, String> excelTableNamesMap, List<Long> excelDsId) {
-        List<UnionDTO> unionDTOList = JsonUtil.parseList(dsInfo.getInfo(), new TypeReference<>() {
-        });
-        if (CollectionUtils.isNotEmpty(excelDsId) && MapUtils.isNotEmpty(excelTableNamesMap)) {
-            for (UnionDTO unionDTO : unionDTOList) {
-                DatasetTableDTO tableDTO = unionDTO.getCurrentDs();
-                if (excelDsId.contains(tableDTO.getDatasourceId())) {
-                    DatasetTableInfoDTO infoDTO = JsonUtil.parseObject(tableDTO.getInfo(), DatasetTableInfoDTO.class);
-                    String s = new String(Base64.getDecoder().decode(infoDTO.getSql()));
-                    excelTableNamesMap.forEach((key, value) -> {
-                        infoDTO.setSql(Base64.getEncoder().encodeToString(s.replace(key, value).getBytes()));
-                    });
-                    tableDTO.setInfo((String) JsonUtil.toJSONString(infoDTO));
-                }
-
-            }
-        }
-        dsInfo.setInfo((String) JsonUtil.toJSONString(unionDTOList));
+    /**
+     * 使用 ID 映射批量替换内容中的资源引用
+     */
+    private void replaceMappedIds(AtomicReference<String> content, Map<Long, Long> mapping, String resourceName) {
+        mapping.forEach((key, value) -> replaceMappedId(content, key, value, resourceName));
     }
 
+    /**
+     * 替换普通 ID 的同时保护数据集 SQL 中的编码内容
+     */
+    private String replaceMappedIdsPreservingDatasetSql(String content, Map<Long, Long> mapping) {
+        if (StringUtils.isBlank(content) || MapUtils.isEmpty(mapping)) {
+            return content;
+        }
+        Map<String, String> encodedSqlByToken = new LinkedHashMap<>();
+        String maskedContent = maskDatasetGroupEncodedSql(content, encodedSqlByToken);
+        AtomicReference<String> mappedContent = new AtomicReference<>(maskedContent);
+        mapping.forEach((key, value) -> mappedContent.set(mappedContent.get().replace(key.toString(), value.toString())));
+        String result = mappedContent.get();
+        for (Map.Entry<String, String> entry : encodedSqlByToken.entrySet()) {
+            result = result.replace(entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
+
+    /**
+     * 将数据集分组中的编码 SQL 暂存为占位符
+     */
+    private String maskDatasetGroupEncodedSql(String content, Map<String, String> encodedSqlByToken) {
+        try {
+            List<UnionDTO> unionDTOList = JsonUtil.parseList(content, new TypeReference<>() {});
+            for (UnionDTO unionDTO : unionDTOList) {
+                DatasetTableDTO tableDTO = unionDTO.getCurrentDs();
+                if (tableDTO == null || StringUtils.isBlank(tableDTO.getInfo())) {
+                    continue;
+                }
+                DatasetTableInfoDTO infoDTO = JsonUtil.parseObject(tableDTO.getInfo(), DatasetTableInfoDTO.class);
+                if (infoDTO == null || StringUtils.isBlank(infoDTO.getSql())) {
+                    continue;
+                }
+                String token = "__CREST_ENCODED_SQL_" + encodedSqlByToken.size() + "__";
+                encodedSqlByToken.put(token, infoDTO.getSql());
+                infoDTO.setSql(token);
+                tableDTO.setInfo(Objects.requireNonNull(JsonUtil.toJSONString(infoDTO)).toString());
+            }
+            return Objects.requireNonNull(JsonUtil.toJSONString(unionDTOList)).toString();
+        } catch (Exception e) {
+            return content;
+        }
+    }
+
+    /**
+     * 替换单个资源 ID，缺少映射时抛出导入匹配异常
+     */
+    private void replaceMappedId(AtomicReference<String> content, Long sourceId, Long targetId, String resourceName) {
+        if (sourceId == null || targetId == null) {
+            throwAppImportMappingMissing(resourceName, null);
+        }
+        content.set(content.get().replace(sourceId.toString(), targetId.toString()));
+    }
+
+    /**
+     * 生成应用导入时资源映射缺失的统一错误
+     */
+    private void throwAppImportMappingMissing(String resourceName, String name) {
+        String suffix = StringUtils.isBlank(name) ? "" : "：" + name;
+        CrestException.throwException(
+                ResultCode.PARAM_IS_INVALID.code(),
+                "导入应用未完成" + resourceName + "匹配，请先选择目标" + resourceName + suffix
+        );
+    }
+
+    void saveAppLinkJumpInfos(VisualizationExport2AppVO appData,
+                              Map<Long, Long> linkJumpIdMap,
+                              Map<Long, Long> linkJumpInfoIdMap,
+                              Map<Long, Long> dsTableFieldsIdMap,
+                              Map<String, String> dsTableFieldsDatasetNameMap,
+                              Map<String, String> viewIdMap) {
+        Optional.ofNullable(appData.getLinkJumpInfos()).orElseGet(ArrayList::new).forEach(visualizationLinkJumpInfoVO -> {
+            Long oldId = visualizationLinkJumpInfoVO.getId();
+            Long newId = IDUtils.snowID();
+            SnapshotVisualizationLinkJumpInfo visualizationLinkJumpInfo = new SnapshotVisualizationLinkJumpInfo();
+            BeanUtils.copyBean(visualizationLinkJumpInfo, visualizationLinkJumpInfoVO);
+            visualizationLinkJumpInfo.setId(newId);
+            visualizationLinkJumpInfo.setLinkJumpId(mappedLong(linkJumpIdMap, visualizationLinkJumpInfo.getLinkJumpId()));
+            visualizationLinkJumpInfo.setSourceFieldId(mappedLong(dsTableFieldsIdMap, visualizationLinkJumpInfo.getSourceFieldId()));
+            linkJumpInfoIdMap.put(oldId, newId);
+            if ("outer".equals(visualizationLinkJumpInfo.getLinkType())) {
+                visualizationLinkJumpInfo.setContent(mappedText(visualizationLinkJumpInfo.getContent(), dsTableFieldsIdMap, dsTableFieldsDatasetNameMap));
+            }
+            snapshotVisualizationLinkJumpInfoMapper.insert(visualizationLinkJumpInfo);
+        });
+
+        Optional.ofNullable(appData.getLinkJumpTargetInfos()).orElseGet(ArrayList::new).forEach(visualizationLinkJumpTargetViewInfoVO -> {
+            SnapshotVisualizationLinkJumpTargetViewInfo targetViewInfo = new SnapshotVisualizationLinkJumpTargetViewInfo();
+            BeanUtils.copyBean(targetViewInfo, visualizationLinkJumpTargetViewInfoVO);
+            targetViewInfo.setTargetId(IDUtils.snowID());
+            targetViewInfo.setLinkJumpInfoId(mappedLong(linkJumpInfoIdMap, targetViewInfo.getLinkJumpInfoId()));
+            targetViewInfo.setSourceFieldActiveId(mappedLong(dsTableFieldsIdMap, targetViewInfo.getSourceFieldActiveId()));
+            targetViewInfo.setTargetFieldId(mappedStringId(dsTableFieldsIdMap, targetViewInfo.getTargetFieldId()));
+            targetViewInfo.setTargetViewId(mappedStringId(viewIdMap, targetViewInfo.getTargetViewId()));
+            snapshotVisualizationLinkJumpTargetViewInfoMapper.insert(targetViewInfo);
+        });
+    }
+
+    /**
+     * 将 Long 类型 ID 按映射表转换为目标 ID
+     */
+    private Long mappedLong(Map<?, ?> mapping, Long value) {
+        if (value == null || MapUtils.isEmpty(mapping)) {
+            return value;
+        }
+        Object mapped = mapping.get(value);
+        if (mapped == null) {
+            mapped = mapping.get(value.toString());
+        }
+        if (mapped == null) {
+            return value;
+        }
+        try {
+            return Long.valueOf(mapped.toString());
+        } catch (NumberFormatException e) {
+            return value;
+        }
+    }
+
+    /**
+     * 将字符串形式的 ID 按映射表转换为目标 ID
+     */
+    private String mappedStringId(Map<?, ?> mapping, String value) {
+        if (StringUtils.isBlank(value) || MapUtils.isEmpty(mapping)) {
+            return value;
+        }
+        Object mapped = mapping.get(value);
+        if (mapped != null) {
+            return mapped.toString();
+        }
+        try {
+            mapped = mapping.get(Long.parseLong(value));
+            return mapped == null ? value : mapped.toString();
+        } catch (NumberFormatException e) {
+            return value;
+        }
+    }
+
+    /**
+     * 替换文本中的字段 ID 和数据集运行名
+     */
+    private String mappedText(String content, Map<Long, Long> fieldIdMap, Map<String, String> datasetNameMap) {
+        if (StringUtils.isEmpty(content)) {
+            return content;
+        }
+        AtomicReference<String> mappedContent = new AtomicReference<>(content);
+        fieldIdMap.forEach((key, value) -> mappedContent.set(mappedContent.get().replace(key.toString(), value.toString())));
+        datasetNameMap.forEach((key, value) -> mappedContent.set(mappedContent.get().replace(key, value)));
+        return mappedContent.get();
+    }
+
+    private Map<String, String> buildDatasourceTableNameMap(List<AppCoreDatasourceVO> appDatasources,
+                                                            Map<Long, Map<String, String>> datasourceTableNames,
+                                                            Map<Long, Long> datasourceIdMap) {
+        Map<String, String> result = new HashMap<>();
+        Optional.ofNullable(appDatasources).orElseGet(ArrayList::new).forEach(sourceDatasource -> {
+            Long targetDatasourceId = datasourceIdMap.get(sourceDatasource.getId());
+            Map<String, String> sourceTables = datasourceTableNames.get(sourceDatasource.getId());
+            Map<String, String> targetTables = datasourceTableNames.get(targetDatasourceId);
+            if (MapUtils.isEmpty(sourceTables) || MapUtils.isEmpty(targetTables)) {
+                return;
+            }
+            boolean singleTableMapping = sourceTables.size() == 1 && targetTables.size() == 1;
+            sourceTables.forEach((sourceTable, sourceRuntimeTable) -> {
+                String targetRuntimeTable = singleTableMapping
+                        ? targetTables.values().iterator().next()
+                        : targetTables.get(sourceTable);
+                if (StringUtils.isBlank(targetRuntimeTable)) {
+                    targetRuntimeTable = "excel_can_not_find";
+                }
+                result.put(sourceTable, targetRuntimeTable);
+                result.put(sourceRuntimeTable, targetRuntimeTable);
+            });
+        });
+        return result;
+    }
+
+    /**
+     * 替换数据集分组配置中的物理表名引用
+     */
+    private String replaceDatasetGroupSql(String info, Map<String, String> tableNameMap) {
+        if (StringUtils.isBlank(info) || MapUtils.isEmpty(tableNameMap)) {
+            return info;
+        }
+        try {
+            List<UnionDTO> unionDTOList = JsonUtil.parseList(info, new TypeReference<>() {});
+            unionDTOList.forEach(unionDTO -> {
+                DatasetTableDTO tableDTO = unionDTO.getCurrentDs();
+                if (tableDTO == null) {
+                    return;
+                }
+                tableDTO.setTableName(replaceTableNames(tableDTO.getTableName(), tableNameMap));
+                tableDTO.setInfo(replaceDatasetTableSql(tableDTO.getInfo(), tableNameMap));
+            });
+            return Objects.requireNonNull(JsonUtil.toJSONString(unionDTOList)).toString();
+        } catch (Exception e) {
+            return replaceTableNames(info, tableNameMap);
+        }
+    }
+
+    /**
+     * 替换数据表配置及其编码 SQL 中的物理表名
+     */
+    private String replaceDatasetTableSql(String info, Map<String, String> tableNameMap) {
+        if (StringUtils.isBlank(info) || MapUtils.isEmpty(tableNameMap)) {
+            return info;
+        }
+        try {
+            DatasetTableInfoDTO infoDTO = JsonUtil.parseObject(info, DatasetTableInfoDTO.class);
+            if (infoDTO == null) {
+                return replaceTableNames(info, tableNameMap);
+            }
+            infoDTO.setTable(replaceTableNames(infoDTO.getTable(), tableNameMap));
+            if (StringUtils.isNotBlank(infoDTO.getSql())) {
+                String sql = new String(Base64.getDecoder().decode(infoDTO.getSql()), StandardCharsets.UTF_8);
+                infoDTO.setSql(Base64.getEncoder().encodeToString(replaceTableNames(sql, tableNameMap).getBytes(StandardCharsets.UTF_8)));
+            }
+            return Objects.requireNonNull(JsonUtil.toJSONString(infoDTO)).toString();
+        } catch (Exception e) {
+            return replaceTableNames(info, tableNameMap);
+        }
+    }
+
+    /**
+     * 按表名长度降序替换文本中的表名，避免短名先替换造成误命中
+     */
+    private String replaceTableNames(String content, Map<String, String> tableNameMap) {
+        if (StringUtils.isBlank(content) || MapUtils.isEmpty(tableNameMap)) {
+            return content;
+        }
+        String mappedContent = content;
+        List<Map.Entry<String, String>> mappings = tableNameMap.entrySet().stream()
+                .filter(entry -> StringUtils.isNotBlank(entry.getKey()) && StringUtils.isNotBlank(entry.getValue()))
+                .sorted((left, right) -> Integer.compare(right.getKey().length(), left.getKey().length()))
+                .toList();
+        for (Map.Entry<String, String> mapping : mappings) {
+            mappedContent = mappedContent.replace(mapping.getKey(), mapping.getValue());
+        }
+        return mappedContent;
+    }
+
+    /**
+     * 校验应用导入时目标数据集文件夹名称是否重复
+     */
     @Override
     public String appCanvasNameCheck(DataVisualizationBaseRequest request) throws Exception {
         Long datasetFolderPid = request.getDatasetFolderPid();
@@ -758,6 +951,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 校验画布内容版本，识别是否存在并发保存冲突
+     */
     @Override
     public String checkCanvasChange(DataVisualizationBaseRequest request) {
         Long dvId = request.getId();
@@ -774,6 +970,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return "Success";
     }
 
+    /**
+     * 更新画布草稿数据，并根据当前发布状态维护未发布状态
+     */
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, stExp = "#p0.type")
     @Override
     @Transactional
@@ -813,6 +1012,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return new DataVisualizationVO(visualizationInfo.getStatus());
     }
 
+    /**
+     * 更新发布状态，并在发布时用镜像数据恢复主表数据
+     */
     @Override
     @Transactional
     public void updatePublishStatus(DataVisualizationBaseRequest request) {
@@ -839,6 +1041,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 将草稿镜像恢复到已发布版本
+     */
     @Override
     public void recoverToPublished(DataVisualizationBaseRequest request) {
         coreVisualizationManage.dvSnapshotRecover(request.getId());
@@ -874,6 +1079,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         coreVisualizationManage.delete(dvId);
     }
 
+    /**
+     * 递归为资源树节点补充资源类型
+     */
     private void resourceTreeTypeAdaptor(List<BusiNodeVO> tree, String type) {
         if (!CollectionUtils.isEmpty(tree)) {
             tree.forEach(busiNodeVO -> {
@@ -883,6 +1091,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 查询可视化资源树，并支持仪表板和大屏混合树
+     */
     @CrestAudit(ot = LogOT.READ, st = LogST.PANEL)
     @Override
     public List<BusiNodeVO> tree(BusiNodeRequest request) {
@@ -928,11 +1139,17 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 查询嵌入式交互场景所需的资源树集合
+     */
     @Override
     public Map<String, List<BusiNodeVO>> interactiveTree(Map<String, BusiNodeRequest> requestMap) {
         return coreBusiManage.interactiveTree(requestMap);
     }
 
+    /**
+     * 移动可视化资源到新的父节点
+     */
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.MODIFY, stExp = "#p0.type")
     @Transactional
     @Override
@@ -940,6 +1157,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         coreVisualizationManage.move(request);
     }
 
+    /**
+     * 查询当前用户最近访问的可视化资源
+     */
     @Override
     public List<VisualizationResourceVO> findRecent(@RequestBody VisualizationWorkbranchQueryRequest request) {
         request.setQueryFrom("recent");
@@ -996,6 +1216,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return String.valueOf(newDvId);
     }
 
+    /**
+     * 查询可视化资源类型，资源不存在时抛出业务异常
+     */
     @Override
     public String findDvType(Long dvId) {
         String result = extDataVisualizationMapper.findDvType(dvId);
@@ -1005,6 +1228,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return result;
     }
 
+    /**
+     * 将资源校验版本更新为当前服务版本
+     */
     @Override
     public String updateCheckVersion(Long dvId) {
         DataVisualizationInfo updateInfo = new DataVisualizationInfo();
@@ -1014,6 +1240,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return "";
     }
 
+    /**
+     * 解压模板来源数据，生成新的画布 ID 和图表视图映射
+     */
     @Override
     public DataVisualizationVO decompression(DataVisualizationBaseRequest request) throws Exception {
         try {
@@ -1051,6 +1280,10 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 staticResource = request.getStaticResource();
                 name = request.getName();
                 dvType = request.getType();
+                version = request.getVersion();
+                if (request.getAppData() != null) {
+                    appDataStr = Objects.requireNonNull(JsonUtil.toJSONString(request.getAppData())).toString();
+                }
             } else if (DataVisualizationConstants.NEW_PANEL_FROM.NEW_MARKET_TEMPLATE.equals(newFrom)) {
                 TemplateManageFileDTO templateFileInfo = templateCenterManage.getTemplateFromMarketV2(request.getResourceName());
                 if (templateFileInfo == null) {
@@ -1112,7 +1345,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 // 数据处理 1.替换viewId 2.加入模板view data数据
                 VisualizationTemplateExtendDataDTO extendDataDTO = new VisualizationTemplateExtendDataDTO(newDvId, newViewId, originViewData);
                 extendDataInfo.put(newViewId, extendDataDTO);
-                templateData = templateData == null ? null : templateData.replace(originViewId, newViewId.toString());
+                templateData = replaceTemplateComponentViewId(templateData, originViewId, newViewId.toString());
                 viewIdsMap.put(originViewId,Long.toString(newViewId));
                 String currentAppDataStr = appDataStr;
                 if (currentAppDataStr != null && !currentAppDataStr.isEmpty()) {
@@ -1137,11 +1370,164 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     }
 
-    @Override
-    public DataVisualizationVO decompressionLocalFile(MultipartFile file) {
-        return null;
+    /**
+     * 替换模板组件数据中的旧视图 ID
+     */
+    private String replaceTemplateComponentViewId(String componentData, String originViewId, String newViewId) {
+        if (StringUtils.isBlank(componentData)) {
+            return componentData;
+        }
+        Object components = JsonUtil.parseObject(componentData, new TypeReference<Object>() {});
+        if (components != null && replaceViewIdValue(components, originViewId, newViewId)) {
+            return JsonUtil.toJSONString(components).toString();
+        }
+        return componentData
+                .replace("\"id\":\"" + originViewId + "\"", "\"id\":\"" + newViewId + "\"")
+                .replace("\"id\": \"" + originViewId + "\"", "\"id\":\"" + newViewId + "\"")
+                .replace("\"id\":" + originViewId, "\"id\":\"" + newViewId + "\"")
+                .replace("\"id\": " + originViewId, "\"id\":\"" + newViewId + "\"")
+                .replace(originViewId, newViewId);
     }
 
+    /**
+     * 递归替换模板组件结构中的视图 ID 值
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private boolean replaceViewIdValue(Object value, String originViewId, String newViewId) {
+        boolean changed = false;
+        if (value instanceof Map map) {
+            for (Object key : new ArrayList<>(map.keySet())) {
+                Object item = map.get(key);
+                if (originViewId.equals(String.valueOf(item))) {
+                    map.put(key, newViewId);
+                    changed = true;
+                } else if (replaceViewIdValue(item, originViewId, newViewId)) {
+                    changed = true;
+                }
+            }
+        } else if (value instanceof List list) {
+            for (int i = 0; i < list.size(); i++) {
+                Object item = list.get(i);
+                if (originViewId.equals(String.valueOf(item))) {
+                    list.set(i, newViewId);
+                    changed = true;
+                } else if (replaceViewIdValue(item, originViewId, newViewId)) {
+                    changed = true;
+                }
+            }
+        }
+        return changed;
+    }
+
+    /**
+     * 解析本地上传的模板文件并转换为画布模板数据
+     */
+    @Override
+    public DataVisualizationVO decompressionLocalFile(MultipartFile file) {
+        try {
+            DataVisualizationBaseRequest request = parseLocalTemplate(file);
+            return decompression(request);
+        } catch (CrestException e) {
+            throw e;
+        } catch (Exception e) {
+            LogUtil.error("Import visualization template file error", e);
+            CrestException.throwException("模板文件解析失败，请确认文件格式是否正确");
+            return null;
+        }
+    }
+
+    /**
+     * 校验并解析本地模板文件内容
+     */
+    private DataVisualizationBaseRequest parseLocalTemplate(MultipartFile file) throws Exception {
+        if (file == null || file.isEmpty()) {
+            CrestException.throwException("请选择模板文件");
+        }
+        String fileName = StringUtils.defaultString(file.getOriginalFilename());
+        String lowerFileName = fileName.toLowerCase(Locale.ROOT);
+        if (!lowerFileName.endsWith(".det2") && !lowerFileName.endsWith(".det2app")) {
+            CrestException.throwException("仅支持 DET2 或 DET2APP 模板文件");
+        }
+
+        String content = new String(file.getBytes(), StandardCharsets.UTF_8);
+        if (StringUtils.isBlank(content)) {
+            CrestException.throwException("模板文件内容为空");
+        }
+        Map<String, Object> templateInfo = JsonUtil.parseObject(content, new TypeReference<>() {});
+        if (MapUtils.isEmpty(templateInfo)) {
+            CrestException.throwException("模板文件内容为空");
+        }
+
+        DataVisualizationBaseRequest request = new DataVisualizationBaseRequest();
+        request.setNewFrom(DataVisualizationConstants.NEW_PANEL_FROM.NEW_OUTER_TEMPLATE);
+        request.setName(requireTemplateValue(templateInfo, "name", "模板名称不能为空"));
+        request.setType(requireTemplateValue(templateInfo, "dvType", "模板类型不能为空"));
+        if (!Strings.CI.equalsAny(request.getType(), "dataV", "dashboard")) {
+            CrestException.throwException("模板类型不正确");
+        }
+        request.setVersion(templateVersion(templateInfo.get("version")));
+        request.setCanvasStyleData(requireTemplateValue(templateInfo, "canvasStyleData", "模板样式数据不能为空"));
+        request.setComponentData(requireTemplateValue(templateInfo, "componentData", "模板组件数据不能为空"));
+        request.setDynamicData(requireTemplateValue(templateInfo, "dynamicData", "模板图表数据不能为空"));
+        request.setStaticResource(templateValue(templateInfo, "staticResource"));
+
+        String appData = templateValue(templateInfo, "appData");
+        if (StringUtils.isNotBlank(appData)) {
+            request.setAppData(JsonUtil.parseObject(appData, VisualizationExport2AppVO.class));
+        }
+        return request;
+    }
+
+    /**
+     * 读取必填模板字段，缺失时抛出业务异常
+     */
+    private String requireTemplateValue(Map<String, Object> templateInfo, String key, String message) {
+        String value = templateValue(templateInfo, key);
+        if (StringUtils.isBlank(value)) {
+            CrestException.throwException(message);
+        }
+        return value;
+    }
+
+    /**
+     * 将模板字段统一转换为字符串形式
+     */
+    private String templateValue(Map<String, Object> templateInfo, String key) {
+        Object value = templateInfo.get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof String text) {
+            return text;
+        }
+        return Objects.requireNonNull(JsonUtil.toJSONString(value)).toString();
+    }
+
+    /**
+     * 解析模板版本号并校验数值格式
+     */
+    private Integer templateVersion(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        String text = value.toString();
+        if (StringUtils.isBlank(text)) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(text);
+        } catch (NumberFormatException e) {
+            CrestException.throwException("模板版本号不正确");
+            return null;
+        }
+    }
+
+    /**
+     * 查询画布中仍被组件引用的图表明细
+     */
     @Override
     public List<VisualizationViewTableDTO> detailList(Long dvId) {
         List<VisualizationViewTableDTO> result = extDataVisualizationMapper.getVisualizationViewDetails(dvId);
@@ -1154,6 +1540,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 导出应用前校验并收集图表、数据集、数据源和交互配置
+     */
     @Override
     public VisualizationExport2AppVO export2AppCheck(VisualizationAppExportRequest appExportRequest) {
         List<Long> viewIds = appExportRequest.getViewIds();
@@ -1167,7 +1556,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
         List<AppCoreDatasourceTaskVO> datasourceTaskVOInfo = null;
         //获取所有视图信息
         if (!CollectionUtils.isEmpty(viewIds)) {
-            chartViewVOInfo = appTemplateMapper.findAppViewInfo(viewIds);
+            chartViewVOInfo = findAppChartViews(viewIds);
         }
         if (!CollectionUtils.isEmpty(dsIds)) {
             datasetGroupVOInfo = appTemplateMapper.findAppDatasetGroupInfo(dsIds);
@@ -1183,36 +1572,92 @@ public class DataVisualizationServer implements DataVisualizationApi {
             CrestException.throwException(Translator.get("i18n_app_error_no_api"));
         }
 
-        List<VisualizationLinkageVO> linkageVOInfo = appTemplateMapper.findAppLinkageInfo(dvId);
-        List<VisualizationLinkageFieldVO> linkageFieldVOInfo = appTemplateMapper.findAppLinkageFieldInfo(dvId);
-        List<VisualizationLinkJumpVO> linkJumpVOInfo = appTemplateMapper.findAppLinkJumpInfo(dvId);
-        List<VisualizationLinkJumpInfoVO> linkJumpInfoVOInfo = appTemplateMapper.findAppLinkJumpInfoInfo(dvId);
-        List<VisualizationLinkJumpTargetViewInfoVO> listJumpTargetViewInfoVO = appTemplateMapper.findAppLinkJumpTargetViewInfoInfo(dvId);
+        List<VisualizationLinkageVO> snapshotLinkageVOInfo = appTemplateMapper.findAppSnapshotLinkageInfo(dvId);
+        List<VisualizationLinkageVO> linkageVOInfo = CollectionUtils.isEmpty(snapshotLinkageVOInfo)
+                ? appTemplateMapper.findAppLinkageInfo(dvId)
+                : snapshotLinkageVOInfo;
+        List<VisualizationLinkageFieldVO> linkageFieldVOInfo = CollectionUtils.isEmpty(snapshotLinkageVOInfo)
+                ? appTemplateMapper.findAppLinkageFieldInfo(dvId)
+                : appTemplateMapper.findAppSnapshotLinkageFieldInfo(dvId);
+
+        List<VisualizationLinkJumpVO> snapshotLinkJumpVOInfo = appTemplateMapper.findAppSnapshotLinkJumpInfo(dvId);
+        List<VisualizationLinkJumpVO> linkJumpVOInfo = CollectionUtils.isEmpty(snapshotLinkJumpVOInfo)
+                ? appTemplateMapper.findAppLinkJumpInfo(dvId)
+                : snapshotLinkJumpVOInfo;
+        List<VisualizationLinkJumpInfoVO> linkJumpInfoVOInfo = CollectionUtils.isEmpty(snapshotLinkJumpVOInfo)
+                ? appTemplateMapper.findAppLinkJumpInfoInfo(dvId)
+                : appTemplateMapper.findAppSnapshotLinkJumpInfoInfo(dvId);
+        List<VisualizationLinkJumpTargetViewInfoVO> listJumpTargetViewInfoVO = CollectionUtils.isEmpty(snapshotLinkJumpVOInfo)
+                ? appTemplateMapper.findAppLinkJumpTargetViewInfoInfo(dvId)
+                : appTemplateMapper.findAppSnapshotLinkJumpTargetViewInfoInfo(dvId);
 
         return new VisualizationExport2AppVO(chartViewVOInfo, datasetGroupVOInfo, datasetTableVOInfo, datasetTableFieldVOInfo, datasourceVOInfo, datasourceTaskVOInfo, linkJumpVOInfo, linkJumpInfoVOInfo, listJumpTargetViewInfoVO, linkageVOInfo, linkageFieldVOInfo);
     }
 
+    /**
+     * 按视图 ID 优先查询发布表，缺失时回退查询镜像表
+     */
+    private List<AppCoreChartViewVO> findAppChartViews(List<Long> viewIds) {
+        List<AppCoreChartViewVO> publishedViews = appTemplateMapper.findAppViewInfo(viewIds);
+        Map<Long, AppCoreChartViewVO> viewMap = new HashMap<>();
+        if (!CollectionUtils.isEmpty(publishedViews)) {
+            publishedViews.forEach(view -> viewMap.put(view.getId(), view));
+        }
+        List<Long> missingViewIds = viewIds.stream()
+                .filter(viewId -> !viewMap.containsKey(viewId))
+                .collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(missingViewIds)) {
+            List<AppCoreChartViewVO> snapshotViews = appTemplateMapper.findAppSnapshotViewInfo(missingViewIds);
+            if (!CollectionUtils.isEmpty(snapshotViews)) {
+                snapshotViews.forEach(view -> viewMap.put(view.getId(), view));
+            }
+        }
+        return viewIds.stream()
+                .map(viewMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 记录应用模板导出审计日志
+     */
     @CrestAudit(id = "#p0.id", ot = LogOT.APP_TEMPLATE_EXPORT, stExp = "#p0.type")
+    @Override
     public void exportLogApp(DataVisualizationBaseRequest request) {
 
     }
 
+    /**
+     * 记录模板导出审计日志
+     */
     @CrestAudit(id = "#p0.id", ot = LogOT.TEMPLATE_EXPORT, stExp = "#p0.type")
+    @Override
     public void exportLogTemplate(DataVisualizationBaseRequest request) {
 
     }
 
+    /**
+     * 记录 PDF 导出审计日志
+     */
     @CrestAudit(id = "#p0.id", ot = LogOT.PDF_EXPORT, stExp = "#p0.type")
+    @Override
     public void exportLogPDF(DataVisualizationBaseRequest request) {
 
     }
 
+    /**
+     * 记录图片导出审计日志
+     */
     @CrestAudit(id = "#p0.id", ot = LogOT.IMG_EXPORT, stExp = "#p0.type")
+    @Override
     public void exportLogImg(DataVisualizationBaseRequest request) {
 
     }
 
 
+    /**
+     * 校验同级目录下可视化资源名称是否重复
+     */
     @Override
     public void nameCheck(DataVisualizationBaseRequest request) {
         QueryWrapper<DataVisualizationInfo> wrapper = new QueryWrapper<>();
@@ -1240,6 +1685,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 根据图表视图 ID 生成资源层级路径
+     */
     public String getAbsPath(Long id) {
         ChartViewDTO viewDTO = chartViewManege.findChartViewAround(String.valueOf(id));
         if (viewDTO == null) {
@@ -1259,6 +1707,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return stringBuilder.toString();
     }
 
+    /**
+     * 查询指定资源的父级链路
+     */
     public List<DataVisualizationInfo> getParents(Long id) {
         List<DataVisualizationInfo> list = new ArrayList<>();
         DataVisualizationInfo dataVisualizationInfo = visualizationInfoMapper.selectById(id);
@@ -1271,6 +1722,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         return list;
     }
 
+    /**
+     * 递归向上收集父级资源节点
+     */
     public void getParent(List<DataVisualizationInfo> list, DataVisualizationInfo dataVisualizationInfo) {
         if (ObjectUtils.isNotEmpty(dataVisualizationInfo) && dataVisualizationInfo.getPid() != null && !dataVisualizationInfo.getPid().equals(dataVisualizationInfo.getId())) {
             DataVisualizationInfo d = visualizationInfoMapper.selectById(dataVisualizationInfo.getPid());
@@ -1279,6 +1733,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
     }
 
+    /**
+     * 查询画布组件数据中实际启用的图表视图 ID
+     */
     public List<Long> getEnabledViewIds(Long dvId, String resourceTable) {
         List<Long> result = new ArrayList<>();
         DataVisualizationVO dvInfo = extDataVisualizationMapper.findDvInfo(dvId, null, resourceTable);
@@ -1293,6 +1750,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     @Resource
     private ResourcePermissionManage resourcePermissionManage;
+    /**
+     * 查询资源绑定的数据集权限模板
+     */
     @Override
     public List<DatasetPermissionTemplate> queruDatasetPermissionTemplate(Long resourceId) {
         return resourcePermissionManage.queruDatasetPermissionTemplate(resourceId);

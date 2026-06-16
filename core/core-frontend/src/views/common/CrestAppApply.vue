@@ -214,11 +214,14 @@ import { filterFreeFolder } from '@/utils/utils'
 
 const { wsCache } = useCache('localStorage')
 const { t } = useI18n()
+// 定义应用保存抽屉事件
 const emits = defineEmits(['closeDraw', 'saveAppCanvas'])
+// 应用保存表单实例
 const appSaveForm = ref(null)
 const dvMainStore = dvMainStoreWithOut()
 const { dvInfo, appData } = storeToRefs(dvMainStore)
 const snapshotStore = snapshotStoreWithOut()
+// 接收应用保存所需的画布和主题信息
 const props = defineProps({
   componentData: {
     type: Object,
@@ -239,35 +242,44 @@ const props = defineProps({
 })
 
 const { curCanvasType } = toRefs(props)
+// 后台内嵌打开时复用当前窗口，独立门户进入时新窗口打开数据源或数据集维护页。
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
 
+// 根据画布类型生成预览名称
 const dvPreName = computed(() =>
   curCanvasType.value === 'dashboard'
     ? t('work_branch.dashboard')
     : t('work_branch.big_data_screen')
 )
+// 判断当前是否按数据源匹配
 const isDatasourceMatch = computed(() => state.form.dataType === 'datasource')
+// 打开新增数据源窗口
 const addDatasourceWindow = () => {
-  // do addDsWindow
+  // 跳转到数据源创建页
   const url = '#/data/datasource?opt=create'
   window.open(url, openType)
 }
 
+// 打开新增数据集窗口
 const addDatasetWindow = () => {
-  // do addDsWindow
+  // 跳转到数据集创建页
   const url = '#/data/dataset?opt=create'
   window.open(url, openType)
 }
 
+// 维护应用保存抽屉、树数据和表单状态
 const state = reactive({
   appApplyDrawer: false,
+  // 大屏和仪表板目录树，用于选择应用保存后的目标位置。
   dvTree: [],
+  // 数据集目录树，仅在按数据源匹配时用于选择自动生成数据集的归属目录。
   dsTree: [],
   propsTree: {
     label: 'name',
     children: 'children',
     isLeaf: node => !node.children?.length
   },
+  // 保存模板中的数据源、数据集引用，提交前需要映射到当前系统内的资源。
   appData: {
     datasourceInfo: [],
     datasetGroupsInfo: []
@@ -343,13 +355,16 @@ const state = reactive({
   }
 })
 
+// 返回上一页
 const goBack = () => {
   window.history.back()
 }
 
+// 初始化可选仪表板目录和数据集目录
 const initData = () => {
   const request = { busiFlag: curCanvasType.value, resourceTable: 'core', leaf: false, weight: 7 }
   queryTreeApi(request).then(res => {
+    // 保存应用只允许选择业务目录，过滤掉无归属或不可保存的虚拟目录。
     filterFreeFolder(res, curCanvasType.value)
     const resultTree = res || []
     dfs(resultTree as unknown as BusiTreeNode[])
@@ -364,6 +379,7 @@ const initData = () => {
 
   const requestDs = { leaf: false, weight: 7 } as BusiTreeRequest
   datasetTree(requestDs).then(res => {
+    // 数据源匹配会自动生成数据集，目录树同样只保留可落库的业务目录。
     filterFreeFolder(res, 'dataset')
     dfs(res as unknown as BusiTreeNode[])
     state.dsTree = (res as unknown as BusiTreeNode[]) || []
@@ -373,6 +389,7 @@ const initData = () => {
   })
 }
 
+// 为业务树节点补充选择器 value
 const dfs = (arr: BusiTreeNode[]) => {
   arr.forEach(ele => {
     ele['value'] = ele.id
@@ -382,38 +399,46 @@ const dfs = (arr: BusiTreeNode[]) => {
   })
 }
 
+// 打开应用保存抽屉并装载当前应用数据
 const init = params => {
   state.appApplyDrawer = true
   state.form = params.base
+  // 默认按数据源匹配，保留模板数据集结构并降低用户逐个选择数据集的成本。
   state.form.dataType = 'datasource'
   state.appData.datasourceInfo = deepCopy(appData.value?.datasourceInfo)
   state.appData.datasetGroupsInfo = deepCopy(appData.value?.datasetGroupsInfo)
   initData()
 }
 
+// 记录画布目录选择结果
 const dvTreeSelect = element => {
   state.form.pid = element.id
 }
 
+// 记录数据集目录选择结果
 const dsTreeSelect = element => {
   state.form.datasetFolderPid = element.id
 }
 
+// 关闭应用保存抽屉
 const close = () => {
   emits('closeDraw')
   snapshotStore.recordSnapshotCache('renderChart')
   state.appApplyDrawer = false
 }
 
+// 校验数据匹配关系并保存为应用
 const saveApp = () => {
   let datasourceMatchReady = true
   let datasetMatchReady = true
+  // 数据源匹配要求模板内每个数据源都有当前系统中的目标数据源。
   state.appData.datasourceInfo.forEach(datasource => {
     if (!datasource.systemDatasourceId) {
       datasourceMatchReady = false
     }
   })
 
+  // 数据集匹配要求模板内每个数据集分组都有当前系统中的目标数据集。
   state.appData.datasetGroupsInfo.forEach(dataset => {
     if (!dataset.systemDatasetId) {
       datasetMatchReady = false
@@ -430,7 +455,7 @@ const saveApp = () => {
   }
   appSaveForm.value?.validate(async valid => {
     if (valid) {
-      // 还原datasource
+      // 还原数据源和数据集匹配关系
       appData.value['datasourceInfo'] = state.appData.datasourceInfo
       appData.value['datasetGroupsInfo'] = state.appData.datasetGroupsInfo
       dvInfo.value['pid'] = state.form.pid

@@ -3,13 +3,9 @@ package io.crest.api.template.vo;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Author: wangjiahao
- * Date: 2022/7/15
- * Description:
- */
 @Data
 @NoArgsConstructor
+// 定义页面展示或接口返回的数据结构
 public class MarketCategoryVO {
     private String id;
     private String name;

@@ -80,6 +80,7 @@ import java.util.stream.Collectors;
 @Component
 @Transactional(rollbackFor = Exception.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
+// 管理导出任务调度、Excel 文件生成、文件落盘和下载响应。
 public class ExportCenterDownLoadManage {
     @Resource
     private CoreExportTaskMapper exportTaskMapper;
@@ -121,6 +122,8 @@ public class ExportCenterDownLoadManage {
     @Resource
     private DatasetDataManage datasetDataManage;
     private final Long sheetLimit = 1000000L;
+
+    // 初始化导出任务线程池，线程数和最大并发由导出配置控制。
     @PostConstruct
     public void init() {
         scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(core);
@@ -128,6 +131,7 @@ public class ExportCenterDownLoadManage {
         scheduledThreadPoolExecutor.setMaximumPoolSize(max);
     }
 
+    // 定时检查已完成的导出任务，并通过 WebSocket 推送任务状态。
     @Scheduled(fixedRate = 5000)
     public void checkRunningTask() {
         Iterator<Map.Entry<String, Future>> iterator = Running_Task.entrySet().iterator();
@@ -136,6 +140,7 @@ public class ExportCenterDownLoadManage {
             if (entry.getValue().isDone()) {
                 iterator.remove();
                 try {
+                    // 任务完成后重新读取数据库记录，确保推送的是最终状态和文件信息。
                     CoreExportTask exportTask = exportTaskMapper.selectById(entry.getKey());
                     ExportTaskDTO exportTaskDTO = new ExportTaskDTO();
                     BeanUtils.copyBean(exportTaskDTO, exportTask);
@@ -148,6 +153,7 @@ public class ExportCenterDownLoadManage {
         }
     }
 
+    // 回填导出来源名称，前端任务列表需要展示图表或数据集名称。
     private void setExportFromName(ExportTaskDTO exportTaskDTO) {
         if (exportTaskDTO.getExportFromType().equalsIgnoreCase("chart")) {
             exportTaskDTO.setExportFromName(coreChartViewMapper.selectById(exportTaskDTO.getExportFrom()).getTitle());
@@ -157,6 +163,7 @@ public class ExportCenterDownLoadManage {
         }
     }
 
+    // 异步启动数据集导出任务，任务状态、进度和文件信息都写回导出任务表。
     @CrestAudit(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.DATASET)
     public void startDatasetTask(CoreExportTask exportTask, DataSetExportRequest request) {
         File directory = prepareTaskDirectory(exportTask.getId());
@@ -164,6 +171,7 @@ public class ExportCenterDownLoadManage {
 
         TokenUserBO tokenUserBO = AuthUtils.getUser();
         Future future = scheduledThreadPoolExecutor.submit(() -> {
+            // 导出在线程池中执行，需要恢复提交任务时的用户上下文。
             AuthUtils.setUser(tokenUserBO);
             try {
                 exportTask.setExportStatus("IN_PROGRESS");
@@ -198,6 +206,7 @@ public class ExportCenterDownLoadManage {
                     CrestException.throwException(Translator.get("i18n_no_fields"));
                 }
                 Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
+                // 导出必须复用列权限和脱敏规则，避免绕过在线数据查看权限。
                 allFields = permissionManage.filterColumnPermissions(allFields, desensitizationList, dto.getId(), null);
                 if (ObjectUtils.isEmpty(allFields)) {
                     CrestException.throwException(Translator.get("i18n_no_column_permission"));
@@ -224,6 +233,7 @@ public class ExportCenterDownLoadManage {
                     rowPermissionsTree = permissionManage.getRowPermissionsTree(dto.getId(), user.getUserId());
                 }
                 if (StringUtils.isNotEmpty(request.getExpressionTree())) {
+                    // 用户在导出弹窗追加的过滤条件作为临时行权限参与 SQL 构建。
                     DatasetRowPermissionsTreeObj datasetRowPermissionsTreeObj = JsonUtil.parseObject(request.getExpressionTree(), DatasetRowPermissionsTreeObj.class);
                     permissionManage.getField(datasetRowPermissionsTreeObj);
                     DataSetRowPermissionsTreeDTO dataSetRowPermissionsTreeDTO = new DataSetRowPermissionsTreeDTO();
@@ -234,6 +244,7 @@ public class ExportCenterDownLoadManage {
 
                 Provider provider;
                 if (crossDs) {
+                    // 跨源数据集使用默认 Provider，由引擎层负责跨源 SQL 处理。
                     provider = ProviderFactory.getDefaultProvider();
                 } else {
                     provider = ProviderFactory.getProvider(dsList.getFirst());
@@ -256,6 +267,7 @@ public class ExportCenterDownLoadManage {
                 String replaceSql = provider.rebuildSQL(SQLProvider.createQuerySQL(sqlMeta, false, false, false), sqlMeta, crossDs, dsMap);
                 Long totalCount = datasetDataManage.datasetTotal(dto, replaceSql, null);
                 Long curLimit = ExportCenterUtils.getExportLimit("dataset");
+                // 导出行数受系统限制保护，避免一次任务生成超大文件。
                 totalCount = totalCount > curLimit ? curLimit : totalCount;
 
                 Long sheetCount = (totalCount / sheetLimit) + (totalCount % sheetLimit > 0 ? 1 : 0);
@@ -269,6 +281,7 @@ public class ExportCenterDownLoadManage {
                 cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
                 for (Long s = 1L; s < sheetCount + 1; s++) {
+                    // Excel 单 Sheet 有行数上限，超过上限时拆分为多个 Sheet。
                     Long sheetSize;
                     if (s.equals(sheetCount)) {
                         sheetSize = totalCount - (s - 1) * sheetLimit;
@@ -279,6 +292,7 @@ public class ExportCenterDownLoadManage {
                     Sheet detailsSheet = null;
                     List<List<String>> details = new ArrayList<>();
                     for (Long p = 0L; p < pageSize; p++) {
+                        // 每个 Sheet 内再按 extractPageSize 分页查询，降低单次内存压力。
                         int beforeCount = (int) ((s - 1) * sheetLimit);
                         String querySQL = SQLProvider.createQuerySQLWithLimit(sqlMeta, false, needOrder, false, beforeCount + p.intValue() * extractPageSize, extractPageSize);
                         if (pageSize == 1) {
@@ -292,6 +306,7 @@ public class ExportCenterDownLoadManage {
                         Map<String, Object> previewData = datasetDataManage.buildPreviewData(provider.fetchResultField(datasourceRequest), allFields, desensitizationList, false);
                         List<Map<String, Object>> data = (List<Map<String, Object>>) previewData.get("data");
                         if (p.equals(0L)) {
+                            // 每个 Sheet 的第一页写入表头，后续页只追加数据行。
                             detailsSheet = wb.createSheet("数据" + s);
                             List<String> header = new ArrayList<>();
                             for (DatasetTableFieldDTO field : allFields) {
@@ -363,6 +378,7 @@ public class ExportCenterDownLoadManage {
                             }
                         }
                         exportTask.setExportStatus("IN_PROGRESS");
+                        // 进度按 Sheet 和页两层比例计算，便于前端展示连续进度。
                         double exportRogress2 = (double) ((double) s - 1) / ((double) sheetCount);
                         double exportRogress = (double) ((double) (p + 1) / (double) pageSize) * ((double) 1 / sheetCount);
                         DecimalFormat df = new DecimalFormat("#.##");
@@ -393,16 +409,19 @@ public class ExportCenterDownLoadManage {
         Running_Task.put(exportTask.getId(), future);
     }
 
+    // 启动仪表板图表导出任务，审计类型按仪表板记录。
     @CrestAudit(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.PANEL)
     public void startPanelViewTask(CoreExportTask exportTask, ChartExcelRequest request) {
         startViewTask(exportTask, request);
     }
 
+    // 启动数据大屏图表导出任务，审计类型按大屏记录。
     @CrestAudit(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.SCREEN)
     public void startDataVViewTask(CoreExportTask exportTask, ChartExcelRequest request) {
         startViewTask(exportTask, request);
     }
 
+    // 从二维数据中移除指定列，用于导出时过滤隐藏字段。
     public static void removeColumn(List<Object[]> list, List<Integer> columnIndexs) {
         if (list == null || list.isEmpty() || columnIndexs == null || columnIndexs.isEmpty()) {
             return;
@@ -420,15 +439,18 @@ public class ExportCenterDownLoadManage {
         }
     }
 
+    // 判断导出字段是否为数值类型，数值类型写入 Excel 时优先使用数字单元格。
     private boolean isNumericExportField(Integer fieldType) {
         return Objects.equals(fieldType, FieldTypeConstants.INTEGER) || Objects.equals(fieldType, FieldTypeConstants.FLOAT);
     }
 
+    // 异步启动图表视图导出任务，表格类视图按分页导出，普通图表一次性写入。
     public void startViewTask(CoreExportTask exportTask, ChartExcelRequest request) {
         File directory = prepareTaskDirectory(exportTask.getId());
         String dataPath = directory.getAbsolutePath();
         TokenUserBO tokenUserBO = AuthUtils.getUser();
         Future future = scheduledThreadPoolExecutor.submit(() -> {
+            // 线程池任务需要恢复用户上下文，后续权限、水印和审计依赖当前用户。
             AuthUtils.setUser(tokenUserBO);
             try {
                 exportTask.setExportStatus("IN_PROGRESS");
@@ -449,6 +471,7 @@ public class ExportCenterDownLoadManage {
                 Sheet detailsSheet;
                 Integer sheetIndex = 1;
                 if ("dataset".equals(request.getDownloadType()) || request.getViewInfo().getType().equalsIgnoreCase("table-info") || request.getViewInfo().getType().equalsIgnoreCase("table-normal")) {
+                    // 明细表、普通表和数据集下载可能数据量较大，需要分页写入多个 Sheet。
                     boolean summaryEnabled = !"dataset".equals(request.getDownloadType()) && ChartDataServer.isSummaryEnabled(request.getViewInfo());
                     ChartDataServer.SummaryConfig summaryConfig = null;
                     ChartDataServer.SummaryAccumulator summaryAcc = null;
@@ -463,12 +486,14 @@ public class ExportCenterDownLoadManage {
                     request.getViewInfo().getChartExtRequest().setPageSize(Long.valueOf(extractPageSize));
                     ChartViewDTO chartViewDTO = chartDataServer.findExcelData(request);
                     for (long i = 1; i < chartViewDTO.getTotalPage() + 1; i++) {
+                        // 每页重新查询图表导出数据，避免一次性加载全部明细。
                         request.getViewInfo().getChartExtRequest().setGoPage(i);
                         request.getViewInfo().setExtStack(request.getViewInfo().getExtStack().stream().filter(ele -> !ele.isHide()).collect(Collectors.toList()));
                         ChartViewDTO pageDto = chartDataServer.findExcelData(request);
                         details.addAll(request.getDetails());
 
                         if (summaryEnabled) {
+                            // 汇总行按页累加统计，最后一页再追加到导出明细末尾。
                             ChartDataServer.accumulatePageStats(summaryAcc, request.getDetails(), allExportColumns, summaryConfig);
                             if (i == chartViewDTO.getTotalPage() && pageDto.getData() != null && pageDto.getData().get("customSumResult") != null) {
                                 customSumResult = (Map<String, java.math.BigDecimal>) pageDto.getData().get("customSumResult");
@@ -476,6 +501,7 @@ public class ExportCenterDownLoadManage {
                         }
 
                         if (((details.size() + extractPageSize) > sheetLimit) || i == chartViewDTO.getTotalPage()) {
+                            // 累积行数接近单 Sheet 上限或到达最后一页时写出当前 Sheet。
                             if (i == chartViewDTO.getTotalPage() && summaryEnabled && summaryAcc.totalCount > 0) {
                                 Object[] totalRow = ChartDataServer.buildSummaryRow(allExportColumns, summaryConfig, summaryAcc, customSumResult);
                                 details.add(totalRow);
@@ -492,6 +518,7 @@ public class ExportCenterDownLoadManage {
                             xAxis.addAll(request.getViewInfo().getYAxisExt());
                             xAxis.addAll(request.getViewInfo().getExtStack());
                             xAxis.addAll(request.getViewInfo().getDrillFields());
+                            // 只导出当前视图仍可见的字段，隐藏字段需要同步移除表头和数据列。
                             header = Arrays.stream(request.getHeader()).filter(item -> xAxis.stream().map(d -> StringUtils.isNotBlank(d.getChartShowName()) ? d.getChartShowName() : d.getName()).toList().contains(item)).toArray();
                             details.add(0, header);
                             List<Integer> columnIndexs = new ArrayList<>();
@@ -514,6 +541,7 @@ public class ExportCenterDownLoadManage {
                         exportTaskMapper.updateById(exportTask);
                     }
                 } else {
+                    // 非明细表数据量相对可控，直接使用图表导出结构写入工作簿。
                     downloadNotTableInfoData(request, wb);
                 }
                 this.addWatermarkTools(wb);
@@ -538,20 +566,16 @@ public class ExportCenterDownLoadManage {
         Running_Task.put(exportTask.getId(), future);
     }
 
+    // 写入非明细表导出数据，支持单 Sheet 和多系列拆分 Sheet 两种模式。
     private void downloadNotTableInfoData(ChartExcelRequest request, Workbook wb) {
         chartDataServer.findExcelData(request);
-        //给单元格设置样式
+        // 表头样式统一使用灰底加粗，和明细导出保持一致。
         CellStyle cellStyle = wb.createCellStyle();
         Font font = wb.createFont();
-        //设置字体大小
         font.setFontHeightInPoints((short) 12);
-        //设置字体加粗
         font.setBold(true);
-        //给字体设置样式
         cellStyle.setFont(font);
-        //设置单元格背景颜色
         cellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        //设置单元格填充样式(使用纯色背景颜色填充)
         cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         if (CollectionUtils.isEmpty(request.getMultiInfo())) {
             if (request.getViewInfo().getType().equalsIgnoreCase("chart-mix-dual-line")) {
@@ -569,7 +593,7 @@ public class ExportCenterDownLoadManage {
                 }
             }
         } else {
-            //多个sheet
+            // 多系列导出按系列拆分多个 Sheet，便于用户分别查看。
             for (int i = 0; i < request.getMultiInfo().size(); i++) {
                 ChartExcelRequestInner requestInner = request.getMultiInfo().get(i);
 
@@ -578,13 +602,14 @@ public class ExportCenterDownLoadManage {
                 details.add(0, requestInner.getHeader());
                 ViewDetailField[] detailFields = requestInner.getDetailFields();
                 Object[] header = requestInner.getHeader();
-                //明细sheet
+                // 每个系列写入一个明细 Sheet。
                 Sheet detailsSheet = wb.createSheet("数据 " + (i + 1));
                 ChartDataServer.setExcelData(detailsSheet, cellStyle, header, details, detailFields, excelTypes, request.getViewInfo(), null);
             }
         }
     }
 
+    // 回填导出文件大小信息，按 Kb/Mb/Gb 自动选择展示单位。
     private void setFileSize(String filePath, CoreExportTask exportTask) {
         File file = new File(filePath);
         long length = file.length();
@@ -606,6 +631,7 @@ public class ExportCenterDownLoadManage {
         exportTask.setFileSizeUnit(unit);
     }
 
+    // 准备导出任务文件目录，防止同名普通文件占用目录路径。
     private File prepareTaskDirectory(String taskId) {
         File directory = new File(exportData_path, taskId);
         if (directory.exists()) {
@@ -620,22 +646,25 @@ public class ExportCenterDownLoadManage {
         return directory;
     }
 
+    // 为工作簿添加水印，只有系统水印和 Excel 水印同时开启时才写入。
     public void addWatermarkTools(Workbook wb) {
         VisualizationWatermark watermark = watermarkMapper.selectById("system_default");
         WatermarkContentDTO watermarkContent = JsonUtil.parseObject(watermark.getSettingContent(), WatermarkContentDTO.class);
         if (watermarkContent.getEnable() && watermarkContent.getExcelEnable()) {
             UserFormVO userInfo = visualizationMapper.queryInnerUserInfo(AuthUtils.getUser().getUserId());
-            // 在主逻辑中添加水印
-            int watermarkPictureIdx = ExcelWatermarkUtils.addWatermarkImage(wb, watermarkContent, userInfo); // 生成水印图片并获取 ID
+            // 先生成水印图片并注册到工作簿，再逐个 Sheet 绑定水印图片。
+            int watermarkPictureIdx = ExcelWatermarkUtils.addWatermarkImage(wb, watermarkContent, userInfo);
             for (Sheet sheet : wb) {
-                ExcelWatermarkUtils.addWatermarkToSheet(sheet, watermarkPictureIdx); // 为每个 Sheet 添加水印
+                ExcelWatermarkUtils.addWatermarkToSheet(sheet, watermarkPictureIdx);
             }
         }
     }
 
+    // 下载已生成的导出文件，兼容历史任务的文件命名规则。
     public void download(CoreExportTask exportTask, HttpServletResponse response) throws Exception {
         File exportFile;
         if (exportTask.getExportTime() != null && exportTask.getExportTime() < 1730277243491L) {
+            // 旧版本导出文件以原始文件名保存，保留兼容路径。
             exportFile = new File(new File(exportData_path, exportTask.getId()), exportTask.getFileName());
         } else {
             exportFile = new File(new File(exportData_path, exportTask.getId()), exportTask.getId() + ".xlsx");
@@ -649,6 +678,7 @@ public class ExportCenterDownLoadManage {
         response.setHeader("Content-Disposition", "attachment; filename=\"" + encodedFileName + "\"; filename*=utf-8''" + encodedFileName);
 
         try (FileInputStream fileInputStream = new FileInputStream(exportFile); OutputStream outputStream = response.getOutputStream()) {
+            // 使用 FileChannel 零拷贝式传输，降低大文件下载时的内存占用。
             FileChannel fileChannel = fileInputStream.getChannel();
             WritableByteChannel outputChannel = Channels.newChannel(outputStream);
             fileChannel.transferTo(0, fileChannel.size(), outputChannel);
@@ -658,6 +688,7 @@ public class ExportCenterDownLoadManage {
         }
     }
 
+    // 直接下载数据集导出文件，不创建导出任务记录，适用于同步下载入口。
     @CrestAudit(id = "#p0.id", ot = LogOT.EXPORT, st = LogST.DATASET)
     public void downloadDataset(DataSetExportRequest request, HttpServletResponse response) throws Exception {
         OutputStream outputStream = response.getOutputStream();
@@ -689,6 +720,7 @@ public class ExportCenterDownLoadManage {
                 CrestException.throwException(Translator.get("i18n_no_fields"));
             }
             Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
+            // 直接下载同样应用列权限和脱敏规则，保持与异步导出一致。
             allFields = permissionManage.filterColumnPermissions(allFields, desensitizationList, dto.getId(), null);
             if (ObjectUtils.isEmpty(allFields)) {
                 CrestException.throwException(Translator.get("i18n_no_column_permission"));
@@ -715,6 +747,7 @@ public class ExportCenterDownLoadManage {
                 rowPermissionsTree = permissionManage.getRowPermissionsTree(dto.getId(), user.getUserId());
             }
             if (StringUtils.isNotEmpty(request.getExpressionTree())) {
+                // 导出弹窗中的临时过滤表达式作为导出专属行权限参与 SQL。
                 DatasetRowPermissionsTreeObj datasetRowPermissionsTreeObj = JsonUtil.parseObject(request.getExpressionTree(), DatasetRowPermissionsTreeObj.class);
                 permissionManage.getField(datasetRowPermissionsTreeObj);
                 DataSetRowPermissionsTreeDTO dataSetRowPermissionsTreeDTO = new DataSetRowPermissionsTreeDTO();
@@ -737,6 +770,7 @@ public class ExportCenterDownLoadManage {
             String replaceSql = provider.rebuildSQL(SQLProvider.createQuerySQL(sqlMeta, false, false, false), sqlMeta, crossDs, dsMap);
             Long totalCount = datasetDataManage.datasetTotal(dto, replaceSql, null);
             Long curLimit = ExportCenterUtils.getExportLimit("dataset");
+            // 同步下载也受数据集导出上限约束。
             totalCount = totalCount > curLimit ? curLimit : totalCount;
 
             Long sheetCount = (totalCount / sheetLimit) + (totalCount % sheetLimit > 0 ? 1 : 0);
@@ -750,6 +784,7 @@ public class ExportCenterDownLoadManage {
             cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
             for (Long s = 1L; s < sheetCount + 1; s++) {
+                // 按 Excel 单 Sheet 行数上限拆分输出。
                 Long sheetSize;
                 if (s.equals(sheetCount)) {
                     sheetSize = totalCount - (s - 1) * sheetLimit;
@@ -760,6 +795,7 @@ public class ExportCenterDownLoadManage {
                 Sheet detailsSheet = null;
                 List<List<String>> details = new ArrayList<>();
                 for (Long p = 0L; p < pageSize; p++) {
+                    // Sheet 内分页查询，避免一次性读取全部导出数据。
                     int beforeCount = (int) ((s - 1) * sheetLimit);
                     String querySQL = SQLProvider.createQuerySQLWithLimit(sqlMeta, false, needOrder, false, beforeCount + p.intValue() * extractPageSize, extractPageSize);
                     if (pageSize == 1) {

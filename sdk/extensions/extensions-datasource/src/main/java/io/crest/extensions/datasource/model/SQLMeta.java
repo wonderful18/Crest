@@ -5,10 +5,8 @@ import lombok.Data;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @Author Junjun
- */
 @Data
+// 定义当前业务对象的核心职责
 public class SQLMeta {
 
     private String chartType;

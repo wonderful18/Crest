@@ -1,8 +1,6 @@
 package io.crest.extensions.datasource.constant;
 
-/**
- * @Author Junjun
- */
+// 定义当前业务对象的核心职责
 public class SqlPlaceholderConstants {
     public static final String TABLE_PLACEHOLDER = "SELECT * FROM CREST_PLACEHOLDER_TABLE_0";
 

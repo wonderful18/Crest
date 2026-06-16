@@ -15,8 +15,7 @@ import java.util.List;
 
 
 /**
- * @author : WangJiaHao
- * @date : 2023/11/13 13:25
+ * 读取模板扩展数据，并将内置图表数据回填到模板视图。
  */
 @Service
 @SuppressWarnings("unchecked")
@@ -25,6 +24,7 @@ public class VisualizationTemplateExtendDataManage {
     @Resource
     private VisualizationTemplateExtendDataMapper extendDataMapper;
 
+    // 执行当前服务方法并返回处理结果
     public ChartViewDTO getChartDataInfo(Long viewId, ChartViewDTO view) {
         QueryWrapper queryWrapper = new QueryWrapper();
         queryWrapper.eq("view_id",viewId);

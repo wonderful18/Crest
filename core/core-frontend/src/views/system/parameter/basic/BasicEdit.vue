@@ -7,6 +7,7 @@ import request from '@/config/axios'
 import dvInfo from '@/assets/svg/dv-info.svg'
 const { t } = useI18n()
 
+// 接收基础参数标签提示配置
 const props = defineProps({
   labelTooltips: {
     type: Array as PropType<any[]>,
@@ -14,13 +15,17 @@ const props = defineProps({
   }
 })
 
+// 控制基础参数抽屉显隐
 const dialogVisible = ref(false)
+// 保存全屏加载实例
 const loadingInstance = ref(null)
+// 基础参数表单实例
 const basicForm = ref<FormInstance>()
 const options = [
   { value: 'minute', label: t('system.time_0_seconds') },
   { value: 'hour', label: t('system.and_0_seconds_de') }
 ]
+// 平台有效期选项和后端参数值保持字符串枚举，避免保存时出现类型差异。
 const pvpOptions = [
   { value: '0', label: t('commons.date.permanent') },
   { value: '1', label: t('commons.date.one_year') },
@@ -39,6 +44,7 @@ const requireKeys = [
   'loginLimitRate',
   'thresholdLimit'
 ]
+// 维护基础参数表单和下拉选项
 const state = reactive({
   form: reactive({
     dsIntervalTime: '30',
@@ -69,7 +75,9 @@ const state = reactive({
   ]
 })
 
+// 参数提示文案映射
 const tooltipItem = ref({})
+// 初始化参数提示文案映射
 const formatLabel = () => {
   props.labelTooltips?.length &&
     props.labelTooltips.forEach(tooltip => {
@@ -77,6 +85,7 @@ const formatLabel = () => {
     })
 }
 
+// 基础参数表单校验规则
 const rule = reactive<FormRules>({
   dsIntervalTime: [
     {
@@ -87,6 +96,7 @@ const rule = reactive<FormRules>({
   ]
 })
 
+// 将表单值转换为后端参数保存结构
 const buildSettingList = () => {
   return state.settingList.map(item => {
     const pkey = item.pkey.startsWith('basic.') ? item.pkey : `basic.${item.pkey}`
@@ -99,7 +109,9 @@ const buildSettingList = () => {
     return { pkey, pval, type, sort }
   })
 }
+// 定义保存成功事件
 const emits = defineEmits(['saved'])
+// 校验并提交基础参数表单
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
   await formEl.validate(valid => {
@@ -140,6 +152,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   })
 }
 
+// 重置基础参数表单和抽屉状态
 const resetForm = (formEl: FormInstance | undefined) => {
   state.settingList = []
   settingList.value = []
@@ -148,18 +161,24 @@ const resetForm = (formEl: FormInstance | undefined) => {
   dialogVisible.value = false
 }
 
+// 使用当前表单实例执行重置
 const reset = () => {
   resetForm(basicForm.value)
 }
 
+// 显示基础参数保存加载态
 const showLoading = () => {
   loadingInstance.value = ElLoading.service({ target: '.basic-param-drawer' })
 }
+// 关闭基础参数保存加载态
 const closeLoading = () => {
   loadingInstance.value?.close()
 }
+// 当前抽屉标题
 const title = ref()
+// 当前抽屉显示的参数项
 const settingList = ref([])
+// 打开基础参数编辑抽屉并填充表单
 const edit = (
   list,
   orgOptions,
@@ -179,6 +198,7 @@ const edit = (
   state.settingList = list.map(item => {
     const pkey = item.pkey
     if (requireKeys.some(requireKey => `basic.${requireKey}` === pkey)) {
+      // 后端返回的参数集合是动态的，必填规则需要按本次抽屉展示项实时补齐。
       rule[pkey.split('.')[1]] = [
         {
           required: true,
@@ -194,6 +214,7 @@ const edit = (
     if (item.pkey.includes('platformRid') && pval?.length) {
       pval = pval.split(',')
       if (!rule['platformRid']) {
+        // 默认角色支持多选保存，编辑时从逗号分隔值还原为数组并补齐必填校验。
         rule['platformRid'] = [
           {
             required: true,
@@ -205,6 +226,7 @@ const edit = (
     }
     if (item.pkey.includes('platformOid')) {
       if (!rule['platformOid']) {
+        // 平台组织是默认角色的上级约束，展示组织字段时同步纳入必填校验。
         rule['platformOid'] = [
           {
             required: true,
@@ -221,6 +243,7 @@ const edit = (
   settingList.value = state.settingList.filter(ele => settingListVal.includes(ele.pkey))
   dialogVisible.value = true
 }
+// 根据平台组织加载角色选项
 const loadRoleOptions = async () => {
   const oid = state.form['platformOid']
   if (!oid) {
@@ -232,6 +255,7 @@ const loadRoleOptions = async () => {
   state.roleOptions[0].children = map.get(false)
   state.roleOptions[1].children = map.get(true)
 }
+// 按只读状态分组角色选项
 const groupBy = list => {
   const map = new Map()
   list.forEach(item => {
@@ -245,6 +269,7 @@ const groupBy = list => {
   })
   return map
 }
+// 组织切换时清空角色并重新加载
 const oidChange = () => {
   state.form['platformRid'] = []
   loadRoleOptions()
@@ -263,6 +288,7 @@ defineExpose({
     size="600px"
     direction="rtl"
   >
+    <!-- 基础参数表单按后端返回的参数列表动态渲染，不同 pkey 对应不同输入控件。 -->
     <el-form
       ref="basicForm"
       require-asterisk-position="right"
@@ -454,6 +480,7 @@ defineExpose({
       </el-form-item>
     </el-form>
     <template #footer>
+      <!-- 抽屉底部只提交当前分组参数，保存成功后由父页面刷新参数列表。 -->
       <span class="dialog-footer">
         <el-button secondary @click="resetForm(basicForm)">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitForm(basicForm)">

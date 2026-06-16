@@ -10,11 +10,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author : WangJiaHao
- * @date : 2024/3/18 10:53
+ * 可视化资源树排序工具，统一处理名称和时间排序规则。
  */
 public class CoreTreeUtils {
 
+    // 执行当前服务方法并返回处理结果
     public static List<VisualizationNodeBO> customSortBO(List<VisualizationNodeBO> list, String sortType) {
         Collator collator = Collator.getInstance(Locale.CHINA);
         if (Strings.CI.equals(SortConstants.NAME_DESC, sortType)) {

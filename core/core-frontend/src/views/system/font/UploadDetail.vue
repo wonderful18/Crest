@@ -8,12 +8,16 @@ import { ElMessage } from 'element-plus-secondary'
 import { edit } from '@/api/font'
 import { cloneDeep } from 'lodash-es'
 
+// 维护上传文件状态
 const state = reactive({
   fileList: null
 })
+// 字体文件上传加载态
 const loading = ref(false)
+// 上传组件实例
 const upload = ref()
 const { t } = useI18n()
+// 上传字体文件并回填字体信息
 const uploadExcel = () => {
   const formData = new FormData()
   formData.append('file', state.fileList.raw)
@@ -40,8 +44,11 @@ const uploadExcel = () => {
       loading.value = false
     })
 }
+// 当前弹窗标题
 const dialogTitle = ref('')
+// 控制字体上传弹窗显隐
 const dialogVisible = ref(false)
+// 当前字体操作类型
 const action = ref('')
 const defaultForm = {
   id: null,
@@ -54,8 +61,10 @@ const defaultForm = {
   isBuiltin: 0,
   updateTime: 0
 }
+// 字体表单数据
 const ruleForm = reactive(cloneDeep(defaultForm))
 
+// 初始化字体上传或编辑弹窗
 const init = (val, type, item) => {
   dialogTitle.value = val || t('system.add_font')
   action.value = type
@@ -64,10 +73,12 @@ const init = (val, type, item) => {
   Object.assign(ruleForm, JSON.parse(JSON.stringify(item)))
 }
 
+// 清空已选择的字体文件
 const fontDel = () => {
   state.fileList = null
 }
 
+// 字体表单实例
 const ruleFormRef = ref()
 const rules = {
   name: [
@@ -79,6 +90,7 @@ defineExpose({
   init
 })
 
+// 上传前校验字体文件格式
 const beforeAvatarUpload = rawFile => {
   if (!rawFile.name.toLocaleLowerCase().endsWith('.ttf')) {
     ElMessage.error(t('system.in_ttf_format'))
@@ -86,24 +98,29 @@ const beforeAvatarUpload = rawFile => {
   }
   return true
 }
+// 选择字体文件后同步上传状态
 const onChange = file => {
   if (file.raw?.name?.toLocaleLowerCase().endsWith('.ttf')) {
     state.fileList = file
   }
 }
 
+// 处理上传失败响应
 const uploadFail = response => {
   let myError = response.toString()
   myError.replace('Error: ', '')
 }
 
+// 定义保存完成事件
 const emits = defineEmits(['finish'])
+// 取消并重置字体表单
 const cancel = () => {
   Object.assign(ruleForm, cloneDeep(defaultForm))
   ruleFormRef.value.clearValidate()
   state.fileList = null
   dialogVisible.value = false
 }
+// 校验并保存字体配置
 const confirm = () => {
   ruleFormRef.value.validate(val => {
     if (val) {

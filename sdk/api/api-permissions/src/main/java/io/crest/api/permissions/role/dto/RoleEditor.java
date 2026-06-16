@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 @Schema(description = "角色编辑器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class RoleEditor implements Serializable {
     @Serial
     private static final long serialVersionUID = -4071819873019095722L;

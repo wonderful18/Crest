@@ -7,10 +7,8 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.List;
 
-/**
- * @Author gin
- */
 @Data
+// 定义接口请求或返回数据的传输结构
 public class UnionDTO implements Serializable {
     private DatasetTableDTO currentDs;
     private List<Long> currentDsField;

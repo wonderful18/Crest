@@ -12,8 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * @author : WangJiaHao
- * @date : 2024/1/10 16:59
+ * 维护系统级可视化水印配置。
  */
 @RestController
 @RequestMapping("/watermark")
@@ -25,6 +24,7 @@ public class VisualizationWatermarkService implements VisualizationWatermarkApi 
     private VisualizationWatermarkMapper watermarkMapper;
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public VisualizationWatermarkVO getWatermarkInfo() {
         VisualizationWatermark watermark =  watermarkMapper.selectById(DEFAULT_ID);
         VisualizationWatermarkVO watermarkVO = new VisualizationWatermarkVO();
@@ -32,6 +32,7 @@ public class VisualizationWatermarkService implements VisualizationWatermarkApi 
     }
 
     @Override
+    // 保存当前业务数据
     public void saveWatermarkInfo(VisualizationWatermarkRequest watermarkRequest) {
         VisualizationWatermark watermark =  new VisualizationWatermark();
         BeanUtils.copyBean(watermark,watermarkRequest);

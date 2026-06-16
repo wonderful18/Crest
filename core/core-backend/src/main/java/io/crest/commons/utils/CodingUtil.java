@@ -10,9 +10,7 @@ import java.security.MessageDigest;
 import java.util.UUID;
 
 /**
- * 加密解密工具
- *
- * @author kun.mo
+ * 通用编码和摘要工具，提供 MD5、Base64、AES 等兼容能力
  */
 public class CodingUtil {
 
@@ -164,6 +162,9 @@ public class CodingUtil {
     }
 
 
+    /**
+     * 生成 AES 随机密钥并以 Base64 字符串返回
+     */
     public static String secretKey() {
         try {
             KeyGenerator keyGen = KeyGenerator.getInstance("AES");
@@ -176,6 +177,9 @@ public class CodingUtil {
 
     }
 
+    /**
+     * 判断字符串是否全部由数字字符组成
+     */
     public static boolean isNumeric(String str){
         for (int i = str.length();--i>=0;){
             if (!Character.isDigit(str.charAt(i))){
@@ -187,6 +191,9 @@ public class CodingUtil {
 
 
 
+    /**
+     * 生成短 UUID，用于需要紧凑随机标识的场景
+     */
     public static String shortUuid() {
         StringBuffer shortBuffer = new StringBuffer();
         String uuid = UUID.randomUUID().toString().replace("-", "");
@@ -198,6 +205,9 @@ public class CodingUtil {
         return shortBuffer.toString();
     }
 
+    /**
+     * 提取字符串中的数字字符并转换为整数
+     */
     public static Integer string2Integer(String str) {
         StringBuffer sb = new StringBuffer();
         if (StringUtils.isBlank(str)) return null;

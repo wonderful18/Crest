@@ -20,11 +20,10 @@ import java.util.*;
 
 import static io.crest.constant.SQLConstants.FIELD_DOT_FIX;
 
-/**
- * @Author Junjun
- */
+// 定义当前业务对象的核心职责
 public class Field2SQLObj {
 
+    // 根据输入参数构造查询语句片段
     public static void field2sqlObj(SQLMeta meta, List<DatasetTableFieldDTO> fields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage, boolean forSqlbot) {
         SQLObj tableObj = meta.getTable();
         if (ObjectUtils.isEmpty(tableObj)) {
@@ -102,10 +101,12 @@ public class Field2SQLObj {
         meta.setXFieldsDialect(fieldsDialect);
     }
 
+    // 根据输入参数构造查询语句片段
     public static void field2sqlObj(SQLMeta meta, List<DatasetTableFieldDTO> fields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         field2sqlObj(meta, fields, originFields, isCross, dsMap, fieldParam, chartParam, pluginManage, false);
     }
 
+    // 处理字段结构并补齐查询所需信息
     public static SQLObj getXFields(DatasetTableFieldDTO f, String originField, String fieldAlias, boolean isCross) {
         String fieldName = "";
         if (originField != null) {
@@ -125,13 +126,14 @@ public class Field2SQLObj {
                     fieldName = originField;
                 }
             } else if (Objects.equals(f.getExtractedFieldType(), FieldTypeConstants.STRING)) {
+                String normalizedOriginField = FieldSqlExpressionUtils.nullSafeTextOrigin(f, originField);
                 if (Objects.equals(f.getFieldType(), FieldTypeConstants.INTEGER)) {
-                    fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_INT_FORMAT);
+                    fieldName = String.format(SQLConstants.CAST, normalizedOriginField, SQLConstants.DEFAULT_INT_FORMAT);
                 } else if (Objects.equals(f.getFieldType(), FieldTypeConstants.FLOAT)) {
-                    fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_FLOAT_FORMAT);
+                    fieldName = String.format(SQLConstants.CAST, normalizedOriginField, SQLConstants.DEFAULT_FLOAT_FORMAT);
                 } else if (Objects.equals(f.getFieldType(), FieldTypeConstants.TIME)) {
-                    fieldName = StringUtils.isEmpty(f.getDateFormat()) ? String.format(SQLConstants.CREST_STR_TO_DATE, originField, SQLConstants.DEFAULT_DATE_FORMAT) :
-                            String.format(SQLConstants.CREST_STR_TO_DATE, originField, f.getDateFormat());
+                    fieldName = StringUtils.isEmpty(f.getDateFormat()) ? String.format(SQLConstants.CREST_STR_TO_DATE, normalizedOriginField, SQLConstants.DEFAULT_DATE_FORMAT) :
+                            String.format(SQLConstants.CREST_STR_TO_DATE, normalizedOriginField, f.getDateFormat());
                 } else {
                     fieldName = originField;
                 }
@@ -140,9 +142,9 @@ public class Field2SQLObj {
                     String cast = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_INT_FORMAT);
                     fieldName = String.format(SQLConstants.FROM_UNIXTIME, cast, SQLConstants.DEFAULT_DATE_FORMAT);
                 } else if (Objects.equals(f.getFieldType(), FieldTypeConstants.INTEGER)) {
-                    fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_INT_FORMAT);
+                    fieldName = String.format(SQLConstants.CAST, FieldSqlExpressionUtils.nullSafeTextOrigin(f, originField), SQLConstants.DEFAULT_INT_FORMAT);
                 } else if (Objects.equals(f.getFieldType(), FieldTypeConstants.FLOAT)) {
-                    fieldName = String.format(SQLConstants.CAST, originField, SQLConstants.DEFAULT_FLOAT_FORMAT);
+                    fieldName = String.format(SQLConstants.CAST, FieldSqlExpressionUtils.nullSafeTextOrigin(f, originField), SQLConstants.DEFAULT_FLOAT_FORMAT);
                 } else {
                     fieldName = originField;
                 }

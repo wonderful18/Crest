@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 @Schema(description = "企微信息")
 @Data
+// 定义页面展示或接口返回的数据结构
 public class WecomInfoVO implements Serializable {
     @Schema(description = "corpId")
     private String corpId;

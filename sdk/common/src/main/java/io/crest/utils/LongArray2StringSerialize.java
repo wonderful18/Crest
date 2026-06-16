@@ -8,9 +8,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+// 提供当前模块复用的工具能力
 public class LongArray2StringSerialize extends JsonSerializer<List<Long>> {
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void serialize(List<Long> longs, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         List<String> list = new ArrayList<>();
         for (Long str : longs) {

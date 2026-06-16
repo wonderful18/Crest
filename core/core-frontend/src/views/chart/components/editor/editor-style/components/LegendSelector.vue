@@ -19,10 +19,14 @@ import { getDynamicColorScale } from '@/views/chart/components/js/util'
 import CustomSortEdit from '@/views/chart/components/editor/drag-item/components/CustomSortEdit.vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
+/** 主画布仓库提供批量设置状态 */
 const dvMainStore = dvMainStoreWithOut()
+/** 批量操作状态引用，用于控制部分表单能力 */
 const { batchOptStatus } = storeToRefs(dvMainStore)
+/** 国际化翻译函数 */
 const { t } = useI18n()
 
+/** 图例样式面板入参，包含图表配置、主题和可见属性集合 */
 const props = withDefaults(
   defineProps<{
     chart: any
@@ -35,10 +39,13 @@ useEmitt({
   name: 'map-default-range',
   callback: args => mapDefaultRange(args)
 })
+/** 向父级同步图例和杂项样式变化 */
 const emit = defineEmits(['onLegendChange', 'onMiscChange'])
+/** 根据编辑器主题反转 tooltip 主题 */
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
+/** 监听图表样式变化并刷新图例表单 */
 watch(
   () => props.chart.customStyle,
   () => {
@@ -47,7 +54,9 @@ watch(
   { deep: true }
 )
 
+/** 颜色选择器预设色板 */
 const predefineColors = COLOR_PANEL
+/** 图例符号形状选项 */
 const iconSymbolOptions = [
   { name: t('chart.line_symbol_circle'), value: 'circle' },
   { name: t('chart.line_symbol_rect'), value: 'square' },
@@ -55,6 +64,7 @@ const iconSymbolOptions = [
   { name: t('chart.line_symbol_diamond'), value: 'diamond' }
 ]
 
+/** 图例样式面板状态，包含图例表单和自定义排序弹窗状态 */
 const state = reactive({
   legendForm: {
     ...JSON.parse(JSON.stringify(DEFAULT_LEGEND_STYLE)),
@@ -64,11 +74,13 @@ const state = reactive({
   customSortField: null
 })
 
+/** 当前图表类型 */
 const chartType = computed(() => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   return chart?.type
 })
 
+/** 字号下拉选项 */
 const fontSizeList = computed(() => {
   const arr = []
   for (let i = 10; i <= 40; i = i + 2) {
@@ -86,6 +98,7 @@ const fontSizeList = computed(() => {
   return arr
 })
 
+/** 图例符号尺寸选项 */
 const sizeList = computed(() => {
   const arr = []
   for (let i = 4; i <= 20; i = i + 2) {
@@ -97,10 +110,12 @@ const sizeList = computed(() => {
   return arr
 })
 
+/** 通知父级图例样式字段变化 */
 const changeLegendStyle = prop => {
   emit('onLegendChange', state.legendForm, prop)
 }
 
+/** 通知父级杂项字段变化，子弹图区间字段需要保护性合并 */
 const changeMisc = prop => {
   // 仅对子弹图区间图例字段做合并保护，避免覆盖 fixedRange/showType。
   if (typeof prop === 'string' && prop.startsWith('bullet.')) {
@@ -112,19 +127,23 @@ const changeMisc = prop => {
   emit('onMiscChange', { data: state.legendForm.miscForm, requestData: true }, prop)
 }
 
+/** 自定义排序选择器引用，用于初始化时移除焦点 */
 const legendSort = ref()
+/** 当前排序字段所在轴 */
 const sortAxis = computed(() => {
   if (props.chart.type === 'line') {
     return 'xAxisExt'
   }
   return 'extStack'
 })
+/** 判断当前图表是否具备可排序字段 */
 const legendSortDisabled = computed(() => {
   if (props.chart?.type === 'line') {
     return !props.chart.xAxisExt?.length
   }
   return !props.chart?.extStack?.length
 })
+/** 按图表配置初始化图例表单和地图图例默认值 */
 const init = () => {
   legendSort.value?.blur()
   const chart = JSON.parse(JSON.stringify(props.chart))
@@ -156,13 +175,17 @@ const init = () => {
   }
 }
 // 存储地图默认的最大最小值
+/** 地图图例默认区间的最大值和最小值 */
 const mapLegendDefaultRange = {
   max: 0,
   min: 0
 }
 // 缓存原始的区间数据
+/** 自定义地图区间的临时缓存，用于输入为空时回退 */
 let mapLegendCustomRangeCacheList = []
+/** 判断指定图例属性是否应展示 */
 const showProperty = prop => props.propertyInner?.includes(prop)
+/** 接收地图默认区间事件，并同步自动或自定义区间初始值 */
 const mapDefaultRange = args => {
   if (args.from === 'map') {
     const rangeCustom = state.legendForm.miscForm.mapLegendRangeType === 'custom'
@@ -188,6 +211,7 @@ const mapDefaultRange = args => {
     })
   }
 }
+/** 初始化地图自定义区间，空区间时按默认最大最小值补齐 */
 const initMapCustomRange = () => {
   const legendCustom = state.legendForm.miscForm.mapAutoLegend
   const rangeCustom = state.legendForm.miscForm.mapLegendRangeType === 'custom'
@@ -240,6 +264,7 @@ const changeLegendNumber = (prop?) => {
   calcMapCustomRange()
   prop ? changeMisc(prop) : ''
 }
+/** 修改单个自定义区间值，空值时回退到缓存区间 */
 const changeRangeItem = (prop, index) => {
   if (state.legendForm.miscForm.mapLegendCustomRange[index] === null) {
     state.legendForm.miscForm.mapLegendCustomRange[index] = cloneDeep(
@@ -248,12 +273,15 @@ const changeRangeItem = (prop, index) => {
   }
   changeMisc(prop)
 }
+/** 获取自定义区间输入框的边界提示文案 */
 const getMapCustomRange = index => {
   if (index === 0) return t('chart.min')
   if (index === state.legendForm.miscForm.mapLegendNumber) return t('chart.max')
   return ''
 }
+/** 自定义图例排序结果缓存 */
 const customSort = []
+/** 切换图例排序方式，必要时打开自定义排序面板 */
 const changeLegendSort = sort => {
   if (sort === 'custom') {
     if (props.chart.type === 'line') {
@@ -271,17 +299,21 @@ const changeLegendSort = sort => {
   }
   changeLegendStyle('sort')
 }
+/** 关闭自定义排序面板 */
 const closeCustomSort = () => {
   state.showCustomSort = false
 }
+/** 保存自定义排序并同步到图例表单 */
 const saveCustomSort = () => {
   state.showCustomSort = false
   state.legendForm.customSort = customSort
   changeLegendStyle('customSort')
 }
+/** 接收排序面板的最新排序结果 */
 const customSortChange = list => {
   customSort.splice(0, customSort.length, ...list)
 }
+/** 挂载后初始化图例表单 */
 onMounted(() => {
   init()
 })

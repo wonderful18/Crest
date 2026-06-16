@@ -23,15 +23,42 @@ import { useCache } from '@/hooks/web/useCache'
 import { useAppStoreWithOut } from '@/store/modules/app'
 import { collectExportableTableViews } from '@/utils/visualization/filteredExcelExport.mjs'
 import { exportFilteredExcel } from '@/utils/visualization/filteredExcelExportService'
+/**
+ * 当前路由对象，用于监听预览页面路由变化
+ */
 const routeWatch = useRoute()
 
+/**
+ * 大屏主仓库
+ */
 const dvMainStore = dvMainStoreWithOut()
+/**
+ * 应用全局状态仓库
+ */
 const appStore = useAppStoreWithOut()
+/**
+ * 国际化翻译函数
+ */
 const { t } = useI18n()
+/**
+ * 嵌入式访问状态仓库
+ */
 const embeddedStore = useEmbedded()
+/**
+ * 本地缓存访问对象
+ */
 const { wsCache } = useCache()
+/**
+ * 预览画布外层容器引用
+ */
 const previewCanvasContainer = ref(null)
+/**
+ * 下载状态标记
+ */
 const downloadStatus = ref(false)
+/**
+ * 预览页状态数据
+ */
 const state = reactive({
   canvasDataPreview: null,
   canvasStylePreview: null,
@@ -48,6 +75,9 @@ const state = reactive({
   containerMainHeight: '1000px'
 })
 
+/**
+ * 预览画布入参
+ */
 const props = defineProps({
   publicLinkStatus: {
     type: Boolean,
@@ -65,6 +95,9 @@ const props = defineProps({
   ticketArgs: propTypes.string.def(null)
 })
 
+/**
+ * 异步加载并初始化预览画布数据
+ */
 const loadCanvasDataAsync = async (dvId, dvType, ignoreParams = false) => {
   const needsUserToken = !props.publicLinkStatus && !props.outerId && !embeddedStore.getToken
   if (needsUserToken && !wsCache.get('user.token')) {
@@ -178,6 +211,9 @@ const loadCanvasDataAsync = async (dvId, dvType, ignoreParams = false) => {
   )
 }
 
+/**
+ * 将当前预览画布下载为指定类型文件
+ */
 const downloadH2 = type => {
   downloadStatus.value = true
   nextTick(() => {
@@ -188,6 +224,9 @@ const downloadH2 = type => {
   })
 }
 
+/**
+ * 处理弹窗预览页发起的表格数据下载消息
+ */
 const handlePreviewPopDownload = (event: MessageEvent) => {
   if (event.origin !== window.location.origin) {
     return
@@ -210,7 +249,6 @@ const handlePreviewPopDownload = (event: MessageEvent) => {
     dvName: (state.dvInfo as any)?.name || exportableViews[0].label
   })
 }
-// 监听路由变化
 // 监听路由变化
 watch(
   () => ({ path: routeWatch.path, params: routeWatch.params }),
@@ -262,10 +300,16 @@ onBeforeUnmount(() => {
   window.removeEventListener('message', handlePreviewPopDownload)
 })
 
+/**
+ * 判断大屏预览是否保持原始尺寸
+ */
 const dataVKeepSize = computed(() => {
   return state.canvasStylePreview?.screenAdaptor === 'keep'
 })
 
+/**
+ * 打印和预览容器使用的 CSS 变量
+ */
 const freezeStyle = computed(() => {
   return [
     { '--top-show-offset': state.showOffset.top },
@@ -274,7 +318,13 @@ const freezeStyle = computed(() => {
   ]
 })
 
+/**
+ * 仪表板预览组件引用
+ */
 const dvPreview = ref(null)
+/**
+ * 计算打印时需要的画布高度
+ */
 const getPrintHeight = async () => {
   if (dvPreview.value) {
     state.containerMainHeight = await dvPreview.value.getDownloadStatusMainHeightV2()

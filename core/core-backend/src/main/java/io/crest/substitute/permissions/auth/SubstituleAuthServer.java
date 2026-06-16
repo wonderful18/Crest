@@ -14,8 +14,11 @@ import io.crest.api.permissions.auth.vo.ResourceVO;
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
 import io.crest.log.CrestAudit;
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.utils.IDUtils;
 import jakarta.annotation.Resource;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/auth")
+// 提供资源权限和菜单权限的替代实现接口
 public class SubstituleAuthServer implements AuthApi {
 
     @Resource
@@ -35,6 +39,10 @@ public class SubstituleAuthServer implements AuthApi {
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
+    @Resource
+    private Environment environment;
+
+    // 查询指定业务类型的资源列表
     @Override
     public List<ResourceVO> busiResource(String flag) {
         String type = normalizeFlag(flag);
@@ -52,6 +60,7 @@ public class SubstituleAuthServer implements AuthApi {
         }, type);
     }
 
+    // 查询角色或用户在业务资源上的权限
     @Override
     public PermissionVO busiPermission(BusiPermissionRequest request) {
         PermissionVO vo = new PermissionVO();
@@ -59,10 +68,10 @@ public class SubstituleAuthServer implements AuthApi {
         vo.setReadonly(false);
         String targetType = targetType(request.getType());
         vo.setPermissions(jdbcTemplate.query("""
-                SELECT CAST(resource_id AS UNSIGNED) AS resource_id, permission
+                SELECT %s AS resource_id, permission
                 FROM iam_resource_permission
                 WHERE target_type = ? AND target_id = ? AND resource_type = ?
-                """, (rs, rowNum) -> {
+                """.formatted(dialect().numberCast("resource_id")), (rs, rowNum) -> {
             PermissionItem item = new PermissionItem();
             item.setId(rs.getLong("resource_id"));
             item.setWeight(platformPermissionManage.weightByPermission(rs.getString("permission")));
@@ -72,11 +81,13 @@ public class SubstituleAuthServer implements AuthApi {
         return vo;
     }
 
+    // 查询指定目标在业务资源上的权限
     @Override
     public PermissionVO busiTargetPermission(BusiPermissionRequest request) {
         return busiPermission(request);
     }
 
+    // 查询菜单权限资源树
     @Override
     public List<ResourceVO> menuResource() {
         List<ResourceVO> menus = jdbcTemplate.query("""
@@ -111,6 +122,7 @@ public class SubstituleAuthServer implements AuthApi {
                 .toList();
     }
 
+    // 查询角色菜单权限
     @Override
     public PermissionVO menuPermission(MenuPermissionRequest request) {
         PermissionVO vo = new PermissionVO();
@@ -121,11 +133,13 @@ public class SubstituleAuthServer implements AuthApi {
         return vo;
     }
 
+    // 查询指定目标的菜单权限
     @Override
     public PermissionVO menuTargetPermission(MenuPermissionRequest request) {
         return menuPermission(request);
     }
 
+    // 保存业务资源权限配置
     @Override
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.DATA, id = "#p0.id")
     public void saveBusiPer(BusiPerEditor editor) {
@@ -144,6 +158,7 @@ public class SubstituleAuthServer implements AuthApi {
         }
     }
 
+    // 批量保存业务资源目标权限配置
     @Override
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.DATA)
     public void saveBusiTargetPer(BusiTargetPerCreator creator) {
@@ -164,6 +179,7 @@ public class SubstituleAuthServer implements AuthApi {
         }
     }
 
+    // 保存角色菜单权限配置
     @Override
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.MENU, id = "#p0.id")
     public void saveMenuPer(MenuPerEditor editor) {
@@ -173,14 +189,12 @@ public class SubstituleAuthServer implements AuthApi {
             return;
         }
         for (PermissionItem item : editor.getPermissions()) {
-            jdbcTemplate.update("""
-                    INSERT IGNORE INTO iam_role_menu_permission(id, rid, menu_id, permission, create_time)
-                    VALUES (?, ?, ?, ?, ?)
-                    """, IDUtils.snowID(), editor.getId(), item.getId(),
-                    platformPermissionManage.permissionByWeight(item.getWeight()), System.currentTimeMillis());
+            saveRoleMenuPermission(editor.getId(), item.getId(),
+                    platformPermissionManage.permissionByWeight(item.getWeight()));
         }
     }
 
+    // 批量保存菜单目标权限配置
     @Override
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.MENU)
     public void saveMenuTargetPer(MenuTargetPerCreator creator) {
@@ -196,6 +210,7 @@ public class SubstituleAuthServer implements AuthApi {
         }
     }
 
+    // 查询业务资源下已授权的全部目标
     @Override
     public List<ResourceItemVO> busiTargetPermissionAll(BusiPermissionRequest request) {
         String targetType = targetType(request.getType());
@@ -229,17 +244,44 @@ public class SubstituleAuthServer implements AuthApi {
         }, normalizeFlag(request.getFlag()), String.valueOf(request.getId()));
     }
 
+    // 写入单条资源权限记录
     private void saveResourcePermission(String resourceType, String resourceId, String targetType, Long targetId, String permission) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(1)
+                FROM iam_resource_permission
+                WHERE resource_type = ? AND resource_id = ? AND target_type = ? AND target_id = ? AND permission = ?
+                """, Integer.class, resourceType, resourceId, targetType, targetId, permission);
+        if (count != null && count > 0) {
+            return;
+        }
         jdbcTemplate.update("""
-                INSERT IGNORE INTO iam_resource_permission(id, resource_type, resource_id, target_type, target_id, permission, create_time)
+                INSERT INTO iam_resource_permission(id, resource_type, resource_id, target_type, target_id, permission, create_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, IDUtils.snowID(), resourceType, resourceId, targetType, targetId, permission, System.currentTimeMillis());
     }
 
+    // 权限表存在唯一约束，先判重再插入可同时兼容 MySQL 和 OB Oracle。
+    private void saveRoleMenuPermission(Long rid, Long menuId, String permission) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(1)
+                FROM iam_role_menu_permission
+                WHERE rid = ? AND menu_id = ? AND permission = ?
+                """, Integer.class, rid, menuId, permission);
+        if (count != null && count > 0) {
+            return;
+        }
+        jdbcTemplate.update("""
+                INSERT INTO iam_role_menu_permission(id, rid, menu_id, permission, create_time)
+                VALUES (?, ?, ?, ?, ?)
+                """, IDUtils.snowID(), rid, menuId, permission, System.currentTimeMillis());
+    }
+
+    // 将前端目标类型转换为权限目标类型
     private String targetType(Integer type) {
         return type != null && type == 1 ? "user" : "role";
     }
 
+    // 统一业务资源类型标识
     private String normalizeFlag(String flag) {
         if ("dataV".equalsIgnoreCase(flag)) {
             return "screen";
@@ -248,5 +290,9 @@ public class SubstituleAuthServer implements AuthApi {
             return "panel";
         }
         return flag == null ? "panel" : flag;
+    }
+
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
     }
 }

@@ -33,8 +33,10 @@
 import warnTree from '@/assets/svg/warn-tree.svg'
 import { ref } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
+// 控制弹窗、面板或区域的展示状态
 const dialogShow = ref(false)
 const { t } = useI18n()
+// 定义组件向父级抛出的事件
 const emits = defineEmits(['doUseCache'])
 
 const dialogInfo = {
@@ -43,6 +45,7 @@ const dialogInfo = {
   tips: ''
 }
 
+// 控制弹窗、面板或区域的展示状态
 const dialogInit = initInfo => {
   const canvasTypeName =
     initInfo.canvasType === 'dataV' ? t('work_branch.big_data_screen') : t('work_branch.dashboard')
@@ -52,6 +55,7 @@ const dialogInit = initInfo => {
   dialogShow.value = true
 }
 
+// 衔接当前组件交互和状态同步
 const doUseCache = flag => {
   emits('doUseCache', flag)
   dialogShow.value = false

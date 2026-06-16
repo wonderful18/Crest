@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 @Schema(description = "用户状态重置器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class EnableSwitchRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = 8477475476294666602L;

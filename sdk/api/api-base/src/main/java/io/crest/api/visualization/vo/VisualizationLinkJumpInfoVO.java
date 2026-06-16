@@ -5,8 +5,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/7/18 13:21
+ * 组件跳转规则视图对象。
  */
 @Data
 public class VisualizationLinkJumpInfoVO {

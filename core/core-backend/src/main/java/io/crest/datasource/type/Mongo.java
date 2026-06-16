@@ -14,6 +14,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Component("mongo")
+// 定义数据源连接参数和元数据匹配规则
 public class Mongo extends DatasourceConfiguration {
     private String driver = "com.mysql.cj.jdbc.Driver";
     private String extraParams = "characterEncoding=UTF-8&connectTimeout=5000&useSSL=false&allowPublicKeyRetrieval=true&zeroDateTimeBehavior=convertToNull";
@@ -21,6 +22,8 @@ public class Mongo extends DatasourceConfiguration {
     private List<String> illegalParameters = Arrays.asList("autoDeserialize", "queryInterceptors", "statementInterceptors", "detectCustomCollations");
     private List<String> showTableSqls = Arrays.asList("show tables");
 
+    // 构建当前数据源的连接地址
+    @Override
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             if (!getJdbcUrl().startsWith("jdbc:mysql")) {

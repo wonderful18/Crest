@@ -18,6 +18,7 @@ import dorisDs from '@/assets/svg/doris-ds.svg'
 import esDs from '@/assets/svg/es-ds.svg'
 const iconDatasourceMap = {
   mysql: mysqlDs,
+  obMysql: oceanbaseOracleDs,
   oracle: oracleDs,
   obOracle: oceanbaseOracleDs,
   sqlServer: sqlServerDs,

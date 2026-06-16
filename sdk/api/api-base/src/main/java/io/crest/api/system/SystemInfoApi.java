@@ -1,8 +1,7 @@
 package io.crest.api.system;
 
 /**
- * @author : WangJiaHao
- * @date : 2024/1/8 18:12
+ * 系统信息接口占位类型。
  */
 public class SystemInfoApi {
 }

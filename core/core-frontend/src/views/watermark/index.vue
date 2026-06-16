@@ -105,6 +105,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import ParamsTips from '@/views/watermark/ParamsTips.vue'
 const { t } = useI18n()
 
+// 保存水印设置、用户信息和编辑器配置
 const state = reactive({
   userLoginInfo: {
     username: '',
@@ -148,14 +149,17 @@ const state = reactive({
   }
 })
 
+// 切换水印启用状态后刷新预览
 const enableChange = () => {
   initWatermark()
 }
 
+// 根据当前表单配置刷新水印预览
 const preview = () => {
   initWatermark()
 }
 
+// 恢复上次保存的水印配置并刷新预览
 const cancel = () => {
   state.watermarkForm = { ...state.watermarkFormSource }
   const params = {
@@ -167,6 +171,7 @@ const cancel = () => {
   initWatermark()
 }
 
+// 保存当前水印配置
 const save = () => {
   const params = {
     settingContent: JSON.stringify(state.watermarkForm)
@@ -176,18 +181,21 @@ const save = () => {
   })
 }
 
+// 查询已保存的水印配置
 const findData = callback => {
   watermarkFind().then(rsp => {
     callback(rsp)
   })
 }
 
+// 查询当前用户信息用于水印变量替换
 const findUserData = callback => {
   personInfoApi().then(rsp => {
     callback(rsp)
   })
 }
 
+// 初始化水印配置并同步表单源数据
 const initData = () => {
   findData(res => {
     state.watermarkForm = JSON.parse(res.data.settingContent)
@@ -196,6 +204,7 @@ const initData = () => {
   })
 }
 
+// 根据表单内容生成预览水印
 const initWatermark = () => {
   let watermark_txt
   let watermark_width = 120

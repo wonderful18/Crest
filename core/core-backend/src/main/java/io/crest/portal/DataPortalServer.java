@@ -2,9 +2,12 @@ package io.crest.portal;
 
 import io.crest.commons.constants.OptConstants;
 import io.crest.exception.CrestException;
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.operation.manage.CoreOptRecentManage;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +17,9 @@ import java.util.Locale;
 
 @RestController
 @RequestMapping("/data-portal")
+/**
+ * 数据门户接口控制器，提供资源概览、列表和详情查询
+ */
 public class DataPortalServer {
 
     private static final int MAX_PAGE_SIZE = 100;
@@ -27,6 +33,12 @@ public class DataPortalServer {
     @Resource
     private CoreOptRecentManage coreOptRecentManage;
 
+    @Resource
+    private Environment environment;
+
+    /**
+     * 查询当前用户可访问资源的门户概览
+     */
     @GetMapping("/overview")
     public DataPortalOverviewVO overview() {
         Long uid = dataPortalPermissionManage.currentUid();
@@ -50,6 +62,9 @@ public class DataPortalServer {
         return overview == null ? new DataPortalOverviewVO() : overview;
     }
 
+    /**
+     * 分页查询当前用户可访问的数据门户资源
+     */
     @PostMapping("/resources")
     public DataPortalPageVO resources(@RequestBody(required = false) DataPortalResourceRequest request) {
         Long uid = dataPortalPermissionManage.currentUid();
@@ -81,22 +96,21 @@ public class DataPortalServer {
         List<Object> listArgs = new ArrayList<>();
         listArgs.add(uid);
         listArgs.addAll(query.args);
-        listArgs.add(normalized.getPageSize());
-        listArgs.add((normalized.getPage() - 1) * normalized.getPageSize());
+        int offset = (normalized.getPage() - 1) * normalized.getPageSize();
         String orderDirection = Boolean.TRUE.equals(normalized.getAsc()) ? "ASC" : "DESC";
-        String listSql = """
+        String listSql = dialect().limitOffset("""
                 SELECT v.id,
                        v.name,
                        v.type,
                        v.mobile_layout AS ext_flag,
                        v.update_time,
-                       COALESCE(u.name, v.create_by) AS creator_name,
+                       COALESCE(u.name, %s) AS creator_name,
                        (SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = v.id) AS chart_count,
                        EXISTS (
                            SELECT 1
                            FROM bi_chart c
-                           INNER JOIN data_asset_profile p ON p.asset_type COLLATE utf8mb4_unicode_ci = 'dataset'
-                             AND p.asset_id COLLATE utf8mb4_unicode_ci = CAST(c.table_id AS CHAR) COLLATE utf8mb4_unicode_ci
+                           INNER JOIN data_asset_profile p ON %s
+                             AND %s
                              AND p.certified = 1
                              AND p.deprecated = 0
                            WHERE c.scene_id = v.id
@@ -104,8 +118,8 @@ public class DataPortalServer {
                        EXISTS (
                            SELECT 1
                            FROM bi_chart c
-                           INNER JOIN data_asset_profile p ON p.asset_type COLLATE utf8mb4_unicode_ci = 'dataset'
-                             AND p.asset_id COLLATE utf8mb4_unicode_ci = CAST(c.table_id AS CHAR) COLLATE utf8mb4_unicode_ci
+                           INNER JOIN data_asset_profile p ON %s
+                             AND %s
                              AND p.recommended = 1
                              AND p.deprecated = 0
                            WHERE c.scene_id = v.id
@@ -113,8 +127,8 @@ public class DataPortalServer {
                        EXISTS (
                            SELECT 1
                            FROM bi_chart c
-                           INNER JOIN data_asset_profile p ON p.asset_type COLLATE utf8mb4_unicode_ci = 'dataset'
-                             AND p.asset_id COLLATE utf8mb4_unicode_ci = CAST(c.table_id AS CHAR) COLLATE utf8mb4_unicode_ci
+                           INNER JOIN data_asset_profile p ON %s
+                             AND %s
                              AND p.deprecated = 1
                            WHERE c.scene_id = v.id
                        ) AS deprecated,
@@ -122,9 +136,19 @@ public class DataPortalServer {
                            SELECT 1
                            FROM workspace_favorite_resource fav
                            WHERE fav.resource_id = v.id
-                             AND fav.uid = ?
+                             AND fav.%s = ?
                        ) AS favorite
-                """ + query.fromWhere + " ORDER BY " + orderExpression(normalized, orderDirection) + " LIMIT ? OFFSET ?";
+                """.formatted(
+                dialect().stringCast("v.create_by"),
+                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
+                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
+                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
+                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
+                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
+                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
+                uidColumn()
+        ) + query.fromWhere + " ORDER BY " + orderExpression(normalized, orderDirection),
+                normalized.getPageSize(), offset);
         List<DataPortalResourceVO> records = jdbcTemplate.query(listSql, (rs, rowNum) -> {
             DataPortalResourceVO vo = new DataPortalResourceVO();
             vo.setId(rs.getLong("id"));
@@ -148,6 +172,9 @@ public class DataPortalServer {
         return page;
     }
 
+    /**
+     * 查询单个门户资源详情并记录最近访问
+     */
     @GetMapping("/resource/{id}")
     public DataPortalResourceVO resource(@PathVariable("id") Long id) {
         if (id == null) {
@@ -163,19 +190,19 @@ public class DataPortalServer {
         List<Object> resourceArgs = new ArrayList<>();
         resourceArgs.add(uid);
         resourceArgs.addAll(query.args);
-        String resourceSql = """
+        String resourceSql = dialect().limitOne("""
                 SELECT v.id,
                        v.name,
                        v.type,
                        v.mobile_layout AS ext_flag,
                        v.update_time,
-                       COALESCE(u.name, v.create_by) AS creator_name,
+                       COALESCE(u.name, %s) AS creator_name,
                        (SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = v.id) AS chart_count,
                        EXISTS (
                            SELECT 1
                            FROM bi_chart c
-                           INNER JOIN data_asset_profile p ON p.asset_type COLLATE utf8mb4_unicode_ci = 'dataset'
-                             AND p.asset_id COLLATE utf8mb4_unicode_ci = CAST(c.table_id AS CHAR) COLLATE utf8mb4_unicode_ci
+                           INNER JOIN data_asset_profile p ON %s
+                             AND %s
                              AND p.certified = 1
                              AND p.deprecated = 0
                            WHERE c.scene_id = v.id
@@ -183,8 +210,8 @@ public class DataPortalServer {
                        EXISTS (
                            SELECT 1
                            FROM bi_chart c
-                           INNER JOIN data_asset_profile p ON p.asset_type COLLATE utf8mb4_unicode_ci = 'dataset'
-                             AND p.asset_id COLLATE utf8mb4_unicode_ci = CAST(c.table_id AS CHAR) COLLATE utf8mb4_unicode_ci
+                           INNER JOIN data_asset_profile p ON %s
+                             AND %s
                              AND p.recommended = 1
                              AND p.deprecated = 0
                            WHERE c.scene_id = v.id
@@ -192,8 +219,8 @@ public class DataPortalServer {
                        EXISTS (
                            SELECT 1
                            FROM bi_chart c
-                           INNER JOIN data_asset_profile p ON p.asset_type COLLATE utf8mb4_unicode_ci = 'dataset'
-                             AND p.asset_id COLLATE utf8mb4_unicode_ci = CAST(c.table_id AS CHAR) COLLATE utf8mb4_unicode_ci
+                           INNER JOIN data_asset_profile p ON %s
+                             AND %s
                              AND p.deprecated = 1
                            WHERE c.scene_id = v.id
                        ) AS deprecated,
@@ -201,9 +228,18 @@ public class DataPortalServer {
                            SELECT 1
                            FROM workspace_favorite_resource fav
                            WHERE fav.resource_id = v.id
-                             AND fav.uid = ?
+                             AND fav.%s = ?
                        ) AS favorite
-                """ + query.fromWhere + " LIMIT 1";
+                """.formatted(
+                dialect().stringCast("v.create_by"),
+                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
+                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
+                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
+                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
+                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
+                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
+                uidColumn()
+        ) + query.fromWhere);
         List<DataPortalResourceVO> resources = jdbcTemplate.query(resourceSql, (rs, rowNum) -> {
             DataPortalResourceVO vo = new DataPortalResourceVO();
             vo.setId(rs.getLong("id"));
@@ -227,6 +263,9 @@ public class DataPortalServer {
         return resource;
     }
 
+    /**
+     * 规范化门户资源查询参数
+     */
     private DataPortalResourceRequest normalizeRequest(DataPortalResourceRequest request) {
         DataPortalResourceRequest normalized = request == null ? new DataPortalResourceRequest() : request;
         int page = normalized.getPage() == null || normalized.getPage() < 1 ? 1 : normalized.getPage();
@@ -258,23 +297,26 @@ public class DataPortalServer {
         return normalized;
     }
 
+    /**
+     * 构造门户资源查询的基础 SQL 和参数
+     */
     private QueryParts buildBaseQuery(Long uid, DataPortalResourceRequest request) {
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder("""
                 FROM bi_visualization v
-                LEFT JOIN iam_user u ON u.id = CAST(v.create_by AS UNSIGNED)
-                """);
+                LEFT JOIN iam_user u ON u.id = %s
+                """.formatted(dialect().numberCast("v.create_by")));
         if (request != null && "store".equals(request.getQueryFrom())) {
             sql.append("""
                 INNER JOIN workspace_favorite_resource wfr ON wfr.resource_id = v.id
-                  AND wfr.uid = ?
-                """);
+                  AND wfr.%s = ?
+                """.formatted(uidColumn()));
             args.add(uid);
         } else if (request != null && "recent".equals(request.getQueryFrom())) {
             sql.append("""
                 INNER JOIN workspace_recent_resource wrr ON wrr.resource_id = v.id
-                  AND wrr.uid = ?
-                """);
+                  AND wrr.%s = ?
+                """.formatted(uidColumn()));
             args.add(uid);
         }
         sql.append("""
@@ -288,13 +330,16 @@ public class DataPortalServer {
             args.add(request.getType());
         }
         if (request != null && StringUtils.isNotBlank(request.getKeyword())) {
-            sql.append(" AND LOWER(v.name) LIKE LOWER(CONCAT('%', ?, '%'))");
+            sql.append(" AND ").append(dialect().caseInsensitiveLike("v.name", "?"));
             args.add(request.getKeyword());
         }
         dataPortalPermissionManage.appendReadScope(sql, args, uid);
         return new QueryParts(sql.toString(), args);
     }
 
+    /**
+     * 复制查询条件并清空资源类型，用于统计全部类型数量
+     */
     private DataPortalResourceRequest copyWithoutType(DataPortalResourceRequest source) {
         DataPortalResourceRequest copy = new DataPortalResourceRequest();
         copy.setKeyword(source.getKeyword());
@@ -305,16 +350,22 @@ public class DataPortalServer {
         return copy;
     }
 
+    /**
+     * 根据查询来源生成排序表达式
+     */
     private String orderExpression(DataPortalResourceRequest request, String direction) {
         if (request != null && "store".equals(request.getQueryFrom())) {
-            return "wfr.time " + direction;
+            return "wfr." + timeColumn() + " " + direction;
         }
         if (request != null && "recent".equals(request.getQueryFrom())) {
-            return "wrr.time " + direction;
+            return "wrr." + timeColumn() + " " + direction;
         }
         return "deprecated ASC, certified DESC, recommended DESC, v.update_time " + direction;
     }
 
+    /**
+     * 记录门户资源最近访问
+     */
     private void recordRecent(DataPortalResourceVO resource) {
         coreOptRecentManage.saveOpt(
                 resource.getId(),
@@ -323,6 +374,21 @@ public class DataPortalServer {
         );
     }
 
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
+    }
+
+    private String uidColumn() {
+        return dialect().quoteIdentifier("UID");
+    }
+
+    private String timeColumn() {
+        return dialect().quoteIdentifier("TIME");
+    }
+
+    /**
+     * 门户资源查询 SQL 片段和参数
+     */
     private static class QueryParts {
         private String fromWhere;
         private final List<Object> args;

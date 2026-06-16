@@ -51,6 +51,112 @@ function normalize_bool_env() {
    esac
 }
 
+function normalize_metadata_db_env() {
+   CREST_DB_TYPE=${CREST_DB_TYPE:-mysql}
+   CREST_DB_TYPE=$(echo "$CREST_DB_TYPE" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
+   case "$CREST_DB_TYPE" in
+      mysql|ob-mysql|ob-oracle)
+         ;;
+      *)
+         echo "CREST_DB_TYPE 只支持 mysql、ob-mysql 或 ob-oracle"
+         exit 1
+         ;;
+   esac
+   export CREST_DB_TYPE
+
+   if [[ "$CREST_DB_TYPE" != "mysql" && ( -z "$CREST_DB_HOST" || "$CREST_DB_HOST" == "mysql-crest" ) ]]; then
+      echo "CREST_DB_TYPE=${CREST_DB_TYPE} 时必须配置 CREST_DB_HOST 为 OBProxy 或 observer 地址"
+      exit 1
+   fi
+
+   if [[ "$CREST_DB_TYPE" != "mysql" && "$CREST_EXTERNAL_MYSQL" == "false" ]]; then
+      CREST_EXTERNAL_MYSQL=true
+      export CREST_EXTERNAL_MYSQL
+      log_content "OceanBase 元数据库使用外部数据库模式，跳过内置 MySQL 容器"
+   fi
+
+   case "$CREST_DB_TYPE" in
+      mysql)
+         CREST_DB_DRIVER_CLASS_NAME=${CREST_DB_DRIVER_CLASS_NAME:-com.mysql.cj.jdbc.Driver}
+         ;;
+      ob-mysql|ob-oracle)
+         if [[ -z "$CREST_DB_DRIVER_CLASS_NAME" || "$CREST_DB_DRIVER_CLASS_NAME" == "com.mysql.cj.jdbc.Driver" ]]; then
+            CREST_DB_DRIVER_CLASS_NAME=com.oceanbase.jdbc.Driver
+         fi
+         ;;
+   esac
+   export CREST_DB_DRIVER_CLASS_NAME
+}
+
+function configure_flyway_locations() {
+   case "$CREST_DB_TYPE" in
+      ob-oracle)
+         CREST_FLYWAY_LOCATIONS="classpath:db/migration-ob-oracle"
+         if [[ "$CREST_LOAD_DEMO" == "true" ]]; then
+            log_content "OceanBase Oracle 元数据库使用独立初始化脚本，跳过 MySQL 演示迁移"
+         fi
+         ;;
+      ob-mysql)
+         CREST_FLYWAY_LOCATIONS="classpath:db/migration-ob-mysql"
+         if [[ "$CREST_LOAD_DEMO" == "true" ]]; then
+            log_content "OceanBase MySQL 元数据库使用独立初始化脚本，跳过 MySQL 演示迁移"
+         fi
+         log_content "跳过内置演示资源"
+         ;;
+      *)
+         if [[ "$CREST_LOAD_DEMO" == "true" ]]; then
+            CREST_FLYWAY_LOCATIONS="classpath:db/migration,classpath:db/demo-migration"
+            log_content "初始化内置演示资源"
+         else
+            CREST_FLYWAY_LOCATIONS="classpath:db/migration"
+            log_content "跳过内置演示资源"
+         fi
+         ;;
+   esac
+   export CREST_FLYWAY_LOCATIONS
+}
+
+function configure_flyway_enabled() {
+   if [[ -z "${CREST_FLYWAY_ENABLED:-}" ]]; then
+      if [[ "$CREST_DB_TYPE" == "mysql" ]]; then
+         CREST_FLYWAY_ENABLED=true
+      else
+         CREST_FLYWAY_ENABLED=false
+      fi
+   fi
+
+   normalize_bool_env CREST_FLYWAY_ENABLED
+   if [[ "$CREST_DB_TYPE" != "mysql" && "$CREST_FLYWAY_ENABLED" == "false" ]]; then
+      log_content "OceanBase 元数据库按外部已初始化数据库处理，应用启动时不执行 Flyway"
+   fi
+   export CREST_FLYWAY_ENABLED
+}
+
+function configure_metadata_db_url() {
+   if [[ -n "$CREST_DB_URL" ]]; then
+      export CREST_DB_URL
+      return
+   fi
+
+   local query=""
+   if [[ -n "$CREST_DB_PARAMS" ]]; then
+      query="?${CREST_DB_PARAMS}"
+   fi
+
+   case "$CREST_DB_TYPE" in
+      mysql)
+         CREST_DB_URL="jdbc:mysql://${CREST_DB_HOST}:${CREST_DB_PORT}/${CREST_DB_NAME}${query}"
+         ;;
+      ob-mysql)
+         CREST_DB_URL="jdbc:oceanbase://${CREST_DB_HOST}:${CREST_DB_PORT}/${CREST_DB_NAME}${query}"
+         ;;
+      ob-oracle)
+         CREST_DB_URL="jdbc:oceanbase://${CREST_DB_HOST}:${CREST_DB_PORT}"
+         ;;
+   esac
+   export CREST_DB_URL
+}
+
 function check_and_prepare_env_params() {
    log "当前时间 : $(date)"
    log_title "检查安装环境并初始化环境变量"
@@ -84,12 +190,22 @@ function check_and_prepare_env_params() {
 
    set -a
    source ${CURRENT_DIR}/install.conf
+   PACKAGE_BACKEND_IMAGE=${CREST_BACKEND_IMAGE:-}
+   PACKAGE_FRONTEND_IMAGE=${CREST_FRONTEND_IMAGE:-}
+   PACKAGE_MYSQL_IMAGE=${CREST_MYSQL_IMAGE:-}
+   PACKAGE_PROMETHEUS_IMAGE=${CREST_PROMETHEUS_IMAGE:-}
+   PACKAGE_GRAFANA_IMAGE=${CREST_GRAFANA_IMAGE:-}
    if [[ $CREST_BASE_OLD ]];then
       CREST_BASE=$CREST_BASE_OLD
       export CREST_BASE=$CREST_BASE_OLD
    fi
    if [[ -d $CREST_BASE ]] && [[ -f $CREST_BASE/crest/.env ]]; then
       load_env_file "$CREST_BASE/crest/.env"
+      [[ -n "$PACKAGE_BACKEND_IMAGE" ]] && export CREST_BACKEND_IMAGE="$PACKAGE_BACKEND_IMAGE"
+      [[ -n "$PACKAGE_FRONTEND_IMAGE" ]] && export CREST_FRONTEND_IMAGE="$PACKAGE_FRONTEND_IMAGE"
+      [[ -n "$PACKAGE_MYSQL_IMAGE" ]] && export CREST_MYSQL_IMAGE="$PACKAGE_MYSQL_IMAGE"
+      [[ -n "$PACKAGE_PROMETHEUS_IMAGE" ]] && export CREST_PROMETHEUS_IMAGE="$PACKAGE_PROMETHEUS_IMAGE"
+      [[ -n "$PACKAGE_GRAFANA_IMAGE" ]] && export CREST_GRAFANA_IMAGE="$PACKAGE_GRAFANA_IMAGE"
       INSTALL_TYPE='upgrade'
       log_content "升级安装"
    else
@@ -113,6 +229,13 @@ function check_and_prepare_env_params() {
          ;;
    esac
    export CREST_EXTERNAL_MYSQL
+   normalize_metadata_db_env
+   if [[ "$CREST_EXTERNAL_MYSQL" == "false" ]]; then
+      CREST_DB_HOST=mysql-crest
+      CREST_DB_PORT=3306
+      export CREST_DB_HOST
+      export CREST_DB_PORT
+   fi
    CREST_CRYPTO_MODE=${CREST_CRYPTO_MODE:-standard}
    case "$CREST_CRYPTO_MODE" in
       standard|sm-suite) ;;
@@ -127,13 +250,9 @@ function check_and_prepare_env_params() {
    case "$(echo "$CREST_LOAD_DEMO" | tr '[:upper:]' '[:lower:]')" in
       true|1|yes)
          CREST_LOAD_DEMO=true
-         CREST_FLYWAY_LOCATIONS="classpath:db/migration,classpath:db/demo-migration"
-         log_content "初始化内置演示资源"
          ;;
       false|0|no)
          CREST_LOAD_DEMO=false
-         CREST_FLYWAY_LOCATIONS="classpath:db/migration"
-         log_content "跳过内置演示资源"
          ;;
       *)
          echo "CREST_LOAD_DEMO 只支持 true 或 false"
@@ -141,7 +260,9 @@ function check_and_prepare_env_params() {
          ;;
    esac
    export CREST_LOAD_DEMO
-   export CREST_FLYWAY_LOCATIONS
+   configure_flyway_enabled
+   configure_flyway_locations
+   configure_metadata_db_url
 
    if [[ -z "$CREST_DB_PASSWORD" ]]; then
       CREST_DB_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 32)
@@ -230,7 +351,7 @@ function prepare_crest_run_base() {
    cp -r ./crest/* ${CREST_RUN_BASE}/
 
    cd $CREST_RUN_BASE
-   env | grep CREST_ >.env
+   env | grep '^CREST_' >.env
 
    mkdir -p ${CREST_RUN_BASE}/{cache,logs,conf}
    mkdir -p ${CREST_RUN_BASE}/data/{mysql,static-resource,appearance,exportData,excel,font,i18n,plugin,prometheus,grafana}
@@ -260,9 +381,7 @@ function prepare_crest_run_base() {
       chmod 777 ${CREST_RUN_BASE}/task/logs
    fi
 
-   if [ "${CREST_EXTERNAL_MYSQL}" = "false" ]; then
-      export CREST_DB_PORT=3306
-   else
+   if [ "${CREST_EXTERNAL_MYSQL}" != "false" ]; then
       awk '
          /^  mysql-crest:/ { skip = 1; next }
          /^  crest-service:/ { skip = 0 }

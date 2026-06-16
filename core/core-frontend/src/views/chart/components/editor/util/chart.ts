@@ -3,6 +3,7 @@ import { deepCopy } from '@/utils/utils'
 import { formatterItem, isEnLocal } from '@/views/chart/components/js/formatter-default'
 const { t } = useI18n()
 
+// 默认调色板会被图表实例、主题切换和样式面板共同引用，字段名需要保持和 ChartAttr 持久化结构一致。
 export const DEFAULT_COLOR_CASE: DeepPartial<ChartAttr> = {
   basicStyle: {
     colorScheme: 'default',
@@ -64,6 +65,7 @@ export const DEFAULT_COLOR_CASE: DeepPartial<ChartAttr> = {
   }
 }
 
+// 浅色主题只覆盖和主题强相关的颜色项，其他结构沿用通用默认值，避免保存后的图表配置出现字段缺口。
 export const DEFAULT_COLOR_CASE_LIGHT: DeepPartial<ChartAttr> = {
   basicStyle: {
     colorScheme: 'default',
@@ -125,6 +127,7 @@ export const DEFAULT_COLOR_CASE_LIGHT: DeepPartial<ChartAttr> = {
   }
 }
 
+// 深色主题默认值面向大屏和暗色仪表板，表格、地图和提示框颜色需要同时兼顾编辑态与发布态。
 export const DEFAULT_COLOR_CASE_DARK: DeepPartial<ChartAttr> = {
   basicStyle: {
     colorScheme: 'default',
@@ -185,6 +188,7 @@ export const DEFAULT_COLOR_CASE_DARK: DeepPartial<ChartAttr> = {
   }
 }
 
+// 标签页样式拆成基础值和明暗主题值，供选项卡组件和图表样式面板复用。
 export const TAB_COMMON_STYLE_BASE = {
   headPosition: 'left'
 }
@@ -203,6 +207,7 @@ export const TAB_COMMON_STYLE_DARK = {
   headBorderActiveColor: '#000000'
 }
 
+// 高级交互图标颜色跟随主题切换，字段名与 senior 配置中的样式读取逻辑保持一致。
 export const SENIOR_STYLE_SETTING_LIGHT = {
   linkageIconColor: '#a6a6a6',
   drillLayerColor: '#a6a6a6',
@@ -217,6 +222,7 @@ export const SENIOR_STYLE_SETTING_DARK = {
   pagerSize: 14
 }
 
+// 查询组件默认样式覆盖筛选器标题、标签和值域文本，作为画布组件新建时的统一外观入口。
 export const FILTER_COMMON_STYLE_BASE = {
   layout: 'horizontal',
   titleLayout: 'left'
@@ -242,10 +248,12 @@ export const FILTER_COMMON_STYLE_DARK = {
   bgColor: '#131C42'
 }
 
+// 选项卡色彩配置保留旧字段名，兼容历史图表在 customAttr 中保存的 tab 样式结构。
 export const DEFAULT_TAB_COLOR_CASE_BASE = {
   headPosition: 'left'
 }
 
+// 暗色选项卡默认融入深色画布，边框色沿用历史字段以兼容旧组件读取。
 export const DEFAULT_TAB_COLOR_CASE_DARK = {
   ...DEFAULT_TAB_COLOR_CASE_BASE,
   headFontColor: '#FFFFFF',
@@ -254,6 +262,7 @@ export const DEFAULT_TAB_COLOR_CASE_DARK = {
   headBorderActiveColor: '#131E42'
 }
 
+// 浅色选项卡字段结构与暗色配置保持一致，便于主题切换时整块替换。
 export const DEFAULT_TAB_COLOR_CASE_LIGHT = {
   ...DEFAULT_TAB_COLOR_CASE_BASE,
   headFontColor: '#OOOOOO',
@@ -262,7 +271,9 @@ export const DEFAULT_TAB_COLOR_CASE_LIGHT = {
   headBorderActiveColor: '#OOOOOO'
 }
 
+// 杂项配置承载非坐标轴类图表的尺寸、范围和专属行为，新图表类型优先在对应子对象下扩展。
 export const DEFAULT_MISC: ChartMiscAttr = {
+  // 半径和角度类字段覆盖饼图、仪表盘和液态图，默认值尽量保证新建图表可直接渲染。
   pieInnerRadius: 0,
   pieOuterRadius: 80,
   radarShape: 'polygon',
@@ -318,6 +329,7 @@ export const DEFAULT_MISC: ChartMiscAttr = {
   mapLegendNumber: 9,
   mapLegendRangeType: 'quantize',
   mapLegendCustomRange: [],
+  // 流向地图的线和点分开配置，便于只调整线路动画或点位样式时不影响另一类图元。
   flowMapConfig: {
     lineConfig: {
       mapLineAnimate: true,
@@ -348,6 +360,7 @@ export const DEFAULT_MISC: ChartMiscAttr = {
     max: 0,
     fieldId: undefined
   },
+  // 子弹图保留 ranges、measures、target 三段结构，和渲染层的语义分区保持一致。
   bullet: {
     bar: {
       ranges: {
@@ -379,10 +392,12 @@ export const DEFAULT_MISC: ChartMiscAttr = {
   liquidBorderDistance: 8
 }
 
+// 标记线默认只保存条件容器，具体规则由阈值编辑器和后端图表计算流程共同补齐。
 export const DEFAULT_MARK = {
   fieldId: '',
   conditions: []
 }
+// 标签配置同时服务普通标签、系列标签、占比标签和转化率标签，默认关闭高成本展示项。
 export const DEFAULT_LABEL: ChartLabelAttr = {
   show: false,
   childrenShow: true,
@@ -423,6 +438,7 @@ export const DEFAULT_LABEL: ChartLabelAttr = {
     }
   }
 }
+// 提示框配置需要覆盖静态 hover 和轮播提示两种场景，默认使用组件内置格式化器。
 export const DEFAULT_TOOLTIP: ChartTooltipAttr = {
   show: true,
   trigger: 'item',
@@ -438,6 +454,7 @@ export const DEFAULT_TOOLTIP: ChartTooltipAttr = {
     intervalTime: 0
   }
 }
+// 透视表汇总配置区分行列方向，字段结构与后端导出汇总逻辑保持同名映射。
 export const DEFAULT_TABLE_TOTAL: ChartTableTotalAttr = {
   row: {
     showGrandTotals: true,
@@ -475,11 +492,13 @@ export const DEFAULT_TABLE_TOTAL: ChartTableTotalAttr = {
       aggregation: 'SUM',
       cfg: []
     },
-    totalSort: 'none', // asc,desc
+    totalSort: 'none', // 透视表列汇总排序方向，可选升序、降序或不排序。
     totalSortField: ''
   }
 }
+// 表头配置包含普通表头、分组表头和辅助说明表头，默认值要兼容旧版明细表和透视表。
 export const DEFAULT_TABLE_HEADER: ChartTableHeaderAttr = {
+  // 序号列表头使用国际化文案，避免导出时出现固定中文列名。
   indexLabel: t('relation.index'),
   showIndex: false,
   tableHeaderAlign: 'left',
@@ -509,10 +528,12 @@ export const DEFAULT_TABLE_HEADER: ChartTableHeaderAttr = {
   isColBolder: true,
   headerGroup: false,
   headerGroupConfig: {
+    // columns 描述树形表头结构，meta 保存字段级补充信息，二者由配置弹窗共同维护。
     columns: [],
     meta: []
   },
   auxiliaryHeader: {
+    // 辅助表头默认关闭，开启后按字段维度保存说明文本和单独样式。
     enabled: false,
     rowHeight: 120,
     backgroundColor: '#FFFFFF',
@@ -524,6 +545,7 @@ export const DEFAULT_TABLE_HEADER: ChartTableHeaderAttr = {
   rowHeaderFreeze: true,
   alignConfig: []
 }
+// 单元格配置控制表格明细渲染、冻结列行和相邻单元格合并，默认保持明细表可读性优先。
 export const DEFAULT_TABLE_CELL: ChartTableCellAttr = {
   tableFontColor: '#000000',
   tableItemAlign: 'right',
@@ -538,11 +560,13 @@ export const DEFAULT_TABLE_CELL: ChartTableCellAttr = {
   isItalic: false,
   isBolder: false,
   tableFreeze: false,
+  // 冻结行列数量默认从 0 开始，避免新建表格出现不可预期的固定区域。
   tableColumnFreezeHead: 0,
   tableRowFreezeHead: 0,
   mergeCells: true,
   alignConfig: []
 }
+// 图表标题样式作为画布标题和图表标题的共用结构，备注字段用于发布态提示说明。
 export const DEFAULT_TITLE_STYLE: ChartTextStyle = {
   show: true,
   fontSize: 16,
@@ -559,6 +583,7 @@ export const DEFAULT_TITLE_STYLE: ChartTextStyle = {
   fontShadow: false
 }
 
+// 指标值样式包含主值和后缀两套字体配置，默认保证数字卡片在暗色画布上可直接展示。
 export const DEFAULT_INDICATOR_STYLE: ChartIndicatorStyle = {
   show: true,
   fontSize: 20,
@@ -582,6 +607,7 @@ export const DEFAULT_INDICATOR_STYLE: ChartIndicatorStyle = {
   suffixLetterSpace: 0,
   suffixFontShadow: false
 }
+// 指标名称样式独立于指标值，便于名称位置和数值字号分别调整。
 export const DEFAULT_INDICATOR_NAME_STYLE: ChartIndicatorNameStyle = {
   show: true,
   fontSize: 18,
@@ -595,6 +621,7 @@ export const DEFAULT_INDICATOR_NAME_STYLE: ChartIndicatorNameStyle = {
   namePosition: 'bottom'
 }
 
+// 标题基础样式不携带主题色，明暗主题只覆盖颜色，减少主题切换时的字段差异。
 export const DEFAULT_TITLE_STYLE_BASE: ChartTextStyle = {
   show: true,
   fontSize: 16,
@@ -612,18 +639,21 @@ export const DEFAULT_TITLE_STYLE_BASE: ChartTextStyle = {
 }
 
 export const DEFAULT_TITLE_STYLE_LIGHT = {
+  // 浅色主题标题默认使用深色文字，备注弹层保持白底以贴合编辑器表单视觉。
   ...DEFAULT_TITLE_STYLE_BASE,
   color: '#000000',
   remarkBackgroundColor: '#ffffff'
 }
 
 export const DEFAULT_TITLE_STYLE_DARK = {
+  // 深色主题标题默认使用白色文字，备注背景与暗色提示框保持一致。
   ...DEFAULT_TITLE_STYLE_BASE,
   color: '#FFFFFF',
   remarkBackgroundColor: '#5A5C62'
 }
 
 export const DEFAULT_LEGEND_STYLE_BASE: ChartLegendStyle = {
+  // 图例基础结构不区分明暗主题，主题配置只覆盖文字颜色等视觉字段。
   show: true,
   hPosition: 'center',
   vPosition: 'bottom',
@@ -637,6 +667,7 @@ export const DEFAULT_LEGEND_STYLE_BASE: ChartLegendStyle = {
   customSort: []
 }
 
+// 兼容旧图表的通用图例默认值，新图表主题初始化优先使用明暗主题版本。
 export const DEFAULT_LEGEND_STYLE: ChartLegendStyle = {
   show: true,
   hPosition: 'center',
@@ -651,18 +682,21 @@ export const DEFAULT_LEGEND_STYLE: ChartLegendStyle = {
   customSort: []
 }
 
+// 浅色图例强调正文可读性，保留基础布局和排序配置。
 export const DEFAULT_LEGEND_STYLE_LIGHT: ChartLegendStyle = {
   ...DEFAULT_LEGEND_STYLE_BASE,
   color: '#333333',
   fontSize: 12
 }
 
+// 深色图例只覆盖文字颜色，避免主题切换影响图例位置和交互排序。
 export const DEFAULT_LEGEND_STYLE_DARK: ChartLegendStyle = {
   ...DEFAULT_LEGEND_STYLE_BASE,
   color: '#ffffff',
   fontSize: 12
 }
 
+// 图表边距默认由组件自动计算，手动边距值仅在用户切换到固定模式后参与渲染。
 export const DEFAULT_MARGIN_STYLE = {
   marginModel: 'auto',
   marginTop: 40,
@@ -671,6 +705,7 @@ export const DEFAULT_MARGIN_STYLE = {
   marginRight: 10
 }
 
+// X 轴默认展示类目标签，数值格式化配置保留给混合图和横向图表复用。
 export const DEFAULT_XAXIS_STYLE: ChartAxisStyle = {
   show: true,
   position: 'bottom',
@@ -710,6 +745,7 @@ export const DEFAULT_XAXIS_STYLE: ChartAxisStyle = {
     splitCount: 10
   },
   axisLabelFormatter: {
+    // 单位语言随当前语言环境初始化，后续由格式化面板按用户选择持久化。
     type: 'auto',
     unitLanguage: isEnLocal ? 'en' : 'ch',
     unit: 1,
@@ -718,6 +754,7 @@ export const DEFAULT_XAXIS_STYLE: ChartAxisStyle = {
     thousandSeparator: true
   }
 }
+// Y 轴默认展示分割线并隐藏轴线，适配大多数指标对比图的阅读习惯。
 export const DEFAULT_YAXIS_STYLE: ChartAxisStyle = {
   show: true,
   position: 'left',
@@ -757,6 +794,7 @@ export const DEFAULT_YAXIS_STYLE: ChartAxisStyle = {
     splitCount: 10
   },
   axisLabelFormatter: {
+    // Y 轴默认开启千分位，适配指标类图表的常见数值展示。
     type: 'auto',
     unitLanguage: isEnLocal ? 'en' : 'ch',
     unit: 1,
@@ -765,6 +803,7 @@ export const DEFAULT_YAXIS_STYLE: ChartAxisStyle = {
     thousandSeparator: true
   }
 }
+// 扩展 Y 轴用于双轴和混合图，默认关闭分割线，避免和主轴网格重复。
 export const DEFAULT_YAXIS_EXT_STYLE: ChartAxisStyle = {
   show: true,
   position: 'right',
@@ -802,6 +841,7 @@ export const DEFAULT_YAXIS_EXT_STYLE: ChartAxisStyle = {
     splitCount: 10
   },
   axisLabelFormatter: {
+    // 扩展轴保留独立格式化配置，混合图左右轴可以使用不同单位。
     type: 'auto',
     unitLanguage: isEnLocal ? 'en' : 'ch',
     unit: 1,
@@ -810,11 +850,13 @@ export const DEFAULT_YAXIS_EXT_STYLE: ChartAxisStyle = {
     thousandSeparator: true
   }
 }
+// 背景默认透明，颜色字段只在用户显式开启背景或边框圆角时参与渲染。
 export const DEFAULT_BACKGROUND_COLOR = {
   color: '#ffffff',
   alpha: 0,
   borderRadius: 0
 }
+// 雷达、仪表等特殊图表的轴线样式集中在 miscStyle，避免污染普通 X/Y 轴配置。
 export const DEFAULT_MISC_STYLE: ChartMiscStyle = {
   showName: false,
   color: '#999',
@@ -865,6 +907,7 @@ export const DEFAULT_MISC_STYLE: ChartMiscStyle = {
     splitCount: 10
   }
 }
+// 功能配置承载缩略轴、空值策略等运行时行为，默认关闭会改变数据形态的能力。
 export const DEFAULT_FUNCTION_CFG: ChartFunctionCfg = {
   sliderShow: false,
   sliderRange: [0, 10],
@@ -873,12 +916,15 @@ export const DEFAULT_FUNCTION_CFG: ChartFunctionCfg = {
   sliderTextColor: '#999999',
   emptyDataStrategy: 'breakLine',
   emptyDataCustomValue: '',
+  // 字段级空值策略只在用户显式配置后生效，默认不改变任何字段数据。
   emptyDataFieldCtrl: []
 }
+// 辅助线默认只保留容器，具体线条由编辑器按字段和固定值规则追加。
 export const DEFAULT_ASSIST_LINE_CFG: ChartAssistLineCfg = {
   enable: false,
   assistLine: []
 }
+// 阈值配置按图表族拆分，避免仪表盘、液态图、表格和文本标签之间互相解释错误。
 export const DEFAULT_THRESHOLD: ChartThreshold = {
   enable: false,
   gaugeThreshold: '',
@@ -888,6 +934,7 @@ export const DEFAULT_THRESHOLD: ChartThreshold = {
   textLabelThreshold: [],
   lineLabelThreshold: []
 }
+// 自动滚动默认关闭，开启后由渲染组件按行数、间隔和步长控制列表类图表滚动。
 export const DEFAULT_SCROLL: ScrollCfg = {
   open: false,
   row: 1,
@@ -895,6 +942,7 @@ export const DEFAULT_SCROLL: ScrollCfg = {
   step: 50
 }
 
+// 气泡动画只描述展示效果，不改变地图或散点图的原始数据。
 export const DEFAULT_BUBBLE_ANIMATE: BubbleCfg = {
   enable: false,
   speed: 1,
@@ -902,6 +950,7 @@ export const DEFAULT_BUBBLE_ANIMATE: BubbleCfg = {
   type: 'wave'
 }
 
+// 象限图默认四区透明，只提供分割线和标签容器，具体业务文案由用户在样式面板录入。
 export const DEFAULT_QUADRANT_STYLE: QuadrantAttr = {
   lineStyle: {
     stroke: '#aaa',
@@ -962,6 +1011,7 @@ export const DEFAULT_QUADRANT_STYLE: QuadrantAttr = {
   ]
 }
 
+// 颜色面板提供单色选择的快捷候选，和主题色板分离，避免影响已保存的系列配色。
 export const COLOR_PANEL = [
   '#FF4500',
   '#FF8C00',
@@ -975,8 +1025,10 @@ export const COLOR_PANEL = [
   '#FFFFFF'
 ]
 
+// 图表色板注册表用于样式面板展示和默认系列配色，value 是持久化标识，不应随文案调整。
 export const COLOR_CASES = [
   {
+    // default 是历史默认色板标识，新增色板不能复用该 value。
     name: t('chart.color_default'),
     value: 'default',
     colors: [
@@ -992,6 +1044,7 @@ export const COLOR_CASES = [
     ]
   },
   {
+    // 复古色板用于对比度更高的经营类图表，保留既有顺序以避免系列颜色漂移。
     name: t('chart.color_retro'),
     value: 'retro',
     colors: [
@@ -1022,6 +1075,7 @@ export const COLOR_CASES = [
     ]
   },
   {
+    // future 色板提供较柔和的多系列配色，适合浅色仪表板中的密集指标。
     name: t('chart.color_future'),
     value: 'future',
     colors: [
@@ -1097,6 +1151,7 @@ export const COLOR_CASES = [
     ]
   },
   {
+    // 科技色板主要服务暗色大屏，前几项颜色需要保持高亮度和高饱和度。
     name: t('chart.color_technology'),
     value: 'technology',
     colors: [
@@ -1218,12 +1273,14 @@ export const COLOR_CASES = [
   }
 ]
 
+// ECharts 选中态只提供轻量阴影，避免和各图表自定义 hover 样式冲突。
 export const BASE_ECHARTS_SELECT = {
   itemStyle: {
     shadowBlur: 2
   }
 }
 
+// 原始字体值保留完整 fallback，用于读取旧配置和跨平台字体回显。
 export const CHART_FONT_FAMILY_ORIGIN = [
   { name: t('chart.font_family_ya_hei'), value: 'Microsoft YaHei' },
   { name: t('chart.font_family_song_ti'), value: 'SimSun, "Songti SC", STSong' },
@@ -1231,6 +1288,7 @@ export const CHART_FONT_FAMILY_ORIGIN = [
   { name: t('chart.font_family_kai_ti'), value: 'KaiTi, "Kaiti SC", STKaiti' }
 ]
 
+// 历史字体值向当前短名称映射，避免旧图表打开后样式面板无法选中。
 export const CHART_FONT_FAMILY_MAP_TRANS = {
   'Microsoft YaHei': 'Microsoft YaHei',
   'SimSun, "Songti SC", STSong': 'SimSun',
@@ -1238,6 +1296,7 @@ export const CHART_FONT_FAMILY_MAP_TRANS = {
   'KaiTi, "Kaiti SC", STKaiti': 'KaiTi'
 }
 
+// 当前字体下拉只保存短名称，再由渲染层映射为平台兼容字体族。
 export const CHART_FONT_FAMILY = [
   { name: t('chart.font_family_ya_hei'), value: 'Microsoft YaHei' },
   { name: t('chart.font_family_song_ti'), value: 'SimSun' },
@@ -1245,6 +1304,7 @@ export const CHART_FONT_FAMILY = [
   { name: t('chart.font_family_kai_ti'), value: 'KaiTi' }
 ]
 
+// 渲染字体映射补齐中文字体 fallback，降低不同操作系统下的字体缺失概率。
 export const CHART_FONT_FAMILY_MAP = {
   'Microsoft YaHei': 'Microsoft YaHei',
   SimSun: 'SimSun, "Songti SC", STSong',
@@ -1252,6 +1312,7 @@ export const CHART_FONT_FAMILY_MAP = {
   KaiTi: 'KaiTi, "Kaiti SC", STKaiti'
 }
 
+// 字间距候选保持有限枚举，避免自由输入导致标题和指标文本在画布上不可控溢出。
 export const CHART_FONT_LETTER_SPACE = [
   { name: '0px', value: 0 },
   { name: '1px', value: 1 },
@@ -1266,7 +1327,9 @@ export const CHART_FONT_LETTER_SPACE = [
   { name: '10px', value: 10 }
 ]
 
+// 以下数据源暂不支持分页查询，图表查询需要走非分页或引擎侧兼容路径。
 export const NOT_SUPPORT_PAGE_DATASET = [
+  // 这些数据源的分页语义或驱动能力不一致，前端分页开关需避开它们。
   'kylin',
   'sqlServer',
   'es',
@@ -1276,8 +1339,10 @@ export const NOT_SUPPORT_PAGE_DATASET = [
   'impala'
 ]
 
+// 年、年月、年月日粒度支持同比环比计算，其余日期粒度需要先在字段层完成转换。
 export const SUPPORT_Y_M = ['y', 'y_M', 'y_M_d']
 
+// 地图线路默认配置供迁徙图和流向图复用，动画参数仅影响前端展示。
 export const DEFAULT_MAP = {
   mapPitch: 0,
   lineType: 'line',
@@ -1288,6 +1353,7 @@ export const DEFAULT_MAP = {
   lineAnimateTrailLength: 0.1
 }
 
+// 图表类型注册表决定左侧图表选择器、默认渲染器和图标入口，value 需要和后端图表处理器匹配。
 export const CHART_TYPE_CONFIGS = [
   {
     category: 'quota',
@@ -1669,6 +1735,7 @@ export const CHART_TYPE_CONFIGS = [
   }
 ]
 
+// 基础样式是新建图表的主默认值，包含表格、地图、柱线点面等多类图表的共同样式字段。
 export const DEFAULT_BASIC_STYLE: ChartBasicStyle = {
   alpha: 100,
   tableBorderColor: '#CCCCCC',
@@ -1761,11 +1828,12 @@ export const DEFAULT_BASIC_STYLE: ChartBasicStyle = {
   tableRowHeaderWidthPercent: 20
 }
 
+// 基础视图配置是新建图表的完整数据模型，字段结构需要同时满足编辑器、查询接口和发布态渲染。
 export const BASE_VIEW_CONFIG = {
-  id: '', // 图表id
+  id: '', // 图表主键，新建视图保存前保持为空。
   title: t('data_set.view'),
-  sceneId: 0, // 仪表板id
-  tableId: '', // 数据集id
+  sceneId: 0, // 所属仪表板或大屏场景标识。
+  tableId: '', // 绑定数据集标识，取数前由编辑器写入。
   type: 'bar',
   render: 'antv',
   resultCount: 1000,
@@ -1773,6 +1841,7 @@ export const BASE_VIEW_CONFIG = {
   refreshViewEnable: false,
   refreshTime: 5,
   refreshUnit: 'minute',
+  // 轴字段、钻取字段和扩展字段按渲染器约定分组保存，避免不同图表族互相污染配置。
   xAxis: [],
   xAxisExt: [],
   yAxis: [],
@@ -1785,6 +1854,7 @@ export const BASE_VIEW_CONFIG = {
   extTooltip: [],
   customFilter: {},
   sortPriority: [],
+  // 自定义属性承载样式、表格和指标卡配置，字段需要和样式面板的表单模型保持一致。
   customAttr: {
     basicStyle: DEFAULT_BASIC_STYLE,
     misc: DEFAULT_MISC,
@@ -1800,6 +1870,7 @@ export const BASE_VIEW_CONFIG = {
       level: 'world'
     }
   },
+  // 自定义样式主要描述标题、图例、坐标轴和特殊轴线，不直接参与取数。
   customStyle: {
     text: DEFAULT_TITLE_STYLE,
     legend: DEFAULT_LEGEND_STYLE,
@@ -1808,6 +1879,7 @@ export const BASE_VIEW_CONFIG = {
     yAxisExt: DEFAULT_YAXIS_EXT_STYLE,
     misc: DEFAULT_MISC_STYLE
   },
+  // 高级配置承载运行态行为，默认关闭会改变数据展示节奏或数据含义的能力。
   senior: {
     functionCfg: DEFAULT_FUNCTION_CFG,
     assistLineCfg: DEFAULT_ASSIST_LINE_CFG,
@@ -1820,11 +1892,13 @@ export const BASE_VIEW_CONFIG = {
   flowMapEndName: []
 }
 
+// 按画布缩放比例计算最小交互尺寸，避免组件在缩小时出现 0 宽或 0 高。
 export function getScaleValue(propValue, scale) {
   const propValueTemp = Math.round(propValue * scale)
   return propValueTemp > 1 ? propValueTemp : 1
 }
 
+// 根据图表类型标识读取注册配置副本，调用方可以安全地修改返回对象。
 export function getViewConfig(name) {
   let viewConfigResult = null
   CHART_TYPE_CONFIGS.forEach(category => {

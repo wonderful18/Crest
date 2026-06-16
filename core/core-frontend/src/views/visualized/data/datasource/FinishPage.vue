@@ -7,26 +7,35 @@ import { useCache } from '@/hooks/web/useCache'
 import { setShowFinishPage } from '@/api/datasource'
 import { useI18n } from '@/hooks/web/useI18n'
 
+// 数据源创建完成页属性
 defineProps({
   name: propTypes.string.def(''),
   disabled: propTypes.bool.def(false)
 })
 
+// 完成页文案函数
 const { t } = useI18n()
+// 本地缓存用于记住是否下次不再提示
 const { wsCache } = useCache()
+// 完成页操作事件
 const emits = defineEmits(['createDataset', 'backToDatasourceList', 'continueCreating'])
+// 是否下次不再展示完成页
 const checked = ref(false)
+// 触发创建数据集入口
 const createDataset = () => {
   emits('createDataset')
 }
+// 返回数据源列表
 const backToDatasourceList = () => {
   emits('backToDatasourceList')
 }
+// 继续创建数据源
 const continueCreating = () => {
   emits('continueCreating')
 }
 
 checked.value = wsCache.get('ds-create-success') || false
+// 更新下次提示偏好并返回数据源列表
 const handleChange = (val: boolean) => {
   setShowFinishPage({})
   wsCache.set('ds-create-success', val)

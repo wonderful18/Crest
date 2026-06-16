@@ -1,13 +1,17 @@
+// 兼容不同元数据结构中字段名的取值位置
 const fieldName = item => item?.field ?? item?.engineFieldName
 
+// 判断字段是否为指标字段，指标字段之后不再参与维度合并
 const isQuotaField = (field, fieldsMap) => fieldsMap[field]?.groupType === 'q'
 
+// 将字段配置转为以 engineFieldName 为键的快速查询表
 const createFieldMap = fields =>
   (fields || []).reduce((pre, cur) => {
     pre[cur.engineFieldName] = cur
     return pre
   }, {})
 
+// 在指定行范围内生成同值单元格的合并信息
 const buildCellsForRange = ({ data, field, colIndex, start, end }) => {
   const mergeCells = []
   const nextRanges = []
@@ -49,6 +53,7 @@ const buildCellsForRange = ({ data, field, colIndex, start, end }) => {
   return { mergeCells, nextRanges }
 }
 
+// 根据前置维度字段切分上下文范围，避免跨父级维度合并
 const buildContextRanges = (data, contextFields) => {
   if (!contextFields.length) {
     return [[0, data.length - 1]]
@@ -67,6 +72,7 @@ const buildContextRanges = (data, contextFields) => {
   return ranges
 }
 
+// 获取表格中位于指标字段之前、可供用户选择合并的维度字段
 export const getMergeableFieldOptions = axis => {
   const options = []
   for (const item of axis || []) {
@@ -81,6 +87,7 @@ export const getMergeableFieldOptions = axis => {
   return options
 }
 
+// 构建透视表维度列的合并单元格坐标信息
 export const buildMergeCellsInfo = ({ fields, meta, data, showIndex = false, mergeFields }) => {
   const tableData = data || []
   if (!tableData.length) {

@@ -11,10 +11,16 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 
+/**
+ * Quartz 任务调度管理器，封装任务新增、修改、触发和清理操作
+ */
 @Component
 @SuppressWarnings("unchecked")
 public class ScheduleManager {
 
+    /**
+     * Quartz 调度器实例
+     */
     @Resource
     private Scheduler scheduler;
 
@@ -47,6 +53,9 @@ public class ScheduleManager {
         scheduler.scheduleJob(jd, trigger);
     }
 
+    /**
+     * 添加不带任务数据的 simpleJob
+     */
     public void addSimpleJob(JobKey jobKey, TriggerKey triggerKey, Class<? extends Job> cls, int repeatIntervalTime)
             throws SchedulerException {
         addSimpleJob(jobKey, triggerKey, cls, repeatIntervalTime);
@@ -102,11 +111,17 @@ public class ScheduleManager {
         }
     }
 
+    /**
+     * 添加不带任务数据的 cronJob
+     */
     public void addCronJob(JobKey jobKey, TriggerKey triggerKey, Class jobClass, String cron, Date startTime,
                            Date endTime) {
         addCronJob(jobKey, triggerKey, jobClass, cron, startTime, endTime, null);
     }
 
+    /**
+     * 添加指定时间执行一次的任务
+     */
     public void addSingleJob(JobKey jobKey, TriggerKey triggerKey, Class jobClass, Date date, JobDataMap jobDataMap) {
         try {
             LogUtil.info("addSingleJob: " + triggerKey.getName() + "," + triggerKey.getGroup());
@@ -132,6 +147,9 @@ public class ScheduleManager {
         }
     }
 
+    /**
+     * 添加不带任务数据的单次任务
+     */
     public void addSingleJob(JobKey jobKey, TriggerKey triggerKey, Class jobClass, Date date) {
         addSingleJob(jobKey, triggerKey, jobClass, date, null);
     }
@@ -226,6 +244,9 @@ public class ScheduleManager {
         }
     }
 
+    /**
+     * 修改单次任务触发时间
+     */
     public void modifySingleJobTime(TriggerKey triggerKey, Date date) throws SchedulerException {
 
         try {
@@ -282,6 +303,9 @@ public class ScheduleManager {
         }
     }
 
+    /**
+     * 启动指定调度器
+     */
     public static void startJobs(Scheduler sched) {
         try {
             sched.start();
@@ -291,6 +315,9 @@ public class ScheduleManager {
         }
     }
 
+    /**
+     * 关闭指定调度器
+     */
     public void shutdownJobs(Scheduler sched) {
         try {
             if (!sched.isShutdown()) {
@@ -323,6 +350,9 @@ public class ScheduleManager {
 
     }
 
+    /**
+     * 新增或更新单次执行任务
+     */
     public void addOrUpdateSingleJob(JobKey jobKey, TriggerKey triggerKey, Class clz,
                                      Date date, JobDataMap jobDataMap) throws CrestException {
         try {
@@ -336,11 +366,17 @@ public class ScheduleManager {
         }
     }
 
+    /**
+     * 新增或更新不带任务数据的单次执行任务
+     */
     public void addOrUpdateSingleJob(JobKey jobKey, TriggerKey triggerKey, Class clz,
                                      Date date) throws SchedulerException {
         addOrUpdateSingleJob(jobKey, triggerKey, clz, date, null);
     }
 
+    /**
+     * 新增或更新不带任务数据的 simpleJob
+     */
     public void addOrUpdateSimpleJob(JobKey jobKey, TriggerKey triggerKey, Class clz, int intervalTime)
             throws SchedulerException {
         addOrUpdateSimpleJob(jobKey, triggerKey, clz, intervalTime, null);
@@ -371,11 +407,17 @@ public class ScheduleManager {
         }
     }
 
+    /**
+     * 添加或更新不带任务数据的 cronJob
+     */
     public void addOrUpdateCronJob(JobKey jobKey, TriggerKey triggerKey, Class jobClass, String cron, Date startTime,
                                    Date endTime) throws SchedulerException {
         addOrUpdateCronJob(jobKey, triggerKey, jobClass, cron, startTime, endTime, null);
     }
 
+    /**
+     * 构建数据集更新任务的默认 JobDataMap
+     */
     public JobDataMap getDefaultJobDataMap(String resourceId, String expression, String taskId, String updateType) {
         JobDataMap jobDataMap = new JobDataMap();
         jobDataMap.put("datasetTableId", resourceId);
@@ -385,6 +427,9 @@ public class ScheduleManager {
         return jobDataMap;
     }
 
+    /**
+     * 查询当前正在执行的任务信息
+     */
     public Object getCurrentlyExecutingJobs() {
         Map<String, String> returnMap = new HashMap<>();
         try {
@@ -403,6 +448,9 @@ public class ScheduleManager {
         return returnMap;
     }
 
+    /**
+     * 根据 cron 表达式创建 CronTrigger
+     */
     public static CronTrigger getCronTrigger(String cron) {
         if (!CronExpression.isValidExpression(cron)) {
             String msg = Translator.get("I18N_CRON_ERROR");
@@ -413,6 +461,9 @@ public class ScheduleManager {
 
     }
 
+    /**
+     * 获取指定开始时间之后的下一次 cron 触发时间
+     */
     public static Date getNTimeByCron(String cron, Date start) {
         CronTrigger trigger = getCronTrigger(cron);
         if (start == null) {
@@ -421,15 +472,24 @@ public class ScheduleManager {
         return trigger.getFireTimeAfter(start);
     }
 
+    /**
+     * 按任务名称和分组立即触发任务
+     */
     public void fireNow(String jobName, String jobGroup) throws SchedulerException {
         JobKey jobKey = new JobKey(jobName, jobGroup);
         scheduler.triggerJob(jobKey);
     }
 
+    /**
+     * 按 JobKey 立即触发任务
+     */
     public void fireNow(JobKey jobKey) throws SchedulerException {
         scheduler.triggerJob(jobKey);
     }
 
+    /**
+     * 判断指定任务是否存在
+     */
     public boolean exist(JobKey jobKey) {
         try {
             return scheduler.checkExists(jobKey);
@@ -439,6 +499,9 @@ public class ScheduleManager {
         }
     }
 
+    /**
+     * 清理指定分组下的任务和触发器
+     */
     public void clearByGroup(String groupName) throws Exception {
         Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.groupEquals(groupName));
         Set<TriggerKey> triggerKeys = scheduler.getTriggerKeys(GroupMatcher.groupEquals(groupName));
@@ -463,8 +526,7 @@ public class ScheduleManager {
     }
 
     /**
-     * 添加 simpleJob,自定义开始时间和结束时间
-     *
+     * 添加带自定义开始和结束时间的 simpleJob
      */
     public void addSimpleJobForCustomTime(JobKey jobKey, TriggerKey triggerKey, Class<? extends Job> cls,
                                           String period, Date startTime, Date endTime, JobDataMap jobDataMap)
@@ -481,8 +543,7 @@ public class ScheduleManager {
     }
 
     /**
-     * 修改simpleTrigger触发器的触发时间,自定义开始时间和结束时间
-     *
+     * 修改 simpleTrigger 的间隔、开始时间和结束时间
      */
     public void modifySimpleJobTimeForCustomTime(TriggerKey triggerKey, String period, Date startTime, Date endTime) {
         try {
@@ -509,8 +570,7 @@ public class ScheduleManager {
     }
 
     /**
-     * 构建simpleTrigger
-     *
+     * 构建 simpleTrigger 触发器
      */
     private TriggerBuilder<SimpleTrigger> simpleJobTriggerBuilder(TriggerKey triggerKey, String period, Date startTime, Date endTime) {
         SimpleScheduleBuilder scheduleBuilder = SimpleScheduleBuilder.simpleSchedule();
@@ -568,6 +628,9 @@ public class ScheduleManager {
         return null;
     }
 
+    /**
+     * 暂停指定触发器
+     */
     public void pauseTrigger(TriggerKey triggerKey) {
         try {
             Trigger trigger = scheduler.getTrigger(triggerKey);
@@ -582,6 +645,9 @@ public class ScheduleManager {
         }
     }
 
+    /**
+     * 恢复指定触发器
+     */
     public void resumeTrigger(TriggerKey triggerKey) {
         try {
             Trigger trigger = scheduler.getTrigger(triggerKey);

@@ -1,0 +1,2 @@
+io.crest.startup.flyway.OceanBaseMySqlDatabaseType
+io.crest.startup.flyway.OceanBaseOracleDatabaseType

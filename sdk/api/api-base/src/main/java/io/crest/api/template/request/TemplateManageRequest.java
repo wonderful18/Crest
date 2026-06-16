@@ -5,12 +5,8 @@ import lombok.Data;
 
 import java.util.List;
 
-/**
- * Author: wangjiahao
- * Date: 2021-03-05
- * Description:
- */
 @Data
+// 定义接口请求或返回数据的传输结构
 public class TemplateManageRequest extends VisualizationTemplateVO {
     private String sort;
     private String withBlobs="N";

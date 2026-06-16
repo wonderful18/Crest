@@ -57,23 +57,29 @@ import { useRoute } from 'vue-router_2'
 import { buildPublicLinkTargetUrl, isPublicLinkHash } from './publicLinkJump.mjs'
 const route = useRoute()
 const { wsCache } = useCache()
+// 子图表组件实例，统一承接渲染、计算和联动清理调用
 const chartComponent = ref<any>()
 const { t } = useI18n()
 const dvMainStore = dvMainStoreWithOut()
 const { emitter } = useEmitt()
+// 预览弹窗实例，用于内部仪表板和外链跳转的浮层打开
 const crestPreviewPopDialogRef = ref(null)
 let innerRefreshTimer = null
 let innerSearchCount = 0
 const appStore = useAppStoreWithOut()
 const appearanceStore = useAppearanceStoreWithOut()
+// 当前是否处于嵌入式集成模式，跳转和权限逻辑会按该状态分支
 const isCrestBi = computed(() => appStore.getIsCrestBi)
+// 当前是否处于 iframe 预览环境，内部跳转需要避免破坏宿主页面
 const isIframe = computed(() => appStore.getIsIframe)
 
+// 对外抛出图表点击和组件事件，供画布层继续处理
 const emit = defineEmits(['onPointClick', 'onComponentEvent'])
 
 const { nowPanelJumpInfo, dvInfo, curComponent, canvasStyleData, mobileInPc, inMobile, editMode } =
   storeToRefs(dvMainStore)
 
+// 视图渲染入参，覆盖图表配置、展示位置、缩放和刷新触发源
 const props = defineProps({
   // 公共参数集
   commonParams: {
@@ -141,8 +147,10 @@ const props = defineProps({
     required: false
   }
 })
+// 动态区域编号，用于图表容器和模板区域关联
 const dynamicAreaId = ref('')
 const { view, showPosition, element, active, searchCount, scale, suffixId } = toRefs(props)
+// 标题是否可见，富文本、图片组和弹窗视图不走普通标题栏
 const titleShow = computed(() => {
   return (
     !['rich-text', 'picture-group'].includes(element.value.innerType) &&
@@ -152,6 +160,7 @@ const titleShow = computed(() => {
 })
 const snapshotStore = snapshotStoreWithOut()
 
+// 图表渲染态，集中保存标题样式、备注、下钻路径和当前视图数据
 const state = reactive({
   initReady: true, //curComponent 切换期间 不接收外部的calcData 和 renderChart 事件
   title_show: true,
@@ -180,8 +189,10 @@ const state = reactive({
   drillClickDimensionList: []
 })
 
+// 当前下钻层级数量，用于标题栏路径和重置逻辑判断
 const drillClickLength = computed(() => state.drillClickDimensionList.length)
 
+// 将标题水平对齐方式映射到 flex 容器的 justify-content
 const titleAlign = computed<string>(() => {
   if (!titleShow.value) {
     return 'flex-start'
@@ -196,26 +207,33 @@ const titleAlign = computed<string>(() => {
   return 'flex-start'
 })
 
+// 当前图表支持的操作菜单，由具体图表组件在运行时暴露
 const trackMenu = computed<Array<string>>(() => {
   return chartComponent?.value?.trackMenu ?? []
 })
 
+// 是否展示联动图标，联动和联动下钻复合菜单都需要入口
 const hasLinkIcon = computed(() => {
   return trackMenu.value.indexOf('linkage') > -1 || trackMenu.value.indexOf('linkageAndDrill') > -1
 })
+// 是否展示跳转图标，移动端套壳内不展示跳转入口
 const hasJumpIcon = computed(() => {
   return trackMenu.value.indexOf('jump') > -1 && !mobileInPc.value
 })
+// 是否展示下钻图标，普通下钻和联动下钻复合菜单都需要入口
 const hasDrillIcon = computed(() => {
   return trackMenu.value.indexOf('drill') > -1 || trackMenu.value.indexOf('linkageAndDrill') > -1
 })
 
+// 图表数据请求状态，和仪表板刷新策略共同决定加载遮罩
 const loading = ref(false)
 
+// 仪表板结果展示模式，传入后端用于限制或合并返回结果
 const resultMode = computed(() => {
   return canvasStyleData.value.dashboard?.resultMode || null
 })
 
+// 仪表板结果数量限制，作为图表数据查询的附加条件
 const resultCount = computed(() => {
   return canvasStyleData.value.dashboard?.resultCount || null
 })
@@ -244,10 +262,12 @@ const clearViewLinkage = () => {
   useEmitt().emitter.emit('clearPanelLinkage', { viewId: element.value.id })
 }
 
+// 缩放比例变化后重新计算标题样式
 watch([() => scale.value], () => {
   initTitle()
 })
 
+// 外部刷新计数变化时触发图表查询，内部定时器已启动时避免重复刷新
 watch([() => searchCount.value], () => {
   // 内部计时器启动 忽略外部计时器
   if (!innerRefreshTimer) {
@@ -255,20 +275,24 @@ watch([() => searchCount.value], () => {
   }
 })
 // 仪表板的查询结果设置变化 图表数据需要刷新
+// 结果数量变化会影响查询返回，必须重新拉取图表数据
 watch([() => resultCount.value], () => {
   queryData()
 })
 
+// 结果模式变化会影响后端聚合输出，触发重新查询
 watch([() => resultMode.value], () => {
   queryData()
 })
 
+// 缩放变化后通知图表组件重绘，保证画布尺寸和坐标重新适配
 watch([() => scale.value], () => {
   nextTick(() => {
     chartComponent?.value?.renderChart?.(view.value)
   })
 })
 
+// 当前编辑组件切换时短暂屏蔽事件，避免旧组件触发重复计算
 watch([() => curComponent.value], () => {
   if (curComponent.value && curComponent.value.id === view.value.id) {
     state.initReady = false
@@ -278,9 +302,11 @@ watch([() => curComponent.value], () => {
   }
 })
 
+// 向子图表透传最近一次扩展查询参数，插件和内置图表统一读取
 const chartExtRequest = shallowRef(null)
 provide('chartExtRequest', chartExtRequest)
 
+// 根据图表自定义样式刷新标题显示、字体、阴影、背景和备注
 const initTitle = () => {
   if (view.value.customStyle) {
     const customStyle = view.value.customStyle
@@ -322,12 +348,14 @@ const initTitle = () => {
   }
 }
 
+// 回退到指定下钻层级，并用新的下钻过滤条件重新计算数据
 const drillJump = (index: number) => {
   state.drillClickDimensionList.splice(index)
   view.value.chartExtRequest = filter()
   calcData(view.value)
 }
 
+// 将图表点选参数编码后抛给父级，供外部嵌入场景消费
 const onPointClick = param => {
   try {
     const msg = {
@@ -341,6 +369,7 @@ const onPointClick = param => {
   }
 }
 
+// 处理图表点击下钻，校验下钻字段后累积路径并重新查询
 const chartClick = param => {
   if (!props.view.drillFields?.length) {
     return
@@ -394,10 +423,13 @@ const filter = (firstLoad?: boolean) => {
   return result
 }
 
+// 接收子图表返回的下钻过滤描述，用于标题栏路径展示
 const onDrillFilters = param => {
   state.drillFilters = param ? param : []
 }
+// 外部窗口句柄代理，供嵌入式宿主接管新窗口行为
 const openHandler = ref(null)
+// 初始化外部窗口句柄，兼容插件或宿主容器提供的 invokeMethod 协议
 const initOpenHandler = newWindow => {
   if (openHandler?.value) {
     const pm = {
@@ -408,10 +440,12 @@ const initOpenHandler = newWindow => {
   }
 }
 
+// 切换嵌入式宿主内的当前组件类型
 const divEmbedded = type => {
   useEmitt().emitter.emit('changeCurrentComponent', type)
 }
 
+// 按跳转类型打开内部弹窗、当前窗口或新窗口
 const windowsJump = (url, jumpType, size = 'middle') => {
   try {
     let newWindow
@@ -428,6 +462,7 @@ const windowsJump = (url, jumpType, size = 'middle') => {
   }
 }
 
+// 处理图表字段跳转，支持内部仪表板、外部链接和嵌入式容器分支
 const jumpClick = param => {
   let dimension, jumpInfo, sourceInfo
   // 如果有名称name 获取和name匹配的dimension 否则倒序取最后一个能匹配的
@@ -569,12 +604,14 @@ const jumpClick = param => {
   }
 }
 
+// 从下拉筛选触发查询前取消旧请求，避免旧响应覆盖新图表
 const queryDataFromSelect = (firstLoad = false) => {
   cancelRequestBatch(`/chart-data/data/${view.value.id}`)
   loading.value = false
   queryData(firstLoad)
 }
 
+// 组合最新过滤条件并防抖查询图表数据
 const queryData = debounce((firstLoad = false, autoRefresh = false) => {
   if (loading.value) {
     return
@@ -590,6 +627,7 @@ const queryData = debounce((firstLoad = false, autoRefresh = false) => {
   calcData(params)
 }, 300)
 
+// 调用内置或插件图表的数据计算入口，并维护加载状态
 const calcData = params => {
   dvMainStore.setLastViewRequestInfo(params.id, params.chartExtRequest)
   if (chartComponent?.value) {
@@ -612,6 +650,7 @@ const calcData = params => {
   }
 }
 
+// 判断当前图表是否应由指定图表库组件渲染
 const showChartView = (...libs: ChartLibraryType[]) => {
   if (view.value?.render && view.value?.type) {
     const chartView = chartViewManager.getChartView(view.value.render, view.value.type)
@@ -627,7 +666,9 @@ const listenerEnable = computed(() => {
 })
 // 存储所有数据集字段，用于判断图表拖入的字段是否存在
 const viewAllDatasetFields = new Map()
+// 是否展示空图表提示
 const showEmpty = ref(false)
+// 校验当前图表字段和必填轴配置是否满足渲染条件
 const checkFieldIsAllowEmpty = (allField?) => {
   showEmpty.value = false
   if (view.value?.render && view.value?.type) {
@@ -707,13 +748,16 @@ const checkFieldIsAllowEmpty = (allField?) => {
     }
   }
 }
+// 图表类型切换后重新判断字段和轴配置是否为空
 const changeChartType = () => {
   checkFieldIsAllowEmpty()
 }
+// 数据集切换后重新判断已选字段是否仍存在
 const changeDataset = () => {
   checkFieldIsAllowEmpty()
 }
 
+// 插件脚本是否已加载，控制插件组件挂载时机
 const loadPlugin = ref(false)
 
 // 渲染图表回调
@@ -735,6 +779,7 @@ const renderChartCallback = val => {
   })
 }
 
+// 注册可被展示位置开关拦截的事件监听
 const registerEnabledEmitt = option => {
   useEmitt({
     name: option.name,
@@ -907,6 +952,7 @@ const loadingFlag = computed(() => {
   )
 })
 
+// 当前图表区域是否具备渲染条件，模板、插件和地图类走额外分支
 const chartAreaShow = computed(() => {
   if (view.value.tableId) {
     if (element.value['state'] === undefined || element.value['state'] === 'ready') {
@@ -931,8 +977,11 @@ const chartAreaShow = computed(() => {
   return false
 })
 
+// 标题输入框引用，用于进入编辑态后自动聚焦
 const titleInputRef = ref()
+// 标题是否处于内联编辑状态
 const titleEditStatus = ref(false)
+// 进入标题编辑态，非激活或移动端预览时禁止编辑
 function changeEditTitle() {
   if (!props.active || mobileInPc.value) {
     return
@@ -946,6 +995,7 @@ function changeEditTitle() {
   }
 }
 
+// 离开标题输入框时恢复普通展示态
 function onLeaveTitleInput() {
   element.value['editing'] = false
   titleEditStatus.value = false
@@ -971,16 +1021,19 @@ const vClickOutside = {
   }
 }
 
+// 标题变更后同步画布组件名称并记录快照
 function onTitleChange() {
   element.value.name = view.value.title
   element.value.label = view.value.title
   snapshotStore.recordSnapshotCache('onTitleChange')
 }
 
+// 提示气泡主题与画布主题反向，确保图标说明可读
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
 
+// 标题区与图表区的间距，只有标题、菜单或备注存在时保留
 const marginBottom = computed<string | 0>(() => {
   if (!titleShow.value) {
     return 0
@@ -991,6 +1044,7 @@ const marginBottom = computed<string | 0>(() => {
   return 0
 })
 
+// 标题栏操作图标尺寸随画布缩放同步变化
 const iconSize = computed<string>(() => {
   return 16 * scale.value + 'px'
 })
@@ -1022,6 +1076,7 @@ const modifyAlpha = isBorder => {
   return `rgba(${r}, ${g}, ${b}, ${!backgroundColorSelect || isBorder ? 0.01 : a})`
 }
 
+// 标题隐藏时仍需给操作图标补背景和边框，避免悬浮在图表上不可辨认
 const titleIconStyle = computed<CSSProperties>(() => {
   const bgColor = modifyAlpha(false)
   const borderColor = modifyAlpha(true)
@@ -1042,14 +1097,18 @@ const titleIconStyle = computed<CSSProperties>(() => {
     ...(titleShow.value ? {} : style)
   }
 })
+// 鼠标是否悬停在图表区域内，用于延迟展示标题栏操作入口
 const chartHover = ref(false)
+// 是否展示标题栏操作图标
 const showActionIcons = computed(() => {
   if (!chartHover.value) {
     return false
   }
   return trackMenu.value.length > 0 || state.title_remark.show
 })
+// 图表分类配置，插件加载后会追加到对应分类
 const chartConfigs = ref(CHART_TYPE_CONFIGS)
+// 当前图表类型是否已存在于本地图表分类配置
 const pluginLoaded = computed(() => {
   let result = false
   chartConfigs.value.forEach(cat => {
@@ -1057,7 +1116,7 @@ const pluginLoaded = computed(() => {
   })
   return result
 })
-// TODO 统一加载
+// 将插件图表注册到现有图表分类中，保持编辑器侧的分类展示一致
 const loadPluginCategory = data => {
   data.forEach(item => {
     const { category, title, render, chartValue, chartTitle, icon, staticMap } = item
@@ -1099,6 +1158,7 @@ const loadPluginCategory = data => {
   })
 }
 
+// 富文本和图片组本身允许空数据渲染
 const allEmptyCheck = computed(() => {
   return ['rich-text', 'picture-group'].includes(element.value.innerType)
 })
@@ -1114,6 +1174,7 @@ const titleTooltipWidth = computed(() => {
   }
   return '500px'
 })
+// 隐藏残留的 G2 提示层，避免图表切换后悬浮提示滞留
 const clearG2Tooltip = () => {
   const g2TooltipWrapper = document.getElementById('g2-tooltip-wrapper')
   if (g2TooltipWrapper) {

@@ -1,12 +1,14 @@
 import { BusiTreeNode } from '@/models/tree/TreeNode'
 import _ from 'lodash'
 
+// 维护树组件实例和选中数据
 export function treeParentWeight(tree: BusiTreeNode[], pWeight) {
   const pWeightResult = {}
   weightCheckCircle(tree, pWeightResult, pWeight)
   return pWeightResult
 }
 
+// 校验当前数据是否满足业务规则
 export function weightCheckCircle(tree: BusiTreeNode[], pWeightResult, pWeight) {
   _.forEach(tree, node => {
     pWeightResult[node.id] = pWeight
@@ -22,6 +24,7 @@ export default function treeSort(tree: BusiTreeNode[], sortType: string) {
   return result
 }
 
+// 处理排序配置并同步展示顺序
 export function sortCircle(tree: BusiTreeNode[], sortType: string) {
   sortPer(tree, sortType)
   _.forEach(tree, node => {
@@ -31,6 +34,7 @@ export function sortCircle(tree: BusiTreeNode[], sortType: string) {
   })
 }
 
+// 处理排序配置并同步展示顺序
 export const sortPer = (subTree: BusiTreeNode[], sortType: string) => {
   if (sortType === 'name_desc') {
     subTree.sort((a, b) => b.name.localeCompare(a.name, 'zh-Hans-CN', { sensitivity: 'accent' }))

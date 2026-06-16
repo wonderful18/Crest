@@ -3,6 +3,7 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { customMergeColor } from '@/custom-component/decoration/component_details/config'
 import { cloneDeep } from 'lodash-es'
 
+// 边框组件接收颜色、背景、尺寸和缩放比例
 interface Props {
   color?: string[]
   backgroundColor?: string
@@ -10,6 +11,7 @@ interface Props {
   scale: number
 }
 
+// 规范化组件属性默认值，保证未配置时仍能绘制默认边框
 const props = withDefaults(defineProps<Props>(), {
   color: () => [],
   backgroundColor: 'transparent',
@@ -19,16 +21,22 @@ const props = withDefaults(defineProps<Props>(), {
   })
 })
 
+// 当前边框宽度来自外部样式配置
 const width = computed(() => props.curStyle.width)
+// 当前边框高度来自外部样式配置
 const height = computed(() => props.curStyle.height)
 
+// 组件内置的默认边框颜色
 const defaultColor = ref(['#2862b7', '#2862b7'])
+// 合并后的实际渲染颜色列表
 const mergedColor = ref<string[]>([])
 
+// 将用户自定义颜色与默认颜色合并，保证多层线条都有可用颜色
 const mergeColor = () => {
   mergedColor.value = customMergeColor(cloneDeep(defaultColor.value), props.color)
 }
 
+// 计算边框容器尺寸和缩放样式
 const border_style = computed(() => {
   return {
     width: `${width.value}px`,
@@ -39,6 +47,7 @@ const border_style = computed(() => {
   }
 })
 
+// 监听相关数据变化并同步组件状态
 watch(() => props.color, mergeColor, { immediate: true })
 onMounted(mergeColor)
 </script>

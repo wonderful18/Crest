@@ -240,28 +240,46 @@ const shareStore = useShareStoreWithOut()
 const embeddedStore = useEmbedded()
 const { toClipboard } = useClipboard()
 const { t } = useI18n()
+// 分享头部组件入参，描述资源身份、类型、权限权重和外部禁用状态
 const props = defineProps({
   resourceId: propTypes.string.def(''),
   resourceType: propTypes.string.def(''),
   weight: propTypes.number.def(0),
   disabled: propTypes.bool.def(false)
 })
+// 分享弹窗显示状态
 const popoverVisible = ref(false)
+// 密码输入框引用，用于复制、校验和聚焦
 const pwdRef = ref(null)
+// 过期时间复选框引用，用于必填校验错误展示
 const expCheckbox = ref()
+// 密码保护复选框引用，用于必填校验错误展示
 const pwdCheckbox = ref()
+// 分享弹窗加载实例，避免重复创建 loading
 const loadingInstance = ref<any>(null)
+// 是否启用分享过期时间
 const overTimeEnable = ref(false)
+// 是否启用分享密码保护
 const passwdEnable = ref(false)
+// 是否启用公开链接分享
 const shareEnable = ref(false)
+// 当前可复制的完整分享链接
 const linkAddr = ref('')
+// 过期时间是否存在校验错误
 const expError = ref(false)
+// 分享链接后缀是否处于自定义编辑状态
 const linkCustom = ref(false)
+// 分享链接后缀输入框引用
 const linkUuidRef = ref(null)
+// Ticket 设置弹窗显示状态
 const showTicket = ref(false)
+// 原始链接后缀，取消编辑时用于回滚
 const originUuid = ref('')
+// 自定义密码弹窗组件引用
 const customPwdRef = ref()
+// Ticket 弹窗组件引用
 const ticketDialogRef = ref()
+// 分享详情状态，保存后端返回的 uuid、密码、过期时间和 Ticket 要求
 const state = reactive({
   detailInfo: {
     id: '',
@@ -272,6 +290,7 @@ const state = reactive({
   } as ShareInfo
 })
 
+// 资源切换时重置分享状态，避免旧资源的分享信息残留在弹窗内
 watch(
   () => props.resourceId,
   () => {
@@ -286,6 +305,7 @@ watch(
     popoverVisible.value = false
   }
 )
+// 点击外部或关闭弹窗时校验必填项和自定义链接后缀，校验通过后收起弹窗
 const hideShare = async () => {
   if (!shareEnable.value) {
     popoverVisible.value = false
@@ -305,6 +325,7 @@ const hideShare = async () => {
   }
 }
 
+// 点击弹窗外部时关闭分享弹窗，分享弹窗和子弹窗内部点击不触发关闭
 const clickOutPopover = e => {
   if (
     !popoverVisible.value ||
@@ -316,12 +337,14 @@ const clickOutPopover = e => {
   }
   hideShare()
 }
+// 打开分享弹窗，并重置 Ticket 子弹窗状态
 const openPopover = () => {
   if (!popoverVisible.value) {
     showTicket.value = false
     popoverVisible.value = true
   }
 }
+// 分享开关旁的提示文案，按资源类型区分仪表板和数据大屏
 const shareTips = computed(
   () =>
     `${t('work_branch.open_link_hint')}${
@@ -330,9 +353,12 @@ const shareTips = computed(
         : t('work_branch.big_data_screen')
     }`
 )
+// 全局分享禁用状态，来自分享 Store
 const shareDisable = computed(() => shareStore.getShareDisable)
+// 是否强制要求过期时间和密码保护，来自分享 Store
 const sharePeRequire = computed(() => shareStore.getSharePeRequire)
 
+// 复制分享链接和可选密码，复制前会检查链接、密码和必填项校验状态
 const copyInfo = async () => {
   if (shareEnable.value) {
     try {
@@ -366,21 +392,26 @@ const copyInfo = async () => {
   hideShare()
 }
 
+// 禁用过去时间，分享过期时间只能选择当前时间之后
 const disabledDate = date => {
   return date.getTime() < new Date().getTime()
 }
 
+// 打开分享弹窗加载态
 const showLoading = () => {
   loadingInstance.value = ElLoading.service({ target: '.share-dialog-container' })
 }
+// 关闭分享弹窗加载态
 const closeLoading = () => {
   loadingInstance.value?.close()
 }
 
+// Popover 展示时加载分享详情，并执行必填项校验
 const share = () => {
   loadShareInfo(validatePeRequire)
 }
 
+// 从后端加载当前资源分享详情，并刷新页面开关状态
 const loadShareInfo = cb => {
   showLoading()
   const resourceId = props.resourceId
@@ -400,6 +431,7 @@ const loadShareInfo = cb => {
     })
 }
 
+// 根据分享详情回填页面开关和链接展示状态
 const setPageInfo = () => {
   if (state.detailInfo.id && state.detailInfo.uuid) {
     shareEnable.value = true
@@ -413,6 +445,7 @@ const setPageInfo = () => {
   }
 }
 
+// 切换公开链接分享开关，后端状态变更后重新加载分享详情
 const enableSwitcher = () => {
   const resourceId = props.resourceId
   const url = `/share/switcher/${resourceId}`
@@ -421,9 +454,11 @@ const enableSwitcher = () => {
   })
 }
 
+// 生成完整分享链接并写入可复制地址
 const formatLinkAddr = () => {
   linkAddr.value = formatLinkBase() + state.detailInfo.uuid
 }
+// 生成分享链接基础地址，兼容嵌入式部署和统一认证路径
 const formatLinkBase = () => {
   let prefix = '/'
   if (embeddedStore.baseUrl) {
@@ -438,6 +473,7 @@ const formatLinkBase = () => {
   return prefix + SHARE_BASE
 }
 
+// 切换过期时间开关，启用时默认设置为一小时后
 const expEnableSwitcher = val => {
   let exp = 0
   if (val) {
@@ -450,6 +486,7 @@ const expEnableSwitcher = val => {
   expChangeHandler(exp)
 }
 
+// 保存过期时间配置，并校验过期时间不能早于当前时间
 const expChangeHandler = exp => {
   if (overTimeEnable.value && exp < new Date().getTime()) {
     expError.value = true
@@ -464,6 +501,7 @@ const expChangeHandler = exp => {
   })
 }
 
+// 切换密码保护开关，启用时生成自动密码
 const pwdEnableSwitcher = val => {
   let pwd = ''
   if (val) {
@@ -472,10 +510,12 @@ const pwdEnableSwitcher = val => {
   validatePwdRequire()
   resetPwdHandler(pwd, true)
 }
+// 重置自动生成的分享密码
 const resetPwd = () => {
   const pwd = getUuid()
   resetPwdHandler(pwd, true)
 }
+// 保存分享密码配置，支持自动生成密码和手动密码两种模式
 const resetPwdHandler = (pwd?: string, autoPwd?: boolean) => {
   const resourceId = props.resourceId
   const url = '/share/password'
@@ -485,6 +525,7 @@ const resetPwdHandler = (pwd?: string, autoPwd?: boolean) => {
   })
 }
 
+// 生成默认分享密码，包含字母、数字和至少一个特殊字符
 const getUuid = () => {
   const length = 10
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+'
@@ -510,6 +551,7 @@ const getUuid = () => {
     .join('')
   return result
 }
+// 校验分享策略要求的过期时间和密码保护是否都已启用
 const validatePeRequire = () => {
   if (shareEnable.value && sharePeRequire.value) {
     const expRequireValid = validateExpRequire()
@@ -519,6 +561,7 @@ const validatePeRequire = () => {
   return true
 }
 
+// 校验过期时间必填要求，并在复选框旁展示错误信息
 const validateExpRequire = () => {
   if (!sharePeRequire.value || overTimeEnable.value) {
     showCheckboxError(null, expCheckbox)
@@ -528,6 +571,7 @@ const validateExpRequire = () => {
   return false
 }
 
+// 校验密码保护必填要求，并在复选框旁展示错误信息
 const validatePwdRequire = () => {
   if (!sharePeRequire.value || passwdEnable.value) {
     showCheckboxError(null, pwdCheckbox)
@@ -536,6 +580,7 @@ const validatePwdRequire = () => {
   showCheckboxError(t('common.required'), pwdCheckbox)
   return false
 }
+// 在复选框区域展示或清理校验错误
 const showCheckboxError = (msg, target, className?: string) => {
   if (!target.value) {
     return
@@ -571,6 +616,7 @@ const showCheckboxError = (msg, target, className?: string) => {
     }
   }
 }
+// 在输入框区域展示或清理校验错误，用于密码和链接后缀
 const showPageError = (msg, target, className?: string) => {
   className = className || 'link-pwd-error-msg'
   const fullClassName = `.${className}`
@@ -606,9 +652,11 @@ const showPageError = (msg, target, className?: string) => {
     }
   }
 }
+// 判断页面中是否存在指定校验错误消息
 const existErrorMsg = (className: string) => {
   return document.getElementsByClassName(className)?.length
 }
+// 切换自动密码模式，启用时重新生成密码，关闭时清空并聚焦输入框
 const autoEnableSwitcher = val => {
   if (val) {
     showPageError(null, pwdRef)
@@ -621,6 +669,7 @@ const autoEnableSwitcher = val => {
   }
 }
 
+// 复制分享密码，复制前校验手动密码是否存在错误
 const copyPwd = async () => {
   if (shareEnable.value && passwdEnable.value) {
     if (!state.detailInfo.autoPwd && existErrorMsg('link-pwd-error-msg')) {
@@ -637,6 +686,7 @@ const copyPwd = async () => {
     ElMessage.warning(t('common.copy_unsupported'))
   }
 }
+// 进入分享链接后缀自定义编辑状态，并聚焦输入框
 const editUuid = () => {
   linkCustom.value = true
   nextTick(() => {
@@ -645,6 +695,7 @@ const editUuid = () => {
     }
   })
 }
+// 校验分享链接后缀格式和唯一性，并在输入框下展示错误信息
 const validateUuid = async () => {
   const val = state.detailInfo.uuid
   const className = 'link-uuid-error-msg'
@@ -664,44 +715,53 @@ const validateUuid = async () => {
   return result
 }
 
+// 调用后端校验分享链接后缀是否可用
 const uuidValidateApi = async val => {
   const url = '/share/uuid'
   const data = { resourceId: props.resourceId, uuid: val }
   const res = await request.post({ url, data })
   return res.data
 }
+// 保存自定义链接后缀，校验未通过时保持编辑状态
 const finishEditUuid = async () => {
   const uuidValid = await validateUuid()
   linkCustom.value = !uuidValid
 }
+// 取消链接后缀编辑并回滚到原始后缀
 const resetUuid = event => {
   event.stopPropagation()
   state.detailInfo.uuid = originUuid.value
   finishEditUuid()
 }
+// 打开 Ticket 设置弹窗
 const openTicket = () => {
   showTicket.value = true
   nextTick(() => {
     ticketDialogRef.value.open()
   })
 }
+// 关闭 Ticket 设置弹窗并卸载内容
 const closeTicket = () => {
   ticketDialogRef.value.close()
   nextTick(() => {
     showTicket.value = false
   })
 }
+// 更新分享详情中的 Ticket 必填状态
 const updateRequireTicket = val => {
   state.detailInfo.ticketRequire = val
 }
 
+// 对外暴露的执行入口，用于父组件主动刷新分享详情
 const execute = () => {
   share()
 }
 
+// 打开自定义密码弹窗，并传入当前密码
 const openPwdDialog = () => {
   customPwdRef.value.open(state.detailInfo.pwd)
 }
+// 保存自定义密码弹窗返回的密码
 const customPwdChange = val => {
   state.detailInfo.pwd = val
   resetPwdHandler(val, false)

@@ -5,8 +5,7 @@ import io.crest.api.template.vo.MarketLatestReleaseVO;
 import lombok.Data;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/11/17 13:41
+ * 模板市场 V2 单项结果。
  */
 @Data
 public class MarketTemplateV2ItemResult {

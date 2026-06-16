@@ -5,19 +5,23 @@ import io.crest.plugins.template.CrestPlugin;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+// 提供插件图表处理器的创建入口
 public class CrestPluginFactory {
     private static final Map<String, CrestPlugin> PLUGINS = new ConcurrentHashMap<>();
 
+    // 执行当前服务方法并返回处理结果
     public static void loadTemplate(String moduleName, CrestPlugin plugin) {
         if (moduleName != null && plugin != null) {
             PLUGINS.put(moduleName, plugin);
         }
     }
 
+    // 执行当前服务方法并返回处理结果
     public static CrestPlugin getTemplate(String moduleName) {
         return PLUGINS.get(moduleName);
     }
 
+    // 执行当前服务方法并返回处理结果
     public static void unloadTemplate(String moduleName) {
         PLUGINS.remove(moduleName);
     }

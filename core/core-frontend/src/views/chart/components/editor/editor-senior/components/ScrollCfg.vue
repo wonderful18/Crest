@@ -2,8 +2,10 @@
 import { PropType, reactive, watch } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 
+// 滚动配置面板的国际化文案函数
 const { t } = useI18n()
 
+// 滚动配置面板属性
 const props = defineProps({
   chart: {
     type: Object,
@@ -18,8 +20,10 @@ const props = defineProps({
   }
 })
 
+// 滚动配置变化时通知父级
 const emit = defineEmits(['onScrollCfgChange'])
 
+// 监听相关数据变化并同步组件状态
 watch(
   () => props.chart.senior.scrollCfg,
   () => {
@@ -28,15 +32,18 @@ watch(
   { deep: true }
 )
 
+// 表格滚动配置表单状态
 const state = reactive({
   scrollForm: {} as ScrollCfg,
   isAutoBreakLine: false
 })
 
+// 提交当前滚动配置
 const changeScrollCfg = () => {
   emit('onScrollCfgChange', state.scrollForm)
 }
 
+// 从图表高级配置中解析滚动配置
 const init = () => {
   const chart = JSON.parse(JSON.stringify(props.chart))
   if (chart.senior) {

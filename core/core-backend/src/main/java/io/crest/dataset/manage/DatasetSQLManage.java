@@ -54,7 +54,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @Author Junjun
+ * 数据集 SQL 组装器，负责把数据集联合树、字段选择、SQL 参数和权限上下文转换为可执行查询
+ * 该类只生成 SQL、字段映射和数据源 schema 信息，不直接执行查询或保存数据集配置
  */
 @Component
 public class DatasetSQLManage {
@@ -78,12 +79,18 @@ public class DatasetSQLManage {
     @Resource
     private CoreDatasetGroupMapper coreDatasetGroupMapper;
 
+    /**
+     * 返回可选的行权限服务，未启用权限模块时允许为空
+     */
     private RowPermissionsApi getRowPermissionsApi() {
         return rowPermissionsApi;
     }
 
     private static Logger logger = LoggerFactory.getLogger(DatasetSQLManage.class);
 
+    /**
+     * 从图表过滤条件中筛选当前数据表关联的 SQL 参数，并携带运行时过滤值
+     */
     private List<SqlVariableDetails> filterParameters(ChartExtRequest chartExtRequest, Long datasetTableId) {
         List<SqlVariableDetails> parameters = new ArrayList<>();
         if (chartExtRequest != null && ObjectUtils.isNotEmpty(chartExtRequest.getOuterParamsFilters())) {
@@ -113,6 +120,9 @@ public class DatasetSQLManage {
         return parameters;
     }
 
+    /**
+     * 将单个过滤条件中的 SQL 参数转换为当前数据表可用的参数值
+     */
     private void filterParametersAdaptor(List<SqlVariableDetails> parameters, ChartExtFilterDTO filterDTO, Long datasetTableId) {
         if (ObjectUtils.isNotEmpty(filterDTO.getParameters())) {
             for (SqlVariableDetails parameter : filterDTO.getParameters()) {
@@ -125,16 +135,22 @@ public class DatasetSQLManage {
         }
     }
 
+    /**
+     * 生成编辑态数据集 SQL，调用方不指定固定数据源时按数据集联合树自行解析
+     */
     public Map<String, Object> getUnionSQLForEdit(DatasetGroupInfoDTO dataTableInfoDTO, ChartExtRequest chartExtRequest) throws Exception {
         return getUnionSQLForEdit(dataTableInfoDTO, chartExtRequest, null, chartExtRequest == null);
     }
 
+    /**
+     * 生成联合数据集 SQL，并返回 SQL 文本、选中字段、关联关系、数据源映射和预编译参数
+     */
     public Map<String, Object> getUnionSQLForEdit(DatasetGroupInfoDTO dataTableInfoDTO, ChartExtRequest chartExtRequest, CoreDatasource coreDatasource, boolean isFromDataSet) throws Exception {
         Map<Long, DatasourceSchemaDTO> dsMap = new LinkedHashMap<>();
-        // 获取所有字段，将engineFieldName赋值给currentField中的engineFieldName
+        // 全量字段用于继承历史引擎字段名，保证编辑后缓存字段名保持稳定
         List<DatasetTableFieldDTO> allFields = dataTableInfoDTO.getAllFields();
         List<UnionDTO> union = dataTableInfoDTO.getUnion();
-        // 所有选中的字段，即select后的查询字段
+        // checkedInfo 记录每个表别名下最终进入 SELECT 的字段表达式
         Map<String, String[]> checkedInfo = new LinkedHashMap<>();
         List<UnionParamDTO> unionList = new ArrayList<>();
         List<DatasetTableFieldDTO> checkedFields = new ArrayList<>();
@@ -161,24 +177,21 @@ public class DatasetSQLManage {
             if (i == 0) {
                 tableName = table;
             }
-            // 获取前端传过来选中的字段
+            // 只把前端勾选字段写入 SELECT，并为每个字段生成稳定别名
             List<DatasetTableFieldDTO> fields = unionDTO.getCurrentDsFields();
             fields = fields.stream().filter(DatasetTableFieldDTO::getChecked).collect(Collectors.toList());
 
             String[] array = fields.stream()
                     .map(f -> {
-                        // 赋值engineFieldName
-                        for (DatasetTableFieldDTO a_f: allFields) {
-                            if (Objects.equals(a_f.getId(),f.getId())) {
-                                f.setEngineFieldName(a_f.getEngineFieldName());
-                            }
-                        }
+                        inheritEngineFieldName(allFields, f);
 
                         String alias;
-                        if (StringUtils.isEmpty(f.getEngineFieldName())) {
-                            alias = TableUtils.fieldNameShort(f.getDatasetTableId() + "_" + f.getOriginName());
-                        } else {
+                        if (StringUtils.isNotBlank(f.getEngineFieldName())) {
                             alias = f.getEngineFieldName();
+                        } else if (StringUtils.isNotBlank(f.getDbFieldName())) {
+                            alias = f.getDbFieldName();
+                        } else {
+                            alias = TableUtils.fieldNameShort(f.getDatasetTableId() + "_" + f.getOriginName());
                         }
 
                         f.setFieldShortName(alias);
@@ -206,15 +219,15 @@ public class DatasetSQLManage {
                     .toArray(String[]::new);
             checkedInfo.put(table.getTableAlias(), array);
             checkedFields.addAll(fields);
-            // 获取child的fields和union
+            // 子节点递归时会继续补充字段表达式和 join 关系
             if (!CollectionUtils.isEmpty(unionDTO.getChildrenDs())) {
                 getUnionForEdit(datasetTable, table, unionDTO.getChildrenDs(), checkedInfo, unionList, checkedFields, dsMap, chartExtRequest, isCross, allFields, tableFieldWithValues);
             }
         }
-        // build sql
+        // 根据是否存在关联关系，决定生成单表查询或 join 查询
         boolean isFullJoin = false;
         if (!CollectionUtils.isEmpty(unionList)) {
-            // field
+            // 合并所有表别名下的 SELECT 字段表达式
             StringBuilder field = new StringBuilder();
             for (Map.Entry<String, String[]> next : checkedInfo.entrySet()) {
                 if (next.getValue().length > 0) {
@@ -222,12 +235,12 @@ public class DatasetSQLManage {
                 }
             }
             String f = subPrefixSuffixChar(field.toString());
-            // join
+            // 按联合树顺序拼接 JOIN 片段和关联条件
             StringBuilder join = new StringBuilder();
             for (UnionParamDTO unionParamDTO : unionList) {
-                // get join type
+                // 前端关联类型转换为 SQL JOIN 关键字
                 String joinType = convertUnionTypeToSQL(unionParamDTO.getUnionType());
-                // 如果不是全连接则需要校验连接方式
+                // 全连接标记返回给调用方，用于后续兼容不支持 FULL JOIN 的数据源
                 if (!isFullJoin) {
                     if (Strings.CI.equals(unionParamDTO.getUnionType(), "full")) {
                         isFullJoin = true;
@@ -254,7 +267,7 @@ public class DatasetSQLManage {
 
                     ts = tablePrefix + currentSQLObj.getTableSchema() + tableSuffix + ".";
                 }
-                // build join
+                // 当前表与父表之间的 ON 条件由前端配置的字段对组成
                 join.append(" ").append(joinType).append(" ")
                         .append(ts)
                         .append(tablePrefix + currentSQLObj.getTableName() + tableSuffix)
@@ -265,7 +278,7 @@ public class DatasetSQLManage {
                 }
                 for (int i = 0; i < unionParamDTO.getUnionFields().size(); i++) {
                     UnionItemDTO unionItemDTO = unionParamDTO.getUnionFields().get(i);
-                    // 通过field id取得field详情，并且以第一组为准，寻找dataset table
+                    // 关联字段沿用各自数据源的标识符引号规则，跨源时统一使用 Calcite 引号
                     DatasetTableFieldDTO parentField = unionItemDTO.getParentField();
                     DatasetTableFieldDTO currentField = unionItemDTO.getCurrentField();
                     String pPrefix = "";
@@ -324,7 +337,9 @@ public class DatasetSQLManage {
         return map;
     }
 
-    // 递归计算出所有子级的checkedFields和unionParam
+    /**
+     * 递归处理联合树子节点，持续累积 SELECT 字段、JOIN 关系和数据源映射
+     */
     private void getUnionForEdit(DatasetTableDTO parentTable, SQLObj parentSQLObj,
                                  List<UnionDTO> childrenDs, Map<String, String[]> checkedInfo,
                                  List<UnionParamDTO> unionList, List<DatasetTableFieldDTO> checkedFields,
@@ -351,18 +366,15 @@ public class DatasetSQLManage {
 
             String[] array = fields.stream()
                     .map(f -> {
-                        // 赋值engineFieldName
-                        for (DatasetTableFieldDTO a_f: allFields) {
-                            if (Objects.equals(a_f.getId(),f.getId())) {
-                                f.setEngineFieldName(a_f.getEngineFieldName());
-                            }
-                        }
+                        inheritEngineFieldName(allFields, f);
 
                         String alias;
-                        if (StringUtils.isEmpty(f.getEngineFieldName())) {
-                            alias = TableUtils.fieldNameShort(f.getDatasetTableId() + "_" + f.getOriginName());
-                        } else {
+                        if (StringUtils.isNotBlank(f.getEngineFieldName())) {
                             alias = f.getEngineFieldName();
+                        } else if (StringUtils.isNotBlank(f.getDbFieldName())) {
+                            alias = f.getDbFieldName();
+                        } else {
+                            alias = TableUtils.fieldNameShort(f.getDatasetTableId() + "_" + f.getOriginName());
                         }
 
                         f.setFieldShortName(alias);
@@ -387,7 +399,7 @@ public class DatasetSQLManage {
             checkedFields.addAll(fields);
 
             UnionParamDTO unionToParent = unionDTO.getUnionToParent();
-            // 设置关联关系中，两个table信息
+            // 关联关系需要带上父子表和 SQL 别名，供顶层 JOIN 统一拼接
             unionToParent.setParentDs(parentTable);
             unionToParent.setParentSQLObj(parentSQLObj);
             unionToParent.setCurrentDs(datasetTable);
@@ -399,6 +411,9 @@ public class DatasetSQLManage {
         }
     }
 
+    /**
+     * 收集联合树中引用的全部数据源 ID，用于判断数据集是否跨源
+     */
     private Set<Long> getAllDs(List<UnionDTO> union) {
         Set<Long> set = new HashSet<>();
         for (UnionDTO unionDTO : union) {
@@ -409,6 +424,9 @@ public class DatasetSQLManage {
         return set;
     }
 
+    /**
+     * 递归收集子节点数据源 ID
+     */
     private void getChildrenDs(List<UnionDTO> childrenDs, Set<Long> set) {
         for (UnionDTO unionDTO : childrenDs) {
             set.add(unionDTO.getCurrentDs().getDatasourceId());
@@ -418,6 +436,9 @@ public class DatasetSQLManage {
         }
     }
 
+    /**
+     * 返回数据源标识符引号规则，内置数据源和插件数据源都在这里统一转换
+     */
     private DsTypeDTO datasourceType(Map<Long, DatasourceSchemaDTO> dsMap, Long datasourceId) {
         DatasourceSchemaDTO datasourceSchemaDTO = dsMap.get(datasourceId);
         String type;
@@ -455,6 +476,9 @@ public class DatasetSQLManage {
         }
     }
 
+    /**
+     * 移除字段表达式首尾多余逗号，避免生成非法 SELECT 列表
+     */
     public String subPrefixSuffixChar(String str) {
         while (Strings.CS.startsWith(str, ",")) {
             str = str.substring(1, str.length());
@@ -465,6 +489,9 @@ public class DatasetSQLManage {
         return str;
     }
 
+    /**
+     * 将前端关联类型转换为 SQL JOIN 关键字
+     */
     private String convertUnionTypeToSQL(String unionType) {
         switch (unionType) {
             case "1:1":
@@ -484,6 +511,9 @@ public class DatasetSQLManage {
         }
     }
 
+    /**
+     * 返回当前用户信息，SQL 参数默认值解析会用它计算用户相关变量
+     */
     private UserFormVO getUserEntity() {
         if (getRowPermissionsApi() == null) {
             return null;
@@ -491,6 +521,9 @@ public class DatasetSQLManage {
         return getRowPermissionsApi().getUserById(AuthUtils.getUser().getUserId());
     }
 
+    /**
+     * 构造联合树中的单表 SQL 对象。自定义 SQL 会先解析变量，再作为子查询参与联合
+     */
     private SQLObj getUnionTable(DatasetTableDTO currentDs, DatasetTableInfoDTO infoDTO, String tableSchema, int index, List<SqlVariableDetails> parameters, boolean isFromDataSet, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<TableFieldWithValue> tableFieldWithValues) {
         SQLObj tableObj;
         String tableAlias = String.format(SQLConstants.TABLE_ALIAS_PREFIX, index);
@@ -498,34 +531,99 @@ public class DatasetSQLManage {
             tableObj = SQLObj.builder().tableSchema(tableSchema).tableName(infoDTO.getTable()).tableAlias(tableAlias).build();
         } else if (Strings.CI.equals(currentDs.getType(), DatasetTableTypeConstants.DATASET_TABLE_SQL)) {
             Provider provider = ProviderFactory.getProvider(dsMap.entrySet().iterator().next().getValue().getType());
-            // parser sql params and replace default value
+            // 自定义 SQL 参数在这里转换为默认值或预编译参数，避免后续拼接阶段丢失参数上下文
             String s = new String(Base64.getDecoder().decode(infoDTO.getSql()));
             SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(s, currentDs.getSqlVariableDetails(), false, isFromDataSet, parameters, isCross, dsMap, pluginManage, getUserEntity());
             String sql = sqlResult.getSql();
             tableFieldWithValues.addAll(sqlResult.getTableFieldWithValues());
             sql = provider.replaceComment(sql);
-            // add table schema
+            // 跨源查询需要把自定义 SQL 中的表引用补上 Calcite schema
             if (isCross) {
                 sql = SqlUtils.addSchema(sql, tableSchema);
             }
             tableObj = SQLObj.builder().tableSchema("").tableName("(" + sql + ")").tableAlias(tableAlias).build();
         } else {
-            // excel,api
+            // Excel 和 API 同步表已经落在引擎库中，按普通物理表参与联合
             tableObj = SQLObj.builder().tableSchema(tableSchema).tableName(infoDTO.getTable()).tableAlias(tableAlias).build();
         }
         return tableObj;
     }
 
+    /**
+     * 返回源表字段名，优先使用数据库字段名，缺省时回退到原始字段名
+     */
     private String sourceFieldName(DatasetTableFieldDTO field) {
         return StringUtils.defaultIfBlank(field.getDbFieldName(), field.getOriginName());
     }
 
+    /**
+     * 从全量字段列表继承已保存的引擎字段名和短字段名，保持编辑前后的字段别名稳定
+     */
+    static void inheritEngineFieldName(List<DatasetTableFieldDTO> allFields, DatasetTableFieldDTO field) {
+        if (CollectionUtils.isEmpty(allFields) || field == null) {
+            return;
+        }
+        for (DatasetTableFieldDTO candidate : allFields) {
+            if (!sameDatasetField(candidate, field)) {
+                continue;
+            }
+            if (StringUtils.isNotBlank(candidate.getEngineFieldName())) {
+                field.setEngineFieldName(candidate.getEngineFieldName());
+            }
+            if (StringUtils.isNotBlank(candidate.getFieldShortName())) {
+                field.setFieldShortName(candidate.getFieldShortName());
+            }
+            if (StringUtils.isBlank(field.getDbFieldName()) && StringUtils.isNotBlank(candidate.getDbFieldName())) {
+                field.setDbFieldName(candidate.getDbFieldName());
+            }
+            return;
+        }
+    }
+
+    /**
+     * 判断两个字段是否指向同一数据集字段，优先比较 ID，其次比较表 ID、数据库字段名和原始名
+     */
+    private static boolean sameDatasetField(DatasetTableFieldDTO candidate, DatasetTableFieldDTO field) {
+        if (candidate == null || field == null) {
+            return false;
+        }
+        if (candidate.getId() != null && field.getId() != null) {
+            return Objects.equals(candidate.getId(), field.getId());
+        }
+        if (candidate.getDatasetTableId() != null && field.getDatasetTableId() != null
+                && !Objects.equals(candidate.getDatasetTableId(), field.getDatasetTableId())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(candidate.getDbFieldName()) && StringUtils.isNotBlank(field.getDbFieldName())) {
+            return Objects.equals(candidate.getDbFieldName(), field.getDbFieldName())
+                    && compatibleOriginName(candidate, field);
+        }
+        return candidate.getDatasetTableId() != null && field.getDatasetTableId() != null
+                && compatibleOriginName(candidate, field);
+    }
+
+    /**
+     * 判断两个字段原始名是否兼容，空原始名按历史配置兼容处理
+     */
+    private static boolean compatibleOriginName(DatasetTableFieldDTO candidate, DatasetTableFieldDTO field) {
+        if (StringUtils.isBlank(candidate.getOriginName()) || StringUtils.isBlank(field.getOriginName())) {
+            return true;
+        }
+        return Objects.equals(candidate.getOriginName(), field.getOriginName());
+    }
+
+    /**
+     * 将数据表所属数据源放入 schema 映射，并返回该表在 SQL 中使用的 schema 名称
+     */
     public String putObj2Map(Map<Long, DatasourceSchemaDTO> dsMap, DatasetTableDTO ds, boolean isCross) {
         return putObj2Map(dsMap, ds, isCross, null);
     }
 
+    /**
+     * 将数据源写入 schema 映射。未传入数据源实体时，会先校验当前用户的数据源读取权限
+     */
     public String putObj2Map(Map<Long, DatasourceSchemaDTO> dsMap, DatasetTableDTO ds, boolean isCross, CoreDatasource coreDatasource) {
-        // 通过datasource id校验数据源权限
+        // 通过数据源 ID 校验读取权限，避免构造 SQL 时绕过数据源权限边界
         if (ObjectUtils.isEmpty(coreDatasource)) {
             BusiPerCheckDTO dto = new BusiPerCheckDTO();
             dto.setId(ds.getDatasourceId());
@@ -586,6 +684,9 @@ public class DatasetSQLManage {
         return schemaAlias;
     }
 
+    /**
+     * 批量刷新历史数据集的跨源标记，用于补齐旧数据的默认值
+     */
     public void datasetCrossDefault() {
         List<DatasetGroupInfoDTO> allList = datasetGroupManage.getAllList();
         for (DatasetGroupInfoDTO ele : allList) {
@@ -596,6 +697,9 @@ public class DatasetSQLManage {
         }
     }
 
+    /**
+     * 根据联合树中的数据源数量计算单个数据集是否跨源
+     */
     public void mergeDatasetCrossDefault(DatasetGroupInfoDTO ele) {
         Set<Long> allDs = getAllDs(ele.getUnion());
         boolean isCross = allDs.size() > 1;

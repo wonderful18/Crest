@@ -15,6 +15,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, toRefs, watch } from 'vue'
 
+// 三角形组件的文本值和元素样式配置
 const props = defineProps({
   propValue: {
     type: String,
@@ -30,9 +31,12 @@ const props = defineProps({
     }
   }
 })
+// 保留元素响应式引用，便于监听宽高和边框样式
 const { element } = toRefs(props)
+// SVG polygon 的 points 字符串
 const points = ref('')
 
+// 宽度变化后重新计算三角形顶点
 watch(
   () => element.value.style.width,
   () => {
@@ -40,6 +44,7 @@ watch(
   }
 )
 
+// 高度变化后重新计算三角形顶点
 watch(
   () => element.value.style.height,
   () => {
@@ -51,15 +56,18 @@ onMounted(() => {
   draw()
 })
 
+// 根据边框开关决定实际描边宽度
 const borderWidth = computed(() => {
   return element.value.style.borderActive ? element.value.style.borderWidth : 0
 })
 
+// 从元素样式读取尺寸并重绘三角形
 const draw = () => {
   const { width, height } = element.value.style
   drawPolygon(width, height)
 }
 
+// 按容器宽高计算等腰三角形的三个顶点坐标
 const drawPolygon = (width, height) => {
   // 三角形三个坐标
   const pointsArray = [

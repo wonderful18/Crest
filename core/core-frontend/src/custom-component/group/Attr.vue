@@ -3,6 +3,7 @@ import CommonAttr from '@/custom-component/common/CommonAttr.vue'
 import { toRefs } from 'vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   themes: {
     type: String,

@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 @Schema(description = "单点登录配置展示")
 @Data
 @EqualsAndHashCode(callSuper = true)
+// 定义页面展示或接口返回的数据结构
 public class SsoConfigVO extends SsoConfigRequest {
 
     @Schema(description = "当前部署回调地址")

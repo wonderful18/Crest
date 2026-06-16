@@ -3,11 +3,9 @@ package io.crest.extensions.view.dto;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-/**
- * @Author Junjun
- */
 @Data
 @Accessors(chain = true)
+// 定义接口请求或返回数据的传输结构
 public class FormatterCfgDTO {
     private String type = "auto"; // auto,value,percent
     private String unitLanguage = "ch";

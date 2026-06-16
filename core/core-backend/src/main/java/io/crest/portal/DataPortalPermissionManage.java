@@ -1,9 +1,12 @@
 package io.crest.portal;
 
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.substitute.permissions.user.CrestUserManage;
 import io.crest.utils.AuthUtils;
 import jakarta.annotation.Resource;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -11,25 +14,49 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+/**
+ * 数据门户发布资源的读权限判断组件
+ */
 public class DataPortalPermissionManage {
 
+    /**
+     * 查询发布资源和权限数据的 JDBC 模板
+     */
     @Resource
     private JdbcTemplate jdbcTemplate;
 
+    /**
+     * 平台权限管理器，用于读取组织和角色范围
+     */
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
+    /**
+     * 用户管理器，用于判断管理员身份
+     */
     @Resource
     private CrestUserManage crestUserManage;
 
+    @Resource
+    private Environment environment;
+
+    /**
+     * 返回当前登录用户 ID
+     */
     public Long currentUid() {
         return AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
     }
 
+    /**
+     * 判断用户是否拥有后台访问权限
+     */
     public boolean hasBackendAccess(Long uid) {
         return uid != null && (crestUserManage.isAdmin(uid) || platformPermissionManage.isSystemAdmin(uid));
     }
 
+    /**
+     * 判断当前用户是否可读取指定已发布可视化资源
+     */
     public boolean canReadPublishedVisualization(Long id, String type) {
         if (id == null) {
             return false;
@@ -57,6 +84,9 @@ public class DataPortalPermissionManage {
         return count != null && count > 0;
     }
 
+    /**
+     * 判断已发布可视化是否引用指定数据集
+     */
     public boolean canReadPublishedVisualizationDataset(Long id, Long datasetGroupId) {
         if (id == null || datasetGroupId == null || !canReadPublishedVisualization(id, null)) {
             return false;
@@ -70,6 +100,9 @@ public class DataPortalPermissionManage {
         return count != null && count > 0;
     }
 
+    /**
+     * 为已发布可视化查询追加当前用户的可读权限范围
+     */
     public void appendReadScope(StringBuilder sql, List<Object> args, Long uid) {
         if (uid == null || hasBackendAccess(uid)) {
             return;
@@ -83,7 +116,7 @@ public class DataPortalPermissionManage {
                   OR v.org_id = ?
                   OR EXISTS (
                     SELECT 1 FROM iam_resource_permission p
-                    WHERE CAST(p.resource_id AS UNSIGNED) = v.id
+                    WHERE %s = v.id
                       AND (
                         (v.type = 'dataV' AND p.resource_type = 'screen')
                         OR (v.type = 'dashboard' AND p.resource_type = 'panel')
@@ -92,7 +125,7 @@ public class DataPortalPermissionManage {
                       AND (
                         (p.target_type = 'user' AND p.target_id = ?)
                         OR (p.target_type = 'org' AND p.target_id = ?)
-                """);
+                """.formatted(dialect().numberCast("p.resource_id")));
         args.add(String.valueOf(uid));
         args.add(oid);
         args.add(uid);
@@ -109,5 +142,9 @@ public class DataPortalPermissionManage {
                   )
                 )
                 """);
+    }
+
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
     }
 }

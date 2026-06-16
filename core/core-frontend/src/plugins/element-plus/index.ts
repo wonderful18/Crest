@@ -10,6 +10,7 @@ const plugins = [ElLoading]
 
 const components = [ElScrollbar]
 
+// 更新当前配置并同步相关状态
 export const setupElementPlus = (app: App<Element>) => {
   plugins.forEach(plugin => {
     app.use(plugin)

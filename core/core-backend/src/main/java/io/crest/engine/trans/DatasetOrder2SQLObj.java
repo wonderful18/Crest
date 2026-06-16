@@ -9,11 +9,10 @@ import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.*;
 
-/**
- * @Author Junjun
- */
+// 定义当前业务对象的核心职责
 public class DatasetOrder2SQLObj {
 
+    // 执行当前服务方法并返回处理结果
     public static void getOrders(SQLMeta meta, List<ChartSortFieldDTO> sortFields, List<DatasetTableFieldDTO> originFields) {
         SQLObj tableObj = meta.getTable();
         List<SQLObj> xOrders = meta.getXOrders() == null ? new ArrayList<>() : meta.getXOrders();

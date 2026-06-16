@@ -3,6 +3,9 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { customMergeColor } from '@/custom-component/decoration/component_details/config'
 import { cloneDeep } from 'lodash-es'
 
+/**
+ * 装饰线组件的样式和动画入参
+ */
 interface Props {
   color?: string[]
   curStyle: { width: number; height: number }
@@ -12,6 +15,9 @@ interface Props {
   strokeWidth?: number
 }
 
+/**
+ * 组件属性默认值
+ */
 const props = withDefaults(defineProps<Props>(), {
   color: () => [],
   curStyle: () => ({
@@ -24,10 +30,19 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // 尺寸计算
+/**
+ * 装饰线所在画布宽度
+ */
 const width = computed(() => props.curStyle.width)
+/**
+ * 装饰线所在画布高度
+ */
 const height = computed(() => props.curStyle.height)
 
 // 样式计算
+/**
+ * 外层缩放容器样式
+ */
 const border_style = computed(() => ({
   width: `${width.value}px`,
   height: `${height.value}px`,
@@ -37,10 +52,19 @@ const border_style = computed(() => ({
 }))
 
 // 颜色配置
+/**
+ * 默认线条颜色
+ */
 const defaultColor = ref(['rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.3)'])
+/**
+ * 与组件配置合并后的最终颜色
+ */
 const mergedColor = ref<string[]>([])
 
 // 计算属性
+/**
+ * 动画容器尺寸和 CSS 变量
+ */
 const containerStyle = computed(() => ({
   width: props.reverse ? `${width.value}px` : `${props.strokeWidth}px`,
   height: props.reverse ? `${props.strokeWidth}px` : `${height.value}px`,
@@ -49,18 +73,25 @@ const containerStyle = computed(() => ({
   '--half-stroke': `${props.strokeWidth / 2}px`
 }))
 
+/**
+ * SVG 折线路径点位
+ */
 const svgPoints = computed(() =>
   props.reverse
     ? `0, ${props.strokeWidth / 2} ${width.value}, ${props.strokeWidth / 2}`
     : `${props.strokeWidth / 2}, 0 ${props.strokeWidth / 2}, ${height.value}`
 )
 
+/**
+ * 合并默认颜色和用户配置颜色
+ */
 const mergeColor = () => {
   mergedColor.value = customMergeColor(cloneDeep(defaultColor.value), props.color)
 }
 
 // 生命周期和监听
 onMounted(mergeColor)
+// 监听相关数据变化并同步组件状态
 watch(() => props.color, mergeColor, { immediate: true })
 </script>
 

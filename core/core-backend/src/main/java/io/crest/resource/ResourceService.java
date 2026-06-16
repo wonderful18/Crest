@@ -6,14 +6,13 @@ import io.crest.system.manage.CorePermissionManage;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
-/**
- * @Author Junjun
- */
 @Component
+// 定义当前业务对象的核心职责
 public class ResourceService {
     @Resource
     private CorePermissionManage corePermissionManage;
 
+    // 计算权限信息并返回校验结果
     public boolean checkPermission(Long id) {
         BusiPerCheckDTO dto = new BusiPerCheckDTO();
         dto.setId(id);

@@ -1,5 +1,8 @@
 package io.crest.commons.constants;
 
+/**
+ * 可视化资源常量集合，按查询来源、新建来源、节点类型和操作类型分组
+ */
 public class DataVisualizationConstants {
 
     //新建仪表板来源
@@ -66,6 +69,7 @@ public class DataVisualizationConstants {
         public static final String COPY = "copy";
     }
 
+    //模板来源
     public static final class TEMPLATE_SOURCE {
         //模板市场
         public static final String MARKET = "market";

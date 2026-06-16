@@ -128,6 +128,7 @@ final class AuditLogText {
         return operationLabel(operationType.name()) + resourceLabel(resourceType);
     }
 
+    // 执行当前服务方法并返回处理结果
     private static boolean containsAny(String value, String... fragments) {
         for (String fragment : fragments) {
             if (value.contains(fragment)) {

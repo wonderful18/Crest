@@ -5,12 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * <p>
- *  Mapper 接口
- * </p>
- *
- * @author fit2cloud
- * @since 2023-08-24
+ * 工作台收藏资源 Mapper。
  */
 @Mapper
 public interface CoreStoreMapper extends BaseMapper<CoreStore> {

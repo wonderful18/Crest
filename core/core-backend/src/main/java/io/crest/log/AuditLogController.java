@@ -4,15 +4,21 @@ import io.crest.auth.CrestPermit;
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
 import io.crest.exception.CrestException;
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.result.ResultCode;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.AuthUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +42,9 @@ public class AuditLogController {
 
     @Autowired
     private PlatformPermissionManage platformPermissionManage;
+
+    @Autowired
+    private Environment environment;
 
     @CrestAudit(ot = LogOT.READ, st = LogST.DATA)
     @Operation(summary = "查询审计日志")
@@ -91,10 +100,10 @@ public class AuditLogController {
         String countSql = "SELECT COUNT(*) FROM audit_log" + where;
         Long total = jdbcTemplate.queryForObject(countSql, Long.class, params.toArray());
 
-        // 查询数据
-        String dataSql = "SELECT * FROM audit_log" + where + " ORDER BY operation_time DESC LIMIT ? OFFSET ?";
-        params.add(safePageSize);
-        params.add(offset);
+        String dataSql = dialect().limitOffset(
+                "SELECT * FROM audit_log" + where + " ORDER BY operation_time DESC",
+                safePageSize,
+                offset);
         List<Map<String, Object>> records = jdbcTemplate.queryForList(dataSql, params.toArray());
 
         Map<String, Object> result = new HashMap<>();
@@ -109,25 +118,29 @@ public class AuditLogController {
     @Operation(summary = "审计日志统计")
     @CrestPermit("m:read")
     @GetMapping("/statistics")
+    // 执行当前服务方法并返回处理结果
     public Map<String, Object> statistics() {
         requireAuditAccess();
         Map<String, Object> stats = new HashMap<>();
+        Timestamp startOfDay = Timestamp.valueOf(LocalDate.now(ZoneId.systemDefault()).atStartOfDay());
+        Timestamp startOfNextDay = Timestamp.valueOf(LocalDate.now(ZoneId.systemDefault()).plusDays(1).atStartOfDay());
 
         // 今日操作数
         Long todayCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM audit_log WHERE DATE(operation_time) = CURDATE()",
-                Long.class);
+                "SELECT COUNT(*) FROM audit_log WHERE operation_time >= ? AND operation_time < ?",
+                Long.class, startOfDay, startOfNextDay);
         stats.put("todayCount", todayCount != null ? todayCount : 0);
 
         // 今日登录数
         Long todayLogin = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM audit_log WHERE operation_type = 'LOGIN' AND DATE(operation_time) = CURDATE()",
-                Long.class);
+                "SELECT COUNT(*) FROM audit_log WHERE operation_type = 'LOGIN' AND operation_time >= ? AND operation_time < ?",
+                Long.class, startOfDay, startOfNextDay);
         stats.put("todayLogin", todayLogin != null ? todayLogin : 0);
 
         // 操作类型统计
         List<Map<String, Object>> typeStats = jdbcTemplate.queryForList(
-                "SELECT operation_type, COUNT(*) as count FROM audit_log WHERE DATE(operation_time) = CURDATE() GROUP BY operation_type");
+                "SELECT operation_type, COUNT(*) as count FROM audit_log WHERE operation_time >= ? AND operation_time < ? GROUP BY operation_type",
+                startOfDay, startOfNextDay);
         stats.put("typeStats", typeStats);
 
         return stats;
@@ -136,12 +149,14 @@ public class AuditLogController {
     @Operation(summary = "获取操作类型列表")
     @CrestPermit("m:read")
     @GetMapping("/operation-types")
+    // 执行当前服务方法并返回处理结果
     public List<Map<String, Object>> operationTypes() {
         requireAuditAccess();
         return jdbcTemplate.queryForList(
                 "SELECT DISTINCT operation_type as value, operation_type as label FROM audit_log ORDER BY operation_type");
     }
 
+    // 执行当前服务方法并返回处理结果
     private void requireAuditAccess() {
         Long uid = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
         if (uid == null) {
@@ -155,5 +170,9 @@ public class AuditLogController {
         if (!hasAuditRole) {
             CrestException.throwException(ResultCode.PERMISSION_NO_ACCESS.code(), "当前用户无权访问审计日志");
         }
+    }
+
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
     }
 }

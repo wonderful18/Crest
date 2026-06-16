@@ -7,6 +7,7 @@ import DragComponent from '@/custom-component/component-group/DragComponent.vue'
 import { commonHandleDragEnd, commonHandleDragStart } from '@/utils/canvasUtils'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   propValue: {
     type: Array,
@@ -32,14 +33,17 @@ const props = defineProps({
 
 const { dvModel, themes } = toRefs(props)
 
+// 处理界面事件并同步业务状态
 const handleDragStart = e => {
   commonHandleDragStart(e, dvModel.value)
 }
 
+// 处理界面事件并同步业务状态
 const handleDragEnd = e => {
   commonHandleDragEnd(e, dvModel.value)
 }
 
+// 创建新数据并写入当前配置
 const newComponent = (componentName, innerType) => {
   eventBus.emit('handleNew', { componentName: componentName, innerType: innerType })
 }

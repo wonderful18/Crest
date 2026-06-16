@@ -72,6 +72,7 @@ import circlePackingOrigin from '@/assets/svg/circle-packing-origin.svg'
 import bulletGraphOrigin from '@/assets/svg/bullet-graph-origin.svg'
 import { syncViewTitle } from '@/utils/canvasUtils'
 import { useI18n } from '@/hooks/web/useI18n'
+// 图层更多操作下拉实例，供右键菜单关闭和重命名流程复用
 const dropdownMore = ref(null)
 const lockStore = lockStoreWithOut()
 const { t } = useI18n()
@@ -80,10 +81,12 @@ const snapshotStore = snapshotStoreWithOut()
 const layerStore = layerStoreWithOut()
 const composeStore = composeStoreWithOut()
 
+// 框选区域和当前组件状态分别来自组合、画布仓库，图层列表只负责同步选择结果
 const { areaData } = storeToRefs(composeStore)
 
 const { curComponent, canvasViewInfo } = storeToRefs(dvMainStore)
 
+// 接收图层列表位置和组件数据；内层列表只展示当前分组或标签页下的子组件
 const props = defineProps({
   tabPosition: {
     type: String,
@@ -98,19 +101,23 @@ const props = defineProps({
 
 const { componentData } = toRefs(props)
 
+// 按视觉倒序获取组件
 const getComponent = index => {
   return componentData.value[componentData.value.length - 1 - index]
 }
+// 将视觉索引转换为真实组件索引
 const transformIndex = index => {
   return componentData.value.length - 1 - index
 }
 
+// 选择当前图层组件
 const onClick = index => {
   setCurComponent(index)
-  //其他情况点击清理选择区域
+  // 点击图层时清理框选区域
   areaData.value.components.splice(0, areaData.value.components.length)
 }
 
+// 设置当前选中组件
 const setCurComponent = index => {
   dvMainStore.setCurComponent({ component: componentData.value[index], index })
 }
@@ -120,6 +127,7 @@ let editComponentId = ref('')
 let inputName = ref('')
 let nameInput = ref(null)
 let curEditComponent = null
+// 进入图层名称编辑状态
 const editComponentName = item => {
   curEditComponent = curComponent.value
   editComponentId.value = `#component-label-${item.id}`
@@ -129,6 +137,7 @@ const editComponentName = item => {
     nameInput.value.focus()
   })
 }
+// 保存图层名称并退出编辑状态
 const closeEditComponentName = () => {
   nameEdit.value = false
   if (!inputName.value || !inputName.value.trim()) {
@@ -147,6 +156,7 @@ const closeEditComponentName = () => {
   curEditComponent = null
 }
 
+// 锁定当前组件
 const lock = () => {
   setTimeout(() => {
     lockStore.lock()
@@ -154,6 +164,7 @@ const lock = () => {
   })
 }
 
+// 解锁当前组件
 const unlock = () => {
   setTimeout(() => {
     lockStore.unlock()
@@ -161,6 +172,7 @@ const unlock = () => {
   })
 }
 
+// 隐藏当前组件
 const hideComponent = () => {
   setTimeout(() => {
     layerStore.hideComponent()
@@ -168,6 +180,7 @@ const hideComponent = () => {
   })
 }
 
+// 显示当前组件
 const showComponent = () => {
   setTimeout(() => {
     layerStore.showComponent()
@@ -175,14 +188,15 @@ const showComponent = () => {
   })
 }
 
+// 拖拽结束后同步倒序图层顺序
 const dragOnEnd = ({ oldIndex, newIndex }) => {
   const source = componentData.value[newIndex]
   const comLength = componentData.value.length
-  // 还原数组
+  // 先还原拖拽库调整过的数组顺序
   componentData.value.splice(newIndex, 1)
   componentData.value.splice(oldIndex, 0, source)
   const target = componentData.value[comLength - 1 - oldIndex]
-  // 反向移动数组
+  // 再按图层视觉倒序移动真实目标组件
   componentData.value.splice(comLength - 1 - oldIndex, 1)
   componentData.value.splice(comLength - 1 - newIndex, 0, target)
   dvMainStore.setCurComponent({ component: target, index: transformIndex(comLength - oldIndex) })
@@ -244,6 +258,7 @@ const iconMap = {
   'circle-packing-origin': circlePackingOrigin,
   'bullet-graph-origin': bulletGraphOrigin
 }
+// 根据组件类型解析图层图标，图表组件需要从画布视图信息反查真实图表类型
 const getIconName = item => {
   if (item.component === 'UserView') {
     const viewInfo = canvasViewInfo.value[item.id]
@@ -253,6 +268,7 @@ const getIconName = item => {
   }
 }
 
+// 关闭右键菜单并按需进入重命名状态，延迟执行用于等待下拉层销毁完成
 const menuAsideClose = (param, index) => {
   const iconDom = document.getElementById('close-button')
   if (iconDom) {
@@ -265,9 +281,10 @@ const menuAsideClose = (param, index) => {
   }
 }
 
+// 拦截原生右键菜单，右键操作由组件内的下拉菜单统一承接
 const handleContextMenu = e => {
   e.preventDefault()
-  // 获取鼠标点击位置
+  // 记录鼠标点击位置以定位临时菜单容器
   const x = e.clientX
   const y = e.clientY
   const customContextMenu = document.createElement('div')
@@ -275,23 +292,22 @@ const handleContextMenu = e => {
   customContextMenu.style.left = x + 'px'
   customContextMenu.style.top = y + 'px'
 
-  // 将自定义菜单添加到页面
+  // 将临时菜单容器添加到页面
   document.body.appendChild(customContextMenu)
 
-  // 为自定义菜单添加事件监听器，例如，点击菜单项后执行的操作
+  // 点击临时菜单后清理容器
   customContextMenu.addEventListener('click', () => {
-    // 在这里执行菜单项点击后的操作
-    // 例如，关闭菜单
     document.body.removeChild(customContextMenu)
   })
 }
+// 切换分组图层展开状态，展开后由上层列表继续递归渲染子图层
 const expandClick = component => {
   component['expand'] = !component['expand']
 }
 </script>
 
 <template>
-  <!--为了保持图层视觉上的一致性 这里进行数组的倒序排列 相应的展示和移动按照倒序处理-->
+  <!-- 图层面板按视觉层级倒序展示，拖拽和选中索引需要同步转换到真实组件数组。 -->
   <div class="real-time-component-list">
     <button hidden="true" id="close-button"></button>
     <el-row class="list-wrap">
@@ -426,12 +442,14 @@ const expandClick = component => {
 .real-time-component-list {
   white-space: nowrap;
   .list-wrap {
+    // 图层列表高度跟随工具栏预留空间，避免长列表覆盖底部操作区。
     max-height: calc(100% - @component-toolbar-height);
     overflow-y: auto;
     width: 100%;
     .list-container {
       width: 100%;
       .component-item {
+        // 单行图层项固定高度，避免图标显示、编辑输入框和拖拽态造成列表抖动。
         position: relative;
         height: 30px;
         width: 100%;
@@ -481,6 +499,7 @@ const expandClick = component => {
           background-color: rgba(235, 235, 235, 0.1);
 
           .icon-container {
+            // 操作区默认收起，悬停时展开显示锁定、显隐和更多操作。
             .component-base {
               opacity: 1;
             }
@@ -522,6 +541,7 @@ const expandClick = component => {
 }
 
 .component-base {
+  // 统一图层操作按钮尺寸，保证内层列表与主图层列表视觉一致。
   cursor: pointer;
   height: 22px !important;
   width: 22px !important;
@@ -554,6 +574,7 @@ const expandClick = component => {
 }
 
 .container-item-not-show {
+  // 隐藏图层使用低亮文本和图标，保留可识别层级但降低视觉权重。
   color: #5f5f5f !important;
   :deep(.component-icon) {
     color: #5f5f5f !important;

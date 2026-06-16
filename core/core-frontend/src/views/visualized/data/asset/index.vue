@@ -27,6 +27,7 @@ import {
   updateGovernanceStatus
 } from './dataAssetPolicy.mjs'
 
+// 数据资产列表的筛选、分页和表格数据状态
 const state = reactive({
   loading: false,
   keyword: '',
@@ -39,16 +40,27 @@ const state = reactive({
   records: [] as DataAsset[]
 })
 
+// 资产详情抽屉显示状态
 const detailDrawerVisible = ref(false)
+// 资产详情加载状态
 const detailLoading = ref(false)
+// 当前详情抽屉选中的页签
 const activeDetailTab = ref('basic')
+// 当前抽屉展示的资产详情
 const detail = ref<DataAssetDetail | null>(null)
+// 资产信息维护弹窗显示状态
 const profileDialogVisible = ref(false)
+// 资产信息保存状态
 const profileSaving = ref(false)
+// 负责人列表加载状态
 const ownerLoading = ref(false)
+// 数据集废弃影响范围加载状态
 const profileImpactLoading = ref(false)
+// 可选负责人列表
 const owners = ref<DataAssetOwner[]>([])
+// 当前资产的下游影响范围
 const profileImpact = ref<DataAssetImpactItem[]>([])
+// 资产信息维护表单
 const profileForm = reactive({
   assetType: '',
   assetId: '',
@@ -61,6 +73,7 @@ const profileForm = reactive({
   deprecated: false
 })
 
+// 资产类型到展示文案的映射
 const typeLabelMap = computed(() =>
   assetTypeOptions.reduce<Record<string, string>>((acc, item) => {
     if (item.value !== 'all') {
@@ -70,6 +83,7 @@ const typeLabelMap = computed(() =>
   }, {})
 )
 
+// 当前资产下游影响按类型汇总后的展示数据
 const impactSummary = computed(() => {
   const summary = detail.value?.impact?.summary || {}
   return Object.keys(summary).map(key => ({
@@ -79,13 +93,17 @@ const impactSummary = computed(() => {
   }))
 })
 
+// 当前资产影响范围明细
 const impactItems = computed(() => detail.value?.impact?.items || [])
 
+// 当前详情抽屉中的资产主体信息
 const currentAsset = computed(() => detail.value?.asset)
+// 当前资产上下游关系列表，统一补充关系方向
 const lineageRows = computed(() => [
   ...relationList(detail.value?.upstream).map(item => ({ ...item, direction: '上游' })),
   ...relationList(detail.value?.downstream).map(item => ({ ...item, direction: '下游' }))
 ])
+// 详情抽屉页签配置和数量徽标
 const detailTabOptions = computed(() => [
   { label: '基础信息', value: 'basic', count: null },
   {
@@ -97,12 +115,16 @@ const detailTabOptions = computed(() => [
   },
   { label: '影响范围', value: 'impact', count: impactItems.value.length }
 ])
+// 当前维护对象是否为数据集，数据集才允许编辑治理状态
 const profileIsDataset = computed(() => profileForm.assetType === 'dataset')
+// 废弃数据集弹窗中优先展示的影响范围列表
 const visibleProfileImpact = computed(() => profileImpact.value.slice(0, 5))
+// 废弃数据集弹窗中未展开展示的影响范围数量
 const remainingProfileImpactCount = computed(() =>
   Math.max(profileImpact.value.length - visibleProfileImpact.value.length, 0)
 )
 
+// 表格分页组件配置
 const paginationConfig = reactive({
   currentPage: state.page,
   pageSize: state.pageSize,
@@ -112,6 +134,7 @@ const paginationConfig = reactive({
   total: state.total
 })
 
+// 将当前筛选条件转换为资产列表接口参数
 const requestParams = () => ({
   keyword: state.keyword || undefined,
   assetType: state.assetType === 'all' ? undefined : state.assetType,
@@ -119,8 +142,10 @@ const requestParams = () => ({
   ...governanceFilterToRequest(state.governanceStatus)
 })
 
+// 格式化资产时间戳
 const formatTime = (time?: number) => (time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '-')
 
+// 加载数据资产列表并同步分页状态
 const loadAssets = async () => {
   state.loading = true
   try {
@@ -136,11 +161,13 @@ const loadAssets = async () => {
   }
 }
 
+// 重置到第一页并按当前筛选条件查询
 const search = () => {
   state.page = 1
   loadAssets()
 }
 
+// 清空所有筛选条件并重新查询
 const resetFilters = () => {
   state.keyword = ''
   state.assetType = 'all'
@@ -149,12 +176,14 @@ const resetFilters = () => {
   search()
 }
 
+// 切换页码后加载对应页数据
 const pageChange = (page: number) => {
   state.page = page
   paginationConfig.currentPage = page
   loadAssets()
 }
 
+// 切换每页条数后回到第一页
 const sizeChange = (pageSize: number) => {
   state.pageSize = pageSize
   state.page = 1
@@ -163,6 +192,7 @@ const sizeChange = (pageSize: number) => {
   loadAssets()
 }
 
+// 加载资产详情并打开指定详情页签
 const loadDetail = async (asset: DataAsset, tab = 'basic') => {
   detailDrawerVisible.value = true
   activeDetailTab.value = tab
@@ -175,6 +205,7 @@ const loadDetail = async (asset: DataAsset, tab = 'basic') => {
   }
 }
 
+// 懒加载负责人列表，供筛选和资产维护使用
 const loadOwners = async () => {
   if (owners.value.length) {
     return
@@ -188,6 +219,7 @@ const loadOwners = async () => {
   }
 }
 
+// 打开资产信息维护弹窗，并按权限和资产类型初始化表单
 const openProfileDialog = async (asset: DataAsset) => {
   if (!canEditProfile(asset)) {
     ElMessage.warning(profileTooltip(asset))
@@ -213,6 +245,7 @@ const openProfileDialog = async (asset: DataAsset) => {
   }
 }
 
+// 加载资产维护弹窗中的下游影响范围
 const loadProfileImpact = async (asset: DataAsset) => {
   profileImpactLoading.value = true
   try {
@@ -223,18 +256,22 @@ const loadProfileImpact = async (asset: DataAsset) => {
   }
 }
 
+// 切换认证状态，并按互斥规则同步治理状态
 const changeCertified = (value: boolean) => {
   Object.assign(profileForm, updateGovernanceStatus(profileForm, 'certified', value))
 }
 
+// 切换推荐状态，并按互斥规则同步治理状态
 const changeRecommended = (value: boolean) => {
   Object.assign(profileForm, updateGovernanceStatus(profileForm, 'recommended', value))
 }
 
+// 切换废弃状态，并按互斥规则同步治理状态
 const changeDeprecated = (value: boolean) => {
   Object.assign(profileForm, updateGovernanceStatus(profileForm, 'deprecated', value))
 }
 
+// 保存资产负责人、标签、说明和治理状态
 const saveProfile = async () => {
   const status = profileIsDataset.value
     ? normalizeGovernanceStatus(profileForm)
@@ -266,15 +303,19 @@ const saveProfile = async () => {
   }
 }
 
+// 将可空关系数组规范化为空数组
 const relationList = (items?: DataAssetImpactItem[]) => items || []
 
+// 根据关系方向返回空状态文案
 const relationEmptyText = (type: 'upstream' | 'downstream') =>
   type === 'upstream' ? '暂无上游资产' : '暂无下游资产'
 
+// 根据维护权限生成编辑按钮提示文案
 const profileTooltip = (asset: DataAsset) => {
   return canEditProfile(asset) ? '编辑资产信息' : '无维护权限'
 }
 
+// 页面初始化时加载资产列表
 onMounted(loadAssets)
 </script>
 
@@ -282,6 +323,7 @@ onMounted(loadAssets)
   <div class="asset-manage">
     <div class="asset-content">
       <div class="asset-table-info">
+        <!-- 筛选区组合关键字、资产类型、治理状态和负责人，查询时统一转换为接口参数。 -->
         <div class="search-operate">
           <el-input
             v-model.trim="state.keyword"
@@ -333,6 +375,7 @@ onMounted(loadAssets)
           <el-button :icon="Refresh" @click="loadAssets">刷新</el-button>
         </div>
 
+        <!-- 资产列表展示治理标识、负责人、上下游数量和维护入口。 -->
         <div class="info-table">
           <grid-table
             class="asset-grid-table"
@@ -414,6 +457,7 @@ onMounted(loadAssets)
       </div>
     </div>
 
+    <!-- 详情抽屉按基础信息、上下游和影响范围分区，避免列表页承载过多关系数据。 -->
     <el-drawer
       v-model="detailDrawerVisible"
       size="560px"
@@ -451,6 +495,7 @@ onMounted(loadAssets)
             </span>
           </div>
 
+          <!-- 页签数量徽标来自当前详情数据，切换只改变本地展示状态。 -->
           <div class="detail-tabs" role="tablist" aria-label="资产详情">
             <button
               v-for="tab in detailTabOptions"
@@ -564,6 +609,7 @@ onMounted(loadAssets)
       </div>
     </el-drawer>
 
+    <!-- 资产维护弹窗同时保存负责人、说明、标签和数据集治理状态。 -->
     <el-dialog v-model="profileDialogVisible" title="资产信息" width="560px">
       <el-form label-width="96px" class="profile-form">
         <el-form-item label="资产名称">
@@ -607,6 +653,7 @@ onMounted(loadAssets)
             </el-checkbox>
           </div>
         </el-form-item>
+        <!-- 废弃数据集前展示下游引用，帮助维护人评估影响范围。 -->
         <el-form-item v-if="profileIsDataset && profileForm.deprecated" label="影响范围">
           <div v-loading="profileImpactLoading" class="profile-impact">
             <div v-if="!profileImpact.length" class="profile-impact-empty">暂无下游影响</div>

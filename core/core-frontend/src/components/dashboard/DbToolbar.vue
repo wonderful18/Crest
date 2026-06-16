@@ -61,6 +61,7 @@ const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const copyStore = copyStoreWithOut()
 const { styleChangeTimes, snapshotIndex } = storeToRefs(snapshotStore)
+// 应用资源保存弹窗引用，仪表板被作为应用创建时使用
 const resourceAppOpt = ref(null)
 const {
   linkageSettingStatus,
@@ -74,23 +75,35 @@ const {
   curBatchOptComponents,
   appData
 } = storeToRefs(dvMainStore)
+// 当前工具栏固定服务仪表板模型，传给组件面板过滤可用组件
 const dvModel = 'dashboard'
+// 组件复用弹窗引用，用于打开复制到当前画布的复用流程
 const multiplexingRef = ref(null)
+// 内部全屏预览组件引用，负责编辑器内预览切换
 const fullScreeRef = ref(null)
+// 画布名称编辑态，双击标题后进入输入模式
 let nameEdit = ref(false)
+// 画布名称临时输入值，校验通过后写回全局画布信息
 let inputName = ref('')
+// 名称输入框引用，用于进入编辑态后自动聚焦
 let nameInput = ref(null)
+// 批量操作前的画布快照，保留取消或后续恢复所需的基准状态
 const state = reactive({
   preBatchComponentData: [],
   preBatchCanvasViewInfo: {}
 })
+// 资源分组选择弹窗引用，首次保存普通仪表板时选择目录
 const resourceGroupOpt = ref(null)
+// 外部参数设置弹窗引用，打开前必须先保证画布已保存
 const outerParamsSetRef = ref(null)
 const { wsCache } = useCache('localStorage')
 const userStore = useUserStoreWithOut()
+// iframe 状态用于控制工具栏内部分导航行为
 const isIframe = computed(() => appStore.getIsIframe)
+// 工具栏向父级通知恢复到已发布版本的操作
 const emits = defineEmits(['recoverToPublished'])
 
+// 创建类型由父组件传入，默认保持普通创建流程
 defineProps({
   createType: {
     type: String,
@@ -98,6 +111,7 @@ defineProps({
   }
 })
 
+// 开始编辑画布名称，并在下一轮渲染后聚焦输入框
 const editCanvasName = () => {
   nameEdit.value = true
   inputName.value = dvInfo.value.name
@@ -105,6 +119,7 @@ const editCanvasName = () => {
     nameInput.value.focus()
   })
 }
+// 结束名称编辑时做空值、重复值和长度校验，通过后只更新本地画布信息
 const closeEditCanvasName = () => {
   nameEdit.value = false
   if (!inputName.value || !inputName.value.trim()) {
@@ -122,6 +137,7 @@ const closeEditCanvasName = () => {
   inputName.value = ''
 }
 
+// 撤销最近一次快照，并通知画布重新初始化矩阵布局
 const undo = () => {
   if (snapshotIndex.value > 0) {
     snapshotStore.undo()
@@ -129,6 +145,7 @@ const undo = () => {
   }
 }
 
+// 恢复被撤销的快照，并同步刷新画布矩阵
 const redo = () => {
   if (snapshotIndex.value !== snapshotStore.snapshotData.length - 1) {
     snapshotStore.redo()
@@ -136,10 +153,12 @@ const redo = () => {
   }
 }
 
+// 在当前编辑器内打开全屏预览，不改变外部路由
 const previewInner = () => {
   fullScreeRef.value.toggleFullscreen()
 }
 
+// 保存后打开新窗口预览，未落库的画布不允许生成外部预览地址
 const previewOuter = () => {
   if (!dvInfo.value.id || dvInfo.value.dataState === 'prepare') {
     ElMessage.warning(t('components.current_page_first'))
@@ -156,10 +175,12 @@ const previewOuter = () => {
   })
 }
 
+// 从预览态切回编辑态
 const edit = () => {
   dvMainStore.setEditMode('edit')
 }
 
+// 汇总画布和 Tab 内的查询组件，保存前用于刷新查询条件
 const queryList = computed(() => {
   let arr = []
   componentData.value.forEach(com => {
@@ -175,6 +196,7 @@ const queryList = computed(() => {
   return arr
 })
 
+// 首次选择资源目录后回填画布基础信息，并继续执行保存或发布
 const resourceOptFinish = param => {
   if (param && param.opt === 'newLeaf') {
     dvInfo.value.dataState = 'ready'
@@ -184,14 +206,16 @@ const resourceOptFinish = param => {
   }
 }
 
+// 将恢复到已发布版本的动作透传给父级处理
 const recoverToPublished = () => {
   emits('recoverToPublished')
 }
 
+// 更新发布状态时同步当前画布内所有视图编号，保证发布态包含最新组件集合
 const publishStatusChange = status => {
   const targetViewIds = []
   findAllViewsId(componentData.value, targetViewIds)
-  // do update
+  // 发布状态更新必须携带当前移动端布局和活动视图清单，后端据此生成发布快照
   updatePublishStatus({
     id: dvInfo.value.id,
     name: dvInfo.value.name,
@@ -210,6 +234,7 @@ const publishStatusChange = status => {
   })
 }
 
+// 保存前检查组织上下文和首次保存目录，必要时先引导资源归档再继续
 const saveCanvasWithCheck = (withPublish = false, status?) => {
   if (userStore.getOid && wsCache.get('user.oid') && userStore.getOid !== wsCache.get('user.oid')) {
     ElMessageBox.confirm(t('components.from_other_organizations'), {
@@ -226,7 +251,7 @@ const saveCanvasWithCheck = (withPublish = false, status?) => {
   }
   if (dvInfo.value.dataState === 'prepare') {
     if (appData.value) {
-      // 应用保存
+      // 应用创建需要先收集应用资源参数，再由应用保存弹窗完成归档
       const params = {
         base: {
           pid: '',
@@ -251,6 +276,7 @@ const saveCanvasWithCheck = (withPublish = false, status?) => {
   })
 }
 
+// 执行实际画布保存，并在需要发布时串联发布状态更新
 const saveResource = (checkParams?) => {
   wsCache.delete('CREST-DV-CACHE-' + dvInfo.value.id)
   if (styleChangeTimes.value > 0 || checkParams.withPublish) {
@@ -297,12 +323,14 @@ const saveResource = (checkParams?) => {
   }
 }
 
+// 清空当前画布组件并记录快照，便于后续撤销恢复
 const clearCanvas = () => {
   dvMainStore.setCurComponent({ component: null, index: null })
   dvMainStore.setComponentData([])
   snapshotStore.recordSnapshotCache('renderChart')
 }
 
+// 返回列表前检查未保存样式变更，避免直接离开导致编辑内容丢失
 const backToMain = () => {
   let url = '#/panel/index'
   if (dvInfo.value.id) {
@@ -323,6 +351,7 @@ const backToMain = () => {
 }
 const embeddedStore = useEmbedded()
 
+// 根据嵌入式宿主、浏览器历史和普通页面三种场景执行返回
 const backHandler = (url: string) => {
   if (isEmbedded.value) {
     wsCache.set(`db-info-id`, dvInfo.value.id)
@@ -350,29 +379,35 @@ const backHandler = (url: string) => {
   }
 }
 
+// 打开组件复用弹窗，实际组件选择和写入由弹窗内部处理
 const multiplexingCanvasOpen = () => {
   multiplexingRef.value.dialogInit()
 }
+// 监听全局工具栏事件，和快捷键、外部按钮保持同一套保存预览入口
 onMounted(() => {
   eventBus.on('preview', previewInner)
   eventBus.on('save', saveCanvasWithCheck)
   eventBus.on('clearCanvas', clearCanvas)
 })
+// 组件卸载时移除全局事件，防止重复进入编辑器后触发多次保存
 onBeforeUnmount(() => {
   eventBus.off('preview', previewInner)
   eventBus.off('save', saveCanvasWithCheck)
   eventBus.off('clearCanvas', clearCanvas)
   dvMainStore.setAppDataInfo(null)
 })
+// 打开仪表板设置前清空当前组件选择，确保设置面板针对画布本身
 const openDataBoardSetting = () => {
   dvMainStore.setCurComponent({ component: null, index: null })
   dvMainStore.setHiddenListStatus(false)
 }
 
+// 切换隐藏组件列表的显隐状态
 const openHiddenList = () => {
   dvMainStore.setHiddenListStatus()
 }
 
+// 批量删除选中组件，包含 Tab 容器内部的嵌套组件
 const batchDelete = () => {
   const componentDataTemp = deepCopy(componentData.value)
   componentDataTemp.forEach(component => {
@@ -394,6 +429,7 @@ const batchDelete = () => {
   })
 }
 
+// 批量复制选中组件，复制数据保留画布视图上下文供粘贴时重建位置
 const batchCopy = () => {
   const multiplexingComponents = {}
   componentData.value.forEach(component => {
@@ -419,9 +455,10 @@ const batchCopy = () => {
   saveBatchChange()
 }
 
+// 切换批量模式时保存进入前快照，并关闭隐藏列表避免状态冲突
 const batchOptStatusChange = value => {
   if (value) {
-    // 如果当前进入批量操作界面 提前保存镜像
+    // 进入批量操作前保留组件和画布信息，后续可以基于该状态做恢复
     state.preBatchComponentData = deepCopy(componentData.value)
     state.preBatchCanvasViewInfo = deepCopy(canvasViewInfo.value)
   } else {
@@ -432,6 +469,7 @@ const batchOptStatusChange = value => {
   dvMainStore.setBatchOptStatus(value)
 }
 
+// 打开外部参数设置前确保已有组件且画布已落库，避免参数绑定到临时资源
 const openOuterParamsSet = () => {
   if (componentData.value.length === 0) {
     ElMessage.warning(t('components.add_components_first'))
@@ -441,22 +479,25 @@ const openOuterParamsSet = () => {
     ElMessage.warning(t('components.current_page_first'))
     return
   }
-  //设置需要先触发保存
+  // 参数配置依赖最新画布结构，打开弹窗前必须先完成一次保存
   canvasSave(() => {
     outerParamsSetRef.value.optInit()
   })
 }
 
+// 批量操作保存后退出批量模式
 const saveBatchChange = () => {
   batchOptStatusChange(false)
 }
 
+// 取消联动配置并清理当前联动编辑上下文
 const cancelLinkageSetting = () => {
   dvMainStore.clearLinkageSettingInfo()
 }
 
+// 保存当前视图联动配置，并刷新面板联动与跳转缓存
 const saveLinkageSetting = () => {
-  // 字段检查
+  // 每组联动必须同时选择来源字段和目标字段，否则后端无法生成有效过滤条件
   for (const key in targetLinkageInfo.value) {
     let subCheckCount = 0
     const linkageInfo = targetLinkageInfo.value[key]
@@ -487,25 +528,29 @@ const saveLinkageSetting = () => {
   }
   saveLinkage(request).then(() => {
     ElMessage.success(t('save_success.common'))
-    // 刷新联动信息
+    // 联动保存后刷新面板级联动缓存，保证后续预览和编辑读取一致
     getPanelAllLinkageInfo(dvInfo.value.id).then(rsp => {
       dvMainStore.setNowPanelTrackInfo(rsp.data)
     })
     cancelLinkageSetting()
-    // 刷新跳转信息
+    // 跳转配置可能与联动目标共享视图上下文，需要同步刷新
     queryVisualizationJumpInfo(dvInfo.value.id).then(rsp => {
       dvMainStore.setNowPanelJumpInfo(rsp.data)
     })
   })
 }
 
+// 名称变化时记录快照，使标题编辑也能进入撤销历史
 const onDvNameChange = () => {
   snapshotStore.recordSnapshotCache('onDvNameChange')
 }
 const appStore = useAppStoreWithOut()
+// 嵌入式运行态包含产品内嵌和 iframe 两类宿主
 const isEmbedded = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
 
+// 外部窗口处理器引用，嵌入式宿主可通过它接管新窗口对象
 const openHandler = ref(null)
+// 预览窗口创建后交给宿主处理器，便于嵌入式场景统一管理窗口
 const initOpenHandler = newWindow => {
   if (openHandler?.value) {
     const pm = {

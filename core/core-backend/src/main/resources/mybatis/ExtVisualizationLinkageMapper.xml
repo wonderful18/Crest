@@ -145,8 +145,16 @@
 
     <select id="getPanelAllLinkageInfo" resultMap="AllLinkageMap">
         SELECT DISTINCT
-            CONCAT( vl.source_view_id, '#', vlf.source_field ) AS sourceInfo,
+            <choose>
+                <when test="_databaseId == 'ob-oracle'">
+                    TO_CHAR(vl.source_view_id) || '#' || TO_CHAR(vlf.source_field) AS sourceInfo,
+                    TO_CHAR(vl.target_view_id) || '#' || TO_CHAR(vlf.target_field) AS targetInfo
+                </when>
+                <otherwise>
+                    CONCAT( vl.source_view_id, '#', vlf.source_field ) AS sourceInfo,
                 CONCAT( vl.target_view_id, '#', vlf.target_field ) AS targetInfo
+                </otherwise>
+            </choose>
         FROM
             visualization_linkage vl
                 LEFT JOIN bi_chart ccv ON vl.source_view_id = ccv.id
@@ -160,8 +168,16 @@
 
     <select id="getPanelAllLinkageInfoSnapshot" resultMap="AllLinkageMap">
         SELECT DISTINCT
-            CONCAT( vl.source_view_id, '#', vlf.source_field ) AS sourceInfo,
+            <choose>
+                <when test="_databaseId == 'ob-oracle'">
+                    TO_CHAR(vl.source_view_id) || '#' || TO_CHAR(vlf.source_field) AS sourceInfo,
+                    TO_CHAR(vl.target_view_id) || '#' || TO_CHAR(vlf.target_field) AS targetInfo
+                </when>
+                <otherwise>
+                    CONCAT( vl.source_view_id, '#', vlf.source_field ) AS sourceInfo,
                 CONCAT( vl.target_view_id, '#', vlf.target_field ) AS targetInfo
+                </otherwise>
+            </choose>
         FROM
             snapshot_visualization_linkage vl
                 LEFT JOIN bi_chart_snapshot ccv ON vl.source_view_id = ccv.id

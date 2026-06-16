@@ -11,6 +11,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "业务权限编辑器")
 @Data
+// 定义接口请求或返回数据的传输结构
 public class BusiPerEditor extends BusiPermissionRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = 3067994331757489447L;

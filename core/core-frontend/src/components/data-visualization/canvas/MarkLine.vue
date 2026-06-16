@@ -5,8 +5,11 @@ import { getCurrentInstance, onMounted, ref } from 'vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 
+// 保存对齐辅助线的横向和纵向标识
 const lines = ref(['xt', 'xc', 'xb', 'yl', 'yc', 'yr']) // 分别对应三条横线和三条竖线
-const diff = ref(3) // 相距 dff 像素将自动吸附
+// 保存触发自动吸附的像素阈值
+const diff = ref(3) // 相距指定像素将自动吸附
+// 记录各辅助线的显示状态
 const lineStatus = ref({
   xt: false,
   xc: false,
@@ -19,12 +22,14 @@ const lineStatus = ref({
 const dvMainStore = dvMainStoreWithOut()
 const { curComponent, componentData } = storeToRefs(dvMainStore)
 let currentInstance
+// 隐藏全部对齐辅助线
 const hideLine = () => {
   Object.keys(lineStatus.value).forEach(line => {
     lineStatus.value[line] = false
   })
 }
 
+// 根据拖拽方向和组件位置显示可吸附的辅助线
 const showLine = (isDownward, isRightward) => {
   const linesRef = currentInstance.proxy.$refs
   const components = componentData.value
@@ -158,6 +163,7 @@ const showLine = (isDownward, isRightward) => {
   })
 }
 
+// 根据旋转后的组件尺寸换算拖拽偏移量
 const translateCurComponentShift = (key, condition, curComponentStyle) => {
   const { width, height } = curComponent.value.style
   if (key == 'top') {
@@ -167,6 +173,7 @@ const translateCurComponentShift = (key, condition, curComponentStyle) => {
   return Math.round(condition.dragShift - (width - curComponentStyle.width) / 2)
 }
 
+// 在候选辅助线中选择最符合拖拽方向的一条
 const chooseTheTrueLine = (needToShow, isDownward, isRightward) => {
   // 如果鼠标向右移动 则按从右到左的顺序显示竖线 否则按相反顺序显示
   // 如果鼠标向下移动 则按从下到上的顺序显示横线 否则按相反顺序显示
@@ -209,6 +216,7 @@ const chooseTheTrueLine = (needToShow, isDownward, isRightward) => {
   }
 }
 
+// 判断拖拽位置是否接近目标位置
 const isNearly = (dragValue, targetValue) => {
   return Math.abs(dragValue - targetValue) <= diff.value
 }

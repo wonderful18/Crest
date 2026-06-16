@@ -21,10 +21,13 @@
 import { useI18n } from '@/hooks/web/useI18n'
 import { computed } from 'vue'
 import { imgUrlTrans } from '@/utils/imgUtils'
+// 模板卡片文案函数
 const { t } = useI18n()
 
+// 模板应用和预览事件
 const emits = defineEmits(['templateApply', 'templatePreview'])
 
+// 模板卡片属性，包含模板数据、创建权限和资源前缀
 const props = defineProps({
   template: {
     type: Object,
@@ -46,6 +49,7 @@ const props = defineProps({
   }
 })
 
+// 模板缩略图背景样式
 const classBackground = computed(() => {
   return {
     background: `url(${imgUrlTrans(thumbnailUrl.value)}) no-repeat`,
@@ -53,6 +57,7 @@ const classBackground = computed(() => {
   }
 })
 
+// 根据缩略图是否为完整路径拼接最终访问地址
 const thumbnailUrl = computed(() => {
   if (
     props.template.thumbnail.indexOf('http') > -1 ||
@@ -64,10 +69,12 @@ const thumbnailUrl = computed(() => {
   }
 })
 
+// 应用当前模板
 const apply = () => {
   emits('templateApply', props.template)
 }
 
+// 预览当前模板内容
 const templateInnerPreview = () => {
   emits('templatePreview', props.template.id)
 }

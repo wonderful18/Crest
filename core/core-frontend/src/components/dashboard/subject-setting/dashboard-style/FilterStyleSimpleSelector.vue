@@ -169,28 +169,36 @@ import { adaptCurThemeFilterStyleAll } from '@/utils/canvasStyle'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import eventBus from '@/utils/eventBus'
 import { ElIcon } from 'element-plus-secondary'
+// 筛选样式精简面板的国际化文案函数
 const { t } = useI18n()
+// 大屏主状态保存画布级筛选样式
 const dvMainStore = dvMainStoreWithOut()
+// 快照仓库用于记录样式修改
 const snapshotStore = snapshotStoreWithOut()
+// 当前筛选样式配置
 const filterStyle = computed<any>(() => {
   return dvMainStore.canvasStyleData.component.filterStyle
 })
 
+// 精简样式面板本地状态和预设色板
 const state = reactive({
   fontSize: [],
   isSetting: false,
   predefineColors: COLOR_PANEL
 })
 
+// 主题切换事件的表单重置入口
 const initForm = () => {
-  // do
+  // 当前仅保留扩展入口，实际样式值由 store 统一维护
 }
+// 应用筛选样式变更并记录快照
 const themeChange = styleKey => {
   dvMainStore.canvasStyleData.component.filterStyle = cloneDeep(filterStyle.value)
   adaptCurThemeFilterStyleAll(styleKey)
   snapshotStore.recordSnapshotCache('filterStyleSimpleSelector-themeChange')
 }
 
+// 更新横向或标题布局配置
 const handleHorizontalChange = (type, horizontal = 'titleLayout') => {
   filterStyle.value[horizontal] = type
   themeChange(horizontal)

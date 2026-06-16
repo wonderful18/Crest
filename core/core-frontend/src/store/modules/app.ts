@@ -90,6 +90,7 @@ export const useAppStore = defineStore('app', {
   }
 })
 
+// 更新状态仓库中的业务数据
 export const useAppStoreWithOut = () => {
   return useAppStore(store)
 }

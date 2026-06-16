@@ -4,10 +4,8 @@ import lombok.Data;
 
 import java.util.List;
 
-/**
- * @Author Junjun
- */
 @Data
+// 定义接口请求或返回数据的传输结构
 public class FieldGroupDTO {
     private String name;
 

@@ -4,12 +4,9 @@ import io.crest.datasource.dao.auto.entity.CoreDatasourceTask;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * @Author gin
- * @Date 2021/3/9 3:19 下午
- */
 @Getter
 @Setter
+// 定义接口请求或返回数据的传输结构
 public class CoreDatasourceTaskDTO extends CoreDatasourceTask {
     private String datasourceName;
     private Long nextExecTime;

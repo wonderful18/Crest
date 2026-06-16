@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+// 定义页面展示或接口返回的数据结构
 public class OrgDetailVO {
 
     private Long id;

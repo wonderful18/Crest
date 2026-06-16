@@ -9,6 +9,7 @@ import java.io.Serializable;
 @Schema(description = "基础设置参数项")
 @Data
 @NoArgsConstructor
+// 定义页面展示或接口返回的数据结构
 public class SettingItemVO implements Serializable {
     @Schema(description = "键", requiredMode = Schema.RequiredMode.REQUIRED)
     private String pkey;

@@ -7,22 +7,25 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.stereotype.Component;
 
 @Component
+// 提供当前模块复用的工具能力
 public class IDUtils {
 
 
     private static SnowFlake snowFlake;
 
     @Resource
+    // 执行当前服务方法并返回处理结果
     public void setSnowFlake(SnowFlake snowFlake) {
         IDUtils.snowFlake = snowFlake;
     }
 
+    // 执行当前服务方法并返回处理结果
     public static String randomID(Integer num) {
         num = ObjectUtils.isEmpty(num) ? 16 : num;
         return RandomStringUtils.secure().nextAlphanumeric(num);
     }
 
-    // 主键请不要使用字符串 推荐雪花算法
+    // 业务主键默认使用雪花算法生成，避免随机字符串带来的排序和冲突风险。
     public static Long snowID() {
         return snowFlake.nextId();
     }

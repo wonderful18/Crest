@@ -166,18 +166,30 @@ import {
   getBlurBgStyle,
   getComponentBackgroundStyle
 } from '@/utils/backgroundStyleUtils'
+/** 国际化翻译函数，提供组件操作提示文案 */
 const { t } = useI18n()
+/** 主画布仓库提供当前组件、编辑模式和画布交互状态 */
 const dvMainStore = dvMainStoreWithOut()
+/** 快照仓库用于记录拖拽、缩放和隐藏操作 */
 const snapshotStore = snapshotStoreWithOut()
+/** 右键菜单仓库用于在组件选中时关闭上下文菜单 */
 const contextmenuStore = contextmenuStoreWithOut()
+/** 组合仓库提供框选区域和组合快捷键状态 */
 const composeStore = composeStoreWithOut()
+/** 当前组件所在画布的父节点引用 */
 const parentNode = ref(null)
+/** 组件最外层节点引用 */
 const shapeInnerRef = ref(null)
+/** 组件内容容器引用 */
 const componentInnerRef = ref(null)
+/** 组件编辑工具条实例引用 */
 const componentEditBarRef = ref(null)
+/** 单组件导出图片时的加载状态 */
 const downLoading = ref(false)
+/** 放大或导出场景下组件内部节点的唯一编号 */
 const viewDemoInnerId = computed(() => 'enlarge-inner-shape-' + element.value.id)
 
+/** 主画布状态引用，驱动选中、批量、联动、Tab 碰撞和全屏表现 */
 const {
   curComponent,
   dvInfo,
@@ -194,7 +206,9 @@ const {
   hiddenListStatus,
   fullscreenFlag
 } = storeToRefs(dvMainStore)
+/** 组合相关状态引用，包含编辑器 DOM、框选组件和快捷键状态 */
 const { editorMap, areaData, isCtrlOrCmdDown } = storeToRefs(composeStore)
+/** 组件交互事件，向画布核心同步拖拽、缩放、联动和跳转操作 */
 const emit = defineEmits([
   'userViewEnlargeOpen',
   'datasetParamsInit',
@@ -207,7 +221,9 @@ const emit = defineEmits([
   'linkageSetOpen'
 ])
 
+/** 当前画布是否处于编辑模式 */
 const isEditMode = computed(() => editMode.value === 'edit')
+/** 组件交互本地状态，记录 Tab 移入检测和碰撞阈值 */
 const state = reactive({
   seriesIdMap: {
     id: ''
@@ -221,6 +237,7 @@ const state = reactive({
   tabMoveInXOffset: 40,
   collisionGap: 10 // 碰撞深度有效区域,
 })
+/** 将当前仪表板组件标记为隐藏，并从矩阵布局中移除 */
 const hiddenComponent = event => {
   event.preventDefault()
   event.stopPropagation()
@@ -231,12 +248,16 @@ const hiddenComponent = event => {
     dvMainStore.setLastHiddenComponent(element.value.id)
   }
 }
+/** 隐藏列表模式下是否展示隐藏按钮 */
 const showHiddenIcon = computed(() => hiddenListStatus.value && isMainCanvas(canvasId.value))
+/** 控制组件内容在 Tab 移出拖拽时临时隐藏 */
 const contentDisplay = ref(true)
+/** 当前组件在编辑态是否锁定 */
 const shapeLock = computed(() => {
   return element.value['isLock'] && isEditMode.value
 })
 
+/** 计算组件当前所在的展示位置，区分批量、编辑和预览场景 */
 const showPosition = computed(() => {
   let position
   // 数据大屏批量操作合并为分组
@@ -250,6 +271,7 @@ const showPosition = computed(() => {
   return position
 })
 
+/** 组件渲染入参，包含组件配置、默认样式、矩阵信息和画布上下文 */
 const props = defineProps({
   element: {
     required: true,
@@ -311,6 +333,7 @@ const props = defineProps({
   }
 })
 
+/** 将组件入参转换为响应式引用 */
 const {
   element,
   defaultStyle,
@@ -322,12 +345,19 @@ const {
   canvasActive
 } = toRefs(props)
 
+/** 当前组件是否位于 Tabs 内的分组中 */
 const pTabGroupFlag = itemCanvasPathCheck(element.value, 'pTabGroup')
+/** 当前组件是否允许参与 Tab 移入移出判断 */
 const pJoinTab = checkJoinTab(element.value)
+/** 当前组件 DOM 编号 */
 const domId = ref('shape-id-' + element.value.id)
+/** 普通组件的八个缩放控制点 */
 const pointList = ['lt', 't', 'rt', 'r', 'rb', 'b', 'lb', 'l']
+/** 角点缩放控制点集合 */
 const pointCorner = ['lt', 'rt', 'rb', 'lb']
+/** 线形组件只允许左右两侧缩放 */
 const pointList2 = ['r', 'l']
+/** 各缩放控制点的初始角度 */
 const initialAngle = {
   // 每个点对应的初始角度
   lt: 0,
@@ -339,8 +369,10 @@ const initialAngle = {
   lb: 270,
   l: 315
 }
+/** 当前旋转角度下各控制点对应的鼠标样式 */
 const cursors = ref({})
 
+/** 当前组件是否进入吸顶冻结状态 */
 const freezeFlag = computed(() => {
   return (
     isMainCanvas(canvasId.value) &&
@@ -350,10 +382,12 @@ const freezeFlag = computed(() => {
   )
 })
 
+/** 移动端预览时是否展示同步和删除移动端设计按钮 */
 const showCheck = computed(() => {
   return mobileInPc.value && element.value.canvasId === 'canvas-main'
 })
 
+/** 从移动端配置同步或删除当前组件 */
 const updateFromMobile = (e, type) => {
   if (type === 'syncPcDesign') {
     e.preventDefault()
@@ -365,6 +399,7 @@ const updateFromMobile = (e, type) => {
   })
 }
 
+/** 角度区间到鼠标缩放方向的映射 */
 const angleToCursor = [
   // 每个范围的角度对应的光标
   { start: 338, end: 23, cursor: 'nw' },
@@ -377,14 +412,17 @@ const angleToCursor = [
   { start: 293, end: 338, cursor: 'w' }
 ]
 
+/** 当前选中对象是否为框选区域 */
 const isGroupArea = computed(() => {
   return curComponent.value?.component === 'GroupArea'
 })
 
+/** 当前组件是否为选中组件 */
 const active = computed(() => {
   return curComponent.value?.id === element.value.id
 })
 
+/** 需要使用边缘拖拽区域的插件图表或地图类组件 */
 const boardMoveActive = computed(() => {
   const CHARTS = [
     'flow-map',
@@ -401,26 +439,32 @@ const boardMoveActive = computed(() => {
   return element.value.isPlugin || CHARTS.includes(element.value.innerType)
 })
 
+/** 当前资源是否为仪表板 */
 const dashboardActive = computed(() => {
   return dvInfo.value.type === 'dashboard'
 })
 
+/** 根据组件类型返回可用缩放控制点 */
 const getPointList = () => {
   return element.value.component === 'line-shape' ? pointList2 : pointList
 }
 
+/** 判断当前组件是否可展示缩放控制点 */
 const isActive = () => {
   return active.value && !element.value['isLock'] && isEditMode.value && !freezeFlag.value
 }
 
+/** 转发用户视图放大事件 */
 const userViewEnlargeOpen = opt => {
   emit('userViewEnlargeOpen', opt)
 }
 
+/** 转发数据集参数初始化事件 */
 const datasetParamsInit = opt => {
   emit('datasetParamsInit', opt)
 }
 
+/** 计算指定缩放控制点的定位和鼠标样式 */
 const getPointStyle = point => {
   let { width, height } = defaultStyle.value
   const { sizeX, sizeY } = element.value
@@ -467,6 +511,7 @@ const getPointStyle = point => {
   return style
 }
 
+/** 按当前组件旋转角度计算各缩放点鼠标样式 */
 const getCursor = () => {
   const rotate = mod360(curComponent.value.style.rotate) // 取余 360
   const result = {}
@@ -496,6 +541,7 @@ const getCursor = () => {
   return result
 }
 
+/** 插件图表边缘拖拽时先选中组件再进入移动逻辑 */
 const handleBoardMouseDownOnShape = e => {
   if (!canvasActive.value) {
     return
@@ -504,6 +550,7 @@ const handleBoardMouseDownOnShape = e => {
   handleMouseDownOnShape(e)
 }
 
+/** 将可组合组件加入框选区域 */
 const areaDataPush = component => {
   if (
     component &&
@@ -515,12 +562,14 @@ const areaDataPush = component => {
     areaData.value.components.push(component)
   }
 }
+/** 双击非主画布组件时同步当前组件选择 */
 const handleDbClick = () => {
   if (element.value.canvasId !== 'canvas-main') {
     dvMainStore.setCurComponent({ component: element.value, index: index.value })
   }
 }
 
+/** 处理组件内容区鼠标按下，分流批量、组合、边缘拖拽和普通移动 */
 const handleInnerMouseDownOnShape = e => {
   if (!canvasActive.value) {
     return
@@ -546,6 +595,7 @@ const handleInnerMouseDownOnShape = e => {
   handleMouseDownOnShape(e)
 }
 
+/** 处理组件拖拽移动，并同步吸附、Tab 移入移出和快照记录 */
 const handleMouseDownOnShape = e => {
   if (element.value['editing']) {
     // e.preventDefault()
@@ -597,6 +647,7 @@ const handleMouseDownOnShape = e => {
   let lastTime = 0
   const throttleInterval = 25 // 约30FPS，可以根据需要调整
 
+  // 处理拖拽交互并更新目标位置
   const move = moveEvent => {
     const now = Date.now()
 
@@ -618,10 +669,10 @@ const handleMouseDownOnShape = e => {
       const left = curX - startX + startLeft
       pos['top'] = top
       pos['left'] = left
-      // 非主画布非分组画布的情况 需要检测是否从Tab中移除组件(向左移除30px 或者向右移除30px 向左移除30px)
-      // 因为仪表板中组件向下移动可能只是为了挤占空间 不一定是为了移出 这里无法判断明确意图 暂时支不支持向下移出
-      // 大屏和仪表板暂时做位置算法区分 仪表板暂时使用curX 因为缩放的影响 大屏使用 tab位置 + 组件位置（相对内部画布）+初始触发点
-      // 如果组件在tab中且tab在Group中 不允许移入移出 pTabGroupFlag = true
+      // 非主画布和非分组画布中，组件越过 Tab 横向边界时触发移出判断。
+      // 仪表板下移可能只是调整布局空间，因此移出判断仅处理横向越界。
+      // 大屏与仪表板使用不同坐标来源，避免缩放后拖拽位置偏移。
+      // Tab 位于分组内时不允许组件移入或移出。
       if (
         !pTabGroupFlag &&
         pJoinTab &&
@@ -695,6 +746,7 @@ const handleMouseDownOnShape = e => {
     })
   }
 
+  // 衔接当前组件交互和状态同步
   const up = () => {
     // 清理动画帧
     if (rafId) {
@@ -730,6 +782,7 @@ const handleMouseDownOnShape = e => {
   document.addEventListener('mouseup', up)
 }
 
+/** 选中大屏组件时阻止事件冒泡并关闭右键菜单 */
 const selectCurComponent = e => {
   if (!canvasActive.value) {
     return
@@ -742,6 +795,7 @@ const selectCurComponent = e => {
   }
 }
 
+/** 批量模式下切换当前组件的批量选中状态 */
 const batchSelected = e => {
   if (batchOptFlag.value) {
     componentEditBarRef.value.batchOptCheckOut()
@@ -751,6 +805,7 @@ const batchSelected = e => {
   }
 }
 
+/** 处理缩放控制点拖拽，更新组件尺寸和分组内部比例 */
 const handleMouseDownOnPoint = (point, e) => {
   if (!canvasActive.value) {
     return
@@ -795,7 +850,7 @@ const handleMouseDownOnPoint = (point, e) => {
     )
   }
 
-  // 获取对称点的坐标 problem point
+  // 获取对称点坐标
   const symmetricPoint = {
     x: center.x - (curPoint.x - center.x) - offsetGapAdaptor('x', point) / 4,
     y: center.y - (curPoint.y - center.y) - offsetGapAdaptor('y', point) / 4
@@ -820,6 +875,7 @@ const handleMouseDownOnPoint = (point, e) => {
     })
   }
 
+  // 处理拖拽交互并更新目标位置
   const move = moveEvent => {
     // 第一次点击时也会触发 move，所以会有“刚点击组件但未移动，组件的大小却改变了”的情况发生
     // 因此第一次点击时不触发 move 事件
@@ -838,9 +894,9 @@ const handleMouseDownOnPoint = (point, e) => {
       curPoint,
       symmetricPoint
     })
-    //Temp dataV坐标偏移
+    // 大屏坐标偏移适配
     offsetDataVAdaptor(style, point)
-    // 保持宽搞比例调整
+    // 保持宽高比例调整
     if (curComponent.value.maintainRadio) {
       // 高度偏移量
       const heightOffset = style.height - defaultStyle.value.height
@@ -886,6 +942,7 @@ const handleMouseDownOnPoint = (point, e) => {
     }
   }
 
+  // 衔接当前组件交互和状态同步
   const up = () => {
     // 如果内部组件保持尺寸时，这里在鼠标抬起时，重新计算一下内部组件占比
     if (['Tabs'].includes(element.value.component) && element.value.resizeInnerKeep) {
@@ -905,6 +962,7 @@ const handleMouseDownOnPoint = (point, e) => {
   document.addEventListener('mouseup', up)
 }
 
+/** 大屏缩放时对边缘控制点做轻微偏移补偿 */
 const offsetDataVAdaptor = (style, point) => {
   if (!dashboardActive.value) {
     const offset = 1
@@ -923,7 +981,8 @@ const offsetDataVAdaptor = (style, point) => {
   }
 }
 
-// resize算法适配，根据9个拖转点的位置 调整curGap 引起的中心点centerPoint 圆点curPoint 对称点 symmetricPoint引起的偏移
+// resize 算法适配，根据拖拽点位置调整 curGap 对中心点、当前点和对称点的偏移
+/** 根据矩阵间距和拖拽点方向计算缩放偏移补偿 */
 const offsetGapAdaptor = (dimension, point) => {
   const offset = baseCellInfo.value.curGap
   if (dimension === 'x') {
@@ -933,6 +992,7 @@ const offsetGapAdaptor = (dimension, point) => {
   }
 }
 
+/** 判断分组内组件旋转后是否需要锁定缩放比例 */
 const isNeedLockProportion = () => {
   if (element.value.component != 'Group') return false
   const rotates = [0, 90, 180, 360]
@@ -945,11 +1005,13 @@ const isNeedLockProportion = () => {
   return false
 }
 
+/** 是否启用 SVG 内部背景板 */
 const svgInnerEnable = computed(() => {
   const { backgroundImageEnable, backgroundType, innerImage } = element.value.commonBackground
   return backgroundImageEnable && backgroundType === 'innerImage' && typeof innerImage === 'string'
 })
 
+/** 内部 SVG 背景板名称 */
 const commonBackgroundSvgInner = computed(() => {
   if (svgInnerEnable.value) {
     return element.value.commonBackground.innerImage.replace('board/', '').replace('.svg', '')
@@ -959,15 +1021,18 @@ const commonBackgroundSvgInner = computed(() => {
 })
 
 // 是否启用背景模糊，有背景图且开启了模糊
+/** 是否启用背景模糊层 */
 const blurBgEnable = computed(() => {
   return isBlurBgEnabled(element.value.commonBackground)
 })
 
 // 背景模糊层样式
+/** 背景模糊层样式 */
 const blurBgStyle = computed(() => {
   return getBlurBgStyle(element.value.commonBackground, scale.value)
 })
 
+/** 组件通用背景样式 */
 const componentBackgroundStyle = computed(() => {
   if (element.value.commonBackground && element.value.component !== 'GroupArea') {
     return getComponentBackgroundStyle(element.value.commonBackground, {
@@ -979,6 +1044,7 @@ const componentBackgroundStyle = computed(() => {
   return {}
 })
 
+/** 是否展示组件编辑工具条 */
 const editBarShowFlag = computed(() => {
   return (
     ((active.value || batchOptFlag.value) &&
@@ -987,18 +1053,22 @@ const editBarShowFlag = computed(() => {
   )
 })
 
+/** 当前组件是否处于联动设置激活状态 */
 const linkageActive = computed(() => {
   return linkageSettingStatus.value && element.value.id === curLinkageView.value.id
 })
 
+/** 打开链接跳转设置 */
 const linkJumpSetOpen = () => {
   emit('linkJumpSetOpen')
 }
+/** 打开联动设置 */
 const linkageSetOpen = () => {
   emit('linkageSetOpen')
 }
 
 // 设置属性(属性跟随所属canvas component类型 要做出改变)
+/** 设置组件 DOM 属性，供 Tab 移入检测和组件识别使用 */
 const settingAttribute = () => {
   // 设置Tab移入检测
   shapeInnerRef.value.setAttribute('tab-is-check', `${isTabMoveCheck.value}`)
@@ -1008,6 +1078,7 @@ const settingAttribute = () => {
   shapeInnerRef.value.setAttribute('component-id', `${element.value.id}`)
 }
 
+/** 检测拖拽组件是否进入 Tabs 碰撞区或移入有效区 */
 const tabMoveInCheck = async () => {
   const curNode = document.querySelector('#' + domId.value) as HTMLElement
   if (!curNode) {
@@ -1087,6 +1158,7 @@ const tabMoveInCheck = async () => {
     }
   }
 }
+/** 3D 旋转组件的插槽补偿样式 */
 const slotStyle = computed(() => {
   // 3d效果支持
   if (element.value['multiDimensional'] && element.value['multiDimensional']?.enable) {
@@ -1116,14 +1188,17 @@ const slotStyle = computed(() => {
   }
 })
 
+/** 当前是否处于仪表板批量操作模式 */
 const batchOptFlag = computed(() => {
   return batchOptStatus.value && dashboardActive.value
 })
 
+/** 当前组件是否正在与 Tab 组件碰撞 */
 const dragCollision = computed(() => {
   return active.value && Boolean(tabCollisionActiveId.value)
 })
 
+/** 将当前组件导出为图片 */
 const htmlToImage = () => {
   downLoading.value = true
   useEmitt().emitter.emit('l7-prepare-picture', element.value.id)
@@ -1131,7 +1206,7 @@ const htmlToImage = () => {
     activeWatermarkCheckUser(viewDemoInnerId.value, 'canvas-main', scale.value)
     const dom = document.getElementById(viewDemoInnerId.value)
     downloadCanvas2('img', dom, '图表', () => {
-      // do callback
+      // 导出完成后清理水印和临时准备状态
       removeActiveWatermark(viewDemoInnerId.value)
       downLoading.value = false
       useEmitt().emitter.emit('l7-unprepare-picture', element.value.id)
@@ -1139,12 +1214,14 @@ const htmlToImage = () => {
   }, 200)
 }
 
+/** 组件位于分组画布时刷新分组边框 */
 const handleGroupComponent = () => {
   if (element.value.canvasId.includes('Group')) {
     composeStore.updateGroupBorder(element.value.canvasId)
   }
 }
 
+/** 挂载后初始化父节点、鼠标样式、事件监听和组件识别属性 */
 onMounted(() => {
   parentNode.value = document.querySelector('#editor-' + canvasId.value)
   // 用于 Group 组件
@@ -1156,7 +1233,7 @@ onMounted(() => {
     }
   })
   eventBus.on('stopAnimation', () => {
-    // do stopAnimation
+    // 停止动画事件预留入口
   })
   settingAttribute()
   const methodName = 'componentImageDownload-' + element.value.id

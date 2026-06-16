@@ -15,11 +15,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 
-/**
- * @Author Junjun
- */
 @Component
 @Order(value = 4)
+// 定义当前业务对象的核心职责
 public class ChartFilterMergeListener implements ApplicationListener<ApplicationReadyEvent> {
     private final Logger logger = LoggerFactory.getLogger(ChartFilterMergeListener.class);
     public static final String JOB_ID = "chartFilterMerge";
@@ -29,6 +27,7 @@ public class ChartFilterMergeListener implements ApplicationListener<Application
     private ChartViewOldDataMergeService chartViewOldDataMergeService;
 
     @Override
+    // 执行当前服务方法并返回处理结果
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         logger.info("====chart filter merge [start]====");
 

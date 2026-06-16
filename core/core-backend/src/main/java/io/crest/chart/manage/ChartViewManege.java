@@ -58,7 +58,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * @Author Junjun
+ * 图表视图管理服务，负责视图保存、字段转换、权限校验和图表数据查询
  */
 @Component
 @SuppressWarnings("unchecked")
@@ -93,6 +93,9 @@ public class ChartViewManege {
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * 保存图表视图草稿，并在写入镜像表前校验标题和访问权限
+     */
     @Transactional
     public ChartViewDTO save(ChartViewDTO chartViewDTO) throws Exception {
         if (chartViewDTO.getTitle().length() > 100) {
@@ -120,9 +123,15 @@ public class ChartViewManege {
         return chartViewDTO;
     }
 
+    /**
+     * 从发布表删除指定图表视图
+     */
     public void delete(Long id) {
         coreChartViewMapper.deleteById(id);
     }
+    /**
+     * 预留图表停用入口
+     */
     public void disuse(List<Long> chartIdList) {
     }
 
@@ -139,6 +148,9 @@ public class ChartViewManege {
     public void restoreThreshold(Long resourceId, String resourceTable) {
     }
 
+    /**
+     * 删除指定场景下未保留的图表视图
+     */
     @Transactional
     public void deleteBySceneId(Long sceneId, List<Long> chartIds) {
         QueryWrapper<CoreChartView> wrapper = new QueryWrapper<>();
@@ -147,6 +159,9 @@ public class ChartViewManege {
         coreChartViewMapper.delete(wrapper);
     }
 
+    /**
+     * 从发布表或镜像表查询图表详情并校验读取权限
+     */
     public ChartViewDTO getDetails(Long id, String resourceTable) {
         CoreChartView coreChartView = null;
         if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(resourceTable)) {
@@ -229,6 +244,9 @@ public class ChartViewManege {
         return chartViewDTOS;
     }
 
+    /**
+     * 将图表记录列表转换为前端使用的视图 DTO 列表
+     */
     public List<ChartViewDTO> transChart(List<CoreChartView> list) {
         if (ObjectUtils.isEmpty(list)) {
             return Collections.emptyList();
@@ -238,6 +256,9 @@ public class ChartViewManege {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * 查询图表详情并计算图表数据，阈值场景使用全量结果参数
+     */
     public ChartViewDTO getChart(Long id, String resourceTable, boolean forThreshold) throws Exception {
         ChartViewDTO details = getDetails(id, resourceTable);
         if (details == null) {
@@ -257,10 +278,16 @@ public class ChartViewManege {
         return chartDataManage.calcData(details);
     }
 
+    /**
+     * 查询并计算普通图表数据
+     */
     public ChartViewDTO getChart(Long id, String resourceTable) throws Exception {
         return getChart(id, resourceTable, false);
     }
 
+    /**
+     * 查询数据集字段并按维度、指标分组返回图表可选字段
+     */
     public Map<String, List<ChartViewFieldDTO>> listByDQ(Long id, Long chartId, ChartViewDTO chartViewDTO) {
         boolean portalVisualizationRead = chartViewDTO != null
                 && dataPortalPermissionManage.canReadPublishedVisualization(chartViewDTO.getSceneId(), null);
@@ -343,6 +370,9 @@ public class ChartViewManege {
         return map;
     }
 
+    /**
+     * 将数据集字段复制为指定图表的计算字段
+     */
     public void copyField(Long id, Long chartId) {
         CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldMapper.selectById(id);
         if (coreDatasetTableField != null) {
@@ -369,6 +399,9 @@ public class ChartViewManege {
         coreDatasetTableFieldMapper.insert(coreDatasetTableField);
     }
 
+    /**
+     * 为复制字段递归生成不重复名称
+     */
     private void newName(HashMap<String, String> map, CoreDatasetTableField coreDatasetTableField, String name) {
         name = name + "_copy";
         if (map.containsKey(name)) {
@@ -378,6 +411,9 @@ public class ChartViewManege {
         }
     }
 
+    /**
+     * 删除指定数据集字段并校验数据集权限
+     */
     public void fieldRemoval(Long id) {
         CoreDatasetTableField field = coreDatasetTableFieldMapper.selectById(id);
         if (field != null) {
@@ -386,6 +422,9 @@ public class ChartViewManege {
         coreDatasetTableFieldMapper.deleteById(id);
     }
 
+    /**
+     * 删除指定图表下的全部计算字段
+     */
     public void chartFieldRemovalId(Long chartId) {
         CoreChartView chart = coreChartViewMapper.selectById(chartId);
         if (chart != null) {
@@ -396,6 +435,9 @@ public class ChartViewManege {
         coreDatasetTableFieldMapper.delete(queryWrapper);
     }
 
+    /**
+     * 校验图表写权限，允许创建者、场景可管理者或数据集可管理者访问
+     */
     private void requireChartAccess(String createBy, Long sceneId, Long tableId) {
         if (CrestPermissionUtils.canAccessCreator(createBy)) {
             return;
@@ -409,6 +451,9 @@ public class ChartViewManege {
         CrestPermissionUtils.requireCreator(createBy);
     }
 
+    /**
+     * 校验图表读权限，包含门户已发布资源的读取场景
+     */
     private void requireChartReadAccess(String createBy, Long sceneId, Long tableId) {
         if (CrestPermissionUtils.canAccessCreator(createBy)) {
             return;
@@ -425,6 +470,9 @@ public class ChartViewManege {
         CrestPermissionUtils.requireCreator(createBy);
     }
 
+    /**
+     * 校验可视化场景管理权限
+     */
     private void requireSceneAccess(Long sceneId) {
         if (sceneId == null || canAccessScene(sceneId)) {
             return;
@@ -432,6 +480,9 @@ public class ChartViewManege {
         CrestPermissionUtils.requireCreator(null);
     }
 
+    /**
+     * 校验可视化场景读取权限
+     */
     private void requireSceneReadAccess(Long sceneId) {
         if (
                 sceneId == null
@@ -443,11 +494,17 @@ public class ChartViewManege {
         CrestPermissionUtils.requireCreator(null);
     }
 
+    /**
+     * 判断当前用户是否可访问指定可视化场景
+     */
     private boolean canAccessScene(Long sceneId) {
         DataVisualizationInfo scene = visualizationInfoMapper.selectById(sceneId);
         return scene != null && CrestPermissionUtils.canAccessCreator(scene.getCreateBy());
     }
 
+    /**
+     * 校验数据集管理权限
+     */
     private void requireDatasetAccess(Long datasetId) {
         if (datasetId == null || canAccessDataset(datasetId)) {
             return;
@@ -455,11 +512,17 @@ public class ChartViewManege {
         CrestPermissionUtils.requireCreator(null);
     }
 
+    /**
+     * 判断当前用户是否可访问指定数据集
+     */
     private boolean canAccessDataset(Long datasetId) {
         CoreDatasetGroup dataset = coreDatasetGroupMapper.selectById(datasetId);
         return dataset != null && CrestPermissionUtils.canAccessCreator(dataset.getCreateBy());
     }
 
+    /**
+     * 查询图表基础信息并解析字段配置
+     */
     public ChartBaseVO chartBaseInfo(Long id, String resourceTable) {
         ChartBasePO po = extChartViewMapper.queryChart(id, resourceTable);
         if (ObjectUtils.isEmpty(po)) return null;
@@ -484,6 +547,9 @@ public class ChartViewManege {
         return vo;
     }
 
+    /**
+     * 创建记录数指标字段
+     */
     public DatasetTableFieldDTO createCountField(Long id) {
         DatasetTableFieldDTO dto = new DatasetTableFieldDTO();
         dto.setId(-1L);
@@ -500,6 +566,9 @@ public class ChartViewManege {
         return dto;
     }
 
+    /**
+     * 将数据集字段转换为图表字段默认配置
+     */
     public List<ChartViewFieldDTO> transFieldDTO(List<DatasetTableFieldDTO> list) {
         return list.stream().map(ele -> {
             ChartViewFieldDTO dto = new ChartViewFieldDTO();
@@ -528,6 +597,9 @@ public class ChartViewManege {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * 将图表 DTO 序列化为镜像表记录
+     */
     public SnapshotCoreChartView transDTO2Record(ChartViewDTO dto) throws Exception {
         SnapshotCoreChartView record = new SnapshotCoreChartView();
         BeanUtils.copyBean(record, dto);
@@ -559,6 +631,9 @@ public class ChartViewManege {
         return record;
     }
 
+    /**
+     * 将图表记录反序列化为前端 DTO
+     */
     public ChartViewDTO transRecord2DTO(CoreChartView record) {
         ChartViewDTO dto = new ChartViewDTO();
         BeanUtils.copyBean(dto, record);
@@ -596,6 +671,9 @@ public class ChartViewManege {
 
     }
 
+    /**
+     * 解析图表自定义过滤条件并兼容旧数组格式
+     */
     private FilterTreeObj parseCustomFilter(String customFilter) {
         if (StringUtils.isBlank(customFilter)) {
             return null;
@@ -613,6 +691,9 @@ public class ChartViewManege {
         return JsonUtil.parseObject(trimmed, FilterTreeObj.class);
     }
 
+    /**
+     * 判断两个图表视图是否来自同一个数据集
+     */
     public String checkSameDataSet(String viewIdSource, String viewIdTarget) {
         QueryWrapper<CoreChartView> wrapper = new QueryWrapper<>();
         wrapper.select("distinct table_id");
@@ -626,6 +707,9 @@ public class ChartViewManege {
 
     }
 
+    /**
+     * 查询资源下仍被组件引用的视图选项
+     */
     public List<ViewSelectorVO> viewOption(Long resourceId) {
         List<ViewSelectorVO> result = extChartViewMapper.queryViewOption(resourceId);
         DataVisualizationInfo dvInfo = visualizationInfoMapper.selectById(resourceId);
@@ -637,6 +721,9 @@ public class ChartViewManege {
         }
     }
 
+    /**
+     * 查询指定视图的上下文图表信息
+     */
     public ChartViewDTO findChartViewAround(String viewId) {
         return extChartViewMapper.findChartViewAround(viewId);
     }

@@ -10,11 +10,13 @@ import org.springframework.stereotype.Component;
 
 @Component
 @SuppressWarnings("unchecked")
+// 定义图表处理器，负责轴格式化和结果组装
 public class RadarHandler extends YoyChartHandler {
     @Getter
     private String type = "radar";
 
     @Override
+    // 按图表配置整理维度和指标轴信息
     public AxisFormatResult formatAxis(ChartViewDTO view) {
         var result = super.formatAxis(view);
         var yAxis = result.getAxisMap().get(ChartAxis.yAxis);

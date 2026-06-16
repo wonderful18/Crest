@@ -4,13 +4,9 @@ import io.crest.constant.CommonConstants;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Author: wangjiahao
- * Date: 2022/7/15
- * Description:
- */
 @Data
 @NoArgsConstructor
+// 定义页面展示或接口返回的数据结构
 public class MarketMetaDataVO {
     private String slug;
     private String value;

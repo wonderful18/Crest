@@ -18,6 +18,7 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/embedded")
+// 实现接口服务，衔接业务处理和返回结果
 public class EmbeddedTokenServer {
 
     private static final Set<String> RESERVED_CLAIMS = Set.of(
@@ -28,6 +29,7 @@ public class EmbeddedTokenServer {
     private static final Set<String> ARG_CONTAINER_CLAIMS = Set.of("args", "params", "tokenArgs");
 
     @GetMapping({"/token-args", "/getTokenArgs"})
+    // 构建嵌入式令牌所需的参数
     public Map<String, Object> getTokenArgs() {
         String token = ServletUtils.getEmbeddedToken();
         if (StringUtils.isBlank(token)) {
@@ -52,6 +54,7 @@ public class EmbeddedTokenServer {
         }
     }
 
+    // 将解析后的声明写入目标参数
     private void putMapClaim(Map<String, Object> target, Claim claim) {
         if (claim == null || claim.isNull()) {
             return;
@@ -62,6 +65,7 @@ public class EmbeddedTokenServer {
         }
     }
 
+    // 执行当前服务方法并返回处理结果
     private Object claimValue(Claim claim) {
         if (claim == null || claim.isNull()) {
             return null;

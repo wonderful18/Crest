@@ -14,6 +14,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Component("db2")
+// 定义数据源连接参数和元数据匹配规则
 public class Db2 extends DatasourceConfiguration {
     private String driver = "com.ibm.db2.jcc.DB2Driver";
     private String extraParams = "";
@@ -27,6 +28,8 @@ public class Db2 extends DatasourceConfiguration {
             "autoDeserialize", "connectionProperties", "initSQL", "dns", "file", "ftp", "iiop", "corbaname", "iiopname"
     );
 
+    // 构建当前数据源的连接地址
+    @Override
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             for (String illegalParameter : illegalParameters) {

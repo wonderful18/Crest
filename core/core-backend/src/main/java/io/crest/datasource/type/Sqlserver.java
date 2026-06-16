@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 @EqualsAndHashCode(callSuper = false)
 @Component("sqlServer")
 @SuppressWarnings("deprecation")
+// 定义数据源连接参数和元数据匹配规则
 public class Sqlserver extends DatasourceConfiguration {
     private String driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
     private String extraParams = "";
@@ -24,6 +25,8 @@ public class Sqlserver extends DatasourceConfiguration {
     private List<String> illegalParameters = Arrays.asList("autoDeserialize", "queryInterceptors", "statementInterceptors", "detectCustomCollations", "jndi:", "rmi:", "ldap:", "ldaps:", "java.naming.factory.initial");
     private List<String> showTableSqls = Arrays.asList("show tables");
 
+    // 构建当前数据源的连接地址
+    @Override
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             if (!getJdbcUrl().startsWith("jdbc:sqlserver")) {
@@ -55,6 +58,7 @@ public class Sqlserver extends DatasourceConfiguration {
     private static final Pattern DB_NAME_PATTERN = Pattern.compile(";databaseName=([^;]+)");
 
     @Override
+    // 返回数据库名称解析使用的匹配规则
     protected Pattern databasePattern() {
         return DB_NAME_PATTERN;
     }

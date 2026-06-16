@@ -5,6 +5,7 @@ import { useEmitt } from '@/hooks/web/useEmitt'
 
 const dvMainStore = dvMainStoreWithOut()
 
+// 定义组件入参，约束外部传入配置
 const props = defineProps({
   themes: {
     type: String,
@@ -21,6 +22,7 @@ const props = defineProps({
   }
 })
 
+// 衔接当前组件交互和状态同步
 const fullscreenChange = () => {
   const isFullscreen = !!document.fullscreenElement
   dvMainStore.setFullscreenFlag(isFullscreen)
@@ -36,6 +38,7 @@ const fullscreenChange = () => {
   }
 }
 
+// 衔接当前组件交互和状态同步
 const toggleFullscreen = () => {
   const bodyNode = document.querySelector('body')
   if (!document.fullscreenElement) {

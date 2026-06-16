@@ -11,8 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author : WangJiaHao
- * @date : 2023/7/13
+ * 组件联动配置及目标图表字段信息。
  */
 @Data
 public class VisualizationLinkageDTO extends VisualizationLinkageVO {

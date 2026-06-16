@@ -16,11 +16,13 @@ import EmptyBackground from '../../components/empty-background/src/EmptyBackgrou
 const { wsCache } = useCache()
 const interactiveStore = interactiveStoreWithOut()
 const embeddedStore = useEmbedded()
+// 衔接当前组件交互和状态同步
 const dashboardPreview = ref(null)
 const embeddedParamsDiv = inject('embeddedParams') as Record<string, any>
 
 const embeddedParams = embeddedParamsDiv?.dvId ? embeddedParamsDiv : embeddedStore
 const { t } = useI18n()
+// 维护组件内部表单、弹窗和临时数据状态
 const state = reactive({
   canvasDataPreview: null,
   canvasStylePreview: null,
@@ -31,6 +33,7 @@ const state = reactive({
 })
 const dvMainStore = dvMainStoreWithOut()
 
+// 校验当前数据是否满足业务规则
 const checkPer = async resourceId => {
   if (!window.CrestBi || !resourceId) {
     return true
@@ -40,6 +43,7 @@ const checkPer = async resourceId => {
   const key = embeddedParams.busiFlag === 'dataV' ? 'screen-weight' : 'panel-weight'
   return check(wsCache.get(key), resourceId, 1)
 }
+// 根据当前数据计算界面可用状态
 const isPc = ref(true)
 onBeforeMount(async () => {
   const checkResult = await checkPer(embeddedParams.dvId)

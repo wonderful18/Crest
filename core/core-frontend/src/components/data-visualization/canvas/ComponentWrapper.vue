@@ -21,14 +21,22 @@ import {
   getBlurBgStyle,
   getComponentBackgroundStyle
 } from '@/utils/backgroundStyleUtils'
+// 组件包装器中的按钮和导出文案翻译入口
 const { t } = useI18n()
 
+// 组件内容容器引用，用于定位编辑区域
 const componentWrapperInnerRef = ref(null)
+// 组件编辑工具栏引用，用于触发复用选择等操作
 const componentEditBarRef = ref(null)
+// 大屏主状态，保存当前选中组件和画布状态
 const dvMainStore = dvMainStoreWithOut()
+// 图片下载中的加载状态
 const downLoading = ref(false)
+// 普通组件样式只提取位置、尺寸和旋转属性
 const commonFilterAttrs = ['width', 'height', 'top', 'left', 'rotate']
+// 弹窗预览组件引用
 const crestPreviewPopDialogRef = ref(null)
+// 边框激活时需要额外保留边框相关样式
 const commonFilterAttrsFilterBorder = [
   'width',
   'height',
@@ -42,6 +50,7 @@ const commonFilterAttrsFilterBorder = [
   'borderColor'
 ]
 
+// 组件包装器接收画布组件配置、展示场景和缩放信息
 const props = defineProps({
   curStyle: {
     type: Object as PropType<Record<string, any>>
@@ -141,6 +150,7 @@ const props = defineProps({
     default: 0
   }
 })
+// 将常用入参转成响应式引用，供计算属性和事件处理复用
 const {
   config,
   showPosition,
@@ -153,11 +163,16 @@ const {
   suffixId,
   scrollMain
 } = toRefs(props)
+// 动态组件实例引用
 const component = ref(null)
+// 组件包装器向外透传放大、数据集参数和点击事件
 const emits = defineEmits(['userViewEnlargeOpen', 'datasetParamsInit', 'onPointClick'])
+// 外层包装节点编号，和组件编号绑定以便 DOM 查询
 const wrapperId = 'wrapper-outer-id-' + config.value.id
 
+// 放大预览区域的内部节点编号
 const viewDemoInnerId = computed(() => 'enlarge-inner-content-' + config.value.id)
+// 将当前组件区域导出为图片，并在导出前后处理水印和地图准备事件
 const htmlToImage = () => {
   useEmitt().emitter.emit('l7-prepare-picture', config.value.id)
   downLoading.value = true
@@ -173,6 +188,7 @@ const htmlToImage = () => {
   }, 1000)
 }
 
+// 处理组件内部鼠标按下，兼容复用、预览和移动端编辑场景
 const handleInnerMouseDown = e => {
   // do setCurComponent
   if (showPositionActive.value.includes('multiplexing')) {
@@ -192,6 +208,7 @@ const handleInnerMouseDown = e => {
   }
 }
 
+// 选中当前组件，并同步编辑器点击状态
 const onClick = () => {
   // 将当前点击组件的事件传播出去
   eventBus.emit('componentClick')
@@ -200,6 +217,7 @@ const onClick = () => {
   dvMainStore.setCurComponent({ component: config.value, index: index.value })
 }
 
+// 根据组件类型提取实际渲染所需的基础样式
 const getComponentStyleDefault = style => {
   if (config.value.component.includes('Svg')) {
     return getStyle(style, [
@@ -218,18 +236,22 @@ const getComponentStyleDefault = style => {
   }
 }
 
+// 鼠标进入组件时通知画布高亮当前组件
 const onMouseEnter = () => {
   eventBus.emit('v-hover', config.value.id)
 }
 
+// 判断组件是否启用模糊背景
 const blurBgEnable = computed(() => {
   return isBlurBgEnabled(config.value.commonBackground)
 })
 
+// 计算模糊背景样式，并按深层缩放修正尺寸
 const blurBgStyle = computed(() => {
   return getBlurBgStyle(config.value.commonBackground, deepScale.value)
 })
 
+// 计算组件公共背景样式，兼容用户视图和组合组件
 const componentBackgroundStyle = computed(() => {
   if (config.value.commonBackground) {
     return getComponentBackgroundStyle(config.value.commonBackground, {
@@ -241,11 +263,17 @@ const componentBackgroundStyle = computed(() => {
   return {}
 })
 
+/**
+ * 判断公共背景是否使用内置 SVG 图片
+ */
 const svgInnerEnable = computed(() => {
   const { backgroundImageEnable, backgroundType, innerImage } = config.value.commonBackground
   return backgroundImageEnable && backgroundType === 'innerImage' && typeof innerImage === 'string'
 })
 
+/**
+ * 获取公共背景内置 SVG 的资源名称
+ */
 const commonBackgroundSvgInner = computed(() => {
   if (svgInnerEnable.value) {
     return config.value.commonBackground.innerImage.replace('board/', '').replace('.svg', '')
@@ -254,6 +282,9 @@ const commonBackgroundSvgInner = computed(() => {
   }
 })
 
+/**
+ * 计算 3D 旋转效果需要的插槽补偿样式
+ */
 const slotStyle = computed(() => {
   // 3d效果支持
   if (config.value['multiDimensional'] && config.value['multiDimensional']?.enable) {
@@ -282,10 +313,16 @@ const slotStyle = computed(() => {
   }
 })
 
+/**
+ * 向外转发组件内部点位点击事件
+ */
 const onPointClick = param => {
   emits('onPointClick', param)
 }
 
+/**
+ * 判断当前组件在预览态是否允许触发事件
+ */
 const eventEnable = computed(
   () =>
     showPositionActive.value.includes('preview') &&
@@ -298,6 +335,9 @@ const eventEnable = computed(
     showPositionActive.value !== 'canvas-multiplexing'
 )
 
+/**
+ * 处理包装器点击事件，指标卡点击由内部组件接管
+ */
 const onWrapperClickCur = e => {
   // 指标卡为内部触发
   if (['indicator'].includes(config.value.innerType)) {
@@ -308,6 +348,9 @@ const onWrapperClickCur = e => {
   onWrapperClick(e)
 }
 
+/**
+ * 根据组件事件配置执行弹框、跳转、刷新、全屏或下载动作
+ */
 const onWrapperClick = e => {
   if (eventEnable.value && !['edit-preview'].includes(showPositionActive.value)) {
     if (config.value.events.type === 'showHidden') {
@@ -345,7 +388,13 @@ const onWrapperClick = e => {
   }
 }
 
+/**
+ * 嵌入式窗口调用句柄
+ */
 const openHandler = ref(null)
+/**
+ * 将新窗口句柄同步给嵌入式宿主
+ */
 const initOpenHandler = newWindow => {
   if (openHandler?.value) {
     const pm = {
@@ -355,10 +404,16 @@ const initOpenHandler = newWindow => {
     openHandler.value.invokeMethod(pm)
   }
 }
+/**
+ * 组件深层缩放比例
+ */
 const deepScale = computed(() => scale.value / 100)
 //const showActive = computed(() => props.popActive || (dvMainStore.mobileInPc && props.active))
 const showActive = false
 
+/**
+ * 判断主画布滚动时组件是否进入冻结状态
+ */
 const freezeFlag = computed(() => {
   return (
     isMainCanvas(props.canvasId) &&
@@ -368,6 +423,9 @@ const freezeFlag = computed(() => {
   )
 })
 
+/**
+ * 传递给内部组件的公共事件参数
+ */
 const commonParams = computed(() => {
   return {
     eventEnable: eventEnable.value,
@@ -375,10 +433,16 @@ const commonParams = computed(() => {
   }
 })
 
+/**
+ * 判断移动端编辑态是否展示同步入口
+ */
 const showCheck = computed(() => {
   return dvMainStore.mobileInPc && showPositionActive.value === 'edit'
 })
 
+/**
+ * 触发移动端状态同步到编辑器
+ */
 const updateFromMobile = (e, type) => {
   if (type === 'syncPcDesign') {
     e.preventDefault()
@@ -390,10 +454,19 @@ const updateFromMobile = (e, type) => {
   })
 }
 
+/**
+ * 将编辑预览态映射为内部组件使用的预览态
+ */
 const showPositionActive = computed(() =>
   showPosition.value === 'edit-preview' ? 'preview' : showPosition.value
 )
+/**
+ * 当前包装器是否已经进入可视区域
+ */
 const isIntersecting = ref(false)
+/**
+ * 移动端懒加载可视区域监听器
+ */
 const observer = ref<IntersectionObserver | null>(null)
 // 移动端懒加载开关
 const isMobileLazyLoadEnabled = computed(() => {

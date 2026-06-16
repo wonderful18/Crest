@@ -52,6 +52,7 @@ export const viewSelectorStore = defineStore('viewSelectorStore', {
   }
 })
 
+// 更新状态仓库中的业务数据
 export const useViewSelectorStoreWithOut = () => {
   return viewSelectorStore(store)
 }
