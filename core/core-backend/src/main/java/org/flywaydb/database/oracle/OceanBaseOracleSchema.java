@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Avoids Oracle data dictionary views that are not available in OceanBase Oracle tenants.
+ * 避开 OceanBase Oracle 租户不可用的 Oracle 数据字典视图
  */
 public class OceanBaseOracleSchema extends OracleSchema {
 
@@ -14,6 +14,7 @@ public class OceanBaseOracleSchema extends OracleSchema {
         super(jdbcTemplate, database, name);
     }
 
+    // 通过 USER_OBJECTS 判断当前 schema 是否为空，覆盖迁移前置校验
     @Override
     protected boolean doEmpty() throws SQLException {
         return jdbcTemplate.queryForInt("""
@@ -27,6 +28,7 @@ public class OceanBaseOracleSchema extends OracleSchema {
                 """) == 0;
     }
 
+    // Flyway 只需要表对象清单，使用 OceanBase 支持的 USER_TABLES 获取
     @Override
     protected OracleTable[] doAllTables() throws SQLException {
         List<String> tableNames = jdbcTemplate.queryForStringList("""

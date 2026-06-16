@@ -126,10 +126,12 @@ public class SsoIdentityBindingManage {
                 """.formatted(predicate), args);
     }
 
+    // SSO 绑定查询按元数据库方言生成单条限制语法
     private String limitOne(String sql) {
         return dialect().limitOne(sql.stripTrailing());
     }
 
+    // SSO 绑定 SQL 统一从环境解析当前元数据库方言
     private MetadataDbDialect dialect() {
         return MetadataDbDialects.current(environment);
     }

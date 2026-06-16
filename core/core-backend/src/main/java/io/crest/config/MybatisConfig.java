@@ -18,12 +18,12 @@ import java.util.List;
 
 @Configuration
 @EnableTransactionManagement
-// 定义当前功能的配置入口
+// 集中注册 MyBatis 插件，保持元数据库兼容逻辑在启动阶段一次性确定
 public class MybatisConfig {
 
     @Bean
     @ConditionalOnMissingBean
-    // 执行当前服务方法并返回处理结果
+    // 注册字段加解密拦截器，并在 OB Oracle 下启用应用侧主键赋值
     public MybatisInterceptor dbInterceptor(Environment environment) {
         MybatisInterceptor interceptor = new MybatisInterceptor();
         List<MybatisInterceptorConfig> configList = new ArrayList<>();
@@ -37,6 +37,7 @@ public class MybatisConfig {
 
     @Bean
     @ConditionalOnMissingBean
+    // 仅在 OB Oracle 元数据库下改写保留字字段，普通 MySQL 路径保持原 SQL
     public ObOracleReservedIdentifierInterceptor obOracleReservedIdentifierInterceptor(Environment environment) {
         return new ObOracleReservedIdentifierInterceptor(
                 MetadataDbTypeResolver.resolve(environment).isOracleCompatible());

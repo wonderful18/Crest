@@ -374,14 +374,17 @@ public class DataPortalServer {
         );
     }
 
+    // 门户资源查询统一通过元数据库方言处理保留字和分页差异
     private MetadataDbDialect dialect() {
         return MetadataDbDialects.current(environment);
     }
 
+    // UID 在 OB Oracle 中是保留字，查询拼接时需要按方言引用
     private String uidColumn() {
         return dialect().quoteIdentifier("UID");
     }
 
+    // TIME 在部分元数据库中需要引用，避免最近访问排序 SQL 解析失败
     private String timeColumn() {
         return dialect().quoteIdentifier("TIME");
     }

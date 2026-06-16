@@ -187,6 +187,7 @@ public class MybatisInterceptor implements Interceptor {
         return copyWithNoKeyGenerator(mappedStatement);
     }
 
+    // OB Oracle 不支持 JDBC 返回自增键时，提前为 Long 主键补 Snowflake 值
     private boolean assignLongKeyIfNeeded(MappedStatement mappedStatement, Object parameter, String keyProperty) {
         if (StringUtils.isBlank(keyProperty)) {
             return false;
@@ -207,6 +208,7 @@ public class MybatisInterceptor implements Interceptor {
         return false;
     }
 
+    // 主键已由应用侧写入后，复制 MappedStatement 并禁用 Jdbc3KeyGenerator
     private MappedStatement copyWithNoKeyGenerator(MappedStatement mappedStatement) {
         MappedStatement.Builder builder = new MappedStatement.Builder(
                 mappedStatement.getConfiguration(),
@@ -232,6 +234,7 @@ public class MybatisInterceptor implements Interceptor {
         return builder.build();
     }
 
+    // MyBatis Builder 需要逗号分隔的 resultSets 字符串
     private String join(String[] values) {
         return values == null || values.length == 0 ? null : String.join(",", values);
     }
@@ -309,6 +312,7 @@ public class MybatisInterceptor implements Interceptor {
         this.interceptorConfigList = interceptorConfigList;
     }
 
+    // 控制是否为不支持 JDBC GeneratedKeys 的元库启用应用侧主键赋值
     public void setUseAssignedKeysWithoutJdbcGeneratedKeys(boolean useAssignedKeysWithoutJdbcGeneratedKeys) {
         this.useAssignedKeysWithoutJdbcGeneratedKeys = useAssignedKeysWithoutJdbcGeneratedKeys;
     }

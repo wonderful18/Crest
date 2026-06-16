@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Loads large OceanBase Oracle seed data through prepared statements.
+ * 通过预编译批处理加载 OceanBase Oracle 元数据库种子数据
  */
 @Component
 @Order(1)
@@ -44,6 +44,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
         this.objectMapper = objectMapper;
     }
 
+    // 应用就绪后再补种子数据，确保 Flyway 或外部初始化已完成表结构创建
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
         if (MetadataDbTypeResolver.resolve(environment) != MetadataDbType.OB_ORACLE) {
@@ -58,6 +59,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
         }
     }
 
+    // 行政区划数据量较大，使用 JSONL 加批处理避免在 Oracle SQL 文件中维护超长 INSERT
     private void loadRefArea() throws IOException {
         List<List<Object>> rows = loadRows("db/seed-ob-oracle/ref_area.jsonl", 4);
         Set<String> existingIds = existingIds("ref_area");
@@ -71,6 +73,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
                 INSERT INTO ref_area (id, "LEVEL", name, pid)
                 VALUES (?, ?, ?, ?)
                 """, new BatchPreparedStatementSetter() {
+            // 按 ref_area 固定列序写入缺失行
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
                 List<Object> row = missingRows.get(i);
@@ -80,6 +83,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
                 ps.setString(4, stringValue(row.get(3)));
             }
 
+            // 批大小与去重后的缺失行数保持一致
             @Override
             public int getBatchSize() {
                 return missingRows.size();
@@ -88,6 +92,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
         LogUtil.info("=====OceanBase Oracle ref_area seed loaded: " + missingRows.size() + " rows=====");
     }
 
+    // 内置主题包含长文本和图片字段，使用 CLOB 绑定避开 SQL 字面量长度限制
     private void loadVisualizationSubject() throws IOException {
         List<List<Object>> rows = loadRows("db/seed-ob-oracle/visualization_subject.jsonl", 13);
         Set<String> existingIds = existingIds("visualization_subject");
@@ -104,6 +109,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, new BatchPreparedStatementSetter() {
+            // 按 visualization_subject 固定列序绑定主题字段
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
                 List<Object> row = missingRows.get(i);
@@ -122,6 +128,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
                 setLong(ps, 13, longValue(row.get(12)));
             }
 
+            // 批大小与主题缺失行数保持一致
             @Override
             public int getBatchSize() {
                 return missingRows.size();
@@ -130,6 +137,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
         LogUtil.info("=====OceanBase Oracle visualization_subject seed loaded: " + missingRows.size() + " rows=====");
     }
 
+    // 逐行解析 JSON 数组，并校验列数防止种子文件和写入语句漂移
     private List<List<Object>> loadRows(String path, int expectedColumns) throws IOException {
         ClassPathResource resource = new ClassPathResource(path);
         try (BufferedReader reader = new BufferedReader(
@@ -147,6 +155,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
         }
     }
 
+    // 单行 JSONL 必须是数组，失败时保留统一的初始化异常上下文
     private List<Object> readRow(String line) {
         try {
             return objectMapper.readValue(line, ROW_TYPE);
@@ -155,10 +164,12 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
         }
     }
 
+    // 读取目标表已有主键，种子加载只补缺失数据
     private Set<String> existingIds(String tableName) {
         return new HashSet<>(jdbcTemplate.queryForList("SELECT id FROM " + tableName, String.class));
     }
 
+    // 长文本字段通过 CharacterStream 写入，兼容 OceanBase Oracle 的 CLOB 绑定
     private static void setClob(PreparedStatement ps, int index, String value) throws SQLException {
         if (value == null) {
             ps.setNull(index, Types.CLOB);
@@ -167,6 +178,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
         ps.setCharacterStream(index, new StringReader(value), value.length());
     }
 
+    // JSON 数字可能由 Jackson 解析为不同 Number 子类，写入前统一收敛为 Integer
     private static void setInteger(PreparedStatement ps, int index, Integer value) throws SQLException {
         if (value == null) {
             ps.setNull(index, Types.INTEGER);
@@ -175,6 +187,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
         ps.setInt(index, value);
     }
 
+    // 时间戳和主键字段统一按 BIGINT 绑定，避免 Oracle 数字精度推断差异
     private static void setLong(PreparedStatement ps, int index, Long value) throws SQLException {
         if (value == null) {
             ps.setNull(index, Types.BIGINT);
@@ -183,10 +196,12 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
         ps.setLong(index, value);
     }
 
+    // JSON 空值保留为空，非空值按字符串写入字符列
     private static String stringValue(Object value) {
         return value == null ? null : String.valueOf(value);
     }
 
+    // 支持数字节点和字符串节点两种种子表示
     private static Integer integerValue(Object value) {
         if (value == null) {
             return null;
@@ -197,6 +212,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
         return Integer.valueOf(String.valueOf(value));
     }
 
+    // 支持 Jackson 数字节点和字符串形式的长整型值
     private static Long longValue(Object value) {
         if (value == null) {
             return null;

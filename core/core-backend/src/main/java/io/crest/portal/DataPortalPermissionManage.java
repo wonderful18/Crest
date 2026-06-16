@@ -144,6 +144,7 @@ public class DataPortalPermissionManage {
                 """);
     }
 
+    // 门户权限 SQL 需要按元数据库方言处理数值转换
     private MetadataDbDialect dialect() {
         return MetadataDbDialects.current(environment);
     }

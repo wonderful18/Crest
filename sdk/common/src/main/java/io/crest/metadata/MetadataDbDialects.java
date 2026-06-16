@@ -19,10 +19,12 @@ public final class MetadataDbDialects {
     private MetadataDbDialects() {
     }
 
+    // 按当前运行环境解析元数据库方言，供业务 SQL 片段生成复用
     public static MetadataDbDialect current(Environment environment) {
         return forType(MetadataDbTypeResolver.resolve(environment));
     }
 
+    // 将显式元数据库类型映射为稳定的方言实现
     public static MetadataDbDialect forType(MetadataDbType type) {
         return switch (type) {
             case MYSQL -> MYSQL;
@@ -31,72 +33,87 @@ public final class MetadataDbDialects {
         };
     }
 
+    // MySQL 与 OceanBase MySQL 共用同一套 SQL 片段规则
     private record MysqlLikeDialect(MetadataDbType type) implements MetadataDbDialect {
+        // MySQL 兼容元库使用反引号保护标识符
         @Override
         public String quoteIdentifier(String identifier) {
             return "`" + StringUtils.defaultString(identifier).replace("`", "``") + "`";
         }
 
+        // MySQL 兼容元库沿用 LIMIT/OFFSET 分页语法
         @Override
         public String limitOffset(String sql, long limit, long offset) {
             return sql + " LIMIT " + limit + " OFFSET " + offset;
         }
 
+        // MySQL 兼容元库使用 IFNULL 处理空值回退
         @Override
         public String ifNull(String expression, String fallback) {
             return "IFNULL(" + expression + ", " + fallback + ")";
         }
 
+        // MySQL 兼容元库通过 CONCAT 拼接可变数量表达式
         @Override
         public String concat(String... expressions) {
             return "CONCAT(" + String.join(", ", expressions) + ")";
         }
 
+        // MySQL 兼容元库使用 NOW 生成当前时间戳
         @Override
         public String currentTimestamp() {
             return "NOW()";
         }
 
+        // 大小写不敏感匹配通过 LOWER 和统一排序规则规避库默认配置差异
         @Override
         public String caseInsensitiveLike(String expression, String parameterExpression) {
             return "LOWER(" + expression + ") LIKE LOWER(CONCAT('%', " + parameterExpression + ", '%'))";
         }
 
+        // 字符串常量统一追加排序规则，避免 UNION 或比较时触发 collation 冲突
         @Override
         public String stringLiteral(String value) {
             return collate("'" + StringUtils.defaultString(value).replace("'", "''") + "'");
         }
 
+        // 字段转字符串后补齐排序规则，保持与字面量比较时的字符集一致
         @Override
         public String stringCast(String expression) {
             return collate("CAST(" + expression + " AS CHAR)");
         }
 
+        // 空字符串占位需要显式类型，防止 MySQL 推断为二进制或未知类型
         @Override
         public String nullableString() {
             return collate("CAST(NULL AS CHAR)");
         }
 
+        // 统一采用 utf8mb4_unicode_ci，兼容旧库和 OceanBase MySQL 的默认排序差异
         @Override
         public String collate(String expression) {
             return expression + " COLLATE utf8mb4_unicode_ci";
         }
 
+        // 数值比较使用无符号转换，匹配历史主键和资源编号字段
         @Override
         public String numberCast(String expression) {
             return "CAST(" + expression + " AS UNSIGNED)";
         }
 
+        // MySQL 兼容元库通过 INSERT IGNORE 实现幂等种子写入
         @Override
         public String insertIgnore(String table, String columns, String values) {
             return "INSERT IGNORE INTO " + table + " (" + columns + ") VALUES (" + values + ")";
         }
 
+        // MySQL 兼容元库的缺失插入复用 INSERT IGNORE，冲突条件由唯一键承担
         @Override
         public String mergeIfMissing(String table, String columns, String values, String conflictPredicate) {
             return insertIgnore(table, columns, values);
         }
 
+        // MySQL 兼容元库通过 ON DUPLICATE KEY UPDATE 写入可重复初始化数据
         @Override
         public String upsert(String table, String columns, String values, String conflictPredicate,
                              List<String> updateAssignments) {
@@ -105,72 +122,87 @@ public final class MetadataDbDialects {
         }
     }
 
+    // OceanBase Oracle 元库使用独立 SQL 片段，避免复用 MySQL 专有语法
     private static final class ObOracleDialect implements MetadataDbDialect {
+        // 方言实例固定绑定 OceanBase Oracle 类型
         @Override
         public MetadataDbType type() {
             return MetadataDbType.OB_ORACLE;
         }
 
+        // Oracle 兼容元库使用双引号保护大小写和保留字字段
         @Override
         public String quoteIdentifier(String identifier) {
             return "\"" + StringUtils.defaultString(identifier).replace("\"", "\"\"") + "\"";
         }
 
+        // Oracle 兼容元库采用 OFFSET/FETCH 分页语法
         @Override
         public String limitOffset(String sql, long limit, long offset) {
             return sql + " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY";
         }
 
+        // Oracle 兼容元库使用 NVL 处理空值回退
         @Override
         public String ifNull(String expression, String fallback) {
             return "NVL(" + expression + ", " + fallback + ")";
         }
 
+        // Oracle 兼容元库使用 || 连接字符串表达式
         @Override
         public String concat(String... expressions) {
             return Arrays.stream(expressions).collect(Collectors.joining(" || "));
         }
 
+        // Oracle 兼容元库使用 SYSTIMESTAMP 保留数据库端时间精度
         @Override
         public String currentTimestamp() {
             return "SYSTIMESTAMP";
         }
 
+        // Oracle 兼容元库通过 LOWER 和 || 生成大小写不敏感 LIKE 条件
         @Override
         public String caseInsensitiveLike(String expression, String parameterExpression) {
             return "LOWER(" + expression + ") LIKE LOWER('%' || " + parameterExpression + " || '%')";
         }
 
+        // Oracle 字符串常量只需要转义单引号，不追加 MySQL 排序规则
         @Override
         public String stringLiteral(String value) {
             return "'" + StringUtils.defaultString(value).replace("'", "''") + "'";
         }
 
+        // Oracle 字段转字符串使用 TO_CHAR，避免 CAST 长度差异
         @Override
         public String stringCast(String expression) {
             return "TO_CHAR(" + expression + ")";
         }
 
+        // Oracle 空字符串占位使用 VARCHAR2，保证 UNION 字段类型可推断
         @Override
         public String nullableString() {
             return "CAST(NULL AS VARCHAR2(255))";
         }
 
+        // Oracle 兼容元库不支持 MySQL collation 片段，直接返回原表达式
         @Override
         public String collate(String expression) {
             return expression;
         }
 
+        // Oracle 数值转换使用 TO_NUMBER，服务资源编号比较和排序
         @Override
         public String numberCast(String expression) {
             return "TO_NUMBER(" + expression + ")";
         }
 
+        // Oracle 缺失插入必须带冲突条件，委托给 NOT EXISTS 版本
         @Override
         public String insertIgnore(String table, String columns, String values) {
             return mergeIfMissing(table, columns, values, null);
         }
 
+        // Oracle 通过 INSERT SELECT WHERE NOT EXISTS 实现幂等插入
         @Override
         public String mergeIfMissing(String table, String columns, String values, String conflictPredicate) {
             if (StringUtils.isBlank(conflictPredicate)) {
@@ -181,6 +213,7 @@ public final class MetadataDbDialects {
                     + " WHERE " + conflictPredicate + ")";
         }
 
+        // Oracle 使用 MERGE 同时覆盖新增和更新，冲突条件由调用方按业务键提供
         @Override
         public String upsert(String table, String columns, String values, String conflictPredicate,
                              List<String> updateAssignments) {

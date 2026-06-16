@@ -189,10 +189,12 @@ public class CrestRoleManage {
         return dialect().quoteIdentifier("UID");
     }
 
+    // 角色查询单条限制由元数据库方言生成，兼容 OB Oracle 语法
     private String limitOne(String sql) {
         return dialect().limitOne(sql.stripTrailing());
     }
 
+    // 角色权限 SQL 统一从当前元数据库配置解析方言
     private MetadataDbDialect dialect() {
         return MetadataDbDialects.current(environment);
     }
