@@ -16,7 +16,6 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -129,11 +128,8 @@ public class ExportCenterServer implements ExportCenterApi {
     // 生成导出文件下载地址
     @Override
     @CrestAudit(id = "#p0", ot = LogOT.READ, st = LogST.DATA)
-    public ResponseEntity<String> generateDownloadUri(String id) throws Exception {
-        return ResponseEntity.ok()
-                .contentType(MediaType.TEXT_PLAIN)
-                .header("X-Content-Type-Options", "nosniff")
-                .body(exportCenterManage.generateDownloadUri(id));
+    public ResultMessage generateDownloadUri(String id) throws Exception {
+        return ResultMessage.success(exportCenterManage.generateDownloadUri(id));
     }
 
     // 重试导出任务

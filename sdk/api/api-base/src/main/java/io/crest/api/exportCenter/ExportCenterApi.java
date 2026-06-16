@@ -5,11 +5,10 @@ import com.github.xiaoymin.knife4j.annotations.ApiSupport;
 import io.crest.auth.CrestPermit;
 import io.crest.model.ExportTaskDTO;
 import io.crest.auth.CrestApiPath;
+import io.crest.result.ResultMessage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -70,8 +69,8 @@ public interface ExportCenterApi {
      * 生成导出文件下载票据地址
      */
     @Operation(summary = "生成下载Url")
-    @GetMapping(value = "/download-tickets/{id}", produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<String> generateDownloadUri(@PathVariable String id) throws Exception;
+    @GetMapping("/download-tickets/{id}")
+    public ResultMessage generateDownloadUri(@PathVariable String id) throws Exception;
 
     /**
      * 重试指定导出任务
