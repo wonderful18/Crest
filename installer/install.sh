@@ -351,7 +351,7 @@ function prepare_crest_run_base() {
    cp -r ./crest/* ${CREST_RUN_BASE}/
 
    cd $CREST_RUN_BASE
-   env | grep CREST_ >.env
+   env | grep '^CREST_' >.env
 
    mkdir -p ${CREST_RUN_BASE}/{cache,logs,conf}
    mkdir -p ${CREST_RUN_BASE}/data/{mysql,static-resource,appearance,exportData,excel,font,i18n,plugin,prometheus,grafana}
