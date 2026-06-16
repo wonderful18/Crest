@@ -190,12 +190,22 @@ function check_and_prepare_env_params() {
 
    set -a
    source ${CURRENT_DIR}/install.conf
+   PACKAGE_BACKEND_IMAGE=${CREST_BACKEND_IMAGE:-}
+   PACKAGE_FRONTEND_IMAGE=${CREST_FRONTEND_IMAGE:-}
+   PACKAGE_MYSQL_IMAGE=${CREST_MYSQL_IMAGE:-}
+   PACKAGE_PROMETHEUS_IMAGE=${CREST_PROMETHEUS_IMAGE:-}
+   PACKAGE_GRAFANA_IMAGE=${CREST_GRAFANA_IMAGE:-}
    if [[ $CREST_BASE_OLD ]];then
       CREST_BASE=$CREST_BASE_OLD
       export CREST_BASE=$CREST_BASE_OLD
    fi
    if [[ -d $CREST_BASE ]] && [[ -f $CREST_BASE/crest/.env ]]; then
       load_env_file "$CREST_BASE/crest/.env"
+      [[ -n "$PACKAGE_BACKEND_IMAGE" ]] && export CREST_BACKEND_IMAGE="$PACKAGE_BACKEND_IMAGE"
+      [[ -n "$PACKAGE_FRONTEND_IMAGE" ]] && export CREST_FRONTEND_IMAGE="$PACKAGE_FRONTEND_IMAGE"
+      [[ -n "$PACKAGE_MYSQL_IMAGE" ]] && export CREST_MYSQL_IMAGE="$PACKAGE_MYSQL_IMAGE"
+      [[ -n "$PACKAGE_PROMETHEUS_IMAGE" ]] && export CREST_PROMETHEUS_IMAGE="$PACKAGE_PROMETHEUS_IMAGE"
+      [[ -n "$PACKAGE_GRAFANA_IMAGE" ]] && export CREST_GRAFANA_IMAGE="$PACKAGE_GRAFANA_IMAGE"
       INSTALL_TYPE='upgrade'
       log_content "升级安装"
    else
@@ -220,6 +230,12 @@ function check_and_prepare_env_params() {
    esac
    export CREST_EXTERNAL_MYSQL
    normalize_metadata_db_env
+   if [[ "$CREST_EXTERNAL_MYSQL" == "false" ]]; then
+      CREST_DB_HOST=mysql-crest
+      CREST_DB_PORT=3306
+      export CREST_DB_HOST
+      export CREST_DB_PORT
+   fi
    CREST_CRYPTO_MODE=${CREST_CRYPTO_MODE:-standard}
    case "$CREST_CRYPTO_MODE" in
       standard|sm-suite) ;;
@@ -365,9 +381,7 @@ function prepare_crest_run_base() {
       chmod 777 ${CREST_RUN_BASE}/task/logs
    fi
 
-   if [ "${CREST_EXTERNAL_MYSQL}" = "false" ]; then
-      export CREST_DB_PORT=3306
-   else
+   if [ "${CREST_EXTERNAL_MYSQL}" != "false" ]; then
       awk '
          /^  mysql-crest:/ { skip = 1; next }
          /^  crest-service:/ { skip = 0 }

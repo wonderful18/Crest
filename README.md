@@ -84,8 +84,8 @@ crestctl version
 | 配置项 | 说明 |
 | --- | --- |
 | `CREST_PORT` | Web 访问端口，默认 `8100` |
-| `CREST_BACKEND_IMAGE` | 后端镜像，默认 `ghcr.io/sevoniva/crest-service:v1.5.11` |
-| `CREST_FRONTEND_IMAGE` | 前端镜像，默认 `ghcr.io/sevoniva/crest-web:v1.5.11` |
+| `CREST_BACKEND_IMAGE` | 后端镜像，下一版默认 `ghcr.io/sevoniva/crest-service:v1.5.12` |
+| `CREST_FRONTEND_IMAGE` | 前端镜像，下一版默认 `ghcr.io/sevoniva/crest-web:v1.5.12` |
 | `CREST_LOAD_DEMO` | 是否初始化内置演示资源，生产环境可设为 `false` |
 | `CREST_DB_TYPE` | 元数据库类型：`mysql`、`ob-mysql`、`ob-oracle` |
 | `CREST_FLYWAY_ENABLED` | 留空自动判断：MySQL 默认 `true`，OceanBase 默认 `false` |
@@ -100,16 +100,16 @@ crestctl version
 
 ```bash
 cd installer
-bash make-offline-package.sh v1.5.11 linux-amd64
-bash make-offline-package.sh v1.5.11 linux-arm64
+bash make-offline-package.sh v1.5.12 linux-amd64
+bash make-offline-package.sh v1.5.12 linux-arm64
 ```
 
 应用镜像升级包：
 
 ```bash
 cd installer
-bash make-app-image-package.sh v1.5.11 linux-amd64
-bash make-app-image-package.sh v1.5.11 linux-arm64
+bash make-app-image-package.sh v1.5.12 linux-amd64
+bash make-app-image-package.sh v1.5.12 linux-arm64
 ```
 
 包内会包含：
