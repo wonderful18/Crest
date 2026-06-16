@@ -145,6 +145,7 @@ public class PlatformPermissionManage {
         return names.isEmpty() ? null : names.get(0);
     }
 
+    // 单条查询交给元数据库方言生成，兼容 MySQL LIMIT 和 OB Oracle FETCH
     private String limitOne(String sql) {
         return MetadataDbDialects.current(environment).limitOffset(sql.stripTrailing(), 1, 0);
     }
@@ -414,6 +415,7 @@ public class PlatformPermissionManage {
         return List.of(role);
     }
 
+    // OB Oracle 不支持 INSERT IGNORE，先检查再补写用户组织绑定
     private void insertUserOrgIfMissing(Long uid, Long oid, boolean defaultOrg, long now) {
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(1) FROM iam_user_org
@@ -428,6 +430,7 @@ public class PlatformPermissionManage {
                 """.formatted(uidColumn()), IDUtils.snowID(), uid, oid, defaultOrg, now);
     }
 
+    // OB Oracle 不支持 INSERT IGNORE，先检查再补写用户角色绑定
     private void insertUserRoleIfMissing(Long uid, Long oid, Long rid, long now) {
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(1) FROM iam_user_role
@@ -442,10 +445,12 @@ public class PlatformPermissionManage {
                 """.formatted(uidColumn()), IDUtils.snowID(), uid, oid, rid, now);
     }
 
+    // 用户绑定表的 UID 在 OB Oracle 中需要引用，MySQL 保持原字段写法
     private String uidColumn() {
         return isObOracle() ? MetadataDbDialects.current(environment).quoteIdentifier("UID") : "uid";
     }
 
+    // 判断当前元数据库是否为 OB Oracle，集中收敛兼容分支
     private boolean isObOracle() {
         return MetadataDbDialects.current(environment).type() == MetadataDbType.OB_ORACLE;
     }

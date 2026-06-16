@@ -24,6 +24,7 @@ final class OceanBaseFlywayDetector {
         return canQuery(connection, "SELECT DATABASE()");
     }
 
+    // 通过轻量探测 SQL 判断当前租户支持的方言能力
     private static boolean canQuery(Connection connection, String sql) {
         try (Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(sql)) {

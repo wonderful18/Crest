@@ -186,6 +186,7 @@ public class CrestOrgManage {
         return dialect().limitOne(sql.stripTrailing());
     }
 
+    // 组织管理 SQL 统一通过元数据库方言生成分页片段
     private MetadataDbDialect dialect() {
         return MetadataDbDialects.current(environment);
     }

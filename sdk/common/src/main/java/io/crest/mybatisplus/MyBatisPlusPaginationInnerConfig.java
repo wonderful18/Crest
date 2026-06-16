@@ -14,7 +14,7 @@ import org.springframework.core.env.Environment;
 @Configuration
 
 @EnableCaching
-// 定义当前业务对象的核心职责
+// 集中配置 MyBatis Plus 分页插件和元数据库 databaseId
 public class MyBatisPlusPaginationInnerConfig {
 
     private final Environment environment;
@@ -24,7 +24,7 @@ public class MyBatisPlusPaginationInnerConfig {
     }
 
     @Bean
-    // 执行当前服务方法并返回处理结果
+    // 分页插件按元数据库类型选择方言，避免 OB Oracle 复用 MySQL 分页语法
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
         MetadataDbType metadataDbType = MetadataDbTypeResolver.resolve(environment);
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
@@ -33,6 +33,7 @@ public class MyBatisPlusPaginationInnerConfig {
     }
 
     @Bean
+    // 向 MyBatis 暴露 databaseId，支持 Mapper XML 中的元数据库条件分支
     public DatabaseIdProvider databaseIdProvider() {
         return new MetadataDatabaseIdProvider(environment);
     }

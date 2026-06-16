@@ -156,7 +156,7 @@ public class AuditLogController {
                 "SELECT DISTINCT operation_type as value, operation_type as label FROM audit_log ORDER BY operation_type");
     }
 
-    // 执行当前服务方法并返回处理结果
+    // 审计日志只允许系统管理员和审计员访问
     private void requireAuditAccess() {
         Long uid = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
         if (uid == null) {
@@ -172,6 +172,7 @@ public class AuditLogController {
         }
     }
 
+    // 审计筛选 SQL 按元数据库方言生成分页和函数片段
     private MetadataDbDialect dialect() {
         return MetadataDbDialects.current(environment);
     }

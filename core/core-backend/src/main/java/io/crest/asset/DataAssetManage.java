@@ -980,38 +980,47 @@ public class DataAssetManage {
         return StringUtils.isBlank(scopeSql) ? "" : "\n AND " + scopeSql;
     }
 
+    // 读取当前元数据库方言，以下 SQL 片段都通过它屏蔽 MySQL 与 OB Oracle 差异
     private MetadataDbDialect dialect() {
         return MetadataDbDialects.current(environment);
     }
 
+    // 生成带数据库转义规则的字符串常量
     private String stringLiteral(String value) {
         return dialect().stringLiteral(value);
     }
 
+    // 将字段表达式转为可比较的字符串表达式
     private String stringCast(String expression) {
         return dialect().stringCast(expression);
     }
 
+    // 生成与当前方言兼容的空字符串占位表达式
     private String nullableString() {
         return dialect().nullableString();
     }
 
+    // 对普通文本表达式补充当前方言需要的字符集或排序规则
     private String text(String expression) {
         return dialect().collate(expression);
     }
 
+    // 生成跨方言一致的字符串相等条件
     private String stringEquals(String leftExpression, String rightExpression) {
         return dialect().stringEquals(leftExpression, rightExpression);
     }
 
+    // 生成跨方言一致的字符串不等条件
     private String stringNotEquals(String leftExpression, String rightExpression) {
         return dialect().stringNotEquals(leftExpression, rightExpression);
     }
 
+    // 将资源编号等文本表达式转换为数值表达式
     private String numberCast(String expression) {
         return dialect().numberCast(expression);
     }
 
+    // 生成跨方言一致的字符串拼接表达式
     private String concat(String... expressions) {
         return dialect().concat(expressions);
     }
