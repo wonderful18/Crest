@@ -64,7 +64,6 @@ CREST_DB_PORT=2883 \
 CREST_DB_URL='jdbc:oceanbase://10.0.0.10:2883' \
 CREST_DB_USERNAME='ob_user@ob_oracle#obcluster' \
 CREST_DB_PASSWORD='ob_password' \
-CREST_FLYWAY_ENABLED=false \
 CREST_FLYWAY_LOCATIONS='classpath:db/migration-ob-oracle' \
 CREST_AES_KEY='<32-character-aes-key>' \
 CREST_AES_IV='<16-character-iv>' \
@@ -73,7 +72,7 @@ CREST_WEB_PORT=18100 \
 docker compose -f deploy/split/docker-compose.yml up -d --no-deps crest-service crest
 ```
 
-生产环境的 OceanBase 元数据库应先由 DBA 执行离线包 `init-sql/ob-mysql/` 或 `init-sql/ob-oracle/` 下的初始化 SQL，再以 `CREST_FLYWAY_ENABLED=false` 启动服务。`ob-mysql` 元数据库使用 `CREST_DB_TYPE=ob-mysql`，URL 形如 `jdbc:oceanbase://10.0.0.10:2883/crest`。OBProxy/ODP 连接用户名使用 `用户@租户#集群`，observer 直连端口通常使用 `2881`，用户名使用 `用户@租户`。
+生产环境的 OceanBase 元数据库应先由 DBA 执行离线包 `init-sql/ob-mysql/` 或 `init-sql/ob-oracle/` 下的初始化 SQL，再启动服务。`CREST_DB_TYPE=ob-mysql/ob-oracle` 时应用默认关闭 Flyway，只连接已初始化的外部元数据库。`ob-mysql` 元数据库使用 `CREST_DB_TYPE=ob-mysql`，URL 形如 `jdbc:oceanbase://10.0.0.10:2883/crest`。OBProxy/ODP 连接用户名使用 `用户@租户#集群`，observer 直连端口通常使用 `2881`，用户名使用 `用户@租户`。
 
 ## 启用 Prometheus 和 Grafana
 
