@@ -79,7 +79,6 @@ public class Configuration {
     }
 
     protected static final Pattern HOST_PORT_PATTERN = Pattern.compile("//([^:/]+)(?::(\\d+))?");
-    protected static final Pattern PARAMETERS_PATTERN = Pattern.compile("([^&=]+)=([^&]*)");
     private static final Pattern DB_NAME_PATTERN = Pattern.compile("//[^/]+/([^?]+)");
     private Map<String, String> parameters = new HashMap<>();
     /**
@@ -102,9 +101,20 @@ public class Configuration {
         int paramStart = jdbcUrl.indexOf('?');
         if (paramStart > 0) {
             String paramString = jdbcUrl.substring(paramStart + 1);
-            Matcher matcher = PARAMETERS_PATTERN.matcher(paramString);
-            while (matcher.find()) {
-                parameters.put(matcher.group(1), matcher.group(2));
+            int start = 0;
+            while (start <= paramString.length()) {
+                int end = paramString.indexOf('&', start);
+                if (end < 0) {
+                    end = paramString.length();
+                }
+                int equals = paramString.indexOf('=', start);
+                if (equals >= start && equals < end && equals > start) {
+                    parameters.put(paramString.substring(start, equals), paramString.substring(equals + 1, end));
+                }
+                if (end == paramString.length()) {
+                    break;
+                }
+                start = end + 1;
             }
         }
     }
