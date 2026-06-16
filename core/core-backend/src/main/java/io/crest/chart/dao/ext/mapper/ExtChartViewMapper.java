@@ -27,6 +27,7 @@ public interface ExtChartViewMapper {
     void deleteViewsBySceneId(@Param("sceneId") Long sceneId, @Param("resourceTable") String resourceTable);
 
     @Select("""
+            <script>
             SELECT id, scene_id as pid, title, type FROM (
                 SELECT id, scene_id, title, type FROM bi_chart
                 WHERE id = #{viewId}
@@ -34,7 +35,15 @@ public interface ExtChartViewMapper {
                 SELECT id, scene_id, title, type FROM bi_chart_snapshot
                 WHERE id = #{viewId}
             ) combined_views
-            LIMIT 1
+            <choose>
+                <when test="_databaseId == 'ob-oracle'">
+                    FETCH FIRST 1 ROWS ONLY
+                </when>
+                <otherwise>
+                    LIMIT 1
+                </otherwise>
+            </choose>
+            </script>
             """)
     ChartViewDTO findChartViewAround(@Param("viewId") String viewId);
 

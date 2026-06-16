@@ -1042,7 +1042,7 @@ const nodeHasSqlVariables = node => {
 
 // 当前左侧选中的数据源节点
 const currentDatasource = computed(() => findDatasource(state.dataSourceList, dataSource.value))
-const syncSupportedDatasourceTypes = ['mysql', 'obOracle']
+const syncSupportedDatasourceTypes = ['mysql', 'obMysql', 'obOracle']
 // 当前数据源类型是否具备缓存同步基础能力
 const syncBaseSupportedDataset = computed(
   () => !!dataSource.value && syncSupportedDatasourceTypes.includes(currentDatasource.value?.type)

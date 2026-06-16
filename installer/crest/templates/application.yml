@@ -9,10 +9,12 @@ spring:
       max-file-size: ${CREST_UPLOAD_MAX_FILE_SIZE:500MB}
       max-request-size: ${CREST_UPLOAD_MAX_REQUEST_SIZE:500MB}
   datasource:
-    url: jdbc:mysql://${CREST_DB_HOST}:${CREST_DB_PORT}/${CREST_DB_NAME}?${CREST_DB_PARAMS}
+    driver-class-name: ${CREST_DB_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
+    url: ${CREST_DB_URL}
     username: ${CREST_DB_USERNAME}
     password: ${CREST_DB_PASSWORD}
   flyway:
+    enabled: ${CREST_FLYWAY_ENABLED}
     locations: ${CREST_FLYWAY_LOCATIONS}
 management:
   endpoints:
@@ -43,6 +45,8 @@ logging:
   file:
     path: ${CREST_LOG_PATH}
 crest:
+  metadata-db:
+    type: ${CREST_DB_TYPE:mysql}
   demo:
     enabled: ${CREST_LOAD_DEMO}
   export:

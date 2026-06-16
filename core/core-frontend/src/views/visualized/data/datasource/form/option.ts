@@ -16,6 +16,13 @@ export const dsTypes = [
       'characterEncoding=UTF-8&connectTimeout=5000&useSSL=false&allowPublicKeyRetrieval=true'
   },
   {
+    type: 'obMysql',
+    name: 'OceanBase MySQL',
+    catalog: 'OLTP',
+    extraParams:
+      'characterEncoding=UTF-8&connectTimeout=5000&useSSL=false&allowPublicKeyRetrieval=true&zeroDateTimeBehavior=convertToNull'
+  },
+  {
     type: 'TiDB',
     name: 'TiDB',
     catalog: 'OLTP',

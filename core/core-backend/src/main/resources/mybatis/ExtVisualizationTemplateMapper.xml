@@ -160,6 +160,26 @@
     </select>
 
     <select id="findTemplateArrayCategories" resultType="String">
+        <choose>
+            <when test="_databaseId == 'ob-oracle'">
+                SELECT
+                LISTAGG(category_id, ',') WITHIN GROUP (ORDER BY category_id) AS selected_subjects
+                FROM (
+                SELECT DISTINCT
+                vtcm.template_id,
+                vtcm.category_id
+                FROM
+                visualization_template_category_map vtcm
+                WHERE
+                vtcm.template_id in
+                <foreach collection="templateArray" item="templateId" index="index" open="(" close=")" separator=",">
+                    #{templateId}
+                </foreach>
+                )
+                GROUP BY
+                template_id
+            </when>
+            <otherwise>
         SELECT DISTINCT
         GROUP_CONCAT( DISTINCT vtcm.category_id ORDER BY vtcm.category_id ) AS selected_subjects
         FROM
@@ -171,6 +191,8 @@
         </foreach>
         GROUP BY
         vtcm.template_id
+            </otherwise>
+        </choose>
     </select>
     <select id="findAppViewInfo" resultType="io.crest.api.visualization.vo.AppCoreChartViewVO">
         SELECT

@@ -1,5 +1,13 @@
 import os from 'node:os'
 
+type NetworkAddress = {
+  address?: string
+  family?: string | number
+  internal?: boolean
+}
+
+type NetworkEntry = [string, NetworkAddress[]]
+
 // 移除浏览器 Origin 头，避免本地代理转发时触发后端跨域校验
 const dropBrowserOriginHeader = proxy => {
   proxy.on('proxyReq', proxyReq => {
@@ -15,9 +23,12 @@ const resolveNetworkAddress = () => {
   }
 
   const preferredInterface = process.env.CREST_DEV_PROXY_INTERFACE
-  const interfaces = os.networkInterfaces()
-  const allEntries = Object.entries(interfaces)
-  const entries = preferredInterface
+  const interfaces = os.networkInterfaces() as Record<string, NetworkAddress[] | undefined>
+  const allEntries: NetworkEntry[] = Object.entries(interfaces).map(([name, addresses]) => [
+    name,
+    addresses || []
+  ])
+  const entries: NetworkEntry[] = preferredInterface
     ? preferredInterface.split(',').map(name => {
         const trimmedName = name.trim()
         return [trimmedName, interfaces[trimmedName] || []]
@@ -58,6 +69,12 @@ export default {
       '/api': {
         target: backendProxyTarget,
         changeOrigin: true,
+        configure: dropBrowserOriginHeader
+      },
+      '/websocket': {
+        target: backendProxyTarget,
+        changeOrigin: true,
+        ws: true,
         configure: dropBrowserOriginHeader
       }
     },

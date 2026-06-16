@@ -92,6 +92,12 @@ if [ -d "${INSTALLER_DIR}/upgrade-sql" ]; then
   cp -R "${INSTALLER_DIR}/upgrade-sql" "${PACKAGE_DIR}/upgrade-sql"
 fi
 
+log "Copy metadata initialization SQL"
+mkdir -p "${PACKAGE_DIR}/init-sql"
+cp -R "${REPO_DIR}/core/core-backend/src/main/resources/db/migration" "${PACKAGE_DIR}/init-sql/mysql"
+cp -R "${REPO_DIR}/core/core-backend/src/main/resources/db/migration-ob-mysql" "${PACKAGE_DIR}/init-sql/ob-mysql"
+cp -R "${REPO_DIR}/core/core-backend/src/main/resources/db/migration-ob-oracle" "${PACKAGE_DIR}/init-sql/ob-oracle"
+
 log "Tag backend image ${SOURCE_BACKEND_IMAGE} -> ${BACKEND_IMAGE}"
 docker tag "${SOURCE_BACKEND_IMAGE}" "${BACKEND_IMAGE}"
 
@@ -143,6 +149,7 @@ cat > "${PACKAGE_DIR}/APP-IMAGES-README.md" <<EOF
 ## 包内内容
 
 - \`images/\`：Crest 后端和前端镜像归档；
+- \`init-sql/\`：空库部署时可由 DBA 手工执行的元数据库初始化 SQL；
 - \`upgrade-sql/\`：从已发布版本升级所需的增量 SQL；
 - \`load-images.sh\`：加载包内镜像；
 - \`image-manifest.txt\`：包内镜像与目标架构。
@@ -178,6 +185,18 @@ docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_N
 
 外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 元数据库。
 如安装时修改过 \`CREST_BASE\`，请把 \`/opt/crest/.env\` 换成实际运行目录中的 \`.env\`。
+
+OceanBase MySQL 元数据库可使用 OceanBase 客户端执行 MySQL 兼容升级 SQL：
+
+\`\`\`bash
+obclient -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' <database> < upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}
+\`\`\`
+
+OceanBase Oracle 元数据库使用独立 Flyway migration 路径。除非发布说明明确提供 OB Oracle 专用升级 SQL，不要把 MySQL 兼容升级 SQL 执行到 OB Oracle 租户。
+
+## OceanBase 空库初始化
+
+OceanBase 元数据库按企业外部数据库处理。生产环境建议先由 DBA 创建租户、数据库或 schema、账号和权限，然后按文件名顺序执行 \`init-sql/ob-mysql/\` 或 \`init-sql/ob-oracle/\` 下的初始化 SQL。Crest 运行配置中保持 \`CREST_FLYWAY_ENABLED=false\`，服务启动时只连接已初始化的外部元数据库。
 
 ## 更新运行配置
 

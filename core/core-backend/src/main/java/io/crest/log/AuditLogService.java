@@ -1,8 +1,11 @@
 package io.crest.log;
 
 import io.crest.constant.LogOT;
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,9 @@ public class AuditLogService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private Environment environment;
 
     /**
      * 异步记录审计日志
@@ -60,8 +66,8 @@ public class AuditLogService {
                  operation_desc, request_method, request_url,
                  operator_id, operator_name, operator_account, operator_ip,
                  duration, response_code, response_msg, operation_time)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-                """;
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, %s)
+                """.formatted(dialect().currentTimestamp());
 
             jdbcTemplate.update(sql,
                     operationType.name(), resourceType, resourceId, resourceName,
@@ -86,8 +92,8 @@ public class AuditLogService {
                 (operation_type, resource_type, resource_id, resource_name,
                  operation_desc, operator_id, operator_name, operator_account, operator_ip,
                  response_code, response_msg, operation_time)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-                """;
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, %s)
+                """.formatted(dialect().currentTimestamp());
 
             jdbcTemplate.update(sql,
                     "LOGIN", "USER", userId != null ? userId.toString() : null, truncate(maskSensitive(account), RESOURCE_NAME_MAX_LENGTH),
@@ -120,5 +126,9 @@ public class AuditLogService {
             return value;
         }
         return value.substring(0, maxLength);
+    }
+
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
     }
 }

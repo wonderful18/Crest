@@ -210,6 +210,14 @@
                     <include>static/**/*.*</include>
                 </includes>
             </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>META-INF/services/**/*</include>
+                    <include>db/seed-ob-oracle/**/*.jsonl</include>
+                </includes>
+            </resource>
         </resources>
         <!-- springboot打包插件 -->
         <plugins>

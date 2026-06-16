@@ -9,12 +9,15 @@ import io.crest.asset.dto.DataAssetProfileRequest;
 import io.crest.asset.dto.DataAssetRequest;
 import io.crest.asset.dto.DataAssetVO;
 import io.crest.exception.CrestException;
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.result.ResultCode;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.IDUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +47,9 @@ public class DataAssetManage {
     @Resource
     private PlatformPermissionManage platformPermissionManage;
 
+    @Resource
+    private Environment environment;
+
     /**
      * 查询当前用户可见的数据资产分页，并补齐治理状态、负责人、权限和上下游数量
      */
@@ -55,9 +61,8 @@ public class DataAssetManage {
 
         Long total = jdbcTemplate.queryForObject("SELECT COUNT(1) " + query.fromWhere, Long.class, query.args.toArray());
         List<Object> listArgs = new ArrayList<>(query.args);
-        listArgs.add(normalizedPageSize);
-        listArgs.add((normalizedPage - 1) * normalizedPageSize);
-        List<DataAssetVO> records = jdbcTemplate.query("""
+        int offset = (normalizedPage - 1) * normalizedPageSize;
+        List<DataAssetVO> records = jdbcTemplate.query(dialect().limitOffset("""
                 SELECT a.asset_type,
                        a.asset_id,
                        a.name,
@@ -74,13 +79,9 @@ public class DataAssetManage {
                        COALESCE(p.recommended, 0) AS recommended,
                        COALESCE(p.deprecated, 0) AS deprecated,
                        COALESCE(p.owner_id, a.creator_id) AS owner_id,
-                       COALESCE(owner.name COLLATE utf8mb4_unicode_ci,
-                                creator.name COLLATE utf8mb4_unicode_ci,
-                                CAST(COALESCE(p.owner_id, a.creator_id) AS CHAR) COLLATE utf8mb4_unicode_ci) AS owner_name,
-                       COALESCE(creator.name COLLATE utf8mb4_unicode_ci,
-                                CAST(a.creator_id AS CHAR) COLLATE utf8mb4_unicode_ci) AS creator_name,
-                       COALESCE(org.name COLLATE utf8mb4_unicode_ci,
-                                '默认组织' COLLATE utf8mb4_unicode_ci) AS org_name
+                       COALESCE(%s, %s, %s) AS owner_name,
+                       COALESCE(%s, %s) AS creator_name,
+                       COALESCE(%s, %s) AS org_name
                 """ + query.fromWhere + """
 
                 ORDER BY COALESCE(p.deprecated, 0) ASC,
@@ -88,8 +89,15 @@ public class DataAssetManage {
                          COALESCE(p.recommended, 0) DESC,
                          a.update_time DESC,
                          a.asset_id DESC
-                LIMIT ? OFFSET ?
-                """, (rs, rowNum) -> mapAsset(rs), listArgs.toArray());
+                """.formatted(
+                text("owner.name"),
+                text("creator.name"),
+                stringCast("COALESCE(p.owner_id, a.creator_id)"),
+                text("creator.name"),
+                stringCast("a.creator_id"),
+                text("org.name"),
+                stringLiteral("默认组织")
+        ), normalizedPageSize, offset), (rs, rowNum) -> mapAsset(rs), listArgs.toArray());
         records.forEach(this::fillAssetAccessAndCounts);
 
         DataAssetPageVO vo = new DataAssetPageVO();
@@ -145,32 +153,27 @@ public class DataAssetManage {
                 : DataAssetUtils.emptyGovernanceStatus();
         Long uid = currentUid();
         long now = System.currentTimeMillis();
-        jdbcTemplate.update("""
-                INSERT INTO data_asset_profile
-                    (id, asset_type, asset_id, description, owner_id, certified, recommended, deprecated, tags, create_time, update_time, update_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                    description = VALUES(description),
-                    owner_id = VALUES(owner_id),
-                    certified = VALUES(certified),
-                    recommended = VALUES(recommended),
-                    deprecated = VALUES(deprecated),
-                    tags = VALUES(tags),
-                    update_time = VALUES(update_time),
-                    update_by = VALUES(update_by)
-                """,
-                IDUtils.snowID(),
-                assetType,
-                assetId,
-                description,
-                request.getOwnerId(),
-                bool(status.certified()),
-                bool(status.recommended()),
-                bool(status.deprecated()),
-                tags,
-                now,
-                now,
-                uid);
+        int updated = jdbcTemplate.update("""
+                UPDATE data_asset_profile
+                SET description = ?,
+                    owner_id = ?,
+                    certified = ?,
+                    recommended = ?,
+                    deprecated = ?,
+                    tags = ?,
+                    update_time = ?,
+                    update_by = ?
+                WHERE asset_type = ? AND asset_id = ?
+                """, description, request.getOwnerId(), bool(status.certified()), bool(status.recommended()),
+                bool(status.deprecated()), tags, now, uid, assetType, assetId);
+        if (updated == 0) {
+            jdbcTemplate.update("""
+                    INSERT INTO data_asset_profile
+                        (id, asset_type, asset_id, description, owner_id, certified, recommended, deprecated, tags, create_time, update_time, update_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, IDUtils.snowID(), assetType, assetId, description, request.getOwnerId(),
+                    bool(status.certified()), bool(status.recommended()), bool(status.deprecated()), tags, now, now, uid);
+        }
         return detail(assetType, assetId);
     }
 
@@ -209,9 +212,9 @@ public class DataAssetManage {
         DataAssetRequest request = new DataAssetRequest();
         request.setAssetType(DataAssetUtils.requireAssetType(assetType));
         QueryParts query = filteredAssets(request);
-        query.fromWhere += " AND a.asset_id COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci";
+        query.fromWhere += " AND " + stringEquals("a.asset_id", "?");
         query.args.add(StringUtils.trimToEmpty(assetId));
-        List<DataAssetVO> assets = jdbcTemplate.query("""
+        List<DataAssetVO> assets = jdbcTemplate.query(dialect().limitOne("""
                 SELECT a.asset_type,
                        a.asset_id,
                        a.name,
@@ -228,14 +231,18 @@ public class DataAssetManage {
                        COALESCE(p.recommended, 0) AS recommended,
                        COALESCE(p.deprecated, 0) AS deprecated,
                        COALESCE(p.owner_id, a.creator_id) AS owner_id,
-                       COALESCE(owner.name COLLATE utf8mb4_unicode_ci,
-                                creator.name COLLATE utf8mb4_unicode_ci,
-                                CAST(COALESCE(p.owner_id, a.creator_id) AS CHAR) COLLATE utf8mb4_unicode_ci) AS owner_name,
-                       COALESCE(creator.name COLLATE utf8mb4_unicode_ci,
-                                CAST(a.creator_id AS CHAR) COLLATE utf8mb4_unicode_ci) AS creator_name,
-                       COALESCE(org.name COLLATE utf8mb4_unicode_ci,
-                                '默认组织' COLLATE utf8mb4_unicode_ci) AS org_name
-                """ + query.fromWhere + " LIMIT 1", (rs, rowNum) -> mapAsset(rs), query.args.toArray());
+                       COALESCE(%s, %s, %s) AS owner_name,
+                       COALESCE(%s, %s) AS creator_name,
+                       COALESCE(%s, %s) AS org_name
+                """.formatted(
+                text("owner.name"),
+                text("creator.name"),
+                stringCast("COALESCE(p.owner_id, a.creator_id)"),
+                text("creator.name"),
+                stringCast("a.creator_id"),
+                text("org.name"),
+                stringLiteral("默认组织")
+        ) + query.fromWhere), (rs, rowNum) -> mapAsset(rs), query.args.toArray());
         if (assets.isEmpty()) {
             CrestException.throwException("资产不存在或无访问权限");
         }
@@ -256,25 +263,29 @@ public class DataAssetManage {
         sql.append("""
                 ) a
                 LEFT JOIN data_asset_profile p
-                    ON p.asset_type COLLATE utf8mb4_unicode_ci = a.asset_type COLLATE utf8mb4_unicode_ci
-                   AND p.asset_id COLLATE utf8mb4_unicode_ci = a.asset_id COLLATE utf8mb4_unicode_ci
+                    ON %s
+                   AND %s
                 LEFT JOIN iam_user owner ON owner.id = p.owner_id
                 LEFT JOIN iam_user creator ON creator.id = a.creator_id
                 LEFT JOIN iam_org org ON org.id = a.org_id
                 WHERE 1 = 1
-                """);
+                """.formatted(stringEquals("p.asset_type", "a.asset_type"), stringEquals("p.asset_id", "a.asset_id")));
         if (request != null && StringUtils.isNotBlank(request.getAssetType())) {
-            sql.append(" AND a.asset_type COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci");
+            sql.append(" AND ").append(stringEquals("a.asset_type", "?"));
             args.add(request.getAssetType());
         }
         if (request != null && StringUtils.isNotBlank(request.getKeyword())) {
             sql.append("""
                     AND (
-                        LOWER(a.name COLLATE utf8mb4_unicode_ci) LIKE LOWER(CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') COLLATE utf8mb4_unicode_ci)
-                        OR LOWER(a.asset_id COLLATE utf8mb4_unicode_ci) LIKE LOWER(CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') COLLATE utf8mb4_unicode_ci)
-                        OR LOWER(COALESCE(p.tags COLLATE utf8mb4_unicode_ci, '' COLLATE utf8mb4_unicode_ci)) LIKE LOWER(CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') COLLATE utf8mb4_unicode_ci)
+                        %s
+                        OR %s
+                        OR %s
                     )
-                    """);
+                    """.formatted(
+                    dialect().caseInsensitiveLike("a.name", "?"),
+                    dialect().caseInsensitiveLike("a.asset_id", "?"),
+                    dialect().caseInsensitiveLike("COALESCE(p.tags, '')", "?")
+            ));
             args.add(request.getKeyword());
             args.add(request.getKeyword());
             args.add(request.getKeyword());
@@ -310,87 +321,132 @@ public class DataAssetManage {
     private String assetUnionSql() {
         List<String> selects = new ArrayList<>();
         selects.add("""
-                SELECT 'datasource' COLLATE utf8mb4_unicode_ci AS asset_type,
-                       CAST(ds.id AS CHAR) COLLATE utf8mb4_unicode_ci AS asset_id,
-                       ds.name COLLATE utf8mb4_unicode_ci AS name,
-                       ds.type COLLATE utf8mb4_unicode_ci AS extra_type,
-                       CAST(NULL AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_type,
-                       CAST(NULL AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_id,
-                       COALESCE(ds_ri.creator, CAST(ds.create_by AS UNSIGNED)) AS creator_id,
+                SELECT %s AS asset_type,
+                       %s AS asset_id,
+                       %s AS name,
+                       %s AS extra_type,
+                       %s AS parent_asset_type,
+                       %s AS parent_asset_id,
+                       COALESCE(ds_ri.creator, %s) AS creator_id,
                        COALESCE(ds_ri.oid, 1) AS org_id,
                        ds.create_time AS create_time,
                        ds.update_time AS update_time
                 FROM data_source ds
                 LEFT JOIN iam_resource_index ds_ri
-                    ON ds_ri.resource_type COLLATE utf8mb4_unicode_ci = 'datasource' COLLATE utf8mb4_unicode_ci
-                   AND ds_ri.resource_id COLLATE utf8mb4_unicode_ci = CAST(ds.id AS CHAR) COLLATE utf8mb4_unicode_ci
-                WHERE ds.type COLLATE utf8mb4_unicode_ci <> 'folder' COLLATE utf8mb4_unicode_ci
-                """ + permissionClause(platformPermissionManage.resourceScopeSql("datasource", "ds.id", "ds.create_by", null)));
+                    ON %s
+                   AND %s
+                WHERE %s
+                """.formatted(
+                stringLiteral("datasource"),
+                stringCast("ds.id"),
+                text("ds.name"),
+                text("ds.type"),
+                nullableString(),
+                nullableString(),
+                numberCast("ds.create_by"),
+                stringEquals("ds_ri.resource_type", stringLiteral("datasource")),
+                stringEquals("ds_ri.resource_id", stringCast("ds.id")),
+                stringNotEquals("ds.type", stringLiteral("folder"))
+        ) + permissionClause(platformPermissionManage.resourceScopeSql("datasource", "ds.id", "ds.create_by", null)));
         selects.add("""
-                SELECT 'table' COLLATE utf8mb4_unicode_ci AS asset_type,
-                       CAST(dt.id AS CHAR) COLLATE utf8mb4_unicode_ci AS asset_id,
-                       COALESCE(NULLIF(dt.name COLLATE utf8mb4_unicode_ci, '' COLLATE utf8mb4_unicode_ci),
-                                dt.table_name COLLATE utf8mb4_unicode_ci,
-                                CAST(dt.id AS CHAR) COLLATE utf8mb4_unicode_ci) AS name,
-                       dt.type COLLATE utf8mb4_unicode_ci AS extra_type,
-                       'dataset' COLLATE utf8mb4_unicode_ci AS parent_asset_type,
-                       CAST(dg.id AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_id,
-                       COALESCE(dg_table_ri.creator, CAST(dg.create_by AS UNSIGNED)) AS creator_id,
+                SELECT %s AS asset_type,
+                       %s AS asset_id,
+                       COALESCE(NULLIF(%s, %s), %s, %s) AS name,
+                       %s AS extra_type,
+                       %s AS parent_asset_type,
+                       %s AS parent_asset_id,
+                       COALESCE(dg_table_ri.creator, %s) AS creator_id,
                        COALESCE(dg_table_ri.oid, 1) AS org_id,
                        dg.create_time AS create_time,
                        dg.last_update_time AS update_time
                 FROM dataset_table dt
-                INNER JOIN dataset_group dg ON dg.id = dt.dataset_group_id AND dg.node_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci
+                INNER JOIN dataset_group dg ON dg.id = dt.dataset_group_id AND %s
                 LEFT JOIN iam_resource_index dg_table_ri
-                    ON dg_table_ri.resource_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci
-                   AND dg_table_ri.resource_id COLLATE utf8mb4_unicode_ci = CAST(dg.id AS CHAR) COLLATE utf8mb4_unicode_ci
+                    ON %s
+                   AND %s
                 WHERE 1 = 1
-                """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)));
+                """.formatted(
+                stringLiteral("table"),
+                stringCast("dt.id"),
+                text("dt.name"),
+                stringLiteral(""),
+                text("dt.table_name"),
+                stringCast("dt.id"),
+                text("dt.type"),
+                stringLiteral("dataset"),
+                stringCast("dg.id"),
+                numberCast("dg.create_by"),
+                stringEquals("dg.node_type", stringLiteral("dataset")),
+                stringEquals("dg_table_ri.resource_type", stringLiteral("dataset")),
+                stringEquals("dg_table_ri.resource_id", stringCast("dg.id"))
+        ) + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)));
         selects.add("""
-                SELECT 'dataset' COLLATE utf8mb4_unicode_ci AS asset_type,
-                       CAST(dg.id AS CHAR) COLLATE utf8mb4_unicode_ci AS asset_id,
-                       dg.name COLLATE utf8mb4_unicode_ci AS name,
-                       dg.type COLLATE utf8mb4_unicode_ci AS extra_type,
-                       CAST(NULL AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_type,
-                       CAST(NULL AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_id,
-                       COALESCE(dg_ri.creator, CAST(dg.create_by AS UNSIGNED)) AS creator_id,
+                SELECT %s AS asset_type,
+                       %s AS asset_id,
+                       %s AS name,
+                       %s AS extra_type,
+                       %s AS parent_asset_type,
+                       %s AS parent_asset_id,
+                       COALESCE(dg_ri.creator, %s) AS creator_id,
                        COALESCE(dg_ri.oid, 1) AS org_id,
                        dg.create_time AS create_time,
                        dg.last_update_time AS update_time
                 FROM dataset_group dg
                 LEFT JOIN iam_resource_index dg_ri
-                    ON dg_ri.resource_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci
-                   AND dg_ri.resource_id COLLATE utf8mb4_unicode_ci = CAST(dg.id AS CHAR) COLLATE utf8mb4_unicode_ci
-                WHERE dg.node_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci
-                """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)));
+                    ON %s
+                   AND %s
+                WHERE %s
+                """.formatted(
+                stringLiteral("dataset"),
+                stringCast("dg.id"),
+                text("dg.name"),
+                text("dg.type"),
+                nullableString(),
+                nullableString(),
+                numberCast("dg.create_by"),
+                stringEquals("dg_ri.resource_type", stringLiteral("dataset")),
+                stringEquals("dg_ri.resource_id", stringCast("dg.id")),
+                stringEquals("dg.node_type", stringLiteral("dataset"))
+        ) + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)));
         selects.add("""
-                SELECT 'chart' COLLATE utf8mb4_unicode_ci AS asset_type,
-                       CAST(c.id AS CHAR) COLLATE utf8mb4_unicode_ci AS asset_id,
-                       COALESCE(NULLIF(c.title COLLATE utf8mb4_unicode_ci, '' COLLATE utf8mb4_unicode_ci),
-                                CAST(c.id AS CHAR) COLLATE utf8mb4_unicode_ci) AS name,
-                       c.type COLLATE utf8mb4_unicode_ci AS extra_type,
-                       (CASE WHEN v.type COLLATE utf8mb4_unicode_ci = 'dataV' COLLATE utf8mb4_unicode_ci THEN 'screen' ELSE 'panel' END) COLLATE utf8mb4_unicode_ci AS parent_asset_type,
-                       CAST(v.id AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_id,
-                       CAST(c.create_by AS UNSIGNED) AS creator_id,
-                       COALESCE(CAST(NULLIF(v.org_id, '') AS UNSIGNED), 1) AS org_id,
+                SELECT %s AS asset_type,
+                       %s AS asset_id,
+                       COALESCE(NULLIF(%s, %s), %s) AS name,
+                       %s AS extra_type,
+                       CASE WHEN %s THEN %s ELSE %s END AS parent_asset_type,
+                       %s AS parent_asset_id,
+                       %s AS creator_id,
+                       COALESCE(%s, 1) AS org_id,
                        c.create_time AS create_time,
                        c.update_time AS update_time
                 FROM bi_chart c
                 INNER JOIN bi_visualization v ON v.id = c.scene_id
                 WHERE v.delete_flag = 0
-                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
-                """ + permissionClause(visualizationScopeSql("v")));
+                  AND %s
+                """.formatted(
+                stringLiteral("chart"),
+                stringCast("c.id"),
+                text("c.title"),
+                stringLiteral(""),
+                stringCast("c.id"),
+                text("c.type"),
+                stringEquals("v.type", stringLiteral("dataV")),
+                stringLiteral("screen"),
+                stringLiteral("panel"),
+                stringCast("v.id"),
+                numberCast("c.create_by"),
+                numberCast("NULLIF(v.org_id, '')"),
+                stringEquals("v.node_type", stringLiteral("leaf"))
+        ) + permissionClause(visualizationScopeSql("v")));
         selects.add(visualizationSelect("panel", "dashboard"));
         selects.add(visualizationSelect("screen", "dataV"));
         selects.add("""
-                SELECT 'share' COLLATE utf8mb4_unicode_ci AS asset_type,
-                       CAST(s.id AS CHAR) COLLATE utf8mb4_unicode_ci AS asset_id,
-                       CONCAT(COALESCE(v.name COLLATE utf8mb4_unicode_ci, '可视化资源' COLLATE utf8mb4_unicode_ci),
-                              ' / ' COLLATE utf8mb4_unicode_ci,
-                              s.uuid COLLATE utf8mb4_unicode_ci) AS name,
-                       s.uuid COLLATE utf8mb4_unicode_ci AS extra_type,
-                       (CASE WHEN v.type COLLATE utf8mb4_unicode_ci = 'dataV' COLLATE utf8mb4_unicode_ci THEN 'screen' ELSE 'panel' END) COLLATE utf8mb4_unicode_ci AS parent_asset_type,
-                       CAST(v.id AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_id,
+                SELECT %s AS asset_type,
+                       %s AS asset_id,
+                       %s AS name,
+                       %s AS extra_type,
+                       CASE WHEN %s THEN %s ELSE %s END AS parent_asset_type,
+                       %s AS parent_asset_id,
                        s.creator AS creator_id,
                        s.oid AS org_id,
                        s.time AS create_time,
@@ -398,8 +454,19 @@ public class DataAssetManage {
                 FROM share_link s
                 INNER JOIN bi_visualization v ON v.id = s.resource_id
                 WHERE v.delete_flag = 0
-                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
-                """ + permissionClause(visualizationScopeSql("v")));
+                  AND %s
+                """.formatted(
+                stringLiteral("share"),
+                stringCast("s.id"),
+                concat("COALESCE(" + text("v.name") + ", " + stringLiteral("可视化资源") + ")",
+                        stringLiteral(" / "), text("s.uuid")),
+                text("s.uuid"),
+                stringEquals("v.type", stringLiteral("dataV")),
+                stringLiteral("screen"),
+                stringLiteral("panel"),
+                stringCast("v.id"),
+                stringEquals("v.node_type", stringLiteral("leaf"))
+        ) + permissionClause(visualizationScopeSql("v")));
         return String.join("\nUNION ALL\n", selects);
     }
 
@@ -409,21 +476,32 @@ public class DataAssetManage {
     private String visualizationSelect(String assetType, String visualizationType) {
         String resourceType = DataAssetUtils.TYPE_SCREEN.equals(assetType) ? "screen" : "panel";
         return """
-                SELECT '%s' COLLATE utf8mb4_unicode_ci AS asset_type,
-                       CAST(v.id AS CHAR) COLLATE utf8mb4_unicode_ci AS asset_id,
-                       v.name COLLATE utf8mb4_unicode_ci AS name,
-                       v.type COLLATE utf8mb4_unicode_ci AS extra_type,
-                       CAST(NULL AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_type,
-                       CAST(NULL AS CHAR) COLLATE utf8mb4_unicode_ci AS parent_asset_id,
-                       CAST(v.create_by AS UNSIGNED) AS creator_id,
-                       COALESCE(CAST(NULLIF(v.org_id, '') AS UNSIGNED), 1) AS org_id,
+                SELECT %s AS asset_type,
+                       %s AS asset_id,
+                       %s AS name,
+                       %s AS extra_type,
+                       %s AS parent_asset_type,
+                       %s AS parent_asset_id,
+                       %s AS creator_id,
+                       COALESCE(%s, 1) AS org_id,
                        v.create_time AS create_time,
                        v.update_time AS update_time
                 FROM bi_visualization v
                 WHERE v.delete_flag = 0
-                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
-                  AND v.type COLLATE utf8mb4_unicode_ci = '%s' COLLATE utf8mb4_unicode_ci
-                """.formatted(assetType, visualizationType) +
+                  AND %s
+                  AND %s
+                """.formatted(
+                stringLiteral(assetType),
+                stringCast("v.id"),
+                text("v.name"),
+                text("v.type"),
+                nullableString(),
+                nullableString(),
+                numberCast("v.create_by"),
+                numberCast("NULLIF(v.org_id, '')"),
+                stringEquals("v.node_type", stringLiteral("leaf")),
+                stringEquals("v.type", stringLiteral(visualizationType))
+        ) +
                 permissionClause(platformPermissionManage.resourceScopeSql(resourceType, "v.id", "v.create_by", "v.org_id"));
     }
 
@@ -473,20 +551,22 @@ public class DataAssetManage {
         }
         return switch (asset.getAssetType()) {
             case DataAssetUtils.TYPE_TABLE -> queryItems("""
-                    SELECT 'dataset' AS asset_type, CAST(dg.id AS CHAR) AS asset_id, dg.name AS name,
+                    SELECT %s AS asset_type, %s AS asset_id, dg.name AS name,
                            '所属数据集' AS relation, dg.last_update_time AS update_time
                     FROM dataset_table dt
                     INNER JOIN dataset_group dg ON dg.id = dt.dataset_group_id
                     WHERE dt.id = ?
-                    """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
+                    """.formatted(stringLiteral("dataset"), stringCast("dg.id"))
+                    + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
             case DataAssetUtils.TYPE_DATASET -> datasetUpstream(id);
             case DataAssetUtils.TYPE_CHART -> queryItems("""
-                    SELECT 'dataset' AS asset_type, CAST(dg.id AS CHAR) AS asset_id, dg.name AS name,
+                    SELECT %s AS asset_type, %s AS asset_id, dg.name AS name,
                            '图表使用的数据集' AS relation, dg.last_update_time AS update_time
                     FROM bi_chart c
                     INNER JOIN dataset_group dg ON dg.id = c.table_id
                     WHERE c.id = ?
-                    """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
+                    """.formatted(stringLiteral("dataset"), stringCast("dg.id"))
+                    + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
             case DataAssetUtils.TYPE_PANEL, DataAssetUtils.TYPE_SCREEN -> panelUpstream(id);
             case DataAssetUtils.TYPE_SHARE -> shareUpstream(id);
             default -> List.of();
@@ -532,21 +612,25 @@ public class DataAssetManage {
     private List<DataAssetImpactItemVO> datasetUpstream(Long datasetId) {
         List<DataAssetImpactItemVO> items = new ArrayList<>();
         items.addAll(queryItems("""
-                SELECT DISTINCT 'datasource' AS asset_type, CAST(ds.id AS CHAR) AS asset_id, ds.name AS name,
+                SELECT DISTINCT %s AS asset_type, %s AS asset_id, ds.name AS name,
                        '提供数据表' AS relation, ds.update_time AS update_time
                 FROM data_source ds
                 INNER JOIN dataset_table dt ON dt.datasource_id = ds.id
                 WHERE dt.dataset_group_id = ?
-                  AND ds.type COLLATE utf8mb4_unicode_ci <> 'folder' COLLATE utf8mb4_unicode_ci
-                """ + permissionClause(platformPermissionManage.resourceScopeSql("datasource", "ds.id", "ds.create_by", null)), datasetId));
+                  AND %s
+                """.formatted(
+                stringLiteral("datasource"),
+                stringCast("ds.id"),
+                stringNotEquals("ds.type", stringLiteral("folder"))
+        ) + permissionClause(platformPermissionManage.resourceScopeSql("datasource", "ds.id", "ds.create_by", null)), datasetId));
         items.addAll(queryItems("""
-                SELECT 'table' AS asset_type, CAST(dt.id AS CHAR) AS asset_id,
-                       COALESCE(NULLIF(dt.name, ''), dt.table_name, CAST(dt.id AS CHAR)) AS name,
+                SELECT %s AS asset_type, %s AS asset_id,
+                       COALESCE(NULLIF(dt.name, ''), dt.table_name, %s) AS name,
                        '组成数据集' AS relation, NULL AS update_time
                 FROM dataset_table dt
                 WHERE dt.dataset_group_id = ?
                 ORDER BY dt.id ASC
-                """, datasetId));
+                """.formatted(stringLiteral("table"), stringCast("dt.id"), stringCast("dt.id")), datasetId));
         return items;
     }
 
@@ -557,20 +641,25 @@ public class DataAssetManage {
         List<DataAssetImpactItemVO> items = new ArrayList<>();
         String visualizationScope = permissionClause(visualizationScopeSql("v"));
         items.addAll(queryItems("""
-                SELECT 'chart' AS asset_type, CAST(c.id AS CHAR) AS asset_id,
-                       COALESCE(NULLIF(c.title, ''), CAST(c.id AS CHAR)) AS name,
+                SELECT %s AS asset_type, %s AS asset_id,
+                       COALESCE(NULLIF(c.title, ''), %s) AS name,
                        '使用该数据集' AS relation, c.update_time AS update_time
                 FROM bi_chart c
                 INNER JOIN bi_visualization v ON v.id = c.scene_id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
-                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
+                  AND %s
                 """ + visualizationScope + """
                 ORDER BY c.update_time DESC
-                """, datasetId));
+                """.formatted(
+                stringLiteral("chart"),
+                stringCast("c.id"),
+                stringCast("c.id"),
+                stringEquals("v.node_type", stringLiteral("leaf"))
+        ), datasetId));
         items.addAll(queryItems("""
-                SELECT CASE WHEN v.type COLLATE utf8mb4_unicode_ci = 'dataV' COLLATE utf8mb4_unicode_ci THEN 'screen' ELSE 'panel' END AS asset_type,
-                       CAST(v.id AS CHAR) AS asset_id,
+                SELECT CASE WHEN %s THEN %s ELSE %s END AS asset_type,
+                       %s AS asset_id,
                        v.name AS name,
                        '包含使用该数据集的图表' AS relation,
                        v.update_time AS update_time
@@ -578,15 +667,21 @@ public class DataAssetManage {
                 INNER JOIN bi_chart c ON c.scene_id = v.id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
-                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
+                  AND %s
                 """ + visualizationScope + """
                 GROUP BY v.id, v.type, v.name, v.update_time
                 ORDER BY v.update_time DESC
-                """, datasetId));
+                """.formatted(
+                stringEquals("v.type", stringLiteral("dataV")),
+                stringLiteral("screen"),
+                stringLiteral("panel"),
+                stringCast("v.id"),
+                stringEquals("v.node_type", stringLiteral("leaf"))
+        ), datasetId));
         items.addAll(queryItems("""
-                SELECT 'share' AS asset_type,
-                       CAST(s.id AS CHAR) AS asset_id,
-                       CONCAT(v.name, ' / ', s.uuid) AS name,
+                SELECT %s AS asset_type,
+                       %s AS asset_id,
+                       %s AS name,
                        '分享了受影响资源' AS relation,
                        s.time AS update_time
                 FROM share_link s
@@ -594,20 +689,25 @@ public class DataAssetManage {
                 INNER JOIN bi_chart c ON c.scene_id = v.id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
-                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
+                  AND %s
                 """ + visualizationScope + """
                 GROUP BY s.id, v.name, s.uuid, s.time
                 ORDER BY s.time DESC
-                """, datasetId));
+                """.formatted(
+                stringLiteral("share"),
+                stringCast("s.id"),
+                concat("v.name", stringLiteral(" / "), "s.uuid"),
+                stringEquals("v.node_type", stringLiteral("leaf"))
+        ), datasetId));
         items.addAll(queryItems("""
-                SELECT 'cacheTask' AS asset_type,
-                       CAST(t.id AS CHAR) AS asset_id,
+                SELECT %s AS asset_type,
+                       %s AS asset_id,
                        COALESCE(NULLIF(t.name, ''), '数据集缓存任务') AS name,
                        '该数据集的缓存任务' AS relation,
                        t.update_time AS update_time
                 FROM dataset_sync_task t
                 WHERE t.dataset_group_id = ?
-                """, datasetId));
+                """.formatted(stringLiteral("cacheTask"), stringCast("t.id")), datasetId));
         return items;
     }
 
@@ -616,16 +716,20 @@ public class DataAssetManage {
      */
     private List<DataAssetImpactItemVO> datasourceDownstream(Long datasourceId) {
         return queryItems("""
-                SELECT DISTINCT 'dataset' AS asset_type,
-                       CAST(dg.id AS CHAR) AS asset_id,
+                SELECT DISTINCT %s AS asset_type,
+                       %s AS asset_id,
                        dg.name AS name,
                        '引用该数据源的数据集' AS relation,
                        dg.last_update_time AS update_time
                 FROM dataset_group dg
                 INNER JOIN dataset_table dt ON dt.dataset_group_id = dg.id
-                WHERE dg.node_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci
+                WHERE %s
                   AND dt.datasource_id = ?
-                """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), datasourceId);
+                """.formatted(
+                stringLiteral("dataset"),
+                stringCast("dg.id"),
+                stringEquals("dg.node_type", stringLiteral("dataset"))
+        ) + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), datasourceId);
     }
 
     /**
@@ -634,23 +738,24 @@ public class DataAssetManage {
     private List<DataAssetImpactItemVO> panelUpstream(Long visualizationId) {
         List<DataAssetImpactItemVO> items = new ArrayList<>();
         items.addAll(queryItems("""
-                SELECT 'chart' AS asset_type, CAST(c.id AS CHAR) AS asset_id,
-                       COALESCE(NULLIF(c.title, ''), CAST(c.id AS CHAR)) AS name,
+                SELECT %s AS asset_type, %s AS asset_id,
+                       COALESCE(NULLIF(c.title, ''), %s) AS name,
                        '属于当前资源' AS relation,
                        c.update_time AS update_time
                 FROM bi_chart c
                 WHERE c.scene_id = ?
                 ORDER BY c.update_time DESC
-                """, visualizationId));
+                """.formatted(stringLiteral("chart"), stringCast("c.id"), stringCast("c.id")), visualizationId));
         items.addAll(queryItems("""
-                SELECT DISTINCT 'dataset' AS asset_type, CAST(dg.id AS CHAR) AS asset_id,
+                SELECT DISTINCT %s AS asset_type, %s AS asset_id,
                        dg.name AS name,
                        '当前资源使用的数据集' AS relation,
                        dg.last_update_time AS update_time
                 FROM bi_chart c
                 INNER JOIN dataset_group dg ON dg.id = c.table_id
                 WHERE c.scene_id = ?
-                """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), visualizationId));
+                """.formatted(stringLiteral("dataset"), stringCast("dg.id"))
+                + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), visualizationId));
         return items;
     }
 
@@ -659,15 +764,15 @@ public class DataAssetManage {
      */
     private List<DataAssetImpactItemVO> visualizationDownstream(Long visualizationId) {
         return queryItems("""
-                SELECT 'share' AS asset_type,
-                       CAST(s.id AS CHAR) AS asset_id,
+                SELECT %s AS asset_type,
+                       %s AS asset_id,
                        s.uuid AS name,
                        '分享当前资源' AS relation,
                        s.time AS update_time
                 FROM share_link s
                 WHERE s.resource_id = ?
                 ORDER BY s.time DESC
-                """, visualizationId);
+                """.formatted(stringLiteral("share"), stringCast("s.id")), visualizationId);
     }
 
     /**
@@ -675,15 +780,20 @@ public class DataAssetManage {
      */
     private List<DataAssetImpactItemVO> shareUpstream(Long shareId) {
         return queryItems("""
-                SELECT CASE WHEN v.type COLLATE utf8mb4_unicode_ci = 'dataV' COLLATE utf8mb4_unicode_ci THEN 'screen' ELSE 'panel' END AS asset_type,
-                       CAST(v.id AS CHAR) AS asset_id,
+                SELECT CASE WHEN %s THEN %s ELSE %s END AS asset_type,
+                       %s AS asset_id,
                        v.name AS name,
                        '被分享资源' AS relation,
                        v.update_time AS update_time
                 FROM share_link s
                 INNER JOIN bi_visualization v ON v.id = s.resource_id
                 WHERE s.id = ?
-                """ + permissionClause(visualizationScopeSql("v")), shareId);
+                """.formatted(
+                stringEquals("v.type", stringLiteral("dataV")),
+                stringLiteral("screen"),
+                stringLiteral("panel"),
+                stringCast("v.id")
+        ) + permissionClause(visualizationScopeSql("v")), shareId);
     }
 
     /**
@@ -706,8 +816,9 @@ public class DataAssetManage {
                 FROM data_source ds
                 INNER JOIN dataset_table dt ON dt.datasource_id = ds.id
                 WHERE dt.dataset_group_id = ?
-                      AND ds.type COLLATE utf8mb4_unicode_ci <> 'folder' COLLATE utf8mb4_unicode_ci
-                    """ + permissionClause(platformPermissionManage.resourceScopeSql("datasource", "ds.id", "ds.create_by", null)), id)
+                      AND %s
+                    """.formatted(stringNotEquals("ds.type", stringLiteral("folder")))
+                    + permissionClause(platformPermissionManage.resourceScopeSql("datasource", "ds.id", "ds.create_by", null)), id)
                     + count("SELECT COUNT(1) FROM dataset_table dt WHERE dt.dataset_group_id = ?", id);
             case DataAssetUtils.TYPE_CHART -> count("""
                     SELECT COUNT(1)
@@ -745,9 +856,10 @@ public class DataAssetManage {
                     SELECT COUNT(DISTINCT dg.id)
                     FROM dataset_group dg
                     INNER JOIN dataset_table dt ON dt.dataset_group_id = dg.id
-                    WHERE dg.node_type COLLATE utf8mb4_unicode_ci = 'dataset' COLLATE utf8mb4_unicode_ci
+                    WHERE %s
                       AND dt.datasource_id = ?
-                    """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
+                    """.formatted(stringEquals("dg.node_type", stringLiteral("dataset")))
+                    + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
             case DataAssetUtils.TYPE_DATASET -> datasetDownstreamCount(id);
             case DataAssetUtils.TYPE_PANEL, DataAssetUtils.TYPE_SCREEN -> count("SELECT COUNT(1) FROM share_link s WHERE s.resource_id = ?", id);
             default -> 0;
@@ -765,16 +877,16 @@ public class DataAssetManage {
                 INNER JOIN bi_visualization v ON v.id = c.scene_id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
-                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
-                """ + visualizationScope, datasetId)
+                  AND %s
+                """.formatted(stringEquals("v.node_type", stringLiteral("leaf"))) + visualizationScope, datasetId)
                 + count("""
                 SELECT COUNT(DISTINCT v.id)
                 FROM bi_visualization v
                 INNER JOIN bi_chart c ON c.scene_id = v.id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
-                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
-                """ + visualizationScope, datasetId)
+                  AND %s
+                """.formatted(stringEquals("v.node_type", stringLiteral("leaf"))) + visualizationScope, datasetId)
                 + count("""
                 SELECT COUNT(DISTINCT s.id)
                 FROM share_link s
@@ -782,8 +894,8 @@ public class DataAssetManage {
                 INNER JOIN bi_chart c ON c.scene_id = v.id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
-                  AND v.node_type COLLATE utf8mb4_unicode_ci = 'leaf' COLLATE utf8mb4_unicode_ci
-                """ + visualizationScope, datasetId)
+                  AND %s
+                """.formatted(stringEquals("v.node_type", stringLiteral("leaf"))) + visualizationScope, datasetId)
                 + count("SELECT COUNT(1) FROM dataset_sync_task t WHERE t.dataset_group_id = ?", datasetId);
     }
 
@@ -856,8 +968,8 @@ public class DataAssetManage {
         if (StringUtils.isBlank(panelScope) || StringUtils.isBlank(screenScope)) {
             return StringUtils.defaultIfBlank(panelScope, screenScope);
         }
-        return "((" + alias + ".type COLLATE utf8mb4_unicode_ci = 'dashboard' COLLATE utf8mb4_unicode_ci AND "
-                + panelScope + ") OR (" + alias + ".type COLLATE utf8mb4_unicode_ci = 'dataV' COLLATE utf8mb4_unicode_ci AND "
+        return "((" + stringEquals(alias + ".type", stringLiteral("dashboard")) + " AND "
+                + panelScope + ") OR (" + stringEquals(alias + ".type", stringLiteral("dataV")) + " AND "
                 + screenScope + "))";
     }
 
@@ -866,6 +978,42 @@ public class DataAssetManage {
      */
     private String permissionClause(String scopeSql) {
         return StringUtils.isBlank(scopeSql) ? "" : "\n AND " + scopeSql;
+    }
+
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
+    }
+
+    private String stringLiteral(String value) {
+        return dialect().stringLiteral(value);
+    }
+
+    private String stringCast(String expression) {
+        return dialect().stringCast(expression);
+    }
+
+    private String nullableString() {
+        return dialect().nullableString();
+    }
+
+    private String text(String expression) {
+        return dialect().collate(expression);
+    }
+
+    private String stringEquals(String leftExpression, String rightExpression) {
+        return dialect().stringEquals(leftExpression, rightExpression);
+    }
+
+    private String stringNotEquals(String leftExpression, String rightExpression) {
+        return dialect().stringNotEquals(leftExpression, rightExpression);
+    }
+
+    private String numberCast(String expression) {
+        return dialect().numberCast(expression);
+    }
+
+    private String concat(String... expressions) {
+        return dialect().concat(expressions);
     }
 
     /**

@@ -1,6 +1,6 @@
 package io.crest.datasource.type;
 
-import io.crest.exception.CrestException;
+import io.crest.datasource.security.JdbcUrlSecurityPolicy;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -8,10 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Component;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 
 @Data
@@ -23,27 +19,17 @@ public class ObOracle extends DatasourceConfiguration {
     private String driver = "com.oceanbase.jdbc.Driver";
     private String extraParams = "";
     private Boolean readOnly = true;
-    private static final List<String> ILLEGAL_PARAMETERS = Arrays.asList(
-            "java.naming.factory.initial", "java.naming.provider.url", "rmi",
-            "ldap://", "ldaps://", "java.naming.factory.object", "java.naming.factory.state",
-            "autoDeserialize", "connectionProperties", "initSQL", "dns", "file", "ftp"
-    );
 
     // 构建当前数据源的连接地址
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !Strings.CI.equals(getUrlType(), "hostName")) {
-            if (!Strings.CI.startsWith(getJdbcUrl(), "jdbc:oceanbase://")) {
-                CrestException.throwException("Illegal jdbcUrl: " + getJdbcUrl());
-            }
             validateIllegalParameters(getJdbcUrl());
             return getJdbcUrl();
         }
 
-        String database = StringUtils.defaultString(getDataBase()).trim();
-        String jdbcUrl = "jdbc:oceanbase://HOSTNAME:PORT/DATABASE"
+        String jdbcUrl = "jdbc:oceanbase://HOSTNAME:PORT"
                 .replace("HOSTNAME", getLHost().trim())
-                .replace("PORT", getLPort().toString().trim())
-                .replace("DATABASE", database);
+                .replace("PORT", getLPort().toString().trim());
         if (StringUtils.isNotBlank(getExtraParams())) {
             jdbcUrl = jdbcUrl + "?" + getExtraParams().trim();
         }
@@ -76,11 +62,6 @@ public class ObOracle extends DatasourceConfiguration {
 
     // 格式化日期时间并返回统一展示值
     private void validateIllegalParameters(String value) {
-        String decodedValue = URLDecoder.decode(StringUtils.defaultString(value), StandardCharsets.UTF_8);
-        for (String illegalParameter : ILLEGAL_PARAMETERS) {
-            if (Strings.CI.contains(decodedValue, illegalParameter)) {
-                CrestException.throwException("Illegal parameter: " + illegalParameter);
-            }
-        }
+        JdbcUrlSecurityPolicy.validate(DatasourceType.obOracle.getType(), value, getExtraParams());
     }
 }

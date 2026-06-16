@@ -22,6 +22,7 @@ public final class JdbcUrlSecurityPolicy {
 
     private static final Map<String, String> JDBC_PREFIXES = Map.ofEntries(
             Map.entry("mysql", "jdbc:mysql"),
+            Map.entry("obmysql", "jdbc:oceanbase"),
             Map.entry("mongo", "jdbc:mysql"),
             Map.entry("mariadb", "jdbc:mysql"),
             Map.entry("starrocks", "jdbc:mysql"),
@@ -40,6 +41,7 @@ public final class JdbcUrlSecurityPolicy {
 
     private static final Map<String, String> DEFAULT_DRIVERS = Map.ofEntries(
             Map.entry("mysql", "com.mysql.cj.jdbc.Driver"),
+            Map.entry("obmysql", "com.oceanbase.jdbc.Driver"),
             Map.entry("mongo", "com.mysql.cj.jdbc.Driver"),
             Map.entry("mariadb", "com.mysql.cj.jdbc.Driver"),
             Map.entry("starrocks", "com.mysql.cj.jdbc.Driver"),
@@ -83,6 +85,7 @@ public final class JdbcUrlSecurityPolicy {
 
     private static final Map<String, Set<String>> TYPE_DANGEROUS_FRAGMENTS = Map.ofEntries(
             Map.entry("mysql", Set.of("maxallowedpacket", "allowloadlocalinfile", "allowurlinlocalinfile", "allowloadlocalinfileinpath", "allowmultiqueries")),
+            Map.entry("obmysql", Set.of("maxallowedpacket", "allowloadlocalinfile", "allowurlinlocalinfile", "allowloadlocalinfileinpath", "allowmultiqueries")),
             Map.entry("mongo", Set.of()),
             Map.entry("mariadb", Set.of("maxallowedpacket", "allowloadlocalinfile", "allowurlinlocalinfile", "allowloadlocalinfileinpath", "allowmultiqueries")),
             Map.entry("starrocks", Set.of("maxallowedpacket", "allowloadlocalinfile", "allowurlinlocalinfile", "allowloadlocalinfileinpath", "allowmultiqueries")),
@@ -113,7 +116,7 @@ public final class JdbcUrlSecurityPolicy {
         String normalizedUrl = canonicalize(jdbcUrl);
         String normalizedExtraParams = canonicalize(extraParams);
         String expectedPrefix = JDBC_PREFIXES.get(normalizedType);
-        if (StringUtils.isBlank(expectedPrefix) || !normalizedUrl.startsWith(expectedPrefix)) {
+        if (StringUtils.isBlank(expectedPrefix) || !hasJdbcSchemePrefix(normalizedUrl, expectedPrefix)) {
             CrestException.throwException("Illegal jdbcUrl: " + jdbcUrl);
         }
         Set<String> dangerousFragments = new LinkedHashSet<>(COMMON_DANGEROUS_FRAGMENTS);
@@ -186,6 +189,13 @@ public final class JdbcUrlSecurityPolicy {
         normalized = Normalizer.normalize(normalized, Normalizer.Form.NFKC);
         normalized = normalized.replace("\\", "");
         return normalized.toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * 校验完整 JDBC scheme 边界，避免 jdbc:mysql-evil 这类伪协议绕过 startsWith。
+     */
+    private static boolean hasJdbcSchemePrefix(String normalizedUrl, String expectedPrefix) {
+        return normalizedUrl.startsWith(expectedPrefix + ":");
     }
 
     /**

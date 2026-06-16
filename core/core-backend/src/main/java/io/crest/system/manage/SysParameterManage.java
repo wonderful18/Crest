@@ -65,7 +65,8 @@ public class SysParameterManage {
         queryWrapper.orderByAsc("sort");
         List<CoreSysSetting> sysSettings = coreSysSettingMapper.selectList(queryWrapper);
         if (!CollectionUtils.isEmpty(sysSettings)) {
-            return sysSettings.stream().collect(Collectors.toMap(CoreSysSetting::getPkey, CoreSysSetting::getPval));
+            return sysSettings.stream()
+                    .collect(Collectors.toMap(CoreSysSetting::getPkey, item -> StringUtils.defaultString(item.getPval())));
         }
         return new HashMap<>();
     }

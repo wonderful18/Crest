@@ -42,7 +42,7 @@ public class JsonUtil {
             t = objectMapper.readValue(json, new TypeReference<T>() {
             });
         } catch (JsonProcessingException e) {
-            LogUtil.error(e.getMessage(), e);
+            logParseFailure("parse");
         }
         return t;
     }
@@ -56,7 +56,7 @@ public class JsonUtil {
         try {
             t = objectMapper.readValue(json, classOfT);
         } catch (JsonProcessingException e) {
-            LogUtil.error(e.getMessage(), e);
+            logParseFailure("parseObject", classOfT);
         }
         return t;
     }
@@ -70,7 +70,7 @@ public class JsonUtil {
         try {
             t = objectMapper.readValue(json, typeReference);
         } catch (JsonProcessingException e) {
-            LogUtil.error(e.getMessage(), e);
+            logParseFailure("parseObject");
         }
         return t;
     }
@@ -84,7 +84,7 @@ public class JsonUtil {
         try {
             t = objectMapper.readValue(json, classOfT);
         } catch (JsonProcessingException e) {
-            LogUtil.error(e.getMessage(), e);
+            logParseFailure("parseList");
         }
         return t;
     }
@@ -97,9 +97,24 @@ public class JsonUtil {
         try {
             return objectMapper.writeValueAsString(o);
         } catch (JsonProcessingException e) {
-            LogUtil.error(e.getMessage(), e);
+            LogUtil.error("JSON serialization failed: " + e.getClass().getSimpleName());
             return null;
         }
+    }
+
+    /**
+     * JSON 解析输入可能包含密文或用户数据，日志只保留操作和目标类型，不输出原文片段。
+     */
+    private static void logParseFailure(String operation) {
+        LogUtil.error("JSON " + operation + " failed");
+    }
+
+    /**
+     * JSON 解析输入可能包含密文或用户数据，日志只保留操作和目标类型，不输出原文片段。
+     */
+    private static void logParseFailure(String operation, Class<?> targetType) {
+        String targetName = targetType == null ? "unknown" : targetType.getName();
+        LogUtil.error("JSON " + operation + " failed for " + targetName);
     }
 
 }

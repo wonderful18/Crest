@@ -15,6 +15,8 @@ import io.crest.api.permissions.user.vo.UserImportVO;
 import io.crest.api.permissions.user.vo.UserItem;
 import io.crest.constant.SystemSettingConstants;
 import io.crest.exception.CrestException;
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.substitute.permissions.user.model.CrestUser;
 import io.crest.substitute.permissions.user.model.SsoUserProfile;
@@ -32,6 +34,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.springframework.core.env.Environment;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -58,6 +61,9 @@ public class CrestUserManage {
 
     @Resource
     private JdbcTemplate jdbcTemplate;
+
+    @Resource
+    private Environment environment;
 
     @Resource
     private PlatformPermissionManage platformPermissionManage;
@@ -116,13 +122,13 @@ public class CrestUserManage {
 
     // 按账号查询单个用户，登录和账号唯一性校验共用此入口
     public CrestUser queryByAccount(String account) {
-        List<CrestUser> users = jdbcTemplate.query("SELECT * FROM iam_user WHERE account = ? LIMIT 1", rowMapper, account);
+        List<CrestUser> users = jdbcTemplate.query(limitOne("SELECT * FROM iam_user WHERE account = ?"), rowMapper, account);
         return users.isEmpty() ? null : users.get(0);
     }
 
     // 按用户 ID 查询单个用户
     public CrestUser queryById(Long id) {
-        List<CrestUser> users = jdbcTemplate.query("SELECT * FROM iam_user WHERE id = ? LIMIT 1", rowMapper, id);
+        List<CrestUser> users = jdbcTemplate.query(limitOne("SELECT * FROM iam_user WHERE id = ?"), rowMapper, id);
         return users.isEmpty() ? null : users.get(0);
     }
 
@@ -131,9 +137,12 @@ public class CrestUserManage {
         List<CrestUser> users = jdbcTemplate.query("""
                 SELECT * FROM iam_user
                 WHERE auth_type = ? AND external_id = ?
-                LIMIT 1
-                """, rowMapper, authType, externalId);
+                """.transform(this::limitOne), rowMapper, authType, externalId);
         return users.isEmpty() ? null : users.get(0);
+    }
+
+    private String limitOne(String sql) {
+        return dialect().limitOne(sql.stripTrailing());
     }
 
     // 返回用户当前密码密文，供认证流程读取凭据版本
@@ -287,15 +296,16 @@ public class CrestUserManage {
             where.append(")");
         }
         if (request != null && request.getOid() != null) {
-            where.append(" AND EXISTS (SELECT 1 FROM iam_user_org uo WHERE uo.uid = iam_user.id AND uo.oid = ?)");
+            where.append(" AND EXISTS (SELECT 1 FROM iam_user_org uo WHERE uo.")
+                    .append(uidColumn()).append(" = iam_user.id AND uo.oid = ?)");
             args.add(request.getOid());
         }
         Long total = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM iam_user" + where, Long.class, args.toArray());
         String order = request != null && Boolean.FALSE.equals(request.getTimeDesc()) ? " ASC" : " DESC";
-        args.add(Math.max((goPage - 1) * pageSize, 0));
-        args.add(pageSize);
+        int offset = Math.max((goPage - 1) * pageSize, 0);
         List<CrestUser> users = jdbcTemplate.query(
-                "SELECT * FROM iam_user" + where + " ORDER BY create_time" + order + " LIMIT ?, ?",
+                dialect().limitOffset("SELECT * FROM iam_user" + where + " ORDER BY create_time" + order,
+                        pageSize, offset),
                 rowMapper,
                 args.toArray());
         Page<UserGridVO> page = new Page<>(goPage, pageSize);
@@ -311,9 +321,9 @@ public class CrestUserManage {
         StringBuilder sql = new StringBuilder("""
                 SELECT u.id, u.name, u.account
                 FROM iam_user u
-                INNER JOIN iam_user_org uo ON uo.uid = u.id
+                INNER JOIN iam_user_org uo ON uo.%s = u.id
                 WHERE uo.oid = ? AND u.enable = 1
-                """);
+                """.formatted(uidColumn()));
         args.add(oid);
         if (StringUtils.isNotBlank(keyword)) {
             sql.append(" AND (u.name LIKE ? OR u.account LIKE ? OR u.email LIKE ?)");
@@ -505,8 +515,8 @@ public class CrestUserManage {
         }
 
         jdbcTemplate.update("DELETE FROM iam_user WHERE id = ?", id);
-        jdbcTemplate.update("DELETE FROM iam_user_org WHERE uid = ?", id);
-        jdbcTemplate.update("DELETE FROM iam_user_role WHERE uid = ?", id);
+        jdbcTemplate.update("DELETE FROM iam_user_org WHERE " + uidColumn() + " = ?", id);
+        jdbcTemplate.update("DELETE FROM iam_user_role WHERE " + uidColumn() + " = ?", id);
     }
 
     // 切换用户启用状态，内置管理员不允许停用
@@ -665,6 +675,15 @@ public class CrestUserManage {
             throw new IllegalStateException(INITIAL_PASSWORD_PROPERTY + " must be configured");
         }
         return password;
+    }
+
+    // 元数据库方言只影响系统库 SQL，MySQL 默认仍保持原有分页和标识符规则。
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
+    }
+
+    private String uidColumn() {
+        return dialect().quoteIdentifier("UID");
     }
 
     // 生成满足复杂度要求的临时密码，并避免连续三位字符相同

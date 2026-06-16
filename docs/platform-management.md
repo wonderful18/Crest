@@ -1,159 +1,92 @@
-# 平台管理与权限体系
+# 平台管理
 
-本文说明 Crest 平台管理能力的源码现状、改造范围、数据表设计和权限口径。该能力面向企业内网部署，在保留现有登录和资源模型的基础上，提供组织、角色、菜单权限、资源权限和用户批量管理能力。
+平台管理用于维护用户、组织、角色、菜单权限和业务资源权限。权限判断在后端执行，前端只负责展示菜单、按钮和授权界面。
 
-## 现状梳理
+## 管理范围
 
-### 登录、Token 和用户上下文
-
-当前登录入口位于权限登录服务，本地账号登录使用 `/login/localLogin`。账号和密码由前端 RSA 加密，后端解密后校验 `iam_user.password_hash`。校验通过后生成 JWT，JWT 包含 `uid` 和 `oid`。
-
-请求鉴权由 `TokenFilter` 完成。过滤器从 `X-CREST-TOKEN` 读取 JWT，通过 `TokenUtils` 按用户密钥验签，并将 `TokenUserBO` 写入 `AuthUtils` 的线程上下文。后端业务代码通过 `AuthUtils.getUser()` 获取当前用户 ID 和默认组织 ID。
-
-单点登录由 `SsoManage` 处理。SSO 用户可按配置自动创建，也可拒绝不存在用户登录。SSO 登录成功后同样生成包含 `uid` 和 `oid` 的 JWT。
-
-### 用户、角色、组织与权限残留
-
-当前版本使用 `iam_user` 作为本地用户表，包含账号、姓名、邮箱、电话、启停状态、管理员标记、认证类型、外部身份 ID、最近登录时间等字段。
-
-权限 API 在 `sdk/api/api-permissions` 中已经定义了组织、角色、用户、菜单权限和资源权限接口。早期后端实现不完整，系统设置中已有用户管理页面，角色、组织、权限页面和后端实现由 v1.5 系列补齐。
-
-菜单来自 `iam_menu`。系统以角色菜单授权和后端资源过滤为准，前端菜单只承担展示职责。
-
-### 前端系统管理
-
-系统设置使用统一路由和菜单结构。用户管理页面已存在，入口在系统设置中。前端请求通过 `src/config/axios` 统一带上 `X-CREST-TOKEN`，菜单和路由由后端菜单接口返回结果驱动。
-
-组织管理、角色管理和权限管理页面放在系统设置下。前端只负责展示、勾选和隐藏，不承担最终权限判定。
-
-### 业务资源归属
-
-数据源、数据集、仪表盘和数据大屏已有创建人或组织字段：
-
-| 资源 | 主要表 | 可复用字段 |
-| --- | --- | --- |
-| 数据源 | `data_source` | `create_by`、`create_time`、`update_time` |
-| 数据集 | `dataset_group` | `create_by`、`create_time`、`last_update_time`、`node_type` |
-| 仪表盘/大屏 | `bi_visualization` | `create_by`、`org_id`、`type`、`node_type`、`delete_flag` |
-
-数据源和数据集没有完整组织字段，因此需要统一资源索引表补齐组织归属。仪表盘和数据大屏优先使用已有 `org_id`，同时写入统一资源索引。
-
-## 改造方案
-
-### 设计原则
-
-1. 复用 `iam_user`、现有登录态和 JWT 机制。
-2. 复用现有资源表的创建人和组织字段。
-3. 新增表只覆盖组织、用户组织关系、角色、角色菜单权限、资源索引、资源授权。
-4. 用户不存在时，SSO 按配置自动创建或拒绝登录。
-5. 权限判断在后端生效，前端只做菜单、按钮和表单展示。
-6. 数据源、数据集、仪表盘、数据大屏的树查询接口统一加资源范围过滤。
-
-### 后端改造点
-
-| 能力 | 改造点 |
+| 能力 | 说明 |
 | --- | --- |
-| 用户管理 | 新建、编辑、删除、启停、批量删除、批量导入；导入支持 `xlsx/xls/csv`；用户支持多角色 |
-| 组织管理 | 支持多级组织树、创建子组织、编辑、删除；默认组织不可删除 |
-| 角色管理 | 支持角色查询、创建、编辑、删除、挂载用户、组织外用户搜索 |
-| 菜单权限 | 通过 `iam_role_menu_permission` 控制角色可见菜单 |
-| 资源权限 | 通过 `iam_resource_index` 和 `iam_resource_permission` 控制资源可见范围 |
-| 登录态 | 本地登录和 SSO 登录生成 token 时写入用户默认组织 |
-| 资源过滤 | 数据源、数据集、仪表盘、大屏树查询按创建人、组织、用户授权、角色授权过滤 |
+| 用户管理 | 新建、编辑、启停、删除、批量删除和批量导入用户 |
+| 组织管理 | 维护多级组织树和用户默认组织 |
+| 角色管理 | 维护角色、角色成员和角色授权 |
+| 菜单权限 | 控制系统菜单和功能入口可见范围 |
+| 资源权限 | 控制数据源、数据集、仪表盘和数据大屏可见范围 |
+| 单点登录 | 支持外部身份登录后的用户查找、绑定或自动创建 |
 
-### 前端改造点
+## 权限模型
 
-| 页面 | 改造点 |
+用户访问资源时，后端按以下维度计算可见范围：
+
+- 当前用户是否为系统管理员；
+- 用户创建的资源；
+- 用户默认组织及下级组织资源；
+- 直接授权给用户的资源；
+- 授权给用户角色的资源；
+- 授权给用户所属组织的资源。
+
+前端菜单和按钮只作为交互提示，不作为最终权限依据。
+
+## 数据对象
+
+| 表 | 用途 |
 | --- | --- |
-| 系统设置 / 用户管理 | 角色单选改为多选，角色从后端读取 |
-| 系统设置 / 组织管理 | 新增组织树表格，支持创建子组织、编辑、删除 |
-| 系统设置 / 角色管理 | 新增角色列表和编辑表单 |
-| 系统设置 / 权限管理 | 新增角色选择、菜单权限树、资源权限树 |
-
-## 数据库变更
-
-初始化脚本：`V1.5.0.1__initial_schema.sql`
-
-新增表：
-
-| 表名 | 作用 |
-| --- | --- |
+| `iam_user` | 本地用户和外部身份绑定 |
 | `iam_org` | 组织树 |
 | `iam_role` | 角色 |
 | `iam_user_org` | 用户与组织关系，包含默认组织 |
 | `iam_user_role` | 用户与角色关系 |
 | `iam_role_menu_permission` | 角色菜单权限 |
-| `iam_resource_index` | 统一资源索引，补齐资源类型、组织、创建人 |
-| `iam_resource_permission` | 资源授权，支持用户、角色、组织 |
+| `iam_resource_index` | 统一资源索引 |
+| `iam_resource_permission` | 资源授权关系 |
 
-初始化数据：
+资源索引用于统一描述数据源、数据集、仪表盘和数据大屏的资源类型、组织、创建人和删除状态。资源授权不替代资源本身的数据表，只作为权限过滤依据。
 
-- 默认组织：`默认组织`
-- 内置角色：`系统管理员`、`普通用户`
-- 系统设置菜单：组织管理、角色管理、权限管理
-- 现有用户绑定默认组织和角色
-- 现有菜单授权给系统管理员
-- 现有数据源、数据集、仪表盘、大屏写入资源索引
+## 登录和用户上下文
 
-## 影响文件
+本地登录成功后，后端生成包含用户 ID 和默认组织 ID 的 token。单点登录成功后，后端按外部唯一标识查找或创建用户，并使用同一套 token 与权限模型。
 
-后端主要文件：
+后端业务代码通过当前用户上下文获取用户 ID、默认组织和角色信息。接口不得信任前端传入的用户身份或组织范围。
 
-- `core/core-backend/src/main/java/io/crest/substitute/permissions/login/SubstituleLoginServer.java`
-- `core/core-backend/src/main/java/io/crest/system/manage/SsoManage.java`
-- `core/core-backend/src/main/java/io/crest/substitute/permissions/user/CrestUserManage.java`
-- `core/core-backend/src/main/java/io/crest/substitute/permissions/user/SubstituteUserServer.java`
-- `core/core-backend/src/main/java/io/crest/substitute/permissions/org/CrestOrgManage.java`
-- `core/core-backend/src/main/java/io/crest/substitute/permissions/org/SubstituleOrgServer.java`
-- `core/core-backend/src/main/java/io/crest/substitute/permissions/role/CrestRoleManage.java`
-- `core/core-backend/src/main/java/io/crest/substitute/permissions/role/SubstituteRoleServer.java`
-- `core/core-backend/src/main/java/io/crest/substitute/permissions/auth/PlatformPermissionManage.java`
-- `core/core-backend/src/main/java/io/crest/substitute/permissions/auth/SubstituleAuthServer.java`
-- `core/core-backend/src/main/java/io/crest/menu/manage/MenuManage.java`
-- `core/core-backend/src/main/java/io/crest/datasource/manage/DataSourceManage.java`
-- `core/core-backend/src/main/java/io/crest/dataset/manage/DatasetGroupManage.java`
-- `core/core-backend/src/main/java/io/crest/visualization/manage/CoreVisualizationManage.java`
+## 管理入口
 
-前端主要文件：
+平台管理入口位于系统设置：
 
-- `core/core-frontend/src/views/system/user/index.vue`
-- `core/core-frontend/src/views/system/org/index.vue`
-- `core/core-frontend/src/views/system/role/index.vue`
-- `core/core-frontend/src/views/system/permission/index.vue`
+- 用户管理；
+- 组织管理；
+- 角色管理；
+- 权限管理；
+- 单点登录；
+- 系统参数；
+- 站点设置；
+- 字体管理。
 
-迁移与文案：
+普通用户只能访问已授权资源。管理员可进入后台管理页面维护系统配置和授权关系。
 
-- `core/core-backend/src/main/resources/db/migration/V1.5.0.1__initial_schema.sql`
-- `core/core-backend/src/main/resources/i18n/core_zh_CN.properties`
-- `core/core-backend/src/main/resources/i18n/core_zh_TW.properties`
-- `core/core-backend/src/main/resources/i18n/core_en_US.properties`
+## 数据导入
 
-## 权限口径
+用户批量导入支持 `xlsx`、`xls` 和 `csv`。导入后用户必须具备：
 
-资源可见条件满足任一项即可：
+- 账号；
+- 姓名或展示名；
+- 默认组织；
+- 至少一个角色；
+- 可用的初始密码或重置密码流程。
 
-1. 当前用户是系统管理员；
-2. 当前用户是资源创建人；
-3. 资源归属当前用户默认组织；
-4. 资源显式授权给当前用户；
-5. 资源显式授权给当前用户拥有的角色；
-6. 资源显式授权给当前组织。
+导入失败时应返回明确行号和原因，不暴露内部异常堆栈。
 
-菜单可见条件：
+## 运维要求
 
-1. 系统管理员拥有全部菜单；
-2. 非系统管理员只返回角色授权菜单；
-3. 前端根据返回菜单渲染导航，后端接口仍需做权限判断。
+- 首次安装后修改管理员密码；
+- 定期检查管理员和高权限角色成员；
+- 删除组织、角色和用户前确认资源授权影响；
+- 启用单点登录后保留管理员应急登录路径；
+- 权限异常排查时同时检查菜单权限和资源权限。
 
-## 验证清单
+## 验收清单
 
-上线前建议完成以下验证：
-
-1. Flyway 核心初始化脚本执行成功；启用内置演示资源时，演示资源脚本也应执行成功。
-2. 本地登录和 SSO 登录 token 均包含正确 `oid`。
-3. 系统设置能看到组织管理、角色管理、权限管理。
-4. 用户可分配多个角色，保存后再次打开仍保持一致。
-5. 角色菜单权限保存后，非管理员只能看到授权菜单。
-6. 数据源、数据集、仪表盘、大屏树接口按权限过滤。
-7. 批量导入模板为 xlsx，导入成功用户具备默认组织和普通用户角色。
-8. 后端编译、前端类型检查、前端构建、Docker 镜像构建均通过。
+- 非管理员无法访问后台管理入口；
+- 普通用户只看到授权范围内的资源；
+- 用户启停、删除和角色变更立即影响后续访问；
+- 组织、角色、菜单权限和资源权限变更后，后端接口结果与前端展示一致；
+- 单点登录用户能正确绑定本地用户或按配置自动创建；
+- 用户导入、密码重置和初始密码提示可用。

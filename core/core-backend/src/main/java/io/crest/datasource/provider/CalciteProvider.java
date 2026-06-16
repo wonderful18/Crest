@@ -163,6 +163,16 @@ public class CalciteProvider extends Provider {
     }
 
     /**
+     * 数据源配置解析失败时返回清晰业务错误，避免后续连接池初始化继续触发空指针。
+     */
+    private DatasourceConfiguration requireDatasourceConfiguration(DatasourceConfiguration configuration) {
+        if (configuration == null) {
+            CrestException.throwException("数据源配置不完整或无法连接");
+        }
+        return configuration;
+    }
+
+    /**
      * 初始化默认驱动类加载器，把驱动目录下的 JDBC 包加入运行时搜索路径
      */
     @PostConstruct
@@ -567,7 +577,7 @@ public class CalciteProvider extends Provider {
             try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId());
                  Statement statement = getStatement(con, 30)) {
                 if (isOracleLike(datasourceSchemaDTO.getType())) {
-                    statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + datasourceConfiguration.getSchema());
+                    statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + oracleSchemaIdentifier(datasourceConfiguration.getSchema()));
                 }
                 boolean readOnly = shouldUseReadOnlyConnection(datasourceRequest, datasourceConfiguration, datasourceSchemaDTO.getType());
                 setConnectionReadOnly(con, readOnly);
@@ -698,12 +708,15 @@ public class CalciteProvider extends Provider {
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(coreDatasource.getType());
         switch (datasourceType) {
             case mysql:
+            case obMysql:
             case mongo:
             case StarRocks:
             case doris:
             case TiDB:
             case mariadb:
-                configuration = JsonUtil.parseObject(coreDatasource.getConfiguration(), Mysql.class);
+                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                        ? JsonUtil.parseObject(coreDatasource.getConfiguration(), ObMysql.class)
+                        : JsonUtil.parseObject(coreDatasource.getConfiguration(), Mysql.class);
                 break;
             case impala:
                 configuration = JsonUtil.parseObject(coreDatasource.getConfiguration(), Impala.class);
@@ -733,6 +746,7 @@ public class CalciteProvider extends Provider {
             default:
                 configuration = JsonUtil.parseObject(coreDatasource.getConfiguration(), Mysql.class);
         }
+        configuration = requireDatasourceConfiguration(configuration);
         CoreDriver customDriver = resolveCustomDriver(coreDatasource.getType(), configuration.getCustomDriver());
         String driverClassName = JdbcUrlSecurityPolicy.resolveDriverClass(coreDatasource.getType(), configuration.getDriver(), configuration.getCustomDriver(), customDriver);
         configuration.setDriver(driverClassName);
@@ -952,7 +966,7 @@ public class CalciteProvider extends Provider {
         if (isOracleLike(value.getType())) {
             statement = getStatement(con, datasourceConfiguration.getQueryTimeout());
             if (StringUtils.isNotBlank(datasourceConfiguration.getSchema())) {
-                statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + datasourceConfiguration.getSchema());
+                statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + oracleSchemaIdentifier(datasourceConfiguration.getSchema()));
             }
             statement.executeUpdate("ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS'");
             // 查询文本按目标库字符集转换，避免 Oracle 兼容库解析中文 SQL 条件失败
@@ -1167,12 +1181,15 @@ public class CalciteProvider extends Provider {
         DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(datasourceDTO.getType());
         switch (datasourceType) {
             case mysql:
+            case obMysql:
             case mongo:
             case mariadb:
             case TiDB:
             case StarRocks:
             case doris:
-                configuration = JsonUtil.parseObject(datasourceDTO.getConfiguration(), Mysql.class);
+                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                        ? JsonUtil.parseObject(datasourceDTO.getConfiguration(), ObMysql.class)
+                        : JsonUtil.parseObject(datasourceDTO.getConfiguration(), Mysql.class);
                 if (StringUtils.isNotEmpty(configuration.getUrlType()) && configuration.getUrlType().equalsIgnoreCase("jdbcUrl")) {
                     if (configuration.getJdbcUrl().contains("password=")) {
                         String[] params = configuration.getJdbcUrl().split("\\?")[1].split("&");
@@ -1316,6 +1333,17 @@ public class CalciteProvider extends Provider {
     }
 
     /**
+     * 格式化 Oracle schema 标识符，CURRENT_SCHEMA 不支持用 JDBC 参数绑定。
+     */
+    private String oracleSchemaIdentifier(String schema) {
+        String normalized = normalizeOracleName(schema);
+        if (!normalized.matches("[A-Z][A-Z0-9_$#]*")) {
+            CrestException.throwException("Illegal schema: " + schema);
+        }
+        return "\"" + normalized + "\"";
+    }
+
+    /**
      * 将数据库字段元数据行转换为 TableField，并补充主键、自增和 JDBC 类型编号
      */
     private TableField getTableFieldDesc(DatasourceRequest datasourceRequest, ResultSet resultSet, int commentIndex, Map<String, Integer> tableTypeMap) throws SQLException {
@@ -1419,6 +1447,10 @@ public class CalciteProvider extends Provider {
         Map<Long, DatasourceSchemaDTO> dsList = datasourceRequest.getDsList();
         for (Map.Entry<Long, DatasourceSchemaDTO> next : dsList.entrySet()) {
             DatasourceSchemaDTO ds = next.getValue();
+            if (StringUtils.isBlank(ds.getConfiguration())) {
+                LogUtil.info("Skip datasource pool with empty configuration: " + ds.getName());
+                continue;
+            }
             try {
                     BasicDataSource dataSource = new BasicDataSource();
                     dataSource.setMaxWaitMillis(5 * 1000);
@@ -1440,12 +1472,16 @@ public class CalciteProvider extends Provider {
                         }
                         switch (datasourceType) {
                             case mysql:
+                            case obMysql:
                             case mongo:
                             case mariadb:
                             case TiDB:
                             case StarRocks:
                             case doris:
-                                configuration = JsonUtil.parseObject(ds.getConfiguration(), Mysql.class);
+                                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                                        ? JsonUtil.parseObject(ds.getConfiguration(), ObMysql.class)
+                                        : JsonUtil.parseObject(ds.getConfiguration(), Mysql.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1463,6 +1499,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case impala:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Impala.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1480,6 +1517,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case sqlServer:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Sqlserver.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1499,6 +1537,7 @@ public class CalciteProvider extends Provider {
                             case obOracle:
                                 dataSource.setValidationQuery("SELECT 1 FROM DUAL");
                                 configuration = parseOracleLikeConfiguration(ds.getConfiguration(), ds.getType());
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1516,6 +1555,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case db2:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Db2.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 dataSource.setValidationQuery("select 1 from syscat.tables  WHERE TABSCHEMA ='CREST_SCHEMA' AND \"TYPE\" = 'T'".replace("CREST_SCHEMA", configuration.getSchema()));
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
@@ -1534,6 +1574,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case ck:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), CK.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1551,6 +1592,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case pg:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Pg.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1568,6 +1610,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case redshift:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Redshift.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1585,6 +1628,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case h2:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), H2.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1602,6 +1646,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             default:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Mysql.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1689,10 +1734,13 @@ public class CalciteProvider extends Provider {
                 }
                 break;
             case mysql:
+            case obMysql:
             case mongo:
             case mariadb:
             case TiDB:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
+                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                        ? JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), ObMysql.class)
+                        : JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
                 if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
                     database = configuration.getDataBase();
                 } else {
@@ -1868,9 +1916,12 @@ public class CalciteProvider extends Provider {
                 tableSqls.add(new QueryAndParams("show tables"));
                 break;
             case mysql:
+            case obMysql:
             case mariadb:
             case TiDB:
-                configuration = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
+                configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
+                        ? JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), ObMysql.class)
+                        : JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Mysql.class);
                 if (StringUtils.isEmpty(configuration.getUrlType()) || configuration.getUrlType().equalsIgnoreCase("hostName")) {
                     database = configuration.getDataBase();
                 } else {

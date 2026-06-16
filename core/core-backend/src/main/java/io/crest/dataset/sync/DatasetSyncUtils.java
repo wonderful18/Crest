@@ -54,7 +54,8 @@ public class DatasetSyncUtils {
      */
     private static final Set<String> SUPPORTED_CACHE_SOURCE_TYPES = Set.of(
             DatasourceConfiguration.DatasourceType.obOracle.name(),
-            DatasourceConfiguration.DatasourceType.mysql.name()
+            DatasourceConfiguration.DatasourceType.mysql.name(),
+            DatasourceConfiguration.DatasourceType.obMysql.name()
     );
 
     /**
@@ -315,7 +316,7 @@ public class DatasetSyncUtils {
         String column = prefix + StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()) + suffix;
         String operator = inclusive ? " >= " : " > ";
         if (Objects.equals(field.getExtractedFieldType(), 1) || Objects.equals(field.getFieldType(), 1)) {
-            if (Strings.CI.equals(datasourceType, DatasourceConfiguration.DatasourceType.mysql.name())) {
+            if (isMysqlCompatible(datasourceType)) {
                 return column + operator + "'" + escapeSqlLiteral(lastValue) + "'";
             }
             return column + operator + "TO_TIMESTAMP('" + escapeSqlLiteral(lastValue) + "', 'YYYY-MM-DD HH24:MI:SS.FF')";
@@ -403,13 +404,22 @@ public class DatasetSyncUtils {
      */
     public static String buildSourcePageSql(String datasourceType, String sourceSql, int limit, int offset,
                                             List<DatasetTableFieldDTO> fields, String prefix, String suffix) {
-        if (Strings.CI.equals(datasourceType, DatasourceConfiguration.DatasourceType.mysql.name())) {
+        if (isMysqlCompatible(datasourceType)) {
             return buildMysqlPageSql(sourceSql, limit, offset, fields, prefix, suffix);
         }
         if (Strings.CI.equals(datasourceType, DatasourceConfiguration.DatasourceType.obOracle.name())) {
             return buildOraclePageSql(sourceSql, limit, offset, fields, prefix, suffix);
         }
         throw new IllegalArgumentException("Unsupported dataset cache source type: " + datasourceType);
+    }
+
+    /**
+     * 判断源库是否使用 MySQL 兼容分页和时间字面量规则
+     */
+    private static boolean isMysqlCompatible(String datasourceType) {
+        return Strings.CI.equalsAny(datasourceType,
+                DatasourceConfiguration.DatasourceType.mysql.name(),
+                DatasourceConfiguration.DatasourceType.obMysql.name());
     }
 
     /**

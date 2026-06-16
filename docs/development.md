@@ -15,8 +15,8 @@ Crest 基于 DataEase 2.10.22 开源版本继续开发，并合入 2.10.23 相�
 | `sdk/extensions/extensions-datasource` | 数据源扩展、JDBC 数据源定义和方言能力 |
 | `drivers` | 随仓库维护的 JDBC 驱动，当前跟踪 `oceanbase-client-2.4.17.jar` |
 | `installer` | 单机安装脚本、Docker Compose 模板、控制脚本和离线包制作脚本 |
-| `deploy/kubernetes` | Kubernetes 清单，支持内置 MySQL 和外部 MySQL |
-| `docs` | 产品能力、开发、血缘和研发效能大屏说明 |
+| `deploy/kubernetes` | Kubernetes 清单，支持内置 MySQL、外部 MySQL 和外部 OceanBase 元数据库配置 |
+| `docs` | 产品能力、部署运维、开发和发布文档 |
 | `.github/workflows/docker-publish.yml` | GHCR 镜像构建和发布流程 |
 
 ## 产品边界
@@ -146,9 +146,11 @@ pnpm dev
 
 | 变量 | 说明 |
 | --- | --- |
-| `CREST_DB_HOST` | MySQL 地址 |
-| `CREST_DB_PORT` | MySQL 端口 |
+| `CREST_DB_HOST` | 元数据库地址；OceanBase 可填写 OBProxy 或 observer 地址 |
+| `CREST_DB_PORT` | 元数据库端口；OceanBase 常用 OBProxy `2883`，observer 直连 `2881` |
 | `CREST_DB_NAME` | 元数据库名 |
+| `CREST_DB_TYPE` | 元数据库类型，默认 `mysql`；OceanBase 适配见 `docs/oceanbase-support.md` |
+| `CREST_DB_URL` | 可选完整 JDBC URL，配置后优先于主机、端口和库名 |
 | `CREST_DB_USERNAME` | 元数据库账号 |
 | `CREST_DB_PASSWORD` | 元数据库密码 |
 | `CREST_INITIAL_PASSWORD` | 管理员初始密码，不能为空 |
@@ -361,6 +363,17 @@ datasource -> table -> table_field -> dataset_field -> dataset -> chart_field ->
 - 开源源码、配置模板、迁移脚本、脱敏样例和公开演示数据；
 - 公开可再分发的驱动文件；
 - 构建、部署、验证和排障文档。
+
+## 文档规则
+
+- 根目录 `README.md` 只保留项目概览、快速入口和核心配置；
+- 正式文档入口维护在 `docs/README.md`；
+- 安装、离线包和升级说明维护在 `installer/README.md`；
+- Kubernetes 和 split 部署说明分别维护在对应部署目录；
+- 发布说明只放在 `docs/release/`，历史版本不改写；
+- 临时审查报告、个人环境记录、一次性计划和过程复盘不放入公开 docs；
+- 文档中的版本号、镜像名、端口、默认账号和 SQL 路径必须与代码和脚本一致；
+- 文案使用交付口径，避免承诺式、聊天式和计划式表达。
 
 清理被忽略文件前先预览：
 

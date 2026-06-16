@@ -72,9 +72,15 @@ Crest 单机安装默认采用前后端分离容器：
 | `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v1.5.11` | Crest 前端镜像 |
 | `CREST_MYSQL_IMAGE` | `mysql:8.0.43` | MySQL 镜像 |
 | `CREST_LOAD_DEMO` | `true` | 是否初始化内置演示资源；生产环境不需要示例数据时设为 `false` |
-| `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部 MySQL；默认安装内置 MySQL 容器 |
+| `CREST_FLYWAY_ENABLED` | 空 | Flyway 元数据库初始化开关；留空时 MySQL 默认 `true`，OceanBase 默认 `false` |
+| `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部元数据库；默认安装内置 MySQL 容器，`CREST_DB_TYPE=ob-mysql/ob-oracle` 时脚本会自动切换为外部库模式 |
+| `CREST_DB_TYPE` | `mysql` | 元数据库类型，支持 `mysql`、`ob-mysql`、`ob-oracle` |
+| `CREST_DB_HOST` | `mysql-crest` | 元数据库地址；OceanBase 建议填写 OBProxy 地址，直连 observer 时填写 observer 地址 |
+| `CREST_DB_PORT` | `3306` | 元数据库端口；OceanBase 常用 OBProxy `2883`，observer 直连 `2881` |
 | `CREST_DB_NAME` | `crest` | 元数据库名 |
-| `CREST_DB_USERNAME` | `root` | MySQL 用户 |
+| `CREST_DB_DRIVER_CLASS_NAME` | `com.mysql.cj.jdbc.Driver` | JDBC 驱动；OceanBase 类型留空或保持默认时脚本会自动使用 `com.oceanbase.jdbc.Driver` |
+| `CREST_DB_URL` | 空 | JDBC URL 覆盖项；留空时安装脚本按 `CREST_DB_TYPE` 自动生成 |
+| `CREST_DB_USERNAME` | `root` | 元数据库用户；OBProxy 连接 OceanBase 时使用 `用户@租户#集群`，observer 直连时使用 `用户@租户` |
 | `CREST_DB_PASSWORD` | 空 | 留空时安装脚本自动生成 |
 | `CREST_AES_KEY` | 空 | 留空时自动生成 32 位值；升级时不要改 |
 | `CREST_AES_IV` | 空 | 留空时自动生成 16 位值；升级时不要改 |
@@ -91,6 +97,33 @@ Crest 单机安装默认采用前后端分离容器：
 | `CREST_GRAFANA_ADMIN_USER` | `admin` | Grafana 管理员账号 |
 | `CREST_GRAFANA_ADMIN_PASSWORD` | 空 | Grafana 管理员密码；开启后留空自动生成 |
 | `CREST_GRAFANA_PUBLIC_URL` | 空 | Grafana 页面访问地址；留空时安装脚本按本机端口生成 |
+
+OceanBase 元数据库示例：
+
+OceanBase 按企业外部元数据库处理。生产环境建议先由 DBA 创建租户、数据库或 schema、账号和权限，执行离线包 `init-sql/ob-mysql/` 或 `init-sql/ob-oracle/` 下的初始化 SQL，再配置 Crest 连接信息启动服务。安装脚本在 OceanBase 模式下默认设置 `CREST_FLYWAY_ENABLED=false`，避免应用启动时直接修改外部元数据库；开发验证需要应用自动初始化空库时，才显式设置 `CREST_FLYWAY_ENABLED=true`。
+
+```bash
+# OceanBase MySQL tenant through OBProxy
+CREST_DB_TYPE=ob-mysql
+CREST_DB_HOST=10.0.0.10
+CREST_DB_PORT=2883
+CREST_DB_NAME=crest
+CREST_DB_USERNAME=<user>@<tenant>#<cluster>
+CREST_DB_PASSWORD=<password>
+```
+
+`CREST_DB_TYPE=ob-mysql` 使用独立的 OceanBase MySQL 兼容初始化脚本，保留 MySQL 兼容表结构，同时去除 OceanBase 会提示 warning 的 MySQL 专属表引擎选项；不会加载 MySQL 演示迁移。默认 MySQL 安装仍使用原有迁移目录和自动初始化行为。
+
+```bash
+# OceanBase Oracle tenant through OBProxy
+CREST_DB_TYPE=ob-oracle
+CREST_DB_HOST=10.0.0.10
+CREST_DB_PORT=2883
+CREST_DB_USERNAME=<user>@<tenant>#<cluster>
+CREST_DB_PASSWORD=<password>
+```
+
+如需 observer 直连，把端口改为 `2881`，用户名使用 `用户@租户`，不要带 `#集群`。`CREST_DB_URL` 留空时脚本会自动生成；只有需要追加特殊 JDBC 参数时才手工覆盖。
 
 ## 在线安装
 

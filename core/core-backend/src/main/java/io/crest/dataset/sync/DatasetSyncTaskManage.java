@@ -22,6 +22,8 @@ import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import io.crest.job.schedule.DatasetSyncJob;
 import io.crest.job.schedule.ScheduleManager;
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.BeanUtils;
 import io.crest.utils.IDUtils;
@@ -31,6 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.quartz.JobKey;
 import org.quartz.TriggerKey;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +70,8 @@ public class DatasetSyncTaskManage {
     private JdbcTemplate jdbcTemplate;
     @Resource
     private PlatformPermissionManage platformPermissionManage;
+    @Resource
+    private Environment environment;
 
     /**
      * 按任务主键读取同步任务实体，供执行器和状态更新流程使用
@@ -81,7 +86,6 @@ public class DatasetSyncTaskManage {
     public CoreDatasetSyncTask selectByDatasetGroupId(Long datasetGroupId) {
         QueryWrapper<CoreDatasetSyncTask> wrapper = new QueryWrapper<>();
         wrapper.eq("dataset_group_id", datasetGroupId);
-        wrapper.last("limit 1");
         return taskMapper.selectOne(wrapper);
     }
 
@@ -153,16 +157,17 @@ public class DatasetSyncTaskManage {
                 INNER JOIN dataset_group dg ON dg.id = dep.dataset_group_id
                 LEFT JOIN dataset_sync_task t ON t.dataset_group_id = dg.id
                 LEFT JOIN dataset_sync_task_log l ON l.id = (
+                    %s
+                )
+                WHERE dg.node_type = 'dataset'
+                  AND dg.%s = 1
+                ORDER BY dg.name ASC, dg.id ASC
+                """.formatted(dialect().limitOne("""
                     SELECT l2.id
                     FROM dataset_sync_task_log l2
                     WHERE l2.dataset_group_id = dg.id
                     ORDER BY l2.start_time DESC, l2.id DESC
-                    LIMIT 1
-                )
-                WHERE dg.node_type = 'dataset'
-                  AND dg.mode = 1
-                ORDER BY dg.name ASC, dg.id ASC
-                """, (rs, rowNum) -> mapTaskCenterRow(rs), args.toArray());
+                    """), modeColumn()), (rs, rowNum) -> mapTaskCenterRow(rs), args.toArray());
     }
 
     /**
@@ -176,9 +181,8 @@ public class DatasetSyncTaskManage {
 
         Long total = jdbcTemplate.queryForObject("SELECT COUNT(1) " + query.fromWhere, Long.class, query.args.toArray());
         List<Object> args = new ArrayList<>(query.args);
-        args.add(normalizedPageSize);
-        args.add((normalizedPage - 1) * normalizedPageSize);
-        List<DatasetSyncTaskDTO> records = jdbcTemplate.query("""
+        int offset = (normalizedPage - 1) * normalizedPageSize;
+        List<DatasetSyncTaskDTO> records = jdbcTemplate.query(dialect().limitOffset("""
                 SELECT dg.id AS dataset_group_id,
                        dg.name AS dataset_name,
                        dg.last_update_time AS dataset_update_time,
@@ -222,8 +226,7 @@ public class DatasetSyncTaskManage {
 
                 ORDER BY COALESCE(t.last_exec_time, t.update_time, dg.last_update_time, dg.create_time, 0) DESC,
                          dg.id DESC
-                LIMIT ? OFFSET ?
-                """, (rs, rowNum) -> mapTaskCenterRow(rs), args.toArray());
+                """, normalizedPageSize, offset), (rs, rowNum) -> mapTaskCenterRow(rs), args.toArray());
 
         DatasetSyncTaskPageVO vo = new DatasetSyncTaskPageVO();
         vo.setPage(normalizedPage);
@@ -692,15 +695,16 @@ public class DatasetSyncTaskManage {
                 FROM dataset_group dg
                 LEFT JOIN dataset_sync_task t ON t.dataset_group_id = dg.id
                 LEFT JOIN dataset_sync_task_log l ON l.id = (
+                    %s
+                )
+                WHERE dg.node_type = 'dataset'
+                  AND dg.%s = 1
+                """.formatted(dialect().limitOne("""
                     SELECT l2.id
                     FROM dataset_sync_task_log l2
                     WHERE l2.dataset_group_id = dg.id
                     ORDER BY l2.start_time DESC, l2.id DESC
-                    LIMIT 1
-                )
-                WHERE dg.node_type = 'dataset'
-                  AND dg.mode = 1
-                """);
+                    """), modeColumn()));
         String permissionScope = platformPermissionManage == null
                 ? null
                 : platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null);
@@ -708,9 +712,13 @@ public class DatasetSyncTaskManage {
             sql.append(" AND ").append(permissionScope);
         }
         if (StringUtils.isNotBlank(request.getKeyword())) {
-            sql.append(" AND (LOWER(dg.name) LIKE LOWER(?) OR CAST(dg.id AS CHAR) LIKE ?)");
-            args.add("%" + request.getKeyword() + "%");
-            args.add("%" + request.getKeyword() + "%");
+            sql.append(" AND (")
+                    .append(dialect().caseInsensitiveLike("dg.name", "?"))
+                    .append(" OR ")
+                    .append(dialect().caseInsensitiveLike(dialect().stringCast("dg.id"), "?"))
+                    .append(")");
+            args.add(request.getKeyword());
+            args.add(request.getKeyword());
         }
         if (StringUtils.isNotBlank(request.getTaskStatus())) {
             sql.append(" AND COALESCE(t.task_status, ?) = ?");
@@ -919,6 +927,14 @@ public class DatasetSyncTaskManage {
      */
     private String jobGroup(String datasetGroupId) {
         return JOB_GROUP_PREFIX + datasetGroupId;
+    }
+
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
+    }
+
+    private String modeColumn() {
+        return dialect().quoteIdentifier("MODE");
     }
 
     /**

@@ -2,12 +2,17 @@ package io.crest.interceptor;
 
 import io.crest.commons.utils.MybatisInterceptorConfig;
 import io.crest.utils.BeanUtils;
+import io.crest.utils.IDUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
+import org.apache.ibatis.executor.keygen.Jdbc3KeyGenerator;
+import org.apache.ibatis.executor.keygen.NoKeyGenerator;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
+import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.plugin.*;
+import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
@@ -28,6 +33,8 @@ public class MybatisInterceptor implements Interceptor {
 
     private List<MybatisInterceptorConfig> interceptorConfigList;
 
+    private boolean useAssignedKeysWithoutJdbcGeneratedKeys;
+
     private ConcurrentHashMap<String, Class> classMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Map<String, Map<String, MybatisInterceptorConfig>>> interceptorConfigMap = new ConcurrentHashMap<>();
 
@@ -37,9 +44,12 @@ public class MybatisInterceptor implements Interceptor {
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
         String methodName = invocation.getMethod().getName();
+        MappedStatement mappedStatement = (MappedStatement) invocation.getArgs()[0];
         Object parameter = invocation.getArgs()[1];
         if (parameter != null && methodName.equals("update")) {
-            invocation.getArgs()[1] = process(parameter);
+            Object processedParameter = process(parameter);
+            invocation.getArgs()[1] = processedParameter;
+            invocation.getArgs()[0] = mappedStatementWithAssignedKeys(mappedStatement, processedParameter);
         }
         Object returnValue = invocation.proceed();
         Object result = returnValue;
@@ -153,6 +163,79 @@ public class MybatisInterceptor implements Interceptor {
         return newObject;
     }
 
+    /**
+     * OB Oracle JDBC 会把 preparedStatement(sql, keyColumns) 当成额外绑定位。
+     * 对应用侧分配 Long 主键的实体，写入前补齐空 ID，并关闭 JDBC 自增主键回填。
+     */
+    private MappedStatement mappedStatementWithAssignedKeys(MappedStatement mappedStatement, Object parameter) {
+        if (!useAssignedKeysWithoutJdbcGeneratedKeys
+                || mappedStatement.getSqlCommandType() != SqlCommandType.INSERT
+                || !(mappedStatement.getKeyGenerator() instanceof Jdbc3KeyGenerator)) {
+            return mappedStatement;
+        }
+        String[] keyProperties = mappedStatement.getKeyProperties();
+        if (keyProperties == null || keyProperties.length == 0) {
+            return mappedStatement;
+        }
+        boolean assigned = false;
+        for (String keyProperty : keyProperties) {
+            assigned = assignLongKeyIfNeeded(mappedStatement, parameter, keyProperty) || assigned;
+        }
+        if (!assigned) {
+            return mappedStatement;
+        }
+        return copyWithNoKeyGenerator(mappedStatement);
+    }
+
+    private boolean assignLongKeyIfNeeded(MappedStatement mappedStatement, Object parameter, String keyProperty) {
+        if (StringUtils.isBlank(keyProperty)) {
+            return false;
+        }
+        MetaObject metaObject = mappedStatement.getConfiguration().newMetaObject(parameter);
+        if (!metaObject.hasSetter(keyProperty)) {
+            return false;
+        }
+        Object value = metaObject.hasGetter(keyProperty) ? metaObject.getValue(keyProperty) : null;
+        if (value != null) {
+            return true;
+        }
+        Class<?> setterType = metaObject.getSetterType(keyProperty);
+        if (setterType == Long.class || setterType == Long.TYPE) {
+            metaObject.setValue(keyProperty, IDUtils.snowID());
+            return true;
+        }
+        return false;
+    }
+
+    private MappedStatement copyWithNoKeyGenerator(MappedStatement mappedStatement) {
+        MappedStatement.Builder builder = new MappedStatement.Builder(
+                mappedStatement.getConfiguration(),
+                mappedStatement.getId(),
+                mappedStatement.getSqlSource(),
+                mappedStatement.getSqlCommandType());
+        builder.resource(mappedStatement.getResource());
+        builder.fetchSize(mappedStatement.getFetchSize());
+        builder.timeout(mappedStatement.getTimeout());
+        builder.statementType(mappedStatement.getStatementType());
+        builder.keyGenerator(NoKeyGenerator.INSTANCE);
+        builder.databaseId(mappedStatement.getDatabaseId());
+        builder.lang(mappedStatement.getLang());
+        builder.resultOrdered(mappedStatement.isResultOrdered());
+        builder.resultSets(join(mappedStatement.getResultSets()));
+        builder.resultMaps(mappedStatement.getResultMaps());
+        builder.resultSetType(mappedStatement.getResultSetType());
+        builder.flushCacheRequired(mappedStatement.isFlushCacheRequired());
+        builder.useCache(mappedStatement.isUseCache());
+        builder.cache(mappedStatement.getCache());
+        builder.parameterMap(mappedStatement.getParameterMap());
+        builder.dirtySelect(mappedStatement.isDirtySelect());
+        return builder.build();
+    }
+
+    private String join(String[] values) {
+        return values == null || values.length == 0 ? null : String.join(",", values);
+    }
+
 
     /**
      * 在查询返回后按配置解密对象字段
@@ -224,6 +307,10 @@ public class MybatisInterceptor implements Interceptor {
      */
     public void setInterceptorConfigList(List<MybatisInterceptorConfig> interceptorConfigList) {
         this.interceptorConfigList = interceptorConfigList;
+    }
+
+    public void setUseAssignedKeysWithoutJdbcGeneratedKeys(boolean useAssignedKeysWithoutJdbcGeneratedKeys) {
+        this.useAssignedKeysWithoutJdbcGeneratedKeys = useAssignedKeysWithoutJdbcGeneratedKeys;
     }
 
     /**
