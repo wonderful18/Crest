@@ -21,6 +21,8 @@ public class PasswordValidator {
      */
     private static final int MAX_LENGTH = 100;
 
+    private static final String SPECIAL_CHARS = "!@#$%^&*()_+-=[]{};':\"\\|,.<>/?";
+
     /**
      * 验证密码是否符合策略
      *
@@ -42,17 +44,29 @@ public class PasswordValidator {
             errors.add("密码长度不能超过 " + MAX_LENGTH + " 个字符");
         }
 
+        boolean hasUppercase = false;
+        boolean hasLowercase = false;
+        boolean hasDigit = false;
+        boolean hasSpecialChar = false;
+        for (int i = 0; i < password.length(); i++) {
+            char value = password.charAt(i);
+            hasUppercase = hasUppercase || Character.isUpperCase(value);
+            hasLowercase = hasLowercase || Character.isLowerCase(value);
+            hasDigit = hasDigit || Character.isDigit(value);
+            hasSpecialChar = hasSpecialChar || SPECIAL_CHARS.indexOf(value) >= 0;
+        }
+
         // 2. 复杂度检查
-        if (!password.matches(".*[A-Z].*")) {
+        if (!hasUppercase) {
             errors.add("密码必须包含至少一个大写字母");
         }
-        if (!password.matches(".*[a-z].*")) {
+        if (!hasLowercase) {
             errors.add("密码必须包含至少一个小写字母");
         }
-        if (!password.matches(".*\\d.*")) {
+        if (!hasDigit) {
             errors.add("密码必须包含至少一个数字");
         }
-        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*")) {
+        if (!hasSpecialChar) {
             errors.add("密码必须包含至少一个特殊字符");
         }
 

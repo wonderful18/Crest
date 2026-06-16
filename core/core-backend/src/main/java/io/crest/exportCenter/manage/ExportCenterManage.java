@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 import io.crest.visualization.dto.WatermarkContentDTO;
 import io.crest.api.permissions.user.vo.UserFormVO;
 
@@ -457,7 +458,14 @@ public class ExportCenterManage implements BaseExportApi {
             coreExportDownloadTask.setValidTime(5L);
             coreExportDownloadTaskMapper.insert(coreExportDownloadTask);
         }
-        return "/export-center/download/" + id + "?ticket=" + buildDownloadTicket(exportTask, createTime, coreExportDownloadTask.getValidTime());
+        String ticket = buildDownloadTicket(exportTask, createTime, coreExportDownloadTask.getValidTime());
+        return UriComponentsBuilder.newInstance()
+                .path("/")
+                .pathSegment("export-center", "download", id)
+                .queryParam("ticket", ticket)
+                .build()
+                .encode()
+                .toUriString();
     }
 
 

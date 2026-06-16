@@ -16,6 +16,7 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,6 +36,7 @@ public class ExportCenterServer implements ExportCenterApi {
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final String DEFAULT_STATUS = "ALL";
+    private static final String DOWNLOAD_FORBIDDEN_MESSAGE = "下载链接无效或已过期";
     private static final Set<String> EXPORT_STATUSES = Set.of("SUCCESS", "FAILED", "PENDING", "IN_PROGRESS", "ALL");
 
     @Resource
@@ -113,7 +115,6 @@ public class ExportCenterServer implements ExportCenterApi {
     }
 
     // 将下载鉴权失败写为禁止访问响应
-    @SuppressWarnings("java/xss")
     private void writeForbidden(HttpServletResponse response, CrestException e) throws Exception {
         if (response.isCommitted()) {
             return;
@@ -122,17 +123,17 @@ public class ExportCenterServer implements ExportCenterApi {
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        String message = e.getMessage() == null || e.getMessage().isBlank()
-                ? "下载链接无效或已过期"
-                : e.getMessage();
-        response.getWriter().write(JsonUtil.toJSONString(new ResultMessage(e.getCode(), message)).toString());
+        response.getWriter().write(JsonUtil.toJSONString(new ResultMessage(e.getCode(), DOWNLOAD_FORBIDDEN_MESSAGE)).toString());
     }
 
     // 生成导出文件下载地址
     @Override
     @CrestAudit(id = "#p0", ot = LogOT.READ, st = LogST.DATA)
-    public String generateDownloadUri(String id) throws Exception {
-        return exportCenterManage.generateDownloadUri(id);
+    public ResponseEntity<String> generateDownloadUri(String id) throws Exception {
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_PLAIN)
+                .header("X-Content-Type-Options", "nosniff")
+                .body(exportCenterManage.generateDownloadUri(id));
     }
 
     // 重试导出任务
