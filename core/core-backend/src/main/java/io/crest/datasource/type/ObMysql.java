@@ -22,6 +22,7 @@ public class ObMysql extends DatasourceConfiguration {
     private List<String> showTableSqls = Arrays.asList("show tables");
 
     // 构建当前数据源的连接地址
+    @Override
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !Strings.CI.equals(getUrlType(), "hostName")) {
             validateJdbcUrl(getJdbcUrl());

@@ -21,6 +21,7 @@ public class ObOracle extends DatasourceConfiguration {
     private Boolean readOnly = true;
 
     // 构建当前数据源的连接地址
+    @Override
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !Strings.CI.equals(getUrlType(), "hostName")) {
             validateIllegalParameters(getJdbcUrl());

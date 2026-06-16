@@ -25,6 +25,7 @@ public class Pg extends DatasourceConfiguration {
     private List<String> illegalParameters = Arrays.asList("socketFactory", "socketFactoryArg", "sslfactory", "sslhostnameverifier", "sslpasswordcallback", "authenticationPluginClassName");
 
     // 构建当前数据源的连接地址
+    @Override
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             for (String illegalParameter : illegalParameters) {

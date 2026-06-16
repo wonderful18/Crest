@@ -20,6 +20,7 @@ public class H2 extends DatasourceConfiguration {
     private String driver = "org.h2.Driver";
 
     // 构建当前数据源的连接地址
+    @Override
     public String getJdbc() {
         for (String illegalParameter : getH2IllegalParameters()) {
             if (jdbc.toUpperCase(Locale.ENGLISH).replace("\\", "").contains(illegalParameter)) {

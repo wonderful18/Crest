@@ -44,6 +44,7 @@ public class TableHeatmapHandler extends DefaultChartHandler {
     }
 
     // 根据查询结果组装图表返回数据
+    @Override
     public Map<String, Object> buildResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, List<String[]> data) {
         var xAxis = formatResult.getAxisMap().get(ChartAxis.xAxis);
         Map<String, Object> result = ChartDataBuild.transChartData( xAxis, new ArrayList<>(), view, data, false);

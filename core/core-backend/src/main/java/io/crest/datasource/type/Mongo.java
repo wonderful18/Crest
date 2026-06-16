@@ -23,6 +23,7 @@ public class Mongo extends DatasourceConfiguration {
     private List<String> showTableSqls = Arrays.asList("show tables");
 
     // 构建当前数据源的连接地址
+    @Override
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             if (!getJdbcUrl().startsWith("jdbc:mysql")) {
