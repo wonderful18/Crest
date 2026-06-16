@@ -16,7 +16,7 @@ Crest 基于 DataEase 2.10.22 开源版本继续开发，并合入 2.10.23 相�
 | `drivers` | 随仓库维护的 JDBC 驱动，当前跟踪 `oceanbase-client-2.4.17.jar` |
 | `installer` | 单机安装脚本、Docker Compose 模板、控制脚本和离线包制作脚本 |
 | `deploy/kubernetes` | Kubernetes 清单，支持内置 MySQL、外部 MySQL 和外部 OceanBase 元数据库配置 |
-| `docs` | 产品能力、开发、血缘和研发效能大屏说明 |
+| `docs` | 产品能力、部署运维、开发和发布文档 |
 | `.github/workflows/docker-publish.yml` | GHCR 镜像构建和发布流程 |
 
 ## 产品边界
@@ -363,6 +363,17 @@ datasource -> table -> table_field -> dataset_field -> dataset -> chart_field ->
 - 开源源码、配置模板、迁移脚本、脱敏样例和公开演示数据；
 - 公开可再分发的驱动文件；
 - 构建、部署、验证和排障文档。
+
+## 文档规则
+
+- 根目录 `README.md` 只保留项目概览、快速入口和核心配置；
+- 正式文档入口维护在 `docs/README.md`；
+- 安装、离线包和升级说明维护在 `installer/README.md`；
+- Kubernetes 和 split 部署说明分别维护在对应部署目录；
+- 发布说明只放在 `docs/release/`，历史版本不改写；
+- 临时审查报告、个人环境记录、一次性计划和过程复盘不放入公开 docs；
+- 文档中的版本号、镜像名、端口、默认账号和 SQL 路径必须与代码和脚本一致；
+- 文案使用交付口径，避免承诺式、聊天式和计划式表达。
 
 清理被忽略文件前先预览：
 

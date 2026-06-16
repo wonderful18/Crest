@@ -108,8 +108,8 @@ CREST_DB_TYPE=ob-mysql
 CREST_DB_HOST=10.0.0.10
 CREST_DB_PORT=2883
 CREST_DB_NAME=crest
-CREST_DB_USERNAME=ob_user@ob_mysql#obcluster
-CREST_DB_PASSWORD=ob_password
+CREST_DB_USERNAME=<user>@<tenant>#<cluster>
+CREST_DB_PASSWORD=<password>
 ```
 
 `CREST_DB_TYPE=ob-mysql` 使用独立的 OceanBase MySQL 兼容初始化脚本，保留 MySQL 兼容表结构，同时去除 OceanBase 会提示 warning 的 MySQL 专属表引擎选项；不会加载 MySQL 演示迁移。默认 MySQL 安装仍使用原有迁移目录和自动初始化行为。
@@ -119,8 +119,8 @@ CREST_DB_PASSWORD=ob_password
 CREST_DB_TYPE=ob-oracle
 CREST_DB_HOST=10.0.0.10
 CREST_DB_PORT=2883
-CREST_DB_USERNAME=ob_user@ob_oracle#obcluster
-CREST_DB_PASSWORD=ob_password
+CREST_DB_USERNAME=<user>@<tenant>#<cluster>
+CREST_DB_PASSWORD=<password>
 ```
 
 如需 observer 直连，把端口改为 `2881`，用户名使用 `用户@租户`，不要带 `#集群`。`CREST_DB_URL` 留空时脚本会自动生成；只有需要追加特殊 JDBC 参数时才手工覆盖。

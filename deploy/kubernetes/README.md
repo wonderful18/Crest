@@ -152,8 +152,8 @@ configMapGenerator:
 secretGenerator:
   - name: crest-db-secret
     literals:
-      - CREST_DB_USERNAME=ob_user@ob_oracle#obcluster
-      - CREST_DB_PASSWORD=ob_password
+      - CREST_DB_USERNAME=<user>@<tenant>#<cluster>
+      - CREST_DB_PASSWORD=<password>
 ```
 
 生产环境的 OceanBase 元数据库应先由 DBA 执行离线包 `init-sql/ob-mysql/` 或 `init-sql/ob-oracle/` 下的初始化 SQL，再以 `CREST_FLYWAY_ENABLED=false` 启动服务。OceanBase MySQL 元数据库使用 `CREST_DB_TYPE=ob-mysql`，`CREST_DB_NAME` 填写目标库名。OBProxy/ODP 连接用户名使用 `用户@租户#集群`，observer 直连时端口使用 `2881`，用户名使用 `用户@租户`，不要带 `#集群`。
