@@ -120,7 +120,7 @@ public class AuditLogService {
         return data;
     }
 
-    // 执行当前服务方法并返回处理结果
+    // 审计详情字段按最大长度截断，避免异常请求体拖慢列表查询
     private String truncate(String value, int maxLength) {
         if (value == null || value.length() <= maxLength) {
             return value;
@@ -128,6 +128,7 @@ public class AuditLogService {
         return value.substring(0, maxLength);
     }
 
+    // 审计写入和脱敏查询按元数据库方言处理 SQL 片段
     private MetadataDbDialect dialect() {
         return MetadataDbDialects.current(environment);
     }

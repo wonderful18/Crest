@@ -141,6 +141,7 @@ public class CrestUserManage {
         return users.isEmpty() ? null : users.get(0);
     }
 
+    // 用户查询单条限制由元数据库方言生成，避免硬编码 LIMIT
     private String limitOne(String sql) {
         return dialect().limitOne(sql.stripTrailing());
     }
@@ -682,6 +683,7 @@ public class CrestUserManage {
         return MetadataDbDialects.current(environment);
     }
 
+    // UID 在 OB Oracle 中是保留字，用户 SQL 中统一走方言引用
     private String uidColumn() {
         return dialect().quoteIdentifier("UID");
     }

@@ -44,6 +44,7 @@ public class CK extends DatasourceConfiguration {
     /**
      * 构建 ClickHouse JDBC URL，并按需追加压缩和 SSL 证书参数
      */
+    @Override
     public String getJdbc() {
         String jdbcUrl;
         if (StringUtils.isNotEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {

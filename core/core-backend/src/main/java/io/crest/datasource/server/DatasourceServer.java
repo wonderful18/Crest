@@ -219,6 +219,7 @@ public class DatasourceServer implements DatasourceApi {
     /**
      * 检查同类型连接型数据源是否重复，目录、Excel 和 API 类型不参与重复连接判断
      */
+    @Override
     public boolean checkRepeat(@RequestBody BusiDsRequest dataSourceDTO) {
         if (Arrays.asList("folder", "es").contains(dataSourceDTO.getType()) || dataSourceDTO.getType().contains("API") || dataSourceDTO.getType().contains("Excel")) {
             return false;
@@ -260,6 +261,7 @@ public class DatasourceServer implements DatasourceApi {
      * 移动数据源或目录到新的父节点，并校验目标目录不会形成循环引用
      */
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, st = LogST.DATASOURCE)
+    @Override
     @Transactional
     public DatasourceDTO move(BusiCreateFolderRequest busiDsRequest) {
         DatasourceDTO dataSourceDTO = new DatasourceDTO();
@@ -285,6 +287,7 @@ public class DatasourceServer implements DatasourceApi {
     /**
      * 重命名数据源或目录，名称唯一性由数据源管理层按同级目录规则校验
      */
+    @Override
     @Transactional
     public DatasourceDTO reName(BusiRenameRequest busiDsRequest) {
         DatasourceDTO dataSourceDTO = new DatasourceDTO();
@@ -305,6 +308,7 @@ public class DatasourceServer implements DatasourceApi {
      * 创建数据源目录节点。目录没有连接配置，只维护树形结构和审计信息
      */
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, st = LogST.DATASOURCE)
+    @Override
     @Transactional
     public DatasourceDTO createFolder(BusiCreateFolderRequest busiDsRequest) {
         DatasourceDTO dataSourceDTO = new DatasourceDTO();
@@ -1037,6 +1041,7 @@ public class DatasourceServer implements DatasourceApi {
     /**
      * 上传并解析本地 Excel 文件。追加模式只保留能按工作表名称和字段结构匹配的旧表
      */
+    @Override
     public ExcelFileData uploadFile(@RequestParam("file") MultipartFile file, @RequestParam("id") long datasourceId, @RequestParam("editType") Integer editType) throws CrestException {
         validateExcelUploadFile(file);
         CoreDatasource coreDatasource = null;
@@ -1109,6 +1114,7 @@ public class DatasourceServer implements DatasourceApi {
     /**
      * 下载并解析远程 Excel 文件，返回与本地上传一致的工作表和字段预览结构
      */
+    @Override
     public ExcelFileData loadRemoteFile(RemoteExcelRequest remoteExcelRequest) throws CrestException, IOException {
         // 远程地址在下载前先做 SSRF 校验，后续解析只使用校验通过的地址
         SsrfProtection.validateUrl(remoteExcelRequest.getUrl());
@@ -1227,6 +1233,7 @@ public class DatasourceServer implements DatasourceApi {
     /**
      * 预检单个 API 定义，解析字段结构并对 Basic Auth 凭证重新编码后返回给前端
      */
+    @Override
     public ApiDefinition checkApiDatasource(Map<String, String> request) throws CrestException {
         ApiDefinition apiDefinition = JsonUtil.parseObject(decodeBase64RequestValue(request.get("data"), "API 数据源配置"), ApiDefinition.class);
         apiDefinition.setType("table");
@@ -1793,6 +1800,7 @@ public class DatasourceServer implements DatasourceApi {
     /**
      * 分页读取数据源同步日志，并把任务日志中的内部表名补充为展示名称
      */
+    @Override
     public IPage<CoreDatasourceTaskLogDTO> listSyncRecord(int goPage, int pageSize, Long dsId) {
         QueryWrapper<CoreDatasourceTaskLogDTO> wrapper = new QueryWrapper<>();
         wrapper.eq("ds_id", dsId);
@@ -1898,6 +1906,7 @@ public class DatasourceServer implements DatasourceApi {
     /**
      * 判断当前用户是否还需要展示数据源引导完成页
      */
+    @Override
     public boolean showFinishPage() throws CrestException {
         return coreDsFinishPageMapper.selectById(AuthUtils.getUser().getUserId()) == null;
     }
@@ -1906,6 +1915,7 @@ public class DatasourceServer implements DatasourceApi {
     /**
      * 记录当前用户已经看过数据源引导完成页
      */
+    @Override
     public void setShowFinishPage() throws CrestException {
         CoreDsFinishPage coreDsFinishPage = new CoreDsFinishPage();
         coreDsFinishPage.setId(AuthUtils.getUser().getUserId());

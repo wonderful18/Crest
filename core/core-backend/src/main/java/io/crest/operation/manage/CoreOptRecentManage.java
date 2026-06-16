@@ -115,6 +115,7 @@ public class CoreOptRecentManage {
         return recentUseTimeMap(result);
     }
 
+    // OB Oracle 无法直接使用 MyBatis Plus 处理 UID/TIME 保留字段，改用显式 SQL 写入
     private void saveOptForObOracle(Long resourceId, String resourceName, int resourceType, int optType, Long uid) {
         long now = System.currentTimeMillis();
         List<Object> args = new ArrayList<>();
@@ -144,6 +145,7 @@ public class CoreOptRecentManage {
         }
     }
 
+    // 将最近访问记录压缩成资源名称到访问时间的映射
     private Map<String, Long> recentUseTimeMap(List<CoreOptRecent> result) {
         if (CollectionUtils.isNotEmpty(result)) {
             return result.stream().collect(Collectors.toMap(CoreOptRecent::getResourceName, CoreOptRecent::getTime));
@@ -151,6 +153,7 @@ public class CoreOptRecentManage {
         return new HashMap<>();
     }
 
+    // 最近访问表在 OB Oracle 下需要走保留字段兼容分支
     private boolean isObOracle() {
         return MetadataDbDialects.current(environment).type() == MetadataDbType.OB_ORACLE;
     }

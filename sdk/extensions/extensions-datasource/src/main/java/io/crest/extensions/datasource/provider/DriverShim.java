@@ -17,6 +17,7 @@ public class DriverShim implements Driver {
     /**
      * 判断底层驱动是否接受指定连接地址
      */
+    @Override
     public boolean acceptsURL(String u) throws SQLException {
         return this.driver.acceptsURL(u);
     }
@@ -64,6 +65,7 @@ public class DriverShim implements Driver {
     /**
      * 使用底层驱动创建数据库连接
      */
+    @Override
     public Connection connect(String u, Properties p) throws SQLException {
         return this.driver.connect(u, p);
     }

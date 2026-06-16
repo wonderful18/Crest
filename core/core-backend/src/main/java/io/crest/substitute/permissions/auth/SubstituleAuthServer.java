@@ -292,6 +292,7 @@ public class SubstituleAuthServer implements AuthApi {
         return flag == null ? "panel" : flag;
     }
 
+    // 权限资源 SQL 片段需要复用元数据库方言，避免调用侧重复判断
     private MetadataDbDialect dialect() {
         return MetadataDbDialects.current(environment);
     }

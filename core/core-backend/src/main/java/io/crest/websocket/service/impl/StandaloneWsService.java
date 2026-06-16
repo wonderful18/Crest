@@ -16,6 +16,7 @@ public class StandaloneWsService implements WsService {
     private SimpMessagingTemplate messagingTemplate;
 
     // 执行当前服务方法并返回处理结果
+    @Override
     public void releaseMessage(WsMessage wsMessage){
         if(ObjectUtils.isEmpty(wsMessage) || ObjectUtils.isEmpty(wsMessage.getUserId()) ||  ObjectUtils.isEmpty(wsMessage.getTopic())) return;
         messagingTemplate.convertAndSendToUser(String.valueOf(wsMessage.getUserId()), wsMessage.getTopic(),wsMessage.getData());

@@ -1622,6 +1622,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
      * 记录应用模板导出审计日志
      */
     @CrestAudit(id = "#p0.id", ot = LogOT.APP_TEMPLATE_EXPORT, stExp = "#p0.type")
+    @Override
     public void exportLogApp(DataVisualizationBaseRequest request) {
 
     }
@@ -1630,6 +1631,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
      * 记录模板导出审计日志
      */
     @CrestAudit(id = "#p0.id", ot = LogOT.TEMPLATE_EXPORT, stExp = "#p0.type")
+    @Override
     public void exportLogTemplate(DataVisualizationBaseRequest request) {
 
     }
@@ -1638,6 +1640,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
      * 记录 PDF 导出审计日志
      */
     @CrestAudit(id = "#p0.id", ot = LogOT.PDF_EXPORT, stExp = "#p0.type")
+    @Override
     public void exportLogPDF(DataVisualizationBaseRequest request) {
 
     }
@@ -1646,6 +1649,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
      * 记录图片导出审计日志
      */
     @CrestAudit(id = "#p0.id", ot = LogOT.IMG_EXPORT, stExp = "#p0.type")
+    @Override
     public void exportLogImg(DataVisualizationBaseRequest request) {
 
     }

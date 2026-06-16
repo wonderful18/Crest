@@ -25,6 +25,7 @@ public class CommonBeanFactory implements ApplicationContextAware {
     /**
      * 保存 Spring 注入的应用上下文
      */
+    @Override
     public void setApplicationContext(ApplicationContext ctx) throws BeansException {
         context = ctx;
     }

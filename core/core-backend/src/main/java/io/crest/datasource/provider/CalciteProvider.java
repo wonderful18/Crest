@@ -2049,6 +2049,7 @@ public class CalciteProvider extends Provider {
     /**
      * 创建普通 Statement 并设置查询超时，用于无参数 SQL 或数据库会话设置语句
      */
+    @Override
     public Statement getStatement(Connection connection, int queryTimeout) {
         if (connection == null) {
             CrestException.throwException("Failed to get connection!");

@@ -929,10 +929,12 @@ public class DatasetSyncTaskManage {
         return JOB_GROUP_PREFIX + datasetGroupId;
     }
 
+    // 数据集同步任务需要按元数据库方言引用保留字段
     private MetadataDbDialect dialect() {
         return MetadataDbDialects.current(environment);
     }
 
+    // mode 在 Oracle 兼容模式下是保留字，统一通过方言引用
     private String modeColumn() {
         return dialect().quoteIdentifier("MODE");
     }
