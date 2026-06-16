@@ -10,6 +10,7 @@ configMapGenerator:
     literals:
       - CREST_CONTEXT_PATH=
       - CREST_LOAD_DEMO=true
+      - CREST_FLYWAY_ENABLED=true
       - CREST_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/demo-migration
       - CREST_DB_HOST=crest-mysql
       - CREST_DB_PORT=3306

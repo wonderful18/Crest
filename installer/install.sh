@@ -116,6 +116,22 @@ function configure_flyway_locations() {
    export CREST_FLYWAY_LOCATIONS
 }
 
+function configure_flyway_enabled() {
+   if [[ -z "${CREST_FLYWAY_ENABLED:-}" ]]; then
+      if [[ "$CREST_DB_TYPE" == "mysql" ]]; then
+         CREST_FLYWAY_ENABLED=true
+      else
+         CREST_FLYWAY_ENABLED=false
+      fi
+   fi
+
+   normalize_bool_env CREST_FLYWAY_ENABLED
+   if [[ "$CREST_DB_TYPE" != "mysql" && "$CREST_FLYWAY_ENABLED" == "false" ]]; then
+      log_content "OceanBase 元数据库按外部已初始化数据库处理，应用启动时不执行 Flyway"
+   fi
+   export CREST_FLYWAY_ENABLED
+}
+
 function configure_metadata_db_url() {
    if [[ -n "$CREST_DB_URL" ]]; then
       export CREST_DB_URL
@@ -228,6 +244,7 @@ function check_and_prepare_env_params() {
          ;;
    esac
    export CREST_LOAD_DEMO
+   configure_flyway_enabled
    configure_flyway_locations
    configure_metadata_db_url
 

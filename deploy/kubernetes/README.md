@@ -104,6 +104,7 @@ docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:main .
 | --- | --- |
 | `CREST_CONTEXT_PATH` | 应用上下文路径，默认空 |
 | `CREST_LOAD_DEMO` | 是否初始化内置演示资源，默认 `true` |
+| `CREST_FLYWAY_ENABLED` | 是否由应用启动时执行 Flyway；MySQL 默认开启，OceanBase 生产环境建议关闭并先手工执行初始化 SQL |
 | `CREST_FLYWAY_LOCATIONS` | Flyway 执行目录；默认 MySQL 路径，OceanBase Oracle 使用 `classpath:db/migration-ob-oracle` |
 | `CREST_DB_TYPE` | 元数据库类型，支持 `mysql`、`ob-mysql`、`ob-oracle` |
 | `CREST_DB_DRIVER_CLASS_NAME` | JDBC 驱动；OceanBase 使用 `com.oceanbase.jdbc.Driver` |
@@ -143,6 +144,7 @@ configMapGenerator:
       - CREST_DB_HOST=10.0.0.10
       - CREST_DB_PORT=2883
       - CREST_DB_URL=jdbc:oceanbase://10.0.0.10:2883
+      - CREST_FLYWAY_ENABLED=false
       - CREST_FLYWAY_LOCATIONS=classpath:db/migration-ob-oracle
 ```
 
@@ -154,7 +156,7 @@ secretGenerator:
       - CREST_DB_PASSWORD=ob_password
 ```
 
-OceanBase MySQL 元数据库使用 `CREST_DB_TYPE=ob-mysql`，`CREST_DB_NAME` 填写目标库名，Flyway 可继续使用 MySQL 兼容路径。OBProxy/ODP 连接用户名使用 `用户@租户#集群`，observer 直连时端口使用 `2881`，用户名使用 `用户@租户`，不要带 `#集群`。
+生产环境的 OceanBase 元数据库应先由 DBA 执行离线包 `init-sql/ob-mysql/` 或 `init-sql/ob-oracle/` 下的初始化 SQL，再以 `CREST_FLYWAY_ENABLED=false` 启动服务。OceanBase MySQL 元数据库使用 `CREST_DB_TYPE=ob-mysql`，`CREST_DB_NAME` 填写目标库名。OBProxy/ODP 连接用户名使用 `用户@租户#集群`，observer 直连时端口使用 `2881`，用户名使用 `用户@租户`，不要带 `#集群`。
 
 `crest-db-secret` 不由 Kustomize 生成，部署前必须在目标 namespace 中创建。不要把生产密码、证书或 kubeconfig 提交到仓库。
 

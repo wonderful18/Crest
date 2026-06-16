@@ -140,6 +140,11 @@ cp -R "${INSTALLER_DIR}/crest" "${PACKAGE_DIR}/crest"
 if [ -d "${INSTALLER_DIR}/upgrade-sql" ]; then
   cp -R "${INSTALLER_DIR}/upgrade-sql" "${PACKAGE_DIR}/upgrade-sql"
 fi
+log "Copy metadata initialization SQL"
+mkdir -p "${PACKAGE_DIR}/init-sql"
+cp -R "${REPO_DIR}/core/core-backend/src/main/resources/db/migration" "${PACKAGE_DIR}/init-sql/mysql"
+cp -R "${REPO_DIR}/core/core-backend/src/main/resources/db/migration-ob-mysql" "${PACKAGE_DIR}/init-sql/ob-mysql"
+cp -R "${REPO_DIR}/core/core-backend/src/main/resources/db/migration-ob-oracle" "${PACKAGE_DIR}/init-sql/ob-oracle"
 mkdir -p "${PACKAGE_DIR}/images"
 
 log "Pin install.conf image names"
@@ -216,6 +221,7 @@ bash install.sh
 - \`CREST_DB_HOST\` / \`CREST_DB_PORT\`：元数据库地址和端口；OceanBase 可填写 OBProxy 或 observer 地址
 - \`CREST_DB_USERNAME\` / \`CREST_DB_PASSWORD\`：元数据库账号和密码；OBProxy 用户名使用 \`用户@租户#集群\`，observer 直连使用 \`用户@租户\`
 - \`CREST_DB_URL\`：自定义 JDBC URL；留空时安装脚本按 \`CREST_DB_TYPE\` 自动生成
+- \`CREST_FLYWAY_ENABLED\`：应用启动时是否执行 Flyway；留空时 MySQL 默认 \`true\`，OceanBase 默认 \`false\`
 - \`CREST_INITIAL_PASSWORD\`：管理员初始密码；留空时安装脚本会随机生成并在安装完成后输出
 - \`CREST_LOAD_DEMO\`：是否初始化内置演示资源，默认 \`true\`；生产环境不需要示例数据时设为 \`false\`
 - \`CREST_PROMETHEUS_ENABLED\`：是否启用 Prometheus 指标采集，默认 \`false\`
@@ -223,7 +229,15 @@ bash install.sh
 
 ## OceanBase 元数据库
 
-使用 OceanBase 作为 Crest 元数据库时，在 \`install.conf\` 中设置 \`CREST_DB_TYPE=ob-mysql\` 或 \`CREST_DB_TYPE=ob-oracle\`，并填写真实的 OBProxy 或 observer 地址。安装脚本会自动切换为外部元数据库模式，不会启动包内 MySQL 容器。`ob-mysql` 使用独立的 OceanBase MySQL 兼容迁移目录，不加载 MySQL 演示迁移；默认 MySQL 安装仍使用原有迁移目录。
+使用 OceanBase 作为 Crest 元数据库时，在 \`install.conf\` 中设置 \`CREST_DB_TYPE=ob-mysql\` 或 \`CREST_DB_TYPE=ob-oracle\`，并填写真实的 OBProxy 或 observer 地址。安装脚本会自动切换为外部元数据库模式，不会启动包内 MySQL 容器。
+
+生产环境建议由 DBA 先执行包内 \`init-sql/\` 目录中的初始化 SQL，再启动 Crest：
+
+- \`init-sql/ob-mysql/\`：OceanBase MySQL 租户初始化 SQL，按文件名顺序在目标数据库中执行；
+- \`init-sql/ob-oracle/\`：OceanBase Oracle 租户初始化 SQL，使用 Crest 目标 schema 用户执行；
+- \`CREST_FLYWAY_ENABLED\`：OceanBase 默认 \`false\`，服务启动时只连接已初始化的元数据库；开发或验证环境需要应用自动初始化时，可显式设为 \`true\`。
+
+默认 MySQL 安装仍使用原有迁移目录和自动初始化行为。
 
 OBProxy 示例：
 

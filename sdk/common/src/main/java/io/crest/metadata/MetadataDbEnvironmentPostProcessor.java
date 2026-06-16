@@ -28,6 +28,7 @@ public class MetadataDbEnvironmentPostProcessor implements EnvironmentPostProces
         }
         boolean demoEnabled = environment.getProperty("CREST_LOAD_DEMO", Boolean.class,
                 environment.getProperty("crest.demo.enabled", Boolean.class, true));
+        defaults.put("CREST_FLYWAY_ENABLED", String.valueOf(type.isFlywayEnabledByDefault()));
         defaults.put("CREST_FLYWAY_LOCATIONS", type.getDefaultFlywayLocations(demoEnabled));
         environment.getPropertySources().addLast(new MapPropertySource(PROPERTY_SOURCE_NAME, defaults));
     }

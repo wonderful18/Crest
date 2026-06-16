@@ -14,6 +14,7 @@ spring:
     username: ${CREST_DB_USERNAME}
     password: ${CREST_DB_PASSWORD}
   flyway:
+    enabled: ${CREST_FLYWAY_ENABLED}
     locations: ${CREST_FLYWAY_LOCATIONS}
 management:
   endpoints:

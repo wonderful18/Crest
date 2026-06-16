@@ -18,7 +18,7 @@ data:
       messages:
         basename: i18n/lic,i18n/core,i18n/permissions,i18n/sync
       flyway:
-        enabled: true
+        enabled: ${CREST_FLYWAY_ENABLED:true}
         table: crest_schema_version
         validate-on-migrate: false
         locations: ${CREST_FLYWAY_LOCATIONS:classpath:db/migration,classpath:db/demo-migration}

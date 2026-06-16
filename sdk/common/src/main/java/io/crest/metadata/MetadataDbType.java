@@ -62,6 +62,10 @@ public enum MetadataDbType {
         return this == OB_MYSQL || this == OB_ORACLE;
     }
 
+    public boolean isFlywayEnabledByDefault() {
+        return !isOceanBase();
+    }
+
     public boolean isOracleCompatible() {
         return this == OB_ORACLE;
     }
