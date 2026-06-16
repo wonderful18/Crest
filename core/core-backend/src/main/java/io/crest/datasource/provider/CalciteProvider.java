@@ -163,6 +163,16 @@ public class CalciteProvider extends Provider {
     }
 
     /**
+     * 数据源配置解析失败时返回清晰业务错误，避免后续连接池初始化继续触发空指针。
+     */
+    private DatasourceConfiguration requireDatasourceConfiguration(DatasourceConfiguration configuration) {
+        if (configuration == null) {
+            CrestException.throwException("数据源配置不完整或无法连接");
+        }
+        return configuration;
+    }
+
+    /**
      * 初始化默认驱动类加载器，把驱动目录下的 JDBC 包加入运行时搜索路径
      */
     @PostConstruct
@@ -736,6 +746,7 @@ public class CalciteProvider extends Provider {
             default:
                 configuration = JsonUtil.parseObject(coreDatasource.getConfiguration(), Mysql.class);
         }
+        configuration = requireDatasourceConfiguration(configuration);
         CoreDriver customDriver = resolveCustomDriver(coreDatasource.getType(), configuration.getCustomDriver());
         String driverClassName = JdbcUrlSecurityPolicy.resolveDriverClass(coreDatasource.getType(), configuration.getDriver(), configuration.getCustomDriver(), customDriver);
         configuration.setDriver(driverClassName);
@@ -1470,6 +1481,7 @@ public class CalciteProvider extends Provider {
                                 configuration = datasourceType == DatasourceConfiguration.DatasourceType.obMysql
                                         ? JsonUtil.parseObject(ds.getConfiguration(), ObMysql.class)
                                         : JsonUtil.parseObject(ds.getConfiguration(), Mysql.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1487,6 +1499,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case impala:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Impala.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1504,6 +1517,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case sqlServer:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Sqlserver.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1523,6 +1537,7 @@ public class CalciteProvider extends Provider {
                             case obOracle:
                                 dataSource.setValidationQuery("SELECT 1 FROM DUAL");
                                 configuration = parseOracleLikeConfiguration(ds.getConfiguration(), ds.getType());
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1540,6 +1555,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case db2:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Db2.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 dataSource.setValidationQuery("select 1 from syscat.tables  WHERE TABSCHEMA ='CREST_SCHEMA' AND \"TYPE\" = 'T'".replace("CREST_SCHEMA", configuration.getSchema()));
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
@@ -1558,6 +1574,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case ck:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), CK.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1575,6 +1592,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case pg:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Pg.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1592,6 +1610,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case redshift:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Redshift.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1609,6 +1628,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             case h2:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), H2.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
@@ -1626,6 +1646,7 @@ public class CalciteProvider extends Provider {
                                 break;
                             default:
                                 configuration = JsonUtil.parseObject(ds.getConfiguration(), Mysql.class);
+                                configuration = requireDatasourceConfiguration(configuration);
                                 if (StringUtils.isNotBlank(configuration.getUsername())) {
                                     dataSource.setUsername(configuration.getUsername());
                                 }
