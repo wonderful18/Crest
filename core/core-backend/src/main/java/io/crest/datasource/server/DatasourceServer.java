@@ -1499,7 +1499,7 @@ public class DatasourceServer implements DatasourceApi {
             executeEngineSql(engine, "ALTER TABLE " + quoteIdentifier(tableName)
                     + " ADD COLUMN " + quoteIdentifier(EXCEL_ROW_ID_FIELD) + " VARCHAR(64)");
         }
-        String uuidExpression = Strings.CI.equals(engine.getType(), "mysql") ? "UUID()" : "RANDOM_UUID()";
+        String uuidExpression = Strings.CI.equalsAny(engine.getType(), "mysql", "obMysql") ? "UUID()" : "RANDOM_UUID()";
         executeEngineSql(engine, "UPDATE " + quoteIdentifier(tableName)
                 + " SET " + quoteIdentifier(EXCEL_ROW_ID_FIELD) + " = " + uuidExpression
                 + " WHERE " + quoteIdentifier(EXCEL_ROW_ID_FIELD) + " IS NULL OR "

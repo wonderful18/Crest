@@ -223,7 +223,7 @@ bash install.sh
 
 ## OceanBase 元数据库
 
-使用 OceanBase 作为 Crest 元数据库时，在 \`install.conf\` 中设置 \`CREST_DB_TYPE=ob-mysql\` 或 \`CREST_DB_TYPE=ob-oracle\`，并填写真实的 OBProxy 或 observer 地址。安装脚本会自动切换为外部元数据库模式，不会启动包内 MySQL 容器。
+使用 OceanBase 作为 Crest 元数据库时，在 \`install.conf\` 中设置 \`CREST_DB_TYPE=ob-mysql\` 或 \`CREST_DB_TYPE=ob-oracle\`，并填写真实的 OBProxy 或 observer 地址。安装脚本会自动切换为外部元数据库模式，不会启动包内 MySQL 容器。`ob-mysql` 使用独立的 OceanBase MySQL 兼容迁移目录，不加载 MySQL 演示迁移；默认 MySQL 安装仍使用原有迁移目录。
 
 OBProxy 示例：
 

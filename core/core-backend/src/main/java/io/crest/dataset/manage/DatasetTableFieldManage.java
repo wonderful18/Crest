@@ -432,6 +432,6 @@ public class DatasetTableFieldManage {
      */
     public boolean isCopilotSupport(Map<Long, DatasourceSchemaDTO> dsMap) {
         DatasourceSchemaDTO value = dsMap.entrySet().iterator().next().getValue();
-        return Strings.CI.equals(value.getType(), "mysql");
+        return Strings.CI.equalsAny(value.getType(), "mysql", "obMysql");
     }
 }

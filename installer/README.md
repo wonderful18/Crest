@@ -109,6 +109,8 @@ CREST_DB_USERNAME=ob_user@ob_mysql#obcluster
 CREST_DB_PASSWORD=ob_password
 ```
 
+`CREST_DB_TYPE=ob-mysql` 使用独立的 OceanBase MySQL 兼容迁移目录，保留 MySQL 兼容表结构，同时去除 OceanBase 会提示 warning 的 MySQL 专属表引擎选项；不会加载 MySQL 演示迁移。默认 MySQL 安装仍使用原有迁移目录。
+
 ```bash
 # OceanBase Oracle tenant through OBProxy
 CREST_DB_TYPE=ob-oracle

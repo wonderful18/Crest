@@ -115,7 +115,7 @@ public class DatasetDataManage {
     /**
      * 不支持 FULL JOIN 的数据源类型列表，预览前需要提前阻断
      */
-    public static final List<String> notFullDs = List.of("mysql", "mariadb", "Excel", "API", "H2", "h2");
+    public static final List<String> notFullDs = List.of("mysql", "obMysql", "mariadb", "Excel", "API", "H2", "h2");
 
     /**
      * 根据数据表配置读取字段元数据，兼容物理表、自定义 SQL、ES、Excel 和 API 同步表

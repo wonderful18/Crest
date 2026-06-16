@@ -5,7 +5,7 @@ This document tracks production-grade support for OceanBase as both the Crest me
 ## Scope
 
 - MySQL remains the default metadata database and must keep its current behavior.
-- `ob-mysql` is a reserved metadata database mode that initially uses MySQL-compatible runtime behavior.
+- `ob-mysql` uses MySQL-compatible runtime behavior with a dedicated Flyway migration path.
 - `ob-oracle` is the primary metadata database adaptation target and uses a separate Flyway migration path.
 - Business datasources must expose explicit `obMysql` and `obOracle` types instead of hiding OceanBase behind `mysql`.
 - OceanBase datasource connections must support both direct observer access and OBProxy access.
@@ -94,6 +94,7 @@ export CREST_DB_URL='jdbc:oceanbase://127.0.0.1:2883'         # ob-oracle
 
 The single-node installer generates `CREST_DB_URL`, driver, and Flyway locations from `CREST_DB_TYPE`.
 For OceanBase metadata databases, set `CREST_DB_TYPE`, `CREST_DB_HOST`, `CREST_DB_PORT`, `CREST_DB_USERNAME`, and `CREST_DB_PASSWORD` in `installer/install.conf`; leave `CREST_DB_URL` empty unless a custom JDBC URL is required. OceanBase metadata databases automatically use external database mode and do not start the bundled MySQL container.
+`ob-mysql` uses `classpath:db/migration-ob-mysql`; these scripts keep the MySQL-compatible schema while removing MySQL-only table engine options that OceanBase reports as warnings. MySQL demo migrations are not loaded for OceanBase metadata databases.
 
 For Kubernetes, keep the default manifests on MySQL unless an overlay explicitly sets:
 
@@ -111,6 +112,7 @@ Use `ob_user@tenant#cluster` through OBProxy and `ob_user@tenant` for observer d
 
 - Do not bulk-replace SQL. Each SQL branch must be reviewed and tested.
 - Keep MySQL migrations unchanged.
+- Keep OB MySQL migrations under `classpath:db/migration-ob-mysql`; do not copy large MySQL demo migrations into the OB path.
 - Keep OB Oracle migrations under `classpath:db/migration-ob-oracle`.
 - Use metadata database dialect helpers for new Java SQL.
 - Use MyBatis `databaseId` for mapper SQL that needs database-specific syntax.

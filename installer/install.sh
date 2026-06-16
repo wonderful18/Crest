@@ -96,6 +96,13 @@ function configure_flyway_locations() {
             log_content "OceanBase Oracle 元数据库使用独立初始化脚本，跳过 MySQL 演示迁移"
          fi
          ;;
+      ob-mysql)
+         CREST_FLYWAY_LOCATIONS="classpath:db/migration-ob-mysql"
+         if [[ "$CREST_LOAD_DEMO" == "true" ]]; then
+            log_content "OceanBase MySQL 元数据库使用独立初始化脚本，跳过 MySQL 演示迁移"
+         fi
+         log_content "跳过内置演示资源"
+         ;;
       *)
          if [[ "$CREST_LOAD_DEMO" == "true" ]]; then
             CREST_FLYWAY_LOCATIONS="classpath:db/migration,classpath:db/demo-migration"

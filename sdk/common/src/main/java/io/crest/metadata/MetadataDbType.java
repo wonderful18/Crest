@@ -12,7 +12,7 @@ public enum MetadataDbType {
     MYSQL("mysql", "com.mysql.cj.jdbc.Driver", DbType.MYSQL, "mysql",
             "classpath:db/migration,classpath:db/demo-migration"),
     OB_MYSQL("ob-mysql", "com.oceanbase.jdbc.Driver", DbType.MYSQL, "ob-mysql",
-            "classpath:db/migration,classpath:db/demo-migration"),
+            "classpath:db/migration-ob-mysql"),
     OB_ORACLE("ob-oracle", "com.oceanbase.jdbc.Driver", DbType.ORACLE, "ob-oracle",
             "classpath:db/migration-ob-oracle");
 

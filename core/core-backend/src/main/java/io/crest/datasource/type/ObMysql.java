@@ -1,7 +1,6 @@
 package io.crest.datasource.type;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.crest.exception.CrestException;
+import io.crest.datasource.security.JdbcUrlSecurityPolicy;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -9,8 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Component;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -22,14 +19,6 @@ import java.util.List;
 public class ObMysql extends DatasourceConfiguration {
     private String driver = "com.oceanbase.jdbc.Driver";
     private String extraParams = "characterEncoding=UTF-8&connectTimeout=5000&useSSL=false&allowPublicKeyRetrieval=true&zeroDateTimeBehavior=convertToNull";
-    @JsonIgnore
-    private List<String> illegalParameters = Arrays.asList(
-            "maxAllowedPacket", "autoDeserialize", "queryInterceptors", "statementInterceptors",
-            "detectCustomCollations", "allowloadlocalinfile", "allowUrlInLocalInfile",
-            "allowLoadLocalInfileInPath", "allowMultiQueries", "java.naming.factory.initial",
-            "java.naming.provider.url", "rmi", "ldap://", "ldaps://", "connectionProperties",
-            "initSQL", "dns", "file", "ftp"
-    );
     private List<String> showTableSqls = Arrays.asList("show tables");
 
     // 构建当前数据源的连接地址
@@ -51,16 +40,6 @@ public class ObMysql extends DatasourceConfiguration {
 
     // 校验 JDBC URL 和危险参数
     private void validateJdbcUrl(String jdbcUrl) {
-        if (!Strings.CI.startsWith(jdbcUrl, "jdbc:oceanbase://")) {
-            CrestException.throwException("Illegal jdbcUrl: " + jdbcUrl);
-        }
-        String decodedUrl = URLDecoder.decode(StringUtils.defaultString(jdbcUrl), StandardCharsets.UTF_8);
-        String decodedExtraParams = URLDecoder.decode(StringUtils.defaultString(getExtraParams()), StandardCharsets.UTF_8);
-        for (String illegalParameter : illegalParameters) {
-            if (Strings.CI.contains(decodedUrl, illegalParameter)
-                    || Strings.CI.contains(decodedExtraParams, illegalParameter)) {
-                CrestException.throwException("Illegal parameter: " + illegalParameter);
-            }
-        }
+        JdbcUrlSecurityPolicy.validate(DatasourceType.obMysql.getType(), jdbcUrl, getExtraParams());
     }
 }

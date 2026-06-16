@@ -46,6 +46,27 @@ CREST_DB_NAME=${CREST_DB_NAME:-crest}
 CREST_DB_USERNAME=${CREST_DB_USERNAME:-root}
 CREST_MYSQL_IMAGE=${CREST_MYSQL_IMAGE:-mysql:8.0.43}
 CREST_EXTERNAL_MYSQL=${CREST_EXTERNAL_MYSQL:-false}
+CREST_DB_TYPE=${CREST_DB_TYPE:-mysql}
+CREST_DB_TYPE=$(echo "${CREST_DB_TYPE}" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
+case "${CREST_DB_TYPE}" in
+  mysql)
+    DEMO_ENABLED_FLYWAY_LOCATIONS="classpath:db/migration,classpath:db/demo-migration"
+    DEMO_DISABLED_FLYWAY_LOCATIONS="classpath:db/migration"
+    ;;
+  ob-mysql)
+    DEMO_ENABLED_FLYWAY_LOCATIONS="classpath:db/migration-ob-mysql"
+    DEMO_DISABLED_FLYWAY_LOCATIONS="classpath:db/migration-ob-mysql"
+    ;;
+  ob-oracle)
+    echo "OceanBase Oracle 元数据库不使用 MySQL 演示迁移，当前清理脚本不支持 ob-oracle。"
+    echo "请不要将 MySQL 演示清理 SQL 执行到 OceanBase Oracle 租户。"
+    exit 1
+    ;;
+  *)
+    echo "CREST_DB_TYPE 只支持 mysql、ob-mysql 或 ob-oracle"
+    exit 1
+    ;;
+esac
 
 SQL_FILE="${CURRENT_DIR}/crest/bin/manual/cleanup-demo-data.sql"
 if [[ ! -f "${SQL_FILE}" && -f "${CREST_RUN_BASE}/bin/manual/cleanup-demo-data.sql" ]]; then
@@ -81,9 +102,9 @@ disable_demo_runtime_config() {
       echo 'CREST_LOAD_DEMO=false' >> "${CREST_RUN_BASE}/.env"
     fi
     if grep -q '^CREST_FLYWAY_LOCATIONS=' "${CREST_RUN_BASE}/.env"; then
-      sed -i.bak 's#^CREST_FLYWAY_LOCATIONS=.*#CREST_FLYWAY_LOCATIONS=classpath:db/migration#g' "${CREST_RUN_BASE}/.env"
+      sed -i.bak "s#^CREST_FLYWAY_LOCATIONS=.*#CREST_FLYWAY_LOCATIONS=${DEMO_DISABLED_FLYWAY_LOCATIONS}#g" "${CREST_RUN_BASE}/.env"
     else
-      echo 'CREST_FLYWAY_LOCATIONS=classpath:db/migration' >> "${CREST_RUN_BASE}/.env"
+      echo "CREST_FLYWAY_LOCATIONS=${DEMO_DISABLED_FLYWAY_LOCATIONS}" >> "${CREST_RUN_BASE}/.env"
     fi
     rm -f "${CREST_RUN_BASE}/.env.bak"
   fi
@@ -97,7 +118,7 @@ disable_demo_runtime_config() {
       { print }
     ' "${CREST_RUN_BASE}/conf/application.yml" > "${tmp_config}"
     mv "${tmp_config}" "${CREST_RUN_BASE}/conf/application.yml"
-    sed -i.bak 's#locations: classpath:db/migration,classpath:db/demo-migration#locations: classpath:db/migration#g' "${CREST_RUN_BASE}/conf/application.yml"
+    sed -i.bak "s#locations: ${DEMO_ENABLED_FLYWAY_LOCATIONS}#locations: ${DEMO_DISABLED_FLYWAY_LOCATIONS}#g" "${CREST_RUN_BASE}/conf/application.yml"
     rm -f "${CREST_RUN_BASE}/conf/application.yml.bak"
   fi
 }
