@@ -50,9 +50,9 @@ public class PasswordValidator {
         boolean hasSpecialChar = false;
         for (int i = 0; i < password.length(); i++) {
             char value = password.charAt(i);
-            hasUppercase = hasUppercase || Character.isUpperCase(value);
-            hasLowercase = hasLowercase || Character.isLowerCase(value);
-            hasDigit = hasDigit || Character.isDigit(value);
+            hasUppercase = hasUppercase || (value >= 'A' && value <= 'Z');
+            hasLowercase = hasLowercase || (value >= 'a' && value <= 'z');
+            hasDigit = hasDigit || (value >= '0' && value <= '9');
             hasSpecialChar = hasSpecialChar || SPECIAL_CHARS.indexOf(value) >= 0;
         }
 
