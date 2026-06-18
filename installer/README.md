@@ -27,6 +27,7 @@ Crest 单机安装默认采用前后端分离容器：
 - `crest`：前端 Nginx 网关，对外暴露 Web 端口；
 - `crest-service`：后端 Spring Boot 服务，只在 Compose 网络内访问；
 - `mysql-crest`：Crest 系统库。
+- `redis-crest`：Redis 实例，用于生产模式下的分布式缓存、任务队列、锁和 WebSocket 广播。
 
 可观测性组件默认关闭。启用后会额外启动：
 
@@ -71,6 +72,7 @@ Crest 单机安装默认采用前后端分离容器：
 | `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v2.0.0` | Crest 后端镜像 |
 | `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v2.0.0` | Crest 前端镜像 |
 | `CREST_MYSQL_IMAGE` | `mysql:8.0.43` | MySQL 镜像 |
+| `CREST_REDIS_IMAGE` | `redis:7.4.5-alpine` | Redis 镜像 |
 | `CREST_LOAD_DEMO` | `true` | 是否初始化内置演示资源；生产环境不需要示例数据时设为 `false` |
 | `CREST_FLYWAY_ENABLED` | 空 | Crest 系统库 Flyway 初始化开关；留空时 MySQL 默认 `true`，OceanBase 默认 `false` |
 | `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部系统库；默认安装内置 MySQL 容器，`CREST_DB_TYPE=ob-mysql/ob-oracle` 时脚本会自动切换为外部库模式 |
@@ -82,6 +84,13 @@ Crest 单机安装默认采用前后端分离容器：
 | `CREST_DB_URL` | 空 | JDBC URL 覆盖项；留空时安装脚本按 `CREST_DB_TYPE` 自动生成 |
 | `CREST_DB_USERNAME` | `root` | Crest 系统库用户；OBProxy 连接 OceanBase 时使用 `用户@租户#集群`，observer 直连时使用 `用户@租户` |
 | `CREST_DB_PASSWORD` | 空 | 留空时安装脚本自动生成 |
+| `CREST_CACHE_TYPE` | `jcache` | 缓存类型；生产模式会自动切换为 `redis` |
+| `CREST_REDIS_HOST` | `redis-crest` | Redis 地址；默认连接包内 Redis 容器 |
+| `CREST_REDIS_PORT` | `6379` | Redis 端口 |
+| `CREST_REDIS_USERNAME` | 空 | Redis ACL 用户名 |
+| `CREST_REDIS_PASSWORD` | 空 | Redis 密码；填写后包内 Redis 会启用 `requirepass` |
+| `CREST_REDIS_DATABASE` | `0` | Redis 逻辑库；Redis Cluster 必须使用 `0` |
+| `CREST_REDIS_CLUSTER_NODES` | 空 | Redis Cluster 节点列表，格式 `host1:6379,host2:6379`；配置后应用按 Cluster 连接 |
 | `CREST_AES_KEY` | 空 | 留空时自动生成 32 位值；升级时不要改 |
 | `CREST_AES_IV` | 空 | 留空时自动生成 16 位值；升级时不要改 |
 | `CREST_CRYPTO_MODE` | `standard` | 加密模式，`standard` 使用 AES/RSA，`sm-suite` 使用 SM2/SM3/SM4 |
@@ -342,6 +351,7 @@ ghcr.io/sevoniva/crest-service:v2.0.0-arm64
 ghcr.io/sevoniva/crest-web:v2.0.0-amd64
 ghcr.io/sevoniva/crest-web:v2.0.0-arm64
 mysql:8.0.43
+redis:7.4.5-alpine
 ```
 
 如需把 Prometheus 和 Grafana 镜像也放入离线包，先准备对应架构镜像，再设置：
@@ -362,14 +372,16 @@ SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v2.0.0-amd64 \
 FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v2.0.0-amd64 \
 SOURCE_MYSQL_IMAGE=mysql:8.0.43-amd64 \
 MYSQL_IMAGE=mysql:8.0.43 \
+SOURCE_REDIS_IMAGE=redis:7.4.5-alpine-amd64 \
+REDIS_IMAGE=redis:7.4.5-alpine \
 bash make-offline-package.sh v2.0.0 linux-amd64
 ```
 
-完整离线安装包脚本会校验前端、后端和 MySQL 镜像架构，架构不一致会直接停止。`SOURCE_*_IMAGE` 用于本机制作来源，包内 `install.conf` 仍写入指定的目标镜像名。
+完整离线安装包脚本会校验前端、后端、MySQL 和 Redis 镜像架构，架构不一致会直接停止。`SOURCE_*_IMAGE` 用于本机制作来源，包内 `install.conf` 仍写入指定的目标镜像名。
 
 离线包会包含 `upgrade-sql/` 目录。全新安装不需要手动执行；升级已有环境时按发布说明选择对应 SQL。
 
-应用镜像升级包只包含 Crest 后端镜像、前端镜像、`init-sql/`、`upgrade-sql/` 和加载说明，不包含 MySQL、Prometheus、Grafana 镜像，也不包含完整安装脚本。已有环境只需要替换应用服务时，优先使用 `crest-app-images-*`。
+应用镜像升级包只包含 Crest 后端镜像、前端镜像、`init-sql/`、`upgrade-sql/` 和加载说明，不包含 MySQL、Redis、Prometheus、Grafana 镜像，也不包含完整安装脚本。已有环境只需要替换应用服务时，优先使用 `crest-app-images-*`。
 
 ## 离线安装
 

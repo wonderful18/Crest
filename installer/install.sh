@@ -193,6 +193,7 @@ function check_and_prepare_env_params() {
    PACKAGE_BACKEND_IMAGE=${CREST_BACKEND_IMAGE:-}
    PACKAGE_FRONTEND_IMAGE=${CREST_FRONTEND_IMAGE:-}
    PACKAGE_MYSQL_IMAGE=${CREST_MYSQL_IMAGE:-}
+   PACKAGE_REDIS_IMAGE=${CREST_REDIS_IMAGE:-}
    PACKAGE_PROMETHEUS_IMAGE=${CREST_PROMETHEUS_IMAGE:-}
    PACKAGE_GRAFANA_IMAGE=${CREST_GRAFANA_IMAGE:-}
    if [[ $CREST_BASE_OLD ]];then
@@ -204,6 +205,7 @@ function check_and_prepare_env_params() {
       [[ -n "$PACKAGE_BACKEND_IMAGE" ]] && export CREST_BACKEND_IMAGE="$PACKAGE_BACKEND_IMAGE"
       [[ -n "$PACKAGE_FRONTEND_IMAGE" ]] && export CREST_FRONTEND_IMAGE="$PACKAGE_FRONTEND_IMAGE"
       [[ -n "$PACKAGE_MYSQL_IMAGE" ]] && export CREST_MYSQL_IMAGE="$PACKAGE_MYSQL_IMAGE"
+      [[ -n "$PACKAGE_REDIS_IMAGE" ]] && export CREST_REDIS_IMAGE="$PACKAGE_REDIS_IMAGE"
       [[ -n "$PACKAGE_PROMETHEUS_IMAGE" ]] && export CREST_PROMETHEUS_IMAGE="$PACKAGE_PROMETHEUS_IMAGE"
       [[ -n "$PACKAGE_GRAFANA_IMAGE" ]] && export CREST_GRAFANA_IMAGE="$PACKAGE_GRAFANA_IMAGE"
       INSTALL_TYPE='upgrade'
@@ -354,7 +356,7 @@ function prepare_crest_run_base() {
    env | grep '^CREST_' >.env
 
    mkdir -p ${CREST_RUN_BASE}/{cache,logs,conf}
-   mkdir -p ${CREST_RUN_BASE}/data/{mysql,static-resource,appearance,exportData,excel,font,i18n,plugin,prometheus,grafana}
+   mkdir -p ${CREST_RUN_BASE}/data/{mysql,redis,static-resource,appearance,exportData,excel,font,i18n,plugin,prometheus,grafana}
    chown -R 10001:10001 \
       ${CREST_RUN_BASE}/cache \
       ${CREST_RUN_BASE}/logs \
@@ -367,6 +369,7 @@ function prepare_crest_run_base() {
       ${CREST_RUN_BASE}/data/plugin 2>/dev/null || true
    chown -R 65534:65534 ${CREST_RUN_BASE}/data/prometheus 2>/dev/null || true
    chown -R 472:472 ${CREST_RUN_BASE}/data/grafana 2>/dev/null || true
+   chown -R 999:999 ${CREST_RUN_BASE}/data/redis 2>/dev/null || true
 
    if [[ "$CREST_PROMETHEUS_ENABLED" == "true" ]]; then
       printf "%s" "$CREST_PROMETHEUS_TOKEN" > ${CONF_FOLDER}/prometheus-token
@@ -383,15 +386,15 @@ function prepare_crest_run_base() {
 
    if [ "${CREST_EXTERNAL_MYSQL}" != "false" ]; then
       awk '
-         /^  mysql-crest:/ { skip = 1; next }
-         /^  crest-service:/ { skip = 0 }
-         skip { next }
+         /^  mysql-crest:/ { skip_mysql_service = 1; next }
+         skip_mysql_service && /^  [a-zA-Z0-9_-]+:/ { skip_mysql_service = 0 }
+         skip_mysql_service { next }
          /^  crest-service:/ { in_backend = 1; print; next }
          /^  [a-zA-Z0-9_-]+:/ { in_backend = 0 }
-         in_backend && /^    depends_on:/ { skip_dep = 1; next }
-         skip_dep && /^    [a-zA-Z0-9_-]+:/ { skip_dep = 0 }
-         skip_dep { next }
-         !skip { print }
+         in_backend && /^      mysql-crest:/ { skip_mysql_dep = 1; next }
+         skip_mysql_dep && /^      [a-zA-Z0-9_-]+:/ { skip_mysql_dep = 0 }
+         skip_mysql_dep { next }
+         { print }
       ' docker-compose.yml > docker-compose.yml.tmp && mv docker-compose.yml.tmp docker-compose.yml
    fi
 
