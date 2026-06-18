@@ -74,6 +74,7 @@ Crest 单机安装默认采用前后端分离容器：
 | `CREST_MYSQL_IMAGE` | `mysql:8.0.43` | MySQL 镜像 |
 | `CREST_REDIS_IMAGE` | `redis:7.4.5-alpine` | Redis 镜像 |
 | `CREST_LOAD_DEMO` | `true` | 是否初始化内置演示资源；生产环境不需要示例数据时设为 `false` |
+| `CREST_PRODUCTION_MODE` | `false` | 生产多副本模式开关；启用后必须使用 Redis，并会禁用启动期 Flyway 和演示数据初始化 |
 | `CREST_FLYWAY_ENABLED` | 空 | Crest 系统库 Flyway 初始化开关；留空时 MySQL 默认 `true`，OceanBase 默认 `false` |
 | `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部系统库；默认安装内置 MySQL 容器，`CREST_DB_TYPE=ob-mysql/ob-oracle` 时脚本会自动切换为外部库模式 |
 | `CREST_DB_TYPE` | `mysql` | Crest 系统库类型，支持 `mysql`、`ob-mysql`、`ob-oracle` |
@@ -84,6 +85,7 @@ Crest 单机安装默认采用前后端分离容器：
 | `CREST_DB_URL` | 空 | JDBC URL 覆盖项；留空时安装脚本按 `CREST_DB_TYPE` 自动生成 |
 | `CREST_DB_USERNAME` | `root` | Crest 系统库用户；OBProxy 连接 OceanBase 时使用 `用户@租户#集群`，observer 直连时使用 `用户@租户` |
 | `CREST_DB_PASSWORD` | 空 | 留空时安装脚本自动生成 |
+| `CREST_INTERNAL_REDIS` | `true` | 是否启动安装包内置 `redis-crest` 容器；使用外部 Redis 或旧版单机兼容模式时可设为 `false` |
 | `CREST_CACHE_TYPE` | `jcache` | 缓存类型；生产模式会自动切换为 `redis` |
 | `CREST_REDIS_HOST` | `redis-crest` | Redis 地址；默认连接包内 Redis 容器 |
 | `CREST_REDIS_PORT` | `6379` | Redis 端口 |
@@ -91,6 +93,8 @@ Crest 单机安装默认采用前后端分离容器：
 | `CREST_REDIS_PASSWORD` | 空 | Redis 密码；填写后包内 Redis 会启用 `requirepass` |
 | `CREST_REDIS_DATABASE` | `0` | Redis 逻辑库；Redis Cluster 必须使用 `0` |
 | `CREST_REDIS_CLUSTER_NODES` | 空 | Redis Cluster 节点列表，格式 `host1:6379,host2:6379`；配置后应用按 Cluster 连接 |
+| `CREST_TASK_QUEUE_ENABLED` | 空 | 是否启用 Redis Streams 任务队列；未配置时生产模式默认启用，旧版单机模式默认关闭 |
+| `CREST_WEBSOCKET_BROADCAST_ENABLED` | 空 | 是否启用 WebSocket Redis 广播；未配置时生产模式默认启用，旧版单机模式默认关闭 |
 | `CREST_AES_KEY` | 空 | 留空时自动生成 32 位值；升级时不要改 |
 | `CREST_AES_IV` | 空 | 留空时自动生成 16 位值；升级时不要改 |
 | `CREST_CRYPTO_MODE` | `standard` | 加密模式，`standard` 使用 AES/RSA，`sm-suite` 使用 SM2/SM3/SM4 |
@@ -106,6 +110,40 @@ Crest 单机安装默认采用前后端分离容器：
 | `CREST_GRAFANA_ADMIN_USER` | `admin` | Grafana 管理员账号 |
 | `CREST_GRAFANA_ADMIN_PASSWORD` | 空 | Grafana 管理员密码；开启后留空自动生成 |
 | `CREST_GRAFANA_PUBLIC_URL` | 空 | Grafana 页面访问地址；留空时安装脚本按本机端口生成 |
+
+### Redis 使用模式
+
+默认安装使用包内 Redis：
+
+```bash
+CREST_INTERNAL_REDIS=true
+CREST_REDIS_HOST=redis-crest
+CREST_CACHE_TYPE=jcache
+```
+
+旧版单机环境如果暂时不使用 Redis，可显式关闭包内 Redis，并保持单机兼容模式：
+
+```bash
+CREST_INTERNAL_REDIS=false
+CREST_PRODUCTION_MODE=false
+CREST_CACHE_TYPE=jcache
+CREST_TASK_QUEUE_ENABLED=false
+CREST_WEBSOCKET_BROADCAST_ENABLED=false
+```
+
+该模式不会启动 `redis-crest`，也不会把后端服务依赖到 Redis。它只适用于单机或旧版兼容部署；多副本、任务队列、WebSocket 跨节点广播和生产模式必须使用 Redis。
+
+使用外部 Redis 时，不启动包内 Redis，改填外部连接：
+
+```bash
+CREST_INTERNAL_REDIS=false
+CREST_REDIS_HOST=redis.example.com
+CREST_REDIS_PORT=6379
+CREST_REDIS_PASSWORD=your_password
+CREST_CACHE_TYPE=redis
+```
+
+如启用 `CREST_PRODUCTION_MODE=true`，必须配置可用 Redis；`CREST_INTERNAL_REDIS=false` 时不能继续使用默认的 `CREST_REDIS_HOST=redis-crest`。
 
 OceanBase 系统库示例：
 
@@ -421,6 +459,7 @@ http://服务器IP:8100
 | `/opt/crest/.env` | 安装时生成的环境变量 |
 | `/opt/crest/conf` | 应用配置 |
 | `/opt/crest/data/mysql` | MySQL 数据 |
+| `/opt/crest/data/redis` | 包内 Redis 数据 |
 | `/opt/crest/data/exportData` | 导出文件 |
 | `/opt/crest/data/static-resource` | 静态资源 |
 | `/opt/crest/data/font` | 字体文件 |

@@ -111,10 +111,12 @@ case "${package_type}" in
     require_entry "images/mysql_8.0.43.tar.gz"
     require_entry "images/redis_7.4.5-alpine.tar.gz"
     require_file_contains "install.conf" '^CREST_REDIS_IMAGE=redis:7\.4\.5-alpine$'
+    require_file_contains "install.conf" '^CREST_INTERNAL_REDIS=true$'
     require_file_contains "install.conf" '^CREST_REDIS_HOST=redis-crest$'
     require_file_contains "crest/docker-compose.yml" '^  redis-crest:$'
     require_file_contains "crest/docker-compose.yml" 'CREST_REDIS_HOST:.*redis-crest'
     require_file_contains "OFFLINE-README.md" 'CREST_REDIS_IMAGE'
+    require_file_contains "OFFLINE-README.md" 'CREST_INTERNAL_REDIS'
 
     if [[ "${EXPECT_OBSERVABILITY_IMAGES:-false}" == "true" ]]; then
       require_entry "images/prom_prometheus_v3.12.0.tar.gz"

@@ -232,6 +232,19 @@ done
 
 OceanBase 系统库按企业外部数据库处理。生产环境建议先由 DBA 创建租户、数据库或 schema、账号和权限，然后使用 \`obclient --default-character-set=utf8mb4\` 按文件名顺序执行 \`init-sql/ob-mysql/\` 或 \`init-sql/ob-oracle/\` 下的初始化 SQL。Crest 运行配置中保持 \`CREST_FLYWAY_ENABLED=false\`，服务启动时只连接已初始化的外部系统库。
 
+## Redis 兼容说明
+
+旧版单机环境如果没有 Redis，且不启用生产多副本模式，可继续保持：
+
+\`\`\`bash
+CREST_PRODUCTION_MODE=false
+CREST_CACHE_TYPE=jcache
+CREST_TASK_QUEUE_ENABLED=false
+CREST_WEBSOCKET_BROADCAST_ENABLED=false
+\`\`\`
+
+该模式不需要新增 Redis。启用 \`CREST_PRODUCTION_MODE=true\`、多副本任务队列或 WebSocket 跨节点广播时，必须先配置 Redis。
+
 ## 更新运行配置
 
 默认运行目录为 \`/opt/crest\`。如安装时修改过 \`CREST_BASE\`，请进入实际运行目录。

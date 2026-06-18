@@ -239,18 +239,56 @@ bash install.sh
 - \`CREST_FRONTEND_IMAGE\`：Crest 前端镜像，已固定为本包内镜像
 - \`CREST_MYSQL_IMAGE\`：MySQL 镜像，已固定为本包内镜像
 - \`CREST_REDIS_IMAGE\`：Redis 镜像，已固定为本包内镜像
+- \`CREST_PRODUCTION_MODE\`：生产多副本模式开关；启用后必须使用 Redis
 - \`CREST_DB_TYPE\`：Crest 系统库类型，默认 \`mysql\`，可选 \`ob-mysql\` 或 \`ob-oracle\`
 - \`CREST_DB_HOST\` / \`CREST_DB_PORT\`：Crest 系统库地址和端口；OceanBase 可填写 OBProxy 或 observer 地址
 - \`CREST_DB_USERNAME\` / \`CREST_DB_PASSWORD\`：Crest 系统库账号和密码；OBProxy 用户名使用 \`用户@租户#集群\`，observer 直连使用 \`用户@租户\`
 - \`CREST_DB_URL\`：自定义 JDBC URL；留空时安装脚本按 \`CREST_DB_TYPE\` 自动生成
 - \`CREST_FLYWAY_ENABLED\`：应用启动时是否执行 Flyway；留空时 MySQL 默认 \`true\`，OceanBase 默认 \`false\`
+- \`CREST_INTERNAL_REDIS\`：是否启动包内 \`redis-crest\`；使用外部 Redis 或旧版单机兼容模式时可设为 \`false\`
 - \`CREST_REDIS_HOST\` / \`CREST_REDIS_PORT\`：Redis 地址和端口；默认连接包内 \`redis-crest\`
 - \`CREST_REDIS_PASSWORD\` / \`CREST_REDIS_DATABASE\`：Redis 密码和逻辑库；Redis Cluster 必须使用 \`0\`
 - \`CREST_REDIS_CLUSTER_NODES\`：Redis Cluster 节点列表；配置后应用按外部 Redis Cluster 连接
+- \`CREST_TASK_QUEUE_ENABLED\`：是否启用 Redis Streams 任务队列；未配置时生产模式默认启用，旧版单机模式默认关闭
+- \`CREST_WEBSOCKET_BROADCAST_ENABLED\`：是否启用 WebSocket Redis 广播；未配置时生产模式默认启用，旧版单机模式默认关闭
 - \`CREST_INITIAL_PASSWORD\`：管理员初始密码；留空时安装脚本会随机生成并在安装完成后输出
 - \`CREST_LOAD_DEMO\`：是否初始化内置演示资源，默认 \`true\`；生产环境不需要示例数据时设为 \`false\`
 - \`CREST_PROMETHEUS_ENABLED\`：是否启用 Prometheus 指标采集，默认 \`false\`
 - \`CREST_GRAFANA_ENABLED\`：是否启用 Grafana 看板，默认 \`false\`
+
+## Redis 使用模式
+
+默认安装启动包内 Redis：
+
+\`\`\`bash
+CREST_INTERNAL_REDIS=true
+CREST_REDIS_HOST=redis-crest
+CREST_CACHE_TYPE=jcache
+\`\`\`
+
+旧版单机环境如果暂时不使用 Redis，可显式关闭包内 Redis，并保持单机兼容模式：
+
+\`\`\`bash
+CREST_INTERNAL_REDIS=false
+CREST_PRODUCTION_MODE=false
+CREST_CACHE_TYPE=jcache
+CREST_TASK_QUEUE_ENABLED=false
+CREST_WEBSOCKET_BROADCAST_ENABLED=false
+\`\`\`
+
+该模式不会启动 \`redis-crest\`，也不会把后端服务依赖到 Redis。它只适用于单机或旧版兼容部署；多副本、任务队列、WebSocket 跨节点广播和生产模式必须使用 Redis。
+
+使用外部 Redis 时，不启动包内 Redis，改填外部连接：
+
+\`\`\`bash
+CREST_INTERNAL_REDIS=false
+CREST_REDIS_HOST=redis.example.com
+CREST_REDIS_PORT=6379
+CREST_REDIS_PASSWORD=your_password
+CREST_CACHE_TYPE=redis
+\`\`\`
+
+如启用 \`CREST_PRODUCTION_MODE=true\`，必须配置可用 Redis；\`CREST_INTERNAL_REDIS=false\` 时不能继续使用默认的 \`CREST_REDIS_HOST=redis-crest\`。
 
 ## OceanBase 系统库
 
