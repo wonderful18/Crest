@@ -62,7 +62,7 @@ public class DataAssetManage {
         Long total = jdbcTemplate.queryForObject("SELECT COUNT(1) " + query.fromWhere, Long.class, query.args.toArray());
         List<Object> listArgs = new ArrayList<>(query.args);
         int offset = (normalizedPage - 1) * normalizedPageSize;
-        List<DataAssetVO> records = jdbcTemplate.query(dialect().limitOffset("""
+        String listSql = """
                 SELECT a.asset_type,
                        a.asset_id,
                        a.name,
@@ -82,13 +82,6 @@ public class DataAssetManage {
                        COALESCE(%s, %s, %s) AS owner_name,
                        COALESCE(%s, %s) AS creator_name,
                        COALESCE(%s, %s) AS org_name
-                """ + query.fromWhere + """
-
-                ORDER BY COALESCE(p.deprecated, 0) ASC,
-                         COALESCE(p.certified, 0) DESC,
-                         COALESCE(p.recommended, 0) DESC,
-                         a.update_time DESC,
-                         a.asset_id DESC
                 """.formatted(
                 text("owner.name"),
                 text("creator.name"),
@@ -97,7 +90,16 @@ public class DataAssetManage {
                 stringCast("a.creator_id"),
                 text("org.name"),
                 stringLiteral("默认组织")
-        ), normalizedPageSize, offset), (rs, rowNum) -> mapAsset(rs), listArgs.toArray());
+        ) + query.fromWhere + """
+
+                ORDER BY COALESCE(p.deprecated, 0) ASC,
+                         COALESCE(p.certified, 0) DESC,
+                         COALESCE(p.recommended, 0) DESC,
+                         a.update_time DESC,
+                         a.asset_id DESC
+                """;
+        List<DataAssetVO> records = jdbcTemplate.query(dialect().limitOffset(listSql, normalizedPageSize, offset),
+                (rs, rowNum) -> mapAsset(rs), listArgs.toArray());
         records.forEach(this::fillAssetAccessAndCounts);
 
         DataAssetPageVO vo = new DataAssetPageVO();
@@ -649,14 +651,14 @@ public class DataAssetManage {
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
                   AND %s
-                """ + visualizationScope + """
-                ORDER BY c.update_time DESC
                 """.formatted(
                 stringLiteral("chart"),
                 stringCast("c.id"),
                 stringCast("c.id"),
                 stringEquals("v.node_type", stringLiteral("leaf"))
-        ), datasetId));
+        ) + visualizationScope + """
+                ORDER BY c.update_time DESC
+                """, datasetId));
         items.addAll(queryItems("""
                 SELECT CASE WHEN %s THEN %s ELSE %s END AS asset_type,
                        %s AS asset_id,
@@ -668,16 +670,16 @@ public class DataAssetManage {
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
                   AND %s
-                """ + visualizationScope + """
-                GROUP BY v.id, v.type, v.name, v.update_time
-                ORDER BY v.update_time DESC
                 """.formatted(
                 stringEquals("v.type", stringLiteral("dataV")),
                 stringLiteral("screen"),
                 stringLiteral("panel"),
                 stringCast("v.id"),
                 stringEquals("v.node_type", stringLiteral("leaf"))
-        ), datasetId));
+        ) + visualizationScope + """
+                GROUP BY v.id, v.type, v.name, v.update_time
+                ORDER BY v.update_time DESC
+                """, datasetId));
         items.addAll(queryItems("""
                 SELECT %s AS asset_type,
                        %s AS asset_id,
@@ -690,15 +692,15 @@ public class DataAssetManage {
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
                   AND %s
-                """ + visualizationScope + """
-                GROUP BY s.id, v.name, s.uuid, s.time
-                ORDER BY s.time DESC
                 """.formatted(
                 stringLiteral("share"),
                 stringCast("s.id"),
                 concat("v.name", stringLiteral(" / "), "s.uuid"),
                 stringEquals("v.node_type", stringLiteral("leaf"))
-        ), datasetId));
+        ) + visualizationScope + """
+                GROUP BY s.id, v.name, s.uuid, s.time
+                ORDER BY s.time DESC
+                """, datasetId));
         items.addAll(queryItems("""
                 SELECT %s AS asset_type,
                        %s AS asset_id,

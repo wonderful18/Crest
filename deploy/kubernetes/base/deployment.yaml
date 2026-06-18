@@ -30,7 +30,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: wait-for-database
-          image: ghcr.io/sevoniva/crest-service:v1.5.12
+          image: ghcr.io/sevoniva/crest-service:v2.0.0
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -72,8 +72,35 @@ spec:
             capabilities:
               drop:
                 - ALL
+        - name: prepare-data-volume
+          image: ghcr.io/sevoniva/crest-service:v2.0.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - |
+              for dir in static-resource appearance exportData excel font report custom-drivers i18n; do
+                mkdir -p "/work/data/${dir}"
+                chmod -R u+rwX,g+rwX,o-rwx "/work/data/${dir}"
+                chown -R 10001:10001 "/work/data/${dir}"
+              done
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - FOWNER
+          volumeMounts:
+            - name: crest-data
+              mountPath: /work/data
         - name: seed-static-resource
-          image: ghcr.io/sevoniva/crest-service:v1.5.12
+          image: ghcr.io/sevoniva/crest-service:v2.0.0
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -93,7 +120,7 @@ spec:
               subPath: static-resource
       containers:
         - name: crest-service
-          image: ghcr.io/sevoniva/crest-service:v1.5.12
+          image: ghcr.io/sevoniva/crest-service:v2.0.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -192,6 +219,12 @@ spec:
               mountPath: /opt/crest/data/font
               subPath: font
             - name: crest-data
+              mountPath: /opt/crest/data/report
+              subPath: report
+            - name: crest-data
+              mountPath: /opt/crest/data/custom-drivers
+              subPath: custom-drivers
+            - name: crest-data
               mountPath: /opt/crest/data/i18n
               subPath: i18n
       volumes:
@@ -246,7 +279,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: crest
-          image: ghcr.io/sevoniva/crest-web:v1.5.12
+          image: ghcr.io/sevoniva/crest-web:v2.0.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

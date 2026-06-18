@@ -242,6 +242,9 @@ public class DataSourceManage {
 
     // 查询数据源，特殊 ID 返回当前引擎数据源
     public CoreDatasource getCoreDatasource(Long id) {
+        if (id == null) {
+            return null;
+        }
         if (id == -1L) {
             return engineManage.getEngineDatasource();
         }

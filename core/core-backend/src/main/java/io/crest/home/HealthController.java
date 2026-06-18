@@ -2,6 +2,9 @@ package io.crest.home;
 
 import io.crest.result.ResultMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,11 +16,11 @@ import java.sql.Connection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@RestController
-@RequestMapping("/actuator/health")
 /**
  * 应用健康检查控制器，提供存活和就绪检查端点
  */
+@RestController
+@RequestMapping("/actuator/health")
 public class HealthController {
 
     /**
@@ -29,12 +32,18 @@ public class HealthController {
      * 可选数据源，用于就绪检查数据库连通性
      */
     private final DataSource dataSource;
+    private final Environment environment;
+    private final RedisConnectionFactory redisConnectionFactory;
 
     /**
      * 创建健康检查控制器，数据源缺失时就绪检查会失败
      */
-    public HealthController(@Autowired(required = false) DataSource dataSource) {
+    public HealthController(@Autowired(required = false) DataSource dataSource,
+                            Environment environment,
+                            @Autowired(required = false) RedisConnectionFactory redisConnectionFactory) {
         this.dataSource = dataSource;
+        this.environment = environment;
+        this.redisConnectionFactory = redisConnectionFactory;
     }
 
     /**
@@ -61,11 +70,18 @@ public class HealthController {
     @GetMapping("/readiness")
     public ResponseEntity<ResultMessage> readiness() {
         Map<String, Object> checks = new LinkedHashMap<>();
-        if (databaseAvailable()) {
-            checks.put("database", "UP");
+        boolean databaseAvailable = databaseAvailable();
+        checks.put("database", databaseAvailable ? "UP" : "DOWN");
+
+        boolean redisRequired = environment.getProperty("crest.production-mode", Boolean.class, false);
+        boolean redisAvailable = !redisRequired || redisAvailable();
+        if (redisRequired) {
+            checks.put("redis", redisAvailable ? "UP" : "DOWN");
+        }
+
+        if (databaseAvailable && redisAvailable) {
             return ResponseEntity.ok(ResultMessage.success(status("UP", checks)));
         }
-        checks.put("database", "DOWN");
         ResultMessage result = new ResultMessage(HttpStatus.SERVICE_UNAVAILABLE.value(), "服务未就绪");
         result.setData(status("DOWN", checks));
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(result);
@@ -80,6 +96,20 @@ public class HealthController {
         }
         try (Connection connection = dataSource.getConnection()) {
             return connection.isValid(DATABASE_VALIDATION_TIMEOUT_SECONDS);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 生产模式要求 Redis 可连接，保证跨 Pod 缓存和票据可用
+     */
+    private boolean redisAvailable() {
+        if (redisConnectionFactory == null) {
+            return false;
+        }
+        try (RedisConnection connection = redisConnectionFactory.getConnection()) {
+            return connection.ping() != null;
         } catch (Exception e) {
             return false;
         }

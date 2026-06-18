@@ -18,8 +18,12 @@ import io.crest.exportCenter.dao.auto.entity.CoreExportTask;
 import io.crest.exportCenter.dao.auto.mapper.CoreExportDownloadTaskMapper;
 import io.crest.exportCenter.dao.auto.mapper.CoreExportTaskMapper;
 import io.crest.exportCenter.dao.ext.mapper.ExportTaskExtMapper;
+import io.crest.exportCenter.queue.ExportTaskQueueService;
 import io.crest.i18n.Translator;
+import io.crest.lock.CrestRedisLockService;
 import io.crest.model.ExportTaskDTO;
+import io.crest.runtime.CrestRuntimeRole;
+import io.crest.storage.StorageService;
 import io.crest.system.manage.SysParameterManage;
 import io.crest.utils.*;
 import io.crest.visualization.dao.auto.entity.VisualizationWatermark;
@@ -32,6 +36,7 @@ import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +47,6 @@ import io.crest.api.permissions.user.vo.UserFormVO;
 import java.io.File;
 import java.net.InetAddress;
 import java.util.*;
-import java.util.concurrent.Future;
 
 /**
  * 导出中心管理服务，负责导出任务创建、下载授权、任务清理、重试和导出文件水印处理
@@ -85,6 +89,8 @@ public class ExportCenterManage implements BaseExportApi {
      */
     @Resource
     private ExportCenterDownLoadManage exportCenterDownLoadManage;
+    @Resource
+    private ExportTaskQueueService exportTaskQueueService;
     /**
      * 系统参数服务，用于读取导出文件保留时间等配置
      */
@@ -116,6 +122,12 @@ public class ExportCenterManage implements BaseExportApi {
      */
     @Resource
     private ExtDataVisualizationMapper visualizationMapper;
+    @Resource
+    private CrestRedisLockService lockService;
+    @Resource
+    private Environment environment;
+    @Resource
+    private StorageService storageService;
     /**
      * 旧版导出文件按原文件名落盘，该时间点之前的任务需要兼容旧路径
      */
@@ -124,11 +136,6 @@ public class ExportCenterManage implements BaseExportApi {
      * 导出任务列表允许过滤的状态集合
      */
     static private List<String> STATUS = Arrays.asList("SUCCESS", "FAILED", "PENDING", "IN_PROGRESS", "ALL");
-    /**
-     * 当前进程持有的运行中任务句柄，用于删除任务时尝试取消执行
-     */
-    private Map<String, Future> Running_Task = new HashMap<>();
-
     /**
      * 校验一次性下载票据并输出导出文件
      */
@@ -186,10 +193,10 @@ public class ExportCenterManage implements BaseExportApi {
         exportTask.setExportMachineName(hostName());
         exportTask.setExportTime(System.currentTimeMillis());
         exportTaskMapper.updateById(exportTask);
-        FileUtils.deleteDirectoryRecursively(taskDirectoryPath(id));
+        storageService.deleteDirectory(exportData_path, id);
         if (exportTask.getExportFromType().equalsIgnoreCase("chart")) {
             ChartExcelRequest request = JsonUtil.parseObject(exportTask.getParams(), ChartExcelRequest.class);
-            exportCenterDownLoadManage.startViewTask(exportTask, request);
+            submitExportTask(exportTask, () -> exportCenterDownLoadManage.startViewTask(exportTask, request));
         }
         if (exportTask.getExportFromType().equalsIgnoreCase("dataset")) {
             DataSetExportRequest request = JsonUtil.parseObject(exportTask.getParams(), DataSetExportRequest.class);
@@ -197,13 +204,14 @@ public class ExportCenterManage implements BaseExportApi {
                 prepareDatasetExportRequest(exportTask.getExportFrom(), request);
                 exportTask.setFileName(request.getFilename() + ".xlsx");
                 exportTask.setParams(JsonUtil.toJSONString(request).toString());
+                exportTaskMapper.updateById(exportTask);
             } catch (Exception e) {
                 exportTask.setMsg(e.getMessage());
                 exportTask.setExportStatus("FAILED");
                 exportTaskMapper.updateById(exportTask);
                 CrestException.throwException(e.getMessage());
             }
-            exportCenterDownLoadManage.startDatasetTask(exportTask, request);
+            submitExportTask(exportTask, () -> exportCenterDownLoadManage.startDatasetTask(exportTask, request));
         }
     }
 
@@ -315,13 +323,6 @@ public class ExportCenterManage implements BaseExportApi {
     }
 
     /**
-     * 根据任务编号生成该任务的导出文件目录
-     */
-    private String taskDirectoryPath(String taskId) {
-        return new File(exportData_path, taskId).getPath();
-    }
-
-    /**
      * 创建图表或可视化资源导出任务，并立即提交到对应执行入口
      */
     public void addTask(String exportFrom, String exportFromType, ChartExcelRequest request, String busiFlag) {
@@ -339,9 +340,9 @@ public class ExportCenterManage implements BaseExportApi {
         exportTask.setExportMachineName(hostName());
         exportTaskMapper.insert(exportTask);
         if (busiFlag.equalsIgnoreCase("dashboard")) {
-            exportCenterDownLoadManage.startPanelViewTask(exportTask, request);
+            submitExportTask(exportTask, () -> exportCenterDownLoadManage.startPanelViewTask(exportTask, request));
         } else {
-            exportCenterDownLoadManage.startDataVViewTask(exportTask, request);
+            submitExportTask(exportTask, () -> exportCenterDownLoadManage.startDataVViewTask(exportTask, request));
         }
 
     }
@@ -364,7 +365,7 @@ public class ExportCenterManage implements BaseExportApi {
         exportTask.setParams(JsonUtil.toJSONString(request).toString());
         exportTask.setExportMachineName(hostName());
         exportTaskMapper.insert(exportTask);
-        exportCenterDownLoadManage.startDatasetTask(exportTask, request);
+        submitExportTask(exportTask, () -> exportCenterDownLoadManage.startDatasetTask(exportTask, request));
     }
 
     /**
@@ -399,6 +400,25 @@ public class ExportCenterManage implements BaseExportApi {
         exportTask.setParams(JsonUtil.toJSONString(request).toString());
         exportTask.setExportMachineName(hostName());
         exportTaskMapper.insert(exportTask);
+    }
+
+    private void submitExportTask(CoreExportTask exportTask, Runnable localRunner) {
+        if (!exportTaskQueueService.enabled()) {
+            localRunner.run();
+            return;
+        }
+        try {
+            exportTask.setLastEnqueueTime(System.currentTimeMillis());
+            exportTaskMapper.updateById(exportTask);
+            exportTaskQueueService.enqueueExportTask(exportTask.getId());
+        } catch (Exception e) {
+            exportTask.setExportStatus("FAILED");
+            exportTask.setExportProgress("100");
+            exportTask.setMsg(e.getMessage());
+            exportTask.setLastError(e.getMessage());
+            exportTaskMapper.updateById(exportTask);
+            CrestException.throwException(e.getMessage());
+        }
     }
 
     /**
@@ -474,10 +494,16 @@ public class ExportCenterManage implements BaseExportApi {
      */
     @Scheduled(fixedRate = 60 * 60 * 1000)
     public void checkDownLoadInfos() {
-        coreExportDownloadTaskMapper.selectList(null).forEach(downLoadInfo -> {
-            if (System.currentTimeMillis() - downLoadInfo.getCreateTime() > downLoadInfo.getValidTime() * 60 * 1000) {
-                coreExportDownloadTaskMapper.deleteById(downLoadInfo.getId());
-            }
+        // 下载票据清理归调度角色执行，避免 Worker 副本重复扫描。
+        if (environment != null && !CrestRuntimeRole.from(environment).runsScheduler()) {
+            return;
+        }
+        lockService.runWithLock("scheduled:clean-download-tickets", () -> {
+            coreExportDownloadTaskMapper.selectList(null).forEach(downLoadInfo -> {
+                if (System.currentTimeMillis() - downLoadInfo.getCreateTime() > downLoadInfo.getValidTime() * 60 * 1000) {
+                    coreExportDownloadTaskMapper.deleteById(downLoadInfo.getId());
+                }
+            });
         });
     }
 
@@ -504,22 +530,14 @@ public class ExportCenterManage implements BaseExportApi {
     }
 
     /**
-     * 删除任务记录、导出目录，并尝试取消当前进程中的运行任务
+     * 删除任务记录和导出目录
      */
     private void deleteTask(CoreExportTask exportTask) {
         if (exportTask == null) {
             return;
         }
         String id = exportTask.getId();
-        Iterator<Map.Entry<String, Future>> iterator = Running_Task.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, Future> entry = iterator.next();
-            if (entry.getKey().equalsIgnoreCase(id)) {
-                entry.getValue().cancel(true);
-                iterator.remove();
-            }
-        }
-        FileUtils.deleteDirectoryRecursively(taskDirectoryPath(id));
+        storageService.deleteDirectory(exportData_path, id);
         exportTaskMapper.deleteById(id);
     }
 
@@ -615,7 +633,7 @@ public class ExportCenterManage implements BaseExportApi {
      * 判断任务导出文件是否仍存在于文件系统
      */
     private boolean exportFileExists(CoreExportTask exportTask) {
-        return resolveExportFile(exportTask).isFile();
+        return storageService.isRegularFile(resolveExportFile(exportTask));
     }
 
     /**
@@ -625,7 +643,7 @@ public class ExportCenterManage implements BaseExportApi {
         String fileName = exportTask.getExportTime() != null && exportTask.getExportTime() < LEGACY_EXPORT_FILE_TIME
                 ? exportTask.getFileName()
                 : exportTask.getId() + ".xlsx";
-        return new File(taskDirectoryPath(exportTask.getId()), fileName);
+        return storageService.resolve(exportData_path, exportTask.getId(), fileName);
     }
 
     /**

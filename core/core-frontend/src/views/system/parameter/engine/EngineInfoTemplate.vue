@@ -51,6 +51,18 @@ const typeMap = dsTypes.reduce((pre, next) => {
   pre[next.type] = next.name
   return pre
 }, {})
+const schemaBasedEngineTypes = ['obOracle']
+const schemaValue = configuration => {
+  if (configuration?.schema) return configuration.schema
+  const username = configuration?.username || ''
+  if (!username) return ''
+  const atIndex = username.indexOf('@')
+  const clusterIndex = username.indexOf('#')
+  let endIndex = username.length
+  if (atIndex >= 0) endIndex = Math.min(endIndex, atIndex)
+  if (clusterIndex >= 0) endIndex = Math.min(endIndex, clusterIndex)
+  return username.substring(0, endIndex).toUpperCase()
+}
 // 控制是否展示连接池和超时优先级配置
 const showPriority = ref(true)
 let nodeInfoId
@@ -117,12 +129,19 @@ const getEngine = () => {
           type: '',
           sort: 0
         },
-        {
-          pkey: 'datasource.data_base',
-          pval: configuration?.dataBase,
-          type: '',
-          sort: 0
-        },
+        schemaBasedEngineTypes.includes(type)
+          ? {
+              pkey: 'datasource.schema',
+              pval: schemaValue(configuration),
+              type: '',
+              sort: 0
+            }
+          : {
+              pkey: 'datasource.data_base',
+              pval: configuration?.dataBase,
+              type: '',
+              sort: 0
+            },
         {
           pkey: 'datasource.user_name',
           pval: configuration?.username,

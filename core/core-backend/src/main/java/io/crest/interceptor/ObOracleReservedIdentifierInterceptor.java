@@ -32,6 +32,7 @@ public class ObOracleReservedIdentifierInterceptor implements Interceptor {
             Map.entry("dataset_field", List.of("size")),
             Map.entry("workspace_recent_resource", List.of("uid", "time")),
             Map.entry("workspace_favorite_resource", List.of("uid", "time")),
+            Map.entry("font_asset", List.of("size")),
             Map.entry("iam_user_org", List.of("uid")),
             Map.entry("iam_user_role", List.of("uid")),
             Map.entry("iam_org", List.of("level")),

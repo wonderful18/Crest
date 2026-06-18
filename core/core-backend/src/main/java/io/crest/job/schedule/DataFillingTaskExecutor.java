@@ -1,14 +1,18 @@
 package io.crest.job.schedule;
 
 import io.crest.commons.utils.CronUtils;
+import io.crest.utils.LogUtil;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.TriggerKey;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Component("dataFillingTaskExecutor")
@@ -26,12 +30,61 @@ public class DataFillingTaskExecutor {
 
     @Resource
     private ScheduleManager scheduleManager;
+    @Resource
+    private ScheduledTaskQueueService queueService;
+    @Autowired(required = false)
+    private ObjectProvider<ScheduledDataFillingTaskRunner> dataFillingTaskRunnerProvider;
     /**
-     * 执行数据填报任务
+     * Quartz 只负责触发和投递，生产队列启用后由 Worker 统一消费。
      */
     public boolean execute(Map<String, Object> taskData) {
-        return false;
+        return execute(taskData, null, null);
     }
+
+    /**
+     * 队列路径补充稳定触发键，用于数据库 CAS 识别同一次 Quartz 触发。
+     */
+    public boolean execute(Map<String, Object> taskData, String queueJobKey, Long scheduledFireTime) {
+        if (queueService != null && queueService.enabled()) {
+            queueService.enqueueDataFillingTask(queueTaskData(taskData, queueJobKey, scheduledFireTime));
+            return true;
+        }
+        return runDataFillingTask(taskData, true);
+    }
+    /**
+     * Worker 队列路径必须真实执行；未接入执行器时交由队列侧进入死信。
+     */
+    public boolean executeQueued(Map<String, Object> taskData) {
+        return runDataFillingTask(taskData, false);
+    }
+
+    private boolean runDataFillingTask(Map<String, Object> taskData, boolean keepScheduleWhenMissingRunner) {
+        ScheduledDataFillingTaskRunner runner = dataFillingTaskRunner();
+        if (runner != null) {
+            return runner.executeDataFillingTask(taskData);
+        }
+        LogUtil.warn("Data filling task runner is not configured");
+        return keepScheduleWhenMissingRunner;
+    }
+
+    private ScheduledDataFillingTaskRunner dataFillingTaskRunner() {
+        return dataFillingTaskRunnerProvider == null ? null : dataFillingTaskRunnerProvider.getIfAvailable();
+    }
+
+    private Map<String, Object> queueTaskData(Map<String, Object> taskData, String queueJobKey, Long scheduledFireTime) {
+        if (queueJobKey == null && scheduledFireTime == null) {
+            return taskData;
+        }
+        Map<String, Object> copy = taskData == null ? new LinkedHashMap<>() : new LinkedHashMap<>(taskData);
+        if (queueJobKey != null) {
+            copy.put(ScheduledTaskQueueService.QUEUE_JOB_KEY, queueJobKey);
+        }
+        if (scheduledFireTime != null) {
+            copy.put(ScheduledTaskQueueService.QUEUE_SCHEDULED_FIRE_TIME, scheduledFireTime);
+        }
+        return copy;
+    }
+
     /**
      * 初始化数据填报调度执行器
      */

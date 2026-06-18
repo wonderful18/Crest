@@ -67,7 +67,7 @@ public class SsrfProtection {
                         "不允许访问内部地址: " + host);
             }
 
-            // 4. 解析主机名并检查所有解析结果，避免非标准 IP 表示法和 DNS 指向内网的绕过。
+            // 4. 解析主机名并检查所有解析结果，避免非标准 IP 表示法和 DNS 指向私有网络的绕过。
             try {
                 InetAddress[] addresses = InetAddress.getAllByName(normalizedHost);
                 for (InetAddress address : addresses) {

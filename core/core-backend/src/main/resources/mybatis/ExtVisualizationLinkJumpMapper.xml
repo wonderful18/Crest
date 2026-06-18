@@ -98,8 +98,8 @@
                 <if test="!isDesktop">
                 share_link.uuid AS publicJumpId,
                 </if>
-                ifnull( vlji.checked, 0 ) AS checked,
-                ifnull( vlji.attach_params, 0 ) AS attach_params,
+                COALESCE( vlji.checked, 0 ) AS checked,
+                COALESCE( vlji.attach_params, 0 ) AS attach_params,
                 vljtvi.target_id,
                 vljtvi.target_view_id,
                 vljtvi.target_field_id,
@@ -124,9 +124,16 @@
                 ccv.id = #{source_view_id}
               AND ccv.type != 'VQuery'
               <if test="!isDesktop">
-               ORDER BY
+                  ORDER BY
+                  <choose>
+                      <when test="_databaseId == 'ob-oracle'">
+                          cdtf.name
+                      </when>
+                      <otherwise>
                           CONVERT (
                           cdtf.NAME USING gbk)
+                      </otherwise>
+                  </choose>
               </if>
               <if test="isDesktop">
               ORDER BY cdtf.name;
@@ -149,8 +156,8 @@
             <if test="!isDesktop">
             share_link.uuid AS publicJumpId,
             </if>
-            ifnull( vlji.checked, 0 ) AS checked,
-            ifnull( vlji.attach_params, 0 ) AS attach_params,
+            COALESCE( vlji.checked, 0 ) AS checked,
+            COALESCE( vlji.attach_params, 0 ) AS attach_params,
             vljtvi.target_id,
             vljtvi.target_view_id,
             vljtvi.target_field_id,
@@ -175,9 +182,16 @@
             ccv.id = #{source_view_id}
           AND ccv.type != 'VQuery'
           <if test="!isDesktop">
-           ORDER BY
+              ORDER BY
+              <choose>
+                  <when test="_databaseId == 'ob-oracle'">
+                      cdtf.name
+                  </when>
+                  <otherwise>
                       CONVERT (
                       cdtf.NAME USING gbk)
+                  </otherwise>
+              </choose>
           </if>
           <if test="isDesktop">
           ORDER BY cdtf.name;
@@ -190,7 +204,7 @@
                #{isDesktop}                                 as isDesktop,
                vlj.id,
                #{dvId} as source_dv_id, vlj.link_jump_info,
-               ifnull(ccv.jump_active, 0) AS checked
+               COALESCE(ccv.jump_active, 0) AS checked
         FROM bi_chart ccv
                  LEFT JOIN visualization_link_jump vlj ON ccv.id = vlj.source_view_id
         WHERE vlj.source_dv_id = #{dvId}
@@ -203,7 +217,7 @@
                #{isDesktop}                                 as isDesktop,
                vlj.id,
                #{dvId} as source_dv_id, vlj.link_jump_info,
-               ifnull(ccv.jump_active, 0) AS checked
+               COALESCE(ccv.jump_active, 0) AS checked
         FROM bi_chart_snapshot ccv
                  LEFT JOIN snapshot_visualization_link_jump vlj ON ccv.id = vlj.source_view_id
         WHERE vlj.source_dv_id = #{dvId}
@@ -248,7 +262,7 @@
                #{isDesktop}                                 as isDesktop,
                vlj.id,
                #{dvId} as source_dv_id, vlj.link_jump_info,
-               ifnull(vlj.checked, 0) AS checked
+               COALESCE(vlj.checked, 0) AS checked
         FROM bi_chart_snapshot ccv
                  LEFT JOIN snapshot_visualization_link_jump vlj ON ccv.id = vlj.source_view_id
             AND vlj.source_dv_id = #{dvId}
@@ -399,7 +413,15 @@
     <insert id="copyLinkJump">
         insert into visualization_link_jump (id, source_dv_id, source_view_id, link_jump_info, `checked`, copy_from,
                                              copy_id)
-        select UUID()                                       as id,
+        select
+               <choose>
+                   <when test="_databaseId == 'ob-oracle'">
+                       RAWTOHEX(SYS_GUID())
+                   </when>
+                   <otherwise>
+                       UUID()
+                   </otherwise>
+               </choose>                                   as id,
                visualization_view_copy.t_dv_id              as source_dv_id,
                visualization_view_copy.t_chart_view_id      as source_view_id,
                visualization_link_jump.link_jump_info,
@@ -432,7 +454,15 @@
                                                   `attach_params`,
                                                   copy_from,
                                                   copy_id)
-        SELECT uuid() AS id,
+        SELECT
+               <choose>
+                   <when test="_databaseId == 'ob-oracle'">
+                       RAWTOHEX(SYS_GUID())
+                   </when>
+                   <otherwise>
+                       uuid()
+                   </otherwise>
+               </choose> AS id,
                plj_copy.t_id,
                link_type,
                jump_type,
@@ -459,7 +489,15 @@
                                                               target_field_id,
                                                               copy_from,
                                                               copy_id)
-        SELECT uuid()         AS id,
+        SELECT
+               <choose>
+                   <when test="_databaseId == 'ob-oracle'">
+                       RAWTOHEX(SYS_GUID())
+                   </when>
+                   <otherwise>
+                       uuid()
+                   </otherwise>
+               </choose> AS id,
                plji_copy.t_id AS link_jump_info_id,
                target_view_id,
                target_field_id,

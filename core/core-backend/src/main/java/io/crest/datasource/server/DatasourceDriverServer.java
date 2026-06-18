@@ -9,6 +9,7 @@ import io.crest.datasource.dao.auto.entity.CoreDriverJar;
 import io.crest.datasource.dao.auto.mapper.CoreDriverJarMapper;
 import io.crest.datasource.dao.auto.mapper.CoreDriverMapper;
 import io.crest.extensions.datasource.dto.DatasourceDTO;
+import io.crest.storage.StorageService;
 import io.crest.utils.BeanUtils;
 import io.crest.utils.FileUtils;
 import io.crest.utils.Md5Utils;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +45,8 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
 
     @Resource
     private CoreDriverJarMapper coreDriverJarMapper;
+    @Resource
+    private StorageService storageService;
 
     /**
      * 按关键字查询数据源驱动
@@ -141,8 +144,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     public void deleteDriverJar(String jarId) {
         CoreDriverJar driverJar = coreDriverJarMapper.selectById(jarId);
         coreDriverJarMapper.deleteById(jarId);
-        CoreDriver driver = coreDriverMapper.selectById(driverJar.getDriverId());
-        FileUtils.deleteFile(DRIVER_PATH + driverJar.getDriverId() + "/" + driverJar.getTransName());
+        storageService.deleteFile(DRIVER_PATH, driverJar.getDriverId(), driverJar.getTransName());
         // 删除驱动文件后，后续连接会重新按现有驱动文件加载。
     }
 
@@ -156,9 +158,10 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
             throw new RuntimeException("DRIVER_NOT_FOUND");
         }
         String filename = jarFile.getOriginalFilename();
-        if (!filename.endsWith(".jar")) {
+        if (filename == null || !filename.endsWith(".jar")) {
             throw new RuntimeException("NOT_JAR");
         }
+        FileUtils.validateUploadFilename(filename);
 
         QueryWrapper<CoreDriverJar> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("fileName", filename);
@@ -166,9 +169,8 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
             throw new Exception("A file with the same name already exists：" + filename);
         }
 
-        String dirPath = DRIVER_PATH + driverId + "/";
-        String filePath = dirPath + Md5Utils.md5(filename) + ".jar";
-        saveJarFile(jarFile, dirPath, filePath);
+        String transName = Md5Utils.md5(filename) + ".jar";
+        saveJarFile(jarFile, driverId, transName);
 
         CoreDriverJar coreDriverJar = new CoreDriverJar();
         coreDriverJar.setDriverId(driverId);
@@ -176,7 +178,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
         coreDriverJar.setFileName(filename);
         coreDriverJar.setDriverClass(String.join(",", new ArrayList<>()));
         coreDriverJar.setIsTransName(true);
-        coreDriverJar.setTransName(Md5Utils.md5(filename) + ".jar");
+        coreDriverJar.setTransName(transName);
         coreDriverJarMapper.insert(coreDriverJar);
         // 上传后的驱动信息立即入库，后续连接按最新驱动文件加载。
 
@@ -188,13 +190,12 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     /**
      * 将上传的驱动 Jar 安全保存到驱动目录
      */
-    @SuppressWarnings("java/path-injection")
-    private String saveJarFile(MultipartFile file, String dirPath, String filePath) throws Exception {
-        File f = FileUtils.resolveUnderDirectory(dirPath, new File(filePath).getName());
-        try (FileOutputStream fileOutputStream = new FileOutputStream(f)) {
+    private void saveJarFile(MultipartFile file, String driverId, String transName) throws Exception {
+        File f = storageService.resolve(DRIVER_PATH, driverId, transName);
+        // 自定义驱动统一落到 StorageService，生产环境由 RWX PVC 供所有 Pod 加载。
+        try (OutputStream fileOutputStream = storageService.newOutputStream(f)) {
             fileOutputStream.write(file.getBytes());
             fileOutputStream.flush();
         }
-        return filePath;
     }
 }

@@ -26,7 +26,7 @@ Crest 单机安装默认采用前后端分离容器：
 
 - `crest`：前端 Nginx 网关，对外暴露 Web 端口；
 - `crest-service`：后端 Spring Boot 服务，只在 Compose 网络内访问；
-- `mysql-crest`：元数据库。
+- `mysql-crest`：Crest 系统库。
 
 可观测性组件默认关闭。启用后会额外启动：
 
@@ -37,7 +37,7 @@ Crest 单机安装默认采用前后端分离容器：
 
 前端和后端容器默认以非 root 用户运行，并启用只读根文件系统、`no-new-privileges`、最小 capability、进程数边界和日志滚动。运行时写入目录集中在 `/opt/crest`，便于做备份、权限审计和磁盘容量监控。
 
-前端容器通过 `/healthz` 判断网关是否可用。后端容器通过 `/api/v1/actuator/health/readiness` 判断服务是否可以接收业务流量；该检查会访问元数据库。`/api/v1/actuator/health/liveness` 只判断应用进程是否仍能响应，适合作为存活检查。
+前端容器通过 `/healthz` 判断网关是否可用。后端容器通过 `/api/v1/actuator/health/readiness` 判断服务是否可以接收业务流量；该检查会访问 Crest 系统库。`/api/v1/actuator/health/liveness` 只判断应用进程是否仍能响应，适合作为存活检查。
 
 ## 安装前检查
 
@@ -68,19 +68,19 @@ Crest 单机安装默认采用前后端分离容器：
 | --- | --- | --- |
 | `CREST_BASE` | `/opt` | 安装基目录，实际运行目录为 `${CREST_BASE}/crest` |
 | `CREST_PORT` | `8100` | Web 访问端口 |
-| `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v1.5.12` | Crest 后端镜像 |
-| `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v1.5.12` | Crest 前端镜像 |
+| `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v2.0.0` | Crest 后端镜像 |
+| `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v2.0.0` | Crest 前端镜像 |
 | `CREST_MYSQL_IMAGE` | `mysql:8.0.43` | MySQL 镜像 |
 | `CREST_LOAD_DEMO` | `true` | 是否初始化内置演示资源；生产环境不需要示例数据时设为 `false` |
-| `CREST_FLYWAY_ENABLED` | 空 | Flyway 元数据库初始化开关；留空时 MySQL 默认 `true`，OceanBase 默认 `false` |
-| `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部元数据库；默认安装内置 MySQL 容器，`CREST_DB_TYPE=ob-mysql/ob-oracle` 时脚本会自动切换为外部库模式 |
-| `CREST_DB_TYPE` | `mysql` | 元数据库类型，支持 `mysql`、`ob-mysql`、`ob-oracle` |
-| `CREST_DB_HOST` | `mysql-crest` | 元数据库地址；OceanBase 建议填写 OBProxy 地址，直连 observer 时填写 observer 地址 |
-| `CREST_DB_PORT` | `3306` | 元数据库端口；OceanBase 常用 OBProxy `2883`，observer 直连 `2881` |
-| `CREST_DB_NAME` | `crest` | 元数据库名 |
+| `CREST_FLYWAY_ENABLED` | 空 | Crest 系统库 Flyway 初始化开关；留空时 MySQL 默认 `true`，OceanBase 默认 `false` |
+| `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部系统库；默认安装内置 MySQL 容器，`CREST_DB_TYPE=ob-mysql/ob-oracle` 时脚本会自动切换为外部库模式 |
+| `CREST_DB_TYPE` | `mysql` | Crest 系统库类型，支持 `mysql`、`ob-mysql`、`ob-oracle` |
+| `CREST_DB_HOST` | `mysql-crest` | Crest 系统库地址；OceanBase 建议填写 OBProxy 地址，直连 observer 时填写 observer 地址 |
+| `CREST_DB_PORT` | `3306` | Crest 系统库端口；OceanBase 常用 OBProxy `2883`，observer 直连 `2881` |
+| `CREST_DB_NAME` | `crest` | Crest 系统库名 |
 | `CREST_DB_DRIVER_CLASS_NAME` | `com.mysql.cj.jdbc.Driver` | JDBC 驱动；OceanBase 类型留空或保持默认时脚本会自动使用 `com.oceanbase.jdbc.Driver` |
 | `CREST_DB_URL` | 空 | JDBC URL 覆盖项；留空时安装脚本按 `CREST_DB_TYPE` 自动生成 |
-| `CREST_DB_USERNAME` | `root` | 元数据库用户；OBProxy 连接 OceanBase 时使用 `用户@租户#集群`，observer 直连时使用 `用户@租户` |
+| `CREST_DB_USERNAME` | `root` | Crest 系统库用户；OBProxy 连接 OceanBase 时使用 `用户@租户#集群`，observer 直连时使用 `用户@租户` |
 | `CREST_DB_PASSWORD` | 空 | 留空时安装脚本自动生成 |
 | `CREST_AES_KEY` | 空 | 留空时自动生成 32 位值；升级时不要改 |
 | `CREST_AES_IV` | 空 | 留空时自动生成 16 位值；升级时不要改 |
@@ -98,9 +98,9 @@ Crest 单机安装默认采用前后端分离容器：
 | `CREST_GRAFANA_ADMIN_PASSWORD` | 空 | Grafana 管理员密码；开启后留空自动生成 |
 | `CREST_GRAFANA_PUBLIC_URL` | 空 | Grafana 页面访问地址；留空时安装脚本按本机端口生成 |
 
-OceanBase 元数据库示例：
+OceanBase 系统库示例：
 
-OceanBase 按企业外部元数据库处理。生产环境建议先由 DBA 创建租户、数据库或 schema、账号和权限，执行离线包 `init-sql/ob-mysql/` 或 `init-sql/ob-oracle/` 下的初始化 SQL，再配置 Crest 连接信息启动服务。安装脚本在 OceanBase 模式下默认设置 `CREST_FLYWAY_ENABLED=false`，避免应用启动时直接修改外部元数据库；开发验证需要应用自动初始化空库时，才显式设置 `CREST_FLYWAY_ENABLED=true`。
+OceanBase 按企业外部系统库处理。生产环境建议先由 DBA 创建租户、数据库或 schema、账号和权限，使用 `obclient --default-character-set=utf8mb4` 执行离线包 `init-sql/ob-mysql/` 或 `init-sql/ob-oracle/` 下的初始化 SQL，再配置 Crest 连接信息启动服务。安装脚本在 OceanBase 模式下默认设置 `CREST_FLYWAY_ENABLED=false`，避免应用启动时直接修改外部系统库；开发验证需要应用自动初始化空库时，才显式设置 `CREST_FLYWAY_ENABLED=true`。
 
 ```bash
 # OceanBase MySQL tenant through OBProxy
@@ -163,7 +163,7 @@ CREST_GRAFANA_ENABLED=true
 
 Prometheus 抓取后端 `/api/v1/actuator/prometheus` 时使用 Bearer Token。安装脚本会把 token 写入运行目录的 `conf/prometheus-token`，Prometheus 以只读文件方式挂载。前端网关会对外屏蔽指标路径，Prometheus 直接访问 Compose 网络内的 `crest-service:8100`。
 
-企业已有 Prometheus/Grafana 时，不需要启动内置 `crest-prometheus` 和 `crest-grafana`。只开启 `CREST_PROMETHEUS_ENABLED=true`，设置 `CREST_PROMETHEUS_TOKEN`，由企业 Prometheus 抓取后端内网地址，再导入 `crest/observability/grafana/provisioning/dashboards/*.json` 和 `crest/observability/prometheus/rules/crest-alerts.yml`。
+企业已有 Prometheus/Grafana 时，不需要启动内置 `crest-prometheus` 和 `crest-grafana`。只开启 `CREST_PROMETHEUS_ENABLED=true`，设置 `CREST_PROMETHEUS_TOKEN`，由企业 Prometheus 抓取后端服务地址，再导入 `crest/observability/grafana/provisioning/dashboards/*.json` 和 `crest/observability/prometheus/rules/crest-alerts.yml`。
 
 Grafana 启动后访问：
 
@@ -196,7 +196,7 @@ crestctl version
 
 ## 迁移和同发布线升级
 
-全新环境可直接使用安装脚本部署 v1.5.12。已有 v1.5.x 环境升级到 v1.5.12 时，请先备份元数据库和运行目录，再按当前版本发布说明执行对应升级步骤；更早版本迁移到 v1.5.12 时，请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
+全新环境可直接使用安装脚本部署 v2.0.0。已有 v1.5.x 环境升级到 v2.0.0 时，请先备份 Crest 系统库和运行目录，再按当前版本发布说明执行对应升级步骤；更早版本迁移到 v2.0.0 时，请先备份 Crest 系统库和运行目录，导出业务资源，再在新环境中导入。
 
 同一发布线的小版本升级前：
 
@@ -211,7 +211,7 @@ cd /opt/crest
 docker-compose up -d --no-deps crest-service crest
 ```
 
-如果发布说明提供升级 SQL，请先确认已经完成备份，再执行对应文件。v1.5.7 及更早版本升级到 v1.5.12 时，至少需要先执行 v1.5.7 到 v1.5.8 的历史升级 SQL：
+如果发布说明提供升级 SQL，请先确认已经完成备份，再执行对应文件。MySQL 系统库从 v1.5.7 及更早版本升级到 v2.0.0 时，先执行 v1.5.7 到 v1.5.8 的历史升级 SQL：
 
 ```bash
 set -a
@@ -220,7 +220,7 @@ set +a
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.7_to_v1.5.8.sql
 ```
 
-v1.5.4 升级到 v1.5.12 时，请先执行 v1.5.4 到 v1.5.5 的升级 SQL，再执行 v1.5.7 到 v1.5.8 的升级 SQL；如 v1.5.12 发布说明提供新增升级 SQL，再继续执行对应文件：
+如果源版本是 v1.5.4，先执行 v1.5.4 到 v1.5.5 的历史升级 SQL，再执行上面的 v1.5.7 到 v1.5.8 SQL：
 
 ```bash
 set -a
@@ -230,7 +230,53 @@ docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAM
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.7_to_v1.5.8.sql
 ```
 
-如安装时修改过 `CREST_BASE`，请把 `/opt/crest/.env` 换成实际运行目录中的 `.env`。外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 元数据库。
+如安装时修改过 `CREST_BASE`，请把 `/opt/crest/.env` 换成实际运行目录中的 `.env`。外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 系统库。
+
+继续按数据库类型执行 v2.0.0 的增量 SQL。MySQL 系统库示例：
+
+```bash
+for sql in \
+  upgrade-sql/v2.0.0_export_task_queue_mysql.sql \
+  upgrade-sql/v2.0.0_datasource_sync_task_queue_mysql.sql \
+  upgrade-sql/v2.0.0_dataset_sync_task_queue_mysql.sql \
+  upgrade-sql/v2.0.0_dataset_sync_task_queue_metadata_mysql.sql \
+  upgrade-sql/v2.0.0_scheduled_task_queue_state_mysql.sql \
+  upgrade-sql/v2.0.0_audit_log_filter_index_mysql.sql
+do
+  docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < "${sql}"
+done
+```
+
+OceanBase MySQL 系统库使用文件名带 `ob_mysql` 的脚本：
+
+```bash
+for sql in \
+  upgrade-sql/v2.0.0_export_task_queue_ob_mysql.sql \
+  upgrade-sql/v2.0.0_datasource_sync_task_queue_ob_mysql.sql \
+  upgrade-sql/v2.0.0_dataset_sync_task_queue_ob_mysql.sql \
+  upgrade-sql/v2.0.0_dataset_sync_task_queue_metadata_ob_mysql.sql \
+  upgrade-sql/v2.0.0_scheduled_task_queue_state_ob_mysql.sql \
+  upgrade-sql/v2.0.0_audit_log_filter_index_ob_mysql.sql
+do
+  obclient --default-character-set=utf8mb4 -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' <database> < "${sql}"
+done
+```
+
+OceanBase Oracle 系统库使用文件名带 `ob_oracle` 的脚本，并以 Crest 系统库 schema 用户执行：
+
+```bash
+for sql in \
+  upgrade-sql/v2.0.0_export_task_queue_ob_oracle.sql \
+  upgrade-sql/v2.0.0_datasource_sync_task_queue_ob_oracle.sql \
+  upgrade-sql/v2.0.0_dataset_sync_task_queue_ob_oracle.sql \
+  upgrade-sql/v2.0.0_dataset_sync_task_queue_metadata_ob_oracle.sql \
+  upgrade-sql/v2.0.0_scheduled_task_queue_state_ob_oracle.sql \
+  upgrade-sql/v2.0.0_repair_seed_text_encoding_ob_oracle.sql \
+  upgrade-sql/v2.0.0_audit_log_filter_index_ob_oracle.sql
+do
+  obclient --default-character-set=utf8mb4 -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' < "${sql}"
+done
+```
 
 升级后检查：
 
@@ -241,8 +287,8 @@ docker logs crest --tail 200
 
 确认点：
 
-- `crest`、`crest-service` 和 `mysql-crest` 容器健康；
-- Flyway 迁移成功；
+- `crest` 和 `crest-service` 容器健康；内置 MySQL 模式还需要确认 `mysql-crest` 健康；
+- MySQL 模式确认 Flyway 迁移成功；OceanBase 模式确认对应增量 SQL 已由 DBA 执行完成；
 - 登录、工作台、数据源、数据集、仪表盘、数据大屏、数据血缘和导出中心可打开；
 - 日志中没有持续的 `ERROR` 或 `Exception`。
 
@@ -260,17 +306,17 @@ CREST_LOAD_DEMO=false
 bash cleanup-demo-data.sh --yes
 ```
 
-脚本会删除固定演示资源 ID、`crest_demo_retail` 演示库，并把运行配置改为后续不再初始化演示资源。执行前建议先备份元数据库。
+脚本会删除固定演示资源 ID、`crest_demo_retail` 演示库，并把运行配置改为后续不再初始化演示资源。执行前建议先备份 Crest 系统库。
 
 ## 离线包制作
 
 发布包按 CPU 架构分别制作：
 
 ```bash
-bash make-offline-package.sh v1.5.12 linux-amd64
-bash make-offline-package.sh v1.5.12 linux-arm64
-bash make-app-image-package.sh v1.5.12 linux-amd64
-bash make-app-image-package.sh v1.5.12 linux-arm64
+bash make-offline-package.sh v2.0.0 linux-amd64
+bash make-offline-package.sh v2.0.0 linux-arm64
+bash make-app-image-package.sh v2.0.0 linux-amd64
+bash make-app-image-package.sh v2.0.0 linux-arm64
 ```
 
 默认输出目录：
@@ -282,19 +328,19 @@ bash make-app-image-package.sh v1.5.12 linux-arm64
 发布包名：
 
 ```text
-crest-offline-v1.5.12-linux-amd64.tar.gz
-crest-offline-v1.5.12-linux-arm64.tar.gz
-crest-app-images-v1.5.12-linux-amd64.tar.gz
-crest-app-images-v1.5.12-linux-arm64.tar.gz
+crest-offline-v2.0.0-linux-amd64.tar.gz
+crest-offline-v2.0.0-linux-arm64.tar.gz
+crest-app-images-v2.0.0-linux-amd64.tar.gz
+crest-app-images-v2.0.0-linux-arm64.tar.gz
 ```
 
-制作前需要本机已有对应架构镜像：
+制作前需要本机已有对应架构镜像。下面的 `*-amd64`、`*-arm64` 是本地制作离线包时使用的镜像标签；GitHub Actions 会从多架构发布镜像生成这些本地标签后再打包。
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.12-amd64
-ghcr.io/sevoniva/crest-service:v1.5.12-arm64
-ghcr.io/sevoniva/crest-web:v1.5.12-amd64
-ghcr.io/sevoniva/crest-web:v1.5.12-arm64
+ghcr.io/sevoniva/crest-service:v2.0.0-amd64
+ghcr.io/sevoniva/crest-service:v2.0.0-arm64
+ghcr.io/sevoniva/crest-web:v2.0.0-amd64
+ghcr.io/sevoniva/crest-web:v2.0.0-arm64
 mysql:8.0.43
 ```
 
@@ -304,34 +350,34 @@ mysql:8.0.43
 INCLUDE_OBSERVABILITY_IMAGES=true \
 PROMETHEUS_IMAGE=prom/prometheus:v3.12.0 \
 GRAFANA_IMAGE=grafana/grafana-oss:13.0.1 \
-bash make-offline-package.sh v1.5.12 linux-amd64
+bash make-offline-package.sh v2.0.0 linux-amd64
 ```
 
 也可以通过环境变量指定来源镜像：
 
 ```bash
-SOURCE_BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.12-amd64 \
-BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.12-amd64 \
-SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.12-amd64 \
-FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.12-amd64 \
+SOURCE_BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v2.0.0-amd64 \
+BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v2.0.0-amd64 \
+SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v2.0.0-amd64 \
+FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v2.0.0-amd64 \
 SOURCE_MYSQL_IMAGE=mysql:8.0.43-amd64 \
 MYSQL_IMAGE=mysql:8.0.43 \
-bash make-offline-package.sh v1.5.12 linux-amd64
+bash make-offline-package.sh v2.0.0 linux-amd64
 ```
 
 完整离线安装包脚本会校验前端、后端和 MySQL 镜像架构，架构不一致会直接停止。`SOURCE_*_IMAGE` 用于本机制作来源，包内 `install.conf` 仍写入指定的目标镜像名。
 
 离线包会包含 `upgrade-sql/` 目录。全新安装不需要手动执行；升级已有环境时按发布说明选择对应 SQL。
 
-应用镜像升级包只包含 Crest 后端镜像、前端镜像、`upgrade-sql/` 和加载说明，不包含 MySQL、Prometheus、Grafana 镜像，也不包含完整安装脚本。已有内网环境只需要替换应用服务时，优先使用 `crest-app-images-*`。
+应用镜像升级包只包含 Crest 后端镜像、前端镜像、`init-sql/`、`upgrade-sql/` 和加载说明，不包含 MySQL、Prometheus、Grafana 镜像，也不包含完整安装脚本。已有环境只需要替换应用服务时，优先使用 `crest-app-images-*`。
 
 ## 离线安装
 
 在目标服务器执行：
 
 ```bash
-tar -zxf crest-offline-v1.5.12-linux-amd64.tar.gz
-cd crest-offline-v1.5.12-linux-amd64
+tar -zxf crest-offline-v2.0.0-linux-amd64.tar.gz
+cd crest-offline-v2.0.0-linux-amd64
 vi install.conf
 bash install.sh
 ```
@@ -395,8 +441,8 @@ tail -f /opt/crest/logs/crest/error.log
 | --- | --- |
 | 页面打不开 | 端口是否开放、`crest` 容器是否健康、反向代理是否转发到前端 Web 端口 |
 | 登录失败 | 初始密码是否来自安装输出，是否已经被修改 |
-| 数据库连接失败 | `mysql-crest` 是否健康，`CREST_DB_PASSWORD` 是否和 `.env` 一致 |
-| 升级后启动失败 | Flyway 迁移日志、数据库备份是否可恢复、镜像架构是否正确 |
+| 数据库连接失败 | 内置 MySQL 模式检查 `mysql-crest` 健康和 `.env` 密码；外部 OceanBase 模式检查 OBProxy/observer 地址、租户用户名、密码和网络连通性 |
+| 升级后启动失败 | MySQL 模式检查 Flyway 迁移日志；OceanBase 模式检查增量 SQL 执行结果、数据库备份是否可恢复、镜像架构是否正确 |
 | 导出文件不可下载 | `/opt/crest/data/exportData` 权限和磁盘空间 |
 
 ## 不提交的内容

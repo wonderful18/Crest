@@ -95,12 +95,12 @@ public class ObservabilityProperties {
             this.enabled = enabled;
         }
 
-        // 获取 Grafana 公网访问地址
+        // 获取 Grafana 访问地址
         public String getPublicUrl() {
             return publicUrl;
         }
 
-        // 设置 Grafana 公网访问地址
+        // 设置 Grafana 访问地址
         public void setPublicUrl(String publicUrl) {
             this.publicUrl = publicUrl;
         }

@@ -16,7 +16,7 @@
 
 ## Reporting a Vulnerability
 
-如果发现安全问题，请优先通过 GitHub Security Advisory 提交。也可以在仓库 Issue 中报告，但不要在公开 Issue 中粘贴可直接利用的攻击代码、真实 token、生产连接串、内网地址、客户数据或完整日志。
+如果发现安全问题，请优先通过 GitHub Security Advisory 提交。也可以在仓库 Issue 中报告，但不要在公开 Issue 中粘贴可直接利用的攻击代码、真实 token、生产连接串、内部地址、客户数据或完整日志。
 
 报告时建议包含：
 
@@ -36,7 +36,7 @@
 
 - `.env`、数据库密码、访问 token、私钥、证书、kubeconfig；
 - 真实客户、员工、供应商、合同或生产业务数据；
-- 内网地址、内部镜像仓库账号、私有制品仓库凭据；
+- 内部地址、内部镜像仓库账号、私有制品仓库凭据；
 - 本地离线包、镜像导出包、数据库备份、运行日志和压测报告。
 
 提交前建议执行：
@@ -60,7 +60,7 @@ rg -n "(BEGIN .*PRIVATE KEY|AKIA[0-9A-Z]{16}|secret_access_key|password\\s*[:=]|
 - 启用 `sm-suite` 后，SM2 私钥会使用配置的 SM4 Key 加密保存，SM4 密文包含随机 IV 和 HMAC-SM3 完整性校验；升级已有环境时不要更换 `CREST_SM4_KEY`；
 - 如开启 SQLBot 连接信息加密，显式配置 `CREST_SQLBOT_AES_KEY` 和 `CREST_SQLBOT_AES_IV`；
 - MySQL、业务数据源和 OceanBase 使用最小权限账号；
-- 不把 Crest 直接暴露到公网管理面；
+- 不把 Crest 管理面直接暴露到未受控网络；
 - 限制 `/doc.html` 和 `/v3/api-docs` 的访问范围；
 - 前端和后端容器保持非 root、只读根文件系统、`no-new-privileges` 和最小 capability；
 - 前端网关只暴露 Web 入口，后端服务通过内部网络或 ClusterIP 访问；

@@ -60,10 +60,8 @@ public class MybatisInterceptor implements Interceptor {
                 Object a = undo(val);
                 if (a != val) {
                     isDecrypted = true;
-                    list.add(a);
-                } else {
-                    break;
                 }
+                list.add(a);
             }
             if (isDecrypted) {
                 result = list;

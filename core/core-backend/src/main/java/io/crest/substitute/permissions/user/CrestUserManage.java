@@ -58,6 +58,10 @@ public class CrestUserManage {
     private static final String LEGACY_ADMIN_PASSWORD_HASH = "21232f297a57a5a743894a0e4a801fc3";
     private static final Pattern ACCOUNT_PATTERN = Pattern.compile("^[A-Za-z0-9._@-]{1,64}$");
     private static final Pattern UNSAFE_DISPLAY_NAME_PATTERN = Pattern.compile("[<>\\p{Cntrl}]");
+    private static final String USER_GRID_COLUMNS = """
+            id, account, name, email, phone_prefix, phone, enable, origin,
+            auth_type, external_id, last_login_time, create_time, update_time
+            """;
 
     @Resource
     private JdbcTemplate jdbcTemplate;
@@ -86,6 +90,25 @@ public class CrestUserManage {
         user.setPasswordHash(rs.getString("password_hash"));
         user.setEnable(rs.getBoolean("enable"));
         user.setAdmin(rs.getBoolean("is_admin"));
+        user.setOrigin(rs.getInt("origin"));
+        user.setAuthType(rs.getString("auth_type"));
+        user.setExternalId(rs.getString("external_id"));
+        long lastLoginTime = rs.getLong("last_login_time");
+        user.setLastLoginTime(rs.wasNull() ? null : lastLoginTime);
+        user.setCreateTime(rs.getLong("create_time"));
+        user.setUpdateTime(rs.getLong("update_time"));
+        return user;
+    };
+
+    private final RowMapper<CrestUser> gridRowMapper = (rs, rowNum) -> {
+        CrestUser user = new CrestUser();
+        user.setId(rs.getLong("id"));
+        user.setAccount(rs.getString("account"));
+        user.setName(rs.getString("name"));
+        user.setEmail(rs.getString("email"));
+        user.setPhonePrefix(rs.getString("phone_prefix"));
+        user.setPhone(rs.getString("phone"));
+        user.setEnable(rs.getBoolean("enable"));
         user.setOrigin(rs.getInt("origin"));
         user.setAuthType(rs.getString("auth_type"));
         user.setExternalId(rs.getString("external_id"));
@@ -301,14 +324,18 @@ public class CrestUserManage {
                     .append(uidColumn()).append(" = iam_user.id AND uo.oid = ?)");
             args.add(request.getOid());
         }
-        Long total = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM iam_user" + where, Long.class, args.toArray());
+        Object[] queryArgs = args.toArray();
+        String countSql = "SELECT COUNT(1) FROM iam_user" + where;
+        Long total = queryArgs.length == 0
+                ? jdbcTemplate.queryForObject(countSql, Long.class)
+                : jdbcTemplate.queryForObject(countSql, Long.class, queryArgs);
         String order = request != null && Boolean.FALSE.equals(request.getTimeDesc()) ? " ASC" : " DESC";
         int offset = Math.max((goPage - 1) * pageSize, 0);
-        List<CrestUser> users = jdbcTemplate.query(
-                dialect().limitOffset("SELECT * FROM iam_user" + where + " ORDER BY create_time" + order,
-                        pageSize, offset),
-                rowMapper,
-                args.toArray());
+        String listSql = dialect().limitOffset("SELECT " + USER_GRID_COLUMNS + " FROM iam_user" + where + " ORDER BY create_time" + order,
+                pageSize, offset);
+        List<CrestUser> users = queryArgs.length == 0
+                ? jdbcTemplate.query(listSql, gridRowMapper)
+                : jdbcTemplate.query(listSql, gridRowMapper, queryArgs);
         Page<UserGridVO> page = new Page<>(goPage, pageSize);
         page.setTotal(total == null ? 0 : total);
         page.setRecords(users.stream().map(this::toGrid).toList());

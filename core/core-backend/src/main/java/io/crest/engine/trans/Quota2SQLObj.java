@@ -61,11 +61,7 @@ public class Quota2SQLObj {
                         originField = calcFieldExp;
                     }
                 } else if (ObjectUtils.isNotEmpty(y.getExtField()) && Objects.equals(y.getExtField(), ExtFieldConstant.EXT_COPY)) {
-                    if (Strings.CI.equals(dsType, "es")) {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), y.getOriginName());
-                    } else {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), y.getEngineFieldName());
-                    }
+                    originField = FieldSqlExpressionUtils.physicalField(tableObj, y, dsType);
                 } else if (ObjectUtils.isNotEmpty(y.getExtField()) && Objects.equals(y.getExtField(), ExtFieldConstant.EXT_GROUP)) {
                     String groupFieldExp = Utils.transGroupFieldToSql(y, originFields, isCross, dsMap, pluginManage);
                     // 给计算字段处加一个占位符，后续SQL方言转换后再替换
@@ -75,11 +71,7 @@ public class Quota2SQLObj {
                         originField = groupFieldExp;
                     }
                 } else {
-                    if (Strings.CI.equals(dsType, "es")) {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), y.getOriginName());
-                    } else {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), y.getEngineFieldName());
-                    }
+                    originField = FieldSqlExpressionUtils.physicalField(tableObj, y, dsType);
                 }
                 String fieldAlias = String.format(SQLConstants.FIELD_ALIAS_Y_PREFIX, i);
                 // 处理纵轴字段

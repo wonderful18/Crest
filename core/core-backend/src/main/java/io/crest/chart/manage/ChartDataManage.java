@@ -1008,11 +1008,29 @@ public class ChartDataManage {
     public void encodeData(ChartViewDTO chartViewDTO) {
         if (chartViewDTO.getData() != null) {
             if (chartViewDTO.getType().startsWith("chart-mix")) {
-                DatasetUtils.listEncode((List<ChartViewFieldDTO>) ((Map<String, Object>) chartViewDTO.getData().get("left")).get("sourceFields"));
-                DatasetUtils.listEncode((List<ChartViewFieldDTO>) ((Map<String, Object>) chartViewDTO.getData().get("right")).get("sourceFields"));
+                encodeSourceFields(chartViewDTO.getData().get("left"));
+                encodeSourceFields(chartViewDTO.getData().get("right"));
             } else {
-                DatasetUtils.listEncode((List<ChartViewFieldDTO>) chartViewDTO.getData().get("sourceFields"));
+                encodeFieldList(chartViewDTO.getData().get("sourceFields"));
             }
         }
+    }
+
+    private void encodeSourceFields(Object sourceData) {
+        if (sourceData instanceof Map<?, ?> data) {
+            encodeFieldList(data.get("sourceFields"));
+        }
+    }
+
+    private void encodeFieldList(Object sourceFields) {
+        if (!(sourceFields instanceof List<?> fields) || CollectionUtils.isEmpty(fields)) {
+            return;
+        }
+        for (Object field : fields) {
+            if (!(field instanceof DatasetTableFieldDTO)) {
+                return;
+            }
+        }
+        DatasetUtils.listEncode((List<? extends DatasetTableFieldDTO>) fields);
     }
 }

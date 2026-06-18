@@ -2223,7 +2223,7 @@ public class CalciteProvider extends Provider {
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDsList(Map.of(datasourceSchemaDTO.getId(), datasourceSchemaDTO));
         try {
-            CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
+            CalciteConnection calciteConnection = take().unwrap(CalciteConnection.class);
             SchemaPlus rootSchema = calciteConnection.getRootSchema();
             if (rootSchema.getSubSchema(datasourceSchemaDTO.getSchemaAlias()) == null) {
                 buildSchema(datasourceRequest, calciteConnection);
@@ -2231,7 +2231,9 @@ public class CalciteProvider extends Provider {
             DatasourceConfiguration configuration = parseDatasourceConfiguration(datasourceDTO.getConfiguration(), datasourceDTO.getType());
             if (configuration.isUseSSH()) {
                 Session session = Provider.getSessions().get(datasourceDTO.getId());
-                session.disconnect();
+                if (session != null) {
+                    session.disconnect();
+                }
                 Provider.getSessions().remove(datasourceDTO.getId());
                 startSshSession(configuration, null, datasourceDTO.getId());
             }
@@ -2361,8 +2363,7 @@ public class CalciteProvider extends Provider {
      */
     @SuppressWarnings("java/sql-injection")
     public Map<String, Object> fetchResultField(EngineRequest engineRequest) throws Exception {
-        DatasourceConfiguration configuration = JsonUtil.parseObject(engineRequest.getEngine().getConfiguration(), DatasourceConfiguration.class);
-        int queryTimeout = configuration.getQueryTimeout();
+        int queryTimeout = engineQueryTimeout(engineRequest);
         DatasourceDTO datasource = new DatasourceDTO();
         BeanUtils.copyBean(datasource, engineRequest.getEngine());
         try (Connection connection = getConnectionFromPool(datasource.getId());
@@ -2382,8 +2383,7 @@ public class CalciteProvider extends Provider {
      */
     @SuppressWarnings("java/sql-injection")
     public void exec(EngineRequest engineRequest) throws Exception {
-        DatasourceConfiguration configuration = JsonUtil.parseObject(engineRequest.getEngine().getConfiguration(), DatasourceConfiguration.class);
-        int queryTimeout = configuration.getQueryTimeout();
+        int queryTimeout = engineQueryTimeout(engineRequest);
         DatasourceDTO datasource = new DatasourceDTO();
         BeanUtils.copyBean(datasource, engineRequest.getEngine());
         try (Connection connection = getConnectionFromPool(datasource.getId());
@@ -2399,8 +2399,7 @@ public class CalciteProvider extends Provider {
      * 在引擎数据源连接上执行事务回调，回调异常时回滚并恢复原自动提交状态
      */
     public void execWithEngineTransaction(EngineRequest engineRequest, EngineConnectionExecutor executor) throws Exception {
-        DatasourceConfiguration configuration = JsonUtil.parseObject(engineRequest.getEngine().getConfiguration(), DatasourceConfiguration.class);
-        int queryTimeout = configuration.getQueryTimeout();
+        int queryTimeout = engineQueryTimeout(engineRequest);
         DatasourceDTO datasource = new DatasourceDTO();
         BeanUtils.copyBean(datasource, engineRequest.getEngine());
         try (Connection connection = getConnectionFromPool(datasource.getId())) {
@@ -2416,6 +2415,14 @@ public class CalciteProvider extends Provider {
                 connection.setAutoCommit(autoCommit);
             }
         }
+    }
+
+    private int engineQueryTimeout(EngineRequest engineRequest) {
+        DatasourceConfiguration configuration = JsonUtil.parseObject(engineRequest.getEngine().getConfiguration(), DatasourceConfiguration.class);
+        if (configuration == null) {
+            return new DatasourceConfiguration().getQueryTimeout();
+        }
+        return configuration.getQueryTimeout();
     }
 
     /**

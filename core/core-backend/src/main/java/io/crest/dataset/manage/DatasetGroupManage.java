@@ -470,6 +470,7 @@ public class DatasetGroupManage {
         if (Strings.CI.equals(dto.getNodeType(), "dataset")) {
             dto.setUnion(JsonUtil.parseList(coreDatasetGroup.getInfo(), new TypeReference<>() {
             }));
+            normalizeDatasetCrossFlag(dto);
             // 字段短名在计数场景复用引擎字段名，方便后续 SQL 聚合引用
             List<DatasetTableFieldDTO> dsFields = datasetTableFieldManage.selectByDatasetGroupId(id);
             List<DatasetTableFieldDTO> allFields = dsFields.stream().map(ele -> {
@@ -495,9 +496,6 @@ public class DatasetGroupManage {
         }
         DatasetGroupInfoDTO dto = new DatasetGroupInfoDTO();
         BeanUtils.copyBean(dto, coreDatasetGroup);
-        if (dto.getIsCross() == null) {
-            dto.setIsCross(false);
-        }
         // 展示用人员名称单独查询，避免把用户表结构暴露给调用方
         String userName = coreUserManage.getUserName(Long.valueOf(dto.getCreateBy()));
         if (StringUtils.isNotBlank(userName)) {
@@ -512,6 +510,7 @@ public class DatasetGroupManage {
             List<UnionDTO> unionDTOList = JsonUtil.parseList(coreDatasetGroup.getInfo(), new TypeReference<>() {
             });
             dto.setUnion(unionDTOList);
+            normalizeDatasetCrossFlag(dto);
 
             // 字段返回前需要编码，保持和前端字段配置协议一致
             List<DatasetTableFieldDTO> dsFields = datasetTableFieldManage.selectByDatasetGroupId(id);
@@ -526,6 +525,7 @@ public class DatasetGroupManage {
 
             dto.setAllFields(allFields);
         }
+        normalizeDatasetCrossFlag(dto);
         return dto;
     }
 
@@ -572,6 +572,7 @@ public class DatasetGroupManage {
             List<UnionDTO> unionDTOList = JsonUtil.parseList(coreDatasetGroup.getInfo(), new TypeReference<>() {
             });
             dto.setUnion(unionDTOList);
+            normalizeDatasetCrossFlag(dto);
 
             // 字段结构与联合树一起返回，供编辑器恢复数据集配置
             List<DatasetTableFieldDTO> dsFields = datasetTableFieldManage.selectByDatasetGroupId(id);
@@ -615,6 +616,7 @@ public class DatasetGroupManage {
             } else {
                 DatasetTableDTO dto = new DatasetTableDTO();
                 BeanUtils.copyBean(dto, coreDatasetGroup);
+                dto.setIsCross(resolveDatasetCrossFlag(coreDatasetGroup));
                 Map<String, List<DatasetTableFieldDTO>> listByDQ = datasetTableFieldManage.listByDQ(id);
                 dto.setFields(listByDQ);
                 list.add(dto);
@@ -789,6 +791,7 @@ public class DatasetGroupManage {
                 List<UnionDTO> unionDTOList = JsonUtil.parseList(coreDatasetGroup.getInfo(), new TypeReference<>() {
                 });
                 dto.setUnion(unionDTOList);
+                normalizeDatasetCrossFlag(dto);
 
                 // 字段编码后返回，保证与编辑详情接口的字段协议一致
                 List<DatasetTableFieldDTO> dsFields = datasetTableFieldManage.selectByDatasetGroupId(coreDatasetGroup.getId());
@@ -807,6 +810,38 @@ public class DatasetGroupManage {
             }
         }
         return list;
+    }
+
+    /**
+     * 兼容旧数据和外部导入数据：只有跨源标记为空时才按联合树推导，避免覆盖已经确认的配置。
+     */
+    private void normalizeDatasetCrossFlag(DatasetGroupInfoDTO dto) {
+        if (dto == null || dto.getIsCross() != null) {
+            return;
+        }
+        if (Strings.CI.equals(dto.getNodeType(), leafType) && CollectionUtils.isNotEmpty(dto.getUnion())) {
+            datasetSQLManage.mergeDatasetCrossDefault(dto);
+            return;
+        }
+        dto.setIsCross(false);
+    }
+
+    /**
+     * 批量详情接口返回的是 DatasetTableDTO，也需要补齐数据集级跨源标记。
+     */
+    private Boolean resolveDatasetCrossFlag(CoreDatasetGroup coreDatasetGroup) {
+        if (coreDatasetGroup.getIsCross() != null) {
+            return coreDatasetGroup.getIsCross();
+        }
+        if (!Strings.CI.equals(coreDatasetGroup.getNodeType(), leafType) || StringUtils.isBlank(coreDatasetGroup.getInfo())) {
+            return false;
+        }
+        DatasetGroupInfoDTO dto = new DatasetGroupInfoDTO();
+        dto.setNodeType(coreDatasetGroup.getNodeType());
+        dto.setUnion(JsonUtil.parseList(coreDatasetGroup.getInfo(), new TypeReference<>() {
+        }));
+        normalizeDatasetCrossFlag(dto);
+        return dto.getIsCross();
     }
 
     /**

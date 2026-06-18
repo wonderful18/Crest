@@ -6,6 +6,7 @@ import io.crest.api.font.dto.FontDto;
 import io.crest.exception.CrestException;
 import io.crest.font.dao.auto.entity.CoreFont;
 import io.crest.font.dao.auto.mapper.CoreFontMapper;
+import io.crest.storage.StorageService;
 import io.crest.utils.BeanUtils;
 import io.crest.utils.FileUtils;
 import io.crest.utils.IDUtils;
@@ -40,6 +41,8 @@ public class FontManage {
     private CoreFontMapper coreFontMapper;
     @Autowired
     private ResourceLoader resourceLoader;
+    @Resource
+    private StorageService storageService;
 
     /**
      * 查询全部字体配置
@@ -104,7 +107,7 @@ public class FontManage {
         if (coreFont != null) {
             coreFontMapper.deleteById(id);
             if (StringUtils.isNotEmpty(coreFont.getFileTransName())) {
-                FileUtils.deleteFile(path + coreFont.getFileTransName());
+                storageService.deleteFile(path, coreFont.getFileTransName());
             }
         }
 
@@ -144,8 +147,9 @@ public class FontManage {
         try {
             response.setContentType("application/x-download");
             response.setHeader("Content-Disposition", "attachment;filename=" + coreFonts.get(0).getFileTransName());
+            File fontFile = storageService.resolve(path, coreFonts.get(0).getFileTransName());
             try (ServletOutputStream out = response.getOutputStream();
-                 InputStream stream = new FileInputStream(path + coreFonts.get(0).getFileTransName())) {
+                 InputStream stream = storageService.newInputStream(fontFile)) {
                 byte buff[] = new byte[1024];
                 int length;
                 while ((length = stream.read(buff)) > 0) {
@@ -187,8 +191,8 @@ public class FontManage {
             }
             FileUtils.validateUploadFilename(filename);
             String suffix = filename.substring(filename.lastIndexOf(".") + 1);
-            File f = FileUtils.resolveUnderDirectory(path, fileNameUUID + "." + suffix);
-            try (FileOutputStream fileOutputStream = new FileOutputStream(f)) {
+            File f = storageService.resolve(path, fileNameUUID + "." + suffix);
+            try (OutputStream fileOutputStream = storageService.newOutputStream(f)) {
                 fileOutputStream.write(file.getBytes());
                 fileOutputStream.flush();
             }

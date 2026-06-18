@@ -3,6 +3,8 @@ package io.crest.listener;
 import io.crest.job.schedule.DataFillingTaskExecutor;
 import io.crest.job.schedule.ScheduledTaskExecutor;
 import io.crest.job.schedule.DataSyncTaskExecutor;
+import io.crest.runtime.ConditionalOnCrestRuntimeRole;
+import io.crest.runtime.CrestRuntimeRole;
 import io.crest.utils.LogUtil;
 import jakarta.annotation.Resource;
 import org.springframework.boot.ApplicationArguments;
@@ -12,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Order(value = 4)
-// 定义当前业务对象的核心职责
+@ConditionalOnCrestRuntimeRole({CrestRuntimeRole.ALL, CrestRuntimeRole.SCHEDULER})
 public class DataSyncTaskStarter implements ApplicationRunner {
 
     @Resource
@@ -25,7 +27,6 @@ public class DataSyncTaskStarter implements ApplicationRunner {
     private DataSyncTaskExecutor dataSyncTaskExecutor;
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void run(ApplicationArguments args) {
         try {
             taskExecutor.init();

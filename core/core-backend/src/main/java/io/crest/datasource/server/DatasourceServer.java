@@ -42,6 +42,8 @@ import io.crest.i18n.Translator;
 import io.crest.job.schedule.CheckDsStatusJob;
 import io.crest.job.schedule.ScheduleManager;
 import io.crest.log.CrestAudit;
+import io.crest.metadata.MetadataDbDialect;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.model.BusiNodeRequest;
 import io.crest.model.BusiNodeVO;
 import io.crest.result.ResultCode;
@@ -57,6 +59,7 @@ import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.TriggerKey;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -125,6 +128,8 @@ public class DatasourceServer implements DatasourceApi {
     private PluginManageApi pluginManage;
     @Autowired(required = false)
     private RelationApi relationManage;
+    @Resource
+    private Environment environment;
 
     /**
      * 解码前端提交的 Base64 字段，统一把格式错误转换为参数异常
@@ -1784,7 +1789,7 @@ public class DatasourceServer implements DatasourceApi {
         QueryWrapper<CoreDatasource> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("create_by", AuthUtils.getUser().getUserId());
         queryWrapper.orderByDesc("create_time");
-        queryWrapper.last(" limit 5");
+        queryWrapper.last(dialect().limitOffset("", 5, 0));
         List<CoreDatasource> coreDatasources = datasourceMapper.selectList(queryWrapper);
         if (CollectionUtils.isEmpty(coreDatasources)) {
             return types;
@@ -2003,9 +2008,17 @@ public class DatasourceServer implements DatasourceApi {
         if (configuration.getPort() == null) {
             CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "数据源端口不能为空");
         }
-        if (StringUtils.isBlank(configuration.getDataBase())) {
+        if (requiresDatabaseName(type, configuration)) {
             CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "数据库名称不能为空");
         }
+    }
+
+    // OB Oracle 连接没有 MySQL 意义上的数据库名，依赖 schema 或用户名定位当前模式。
+    private static boolean requiresDatabaseName(String type, DatasourceConfiguration configuration) {
+        if (Strings.CI.equals(type, DatasourceConfiguration.DatasourceType.obOracle.getType())) {
+            return StringUtils.isBlank(configuration.getSchema()) && StringUtils.isBlank(configuration.getUsername());
+        }
+        return StringUtils.isBlank(configuration.getDataBase());
     }
 
     /**
@@ -2181,6 +2194,11 @@ public class DatasourceServer implements DatasourceApi {
         }
         CrestPermissionUtils.requireCreator(datasource.getCreateBy());
         return datasource;
+    }
+
+    // 数据源模块的元数据查询尾部语法按当前系统库方言生成，避免 OB Oracle 误用 MySQL LIMIT
+    private MetadataDbDialect dialect() {
+        return MetadataDbDialects.current(environment);
     }
 
     /**

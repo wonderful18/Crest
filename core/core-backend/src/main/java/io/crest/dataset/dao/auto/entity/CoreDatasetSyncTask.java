@@ -45,6 +45,18 @@ public class CoreDatasetSyncTask implements Serializable {
 
     private Long heartbeatTime;
 
+    private String workerId;
+
+    private Integer retryCount;
+
+    private Long lockVersion;
+
+    private Long nextFireTime;
+
+    private Long lastEnqueueTime;
+
+    private String lastError;
+
     private String lastExecStatus;
 
     private String taskStatus;

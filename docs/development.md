@@ -15,7 +15,7 @@ Crest 基于 DataEase 2.10.22 开源版本继续开发，并合入 2.10.23 相�
 | `sdk/extensions/extensions-datasource` | 数据源扩展、JDBC 数据源定义和方言能力 |
 | `drivers` | 随仓库维护的 JDBC 驱动，当前跟踪 `oceanbase-client-2.4.17.jar` |
 | `installer` | 单机安装脚本、Docker Compose 模板、控制脚本和离线包制作脚本 |
-| `deploy/kubernetes` | Kubernetes 清单，支持内置 MySQL、外部 MySQL 和外部 OceanBase 元数据库配置 |
+| `deploy/kubernetes` | Kubernetes 清单，支持内置 MySQL、外部 MySQL 和外部 OceanBase 系统库配置 |
 | `docs` | 产品能力、部署运维、开发和发布文档 |
 | `.github/workflows/docker-publish.yml` | GHCR 镜像构建和发布流程 |
 
@@ -146,13 +146,47 @@ pnpm dev
 
 | 变量 | 说明 |
 | --- | --- |
-| `CREST_DB_HOST` | 元数据库地址；OceanBase 可填写 OBProxy 或 observer 地址 |
-| `CREST_DB_PORT` | 元数据库端口；OceanBase 常用 OBProxy `2883`，observer 直连 `2881` |
-| `CREST_DB_NAME` | 元数据库名 |
-| `CREST_DB_TYPE` | 元数据库类型，默认 `mysql`；OceanBase 适配见 `docs/oceanbase-support.md` |
+| `CREST_DB_HOST` | Crest 系统库地址；OceanBase 可填写 OBProxy 或 observer 地址 |
+| `CREST_DB_PORT` | Crest 系统库端口；OceanBase 常用 OBProxy `2883`，observer 直连 `2881` |
+| `CREST_DB_NAME` | Crest 系统库名称 |
+| `CREST_DB_TYPE` | Crest 系统库类型，默认 `mysql`；OceanBase 适配见 `docs/oceanbase-support.md` |
 | `CREST_DB_URL` | 可选完整 JDBC URL，配置后优先于主机、端口和库名 |
-| `CREST_DB_USERNAME` | 元数据库账号 |
-| `CREST_DB_PASSWORD` | 元数据库密码 |
+| `CREST_DB_USERNAME` | Crest 系统库账号 |
+| `CREST_DB_PASSWORD` | Crest 系统库密码 |
+| `CREST_RUNTIME_ROLE` | 后端运行角色，默认 `all`；可选 `all`、`api`、`scheduler`、`worker` |
+| `CREST_PRODUCTION_MODE` | 生产模式开关，默认 `false`；启用后会强制校验 Redis、固定密钥、Flyway 和演示数据开关 |
+| `CREST_DATASOURCE_POOL_PRELOAD_ENABLED` | 是否启动时预热业务数据源连接池；旧 all-in-one 非生产默认开启，生产多副本默认关闭 |
+| `CREST_TOKEN_SECRET` | 登录令牌签名密钥；配置后优先于旧 `substitule.json` 中的 `tokenSecret` |
+| `CREST_REDIS_HOST` / `CREST_REDIS_PORT` | Redis 地址和端口；生产模式下 readiness 会校验 Redis 连通性 |
+| `CREST_REDIS_PASSWORD` / `CREST_REDIS_DATABASE` | Redis 密码和逻辑库；Redis Cluster 必须使用 `0` |
+| `CREST_REDIS_CLUSTER_NODES` | Redis Cluster 节点列表，格式 `host1:6379,host2:6379`；配置后优先使用 Cluster |
+| `CREST_REDIS_USERNAME` / `CREST_REDIS_SSL_ENABLED` | Redis ACL 用户名和 TLS 开关 |
+| `CREST_REDIS_CONNECT_TIMEOUT` / `CREST_REDIS_TIMEOUT` | Redis 连接和读写超时；生产建议 `2s` / `5s` |
+| `CREST_REDIS_CLUSTER_REFRESH_ADAPTIVE` / `CREST_REDIS_CLUSTER_REFRESH_PERIOD` | Redis Cluster 拓扑刷新；生产建议 `true` / `30s` |
+| `CREST_LOCK_KEY_PREFIX` | Redis 分布式锁 Key 前缀，默认 `crest:lock` |
+| `CREST_LOCK_DEFAULT_TTL_SECONDS` | Redis 分布式锁默认过期时间，默认 1800 秒 |
+| `CREST_WEBSOCKET_BROADCAST_ENABLED` | 是否启用 WebSocket Redis 广播；未配置时生产模式默认启用，旧部署默认关闭 |
+| `CREST_WEBSOCKET_BROADCAST_CHANNEL` | WebSocket 广播 Redis channel，默认 `crest:pubsub:websocket` |
+| `CREST_TASK_QUEUE_ENABLED` | 是否启用 Redis Streams 任务队列；未配置时生产模式默认启用，旧部署默认关闭 |
+| `CREST_EXPORT_TASK_STREAM` | 导出任务 Redis Stream 名称，默认 `crest:stream:export-task` |
+| `CREST_EXPORT_TASK_CONSUMER_GROUP` | 导出任务 Worker 消费组，默认 `crest-export-workers` |
+| `CREST_EXPORT_TASK_STALE_MILLIS` | 导出任务 Worker 心跳超时时间，默认 30 分钟 |
+| `CREST_EXPORT_TASK_ENQUEUE_RETRY_MILLIS` | 待执行任务重复投递保护间隔，默认 60 秒 |
+| `CREST_EXPORT_TASK_PENDING_IDLE_MILLIS` | 导出任务 Redis pending 消息认领等待时间，默认 60 秒 |
+| `CREST_SYNC_TASK_STREAM` | 数据集同步任务 Redis Stream 名称，默认 `crest:stream:dataset-sync-task` |
+| `CREST_SYNC_TASK_CONSUMER_GROUP` | 数据集同步任务 Worker 消费组，默认 `crest-dataset-sync-workers` |
+| `CREST_SYNC_TASK_STALE_MILLIS` | 数据集同步任务 Worker 心跳超时时间，默认 30 分钟 |
+| `CREST_SYNC_TASK_ENQUEUE_RETRY_MILLIS` | 数据集同步任务重复投递保护间隔，默认 60 秒 |
+| `CREST_SYNC_TASK_PENDING_IDLE_MILLIS` | 数据集同步 Redis pending 消息认领等待时间，默认 60 秒 |
+| `CREST_DATASOURCE_SYNC_TASK_STREAM` | 数据源同步任务 Redis Stream 名称，默认 `crest:stream:datasource-sync-task` |
+| `CREST_DATASOURCE_SYNC_TASK_CONSUMER_GROUP` | 数据源同步任务 Worker 消费组，默认 `crest-datasource-sync-workers` |
+| `CREST_DATASOURCE_SYNC_TASK_STALE_MILLIS` | 数据源同步任务 Worker 心跳超时时间，默认 30 分钟 |
+| `CREST_DATASOURCE_SYNC_TASK_ENQUEUE_RETRY_MILLIS` | 数据源同步任务重复投递保护间隔，默认 60 秒 |
+| `CREST_DATASOURCE_SYNC_TASK_PENDING_IDLE_MILLIS` | 数据源同步 Redis pending 消息认领等待时间，默认 60 秒 |
+| `CREST_SCHEDULED_TASK_STREAM` | 报表和填报调度任务 Redis Stream 名称，默认 `crest:stream:scheduled-task` |
+| `CREST_SCHEDULED_TASK_CONSUMER_GROUP` | 报表和填报调度任务 Worker 消费组，默认 `crest-scheduled-workers` |
+| `CREST_SCHEDULED_TASK_PENDING_IDLE_MILLIS` | 报表和填报调度 Redis pending 消息认领等待时间，默认 60 秒 |
+| `CREST_WORKER_ID` | Worker 实例编号；未配置时自动使用主机名和随机 ID |
 | `CREST_INITIAL_PASSWORD` | 管理员初始密码，不能为空 |
 | `CREST_AES_KEY` | 32 位加密 Key |
 | `CREST_AES_IV` | 16 位加密 IV |
@@ -164,6 +198,18 @@ pnpm dev
 | `CREST_LOGIN_TIMEOUT` | 登录超时时间，默认 960 分钟 |
 
 源码启动时如果 `CREST_INITIAL_PASSWORD` 为空，后端会拒绝启动。安装脚本会自动生成该值，Kubernetes 清单要求部署前在 Secret 中填写。
+
+`CREST_RUNTIME_ROLE=all` 是兼容模式，保留旧单进程行为。`api` 角色只处理 HTTP 接口，`scheduler` 角色负责调度类启动任务，`worker` 角色为后续异步任务执行预留。非 API 角色只开放健康检查和指标端点，避免被误接入业务流量。
+
+`CREST_PRODUCTION_MODE=true` 用于多副本生产部署。启用后必须显式配置 `CREST_TOKEN_SECRET`，并保持 `CREST_FLYWAY_ENABLED=false`、`CREST_LOAD_DEMO=false`、`spring.cache.type=redis` 和 Redis 健康检查启用。生产数据库初始化和升级 SQL 由部署流程人工执行，不由应用启动时自动迁移。
+
+生产模式下默认不在启动阶段预热业务数据源连接池，避免多副本同时占用业务库连接。确需提前预热时，可显式设置 `CREST_DATASOURCE_POOL_PRELOAD_ENABLED=true`，并按副本数评估业务库最大连接数。
+
+生产模式下导出任务、数据集同步任务和数据源同步任务默认写入 Redis Streams，由 `all` 或 `worker` 角色消费执行。Worker 执行前通过数据库 CAS 抢占任务，心跳超时后会重新投递。旧部署未启用生产模式时仍保持原执行路径。
+
+生产模式下 WebSocket 消息默认通过 Redis pub/sub 广播到所有 API Pod，各 Pod 只向本机连接投递。旧部署未启用生产模式时仍保持本机 WebSocket 投递。
+
+导出文件已通过 `StorageService` 访问。默认实现仍使用本地路径；多副本生产部署需要把 `/opt/crest/data` 下的业务文件目录挂载到 RWX PVC，确保 Worker Pod 生成的文件可被任意 API Pod 下载。
 
 ## 数据库迁移
 
@@ -355,7 +401,7 @@ datasource -> table -> table_field -> dataset_field -> dataset -> chart_field ->
 - `.env`、账号密码、token、私钥、证书和真实连接串；
 - 本地运行目录、离线包、镜像导出包、日志、pid、压测报告和浏览器测试输出；
 - `node_modules`、Maven `target`、前端 `dist`、`.flattened-pom.xml`；
-- 真实客户、员工、供应商、合同、内网地址或生产库数据；
+- 真实客户、员工、供应商、合同、内部地址或生产库数据；
 - 私有制品仓库、私有 npm 源或内部镜像地址。
 
 可以提交：

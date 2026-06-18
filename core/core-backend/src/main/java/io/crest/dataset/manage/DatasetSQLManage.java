@@ -159,7 +159,10 @@ public class DatasetSQLManage {
         if (ObjectUtils.isEmpty(union)) {
             return null;
         }
-        boolean isCross = dataTableInfoDTO.getIsCross();
+        if (dataTableInfoDTO.getIsCross() == null) {
+            mergeDatasetCrossDefault(dataTableInfoDTO);
+        }
+        boolean isCross = Boolean.TRUE.equals(dataTableInfoDTO.getIsCross());
         DatasetTableDTO currentDs = union.get(0).getCurrentDs();
         SQLObj tableName = null;
         for (int i = 0; i < union.size(); i++) {
@@ -416,9 +419,17 @@ public class DatasetSQLManage {
      */
     private Set<Long> getAllDs(List<UnionDTO> union) {
         Set<Long> set = new HashSet<>();
+        if (CollectionUtils.isEmpty(union)) {
+            return set;
+        }
         for (UnionDTO unionDTO : union) {
+            if (unionDTO == null || unionDTO.getCurrentDs() == null) {
+                continue;
+            }
             Long datasourceId = unionDTO.getCurrentDs().getDatasourceId();
-            set.add(datasourceId);
+            if (datasourceId != null) {
+                set.add(datasourceId);
+            }
             getChildrenDs(unionDTO.getChildrenDs(), set);
         }
         return set;
@@ -428,8 +439,17 @@ public class DatasetSQLManage {
      * 递归收集子节点数据源 ID
      */
     private void getChildrenDs(List<UnionDTO> childrenDs, Set<Long> set) {
+        if (CollectionUtils.isEmpty(childrenDs)) {
+            return;
+        }
         for (UnionDTO unionDTO : childrenDs) {
-            set.add(unionDTO.getCurrentDs().getDatasourceId());
+            if (unionDTO == null || unionDTO.getCurrentDs() == null) {
+                continue;
+            }
+            Long datasourceId = unionDTO.getCurrentDs().getDatasourceId();
+            if (datasourceId != null) {
+                set.add(datasourceId);
+            }
             if (!CollectionUtils.isEmpty(unionDTO.getChildrenDs())) {
                 getChildrenDs(unionDTO.getChildrenDs(), set);
             }

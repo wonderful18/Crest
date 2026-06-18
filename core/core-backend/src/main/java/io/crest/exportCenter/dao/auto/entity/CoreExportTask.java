@@ -70,6 +70,41 @@ public class CoreExportTask implements Serializable {
     private String exportMachineName;
 
     /**
+     * 当前抢占任务的 Worker 编号
+     */
+    private String workerId;
+
+    /**
+     * Worker 最近心跳时间
+     */
+    private Long heartbeatTime;
+
+    /**
+     * 任务重试次数
+     */
+    private Integer retryCount;
+
+    /**
+     * 任务抢占版本号
+     */
+    private Long lockVersion;
+
+    /**
+     * 下次调度时间
+     */
+    private Long nextFireTime;
+
+    /**
+     * 最近一次投递到队列的时间
+     */
+    private Long lastEnqueueTime;
+
+    /**
+     * 最近一次执行错误
+     */
+    private String lastError;
+
+    /**
      * 导出过滤参数
      */
     private String params;
@@ -234,6 +269,104 @@ public class CoreExportTask implements Serializable {
     }
 
     /**
+     * 获取当前抢占任务的 Worker 编号
+     */
+    public String getWorkerId() {
+        return workerId;
+    }
+
+    /**
+     * 设置当前抢占任务的 Worker 编号
+     */
+    public void setWorkerId(String workerId) {
+        this.workerId = workerId;
+    }
+
+    /**
+     * 获取 Worker 最近心跳时间
+     */
+    public Long getHeartbeatTime() {
+        return heartbeatTime;
+    }
+
+    /**
+     * 设置 Worker 最近心跳时间
+     */
+    public void setHeartbeatTime(Long heartbeatTime) {
+        this.heartbeatTime = heartbeatTime;
+    }
+
+    /**
+     * 获取任务重试次数
+     */
+    public Integer getRetryCount() {
+        return retryCount;
+    }
+
+    /**
+     * 设置任务重试次数
+     */
+    public void setRetryCount(Integer retryCount) {
+        this.retryCount = retryCount;
+    }
+
+    /**
+     * 获取任务抢占版本号
+     */
+    public Long getLockVersion() {
+        return lockVersion;
+    }
+
+    /**
+     * 设置任务抢占版本号
+     */
+    public void setLockVersion(Long lockVersion) {
+        this.lockVersion = lockVersion;
+    }
+
+    /**
+     * 获取下次调度时间
+     */
+    public Long getNextFireTime() {
+        return nextFireTime;
+    }
+
+    /**
+     * 设置下次调度时间
+     */
+    public void setNextFireTime(Long nextFireTime) {
+        this.nextFireTime = nextFireTime;
+    }
+
+    /**
+     * 获取最近一次投递到队列的时间
+     */
+    public Long getLastEnqueueTime() {
+        return lastEnqueueTime;
+    }
+
+    /**
+     * 设置最近一次投递到队列的时间
+     */
+    public void setLastEnqueueTime(Long lastEnqueueTime) {
+        this.lastEnqueueTime = lastEnqueueTime;
+    }
+
+    /**
+     * 获取最近一次执行错误
+     */
+    public String getLastError() {
+        return lastError;
+    }
+
+    /**
+     * 设置最近一次执行错误
+     */
+    public void setLastError(String lastError) {
+        this.lastError = lastError;
+    }
+
+    /**
      * 获取导出过滤参数
      */
     public String getParams() {
@@ -278,6 +411,13 @@ public class CoreExportTask implements Serializable {
         ", exportTime = " + exportTime +
         ", exportProgress = " + exportProgress +
         ", exportMachineName = " + exportMachineName +
+        ", workerId = " + workerId +
+        ", heartbeatTime = " + heartbeatTime +
+        ", retryCount = " + retryCount +
+        ", lockVersion = " + lockVersion +
+        ", nextFireTime = " + nextFireTime +
+        ", lastEnqueueTime = " + lastEnqueueTime +
+        ", lastError = " + lastError +
         ", params = " + params +
         ", msg = " + msg +
         "}";

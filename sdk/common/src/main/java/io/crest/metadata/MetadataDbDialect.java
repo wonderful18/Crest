@@ -1,5 +1,6 @@
 package io.crest.metadata;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 /**
@@ -23,6 +24,14 @@ public interface MetadataDbDialect {
 
     String currentTimestamp();
 
+    default String timestampParameter() {
+        return "?";
+    }
+
+    default Object timestampValue(String value) {
+        return Timestamp.valueOf(value);
+    }
+
     String caseInsensitiveLike(String expression, String parameterExpression);
 
     String stringLiteral(String value);
@@ -39,6 +48,10 @@ public interface MetadataDbDialect {
 
     default String stringNotEquals(String leftExpression, String rightExpression) {
         return collate(leftExpression) + " <> " + collate(rightExpression);
+    }
+
+    default String existsFlag(String subquery) {
+        return "CASE WHEN EXISTS (" + subquery + ") THEN 1 ELSE 0 END";
     }
 
     String numberCast(String expression);

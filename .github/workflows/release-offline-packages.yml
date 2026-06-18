@@ -4,13 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Release version, for example v1.5.12
+        description: Release version, for example v2.0.0
         required: true
-        default: v1.5.12
+        default: v2.0.0
 
 permissions:
   contents: write
   packages: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   package:
@@ -87,6 +90,15 @@ jobs:
           SOURCE_FRONTEND_IMAGE="ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}" \
           FRONTEND_IMAGE="ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}" \
           bash installer/make-offline-package.sh "${VERSION}" "${PACKAGE_PLATFORM}"
+
+      - name: Verify offline package contents
+        env:
+          VERSION: ${{ inputs.version }}
+          PACKAGE_PLATFORM: ${{ matrix.package_platform }}
+          EXPECT_OBSERVABILITY_IMAGES: "true"
+        run: |
+          set -euo pipefail
+          bash scripts/verify-release-package-contents.sh offline "${VERSION}" "${PACKAGE_PLATFORM}"
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v7.0.1

@@ -139,6 +139,8 @@ const getResourceTypeLabel = (type: string) => {
   return map[type] || type
 }
 
+const isSuccessResponse = (code: unknown) => Number(code) === 200
+
 // 根据审计记录内容生成用户可读的操作描述
 const getOperationDesc = (row: any) => {
   if (row.operation_desc) return row.operation_desc
@@ -291,8 +293,8 @@ onMounted(loadTable)
         />
         <el-table-column label="状态" width="80">
           <template #default="{ row }">
-            <el-tag :type="row.response_code === 200 ? 'success' : 'danger'" size="small">
-              {{ row.response_code === 200 ? '成功' : '失败' }}
+            <el-tag :type="isSuccessResponse(row.response_code) ? 'success' : 'danger'" size="small">
+              {{ isSuccessResponse(row.response_code) ? '成功' : '失败' }}
             </el-tag>
           </template>
         </el-table-column>

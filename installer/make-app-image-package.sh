@@ -33,12 +33,6 @@ SOURCE_BACKEND_IMAGE=${SOURCE_BACKEND_IMAGE:-"ghcr.io/sevoniva/crest-service:${V
 SOURCE_FRONTEND_IMAGE=${SOURCE_FRONTEND_IMAGE:-"ghcr.io/sevoniva/crest-web:${VERSION}-${TARGET_ARCH}"}
 PACKAGE_NAME="crest-app-images-${VERSION}-${TARGET_PLATFORM}"
 PACKAGE_DIR="${OUTPUT_DIR}/${PACKAGE_NAME}"
-UPGRADE_SQL_FROM_1_5_7="v1.5.7_to_${VERSION}.sql"
-if [ ! -f "${INSTALLER_DIR}/upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}" ]; then
-  UPGRADE_SQL_FROM_1_5_7="v1.5.7_to_v1.5.8.sql"
-fi
-UPGRADE_SQL_TARGET_VERSION="${UPGRADE_SQL_FROM_1_5_7#v1.5.7_to_}"
-UPGRADE_SQL_TARGET_VERSION="${UPGRADE_SQL_TARGET_VERSION%.sql}"
 
 log() {
   echo "[app-image-package] $*"
@@ -144,12 +138,12 @@ EOF
 cat > "${PACKAGE_DIR}/APP-IMAGES-README.md" <<EOF
 # Crest 应用镜像升级包 ${VERSION} (${TARGET_PLATFORM})
 
-本包仅包含 Crest 后端镜像、前端镜像、增量升级 SQL 和加载说明，不包含 MySQL、Prometheus、Grafana 镜像，也不包含完整安装脚本。适用于已经安装 Crest 的内网环境升级应用服务。
+本包仅包含 Crest 后端镜像、前端镜像、初始化 SQL、增量升级 SQL 和加载说明，不包含 MySQL、Prometheus、Grafana 镜像，也不包含完整安装脚本。适用于已经安装 Crest 的环境升级应用服务。
 
 ## 包内内容
 
 - \`images/\`：Crest 后端和前端镜像归档；
-- \`init-sql/\`：空库部署时可由 DBA 手工执行的元数据库初始化 SQL；
+- \`init-sql/\`：空库部署时可由 DBA 手工执行的 Crest 系统库初始化 SQL；
 - \`upgrade-sql/\`：从已发布版本升级所需的增量 SQL；
 - \`load-images.sh\`：加载包内镜像；
 - \`image-manifest.txt\`：包内镜像与目标架构。
@@ -164,39 +158,79 @@ bash load-images.sh
 
 ## 执行升级 SQL
 
-全新安装不需要执行升级 SQL。已有 v1.5.7 环境升级到 ${VERSION} 时，请先备份元数据库，再在本包目录执行 ${UPGRADE_SQL_TARGET_VERSION} 元数据库升级 SQL：
+全新安装不需要执行升级 SQL。已有环境升级到 ${VERSION} 时，请先备份 Crest 系统库，再在本包目录按数据库类型执行对应 SQL。
+
+MySQL 系统库从 v1.5.7 及更早版本升级时，先执行历史结构补齐 SQL：
 
 \`\`\`bash
 set -a
 source /opt/crest/.env
 set +a
-docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}
+docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.7_to_v1.5.8.sql
 \`\`\`
 
-已有 v1.5.4 环境升级到 ${VERSION} 时，请先执行 v1.5.4 到 v1.5.5 的升级 SQL，再执行 v1.5.7 到 ${UPGRADE_SQL_TARGET_VERSION} 的升级 SQL：
+如果源版本是 v1.5.4，先执行 v1.5.4 到 v1.5.5 的历史升级 SQL，再执行上面的 v1.5.7 到 v1.5.8 SQL：
 
 \`\`\`bash
 set -a
 source /opt/crest/.env
 set +a
 docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.4_to_v1.5.5.sql
-docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}
+docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.7_to_v1.5.8.sql
 \`\`\`
 
-外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 元数据库。
+外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 系统库。
 如安装时修改过 \`CREST_BASE\`，请把 \`/opt/crest/.env\` 换成实际运行目录中的 \`.env\`。
 
-OceanBase MySQL 元数据库可使用 OceanBase 客户端执行 MySQL 兼容升级 SQL：
+继续按数据库类型执行 ${VERSION} 的增量 SQL。MySQL 系统库示例：
 
 \`\`\`bash
-obclient -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' <database> < upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}
+for sql in \\
+  upgrade-sql/v2.0.0_export_task_queue_mysql.sql \\
+  upgrade-sql/v2.0.0_datasource_sync_task_queue_mysql.sql \\
+  upgrade-sql/v2.0.0_dataset_sync_task_queue_mysql.sql \\
+  upgrade-sql/v2.0.0_dataset_sync_task_queue_metadata_mysql.sql \\
+  upgrade-sql/v2.0.0_scheduled_task_queue_state_mysql.sql \\
+  upgrade-sql/v2.0.0_audit_log_filter_index_mysql.sql
+do
+  docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < "\${sql}"
+done
 \`\`\`
 
-OceanBase Oracle 元数据库使用独立 Flyway migration 路径。除非发布说明明确提供 OB Oracle 专用升级 SQL，不要把 MySQL 兼容升级 SQL 执行到 OB Oracle 租户。
+OceanBase MySQL 系统库使用文件名带 \`ob_mysql\` 的脚本：
+
+\`\`\`bash
+for sql in \\
+  upgrade-sql/v2.0.0_export_task_queue_ob_mysql.sql \\
+  upgrade-sql/v2.0.0_datasource_sync_task_queue_ob_mysql.sql \\
+  upgrade-sql/v2.0.0_dataset_sync_task_queue_ob_mysql.sql \\
+  upgrade-sql/v2.0.0_dataset_sync_task_queue_metadata_ob_mysql.sql \\
+  upgrade-sql/v2.0.0_scheduled_task_queue_state_ob_mysql.sql \\
+  upgrade-sql/v2.0.0_audit_log_filter_index_ob_mysql.sql
+do
+  obclient --default-character-set=utf8mb4 -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' <database> < "\${sql}"
+done
+\`\`\`
+
+OceanBase Oracle 系统库使用文件名带 \`ob_oracle\` 的脚本，并以 Crest 系统库 schema 用户执行：
+
+\`\`\`bash
+for sql in \\
+  upgrade-sql/v2.0.0_export_task_queue_ob_oracle.sql \\
+  upgrade-sql/v2.0.0_datasource_sync_task_queue_ob_oracle.sql \\
+  upgrade-sql/v2.0.0_dataset_sync_task_queue_ob_oracle.sql \\
+  upgrade-sql/v2.0.0_dataset_sync_task_queue_metadata_ob_oracle.sql \\
+  upgrade-sql/v2.0.0_scheduled_task_queue_state_ob_oracle.sql \\
+  upgrade-sql/v2.0.0_repair_seed_text_encoding_ob_oracle.sql \\
+  upgrade-sql/v2.0.0_audit_log_filter_index_ob_oracle.sql
+do
+  obclient --default-character-set=utf8mb4 -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' < "\${sql}"
+done
+\`\`\`
 
 ## OceanBase 空库初始化
 
-OceanBase 元数据库按企业外部数据库处理。生产环境建议先由 DBA 创建租户、数据库或 schema、账号和权限，然后按文件名顺序执行 \`init-sql/ob-mysql/\` 或 \`init-sql/ob-oracle/\` 下的初始化 SQL。Crest 运行配置中保持 \`CREST_FLYWAY_ENABLED=false\`，服务启动时只连接已初始化的外部元数据库。
+OceanBase 系统库按企业外部数据库处理。生产环境建议先由 DBA 创建租户、数据库或 schema、账号和权限，然后使用 \`obclient --default-character-set=utf8mb4\` 按文件名顺序执行 \`init-sql/ob-mysql/\` 或 \`init-sql/ob-oracle/\` 下的初始化 SQL。Crest 运行配置中保持 \`CREST_FLYWAY_ENABLED=false\`，服务启动时只连接已初始化的外部系统库。
 
 ## 更新运行配置
 

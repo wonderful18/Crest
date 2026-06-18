@@ -2,8 +2,8 @@
   <div class="observability-page" v-loading="loading">
     <div class="observability-toolbar">
       <div>
-        <p class="observability-title">Prometheus 与 Grafana</p>
-        <p class="observability-subtitle">运行指标由服务端参数和部署 Secret 控制。</p>
+        <p class="observability-title">监控接入</p>
+        <p class="observability-subtitle">确认 Prometheus 抓取地址、访问凭据和 Grafana 入口。</p>
       </div>
       <el-button secondary :icon="Refresh" @click="loadStatus">刷新</el-button>
     </div>
@@ -12,8 +12,8 @@
       <section class="observability-panel">
         <div class="panel-head">
           <div>
-            <p class="panel-title">Prometheus 采集</p>
-            <p class="panel-desc">接口、JVM、线程池与进程指标统一从后端采集。</p>
+            <p class="panel-title">Prometheus</p>
+            <p class="panel-desc">后端暴露给 Prometheus 的抓取配置。</p>
           </div>
           <span class="status-pill" :class="{ enabled: prometheus.enabled }">
             {{ prometheus.enabled ? '已开启' : '未开启' }}
@@ -21,10 +21,14 @@
         </div>
 
         <div class="setting-row">
-          <span>指标端点</span>
+          <span>采集端点</span>
           <div class="setting-value">
             <code>{{ prometheus.endpoint || '/api/v1/actuator/prometheus' }}</code>
-            <el-button text :icon="CopyDocument" @click="copyValue(prometheus.endpoint)" />
+            <el-button
+              text
+              :icon="CopyDocument"
+              @click="copyValue(prometheus.endpoint || '/api/v1/actuator/prometheus')"
+            />
           </div>
         </div>
         <div class="setting-row">
@@ -38,7 +42,7 @@
           </span>
         </div>
         <div class="setting-row">
-          <span>接口标签上限</span>
+          <span>URI 标签上限</span>
           <strong>{{ prometheus.maxUriTags || 200 }}</strong>
         </div>
       </section>
@@ -46,8 +50,8 @@
       <section class="observability-panel">
         <div class="panel-head">
           <div>
-            <p class="panel-title">Grafana 看板</p>
-            <p class="panel-desc">部署时自动加载 Prometheus 数据源和 Crest 看板。</p>
+            <p class="panel-title">Grafana</p>
+            <p class="panel-desc">已配置的访问入口和预置看板。</p>
           </div>
           <span class="status-pill" :class="{ enabled: grafana.enabled }">
             {{ grafana.enabled ? '已开启' : '未开启' }}
@@ -66,39 +70,37 @@
             />
           </div>
         </div>
-        <div class="dashboard-list">
+        <div v-if="grafana.provisionedDashboards.length" class="dashboard-list">
           <span v-for="item in grafana.provisionedDashboards" :key="item">{{ item }}</span>
         </div>
+        <div v-else class="empty-text">暂无预置看板</div>
       </section>
     </div>
 
     <section class="observability-panel full">
       <div class="panel-head compact">
         <div>
-          <p class="panel-title">部署要求</p>
-          <p class="panel-desc">生产环境按最小暴露面启用监控。</p>
+          <p class="panel-title">部署提示</p>
+          <p class="panel-desc">按实际部署方式确认抓取链路和密钥来源。</p>
         </div>
         <el-icon class="guard-icon"><Monitor /></el-icon>
       </div>
       <div class="security-list">
         <div>
           <el-icon><CircleCheck /></el-icon>
-          <span>默认关闭 Prometheus 指标端点，需要显式设置 `CREST_PROMETHEUS_ENABLED=true`。</span>
+          <span>默认不开放指标端点，需显式设置 <code>CREST_PROMETHEUS_ENABLED=true</code>。</span>
         </div>
         <div>
           <el-icon><CircleCheck /></el-icon>
-          <span>开启后必须配置 `CREST_PROMETHEUS_TOKEN`，没有 token 时服务端拒绝采集。</span>
+          <span>启用后必须配置 <code>CREST_PROMETHEUS_TOKEN</code>，否则请求会被拒绝。</span>
         </div>
         <div>
           <el-icon><CircleCheck /></el-icon>
-          <span>前端网关不公开指标路径，Prometheus 在内网直接抓取后端服务。</span>
+          <span>Prometheus 请访问后端服务地址，不要从前端域名转发。</span>
         </div>
         <div>
-          <el-icon><CircleClose /></el-icon>
-          <span
-            >Token 不会在页面返回或保存，建议放在 Docker env、Kubernetes Secret
-            或同级密钥系统。</span
-          >
+          <el-icon><Lock /></el-icon>
+          <span>Token 只从环境变量、Kubernetes Secret 或外部密钥系统读取，本页不展示明文。</span>
         </div>
       </div>
     </section>
@@ -109,9 +111,9 @@
 import { computed, onMounted, ref } from 'vue'
 import {
   CircleCheck,
-  CircleClose,
   CopyDocument,
   Link,
+  Lock,
   Monitor,
   Refresh
 } from '@element-plus/icons-vue'
@@ -145,7 +147,7 @@ const grafana = computed(() => ({
   ...(status.value.grafana || {})
 }))
 
-// 从后端加载当前可观测性配置状态
+// 从后端加载当前监控接入配置状态
 const loadStatus = async () => {
   loading.value = true
   try {
@@ -326,6 +328,12 @@ code {
   font-weight: 600;
 }
 
+.empty-text {
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 28px;
+}
+
 .guard-icon {
   color: #2563eb;
   font-size: 22px;
@@ -349,6 +357,12 @@ code {
 .security-list .ed-icon {
   margin-top: 2px;
   color: #2563eb;
+}
+
+.security-list code {
+  max-width: none;
+  color: #0f172a;
+  white-space: normal;
 }
 
 @media (max-width: 960px) {

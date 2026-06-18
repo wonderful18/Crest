@@ -20,6 +20,7 @@ import io.crest.exportCenter.util.ExportCenterUtils;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.view.dto.*;
 import io.crest.i18n.Lang;
+import io.crest.i18n.Translator;
 import io.crest.log.CrestAudit;
 import io.crest.result.ResultCode;
 import io.crest.utils.CommonBeanFactory;
@@ -33,7 +34,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.RegionUtil;
@@ -97,8 +97,11 @@ public class ChartDataServer implements ChartDataApi {
                 chartDataManage.encodeData(dto);
                 return dto;
             }
+        } catch (CrestException e) {
+            throw e;
         } catch (Exception e) {
-            CrestException.throwException(ResultCode.DATA_IS_WRONG.code(), e.getMessage() + "\n\n" + ExceptionUtils.getStackTrace(e));
+            LogUtil.error("Chart data query failed: " + StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()), e);
+            CrestException.throwException(ResultCode.DATA_IS_WRONG.code(), Translator.get("i18n_fetch_error"));
         }
         return null;
     }

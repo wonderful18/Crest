@@ -43,6 +43,9 @@ import io.crest.extensions.view.dto.DatasetRowPermissionsTreeObj;
 import io.crest.i18n.Translator;
 import io.crest.log.CrestAudit;
 import io.crest.model.ExportTaskDTO;
+import io.crest.runtime.CrestRuntimeRole;
+import io.crest.storage.StorageService;
+import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.*;
 import io.crest.visualization.dao.auto.entity.VisualizationWatermark;
 import io.crest.visualization.dao.auto.mapper.VisualizationWatermarkMapper;
@@ -60,18 +63,19 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.URLEncoder;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -84,6 +88,8 @@ import java.util.stream.Collectors;
 public class ExportCenterDownLoadManage {
     @Resource
     private CoreExportTaskMapper exportTaskMapper;
+    @Resource
+    private Environment environment;
     @Resource
     private CoreChartViewMapper coreChartViewMapper;
     @Resource
@@ -110,7 +116,7 @@ public class ExportCenterDownLoadManage {
     static private List<String> STATUS = Arrays.asList("SUCCESS", "FAILED", "PENDING", "IN_PROGRESS", "ALL");
     private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
     private int keepAliveSeconds = 600;
-    private Map<String, Future> Running_Task = new HashMap<>();
+    private Map<String, Future> Running_Task = new ConcurrentHashMap<>();
     @Resource
     private ChartDataServer chartDataServer;
     @Resource
@@ -121,6 +127,10 @@ public class ExportCenterDownLoadManage {
     private DatasetTableFieldManage datasetTableFieldManage;
     @Resource
     private DatasetDataManage datasetDataManage;
+    @Resource
+    private PlatformPermissionManage platformPermissionManage;
+    @Resource
+    private StorageService storageService;
     private final Long sheetLimit = 1000000L;
 
     // 初始化导出任务线程池，线程数和最大并发由导出配置控制。
@@ -134,23 +144,96 @@ public class ExportCenterDownLoadManage {
     // 定时检查已完成的导出任务，并通过 WebSocket 推送任务状态。
     @Scheduled(fixedRate = 5000)
     public void checkRunningTask() {
+        if (environment != null && !CrestRuntimeRole.from(environment).runsWorker()) {
+            return;
+        }
         Iterator<Map.Entry<String, Future>> iterator = Running_Task.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, Future> entry = iterator.next();
             if (entry.getValue().isDone()) {
                 iterator.remove();
-                try {
-                    // 任务完成后重新读取数据库记录，确保推送的是最终状态和文件信息。
-                    CoreExportTask exportTask = exportTaskMapper.selectById(entry.getKey());
-                    ExportTaskDTO exportTaskDTO = new ExportTaskDTO();
-                    BeanUtils.copyBean(exportTaskDTO, exportTask);
-                    setExportFromName(exportTaskDTO);
-                    WsMessage message = new WsMessage(exportTask.getUserId(), "/task-export-topic", exportTaskDTO);
-                    wsService.releaseMessage(message);
-                } catch (Exception e) {
-                }
+                notifyExportTaskFinishedSafely(entry.getKey());
             }
         }
+    }
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public boolean executeQueuedTask(String taskId, String workerId) {
+        CoreExportTask exportTask = exportTaskMapper.selectById(taskId);
+        if (exportTask == null) {
+            return true;
+        }
+        if (!"PENDING".equalsIgnoreCase(exportTask.getExportStatus())) {
+            return true;
+        }
+        long now = System.currentTimeMillis();
+        int claimed = exportTaskMapper.claimPendingTask(taskId, workerId, hostName(), now);
+        if (claimed <= 0) {
+            return true;
+        }
+
+        TokenUserBO previousUser = AuthUtils.getUser();
+        try {
+            exportTask = exportTaskMapper.selectById(taskId);
+            AuthUtils.setUser(new TokenUserBO(exportTask.getUserId(), platformPermissionManage.defaultOrgId(exportTask.getUserId())));
+            Future future = submitQueuedTask(exportTask);
+            Running_Task.put(exportTask.getId(), future);
+            future.get();
+            notifyExportTaskFinishedSafely(exportTask.getId());
+            return true;
+        } catch (Exception e) {
+            markQueuedTaskFailed(taskId, e.getMessage());
+            LogUtil.error("Queued export task failed: " + taskId, e);
+            return true;
+        } finally {
+            Running_Task.remove(taskId);
+            if (previousUser == null) {
+                AuthUtils.remove();
+            } else {
+                AuthUtils.setUser(previousUser);
+            }
+        }
+    }
+
+    private void notifyExportTaskFinishedSafely(String taskId) {
+        try {
+            notifyExportTaskFinished(taskId);
+        } catch (Exception e) {
+            LogUtil.warn("Export task notification skipped: " + taskId + ", "
+                    + StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+        }
+    }
+
+    private Future submitQueuedTask(CoreExportTask exportTask) {
+        if ("dataset".equalsIgnoreCase(exportTask.getExportFromType())) {
+            DataSetExportRequest request = JsonUtil.parseObject(exportTask.getParams(), DataSetExportRequest.class);
+            return submitDatasetTask(exportTask, request);
+        }
+        ChartExcelRequest request = JsonUtil.parseObject(exportTask.getParams(), ChartExcelRequest.class);
+        return submitViewTask(exportTask, request);
+    }
+
+    private void notifyExportTaskFinished(String taskId) {
+        CoreExportTask exportTask = exportTaskMapper.selectById(taskId);
+        if (exportTask == null) {
+            return;
+        }
+        ExportTaskDTO exportTaskDTO = new ExportTaskDTO();
+        BeanUtils.copyBean(exportTaskDTO, exportTask);
+        setExportFromName(exportTaskDTO);
+        WsMessage message = new WsMessage(exportTask.getUserId(), "/task-export-topic", exportTaskDTO);
+        wsService.releaseMessage(message);
+    }
+
+    private void markQueuedTaskFailed(String taskId, String message) {
+        CoreExportTask failed = new CoreExportTask();
+        failed.setId(taskId);
+        failed.setExportStatus("FAILED");
+        failed.setExportProgress("100");
+        failed.setMsg(message);
+        failed.setLastError(message);
+        failed.setHeartbeatTime(System.currentTimeMillis());
+        exportTaskMapper.updateById(failed);
     }
 
     // 回填导出来源名称，前端任务列表需要展示图表或数据集名称。
@@ -166,8 +249,13 @@ public class ExportCenterDownLoadManage {
     // 异步启动数据集导出任务，任务状态、进度和文件信息都写回导出任务表。
     @CrestAudit(id = "#p0.exportFrom", ot = LogOT.EXPORT, st = LogST.DATASET)
     public void startDatasetTask(CoreExportTask exportTask, DataSetExportRequest request) {
-        File directory = prepareTaskDirectory(exportTask.getId());
-        String dataPath = directory.getAbsolutePath();
+        Future future = submitDatasetTask(exportTask, request);
+        Running_Task.put(exportTask.getId(), future);
+    }
+
+    private Future submitDatasetTask(CoreExportTask exportTask, DataSetExportRequest request) {
+        prepareTaskDirectory(exportTask.getId());
+        File exportFile = storageService.resolve(exportData_path, exportTask.getId(), exportTask.getId() + ".xlsx");
 
         TokenUserBO tokenUserBO = AuthUtils.getUser();
         Future future = scheduledThreadPoolExecutor.submit(() -> {
@@ -178,6 +266,7 @@ public class ExportCenterDownLoadManage {
                 exportTask.setMsg(null);
                 exportTask.setFileSize(null);
                 exportTask.setFileSizeUnit(null);
+                exportTask.setHeartbeatTime(System.currentTimeMillis());
                 exportTaskMapper.updateById(exportTask);
                 CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(exportTask.getExportFrom());
                 if (coreDatasetGroup == null) {
@@ -198,6 +287,7 @@ public class ExportCenterDownLoadManage {
                 }).collect(Collectors.toList());
                 DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTO(request.getId(), null);
                 Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null);
+                dto.setIsCross(Boolean.TRUE.equals(datasetGroupInfoDTO.getIsCross()));
                 if (sqlMap == null || StringUtils.isBlank((String) sqlMap.get("sql"))) {
                     CrestException.throwException("数据集配置不完整，无法导出");
                 }
@@ -302,7 +392,7 @@ public class ExportCenterDownLoadManage {
                         DatasourceRequest datasourceRequest = new DatasourceRequest();
                         datasourceRequest.setQuery(querySQL);
                         datasourceRequest.setDsList(dsMap);
-                        datasourceRequest.setIsCross(coreDatasetGroup.getIsCross());
+                        datasourceRequest.setIsCross(crossDs);
                         Map<String, Object> previewData = datasetDataManage.buildPreviewData(provider.fetchResultField(datasourceRequest), allFields, desensitizationList, false);
                         List<Map<String, Object>> data = (List<Map<String, Object>>) previewData.get("data");
                         if (p.equals(0L)) {
@@ -378,6 +468,7 @@ public class ExportCenterDownLoadManage {
                             }
                         }
                         exportTask.setExportStatus("IN_PROGRESS");
+                        exportTask.setHeartbeatTime(System.currentTimeMillis());
                         // 进度按 Sheet 和页两层比例计算，便于前端展示连续进度。
                         double exportRogress2 = (double) ((double) s - 1) / ((double) sheetCount);
                         double exportRogress = (double) ((double) (p + 1) / (double) pageSize) * ((double) 1 / sheetCount);
@@ -388,25 +479,29 @@ public class ExportCenterDownLoadManage {
                     }
                 }
                 this.addWatermarkTools(wb);
-                FileOutputStream fileOutputStream = new FileOutputStream(dataPath + "/" + exportTask.getId() + ".xlsx");
-                wb.write(fileOutputStream);
-                fileOutputStream.flush();
-                fileOutputStream.close();
+                try (OutputStream fileOutputStream = storageService.newOutputStream(exportFile)) {
+                    wb.write(fileOutputStream);
+                    fileOutputStream.flush();
+                }
                 wb.close();
                 exportTask.setExportProgress("100");
                 exportTask.setExportStatus("SUCCESS");
                 exportTask.setMsg(null);
-                setFileSize(dataPath + "/" + exportTask.getId() + ".xlsx", exportTask);
+                exportTask.setLastError(null);
+                exportTask.setHeartbeatTime(System.currentTimeMillis());
+                setFileSize(exportFile, exportTask);
 
             } catch (Exception e) {
                 LogUtil.error("Failed to export data", e);
                 exportTask.setMsg(e.getMessage());
+                exportTask.setLastError(e.getMessage());
                 exportTask.setExportStatus("FAILED");
+                exportTask.setHeartbeatTime(System.currentTimeMillis());
             } finally {
                 exportTaskMapper.updateById(exportTask);
             }
         });
-        Running_Task.put(exportTask.getId(), future);
+        return future;
     }
 
     // 启动仪表板图表导出任务，审计类型按仪表板记录。
@@ -446,8 +541,13 @@ public class ExportCenterDownLoadManage {
 
     // 异步启动图表视图导出任务，表格类视图按分页导出，普通图表一次性写入。
     public void startViewTask(CoreExportTask exportTask, ChartExcelRequest request) {
-        File directory = prepareTaskDirectory(exportTask.getId());
-        String dataPath = directory.getAbsolutePath();
+        Future future = submitViewTask(exportTask, request);
+        Running_Task.put(exportTask.getId(), future);
+    }
+
+    private Future submitViewTask(CoreExportTask exportTask, ChartExcelRequest request) {
+        prepareTaskDirectory(exportTask.getId());
+        File exportFile = storageService.resolve(exportData_path, exportTask.getId(), exportTask.getId() + ".xlsx");
         TokenUserBO tokenUserBO = AuthUtils.getUser();
         Future future = scheduledThreadPoolExecutor.submit(() -> {
             // 线程池任务需要恢复用户上下文，后续权限、水印和审计依赖当前用户。
@@ -457,6 +557,7 @@ public class ExportCenterDownLoadManage {
                 exportTask.setMsg(null);
                 exportTask.setFileSize(null);
                 exportTask.setFileSizeUnit(null);
+                exportTask.setHeartbeatTime(System.currentTimeMillis());
                 exportTaskMapper.updateById(exportTask);
                 Workbook wb = new SXSSFWorkbook();
                 CellStyle cellStyle = wb.createCellStyle();
@@ -534,6 +635,7 @@ public class ExportCenterDownLoadManage {
                             details.clear();
                         }
                         exportTask.setExportStatus("IN_PROGRESS");
+                        exportTask.setHeartbeatTime(System.currentTimeMillis());
                         double exportProgress = (double) ((double) i / (chartViewDTO.getTotalPage()));
                         DecimalFormat df = new DecimalFormat("#.##");
                         String formattedResult = df.format((exportProgress) * 100);
@@ -546,7 +648,7 @@ public class ExportCenterDownLoadManage {
                 }
                 this.addWatermarkTools(wb);
 
-                try (FileOutputStream outputStream = new FileOutputStream(dataPath + "/" + exportTask.getId() + ".xlsx")) {
+                try (OutputStream outputStream = storageService.newOutputStream(exportFile)) {
                     wb.write(outputStream);
                     outputStream.flush();
                 }
@@ -554,16 +656,20 @@ public class ExportCenterDownLoadManage {
                 exportTask.setExportProgress("100");
                 exportTask.setExportStatus("SUCCESS");
                 exportTask.setMsg(null);
-                setFileSize(dataPath + "/" + exportTask.getId() + ".xlsx", exportTask);
+                exportTask.setLastError(null);
+                exportTask.setHeartbeatTime(System.currentTimeMillis());
+                setFileSize(exportFile, exportTask);
             } catch (Exception e) {
                 exportTask.setMsg(e.getMessage());
+                exportTask.setLastError(e.getMessage());
                 LogUtil.error("Failed to export data", e);
                 exportTask.setExportStatus("FAILED");
+                exportTask.setHeartbeatTime(System.currentTimeMillis());
             } finally {
                 exportTaskMapper.updateById(exportTask);
             }
         });
-        Running_Task.put(exportTask.getId(), future);
+        return future;
     }
 
     // 写入非明细表导出数据，支持单 Sheet 和多系列拆分 Sheet 两种模式。
@@ -610,9 +716,8 @@ public class ExportCenterDownLoadManage {
     }
 
     // 回填导出文件大小信息，按 Kb/Mb/Gb 自动选择展示单位。
-    private void setFileSize(String filePath, CoreExportTask exportTask) {
-        File file = new File(filePath);
-        long length = file.length();
+    private void setFileSize(File file, CoreExportTask exportTask) {
+        long length = storageService.size(file);
         String unit = "Mb";
         Double size = 0.0;
         if ((double) length / 1024 / 1024 > 1) {
@@ -633,17 +738,15 @@ public class ExportCenterDownLoadManage {
 
     // 准备导出任务文件目录，防止同名普通文件占用目录路径。
     private File prepareTaskDirectory(String taskId) {
-        File directory = new File(exportData_path, taskId);
-        if (directory.exists()) {
-            if (!directory.isDirectory()) {
-                CrestException.throwException("导出目录被文件占用: " + directory.getAbsolutePath());
-            }
-            return directory;
+        return storageService.ensureDirectory(exportData_path, taskId);
+    }
+
+    private String hostName() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (Exception e) {
+            return "unknown-worker";
         }
-        if (!directory.mkdirs() && !directory.isDirectory()) {
-            CrestException.throwException("导出目录创建失败: " + directory.getAbsolutePath());
-        }
-        return directory;
     }
 
     // 为工作簿添加水印，只有系统水印和 Excel 水印同时开启时才写入。
@@ -665,11 +768,11 @@ public class ExportCenterDownLoadManage {
         File exportFile;
         if (exportTask.getExportTime() != null && exportTask.getExportTime() < 1730277243491L) {
             // 旧版本导出文件以原始文件名保存，保留兼容路径。
-            exportFile = new File(new File(exportData_path, exportTask.getId()), exportTask.getFileName());
+            exportFile = storageService.resolve(exportData_path, exportTask.getId(), exportTask.getFileName());
         } else {
-            exportFile = new File(new File(exportData_path, exportTask.getId()), exportTask.getId() + ".xlsx");
+            exportFile = storageService.resolve(exportData_path, exportTask.getId(), exportTask.getId() + ".xlsx");
         }
-        if (!exportFile.isFile()) {
+        if (!storageService.isRegularFile(exportFile)) {
             CrestException.throwException(Translator.get("i18n_export_file_missing"));
         }
 
@@ -677,11 +780,10 @@ public class ExportCenterDownLoadManage {
         String encodedFileName = URLEncoder.encode(exportTask.getFileName(), StandardCharsets.UTF_8);
         response.setHeader("Content-Disposition", "attachment; filename=\"" + encodedFileName + "\"; filename*=utf-8''" + encodedFileName);
 
-        try (FileInputStream fileInputStream = new FileInputStream(exportFile); OutputStream outputStream = response.getOutputStream()) {
-            // 使用 FileChannel 零拷贝式传输，降低大文件下载时的内存占用。
-            FileChannel fileChannel = fileInputStream.getChannel();
-            WritableByteChannel outputChannel = Channels.newChannel(outputStream);
-            fileChannel.transferTo(0, fileChannel.size(), outputChannel);
+        try (InputStream fileInputStream = storageService.newInputStream(exportFile);
+             OutputStream outputStream = response.getOutputStream()) {
+            // 通过存储抽象读取文件，保证 API Pod 可下载 Worker Pod 写入的共享文件。
+            fileInputStream.transferTo(outputStream);
             response.flushBuffer();
         } catch (IOException e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -712,6 +814,7 @@ public class ExportCenterDownLoadManage {
             }).collect(Collectors.toList());
             DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTO(request.getId(), null);
             Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null);
+            dto.setIsCross(Boolean.TRUE.equals(datasetGroupInfoDTO.getIsCross()));
             if (sqlMap == null || StringUtils.isBlank((String) sqlMap.get("sql"))) {
                 CrestException.throwException("数据集配置不完整，无法导出");
             }
@@ -805,7 +908,7 @@ public class ExportCenterDownLoadManage {
                     DatasourceRequest datasourceRequest = new DatasourceRequest();
                     datasourceRequest.setQuery(querySQL);
                     datasourceRequest.setDsList(dsMap);
-                    datasourceRequest.setIsCross(coreDatasetGroup.getIsCross());
+                    datasourceRequest.setIsCross(crossDs);
                     Map<String, Object> previewData = datasetDataManage.buildPreviewData(provider.fetchResultField(datasourceRequest), allFields, desensitizationList, false);
                     List<Map<String, Object>> data = (List<Map<String, Object>>) previewData.get("data");
                     if (p.equals(0L)) {

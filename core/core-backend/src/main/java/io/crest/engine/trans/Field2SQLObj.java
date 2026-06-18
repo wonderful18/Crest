@@ -20,10 +20,10 @@ import java.util.*;
 
 import static io.crest.constant.SQLConstants.FIELD_DOT_FIX;
 
-// 定义当前业务对象的核心职责
+// 将数据集字段转换为 SELECT 字段描述，兼容计算字段、分组字段和 SQLBot 别名
 public class Field2SQLObj {
 
-    // 根据输入参数构造查询语句片段
+    // 按图表字段顺序生成查询字段，并保留需要按数据库方言二次转换的表达式
     public static void field2sqlObj(SQLMeta meta, List<DatasetTableFieldDTO> fields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage, boolean forSqlbot) {
         SQLObj tableObj = meta.getTable();
         if (ObjectUtils.isEmpty(tableObj)) {
@@ -61,11 +61,7 @@ public class Field2SQLObj {
                         }
                     }
                 } else if (ObjectUtils.isNotEmpty(x.getExtField()) && Objects.equals(x.getExtField(), ExtFieldConstant.EXT_COPY)) {
-                    if (Strings.CI.equals(dsType, "es")) {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getOriginName());
-                    } else {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getEngineFieldName());
-                    }
+                    originField = FieldSqlExpressionUtils.physicalField(tableObj, x, dsType);
                 } else if (ObjectUtils.isNotEmpty(x.getExtField()) && Objects.equals(x.getExtField(), ExtFieldConstant.EXT_GROUP)) {
                     String groupFieldExp = Utils.transGroupFieldToSql(x, originFields, isCross, dsMap, pluginManage);
                     // 给计算字段处加一个占位符，后续SQL方言转换后再替换
@@ -75,11 +71,7 @@ public class Field2SQLObj {
                         originField = groupFieldExp;
                     }
                 } else {
-                    if (Strings.CI.equals(dsType, "es")) {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getOriginName());
-                    } else {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getEngineFieldName());
-                    }
+                    originField = FieldSqlExpressionUtils.physicalField(tableObj, x, dsType);
                 }
                 String fieldAlias = String.format(SQLConstants.FIELD_ALIAS_X_PREFIX, i);
                 if (forSqlbot) {
@@ -101,7 +93,7 @@ public class Field2SQLObj {
         meta.setXFieldsDialect(fieldsDialect);
     }
 
-    // 根据输入参数构造查询语句片段
+    // 普通图表查询不使用 SQLBot 专属字段别名
     public static void field2sqlObj(SQLMeta meta, List<DatasetTableFieldDTO> fields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         field2sqlObj(meta, fields, originFields, isCross, dsMap, fieldParam, chartParam, pluginManage, false);
     }

@@ -9,7 +9,6 @@ import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-// 定义接口请求或返回数据的传输结构
 public class UserGridRequest extends KeywordRequest implements Serializable {
     private List<Boolean> statusList;
 

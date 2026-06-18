@@ -25,6 +25,8 @@ import io.crest.extensions.datasource.dto.DatasourceRequest;
 import io.crest.extensions.datasource.dto.TableField;
 import io.crest.api.ds.vo.ExcelConfiguration;
 import io.crest.i18n.Translator;
+import io.crest.storage.LocalStorageService;
+import io.crest.storage.StorageService;
 import io.crest.utils.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -40,6 +42,7 @@ import java.net.URLDecoder;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -58,6 +61,7 @@ public class ExcelUtils {
     private static final String SHEET_MESSAGE_SQL_DESCRIPTION = "检测到该工作表首行疑似 SQL 或说明文本，默认不导入。";
     private static final String SHEET_MESSAGE_EMPTY_HEADER = "未检测到有效表头，默认不导入。";
     private static final String SHEET_MESSAGE_BLANK_HEADER = "检测到空表头，默认不导入。";
+    private static final StorageService FALLBACK_STORAGE_SERVICE = new LocalStorageService();
     private static ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -75,12 +79,71 @@ public class ExcelUtils {
      * 将文件名限制在 Excel 根目录下，防止调用方通过相对路径访问目录外文件
      */
     private static File excelTempFile(String filename) {
-        try {
-            return FileUtils.resolveUnderDirectory(getExcelPath(), filename);
-        } catch (IOException e) {
-            CrestException.throwException(Translator.get("i18n_invalid_file_name"));
-            return null;
+        return storageService().resolve(getExcelPath(), filename);
+    }
+
+    /**
+     * 兼容历史配置中保存的绝对路径，但仍要求文件位于 Excel 根目录下。
+     */
+    @SuppressWarnings("java/path-injection")
+    private static File excelStoredFile(String storedPath) {
+        if (StringUtils.isBlank(storedPath) || storedPath.indexOf('\0') >= 0) {
+            CrestException.throwException("Excel文件路径非法");
         }
+        try {
+            File root = new File(getExcelPath()).getCanonicalFile();
+            File target = new File(storedPath);
+            if (!target.isAbsolute()) {
+                target = new File(root, storedPath);
+            }
+            File canonicalTarget = target.getCanonicalFile();
+            if (!canonicalTarget.toPath().startsWith(root.toPath())) {
+                CrestException.throwException("Excel文件路径越界");
+            }
+            Path relativePath = root.toPath().relativize(canonicalTarget.toPath());
+            List<String> pathSegments = new ArrayList<>();
+            for (Path pathSegment : relativePath) {
+                pathSegments.add(pathSegment.toString());
+            }
+            if (pathSegments.isEmpty()) {
+                CrestException.throwException("Excel文件路径非法");
+            }
+            return storageService().resolve(root.getPath(), pathSegments.toArray(new String[0]));
+        } catch (IOException | IllegalArgumentException e) {
+            CrestException.throwException("Excel文件路径解析失败");
+            return new File(storedPath);
+        }
+    }
+
+    /**
+     * 通过存储抽象读取 Excel 文件，兼容历史绝对路径配置。
+     */
+    private static InputStream newExcelInputStream(File file) throws IOException {
+        return storageService().newInputStream(file);
+    }
+
+    /**
+     * 通过存储抽象写入 Excel 文件，生产环境由 RWX PVC 提供共享目录。
+     */
+    private static OutputStream newExcelOutputStream(File file) throws IOException {
+        return storageService().newOutputStream(file);
+    }
+
+    /**
+     * 删除 Excel 临时文件，仅允许删除 Excel 根目录下的文件名。
+     */
+    private static void deleteExcelTempFile(String filename) {
+        if (StringUtils.isNotEmpty(filename)) {
+            storageService().deleteFile(getExcelPath(), filename);
+        }
+    }
+
+    /**
+     * 静态工具类优先使用容器内存储服务，单元测试和旧静态调用退回本地实现。
+     */
+    private static StorageService storageService() {
+        StorageService storageService = CommonBeanFactory.getBean(StorageService.class);
+        return storageService == null ? FALLBACK_STORAGE_SERVICE : storageService;
     }
 
     private static TypeReference<List<TableField>> TableFieldListTypeReference = new TypeReference<List<TableField>>() {
@@ -400,7 +463,7 @@ public class ExcelUtils {
                 if (sheet.getDisplayTableName().equalsIgnoreCase(datasourceRequest.getTable())) {
                     List<TableField> tableFields = sheet.getFields();
                     String suffix = fileNames.get("fileName").substring(fileNames.get("fileName").lastIndexOf(".") + 1);
-                    try (InputStream inputStream = new FileInputStream(excelTempFile(fileNames.get("tranName")))) {
+                    try (InputStream inputStream = newExcelInputStream(excelTempFile(fileNames.get("tranName")))) {
                         if (Strings.CI.equals(suffix, "csv")) {
                             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
                                 // 跳过 CSV 表头，后续只读取数据行
@@ -414,7 +477,7 @@ public class ExcelUtils {
                 }
             }
             if (StringUtils.isNotEmpty(fileNames.get("tranName"))) {
-                FileUtils.deleteFile(excelTempFile(fileNames.get("tranName")).getPath());
+                deleteExcelTempFile(fileNames.get("tranName"));
             }
         } else {
             try {
@@ -423,7 +486,7 @@ public class ExcelUtils {
                     if (rootNode.get(i).get("displayTableName").asText().equalsIgnoreCase(datasourceRequest.getTable())) {
                         List<TableField> tableFields = JsonUtil.parseList(rootNode.get(i).get("fields").toString(), TableFieldListTypeReference);
                         String suffix = rootNode.get(i).get("path").asText().substring(rootNode.get(i).get("path").asText().lastIndexOf(".") + 1);
-                        try (InputStream inputStream = new FileInputStream(rootNode.get(i).get("path").asText())) {
+                        try (InputStream inputStream = newExcelInputStream(excelStoredFile(rootNode.get(i).get("path").asText()))) {
                             if (Strings.CI.equals(suffix, "csv")) {
                                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
                                     // 跳过 CSV 表头，后续只读取数据行
@@ -557,7 +620,7 @@ public class ExcelUtils {
             throw e;
         } finally {
             if (StringUtils.isNotEmpty(fileNames.get("tranName"))) {
-                FileUtils.deleteFile(excelTempFile(fileNames.get("tranName")).getPath());
+                deleteExcelTempFile(fileNames.get("tranName"));
             }
         }
     }
@@ -569,7 +632,7 @@ public class ExcelUtils {
     public ExcelFileData parseRemoteExcel(RemoteExcelRequest remoteExcelRequest) throws CrestException, FileNotFoundException {
         Map<String, String> fileNames = downLoadRemoteExcel(remoteExcelRequest);
         List<ExcelSheetData> returnSheetDataList = new ArrayList<>();
-        try (FileInputStream fileInputStream = new FileInputStream(excelTempFile(fileNames.get("tranName")))) {
+        try (InputStream fileInputStream = newExcelInputStream(excelTempFile(fileNames.get("tranName")))) {
             returnSheetDataList = parseExcel(fileNames.get("tranName"), fileInputStream, true, fileNames.get("fileName"));
         } catch (Exception e) {
             CrestException.throwException(e);
@@ -608,7 +671,7 @@ public class ExcelUtils {
         excelFileData.setPath(excelTempFile(fileNames.get("tranName")).getPath());
         excelFileData.setSheets(returnSheetDataList);
         if (StringUtils.isNotEmpty(fileNames.get("tranName"))) {
-            FileUtils.deleteFile(excelTempFile(fileNames.get("tranName")).getPath());
+            deleteExcelTempFile(fileNames.get("tranName"));
         }
         return excelFileData;
     }
@@ -625,7 +688,7 @@ public class ExcelUtils {
                 httpClientConfig.addHeader("Authorization", authValue);
             }
             ensureExcelDirectory();
-            fileNames = HttpClientUtil.downloadFile(remoteExcelRequest.getUrl(), httpClientConfig, getExcelPath());
+            fileNames = HttpClientUtil.downloadFile(remoteExcelRequest.getUrl(), httpClientConfig, ExcelUtils::writeDownloadedExcelFile);
         } else if (remoteExcelRequest.getUrl().trim().startsWith("ftp")) {
             fileNames = downLoadFromFtp(remoteExcelRequest);
         } else {
@@ -635,12 +698,21 @@ public class ExcelUtils {
     }
 
     /**
+     * 将 HTTP 远程下载结果写入 Excel 共享目录。
+     */
+    private static void writeDownloadedExcelFile(String tranName, InputStream inputStream) throws IOException {
+        try (OutputStream outputStream = newExcelOutputStream(excelTempFile(tranName))) {
+            copyExcelStream(inputStream, outputStream);
+        }
+    }
+
+    /**
      * 确保 Excel 根目录存在，所有上传和远程下载文件都落在该目录下
      */
     private static File ensureExcelDirectory() {
         try {
-            return FileUtils.ensureDirectory(getExcelPath());
-        } catch (IOException e) {
+            return storageService().ensureDirectory(getExcelPath());
+        } catch (Exception e) {
             CrestException.throwException("Excel文件目录创建失败: " + getExcelPath());
             return null;
         }
@@ -658,7 +730,7 @@ public class ExcelUtils {
             ensureExcelDirectory();
             File f = excelTempFile(fileNameUUID + "." + suffix);
             filePath = f.getPath();
-            try (FileOutputStream fileOutputStream = new FileOutputStream(f)) {
+            try (OutputStream fileOutputStream = newExcelOutputStream(f)) {
                 fileOutputStream.write(file.getBytes());
                 fileOutputStream.flush();
             }
@@ -1183,7 +1255,7 @@ public class ExcelUtils {
             CrestException.throwException(Translator.get("i18n_unsupported_file_format"));
         }
         String tranName = UUID.randomUUID().toString() + "." + suffix;
-        String localFilePath = excelTempFile(tranName).getPath();
+        File localFile = excelTempFile(tranName);
         fileNames.put("fileName", filePath);
         fileNames.put("tranName", tranName);
 
@@ -1198,18 +1270,25 @@ public class ExcelUtils {
 
             URLConnection conn = url.openConnection();
             try (InputStream inputStream = conn.getInputStream();
-                 FileOutputStream outputStream = new FileOutputStream(localFilePath)) {
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
+                 OutputStream outputStream = newExcelOutputStream(localFile)) {
+                copyExcelStream(inputStream, outputStream);
             }
 
         } catch (IOException e) {
             CrestException.throwException(Translator.get("i18n_file_download_failed") + ", " + e.getMessage());
         }
         return fileNames;
+    }
+
+    /**
+     * 流式复制 Excel 文件内容，避免大文件占用过多堆内存。
+     */
+    private static void copyExcelStream(InputStream inputStream, OutputStream outputStream) throws IOException {
+        byte[] buffer = new byte[4096];
+        int bytesRead;
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, bytesRead);
+        }
     }
 
 }

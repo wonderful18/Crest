@@ -1,10 +1,11 @@
 package io.crest.visualization.utils;
 
 import io.crest.constant.FieldTypeConstants;
+import io.crest.storage.LocalStorageService;
+import io.crest.storage.StorageService;
+import io.crest.utils.CommonBeanFactory;
 import io.crest.utils.ConfigUtils;
-import io.crest.utils.FileUtils;
 import io.crest.utils.LogUtil;
-import io.crest.utils.ModelUtils;
 import io.crest.visualization.bo.ExcelSheetModel;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -14,7 +15,8 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -25,15 +27,12 @@ import java.util.regex.Pattern;
 public class VisualizationExcelUtils {
 
     private static final String suffix = ".xlsx";
-    private static final String BASE_ROOT = getBaseRoot();
+    private static final StorageService FALLBACK_STORAGE_SERVICE = new LocalStorageService();
+    private static final Pattern INVALID_FILE_NAME_CHARS = Pattern.compile("[\\p{Cntrl}\\\\/:\\*\\?\\\"<>\\|]");
 
     // 执行当前服务方法并返回处理结果
     public static String getBaseRoot() {
-        if (ModelUtils.isDesktop()) {
-            return ConfigUtils.getConfig("crest.path.report", "/opt/crest/data/report/");
-        } else {
-            return "/opt/crest/data/report/";
-        }
+        return ConfigUtils.getConfig("crest.path.report", "/opt/crest/data/report/");
     }
 
     // 执行当前服务方法并返回处理结果
@@ -87,29 +86,43 @@ public class VisualizationExcelUtils {
                 }
             }
         });
-        if (!Strings.CS.endsWith(fileName, suffix)) {
-            realFileName.set(realFileName.get() + suffix);
+        String exportFileName = StringUtils.defaultIfBlank(realFileName.get(), "export");
+        if (!Strings.CS.endsWith(exportFileName, suffix)) {
+            exportFileName += suffix;
         }
-        String folderPath = BASE_ROOT;
-        if (StringUtils.isNotBlank(folderId)) {
-            folderPath = BASE_ROOT + folderId + "/";
-        }
-
-        folderPath += Thread.currentThread().getId() + "/";
-        FileUtils.validateExist(folderPath);
-        File result = new File(folderPath + realFileName.get());
-        FileOutputStream fos = new FileOutputStream(result);
-        BufferedOutputStream outputStream = new BufferedOutputStream(fos);
-        try {
+        StorageService storageService = storageService();
+        File result = resolveExportFile(storageService, cleanExportFileName(exportFileName), folderId);
+        try (OutputStream outputStream = new BufferedOutputStream(storageService.newOutputStream(result))) {
             wb.write(outputStream);
+            outputStream.flush();
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), new Throwable(e));
             throw e;
         } finally {
             wb.close();
-            outputStream.flush();
-            outputStream.close();
         }
         return result;
+    }
+
+    private static File resolveExportFile(StorageService storageService, String fileName, String folderId) {
+        String rootPath = getBaseRoot();
+        List<String> segments = new ArrayList<>();
+        if (StringUtils.isNotBlank(folderId)) {
+            segments.add(folderId);
+        }
+        segments.add(String.valueOf(Thread.currentThread().getId()));
+        storageService.ensureDirectory(rootPath, segments.toArray(new String[0]));
+        segments.add(fileName);
+        return storageService.resolve(rootPath, segments.toArray(new String[0]));
+    }
+
+    private static StorageService storageService() {
+        StorageService storageService = CommonBeanFactory.getBean(StorageService.class);
+        return storageService == null ? FALLBACK_STORAGE_SERVICE : storageService;
+    }
+
+    private static String cleanExportFileName(String fileName) {
+        String cleaned = INVALID_FILE_NAME_CHARS.matcher(StringUtils.defaultIfBlank(fileName, "export")).replaceAll("-").trim();
+        return StringUtils.isBlank(cleaned) || ".".equals(cleaned) || "..".equals(cleaned) ? "export" + suffix : cleaned;
     }
 }

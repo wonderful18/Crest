@@ -41,6 +41,11 @@ const fontListComputed = computed(() => {
   })
 })
 
+const formatUpdateTime = (updateTime?: number | string | null) => {
+  const time = Number(updateTime)
+  return Number.isFinite(time) && time > 0 ? new Date(time).toLocaleString() : '-'
+}
+
 // 删除非默认字体，并刷新默认字体状态
 const deleteFont = item => {
   if (item.isDefault) {
@@ -164,7 +169,7 @@ onMounted(() => {
             <span v-if="ele.isBuiltin" class="font-type"> {{ t('system.system_built_in') }} </span>
           </div>
           <div :title="ele.fileName" class="font-update_time">
-            {{ t('system.update_time') }} {{ new Date(ele.updateTime).toLocaleString() }}
+            {{ t('system.update_time') }} {{ formatUpdateTime(ele.updateTime) }}
             <span class="line"></span>
             <span :title="ele.fileName" class="font-update_text"
               >{{ t('system.font_file') }} {{ ele.fileName }}</span

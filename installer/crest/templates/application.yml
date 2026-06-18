@@ -45,6 +45,59 @@ logging:
   file:
     path: ${CREST_LOG_PATH}
 crest:
+  runtime:
+    role: ${CREST_RUNTIME_ROLE:all}
+  production-mode: ${CREST_PRODUCTION_MODE:false}
+  lock:
+    key-prefix: ${CREST_LOCK_KEY_PREFIX:crest:lock}
+    default-ttl-seconds: ${CREST_LOCK_DEFAULT_TTL_SECONDS:1800}
+  websocket:
+    broadcast:
+      enabled: ${CREST_WEBSOCKET_BROADCAST_ENABLED:}
+      channel: ${CREST_WEBSOCKET_BROADCAST_CHANNEL:crest:pubsub:websocket}
+  task:
+    queue:
+      enabled: ${CREST_TASK_QUEUE_ENABLED:}
+      export:
+        stream: ${CREST_EXPORT_TASK_STREAM:crest:stream:export-task}
+        consumer-group: ${CREST_EXPORT_TASK_CONSUMER_GROUP:crest-export-workers}
+        batch-size: ${CREST_EXPORT_TASK_BATCH_SIZE:4}
+        block-millis: ${CREST_EXPORT_TASK_BLOCK_MILLIS:1000}
+        poll-delay-millis: ${CREST_EXPORT_TASK_POLL_DELAY_MILLIS:1000}
+        recovery-interval-millis: ${CREST_EXPORT_TASK_RECOVERY_INTERVAL_MILLIS:60000}
+        recovery-batch-size: ${CREST_EXPORT_TASK_RECOVERY_BATCH_SIZE:100}
+        stale-millis: ${CREST_EXPORT_TASK_STALE_MILLIS:1800000}
+        enqueue-retry-millis: ${CREST_EXPORT_TASK_ENQUEUE_RETRY_MILLIS:60000}
+        pending-idle-millis: ${CREST_EXPORT_TASK_PENDING_IDLE_MILLIS:60000}
+      sync:
+        stream: ${CREST_SYNC_TASK_STREAM:crest:stream:dataset-sync-task}
+        consumer-group: ${CREST_SYNC_TASK_CONSUMER_GROUP:crest-dataset-sync-workers}
+        batch-size: ${CREST_SYNC_TASK_BATCH_SIZE:2}
+        block-millis: ${CREST_SYNC_TASK_BLOCK_MILLIS:1000}
+        poll-delay-millis: ${CREST_SYNC_TASK_POLL_DELAY_MILLIS:1000}
+        recovery-interval-millis: ${CREST_SYNC_TASK_RECOVERY_INTERVAL_MILLIS:60000}
+        recovery-batch-size: ${CREST_SYNC_TASK_RECOVERY_BATCH_SIZE:100}
+        stale-millis: ${CREST_SYNC_TASK_STALE_MILLIS:1800000}
+        enqueue-retry-millis: ${CREST_SYNC_TASK_ENQUEUE_RETRY_MILLIS:60000}
+        pending-idle-millis: ${CREST_SYNC_TASK_PENDING_IDLE_MILLIS:60000}
+      datasource-sync:
+        stream: ${CREST_DATASOURCE_SYNC_TASK_STREAM:crest:stream:datasource-sync-task}
+        consumer-group: ${CREST_DATASOURCE_SYNC_TASK_CONSUMER_GROUP:crest-datasource-sync-workers}
+        batch-size: ${CREST_DATASOURCE_SYNC_TASK_BATCH_SIZE:2}
+        block-millis: ${CREST_DATASOURCE_SYNC_TASK_BLOCK_MILLIS:1000}
+        poll-delay-millis: ${CREST_DATASOURCE_SYNC_TASK_POLL_DELAY_MILLIS:1000}
+        recovery-interval-millis: ${CREST_DATASOURCE_SYNC_TASK_RECOVERY_INTERVAL_MILLIS:60000}
+        recovery-batch-size: ${CREST_DATASOURCE_SYNC_TASK_RECOVERY_BATCH_SIZE:100}
+        stale-millis: ${CREST_DATASOURCE_SYNC_TASK_STALE_MILLIS:1800000}
+        enqueue-retry-millis: ${CREST_DATASOURCE_SYNC_TASK_ENQUEUE_RETRY_MILLIS:60000}
+        pending-idle-millis: ${CREST_DATASOURCE_SYNC_TASK_PENDING_IDLE_MILLIS:60000}
+      scheduled:
+        stream: ${CREST_SCHEDULED_TASK_STREAM:crest:stream:scheduled-task}
+        consumer-group: ${CREST_SCHEDULED_TASK_CONSUMER_GROUP:crest-scheduled-workers}
+        batch-size: ${CREST_SCHEDULED_TASK_BATCH_SIZE:2}
+        block-millis: ${CREST_SCHEDULED_TASK_BLOCK_MILLIS:1000}
+        poll-delay-millis: ${CREST_SCHEDULED_TASK_POLL_DELAY_MILLIS:1000}
+        pending-idle-millis: ${CREST_SCHEDULED_TASK_PENDING_IDLE_MILLIS:60000}
   metadata-db:
     type: ${CREST_DB_TYPE:mysql}
   demo:
@@ -66,6 +119,8 @@ crest:
     aes-key: ${CREST_AES_KEY}
     aes-iv: ${CREST_AES_IV}
     sm4-key: ${CREST_SM4_KEY}
+  security:
+    token-secret: ${CREST_TOKEN_SECRET:}
   user:
     initial-password: ${CREST_INITIAL_PASSWORD}
   observability:

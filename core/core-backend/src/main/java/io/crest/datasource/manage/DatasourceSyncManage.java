@@ -8,6 +8,7 @@ import io.crest.datasource.dao.auto.entity.CoreDatasourceTask;
 import io.crest.datasource.dao.auto.entity.CoreDatasourceTaskLog;
 import io.crest.datasource.dao.auto.entity.CoreEngine;
 import io.crest.datasource.dao.auto.mapper.CoreDatasourceMapper;
+import io.crest.datasource.queue.DatasourceSyncTaskQueueService;
 import io.crest.datasource.provider.*;
 import io.crest.datasource.request.EngineRequest;
 import io.crest.datasource.server.DatasourceServer;
@@ -52,6 +53,8 @@ public class DatasourceSyncManage {
     private CalciteProvider calciteProvider;
     @Resource
     private DatasourceServer datasourceServer;
+    @Resource
+    private DatasourceSyncTaskQueueService queueService;
 
 
     // 抽取 Excel 数据源的所有表数据
@@ -104,6 +107,25 @@ public class DatasourceSyncManage {
 
     // 执行数据源同步任务入口
     public void extractData(Long datasourceId, Long taskId, JobExecutionContext context) {
+        extractData(datasourceId, taskId, context == null ? null : context.getFireInstanceId(), false, null);
+    }
+
+    // Worker 消费队列后执行任务，执行前仍由数据库状态抢占防重。
+    public void executeQueued(Long datasourceId, Long taskId, String fireInstanceId, String workerId) {
+        executeQueued(datasourceId, taskId, fireInstanceId, workerId, null);
+    }
+
+    // Worker 消费队列后执行任务，投递时间用于过滤已经完成的旧消息。
+    public void executeQueued(Long datasourceId, Long taskId, String fireInstanceId, String workerId, Long enqueueTime) {
+        extractData(datasourceId, taskId, fireInstanceId, true, workerId, enqueueTime);
+    }
+
+    private void extractData(Long datasourceId, Long taskId, String fireInstanceId, boolean queued, String workerId) {
+        extractData(datasourceId, taskId, fireInstanceId, queued, workerId, null);
+    }
+
+    private void extractData(Long datasourceId, Long taskId, String fireInstanceId, boolean queued, String workerId,
+                             Long enqueueTime) {
         CoreDatasource coreDatasource = datasourceMapper.selectById(datasourceId);
         if (coreDatasource == null) {
             LogUtil.error("Can not find datasource: " + datasourceId);
@@ -114,43 +136,70 @@ public class DatasourceSyncManage {
             return;
         }
         datasourceTaskServer.checkTaskIsStopped(coreDatasourceTask);
+        coreDatasourceTask = datasourceTaskServer.selectById(taskId);
+        if (coreDatasourceTask == null) {
+            return;
+        }
         if (StringUtils.isNotEmpty(coreDatasourceTask.getTaskStatus()) && (coreDatasourceTask.getTaskStatus().equalsIgnoreCase(TaskStatus.Stopped.name()) || coreDatasourceTask.getTaskStatus().equalsIgnoreCase(TaskStatus.Suspend.name()))) {
             LogUtil.info("Skip synchronization task: {} ,due to task status is {}", coreDatasourceTask.getId(), coreDatasourceTask.getTaskStatus());
+            if (queued) {
+                datasourceTaskServer.finishQueuedTask(coreDatasourceTask.getId(), null);
+            }
             return;
         }
 
-        if (datasourceTaskServer.existUnderExecutionTask(datasourceId, coreDatasourceTask.getId())) {
+        if (!queued && queueService.enabled()) {
+            long now = System.currentTimeMillis();
+            if (datasourceTaskServer.markQueuedTaskEnqueued(coreDatasourceTask.getId(), now, queueService.enqueueRetryMillis())) {
+                queueService.enqueueDatasourceSyncTask(datasourceId, coreDatasourceTask.getId(), fireInstanceId, now);
+            } else {
+                LogUtil.info("Skip enqueue datasource sync task due to recent enqueue, task ID : " + coreDatasourceTask.getId());
+            }
+            return;
+        }
+
+        if (datasourceTaskServer.existUnderExecutionTask(datasourceId, coreDatasourceTask.getId(), workerId, enqueueTime)) {
             LogUtil.info("Skip synchronization task for datasource due to exist others, datasource ID : " + datasourceId);
             return;
         }
+        String lastError = null;
         try {
             DatasourceServer.UpdateType updateType = DatasourceServer.UpdateType.valueOf(coreDatasourceTask.getUpdateType());
-            if (context != null) {
+            if (StringUtils.isNotBlank(fireInstanceId)) {
                 UpdateWrapper<CoreDatasource> updateWrapper = new UpdateWrapper<>();
                 updateWrapper.eq("id", datasourceId);
                 CoreDatasource record = new CoreDatasource();
-                record.setQrtzInstance(context.getFireInstanceId());
+                record.setQrtzInstance(fireInstanceId);
                 datasourceMapper.update(record, updateWrapper);
             }
             if (coreDatasource.getType().equalsIgnoreCase("ExcelRemote")) {
-                extractedExcelData(taskId, coreDatasource, updateType, coreDatasourceTask.getSyncRate());
+                extractedExcelData(taskId, coreDatasource, updateType, coreDatasourceTask.getSyncRate(), queued);
             } else {
-                extractedData(taskId, coreDatasource, updateType, coreDatasourceTask.getSyncRate());
+                extractedData(taskId, coreDatasource, updateType, coreDatasourceTask.getSyncRate(), queued);
             }
         } catch (Exception e) {
+            lastError = e.getMessage();
             LogUtil.error(e);
         } finally {
             datasourceTaskServer.updateTaskStatus(coreDatasourceTask);
             updateDsTaskStatus(datasourceId);
+            if (queued) {
+                datasourceTaskServer.finishQueuedTask(coreDatasourceTask.getId(), lastError);
+            }
         }
     }
 
     // 抽取 API 数据源表数据
     public void extractedData(Long taskId, CoreDatasource coreDatasource, DatasourceServer.UpdateType updateType, String scheduleType) {
+        extractedData(taskId, coreDatasource, updateType, scheduleType, false);
+    }
+
+    private void extractedData(Long taskId, CoreDatasource coreDatasource, DatasourceServer.UpdateType updateType, String scheduleType, boolean queued) {
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDatasource(transDTO(coreDatasource));
         List<DatasetTableDTO> tables = (List<DatasetTableDTO>) datasourceServer.invokeMethod(coreDatasource.getType(), "getApiTables", DatasourceRequest.class, datasourceRequest);
         for (DatasetTableDTO api : tables) {
+            touchQueuedHeartbeat(taskId, queued);
             CoreDatasourceTaskLog datasetTableTaskLog = datasourceTaskServer.initTaskLog(coreDatasource.getId(), taskId, api.getTableName(), scheduleType);
             datasourceRequest.setTable(api.getTableName());
             List<TableField> tableFields = (List<TableField>) datasourceServer.invokeMethod(coreDatasource.getType(), "getTableFields", DatasourceRequest.class, datasourceRequest);
@@ -160,7 +209,7 @@ public class DatasourceSyncManage {
                 if (updateType.equals(DatasourceServer.UpdateType.all_scope)) {
                     createEngineTable(TableUtils.tmpName(datasourceRequest.getTable()), tableFields);
                 }
-                extractApiData(datasourceRequest, updateType, tableFields);
+                extractApiData(datasourceRequest, updateType, tableFields, taskId, queued);
                 if (updateType.equals(DatasourceServer.UpdateType.all_scope)) {
                     replaceTable(datasourceRequest.getTable());
                 }
@@ -185,10 +234,15 @@ public class DatasourceSyncManage {
 
     // 抽取远程 Excel 数据源表数据
     public void extractedExcelData(Long taskId, CoreDatasource coreDatasource, DatasourceServer.UpdateType updateType, String scheduleType) {
+        extractedExcelData(taskId, coreDatasource, updateType, scheduleType, false);
+    }
+
+    private void extractedExcelData(Long taskId, CoreDatasource coreDatasource, DatasourceServer.UpdateType updateType, String scheduleType, boolean queued) {
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDatasource(transDTO(coreDatasource));
         List<DatasetTableDTO> tables = ExcelUtils.tables(datasourceRequest);
         for (DatasetTableDTO tableDTO : tables) {
+            touchQueuedHeartbeat(taskId, queued);
             CoreDatasourceTaskLog datasetTableTaskLog = datasourceTaskServer.initTaskLog(coreDatasource.getId(), taskId, tableDTO.getTableName(), scheduleType);
             datasourceRequest.setTable(tableDTO.getTableName());
             ExcelUtils.getTableFields(datasourceRequest);
@@ -199,7 +253,7 @@ public class DatasourceSyncManage {
                 if (updateType.equals(DatasourceServer.UpdateType.all_scope)) {
                     createEngineTable(TableUtils.tmpName(datasourceRequest.getTable()), tableFields);
                 }
-                extractExcelData(datasourceRequest, updateType, tableFields);
+                extractExcelData(datasourceRequest, updateType, tableFields, taskId, queued);
                 if (updateType.equals(DatasourceServer.UpdateType.all_scope)) {
                     replaceTable(datasourceRequest.getTable());
                 }
@@ -221,6 +275,12 @@ public class DatasourceSyncManage {
             } finally {
                 datasourceTaskServer.saveLog(datasetTableTaskLog);
             }
+        }
+    }
+
+    private void touchQueuedHeartbeat(Long taskId, boolean queued) {
+        if (queued) {
+            datasourceTaskServer.touchQueuedTaskHeartbeat(taskId);
         }
     }
 
@@ -282,6 +342,11 @@ public class DatasourceSyncManage {
 
     // 分页写入 API 抽取数据到引擎表
     private void extractApiData(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType extractType, List<TableField> tableFields) throws Exception {
+        extractApiData(datasourceRequest, extractType, tableFields, null, false);
+    }
+
+    private void extractApiData(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType extractType, List<TableField> tableFields, Long taskId, boolean queued) throws Exception {
+        touchQueuedHeartbeat(taskId, queued);
         Map<String, Object> result = (Map<String, Object>) datasourceServer.invokeMethod(datasourceRequest.getDatasource().getType(), "fetchApiResultField", DatasourceRequest.class, datasourceRequest);
         List<String[]> dataList = (List<String[]>) result.get("dataList");
         CoreEngine engine = engineManage.info();
@@ -296,6 +361,7 @@ public class DatasourceSyncManage {
             totalPage = dataList.size() / pageNumber;
         }
         for (int page = 1; page <= totalPage; page++) {
+            touchQueuedHeartbeat(taskId, queued);
             engineRequest.setQuery(engineProvider.insertSql(DatasourceConfiguration.DatasourceType.API.name(), datasourceRequest.getTable(), extractType, dataList, page, pageNumber, tableFields));
             calciteProvider.exec(engineRequest);
         }
@@ -303,6 +369,11 @@ public class DatasourceSyncManage {
 
     // 分页写入 Excel 抽取数据到引擎表
     private void extractExcelData(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType extractType, List<TableField> tableFields) throws Exception {
+        extractExcelData(datasourceRequest, extractType, tableFields, null, false);
+    }
+
+    private void extractExcelData(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType extractType, List<TableField> tableFields, Long taskId, boolean queued) throws Exception {
+        touchQueuedHeartbeat(taskId, queued);
         ExcelUtils excelUtils = new ExcelUtils();
         List<String[]> dataList = excelUtils.fetchDataList(datasourceRequest);
         CoreEngine engine = engineManage.info();
@@ -317,6 +388,7 @@ public class DatasourceSyncManage {
             totalPage = dataList.size() / pageNumber;
         }
         for (int page = 1; page <= totalPage; page++) {
+            touchQueuedHeartbeat(taskId, queued);
             engineRequest.setQuery(engineProvider.insertSql(DatasourceConfiguration.DatasourceType.Excel.name(), datasourceRequest.getTable(), extractType, dataList, page, pageNumber, tableFields));
             calciteProvider.exec(engineRequest);
         }
@@ -332,7 +404,13 @@ public class DatasourceSyncManage {
         for (int i = 0; i < replaceTableSql.length; i++) {
             if (StringUtils.isNotEmpty(replaceTableSql[i])) {
                 engineRequest.setQuery(replaceTableSql[i]);
-                calciteProvider.exec(engineRequest);
+                try {
+                    calciteProvider.exec(engineRequest);
+                } catch (Exception e) {
+                    if (!isDropStatement(replaceTableSql[i]) || !isTableMissing(e)) {
+                        throw e;
+                    }
+                }
             }
         }
     }
@@ -344,7 +422,13 @@ public class DatasourceSyncManage {
         engineRequest.setEngine(engine);
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
         engineRequest.setQuery(engineProvider.createTableSql(tableName, tableFields, engine));
-        calciteProvider.exec(engineRequest);
+        try {
+            calciteProvider.exec(engineRequest);
+        } catch (Exception e) {
+            if (!isTableAlreadyExists(e)) {
+                throw e;
+            }
+        }
     }
 
     // 删除当前引擎中的数据表
@@ -354,7 +438,29 @@ public class DatasourceSyncManage {
         engineRequest.setEngine(engine);
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
         engineRequest.setQuery(engineProvider.dropTable(tableName));
-        calciteProvider.exec(engineRequest);
+        try {
+            calciteProvider.exec(engineRequest);
+        } catch (Exception e) {
+            if (!isTableMissing(e)) {
+                throw e;
+            }
+        }
+    }
+
+    private boolean isTableMissing(Exception e) {
+        String message = StringUtils.defaultString(e.getMessage()).toUpperCase(java.util.Locale.ROOT);
+        return message.contains("ORA-00942") || message.contains("DOES NOT EXIST");
+    }
+
+    private boolean isDropStatement(String sql) {
+        return StringUtils.defaultString(sql).stripLeading()
+                .toUpperCase(java.util.Locale.ROOT)
+                .startsWith("DROP TABLE");
+    }
+
+    private boolean isTableAlreadyExists(Exception e) {
+        String message = StringUtils.defaultString(e.getMessage()).toUpperCase(java.util.Locale.ROOT);
+        return message.contains("ORA-00955") || message.contains("ALREADY EXISTS");
     }
 
     // 新增或更新数据源同步调度

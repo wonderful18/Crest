@@ -58,7 +58,7 @@ case "${CREST_DB_TYPE}" in
     DEMO_DISABLED_FLYWAY_LOCATIONS="classpath:db/migration-ob-mysql"
     ;;
   ob-oracle)
-    echo "OceanBase Oracle 元数据库不使用 MySQL 演示迁移，当前清理脚本不支持 ob-oracle。"
+    echo "OceanBase Oracle 系统库不使用 MySQL 演示迁移，当前清理脚本不支持 ob-oracle。"
     echo "请不要将 MySQL 演示清理 SQL 执行到 OceanBase Oracle 租户。"
     exit 1
     ;;

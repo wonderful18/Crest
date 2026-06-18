@@ -2,6 +2,7 @@ package io.crest.log;
 
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
+import io.crest.exception.CrestException;
 import io.crest.substitute.permissions.user.CrestUserManage;
 import io.crest.substitute.permissions.user.model.CrestUser;
 import io.crest.utils.AuthUtils;
@@ -64,6 +65,10 @@ public class GenericAuditLogAspect {
 
         try {
             return point.proceed();
+        } catch (CrestException e) {
+            responseCode = e.getCode();
+            responseMsg = e.getMessage();
+            throw e;
         } catch (Throwable e) {
             responseCode = 500;
             responseMsg = e.getMessage();

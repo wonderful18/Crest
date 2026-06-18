@@ -18,10 +18,10 @@ import org.apache.commons.lang3.Strings;
 
 import java.util.*;
 
-// 定义当前业务对象的核心职责
+// 将图表排序字段转换为 SQL ORDER BY 片段
 public class Order2SQLObj {
 
-    // 执行当前服务方法并返回处理结果
+    // 追加图表排序字段，普通字段、计算字段和分组字段分别生成对应排序表达式
     public static void getOrders(SQLMeta meta, List<ChartSortFieldDTO> sortFields, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         SQLObj tableObj = meta.getTable();
         List<SQLObj> xOrders = meta.getXOrders() == null ? new ArrayList<>() : meta.getXOrders();
@@ -39,7 +39,7 @@ public class Order2SQLObj {
         }
     }
 
-    // 根据输入参数构造业务结果
+    // 单个排序字段需要复用字段转换规则，保证 ORDER BY 与 SELECT 表达式一致
     private static SQLObj buildSortField(ChartSortFieldDTO f, SQLObj tableObj, int i, List<DatasetTableFieldDTO> originFields, boolean isCross, Map<Long, DatasourceSchemaDTO> dsMap, List<CalParam> fieldParam, List<CalParam> chartParam, PluginManageApi pluginManage) {
         Map<String, String> paramMap = Utils.mergeParam(fieldParam, chartParam);
         String originField;
@@ -61,11 +61,7 @@ public class Order2SQLObj {
                 originField = calcFieldExp;
             }
         } else if (ObjectUtils.isNotEmpty(f.getExtField()) && Objects.equals(f.getExtField(), ExtFieldConstant.EXT_COPY)) {
-            if (Strings.CI.equals(dsType, "es")) {
-                originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), f.getOriginName());
-            } else {
-                originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), f.getEngineFieldName());
-            }
+            originField = FieldSqlExpressionUtils.physicalField(tableObj, f, dsType);
         } else if (ObjectUtils.isNotEmpty(f.getExtField()) && Objects.equals(f.getExtField(), ExtFieldConstant.EXT_GROUP)) {
             String groupFieldExp = Utils.transGroupFieldToSql(f, originFields, isCross, dsMap, pluginManage);
             // 给计算字段处加一个占位符，后续SQL方言转换后再替换
@@ -75,11 +71,7 @@ public class Order2SQLObj {
                 originField = groupFieldExp;
             }
         } else {
-            if (Strings.CI.equals(dsType, "es")) {
-                originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), f.getOriginName());
-            } else {
-                originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), f.getEngineFieldName());
-            }
+            originField = FieldSqlExpressionUtils.physicalField(tableObj, f, dsType);
         }
         String fieldAlias = String.format(SQLConstants.FIELD_ALIAS_X_PREFIX, i);
         String fieldName = "";

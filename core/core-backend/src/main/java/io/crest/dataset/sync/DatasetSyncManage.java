@@ -10,6 +10,7 @@ import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTaskLog;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetGroupMapper;
 import io.crest.dataset.manage.DatasetGroupManage;
 import io.crest.dataset.manage.DatasetSQLManage;
+import io.crest.dataset.sync.queue.DatasetSyncTaskQueueService;
 import io.crest.datasource.dao.auto.entity.CoreEngine;
 import io.crest.datasource.manage.EngineManage;
 import io.crest.datasource.provider.EngineProvider;
@@ -69,6 +70,8 @@ public class DatasetSyncManage {
     private CoreDatasetGroupMapper datasetGroupMapper;
     @Resource
     private CommonThreadPool commonThreadPool;
+    @Resource
+    private DatasetSyncTaskQueueService queueService;
 
     /**
      * 手动触发数据集同步。未配置任务时会创建一次性任务，再异步进入执行流程
@@ -84,6 +87,14 @@ public class DatasetSyncManage {
             task = taskManage.selectById(taskManage.save(dto).getId());
         }
         Long taskId = task.getId();
+        if (queueEnabled()) {
+            long now = System.currentTimeMillis();
+            if (taskManage.markQueuedTaskEnqueued(taskId, now, queueService.enqueueRetryMillis())) {
+                queueService.enqueueDatasetSyncTask(task.getDatasetGroupId(), taskId,
+                        DatasourceTaskServer.ScheduleType.MANUAL.name(), true, now);
+            }
+            return taskManage.task(datasetGroupId);
+        }
         commonThreadPool.addTask(() -> {
             try {
                 execute(datasetGroupId, taskId, DatasourceTaskServer.ScheduleType.MANUAL.name(), null, true);
@@ -106,6 +117,13 @@ public class DatasetSyncManage {
             if (task == null) {
                 return;
             }
+            if (queueEnabled()) {
+                long now = System.currentTimeMillis();
+                if (taskManage.markQueuedTaskEnqueued(task.getId(), now, queueService.enqueueRetryMillis())) {
+                    queueService.enqueueDatasetSyncTask(task.getDatasetGroupId(), task.getId(), task.getSyncRate(), false, now);
+                }
+                return;
+            }
             execute(task.getDatasetGroupId(), task.getId(), task.getSyncRate(), context, false);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
@@ -113,9 +131,48 @@ public class DatasetSyncManage {
     }
 
     /**
+     * Worker 消费 Redis 队列后的执行入口，异常由任务日志和任务状态记录。
+     */
+    public void executeQueued(Long datasetGroupId, Long taskId, String triggerType, boolean manual) {
+        executeQueued(datasetGroupId, taskId, triggerType, manual, null);
+    }
+
+    /**
+     * Worker 消费 Redis 队列后的执行入口，记录执行者用于多副本排障和恢复。
+     */
+    public void executeQueued(Long datasetGroupId, Long taskId, String triggerType, boolean manual, String workerId) {
+        executeQueued(datasetGroupId, taskId, triggerType, manual, workerId, null);
+    }
+
+    /**
+     * Worker 消费 Redis 队列后的执行入口，投递时间用于过滤已经完成的旧消息。
+     */
+    public void executeQueued(Long datasetGroupId, Long taskId, String triggerType, boolean manual, String workerId,
+                              Long enqueueTime) {
+        try {
+            execute(datasetGroupId, taskId, triggerType, null, manual, workerId, enqueueTime);
+        } catch (Exception e) {
+            LogUtil.error("Dataset sync queued task failed: " + taskId, e);
+        }
+    }
+
+    /**
      * 执行一次同步任务，负责抢占执行锁、选择全量或增量策略、记录日志并回写任务状态
      */
     private void execute(Long datasetGroupId, Long taskId, String triggerType, JobExecutionContext context, boolean manual) throws Exception {
+        execute(datasetGroupId, taskId, triggerType, context, manual, null);
+    }
+
+    /**
+     * 执行一次同步任务，Worker 路径会传入执行者标识用于数据库 CAS 记录。
+     */
+    private void execute(Long datasetGroupId, Long taskId, String triggerType, JobExecutionContext context,
+                         boolean manual, String workerId) throws Exception {
+        execute(datasetGroupId, taskId, triggerType, context, manual, workerId, null);
+    }
+
+    private void execute(Long datasetGroupId, Long taskId, String triggerType, JobExecutionContext context,
+                         boolean manual, String workerId, Long enqueueTime) throws Exception {
         CoreDatasetSyncTask task = taskManage.selectById(taskId);
         if (task == null) {
             return;
@@ -123,7 +180,7 @@ public class DatasetSyncManage {
         if (!manual && Strings.CI.equalsAny(task.getTaskStatus(), TaskStatus.Stopped.name(), TaskStatus.Suspend.name())) {
             return;
         }
-        if (taskManage.markUnderExecution(task)) {
+        if (taskManage.markUnderExecution(task, workerId, enqueueTime)) {
             LogUtil.info("Skip dataset sync task due to exist another running task, dataset ID: " + datasetGroupId);
             return;
         }
@@ -171,7 +228,8 @@ public class DatasetSyncManage {
             log.setUpdateType(result.fullSync ? DatasourceServer.UpdateType.all_scope.name() : task.getUpdateType());
             taskManage.updateLog(log);
             taskManage.finishTask(task, status, result.incrementalLastValue, result.schemaHash,
-                    result.fullSync, result.reconcileResult, result.sourceRowCount, result.cacheRowCount);
+                    result.fullSync, result.reconcileResult, result.sourceRowCount, result.cacheRowCount,
+                    status == TaskStatus.Completed ? null : log.getInfo());
         }
     }
 
@@ -210,6 +268,10 @@ public class DatasetSyncManage {
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
         Provider sourceProvider = ProviderFactory.getProvider(datasource.getType());
         return new SyncContext(dataset, sourceSql, dsMap, sourceProvider, engine, engineProvider, syncFields, tableFields);
+    }
+
+    private boolean queueEnabled() {
+        return queueService != null && queueService.enabled();
     }
 
     /**
@@ -426,7 +488,13 @@ public class DatasetSyncManage {
         EngineRequest request = new EngineRequest();
         request.setEngine(context.engine);
         request.setQuery(context.engineProvider.createTableSql(tableName, context.tableFields, context.engine));
-        calciteProvider.exec(request);
+        try {
+            calciteProvider.exec(request);
+        } catch (Exception e) {
+            if (!isTableAlreadyExists(e)) {
+                throw e;
+            }
+        }
     }
 
     /**
@@ -549,7 +617,13 @@ public class DatasetSyncManage {
         EngineRequest request = new EngineRequest();
         request.setEngine(context.engine);
         request.setQuery(context.engineProvider.dropTable(tableName));
-        calciteProvider.exec(request);
+        try {
+            calciteProvider.exec(request);
+        } catch (Exception e) {
+            if (!isTableMissing(e)) {
+                throw e;
+            }
+        }
     }
 
     /**
@@ -564,8 +638,30 @@ public class DatasetSyncManage {
             EngineRequest request = new EngineRequest();
             request.setEngine(context.engine);
             request.setQuery(sql);
-            calciteProvider.exec(request);
+            try {
+                calciteProvider.exec(request);
+            } catch (Exception e) {
+                if (!isDropStatement(sql) || !isTableMissing(e)) {
+                    throw e;
+                }
+            }
         }
+    }
+
+    private boolean isDropStatement(String sql) {
+        return StringUtils.defaultString(sql).stripLeading()
+                .toUpperCase(java.util.Locale.ROOT)
+                .startsWith("DROP TABLE");
+    }
+
+    private boolean isTableMissing(Exception e) {
+        String message = StringUtils.defaultString(e.getMessage()).toUpperCase(java.util.Locale.ROOT);
+        return message.contains("ORA-00942") || message.contains("DOES NOT EXIST");
+    }
+
+    private boolean isTableAlreadyExists(Exception e) {
+        String message = StringUtils.defaultString(e.getMessage()).toUpperCase(java.util.Locale.ROOT);
+        return message.contains("ORA-00955") || message.contains("ALREADY EXISTS");
     }
 
     /**

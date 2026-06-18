@@ -16,7 +16,7 @@
 | --- | --- | --- |
 | `main` | 稳定主线，代表最新可发布状态 | 只接受 PR，不直接 push |
 | `dev` | 新功能和非紧急修复集成分支 | 只接受 PR，不直接 push |
-| `release/1.5` | 1.5 系列维护分支，产出 `v1.5.6`、`v1.5.7` 等补丁版本 | 只接受 PR，不直接 push |
+| `release/<major.minor>` | 已发布稳定线维护分支，例如 `release/1.5`、`release/2.0` | 只接受 PR，不直接 push |
 
 ## 临时分支命名
 
@@ -24,9 +24,9 @@
 | --- | --- | --- |
 | 新功能 | `feat/<short-name>` | `dev` |
 | 普通缺陷，尚未发布 | `fix/<short-name>` | `dev` |
-| 已发布版本补丁 | `hotfix/<next-version>-<short-name>` | `release/1.5` |
-| 安全修复 | `security/<short-name>` 或 `hotfix/<next-version>-security-<short-name>` | `dev` 或 `release/1.5` |
-| 发布流程、CI、打包脚本 | `ci/<short-name>` 或 `chore/<short-name>` | `dev`、`main` 或 `release/1.5`，按影响范围选择 |
+| 已发布版本补丁 | `hotfix/<next-version>-<short-name>` | 对应 `release/<major.minor>` |
+| 安全修复 | `security/<short-name>` 或 `hotfix/<next-version>-security-<short-name>` | `dev` 或对应 `release/<major.minor>` |
+| 发布流程、CI、打包脚本 | `ci/<short-name>` 或 `chore/<short-name>` | `dev`、`main` 或对应 `release/<major.minor>`，按影响范围选择 |
 | 文档 | `docs/<short-name>` | 对应长期分支 |
 | 实验验证 | `spike/<short-name>` | 不直接合入受保护分支，需整理为正式分支后再 PR |
 
@@ -34,7 +34,7 @@
 
 ### 1. 已发布版本发现业务 bug
 
-示例：内网 `v1.5.5` 有 bug，需要重新交付。
+示例：已交付的 `v1.5.5` 环境有 bug，需要重新打包交付。
 
 1. 从维护分支创建补丁分支：
 
@@ -67,18 +67,18 @@
 
 ### 3. 新功能
 
-新功能从 `feat/*` 分支进入 `dev`。功能稳定后，按版本计划从 `dev` 合入 `main` 或未来的 release 分支。新功能不得直接进入 `release/1.5`，除非明确决定作为补丁版本的一部分并完成风险评审。
+新功能从 `feat/*` 分支进入 `dev`。功能稳定后，按版本计划从 `dev` 合入 `main` 或未来的 release 分支。新功能不得直接进入已发布稳定线的 release 分支，除非明确决定作为补丁版本的一部分并完成风险评审。
 
 ### 4. 普通缺陷
 
-尚未发布到稳定版本的缺陷，从 `fix/*` 进入 `dev`。如果同一问题已经影响发布版本，再从 `release/1.5` 创建 `hotfix/*` 做最小补丁，不直接 cherry-pick 大范围开发分支。
+尚未发布到稳定版本的缺陷，从 `fix/*` 进入 `dev`。如果同一问题已经影响发布版本，再从对应 `release/<major.minor>` 创建 `hotfix/*` 做最小补丁，不直接 cherry-pick 大范围开发分支。
 
 ### 5. 安全问题
 
 安全问题按影响范围选择：
 
 - 只影响未发布开发线：`security/*` -> `dev`；
-- 影响已发布版本：`hotfix/<next-version>-security-<short-name>` -> `release/1.5`；
+- 影响已发布版本：`hotfix/<next-version>-security-<short-name>` -> 对应 `release/<major.minor>`；
 - 修复后同步回 `main` 和 `dev`。
 
 ### 6. SQL 变更
@@ -106,7 +106,7 @@ v1.5.5_to_v1.5.6.sql
 
 ## 发布检查
 
-发布补丁版本前必须满足：
+发布稳定版本或补丁版本前必须满足：
 
 - `VERSION`、Maven 根版本、`crest.version`、前端 `package.json` 版本一致；
 - 新版本号大于仓库中最新稳定 tag；

@@ -123,11 +123,7 @@ public class WhereTree2Str {
                 originName = calcFieldExp;
             }
         } else if (ObjectUtils.isNotEmpty(field.getExtField()) && Objects.equals(field.getExtField(), ExtFieldConstant.EXT_COPY)) {
-            if (Strings.CI.equals(dsType, "es")) {
-                originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getOriginName());
-            } else {
-                originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getEngineFieldName());
-            }
+            originName = FieldSqlExpressionUtils.physicalField(tableObj, field, dsType);
         } else if (ObjectUtils.isNotEmpty(field.getExtField()) && Objects.equals(field.getExtField(), ExtFieldConstant.EXT_GROUP)) {
             String groupFieldExp = Utils.transGroupFieldToSql(field, originFields, isCross, dsMap, pluginManage);
             // 给计算字段处加一个占位符，后续SQL方言转换后再替换
@@ -137,11 +133,7 @@ public class WhereTree2Str {
                 originName = groupFieldExp;
             }
         } else {
-            if (Strings.CI.equals(dsType, "es")) {
-                originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getOriginName());
-            } else {
-                originName = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), field.getEngineFieldName());
-            }
+            originName = FieldSqlExpressionUtils.physicalField(tableObj, field, dsType);
         }
         if (field.getFieldType() == 1) {
             if (field.getExtractedFieldType() == 0 || field.getExtractedFieldType() == 5) {

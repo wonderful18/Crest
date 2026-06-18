@@ -3,11 +3,11 @@ package io.crest.datasource.provider;
 import io.crest.utils.CommonBeanFactory;
 import io.micrometer.common.util.StringUtils;
 
-// 定义当前业务对象的核心职责
+// 按抽取引擎类型查找对应 SQL provider
 public class ProviderUtil {
 
 
-    // 执行当前服务方法并返回处理结果
+    // 未配置引擎类型时仍按历史默认值使用 MySQL 抽取引擎
     public static EngineProvider getEngineProvider(String datasourceType) {
         if (StringUtils.isNotEmpty(datasourceType)) {
             return (EngineProvider) CommonBeanFactory.getBean(datasourceType + "Engine");

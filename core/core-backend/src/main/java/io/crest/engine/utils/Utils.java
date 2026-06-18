@@ -152,10 +152,11 @@ public class Utils {
                 if (Strings.CI.contains(originField, ele.getId() + "")) {
                     // 计算字段允许二次引用，这里递归查询完整引用链
                     if (Objects.equals(ele.getExtField(), ExtFieldConstant.EXT_NORMAL)) {
+                        String physicalFieldName = physicalFieldName(ele);
                         if (isCross) {
-                            originField = originField.replace("[" + ele.getId() + "]", String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), ele.getEngineFieldName()));
+                            originField = originField.replace("[" + ele.getId() + "]", String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), physicalFieldName));
                         } else {
-                            originField = originField.replace("[" + ele.getId() + "]", datasourceType.getPrefix() + tableObj.getTableAlias() + datasourceType.getSuffix() + "." + datasourceType.getPrefix() + ele.getEngineFieldName() + datasourceType.getSuffix());
+                            originField = originField.replace("[" + ele.getId() + "]", datasourceType.getPrefix() + tableObj.getTableAlias() + datasourceType.getSuffix() + "." + datasourceType.getPrefix() + physicalFieldName + datasourceType.getSuffix());
                         }
                     } else {
                         originField = originField.replace("[" + ele.getId() + "]", "(" + ele.getOriginName() + ")");
@@ -164,10 +165,20 @@ public class Utils {
                 }
             }
             return originField;
+        } catch (CrestException e) {
+            throw e;
         } catch (Exception e) {
             CrestException.throwException(Translator.get("i18n_field_circular_error"));
         }
         return null;
+    }
+
+    private static String physicalFieldName(DatasetTableFieldDTO field) {
+        String identifier = StringUtils.firstNonBlank(field.getEngineFieldName(), field.getFieldShortName(), field.getDbFieldName());
+        if (StringUtils.isBlank(identifier) || Strings.CI.equals(identifier, "null")) {
+            CrestException.throwException(Translator.get("i18n_gauge_field_change"));
+        }
+        return identifier;
     }
 
     /**

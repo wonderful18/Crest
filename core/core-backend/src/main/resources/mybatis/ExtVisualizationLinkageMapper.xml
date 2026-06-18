@@ -125,7 +125,7 @@
                 <if test="sourceViewId != null">
                   AND pvl.source_view_id = #{sourceViewId}
                 </if>
-            ) AS temp_table
+            ) temp_table
         )
     </delete>
 
@@ -139,7 +139,7 @@
                         <if test="sourceViewId != null">
                           AND pvl.source_view_id = #{sourceViewId}
                         </if>
-                    ) AS temp_table
+                    ) temp_table
                 )
     </delete>
 
@@ -203,7 +203,14 @@
                 copy_from,
                 copy_id
             ) SELECT
-            UUID() AS id,
+            <choose>
+                <when test="_databaseId == 'ob-oracle'">
+                    RAWTOHEX(SYS_GUID())
+                </when>
+                <otherwise>
+                    UUID()
+                </otherwise>
+            </choose> AS id,
             pv_source_copy.t_dv_id AS dv_id,
             pv_source_copy.t_chart_view_id AS source_view_id,
             pv_target_copy.t_chart_view_id target_view_id,
@@ -255,7 +262,14 @@
             copy_from,
             copy_id
         ) SELECT
-        uuid() AS id,
+        <choose>
+            <when test="_databaseId == 'ob-oracle'">
+                RAWTOHEX(SYS_GUID())
+            </when>
+            <otherwise>
+                uuid()
+            </otherwise>
+        </choose> AS id,
         pvlf_copy.t_id,
         source_field,
         target_field,

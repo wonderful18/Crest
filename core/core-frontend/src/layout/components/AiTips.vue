@@ -24,8 +24,8 @@ onMounted(() => {
     show-arrow
   >
     <div class="ai-popper-tips-content">
-      <p class="title">Crest 智能客服</p>
-      <p class="constant">你好，我是 Crest 智能客服<br />点击一下，开启高效解答模式~<br />&nbsp;</p>
+      <p class="title">Crest 帮助</p>
+      <p class="constant">查看使用说明与常见问题。<br />&nbsp;</p>
       <div class="bottom">
         <el-button @click="confirm"> 我知道了 </el-button>
       </div>

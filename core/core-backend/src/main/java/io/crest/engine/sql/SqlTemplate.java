@@ -1,6 +1,6 @@
 package io.crest.engine.sql;
 
-// 定义当前业务对象的核心职责
+// StringTemplate 查询模板，统一描述预览、聚合、过滤和排序 SQL 的输出结构
 public class SqlTemplate {
     public static String QUERY_SQL = "querySql(limitFiled, groups, aggregators, filters, orders, table, notUseAs, useAliasForGroup)\n" +
             "::=<<\n" +

@@ -1,12 +1,12 @@
 # 前后端分离部署
 
-本目录用于验证 Crest 的前后端分离运行形态。生产发布时，后端服务、前端网关和元数据库分别运行在独立容器中：
+本目录用于验证 Crest 的前后端分离运行形态。生产发布时，后端服务、前端网关和 Crest 系统库分别运行在独立容器中：
 
 | 服务 | 容器 | 说明 |
 | --- | --- | --- |
 | `crest-service` | Spring Boot | 提供 `/api/v1/`、`/websocket`、OpenAPI 文档和后台任务 |
 | `crest` | Nginx | 提供前端静态资源，转发后端接口和 WebSocket |
-| `mysql-crest` | MySQL 8.0 | 保存元数据、系统配置、演示资源和任务状态 |
+| `mysql-crest` | MySQL 8.0 | 保存系统配置、资源索引、演示资源和任务状态 |
 | `crest-prometheus` | Prometheus | 可选，抓取后端指标 |
 | `crest-grafana` | Grafana | 可选，展示接口和运行时看板 |
 
@@ -52,9 +52,9 @@ http://127.0.0.1:18100/
 
 首次登录后建议立即修改管理员密码。
 
-## OceanBase 元数据库
+## OceanBase 系统库
 
-拆分部署默认启动内置 MySQL，默认 JDBC URL 指向 `mysql-crest:3306`。使用 OceanBase 作为 Crest 元数据库时，应通过 `--no-deps` 停用内置 MySQL 依赖，并显式覆盖后端数据库配置，尤其是 `CREST_DB_URL` 和 `CREST_DB_USERNAME`：
+拆分部署默认启动内置 MySQL，默认 JDBC URL 指向 `mysql-crest:3306`。使用 OceanBase 作为 Crest 系统库时，应通过 `--no-deps` 停用内置 MySQL 依赖，并显式覆盖后端数据库配置，尤其是 `CREST_DB_URL` 和 `CREST_DB_USERNAME`：
 
 ```bash
 CREST_DB_TYPE=ob-oracle \
@@ -73,7 +73,7 @@ CREST_WEB_PORT=18100 \
 docker compose -f deploy/split/docker-compose.yml up -d --no-deps crest-service crest
 ```
 
-生产环境的 OceanBase 元数据库应先由 DBA 执行离线包 `init-sql/ob-mysql/` 或 `init-sql/ob-oracle/` 下的初始化 SQL，再以 `CREST_FLYWAY_ENABLED=false` 启动服务。`ob-mysql` 元数据库使用 `CREST_DB_TYPE=ob-mysql`，URL 形如 `jdbc:oceanbase://10.0.0.10:2883/crest`。OBProxy/ODP 连接用户名使用 `用户@租户#集群`，observer 直连端口通常使用 `2881`，用户名使用 `用户@租户`。
+生产环境的 OceanBase 系统库应先由 DBA 使用 `obclient --default-character-set=utf8mb4` 执行离线包 `init-sql/ob-mysql/` 或 `init-sql/ob-oracle/` 下的初始化 SQL，再以 `CREST_FLYWAY_ENABLED=false` 启动服务。`ob-mysql` 系统库使用 `CREST_DB_TYPE=ob-mysql`，URL 形如 `jdbc:oceanbase://10.0.0.10:2883/crest`。OBProxy/ODP 连接用户名使用 `用户@租户#集群`，observer 直连端口通常使用 `2881`，用户名使用 `用户@租户`。
 
 ## 启用 Prometheus 和 Grafana
 
@@ -133,7 +133,7 @@ docker exec split-crest-prometheus wget -qO- http://crest-service:8100/api/v1/ac
 - Nginx 在 Docker 网络内按固定周期解析后端服务名，后端容器重建后不需要重启前端网关；
 - MySQL 服务不暴露宿主机端口。
 
-`/doc.html`、`/v3/api-docs` 和 `/swagger-ui` 会转发到后端，便于本地调试接口。生产环境如果需要开放接口文档，应放在内网或网关白名单后面。
+`/doc.html`、`/v3/api-docs` 和 `/swagger-ui` 会转发到后端，便于本地调试接口。生产环境如果需要开放接口文档，应放在受控网络或网关白名单后面。
 
 ## Nginx 说明
 
@@ -144,7 +144,7 @@ docker exec split-crest-prometheus wget -qO- http://crest-service:8100/api/v1/ac
 | 前端健康检查 | `/healthz` 返回 `204`，用于判断 Nginx 网关是否可用 |
 | 后端存活检查 | `/api/v1/actuator/health/liveness` 只做进程级轻量检查 |
 | 后端就绪检查 | `/api/v1/actuator/health/readiness` 校验数据库连接，适合容器 healthcheck 和流量接入判断 |
-| 指标路径 | `/api/v1/actuator/prometheus` 不经前端网关公开，由 Prometheus 在内网直接抓后端 |
+| 指标路径 | `/api/v1/actuator/prometheus` 不经前端网关公开，由 Prometheus 通过受控网络直接抓取后端 |
 | 上传大小 | `client_max_body_size 500m`，与后端上传限制保持一致 |
 | API 转发 | `/api/v1/` 转发到 `crest-service:8100/api/v1/` |
 | API 安全头 | 接口响应使用 `X-Frame-Options: DENY` 和 `frame-ancestors 'none'`，不继承前端页面 CSP |
@@ -158,7 +158,7 @@ docker exec split-crest-prometheus wget -qO- http://crest-service:8100/api/v1/ac
 | Source Map | `*.map` 默认不对外提供 |
 | 隐藏文件 | 拒绝访问隐藏文件，保留 `.well-known` 例外 |
 
-如果生产环境由外部网关终止 HTTPS，建议在外部网关配置 HSTS、TLS 版本、证书轮换、访问日志脱敏和 IP 白名单。容器内 Nginx 不默认发送 HSTS，避免在 HTTP 本地验证和内网代理场景中产生误配置。
+如果生产环境由外部网关终止 HTTPS，建议在外部网关配置 HSTS、TLS 版本、证书轮换、访问日志脱敏和 IP 白名单。容器内 Nginx 不默认发送 HSTS，避免在 HTTP 本地验证和代理转发场景中产生误配置。
 
 ## 验证清单
 

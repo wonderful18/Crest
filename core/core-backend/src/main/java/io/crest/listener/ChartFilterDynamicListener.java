@@ -1,6 +1,8 @@
 package io.crest.listener;
 
 import io.crest.chart.manage.ChartViewOldDataMergeService;
+import io.crest.runtime.ConditionalOnCrestRuntimeRole;
+import io.crest.runtime.CrestRuntimeRole;
 import io.crest.startup.dao.auto.entity.CoreSysStartupJob;
 import io.crest.startup.dao.auto.mapper.CoreSysStartupJobMapper;
 import jakarta.annotation.Resource;
@@ -17,7 +19,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Order(value = 9)
-// 定义当前业务对象的核心职责
+@ConditionalOnCrestRuntimeRole({CrestRuntimeRole.ALL, CrestRuntimeRole.SCHEDULER})
 public class ChartFilterDynamicListener implements ApplicationListener<ApplicationReadyEvent> {
     private final Logger logger = LoggerFactory.getLogger(ChartFilterDynamicListener.class);
     public static final String JOB_ID = "chartFilterDynamic";
@@ -27,7 +29,6 @@ public class ChartFilterDynamicListener implements ApplicationListener<Applicati
     private ChartViewOldDataMergeService chartViewOldDataMergeService;
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         logger.info("====chart filter dynamic [start]====");
 

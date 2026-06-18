@@ -9,6 +9,7 @@ import io.crest.datasource.manage.EngineManage;
 import io.crest.datasource.provider.CalciteProvider;
 import io.crest.datasource.server.DatasourceServer;
 import io.crest.datasource.server.DatasourceTaskServer;
+import io.crest.runtime.CrestRuntimeRole;
 import io.crest.system.dao.auto.entity.CoreSysSetting;
 import io.crest.system.manage.SysParameterManage;
 import jakarta.annotation.Resource;
@@ -17,6 +18,7 @@ import org.apache.commons.lang3.Strings;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -24,7 +26,6 @@ import java.util.List;
 
 @Component
 @Order(value = 2)
-// 定义当前业务对象的核心职责
 public class DataSourceInitStartListener implements ApplicationListener<ApplicationReadyEvent> {
     @Resource
     private DatasourceSyncManage datasourceSyncManage;
@@ -42,19 +43,25 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
     private EngineManage engineManage;
     @Resource
     private SysParameterManage sysParameterManage;
+    @Resource
+    private Environment environment;
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         try {
             engineManage.initSimpleEngine();
         } catch (Exception e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
-        try {
-            calciteProvider.initConnectionPool();
-        } catch (Exception e) {
-            io.crest.utils.LogUtil.error(e.getMessage(), e);
+        if (shouldPreloadDatasourcePool()) {
+            try {
+                calciteProvider.initConnectionPool();
+            } catch (Exception e) {
+                io.crest.utils.LogUtil.error(e.getMessage(), e);
+            }
+        }
+        if (!CrestRuntimeRole.from(environment).runsScheduler()) {
+            return;
         }
         List<CoreDatasourceTask> list = datasourceTaskServer.listAll();
         for (CoreDatasourceTask task : list) {
@@ -109,5 +116,18 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
         dataSourceManage.encryptDsConfig();
     }
 
+    /**
+     * 生产多副本下默认关闭启动预热，避免每个 Pod 同时占用业务库连接。
+     */
+    private boolean shouldPreloadDatasourcePool() {
+        String explicit = StringUtils.defaultIfBlank(environment.getProperty("crest.datasource.pool.preload.enabled"),
+                environment.getProperty("CREST_DATASOURCE_POOL_PRELOAD_ENABLED"));
+        if (StringUtils.isNotBlank(explicit)) {
+            return Boolean.parseBoolean(explicit.trim());
+        }
+        boolean productionMode = environment.getProperty("crest.production-mode", Boolean.class,
+                environment.getProperty("CREST_PRODUCTION_MODE", Boolean.class, false));
+        return !productionMode && CrestRuntimeRole.from(environment) == CrestRuntimeRole.ALL;
+    }
 
 }

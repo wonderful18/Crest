@@ -19,7 +19,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 
-// 定义当前业务对象的核心职责
+// 将图表维度字段转换为查询字段、排序字段和方言占位表达式
 public class Dimension2SQLObj {
 
     public static void dimension2sqlObj(SQLMeta meta, List<ChartViewFieldDTO> fields, List<DatasetTableFieldDTO> originFields,
@@ -53,11 +53,7 @@ public class Dimension2SQLObj {
                         originField = calcFieldExp;
                     }
                 } else if (ObjectUtils.isNotEmpty(x.getExtField()) && Objects.equals(x.getExtField(), ExtFieldConstant.EXT_COPY)) {
-                    if (Strings.CI.equals(dsType, "es")) {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getOriginName());
-                    } else {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getEngineFieldName());
-                    }
+                    originField = FieldSqlExpressionUtils.physicalField(tableObj, x, dsType);
                 } else if (ObjectUtils.isNotEmpty(x.getExtField()) && Objects.equals(x.getExtField(), ExtFieldConstant.EXT_GROUP)) {
                     String groupFieldExp = Utils.transGroupFieldToSql(x, originFields, isCross, dsMap, pluginManage);
                     // 给计算字段处加一个占位符，后续SQL方言转换后再替换
@@ -67,11 +63,7 @@ public class Dimension2SQLObj {
                         originField = groupFieldExp;
                     }
                 } else {
-                    if (Strings.CI.equals(dsType, "es")) {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getOriginName());
-                    } else {
-                        originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), x.getEngineFieldName());
-                    }
+                    originField = FieldSqlExpressionUtils.physicalField(tableObj, x, dsType);
                 }
                 String fieldAlias = String.format(SQLConstants.FIELD_ALIAS_X_PREFIX, i);
                 // 处理横轴字段

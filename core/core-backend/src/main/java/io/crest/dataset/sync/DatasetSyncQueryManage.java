@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-// 定义当前业务对象的核心职责
+// 在数据集缓存可用时，将查询路由到本地抽取引擎缓存表
 public class DatasetSyncQueryManage {
 
     @Resource
@@ -27,7 +27,7 @@ public class DatasetSyncQueryManage {
     private DatasetSyncTaskManage taskManage;
 
     @SuppressWarnings("unchecked")
-    // 执行当前服务方法并返回处理结果
+    // 缓存未开启、结构不匹配或缓存表不存在时，保持原始实时查询路径
     public Map<String, Object> routeIfSynced(DatasetGroupInfoDTO dataset, Map<String, Object> sqlMap) {
         if (!DatasetSyncUtils.shouldRouteToCache(dataset, sqlMap)) {
             return sqlMap;

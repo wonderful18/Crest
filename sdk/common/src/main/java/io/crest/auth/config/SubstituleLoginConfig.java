@@ -28,12 +28,14 @@ import java.util.UUID;
 public class SubstituleLoginConfig {
     private static final String PWD_KEY = "pwd";
     private static final String TOKEN_SECRET_KEY = "tokenSecret";
+    private static final String TOKEN_SECRET_PROPERTY = "crest.security.token-secret";
 
     @Value("${crest.path.substitule:classpath:substitule.json}")
     private String jsonFilePath;
 
     private static volatile String pwd;
     private static volatile String tokenSecret;
+    private static volatile boolean tokenSecretExternal = false;
 
     private static volatile boolean ready = false;
 
@@ -55,7 +57,9 @@ public class SubstituleLoginConfig {
             data.put(PWD_KEY, pwd);
             updated = true;
         }
-        tokenSecret = readString(data, TOKEN_SECRET_KEY);
+        String externalTokenSecret = resolveExternalTokenSecret();
+        tokenSecretExternal = StringUtils.isNotBlank(externalTokenSecret);
+        tokenSecret = StringUtils.defaultIfBlank(externalTokenSecret, readString(data, TOKEN_SECRET_KEY));
         if (StringUtils.isBlank(tokenSecret)) {
             tokenSecret = generateSecret();
             data.put(TOKEN_SECRET_KEY, tokenSecret);
@@ -92,6 +96,11 @@ public class SubstituleLoginConfig {
                     tokenSecret = configuredTokenSecret;
                 }
             }
+            String externalTokenSecret = resolveExternalTokenSecret();
+            if (StringUtils.isNotBlank(externalTokenSecret)) {
+                tokenSecret = externalTokenSecret;
+                tokenSecretExternal = true;
+            }
             if (StringUtils.isBlank(pwd)) {
                 pwd = CommonBeanFactory.getBean(Environment.class).getProperty("crest.default-pwd", "admin");
             }
@@ -104,6 +113,12 @@ public class SubstituleLoginConfig {
      */
     public static String getTokenSecret() {
         getPwd();
+        String externalTokenSecret = resolveExternalTokenSecret();
+        if (StringUtils.isNotBlank(externalTokenSecret)) {
+            tokenSecret = externalTokenSecret;
+            tokenSecretExternal = true;
+            return tokenSecret;
+        }
         if (StringUtils.isBlank(tokenSecret)) {
             tokenSecret = generateSecret();
         }
@@ -114,12 +129,24 @@ public class SubstituleLoginConfig {
      * 修改替代登录密码并写回配置文件
      */
     public void modifyPwd(String pwd) {
+        ObjectMapper objectMapper = new ObjectMapper();
         File file = new File(jsonFilePath);
         Map<String, String> myObject = new HashMap<>();
+        String fileTokenSecret = null;
+        if (file.exists()) {
+            try {
+                fileTokenSecret = readString(objectMapper.readValue(file, Map.class), TOKEN_SECRET_KEY);
+            } catch (IOException e) {
+                LogUtil.error(e.getCause(), new Throwable(e));
+            }
+        }
         myObject.put(PWD_KEY, pwd);
-        myObject.put(TOKEN_SECRET_KEY, StringUtils.defaultIfBlank(tokenSecret, generateSecret()));
+        myObject.put(TOKEN_SECRET_KEY, StringUtils.defaultIfBlank(fileTokenSecret,
+                StringUtils.defaultIfBlank(tokenSecretExternal ? null : tokenSecret, generateSecret())));
         SubstituleLoginConfig.pwd = pwd;
-        SubstituleLoginConfig.tokenSecret = myObject.get(TOKEN_SECRET_KEY);
+        String externalTokenSecret = resolveExternalTokenSecret();
+        SubstituleLoginConfig.tokenSecret = StringUtils.defaultIfBlank(externalTokenSecret, myObject.get(TOKEN_SECRET_KEY));
+        SubstituleLoginConfig.tokenSecretExternal = StringUtils.isNotBlank(externalTokenSecret);
         try {
             writeConfig(file, myObject);
         } catch (IOException e) {
@@ -143,6 +170,15 @@ public class SubstituleLoginConfig {
     private static String readString(Map<String, Object> config, String key) {
         Object value = config.get(key);
         return ObjectUtils.isEmpty(value) ? null : value.toString();
+    }
+
+    private static String resolveExternalTokenSecret() {
+        Environment environment = CommonBeanFactory.getBean(Environment.class);
+        if (environment == null) {
+            return null;
+        }
+        return StringUtils.defaultIfBlank(environment.getProperty(TOKEN_SECRET_PROPERTY),
+                environment.getProperty("CREST_TOKEN_SECRET"));
     }
 
     /**

@@ -69,7 +69,7 @@
             popi.enabled_default,
             popi.required,
             popi.default_value,
-            ifnull( popi.checked, 0 ) AS checked,
+            COALESCE( popi.checked, 0 ) AS checked,
             poptvi.target_view_id,
             poptvi.target_ds_id,
             poptvi.match_mode,
@@ -81,13 +81,13 @@
         WHERE
             pop.visualization_id = #{visualization_id}
         ORDER BY
-            ifnull( popi.checked, 0 ) DESC
+            COALESCE( popi.checked, 0 ) DESC
     </select>
 
   <select id="queryWithVisualizationIdSnapshot"  resultMap="BaseResultMapDTOSnapshot">
       SELECT
           #{visualizationId} as visualization_id,
-          ifnull( vop.checked, 0 ) AS checked
+          COALESCE( vop.checked, 0 ) AS checked
       FROM
           bi_visualization_snapshot dvi
               LEFT JOIN snapshot_visualization_outer_params vop ON dvi.id = vop.visualization_id

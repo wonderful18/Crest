@@ -48,4 +48,4 @@ HEALTHCHECK --interval=15s --timeout=5s --retries=20 --start-period=60s CMD env 
 
 USER crest
 
-CMD ["sh", "-c", "exec java $JAVA_OPTIONS -jar $JAVA_APP_JAR"]
+CMD ["sh", "-c", "exec java $JAVA_OPTIONS ${JAVA_OPTS:-} -jar $JAVA_APP_JAR"]

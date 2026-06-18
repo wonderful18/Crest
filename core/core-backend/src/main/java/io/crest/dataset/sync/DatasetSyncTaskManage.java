@@ -2,6 +2,7 @@ package io.crest.dataset.sync;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.crest.api.dataset.dto.DatasetSyncLogDTO;
 import io.crest.api.dataset.dto.DatasetSyncTaskPageVO;
 import io.crest.api.dataset.dto.DatasetSyncTaskRequest;
@@ -307,7 +308,7 @@ public class DatasetSyncTaskManage {
         QueryWrapper<CoreDatasetSyncTaskLog> wrapper = new QueryWrapper<>();
         wrapper.eq("dataset_group_id", datasetGroupId);
         wrapper.orderByDesc("start_time");
-        wrapper.last("limit 20");
+        wrapper.last(dialect().limitOffset("", 20, 0));
         return logMapper.selectList(wrapper).stream().map(this::toLogDTO).toList();
     }
 
@@ -315,28 +316,93 @@ public class DatasetSyncTaskManage {
      * 尝试把任务标记为执行中。返回值表示当前是否已有执行中任务占用该任务
      */
     public synchronized boolean markUnderExecution(CoreDatasetSyncTask task) {
+        return markUnderExecution(task, null);
+    }
+
+    /**
+     * 队列 Worker 抢占任务时记录执行者，数据库 CAS 是多副本下的最终防重依据。
+     */
+    public synchronized boolean markUnderExecution(CoreDatasetSyncTask task, String workerId) {
+        return markUnderExecution(task, workerId, null);
+    }
+
+    /**
+     * 队列消息携带投递时间，完成后该值会被清空，旧 Redis 消息不能再次抢占。
+     */
+    public synchronized boolean markUnderExecution(CoreDatasetSyncTask task, String workerId, Long enqueueTime) {
         recoverIfStale(task);
-        UpdateWrapper<CoreDatasetSyncTask> wrapper = new UpdateWrapper<>();
-        wrapper.eq("id", task.getId());
-        wrapper.ne("task_status", TaskStatus.UnderExecution.name());
         long now = System.currentTimeMillis();
-        CoreDatasetSyncTask record = new CoreDatasetSyncTask();
-        record.setTaskStatus(TaskStatus.UnderExecution.name());
-        record.setLastExecTime(now);
-        record.setHeartbeatTime(now);
-        return taskMapper.update(record, wrapper) == 0;
+        if (StringUtils.isNotBlank(workerId)) {
+            if (enqueueTime != null) {
+                return taskMapper.claimQueuedWorkerTaskByEnqueueTime(task.getId(), workerId, now, enqueueTime) == 0;
+            }
+            return taskMapper.claimQueuedWorkerTask(task.getId(), workerId, now) == 0;
+        }
+        return taskMapper.markWorkerStarted(task.getId(), StringUtils.defaultIfBlank(workerId, null), now) == 0;
     }
 
     /**
      * 刷新执行中任务心跳，后台恢复逻辑用它判断任务是否已经僵死
      */
     public void touchHeartbeat(Long taskId) {
-        CoreDatasetSyncTask record = new CoreDatasetSyncTask();
-        record.setHeartbeatTime(System.currentTimeMillis());
-        UpdateWrapper<CoreDatasetSyncTask> wrapper = new UpdateWrapper<>();
-        wrapper.eq("id", taskId);
+        taskMapper.touchWorkerHeartbeat(taskId, System.currentTimeMillis());
+    }
+
+    /**
+     * 记录任务已进入 Redis 队列，避免 Worker 恢复扫描重复投递同一任务
+     */
+    public boolean markQueuedTaskEnqueued(Long taskId, long now, long enqueueRetryMillis) {
+        if (taskId == null) {
+            return false;
+        }
+        long enqueueBefore = now - Math.max(10000, enqueueRetryMillis);
+        return taskMapper.markQueuedTaskEnqueued(taskId, now, enqueueBefore) > 0;
+    }
+
+    /**
+     * 查询心跳超时的执行中任务，交给 Worker 恢复并重新投递
+     */
+    public List<CoreDatasetSyncTask> listStaleQueuedTasks(long staleBefore, int limit) {
+        QueryWrapper<CoreDatasetSyncTask> wrapper = new QueryWrapper<>();
         wrapper.eq("task_status", TaskStatus.UnderExecution.name());
-        taskMapper.update(record, wrapper);
+        wrapper.and(condition -> condition.isNull("heartbeat_time")
+                .or()
+                .lt("heartbeat_time", staleBefore));
+        wrapper.orderByAsc("heartbeat_time");
+        return taskMapper.selectPage(new Page<>(1, Math.max(1, limit), false), wrapper).getRecords();
+    }
+
+    /**
+     * 查询等待执行但长时间未重新投递的任务，兜底处理 Redis 投递失败或消息丢失
+     */
+    public List<CoreDatasetSyncTask> listQueuedTasksWaitingRetry(long enqueueBefore, int limit) {
+        QueryWrapper<CoreDatasetSyncTask> wrapper = new QueryWrapper<>();
+        wrapper.eq("task_status", TaskStatus.WaitingForExecution.name());
+        wrapper.isNotNull("last_enqueue_time");
+        wrapper.lt("last_enqueue_time", enqueueBefore);
+        wrapper.orderByAsc("last_enqueue_time");
+        return taskMapper.selectPage(new Page<>(1, Math.max(1, limit), false), wrapper).getRecords();
+    }
+
+    /**
+     * 恢复执行中心跳超时的任务。状态更新成功后才允许 Worker 重新投递
+     */
+    public boolean resetStaleQueuedTask(Long taskId, long staleBefore, String message) {
+        long now = System.currentTimeMillis();
+        int updated = taskMapper.resetStaleQueuedTask(taskId, staleBefore, now, message);
+        if (updated <= 0) {
+            return false;
+        }
+
+        CoreDatasetSyncTaskLog logRecord = new CoreDatasetSyncTaskLog();
+        logRecord.setTaskStatus(TaskStatus.Error.name());
+        logRecord.setEndTime(now);
+        logRecord.setInfo(message);
+        UpdateWrapper<CoreDatasetSyncTaskLog> logWrapper = new UpdateWrapper<>();
+        logWrapper.eq("task_id", taskId);
+        logWrapper.eq("task_status", TaskStatus.UnderExecution.name());
+        logMapper.update(logRecord, logWrapper);
+        return true;
     }
 
     /**
@@ -372,15 +438,26 @@ public class DatasetSyncTaskManage {
      */
     public void finishTask(CoreDatasetSyncTask task, TaskStatus status, String incrementalLastValue, String schemaHash,
                            boolean fullSync, DatasetSyncUtils.ReconcileResult reconcileResult, Long sourceRowCount, Long cacheRowCount) {
+        finishTask(task, status, incrementalLastValue, schemaHash, fullSync, reconcileResult, sourceRowCount, cacheRowCount, null);
+    }
+
+    /**
+     * 收尾队列任务时同时写入最近错误，便于多 Worker 环境定位恢复原因。
+     */
+    public void finishTask(CoreDatasetSyncTask task, TaskStatus status, String incrementalLastValue, String schemaHash,
+                           boolean fullSync, DatasetSyncUtils.ReconcileResult reconcileResult, Long sourceRowCount,
+                           Long cacheRowCount, String lastError) {
         CoreDatasetSyncTask record = new CoreDatasetSyncTask();
         record.setLastExecStatus(status.name());
-        record.setUpdateTime(System.currentTimeMillis());
+        long now = System.currentTimeMillis();
+        record.setUpdateTime(now);
+        record.setHeartbeatTime(now);
         CoreDatasetSyncTask latest = selectById(task.getId());
         if (status == TaskStatus.Completed) {
             record.setCacheReady(1);
             record.setConsecutiveFailures(0);
             if (fullSync) {
-                record.setLastFullSyncTime(System.currentTimeMillis());
+                record.setLastFullSyncTime(now);
             }
         } else {
             record.setConsecutiveFailures(Objects.requireNonNullElse(latest == null ? null : latest.getConsecutiveFailures(), 0) + 1);
@@ -407,6 +484,12 @@ public class DatasetSyncTaskManage {
         }
         UpdateWrapper<CoreDatasetSyncTask> wrapper = new UpdateWrapper<>();
         wrapper.eq("id", task.getId());
+        // 队列投递字段只表示仍需恢复扫描的消息，任务完成后必须清空。
+        wrapper.set("worker_id", null);
+        wrapper.set("last_enqueue_time", null);
+        wrapper.set("next_fire_time", null);
+        wrapper.set("last_error", status == TaskStatus.Completed ? null : StringUtils.defaultIfBlank(lastError, "数据集同步任务执行失败"));
+        wrapper.setSql("lock_version = COALESCE(lock_version, 0) + 1");
         taskMapper.update(record, wrapper);
     }
 
@@ -965,19 +1048,29 @@ public class DatasetSyncTaskManage {
      * 将中断或僵死任务恢复为等待执行，并把最后一条执行中日志标记为失败
      */
     private void markRecovered(CoreDatasetSyncTask task, String message) {
+        long now = System.currentTimeMillis();
         CoreDatasetSyncTask record = new CoreDatasetSyncTask();
         record.setTaskStatus(TaskStatus.WaitingForExecution.name());
         record.setLastExecStatus(TaskStatus.Error.name());
         record.setConsecutiveFailures(Objects.requireNonNullElse(task.getConsecutiveFailures(), 0) + 1);
-        record.setUpdateTime(System.currentTimeMillis());
+        record.setLastError(message);
+        record.setUpdateTime(now);
         UpdateWrapper<CoreDatasetSyncTask> wrapper = new UpdateWrapper<>();
         wrapper.eq("id", task.getId());
         wrapper.eq("task_status", TaskStatus.UnderExecution.name());
-        taskMapper.update(record, wrapper);
+        wrapper.set("worker_id", null);
+        wrapper.set("heartbeat_time", null);
+        wrapper.set("last_enqueue_time", null);
+        wrapper.set("next_fire_time", now);
+        wrapper.setSql("lock_version = COALESCE(lock_version, 0) + 1");
+        int updated = taskMapper.update(record, wrapper);
+        if (updated <= 0) {
+            return;
+        }
 
         CoreDatasetSyncTaskLog logRecord = new CoreDatasetSyncTaskLog();
         logRecord.setTaskStatus(TaskStatus.Error.name());
-        logRecord.setEndTime(System.currentTimeMillis());
+        logRecord.setEndTime(now);
         logRecord.setInfo(message);
         UpdateWrapper<CoreDatasetSyncTaskLog> logWrapper = new UpdateWrapper<>();
         logWrapper.eq("task_id", task.getId());

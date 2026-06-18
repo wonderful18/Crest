@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Release version, for example v1.5.12
+        description: Release version, for example v2.0.0
         required: true
-        default: v1.5.12
+        default: v2.0.0
 
 permissions:
   contents: write
@@ -82,18 +82,7 @@ jobs:
           PACKAGE_PLATFORM: ${{ matrix.package_platform }}
         run: |
           set -euo pipefail
-
-          package_dir="crest-app-images-${VERSION}-${PACKAGE_PLATFORM}"
-          package_file="offline-packages/${package_dir}.tar.gz"
-          tar -tzf "${package_file}" > /tmp/crest-app-image-package-files.txt
-
-          grep -Fqx "${package_dir}/APP-IMAGES-README.md" /tmp/crest-app-image-package-files.txt
-          grep -Fqx "${package_dir}/load-images.sh" /tmp/crest-app-image-package-files.txt
-          grep -Fqx "${package_dir}/image-manifest.txt" /tmp/crest-app-image-package-files.txt
-          grep -Fqx "${package_dir}/upgrade-sql/v1.5.4_to_v1.5.5.sql" /tmp/crest-app-image-package-files.txt
-          grep -Fqx "${package_dir}/upgrade-sql/v1.5.7_to_v1.5.8.sql" /tmp/crest-app-image-package-files.txt
-          grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-service_${VERSION}.tar.gz" /tmp/crest-app-image-package-files.txt
-          grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-web_${VERSION}.tar.gz" /tmp/crest-app-image-package-files.txt
+          bash scripts/verify-release-package-contents.sh app-images "${VERSION}" "${PACKAGE_PLATFORM}"
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v7.0.1

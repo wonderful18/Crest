@@ -95,11 +95,16 @@ public class RedisCacheImpl implements CrestCacheService {
      */
     @Override
     public void keyRemove(String cacheName, String key) {
-        Cache cache = getCacheManager().getCache(cacheName);
-        if (null == cache) return;
-        cache.evictIfPresent(key);
-        // cache.clear();
-        redisTemplate.delete(cacheName + SEPARATOR + key);
+        String realKey = cacheName + SEPARATOR + key;
+        try {
+            Cache cache = getCacheManager().getCache(cacheName);
+            if (cache != null) {
+                cache.evictIfPresent(key);
+            }
+        } catch (Exception ignored) {
+            // 缓存区域未注册时仍要删除底层 Redis key，确保一次性票据不会残留。
+        }
+        redisTemplate.delete(realKey);
     }
 
     /**

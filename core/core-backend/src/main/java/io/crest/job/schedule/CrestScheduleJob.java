@@ -1,9 +1,10 @@
 package io.crest.job.schedule;
 
+import io.crest.lock.CrestRedisLockService;
+import io.crest.utils.CommonBeanFactory;
 import io.crest.utils.LogUtil;
 import org.quartz.*;
 
-// 定义当前业务对象的核心职责
 public abstract class CrestScheduleJob implements Job {
 
     protected Long datasetTableId;
@@ -12,7 +13,6 @@ public abstract class CrestScheduleJob implements Job {
     protected String updateType;
 
     @Override
-    // 执行当前业务请求并写入处理结果
     public void execute(JobExecutionContext context) throws JobExecutionException {
         JobKey jobKey = context.getTrigger().getJobKey();
         JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
@@ -22,8 +22,18 @@ public abstract class CrestScheduleJob implements Job {
         this.updateType = jobDataMap.getString("updateType");
         LogUtil.info(jobKey.getName() + " Running: " + datasetTableId);
         LogUtil.info("CronExpression: " + expression);
-        businessExecute(context);
+        CrestRedisLockService lockService = CommonBeanFactory.getBean(CrestRedisLockService.class);
+        if (lockService == null) {
+            businessExecute(context);
+            return;
+        }
+        lockService.runWithLock(quartzLockName(context), () -> businessExecute(context));
     }
 
     abstract void businessExecute(JobExecutionContext context);
+
+    protected String quartzLockName(JobExecutionContext context) {
+        JobKey jobKey = context.getTrigger().getJobKey();
+        return "quartz:" + jobKey.getGroup() + ":" + jobKey.getName();
+    }
 }

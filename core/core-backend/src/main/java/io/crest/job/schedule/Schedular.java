@@ -1,22 +1,26 @@
 package io.crest.job.schedule;
 
 import io.crest.datasource.server.DatasourceServer;
+import io.crest.lock.CrestRedisLockService;
+import io.crest.runtime.ConditionalOnCrestRuntimeRole;
+import io.crest.runtime.CrestRuntimeRole;
 import jakarta.annotation.Resource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 
 @Component
-// 定义当前业务对象的核心职责
+@ConditionalOnCrestRuntimeRole({CrestRuntimeRole.ALL, CrestRuntimeRole.SCHEDULER})
 public class Schedular {
 
     @Resource
     private DatasourceServer datasourceServer;
+    @Resource
+    private CrestRedisLockService lockService;
 
     @Scheduled(cron = "0 0/3 * * * ?")
-    // 格式化日期时间并返回统一展示值
     public void updateStopJobStatus() {
-        datasourceServer.updateStopJobStatus();
+        lockService.runWithLock("scheduled:update-stop-job-status", datasourceServer::updateStopJobStatus);
     }
 
 }

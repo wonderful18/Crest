@@ -71,7 +71,7 @@ export const customStyleTrans = {
   }
 }
 
-// 整理输入数据并返回工具处理结果
+// 按模板递归缩放图表尺寸类属性，移动端保留指定属性的专用值
 export function recursionTransObj(template, infoObj, scale, terminal) {
   for (const templateKey in template) {
     // 如果是数组 进行赋值计算
@@ -101,7 +101,7 @@ export function recursionTransObj(template, infoObj, scale, terminal) {
   }
 }
 
-// 整理输入数据并返回工具处理结果
+// 按模板递归替换主题色属性
 export function recursionThemTransObj(template, infoObj, color) {
   for (const templateKey in template) {
     // 如果是数组 进行赋值计算
@@ -123,7 +123,7 @@ export function recursionThemTransObj(template, infoObj, color) {
   }
 }
 
-// 整理输入数据并返回工具处理结果
+// 组件整体缩放时同步处理 customAttr 和 customStyle
 export function componentScalePublic(chartInfo, heightScale, widthScale) {
   const scale = Math.min(heightScale, widthScale)
   // attr 缩放转换

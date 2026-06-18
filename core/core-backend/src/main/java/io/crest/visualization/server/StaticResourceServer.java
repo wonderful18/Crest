@@ -3,9 +3,11 @@ package io.crest.visualization.server;
 import io.crest.api.visualization.StaticResourceApi;
 import io.crest.api.visualization.request.StaticResourceRequest;
 import io.crest.exception.CrestException;
+import io.crest.storage.StorageService;
 import io.crest.utils.FileUtils;
 import io.crest.utils.JsonUtil;
 import io.crest.utils.LogUtil;
+import jakarta.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -28,12 +30,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 /**
@@ -65,6 +65,8 @@ public class StaticResourceServer implements StaticResourceApi {
      */
     @Value("${crest.path.static-resource:/opt/crest/data/static-resource/}")
     private String staticDir;
+    @Resource
+    private StorageService storageService;
 
     /**
      * 上传单个静态图片资源
@@ -221,12 +223,15 @@ public class StaticResourceServer implements StaticResourceApi {
         }
         try {
             FileUtils.validateUploadFilename(fileName);
-            Path basePath = Paths.get(staticDir).normalize();
-            Path resourcePath = basePath.resolve(fileName).normalize();
-            if (!resourcePath.startsWith(basePath) || !Files.isRegularFile(resourcePath)) {
+            File resourceFile = storageService.resolve(staticDir, fileName);
+            if (!storageService.isRegularFile(resourceFile)) {
                 return null;
             }
-            return Base64.getEncoder().encodeToString(Files.readAllBytes(resourcePath));
+            try (InputStream inputStream = storageService.newInputStream(resourceFile);
+                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                inputStream.transferTo(outputStream);
+                return Base64.getEncoder().encodeToString(outputStream.toByteArray());
+            }
         } catch (RuntimeException e) {
             return null;
         } catch (IOException e) {
@@ -251,17 +256,16 @@ public class StaticResourceServer implements StaticResourceApi {
      * 当目标文件不存在时写入静态资源内容
      */
     private void writeFileIfAbsent(String fileName, byte[] content) throws IOException {
-        Path basePath = Paths.get(staticDir.toString());
-        FileUtils.createIfAbsent(basePath);
-        Path uploadPath = basePath.resolve(fileName).normalize();
-        if (!uploadPath.startsWith(basePath.normalize())) {
-            CrestException.throwException("静态资源文件名非法");
-        }
-        if (Files.exists(uploadPath)) {
+        File uploadFile = storageService.resolve(staticDir, fileName);
+        if (storageService.isRegularFile(uploadFile)) {
             LogUtil.info("file exists");
             return;
         }
-        Files.write(uploadPath, content, StandardOpenOption.CREATE_NEW);
+        // 静态资源统一落到 StorageService，生产环境由 RWX PVC 保证多 Pod 可见。
+        try (var outputStream = storageService.newOutputStream(uploadFile)) {
+            outputStream.write(content);
+            outputStream.flush();
+        }
     }
 
     /**

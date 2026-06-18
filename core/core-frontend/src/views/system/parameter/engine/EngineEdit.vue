@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import icon_down_outlined1 from '@/assets/svg/icon_down_outlined-1.svg'
 import icon_down_outlined from '@/assets/svg/icon_down_outlined.svg'
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElLoading } from 'element-plus-secondary'
 import { useI18n } from '@/hooks/web/useI18n'
 import request from '@/config/axios'
@@ -34,12 +34,22 @@ const defaultRule = {
     }
   ]
 }
+const schemaBasedEngineTypes = ['obOracle']
+
+// 使用 Schema 定位对象空间的引擎不要求填写数据库名称。
+const validateDatabaseName = (_rule, value, callback) => {
+  if (schemaBasedEngineTypes.includes(nodeInfo.type) || value) {
+    callback()
+    return
+  }
+  callback(new Error(t('datasource.please_input_data_base')))
+}
+
 // 连接参数校验规则覆盖 JDBC、账号密码、连接池和查询超时等必填项。
 const configRules = {
   'configuration.dataBase': [
     {
-      required: true,
-      message: t('datasource.please_input_data_base'),
+      validator: validateDatabaseName,
       trigger: 'blur'
     }
   ],
@@ -140,6 +150,7 @@ const closeLoading = () => {
 }
 // 控制连接池和查询超时等高级配置显隐。
 const showPriority = ref(false)
+const usesSchemaField = computed(() => schemaBasedEngineTypes.includes(nodeInfo.type))
 // 默认引擎配置覆盖基本信息、连接参数和连接池参数。
 const defaultInfo = {
   name: '',
@@ -157,6 +168,7 @@ const defaultInfo = {
     jdbc: '',
     port: 8081,
     dataBase: '',
+    schema: '',
     username: '',
     password: '',
     extraParams: '',
@@ -353,10 +365,21 @@ defineExpose({
           type="number"
         />
       </el-form-item>
-      <el-form-item :label="t('datasource.data_base')" prop="configuration.dataBase">
+      <el-form-item
+        v-if="!usesSchemaField"
+        :label="t('datasource.data_base')"
+        prop="configuration.dataBase"
+      >
         <el-input
           v-model="nodeInfo.configuration.dataBase"
           :placeholder="t('datasource.please_input_data_base')"
+          autocomplete="off"
+        />
+      </el-form-item>
+      <el-form-item v-else :label="t('datasource.schema')" prop="configuration.schema">
+        <el-input
+          v-model="nodeInfo.configuration.schema"
+          :placeholder="`${t('common.inputText')} ${t('datasource.schema')}`"
           autocomplete="off"
         />
       </el-form-item>

@@ -1,12 +1,12 @@
 package io.crest.listener;
 
-import io.crest.chart.manage.ChartViewOldDataMergeService;
 import io.crest.dataset.manage.DatasetSQLManage;
+import io.crest.runtime.ConditionalOnCrestRuntimeRole;
+import io.crest.runtime.CrestRuntimeRole;
 import io.crest.startup.dao.auto.entity.CoreSysStartupJob;
 import io.crest.startup.dao.auto.mapper.CoreSysStartupJobMapper;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Order(value = 10)
-// 定义当前业务对象的核心职责
+@ConditionalOnCrestRuntimeRole({CrestRuntimeRole.ALL, CrestRuntimeRole.SCHEDULER})
 public class DatasetCrossListener implements ApplicationListener<ApplicationReadyEvent> {
     private final Logger logger = LoggerFactory.getLogger(DatasetCrossListener.class);
     public static final String JOB_ID = "datasetCrossListener";
@@ -28,7 +28,6 @@ public class DatasetCrossListener implements ApplicationListener<ApplicationRead
     private DatasetSQLManage datasetSQLManage;
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         logger.info("====dataset cross listener [start]====");
 

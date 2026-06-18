@@ -276,9 +276,30 @@ export const tables = async (data): Promise<Table[]> => {
   })
 }
 
+// 统一补齐字段探测请求，避免把物理表名误传给后端 Long 类型节点 ID。
+const normalizeTableFieldRequest = (data = {}) => {
+  const copyData = cloneDeep(data) as Record<string, any>
+  if (copyData.id !== undefined && copyData.id !== null && copyData.id !== '') {
+    const idText = String(copyData.id)
+    if (!/^\d+$/.test(idText)) {
+      delete copyData.id
+    }
+  }
+  if (!copyData.type && copyData.tableName) {
+    copyData.type = 'db'
+  }
+  if (!copyData.info && copyData.tableName) {
+    copyData.info = JSON.stringify({
+      table: copyData.tableName,
+      sql: ''
+    })
+  }
+  return copyData
+}
+
 // 查询表字段元数据，用于 SQL 编辑器、字段预览和建模页面
 export const getTableField = async (data): Promise<IResponse> => {
-  return request.post({ url: '/dataset-data/table-fields', data }).then(res => {
+  return request.post({ url: '/dataset-data/table-fields', data: normalizeTableFieldRequest(data) }).then(res => {
     return res?.data
   })
 }

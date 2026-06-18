@@ -15,7 +15,7 @@ const smSuitePublicKeyPrefix = 'sm-suite:v1:sm2-public:'
 const sm2CipherPrefix = 'sm-suite:v1:sm2:'
 const sm4CipherPrefix = 'sm-suite:v1:sm4:'
 
-// 整理输入数据并返回工具处理结果
+// 后端下发的 RSA 公钥会先用 AES 包装，前端按固定 IV 解出真实公钥
 const aesDecrypt = (word, keyStr) => {
   const keyHex = CryptoJS.enc.Utf8.parse(keyStr) //
   const ivHex = CryptoJS.enc.Utf8.parse('0000000000000000')
@@ -27,7 +27,7 @@ const aesDecrypt = (word, keyStr) => {
   return decrypt.toString(CryptoJS.enc.Utf8)
 }
 
-// 整理输入数据并返回工具处理结果
+// 登录请求同时兼容传统 RSA 和国密 SM2 公钥格式
 export const rsaEncryp = word => {
   const clientKey = wsCache.get(appStore.getClientKey)
   if (typeof clientKey === 'string' && clientKey.startsWith(smSuitePublicKeyPrefix)) {
@@ -43,7 +43,7 @@ export const rsaEncryp = word => {
   return crypt.encrypt(word)
 }
 
-// 整理输入数据并返回工具处理结果
+// 解密后端返回的对称加密载荷，SM4 载荷会先校验完整性
 export const symmetricDecrypt = (data, keyStr) => {
   if (typeof data === 'string' && data.startsWith(sm4CipherPrefix)) {
     const [iv, ciphertext, mac] = data.substring(sm4CipherPrefix.length).split(':')
@@ -67,7 +67,7 @@ export const symmetricDecrypt = (data, keyStr) => {
   return decrypted.toString(CryptoJS.enc.Utf8)
 }
 
-// 整理输入数据并返回工具处理结果
+// 十六进制摘要比较需要固定耗时，避免因为提前返回泄漏差异位置
 const constantTimeEqualsHex = (left: string, right: string) => {
   if (left.length !== right.length) {
     return false

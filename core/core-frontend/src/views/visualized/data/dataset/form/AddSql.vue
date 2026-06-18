@@ -116,6 +116,8 @@ const state = reactive({
 
 // 虚拟列表的数据源表数据，搜索时会替换为过滤结果
 const datasourceTableData = shallowRef([])
+// 当前数据源表名列表，用于 SQL 编辑器表名联想
+const tableCompletionNames = ref<string[]>([])
 const isCross = inject<Ref>('isCross')
 // 执行日志表格分页配置
 const paginationConfig = reactive({
@@ -284,7 +286,7 @@ const showSystemParams = ref(true)
 // 初始化数据源表、移动端变量列表和 CodeMirror 实例
 onMounted(async () => {
   // 数据源表列表先按当前 SQL 节点加载，避免编辑器打开后左侧列表为空。
-  dsChange(sqlNode.value.datasourceId)
+  await loadDatasourceTables(sqlNode.value.datasourceId)
   if (!desktop) {
     try {
       await handleSearchVariableApi()
@@ -296,7 +298,8 @@ onMounted(async () => {
   }
   codeCom.value = myCm.value.codeComInit(
     setNameIdTrans('id', 'name', Base64.decode(sqlNode.value.sql)),
-    true
+    true,
+    tableCompletionNames.value
   )
 })
 
@@ -550,17 +553,41 @@ const handleShowLeft = () => {
   LeftWidth.value = showLeft.value ? 240 : 0
 }
 
+// 加载当前数据源下的数据表列表，并同步 SQL 编辑器补全所需表名
+const loadDatasourceTables = async (val: string) => {
+  if (!val) {
+    tableList = []
+    datasourceTableData.value = []
+    tableCompletionNames.value = []
+    return
+  }
+  dsLoading.value = true
+  try {
+    const res = await tables({ datasourceId: val })
+    tableList = res || []
+    datasourceTableData.value = [...tableList]
+    tableCompletionNames.value = tableList.map(ele => ele.tableName).filter(Boolean)
+  } catch {
+    tableList = []
+    datasourceTableData.value = []
+    tableCompletionNames.value = []
+  } finally {
+    dsLoading.value = false
+  }
+}
+
+// 数据源切换后重建编辑器语言扩展，保留当前 SQL 文本并刷新表名补全
+const refreshSqlEditorTables = async (val: string) => {
+  await loadDatasourceTables(val)
+  if (!codeCom.value || !myCm.value) return
+  const currentSql = codeCom.value.state.doc.toString()
+  codeCom.value.destroy?.()
+  codeCom.value = myCm.value.codeComInit(currentSql, true, tableCompletionNames.value)
+}
+
 // 防抖加载当前数据源下的数据表列表
 const dsChange = debounce((val: string) => {
-  dsLoading.value = true
-  tables({ datasourceId: val })
-    .then(res => {
-      tableList = res || []
-      datasourceTableData.value = [...tableList]
-    })
-    .finally(() => {
-      dsLoading.value = false
-    })
+  refreshSqlEditorTables(val)
 }, 300)
 
 // 数据源选择变化时标记未保存，并刷新数据表列表
@@ -936,6 +963,7 @@ const mousedownDrag = () => {
         :regexp="/\$crest\[(.*?)\]/g"
         ref="myCm"
         :quotaMap="fieldFormList.filter(ele => ['num'].includes(ele.type)).map(ele => ele.name)"
+        :tableNames="tableCompletionNames"
         :dimensionMap="
           builtInList
             .concat(fieldFormList.filter(ele => !['num'].includes(ele.type)))

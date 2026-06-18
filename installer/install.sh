@@ -72,7 +72,7 @@ function normalize_metadata_db_env() {
    if [[ "$CREST_DB_TYPE" != "mysql" && "$CREST_EXTERNAL_MYSQL" == "false" ]]; then
       CREST_EXTERNAL_MYSQL=true
       export CREST_EXTERNAL_MYSQL
-      log_content "OceanBase 元数据库使用外部数据库模式，跳过内置 MySQL 容器"
+      log_content "OceanBase 系统库使用外部数据库模式，跳过内置 MySQL 容器"
    fi
 
    case "$CREST_DB_TYPE" in
@@ -93,13 +93,13 @@ function configure_flyway_locations() {
       ob-oracle)
          CREST_FLYWAY_LOCATIONS="classpath:db/migration-ob-oracle"
          if [[ "$CREST_LOAD_DEMO" == "true" ]]; then
-            log_content "OceanBase Oracle 元数据库使用独立初始化脚本，跳过 MySQL 演示迁移"
+            log_content "OceanBase Oracle 系统库使用独立初始化脚本，跳过 MySQL 演示迁移"
          fi
          ;;
       ob-mysql)
          CREST_FLYWAY_LOCATIONS="classpath:db/migration-ob-mysql"
          if [[ "$CREST_LOAD_DEMO" == "true" ]]; then
-            log_content "OceanBase MySQL 元数据库使用独立初始化脚本，跳过 MySQL 演示迁移"
+            log_content "OceanBase MySQL 系统库使用独立初始化脚本，跳过 MySQL 演示迁移"
          fi
          log_content "跳过内置演示资源"
          ;;
@@ -127,7 +127,7 @@ function configure_flyway_enabled() {
 
    normalize_bool_env CREST_FLYWAY_ENABLED
    if [[ "$CREST_DB_TYPE" != "mysql" && "$CREST_FLYWAY_ENABLED" == "false" ]]; then
-      log_content "OceanBase 元数据库按外部已初始化数据库处理，应用启动时不执行 Flyway"
+      log_content "OceanBase 系统库按外部已初始化数据库处理，应用启动时不执行 Flyway"
    fi
    export CREST_FLYWAY_ENABLED
 }

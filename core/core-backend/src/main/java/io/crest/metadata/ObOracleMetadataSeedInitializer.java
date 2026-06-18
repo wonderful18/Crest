@@ -47,6 +47,9 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
     // 应用就绪后再补种子数据，确保 Flyway 或外部初始化已完成表结构创建
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
+        if (environment.getProperty("crest.production-mode", Boolean.class, false)) {
+            return;
+        }
         if (MetadataDbTypeResolver.resolve(environment) != MetadataDbType.OB_ORACLE) {
             return;
         }

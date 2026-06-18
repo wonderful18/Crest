@@ -5,18 +5,28 @@ import io.crest.i18n.Translator;
 import io.crest.result.ResultCode;
 import io.crest.result.ResultMessage;
 import io.crest.utils.LogUtil;
+import jakarta.validation.ConstraintViolationException;
 import org.apache.catalina.connector.ClientAbortException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.ServletRequestBindingException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
@@ -31,6 +41,7 @@ public class GlobalExceptionHandler {
      * 处理参数校验失败异常并返回本地化提示
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResultMessage MethodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e) {
         ObjectError objectError = e.getBindingResult().getAllErrors().get(0);
         String msg = objectError.getDefaultMessage();
@@ -83,6 +94,90 @@ public class GlobalExceptionHandler {
     public ResultMessage methodNotSupportedExceptionHandler(HttpRequestMethodNotSupportedException e) {
         LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
         return new ResultMessage(HttpStatus.METHOD_NOT_ALLOWED.value(), "请求方法不支持");
+    }
+
+    /**
+     * 处理请求媒体类型不被当前接口支持的异常
+     */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+    public ResultMessage mediaTypeNotSupportedExceptionHandler(HttpMediaTypeNotSupportedException e) {
+        LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+        return new ResultMessage(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(), "请求媒体类型不支持");
+    }
+
+    /**
+     * 处理响应媒体类型无法匹配客户端 Accept 的异常
+     */
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public ResultMessage mediaTypeNotAcceptableExceptionHandler(HttpMediaTypeNotAcceptableException e) {
+        LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+        return new ResultMessage(HttpStatus.NOT_ACCEPTABLE.value(), "响应媒体类型不支持");
+    }
+
+    /**
+     * 处理 JSON 结构或字段类型不匹配的请求体
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResultMessage httpMessageNotReadableExceptionHandler(HttpMessageNotReadableException e) {
+        LogUtil.info(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+        return new ResultMessage(ResultCode.PARAM_TYPE_BIND_ERROR.code(), "请求参数格式错误");
+    }
+
+    /**
+     * 处理路径或查询参数类型不匹配的请求
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResultMessage methodArgumentTypeMismatchExceptionHandler(MethodArgumentTypeMismatchException e) {
+        LogUtil.info(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+        return new ResultMessage(ResultCode.PARAM_TYPE_BIND_ERROR.code(), "请求参数格式错误");
+    }
+
+    /**
+     * 处理缺少必填查询参数、文件或请求头的请求
+     */
+    @ExceptionHandler({
+            MissingServletRequestParameterException.class,
+            MissingServletRequestPartException.class,
+            ServletRequestBindingException.class
+    })
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResultMessage missingRequestValueExceptionHandler(Exception e) {
+        LogUtil.info(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+        return new ResultMessage(ResultCode.PARAM_NOT_COMPLETE.code(), "请求参数缺失");
+    }
+
+    /**
+     * 处理表单或查询对象绑定失败的请求
+     */
+    @ExceptionHandler(BindException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResultMessage bindExceptionHandler(BindException e) {
+        LogUtil.info(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+        return new ResultMessage(ResultCode.PARAM_TYPE_BIND_ERROR.code(), "请求参数格式错误");
+    }
+
+    /**
+     * 处理上传接口非 multipart 请求或 multipart 解析失败的异常
+     */
+    @ExceptionHandler(MultipartException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResultMessage multipartExceptionHandler(MultipartException e) {
+        LogUtil.info(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+        return new ResultMessage(ResultCode.PARAM_TYPE_BIND_ERROR.code(), "请求参数格式错误");
+    }
+
+    /**
+     * 处理请求参数约束校验失败的请求
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResultMessage constraintViolationExceptionHandler(ConstraintViolationException e) {
+        LogUtil.info(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+        return new ResultMessage(ResultCode.PARAM_IS_INVALID.code(), "请求参数无效");
     }
 
     /**

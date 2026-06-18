@@ -1,0 +1,59 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: crest-service-api
+  labels:
+    app.kubernetes.io/name: crest-service-api
+    app.kubernetes.io/part-of: crest
+    app.kubernetes.io/component: api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crest-service-api
+      app.kubernetes.io/component: api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: crest-service-scheduler
+  labels:
+    app.kubernetes.io/name: crest-service-scheduler
+    app.kubernetes.io/part-of: crest
+    app.kubernetes.io/component: scheduler
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crest-service-scheduler
+      app.kubernetes.io/component: scheduler
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: crest-service-worker
+  labels:
+    app.kubernetes.io/name: crest-service-worker
+    app.kubernetes.io/part-of: crest
+    app.kubernetes.io/component: worker
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crest-service-worker
+      app.kubernetes.io/component: worker
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: crest
+  labels:
+    app.kubernetes.io/name: crest
+    app.kubernetes.io/part-of: crest
+    app.kubernetes.io/component: frontend
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crest
+      app.kubernetes.io/component: frontend

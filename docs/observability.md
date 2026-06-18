@@ -1,6 +1,6 @@
 # Crest 可观测性
 
-Crest 支持按需启用 Prometheus 和 Grafana。默认安装不启动监控组件，后端也不暴露 Prometheus 指标端点。启用后，后端通过 `/api/v1/actuator/prometheus` 输出指标，Prometheus 使用 Bearer Token 在容器或集群内网抓取 `crest-service:8100`。前端 Nginx 默认不公开该路径。
+Crest 支持按需启用 Prometheus 和 Grafana。默认安装不启动监控组件，后端也不暴露 Prometheus 指标端点。启用后，后端通过 `/api/v1/actuator/prometheus` 输出指标，Prometheus 使用 Bearer Token 访问 `crest-service:8100` 或实际后端服务地址。前端 Nginx 默认不公开该路径。
 
 Grafana 通过 provisioning 自动加载 Prometheus 数据源和 Crest 看板。当前交付 6 个看板：
 
@@ -20,7 +20,7 @@ Crest 不要求必须使用内置 Prometheus/Grafana。生产环境可按现场�
 | 模式 | 适用场景 | 做法 |
 | --- | --- | --- |
 | 只开启 metrics | 企业已有 Prometheus 和 Grafana | 设置 `CREST_PROMETHEUS_ENABLED=true` 和 `CREST_PROMETHEUS_TOKEN`，在企业 Prometheus 中增加抓取任务，导入 Crest 看板和告警规则 |
-| 内置 Prometheus/Grafana | 单机验证、小规模内网部署、无统一监控平台 | 设置 `CREST_PROMETHEUS_ENABLED=true` 和 `CREST_GRAFANA_ENABLED=true`，由 Compose 或 Kubernetes overlay 启动配套组件 |
+| 内置 Prometheus/Grafana | 单机验证、小规模部署、无统一监控平台 | 设置 `CREST_PROMETHEUS_ENABLED=true` 和 `CREST_GRAFANA_ENABLED=true`，由 Compose 或 Kubernetes overlay 启动配套组件 |
 
 企业 Prometheus 抓取示例：
 
@@ -216,7 +216,7 @@ curl http://127.0.0.1:9090/api/v1/rules
 
 - 不要把 `CREST_PROMETHEUS_TOKEN` 写入公开文档、截图或前端页面；
 - 生产环境通过 Docker env、Kubernetes Secret 或企业密钥系统管理 token；
-- Prometheus 服务不直接暴露公网端口；
+- Prometheus 服务不直接暴露到未受控网络；
 - Grafana 使用独立强密码，并接入现场 SSO 或网关认证；
 - 集群支持 NetworkPolicy 时，保留 `deploy/kubernetes/observability/networkpolicy.yaml`，只允许前端网关和 Prometheus 访问后端服务；
 - 指标数据可能包含接口路径、状态码和异常标签，按内部运维数据管理。

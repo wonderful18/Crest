@@ -60,6 +60,14 @@ public class HttpClientUtil {
     private static Logger logger = LoggerFactory.getLogger(HttpClientUtil.class);
 
     /**
+     * 下载文件内容写入器，由调用方决定目标存储介质。
+     */
+    @FunctionalInterface
+    public interface DownloadFileWriter {
+        void write(String tranName, InputStream inputStream) throws IOException;
+    }
+
+    /**
      * HTTPS 协议前缀，用于选择 TLS 客户端构造路径
      */
     private static final String HTTPS = "https";
@@ -410,6 +418,18 @@ public class HttpClientUtil {
      * 下载远程文件到指定目录，并返回原始文件名和本地转换文件名
      */
     public static Map<String, String> downloadFile(String url, HttpClientConfig config, String path) {
+        return downloadFile(url, config, (tranName, inputStream) -> {
+            File localFile = FileUtils.resolveUnderDirectory(path, tranName);
+            try (FileOutputStream outputStream = new FileOutputStream(localFile)) {
+                copy(inputStream, outputStream);
+            }
+        });
+    }
+
+    /**
+     * 下载远程文件并由调用方写入目标存储，避免公共模块绑定具体文件系统。
+     */
+    public static Map<String, String> downloadFile(String url, HttpClientConfig config, DownloadFileWriter writer) {
         validateRemoteDownloadUrl(url);
         String encodeUIl = url;
         Map<String, String> name = new HashMap<>();
@@ -437,20 +457,25 @@ public class HttpClientUtil {
             String tranName = UUID.randomUUID().toString() + "." + suffix;
             name.put("fileName", fileName);
             name.put("tranName", tranName);
-            File localFile = FileUtils.resolveUnderDirectory(path, tranName);
-            try (InputStream is = response.getEntity().getContent();
-                 FileOutputStream outputStream = new FileOutputStream(localFile)) {
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = is.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
+            try (InputStream is = response.getEntity().getContent()) {
+                writer.write(tranName, is);
             }
         } catch (Exception e) {
             logger.error("HttpClient查询失败", e);
             throw new RuntimeException("HttpClient查询失败: " + e.getMessage(), e);
         }
         return name;
+    }
+
+    /**
+     * 流式复制下载内容，避免大文件一次性载入内存。
+     */
+    private static void copy(InputStream inputStream, OutputStream outputStream) throws IOException {
+        byte[] buffer = new byte[4096];
+        int bytesRead;
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, bytesRead);
+        }
     }
 
     /**

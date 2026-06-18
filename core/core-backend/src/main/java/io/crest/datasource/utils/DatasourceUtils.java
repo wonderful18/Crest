@@ -8,9 +8,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 
-// 提供当前模块复用的工具能力
+// 数据源运行状态校验工具
 public class DatasourceUtils {
-    // 执行当前服务方法并返回处理结果
+
+    // 任一参与查询的数据源被删除或处于错误状态时，提前阻断查询
     public static void checkDsStatus(Map<Long, DatasourceSchemaDTO> dsMap) {
         if (ObjectUtils.isEmpty(dsMap)) {
             CrestException.throwException(Translator.get("i18n_datasource_delete"));

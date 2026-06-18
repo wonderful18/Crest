@@ -9,10 +9,10 @@ import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.*;
 
-// 定义当前业务对象的核心职责
+// 处理数据集预览场景中基于字段别名的排序表达式
 public class DatasetOrder2SQLObj {
 
-    // 执行当前服务方法并返回处理结果
+    // 将排序字段映射到已生成的 SELECT 别名，避免重复拼接物理字段表达式
     public static void getOrders(SQLMeta meta, List<ChartSortFieldDTO> sortFields, List<DatasetTableFieldDTO> originFields) {
         SQLObj tableObj = meta.getTable();
         List<SQLObj> xOrders = meta.getXOrders() == null ? new ArrayList<>() : meta.getXOrders();

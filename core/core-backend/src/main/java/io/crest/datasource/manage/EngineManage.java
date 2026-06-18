@@ -1,16 +1,19 @@
 package io.crest.datasource.manage;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
 import io.crest.datasource.dao.auto.entity.CoreEngine;
 import io.crest.datasource.dao.auto.mapper.CoreDatasourceMapper;
 import io.crest.datasource.dao.auto.mapper.CoreEngineMapper;
 import io.crest.datasource.type.H2;
 import io.crest.datasource.type.Mysql;
+import io.crest.datasource.type.ObMysql;
+import io.crest.datasource.type.ObOracle;
 import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasourceDTO;
 import io.crest.extensions.datasource.dto.DatasourceRequest;
 import io.crest.extensions.datasource.factory.ProviderFactory;
+import io.crest.metadata.MetadataDbType;
+import io.crest.metadata.MetadataDbTypeResolver;
 import io.crest.result.ResultMessage;
 import io.crest.utils.BeanUtils;
 import io.crest.utils.JsonUtil;
@@ -112,19 +115,18 @@ public class EngineManage {
     // 初始化默认本地数据引擎
     public void initSimpleEngine() throws Exception {
         initLocalDataSource();
-        QueryWrapper<CoreEngine> queryWrapper = new QueryWrapper<>();
-        if (ModelUtils.isDesktop()) {
-            queryWrapper.eq("type", engineType.h2.name());
-        } else {
-            queryWrapper.eq("type", engineType.mysql.name());
-        }
-        List<CoreEngine> engines = engineMapper.selectList(queryWrapper);
-        if (!CollectionUtils.isEmpty(engines) && validConfiguration(engines.get(0).getConfiguration())
-                && !legacyCharsetConfiguration(engines.get(0).getConfiguration())) {
+        MetadataDbType metadataDbType = MetadataDbTypeResolver.resolve(env);
+        String targetEngineType = targetEngineType(metadataDbType);
+        List<CoreEngine> engines = engineMapper.selectList(null);
+        CoreEngine current = CollectionUtils.isEmpty(engines) ? null : engines.get(0);
+        if (current != null
+                && targetEngineType.equalsIgnoreCase(StringUtils.defaultString(current.getType()))
+                && validConfiguration(current.getConfiguration())
+                && !legacyCharsetConfiguration(current.getConfiguration())) {
             return;
         }
 
-        CoreEngine engine = CollectionUtils.isEmpty(engines) ? new CoreEngine() : engines.get(0);
+        CoreEngine engine = current == null ? new CoreEngine() : current;
         if (ModelUtils.isDesktop()) {
             engine.setType(engineType.h2.name());
             H2 h2 = new H2();
@@ -133,6 +135,16 @@ public class EngineManage {
             h2.setUsername(env.getProperty("spring.datasource.username"));
             h2.setPassword(env.getProperty("spring.datasource.password"));
             engine.setConfiguration(JsonUtil.toJSONString(h2).toString());
+        } else if (metadataDbType == MetadataDbType.OB_MYSQL) {
+            engine.setType("obMysql");
+            ObMysql obMysql = new ObMysql();
+            applyJdbcUrlEngineConfig(obMysql);
+            engine.setConfiguration(JsonUtil.toJSONString(obMysql).toString());
+        } else if (metadataDbType == MetadataDbType.OB_ORACLE) {
+            engine.setType("obOracle");
+            ObOracle obOracle = new ObOracle();
+            applyJdbcUrlEngineConfig(obOracle);
+            engine.setConfiguration(JsonUtil.toJSONString(obOracle).toString());
         } else {
             engine.setType(engineType.mysql.name());
             Mysql mysqlConfiguration = new Mysql();
@@ -157,6 +169,30 @@ public class EngineManage {
         } else {
             engineMapper.updateById(engine);
         }
+    }
+
+    private String targetEngineType(MetadataDbType metadataDbType) {
+        if (ModelUtils.isDesktop()) {
+            return engineType.h2.name();
+        }
+        return switch (metadataDbType) {
+            case OB_MYSQL -> "obMysql";
+            case OB_ORACLE -> "obOracle";
+            default -> engineType.mysql.name();
+        };
+    }
+
+    private void applyJdbcUrlEngineConfig(io.crest.extensions.datasource.vo.DatasourceConfiguration configuration) {
+        configuration.setUrlType("jdbcUrl");
+        configuration.setJdbcUrl(env.getProperty("spring.datasource.url"));
+        configuration.setUsername(env.getProperty("spring.datasource.username"));
+        configuration.setPassword(env.getProperty("spring.datasource.password"));
+        configuration.setInitialPoolSize(5);
+        configuration.setMinPoolSize(5);
+        configuration.setMaxPoolSize(20);
+        configuration.setQueryTimeout(30);
+        configuration.setUseSSH(false);
+        configuration.convertJdbcUrl();
     }
 
     // 判断引擎配置是否为有效 JSON 配置

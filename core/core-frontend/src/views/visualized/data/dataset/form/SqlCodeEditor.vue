@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { sql } from '@codemirror/lang-sql'
+import { sql, type SQLNamespace } from '@codemirror/lang-sql'
 import { basicSetup } from 'codemirror'
 import { indentWithTab } from '@codemirror/commands'
 import {
@@ -18,6 +18,7 @@ const props = defineProps({
   height: propTypes.string.def('250px'),
   quotaMap: propTypes.arrayOf(String).def(() => []),
   dimensionMap: propTypes.arrayOf(String).def(() => []),
+  tableNames: propTypes.arrayOf(String).def(() => []),
   regexp: {
     type: RegExp,
     default: /\[(.*?)\]/g
@@ -27,7 +28,24 @@ const props = defineProps({
 const emits = defineEmits(['change'])
 
 // 衔接当前组件交互和状态同步
-const codeComInit = (doc: string, sqlMode?: boolean) => {
+const normalizeTableNames = (tableNames: string[]) =>
+  Array.from(new Set(tableNames.filter(tableName => !!tableName)))
+
+const buildSqlSchema = (tableNames: string[]): SQLNamespace =>
+  normalizeTableNames(tableNames).reduce<Record<string, readonly string[]>>((schema, tableName) => {
+    if (tableName) {
+      schema[tableName] = []
+    }
+    return schema
+  }, {})
+
+const buildTableCompletions = (tableNames: string[]) =>
+  normalizeTableNames(tableNames).map(tableName => ({
+    label: tableName,
+    type: 'type'
+  }))
+
+const codeComInit = (doc: string, sqlMode?: boolean, tableNames: string[] = props.tableNames) => {
   // 衔接当前组件交互和状态同步
   function _optionalChain(ops) {
     let lastAccessLHS = undefined
@@ -123,7 +141,11 @@ const codeComInit = (doc: string, sqlMode?: boolean) => {
   const extensionsAttach = sqlMode
     ? [
         basicSetup,
-        sql(),
+        sql({
+          schema: buildSqlSchema(tableNames),
+          tables: buildTableCompletions(tableNames),
+          upperCaseKeywords: true
+        }),
         placeholders,
         keymap.of([indentWithTab]),
         EditorView.updateListener.of(v => {

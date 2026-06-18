@@ -13,7 +13,7 @@ const visible = ref(true)
     show-arrow
   >
     <div class="ai-popper-tips-content">
-      <p class="constant">你好，我是 Crest 智能客服<br />点击一下，开启高效解答模式~<br />&nbsp;</p>
+      <p class="constant">查看使用说明与常见问题。<br />&nbsp;</p>
     </div>
     <template #reference>
       <div class="ai-popper-tips-icon">

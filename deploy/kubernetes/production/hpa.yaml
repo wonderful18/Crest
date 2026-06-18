@@ -1,0 +1,91 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: crest-service-api
+  labels:
+    app.kubernetes.io/name: crest-service-api
+    app.kubernetes.io/part-of: crest
+    app.kubernetes.io/component: api
+spec:
+  minReplicas: 2
+  maxReplicas: 6
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: crest-service-api
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: crest-service-scheduler
+  labels:
+    app.kubernetes.io/name: crest-service-scheduler
+    app.kubernetes.io/part-of: crest
+    app.kubernetes.io/component: scheduler
+spec:
+  minReplicas: 2
+  maxReplicas: 4
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: crest-service-scheduler
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: crest-service-worker
+  labels:
+    app.kubernetes.io/name: crest-service-worker
+    app.kubernetes.io/part-of: crest
+    app.kubernetes.io/component: worker
+spec:
+  minReplicas: 2
+  maxReplicas: 8
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: crest-service-worker
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: crest
+  labels:
+    app.kubernetes.io/name: crest
+    app.kubernetes.io/part-of: crest
+    app.kubernetes.io/component: frontend
+spec:
+  minReplicas: 2
+  maxReplicas: 6
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: crest
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

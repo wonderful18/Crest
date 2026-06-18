@@ -228,7 +228,7 @@ const selectDataset = row => {
   dsTableDataLoading.value = true
   getTableField({ tableName: row.tableName, datasourceId: nodeInfo.id, isCross: false })
     .then(res => {
-      state.dsTableData = res.data
+      state.dsTableData = res || []
     })
     .finally(() => {
       dsTableDataLoading.value = false

@@ -63,6 +63,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -121,13 +122,18 @@ public class DatasetDataManage {
      * 根据数据表配置读取字段元数据，兼容物理表、自定义 SQL、ES、Excel 和 API 同步表
      */
     public List<DatasetTableFieldDTO> getTableFields(DatasetTableDTO datasetTableDTO) throws Exception {
-        List<DatasetTableFieldDTO> list = null;
         List<TableField> tableFields = null;
-        String type = datasetTableDTO.getType();
-        DatasetTableInfoDTO tableInfoDTO = JsonUtil.parseObject(datasetTableDTO.getInfo(), DatasetTableInfoDTO.class);
+        if (datasetTableDTO == null) {
+            CrestException.throwException(Translator.get("i18n_table_id_can_not_empty"));
+        }
+        String type = StringUtils.defaultIfBlank(datasetTableDTO.getType(), DatasetTableType.DB);
+        DatasetTableInfoDTO tableInfoDTO = resolveTableInfo(datasetTableDTO, type);
         if (Strings.CI.equals(type, DatasetTableType.DB) || Strings.CI.equals(type, DatasetTableType.SQL)) {
             CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(datasetTableDTO.getDatasourceId());
-            if (coreDatasource != null && coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name())
+            if (coreDatasource == null) {
+                CrestException.throwException(Translator.get("i18n_datasource_delete"));
+            }
+            if (coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name())
                     && Strings.CI.equals(type, DatasetTableType.DB)) {
                 DatasourceRequest datasourceRequest = new DatasourceRequest();
                 DatasourceDTO datasourceDTO = new DatasourceDTO();
@@ -149,7 +155,8 @@ public class DatasetDataManage {
             Provider provider = ProviderFactory.getProvider(coreDatasource.getType());
 
             DatasourceRequest datasourceRequest = new DatasourceRequest();
-            datasourceRequest.setIsCross(datasetTableDTO.getIsCross());
+            boolean isCross = Boolean.TRUE.equals(datasetTableDTO.getIsCross());
+            datasourceRequest.setIsCross(isCross);
             datasourceRequest.setDsList(Map.of(datasourceSchemaDTO.getId(), datasourceSchemaDTO));
             String sql;
             if (Strings.CI.equals(type, DatasetTableType.DB)) {
@@ -171,8 +178,8 @@ public class DatasetDataManage {
                 }
             } else {
                 // 自定义 SQL 先解析变量默认值，再以子查询方式探测字段结构
-                String s = new String(Base64.getDecoder().decode(tableInfoDTO.getSql()));
-                SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(s, datasetTableDTO.getSqlVariableDetails(), true, false, null, datasourceRequest.getIsCross(), datasourceRequest.getDsList(), pluginManage, getUserEntity());
+                String s = decodeSql(tableInfoDTO.getSql());
+                SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(s, datasetTableDTO.getSqlVariableDetails(), true, false, null, isCross, datasourceRequest.getDsList(), pluginManage, getUserEntity());
                 String originSql = sqlResult.getSql();
                 datasourceRequest.setTableFieldWithValues(sqlResult.getTableFieldWithValues());
                 originSql = provider.replaceComment(originSql);
@@ -197,6 +204,9 @@ public class DatasetDataManage {
             tableFields = provider.fetchTableField(datasourceRequest);
         } else if (Strings.CI.equals(type, DatasetTableType.Es)) {
             CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(datasetTableDTO.getDatasourceId());
+            if (coreDatasource == null) {
+                CrestException.throwException(Translator.get("i18n_datasource_delete"));
+            }
             Provider provider = ProviderFactory.getProvider(type);
             DatasourceRequest datasourceRequest = new DatasourceRequest();
             DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
@@ -233,6 +243,31 @@ public class DatasetDataManage {
             tableFields = provider.fetchTableField(datasourceRequest);
         }
         return transFields(tableFields, true);
+    }
+
+    /**
+     * 字段探测入口兼容历史调用方，物理表可只传 tableName，自定义 SQL 必须携带 sql。
+     */
+    private DatasetTableInfoDTO resolveTableInfo(DatasetTableDTO datasetTableDTO, String type) throws CrestException {
+        DatasetTableInfoDTO tableInfoDTO = StringUtils.isBlank(datasetTableDTO.getInfo())
+                ? new DatasetTableInfoDTO()
+                : JsonUtil.parseObject(datasetTableDTO.getInfo(), DatasetTableInfoDTO.class);
+        if (tableInfoDTO == null) {
+            tableInfoDTO = new DatasetTableInfoDTO();
+        }
+        if (StringUtils.isBlank(tableInfoDTO.getTable()) && StringUtils.isNotBlank(datasetTableDTO.getTableName())) {
+            tableInfoDTO.setTable(datasetTableDTO.getTableName());
+        }
+        if (Strings.CI.equals(type, DatasetTableType.SQL)) {
+            if (StringUtils.isBlank(tableInfoDTO.getSql())) {
+                CrestException.throwException(Translator.get("i18n_sql_not_empty"));
+            }
+            return tableInfoDTO;
+        }
+        if (!Strings.CI.equals(type, DatasetTableType.Es) && StringUtils.isBlank(tableInfoDTO.getTable())) {
+            CrestException.throwException(Translator.get("i18n_table_id_can_not_empty"));
+        }
+        return tableInfoDTO;
     }
 
     /**
@@ -474,7 +509,7 @@ public class DatasetDataManage {
             return null;
         }
         SqlLogDTO sqlLogDTO = new SqlLogDTO();
-        String sql = new String(Base64.getDecoder().decode(dto.getSql()));
+        String sql = decodeSql(dto.getSql());
         sqlLogDTO.setSql(sql);
         Map<String, Object> map = null;
         try {
@@ -510,6 +545,21 @@ public class DatasetDataManage {
     }
 
     /**
+     * 前端按 Base64 传输自定义 SQL，后端统一校验编码格式并返回业务错误。
+     */
+    private String decodeSql(String encodedSql) {
+        if (StringUtils.isBlank(encodedSql)) {
+            CrestException.throwException(Translator.get("i18n_sql_not_empty"));
+        }
+        try {
+            return new String(Base64.getDecoder().decode(encodedSql), StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            CrestException.throwException(Translator.get("i18n_sql_encoding_invalid"));
+            return null;
+        }
+    }
+
+    /**
      * 返回当前用户信息，SQL 变量默认值解析会用它计算用户相关变量
      */
     private UserFormVO getUserEntity() {
@@ -542,23 +592,24 @@ public class DatasetDataManage {
         dsMap.put(datasourceSchemaDTO.getId(), datasourceSchemaDTO);
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDsList(dsMap);
-        datasourceRequest.setIsCross(dto.getIsCross());
+        boolean isCross = Boolean.TRUE.equals(dto.getIsCross());
+        datasourceRequest.setIsCross(isCross);
         Provider provider = ProviderFactory.getProvider(datasourceSchemaDTO.getType());
 
         // 先解析 SQL 参数并替换默认值，跨源时还要保留预编译参数上下文
-        String s = new String(Base64.getDecoder().decode(dto.getSql()));
-        SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(datasetSQLManage.subPrefixSuffixChar(s), dto.getSqlVariableDetails(), true, true, null, dto.getIsCross(), dsMap, pluginManage, getUserEntity());
+        String s = decodeSql(dto.getSql());
+        SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(datasetSQLManage.subPrefixSuffixChar(s), dto.getSqlVariableDetails(), true, true, null, isCross, dsMap, pluginManage, getUserEntity());
         String originSql = sqlResult.getSql();
         datasourceRequest.setTableFieldWithValues(sqlResult.getTableFieldWithValues());
         originSql = provider.replaceComment(originSql);
 
         // 将自定义 SQL 包装为临时表，再在外层追加分页限制。
         String sql;
-        if (dto.getIsCross()) {
+        if (isCross) {
             DatasetTableDTO currentDs = new DatasetTableDTO();
             BeanUtils.copyBean(currentDs, dto);
             currentDs.setType("sql");
-            String tableSchema = datasetSQLManage.putObj2Map(dsMap, currentDs, dto.getIsCross());
+            String tableSchema = datasetSQLManage.putObj2Map(dsMap, currentDs, isCross);
             sql = SqlUtils.addSchema(originSql, tableSchema);
             sql = translatePreviewSql(sql, datasourceSchemaDTO);
             if (Utils.isNeedOrder(List.of(datasourceSchemaDTO.getType()))) {

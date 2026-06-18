@@ -106,47 +106,16 @@ public class DataPortalServer {
                        v.update_time,
                        COALESCE(u.name, %s) AS creator_name,
                        (SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = v.id) AS chart_count,
-                       EXISTS (
-                           SELECT 1
-                           FROM bi_chart c
-                           INNER JOIN data_asset_profile p ON %s
-                             AND %s
-                             AND p.certified = 1
-                             AND p.deprecated = 0
-                           WHERE c.scene_id = v.id
-                       ) AS certified,
-                       EXISTS (
-                           SELECT 1
-                           FROM bi_chart c
-                           INNER JOIN data_asset_profile p ON %s
-                             AND %s
-                             AND p.recommended = 1
-                             AND p.deprecated = 0
-                           WHERE c.scene_id = v.id
-                       ) AS recommended,
-                       EXISTS (
-                           SELECT 1
-                           FROM bi_chart c
-                           INNER JOIN data_asset_profile p ON %s
-                             AND %s
-                             AND p.deprecated = 1
-                           WHERE c.scene_id = v.id
-                       ) AS deprecated,
-                       EXISTS (
-                           SELECT 1
-                           FROM workspace_favorite_resource fav
-                           WHERE fav.resource_id = v.id
-                             AND fav.%s = ?
-                       ) AS favorite
+                       %s AS certified,
+                       %s AS recommended,
+                       %s AS deprecated,
+                       %s AS favorite
                 """.formatted(
                 dialect().stringCast("v.create_by"),
-                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
-                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
-                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
-                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
-                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
-                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
-                uidColumn()
+                datasetAssetFlag("p.certified = 1\n                             AND p.deprecated = 0"),
+                datasetAssetFlag("p.recommended = 1\n                             AND p.deprecated = 0"),
+                datasetAssetFlag("p.deprecated = 1"),
+                favoriteFlag()
         ) + query.fromWhere + " ORDER BY " + orderExpression(normalized, orderDirection),
                 normalized.getPageSize(), offset);
         List<DataPortalResourceVO> records = jdbcTemplate.query(listSql, (rs, rowNum) -> {
@@ -198,47 +167,16 @@ public class DataPortalServer {
                        v.update_time,
                        COALESCE(u.name, %s) AS creator_name,
                        (SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = v.id) AS chart_count,
-                       EXISTS (
-                           SELECT 1
-                           FROM bi_chart c
-                           INNER JOIN data_asset_profile p ON %s
-                             AND %s
-                             AND p.certified = 1
-                             AND p.deprecated = 0
-                           WHERE c.scene_id = v.id
-                       ) AS certified,
-                       EXISTS (
-                           SELECT 1
-                           FROM bi_chart c
-                           INNER JOIN data_asset_profile p ON %s
-                             AND %s
-                             AND p.recommended = 1
-                             AND p.deprecated = 0
-                           WHERE c.scene_id = v.id
-                       ) AS recommended,
-                       EXISTS (
-                           SELECT 1
-                           FROM bi_chart c
-                           INNER JOIN data_asset_profile p ON %s
-                             AND %s
-                             AND p.deprecated = 1
-                           WHERE c.scene_id = v.id
-                       ) AS deprecated,
-                       EXISTS (
-                           SELECT 1
-                           FROM workspace_favorite_resource fav
-                           WHERE fav.resource_id = v.id
-                             AND fav.%s = ?
-                       ) AS favorite
+                       %s AS certified,
+                       %s AS recommended,
+                       %s AS deprecated,
+                       %s AS favorite
                 """.formatted(
                 dialect().stringCast("v.create_by"),
-                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
-                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
-                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
-                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
-                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
-                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
-                uidColumn()
+                datasetAssetFlag("p.certified = 1\n                             AND p.deprecated = 0"),
+                datasetAssetFlag("p.recommended = 1\n                             AND p.deprecated = 0"),
+                datasetAssetFlag("p.deprecated = 1"),
+                favoriteFlag()
         ) + query.fromWhere);
         List<DataPortalResourceVO> resources = jdbcTemplate.query(resourceSql, (rs, rowNum) -> {
             DataPortalResourceVO vo = new DataPortalResourceVO();
@@ -372,6 +310,30 @@ public class DataPortalServer {
                 OptConstants.OPT_RESOURCE_TYPE.VISUALIZATION,
                 OptConstants.OPT_TYPE.UPDATE
         );
+    }
+
+    private String datasetAssetFlag(String assetCondition) {
+        return dialect().existsFlag("""
+                SELECT 1
+                FROM bi_chart c
+                INNER JOIN data_asset_profile p ON %s
+                  AND %s
+                  AND %s
+                WHERE c.scene_id = v.id
+                """.formatted(
+                dialect().stringEquals("p.asset_type", dialect().stringLiteral("dataset")),
+                dialect().stringEquals("p.asset_id", dialect().stringCast("c.table_id")),
+                assetCondition
+        ));
+    }
+
+    private String favoriteFlag() {
+        return dialect().existsFlag("""
+                SELECT 1
+                FROM workspace_favorite_resource fav
+                WHERE fav.resource_id = v.id
+                  AND fav.%s = ?
+                """.formatted(uidColumn()));
     }
 
     // 门户资源查询统一通过元数据库方言处理保留字和分页差异

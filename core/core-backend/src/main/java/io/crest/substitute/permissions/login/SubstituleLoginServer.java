@@ -6,6 +6,7 @@ import io.crest.auth.vo.TokenVO;
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
 import io.crest.exception.CrestException;
+import io.crest.result.ResultCode;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.log.CrestAudit;
 import io.crest.substitute.permissions.user.CrestUserManage;
@@ -66,10 +67,10 @@ public class SubstituleLoginServer {
 
         CrestUser user = crestUserManage.queryByAccount(name);
         if (user == null || !crestUserManage.passwordMatches(user, pwd)) {
-            CrestException.throwException("用户名或密码错误");
+            CrestException.throwException(ResultCode.USER_LOGIN_ERROR.code(), "用户名或密码错误");
         }
         if (Boolean.FALSE.equals(user.getEnable())) {
-            CrestException.throwException("用户已停用");
+            CrestException.throwException(ResultCode.USER_ACCOUNT_FORBIDDEN.code(), "用户已停用");
         }
         boolean emergencyAdmin = Boolean.TRUE.equals(dto.getEmergency()) && Boolean.TRUE.equals(user.getAdmin());
         if (CrestUserManage.AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType()) && !emergencyAdmin) {

@@ -154,10 +154,20 @@ public final class MetadataDbDialects {
             return Arrays.stream(expressions).collect(Collectors.joining(" || "));
         }
 
-        // Oracle 兼容元库使用 SYSTIMESTAMP 保留数据库端时间精度
+        // Oracle 兼容元库使用会话时区时间，避免页面显示 UTC 时间
         @Override
         public String currentTimestamp() {
-            return "SYSTIMESTAMP";
+            return "CURRENT_TIMESTAMP";
+        }
+
+        @Override
+        public String timestampParameter() {
+            return "TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS')";
+        }
+
+        @Override
+        public Object timestampValue(String value) {
+            return value;
         }
 
         // Oracle 兼容元库通过 LOWER 和 || 生成大小写不敏感 LIKE 条件

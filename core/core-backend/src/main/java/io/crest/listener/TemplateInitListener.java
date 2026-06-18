@@ -2,6 +2,8 @@ package io.crest.listener;
 
 import io.crest.utils.LogUtil;
 import io.crest.template.manage.TemplateLocalParseManage;
+import io.crest.runtime.ConditionalOnCrestRuntimeRole;
+import io.crest.runtime.CrestRuntimeRole;
 import jakarta.annotation.Resource;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Order(value = 3)
-// 定义当前业务对象的核心职责
+@ConditionalOnCrestRuntimeRole({CrestRuntimeRole.ALL, CrestRuntimeRole.SCHEDULER})
 public class TemplateInitListener implements ApplicationListener<ApplicationReadyEvent> {
 
     @Resource
@@ -21,7 +23,6 @@ public class TemplateInitListener implements ApplicationListener<ApplicationRead
     private boolean internalLiteEnabled;
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         if (internalLiteEnabled) {
             LogUtil.info("=====Template init skipped in internal lite mode=====");

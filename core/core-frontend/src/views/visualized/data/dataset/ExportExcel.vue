@@ -138,6 +138,7 @@ const handleClick = (tab?: { paneName?: string | number }, _ev?: Event) => {
 
 // 打开导出中心并启动任务状态轮询
 const init = (params?: { activeName?: string }) => {
+  clearInterval(timer)
   drawer.value = true
   if (params && params.activeName !== undefined) {
     activeName.value = params.activeName

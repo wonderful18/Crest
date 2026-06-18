@@ -2,6 +2,7 @@ package io.crest.datasource.server;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.crest.commons.constants.TaskStatus;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
 import io.crest.datasource.dao.auto.entity.CoreDatasourceTask;
@@ -12,10 +13,13 @@ import io.crest.datasource.dao.auto.mapper.CoreDatasourceTaskMapper;
 import io.crest.datasource.dto.CoreDatasourceTaskDTO;
 import io.crest.datasource.dao.ext.mapper.ExtDatasourceTaskMapper;
 import io.crest.datasource.manage.DatasourceSyncManage;
+import io.crest.metadata.MetadataDbDialects;
 import io.crest.utils.IDUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
@@ -35,6 +39,8 @@ public class DatasourceTaskServer {
     private CoreDatasourceTaskLogMapper coreDatasourceTaskLogMapper;
     @Resource
     private DatasourceSyncManage datasourceSyncManage;
+    @Resource
+    private Environment environment;
 
 
     // 按任务 ID 查询数据源同步任务
@@ -62,7 +68,7 @@ public class DatasourceTaskServer {
         queryWrapper.eq("ds_id", dsId);
         queryWrapper.eq("table_name", tableName);
         queryWrapper.orderByDesc("start_time");
-        queryWrapper.last("limit 1");
+        queryWrapper.last(limitTail(1));
         List<CoreDatasourceTaskLog> logs = coreDatasourceTaskLogMapper.selectList(queryWrapper);
         if (!CollectionUtils.isEmpty(logs)) {
             return logs.get(0);
@@ -80,6 +86,11 @@ public class DatasourceTaskServer {
             datasourceSyncManage.deleteSchedule(coreDatasourceTasks.get(0));
         }
         datasourceTaskMapper.delete(queryWrapper);
+    }
+
+    // 同步日志查询尾部按系统库方言生成，避免 OB Oracle 误用 MySQL LIMIT
+    private String limitTail(long limit) {
+        return MetadataDbDialects.current(environment).limitOffset("", limit, 0);
     }
 
     // 新增数据源同步任务
@@ -143,7 +154,21 @@ public class DatasourceTaskServer {
     }
 
     // 尝试标记任务执行中并判断是否已有执行任务
+    @Transactional(rollbackFor = Exception.class)
     public synchronized boolean existUnderExecutionTask(Long datasourceId, Long taskId) {
+        return existUnderExecutionTask(datasourceId, taskId, null);
+    }
+
+    // Worker 执行队列任务时记录执行者，旧部署不传 workerId 时不写新增队列字段。
+    @Transactional(rollbackFor = Exception.class)
+    public synchronized boolean existUnderExecutionTask(Long datasourceId, Long taskId, String workerId) {
+        return existUnderExecutionTask(datasourceId, taskId, workerId, null);
+    }
+
+    // 带投递时间抢占队列任务，避免 ack 失败后的旧 Redis 消息重复执行。
+    @Transactional(rollbackFor = Exception.class)
+    public synchronized boolean existUnderExecutionTask(Long datasourceId, Long taskId, String workerId, Long enqueueTime) {
+        long now = System.currentTimeMillis();
         UpdateWrapper<CoreDatasource> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", datasourceId);
         updateWrapper.ne("task_status", TaskStatus.UnderExecution.name());
@@ -151,14 +176,91 @@ public class DatasourceTaskServer {
         coreDatasource.setTaskStatus(TaskStatus.UnderExecution.name());
         Boolean existSyncTask = coreDatasourceMapper.update(coreDatasource, updateWrapper) == 0;
         if (!existSyncTask) {
+            if (StringUtils.isNotBlank(workerId) && enqueueTime != null) {
+                int claimed = datasourceTaskMapper.markQueuedWorkerStartedByEnqueueTime(taskId, workerId, now, enqueueTime);
+                if (claimed <= 0) {
+                    resetDatasourceExecution(datasourceId);
+                    return true;
+                }
+                return false;
+            }
             UpdateWrapper<CoreDatasourceTask> updateTaskWrapper = new UpdateWrapper<>();
-            updateWrapper.eq("id", taskId);
+            updateTaskWrapper.eq("id", taskId);
             CoreDatasourceTask record = new CoreDatasourceTask();
             record.setTaskStatus(TaskStatus.UnderExecution.name());
-            record.setLastExecTime(System.currentTimeMillis());
+            record.setLastExecTime(now);
             datasourceTaskMapper.update(record, updateTaskWrapper);
+            if (StringUtils.isNotBlank(workerId)) {
+                datasourceTaskMapper.markQueuedWorkerStarted(taskId, workerId, now);
+            }
         }
         return existSyncTask;
+    }
+
+    private void resetDatasourceExecution(Long datasourceId) {
+        UpdateWrapper<CoreDatasource> wrapper = new UpdateWrapper<>();
+        wrapper.eq("id", datasourceId);
+        CoreDatasource record = new CoreDatasource();
+        record.setTaskStatus(TaskStatus.WaitingForExecution.name());
+        coreDatasourceMapper.update(record, wrapper);
+    }
+
+    // 标记任务已进入 Redis 队列，返回 false 表示近期已有投递。
+    public boolean markQueuedTaskEnqueued(Long taskId, long now, long enqueueRetryMillis) {
+        long enqueueBefore = now - Math.max(10000, enqueueRetryMillis);
+        return datasourceTaskMapper.markQueuedTaskEnqueued(taskId, now, enqueueBefore) > 0;
+    }
+
+    // 查询心跳超时的队列执行任务。
+    public List<CoreDatasourceTask> listStaleQueuedTasks(long staleBefore, int limit) {
+        QueryWrapper<CoreDatasourceTask> wrapper = new QueryWrapper<>();
+        wrapper.select("id", "ds_id");
+        wrapper.eq("task_status", TaskStatus.UnderExecution.name());
+        wrapper.and(condition -> condition.isNull("heartbeat_time").or().lt("heartbeat_time", staleBefore));
+        wrapper.orderByAsc("heartbeat_time");
+        return datasourceTaskMapper.selectPage(new Page<>(1, Math.max(1, limit), false), wrapper).getRecords();
+    }
+
+    // 查询投递后未被消费的任务，用于 Redis 投递失败或消息丢失兜底。
+    public List<CoreDatasourceTask> listQueuedTasksWaitingRetry(long enqueueBefore, int limit) {
+        QueryWrapper<CoreDatasourceTask> wrapper = new QueryWrapper<>();
+        wrapper.select("id", "ds_id");
+        wrapper.eq("task_status", TaskStatus.WaitingForExecution.name());
+        wrapper.isNotNull("last_enqueue_time");
+        wrapper.lt("last_enqueue_time", enqueueBefore);
+        wrapper.orderByAsc("last_enqueue_time");
+        return datasourceTaskMapper.selectPage(new Page<>(1, Math.max(1, limit), false), wrapper).getRecords();
+    }
+
+    // 回滚超时队列任务，同时恢复数据源状态。
+    @Transactional(rollbackFor = Exception.class)
+    public boolean resetStaleQueuedTask(Long taskId, Long datasourceId, long staleBefore, long now, String reason) {
+        int updated = datasourceTaskMapper.resetStaleQueuedTask(taskId, staleBefore, now, reason);
+        if (updated <= 0) {
+            return false;
+        }
+        UpdateWrapper<CoreDatasource> wrapper = new UpdateWrapper<>();
+        wrapper.eq("id", datasourceId);
+        CoreDatasource record = new CoreDatasource();
+        record.setTaskStatus(TaskStatus.WaitingForExecution.name());
+        coreDatasourceMapper.update(record, wrapper);
+        return true;
+    }
+
+    // 刷新执行心跳，仅队列 Worker 路径调用。
+    public void touchQueuedTaskHeartbeat(Long taskId) {
+        if (taskId == null) {
+            return;
+        }
+        datasourceTaskMapper.touchQueuedTaskHeartbeat(taskId, System.currentTimeMillis());
+    }
+
+    // 队列 Worker 完成后清理投递状态，避免恢复逻辑重复执行同一次触发。
+    public void finishQueuedTask(Long taskId, String lastError) {
+        if (taskId == null) {
+            return;
+        }
+        datasourceTaskMapper.finishQueuedTask(taskId, System.currentTimeMillis(), lastError);
     }
 
     // 初始化数据源同步任务日志
