@@ -11,10 +11,12 @@ VERSION=${1:?"Usage: $0 <version> <linux-amd64|linux-arm64> [output_dir]"}
 TARGET_PLATFORM=${2:?"Usage: $0 <version> <linux-amd64|linux-arm64> [output_dir]"}
 OUTPUT_DIR=${3:-"${REPO_DIR}/offline-packages"}
 MYSQL_IMAGE=${MYSQL_IMAGE:-"mysql:8.0.43"}
+REDIS_IMAGE=${REDIS_IMAGE:-"redis:7.4.5-alpine"}
 INCLUDE_OBSERVABILITY_IMAGES=${INCLUDE_OBSERVABILITY_IMAGES:-false}
 PROMETHEUS_IMAGE=${PROMETHEUS_IMAGE:-"prom/prometheus:v3.12.0"}
 GRAFANA_IMAGE=${GRAFANA_IMAGE:-"grafana/grafana-oss:13.0.1"}
 SOURCE_MYSQL_IMAGE=${SOURCE_MYSQL_IMAGE:-"${MYSQL_IMAGE}"}
+SOURCE_REDIS_IMAGE=${SOURCE_REDIS_IMAGE:-"${REDIS_IMAGE}"}
 SOURCE_PROMETHEUS_IMAGE=${SOURCE_PROMETHEUS_IMAGE:-"${PROMETHEUS_IMAGE}"}
 SOURCE_GRAFANA_IMAGE=${SOURCE_GRAFANA_IMAGE:-"${GRAFANA_IMAGE}"}
 
@@ -81,6 +83,12 @@ if ! docker image inspect "${SOURCE_MYSQL_IMAGE}" >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! docker image inspect "${SOURCE_REDIS_IMAGE}" >/dev/null 2>&1; then
+  echo "Source Redis image not found: ${SOURCE_REDIS_IMAGE}" >&2
+  echo "Pull or load it first, or set SOURCE_REDIS_IMAGE." >&2
+  exit 1
+fi
+
 if [ "${INCLUDE_OBSERVABILITY_IMAGES}" = "true" ]; then
   if ! docker image inspect "${SOURCE_PROMETHEUS_IMAGE}" >/dev/null 2>&1; then
     echo "Source Prometheus image not found: ${SOURCE_PROMETHEUS_IMAGE}" >&2
@@ -106,6 +114,11 @@ fi
 
 if [ "$(image_arch "${SOURCE_MYSQL_IMAGE}")" != "${TARGET_ARCH}" ]; then
   echo "Source MySQL image architecture mismatch: ${SOURCE_MYSQL_IMAGE} is $(image_arch "${SOURCE_MYSQL_IMAGE}"), expected ${TARGET_ARCH}." >&2
+  exit 1
+fi
+
+if [ "$(image_arch "${SOURCE_REDIS_IMAGE}")" != "${TARGET_ARCH}" ]; then
+  echo "Source Redis image architecture mismatch: ${SOURCE_REDIS_IMAGE} is $(image_arch "${SOURCE_REDIS_IMAGE}"), expected ${TARGET_ARCH}." >&2
   exit 1
 fi
 
@@ -146,6 +159,7 @@ sed -i.bak \
   -e "s#^CREST_BACKEND_IMAGE=.*#CREST_BACKEND_IMAGE=${BACKEND_IMAGE}#g" \
   -e "s#^CREST_FRONTEND_IMAGE=.*#CREST_FRONTEND_IMAGE=${FRONTEND_IMAGE}#g" \
   -e "s#^CREST_MYSQL_IMAGE=.*#CREST_MYSQL_IMAGE=${MYSQL_IMAGE}#g" \
+  -e "s#^CREST_REDIS_IMAGE=.*#CREST_REDIS_IMAGE=${REDIS_IMAGE}#g" \
   -e "s#^CREST_PROMETHEUS_IMAGE=.*#CREST_PROMETHEUS_IMAGE=${PROMETHEUS_IMAGE}#g" \
   -e "s#^CREST_GRAFANA_IMAGE=.*#CREST_GRAFANA_IMAGE=${GRAFANA_IMAGE}#g" \
   "${PACKAGE_DIR}/install.conf"
@@ -160,6 +174,9 @@ docker tag "${SOURCE_FRONTEND_IMAGE}" "${FRONTEND_IMAGE}"
 log "Tag MySQL image ${SOURCE_MYSQL_IMAGE} -> ${MYSQL_IMAGE}"
 docker tag "${SOURCE_MYSQL_IMAGE}" "${MYSQL_IMAGE}"
 
+log "Tag Redis image ${SOURCE_REDIS_IMAGE} -> ${REDIS_IMAGE}"
+docker tag "${SOURCE_REDIS_IMAGE}" "${REDIS_IMAGE}"
+
 if [ "${INCLUDE_OBSERVABILITY_IMAGES}" = "true" ]; then
   log "Tag Prometheus image ${SOURCE_PROMETHEUS_IMAGE} -> ${PROMETHEUS_IMAGE}"
   docker tag "${SOURCE_PROMETHEUS_IMAGE}" "${PROMETHEUS_IMAGE}"
@@ -171,6 +188,7 @@ fi
 BACKEND_ARCHIVE="${PACKAGE_DIR}/images/$(safe_image_file_name "${BACKEND_IMAGE}").tar.gz"
 FRONTEND_ARCHIVE="${PACKAGE_DIR}/images/$(safe_image_file_name "${FRONTEND_IMAGE}").tar.gz"
 MYSQL_ARCHIVE="${PACKAGE_DIR}/images/$(safe_image_file_name "${MYSQL_IMAGE}").tar.gz"
+REDIS_ARCHIVE="${PACKAGE_DIR}/images/$(safe_image_file_name "${REDIS_IMAGE}").tar.gz"
 PROMETHEUS_ARCHIVE="${PACKAGE_DIR}/images/$(safe_image_file_name "${PROMETHEUS_IMAGE}").tar.gz"
 GRAFANA_ARCHIVE="${PACKAGE_DIR}/images/$(safe_image_file_name "${GRAFANA_IMAGE}").tar.gz"
 
@@ -183,6 +201,9 @@ docker save "${FRONTEND_IMAGE}" | gzip -c > "${FRONTEND_ARCHIVE}"
 log "Save ${MYSQL_IMAGE}"
 docker save "${MYSQL_IMAGE}" | gzip -c > "${MYSQL_ARCHIVE}"
 
+log "Save ${REDIS_IMAGE}"
+docker save "${REDIS_IMAGE}" | gzip -c > "${REDIS_ARCHIVE}"
+
 if [ "${INCLUDE_OBSERVABILITY_IMAGES}" = "true" ]; then
   log "Save ${PROMETHEUS_IMAGE}"
   docker save "${PROMETHEUS_IMAGE}" | gzip -c > "${PROMETHEUS_ARCHIVE}"
@@ -191,10 +212,16 @@ if [ "${INCLUDE_OBSERVABILITY_IMAGES}" = "true" ]; then
   docker save "${GRAFANA_IMAGE}" | gzip -c > "${GRAFANA_ARCHIVE}"
 fi
 
+OBSERVABILITY_IMAGE_SUMMARY="可观测性镜像：未包含；需要内置 Prometheus/Grafana 时，制作包时设置 INCLUDE_OBSERVABILITY_IMAGES=true。"
+if [ "${INCLUDE_OBSERVABILITY_IMAGES}" = "true" ]; then
+  OBSERVABILITY_IMAGE_SUMMARY="Prometheus 镜像：\`${PROMETHEUS_IMAGE}\`
+- Grafana 镜像：\`${GRAFANA_IMAGE}\`"
+fi
+
 cat > "${PACKAGE_DIR}/OFFLINE-README.md" <<EOF
 # Crest 离线部署包 ${VERSION} (${TARGET_PLATFORM})
 
-本目录包含 Crest 应用镜像、MySQL 镜像、Docker Compose 配置和安装脚本，可在目标服务器上直接安装。
+本目录包含 Crest 应用镜像、MySQL 镜像、Redis 镜像、Docker Compose 配置和安装脚本，可在目标服务器上直接安装。
 
 ## 安装
 
@@ -211,15 +238,57 @@ bash install.sh
 - \`CREST_BACKEND_IMAGE\`：Crest 后端镜像，已固定为本包内镜像
 - \`CREST_FRONTEND_IMAGE\`：Crest 前端镜像，已固定为本包内镜像
 - \`CREST_MYSQL_IMAGE\`：MySQL 镜像，已固定为本包内镜像
+- \`CREST_REDIS_IMAGE\`：Redis 镜像，已固定为本包内镜像
+- \`CREST_PRODUCTION_MODE\`：生产多副本模式开关；启用后必须使用 Redis
 - \`CREST_DB_TYPE\`：Crest 系统库类型，默认 \`mysql\`，可选 \`ob-mysql\` 或 \`ob-oracle\`
 - \`CREST_DB_HOST\` / \`CREST_DB_PORT\`：Crest 系统库地址和端口；OceanBase 可填写 OBProxy 或 observer 地址
 - \`CREST_DB_USERNAME\` / \`CREST_DB_PASSWORD\`：Crest 系统库账号和密码；OBProxy 用户名使用 \`用户@租户#集群\`，observer 直连使用 \`用户@租户\`
 - \`CREST_DB_URL\`：自定义 JDBC URL；留空时安装脚本按 \`CREST_DB_TYPE\` 自动生成
 - \`CREST_FLYWAY_ENABLED\`：应用启动时是否执行 Flyway；留空时 MySQL 默认 \`true\`，OceanBase 默认 \`false\`
+- \`CREST_INTERNAL_REDIS\`：是否启动包内 \`redis-crest\`；使用外部 Redis 或旧版单机兼容模式时可设为 \`false\`
+- \`CREST_REDIS_HOST\` / \`CREST_REDIS_PORT\`：Redis 地址和端口；默认连接包内 \`redis-crest\`
+- \`CREST_REDIS_PASSWORD\` / \`CREST_REDIS_DATABASE\`：Redis 密码和逻辑库；Redis Cluster 必须使用 \`0\`
+- \`CREST_REDIS_CLUSTER_NODES\`：Redis Cluster 节点列表；配置后应用按外部 Redis Cluster 连接
+- \`CREST_TASK_QUEUE_ENABLED\`：是否启用 Redis Streams 任务队列；未配置时生产模式默认启用，旧版单机模式默认关闭
+- \`CREST_WEBSOCKET_BROADCAST_ENABLED\`：是否启用 WebSocket Redis 广播；未配置时生产模式默认启用，旧版单机模式默认关闭
 - \`CREST_INITIAL_PASSWORD\`：管理员初始密码；留空时安装脚本会随机生成并在安装完成后输出
 - \`CREST_LOAD_DEMO\`：是否初始化内置演示资源，默认 \`true\`；生产环境不需要示例数据时设为 \`false\`
 - \`CREST_PROMETHEUS_ENABLED\`：是否启用 Prometheus 指标采集，默认 \`false\`
 - \`CREST_GRAFANA_ENABLED\`：是否启用 Grafana 看板，默认 \`false\`
+
+## Redis 使用模式
+
+默认安装启动包内 Redis：
+
+\`\`\`bash
+CREST_INTERNAL_REDIS=true
+CREST_REDIS_HOST=redis-crest
+CREST_CACHE_TYPE=jcache
+\`\`\`
+
+旧版单机环境如果暂时不使用 Redis，可显式关闭包内 Redis，并保持单机兼容模式：
+
+\`\`\`bash
+CREST_INTERNAL_REDIS=false
+CREST_PRODUCTION_MODE=false
+CREST_CACHE_TYPE=jcache
+CREST_TASK_QUEUE_ENABLED=false
+CREST_WEBSOCKET_BROADCAST_ENABLED=false
+\`\`\`
+
+该模式不会启动 \`redis-crest\`，也不会把后端服务依赖到 Redis。它只适用于单机或旧版兼容部署；多副本、任务队列、WebSocket 跨节点广播和生产模式必须使用 Redis。
+
+使用外部 Redis 时，不启动包内 Redis，改填外部连接：
+
+\`\`\`bash
+CREST_INTERNAL_REDIS=false
+CREST_REDIS_HOST=redis.example.com
+CREST_REDIS_PORT=6379
+CREST_REDIS_PASSWORD=your_password
+CREST_CACHE_TYPE=redis
+\`\`\`
+
+如启用 \`CREST_PRODUCTION_MODE=true\`，必须配置可用 Redis；\`CREST_INTERNAL_REDIS=false\` 时不能继续使用默认的 \`CREST_REDIS_HOST=redis-crest\`。
 
 ## OceanBase 系统库
 
@@ -327,8 +396,8 @@ done
 - 后端镜像：\`${BACKEND_IMAGE}\`
 - 前端镜像：\`${FRONTEND_IMAGE}\`
 - MySQL 镜像：\`${MYSQL_IMAGE}\`
-- Prometheus 镜像：\`${PROMETHEUS_IMAGE}\`
-- Grafana 镜像：\`${GRAFANA_IMAGE}\`
+- Redis 镜像：\`${REDIS_IMAGE}\`
+- ${OBSERVABILITY_IMAGE_SUMMARY}
 - 目标架构：\`${TARGET_PLATFORM}\`
 
 安装脚本会自动执行 \`docker load\` 加载 \`images/\` 下的镜像文件。

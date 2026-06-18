@@ -67,6 +67,7 @@ jobs:
           load_image "ghcr.io/sevoniva/crest-service:${VERSION}" "ghcr.io/sevoniva/crest-service:${VERSION}-${ARCH}"
           load_image "ghcr.io/sevoniva/crest-web:${VERSION}" "ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}"
           load_image "mysql:8.0.43" "mysql:8.0.43-${ARCH}"
+          load_image "redis:7.4.5-alpine" "redis:7.4.5-alpine-${ARCH}"
           load_image "prom/prometheus:v3.12.0" "prom/prometheus:v3.12.0-${ARCH}"
           load_image "grafana/grafana-oss:13.0.1" "grafana/grafana-oss:13.0.1-${ARCH}"
 
@@ -78,6 +79,8 @@ jobs:
           INCLUDE_OBSERVABILITY_IMAGES: "true"
           SOURCE_MYSQL_IMAGE: mysql:8.0.43-${{ matrix.arch }}
           MYSQL_IMAGE: mysql:8.0.43
+          SOURCE_REDIS_IMAGE: redis:7.4.5-alpine-${{ matrix.arch }}
+          REDIS_IMAGE: redis:7.4.5-alpine
           SOURCE_PROMETHEUS_IMAGE: prom/prometheus:v3.12.0-${{ matrix.arch }}
           PROMETHEUS_IMAGE: prom/prometheus:v3.12.0
           SOURCE_GRAFANA_IMAGE: grafana/grafana-oss:13.0.1-${{ matrix.arch }}

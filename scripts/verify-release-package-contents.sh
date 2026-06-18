@@ -58,6 +58,14 @@ require_entry() {
   grep -Fqx "${package_dir}/${entry}" "${package_list}" || fail "Missing ${entry} in ${package_file}."
 }
 
+require_file_contains() {
+  local entry="$1"
+  local pattern="$2"
+  require_entry "${entry}"
+  tar -xOf "${package_file}" "${package_dir}/${entry}" | grep -Eq "${pattern}" \
+    || fail "${entry} does not contain expected pattern: ${pattern}."
+}
+
 reject_entry() {
   local pattern="$1"
   if grep -Eq "${pattern}" "${package_list}"; then
@@ -101,6 +109,14 @@ case "${package_type}" in
     require_entry "images/ghcr.io_sevoniva_crest-service_${version}-${arch}.tar.gz"
     require_entry "images/ghcr.io_sevoniva_crest-web_${version}-${arch}.tar.gz"
     require_entry "images/mysql_8.0.43.tar.gz"
+    require_entry "images/redis_7.4.5-alpine.tar.gz"
+    require_file_contains "install.conf" '^CREST_REDIS_IMAGE=redis:7\.4\.5-alpine$'
+    require_file_contains "install.conf" '^CREST_INTERNAL_REDIS=true$'
+    require_file_contains "install.conf" '^CREST_REDIS_HOST=redis-crest$'
+    require_file_contains "crest/docker-compose.yml" '^  redis-crest:$'
+    require_file_contains "crest/docker-compose.yml" 'CREST_REDIS_HOST:.*redis-crest'
+    require_file_contains "OFFLINE-README.md" 'CREST_REDIS_IMAGE'
+    require_file_contains "OFFLINE-README.md" 'CREST_INTERNAL_REDIS'
 
     if [[ "${EXPECT_OBSERVABILITY_IMAGES:-false}" == "true" ]]; then
       require_entry "images/prom_prometheus_v3.12.0.tar.gz"
@@ -113,6 +129,7 @@ case "${package_type}" in
     require_entry "image-manifest.txt"
     require_entry "images/ghcr.io_sevoniva_crest-service_${version}.tar.gz"
     require_entry "images/ghcr.io_sevoniva_crest-web_${version}.tar.gz"
+    reject_entry "^${package_dir}/images/(mysql|redis|prom_prometheus|grafana_grafana-oss)_"
     ;;
 esac
 

@@ -193,6 +193,7 @@ function check_and_prepare_env_params() {
    PACKAGE_BACKEND_IMAGE=${CREST_BACKEND_IMAGE:-}
    PACKAGE_FRONTEND_IMAGE=${CREST_FRONTEND_IMAGE:-}
    PACKAGE_MYSQL_IMAGE=${CREST_MYSQL_IMAGE:-}
+   PACKAGE_REDIS_IMAGE=${CREST_REDIS_IMAGE:-}
    PACKAGE_PROMETHEUS_IMAGE=${CREST_PROMETHEUS_IMAGE:-}
    PACKAGE_GRAFANA_IMAGE=${CREST_GRAFANA_IMAGE:-}
    if [[ $CREST_BASE_OLD ]];then
@@ -204,6 +205,7 @@ function check_and_prepare_env_params() {
       [[ -n "$PACKAGE_BACKEND_IMAGE" ]] && export CREST_BACKEND_IMAGE="$PACKAGE_BACKEND_IMAGE"
       [[ -n "$PACKAGE_FRONTEND_IMAGE" ]] && export CREST_FRONTEND_IMAGE="$PACKAGE_FRONTEND_IMAGE"
       [[ -n "$PACKAGE_MYSQL_IMAGE" ]] && export CREST_MYSQL_IMAGE="$PACKAGE_MYSQL_IMAGE"
+      [[ -n "$PACKAGE_REDIS_IMAGE" ]] && export CREST_REDIS_IMAGE="$PACKAGE_REDIS_IMAGE"
       [[ -n "$PACKAGE_PROMETHEUS_IMAGE" ]] && export CREST_PROMETHEUS_IMAGE="$PACKAGE_PROMETHEUS_IMAGE"
       [[ -n "$PACKAGE_GRAFANA_IMAGE" ]] && export CREST_GRAFANA_IMAGE="$PACKAGE_GRAFANA_IMAGE"
       INSTALL_TYPE='upgrade'
@@ -215,6 +217,8 @@ function check_and_prepare_env_params() {
    fi
    set +a
    CREST_INTERNAL_LITE=${CREST_INTERNAL_LITE:-true}
+   CREST_PRODUCTION_MODE=${CREST_PRODUCTION_MODE:-false}
+   normalize_bool_env CREST_PRODUCTION_MODE
    CREST_EXTERNAL_MYSQL=${CREST_EXTERNAL_MYSQL:-false}
    case "$(echo "$CREST_EXTERNAL_MYSQL" | tr '[:upper:]' '[:lower:]')" in
       true|1|yes)
@@ -229,12 +233,25 @@ function check_and_prepare_env_params() {
          ;;
    esac
    export CREST_EXTERNAL_MYSQL
+   CREST_INTERNAL_REDIS=${CREST_INTERNAL_REDIS:-true}
+   normalize_bool_env CREST_INTERNAL_REDIS
    normalize_metadata_db_env
    if [[ "$CREST_EXTERNAL_MYSQL" == "false" ]]; then
       CREST_DB_HOST=mysql-crest
       CREST_DB_PORT=3306
       export CREST_DB_HOST
       export CREST_DB_PORT
+   fi
+   local redis_required=false
+   if [[ "$CREST_PRODUCTION_MODE" == "true" \
+      || "$(echo "${CREST_CACHE_TYPE:-jcache}" | tr '[:upper:]' '[:lower:]')" == "redis" \
+      || "$(echo "${CREST_TASK_QUEUE_ENABLED:-false}" | tr '[:upper:]' '[:lower:]')" =~ ^(true|1|yes)$ \
+      || "$(echo "${CREST_WEBSOCKET_BROADCAST_ENABLED:-false}" | tr '[:upper:]' '[:lower:]')" =~ ^(true|1|yes)$ ]]; then
+      redis_required=true
+   fi
+   if [[ "$redis_required" == "true" && "$CREST_INTERNAL_REDIS" == "false" && ( -z "$CREST_REDIS_HOST" || "$CREST_REDIS_HOST" == "redis-crest" ) ]]; then
+      echo "当前配置需要 Redis。CREST_INTERNAL_REDIS=false 时，请配置外部 CREST_REDIS_HOST，或关闭生产模式、Redis 缓存、任务队列和 WebSocket Redis 广播。"
+      exit 1
    fi
    CREST_CRYPTO_MODE=${CREST_CRYPTO_MODE:-standard}
    case "$CREST_CRYPTO_MODE" in
@@ -354,7 +371,7 @@ function prepare_crest_run_base() {
    env | grep '^CREST_' >.env
 
    mkdir -p ${CREST_RUN_BASE}/{cache,logs,conf}
-   mkdir -p ${CREST_RUN_BASE}/data/{mysql,static-resource,appearance,exportData,excel,font,i18n,plugin,prometheus,grafana}
+   mkdir -p ${CREST_RUN_BASE}/data/{mysql,redis,static-resource,appearance,exportData,excel,font,i18n,plugin,prometheus,grafana}
    chown -R 10001:10001 \
       ${CREST_RUN_BASE}/cache \
       ${CREST_RUN_BASE}/logs \
@@ -367,6 +384,7 @@ function prepare_crest_run_base() {
       ${CREST_RUN_BASE}/data/plugin 2>/dev/null || true
    chown -R 65534:65534 ${CREST_RUN_BASE}/data/prometheus 2>/dev/null || true
    chown -R 472:472 ${CREST_RUN_BASE}/data/grafana 2>/dev/null || true
+   chown -R 999:999 ${CREST_RUN_BASE}/data/redis 2>/dev/null || true
 
    if [[ "$CREST_PROMETHEUS_ENABLED" == "true" ]]; then
       printf "%s" "$CREST_PROMETHEUS_TOKEN" > ${CONF_FOLDER}/prometheus-token
@@ -381,18 +399,72 @@ function prepare_crest_run_base() {
       chmod 777 ${CREST_RUN_BASE}/task/logs
    fi
 
-   if [ "${CREST_EXTERNAL_MYSQL}" != "false" ]; then
+   if [[ "${CREST_EXTERNAL_MYSQL}" != "false" || "${CREST_INTERNAL_REDIS}" != "true" ]]; then
       awk '
-         /^  mysql-crest:/ { skip = 1; next }
-         /^  crest-service:/ { skip = 0 }
-         skip { next }
+         function remove_name(name) {
+            return (remove_mysql == "true" && name == "mysql-crest") || (remove_redis == "true" && name == "redis-crest")
+         }
+         function flush_depends() {
+            if (depends_body != "") {
+               print depends_header
+               printf "%s", depends_body
+            }
+            collect_depends = 0
+            skip_dep = 0
+            depends_header = ""
+            depends_body = ""
+         }
+         /^  [a-zA-Z0-9_-]+:/ {
+            service_name = $1
+            sub(":", "", service_name)
+            if (skip_service && !remove_name(service_name)) {
+               skip_service = 0
+            }
+            if (remove_name(service_name)) {
+               skip_service = 1
+               next
+            }
+         }
+         skip_service { next }
+         collect_depends {
+            if ($0 ~ /^      [a-zA-Z0-9_-]+:/) {
+               dep_name = $1
+               sub(":", "", dep_name)
+               skip_dep = remove_name(dep_name)
+               if (!skip_dep) {
+                  depends_body = depends_body $0 ORS
+               }
+               next
+            }
+            if ($0 ~ /^        /) {
+               if (!skip_dep) {
+                  depends_body = depends_body $0 ORS
+               }
+               next
+            }
+            flush_depends()
+            if ($0 ~ /^  [a-zA-Z0-9_-]+:/) {
+               in_backend = 0
+            }
+         }
          /^  crest-service:/ { in_backend = 1; print; next }
          /^  [a-zA-Z0-9_-]+:/ { in_backend = 0 }
-         in_backend && /^    depends_on:/ { skip_dep = 1; next }
-         skip_dep && /^    [a-zA-Z0-9_-]+:/ { skip_dep = 0 }
-         skip_dep { next }
-         !skip { print }
-      ' docker-compose.yml > docker-compose.yml.tmp && mv docker-compose.yml.tmp docker-compose.yml
+         in_backend && /^    depends_on:/ {
+            collect_depends = 1
+            depends_header = $0
+            depends_body = ""
+            skip_dep = 0
+            next
+         }
+         { print }
+         END {
+            if (collect_depends) {
+               flush_depends()
+            }
+         }
+      ' remove_mysql="$([ "${CREST_EXTERNAL_MYSQL}" != "false" ] && echo true || echo false)" \
+        remove_redis="$([ "${CREST_INTERNAL_REDIS}" != "true" ] && echo true || echo false)" \
+        docker-compose.yml > docker-compose.yml.tmp && mv docker-compose.yml.tmp docker-compose.yml
    fi
 
    log_content "调整配置文件参数"
