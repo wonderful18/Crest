@@ -138,7 +138,7 @@ EOF
 cat > "${PACKAGE_DIR}/APP-IMAGES-README.md" <<EOF
 # Crest 应用镜像升级包 ${VERSION} (${TARGET_PLATFORM})
 
-本包仅包含 Crest 后端镜像、前端镜像、增量升级 SQL 和加载说明，不包含 MySQL、Prometheus、Grafana 镜像，也不包含完整安装脚本。适用于已经安装 Crest 的内网环境升级应用服务。
+本包仅包含 Crest 后端镜像、前端镜像、增量升级 SQL 和加载说明，不包含 MySQL、Prometheus、Grafana 镜像，也不包含完整安装脚本。适用于已经安装 Crest 的环境升级应用服务。
 
 ## 包内内容
 
