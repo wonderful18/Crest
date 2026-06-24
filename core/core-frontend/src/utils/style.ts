@@ -1,9 +1,19 @@
 import { sin, cos, toPercent } from '@/utils/translate'
-import { imgUrlTrans } from '@/utils/imgUtils'
 import { hexColorToRGBA } from '@/views/chart/components/js/util'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { isMainCanvas, isTabCanvas } from '@/utils/canvasUtils'
+import { setBackgroundImageStyle } from '@/utils/backgroundStyleUtils'
 const dvMainStore = dvMainStoreWithOut()
+
+function clearBackgroundStyle(style) {
+  delete style.background
+  delete style.backgroundColor
+  delete style['background-color']
+  delete style.backgroundImage
+  delete style.backgroundRepeat
+  delete style.backgroundPosition
+  delete style.backgroundSize
+}
 export function getShapeStyle(style) {
   const result = {}
   ;['width', 'height', 'top', 'left', 'rotate'].forEach(attr => {
@@ -129,19 +139,15 @@ export function getItemAllStyle(item, filter = []) {
       if (commonBackground.backgroundColorSelect) {
         colorRGBA = hexColorToRGBA(commonBackground.backgroundColor, commonBackground.alpha)
       }
-      if (commonBackground.backgroundImageEnable) {
-        if (
-          commonBackground.backgroundType === 'outerImage' &&
-          typeof commonBackground.outerImage === 'string'
-        ) {
-          result['background'] = `url(${imgUrlTrans(
-            commonBackground.outerImage
-          )}) no-repeat ${colorRGBA}`
-        } else {
-          result['background-color'] = colorRGBA
-        }
-      } else {
-        result['background-color'] = colorRGBA
+      if (colorRGBA) {
+        result['backgroundColor'] = colorRGBA
+      }
+      if (
+        commonBackground.backgroundImageEnable &&
+        commonBackground.backgroundType === 'outerImage' &&
+        typeof commonBackground.outerImage === 'string'
+      ) {
+        setBackgroundImageStyle(result, commonBackground.outerImage)
       }
     }
   })
@@ -210,20 +216,21 @@ export function getCanvasStyle(canvasStyleData, canvasId = 'canvas-main') {
     if (backgroundColorSelect && backgroundColor) {
       colorRGBA = backgroundColor
     }
-    if (backgroundImageEnable) {
-      style['background'] = `url(${imgUrlTrans(background)}) no-repeat ${colorRGBA}`
-    } else {
-      style['background-color'] = colorRGBA
+    if (colorRGBA) {
+      style['backgroundColor'] = colorRGBA
+    }
+    if (backgroundImageEnable && typeof background === 'string') {
+      setBackgroundImageStyle(style, background)
     }
 
     if (dvMainStore.mobileInPc && mobileSetting?.customSetting) {
       const { backgroundColorSelect, color, backgroundImageEnable, background } = mobileSetting
-      if (backgroundColorSelect && backgroundImageEnable && typeof background === 'string') {
-        style['background'] = `url(${imgUrlTrans(background)}) no-repeat ${color}`
-      } else if (backgroundColorSelect) {
-        style['background-color'] = color
-      } else if (backgroundImageEnable) {
-        style['background'] = `url(${imgUrlTrans(background)}) no-repeat`
+      clearBackgroundStyle(style)
+      if (backgroundColorSelect && color) {
+        style['backgroundColor'] = color
+      }
+      if (backgroundImageEnable && typeof background === 'string') {
+        setBackgroundImageStyle(style, background)
       }
     }
     style['font-family'] = fontFamily + '!important'

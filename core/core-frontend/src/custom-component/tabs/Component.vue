@@ -172,7 +172,6 @@ import { dataVTabComponentAdd, groupSizeStyleAdaptor } from '@/utils/style'
 import { deepCopyTabItemHelper } from '@/store/modules/data-visualization/copy'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import { useI18n } from '@/hooks/web/useI18n'
-import { imgUrlTrans } from '@/utils/imgUtils'
 import Board from '@/components/visual-board/Board.vue'
 import ChartCarouselTooltip from '@/views/chart/components/js/g2plot_tooltip_carousel'
 import { debounce } from 'lodash-es'
@@ -180,6 +179,7 @@ import { useEmitt } from '@/hooks/web/useEmitt'
 import { CommonBackground } from '@/components/visualization/component-background/Types'
 import { ShorthandMode } from '@/Types'
 import { checkFilterRemove } from '@/custom-component/v-query/QueryUtils'
+import { setBackgroundImageStyle } from '@/utils/backgroundStyleUtils'
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const { tabMoveInActiveId, bashMatrixInfo, editMode, mobileInPc } = storeToRefs(dvMainStore)
@@ -586,14 +586,15 @@ const backgroundStyle = backgroundParams => {
     if (backgroundColorSelect && backgroundColor) {
       colorRGBA = backgroundColor
     }
-    if (backgroundImageEnable) {
-      if (backgroundType === 'outerImage' && typeof outerImage === 'string') {
-        style['background'] = `url(${imgUrlTrans(outerImage)}) no-repeat ${colorRGBA}`
-      } else {
-        style['background-color'] = colorRGBA
-      }
-    } else {
-      style['background-color'] = colorRGBA
+    if (colorRGBA) {
+      style['backgroundColor'] = colorRGBA
+    }
+    if (
+      backgroundImageEnable &&
+      backgroundType === 'outerImage' &&
+      typeof outerImage === 'string'
+    ) {
+      setBackgroundImageStyle(style, outerImage)
     }
     if (backdropFilterEnable) {
       style['backdrop-filter'] = 'blur(' + backdropFilter + 'px)'

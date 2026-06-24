@@ -23,7 +23,7 @@ services:
       - crest-network
 
   crest-service:
-    image: ${CREST_BACKEND_IMAGE:-ghcr.io/sevoniva/crest-service:v1.5.11}
+    image: ${CREST_BACKEND_IMAGE:-ghcr.io/sevoniva/crest-service:v1.5.12}
     restart: unless-stopped
     init: true
     user: "10001:10001"
@@ -65,7 +65,7 @@ services:
       - crest-network
 
   crest:
-    image: ${CREST_FRONTEND_IMAGE:-ghcr.io/sevoniva/crest-web:v1.5.11}
+    image: ${CREST_FRONTEND_IMAGE:-ghcr.io/sevoniva/crest-web:v1.5.12}
     restart: unless-stopped
     init: true
     user: "10001:10001"
