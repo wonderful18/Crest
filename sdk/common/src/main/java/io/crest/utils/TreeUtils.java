@@ -4,7 +4,6 @@ import io.crest.constant.SortConstants;
 import io.crest.model.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.util.Assert;
 
@@ -26,7 +25,7 @@ public class TreeUtils {
     /**
      * 层级路径分隔符
      */
-    public final static String SEPARATOR = "-de-";
+    public final static String SEPARATOR = "-crest-";
 
     /**
      * 权限菜单国际化 key 前缀
@@ -161,7 +160,7 @@ public class TreeUtils {
         }
         List<T> result = new ArrayList<>();
         // 构建id-节点map映射
-        Map<String, T> treePidMap = tree.stream().collect(Collectors.toMap(node -> node.getNodeType(), t -> t));
+        Map<String, T> treePidMap = tree.stream().collect(Collectors.toMap(ITreeBase::getNodeType, t -> t));
         tree.stream().filter(item -> ObjectUtils.isNotEmpty(item.getId())).forEach(node -> {
 
             String nodeType = node.getNodeType();

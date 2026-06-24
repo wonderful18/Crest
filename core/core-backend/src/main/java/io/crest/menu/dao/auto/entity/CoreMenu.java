@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * 菜单资源实体。
  */
-@TableName("iam_menu")
+@TableName("core_iam_menu")
 public class CoreMenu implements Serializable {
 
     /**

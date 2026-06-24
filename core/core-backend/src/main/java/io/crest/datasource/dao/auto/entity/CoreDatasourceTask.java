@@ -9,7 +9,7 @@ import java.io.Serializable;
 /**
  * 数据源同步任务实体。
  */
-@TableName("data_source_sync_task")
+@TableName("core_datasource_sync_task")
 public class CoreDatasourceTask implements Serializable {
 
     /**

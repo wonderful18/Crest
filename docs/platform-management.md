@@ -30,14 +30,14 @@
 
 | 表 | 用途 |
 | --- | --- |
-| `iam_user` | 本地用户和外部身份绑定 |
-| `iam_org` | 组织树 |
-| `iam_role` | 角色 |
-| `iam_user_org` | 用户与组织关系，包含默认组织 |
-| `iam_user_role` | 用户与角色关系 |
-| `iam_role_menu_permission` | 角色菜单权限 |
-| `iam_resource_index` | 统一资源索引 |
-| `iam_resource_permission` | 资源授权关系 |
+| `core_iam_user` | 本地用户和外部身份绑定 |
+| `core_iam_org` | 组织树 |
+| `core_iam_role` | 角色 |
+| `core_iam_user_org` | 用户与组织关系，包含默认组织 |
+| `core_iam_user_role` | 用户与角色关系 |
+| `core_iam_role_menu_permission` | 角色菜单权限 |
+| `core_iam_resource_index` | 统一资源索引 |
+| `core_iam_resource_permission` | 资源授权关系 |
 
 资源索引用于统一描述数据源、数据集、仪表盘和数据大屏的资源类型、组织、创建人和删除状态。资源授权不替代资源本身的数据表，只作为权限过滤依据。
 

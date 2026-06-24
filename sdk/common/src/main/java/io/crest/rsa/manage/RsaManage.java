@@ -46,7 +46,7 @@ public class RsaManage {
     /**
      * 生成并保存默认 RSA/AES 密钥
      */
-    @CacheEvict(value = RSA_CACHE, key = "'-de-'")
+    @CacheEvict(value = RSA_CACHE, key = "'crest-rsa-key'")
     public void save() {
         RSAModel model = RsaUtils.generate();
         CoreRsa coreRsa = new CoreRsa();
@@ -61,7 +61,7 @@ public class RsaManage {
     /**
      * 确保国密模式所需的 SM2 密钥已生成
      */
-    @CacheEvict(value = RSA_CACHE, key = "'-de-'")
+    @CacheEvict(value = RSA_CACHE, key = "'crest-rsa-key'")
     public CoreRsa ensureSmSuiteKey() {
         CoreRsa coreRsa = coreRsaMapper.selectById(1);
         if (ObjectUtils.isEmpty(coreRsa)) {
@@ -84,7 +84,7 @@ public class RsaManage {
     /**
      * 查询系统密钥配置
      */
-    @Cacheable(value = RSA_CACHE, key = "'-de-'", unless = "#result == null")
+    @Cacheable(value = RSA_CACHE, key = "'crest-rsa-key'", unless = "#result == null")
     public CoreRsa query() {
         return coreRsaMapper.selectById(1);
     }

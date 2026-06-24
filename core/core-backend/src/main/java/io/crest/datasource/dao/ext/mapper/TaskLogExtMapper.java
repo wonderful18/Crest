@@ -15,7 +15,7 @@ public interface TaskLogExtMapper extends BaseMapper<CoreDatasourceTaskLogDTO> {
     @Select(
             """
                     select *
-                    from data_source_sync_task_log
+                    from core_datasource_sync_task_log
                     ${ew.customSqlSegment}
                     """
     )

@@ -1,6 +1,6 @@
 <template>
-  <div class="de-tinymce-container ed-textarea__inner">
-    <editor class="de-tinymce-content" v-model="myValue" :id="tinymceId" :init="init" />
+  <div class="crest-tinymce-container ed-textarea__inner">
+    <editor class="crest-tinymce-content" v-model="myValue" :id="tinymceId" :init="init" />
   </div>
 </template>
 <script lang="ts" setup>
@@ -84,7 +84,7 @@ tinymce.init({})
 </script>
 
 <style lang="less" scoped>
-.de-tinymce-container {
+.crest-tinymce-container {
   --ed-input-text-color: var(--ed-text-color-regular);
   --ed-input-border: var(--ed-border);
   --ed-input-hover-border: var(--ed-border-color-hover);
@@ -101,7 +101,7 @@ tinymce.init({})
   --ed-input-width: 100%;
   width: 100%;
   height: 80px;
-  .de-tinymce-content {
+  .crest-tinymce-content {
     width: 100%;
     height: 100%;
     overflow-y: auto;

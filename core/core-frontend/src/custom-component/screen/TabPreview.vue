@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <div class="de-tab-preview" />
+  <div class="crest-tab-preview" />
 </template>
 
 <style scoped lang="less"></style>

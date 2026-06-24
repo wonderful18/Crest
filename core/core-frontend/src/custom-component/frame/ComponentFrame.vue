@@ -7,7 +7,7 @@
         :src="element.frameLinks.src"
         scrolling="auto"
         frameborder="0"
-        class="main-frame main-de-iframe"
+        class="main-frame main-crest-iframe"
       />
       <div v-if="isEdit" class="frame-mask edit-mask">
         <span style="opacity: 1">

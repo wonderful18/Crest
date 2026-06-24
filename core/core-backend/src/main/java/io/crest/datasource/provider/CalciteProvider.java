@@ -77,7 +77,6 @@ public class CalciteProvider extends Provider {
     private String FILE_PATH;
     @Value("${crest.path.custom-drivers:/opt/crest/custom-drivers/}")
     private String CUSTOM_PATH;
-    private static String split = "DE";
 
     @Resource
     private CommonThreadPool commonThreadPool;

@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * 外部参数明细实体。
  */
-@TableName("visualization_outer_params_info")
+@TableName("core_visualization_parameter_item")
 public class VisualizationOuterParamsInfo implements Serializable {
 
     /**

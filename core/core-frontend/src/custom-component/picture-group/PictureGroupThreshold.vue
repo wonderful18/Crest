@@ -145,7 +145,7 @@ onMounted(() => {
 </template>
 
 <style lang="less" scoped>
-.de-collapse-style {
+.crest-collapse-style {
   :deep(.ed-collapse-item__header) {
     height: 36px !important;
     line-height: 36px !important;

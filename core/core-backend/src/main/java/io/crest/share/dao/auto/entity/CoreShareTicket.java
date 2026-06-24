@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 分享访问票据实体。
  */
-@TableName("share_ticket")
+@TableName("core_share_ticket")
 public class CoreShareTicket implements Serializable {
 
     private static final long serialVersionUID = 1L;

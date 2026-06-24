@@ -639,7 +639,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 }
             });
             Map<String, String> viewIdMap = appData.getViewIdMap();
-            // visualization_linkage
+            // core_visualization_linkage
             appData.getLinkages().forEach(visualizationLinkageVO -> {
                 Long oldId = visualizationLinkageVO.getId();
                 Long newId = IDUtils.snowID();
@@ -651,7 +651,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 snapshotVisualizationLinkageMapper.insert(visualizationLinkage);
             });
 
-            // visualization_linkage_field
+            // core_visualization_linkage_field
             appData.getLinkageFields().forEach(visualizationLinkageFieldVO -> {
                 Long oldId = visualizationLinkageFieldVO.getId();
                 Long newId = IDUtils.snowID();
@@ -665,7 +665,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 snapshotVisualizationLinkageFieldMapper.insert(visualizationLinkageField);
             });
 
-            // visualization_link_jump
+            // core_visualization_jump
             appData.getLinkJumps().forEach(visualizationLinkJumpVO -> {
                 Long oldId = visualizationLinkJumpVO.getId();
                 Long newId = IDUtils.snowID();
@@ -1444,9 +1444,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
             CrestException.throwException("请选择模板文件");
         }
         String fileName = StringUtils.defaultString(file.getOriginalFilename());
-        String lowerFileName = fileName.toLowerCase(Locale.ROOT);
-        if (!lowerFileName.endsWith(".det2") && !lowerFileName.endsWith(".det2app")) {
-            CrestException.throwException("仅支持 DET2 或 DET2APP 模板文件");
+        if (!isCrestTemplateFile(fileName)) {
+            CrestException.throwException("仅支持 .crest 模板文件");
         }
 
         String content = new String(file.getBytes(), StandardCharsets.UTF_8);
@@ -1476,6 +1475,13 @@ public class DataVisualizationServer implements DataVisualizationApi {
             request.setAppData(JsonUtil.parseObject(appData, VisualizationExport2AppVO.class));
         }
         return request;
+    }
+
+    /**
+     * 判断上传文件是否为 Crest 模板文件
+     */
+    static boolean isCrestTemplateFile(String fileName) {
+        return Strings.CI.endsWith(StringUtils.defaultString(fileName), ".crest");
     }
 
     /**

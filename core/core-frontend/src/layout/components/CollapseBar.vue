@@ -39,7 +39,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="de-collapse-bar" :style="{ width: (width || 280) + 'px' }" @click="setCollapse">
+  <div class="crest-collapse-bar" :style="{ width: (width || 280) + 'px' }" @click="setCollapse">
     <el-icon style="color: #646a73">
       <Icon
         ><component
@@ -52,7 +52,7 @@ onMounted(() => {
 </template>
 
 <style lang="less" scoped>
-.de-collapse-bar {
+.crest-collapse-bar {
   position: fixed;
   cursor: pointer;
   z-index: 10;

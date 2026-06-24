@@ -49,8 +49,8 @@ public class CrestRoleManage {
         List<Object> args = new java.util.ArrayList<>();
         StringBuilder sql = new StringBuilder("""
                 SELECT r.id, r.name, r.readonly, r.system_role
-                FROM iam_role r
-                INNER JOIN iam_user_role ur ON ur.rid = r.id
+                FROM core_iam_role r
+                INNER JOIN core_iam_user_role ur ON ur.rid = r.id
                 WHERE ur.%s = ?
                 """.formatted(uidColumn()));
         args.add(uid);
@@ -77,10 +77,10 @@ public class CrestRoleManage {
         Long oid = currentOid();
         List<ExternalUserVO> users = jdbcTemplate.query("""
                 SELECT u.id, u.account, u.name, u.email, u.phone
-                FROM iam_user u
+                FROM core_iam_user u
                 WHERE u.enable = 1
                   AND NOT EXISTS (
-                      SELECT 1 FROM iam_user_org uo WHERE uo.%s = u.id AND uo.oid = ?
+                      SELECT 1 FROM core_iam_user_org uo WHERE uo.%s = u.id AND uo.oid = ?
                   )
                   AND (u.account = ? OR u.email = ? OR u.name LIKE ?)
                   ORDER BY u.create_time DESC
@@ -106,7 +106,7 @@ public class CrestRoleManage {
         long id = IDUtils.snowID();
         long now = System.currentTimeMillis();
         jdbcTemplate.update("""
-                INSERT INTO iam_role(id, oid, name, code, description, type_code, readonly, system_role, org_admin, create_time, update_time)
+                INSERT INTO core_iam_role(id, oid, name, code, description, type_code, readonly, system_role, org_admin, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, id, creator.getOid() == null ? currentOid() : creator.getOid(), creator.getName().trim(), null, creator.getDesc(),
                 creator.getTypeCode() == null ? 0 : creator.getTypeCode(), false, false, false, now, now);
@@ -121,7 +121,7 @@ public class CrestRoleManage {
             CrestException.throwException("角色名称不能为空");
         }
         jdbcTemplate.update("""
-                UPDATE iam_role
+                UPDATE core_iam_role
                 SET name = ?, description = ?, update_time = ?
                 WHERE id = ? AND readonly = 0
                 """, editor.getName().trim(), editor.getDesc(), System.currentTimeMillis(), editor.getId());
@@ -134,16 +134,16 @@ public class CrestRoleManage {
         if (rid == null || rid == PlatformPermissionManage.SYSTEM_ADMIN_ROLE_ID || rid == PlatformPermissionManage.MEMBER_ROLE_ID) {
             CrestException.throwException("内置角色不能删除");
         }
-        jdbcTemplate.update("DELETE FROM iam_user_role WHERE rid = ?", rid);
-        jdbcTemplate.update("DELETE FROM iam_role_menu_permission WHERE rid = ?", rid);
-        jdbcTemplate.update("DELETE FROM iam_resource_permission WHERE target_type = 'role' AND target_id = ?", rid);
-        jdbcTemplate.update("DELETE FROM iam_role WHERE id = ? AND readonly = 0", rid);
+        jdbcTemplate.update("DELETE FROM core_iam_user_role WHERE rid = ?", rid);
+        jdbcTemplate.update("DELETE FROM core_iam_role_menu_permission WHERE rid = ?", rid);
+        jdbcTemplate.update("DELETE FROM core_iam_resource_permission WHERE target_type = 'role' AND target_id = ?", rid);
+        jdbcTemplate.update("DELETE FROM core_iam_role WHERE id = ? AND readonly = 0", rid);
     }
 
     // 查询角色详情
     public RoleDetailVO detail(Long rid) {
         List<RoleDetailVO> list = jdbcTemplate.query("""
-                SELECT id, name, description, type_code FROM iam_role WHERE id = ?
+                SELECT id, name, description, type_code FROM core_iam_role WHERE id = ?
                 """.transform(this::limitOne), (rs, rowNum) -> {
             RoleDetailVO vo = new RoleDetailVO();
             vo.setId(rs.getLong("id"));
@@ -173,12 +173,12 @@ public class CrestRoleManage {
     @Transactional
     public void unmountUser(Long rid, Long uid) {
         platformPermissionManage.requireSystemAdmin();
-        jdbcTemplate.update("DELETE FROM iam_user_role WHERE " + uidColumn() + " = ? AND rid = ?", uid, rid);
+        jdbcTemplate.update("DELETE FROM core_iam_user_role WHERE " + uidColumn() + " = ? AND rid = ?", uid, rid);
     }
 
     // 查询解绑用户前的绑定数量
     public Integer beforeUnmountInfo(Long rid, Long uid) {
-        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM iam_user_role WHERE rid = ? AND "
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM core_iam_user_role WHERE rid = ? AND "
                         + uidColumn() + " = ?",
                 Integer.class, rid, uid);
         return count == null ? 0 : count;

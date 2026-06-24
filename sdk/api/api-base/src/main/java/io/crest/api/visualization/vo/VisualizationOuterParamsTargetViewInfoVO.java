@@ -18,7 +18,7 @@ public class VisualizationOuterParamsTargetViewInfoVO implements Serializable {
     private String targetId;
 
     /**
-     * visualization_outer_params_info 表的 ID
+     * core_visualization_parameter_item 表的 ID
      */
     private String paramsInfoId;
 

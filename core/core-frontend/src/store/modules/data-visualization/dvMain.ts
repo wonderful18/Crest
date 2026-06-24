@@ -30,6 +30,7 @@ import {
   filterEnumParamsReduce,
   filterParamsOptions
 } from '@/utils/componentUtils'
+import { encodeTreeLevelValue } from '@/utils/treeLevelSeparator'
 import { formatterItem } from '@/views/chart/components/js/formatter'
 import { checkFilterRemove } from '@/custom-component/v-query/QueryUtils'
 import { normalizeLegacyComponentData } from '@/utils/legacyComponent'
@@ -1303,7 +1304,7 @@ export const dvMainStore = defineStore('dataVisualization', {
                 if (targetMatchMode === 'filter') {
                   paramValue = paramValue.map(option => {
                     if (typeof option === 'string' && option.includes(',')) {
-                      return option.replace(/,/g, '-de-')
+                      return encodeTreeLevelValue(option)
                     }
                     return option
                   })

@@ -1,5 +1,5 @@
 <template>
-  <div class="attr-list de-collapse-style">
+  <div class="attr-list crest-collapse-style">
     <CommonAttr :element="curComponent">
       <el-collapse-item
         effect="dark"

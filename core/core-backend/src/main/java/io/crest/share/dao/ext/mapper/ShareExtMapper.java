@@ -25,20 +25,20 @@ public interface ShareExtMapper {
             s.time,
             s.exp,
             v.name
-            from share_link s
-            left join bi_visualization v on s.resource_id = v.id
+            from core_share_link s
+            left join core_visualization v on s.resource_id = v.id
             ${ew.customSqlSegment}
             """)
     IPage<SharePO> query(IPage<SharePO> page, @Param("ew") QueryWrapper<Object> ew);
 
-    @Select("select type from bi_visualization where id = #{id}")
+    @Select("select type from core_visualization where id = #{id}")
     String visualizationType(@Param("id") Long id);
 
-    @Update("update share_ticket set uuid = #{ticketUuid} where uuid = #{originUuid}")
+    @Update("update core_share_ticket set uuid = #{ticketUuid} where uuid = #{originUuid}")
     void updateTicketUuid(@Param("originUuid") String originUuid, @Param("ticketUuid") String ticketUuid);
 
     @Select("""
-           select * from share_ticket
+           select * from core_share_ticket
             ${ew.customSqlSegment}
            """)
     IPage<CoreShareTicket> pager(IPage<TicketVO> page, @Param("ew") QueryWrapper<CoreShareTicket> ew);

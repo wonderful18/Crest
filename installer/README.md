@@ -279,7 +279,7 @@ docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAM
 
 如安装时修改过 `CREST_BASE`，请把 `/opt/crest/.env` 换成实际运行目录中的 `.env`。外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 系统库。
 
-继续按数据库类型执行 v2.0.0 的增量 SQL。MySQL 系统库示例：
+继续按数据库类型执行 v2.0.0 和 v2.0.1 的增量 SQL。MySQL 系统库示例：
 
 ```bash
 for sql in \
@@ -288,7 +288,9 @@ for sql in \
   upgrade-sql/v2.0.0_dataset_sync_task_queue_mysql.sql \
   upgrade-sql/v2.0.0_dataset_sync_task_queue_metadata_mysql.sql \
   upgrade-sql/v2.0.0_scheduled_task_queue_state_mysql.sql \
-  upgrade-sql/v2.0.0_audit_log_filter_index_mysql.sql
+  upgrade-sql/v2.0.0_audit_log_filter_index_mysql.sql \
+  upgrade-sql/v2.0.0_to_v2.0.1_metadata_tables_mysql.sql \
+  upgrade-sql/v2.0.0_to_v2.0.1_runtime_identifiers_mysql.sql
 do
   docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < "${sql}"
 done
@@ -303,7 +305,9 @@ for sql in \
   upgrade-sql/v2.0.0_dataset_sync_task_queue_ob_mysql.sql \
   upgrade-sql/v2.0.0_dataset_sync_task_queue_metadata_ob_mysql.sql \
   upgrade-sql/v2.0.0_scheduled_task_queue_state_ob_mysql.sql \
-  upgrade-sql/v2.0.0_audit_log_filter_index_ob_mysql.sql
+  upgrade-sql/v2.0.0_audit_log_filter_index_ob_mysql.sql \
+  upgrade-sql/v2.0.0_to_v2.0.1_metadata_tables_ob_mysql.sql \
+  upgrade-sql/v2.0.0_to_v2.0.1_runtime_identifiers_ob_mysql.sql
 do
   obclient --default-character-set=utf8mb4 -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' <database> < "${sql}"
 done
@@ -319,7 +323,9 @@ for sql in \
   upgrade-sql/v2.0.0_dataset_sync_task_queue_metadata_ob_oracle.sql \
   upgrade-sql/v2.0.0_scheduled_task_queue_state_ob_oracle.sql \
   upgrade-sql/v2.0.0_repair_seed_text_encoding_ob_oracle.sql \
-  upgrade-sql/v2.0.0_audit_log_filter_index_ob_oracle.sql
+  upgrade-sql/v2.0.0_audit_log_filter_index_ob_oracle.sql \
+  upgrade-sql/v2.0.0_to_v2.0.1_metadata_tables_ob_oracle.sql \
+  upgrade-sql/v2.0.0_to_v2.0.1_runtime_identifiers_ob_oracle.sql
 do
   obclient --default-character-set=utf8mb4 -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' < "${sql}"
 done

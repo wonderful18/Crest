@@ -3092,7 +3092,7 @@ export default {
     apply_template: 'App Template',
     style_template: 'Style Template',
     import_app_template: 'Import Application Template',
-    template_file_type_limit: 'Only DET2 or DET2APP template files are supported',
+    template_file_type_limit: 'Only .crest template files are supported',
     template_type_mismatch: 'Template type does not match the current resource type',
     import_template_expired: 'Imported template data has expired. Please import it again',
     all_type: 'All Categories',

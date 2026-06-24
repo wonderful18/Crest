@@ -20,7 +20,7 @@ const { value, min, max, step, themes, disabled } = toRefs(props)
 
 <template>
   <el-input-number
-    class="de-input-number"
+    class="crest-input-number"
     :class="themes + '-custom-input-number'"
     v-model="value"
     :effect="themes"
@@ -34,7 +34,7 @@ const { value, min, max, step, themes, disabled } = toRefs(props)
 </template>
 
 <style lang="less" scoped>
-.de-input-number {
+.crest-input-number {
   margin-left: 5px;
   width: 80px;
 }

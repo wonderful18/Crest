@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * 数据源完成页配置实体。
  */
-@TableName("data_source_finish_page")
+@TableName("core_datasource_finish_page")
 public class CoreDsFinishPage implements Serializable {
 
     private static final long serialVersionUID = 1L;

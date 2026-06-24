@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * 数据源实体。
  */
-@TableName("data_source")
+@TableName("core_datasource")
 public class CoreDatasource implements Serializable {
 
     /**

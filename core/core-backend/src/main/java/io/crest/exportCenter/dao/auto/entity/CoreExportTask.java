@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 导出任务实体。
  */
-@TableName("export_task")
+@TableName("core_export_task")
 public class CoreExportTask implements Serializable {
 
     /**

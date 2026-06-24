@@ -15,13 +15,13 @@ withDefaults(
 </script>
 
 <template>
-  <div class="attr-list de-collapse-style">
+  <div class="attr-list crest-collapse-style">
     <CommonAttr :element="curComponent" :themes="themes"></CommonAttr>
   </div>
 </template>
 
 <style lang="less" scoped>
-.de-collapse-style {
+.crest-collapse-style {
   :deep(.ed-collapse-item__header) {
     height: 36px !important;
     line-height: 36px !important;

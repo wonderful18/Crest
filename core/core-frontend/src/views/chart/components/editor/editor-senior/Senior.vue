@@ -258,7 +258,7 @@ const removeJumpSenior = () => {
 <template>
   <el-row class="view-panel" :class="'senior-' + themes">
     <div @keydown.stop @keyup.stop class="attr-style" v-if="!noSenior">
-      <el-row class="de-collapse-style">
+      <el-row class="crest-collapse-style">
         <el-collapse v-model="state.attrActiveNames" class="style-collapse">
           <el-collapse-item
             :effect="themes"
@@ -507,7 +507,7 @@ span {
   color: #646a73;
 }
 
-.de-collapse-style {
+.crest-collapse-style {
   :deep(.ed-form-item) {
     display: block;
     margin-bottom: 8px;

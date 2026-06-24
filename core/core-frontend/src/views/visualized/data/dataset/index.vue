@@ -1212,13 +1212,13 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
     v-if="showExport"
     v-model="showExport"
     width="800px"
-    class="de-dialog-form form-tree-cont"
+    class="crest-dialog-form form-tree-cont"
     :title="$t('dataset.export_dataset')"
     append-to-body
   >
     <el-form
       ref="exportFormRef"
-      class="de-form-item"
+      class="crest-form-item"
       @submit.prevent
       :model="exportForm"
       :rules="exportFormRules"

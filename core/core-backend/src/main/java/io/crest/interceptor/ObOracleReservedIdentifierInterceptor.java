@@ -28,19 +28,19 @@ import java.util.regex.Pattern;
 public class ObOracleReservedIdentifierInterceptor implements Interceptor {
 
     private static final Map<String, List<String>> RESERVED_COLUMNS_BY_TABLE = Map.ofEntries(
-            Map.entry("dataset_group", List.of("level", "mode")),
-            Map.entry("dataset_field", List.of("size")),
-            Map.entry("workspace_recent_resource", List.of("uid", "time")),
-            Map.entry("workspace_favorite_resource", List.of("uid", "time")),
-            Map.entry("font_asset", List.of("size")),
-            Map.entry("iam_user_org", List.of("uid")),
-            Map.entry("iam_user_role", List.of("uid")),
-            Map.entry("iam_org", List.of("level")),
-            Map.entry("ref_area", List.of("level")),
-            Map.entry("bi_visualization", List.of("level")),
-            Map.entry("bi_visualization_snapshot", List.of("level")),
-            Map.entry("visualization_template", List.of("level")),
-            Map.entry("visualization_template_category", List.of("level"))
+            Map.entry("core_dataset", List.of("level", "mode")),
+            Map.entry("core_dataset_field", List.of("size")),
+            Map.entry("core_workspace_recent_resource", List.of("uid", "time")),
+            Map.entry("core_workspace_favorite_resource", List.of("uid", "time")),
+            Map.entry("core_font_asset", List.of("size")),
+            Map.entry("core_iam_user_org", List.of("uid")),
+            Map.entry("core_iam_user_role", List.of("uid")),
+            Map.entry("core_iam_org", List.of("level")),
+            Map.entry("core_reference_area", List.of("level")),
+            Map.entry("core_visualization", List.of("level")),
+            Map.entry("core_visualization_snapshot", List.of("level")),
+            Map.entry("core_template", List.of("level")),
+            Map.entry("core_template_category", List.of("level"))
     );
 
     private final boolean enabled;

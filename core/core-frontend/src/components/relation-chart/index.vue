@@ -84,7 +84,7 @@ defineExpose({
   <el-drawer
     title="血缘关系图"
     v-model="relationDrawer"
-    modal-class="de-relation-drawer"
+    modal-class="crest-relation-drawer"
     size="1200px"
     direction="rtl"
   >
@@ -95,7 +95,7 @@ defineExpose({
 </template>
 
 <style lang="less">
-.de-relation-drawer {
+.crest-relation-drawer {
   .ed-drawer__body {
     padding-bottom: 24px;
   }

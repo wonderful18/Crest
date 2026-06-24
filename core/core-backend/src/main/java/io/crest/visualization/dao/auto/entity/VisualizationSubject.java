@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 可视化主题实体。
  */
-@TableName("visualization_subject")
+@TableName("core_visualization_theme")
 public class VisualizationSubject implements Serializable {
 
     /**

@@ -13,6 +13,7 @@ import io.crest.constant.CommonConstants;
 import io.crest.dataset.dao.auto.entity.CoreDatasetTable;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetTableMapper;
 import io.crest.constant.FieldTypeConstants;
+import io.crest.dataset.utils.DatasetParameterFieldId;
 import io.crest.dataset.utils.FieldUtils;
 import io.crest.extensions.view.dto.SqlVariableDetails;
 import io.crest.utils.BeanUtils;
@@ -191,7 +192,7 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
                             };
                             List<SqlVariableDetails> defaultsSqlVariableDetails = JsonUtil.parseList(sqlVarDetail, listTypeReference);
                             defaultsSqlVariableDetails.forEach(sqlVariableDetails -> {
-                                String varFieldId = coreDatasetTable.getId() + "|DE|" + sqlVariableDetails.getVariableName();
+                                String varFieldId = DatasetParameterFieldId.build(coreDatasetTable.getId(), sqlVariableDetails.getVariableName());
                                 fields.add(new CoreDatasetTableFieldVO(varFieldId, sqlVariableDetails.getVariableName(), FieldUtils.resolveFieldType(sqlVariableDetails.getType().get(0).contains("DATETIME") ? "DATETIME" : sqlVariableDetails.getType().get(0))));
                             });
                         }

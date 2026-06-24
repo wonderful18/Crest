@@ -170,11 +170,11 @@ const changeSettingSideStatus = (showSide: boolean) => {
       flex: 0 0 64px;
     }
 
-    &:has(.layout-sidebar) :deep(.de-collapse-bar) {
+    &:has(.layout-sidebar) :deep(.crest-collapse-bar) {
       width: 248px !important;
     }
 
-    &:has(.layout-sidebar-collapse) :deep(.de-collapse-bar) {
+    &:has(.layout-sidebar-collapse) :deep(.crest-collapse-bar) {
       width: 64px !important;
       padding-right: 0;
       padding-left: 22px;

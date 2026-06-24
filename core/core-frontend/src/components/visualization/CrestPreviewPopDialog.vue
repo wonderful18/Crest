@@ -25,7 +25,7 @@
         v-if="state.dialogShow"
         ref="previewFrameRef"
         class="preview-main-frame"
-        id="iframe-de-preview-pop"
+        id="iframe-crest-preview-pop"
         :src="state.url.startsWith('#/') ? `?${new Date().getTime()}${state.url}` : state.url"
         scrolling="auto"
         frameborder="0"
@@ -76,12 +76,12 @@ const dialogStyle = computed(() => {
   if (state.fullscreen) {
     return [
       { '--ed-dialog-bg-color': canvasStyleData.value.dialogBackgroundColor },
-      { '--ed-dialog__de-text': canvasStyleData.value.dialogButton }
+      { '--crest-dialog-text': canvasStyleData.value.dialogButton }
     ]
   } else {
     return [
       { '--ed-dialog-bg-color': canvasStyleData.value.dialogBackgroundColor },
-      { '--ed-dialog__de-text': canvasStyleData.value.dialogButton },
+      { '--crest-dialog-text': canvasStyleData.value.dialogButton },
       { height: state.height }
     ]
   }
@@ -144,11 +144,11 @@ defineExpose({
   overflow: hidden;
   :deep(.is_link) {
     &:hover {
-      color: var(--ed-dialog__de-text) !important;
+      color: var(--crest-dialog-text) !important;
     }
   }
   .ed-dialog__close {
-    color: var(--ed-dialog__de-text) !important;
+    color: var(--crest-dialog-text) !important;
   }
   .preview-main-frame-outer {
     width: 100%;
@@ -180,7 +180,7 @@ defineExpose({
   .preview-pop-title {
     min-width: 0;
     overflow: hidden;
-    color: var(--ed-dialog__de-text);
+    color: var(--crest-dialog-text);
     font-size: 13px;
     font-weight: 600;
     line-height: 36px;
@@ -193,7 +193,7 @@ defineExpose({
     gap: 4px;
     height: 26px;
     padding: 0 10px;
-    color: var(--ed-dialog__de-text);
+    color: var(--crest-dialog-text);
     font-size: 12px;
     line-height: 26px;
     cursor: pointer;

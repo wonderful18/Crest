@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 组件跳转主配置实体。
  */
-@TableName("visualization_link_jump")
+@TableName("core_visualization_jump")
 public class VisualizationLinkJump implements Serializable {
 
     private static final long serialVersionUID = 1L;

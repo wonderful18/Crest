@@ -15,7 +15,7 @@ public interface ExportTaskExtMapper extends BaseMapper<CoreExportTask> {
     @Select(
             """
                     select *
-                    from export_task
+                    from core_export_task
                     ${ew.customSqlSegment}
                     """
     )

@@ -19,7 +19,7 @@ const { curComponent } = storeToRefs(dvMainStore)
 </script>
 
 <template>
-  <div class="attr-list de-collapse-style">
+  <div class="attr-list crest-collapse-style">
     <CommonAttr
       :themes="themes"
       :element="curComponent"
@@ -37,7 +37,7 @@ const { curComponent } = storeToRefs(dvMainStore)
   padding: 10px;
 }
 
-.de-collapse-style {
+.crest-collapse-style {
   :deep(.ed-collapse-item__header) {
     height: 36px !important;
     line-height: 36px !important;

@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 组件联动字段实体。
  */
-@TableName("visualization_linkage_field")
+@TableName("core_visualization_linkage_field")
 public class VisualizationLinkageField implements Serializable {
 
     private static final long serialVersionUID = 1L;

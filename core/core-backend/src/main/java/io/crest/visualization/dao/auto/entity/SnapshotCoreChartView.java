@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 组件图表快照实体。
  */
-@TableName("bi_chart_snapshot")
+@TableName("core_chart_view_snapshot")
 public class SnapshotCoreChartView implements Serializable {
 
     /**

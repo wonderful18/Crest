@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 数据集 SQL 日志实体。
  */
-@TableName("dataset_sql_log")
+@TableName("core_dataset_sql_log")
 public class CoreDatasetTableSqlLog implements Serializable {
 
     private static final long serialVersionUID = 1L;

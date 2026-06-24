@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * 数据源同步任务日志实体。
  */
-@TableName("data_source_sync_task_log")
+@TableName("core_datasource_sync_task_log")
 public class CoreDatasourceTaskLog implements Serializable {
 
     /**

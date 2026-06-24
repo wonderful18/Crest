@@ -45,7 +45,7 @@ public class SsoProviderConfigManage {
     public void upsert(SsoProviderConfig provider) {
         long now = System.currentTimeMillis();
         int updated = jdbcTemplate.update("""
-                UPDATE auth_sso_provider
+                UPDATE core_auth_sso_provider
                 SET provider_type = ?,
                     name = ?,
                     enabled = ?,
@@ -92,7 +92,7 @@ public class SsoProviderConfigManage {
         }
         // 新增路径只在首次启用 SSO 时执行，更新路径避免依赖 MySQL 专有 upsert 语法。
         jdbcTemplate.update("""
-                INSERT INTO auth_sso_provider(id, provider_key, provider_type, name, enabled, client_id, client_secret,
+                INSERT INTO core_auth_sso_provider(id, provider_key, provider_type, name, enabled, client_id, client_secret,
                     authorization_endpoint, token_endpoint, user_info_endpoint, issuer, scope, redirect_uri,
                     user_id_attribute, account_attribute, name_attribute, email_attribute, union_id_attribute,
                     auto_create_user, require_https, create_time, update_time)

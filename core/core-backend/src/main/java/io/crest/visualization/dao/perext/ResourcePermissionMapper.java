@@ -12,14 +12,14 @@ import java.util.List;
 // 定义当前业务对象的核心职责
 public interface ResourcePermissionMapper {
 
-    @Select("select `component_data` from bi_visualization where id = #{id}")
+    @Select("select `component_data` from core_visualization where id = #{id}")
     String queryResourceData(@Param("id") Long id);
 
     @Select("""
     <script>
-        select cdg.* from dataset_group cdg
+        select cdg.* from core_dataset cdg
         where EXISTS
-        (SELECT 1 FROM bi_chart cv WHERE cv.table_id = cdg.id and cv.id IN
+        (SELECT 1 FROM core_chart_view cv WHERE cv.table_id = cdg.id and cv.id IN
         <foreach item='item' index='index' collection='viewIds' open='(' separator=',' close=')'>
             #{item}
         </foreach>

@@ -114,7 +114,7 @@ export default {
     parameter_default_value: '参数默认值',
     parsing_path: '解析路径',
     total_number: '总数',
-    total_number_de: '总数量',
+    total_count: '总数量',
     number_of_pages: '总页数',
     number__size: '页码+大小',
     cursor__size: '游标+大小',
@@ -2920,9 +2920,9 @@ export default {
   visualization: {
     img_can_not_null: '图片不能为空',
     outer_params_type_tips1:
-      "类型为过滤时仅对文本下拉、文本树、数字下拉，文本树的过滤格式多级之间使用'-de-' 隔离",
+      "类型为过滤时，仅支持文本下拉、文本树、数字下拉；文本树多级值使用 ' > ' 分隔。",
     outer_params_type_tips2:
-      '["Level1","Level1-de-Level2_1","Level2-de-Level2_1","Level1-de-Level2_1-de-Level3_1","Level2"]',
+      '["Level1","Level1 > Level2_1","Level2 > Level2_1","Level1 > Level2_1 > Level3_1","Level2"]',
     outer_params_type: '类型',
     outer_params_type_self: '赋值',
     outer_params_type_filter: '过滤',
@@ -3341,7 +3341,7 @@ export default {
     apply_template: '应用模板',
     style_template: '样式模板',
     import_app_template: '导入应用模板',
-    template_file_type_limit: '仅支持 DET2 或 DET2APP 模板文件',
+    template_file_type_limit: '仅支持 .crest 模板文件',
     template_type_mismatch: '模板类型与当前资源类型不一致',
     import_template_expired: '导入模板数据已失效，请重新导入',
     all_type: '全部分类',

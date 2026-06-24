@@ -624,7 +624,7 @@ defineExpose({
     class="canvas-container"
     :style="canvasStyle"
     :class="{
-      'de-download-custom': downloadStatus,
+      'crest-download-custom': downloadStatus,
       'datav-preview': dataVPreview,
       'datav-preview-unpublish': showUnpublishFlag
     }"

@@ -21,7 +21,7 @@ const { curComponent, canvasViewInfo, mobileInPc, batchOptStatus } = storeToRefs
 </script>
 
 <template>
-  <div class="attr-list de-collapse-style">
+  <div class="attr-list crest-collapse-style">
     <CommonAttr
       :themes="themes"
       :element="curComponent"
@@ -61,7 +61,7 @@ const { curComponent, canvasViewInfo, mobileInPc, batchOptStatus } = storeToRefs
 </template>
 
 <style lang="less" scoped>
-.de-collapse-style {
+.crest-collapse-style {
   :deep(.ed-collapse-item__header) {
     height: 36px !important;
     line-height: 36px !important;

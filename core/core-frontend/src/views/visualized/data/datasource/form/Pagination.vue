@@ -75,7 +75,7 @@ const requestData = ref([
 const defaultPathArr = [
   {
     value: 'totalNumber',
-    label: t('api_pagination.total_number_de')
+    label: t('api_pagination.total_count')
   },
   {
     value: 'totalPage',

@@ -6,7 +6,7 @@ import lombok.Data;
 import java.io.Serial;
 import java.io.Serializable;
 
-@TableName("api_traffic")
+@TableName("core_api_traffic_limit")
 @Data
 // 定义当前业务对象的核心职责
 public class CoreApiTraffic implements Serializable {

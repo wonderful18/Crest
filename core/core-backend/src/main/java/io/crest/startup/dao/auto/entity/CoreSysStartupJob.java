@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 系统启动任务实体。
  */
-@TableName("startup_job")
+@TableName("core_system_startup_job")
 public class CoreSysStartupJob implements Serializable {
 
     private static final long serialVersionUID = 1L;

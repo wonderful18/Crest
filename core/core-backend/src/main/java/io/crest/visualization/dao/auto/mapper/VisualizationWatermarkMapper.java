@@ -12,7 +12,7 @@ import org.apache.ibatis.annotations.Update;
 public interface VisualizationWatermarkMapper extends BaseMapper<VisualizationWatermark> {
 
     @Update("""
-    UPDATE `visualization_watermark` set `setting_content` = REPLACE(`setting_content`,'"enable":true','"enable":false')
+    UPDATE `core_visualization_watermark` set `setting_content` = REPLACE(`setting_content`,'"enable":true','"enable":false')
     """)
     void disable();
 }

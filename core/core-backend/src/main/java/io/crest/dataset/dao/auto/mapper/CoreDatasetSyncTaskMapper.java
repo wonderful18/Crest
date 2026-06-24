@@ -12,7 +12,7 @@ public interface CoreDatasetSyncTaskMapper extends BaseMapper<CoreDatasetSyncTas
 
     // 调度端投递前先写入投递时间，避免多 Scheduler 重复投递同一触发。
     @Update("""
-            UPDATE dataset_sync_task
+            UPDATE core_dataset_sync_task
             SET task_status = 'WaitingForExecution',
                 last_enqueue_time = #{now},
                 next_fire_time = #{now},
@@ -32,7 +32,7 @@ public interface CoreDatasetSyncTaskMapper extends BaseMapper<CoreDatasetSyncTas
 
     // Worker 成功抢占后记录执行者和版本，数据库状态是最终防重依据。
     @Update("""
-            UPDATE dataset_sync_task
+            UPDATE core_dataset_sync_task
             SET task_status = 'UnderExecution',
                 last_exec_time = #{now},
                 heartbeat_time = #{now},
@@ -49,7 +49,7 @@ public interface CoreDatasetSyncTaskMapper extends BaseMapper<CoreDatasetSyncTas
 
     // 队列 Worker 只抢占等待执行任务，避免停用任务被旧 Redis 消息重新拉起。
     @Update("""
-            UPDATE dataset_sync_task
+            UPDATE core_dataset_sync_task
             SET task_status = 'UnderExecution',
                 last_exec_time = #{now},
                 heartbeat_time = #{now},
@@ -66,7 +66,7 @@ public interface CoreDatasetSyncTaskMapper extends BaseMapper<CoreDatasetSyncTas
 
     // 带投递时间抢占队列任务，旧 Redis 消息在任务完成后无法再次拉起同一次执行。
     @Update("""
-            UPDATE dataset_sync_task
+            UPDATE core_dataset_sync_task
             SET task_status = 'UnderExecution',
                 last_exec_time = #{now},
                 heartbeat_time = #{now},
@@ -85,7 +85,7 @@ public interface CoreDatasetSyncTaskMapper extends BaseMapper<CoreDatasetSyncTas
 
     // 长任务执行过程中刷新心跳，避免正常执行被恢复逻辑误判。
     @Update("""
-            UPDATE dataset_sync_task
+            UPDATE core_dataset_sync_task
             SET heartbeat_time = #{now}
             WHERE id = #{id}
               AND task_status = 'UnderExecution'
@@ -95,7 +95,7 @@ public interface CoreDatasetSyncTaskMapper extends BaseMapper<CoreDatasetSyncTas
 
     // 超时执行中的任务回到等待态，之后再由正常投递 CAS 写入队列。
     @Update("""
-            UPDATE dataset_sync_task
+            UPDATE core_dataset_sync_task
             SET task_status = 'WaitingForExecution',
                 last_exec_status = 'Error',
                 worker_id = NULL,

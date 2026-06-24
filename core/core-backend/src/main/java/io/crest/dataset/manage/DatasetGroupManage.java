@@ -15,6 +15,7 @@ import io.crest.dataset.dao.ext.mapper.CoreDataSetExtMapper;
 import io.crest.dataset.dao.ext.po.DataSetNodePO;
 import io.crest.dataset.dto.DataSetNodeBO;
 import io.crest.dataset.sync.DatasetSyncTaskManage;
+import io.crest.dataset.utils.DatasetParameterFieldId;
 import io.crest.dataset.utils.DatasetUtils;
 import io.crest.dataset.utils.FieldUtils;
 import io.crest.dataset.utils.TableUtils;
@@ -294,9 +295,9 @@ public class DatasetGroupManage {
         }
         String info = CommunityUtils.getInfo();
         if (StringUtils.isNotBlank(info)) {
-            queryWrapper.notExists(String.format(info, "dataset_group.id"));
+            queryWrapper.notExists(String.format(info, "core_dataset.id"));
         }
-        String scopeSql = platformPermissionManage.resourceScopeSql("dataset", "dataset_group.id", "dataset_group.create_by", null);
+        String scopeSql = platformPermissionManage.resourceScopeSql("dataset", "core_dataset.id", "core_dataset.create_by", null);
         if (StringUtils.isNotBlank(scopeSql)) {
             queryWrapper.apply(scopeSql);
         }
@@ -678,7 +679,7 @@ public class DatasetGroupManage {
             }
         }
         list.forEach(sqlVariableDetail -> {
-            sqlVariableDetail.setId(sqlVariableDetail.getDatasetTableId() + "|DE|" + sqlVariableDetail.getVariableName());
+            sqlVariableDetail.setId(DatasetParameterFieldId.build(sqlVariableDetail.getDatasetTableId(), sqlVariableDetail.getVariableName()));
             sqlVariableDetail.setFieldType(FieldUtils.resolveFieldType(sqlVariableDetail.getType().get(0).contains("DATETIME") ? "DATETIME" : sqlVariableDetail.getType().get(0)));
         });
         return list;

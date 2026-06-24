@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 分享链接实体。
  */
-@TableName("share_link")
+@TableName("core_share_link")
 public class CoreShare implements Serializable {
 
     /**

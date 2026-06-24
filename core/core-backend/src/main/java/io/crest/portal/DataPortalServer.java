@@ -105,7 +105,7 @@ public class DataPortalServer {
                        v.mobile_layout AS ext_flag,
                        v.update_time,
                        COALESCE(u.name, %s) AS creator_name,
-                       (SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = v.id) AS chart_count,
+                       (SELECT COUNT(1) FROM core_chart_view c WHERE c.scene_id = v.id) AS chart_count,
                        %s AS certified,
                        %s AS recommended,
                        %s AS deprecated,
@@ -166,7 +166,7 @@ public class DataPortalServer {
                        v.mobile_layout AS ext_flag,
                        v.update_time,
                        COALESCE(u.name, %s) AS creator_name,
-                       (SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = v.id) AS chart_count,
+                       (SELECT COUNT(1) FROM core_chart_view c WHERE c.scene_id = v.id) AS chart_count,
                        %s AS certified,
                        %s AS recommended,
                        %s AS deprecated,
@@ -241,18 +241,18 @@ public class DataPortalServer {
     private QueryParts buildBaseQuery(Long uid, DataPortalResourceRequest request) {
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder("""
-                FROM bi_visualization v
-                LEFT JOIN iam_user u ON u.id = %s
+                FROM core_visualization v
+                LEFT JOIN core_iam_user u ON u.id = %s
                 """.formatted(dialect().numberCast("v.create_by")));
         if (request != null && "store".equals(request.getQueryFrom())) {
             sql.append("""
-                INNER JOIN workspace_favorite_resource wfr ON wfr.resource_id = v.id
+                INNER JOIN core_workspace_favorite_resource wfr ON wfr.resource_id = v.id
                   AND wfr.%s = ?
                 """.formatted(uidColumn()));
             args.add(uid);
         } else if (request != null && "recent".equals(request.getQueryFrom())) {
             sql.append("""
-                INNER JOIN workspace_recent_resource wrr ON wrr.resource_id = v.id
+                INNER JOIN core_workspace_recent_resource wrr ON wrr.resource_id = v.id
                   AND wrr.%s = ?
                 """.formatted(uidColumn()));
             args.add(uid);
@@ -315,8 +315,8 @@ public class DataPortalServer {
     private String datasetAssetFlag(String assetCondition) {
         return dialect().existsFlag("""
                 SELECT 1
-                FROM bi_chart c
-                INNER JOIN data_asset_profile p ON %s
+                FROM core_chart_view c
+                INNER JOIN core_asset_profile p ON %s
                   AND %s
                   AND %s
                 WHERE c.scene_id = v.id
@@ -330,7 +330,7 @@ public class DataPortalServer {
     private String favoriteFlag() {
         return dialect().existsFlag("""
                 SELECT 1
-                FROM workspace_favorite_resource fav
+                FROM core_workspace_favorite_resource fav
                 WHERE fav.resource_id = v.id
                   AND fav.%s = ?
                 """.formatted(uidColumn()));

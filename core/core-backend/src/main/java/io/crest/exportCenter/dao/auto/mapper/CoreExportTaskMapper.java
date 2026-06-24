@@ -14,7 +14,7 @@ public interface CoreExportTaskMapper extends BaseMapper<CoreExportTask> {
 
     // Worker 执行前通过数据库 CAS 抢占任务，避免 Redis 重复消息导致并发执行。
     @Update("""
-            UPDATE export_task
+            UPDATE core_export_task
             SET export_status = 'IN_PROGRESS',
                 export_progress = '0',
                 msg = NULL,
@@ -36,7 +36,7 @@ public interface CoreExportTaskMapper extends BaseMapper<CoreExportTask> {
 
     // 只重投已进入队列链路的任务，避免误执行旧版外部 API 仅入库任务。
     @Update("""
-            UPDATE export_task
+            UPDATE core_export_task
             SET last_enqueue_time = #{now},
                 next_fire_time = #{now},
                 lock_version = COALESCE(lock_version, 0) + 1
@@ -51,7 +51,7 @@ public interface CoreExportTaskMapper extends BaseMapper<CoreExportTask> {
 
     // 超时任务回到待执行状态，由后续 CAS 抢占保证同一任务只会被一个 Worker 执行。
     @Update("""
-            UPDATE export_task
+            UPDATE core_export_task
             SET export_status = 'PENDING',
                 export_progress = '0',
                 worker_id = NULL,

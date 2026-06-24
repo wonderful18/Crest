@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 可视化模板扩展数据实体。
  */
-@TableName("visualization_template_extend_data")
+@TableName("core_template_view_data")
 public class VisualizationTemplateExtendData implements Serializable {
 
     private static final long serialVersionUID = 1L;

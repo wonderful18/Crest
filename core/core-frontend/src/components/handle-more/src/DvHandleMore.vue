@@ -99,7 +99,7 @@ const menuDisabledCheck = ele => {
           :key="ele.label"
           :disabled="menuDisabledCheck(ele)"
           :class="{
-            'de-hidden-drop-item':
+            'crest-hidden-drop-item':
               ele.hidden || (ele.command === 'cancelPublish' && node.extraFlag1 === 0)
           }"
         >
@@ -139,7 +139,7 @@ const menuDisabledCheck = ele => {
 .custom-disable {
   color: var(--ed-text-color-disabled) !important;
 }
-.de-hidden-drop-item {
+.crest-hidden-drop-item {
   display: none !important;
 }
 .menu-more-dv_popper {

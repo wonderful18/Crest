@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 可视化模板与分类关系实体。
  */
-@TableName("visualization_template_category_map")
+@TableName("core_template_category_rel")
 public class VisualizationTemplateCategoryMap implements Serializable {
 
     private static final long serialVersionUID = 1L;

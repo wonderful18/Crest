@@ -14,12 +14,12 @@ import java.util.List;
 public interface CoreDatasourceExtMapper {
 
     @Select("""
-            select id, name, type, pid from data_source
+            select id, name, type, pid from core_datasource
             ${ew.customSqlSegment}
             """)
     List<DatasourceNodePO> query(@Param("ew") QueryWrapper queryWrapper);
 
 
-    @Select("select id, pid from data_source where id = #{id}")
+    @Select("select id, pid from core_datasource where id = #{id}")
     DsItem queryItem(@Param("id") Long id);
 }

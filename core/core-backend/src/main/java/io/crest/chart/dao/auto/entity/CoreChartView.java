@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 组件图表实体。
  */
-@TableName("bi_chart")
+@TableName("core_chart_view")
 public class CoreChartView implements Serializable {
 
     /**

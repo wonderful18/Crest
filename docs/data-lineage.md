@@ -106,12 +106,12 @@
 
 | Crest 元数据 | 用途 |
 | --- | --- |
-| `data_source` | 数据源节点 |
-| `dataset_group` | 数据集节点 |
-| `dataset_table` | 数据集引用的物理表 |
-| `dataset_field` | 物理字段、数据集字段和计算字段引用 |
-| `bi_chart` | 图表、图表字段和图表字段角色 |
-| `bi_visualization` | 仪表盘和数据大屏 |
+| `core_datasource` | 数据源节点 |
+| `core_dataset` | 数据集节点 |
+| `core_dataset_table` | 数据集引用的物理表 |
+| `core_dataset_field` | 物理字段、数据集字段和计算字段引用 |
+| `core_chart_view` | 图表、图表字段和图表字段角色 |
+| `core_visualization` | 仪表盘和数据大屏 |
 
 这样做的好处是稳定、轻量，不会因为打开血缘页面就访问生产业务库。代价也很明确：没有接入 Crest、没有保存成数据集、没有被图表使用的库表，不会出现在血缘图里。
 

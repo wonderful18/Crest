@@ -45,7 +45,7 @@ public class CrestOrgManage {
     public List<OrgPageVO> pageTree(OrgRequest request) {
         List<OrgPageVO> orgs = jdbcTemplate.query("""
                 SELECT id, pid, name, create_time, readonly
-                FROM iam_org
+                FROM core_iam_org
                 WHERE enable = 1
                 ORDER BY sort ASC, id ASC
                 """, (rs, rowNum) -> {
@@ -58,7 +58,7 @@ public class CrestOrgManage {
             return vo;
         });
         Map<Long, OrgPageVO> byId = orgs.stream().collect(Collectors.toMap(OrgPageVO::getId, item -> item));
-        List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT id, pid FROM iam_org WHERE enable = 1");
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT id, pid FROM core_iam_org WHERE enable = 1");
         for (Map<String, Object> row : rows) {
             Long id = ((Number) row.get("id")).longValue();
             Number pidNumber = (Number) row.get("pid");
@@ -111,7 +111,7 @@ public class CrestOrgManage {
         long id = creator.getId() == null ? IDUtils.snowID() : creator.getId();
         long now = System.currentTimeMillis();
         jdbcTemplate.update("""
-                INSERT INTO iam_org(id, pid, name, code, path, level, sort, enable, readonly, create_time, update_time)
+                INSERT INTO core_iam_org(id, pid, name, code, path, level, sort, enable, readonly, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, id, pid, creator.getName().trim(), null, parentPath + id + "/", level, 0, true, false, now, now);
         return id;
@@ -126,7 +126,7 @@ public class CrestOrgManage {
         if (editor == null || editor.getId() == null || StringUtils.isBlank(editor.getName())) {
             CrestException.throwException("组织名称不能为空");
         }
-        jdbcTemplate.update("UPDATE iam_org SET name = ?, update_time = ? WHERE id = ? AND readonly = 0",
+        jdbcTemplate.update("UPDATE core_iam_org SET name = ?, update_time = ? WHERE id = ? AND readonly = 0",
                 editor.getName().trim(), System.currentTimeMillis(), editor.getId());
     }
 
@@ -142,7 +142,7 @@ public class CrestOrgManage {
         if (resourceExist(id)) {
             CrestException.throwException("组织下存在用户、子组织或资源，不能删除");
         }
-        jdbcTemplate.update("DELETE FROM iam_org WHERE id = ? AND readonly = 0", id);
+        jdbcTemplate.update("DELETE FROM core_iam_org WHERE id = ? AND readonly = 0", id);
     }
 
     /**
@@ -151,9 +151,9 @@ public class CrestOrgManage {
     public boolean resourceExist(Long oid) {
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT
-                  (SELECT COUNT(1) FROM iam_org WHERE pid = ?) +
-                  (SELECT COUNT(1) FROM iam_user_org WHERE oid = ?) +
-                  (SELECT COUNT(1) FROM iam_resource_index WHERE oid = ?)
+                  (SELECT COUNT(1) FROM core_iam_org WHERE pid = ?) +
+                  (SELECT COUNT(1) FROM core_iam_user_org WHERE oid = ?) +
+                  (SELECT COUNT(1) FROM core_iam_resource_index WHERE oid = ?)
                 """, Integer.class, oid, oid, oid);
         return count != null && count > 0;
     }
@@ -163,7 +163,7 @@ public class CrestOrgManage {
      */
     public OrgDetailVO detail(Long oid) {
         List<OrgDetailVO> list = jdbcTemplate.query("""
-                SELECT id, name, pid, path FROM iam_org WHERE id = ?
+                SELECT id, name, pid, path FROM core_iam_org WHERE id = ?
                 """.transform(this::limitOne), (rs, rowNum) -> new OrgDetailVO(rs.getLong("id"), rs.getString("name"),
                 rs.getLong("pid"), rs.getString("path")), oid);
         return list.isEmpty() ? null : list.get(0);
@@ -177,7 +177,7 @@ public class CrestOrgManage {
         if (org == null) {
             return List.of();
         }
-        return jdbcTemplate.queryForList("SELECT " + dialect().stringCast("id") + " FROM iam_org WHERE path LIKE ?",
+        return jdbcTemplate.queryForList("SELECT " + dialect().stringCast("id") + " FROM core_iam_org WHERE path LIKE ?",
                 String.class, org.getRootPath() + "%");
     }
 
@@ -197,8 +197,8 @@ public class CrestOrgManage {
     private List<LazyOrgTreeNode> children(Long pid) {
         return jdbcTemplate.query("""
                 SELECT o.id, o.pid, o.name, o.create_time, o.readonly,
-                       EXISTS(SELECT 1 FROM iam_org c WHERE c.pid = o.id) AS has_children
-                FROM iam_org o
+                       EXISTS(SELECT 1 FROM core_iam_org c WHERE c.pid = o.id) AS has_children
+                FROM core_iam_org o
                 WHERE o.pid = ? AND o.enable = 1
                 ORDER BY o.sort ASC, o.id ASC
                 """, (rs, rowNum) -> {

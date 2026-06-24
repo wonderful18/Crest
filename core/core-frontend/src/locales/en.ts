@@ -116,7 +116,7 @@ export default {
     parameter_default_value: 'Parameter default value',
     parsing_path: 'Parsing path',
     total_number: 'Total number',
-    total_number_de: 'Total number de',
+    total_count: 'Total count',
     number_of_pages: 'Total number of pages',
     number__size: 'Page number + size',
     cursor__size: 'Cursor + size',
@@ -2996,9 +2996,9 @@ export default {
   visualization: {
     img_can_not_null: 'Image cannot be empty',
     outer_params_type_tips1:
-      "When the type is 'filter', it only applies to text dropdown, text tree, and number dropdown. For text tree filtering format, separate multiple levels with '-de-'",
+      "When the type is 'filter', it only applies to text dropdown, text tree, and number dropdown. For text tree values, separate levels with ' > '.",
     outer_params_type_tips2:
-      '["Level1","Level1-de-Level2_1","Level2-de-Level2_1","Level1-de-Level2_1-de-Level3_1","Level2"]',
+      '["Level1","Level1 > Level2_1","Level2 > Level2_1","Level1 > Level2_1 > Level3_1","Level2"]',
     outer_params_type: 'Type',
     outer_params_type_self: 'Assignment',
     outer_params_type_filter: 'Filter',
@@ -3432,7 +3432,7 @@ export default {
     apply_template: 'App Template',
     style_template: 'Style Template',
     import_app_template: 'Import Application Template',
-    template_file_type_limit: 'Only DET2 or DET2APP template files are supported',
+    template_file_type_limit: 'Only .crest template files are supported',
     template_type_mismatch: 'Template type does not match the current resource type',
     import_template_expired: 'Imported template data has expired. Please import it again',
     all_type: 'All Categories',

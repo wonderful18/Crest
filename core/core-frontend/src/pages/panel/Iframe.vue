@@ -9,11 +9,11 @@ const outerUrl = computed(() => {
 </script>
 
 <template>
-  <iframe class="de-jump_outer_url" :src="outerUrl" frameborder="0"></iframe>
+  <iframe class="crest-jump-outer-url" :src="outerUrl" frameborder="0"></iframe>
 </template>
 
 <style lang="less" scoped>
-.de-jump_outer_url {
+.crest-jump-outer-url {
   width: 100%;
   height: 100%;
 }

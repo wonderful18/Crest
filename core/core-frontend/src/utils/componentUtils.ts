@@ -1,4 +1,10 @@
 import { EnumValue, enumValueObj } from '@/api/dataset'
+import {
+  joinTreeLevelParts,
+  normalizeTreeLevelValue,
+  splitTreeLevelValue,
+  TREE_LEVEL_SEPARATOR
+} from '@/utils/treeLevelSeparator'
 
 /**
  * 查询组件字段值到实际查询值的映射缓存
@@ -93,14 +99,16 @@ export function filterParamsOptions(params, paramsOption: string[]) {
   }
   // 创建 paramsOption 集合和前缀集合用于快速查找
   const optionSet = new Set<string>(paramsOption)
+  const normalizedOptionSet = new Set<string>(paramsOption.map(normalizeTreeLevelValue))
   const prefixSet = new Set<string>()
   // 收集所有可能的父级前缀
   paramsOption.forEach(option => {
-    if (option.includes('-de-')) {
-      const parts = option.split('-de-')
+    const normalizedOption = normalizeTreeLevelValue(option)
+    if (normalizedOption.includes(TREE_LEVEL_SEPARATOR)) {
+      const parts = splitTreeLevelValue(normalizedOption)
       // 收集所有前缀：父级、祖父级等
       for (let i = 1; i < parts.length; i++) {
-        const prefix = parts.slice(0, i).join('-de-')
+        const prefix = joinTreeLevelParts(parts.slice(0, i))
         prefixSet.add(prefix)
       }
     }
@@ -111,32 +119,36 @@ export function filterParamsOptions(params, paramsOption: string[]) {
    * 判断单个参数值是否存在于可选项或其层级关系中
    */
   function checkValueExists(value: string) {
+    const normalizedValue = normalizeTreeLevelValue(value)
     // 直接存在
-    if (optionSet.has(value)) {
+    if (optionSet.has(value) || normalizedOptionSet.has(normalizedValue)) {
       return true
     }
     // 如果是层级结构，检查所有父级前缀
-    if (value.includes('-de-')) {
-      const parts = value.split('-de-')
+    if (normalizedValue.includes(TREE_LEVEL_SEPARATOR)) {
+      const parts = splitTreeLevelValue(normalizedValue)
 
       // 检查所有可能的父级前缀
       for (let i = 1; i < parts.length; i++) {
-        const prefix = parts.slice(0, i).join('-de-')
-        if (optionSet.has(prefix)) {
+        const prefix = joinTreeLevelParts(parts.slice(0, i))
+        if (normalizedOptionSet.has(prefix)) {
           return true
         }
       }
     }
 
     // 检查该值是否是某个选项的父级
-    // 如：paramsOption 中有 "香橙店-de-浓郁椰奶"，传入 "香橙店" 也应该匹配
+    // 如：paramsOption 中有 "香橙店 > 浓郁椰奶"，传入 "香橙店" 也应该匹配
     if (
-      Array.from(optionSet).some(option => option.startsWith(value + '-de-') || option === value)
+      Array.from(normalizedOptionSet).some(
+        option =>
+          option.startsWith(normalizedValue + TREE_LEVEL_SEPARATOR) || option === normalizedValue
+      )
     ) {
       return true
     }
     // 检查该值是否是某个选项的前缀（通过 prefixSet）
-    if (prefixSet.has(value)) {
+    if (prefixSet.has(normalizedValue)) {
       return true
     }
     return false

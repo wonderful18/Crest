@@ -1,6 +1,6 @@
 <template>
-  <div class="de-tinymce-container_alarm ed-textarea__inner">
-    <editor class="de-tinymce-content_alarm" v-model="myValue" :id="tinymceId" :init="init" />
+  <div class="crest-tinymce-container-alarm ed-textarea__inner">
+    <editor class="crest-tinymce-content-alarm" v-model="myValue" :id="tinymceId" :init="init" />
   </div>
 </template>
 <script lang="ts" setup>
@@ -185,7 +185,7 @@ let moreBarElement = null
 onMounted(() => {
   setTimeout(() => {
     moreBarElement = document.querySelectorAll(
-      '.de-tinymce-container_alarm .tox-toolbar__primary .tox-toolbar__group'
+      '.crest-tinymce-container-alarm .tox-toolbar__primary .tox-toolbar__group'
     )[4]
   }, 1000)
 })
@@ -200,7 +200,7 @@ defineExpose({
 </script>
 
 <style lang="less">
-.de-tinymce-container_alarm {
+.crest-tinymce-container-alarm {
   --ed-input-text-color: var(--ed-text-color-regular);
   --ed-input-border: var(--ed-border);
   --ed-input-hover-border: var(--ed-border-color-hover);

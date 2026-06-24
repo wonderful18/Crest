@@ -419,7 +419,7 @@ const emit = defineEmits(['nodeClick'])
 
 // 导入前校验模板文件扩展名
 const beforeImportTemplateUpload = file => {
-  if (!/\.(det2|det2app)$/i.test(file.name || '')) {
+  if (!/\.crest$/i.test(file.name || '')) {
     ElMessage.error(t('visualization.template_file_type_limit'))
     return false
   }
@@ -795,7 +795,7 @@ defineExpose({
                     ref="importUploadRef"
                     class="resource-import-upload"
                     :show-file-list="false"
-                    accept=".DET2,.DET2APP,.det2,.det2app"
+                    accept=".crest"
                     :before-upload="beforeImportTemplateUpload"
                     :http-request="importTemplateFile"
                   >

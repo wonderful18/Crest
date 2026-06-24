@@ -8,7 +8,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-@TableName("dataset_sync_task")
+@TableName("core_dataset_sync_task")
 // 定义当前业务对象的核心职责
 public class CoreDatasetSyncTask implements Serializable {
 

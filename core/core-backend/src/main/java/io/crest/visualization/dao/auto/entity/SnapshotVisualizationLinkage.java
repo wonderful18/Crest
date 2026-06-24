@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 组件联动快照实体。
  */
-@TableName("snapshot_visualization_linkage")
+@TableName("core_visualization_linkage_snapshot")
 public class SnapshotVisualizationLinkage implements Serializable {
 
     /**

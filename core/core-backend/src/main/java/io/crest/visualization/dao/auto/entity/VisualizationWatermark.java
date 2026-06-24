@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 可视化水印配置实体。
  */
-@TableName("visualization_watermark")
+@TableName("core_visualization_watermark")
 public class VisualizationWatermark implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -12,8 +12,8 @@ public class ShareLinkAccessManage {
             SELECT COUNT(1)
             FROM (
                 SELECT i.id
-                FROM visualization_link_jump j
-                JOIN visualization_link_jump_info i ON i.link_jump_id = j.id
+                FROM core_visualization_jump j
+                JOIN core_visualization_jump_action i ON i.link_jump_id = j.id
                 WHERE j.source_dv_id = ?
                   AND i.target_dv_id = ?
                   AND COALESCE(j.checked, 0) = 1
@@ -21,8 +21,8 @@ public class ShareLinkAccessManage {
                   AND i.link_type = 'inner'
                 UNION ALL
                 SELECT i.id
-                FROM snapshot_visualization_link_jump j
-                JOIN snapshot_visualization_link_jump_info i ON i.link_jump_id = j.id
+                FROM core_visualization_jump_snapshot j
+                JOIN core_visualization_jump_action_snapshot i ON i.link_jump_id = j.id
                 WHERE j.source_dv_id = ?
                   AND i.target_dv_id = ?
                   AND COALESCE(j.checked, 0) = 1

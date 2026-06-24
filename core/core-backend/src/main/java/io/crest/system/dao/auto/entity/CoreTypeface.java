@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 字形资源实体。
  */
-@TableName("typeface_asset")
+@TableName("core_font_asset")
 public class CoreTypeface implements Serializable {
 
     private static final long serialVersionUID = 1L;

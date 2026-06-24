@@ -130,7 +130,7 @@ defineExpose({
 
 <template>
   <div
-    id="de-preview-content"
+    id="crest-preview-content"
     ref="crestPreviewOuterRef"
     :class="{ 'screen-full': fullscreenFlag }"
     :style="outerStyle"

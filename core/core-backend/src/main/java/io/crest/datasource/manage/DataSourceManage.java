@@ -110,9 +110,9 @@ public class DataSourceManage {
         }
         String info = CommunityUtils.getInfo();
         if (StringUtils.isNotBlank(info)) {
-            queryWrapper.notExists(String.format(info, "data_source.id"));
+            queryWrapper.notExists(String.format(info, "core_datasource.id"));
         }
-        String scopeSql = platformPermissionManage.resourceScopeSql("datasource", "data_source.id", "data_source.create_by", null);
+        String scopeSql = platformPermissionManage.resourceScopeSql("datasource", "core_datasource.id", "core_datasource.create_by", null);
         if (StringUtils.isNotBlank(scopeSql)) {
             queryWrapper.apply(scopeSql);
         }

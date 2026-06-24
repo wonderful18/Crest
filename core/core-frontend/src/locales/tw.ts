@@ -113,7 +113,7 @@ export default {
     parameter_default_value: '參數預設值',
     parsing_path: '解析路徑',
     total_number: '總數',
-    total_number_de: '總數量',
+    total_count: '總數量',
     number_of_pages: '總頁數',
     number_plus_size: '頁碼+大小',
     cursor_plus_size: '遊標+大小',
@@ -2914,9 +2914,9 @@ export default {
   visualization: {
     img_can_not_null: '圖片不能為空',
     outer_params_type_tips1:
-      "類型為過濾時僅對文字下拉、文字樹、數字下拉有效。文字樹的過濾格式中，多級之間使用 '-de-' 分隔",
+      "類型為過濾時，僅支持文字下拉、文字樹、數字下拉；文字樹多級值使用 ' > ' 分隔。",
     outer_params_type_tips2:
-      '["Level1","Level1-de-Level2_1","Level2-de-Level2_1","Level1-de-Level2_1-de-Level3_1","Level2"]',
+      '["Level1","Level1 > Level2_1","Level2 > Level2_1","Level1 > Level2_1 > Level3_1","Level2"]',
     outer_params_type: '類型',
     outer_params_type_self: '賦值',
     outer_params_type_filter: '過濾',
@@ -3336,7 +3336,7 @@ export default {
     apply_template: '應用模板',
     style_template: '樣式模板',
     import_app_template: '導入應用模板',
-    template_file_type_limit: '僅支持 DET2 或 DET2APP 模板文件',
+    template_file_type_limit: '僅支持 .crest 模板文件',
     template_type_mismatch: '模板類型與當前資源類型不一致',
     import_template_expired: '導入模板數據已失效，請重新導入',
     all_type: '全部分類',

@@ -549,12 +549,11 @@ class ChartCarouselTooltip {
     }
     // 获取目标元素，优先全屏预览
     const targetDiv =
-      document.getElementById('de-preview-content') ||
+      document.getElementById('crest-preview-content') ||
       document.getElementById('preview-canvas-main') ||
       document.getElementById('dv-main-center') ||
       document.getElementById('edit-canvas-main') ||
-      document.getElementById('canvas-mark-line') ||
-      document.getElementById('de-canvas-canvas-main')
+      document.getElementById('canvas-mark-line')
     // 绑定目标元素的事件
     if (targetDiv) {
       targetDiv.removeEventListener('wheel', handleMouseWheel)

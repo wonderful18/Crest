@@ -14,7 +14,7 @@ public interface CoreDatasourceTaskMapper extends BaseMapper<CoreDatasourceTask>
 
     // 调度端投递前先写入投递时间，避免多 Scheduler 重复投递同一触发。
     @Update("""
-            UPDATE data_source_sync_task
+            UPDATE core_datasource_sync_task
             SET last_enqueue_time = #{now},
                 next_fire_time = #{now},
                 lock_version = COALESCE(lock_version, 0) + 1
@@ -27,7 +27,7 @@ public interface CoreDatasourceTaskMapper extends BaseMapper<CoreDatasourceTask>
 
     // Worker 成功抢占后记录执行者和心跳，后续恢复逻辑以该状态为准。
     @Update("""
-            UPDATE data_source_sync_task
+            UPDATE core_datasource_sync_task
             SET worker_id = #{workerId},
                 heartbeat_time = #{now},
                 retry_count = COALESCE(retry_count, 0) + 1,
@@ -42,7 +42,7 @@ public interface CoreDatasourceTaskMapper extends BaseMapper<CoreDatasourceTask>
 
     // 带投递时间抢占队列任务，完成后 last_enqueue_time 清空，旧消息无法重复执行。
     @Update("""
-            UPDATE data_source_sync_task
+            UPDATE core_datasource_sync_task
             SET task_status = 'UnderExecution',
                 last_exec_time = #{now},
                 worker_id = #{workerId},
@@ -61,7 +61,7 @@ public interface CoreDatasourceTaskMapper extends BaseMapper<CoreDatasourceTask>
 
     // 长任务按表处理时刷新心跳，避免正常执行被超时恢复误判。
     @Update("""
-            UPDATE data_source_sync_task
+            UPDATE core_datasource_sync_task
             SET heartbeat_time = #{now}
             WHERE id = #{id}
               AND worker_id IS NOT NULL
@@ -71,7 +71,7 @@ public interface CoreDatasourceTaskMapper extends BaseMapper<CoreDatasourceTask>
 
     // Worker 结束后清理队列执行态，防止恢复任务重复投递已完成触发。
     @Update("""
-            UPDATE data_source_sync_task
+            UPDATE core_datasource_sync_task
             SET worker_id = NULL,
                 heartbeat_time = #{now},
                 last_enqueue_time = NULL,
@@ -86,7 +86,7 @@ public interface CoreDatasourceTaskMapper extends BaseMapper<CoreDatasourceTask>
 
     // 超时执行中的任务回到等待态，之后再由正常投递 CAS 写入队列。
     @Update("""
-            UPDATE data_source_sync_task
+            UPDATE core_datasource_sync_task
             SET task_status = 'WaitingForExecution',
                 worker_id = NULL,
                 heartbeat_time = NULL,

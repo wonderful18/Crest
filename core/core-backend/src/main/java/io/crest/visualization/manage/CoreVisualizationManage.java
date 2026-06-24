@@ -96,11 +96,11 @@ public class CoreVisualizationManage {
         queryWrapper.eq("type", request.getBusiFlag());
         String info = CommunityUtils.getInfo();
         if (StringUtils.isNotBlank(info)) {
-            queryWrapper.notExists(String.format(info, "bi_visualization.id"));
+            queryWrapper.notExists(String.format(info, "core_visualization.id"));
         }
         String resourceType = "dataV".equalsIgnoreCase(request.getBusiFlag()) ? "screen" : "panel";
-        String scopeSql = platformPermissionManage.resourceScopeSql(resourceType, "bi_visualization.id",
-                "bi_visualization.create_by", "bi_visualization.org_id");
+        String scopeSql = platformPermissionManage.resourceScopeSql(resourceType, "core_visualization.id",
+                "core_visualization.create_by", "core_visualization.org_id");
         if (StringUtils.isNotBlank(scopeSql)) {
             queryWrapper.apply(scopeSql);
         }

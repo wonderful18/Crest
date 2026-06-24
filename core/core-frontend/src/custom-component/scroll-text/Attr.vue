@@ -18,7 +18,7 @@ const { themes } = toRefs(props)
 </script>
 
 <template>
-  <div class="attr-list de-collapse-style">
+  <div class="attr-list crest-collapse-style">
     <CommonAttr :themes="themes" :element="curComponent"></CommonAttr>
   </div>
 </template>
@@ -30,7 +30,7 @@ const { themes } = toRefs(props)
   padding: 10px;
 }
 
-.de-collapse-style {
+.crest-collapse-style {
   :deep(.ed-collapse-item__header) {
     height: 34px !important;
     line-height: 34px !important;

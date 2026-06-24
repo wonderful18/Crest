@@ -54,10 +54,10 @@ public interface DataSetAssistantMapper {
             cdtf.date_format_type as cdtf_date_format_type,
             cdtf.params as cdtf_params
 
-            from dataset_group cdg
-            left join dataset_table cdt on cdg.id =  cdt.dataset_group_id
-            left join dataset_field cdtf on cdtf.dataset_group_id = cdg.id and (cdtf.dataset_table_id is NULL or cdtf.dataset_table_id = cdt.id)
-            inner join data_source cd on cdt.datasource_id = cd.id
+            from core_dataset cdg
+            left join core_dataset_table cdt on cdg.id =  cdt.dataset_group_id
+            left join core_dataset_field cdtf on cdtf.dataset_group_id = cdg.id and (cdtf.dataset_table_id is NULL or cdtf.dataset_table_id = cdt.id)
+            inner join core_datasource cd on cdt.datasource_id = cd.id
             where  cdg.is_cross != 1 and (cd.STATUS IS NULL OR cd.STATUS != 'Error')
             ${ew.customSqlSegment}
             """
@@ -69,7 +69,7 @@ public interface DataSetAssistantMapper {
         SELECT DISTINCT resource_id
         FROM (
             SELECT (resource_id + 0) AS resource_id
-            FROM iam_resource_index
+            FROM core_iam_resource_index
             WHERE resource_type = 'datasource'
         ) temp
     ),
@@ -77,7 +77,7 @@ public interface DataSetAssistantMapper {
         SELECT DISTINCT resource_id
         FROM (
             SELECT (resource_id + 0) AS resource_id
-            FROM iam_resource_index
+            FROM core_iam_resource_index
             WHERE resource_type = 'dataset'
         ) temp
     )
@@ -120,11 +120,11 @@ public interface DataSetAssistantMapper {
         cdtf.date_format as cdtf_date_format,
         cdtf.date_format_type as cdtf_date_format_type,
         cdtf.params as cdtf_params
-    FROM dataset_table cdt
-    INNER JOIN data_source cd ON cdt.datasource_id = cd.id and (cd.STATUS IS NULL OR cd.STATUS != 'Error')
-    INNER JOIN dataset_group cdg ON cdg.id = cdt.dataset_group_id
+    FROM core_dataset_table cdt
+    INNER JOIN core_datasource cd ON cdt.datasource_id = cd.id and (cd.STATUS IS NULL OR cd.STATUS != 'Error')
+    INNER JOIN core_dataset cdg ON cdg.id = cdt.dataset_group_id
         AND cdg.is_cross != 1
-    INNER JOIN dataset_field cdtf ON cdtf.dataset_group_id = cdg.id and (cdtf.dataset_table_id is NULL or cdtf.dataset_table_id = cdt.id)
+    INNER JOIN core_dataset_field cdtf ON cdtf.dataset_group_id = cdg.id and (cdtf.dataset_table_id is NULL or cdtf.dataset_table_id = cdt.id)
     where not exists( select 1 from user_ds_permissions ds_p where cd.id = ds_p.resource_id )
     and not exists( select 1 from user_dg_permissions dg_p where cdg.id = dg_p.resource_id )
     ${ew.customSqlSegment}
@@ -139,19 +139,19 @@ public interface DataSetAssistantMapper {
         <choose>
             <when test="orgAdmin">
                 SELECT (resource_id + 0) AS resource_id
-                FROM iam_resource_index
+                FROM core_iam_resource_index
                 WHERE oid = #{oid} AND resource_type = 'datasource'
             </when>
             <otherwise>
                 SELECT DISTINCT resource_id
                 FROM (
                     SELECT (resource_id + 0) AS resource_id
-                    FROM iam_resource_permission
+                    FROM core_iam_resource_permission
                     WHERE target_type = 'user' AND target_id = #{uid} AND resource_type = 'datasource'
                     UNION ALL
                     SELECT (a.resource_id + 0) AS resource_id
-                    FROM iam_resource_permission a
-                    INNER JOIN iam_user_role b ON a.target_id = b.rid
+                    FROM core_iam_resource_permission a
+                    INNER JOIN core_iam_user_role b ON a.target_id = b.rid
                     WHERE a.target_type = 'role' AND b.oid = #{oid} AND b.uid = #{uid} AND a.resource_type = 'datasource'
                 ) temp
             </otherwise>
@@ -161,19 +161,19 @@ public interface DataSetAssistantMapper {
         <choose>
             <when test="orgAdmin">
                 SELECT (resource_id + 0) AS resource_id
-                FROM iam_resource_index
+                FROM core_iam_resource_index
                 WHERE oid = #{oid} AND resource_type = 'dataset'
             </when>
             <otherwise>
                 SELECT DISTINCT resource_id
                 FROM (
                     SELECT (resource_id + 0) AS resource_id
-                    FROM iam_resource_permission
+                    FROM core_iam_resource_permission
                     WHERE target_type = 'user' AND target_id = #{uid} AND resource_type = 'dataset'
                     UNION ALL
                     SELECT (a.resource_id + 0) AS resource_id
-                    FROM iam_resource_permission a
-                    INNER JOIN iam_user_role b ON a.target_id = b.rid
+                    FROM core_iam_resource_permission a
+                    INNER JOIN core_iam_user_role b ON a.target_id = b.rid
                     WHERE a.target_type = 'role' AND b.oid = #{oid} AND b.uid = #{uid} AND a.resource_type = 'dataset'
                 ) temp
             </otherwise>
@@ -218,12 +218,12 @@ public interface DataSetAssistantMapper {
         cdtf.date_format as cdtf_date_format,
         cdtf.date_format_type as cdtf_date_format_type,
         cdtf.params as cdtf_params
-    FROM dataset_table cdt
-    INNER JOIN data_source cd ON cdt.datasource_id = cd.id
+    FROM core_dataset_table cdt
+    INNER JOIN core_datasource cd ON cdt.datasource_id = cd.id
         AND (cd.STATUS IS NULL OR cd.STATUS != 'Error')
-    INNER JOIN dataset_group cdg ON cdg.id = cdt.dataset_group_id
+    INNER JOIN core_dataset cdg ON cdg.id = cdt.dataset_group_id
         AND cdg.is_cross != 1
-    INNER JOIN dataset_field cdtf ON cdtf.dataset_group_id = cdg.id and (cdtf.dataset_table_id is NULL or cdtf.dataset_table_id = cdt.id)
+    INNER JOIN core_dataset_field cdtf ON cdtf.dataset_group_id = cdg.id and (cdtf.dataset_table_id is NULL or cdtf.dataset_table_id = cdt.id)
     INNER JOIN user_ds_permissions ds_p ON cd.id = ds_p.resource_id
     INNER JOIN user_dg_permissions dg_p ON cdg.id = dg_p.resource_id
     ${ew.customSqlSegment}
@@ -232,6 +232,6 @@ public interface DataSetAssistantMapper {
     List<Map<String, Object>> queryEnterprise(@Param("oid") Long oid, @Param("uid") Long uid, @Param("orgAdmin") boolean orgAdmin, @Param("ew") QueryWrapper queryWrapper);
 
 
-    @Select("select cr.id, cr.readonly, NULL as pid from iam_user_role cur left join iam_role cr on cur.rid = cr.id where cur.uid = #{uid} and cur.oid = #{oid} ")
+    @Select("select cr.id, cr.readonly, NULL as pid from core_iam_user_role cur left join core_iam_role cr on cur.rid = cr.id where cur.uid = #{uid} and cur.oid = #{oid} ")
     List<Map<String, Object>> roleInfoByUid(@Param("uid") Long uid, @Param("oid") Long oid);
 }

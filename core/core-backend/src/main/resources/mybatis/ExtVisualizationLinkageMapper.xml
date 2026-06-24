@@ -45,11 +45,11 @@
         vlf.source_field,
         vlf.target_field
         FROM
-        bi_chart ccv
-        LEFT JOIN visualization_linkage vl ON ccv.id = vl.target_view_id
+        core_chart_view ccv
+        LEFT JOIN core_visualization_linkage vl ON ccv.id = vl.target_view_id
         AND vl.dv_id = #{dvId}
         AND vl.source_view_id = #{sourceViewId}
-        LEFT JOIN visualization_linkage_field vlf ON vl.id = vlf.linkage_id
+        LEFT JOIN core_visualization_linkage_field vlf ON vl.id = vlf.linkage_id
         where ccv.type != 'VQuery' and ccv.id in
         <foreach collection="targetViewIds" item="targetViewId" index="index" open="(" close=")" separator=",">
             #{targetViewId}
@@ -67,11 +67,11 @@
             vlf.source_field,
             vlf.target_field
             FROM
-            bi_chart_snapshot ccv
-            LEFT JOIN snapshot_visualization_linkage vl ON ccv.id = vl.target_view_id
+            core_chart_view_snapshot ccv
+            LEFT JOIN core_visualization_linkage_snapshot vl ON ccv.id = vl.target_view_id
             AND vl.dv_id = #{dvId}
             AND vl.source_view_id = #{sourceViewId}
-            LEFT JOIN snapshot_visualization_linkage_field vlf ON vl.id = vlf.linkage_id
+            LEFT JOIN core_visualization_linkage_field_snapshot vlf ON vl.id = vlf.linkage_id
             where ccv.type != 'VQuery' and ccv.id in
             <foreach collection="targetViewIds" item="targetViewId" index="index" open="(" close=")" separator=",">
                 #{targetViewId}
@@ -80,47 +80,47 @@
 
     <select id="queryTableField" resultMap="TableFieldMap">
        select
-       dataset_field.id,
-       dataset_field.dataset_table_id,
-       dataset_field.origin_name,
-       dataset_field.`name`,
-       dataset_field.field_type
-    from dataset_field where dataset_group_id = #{table_id}
+       core_dataset_field.id,
+       core_dataset_field.dataset_table_id,
+       core_dataset_field.origin_name,
+       core_dataset_field.`name`,
+       core_dataset_field.field_type
+    from core_dataset_field where dataset_group_id = #{table_id}
     </select>
 
     <select id="queryTableFieldWithViewId" resultMap="TableFieldMap">
         select
-       dataset_field.id,
-       dataset_field.dataset_table_id,
-       dataset_field.origin_name,
-       dataset_field.`name`,
-       dataset_field.field_type
-        from dataset_field
-        left join bi_chart on dataset_field.dataset_table_id= bi_chart.table_id
-        where bi_chart.id = #{viewId}
+       core_dataset_field.id,
+       core_dataset_field.dataset_table_id,
+       core_dataset_field.origin_name,
+       core_dataset_field.`name`,
+       core_dataset_field.field_type
+        from core_dataset_field
+        left join core_chart_view on core_dataset_field.dataset_table_id= core_chart_view.table_id
+        where core_chart_view.id = #{viewId}
     </select>
 
     <delete id="deleteViewLinkage">
-        delete from visualization_linkage where   visualization_linkage.dv_id = #{dvId}
+        delete from core_visualization_linkage where   core_visualization_linkage.dv_id = #{dvId}
         <if test="sourceViewId != null">
-          AND visualization_linkage.source_view_id = #{sourceViewId}
+          AND core_visualization_linkage.source_view_id = #{sourceViewId}
         </if>
     </delete>
 
     <delete id="deleteViewLinkageSnapshot">
-        delete from snapshot_visualization_linkage where   snapshot_visualization_linkage.dv_id = #{dvId}
+        delete from core_visualization_linkage_snapshot where   core_visualization_linkage_snapshot.dv_id = #{dvId}
         <if test="sourceViewId != null">
-          AND snapshot_visualization_linkage.source_view_id = #{sourceViewId}
+          AND core_visualization_linkage_snapshot.source_view_id = #{sourceViewId}
         </if>
     </delete>
 
 
     <delete id="deleteViewLinkageField">
-        DELETE FROM visualization_linkage_field
+        DELETE FROM core_visualization_linkage_field
         WHERE linkage_id IN (
             SELECT id FROM (
                 SELECT pvl.id
-                FROM visualization_linkage pvl
+                FROM core_visualization_linkage pvl
                 WHERE pvl.dv_id = #{dvId}
                 <if test="sourceViewId != null">
                   AND pvl.source_view_id = #{sourceViewId}
@@ -130,11 +130,11 @@
     </delete>
 
     <delete id="deleteViewLinkageFieldSnapshot">
-        DELETE FROM snapshot_visualization_linkage_field
+        DELETE FROM core_visualization_linkage_field_snapshot
         WHERE linkage_id IN (
                     SELECT id FROM (
                         SELECT pvl.id
-                        FROM snapshot_visualization_linkage pvl
+                        FROM core_visualization_linkage_snapshot pvl
                         WHERE pvl.dv_id = #{dvId}
                         <if test="sourceViewId != null">
                           AND pvl.source_view_id = #{sourceViewId}
@@ -156,9 +156,9 @@
                 </otherwise>
             </choose>
         FROM
-            visualization_linkage vl
-                LEFT JOIN bi_chart ccv ON vl.source_view_id = ccv.id
-                LEFT JOIN visualization_linkage_field vlf ON vl.id = vlf.linkage_id
+            core_visualization_linkage vl
+                LEFT JOIN core_chart_view ccv ON vl.source_view_id = ccv.id
+                LEFT JOIN core_visualization_linkage_field vlf ON vl.id = vlf.linkage_id
         WHERE
             vl.dv_id = #{dvId}
           AND ccv.linkage_active = 1
@@ -179,9 +179,9 @@
                 </otherwise>
             </choose>
         FROM
-            snapshot_visualization_linkage vl
-                LEFT JOIN bi_chart_snapshot ccv ON vl.source_view_id = ccv.id
-                LEFT JOIN snapshot_visualization_linkage_field vlf ON vl.id = vlf.linkage_id
+            core_visualization_linkage_snapshot vl
+                LEFT JOIN core_chart_view_snapshot ccv ON vl.source_view_id = ccv.id
+                LEFT JOIN core_visualization_linkage_field_snapshot vlf ON vl.id = vlf.linkage_id
         WHERE
             vl.dv_id = #{dvId}
           AND ccv.linkage_active = 1
@@ -190,7 +190,7 @@
     </select>
 
     <insert id="copyViewLinkage">
-        INSERT INTO visualization_linkage (
+        INSERT INTO core_visualization_linkage (
                 id,
                 dv_id,
                 source_view_id,
@@ -222,7 +222,7 @@
             id as copy_from,
             #{copyId} as copy_id
             FROM
-                visualization_linkage
+                core_visualization_linkage
                 INNER JOIN (
                 SELECT
                     pvs.scene_id AS s_dv_id,
@@ -230,12 +230,12 @@
                     pvt.scene_id AS t_dv_id,
                     pvt.id AS t_chart_view_id
                 FROM
-                    bi_chart pvt
-                    inner JOIN bi_chart pvs ON pvt.copy_from = pvs.id
+                    core_chart_view pvt
+                    inner JOIN core_chart_view pvs ON pvt.copy_from = pvs.id
                 WHERE
                     pvt.copy_id = #{copyId}
-                ) pv_source_copy ON visualization_linkage.dv_id = pv_source_copy.s_dv_id
-                AND visualization_linkage.source_view_id = pv_source_copy.s_chart_view_id
+                ) pv_source_copy ON core_visualization_linkage.dv_id = pv_source_copy.s_dv_id
+                AND core_visualization_linkage.source_view_id = pv_source_copy.s_chart_view_id
                 INNER JOIN (
                 SELECT
                     pvs.scene_id AS s_dv_id,
@@ -243,17 +243,17 @@
                     pvt.scene_id AS t_dv_id,
                     pvt.id AS t_chart_view_id
                 FROM
-                    bi_chart pvt
-                    inner JOIN bi_chart pvs ON pvt.copy_from = pvs.id
+                    core_chart_view pvt
+                    inner JOIN core_chart_view pvs ON pvt.copy_from = pvs.id
                 WHERE
                     pvt.copy_id = #{copyId}
-                ) pv_target_copy ON visualization_linkage.dv_id = pv_target_copy.s_dv_id
-                AND visualization_linkage.target_view_id = pv_target_copy.s_chart_view_id
+                ) pv_target_copy ON core_visualization_linkage.dv_id = pv_target_copy.s_dv_id
+                AND core_visualization_linkage.target_view_id = pv_target_copy.s_chart_view_id
 
     </insert>
 
     <insert id ="copyViewLinkageField">
-        INSERT INTO visualization_linkage_field (
+        INSERT INTO core_visualization_linkage_field (
             id,
             linkage_id,
             source_field,
@@ -277,30 +277,30 @@
         id AS copy_from,
         #{copyId} AS copy_id
         FROM
-            visualization_linkage_field
+            core_visualization_linkage_field
             INNER JOIN (
             SELECT
                 id AS t_id,
                 copy_from AS s_id
             FROM
-                visualization_linkage
+                core_visualization_linkage
             WHERE
                 copy_id = #{copyId}
-            ) pvlf_copy ON visualization_linkage_field.linkage_id = pvlf_copy.s_id
+            ) pvlf_copy ON core_visualization_linkage_field.linkage_id = pvlf_copy.s_id
 
     </insert>
 
 
     <select id="findLinkageWithDvId" resultType="io.crest.visualization.dao.auto.entity.VisualizationLinkage">
-        select * from visualization_linkage  where dv_id =#{dvId};
+        select * from core_visualization_linkage  where dv_id =#{dvId};
     </select>
 
     <select id="findLinkageFieldWithDvId" resultType="io.crest.visualization.dao.auto.entity.VisualizationLinkageField">
         SELECT
             *
         FROM
-            visualization_linkage_field
+            core_visualization_linkage_field
         WHERE
-                linkage_id IN ( SELECT id FROM visualization_linkage WHERE dv_id = #{dvId} );
+                linkage_id IN ( SELECT id FROM core_visualization_linkage WHERE dv_id = #{dvId} );
     </select>
 </mapper>

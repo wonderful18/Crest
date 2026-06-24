@@ -27,7 +27,7 @@ public class SsoIdentityBindingManage {
     public void upsertProvider(Long providerId, SsoProviderType providerType, String providerName) {
         long now = System.currentTimeMillis();
         int updated = jdbcTemplate.update("""
-                UPDATE auth_sso_provider
+                UPDATE core_auth_sso_provider
                 SET provider_type = ?, name = ?, enabled = ?, update_time = ?
                 WHERE id = ?
                 """, providerType.name(), StringUtils.defaultIfBlank(providerName, "统一身份认证"), true, now, providerId);
@@ -35,7 +35,7 @@ public class SsoIdentityBindingManage {
             return;
         }
         jdbcTemplate.update("""
-                INSERT INTO auth_sso_provider(id, provider_key, provider_type, name, enabled, create_time, update_time)
+                INSERT INTO core_auth_sso_provider(id, provider_key, provider_type, name, enabled, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 providerId,
@@ -50,7 +50,7 @@ public class SsoIdentityBindingManage {
     // 根据外部身份查询绑定用户编号
     public Long boundUserId(SsoIdentityProfile profile) {
         List<Long> bySubject = jdbcTemplate.queryForList("""
-                SELECT user_id FROM auth_sso_identity_binding
+                SELECT user_id FROM core_auth_sso_identity_binding
                 WHERE provider_id = ? AND external_subject = ?
                 """.transform(this::limitOne), Long.class, profile.getProviderId(), profile.getExternalSubject());
         if (!bySubject.isEmpty()) {
@@ -60,7 +60,7 @@ public class SsoIdentityBindingManage {
             return null;
         }
         List<Long> byUnion = jdbcTemplate.queryForList("""
-                SELECT user_id FROM auth_sso_identity_binding
+                SELECT user_id FROM core_auth_sso_identity_binding
                 WHERE provider_id = ? AND union_id = ?
                 """.transform(this::limitOne), Long.class, profile.getProviderId(), profile.getUnionId());
         return byUnion.isEmpty() ? null : byUnion.get(0);
@@ -80,7 +80,7 @@ public class SsoIdentityBindingManage {
             return;
         }
         jdbcTemplate.update("""
-                INSERT INTO auth_sso_identity_binding(id, user_id, provider_id, provider_type, external_subject,
+                INSERT INTO core_auth_sso_identity_binding(id, user_id, provider_id, provider_type, external_subject,
                     account, display_name, email, union_id, last_login_time, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
@@ -112,7 +112,7 @@ public class SsoIdentityBindingManage {
         args[8] = now;
         System.arraycopy(predicateArgs, 0, args, 9, predicateArgs.length);
         return jdbcTemplate.update("""
-                UPDATE auth_sso_identity_binding
+                UPDATE core_auth_sso_identity_binding
                 SET user_id = ?,
                     provider_type = ?,
                     external_subject = ?,

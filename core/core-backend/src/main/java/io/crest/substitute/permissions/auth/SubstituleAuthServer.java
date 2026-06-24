@@ -48,7 +48,7 @@ public class SubstituleAuthServer implements AuthApi {
         String type = normalizeFlag(flag);
         return jdbcTemplate.query("""
                 SELECT id, resource_id, name
-                FROM iam_resource_index
+                FROM core_iam_resource_index
                 WHERE resource_type = ?
                 ORDER BY update_time DESC, id DESC
                 """, (rs, rowNum) -> {
@@ -69,7 +69,7 @@ public class SubstituleAuthServer implements AuthApi {
         String targetType = targetType(request.getType());
         vo.setPermissions(jdbcTemplate.query("""
                 SELECT %s AS resource_id, permission
-                FROM iam_resource_permission
+                FROM core_iam_resource_permission
                 WHERE target_type = ? AND target_id = ? AND resource_type = ?
                 """.formatted(dialect().numberCast("resource_id")), (rs, rowNum) -> {
             PermissionItem item = new PermissionItem();
@@ -92,7 +92,7 @@ public class SubstituleAuthServer implements AuthApi {
     public List<ResourceVO> menuResource() {
         List<ResourceVO> menus = jdbcTemplate.query("""
                 SELECT id, pid, name, type
-                FROM iam_menu
+                FROM core_iam_menu
                 WHERE in_layout = 1
                 ORDER BY menu_sort ASC, id ASC
                 """, (rs, rowNum) -> {
@@ -104,7 +104,7 @@ public class SubstituleAuthServer implements AuthApi {
             return vo;
         });
         Map<Long, ResourceVO> byId = menus.stream().collect(Collectors.toMap(ResourceVO::getId, item -> item));
-        List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT id, pid FROM iam_menu WHERE in_layout = 1");
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT id, pid FROM core_iam_menu WHERE in_layout = 1");
         for (Map<String, Object> row : rows) {
             Long id = ((Number) row.get("id")).longValue();
             Long pid = ((Number) row.get("pid")).longValue();
@@ -146,7 +146,7 @@ public class SubstituleAuthServer implements AuthApi {
         platformPermissionManage.requireSystemAdmin();
         String targetType = targetType(editor.getType());
         jdbcTemplate.update("""
-                DELETE FROM iam_resource_permission
+                DELETE FROM core_iam_resource_permission
                 WHERE target_type = ? AND target_id = ? AND resource_type = ?
                 """, targetType, editor.getId(), normalizeFlag(editor.getFlag()));
         if (editor.getPermissions() == null) {
@@ -169,7 +169,7 @@ public class SubstituleAuthServer implements AuthApi {
         String targetType = targetType(creator.getType());
         for (Long resourceId : creator.getIds()) {
             jdbcTemplate.update("""
-                    DELETE FROM iam_resource_permission
+                    DELETE FROM core_iam_resource_permission
                     WHERE resource_type = ? AND resource_id = ? AND target_type = ?
                     """, normalizeFlag(creator.getFlag()), String.valueOf(resourceId), targetType);
             for (PermissionItem item : creator.getPermissions()) {
@@ -184,7 +184,7 @@ public class SubstituleAuthServer implements AuthApi {
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.MENU, id = "#p0.id")
     public void saveMenuPer(MenuPerEditor editor) {
         platformPermissionManage.requireSystemAdmin();
-        jdbcTemplate.update("DELETE FROM iam_role_menu_permission WHERE rid = ?", editor.getId());
+        jdbcTemplate.update("DELETE FROM core_iam_role_menu_permission WHERE rid = ?", editor.getId());
         if (editor.getPermissions() == null) {
             return;
         }
@@ -217,8 +217,8 @@ public class SubstituleAuthServer implements AuthApi {
         if ("user".equals(targetType)) {
             return jdbcTemplate.query("""
                     SELECT DISTINCT u.id, u.account, u.name
-                    FROM iam_user u
-                    INNER JOIN iam_resource_permission p ON p.target_id = u.id AND p.target_type = 'user'
+                    FROM core_iam_user u
+                    INNER JOIN core_iam_resource_permission p ON p.target_id = u.id AND p.target_type = 'user'
                     WHERE p.resource_type = ? AND p.resource_id = ?
                     ORDER BY u.name ASC, u.account ASC
                     """, (rs, rowNum) -> {
@@ -231,8 +231,8 @@ public class SubstituleAuthServer implements AuthApi {
         }
         return jdbcTemplate.query("""
                 SELECT DISTINCT r.id, r.code AS account, r.name
-                FROM iam_role r
-                INNER JOIN iam_resource_permission p ON p.target_id = r.id AND p.target_type = 'role'
+                FROM core_iam_role r
+                INNER JOIN core_iam_resource_permission p ON p.target_id = r.id AND p.target_type = 'role'
                 WHERE p.resource_type = ? AND p.resource_id = ?
                 ORDER BY r.system_role DESC, r.name ASC
                 """, (rs, rowNum) -> {
@@ -248,14 +248,14 @@ public class SubstituleAuthServer implements AuthApi {
     private void saveResourcePermission(String resourceType, String resourceId, String targetType, Long targetId, String permission) {
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(1)
-                FROM iam_resource_permission
+                FROM core_iam_resource_permission
                 WHERE resource_type = ? AND resource_id = ? AND target_type = ? AND target_id = ? AND permission = ?
                 """, Integer.class, resourceType, resourceId, targetType, targetId, permission);
         if (count != null && count > 0) {
             return;
         }
         jdbcTemplate.update("""
-                INSERT INTO iam_resource_permission(id, resource_type, resource_id, target_type, target_id, permission, create_time)
+                INSERT INTO core_iam_resource_permission(id, resource_type, resource_id, target_type, target_id, permission, create_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, IDUtils.snowID(), resourceType, resourceId, targetType, targetId, permission, System.currentTimeMillis());
     }
@@ -264,14 +264,14 @@ public class SubstituleAuthServer implements AuthApi {
     private void saveRoleMenuPermission(Long rid, Long menuId, String permission) {
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(1)
-                FROM iam_role_menu_permission
+                FROM core_iam_role_menu_permission
                 WHERE rid = ? AND menu_id = ? AND permission = ?
                 """, Integer.class, rid, menuId, permission);
         if (count != null && count > 0) {
             return;
         }
         jdbcTemplate.update("""
-                INSERT INTO iam_role_menu_permission(id, rid, menu_id, permission, create_time)
+                INSERT INTO core_iam_role_menu_permission(id, rid, menu_id, permission, create_time)
                 VALUES (?, ?, ?, ?, ?)
                 """, IDUtils.snowID(), rid, menuId, permission, System.currentTimeMillis());
     }

@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * 数据源驱动实体。
  */
-@TableName("data_source_driver")
+@TableName("core_datasource_driver")
 public class CoreDriver implements Serializable {
 
     private static final long serialVersionUID = 1L;

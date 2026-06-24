@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 系统配置实体。
  */
-@TableName("sys_setting")
+@TableName("core_system_setting")
 public class CoreSysSetting implements Serializable {
 
     private static final long serialVersionUID = 1L;

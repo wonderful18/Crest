@@ -43,7 +43,7 @@ public class PlatformPermissionManage {
             return ROOT_ORG_ID;
         }
         List<Long> orgIds = jdbcTemplate.queryForList("""
-                SELECT oid FROM iam_user_org
+                SELECT oid FROM core_iam_user_org
                 WHERE %s = ?
                 ORDER BY default_org DESC, create_time ASC
                 """.formatted(uidColumn()).transform(this::limitOne), Long.class, uid);
@@ -61,7 +61,7 @@ public class PlatformPermissionManage {
             return List.of();
         }
         return jdbcTemplate.queryForList("""
-                SELECT rid FROM iam_user_role
+                SELECT rid FROM core_iam_user_role
                 WHERE %s = ? AND oid = ?
                 ORDER BY rid ASC
                 """.formatted(uidColumn()), Long.class, uid, oid == null ? defaultOrgId(uid) : oid);
@@ -71,8 +71,8 @@ public class PlatformPermissionManage {
     public List<UserGridRoleItem> userRoleItems(Long uid) {
         List<UserGridRoleItem> roles = jdbcTemplate.query("""
                 SELECT r.id, r.name
-                FROM iam_role r
-                INNER JOIN iam_user_role ur ON ur.rid = r.id
+                FROM core_iam_role r
+                INNER JOIN core_iam_user_role ur ON ur.rid = r.id
                 WHERE ur.%s = ?
                 ORDER BY r.system_role DESC, r.id ASC
                 """.formatted(uidColumn()), (rs, rowNum) -> {
@@ -95,7 +95,7 @@ public class PlatformPermissionManage {
             return false;
         }
         Integer count = jdbcTemplate.queryForObject("""
-                SELECT COUNT(1) FROM iam_user_role
+                SELECT COUNT(1) FROM core_iam_user_role
                 WHERE %s = ? AND rid = ?
                 """.formatted(uidColumn()), Integer.class, uid, SYSTEM_ADMIN_ROLE_ID);
         return (count != null && count > 0) || AuthUtils.isSysAdmin(uid);
@@ -108,8 +108,8 @@ public class PlatformPermissionManage {
         }
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(1)
-                FROM iam_user_role ur
-                INNER JOIN iam_role r ON r.id = ur.rid
+                FROM core_iam_user_role ur
+                INNER JOIN core_iam_role r ON r.id = ur.rid
                 WHERE ur.%s = ? AND ur.oid = ? AND r.org_admin = 1
                 """.formatted(uidColumn()), Integer.class, uid, oid == null ? defaultOrgId(uid) : oid);
         return count != null && count > 0;
@@ -125,7 +125,7 @@ public class PlatformPermissionManage {
     @Transactional
     public void replaceUserRoles(Long uid, Long oid, List<Long> roleIds) {
         oid = oid == null ? defaultOrgId(uid) : oid;
-        jdbcTemplate.update("DELETE FROM iam_user_role WHERE " + uidColumn() + " = ? AND oid = ?", uid, oid);
+        jdbcTemplate.update("DELETE FROM core_iam_user_role WHERE " + uidColumn() + " = ? AND oid = ?", uid, oid);
         List<Long> effectiveRoleIds = roleIds == null || roleIds.isEmpty() ? List.of(MEMBER_ROLE_ID) : roleIds;
         for (Long roleId : effectiveRoleIds) {
             bindUserToRole(uid, oid, roleId);
@@ -140,7 +140,7 @@ public class PlatformPermissionManage {
 
     // 查询组织名称
     public String orgName(Long oid) {
-        List<String> names = jdbcTemplate.queryForList(limitOne("SELECT name FROM iam_org WHERE id = ?"),
+        List<String> names = jdbcTemplate.queryForList(limitOne("SELECT name FROM core_iam_org WHERE id = ?"),
                 String.class, oid == null ? ROOT_ORG_ID : oid);
         return names.isEmpty() ? null : names.get(0);
     }
@@ -155,18 +155,18 @@ public class PlatformPermissionManage {
     public void bindUserToOrg(Long uid, Long oid, boolean defaultOrg) {
         long now = System.currentTimeMillis();
         if (defaultOrg) {
-            jdbcTemplate.update("UPDATE iam_user_org SET default_org = 0 WHERE " + uidColumn() + " = ?", uid);
+            jdbcTemplate.update("UPDATE core_iam_user_org SET default_org = 0 WHERE " + uidColumn() + " = ?", uid);
         }
         if (isObOracle()) {
             insertUserOrgIfMissing(uid, oid, defaultOrg, now);
         } else {
             jdbcTemplate.update("""
-                    INSERT IGNORE INTO iam_user_org(id, uid, oid, default_org, create_time)
+                    INSERT IGNORE INTO core_iam_user_org(id, uid, oid, default_org, create_time)
                     VALUES (?, ?, ?, ?, ?)
                     """, IDUtils.snowID(), uid, oid, defaultOrg, now);
         }
         if (defaultOrg) {
-            jdbcTemplate.update("UPDATE iam_user_org SET default_org = 1 WHERE " + uidColumn() + " = ? AND oid = ?", uid, oid);
+            jdbcTemplate.update("UPDATE core_iam_user_org SET default_org = 1 WHERE " + uidColumn() + " = ? AND oid = ?", uid, oid);
         }
     }
 
@@ -182,7 +182,7 @@ public class PlatformPermissionManage {
             return;
         }
         jdbcTemplate.update("""
-                INSERT IGNORE INTO iam_user_role(id, uid, oid, rid, create_time)
+                INSERT IGNORE INTO core_iam_user_role(id, uid, oid, rid, create_time)
                 VALUES (?, ?, ?, ?, ?)
                 """, IDUtils.snowID(), uid, oid, rid, now);
     }
@@ -190,7 +190,7 @@ public class PlatformPermissionManage {
     // 查询指定组织下的角色列表，可按名称模糊过滤
     public List<RoleVO> roles(Long oid, String keyword) {
         List<Object> args = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT id, name, readonly, system_role FROM iam_role WHERE oid = ?");
+        StringBuilder sql = new StringBuilder("SELECT id, name, readonly, system_role FROM core_iam_role WHERE oid = ?");
         args.add(oid == null ? ROOT_ORG_ID : oid);
         if (StringUtils.isNotBlank(keyword)) {
             sql.append(" AND name LIKE ?");
@@ -212,13 +212,13 @@ public class PlatformPermissionManage {
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder("""
                 SELECT DISTINCT o.id, o.name, o.readonly
-                FROM iam_org o
-                INNER JOIN iam_user_org uo ON uo.oid = o.id
+                FROM core_iam_org o
+                INNER JOIN core_iam_user_org uo ON uo.oid = o.id
                 WHERE uo.%s = ? AND o.enable = 1
                 """.formatted(uidColumn()));
         args.add(uid);
         if (isSystemAdmin(uid)) {
-            sql = new StringBuilder("SELECT id, name, readonly FROM iam_org WHERE enable = 1");
+            sql = new StringBuilder("SELECT id, name, readonly FROM core_iam_org WHERE enable = 1");
             args.clear();
         }
         if (StringUtils.isNotBlank(keyword)) {
@@ -253,12 +253,12 @@ public class PlatformPermissionManage {
         if (StringUtils.isNotBlank(orgColumn)) {
             sql.append(" OR ").append(orgColumn).append(" = '").append(oidValue).append("'");
         } else {
-            sql.append(" OR EXISTS (SELECT 1 FROM iam_resource_index cri WHERE cri.resource_type = '")
+            sql.append(" OR EXISTS (SELECT 1 FROM core_iam_resource_index cri WHERE cri.resource_type = '")
                     .append(resourceType).append("' AND cri.resource_id = ")
                     .append(MetadataDbDialects.current(environment).stringCast(resourceIdColumn))
                     .append(" AND cri.oid = ").append(oidValue).append(")");
         }
-        sql.append(" OR EXISTS (SELECT 1 FROM iam_resource_permission crp WHERE crp.resource_type = '")
+        sql.append(" OR EXISTS (SELECT 1 FROM core_iam_resource_permission crp WHERE crp.resource_type = '")
                 .append(resourceType).append("' AND crp.resource_id = ")
                 .append(MetadataDbDialects.current(environment).stringCast(resourceIdColumn))
                 .append(" AND crp.permission IN ('read', 'manage') AND ((crp.target_type = 'user' AND crp.target_id = ")
@@ -304,7 +304,7 @@ public class PlatformPermissionManage {
         args.add(uid);
         args.add(oid);
         StringBuilder sql = new StringBuilder("""
-                SELECT DISTINCT permission FROM iam_resource_permission
+                SELECT DISTINCT permission FROM core_iam_resource_permission
                 WHERE resource_type = ? AND resource_id = ? AND permission IN ('read', 'manage')
                   AND ((target_type = 'user' AND target_id = ?)
                     OR (target_type = 'org' AND target_id = ?)
@@ -344,7 +344,7 @@ public class PlatformPermissionManage {
         Long effectiveUpdateTime = updateTime == null ? now : updateTime;
         if (isObOracle()) {
             jdbcTemplate.update("""
-                    MERGE INTO iam_resource_index target
+                    MERGE INTO core_iam_resource_index target
                     USING (SELECT ? AS resource_id, ? AS resource_type FROM DUAL) source
                     ON (target.resource_id = source.resource_id AND target.resource_type = source.resource_type)
                     WHEN MATCHED THEN UPDATE SET
@@ -360,7 +360,7 @@ public class PlatformPermissionManage {
             return;
         }
         jdbcTemplate.update("""
-                INSERT INTO iam_resource_index(id, resource_id, resource_type, oid, creator, name, create_time, update_time)
+                INSERT INTO core_iam_resource_index(id, resource_id, resource_type, oid, creator, name, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE oid = VALUES(oid), creator = VALUES(creator), name = VALUES(name), update_time = VALUES(update_time)
                 """, IDUtils.snowID(), resourceId, resourceType, effectiveOid, creator,
@@ -370,8 +370,8 @@ public class PlatformPermissionManage {
     // 删除资源索引及其显式授权记录
     @Transactional
     public void deleteResource(String resourceType, String resourceId) {
-        jdbcTemplate.update("DELETE FROM iam_resource_index WHERE resource_type = ? AND resource_id = ?", resourceType, resourceId);
-        jdbcTemplate.update("DELETE FROM iam_resource_permission WHERE resource_type = ? AND resource_id = ?", resourceType, resourceId);
+        jdbcTemplate.update("DELETE FROM core_iam_resource_index WHERE resource_type = ? AND resource_id = ?", resourceType, resourceId);
+        jdbcTemplate.update("DELETE FROM core_iam_resource_permission WHERE resource_type = ? AND resource_id = ?", resourceType, resourceId);
     }
 
     // 将资源权重转换为单个最高权限
@@ -396,7 +396,7 @@ public class PlatformPermissionManage {
     public List<PermissionItem> roleMenuPermissions(Long rid) {
         return jdbcTemplate.query("""
                 SELECT menu_id, MAX(CASE WHEN permission = 'manage' THEN 7 ELSE 1 END) AS weight
-                FROM iam_role_menu_permission
+                FROM core_iam_role_menu_permission
                 WHERE rid = ?
                 GROUP BY menu_id
                 """, (rs, rowNum) -> {
@@ -418,14 +418,14 @@ public class PlatformPermissionManage {
     // OB Oracle 不支持 INSERT IGNORE，先检查再补写用户组织绑定
     private void insertUserOrgIfMissing(Long uid, Long oid, boolean defaultOrg, long now) {
         Integer count = jdbcTemplate.queryForObject("""
-                SELECT COUNT(1) FROM iam_user_org
+                SELECT COUNT(1) FROM core_iam_user_org
                 WHERE %s = ? AND oid = ?
                 """.formatted(uidColumn()), Integer.class, uid, oid);
         if (count != null && count > 0) {
             return;
         }
         jdbcTemplate.update("""
-                INSERT INTO iam_user_org(id, %s, oid, default_org, create_time)
+                INSERT INTO core_iam_user_org(id, %s, oid, default_org, create_time)
                 VALUES (?, ?, ?, ?, ?)
                 """.formatted(uidColumn()), IDUtils.snowID(), uid, oid, defaultOrg, now);
     }
@@ -433,14 +433,14 @@ public class PlatformPermissionManage {
     // OB Oracle 不支持 INSERT IGNORE，先检查再补写用户角色绑定
     private void insertUserRoleIfMissing(Long uid, Long oid, Long rid, long now) {
         Integer count = jdbcTemplate.queryForObject("""
-                SELECT COUNT(1) FROM iam_user_role
+                SELECT COUNT(1) FROM core_iam_user_role
                 WHERE %s = ? AND oid = ? AND rid = ?
                 """.formatted(uidColumn()), Integer.class, uid, oid, rid);
         if (count != null && count > 0) {
             return;
         }
         jdbcTemplate.update("""
-                INSERT INTO iam_user_role(id, %s, oid, rid, create_time)
+                INSERT INTO core_iam_user_role(id, %s, oid, rid, create_time)
                 VALUES (?, ?, ?, ?, ?)
                 """.formatted(uidColumn()), IDUtils.snowID(), uid, oid, rid, now);
     }

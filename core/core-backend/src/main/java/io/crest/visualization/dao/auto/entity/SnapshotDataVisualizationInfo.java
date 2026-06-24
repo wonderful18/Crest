@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 可视化资源快照实体。
  */
-@TableName("bi_visualization_snapshot")
+@TableName("core_visualization_snapshot")
 public class SnapshotDataVisualizationInfo implements Serializable {
 
     /**

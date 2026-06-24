@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 可视化资源实体。
  */
-@TableName("bi_visualization")
+@TableName("core_visualization")
 public class DataVisualizationInfo implements Serializable {
 
     /**

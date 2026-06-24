@@ -148,16 +148,16 @@ public class DatasetSyncTaskManage {
                        l.trigger_type AS log_trigger_type
                 FROM (
                     SELECT DISTINCT c.table_id AS dataset_group_id
-                    FROM bi_visualization v
-                    INNER JOIN bi_chart c ON c.scene_id = v.id
+                    FROM core_visualization v
+                    INNER JOIN core_chart_view c ON c.scene_id = v.id
                     WHERE v.id = ?
                       AND v.delete_flag = 0
                       AND v.node_type = 'leaf'
                 """ + visualizationPermissionClause("v") + """
                 ) dep
-                INNER JOIN dataset_group dg ON dg.id = dep.dataset_group_id
-                LEFT JOIN dataset_sync_task t ON t.dataset_group_id = dg.id
-                LEFT JOIN dataset_sync_task_log l ON l.id = (
+                INNER JOIN core_dataset dg ON dg.id = dep.dataset_group_id
+                LEFT JOIN core_dataset_sync_task t ON t.dataset_group_id = dg.id
+                LEFT JOIN core_dataset_sync_task_log l ON l.id = (
                     %s
                 )
                 WHERE dg.node_type = 'dataset'
@@ -165,7 +165,7 @@ public class DatasetSyncTaskManage {
                 ORDER BY dg.name ASC, dg.id ASC
                 """.formatted(dialect().limitOne("""
                     SELECT l2.id
-                    FROM dataset_sync_task_log l2
+                    FROM core_dataset_sync_task_log l2
                     WHERE l2.dataset_group_id = dg.id
                     ORDER BY l2.start_time DESC, l2.id DESC
                     """), modeColumn()), (rs, rowNum) -> mapTaskCenterRow(rs), args.toArray());
@@ -775,16 +775,16 @@ public class DatasetSyncTaskManage {
     private QueryParts taskCenterQuery(DatasetSyncTaskRequest request) {
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder("""
-                FROM dataset_group dg
-                LEFT JOIN dataset_sync_task t ON t.dataset_group_id = dg.id
-                LEFT JOIN dataset_sync_task_log l ON l.id = (
+                FROM core_dataset dg
+                LEFT JOIN core_dataset_sync_task t ON t.dataset_group_id = dg.id
+                LEFT JOIN core_dataset_sync_task_log l ON l.id = (
                     %s
                 )
                 WHERE dg.node_type = 'dataset'
                   AND dg.%s = 1
                 """.formatted(dialect().limitOne("""
                     SELECT l2.id
-                    FROM dataset_sync_task_log l2
+                    FROM core_dataset_sync_task_log l2
                     WHERE l2.dataset_group_id = dg.id
                     ORDER BY l2.start_time DESC, l2.id DESC
                     """), modeColumn()));

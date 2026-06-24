@@ -253,7 +253,7 @@ docker exec crest-mysql-local mysql -uroot -p'<mysql-root-password>' \
 
 - `crest_schema_version` 包含最新迁移；
 - 只有一个默认管理员账号；
-- `workspace_recent_resource`、`export_task` 等运行残留为空；
+- `core_workspace_recent_resource`、`core_export_task` 等运行残留为空；
 - 启用 `CREST_LOAD_DEMO` 时，零售经营和研发效能演示资源存在；
 - `sso.` 配置项存在，默认不开启单点登录；
 - 启用 `CREST_LOAD_DEMO` 时，演示数据源连接信息不含本地环境地址；

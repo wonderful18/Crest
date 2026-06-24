@@ -134,7 +134,7 @@ export function watermark(settings, domId) {
       oTemp.appendChild(mask_div)
     }
   }
-  oTemp.setAttribute('id', domId + '-de-watermark-server')
+  oTemp.setAttribute('id', domId + '-crest-watermark-server')
   watermarkDom.appendChild(oTemp)
 }
 
@@ -191,7 +191,7 @@ export function activeWatermarkCheckUser(domId, canvasId, scale = 1) {
 
 // 移除指定容器中已经渲染的水印节点
 export function removeActiveWatermark(domId) {
-  const historyWatermarkDom = document.getElementById(domId + '-de-watermark-server')
+  const historyWatermarkDom = document.getElementById(domId + '-crest-watermark-server')
   if (historyWatermarkDom) {
     historyWatermarkDom.remove()
   }

@@ -1422,10 +1422,10 @@ public class ChartDataBuild {
         Map<String, Object> map = transTableNormal(fields, null, data, desensitizationList);
         List<Map<String, Object>> tableRow = (List<Map<String, Object>>) map.get("tableRow");
         final int xEndIndex = detailIndex;
-        Map<String, List<String[]>> groupDataList = detailData.stream().collect(Collectors.groupingBy(item -> "(" + StringUtils.join(ArrayUtils.subarray(item, 0, xEndIndex), ")-de-(") + ")"));
+        Map<String, List<String[]>> groupDataList = detailData.stream().collect(Collectors.groupingBy(item -> "(" + StringUtils.join(ArrayUtils.subarray(item, 0, xEndIndex), ")-crest-(") + ")"));
 
         tableRow.forEach(row -> {
-            String key = xAxis.stream().map(x -> String.format(format, row.get(x.getEngineFieldName()).toString())).collect(Collectors.joining("-de-"));
+            String key = xAxis.stream().map(x -> String.format(format, row.get(x.getEngineFieldName()).toString())).collect(Collectors.joining("-crest-"));
             List<String[]> detailFieldValueList = groupDataList.get(key);
             List<Map<String, Object>> detailValueMapList = detailFieldValueList.stream().map((detailArr -> {
                 Map<String, Object> temp = new HashMap<>();
@@ -2060,11 +2060,11 @@ public class ChartDataBuild {
         Map<String, Object> map = transTableNormal(fields, view, data, new HashMap<>());
         List<Map<String, Object>> tableRow = (List<Map<String, Object>>) map.get("tableRow");
         final int xEndIndex = detailIndex;
-        Map<String, List<String[]>> groupDataList = detailData.stream().collect(Collectors.groupingBy(item -> "(" + StringUtils.join(ArrayUtils.subarray(item, 0, xEndIndex), ")-de-(") + ")"));
+        Map<String, List<String[]>> groupDataList = detailData.stream().collect(Collectors.groupingBy(item -> "(" + StringUtils.join(ArrayUtils.subarray(item, 0, xEndIndex), ")-crest-(") + ")"));
         String extBubbleEngineFieldName = ObjectUtils.isNotEmpty(extBubble) ? extBubble.get(0).getEngineFieldName() : "";
         tableRow.forEach(row -> {
             BigDecimal rowValue = row.get(extBubbleEngineFieldName) == null ? BigDecimal.ZERO : new BigDecimal(row.get(extBubbleEngineFieldName).toString());
-            String key = xAxis.stream().map(x -> String.format(format, row.get(x.getEngineFieldName()).toString())).collect(Collectors.joining("-de-"));
+            String key = xAxis.stream().map(x -> String.format(format, row.get(x.getEngineFieldName()).toString())).collect(Collectors.joining("-crest-"));
             List<String[]> detailFieldValueList = groupDataList.get(key);
             List<Map<String, Object>> detailValueMapList = Optional.ofNullable(detailFieldValueList).orElse(new ArrayList<>()).stream().map((detailArr -> {
                 Map<String, Object> temp = new HashMap<>();

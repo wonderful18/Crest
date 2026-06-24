@@ -93,9 +93,9 @@ export function download2AppTemplate(downloadType, canvasDom, name, attachParams
               }
               const blob = new Blob([JSON.stringify(templateInfo)], { type: '' })
               if (downloadType === 'template') {
-                FileSaver.saveAs(blob, name + '-TEMPLATE.DET2')
+                FileSaver.saveAs(blob, name + '.crest')
               } else if (downloadType === 'app') {
-                FileSaver.saveAs(blob, templateName + '-APP.DET2APP')
+                FileSaver.saveAs(blob, templateName + '.crest')
               }
               if (callBack) {
                 callBack()
