@@ -2,15 +2,14 @@
 
 本文说明 Crest 的安全报告方式、公开仓库检查项和部署加固建议。
 
-发布前安全基线见 [SECURITY_BASELINE.md](./SECURITY_BASELINE.md)。
-
 ## Supported Versions
 
 当前维护版本：
 
 | Version | Status |
 | --- | --- |
-| `v1.5.x` | Supported |
+| `v2.0.x` | Supported |
+| `v1.5.x` | Maintenance |
 
 更早的本地构建和实验分支不作为公开安全维护对象。正式部署建议使用 GitHub Release，或使用 `ghcr.io/sevoniva/crest-service` 与 `ghcr.io/sevoniva/crest-web` 中带版本号的镜像。
 
@@ -58,7 +57,6 @@ rg -n "(BEGIN .*PRIVATE KEY|AKIA[0-9A-Z]{16}|secret_access_key|password\\s*[:=]|
 - `CREST_AES_KEY` 和 `CREST_AES_IV` 使用部署环境独立生成的值，升级已有环境时不要更换；
 - 需要 SM2/SM3/SM4 时设置 `CREST_CRYPTO_MODE=sm-suite`，并使用部署环境独立生成的 `CREST_SM4_KEY`；
 - 启用 `sm-suite` 后，SM2 私钥会使用配置的 SM4 Key 加密保存，SM4 密文包含随机 IV 和 HMAC-SM3 完整性校验；升级已有环境时不要更换 `CREST_SM4_KEY`；
-- 如开启 SQLBot 连接信息加密，显式配置 `CREST_SQLBOT_AES_KEY` 和 `CREST_SQLBOT_AES_IV`；
 - MySQL、业务数据源和 OceanBase 使用最小权限账号；
 - 不把 Crest 管理面直接暴露到未受控网络；
 - 限制 `/doc.html` 和 `/v3/api-docs` 的访问范围；
@@ -79,6 +77,8 @@ rg -n "(BEGIN .*PRIVATE KEY|AKIA[0-9A-Z]{16}|secret_access_key|password\\s*[:=]|
 - Docker 镜像来源清楚，架构匹配；
 - 最终镜像以非 root 用户运行；
 - Dockerfile 和 Kubernetes 清单未新增特权容器、宿主机敏感路径挂载或不必要的 Linux capability。
+
+正式发布还需要按 `docs/release-process.md` 和当前版本发布说明完成构建、SQL、离线包、镜像、部署清单和公开文档检查。
 
 ## Data Source Safety
 

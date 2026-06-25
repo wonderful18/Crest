@@ -1,6 +1,6 @@
 # Crest
 
-Crest 是面向私有化部署的 BI 平台，覆盖数据源接入、数据集建模、图表、仪表盘、数据大屏、分享、导出、系统管理和字段级数据血缘。当前工程版本为 `v2.0.0`。
+Crest 是面向私有化部署的 BI 平台，覆盖数据源接入、数据集建模、图表、仪表盘、数据大屏、分享、导出、系统管理和字段级数据血缘。当前工程版本为 `v2.0.2`。
 
 Crest 基于 DataEase 2.10.22 开源版本继续开发，并合入 2.10.23 相关安全加固和依赖升级。仓库保留上游版权和 GPLv3 许可声明；品牌、部署脚本、演示资源、OceanBase 支持、数据血缘和研发效能分析能力由 Crest 独立维护。
 
@@ -14,10 +14,8 @@ Crest 基于 DataEase 2.10.22 开源版本继续开发，并合入 2.10.23 相�
 | 图表与仪表盘 | 图表编辑、筛选、联动、跳转、分享和导出 |
 | 数据大屏 | 面向驾驶舱、展示墙和专题分析的可视化页面 |
 | 数据血缘 | 展示数据源、表、字段、数据集、图表和展示资源之间的依赖 |
-| 系统管理 | 用户、角色、权限、站点设置、单点登录、字体和系统参数 |
+| 系统管理 | 用户、角色、权限、站点设置、单点登录、字体、系统参数和关于系统 |
 | 可观测性 | 可选接入 Prometheus 和 Grafana |
-
-当前不交付模板市场、SQLBot、消息中心、独立移动端入口、地图运行时、外部插件市场、帮助中心和关于页。
 
 ## 部署架构
 
@@ -29,11 +27,12 @@ Browser
   -> Business datasources
 ```
 
-默认单机安装启动三个容器：
+默认单机安装启动四个容器：
 
 - `crest`：前端 Nginx 网关；
 - `crest-service`：后端服务；
-- `mysql-crest`：默认系统库。
+- `mysql-crest`：默认系统库；
+- `redis-crest`：生产模式下使用的缓存、任务队列、锁和 WebSocket 广播组件。
 
 OceanBase 系统库按企业外部数据库处理。生产环境应先由 DBA 创建租户、库或 schema、账号和权限，使用 `obclient --default-character-set=utf8mb4` 执行离线包中的 `init-sql/ob-mysql` 或 `init-sql/ob-oracle` 初始化 SQL，再启动 Crest。MySQL 默认行为不变，仍由应用在启动时执行 Flyway 初始化。
 
@@ -66,6 +65,8 @@ http://<server-ip>:8100
 username: admin
 ```
 
+登录后可在右上角用户菜单打开“关于系统”，核对前端版本、前端 Commit、后端版本和后端 Commit。
+
 常用运维命令：
 
 ```bash
@@ -84,8 +85,8 @@ crestctl version
 | 配置项 | 说明 |
 | --- | --- |
 | `CREST_PORT` | Web 访问端口，默认 `8100` |
-| `CREST_BACKEND_IMAGE` | 后端镜像，默认示例 `ghcr.io/sevoniva/crest-service:v2.0.0` |
-| `CREST_FRONTEND_IMAGE` | 前端镜像，默认示例 `ghcr.io/sevoniva/crest-web:v2.0.0` |
+| `CREST_BACKEND_IMAGE` | 后端镜像，默认示例 `ghcr.io/sevoniva/crest-service:v2.0.2` |
+| `CREST_FRONTEND_IMAGE` | 前端镜像，默认示例 `ghcr.io/sevoniva/crest-web:v2.0.2` |
 | `CREST_LOAD_DEMO` | 是否初始化内置演示资源，生产环境可设为 `false` |
 | `CREST_DB_TYPE` | 系统库类型：`mysql`、`ob-mysql`、`ob-oracle` |
 | `CREST_FLYWAY_ENABLED` | 留空自动判断：MySQL 默认 `true`，OceanBase 默认 `false` |
@@ -100,16 +101,16 @@ crestctl version
 
 ```bash
 cd installer
-bash make-offline-package.sh v2.0.0 linux-amd64
-bash make-offline-package.sh v2.0.0 linux-arm64
+bash make-offline-package.sh v2.0.2 linux-amd64
+bash make-offline-package.sh v2.0.2 linux-arm64
 ```
 
 应用镜像升级包：
 
 ```bash
 cd installer
-bash make-app-image-package.sh v2.0.0 linux-amd64
-bash make-app-image-package.sh v2.0.0 linux-arm64
+bash make-app-image-package.sh v2.0.2 linux-amd64
+bash make-app-image-package.sh v2.0.2 linux-arm64
 ```
 
 包内会包含：
@@ -117,7 +118,7 @@ bash make-app-image-package.sh v2.0.0 linux-arm64
 - 前端和后端镜像；
 - 完整安装脚本或镜像加载脚本；
 - `upgrade-sql/` 增量升级 SQL；
-- `init-sql/` 空库初始化 SQL；
+- `init-sql/` 和一次性空库初始化 SQL；
 - 部署说明。GitHub Release 附件会另行提供 checksum 文件。
 
 ## Kubernetes

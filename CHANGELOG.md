@@ -9,15 +9,18 @@ v2.0.2 是 Crest 2.0 的维护版本，重点补齐调度元数据命名统一�
 - 调度元数据表统一改为 `core_schedule_*` 命名，模板分类关系表和导出下载任务表补齐完整语义。
 - 数据集和数据源中的调度触发实例列统一改为 `scheduler_fire_instance_id`。
 - 关系图内部边类型改为更明确的关联关系命名，前后端保持一致。
+- 初始化 SQL 不再写入固定系统密钥，服务启动时为当前部署生成专属密钥。
+- 右上角用户菜单新增“关于系统”，展示前端版本、前端 Commit、后端版本和后端 Commit。
 
 ### 修复
 
 - 修复 Quartz JDBC JobStore 使用统一表名前缀时，框架固定大写后缀与 Crest 物理表名不一致的问题。
+- 修复早期初始化脚本可能留下固定系统密钥的问题，升级脚本会清理该默认值。
 - 修复部分部署文档、离线包说明和 Kubernetes 示例仍指向旧版本镜像的问题。
 
 ### 升级说明
 
-- 从 v2.0.1 升级到 v2.0.2 时，按系统库类型执行 `v2.0.1_to_v2.0.2_metadata_names_*` 脚本。
+- 从 v2.0.1 升级到 v2.0.2 时，按系统库类型依次执行 `v2.0.1_to_v2.0.2_metadata_names_*` 和 `v2.0.1_to_v2.0.2_rotate_default_crypto_key_*` 脚本。
 - MySQL、OceanBase MySQL 和 OceanBase Oracle 分别使用 `upgrade-sql/` 中对应数据库类型的 v2.0.2 脚本。
 - 全新安装不需要手工执行 `upgrade-sql/`。
 
