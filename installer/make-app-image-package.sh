@@ -182,7 +182,7 @@ docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_N
 外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 系统库。
 如安装时修改过 \`CREST_BASE\`，请把 \`/opt/crest/.env\` 换成实际运行目录中的 \`.env\`。
 
-继续按数据库类型执行 ${VERSION} 的增量 SQL。MySQL 系统库示例：
+继续按数据库类型执行 v2.0.0 和 ${VERSION} 的增量 SQL。MySQL 系统库示例：
 
 \`\`\`bash
 for sql in \\
