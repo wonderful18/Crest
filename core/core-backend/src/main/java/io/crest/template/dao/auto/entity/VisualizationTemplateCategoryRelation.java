@@ -6,8 +6,8 @@ import java.io.Serializable;
 /**
  * 可视化模板与分类关系实体。
  */
-@TableName("core_template_category_rel")
-public class VisualizationTemplateCategoryMap implements Serializable {
+@TableName("core_template_category_relation")
+public class VisualizationTemplateCategoryRelation implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -17,12 +17,12 @@ public class VisualizationTemplateCategoryMap implements Serializable {
     private String id;
 
     /**
-     * 名称
+     * 模板分类编号
      */
     private String categoryId;
 
     /**
-     * 父级id
+     * 可视化模板编号
      */
     private String templateId;
 
@@ -73,7 +73,7 @@ public class VisualizationTemplateCategoryMap implements Serializable {
      */
     @Override
     public String toString() {
-        return "VisualizationTemplateCategoryMap{" +
+        return "VisualizationTemplateCategoryRelation{" +
         "id = " + id +
         ", categoryId = " + categoryId +
         ", templateId = " + templateId +

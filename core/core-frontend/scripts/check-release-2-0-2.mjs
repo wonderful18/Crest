@@ -62,7 +62,13 @@ const forbiddenRuntimePatterns = [
   /de-chart-active/,
   /de-map-rendering/,
   /de-map-rendered/,
-  /de-dialog-form/
+  /de-dialog-form/,
+  /QRTZ_/,
+  /Qrtz/,
+  /qrtz_/,
+  /core_template_category_rel\b/,
+  /core_export_download\b/,
+  /dataset_table_join(?!_relation)/
 ]
 
 const versionPomFiles = [
@@ -130,20 +136,20 @@ test('runtime source paths no longer contain legacy external names or markers', 
   assert.deepEqual(failures, [])
 })
 
-test('project version is 2.0.1 across release metadata', () => {
-  assert.equal(read('VERSION').trim(), '2.0.1')
-  assert.match(read('core/core-frontend/package.json'), /"version": "2\.0\.1"/)
+test('project version is 2.0.2 across release metadata', () => {
+  assert.equal(read('VERSION').trim(), '2.0.2')
+  assert.match(read('core/core-frontend/package.json'), /"version": "2\.0\.2"/)
 
   for (const file of versionPomFiles) {
     const source = read(file)
     assert.doesNotMatch(source, /<version>2\.0\.0<\/version>/, file)
   }
 
-  assert.match(read('pom.xml'), /<version>2\.0\.1<\/version>/)
-  assert.match(read('pom.xml'), /<crest\.version>2\.0\.1<\/crest\.version>/)
+  assert.match(read('pom.xml'), /<version>2\.0\.2<\/version>/)
+  assert.match(read('pom.xml'), /<crest\.version>2\.0\.2<\/crest\.version>/)
 })
 
-test('v2.0.1 migration scripts are present for every supported system database', () => {
+test('v2.0.1 and v2.0.2 migration scripts are present for every supported system database', () => {
   for (const dbType of dbTypes) {
     const migrationBase = `core/core-backend/src/main/resources/db/${dbType.migrationDir}`
     assert.ok(existsSync(path.join(root, migrationBase, 'V2.0.1.1__rename_metadata_tables.sql')))
@@ -167,7 +173,73 @@ test('v2.0.1 migration scripts are present for every supported system database',
         )
       )
     )
+    assert.ok(
+      existsSync(
+        path.join(root, migrationBase, 'V2.0.2.1__normalize_scheduler_metadata_names.sql')
+      )
+    )
+    assert.ok(
+      existsSync(
+        path.join(
+          root,
+          `installer/upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_${dbType.suffix}.sql`
+        )
+      )
+    )
   }
+})
+
+test('scheduler metadata migrations cover the remaining mixed table names', () => {
+  const mysqlMigration = read(
+    'core/core-backend/src/main/resources/db/migration/V2.0.2.1__normalize_scheduler_metadata_names.sql'
+  )
+  const obMysqlMigration = read(
+    'core/core-backend/src/main/resources/db/migration-ob-mysql/V2.0.2.1__normalize_scheduler_metadata_names.sql'
+  )
+  const obOracleMigration = read(
+    'core/core-backend/src/main/resources/db/migration-ob-oracle/V2.0.2.1__normalize_scheduler_metadata_names.sql'
+  )
+
+  assert.equal(mysqlMigration, obMysqlMigration)
+  assert.equal(
+    mysqlMigration,
+    read('installer/upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_mysql.sql')
+  )
+  assert.equal(
+    obMysqlMigration,
+    read('installer/upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_mysql.sql')
+  )
+  assert.equal(
+    obOracleMigration,
+    read('installer/upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_oracle.sql')
+  )
+
+  for (const source of [mysqlMigration, obOracleMigration]) {
+    for (const tableName of [
+      'core_schedule_job_details',
+      'core_schedule_triggers',
+      'core_schedule_cron_triggers',
+      'core_schedule_simple_triggers',
+      'core_schedule_blob_triggers',
+      'core_schedule_simprop_triggers',
+      'core_schedule_fired_triggers',
+      'core_schedule_calendars',
+      'core_schedule_paused_trigger_groups',
+      'core_schedule_locks',
+      'core_schedule_scheduler_state',
+      'core_template_category_relation',
+      'core_export_download_task'
+    ]) {
+      assert.match(source, new RegExp(tableName))
+    }
+    assert.match(source, /scheduler_fire_instance_id/)
+  }
+
+  assert.match(read('core/core-backend/src/main/resources/application.yml'), /tablePrefix: core_schedule_/)
+  assert.match(
+    read('core/core-backend/src/main/java/io/crest/config/QuartzScheduleTableNameDataSource.java'),
+    /core_schedule_JOB_DETAILS/
+  )
 })
 
 test('runtime identifier migrations cover saved parameter and tree configuration', () => {
@@ -228,8 +300,9 @@ test('runtime identifier migrations cover saved parameter and tree configuration
   assert.match(obOracleRuntime, /DBMS_LOB\.INSTR/)
 })
 
-test('installer and release notes list v2.0.1 scripts in execution order', () => {
-  const releaseNotes = read('docs/release/v2.0.1.md')
+test('installer and release notes list release scripts in execution order', () => {
+  const releaseNotes201 = read('docs/release/v2.0.1.md')
+  const releaseNotes202 = read('docs/release/v2.0.2.md')
   const upgradeReadme = read('installer/upgrade-sql/README.md')
   const installerReadme = read('installer/README.md')
   const offlinePackage = read('installer/make-offline-package.sh')
@@ -240,7 +313,7 @@ test('installer and release notes list v2.0.1 scripts in execution order', () =>
     const runtimeScript = `v2.0.0_to_v2.0.1_runtime_identifiers_${dbType.suffix}.sql`
 
     for (const source of [
-      releaseNotes,
+      releaseNotes201,
       upgradeReadme,
       installerReadme,
       offlinePackage,
@@ -250,6 +323,16 @@ test('installer and release notes list v2.0.1 scripts in execution order', () =>
       const runtimeIndex = source.indexOf(runtimeScript)
       assert.ok(metadataIndex >= 0, metadataScript)
       assert.ok(runtimeIndex > metadataIndex, runtimeScript)
+    }
+
+    const schedulerScript = `v2.0.1_to_v2.0.2_metadata_names_${dbType.suffix}.sql`
+    for (const source of [releaseNotes202, upgradeReadme, installerReadme, offlinePackage, appImagePackage]) {
+      const runtimeIndex = source.indexOf(runtimeScript)
+      const schedulerIndex = source.indexOf(schedulerScript)
+      assert.ok(schedulerIndex >= 0, schedulerScript)
+      if (runtimeIndex >= 0) {
+        assert.ok(schedulerIndex > runtimeIndex, schedulerScript)
+      }
     }
   }
 })

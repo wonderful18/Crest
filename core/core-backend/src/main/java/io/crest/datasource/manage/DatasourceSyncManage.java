@@ -169,7 +169,7 @@ public class DatasourceSyncManage {
                 UpdateWrapper<CoreDatasource> updateWrapper = new UpdateWrapper<>();
                 updateWrapper.eq("id", datasourceId);
                 CoreDatasource record = new CoreDatasource();
-                record.setQrtzInstance(fireInstanceId);
+                record.setSchedulerFireInstanceId(fireInstanceId);
                 datasourceMapper.update(record, updateWrapper);
             }
             if (coreDatasource.getType().equalsIgnoreCase("ExcelRemote")) {

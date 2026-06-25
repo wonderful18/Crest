@@ -117,7 +117,7 @@ const dashedEdgeTypes = new Set([
 
 // 需要高亮展示的关键关系类型
 const highlightedEdgeTypes = new Set([
-  'dataset_table_join',
+  'dataset_table_join_relation',
   'table_field_join',
   'dataset_field_calc_field'
 ])
@@ -651,7 +651,7 @@ const formatLinks = () => {
         curveness:
           props.layoutMode === 'knowledge'
             ? 0.12
-            : edge.type === 'dataset_table_join'
+            : edge.type === 'dataset_table_join_relation'
             ? 0.08
             : 0.18,
         opacity: selectedContext ? (isHighlighted ? 0.95 : isLargeGraph.value ? 0.64 : 0.86) : 0.2

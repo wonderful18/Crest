@@ -48,7 +48,7 @@ spec:
               app.kubernetes.io/component: api
       initContainers:
         - name: wait-for-database
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -91,7 +91,7 @@ spec:
               drop:
                 - ALL
         - name: wait-for-redis
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -150,7 +150,7 @@ spec:
               drop:
                 - ALL
         - name: prepare-data-volume
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -177,7 +177,7 @@ spec:
             - name: crest-data
               mountPath: /work/data
         - name: seed-static-resource
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -197,7 +197,7 @@ spec:
               subPath: static-resource
       containers:
         - name: crest-service
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -383,7 +383,7 @@ spec:
               app.kubernetes.io/component: scheduler
       initContainers:
         - name: wait-for-database
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -426,7 +426,7 @@ spec:
               drop:
                 - ALL
         - name: wait-for-redis
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -485,7 +485,7 @@ spec:
               drop:
                 - ALL
         - name: prepare-data-volume
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -513,7 +513,7 @@ spec:
               mountPath: /work/data
       containers:
         - name: crest-service
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -699,7 +699,7 @@ spec:
               app.kubernetes.io/component: worker
       initContainers:
         - name: wait-for-database
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -742,7 +742,7 @@ spec:
               drop:
                 - ALL
         - name: wait-for-redis
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -801,7 +801,7 @@ spec:
               drop:
                 - ALL
         - name: prepare-data-volume
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -829,7 +829,7 @@ spec:
               mountPath: /work/data
       containers:
         - name: crest-service
-          image: ghcr.io/sevoniva/crest-service:v2.0.1
+          image: ghcr.io/sevoniva/crest-service:v2.0.2
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -95,7 +95,7 @@
 | `dataset_field_chart_field` | 图表字段引用数据集字段 |
 | `chart_field_chart` | 图表字段属于图表 |
 | `chart_dv` | 图表归属仪表盘或数据大屏 |
-| `dataset_table_join` | 数据集里的表关联 |
+| `dataset_table_join_relation` | 数据集里的表关联 |
 | `table_field_join` | 数据集关联键对应的字段关系 |
 
 字段级查询就是沿这些关系向上、向下收集节点。

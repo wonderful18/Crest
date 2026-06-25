@@ -35,4 +35,10 @@ OceanBase MySQL 租户执行文件名带 `ob_mysql` 的脚本。OceanBase Oracle
 - OceanBase MySQL 模式：`v2.0.0_to_v2.0.1_metadata_tables_ob_mysql.sql`、`v2.0.0_to_v2.0.1_runtime_identifiers_ob_mysql.sql`
 - OceanBase Oracle 模式：`v2.0.0_to_v2.0.1_metadata_tables_ob_oracle.sql`、`v2.0.0_to_v2.0.1_runtime_identifiers_ob_oracle.sql`
 
-元数据改名脚本只处理 Crest 自有表，Quartz `QRTZ_*` 表保持不变。运行配置标识脚本处理已保存的图表、可视化、模板和外部参数配置。执行前必须备份系统库；如果同一张元数据表的新旧表名同时存在，脚本会中断，需先人工确认数据后再继续。
+2.0.1 元数据改名脚本处理 Crest 自有业务表；运行配置标识脚本处理已保存的图表、可视化、模板和外部参数配置。2.0.2 继续统一调度元数据表、模板分类关系表、导出下载任务表和调度实例列名。执行前必须备份系统库；如果同一张元数据表的新旧名称同时存在，脚本会中断，需先人工确认数据后再继续。
+
+2.0.1 升级到 2.0.2 时，按数据库类型选择对应脚本：
+
+- MySQL：`v2.0.1_to_v2.0.2_metadata_names_mysql.sql`
+- OceanBase MySQL 模式：`v2.0.1_to_v2.0.2_metadata_names_ob_mysql.sql`
+- OceanBase Oracle 模式：`v2.0.1_to_v2.0.2_metadata_names_ob_oracle.sql`

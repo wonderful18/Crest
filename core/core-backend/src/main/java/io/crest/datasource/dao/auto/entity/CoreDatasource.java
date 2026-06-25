@@ -1,6 +1,7 @@
 package io.crest.datasource.dao.auto.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
@@ -80,7 +81,8 @@ public class CoreDatasource implements Serializable {
     /**
      * 调度实例编号
      */
-    private String qrtzInstance;
+    @TableField("scheduler_fire_instance_id")
+    private String schedulerFireInstanceId;
 
     /**
      * 同步任务状态
@@ -263,15 +265,15 @@ public class CoreDatasource implements Serializable {
     /**
      * 获取调度实例编号
      */
-    public String getQrtzInstance() {
-        return qrtzInstance;
+    public String getSchedulerFireInstanceId() {
+        return schedulerFireInstanceId;
     }
 
     /**
      * 设置调度实例编号
      */
-    public void setQrtzInstance(String qrtzInstance) {
-        this.qrtzInstance = qrtzInstance;
+    public void setSchedulerFireInstanceId(String schedulerFireInstanceId) {
+        this.schedulerFireInstanceId = schedulerFireInstanceId;
     }
 
     /**
@@ -320,7 +322,7 @@ public class CoreDatasource implements Serializable {
         ", updateBy = " + updateBy +
         ", createBy = " + createBy +
         ", status = " + status +
-        ", qrtzInstance = " + qrtzInstance +
+        ", schedulerFireInstanceId = " + schedulerFireInstanceId +
         ", taskStatus = " + taskStatus +
         ", enableDataFill = " + enableDataFill +
         "}";

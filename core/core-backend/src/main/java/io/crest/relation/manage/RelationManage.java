@@ -753,7 +753,7 @@ public class RelationManage implements RelationApi {
             if (parent != null && current != null) {
                 addPhysicalTableNode(builder, parent);
                 addPhysicalTableNode(builder, current);
-                builder.addEdge(tableNodeId(parent), tableNodeId(current), "dataset_table_join", joinLabel(unionToParent));
+                builder.addEdge(tableNodeId(parent), tableNodeId(current), "dataset_table_join_relation", joinLabel(unionToParent));
                 if (includeFields) {
                     addJoinFieldLineage(builder, context, parent, current, unionToParent);
                 }

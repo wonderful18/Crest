@@ -28,6 +28,6 @@
 | [开发说明](./development.md) | 仓库结构、工具链、构建命令、迁移规则和提交检查 |
 | [发布管理](./release-process.md) | 分支、补丁、SQL、发布包和 release 检查 |
 | [前端工程](../core/core-frontend/README.md) | 前端构建、视觉约定、品牌资源和页面规则 |
-| [发布说明](./release/v2.0.1.md) | 当前稳定版本发布说明 |
+| [发布说明](./release/v2.0.2.md) | 当前稳定版本发布说明 |
 
 历史版本发布说明保留在 [release](./release) 目录。过程类审查报告、临时计划和本地环境记录不放入公开文档。

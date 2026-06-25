@@ -786,7 +786,7 @@ public class DatasetSyncManage {
         record.setSyncStatus(status.name());
         record.setLastUpdateTime(System.currentTimeMillis());
         if (context != null) {
-            record.setQrtzInstance(context.getFireInstanceId());
+            record.setSchedulerFireInstanceId(context.getFireInstanceId());
         }
         UpdateWrapper<CoreDatasetGroup> wrapper = new UpdateWrapper<>();
         wrapper.eq("id", datasetGroupId);

@@ -218,7 +218,7 @@
               cdg.`info`,
               cdg.`create_by`,
               cdg.`create_time`,
-              cdg.`qrtz_instance`,
+              cdg.`scheduler_fire_instance_id`,
               cdg.`sync_status`,
               cdg.`update_by`,
               cdg.`last_update_time`,

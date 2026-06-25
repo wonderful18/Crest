@@ -13,9 +13,9 @@ patches:
 
 images:
   - name: ghcr.io/sevoniva/crest-service
-    newTag: v2.0.1
+    newTag: v2.0.2
   - name: ghcr.io/sevoniva/crest-web
-    newTag: v2.0.1
+    newTag: v2.0.2
 
 configMapGenerator:
   - name: crest-env

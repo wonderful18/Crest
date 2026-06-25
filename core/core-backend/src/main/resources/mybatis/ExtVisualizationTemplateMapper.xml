@@ -57,7 +57,7 @@
                vtcm.category_id,
                cor.time as `recent_use_time`
         FROM core_template vt
-                 LEFT JOIN core_template_category_rel vtcm ON vt.id = vtcm.template_id
+                 LEFT JOIN core_template_category_relation vtcm ON vt.id = vtcm.template_id
                  left JOIN core_workspace_recent_resource cor on cor.resource_type = 6 and vt.id = cor.resource_name
         ORDER BY vt.use_count ,vt.create_time DESC
     </select>
@@ -86,20 +86,20 @@
         </if>
         FROM
         core_template vt
-        LEFT JOIN core_template_category_rel vtcm on vt.id = vtcm.template_id
+        LEFT JOIN core_template_category_relation vtcm on vt.id = vtcm.template_id
         where vtcm.category_id=#{categoryId}
         order by vt.create_time desc
     </select>
 
-    <select id="checkCategoryMap" resultType="Long">
+    <select id="checkCategoryRelation" resultType="Long">
         SELECT count(1)
-        FROM core_template_category_rel cm
+        FROM core_template_category_relation cm
         WHERE cm.category_id = #{categoryId}
     </select>
 
     <select id="checkRepeatTemplateId" resultType="Long">
         SELECT count(1)
-        FROM core_template_category_rel cm
+        FROM core_template_category_relation cm
         where cm.category_id != #{categoryId}
           and cm.template_id =#{templateId}
     </select>
@@ -109,7 +109,7 @@
         count(1)
         FROM
         core_template vt
-        LEFT JOIN core_template_category_rel vtcm ON vt.id = vtcm.template_id
+        LEFT JOIN core_template_category_relation vtcm ON vt.id = vtcm.template_id
         WHERE
         vt.NAME = #{templateName}
         AND vtcm.category_id IN
@@ -123,7 +123,7 @@
         count(1)
         FROM
         core_template vt
-        LEFT JOIN core_template_category_rel vtcm ON vt.id = vtcm.template_id
+        LEFT JOIN core_template_category_relation vtcm ON vt.id = vtcm.template_id
         WHERE
         vt.NAME in
         <foreach collection="templateNames" item="templateName" index="index" open="(" close=")" separator=",">
@@ -139,8 +139,8 @@
         </foreach>
     </select>
 
-    <delete id="deleteCategoryMapByTemplate">
-        delete from core_template_category_rel tcm
+    <delete id="deleteCategoryRelationByTemplate">
+        delete from core_template_category_relation tcm
         <where>
             <if test="templateName">
                 tcm.template_id in (
@@ -155,7 +155,7 @@
 
     <select id="findTemplateCategories" resultType="String">
         select category_id
-        from core_template_category_rel
+        from core_template_category_relation
         where template_id = #{templateId}
     </select>
 
@@ -169,7 +169,7 @@
                 vtcm.template_id,
                 vtcm.category_id
                 FROM
-                core_template_category_rel vtcm
+                core_template_category_relation vtcm
                 WHERE
                 vtcm.template_id in
                 <foreach collection="templateArray" item="templateId" index="index" open="(" close=")" separator=",">
@@ -183,7 +183,7 @@
         SELECT DISTINCT
         GROUP_CONCAT( DISTINCT vtcm.category_id ORDER BY vtcm.category_id ) AS selected_subjects
         FROM
-        core_template_category_rel vtcm
+        core_template_category_relation vtcm
         WHERE
         vtcm.template_id in
         <foreach collection="templateArray" item="templateId" index="index" open="(" close=")" separator=",">
