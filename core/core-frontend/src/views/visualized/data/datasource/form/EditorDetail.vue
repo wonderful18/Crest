@@ -241,7 +241,7 @@ const validateSshHost = (_: any, value: any, callback: any) => {
 // SSH 端口校验，仅在启用 SSH 隧道时要求填写
 const validateSshPort = (_: any, value: any, callback: any) => {
   if ((value === undefined || value === null || value === '') && form.value.configuration.useSSH) {
-    callback(new Error(t('data_source.cannot_be_empty_de')))
+    callback(new Error(t('data_source.ssh_port_required')))
   }
   return callback()
 }
@@ -249,7 +249,7 @@ const validateSshPort = (_: any, value: any, callback: any) => {
 // SSH 用户名校验，仅在启用 SSH 隧道时要求填写
 const validateSshUserName = (_: any, value: any, callback: any) => {
   if ((value === undefined || value === null || value === '') && form.value.configuration.useSSH) {
-    callback(new Error(t('data_source.cannot_be_empty_de_name')))
+    callback(new Error(t('data_source.ssh_username_required')))
   }
   return callback()
 }
@@ -261,7 +261,7 @@ const validateSshPassword = (_: any, value: any, callback: any) => {
     form.value.configuration.useSSH &&
     form.value.configuration.sshType === 'password'
   ) {
-    callback(new Error(t('data_source.cannot_be_empty_de_pwd')))
+    callback(new Error(t('data_source.ssh_password_required')))
   }
   return callback()
 }
@@ -273,7 +273,7 @@ const validateSshkey = (_: any, value: any, callback: any) => {
     form.value.configuration.useSSH &&
     form.value.configuration.sshType === 'sshkey'
   ) {
-    callback(new Error(t('data_source.cannot_be_empty_de_key')))
+    callback(new Error(t('data_source.ssh_key_required')))
   }
   return callback()
 }
@@ -779,7 +779,7 @@ const apiObjRules = {
     {
       min: 2,
       max: 64,
-      message: t('data_source.to_64_characters_de'),
+      message: t('data_source.interface_name_length_limit'),
       trigger: 'blur'
     }
   ]

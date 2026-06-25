@@ -112,7 +112,7 @@ export default {
     parameter_is_supported: 'Only one calculation parameter can be added. ',
     enter_a_number: 'Please enter a number',
     parameter_name: 'Parameter name',
-    parameter_default_value_de: 'Parameter default value',
+    parameter_default_value_label: 'Parameter default value',
     confirm_the_deletion:
       'Not checked, the associated calculated fields will be deleted, confirm the deletion? ',
     confirm_to_delete: 'Are you sure you want to delete {a}?',
@@ -152,7 +152,7 @@ export default {
     reason_for_failure: 'Reason for failure',
     closure: 'Close',
     cannot_be_empty: 'SQL name cannot be empty',
-    cannot_be_empty_de: 'SQL cannot be empty',
+    sql_content_required: 'SQL cannot be empty',
     sure_to_exit: 'The information you filled in is not saved, are you sure to exit? ',
     copied_successfully: 'Copied successfully',
     not_support_copying: 'Your browser does not support copying:',
@@ -180,7 +180,7 @@ export default {
     a_data_set: 'Drag here to create a Dataset',
     rename_table: 'Rename table',
     table_name: 'Table name',
-    table_name_de: 'Table name',
+    table_name_label: 'Table name',
     table_remarks: 'Table remarks',
     customize: 'Customize',
     change_field_type: 'Change field type',
@@ -197,9 +197,9 @@ export default {
     custom_sql: 'Custom SQL',
     want_to_exit: 'Current changes have not been saved, are you sure you want to exit?',
     saved_successfully: 'Save successfully',
-    cannot_be_empty_de_: 'Expression cannot be empty!',
+    expression_required: 'Expression cannot be empty!',
     copy_a_dataset: 'Copy dataset',
-    cannot_be_empty_de_field: 'Related field cannot be empty!',
+    related_field_required: 'Related field cannot be empty!',
     dataset_cannot_be: 'Dataset cannot be empty',
     save_and_return: 'Save and return',
     select_data_source: 'Select Datasource',
@@ -214,7 +214,7 @@ export default {
     format_edit: 'Format edit',
     custom_time_format: 'Custom time format',
     cannot_be_empty_: 'Filter field cannot be empty',
-    cannot_be_empty_de_ruler: 'Rule condition cannot be empty'
+    rule_condition_required: 'Rule condition cannot be empty'
   },
   data_source: {
     successfully_created: 'Created successfully',
@@ -253,7 +253,7 @@ export default {
     failure_details: 'Failure details',
     the_request_address: 'Please enter the request address',
     name_already_exists: 'Parameter with the same name already exists:',
-    name_already_exists_de: 'Parameter table with the same name already exists',
+    parameter_table_name_exists: 'Parameter table with the same name already exists',
     interface_parameters: 'Interface parameters',
     extract_parameters: 'Extract parameters',
     view_data_structure: 'View data structure',
@@ -267,18 +267,18 @@ export default {
     name_use_parameters: "You can use ${'{'}parameter name{'}'}, use parameters",
     add_parameters: 'Add parameters',
     data_source_name: 'Datasource name',
-    data_source_name_de: 'Please enter the Datasource name',
+    data_source_name_placeholder: 'Please enter the Datasource name',
     a_folder_name: 'Please enter the folder name',
     data_source: 'Datasource',
     the_destination_folder: 'Please select the destination folder',
     relevant_content_found: 'No relevant content found',
     cannot_be_empty: 'SSH host cannot be empty',
-    cannot_be_empty_de: 'SSH port cannot be empty',
-    cannot_be_empty_de_name: 'SSH username cannot be empty',
-    cannot_be_empty_de_pwd: 'SSH password cannot be empty',
-    cannot_be_empty_de_key: 'SSH key cannot be empty',
+    ssh_port_required: 'SSH port cannot be empty',
+    ssh_username_required: 'SSH username cannot be empty',
+    ssh_password_required: 'SSH password cannot be empty',
+    ssh_key_required: 'SSH key cannot be empty',
     to_64_characters: 'Parameter name limit 2 to 64 characters',
-    to_64_characters_de: 'Interface name limit 2 to 64 characters',
+    interface_name_length_limit: 'Interface name limit 2 to 64 characters',
     sure_to_delete: 'Are you sure you want to delete?',
     delete: 'Delete',
     source_configuration_information: 'Datasource configuration information',
@@ -418,7 +418,7 @@ export default {
     login_settings: 'Login settings',
     and_0_seconds: '0 minutes and 0 seconds',
     time_0_seconds: 'Minutes (execution time: 0 seconds)',
-    and_0_seconds_de: 'Hours (execution time: 0 minutes and 0 seconds)',
+    hour_execution_default: 'Hours (execution time: 0 minutes and 0 seconds)',
     fonts_before_deleting: 'Please set other fonts as default fonts before deleting. ',
     sure_to_delete:
       'After the current font is deleted, the components using this font will use the default font. Are you sure to delete it?',
@@ -437,9 +437,9 @@ export default {
     the_font_name: 'Please enter the font name',
     in_ttf_format: 'Only supports uploading font files in ttf format!',
     character_length_1_50: 'Character length 1-50',
-    upload_font_file_de: 'Please upload font file',
+    upload_font_file_required: 'Please upload font file',
     font_name: 'Font name',
-    font_file_de: 'Font file',
+    font_file_label: 'Font file',
     be_the_same: 'Old and new passwords cannot be the same',
     twice_are_inconsistent: 'The passwords entered twice are inconsistent',
     log_in_again: 'Change successfully, please log in again',
@@ -506,10 +506,10 @@ export default {
     user_login: 'User login',
     in_user_name: 'Please fill in the user name',
     fill_in_password: 'Please fill in the password',
-    supports_custom_settings_de:
+    mobile_supports_custom_settings:
       'Default is {msg} Mobile login interface, supports custom settings',
     login_logo: 'Login Logo',
-    not_exceeding_200kb_de:
+    login_logo_size_limit:
       'Login page right side logo, recommended size 120*30, support JPG, PNG, SVG, size not exceeding 200KB',
     login_background_image: 'Login background image',
     not_exceeding_5m:
@@ -524,11 +524,11 @@ export default {
     display_the_document: 'Please select whether to display the document',
     display_the_about: 'Please select whether to display the about',
     website_logo: 'Website Logo',
-    not_exceeding_200kb_de_:
+    website_logo_size_limit:
       'The Logo displayed on the top website, recommended size 48 x 48, support JPG, PNG, SVG, size not exceeding 200KB',
-    not_exceeding_200kb_de_right:
+    login_page_logo_size_limit:
       'Logo on the right side of the login page, recommended size 204 x 52, support JPG, PNG, SVG, size not exceeding 200KB',
-    not_exceeding_5m_de:
+    large_login_background_size_limit:
       'Background image on the left, recommended size 640 x 900 for vector graphics, 1280 x 1800 for bitmap graphics; support JPG, PNG, SVG, size not exceeding 5M',
     tab: 'Tab',
     incorrect_please_re_enter: 'The callback domain name format is incorrect, please re-enter',
@@ -549,7 +549,7 @@ export default {
     such_as_uid:
       "Filter [Possible options are cn or uid or sAMAccountName={'{'}0{'}'}, such as: (uid={'{'}0{'}'})]",
     ldap_attribute_mapping: 'LDAP attribute mapping',
-    incorrect_please_re_enter_de: 'URL format error, please re-enter',
+    url_format_error: 'URL format error, please re-enter',
     oauth2_settings: 'OAuth2 settings',
     authorization_end_address: 'Authorization end address',
     token_end_address: 'Token end address',
@@ -600,7 +600,7 @@ export default {
     update_the_plugin: 'Are you sure you want to update this plugin?',
     to_take_effect_update: 'Update and restart the server to take effect',
     uninstall_the_plugin: 'Are you sure you want to uninstall this plugin?',
-    to_take_effect_de: 'Uninstall and restart the server to take effect',
+    plugin_uninstall_restart_notice: 'Uninstall and restart the server to take effect',
     uninstall_successful: 'Uninstall successful',
     update_successful: 'Update successful',
     installation_successful: 'Installation successful',
@@ -701,7 +701,7 @@ export default {
     international_feishu: 'International Feishu',
     user_management: 'User management',
     cannot_be_modified: 'Administrator status cannot be modified',
-    cannot_be_modified_de: 'Current user status cannot be modified',
+    current_user_status_locked: 'Current user status cannot be modified',
     has_been_disabled: 'User has been disabled',
     selected_user: 'Selected: {msg} users',
     cannot_be_empty: 'Variable cannot be empty! ',
@@ -724,7 +724,7 @@ export default {
     return_to_view: 'Return to view',
     continue_importing: 'Continue importing',
     data_import_failed: 'Some data import failed',
-    data_import_failed_de: 'Data import failed'
+    data_import_failed_message: 'Data import failed'
   },
   userimport: {
     buttonText: 'Batch import',
@@ -2675,7 +2675,7 @@ export default {
     numerical_parameter_configuration:
       'The numerical parameter configuration must configure the maximum and minimum values',
     format_is_inconsistent: 'The time format is inconsistent',
-    cannot_be_empty_de: 'The query condition is required and the default value cannot be empty',
+    required_default_value_empty: 'The query condition is required and the default value cannot be empty',
     the_start_time: 'The end time must be greater than the start time!',
     and_end_time: 'The time parameter configuration must configure the start time and end time',
     cannot_be_empty_time: 'The default time cannot be empty!',

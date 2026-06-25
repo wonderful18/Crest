@@ -64,7 +64,7 @@ const errorDetected = ({
   }
   if (filterType === 'logic') {
     if (!term) {
-      errorMessage.value = t('data_set.cannot_be_empty_de_ruler')
+      errorMessage.value = t('data_set.rule_condition_required')
       return
     }
     if (

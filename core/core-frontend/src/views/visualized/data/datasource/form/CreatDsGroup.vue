@@ -209,7 +209,7 @@ const createInit = (type, data: Tree, exec, name: string) => {
   nodeType.value = type
   filterText.value = ''
   placeholder.value =
-    type === 'folder' ? t('data_source.a_folder_name') : t('data_source.data_source_name_de')
+    type === 'folder' ? t('data_source.a_folder_name') : t('data_source.data_source_name_placeholder')
   dsType = data.type
   if (type === 'datasource') {
     request = data.request

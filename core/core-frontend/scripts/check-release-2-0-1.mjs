@@ -54,6 +54,8 @@ const forbiddenRuntimePatterns = [
   /\bDE\b/,
   /\bDE_(CAST_DATE_FORMAT|UNIX_TIMESTAMP|STR_TO_DATE|FROM_UNIXTIME|DATE_FORMAT)\b/,
   /-de-/,
+  /\b[A-Za-z0-9_]*_de(?:\b|_[A-Za-z0-9_]+)/,
+  /_de_/,
   /(^|[^A-Za-z0-9_])de-[A-Za-z0-9_-]+/,
   /de-preview-content/,
   /de-canvas-canvas-main/,

@@ -312,7 +312,7 @@ initFunction()
               </el-icon>
             </template>
           </el-input>
-          <div class="quota-btn_de">
+          <div class="quota-btn">
             <span>{{ t('chart.quota') }}</span>
           </div>
           <div class="field-height">
@@ -529,7 +529,7 @@ initFunction()
   }
 }
 
-.quota-btn_de {
+.quota-btn {
   display: flex;
   align-items: center;
   justify-content: space-between;

@@ -448,7 +448,7 @@ const stepNext = () => {
         paramsList[i].name === apiItem.name &&
         apiItem.serialNumber !== paramsList[i].serialNumber
       ) {
-        ElMessage.error(t('data_source.name_already_exists_de'))
+        ElMessage.error(t('data_source.parameter_table_name_exists'))
         return
       }
     }

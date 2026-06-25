@@ -444,7 +444,7 @@ const save = () => {
   sql = setNameIdTrans('name', 'id', codeCom.value.state.doc.toString())
   sqlNode.value.changeFlag = true
   if (!sql.trim()) {
-    ElMessage.error(t('data_set.cannot_be_empty_de'))
+    ElMessage.error(t('data_set.sql_content_required'))
     return
   }
   sqlNode.value.sql = Base64.encode(sql)

@@ -524,7 +524,7 @@ initFunction()
               <div v-else class="class-na">{{ t('dataset.na') }}</div>
             </el-scrollbar>
           </div>
-          <div class="quota-btn_de">
+          <div class="quota-btn">
             <span>{{ t('chart.quota') }}</span>
             <el-tooltip
               effect="dark"
@@ -670,7 +670,7 @@ initFunction()
             :placeholder="t('data_set.enter_1_50_characters')"
           />
         </el-form-item>
-        <el-form-item :label="t('data_set.parameter_default_value_de')" prop="value">
+        <el-form-item :label="t('data_set.parameter_default_value_label')" prop="value">
           <el-input-number
             style="width: 100%"
             v-model="formQuota.value"
@@ -825,7 +825,7 @@ initFunction()
   }
 }
 
-.quota-btn_de {
+.quota-btn {
   display: flex;
   align-items: center;
   justify-content: space-between;

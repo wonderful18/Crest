@@ -834,7 +834,7 @@ defineExpose({
           <el-input
             v-model="form.name"
             autocomplete="off"
-            :placeholder="t('data_source.data_source_name_de')"
+            :placeholder="t('data_source.data_source_name_placeholder')"
           />
         </el-form-item>
         <el-form-item

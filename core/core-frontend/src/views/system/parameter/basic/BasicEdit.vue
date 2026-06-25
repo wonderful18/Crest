@@ -23,7 +23,7 @@ const loadingInstance = ref(null)
 const basicForm = ref<FormInstance>()
 const options = [
   { value: 'minute', label: t('system.time_0_seconds') },
-  { value: 'hour', label: t('system.and_0_seconds_de') }
+  { value: 'hour', label: t('system.hour_execution_default') }
 ]
 // 平台有效期选项和后端参数值保持字符串枚举，避免保存时出现类型差异。
 const pvpOptions = [
