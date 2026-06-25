@@ -1,5 +1,6 @@
 import path from 'path'
 import fs from 'node:fs'
+import { execSync } from 'node:child_process'
 import { resolve } from 'path'
 import Vue from '@vitejs/plugin-vue'
 import eslintPlugin from 'vite-plugin-eslint'
@@ -15,6 +16,21 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components-secondary/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components-secondary/resolvers'
 const root = process.cwd()
+const frontendPackage = JSON.parse(fs.readFileSync(path.resolve(root, 'package.json'), 'utf8')) as {
+  version?: string
+}
+const frontendVersion = process.env.CREST_FRONTEND_VERSION || frontendPackage.version || 'unknown'
+const resolveFrontendCommitId = () => {
+  const commitId = process.env.CREST_FRONTEND_COMMIT_ID || process.env.GITHUB_SHA
+  if (commitId) {
+    return commitId
+  }
+  try {
+    return execSync('git rev-parse --short=12 HEAD', { cwd: root }).toString().trim()
+  } catch {
+    return 'unknown'
+  }
+}
 // 根据当前配置计算界面样式
 const elementPlusSecondaryStyleDeps = (() => {
   const componentsDir = path.resolve(root, 'node_modules/element-plus-secondary/es/components')
@@ -106,6 +122,10 @@ export function pathResolve(dir: string) {
 }
 export default {
   base: './',
+  define: {
+    __CREST_FRONTEND_VERSION__: JSON.stringify(frontendVersion),
+    __CREST_FRONTEND_COMMIT_ID__: JSON.stringify(resolveFrontendCommitId())
+  },
   plugins: [
     elementPlusSecondaryTypesPatch(),
     Vue(),

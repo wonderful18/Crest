@@ -2,7 +2,15 @@
 
 本目录保存同发布线升级使用的 SQL。
 
-只有升级已有环境时才需要执行对应 SQL。全新安装不需要执行本目录文件，应用镜像已经包含最新初始化脚本。
+默认安装不需要执行本目录文件，应用镜像已经包含最新初始化脚本。
+
+如果由 DBA 先手工初始化空系统库，并关闭服务端自动迁移，可执行对应数据库类型的一次性空库初始化 SQL：
+
+- MySQL：`v2.0.2_full_schema_mysql.sql`
+- OceanBase MySQL 模式：`v2.0.2_full_schema_ob_mysql.sql`
+- OceanBase Oracle 模式：`v2.0.2_full_schema_ob_oracle.sql`
+
+一次性空库初始化 SQL 只适用于新建系统库。已有系统库升级时不要执行这些 full schema 文件，应执行对应源版本到目标版本的增量 SQL。
 
 执行前请先确认：
 

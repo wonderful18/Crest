@@ -43,6 +43,20 @@ SOURCE_FRONTEND_IMAGE=${SOURCE_FRONTEND_IMAGE:-"${FRONTEND_IMAGE}"}
 PACKAGE_NAME="crest-offline-${VERSION}-${TARGET_PLATFORM}"
 PACKAGE_DIR="${OUTPUT_DIR}/${PACKAGE_NAME}"
 
+resolve_source_commit() {
+  if [ -n "${SOURCE_COMMIT:-}" ]; then
+    echo "${SOURCE_COMMIT}"
+    return
+  fi
+  if command -v git >/dev/null 2>&1; then
+    git -C "${REPO_DIR}" rev-parse HEAD 2>/dev/null || echo "unknown"
+    return
+  fi
+  echo "unknown"
+}
+
+SOURCE_COMMIT=$(resolve_source_commit)
+
 log() {
   echo "[offline-package] $*"
 }
@@ -218,10 +232,25 @@ if [ "${INCLUDE_OBSERVABILITY_IMAGES}" = "true" ]; then
 - Grafana 镜像：\`${GRAFANA_IMAGE}\`"
 fi
 
+cat > "${PACKAGE_DIR}/package-manifest.txt" <<EOF
+version=${VERSION}
+platform=${TARGET_PLATFORM}
+source_commit=${SOURCE_COMMIT}
+backend_image=${BACKEND_IMAGE}
+frontend_image=${FRONTEND_IMAGE}
+mysql_image=${MYSQL_IMAGE}
+redis_image=${REDIS_IMAGE}
+generated_at=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+EOF
+
 cat > "${PACKAGE_DIR}/OFFLINE-README.md" <<EOF
 # Crest 离线部署包 ${VERSION} (${TARGET_PLATFORM})
 
 本目录包含 Crest 应用镜像、MySQL 镜像、Redis 镜像、Docker Compose 配置和安装脚本，可在目标服务器上直接安装。
+
+安装完成后可在右上角用户菜单打开“关于系统”，核对前端版本、前端 Commit、后端版本和后端 Commit；这些信息来自本包内应用镜像。
+
+包内 \`package-manifest.txt\` 记录版本、Commit、镜像和目标架构，可用于交付归档。
 
 ## 安装
 
@@ -323,6 +352,16 @@ bash cleanup-demo-data.sh --yes
 ## 升级 SQL
 
 本包会携带 \`upgrade-sql/\` 目录。全新安装不需要手动执行 SQL；从旧版本升级已有环境时，请先备份 Crest 系统库，再按发布说明执行对应版本和数据库类型的 SQL。
+
+由 DBA 手工初始化空系统库时，可按数据库类型一次执行以下 full schema SQL，并在服务配置中关闭自动迁移：
+
+\`\`\`text
+upgrade-sql/v2.0.2_full_schema_mysql.sql
+upgrade-sql/v2.0.2_full_schema_ob_mysql.sql
+upgrade-sql/v2.0.2_full_schema_ob_oracle.sql
+\`\`\`
+
+full schema SQL 只适用于新建系统库，已有系统库不要执行。
 
 MySQL 系统库从 v1.5.7 及更早版本升级时，先执行历史结构补齐 SQL：
 

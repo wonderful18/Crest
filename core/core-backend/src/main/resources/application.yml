@@ -31,6 +31,7 @@ spring:
       allow-numeric-leading-zeros: true
   quartz:
     scheduler-name: crestSyncJob
+    job-store-type: jdbc
     properties:
       org:
         quartz:
@@ -63,6 +64,8 @@ management:
         http.server.requests: 0.5,0.9,0.95,0.99
 crest:
   version: '@project.version@'
+  build:
+    commit-id: ${CREST_BACKEND_COMMIT_ID:unknown}
   runtime:
     role: ${CREST_RUNTIME_ROLE:all}
   production-mode: ${CREST_PRODUCTION_MODE:false}

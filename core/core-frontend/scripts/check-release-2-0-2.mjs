@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -89,9 +90,24 @@ const versionPomFiles = [
 ]
 
 const dbTypes = [
-  { name: 'mysql', migrationDir: 'migration', suffix: 'mysql' },
-  { name: 'ob-mysql', migrationDir: 'migration-ob-mysql', suffix: 'ob_mysql' },
-  { name: 'ob-oracle', migrationDir: 'migration-ob-oracle', suffix: 'ob_oracle' }
+  {
+    name: 'mysql',
+    migrationDir: 'migration',
+    suffix: 'mysql',
+    fullSchema: 'v2.0.2_full_schema_mysql.sql'
+  },
+  {
+    name: 'ob-mysql',
+    migrationDir: 'migration-ob-mysql',
+    suffix: 'ob_mysql',
+    fullSchema: 'v2.0.2_full_schema_ob_mysql.sql'
+  },
+  {
+    name: 'ob-oracle',
+    migrationDir: 'migration-ob-oracle',
+    suffix: 'ob_oracle',
+    fullSchema: 'v2.0.2_full_schema_ob_oracle.sql'
+  }
 ]
 
 test('runtime source paths no longer contain legacy external names or markers', () => {
@@ -236,10 +252,101 @@ test('scheduler metadata migrations cover the remaining mixed table names', () =
   }
 
   assert.match(read('core/core-backend/src/main/resources/application.yml'), /tablePrefix: core_schedule_/)
+  assert.match(read('core/core-backend/src/main/resources/application.yml'), /job-store-type: jdbc/)
   assert.match(
     read('core/core-backend/src/main/java/io/crest/config/QuartzScheduleTableNameDataSource.java'),
     /core_schedule_JOB_DETAILS/
   )
+})
+
+test('about system build information is exposed and injected by package pipeline', () => {
+  const accountOperator = read('core/core-frontend/src/layout/components/AccountOperator.vue')
+  const frontendConfig = read('core/core-frontend/config/common.ts')
+  const backendConfig = read('core/core-backend/src/main/resources/application.yml')
+  const dockerWorkflow = read('.github/workflows/docker-publish.yml')
+
+  assert.match(accountOperator, /system_about/)
+  assert.match(accountOperator, /querySystemAbout/)
+  assert.match(accountOperator, /__CREST_FRONTEND_VERSION__/)
+  assert.match(accountOperator, /__CREST_FRONTEND_COMMIT_ID__/)
+  assert.match(frontendConfig, /CREST_FRONTEND_COMMIT_ID/)
+  assert.match(frontendConfig, /CREST_FRONTEND_VERSION/)
+  assert.match(read('core/core-frontend/src/vite-env.d.ts'), /__CREST_FRONTEND_COMMIT_ID__/)
+  assert.match(
+    read('core/core-backend/src/main/java/io/crest/system/server/SystemAboutServer.java'),
+    /\/system\/about/
+  )
+  assert.match(backendConfig, /commit-id: \$\{CREST_BACKEND_COMMIT_ID:unknown\}/)
+  assert.match(read('Dockerfile.backend'), /ARG CREST_BACKEND_COMMIT_ID=unknown/)
+  assert.match(read('Dockerfile.backend'), /ENV CREST_BACKEND_COMMIT_ID=/)
+  assert.match(read('Dockerfile.frontend'), /ARG CREST_FRONTEND_COMMIT_ID=unknown/)
+  assert.match(dockerWorkflow, /CREST_FRONTEND_COMMIT_ID: \$\{\{ github\.sha \}\}/)
+  assert.match(dockerWorkflow, /CREST_BACKEND_COMMIT_ID=\$\{\{ github\.sha \}\}/)
+  assert.match(dockerWorkflow, /org\.opencontainers\.image\.revision=\$\{\{ github\.sha \}\}/)
+  assert.match(read('docs/release/v2.0.2.md'), /关于系统/)
+  assert.match(read('installer/README.md'), /前端 Commit、后端版本和后端 Commit/)
+  assert.match(read('installer/make-app-image-package.sh'), /source_commit=\$\{SOURCE_COMMIT\}/)
+  assert.match(read('installer/make-offline-package.sh'), /package-manifest\.txt/)
+  assert.match(read('installer/make-offline-package.sh'), /source_commit=\$\{SOURCE_COMMIT\}/)
+})
+
+test('full schema SQL is generated, complete and documented', () => {
+  const checkResult = spawnSync(
+    process.execPath,
+    ['installer/upgrade-sql/generate-full-schema.mjs', '--check'],
+    {
+      cwd: root,
+      encoding: 'utf8'
+    }
+  )
+  assert.equal(checkResult.status, 0, checkResult.stdout + checkResult.stderr)
+
+  const releaseNotes202 = read('docs/release/v2.0.2.md')
+  const upgradeReadme = read('installer/upgrade-sql/README.md')
+  const installerReadme = read('installer/README.md')
+  const offlinePackage = read('installer/make-offline-package.sh')
+  const appImagePackage = read('installer/make-app-image-package.sh')
+
+  for (const dbType of dbTypes) {
+    const fullSchemaPath = `installer/upgrade-sql/${dbType.fullSchema}`
+    assert.ok(existsSync(path.join(root, fullSchemaPath)), fullSchemaPath)
+
+    const fullSchema = read(fullSchemaPath)
+    assert.match(fullSchema, /空库一次性初始化 SQL/)
+    assert.match(fullSchema, /仅适用于新建 Crest 系统库/)
+    assert.match(fullSchema, /直接使用 v2\.0\.2 最终命名/)
+    assert.match(fullSchema, /Source: /)
+    assert.match(fullSchema, /core_schedule_triggers/)
+    assert.match(fullSchema, /core_template_category_relation/)
+    assert.match(fullSchema, /core_export_download_task/)
+    assert.match(fullSchema, /scheduler_fire_instance_id/)
+    assert.doesNotMatch(fullSchema, /core_core_/)
+    assert.doesNotMatch(fullSchema, /core_core_core_/)
+    assert.doesNotMatch(fullSchema, /QRTZ_|qrtz_/)
+    assert.doesNotMatch(fullSchema, /core_template_category_rel\b/)
+    assert.doesNotMatch(fullSchema, /core_export_download\b/)
+    assert.doesNotMatch(fullSchema, /dataset_table_join\b/)
+    assert.doesNotMatch(fullSchema, /scheduler_instance_id\b/)
+    assert.doesNotMatch(fullSchema, /\|DE\||-de-/)
+    assert.doesNotMatch(
+      fullSchema,
+      /\bDE_(CAST_DATE_FORMAT|UNIX_TIMESTAMP|STR_TO_DATE|FROM_UNIXTIME|DATE_FORMAT)\b/
+    )
+    assert.doesNotMatch(
+      fullSchema,
+      /V2\.0\.(1\.1__rename_metadata_tables|1\.2__normalize_runtime_identifiers|2\.1__normalize_scheduler_metadata_names)/
+    )
+
+    for (const source of [
+      releaseNotes202,
+      upgradeReadme,
+      installerReadme,
+      offlinePackage,
+      appImagePackage
+    ]) {
+      assert.ok(source.includes(dbType.fullSchema), dbType.fullSchema)
+    }
+  }
 })
 
 test('runtime identifier migrations cover saved parameter and tree configuration', () => {

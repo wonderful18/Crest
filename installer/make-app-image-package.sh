@@ -34,6 +34,20 @@ SOURCE_FRONTEND_IMAGE=${SOURCE_FRONTEND_IMAGE:-"ghcr.io/sevoniva/crest-web:${VER
 PACKAGE_NAME="crest-app-images-${VERSION}-${TARGET_PLATFORM}"
 PACKAGE_DIR="${OUTPUT_DIR}/${PACKAGE_NAME}"
 
+resolve_source_commit() {
+  if [ -n "${SOURCE_COMMIT:-}" ]; then
+    echo "${SOURCE_COMMIT}"
+    return
+  fi
+  if command -v git >/dev/null 2>&1; then
+    git -C "${REPO_DIR}" rev-parse HEAD 2>/dev/null || echo "unknown"
+    return
+  fi
+  echo "unknown"
+}
+
+SOURCE_COMMIT=$(resolve_source_commit)
+
 log() {
   echo "[app-image-package] $*"
 }
@@ -130,6 +144,7 @@ chmod +x "${PACKAGE_DIR}/load-images.sh"
 cat > "${PACKAGE_DIR}/image-manifest.txt" <<EOF
 version=${VERSION}
 platform=${TARGET_PLATFORM}
+source_commit=${SOURCE_COMMIT}
 backend_image=${BACKEND_IMAGE}
 frontend_image=${FRONTEND_IMAGE}
 generated_at=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
@@ -140,13 +155,15 @@ cat > "${PACKAGE_DIR}/APP-IMAGES-README.md" <<EOF
 
 本包仅包含 Crest 后端镜像、前端镜像、初始化 SQL、增量升级 SQL 和加载说明，不包含 MySQL、Redis、Prometheus、Grafana 镜像，也不包含完整安装脚本。适用于已经安装 Crest 的环境升级应用服务。
 
+升级后可在右上角用户菜单打开“关于系统”，核对前端版本、前端 Commit、后端版本和后端 Commit；这些信息来自本包内应用镜像。
+
 ## 包内内容
 
 - \`images/\`：Crest 后端和前端镜像归档；
 - \`init-sql/\`：空库部署时可由 DBA 手工执行的 Crest 系统库初始化 SQL；
 - \`upgrade-sql/\`：从已发布版本升级所需的增量 SQL；
 - \`load-images.sh\`：加载包内镜像；
-- \`image-manifest.txt\`：包内镜像与目标架构。
+- \`image-manifest.txt\`：版本、Commit、包内镜像与目标架构。
 
 ## 加载镜像
 
@@ -159,6 +176,16 @@ bash load-images.sh
 ## 执行升级 SQL
 
 全新安装不需要执行升级 SQL。已有环境升级到 ${VERSION} 时，请先备份 Crest 系统库，再在本包目录按数据库类型执行对应 SQL。
+
+由 DBA 手工初始化空系统库时，可按数据库类型一次执行以下 full schema SQL，并在服务配置中关闭自动迁移：
+
+\`\`\`text
+upgrade-sql/v2.0.2_full_schema_mysql.sql
+upgrade-sql/v2.0.2_full_schema_ob_mysql.sql
+upgrade-sql/v2.0.2_full_schema_ob_oracle.sql
+\`\`\`
+
+full schema SQL 只适用于新建系统库，已有系统库不要执行。
 
 MySQL 系统库从 v1.5.7 及更早版本升级时，先执行历史结构补齐 SQL：
 

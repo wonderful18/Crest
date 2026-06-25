@@ -2,9 +2,12 @@
 import userImg from '@/assets/svg/user-img.svg'
 import icon_expandDown_filled from '@/assets/svg/icon_expand-down_filled.svg'
 import { computed, ref, unref } from 'vue'
+import { ElMessage } from 'element-plus-secondary'
 import { Icon } from '@/components/icon-custom'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { logoutApi } from '@/api/login'
+import { querySystemAbout } from '@/api/about'
+import type { SystemAboutInfo } from '@/api/about'
 import { logoutHandler } from '@/utils/logout'
 import { useI18n } from '@/hooks/web/useI18n'
 import LangSelector from './LangSelector.vue'
@@ -17,6 +20,17 @@ const navigateBg = computed(() => appearanceStore.getNavigateBg)
 const { wsCache } = useCache()
 const userStore = useUserStoreWithOut()
 const { t } = useI18n()
+const unknownText = 'unknown'
+const frontendAbout: SystemAboutInfo = {
+  version: __CREST_FRONTEND_VERSION__ || unknownText,
+  commitId: __CREST_FRONTEND_COMMIT_ID__ || unknownText
+}
+const backendAbout = ref<SystemAboutInfo>({
+  version: unknownText,
+  commitId: unknownText
+})
+const aboutVisible = ref(false)
+const aboutLoading = ref(false)
 
 interface LinkItem {
   id: number
@@ -79,6 +93,26 @@ const openPopover = () => {
   unref(popoverRef).popperRef?.delayHide?.()
 }
 
+const normalizeAbout = (about?: Partial<SystemAboutInfo>): SystemAboutInfo => ({
+  version: about?.version || unknownText,
+  commitId: about?.commitId || unknownText
+})
+
+// 打开系统版本信息弹窗
+const openAboutDialog = async () => {
+  unref(popoverRef)?.hide?.()
+  aboutVisible.value = true
+  aboutLoading.value = true
+  try {
+    backendAbout.value = normalizeAbout(await querySystemAbout())
+  } catch {
+    backendAbout.value = normalizeAbout()
+    ElMessage.error(t('common.version_info_read_failed'))
+  } finally {
+    aboutLoading.value = false
+  }
+}
+
 if (uid.value === '1') {
   linkLoaded([{ id: 4, link: '/sys-setting/parameter', label: t('commons.system_setting') }])
   const desktop = wsCache.get('app.desktop')
@@ -129,6 +163,10 @@ if (uid.value === '1') {
           <span>{{ link.label }}</span>
         </div>
 
+        <div class="uinfo-main-item crest-container" @click="openAboutDialog">
+          <span>{{ t('common.system_about') }}</span>
+        </div>
+
         <div class="uinfo-main-item crest-container">
           <div class="about-parent" ref="divLanguageRef" v-click-outside="openLanguage">
             <span>{{ $t('commons.language') }}</span>
@@ -158,6 +196,32 @@ if (uid.value === '1') {
       </div>
     </div>
   </el-popover>
+  <el-dialog
+    v-model="aboutVisible"
+    :title="t('common.system_about')"
+    width="min(520px, calc(100vw - 32px))"
+    append-to-body
+    class="system-about-dialog"
+  >
+    <div v-loading="aboutLoading" class="system-about-content">
+      <div class="system-about-row">
+        <span>{{ t('common.frontend_version') }}</span>
+        <code>{{ frontendAbout.version }}</code>
+      </div>
+      <div class="system-about-row">
+        <span>{{ t('common.frontend_commit') }}</span>
+        <code>{{ frontendAbout.commitId }}</code>
+      </div>
+      <div class="system-about-row">
+        <span>{{ t('common.backend_version') }}</span>
+        <code>{{ backendAbout.version }}</code>
+      </div>
+      <div class="system-about-row">
+        <span>{{ t('common.backend_commit') }}</span>
+        <code>{{ backendAbout.commitId }}</code>
+      </div>
+    </div>
+  </el-dialog>
 </template>
 
 <style lang="less">
@@ -273,5 +337,39 @@ if (uid.value === '1') {
     display: none;
   }
   padding: var(--ed-popover-padding) 0 !important;
+}
+.system-about-dialog {
+  .ed-dialog__body {
+    padding-top: 8px;
+  }
+  .system-about-content {
+    min-height: 168px;
+  }
+  .system-about-row {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+    padding: 12px 0;
+    border-bottom: 1px solid #edf0f5;
+    color: #1f2329;
+    &:last-child {
+      border-bottom: 0;
+    }
+    span {
+      font-size: 14px;
+      color: #646a73;
+    }
+    code {
+      padding: 0;
+      font-family: var(--crest-font-mono);
+      font-size: 13px;
+      line-height: 20px;
+      color: #1f2329;
+      background: transparent;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+  }
 }
 </style>
