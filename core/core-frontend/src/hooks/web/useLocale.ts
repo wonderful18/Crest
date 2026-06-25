@@ -17,7 +17,6 @@ const setI18nLanguage = (locale: LocaleType) => {
   setHtmlPageLang(locale)
 }
 
-// 读取当前业务数据并返回处理结果
 const loadRemoteI18n = async (option: any) => {
   const name = option.lang.replace('-', '_')
   const path =

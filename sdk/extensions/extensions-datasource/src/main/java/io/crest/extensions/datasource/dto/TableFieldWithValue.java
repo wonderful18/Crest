@@ -29,7 +29,6 @@ public class TableFieldWithValue implements Serializable {
     private String term = "eq";
     private Integer extractedFieldType;
 
-    // 执行当前服务方法并返回处理结果
     public static TableFieldWithValue copy(TableFieldWithValue tableFieldWithValue) {
         return new TableFieldWithValue()
                 .setValue(tableFieldWithValue.getValue())

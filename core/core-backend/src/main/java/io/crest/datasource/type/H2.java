@@ -34,7 +34,6 @@ public class H2 extends DatasourceConfiguration {
     }
 
     @JsonIgnore
-    // 执行当前服务方法并返回处理结果
     private List<String> getH2IllegalParameters() {
         return Arrays.asList("INIT", "RUNSCRIPT");
     }

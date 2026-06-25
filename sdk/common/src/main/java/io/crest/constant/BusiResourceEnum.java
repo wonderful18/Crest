@@ -7,12 +7,10 @@ public enum BusiResourceEnum {
 
     private int flag;
 
-    // 执行当前服务方法并返回处理结果
     public int getFlag() {
         return flag;
     }
 
-    // 执行当前服务方法并返回处理结果
     public void setFlag(int flag) {
         this.flag = flag;
     }

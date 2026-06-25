@@ -11,7 +11,6 @@ import java.io.IOException;
 public class BooleanCompatibleIntegerDeserializer extends JsonDeserializer<Integer> {
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public Integer deserialize(JsonParser parser, DeserializationContext context) throws IOException {
         JsonToken token = parser.currentToken();
         if (token == JsonToken.VALUE_TRUE) {

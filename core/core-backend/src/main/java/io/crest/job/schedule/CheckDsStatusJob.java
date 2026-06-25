@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 
 
 @Component
-// 定义当前业务对象的核心职责
 public class CheckDsStatusJob implements Job {
     @Resource
     private DatasourceServer datasourceServer;

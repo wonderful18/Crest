@@ -8,7 +8,6 @@ public class CrestWebSocketHandlerFactory implements WebSocketHandlerDecoratorFa
 
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public WebSocketHandler decorate(WebSocketHandler webSocketHandler) {
         return new CrestWebSocketHandlerDecorator(webSocketHandler);
     }

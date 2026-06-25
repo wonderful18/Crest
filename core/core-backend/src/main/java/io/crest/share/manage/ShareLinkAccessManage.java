@@ -37,7 +37,6 @@ public class ShareLinkAccessManage {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // 执行当前服务方法并返回处理结果
     public boolean canAccessWithShareResource(Long shareResourceId, Long requestResourceId) {
         if (ObjectUtils.anyNull(shareResourceId, requestResourceId)) {
             return false;

@@ -177,7 +177,7 @@ bash load-images.sh
 
 全新安装不需要执行升级 SQL。已有环境升级到 ${VERSION} 时，请先备份 Crest 系统库，再在本包目录按数据库类型执行对应 SQL。
 
-由 DBA 手工初始化空系统库时，可按数据库类型一次执行以下 full schema SQL，并在服务配置中关闭自动迁移：
+由 DBA 手工初始化空系统库时，可按数据库类型一次执行以下完整建库 SQL，并在服务配置中关闭自动迁移：
 
 \`\`\`text
 upgrade-sql/v2.0.2_full_schema_mysql.sql
@@ -185,7 +185,7 @@ upgrade-sql/v2.0.2_full_schema_ob_mysql.sql
 upgrade-sql/v2.0.2_full_schema_ob_oracle.sql
 \`\`\`
 
-full schema SQL 只适用于新建系统库，已有系统库不要执行。
+完整建库 SQL 只适用于新建系统库，已有系统库不要执行。
 
 MySQL 系统库从 v1.5.7 及更早版本升级时，先执行历史结构补齐 SQL：
 
@@ -209,7 +209,7 @@ docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_N
 外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 系统库。
 如安装时修改过 \`CREST_BASE\`，请把 \`/opt/crest/.env\` 换成实际运行目录中的 \`.env\`。
 
-继续按数据库类型执行 v2.0.0 和 ${VERSION} 的增量 SQL。MySQL 系统库示例：
+继续按数据库类型执行 v2.0.0、v2.0.1 和 ${VERSION} 的增量 SQL。MySQL 系统库示例：
 
 \`\`\`bash
 for sql in \\
@@ -221,7 +221,8 @@ for sql in \\
   upgrade-sql/v2.0.0_audit_log_filter_index_mysql.sql \\
   upgrade-sql/v2.0.0_to_v2.0.1_metadata_tables_mysql.sql \\
   upgrade-sql/v2.0.0_to_v2.0.1_runtime_identifiers_mysql.sql \\
-  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_mysql.sql
+  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_mysql.sql \\
+  upgrade-sql/v2.0.1_to_v2.0.2_rotate_default_crypto_key_mysql.sql
 do
   docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < "\${sql}"
 done
@@ -239,7 +240,8 @@ for sql in \\
   upgrade-sql/v2.0.0_audit_log_filter_index_ob_mysql.sql \\
   upgrade-sql/v2.0.0_to_v2.0.1_metadata_tables_ob_mysql.sql \\
   upgrade-sql/v2.0.0_to_v2.0.1_runtime_identifiers_ob_mysql.sql \\
-  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_mysql.sql
+  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_mysql.sql \\
+  upgrade-sql/v2.0.1_to_v2.0.2_rotate_default_crypto_key_ob_mysql.sql
 do
   obclient --default-character-set=utf8mb4 -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' <database> < "\${sql}"
 done
@@ -258,7 +260,8 @@ for sql in \\
   upgrade-sql/v2.0.0_audit_log_filter_index_ob_oracle.sql \\
   upgrade-sql/v2.0.0_to_v2.0.1_metadata_tables_ob_oracle.sql \\
   upgrade-sql/v2.0.0_to_v2.0.1_runtime_identifiers_ob_oracle.sql \\
-  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_oracle.sql
+  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_oracle.sql \\
+  upgrade-sql/v2.0.1_to_v2.0.2_rotate_default_crypto_key_ob_oracle.sql
 do
   obclient --default-character-set=utf8mb4 -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' < "\${sql}"
 done

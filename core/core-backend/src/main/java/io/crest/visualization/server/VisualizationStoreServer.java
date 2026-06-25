@@ -34,7 +34,6 @@ public class VisualizationStoreServer implements VisualizationStoreApi {
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public boolean favorited(Long id) {
         return visualizationStoreManage.favorited(id);
     }

@@ -19,7 +19,6 @@ public class SsoLoginIdentityManage {
     private SsoIdentityBindingManage bindingManage;
 
     @Transactional
-    // 执行当前服务方法并返回处理结果
     public CrestUser resolve(SsoIdentityProfile profile, boolean autoCreateUser, String providerName) {
         bindingManage.upsertProvider(profile.getProviderId(), profile.getProviderType(), providerName);
         Long boundUserId = bindingManage.boundUserId(profile);

@@ -11,7 +11,6 @@ public enum CryptoMode {
 
     private static final String CRYPTO_MODE_PROPERTY = "crest.crypto.mode";
 
-    // 执行当前服务方法并返回处理结果
     public static CryptoMode current() {
         String mode = ConfigUtils.getConfig(CRYPTO_MODE_PROPERTY, "standard");
         String normalized = StringUtils.trimToEmpty(mode).toLowerCase(Locale.ROOT);

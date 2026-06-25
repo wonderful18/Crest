@@ -11,12 +11,10 @@ public class ModelUtils {
     private static String modelValue;
 
     @Value("${spring.profiles.active:standalone}")
-    // 执行当前服务方法并返回处理结果
     public void setModelValue(String modelValue) {
         ModelUtils.modelValue = modelValue;
     }
 
-    // 执行当前服务方法并返回处理结果
     public static CrestDeploymentMode get() {
         return CrestDeploymentMode.valueOf(modelValue.toUpperCase());
     }

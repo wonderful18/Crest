@@ -10,7 +10,7 @@
 - OceanBase MySQL 模式：`v2.0.2_full_schema_ob_mysql.sql`
 - OceanBase Oracle 模式：`v2.0.2_full_schema_ob_oracle.sql`
 
-一次性空库初始化 SQL 只适用于新建系统库。已有系统库升级时不要执行这些 full schema 文件，应执行对应源版本到目标版本的增量 SQL。
+一次性空库初始化 SQL 只适用于新建系统库。已有系统库升级时不要执行这些完整建库 SQL，应执行对应源版本到目标版本的增量 SQL。
 
 执行前请先确认：
 
@@ -43,10 +43,10 @@ OceanBase MySQL 租户执行文件名带 `ob_mysql` 的脚本。OceanBase Oracle
 - OceanBase MySQL 模式：`v2.0.0_to_v2.0.1_metadata_tables_ob_mysql.sql`、`v2.0.0_to_v2.0.1_runtime_identifiers_ob_mysql.sql`
 - OceanBase Oracle 模式：`v2.0.0_to_v2.0.1_metadata_tables_ob_oracle.sql`、`v2.0.0_to_v2.0.1_runtime_identifiers_ob_oracle.sql`
 
-2.0.1 元数据改名脚本处理 Crest 自有业务表；运行配置标识脚本处理已保存的图表、可视化、模板和外部参数配置。2.0.2 继续统一调度元数据表、模板分类关系表、导出下载任务表和调度实例列名。执行前必须备份系统库；如果同一张元数据表的新旧名称同时存在，脚本会中断，需先人工确认数据后再继续。
+2.0.1 元数据改名脚本处理 Crest 自有业务表；运行配置标识脚本处理已保存的图表、可视化、模板和外部参数配置。2.0.2 继续统一调度元数据表、模板分类关系表、导出下载任务表和调度实例列名，并清理早期初始化脚本写入的固定系统密钥。执行前必须备份系统库；如果同一张元数据表的新旧名称同时存在，脚本会中断，需先人工确认数据后再继续。
 
-2.0.1 升级到 2.0.2 时，按数据库类型选择对应脚本：
+2.0.1 升级到 2.0.2 时，按数据库类型选择对应脚本，并按下面顺序执行：
 
-- MySQL：`v2.0.1_to_v2.0.2_metadata_names_mysql.sql`
-- OceanBase MySQL 模式：`v2.0.1_to_v2.0.2_metadata_names_ob_mysql.sql`
-- OceanBase Oracle 模式：`v2.0.1_to_v2.0.2_metadata_names_ob_oracle.sql`
+- MySQL：`v2.0.1_to_v2.0.2_metadata_names_mysql.sql`、`v2.0.1_to_v2.0.2_rotate_default_crypto_key_mysql.sql`
+- OceanBase MySQL 模式：`v2.0.1_to_v2.0.2_metadata_names_ob_mysql.sql`、`v2.0.1_to_v2.0.2_rotate_default_crypto_key_ob_mysql.sql`
+- OceanBase Oracle 模式：`v2.0.1_to_v2.0.2_metadata_names_ob_oracle.sql`、`v2.0.1_to_v2.0.2_rotate_default_crypto_key_ob_oracle.sql`

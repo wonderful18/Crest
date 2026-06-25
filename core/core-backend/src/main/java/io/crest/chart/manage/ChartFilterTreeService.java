@@ -56,7 +56,6 @@ public class ChartFilterTreeService {
         }
     }
 
-    // 执行当前服务方法并返回处理结果
     public FilterTreeObj charReplace(FilterTreeObj tree) {
         if (ObjectUtils.isNotEmpty(tree)) {
             if (ObjectUtils.isNotEmpty(tree.getItems())) {

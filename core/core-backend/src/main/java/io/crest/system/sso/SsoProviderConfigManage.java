@@ -14,7 +14,6 @@ public class SsoProviderConfigManage {
     @Resource
     private JdbcTemplate jdbcTemplate;
 
-    // 执行当前服务方法并返回处理结果
     public static SsoProviderConfig defaultProvider(SsoConfigVO config, String encryptedSecret) {
         SsoProviderConfig provider = new SsoProviderConfig();
         provider.setProviderId(1L);

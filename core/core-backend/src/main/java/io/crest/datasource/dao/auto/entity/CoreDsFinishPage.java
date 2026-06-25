@@ -19,18 +19,15 @@ public class CoreDsFinishPage implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    // 执行当前服务方法并返回处理结果
     public Long getId() {
         return id;
     }
 
-    // 执行当前服务方法并返回处理结果
     public void setId(Long id) {
         this.id = id;
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public String toString() {
         return "CoreDsFinishPage{" +
         "id = " + id +

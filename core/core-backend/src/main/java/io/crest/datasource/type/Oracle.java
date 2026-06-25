@@ -19,7 +19,6 @@ import java.util.regex.Pattern;
 public class Oracle extends DatasourceConfiguration {
     private String driver = "oracle.jdbc.driver.OracleDriver";
     private String extraParams = "";
-    // 执行当前服务方法并返回处理结果
     private List<String> getOracleIllegalParameters() {
         return Arrays.asList(
                 // 原有参数（如RMI相关）

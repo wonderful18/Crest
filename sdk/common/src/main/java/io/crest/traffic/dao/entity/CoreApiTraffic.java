@@ -8,7 +8,6 @@ import java.io.Serializable;
 
 @TableName("core_api_traffic_limit")
 @Data
-// 定义当前业务对象的核心职责
 public class CoreApiTraffic implements Serializable {
     @Serial
     private static final long serialVersionUID = -9130425144350145905L;

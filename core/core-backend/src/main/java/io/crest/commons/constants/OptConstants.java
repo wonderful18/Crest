@@ -5,7 +5,6 @@ package io.crest.commons.constants;
  */
 public class OptConstants {
 
-    // 定义当前业务对象的核心职责
     public static final class OPT_TYPE {
         // 新建资源。
         public static final int NEW = 1;
@@ -15,7 +14,6 @@ public class OptConstants {
         public static final int DELETE = 3;
     }
 
-    // 定义当前业务对象的核心职责
     public static final class OPT_RESOURCE_TYPE {
         // 可视化资源。
         public static final int VISUALIZATION = 1;

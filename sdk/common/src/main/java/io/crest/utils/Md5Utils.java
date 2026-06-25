@@ -7,12 +7,10 @@ public class Md5Utils {
     private static final char[] HEX_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     private static final String UTF_8 = "UTF-8";
 
-    // 执行当前服务方法并返回处理结果
     public static String md5(String src) {
         return md5(src, UTF_8);
     }
 
-    // 执行当前服务方法并返回处理结果
     public static String md5(String src, String charset) {
         try {
             byte[] strTemp = charset == null || charset.equals("") ? src.getBytes() : src.getBytes(charset);

@@ -48,7 +48,6 @@ const createI18nOptions = async (): Promise<I18nOptions> => {
   }
 }
 
-// 读取当前业务数据并返回处理结果
 const loadRemoteI18n = async (option: any) => {
   const name = option.lang.replace('-', '_')
   const path =

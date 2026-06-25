@@ -15,7 +15,6 @@ public final class SsoAccountPolicy {
     private SsoAccountPolicy() {
     }
 
-    // 执行当前服务方法并返回处理结果
     public static String normalizeAccount(String account, String fallbackSubject) {
         String value = StringUtils.defaultIfBlank(account, fallbackSubject);
         if (StringUtils.isBlank(value)) {
@@ -28,7 +27,6 @@ public final class SsoAccountPolicy {
         return trimmed;
     }
 
-    // 执行当前服务方法并返回处理结果
     public static String normalizeDisplayName(String displayName, String fallbackAccount) {
         String value = StringUtils.defaultIfBlank(displayName, fallbackAccount);
         if (StringUtils.isBlank(value)) {

@@ -9,7 +9,6 @@ import org.apache.ibatis.annotations.*;
 
 
 @Mapper
-// 定义当前业务对象的核心职责
 public interface ExportTaskExtMapper extends BaseMapper<CoreExportTask> {
 
     @Select(

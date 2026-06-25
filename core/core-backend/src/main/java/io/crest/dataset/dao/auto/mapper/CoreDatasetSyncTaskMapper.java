@@ -7,7 +7,6 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
 
 @Mapper
-// 定义当前业务对象的核心职责
 public interface CoreDatasetSyncTaskMapper extends BaseMapper<CoreDatasetSyncTask> {
 
     // 调度端投递前先写入投递时间，避免多 Scheduler 重复投递同一触发。

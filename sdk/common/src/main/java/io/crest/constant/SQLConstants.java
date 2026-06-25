@@ -3,7 +3,6 @@ package io.crest.constant;
 import java.util.ArrayList;
 import java.util.List;
 
-// 定义当前业务对象的核心职责
 public class SQLConstants {
     /**
      * 维度类型list

@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unchecked")
-// 定义当前业务对象的核心职责
 public class AutoAdaptWidthStyleStrategy extends AbstractColumnWidthStyleStrategy {
 
     private Map<Integer, Map<Integer, Integer>> CACHE = new HashMap(8);
@@ -27,7 +26,6 @@ public class AutoAdaptWidthStyleStrategy extends AbstractColumnWidthStyleStrateg
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     protected void setColumnWidth(WriteSheetHolder writeSheetHolder, List<WriteCellData<?>> cellDataList, Cell cell, Head head, Integer relativeRowIndex, Boolean isHead) {
         boolean needSetWidth = isHead || !CollectionUtils.isEmpty(cellDataList);
         if (needSetWidth) {
@@ -51,7 +49,6 @@ public class AutoAdaptWidthStyleStrategy extends AbstractColumnWidthStyleStrateg
         }
     }
 
-    // 执行当前服务方法并返回处理结果
     private Integer dataLength(List<WriteCellData<?>> cellDataList, Cell cell, Boolean isHead) {
         if (isHead) {
             return cell.getStringCellValue().getBytes().length;
@@ -76,7 +73,6 @@ public class AutoAdaptWidthStyleStrategy extends AbstractColumnWidthStyleStrateg
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void beforeCellCreate(CellWriteHandlerContext context) {
         if (!context.getHead()) return;
         Head headData = context.getHeadData();

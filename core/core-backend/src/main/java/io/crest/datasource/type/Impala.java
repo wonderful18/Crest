@@ -80,7 +80,6 @@ public class Impala extends DatasourceConfiguration {
 
 
     @Override
-    // 执行当前服务方法并返回处理结果
     protected void parseParameters(String jdbcUrl) {
         if (jdbcUrl.contains(";")) {
             String[] parts = jdbcUrl.split(";");

@@ -9,7 +9,6 @@ import java.util.List;
 
 
 @Mapper
-// 定义当前业务对象的核心职责
 public interface ResourcePermissionMapper {
 
     @Select("select `component_data` from core_visualization where id = #{id}")

@@ -9,7 +9,6 @@ import java.io.Serializable;
 
 @Data
 @TableName("core_dataset_sync_task_log")
-// 定义当前业务对象的核心职责
 public class CoreDatasetSyncTaskLog implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)

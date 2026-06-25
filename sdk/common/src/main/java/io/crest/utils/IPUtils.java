@@ -18,7 +18,6 @@ public class IPUtils {
     private static final String LOCAL_IP_KEY = "0:0:0:0:0:0:0:1";
     private static final String LOCAL_IP_VAL = "127.0.0.1";
 
-    // 执行当前服务方法并返回处理结果
     public static String get() {
 
         String ipStr = null;
@@ -49,7 +48,6 @@ public class IPUtils {
         return Strings.CS.equals(LOCAL_IP_KEY, ipStr) ? LOCAL_IP_VAL : ipStr;
     }
 
-    // 执行当前服务方法并返回处理结果
     public static String domain() {
         try {
             return InetAddress.getLocalHost().getHostAddress();

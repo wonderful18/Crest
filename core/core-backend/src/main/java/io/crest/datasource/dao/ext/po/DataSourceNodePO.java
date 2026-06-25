@@ -8,7 +8,6 @@ import java.io.Serializable;
 
 @Data
 @TableName("core_datasource")
-// 定义当前业务对象的核心职责
 public class DataSourceNodePO implements Serializable {
 
     @TableId

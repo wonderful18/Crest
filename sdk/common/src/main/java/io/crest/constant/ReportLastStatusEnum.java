@@ -8,12 +8,10 @@ public enum ReportLastStatusEnum {
 
     private Integer flag;
 
-    // 执行当前服务方法并返回处理结果
     public Integer getFlag() {
         return flag;
     }
 
-    // 执行当前服务方法并返回处理结果
     public void setFlag(Integer flag) {
         this.flag = flag;
     }
@@ -25,7 +23,6 @@ public enum ReportLastStatusEnum {
         this.flag = flag;
     }
 
-    // 执行当前服务方法并返回处理结果
     public static ReportLastStatusEnum fromValue(Integer flag) {
         return Arrays.stream(values()).filter(v -> v.flag.equals(flag)).findFirst().get();
     }

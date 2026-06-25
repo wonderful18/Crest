@@ -15,7 +15,6 @@ import io.crest.utils.CrestPermissionUtils;
 public class CommunityTokenFilter implements Filter {
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         try {
             CommunityUtils.setInfo(CrestPermissionUtils.communityScopeSql());

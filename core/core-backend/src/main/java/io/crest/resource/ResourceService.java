@@ -7,7 +7,6 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
-// 定义当前业务对象的核心职责
 public class ResourceService {
     @Resource
     private CorePermissionManage corePermissionManage;

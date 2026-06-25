@@ -335,10 +335,10 @@ OBProxy 示例：
 
 \`\`\`bash
 CREST_DB_TYPE=ob-oracle
-CREST_DB_HOST=10.0.0.10
+CREST_DB_HOST=<obproxy-host>
 CREST_DB_PORT=2883
-CREST_DB_USERNAME=ob_user@ob_oracle#obcluster
-CREST_DB_PASSWORD=ob_password
+CREST_DB_USERNAME=<user>@<tenant>#<cluster>
+CREST_DB_PASSWORD=<password>
 \`\`\`
 
 observer 直连时端口通常为 \`2881\`，用户名使用 \`用户@租户\`，不要带 \`#集群\`。
@@ -353,7 +353,7 @@ bash cleanup-demo-data.sh --yes
 
 本包会携带 \`upgrade-sql/\` 目录。全新安装不需要手动执行 SQL；从旧版本升级已有环境时，请先备份 Crest 系统库，再按发布说明执行对应版本和数据库类型的 SQL。
 
-由 DBA 手工初始化空系统库时，可按数据库类型一次执行以下 full schema SQL，并在服务配置中关闭自动迁移：
+由 DBA 手工初始化空系统库时，可按数据库类型一次执行以下完整建库 SQL，并在服务配置中关闭自动迁移：
 
 \`\`\`text
 upgrade-sql/v2.0.2_full_schema_mysql.sql
@@ -361,7 +361,7 @@ upgrade-sql/v2.0.2_full_schema_ob_mysql.sql
 upgrade-sql/v2.0.2_full_schema_ob_oracle.sql
 \`\`\`
 
-full schema SQL 只适用于新建系统库，已有系统库不要执行。
+完整建库 SQL 只适用于新建系统库，已有系统库不要执行。
 
 MySQL 系统库从 v1.5.7 及更早版本升级时，先执行历史结构补齐 SQL：
 
@@ -384,7 +384,7 @@ docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_N
 
 如安装时修改过 \`CREST_BASE\`，请把 \`/opt/crest/.env\` 换成实际运行目录中的 \`.env\`。外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 系统库。
 
-继续按数据库类型执行 v2.0.0 和 ${VERSION} 的增量 SQL。MySQL 系统库示例：
+继续按数据库类型执行 v2.0.0、v2.0.1 和 ${VERSION} 的增量 SQL。MySQL 系统库示例：
 
 \`\`\`bash
 for sql in \\
@@ -396,7 +396,8 @@ for sql in \\
   upgrade-sql/v2.0.0_audit_log_filter_index_mysql.sql \\
   upgrade-sql/v2.0.0_to_v2.0.1_metadata_tables_mysql.sql \\
   upgrade-sql/v2.0.0_to_v2.0.1_runtime_identifiers_mysql.sql \\
-  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_mysql.sql
+  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_mysql.sql \\
+  upgrade-sql/v2.0.1_to_v2.0.2_rotate_default_crypto_key_mysql.sql
 do
   docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < "\${sql}"
 done
@@ -414,7 +415,8 @@ for sql in \\
   upgrade-sql/v2.0.0_audit_log_filter_index_ob_mysql.sql \\
   upgrade-sql/v2.0.0_to_v2.0.1_metadata_tables_ob_mysql.sql \\
   upgrade-sql/v2.0.0_to_v2.0.1_runtime_identifiers_ob_mysql.sql \\
-  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_mysql.sql
+  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_mysql.sql \\
+  upgrade-sql/v2.0.1_to_v2.0.2_rotate_default_crypto_key_ob_mysql.sql
 do
   obclient --default-character-set=utf8mb4 -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' <database> < "\${sql}"
 done
@@ -433,7 +435,8 @@ for sql in \\
   upgrade-sql/v2.0.0_audit_log_filter_index_ob_oracle.sql \\
   upgrade-sql/v2.0.0_to_v2.0.1_metadata_tables_ob_oracle.sql \\
   upgrade-sql/v2.0.0_to_v2.0.1_runtime_identifiers_ob_oracle.sql \\
-  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_oracle.sql
+  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_oracle.sql \\
+  upgrade-sql/v2.0.1_to_v2.0.2_rotate_default_crypto_key_ob_oracle.sql
 do
   obclient --default-character-set=utf8mb4 -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' < "\${sql}"
 done

@@ -3,7 +3,6 @@ import { dvMainStoreWithOut } from './dvMain'
 const dvMainStore = dvMainStoreWithOut()
 const { curComponent, componentData } = storeToRefs(dvMainStore)
 
-// 读取当前业务数据并返回处理结果
 export const getComponentById = (componentId?) => {
   const curInfo = getCurInfo(componentId)
   if (curInfo) {
@@ -11,7 +10,6 @@ export const getComponentById = (componentId?) => {
   } else return null
 }
 
-// 读取当前业务数据并返回处理结果
 export const getCurInfo = (componentId?) => {
   if (componentId) {
     return getCurInfoById(componentId)
@@ -20,7 +18,6 @@ export const getCurInfo = (componentId?) => {
   }
 }
 
-// 读取当前业务数据并返回处理结果
 export const getCurInfoById = curComponentId => {
   if (curComponentId) {
     let curIndex = 0

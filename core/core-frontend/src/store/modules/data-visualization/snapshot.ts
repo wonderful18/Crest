@@ -229,7 +229,6 @@ export function setDefaultComponentData(data = []) {
   defaultCanvasInfo.componentData = data
 }
 
-// 读取当前业务数据并返回处理结果
 function getDefaultCanvasInfo() {
   return defaultCanvasInfo
 }

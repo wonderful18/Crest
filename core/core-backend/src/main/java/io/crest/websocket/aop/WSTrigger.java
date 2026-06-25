@@ -21,7 +21,6 @@ public class WSTrigger {
     private WsService wsService;
 
     @AfterReturning(value = "execution(* io.crest.service.message.service.strategy.SendStation.sendMsg(..))")
-    // 执行当前服务方法并返回处理结果
     public void after(JoinPoint point) {
         Object[] args = point.getArgs();
         Optional.ofNullable(args).ifPresent(objs -> {

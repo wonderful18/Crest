@@ -46,7 +46,6 @@ export function colorStringToHex(colorStr) {
   return a !== undefined ? rgbaToHex(r, g, b, a) : rgbToHex(r, g, b)
 }
 
-// 读取当前业务数据并返回处理结果
 export function getCSSVariable(element = document.body, property = '--ed-color-primary') {
   const style = window.getComputedStyle(element)
   return style.getPropertyValue(property) || '#3B82F6'

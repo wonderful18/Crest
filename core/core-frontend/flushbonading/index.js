@@ -32,7 +32,6 @@ htmlStream.pipe(parserStream).on('finish', () => {
   let suffix = \`${suffix}\`
 
 
-  // 读取当前业务数据并返回处理结果
   const getPrefix = () => {
     let prefix = ''
     Array.from(document.querySelector('head').children).some(ele => {

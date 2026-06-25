@@ -7,7 +7,6 @@ import org.springframework.beans.BeanUtils;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// 定义当前业务对象的核心职责
 public class FieldUtil {
     // 转换输入内容并返回安全结果
     public static List<DatasetTableFieldDTO> transFields(List<? extends ChartViewFieldBaseDTO> list) {

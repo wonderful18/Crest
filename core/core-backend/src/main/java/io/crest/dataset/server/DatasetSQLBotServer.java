@@ -20,13 +20,11 @@ public class DatasetSQLBotServer implements DataAssistantApi {
     @Resource
     private DatasetSQLBotManage datasetSQLBotManage;
     @Override
-    // 执行当前服务方法并返回处理结果
     public List<DataSQLBotAssistantVO> datasourceList(Long dsId, Long tableId) {
         return datasetSQLBotManage.datasourceList(dsId, tableId);
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public List<DataSQLBotDatasetVO> datasetList(String dvInfo) {
         return datasetSQLBotManage.datasetList(dvInfo);
     }

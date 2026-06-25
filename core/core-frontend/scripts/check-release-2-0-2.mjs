@@ -195,10 +195,21 @@ test('v2.0.1 and v2.0.2 migration scripts are present for every supported system
       )
     )
     assert.ok(
+      existsSync(path.join(root, migrationBase, 'V2.0.2.2__rotate_default_crypto_key.sql'))
+    )
+    assert.ok(
       existsSync(
         path.join(
           root,
           `installer/upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_${dbType.suffix}.sql`
+        )
+      )
+    )
+    assert.ok(
+      existsSync(
+        path.join(
+          root,
+          `installer/upgrade-sql/v2.0.1_to_v2.0.2_rotate_default_crypto_key_${dbType.suffix}.sql`
         )
       )
     )
@@ -257,6 +268,35 @@ test('scheduler metadata migrations cover the remaining mixed table names', () =
     read('core/core-backend/src/main/java/io/crest/config/QuartzScheduleTableNameDataSource.java'),
     /core_schedule_JOB_DETAILS/
   )
+})
+
+test('default crypto key seed is not shipped in public initialization SQL', () => {
+  const initializationSqlFiles = [
+    'core/core-backend/src/main/resources/db/migration/V1.5.0.1__initial_schema.sql',
+    'core/core-backend/src/main/resources/db/migration-ob-mysql/V1.5.0.1__initial_schema.sql',
+    'core/core-backend/src/main/resources/db/migration-ob-oracle/V1.5.0.1__initial_schema.sql',
+    ...dbTypes.map(dbType => `installer/upgrade-sql/${dbType.fullSchema}`)
+  ]
+
+  for (const file of initializationSqlFiles) {
+    const source = read(file)
+    assert.doesNotMatch(source, /INSERT INTO `?(?:core_)?crypto_key`?/i, file)
+    assert.doesNotMatch(source, /1779664249927/, file)
+  }
+
+  for (const dbType of dbTypes) {
+    const migration = read(
+      `core/core-backend/src/main/resources/db/${dbType.migrationDir}/V2.0.2.2__rotate_default_crypto_key.sql`
+    )
+    const installerSql = read(
+      `installer/upgrade-sql/v2.0.1_to_v2.0.2_rotate_default_crypto_key_${dbType.suffix}.sql`
+    )
+
+    assert.equal(migration, installerSql)
+    assert.match(migration, /DELETE FROM core_crypto_key/)
+    assert.match(migration, /create_time = 1779664249927/)
+    assert.doesNotMatch(migration, /private_key|public_key|aes_key/i)
+  }
 })
 
 test('about system build information is exposed and injected by package pipeline', () => {
@@ -327,6 +367,7 @@ test('full schema SQL is generated, complete and documented', () => {
     assert.doesNotMatch(fullSchema, /core_export_download\b/)
     assert.doesNotMatch(fullSchema, /dataset_table_join\b/)
     assert.doesNotMatch(fullSchema, /scheduler_instance_id\b/)
+    assert.doesNotMatch(fullSchema, /INSERT INTO `?core_crypto_key`?/i)
     assert.doesNotMatch(fullSchema, /\|DE\||-de-/)
     assert.doesNotMatch(
       fullSchema,
@@ -433,10 +474,13 @@ test('installer and release notes list release scripts in execution order', () =
     }
 
     const schedulerScript = `v2.0.1_to_v2.0.2_metadata_names_${dbType.suffix}.sql`
+    const keyRotationScript = `v2.0.1_to_v2.0.2_rotate_default_crypto_key_${dbType.suffix}.sql`
     for (const source of [releaseNotes202, upgradeReadme, installerReadme, offlinePackage, appImagePackage]) {
       const runtimeIndex = source.indexOf(runtimeScript)
       const schedulerIndex = source.indexOf(schedulerScript)
+      const keyRotationIndex = source.indexOf(keyRotationScript)
       assert.ok(schedulerIndex >= 0, schedulerScript)
+      assert.ok(keyRotationIndex > schedulerIndex, keyRotationScript)
       if (runtimeIndex >= 0) {
         assert.ok(schedulerIndex > runtimeIndex, schedulerScript)
       }

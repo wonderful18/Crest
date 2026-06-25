@@ -81,7 +81,6 @@ public class RangeBarHandler extends YoyChartHandler {
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         sqlMeta.setChartType(this.type);
         return super.calcChartResult(view, formatResult, filterResult, sqlMap, sqlMeta, provider);

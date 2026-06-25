@@ -7,7 +7,6 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
-// 定义当前业务对象的核心职责
 public class ExcelSheetModel implements Serializable {
     @Serial
     private static final long serialVersionUID = 1122095875367371623L;

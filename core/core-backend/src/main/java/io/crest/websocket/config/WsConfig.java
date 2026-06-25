@@ -16,7 +16,6 @@ public class WsConfig implements WebSocketMessageBrokerConfigurer {
 
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/websocket")
                 .setAllowedOriginPatterns("*")

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 @Mapper
-// 定义当前业务对象的核心职责
 public interface DataSetAssistantMapper {
 
     @Select(

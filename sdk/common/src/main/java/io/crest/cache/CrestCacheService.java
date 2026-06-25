@@ -2,7 +2,6 @@ package io.crest.cache;
 
 import java.util.concurrent.TimeUnit;
 
-// 定义当前业务对象的核心职责
 public interface CrestCacheService<T> {
 
 

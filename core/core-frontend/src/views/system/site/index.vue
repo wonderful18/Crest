@@ -12,7 +12,6 @@ const form = reactive({
   title: 'Crest'
 })
 
-// 读取当前业务数据并返回处理结果
 const load = async () => {
   loading.value = true
   try {

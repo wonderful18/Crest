@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Configuration;
 public class FilterConfig {
 
     @Bean
-    // 执行当前服务方法并返回处理结果
     public FilterRegistrationBean prometheusMetricsAccessFilter(ObservabilityProperties observabilityProperties) {
         FilterRegistrationBean filter = new FilterRegistrationBean<>();
         filter.setName("prometheusMetricsAccessFilter");
@@ -25,7 +24,6 @@ public class FilterConfig {
     }
 
     @Bean
-    // 执行当前服务方法并返回处理结果
     public FilterRegistrationBean orderFilter() {
         FilterRegistrationBean filter = new FilterRegistrationBean<>();
         filter.setName("tokenFilter");
@@ -36,7 +34,6 @@ public class FilterConfig {
     }
 
     @Bean
-    // 执行当前服务方法并返回处理结果
     public FilterRegistrationBean communityFilter() {
         FilterRegistrationBean filter = new FilterRegistrationBean<>();
         filter.setName("communityTokenFilter");

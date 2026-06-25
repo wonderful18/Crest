@@ -15,7 +15,6 @@ public class ExportCenterLimitManage {
     @Value("${crest.export.views.limit:100000}")
     private Long viewLimit;
 
-    // 执行当前服务方法并返回处理结果
     public Long getExportLimit(String type) {
         if (StringUtils.isBlank(type) || Strings.CS.equals("view", type)) {
             return viewLimit;

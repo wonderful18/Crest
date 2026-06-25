@@ -41,17 +41,14 @@ public enum LogOT {
         this.name = name;
     }
 
-    // 执行当前服务方法并返回处理结果
     public static LogOT fromValue(Integer value) {
         return Arrays.stream(values()).filter(v -> v.value.equals(value)).findFirst().get();
     }
 
-    // 执行当前服务方法并返回处理结果
     public Integer getValue() {
         return value;
     }
 
-    // 执行当前服务方法并返回处理结果
     public String getName() {
         return name;
     }

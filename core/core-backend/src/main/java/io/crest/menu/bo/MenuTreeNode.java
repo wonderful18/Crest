@@ -9,7 +9,6 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-// 定义当前业务对象的核心职责
 public class MenuTreeNode extends CoreMenu {
 
     private List<MenuTreeNode> children = new ArrayList<>();

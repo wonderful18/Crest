@@ -101,7 +101,6 @@ public class SsrfProtection {
         }
     }
 
-    // 执行当前服务方法并返回处理结果
     private static String normalizeHost(String host) {
         String normalized = host.trim().toLowerCase(Locale.ROOT);
         if (normalized.startsWith("[") && normalized.endsWith("]")) {
