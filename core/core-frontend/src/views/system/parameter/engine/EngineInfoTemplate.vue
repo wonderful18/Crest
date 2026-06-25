@@ -9,8 +9,8 @@
       @edit="edit"
       @check="validateById"
     />
-    <div class="de-expand_content">
-      <div class="de-expand-engine" @click="showPriority = !showPriority">
+    <div class="crest-expand-content">
+      <div class="crest-expand-engine" @click="showPriority = !showPriority">
         {{ t('datasource.priority') }}
         <el-icon>
           <Icon
@@ -189,12 +189,12 @@ const validateById = async () => {
   flex-direction: column;
   gap: 14px;
 }
-.de-expand_content {
+.crest-expand-content {
   height: 28px;
   display: inline-flex;
   align-items: center;
   margin: -2px 0 -2px 0;
-  .de-expand-engine {
+  .crest-expand-engine {
     font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 600;

@@ -203,7 +203,7 @@ const getSparkLastPoint = item => {
         </div>
         <div
           class="stat-item"
-          :class="{ 'de-item-hidden': !item['menuAuth'] }"
+          :class="{ 'crest-item-hidden': !item['menuAuth'] }"
           v-for="(item, index) in busiCountCardList"
           :key="index"
         >
@@ -453,7 +453,7 @@ const getSparkLastPoint = item => {
         }
       }
 
-      .de-item-hidden {
+      .crest-item-hidden {
         cursor: not-allowed;
       }
     }

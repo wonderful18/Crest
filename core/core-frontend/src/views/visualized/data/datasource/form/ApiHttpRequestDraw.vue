@@ -849,7 +849,7 @@ defineExpose({
         <div class="title-form_primary request-info" v-show="apiItem.useJsonPath">
           <span>{{ t('datasource.column_info') }}</span>
         </div>
-        <div class="table-container de-svg-in-table" v-show="apiItem.useJsonPath">
+        <div class="table-container crest-svg-in-table" v-show="apiItem.useJsonPath">
           <el-table
             class="crest-data-table"
             :data="originFieldItem.jsonFields"
@@ -891,7 +891,7 @@ defineExpose({
           </el-icon>
           <span class="name">{{ t('datasource.column_info') }}</span>
         </p>
-        <div v-show="activeColumnInfo" class="de-svg-in-table">
+        <div v-show="activeColumnInfo" class="crest-svg-in-table">
           <el-table
             class="crest-data-table"
             header-cell-class-name="header-cell"

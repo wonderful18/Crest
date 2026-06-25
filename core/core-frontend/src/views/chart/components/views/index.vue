@@ -412,13 +412,13 @@ const filter = (firstLoad?: boolean) => {
   // 定时报告相关勿动
   if (route.path === '/preview' && route.query.taskId) {
     const sceneId = view.value['sceneId']
-    const filterJson = window[`de-report-filter-${sceneId}`]
+    const filterJson = window[`crest-report-filter-${sceneId}`]
     let filterObj = {}
     if (filterJson) {
       filterObj = JSON.parse(filterJson)
     }
     filterObj[view.value.id] = result
-    window[`de-report-filter-${sceneId}`] = JSON.stringify(filterObj)
+    window[`crest-report-filter-${sceneId}`] = JSON.stringify(filterObj)
   }
   return result
 }

@@ -229,7 +229,7 @@ const state = reactive({
     id: ''
   },
   // 禁止移入Tab中的组件
-  ignoreTabMoveComponent: ['de-button', 'de-reset-button', 'Tabs', 'GroupArea'],
+  ignoreTabMoveComponent: ['crest-button', 'crest-reset-button', 'Tabs', 'GroupArea'],
   // 当画布在tab中是 宽度左右拓展的余量
   parentWidthTabOffset: 40,
   canvasChangeTips: 'none',

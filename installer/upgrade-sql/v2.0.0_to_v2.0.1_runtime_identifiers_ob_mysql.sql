@@ -43,6 +43,12 @@ BEGIN
   CALL crest_replace_text_if_needed(target_table_name, target_column_name, 'DE_STR_TO_DATE', 'CREST_STR_TO_DATE');
   CALL crest_replace_text_if_needed(target_table_name, target_column_name, 'DE_FROM_UNIXTIME', 'CREST_FROM_UNIXTIME');
   CALL crest_replace_text_if_needed(target_table_name, target_column_name, 'DE_DATE_FORMAT', 'CREST_DATE_FORMAT');
+  CALL crest_replace_text_if_needed(target_table_name, target_column_name, 'de-rich-text', 'rich-text');
+  CALL crest_replace_text_if_needed(target_table_name, target_column_name, 'de-reset-button', 'crest-reset-button');
+  CALL crest_replace_text_if_needed(target_table_name, target_column_name, 'de-button', 'crest-button');
+  CALL crest_replace_text_if_needed(target_table_name, target_column_name, 'de-template-data', 'crest-template-data');
+  CALL crest_replace_text_if_needed(target_table_name, target_column_name, 'de-report-filter-', 'crest-report-filter-');
+  CALL crest_replace_text_if_needed(target_table_name, target_column_name, 'de-canvas-', 'crest-canvas-');
 END//
 DELIMITER ;
 

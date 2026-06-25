@@ -317,7 +317,7 @@ defineExpose({
       label-position="top"
     >
       <el-form-item :label="t('datasource.type')">
-        <el-select v-model="nodeInfo.type" class="de-select" disabled>
+        <el-select v-model="nodeInfo.type" class="crest-select" disabled>
           <el-option
             v-for="item in dsTypes"
             :key="item.type"
@@ -408,7 +408,7 @@ defineExpose({
       </el-form-item>
       <el-form-item>
         <!-- 高级配置默认收起，减少普通连接维护时的表单噪音。 -->
-        <span class="de-expand_engine" @click="showPriority = !showPriority"
+        <span class="crest-expand-engine" @click="showPriority = !showPriority"
           >{{ t('datasource.priority') }}
           <el-icon>
             <Icon
@@ -501,7 +501,7 @@ defineExpose({
 <style lang="less">
 .basic-param-drawer {
   // 抽屉样式限定在参数编辑容器下，避免影响其它全局抽屉。
-  .de-expand_engine {
+  .crest-expand-engine {
     font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 400;

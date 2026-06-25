@@ -114,14 +114,14 @@ if (uid.value === '1') {
     width="224"
   >
     <div class="uinfo-container">
-      <div class="uinfo-header de-container">
+      <div class="uinfo-header crest-container">
         <span class="uinfo-name">{{ name }}</span>
         <span class="uinfo-id">{{ `ID: ${uid}` }}</span>
       </div>
       <el-divider />
       <div class="uinfo-main">
         <div
-          class="uinfo-main-item de-container"
+          class="uinfo-main-item crest-container"
           v-for="link in linkList"
           :key="link.id"
           @click="executeMethod(link)"
@@ -129,7 +129,7 @@ if (uid.value === '1') {
           <span>{{ link.label }}</span>
         </div>
 
-        <div class="uinfo-main-item de-container">
+        <div class="uinfo-main-item crest-container">
           <div class="about-parent" ref="divLanguageRef" v-click-outside="openLanguage">
             <span>{{ $t('commons.language') }}</span>
             <el-icon class="el-icon-animate">
@@ -152,7 +152,7 @@ if (uid.value === '1') {
       </div>
       <el-divider />
       <div class="uinfo-footer" v-if="!inPlatformClient">
-        <div class="uinfo-main-item de-container" @click="logout">
+        <div class="uinfo-main-item crest-container" @click="logout">
           <span>{{ t('common.exit_system') }}</span>
         </div>
       </div>
@@ -212,7 +212,7 @@ if (uid.value === '1') {
 .uinfo-container {
   width: 100%;
   height: 100%;
-  .de-container {
+  .crest-container {
     padding: 0 13px 10px;
   }
   .ed-divider--horizontal {

@@ -319,7 +319,7 @@ defineExpose({
           </div>
         </template>
         <el-switch
-          class="de-basic-switch"
+          class="crest-basic-switch"
           v-if="
             item.pkey === 'autoCreateUser' ||
             item.pkey === 'pwdStrategy' ||
@@ -568,7 +568,7 @@ defineExpose({
     margin-left: 6px;
   }
 }
-.de-basic-switch {
+.crest-basic-switch {
   height: 22px;
 }
 </style>

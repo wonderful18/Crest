@@ -2357,7 +2357,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
 </script>
 
 <template>
-  <div class="de-dataset-form" v-loading="loading">
+  <div class="crest-dataset-form" v-loading="loading">
     <div class="top">
       <span class="name">
         <el-icon @click="backToMain">
@@ -3658,7 +3658,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
   --ed-table-header-bg-color: #f5f6f7;
 }
 
-.de-dataset-form {
+.crest-dataset-form {
   color: #1f2329;
 
   :deep(.ed-table__border-left-patch),

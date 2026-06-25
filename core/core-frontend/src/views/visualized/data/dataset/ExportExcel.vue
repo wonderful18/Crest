@@ -397,7 +397,7 @@ defineExpose({
 
 <template>
   <el-drawer
-    modal-class="de-export-excel"
+    modal-class="crest-export-excel"
     class="export-center-drawer"
     :title="$t('data_export.export_center')"
     v-model="drawer"
@@ -589,7 +589,7 @@ defineExpose({
 </template>
 
 <style lang="less">
-.de-export-excel {
+.crest-export-excel {
   // 导出中心使用独立 CSS 变量，避免与数据集页面其它抽屉样式相互影响。
   --export-ink: #0f172a;
   --export-ink-2: #334155;
@@ -929,7 +929,7 @@ defineExpose({
 }
 
 @media (max-width: 900px) {
-  .de-export-excel {
+  .crest-export-excel {
     .export-center-drawer {
       width: calc(100vw - 12px) !important;
       max-width: calc(100vw - 12px);

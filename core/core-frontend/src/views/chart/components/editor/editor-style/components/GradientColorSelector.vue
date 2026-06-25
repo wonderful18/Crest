@@ -74,15 +74,7 @@ const handleClick = () => {
     scrollToSelected()
   })
   // 获取颜色选择器组件引用并关闭其浮层
-  const widget = ref['de-color-picker']
-  if (!widget) return
-  if (Array.isArray(widget)) {
-    widget.forEach(item => {
-      item.triggerHide && item.triggerHide()
-    })
-    return
-  }
-  widget.triggerHide && widget.triggerHide()
+  colorCaseSelectorRef.value?.hide()
 }
 
 // 选择配色方案并同步给父组件

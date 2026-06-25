@@ -34,6 +34,8 @@ const runtimeScanRoots = [
   'deploy'
 ]
 
+const runtimeScanFiles = ['core/core-frontend/index.html']
+
 const runtimeScanExcludes = [
   '/node_modules/',
   '/target/',
@@ -52,6 +54,7 @@ const forbiddenRuntimePatterns = [
   /\bDE\b/,
   /\bDE_(CAST_DATE_FORMAT|UNIX_TIMESTAMP|STR_TO_DATE|FROM_UNIXTIME|DATE_FORMAT)\b/,
   /-de-/,
+  /(^|[^A-Za-z0-9_])de-[A-Za-z0-9_-]+/,
   /de-preview-content/,
   /de-canvas-canvas-main/,
   /de-chart-active/,
@@ -86,6 +89,20 @@ const dbTypes = [
 test('runtime source paths no longer contain legacy external names or markers', () => {
   const failures = []
 
+  const scanFile = file => {
+    const relativePath = path.relative(root, file)
+    if (!/\.(java|xml|ts|tsx|js|jsx|vue|less|css|scss|html|yaml|yml|sql|md)$/.test(file)) {
+      return
+    }
+
+    const source = readFileSync(file, 'utf8')
+    forbiddenRuntimePatterns.forEach(pattern => {
+      if (pattern.test(source)) {
+        failures.push(`${relativePath}: ${pattern}`)
+      }
+    })
+  }
+
   for (const relativeRoot of runtimeScanRoots) {
     const absoluteRoot = path.join(root, relativeRoot)
     if (!existsSync(absoluteRoot)) {
@@ -97,16 +114,14 @@ test('runtime source paths no longer contain legacy external names or markers', 
       if (runtimeScanExcludes.some(exclude => file.includes(exclude))) {
         continue
       }
-      if (!/\.(java|xml|ts|tsx|js|jsx|vue|less|css|scss|yaml|yml|sql|md)$/.test(file)) {
-        continue
-      }
+      scanFile(file)
+    }
+  }
 
-      const source = readFileSync(file, 'utf8')
-      forbiddenRuntimePatterns.forEach(pattern => {
-        if (pattern.test(source)) {
-          failures.push(`${relativePath}: ${pattern}`)
-        }
-      })
+  for (const relativeFile of runtimeScanFiles) {
+    const absoluteFile = path.join(root, relativeFile)
+    if (existsSync(absoluteFile)) {
+      scanFile(absoluteFile)
     }
   }
 
@@ -185,6 +200,18 @@ test('runtime identifier migrations cover saved parameter and tree configuration
     assert.match(source, / > /)
     assert.match(source, /DE_DATE_FORMAT/)
     assert.match(source, /CREST_DATE_FORMAT/)
+    assert.match(source, /de-rich-text/)
+    assert.match(source, /rich-text/)
+    assert.match(source, /de-reset-button/)
+    assert.match(source, /crest-reset-button/)
+    assert.match(source, /de-button/)
+    assert.match(source, /crest-button/)
+    assert.match(source, /de-template-data/)
+    assert.match(source, /crest-template-data/)
+    assert.match(source, /de-report-filter-/)
+    assert.match(source, /crest-report-filter-/)
+    assert.match(source, /de-canvas-/)
+    assert.match(source, /crest-canvas-/)
     assert.match(source, /core_dataset_field/)
     assert.match(source, /origin_name/)
     assert.match(source, /params/)

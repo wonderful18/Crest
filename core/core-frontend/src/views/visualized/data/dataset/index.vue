@@ -897,7 +897,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
 </script>
 
 <template>
-  <div class="dataset-manage" :class="isIframe && 'de-100vh'" v-loading="dtLoading">
+  <div class="dataset-manage" :class="isIframe && 'crest-100vh'" v-loading="dtLoading">
     <ArrowSide
       :style="{ left: (sideTreeStatus ? width - 12 : 0) + 'px' }"
       @change-side-tree-status="changeSideTreeStatus"
@@ -1315,7 +1315,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
   background: #fff;
   position: relative;
 
-  &.de-100vh {
+  &.crest-100vh {
     height: 100vh;
     .custom-tree {
       height: calc(100vh - 122px);

@@ -57,7 +57,7 @@ const props = defineProps({
 const { canvasStyleData, componentData, canvasViewInfo, canvasId, canvasActive, canvasPosition } =
   toRefs(props)
 /** 画布滚动容器的 DOM 编号 */
-const domId = ref('de-canvas-' + canvasId.value)
+const domId = ref('crest-canvas-' + canvasId.value)
 
 /** 主画布仓库提供矩阵、主题和移动端状态 */
 const dvMainStore = dvMainStoreWithOut()

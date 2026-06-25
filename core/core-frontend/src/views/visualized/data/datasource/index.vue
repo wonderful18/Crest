@@ -1992,7 +1992,7 @@ const getMenuList = (val: boolean) => {
                       !['es', 'api'].includes(nodeInfo.type.toLowerCase()) &&
                       nodeInfo.configuration.urlType !== 'jdbcUrl'
                     "
-                    class="de-expand"
+                    class="crest-expand"
                     @click="showSSH = !showSSH"
                     >{{ t('data_source.ssh_settings') }}
                     <el-icon>
@@ -2028,7 +2028,7 @@ const getMenuList = (val: boolean) => {
                 <el-row :gutter="24">
                   <span
                     v-if="!['es', 'api'].includes(nodeInfo.type.toLowerCase())"
-                    class="de-expand"
+                    class="crest-expand"
                     @click="showPriority = !showPriority"
                     >{{ t('datasource.priority') }}
                     <el-icon>
@@ -2096,10 +2096,10 @@ const getMenuList = (val: boolean) => {
                     <span class="name">
                       <span class="ellipsis" :title="api.name">{{ api.name }}</span>
                     </span>
-                    <span v-if="api.status === 'Error'" class="de-tag error-color">{{
+                    <span v-if="api.status === 'Error'" class="crest-tag error-color">{{
                       t('datasource.invalid')
                     }}</span>
-                    <span v-if="api.status === 'Success'" class="de-tag success-color">{{
+                    <span v-if="api.status === 'Success'" class="crest-tag success-color">{{
                       t('datasource.valid')
                     }}</span>
                   </el-col>
@@ -2714,7 +2714,7 @@ const getMenuList = (val: boolean) => {
         color: var(--crestDanger, #f54a45);
       }
     }
-    .de-tag {
+    .crest-tag {
       display: inline-flex;
       justify-content: center;
       align-items: center;
@@ -2734,7 +2734,7 @@ const getMenuList = (val: boolean) => {
     }
   }
 
-  .de-expand {
+  .crest-expand {
     font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 400;
