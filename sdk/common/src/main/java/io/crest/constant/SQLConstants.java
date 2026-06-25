@@ -52,15 +52,15 @@ public class SQLConstants {
 
     public static final String FIELD_DOT_FIX = "`%s`";
 
-    public static final String UNIX_TIMESTAMP = "DE_UNIX_TIMESTAMP(%s)";
+    public static final String UNIX_TIMESTAMP = "CREST_UNIX_TIMESTAMP(%s)";
 
-    public static final String CREST_DATE_FORMAT = "DE_DATE_FORMAT(%s,'%s')";
+    public static final String CREST_DATE_FORMAT = "CREST_DATE_FORMAT(%s,'%s')";
 
-    public static final String CREST_CAST_DATE_FORMAT = "DE_CAST_DATE_FORMAT(%s,'%s','%s')";
+    public static final String CREST_CAST_DATE_FORMAT = "CREST_CAST_DATE_FORMAT(%s,'%s','%s')";
 
-    public static final String FROM_UNIXTIME = "DE_FROM_UNIXTIME(%s,'%s')";
+    public static final String FROM_UNIXTIME = "CREST_FROM_UNIXTIME(%s,'%s')";
 
-    public static final String CREST_STR_TO_DATE = "DE_STR_TO_DATE(%s,'%s')";
+    public static final String CREST_STR_TO_DATE = "CREST_STR_TO_DATE(%s,'%s')";
 
     public static final String CAST = "CAST(%s AS %s)";
 

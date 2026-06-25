@@ -1,5 +1,5 @@
 -- Crest 2.0.1 运行配置标识迁移。
--- 本脚本在元数据表统一命名后执行，只处理已保存的图表、可视化、模板和外部参数配置。
+-- 本脚本在元数据表统一命名后执行，处理已保存的数据集、图表、可视化、模板和外部参数配置。
 
 CREATE OR REPLACE PROCEDURE crest_replace_text_if_needed(
   target_table_name IN VARCHAR2,
@@ -44,6 +44,11 @@ CREATE OR REPLACE PROCEDURE crest_normalize_config_column(
 BEGIN
   crest_replace_text_if_needed(target_table_name, target_column_name, '|DE|', '|DATASET_PARAM|');
   crest_replace_text_if_needed(target_table_name, target_column_name, '-de-', ' > ');
+  crest_replace_text_if_needed(target_table_name, target_column_name, 'DE_CAST_DATE_FORMAT', 'CREST_CAST_DATE_FORMAT');
+  crest_replace_text_if_needed(target_table_name, target_column_name, 'DE_UNIX_TIMESTAMP', 'CREST_UNIX_TIMESTAMP');
+  crest_replace_text_if_needed(target_table_name, target_column_name, 'DE_STR_TO_DATE', 'CREST_STR_TO_DATE');
+  crest_replace_text_if_needed(target_table_name, target_column_name, 'DE_FROM_UNIXTIME', 'CREST_FROM_UNIXTIME');
+  crest_replace_text_if_needed(target_table_name, target_column_name, 'DE_DATE_FORMAT', 'CREST_DATE_FORMAT');
 END;
 /
 
@@ -57,6 +62,14 @@ BEGIN
   -- 外部参数默认值可能保存树层级值。
   crest_normalize_config_column('core_visualization_parameter_item', 'default_value');
   crest_normalize_config_column('core_visualization_parameter_item_snapshot', 'default_value');
+
+  -- 数据集计算字段和数据表配置可能保存内置日期函数。
+  crest_normalize_config_column('core_dataset_field', 'origin_name');
+  crest_normalize_config_column('core_dataset_field', 'group_list');
+  crest_normalize_config_column('core_dataset_field', 'other_group');
+  crest_normalize_config_column('core_dataset_field', 'params');
+  crest_normalize_config_column('core_dataset_table', 'info');
+  crest_normalize_config_column('core_dataset_table', 'sql_variable_details');
 
   -- 图表字段、过滤、高级配置和样式配置。
   crest_normalize_config_column('core_chart_view', 'x_axis');

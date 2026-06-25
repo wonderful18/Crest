@@ -29,6 +29,7 @@ const runtimeScanRoots = [
   'core/core-frontend/src',
   'sdk/api',
   'sdk/common',
+  'sdk/extensions',
   'installer',
   'deploy'
 ]
@@ -49,6 +50,7 @@ const forbiddenRuntimePatterns = [
   /\.DET2/i,
   /\|DE\|/,
   /\bDE\b/,
+  /\bDE_(CAST_DATE_FORMAT|UNIX_TIMESTAMP|STR_TO_DATE|FROM_UNIXTIME|DATE_FORMAT)\b/,
   /-de-/,
   /de-preview-content/,
   /de-canvas-canvas-main/,
@@ -181,6 +183,11 @@ test('runtime identifier migrations cover saved parameter and tree configuration
     assert.match(source, /\|DATASET_PARAM\|/)
     assert.match(source, /-de-/)
     assert.match(source, / > /)
+    assert.match(source, /DE_DATE_FORMAT/)
+    assert.match(source, /CREST_DATE_FORMAT/)
+    assert.match(source, /core_dataset_field/)
+    assert.match(source, /origin_name/)
+    assert.match(source, /params/)
     assert.match(source, /core_visualization_parameter_target/)
     assert.match(source, /core_visualization_parameter_item/)
     assert.match(source, /core_chart_view/)
