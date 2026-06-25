@@ -37,6 +37,7 @@ public class CrestRuntimeEnvironmentPostProcessor implements EnvironmentPostProc
             enforced.put("management.health.redis.enabled", "true");
             enforced.put("CREST_FLYWAY_ENABLED", "false");
             enforced.put("spring.flyway.enabled", "false");
+            enforced.put("spring.quartz.jdbc.initialize-schema", "never");
             enforced.put("CREST_LOAD_DEMO", "false");
             enforced.put("crest.demo.enabled", "false");
         }
@@ -95,6 +96,7 @@ public class CrestRuntimeEnvironmentPostProcessor implements EnvironmentPostProc
         String productionReason = "when CREST_PRODUCTION_MODE=true";
         requireEquals(environment, "spring.cache.type", "redis", productionReason);
         requireEquals(environment, "spring.flyway.enabled", "false", productionReason);
+        requireEquals(environment, "spring.quartz.jdbc.initialize-schema", "never", productionReason);
         requireEquals(environment, "CREST_FLYWAY_ENABLED", "false", productionReason);
         requireEquals(environment, "crest.demo.enabled", "false", productionReason);
         requireEquals(environment, "CREST_LOAD_DEMO", "false", productionReason);
