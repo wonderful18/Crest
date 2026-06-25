@@ -89,7 +89,6 @@ public class TemplateMarketDTO implements Comparable<TemplateMarketDTO> {
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public int compareTo(TemplateMarketDTO other) {
         return Long.compare(other.recentUseTime, this.recentUseTime);
     }

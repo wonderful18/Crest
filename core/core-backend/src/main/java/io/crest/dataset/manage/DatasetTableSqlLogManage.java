@@ -51,7 +51,6 @@ public class DatasetTableSqlLogManage {
         }).collect(Collectors.toList());
     }
 
-    // 执行当前服务方法并返回处理结果
     public void tableRemoval(String id) {
         QueryWrapper<CoreDatasetTableSqlLog> wrapper = new QueryWrapper<>();
         wrapper.eq("table_id", id);

@@ -19,7 +19,7 @@ public class VisualizationOuterParamsInfoVO implements Serializable {
     private String paramsInfoId;
 
     /**
-     * visualization_outer_params 表的 ID
+     * core_visualization_parameter 表的 ID
      */
     private String paramsId;
 
@@ -59,7 +59,6 @@ public class VisualizationOuterParamsInfoVO implements Serializable {
     private String copyId;
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public String toString() {
         return "VisualizationOuterParamsInfo{" +
         "paramsInfoId = " + paramsInfoId +

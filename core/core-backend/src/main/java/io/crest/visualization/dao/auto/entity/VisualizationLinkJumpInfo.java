@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 组件跳转规则实体。
  */
-@TableName("visualization_link_jump_info")
+@TableName("core_visualization_jump_action")
 public class VisualizationLinkJumpInfo implements Serializable {
 
     /**

@@ -64,8 +64,8 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
 
     // 行政区划数据量较大，使用 JSONL 加批处理避免在 Oracle SQL 文件中维护超长 INSERT
     private void loadRefArea() throws IOException {
-        List<List<Object>> rows = loadRows("db/seed-ob-oracle/ref_area.jsonl", 4);
-        Set<String> existingIds = existingIds("ref_area");
+        List<List<Object>> rows = loadRows("db/seed-ob-oracle/core_reference_area.jsonl", 4);
+        Set<String> existingIds = existingIds("core_reference_area");
         List<List<Object>> missingRows = rows.stream()
                 .filter(row -> !existingIds.contains(stringValue(row.get(0))))
                 .toList();
@@ -73,10 +73,10 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
             return;
         }
         jdbcTemplate.batchUpdate("""
-                INSERT INTO ref_area (id, "LEVEL", name, pid)
+                INSERT INTO core_reference_area (id, "LEVEL", name, pid)
                 VALUES (?, ?, ?, ?)
                 """, new BatchPreparedStatementSetter() {
-            // 按 ref_area 固定列序写入缺失行
+            // 按 core_reference_area 固定列序写入缺失行
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
                 List<Object> row = missingRows.get(i);
@@ -92,13 +92,13 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
                 return missingRows.size();
             }
         });
-        LogUtil.info("=====OceanBase Oracle ref_area seed loaded: " + missingRows.size() + " rows=====");
+        LogUtil.info("=====OceanBase Oracle core_reference_area seed loaded: " + missingRows.size() + " rows=====");
     }
 
     // 内置主题包含长文本和图片字段，使用 CLOB 绑定避开 SQL 字面量长度限制
     private void loadVisualizationSubject() throws IOException {
-        List<List<Object>> rows = loadRows("db/seed-ob-oracle/visualization_subject.jsonl", 13);
-        Set<String> existingIds = existingIds("visualization_subject");
+        List<List<Object>> rows = loadRows("db/seed-ob-oracle/core_visualization_theme.jsonl", 13);
+        Set<String> existingIds = existingIds("core_visualization_theme");
         List<List<Object>> missingRows = rows.stream()
                 .filter(row -> !existingIds.contains(stringValue(row.get(0))))
                 .toList();
@@ -106,13 +106,13 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
             return;
         }
         jdbcTemplate.batchUpdate("""
-                INSERT INTO visualization_subject (
+                INSERT INTO core_visualization_theme (
                     id, name, type, details, delete_flag, cover_url, create_num,
                     create_time, create_by, update_time, update_by, delete_time, delete_by
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, new BatchPreparedStatementSetter() {
-            // 按 visualization_subject 固定列序绑定主题字段
+            // 按 core_visualization_theme 固定列序绑定主题字段
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
                 List<Object> row = missingRows.get(i);
@@ -137,7 +137,7 @@ public class ObOracleMetadataSeedInitializer implements ApplicationListener<Appl
                 return missingRows.size();
             }
         });
-        LogUtil.info("=====OceanBase Oracle visualization_subject seed loaded: " + missingRows.size() + " rows=====");
+        LogUtil.info("=====OceanBase Oracle core_visualization_theme seed loaded: " + missingRows.size() + " rows=====");
     }
 
     // 逐行解析 JSON 数组，并校验列数防止种子文件和写入语句漂移

@@ -16,7 +16,6 @@ public class DatasetPermissionTemplate {
 
     private List<TableSysVariable> tableSysVariables;
 
-    // 执行当前服务方法并返回处理结果
     public boolean hasSysVariable() {
         return CollectionUtils.isNotEmpty(tableSysVariables);
     }

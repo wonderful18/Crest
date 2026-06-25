@@ -169,7 +169,7 @@ public class MenuManage {
         }
         String ids = roleIds.stream().map(String::valueOf).collect(Collectors.joining(","));
         return jdbcTemplate.queryForList("""
-                SELECT DISTINCT menu_id FROM iam_role_menu_permission
+                SELECT DISTINCT menu_id FROM core_iam_role_menu_permission
                 WHERE rid IN (%s)
                 """.formatted(ids), Long.class).stream().collect(Collectors.toSet());
     }

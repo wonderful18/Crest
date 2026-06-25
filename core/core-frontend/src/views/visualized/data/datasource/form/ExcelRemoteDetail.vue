@@ -834,7 +834,7 @@ defineExpose({
           <el-input
             v-model="form.name"
             autocomplete="off"
-            :placeholder="t('data_source.data_source_name_de')"
+            :placeholder="t('data_source.data_source_name_placeholder')"
           />
         </el-form-item>
         <el-form-item
@@ -1127,7 +1127,7 @@ defineExpose({
           >
             <el-date-picker
               v-model="form.syncSetting.startTime"
-              class="de-date-picker"
+              class="crest-date-picker"
               :prefix-icon="icon_calendar_outlined"
               type="datetime"
               :placeholder="t('datasource.start_time')"
@@ -1141,7 +1141,7 @@ defineExpose({
             <div style="width: 100%">
               <el-date-picker
                 v-model="form.syncSetting.endTime"
-                class="de-date-picker"
+                class="crest-date-picker"
                 :prefix-icon="icon_calendar_outlined"
                 type="datetime"
                 :placeholder="t('datasource.end_time')"
@@ -1174,7 +1174,7 @@ defineExpose({
     margin-top: -8px;
   }
 
-  .de-select {
+  .crest-select {
     width: 100%;
   }
   .ed-input-number {
@@ -1185,7 +1185,7 @@ defineExpose({
     background: #fff;
   }
 
-  .de-expand {
+  .crest-expand {
     font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 400;
@@ -1481,7 +1481,7 @@ defineExpose({
   .delete-icon {
     cursor: pointer;
   }
-  .de-tag {
+  .crest-tag {
     display: inline-flex;
     justify-content: center;
     align-items: center;

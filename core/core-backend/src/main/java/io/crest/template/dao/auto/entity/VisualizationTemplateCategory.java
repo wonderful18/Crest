@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 可视化模板分类实体。
  */
-@TableName("visualization_template_category")
+@TableName("core_template_category")
 public class VisualizationTemplateCategory implements Serializable {
 
     /**

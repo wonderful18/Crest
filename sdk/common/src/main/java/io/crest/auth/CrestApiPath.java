@@ -8,7 +8,6 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 @Documented
-// 定义当前业务对象的核心职责
 public @interface CrestApiPath {
 
     @AliasFor("path")

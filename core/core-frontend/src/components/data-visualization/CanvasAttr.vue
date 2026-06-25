@@ -115,7 +115,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="attr-container de-collapse-style">
+  <div class="attr-container crest-collapse-style">
     <el-collapse v-model="canvasAttrActiveNames">
       <el-collapse-item effect="dark" :title="t('visualization.size')" name="size">
         <el-form label-position="left" :label-width="14">
@@ -234,7 +234,7 @@ onMounted(() => {
   }
 }
 
-.de-collapse-style {
+.crest-collapse-style {
   :deep(.ed-collapse-item__header) {
     height: 36px !important;
     line-height: 36px !important;

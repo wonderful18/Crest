@@ -7,7 +7,6 @@ import java.util.Map;
 // 提供当前模块复用的工具能力
 public class MappingUtils {
 
-    // 执行当前服务方法并返回处理结果
     public static Map<String, String> mapNestedUserData(Map<String, Object> userMap, Map<String, String> mappingMap) {
 
         Map<String, String> resultMap = new HashMap<>();
@@ -21,7 +20,6 @@ public class MappingUtils {
         return resultMap;
     }
 
-    // 执行当前服务方法并返回处理结果
     private static Object getNestedValue(Map<String, Object> sourceMap, String path) {
         String[] keys = path.split("\\.");
         Object current = sourceMap;

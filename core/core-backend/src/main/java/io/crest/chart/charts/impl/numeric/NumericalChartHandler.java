@@ -30,7 +30,6 @@ import java.util.regex.Pattern;
 // 定义图表处理器，负责轴格式化和结果组装
 public class NumericalChartHandler extends DefaultChartHandler {
     @Override
-    // 执行当前服务方法并返回处理结果
     public <T extends ChartCalcDataResult> T calcChartResult(ChartViewDTO view, AxisFormatResult formatResult, CustomFilterResult filterResult, Map<String, Object> sqlMap, SQLMeta sqlMeta, Provider provider) {
         var dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
         List<String> dsList = new ArrayList<>();

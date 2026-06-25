@@ -96,7 +96,7 @@
                 dvi.type as target_dv_type,
                 vlji.content,
                 <if test="!isDesktop">
-                share_link.uuid AS publicJumpId,
+                core_share_link.uuid AS publicJumpId,
                 </if>
                 COALESCE( vlji.checked, 0 ) AS checked,
                 COALESCE( vlji.attach_params, 0 ) AS attach_params,
@@ -107,19 +107,19 @@
                 vljtvi.source_field_active_id,
                 vopi.param_name as outer_params_name
             FROM
-                bi_chart_snapshot ccv
-                    LEFT JOIN dataset_field cdtf ON ccv.table_id = cdtf.dataset_group_id
-                    LEFT JOIN snapshot_visualization_link_jump vlj ON ccv.id = vlj.source_view_id
+                core_chart_view_snapshot ccv
+                    LEFT JOIN core_dataset_field cdtf ON ccv.table_id = cdtf.dataset_group_id
+                    LEFT JOIN core_visualization_jump_snapshot vlj ON ccv.id = vlj.source_view_id
                     AND vlj.id = #{id}
-                    LEFT JOIN snapshot_visualization_link_jump_info vlji ON vlj.id = vlji.link_jump_id
+                    LEFT JOIN core_visualization_jump_action_snapshot vlji ON vlj.id = vlji.link_jump_id
                     AND cdtf.id = vlji.source_field_id
-                    LEFT JOIN bi_visualization dvi ON vlji.target_dv_id = dvi.id
-                    LEFT JOIN snapshot_visualization_link_jump_target_view_info vljtvi ON vlji.id = vljtvi.link_jump_info_id
+                    LEFT JOIN core_visualization dvi ON vlji.target_dv_id = dvi.id
+                    LEFT JOIN core_visualization_jump_target_snapshot vljtvi ON vlji.id = vljtvi.link_jump_info_id
                     <if test="!isDesktop">
-                    LEFT JOIN share_link ON share_link.creator = #{uid}
-                    AND vlji.target_dv_id = share_link.resource_id
+                    LEFT JOIN core_share_link ON core_share_link.creator = #{uid}
+                    AND vlji.target_dv_id = core_share_link.resource_id
                     </if>
-                    left join snapshot_visualization_outer_params_info vopi on vopi.params_info_id = vljtvi.target_view_id
+                    left join core_visualization_parameter_item_snapshot vopi on vopi.params_info_id = vljtvi.target_view_id
             WHERE
                 ccv.id = #{source_view_id}
               AND ccv.type != 'VQuery'
@@ -154,7 +154,7 @@
             dvi.type as target_dv_type,
             vlji.content,
             <if test="!isDesktop">
-            share_link.uuid AS publicJumpId,
+            core_share_link.uuid AS publicJumpId,
             </if>
             COALESCE( vlji.checked, 0 ) AS checked,
             COALESCE( vlji.attach_params, 0 ) AS attach_params,
@@ -165,19 +165,19 @@
             vljtvi.source_field_active_id,
             vopi.param_name as outer_params_name
         FROM
-            bi_chart ccv
-                LEFT JOIN dataset_field cdtf ON ccv.table_id = cdtf.dataset_group_id
-                LEFT JOIN visualization_link_jump vlj ON ccv.id = vlj.source_view_id
+            core_chart_view ccv
+                LEFT JOIN core_dataset_field cdtf ON ccv.table_id = cdtf.dataset_group_id
+                LEFT JOIN core_visualization_jump vlj ON ccv.id = vlj.source_view_id
                 AND vlj.id = #{id}
-                LEFT JOIN visualization_link_jump_info vlji ON vlj.id = vlji.link_jump_id
+                LEFT JOIN core_visualization_jump_action vlji ON vlj.id = vlji.link_jump_id
                 AND cdtf.id = vlji.source_field_id
-                LEFT JOIN bi_visualization dvi ON vlji.target_dv_id = dvi.id
-                LEFT JOIN visualization_link_jump_target_view_info vljtvi ON vlji.id = vljtvi.link_jump_info_id
+                LEFT JOIN core_visualization dvi ON vlji.target_dv_id = dvi.id
+                LEFT JOIN core_visualization_jump_target vljtvi ON vlji.id = vljtvi.link_jump_info_id
                 <if test="!isDesktop">
-                LEFT JOIN share_link ON share_link.creator = #{uid}
-                AND vlji.target_dv_id = share_link.resource_id
+                LEFT JOIN core_share_link ON core_share_link.creator = #{uid}
+                AND vlji.target_dv_id = core_share_link.resource_id
                 </if>
-                left join visualization_outer_params_info vopi on vopi.params_info_id = vljtvi.target_view_id
+                left join core_visualization_parameter_item vopi on vopi.params_info_id = vljtvi.target_view_id
         WHERE
             ccv.id = #{source_view_id}
           AND ccv.type != 'VQuery'
@@ -205,8 +205,8 @@
                vlj.id,
                #{dvId} as source_dv_id, vlj.link_jump_info,
                COALESCE(ccv.jump_active, 0) AS checked
-        FROM bi_chart ccv
-                 LEFT JOIN visualization_link_jump vlj ON ccv.id = vlj.source_view_id
+        FROM core_chart_view ccv
+                 LEFT JOIN core_visualization_jump vlj ON ccv.id = vlj.source_view_id
         WHERE vlj.source_dv_id = #{dvId}
           and ccv.jump_active = 1
     </select>
@@ -218,39 +218,39 @@
                vlj.id,
                #{dvId} as source_dv_id, vlj.link_jump_info,
                COALESCE(ccv.jump_active, 0) AS checked
-        FROM bi_chart_snapshot ccv
-                 LEFT JOIN snapshot_visualization_link_jump vlj ON ccv.id = vlj.source_view_id
+        FROM core_chart_view_snapshot ccv
+                 LEFT JOIN core_visualization_jump_snapshot vlj ON ccv.id = vlj.source_view_id
         WHERE vlj.source_dv_id = #{dvId}
           and ccv.jump_active = 1
     </select>
 
     <select id="getViewTableDetails" resultMap="ViewTableFieldDetailsMap">
         SELECT
-            bi_chart.id,
-            bi_chart.title,
-            bi_chart.type,
-            bi_chart.scene_id AS dv_id,
-            dataset_field.id AS field_id,
-            dataset_field.origin_name,
-            dataset_field.`name` AS field_name,
-            dataset_field.type AS raw_field_type,
-            dataset_field.field_type AS field_type
+            core_chart_view.id,
+            core_chart_view.title,
+            core_chart_view.type,
+            core_chart_view.scene_id AS dv_id,
+            core_dataset_field.id AS field_id,
+            core_dataset_field.origin_name,
+            core_dataset_field.`name` AS field_name,
+            core_dataset_field.type AS raw_field_type,
+            core_dataset_field.field_type AS field_type
         FROM
-            bi_chart
-            LEFT JOIN dataset_field ON bi_chart.table_id = dataset_field.dataset_group_id
-            INNER JOIN bi_visualization dvi ON bi_chart.scene_id = dvi.id
+            core_chart_view
+            LEFT JOIN core_dataset_field ON core_chart_view.table_id = core_dataset_field.dataset_group_id
+            INNER JOIN core_visualization dvi ON core_chart_view.scene_id = dvi.id
         WHERE
-            bi_chart.scene_id = #{dvId}
-            AND bi_chart.type != 'VQuery'
-            AND bi_chart.table_id IS NOT NULL
+            core_chart_view.scene_id = #{dvId}
+            AND core_chart_view.type != 'VQuery'
+            AND core_chart_view.table_id IS NOT NULL
             AND dvi.id = #{dvId}
             <choose>
                 <when test="_databaseId == 'ob-oracle'">
-                    AND INSTR(dvi.component_data, TO_CHAR(bi_chart.id)) > 0
+                    AND INSTR(dvi.component_data, TO_CHAR(core_chart_view.id)) > 0
                 </when>
                 <otherwise>
                     AND LOCATE(
-                    bi_chart.id,
+                    core_chart_view.id,
                     dvi.component_data)
                 </otherwise>
             </choose>
@@ -263,8 +263,8 @@
                vlj.id,
                #{dvId} as source_dv_id, vlj.link_jump_info,
                COALESCE(vlj.checked, 0) AS checked
-        FROM bi_chart_snapshot ccv
-                 LEFT JOIN snapshot_visualization_link_jump vlj ON ccv.id = vlj.source_view_id
+        FROM core_chart_view_snapshot ccv
+                 LEFT JOIN core_visualization_jump_snapshot vlj ON ccv.id = vlj.source_view_id
             AND vlj.source_dv_id = #{dvId}
         WHERE ccv.id = #{viewId}
     </select>
@@ -276,85 +276,85 @@
                 vopi.param_name as title,
                 'outerParams' as type
             FROM
-                visualization_outer_params_info vopi
-                LEFT JOIN visualization_outer_params vop ON vopi.params_id = vop.params_id
+                core_visualization_parameter_item vopi
+                LEFT JOIN core_visualization_parameter vop ON vopi.params_id = vop.params_id
             WHERE
                 vop.visualization_id = #{dvId}
         </select>
 
     <delete id="deleteJumpTargetViewInfoSnapshot">
-        DELETE FROM snapshot_visualization_link_jump_target_view_info
+        DELETE FROM core_visualization_jump_target_snapshot
         WHERE link_jump_info_id IN (
             SELECT lji.id
-            FROM snapshot_visualization_link_jump_info lji
-            JOIN snapshot_visualization_link_jump lj ON lji.link_jump_id = lj.id
+            FROM core_visualization_jump_action_snapshot lji
+            JOIN core_visualization_jump_snapshot lj ON lji.link_jump_id = lj.id
             WHERE lj.source_dv_id = #{dvId}
               AND lj.source_view_id = #{viewId}
         );
     </delete>
 
     <delete id="deleteJumpInfoSnapshot">
-        DELETE FROM snapshot_visualization_link_jump_info
+        DELETE FROM core_visualization_jump_action_snapshot
         WHERE link_jump_id IN (
             SELECT lj.id
-            FROM snapshot_visualization_link_jump lj
+            FROM core_visualization_jump_snapshot lj
             WHERE lj.source_dv_id = #{dvId}
               AND lj.source_view_id = #{viewId}
         );
     </delete>
 
     <delete id="deleteJumpSnapshot">
-        DELETE FROM snapshot_visualization_link_jump
+        DELETE FROM core_visualization_jump_snapshot
         WHERE source_dv_id = #{dvId}
           AND source_view_id = #{viewId}
     </delete>
 
 
     <delete id="deleteJumpTargetViewInfoWithVisualization">
-        DELETE FROM visualization_link_jump_target_view_info
+        DELETE FROM core_visualization_jump_target
         WHERE link_jump_info_id IN (
             SELECT lji.id
-            FROM visualization_link_jump_info lji
-            JOIN visualization_link_jump lj ON lji.link_jump_id = lj.id
+            FROM core_visualization_jump_action lji
+            JOIN core_visualization_jump lj ON lji.link_jump_id = lj.id
             WHERE lj.source_dv_id = #{dvId}
         )
     </delete>
 
     <delete id="deleteJumpTargetViewInfoWithVisualizationSnapshot">
-        DELETE FROM snapshot_visualization_link_jump_target_view_info
+        DELETE FROM core_visualization_jump_target_snapshot
         WHERE link_jump_info_id IN (
             SELECT lji.id
-            FROM snapshot_visualization_link_jump_info lji
-            JOIN snapshot_visualization_link_jump lj ON lji.link_jump_id = lj.id
+            FROM core_visualization_jump_action_snapshot lji
+            JOIN core_visualization_jump_snapshot lj ON lji.link_jump_id = lj.id
             WHERE lj.source_dv_id = #{dvId}
         )
     </delete>
 
     <delete id="deleteJumpInfoWithVisualization">
-        DELETE FROM visualization_link_jump_info
+        DELETE FROM core_visualization_jump_action
         WHERE link_jump_id IN (
             SELECT lj.id
-            FROM visualization_link_jump lj
+            FROM core_visualization_jump lj
             WHERE lj.source_dv_id = #{dvId}
         )
     </delete>
 
     <delete id="deleteJumpInfoWithVisualizationSnapshot">
-        DELETE FROM snapshot_visualization_link_jump_info
+        DELETE FROM core_visualization_jump_action_snapshot
         WHERE link_jump_id IN (
             SELECT lj.id
-            FROM snapshot_visualization_link_jump lj
+            FROM core_visualization_jump_snapshot lj
             WHERE lj.source_dv_id = #{dvId}
         )
     </delete>
 
    <delete id="deleteJumpWithVisualization">
-       DELETE FROM visualization_link_jump
+       DELETE FROM core_visualization_jump
        WHERE source_dv_id = #{dvId}
    </delete>
 
       <delete id="deleteJumpWithVisualizationSnapshot">
-          DELETE FROM snapshot_visualization_link_jump
+          DELETE FROM core_visualization_jump_snapshot
           WHERE source_dv_id = #{dvId}
       </delete>
 
@@ -371,9 +371,9 @@
             </otherwise>
         </choose>
         FROM
-        visualization_link_jump_target_view_info jtvi
-        LEFT JOIN visualization_link_jump_info lji ON jtvi.link_jump_info_id = lji.id
-        LEFT JOIN visualization_link_jump lj ON lji.link_jump_id = lj.id
+        core_visualization_jump_target jtvi
+        LEFT JOIN core_visualization_jump_action lji ON jtvi.link_jump_info_id = lji.id
+        LEFT JOIN core_visualization_jump lj ON lji.link_jump_id = lj.id
         WHERE
         lji.checked = 1
         and lj.source_dv_id = #{request.sourceDvId}
@@ -397,9 +397,9 @@
                 </otherwise>
             </choose>
             FROM
-            snapshot_visualization_link_jump_target_view_info jtvi
-            LEFT JOIN snapshot_visualization_link_jump_info lji ON jtvi.link_jump_info_id = lji.id
-            LEFT JOIN snapshot_visualization_link_jump lj ON lji.link_jump_id = lj.id
+            core_visualization_jump_target_snapshot jtvi
+            LEFT JOIN core_visualization_jump_action_snapshot lji ON jtvi.link_jump_info_id = lji.id
+            LEFT JOIN core_visualization_jump_snapshot lj ON lji.link_jump_id = lj.id
             WHERE
             lji.checked = 1
             and lj.source_dv_id = #{request.sourceDvId}
@@ -411,7 +411,7 @@
         </select>
 
     <insert id="copyLinkJump">
-        insert into visualization_link_jump (id, source_dv_id, source_view_id, link_jump_info, `checked`, copy_from,
+        insert into core_visualization_jump (id, source_dv_id, source_view_id, link_jump_info, `checked`, copy_from,
                                              copy_id)
         select
                <choose>
@@ -424,25 +424,25 @@
                </choose>                                   as id,
                visualization_view_copy.t_dv_id              as source_dv_id,
                visualization_view_copy.t_chart_view_id      as source_view_id,
-               visualization_link_jump.link_jump_info,
-               visualization_link_jump.checked,
-               visualization_link_jump.id                   as copy_from,
+               core_visualization_jump.link_jump_info,
+               core_visualization_jump.checked,
+               core_visualization_jump.id                   as copy_from,
                #{copyId}                                    as copy_id
-        from visualization_link_jump
+        from core_visualization_jump
                  inner join
              (SELECT pvs.scene_id as s_dv_id,
                      pvs.id       as s_chart_view_id,
                      pvt.scene_id as t_dv_id,
                      pvt.id       as t_chart_view_id
-              FROM bi_chart pvt
-                       inner JOIN bi_chart pvs ON pvt.copy_from = pvs.id
+              FROM core_chart_view pvt
+                       inner JOIN core_chart_view pvs ON pvt.copy_from = pvs.id
               WHERE pvt.copy_id = #{copyId}) visualization_view_copy
-             on visualization_link_jump.source_dv_id = visualization_view_copy.s_dv_id
-                 and visualization_link_jump.source_view_id = visualization_view_copy.s_chart_view_id
+             on core_visualization_jump.source_dv_id = visualization_view_copy.s_dv_id
+                 and core_visualization_jump.source_view_id = visualization_view_copy.s_chart_view_id
     </insert>
 
     <insert id="copyLinkJumpInfo">
-        INSERT INTO visualization_link_jump_info (id,
+        INSERT INTO core_visualization_jump_action (id,
                                                   link_jump_id,
                                                   link_type,
                                                   jump_type,
@@ -474,16 +474,16 @@
                `attach_params`,
                id     AS copy_from,
                #{copyId}
-        FROM visualization_link_jump_info
+        FROM core_visualization_jump_action
                  inner JOIN (SELECT id        AS t_id,
                                     copy_from AS s_id
-                             FROM visualization_link_jump
+                             FROM core_visualization_jump
                              WHERE copy_id = #{copyId}) plj_copy
-                            ON visualization_link_jump_info.link_jump_id = plj_copy.s_id
+                            ON core_visualization_jump_action.link_jump_id = plj_copy.s_id
     </insert>
 
     <insert id="copyLinkJumpTarget">
-        INSERT INTO visualization_link_jump_target_view_info (target_id,
+        INSERT INTO core_visualization_jump_target (target_id,
                                                               link_jump_info_id,
                                                               target_view_id,
                                                               target_field_id,
@@ -503,26 +503,26 @@
                target_field_id,
                copy_from,
                #{copyId}      AS copy_id
-        FROM visualization_link_jump_target_view_info
+        FROM core_visualization_jump_target
                  inner JOIN (SELECT id        AS t_id,
                                     copy_from AS s_id
-                             FROM visualization_link_jump_info
+                             FROM core_visualization_jump_action
                              WHERE copy_id = #{copyId}) plji_copy
-                            ON visualization_link_jump_target_view_info.link_jump_info_id = plji_copy.s_id
+                            ON core_visualization_jump_target.link_jump_info_id = plji_copy.s_id
     </insert>
 
     <select id="findLinkJumpWithDvId" resultType="io.crest.api.visualization.vo.VisualizationLinkJumpVO">
         SELECT *
-        FROM visualization_link_jump
+        FROM core_visualization_jump
         WHERE source_dv_id = #{dvId}
     </select>
 
     <select id="findLinkJumpInfoWithDvId" resultType="io.crest.api.visualization.vo.VisualizationLinkJumpInfoVO">
         SELECT *
-        FROM visualization_link_jump_info
+        FROM core_visualization_jump_action
         WHERE link_type = 'outer'
           AND link_jump_id IN (SELECT id
-                               FROM visualization_link_jump
+                               FROM core_visualization_jump
                                WHERE source_dv_id = #{dvId})
     </select>
 </mapper>

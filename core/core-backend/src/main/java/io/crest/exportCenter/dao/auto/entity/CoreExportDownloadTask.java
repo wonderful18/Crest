@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 导出下载任务实体。
  */
-@TableName("export_download_task")
+@TableName("core_export_download_task")
 public class CoreExportDownloadTask implements Serializable {
 
     private static final long serialVersionUID = 1L;

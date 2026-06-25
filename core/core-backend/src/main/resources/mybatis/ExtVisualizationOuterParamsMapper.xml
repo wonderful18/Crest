@@ -75,9 +75,9 @@
             poptvi.match_mode,
             poptvi.target_field_id
         FROM
-            snapshot_visualization_outer_params pop
-            LEFT JOIN snapshot_visualization_outer_params_info popi ON pop.params_id = popi.params_id
-            LEFT JOIN snapshot_visualization_outer_params_target_view_info poptvi ON popi.params_info_id = poptvi.params_info_id
+            core_visualization_parameter_snapshot pop
+            LEFT JOIN core_visualization_parameter_item_snapshot popi ON pop.params_id = popi.params_id
+            LEFT JOIN core_visualization_parameter_target_snapshot poptvi ON popi.params_info_id = poptvi.params_info_id
         WHERE
             pop.visualization_id = #{visualization_id}
         ORDER BY
@@ -89,23 +89,23 @@
           #{visualizationId} as visualization_id,
           COALESCE( vop.checked, 0 ) AS checked
       FROM
-          bi_visualization_snapshot dvi
-              LEFT JOIN snapshot_visualization_outer_params vop ON dvi.id = vop.visualization_id
+          core_visualization_snapshot dvi
+              LEFT JOIN core_visualization_parameter_snapshot vop ON dvi.id = vop.visualization_id
       WHERE
           dvi.id = #{visualizationId}
   </select>
 
     <delete id="deleteOuterParamsTargetWithVisualizationId" >
         DELETE FROM
-            visualization_outer_params_target_view_info poptvi
+            core_visualization_parameter_target poptvi
         WHERE
             poptvi.params_info_id IN (
                SELECT params_info_id FROM
                 (
                     SELECT poptvi.params_info_id FROM
-                        visualization_outer_params_target_view_info poptvi
-                            INNER JOIN visualization_outer_params_info popi ON poptvi.params_info_id = popi.params_info_id
-                            INNER JOIN visualization_outer_params pop ON popi.params_id = pop.params_id
+                        core_visualization_parameter_target poptvi
+                            INNER JOIN core_visualization_parameter_item popi ON poptvi.params_info_id = popi.params_info_id
+                            INNER JOIN core_visualization_parameter pop ON popi.params_id = pop.params_id
                     WHERE pop.visualization_id = #{visualizationId}
                 ) tmp
             )
@@ -113,14 +113,14 @@
 
     <delete id="deleteOuterParamsInfoWithVisualizationId" >
         DELETE FROM
-            visualization_outer_params_info popi
+            core_visualization_parameter_item popi
         WHERE
             popi.params_id IN (
                 SELECT params_id FROM
                     (
                         SELECT popi.params_id FROM
-                            visualization_outer_params_info popi
-                                INNER JOIN visualization_outer_params pop ON popi.params_id = pop.params_id
+                            core_visualization_parameter_item popi
+                                INNER JOIN core_visualization_parameter pop ON popi.params_id = pop.params_id
                         WHERE pop.visualization_id = #{visualizationId}
                     ) tmp
             )
@@ -128,7 +128,7 @@
 
     <delete id="deleteOuterParamsWithVisualizationId" >
         DELETE FROM
-            visualization_outer_params
+            core_visualization_parameter
         WHERE
             visualization_id = #{visualizationId}
     </delete>
@@ -136,15 +136,15 @@
 
     <delete id="deleteOuterParamsTargetWithVisualizationIdSnapshot" >
         DELETE FROM
-            snapshot_visualization_outer_params_target_view_info poptvi
+            core_visualization_parameter_target_snapshot poptvi
         WHERE
             poptvi.params_info_id IN (
                SELECT params_info_id FROM
                 (
                     SELECT poptvi.params_info_id FROM
-                        snapshot_visualization_outer_params_target_view_info poptvi
-                            INNER JOIN snapshot_visualization_outer_params_info popi ON poptvi.params_info_id = popi.params_info_id
-                            INNER JOIN snapshot_visualization_outer_params pop ON popi.params_id = pop.params_id
+                        core_visualization_parameter_target_snapshot poptvi
+                            INNER JOIN core_visualization_parameter_item_snapshot popi ON poptvi.params_info_id = popi.params_info_id
+                            INNER JOIN core_visualization_parameter_snapshot pop ON popi.params_id = pop.params_id
                     WHERE pop.visualization_id = #{visualizationId}
                 ) tmp
             )
@@ -152,14 +152,14 @@
 
     <delete id="deleteOuterParamsInfoWithVisualizationIdSnapshot" >
         DELETE FROM
-            snapshot_visualization_outer_params_info popi
+            core_visualization_parameter_item_snapshot popi
         WHERE
             popi.params_id IN (
                 SELECT params_id FROM
                     (
                         SELECT popi.params_id FROM
-                            snapshot_visualization_outer_params_info popi
-                                INNER JOIN snapshot_visualization_outer_params pop ON popi.params_id = pop.params_id
+                            core_visualization_parameter_item_snapshot popi
+                                INNER JOIN core_visualization_parameter_snapshot pop ON popi.params_id = pop.params_id
                         WHERE pop.visualization_id = #{visualizationId}
                     ) tmp
             )
@@ -167,7 +167,7 @@
 
     <delete id="deleteOuterParamsWithVisualizationIdSnapshot" >
         DELETE FROM
-            snapshot_visualization_outer_params
+            core_visualization_parameter_snapshot
         WHERE
             visualization_id = #{visualizationId}
     </delete>
@@ -187,9 +187,9 @@
                 </otherwise>
             </choose>
         FROM
-            visualization_outer_params pop
-            LEFT JOIN visualization_outer_params_info popi ON pop.params_id = popi.params_id
-            LEFT JOIN visualization_outer_params_target_view_info poptvi ON popi.params_info_id = poptvi.params_info_id
+            core_visualization_parameter pop
+            LEFT JOIN core_visualization_parameter_item popi ON pop.params_id = popi.params_id
+            LEFT JOIN core_visualization_parameter_target poptvi ON popi.params_info_id = poptvi.params_info_id
         WHERE
             pop.visualization_id = #{visualizationId} and pop.checked=1
             and popi.checked=1
@@ -200,8 +200,8 @@
                vopi.param_name,
                vopi.params_info_id
            FROM
-               snapshot_visualization_outer_params_info vopi
-               INNER JOIN snapshot_visualization_outer_params vop ON vop.params_id = vopi.params_id
+               core_visualization_parameter_item_snapshot vopi
+               INNER JOIN core_visualization_parameter_snapshot vop ON vop.params_id = vopi.params_id
            WHERE
                vop.visualization_id = #{visualizationId}
         </select>
@@ -218,16 +218,16 @@
               cdg.`info`,
               cdg.`create_by`,
               cdg.`create_time`,
-              cdg.`qrtz_instance`,
+              cdg.`scheduler_fire_instance_id`,
               cdg.`sync_status`,
               cdg.`update_by`,
               cdg.`last_update_time`,
               #{visualizationId} as visualizationId
           FROM
-              dataset_group cdg
-              INNER JOIN bi_chart_snapshot ccv ON cdg.id = ccv.table_id
+              core_dataset cdg
+              INNER JOIN core_chart_view_snapshot ccv ON cdg.id = ccv.table_id
               AND ccv.type != 'VQuery'
-              INNER JOIN bi_visualization_snapshot dvi ON ccv.scene_id = dvi.id
+              INNER JOIN core_visualization_snapshot dvi ON ccv.scene_id = dvi.id
           WHERE
               ccv.scene_id = #{visualizationId}
               AND dvi.id = #{visualizationId}
@@ -244,15 +244,15 @@
       </select>
 
        <select id="getDsFieldInfo"  resultType="io.crest.api.dataset.vo.CoreDatasetTableFieldVO">
-          select cdtf.*,cdtf.id as attachId from dataset_field cdtf where cdtf.dataset_group_id = #{dataset_group_id} order by cdtf.field_type, cdtf.origin_name
+          select cdtf.*,cdtf.id as attachId from core_dataset_field cdtf where cdtf.dataset_group_id = #{dataset_group_id} order by cdtf.field_type, cdtf.origin_name
       </select>
 
       <select id="getViewInfo"  resultType="io.crest.api.chart.vo.ChartBaseVO">
            SELECT DISTINCT
               ccv.id as chartId,ccv.title as chartName,ccv.type as chartType
           FROM
-              bi_chart_snapshot ccv
-              INNER JOIN bi_visualization_snapshot dvi ON ccv.scene_id = dvi.id
+              core_chart_view_snapshot ccv
+              INNER JOIN core_visualization_snapshot dvi ON ccv.scene_id = dvi.id
           WHERE
               ccv.table_id = #{dataset_group_id}
               AND ccv.type != 'VQuery'

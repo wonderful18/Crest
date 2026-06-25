@@ -12,7 +12,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/observability")
-// 定义当前业务对象的核心职责
 public class ObservabilityServer {
 
     private final ObservabilityProperties observabilityProperties;
@@ -22,7 +21,6 @@ public class ObservabilityServer {
     }
 
     @GetMapping("/status")
-    // 执行当前服务方法并返回处理结果
     public Map<String, Object> status() {
         CrestPermissionUtils.requireAdmin();
         ObservabilityProperties.Prometheus prometheus = observabilityProperties.getPrometheus();

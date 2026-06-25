@@ -1,6 +1,6 @@
 <template>
-  <Icon v-once v-if="element.innerType.includes('board')" class-name="de-svg-main"
-    ><component class="svg-icon de-svg-main" :is="iconBoardMap[element.innerType]"></component
+  <Icon v-once v-if="element.innerType.includes('board')" class-name="crest-svg-main"
+    ><component class="svg-icon crest-svg-main" :is="iconBoardMap[element.innerType]"></component
   ></Icon>
   <component v-else v-once :is="element.innerType"></component>
 </template>
@@ -30,7 +30,7 @@ const { element } = toRefs(props)
 </script>
 
 <style lang="less" scoped>
-.de-svg-main {
+.crest-svg-main {
   width: 100%;
   height: 100%;
 }

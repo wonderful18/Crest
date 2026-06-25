@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 工作台收藏资源实体。
  */
-@TableName("workspace_favorite_resource")
+@TableName("core_workspace_favorite_resource")
 public class CoreStore implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -24,7 +24,6 @@ public class ShareSecretManage {
     @Resource
     private CoreShareMapper coreShareMapper;
 
-    // 执行当前服务方法并返回处理结果
     public String getSecret(Long resourceId, Long uid) {
         QueryWrapper<CoreShare> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("creator", uid);

@@ -294,7 +294,7 @@ const edit = () => {
     eventBus.emit('button-dialog-edit')
   } else if (
     curComponent.value.type === 'v-text' ||
-    curComponent.value.type === 'de-rich-text' ||
+    curComponent.value.type === 'rich-text' ||
     curComponent.value.type === 'rect-shape'
   ) {
     eventBus.emit('component-dialog-style')

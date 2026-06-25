@@ -17,13 +17,11 @@ public class PluginsChartFactory {
     private static final Map<String, CrestChartPlugin> templateMap = new ConcurrentHashMap<>();
 
 
-    // 执行当前服务方法并返回处理结果
     public static AbstractChartPlugin getInstance(String render, String type) {
         String key = render + "_" + type;
         return templateMap.get(key);
     }
 
-    // 执行当前服务方法并返回处理结果
     public static void loadPlugin(String render, String type, CrestChartPlugin plugin) {
         String key = render + "_" + type;
         if (templateMap.containsKey(key)) return;

@@ -126,7 +126,7 @@ const confirm = () => {
     if (val) {
       if (action.value === 'uploadFile') {
         if (ruleForm.fileTransName === '') {
-          ElMessage.error(t('system.upload_font_file_de'))
+          ElMessage.error(t('system.upload_font_file_required'))
           return
         }
       }
@@ -163,7 +163,7 @@ const confirm = () => {
       <el-form-item
         v-loading="loading"
         v-if="action !== 'rename'"
-        :label="t('system.font_file_de')"
+        :label="t('system.font_file_label')"
       >
         <el-upload
           action=""

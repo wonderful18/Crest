@@ -2714,7 +2714,7 @@ def dataset_sql():
             )
     sql = []
     sql += insert_many(
-        "crest.dataset_group",
+        "crest.core_dataset",
         [
             "id",
             "name",
@@ -2737,13 +2737,13 @@ def dataset_sql():
         100,
     )
     sql += insert_many(
-        "crest.dataset_table",
+        "crest.core_dataset_table",
         ["id", "name", "table_name", "datasource_id", "dataset_group_id", "type", "info", "sql_variable_details"],
         rows_table,
         100,
     )
     sql += insert_many(
-        "crest.dataset_field",
+        "crest.core_dataset_field",
         [
             "id",
             "datasource_id",
@@ -2830,7 +2830,7 @@ def chart_sql():
             )
         )
     return insert_many(
-        "crest.bi_chart",
+        "crest.core_chart_view",
         [
             "id",
             "title",
@@ -2915,7 +2915,7 @@ def screen_sql():
             )
         )
     return insert_many(
-        "crest.bi_visualization",
+        "crest.core_visualization",
         [
             "id",
             "name",
@@ -3575,26 +3575,26 @@ WHERE e.active_status = '在岗';
 def metadata_cleanup_sql():
     return """
 USE crest;
-DELETE FROM bi_chart_snapshot WHERE scene_id BETWEEN 980001 AND 980005 OR id BETWEEN 980000 AND 980999;
-DELETE FROM bi_chart WHERE scene_id BETWEEN 980001 AND 980005 OR id BETWEEN 980000 AND 980999;
-DELETE FROM bi_visualization_snapshot WHERE id IN ('980001','980002','980003','980004','980005');
-DELETE FROM bi_visualization WHERE id IN ('980001','980002','980003','980004','980005');
-DELETE FROM dataset_field WHERE dataset_group_id BETWEEN 982000 AND 982999 OR dataset_table_id BETWEEN 983000 AND 983999 OR id BETWEEN 984000000 AND 984999999;
-DELETE FROM dataset_table WHERE dataset_group_id BETWEEN 982000 AND 982999 OR id BETWEEN 983000 AND 983999;
-DELETE FROM dataset_group WHERE id BETWEEN 982000 AND 982999;
+DELETE FROM core_chart_view_snapshot WHERE scene_id BETWEEN 980001 AND 980005 OR id BETWEEN 980000 AND 980999;
+DELETE FROM core_chart_view WHERE scene_id BETWEEN 980001 AND 980005 OR id BETWEEN 980000 AND 980999;
+DELETE FROM core_visualization_snapshot WHERE id IN ('980001','980002','980003','980004','980005');
+DELETE FROM core_visualization WHERE id IN ('980001','980002','980003','980004','980005');
+DELETE FROM core_dataset_field WHERE dataset_group_id BETWEEN 982000 AND 982999 OR dataset_table_id BETWEEN 983000 AND 983999 OR id BETWEEN 984000000 AND 984999999;
+DELETE FROM core_dataset_table WHERE dataset_group_id BETWEEN 982000 AND 982999 OR id BETWEEN 983000 AND 983999;
+DELETE FROM core_dataset WHERE id BETWEEN 982000 AND 982999;
 """
 
 
 def snapshot_sql():
     return """
-INSERT INTO crest.bi_chart_snapshot SELECT * FROM crest.bi_chart WHERE scene_id BETWEEN 980001 AND 980005;
-INSERT INTO crest.bi_visualization_snapshot SELECT * FROM crest.bi_visualization WHERE id IN ('980001','980002','980003','980004','980005');
+INSERT INTO crest.core_chart_view_snapshot SELECT * FROM crest.core_chart_view WHERE scene_id BETWEEN 980001 AND 980005;
+INSERT INTO crest.core_visualization_snapshot SELECT * FROM crest.core_visualization WHERE id IN ('980001','980002','980003','980004','980005');
 
-DELETE FROM workspace_recent_resource
+DELETE FROM core_workspace_recent_resource
 WHERE uid = 1
   AND resource_id IN (910001, 980001, 980002, 980003, 980004, 980005, 982001, 982002, 982003, 982004, 982005, 982006, 982007);
 
-INSERT INTO workspace_recent_resource (id, resource_id, resource_name, uid, resource_type, opt_type, time) VALUES
+INSERT INTO core_workspace_recent_resource (id, resource_id, resource_name, uid, resource_type, opt_type, time) VALUES
 (1780032200000000001, 980001, NULL, 1, 1, 2, 1780032200000),
 (1780032200000000002, 980002, NULL, 1, 1, 2, 1780032190000),
 (1780032200000000003, 980003, NULL, 1, 1, 2, 1780032180000),

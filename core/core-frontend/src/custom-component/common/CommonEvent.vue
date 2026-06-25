@@ -40,7 +40,6 @@ const onEventChange = () => {
 const onJumpValueChange = () => {
   snapshotStore.recordSnapshotCacheToMobile('events')
 }
-// 读取当前业务数据并返回处理结果
 const getTypeLabel = type => {
   return typeMap[type] || type
 }

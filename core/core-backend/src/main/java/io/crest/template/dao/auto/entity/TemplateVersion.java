@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 /**
  * 内置模板初始化版本实体。
  */
-@TableName("template_version")
+@TableName("core_template_init_history")
 public class TemplateVersion implements Serializable {
 
     /**

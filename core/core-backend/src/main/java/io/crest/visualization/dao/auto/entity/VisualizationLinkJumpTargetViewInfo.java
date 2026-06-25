@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * 组件跳转目标字段实体。
  */
-@TableName("visualization_link_jump_target_view_info")
+@TableName("core_visualization_jump_target")
 public class VisualizationLinkJumpTargetViewInfo implements Serializable {
 
     /**

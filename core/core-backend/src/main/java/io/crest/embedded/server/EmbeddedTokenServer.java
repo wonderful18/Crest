@@ -65,7 +65,6 @@ public class EmbeddedTokenServer {
         }
     }
 
-    // 执行当前服务方法并返回处理结果
     private Object claimValue(Claim claim) {
         if (claim == null || claim.isNull()) {
             return null;

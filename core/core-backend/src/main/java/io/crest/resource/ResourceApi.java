@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/resource")
-// 定义当前业务对象的核心职责
 public class ResourceApi {
     @Resource
     private ResourceService resourceService;

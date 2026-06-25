@@ -1606,7 +1606,7 @@ export function calculateBounds(coordinates: number[][]): number[][] {
 function mobileEv(chart: Chart, plot: L7Plot) {
   if (!isMobile()) return
   const containerDiv = document.getElementById(chart.container)
-  const active = containerDiv?.getAttribute('de-chart-active') === 'true'
+  const active = containerDiv?.getAttribute('crest-chart-active') === 'true'
   // 按当前组件激活态切换地图容器的指针事件
   const setTouchAction = () => {
     const sceneEl = plot.scene
@@ -1659,7 +1659,7 @@ export function mapRendering(dom: HTMLElement | string) {
   if (typeof dom === 'string') {
     dom = document.getElementById(dom)
   }
-  dom.classList.add('de-map-rendering')
+  dom.classList.add('crest-map-rendering')
 }
 
 // 腾讯地图渲染后缓存自动适配得到的缩放和中心点
@@ -1680,7 +1680,7 @@ export function mapRendered(dom: HTMLElement | string) {
   if (typeof dom === 'string') {
     dom = document.getElementById(dom)
   }
-  dom.classList.add('de-map-rendered')
+  dom.classList.add('crest-map-rendered')
 }
 
 // 根据自动适配开关计算地图初始中心点

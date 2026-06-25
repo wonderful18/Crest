@@ -4,29 +4,28 @@ import io.crest.traffic.dao.entity.CoreApiTraffic;
 import org.apache.ibatis.annotations.*;
 
 @Mapper
-// 定义当前业务对象的核心职责
 public interface CoreApiTrafficMapper {
 
-    @Select("select `alive` from `api_traffic` where `api` = #{api}")
+    @Select("select `alive` from `core_api_traffic_limit` where `api` = #{api}")
     int getAlive(@Param("api") String api);
 
-    @Update("update `api_traffic` set alive = alive + 1 where `api` = #{api}")
+    @Update("update `core_api_traffic_limit` set alive = alive + 1 where `api` = #{api}")
     void upgrade(@Param("api") String api);
 
-    @Insert("insert into api_traffic values(#{id}, #{api}, #{threshold}, 0)")
+    @Insert("insert into core_api_traffic_limit values(#{id}, #{api}, #{threshold}, 0)")
     void insert(CoreApiTraffic traffic);
 
-    @Select("select count(*) from api_traffic where api = #{api}")
+    @Select("select count(*) from core_api_traffic_limit where api = #{api}")
     Integer apiCount(@Param("api") String api);
 
     @Update("""
-        update `api_traffic` set alive =
+        update `core_api_traffic_limit` set alive =
         CASE WHEN alive > 0 THEN alive - 1
         ELSE alive END
         where `api` = #{api}
     """)
     void releaseAlive(@Param("api") String api);
 
-    @Delete("delete from api_traffic")
+    @Delete("delete from core_api_traffic_limit")
     void cleanTraffic();
 }

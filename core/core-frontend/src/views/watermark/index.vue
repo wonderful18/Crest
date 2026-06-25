@@ -237,7 +237,7 @@ const initWatermark = () => {
     watermark_fontsize: state.watermarkForm.watermark_fontsize + 'px'
   }
   // 清理历史水印
-  const historyWatermarkDom = document.getElementById('de-watermark-server')
+  const historyWatermarkDom = document.getElementById('watermark-demo-crest-watermark-server')
   if (historyWatermarkDom) {
     historyWatermarkDom.remove()
   }

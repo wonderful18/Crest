@@ -339,7 +339,7 @@ const onPlaceholderChange = () => {
       "
       @change="reUpload"
     />
-    <el-row class="de-collapse-style">
+    <el-row class="crest-collapse-style">
       <el-collapse v-model="styleActiveNames" class="style-collapse">
         <el-collapse-item :effect="themes" name="basicStyle" :title="t('chart.basic_style')">
           <el-form size="small" @keydown.stop.prevent.enter label-position="top">

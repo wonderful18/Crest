@@ -20,7 +20,6 @@ public enum Lang {
         this.desc = desc;
     }
 
-    // 执行当前服务方法并返回处理结果
     public static Lang getLang(String lang) {
         Lang result = getLangWithoutDefault(lang);
         if (result == null) {
@@ -29,7 +28,6 @@ public enum Lang {
         return result;
     }
 
-    // 执行当前服务方法并返回处理结果
     public static Lang getLangWithoutDefault(String lang) {
         if (StringUtils.isBlank(lang)) {
             return null;

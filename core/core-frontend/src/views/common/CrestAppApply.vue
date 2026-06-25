@@ -15,11 +15,11 @@
         ref="appSaveForm"
         :model="state.form"
         :rules="isDatasourceMatch ? state.ruleDatasource : state.ruleDataset"
-        class="de-form-item app-form create-dialog"
+        class="crest-form-item app-form create-dialog"
         label-width="180px"
         label-position="top"
       >
-        <div class="de-row-rules" style="margin: 0 0 16px">
+        <div class="crest-row-rules" style="margin: 0 0 16px">
           <span>{{ t('visualization.base_info') }}</span>
         </div>
         <el-form-item :label="dvPreName + t('visualization.name')" prop="name">
@@ -87,7 +87,7 @@
               </template>
             </el-tree-select>
           </el-form-item>
-          <div class="de-row-rules" style="margin: 0 0 16px">
+          <div class="crest-row-rules" style="margin: 0 0 16px">
             <span>{{ t('visualization.datasource_info') }}</span>
           </div>
           <el-row class="datasource-link">
@@ -131,7 +131,7 @@
           </el-row>
         </template>
         <template v-if="!isDatasourceMatch">
-          <div class="de-row-rules" style="margin: 0 0 16px">
+          <div class="crest-row-rules" style="margin: 0 0 16px">
             <span>{{ t('visualization.dataset_info') }}</span>
           </div>
           <el-row class="datasource-link">
@@ -501,7 +501,7 @@ defineExpose({
   padding-bottom: 0 !important;
 }
 
-.de-row-rules {
+.crest-row-rules {
   display: flex;
   align-items: center;
   position: relative;

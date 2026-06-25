@@ -14,8 +14,6 @@ import io.crest.exception.CrestException;
 import io.crest.i18n.Translator;
 import io.crest.operation.manage.CoreOptRecentManage;
 import io.crest.system.manage.SysParameterManage;
-import io.crest.template.dao.auto.entity.VisualizationTemplateCategoryMap;
-import io.crest.template.dao.auto.mapper.VisualizationTemplateCategoryMapMapper;
 import io.crest.template.dao.ext.ExtVisualizationTemplateMapper;
 import io.crest.utils.HttpClientConfig;
 import io.crest.utils.HttpClientUtil;
@@ -48,9 +46,6 @@ public class TemplateCenterManage {
 
     @Resource
     private ExtVisualizationTemplateMapper templateManageMapper;
-
-    @Resource
-    private VisualizationTemplateCategoryMapMapper categoryMapMapper;
 
     /**
      * 根据模板文件地址从模板市场拉取模板内容
@@ -143,9 +138,9 @@ public class TemplateCenterManage {
         try {
             List<TemplateManageDTO> manageResult = templateManageMapper.findBaseTemplateList();
             List<TemplateManageDTO> categories = templateManageMapper.findCategories(null);
-            Map<String, String> categoryMap = categories.stream()
+            Map<String, String> categoryNameById = categories.stream()
                     .collect(Collectors.toMap(TemplateManageDTO::getId, TemplateManageDTO::getName));
-            return baseManage2MarketTrans(manageResult, categoryMap);
+            return baseManage2MarketTrans(manageResult, categoryNameById);
         } catch (Exception e) {
             CrestException.throwException(e);
         }
@@ -155,13 +150,13 @@ public class TemplateCenterManage {
     /**
      * 将本地模板管理 DTO 转换为模板市场展示 DTO
      */
-    private List<TemplateMarketDTO> baseManage2MarketTrans(List<TemplateManageDTO> manageResult, Map<String, String> categoryMap) {
+    private List<TemplateMarketDTO> baseManage2MarketTrans(List<TemplateManageDTO> manageResult, Map<String, String> categoryNameById) {
         List<TemplateMarketDTO> result = new ArrayList<>();
         manageResult.stream().forEach(templateManageDTO -> {
-            templateManageDTO.setCategoryName(categoryMap.get(templateManageDTO.getPid()));
+            templateManageDTO.setCategoryName(categoryNameById.get(templateManageDTO.getPid()));
             List<String> categories = templateManageDTO.getCategories();
             if (!CollectionUtils.isEmpty(categories)) {
-                List<String> categoryNames = categories.stream().map(categoryId -> categoryMap.get(categoryId)).collect(Collectors.toList());
+                List<String> categoryNames = categories.stream().map(categoryNameById::get).collect(Collectors.toList());
                 templateManageDTO.setCategoryNames(categoryNames);
                 result.add(new TemplateMarketDTO(templateManageDTO));
             }

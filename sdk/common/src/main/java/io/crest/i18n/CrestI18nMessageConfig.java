@@ -12,14 +12,12 @@ import java.util.Arrays;
 import java.util.Locale;
 
 @Configuration
-// 定义当前业务对象的核心职责
 public class CrestI18nMessageConfig {
 
     @Value("${spring.messages.basename}")
     private String messageBaseName;
 
     @Bean
-    // 执行当前服务方法并返回处理结果
     public LocaleResolver localeResolver() {
         AcceptHeaderLocaleResolver localeResolver = new AcceptHeaderLocaleResolver();
         localeResolver.setDefaultLocale(Locale.CHINA);
@@ -27,7 +25,6 @@ public class CrestI18nMessageConfig {
     }
 
     @Bean
-    // 执行当前服务方法并返回处理结果
     public ReloadableResourceBundleMessageSource messageSource() {
         ReloadableResourceBundleMessageSource messageSource = new CrestReloadableResourceBundleMessageSource();
         messageSource.setResourceLoader(new AnnotationConfigServletWebServerApplicationContext());

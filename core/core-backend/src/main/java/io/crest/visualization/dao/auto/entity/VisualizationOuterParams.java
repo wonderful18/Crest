@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * 外部参数主配置实体。
  */
-@TableName("visualization_outer_params")
+@TableName("core_visualization_parameter")
 public class VisualizationOuterParams implements Serializable {
 
     private static final long serialVersionUID = 1L;

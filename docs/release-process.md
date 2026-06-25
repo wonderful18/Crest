@@ -4,7 +4,7 @@
 
 ## 核心原则
 
-- 已发布 tag 不移动、不删除、不重打。`v1.5.5` 一旦发布，业务修复必须进入后续补丁版本，例如 `v1.5.6`。
+- 已发布 tag 不移动、不删除、不重打。版本一旦发布，业务修复必须进入后续补丁版本，例如 `v2.0.2` 发布后的修复进入 `v2.0.3`。
 - 发布包内容异常但代码和镜像未变时，可以重跑对应打包 workflow 覆盖同名附件；业务代码、SQL、配置或前端产物变化时必须发新版本。
 - 补丁版本只做最小修复，不混入新功能、重构或无关格式化。
 - 数据库变更必须提供增量 SQL，并进入完整离线包和应用镜像升级包。
@@ -34,25 +34,25 @@
 
 ### 1. 已发布版本发现业务 bug
 
-示例：已交付的 `v1.5.5` 环境有 bug，需要重新打包交付。
+示例：已交付的 `v2.0.2` 环境有 bug，需要重新打包交付。
 
 1. 从维护分支创建补丁分支：
 
    ```bash
-   git checkout release/1.5
+   git checkout release/2.0
    git pull --ff-only
-   git checkout -b hotfix/1.5.6-short-description
+   git checkout -b hotfix/2.0.3-short-description
    ```
 
 2. 做最小修复和回归测试。
-3. 将版本从 `1.5.5` 提升到 `1.5.6`。
-4. 更新 `CHANGELOG.md`，新增 `docs/release/v1.5.6.md`。
-5. 如涉及数据库、系统参数、初始化数据或结构变化，新增 `installer/upgrade-sql/v1.5.5_to_v1.5.6.sql`。
-6. PR 合入 `release/1.5`。
-7. 从 `release/1.5` 打 `v1.5.6` tag，触发镜像、完整离线包、应用镜像升级包和源码包。
+3. 将版本从 `2.0.2` 提升到 `2.0.3`。
+4. 更新 `CHANGELOG.md`，新增 `docs/release/v2.0.3.md`。
+5. 如涉及数据库、系统参数、初始化数据或结构变化，新增 `installer/upgrade-sql/v2.0.2_to_v2.0.3_<db-type>.sql`。
+6. PR 合入 `release/2.0`。
+7. 从 `release/2.0` 打 `v2.0.3` tag，触发镜像、完整离线包、应用镜像升级包和源码包。
 8. 将补丁同步回 `main`，必要时同步回 `dev`。
 
-不要覆盖 `v1.5.5` 的 tag 或业务包。
+不要覆盖已发布版本的 tag 或业务包。
 
 ### 2. 发布附件或打包流程异常
 
@@ -88,21 +88,25 @@
 命名规则：
 
 ```text
-installer/upgrade-sql/v<from>_to_v<to>.sql
+installer/upgrade-sql/v<from>_to_v<to>_<db-type>.sql
 ```
 
 示例：
 
 ```text
-installer/upgrade-sql/v1.5.5_to_v1.5.6.sql
+installer/upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_mysql.sql
+installer/upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_mysql.sql
+installer/upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_oracle.sql
 ```
 
-从 `v1.5.4` 升级到 `v1.5.6` 时，文档必须说明按顺序执行：
+跨多个补丁版本升级时，文档必须说明按顺序执行。例如从 `v2.0.0` 升级到 `v2.0.2` 时：
 
 ```text
-v1.5.4_to_v1.5.5.sql
-v1.5.5_to_v1.5.6.sql
+v2.0.0_to_v2.0.1_*.sql
+v2.0.1_to_v2.0.2_*.sql
 ```
+
+历史 1.x 单数据库升级脚本可以保留已发布文件名；新增 2.x 升级脚本需要按 MySQL、OceanBase MySQL 和 OceanBase Oracle 分别提供。
 
 ## 发布检查
 

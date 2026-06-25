@@ -1,6 +1,5 @@
 package io.crest.constant;
 
-// 定义当前业务对象的核心职责
 public class FieldTypeConstants {
 
     public final static Integer STRING = 0;

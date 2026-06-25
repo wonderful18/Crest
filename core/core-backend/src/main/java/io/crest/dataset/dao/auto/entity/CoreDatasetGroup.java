@@ -1,12 +1,13 @@
 package io.crest.dataset.dao.auto.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.TableField;
 import java.io.Serializable;
 
 /**
  * 数据集分组实体。
  */
-@TableName("dataset_group")
+@TableName("core_dataset")
 public class CoreDatasetGroup implements Serializable {
 
     /**
@@ -67,7 +68,8 @@ public class CoreDatasetGroup implements Serializable {
     /**
      * 调度实例编号
      */
-    private String qrtzInstance;
+    @TableField("scheduler_fire_instance_id")
+    private String schedulerFireInstanceId;
 
     /**
      * 同步状态
@@ -237,15 +239,15 @@ public class CoreDatasetGroup implements Serializable {
     /**
      * 获取调度实例编号
      */
-    public String getQrtzInstance() {
-        return qrtzInstance;
+    public String getSchedulerFireInstanceId() {
+        return schedulerFireInstanceId;
     }
 
     /**
      * 设置调度实例编号
      */
-    public void setQrtzInstance(String qrtzInstance) {
-        this.qrtzInstance = qrtzInstance;
+    public void setSchedulerFireInstanceId(String schedulerFireInstanceId) {
+        this.schedulerFireInstanceId = schedulerFireInstanceId;
     }
 
     /**
@@ -319,7 +321,6 @@ public class CoreDatasetGroup implements Serializable {
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public String toString() {
         return "CoreDatasetGroup{" +
         "id = " + id +
@@ -332,7 +333,7 @@ public class CoreDatasetGroup implements Serializable {
         ", info = " + info +
         ", createBy = " + createBy +
         ", createTime = " + createTime +
-        ", qrtzInstance = " + qrtzInstance +
+        ", schedulerFireInstanceId = " + schedulerFireInstanceId +
         ", syncStatus = " + syncStatus +
         ", updateBy = " + updateBy +
         ", lastUpdateTime = " + lastUpdateTime +

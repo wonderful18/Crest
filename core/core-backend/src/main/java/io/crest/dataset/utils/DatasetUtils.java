@@ -21,7 +21,7 @@ public class DatasetUtils {
     /**
      * 节点类型路径分隔符
      */
-    public final static String SEPARATOR = "-de-";
+    public final static String SEPARATOR = "-crest-";
 
     /**
      * 按节点类型路径合并可能重复 ID 的数据集树
@@ -33,7 +33,7 @@ public class DatasetUtils {
         }
         List<BaseTreeNodeDTO> result = new ArrayList<>();
         // 构建节点类型到节点的映射
-        Map<String, BaseTreeNodeDTO> treePidMap = tree.stream().collect(Collectors.toMap(node -> node.getNodeType(), t -> t));
+        Map<String, BaseTreeNodeDTO> treePidMap = tree.stream().collect(Collectors.toMap(BaseTreeNodeDTO::getNodeType, t -> t));
         tree.stream().filter(item -> ObjectUtils.isNotEmpty(item.getId())).forEach(node -> {
 
             String nodeType = node.getNodeType();

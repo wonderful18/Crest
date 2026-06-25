@@ -7,8 +7,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-@TableName("data_source")
-// 定义当前业务对象的核心职责
+@TableName("core_datasource")
 public class DataSourceNodePO implements Serializable {
 
     @TableId

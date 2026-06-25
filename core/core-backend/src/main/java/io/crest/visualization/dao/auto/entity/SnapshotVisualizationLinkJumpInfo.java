@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 组件跳转规则快照实体。
  */
-@TableName("snapshot_visualization_link_jump_info")
+@TableName("core_visualization_jump_action_snapshot")
 public class SnapshotVisualizationLinkJumpInfo implements Serializable {
 
     /**

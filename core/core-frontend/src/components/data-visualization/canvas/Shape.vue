@@ -101,22 +101,22 @@
       <template v-if="boardMoveActive">
         <div
           v-show="!element.editing"
-          class="de-drag-area de-drag-top"
+          class="crest-drag-area crest-drag-top"
           @mousedown="handleBoardMouseDownOnShape"
         />
         <div
           v-show="!element.editing && element.component !== 'Tabs'"
-          class="de-drag-area de-drag-right"
+          class="crest-drag-area crest-drag-right"
           @mousedown="handleBoardMouseDownOnShape"
         />
         <div
           v-show="!element.editing && element.component !== 'Tabs'"
-          class="de-drag-area de-drag-bottom"
+          class="crest-drag-area crest-drag-bottom"
           @mousedown="handleBoardMouseDownOnShape"
         />
         <div
           v-show="!element.editing && element.component !== 'Tabs'"
-          class="de-drag-area de-drag-left"
+          class="crest-drag-area crest-drag-left"
           @mousedown="handleBoardMouseDownOnShape"
         />
       </template>
@@ -229,7 +229,7 @@ const state = reactive({
     id: ''
   },
   // 禁止移入Tab中的组件
-  ignoreTabMoveComponent: ['de-button', 'de-reset-button', 'Tabs', 'GroupArea'],
+  ignoreTabMoveComponent: ['crest-button', 'crest-reset-button', 'Tabs', 'GroupArea'],
   // 当画布在tab中是 宽度左右拓展的余量
   parentWidthTabOffset: 40,
   canvasChangeTips: 'none',
@@ -1379,36 +1379,36 @@ onMounted(() => {
   display: inline-block !important;
 }
 
-.de-drag-area {
+.crest-drag-area {
   position: absolute;
 }
 
-.de-drag-area:hover {
+.crest-drag-area:hover {
   cursor: move;
 }
 
-.de-drag-top {
+.crest-drag-top {
   left: 1px;
   top: 1px;
   height: 12px;
   width: calc(100% - 2px);
 }
 
-.de-drag-right {
+.crest-drag-right {
   right: 1px;
   top: 70px;
   width: 12px;
   height: calc(100% - 110px);
 }
 
-.de-drag-bottom {
+.crest-drag-bottom {
   left: 100px;
   bottom: 1px;
   height: 12px;
   width: calc(100% - 102px);
 }
 
-.de-drag-left {
+.crest-drag-left {
   left: 1px;
   top: 1px;
   width: 16px;

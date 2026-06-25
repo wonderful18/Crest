@@ -5,13 +5,13 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-// 定义当前业务对象的核心职责
 public @interface CrestPermit {
 
     /**
-     * 鉴权el表达式数组
-     * DE产品中仅考虑权限的&运算，不考虑||
-     * @return
+     * 鉴权 EL 表达式数组。
+     * 当前权限表达式只处理与运算，不处理或运算。
+     *
+     * @return 权限表达式数组
      */
     String[] value() default {};
 

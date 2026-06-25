@@ -149,7 +149,7 @@ public class DatasourceTaskServer {
     // 查询任务关联的调度触发器
     public List<CoreDatasourceTaskDTO> taskWithTriggers(Long taskId) {
         QueryWrapper<CoreDatasourceTaskDTO> wrapper = new QueryWrapper<>();
-        wrapper.eq("QRTZ_TRIGGERS.TRIGGER_NAME", String.valueOf(taskId));
+        wrapper.eq("cst.TRIGGER_NAME", String.valueOf(taskId));
         return extDatasourceTaskMapper.taskWithTriggers(wrapper);
     }
 

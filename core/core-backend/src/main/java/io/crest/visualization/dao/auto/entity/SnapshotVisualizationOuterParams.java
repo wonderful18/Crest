@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * 外部参数主配置快照实体。
  */
-@TableName("snapshot_visualization_outer_params")
+@TableName("core_visualization_parameter_snapshot")
 public class SnapshotVisualizationOuterParams implements Serializable {
 
     private static final long serialVersionUID = 1L;

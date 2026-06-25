@@ -38,12 +38,12 @@ git pull --ff-only
 git checkout -b feat/your-change
 ```
 
-已发布版本补丁从维护分支创建：
+已发布版本补丁从对应维护分支创建。当前维护 `release/2.0` 和 `release/1.5` 两条发布线：
 
 ```bash
-git checkout release/1.5
+git checkout release/2.0
 git pull --ff-only
-git checkout -b hotfix/1.5.6-your-fix
+git checkout -b hotfix/2.0.3-your-fix
 ```
 
 提交信息使用简洁的 Conventional Commit 风格：

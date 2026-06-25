@@ -122,43 +122,43 @@ public class CrestUserManage {
     // 初始化内置管理员，首次启动创建账号，并兼容旧版 MD5 管理员密码升级
     @PostConstruct
     public void initAdmin() {
-        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM iam_user WHERE id = 1", Integer.class);
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM core_iam_user WHERE id = 1", Integer.class);
         if (count == null || count == 0) {
             long now = System.currentTimeMillis();
             jdbcTemplate.update("""
-                    INSERT INTO iam_user(id, account, name, password_hash, enable, is_admin, origin, create_time, update_time)
+                    INSERT INTO core_iam_user(id, account, name, password_hash, enable, is_admin, origin, create_time, update_time)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, 1L, "admin", "管理员", PasswordEncoder.encode(initialPassword()), true, true, 0, now, now);
             platformPermissionManage.bindUserToOrg(1L, PlatformPermissionManage.ROOT_ORG_ID, true);
             platformPermissionManage.bindUserToRole(1L, PlatformPermissionManage.ROOT_ORG_ID, PlatformPermissionManage.SYSTEM_ADMIN_ROLE_ID);
         } else {
             String passwordHash = jdbcTemplate.queryForObject(
-                    "SELECT password_hash FROM iam_user WHERE id = 1", String.class);
+                    "SELECT password_hash FROM core_iam_user WHERE id = 1", String.class);
             if (Strings.CS.equals(passwordHash, LEGACY_ADMIN_PASSWORD_HASH)) {
-                jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, is_admin = 1, enable = 1, update_time = ? WHERE id = 1",
+                jdbcTemplate.update("UPDATE core_iam_user SET password_hash = ?, is_admin = 1, enable = 1, update_time = ? WHERE id = 1",
                         PasswordEncoder.encode(initialPassword()), System.currentTimeMillis());
             } else {
-                jdbcTemplate.update("UPDATE iam_user SET is_admin = 1, enable = 1 WHERE id = 1");
+                jdbcTemplate.update("UPDATE core_iam_user SET is_admin = 1, enable = 1 WHERE id = 1");
             }
         }
     }
 
     // 按账号查询单个用户，登录和账号唯一性校验共用此入口
     public CrestUser queryByAccount(String account) {
-        List<CrestUser> users = jdbcTemplate.query(limitOne("SELECT * FROM iam_user WHERE account = ?"), rowMapper, account);
+        List<CrestUser> users = jdbcTemplate.query(limitOne("SELECT * FROM core_iam_user WHERE account = ?"), rowMapper, account);
         return users.isEmpty() ? null : users.get(0);
     }
 
     // 按用户 ID 查询单个用户
     public CrestUser queryById(Long id) {
-        List<CrestUser> users = jdbcTemplate.query(limitOne("SELECT * FROM iam_user WHERE id = ?"), rowMapper, id);
+        List<CrestUser> users = jdbcTemplate.query(limitOne("SELECT * FROM core_iam_user WHERE id = ?"), rowMapper, id);
         return users.isEmpty() ? null : users.get(0);
     }
 
     // 按认证类型和外部身份 ID 查询单点登录用户
     public CrestUser queryByExternalId(String authType, String externalId) {
         List<CrestUser> users = jdbcTemplate.query("""
-                SELECT * FROM iam_user
+                SELECT * FROM core_iam_user
                 WHERE auth_type = ? AND external_id = ?
                 """.transform(this::limitOne), rowMapper, authType, externalId);
         return users.isEmpty() ? null : users.get(0);
@@ -194,7 +194,7 @@ public class CrestUserManage {
         // 旧密文校验成功后立即重写为新格式，减少后续兼容面
         if (matches && PasswordEncoder.needsReEncoding(storedHash)) {
             String newHash = PasswordEncoder.encode(rawPassword);
-            jdbcTemplate.update("UPDATE iam_user SET password_hash = ? WHERE id = ?",
+            jdbcTemplate.update("UPDATE core_iam_user SET password_hash = ? WHERE id = ?",
                     newHash, user.getId());
         }
 
@@ -229,7 +229,7 @@ public class CrestUserManage {
             }
             long id = IDUtils.snowID();
             jdbcTemplate.update("""
-                    INSERT INTO iam_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
+                    INSERT INTO core_iam_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
                         origin, auth_type, external_id, last_login_time, create_time, update_time)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, id, account, name, email, null, null, Md5Utils.md5(IDUtils.randomID(32)),
@@ -246,7 +246,7 @@ public class CrestUserManage {
             CrestException.throwException("单点登录账号已被其他用户占用");
         }
         jdbcTemplate.update("""
-                UPDATE iam_user
+                UPDATE core_iam_user
                 SET account = ?, name = ?, email = ?, auth_type = ?, external_id = ?, origin = ?, last_login_time = ?, update_time = ?
                 WHERE id = ?
                 """, account, name, email, AUTH_TYPE_SSO, profile.getExternalId(), 2, now, now, user.getId());
@@ -264,7 +264,7 @@ public class CrestUserManage {
         if (SsoIdentityAction.CREATE_USER.equals(decision.getAction())) {
             long id = IDUtils.snowID();
             jdbcTemplate.update("""
-                    INSERT INTO iam_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
+                    INSERT INTO core_iam_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
                         origin, auth_type, external_id, last_login_time, create_time, update_time)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, id, account, name, email, null, null, Md5Utils.md5(IDUtils.randomID(32)),
@@ -283,7 +283,7 @@ public class CrestUserManage {
             return queryById(userId);
         }
         jdbcTemplate.update("""
-                UPDATE iam_user
+                UPDATE core_iam_user
                 SET account = ?, name = ?, email = ?, auth_type = ?, external_id = ?, origin = ?, last_login_time = ?, update_time = ?
                 WHERE id = ?
                 """, account, name, email, AUTH_TYPE_SSO, profile.getExternalSubject(), 2, now, now, userId);
@@ -295,7 +295,7 @@ public class CrestUserManage {
     public void markLoginSuccess(Long id) {
         if (id == null) return;
         long now = System.currentTimeMillis();
-        jdbcTemplate.update("UPDATE iam_user SET last_login_time = ?, update_time = ? WHERE id = ?", now, now, id);
+        jdbcTemplate.update("UPDATE core_iam_user SET last_login_time = ?, update_time = ? WHERE id = ?", now, now, id);
     }
 
     // 分页查询用户列表，支持关键字、状态和组织范围过滤
@@ -320,18 +320,18 @@ public class CrestUserManage {
             where.append(")");
         }
         if (request != null && request.getOid() != null) {
-            where.append(" AND EXISTS (SELECT 1 FROM iam_user_org uo WHERE uo.")
-                    .append(uidColumn()).append(" = iam_user.id AND uo.oid = ?)");
+            where.append(" AND EXISTS (SELECT 1 FROM core_iam_user_org uo WHERE uo.")
+                    .append(uidColumn()).append(" = core_iam_user.id AND uo.oid = ?)");
             args.add(request.getOid());
         }
         Object[] queryArgs = args.toArray();
-        String countSql = "SELECT COUNT(1) FROM iam_user" + where;
+        String countSql = "SELECT COUNT(1) FROM core_iam_user" + where;
         Long total = queryArgs.length == 0
                 ? jdbcTemplate.queryForObject(countSql, Long.class)
                 : jdbcTemplate.queryForObject(countSql, Long.class, queryArgs);
         String order = request != null && Boolean.FALSE.equals(request.getTimeDesc()) ? " ASC" : " DESC";
         int offset = Math.max((goPage - 1) * pageSize, 0);
-        String listSql = dialect().limitOffset("SELECT " + USER_GRID_COLUMNS + " FROM iam_user" + where + " ORDER BY create_time" + order,
+        String listSql = dialect().limitOffset("SELECT " + USER_GRID_COLUMNS + " FROM core_iam_user" + where + " ORDER BY create_time" + order,
                 pageSize, offset);
         List<CrestUser> users = queryArgs.length == 0
                 ? jdbcTemplate.query(listSql, gridRowMapper)
@@ -348,8 +348,8 @@ public class CrestUserManage {
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder("""
                 SELECT u.id, u.name, u.account
-                FROM iam_user u
-                INNER JOIN iam_user_org uo ON uo.%s = u.id
+                FROM core_iam_user u
+                INNER JOIN core_iam_user_org uo ON uo.%s = u.id
                 WHERE uo.oid = ? AND u.enable = 1
                 """.formatted(uidColumn()));
         args.add(oid);
@@ -454,7 +454,7 @@ public class CrestUserManage {
         long id = IDUtils.snowID();
         long now = System.currentTimeMillis();
         jdbcTemplate.update("""
-                INSERT INTO iam_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
+                INSERT INTO core_iam_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
                     origin, auth_type, external_id, create_time, update_time)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, id, creator.getAccount().trim(), creator.getName().trim(), creator.getEmail(),
@@ -506,7 +506,7 @@ public class CrestUserManage {
         }
         if (newPassword != null) {
             jdbcTemplate.update("""
-                    UPDATE iam_user
+                    UPDATE core_iam_user
                     SET account = ?, name = ?, email = ?, phone_prefix = ?, phone = ?, enable = ?, is_admin = ?, password_hash = ?, update_time = ?
                     WHERE id = ?
                     """, editor.getAccount().trim(), editor.getName().trim(), editor.getEmail(),
@@ -514,7 +514,7 @@ public class CrestUserManage {
                     editor.getId() == 1L || hasAdminRole(editor.getRoleIds()), PasswordEncoder.encode(newPassword), System.currentTimeMillis(), editor.getId());
         } else {
             jdbcTemplate.update("""
-                    UPDATE iam_user
+                    UPDATE core_iam_user
                     SET account = ?, name = ?, email = ?, phone_prefix = ?, phone = ?, enable = ?, is_admin = ?, update_time = ?
                     WHERE id = ?
                     """, editor.getAccount().trim(), editor.getName().trim(), editor.getEmail(),
@@ -542,9 +542,9 @@ public class CrestUserManage {
             }
         }
 
-        jdbcTemplate.update("DELETE FROM iam_user WHERE id = ?", id);
-        jdbcTemplate.update("DELETE FROM iam_user_org WHERE " + uidColumn() + " = ?", id);
-        jdbcTemplate.update("DELETE FROM iam_user_role WHERE " + uidColumn() + " = ?", id);
+        jdbcTemplate.update("DELETE FROM core_iam_user WHERE id = ?", id);
+        jdbcTemplate.update("DELETE FROM core_iam_user_org WHERE " + uidColumn() + " = ?", id);
+        jdbcTemplate.update("DELETE FROM core_iam_user_role WHERE " + uidColumn() + " = ?", id);
     }
 
     // 切换用户启用状态，内置管理员不允许停用
@@ -563,7 +563,7 @@ public class CrestUserManage {
             }
         }
 
-        jdbcTemplate.update("UPDATE iam_user SET enable = ?, update_time = ? WHERE id = ?",
+        jdbcTemplate.update("UPDATE core_iam_user SET enable = ?, update_time = ? WHERE id = ?",
                 request.getEnable(), System.currentTimeMillis(), request.getId());
     }
 
@@ -578,7 +578,7 @@ public class CrestUserManage {
             CrestException.throwException("单点登录用户不支持重置本地密码");
         }
         String password = generateSecurePassword();
-        jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, update_time = ? WHERE id = ?",
+        jdbcTemplate.update("UPDATE core_iam_user SET password_hash = ?, update_time = ? WHERE id = ?",
                 PasswordEncoder.encode(password), System.currentTimeMillis(), id);
         return password;
     }
@@ -600,7 +600,7 @@ public class CrestUserManage {
         // 修改密码同样复用统一密码策略
         PasswordValidator.validate(newPwd);
 
-        jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, update_time = ? WHERE id = ?",
+        jdbcTemplate.update("UPDATE core_iam_user SET password_hash = ?, update_time = ? WHERE id = ?",
                 PasswordEncoder.encode(newPwd), System.currentTimeMillis(), id);
     }
 

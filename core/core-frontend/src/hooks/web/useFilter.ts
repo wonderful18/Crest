@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import dayjs from 'dayjs'
 import { getDynamicRange, getCustomTime } from '@/custom-component/v-query/time-format'
 import { getCustomRange } from '@/custom-component/v-query/time-format-dayjs'
+import { decodeTreeLevelValue } from '@/utils/treeLevelSeparator'
 const dvMainStore = dvMainStoreWithOut()
 const { componentData, canvasStyleData } = storeToRefs(dvMainStore)
 
@@ -139,18 +140,18 @@ const getValueByDefaultValueCheckOrFirstLoad = (
   displayId: string
 ) => {
   if (+displayType === 9) {
-    // 树形值使用 -de- 转义逗号，生成查询前需要还原层级分隔符。
+    // 树形值会转义层级分隔符，生成查询前需要还原。
     if (firstLoad) {
       return defaultValueCheck
         ? multiple
-          ? defaultValue.map(ele => ele.split('-de-').join(','))
-          : (defaultValue || '').split('-de-').join(',')
+          ? defaultValue.map(decodeTreeLevelValue)
+          : decodeTreeLevelValue(defaultValue || '')
         : []
     }
     return selectValue?.length
       ? multiple
-        ? selectValue.map(ele => ele.split('-de-').join(','))
-        : (selectValue || '').split('-de-').join(',')
+        ? selectValue.map(decodeTreeLevelValue)
+        : decodeTreeLevelValue(selectValue || '')
       : []
   }
   if (
@@ -402,9 +403,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
           if (optionFilter) {
             // 选项过滤来自候选值过滤，作为独立筛选条件先写入。
             let fieldIdOption = item.checkedFieldsMap[curComponentId]
-            const optionFilterValue = isTree
-              ? optionFilter.map(itemOption => itemOption.replace(/-de-/g, ','))
-              : optionFilter
+            const optionFilterValue = isTree ? optionFilter.map(decodeTreeLevelValue) : optionFilter
             if (isTree) {
               const [i, r] = getFieldId(
                 treeFieldList,

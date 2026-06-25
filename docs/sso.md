@@ -26,7 +26,7 @@ Crest 支持基于 OIDC / OAuth2 授权码模式的单点登录。该能力不�
 
 ## 配置存储
 
-SSO 配置保存到 `sys_setting`，键名前缀为 `sso.`。
+SSO 配置保存到 `core_system_setting`，键名前缀为 `sso.`。
 
 | 配置项 | 说明 |
 | --- | --- |
@@ -49,7 +49,7 @@ SSO 配置保存到 `sys_setting`，键名前缀为 `sso.`。
 | `sso.requireHttps` | 非本地端点是否必须使用 HTTPS |
 | `sso.logoutRedirectUrl` | 退出跳转地址，当前仅保存配置 |
 
-用户表 `iam_user` 包含以下 SSO 字段：
+用户表 `core_iam_user` 包含以下 SSO 字段：
 
 | 字段 | 说明 |
 | --- | --- |

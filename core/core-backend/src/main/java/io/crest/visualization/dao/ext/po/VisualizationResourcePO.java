@@ -12,7 +12,6 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-// 定义当前业务对象的核心职责
 public class VisualizationResourcePO implements Serializable {
     @Serial
     private static final long serialVersionUID = 627770173259978185L;

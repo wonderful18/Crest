@@ -96,7 +96,7 @@ defineExpose({
     append-to-body
     :title="$t('chart.add_filter')"
     destroy-on-close
-    class="de-dialog-form filter-tree-cont"
+    class="crest-dialog-form filter-tree-cont"
     v-model="dialogVisible"
   >
     <div class="tree-cont">

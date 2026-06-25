@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 系统加密密钥实体。
  */
-@TableName("crypto_key")
+@TableName("core_crypto_key")
 public class CoreRsa implements Serializable {
 
     private static final long serialVersionUID = 1L;

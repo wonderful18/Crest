@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * 外部参数目标字段快照实体。
  */
-@TableName("snapshot_visualization_outer_params_target_view_info")
+@TableName("core_visualization_parameter_target_snapshot")
 public class SnapshotVisualizationOuterParamsTargetViewInfo implements Serializable {
 
     /**

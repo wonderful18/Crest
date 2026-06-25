@@ -109,14 +109,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
-import {
-  CircleCheck,
-  CopyDocument,
-  Link,
-  Lock,
-  Monitor,
-  Refresh
-} from '@element-plus/icons-vue'
+import { CircleCheck, CopyDocument, Link, Lock, Monitor, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus-secondary'
 import { observabilityStatusApi } from '@/api/observability'
 

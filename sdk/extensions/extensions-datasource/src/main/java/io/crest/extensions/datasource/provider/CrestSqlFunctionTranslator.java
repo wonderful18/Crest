@@ -11,11 +11,11 @@ import java.util.Set;
 // 将内置日期函数翻译为指定数据源可执行的 SQL 函数
 public final class CrestSqlFunctionTranslator {
     private static final List<String> DATE_FUNCTIONS = List.of(
-            "DE_CAST_DATE_FORMAT",
-            "DE_UNIX_TIMESTAMP",
-            "DE_STR_TO_DATE",
-            "DE_FROM_UNIXTIME",
-            "DE_DATE_FORMAT"
+            "CREST_CAST_DATE_FORMAT",
+            "CREST_UNIX_TIMESTAMP",
+            "CREST_STR_TO_DATE",
+            "CREST_FROM_UNIXTIME",
+            "CREST_DATE_FORMAT"
     );
     private static final Set<String> MYSQL_FAMILY = Set.of(
             "mysql",
@@ -107,22 +107,22 @@ public final class CrestSqlFunctionTranslator {
     // 将单个内置日期函数转换为 MySQL 兼容函数
     private static String rewriteMysqlFunction(String functionName, List<String> args) {
         String normalized = functionName.toUpperCase();
-        if (Strings.CS.equals(normalized, "DE_STR_TO_DATE") && args.size() >= 2) {
+        if (Strings.CS.equals(normalized, "CREST_STR_TO_DATE") && args.size() >= 2) {
             return "STR_TO_DATE(" + rewriteMysql(args.get(0).trim()) + ", " + mysqlFormat(args.get(1)) + ")";
         }
-        if (Strings.CS.equals(normalized, "DE_DATE_FORMAT") && args.size() >= 2) {
+        if (Strings.CS.equals(normalized, "CREST_DATE_FORMAT") && args.size() >= 2) {
             return "DATE_FORMAT(" + rewriteMysql(args.get(0).trim()) + ", " + mysqlFormat(args.get(1)) + ")";
         }
-        if (Strings.CS.equals(normalized, "DE_CAST_DATE_FORMAT") && args.size() >= 3) {
+        if (Strings.CS.equals(normalized, "CREST_CAST_DATE_FORMAT") && args.size() >= 3) {
             return "DATE_FORMAT(" + rewriteMysql(args.get(0).trim()) + ", " + mysqlFormat(args.get(2)) + ")";
         }
-        if (Strings.CS.equals(normalized, "DE_FROM_UNIXTIME") && !args.isEmpty()) {
+        if (Strings.CS.equals(normalized, "CREST_FROM_UNIXTIME") && !args.isEmpty()) {
             if (args.size() >= 2) {
                 return "FROM_UNIXTIME(" + rewriteMysql(args.get(0).trim()) + ", " + mysqlFormat(args.get(1)) + ")";
             }
             return "FROM_UNIXTIME(" + rewriteMysql(args.get(0).trim()) + ")";
         }
-        if (Strings.CS.equals(normalized, "DE_UNIX_TIMESTAMP") && !args.isEmpty()) {
+        if (Strings.CS.equals(normalized, "CREST_UNIX_TIMESTAMP") && !args.isEmpty()) {
             return "UNIX_TIMESTAMP(" + rewriteMysql(args.get(0).trim()) + ")";
         }
         return null;

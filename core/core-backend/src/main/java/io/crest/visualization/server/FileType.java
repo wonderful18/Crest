@@ -30,12 +30,10 @@ public enum FileType {
         this.ext = ext;
     }
 
-    // 执行当前服务方法并返回处理结果
     public String getExt() {
         return ext;
     }
 
-    // 执行当前服务方法并返回处理结果
     public String getValue() {
         return value;
     }

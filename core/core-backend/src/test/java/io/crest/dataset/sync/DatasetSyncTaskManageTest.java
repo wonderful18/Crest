@@ -40,15 +40,15 @@ class DatasetSyncTaskManageTest {
         ReflectionTestUtils.setField(manage, "jdbcTemplate", jdbcTemplate);
         createTaskCenterTables(jdbcTemplate);
         jdbcTemplate.update("""
-                INSERT INTO dataset_group(id, name, node_type, mode, create_by, create_time, last_update_time)
+                INSERT INTO core_dataset(id, name, node_type, mode, create_by, create_time, last_update_time)
                 VALUES (982004, '销售缓存数据集', 'dataset', 1, '1', 1000, 2000)
                 """);
         jdbcTemplate.update("""
-                INSERT INTO dataset_group(id, name, node_type, mode, create_by, create_time, last_update_time)
+                INSERT INTO core_dataset(id, name, node_type, mode, create_by, create_time, last_update_time)
                 VALUES (982005, '直连数据集', 'dataset', 0, '1', 1000, 2000)
                 """);
         jdbcTemplate.update("""
-                INSERT INTO dataset_sync_task(
+                INSERT INTO core_dataset_sync_task(
                     id, dataset_group_id, name, update_type, sync_rate, cron, task_status, last_exec_status,
                     cache_ready, last_exec_time, last_source_row_count, last_cache_row_count, create_time, update_time
                 )
@@ -58,7 +58,7 @@ class DatasetSyncTaskManageTest {
                 )
                 """);
         jdbcTemplate.update("""
-                INSERT INTO dataset_sync_task_log(
+                INSERT INTO core_dataset_sync_task_log(
                     id, dataset_group_id, task_id, start_time, end_time, task_status, row_count, info, trigger_type
                 )
                 VALUES (
@@ -88,15 +88,15 @@ class DatasetSyncTaskManageTest {
         createTaskCenterTables(jdbcTemplate);
         createVisualizationTables(jdbcTemplate);
         jdbcTemplate.update("""
-                INSERT INTO dataset_group(id, name, node_type, mode, create_by, create_time, last_update_time)
+                INSERT INTO core_dataset(id, name, node_type, mode, create_by, create_time, last_update_time)
                 VALUES (982004, '销售缓存数据集', 'dataset', 1, '1', 1000, 2000)
                 """);
         jdbcTemplate.update("""
-                INSERT INTO dataset_group(id, name, node_type, mode, create_by, create_time, last_update_time)
+                INSERT INTO core_dataset(id, name, node_type, mode, create_by, create_time, last_update_time)
                 VALUES (982005, '直连数据集', 'dataset', 0, '1', 1000, 2000)
                 """);
         jdbcTemplate.update("""
-                INSERT INTO dataset_sync_task(
+                INSERT INTO core_dataset_sync_task(
                     id, dataset_group_id, name, update_type, sync_rate, task_status, last_exec_status,
                     cache_ready, last_exec_time, last_source_row_count, last_cache_row_count, create_time, update_time
                 )
@@ -106,15 +106,15 @@ class DatasetSyncTaskManageTest {
                 )
                 """);
         jdbcTemplate.update("""
-                INSERT INTO bi_visualization(id, name, type, node_type, delete_flag, create_by, org_id)
+                INSERT INTO core_visualization(id, name, type, node_type, delete_flag, create_by, org_id)
                 VALUES (1259851055592771584, '经营仪表盘', 'dashboard', 'leaf', 0, '1', '1')
                 """);
         jdbcTemplate.update("""
-                INSERT INTO bi_chart(id, scene_id, table_id, title)
+                INSERT INTO core_chart_view(id, scene_id, table_id, title)
                 VALUES (1, 1259851055592771584, 982004, '销售趋势')
                 """);
         jdbcTemplate.update("""
-                INSERT INTO bi_chart(id, scene_id, table_id, title)
+                INSERT INTO core_chart_view(id, scene_id, table_id, title)
                 VALUES (2, 1259851055592771584, 982005, '直连趋势')
                 """);
 
@@ -413,7 +413,7 @@ class DatasetSyncTaskManageTest {
 
     private void createTaskCenterTables(JdbcTemplate jdbcTemplate) {
         jdbcTemplate.execute("""
-                CREATE TABLE dataset_group (
+                CREATE TABLE core_dataset (
                     id BIGINT PRIMARY KEY,
                     name VARCHAR(128),
                     node_type VARCHAR(50),
@@ -424,7 +424,7 @@ class DatasetSyncTaskManageTest {
                 )
                 """);
         jdbcTemplate.execute("""
-                CREATE TABLE dataset_sync_task (
+                CREATE TABLE core_dataset_sync_task (
                     id BIGINT PRIMARY KEY,
                     dataset_group_id BIGINT,
                     name VARCHAR(255),
@@ -466,7 +466,7 @@ class DatasetSyncTaskManageTest {
                 )
                 """);
         jdbcTemplate.execute("""
-                CREATE TABLE dataset_sync_task_log (
+                CREATE TABLE core_dataset_sync_task_log (
                     id BIGINT PRIMARY KEY,
                     dataset_group_id BIGINT,
                     task_id BIGINT,
@@ -485,7 +485,7 @@ class DatasetSyncTaskManageTest {
 
     private void createVisualizationTables(JdbcTemplate jdbcTemplate) {
         jdbcTemplate.execute("""
-                CREATE TABLE bi_visualization (
+                CREATE TABLE core_visualization (
                     id BIGINT PRIMARY KEY,
                     name VARCHAR(255),
                     type VARCHAR(50),
@@ -496,7 +496,7 @@ class DatasetSyncTaskManageTest {
                 )
                 """);
         jdbcTemplate.execute("""
-                CREATE TABLE bi_chart (
+                CREATE TABLE core_chart_view (
                     id BIGINT PRIMARY KEY,
                     scene_id BIGINT,
                     table_id BIGINT,

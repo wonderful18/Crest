@@ -92,10 +92,10 @@ public class CrestPermissionUtils {
         String idExpression = dialect.stringCast("id");
         String targetIdExpression = dialect.stringCast("%s");
         return "SELECT 1 FROM (\n"
-                + "  SELECT " + idExpression + " AS resource_id, create_by FROM data_source\n"
-                + "  UNION ALL SELECT " + idExpression + " AS resource_id, create_by FROM dataset_group\n"
-                + "  UNION ALL SELECT " + idExpression + " AS resource_id, create_by FROM bi_chart\n"
-                + "  UNION ALL SELECT " + idExpression + " AS resource_id, create_by FROM bi_visualization\n"
+                + "  SELECT " + idExpression + " AS resource_id, create_by FROM core_datasource\n"
+                + "  UNION ALL SELECT " + idExpression + " AS resource_id, create_by FROM core_dataset\n"
+                + "  UNION ALL SELECT " + idExpression + " AS resource_id, create_by FROM core_chart_view\n"
+                + "  UNION ALL SELECT " + idExpression + " AS resource_id, create_by FROM core_visualization\n"
                 + ") resource_scope\n"
                 + "WHERE resource_scope.resource_id = " + targetIdExpression + "\n"
                 + "  AND (resource_scope.create_by IS NULL OR resource_scope.create_by <> '" + safeUid + "')";

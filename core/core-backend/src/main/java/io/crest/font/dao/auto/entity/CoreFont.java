@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 字体资源实体。
  */
-@TableName("font_asset")
+@TableName("core_font_asset")
 public class CoreFont implements Serializable {
 
     /**

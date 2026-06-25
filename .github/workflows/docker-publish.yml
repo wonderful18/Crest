@@ -9,7 +9,7 @@ on:
       image_tag:
         description: Crest image tag to publish
         required: false
-        default: v2.0.0
+        default: v2.0.2
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_TAG: ${{ inputs.image_tag || github.ref_name || 'v2.0.0' }}
+  IMAGE_TAG: ${{ inputs.image_tag || github.ref_name || 'v2.0.2' }}
   REGISTRY: ghcr.io
   BACKEND_IMAGE: ghcr.io/sevoniva/crest-service
   FRONTEND_IMAGE: ghcr.io/sevoniva/crest-web
@@ -56,6 +56,8 @@ jobs:
 
       - name: Build frontend
         working-directory: core/core-frontend
+        env:
+          CREST_FRONTEND_COMMIT_ID: ${{ github.sha }}
         run: |
           pnpm install --frozen-lockfile
           pnpm run build:base
@@ -82,8 +84,11 @@ jobs:
           file: Dockerfile.backend
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            CREST_BACKEND_COMMIT_ID=${{ github.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/sevoniva/Crest
+            org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.description=Crest backend service
             org.opencontainers.image.licenses=GPL-3.0
           tags: |
@@ -98,8 +103,11 @@ jobs:
           file: Dockerfile.frontend
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            CREST_FRONTEND_COMMIT_ID=${{ github.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/sevoniva/Crest
+            org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.description=Crest frontend web
             org.opencontainers.image.licenses=GPL-3.0
           tags: |

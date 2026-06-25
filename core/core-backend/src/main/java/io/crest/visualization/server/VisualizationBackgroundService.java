@@ -25,7 +25,6 @@ public class VisualizationBackgroundService implements VisualizationBackgroundAp
     VisualizationBackgroundMapper mapper;
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public Map<String, List<VisualizationBackgroundVO>> findAll() {
         List<VisualizationBackground> result = mapper.selectList(new QueryWrapper<>());
         return result.stream().map(vb ->{

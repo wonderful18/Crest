@@ -2,7 +2,7 @@
   <el-drawer
     :title="t('visualization.app_export')"
     v-model="state.applyDownloadDrawer"
-    modal-class="de-user-drawer"
+    modal-class="crest-user-drawer"
     size="600px"
     direction="rtl"
   >
@@ -11,7 +11,7 @@
         ref="applyDownloadForm"
         :model="state.form"
         :rules="state.rule"
-        class="de-form-item"
+        class="crest-form-item"
         label-width="180px"
         label-position="top"
       >

@@ -444,7 +444,7 @@ const save = () => {
   sql = setNameIdTrans('name', 'id', codeCom.value.state.doc.toString())
   sqlNode.value.changeFlag = true
   if (!sql.trim()) {
-    ElMessage.error(t('data_set.cannot_be_empty_de'))
+    ElMessage.error(t('data_set.sql_content_required'))
     return
   }
   sqlNode.value.sql = Base64.encode(sql)
@@ -879,7 +879,7 @@ const mousedownDrag = () => {
                         }}
                       </div>
                       <el-icon
-                        class="hover-icon de-hover-icon-primary"
+                        class="hover-icon crest-hover-icon-primary"
                         @click.stop="
                           copyInfo(
                             datasourceTableData[index].name || datasourceTableData[index].tableName
@@ -931,7 +931,7 @@ const mousedownDrag = () => {
                         <el-table-column :label="t('common.operate')">
                           <template #default="scope">
                             <el-icon
-                              class="hover-icon de-hover-icon-primary"
+                              class="hover-icon crest-hover-icon-primary"
                               @click.stop="copyInfo(scope.row.originName)"
                             >
                               <Icon name="icon_copy_outlined"
@@ -1042,7 +1042,9 @@ const mousedownDrag = () => {
             />
             <el-table-column key="status" prop="status" :label="t('dataset.sql_result')">
               <template #default="scope">
-                <span v-if="scope.row.status" :class="[`de-${scope.row.status}-pre`, 'de-status']"
+                <span
+                  v-if="scope.row.status"
+                  :class="[`crest-${scope.row.status}-pre`, 'crest-status']"
                   >{{ t(`dataset.${scope.row.status.toLocaleLowerCase()}`) }}
                 </span>
                 <span v-else>-</span>
@@ -1219,7 +1221,7 @@ const mousedownDrag = () => {
           </el-input>
           <div
             v-if="getIconName(scope.row.type[0]) === 'time'"
-            class="ed-input ed-input--light ed-input-group ed-input-group--prepend de-group__prepend"
+            class="ed-input ed-input--light ed-input-group ed-input-group--prepend crest-group__prepend"
           >
             <div class="ed-input-group__prepend">
               <el-select v-model="scope.row.defaultValueScope" style="width: calc(100% + 22px)">
@@ -1505,7 +1507,7 @@ const mousedownDrag = () => {
         }
       }
 
-      .de-status {
+      .crest-status {
         position: relative;
         margin-left: 15px;
 
@@ -1521,28 +1523,28 @@ const mousedownDrag = () => {
         }
       }
 
-      .de-Pending-result,
-      .de-Underway-result {
+      .crest-Pending-result,
+      .crest-Underway-result {
         &::before {
           background: var(--crestTextPlaceholder, #8f959e);
         }
       }
 
-      .de-Exec-result,
-      .de-Underway-pre {
+      .crest-Exec-result,
+      .crest-Underway-pre {
         &::before {
           background: var(--ed-color-primary, #3b82f6);
         }
       }
 
-      .de-Stopped-result,
-      .de-Completed-pre {
+      .crest-Stopped-result,
+      .crest-Completed-pre {
         &::before {
           background: var(--crestSuccess, #34c724);
         }
       }
 
-      .de-Error-pre {
+      .crest-Error-pre {
         &::before {
           background: var(--crestDanger, #f54a45);
         }
@@ -1710,7 +1712,7 @@ const mousedownDrag = () => {
     height: 240px;
   }
 }
-.de-hover-icon-primary {
+.crest-hover-icon-primary {
   color: var(--ed-color-primary) !important;
 }
 .sql-tips {
@@ -1787,7 +1789,7 @@ const mousedownDrag = () => {
     padding: 0 11px;
     width: 163px;
   }
-  .de-group__prepend {
+  .crest-group__prepend {
     .ed-date-editor {
       flex: 1;
       .ed-input__wrapper {

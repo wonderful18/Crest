@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-// 定义当前业务对象的核心职责
 public class Utils {
 
     // 判断当前类型是否满足业务分类

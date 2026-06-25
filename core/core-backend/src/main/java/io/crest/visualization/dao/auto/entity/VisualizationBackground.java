@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 可视化背景资源实体。
  */
-@TableName("visualization_background")
+@TableName("core_visualization_background")
 public class VisualizationBackground implements Serializable {
 
     /**

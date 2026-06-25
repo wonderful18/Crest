@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Set;
 
 @Mapper
-// 定义当前业务对象的核心职责
 public interface ExtDataVisualizationMapper {
 
 
@@ -29,7 +28,7 @@ public interface ExtDataVisualizationMapper {
             "\tbi_visualization where delete_flag=0 <when test='nodeType !=null'> and node_type = #{nodeType} </when>  <when test='type !=null'> and type = #{type} </when> order by node_type desc </script>")
     List<DataVisualizationBaseVO> findBashInfo(@Param("nodeType") String nodeType, @Param("type") String type);
 
-    @Select("select type from bi_visualization where id = #{dvId}")
+    @Select("select type from core_visualization where id = #{dvId}")
     String findDvType(@Param("dvId") Long dvId);
 
     void dvCopy(@Param("sourceDvId") Long sourceDvId,@Param("newDvId") Long newDvId,@Param("copyId") Long copyId);
@@ -102,9 +101,9 @@ public interface ExtDataVisualizationMapper {
 
     void restoreOuterParams(@Param("dvId") Long dvId);
 
-    @Select("select status from bi_visualization where id = #{dvId}")
+    @Select("select status from core_visualization where id = #{dvId}")
     Integer findDvInfoStats(@Param("dvId") Long dvId);
 
-    @Select("select id from bi_visualization where pid = -1")
+    @Select("select id from core_visualization where pid = -1")
     List<Long> findCopyResource();
 }

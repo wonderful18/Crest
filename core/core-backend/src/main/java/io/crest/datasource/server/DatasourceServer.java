@@ -20,7 +20,7 @@ import io.crest.dataset.utils.TableUtils;
 import io.crest.datasource.dao.auto.entity.*;
 import io.crest.datasource.dao.auto.mapper.CoreDatasourceMapper;
 import io.crest.datasource.dao.auto.mapper.CoreDsFinishPageMapper;
-import io.crest.datasource.dao.auto.mapper.QrtzSchedulerStateMapper;
+import io.crest.datasource.dao.auto.mapper.CoreScheduleStateMapper;
 import io.crest.datasource.dao.ext.mapper.DataSourceExtMapper;
 import io.crest.datasource.dao.ext.mapper.TaskLogExtMapper;
 import io.crest.datasource.manage.DataSourceManage;
@@ -113,7 +113,7 @@ public class DatasourceServer implements DatasourceApi {
     @Resource
     private DataSourceManage dataSourceManage;
     @Resource
-    private QrtzSchedulerStateMapper qrtzSchedulerStateMapper;
+    private CoreScheduleStateMapper coreScheduleStateMapper;
     @Resource
     private DataSourceExtMapper dataSourceExtMapper;
     @Resource
@@ -1878,8 +1878,8 @@ public class DatasourceServer implements DatasourceApi {
      * 查找已经不在活跃调度实例上的执行中任务，并回滚为等待执行状态
      */
     private void doUpdate() {
-        List<QrtzSchedulerState> qrtzSchedulerStates = qrtzSchedulerStateMapper.selectList(null);
-        List<String> activeQrtzInstances = qrtzSchedulerStates.stream().filter(qrtzSchedulerState -> qrtzSchedulerState.getLastCheckinTime() + qrtzSchedulerState.getCheckinInterval() + 1000 > dataSourceExtMapper.selectTimestamp().getCurrentTimestamp() * 1000).map(QrtzSchedulerState::getInstanceName).collect(Collectors.toList());
+        List<CoreScheduleState> scheduleStates = coreScheduleStateMapper.selectList(null);
+        List<String> activeScheduleInstances = scheduleStates.stream().filter(scheduleState -> scheduleState.getLastCheckinTime() + scheduleState.getCheckinInterval() + 1000 > dataSourceExtMapper.selectTimestamp().getCurrentTimestamp() * 1000).map(CoreScheduleState::getInstanceName).collect(Collectors.toList());
 
         QueryWrapper<CoreDatasource> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("task_status", TaskStatus.UnderExecution.name());
@@ -1888,7 +1888,7 @@ public class DatasourceServer implements DatasourceApi {
         List<CoreDatasource> syncCoreDatasources = new ArrayList<>();
         List<CoreDatasource> jobStoppedCoreDatasources = new ArrayList<>();
         datasources.forEach(coreDatasource -> {
-            if (StringUtils.isNotEmpty(coreDatasource.getQrtzInstance()) && !activeQrtzInstances.contains(coreDatasource.getQrtzInstance().substring(0, coreDatasource.getQrtzInstance().length() - 13))) {
+            if (StringUtils.isNotEmpty(coreDatasource.getSchedulerFireInstanceId()) && !activeScheduleInstances.contains(coreDatasource.getSchedulerFireInstanceId().substring(0, coreDatasource.getSchedulerFireInstanceId().length() - 13))) {
                 jobStoppedCoreDatasources.add(coreDatasource);
             } else {
                 syncCoreDatasources.add(coreDatasource);

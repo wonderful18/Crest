@@ -391,6 +391,7 @@ import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapsho
 import { iconChartMap } from '../icon-group/chart-list'
 import { iconFieldMap } from '../icon-group/field-list'
 import Icon from '../icon-custom/src/Icon.vue'
+import { isDatasetParameterFieldId } from '@/utils/datasetParameterFieldId'
 /** 可视化主画布状态仓库 */
 const dvMainStore = dvMainStoreWithOut()
 /** 当前可视化资源和画布组件数据 */
@@ -645,9 +646,9 @@ const initParams = async () => {
 /** 根据字段来源类型筛选数据集参数或普通字段 */
 const findFields = (type, datasetFields) => {
   if (type === 'parameterList') {
-    return datasetFields.filter(field => field.attachId.indexOf('DE') > -1)
+    return datasetFields.filter(field => isDatasetParameterFieldId(field.attachId))
   } else {
-    return datasetFields.filter(field => field.attachId.indexOf('DE') === -1)
+    return datasetFields.filter(field => !isDatasetParameterFieldId(field.attachId))
   }
 }
 
@@ -696,8 +697,8 @@ const paramsCheckedAdaptor = (outerParamsInfo, newBaseFilterInfo, newBaseDataset
       datasetInfo['checkAll'] = viewCheckCount === datasetInfo.datasetViews.length
       datasetInfo['checkAllIsIndeterminate'] =
         viewCheckCount > 0 && viewCheckCount < datasetInfo.datasetViews.length
-      if (datasetInfo['fieldIdSelected'] && datasetInfo['fieldIdSelected'].indexOf('DE') > -1) {
-        // DE 前缀表示数据集参数，非 DE 表示普通字段。
+      if (isDatasetParameterFieldId(datasetInfo['fieldIdSelected'])) {
+        // 参数字段和普通字段使用不同的配置页签。
         datasetInfo['activelist'] = 'parameterList'
       } else {
         datasetInfo['activelist'] = 'dimensionList'

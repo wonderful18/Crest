@@ -7,14 +7,13 @@ import org.apache.ibatis.annotations.*;
 import java.util.List;
 
 @Mapper
-// 定义当前业务对象的核心职责
 public interface ExtDatasourceTaskMapper {
 
 
     @Select(
             """     
-                    SELECT QRTZ_TRIGGERS.* 
-                    FROM QRTZ_TRIGGERS
+                    SELECT cst.*
+                    FROM core_schedule_triggers cst
                      ${ew.customSqlSegment}
                     """
     )

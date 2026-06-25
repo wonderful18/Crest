@@ -12,7 +12,6 @@ public class CrestPrincipal implements Principal {
     private String name;
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public String getName() {
         return name;
     }

@@ -67,7 +67,7 @@ public class DataPortalPermissionManage {
         }
         StringBuilder sql = new StringBuilder("""
                 SELECT COUNT(1)
-                FROM bi_visualization v
+                FROM core_visualization v
                 WHERE v.id = ?
                   AND v.delete_flag = 0
                   AND v.node_type = 'leaf'
@@ -93,7 +93,7 @@ public class DataPortalPermissionManage {
         }
         Long count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(1)
-                FROM bi_chart c
+                FROM core_chart_view c
                 WHERE c.scene_id = ?
                   AND c.table_id = ?
                 """, Long.class, id, datasetGroupId);
@@ -115,7 +115,7 @@ public class DataPortalPermissionManage {
                   v.create_by = ?
                   OR v.org_id = ?
                   OR EXISTS (
-                    SELECT 1 FROM iam_resource_permission p
+                    SELECT 1 FROM core_iam_resource_permission p
                     WHERE %s = v.id
                       AND (
                         (v.type = 'dataV' AND p.resource_type = 'screen')

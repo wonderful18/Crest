@@ -12,7 +12,6 @@ import io.crest.utils.JsonUtil;
 public abstract class DataFillingPlugin extends ExtDDLProvider implements CrestPlugin {
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void loadPlugin() {
         PluginDataFillingVO viewConfig = getConfig();
         ExtDDLProviderFactory.loadPlugin(viewConfig.getType(), this);
@@ -34,7 +33,6 @@ public abstract class DataFillingPlugin extends ExtDDLProvider implements CrestP
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void unloadPlugin() {
 
     }

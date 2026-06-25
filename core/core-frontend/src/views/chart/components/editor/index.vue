@@ -2272,7 +2272,7 @@ const chartStyleScroll = (val: any) => {
 
     <!--pc端设计使用-->
     <template v-if="!mobileInPc">
-      <el-row v-loading="loading" class="de-chart-editor">
+      <el-row v-loading="loading" class="crest-chart-editor">
         <div
           class="content-area"
           :class="{
@@ -4594,7 +4594,7 @@ span {
   font-size: 12px;
 }
 
-.de-chart-editor {
+.crest-chart-editor {
   height: 100%;
   overflow-y: hidden;
   width: 100%;

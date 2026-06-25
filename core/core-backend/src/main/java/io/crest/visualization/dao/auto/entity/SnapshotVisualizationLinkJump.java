@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 组件跳转快照实体。
  */
-@TableName("snapshot_visualization_link_jump")
+@TableName("core_visualization_jump_snapshot")
 public class SnapshotVisualizationLinkJump implements Serializable {
 
     private static final long serialVersionUID = 1L;

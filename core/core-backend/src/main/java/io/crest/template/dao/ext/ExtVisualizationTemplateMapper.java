@@ -10,7 +10,6 @@ import java.util.List;
 
 
 @Mapper
-// 定义当前业务对象的核心职责
 public interface ExtVisualizationTemplateMapper{
 
     List<TemplateManageDTO> findTemplateList(TemplateManageRequest request);
@@ -19,11 +18,11 @@ public interface ExtVisualizationTemplateMapper{
 
     List<TemplateManageDTO> findBaseTemplateList();
 
-    Long checkCategoryMap(@Param("categoryId") String categoryId);
+    Long checkCategoryRelation(@Param("categoryId") String categoryId);
 
     Long checkRepeatTemplateId(@Param("categoryId") String categoryId, @Param("templateId") String templateId);
 
-    void deleteCategoryMapByTemplate(@Param("templateName") String templateName, @Param("templateId") String templateId);
+    void deleteCategoryRelationByTemplate(@Param("templateName") String templateName, @Param("templateId") String templateId);
 
     Long checkCategoryTemplateName(@Param("templateName") String templateName,@Param("categories") List<String> categories);
 

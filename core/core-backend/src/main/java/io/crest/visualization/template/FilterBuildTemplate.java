@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// 定义当前业务对象的核心职责
 public class FilterBuildTemplate {
 
     // 根据输入参数构造业务结果

@@ -5,10 +5,10 @@
         INSERT INTO
         <choose>
             <when test="resourceTable == 'snapshot'">
-                  `bi_chart_snapshot`
+                  `core_chart_view_snapshot`
             </when>
             <otherwise>
-                  `bi_chart`
+                  `core_chart_view`
             </otherwise>
         </choose>
                                        (`id`,
@@ -98,16 +98,16 @@
         FROM
         <choose>
             <when test="resourceTable == 'snapshot'">
-                  bi_chart_snapshot ccv
+                  core_chart_view_snapshot ccv
             </when>
             <otherwise>
-                  bi_chart ccv
+                  core_chart_view ccv
             </otherwise>
         </choose>
         WHERE ccv.scene_id = #{sourceDvId}
     </insert>
     <insert id="dvCopy">
-        INSERT INTO `bi_visualization` (`id`,
+        INSERT INTO `core_visualization` (`id`,
                                                `name`,
                                                `pid`,
                                                `org_id`,
@@ -151,12 +151,12 @@
                `delete_flag`,
                `delete_time`,
                `delete_by`
-        from bi_visualization dvInfo
+        from core_visualization dvInfo
         where dvInfo.id = #{sourceDvId}
     </insert>
     <select id="findViewInfoByCopyId" resultType="io.crest.chart.dao.auto.entity.CoreChartView">
         select id, copy_from
-        from bi_chart
+        from core_chart_view
         where copy_id = #{copyId}
     </select>
     <select id="findDvInfo" resultType="io.crest.api.visualization.vo.DataVisualizationVO">
@@ -189,10 +189,10 @@
         FROM
            <choose>
                <when test="resourceTable == 'snapshot'">
-                  bi_visualization_snapshot dvi
+                  core_visualization_snapshot dvi
                </when>
                 <otherwise>
-                  bi_visualization dvi
+                  core_visualization dvi
                 </otherwise>
            </choose>
         where dvi.delete_flag = 0
@@ -214,57 +214,57 @@
                (
                    CASE
 
-                       WHEN workspace_favorite_resource.resource_id IS NULL THEN
+                       WHEN core_workspace_favorite_resource.resource_id IS NULL THEN
                            0
                        ELSE 1
                        END
                    )                AS favorite
-        FROM (SELECT dataset_group.id,
-                     dataset_group.id        AS resource_id,
-                     dataset_group.NAME,
+        FROM (SELECT core_dataset.id,
+                     core_dataset.id        AS resource_id,
+                     core_dataset.NAME,
                      0 as ext_flag,
                      'dataset'                    AS type,
-                     dataset_group.create_by AS creator,
-                     COALESCE(dataset_group.update_by, dataset_group.create_by) AS last_editor,
-                     COALESCE(NULLIF(dataset_group.last_update_time, 0), dataset_group.create_time) AS last_edit_time
-              FROM dataset_group
-              WHERE dataset_group.node_type = 'dataset'
+                     core_dataset.create_by AS creator,
+                     COALESCE(core_dataset.update_by, core_dataset.create_by) AS last_editor,
+                     COALESCE(NULLIF(core_dataset.last_update_time, 0), core_dataset.create_time) AS last_edit_time
+              FROM core_dataset
+              WHERE core_dataset.node_type = 'dataset'
               UNION ALL
-              SELECT data_source.id,
-                     data_source.id        AS resource_id,
-                     data_source.NAME,
+              SELECT core_datasource.id,
+                     core_datasource.id        AS resource_id,
+                     core_datasource.NAME,
                      0 as ext_flag,
                      'datasource'              AS type,
-                     data_source.create_by AS creator,
-                     COALESCE(data_source.update_by, data_source.create_by) AS last_editor,
-                     COALESCE(data_source.update_time, data_source.create_time) AS last_edit_time
-              FROM data_source
-              WHERE data_source.type != 'folder'
+                     core_datasource.create_by AS creator,
+                     COALESCE(core_datasource.update_by, core_datasource.create_by) AS last_editor,
+                     COALESCE(core_datasource.update_time, core_datasource.create_time) AS last_edit_time
+              FROM core_datasource
+              WHERE core_datasource.type != 'folder'
               UNION ALL
               SELECT
-                  bi_visualization.id,
-                  bi_visualization.id AS resource_id,
-                  bi_visualization.NAME,
-                  bi_visualization.`mobile_layout` as ext_flag,
+                  core_visualization.id,
+                  core_visualization.id AS resource_id,
+                  core_visualization.NAME,
+                  core_visualization.`mobile_layout` as ext_flag,
                   (
                   CASE
-                  bi_visualization.type
+                  core_visualization.type
                   WHEN 'dataV' THEN
                   'screen' ELSE 'panel'
                   END
                   ) AS type,
-                  bi_visualization.create_by AS creator,
-                  COALESCE(bi_visualization.update_by, bi_visualization.create_by) AS last_editor,
-                  COALESCE(bi_visualization.update_time, bi_visualization.create_time) AS last_edit_time
+                  core_visualization.create_by AS creator,
+                  COALESCE(core_visualization.update_by, core_visualization.create_by) AS last_editor,
+                  COALESCE(core_visualization.update_time, core_visualization.create_time) AS last_edit_time
               FROM
-                  bi_visualization
+                  core_visualization
               WHERE
-                  bi_visualization.delete_flag = 0
-                AND node_type = 'leaf' and bi_visualization.status != 0 ) dvResource
-                 LEFT JOIN workspace_favorite_resource ON dvResource.id = workspace_favorite_resource.resource_id
-            AND workspace_favorite_resource.uid = #{uid}
-                 INNER JOIN workspace_recent_resource ON dvResource.resource_id = workspace_recent_resource.resource_id
-            AND workspace_recent_resource.uid = #{uid}
+                  core_visualization.delete_flag = 0
+                AND node_type = 'leaf' and core_visualization.status != 0 ) dvResource
+                 LEFT JOIN core_workspace_favorite_resource ON dvResource.id = core_workspace_favorite_resource.resource_id
+            AND core_workspace_favorite_resource.uid = #{uid}
+                 INNER JOIN core_workspace_recent_resource ON dvResource.resource_id = core_workspace_recent_resource.resource_id
+            AND core_workspace_recent_resource.uid = #{uid}
             AND dvResource.name IS NOT NULL
              AND TRIM(dvResource.name) != ''
              <if test="keyword">
@@ -282,43 +282,43 @@
              </if>
              <choose>
                 <when test="ew.isAsc">
-                  order by workspace_recent_resource.time asc
+                  order by core_workspace_recent_resource.time asc
                 </when>
                 <otherwise>
-                  order by workspace_recent_resource.time desc
+                  order by core_workspace_recent_resource.time desc
                 </otherwise>
              </choose>
     </select>
 
     <insert id="copyLinkJump">
-        INSERT INTO visualization_link_jump (`id`,
+        INSERT INTO core_visualization_jump (`id`,
                                              `source_dv_id`,
                                              `source_view_id`,
                                              `link_jump_info`,
                                              `checked`,
                                              `copy_from`,
                                              `copy_id`)
-        SELECT visualization_link_jump.`id` + #{copyId} as id,
+        SELECT core_visualization_jump.`id` + #{copyId} as id,
                dv_view_copy.t_dv_id                     as source_dv_id,
                dv_view_copy.t_chart_view_id             as source_view_id,
-               visualization_link_jump.`link_jump_info`,
-               visualization_link_jump.`checked`,
-               visualization_link_jump.`id`             as copy_from,
+               core_visualization_jump.`link_jump_info`,
+               core_visualization_jump.`checked`,
+               core_visualization_jump.`id`             as copy_from,
                #{copyId}                                as copy_id
-        FROM visualization_link_jump
+        FROM core_visualization_jump
                  INNER JOIN (SELECT pvs.scene_id AS s_dv_id,
                                     pvs.id       AS s_chart_view_id,
                                     pvt.scene_id AS t_dv_id,
                                     pvt.id       AS t_chart_view_id
-                             FROM bi_chart pvt
-                                      INNER JOIN bi_chart pvs ON pvt.copy_from = pvs.id
+                             FROM core_chart_view pvt
+                                      INNER JOIN core_chart_view pvs ON pvt.copy_from = pvs.id
                              WHERE pvt.copy_id = #{copyId}) dv_view_copy
-                            ON visualization_link_jump.source_dv_id = dv_view_copy.s_dv_id
-                                AND visualization_link_jump.source_view_id = dv_view_copy.s_chart_view_id
+                            ON core_visualization_jump.source_dv_id = dv_view_copy.s_dv_id
+                                AND core_visualization_jump.source_view_id = dv_view_copy.s_chart_view_id
     </insert>
 
     <insert id="copyLinkJumpInfo">
-        INSERT INTO visualization_link_jump_info (id,
+        INSERT INTO core_visualization_jump_action (id,
                                                   link_jump_id,
                                                   link_type,
                                                   jump_type,
@@ -329,28 +329,28 @@
                                                   `attach_params`,
                                                   copy_from,
                                                   copy_id)
-        SELECT visualization_link_jump_info.`id` + #{copyId} as id,
+        SELECT core_visualization_jump_action.`id` + #{copyId} as id,
                plj_copy.t_id                                 as link_jump_id,
-               visualization_link_jump_info.`link_type`,
-               visualization_link_jump_info.`jump_type`,
-               visualization_link_jump_info.`target_dv_id`,
-               visualization_link_jump_info.`source_field_id`,
-               visualization_link_jump_info.`content`,
-               visualization_link_jump_info.`checked`,
-               visualization_link_jump_info.`attach_params`,
-               visualization_link_jump_info.`id`             AS copy_from,
+               core_visualization_jump_action.`link_type`,
+               core_visualization_jump_action.`jump_type`,
+               core_visualization_jump_action.`target_dv_id`,
+               core_visualization_jump_action.`source_field_id`,
+               core_visualization_jump_action.`content`,
+               core_visualization_jump_action.`checked`,
+               core_visualization_jump_action.`attach_params`,
+               core_visualization_jump_action.`id`             AS copy_from,
                #{copyId}                                     AS copy_id
-        FROM visualization_link_jump_info
+        FROM core_visualization_jump_action
                  INNER JOIN (SELECT id        AS t_id,
                                     copy_from AS s_id
-                             FROM visualization_link_jump
+                             FROM core_visualization_jump
                              WHERE copy_id = #{copyId}) plj_copy
-                            ON visualization_link_jump_info.link_jump_id = plj_copy.s_id
+                            ON core_visualization_jump_action.link_jump_id = plj_copy.s_id
     </insert>
 
 
     <insert id="copyLinkJumpTargetInfo">
-        INSERT INTO visualization_link_jump_target_view_info (`target_id`,
+        INSERT INTO core_visualization_jump_target (`target_id`,
                                                               `link_jump_info_id`,
                                                               `source_field_active_id`,
                                                               `target_view_id`,
@@ -364,16 +364,16 @@
                vljtvi.`target_field_id`,
                vljtvi.`target_id`             AS copy_from,
                #{copyId}                                                        AS copy_id
-        FROM visualization_link_jump_target_view_info vljtvi
+        FROM core_visualization_jump_target vljtvi
                  INNER JOIN (SELECT id        AS t_id,
                                     copy_from AS s_id
-                             FROM visualization_link_jump_info
+                             FROM core_visualization_jump_action
                              WHERE copy_id = #{copyId}) plji_copy
                             ON vljtvi.link_jump_info_id = plji_copy.s_id
     </insert>
 
     <insert id="copyLinkage">
-        INSERT INTO visualization_linkage (`id`,
+        INSERT INTO core_visualization_linkage (`id`,
                                            dv_id,
                                            source_view_id,
                                            target_view_id,
@@ -384,7 +384,7 @@
                                            `ext2`,
                                            `copy_from`,
                                            `copy_id`)
-        SELECT visualization_linkage.`id` + #{copyId} as `id`,
+        SELECT core_visualization_linkage.`id` + #{copyId} as `id`,
                pv_source_copy.t_dv_id                 AS dv_id,
                pv_source_copy.t_chart_view_id         AS source_view_id,
                pv_target_copy.t_chart_view_id         AS target_view_id,
@@ -393,51 +393,51 @@
                `linkage_active`,
                `ext1`,
                `ext2`,
-               visualization_linkage.`id`             as copy_from,
+               core_visualization_linkage.`id`             as copy_from,
                #{copyId}                              as copy_id
-        FROM visualization_linkage
+        FROM core_visualization_linkage
                  INNER JOIN (SELECT pvs.scene_id AS s_dv_id,
                                     pvs.id       AS s_chart_view_id,
                                     pvt.scene_id AS t_dv_id,
                                     pvt.id       AS t_chart_view_id
-                             FROM bi_chart pvt
-                                      INNER JOIN bi_chart pvs ON pvt.copy_from = pvs.id
+                             FROM core_chart_view pvt
+                                      INNER JOIN core_chart_view pvs ON pvt.copy_from = pvs.id
                              WHERE pvt.copy_id = #{copyId}) pv_source_copy
-                            ON visualization_linkage.dv_id = pv_source_copy.s_dv_id
-                                AND visualization_linkage.source_view_id = pv_source_copy.s_chart_view_id
+                            ON core_visualization_linkage.dv_id = pv_source_copy.s_dv_id
+                                AND core_visualization_linkage.source_view_id = pv_source_copy.s_chart_view_id
                  INNER JOIN (SELECT pvs.scene_id AS s_dv_id,
                                     pvs.id       AS s_chart_view_id,
                                     pvt.scene_id AS t_dv_id,
                                     pvt.id       AS t_chart_view_id
-                             FROM bi_chart pvt
-                                      INNER JOIN bi_chart pvs ON pvt.copy_from = pvs.id
+                             FROM core_chart_view pvt
+                                      INNER JOIN core_chart_view pvs ON pvt.copy_from = pvs.id
                              WHERE pvt.copy_id = #{copyId}) pv_target_copy
-                            ON visualization_linkage.dv_id = pv_target_copy.s_dv_id
-                                AND visualization_linkage.target_view_id = pv_target_copy.s_chart_view_id
+                            ON core_visualization_linkage.dv_id = pv_target_copy.s_dv_id
+                                AND core_visualization_linkage.target_view_id = pv_target_copy.s_chart_view_id
     </insert>
 
     <insert id="copyLinkageField">
 
-        INSERT INTO visualization_linkage_field (id,
+        INSERT INTO core_visualization_linkage_field (id,
                                                  `linkage_id`,
                                                  `source_field`,
                                                  `target_field`,
                                                  `update_time`,
                                                  `copy_from`,
                                                  `copy_id`)
-        SELECT visualization_linkage_field.`id` + #{copyId} as `id`,
+        SELECT core_visualization_linkage_field.`id` + #{copyId} as `id`,
                pvlf_copy.t_id                               as `linkage_id`,
                `source_field`,
                `target_field`,
                `update_time`,
                id                                           AS copy_from,
                #{copyId}                                    as copy_id
-        FROM visualization_linkage_field
+        FROM core_visualization_linkage_field
                  INNER JOIN (SELECT id        AS t_id,
                                     copy_from AS s_id
-                             FROM visualization_linkage
+                             FROM core_visualization_linkage
                              WHERE copy_id = #{copyId}) pvlf_copy
-                            ON visualization_linkage_field.linkage_id = pvlf_copy.s_id
+                            ON core_visualization_linkage_field.linkage_id = pvlf_copy.s_id
     </insert>
 
     <resultMap  id="ViewDetailsMap" type="io.crest.api.visualization.dto.VisualizationViewTableDTO">
@@ -463,11 +463,11 @@
                ccv.table_id,
                ccv.`type`,
                ccv.render,
-               ccv.scene_id as `visualization_id`, dataset_field.id AS `field_id`, dataset_field.origin_name,
-               dataset_field.`name` AS `field_name`, dataset_field.type AS `raw_field_type`, dataset_field.field_type AS `field_type`
-        FROM bi_chart_snapshot ccv
-                 LEFT JOIN dataset_field
-                           ON ccv.table_id = dataset_field.dataset_group_id
+               ccv.scene_id as `visualization_id`, core_dataset_field.id AS `field_id`, core_dataset_field.origin_name,
+               core_dataset_field.`name` AS `field_name`, core_dataset_field.type AS `raw_field_type`, core_dataset_field.field_type AS `field_type`
+        FROM core_chart_view_snapshot ccv
+                 LEFT JOIN core_dataset_field
+                           ON ccv.table_id = core_dataset_field.dataset_group_id
         WHERE ccv.scene_id = #{dvId}
           AND ccv.id IS NOT NULL and ccv.`type` != 'VQuery'
     </select>
@@ -476,8 +476,8 @@
         SELECT
             `id`, `report_id`, `resource_id`, `dv_type`, `component_id`, `filter_id`, `filter_info`, `filter_version`, `create_time`, `create_user`
         FROM
-            visualization_report_filter
-        where visualization_report_filter.resource_id = #{dvId} and visualization_report_filter.task_id = #{taskId}
+            core_visualization_report_filter
+        where core_visualization_report_filter.resource_id = #{dvId} and core_visualization_report_filter.task_id = #{taskId}
     </select>
 
     <delete id="deleteDataVBatch">
@@ -485,10 +485,10 @@
         FROM
          <choose>
             <when test="resourceTable == 'snapshot'">
-               bi_visualization_snapshot dvi
+               core_visualization_snapshot dvi
             </when>
             <otherwise>
-               bi_visualization dvi
+               core_visualization dvi
             </otherwise>
          </choose>
         WHERE
@@ -502,10 +502,10 @@
         FROM
         <choose>
            <when test="resourceTable == 'snapshot'">
-               bi_chart_snapshot ccv
+               core_chart_view_snapshot ccv
            </when>
            <otherwise>
-              bi_chart ccv
+              core_chart_view ccv
            </otherwise>
         </choose>
         WHERE
@@ -518,7 +518,7 @@
     <delete id="deleteUselessViewsBatchSnapshot">
         DELETE
         FROM
-        bi_chart_snapshot ccv
+        core_chart_view_snapshot ccv
         WHERE
             ccv.scene_id = #{dvId}
             <if test="ids != null and ids.size() > 0">
@@ -530,11 +530,11 @@
     </delete>
 
      <select id="queryInnerUserInfo" resultType="io.crest.api.permissions.user.vo.UserFormVO">
-            select id,account,name from iam_user where id =  #{id}
+            select id,account,name from core_iam_user where id =  #{id}
      </select>
 
      <insert id="snapshotDataV">
-        INSERT into bi_visualization_snapshot (
+        INSERT into core_visualization_snapshot (
             `id`,
             `name`,
             `pid`,
@@ -587,13 +587,13 @@
         `content_id`,
         `check_version`
         FROM
-            bi_visualization
+            core_visualization
         WHERE
             id = #{dvId}
      </insert>
 
      <insert id="snapshotViews">
-        INSERT into bi_chart_snapshot (
+        INSERT into core_chart_view_snapshot (
             `id`,
             `title`,
             `scene_id`,
@@ -684,13 +684,13 @@
         `ext_color`,
         `sort_priority`
         FROM
-            bi_chart
+            core_chart_view
         WHERE
             scene_id = #{dvId}
      </insert>
 
      <insert id="snapshotLinkJumpTargetViewInfo">
-        INSERT into snapshot_visualization_link_jump_target_view_info (
+        INSERT into core_visualization_jump_target_snapshot (
             `target_id`,
             `link_jump_info_id`,
             `source_field_active_id`,
@@ -709,15 +709,15 @@
         vljtvi.`copy_id`,
         vljtvi.`target_type`
         FROM
-            visualization_link_jump_target_view_info vljtvi
-            LEFT JOIN visualization_link_jump_info vlji ON vljtvi.link_jump_info_id = vlji.id
-            LEFT JOIN visualization_link_jump vlj ON vlji.link_jump_id = vlj.id
+            core_visualization_jump_target vljtvi
+            LEFT JOIN core_visualization_jump_action vlji ON vljtvi.link_jump_info_id = vlji.id
+            LEFT JOIN core_visualization_jump vlj ON vlji.link_jump_id = vlj.id
         WHERE
             vlj.source_dv_id = #{dvId}
      </insert>
 
      <insert id="snapshotLinkJumpInfo">
-        INSERT into snapshot_visualization_link_jump_info (
+        INSERT into core_visualization_jump_action_snapshot (
             `id`,
             `link_jump_id`,
             `link_type`,
@@ -744,13 +744,13 @@
         vlji.`copy_id`,
         vlji.`window_size`
         FROM
-            visualization_link_jump_info vlji
-            LEFT JOIN visualization_link_jump vlj ON vlji.link_jump_id = vlj.id
+            core_visualization_jump_action vlji
+            LEFT JOIN core_visualization_jump vlj ON vlji.link_jump_id = vlj.id
         WHERE
             vlj.source_dv_id = #{dvId}
      </insert>
      <insert id="snapshotLinkJump">
-        INSERT into snapshot_visualization_link_jump (
+        INSERT into core_visualization_jump_snapshot (
             `id`,
             `source_dv_id`,
             `source_view_id`,
@@ -767,13 +767,13 @@
         vlj.`copy_from`,
         vlj.`copy_id`
         FROM
-            visualization_link_jump vlj
+            core_visualization_jump vlj
         WHERE
             vlj.source_dv_id = #{dvId}
      </insert>
 
      <insert id="snapshotLinkageField">
-        INSERT into snapshot_visualization_linkage_field (
+        INSERT into core_visualization_linkage_field_snapshot (
             `id`,
             `linkage_id`,
             `source_field`,
@@ -790,13 +790,13 @@
         vlf.`copy_from`,
         vlf.`copy_id`
         FROM
-            visualization_linkage_field vlf
-            LEFT JOIN visualization_linkage vl ON vlf.linkage_id = vl.id
+            core_visualization_linkage_field vlf
+            LEFT JOIN core_visualization_linkage vl ON vlf.linkage_id = vl.id
         WHERE
             vl.dv_id =  #{dvId}
      </insert>
      <insert id="snapshotLinkage">
-         INSERT into snapshot_visualization_linkage (
+         INSERT into core_visualization_linkage_snapshot (
              `id`,
              `dv_id`,
              `source_view_id`,
@@ -821,12 +821,12 @@
          vl.`copy_from`,
          vl.`copy_id`
          FROM
-             visualization_linkage vl
+             core_visualization_linkage vl
          WHERE
              vl.dv_id = #{dvId}
      </insert>
      <insert id="snapshotOuterParamsTargetViewInfo">
-         INSERT into snapshot_visualization_outer_params_target_view_info (
+         INSERT into core_visualization_parameter_target_snapshot (
              `target_id`,
              `params_info_id`,
              `target_view_id`,
@@ -845,14 +845,14 @@
          voptvi.`target_ds_id`,
          voptvi.`match_mode`
          FROM
-             visualization_outer_params_target_view_info voptvi
-             LEFT JOIN visualization_outer_params_info vopi ON vopi.params_info_id = voptvi.params_info_id
-             LEFT JOIN visualization_outer_params vop ON vop.params_id = vopi.params_id
+             core_visualization_parameter_target voptvi
+             LEFT JOIN core_visualization_parameter_item vopi ON vopi.params_info_id = voptvi.params_info_id
+             LEFT JOIN core_visualization_parameter vop ON vop.params_id = vopi.params_id
          WHERE
              vop.visualization_id = #{dvId}
      </insert>
      <insert id="snapshotOuterParamsInfo">
-         INSERT INTO snapshot_visualization_outer_params_info (
+         INSERT INTO core_visualization_parameter_item_snapshot (
              `params_info_id`,
              `params_id`,
              `param_name`,
@@ -873,13 +873,13 @@
          vopi.`default_value`,
          vopi.`enabled_default`
          FROM
-             visualization_outer_params_info vopi
-             LEFT JOIN visualization_outer_params vop ON vop.params_id = vopi.params_id
+             core_visualization_parameter_item vopi
+             LEFT JOIN core_visualization_parameter vop ON vop.params_id = vopi.params_id
          WHERE
              vop.visualization_id =  #{dvId}
     </insert>
     <insert id="snapshotOuterParams">
-       INSERT into snapshot_visualization_outer_params (
+       INSERT into core_visualization_parameter_snapshot (
            `params_id`,
            `visualization_id`,
            `checked`,
@@ -894,14 +894,14 @@
        vop.`copy_from`,
        vop.`copy_id`
        FROM
-           visualization_outer_params vop
+           core_visualization_parameter vop
        WHERE
            vop.visualization_id =  #{dvId}
     </insert>
 
 
     <insert id="restoreDataV">
-       INSERT INTO bi_visualization (
+       INSERT INTO core_visualization (
            `id`,
            `name`,
            `pid`,
@@ -954,13 +954,13 @@
        `content_id`,
        `check_version`
        FROM
-           bi_visualization_snapshot
+           core_visualization_snapshot
        WHERE
            id =  #{dvId}
      </insert>
 
      <insert id="restoreViews">
-       INSERT INTO bi_chart (
+       INSERT INTO core_chart_view (
            `id`,
            `title`,
            `scene_id`,
@@ -1051,13 +1051,13 @@
        `ext_color`,
        `sort_priority`
        FROM
-           bi_chart_snapshot
+           core_chart_view_snapshot
        WHERE
            scene_id = #{dvId}
      </insert>
 
      <insert id="restoreLinkJumpTargetViewInfo">
-         INSERT into visualization_link_jump_target_view_info (
+         INSERT into core_visualization_jump_target (
              `target_id`,
              `link_jump_info_id`,
              `source_field_active_id`,
@@ -1076,15 +1076,15 @@
          vljtvi.`copy_id`,
          vljtvi.`target_type`
          FROM
-             snapshot_visualization_link_jump_target_view_info vljtvi
-             LEFT JOIN snapshot_visualization_link_jump_info vlji ON vljtvi.link_jump_info_id = vlji.id
-             LEFT JOIN snapshot_visualization_link_jump vlj ON vlji.link_jump_id = vlj.id
+             core_visualization_jump_target_snapshot vljtvi
+             LEFT JOIN core_visualization_jump_action_snapshot vlji ON vljtvi.link_jump_info_id = vlji.id
+             LEFT JOIN core_visualization_jump_snapshot vlj ON vlji.link_jump_id = vlj.id
          WHERE
              vlj.source_dv_id = #{dvId}
      </insert>
 
      <insert id="restoreLinkJumpInfo">
-         INSERT INTO visualization_link_jump_info (
+         INSERT INTO core_visualization_jump_action (
              `id`,
              `link_jump_id`,
              `link_type`,
@@ -1111,13 +1111,13 @@
          vlji.`copy_id`,
          vlji.`window_size`
          FROM
-             snapshot_visualization_link_jump_info vlji
-             LEFT JOIN snapshot_visualization_link_jump vlj ON vlji.link_jump_id = vlj.id
+             core_visualization_jump_action_snapshot vlji
+             LEFT JOIN core_visualization_jump_snapshot vlj ON vlji.link_jump_id = vlj.id
          WHERE
              vlj.source_dv_id = #{dvId}
      </insert>
      <insert id="restoreLinkJump">
-         INSERT INTO visualization_link_jump (
+         INSERT INTO core_visualization_jump (
              `id`,
              `source_dv_id`,
              `source_view_id`,
@@ -1134,13 +1134,13 @@
          vlj.`copy_from`,
          vlj.`copy_id`
          FROM
-             snapshot_visualization_link_jump vlj
+             core_visualization_jump_snapshot vlj
          WHERE
              vlj.source_dv_id = #{dvId}
      </insert>
 
      <insert id="restoreLinkageField">
-         INSERT INTO visualization_linkage_field (
+         INSERT INTO core_visualization_linkage_field (
              `id`,
              `linkage_id`,
              `source_field`,
@@ -1157,13 +1157,13 @@
          vlf.`copy_from`,
          vlf.`copy_id`
          FROM
-             snapshot_visualization_linkage_field vlf
-             LEFT JOIN snapshot_visualization_linkage vl ON vlf.linkage_id = vl.id
+             core_visualization_linkage_field_snapshot vlf
+             LEFT JOIN core_visualization_linkage_snapshot vl ON vlf.linkage_id = vl.id
          WHERE
              vl.dv_id = #{dvId}
      </insert>
      <insert id="restoreLinkage">
-        INSERT INTO visualization_linkage (
+        INSERT INTO core_visualization_linkage (
             `id`,
             `dv_id`,
             `source_view_id`,
@@ -1188,12 +1188,12 @@
         vl.`copy_from`,
         vl.`copy_id`
         FROM
-            snapshot_visualization_linkage vl
+            core_visualization_linkage_snapshot vl
         WHERE
             vl.dv_id = #{dvId}
      </insert>
      <insert id="restoreOuterParamsTargetViewInfo">
-         INSERT into visualization_outer_params_target_view_info (
+         INSERT into core_visualization_parameter_target (
              `target_id`,
              `params_info_id`,
              `target_view_id`,
@@ -1212,14 +1212,14 @@
          voptvi.`target_ds_id`,
          voptvi.`match_mode`
          FROM
-             snapshot_visualization_outer_params_target_view_info voptvi
-             LEFT JOIN snapshot_visualization_outer_params_info vopi ON vopi.params_info_id = voptvi.params_info_id
-             LEFT JOIN snapshot_visualization_outer_params vop ON vop.params_id = vopi.params_id
+             core_visualization_parameter_target_snapshot voptvi
+             LEFT JOIN core_visualization_parameter_item_snapshot vopi ON vopi.params_info_id = voptvi.params_info_id
+             LEFT JOIN core_visualization_parameter_snapshot vop ON vop.params_id = vopi.params_id
          WHERE
              vop.visualization_id = #{dvId}
      </insert>
      <insert id="restoreOuterParamsInfo">
-         INSERT into visualization_outer_params_info (
+         INSERT into core_visualization_parameter_item (
              `params_info_id`,
              `params_id`,
              `param_name`,
@@ -1240,13 +1240,13 @@
          vopi.`default_value`,
          vopi.`enabled_default`
          FROM
-             snapshot_visualization_outer_params_info vopi
-             LEFT JOIN snapshot_visualization_outer_params vop ON vop.params_id = vopi.params_id
+             core_visualization_parameter_item_snapshot vopi
+             LEFT JOIN core_visualization_parameter_snapshot vop ON vop.params_id = vopi.params_id
          WHERE
              vop.visualization_id = #{dvId}
     </insert>
     <insert id="restoreOuterParams">
-       INSERT into visualization_outer_params (
+       INSERT into core_visualization_parameter (
            `params_id`,
            `visualization_id`,
            `checked`,
@@ -1261,7 +1261,7 @@
        vop.`copy_from`,
        vop.`copy_id`
        FROM
-           snapshot_visualization_outer_params vop
+           core_visualization_parameter_snapshot vop
        WHERE
            vop.visualization_id = #{dvId}
     </insert>

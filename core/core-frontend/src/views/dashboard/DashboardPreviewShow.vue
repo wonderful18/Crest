@@ -337,7 +337,7 @@ defineExpose({
         <div
           ref="previewCanvasContainer"
           class="content"
-          id="de-preview-content"
+          id="crest-preview-content"
           :class="{ 'screen-full': fullscreenFlag }"
         >
           <canvas-opt-bar

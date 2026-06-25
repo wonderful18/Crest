@@ -293,7 +293,10 @@ onMounted(loadTable)
         />
         <el-table-column label="状态" width="80">
           <template #default="{ row }">
-            <el-tag :type="isSuccessResponse(row.response_code) ? 'success' : 'danger'" size="small">
+            <el-tag
+              :type="isSuccessResponse(row.response_code) ? 'success' : 'danger'"
+              size="small"
+            >
               {{ isSuccessResponse(row.response_code) ? '成功' : '失败' }}
             </el-tag>
           </template>

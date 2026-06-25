@@ -113,7 +113,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="attr-list de-collapse-style">
+  <div class="attr-list crest-collapse-style">
     <input
       id="input"
       ref="files"
@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="less" scoped>
-.de-collapse-style {
+.crest-collapse-style {
   :deep(.ed-collapse-item__header) {
     height: 36px !important;
     line-height: 36px !important;

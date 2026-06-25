@@ -309,8 +309,8 @@ class StageFunnelDomChart {
       .join('')
 
     const periodBlock = sideVisible
-      // 宽屏展示左侧周期块，窄屏隐藏以保证阶段主体可读。
-      ? `<g>
+      ? // 宽屏展示左侧周期块，窄屏隐藏以保证阶段主体可读。
+        `<g>
           <rect x="12" y="${height / 2 - 28}" width="94" height="46" rx="10" fill="${colorWithAlpha(
           periodColor,
           0.18
@@ -328,8 +328,8 @@ class StageFunnelDomChart {
       : ''
     const noteLines = this.buildMetricNoteLines(metricTitle)
     const noteBlock = sideVisible
-      // 右侧指标说明只在空间足够时展示，避免压缩阶段标签。
-      ? `<g>
+      ? // 右侧指标说明只在空间足够时展示，避免压缩阶段标签。
+        `<g>
           ${noteLines
             .map(
               (line, index) =>

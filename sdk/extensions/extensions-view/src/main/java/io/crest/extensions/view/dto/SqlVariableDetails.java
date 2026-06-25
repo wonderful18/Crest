@@ -34,7 +34,6 @@ public class SqlVariableDetails {
         DefaultValueScope(String type){
             this.type = type;
         }
-        // 执行当前服务方法并返回处理结果
         public String getType(){
             return type;
         }

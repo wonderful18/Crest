@@ -157,17 +157,14 @@ public interface DatasourceApi {
 
     @PostMapping("/latest-use")
     @Operation(summary = "最近常用")
-    // 执行当前服务方法并返回处理结果
     public List<String> latestUse();
 
     @GetMapping("finish-page/visible")
     @Operation(summary = "是否显示完成页面")
-    // 执行当前服务方法并返回处理结果
     public boolean showFinishPage() throws CrestException;
 
     @PostMapping("finish-page/visible")
     @Operation(summary = "是否显示完成页面")
-    // 执行当前服务方法并返回处理结果
     public void setShowFinishPage() throws CrestException;
 
     @PostMapping("/sync-records/{dsId}/{goPage}/{pageSize}")

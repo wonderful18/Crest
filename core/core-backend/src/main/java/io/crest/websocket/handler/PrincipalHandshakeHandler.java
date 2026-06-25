@@ -15,7 +15,6 @@ import java.util.Map;
 public class PrincipalHandshakeHandler extends DefaultHandshakeHandler {
 
     @Override
-    // 执行当前服务方法并返回处理结果
     protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler, Map<String, Object> attributes) {
         if (request instanceof ServletServerHttpRequest) {
             ServletServerHttpRequest servletServerHttpRequest = (ServletServerHttpRequest) request;

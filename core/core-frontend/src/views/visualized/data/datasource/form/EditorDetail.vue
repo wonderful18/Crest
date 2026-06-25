@@ -241,7 +241,7 @@ const validateSshHost = (_: any, value: any, callback: any) => {
 // SSH 端口校验，仅在启用 SSH 隧道时要求填写
 const validateSshPort = (_: any, value: any, callback: any) => {
   if ((value === undefined || value === null || value === '') && form.value.configuration.useSSH) {
-    callback(new Error(t('data_source.cannot_be_empty_de')))
+    callback(new Error(t('data_source.ssh_port_required')))
   }
   return callback()
 }
@@ -249,7 +249,7 @@ const validateSshPort = (_: any, value: any, callback: any) => {
 // SSH 用户名校验，仅在启用 SSH 隧道时要求填写
 const validateSshUserName = (_: any, value: any, callback: any) => {
   if ((value === undefined || value === null || value === '') && form.value.configuration.useSSH) {
-    callback(new Error(t('data_source.cannot_be_empty_de_name')))
+    callback(new Error(t('data_source.ssh_username_required')))
   }
   return callback()
 }
@@ -261,7 +261,7 @@ const validateSshPassword = (_: any, value: any, callback: any) => {
     form.value.configuration.useSSH &&
     form.value.configuration.sshType === 'password'
   ) {
-    callback(new Error(t('data_source.cannot_be_empty_de_pwd')))
+    callback(new Error(t('data_source.ssh_password_required')))
   }
   return callback()
 }
@@ -273,7 +273,7 @@ const validateSshkey = (_: any, value: any, callback: any) => {
     form.value.configuration.useSSH &&
     form.value.configuration.sshType === 'sshkey'
   ) {
-    callback(new Error(t('data_source.cannot_be_empty_de_key')))
+    callback(new Error(t('data_source.ssh_key_required')))
   }
   return callback()
 }
@@ -779,7 +779,7 @@ const apiObjRules = {
     {
       min: 2,
       max: 64,
-      message: t('data_source.to_64_characters_de'),
+      message: t('data_source.interface_name_length_limit'),
       trigger: 'blur'
     }
   ]
@@ -986,10 +986,10 @@ defineExpose({
                 <el-row>
                   <el-col style="display: flex" :span="19">
                     <span class="name ellipsis">{{ api.name }}</span>
-                    <span v-if="api.status === 'Error'" class="de-tag invalid">{{
+                    <span v-if="api.status === 'Error'" class="crest-tag invalid">{{
                       t('datasource.invalid')
                     }}</span>
-                    <span v-if="api.status === 'Success'" class="de-tag valid">{{
+                    <span v-if="api.status === 'Success'" class="crest-tag valid">{{
                       t('datasource.valid')
                     }}</span>
                   </el-col>
@@ -1194,7 +1194,7 @@ defineExpose({
             <el-select
               :placeholder="t('common.inputText') + ' ' + t('datasource.auth_method')"
               v-model="form.configuration.authMethod"
-              class="de-select"
+              class="crest-select"
             >
               <el-option
                 v-for="item in authMethodList"
@@ -1291,7 +1291,7 @@ defineExpose({
               :options="schemas"
               filterable
               :placeholder="t('common.please_select')"
-              class="de-select"
+              class="crest-select"
               @change="validatorSchema"
               @blur="validatorSchema"
             />
@@ -1304,7 +1304,7 @@ defineExpose({
               v-model="form.configuration.charset"
               filterable
               :placeholder="$t('datasource.please_choose_charset')"
-              class="de-select"
+              class="crest-select"
             >
               <el-option v-for="item in charset" :key="item" :label="item" :value="item" />
             </el-select>
@@ -1317,7 +1317,7 @@ defineExpose({
               v-model="form.configuration.targetCharset"
               filterable
               :placeholder="$t('datasource.please_choose_targetCharset')"
-              class="de-select"
+              class="crest-select"
             >
               <el-option v-for="item in targetCharset" :key="item" :label="item" :value="item" />
             </el-select>
@@ -1399,7 +1399,7 @@ defineExpose({
           <el-form-item>
             <span
               v-if="!['es', 'api'].includes(form.type) && form.configuration.urlType !== 'jdbcUrl'"
-              class="de-expand"
+              class="crest-expand"
               @click="showSSH = !showSSH"
               >{{ t('data_source.ssh_settings') }}
               <el-icon>
@@ -1493,7 +1493,7 @@ defineExpose({
           <el-form-item>
             <span
               v-if="!['es', 'api'].includes(form.type)"
-              class="de-expand"
+              class="crest-expand"
               @click="showPriority = !showPriority"
               >{{ t('datasource.priority') }}
               <el-icon>
@@ -1664,7 +1664,7 @@ defineExpose({
           >
             <el-date-picker
               v-model="form.syncSetting.startTime"
-              class="de-date-picker"
+              class="crest-date-picker"
               :prefix-icon="icon_calendar_outlined"
               type="datetime"
               :placeholder="t('datasource.start_time')"
@@ -1678,7 +1678,7 @@ defineExpose({
             <div style="width: 100%">
               <el-date-picker
                 v-model="form.syncSetting.endTime"
-                class="de-date-picker"
+                class="crest-date-picker"
                 :prefix-icon="icon_calendar_outlined"
                 type="datetime"
                 :placeholder="t('datasource.end_time')"
@@ -1771,7 +1771,7 @@ defineExpose({
     margin-top: -8px;
   }
 
-  .de-select {
+  .crest-select {
     width: 100%;
   }
 
@@ -1783,7 +1783,7 @@ defineExpose({
     background: #fff;
   }
 
-  .de-expand {
+  .crest-expand {
     font-family: var(--crest-custom_font, 'PingFang');
     font-size: 14px;
     font-weight: 400;
@@ -2002,7 +2002,7 @@ defineExpose({
     cursor: pointer;
   }
 
-  .de-tag {
+  .crest-tag {
     display: inline-flex;
     justify-content: center;
     align-items: center;

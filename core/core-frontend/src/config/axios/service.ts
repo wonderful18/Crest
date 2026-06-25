@@ -51,7 +51,6 @@ export interface AxiosInstanceWithLoading extends AxiosInstance {
   ): Promise<R>
 }
 
-// 读取当前业务数据并返回处理结果
 const getTimeOut = () => {
   let time = 100
   const url = PATH_URL + '/sys-parameter/request-timeout'

@@ -6,6 +6,17 @@ import type {
 } from '@/components/visualization/component-background/Types'
 import { ShorthandMode } from '@/Types'
 
+function toCssUrl(url: string): string {
+  return `url("${imgUrlTrans(url).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}")`
+}
+
+export function setBackgroundImageStyle(style: Record<string, string>, url: string): void {
+  style.backgroundImage = toCssUrl(url)
+  style.backgroundRepeat = 'no-repeat'
+  style.backgroundPosition = 'center'
+  style.backgroundSize = '100% 100%'
+}
+
 /**
  * 判断是否启用背景图模糊
  * @param commonBackground 组件背景配置
@@ -98,14 +109,15 @@ export function getBlurBgStyle(
     return {}
   }
   const { outerImage, backdropFilter, borderRadius } = commonBackground
-  return {
+  const style: Record<string, string> = {
     position: 'absolute',
     inset: '0',
-    background: `url(${imgUrlTrans(outerImage!)}) no-repeat center/cover`,
     filter: `blur(${backdropFilter ?? 0}px)`,
     borderRadius: getCornerValuesStyle(borderRadius, scale),
     pointerEvents: 'none'
   }
+  setBackgroundImageStyle(style, outerImage!)
+  return style
 }
 
 /**
@@ -146,18 +158,15 @@ export function getComponentBackgroundStyle(
   if (backgroundColorSelect && backgroundColor) {
     colorRGBA = backgroundColor
   }
+  if (colorRGBA) {
+    style.backgroundColor = colorRGBA
+  }
   // 背景图
   const blurEnabled = isBlurBgEnabled(commonBackground)
   if (backgroundImageEnable) {
-    if (blurEnabled) {
-      style['background-color'] = colorRGBA
-    } else if (backgroundType === 'outerImage' && typeof outerImage === 'string') {
-      style['background'] = `url(${imgUrlTrans(outerImage)}) no-repeat ${colorRGBA}`
-    } else {
-      style['background-color'] = colorRGBA
+    if (!blurEnabled && backgroundType === 'outerImage' && typeof outerImage === 'string') {
+      setBackgroundImageStyle(style, outerImage)
     }
-  } else {
-    style['background-color'] = colorRGBA
   }
   // 溢出处理
   if (!isUserView) {

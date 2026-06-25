@@ -266,7 +266,7 @@ const DETAIL_TABLE_ATTR: DeepPartial<ChartObj> = {
 const dialogStyle = computed(() => {
   return [
     { '--ed-dialog-bg-color': canvasStyleData.value.dialogBackgroundColor },
-    { '--ed-dialog__de-text': canvasStyleData.value.dialogButton }
+    { '--crest-dialog-text': canvasStyleData.value.dialogButton }
   ]
 })
 
@@ -590,7 +590,7 @@ defineExpose({
 <style lang="less">
 .userViewEnlarge-class {
   .ed-dialog__close {
-    color: var(--ed-dialog__de-text) !important;
+    color: var(--crest-dialog-text) !important;
   }
   .ed-dialog__header {
     display: flex;
@@ -608,7 +608,7 @@ defineExpose({
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    color: var(--ed-dialog__de-text);
+    color: var(--crest-dialog-text);
 
     font-size: 16px;
     font-weight: 500;
@@ -625,12 +625,12 @@ defineExpose({
       background-color: rgba(255, 255, 255, 0) !important;
     }
     :deep(.ed-select__placeholder) {
-      color: var(--ed-dialog__de-text);
+      color: var(--crest-dialog-text);
     }
   }
 
   .m-button {
-    color: var(--ed-dialog__de-text);
+    color: var(--crest-dialog-text);
     font-size: 14px;
     font-style: normal;
     font-weight: 400;
@@ -643,7 +643,7 @@ defineExpose({
 
     &:not(.is-disabled):focus,
     &:not(.is-disabled):hover {
-      color: var(--ed-dialog__de-text) !important;
+      color: var(--crest-dialog-text) !important;
       opacity: 0.5;
       border-color: transparent;
       background-color: rgba(31, 35, 41, 0.1);

@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 数据集表字段实体。
  */
-@TableName("dataset_field")
+@TableName("core_dataset_field")
 public class CoreDatasetTableField implements Serializable {
 
     /**

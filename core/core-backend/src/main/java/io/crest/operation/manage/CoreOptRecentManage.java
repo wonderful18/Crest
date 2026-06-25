@@ -98,7 +98,7 @@ public class CoreOptRecentManage {
         Long uid = AuthUtils.getUser().getUserId();
         if (isObOracle()) {
             List<CoreOptRecent> result = jdbcTemplate.query("""
-                    SELECT resource_name, "TIME" FROM workspace_recent_resource
+                    SELECT resource_name, "TIME" FROM core_workspace_recent_resource
                     WHERE resource_type = ? AND "UID" = ?
                     """, (rs, rowNum) -> {
                 CoreOptRecent recent = new CoreOptRecent();
@@ -120,7 +120,7 @@ public class CoreOptRecentManage {
         long now = System.currentTimeMillis();
         List<Object> args = new ArrayList<>();
         StringBuilder sql = new StringBuilder("""
-                UPDATE workspace_recent_resource
+                UPDATE core_workspace_recent_resource
                 SET opt_type = ?, "TIME" = ?
                 WHERE resource_type = ? AND "UID" = ?
                 """);
@@ -138,7 +138,7 @@ public class CoreOptRecentManage {
         }
         if (jdbcTemplate.update(sql.toString(), args.toArray()) == 0) {
             jdbcTemplate.update("""
-                    INSERT INTO workspace_recent_resource
+                    INSERT INTO core_workspace_recent_resource
                         (id, resource_id, resource_name, "UID", resource_type, opt_type, "TIME")
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     """, IDUtils.snowID(), resourceId, resourceName, uid, resourceType, optType, now);

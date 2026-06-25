@@ -40,6 +40,8 @@ Crest 单机安装默认采用前后端分离容器：
 
 前端容器通过 `/healthz` 判断网关是否可用。后端容器通过 `/api/v1/actuator/health/readiness` 判断服务是否可以接收业务流量；该检查会访问 Crest 系统库。`/api/v1/actuator/health/liveness` 只判断应用进程是否仍能响应，适合作为存活检查。
 
+部署完成后，可在右上角用户菜单打开“关于系统”，核对前端版本、前端 Commit、后端版本和后端 Commit。正式发布流水线会把同一次 GitHub Commit 注入前端静态资源和后端镜像环境变量，离线包和应用镜像升级包直接沿用镜像内信息。
+
 ## 安装前检查
 
 建议服务器满足：
@@ -69,8 +71,8 @@ Crest 单机安装默认采用前后端分离容器：
 | --- | --- | --- |
 | `CREST_BASE` | `/opt` | 安装基目录，实际运行目录为 `${CREST_BASE}/crest` |
 | `CREST_PORT` | `8100` | Web 访问端口 |
-| `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v2.0.0` | Crest 后端镜像 |
-| `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v2.0.0` | Crest 前端镜像 |
+| `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v2.0.2` | Crest 后端镜像 |
+| `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v2.0.2` | Crest 前端镜像 |
 | `CREST_MYSQL_IMAGE` | `mysql:8.0.43` | MySQL 镜像 |
 | `CREST_REDIS_IMAGE` | `redis:7.4.5-alpine` | Redis 镜像 |
 | `CREST_LOAD_DEMO` | `true` | 是否初始化内置演示资源；生产环境不需要示例数据时设为 `false` |
@@ -243,7 +245,7 @@ crestctl version
 
 ## 迁移和同发布线升级
 
-全新环境可直接使用安装脚本部署 v2.0.0。已有 v1.5.x 环境升级到 v2.0.0 时，请先备份 Crest 系统库和运行目录，再按当前版本发布说明执行对应升级步骤；更早版本迁移到 v2.0.0 时，请先备份 Crest 系统库和运行目录，导出业务资源，再在新环境中导入。
+全新环境可直接使用安装脚本部署 v2.0.2。由 DBA 手工初始化空系统库时，可按数据库类型执行一次性空库初始化 SQL：`upgrade-sql/v2.0.2_full_schema_mysql.sql`、`upgrade-sql/v2.0.2_full_schema_ob_mysql.sql` 或 `upgrade-sql/v2.0.2_full_schema_ob_oracle.sql`，并在服务配置中关闭自动迁移。已有 v1.5.x 环境升级到 v2.0.2 时，请先备份 Crest 系统库和运行目录，再按当前版本发布说明执行对应升级步骤；更早版本迁移到 v2.0.2 时，请先备份 Crest 系统库和运行目录，导出业务资源，再在新环境中导入。
 
 同一发布线的小版本升级前：
 
@@ -258,7 +260,7 @@ cd /opt/crest
 docker-compose up -d --no-deps crest-service crest
 ```
 
-如果发布说明提供升级 SQL，请先确认已经完成备份，再执行对应文件。MySQL 系统库从 v1.5.7 及更早版本升级到 v2.0.0 时，先执行 v1.5.7 到 v1.5.8 的历史升级 SQL：
+如果发布说明提供升级 SQL，请先确认已经完成备份，再执行对应文件。MySQL 系统库从 v1.5.7 及更早版本升级到 v2.0.2 时，先执行 v1.5.7 到 v1.5.8 的历史升级 SQL：
 
 ```bash
 set -a
@@ -279,7 +281,7 @@ docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAM
 
 如安装时修改过 `CREST_BASE`，请把 `/opt/crest/.env` 换成实际运行目录中的 `.env`。外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 系统库。
 
-继续按数据库类型执行 v2.0.0 的增量 SQL。MySQL 系统库示例：
+继续按数据库类型执行 v2.0.0、v2.0.1 和 v2.0.2 的增量 SQL。MySQL 系统库示例：
 
 ```bash
 for sql in \
@@ -288,7 +290,11 @@ for sql in \
   upgrade-sql/v2.0.0_dataset_sync_task_queue_mysql.sql \
   upgrade-sql/v2.0.0_dataset_sync_task_queue_metadata_mysql.sql \
   upgrade-sql/v2.0.0_scheduled_task_queue_state_mysql.sql \
-  upgrade-sql/v2.0.0_audit_log_filter_index_mysql.sql
+  upgrade-sql/v2.0.0_audit_log_filter_index_mysql.sql \
+  upgrade-sql/v2.0.0_to_v2.0.1_metadata_tables_mysql.sql \
+  upgrade-sql/v2.0.0_to_v2.0.1_runtime_identifiers_mysql.sql \
+  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_mysql.sql \
+  upgrade-sql/v2.0.1_to_v2.0.2_rotate_default_crypto_key_mysql.sql
 do
   docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < "${sql}"
 done
@@ -303,7 +309,11 @@ for sql in \
   upgrade-sql/v2.0.0_dataset_sync_task_queue_ob_mysql.sql \
   upgrade-sql/v2.0.0_dataset_sync_task_queue_metadata_ob_mysql.sql \
   upgrade-sql/v2.0.0_scheduled_task_queue_state_ob_mysql.sql \
-  upgrade-sql/v2.0.0_audit_log_filter_index_ob_mysql.sql
+  upgrade-sql/v2.0.0_audit_log_filter_index_ob_mysql.sql \
+  upgrade-sql/v2.0.0_to_v2.0.1_metadata_tables_ob_mysql.sql \
+  upgrade-sql/v2.0.0_to_v2.0.1_runtime_identifiers_ob_mysql.sql \
+  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_mysql.sql \
+  upgrade-sql/v2.0.1_to_v2.0.2_rotate_default_crypto_key_ob_mysql.sql
 do
   obclient --default-character-set=utf8mb4 -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' <database> < "${sql}"
 done
@@ -319,7 +329,11 @@ for sql in \
   upgrade-sql/v2.0.0_dataset_sync_task_queue_metadata_ob_oracle.sql \
   upgrade-sql/v2.0.0_scheduled_task_queue_state_ob_oracle.sql \
   upgrade-sql/v2.0.0_repair_seed_text_encoding_ob_oracle.sql \
-  upgrade-sql/v2.0.0_audit_log_filter_index_ob_oracle.sql
+  upgrade-sql/v2.0.0_audit_log_filter_index_ob_oracle.sql \
+  upgrade-sql/v2.0.0_to_v2.0.1_metadata_tables_ob_oracle.sql \
+  upgrade-sql/v2.0.0_to_v2.0.1_runtime_identifiers_ob_oracle.sql \
+  upgrade-sql/v2.0.1_to_v2.0.2_metadata_names_ob_oracle.sql \
+  upgrade-sql/v2.0.1_to_v2.0.2_rotate_default_crypto_key_ob_oracle.sql
 do
   obclient --default-character-set=utf8mb4 -h<obproxy-host> -P2883 -u'<user>@<tenant>#<cluster>' -p'<password>' < "${sql}"
 done
@@ -360,10 +374,10 @@ bash cleanup-demo-data.sh --yes
 发布包按 CPU 架构分别制作：
 
 ```bash
-bash make-offline-package.sh v2.0.0 linux-amd64
-bash make-offline-package.sh v2.0.0 linux-arm64
-bash make-app-image-package.sh v2.0.0 linux-amd64
-bash make-app-image-package.sh v2.0.0 linux-arm64
+bash make-offline-package.sh v2.0.2 linux-amd64
+bash make-offline-package.sh v2.0.2 linux-arm64
+bash make-app-image-package.sh v2.0.2 linux-amd64
+bash make-app-image-package.sh v2.0.2 linux-arm64
 ```
 
 默认输出目录：
@@ -375,19 +389,19 @@ bash make-app-image-package.sh v2.0.0 linux-arm64
 发布包名：
 
 ```text
-crest-offline-v2.0.0-linux-amd64.tar.gz
-crest-offline-v2.0.0-linux-arm64.tar.gz
-crest-app-images-v2.0.0-linux-amd64.tar.gz
-crest-app-images-v2.0.0-linux-arm64.tar.gz
+crest-offline-v2.0.2-linux-amd64.tar.gz
+crest-offline-v2.0.2-linux-arm64.tar.gz
+crest-app-images-v2.0.2-linux-amd64.tar.gz
+crest-app-images-v2.0.2-linux-arm64.tar.gz
 ```
 
 制作前需要本机已有对应架构镜像。下面的 `*-amd64`、`*-arm64` 是本地制作离线包时使用的镜像标签；GitHub Actions 会从多架构发布镜像生成这些本地标签后再打包。
 
 ```text
-ghcr.io/sevoniva/crest-service:v2.0.0-amd64
-ghcr.io/sevoniva/crest-service:v2.0.0-arm64
-ghcr.io/sevoniva/crest-web:v2.0.0-amd64
-ghcr.io/sevoniva/crest-web:v2.0.0-arm64
+ghcr.io/sevoniva/crest-service:v2.0.2-amd64
+ghcr.io/sevoniva/crest-service:v2.0.2-arm64
+ghcr.io/sevoniva/crest-web:v2.0.2-amd64
+ghcr.io/sevoniva/crest-web:v2.0.2-arm64
 mysql:8.0.43
 redis:7.4.5-alpine
 ```
@@ -398,21 +412,21 @@ redis:7.4.5-alpine
 INCLUDE_OBSERVABILITY_IMAGES=true \
 PROMETHEUS_IMAGE=prom/prometheus:v3.12.0 \
 GRAFANA_IMAGE=grafana/grafana-oss:13.0.1 \
-bash make-offline-package.sh v2.0.0 linux-amd64
+bash make-offline-package.sh v2.0.2 linux-amd64
 ```
 
 也可以通过环境变量指定来源镜像：
 
 ```bash
-SOURCE_BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v2.0.0-amd64 \
-BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v2.0.0-amd64 \
-SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v2.0.0-amd64 \
-FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v2.0.0-amd64 \
+SOURCE_BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v2.0.2-amd64 \
+BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v2.0.2-amd64 \
+SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v2.0.2-amd64 \
+FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v2.0.2-amd64 \
 SOURCE_MYSQL_IMAGE=mysql:8.0.43-amd64 \
 MYSQL_IMAGE=mysql:8.0.43 \
 SOURCE_REDIS_IMAGE=redis:7.4.5-alpine-amd64 \
 REDIS_IMAGE=redis:7.4.5-alpine \
-bash make-offline-package.sh v2.0.0 linux-amd64
+bash make-offline-package.sh v2.0.2 linux-amd64
 ```
 
 完整离线安装包脚本会校验前端、后端、MySQL 和 Redis 镜像架构，架构不一致会直接停止。`SOURCE_*_IMAGE` 用于本机制作来源，包内 `install.conf` 仍写入指定的目标镜像名。
@@ -426,8 +440,8 @@ bash make-offline-package.sh v2.0.0 linux-amd64
 在目标服务器执行：
 
 ```bash
-tar -zxf crest-offline-v2.0.0-linux-amd64.tar.gz
-cd crest-offline-v2.0.0-linux-amd64
+tar -zxf crest-offline-v2.0.2-linux-amd64.tar.gz
+cd crest-offline-v2.0.2-linux-amd64
 vi install.conf
 bash install.sh
 ```

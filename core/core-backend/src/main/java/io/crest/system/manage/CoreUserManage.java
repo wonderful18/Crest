@@ -13,7 +13,6 @@ public class CoreUserManage {
     @Resource
     private CrestUserManage crestUserManage;
 
-    // 执行当前服务方法并返回处理结果
     public String getUserName(Long uid) {
         if (uid == null) {
             return null;

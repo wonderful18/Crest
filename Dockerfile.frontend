@@ -1,5 +1,9 @@
 FROM nginx:1.29-alpine
 
+ARG CREST_FRONTEND_COMMIT_ID=unknown
+
+LABEL org.opencontainers.image.revision="${CREST_FRONTEND_COMMIT_ID}"
+
 RUN addgroup -g 10001 crest \
     && adduser -D -u 10001 -G crest -h /var/cache/nginx -s /sbin/nologin crest \
     && mkdir -p /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp /var/cache/nginx/fastcgi_temp /var/cache/nginx/uwsgi_temp /var/cache/nginx/scgi_temp /var/run/nginx \

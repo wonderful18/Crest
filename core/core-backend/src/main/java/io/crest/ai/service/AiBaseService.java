@@ -21,7 +21,6 @@ public class AiBaseService implements AiComponentApi {
     private SysParameterManage sysParameterManage;
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public Map<String, String> targetUrl() {
         Map<String, String> templateParams = sysParameterManage.groupVal("ai.");
         if (templateParams != null && StringUtils.isNotEmpty(templateParams.get("ai.baseUrl"))) {

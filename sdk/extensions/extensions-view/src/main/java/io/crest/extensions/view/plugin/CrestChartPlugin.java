@@ -11,7 +11,6 @@ import io.crest.utils.JsonUtil;
 public abstract class CrestChartPlugin extends AbstractChartPlugin implements CrestPlugin {
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void loadPlugin() {
         PluginViewVO viewConfig = getConfig();
         PluginsChartFactory.loadPlugin(viewConfig.getRender(), viewConfig.getChartValue(), this);

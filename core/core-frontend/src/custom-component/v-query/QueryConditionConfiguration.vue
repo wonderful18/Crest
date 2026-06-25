@@ -1422,7 +1422,7 @@ const validate = () => {
         (ele.defaultNumValueEnd !== 0 && !ele.defaultNumValueEnd) ||
         (ele.defaultNumValueStart !== 0 && !ele.defaultNumValueStart)
       ) {
-        ElMessage.error(t('v_query.cannot_be_empty_de'))
+        ElMessage.error(t('v_query.required_default_value_empty'))
         return true
       }
       if (
@@ -1513,13 +1513,13 @@ const validate = () => {
         setParams(ele)
         const result = validateConditionType(ele)
         if (result) {
-          ElMessage.error(t('v_query.cannot_be_empty_de'))
+          ElMessage.error(t('v_query.required_default_value_empty'))
         }
         return result
       }
 
       if (!ele.defaultValueCheck) {
-        ElMessage.error(t('v_query.cannot_be_empty_de'))
+        ElMessage.error(t('v_query.required_default_value_empty'))
         return true
       }
 
@@ -1528,7 +1528,7 @@ const validate = () => {
           (ele.defaultNumValueEnd !== 0 && !ele.defaultNumValueEnd) ||
           (ele.defaultNumValueStart !== 0 && !ele.defaultNumValueStart)
         ) {
-          ElMessage.error(t('v_query.cannot_be_empty_de'))
+          ElMessage.error(t('v_query.required_default_value_empty'))
           return true
         }
         return false
@@ -1538,7 +1538,7 @@ const validate = () => {
         (Array.isArray(ele.defaultValue) && !ele.defaultValue.length) ||
         (ele.defaultValue !== 0 && !ele.defaultValue)
       ) {
-        ElMessage.error(t('v_query.cannot_be_empty_de'))
+        ElMessage.error(t('v_query.required_default_value_empty'))
         return true
       }
     }
@@ -2709,7 +2709,7 @@ defineExpose({
               v-model="curComponent.checkedFields"
               @change="handleCheckedFieldsChangeTree"
             >
-              <div v-for="field in fields" :key="field.componentId" class="list-item_field_de">
+              <div v-for="field in fields" :key="field.componentId" class="list-item-field">
                 <el-checkbox :label="field.componentId"
                   ><el-icon class="component-type">
                     <Icon
@@ -3943,7 +3943,7 @@ defineExpose({
           font-size: 20px;
           color: var(--ed-color-primary);
         }
-        .list-item_field_de {
+        .list-item-field {
           height: 32px;
           display: flex;
           align-items: center;

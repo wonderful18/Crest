@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 组件联动字段快照实体。
  */
-@TableName("snapshot_visualization_linkage_field")
+@TableName("core_visualization_linkage_field_snapshot")
 public class SnapshotVisualizationLinkageField implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -7,7 +7,6 @@ import org.quartz.JobExecutionContext;
 import org.springframework.stereotype.Component;
 
 @Component
-// 定义当前业务对象的核心职责
 public class ExtractDataJob extends CrestScheduleJob {
     private DatasourceSyncManage datasourceSyncManage;
 

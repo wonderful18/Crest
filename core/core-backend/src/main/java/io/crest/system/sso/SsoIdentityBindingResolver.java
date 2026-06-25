@@ -29,7 +29,6 @@ public class SsoIdentityBindingResolver {
         return new SsoIdentityDecision(SsoIdentityAction.CREATE_USER, null, normalized);
     }
 
-    // 执行当前服务方法并返回处理结果
     private SsoIdentityProfile normalize(SsoIdentityProfile profile) {
         if (profile == null) {
             CrestException.throwException("单点登录用户信息不能为空");
@@ -57,7 +56,6 @@ public class SsoIdentityBindingResolver {
         return normalized;
     }
 
-    // 执行当前服务方法并返回处理结果
     private void ensureEnabled(CrestUser user) {
         if (Boolean.FALSE.equals(user.getEnable())) {
             CrestException.throwException("用户已停用");

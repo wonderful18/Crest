@@ -741,7 +741,7 @@ const confirmEditCalc = () => {
     if (val) {
       calcEdit.value.setFieldForm()
       if (!calcEdit.value.fieldForm.originName.trim()) {
-        ElMessage.error(t('data_set.cannot_be_empty_de_'))
+        ElMessage.error(t('data_set.expression_required'))
         return
       }
       const obj = cloneDeep(calcEdit.value.fieldForm)
@@ -1506,7 +1506,7 @@ const confirmEditUnion = () => {
   })
 
   if (unionFieldsLost) {
-    ElMessage.error(t('data_set.cannot_be_empty_de_field'))
+    ElMessage.error(t('data_set.related_field_required'))
     return
   }
 
@@ -1815,7 +1815,7 @@ const verify = () => {
     if (val) {
       calcEdit.value.setFieldForm()
       if (!calcEdit.value.fieldForm.originName.trim()) {
-        ElMessage.error(t('data_set.cannot_be_empty_de_'))
+        ElMessage.error(t('data_set.expression_required'))
         return
       }
       const obj = cloneDeep(calcEdit.value.fieldForm)
@@ -2357,7 +2357,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
 </script>
 
 <template>
-  <div class="de-dataset-form" v-loading="loading">
+  <div class="crest-dataset-form" v-loading="loading">
     <div class="top">
       <span class="name">
         <el-icon @click="backToMain">
@@ -2915,7 +2915,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                     </el-table-column>
                     <el-table-column
                       prop="datasetTableId"
-                      :label="t('data_set.table_name_de')"
+                      :label="t('data_set.table_name_label')"
                       width="240"
                     >
                       <template #default="scope">
@@ -3126,7 +3126,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
 
                     <el-table-column
                       prop="datasetTableId"
-                      :label="t('data_set.table_name_de')"
+                      :label="t('data_set.table_name_label')"
                       width="240"
                     >
                       <template #default="scope">
@@ -3658,7 +3658,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
   --ed-table-header-bg-color: #f5f6f7;
 }
 
-.de-dataset-form {
+.crest-dataset-form {
   color: #1f2329;
 
   :deep(.ed-table__border-left-patch),

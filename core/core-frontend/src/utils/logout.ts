@@ -62,7 +62,7 @@ const removeCache = () => {
   const keys = Object.keys(wsCache['storage'])
   keys.forEach(key => {
     if (
-      key.startsWith('de-plugin-') ||
+      key.startsWith('crest-plugin-') ||
       key === 'crest-platform-client' ||
       key === 'pwd-validity-period' ||
       key === 'pluginBridge-model-distributed'

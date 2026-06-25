@@ -51,7 +51,7 @@
                 ></Board>
                 <span v-if="isEditMode">
                   <el-dropdown
-                    popper-class="custom-de-tab-dropdown"
+                    popper-class="custom-crest-tab-dropdown"
                     :effect="curThemes"
                     trigger="click"
                     @command="handleCommand"
@@ -164,7 +164,7 @@ import { dataVTabComponentAdd, groupSizeStyleAdaptor } from '@/utils/style'
 import { deepCopyTabItemHelper } from '@/store/modules/data-visualization/copy'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import { useI18n } from '@/hooks/web/useI18n'
-import { imgUrlTrans } from '@/utils/imgUtils'
+import { setBackgroundImageStyle } from '@/utils/backgroundStyleUtils'
 import Board from '@/components/visual-board/Board.vue'
 import ChartCarouselTooltip from '@/views/chart/components/js/g2plot_tooltip_carousel'
 import { debounce } from 'lodash-es'
@@ -583,14 +583,15 @@ const backgroundStyle = backgroundParams => {
     if (backgroundColorSelect && backgroundColor) {
       colorRGBA = backgroundColor
     }
-    if (backgroundImageEnable) {
-      if (backgroundType === 'outerImage' && typeof outerImage === 'string') {
-        style['background'] = `url(${imgUrlTrans(outerImage)}) no-repeat ${colorRGBA}`
-      } else {
-        style['background-color'] = colorRGBA
-      }
-    } else {
-      style['background-color'] = colorRGBA
+    if (colorRGBA) {
+      style['backgroundColor'] = colorRGBA
+    }
+    if (
+      backgroundImageEnable &&
+      backgroundType === 'outerImage' &&
+      typeof outerImage === 'string'
+    ) {
+      setBackgroundImageStyle(style, outerImage)
     }
     if (backdropFilterEnable) {
       style['backdrop-filter'] = 'blur(' + backdropFilter + 'px)'

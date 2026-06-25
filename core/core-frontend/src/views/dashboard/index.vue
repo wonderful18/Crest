@@ -267,7 +267,7 @@ onMounted(async () => {
       dvMainStore.createInit('dashboard', null, pid, watermarkBaseInfo, preName)
       // 从模板新建
       if (createType === 'template' || createType === 'uploadedTemplate') {
-        wsCache.delete('de-template-data')
+        wsCache.delete('crest-template-data')
         dvMainStore.setComponentData(templatePayload['componentData'])
         dvMainStore.setCanvasStyle(templatePayload['canvasStyleData'])
         dvMainStore.setCanvasViewInfo(templatePayload['canvasViewInfo'])

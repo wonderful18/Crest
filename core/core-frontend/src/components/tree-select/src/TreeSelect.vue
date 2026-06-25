@@ -35,7 +35,6 @@ const treeDefaultProps = {
   isLeaf: data => !data.hasChildren
 }
 
-// 读取当前业务数据并返回处理结果
 const loadNode = (node: Node, resolve: (data: Tree[]) => void) => {
   if (node.level === 0) {
     return setTimeout(() => {

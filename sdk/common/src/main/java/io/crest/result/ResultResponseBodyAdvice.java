@@ -15,17 +15,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 @RestControllerAdvice(value = {"io.crest"})
-// 定义当前业务对象的核心职责
 public class ResultResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public boolean supports(MethodParameter methodParameter, Class<? extends HttpMessageConverter<?>> converterType) {
         return MappingJackson2HttpMessageConverter.class.isAssignableFrom(converterType) || StringHttpMessageConverter.class.isAssignableFrom(converterType);
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public Object beforeBodyWrite(Object o, MethodParameter methodParameter, MediaType mediaType, Class<? extends HttpMessageConverter<?>> converterType, ServerHttpRequest serverHttpRequest, ServerHttpResponse serverHttpResponse) {
         // 处理空值
         if (o == null && StringHttpMessageConverter.class.isAssignableFrom(converterType)) {

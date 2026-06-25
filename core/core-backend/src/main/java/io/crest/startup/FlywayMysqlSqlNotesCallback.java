@@ -20,6 +20,10 @@ public class FlywayMysqlSqlNotesCallback implements Callback {
     private static final Set<String> MYSQL_COMPATIBILITY_MIGRATIONS = Set.of("1.5.8.1");
     private static final String DATA_ASSET_MENU_IDS = "77,78";
     private static final String DATA_ASSET_PERMISSION_IDS = "7701,7702,7703,7801,7802,7803";
+    private static final String ROLE_MENU_PERMISSION_TABLE = "core_iam_role_menu_permission";
+    private static final String MENU_TABLE = "core_iam_menu";
+    private static final String LEGACY_ROLE_MENU_PERMISSION_TABLE = "iam_role_menu_permission";
+    private static final String LEGACY_MENU_TABLE = "iam_menu";
 
     /**
      * 判断当前事件是否需要该回调处理
@@ -112,10 +116,21 @@ public class FlywayMysqlSqlNotesCallback implements Callback {
      */
     private void cleanDataAssetSeedRows(Context context) {
         try (Statement statement = context.getConnection().createStatement()) {
-            statement.execute("DELETE FROM `iam_role_menu_permission` WHERE `id` IN (" + DATA_ASSET_PERMISSION_IDS + ")");
-            statement.execute("DELETE FROM `iam_menu` WHERE `id` IN (" + DATA_ASSET_MENU_IDS + ")");
+            deleteSeedRows(statement, ROLE_MENU_PERMISSION_TABLE, LEGACY_ROLE_MENU_PERMISSION_TABLE, DATA_ASSET_PERMISSION_IDS);
+            deleteSeedRows(statement, MENU_TABLE, LEGACY_MENU_TABLE, DATA_ASSET_MENU_IDS);
         } catch (SQLException e) {
             LogUtil.debug("Flyway data asset seed cleanup skipped: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 清理当前元数据表；历史迁移阶段新表尚不存在时回退到旧表
+     */
+    private void deleteSeedRows(Statement statement, String tableName, String legacyTableName, String ids) throws SQLException {
+        try {
+            statement.execute("DELETE FROM `" + tableName + "` WHERE `id` IN (" + ids + ")");
+        } catch (SQLException e) {
+            statement.execute("DELETE FROM `" + legacyTableName + "` WHERE `id` IN (" + ids + ")");
         }
     }
 }

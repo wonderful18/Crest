@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 数据集表实体。
  */
-@TableName("dataset_table")
+@TableName("core_dataset_table")
 public class CoreDatasetTable implements Serializable {
 
     /**

@@ -925,7 +925,7 @@ watch(
       .querySelectorAll<HTMLElement>('.l7-scene')
       .forEach(el => (el.style.pointerEvents = sceneEvents))
     // 容器添加活跃标识，方便后续样式调整
-    containerDiv.setAttribute('de-chart-active', String(newVal))
+    containerDiv.setAttribute('crest-chart-active', String(newVal))
   }
 )
 </script>

@@ -506,7 +506,7 @@ const emits = defineEmits(['update:item', 'del'])
         </el-input>
         <template #dropdown>
           <!-- 字段候选来自上层注入的字段字典，搜索只影响本地下拉展示。 -->
-          <el-dropdown-menu class="de-el-dropdown-menu">
+          <el-dropdown-menu class="crest-el-dropdown-menu">
             <el-input
               @keydown.stop
               :placeholder="t('auth.enter_keywords')"
@@ -669,7 +669,7 @@ const emits = defineEmits(['update:item', 'del'])
         </template>
 
         <el-popover
-          popper-class="de-el-dropdown-menu-fixed"
+          popper-class="crest-el-dropdown-menu-fixed"
           v-else
           width="360px"
           trigger="click"
@@ -686,7 +686,7 @@ const emits = defineEmits(['update:item', 'del'])
             >
             </el-input>
           </template>
-          <div class="de-panel clearfix">
+          <div class="crest-panel clearfix">
             <!-- 枚举筛选左侧负责候选值搜索，右侧负责已选值和批量手工录入。 -->
             <div class="mod-left">
               <el-input :placeholder="t('auth.enter_keywords')" v-model="filterFiled"> </el-input>
@@ -719,7 +719,7 @@ const emits = defineEmits(['update:item', 'del'])
                     {{ t('auth.manual_input') }}
                   </span>
                   <transition name="el-zoom-in-top">
-                    <div v-if="showTextArea" class="de-el-dropdown-menu-manu">
+                    <div v-if="showTextArea" class="crest-el-dropdown-menu-manual">
                       <div class="text-area">
                         <textarea
                           :placeholder="t('auth.please_fill')"
@@ -977,7 +977,7 @@ const emits = defineEmits(['update:item', 'del'])
 </style>
 
 <style lang="less">
-.de-el-dropdown-menu {
+.crest-el-dropdown-menu {
   .dimension {
     max-height: 200px;
     padding: 0;
@@ -1070,10 +1070,10 @@ const emits = defineEmits(['update:item', 'del'])
   }
 }
 
-.de-el-dropdown-menu-fixed {
+.crest-el-dropdown-menu-fixed {
   padding: 0 !important;
   border: none !important;
-  .de-panel {
+  .crest-panel {
     color: rgba(0, 0, 0, 0.65);
     font-size: 14px;
     box-sizing: border-box;
@@ -1255,7 +1255,7 @@ const emits = defineEmits(['update:item', 'del'])
   }
 }
 
-.de-el-dropdown-menu-manu {
+.crest-el-dropdown-menu-manual {
   padding: 0;
   margin: 5px 0;
   background-color: #fff;

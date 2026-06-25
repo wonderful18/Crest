@@ -29,7 +29,6 @@ public class DatasetTableSqlLogServer implements DatasetTableSqlLogApi {
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void tableRemoval(String id) throws Exception {
         datasetTableSqlLogManage.tableRemoval(id);
     }

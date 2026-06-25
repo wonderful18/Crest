@@ -156,7 +156,7 @@ public class DataAssetManage {
         Long uid = currentUid();
         long now = System.currentTimeMillis();
         int updated = jdbcTemplate.update("""
-                UPDATE data_asset_profile
+                UPDATE core_asset_profile
                 SET description = ?,
                     owner_id = ?,
                     certified = ?,
@@ -170,7 +170,7 @@ public class DataAssetManage {
                 bool(status.deprecated()), tags, now, uid, assetType, assetId);
         if (updated == 0) {
             jdbcTemplate.update("""
-                    INSERT INTO data_asset_profile
+                    INSERT INTO core_asset_profile
                         (id, asset_type, asset_id, description, owner_id, certified, recommended, deprecated, tags, create_time, update_time, update_by)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, IDUtils.snowID(), assetType, assetId, description, request.getOwnerId(),
@@ -185,7 +185,7 @@ public class DataAssetManage {
     public List<DataAssetOwnerVO> owners() {
         return jdbcTemplate.query("""
                 SELECT id, name, account
-                FROM iam_user
+                FROM core_iam_user
                 WHERE enable = 1
                 ORDER BY name ASC, account ASC
                 """, (rs, rowNum) -> {
@@ -264,12 +264,12 @@ public class DataAssetManage {
         sql.append(assetUnionSql());
         sql.append("""
                 ) a
-                LEFT JOIN data_asset_profile p
+                LEFT JOIN core_asset_profile p
                     ON %s
                    AND %s
-                LEFT JOIN iam_user owner ON owner.id = p.owner_id
-                LEFT JOIN iam_user creator ON creator.id = a.creator_id
-                LEFT JOIN iam_org org ON org.id = a.org_id
+                LEFT JOIN core_iam_user owner ON owner.id = p.owner_id
+                LEFT JOIN core_iam_user creator ON creator.id = a.creator_id
+                LEFT JOIN core_iam_org org ON org.id = a.org_id
                 WHERE 1 = 1
                 """.formatted(stringEquals("p.asset_type", "a.asset_type"), stringEquals("p.asset_id", "a.asset_id")));
         if (request != null && StringUtils.isNotBlank(request.getAssetType())) {
@@ -333,8 +333,8 @@ public class DataAssetManage {
                        COALESCE(ds_ri.oid, 1) AS org_id,
                        ds.create_time AS create_time,
                        ds.update_time AS update_time
-                FROM data_source ds
-                LEFT JOIN iam_resource_index ds_ri
+                FROM core_datasource ds
+                LEFT JOIN core_iam_resource_index ds_ri
                     ON %s
                    AND %s
                 WHERE %s
@@ -361,9 +361,9 @@ public class DataAssetManage {
                        COALESCE(dg_table_ri.oid, 1) AS org_id,
                        dg.create_time AS create_time,
                        dg.last_update_time AS update_time
-                FROM dataset_table dt
-                INNER JOIN dataset_group dg ON dg.id = dt.dataset_group_id AND %s
-                LEFT JOIN iam_resource_index dg_table_ri
+                FROM core_dataset_table dt
+                INNER JOIN core_dataset dg ON dg.id = dt.dataset_group_id AND %s
+                LEFT JOIN core_iam_resource_index dg_table_ri
                     ON %s
                    AND %s
                 WHERE 1 = 1
@@ -393,8 +393,8 @@ public class DataAssetManage {
                        COALESCE(dg_ri.oid, 1) AS org_id,
                        dg.create_time AS create_time,
                        dg.last_update_time AS update_time
-                FROM dataset_group dg
-                LEFT JOIN iam_resource_index dg_ri
+                FROM core_dataset dg
+                LEFT JOIN core_iam_resource_index dg_ri
                     ON %s
                    AND %s
                 WHERE %s
@@ -421,8 +421,8 @@ public class DataAssetManage {
                        COALESCE(%s, 1) AS org_id,
                        c.create_time AS create_time,
                        c.update_time AS update_time
-                FROM bi_chart c
-                INNER JOIN bi_visualization v ON v.id = c.scene_id
+                FROM core_chart_view c
+                INNER JOIN core_visualization v ON v.id = c.scene_id
                 WHERE v.delete_flag = 0
                   AND %s
                 """.formatted(
@@ -453,8 +453,8 @@ public class DataAssetManage {
                        s.oid AS org_id,
                        s.time AS create_time,
                        s.time AS update_time
-                FROM share_link s
-                INNER JOIN bi_visualization v ON v.id = s.resource_id
+                FROM core_share_link s
+                INNER JOIN core_visualization v ON v.id = s.resource_id
                 WHERE v.delete_flag = 0
                   AND %s
                 """.formatted(
@@ -488,7 +488,7 @@ public class DataAssetManage {
                        COALESCE(%s, 1) AS org_id,
                        v.create_time AS create_time,
                        v.update_time AS update_time
-                FROM bi_visualization v
+                FROM core_visualization v
                 WHERE v.delete_flag = 0
                   AND %s
                   AND %s
@@ -555,8 +555,8 @@ public class DataAssetManage {
             case DataAssetUtils.TYPE_TABLE -> queryItems("""
                     SELECT %s AS asset_type, %s AS asset_id, dg.name AS name,
                            '所属数据集' AS relation, dg.last_update_time AS update_time
-                    FROM dataset_table dt
-                    INNER JOIN dataset_group dg ON dg.id = dt.dataset_group_id
+                    FROM core_dataset_table dt
+                    INNER JOIN core_dataset dg ON dg.id = dt.dataset_group_id
                     WHERE dt.id = ?
                     """.formatted(stringLiteral("dataset"), stringCast("dg.id"))
                     + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
@@ -564,8 +564,8 @@ public class DataAssetManage {
             case DataAssetUtils.TYPE_CHART -> queryItems("""
                     SELECT %s AS asset_type, %s AS asset_id, dg.name AS name,
                            '图表使用的数据集' AS relation, dg.last_update_time AS update_time
-                    FROM bi_chart c
-                    INNER JOIN dataset_group dg ON dg.id = c.table_id
+                    FROM core_chart_view c
+                    INNER JOIN core_dataset dg ON dg.id = c.table_id
                     WHERE c.id = ?
                     """.formatted(stringLiteral("dataset"), stringCast("dg.id"))
                     + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
@@ -616,8 +616,8 @@ public class DataAssetManage {
         items.addAll(queryItems("""
                 SELECT DISTINCT %s AS asset_type, %s AS asset_id, ds.name AS name,
                        '提供数据表' AS relation, ds.update_time AS update_time
-                FROM data_source ds
-                INNER JOIN dataset_table dt ON dt.datasource_id = ds.id
+                FROM core_datasource ds
+                INNER JOIN core_dataset_table dt ON dt.datasource_id = ds.id
                 WHERE dt.dataset_group_id = ?
                   AND %s
                 """.formatted(
@@ -629,7 +629,7 @@ public class DataAssetManage {
                 SELECT %s AS asset_type, %s AS asset_id,
                        COALESCE(NULLIF(dt.name, ''), dt.table_name, %s) AS name,
                        '组成数据集' AS relation, NULL AS update_time
-                FROM dataset_table dt
+                FROM core_dataset_table dt
                 WHERE dt.dataset_group_id = ?
                 ORDER BY dt.id ASC
                 """.formatted(stringLiteral("table"), stringCast("dt.id"), stringCast("dt.id")), datasetId));
@@ -646,8 +646,8 @@ public class DataAssetManage {
                 SELECT %s AS asset_type, %s AS asset_id,
                        COALESCE(NULLIF(c.title, ''), %s) AS name,
                        '使用该数据集' AS relation, c.update_time AS update_time
-                FROM bi_chart c
-                INNER JOIN bi_visualization v ON v.id = c.scene_id
+                FROM core_chart_view c
+                INNER JOIN core_visualization v ON v.id = c.scene_id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
                   AND %s
@@ -665,8 +665,8 @@ public class DataAssetManage {
                        v.name AS name,
                        '包含使用该数据集的图表' AS relation,
                        v.update_time AS update_time
-                FROM bi_visualization v
-                INNER JOIN bi_chart c ON c.scene_id = v.id
+                FROM core_visualization v
+                INNER JOIN core_chart_view c ON c.scene_id = v.id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
                   AND %s
@@ -686,9 +686,9 @@ public class DataAssetManage {
                        %s AS name,
                        '分享了受影响资源' AS relation,
                        s.time AS update_time
-                FROM share_link s
-                INNER JOIN bi_visualization v ON v.id = s.resource_id
-                INNER JOIN bi_chart c ON c.scene_id = v.id
+                FROM core_share_link s
+                INNER JOIN core_visualization v ON v.id = s.resource_id
+                INNER JOIN core_chart_view c ON c.scene_id = v.id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
                   AND %s
@@ -707,7 +707,7 @@ public class DataAssetManage {
                        COALESCE(NULLIF(t.name, ''), '数据集缓存任务') AS name,
                        '该数据集的缓存任务' AS relation,
                        t.update_time AS update_time
-                FROM dataset_sync_task t
+                FROM core_dataset_sync_task t
                 WHERE t.dataset_group_id = ?
                 """.formatted(stringLiteral("cacheTask"), stringCast("t.id")), datasetId));
         return items;
@@ -723,8 +723,8 @@ public class DataAssetManage {
                        dg.name AS name,
                        '引用该数据源的数据集' AS relation,
                        dg.last_update_time AS update_time
-                FROM dataset_group dg
-                INNER JOIN dataset_table dt ON dt.dataset_group_id = dg.id
+                FROM core_dataset dg
+                INNER JOIN core_dataset_table dt ON dt.dataset_group_id = dg.id
                 WHERE %s
                   AND dt.datasource_id = ?
                 """.formatted(
@@ -744,7 +744,7 @@ public class DataAssetManage {
                        COALESCE(NULLIF(c.title, ''), %s) AS name,
                        '属于当前资源' AS relation,
                        c.update_time AS update_time
-                FROM bi_chart c
+                FROM core_chart_view c
                 WHERE c.scene_id = ?
                 ORDER BY c.update_time DESC
                 """.formatted(stringLiteral("chart"), stringCast("c.id"), stringCast("c.id")), visualizationId));
@@ -753,8 +753,8 @@ public class DataAssetManage {
                        dg.name AS name,
                        '当前资源使用的数据集' AS relation,
                        dg.last_update_time AS update_time
-                FROM bi_chart c
-                INNER JOIN dataset_group dg ON dg.id = c.table_id
+                FROM core_chart_view c
+                INNER JOIN core_dataset dg ON dg.id = c.table_id
                 WHERE c.scene_id = ?
                 """.formatted(stringLiteral("dataset"), stringCast("dg.id"))
                 + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), visualizationId));
@@ -771,7 +771,7 @@ public class DataAssetManage {
                        s.uuid AS name,
                        '分享当前资源' AS relation,
                        s.time AS update_time
-                FROM share_link s
+                FROM core_share_link s
                 WHERE s.resource_id = ?
                 ORDER BY s.time DESC
                 """.formatted(stringLiteral("share"), stringCast("s.id")), visualizationId);
@@ -787,8 +787,8 @@ public class DataAssetManage {
                        v.name AS name,
                        '被分享资源' AS relation,
                        v.update_time AS update_time
-                FROM share_link s
-                INNER JOIN bi_visualization v ON v.id = s.resource_id
+                FROM core_share_link s
+                INNER JOIN core_visualization v ON v.id = s.resource_id
                 WHERE s.id = ?
                 """.formatted(
                 stringEquals("v.type", stringLiteral("dataV")),
@@ -809,36 +809,36 @@ public class DataAssetManage {
         return switch (asset.getAssetType()) {
             case DataAssetUtils.TYPE_TABLE -> count("""
                     SELECT COUNT(1)
-                    FROM dataset_table dt
-                    INNER JOIN dataset_group dg ON dg.id = dt.dataset_group_id
+                    FROM core_dataset_table dt
+                    INNER JOIN core_dataset dg ON dg.id = dt.dataset_group_id
                     WHERE dt.id = ?
                     """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
             case DataAssetUtils.TYPE_DATASET -> count("""
                     SELECT COUNT(DISTINCT ds.id)
-                FROM data_source ds
-                INNER JOIN dataset_table dt ON dt.datasource_id = ds.id
+                FROM core_datasource ds
+                INNER JOIN core_dataset_table dt ON dt.datasource_id = ds.id
                 WHERE dt.dataset_group_id = ?
                       AND %s
                     """.formatted(stringNotEquals("ds.type", stringLiteral("folder")))
                     + permissionClause(platformPermissionManage.resourceScopeSql("datasource", "ds.id", "ds.create_by", null)), id)
-                    + count("SELECT COUNT(1) FROM dataset_table dt WHERE dt.dataset_group_id = ?", id);
+                    + count("SELECT COUNT(1) FROM core_dataset_table dt WHERE dt.dataset_group_id = ?", id);
             case DataAssetUtils.TYPE_CHART -> count("""
                     SELECT COUNT(1)
-                    FROM bi_chart c
-                    INNER JOIN dataset_group dg ON dg.id = c.table_id
+                    FROM core_chart_view c
+                    INNER JOIN core_dataset dg ON dg.id = c.table_id
                     WHERE c.id = ?
                     """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
-            case DataAssetUtils.TYPE_PANEL, DataAssetUtils.TYPE_SCREEN -> count("SELECT COUNT(1) FROM bi_chart c WHERE c.scene_id = ?", id)
+            case DataAssetUtils.TYPE_PANEL, DataAssetUtils.TYPE_SCREEN -> count("SELECT COUNT(1) FROM core_chart_view c WHERE c.scene_id = ?", id)
                     + count("""
                     SELECT COUNT(DISTINCT dg.id)
-                    FROM bi_chart c
-                    INNER JOIN dataset_group dg ON dg.id = c.table_id
+                    FROM core_chart_view c
+                    INNER JOIN core_dataset dg ON dg.id = c.table_id
                     WHERE c.scene_id = ?
                     """ + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
             case DataAssetUtils.TYPE_SHARE -> count("""
                     SELECT COUNT(1)
-                    FROM share_link s
-                    INNER JOIN bi_visualization v ON v.id = s.resource_id
+                    FROM core_share_link s
+                    INNER JOIN core_visualization v ON v.id = s.resource_id
                     WHERE s.id = ?
                     """ + permissionClause(visualizationScopeSql("v")), id);
             default -> 0;
@@ -856,14 +856,14 @@ public class DataAssetManage {
         return switch (asset.getAssetType()) {
             case DataAssetUtils.TYPE_DATASOURCE -> count("""
                     SELECT COUNT(DISTINCT dg.id)
-                    FROM dataset_group dg
-                    INNER JOIN dataset_table dt ON dt.dataset_group_id = dg.id
+                    FROM core_dataset dg
+                    INNER JOIN core_dataset_table dt ON dt.dataset_group_id = dg.id
                     WHERE %s
                       AND dt.datasource_id = ?
                     """.formatted(stringEquals("dg.node_type", stringLiteral("dataset")))
                     + permissionClause(platformPermissionManage.resourceScopeSql("dataset", "dg.id", "dg.create_by", null)), id);
             case DataAssetUtils.TYPE_DATASET -> datasetDownstreamCount(id);
-            case DataAssetUtils.TYPE_PANEL, DataAssetUtils.TYPE_SCREEN -> count("SELECT COUNT(1) FROM share_link s WHERE s.resource_id = ?", id);
+            case DataAssetUtils.TYPE_PANEL, DataAssetUtils.TYPE_SCREEN -> count("SELECT COUNT(1) FROM core_share_link s WHERE s.resource_id = ?", id);
             default -> 0;
         };
     }
@@ -875,30 +875,30 @@ public class DataAssetManage {
         String visualizationScope = permissionClause(visualizationScopeSql("v"));
         return count("""
                 SELECT COUNT(DISTINCT c.id)
-                FROM bi_chart c
-                INNER JOIN bi_visualization v ON v.id = c.scene_id
+                FROM core_chart_view c
+                INNER JOIN core_visualization v ON v.id = c.scene_id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
                   AND %s
                 """.formatted(stringEquals("v.node_type", stringLiteral("leaf"))) + visualizationScope, datasetId)
                 + count("""
                 SELECT COUNT(DISTINCT v.id)
-                FROM bi_visualization v
-                INNER JOIN bi_chart c ON c.scene_id = v.id
+                FROM core_visualization v
+                INNER JOIN core_chart_view c ON c.scene_id = v.id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
                   AND %s
                 """.formatted(stringEquals("v.node_type", stringLiteral("leaf"))) + visualizationScope, datasetId)
                 + count("""
                 SELECT COUNT(DISTINCT s.id)
-                FROM share_link s
-                INNER JOIN bi_visualization v ON v.id = s.resource_id
-                INNER JOIN bi_chart c ON c.scene_id = v.id
+                FROM core_share_link s
+                INNER JOIN core_visualization v ON v.id = s.resource_id
+                INNER JOIN core_chart_view c ON c.scene_id = v.id
                 WHERE c.table_id = ?
                   AND v.delete_flag = 0
                   AND %s
                 """.formatted(stringEquals("v.node_type", stringLiteral("leaf"))) + visualizationScope, datasetId)
-                + count("SELECT COUNT(1) FROM dataset_sync_task t WHERE t.dataset_group_id = ?", datasetId);
+                + count("SELECT COUNT(1) FROM core_dataset_sync_task t WHERE t.dataset_group_id = ?", datasetId);
     }
 
     /**

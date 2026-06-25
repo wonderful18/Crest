@@ -43,7 +43,6 @@ public interface SysParameterApi {
 
     @Operation(summary = "系统默认配置(社区版)")
     @GetMapping("/default-settings")
-    // 执行当前服务方法并返回处理结果
     public Map<String, Object> defaultSettings();
 
     @Hidden

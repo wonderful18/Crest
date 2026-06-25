@@ -11,6 +11,7 @@ import io.crest.dataset.manage.DatasetSQLManage;
 import io.crest.dataset.manage.DatasetTableFieldManage;
 import io.crest.dataset.manage.PermissionManage;
 import io.crest.dataset.sync.DatasetSyncQueryManage;
+import io.crest.dataset.utils.DatasetParameterFieldId;
 import io.crest.dataset.utils.DatasetUtils;
 import io.crest.engine.sql.SQLProvider;
 import io.crest.engine.trans.*;
@@ -214,9 +215,9 @@ public class ChartDataManage {
 
                 boolean hasParameters = false;
                 if (CollectionUtils.isNotEmpty(sqlVariables)) {
-                    if(fieldId.indexOf("|DE|")>-1){
+                    if (DatasetParameterFieldId.matches(fieldId)) {
                         hasParameters = true;
-                    }else{
+                    } else {
                         for (SqlVariableDetails parameter : Optional.ofNullable(request.getParameters()).orElse(new ArrayList<>())) {
                             String parameterId = Strings.CS.endsWith(parameter.getId(), START_END_SEPARATOR) ? parameter.getId().split(START_END_SEPARATOR)[0] : parameter.getId();
                             if (sqlVariables.stream().map(SqlVariableDetails::getId).collect(Collectors.toList()).contains(parameterId)) {
@@ -312,8 +313,8 @@ public class ChartDataManage {
         //联动过滤条件和外部参数过滤条件全部加上
         if (ObjectUtils.isNotEmpty(filters)) {
             for (ChartExtFilterDTO request : filters) {
-                // 包含 DE 的为数据集参数
-                if (request.getFieldId().contains("DE")) {
+                // 数据集参数字段需要补充原始参数定义。
+                if (DatasetParameterFieldId.matches(request.getFieldId())) {
                     // 组装sql 参数原始数据
                     if (CollectionUtils.isNotEmpty(sqlVariables)) {
                         for (SqlVariableDetails sourceVariables : sqlVariables) {

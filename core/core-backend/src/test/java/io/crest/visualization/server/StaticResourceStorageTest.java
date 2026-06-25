@@ -45,6 +45,22 @@ class StaticResourceStorageTest {
         assertThat(result).containsEntry("/static-resource/sample.svg", SVG_BASE64);
     }
 
+    @Test
+    @DisplayName("模板文件应接受 .crest 后缀")
+    void crestTemplateFileExtensionShouldBeAcceptedCaseInsensitively() {
+        assertThat(DataVisualizationServer.isCrestTemplateFile("sales.crest")).isTrue();
+        assertThat(DataVisualizationServer.isCrestTemplateFile("sales.CREST")).isTrue();
+    }
+
+    @Test
+    @DisplayName("模板文件应拒绝旧后缀")
+    void legacyTemplateFileExtensionsShouldBeRejected() {
+        assertThat(DataVisualizationServer.isCrestTemplateFile("sales.DET2")).isFalse();
+        assertThat(DataVisualizationServer.isCrestTemplateFile("sales.DET2APP")).isFalse();
+        assertThat(DataVisualizationServer.isCrestTemplateFile("sales.json")).isFalse();
+        assertThat(DataVisualizationServer.isCrestTemplateFile(null)).isFalse();
+    }
+
     private StaticResourceServer staticResourceServer() {
         StaticResourceServer server = new StaticResourceServer();
         ReflectionTestUtils.setField(server, "staticDir", tempDir.toString());

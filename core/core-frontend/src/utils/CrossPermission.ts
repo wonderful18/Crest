@@ -21,7 +21,6 @@ export const check = (data, id?: string, weight?: number) => {
   return true
 }
 
-// 读取当前业务数据并返回处理结果
 const getNode = (data, id: string) => {
   if (!id) {
     return null

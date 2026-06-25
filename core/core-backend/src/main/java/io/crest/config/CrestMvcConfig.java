@@ -43,7 +43,6 @@ public class CrestMvcConfig implements WebMvcConfigurer {
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(linkInterceptor).addPathPatterns("/**");
     }

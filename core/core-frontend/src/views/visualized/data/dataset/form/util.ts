@@ -104,7 +104,6 @@ const fieldOptions = [
   }
 ]
 
-// 读取当前业务数据并返回处理结果
 const getFieldName = (fields, name) => {
   let n = name
   n = n + '_copy'

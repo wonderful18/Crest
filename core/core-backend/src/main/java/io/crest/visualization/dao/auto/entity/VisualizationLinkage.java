@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 组件联动主配置实体。
  */
-@TableName("visualization_linkage")
+@TableName("core_visualization_linkage")
 public class VisualizationLinkage implements Serializable {
 
     /**

@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * 数据引擎实体。
  */
-@TableName("data_engine")
+@TableName("core_datasource_engine")
 public class CoreEngine implements Serializable {
 
     /**

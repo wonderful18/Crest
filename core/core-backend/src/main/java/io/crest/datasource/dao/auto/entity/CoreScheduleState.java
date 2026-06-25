@@ -1,24 +1,28 @@
 package io.crest.datasource.dao.auto.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 
 /**
- * Quartz 调度器状态实体。
+ * 调度器状态实体。
  */
-@TableName("QRTZ_SCHEDULER_STATE")
-public class QrtzSchedulerState implements Serializable {
+@TableName("core_schedule_scheduler_state")
+public class CoreScheduleState implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @TableId("SCHED_NAME")
     private String schedName;
 
+    @TableField("INSTANCE_NAME")
     private String instanceName;
 
+    @TableField("LAST_CHECKIN_TIME")
     private Long lastCheckinTime;
 
+    @TableField("CHECKIN_INTERVAL")
     private Long checkinInterval;
 
     /**
@@ -82,7 +86,7 @@ public class QrtzSchedulerState implements Serializable {
      */
     @Override
     public String toString() {
-        return "QrtzSchedulerState{" +
+        return "CoreScheduleState{" +
         "schedName = " + schedName +
         ", instanceName = " + instanceName +
         ", lastCheckinTime = " + lastCheckinTime +

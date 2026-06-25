@@ -30,12 +30,10 @@ public class VisualizationExcelUtils {
     private static final StorageService FALLBACK_STORAGE_SERVICE = new LocalStorageService();
     private static final Pattern INVALID_FILE_NAME_CHARS = Pattern.compile("[\\p{Cntrl}\\\\/:\\*\\?\\\"<>\\|]");
 
-    // 执行当前服务方法并返回处理结果
     public static String getBaseRoot() {
         return ConfigUtils.getConfig("crest.path.report", "/opt/crest/data/report/");
     }
 
-    // 执行当前服务方法并返回处理结果
     public static File exportExcel(List<ExcelSheetModel> sheets, String fileName, String folderId) throws Exception {
         AtomicReference<String> realFileName = new AtomicReference<>(fileName);
         Workbook wb = new SXSSFWorkbook();

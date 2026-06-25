@@ -107,11 +107,11 @@ public class AuditLogController {
         }
 
         // 查询总数
-        String countSql = "SELECT COUNT(*) FROM audit_log" + where;
+        String countSql = "SELECT COUNT(*) FROM core_audit_log" + where;
         Long total = jdbcTemplate.queryForObject(countSql, Long.class, params.toArray());
 
         String dataSql = metadataDialect.limitOffset(
-                "SELECT " + LIST_COLUMNS + " FROM audit_log" + where + " ORDER BY operation_time DESC",
+                "SELECT " + LIST_COLUMNS + " FROM core_audit_log" + where + " ORDER BY operation_time DESC",
                 safePageSize,
                 offset);
         List<Map<String, Object>> records = normalizeRows(jdbcTemplate.queryForList(dataSql, params.toArray()));
@@ -141,21 +141,21 @@ public class AuditLogController {
 
         // 今日操作数
         Long todayCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM audit_log WHERE operation_time >= " + dayStartExpression
+                "SELECT COUNT(*) FROM core_audit_log WHERE operation_time >= " + dayStartExpression
                         + " AND operation_time < " + dayEndExpression,
                 Long.class, startOfDay, startOfNextDay);
         stats.put("todayCount", todayCount != null ? todayCount : 0);
 
         // 今日登录数
         Long todayLogin = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM audit_log WHERE operation_type = 'LOGIN' AND operation_time >= "
+                "SELECT COUNT(*) FROM core_audit_log WHERE operation_type = 'LOGIN' AND operation_time >= "
                         + dayStartExpression + " AND operation_time < " + dayEndExpression,
                 Long.class, startOfDay, startOfNextDay);
         stats.put("todayLogin", todayLogin != null ? todayLogin : 0);
 
         // 操作类型统计
         List<Map<String, Object>> typeStats = jdbcTemplate.queryForList(
-                "SELECT operation_type, COUNT(*) as count FROM audit_log WHERE operation_time >= "
+                "SELECT operation_type, COUNT(*) as count FROM core_audit_log WHERE operation_time >= "
                         + dayStartExpression + " AND operation_time < " + dayEndExpression
                         + " GROUP BY operation_type",
                 startOfDay, startOfNextDay);
@@ -170,7 +170,7 @@ public class AuditLogController {
     public List<Map<String, Object>> operationTypes() {
         requireAuditAccess();
         return normalizeRows(jdbcTemplate.queryForList(
-                "SELECT DISTINCT operation_type as value, operation_type as label FROM audit_log ORDER BY operation_type"));
+                "SELECT DISTINCT operation_type as value, operation_type as label FROM core_audit_log ORDER BY operation_type"));
     }
 
     // 审计日志只允许系统管理员和审计员访问

@@ -272,7 +272,7 @@ watch(
 <template>
   <el-row class="view-panel" :class="'style-' + themes">
     <div class="attr-style">
-      <el-row class="de-collapse-style">
+      <el-row class="crest-collapse-style">
         <!-- 属性区承载位置、基础样式、标题图例和表格属性，所有子组件变更统一向编辑器上层转发。 -->
         <el-collapse v-model="state.attrActiveNames" class="style-collapse">
           <el-collapse-item
@@ -695,7 +695,7 @@ span {
   width: 100%;
 }
 
-.de-collapse-style {
+.crest-collapse-style {
   :deep(.ed-form-item) {
     display: block;
     margin-bottom: 8px;

@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * 工作台最近访问资源实体。
  */
-@TableName("workspace_recent_resource")
+@TableName("core_workspace_recent_resource")
 public class CoreOptRecent implements Serializable {
 
     private static final long serialVersionUID = 1L;

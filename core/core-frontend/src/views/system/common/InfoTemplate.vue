@@ -181,7 +181,7 @@ const loadList = () => {
 const getExecuteTime = val => {
   const options = [
     { value: 'minute', label: t('system.time_0_seconds') },
-    { value: 'hour', label: t('system.and_0_seconds_de') }
+    { value: 'hour', label: t('system.hour_execution_default') }
   ]
   return options.find(item => item.value === val)?.label ?? options[0].label
 }

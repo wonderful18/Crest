@@ -13,7 +13,7 @@ import org.apache.ibatis.annotations.Update;
 public interface ScheduledTaskQueueStateMapper {
 
     @Insert("""
-            INSERT INTO scheduled_task_queue_state (
+            INSERT INTO core_scheduled_task_queue_state (
                 state_id, task_type, task_id, payload_hash, status, enqueue_time,
                 retry_count, lock_version
             ) VALUES (
@@ -29,14 +29,14 @@ public interface ScheduledTaskQueueStateMapper {
 
     @Select("""
             SELECT status
-            FROM scheduled_task_queue_state
+            FROM core_scheduled_task_queue_state
             WHERE state_id = #{stateId}
             """)
     String selectStatus(@Param("stateId") String stateId);
 
     // Worker 执行前抢占待执行记录，数据库状态是 Redis 重复消息之外的最终防重依据。
     @Update("""
-            UPDATE scheduled_task_queue_state
+            UPDATE core_scheduled_task_queue_state
             SET status = 'IN_PROGRESS',
                 worker_id = #{workerId},
                 start_time = #{now},
@@ -53,7 +53,7 @@ public interface ScheduledTaskQueueStateMapper {
 
     // Worker 异常退出后，超时执行记录允许重新回到待执行状态。
     @Update("""
-            UPDATE scheduled_task_queue_state
+            UPDATE core_scheduled_task_queue_state
             SET status = 'PENDING',
                 worker_id = NULL,
                 heartbeat_time = NULL,
@@ -68,7 +68,7 @@ public interface ScheduledTaskQueueStateMapper {
                              @Param("reason") String reason);
 
     @Update("""
-            UPDATE scheduled_task_queue_state
+            UPDATE core_scheduled_task_queue_state
             SET status = 'COMPLETED',
                 end_time = #{now},
                 heartbeat_time = #{now},
@@ -81,7 +81,7 @@ public interface ScheduledTaskQueueStateMapper {
                  @Param("now") Long now);
 
     @Update("""
-            UPDATE scheduled_task_queue_state
+            UPDATE core_scheduled_task_queue_state
             SET status = 'FAILED',
                 end_time = #{now},
                 heartbeat_time = #{now},
@@ -95,7 +95,7 @@ public interface ScheduledTaskQueueStateMapper {
              @Param("reason") String reason);
 
     @Update("""
-            UPDATE scheduled_task_queue_state
+            UPDATE core_scheduled_task_queue_state
             SET status = 'ENQUEUE_FAILED',
                 end_time = #{now},
                 heartbeat_time = #{now},
@@ -110,7 +110,7 @@ public interface ScheduledTaskQueueStateMapper {
                           @Param("reason") String reason);
 
     @Update("""
-            UPDATE scheduled_task_queue_state
+            UPDATE core_scheduled_task_queue_state
             SET status = 'PENDING',
                 payload_hash = #{payloadHash},
                 enqueue_time = #{enqueueTime},
@@ -128,7 +128,7 @@ public interface ScheduledTaskQueueStateMapper {
                             @Param("enqueueTime") Long enqueueTime);
 
     @Update("""
-            UPDATE scheduled_task_queue_state
+            UPDATE core_scheduled_task_queue_state
             SET status = 'PENDING',
                 worker_id = NULL,
                 heartbeat_time = NULL,

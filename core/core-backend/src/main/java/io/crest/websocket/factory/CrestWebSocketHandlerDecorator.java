@@ -18,7 +18,6 @@ public class CrestWebSocketHandlerDecorator extends WebSocketHandlerDecorator {
 
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         Optional.ofNullable(session.getPrincipal()).ifPresent(principal -> {
             String name = principal.getName();
@@ -31,7 +30,6 @@ public class CrestWebSocketHandlerDecorator extends WebSocketHandlerDecorator {
     }
 
     @Override
-    // 执行当前服务方法并返回处理结果
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         Optional.ofNullable(session.getPrincipal()).ifPresent(principal -> {
             String name = principal.getName();

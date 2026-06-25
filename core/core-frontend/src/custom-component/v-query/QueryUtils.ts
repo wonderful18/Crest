@@ -47,7 +47,6 @@ export const reRenderAfterDelete = oldArr => {
   })
 }
 
-// 读取当前业务数据并返回处理结果
 export const getKeyList = next => {
   const checkedFields = next.checkedFields || []
   const checkedFieldsMap = next.checkedFieldsMap || {}
