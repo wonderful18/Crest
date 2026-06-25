@@ -2932,7 +2932,8 @@ export default {
     numerical_parameter_configuration:
       'The numerical parameter configuration must configure the maximum and minimum values',
     format_is_inconsistent: 'The time format is inconsistent',
-    required_default_value_empty: 'The query condition is required and the default value cannot be empty',
+    required_default_value_empty:
+      'The query condition is required and the default value cannot be empty',
     the_start_time: 'The end time must be greater than the start time!',
     and_end_time: 'The time parameter configuration must configure the start time and end time',
     cannot_be_empty_time: 'The default time cannot be empty!',

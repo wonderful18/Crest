@@ -24,7 +24,9 @@ const elementPlusSecondaryStyleDeps = (() => {
   return fs
     .readdirSync(componentsDir, { withFileTypes: true })
     .filter(item => {
-      return item.isDirectory() && fs.existsSync(path.join(componentsDir, item.name, 'style/css.mjs'))
+      return (
+        item.isDirectory() && fs.existsSync(path.join(componentsDir, item.name, 'style/css.mjs'))
+      )
     })
     .map(item => `element-plus-secondary/es/components/${item.name}/style/css`)
 })()

@@ -299,9 +299,11 @@ const normalizeTableFieldRequest = (data = {}) => {
 
 // 查询表字段元数据，用于 SQL 编辑器、字段预览和建模页面
 export const getTableField = async (data): Promise<IResponse> => {
-  return request.post({ url: '/dataset-data/table-fields', data: normalizeTableFieldRequest(data) }).then(res => {
-    return res?.data
-  })
+  return request
+    .post({ url: '/dataset-data/table-fields', data: normalizeTableFieldRequest(data) })
+    .then(res => {
+      return res?.data
+    })
 }
 
 // 预览数据集结果，提交前转义字段原始名，返回后恢复前端展示字段

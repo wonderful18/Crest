@@ -1042,7 +1042,9 @@ const mousedownDrag = () => {
             />
             <el-table-column key="status" prop="status" :label="t('dataset.sql_result')">
               <template #default="scope">
-                <span v-if="scope.row.status" :class="[`crest-${scope.row.status}-pre`, 'crest-status']"
+                <span
+                  v-if="scope.row.status"
+                  :class="[`crest-${scope.row.status}-pre`, 'crest-status']"
                   >{{ t(`dataset.${scope.row.status.toLocaleLowerCase()}`) }}
                 </span>
                 <span v-else>-</span>

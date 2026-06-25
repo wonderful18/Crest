@@ -60,9 +60,9 @@ function getNextEnd(val = 'month' as ManipulateTypeWithQuarter) {
   )
 }
 
-// eslint-disable-next-line
 // 外部传入的回调可拦截默认 pick 行为
-let callback: Function = () => {}
+type ShortcutCallback = (range: Date[]) => boolean | void
+let callback: ShortcutCallback = () => false
 // 日期范围选择器的预设快捷项列表
 const shortcuts = [
   {
@@ -181,7 +181,7 @@ shortcuts.forEach(ele => {
 })
 
 // 注册快捷项回调并返回给日期范围选择器使用
-const useShortcuts = cb => {
+const useShortcuts = (cb: ShortcutCallback) => {
   callback = cb
   return {
     shortcuts
