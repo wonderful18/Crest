@@ -222,7 +222,7 @@ INSERT INTO `core_reference_area` VALUES ('156','country','中国','000'),('1561
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `core_api_traffic_limit` (
   `id` bigint NOT NULL COMMENT 'ID',
-  `api` varchar(255) NOT NULL COMMENT 'api',
+  `api` varchar(255) NOT NULL COMMENT '接口',
   `threshold` int NOT NULL DEFAULT '2' COMMENT '阈值',
   `alive` int NOT NULL DEFAULT '0' COMMENT '活动并发',
   PRIMARY KEY (`id`)
@@ -255,7 +255,7 @@ CREATE TABLE `core_chart_view` (
   `result_count` int DEFAULT NULL COMMENT '展示结果',
   `result_mode` varchar(50) DEFAULT NULL COMMENT '展示模式',
   `x_axis` longtext COMMENT '横轴field',
-  `x_axis_ext` longtext COMMENT 'table-row',
+  `x_axis_ext` longtext COMMENT '表格行扩展配置',
   `y_axis` longtext COMMENT '纵轴field',
   `y_axis_ext` longtext COMMENT '副轴',
   `ext_stack` longtext COMMENT '堆叠项',
@@ -315,9 +315,9 @@ CREATE TABLE `core_query_assistant_message` (
   `id` bigint NOT NULL COMMENT 'ID',
   `user_id` bigint DEFAULT NULL COMMENT '用户ID',
   `dataset_group_id` bigint DEFAULT NULL COMMENT '数据集ID',
-  `msg_type` varchar(255) DEFAULT NULL COMMENT 'user or api',
-  `engine_type` varchar(255) DEFAULT NULL COMMENT 'mysql oracle ...',
-  `schema_sql` longtext COMMENT 'create sql',
+  `msg_type` varchar(255) DEFAULT NULL COMMENT '消息来源类型',
+  `engine_type` varchar(255) DEFAULT NULL COMMENT '数据库引擎类型',
+  `schema_sql` longtext COMMENT '建表 SQL',
   `question` longtext COMMENT '用户提问',
   `history` longtext COMMENT '历史信息',
   `copilot_sql` longtext COMMENT 'copilot 返回 sql',
@@ -340,7 +340,7 @@ CREATE TABLE `core_query_assistant_message` (
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `core_query_assistant_token` (
   `id` bigint NOT NULL COMMENT 'ID',
-  `type` varchar(255) DEFAULT NULL COMMENT 'free or license',
+  `type` varchar(255) DEFAULT NULL COMMENT '令牌类型',
   `token` longtext COMMENT 'token值',
   `update_time` bigint DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`)
@@ -386,7 +386,7 @@ CREATE TABLE `core_dataset` (
   `info` longtext COMMENT '关联关系树',
   `create_by` varchar(50) DEFAULT NULL COMMENT '创建人ID',
   `create_time` bigint DEFAULT NULL COMMENT '创建时间',
-  `scheduler_fire_instance_id` varchar(1024) DEFAULT NULL COMMENT 'Quartz 实例 ID',
+  `scheduler_fire_instance_id` varchar(1024) DEFAULT NULL COMMENT '调度触发实例编号',
   `sync_status` varchar(45) DEFAULT NULL COMMENT '同步状态',
   `update_by` varchar(50) DEFAULT NULL COMMENT '更新人ID',
   `last_update_time` bigint DEFAULT '0' COMMENT '最后同步时间',
@@ -567,7 +567,7 @@ CREATE TABLE `core_datasource` (
   `update_by` bigint DEFAULT NULL COMMENT '变更人',
   `create_by` varchar(50) DEFAULT NULL COMMENT '创建人ID',
   `status` longtext COMMENT '状态',
-  `scheduler_fire_instance_id` longtext COMMENT '状态',
+  `scheduler_fire_instance_id` longtext COMMENT '调度触发实例编号',
   `task_status` varchar(50) DEFAULT NULL COMMENT '任务状态',
   `enable_data_fill` tinyint DEFAULT '0' COMMENT '启用数据填报功能',
   PRIMARY KEY (`id`)
@@ -631,8 +631,8 @@ CREATE TABLE `core_datasource_engine` (
   `description` varchar(50) DEFAULT NULL COMMENT '描述',
   `type` varchar(50) NOT NULL COMMENT '类型',
   `configuration` longtext NOT NULL COMMENT '详细信息',
-  `create_time` bigint DEFAULT NULL COMMENT 'Create timestamp',
-  `update_time` bigint DEFAULT NULL COMMENT 'Update timestamp',
+  `create_time` bigint DEFAULT NULL COMMENT '创建时间',
+  `update_time` bigint DEFAULT NULL COMMENT '更新时间',
   `create_by` varchar(50) DEFAULT NULL COMMENT '创建人ID',
   `status` varchar(45) DEFAULT NULL COMMENT '状态',
   `enable_data_fill` tinyint DEFAULT '1' COMMENT '启用数据填报功能',
@@ -844,7 +844,7 @@ CREATE TABLE `core_share_link` (
   `creator` bigint NOT NULL COMMENT '创建人',
   `time` bigint NOT NULL COMMENT '创建时间',
   `exp` bigint DEFAULT NULL COMMENT '过期时间',
-  `uuid` varchar(16) NOT NULL COMMENT 'uuid',
+  `uuid` varchar(16) NOT NULL COMMENT 'UUID',
   `pwd` varchar(255) DEFAULT NULL COMMENT '密码',
   `resource_id` bigint NOT NULL COMMENT '资源ID',
   `oid` bigint NOT NULL COMMENT '组织ID',
@@ -862,7 +862,7 @@ CREATE TABLE `core_share_link` (
 CREATE TABLE `core_share_ticket` (
   `id` bigint NOT NULL COMMENT 'ID',
   `uuid` varchar(255) NOT NULL COMMENT '分享uuid',
-  `ticket` varchar(255) NOT NULL COMMENT 'ticket',
+  `ticket` varchar(255) NOT NULL COMMENT '分享票据',
   `exp` bigint DEFAULT NULL COMMENT 'ticket有效期',
   `args` longtext COMMENT 'ticket参数',
   `access_time` bigint DEFAULT NULL COMMENT '首次访问时间',
@@ -933,7 +933,7 @@ CREATE TABLE `core_alert_rule` (
   `reci_emails` longtext COMMENT '接收邮箱',
   `reci_lark_groups` longtext COMMENT '飞书群聊',
   `reci_larksuite_groups` longtext COMMENT '国际飞书群',
-  `reci_webhooks` longtext COMMENT 'Web hooks',
+  `reci_webhooks` longtext COMMENT 'Webhook 接收人',
   `msg_title` varchar(255) NOT NULL COMMENT '消息标题',
   `msg_type` int NOT NULL DEFAULT '0' COMMENT '消息类型',
   `msg_content` longtext COMMENT '消息内容',
@@ -970,8 +970,8 @@ CREATE TABLE `core_alert_instance` (
 CREATE TABLE `core_webhook_config` (
   `id` bigint NOT NULL COMMENT 'ID',
   `name` varchar(255) NOT NULL COMMENT '名称',
-  `url` varchar(255) NOT NULL COMMENT 'url',
-  `content_type` varchar(255) NOT NULL COMMENT 'content_type',
+  `url` varchar(255) NOT NULL COMMENT '地址',
+  `content_type` varchar(255) NOT NULL COMMENT '内容类型',
   `secret` varchar(255) DEFAULT NULL COMMENT '密钥',
   `ssl` tinyint NOT NULL DEFAULT '0' COMMENT '开启ssl',
   `oid` bigint NOT NULL COMMENT '组织ID',
@@ -1070,7 +1070,7 @@ CREATE TABLE `core_chart_view_snapshot` (
   `result_count` int DEFAULT NULL COMMENT '展示结果',
   `result_mode` varchar(50) DEFAULT NULL COMMENT '展示模式',
   `x_axis` longtext COMMENT '横轴field',
-  `x_axis_ext` longtext COMMENT 'table-row',
+  `x_axis_ext` longtext COMMENT '表格行扩展配置',
   `y_axis` longtext COMMENT '纵轴field',
   `y_axis_ext` longtext COMMENT '副轴',
   `ext_stack` longtext COMMENT '堆叠项',
@@ -1165,7 +1165,7 @@ CREATE TABLE `core_visualization_jump_snapshot` (
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `core_visualization_jump_action_snapshot` (
   `id` bigint NOT NULL COMMENT '主键',
-  `link_jump_id` bigint DEFAULT NULL COMMENT 'link jump ID',
+  `link_jump_id` bigint DEFAULT NULL COMMENT '跳转配置ID',
   `link_type` varchar(255) DEFAULT NULL COMMENT '关联类型 inner 内部仪表板，outer 外部链接',
   `jump_type` varchar(255) DEFAULT NULL COMMENT '跳转类型 _blank 新开页面 _self 当前窗口',
   `target_dv_id` bigint DEFAULT NULL COMMENT '关联仪表板ID',
@@ -1342,7 +1342,7 @@ CREATE TABLE `core_visualization_jump` (
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `core_visualization_jump_action` (
   `id` bigint NOT NULL COMMENT '主键',
-  `link_jump_id` bigint DEFAULT NULL COMMENT 'link jump ID',
+  `link_jump_id` bigint DEFAULT NULL COMMENT '跳转配置ID',
   `link_type` varchar(255) DEFAULT NULL COMMENT '关联类型 inner 内部仪表板，outer 外部链接',
   `jump_type` varchar(255) DEFAULT NULL COMMENT '跳转类型 _blank 新开页面 _self 当前窗口',
   `target_dv_id` bigint DEFAULT NULL COMMENT '关联仪表板ID',
@@ -1967,9 +1967,9 @@ DELETE FROM `core_iam_role_menu_permission` WHERE `menu_id` = 73;
 DELETE FROM `core_iam_menu` WHERE `id` = 73;
 
 ALTER TABLE `core_crypto_key`
-    ADD COLUMN `sm2_private_key` TEXT NULL COMMENT 'SM2 private key',
-    ADD COLUMN `sm2_public_key` TEXT NULL COMMENT 'SM2 public key',
-    ADD COLUMN `sm2_create_time` BIGINT NULL COMMENT 'SM2 key creation time';
+    ADD COLUMN `sm2_private_key` TEXT NULL COMMENT 'SM2 私钥',
+    ADD COLUMN `sm2_public_key` TEXT NULL COMMENT 'SM2 公钥',
+    ADD COLUMN `sm2_create_time` BIGINT NULL COMMENT 'SM2 密钥生成时间';
 
 
 -- ----------------------------------------------------------------------

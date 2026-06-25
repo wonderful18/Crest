@@ -20,7 +20,7 @@ Crest 不要求必须使用内置 Prometheus/Grafana。生产环境可按现场�
 | 模式 | 适用场景 | 做法 |
 | --- | --- | --- |
 | 只开启 metrics | 企业已有 Prometheus 和 Grafana | 设置 `CREST_PROMETHEUS_ENABLED=true` 和 `CREST_PROMETHEUS_TOKEN`，在企业 Prometheus 中增加抓取任务，导入 Crest 看板和告警规则 |
-| 内置 Prometheus/Grafana | 单机验证、小规模部署、无统一监控平台 | 设置 `CREST_PROMETHEUS_ENABLED=true` 和 `CREST_GRAFANA_ENABLED=true`，由 Compose 或 Kubernetes overlay 启动配套组件 |
+| 内置 Prometheus/Grafana | 单机验证、小规模部署、无统一监控平台 | 设置 `CREST_PROMETHEUS_ENABLED=true` 和 `CREST_GRAFANA_ENABLED=true`，由单机安装包启动配套组件 |
 
 企业 Prometheus 抓取示例：
 
@@ -81,41 +81,14 @@ Prometheus 端口不对宿主机开放。需要临时排查时，在服务器上
 
 ## Kubernetes
 
-启用可观测性时，需要额外创建 `crest-observability-secret`。
+当前 Kubernetes 交付清单不内置 Prometheus 和 Grafana。生产环境如需纳入企业监控，按以下方式接入：
 
-内置 MySQL 模式：
+1. 在 `deploy/kubernetes/crest-ob-oracle-redis.yaml` 的 `crest-env` 中增加 `CREST_PROMETHEUS_ENABLED=true`；
+2. 在 `crest-db-secret` 中增加 `CREST_PROMETHEUS_TOKEN`；
+3. 在企业 Prometheus 中增加抓取任务，目标为 `crest-service.<namespace>.svc:8100`；
+4. 在企业 Grafana 中按现场规范配置看板和告警。
 
-```bash
-kubectl -n crest-internal create secret generic crest-observability-secret \
-  --from-literal=CREST_PROMETHEUS_TOKEN='<prometheus-scrape-token>' \
-  --from-literal=GF_SECURITY_ADMIN_PASSWORD='<grafana-admin-password>' \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-kubectl apply -k deploy/kubernetes/internal-mysql-observability
-```
-
-外部 MySQL 模式：
-
-```bash
-kubectl -n crest-external create secret generic crest-observability-secret \
-  --from-literal=CREST_PROMETHEUS_TOKEN='<prometheus-scrape-token>' \
-  --from-literal=GF_SECURITY_ADMIN_PASSWORD='<grafana-admin-password>' \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-kubectl apply -k deploy/kubernetes/external-mysql-observability
-```
-
-Grafana 默认是 ClusterIP 服务，按现场网关规范暴露。临时查看可使用：
-
-```bash
-kubectl -n crest-internal port-forward svc/crest-grafana 3000:3000
-```
-
-Prometheus 同样只在集群内访问：
-
-```bash
-kubectl -n crest-internal port-forward svc/crest-prometheus 9090:9090
-```
+前端 Service 不公开 `/api/v1/actuator/prometheus`。抓取指标时应访问后端 Service `crest-service`。
 
 ## 指标口径
 
@@ -218,5 +191,5 @@ curl http://127.0.0.1:9090/api/v1/rules
 - 生产环境通过 Docker env、Kubernetes Secret 或企业密钥系统管理 token；
 - Prometheus 服务不直接暴露到未受控网络；
 - Grafana 使用独立强密码，并接入现场 SSO 或网关认证；
-- 集群支持 NetworkPolicy 时，保留 `deploy/kubernetes/observability/networkpolicy.yaml`，只允许前端网关和 Prometheus 访问后端服务；
+- 集群支持 NetworkPolicy 时，由现场平台按最小访问原则限制网关、Prometheus 和后端服务之间的流量；
 - 指标数据可能包含接口路径、状态码和异常标签，按内部运维数据管理。

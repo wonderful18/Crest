@@ -1,7 +1,0 @@
-resources:
-  - configmap-app.yaml
-  - configmap-nginx.yaml
-  - deployment.yaml
-  - pvc.yaml
-  - service.yaml
-  - serviceaccount.yaml

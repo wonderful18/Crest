@@ -443,7 +443,7 @@ git clean -fdX
 | 后端接口、数据源、导出、血缘 | Maven 打包或相关模块编译，结合服务做接口回归 |
 | 数据库迁移 | 空库启动，检查 Flyway 版本和初始化数据 |
 | 安装脚本或 Dockerfile | 前后端镜像构建，单机安装或离线包验证 |
-| Kubernetes 清单 | `kubectl apply -k` 到测试命名空间并检查 rollout |
+| Kubernetes 清单 | `kubectl apply -f` 到测试命名空间并检查 rollout |
 | 文档 | 检查版本号、镜像名、端口、账号和路径是否与代码一致 |
 
 提交要求：

@@ -7,7 +7,7 @@
 | 文档 | 内容 |
 | --- | --- |
 | [单机安装与离线包](../installer/README.md) | Docker 单机部署、配置项、备份、升级和离线包制作 |
-| [Kubernetes 部署](../deploy/kubernetes/README.md) | 内置 MySQL、外部 MySQL、Secret、探针和可观测性部署 |
+| [Kubernetes 部署](../deploy/kubernetes/README.md) | OceanBase Oracle、外部 Redis、Secret 和探针 |
 | [前后端分离部署](../deploy/split/README.md) | Compose 方式验证前后端分离部署 |
 | [OceanBase 支持](./oceanbase-support.md) | Crest 系统库和业务数据源接入 OceanBase 的配置与验收 |
 | [可观测性](./observability.md) | Prometheus、Grafana、指标、告警和排障 |

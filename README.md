@@ -91,7 +91,7 @@ crestctl version
 | `CREST_DB_TYPE` | 系统库类型：`mysql`、`ob-mysql`、`ob-oracle` |
 | `CREST_FLYWAY_ENABLED` | 留空自动判断：MySQL 默认 `true`，OceanBase 默认 `false` |
 | `CREST_INITIAL_PASSWORD` | 管理员初始密码，留空时安装脚本自动生成 |
-| `CREST_AES_KEY` / `CREST_AES_IV` | 敏感配置加密参数，升级已有环境时不要修改 |
+| `CREST_AES_KEY` / `CREST_AES_IV` | 配置加密参数，升级已有环境时不要修改 |
 | `CREST_ORIGIN_LIST` | 允许访问来源，生产环境应改为实际域名 |
 | `CREST_PROMETHEUS_ENABLED` | 是否启用 Prometheus 指标端点 |
 
@@ -125,9 +125,9 @@ bash make-app-image-package.sh v2.0.2 linux-arm64
 
 Kubernetes 清单位于 [deploy/kubernetes](./deploy/kubernetes)：
 
-- `internal-mysql`：部署 Crest 和内置 MySQL；
-- `external-mysql`：连接外部 MySQL；
-- `*-observability`：启用 Prometheus 和 Grafana。
+- 单套最小化清单：OceanBase Oracle 系统库、外部 Redis、一个后端 Pod、一个前端 Pod；
+- 数据库、Redis、访问域名和镜像标签均在清单目录内配置；
+- 部署前先执行 `installer/upgrade-sql/v2.0.2_full_schema_ob_oracle.sql` 初始化空库。
 
 部署说明见 [deploy/kubernetes/README.md](./deploy/kubernetes/README.md)。
 
