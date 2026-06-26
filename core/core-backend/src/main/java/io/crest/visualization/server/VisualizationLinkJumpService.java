@@ -250,9 +250,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
         Set<String> viewIds = componentViewIds(componentData);
         return Optional.ofNullable(tables).orElse(new ArrayList<>()).stream()
                 .filter(viewTableInfo -> viewTableInfo.getId() != null)
-                .filter(viewTableInfo -> viewIds.isEmpty()
-                        ? componentData.contains(viewTableInfo.getId().toString())
-                        : viewIds.contains(viewTableInfo.getId().toString()))
+                .filter(viewTableInfo -> viewIds.contains(viewTableInfo.getId().toString()))
                 .collect(Collectors.toList());
     }
 

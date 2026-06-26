@@ -29,6 +29,20 @@ class ExtVisualizationLinkJumpMapperSqlTest {
     }
 
     @Test
+    void obOracleViewTableSqlDoesNotUseMysqlIdentifierQuoting() {
+        Configuration configuration = parseMapper("ob-oracle");
+        BoundSql snapshotSql = configuration
+                .getMappedStatement(ExtVisualizationLinkJumpMapper.class.getName() + ".getViewTableDetailsSnapshot")
+                .getBoundSql(Map.of("dvId", 1L));
+        BoundSql editSql = configuration
+                .getMappedStatement(ExtVisualizationLinkJumpMapper.class.getName() + ".getViewTableDetails")
+                .getBoundSql(Map.of("dvId", 1L));
+
+        assertThat(snapshotSql.getSql()).doesNotContain("`");
+        assertThat(editSql.getSql()).doesNotContain("`");
+    }
+
+    @Test
     void mybatisBuildsSnapshotOutParamsSql() {
         Configuration configuration = parseMapper("mysql");
         BoundSql boundSql = configuration

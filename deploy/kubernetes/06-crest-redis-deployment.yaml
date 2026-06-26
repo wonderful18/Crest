@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crest-redis
+  labels:
+    app.kubernetes.io/name: crest-redis
+    app.kubernetes.io/component: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crest-redis
+      app.kubernetes.io/component: redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: crest-redis
+        app.kubernetes.io/component: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:6.2.19
+          imagePullPolicy: IfNotPresent
+          args:
+            - redis-server
+            - /etc/redis/redis.conf
+            - --requirepass
+            - $(CREST_REDIS_PASSWORD)
+          ports:
+            - name: redis
+              containerPort: 6379
+          envFrom:
+            - secretRef:
+                name: crest-redis-secret
+          readinessProbe:
+            tcpSocket:
+              port: redis
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            tcpSocket:
+              port: redis
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 2Gi
+          volumeMounts:
+            - name: redis-config
+              mountPath: /etc/redis/redis.conf
+              subPath: redis.conf
+              readOnly: true
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-config
+          configMap:
+            name: crest-redis-config
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: crest-redis-data

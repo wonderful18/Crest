@@ -37,6 +37,16 @@ class VisualizationLinkJumpServiceTest {
                 .containsExactly(view112);
     }
 
+    @Test
+    void filterViewTablesDoesNotFallbackToTextSearchWhenNoViewIdsAreParsed() {
+        VisualizationViewTableVO view12 = view(12L);
+        String componentData = """
+                [{"component":"Decoration","text":"chart 12"}]
+                """;
+
+        assertThat(VisualizationLinkJumpService.filterViewTables(componentData, List.of(view12))).isEmpty();
+    }
+
     private static VisualizationViewTableVO view(Long id) {
         VisualizationViewTableVO view = new VisualizationViewTableVO();
         view.setId(id);

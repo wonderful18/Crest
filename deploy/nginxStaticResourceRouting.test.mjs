@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
-const configs = ['deploy/split/nginx/crest.conf', 'deploy/kubernetes/crest-ob-oracle-redis.yaml']
+const configs = ['deploy/split/nginx/crest.conf', 'deploy/kubernetes/10-crest-nginx-configmap.yaml']
 
 for (const configPath of configs) {
   test(`${configPath} proxies API static resources before asset regex locations`, () => {

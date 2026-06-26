@@ -32,7 +32,17 @@ function renderOverlay() {
   const overlayPath = path.resolve(repoRoot, overlay);
   const files = manifestFiles(overlayPath);
   assert(files.length > 0, `${overlay} must contain Kubernetes YAML files`);
-  assert(files.length === 1, `${overlay} must keep a single Kubernetes YAML file for delivery`);
+  if (files.length > 1) {
+    execFileSync("ruby", [
+      "-ryaml",
+      "-e",
+      "ARGV.each { |f| docs = YAML.load_stream(File.read(f)).compact; abort(\"#{f} must contain exactly one Kubernetes resource\") unless docs.length == 1 }",
+      ...files,
+    ], {
+      cwd: repoRoot,
+      stdio: ["ignore", "ignore", "pipe"],
+    });
+  }
   const json = execFileSync("ruby", [
     "-ryaml",
     "-rjson",

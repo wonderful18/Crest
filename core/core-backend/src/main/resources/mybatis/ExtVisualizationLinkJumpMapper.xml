@@ -232,7 +232,7 @@
             core_chart_view.scene_id AS dv_id,
             core_dataset_field.id AS field_id,
             core_dataset_field.origin_name,
-            core_dataset_field.`name` AS field_name,
+            core_dataset_field.name AS field_name,
             core_dataset_field.type AS raw_field_type,
             core_dataset_field.field_type AS field_type
         FROM
@@ -254,7 +254,7 @@
             core_chart_view_snapshot.scene_id AS dv_id,
             core_dataset_field.id AS field_id,
             core_dataset_field.origin_name,
-            core_dataset_field.`name` AS field_name,
+            core_dataset_field.name AS field_name,
             core_dataset_field.type AS raw_field_type,
             core_dataset_field.field_type AS field_type
         FROM

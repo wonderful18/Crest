@@ -83,8 +83,8 @@ Prometheus 端口不对宿主机开放。需要临时排查时，在服务器上
 
 当前 Kubernetes 交付清单不内置 Prometheus 和 Grafana。生产环境如需纳入企业监控，按以下方式接入：
 
-1. 在 `deploy/kubernetes/crest-ob-oracle-redis.yaml` 的 `crest-env` 中增加 `CREST_PROMETHEUS_ENABLED=true`；
-2. 在 `crest-db-secret` 中增加 `CREST_PROMETHEUS_TOKEN`；
+1. 在 `deploy/kubernetes/00-crest-env-configmap.yaml` 中增加 `CREST_PROMETHEUS_ENABLED=true`；
+2. 在 `deploy/kubernetes/01-crest-db-secret.yaml` 中增加 `CREST_PROMETHEUS_TOKEN`；
 3. 在企业 Prometheus 中增加抓取任务，目标为 `crest-service.<namespace>.svc:8100`；
 4. 在企业 Grafana 中按现场规范配置看板和告警。
 

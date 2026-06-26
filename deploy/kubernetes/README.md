@@ -1,42 +1,70 @@
-# Crest Kubernetes 部署
+# Crest Kubernetes 平台部署
 
-本目录只保留一个部署清单：
+本目录是标准 Kubernetes 平台交付清单。每个 YAML 文件只包含一个资源，按文件名前缀从 `00` 到 `12` 依次导入。
 
-```text
-crest-ob-oracle-redis.yaml
+适用场景：OceanBase Oracle 系统库、Redis 6.2.19、一个后端 Pod、一个前端 Pod、后端持久卷、Redis 持久卷。只有前端 `crest` Service 使用 `NodePort`，后端和 Redis 只在集群内访问。
+
+## 文件顺序
+
+| 文件 | 资源 |
+| --- | --- |
+| `00-crest-env-configmap.yaml` | 运行参数 |
+| `01-crest-db-secret.yaml` | 数据库、加密和初始密码 |
+| `02-crest-redis-secret.yaml` | Redis 密码 |
+| `03-crest-data-pvc.yaml` | 后端数据卷 |
+| `04-crest-redis-data-pvc.yaml` | Redis 数据卷 |
+| `05-crest-redis-configmap.yaml` | Redis 配置 |
+| `06-crest-redis-deployment.yaml` | Redis 实例 |
+| `07-crest-redis-service.yaml` | Redis 集群内访问 |
+| `08-crest-service-deployment.yaml` | 后端服务 |
+| `09-crest-service-service.yaml` | 后端集群内访问 |
+| `10-crest-nginx-configmap.yaml` | 前端 Nginx 配置 |
+| `11-crest-web-deployment.yaml` | 前端服务 |
+| `12-crest-web-service.yaml` | 前端 NodePort 访问 |
+
+## 必须修改
+
+`00-crest-env-configmap.yaml`
+
+```yaml
+CREST_ORIGIN_LIST: "http://CHANGE_ME_NODE_IP:CHANGE_ME_NODEPORT"
+CREST_DB_HOST: "CHANGE_ME_OB_HOST"
+CREST_DB_PORT: "2883"
+CREST_DB_URL: "jdbc:oceanbase://CHANGE_ME_OB_HOST:2883"
 ```
 
-适用场景：OceanBase Oracle 系统库、单机 Redis 6.2、一个后端 Pod、一个前端 Pod、后端持久卷、Redis 持久卷。
+`01-crest-db-secret.yaml`
 
-## 需要改的地方
+```yaml
+CREST_DB_USERNAME: "CHANGE_ME_OB_USER@ob_oracle#obcluster"
+CREST_DB_PASSWORD: "CHANGE_ME_OB_PASSWORD"
+CREST_AES_KEY: "CHANGE_ME_AES_KEY_32_CHARS_00000"
+CREST_AES_IV: "CHANGE_ME_IV_16_"
+CREST_INITIAL_PASSWORD: "CHANGE_ME_INITIAL_ADMIN_PASSWORD"
+CREST_TOKEN_SECRET: "CHANGE_ME_LONG_RANDOM_TOKEN_SECRET"
+```
 
-在 `crest-ob-oracle-redis.yaml` 中只改这些：
+如果通过 observer 直连，把端口改为 `2881`，用户名使用 `用户@租户`。
 
-| 配置 | 说明 |
-| --- | --- |
-| `CREST_ORIGIN_LIST` | 生产访问地址 |
-| `CREST_DB_HOST` | OBProxy 或 observer 地址 |
-| `CREST_DB_PORT` | OBProxy 通常 `2883`，observer 通常 `2881` |
-| `CREST_DB_URL` | `jdbc:oceanbase://<host>:<port>` |
-| `CREST_DB_USERNAME` | Crest 专用 OB Oracle 用户 |
-| `CREST_DB_PASSWORD` | Crest 专用 OB Oracle 密码 |
-| `ghcr.io/sevoniva/crest-service:v2.0.2` | 后端内网镜像地址 |
-| `ghcr.io/sevoniva/crest-web:v2.0.2` | 前端内网镜像地址 |
-| `redis:6.2.19` | Redis 6.2.19 内网镜像地址 |
-| `50Gi` / `10Gi` | 后端和 Redis PVC 容量 |
-| `storageClassName` | 需要指定存储类时取消注释并填写 |
+`02-crest-redis-secret.yaml`
 
-已经生成好的值不需要再改：
+```yaml
+CREST_REDIS_PASSWORD: "CHANGE_ME_REDIS_PASSWORD"
+```
+
+`CREST_AES_KEY` 必须为 32 位，`CREST_AES_IV` 必须为 16 位。升级已有环境时沿用原值，不要重新生成。
+
+## 保持默认
 
 ```text
-CREST_AES_KEY
-CREST_AES_IV
-CREST_INITIAL_PASSWORD
-CREST_TOKEN_SECRET
-CREST_REDIS_PASSWORD
+SPRING_QUARTZ_JDBC_INITIALIZE_SCHEMA
 ```
 
 Redis username 不需要填写。OceanBase Oracle 不填写 `DB_NAME`。
+
+## 按平台修改
+
+如平台要求指定存储类，取消两个 PVC 文件中的 `storageClassName` 注释并填写实际值。前端 Service 不固定 `nodePort`，由平台自动分配。
 
 ## 初始化数据库
 
@@ -47,28 +75,14 @@ obclient --default-character-set=utf8mb4 \
   -h <obproxy-host> -P 2883 \
   -u '<user>@<tenant>#<cluster>' \
   -p'<password>' \
-  < installer/upgrade-sql/v2.0.2_full_schema_ob_oracle.sql
+  < installer/upgrade-sql/v2.0.3_full_schema_ob_oracle.sql
 ```
 
-## 部署
+## 校验
 
 ```bash
 node scripts/verify-kubernetes-production.mjs deploy/kubernetes
-kubectl apply -f deploy/kubernetes/crest-ob-oracle-redis.yaml
-kubectl rollout status deployment/crest-redis --timeout=300s
-kubectl rollout status deployment/crest-service --timeout=300s
-kubectl rollout status deployment/crest --timeout=300s
+kubectl create --dry-run=client -f deploy/kubernetes -o name
 ```
 
-## 检查
-
-```bash
-kubectl get pods
-kubectl logs deploy/crest-service --tail=200
-```
-
-后端日志不应持续出现 `ERROR`、`WARN`、`Exception`、数据库连接失败或 Redis 连接失败。
-
-## 访问
-
-清单创建 `crest` Service，端口为 `8100`。现场按集群规范接入 Ingress、网关或负载均衡。
+部署后确认后端 readiness 返回数据库和 Redis 都为 `UP`，后端日志不应持续出现 `ERROR`、`WARN`、`Exception`、数据库连接失败或 Redis 连接失败。
