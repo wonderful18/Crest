@@ -104,7 +104,7 @@ public class DatasetSyncUtils {
      * 判断数据集查询是否包含运行时 SQL 参数，任一来源存在参数都不能走静态缓存
      */
     public static boolean hasSqlParameters(DatasetGroupInfoDTO dataset, Map<String, Object> sqlMap) {
-        return hasSqlParameterValues(sqlMap) || hasSqlParameterDefinitions(dataset);
+        return hasSqlParameterValues(sqlMap) || hasSqlParameterDefinitions(dataset) || hasSqlParameterMarkers(sqlMap);
     }
 
     /**
@@ -119,6 +119,88 @@ public class DatasetSyncUtils {
             return !values.isEmpty();
         }
         return tableFieldWithValues != null;
+    }
+
+    /**
+     * 检查最终 SQL 是否还存在未绑定的 JDBC 参数占位符，字符串和注释中的问号不参与判断
+     */
+    private static boolean hasSqlParameterMarkers(Map<String, Object> sqlMap) {
+        if (sqlMap == null) {
+            return false;
+        }
+        Object sql = sqlMap.get("sql");
+        return sql instanceof String value && hasUnboundParameterMarker(value);
+    }
+
+    /**
+     * 判断 SQL 文本中是否存在裸问号参数占位符
+     */
+    public static boolean hasUnboundParameterMarker(String sql) {
+        if (StringUtils.isEmpty(sql)) {
+            return false;
+        }
+        char quote = 0;
+        boolean bracketQuote = false;
+        for (int i = 0; i < sql.length(); i++) {
+            char current = sql.charAt(i);
+            char next = i + 1 < sql.length() ? sql.charAt(i + 1) : 0;
+            if (quote != 0) {
+                if (bracketQuote && current == ']') {
+                    quote = 0;
+                    bracketQuote = false;
+                } else if (current == '\\' && quote != '`' && !bracketQuote) {
+                    i++;
+                } else if (!bracketQuote && current == quote) {
+                    if (next == quote && quote != '`') {
+                        i++;
+                    } else {
+                        quote = 0;
+                    }
+                }
+                continue;
+            }
+            if (current == '\'' || current == '"' || current == '`') {
+                quote = current;
+                continue;
+            }
+            if (current == '[') {
+                quote = ']';
+                bracketQuote = true;
+                continue;
+            }
+            if (current == '-' && next == '-') {
+                i = skipLineComment(sql, i + 2);
+                continue;
+            }
+            if (current == '#') {
+                i = skipLineComment(sql, i + 1);
+                continue;
+            }
+            if (current == '/' && next == '*') {
+                i = skipBlockComment(sql, i + 2);
+                continue;
+            }
+            if (current == '?') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 跳过 SQL 行注释
+     */
+    private static int skipLineComment(String sql, int start) {
+        int lineEnd = sql.indexOf('\n', start);
+        return lineEnd < 0 ? sql.length() : lineEnd;
+    }
+
+    /**
+     * 跳过 SQL 块注释
+     */
+    private static int skipBlockComment(String sql, int start) {
+        int blockEnd = sql.indexOf("*/", start);
+        return blockEnd < 0 ? sql.length() : blockEnd + 1;
     }
 
     /**
