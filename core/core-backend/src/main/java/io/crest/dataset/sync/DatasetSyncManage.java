@@ -115,6 +115,9 @@ public class DatasetSyncManage {
             if (task == null) {
                 return;
             }
+            if (Strings.CI.equalsAny(task.getTaskStatus(), TaskStatus.Stopped.name(), TaskStatus.Suspend.name())) {
+                return;
+            }
             if (queueEnabled()) {
                 long now = System.currentTimeMillis();
                 if (taskManage.markQueuedTaskEnqueued(task.getId(), now, queueService.enqueueRetryMillis())) {

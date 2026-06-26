@@ -8,6 +8,7 @@ import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
 import jakarta.annotation.Resource;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +48,10 @@ public class DatasetSyncSupportValidator {
         if (sqlMap == null) {
             CrestException.throwException("数据集 SQL 生成失败，暂不支持缓存");
         }
+        Object sql = sqlMap.get("sql");
+        if (!(sql instanceof String sqlText) || StringUtils.isBlank(sqlText)) {
+            CrestException.throwException("数据集 SQL 为空，暂不支持缓存");
+        }
         if (DatasetSyncUtils.hasSqlParameters(dataset, sqlMap)) {
             CrestException.throwException("带 SQL 参数或未绑定占位符的数据集暂不支持缓存");
         }
@@ -56,7 +61,7 @@ public class DatasetSyncSupportValidator {
         }
         DatasourceSchemaDTO datasource = dsMap.entrySet().iterator().next().getValue();
         if (!DatasetSyncUtils.isSupportedCacheSource(datasource.getType())) {
-            CrestException.throwException("当前缓存能力仅支持 MySQL 或 OB Oracle 数据源");
+            CrestException.throwException("当前缓存能力仅支持 MySQL、OB MySQL 或 OB Oracle 数据源");
         }
 
         List<DatasetTableFieldDTO> checkedFields = (List<DatasetTableFieldDTO>) sqlMap.get("field");

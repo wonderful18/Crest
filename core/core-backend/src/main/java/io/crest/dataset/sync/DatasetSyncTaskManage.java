@@ -704,6 +704,24 @@ public class DatasetSyncTaskManage {
     }
 
     /**
+     * 缓存表不可访问时关闭缓存路由，后续查询直接回源，避免持续探测同一张不可用缓存表
+     */
+    public void markCacheUnavailable(Long datasetGroupId, String reason) {
+        if (datasetGroupId == null) {
+            return;
+        }
+        CoreDatasetSyncTask record = new CoreDatasetSyncTask();
+        record.setCacheReady(0);
+        record.setLastExecStatus(TaskStatus.Error.name());
+        record.setLastError(StringUtils.defaultIfBlank(reason, "缓存表不可访问，已回退实时查询"));
+        record.setUpdateTime(System.currentTimeMillis());
+        UpdateWrapper<CoreDatasetSyncTask> wrapper = new UpdateWrapper<>();
+        wrapper.eq("dataset_group_id", datasetGroupId);
+        wrapper.eq("cache_ready", 1);
+        taskMapper.update(record, wrapper);
+    }
+
+    /**
      * 规范化同步任务配置，补齐默认值并清理不适用的增量字段
      */
     private CoreDatasetSyncTask normalize(DatasetSyncTaskDTO task) {

@@ -86,6 +86,10 @@ public class DatasetSyncUtils {
                 || Objects.equals(dataset.getIsCross(), true)) {
             return false;
         }
+        Object sql = sqlMap.get("sql");
+        if (!(sql instanceof String sqlText) || StringUtils.isBlank(sqlText)) {
+            return false;
+        }
         Object dsMapObject = sqlMap.get("dsMap");
         if (!(dsMapObject instanceof Map<?, ?> dsMap) || dsMap.size() != 1) {
             return false;

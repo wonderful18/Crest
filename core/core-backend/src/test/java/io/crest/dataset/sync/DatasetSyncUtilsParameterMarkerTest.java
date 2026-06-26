@@ -1,7 +1,10 @@
 package io.crest.dataset.sync;
 
+import io.crest.api.dataset.union.DatasetGroupInfoDTO;
+import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -57,5 +60,19 @@ class DatasetSyncUtilsParameterMarkerTest {
     void treatsUnboundMarkerAsSqlParameterInSqlMap() {
         assertTrue(DatasetSyncUtils.hasSqlParameters(null, Map.of("sql", "SELECT * FROM orders WHERE status = ?")));
         assertFalse(DatasetSyncUtils.hasSqlParameters(null, Map.of("sql", "SELECT '?' AS q FROM dual")));
+    }
+
+    @Test
+    void doesNotRouteToCacheWhenGeneratedSqlIsBlank() {
+        DatasetGroupInfoDTO dataset = new DatasetGroupInfoDTO();
+        dataset.setMode(1);
+        dataset.setIsCross(false);
+
+        DatasourceSchemaDTO datasource = new DatasourceSchemaDTO();
+        datasource.setType("obOracle");
+        Map<Long, DatasourceSchemaDTO> dsMap = new LinkedHashMap<>();
+        dsMap.put(1L, datasource);
+
+        assertFalse(DatasetSyncUtils.shouldRouteToCache(dataset, Map.of("sql", " ", "dsMap", dsMap)));
     }
 }

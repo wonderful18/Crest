@@ -389,6 +389,26 @@ class DatasetSyncTaskManageTest {
     }
 
     @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void markCacheUnavailableDisablesOnlyReadyCacheTask() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+
+        manage.markCacheUnavailable(982004L, "缓存表不可访问，已回退实时查询");
+
+        ArgumentCaptor<CoreDatasetSyncTask> recordCaptor = ArgumentCaptor.forClass(CoreDatasetSyncTask.class);
+        ArgumentCaptor<Wrapper<CoreDatasetSyncTask>> wrapperCaptor = ArgumentCaptor.forClass(Wrapper.class);
+        verify(taskMapper).update(recordCaptor.capture(), wrapperCaptor.capture());
+        CoreDatasetSyncTask record = recordCaptor.getValue();
+        assertEquals(0, record.getCacheReady());
+        assertEquals(TaskStatus.Error.name(), record.getLastExecStatus());
+        assertEquals("缓存表不可访问，已回退实时查询", record.getLastError());
+        UpdateWrapper<CoreDatasetSyncTask> wrapper = (UpdateWrapper<CoreDatasetSyncTask>) wrapperCaptor.getValue();
+        assertTrue(wrapper.getSqlSegment().contains("cache_ready"));
+    }
+
+    @Test
     void markQueuedTaskEnqueuedUsesAtomicQueueUpdate() {
         DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
         CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);

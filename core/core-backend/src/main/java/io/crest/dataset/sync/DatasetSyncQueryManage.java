@@ -5,17 +5,20 @@ import io.crest.constant.SQLConstants;
 import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTask;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
 import io.crest.datasource.manage.EngineManage;
+import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import io.crest.utils.BeanUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Component
 // 在数据集缓存可用时，将查询路由到本地抽取引擎缓存表
@@ -36,11 +39,20 @@ public class DatasetSyncQueryManage {
         if (ObjectUtils.isEmpty(fields)) {
             return sqlMap;
         }
+        boolean hasRoutableField = fields.stream()
+                .filter(field -> Objects.equals(field.getChecked(), true))
+                .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
+                .map(field -> StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()))
+                .anyMatch(StringUtils::isNotBlank);
+        if (!hasRoutableField) {
+            return sqlMap;
+        }
         CoreDatasetSyncTask task = taskManage.selectByDatasetGroupId(dataset.getId());
         if (!DatasetSyncUtils.isCacheReady(task, DatasetSyncUtils.schemaHash(fields))) {
             return sqlMap;
         }
         if (!taskManage.cacheTableExists(dataset.getId())) {
+            taskManage.markCacheUnavailable(dataset.getId(), "缓存表不可访问，已回退实时查询");
             return sqlMap;
         }
 
