@@ -230,9 +230,28 @@
             AND bi_chart.type != 'VQuery'
             AND bi_chart.table_id IS NOT NULL
             AND dvi.id = #{dvId}
-            AND LOCATE(
-            bi_chart.id,
-            dvi.component_data)
+    </select>
+
+    <select id="getViewTableDetailsSnapshot" resultMap="ViewTableFieldDetailsMap">
+        SELECT
+            bi_chart_snapshot.id,
+            bi_chart_snapshot.title,
+            bi_chart_snapshot.type,
+            bi_chart_snapshot.scene_id AS dv_id,
+            dataset_field.id AS field_id,
+            dataset_field.origin_name,
+            dataset_field.`name` AS field_name,
+            dataset_field.type AS raw_field_type,
+            dataset_field.field_type AS field_type
+        FROM
+            bi_chart_snapshot
+            LEFT JOIN dataset_field ON bi_chart_snapshot.table_id = dataset_field.dataset_group_id
+            INNER JOIN bi_visualization_snapshot dvi ON bi_chart_snapshot.scene_id = dvi.id
+        WHERE
+            bi_chart_snapshot.scene_id = #{dvId}
+            AND bi_chart_snapshot.type != 'VQuery'
+            AND bi_chart_snapshot.table_id IS NOT NULL
+            AND dvi.id = #{dvId}
     </select>
 
     <select id="queryWithViewId" resultMap="BaseResultMapDTOSnapshot">
@@ -257,6 +276,19 @@
             FROM
                 visualization_outer_params_info vopi
                 LEFT JOIN visualization_outer_params vop ON vopi.params_id = vop.params_id
+            WHERE
+                vop.visualization_id = #{dvId}
+        </select>
+
+        <select id="queryOutParamsTargetWithDvIdSnapshot" resultType="io.crest.api.visualization.vo.VisualizationOutParamsJumpVO">
+            SELECT
+                vopi.params_info_id as id,
+                vopi.param_name as name,
+                vopi.param_name as title,
+                'outerParams' as type
+            FROM
+                snapshot_visualization_outer_params_info vopi
+                LEFT JOIN snapshot_visualization_outer_params vop ON vopi.params_id = vop.params_id
             WHERE
                 vop.visualization_id = #{dvId}
         </select>

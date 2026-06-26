@@ -964,9 +964,9 @@ const codeMirrorContentSet = content => {
 
 // 获取当前图表字段 关联仪表板的图表信息列表
 const getPanelViewList = dvId => {
-  viewTableDetailList(dvId).then((rsp: any) => {
+  viewTableDetailList(dvId, 'snapshot').then((rsp: any) => {
     state.viewIdFieldArrayMap = {}
-    state.currentLinkPanelViewArray = rsp.data.visualizationViewTables
+    state.currentLinkPanelViewArray = rsp.data.visualizationViewTables || []
     if (state.currentLinkPanelViewArray) {
       state.currentLinkPanelViewArray.forEach(view => {
         state.viewIdFieldArrayMap[view.id] = view.tableFields
