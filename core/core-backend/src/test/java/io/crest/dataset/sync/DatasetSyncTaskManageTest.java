@@ -2,6 +2,7 @@ package io.crest.dataset.sync;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.crest.api.dataset.dto.DatasetSyncTaskPageVO;
 import io.crest.api.dataset.dto.DatasetSyncTaskRequest;
 import io.crest.api.dataset.dto.DatasetSyncTaskDTO;
@@ -263,6 +264,91 @@ class DatasetSyncTaskManageTest {
 
         assertEquals("增量字段必须是已选中的时间或数值字段", exception.getMessage());
         verifyNoInteractions(taskMapper);
+    }
+
+    @Test
+    void staleQueuedTaskRecoveryWaitsForTaskTimeout() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        long startedAt = 1782460000000L;
+        long now = startedAt + 31 * 60 * 1000L;
+        CoreDatasetSyncTask task = runningTask(startedAt, 360);
+        Page<CoreDatasetSyncTask> page = new Page<>();
+        page.setRecords(List.of(task));
+        when(taskMapper.selectPage(any(), any())).thenReturn(page);
+
+        List<CoreDatasetSyncTask> tasks = manage.listStaleQueuedTasks(now, 30 * 60 * 1000L, 100);
+
+        assertTrue(tasks.isEmpty());
+    }
+
+    @Test
+    void staleQueuedTaskRecoveryWaitsForTimeoutGrace() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        long startedAt = 1782460000000L;
+        long now = startedAt + 31 * 60 * 1000L;
+        CoreDatasetSyncTask task = runningTask(startedAt, 30);
+        Page<CoreDatasetSyncTask> page = new Page<>();
+        page.setRecords(List.of(task));
+        when(taskMapper.selectPage(any(), any())).thenReturn(page);
+
+        List<CoreDatasetSyncTask> tasks = manage.listStaleQueuedTasks(now, 30 * 60 * 1000L, 100);
+
+        assertTrue(tasks.isEmpty());
+    }
+
+    @Test
+    void staleQueuedTaskRecoveryAllowsTaskAfterTimeoutGrace() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        long startedAt = 1782460000000L;
+        long now = startedAt + 61 * 60 * 1000L;
+        CoreDatasetSyncTask task = runningTask(startedAt, 30);
+        Page<CoreDatasetSyncTask> page = new Page<>();
+        page.setRecords(List.of(task));
+        when(taskMapper.selectPage(any(), any())).thenReturn(page);
+
+        List<CoreDatasetSyncTask> tasks = manage.listStaleQueuedTasks(now, 30 * 60 * 1000L, 100);
+
+        assertEquals(List.of(task), tasks);
+    }
+
+    @Test
+    void staleQueuedTaskRecoverySkipsTaskWhenTimeoutDisabled() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        long startedAt = 1782460000000L;
+        long now = startedAt + 31 * 60 * 1000L;
+        CoreDatasetSyncTask task = runningTask(startedAt, 0);
+        Page<CoreDatasetSyncTask> page = new Page<>();
+        page.setRecords(List.of(task));
+        when(taskMapper.selectPage(any(), any())).thenReturn(page);
+
+        List<CoreDatasetSyncTask> tasks = manage.listStaleQueuedTasks(now, 30 * 60 * 1000L, 100);
+
+        assertTrue(tasks.isEmpty());
+    }
+
+    @Test
+    void staleQueuedTaskRecoveryAllowsTaskWithoutStartTime() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        CoreDatasetSyncTask task = new CoreDatasetSyncTask();
+        task.setTaskStatus(TaskStatus.UnderExecution.name());
+        task.setTaskTimeoutMinutes(360);
+        Page<CoreDatasetSyncTask> page = new Page<>();
+        page.setRecords(List.of(task));
+        when(taskMapper.selectPage(any(), any())).thenReturn(page);
+
+        List<CoreDatasetSyncTask> tasks = manage.listStaleQueuedTasks(1782460000000L, 30 * 60 * 1000L, 100);
+
+        assertEquals(List.of(task), tasks);
     }
 
     @Test
@@ -622,6 +708,17 @@ class DatasetSyncTaskManageTest {
         task.setSyncRate(DatasourceTaskServer.ScheduleType.SIMPLE_CRON.name());
         task.setCron("0 0/30 * * * ? *");
         task.setTaskStatus(taskStatus);
+        return task;
+    }
+
+    private CoreDatasetSyncTask runningTask(long startedAt, int timeoutMinutes) {
+        CoreDatasetSyncTask task = new CoreDatasetSyncTask();
+        task.setId(1262155861866975232L);
+        task.setDatasetGroupId(982004L);
+        task.setTaskStatus(TaskStatus.UnderExecution.name());
+        task.setLastExecTime(startedAt);
+        task.setHeartbeatTime(startedAt);
+        task.setTaskTimeoutMinutes(timeoutMinutes);
         return task;
     }
 

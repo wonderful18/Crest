@@ -60,11 +60,14 @@ export const buildDatasetSyncTaskPayload = ({ syncTask, datasetGroupId, datasetN
 
 // 格式化同步日志影响行数
 export const formatDatasetSyncRowCount = log => {
-  if (!log || log.taskStatus === 'UnderExecution') {
+  if (!log) {
     return ''
   }
   if (log.rowCount === null || log.rowCount === undefined) {
     return ''
+  }
+  if (log.taskStatus === 'UnderExecution') {
+    return log.rowCount > 0 ? `已写入 ${log.rowCount} 行` : ''
   }
   return `${log.rowCount} 行`
 }

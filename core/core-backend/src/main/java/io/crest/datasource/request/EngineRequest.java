@@ -44,6 +44,10 @@ public class EngineRequest {
      */
     private Integer fetchSize = 10000;
     /**
+     * 单次查询超时时间，单位秒；为空时使用引擎配置
+     */
+    private Integer queryTimeout;
+    /**
      * 是否启用分页
      */
     private boolean pageable = false;

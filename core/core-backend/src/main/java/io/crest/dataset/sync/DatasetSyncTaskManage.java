@@ -406,14 +406,37 @@ public class DatasetSyncTaskManage {
     /**
      * 查询心跳超时的执行中任务，交给 Worker 恢复并重新投递
      */
-    public List<CoreDatasetSyncTask> listStaleQueuedTasks(long staleBefore, int limit) {
+    public List<CoreDatasetSyncTask> listStaleQueuedTasks(long now, long staleMillis, int limit) {
+        long safeStaleMillis = Math.max(60000, staleMillis);
+        long staleBefore = now - safeStaleMillis;
         QueryWrapper<CoreDatasetSyncTask> wrapper = new QueryWrapper<>();
         wrapper.eq("task_status", TaskStatus.UnderExecution.name());
         wrapper.and(condition -> condition.isNull("heartbeat_time")
                 .or()
                 .lt("heartbeat_time", staleBefore));
         wrapper.orderByAsc("heartbeat_time");
-        return taskMapper.selectPage(new Page<>(1, Math.max(1, limit), false), wrapper).getRecords();
+        return taskMapper.selectPage(new Page<>(1, Math.max(1, limit), false), wrapper).getRecords().stream()
+                .filter(task -> canRecoverStaleTask(task, now, safeStaleMillis))
+                .toList();
+    }
+
+    private boolean canRecoverStaleTask(CoreDatasetSyncTask task, long now, long staleMillis) {
+        if (task == null) {
+            return false;
+        }
+        int timeoutMinutes = Objects.requireNonNullElse(task.getTaskTimeoutMinutes(), DatasetSyncUtils.DEFAULT_TASK_TIMEOUT_MINUTES);
+        if (timeoutMinutes <= 0) {
+            return false;
+        }
+        Long startedAtValue = task.getLastExecTime() != null ? task.getLastExecTime() : task.getHeartbeatTime();
+        long startedAt = Objects.requireNonNullElse(startedAtValue, 0L);
+        if (startedAt <= 0) {
+            return true;
+        }
+        long timeoutMillis = timeoutMinutes * 60L * 1000L;
+        // 业务超时后再等待一个心跳周期，避免 JDBC 超时回收中的任务被重复投递。
+        long recoveryMillis = timeoutMillis + staleMillis;
+        return now - startedAt > recoveryMillis;
     }
 
     /**
