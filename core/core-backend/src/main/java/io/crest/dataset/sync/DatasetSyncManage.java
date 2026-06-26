@@ -9,7 +9,6 @@ import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTask;
 import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTaskLog;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetGroupMapper;
 import io.crest.dataset.manage.DatasetGroupManage;
-import io.crest.dataset.manage.DatasetSQLManage;
 import io.crest.dataset.sync.queue.DatasetSyncTaskQueueService;
 import io.crest.datasource.dao.auto.entity.CoreEngine;
 import io.crest.datasource.manage.EngineManage;
@@ -43,7 +42,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * 数据集缓存同步执行器，负责把单源数据集查询结果写入引擎缓存表，并维护全量、增量和校验结果
@@ -61,7 +59,7 @@ public class DatasetSyncManage {
     @Resource
     private DatasetGroupManage datasetGroupManage;
     @Resource
-    private DatasetSQLManage datasetSQLManage;
+    private DatasetSyncSupportValidator supportValidator;
     @Resource
     private EngineManage engineManage;
     @Resource
@@ -77,7 +75,7 @@ public class DatasetSyncManage {
      * 手动触发数据集同步。未配置任务时会创建一次性任务，再异步进入执行流程
      */
     public DatasetSyncTaskDTO executeNow(Long datasetGroupId) throws Exception {
-        assertDatasetSyncModeEnabled(datasetGroupId);
+        supportValidator.assertSupported(datasetGroupId);
         CoreDatasetSyncTask task = taskManage.selectByDatasetGroupId(datasetGroupId);
         if (task == null) {
             DatasetSyncTaskDTO dto = new DatasetSyncTaskDTO();
@@ -238,32 +236,15 @@ public class DatasetSyncManage {
      */
     @SuppressWarnings("unchecked")
     private SyncContext prepareContext(Long datasetGroupId) throws Exception {
-        DatasetGroupInfoDTO dataset = assertDatasetSyncModeEnabled(datasetGroupId);
-        if (Objects.equals(dataset.getIsCross(), true)) {
-            CrestException.throwException("数据集缓存暂不支持跨源数据集");
-        }
-        Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(dataset, null);
-        if (DatasetSyncUtils.hasSqlParameters(dataset, sqlMap)) {
-            CrestException.throwException("带 SQL 参数的数据集暂不支持缓存");
-        }
-        Map<Long, DatasourceSchemaDTO> dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
-        if (dsMap == null || dsMap.size() != 1) {
-            CrestException.throwException("数据集缓存仅支持单一数据源");
-        }
+        DatasetSyncSupportValidator.SupportContext support = supportValidator.assertSupported(datasetGroupId);
+        DatasetGroupInfoDTO dataset = support.dataset();
+        Map<String, Object> sqlMap = support.sqlMap();
+        Map<Long, DatasourceSchemaDTO> dsMap = support.dsMap();
         DatasourceSchemaDTO datasource = dsMap.entrySet().iterator().next().getValue();
-        if (!DatasetSyncUtils.isSupportedCacheSource(datasource.getType())) {
-            CrestException.throwException("当前缓存能力仅支持 MySQL 或 OB Oracle 数据源");
-        }
         String sourceSql = Utils.replaceSchemaAlias((String) sqlMap.get("sql"), dsMap);
-        List<DatasetTableFieldDTO> checkedFields = (List<DatasetTableFieldDTO>) sqlMap.get("field");
-        List<DatasetTableFieldDTO> syncFields = checkedFields.stream()
-                .filter(field -> Objects.equals(field.getChecked(), true))
-                .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
-                .collect(Collectors.toList());
+        List<DatasetTableFieldDTO> checkedFields = support.checkedFields();
+        List<DatasetTableFieldDTO> syncFields = support.syncFields();
         List<TableField> tableFields = DatasetSyncUtils.toEngineTableFields(syncFields);
-        if (tableFields.isEmpty()) {
-            CrestException.throwException("数据集没有可同步字段");
-        }
         CoreEngine engine = engineManage.info();
         EngineProvider engineProvider = ProviderUtil.getEngineProvider(engine.getType());
         Provider sourceProvider = ProviderFactory.getProvider(datasource.getType());

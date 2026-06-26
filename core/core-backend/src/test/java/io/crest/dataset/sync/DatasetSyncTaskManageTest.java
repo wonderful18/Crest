@@ -9,6 +9,7 @@ import io.crest.commons.constants.TaskStatus;
 import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTask;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetSyncTaskMapper;
 import io.crest.datasource.server.DatasourceTaskServer;
+import io.crest.exception.CrestException;
 import io.crest.job.schedule.DatasetSyncJob;
 import io.crest.job.schedule.ScheduleManager;
 import org.h2.jdbcx.JdbcDataSource;
@@ -22,13 +23,16 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class DatasetSyncTaskManageTest {
@@ -179,6 +183,28 @@ class DatasetSyncTaskManageTest {
         assertEquals(984000405L, record.getIncrementalFieldId());
         assertFalse(record.getCron().isBlank());
         assertEquals(TaskStatus.WaitingForExecution.name(), saved.getTaskStatus());
+    }
+
+    @Test
+    void saveRejectsUnsupportedDatasetBeforePersistingTask() throws Exception {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        DatasetSyncSupportValidator supportValidator = mock(DatasetSyncSupportValidator.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "supportValidator", supportValidator);
+        doThrow(new RuntimeException("带 SQL 参数或未绑定占位符的数据集暂不支持缓存"))
+                .when(supportValidator).assertSupported(982004L);
+
+        DatasetSyncTaskDTO request = new DatasetSyncTaskDTO();
+        request.setDatasetGroupId(982004L);
+        request.setName("参数化数据集");
+        request.setUpdateType("all_scope");
+        request.setSyncRate(DatasourceTaskServer.ScheduleType.RIGHTNOW.name());
+
+        CrestException exception = assertThrows(CrestException.class, () -> manage.save(request));
+
+        assertEquals("带 SQL 参数或未绑定占位符的数据集暂不支持缓存", exception.getMessage());
+        verifyNoInteractions(taskMapper);
     }
 
     @Test

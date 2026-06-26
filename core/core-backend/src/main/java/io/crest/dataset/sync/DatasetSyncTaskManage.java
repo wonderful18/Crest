@@ -34,6 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.quartz.JobKey;
 import org.quartz.TriggerKey;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -73,6 +74,8 @@ public class DatasetSyncTaskManage {
     private PlatformPermissionManage platformPermissionManage;
     @Resource
     private Environment environment;
+    @Autowired(required = false)
+    private DatasetSyncSupportValidator supportValidator;
 
     /**
      * 按任务主键读取同步任务实体，供执行器和状态更新流程使用
@@ -246,6 +249,7 @@ public class DatasetSyncTaskManage {
             CrestException.throwException("datasetGroupId can not be empty");
         }
         CoreDatasetSyncTask record = normalize(task);
+        assertCacheSupported(record.getDatasetGroupId());
         CoreDatasetSyncTask exists = selectByDatasetGroupId(record.getDatasetGroupId());
         long now = System.currentTimeMillis();
         if (exists == null) {
@@ -291,6 +295,22 @@ public class DatasetSyncTaskManage {
         CoreDatasetSyncTask saved = taskMapper.selectById(record.getId());
         refreshSchedule(saved);
         return toDTO(saved);
+    }
+
+    /**
+     * 保存任务前先校验数据集是否支持缓存，避免不支持的任务进入调度后反复失败
+     */
+    private void assertCacheSupported(Long datasetGroupId) {
+        if (supportValidator == null) {
+            return;
+        }
+        try {
+            supportValidator.assertSupported(datasetGroupId);
+        } catch (CrestException e) {
+            throw e;
+        } catch (Exception e) {
+            CrestException.throwException(e.getMessage());
+        }
     }
 
     /**
