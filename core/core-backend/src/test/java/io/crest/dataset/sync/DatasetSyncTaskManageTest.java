@@ -553,6 +553,9 @@ class DatasetSyncTaskManageTest {
         verify(taskMapper).update(recordCaptor.capture(), wrapperCaptor.capture());
         assertEquals(TaskStatus.WaitingForExecution.name(), recordCaptor.getValue().getTaskStatus());
         UpdateWrapper<CoreDatasetSyncTask> wrapper = (UpdateWrapper<CoreDatasetSyncTask>) wrapperCaptor.getValue();
+        assertTrue(wrapper.getSqlSegment().contains("last_exec_time"));
+        assertTrue(wrapper.getSqlSegment().contains("worker_id"));
+        assertTrue(wrapper.getSqlSegment().contains("task_status"));
         assertTrue(wrapper.getSqlSet().contains("worker_id"));
         assertTrue(wrapper.getSqlSet().contains("last_enqueue_time"));
         assertTrue(wrapper.getSqlSet().contains("next_fire_time"));
@@ -627,6 +630,10 @@ class DatasetSyncTaskManageTest {
         assertFalse(manage.markUnderExecution(task, "worker-a"));
 
         verify(taskMapper).claimQueuedWorkerTask(eq(task.getId()), eq("worker-a"), any());
+        assertEquals(TaskStatus.UnderExecution.name(), task.getTaskStatus());
+        assertEquals("worker-a", task.getWorkerId());
+        assertTrue(task.getLastExecTime() > 0);
+        assertEquals(task.getLastExecTime(), task.getHeartbeatTime());
     }
 
     @Test
@@ -657,6 +664,40 @@ class DatasetSyncTaskManageTest {
         assertFalse(manage.markUnderExecution(task, null));
 
         verify(taskMapper).markWorkerStarted(eq(task.getId()), isNull(), any());
+        assertEquals(TaskStatus.UnderExecution.name(), task.getTaskStatus());
+        assertEquals(null, task.getWorkerId());
+        assertTrue(task.getLastExecTime() > 0);
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void touchHeartbeatScopesUpdateByExecutionToken() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        CoreDatasetSyncTask task = runningTask(1781080000000L, 360);
+        task.setWorkerId("worker-a");
+        when(taskMapper.update(any(CoreDatasetSyncTask.class), any())).thenReturn(1);
+
+        assertTrue(manage.touchHeartbeat(task));
+
+        ArgumentCaptor<Wrapper<CoreDatasetSyncTask>> wrapperCaptor = ArgumentCaptor.forClass(Wrapper.class);
+        verify(taskMapper).update(any(CoreDatasetSyncTask.class), wrapperCaptor.capture());
+        UpdateWrapper<CoreDatasetSyncTask> wrapper = (UpdateWrapper<CoreDatasetSyncTask>) wrapperCaptor.getValue();
+        assertTrue(wrapper.getSqlSegment().contains("last_exec_time"));
+        assertTrue(wrapper.getSqlSegment().contains("worker_id"));
+        assertTrue(wrapper.getSqlSegment().contains("task_status"));
+    }
+
+    @Test
+    void sameExecutionRejectsExecutionTokenChanged() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTask expected = runningTask(1781080000000L, 360);
+        expected.setWorkerId("worker-a");
+        CoreDatasetSyncTask latest = runningTask(1781080060000L, 360);
+        latest.setWorkerId("worker-a");
+
+        assertFalse(manage.sameExecution(expected, latest));
     }
 
     @Test

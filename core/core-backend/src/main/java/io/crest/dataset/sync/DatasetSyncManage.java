@@ -318,7 +318,7 @@ public class DatasetSyncManage {
         try {
             while (true) {
                 assertTaskRunnable(task, syncStartTime);
-                taskManage.touchHeartbeat(task.getId());
+                touchHeartbeat(task);
                 List<String[]> rows = fetchSourcePage(context, context.sourceSql, offset);
                 insertRows(context, tableName, DatasourceServer.UpdateType.all_scope, rows);
                 result.rowCount += rows.size();
@@ -382,7 +382,7 @@ public class DatasetSyncManage {
         try {
             while (true) {
                 assertTaskRunnable(task, syncStartTime);
-                taskManage.touchHeartbeat(task.getId());
+                touchHeartbeat(task);
                 List<String[]> rows = fetchSourcePage(context, incrementalSql, offset);
                 insertRows(context, tableName, DatasourceServer.UpdateType.all_scope, rows);
                 result.rowCount += rows.size();
@@ -766,8 +766,17 @@ public class DatasetSyncManage {
             CrestException.throwException("数据集同步任务超过 " + timeoutMinutes + " 分钟未完成，已自动终止");
         }
         CoreDatasetSyncTask latest = taskManage.selectById(task.getId());
+        if (!taskManage.sameExecution(task, latest)) {
+            CrestException.throwException("数据集同步任务已被新的执行接管");
+        }
         if (!DatasetSyncUtils.isTaskRunnable(latest)) {
             CrestException.throwException("数据集同步任务已停止或已删除");
+        }
+    }
+
+    private void touchHeartbeat(CoreDatasetSyncTask task) {
+        if (!taskManage.touchHeartbeat(task)) {
+            CrestException.throwException("数据集同步任务已被新的执行接管");
         }
     }
 

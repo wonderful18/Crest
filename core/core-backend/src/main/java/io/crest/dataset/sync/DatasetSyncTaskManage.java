@@ -376,20 +376,52 @@ public class DatasetSyncTaskManage {
     public synchronized boolean markUnderExecution(CoreDatasetSyncTask task, String workerId, Long enqueueTime) {
         recoverIfStale(task);
         long now = System.currentTimeMillis();
+        String claimedWorkerId = StringUtils.defaultIfBlank(workerId, null);
+        int updated;
         if (StringUtils.isNotBlank(workerId)) {
             if (enqueueTime != null) {
-                return taskMapper.claimQueuedWorkerTaskByEnqueueTime(task.getId(), workerId, now, enqueueTime) == 0;
+                updated = taskMapper.claimQueuedWorkerTaskByEnqueueTime(task.getId(), workerId, now, enqueueTime);
+            } else {
+                updated = taskMapper.claimQueuedWorkerTask(task.getId(), workerId, now);
             }
-            return taskMapper.claimQueuedWorkerTask(task.getId(), workerId, now) == 0;
+        } else {
+            updated = taskMapper.markWorkerStarted(task.getId(), claimedWorkerId, now);
         }
-        return taskMapper.markWorkerStarted(task.getId(), StringUtils.defaultIfBlank(workerId, null), now) == 0;
+        if (updated <= 0) {
+            return true;
+        }
+        task.setTaskStatus(TaskStatus.UnderExecution.name());
+        task.setLastExecTime(now);
+        task.setHeartbeatTime(now);
+        task.setWorkerId(claimedWorkerId);
+        return false;
     }
 
     /**
      * 刷新执行中任务心跳，后台恢复逻辑用它判断任务是否已经僵死
      */
-    public void touchHeartbeat(Long taskId) {
-        taskMapper.touchWorkerHeartbeat(taskId, System.currentTimeMillis());
+    public boolean touchHeartbeat(CoreDatasetSyncTask task) {
+        if (task == null || task.getId() == null) {
+            return false;
+        }
+        CoreDatasetSyncTask record = new CoreDatasetSyncTask();
+        record.setHeartbeatTime(System.currentTimeMillis());
+        UpdateWrapper<CoreDatasetSyncTask> wrapper = executionTokenWrapper(task);
+        wrapper.eq("task_status", TaskStatus.UnderExecution.name());
+        return taskMapper.update(record, wrapper) > 0;
+    }
+
+    /**
+     * 判断当前任务是否仍属于本次抢占的执行，避免旧线程覆盖新执行状态
+     */
+    public boolean sameExecution(CoreDatasetSyncTask expected, CoreDatasetSyncTask actual) {
+        if (expected == null || actual == null) {
+            return false;
+        }
+        String expectedWorkerId = StringUtils.defaultIfBlank(expected.getWorkerId(), null);
+        String actualWorkerId = StringUtils.defaultIfBlank(actual.getWorkerId(), null);
+        return Objects.equals(expected.getLastExecTime(), actual.getLastExecTime())
+                && Objects.equals(expectedWorkerId, actualWorkerId);
     }
 
     /**
@@ -552,6 +584,12 @@ public class DatasetSyncTaskManage {
         }
         UpdateWrapper<CoreDatasetSyncTask> wrapper = new UpdateWrapper<>();
         wrapper.eq("id", task.getId());
+        applyExecutionToken(wrapper, task);
+        wrapper.in("task_status", List.of(
+                TaskStatus.UnderExecution.name(),
+                TaskStatus.Stopped.name(),
+                TaskStatus.Suspend.name()
+        ));
         // 队列投递字段只表示仍需恢复扫描的消息，任务完成后必须清空。
         wrapper.set("worker_id", null);
         wrapper.set("last_enqueue_time", null);
@@ -559,6 +597,27 @@ public class DatasetSyncTaskManage {
         wrapper.set("last_error", status == TaskStatus.Completed ? null : StringUtils.defaultIfBlank(lastError, "数据集同步任务执行失败"));
         wrapper.setSql("lock_version = COALESCE(lock_version, 0) + 1");
         taskMapper.update(record, wrapper);
+    }
+
+    private UpdateWrapper<CoreDatasetSyncTask> executionTokenWrapper(CoreDatasetSyncTask task) {
+        UpdateWrapper<CoreDatasetSyncTask> wrapper = new UpdateWrapper<>();
+        wrapper.eq("id", task.getId());
+        applyExecutionToken(wrapper, task);
+        return wrapper;
+    }
+
+    private void applyExecutionToken(UpdateWrapper<CoreDatasetSyncTask> wrapper, CoreDatasetSyncTask task) {
+        if (task.getLastExecTime() == null) {
+            wrapper.isNull("last_exec_time");
+        } else {
+            wrapper.eq("last_exec_time", task.getLastExecTime());
+        }
+        String workerId = StringUtils.defaultIfBlank(task.getWorkerId(), null);
+        if (workerId == null) {
+            wrapper.isNull("worker_id");
+        } else {
+            wrapper.eq("worker_id", workerId);
+        }
     }
 
     /**
