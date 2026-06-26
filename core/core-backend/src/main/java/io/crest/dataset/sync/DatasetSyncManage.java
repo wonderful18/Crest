@@ -246,7 +246,6 @@ public class DatasetSyncManage {
         Map<Long, DatasourceSchemaDTO> dsMap = support.dsMap();
         DatasourceSchemaDTO datasource = dsMap.entrySet().iterator().next().getValue();
         String sourceSql = Utils.replaceSchemaAlias((String) sqlMap.get("sql"), dsMap);
-        List<DatasetTableFieldDTO> checkedFields = support.checkedFields();
         List<DatasetTableFieldDTO> syncFields = support.syncFields();
         List<TableField> tableFields = DatasetSyncUtils.toEngineTableFields(syncFields);
         CoreEngine engine = engineManage.info();
