@@ -308,6 +308,27 @@ class DatasetSyncTaskManageTest {
     }
 
     @Test
+    void finishTaskMarksCacheUnavailableAfterFailedExecution() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+
+        CoreDatasetSyncTask task = scheduledTask(TaskStatus.UnderExecution.name());
+        CoreDatasetSyncTask latest = scheduledTask(TaskStatus.UnderExecution.name());
+        latest.setConsecutiveFailures(2);
+        when(taskMapper.selectById(task.getId())).thenReturn(latest);
+
+        manage.finishTask(task, TaskStatus.Error, null, null, false, null, null, null, "缓存表创建失败");
+
+        ArgumentCaptor<CoreDatasetSyncTask> recordCaptor = ArgumentCaptor.forClass(CoreDatasetSyncTask.class);
+        verify(taskMapper).update(recordCaptor.capture(), any());
+        CoreDatasetSyncTask record = recordCaptor.getValue();
+        assertEquals(0, record.getCacheReady());
+        assertEquals(3, record.getConsecutiveFailures());
+        assertEquals(TaskStatus.WaitingForExecution.name(), record.getTaskStatus());
+    }
+
+    @Test
     void markQueuedTaskEnqueuedUsesAtomicQueueUpdate() {
         DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
         CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);

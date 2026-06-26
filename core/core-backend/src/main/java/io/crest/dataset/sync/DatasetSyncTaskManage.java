@@ -460,6 +460,7 @@ public class DatasetSyncTaskManage {
                 record.setLastFullSyncTime(now);
             }
         } else {
+            record.setCacheReady(0);
             record.setConsecutiveFailures(Objects.requireNonNullElse(latest == null ? null : latest.getConsecutiveFailures(), 0) + 1);
         }
         if (StringUtils.isNotBlank(incrementalLastValue)) {

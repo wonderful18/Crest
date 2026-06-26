@@ -402,7 +402,7 @@ public class Utils {
     }
 
     /**
-     * 在无显式 schema 配置时移除 SQL 中的 schema 别名前缀
+     * 将单源查询中的内部 schema 别名转换为真实数据库标识
      *
      * @param sql 原始 SQL
      * @param dsMap 数据源映射
@@ -410,11 +410,17 @@ public class Utils {
      */
     public static String replaceSchemaAlias(String sql, Map<Long, DatasourceSchemaDTO> dsMap) {
         DatasourceSchemaDTO value = dsMap.entrySet().iterator().next().getValue();
-        Map map = JsonUtil.parseObject(value.getConfiguration(), Map.class);
-        if (ObjectUtils.isNotEmpty(map.get("schema"))) {
+        Map map = StringUtils.isBlank(value.getConfiguration()) ? null : JsonUtil.parseObject(value.getConfiguration(), Map.class);
+        String schemaAlias = value.getSchemaAlias();
+        if (StringUtils.isBlank(schemaAlias)) {
             return sql;
         }
-        String schemaAlias = value.getSchemaAlias();
+        Object schemaValue = map == null ? null : map.get("schema");
+        String schema = schemaValue == null ? null : schemaValue.toString().trim();
+        if (StringUtils.isNotBlank(schema)) {
+            DatasourceConfiguration.DatasourceType datasourceType = DatasourceConfiguration.DatasourceType.valueOf(value.getType());
+            return SqlPlaceholderUtils.replaceIdentifier(sql, schemaAlias, datasourceType.getPrefix() + schema + datasourceType.getSuffix());
+        }
         return SqlPlaceholderUtils.removeIdentifierPrefix(sql, schemaAlias);
     }
 
