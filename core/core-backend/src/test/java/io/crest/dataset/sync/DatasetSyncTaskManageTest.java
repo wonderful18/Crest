@@ -312,6 +312,36 @@ class DatasetSyncTaskManageTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void resumeRejectsUnsupportedDatasetBeforeRestoringSchedule() throws Exception {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ScheduleManager scheduleManager = mock(ScheduleManager.class);
+        DatasetSyncSupportValidator supportValidator = mock(DatasetSyncSupportValidator.class);
+        ObjectProvider<DatasetSyncSupportValidator> supportValidatorProvider = mock(ObjectProvider.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "scheduleManager", scheduleManager);
+        ReflectionTestUtils.setField(manage, "supportValidatorProvider", supportValidatorProvider);
+
+        CoreDatasetSyncTask exists = new CoreDatasetSyncTask();
+        exists.setId(1262155861866975232L);
+        exists.setDatasetGroupId(982004L);
+        exists.setSyncRate(DatasourceTaskServer.ScheduleType.SIMPLE_CRON.name());
+        exists.setCron("0 0/30 * * * ? *");
+        exists.setTaskStatus(TaskStatus.Suspend.name());
+        when(taskMapper.selectOne(any())).thenReturn(exists);
+        when(supportValidatorProvider.getIfAvailable()).thenReturn(supportValidator);
+        doThrow(new RuntimeException("带 SQL 参数或未绑定占位符的数据集暂不支持缓存"))
+                .when(supportValidator).assertSupported(982004L);
+
+        CrestException exception = assertThrows(CrestException.class, () -> manage.resume(982004L));
+
+        assertEquals("带 SQL 参数或未绑定占位符的数据集暂不支持缓存", exception.getMessage());
+        verify(taskMapper, never()).update(any(CoreDatasetSyncTask.class), any());
+        verify(scheduleManager, never()).addOrUpdateCronJob(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     void finishTaskClearsQueueMarkerAfterQueuedExecution() {
         DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
@@ -442,6 +472,20 @@ class DatasetSyncTaskManageTest {
         CoreDatasetSyncTask manual = scheduledTask(TaskStatus.WaitingForExecution.name());
         manual.setSyncRate(DatasourceTaskServer.ScheduleType.RIGHTNOW.name());
         assertEquals(false, manage.shouldRestoreSchedule(manual));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldRestoreScheduleSkipsUnsupportedHistoricalTask() throws Exception {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        DatasetSyncSupportValidator supportValidator = mock(DatasetSyncSupportValidator.class);
+        ObjectProvider<DatasetSyncSupportValidator> supportValidatorProvider = mock(ObjectProvider.class);
+        ReflectionTestUtils.setField(manage, "supportValidatorProvider", supportValidatorProvider);
+        when(supportValidatorProvider.getIfAvailable()).thenReturn(supportValidator);
+        doThrow(new RuntimeException("带 SQL 参数或未绑定占位符的数据集暂不支持缓存"))
+                .when(supportValidator).assertSupported(982004L);
+
+        assertFalse(manage.shouldRestoreSchedule(scheduledTask(TaskStatus.WaitingForExecution.name())));
     }
 
     private CoreDatasetSyncTask scheduledTask(String taskStatus) {

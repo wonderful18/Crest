@@ -571,6 +571,7 @@ public class DatasetSyncTaskManage {
         if (task == null) {
             return null;
         }
+        assertCacheSupported(datasetGroupId);
         String nextStatus = Strings.CI.equals(task.getSyncRate(), DatasourceTaskServer.ScheduleType.RIGHTNOW.name())
                 ? TaskStatus.Stopped.name()
                 : TaskStatus.WaitingForExecution.name();
@@ -629,7 +630,17 @@ public class DatasetSyncTaskManage {
         if (task == null || Strings.CI.equals(task.getSyncRate(), DatasourceTaskServer.ScheduleType.RIGHTNOW.name())) {
             return false;
         }
-        return !Strings.CI.equalsAny(task.getTaskStatus(), TaskStatus.Stopped.name(), TaskStatus.Suspend.name());
+        if (Strings.CI.equalsAny(task.getTaskStatus(), TaskStatus.Stopped.name(), TaskStatus.Suspend.name())) {
+            return false;
+        }
+        try {
+            assertCacheSupported(task.getDatasetGroupId());
+            return true;
+        } catch (Exception e) {
+            LogUtil.warn("Skip restoring unsupported dataset sync task, dataset ID: "
+                    + task.getDatasetGroupId() + ", " + e.getMessage());
+            return false;
+        }
     }
 
     /**
