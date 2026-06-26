@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crest-env
+data:
+  CREST_ORIGIN_LIST: "http://CHANGE_ME_NODE_IP:CHANGE_ME_NODEPORT"
+  CREST_PRODUCTION_MODE: "true"
+  SPRING_PROFILES_ACTIVE: "standalone"
+  SPRING_QUARTZ_JDBC_INITIALIZE_SCHEMA: "never"
+  CREST_LOAD_DEMO: "false"
+  CREST_FLYWAY_ENABLED: "false"
+  CREST_DB_TYPE: "ob-oracle"
+  CREST_DB_DRIVER_CLASS_NAME: "com.oceanbase.jdbc.Driver"
+  CREST_DB_HOST: "CHANGE_ME_OB_HOST"
+  CREST_DB_PORT: "2883"
+  CREST_DB_URL: "jdbc:oceanbase://CHANGE_ME_OB_HOST:2883"
+  CREST_REDIS_HOST: "crest-redis"
+  CREST_REDIS_PORT: "6379"
+  CREST_REDIS_DATABASE: "0"

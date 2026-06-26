@@ -995,9 +995,9 @@ const codeMirrorContentSet = content => {
 
 /** 获取目标仪表板中的图表字段和外部参数列表 */
 const getPanelViewList = dvId => {
-  viewTableDetailList(dvId).then((rsp: any) => {
+  viewTableDetailList(dvId, 'snapshot').then((rsp: any) => {
     state.viewIdFieldArrayMap = {}
-    state.currentLinkPanelViewArray = rsp.data.visualizationViewTables
+    state.currentLinkPanelViewArray = rsp.data.visualizationViewTables || []
     if (state.currentLinkPanelViewArray) {
       state.currentLinkPanelViewArray.forEach(view => {
         // 目标图表字段按图表 id 建索引，字段映射下拉按目标图表动态读取。

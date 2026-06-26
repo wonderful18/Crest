@@ -1,6 +1,6 @@
 # Crest
 
-Crest 是面向私有化部署的 BI 平台，覆盖数据源接入、数据集建模、图表、仪表盘、数据大屏、分享、导出、系统管理和字段级数据血缘。当前工程版本为 `v2.0.2`。
+Crest 是面向私有化部署的 BI 平台，覆盖数据源接入、数据集建模、图表、仪表盘、数据大屏、分享、导出、系统管理和字段级数据血缘。当前工程版本为 `v2.0.3`。
 
 Crest 基于 DataEase 2.10.22 开源版本继续开发，并合入 2.10.23 相关安全加固和依赖升级。仓库保留上游版权和 GPLv3 许可声明；品牌、部署脚本、演示资源、OceanBase 支持、数据血缘和研发效能分析能力由 Crest 独立维护。
 
@@ -85,13 +85,13 @@ crestctl version
 | 配置项 | 说明 |
 | --- | --- |
 | `CREST_PORT` | Web 访问端口，默认 `8100` |
-| `CREST_BACKEND_IMAGE` | 后端镜像，默认示例 `ghcr.io/sevoniva/crest-service:v2.0.2` |
-| `CREST_FRONTEND_IMAGE` | 前端镜像，默认示例 `ghcr.io/sevoniva/crest-web:v2.0.2` |
+| `CREST_BACKEND_IMAGE` | 后端镜像，默认示例 `ghcr.io/sevoniva/crest-service:v2.0.3` |
+| `CREST_FRONTEND_IMAGE` | 前端镜像，默认示例 `ghcr.io/sevoniva/crest-web:v2.0.3` |
 | `CREST_LOAD_DEMO` | 是否初始化内置演示资源，生产环境可设为 `false` |
 | `CREST_DB_TYPE` | 系统库类型：`mysql`、`ob-mysql`、`ob-oracle` |
 | `CREST_FLYWAY_ENABLED` | 留空自动判断：MySQL 默认 `true`，OceanBase 默认 `false` |
 | `CREST_INITIAL_PASSWORD` | 管理员初始密码，留空时安装脚本自动生成 |
-| `CREST_AES_KEY` / `CREST_AES_IV` | 敏感配置加密参数，升级已有环境时不要修改 |
+| `CREST_AES_KEY` / `CREST_AES_IV` | 配置加密参数，升级已有环境时不要修改 |
 | `CREST_ORIGIN_LIST` | 允许访问来源，生产环境应改为实际域名 |
 | `CREST_PROMETHEUS_ENABLED` | 是否启用 Prometheus 指标端点 |
 
@@ -101,16 +101,16 @@ crestctl version
 
 ```bash
 cd installer
-bash make-offline-package.sh v2.0.2 linux-amd64
-bash make-offline-package.sh v2.0.2 linux-arm64
+bash make-offline-package.sh v2.0.3 linux-amd64
+bash make-offline-package.sh v2.0.3 linux-arm64
 ```
 
 应用镜像升级包：
 
 ```bash
 cd installer
-bash make-app-image-package.sh v2.0.2 linux-amd64
-bash make-app-image-package.sh v2.0.2 linux-arm64
+bash make-app-image-package.sh v2.0.3 linux-amd64
+bash make-app-image-package.sh v2.0.3 linux-arm64
 ```
 
 包内会包含：
@@ -125,9 +125,9 @@ bash make-app-image-package.sh v2.0.2 linux-arm64
 
 Kubernetes 清单位于 [deploy/kubernetes](./deploy/kubernetes)：
 
-- `internal-mysql`：部署 Crest 和内置 MySQL；
-- `external-mysql`：连接外部 MySQL；
-- `*-observability`：启用 Prometheus 和 Grafana。
+- 标准平台清单：OceanBase Oracle 系统库、Redis 6.2.19、一个后端 Pod、一个前端 Pod；
+- 数据库、Redis、访问域名和镜像标签均在清单目录内配置；
+- 部署前先执行 `installer/upgrade-sql/v2.0.3_full_schema_ob_oracle.sql` 初始化空库。
 
 部署说明见 [deploy/kubernetes/README.md](./deploy/kubernetes/README.md)。
 

@@ -1,19 +1,20 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
+import { readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const overlay = process.argv[2] || "deploy/kubernetes/production";
+const overlay = process.argv[2] || "deploy/kubernetes";
 
 function fail(message) {
-  console.error(`production-k8s: ${message}`);
+  console.error(`k8s-check: ${message}`);
   process.exit(1);
 }
 
 function info(message) {
-  console.log(`production-k8s: ${message}`);
+  console.log(`k8s-check: ${message}`);
 }
 
 function assert(condition, message) {
@@ -23,36 +24,63 @@ function assert(condition, message) {
 }
 
 function renderOverlay() {
-  // 先由 kustomize 渲染，再用 Ruby 标准库解析 YAML，避免 kubectl apply 合并本地状态。
-  const yaml = execFileSync("kubectl", ["kustomize", overlay], {
+  execFileSync("kubectl", ["create", "--dry-run=client", "-f", overlay], {
     cwd: repoRoot,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
+    stdio: ["ignore", "ignore", "pipe"],
   });
+
+  const overlayPath = path.resolve(repoRoot, overlay);
+  const files = manifestFiles(overlayPath);
+  assert(files.length > 0, `${overlay} must contain Kubernetes YAML files`);
+  if (files.length > 1) {
+    execFileSync("ruby", [
+      "-ryaml",
+      "-e",
+      "ARGV.each { |f| docs = YAML.load_stream(File.read(f)).compact; abort(\"#{f} must contain exactly one Kubernetes resource\") unless docs.length == 1 }",
+      ...files,
+    ], {
+      cwd: repoRoot,
+      stdio: ["ignore", "ignore", "pipe"],
+    });
+  }
   const json = execFileSync("ruby", [
     "-ryaml",
     "-rjson",
     "-e",
-    "items = YAML.load_stream(ARGF.read).compact; puts({kind: 'List', items: items}.to_json)",
+    "items = ARGV.flat_map { |f| YAML.load_stream(File.read(f)).compact }; puts({kind: 'List', items: items}.to_json)",
+    ...files,
   ], {
     cwd: repoRoot,
-    input: yaml,
     encoding: "utf8",
-    stdio: ["pipe", "pipe", "pipe"],
+    stdio: ["ignore", "pipe", "pipe"],
   });
   return JSON.parse(json);
+}
+
+function manifestFiles(targetPath) {
+  const stat = statSync(targetPath);
+  if (stat.isFile()) {
+    return yamlFile(targetPath) ? [targetPath] : [];
+  }
+  return readdirSync(targetPath)
+    .flatMap((name) => manifestFiles(path.join(targetPath, name)))
+    .sort();
+}
+
+function yamlFile(filePath) {
+  return filePath.endsWith(".yaml") || filePath.endsWith(".yml");
 }
 
 function byKindAndName(items, kind, name) {
   return items.find((item) => item.kind === kind && item.metadata?.name === name);
 }
 
-function container(deployment) {
-  return deployment?.spec?.template?.spec?.containers?.[0];
+function allByKind(items, kind) {
+  return items.filter((item) => item.kind === kind);
 }
 
-function initContainer(deployment, name) {
-  return (deployment?.spec?.template?.spec?.initContainers || []).find((item) => item.name === name);
+function container(deployment) {
+  return deployment?.spec?.template?.spec?.containers?.[0];
 }
 
 function envMap(containerSpec) {
@@ -67,6 +95,10 @@ function hasEnvFrom(containerSpec, type, name) {
   return (containerSpec?.envFrom || []).some((item) => item[type]?.name === name);
 }
 
+function envFromRef(containerSpec, type, name) {
+  return (containerSpec?.envFrom || []).find((item) => item[type]?.name === name);
+}
+
 function hasVolume(deployment, name, type) {
   const volume = (deployment?.spec?.template?.spec?.volumes || []).find((item) => item.name === name);
   return Boolean(volume?.[type]);
@@ -76,103 +108,147 @@ function hasVolumeMount(containerSpec, name, mountPath) {
   return (containerSpec?.volumeMounts || []).some((item) => item.name === name && item.mountPath === mountPath);
 }
 
-function checkBackendDeployment(items, name, role) {
-  const deployment = byKindAndName(items, "Deployment", name);
-  assert(deployment, `missing Deployment ${name}`);
-  assert(deployment.spec?.replicas >= 2, `${name} must run at least 2 replicas`);
-  assert(deployment.spec?.template?.spec?.affinity?.podAntiAffinity, `${name} must configure podAntiAffinity`);
-  assert((deployment.spec?.template?.spec?.topologySpreadConstraints || []).length > 0,
-    `${name} must configure topologySpreadConstraints`);
-
-  const appContainer = container(deployment);
-  assert(envValue(appContainer, "CREST_RUNTIME_ROLE") === role, `${name} must set CREST_RUNTIME_ROLE=${role}`);
-  assert(envMap(appContainer).CREST_WORKER_ID?.valueFrom?.fieldRef?.fieldPath === "metadata.name",
-    `${name} must derive CREST_WORKER_ID from pod name`);
-  assert(hasEnvFrom(appContainer, "configMapRef", "crest-env"), `${name} must load crest-env`);
-  assert(hasEnvFrom(appContainer, "secretRef", "crest-db-secret"), `${name} must load crest-db-secret`);
-  assert(hasEnvFrom(appContainer, "secretRef", "crest-redis-secret"), `${name} must load crest-redis-secret`);
-  assert(appContainer?.startupProbe && appContainer?.readinessProbe && appContainer?.livenessProbe,
-    `${name} must configure startup/readiness/liveness probes`);
-  const redisInit = initContainer(deployment, "wait-for-redis");
-  const redisInitCommand = (redisInit?.command || []).join("\n");
-  assert(redisInitCommand.includes("CREST_REDIS_CLUSTER_NODES"),
-    `${name} wait-for-redis must read Redis Cluster nodes`);
-  assert(redisInitCommand.includes("for REDIS_ENDPOINT in \"$@\"")
-      && redisInitCommand.includes("REDIS_AVAILABLE")
-      && redisInitCommand.includes("waiting for redis cluster"),
-    `${name} wait-for-redis must accept any reachable Redis Cluster seed`);
-
-  // cache、log、tmp 只能使用 Pod 本地临时目录，业务文件统一走 RWX PVC。
-  assert(hasVolume(deployment, "crest-data", "persistentVolumeClaim"), `${name} must mount crest-data PVC`);
-  assert(hasVolume(deployment, "crest-cache", "emptyDir"), `${name} cache must use emptyDir`);
-  assert(hasVolume(deployment, "crest-logs", "emptyDir"), `${name} logs must use emptyDir`);
-  assert(hasVolume(deployment, "crest-tmp", "emptyDir"), `${name} tmp must use emptyDir`);
-  assert(hasVolumeMount(appContainer, "crest-data", "/opt/crest/data/exportData"),
-    `${name} must mount shared exportData path`);
-}
-
-function checkFrontendDeployment(items) {
-  const deployment = byKindAndName(items, "Deployment", "crest");
-  assert(deployment, "missing frontend Deployment crest");
-  assert(deployment.spec?.replicas >= 2, "frontend must run at least 2 replicas");
-  assert(deployment.spec?.template?.spec?.affinity?.podAntiAffinity, "frontend must configure podAntiAffinity");
-  assert((deployment.spec?.template?.spec?.topologySpreadConstraints || []).length > 0,
-    "frontend must configure topologySpreadConstraints");
-}
-
 function checkConfig(items) {
   const configMap = byKindAndName(items, "ConfigMap", "crest-env");
   assert(configMap, "missing ConfigMap crest-env");
   const data = configMap.data || {};
   const expected = {
+    CREST_DB_TYPE: "ob-oracle",
     CREST_PRODUCTION_MODE: "true",
     CREST_LOAD_DEMO: "false",
     CREST_FLYWAY_ENABLED: "false",
-    SPRING_FLYWAY_ENABLED: "false",
-    SPRING_CACHE_TYPE: "redis",
-    MANAGEMENT_HEALTH_REDIS_ENABLED: "true",
-    CREST_TASK_QUEUE_ENABLED: "true",
-    CREST_WEBSOCKET_BROADCAST_ENABLED: "true",
-    CREST_REDIS_CLUSTER_MAX_REDIRECTS: "3",
-    CREST_REDIS_SSL_ENABLED: "false",
-    CREST_REDIS_CONNECT_TIMEOUT: "2s",
-    CREST_REDIS_TIMEOUT: "5s",
-    CREST_REDIS_CLUSTER_REFRESH_ADAPTIVE: "true",
-    CREST_REDIS_CLUSTER_REFRESH_PERIOD: "30s",
-    CREST_REDIS_CLUSTER_DYNAMIC_REFRESH_SOURCES: "true",
-    CREST_SCHEDULED_TASK_STREAM: "crest:stream:scheduled-task",
-    CREST_SCHEDULED_TASK_CONSUMER_GROUP: "crest-scheduled-workers",
+    SPRING_PROFILES_ACTIVE: "standalone",
+    CREST_REDIS_HOST: "crest-redis",
+    CREST_REDIS_PORT: "6379",
+    CREST_REDIS_DATABASE: "0",
   };
   for (const [key, value] of Object.entries(expected)) {
     assert(data[key] === value, `crest-env ${key} must be ${value}`);
   }
+  for (const key of ["CREST_DB_NAME", "CREST_DB_PARAMS", "CREST_REDIS_CLUSTER_NODES", "CREST_REDIS_USERNAME"]) {
+    assert(!(key in data), `crest-env must not require optional key ${key}`);
+  }
+}
+
+function checkBackendDeployment(items) {
+  const deployment = byKindAndName(items, "Deployment", "crest-service");
+  assert(deployment, "missing backend Deployment crest-service");
+  assert(deployment.spec?.replicas === 1, "crest-service must run 1 replica in minimal deployment");
+  assert((deployment.spec?.template?.spec?.initContainers || []).length === 0,
+    "crest-service must not use initContainers in cloud-platform manifest");
+  assert(deployment.spec?.template?.spec?.securityContext?.fsGroup === 10001,
+    "crest-service must set fsGroup=10001 for persistent volume write access");
+
+  const appContainer = container(deployment);
+  assert(!appContainer.command && !appContainer.args, "crest-service must not override command or args");
+  assert(envValue(appContainer, "CREST_RUNTIME_ROLE") === "all",
+    "crest-service must set CREST_RUNTIME_ROLE=all");
+  assert(envMap(appContainer).CREST_WORKER_ID?.valueFrom?.fieldRef?.fieldPath === "metadata.name",
+    "crest-service must derive CREST_WORKER_ID from pod name");
+  assert(hasEnvFrom(appContainer, "configMapRef", "crest-env"), "crest-service must load crest-env");
+  assert(hasEnvFrom(appContainer, "secretRef", "crest-db-secret"), "crest-service must load crest-db-secret");
+  assert(hasEnvFrom(appContainer, "secretRef", "crest-redis-secret"),
+    "crest-service must load crest-redis-secret");
+  assert(envFromRef(appContainer, "secretRef", "crest-redis-secret").secretRef.optional !== true,
+    "crest-service must require crest-redis-secret");
+  assert(appContainer?.readinessProbe && appContainer?.livenessProbe,
+    "crest-service must configure readiness/liveness probes");
+  assert(appContainer.readinessProbe?.httpGet && appContainer.livenessProbe?.httpGet,
+    "crest-service probes must use HTTP GET");
+  assert(hasVolume(deployment, "crest-data", "persistentVolumeClaim"), "crest-service must mount crest-data PVC");
+  assert(hasVolumeMount(appContainer, "crest-data", "/opt/crest/data"),
+    "crest-service must mount persistent data path");
+}
+
+function checkRedisDeployment(items) {
+  const deployment = byKindAndName(items, "Deployment", "crest-redis");
+  assert(deployment, "missing Redis Deployment crest-redis");
+  assert(deployment.spec?.replicas === 1, "crest-redis must run 1 replica");
+  assert((deployment.spec?.template?.spec?.initContainers || []).length === 0,
+    "crest-redis must not use initContainers");
+
+  const appContainer = container(deployment);
+  assert(!appContainer.command, "crest-redis must not override command");
+  const args = appContainer.args || [];
+  assert(args.includes("redis-server") && args.includes("/etc/redis/redis.conf"),
+    "crest-redis must start with redis-server /etc/redis/redis.conf");
+  assert(args.includes("--requirepass") && args.includes("$(CREST_REDIS_PASSWORD)"),
+    "crest-redis must use CREST_REDIS_PASSWORD");
+  assert(hasEnvFrom(appContainer, "secretRef", "crest-redis-secret"),
+    "crest-redis must load crest-redis-secret");
+  assert(appContainer?.readinessProbe?.tcpSocket && appContainer?.livenessProbe?.tcpSocket,
+    "crest-redis probes must use TCP socket checks");
+  assert(hasVolume(deployment, "redis-config", "configMap"), "crest-redis must mount Redis ConfigMap");
+  assert(hasVolume(deployment, "redis-data", "persistentVolumeClaim"), "crest-redis must mount redis data PVC");
+  assert(hasVolumeMount(appContainer, "redis-config", "/etc/redis/redis.conf"),
+    "crest-redis must mount redis.conf");
+  assert(hasVolumeMount(appContainer, "redis-data", "/data"),
+    "crest-redis must mount /data");
+}
+
+function checkFrontendDeployment(items) {
+  const deployment = byKindAndName(items, "Deployment", "crest");
+  assert(deployment, "missing frontend Deployment crest");
+  assert(deployment.spec?.replicas === 1, "frontend must run 1 replica in minimal deployment");
+  assert((deployment.spec?.template?.spec?.initContainers || []).length === 0,
+    "frontend must not use initContainers in cloud-platform manifest");
+  const appContainer = container(deployment);
+  assert(!appContainer.command && !appContainer.args, "frontend must not override command or args");
+  assert(appContainer?.readinessProbe?.httpGet && appContainer?.livenessProbe?.httpGet,
+    "frontend probes must use HTTP GET");
 }
 
 function checkSupportResources(items) {
+  const deployments = allByKind(items, "Deployment").map((item) => item.metadata?.name).sort();
+  assert(JSON.stringify(deployments) === JSON.stringify(["crest", "crest-redis", "crest-service"]),
+    `minimal deployment must only contain crest, crest-redis and crest-service Deployments, got ${deployments.join(", ")}`);
+
+  assert(allByKind(items, "HorizontalPodAutoscaler").length === 0, "minimal deployment must not include HPA");
+  assert(allByKind(items, "PodDisruptionBudget").length === 0, "minimal deployment must not include PDB");
+  assert(!byKindAndName(items, "ConfigMap", "crest-app-config"),
+    "minimal deployment must not mount application.yml ConfigMap");
+  assert(allByKind(items, "Namespace").length === 0, "minimal deployment must not create Namespace");
+  assert(allByKind(items, "ServiceAccount").length === 0, "minimal deployment must not require ServiceAccount");
+
   const pvc = byKindAndName(items, "PersistentVolumeClaim", "crest-data");
   assert(pvc, "missing PVC crest-data");
-  assert((pvc.spec?.accessModes || []).includes("ReadWriteMany"), "crest-data PVC must use ReadWriteMany");
+  assert((pvc.spec?.accessModes || []).includes("ReadWriteOnce"), "crest-data PVC must use ReadWriteOnce");
 
-  const service = byKindAndName(items, "Service", "crest-service");
-  assert(service?.spec?.selector?.["app.kubernetes.io/name"] === "crest-service-api",
-    "crest-service must route to api pods");
+  const redisPvc = byKindAndName(items, "PersistentVolumeClaim", "crest-redis-data");
+  assert(redisPvc, "missing PVC crest-redis-data");
+  assert((redisPvc.spec?.accessModes || []).includes("ReadWriteOnce"), "crest-redis-data PVC must use ReadWriteOnce");
 
-  for (const name of ["crest", "crest-service-api", "crest-service-scheduler", "crest-service-worker"]) {
-    assert(byKindAndName(items, "PodDisruptionBudget", name), `missing PDB ${name}`);
-    const hpa = byKindAndName(items, "HorizontalPodAutoscaler", name);
-    assert(hpa, `missing HPA ${name}`);
-    assert(hpa.spec?.minReplicas >= 2, `${name} HPA must keep at least 2 replicas`);
+  assert(byKindAndName(items, "ConfigMap", "crest-redis-config"), "missing Redis ConfigMap crest-redis-config");
+  const dbSecret = byKindAndName(items, "Secret", "crest-db-secret");
+  const redisSecret = byKindAndName(items, "Secret", "crest-redis-secret");
+  assert(dbSecret, "missing DB Secret crest-db-secret");
+  assert(redisSecret, "missing Redis Secret crest-redis-secret");
+  for (const key of ["CREST_PROMETHEUS_TOKEN", "CREST_SM4_KEY", "CREST_CRYPTO_MODE"]) {
+    assert(!(key in (dbSecret.stringData || {})), `crest-db-secret must not require optional key ${key}`);
   }
+
+  const backendService = byKindAndName(items, "Service", "crest-service");
+  assert(backendService?.spec?.selector?.["app.kubernetes.io/name"] === "crest-service",
+    "crest-service must route to backend pod");
+  assert(backendService?.spec?.selector?.["app.kubernetes.io/component"] === "backend",
+    "crest-service must select backend component");
+
+  const frontendService = byKindAndName(items, "Service", "crest");
+  assert(frontendService?.spec?.selector?.["app.kubernetes.io/name"] === "crest",
+    "crest Service must route to frontend pod");
+
+  const redisService = byKindAndName(items, "Service", "crest-redis");
+  assert(redisService?.spec?.selector?.["app.kubernetes.io/name"] === "crest-redis",
+    "crest-redis Service must route to Redis pod");
 }
 
 const rendered = renderOverlay();
 const items = rendered.items || [];
 
 checkConfig(items);
+checkBackendDeployment(items);
+checkRedisDeployment(items);
 checkFrontendDeployment(items);
-checkBackendDeployment(items, "crest-service-api", "api");
-checkBackendDeployment(items, "crest-service-scheduler", "scheduler");
-checkBackendDeployment(items, "crest-service-worker", "worker");
 checkSupportResources(items);
 
-info(`${overlay} passed production topology checks`);
+info(`${overlay} passed minimal Kubernetes checks`);

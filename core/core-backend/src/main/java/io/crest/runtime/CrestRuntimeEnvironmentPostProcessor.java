@@ -34,6 +34,7 @@ public class CrestRuntimeEnvironmentPostProcessor implements EnvironmentPostProc
             properties.put("management.health.redis.enabled", "true");
             properties.put("CREST_FLYWAY_ENABLED", "false");
             properties.put("spring.flyway.enabled", "false");
+            properties.put("spring.quartz.jdbc.initialize-schema", "never");
             properties.put("CREST_LOAD_DEMO", "false");
             properties.put("crest.demo.enabled", "false");
         }

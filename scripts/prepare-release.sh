@@ -57,10 +57,13 @@ replace_package_version() {
 }
 
 update_kubernetes_image_tags() {
-  local file="deploy/kubernetes/base/deployment.yaml"
+  local files=(
+    "deploy/kubernetes/08-crest-service-deployment.yaml"
+    "deploy/kubernetes/11-crest-web-deployment.yaml"
+  )
 
   perl -0pi -e 'BEGIN { $tag = shift @ARGV } s#(ghcr\.io/sevoniva/crest-service:)v[0-9]+\.[0-9]+\.[0-9]+#$1$tag#g; s#(ghcr\.io/sevoniva/crest-web:)v[0-9]+\.[0-9]+\.[0-9]+#$1$tag#g' \
-    "${target_tag}" "${file}"
+    "${target_tag}" "${files[@]}"
 }
 
 update_workflow_release_defaults() {
@@ -97,7 +100,8 @@ tag_files=(
   ".github/workflows/release-offline-packages.yml"
   "installer/install.conf"
   "installer/crest/docker-compose.yml"
-  "deploy/kubernetes/base/deployment.yaml"
+  "deploy/kubernetes/08-crest-service-deployment.yaml"
+  "deploy/kubernetes/11-crest-web-deployment.yaml"
 )
 
 doc_files=(

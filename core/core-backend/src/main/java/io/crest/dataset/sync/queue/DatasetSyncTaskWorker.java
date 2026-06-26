@@ -87,7 +87,7 @@ public class DatasetSyncTaskWorker {
 
     private void requeueStaleInProgressTasks(long now) {
         long staleBefore = now - Math.max(60000, staleMillis);
-        List<CoreDatasetSyncTask> tasks = taskManage.listStaleQueuedTasks(staleBefore, recoveryBatchSize);
+        List<CoreDatasetSyncTask> tasks = taskManage.listStaleQueuedTasks(now, staleMillis, recoveryBatchSize);
         for (CoreDatasetSyncTask task : tasks) {
             boolean reset = taskManage.resetStaleQueuedTask(
                     task.getId(),

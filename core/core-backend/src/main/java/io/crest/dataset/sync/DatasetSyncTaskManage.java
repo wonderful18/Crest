@@ -20,6 +20,7 @@ import io.crest.datasource.provider.CalciteProvider;
 import io.crest.datasource.request.EngineRequest;
 import io.crest.datasource.server.DatasourceTaskServer;
 import io.crest.exception.CrestException;
+import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import io.crest.job.schedule.DatasetSyncJob;
 import io.crest.job.schedule.ScheduleManager;
@@ -34,6 +35,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.quartz.JobKey;
 import org.quartz.TriggerKey;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -73,6 +76,8 @@ public class DatasetSyncTaskManage {
     private PlatformPermissionManage platformPermissionManage;
     @Resource
     private Environment environment;
+    @Autowired
+    private ObjectProvider<DatasetSyncSupportValidator> supportValidatorProvider;
 
     /**
      * 按任务主键读取同步任务实体，供执行器和状态更新流程使用
@@ -246,6 +251,8 @@ public class DatasetSyncTaskManage {
             CrestException.throwException("datasetGroupId can not be empty");
         }
         CoreDatasetSyncTask record = normalize(task);
+        DatasetSyncSupportValidator.SupportContext support = assertCacheSupported(record.getDatasetGroupId());
+        assertIncrementalSupported(record, support);
         CoreDatasetSyncTask exists = selectByDatasetGroupId(record.getDatasetGroupId());
         long now = System.currentTimeMillis();
         if (exists == null) {
@@ -294,6 +301,43 @@ public class DatasetSyncTaskManage {
     }
 
     /**
+     * 保存任务前先校验数据集是否支持缓存，避免不支持的任务进入调度后反复失败
+     */
+    private DatasetSyncSupportValidator.SupportContext assertCacheSupported(Long datasetGroupId) {
+        DatasetSyncSupportValidator supportValidator = supportValidatorProvider == null ? null : supportValidatorProvider.getIfAvailable();
+        if (supportValidator == null) {
+            return null;
+        }
+        try {
+            return supportValidator.assertSupported(datasetGroupId);
+        } catch (CrestException e) {
+            throw e;
+        } catch (Exception e) {
+            CrestException.throwException(e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * 增量同步必须具备时间或数值水位字段，避免文本字段或无字段配置进入周期任务后反复全量或错取水位
+     */
+    private void assertIncrementalSupported(CoreDatasetSyncTask task, DatasetSyncSupportValidator.SupportContext support) {
+        if (task == null || !Strings.CI.equals(task.getUpdateType(), "add_scope") || support == null) {
+            return;
+        }
+        List<DatasetTableFieldDTO> candidates = support.syncFields().stream()
+                .filter(DatasetSyncUtils::isIncrementalFieldSupported)
+                .toList();
+        if (candidates.isEmpty()) {
+            CrestException.throwException("增量同步需要选择时间或数值字段");
+        }
+        if (task.getIncrementalFieldId() != null
+                && candidates.stream().noneMatch(field -> Objects.equals(field.getId(), task.getIncrementalFieldId()))) {
+            CrestException.throwException("增量字段必须是已选中的时间或数值字段");
+        }
+    }
+
+    /**
      * 读取单个数据集的同步任务配置，未配置时返回空值
      */
     public DatasetSyncTaskDTO task(Long datasetGroupId) {
@@ -332,20 +376,52 @@ public class DatasetSyncTaskManage {
     public synchronized boolean markUnderExecution(CoreDatasetSyncTask task, String workerId, Long enqueueTime) {
         recoverIfStale(task);
         long now = System.currentTimeMillis();
+        String claimedWorkerId = StringUtils.defaultIfBlank(workerId, null);
+        int updated;
         if (StringUtils.isNotBlank(workerId)) {
             if (enqueueTime != null) {
-                return taskMapper.claimQueuedWorkerTaskByEnqueueTime(task.getId(), workerId, now, enqueueTime) == 0;
+                updated = taskMapper.claimQueuedWorkerTaskByEnqueueTime(task.getId(), workerId, now, enqueueTime);
+            } else {
+                updated = taskMapper.claimQueuedWorkerTask(task.getId(), workerId, now);
             }
-            return taskMapper.claimQueuedWorkerTask(task.getId(), workerId, now) == 0;
+        } else {
+            updated = taskMapper.markWorkerStarted(task.getId(), claimedWorkerId, now);
         }
-        return taskMapper.markWorkerStarted(task.getId(), StringUtils.defaultIfBlank(workerId, null), now) == 0;
+        if (updated <= 0) {
+            return true;
+        }
+        task.setTaskStatus(TaskStatus.UnderExecution.name());
+        task.setLastExecTime(now);
+        task.setHeartbeatTime(now);
+        task.setWorkerId(claimedWorkerId);
+        return false;
     }
 
     /**
      * 刷新执行中任务心跳，后台恢复逻辑用它判断任务是否已经僵死
      */
-    public void touchHeartbeat(Long taskId) {
-        taskMapper.touchWorkerHeartbeat(taskId, System.currentTimeMillis());
+    public boolean touchHeartbeat(CoreDatasetSyncTask task) {
+        if (task == null || task.getId() == null) {
+            return false;
+        }
+        CoreDatasetSyncTask record = new CoreDatasetSyncTask();
+        record.setHeartbeatTime(System.currentTimeMillis());
+        UpdateWrapper<CoreDatasetSyncTask> wrapper = executionTokenWrapper(task);
+        wrapper.eq("task_status", TaskStatus.UnderExecution.name());
+        return taskMapper.update(record, wrapper) > 0;
+    }
+
+    /**
+     * 判断当前任务是否仍属于本次抢占的执行，避免旧线程覆盖新执行状态
+     */
+    public boolean sameExecution(CoreDatasetSyncTask expected, CoreDatasetSyncTask actual) {
+        if (expected == null || actual == null) {
+            return false;
+        }
+        String expectedWorkerId = StringUtils.defaultIfBlank(expected.getWorkerId(), null);
+        String actualWorkerId = StringUtils.defaultIfBlank(actual.getWorkerId(), null);
+        return Objects.equals(expected.getLastExecTime(), actual.getLastExecTime())
+                && Objects.equals(expectedWorkerId, actualWorkerId);
     }
 
     /**
@@ -362,14 +438,37 @@ public class DatasetSyncTaskManage {
     /**
      * 查询心跳超时的执行中任务，交给 Worker 恢复并重新投递
      */
-    public List<CoreDatasetSyncTask> listStaleQueuedTasks(long staleBefore, int limit) {
+    public List<CoreDatasetSyncTask> listStaleQueuedTasks(long now, long staleMillis, int limit) {
+        long safeStaleMillis = Math.max(60000, staleMillis);
+        long staleBefore = now - safeStaleMillis;
         QueryWrapper<CoreDatasetSyncTask> wrapper = new QueryWrapper<>();
         wrapper.eq("task_status", TaskStatus.UnderExecution.name());
         wrapper.and(condition -> condition.isNull("heartbeat_time")
                 .or()
                 .lt("heartbeat_time", staleBefore));
         wrapper.orderByAsc("heartbeat_time");
-        return taskMapper.selectPage(new Page<>(1, Math.max(1, limit), false), wrapper).getRecords();
+        return taskMapper.selectPage(new Page<>(1, Math.max(1, limit), false), wrapper).getRecords().stream()
+                .filter(task -> canRecoverStaleTask(task, now, safeStaleMillis))
+                .toList();
+    }
+
+    private boolean canRecoverStaleTask(CoreDatasetSyncTask task, long now, long staleMillis) {
+        if (task == null) {
+            return false;
+        }
+        int timeoutMinutes = Objects.requireNonNullElse(task.getTaskTimeoutMinutes(), DatasetSyncUtils.DEFAULT_TASK_TIMEOUT_MINUTES);
+        if (timeoutMinutes <= 0) {
+            return false;
+        }
+        Long startedAtValue = task.getLastExecTime() != null ? task.getLastExecTime() : task.getHeartbeatTime();
+        long startedAt = Objects.requireNonNullElse(startedAtValue, 0L);
+        if (startedAt <= 0) {
+            return true;
+        }
+        long timeoutMillis = timeoutMinutes * 60L * 1000L;
+        // 业务超时后再等待一个心跳周期，避免 JDBC 超时回收中的任务被重复投递。
+        long recoveryMillis = timeoutMillis + staleMillis;
+        return now - startedAt > recoveryMillis;
     }
 
     /**
@@ -460,6 +559,7 @@ public class DatasetSyncTaskManage {
                 record.setLastFullSyncTime(now);
             }
         } else {
+            record.setCacheReady(0);
             record.setConsecutiveFailures(Objects.requireNonNullElse(latest == null ? null : latest.getConsecutiveFailures(), 0) + 1);
         }
         if (StringUtils.isNotBlank(incrementalLastValue)) {
@@ -484,6 +584,12 @@ public class DatasetSyncTaskManage {
         }
         UpdateWrapper<CoreDatasetSyncTask> wrapper = new UpdateWrapper<>();
         wrapper.eq("id", task.getId());
+        applyExecutionToken(wrapper, task);
+        wrapper.in("task_status", List.of(
+                TaskStatus.UnderExecution.name(),
+                TaskStatus.Stopped.name(),
+                TaskStatus.Suspend.name()
+        ));
         // 队列投递字段只表示仍需恢复扫描的消息，任务完成后必须清空。
         wrapper.set("worker_id", null);
         wrapper.set("last_enqueue_time", null);
@@ -491,6 +597,27 @@ public class DatasetSyncTaskManage {
         wrapper.set("last_error", status == TaskStatus.Completed ? null : StringUtils.defaultIfBlank(lastError, "数据集同步任务执行失败"));
         wrapper.setSql("lock_version = COALESCE(lock_version, 0) + 1");
         taskMapper.update(record, wrapper);
+    }
+
+    private UpdateWrapper<CoreDatasetSyncTask> executionTokenWrapper(CoreDatasetSyncTask task) {
+        UpdateWrapper<CoreDatasetSyncTask> wrapper = new UpdateWrapper<>();
+        wrapper.eq("id", task.getId());
+        applyExecutionToken(wrapper, task);
+        return wrapper;
+    }
+
+    private void applyExecutionToken(UpdateWrapper<CoreDatasetSyncTask> wrapper, CoreDatasetSyncTask task) {
+        if (task.getLastExecTime() == null) {
+            wrapper.isNull("last_exec_time");
+        } else {
+            wrapper.eq("last_exec_time", task.getLastExecTime());
+        }
+        String workerId = StringUtils.defaultIfBlank(task.getWorkerId(), null);
+        if (workerId == null) {
+            wrapper.isNull("worker_id");
+        } else {
+            wrapper.eq("worker_id", workerId);
+        }
     }
 
     /**
@@ -548,6 +675,7 @@ public class DatasetSyncTaskManage {
         if (task == null) {
             return null;
         }
+        assertCacheSupported(datasetGroupId);
         String nextStatus = Strings.CI.equals(task.getSyncRate(), DatasourceTaskServer.ScheduleType.RIGHTNOW.name())
                 ? TaskStatus.Stopped.name()
                 : TaskStatus.WaitingForExecution.name();
@@ -606,7 +734,17 @@ public class DatasetSyncTaskManage {
         if (task == null || Strings.CI.equals(task.getSyncRate(), DatasourceTaskServer.ScheduleType.RIGHTNOW.name())) {
             return false;
         }
-        return !Strings.CI.equalsAny(task.getTaskStatus(), TaskStatus.Stopped.name(), TaskStatus.Suspend.name());
+        if (Strings.CI.equalsAny(task.getTaskStatus(), TaskStatus.Stopped.name(), TaskStatus.Suspend.name())) {
+            return false;
+        }
+        try {
+            assertCacheSupported(task.getDatasetGroupId());
+            return true;
+        } catch (Exception e) {
+            LogUtil.warn("Skip restoring unsupported dataset sync task, dataset ID: "
+                    + task.getDatasetGroupId() + ", " + e.getMessage());
+            return false;
+        }
     }
 
     /**
@@ -667,6 +805,24 @@ public class DatasetSyncTaskManage {
             LogUtil.warn("Dataset sync cache table is not available: " + datasetGroupId + ", " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * 缓存表不可访问时关闭缓存路由，后续查询直接回源，避免持续探测同一张不可用缓存表
+     */
+    public void markCacheUnavailable(Long datasetGroupId, String reason) {
+        if (datasetGroupId == null) {
+            return;
+        }
+        CoreDatasetSyncTask record = new CoreDatasetSyncTask();
+        record.setCacheReady(0);
+        record.setLastExecStatus(TaskStatus.Error.name());
+        record.setLastError(StringUtils.defaultIfBlank(reason, "缓存表不可访问，已回退实时查询"));
+        record.setUpdateTime(System.currentTimeMillis());
+        UpdateWrapper<CoreDatasetSyncTask> wrapper = new UpdateWrapper<>();
+        wrapper.eq("dataset_group_id", datasetGroupId);
+        wrapper.eq("cache_ready", 1);
+        taskMapper.update(record, wrapper);
     }
 
     /**

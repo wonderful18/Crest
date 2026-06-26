@@ -962,8 +962,9 @@ public class CalciteProvider extends Provider {
      */
     private Statement getStatement(DatasourceSchemaDTO value, Connection con, DatasourceRequest datasourceRequest, DatasourceConfiguration datasourceConfiguration, String autoIncrementPkName) throws Exception {
         Statement statement;
+        int queryTimeout = datasourceQueryTimeout(datasourceRequest, datasourceConfiguration);
         if (isOracleLike(value.getType())) {
-            statement = getStatement(con, datasourceConfiguration.getQueryTimeout());
+            statement = getStatement(con, queryTimeout);
             if (StringUtils.isNotBlank(datasourceConfiguration.getSchema())) {
                 statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + oracleSchemaIdentifier(datasourceConfiguration.getSchema()));
             }
@@ -975,7 +976,7 @@ public class CalciteProvider extends Provider {
                 datasourceRequest.setQuery(convertOracleText(datasourceRequest.getQuery(), oracleTargetCharset, oracleCharset));
             }
         }
-        statement = getPreparedStatement(con, datasourceConfiguration.getQueryTimeout(), datasourceRequest.getQuery(), datasourceRequest.getTableFieldWithValues(), autoIncrementPkName, datasourceConfiguration);
+        statement = getPreparedStatement(con, queryTimeout, datasourceRequest.getQuery(), datasourceRequest.getTableFieldWithValues(), autoIncrementPkName, datasourceConfiguration);
         return statement;
     }
 
@@ -2417,11 +2418,21 @@ public class CalciteProvider extends Provider {
     }
 
     private int engineQueryTimeout(EngineRequest engineRequest) {
+        if (engineRequest != null && engineRequest.getQueryTimeout() != null) {
+            return Math.max(0, engineRequest.getQueryTimeout());
+        }
         DatasourceConfiguration configuration = JsonUtil.parseObject(engineRequest.getEngine().getConfiguration(), DatasourceConfiguration.class);
         if (configuration == null) {
             return new DatasourceConfiguration().getQueryTimeout();
         }
         return configuration.getQueryTimeout();
+    }
+
+    private int datasourceQueryTimeout(DatasourceRequest datasourceRequest, DatasourceConfiguration configuration) {
+        if (datasourceRequest != null && datasourceRequest.getQueryTimeout() != null) {
+            return Math.max(0, datasourceRequest.getQueryTimeout());
+        }
+        return configuration == null ? new DatasourceConfiguration().getQueryTimeout() : configuration.getQueryTimeout();
     }
 
     /**

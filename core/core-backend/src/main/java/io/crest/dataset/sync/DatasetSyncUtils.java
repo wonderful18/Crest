@@ -86,6 +86,10 @@ public class DatasetSyncUtils {
                 || Objects.equals(dataset.getIsCross(), true)) {
             return false;
         }
+        Object sql = sqlMap.get("sql");
+        if (!(sql instanceof String sqlText) || StringUtils.isBlank(sqlText)) {
+            return false;
+        }
         Object dsMapObject = sqlMap.get("dsMap");
         if (!(dsMapObject instanceof Map<?, ?> dsMap) || dsMap.size() != 1) {
             return false;
@@ -104,7 +108,7 @@ public class DatasetSyncUtils {
      * 判断数据集查询是否包含运行时 SQL 参数，任一来源存在参数都不能走静态缓存
      */
     public static boolean hasSqlParameters(DatasetGroupInfoDTO dataset, Map<String, Object> sqlMap) {
-        return hasSqlParameterValues(sqlMap) || hasSqlParameterDefinitions(dataset);
+        return hasSqlParameterValues(sqlMap) || hasSqlParameterDefinitions(dataset) || hasSqlParameterMarkers(sqlMap);
     }
 
     /**
@@ -119,6 +123,88 @@ public class DatasetSyncUtils {
             return !values.isEmpty();
         }
         return tableFieldWithValues != null;
+    }
+
+    /**
+     * 检查最终 SQL 是否还存在未绑定的 JDBC 参数占位符，字符串和注释中的问号不参与判断
+     */
+    private static boolean hasSqlParameterMarkers(Map<String, Object> sqlMap) {
+        if (sqlMap == null) {
+            return false;
+        }
+        Object sql = sqlMap.get("sql");
+        return sql instanceof String value && hasUnboundParameterMarker(value);
+    }
+
+    /**
+     * 判断 SQL 文本中是否存在裸问号参数占位符
+     */
+    public static boolean hasUnboundParameterMarker(String sql) {
+        if (StringUtils.isEmpty(sql)) {
+            return false;
+        }
+        char quote = 0;
+        boolean bracketQuote = false;
+        for (int i = 0; i < sql.length(); i++) {
+            char current = sql.charAt(i);
+            char next = i + 1 < sql.length() ? sql.charAt(i + 1) : 0;
+            if (quote != 0) {
+                if (bracketQuote && current == ']') {
+                    quote = 0;
+                    bracketQuote = false;
+                } else if (current == '\\' && quote != '`' && !bracketQuote) {
+                    i++;
+                } else if (!bracketQuote && current == quote) {
+                    if (next == quote && quote != '`') {
+                        i++;
+                    } else {
+                        quote = 0;
+                    }
+                }
+                continue;
+            }
+            if (current == '\'' || current == '"' || current == '`') {
+                quote = current;
+                continue;
+            }
+            if (current == '[') {
+                quote = ']';
+                bracketQuote = true;
+                continue;
+            }
+            if (current == '-' && next == '-') {
+                i = skipLineComment(sql, i + 2);
+                continue;
+            }
+            if (current == '#') {
+                i = skipLineComment(sql, i + 1);
+                continue;
+            }
+            if (current == '/' && next == '*') {
+                i = skipBlockComment(sql, i + 2);
+                continue;
+            }
+            if (current == '?') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 跳过 SQL 行注释
+     */
+    private static int skipLineComment(String sql, int start) {
+        int lineEnd = sql.indexOf('\n', start);
+        return lineEnd < 0 ? sql.length() : lineEnd;
+    }
+
+    /**
+     * 跳过 SQL 块注释
+     */
+    private static int skipBlockComment(String sql, int start) {
+        int blockEnd = sql.indexOf("*/", start);
+        return blockEnd < 0 ? sql.length() : blockEnd + 1;
     }
 
     /**
@@ -315,14 +401,13 @@ public class DatasetSyncUtils {
     public static String buildIncrementalPredicate(DatasetTableFieldDTO field, String lastValue, String prefix, String suffix, boolean inclusive, String datasourceType) {
         String column = prefix + StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()) + suffix;
         String operator = inclusive ? " >= " : " > ";
-        if (Objects.equals(field.getExtractedFieldType(), 1) || Objects.equals(field.getFieldType(), 1)) {
+        if (isTimeField(field)) {
             if (isMysqlCompatible(datasourceType)) {
                 return column + operator + "'" + escapeSqlLiteral(lastValue) + "'";
             }
             return column + operator + "TO_TIMESTAMP('" + escapeSqlLiteral(lastValue) + "', 'YYYY-MM-DD HH24:MI:SS.FF')";
         }
-        if (Objects.equals(field.getExtractedFieldType(), 2) || Objects.equals(field.getExtractedFieldType(), 3)
-                || Objects.equals(field.getFieldType(), 2) || Objects.equals(field.getFieldType(), 3)) {
+        if (isNumericField(field)) {
             return column + operator + lastValue;
         }
         return column + operator + "'" + escapeSqlLiteral(lastValue) + "'";
@@ -332,8 +417,19 @@ public class DatasetSyncUtils {
      * 针对缓存表生成水位比较条件，数值字段在水位合法时不加字符串引号
      */
     public static String buildCacheWatermarkPredicate(DatasetTableFieldDTO field, String lastValue, String prefix, String suffix, String operator) {
+        return buildCacheWatermarkPredicate(field, lastValue, prefix, suffix, operator, null);
+    }
+
+    /**
+     * 针对指定引擎方言生成缓存表水位比较条件，OB Oracle 时间字段使用显式 TIMESTAMP 字面量
+     */
+    public static String buildCacheWatermarkPredicate(DatasetTableFieldDTO field, String lastValue, String prefix, String suffix,
+                                                      String operator, String datasourceType) {
         String column = prefix + StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()) + suffix;
         String safeOperator = StringUtils.defaultIfBlank(operator, ">").trim();
+        if (isTimeField(field) && Strings.CI.equals(datasourceType, DatasourceConfiguration.DatasourceType.obOracle.getType())) {
+            return column + " " + safeOperator + " TO_TIMESTAMP('" + escapeSqlLiteral(lastValue) + "', 'YYYY-MM-DD HH24:MI:SS.FF')";
+        }
         if (isNumericField(field) && isNumericLiteral(lastValue)) {
             return column + " " + safeOperator + " " + lastValue;
         }
@@ -348,6 +444,23 @@ public class DatasetSyncUtils {
             return false;
         }
         return !isNumericField(field) || isNumericLiteral(lastValue);
+    }
+
+    /**
+     * 判断字段是否可作为增量水位字段。增量字段只允许普通的时间或数值字段
+     */
+    public static boolean isIncrementalFieldSupported(DatasetTableFieldDTO field) {
+        return field != null
+                && Objects.equals(field.getChecked(), true)
+                && Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL)
+                && (isTimeField(field) || isNumericField(field));
+    }
+
+    /**
+     * 判断字段是否按时间类型处理
+     */
+    private static boolean isTimeField(DatasetTableFieldDTO field) {
+        return Objects.equals(field.getExtractedFieldType(), 1) || Objects.equals(field.getFieldType(), 1);
     }
 
     /**

@@ -56,6 +56,7 @@ class CrestRuntimeEnvironmentPostProcessorTest {
         assertThat(environment.getProperty("management.health.redis.enabled")).isEqualTo("true");
         assertThat(environment.getProperty("CREST_FLYWAY_ENABLED")).isEqualTo("false");
         assertThat(environment.getProperty("spring.flyway.enabled")).isEqualTo("false");
+        assertThat(environment.getProperty("spring.quartz.jdbc.initialize-schema")).isEqualTo("never");
         assertThat(environment.getProperty("CREST_LOAD_DEMO")).isEqualTo("false");
         assertThat(environment.getProperty("crest.demo.enabled")).isEqualTo("false");
     }

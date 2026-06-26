@@ -2,33 +2,44 @@ package io.crest.dataset.sync;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.crest.api.dataset.dto.DatasetSyncTaskPageVO;
 import io.crest.api.dataset.dto.DatasetSyncTaskRequest;
 import io.crest.api.dataset.dto.DatasetSyncTaskDTO;
+import io.crest.api.dataset.union.DatasetGroupInfoDTO;
 import io.crest.commons.constants.TaskStatus;
 import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTask;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetSyncTaskMapper;
 import io.crest.datasource.server.DatasourceTaskServer;
+import io.crest.engine.constant.ExtFieldConstant;
+import io.crest.exception.CrestException;
+import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
+import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
 import io.crest.job.schedule.DatasetSyncJob;
 import io.crest.job.schedule.ScheduleManager;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.quartz.JobDataMap;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class DatasetSyncTaskManageTest {
@@ -182,6 +193,218 @@ class DatasetSyncTaskManageTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void saveRejectsUnsupportedDatasetBeforePersistingTask() throws Exception {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        DatasetSyncSupportValidator supportValidator = mock(DatasetSyncSupportValidator.class);
+        ObjectProvider<DatasetSyncSupportValidator> supportValidatorProvider = mock(ObjectProvider.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "supportValidatorProvider", supportValidatorProvider);
+        when(supportValidatorProvider.getIfAvailable()).thenReturn(supportValidator);
+        doThrow(new RuntimeException("带 SQL 参数或未绑定占位符的数据集暂不支持缓存"))
+                .when(supportValidator).assertSupported(982004L);
+
+        DatasetSyncTaskDTO request = new DatasetSyncTaskDTO();
+        request.setDatasetGroupId(982004L);
+        request.setName("参数化数据集");
+        request.setUpdateType("all_scope");
+        request.setSyncRate(DatasourceTaskServer.ScheduleType.RIGHTNOW.name());
+
+        CrestException exception = assertThrows(CrestException.class, () -> manage.save(request));
+
+        assertEquals("带 SQL 参数或未绑定占位符的数据集暂不支持缓存", exception.getMessage());
+        verifyNoInteractions(taskMapper);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void saveRejectsAddScopeWhenNoIncrementalCandidateExists() throws Exception {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        DatasetSyncSupportValidator supportValidator = mock(DatasetSyncSupportValidator.class);
+        ObjectProvider<DatasetSyncSupportValidator> supportValidatorProvider = mock(ObjectProvider.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "supportValidatorProvider", supportValidatorProvider);
+        when(supportValidatorProvider.getIfAvailable()).thenReturn(supportValidator);
+        when(supportValidator.assertSupported(982004L)).thenReturn(supportContext(List.of(textField(1001L))));
+
+        DatasetSyncTaskDTO request = new DatasetSyncTaskDTO();
+        request.setDatasetGroupId(982004L);
+        request.setName("文本字段数据集");
+        request.setUpdateType("add_scope");
+        request.setSyncRate(DatasourceTaskServer.ScheduleType.RIGHTNOW.name());
+
+        CrestException exception = assertThrows(CrestException.class, () -> manage.save(request));
+
+        assertEquals("增量同步需要选择时间或数值字段", exception.getMessage());
+        verifyNoInteractions(taskMapper);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void saveRejectsAddScopeWhenSelectedFieldIsNotIncrementalCandidate() throws Exception {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        DatasetSyncSupportValidator supportValidator = mock(DatasetSyncSupportValidator.class);
+        ObjectProvider<DatasetSyncSupportValidator> supportValidatorProvider = mock(ObjectProvider.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "supportValidatorProvider", supportValidatorProvider);
+        when(supportValidatorProvider.getIfAvailable()).thenReturn(supportValidator);
+        when(supportValidator.assertSupported(982004L)).thenReturn(supportContext(List.of(timeField(1001L), textField(1002L))));
+
+        DatasetSyncTaskDTO request = new DatasetSyncTaskDTO();
+        request.setDatasetGroupId(982004L);
+        request.setName("错误增量字段数据集");
+        request.setUpdateType("add_scope");
+        request.setIncrementalFieldId(1002L);
+        request.setSyncRate(DatasourceTaskServer.ScheduleType.RIGHTNOW.name());
+
+        CrestException exception = assertThrows(CrestException.class, () -> manage.save(request));
+
+        assertEquals("增量字段必须是已选中的时间或数值字段", exception.getMessage());
+        verifyNoInteractions(taskMapper);
+    }
+
+    @Test
+    void staleQueuedTaskRecoveryWaitsForTaskTimeout() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        long startedAt = 1782460000000L;
+        long now = startedAt + 31 * 60 * 1000L;
+        CoreDatasetSyncTask task = runningTask(startedAt, 360);
+        Page<CoreDatasetSyncTask> page = new Page<>();
+        page.setRecords(List.of(task));
+        when(taskMapper.selectPage(any(), any())).thenReturn(page);
+
+        List<CoreDatasetSyncTask> tasks = manage.listStaleQueuedTasks(now, 30 * 60 * 1000L, 100);
+
+        assertTrue(tasks.isEmpty());
+    }
+
+    @Test
+    void staleQueuedTaskRecoveryWaitsForTimeoutGrace() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        long startedAt = 1782460000000L;
+        long now = startedAt + 31 * 60 * 1000L;
+        CoreDatasetSyncTask task = runningTask(startedAt, 30);
+        Page<CoreDatasetSyncTask> page = new Page<>();
+        page.setRecords(List.of(task));
+        when(taskMapper.selectPage(any(), any())).thenReturn(page);
+
+        List<CoreDatasetSyncTask> tasks = manage.listStaleQueuedTasks(now, 30 * 60 * 1000L, 100);
+
+        assertTrue(tasks.isEmpty());
+    }
+
+    @Test
+    void staleQueuedTaskRecoveryAllowsTaskAfterTimeoutGrace() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        long startedAt = 1782460000000L;
+        long now = startedAt + 61 * 60 * 1000L;
+        CoreDatasetSyncTask task = runningTask(startedAt, 30);
+        Page<CoreDatasetSyncTask> page = new Page<>();
+        page.setRecords(List.of(task));
+        when(taskMapper.selectPage(any(), any())).thenReturn(page);
+
+        List<CoreDatasetSyncTask> tasks = manage.listStaleQueuedTasks(now, 30 * 60 * 1000L, 100);
+
+        assertEquals(List.of(task), tasks);
+    }
+
+    @Test
+    void staleQueuedTaskRecoverySkipsTaskWhenTimeoutDisabled() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        long startedAt = 1782460000000L;
+        long now = startedAt + 31 * 60 * 1000L;
+        CoreDatasetSyncTask task = runningTask(startedAt, 0);
+        Page<CoreDatasetSyncTask> page = new Page<>();
+        page.setRecords(List.of(task));
+        when(taskMapper.selectPage(any(), any())).thenReturn(page);
+
+        List<CoreDatasetSyncTask> tasks = manage.listStaleQueuedTasks(now, 30 * 60 * 1000L, 100);
+
+        assertTrue(tasks.isEmpty());
+    }
+
+    @Test
+    void staleQueuedTaskRecoveryAllowsTaskWithoutStartTime() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        CoreDatasetSyncTask task = new CoreDatasetSyncTask();
+        task.setTaskStatus(TaskStatus.UnderExecution.name());
+        task.setTaskTimeoutMinutes(360);
+        Page<CoreDatasetSyncTask> page = new Page<>();
+        page.setRecords(List.of(task));
+        when(taskMapper.selectPage(any(), any())).thenReturn(page);
+
+        List<CoreDatasetSyncTask> tasks = manage.listStaleQueuedTasks(1782460000000L, 30 * 60 * 1000L, 100);
+
+        assertEquals(List.of(task), tasks);
+    }
+
+    @Test
+    void obOracleCacheWatermarkPredicateUsesTimestampLiteralForTimeField() {
+        String predicate = DatasetSyncUtils.buildCacheWatermarkPredicate(
+                timeField(1001L),
+                "2026-06-26 12:30:15.123",
+                "\"",
+                "\"",
+                "<",
+                "obOracle"
+        );
+
+        assertEquals("\"f_1001\" < TO_TIMESTAMP('2026-06-26 12:30:15.123', 'YYYY-MM-DD HH24:MI:SS.FF')", predicate);
+    }
+
+    @Test
+    void mysqlCacheWatermarkPredicateKeepsStringLiteralForTimeField() {
+        String predicate = DatasetSyncUtils.buildCacheWatermarkPredicate(
+                timeField(1001L),
+                "2026-06-26 12:30:15",
+                "`",
+                "`",
+                "<",
+                "mysql"
+        );
+
+        assertEquals("`f_1001` < '2026-06-26 12:30:15'", predicate);
+    }
+
+    @Test
+    void numericCacheWatermarkPredicateDoesNotQuoteValidNumber() {
+        String predicate = DatasetSyncUtils.buildCacheWatermarkPredicate(
+                numberField(1001L),
+                "1024",
+                "\"",
+                "\"",
+                "<",
+                "obOracle"
+        );
+
+        assertEquals("\"f_1001\" < 1024", predicate);
+    }
+
+    @Test
+    void incrementalFieldMustBeCheckedNormalTimeOrNumberField() {
+        assertTrue(DatasetSyncUtils.isIncrementalFieldSupported(timeField(1001L)));
+        assertTrue(DatasetSyncUtils.isIncrementalFieldSupported(numberField(1002L)));
+        assertFalse(DatasetSyncUtils.isIncrementalFieldSupported(textField(1003L)));
+
+        DatasetTableFieldDTO unchecked = numberField(1004L);
+        unchecked.setChecked(false);
+        assertFalse(DatasetSyncUtils.isIncrementalFieldSupported(unchecked));
+    }
+
+    @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     void saveAllScopeClearsStaleIncrementalFields() {
         DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
@@ -282,6 +505,36 @@ class DatasetSyncTaskManageTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void resumeRejectsUnsupportedDatasetBeforeRestoringSchedule() throws Exception {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ScheduleManager scheduleManager = mock(ScheduleManager.class);
+        DatasetSyncSupportValidator supportValidator = mock(DatasetSyncSupportValidator.class);
+        ObjectProvider<DatasetSyncSupportValidator> supportValidatorProvider = mock(ObjectProvider.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "scheduleManager", scheduleManager);
+        ReflectionTestUtils.setField(manage, "supportValidatorProvider", supportValidatorProvider);
+
+        CoreDatasetSyncTask exists = new CoreDatasetSyncTask();
+        exists.setId(1262155861866975232L);
+        exists.setDatasetGroupId(982004L);
+        exists.setSyncRate(DatasourceTaskServer.ScheduleType.SIMPLE_CRON.name());
+        exists.setCron("0 0/30 * * * ? *");
+        exists.setTaskStatus(TaskStatus.Suspend.name());
+        when(taskMapper.selectOne(any())).thenReturn(exists);
+        when(supportValidatorProvider.getIfAvailable()).thenReturn(supportValidator);
+        doThrow(new RuntimeException("带 SQL 参数或未绑定占位符的数据集暂不支持缓存"))
+                .when(supportValidator).assertSupported(982004L);
+
+        CrestException exception = assertThrows(CrestException.class, () -> manage.resume(982004L));
+
+        assertEquals("带 SQL 参数或未绑定占位符的数据集暂不支持缓存", exception.getMessage());
+        verify(taskMapper, never()).update(any(CoreDatasetSyncTask.class), any());
+        verify(scheduleManager, never()).addOrUpdateCronJob(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     void finishTaskClearsQueueMarkerAfterQueuedExecution() {
         DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
@@ -300,11 +553,55 @@ class DatasetSyncTaskManageTest {
         verify(taskMapper).update(recordCaptor.capture(), wrapperCaptor.capture());
         assertEquals(TaskStatus.WaitingForExecution.name(), recordCaptor.getValue().getTaskStatus());
         UpdateWrapper<CoreDatasetSyncTask> wrapper = (UpdateWrapper<CoreDatasetSyncTask>) wrapperCaptor.getValue();
+        assertTrue(wrapper.getSqlSegment().contains("last_exec_time"));
+        assertTrue(wrapper.getSqlSegment().contains("worker_id"));
+        assertTrue(wrapper.getSqlSegment().contains("task_status"));
         assertTrue(wrapper.getSqlSet().contains("worker_id"));
         assertTrue(wrapper.getSqlSet().contains("last_enqueue_time"));
         assertTrue(wrapper.getSqlSet().contains("next_fire_time"));
         assertTrue(wrapper.getSqlSet().contains("last_error"));
         assertTrue(wrapper.getSqlSet().contains("lock_version"));
+    }
+
+    @Test
+    void finishTaskMarksCacheUnavailableAfterFailedExecution() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+
+        CoreDatasetSyncTask task = scheduledTask(TaskStatus.UnderExecution.name());
+        CoreDatasetSyncTask latest = scheduledTask(TaskStatus.UnderExecution.name());
+        latest.setConsecutiveFailures(2);
+        when(taskMapper.selectById(task.getId())).thenReturn(latest);
+
+        manage.finishTask(task, TaskStatus.Error, null, null, false, null, null, null, "缓存表创建失败");
+
+        ArgumentCaptor<CoreDatasetSyncTask> recordCaptor = ArgumentCaptor.forClass(CoreDatasetSyncTask.class);
+        verify(taskMapper).update(recordCaptor.capture(), any());
+        CoreDatasetSyncTask record = recordCaptor.getValue();
+        assertEquals(0, record.getCacheReady());
+        assertEquals(3, record.getConsecutiveFailures());
+        assertEquals(TaskStatus.WaitingForExecution.name(), record.getTaskStatus());
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void markCacheUnavailableDisablesOnlyReadyCacheTask() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+
+        manage.markCacheUnavailable(982004L, "缓存表不可访问，已回退实时查询");
+
+        ArgumentCaptor<CoreDatasetSyncTask> recordCaptor = ArgumentCaptor.forClass(CoreDatasetSyncTask.class);
+        ArgumentCaptor<Wrapper<CoreDatasetSyncTask>> wrapperCaptor = ArgumentCaptor.forClass(Wrapper.class);
+        verify(taskMapper).update(recordCaptor.capture(), wrapperCaptor.capture());
+        CoreDatasetSyncTask record = recordCaptor.getValue();
+        assertEquals(0, record.getCacheReady());
+        assertEquals(TaskStatus.Error.name(), record.getLastExecStatus());
+        assertEquals("缓存表不可访问，已回退实时查询", record.getLastError());
+        UpdateWrapper<CoreDatasetSyncTask> wrapper = (UpdateWrapper<CoreDatasetSyncTask>) wrapperCaptor.getValue();
+        assertTrue(wrapper.getSqlSegment().contains("cache_ready"));
     }
 
     @Test
@@ -333,6 +630,10 @@ class DatasetSyncTaskManageTest {
         assertFalse(manage.markUnderExecution(task, "worker-a"));
 
         verify(taskMapper).claimQueuedWorkerTask(eq(task.getId()), eq("worker-a"), any());
+        assertEquals(TaskStatus.UnderExecution.name(), task.getTaskStatus());
+        assertEquals("worker-a", task.getWorkerId());
+        assertTrue(task.getLastExecTime() > 0);
+        assertEquals(task.getLastExecTime(), task.getHeartbeatTime());
     }
 
     @Test
@@ -363,6 +664,40 @@ class DatasetSyncTaskManageTest {
         assertFalse(manage.markUnderExecution(task, null));
 
         verify(taskMapper).markWorkerStarted(eq(task.getId()), isNull(), any());
+        assertEquals(TaskStatus.UnderExecution.name(), task.getTaskStatus());
+        assertEquals(null, task.getWorkerId());
+        assertTrue(task.getLastExecTime() > 0);
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void touchHeartbeatScopesUpdateByExecutionToken() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        CoreDatasetSyncTask task = runningTask(1781080000000L, 360);
+        task.setWorkerId("worker-a");
+        when(taskMapper.update(any(CoreDatasetSyncTask.class), any())).thenReturn(1);
+
+        assertTrue(manage.touchHeartbeat(task));
+
+        ArgumentCaptor<Wrapper<CoreDatasetSyncTask>> wrapperCaptor = ArgumentCaptor.forClass(Wrapper.class);
+        verify(taskMapper).update(any(CoreDatasetSyncTask.class), wrapperCaptor.capture());
+        UpdateWrapper<CoreDatasetSyncTask> wrapper = (UpdateWrapper<CoreDatasetSyncTask>) wrapperCaptor.getValue();
+        assertTrue(wrapper.getSqlSegment().contains("last_exec_time"));
+        assertTrue(wrapper.getSqlSegment().contains("worker_id"));
+        assertTrue(wrapper.getSqlSegment().contains("task_status"));
+    }
+
+    @Test
+    void sameExecutionRejectsExecutionTokenChanged() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTask expected = runningTask(1781080000000L, 360);
+        expected.setWorkerId("worker-a");
+        CoreDatasetSyncTask latest = runningTask(1781080060000L, 360);
+        latest.setWorkerId("worker-a");
+
+        assertFalse(manage.sameExecution(expected, latest));
     }
 
     @Test
@@ -393,6 +728,20 @@ class DatasetSyncTaskManageTest {
         assertEquals(false, manage.shouldRestoreSchedule(manual));
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldRestoreScheduleSkipsUnsupportedHistoricalTask() throws Exception {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        DatasetSyncSupportValidator supportValidator = mock(DatasetSyncSupportValidator.class);
+        ObjectProvider<DatasetSyncSupportValidator> supportValidatorProvider = mock(ObjectProvider.class);
+        ReflectionTestUtils.setField(manage, "supportValidatorProvider", supportValidatorProvider);
+        when(supportValidatorProvider.getIfAvailable()).thenReturn(supportValidator);
+        doThrow(new RuntimeException("带 SQL 参数或未绑定占位符的数据集暂不支持缓存"))
+                .when(supportValidator).assertSupported(982004L);
+
+        assertFalse(manage.shouldRestoreSchedule(scheduledTask(TaskStatus.WaitingForExecution.name())));
+    }
+
     private CoreDatasetSyncTask scheduledTask(String taskStatus) {
         CoreDatasetSyncTask task = new CoreDatasetSyncTask();
         task.setId(1262155861866975232L);
@@ -401,6 +750,57 @@ class DatasetSyncTaskManageTest {
         task.setCron("0 0/30 * * * ? *");
         task.setTaskStatus(taskStatus);
         return task;
+    }
+
+    private CoreDatasetSyncTask runningTask(long startedAt, int timeoutMinutes) {
+        CoreDatasetSyncTask task = new CoreDatasetSyncTask();
+        task.setId(1262155861866975232L);
+        task.setDatasetGroupId(982004L);
+        task.setTaskStatus(TaskStatus.UnderExecution.name());
+        task.setLastExecTime(startedAt);
+        task.setHeartbeatTime(startedAt);
+        task.setTaskTimeoutMinutes(timeoutMinutes);
+        return task;
+    }
+
+    private DatasetSyncSupportValidator.SupportContext supportContext(List<DatasetTableFieldDTO> syncFields) {
+        DatasetGroupInfoDTO dataset = new DatasetGroupInfoDTO();
+        dataset.setId(982004L);
+        DatasourceSchemaDTO datasource = new DatasourceSchemaDTO();
+        datasource.setId(1L);
+        datasource.setType("obOracle");
+        Map<Long, DatasourceSchemaDTO> dsMap = Map.of(1L, datasource);
+        return new DatasetSyncSupportValidator.SupportContext(dataset, Map.of("sql", "SELECT 1 FROM dual"), dsMap, syncFields, syncFields);
+    }
+
+    private DatasetTableFieldDTO timeField(Long id) {
+        DatasetTableFieldDTO field = field(id);
+        field.setExtractedFieldType(1);
+        field.setFieldType(1);
+        return field;
+    }
+
+    private DatasetTableFieldDTO numberField(Long id) {
+        DatasetTableFieldDTO field = field(id);
+        field.setExtractedFieldType(2);
+        field.setFieldType(2);
+        return field;
+    }
+
+    private DatasetTableFieldDTO textField(Long id) {
+        DatasetTableFieldDTO field = field(id);
+        field.setExtractedFieldType(0);
+        field.setFieldType(0);
+        return field;
+    }
+
+    private DatasetTableFieldDTO field(Long id) {
+        DatasetTableFieldDTO field = new DatasetTableFieldDTO();
+        field.setId(id);
+        field.setChecked(true);
+        field.setExtField(ExtFieldConstant.EXT_NORMAL);
+        field.setEngineFieldName("f_" + id);
+        return field;
     }
 
     private JdbcDataSource h2(String name) {

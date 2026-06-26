@@ -1,3 +1,43 @@
+export const DATASET_SYNC_CONFIG_KEYS = [
+  'name',
+  'updateType',
+  'incrementalFieldId',
+  'startTime',
+  'syncRate',
+  'cron',
+  'simpleCronValue',
+  'simpleCronType',
+  'endTime',
+  'fullSyncIntervalHours',
+  'verifyEnabled',
+  'cacheExpireHours',
+  'taskTimeoutMinutes',
+  'failureWarnThreshold'
+]
+
+// 后台轮询刷新时保留用户正在编辑的配置项，只更新任务状态、校验结果和运行指标
+export const applyDatasetSyncTaskPatch = (target, task, { preserveConfig = false } = {}) => {
+  if (!target || !task) {
+    return target
+  }
+  Object.keys(task).forEach(key => {
+    if (preserveConfig && DATASET_SYNC_CONFIG_KEYS.includes(key)) {
+      return
+    }
+    target[key] = task[key]
+  })
+  return target
+}
+
+// 判断字段是否为可同步的普通字段
+export const isDatasetSyncField = field =>
+  Number(field?.extField) === 0 && field?.checked !== false
+
+// 增量字段只允许时间或数值字段，避免文本字段按字典序参与水位比较
+export const isDatasetIncrementalField = field =>
+  isDatasetSyncField(field) &&
+  [field?.extractedFieldType, field?.fieldType].some(type => [1, 2, 3].includes(Number(type)))
+
 // 根据数据集缓存配置构建保存任务载荷
 export const buildDatasetSyncTaskPayload = ({ syncTask, datasetGroupId, datasetName }) => ({
   id: syncTask.id,
@@ -20,11 +60,14 @@ export const buildDatasetSyncTaskPayload = ({ syncTask, datasetGroupId, datasetN
 
 // 格式化同步日志影响行数
 export const formatDatasetSyncRowCount = log => {
-  if (!log || log.taskStatus === 'UnderExecution') {
+  if (!log) {
     return ''
   }
   if (log.rowCount === null || log.rowCount === undefined) {
     return ''
+  }
+  if (log.taskStatus === 'UnderExecution') {
+    return log.rowCount > 0 ? `已写入 ${log.rowCount} 行` : ''
   }
   return `${log.rowCount} 行`
 }
@@ -64,7 +107,7 @@ export const getDatasetSyncNowDisabledReason = ({ hasDatasetId, syncRunning }) =
 export const getIncrementalDisabledReason = incrementalFieldOptions => {
   return Array.isArray(incrementalFieldOptions) && incrementalFieldOptions.length
     ? ''
-    : '当前没有可用增量字段，请使用全量更新'
+    : '增量同步需要时间或数值字段'
 }
 
 // 执行立即更新缓存的完整流程

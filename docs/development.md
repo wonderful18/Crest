@@ -15,7 +15,7 @@ Crest 基于 DataEase 2.10.22 开源版本继续开发，并合入 2.10.23 相�
 | `sdk/extensions/extensions-datasource` | 数据源扩展、JDBC 数据源定义和方言能力 |
 | `drivers` | 随仓库维护的 JDBC 驱动，当前跟踪 `oceanbase-client-2.4.17.jar` |
 | `installer` | 单机安装脚本、Docker Compose 模板、控制脚本和离线包制作脚本 |
-| `deploy/kubernetes` | Kubernetes 清单，支持内置 MySQL、外部 MySQL 和外部 OceanBase 系统库配置 |
+| `deploy/kubernetes` | Kubernetes 平台交付清单，按资源拆分，使用 OceanBase Oracle 系统库和 Redis 6.2.19 |
 | `docs` | 产品能力、部署运维、开发和发布文档 |
 | `.github/workflows/docker-publish.yml` | GHCR 镜像构建和发布流程 |
 
@@ -443,7 +443,7 @@ git clean -fdX
 | 后端接口、数据源、导出、血缘 | Maven 打包或相关模块编译，结合服务做接口回归 |
 | 数据库迁移 | 空库启动，检查 Flyway 版本和初始化数据 |
 | 安装脚本或 Dockerfile | 前后端镜像构建，单机安装或离线包验证 |
-| Kubernetes 清单 | `kubectl apply -k` 到测试命名空间并检查 rollout |
+| Kubernetes 清单 | `kubectl apply -f` 到测试命名空间并检查 rollout |
 | 文档 | 检查版本号、镜像名、端口、账号和路径是否与代码一致 |
 
 提交要求：

@@ -50,6 +50,10 @@ public class DatasourceRequest implements Serializable {
      */
     private Integer fetchSize = 10000;
     /**
+     * 单次查询超时时间，单位秒；为空时使用数据源配置
+     */
+    private Integer queryTimeout;
+    /**
      * 是否启用分页查询
      */
     private boolean pageable = false;

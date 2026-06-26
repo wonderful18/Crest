@@ -75,12 +75,15 @@ import { cloneDeep, debounce } from 'lodash-es'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 import { iconDatasourceMap } from '@/components/icon-group/datasource-list'
 import {
+  applyDatasetSyncTaskPatch,
   buildDatasetSyncTaskPayload,
   executeDatasetSyncNowFlow,
   formatDatasetSyncRowCount,
   getDatasetSyncNowDisabledReason,
   getDatasetSyncStatusText,
   getIncrementalDisabledReason,
+  isDatasetIncrementalField,
+  isDatasetSyncField,
   normalizeDatasetSyncInfo
 } from './datasetSyncWorkflow.mjs'
 interface DragEvent extends MouseEvent {
@@ -187,7 +190,21 @@ const syncLogs = ref<DatasetSyncLog[]>([])
 const syncSubmitting = ref(false)
 // 同步高级设置面板展开状态
 const syncAdvancedVisible = ref(false)
+// 用户是否正在编辑同步配置，避免后台轮询覆盖未保存的表单值
+const syncConfigDirty = ref(false)
 let syncPollTimer: number | null = null
+
+// 标记同步配置被用户修改
+const markSyncConfigDirty = () => {
+  syncConfigDirty.value = true
+}
+
+// 应用后端同步任务状态。轮询刷新时可保留用户正在编辑的配置字段
+const applyServerSyncTask = (task, options = { preserveConfig: false }) => {
+  applyDatasetSyncTaskPatch(syncTask, task, {
+    preserveConfig: !!options.preserveConfig && syncConfigDirty.value
+  })
+}
 
 // 将字段类型编码转换为界面展示文案
 const fieldTypes = index => {
@@ -1075,9 +1092,9 @@ const syncSupportedDataset = computed(
 // 最终保存到后端的数据集读取模式
 const datasetMode = computed(() => (syncSupportedDataset.value && syncMode.value === 1 ? 1 : 0))
 // 可作为增量字段的普通选中字段
-const incrementalFieldOptions = computed(() =>
-  allfields.value.filter(ele => ele.extField === 0 && ele.checked !== false)
-)
+const syncFieldOptions = computed(() => allfields.value.filter(isDatasetSyncField))
+// 可作为增量水位的字段
+const incrementalFieldOptions = computed(() => syncFieldOptions.value.filter(isDatasetIncrementalField))
 // 时间类型增量候选字段
 const timeIncrementalFields = computed(() =>
   incrementalFieldOptions.value.filter(
@@ -1173,13 +1190,11 @@ const applyIncrementalDefaults = () => {
   if (!currentIncrementalField.value) {
     syncTask.incrementalFieldId = autoIncrementalField.value?.id || null
   }
-  if (!syncTask.incrementalFieldId) {
-    syncTask.updateType = 'all_scope'
-  }
 }
 
 // 切换直连和缓存模式时校验支持状态，并自动推荐增量字段
 const syncModeChange = () => {
+  markSyncConfigDirty()
   if (syncMode.value !== 1) {
     return
   }
@@ -1196,6 +1211,7 @@ const syncModeChange = () => {
 
 // 切换全量或增量更新方式时校验字段条件
 const syncUpdateTypeChange = () => {
+  markSyncConfigDirty()
   if (syncTask.updateType === 'add_scope' && incrementalDisabledReason.value) {
     syncTask.updateType = 'all_scope'
     ElMessage.warning(incrementalDisabledReason.value)
@@ -1220,6 +1236,7 @@ watch(syncUnsupportedReason, reason => {
 
 // 根据简单定时配置生成后端 cron 表达式
 const refreshSimpleCron = () => {
+  markSyncConfigDirty()
   const value = Number(syncTask.simpleCronValue || 30)
   if (syncTask.simpleCronType === 'hour') {
     syncTask.simpleCronValue = Math.min(Math.max(value, 1), 23)
@@ -1237,6 +1254,7 @@ const refreshSimpleCron = () => {
 
 // 切换同步频率时刷新 cron 或清空手动同步 cron
 const syncRateChange = () => {
+  markSyncConfigDirty()
   if (syncTask.syncRate === 'SIMPLE_CRON') {
     refreshSimpleCron()
   }
@@ -1254,7 +1272,15 @@ const validateSyncSetting = () => {
   if (datasetMode.value !== 1) {
     return true
   }
+  if (syncTask.updateType === 'add_scope' && incrementalDisabledReason.value) {
+    ElMessage.warning(incrementalDisabledReason.value)
+    return false
+  }
   applyIncrementalDefaults()
+  if (syncTask.updateType === 'add_scope' && !syncTask.incrementalFieldId) {
+    ElMessage.warning('请选择增量字段')
+    return false
+  }
   return true
 }
 
@@ -1263,8 +1289,9 @@ const loadDatasetSyncTask = async id => {
   Object.assign(syncTask, defaultSyncTask())
   const task = await datasetSyncTask(id)
   if (task) {
-    Object.assign(syncTask, task)
+    applyServerSyncTask(task)
   }
+  syncConfigDirty.value = false
   applyIncrementalDefaults()
   syncLogs.value = await datasetSyncLogs(id)
   if (syncRunning.value) {
@@ -1281,9 +1308,11 @@ const refreshDatasetSyncState = async () => {
   }
   const task = await datasetSyncTask(currentDatasetId.value)
   if (task) {
-    Object.assign(syncTask, task)
+    applyServerSyncTask(task, { preserveConfig: true })
   }
-  applyIncrementalDefaults()
+  if (!syncConfigDirty.value) {
+    applyIncrementalDefaults()
+  }
   syncLogs.value = await datasetSyncLogs(currentDatasetId.value)
   if (!syncRunning.value) {
     stopSyncPolling()
@@ -1317,6 +1346,7 @@ const persistDatasetSync = async id => {
   if (datasetMode.value !== 1) {
     await stopDatasetSync(id)
     stopSyncPolling()
+    syncConfigDirty.value = false
     return
   }
   if (!validateSyncSetting()) {
@@ -1326,13 +1356,17 @@ const persistDatasetSync = async id => {
   if (syncTask.syncRate === 'SIMPLE_CRON') {
     refreshSimpleCron()
   }
-  await saveDatasetSyncTask(
+  const savedTask = await saveDatasetSyncTask(
     buildDatasetSyncTaskPayload({
       syncTask: toRaw(syncTask),
       datasetGroupId: id,
       datasetName: datasetName.value
     })
   )
+  if (savedTask) {
+    applyServerSyncTask(savedTask)
+  }
+  syncConfigDirty.value = false
 }
 
 // 保存当前数据集定义，并回写后端返回的 ID、名称和字段列表
@@ -1376,7 +1410,7 @@ const executeDatasetSyncNow = async () => {
       persistDatasetSync,
       executeDatasetSync,
       loadDatasetSyncLogs: datasetSyncLogs,
-      applyTask: task => Object.assign(syncTask, task),
+      applyTask: task => applyServerSyncTask(task),
       applyLogs: logs => {
         syncLogs.value = logs
       },
@@ -2546,12 +2580,14 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                   v-model="syncTask.cron"
                   class="sync-control"
                   placeholder="Cron 表达式"
+                  @change="markSyncConfigDirty"
                 />
                 <el-select
                   v-if="syncTask.updateType === 'add_scope'"
                   v-model="syncTask.incrementalFieldId"
                   class="sync-control"
                   placeholder="自动识别增量字段"
+                  @change="markSyncConfigDirty"
                 >
                   <el-option
                     v-for="field in incrementalFieldOptions"
@@ -2568,6 +2604,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                       :min="0"
                       :max="720"
                       controls-position="right"
+                      @change="markSyncConfigDirty"
                     />
                   </div>
                   <div class="sync-option">
@@ -2577,6 +2614,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                       :min="0"
                       :max="1440"
                       controls-position="right"
+                      @change="markSyncConfigDirty"
                     />
                   </div>
                 </div>
@@ -2585,6 +2623,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                   class="sync-check"
                   :true-value="1"
                   :false-value="0"
+                  @change="markSyncConfigDirty"
                 >
                   更新后校验数据一致性
                 </el-checkbox>
