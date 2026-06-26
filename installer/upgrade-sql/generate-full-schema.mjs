@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '../..')
 const definitions = [
   {
     name: 'MySQL',
-    output: 'v2.0.2_full_schema_mysql.sql',
+    output: 'v2.0.3_full_schema_mysql.sql',
     sources: [
       'core/core-backend/src/main/resources/db/migration/V1.5.0.1__initial_schema.sql',
       'core/core-backend/src/main/resources/db/migration/V1.5.8.1__data_asset_center.sql',
@@ -26,7 +26,7 @@ const definitions = [
   },
   {
     name: 'OceanBase MySQL',
-    output: 'v2.0.2_full_schema_ob_mysql.sql',
+    output: 'v2.0.3_full_schema_ob_mysql.sql',
     sources: [
       'core/core-backend/src/main/resources/db/migration-ob-mysql/V1.5.0.1__initial_schema.sql',
       'core/core-backend/src/main/resources/db/migration-ob-mysql/V1.5.8.1__data_asset_center.sql',
@@ -44,7 +44,7 @@ const definitions = [
   },
   {
     name: 'OceanBase Oracle',
-    output: 'v2.0.2_full_schema_ob_oracle.sql',
+    output: 'v2.0.3_full_schema_ob_oracle.sql',
     sources: [
       'core/core-backend/src/main/resources/db/migration-ob-oracle/V1.5.0.1__initial_schema.sql',
       'core/core-backend/src/main/resources/db/migration-ob-oracle/V2.0.0.1__export_task_queue.sql',

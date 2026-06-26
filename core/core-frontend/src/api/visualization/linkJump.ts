@@ -39,9 +39,9 @@ export function queryVisualizationJumpInfo(dvId, resourceTable = 'snapshot') {
 }
 
 // 查询可视化资源下的明细表列表
-export function viewTableDetailList(dvId) {
+export function viewTableDetailList(dvId, resourceTable = 'snapshot') {
   return request.get({
-    url: '/link-jump/view-table-detail-list/' + dvId,
+    url: '/link-jump/view-table-detail-list/' + dvId + '/' + resourceTable,
     loading: false
   })
 }

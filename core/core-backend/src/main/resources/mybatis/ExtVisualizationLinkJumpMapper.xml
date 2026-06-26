@@ -244,16 +244,28 @@
             AND core_chart_view.type != 'VQuery'
             AND core_chart_view.table_id IS NOT NULL
             AND dvi.id = #{dvId}
-            <choose>
-                <when test="_databaseId == 'ob-oracle'">
-                    AND INSTR(dvi.component_data, TO_CHAR(core_chart_view.id)) > 0
-                </when>
-                <otherwise>
-                    AND LOCATE(
-                    core_chart_view.id,
-                    dvi.component_data)
-                </otherwise>
-            </choose>
+    </select>
+
+    <select id="getViewTableDetailsSnapshot" resultMap="ViewTableFieldDetailsMap">
+        SELECT
+            core_chart_view_snapshot.id,
+            core_chart_view_snapshot.title,
+            core_chart_view_snapshot.type,
+            core_chart_view_snapshot.scene_id AS dv_id,
+            core_dataset_field.id AS field_id,
+            core_dataset_field.origin_name,
+            core_dataset_field.`name` AS field_name,
+            core_dataset_field.type AS raw_field_type,
+            core_dataset_field.field_type AS field_type
+        FROM
+            core_chart_view_snapshot
+            LEFT JOIN core_dataset_field ON core_chart_view_snapshot.table_id = core_dataset_field.dataset_group_id
+            INNER JOIN core_visualization_snapshot dvi ON core_chart_view_snapshot.scene_id = dvi.id
+        WHERE
+            core_chart_view_snapshot.scene_id = #{dvId}
+            AND core_chart_view_snapshot.type != 'VQuery'
+            AND core_chart_view_snapshot.table_id IS NOT NULL
+            AND dvi.id = #{dvId}
     </select>
 
     <select id="queryWithViewId" resultMap="BaseResultMapDTOSnapshot">
@@ -278,6 +290,19 @@
             FROM
                 core_visualization_parameter_item vopi
                 LEFT JOIN core_visualization_parameter vop ON vopi.params_id = vop.params_id
+            WHERE
+                vop.visualization_id = #{dvId}
+        </select>
+
+        <select id="queryOutParamsTargetWithDvIdSnapshot" resultType="io.crest.api.visualization.vo.VisualizationOutParamsJumpVO">
+            SELECT
+                vopi.params_info_id as id,
+                vopi.param_name as name,
+                vopi.param_name as title,
+                'outerParams' as type
+            FROM
+                core_visualization_parameter_item_snapshot vopi
+                LEFT JOIN core_visualization_parameter_snapshot vop ON vopi.params_id = vop.params_id
             WHERE
                 vop.visualization_id = #{dvId}
         </select>

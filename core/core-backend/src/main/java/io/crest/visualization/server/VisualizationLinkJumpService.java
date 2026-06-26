@@ -1,5 +1,6 @@
 package io.crest.visualization.server;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.crest.api.visualization.VisualizationLinkJumpApi;
 import io.crest.api.visualization.dto.VisualizationComponentDTO;
 import io.crest.api.visualization.dto.VisualizationLinkJumpDTO;
@@ -16,6 +17,7 @@ import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.BeanUtils;
 import io.crest.utils.IDUtils;
+import io.crest.utils.JsonUtil;
 import io.crest.utils.ModelUtils;
 import io.crest.visualization.dao.auto.entity.*;
 import io.crest.visualization.dao.auto.mapper.*;
@@ -104,6 +106,12 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
      */
     @Resource
     private DataVisualizationInfoMapper dataVisualizationInfoMapper;
+
+    /**
+     * 快照态可视化主信息 Mapper
+     */
+    @Resource
+    private SnapshotDataVisualizationInfoMapper snapshotDataVisualizationInfoMapper;
 
     /**
      * 查询指定图表可用于跳转映射的数据集字段
@@ -214,22 +222,72 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
      * 查询大屏内图表明细和外部参数跳转信息
      */
     @Override
-    public VisualizationComponentDTO viewTableDetailList(Long dvId) {
-        DataVisualizationInfo dvInfo = dataVisualizationInfoMapper.selectById(dvId);
-        List<VisualizationViewTableVO> result;
-        List<VisualizationOutParamsJumpVO> outParamsJumpInfo;
-        String componentData;
-        if (dvInfo != null) {
-            result = extVisualizationLinkJumpMapper.getViewTableDetails(dvId).stream().filter(viewTableInfo -> dvInfo.getComponentData().indexOf(viewTableInfo.getId().toString()) > -1).collect(Collectors.toList());
-            componentData = dvInfo.getComponentData();
-            outParamsJumpInfo = extVisualizationLinkJumpMapper.queryOutParamsTargetWithDvId(dvId);
+    public VisualizationComponentDTO viewTableDetailList(Long dvId, String resourceTable) {
+        List<VisualizationViewTableVO> result = new ArrayList<>();
+        List<VisualizationOutParamsJumpVO> outParamsJumpInfo = new ArrayList<>();
+        String componentData = "[]";
+        String resolvedResourceTable = StringUtils.defaultIfBlank(resourceTable, CommonConstants.RESOURCE_TABLE.SNAPSHOT);
+        if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(resolvedResourceTable)) {
+            SnapshotDataVisualizationInfo dvInfo = snapshotDataVisualizationInfoMapper.selectById(dvId);
+            if (dvInfo != null) {
+                componentData = StringUtils.defaultIfBlank(dvInfo.getComponentData(), "[]");
+                result = filterViewTables(componentData, extVisualizationLinkJumpMapper.getViewTableDetailsSnapshot(dvId));
+                outParamsJumpInfo = Optional.ofNullable(extVisualizationLinkJumpMapper.queryOutParamsTargetWithDvIdSnapshot(dvId)).orElse(new ArrayList<>());
+            }
         } else {
-            result = new ArrayList<>();
-            outParamsJumpInfo = new ArrayList<>();
-            componentData = "[]";
+            DataVisualizationInfo dvInfo = dataVisualizationInfoMapper.selectById(dvId);
+            if (dvInfo != null) {
+                componentData = StringUtils.defaultIfBlank(dvInfo.getComponentData(), "[]");
+                result = filterViewTables(componentData, extVisualizationLinkJumpMapper.getViewTableDetails(dvId));
+                outParamsJumpInfo = Optional.ofNullable(extVisualizationLinkJumpMapper.queryOutParamsTargetWithDvId(dvId)).orElse(new ArrayList<>());
+            }
         }
         return new VisualizationComponentDTO(componentData, result, outParamsJumpInfo);
 
+    }
+
+    static List<VisualizationViewTableVO> filterViewTables(String componentData, List<VisualizationViewTableVO> tables) {
+        Set<String> viewIds = componentViewIds(componentData);
+        return Optional.ofNullable(tables).orElse(new ArrayList<>()).stream()
+                .filter(viewTableInfo -> viewTableInfo.getId() != null)
+                .filter(viewTableInfo -> viewIds.isEmpty()
+                        ? componentData.contains(viewTableInfo.getId().toString())
+                        : viewIds.contains(viewTableInfo.getId().toString()))
+                .collect(Collectors.toList());
+    }
+
+    static Set<String> componentViewIds(String componentData) {
+        List<Map<String, Object>> components = JsonUtil.parseObject(componentData, new TypeReference<List<Map<String, Object>>>() {});
+        if (components == null) {
+            return Collections.emptySet();
+        }
+        Set<String> result = new HashSet<>();
+        collectComponentViewIds(components, result);
+        return result;
+    }
+
+    private static void collectComponentViewIds(Object value, Set<String> result) {
+        if (value instanceof List<?> list) {
+            list.forEach(item -> collectComponentViewIds(item, result));
+            return;
+        }
+        if (!(value instanceof Map<?, ?> component)) {
+            return;
+        }
+        Object componentType = component.get("component");
+        Object id = component.get("id");
+        if ("UserView".equals(componentType) && !"VQuery".equals(component.get("innerType")) && id != null) {
+            result.add(String.valueOf(id));
+        }
+        if ("Group".equals(componentType)) {
+            collectComponentViewIds(component.get("propValue"), result);
+        } else if ("Tabs".equals(componentType) && component.get("propValue") instanceof List<?> tabs) {
+            tabs.forEach(tab -> {
+                if (tab instanceof Map<?, ?> tabItem) {
+                    collectComponentViewIds(tabItem.get("componentData"), result);
+                }
+            });
+        }
     }
 
     /**

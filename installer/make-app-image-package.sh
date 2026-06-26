@@ -180,9 +180,9 @@ bash load-images.sh
 由 DBA 手工初始化空系统库时，可按数据库类型一次执行以下完整建库 SQL，并在服务配置中关闭自动迁移：
 
 \`\`\`text
-upgrade-sql/v2.0.2_full_schema_mysql.sql
-upgrade-sql/v2.0.2_full_schema_ob_mysql.sql
-upgrade-sql/v2.0.2_full_schema_ob_oracle.sql
+upgrade-sql/${VERSION}_full_schema_mysql.sql
+upgrade-sql/${VERSION}_full_schema_ob_mysql.sql
+upgrade-sql/${VERSION}_full_schema_ob_oracle.sql
 \`\`\`
 
 完整建库 SQL 只适用于新建系统库，已有系统库不要执行。
@@ -209,7 +209,7 @@ docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_N
 外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 系统库。
 如安装时修改过 \`CREST_BASE\`，请把 \`/opt/crest/.env\` 换成实际运行目录中的 \`.env\`。
 
-继续按数据库类型执行 v2.0.0、v2.0.1 和 ${VERSION} 的增量 SQL。MySQL 系统库示例：
+继续按发布说明顺序执行目标版本要求的增量 SQL。MySQL 系统库示例：
 
 \`\`\`bash
 for sql in \\
