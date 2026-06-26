@@ -16,6 +16,7 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.quartz.JobDataMap;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -186,12 +187,15 @@ class DatasetSyncTaskManageTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void saveRejectsUnsupportedDatasetBeforePersistingTask() throws Exception {
         DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
         CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
         DatasetSyncSupportValidator supportValidator = mock(DatasetSyncSupportValidator.class);
+        ObjectProvider<DatasetSyncSupportValidator> supportValidatorProvider = mock(ObjectProvider.class);
         ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
-        ReflectionTestUtils.setField(manage, "supportValidator", supportValidator);
+        ReflectionTestUtils.setField(manage, "supportValidatorProvider", supportValidatorProvider);
+        when(supportValidatorProvider.getIfAvailable()).thenReturn(supportValidator);
         doThrow(new RuntimeException("带 SQL 参数或未绑定占位符的数据集暂不支持缓存"))
                 .when(supportValidator).assertSupported(982004L);
 
