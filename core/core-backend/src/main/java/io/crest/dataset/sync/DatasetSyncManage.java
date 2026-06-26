@@ -17,7 +17,6 @@ import io.crest.datasource.provider.ProviderUtil;
 import io.crest.datasource.request.EngineRequest;
 import io.crest.datasource.server.DatasourceServer;
 import io.crest.datasource.server.DatasourceTaskServer;
-import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.engine.utils.Utils;
 import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
@@ -456,7 +455,8 @@ public class DatasetSyncManage {
                 lastValue,
                 engineType.getPrefix(),
                 engineType.getSuffix(),
-                "<"
+                "<",
+                context.engine.getType()
         );
         EngineRequest request = new EngineRequest();
         request.setEngine(context.engine);
@@ -659,7 +659,7 @@ public class DatasetSyncManage {
         if (task.getIncrementalFieldId() != null) {
             DatasetTableFieldDTO field = dataset.getAllFields().stream()
                     .filter(item -> Objects.equals(item.getId(), task.getIncrementalFieldId()))
-                    .filter(item -> Objects.equals(item.getExtField(), ExtFieldConstant.EXT_NORMAL))
+                    .filter(DatasetSyncUtils::isIncrementalFieldSupported)
                     .findFirst()
                     .orElse(null);
             if (field != null) {
@@ -667,13 +667,11 @@ public class DatasetSyncManage {
             }
         }
         return dataset.getAllFields().stream()
-                .filter(field -> Objects.equals(field.getChecked(), true))
-                .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
+                .filter(DatasetSyncUtils::isIncrementalFieldSupported)
                 .filter(field -> Objects.equals(field.getExtractedFieldType(), 1) || Objects.equals(field.getFieldType(), 1))
                 .findFirst()
                 .or(() -> dataset.getAllFields().stream()
-                        .filter(field -> Objects.equals(field.getChecked(), true))
-                        .filter(field -> Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL))
+                        .filter(DatasetSyncUtils::isIncrementalFieldSupported)
                         .filter(field -> Objects.equals(field.getExtractedFieldType(), 2) || Objects.equals(field.getExtractedFieldType(), 3)
                                 || Objects.equals(field.getFieldType(), 2) || Objects.equals(field.getFieldType(), 3))
                         .findFirst())

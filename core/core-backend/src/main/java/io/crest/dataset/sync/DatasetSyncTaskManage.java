@@ -20,6 +20,7 @@ import io.crest.datasource.provider.CalciteProvider;
 import io.crest.datasource.request.EngineRequest;
 import io.crest.datasource.server.DatasourceTaskServer;
 import io.crest.exception.CrestException;
+import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import io.crest.job.schedule.DatasetSyncJob;
 import io.crest.job.schedule.ScheduleManager;
@@ -250,7 +251,8 @@ public class DatasetSyncTaskManage {
             CrestException.throwException("datasetGroupId can not be empty");
         }
         CoreDatasetSyncTask record = normalize(task);
-        assertCacheSupported(record.getDatasetGroupId());
+        DatasetSyncSupportValidator.SupportContext support = assertCacheSupported(record.getDatasetGroupId());
+        assertIncrementalSupported(record, support);
         CoreDatasetSyncTask exists = selectByDatasetGroupId(record.getDatasetGroupId());
         long now = System.currentTimeMillis();
         if (exists == null) {
@@ -301,17 +303,37 @@ public class DatasetSyncTaskManage {
     /**
      * 保存任务前先校验数据集是否支持缓存，避免不支持的任务进入调度后反复失败
      */
-    private void assertCacheSupported(Long datasetGroupId) {
+    private DatasetSyncSupportValidator.SupportContext assertCacheSupported(Long datasetGroupId) {
         DatasetSyncSupportValidator supportValidator = supportValidatorProvider == null ? null : supportValidatorProvider.getIfAvailable();
         if (supportValidator == null) {
-            return;
+            return null;
         }
         try {
-            supportValidator.assertSupported(datasetGroupId);
+            return supportValidator.assertSupported(datasetGroupId);
         } catch (CrestException e) {
             throw e;
         } catch (Exception e) {
             CrestException.throwException(e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * 增量同步必须具备时间或数值水位字段，避免文本字段或无字段配置进入周期任务后反复全量或错取水位
+     */
+    private void assertIncrementalSupported(CoreDatasetSyncTask task, DatasetSyncSupportValidator.SupportContext support) {
+        if (task == null || !Strings.CI.equals(task.getUpdateType(), "add_scope") || support == null) {
+            return;
+        }
+        List<DatasetTableFieldDTO> candidates = support.syncFields().stream()
+                .filter(DatasetSyncUtils::isIncrementalFieldSupported)
+                .toList();
+        if (candidates.isEmpty()) {
+            CrestException.throwException("增量同步需要选择时间或数值字段");
+        }
+        if (task.getIncrementalFieldId() != null
+                && candidates.stream().noneMatch(field -> Objects.equals(field.getId(), task.getIncrementalFieldId()))) {
+            CrestException.throwException("增量字段必须是已选中的时间或数值字段");
         }
     }
 

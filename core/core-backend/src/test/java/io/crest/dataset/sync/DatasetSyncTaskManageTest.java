@@ -5,11 +5,15 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import io.crest.api.dataset.dto.DatasetSyncTaskPageVO;
 import io.crest.api.dataset.dto.DatasetSyncTaskRequest;
 import io.crest.api.dataset.dto.DatasetSyncTaskDTO;
+import io.crest.api.dataset.union.DatasetGroupInfoDTO;
 import io.crest.commons.constants.TaskStatus;
 import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTask;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetSyncTaskMapper;
 import io.crest.datasource.server.DatasourceTaskServer;
+import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.exception.CrestException;
+import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
+import io.crest.extensions.datasource.dto.DatasourceSchemaDTO;
 import io.crest.job.schedule.DatasetSyncJob;
 import io.crest.job.schedule.ScheduleManager;
 import org.h2.jdbcx.JdbcDataSource;
@@ -21,6 +25,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -209,6 +214,108 @@ class DatasetSyncTaskManageTest {
 
         assertEquals("带 SQL 参数或未绑定占位符的数据集暂不支持缓存", exception.getMessage());
         verifyNoInteractions(taskMapper);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void saveRejectsAddScopeWhenNoIncrementalCandidateExists() throws Exception {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        DatasetSyncSupportValidator supportValidator = mock(DatasetSyncSupportValidator.class);
+        ObjectProvider<DatasetSyncSupportValidator> supportValidatorProvider = mock(ObjectProvider.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "supportValidatorProvider", supportValidatorProvider);
+        when(supportValidatorProvider.getIfAvailable()).thenReturn(supportValidator);
+        when(supportValidator.assertSupported(982004L)).thenReturn(supportContext(List.of(textField(1001L))));
+
+        DatasetSyncTaskDTO request = new DatasetSyncTaskDTO();
+        request.setDatasetGroupId(982004L);
+        request.setName("文本字段数据集");
+        request.setUpdateType("add_scope");
+        request.setSyncRate(DatasourceTaskServer.ScheduleType.RIGHTNOW.name());
+
+        CrestException exception = assertThrows(CrestException.class, () -> manage.save(request));
+
+        assertEquals("增量同步需要选择时间或数值字段", exception.getMessage());
+        verifyNoInteractions(taskMapper);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void saveRejectsAddScopeWhenSelectedFieldIsNotIncrementalCandidate() throws Exception {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        DatasetSyncSupportValidator supportValidator = mock(DatasetSyncSupportValidator.class);
+        ObjectProvider<DatasetSyncSupportValidator> supportValidatorProvider = mock(ObjectProvider.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "supportValidatorProvider", supportValidatorProvider);
+        when(supportValidatorProvider.getIfAvailable()).thenReturn(supportValidator);
+        when(supportValidator.assertSupported(982004L)).thenReturn(supportContext(List.of(timeField(1001L), textField(1002L))));
+
+        DatasetSyncTaskDTO request = new DatasetSyncTaskDTO();
+        request.setDatasetGroupId(982004L);
+        request.setName("错误增量字段数据集");
+        request.setUpdateType("add_scope");
+        request.setIncrementalFieldId(1002L);
+        request.setSyncRate(DatasourceTaskServer.ScheduleType.RIGHTNOW.name());
+
+        CrestException exception = assertThrows(CrestException.class, () -> manage.save(request));
+
+        assertEquals("增量字段必须是已选中的时间或数值字段", exception.getMessage());
+        verifyNoInteractions(taskMapper);
+    }
+
+    @Test
+    void obOracleCacheWatermarkPredicateUsesTimestampLiteralForTimeField() {
+        String predicate = DatasetSyncUtils.buildCacheWatermarkPredicate(
+                timeField(1001L),
+                "2026-06-26 12:30:15.123",
+                "\"",
+                "\"",
+                "<",
+                "obOracle"
+        );
+
+        assertEquals("\"f_1001\" < TO_TIMESTAMP('2026-06-26 12:30:15.123', 'YYYY-MM-DD HH24:MI:SS.FF')", predicate);
+    }
+
+    @Test
+    void mysqlCacheWatermarkPredicateKeepsStringLiteralForTimeField() {
+        String predicate = DatasetSyncUtils.buildCacheWatermarkPredicate(
+                timeField(1001L),
+                "2026-06-26 12:30:15",
+                "`",
+                "`",
+                "<",
+                "mysql"
+        );
+
+        assertEquals("`f_1001` < '2026-06-26 12:30:15'", predicate);
+    }
+
+    @Test
+    void numericCacheWatermarkPredicateDoesNotQuoteValidNumber() {
+        String predicate = DatasetSyncUtils.buildCacheWatermarkPredicate(
+                numberField(1001L),
+                "1024",
+                "\"",
+                "\"",
+                "<",
+                "obOracle"
+        );
+
+        assertEquals("\"f_1001\" < 1024", predicate);
+    }
+
+    @Test
+    void incrementalFieldMustBeCheckedNormalTimeOrNumberField() {
+        assertTrue(DatasetSyncUtils.isIncrementalFieldSupported(timeField(1001L)));
+        assertTrue(DatasetSyncUtils.isIncrementalFieldSupported(numberField(1002L)));
+        assertFalse(DatasetSyncUtils.isIncrementalFieldSupported(textField(1003L)));
+
+        DatasetTableFieldDTO unchecked = numberField(1004L);
+        unchecked.setChecked(false);
+        assertFalse(DatasetSyncUtils.isIncrementalFieldSupported(unchecked));
     }
 
     @Test
@@ -516,6 +623,46 @@ class DatasetSyncTaskManageTest {
         task.setCron("0 0/30 * * * ? *");
         task.setTaskStatus(taskStatus);
         return task;
+    }
+
+    private DatasetSyncSupportValidator.SupportContext supportContext(List<DatasetTableFieldDTO> syncFields) {
+        DatasetGroupInfoDTO dataset = new DatasetGroupInfoDTO();
+        dataset.setId(982004L);
+        DatasourceSchemaDTO datasource = new DatasourceSchemaDTO();
+        datasource.setId(1L);
+        datasource.setType("obOracle");
+        Map<Long, DatasourceSchemaDTO> dsMap = Map.of(1L, datasource);
+        return new DatasetSyncSupportValidator.SupportContext(dataset, Map.of("sql", "SELECT 1 FROM dual"), dsMap, syncFields, syncFields);
+    }
+
+    private DatasetTableFieldDTO timeField(Long id) {
+        DatasetTableFieldDTO field = field(id);
+        field.setExtractedFieldType(1);
+        field.setFieldType(1);
+        return field;
+    }
+
+    private DatasetTableFieldDTO numberField(Long id) {
+        DatasetTableFieldDTO field = field(id);
+        field.setExtractedFieldType(2);
+        field.setFieldType(2);
+        return field;
+    }
+
+    private DatasetTableFieldDTO textField(Long id) {
+        DatasetTableFieldDTO field = field(id);
+        field.setExtractedFieldType(0);
+        field.setFieldType(0);
+        return field;
+    }
+
+    private DatasetTableFieldDTO field(Long id) {
+        DatasetTableFieldDTO field = new DatasetTableFieldDTO();
+        field.setId(id);
+        field.setChecked(true);
+        field.setExtField(ExtFieldConstant.EXT_NORMAL);
+        field.setEngineFieldName("f_" + id);
+        return field;
     }
 
     private JdbcDataSource h2(String name) {

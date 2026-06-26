@@ -401,14 +401,13 @@ public class DatasetSyncUtils {
     public static String buildIncrementalPredicate(DatasetTableFieldDTO field, String lastValue, String prefix, String suffix, boolean inclusive, String datasourceType) {
         String column = prefix + StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()) + suffix;
         String operator = inclusive ? " >= " : " > ";
-        if (Objects.equals(field.getExtractedFieldType(), 1) || Objects.equals(field.getFieldType(), 1)) {
+        if (isTimeField(field)) {
             if (isMysqlCompatible(datasourceType)) {
                 return column + operator + "'" + escapeSqlLiteral(lastValue) + "'";
             }
             return column + operator + "TO_TIMESTAMP('" + escapeSqlLiteral(lastValue) + "', 'YYYY-MM-DD HH24:MI:SS.FF')";
         }
-        if (Objects.equals(field.getExtractedFieldType(), 2) || Objects.equals(field.getExtractedFieldType(), 3)
-                || Objects.equals(field.getFieldType(), 2) || Objects.equals(field.getFieldType(), 3)) {
+        if (isNumericField(field)) {
             return column + operator + lastValue;
         }
         return column + operator + "'" + escapeSqlLiteral(lastValue) + "'";
@@ -418,8 +417,19 @@ public class DatasetSyncUtils {
      * 针对缓存表生成水位比较条件，数值字段在水位合法时不加字符串引号
      */
     public static String buildCacheWatermarkPredicate(DatasetTableFieldDTO field, String lastValue, String prefix, String suffix, String operator) {
+        return buildCacheWatermarkPredicate(field, lastValue, prefix, suffix, operator, null);
+    }
+
+    /**
+     * 针对指定引擎方言生成缓存表水位比较条件，OB Oracle 时间字段使用显式 TIMESTAMP 字面量
+     */
+    public static String buildCacheWatermarkPredicate(DatasetTableFieldDTO field, String lastValue, String prefix, String suffix,
+                                                      String operator, String datasourceType) {
         String column = prefix + StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getFieldShortName()) + suffix;
         String safeOperator = StringUtils.defaultIfBlank(operator, ">").trim();
+        if (isTimeField(field) && Strings.CI.equals(datasourceType, DatasourceConfiguration.DatasourceType.obOracle.getType())) {
+            return column + " " + safeOperator + " TO_TIMESTAMP('" + escapeSqlLiteral(lastValue) + "', 'YYYY-MM-DD HH24:MI:SS.FF')";
+        }
         if (isNumericField(field) && isNumericLiteral(lastValue)) {
             return column + " " + safeOperator + " " + lastValue;
         }
@@ -434,6 +444,23 @@ public class DatasetSyncUtils {
             return false;
         }
         return !isNumericField(field) || isNumericLiteral(lastValue);
+    }
+
+    /**
+     * 判断字段是否可作为增量水位字段。增量字段只允许普通的时间或数值字段
+     */
+    public static boolean isIncrementalFieldSupported(DatasetTableFieldDTO field) {
+        return field != null
+                && Objects.equals(field.getChecked(), true)
+                && Objects.equals(field.getExtField(), ExtFieldConstant.EXT_NORMAL)
+                && (isTimeField(field) || isNumericField(field));
+    }
+
+    /**
+     * 判断字段是否按时间类型处理
+     */
+    private static boolean isTimeField(DatasetTableFieldDTO field) {
+        return Objects.equals(field.getExtractedFieldType(), 1) || Objects.equals(field.getFieldType(), 1);
     }
 
     /**
