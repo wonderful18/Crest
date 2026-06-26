@@ -77,7 +77,15 @@ elif [[ -n "${EVENT_BEFORE:-}" && ! "${EVENT_BEFORE}" =~ ^0+$ ]]; then
   changed_files="$(git diff --name-only "${EVENT_BEFORE}...HEAD" || true)"
 fi
 
-latest_tag="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | head -n 1 || true)"
+if [[ "${target_branch}" =~ ^release/([0-9]+)\.([0-9]+)([-/].*)?$ ]]; then
+  release_line="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+  current_line="${current_version%.*}"
+  [[ "${current_line}" == "${release_line}" ]] || fail "Release branch ${target_branch} requires VERSION ${release_line}.x; current is v${current_version}."
+  escaped_release_line="${release_line//./\\.}"
+  latest_tag="$(git tag -l "v${release_line}.*" --sort=-version:refname | grep -E "^v${escaped_release_line}\\.[0-9]+$" | head -n 1 || true)"
+else
+  latest_tag="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
+fi
 latest_version="${latest_tag#v}"
 
 semver_gt() {

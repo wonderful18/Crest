@@ -44,9 +44,9 @@ public interface VisualizationLinkJumpApi {
     @Operation(summary = "查询目标跳转信息")
     VisualizationLinkJumpBaseResponse queryTargetVisualizationJumpInfo(@RequestBody VisualizationLinkJumpBaseRequest request);
 
-    @GetMapping("/view-table-detail-list/{dvId}")
+    @GetMapping({"/view-table-detail-list/{dvId}", "/view-table-detail-list/{dvId}/{resourceTable}"})
     @Operation(summary = "查询跳转明细")
-    VisualizationComponentDTO viewTableDetailList(@PathVariable Long dvId);
+    VisualizationComponentDTO viewTableDetailList(@PathVariable Long dvId, @PathVariable(required = false) String resourceTable);
 
     @PostMapping("/jump-set-active")
     @Operation(summary = "更新跳转信息可用状态")

@@ -33,9 +33,9 @@ export function queryVisualizationJumpInfo(dvId, resourceTable = 'snapshot') {
   })
 }
 
-export function viewTableDetailList(dvId) {
+export function viewTableDetailList(dvId, resourceTable = 'snapshot') {
   return request.get({
-    url: '/link-jump/view-table-detail-list/' + dvId,
+    url: '/link-jump/view-table-detail-list/' + dvId + '/' + resourceTable,
     loading: false
   })
 }

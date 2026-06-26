@@ -52,5 +52,9 @@ public interface ExtVisualizationLinkJumpMapper {
 
     List<VisualizationViewTableVO> getViewTableDetails(@Param("dvId")Long dvId);
 
+    List<VisualizationViewTableVO> getViewTableDetailsSnapshot(@Param("dvId")Long dvId);
+
     List<VisualizationOutParamsJumpVO> queryOutParamsTargetWithDvId(@Param("dvId")Long dvId);
+
+    List<VisualizationOutParamsJumpVO> queryOutParamsTargetWithDvIdSnapshot(@Param("dvId")Long dvId);
 }
