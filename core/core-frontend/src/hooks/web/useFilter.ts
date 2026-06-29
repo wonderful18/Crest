@@ -554,33 +554,45 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
                 const endTimeFieldId = item.checkedFieldsMapArr?.[curComponentId].find(
                   element => element !== fieldId
                 )
-                const resultEnd = Array(2).fill(
-                  endTimeFieldId === item.checkedFieldsMapEnd[curComponentId]
-                    ? result[1]
-                    : result[0]
-                )
-                result = Array(2).fill(
-                  endTimeFieldId === item.checkedFieldsMapEnd[curComponentId]
-                    ? result[0]
-                    : result[1]
-                )
-                parametersFilter = duplicateRemoval(
-                  item.parametersArr[curComponentId].filter(e => e.id === fieldId)
-                )
+                if ([1, 7].includes(+displayType) && operator !== 'between') {
+                  const mappedEndFieldId = item.checkedFieldsMapEnd[curComponentId]
+                  const startTimeFieldId =
+                    fieldId === mappedEndFieldId ? endTimeFieldId : fieldId
+                  const targetFieldId = operator === 'le' ? mappedEndFieldId : startTimeFieldId
+                  parametersFilter = duplicateRemoval(
+                    item.parametersArr[curComponentId].filter(e => e.id === targetFieldId)
+                  )
+                  fieldId = targetFieldId
+                  result = [result[0]]
+                } else {
+                  const resultEnd = Array(2).fill(
+                    endTimeFieldId === item.checkedFieldsMapEnd[curComponentId]
+                      ? result[1]
+                      : result[0]
+                  )
+                  result = Array(2).fill(
+                    endTimeFieldId === item.checkedFieldsMapEnd[curComponentId]
+                      ? result[0]
+                      : result[1]
+                  )
+                  parametersFilter = duplicateRemoval(
+                    item.parametersArr[curComponentId].filter(e => e.id === fieldId)
+                  )
 
-                const parametersFilterEnd = duplicateRemoval(
-                  item.parametersArr[curComponentId].filter(e => e.id === endTimeFieldId)
-                )
-                filter.push({
-                  filterId: id,
-                  componentId: ele.id,
-                  fieldId: endTimeFieldId,
-                  arrayType: 'END',
-                  operator,
-                  value: resultEnd,
-                  parameters: parametersFilterEnd,
-                  isTree
-                })
+                  const parametersFilterEnd = duplicateRemoval(
+                    item.parametersArr[curComponentId].filter(e => e.id === endTimeFieldId)
+                  )
+                  filter.push({
+                    filterId: id,
+                    componentId: ele.id,
+                    fieldId: endTimeFieldId,
+                    arrayType: 'END',
+                    operator,
+                    value: resultEnd,
+                    parameters: parametersFilterEnd,
+                    isTree
+                  })
+                }
               }
 
               if (item.checkedFieldsMapArrNum?.[curComponentId]?.length) {
