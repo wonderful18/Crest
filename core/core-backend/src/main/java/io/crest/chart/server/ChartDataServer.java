@@ -12,6 +12,7 @@ import io.crest.constant.*;
 import io.crest.dataset.manage.PermissionManage;
 import io.crest.dataset.server.DatasetFieldServer;
 import io.crest.dataset.utils.DatasetUtils;
+import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.exception.CrestException;
 import io.crest.exportCenter.dao.auto.entity.CoreExportTask;
 import io.crest.exportCenter.manage.ExportCenterDownLoadManage;
@@ -31,6 +32,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -268,6 +270,7 @@ public class ChartDataServer implements ChartDataApi {
                     SummaryAccumulator summaryAcc = null;
                     List<ChartViewFieldDTO> allExportColumns = null;
                     Map<String, BigDecimal> customSumResult = null;
+                    Map<String, BigDecimal> summaryColumnResult = null;
                     if (summaryEnabled) {
                         summaryConfig = parseSummaryConfig(request.getViewInfo());
                         summaryAcc = new SummaryAccumulator();
@@ -279,18 +282,27 @@ public class ChartDataServer implements ChartDataApi {
                     for (long i = 1; i < chartViewDTO.getTotalPage() + 1; i++) {
                         request.getViewInfo().getChartExtRequest().setGoPage(i);
                         ChartViewDTO pageDto = findExcelData(request);
-                        details.addAll(request.getDetails());
+                        List<Object[]> pageDetails = request.getDetails();
+                        if (summaryEnabled) {
+                            appendSummaryColumnPlaceholders(pageDetails, summaryConfig);
+                        }
+                        details.addAll(pageDetails);
 
                         if (summaryEnabled) {
-                            accumulatePageStats(summaryAcc, request.getDetails(), allExportColumns, summaryConfig);
-                            if (i == chartViewDTO.getTotalPage() && pageDto.getData() != null && pageDto.getData().get("customSumResult") != null) {
-                                customSumResult = (Map<String, BigDecimal>) pageDto.getData().get("customSumResult");
+                            accumulatePageStats(summaryAcc, pageDetails, allExportColumns, summaryConfig);
+                            if (i == chartViewDTO.getTotalPage() && pageDto.getData() != null) {
+                                if (pageDto.getData().get("customSumResult") != null) {
+                                    customSumResult = (Map<String, BigDecimal>) pageDto.getData().get("customSumResult");
+                                }
+                                if (pageDto.getData().get("summaryColumnResult") != null) {
+                                    summaryColumnResult = (Map<String, BigDecimal>) pageDto.getData().get("summaryColumnResult");
+                                }
                             }
                         }
 
                         if ((details.size() + extractPageSize) > sheetLimit || i == chartViewDTO.getTotalPage()) {
                             if (i == chartViewDTO.getTotalPage() && summaryEnabled && summaryAcc.totalCount > 0) {
-                                Object[] totalRow = buildSummaryRow(allExportColumns, summaryConfig, summaryAcc, customSumResult);
+                                Object[] totalRow = buildSummaryRow(allExportColumns, summaryConfig, summaryAcc, customSumResult, summaryColumnResult);
                                 details.add(totalRow);
                             }
 
@@ -302,7 +314,13 @@ public class ChartDataServer implements ChartDataApi {
                             xAxis.addAll(request.getViewInfo().getXAxisExt());
                             xAxis.addAll(request.getViewInfo().getYAxisExt());
                             xAxis.addAll(request.getViewInfo().getExtStack());
-                            Object[] header = Arrays.stream(request.getHeader()).filter(item -> xAxis.stream().map(d -> StringUtils.isNotBlank(d.getChartShowName()) ? d.getChartShowName() : d.getName()).toList().contains(item)).collect(Collectors.toList()).toArray();
+                            if (summaryEnabled) {
+                                xAxis.addAll(buildSummaryColumnFields(summaryConfig));
+                            }
+                            Object[] header = xAxis.stream()
+                                    .filter(item -> !item.isHide())
+                                    .map(item -> StringUtils.isNotBlank(item.getChartShowName()) ? item.getChartShowName() : item.getName())
+                                    .toArray();
                             details.add(0, header);
                             List<Integer> columnIndexs = new ArrayList<>();
                             for (int i1 = 0; i1 < xAxis.size(); i1++) {
@@ -427,6 +445,11 @@ public class ChartDataServer implements ChartDataApi {
         xAxis.addAll(viewInfo.getYAxisExt());
         xAxis.addAll(viewInfo.getExtStack());
         xAxis.addAll(viewInfo.getDrillFields());
+        SummaryConfig summaryConfig = null;
+        if (Strings.CI.equalsAny(viewInfo.getType(), "table-normal", "table-info") && isSummaryEnabled(viewInfo)) {
+            summaryConfig = parseSummaryConfig(viewInfo);
+            xAxis.addAll(buildSummaryColumnFields(summaryConfig));
+        }
         TableHeader tableHeader = null;
         Integer totalDepth = 0;
         List<CellRangeAddress> mergeConfig = new ArrayList<>();
@@ -449,6 +472,9 @@ public class ChartDataServer implements ChartDataApi {
             var allAxis = new ArrayList<>(viewInfo.getXAxis().stream().filter(x -> !x.isHide()).toList());
             if (Strings.CI.equals(viewInfo.getType(), "table-normal")) {
                 allAxis.addAll(viewInfo.getYAxis().stream().filter(x -> !x.isHide()).toList());
+            }
+            if (summaryConfig != null) {
+                allAxis.addAll(buildSummaryColumnFields(summaryConfig));
             }
             if (tableHeaderMap != null) {
                 tmpHeader = JsonUtil.parseObject((String) JsonUtil.toJSONString(tableHeaderMap), TableHeader.class);
@@ -1064,7 +1090,7 @@ public class ChartDataServer implements ChartDataApi {
         if (!Strings.CI.equalsAny(type, "table-info", "table-normal")) return false;
         Map<String, Object> basicStyle = (Map<String, Object>) viewInfo.getCustomAttr().get("basicStyle");
         if (basicStyle == null) return false;
-        return basicStyle.get("showSummary") != null && (Boolean) basicStyle.get("showSummary");
+        return basicStyle.get("showSummary") != null && BooleanUtils.toBoolean(basicStyle.get("showSummary").toString());
     }
 
     public static SummaryConfig parseSummaryConfig(ChartViewDTO viewInfo) {
@@ -1076,14 +1102,15 @@ public class ChartDataServer implements ChartDataApi {
 
         List<Map<String, Object>> seriesSummary = basicStyle.get("seriesSummary") != null
                 ? (List<Map<String, Object>>) basicStyle.get("seriesSummary") : null;
+        config.summaryColumns.addAll(parseSummaryColumns(basicStyle));
 
         List<ChartViewFieldDTO> summaryFields;
         if (viewInfo.getType().equalsIgnoreCase("table-info")) {
-            summaryFields = viewInfo.getXAxis();
+            summaryFields = safeAxis(viewInfo.getXAxis());
         } else {
             summaryFields = new ArrayList<>();
-            summaryFields.addAll(viewInfo.getXAxis());
-            summaryFields.addAll(viewInfo.getYAxis());
+            summaryFields.addAll(safeAxis(viewInfo.getXAxis()));
+            summaryFields.addAll(safeAxis(viewInfo.getYAxis()));
         }
 
         for (ChartViewFieldDTO field : summaryFields) {
@@ -1103,6 +1130,51 @@ public class ChartDataServer implements ChartDataApi {
             config.summaryShowMap.put(fName, sShow);
         }
         return config;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<SummaryColumnConfig> parseSummaryColumns(Map<String, Object> basicStyle) {
+        Object value = basicStyle.get("summaryColumns");
+        if (!(value instanceof List<?> list)) return Collections.emptyList();
+        List<SummaryColumnConfig> result = new ArrayList<>();
+        for (Object item : list) {
+            if (!(item instanceof Map<?, ?> raw)) continue;
+            Map<String, Object> column = (Map<String, Object>) raw;
+            String id = column.get("id") == null ? null : column.get("id").toString();
+            String name = column.get("name") == null ? null : column.get("name").toString();
+            if (StringUtils.isBlank(id) || StringUtils.isBlank(name)) continue;
+            boolean show = column.get("show") == null || BooleanUtils.toBoolean(column.get("show").toString());
+            if (!show) continue;
+            String summary = column.get("summary") == null ? "sum" : column.get("summary").toString();
+            String field = column.get("field") == null ? "" : column.get("field").toString();
+            String originName = column.get("originName") == null ? "" : column.get("originName").toString();
+            String emptyText = "--";
+            FormatterCfgDTO formatterCfg = new FormatterCfgDTO()
+                    .setType("value")
+                    .setDecimalCount(2)
+                    .setThousandSeparator(true)
+                    .setSuffix("");
+            Object format = column.get("format");
+            if (format instanceof Map<?, ?> formatMap) {
+                if (formatMap.get("emptyText") != null) {
+                    emptyText = formatMap.get("emptyText").toString();
+                }
+                if (formatMap.get("decimal") instanceof Number decimal) {
+                    formatterCfg.setDecimalCount(decimal.intValue());
+                }
+                if (formatMap.get("percent") != null && BooleanUtils.toBoolean(formatMap.get("percent").toString())) {
+                    formatterCfg.setType("percent");
+                }
+                if (formatMap.get("unit") != null) {
+                    formatterCfg.setSuffix(formatMap.get("unit").toString());
+                }
+                if (formatMap.get("thousandSeparator") != null) {
+                    formatterCfg.setThousandSeparator(BooleanUtils.toBoolean(formatMap.get("thousandSeparator").toString()));
+                }
+            }
+            result.add(new SummaryColumnConfig(id, name, true, summary, field, originName, emptyText, formatterCfg));
+        }
+        return result;
     }
 
     public static void accumulatePageStats(SummaryAccumulator acc, List<Object[]> pageDetails,
@@ -1146,12 +1218,24 @@ public class ChartDataServer implements ChartDataApi {
     @SuppressWarnings("unchecked")
     public static Object[] buildSummaryRow(List<ChartViewFieldDTO> allColumns, SummaryConfig config,
                                            SummaryAccumulator acc, Map<String, BigDecimal> customSumResult) {
+        return buildSummaryRow(allColumns, config, acc, customSumResult, null);
+    }
+
+    public static Object[] buildSummaryRow(List<ChartViewFieldDTO> allColumns, SummaryConfig config,
+                                           SummaryAccumulator acc, Map<String, BigDecimal> customSumResult,
+                                           Map<String, BigDecimal> summaryColumnResult) {
         Object[] totalRow = new Object[allColumns.size()];
         boolean labelSet = false;
+        Map<String, SummaryColumnConfig> summaryColumnMap = config.summaryColumns.stream()
+                .collect(Collectors.toMap(SummaryColumnConfig::id, item -> item, (a, b) -> a, LinkedHashMap::new));
         for (int j = 0; j < allColumns.size(); j++) {
             ChartViewFieldDTO field = allColumns.get(j);
             String fName = getSummaryFieldName(field);
-            if (config.summaryShowMap.containsKey(fName) && config.summaryShowMap.get(fName)) {
+            if (summaryColumnMap.containsKey(fName)) {
+                SummaryColumnConfig column = summaryColumnMap.get(fName);
+                BigDecimal value = summaryColumnResult == null ? null : summaryColumnResult.get(fName);
+                totalRow[j] = value == null ? column.emptyText() : value.toPlainString();
+            } else if (config.summaryShowMap.containsKey(fName) && config.summaryShowMap.get(fName)) {
                 if (customSumResult != null && customSumResult.get(fName) != null) {
                     totalRow[j] = customSumResult.get(fName).toPlainString();
                     continue;
@@ -1220,18 +1304,97 @@ public class ChartDataServer implements ChartDataApi {
 
     public static List<ChartViewFieldDTO> getAllExportColumns(ChartViewDTO viewInfo) {
         List<ChartViewFieldDTO> allColumns = new ArrayList<>();
-        allColumns.addAll(viewInfo.getXAxis());
-        allColumns.addAll(viewInfo.getYAxis());
-        allColumns.addAll(viewInfo.getXAxisExt());
-        allColumns.addAll(viewInfo.getYAxisExt());
-        allColumns.addAll(viewInfo.getExtStack());
+        allColumns.addAll(safeAxis(viewInfo.getXAxis()));
+        allColumns.addAll(safeAxis(viewInfo.getYAxis()));
+        allColumns.addAll(safeAxis(viewInfo.getXAxisExt()));
+        allColumns.addAll(safeAxis(viewInfo.getYAxisExt()));
+        allColumns.addAll(safeAxis(viewInfo.getExtStack()));
+        if (isSummaryEnabled(viewInfo)) {
+            allColumns.addAll(buildSummaryColumnFields(parseSummaryConfig(viewInfo)));
+        }
         return allColumns;
+    }
+
+    private static List<ChartViewFieldDTO> safeAxis(List<ChartViewFieldDTO> fields) {
+        return fields == null ? Collections.emptyList() : fields;
+    }
+
+    public static List<ChartViewFieldDTO> buildSummaryColumnFields(SummaryConfig config) {
+        return config.summaryColumns.stream().map(column -> {
+            ChartViewFieldDTO field = new ChartViewFieldDTO();
+            field.setField(column.id());
+            field.setEngineFieldName(column.id());
+            field.setName(column.name());
+            field.setChartShowName(column.name());
+            field.setFieldType(FieldTypeConstants.FLOAT);
+            field.setSummary(column.summary());
+            field.setHide(false);
+            field.setGroupType("q");
+            field.setFormatterCfg(column.formatterCfg());
+            return field;
+        }).toList();
+    }
+
+    public static void appendSummaryColumnPlaceholders(List<Object[]> details, SummaryConfig config) {
+        if (CollectionUtils.isEmpty(details) || CollectionUtils.isEmpty(config.summaryColumns)) return;
+        int appendCount = config.summaryColumns.size();
+        for (int i = 0; i < details.size(); i++) {
+            Object[] row = details.get(i);
+            Object[] expanded = Arrays.copyOf(row, row.length + appendCount);
+            for (int j = 0; j < appendCount; j++) {
+                expanded[row.length + j] = config.summaryColumns.get(j).emptyText();
+            }
+            details.set(i, expanded);
+        }
+    }
+
+    public static List<ChartViewFieldDTO> buildSummaryColumnCalcFields(ChartViewDTO viewInfo, List<? extends DatasetTableFieldDTO> allFields) {
+        if (!isSummaryEnabled(viewInfo) || CollectionUtils.isEmpty(allFields)) return Collections.emptyList();
+        SummaryConfig config = parseSummaryConfig(viewInfo);
+        if (CollectionUtils.isEmpty(config.summaryColumns)) return Collections.emptyList();
+        Map<String, DatasetTableFieldDTO> fieldMap = allFields.stream()
+                .filter(field -> StringUtils.isNotBlank(field.getEngineFieldName()))
+                .collect(Collectors.toMap(DatasetTableFieldDTO::getEngineFieldName, field -> field, (a, b) -> a));
+        List<ChartViewFieldDTO> result = new ArrayList<>();
+        for (SummaryColumnConfig column : config.summaryColumns) {
+            ChartViewFieldDTO field;
+            if (StringUtils.isNotBlank(column.originName()) || Strings.CI.equals(column.summary(), "custom")) {
+                if (StringUtils.isBlank(column.originName())) continue;
+                field = new ChartViewFieldDTO();
+                field.setId(summaryColumnRuntimeId(column));
+                field.setOriginName(column.originName());
+                field.setSummary(null);
+                field.setFieldType(FieldTypeConstants.FLOAT);
+                field.setExtField(ExtFieldConstant.EXT_CALC);
+            } else {
+                DatasetTableFieldDTO source = fieldMap.get(column.field());
+                if (source == null) continue;
+                field = JsonUtil.parseObject(JsonUtil.toJSONString(source).toString(), ChartViewFieldDTO.class);
+                field.setSummary(column.summary());
+            }
+            field.setField(column.id());
+            field.setName(column.name());
+            field.setChartShowName(column.name());
+            field.setHide(false);
+            field.setGroupType("q");
+            field.setFormatterCfg(column.formatterCfg());
+            result.add(field);
+        }
+        return result;
+    }
+
+    private static long summaryColumnRuntimeId(SummaryColumnConfig column) {
+        return Integer.toUnsignedLong(Objects.hash(column.id(), column.name(), column.originName()));
     }
 
     public static class SummaryConfig {
         public String summaryLabel;
         public Map<String, String> summaryTypeMap = new HashMap<>();
         public Map<String, Boolean> summaryShowMap = new HashMap<>();
+        public List<SummaryColumnConfig> summaryColumns = new ArrayList<>();
+    }
+
+    public record SummaryColumnConfig(String id, String name, boolean show, String summary, String field, String originName, String emptyText, FormatterCfgDTO formatterCfg) {
     }
 
     public static class SummaryAccumulator {
