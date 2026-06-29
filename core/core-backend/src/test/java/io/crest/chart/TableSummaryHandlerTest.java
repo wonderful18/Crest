@@ -68,6 +68,25 @@ class TableSummaryHandlerTest {
         assertEquals(2, provider.fetchCount);
     }
 
+    @Test
+    void excelBuildChartShouldExposeSummaryColumnResultForExport() {
+        Map<String, BigDecimal> summaryColumnResult = Map.of("summary_amount", new BigDecimal("42.5"));
+        ChartCalcDataResult calcResult = new ChartCalcDataResult();
+        calcResult.setData(Map.of("summaryColumnResult", summaryColumnResult));
+        calcResult.setOriginData(List.<String[]>of(new String[]{"项目A"}));
+
+        ChartViewDTO view = view("table-info");
+        view.setIsExcelExport(true);
+        AxisFormatResult formatResult = formatResult();
+        formatResult.getAxisMap().put(ChartAxis.extStack, new ArrayList<>());
+        CustomFilterResult filterResult = filterResult("pull");
+        filterResult.getContext().put("desensitizationList", Map.of());
+
+        new TableInfoHandler().buildChart(view, calcResult, formatResult, filterResult);
+
+        assertEquals(summaryColumnResult, view.getData().get("summaryColumnResult"));
+    }
+
     private ChartViewDTO view(String type) {
         ChartViewDTO view = new ChartViewDTO();
         view.setType(type);

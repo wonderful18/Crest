@@ -171,6 +171,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
             if (calcResult.getData() != null && calcResult.getData().get("customSumResult") != null) {
                 sourceInfo.put("customSumResult", calcResult.getData().get("customSumResult"));
             }
+            if (calcResult.getData() != null && calcResult.getData().get("summaryColumnResult") != null) {
+                sourceInfo.put("summaryColumnResult", calcResult.getData().get("summaryColumnResult"));
+            }
             view.setData(sourceInfo);
             return view;
         }
