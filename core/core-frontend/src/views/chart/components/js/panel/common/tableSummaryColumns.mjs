@@ -60,7 +60,8 @@ export const appendSummaryColumnsToS2Config = (dataConfig, summaryColumns = []) 
     if (!meta.some(item => item.field === column.id)) {
       meta.push({
         field: column.id,
-        name: column.name
+        name: column.name,
+        id: column.id
       })
     }
   })

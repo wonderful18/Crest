@@ -31,7 +31,8 @@ test('appendSummaryColumnsToS2Config appends visible virtual columns and empty d
   assert.deepEqual(dataConfig.fields.columns, ['project', 'duration', 'summary_avg_duration'])
   assert.deepEqual(dataConfig.meta.at(-1), {
     field: 'summary_avg_duration',
-    name: '平均处理时长'
+    name: '平均处理时长',
+    id: 'summary_avg_duration'
   })
   assert.equal(dataConfig.data[0].summary_avg_duration, '--')
   assert.equal(dataConfig.data[0].summary_hidden, undefined)
