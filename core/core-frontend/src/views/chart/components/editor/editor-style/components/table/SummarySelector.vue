@@ -211,7 +211,7 @@ onMounted(() => {
 
         <div class="indented-container">
           <el-form-item class="form-item" :class="'form-item-' + themes">
-            <el-col :span="state.currentAxisSummary.summary === 'custom' ? 19 : 22" :offset="2">
+            <el-col :span="state.currentAxisSummary.show ? 19 : 22" :offset="2">
               <el-select
                 v-model="state.currentAxisSummary.summary"
                 :class="'form-item-' + themes"
@@ -223,7 +223,7 @@ onMounted(() => {
                 <el-option v-for="c in summaryTypes" :key="c.key" :value="c.key" :label="c.name" />
               </el-select>
             </el-col>
-            <el-col v-if="state.currentAxisSummary.summary === 'custom'" :span="2" :offset="1">
+            <el-col v-if="state.currentAxisSummary.show" :span="2" :offset="1">
               <el-icon style="cursor: pointer">
                 <Setting @click="editField()" />
               </el-icon>

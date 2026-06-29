@@ -1087,7 +1087,7 @@ public class ChartDataServer implements ChartDataApi {
         }
 
         for (ChartViewFieldDTO field : summaryFields) {
-            String fName = field.getEngineFieldName();
+            String fName = getSummaryFieldName(field);
             String sType = "sum";
             boolean sShow = true;
             if (seriesSummary != null) {
@@ -1112,7 +1112,7 @@ public class ChartDataServer implements ChartDataApi {
             acc.totalCount++;
             for (int j = 0; j < allColumns.size() && j < row.length; j++) {
                 ChartViewFieldDTO field = allColumns.get(j);
-                String fName = field.getEngineFieldName();
+                String fName = getSummaryFieldName(field);
                 if (!config.summaryShowMap.containsKey(fName) || !config.summaryShowMap.get(fName)) continue;
                 String sType = config.summaryTypeMap.get(fName);
                 if (sType == null || "custom".equals(sType)) continue;
@@ -1150,13 +1150,16 @@ public class ChartDataServer implements ChartDataApi {
         boolean labelSet = false;
         for (int j = 0; j < allColumns.size(); j++) {
             ChartViewFieldDTO field = allColumns.get(j);
-            String fName = field.getEngineFieldName();
+            String fName = getSummaryFieldName(field);
             if (config.summaryShowMap.containsKey(fName) && config.summaryShowMap.get(fName)) {
+                if (customSumResult != null && customSumResult.get(fName) != null) {
+                    totalRow[j] = customSumResult.get(fName).toPlainString();
+                    continue;
+                }
                 String sType = config.summaryTypeMap.get(fName);
                 switch (sType) {
                     case "custom":
-                        totalRow[j] = customSumResult != null && customSumResult.get(fName) != null
-                                ? customSumResult.get(fName).toPlainString() : null;
+                        totalRow[j] = null;
                         break;
                     case "max":
                         totalRow[j] = acc.maxMap.get(fName) != null ? acc.maxMap.get(fName).toPlainString() : null;
@@ -1188,10 +1191,14 @@ public class ChartDataServer implements ChartDataApi {
                 labelSet = true;
             }
         }
-        if (!labelSet && totalRow.length > 0) {
+        if (!labelSet && totalRow.length > 0 && totalRow[0] == null) {
             totalRow[0] = config.summaryLabel;
         }
         return totalRow;
+    }
+
+    private static String getSummaryFieldName(ChartViewFieldDTO field) {
+        return StringUtils.defaultIfBlank(field.getEngineFieldName(), field.getField());
     }
 
     private static String calcVariance(SummaryAccumulator acc, String fName, boolean isSqrt) {

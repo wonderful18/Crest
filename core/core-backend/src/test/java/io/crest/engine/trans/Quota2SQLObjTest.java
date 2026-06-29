@@ -198,6 +198,34 @@ class Quota2SQLObjTest {
         assertTrue(meta.getExtWheres().contains(expectedPrefix + "CASE WHEN t_a_0.`f_amount` IS NULL THEN NULL"), meta.getExtWheres());
     }
 
+    @Test
+    void extWhereTimeStartOnlyFilterUsesLowerBoundDateLiteral() {
+        SQLMeta meta = meta();
+        DatasetTableFieldDTO field = datasetField(FieldTypeConstants.TIME, FieldTypeConstants.TIME, "datetime", null);
+        ChartExtFilterDTO filter = new ChartExtFilterDTO();
+        filter.setDatasetTableField(field);
+        filter.setOperator("ge");
+        filter.setValue(List.of("1716739200000"));
+
+        ExtWhere2Str.extWhere2sqlOjb(meta, List.of(filter), List.of(field), false, null, null, null, null);
+
+        assertTrue(meta.getExtWheres().contains(" >= '2024-05-27 00:00:00'"), meta.getExtWheres());
+    }
+
+    @Test
+    void extWhereTimeEndOnlyDateFilterUsesUpperBoundDayLiteral() {
+        SQLMeta meta = meta();
+        DatasetTableFieldDTO field = datasetField(FieldTypeConstants.TIME, FieldTypeConstants.TIME, "date", null);
+        ChartExtFilterDTO filter = new ChartExtFilterDTO();
+        filter.setDatasetTableField(field);
+        filter.setOperator("le");
+        filter.setValue(List.of("1716739200000"));
+
+        ExtWhere2Str.extWhere2sqlOjb(meta, List.of(filter), List.of(field), false, null, null, null, null);
+
+        assertTrue(meta.getExtWheres().contains(" <= '2024-05-27 23:59:59'"), meta.getExtWheres());
+    }
+
     @ParameterizedTest
     @MethodSource("convertedExcelTextDatasetFilters")
     void rowPermissionTreeNormalizesConvertedExcelTextFilters(Integer fieldType, String dateFormat, String expectedPrefix) {

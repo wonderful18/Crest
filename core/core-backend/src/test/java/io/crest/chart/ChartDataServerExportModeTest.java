@@ -3,9 +3,12 @@ package io.crest.chart;
 import io.crest.chart.server.ChartDataServer;
 import io.crest.api.chart.request.ChartExcelRequest;
 import io.crest.extensions.view.dto.ChartViewDTO;
+import io.crest.extensions.view.dto.ChartViewFieldDTO;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -49,5 +52,28 @@ class ChartDataServerExportModeTest {
         ChartDataServer.prepareTableViewForExport(request);
 
         assertEquals("page", basicStyle.get("tablePageMode"));
+    }
+
+    @Test
+    void formulaSummaryShouldOverrideBuiltInAverageOnExport() {
+        ChartViewFieldDTO field = new ChartViewFieldDTO();
+        field.setEngineFieldName("f_profit");
+        field.setField("f_profit");
+        String fieldName = field.getEngineFieldName();
+        ChartDataServer.SummaryConfig config = new ChartDataServer.SummaryConfig();
+        config.summaryTypeMap.put(fieldName, "avg");
+        config.summaryShowMap.put(fieldName, true);
+
+        ChartDataServer.SummaryAccumulator acc = new ChartDataServer.SummaryAccumulator();
+        acc.sumMap.put(fieldName, new BigDecimal("10"));
+        acc.countMap.put(fieldName, 2L);
+
+        Object[] row = ChartDataServer.buildSummaryRow(
+                List.of(field),
+                config,
+                acc,
+                Map.of(fieldName, new BigDecimal("88.8")));
+
+        assertEquals("88.8", row[0]);
     }
 }

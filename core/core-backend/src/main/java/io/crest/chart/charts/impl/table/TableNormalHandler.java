@@ -256,7 +256,7 @@ public class TableNormalHandler extends DefaultChartHandler {
                 var seriesList = JsonUtil.parseList(JsonUtil.toJSONString(fieldList).toString(), new TypeReference<List<ChartViewFieldDTO>>(){});
                 var quotaIds = allFields.stream().map(DatasetTableFieldDTO::getEngineFieldName).collect(Collectors.toSet());
                 seriesList.forEach(field -> {
-                    if (!BooleanUtils.isTrue(field.getShow()) || !"custom".equalsIgnoreCase(field.getSummary())) {
+                    if (!BooleanUtils.isTrue(field.getShow())) {
                         return;
                     }
                     if (StringUtils.isBlank(field.getOriginName())) {

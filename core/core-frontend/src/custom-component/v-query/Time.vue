@@ -164,7 +164,7 @@ const handleValueChange = () => {
     return
   }
   config.value.defaultValue = Array.isArray(value)
-    ? value.map(ele => new Date(ele).toLocaleString())
+    ? value.map(ele => (ele ? new Date(ele).toLocaleString() : ''))
     : new Date(value).toLocaleString()
 }
 
@@ -199,6 +199,28 @@ const selectStyle = computed(() => {
     : {
         width: (multiple.value ? getCustomWidth() * 2 : getCustomWidth()) + 'px !important'
       }
+})
+
+const rangeSingleType = computed(() => {
+  return config.value.timeGranularityMultiple.replace('range', '') as DatePickType
+})
+
+const rangeStartValue = computed({
+  get: () => (Array.isArray(selectValue.value) ? selectValue.value[0] : undefined),
+  set: val => {
+    const value = Array.isArray(selectValue.value) ? [...selectValue.value] : []
+    value[0] = val
+    selectValue.value = value
+  }
+})
+
+const rangeEndValue = computed({
+  get: () => (Array.isArray(selectValue.value) ? selectValue.value[1] : undefined),
+  set: val => {
+    const value = Array.isArray(selectValue.value) ? [...selectValue.value] : []
+    value[1] = val
+    selectValue.value = value
+  }
 })
 
 const columnsType = computed(() => {
@@ -242,14 +264,17 @@ const getIndex = () => {
   return index
 }
 const startWindowTime = ref(0)
-const calendarChange = val => {
-  startWindowTime.value = +new Date(val[0])
-}
-
 const datePicker = ref()
 
 const visibleChange = (visible: boolean) => {
   startWindowTime.value = 0
+  if (!visible) {
+    datePicker.value?.blur()
+  }
+}
+
+const visibleRangeChange = (visible: boolean, value: any) => {
+  startWindowTime.value = visible && value ? +new Date(value) : 0
   if (!visible) {
     datePicker.value?.blur()
   }
@@ -435,13 +460,13 @@ const setArrValue = () => {
     const [start, end] = selectValue.value || []
     if (selectSecond.value) {
       selectValue.value = [
-        start ? start : new Date(`${timeFormat.join('/')} ${currentTime.value.join(':')}`),
+        start,
         new Date(`${timeFormat.join('/')} ${currentTime.value.join(':')}`)
       ]
     } else {
       selectValue.value = [
         new Date(`${timeFormat.join('/')} ${currentTime.value.join(':')}`),
-        end ? end : new Date(`${timeFormat.join('/')} ${currentTime.value.join(':')}`)
+        end
       ]
     }
   } else {
@@ -489,26 +514,32 @@ const formatDate = computed(() => {
 </script>
 
 <template>
-  <el-date-picker
-    v-model="selectValue"
-    v-if="multiple"
-    :key="config.timeGranularityMultiple"
-    :type="config.timeGranularityMultiple"
-    :style="selectStyle"
-    ref="datePicker"
-    @visible-change="visibleChange"
-    :disabled-date="disabledDate"
-    @calendar-change="calendarChange"
-    :format="formatDate"
-    :shortcuts="
-      ['datetimerange', 'daterange'].includes(config.timeGranularityMultiple) ? shortcuts : []
-    "
-    @change="handleValueChange"
-    :editable="false"
-    :range-separator="$t('cron.to')"
-    :start-placeholder="placeholderText"
-    :end-placeholder="placeholderText"
-  />
+  <div v-if="multiple" class="time-range-select" :style="selectStyle">
+    <el-date-picker
+      v-model="rangeStartValue"
+      :key="config.timeGranularityMultiple + '-start'"
+      :type="rangeSingleType"
+      class="time-range-picker"
+      ref="datePicker"
+      @visible-change="visible => visibleRangeChange(visible, rangeEndValue)"
+      :disabled-date="disabledDate"
+      :format="formatDate"
+      @change="handleValueChange"
+      :placeholder="placeholderText"
+    />
+    <span class="time-range-separator">{{ $t('cron.to') }}</span>
+    <el-date-picker
+      v-model="rangeEndValue"
+      :key="config.timeGranularityMultiple + '-end'"
+      :type="rangeSingleType"
+      class="time-range-picker"
+      @visible-change="visible => visibleRangeChange(visible, rangeStartValue)"
+      :disabled-date="disabledDate"
+      :format="formatDate"
+      @change="handleValueChange"
+      :placeholder="placeholderText"
+    />
+  </div>
   <el-date-picker
     v-else
     :key="config.timeGranularity + 1"
@@ -587,6 +618,22 @@ const formatDate = computed(() => {
 </template>
 
 <style lang="less">
+.time-range-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .time-range-picker {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .time-range-separator {
+    flex: none;
+    color: var(--crestTextPrimary, #1f2329);
+  }
+}
+
 .vant-mobile {
   position: absolute;
   top: 0;

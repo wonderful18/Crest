@@ -3657,6 +3657,10 @@ export function getSummaryRow(data, axis, sumCon = [], customSumResult = {}) {
     if (!savedAxis.show) {
       continue
     }
+    if (customSumResult[a] !== undefined && customSumResult[a] !== null) {
+      summaryObj[a] = customSumResult[a]
+      continue
+    }
     // 根据汇总方式处理数据
     switch (savedAxis.summary) {
       case 'sum':
