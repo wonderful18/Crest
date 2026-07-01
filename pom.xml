@@ -47,8 +47,8 @@
         <bcprov.version>1.84</bcprov.version>
         <logback.version>1.5.25</logback.version>
         <tomcat.version>10.1.55</tomcat.version>
-        <jackson.version>2.21.2</jackson.version>
-        <netty.version>4.2.14.Final</netty.version>
+        <jackson-bom.version>2.22.0</jackson-bom.version>
+        <netty.version>4.2.15.Final</netty.version>
         <log4j2.version>2.26.0</log4j2.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <poi.version>5.4.0</poi.version>

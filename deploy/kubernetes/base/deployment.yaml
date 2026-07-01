@@ -51,6 +51,13 @@ spec:
             capabilities:
               drop:
                 - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
         - name: seed-static-resource
           image: ghcr.io/sevoniva/crest-service:v1.5.14
           imagePullPolicy: IfNotPresent
@@ -66,6 +73,13 @@ spec:
             capabilities:
               drop:
                 - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
           volumeMounts:
             - name: crest-data
               mountPath: /work/static-resource
@@ -97,6 +111,16 @@ spec:
               value: /opt/crest/cache
             - name: CREST_LOG_PATH
               value: /opt/crest/logs/crest
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: crest-db-secret
+                  key: CREST_DB_USERNAME
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: crest-db-secret
+                  key: CREST_DB_PASSWORD
           envFrom:
             - configMapRef:
                 name: crest-env

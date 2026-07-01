@@ -38,12 +38,15 @@ spec:
       securityContext:
         fsGroup: 999
         fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: mysql
           image: mysql:8.0.43
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
           ports:
             - name: mysql
               containerPort: 3306
@@ -100,10 +103,26 @@ spec:
               mountPath: /etc/mysql/conf.d/crest.cnf
               subPath: my.cnf
               readOnly: true
+            - name: mysql-run
+              mountPath: /var/run/mysqld
+            - name: mysql-tmp
+              mountPath: /tmp
+            - name: mysql-files
+              mountPath: /var/lib/mysql-files
       volumes:
         - name: crest-mysql-init
           configMap:
             name: crest-mysql-init
+        - name: mysql-run
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+        - name: mysql-tmp
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: mysql-files
+          emptyDir:
+            sizeLimit: 256Mi
   volumeClaimTemplates:
     - metadata:
         name: mysql-data
