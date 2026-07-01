@@ -132,6 +132,10 @@ __pycache__/
 .env
 .env.*
 !.env.example
+!/core/core-frontend/.env.base
+!/core/core-frontend/.env.desktop
+!/core/core-frontend/.env.dev
+!/core/core-frontend/.env.distributed
 *.local
 *.local.*
 *.local.sql
