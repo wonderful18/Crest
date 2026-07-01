@@ -419,7 +419,6 @@ const initWatermark = (waterDomId = 'preview-canvas-main') => {
 // 目标校验： 需要校验targetSourceId 是否是当前可视化资源ID
 const winMsgHandle = event => {
   const msgInfo = event.data
-  console.info('Received Message: ' + JSON.stringify(msgInfo))
   if (msgInfo?.targetSourceId === dvInfo.value.id + '' && isMainCanvas(canvasId.value))
     if (msgInfo.type === 'attachParams') {
       winMsgOuterParamsHandle(msgInfo)
@@ -480,7 +479,6 @@ const handleMouseDown = () => {
 
 const onPointClick = param => {
   try {
-    console.info('crest_inner_params send')
     if (window['crest-embedded-host'] && openHandler?.value) {
       const pm = {
         methodName: 'embeddedInteractive',
@@ -491,16 +489,29 @@ const onPointClick = param => {
       }
       openHandler.value.invokeMethod(pm)
     } else {
-      console.info('crest_inner_params send to host')
       const targetPm = {
         type: 'crest-embedded-interactive',
         eventName: 'crest_inner_params',
         args: param
       }
-      window.parent.postMessage(targetPm, '*')
+      window.parent.postMessage(targetPm, getPostMessageTargetOrigin())
     }
-  } catch (e) {
-    console.warn('crest_inner_params send error')
+  } catch {
+    // ignore embedded message failures
+  }
+}
+
+const getPostMessageTargetOrigin = () => {
+  if (!document.referrer) {
+    return window.location.origin
+  }
+  try {
+    const referrerUrl = new URL(document.referrer)
+    return ['http:', 'https:'].includes(referrerUrl.protocol)
+      ? referrerUrl.origin
+      : window.location.origin
+  } catch {
+    return window.location.origin
   }
 }
 

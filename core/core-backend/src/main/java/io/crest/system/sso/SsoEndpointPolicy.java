@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Objects;
 
 public final class SsoEndpointPolicy {
@@ -22,7 +23,7 @@ public final class SsoEndpointPolicy {
             endpoint = value;
         }
         try {
-            URI uri = URI.create(endpoint);
+            URI uri = new URI(endpoint);
             String scheme = uri.getScheme();
             String host = uri.getHost();
             if (!Strings.CI.equalsAny(scheme, "https", "http") || StringUtils.isBlank(host)) {
@@ -40,7 +41,7 @@ public final class SsoEndpointPolicy {
                 CrestException.throwException(name + "生产环境必须使用 HTTPS");
             }
             return endpoint;
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | URISyntaxException e) {
             CrestException.throwException(name + "格式无效");
             return null;
         }

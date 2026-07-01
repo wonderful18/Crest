@@ -304,7 +304,11 @@ const saveResource = () => {
                 curCanvasType.value === 'dataV'
                   ? '#/dvCanvas?opt=copy&dvId='
                   : '#/dashboard?opt=copy&resourceId='
-              window.open(baseUrl + data.data, openType)
+              window.open(
+                baseUrl + data.data,
+                openType,
+                openType === '_blank' ? 'noopener,noreferrer' : undefined
+              )
             }
           })
           .finally(() => {

@@ -94,17 +94,19 @@ class ApiEndpointContractTest {
     }
 
     @Test
-    void userPasswordManagementShouldShowDefaultPassword() throws IOException {
+    void userPasswordManagementShouldUseInitialPasswordPolicy() throws IOException {
         assertFrontendContract("core/core-frontend/src/views/system/user/index.vue",
                 List.of(
-                        "/user/default-password",
                         "/user/reset-password/${row.id}",
-                        "默认密码：",
+                        "已按系统初始密码策略创建",
                         "复制密码",
                         "新建用户成功",
                         "密码已重置"
                 ),
                 List.of(
+                        "/user/" + "default-" + "password",
+                        "已使用系统" + "默认" + "密码",
+                        "默认" + "密码：",
                         "密码已重置')"
                 ));
         assertFrontendContract("core/core-frontend/src/views/system/parameter/basic/BasicInfo.vue",
@@ -114,8 +116,8 @@ class ApiEndpointContractTest {
                 List.of("item.pkey === 'initialPassword'", "autocomplete=\"new-password\""),
                 List.of("AI"));
         assertFrontendContract("core/core-backend/src/main/java/io/crest/substitute/permissions/user/SubstituteUserServer.java",
-                List.of("return crestUserManage.defaultPwd();"),
-                List.of("return \"\";"));
+                List.of("return crestUserManage.resetPwd(id);"),
+                List.of("/default-" + "password", "default" + "Pwd"));
     }
 
     @Test

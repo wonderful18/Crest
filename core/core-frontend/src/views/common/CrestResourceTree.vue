@@ -38,6 +38,7 @@ import { BusiTreeNode, BusiTreeRequest } from '@/models/tree/TreeNode'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { useAppStoreWithOut } from '@/store/modules/app'
 import { storeToRefs } from 'pinia'
+import { secureRandomInt } from '@/utils/secureRandom'
 import DvHandleMore from '@/components/handle-more/src/DvHandleMore.vue'
 import { interactiveStoreWithOut } from '@/store/modules/interactive'
 import { useShareStoreWithOut } from '@/store/modules/share'
@@ -394,9 +395,9 @@ const importTemplateFile = uploadFile => {
         ElMessage.error(t('visualization.template_type_mismatch'))
         return
       }
-      const cacheKey = `CREST-VISUALIZATION-IMPORT-${Date.now()}-${Math.random()
+      const cacheKey = `CREST-VISUALIZATION-IMPORT-${Date.now()}-${secureRandomInt(0x100000000)
         .toString(36)
-        .slice(2)}`
+        .padStart(7, '0')}`
       window.sessionStorage.setItem(cacheKey, JSON.stringify(payload))
       openImportedTemplateEditor(cacheKey)
     })
@@ -422,7 +423,11 @@ const openImportedTemplateEditor = cacheKey => {
     cacheKey
   )}`
   const baseUrl = curCanvasType.value === 'dataV' ? `#/dvCanvas?${query}` : `#/dashboard?${query}`
-  const newWindow = window.open(baseUrl, openType)
+  const newWindow = window.open(
+    baseUrl,
+    openType,
+    openType === '_blank' ? 'noopener,noreferrer' : undefined
+  )
   initOpenHandler(newWindow)
 }
 
@@ -495,7 +500,11 @@ const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
           )
           return
         }
-        const newWindow = window.open(baseUrl, openType)
+        const newWindow = window.open(
+          baseUrl,
+          openType,
+          openType === '_blank' ? 'noopener,noreferrer' : undefined
+        )
         initOpenHandler(newWindow)
       })
       .finally(() => {
@@ -530,9 +539,17 @@ const addOperation = (
       return
     }
     if (data?.id) {
-      newWindow = window.open(baseUrl + `&pid=${data.id}`, openType)
+      newWindow = window.open(
+        baseUrl + `&pid=${data.id}`,
+        openType,
+        openType === '_blank' ? 'noopener,noreferrer' : undefined
+      )
     } else {
-      newWindow = window.open(baseUrl, openType)
+      newWindow = window.open(
+        baseUrl,
+        openType,
+        openType === '_blank' ? 'noopener,noreferrer' : undefined
+      )
     }
     initOpenHandler(newWindow)
   } else {
@@ -560,7 +577,11 @@ const resourceEdit = resourceId => {
     return
   }
 
-  const newWindow = window.open(baseUrl + resourceId, openType)
+  const newWindow = window.open(
+    baseUrl + resourceId,
+    openType,
+    openType === '_blank' ? 'noopener,noreferrer' : undefined
+  )
   initOpenHandler(newWindow)
 }
 

@@ -42,10 +42,10 @@ jobs:
 
     steps:
       - name: Checkout packaging scripts
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
 
       - name: Log in to GHCR
-        uses: docker/login-action@v4.2.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -100,11 +100,12 @@ jobs:
           grep -Fqx "${package_dir}/image-manifest.txt" /tmp/crest-app-image-package-files.txt
           grep -Fqx "${package_dir}/upgrade-sql/v1.5.4_to_v1.5.5.sql" /tmp/crest-app-image-package-files.txt
           grep -Fqx "${package_dir}/upgrade-sql/v1.5.7_to_v1.5.8.sql" /tmp/crest-app-image-package-files.txt
+          grep -Fqx "${package_dir}/upgrade-sql/v1.5.13_to_${VERSION}.sql" /tmp/crest-app-image-package-files.txt
           grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-service_${VERSION}.tar.gz" /tmp/crest-app-image-package-files.txt
           grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-web_${VERSION}.tar.gz" /tmp/crest-app-image-package-files.txt
 
       - name: Upload package artifact
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: crest-app-images-${{ inputs.version }}-${{ matrix.package_platform }}
           path: offline-packages/crest-app-images-${{ inputs.version }}-${{ matrix.package_platform }}.tar.gz
@@ -118,10 +119,10 @@ jobs:
 
     steps:
       - name: Checkout release notes
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
 
       - name: Download package artifacts
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: offline-packages
           merge-multiple: true
@@ -137,7 +138,7 @@ jobs:
             > crest-app-images-${VERSION}-checksums.txt
 
       - name: Publish release assets
-        uses: softprops/action-gh-release@v3.0.0
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           tag_name: ${{ inputs.version }}
           name: Crest ${{ inputs.version }}

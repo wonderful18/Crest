@@ -336,8 +336,8 @@ const onPointClick = param => {
       message: Base64.encode(JSON.stringify(param))
     }
     emit('onPointClick', msg)
-  } catch (e) {
-    console.warn('crest_inner_params send error')
+  } catch {
+    // ignore embedded message failures
   }
 }
 
@@ -414,17 +414,35 @@ const divEmbedded = type => {
 
 const windowsJump = (url, jumpType, size = 'middle') => {
   try {
+    const safeUrl = resolveSafeJumpUrl(url)
+    if (!safeUrl) {
+      return
+    }
     let newWindow
     if ('newPop' === jumpType) {
-      crestPreviewPopDialogRef.value.previewInit({ url, size })
+      crestPreviewPopDialogRef.value.previewInit({ url: safeUrl, size })
     } else if ('_self' === jumpType) {
-      newWindow = window.open(url, jumpType)
+      newWindow = window.open(safeUrl, jumpType)
     } else {
-      newWindow = window.open(url, jumpType)
+      newWindow = window.open(safeUrl, jumpType, 'noopener,noreferrer')
     }
     initOpenHandler(newWindow)
-  } catch (e) {
-    console.warn(t('visualization.url_check_error') + ':' + url)
+  } catch {
+    // ignore invalid jump URLs
+  }
+}
+
+const resolveSafeJumpUrl = (url?: string) => {
+  const text = String(url || '').trim()
+  if (!text || /[\u0000-\u001f\u007f]/.test(text)) return null
+  try {
+    const target = new URL(text, window.location.href)
+    if (!['http:', 'https:'].includes(target.protocol)) {
+      return null
+    }
+    return text
+  } catch {
+    return null
   }
 }
 
@@ -553,17 +571,21 @@ const jumpClick = param => {
       const colList = [...param.dimensionList, ...param.quotaList]
       let url = setIdValueTrans('id', 'value', jumpInfo.content, colList)
       url = checkAddHttp(url)
+      const safeUrl = resolveSafeJumpUrl(url)
+      if (!safeUrl) {
+        return
+      }
 
       if (isIframe.value || isCrestBi.value) {
         embeddedStore.clearState()
       }
       if (divSelf) {
-        embeddedStore.setOuterUrl(url)
+        embeddedStore.setOuterUrl(safeUrl)
         divEmbedded('Iframe')
         return
       }
 
-      windowsJump(url, jumpInfo.jumpType, jumpInfo.windowSize)
+      windowsJump(safeUrl, jumpInfo.jumpType, jumpInfo.windowSize)
     }
   } else {
   }

@@ -52,6 +52,7 @@ import static io.crest.result.ResultCode.SYSTEM_INNER_ERROR;
 public class HttpClientUtil {
 
     private static Logger logger = LoggerFactory.getLogger(HttpClientUtil.class);
+    private static final Set<String> REMOTE_EXCEL_SUFFIXES = Set.of("csv", "xls", "xlsx");
 
     private static final String HTTPS = "https";
 
@@ -403,6 +404,7 @@ public class HttpClientUtil {
                 throw new Exception(msg);
             }
             String fileName = extractFileName(response, url);
+            validateRemoteExcelFilename(fileName);
             String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
             String tranName = UUID.randomUUID().toString() + "." + suffix;
             name.put("fileName", fileName);
@@ -421,6 +423,14 @@ public class HttpClientUtil {
             throw new RuntimeException("HttpClient查询失败: " + e.getMessage(), e);
         }
         return name;
+    }
+
+    private static void validateRemoteExcelFilename(String fileName) {
+        FileUtils.validateUploadFilename(fileName);
+        String suffix = StringUtils.substringAfterLast(fileName, ".").toLowerCase(Locale.ROOT);
+        if (!REMOTE_EXCEL_SUFFIXES.contains(suffix)) {
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), "远程文件格式不支持");
+        }
     }
 
     public static void validateRemoteDownloadUrl(String url) {

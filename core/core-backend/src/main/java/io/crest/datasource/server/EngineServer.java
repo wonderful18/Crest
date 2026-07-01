@@ -16,6 +16,7 @@ import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -49,7 +50,7 @@ public class EngineServer implements EngineApi {
     }
 
     @Override
-    public void save(DatasourceDTO datasourceDTO) {
+    public void save(@RequestBody DatasourceDTO datasourceDTO) {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
             CrestException.throwException("非管理员，无权访问！");
         }
@@ -69,7 +70,7 @@ public class EngineServer implements EngineApi {
     }
 
     @Override
-    public void validate(DatasourceDTO datasourceDTO) throws Exception {
+    public void validate(@RequestBody DatasourceDTO datasourceDTO) throws Exception {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
             CrestException.throwException("非管理员，无权访问！");
         }

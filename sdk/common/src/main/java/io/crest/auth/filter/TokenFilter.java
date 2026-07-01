@@ -79,7 +79,7 @@ public class TokenFilter implements Filter {
             }
             String executeVersion = null;
             if (StringUtils.isNotBlank(executeVersion = VersionUtil.getRandomVersion())) {
-                Objects.requireNonNull(ServletUtils.response()).addHeader(AuthConstant.CREST_EXECUTE_VERSION, executeVersion);
+                Objects.requireNonNull(ServletUtils.response()).addHeader(AuthConstant.CREST_EXECUTE_VERSION, sanitizeHeaderValue(executeVersion));
             }
             String linkToken = ServletUtils.getHead(AuthConstant.LINK_TOKEN_KEY);
             if (StringUtils.isNotBlank(linkToken)) {
@@ -122,6 +122,10 @@ public class TokenFilter implements Filter {
         } finally {
             UserUtils.removeUser();
         }
+    }
+
+    private String sanitizeHeaderValue(String value) {
+        return StringUtils.replaceChars(value, "\r\n", "");
     }
 
     private void sendResponseEntity(HttpServletResponse httpResponse, ResponseEntity<ResultMessage> responseEntity) throws IOException {

@@ -36,28 +36,28 @@ public class RelationServer {
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASOURCE, id = "#p0")
     @PostMapping("/datasource/{id}")
     @Operation(summary = "查询数据源血缘")
-    public RelationGraphDTO datasource(@PathVariable Long id) {
+    public RelationGraphDTO datasource(@PathVariable("id") Long id) {
         return relationManage.datasource(id);
     }
 
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASET, id = "#p0")
     @PostMapping("/dataset/{id}")
     @Operation(summary = "查询数据集血缘")
-    public RelationGraphDTO dataset(@PathVariable Long id) {
+    public RelationGraphDTO dataset(@PathVariable("id") Long id) {
         return relationManage.dataset(id);
     }
 
     @CrestAudit(ot = LogOT.READ, st = LogST.PANEL, id = "#p0")
     @PostMapping("/dv/{id}")
     @Operation(summary = "查询仪表板或大屏血缘")
-    public RelationGraphDTO dv(@PathVariable Long id) {
+    public RelationGraphDTO dv(@PathVariable("id") Long id) {
         return relationManage.dv(id);
     }
 
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASOURCE)
     @PostMapping("/resources/{type}")
     @Operation(summary = "查询血缘资源")
-    public List<RelationResourceDTO> resources(@PathVariable String type, @RequestBody(required = false) RelationResourceRequest request) {
+    public List<RelationResourceDTO> resources(@PathVariable("type") String type, @RequestBody(required = false) RelationResourceRequest request) {
         return relationManage.resources(type, request);
     }
 }

@@ -49,8 +49,8 @@ deploy/kubernetes
 默认应用镜像：
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.7
-ghcr.io/sevoniva/crest-web:v1.5.7
+ghcr.io/sevoniva/crest-service:v1.5.14
+ghcr.io/sevoniva/crest-web:v1.5.14
 ```
 
 后端镜像以 Alpine 为最终基础镜像，内置 jlink 裁剪后的 Java 21 runtime。前端镜像基于 Nginx Alpine，负责静态资源、API 转发和 WebSocket 转发。两个应用容器都以固定非 root 用户运行：
@@ -95,6 +95,8 @@ docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:main .
 `readiness` 依赖元数据库，数据库不可用时返回 `503`。`liveness` 不访问数据库，只用于判断应用进程是否还能响应。
 
 前端网关使用 `/healthz` 做 startup、readiness 和 liveness 检查。该检查只判断 Nginx 进程和站点配置是否可用，不访问后端数据库，避免数据库短暂抖动导致前端容器被误重启。
+
+前端 Nginx 不直接把客户端 `Host` 透传给后端。需要 SSO 动态回调或后端生成对外链接时，请在 `base/configmap-nginx.yaml` 中将 `server_name` 设置为实际对外域名。
 
 ## 配置项
 
@@ -323,10 +325,10 @@ curl -i http://127.0.0.1:18100/api/v1/actuator/prometheus
 
 ```bash
 mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true -Dcrest.copy.frontend.skip=true
-docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:v1.5.7 .
-docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:v1.5.7 .
-kind load docker-image ghcr.io/sevoniva/crest-service:v1.5.7 --name crest-kind
-kind load docker-image ghcr.io/sevoniva/crest-web:v1.5.7 --name crest-kind
+docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:v1.5.14 .
+docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:v1.5.14 .
+kind load docker-image ghcr.io/sevoniva/crest-service:v1.5.14 --name crest-kind
+kind load docker-image ghcr.io/sevoniva/crest-web:v1.5.14 --name crest-kind
 kind load docker-image mysql:8.0.43 --name crest-kind
 ```
 
@@ -414,7 +416,7 @@ installer/crest/bin/mysql/cleanup-demo-data.sql
 
 ## 迁移和同发布线升级
 
-全新环境可直接使用 Kubernetes 清单部署 v1.5.7。已有 v1.5.5 或 v1.5.6 环境升级到 v1.5.7 时，请更新前后端镜像；本补丁不包含数据库变更，不需要执行新增升级 SQL。更早版本迁移到 v1.5.7 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
+全新环境可直接使用 Kubernetes 清单部署 v1.5.14。已有 v1.5.8 及之后版本升级到 v1.5.14 时，请先备份元数据库和持久化目录，执行 `installer/upgrade-sql/v1.5.13_to_v1.5.14.sql`，再更新前后端镜像。已有 v1.5.7 环境升级到 v1.5.14 时，请先执行 `installer/upgrade-sql/v1.5.7_to_v1.5.8.sql`，再执行 `installer/upgrade-sql/v1.5.13_to_v1.5.14.sql` 并更新前后端镜像。更早版本迁移到 v1.5.14 时，请先备份元数据库和持久化目录，导出业务资源，再部署新环境导入。
 
 同一发布线的小版本升级前：
 
@@ -426,8 +428,8 @@ installer/crest/bin/mysql/cleanup-demo-data.sql
 确认 release notes 明确支持原地升级后，更新镜像：
 
 ```bash
-kubectl -n crest-internal set image deployment/crest-service crest-service=ghcr.io/sevoniva/crest-service:v1.5.7
-kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest-web:v1.5.7
+kubectl -n crest-internal set image deployment/crest-service crest-service=ghcr.io/sevoniva/crest-service:v1.5.14
+kubectl -n crest-internal set image deployment/crest crest=ghcr.io/sevoniva/crest-web:v1.5.14
 kubectl -n crest-internal rollout status deployment/crest-service --timeout=300s
 kubectl -n crest-internal rollout status deployment/crest --timeout=300s
 ```

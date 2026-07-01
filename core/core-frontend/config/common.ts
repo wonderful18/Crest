@@ -4,7 +4,6 @@ import { resolve } from 'path'
 import Vue from '@vitejs/plugin-vue'
 import eslintPlugin from 'vite-plugin-eslint'
 import VueJsx from '@vitejs/plugin-vue-jsx'
-import viteStylelint from 'vite-plugin-stylelint'
 import {
   createStyleImportPlugin,
   ElementPlusSecondaryResolve
@@ -23,7 +22,9 @@ const elementPlusSecondaryStyleDeps = (() => {
   return fs
     .readdirSync(componentsDir, { withFileTypes: true })
     .filter(item => {
-      return item.isDirectory() && fs.existsSync(path.join(componentsDir, item.name, 'style/css.mjs'))
+      return (
+        item.isDirectory() && fs.existsSync(path.join(componentsDir, item.name, 'style/css.mjs'))
+      )
     })
     .map(item => `element-plus-secondary/es/components/${item.name}/style/css`)
 })()
@@ -42,8 +43,7 @@ const lintPlugins = skipViteLint
           'src/*.js',
           'src/*.vue'
         ]
-      }),
-      viteStylelint()
+      })
     ]
 
 const patchElementPlusSecondaryTypes = (code: string) =>

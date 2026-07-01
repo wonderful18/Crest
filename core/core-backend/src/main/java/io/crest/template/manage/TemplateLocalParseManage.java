@@ -47,8 +47,8 @@ public class TemplateLocalParseManage {
                     TemplateVersion version = new TemplateVersion();
                     version.setScript(templateName);
                     version.setInstalledOn(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES));
-                    try {
-                        String content = new String(templateFile.getInputStream().readAllBytes());;
+                    try (InputStream inputStream = templateFile.getInputStream()) {
+                        String content = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
                         DataVisualizationBaseRequest template = JsonUtil.parseObject(content, DataVisualizationBaseRequest.class);
                         parseCore(template);
                         version.setSuccess(true);

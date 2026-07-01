@@ -1,6 +1,7 @@
 package io.crest.security;
 
 import io.crest.exception.GlobalExceptionHandler;
+import io.crest.exception.CrestException;
 import io.crest.result.ResultCode;
 import io.crest.result.ResultMessage;
 import org.junit.jupiter.api.DisplayName;
@@ -44,5 +45,17 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(ResultCode.PARAM_IS_INVALID.code(), result.getCode());
         assertEquals("文件大小超过上传限制，请压缩文件或拆分后重新上传", result.getMsg());
+    }
+
+    @Test
+    @DisplayName("业务异常返回前应过滤内部错误细节")
+    void shouldSanitizeInternalDetailsFromBusinessException() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+        ResultMessage result = handler.crestExceptionHandler(
+                new CrestException(ResultCode.PARAM_IS_INVALID.code(), "SQL ERROR: java.sql.SQLException at mapper"));
+
+        assertEquals(ResultCode.PARAM_IS_INVALID.code(), result.getCode());
+        assertEquals("请求处理失败，请检查参数后重试", result.getMsg());
     }
 }

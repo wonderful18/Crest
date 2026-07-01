@@ -17,6 +17,7 @@ import io.crest.model.KeywordRequest;
 import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.AuthUtils;
 import jakarta.annotation.Resource;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,26 +34,26 @@ public class SubstituleOrgServer implements OrgApi {
     private PlatformPermissionManage platformPermissionManage;
 
     @Override
-    public List<OrgPageVO> pageTree(OrgRequest request) {
+    public List<OrgPageVO> pageTree(@RequestBody OrgRequest request) {
         platformPermissionManage.requireSystemAdmin();
         return crestOrgManage.pageTree(request);
     }
 
     @Override
-    public LazyTreeVO lazyPageTree(OrgLazyRequest request) {
+    public LazyTreeVO lazyPageTree(@RequestBody OrgLazyRequest request) {
         platformPermissionManage.requireSystemAdmin();
         return crestOrgManage.lazyPageTree(request);
     }
 
     @Override
     @CrestAudit(ot = LogOT.CREATE, st = LogST.ORG)
-    public Long create(OrgCreator creator) {
+    public Long create(@RequestBody OrgCreator creator) {
         return crestOrgManage.create(creator);
     }
 
     @Override
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.ORG, id = "#p0.id")
-    public void edit(OrgEditor editor) {
+    public void edit(@RequestBody OrgEditor editor) {
         crestOrgManage.edit(editor);
     }
 
@@ -63,14 +64,14 @@ public class SubstituleOrgServer implements OrgApi {
     }
 
     @Override
-    public List<MountedVO> mounted(KeywordRequest request) {
+    public List<MountedVO> mounted(@RequestBody KeywordRequest request) {
         Long uid = AuthUtils.getUser() == null ? 1L : AuthUtils.getUser().getUserId();
         String keyword = request == null ? null : request.getKeyword();
         return platformPermissionManage.mountedOrgs(uid, keyword);
     }
 
     @Override
-    public LazyMountedVO lazyMounted(OrgLazyRequest request) {
+    public LazyMountedVO lazyMounted(@RequestBody OrgLazyRequest request) {
         LazyMountedVO vo = new LazyMountedVO();
         vo.setNodes(mounted(request));
         vo.setName("组织");

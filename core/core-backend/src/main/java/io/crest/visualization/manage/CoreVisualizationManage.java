@@ -359,6 +359,7 @@ public class CoreVisualizationManage {
     @Transactional
     public void removeSnapshot(Long dvId) {
         if (dvId != null) {
+            requireVisualizationAccess(dvId);
             // 清理历史数据
             Set<Long> dvIds = new HashSet<>();
             dvIds.add(dvId);
@@ -381,6 +382,7 @@ public class CoreVisualizationManage {
     @Transactional
     public void removeDvCore(Long dvId) {
         if (dvId != null) {
+            requireVisualizationAccess(dvId);
             // 清理历史数据
             Set<Long> dvIds = new HashSet<>();
             dvIds.add(dvId);
@@ -401,6 +403,7 @@ public class CoreVisualizationManage {
 
     @Transactional
     public void dvSnapshotRecover(Long dvId) {
+        requireVisualizationAccess(dvId);
         // 清理历史数据
         CoreVisualizationManage proxy = CommonBeanFactory.proxy(this.getClass());
         assert proxy != null;
@@ -422,6 +425,7 @@ public class CoreVisualizationManage {
 
     @Transactional
     public void dvRestore(Long dvId) {
+        requireVisualizationAccess(dvId);
         extDataVisualizationMapper.restoreDataV(dvId);
         extDataVisualizationMapper.restoreViews(dvId);
         extDataVisualizationMapper.restoreLinkJumpTargetViewInfo(dvId);

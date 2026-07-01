@@ -274,8 +274,7 @@ const calcData = (viewCalc: Chart, callback) => {
           initReady.value = true
         })
       })
-      .catch(e => {
-        console.error(e)
+      .catch(() => {
         nextTick(() => {
           initReady.value = true
         })

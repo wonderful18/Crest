@@ -3,6 +3,7 @@ package io.crest.datasource.type;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
+import io.crest.utils.FileUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
@@ -14,10 +15,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -97,17 +100,29 @@ public class CK extends DatasourceConfiguration {
             return cachedPath;
         }
         try {
-            Path certDir = Paths.get(System.getProperty("java.io.tmpdir"), "crest", "clickhouse-ssl");
-            Files.createDirectories(certDir);
-            Path certFile = Files.createTempFile(certDir, "de-" + prefix + "-", ".pem");
-            Files.writeString(certFile, certContent, StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING);
-            certFile.toFile().deleteOnExit();
+            Path tmpRoot = FileUtils.ensureDirectory(System.getProperty("java.io.tmpdir")).toPath();
+            Path certDir = FileUtils.ensureSubDirectory(
+                    FileUtils.ensureSubDirectory(tmpRoot.toString(), "crest").getPath(),
+                    "clickhouse-ssl"
+            ).toPath();
+            Path certFile = certDir.resolve("de-" + prefix + "-" + sha256(certContent) + ".pem");
+            Files.writeString(certFile, certContent, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            restrictOwnerAccess(certFile);
             String certPath = certFile.toAbsolutePath().toString();
             SSL_CERT_PATH_CACHE.put(cacheKey, certPath);
             return certPath;
         } catch (IOException e) {
             CrestException.throwException("SSL cert write failed: " + e.getMessage());
             return null;
+        }
+    }
+
+    private void restrictOwnerAccess(Path certFile) throws IOException {
+        try {
+            Files.setPosixFilePermissions(certFile, PosixFilePermissions.fromString("rw-------"));
+        } catch (UnsupportedOperationException ignored) {
+            // Non-POSIX file systems keep the platform default permissions.
         }
     }
 
@@ -139,9 +154,9 @@ public class CK extends DatasourceConfiguration {
     }
 
     private void checkIllegalParameters(String jdbcUrl) {
-        String lowerUrl = jdbcUrl.toLowerCase();
+        String lowerUrl = jdbcUrl.toLowerCase(Locale.ROOT);
         for (String illegalParam : ILLEGAL_PARAMETERS) {
-            if (lowerUrl.contains(illegalParam.toLowerCase())) {
+            if (lowerUrl.contains(illegalParam.toLowerCase(Locale.ROOT))) {
                 throw new SecurityException("Illegal parameter detected in JDBC URL: " + illegalParam);
             }
         }

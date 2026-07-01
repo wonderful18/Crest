@@ -140,10 +140,9 @@ public class CalciteProvider extends Provider {
     @PostConstruct
     public void init() throws Exception {
         try {
-            String jarPath = FILE_PATH;
+            File file = FileUtils.ensureDirectory(FILE_PATH);
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            extendedJdbcClassLoader = new ExtendedJdbcClassLoader(new URL[]{new File(jarPath).toURI().toURL()}, classLoader);
-            File file = new File(jarPath);
+            extendedJdbcClassLoader = new ExtendedJdbcClassLoader(new URL[]{file.toURI().toURL()}, classLoader);
             File[] array = file.listFiles();
             Optional.ofNullable(array).ifPresent(files -> {
                 for (File tmp : array) {
@@ -416,6 +415,17 @@ public class CalciteProvider extends Provider {
         return "`" + identifier.replace("`", "``") + "`";
     }
 
+    static String quoteOracleSchema(String schema) {
+        if (StringUtils.isBlank(schema)) {
+            CrestException.throwException(Translator.get("i18n_schema_is_empty"));
+        }
+        String value = schema.trim();
+        if (value.indexOf('\0') >= 0 || value.contains(".") || value.length() > 128) {
+            CrestException.throwException(Translator.get("i18n_invalid_ds"));
+        }
+        return "\"" + value.replace("\"", "\"\"") + "\"";
+    }
+
     private String quoteQualifiedIdentifier(String identifier) {
         if (StringUtils.isBlank(identifier)) {
             CrestException.throwException("Illegal empty identifier");
@@ -501,7 +511,7 @@ public class CalciteProvider extends Provider {
             try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId());
                  Statement statement = getStatement(con, 30)) {
                 if (isOracleLike(datasourceSchemaDTO.getType())) {
-                    statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + datasourceConfiguration.getSchema());
+                    statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + quoteOracleSchema(datasourceConfiguration.getSchema()));
                 }
                 boolean readOnly = shouldUseReadOnlyConnection(datasourceRequest, datasourceConfiguration, datasourceSchemaDTO.getType());
                 setConnectionReadOnly(con, readOnly);
@@ -739,10 +749,9 @@ public class CalciteProvider extends Provider {
 
         try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId())) {
 
-            Statement statement = getStatement(value, con, datasourceRequest, datasourceConfiguration, null);
             boolean readOnly = shouldUseReadOnlyConnection(datasourceRequest, datasourceConfiguration, value.getType());
             setConnectionReadOnly(con, readOnly);
-            try {
+            try (Statement statement = getStatement(value, con, datasourceRequest, datasourceConfiguration, null)) {
                 if (CollectionUtils.isNotEmpty(datasourceRequest.getTableFieldWithValues())) {
                     LogUtil.info("execWithPreparedStatement sql: " + datasourceRequest.getQuery());
                     for (int i = 0; i < datasourceRequest.getTableFieldWithValues().size(); i++) {
@@ -763,9 +772,9 @@ public class CalciteProvider extends Provider {
                             } else {
                                 ((PreparedStatement) statement).setObject(i + 1, valueObject, datasourceRequest.getTableFieldWithValues().get(i).getType());
                             }
-                            LogUtil.info("execWithPreparedStatement param[" + (i + 1) + "](" + datasourceRequest.getTableFieldWithValues().get(i).getColumnTypeName() + "): " + datasourceRequest.getTableFieldWithValues().get(i).getValue());
+                            LogUtil.info("execWithPreparedStatement param[" + (i + 1) + "](" + datasourceRequest.getTableFieldWithValues().get(i).getColumnTypeName() + ")");
                         } catch (SQLException e) {
-                            throw new SQLException(e.getMessage() + ". VALUE: " + datasourceRequest.getTableFieldWithValues().get(i).getValue().toString() + " , TARGET TYPE: " + datasourceRequest.getTableFieldWithValues().get(i).getColumnTypeName());
+                            throw new SQLException(e.getMessage() + ". TARGET TYPE: " + datasourceRequest.getTableFieldWithValues().get(i).getColumnTypeName());
                         }
                     }
                     resultSet = ((PreparedStatement) statement).executeQuery();
@@ -808,35 +817,35 @@ public class CalciteProvider extends Provider {
 
         try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId())) {
 
-            Statement statement = getStatement(value, con, datasourceRequest, datasourceConfiguration, null);
-
-            if (CollectionUtils.isNotEmpty(datasourceRequest.getTableFieldWithValues())) {
-                LogUtil.info("execWithPreparedStatement sql: " + datasourceRequest.getQuery());
-                for (int i = 0; i < datasourceRequest.getTableFieldWithValues().size(); i++) {
-                    try {
-                        Object valueObject = datasourceRequest.getTableFieldWithValues().get(i).getValue();
-                        if (valueObject instanceof String && isOracleLike(value.getType())) {
-                            if (StringUtils.isNotEmpty(oracleCharset) && StringUtils.isNotEmpty(oracleTargetCharset)) {
-                                //转换为数据库的字符集
-                                valueObject = convertOracleText((String) valueObject, oracleTargetCharset, oracleCharset);
-                            }
-                            if (datasourceRequest.getTableFieldWithValues().get(i).getType().equals(Types.CLOB)) {
-                                Reader reader = new StringReader((String) valueObject);
-                                ((PreparedStatement) statement).setCharacterStream(i + 1, reader, ((String) valueObject).length());
+            try (Statement statement = getStatement(value, con, datasourceRequest, datasourceConfiguration, null)) {
+                if (CollectionUtils.isNotEmpty(datasourceRequest.getTableFieldWithValues())) {
+                    LogUtil.info("execWithPreparedStatement sql: " + datasourceRequest.getQuery());
+                    for (int i = 0; i < datasourceRequest.getTableFieldWithValues().size(); i++) {
+                        try {
+                            Object valueObject = datasourceRequest.getTableFieldWithValues().get(i).getValue();
+                            if (valueObject instanceof String && isOracleLike(value.getType())) {
+                                if (StringUtils.isNotEmpty(oracleCharset) && StringUtils.isNotEmpty(oracleTargetCharset)) {
+                                    //转换为数据库的字符集
+                                    valueObject = convertOracleText((String) valueObject, oracleTargetCharset, oracleCharset);
+                                }
+                                if (datasourceRequest.getTableFieldWithValues().get(i).getType().equals(Types.CLOB)) {
+                                    Reader reader = new StringReader((String) valueObject);
+                                    ((PreparedStatement) statement).setCharacterStream(i + 1, reader, ((String) valueObject).length());
+                                } else {
+                                    ((PreparedStatement) statement).setObject(i + 1, valueObject, datasourceRequest.getTableFieldWithValues().get(i).getType());
+                                }
                             } else {
                                 ((PreparedStatement) statement).setObject(i + 1, valueObject, datasourceRequest.getTableFieldWithValues().get(i).getType());
                             }
-                        } else {
-                            ((PreparedStatement) statement).setObject(i + 1, valueObject, datasourceRequest.getTableFieldWithValues().get(i).getType());
+                            LogUtil.info("execWithPreparedStatement param[" + (i + 1) + "](" + datasourceRequest.getTableFieldWithValues().get(i).getColumnTypeName() + ")");
+                        } catch (SQLException e) {
+                            throw new SQLException(e.getMessage() + ". TARGET TYPE: " + datasourceRequest.getTableFieldWithValues().get(i).getColumnTypeName());
                         }
-                        LogUtil.info("execWithPreparedStatement param[" + (i + 1) + "](" + datasourceRequest.getTableFieldWithValues().get(i).getColumnTypeName() + "): " + datasourceRequest.getTableFieldWithValues().get(i).getValue());
-                    } catch (SQLException e) {
-                        throw new SQLException(e.getMessage() + ". VALUE: " + datasourceRequest.getTableFieldWithValues().get(i).getValue().toString() + " , TARGET TYPE: " + datasourceRequest.getTableFieldWithValues().get(i).getColumnTypeName());
                     }
+                    ((PreparedStatement) statement).execute();
+                } else {
+                    statement.execute(SqlSecurityPolicy.validateSingleStatement(datasourceRequest.getQuery()));
                 }
-                ((PreparedStatement) statement).execute();
-            } else {
-                statement.execute(datasourceRequest.getQuery());
             }
 
         } catch (SQLException e) {
@@ -858,13 +867,13 @@ public class CalciteProvider extends Provider {
      * 针对Oracle特殊处理
      */
     private Statement getStatement(DatasourceSchemaDTO value, Connection con, DatasourceRequest datasourceRequest, DatasourceConfiguration datasourceConfiguration, String autoIncrementPkName) throws Exception {
-        Statement statement;
         if (isOracleLike(value.getType())) {
-            statement = getStatement(con, datasourceConfiguration.getQueryTimeout());
-            if (StringUtils.isNotBlank(datasourceConfiguration.getSchema())) {
-                statement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + datasourceConfiguration.getSchema());
+            try (Statement sessionStatement = getStatement(con, datasourceConfiguration.getQueryTimeout())) {
+                if (StringUtils.isNotBlank(datasourceConfiguration.getSchema())) {
+                    sessionStatement.executeUpdate("ALTER SESSION SET CURRENT_SCHEMA = " + quoteOracleSchema(datasourceConfiguration.getSchema()));
+                }
+                sessionStatement.executeUpdate("ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS'");
             }
-            statement.executeUpdate("ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS'");
             //调整字符集
             String oracleCharset = normalizeOracleCharset(datasourceConfiguration.getCharset());
             String oracleTargetCharset = normalizeOracleCharset(datasourceConfiguration.getTargetCharset());
@@ -872,8 +881,7 @@ public class CalciteProvider extends Provider {
                 datasourceRequest.setQuery(convertOracleText(datasourceRequest.getQuery(), oracleTargetCharset, oracleCharset));
             }
         }
-        statement = getPreparedStatement(con, datasourceConfiguration.getQueryTimeout(), datasourceRequest.getQuery(), datasourceRequest.getTableFieldWithValues(), autoIncrementPkName, datasourceConfiguration);
-        return statement;
+        return getPreparedStatement(con, datasourceConfiguration.getQueryTimeout(), datasourceRequest.getQuery(), datasourceRequest.getTableFieldWithValues(), autoIncrementPkName, datasourceConfiguration);
     }
 
     @Override
@@ -887,52 +895,53 @@ public class CalciteProvider extends Provider {
         String oracleTargetCharset = normalizeOracleCharset(datasourceConfiguration.getTargetCharset());
         try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId())) {
 
-            Statement statement = getStatement(value, con, datasourceRequest, datasourceConfiguration, autoIncrementPkName);
+            try (Statement statement = getStatement(value, con, datasourceRequest, datasourceConfiguration, autoIncrementPkName)) {
+                int count = 0;
+                if (CollectionUtils.isNotEmpty(datasourceRequest.getTableFieldWithValues())) {
+                    LogUtil.info("execWithPreparedStatement sql: " + datasourceRequest.getQuery());
+                    for (int i = 0; i < datasourceRequest.getTableFieldWithValues().size(); i++) {
+                        try {
+                            Object valueObject = datasourceRequest.getTableFieldWithValues().get(i).getValue();
 
-            int count = 0;
-            if (CollectionUtils.isNotEmpty(datasourceRequest.getTableFieldWithValues())) {
-                LogUtil.info("execWithPreparedStatement sql: " + datasourceRequest.getQuery());
-                for (int i = 0; i < datasourceRequest.getTableFieldWithValues().size(); i++) {
-                    try {
-                        Object valueObject = datasourceRequest.getTableFieldWithValues().get(i).getValue();
-
-                        if (valueObject instanceof String && isOracleLike(value.getType())) {
-                            if (StringUtils.isNotEmpty(oracleCharset) && StringUtils.isNotEmpty(oracleTargetCharset)) {
-                                //转换为数据库的字符集
-                                valueObject = convertOracleText((String) valueObject, oracleTargetCharset, oracleCharset);
-                            }
-                            if (datasourceRequest.getTableFieldWithValues().get(i).getType().equals(Types.CLOB)) {
-                                Reader reader = new StringReader((String) valueObject);
-                                ((PreparedStatement) statement).setCharacterStream(i + 1, reader, ((String) valueObject).length());
+                            if (valueObject instanceof String && isOracleLike(value.getType())) {
+                                if (StringUtils.isNotEmpty(oracleCharset) && StringUtils.isNotEmpty(oracleTargetCharset)) {
+                                    //转换为数据库的字符集
+                                    valueObject = convertOracleText((String) valueObject, oracleTargetCharset, oracleCharset);
+                                }
+                                if (datasourceRequest.getTableFieldWithValues().get(i).getType().equals(Types.CLOB)) {
+                                    Reader reader = new StringReader((String) valueObject);
+                                    ((PreparedStatement) statement).setCharacterStream(i + 1, reader, ((String) valueObject).length());
+                                } else {
+                                    ((PreparedStatement) statement).setObject(i + 1, valueObject, datasourceRequest.getTableFieldWithValues().get(i).getType());
+                                }
                             } else {
                                 ((PreparedStatement) statement).setObject(i + 1, valueObject, datasourceRequest.getTableFieldWithValues().get(i).getType());
                             }
-                        } else {
-                            ((PreparedStatement) statement).setObject(i + 1, valueObject, datasourceRequest.getTableFieldWithValues().get(i).getType());
+                            LogUtil.info("execWithPreparedStatement param[" + (i + 1) + "](" + datasourceRequest.getTableFieldWithValues().get(i).getColumnTypeName() + ")");
+                        } catch (SQLException e) {
+                            throw new SQLException(e.getMessage() + ". TARGET TYPE: " + datasourceRequest.getTableFieldWithValues().get(i).getColumnTypeName());
                         }
-                        LogUtil.info("execWithPreparedStatement param[" + (i + 1) + "](" + datasourceRequest.getTableFieldWithValues().get(i).getColumnTypeName() + "): " + datasourceRequest.getTableFieldWithValues().get(i).getValue());
-                    } catch (SQLException e) {
-                        throw new SQLException(e.getMessage() + ". VALUE: " + datasourceRequest.getTableFieldWithValues().get(i).getValue().toString() + " , TARGET TYPE: " + datasourceRequest.getTableFieldWithValues().get(i).getColumnTypeName());
                     }
+                    count = ((PreparedStatement) statement).executeUpdate();
+                } else {
+                    count = statement.executeUpdate(SqlSecurityPolicy.validateSingleStatement(datasourceRequest.getQuery()));
                 }
-                count = ((PreparedStatement) statement).executeUpdate();
-            } else {
-                count = statement.executeUpdate(datasourceRequest.getQuery());
-            }
 
-            ExecuteResult result = new ExecuteResult();
-            result.setCount(count);
+                ExecuteResult result = new ExecuteResult();
+                result.setCount(count);
 
-            if (StringUtils.isNotBlank(autoIncrementPkName)) {
-                List<String> generatedKeys = new ArrayList<>();
-                ResultSet keys = statement.getGeneratedKeys();
-                while (keys.next()) {
-                    generatedKeys.add(keys.getObject(1).toString());
+                if (StringUtils.isNotBlank(autoIncrementPkName)) {
+                    List<String> generatedKeys = new ArrayList<>();
+                    try (ResultSet keys = statement.getGeneratedKeys()) {
+                        while (keys.next()) {
+                            generatedKeys.add(keys.getObject(1).toString());
+                        }
+                    }
+                    result.setGeneratedKeys(generatedKeys);
                 }
-                result.setGeneratedKeys(generatedKeys);
-            }
 
-            return result;
+                return result;
+            }
         } catch (SQLException e) {
             CrestException.throwException("SQL ERROR: " + e.getMessage());
         } catch (Exception e) {
@@ -1827,7 +1836,8 @@ public class CalciteProvider extends Provider {
                 return "select name from sys.schemas;";
             case db2:
                 DatasourceConfiguration configuration = JsonUtil.parseObject(datasource.getConfiguration(), Db2.class);
-                return "select SCHEMANAME from syscat.SCHEMATA   WHERE \"DEFINER\" ='USER'".replace("USER", configuration.getUsername().toUpperCase());
+                return "select SCHEMANAME from syscat.SCHEMATA WHERE \"DEFINER\" = "
+                        + sqlLiteral(configuration.getUsername().toUpperCase(Locale.ROOT));
             case pg:
                 return "SELECT nspname FROM pg_namespace;";
             case redshift:
@@ -1910,9 +1920,9 @@ public class CalciteProvider extends Provider {
             }
         }
         try {
-            ExtendedJdbcClassLoader customJdbcClassLoader = new ExtendedJdbcClassLoader(new URL[]{new File(CUSTOM_PATH + coreDriver.getId()).toURI().toURL()}, classLoader);
+            File file = FileUtils.ensureSubDirectory(CUSTOM_PATH, String.valueOf(coreDriver.getId()));
+            ExtendedJdbcClassLoader customJdbcClassLoader = new ExtendedJdbcClassLoader(new URL[]{file.toURI().toURL()}, classLoader);
             customJdbcClassLoader.setDriver(coreDriver.getDriverClass());
-            File file = new File(CUSTOM_PATH + coreDriver.getId());
             File[] array = file.listFiles();
             Optional.ofNullable(array).ifPresent(files -> {
                 for (File tmp : array) {
@@ -1971,7 +1981,7 @@ public class CalciteProvider extends Provider {
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDsList(Map.of(datasourceSchemaDTO.getId(), datasourceSchemaDTO));
         try {
-            Connection conn = (connection != null) ? connection : getCalciteConnection();
+            Connection conn = take();
             CalciteConnection calciteConnection = conn.unwrap(CalciteConnection.class);
             SchemaPlus rootSchema = buildSchema(datasourceRequest, calciteConnection);
         } catch (Exception e) {
@@ -2009,7 +2019,7 @@ public class CalciteProvider extends Provider {
         BeanUtils.copyBean(datasourceSchemaDTO, datasource);
         datasourceSchemaDTO.setSchemaAlias(String.format(SQLConstants.SCHEMA, datasourceSchemaDTO.getId()));
         try {
-            Connection conn = (connection != null) ? connection : getCalciteConnection();
+            Connection conn = take();
             CalciteConnection calciteConnection = conn.unwrap(CalciteConnection.class);
             SchemaPlus rootSchema = calciteConnection.getRootSchema();
             if (rootSchema.getSubSchema(datasourceSchemaDTO.getSchemaAlias()) != null) {

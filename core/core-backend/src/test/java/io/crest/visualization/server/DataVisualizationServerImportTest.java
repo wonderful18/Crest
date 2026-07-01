@@ -13,6 +13,8 @@ import io.crest.api.visualization.vo.VisualizationExport2AppVO;
 import io.crest.api.visualization.vo.VisualizationLinkJumpInfoVO;
 import io.crest.api.visualization.vo.VisualizationLinkJumpTargetViewInfoVO;
 import io.crest.api.visualization.vo.VisualizationLinkJumpVO;
+import io.crest.chart.dao.auto.entity.CoreChartView;
+import io.crest.chart.dao.ext.mapper.ExtChartViewMapper;
 import io.crest.chart.manage.ChartDataManage;
 import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasetTableDTO;
@@ -23,12 +25,15 @@ import io.crest.utils.JsonUtil;
 import io.crest.utils.SnowFlake;
 import io.crest.template.dao.auto.mapper.VisualizationTemplateExtendDataMapper;
 import io.crest.template.dao.ext.ExtVisualizationTemplateMapper;
+import io.crest.visualization.dao.auto.entity.DataVisualizationInfo;
 import io.crest.visualization.dao.auto.entity.SnapshotVisualizationLinkJump;
 import io.crest.visualization.dao.auto.entity.SnapshotVisualizationLinkJumpInfo;
 import io.crest.visualization.dao.auto.entity.SnapshotVisualizationLinkJumpTargetViewInfo;
+import io.crest.visualization.dao.auto.mapper.DataVisualizationInfoMapper;
 import io.crest.visualization.dao.auto.mapper.SnapshotVisualizationLinkJumpInfoMapper;
 import io.crest.visualization.dao.auto.mapper.SnapshotVisualizationLinkJumpMapper;
 import io.crest.visualization.dao.auto.mapper.SnapshotVisualizationLinkJumpTargetViewInfoMapper;
+import io.crest.visualization.dao.ext.mapper.ExtDataVisualizationMapper;
 import io.crest.visualization.manage.CoreVisualizationManage;
 import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,6 +70,9 @@ class DataVisualizationServerImportTest {
     private CoreVisualizationManage coreVisualizationManage;
     private ChartDataManage chartDataManage;
     private ExtVisualizationTemplateMapper appTemplateMapper;
+    private DataVisualizationInfoMapper visualizationInfoMapper;
+    private ExtDataVisualizationMapper extDataVisualizationMapper;
+    private ExtChartViewMapper extChartViewMapper;
     private SnapshotVisualizationLinkJumpMapper snapshotVisualizationLinkJumpMapper;
     private SnapshotVisualizationLinkJumpInfoMapper snapshotVisualizationLinkJumpInfoMapper;
     private SnapshotVisualizationLinkJumpTargetViewInfoMapper snapshotVisualizationLinkJumpTargetViewInfoMapper;
@@ -77,6 +85,9 @@ class DataVisualizationServerImportTest {
         coreVisualizationManage = mock(CoreVisualizationManage.class);
         chartDataManage = mock(ChartDataManage.class);
         appTemplateMapper = mock(ExtVisualizationTemplateMapper.class);
+        visualizationInfoMapper = mock(DataVisualizationInfoMapper.class);
+        extDataVisualizationMapper = mock(ExtDataVisualizationMapper.class);
+        extChartViewMapper = mock(ExtChartViewMapper.class);
         snapshotVisualizationLinkJumpMapper = mock(SnapshotVisualizationLinkJumpMapper.class);
         snapshotVisualizationLinkJumpInfoMapper = mock(SnapshotVisualizationLinkJumpInfoMapper.class);
         snapshotVisualizationLinkJumpTargetViewInfoMapper = mock(SnapshotVisualizationLinkJumpTargetViewInfoMapper.class);
@@ -86,9 +97,42 @@ class DataVisualizationServerImportTest {
         ReflectionTestUtils.setField(server, "coreVisualizationManage", coreVisualizationManage);
         ReflectionTestUtils.setField(server, "chartDataManage", chartDataManage);
         ReflectionTestUtils.setField(server, "appTemplateMapper", appTemplateMapper);
+        ReflectionTestUtils.setField(server, "visualizationInfoMapper", visualizationInfoMapper);
+        ReflectionTestUtils.setField(server, "extDataVisualizationMapper", extDataVisualizationMapper);
+        ReflectionTestUtils.setField(server, "extChartViewMapper", extChartViewMapper);
         ReflectionTestUtils.setField(server, "snapshotVisualizationLinkJumpMapper", snapshotVisualizationLinkJumpMapper);
         ReflectionTestUtils.setField(server, "snapshotVisualizationLinkJumpInfoMapper", snapshotVisualizationLinkJumpInfoMapper);
         ReflectionTestUtils.setField(server, "snapshotVisualizationLinkJumpTargetViewInfoMapper", snapshotVisualizationLinkJumpTargetViewInfoMapper);
+
+        DataVisualizationInfo current = new DataVisualizationInfo();
+        current.setId(8000L);
+        current.setType("dataV");
+        current.setCreateBy("2");
+        when(visualizationInfoMapper.selectById(8000L)).thenReturn(current);
+
+        DataVisualizationVO dvInfo = new DataVisualizationVO();
+        dvInfo.setComponentData("[{\"id\":\"100\"},{\"id\":\"101\"}]");
+        when(extDataVisualizationMapper.findDvInfo(eq(8000L), eq(null), any())).thenReturn(dvInfo);
+        when(extChartViewMapper.selectListCustom(eq(8000L), any()))
+                .thenReturn(List.of(chartView(100L), chartView(101L)));
+
+        AppCoreChartViewVO chart100 = new AppCoreChartViewVO();
+        chart100.setId(100L);
+        chart100.setSceneId(8000L);
+        chart100.setTableId(200L);
+        AppCoreChartViewVO chart101 = new AppCoreChartViewVO();
+        chart101.setId(101L);
+        chart101.setSceneId(8000L);
+        chart101.setTableId(200L);
+        when(appTemplateMapper.findAppViewInfo(any())).thenReturn(List.of(chart100, chart101));
+    }
+
+    private CoreChartView chartView(Long id) {
+        CoreChartView view = new CoreChartView();
+        view.setId(id);
+        view.setSceneId(8000L);
+        view.setTableId(200L);
+        return view;
     }
 
     @Test
@@ -325,6 +369,7 @@ class DataVisualizationServerImportTest {
         AppCoreChartViewVO publishedView = new AppCoreChartViewVO();
         publishedView.setId(100L);
         publishedView.setSceneId(8000L);
+        publishedView.setTableId(200L);
         publishedView.setTitle("指标总数");
         AppCoreChartViewVO snapshotView = new AppCoreChartViewVO();
         snapshotView.setId(101L);

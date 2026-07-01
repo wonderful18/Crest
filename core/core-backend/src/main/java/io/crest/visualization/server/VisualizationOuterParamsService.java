@@ -15,16 +15,19 @@ import io.crest.dataset.dao.auto.mapper.CoreDatasetTableMapper;
 import io.crest.constant.FieldTypeConstants;
 import io.crest.dataset.utils.FieldUtils;
 import io.crest.extensions.view.dto.SqlVariableDetails;
+import io.crest.portal.DataPortalPermissionManage;
 import io.crest.utils.BeanUtils;
 import io.crest.utils.JsonUtil;
 import io.crest.visualization.dao.auto.entity.*;
 import io.crest.visualization.dao.auto.mapper.*;
 import io.crest.visualization.dao.ext.mapper.ExtVisualizationOuterParamsMapper;
+import io.crest.visualization.manage.CoreVisualizationManage;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -63,18 +66,27 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
     private DataVisualizationServer dataVisualizationServer;
     @Autowired
     private SnapshotDataVisualizationInfoMapper snapshotDataVisualizationInfoMapper;
+    @Resource
+    private DataVisualizationInfoMapper dataVisualizationInfoMapper;
+    @Resource
+    private CoreVisualizationManage coreVisualizationManage;
+    @Resource
+    private DataPortalPermissionManage dataPortalPermissionManage;
 
 
     @Override
+    @CrestLinkPermit("#p0")
     public VisualizationOuterParamsDTO queryWithVisualizationId(String visualizationId) {
+        requireVisualizationRead(visualizationId);
         VisualizationOuterParamsDTO visualizationOuterParamsDTO = extOuterParamsMapper.queryWithVisualizationIdSnapshot(visualizationId);
         return visualizationOuterParamsDTO;
     }
 
     @Override
-    public void updateOuterParamsSet(VisualizationOuterParamsDTO outerParamsDTO) {
+    public void updateOuterParamsSet(@RequestBody VisualizationOuterParamsDTO outerParamsDTO) {
         String visualizationId = outerParamsDTO.getVisualizationId();
         Assert.notNull(visualizationId, "visualizationId cannot be null");
+        requireVisualizationManage(visualizationId);
         Map<String,String> paramsInfoNameIdMap = new HashMap<>();
         List<SnapshotVisualizationOuterParamsInfo> paramsInfoNameIdList = extOuterParamsMapper.getVisualizationOuterParamsInfoBase(visualizationId);
         if(!CollectionUtils.isEmpty(paramsInfoNameIdList)){
@@ -121,6 +133,7 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
     @CrestLinkPermit
     @Override
     public VisualizationOuterParamsBaseResponse getOuterParamsInfo(String visualizationId) {
+        requireVisualizationRead(visualizationId);
         List<VisualizationOuterParamsInfoDTO> result = extOuterParamsMapper.getVisualizationOuterParamsInfo(visualizationId);
         return new VisualizationOuterParamsBaseResponse(Optional.ofNullable(result).orElse(new ArrayList<>()).stream().collect(Collectors.toMap(VisualizationOuterParamsInfoDTO::getSourceInfo, VisualizationOuterParamsInfoDTO::getTargetInfoList)),
                 Optional.ofNullable(result).orElse(new ArrayList<>()).stream().collect(Collectors.toMap(VisualizationOuterParamsInfoDTO::getSourceInfo, paramsInfo -> paramsInfo))
@@ -128,7 +141,9 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
     }
 
     @Override
+    @CrestLinkPermit("#p0")
     public List<CoreDatasetGroupVO> queryDsWithVisualizationId(String visualizationId) {
+        requireVisualizationRead(visualizationId);
         List<CoreDatasetGroupVO> result = extOuterParamsMapper.queryDsWithVisualizationId(visualizationId);
         if (!CollectionUtils.isEmpty(result)) {
             List<Long> activeViewIds = dataVisualizationServer.getEnabledViewIds(Long.valueOf(visualizationId), CommonConstants.RESOURCE_TABLE.SNAPSHOT);
@@ -158,5 +173,32 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
             });
         }
         return result;
+    }
+
+    private void requireVisualizationRead(String visualizationId) {
+        Long dvId = parseVisualizationId(visualizationId);
+        DataVisualizationInfo info = dataVisualizationInfoMapper.selectById(dvId);
+        if (info == null) {
+            coreVisualizationManage.requireVisualizationManage(null);
+            return;
+        }
+        if (!dataPortalPermissionManage.canReadPublishedVisualization(dvId, info.getType())) {
+            coreVisualizationManage.requireVisualizationManage(info);
+        }
+    }
+
+    private void requireVisualizationManage(String visualizationId) {
+        Long dvId = parseVisualizationId(visualizationId);
+        DataVisualizationInfo info = dataVisualizationInfoMapper.selectById(dvId);
+        coreVisualizationManage.requireVisualizationManage(info);
+    }
+
+    private Long parseVisualizationId(String visualizationId) {
+        try {
+            return Long.valueOf(visualizationId);
+        } catch (Exception e) {
+            coreVisualizationManage.requireVisualizationManage(null);
+            return null;
+        }
     }
 }

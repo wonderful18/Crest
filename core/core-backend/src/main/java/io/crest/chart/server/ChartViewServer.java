@@ -11,6 +11,7 @@ import io.crest.extensions.view.dto.ChartViewDTO;
 import io.crest.extensions.view.dto.ChartViewFieldDTO;
 import io.crest.result.ResultCode;
 import jakarta.annotation.Resource;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -34,7 +35,7 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     @Override
-    public Map<String, List<ChartViewFieldDTO>> listByDQ(Long id, Long chartId, ChartViewDTO dto) {
+    public Map<String, List<ChartViewFieldDTO>> listByDQ(Long id, Long chartId, @RequestBody ChartViewDTO dto) {
         Map<String, List<ChartViewFieldDTO>> stringListMap = chartViewManege.listByDQ(id, chartId, dto);
         DatasetUtils.listEncode(stringListMap.get("dimensionList"));
         DatasetUtils.listEncode(stringListMap.get("quotaList"));
@@ -42,7 +43,7 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     @Override
-    public ChartViewDTO save(ChartViewDTO dto) throws Exception {
+    public ChartViewDTO save(@RequestBody ChartViewDTO dto) throws Exception {
         return chartViewManege.save(dto);
     }
 

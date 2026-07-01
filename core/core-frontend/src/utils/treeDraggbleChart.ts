@@ -103,8 +103,8 @@ const treeDraggbleChart = (state, key, type) => {
 
     try {
       await dvNameCheck(params)
-    } catch (error) {
-      console.error(error)
+    } catch {
+      // keep legacy drag flow behavior
     }
     delete params.opt
 

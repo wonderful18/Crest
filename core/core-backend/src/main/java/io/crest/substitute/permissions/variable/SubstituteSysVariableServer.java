@@ -7,11 +7,6 @@ import io.crest.api.permissions.variable.dto.SysVariableDto;
 import io.crest.api.permissions.variable.dto.SysVariableValueDto;
 import io.crest.exception.CrestException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collections;
 import java.util.List;

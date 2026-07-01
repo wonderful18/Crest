@@ -22,11 +22,15 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.Locale;
 
 public class SmCryptoUtils {
 
@@ -204,12 +208,16 @@ public class SmCryptoUtils {
         if (password == null || salt == null || iterations < 1) {
             throw new IllegalArgumentException("SM3 hash parameters are invalid");
         }
-        byte[] passwordBytes = new String(password).getBytes(StandardCharsets.UTF_8);
-        byte[] current = doHmacSm3(passwordBytes, salt);
-        for (int i = 1; i < iterations; i++) {
-            current = doHmacSm3(passwordBytes, concat(current, salt));
+        byte[] passwordBytes = utf8Bytes(password);
+        try {
+            byte[] current = doHmacSm3(passwordBytes, salt);
+            for (int i = 1; i < iterations; i++) {
+                current = doHmacSm3(passwordBytes, concat(current, salt));
+            }
+            return current;
+        } finally {
+            Arrays.fill(passwordBytes, (byte) 0);
         }
-        return current;
     }
 
     public static byte[] hmacSm3(byte[] key, byte[] data) {
@@ -313,6 +321,16 @@ public class SmCryptoUtils {
         return result;
     }
 
+    private static byte[] utf8Bytes(char[] value) {
+        ByteBuffer buffer = StandardCharsets.UTF_8.encode(CharBuffer.wrap(value));
+        byte[] result = new byte[buffer.remaining()];
+        buffer.get(result);
+        if (buffer.hasArray()) {
+            Arrays.fill(buffer.array(), (byte) 0);
+        }
+        return result;
+    }
+
     private static byte[] normalizeSm2CipherBytes(String cipherHex) {
         byte[] data = Hex.decode(cipherHex);
         if (data.length > 0 && data[0] == 0x04) {
@@ -332,7 +350,7 @@ public class SmCryptoUtils {
         if (normalized.length() != 130) {
             throw new IllegalArgumentException("SM2 public key must be an uncompressed 65-byte point");
         }
-        return normalized.toLowerCase();
+        return normalized.toLowerCase(Locale.ROOT);
     }
 
     private static String normalizePrivateKey(String privateKey) {
@@ -340,7 +358,7 @@ public class SmCryptoUtils {
         if (normalized.length() > 64) {
             throw new IllegalArgumentException("SM2 private key is invalid");
         }
-        return StringUtils.leftPad(normalized, 64, '0').toLowerCase();
+        return StringUtils.leftPad(normalized, 64, '0').toLowerCase(Locale.ROOT);
     }
 
     private static String toFixedLengthHex(BigInteger value, int length) {

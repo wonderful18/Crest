@@ -7,6 +7,7 @@ import org.apache.commons.lang3.Strings;
 import org.springframework.core.env.Environment;
 
 import java.util.List;
+import java.util.Locale;
 
 import static io.crest.result.ResultCode.INTERFACE_ADDRESS_INVALID;
 
@@ -63,18 +64,10 @@ public class WhitelistUtils {
 
     public static boolean match(String requestURI) {
         invalidUrl(requestURI);
-        if (Strings.CS.startsWith(requestURI, getContextPath())) {
-            requestURI = requestURI.replaceFirst(getContextPath(), "");
-        }
-        if (Strings.CS.startsWith(requestURI, AuthConstant.CREST_API_PREFIX)) {
-            requestURI = requestURI.replaceFirst(AuthConstant.CREST_API_PREFIX, "");
-        }
-        if (Strings.CS.startsWith(requestURI, AuthConstant.CREST_CASAPI_PREFIX)) {
-            requestURI = requestURI.replaceFirst(AuthConstant.CREST_CASAPI_PREFIX, "");
-        }
-        if (Strings.CS.startsWith(requestURI, AuthConstant.CREST_OIDCAPI_PREFIX)) {
-            requestURI = requestURI.replaceFirst(AuthConstant.CREST_OIDCAPI_PREFIX, "");
-        }
+        requestURI = removePrefix(requestURI, getContextPath());
+        requestURI = removePrefix(requestURI, AuthConstant.CREST_API_PREFIX);
+        requestURI = removePrefix(requestURI, AuthConstant.CREST_CASAPI_PREFIX);
+        requestURI = removePrefix(requestURI, AuthConstant.CREST_OIDCAPI_PREFIX);
         return WHITE_PATH.contains(requestURI)
                 || Strings.CS.endsWithAny(requestURI, ".gif", ".ico", ".js", ".css", ".svg", ".png", ".jpg", ".jpeg", ".js.map", ".otf", ".ttf", ".woff2")
                 || Strings.CS.startsWithAny(requestURI, "data:image")
@@ -100,6 +93,13 @@ public class WhitelistUtils {
                 || Strings.CS.startsWithAny(requestURI, "/communicate/down/");
     }
 
+    public static String removePrefix(String value, String prefix) {
+        if (StringUtils.isBlank(value) || StringUtils.isBlank(prefix)) {
+            return value;
+        }
+        return Strings.CS.startsWith(value, prefix) ? value.substring(prefix.length()) : value;
+    }
+
     public static String getBaseApiUrl(String redirect_uri) {
         if (Strings.CS.endsWith(redirect_uri, "/")) {
             redirect_uri = redirect_uri.substring(0, redirect_uri.length() - 1);
@@ -112,7 +112,7 @@ public class WhitelistUtils {
     }
 
     private static void invalidUrl(String requestURI) {
-        if (requestURI.contains("./") || requestURI.contains(".%") || requestURI.toLowerCase().contains("%2e") || (requestURI.contains(";") && !requestURI.contains("?"))) {
+        if (requestURI.contains("./") || requestURI.contains(".%") || requestURI.toLowerCase(Locale.ROOT).contains("%2e") || (requestURI.contains(";") && !requestURI.contains("?"))) {
             CrestException.throwException(INTERFACE_ADDRESS_INVALID.code(), String.format("%s [%s]", INTERFACE_ADDRESS_INVALID.message(), requestURI));
         }
     }

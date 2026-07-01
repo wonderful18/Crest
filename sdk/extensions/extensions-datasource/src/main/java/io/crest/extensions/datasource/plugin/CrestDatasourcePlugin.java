@@ -49,7 +49,7 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
     @SuppressWarnings("java/zipslip")
     private void loadDriver() throws Exception {
         PluginDatasourceVO config = getConfig();
-        String localPath = StringUtils.isEmpty(config.getDriverPath()) ? DEFAULT_FILE_PATH : config.getDriverPath();
+        File driverDirectory = pluginDriverDirectory(config);
         ProtectionDomain protectionDomain = this.getClass().getProtectionDomain();
         URI uri = protectionDomain.getCodeSource().getLocation().toURI();
         try (JarFile jarFile = new JarFile(new File(uri))) {
@@ -58,7 +58,7 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
                 JarEntry entry = entries.nextElement();
                 String name = entry.getName();
                 if (Strings.CS.endsWith(name, ".jar")) {
-                    File file = FileUtils.resolveUnderDirectory(localPath, Paths.get(name).getFileName().toString());
+                    File file = FileUtils.resolveUnderDirectory(driverDirectory.getPath(), Paths.get(name).getFileName().toString());
 
                     try (InputStream inputStream = jarFile.getInputStream(entry);
                          FileOutputStream outputStream = new FileOutputStream(file)) {
@@ -73,12 +73,21 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
         }
     }
 
+    private File pluginDriverDirectory(PluginDatasourceVO config) throws Exception {
+        String localPath = StringUtils.isEmpty(config.getDriverPath()) ? DEFAULT_FILE_PATH : config.getDriverPath();
+        return FileUtils.ensureDirectory(localPath);
+    }
+
     public PluginDatasourceVO getConfig() {
         CrestPluginVO pluginInfo = null;
         try {
             pluginInfo = getPluginInfo();
         } catch (Exception e) {
             CrestException.throwException(e);
+        }
+        if (pluginInfo == null) {
+            CrestException.throwException("Plugin info not exists");
+            return null;
         }
         String config = pluginInfo.getConfig();
         PluginDatasourceVO vo = JsonUtil.parseObject(config, PluginDatasourceVO.class);

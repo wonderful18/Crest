@@ -62,19 +62,38 @@ public class CrestUserManageTest {
     }
 
     @Test
-    public void defaultPwdPrefersSystemSetting() {
-        ReflectionTestUtils.setField(crestUserManage, "configuredInitialPassword", "EnvInitialPassword123!");
-        when(sysParameterManage.singleVal(SystemSettingConstants.INITIAL_PASSWORD)).thenReturn("SystemInitialPassword123!");
+    public void createRejectsUnknownRoleAssignment() {
+        ReflectionTestUtils.setField(crestUserManage, "configuredInitialPassword", "TestInitialPassword123!");
+        when(jdbcTemplate.query(eq("SELECT * FROM iam_user WHERE account = ? LIMIT 1"),
+                ArgumentMatchers.<RowMapper<CrestUser>>any(), eq("safe.user"))).thenReturn(List.of());
+        when(jdbcTemplate.queryForObject(eq("SELECT COUNT(1) FROM iam_org WHERE id = ?"),
+                eq(Integer.class), eq(PlatformPermissionManage.ROOT_ORG_ID))).thenReturn(1);
+        when(jdbcTemplate.queryForObject(eq("SELECT COUNT(1) FROM iam_role WHERE id = ?"),
+                eq(Integer.class), eq(999L))).thenReturn(0);
 
-        assertEquals("SystemInitialPassword123!", crestUserManage.defaultPwd());
+        UserCreator creator = new UserCreator();
+        creator.setAccount("safe.user");
+        creator.setName("普通用户");
+        creator.setRoleIds(List.of(999L));
+        creator.setEnable(true);
+
+        assertThrows(CrestException.class, () -> crestUserManage.create(creator));
     }
 
     @Test
-    public void defaultPwdFallsBackToConfiguredInitialPassword() {
+    public void initialPasswordPrefersSystemSetting() {
+        ReflectionTestUtils.setField(crestUserManage, "configuredInitialPassword", "EnvInitialPassword123!");
+        when(sysParameterManage.singleVal(SystemSettingConstants.INITIAL_PASSWORD)).thenReturn("SystemInitialPassword123!");
+
+        assertEquals("SystemInitialPassword123!", ReflectionTestUtils.invokeMethod(crestUserManage, "initialPassword"));
+    }
+
+    @Test
+    public void initialPasswordFallsBackToConfiguredInitialPassword() {
         ReflectionTestUtils.setField(crestUserManage, "configuredInitialPassword", "EnvInitialPassword123!");
         when(sysParameterManage.singleVal(SystemSettingConstants.INITIAL_PASSWORD)).thenReturn("");
 
-        assertEquals("EnvInitialPassword123!", crestUserManage.defaultPwd());
+        assertEquals("EnvInitialPassword123!", ReflectionTestUtils.invokeMethod(crestUserManage, "initialPassword"));
     }
 
     @Test

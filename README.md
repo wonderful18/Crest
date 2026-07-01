@@ -1,12 +1,12 @@
 # Crest
 
-Crest 是面向私有化部署的开源 BI 平台，覆盖数据源接入、数据集建模、仪表盘、数据大屏、分享、导出、系统管理和字段级数据血缘。当前版本为 `v1.5.9`。
+Crest 是面向私有化部署的开源 BI 平台，覆盖数据源接入、数据集建模、仪表盘、数据大屏、分享、导出、系统管理和字段级数据血缘。当前版本为 `v1.5.14`。
 
 Crest 基于 DataEase 2.10.22 开源版本继续开发，并合入 2.10.23 相关安全加固和依赖升级。仓库保留上游版权和 GPLv3 许可声明。品牌、部署脚本、演示资源、OceanBase Oracle 数据源、数据血缘和研发效能分析能力由 Crest 独立维护。
 
 ## 项目定位
 
-Crest 适合部署在企业内网或专有云环境中，用于内部经营分析、研发效能分析、数据资产查看和报表共享。项目聚焦 BI 使用流程，不包含模板市场、SQLBot、消息中心、独立移动端入口、地图类图表运行时、外部插件市场、帮助中心和关于页等未纳入本版本交付范围的能力。
+Crest 适合部署在企业内网或专有云环境中，用于内部经营分析、研发效能分析、数据资产查看和报表共享。项目聚焦数据接入、建模、分析、展示、分享、导出和平台管理等 BI 主流程。
 
 主要功能：
 
@@ -114,8 +114,8 @@ bash install.sh
 | --- | --- |
 | `CREST_BASE` | 安装基目录，默认 `/opt`，实际运行目录为 `/opt/crest` |
 | `CREST_PORT` | Web 端口，默认 `8100` |
-| `CREST_BACKEND_IMAGE` | Crest 后端镜像，默认 `ghcr.io/sevoniva/crest-service:v1.5.9` |
-| `CREST_FRONTEND_IMAGE` | Crest 前端镜像，默认 `ghcr.io/sevoniva/crest-web:v1.5.9` |
+| `CREST_BACKEND_IMAGE` | Crest 后端镜像，默认 `ghcr.io/sevoniva/crest-service:v1.5.14` |
+| `CREST_FRONTEND_IMAGE` | Crest 前端镜像，默认 `ghcr.io/sevoniva/crest-web:v1.5.14` |
 | `CREST_MYSQL_IMAGE` | MySQL 镜像，默认 `mysql:8.0.43` |
 | `CREST_EXTERNAL_MYSQL` | 是否连接外部 MySQL，默认 `false` |
 | `CREST_DB_PASSWORD` | MySQL root 密码，留空时自动生成 |
@@ -139,7 +139,7 @@ crestctl restart
 crestctl clear-logs
 ```
 
-全新环境可直接使用安装脚本部署 `v1.5.9`。已有 `v1.5.x` 环境升级到 `v1.5.9` 时，请先备份元数据库和运行目录，再替换前后端镜像；已有环境需要执行 `upgrade-sql/v1.5.7_to_v1.5.8.sql`。更早版本迁移到 `v1.5.9` 时，请先完成数据备份和资源导出，再在新环境中导入业务资源。
+全新环境可直接使用安装脚本部署 `v1.5.14`。已有 `v1.5.8` 及之后版本升级到 `v1.5.14` 时，请先备份元数据库和运行目录，执行 `upgrade-sql/v1.5.13_to_v1.5.14.sql`，再替换前后端镜像。已有 `v1.5.7` 环境升级到 `v1.5.14` 时，请先执行 `upgrade-sql/v1.5.7_to_v1.5.8.sql`，再执行 `upgrade-sql/v1.5.13_to_v1.5.14.sql` 并替换前后端镜像。更早版本迁移到 `v1.5.14` 时，请先完成数据备份和资源导出，再在新环境中导入业务资源。
 
 已有 `v1.5.x` 环境只替换后端镜像时，可在运行目录执行 `docker-compose up -d --no-deps crest-service`；只替换前端镜像时执行 `docker-compose up -d --no-deps crest`。
 
@@ -155,29 +155,29 @@ Prometheus 指标端点默认关闭。开启后，Prometheus 使用专用 Bearer
 
 ```bash
 cd installer
-bash make-offline-package.sh v1.5.9 linux-amd64
-bash make-offline-package.sh v1.5.9 linux-arm64
-bash make-app-image-package.sh v1.5.9 linux-amd64
-bash make-app-image-package.sh v1.5.9 linux-arm64
+bash make-offline-package.sh v1.5.14 linux-amd64
+bash make-offline-package.sh v1.5.14 linux-arm64
+bash make-app-image-package.sh v1.5.14 linux-amd64
+bash make-app-image-package.sh v1.5.14 linux-arm64
 ```
 
 发布包名：
 
 ```text
-crest-offline-v1.5.9-linux-amd64.tar.gz
-crest-offline-v1.5.9-linux-arm64.tar.gz
-crest-app-images-v1.5.9-linux-amd64.tar.gz
-crest-app-images-v1.5.9-linux-arm64.tar.gz
-crest-source-v1.5.9.tar.gz
-crest-v1.5.9-checksums.txt
-crest-app-images-v1.5.9-checksums.txt
+crest-offline-v1.5.14-linux-amd64.tar.gz
+crest-offline-v1.5.14-linux-arm64.tar.gz
+crest-app-images-v1.5.14-linux-amd64.tar.gz
+crest-app-images-v1.5.14-linux-arm64.tar.gz
+crest-source-v1.5.14.tar.gz
+crest-v1.5.14-checksums.txt
+crest-app-images-v1.5.14-checksums.txt
 ```
 
 `crest-offline-*` 是完整离线安装包，包含安装脚本、配置模板、Docker Compose 文件、部署说明文档、Crest 应用镜像、MySQL 镜像、可选监控组件镜像和 `upgrade-sql/` 升级 SQL。离线服务器解压完整离线包后直接执行：
 
 ```bash
-tar -zxf crest-offline-v1.5.9-linux-amd64.tar.gz
-cd crest-offline-v1.5.9-linux-amd64
+tar -zxf crest-offline-v1.5.14-linux-amd64.tar.gz
+cd crest-offline-v1.5.14-linux-amd64
 bash install.sh
 ```
 
@@ -194,12 +194,12 @@ set +a
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.4_to_v1.5.5.sql
 ```
 
-已有 v1.5.7 环境升级到 v1.5.9 时，请先备份元数据库，再执行 `upgrade-sql/v1.5.7_to_v1.5.8.sql` 并替换前后端镜像。已有 v1.5.5 或 v1.5.6 环境升级到 v1.5.9 时，同样需要执行 `upgrade-sql/v1.5.7_to_v1.5.8.sql`；v1.5.4 环境还需先执行 `upgrade-sql/v1.5.4_to_v1.5.5.sql`。
+已有 v1.5.8 及之后版本升级到 v1.5.14 时，请先备份元数据库，再执行 `upgrade-sql/v1.5.13_to_v1.5.14.sql` 并替换前后端镜像。已有 v1.5.7 环境升级到 v1.5.14 时，请先备份元数据库，再执行 `upgrade-sql/v1.5.7_to_v1.5.8.sql` 和 `upgrade-sql/v1.5.13_to_v1.5.14.sql` 并替换前后端镜像。已有 v1.5.5 或 v1.5.6 环境升级到 v1.5.14 时，同样需要执行这两个升级 SQL；v1.5.4 环境还需先执行 `upgrade-sql/v1.5.4_to_v1.5.5.sql`。
 
 如需把 Prometheus 和 Grafana 镜像一起放进离线包，制作前先准备对应架构镜像，并设置：
 
 ```bash
-INCLUDE_OBSERVABILITY_IMAGES=true bash make-offline-package.sh v1.5.9 linux-amd64
+INCLUDE_OBSERVABILITY_IMAGES=true bash make-offline-package.sh v1.5.14 linux-amd64
 ```
 
 ## Kubernetes 部署
@@ -246,9 +246,9 @@ http://127.0.0.1:18100/index.html
 默认镜像：
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.9
+ghcr.io/sevoniva/crest-service:v1.5.14
 ghcr.io/sevoniva/crest-service:main
-ghcr.io/sevoniva/crest-web:v1.5.9
+ghcr.io/sevoniva/crest-web:v1.5.14
 ghcr.io/sevoniva/crest-web:main
 ```
 
@@ -437,7 +437,7 @@ Crest 支持基于 OIDC / OAuth2 授权码模式的单点登录。配置入口�
 
 ## 平台管理
 
-Crest `v1.5.9` 内置平台管理能力，包括用户、组织、角色、菜单权限和业务资源权限。权限判断在后端执行，前端只负责菜单、按钮和授权界面的展示。
+Crest `v1.5.14` 内置平台管理能力，包括用户、组织、角色、菜单权限和业务资源权限。权限判断在后端执行，前端只负责菜单、按钮和授权界面的展示。
 
 平台管理能力覆盖：
 
@@ -487,6 +487,9 @@ git clean -fdXn
 | 文档 | 内容 |
 | --- | --- |
 | [docs/development.md](./docs/development.md) | 仓库结构、开发工具链、构建命令、迁移规则和提交前检查 |
+| [docs/release/v1.5.14.md](./docs/release/v1.5.14.md) | v1.5.14 发布说明、镜像、离线包、源码包和安装注意事项 |
+| [docs/release/v1.5.14-security-review.md](./docs/release/v1.5.14-security-review.md) | v1.5.14 安全修复范围、验证结果和剩余风险说明 |
+| [docs/release/v1.5.14-security-report-ledger.md](./docs/release/v1.5.14-security-report-ledger.md) | v1.5.14 安全扫描报告处置台账 |
 | [docs/release/v1.5.9.md](./docs/release/v1.5.9.md) | v1.5.9 发布说明、镜像、离线包、源码包和安装注意事项 |
 | [docs/release/v1.5.8.md](./docs/release/v1.5.8.md) | v1.5.8 发布说明、镜像、离线包、源码包和安装注意事项 |
 | [docs/release/v1.5.7.md](./docs/release/v1.5.7.md) | v1.5.7 发布说明、镜像、离线包、源码包和安装注意事项 |
@@ -506,7 +509,7 @@ git clean -fdXn
 
 ## 版本与变更
 
-当前版本：`v1.5.9`。
+当前版本：`v1.5.14`。
 
 变更记录见 [CHANGELOG.md](./CHANGELOG.md)。
 

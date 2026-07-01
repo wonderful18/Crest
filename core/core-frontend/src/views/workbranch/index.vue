@@ -82,22 +82,22 @@ const quickCreate = (flag: number, hasAuth: boolean) => {
 
 const createPanel = () => {
   const baseUrl = '#/dashboard?opt=create'
-  window.open(baseUrl, openType)
+  window.open(baseUrl, openType, openType === '_blank' ? 'noopener,noreferrer' : undefined)
 }
 
 const createScreen = () => {
   const baseUrl = '#/dvCanvas?opt=create'
-  window.open(baseUrl, openType)
+  window.open(baseUrl, openType, openType === '_blank' ? 'noopener,noreferrer' : undefined)
 }
 const createDataset = () => {
   let routeData = router.resolve({
     path: '/dataset-form'
   })
-  window.open(routeData.href, openType)
+  window.open(routeData.href, openType, openType === '_blank' ? 'noopener,noreferrer' : undefined)
 }
 const createDatasource = () => {
   const baseUrl = '#/data/datasource?opt=create'
-  window.open(baseUrl, openType)
+  window.open(baseUrl, openType, openType === '_blank' ? 'noopener,noreferrer' : undefined)
 }
 
 const getLeafTimes = item => {

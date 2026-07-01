@@ -1,10 +1,10 @@
 # Crest 分支、补丁和发布管理规范
 
-本文定义 Crest 的长期分支、临时分支、补丁版本和发布包规则。人和 AI 助手都必须按本文执行；如本文与临时口头描述冲突，以本文为准。
+本文定义 Crest 的长期分支、临时分支、补丁版本和发布包规则。所有协作者都必须按本文执行；如本文与临时口头描述冲突，以本文为准。
 
 ## 核心原则
 
-- 已发布 tag 不移动、不删除、不重打。`v1.5.5` 一旦发布，业务修复必须进入后续补丁版本，例如 `v1.5.6`。
+- 已发布 tag 不移动、不删除、不重打。`v1.5.13` 一旦发布，业务修复必须进入后续补丁版本，例如 `v1.5.14`。
 - 发布包内容异常但代码和镜像未变时，可以重跑对应打包 workflow 覆盖同名附件；业务代码、SQL、配置或前端产物变化时必须发新版本。
 - 补丁版本只做最小修复，不混入新功能、重构或无关格式化。
 - 数据库变更必须提供增量 SQL，并进入完整离线包和应用镜像升级包。
@@ -16,7 +16,7 @@
 | --- | --- | --- |
 | `main` | 稳定主线，代表最新可发布状态 | 只接受 PR，不直接 push |
 | `dev` | 新功能和非紧急修复集成分支 | 只接受 PR，不直接 push |
-| `release/1.5` | 1.5 系列维护分支，产出 `v1.5.6`、`v1.5.7` 等补丁版本 | 只接受 PR，不直接 push |
+| `release/1.5-lts` | 1.5 系列 LTS 维护分支，产出 `v1.5.8` 及之后的 1.5 补丁版本 | 只接受 PR，不直接 push |
 
 ## 临时分支命名
 
@@ -24,9 +24,9 @@
 | --- | --- | --- |
 | 新功能 | `feat/<short-name>` | `dev` |
 | 普通缺陷，尚未发布 | `fix/<short-name>` | `dev` |
-| 已发布版本补丁 | `hotfix/<next-version>-<short-name>` | `release/1.5` |
-| 安全修复 | `security/<short-name>` 或 `hotfix/<next-version>-security-<short-name>` | `dev` 或 `release/1.5` |
-| 发布流程、CI、打包脚本 | `ci/<short-name>` 或 `chore/<short-name>` | `dev`、`main` 或 `release/1.5`，按影响范围选择 |
+| 已发布版本补丁 | `hotfix/<next-version>-<short-name>` | `release/1.5-lts` |
+| 安全修复 | `security/<short-name>` 或 `hotfix/<next-version>-security-<short-name>` | `dev` 或 `release/1.5-lts` |
+| 发布流程、CI、打包脚本 | `ci/<short-name>` 或 `chore/<short-name>` | `dev`、`main` 或 `release/1.5-lts`，按影响范围选择 |
 | 文档 | `docs/<short-name>` | 对应长期分支 |
 | 实验验证 | `spike/<short-name>` | 不直接合入受保护分支，需整理为正式分支后再 PR |
 
@@ -34,25 +34,25 @@
 
 ### 1. 已发布版本发现业务 bug
 
-示例：内网 `v1.5.5` 有 bug，需要重新交付。
+示例：内网 `v1.5.13` 有 bug，需要重新交付。
 
 1. 从维护分支创建补丁分支：
 
    ```bash
-   git checkout release/1.5
+   git checkout release/1.5-lts
    git pull --ff-only
-   git checkout -b hotfix/1.5.6-short-description
+   git checkout -b hotfix/1.5.14-short-description
    ```
 
 2. 做最小修复和回归测试。
-3. 将版本从 `1.5.5` 提升到 `1.5.6`。
-4. 更新 `CHANGELOG.md`，新增 `docs/release/v1.5.6.md`。
-5. 如涉及数据库、系统参数、初始化数据或结构变化，新增 `installer/upgrade-sql/v1.5.5_to_v1.5.6.sql`。
-6. PR 合入 `release/1.5`。
-7. 从 `release/1.5` 打 `v1.5.6` tag，触发镜像、完整离线包、应用镜像升级包和源码包。
+3. 将版本从 `1.5.13` 提升到 `1.5.14`。
+4. 更新 `CHANGELOG.md`，新增 `docs/release/v1.5.14.md`。
+5. 如涉及数据库、系统参数、初始化数据或结构变化，新增 `installer/upgrade-sql/v1.5.13_to_v1.5.14.sql`。
+6. PR 合入 `release/1.5-lts`。
+7. 从 `release/1.5-lts` 打 `v1.5.14` tag，触发镜像、完整离线包、应用镜像升级包和源码包。
 8. 将补丁同步回 `main`，必要时同步回 `dev`。
 
-不要覆盖 `v1.5.5` 的 tag 或业务包。
+不要覆盖 `v1.5.13` 的 tag 或业务包。
 
 ### 2. 发布附件或打包流程异常
 
@@ -67,18 +67,18 @@
 
 ### 3. 新功能
 
-新功能从 `feat/*` 分支进入 `dev`。功能稳定后，按版本计划从 `dev` 合入 `main` 或未来的 release 分支。新功能不得直接进入 `release/1.5`，除非明确决定作为补丁版本的一部分并完成风险评审。
+新功能从 `feat/*` 分支进入 `dev`。功能稳定后，按版本计划从 `dev` 合入 `main` 或未来的 release 分支。新功能不得直接进入 `release/1.5-lts`，除非明确决定作为补丁版本的一部分并完成风险评审。
 
 ### 4. 普通缺陷
 
-尚未发布到稳定版本的缺陷，从 `fix/*` 进入 `dev`。如果同一问题已经影响发布版本，再从 `release/1.5` 创建 `hotfix/*` 做最小补丁，不直接 cherry-pick 大范围开发分支。
+尚未发布到稳定版本的缺陷，从 `fix/*` 进入 `dev`。如果同一问题已经影响发布版本，再从 `release/1.5-lts` 创建 `hotfix/*` 做最小补丁，不直接 cherry-pick 大范围开发分支。
 
 ### 5. 安全问题
 
 安全问题按影响范围选择：
 
 - 只影响未发布开发线：`security/*` -> `dev`；
-- 影响已发布版本：`hotfix/<next-version>-security-<short-name>` -> `release/1.5`；
+- 影响已发布版本：`hotfix/<next-version>-security-<short-name>` -> `release/1.5-lts`；
 - 修复后同步回 `main` 和 `dev`。
 
 ### 6. SQL 变更
@@ -94,14 +94,14 @@ installer/upgrade-sql/v<from>_to_v<to>.sql
 示例：
 
 ```text
-installer/upgrade-sql/v1.5.5_to_v1.5.6.sql
+installer/upgrade-sql/v1.5.13_to_v1.5.14.sql
 ```
 
-从 `v1.5.4` 升级到 `v1.5.6` 时，文档必须说明按顺序执行：
+从 `v1.5.7` 升级到 `v1.5.14` 时，文档必须说明按顺序执行：
 
 ```text
-v1.5.4_to_v1.5.5.sql
-v1.5.5_to_v1.5.6.sql
+v1.5.7_to_v1.5.8.sql
+v1.5.13_to_v1.5.14.sql
 ```
 
 ## 发布检查
@@ -117,14 +117,14 @@ v1.5.5_to_v1.5.6.sql
 - 镜像构建 workflow 通过；
 - 完整离线包、应用镜像升级包、源码包和 checksum 都上传到 Release。
 
-## AI 助手执行要求
+## 自动化协作者执行要求
 
-AI 助手看到任务时，先按以下规则判断：
+自动化协作者看到任务时，先按以下规则判断：
 
-- 用户说“线上、内网、已发布、1.5.5 有 bug、重新打包并修复”：按 hotfix 流程，目标分支是 `release/1.5`，版本应提升到下一个补丁版本。
+- 用户说“线上、内网、已发布、1.5.x 有 bug、重新打包并修复”：按 hotfix 流程，目标分支是 `release/1.5-lts`，版本应提升到下一个补丁版本。
 - 用户说“新功能、优化、规划中的能力”：从 `feat/*` 做到 `dev`。
 - 用户说“包没传、附件漏了、checksum 不对、workflow 失败”：判断代码和镜像是否变化；未变化时只修打包流程并重跑附件 workflow。
 - 用户说“SQL 变更、系统参数、初始化数据、表结构”：必须检查并维护 `installer/upgrade-sql/`。
 - 不确定属于哪类时，先说明判断依据，再选择风险最低的分支；不要默认把修复直接提交到 `main`。
 
-AI 助手不得建议移动已发布 tag、删除已发布 tag、覆盖含业务修复的同名 Release 包，除非用户明确要求做事故回滚并确认风险。
+自动化协作者不得建议移动已发布 tag、删除已发布 tag、覆盖含业务修复的同名 Release 包，除非用户明确要求做事故回滚并确认风险。

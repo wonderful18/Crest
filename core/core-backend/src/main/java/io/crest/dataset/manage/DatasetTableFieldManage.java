@@ -3,6 +3,8 @@ package io.crest.dataset.manage;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.crest.api.dataset.union.DatasetGroupInfoDTO;
+import io.crest.chart.dao.auto.entity.CoreChartView;
+import io.crest.chart.dao.auto.mapper.CoreChartViewMapper;
 import io.crest.dataset.dao.auto.entity.CoreDatasetTableField;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetTableFieldMapper;
 import io.crest.dataset.utils.DatasetUtils;
@@ -21,8 +23,11 @@ import io.crest.extensions.view.dto.ColumnPermissionItem;
 import io.crest.i18n.Translator;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.BeanUtils;
+import io.crest.utils.CrestPermissionUtils;
 import io.crest.utils.IDUtils;
 import io.crest.utils.JsonUtil;
+import io.crest.visualization.dao.auto.entity.DataVisualizationInfo;
+import io.crest.visualization.dao.auto.mapper.DataVisualizationInfoMapper;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -47,6 +52,10 @@ public class DatasetTableFieldManage {
     private DatasetSQLManage datasetSQLManage;
     @Resource
     private DatasetGroupManage datasetGroupManage;
+    @Resource
+    private CoreChartViewMapper coreChartViewMapper;
+    @Resource
+    private DataVisualizationInfoMapper visualizationInfoMapper;
     @Autowired(required = false)
     private PluginManageApi pluginManage;
 
@@ -61,6 +70,7 @@ public class DatasetTableFieldManage {
     }
 
     public DatasetTableFieldDTO chartFieldSave(DatasetTableFieldDTO datasetTableFieldDTO) {
+        requireChartAccess(datasetTableFieldDTO == null ? null : datasetTableFieldDTO.getChartId());
         checkNameLength(datasetTableFieldDTO.getName());
         CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldMapper.selectById(datasetTableFieldDTO.getId());
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
@@ -120,7 +130,54 @@ public class DatasetTableFieldManage {
     }
 
     public void deleteById(Long id) {
+        CoreDatasetTableField field = coreDatasetTableFieldMapper.selectById(id);
+        if (field != null) {
+            requireFieldAccess(field);
+        }
         coreDatasetTableFieldMapper.deleteById(id);
+    }
+
+    private void requireFieldAccess(CoreDatasetTableField field) {
+        if (field.getChartId() != null) {
+            requireChartAccess(field.getChartId());
+            return;
+        }
+        if (field.getDatasetGroupId() != null) {
+            datasetGroupManage.requireDatasetAccess(field.getDatasetGroupId());
+            return;
+        }
+        CrestPermissionUtils.requireCreator(null);
+    }
+
+    private void requireChartAccess(Long chartId) {
+        if (chartId == null) {
+            CrestPermissionUtils.requireCreator(null);
+            return;
+        }
+        CoreChartView chart = coreChartViewMapper.selectById(chartId);
+        if (chart == null) {
+            CrestPermissionUtils.requireCreator(null);
+            return;
+        }
+        if (CrestPermissionUtils.canAccessCreator(chart.getCreateBy())) {
+            return;
+        }
+        if (canAccessScene(chart.getSceneId())) {
+            return;
+        }
+        if (chart.getTableId() != null) {
+            datasetGroupManage.requireDatasetAccess(chart.getTableId());
+            return;
+        }
+        CrestPermissionUtils.requireCreator(chart.getCreateBy());
+    }
+
+    private boolean canAccessScene(Long sceneId) {
+        if (sceneId == null) {
+            return false;
+        }
+        DataVisualizationInfo scene = visualizationInfoMapper.selectById(sceneId);
+        return scene != null && CrestPermissionUtils.canAccessCreator(scene.getCreateBy());
     }
 
     public void deleteByDatasetTableUpdate(Long datasetTableId, List<Long> fieldIds) {
@@ -168,6 +225,7 @@ public class DatasetTableFieldManage {
     }
 
     public void deleteChartFields(Long chartId) {
+        requireChartAccess(chartId);
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
         wrapper.eq("chart_id", chartId);
         coreDatasetTableFieldMapper.delete(wrapper);
@@ -187,6 +245,11 @@ public class DatasetTableFieldManage {
         return transDTO(coreDatasetTableFieldMapper.selectList(wrapper));
     }
 
+    public List<DatasetTableFieldDTO> selectByDatasetGroupIdWithAccess(Long id) {
+        datasetGroupManage.requireDatasetAccess(id);
+        return selectByDatasetGroupId(id);
+    }
+
     public Map<String, List<DatasetTableFieldDTO>> selectByDatasetGroupIds(List<Long> ids) {
         Map<String, List<DatasetTableFieldDTO>> map = new HashMap<>();
         for (Long id : ids) {
@@ -200,6 +263,14 @@ public class DatasetTableFieldManage {
         return map;
     }
 
+    public Map<String, List<DatasetTableFieldDTO>> selectByDatasetGroupIdsWithAccess(List<Long> ids) {
+        if (ids == null) {
+            return Collections.emptyMap();
+        }
+        ids.forEach(datasetGroupManage::requireDatasetAccess);
+        return selectByDatasetGroupIds(ids);
+    }
+
     public List<DatasetTableFieldDTO> selectByFieldIds(List<Long> ids) {
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
         wrapper.in("id", ids);
@@ -210,6 +281,13 @@ public class DatasetTableFieldManage {
         CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldMapper.selectById(id);
         if (coreDatasetTableField == null) return null;
         return transObj(coreDatasetTableField);
+    }
+
+    public DatasetTableFieldDTO selectByIdWithAccess(Long id) {
+        CoreDatasetTableField field = coreDatasetTableFieldMapper.selectById(id);
+        if (field == null) return null;
+        requireFieldAccess(field);
+        return transObj(field);
     }
 
     /**
@@ -228,6 +306,11 @@ public class DatasetTableFieldManage {
         map.put("dimensionList", dimensionList);
         map.put("quotaList", quotaList);
         return map;
+    }
+
+    public Map<String, List<DatasetTableFieldDTO>> listByDQWithAccess(Long id) {
+        datasetGroupManage.requireDatasetAccess(id);
+        return listByDQ(id);
     }
 
     public Map<String, List<DatasetTableFieldDTO>> copilotFields(Long id) throws Exception {
@@ -260,6 +343,7 @@ public class DatasetTableFieldManage {
     }
 
     public List<DatasetTableFieldDTO> listFieldsWithPermissions(Long id) {
+        datasetGroupManage.requireDatasetAccess(id);
         List<DatasetTableFieldDTO> fields = selectByDatasetGroupId(id);
         Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
         Long userId = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
@@ -273,6 +357,7 @@ public class DatasetTableFieldManage {
     }
 
     public List<DatasetTableFieldDTO> listFieldsWithPermissionsRemoveAgg(Long id) {
+        datasetGroupManage.requireDatasetAccess(id);
         List<DatasetTableFieldDTO> fields = selectByDatasetGroupId(id);
         Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
         Long userId = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();

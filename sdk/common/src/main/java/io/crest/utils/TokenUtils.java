@@ -14,14 +14,18 @@ public class TokenUtils {
 
 
     public static TokenUserBO userBOByToken(String token) {
-        String secret = userSecret(token);
-        DecodedJWT jwt = SignedTokenUtils.verify(token, secret);
+        DecodedJWT jwt = verifyUserToken(token);
         Long userId = jwt.getClaim("uid").asLong();
         Long oid = jwt.getClaim("oid").asLong();
         if (ObjectUtils.isEmpty(userId)) {
             CrestException.throwException("token格式错误！");
         }
         return new TokenUserBO(userId, oid);
+    }
+
+    public static DecodedJWT verifyUserToken(String token) {
+        String secret = userSecret(token);
+        return SignedTokenUtils.verify(token, secret);
     }
 
     public static TokenUserBO validate(String token) {

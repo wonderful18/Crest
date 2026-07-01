@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.Assert;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,11 +24,13 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.imageio.ImageIO;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -151,7 +154,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     @Override
-    public Map<String, String> resourceBase64(StaticResourceRequest resourceRequest) {
+    public Map<String, String> resourceBase64(@RequestBody StaticResourceRequest resourceRequest) {
         Map<String, String> result = new HashMap<>();
         if (CollectionUtils.isNotEmpty(resourceRequest.getResourcePathList())) {
             for (String path : resourceRequest.getResourcePathList()) {
@@ -179,9 +182,9 @@ public class StaticResourceServer implements StaticResourceApi {
         }
         try {
             FileUtils.validateUploadFilename(fileName);
-            Path basePath = Paths.get(staticDir).normalize();
-            Path resourcePath = basePath.resolve(fileName).normalize();
-            if (!resourcePath.startsWith(basePath) || !Files.isRegularFile(resourcePath)) {
+            File resourceFile = FileUtils.resolveUnderDirectory(staticDir, fileName);
+            Path resourcePath = resourceFile.toPath();
+            if (!Files.isRegularFile(resourcePath)) {
                 return null;
             }
             return Base64.getEncoder().encodeToString(Files.readAllBytes(resourcePath));
@@ -203,12 +206,7 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     private void writeFileIfAbsent(String fileName, byte[] content) throws IOException {
-        Path basePath = Paths.get(staticDir.toString());
-        FileUtils.createIfAbsent(basePath);
-        Path uploadPath = basePath.resolve(fileName).normalize();
-        if (!uploadPath.startsWith(basePath.normalize())) {
-            CrestException.throwException("静态资源文件名非法");
-        }
+        Path uploadPath = FileUtils.resolveUnderDirectory(staticDir, fileName).toPath();
         if (Files.exists(uploadPath)) {
             LogUtil.info("file exists");
             return;
@@ -243,17 +241,8 @@ public class StaticResourceServer implements StaticResourceApi {
         if (checkSvgMimeType && !isValidSvgMimeType(mimeType)) {
             CrestException.throwException("无效的SVG文件MIME类型");
         }
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try (InputStream inputStream = new ByteArrayInputStream(content)) {
-            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            dbf.setNamespaceAware(true);
-            dbf.setXIncludeAware(false);
-            dbf.setExpandEntityReferences(false);
-
-            DocumentBuilder db = dbf.newDocumentBuilder();
+            DocumentBuilder db = secureSvgDocumentBuilderFactory().newDocumentBuilder();
             Document doc = db.parse(inputStream);
             if (!"svg".equals(doc.getDocumentElement().getNodeName())) {
                 CrestException.throwException("根元素必须是svg");
@@ -281,21 +270,8 @@ public class StaticResourceServer implements StaticResourceApi {
             return false;
         }
 
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-
         try (InputStream inputStream = file.getInputStream()) {
-            // 禁用外部实体解析以防止XXE攻击
-            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            dbf.setNamespaceAware(true);
-
-            // 启用安全解析设置
-            dbf.setXIncludeAware(false);
-            dbf.setExpandEntityReferences(false);
-
-            DocumentBuilder db = dbf.newDocumentBuilder();
+            DocumentBuilder db = secureSvgDocumentBuilderFactory().newDocumentBuilder();
             Document doc = db.parse(inputStream);
 
             // 检查根元素是否是<svg>
@@ -338,6 +314,21 @@ public class StaticResourceServer implements StaticResourceApi {
         return ALLOWED_SVG_MIME_TYPES.contains(contentType.toLowerCase(Locale.ROOT));
     }
 
+    private static DocumentBuilderFactory secureSvgDocumentBuilderFactory() throws ParserConfigurationException {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        dbf.setNamespaceAware(true);
+        dbf.setXIncludeAware(false);
+        dbf.setExpandEntityReferences(false);
+        return dbf;
+    }
+
     /**
      * 检查SVG是否包含危险内容
      * @return true 包含危险内容，false 安全
@@ -366,7 +357,7 @@ public class StaticResourceServer implements StaticResourceApi {
         NodeList elements = doc.getElementsByTagName("*");
         for (int i = 0; i < elements.getLength(); i++) {
             Element element = (Element) elements.item(i);
-            String tagName = element.getTagName().toLowerCase();
+            String tagName = element.getTagName().toLowerCase(Locale.ROOT);
 
             // 检查危险标签
             if (dangerousTags.contains(tagName)) {
@@ -377,8 +368,8 @@ public class StaticResourceServer implements StaticResourceApi {
             NamedNodeMap attributes = element.getAttributes();
             for (int j = 0; j < attributes.getLength(); j++) {
                 Attr attr = (Attr) attributes.item(j);
-                String attrName = attr.getName().toLowerCase();
-                String attrValue = attr.getValue().toLowerCase();
+                String attrName = attr.getName().toLowerCase(Locale.ROOT);
+                String attrValue = attr.getValue().toLowerCase(Locale.ROOT);
 
                 // 检查事件处理器属性
                 if (dangerousAttributes.contains(attrName)) {
@@ -413,7 +404,7 @@ public class StaticResourceServer implements StaticResourceApi {
             return false;
         }
 
-        String lowerValue = value.toLowerCase();
+        String lowerValue = value.toLowerCase(Locale.ROOT);
 
         // JavaScript相关模式
         String[] jsPatterns = {
@@ -451,7 +442,7 @@ public class StaticResourceServer implements StaticResourceApi {
             // 检查元素的文本内容
             String textContent = node.getTextContent();
             if (textContent != null && !textContent.trim().isEmpty()) {
-                String lowerText = textContent.toLowerCase();
+                String lowerText = textContent.toLowerCase(Locale.ROOT);
 
                 // 检查文本中是否包含HTML/XML标签
                 if (lowerText.contains("<script") ||
@@ -472,7 +463,7 @@ public class StaticResourceServer implements StaticResourceApi {
             for (int j = 0; j < childNodes.getLength(); j++) {
                 Node child = childNodes.item(j);
                 if (child.getNodeType() == Node.CDATA_SECTION_NODE) {
-                    String cdataContent = child.getTextContent().toLowerCase();
+                    String cdataContent = child.getTextContent().toLowerCase(Locale.ROOT);
                     if (containsJavaScript(cdataContent) ||
                             cdataContent.contains("<script") ||
                             cdataContent.contains("</script")) {
@@ -493,7 +484,7 @@ public class StaticResourceServer implements StaticResourceApi {
         }
         for (int i = 0; i < src.length; i++) {
             int v = src[i] & 0xFF;
-            String hv = Integer.toHexString(v).toUpperCase();
+            String hv = Integer.toHexString(v).toUpperCase(Locale.ROOT);
             if (hv.length() < 2) {
                 stringBuilder.append(0);
             }
@@ -509,8 +500,8 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     private static Boolean isImageCheckType(MultipartFile file) {
-        try {
-            return getFileType(file.getInputStream()) != null;
+        try (InputStream inputStream = file.getInputStream()) {
+            return getFileType(inputStream) != null;
         } catch (Exception e) {
             LogUtil.error(e.getMessage());
             return false;

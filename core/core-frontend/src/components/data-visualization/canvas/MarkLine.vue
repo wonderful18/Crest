@@ -152,8 +152,8 @@ const showLine = (isDownward, isRightward) => {
       if (needToShow.length) {
         chooseTheTrueLine(needToShow, isDownward, isRightward)
       }
-    } catch (e) {
-      console.warn('markLine disabled')
+    } catch {
+      // ignore invalid mark-line calculations
     }
   })
 }
@@ -179,7 +179,6 @@ const chooseTheTrueLine = (needToShow, isDownward, isRightward) => {
       lineStatus.value.yl = true
     }
   } else {
-    // eslint-disable-next-line no-lonely-if
     if (needToShow.includes('yl')) {
       lineStatus.value.yl = true
     } else if (needToShow.includes('yc')) {
@@ -198,7 +197,6 @@ const chooseTheTrueLine = (needToShow, isDownward, isRightward) => {
       lineStatus.value.xt = true
     }
   } else {
-    // eslint-disable-next-line no-lonely-if
     if (needToShow.includes('xt')) {
       lineStatus.value.xt = true
     } else if (needToShow.includes('xc')) {

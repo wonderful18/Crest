@@ -26,4 +26,19 @@ class SqlSecurityPolicyTest {
     void validateSingleStatementShouldRejectExecutableSqlAfterTopLevelSemicolon() {
         assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateSingleStatement("select 1; select 2"));
     }
+
+    @Test
+    void validateReadQueryShouldAllowReadOnlyStatements() {
+        assertDoesNotThrow(() -> SqlSecurityPolicy.validateReadQuery("select * from demo_table where id = ?"));
+        assertDoesNotThrow(() -> SqlSecurityPolicy.validateReadQuery("with base as (select 1 as id) select * from base"));
+        assertDoesNotThrow(() -> SqlSecurityPolicy.validateReadQuery("desc demo_table"));
+    }
+
+    @Test
+    void validateReadQueryShouldRejectWriteAndDdlStatements() {
+        assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("update demo_table set name = 'x'"));
+        assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("delete from demo_table"));
+        assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("drop table demo_table"));
+        assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("select 1; update demo_table set name = 'x'"));
+    }
 }

@@ -31,7 +31,7 @@ Crest 维护以下功能范围：
 - OceanBase Oracle 模式数据源；
 - 零售经营和研发效能演示资源。
 
-当前不提供 SQLBot、模板市场、工具箱、消息中心、独立移动端入口、地图类图表、地图运行时、地图 API、帮助中心、关于页和外部插件入口。新增入口前必须确认产品边界和部署依赖，不要把不可运行或未维护的菜单暴露出来。
+新增导航入口、图表类型、插件入口和外部集成前，必须先确认产品边界、运行依赖、部署说明和验收用例。
 
 分享模块保留 `core_share`、`CoreShare*`、`ShareTicket` 和 `de-link` 等历史兼容名称。这些名称关联数据库表、接口路径、Mapper 语句和旧分享链接。调整前必须先设计迁移、回滚和链接兼容方案。
 
@@ -156,8 +156,6 @@ pnpm dev
 | `CREST_AES_IV` | 16 位加密 IV |
 | `CREST_CRYPTO_MODE` | 加密模式，默认 `standard`；需要 SM2/SM3/SM4 时设为 `sm-suite` |
 | `CREST_SM4_KEY` | SM4 使用的 16 位 Key；仅在 `CREST_CRYPTO_MODE=sm-suite` 时必填，启动阶段会校验 |
-| `CREST_SQLBOT_ENCRYPT` | SQLBot 对外返回连接信息时是否加密，默认 `false` |
-| `CREST_SQLBOT_AES_KEY` / `CREST_SQLBOT_AES_IV` | 仅在开启 SQLBot 加密时配置，系统不提供默认密钥 |
 | `CREST_ORIGIN_LIST` | 允许来源列表 |
 | `CREST_LOGIN_TIMEOUT` | 登录超时时间，默认 960 分钟 |
 

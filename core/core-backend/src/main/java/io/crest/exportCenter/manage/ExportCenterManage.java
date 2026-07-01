@@ -39,6 +39,7 @@ import io.crest.visualization.dto.WatermarkContentDTO;
 import io.crest.api.permissions.user.vo.UserFormVO;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -229,7 +230,12 @@ public class ExportCenterManage implements BaseExportApi {
     }
 
     private String taskDirectoryPath(String taskId) {
-        return new File(exportData_path, taskId).getPath();
+        try {
+            return FileUtils.ensureSubDirectory(exportData_path, taskId).getPath();
+        } catch (Exception e) {
+            CrestException.throwException(e.getMessage());
+            return null;
+        }
     }
 
     public void addTask(String exportFrom, String exportFromType, ChartExcelRequest request, String busiFlag) {
@@ -474,7 +480,12 @@ public class ExportCenterManage implements BaseExportApi {
         String fileName = exportTask.getExportTime() != null && exportTask.getExportTime() < LEGACY_EXPORT_FILE_TIME
                 ? exportTask.getFileName()
                 : exportTask.getId() + ".xlsx";
-        return new File(taskDirectoryPath(exportTask.getId()), fileName);
+        try {
+            return FileUtils.resolveUnderDirectory(taskDirectoryPath(exportTask.getId()), fileName);
+        } catch (IOException e) {
+            CrestException.throwException(Translator.get("i18n_export_file_missing"));
+            return null;
+        }
     }
 
     private String buildDownloadTicket(CoreExportTask exportTask, long createTime, Long validTime) {

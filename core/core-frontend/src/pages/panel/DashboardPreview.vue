@@ -72,8 +72,7 @@ onBeforeMount(async () => {
       const outerPramsParse = JSON.parse(embeddedParams.outerParams) as Record<string, any>
       attachParams = outerPramsParse.attachParams
       dvMainStore.setEmbeddedCallBack(outerPramsParse.callBackFlag || 'no')
-    } catch (e) {
-      console.error(e)
+    } catch {
       ElMessage.error(t('visualization.outer_param_decode_error'))
       return
     }

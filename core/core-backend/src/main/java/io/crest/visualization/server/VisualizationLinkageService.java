@@ -10,15 +10,18 @@ import io.crest.auth.CrestLinkPermit;
 import io.crest.chart.dao.auto.entity.CoreChartView;
 import io.crest.chart.dao.auto.mapper.CoreChartViewMapper;
 import io.crest.constant.CommonConstants;
+import io.crest.portal.DataPortalPermissionManage;
 import io.crest.utils.BeanUtils;
 import io.crest.utils.IDUtils;
 import io.crest.visualization.dao.auto.entity.*;
 import io.crest.visualization.dao.auto.mapper.*;
 import io.crest.visualization.dao.ext.mapper.ExtVisualizationLinkageMapper;
+import io.crest.visualization.manage.CoreVisualizationManage;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -51,13 +54,21 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
     private DataVisualizationInfoMapper dataVisualizationInfoMapper;
 
     @Resource
+    private CoreVisualizationManage coreVisualizationManage;
+
+    @Resource
+    private DataPortalPermissionManage dataPortalPermissionManage;
+
+    @Resource
     private CoreChartViewMapper coreChartViewMapper;
 
     @Resource
     private SnapshotCoreChartViewMapper snapshotCoreChartViewMapper;
 
     @Override
-    public Map<String, VisualizationLinkageDTO> viewLinkageGather(VisualizationLinkageRequest request) {
+    @CrestLinkPermit("#p0.dvId")
+    public Map<String, VisualizationLinkageDTO> viewLinkageGather(@RequestBody VisualizationLinkageRequest request) {
+        requireVisualizationRead(request.getDvId());
         if (CollectionUtils.isNotEmpty(request.getTargetViewIds())) {
             List<VisualizationLinkageDTO> linkageDTOList = null;
             if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(request.getResourceTable())) {
@@ -71,7 +82,9 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
     }
 
     @Override
-    public List<VisualizationLinkageDTO> viewLinkageGatherArray(VisualizationLinkageRequest request) {
+    @CrestLinkPermit("#p0.dvId")
+    public List<VisualizationLinkageDTO> viewLinkageGatherArray(@RequestBody VisualizationLinkageRequest request) {
+        requireVisualizationRead(request.getDvId());
         if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(request.getResourceTable())) {
             return extVisualizationLinkageMapper.viewLinkageGatherSnapshot(request.getDvId(), request.getSourceViewId(), request.getTargetViewIds());
         } else {
@@ -81,7 +94,8 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
 
     @Override
     @Transactional
-    public BaseRspModel saveLinkage(VisualizationLinkageRequest request) {
+    public BaseRspModel saveLinkage(@RequestBody VisualizationLinkageRequest request) {
+        requireVisualizationManage(request.getDvId());
         // 向镜像中保存
         Long updateTime = System.currentTimeMillis();
         List<VisualizationLinkageDTO> linkageInfo = request.getLinkageInfo();
@@ -128,6 +142,7 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
     @CrestLinkPermit
     @Override
     public Map<String, List<String>> getVisualizationAllLinkageInfo(Long dvId, String resourceTable) {
+        requireVisualizationRead(dvId);
         List<LinkageInfoDTO> info = null;
         if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(resourceTable)) {
             info = extVisualizationLinkageMapper.getPanelAllLinkageInfoSnapshot(dvId);
@@ -138,7 +153,8 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
     }
 
     @Override
-    public Map updateLinkageActive(VisualizationLinkageRequest request) {
+    public Map updateLinkageActive(@RequestBody VisualizationLinkageRequest request) {
+        requireVisualizationManage(request.getDvId());
         SnapshotCoreChartView coreChartView = new SnapshotCoreChartView();
         coreChartView.setId(request.getSourceViewId());
         coreChartView.setLinkageActive(request.getActiveStatus());
@@ -147,9 +163,30 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
     }
 
     @Override
-    public void deleteLinkage(VisualizationLinkageRequest request) {
+    public void deleteLinkage(@RequestBody VisualizationLinkageRequest request) {
+        requireVisualizationManage(request.getDvId());
         // 清理原有关系
         extVisualizationLinkageMapper.deleteViewLinkageFieldSnapshot(request.getDvId(), request.getSourceViewId());
         extVisualizationLinkageMapper.deleteViewLinkageSnapshot(request.getDvId(), request.getSourceViewId());
+    }
+
+    private void requireVisualizationRead(Long dvId) {
+        if (dvId == null) {
+            coreVisualizationManage.requireVisualizationManage(null);
+            return;
+        }
+        DataVisualizationInfo info = dataVisualizationInfoMapper.selectById(dvId);
+        if (info == null) {
+            coreVisualizationManage.requireVisualizationManage(null);
+            return;
+        }
+        if (!dataPortalPermissionManage.canReadPublishedVisualization(dvId, info.getType())) {
+            coreVisualizationManage.requireVisualizationManage(info);
+        }
+    }
+
+    private void requireVisualizationManage(Long dvId) {
+        DataVisualizationInfo info = dvId == null ? null : dataVisualizationInfoMapper.selectById(dvId);
+        coreVisualizationManage.requireVisualizationManage(info);
     }
 }

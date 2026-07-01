@@ -13,6 +13,7 @@ import io.crest.share.manage.ShareManage;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,12 +37,12 @@ public class ShareServer implements ShareApi {
     }
 
     @Override
-    public void editExp(ShareExpRequest request) {
+    public void editExp(@RequestBody ShareExpRequest request) {
         shareManage.editExp(request.getResourceId(), request.getExp());
     }
 
     @Override
-    public void editPwd(SharePwdRequest request) {
+    public void editPwd(@RequestBody SharePwdRequest request) {
         shareManage.editPwd(request.getResourceId(), request.getPwd(), request.getAutoPwd());
     }
 
@@ -53,22 +54,22 @@ public class ShareServer implements ShareApi {
     }
 
     @Override
-    public List<ShareGridVO> query(VisualizationWorkbranchQueryRequest request) {
+    public List<ShareGridVO> query(@RequestBody VisualizationWorkbranchQueryRequest request) {
         return shareManage.query(1, 20, request).getRecords();
     }
 
     @Override
-    public IPage<ShareGridVO> pager(int goPage, int pageSize, VisualizationWorkbranchQueryRequest request) {
+    public IPage<ShareGridVO> pager(int goPage, int pageSize, @RequestBody VisualizationWorkbranchQueryRequest request) {
         return shareManage.query(goPage, pageSize, request);
     }
 
     @Override
-    public ShareProxyVO proxyInfo(ShareProxyRequest request) {
+    public ShareProxyVO proxyInfo(@RequestBody ShareProxyRequest request) {
         return shareManage.proxyInfo(request);
     }
 
     @Override
-    public boolean validatePwd(SharePwdValidator validator) {
+    public boolean validatePwd(@RequestBody SharePwdValidator validator) {
         return shareManage.validatePwd(validator);
     }
 
@@ -78,7 +79,7 @@ public class ShareServer implements ShareApi {
     }
 
     @Override
-    public String editUuid(ShareUuidEditor editor) {
+    public String editUuid(@RequestBody ShareUuidEditor editor) {
         return shareManage.editUuid(editor);
     }
 }

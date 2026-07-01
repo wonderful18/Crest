@@ -20,7 +20,11 @@ const { cardInfo } = toRefs(props)
 const openBlank = () => {
   if (cardInfo.value.url) {
     const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
-    window.open(cardInfo.value.url, openType)
+    window.open(
+      cardInfo.value.url,
+      openType,
+      openType === '_blank' ? 'noopener,noreferrer' : undefined
+    )
   }
 }
 </script>

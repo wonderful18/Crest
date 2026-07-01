@@ -18,6 +18,7 @@ import jakarta.annotation.Resource;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
@@ -40,6 +41,9 @@ public class SubstituleLoginServer {
     @CrestAudit(ot = LogOT.LOGIN, st = LogST.USER)
     @PostMapping("/login/local-login")
     public TokenVO localLogin(@RequestBody PwdLoginDTO dto) {
+        if (dto == null || StringUtils.isAnyBlank(dto.getName(), dto.getPwd())) {
+            CrestException.throwException("用户名或密码错误");
+        }
 
         String name = dto.getName();
         name = RsaUtils.decryptStr(name);

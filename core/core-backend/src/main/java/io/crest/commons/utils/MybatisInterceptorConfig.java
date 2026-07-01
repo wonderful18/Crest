@@ -19,11 +19,10 @@ public class MybatisInterceptorConfig {
     }
 
     /**
-     * 用时需谨慎！！！！！
-     * 主要配置多个的时候，参数少一点
+     * 使用默认的字段加解密处理器配置实体字段。
      *
-     * @param modelClass
-     * @param attrName
+     * @param modelClass 需要处理的实体类型
+     * @param attrName 需要加解密的字段名
      */
     public MybatisInterceptorConfig(Class<?> modelClass, String attrName) {
         this.modelName = modelClass.getName();

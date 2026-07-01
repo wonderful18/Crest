@@ -179,15 +179,14 @@ const resetPwd = async row => {
       ElMessage.success('密码重置完成')
       return
     }
-    await showPasswordNotice('密码已重置', `用户「${row.name}」的新密码：${newPwd}`, newPwd)
+    await showPasswordNotice(
+      '密码已重置',
+      `用户「${row.name}」的新密码已生成，请及时复制并妥善保存`,
+      newPwd
+    )
   } catch (e: any) {
     // ElMessageBox cancel or axios interceptor already shows error message
   }
-}
-
-const queryDefaultPassword = async () => {
-  const res = await request.get({ url: '/user/default-password' })
-  return String(res.data || '')
 }
 
 const copyPassword = async (password: string) => {
@@ -209,18 +208,14 @@ const showPasswordNotice = async (title: string, message: string, password: stri
 }
 
 const showDefaultPasswordNotice = async (title: string, message: string) => {
-  let password = ''
-  try {
-    password = await queryDefaultPassword()
-  } catch {
-    ElMessage.warning('默认密码未配置，请先在系统参数的账号安全中设置')
-    return
-  }
-  if (!password) {
-    ElMessage.warning('默认密码未配置，请先在系统参数的账号安全中设置')
-    return
-  }
-  await showPasswordNotice(title, `${message}，默认密码：${password}`, password)
+  await ElMessageBox.alert(
+    `${message}，已按系统初始密码策略创建。请在账号安全参数中确认交付方式，或通过“重置密码”生成一次性密码。`,
+    title,
+    {
+      confirmButtonText: '知道了',
+      type: 'success'
+    }
+  )
 }
 
 const remove = async row => {
@@ -490,7 +485,7 @@ onMounted(async () => {
             v-model.trim="form.password"
             type="password"
             show-password
-            :placeholder="isEdit ? '不填写则保持原密码' : '留空则使用系统默认密码'"
+            :placeholder="isEdit ? '不填写则保持原密码' : '留空则按系统初始密码策略创建'"
             maxlength="100"
           />
         </el-form-item>

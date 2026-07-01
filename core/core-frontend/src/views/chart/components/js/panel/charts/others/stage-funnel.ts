@@ -16,6 +16,18 @@ const escapeSvgAttribute = (value: unknown) =>
   escapeSvgText(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+const safeHexColor = (value: unknown, fallback: string) => {
+  const color = String(value ?? '').trim()
+  return /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback
+}
+const safeSvgColor = (value: unknown, fallback: string) => {
+  const color = String(value ?? '').trim()
+  if (/^#[0-9a-fA-F]{3,8}$/.test(color)) return color
+  if (/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*(0|1|0?\.\d+))?\s*\)$/i.test(color)) {
+    return color
+  }
+  return fallback
+}
 
 const formatMetricValue = (value: unknown) => {
   const numberValue = Number(value)
@@ -41,18 +53,18 @@ const hexToRgb = (hex: string) => {
 }
 
 const adjustColor = (hex: string, amount: number) => {
-  const rgb = hexToRgb(hex)
+  const rgb = hexToRgb(safeHexColor(hex, DEFAULT_COLORS[0]))
   if (!rgb) {
-    return hex
+    return DEFAULT_COLORS[0]
   }
   const channel = (value: number) => clamp(value + amount, 0, 255)
   return `rgb(${channel(rgb.r)}, ${channel(rgb.g)}, ${channel(rgb.b)})`
 }
 
 const colorWithAlpha = (hex: string, alpha: number) => {
-  const rgb = hexToRgb(hex)
+  const rgb = hexToRgb(safeHexColor(hex, DEFAULT_COLORS[0]))
   if (!rgb) {
-    return hex
+    return DEFAULT_COLORS[0]
   }
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`
 }
@@ -95,15 +107,21 @@ class StageFunnelDomChart {
     const customAttr: DeepPartial<ChartAttr> = parseJson(this.chart.customAttr)
     const basicStyle = customAttr.basicStyle as any
     const metricLimit = Number(basicStyle?.stageFunnel?.metricLimit)
+    const colors =
+      Array.isArray(basicStyle?.colors) && basicStyle.colors.length
+        ? basicStyle.colors.map((color, index) =>
+            safeHexColor(color, DEFAULT_COLORS[index % DEFAULT_COLORS.length])
+          )
+        : DEFAULT_COLORS
     return {
-      colors: basicStyle?.colors?.length ? basicStyle.colors : DEFAULT_COLORS,
+      colors,
       periodLabel: basicStyle?.stageFunnel?.periodLabel || '时间周期',
-      periodColor: basicStyle?.stageFunnel?.periodColor || '#416fd1',
+      periodColor: safeHexColor(basicStyle?.stageFunnel?.periodColor, '#416fd1'),
       metricTitle: basicStyle?.stageFunnel?.metricTitle || '各阶段显示：数量 / 平均耗时',
       metricLimit: Number.isFinite(metricLimit) ? metricLimit : 3,
       metricAliases: basicStyle?.stageFunnel?.metricAliases || {},
-      noteTitleColor: basicStyle?.stageFunnel?.noteTitleColor || '#f3fbff',
-      noteTextColor: basicStyle?.stageFunnel?.noteTextColor || 'rgba(226,245,255,.82)'
+      noteTitleColor: safeSvgColor(basicStyle?.stageFunnel?.noteTitleColor, '#f3fbff'),
+      noteTextColor: safeSvgColor(basicStyle?.stageFunnel?.noteTextColor, 'rgba(226,245,255,.82)')
     }
   }
 

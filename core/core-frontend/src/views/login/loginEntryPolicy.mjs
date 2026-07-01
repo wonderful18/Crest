@@ -32,6 +32,10 @@ export const parseLoginRedirect = redirectPath => {
   } catch {
     // Keep the original path when an invalid escape sequence is passed in.
   }
+  queryRedirectPath = String(queryRedirectPath).trim()
+  if (!isLocalRedirectPath(queryRedirectPath)) {
+    queryRedirectPath = PORTAL_HOME
+  }
   const [path, search = ''] = queryRedirectPath.split('?')
   const query = {}
   new URLSearchParams(search).forEach((value, key) => {
@@ -41,4 +45,20 @@ export const parseLoginRedirect = redirectPath => {
     path,
     query
   }
+}
+
+export const stringifyLoginRedirect = redirectPath => {
+  const redirect = parseLoginRedirect(redirectPath)
+  const search = new URLSearchParams(redirect.query).toString()
+  return search ? `${redirect.path}?${search}` : redirect.path
+}
+
+const isLocalRedirectPath = redirectPath => {
+  return (
+    redirectPath.startsWith('/') &&
+    !redirectPath.startsWith('//') &&
+    !redirectPath.includes('\\') &&
+    !/^[a-z][a-z\d+.-]*:/i.test(redirectPath) &&
+    !/[\u0000-\u001f\u007f]/.test(redirectPath)
+  )
 }

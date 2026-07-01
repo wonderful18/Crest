@@ -12,6 +12,22 @@ const embeddedStore = useEmbedded()
 const basePath = import.meta.env.VITE_API_BASEPATH
 const baseUrl = basePath + '/appearance/image/'
 import { isBtnShow } from '@/utils/utils'
+
+const escapeCssString = (value?: string | null) =>
+  String(value || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/[\n\r\f]/g, '\\A ')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+
+const cssFontFamily = (name?: string | null) => (name ? `'${escapeCssString(name)}'` : '')
+const cssUrl = (url?: string | null) => `"${escapeCssString(url)}"`
+const setCustomFontVariables = (name?: string | null) => {
+  const fontFamily = cssFontFamily(name)
+  document.documentElement.style.setProperty('--crest-custom_font', fontFamily)
+  document.documentElement.style.setProperty('--van-base-font', fontFamily)
+}
+
 interface AppearanceState {
   themeColor?: string
   customColor?: string
@@ -168,24 +184,22 @@ export const useAppearanceStore = defineStore('appearanceStore', {
     setCurrentFont(name) {
       const currentFont = this.fontList.find(ele => ele.name === name)
       if (currentFont) {
-        document.documentElement.style.setProperty('--crest-custom_font', `${name}`)
-        document.documentElement.style.setProperty('--van-base-font', `${name}`)
+        setCustomFontVariables(name)
         if (!currentFont.fileTransName) {
           return
         }
-        let fontStyleElement = document.querySelector(`[id="crest-custom_font${name}"]`)
+        let fontStyleElement = document.getElementById('crest-custom_font_current')
         if (!fontStyleElement) {
           fontStyleElement = document.createElement('style')
-          fontStyleElement.setAttribute('id', `crest-custom_font${name}`)
+          fontStyleElement.setAttribute('id', 'crest-custom_font_current')
           document.querySelector('head').appendChild(fontStyleElement)
         }
-        fontStyleElement.innerHTML = `@font-face {
-            font-family: '${name}';
-            src: url(${
-              embeddedStore.baseUrl
-                ? (embeddedStore.baseUrl + basePath).replace('/./', '/')
-                : basePath
-            }/typeface/download/${currentFont.fileTransName});
+        const fontUrl = `${
+          embeddedStore.baseUrl ? (embeddedStore.baseUrl + basePath).replace('/./', '/') : basePath
+        }/typeface/download/${encodeURIComponent(currentFont.fileTransName)}`
+        fontStyleElement.textContent = `@font-face {
+            font-family: ${cssFontFamily(name)};
+            src: url(${cssUrl(fontUrl)});
             font-weight: normal;
             font-style: normal;
           }`
@@ -237,21 +251,20 @@ export const useAppearanceStore = defineStore('appearanceStore', {
             document.querySelector('head').appendChild(fontStyleElement)
           }
           if (!name) {
-            fontStyleElement.innerHTML = ''
+            fontStyleElement.textContent = ''
             document.documentElement.style.removeProperty('--crest-custom_font')
             document.documentElement.style.removeProperty('--van-base-font')
             return
           }
-          fontStyleElement.innerHTML = fileTransName
+          fontStyleElement.textContent = fileTransName
             ? `@font-face {
-                font-family: '${name}';
-                src: url(${url});
+                font-family: ${cssFontFamily(name)};
+                src: url(${cssUrl(url)});
                 font-weight: normal;
                 font-style: normal;
                 }`
             : ''
-          document.documentElement.style.setProperty('--crest-custom_font', `${name}`)
-          document.documentElement.style.setProperty('--van-base-font', `${name}`)
+          setCustomFontVariables(name)
         }
       })
       if (!isCrestBi) {

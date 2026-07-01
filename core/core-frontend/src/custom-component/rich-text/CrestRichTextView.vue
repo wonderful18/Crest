@@ -386,7 +386,7 @@ const assignment = content => {
           const ele = itm.slice(1, -1)
           let value =
             dataRowNameSelect.value[ele] !== undefined ? dataRowNameSelect.value[ele] : null
-          let targetValue = !!value ? value : state.emptyValue
+          let targetValue = encodeHTMLEntities(String(!!value ? value : state.emptyValue))
           if (thresholdStyleInfo && thresholdStyleInfo[ele]) {
             const thresholdStyle = thresholdStyleInfo[ele]
             targetValue = `<span style="color:${thresholdStyle.color};background-color: ${thresholdStyle.backgroundColor}">${targetValue}</span>`
@@ -415,17 +415,37 @@ const assignment = content => {
 const decodeHTMLEntities = text => {
   if (!text) return text
 
-  const textarea = document.createElement('textarea')
-  textarea.innerHTML = text
-  return textarea.value
+  return text.replace(/&(#\d+|#x[\da-fA-F]+|[a-zA-Z][\w-]+);/g, (match, entity) => {
+    const namedEntities: Record<string, string> = {
+      amp: '&',
+      lt: '<',
+      gt: '>',
+      quot: '"',
+      apos: "'",
+      nbsp: ' '
+    }
+    if (entity.charAt(0) === '#') {
+      const radix = entity.charAt(1).toLowerCase() === 'x' ? 16 : 10
+      const codePoint = parseInt(entity.slice(radix === 16 ? 2 : 1), radix)
+      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match
+    }
+    return namedEntities[entity] || match
+  })
 }
 
 const encodeHTMLEntities = text => {
   if (!text) return text
 
-  const textarea = document.createElement('textarea')
-  textarea.textContent = text
-  return textarea.innerHTML
+  return String(text).replace(/[&<>"']/g, char => {
+    const entityMap: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }
+    return entityMap[char]
+  })
 }
 const initFontFamily = htmlText => {
   const regex = /font-family:\s*([^;"]+);/g
@@ -440,13 +460,14 @@ const initFontFamily = htmlText => {
 const fieldSelect = field => {
   const ed = tinymce.editors[tinymceId]
   const fieldId = 'changeText-' + guid()
+  const fieldName = encodeHTMLEntities(String(field.name || ''))
   const value =
     '<span id="' +
     fieldId +
     '"><span class="mceNonEditable" contenteditable="false" data-mce-content="[' +
-    field.name +
+    fieldName +
     ']">[' +
-    field.name +
+    fieldName +
     ']</span></span>'
   const attachValue = '<span id="attachValue">&nbsp;</span>'
   ed.insertContent(value)
@@ -543,12 +564,7 @@ const editCursor = () => {
     }
     tinymce.init({
       selector: tinymceId,
-      plugins: 'table',
-      setup: function (editor) {
-        editor.on('init', function () {
-          console.info('====init====')
-        })
-      }
+      plugins: 'table'
     })
   }, 100)
 }

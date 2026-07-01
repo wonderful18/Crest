@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -544,7 +545,7 @@ public class RelationManage implements RelationApi {
         if (StringUtils.isBlank(summary)) {
             return summary;
         }
-        return switch (summary.toLowerCase()) {
+        return switch (summary.toLowerCase(Locale.ROOT)) {
             case "sum" -> "求和";
             case "count" -> "计数";
             case "avg" -> "平均";
@@ -694,12 +695,12 @@ public class RelationManage implements RelationApi {
         if (StringUtils.isBlank(joinType)) {
             return "JOIN";
         }
-        return switch (joinType.toLowerCase()) {
+        return switch (joinType.toLowerCase(Locale.ROOT)) {
             case "left" -> "LEFT JOIN";
             case "right" -> "RIGHT JOIN";
             case "inner" -> "INNER JOIN";
             case "full" -> "FULL JOIN";
-            default -> joinType.toUpperCase() + " JOIN";
+            default -> joinType.toUpperCase(Locale.ROOT) + " JOIN";
         };
     }
 

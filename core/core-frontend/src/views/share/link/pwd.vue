@@ -75,7 +75,7 @@ const rule = reactive<FormRules>({
 
 const refresh = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
-  await formEl.validate((valid, fields) => {
+  await formEl.validate(valid => {
     if (valid) {
       const uuid = vid.value
       const pwd = form.value.password
@@ -89,8 +89,6 @@ const refresh = async (formEl: FormInstance | undefined) => {
           msg.value = '密码错误'
         }
       })
-    } else {
-      console.error('error submit!', fields)
     }
   })
 }

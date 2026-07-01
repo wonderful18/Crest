@@ -721,6 +721,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                         simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
                     }
                 }
+                if (simpleDateFormat == null) {
+                    return cTime;
+                }
                 Date date = simpleDateFormat.parse(cTime);
                 calendar.setTime(date);
                 calendar.add(Calendar.YEAR, -1);
@@ -751,6 +754,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                         simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
                     }
                 }
+                if (simpleDateFormat == null) {
+                    return cTime;
+                }
                 Date date = simpleDateFormat.parse(cTime);
                 calendar.setTime(date);
                 calendar.add(Calendar.MONTH, -1);
@@ -773,8 +779,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                 return Strings.CI.equals(calcType, "day_mom")
                         || Strings.CI.equals(calcType, "month_yoy")
                         || Strings.CI.equals(calcType, "year_yoy");
+            default:
+                return false;
         }
-        return false;
     }
 
     protected boolean checkYoyFilter(List<ChartExtFilterDTO> filter, List<ChartViewFieldDTO> yoyAxis) {

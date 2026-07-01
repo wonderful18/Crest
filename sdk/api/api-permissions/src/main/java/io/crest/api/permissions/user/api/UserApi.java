@@ -148,11 +148,6 @@ public interface UserApi {
     @GetMapping("/clear-error-record/{key}")
     void clearErrorRecord(@PathVariable("key") String key);
 
-    @Operation(summary = "查询默认密码")
-    @CrestPermit({"m:read"})
-    @GetMapping("/default-password")
-    String defaultPwd();
-
     @Operation(summary = "重置本地密码")
     @Parameter(name = "id", description = "用户ID", required = true, in = ParameterIn.PATH)
     @CrestPermit({"m:read", "#p0 + ':manage'"})

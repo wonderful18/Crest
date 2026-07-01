@@ -66,7 +66,11 @@ const addDsWindow = () => {
     embeddedStore.getToken && appStore.getIsIframe ? 'dataset-embedded-form' : '/dataset-form'
   let routeData = router.resolve(path)
   const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
-  const newWindow = window.open(routeData.href, openType)
+  const newWindow = window.open(
+    routeData.href,
+    openType,
+    openType === '_blank' ? 'noopener,noreferrer' : undefined
+  )
   initOpenHandler(newWindow)
 }
 

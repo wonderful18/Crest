@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 public class HtmlResourceFilter implements Filter, Ordered {
 
     private static final Pattern VERSIONED_FRONTEND_ASSET = Pattern.compile(
-            "^(js|assets/(?:chunk|css|svg|png|jpg|jpeg|gif|ico|woff2?))/(.+)-\\d+\\.\\d+\\.\\d+-(crest.*)$"
+            "^(js|assets/(?:chunk|css|svg|png|jpg|jpeg|gif|ico|woff2?))/([^/]+)-\\d+\\.\\d+\\.\\d+-(crest[^/]*)$"
     );
     private static final String FRONTEND_CONTENT_SECURITY_POLICY = String.join("; ",
             "default-src 'self'",

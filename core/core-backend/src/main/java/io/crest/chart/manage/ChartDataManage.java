@@ -592,6 +592,7 @@ public class ChartDataManage {
             case "xAxis" -> fieldList = view.getXAxis();
             case "xAxisExt" -> fieldList = view.getXAxisExt();
             case "extStack" -> fieldList = view.getExtStack();
+            default -> fieldList = new ArrayList<>();
         }
         DatasetTableFieldDTO field = datasetTableFieldManage.selectById(fieldId);
 
@@ -612,9 +613,9 @@ public class ChartDataManage {
                 }
             }
             if (Strings.CI.equals(fieldType, "xAxisExt")) {
-                List<ChartViewFieldDTO> xAxis = view.getXAxis();
-                index += xAxis.size();
-                getIndex += xAxis.size();
+                int xAxisSize = CollectionUtils.size(view.getXAxis());
+                index += xAxisSize;
+                getIndex += xAxisSize;
             }
             if (Strings.CI.equals(fieldType, "extStack")) {
                 int xAxisSize = CollectionUtils.size(view.getXAxis());
@@ -628,12 +629,18 @@ public class ChartDataManage {
                 // 获取自定义值与data对应列的结果
                 List<String[]> strings = customSort(Optional.ofNullable(chartViewFieldDTO.getCustomSort()).orElse(new ArrayList<>()), sortResult, index);
                 for (int i = 0; i < strings.size(); i++) {
-                    res.add(strings.get(i)[getIndex]);
+                    String[] row = strings.get(i);
+                    if (row != null && getIndex >= 0 && getIndex < row.length) {
+                        res.add(row[getIndex]);
+                    }
                 }
             } else {
                 // 返回请求结果
                 for (int i = 0; i < sortResult.size(); i++) {
-                    res.add(sortResult.get(i)[getIndex]);
+                    String[] row = sortResult.get(i);
+                    if (row != null && getIndex >= 0 && getIndex < row.length) {
+                        res.add(row[getIndex]);
+                    }
                 }
             }
         }

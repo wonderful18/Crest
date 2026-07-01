@@ -4,7 +4,8 @@ import {
   parseLoginRedirect,
   resolveDefaultLoginPath,
   shouldShowLocalLogin,
-  shouldUseEmergencyLogin
+  shouldUseEmergencyLogin,
+  stringifyLoginRedirect
 } from './loginEntryPolicy.mjs'
 
 describe('login entry policy', () => {
@@ -37,5 +38,25 @@ describe('login entry policy', () => {
         id: '10'
       }
     })
+  })
+
+  it('falls back to portal for non-local redirect targets', () => {
+    for (const redirect of [
+      'https://example.com',
+      '//example.com/path',
+      '%2F%2Fexample.com/path',
+      'javascript:alert(1)',
+      '/\\example.com'
+    ]) {
+      assert.deepEqual(parseLoginRedirect(redirect), {
+        path: '/portal',
+        query: {}
+      })
+    }
+  })
+
+  it('serializes only safe local redirect targets for SSO login', () => {
+    assert.equal(stringifyLoginRedirect('/dashboard%3Fid%3D10'), '/dashboard?id=10')
+    assert.equal(stringifyLoginRedirect('https://example.com'), '/portal')
   })
 })

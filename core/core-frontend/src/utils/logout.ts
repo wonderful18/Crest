@@ -44,16 +44,33 @@ export const logoutHandler = (justClean?: boolean, save_platform_status = false)
         pathname = pathname.replace('mobile.html', '')
       }
       pathname = pathname.substring(0, pathname.length - 1)
-      const uri = window.location.href
+      const uri = encodeURIComponent(window.location.href)
       window.location.href = pathname + '/casbi/cas/logout?service=' + uri
       return
     }
     pathname = pathname.substring(0, pathname.length - 1)
   }
-  if (wsCache.get('custom_auth_logout_url')) {
-    window.location.href = wsCache.get('custom_auth_logout_url')
+  const customLogoutUrl = safeLogoutUrl(wsCache.get('custom_auth_logout_url'))
+  if (customLogoutUrl) {
+    window.location.href = customLogoutUrl
   }
   router.push(justClean ? queryRedirectPath : `/login?redirect=${queryRedirectPath}`)
+}
+
+const safeLogoutUrl = (url?: string) => {
+  if (!url) return null
+  try {
+    const target = new URL(url, window.location.origin)
+    if (!['http:', 'https:'].includes(target.protocol)) {
+      return null
+    }
+    if (target.username || target.password) {
+      return null
+    }
+    return target.href
+  } catch {
+    return null
+  }
 }
 
 const removeCache = () => {

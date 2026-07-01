@@ -21,7 +21,8 @@ import {
   parseLoginRedirect,
   resolveDefaultLoginPath,
   shouldShowLocalLogin,
-  shouldUseEmergencyLogin
+  shouldUseEmergencyLogin,
+  stringifyLoginRedirect
 } from './loginEntryPolicy.mjs'
 import xss from 'xss'
 const { wsCache } = useCache()
@@ -145,7 +146,9 @@ const loadSsoStatus = async () => {
 }
 const handleSsoLogin = () => {
   cleanPlatformFlag()
-  const redirect = (router.currentRoute.value.query.redirect as string) || '/portal'
+  const redirect = stringifyLoginRedirect(
+    (router.currentRoute.value.query.redirect as string) || '/portal'
+  )
   const apiBase = PATH_URL.startsWith('./') ? PATH_URL.substring(1) : PATH_URL
   window.location.href = `${apiBase}/sso/login?redirect=${encodeURIComponent(redirect)}`
 }
@@ -339,7 +342,6 @@ onMounted(async () => {
                     :placeholder="`${t('common.account')}${
                       activeName === 'simple' ? '/' + t('commons.email') : ''
                     }`"
-                    autofocus
                   />
                 </el-form-item>
                 <el-form-item class="login-input-module" prop="password">

@@ -194,6 +194,9 @@ public class ChartViewThresholdManage {
                 } else {
                     unitLabels = List.of(Translator.get("i18n_time_year"), Translator.get("i18n_time_month"), Translator.get("i18n_time_date"), Translator.get("i18n_time_hour"));
                 }
+                if (unit < 1 || unit > unitLabels.size()) {
+                    CrestException.throwException("动态时间单位无效");
+                }
                 String unitText = unitLabels.get(unit - 1);
                 String suffixText = Translator.get("i18n_time_ago");
                 if (suffix == 2) {

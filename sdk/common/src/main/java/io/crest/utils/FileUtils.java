@@ -43,6 +43,27 @@ public class FileUtils {
         return directory;
     }
 
+    public static File ensureSubDirectory(String directoryPath, String directoryName) throws IOException {
+        File target = resolveSubDirectory(directoryPath, directoryName);
+        if (!target.exists() && !target.mkdirs()) {
+            throw new IOException("Failed to create directory: " + target.getPath());
+        }
+        if (!target.isDirectory()) {
+            throw new IOException("Path is not a directory: " + target.getPath());
+        }
+        return target;
+    }
+
+    public static File resolveSubDirectory(String directoryPath, String directoryName) throws IOException {
+        validateUploadFilename(directoryName);
+        File directory = ensureDirectory(directoryPath);
+        File target = new File(directory, directoryName).getCanonicalFile();
+        if (!target.toPath().startsWith(directory.toPath())) {
+            CrestException.throwException(Translator.get("i18n_invalid_file_name"));
+        }
+        return target;
+    }
+
     public static File resolveUnderDirectory(String directoryPath, String filename) throws IOException {
         validateUploadFilename(filename);
         File directory = ensureDirectory(directoryPath);
@@ -100,9 +121,11 @@ public class FileUtils {
     }
 
     public static void validateExist(String path) {
-        File dir = new File(path);
-        if (dir.exists()) return;
-        dir.mkdirs();
+        try {
+            ensureDirectory(path);
+        } catch (IOException e) {
+            CrestException.throwException(e.getMessage());
+        }
     }
 
     /**
@@ -161,16 +184,14 @@ public class FileUtils {
                 copyFolder(file.getAbsolutePath(), movePath);
             } else {
                 //如果是文件则复制文件
-                BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
-                BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(movePath));
-
-                byte[] b = new byte[1024];
-                int temp = 0;
-                while ((temp = in.read(b)) != -1) {
-                    out.write(b, 0, temp);
+                try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
+                     BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(movePath))) {
+                    byte[] b = new byte[1024];
+                    int temp;
+                    while ((temp = in.read(b)) != -1) {
+                        out.write(b, 0, temp);
+                    }
                 }
-                out.close();
-                in.close();
             }
         }
     }
@@ -193,15 +214,9 @@ public class FileUtils {
     }
 
     private static void copyFileUsingFileChannels(File source, File dest) throws IOException {
-        FileChannel inputChannel = null;
-        FileChannel outputChannel = null;
-        try {
-            inputChannel = new FileInputStream(source).getChannel();
-            outputChannel = new FileOutputStream(dest).getChannel();
+        try (FileChannel inputChannel = new FileInputStream(source).getChannel();
+             FileChannel outputChannel = new FileOutputStream(dest).getChannel()) {
             outputChannel.transferFrom(inputChannel, 0, inputChannel.size());
-        } finally {
-            inputChannel.close();
-            outputChannel.close();
         }
     }
 

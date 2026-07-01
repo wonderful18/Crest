@@ -307,8 +307,9 @@ public class ExtWhere2Str {
                 return toLikeValue(value);
             case "eq":
                 return toQuotedValue(value);
+            default:
+                return null;
         }
-        return null;
     }
 
     private static String sanitizeSqlLiteral(String value) {

@@ -8,8 +8,8 @@ groups:
           severity: critical
           category: availability
         annotations:
-          summary: "Crest 服务采集中断"
-          description: "Prometheus 连续 2 分钟未能成功采集 crest-service。请检查服务进程、容器健康状态和网络连通性。"
+          summary: 'Crest 服务采集中断'
+          description: 'Prometheus 连续 2 分钟未能成功采集 crest-service。请检查服务进程、容器健康状态和网络连通性。'
 
       - alert: CrestApiInventoryMissing
         expr: count(crest_api_route_info) == 0
@@ -18,8 +18,8 @@ groups:
           severity: critical
           category: observability
         annotations:
-          summary: "Crest API 路由清单缺失"
-          description: "未采集到 crest_api_route_info 指标。API 纳管率、模块统计和接口清单不可作为运维依据。"
+          summary: 'Crest API 路由清单缺失'
+          description: '未采集到 crest_api_route_info 指标。API 纳管率、模块统计和接口清单不可作为运维依据。'
 
   - name: crest.api-slo
     rules:
@@ -34,8 +34,8 @@ groups:
           severity: warning
           category: api
         annotations:
-          summary: "Crest HTTP 5xx 错误率偏高"
-          description: "5 分钟内 HTTP 5xx 错误率持续高于 2%。请优先检查服务日志、数据库连接和近期发布变更。"
+          summary: 'Crest HTTP 5xx 错误率偏高'
+          description: '5 分钟内 HTTP 5xx 错误率持续高于 2%。请优先检查服务日志、数据库连接和近期发布变更。'
 
       - alert: CrestHighHttpP95Latency
         expr: |
@@ -48,8 +48,8 @@ groups:
           severity: warning
           category: api
         annotations:
-          summary: "Crest HTTP P95 延迟偏高"
-          description: "5 分钟内 HTTP P95 延迟持续高于 2 秒。请检查慢接口、数据库连接池、CPU 和外部依赖。"
+          summary: 'Crest HTTP P95 延迟偏高'
+          description: '5 分钟内 HTTP P95 延迟持续高于 2 秒。请检查慢接口、数据库连接池、CPU 和外部依赖。'
 
   - name: crest.runtime
     rules:
@@ -60,8 +60,8 @@ groups:
           severity: warning
           category: runtime
         annotations:
-          summary: "Crest 进程 CPU 使用率偏高"
-          description: "进程 CPU 使用率连续 10 分钟高于 85%。请结合接口吞吐、慢请求和 JVM 线程状态排查。"
+          summary: 'Crest 进程 CPU 使用率偏高'
+          description: '进程 CPU 使用率连续 10 分钟高于 85%。请结合接口吞吐、慢请求和 JVM 线程状态排查。'
 
       - alert: CrestJvmHeapHigh
         expr: |
@@ -74,8 +74,8 @@ groups:
           severity: warning
           category: runtime
         annotations:
-          summary: "Crest JVM 堆内存使用率偏高"
-          description: "JVM 堆内存使用率连续 10 分钟高于 85%。请检查对象增长、缓存占用和 GC 情况。"
+          summary: 'Crest JVM 堆内存使用率偏高'
+          description: 'JVM 堆内存使用率连续 10 分钟高于 85%。请检查对象增长、缓存占用和 GC 情况。'
 
       - alert: CrestExecutorQueueBacklog
         expr: sum(executor_queued_tasks{job="crest-service"}) > 100
@@ -84,8 +84,8 @@ groups:
           severity: warning
           category: runtime
         annotations:
-          summary: "Crest 线程池队列积压"
-          description: "线程池排队任务连续 5 分钟超过 100。请检查异步任务、WebSocket 通道和审计日志写入压力。"
+          summary: 'Crest 线程池队列积压'
+          description: '线程池排队任务连续 5 分钟超过 100。请检查异步任务、WebSocket 通道和审计日志写入压力。'
 
   - name: crest.database
     rules:
@@ -100,8 +100,8 @@ groups:
           severity: warning
           category: database
         annotations:
-          summary: "Crest 数据库连接池使用率偏高"
-          description: "数据库连接池使用率连续 5 分钟高于 85%。请检查慢 SQL、连接泄漏和数据库实例负载。"
+          summary: 'Crest 数据库连接池使用率偏高'
+          description: '数据库连接池使用率连续 5 分钟高于 85%。请检查慢 SQL、连接泄漏和数据库实例负载。'
 
       - alert: CrestDatabasePendingConnections
         expr: sum(hikaricp_connections_pending{job="crest-service"}) > 0
@@ -110,5 +110,5 @@ groups:
           severity: warning
           category: database
         annotations:
-          summary: "Crest 数据库连接等待"
-          description: "数据库连接等待数连续 3 分钟大于 0。请检查连接池容量、SQL 执行耗时和数据库连接上限。"
+          summary: 'Crest 数据库连接等待'
+          description: '数据库连接等待数连续 3 分钟大于 0。请检查连接池容量、SQL 执行耗时和数据库连接上限。'

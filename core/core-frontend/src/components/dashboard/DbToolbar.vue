@@ -151,7 +151,7 @@ const previewOuter = () => {
     if (embeddedStore.baseUrl) {
       url = `${embeddedStore.baseUrl}${url}`.replaceAll('\/\/#', '\/#')
     }
-    const newWindow = window.open(url, '_blank')
+    const newWindow = window.open(url, '_blank', 'noopener,noreferrer')
     initOpenHandler(newWindow)
   })
 }
@@ -291,8 +291,8 @@ const saveResource = (checkParams?) => {
           ElMessage.success(t('commons.save_success'))
         }
       })
-    } catch (e) {
-      console.error(e)
+    } catch {
+      // keep current canvas state when save fails before request completion
     }
   }
 }

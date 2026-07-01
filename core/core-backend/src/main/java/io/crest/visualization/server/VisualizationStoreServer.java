@@ -7,6 +7,7 @@ import io.crest.api.visualization.request.VisualizationWorkbranchQueryRequest;
 import io.crest.api.visualization.vo.VisualizationStoreVO;
 import io.crest.visualization.manage.VisualizationStoreManage;
 import jakarta.annotation.Resource;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,12 +21,12 @@ public class VisualizationStoreServer implements VisualizationStoreApi {
     private VisualizationStoreManage visualizationStoreManage;
 
     @Override
-    public void execute(VisualizationStoreRequest request) {
+    public void execute(@RequestBody VisualizationStoreRequest request) {
         visualizationStoreManage.execute(request);
     }
 
     @Override
-    public List<VisualizationStoreVO> query(VisualizationWorkbranchQueryRequest request) {
+    public List<VisualizationStoreVO> query(@RequestBody VisualizationWorkbranchQueryRequest request) {
         IPage<VisualizationStoreVO> iPage = visualizationStoreManage.query(1, 20, request);
         return iPage.getRecords();
     }

@@ -316,22 +316,25 @@ const onWrapperClick = e => {
         dvMainStore.popAreaActiveSwitch()
       })
     } else if (config.value.events.type === 'jump') {
-      const url = config.value.events.jump.value
+      const url = resolveSafeJumpUrl(config.value.events.jump.value)
       const jumpType = config.value.events.jump.type
+      if (!url) {
+        return
+      }
       try {
         if ('newPop' === jumpType) {
           crestPreviewPopDialogRef.value.previewInit({ url, size: 'middle' })
         } else if ('_blank' === jumpType) {
           if (window['originOpen']) {
-            window['originOpen'](url, '_blank')
+            window['originOpen'](url, '_blank', 'noopener,noreferrer')
           } else {
-            window.open(url, '_blank')
+            window.open(url, '_blank', 'noopener,noreferrer')
           }
         } else {
           initOpenHandler(window.open(url, jumpType))
         }
-      } catch (e) {
-        console.warn('url 格式错误:' + url)
+      } catch {
+        // ignore invalid jump URLs
       }
     } else if (config.value.events.type === 'refreshDataV') {
       useEmitt().emitter.emit('componentRefresh')
@@ -342,6 +345,20 @@ const onWrapperClick = e => {
     }
     e?.preventDefault()
     e?.stopPropagation()
+  }
+}
+
+const resolveSafeJumpUrl = (url?: string) => {
+  const text = String(url || '').trim()
+  if (!text || /[\u0000-\u001f\u007f]/.test(text)) return null
+  try {
+    const target = new URL(text, window.location.href)
+    if (!['http:', 'https:'].includes(target.protocol)) {
+      return null
+    }
+    return text
+  } catch {
+    return null
   }
 }
 

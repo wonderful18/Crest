@@ -301,7 +301,8 @@ public class DatasetSQLManage {
             }
             sql = MessageFormat.format("SELECT {0} FROM {1}", f, TableUtils.getTableAndAlias(tableName, datasourceType(dsMap, currentDs.getDatasourceId()), isCross)) + join.toString();
         } else {
-            String f = StringUtils.join(checkedInfo.get(tableName.getTableAlias()), ",");
+            String[] checkedFieldNames = checkedInfo.get(tableName.getTableAlias());
+            String f = checkedFieldNames == null ? "" : StringUtils.join(checkedFieldNames, ",");
             if (StringUtils.isEmpty(f)) {
                 CrestException.throwException(Translator.get("i18n_union_ds_no_checked"));
             }

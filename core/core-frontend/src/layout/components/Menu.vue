@@ -33,7 +33,7 @@ const menuSelect = (index: string, indexPath: string[]) => {
   //   自定义事件
   if (isExternal(index)) {
     const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
-    window.open(index, openType)
+    window.open(index, openType, openType === '_blank' ? 'noopener,noreferrer' : undefined)
   } else {
     push(`${path.value}/${indexPath.join('/')}`)
   }

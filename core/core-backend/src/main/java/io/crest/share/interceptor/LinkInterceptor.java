@@ -42,12 +42,8 @@ public class LinkInterceptor implements HandlerInterceptor {
                 List<String> whiteList = Arrays.stream(StringUtils.split(whiteListText, ",")).map(String::trim).toList();
 
                 String requestURI = ServletUtils.request().getRequestURI();
-                if (Strings.CS.startsWith(requestURI, WhitelistUtils.getContextPath())) {
-                    requestURI = requestURI.replaceFirst(WhitelistUtils.getContextPath(), "");
-                }
-                if (Strings.CS.startsWith(requestURI, AuthConstant.CREST_API_PREFIX)) {
-                    requestURI = requestURI.replaceFirst(AuthConstant.CREST_API_PREFIX, "");
-                }
+                requestURI = WhitelistUtils.removePrefix(requestURI, WhitelistUtils.getContextPath());
+                requestURI = WhitelistUtils.removePrefix(requestURI, AuthConstant.CREST_API_PREFIX);
                 boolean valid = whiteList.contains(requestURI) || isWhiteStart(requestURI) || WhitelistUtils.match(requestURI);
                 if (!valid) {
                     CrestException.throwException("分享链接Token不支持访问当前url[" + requestURI + "]");

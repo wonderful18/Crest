@@ -57,7 +57,6 @@ Lint：
 
 ```bash
 pnpm run lint:check
-pnpm run lint:stylelint
 ```
 
 后端打包时会把前端 `dist` 拷贝到后端静态资源目录。只改前端后，如果要在 `http://localhost:8100` 的打包服务里看到效果，需要重新执行前端构建和后端打包。
@@ -77,7 +76,7 @@ pnpm run lint:stylelint
 - 修改密码；
 - 系统参数、分享管理、站点设置、用户管理和字体管理。
 
-当前不提供模板市场、工具箱、消息中心、独立移动端入口、地图类图表、地图运行时、外部插件入口、帮助中心和关于页。不要新增不可运行的菜单入口。
+新增导航入口、图表类型、插件入口和外部集成前，必须先确认产品边界、运行依赖、部署说明和验收用例。
 
 分享功能属于稳定能力。`core_share`、`ShareTicket`、`de-link` 等名称与数据库表、接口路径和历史分享链接有关，调整前必须先设计迁移和兼容方案。
 
@@ -219,6 +218,5 @@ src/views/visualized/data/dataset/form/SqlCodeEditor.vue
 
 - `node_modules/`
 - `dist/`
-- `.stylelintcache`
 - `components.d.ts`
 - 浏览器截图和临时验证目录

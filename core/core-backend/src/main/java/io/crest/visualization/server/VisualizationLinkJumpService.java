@@ -14,6 +14,7 @@ import io.crest.chart.dao.auto.entity.CoreChartView;
 import io.crest.chart.dao.auto.mapper.CoreChartViewMapper;
 import io.crest.constant.CommonConstants;
 import io.crest.extensions.datasource.dto.DatasetTableFieldDTO;
+import io.crest.portal.DataPortalPermissionManage;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.BeanUtils;
 import io.crest.utils.IDUtils;
@@ -23,10 +24,12 @@ import io.crest.visualization.dao.auto.entity.*;
 import io.crest.visualization.dao.auto.mapper.*;
 import io.crest.visualization.dao.ext.mapper.ExtVisualizationLinkJumpMapper;
 import io.crest.visualization.dao.ext.mapper.ExtVisualizationLinkageMapper;
+import io.crest.visualization.manage.CoreVisualizationManage;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -70,6 +73,12 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     @Resource
     private SnapshotCoreChartViewMapper snapshotCoreChartViewMapper;
 
+    @Resource
+    private CoreVisualizationManage coreVisualizationManage;
+
+    @Resource
+    private DataPortalPermissionManage dataPortalPermissionManage;
+
 
     @Resource
     private DataVisualizationInfoMapper dataVisualizationInfoMapper;
@@ -79,6 +88,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
 
     @Override
     public List<DatasetTableFieldDTO> getTableFieldWithViewId(Long viewId) {
+        requireViewRead(viewId);
         return extVisualizationLinkageMapper.queryTableFieldWithViewId(viewId);
     }
 
@@ -86,6 +96,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     // 查询仪表板或大屏的组件跳转配置。
     @Override
     public VisualizationLinkJumpBaseResponse queryVisualizationJumpInfo(Long dvId, String resourceTable) {
+        requireVisualizationRead(dvId);
         Map<String, VisualizationLinkJumpInfoDTO> resultBase = new HashMap<>();
         List<VisualizationLinkJumpDTO> resultLinkJumpList = null;
         if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(resourceTable)) {
@@ -117,12 +128,14 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
 
     @Override
     public VisualizationLinkJumpDTO queryWithViewId(Long dvId, Long viewId) {
+        requireVisualizationRead(dvId);
         return extVisualizationLinkJumpMapper.queryWithViewId(dvId, viewId, AuthUtils.getUser().getUserId(), ModelUtils.isDesktop());
     }
 
     @Transactional
     @Override
-    public void updateJumpSet(VisualizationLinkJumpDTO jumpDTO) {
+    public void updateJumpSet(@RequestBody VisualizationLinkJumpDTO jumpDTO) {
+        requireVisualizationManage(jumpDTO.getSourceDvId());
         Long dvId = jumpDTO.getSourceDvId();
         Long viewId = jumpDTO.getSourceViewId();
         Assert.notNull(dvId, "dvId cannot be null");
@@ -158,7 +171,8 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
 
     @CrestLinkPermit("#p0.targetDvId")
     @Override
-    public VisualizationLinkJumpBaseResponse queryTargetVisualizationJumpInfo(VisualizationLinkJumpBaseRequest request) {
+    public VisualizationLinkJumpBaseResponse queryTargetVisualizationJumpInfo(@RequestBody VisualizationLinkJumpBaseRequest request) {
+        requireVisualizationRead(request.getTargetDvId());
         List<VisualizationLinkJumpDTO> result = null;
         if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(request.getResourceTable())) {
             result = extVisualizationLinkJumpMapper.getTargetVisualizationJumpInfoSnapshot(request);
@@ -170,6 +184,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
 
     @Override
     public VisualizationComponentDTO viewTableDetailList(Long dvId, String resourceTable) {
+        requireVisualizationRead(dvId);
         List<VisualizationViewTableVO> result = new ArrayList<>();
         List<VisualizationOutParamsJumpVO> outParamsJumpInfo = new ArrayList<>();
         String componentData = "[]";
@@ -238,7 +253,8 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     }
 
     @Override
-    public VisualizationLinkJumpBaseResponse updateJumpSetActive(VisualizationLinkJumpBaseRequest request) {
+    public VisualizationLinkJumpBaseResponse updateJumpSetActive(@RequestBody VisualizationLinkJumpBaseRequest request) {
+        requireVisualizationManage(request.getSourceDvId());
         SnapshotCoreChartView coreChartView = new SnapshotCoreChartView();
         coreChartView.setId(Long.valueOf(request.getSourceViewId()));
         coreChartView.setJumpActive(request.getActiveStatus());
@@ -247,11 +263,50 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     }
 
     @Override
-    public void deleteJumpSet(VisualizationLinkJumpDTO jumpDTO) {
+    public void deleteJumpSet(@RequestBody VisualizationLinkJumpDTO jumpDTO) {
+        requireVisualizationManage(jumpDTO.getSourceDvId());
         //清理原有数据
         extVisualizationLinkJumpMapper.deleteJumpTargetViewInfoSnapshot(jumpDTO.getSourceDvId(), jumpDTO.getSourceViewId());
         extVisualizationLinkJumpMapper.deleteJumpInfoSnapshot(jumpDTO.getSourceDvId(), jumpDTO.getSourceViewId());
         extVisualizationLinkJumpMapper.deleteJumpSnapshot(jumpDTO.getSourceDvId(), jumpDTO.getSourceViewId());
+    }
+
+    private void requireViewRead(Long viewId) {
+        if (viewId == null) {
+            coreVisualizationManage.requireVisualizationManage(null);
+            return;
+        }
+        CoreChartView view = coreChartViewMapper.selectById(viewId);
+        if (view != null) {
+            requireVisualizationRead(view.getSceneId());
+            return;
+        }
+        SnapshotCoreChartView snapshotView = snapshotCoreChartViewMapper.selectById(viewId);
+        if (snapshotView != null) {
+            requireVisualizationRead(snapshotView.getSceneId());
+            return;
+        }
+        coreVisualizationManage.requireVisualizationManage(null);
+    }
+
+    private void requireVisualizationRead(Long dvId) {
+        if (dvId == null) {
+            coreVisualizationManage.requireVisualizationManage(null);
+            return;
+        }
+        DataVisualizationInfo info = dataVisualizationInfoMapper.selectById(dvId);
+        if (info == null) {
+            coreVisualizationManage.requireVisualizationManage(null);
+            return;
+        }
+        if (!dataPortalPermissionManage.canReadPublishedVisualization(dvId, info.getType())) {
+            coreVisualizationManage.requireVisualizationManage(info);
+        }
+    }
+
+    private void requireVisualizationManage(Long dvId) {
+        DataVisualizationInfo info = dvId == null ? null : dataVisualizationInfoMapper.selectById(dvId);
+        coreVisualizationManage.requireVisualizationManage(info);
     }
 
 }

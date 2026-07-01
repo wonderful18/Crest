@@ -40,6 +40,9 @@ public class Translator {
      * 单Key翻译
      */
     public static String get(String key) {
+        if (messageSource == null) {
+            return key;
+        }
         return messageSource.getMessage(key, null, key, LocaleContextHolder.getLocale());
     }
 
@@ -51,6 +54,9 @@ public class Translator {
      * @return 替换后的消息
      */
     public static String get(String key, Object... placeholders) {
+        if (messageSource == null) {
+            return key;
+        }
         return messageSource.getMessage(key, placeholders, key, LocaleContextHolder.getLocale());
     }
 

@@ -7,6 +7,7 @@ import io.crest.exception.CrestException;
 import io.crest.font.dao.auto.entity.CoreFont;
 import io.crest.font.dao.auto.mapper.CoreFontMapper;
 import io.crest.utils.BeanUtils;
+import io.crest.utils.CrestPermissionUtils;
 import io.crest.utils.FileUtils;
 import io.crest.utils.IDUtils;
 import jakarta.annotation.Resource;
@@ -25,6 +26,7 @@ import java.awt.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Component
@@ -52,6 +54,7 @@ public class FontManage {
     }
 
     public FontDto create(FontDto fontDto) {
+        CrestPermissionUtils.requireAdmin();
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("name", fontDto.getName());
         if (CollectionUtils.isNotEmpty(coreFontMapper.selectList(queryWrapper))) {
@@ -67,6 +70,7 @@ public class FontManage {
 
 
     public FontDto edit(FontDto fontDto) {
+        CrestPermissionUtils.requireAdmin();
         if (ObjectUtils.isEmpty(fontDto.getId())) {
             return create(fontDto);
         }
@@ -85,17 +89,23 @@ public class FontManage {
     }
 
     public void delete(Long id) {
+        CrestPermissionUtils.requireAdmin();
         CoreFont coreFont = coreFontMapper.selectById(id);
         if (coreFont != null) {
             coreFontMapper.deleteById(id);
             if (StringUtils.isNotEmpty(coreFont.getFileTransName())) {
-                FileUtils.deleteFile(path + coreFont.getFileTransName());
+                try {
+                    FileUtils.deleteFile(FileUtils.resolveUnderDirectory(path, coreFont.getFileTransName()).getPath());
+                } catch (IOException e) {
+                    CrestException.throwException(e.getMessage());
+                }
             }
         }
 
     }
 
     public void changeDefault(FontDto fontDto) {
+        CrestPermissionUtils.requireAdmin();
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("id", fontDto.getId());
         CoreFont record = new CoreFont();
@@ -104,6 +114,7 @@ public class FontManage {
     }
 
     public FontDto upload(MultipartFile file) {
+        CrestPermissionUtils.requireAdmin();
         String fileUuid = UUID.randomUUID().toString();
         return saveFile(file, fileUuid);
     }
@@ -119,9 +130,10 @@ public class FontManage {
 
         try {
             response.setContentType("application/x-download");
-            response.setHeader("Content-Disposition", "attachment;filename=" + coreFonts.get(0).getFileTransName());
+            String fileTransName = coreFonts.get(0).getFileTransName();
+            response.setHeader("Content-Disposition", "attachment;filename=" + fileTransName);
             try (ServletOutputStream out = response.getOutputStream();
-                 InputStream stream = new FileInputStream(path + coreFonts.get(0).getFileTransName())) {
+                 InputStream stream = new FileInputStream(FileUtils.resolveUnderDirectory(path, fileTransName))) {
                 byte buff[] = new byte[1024];
                 int length;
                 while ((length = stream.read(buff)) > 0) {
@@ -151,8 +163,11 @@ public class FontManage {
     private FontDto saveFile(MultipartFile file, String fileNameUUID) throws CrestException {
         FontDto fontDto = new FontDto();
         try {
+            if (file == null || file.isEmpty()) {
+                CrestException.throwException("字体文件不能为空");
+            }
             String filename = file.getOriginalFilename();
-            if (StringUtils.isEmpty(filename) || !filename.toLowerCase().endsWith(".ttf")) {
+            if (StringUtils.isEmpty(filename) || !filename.toLowerCase(Locale.ROOT).endsWith(".ttf")) {
                 CrestException.throwException("非法格式的文件！");
             }
             FileUtils.validateUploadFilename(filename);

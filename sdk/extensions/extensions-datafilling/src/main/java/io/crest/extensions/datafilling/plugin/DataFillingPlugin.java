@@ -23,9 +23,18 @@ public abstract class DataFillingPlugin extends ExtDDLProvider implements CrestP
             pluginInfo = getPluginInfo();
         } catch (Exception e) {
             CrestException.throwException(e);
+            return null;
+        }
+        if (pluginInfo == null) {
+            CrestException.throwException("Plugin info not exists");
+            return null;
         }
         String config = pluginInfo.getConfig();
         PluginDataFillingVO vo = JsonUtil.parseObject(config, PluginDataFillingVO.class);
+        if (vo == null) {
+            CrestException.throwException("Plugin config not exists");
+            return null;
+        }
         vo.setIcon(pluginInfo.getIcon());
         return vo;
     }

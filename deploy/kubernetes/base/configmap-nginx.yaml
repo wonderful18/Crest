@@ -42,13 +42,12 @@ data:
         open_file_cache_min_uses 2;
         open_file_cache_errors off;
 
-        map $http_host $crest_forwarded_host {
-            default $http_host;
-            "" $host;
+        map $server_name $crest_forwarded_host {
+            default $server_name;
+            "_" "crest-service";
         }
 
-        map $http_host $crest_forwarded_port {
-            "~.*:(?<crest_host_port>[0-9]+)$" $crest_host_port;
+        map $server_port $crest_forwarded_port {
             default $server_port;
         }
 
@@ -153,7 +152,8 @@ data:
 
         location /websocket {
             proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
+            # 仅 WebSocket 端点转发固定升级头，不透传客户端 Upgrade 值。
+            proxy_set_header Upgrade "websocket";
             proxy_set_header Connection "upgrade";
             proxy_set_header Host $crest_forwarded_host;
             proxy_set_header X-Real-IP $remote_addr;

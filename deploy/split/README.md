@@ -57,7 +57,8 @@ http://127.0.0.1:18100/
 准备 Prometheus token 文件：
 
 ```bash
-printf '%s' 'local-prometheus-token' > deploy/split/prometheus-token
+PROMETHEUS_TOKEN="$(openssl rand -base64 32)"
+printf '%s' "$PROMETHEUS_TOKEN" > deploy/split/prometheus-token
 chmod 0400 deploy/split/prometheus-token
 ```
 
@@ -70,7 +71,7 @@ CREST_AES_KEY='<32-character-aes-key>' \
 CREST_AES_IV='<16-character-iv>' \
 CREST_INITIAL_PASSWORD='<initial-admin-password>' \
 CREST_PROMETHEUS_ENABLED=true \
-CREST_PROMETHEUS_TOKEN=local-prometheus-token \
+CREST_PROMETHEUS_TOKEN="$PROMETHEUS_TOKEN" \
 CREST_PROMETHEUS_TOKEN_FILE=./prometheus-token \
 CREST_GRAFANA_ENABLED=true \
 CREST_GRAFANA_ADMIN_PASSWORD='<grafana-admin-password>' \
@@ -88,7 +89,7 @@ Prometheus 不映射宿主机端口。需要检查指标时从容器内访问：
 
 ```bash
 docker exec split-crest-prometheus wget -qO- http://crest-service:8100/api/v1/actuator/prometheus \
-  --header='Authorization: Bearer local-prometheus-token' | head
+  --header="Authorization: Bearer ${PROMETHEUS_TOKEN}" | head
 ```
 
 ## 安全边界
@@ -126,7 +127,7 @@ docker exec split-crest-prometheus wget -qO- http://crest-service:8100/api/v1/ac
 | API 转发 | `/api/v1/` 转发到 `crest-service:8100/api/v1/` |
 | API 安全头 | 接口响应使用 `X-Frame-Options: DENY` 和 `frame-ancestors 'none'`，不继承前端页面 CSP |
 | 请求追踪 | 生成并透传 `X-Request-Id` |
-| 网关头 | 转发时保留浏览器原始 `Host`、外部端口和可信 HTTPS 网关协议，后端重定向不降级 |
+| 网关头 | 不直接透传客户端 `Host`；如需 SSO 回调或后端生成对外链接，应将 `crest.conf` 中的 `server_name` 设置为实际对外域名 |
 | 大响应处理 | API 响应不落 Nginx 临时文件，避免大导出占用网关磁盘 |
 | WebSocket | `/websocket` 保持长连接，读写超时 1 小时 |
 | HTML 缓存 | `index.html` 和路由回退不缓存，避免升级后加载旧入口 |

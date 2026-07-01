@@ -260,9 +260,7 @@ const showApiData = () => {
         .then(response => {
           originFieldItem.jsonFields = response.data.jsonFields
         })
-        .catch(error => {
-          console.warn(error?.message)
-        })
+        .catch(() => undefined)
       loading.value = false
     }
   })
@@ -443,10 +441,9 @@ const stepNext = () => {
       previewData()
       active.value += 1
     })
-    .catch(error => {
+    .catch(() => {
       disabledNext.value = false
       formLoading.value = false
-      console.warn(error?.message)
     })
 }
 const validate = () => {

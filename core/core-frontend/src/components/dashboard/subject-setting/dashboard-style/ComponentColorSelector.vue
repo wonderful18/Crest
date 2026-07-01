@@ -441,8 +441,8 @@ const changeLabelCase = () => {
           })
         }
         useEmitt().emitter.emit('renderChart-' + viewId, viewInfo)
-      } catch (e) {
-        console.warn('changeLabelCase-error')
+      } catch {
+        // ignore incomplete chart label config
       }
     })
     snapshotStore.recordSnapshotCache('renderChart')
@@ -470,8 +470,8 @@ const changeTooltipCase = () => {
           })
         }
         useEmitt().emitter.emit('renderChart-' + viewId, viewInfo)
-      } catch (e) {
-        console.warn('changeTooltipCase-error')
+      } catch {
+        // ignore incomplete chart tooltip config
       }
     })
     snapshotStore.recordSnapshotCache('renderChart')

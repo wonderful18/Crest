@@ -3,10 +3,6 @@ package io.crest.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 public class LogUtil {
 
     private static final String DEBUG = "DEBUG";
@@ -222,28 +218,11 @@ public class LogUtil {
     }
 
     public static String toString(Throwable e) {
-        StringWriter sw = null;
-        PrintWriter pw = null;
-        try {
-            sw = new StringWriter();
-            pw = new PrintWriter(sw);
-            //将出错的栈信息输出到printWriter中
-            e.printStackTrace(pw);
-            pw.flush();
-            sw.flush();
-        } finally {
-            if (sw != null) {
-                try {
-                    sw.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-            }
-            if (pw != null) {
-                pw.close();
-            }
+        StringBuilder sb = new StringBuilder(e.toString()).append(System.lineSeparator());
+        for (StackTraceElement stackTraceElement : e.getStackTrace()) {
+            sb.append("\tat ").append(stackTraceElement).append(System.lineSeparator());
         }
-        return sw.toString();
+        return sb.toString();
     }
 
     public static String getExceptionDetailsToStr(Exception e) {

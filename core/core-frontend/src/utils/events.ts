@@ -1,16 +1,27 @@
 // 编辑器自定义事件
 const events = {
   redirect(url) {
-    if (url) {
-      window.location.href = url
+    const target = safeRedirectUrl(url)
+    if (target) {
+      window.location.href = target
     }
   },
 
   alert(msg) {
     if (msg) {
-      // eslint-disable-next-line no-alert
       alert(msg)
     }
+  }
+}
+
+const safeRedirectUrl = (url?: string) => {
+  const text = String(url || '').trim()
+  if (!text || /[\u0000-\u001f\u007f]/.test(text)) return null
+  try {
+    const target = new URL(text, window.location.href)
+    return ['http:', 'https:'].includes(target.protocol) ? text : null
+  } catch {
+    return null
   }
 }
 

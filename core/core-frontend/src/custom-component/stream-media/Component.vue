@@ -93,8 +93,8 @@ const initOption = () => {
           state.flvPlayer.attachMediaElement(video)
           state.flvPlayer.load()
           state.flvPlayer.play()
-        } catch (error) {
-          console.error('flvjs err ignore', error)
+        } catch {
+          // ignore unsupported stream playback
         }
       }
     }

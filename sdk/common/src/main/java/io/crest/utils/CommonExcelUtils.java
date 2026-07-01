@@ -33,12 +33,8 @@ public class CommonExcelUtils {
         response.setContentType("application/vnd.ms-excel");
         response.setCharacterEncoding("utf-8");
         response.setHeader("Content-Disposition", "attachment:filename=" + URLEncoder.encode(fileName + "." + "xlsx", "UTF-8"));
-        ServletOutputStream outputStream = response.getOutputStream();
-        writeOutputStream(outputStream, clazz, objects, errMsgList, sheetName);
-        try {
-            outputStream.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        try (ServletOutputStream outputStream = response.getOutputStream()) {
+            writeOutputStream(outputStream, clazz, objects, errMsgList, sheetName);
         }
     }
 

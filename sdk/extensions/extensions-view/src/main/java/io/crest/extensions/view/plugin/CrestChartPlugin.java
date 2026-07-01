@@ -21,9 +21,18 @@ public abstract class CrestChartPlugin extends AbstractChartPlugin implements Cr
             pluginInfo = getPluginInfo();
         } catch (Exception e) {
             CrestException.throwException(e);
+            return null;
+        }
+        if (pluginInfo == null) {
+            CrestException.throwException("Plugin info not exists");
+            return null;
         }
         String config = pluginInfo.getConfig();
         PluginViewVO vo = JsonUtil.parseObject(config, PluginViewVO.class);
+        if (vo == null) {
+            CrestException.throwException("Plugin config not exists");
+            return null;
+        }
         vo.setIcon(pluginInfo.getIcon());
         return vo;
     }

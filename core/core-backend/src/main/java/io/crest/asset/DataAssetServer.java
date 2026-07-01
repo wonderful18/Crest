@@ -34,8 +34,8 @@ public class DataAssetServer {
     @CrestAudit(ot = LogOT.READ, st = LogST.DATA)
     @CrestPermit("m:read")
     @PostMapping("/page/{page}/{pageSize}")
-    public DataAssetPageVO page(@PathVariable Integer page,
-                                @PathVariable Integer pageSize,
+    public DataAssetPageVO page(@PathVariable("page") Integer page,
+                                @PathVariable("pageSize") Integer pageSize,
                                 @RequestBody(required = false) DataAssetRequest request) {
         return dataAssetManage.page(page, pageSize, request);
     }
@@ -43,14 +43,14 @@ public class DataAssetServer {
     @CrestAudit(ot = LogOT.READ, st = LogST.DATA, id = "#p1")
     @CrestPermit("m:read")
     @GetMapping("/{assetType}/{assetId}")
-    public DataAssetDetailVO detail(@PathVariable String assetType, @PathVariable String assetId) {
+    public DataAssetDetailVO detail(@PathVariable("assetType") String assetType, @PathVariable("assetId") String assetId) {
         return dataAssetManage.detail(assetType, assetId);
     }
 
     @CrestAudit(ot = LogOT.READ, st = LogST.DATA, id = "#p1")
     @CrestPermit("m:read")
     @GetMapping("/{assetType}/{assetId}/impact")
-    public DataAssetImpactVO impact(@PathVariable String assetType, @PathVariable String assetId) {
+    public DataAssetImpactVO impact(@PathVariable("assetType") String assetType, @PathVariable("assetId") String assetId) {
         return dataAssetManage.impact(assetType, assetId);
     }
 

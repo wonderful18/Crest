@@ -139,6 +139,8 @@ public class Utils {
                     return "AND";
                 case "or":
                     return "OR";
+                default:
+                    return "AND";
             }
         }
         return "AND";
@@ -545,6 +547,7 @@ public class Utils {
         }
         if (originField == null) {
             CrestException.throwException("Field not exists");
+            return null;
         }
 
         DsTypeDTO datasourceType = null;
@@ -554,6 +557,7 @@ public class Utils {
         }
         if (datasourceType == null) {
             CrestException.throwException("Datasource not exists");
+            return null;
         }
 
         String fieldName;
@@ -603,10 +607,8 @@ public class Utils {
     }
 
     /**
-     * 该方法检测 SQL 注入风险时不检测单引号
-     * 类似 Arkhangel'sk、O'Brien 等包含引号的合法数据应允通过
-     * 使用注意！！
-     * 使用该方法，必须在后续调用 transValue 方法进行转义处理
+     * 校验过滤值中的高风险 SQL 片段，允许合法业务文本包含单引号。
+     * 调用方必须在拼接前继续使用 transValue 做值转义。
      */
     public static void validateSqlInjectionRisk(String value) {
         String normalized = StringUtils.defaultString(value);

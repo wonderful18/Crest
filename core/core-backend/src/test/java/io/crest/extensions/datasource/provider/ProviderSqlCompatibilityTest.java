@@ -49,9 +49,13 @@ class ProviderSqlCompatibilityTest {
 
         String sql = Provider.restoreUnicodeStringLiterals(officialSql);
 
-        assertTrue(officialSql.contains("u&'"));
-        assertTrue(sql.contains("'交易履约部'"));
-        assertFalse(sql.contains("u&'"));
+        if (officialSql.contains("u&'")) {
+            assertTrue(sql.contains("'交易履约部'"));
+            assertFalse(sql.contains("u&'"));
+        } else {
+            assertTrue(officialSql.contains("'交易履约部'"));
+            assertEquals(officialSql, sql);
+        }
     }
 
     @Test

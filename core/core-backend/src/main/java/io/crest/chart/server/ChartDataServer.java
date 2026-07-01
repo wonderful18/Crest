@@ -39,6 +39,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -74,12 +75,14 @@ public class ChartDataServer implements ChartDataApi {
     @Value("${crest.export.page.size:50000}")
     private Integer extractPageSize;
     private final Long sheetLimit = 1000000L;
+    private static final int EXCEL_NUMERIC_TEXT_LIMIT = 64;
+    private static final Pattern EXCEL_NUMERIC_PATTERN = Pattern.compile("^-?\\d+(\\.\\d+)?$");
     private static final String AUXILIARY_HEADER_GROUP_PREFIX = "__crest_aux_header_group__";
 
 
     @CrestLinkPermit("#p0.sceneId")
     @Override
-    public ChartViewDTO getData(ChartViewDTO chartViewDTO) throws Exception {
+    public ChartViewDTO getData(@RequestBody ChartViewDTO chartViewDTO) throws Exception {
         try {
             // 从模板数据获取
             if (CommonConstants.VIEW_DATA_FROM.TEMPLATE.equalsIgnoreCase(chartViewDTO.getDataFrom())) {
@@ -235,15 +238,14 @@ public class ChartDataServer implements ChartDataApi {
 
     @CrestLinkPermit("#p0.dvId")
     @Override
-    public void innerExportDetails(ChartExcelRequest request, HttpServletResponse response) throws Exception {
+    public void innerExportDetails(@RequestBody ChartExcelRequest request, HttpServletResponse response) throws Exception {
         ensureExportRequest(request);
         HttpServletRequest httpServletRequest = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         String linkToken = httpServletRequest.getHeader(AuthConstant.LINK_TOKEN_KEY);
         LogUtil.info(request.getViewInfo().getId() + " " + StringUtils.isNotEmpty(linkToken) + " " + request.isEmbeddedExport());
         if (shouldWriteDirectExport(linkToken, request.isEmbeddedExport())) {
-            OutputStream outputStream = response.getOutputStream();
-            try {
-                Workbook wb = new SXSSFWorkbook();
+            try (OutputStream outputStream = response.getOutputStream();
+                 Workbook wb = new SXSSFWorkbook()) {
                 //给单元格设置样式
                 CellStyle cellStyle = wb.createCellStyle();
                 Font font = wb.createFont();
@@ -351,7 +353,6 @@ public class ChartDataServer implements ChartDataApi {
                 response.setHeader("Content-disposition", "attachment;filename=" + URLEncoder.encode(request.getViewName(), StandardCharsets.UTF_8) + ".xlsx");
                 wb.write(outputStream);
                 outputStream.flush();
-                outputStream.close();
 
                 try {
                     if (request.getBusiFlag().equalsIgnoreCase("dashboard")) {
@@ -392,7 +393,7 @@ public class ChartDataServer implements ChartDataApi {
 
     @CrestLinkPermit("#p0.dvId")
     @Override
-    public void innerExportDataSetDetails(ChartExcelRequest request, HttpServletResponse response) throws Exception {
+    public void innerExportDataSetDetails(@RequestBody ChartExcelRequest request, HttpServletResponse response) throws Exception {
         this.innerExportDetails(request, response);
     }
 
@@ -605,16 +606,22 @@ public class ChartDataServer implements ChartDataApi {
                                 if (Strings.CI.equalsAny(viewInfo.getType(), "table-info", "table-normal") && Arrays.asList(FieldTypeConstants.INTEGER,FieldTypeConstants.FLOAT).contains(xAxis.get(j).getFieldType())) {
                                     try {
                                         FormatterCfgDTO formatterCfgDTO = xAxis.get(j).getFormatterCfg() == null ? new FormatterCfgDTO().setUnitLanguage(Lang.isChinese() ? "ch" : "en") : xAxis.get(j).getFormatterCfg();
-                                        row.getCell(j).setCellStyle(styles.get(j));
-                                        row.getCell(j).setCellValue(Double.valueOf(cellValue(formatterCfgDTO, new BigDecimal(cellValObj.toString()))));
+                                        String numericText = cellValObj.toString();
+                                        if (isSafeExcelNumericText(numericText)) {
+                                            row.getCell(j).setCellStyle(styles.get(j));
+                                            row.getCell(j).setCellValue(Double.parseDouble(cellValue(formatterCfgDTO, new BigDecimal(numericText))));
+                                        } else {
+                                            cell.setCellValue(numericText);
+                                        }
                                     } catch (Exception e) {
                                         cell.setCellValue(cellValObj.toString());
                                     }
                                 } else {
-                                    if ((excelTypes[j].equals(FieldTypeConstants.INTEGER) || excelTypes[j].equals(FieldTypeConstants.FLOAT)) && StringUtils.isNotEmpty(cellValObj.toString())) {
-                                        cell.setCellValue(Double.valueOf(cellValObj.toString()));
+                                    String numericText = cellValObj.toString();
+                                    if ((excelTypes[j].equals(FieldTypeConstants.INTEGER) || excelTypes[j].equals(FieldTypeConstants.FLOAT)) && isSafeExcelNumericText(numericText)) {
+                                        cell.setCellValue(Double.parseDouble(StringUtils.trim(numericText)));
                                     } else if (cellValObj != null) {
-                                        cell.setCellValue(cellValObj.toString());
+                                        cell.setCellValue(numericText);
                                     }
                                 }
                             } catch (Exception e) {
@@ -943,6 +950,13 @@ public class ChartDataServer implements ChartDataApi {
         }
     }
 
+    private static boolean isSafeExcelNumericText(String value) {
+        String text = StringUtils.trimToEmpty(value);
+        return StringUtils.isNotEmpty(text)
+                && text.length() <= EXCEL_NUMERIC_TEXT_LIMIT
+                && EXCEL_NUMERIC_PATTERN.matcher(text).matches();
+    }
+
     private static CellStyle createCellStyle(Workbook workbook, FormatterCfgDTO formatter, String value) {
         CellStyle cellStyle = workbook.createCellStyle();
         DataFormat format = workbook.createDataFormat();
@@ -1041,12 +1055,12 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     @Override
-    public List<String> getFieldData(ChartViewDTO view, Long fieldId, String fieldType) throws Exception {
+    public List<String> getFieldData(@RequestBody ChartViewDTO view, Long fieldId, String fieldType) throws Exception {
         return chartDataManage.getFieldData(view, fieldId, fieldType);
     }
 
     @Override
-    public List<String> getDrillFieldData(ChartViewDTO view, Long fieldId) throws Exception {
+    public List<String> getDrillFieldData(@RequestBody ChartViewDTO view, Long fieldId) throws Exception {
         return chartDataManage.getDrillFieldData(view, fieldId);
     }
 
@@ -1117,7 +1131,7 @@ public class ChartDataServer implements ChartDataApi {
                 String sType = config.summaryTypeMap.get(fName);
                 if (sType == null || "custom".equals(sType)) continue;
                 Object valObj = row[j];
-                if (valObj == null || StringUtils.isBlank(valObj.toString())) continue;
+                if (valObj == null || !isSafeExcelNumericText(valObj.toString())) continue;
                 try {
                     BigDecimal val = new BigDecimal(valObj.toString());
                     switch (sType) {

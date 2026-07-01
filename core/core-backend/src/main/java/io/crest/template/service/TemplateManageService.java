@@ -17,6 +17,7 @@ import io.crest.template.dao.auto.mapper.VisualizationTemplateMapper;
 import io.crest.template.dao.ext.ExtVisualizationTemplateMapper;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.BeanUtils;
+import io.crest.utils.CrestPermissionUtils;
 import io.crest.visualization.server.StaticResourceServer;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +25,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -52,7 +54,7 @@ public class TemplateManageService implements TemplateManageApi {
     private StaticResourceServer staticResourceServer;
 
     @Override
-    public List<TemplateManageDTO> templateList(TemplateManageRequest request) {
+    public List<TemplateManageDTO> templateList(@RequestBody TemplateManageRequest request) {
         request.setWithBlobs("N");
         List<TemplateManageDTO> templateList = extTemplateMapper.findTemplateList(request);
         if (request.getWithChildren()) {
@@ -76,7 +78,8 @@ public class TemplateManageService implements TemplateManageApi {
 
     @Transactional
     @Override
-    public TemplateManageDTO save(TemplateManageRequest request) {
+    public TemplateManageDTO save(@RequestBody TemplateManageRequest request) {
+        CrestPermissionUtils.requireAdmin();
         if (StringUtils.isEmpty(request.getId())) {
             request.setId(UUID.randomUUID().toString());
             request.setCreateTime(System.currentTimeMillis());
@@ -181,7 +184,7 @@ public class TemplateManageService implements TemplateManageApi {
 
     //分类下模板名称检查
     @Override
-    public String categoryTemplateNameCheck(TemplateManageRequest request) {
+    public String categoryTemplateNameCheck(@RequestBody TemplateManageRequest request) {
         Long result = extTemplateMapper.checkCategoryTemplateName(request.getName(), request.getCategories());
         if (result == 0) {
             return CommonConstants.CHECK_RESULT.NONE;
@@ -191,7 +194,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     @Override
-    public String checkCategoryTemplateBatchNames(TemplateManageRequest request) {
+    public String checkCategoryTemplateBatchNames(@RequestBody TemplateManageRequest request) {
         Long result = extTemplateMapper.checkCategoryTemplateBatchNames(request.getTemplateNames(), request.getCategories(), request.getTemplateArray());
         if (result == 0) {
             return CommonConstants.CHECK_RESULT.NONE;
@@ -218,12 +221,13 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     @Override
-    public String nameCheck(TemplateManageRequest request) {
+    public String nameCheck(@RequestBody TemplateManageRequest request) {
         return nameCheck(request.getOptType(), request.getName(), request.getId());
     }
 
     @Override
     public void delete(String id, String categoryId) {
+        CrestPermissionUtils.requireAdmin();
         Assert.notNull(id, "id cannot be null");
         Assert.notNull(categoryId, "categoryId cannot be null");
         QueryWrapper<VisualizationTemplateCategoryMap> queryWrapper = new QueryWrapper<>();
@@ -239,6 +243,7 @@ public class TemplateManageService implements TemplateManageApi {
 
     @Override
     public String deleteCategory(String id) {
+        CrestPermissionUtils.requireAdmin();
         Assert.notNull(id, "id cannot be null");
         // 该分类下是否有其他分类公用的模板
 
@@ -270,7 +275,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     @Override
-    public List<String> findCategoriesByTemplateIds(TemplateManageRequest request) throws Exception {
+    public List<String> findCategoriesByTemplateIds(@RequestBody TemplateManageRequest request) throws Exception {
         if (!CollectionUtils.isEmpty(request.getTemplateArray())) {
             List<String> result = extTemplateMapper.findTemplateArrayCategories(request.getTemplateArray());
             if (!CollectionUtils.isEmpty(result) && result.size() == 1) {
@@ -281,17 +286,18 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     @Override
-    public List<TemplateManageDTO> find(TemplateManageRequest request) {
+    public List<TemplateManageDTO> find(@RequestBody TemplateManageRequest request) {
         return extTemplateMapper.findTemplateList(request);
     }
 
     @Override
-    public List<TemplateManageDTO> findCategories(TemplateManageRequest request) {
+    public List<TemplateManageDTO> findCategories(@RequestBody TemplateManageRequest request) {
         return extTemplateMapper.findCategories(request);
     }
 
     @Override
-    public void batchUpdate(TemplateManageBatchRequest request) {
+    public void batchUpdate(@RequestBody TemplateManageBatchRequest request) {
+        CrestPermissionUtils.requireAdmin();
         request.getTemplateIds().forEach(templateId -> {
             // 分类映射删除
             extTemplateMapper.deleteCategoryMapByTemplate(null, templateId);
@@ -307,7 +313,8 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     @Override
-    public void batchDelete(TemplateManageBatchRequest request) {
+    public void batchDelete(@RequestBody TemplateManageBatchRequest request) {
+        CrestPermissionUtils.requireAdmin();
         request.getTemplateIds().forEach(templateId -> {
             request.getCategories().forEach(categoryId -> {
                 QueryWrapper<VisualizationTemplateCategoryMap> queryWrapper = new QueryWrapper<>();

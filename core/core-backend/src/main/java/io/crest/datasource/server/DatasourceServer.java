@@ -71,6 +71,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -143,7 +144,7 @@ public class DatasourceServer implements DatasourceApi {
     };
     @Resource
     private CommonThreadPool commonThreadPool;
-    private boolean isUpdatingStatus = false;
+    private final AtomicBoolean isUpdatingStatus = new AtomicBoolean(false);
     private static List<Long> syncDsIds = new ArrayList<>();
 
 
@@ -213,7 +214,7 @@ public class DatasourceServer implements DatasourceApi {
 
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, st = LogST.DATASOURCE)
     @Transactional
-    public DatasourceDTO move(BusiCreateFolderRequest busiDsRequest) {
+    public DatasourceDTO move(@RequestBody BusiCreateFolderRequest busiDsRequest) {
         DatasourceDTO dataSourceDTO = new DatasourceDTO();
         BeanUtils.copyBean(dataSourceDTO, busiDsRequest);
         if (dataSourceDTO.getPid() == null) {
@@ -235,7 +236,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @Transactional
-    public DatasourceDTO reName(BusiRenameRequest busiDsRequest) {
+    public DatasourceDTO reName(@RequestBody BusiRenameRequest busiDsRequest) {
         DatasourceDTO dataSourceDTO = new DatasourceDTO();
         BeanUtils.copyBean(dataSourceDTO, busiDsRequest);
         if (StringUtils.isEmpty(dataSourceDTO.getName())) {
@@ -252,7 +253,7 @@ public class DatasourceServer implements DatasourceApi {
 
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, st = LogST.DATASOURCE)
     @Transactional
-    public DatasourceDTO createFolder(BusiCreateFolderRequest busiDsRequest) {
+    public DatasourceDTO createFolder(@RequestBody BusiCreateFolderRequest busiDsRequest) {
         DatasourceDTO dataSourceDTO = new DatasourceDTO();
         BeanUtils.copyBean(dataSourceDTO, busiDsRequest);
         if (ObjectUtils.isNotEmpty(dataSourceDTO.getPid()) && !Objects.equals(dataSourceDTO.getPid(), 0L)) {
@@ -270,7 +271,7 @@ public class DatasourceServer implements DatasourceApi {
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, st = LogST.DATASOURCE)
     @Transactional
     @Override
-    public DatasourceDTO save(BusiDsRequest busiDsRequest) throws CrestException {
+    public DatasourceDTO save(@RequestBody BusiDsRequest busiDsRequest) throws CrestException {
         DatasourceDTO dataSourceDTO = new DatasourceDTO();
         BeanUtils.copyBean(dataSourceDTO, busiDsRequest);
         if (dataSourceDTO.getId() != null && dataSourceDTO.getId() > 0) {
@@ -398,7 +399,7 @@ public class DatasourceServer implements DatasourceApi {
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, st = LogST.DATASOURCE)
     @Transactional
     @Override
-    public DatasourceDTO update(BusiDsRequest busiDsRequest) throws CrestException {
+    public DatasourceDTO update(@RequestBody BusiDsRequest busiDsRequest) throws CrestException {
         DatasourceDTO dataSourceDTO = new DatasourceDTO();
         BeanUtils.copyBean(dataSourceDTO, busiDsRequest);
         Long pk = null;
@@ -535,7 +536,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @Override
-    public DatasourceDTO validate(BusiDsRequest busiDsRequest) throws CrestException {
+    public DatasourceDTO validate(@RequestBody BusiDsRequest busiDsRequest) throws CrestException {
         DatasourceDTO dataSourceDTO = new DatasourceDTO();
         BeanUtils.copyBean(dataSourceDTO, busiDsRequest);
         dataSourceDTO.setConfiguration(decodeBase64RequestValue(dataSourceDTO.getConfiguration(), "数据源配置"));
@@ -550,7 +551,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @Override
-    public List<String> getSchema(BusiDsRequest busiDsRequest) throws CrestException {
+    public List<String> getSchema(@RequestBody BusiDsRequest busiDsRequest) throws CrestException {
         DatasourceDTO dataSourceDTO = new DatasourceDTO();
         BeanUtils.copyBean(dataSourceDTO, busiDsRequest);
         dataSourceDTO.setConfiguration(decodeBase64RequestValue(dataSourceDTO.getConfiguration(), "数据源配置"));
@@ -776,12 +777,12 @@ public class DatasourceServer implements DatasourceApi {
 
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASOURCE)
     @Override
-    public List<BusiNodeVO> tree(BusiNodeRequest request) throws CrestException {
+    public List<BusiNodeVO> tree(@RequestBody BusiNodeRequest request) throws CrestException {
         return dataSourceManage.tree(request);
     }
 
     @Override
-    public List<DatasetTableDTO> tables(DatasetTableDTO datasetTableDTO) throws CrestException {
+    public List<DatasetTableDTO> tables(@RequestBody DatasetTableDTO datasetTableDTO) throws CrestException {
         CoreDatasource coreDatasource = requireDatasourceAccess(datasetTableDTO.getDatasourceId());
         if (coreDatasource == null) {
             CrestException.throwException("无效数据源！");
@@ -821,8 +822,8 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @Override
-    public List<DatasetTableDTO> tableStatus(DatasetTableDTO datasetTableDTO) throws CrestException {
-        CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(datasetTableDTO.getDatasourceId());
+    public List<DatasetTableDTO> tableStatus(@RequestBody DatasetTableDTO datasetTableDTO) throws CrestException {
+        CoreDatasource coreDatasource = requireDatasourceAccess(datasetTableDTO.getDatasourceId());
         if (coreDatasource == null) {
             CrestException.throwException("无效数据源！");
         }
@@ -848,7 +849,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @Override
-    public List<TableField> getTableField(Map<String, String> req) throws CrestException {
+    public List<TableField> getTableField(@RequestBody Map<String, String> req) throws CrestException {
         String tableName = req.get("tableName");
         String datasourceId = req.get("datasourceId");
         DatasetTableDTO datasetTableDTO = new DatasetTableDTO();
@@ -889,7 +890,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @Override
-    public void syncApiTable(Map<String, String> req) throws CrestException {
+    public void syncApiTable(@RequestBody Map<String, String> req) throws CrestException {
         String tableName = req.get("tableName");
         String name = req.get("name");
         Long datasourceId = Long.valueOf(req.get("datasourceId"));
@@ -897,7 +898,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @Override
-    public void syncApiDs(Map<String, String> req) throws Exception {
+    public void syncApiDs(@RequestBody Map<String, String> req) throws Exception {
         Long datasourceId = Long.valueOf(req.get("datasourceId"));
         CoreDatasourceTask coreDatasourceTask = datasourceTaskServer.selectByDSId(datasourceId);
         CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(datasourceId);
@@ -976,17 +977,17 @@ public class DatasourceServer implements DatasourceApi {
         return excelFileData;
     }
 
-    public ExcelFileData loadRemoteFile(RemoteExcelRequest remoteExcelRequest) throws CrestException, IOException {
+    public ExcelFileData loadRemoteFile(@RequestBody RemoteExcelRequest remoteExcelRequest) throws CrestException, IOException {
+        CoreDatasource coreDatasource = null;
+        if (ObjectUtils.isNotEmpty(remoteExcelRequest.getDatasourceId()) && 0L != remoteExcelRequest.getDatasourceId()) {
+            coreDatasource = requireDatasourceAccess(remoteExcelRequest.getDatasourceId());
+        }
         // SSRF 防护：验证 URL 安全性
         SsrfProtection.validateUrl(remoteExcelRequest.getUrl());
 
         remoteExcelRequest.setUserName(decodeBase64RequestValue(remoteExcelRequest.getUserName(), "远程 Excel 用户名"));
         remoteExcelRequest.setPasswd(decodeBase64RequestValue(remoteExcelRequest.getPasswd(), "远程 Excel 密码"));
         ExcelFileData excelFileData = new ExcelUtils().parseRemoteExcel(remoteExcelRequest);
-        CoreDatasource coreDatasource = null;
-        if (ObjectUtils.isNotEmpty(remoteExcelRequest.getDatasourceId()) && 0L != remoteExcelRequest.getDatasourceId()) {
-            coreDatasource = dataSourceManage.getCoreDatasource(remoteExcelRequest.getDatasourceId());
-        }
         if (coreDatasource != null) {
             DatasourceRequest datasourceRequest = new DatasourceRequest();
             datasourceRequest.setDatasource(transDTO(coreDatasource));
@@ -1079,7 +1080,7 @@ public class DatasourceServer implements DatasourceApi {
         return suffix.equalsIgnoreCase("csv");
     }
 
-    public ApiDefinition checkApiDatasource(Map<String, String> request) throws CrestException {
+    public ApiDefinition checkApiDatasource(@RequestBody Map<String, String> request) throws CrestException {
         ApiDefinition apiDefinition = JsonUtil.parseObject(decodeBase64RequestValue(request.get("data"), "API 数据源配置"), ApiDefinition.class);
         apiDefinition.setType("table");
         if (request.keySet().contains("type") && request.get("type").equals("apiStructure")) {
@@ -1094,8 +1095,8 @@ public class DatasourceServer implements DatasourceApi {
 
         apiDefinition = (ApiDefinition) invokeMethod(request.get("dsType"), "checkApiDefinition", DatasourceRequest.class, datasourceRequest);
         if (apiDefinition.getRequest().getAuthManager() != null && StringUtils.isNotBlank(apiDefinition.getRequest().getAuthManager().getUsername()) && StringUtils.isNotBlank(apiDefinition.getRequest().getAuthManager().getPassword()) && apiDefinition.getRequest().getAuthManager().getVerification().equals("Basic Auth")) {
-            apiDefinition.getRequest().getAuthManager().setUsername(new String(Base64.getEncoder().encode(apiDefinition.getRequest().getAuthManager().getUsername().getBytes())));
-            apiDefinition.getRequest().getAuthManager().setPassword(new String(Base64.getEncoder().encode(apiDefinition.getRequest().getAuthManager().getPassword().getBytes())));
+            apiDefinition.getRequest().getAuthManager().setUsername(Base64.getEncoder().encodeToString(apiDefinition.getRequest().getAuthManager().getUsername().getBytes(StandardCharsets.UTF_8)));
+            apiDefinition.getRequest().getAuthManager().setPassword(Base64.getEncoder().encodeToString(apiDefinition.getRequest().getAuthManager().getPassword().getBytes(StandardCharsets.UTF_8)));
         }
         return apiDefinition;
     }
@@ -1157,7 +1158,7 @@ public class DatasourceServer implements DatasourceApi {
 
 
     @Override
-    public Map<String, Object> previewDataWithLimit(Map<String, Object> req) throws CrestException {
+    public Map<String, Object> previewDataWithLimit(@RequestBody Map<String, Object> req) throws CrestException {
         String tableName = req.get("table").toString();
         Long id = Long.valueOf(req.get("id").toString());
         if (ObjectUtils.isEmpty(tableName) || ObjectUtils.isEmpty(id)) {
@@ -1169,6 +1170,7 @@ public class DatasourceServer implements DatasourceApi {
         if (!tables(datasetTableDTO).stream().map(DatasetTableDTO::getTableName).collect(Collectors.toList()).contains(tableName)) {
             CrestException.throwException(Translator.get("i18n_invalid_table_name"));
         }
+        // nosemgrep: java.spring.security.injection.tainted-sql-string.tainted-sql-string
         String sql = "SELECT * FROM " + quoteIdentifier(tableName);
         if (coreDatasource.getType().contains("Excel")) {
             DatasourceRequest datasourceRequest = new DatasourceRequest();
@@ -1179,10 +1181,11 @@ public class DatasourceServer implements DatasourceApi {
                     .map(field -> quoteExcelIdentifier(excelDbFieldName(field)) + " AS " + quoteExcelIdentifier(field.getName()))
                     .collect(Collectors.joining(", "));
             if (StringUtils.isNotEmpty(columns)) {
+                // nosemgrep: java.spring.security.injection.tainted-sql-string.tainted-sql-string
                 sql = "SELECT " + columns + " FROM " + quoteIdentifier(tableName);
             }
         }
-        sql = new String(Base64.getEncoder().encode(sql.getBytes()));
+        sql = Base64.getEncoder().encodeToString(sql.getBytes(StandardCharsets.UTF_8));
         PreviewSqlDTO previewSqlDTO = new PreviewSqlDTO();
         previewSqlDTO.setSql(sql);
         previewSqlDTO.setDatasourceId(id);
@@ -1191,7 +1194,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @Override
-    public ExcelDataPageVO excelDataPage(ExcelDataPageRequest request) throws CrestException {
+    public ExcelDataPageVO excelDataPage(@RequestBody ExcelDataPageRequest request) throws CrestException {
         if (request == null) {
             CrestException.throwException("无效的 Excel 数据表");
         }
@@ -1205,6 +1208,7 @@ public class DatasourceServer implements DatasourceApi {
                 .map(this::excelDbFieldName)
                 .map(this::quoteExcelIdentifier)
                 .collect(Collectors.joining(", "));
+        // nosemgrep: java.spring.security.injection.tainted-sql-string.tainted-sql-string
         String query = "SELECT " + quoteIdentifier(EXCEL_ROW_ID_FIELD)
                 + (StringUtils.isEmpty(columns) ? "" : ", " + columns)
                 + " FROM " + quoteIdentifier(context.tableName)
@@ -1243,7 +1247,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @Override
-    public void saveExcelData(ExcelDataSaveRequest request) throws CrestException {
+    public void saveExcelData(@RequestBody ExcelDataSaveRequest request) throws CrestException {
         if (request == null) {
             CrestException.throwException("无效的 Excel 数据表");
         }
@@ -1608,10 +1612,8 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     public void updateStopJobStatus() {
-        if (this.isUpdatingStatus) {
+        if (!isUpdatingStatus.compareAndSet(false, true)) {
             return;
-        } else {
-            this.isUpdatingStatus = true;
         }
 
         try {
@@ -1619,7 +1621,7 @@ public class DatasourceServer implements DatasourceApi {
         } catch (Exception e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         } finally {
-            this.isUpdatingStatus = false;
+            isUpdatingStatus.set(false);
         }
     }
 
@@ -1894,7 +1896,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @Override
-    public List<Map<String, String>> multidimensionalTables(Map<String, String> request) throws CrestException {
+    public List<Map<String, String>> multidimensionalTables(@RequestBody Map<String, String> request) throws CrestException {
         List<ApiDefinition> paramsList = new ArrayList<>();
         ApiDefinition apiDefinition = JsonUtil.parseObject(decodeBase64RequestValue(request.get("data"), "API 数据源配置"), ApiDefinition.class);
         paramsList.add(apiDefinition);

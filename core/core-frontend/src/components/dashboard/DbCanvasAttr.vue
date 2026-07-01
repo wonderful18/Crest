@@ -77,8 +77,8 @@ const themeAttrChange = (custom, property, value) => {
         if (viewInfo.type === 'rich-text') {
           useEmitt().emitter.emit('calcData-' + viewId, viewInfo)
         }
-      } catch (e) {
-        console.warn('themeAttrChange-error')
+      } catch {
+        // ignore incomplete theme config
       }
     })
     snapshotStore.recordSnapshotCache('renderChart')

@@ -77,8 +77,6 @@ export const clearErrorApi = (key: string) => {
 
 export const batchDelApi = data => request.delete({ url: '/user/batch', data })
 
-export const defaultPwdApi = () => request.get({ url: '/user/default-password' })
-
 export const resetPwdApi = uid => request.post({ url: `/user/reset-password/${uid}` })
 
 export const switchEnableApi = data => request.post({ url: '/user/enable', data })

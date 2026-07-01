@@ -1028,9 +1028,7 @@ export async function decompressionPre(params, callBack) {
     .then(response => {
       templatePayload = normalizeTemplatePayload(response.data)
     })
-    .catch(e => {
-      console.error(e)
-    })
+    .catch(() => undefined)
   callBack(templatePayload)
 }
 
@@ -1134,20 +1132,29 @@ export function findComponentById(componentId) {
   return result
 }
 
+function resolveParentMessageOrigin() {
+  const currentOrigin = window.location.origin
+  if (!document.referrer) {
+    return currentOrigin
+  }
+  try {
+    const referrerUrl = new URL(document.referrer)
+    return ['http:', 'https:'].includes(referrerUrl.protocol) ? referrerUrl.origin : currentOrigin
+  } catch {
+    return currentOrigin
+  }
+}
+
 export function onInitReady(params, eventName = 'canvas_init_ready') {
   try {
-    console.info('event:' + eventName)
     const targetPm = {
       type: 'crest-embedded-interactive',
       eventName: eventName,
       args: params
     }
-    const targetOrigin = document.referrer
-      ? new URL(document.referrer).origin
-      : window.location.origin
-    window.parent.postMessage(targetPm, targetOrigin)
-  } catch (e) {
-    console.debug('crest_inner_params send error')
+    window.parent.postMessage(targetPm, resolveParentMessageOrigin())
+  } catch {
+    // ignore embedded message failures
   }
 }
 

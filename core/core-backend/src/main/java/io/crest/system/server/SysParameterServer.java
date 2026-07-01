@@ -14,16 +14,19 @@ import io.crest.log.CrestAudit;
 import io.crest.system.dao.auto.entity.CoreSysSetting;
 import io.crest.system.manage.SysParameterManage;
 import io.crest.utils.CrestPermissionUtils;
+import io.crest.utils.FileUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,7 +56,7 @@ public class SysParameterServer implements SysParameterApi {
 
     @Override
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA)
-    public void saveBasicSetting(List<SettingItemVO> settingItemVOS) {
+    public void saveBasicSetting(@RequestBody List<SettingItemVO> settingItemVOS) {
         CrestPermissionUtils.requireAdmin();
         sysParameterManage.saveBasic(settingItemVOS);
     }
@@ -104,7 +107,14 @@ public class SysParameterServer implements SysParameterApi {
 
     @Override
     public Map<String, String> i18nOptions() {
-        File dir = new File(StaticResourceConstants.I18N_DIR);
+        File dir;
+        try {
+            File i18nRoot = FileUtils.resolveSubDirectory(StaticResourceConstants.USER_HOME, "i18n");
+            dir = FileUtils.resolveSubDirectory(i18nRoot.getPath(), "front");
+        } catch (IOException e) {
+            CrestException.throwException("国际化资源目录无效");
+            return null;
+        }
         File[] files = null;
         if (!dir.exists() || ObjectUtils.isEmpty(files = dir.listFiles())) {
             return null;
@@ -146,7 +156,8 @@ public class SysParameterServer implements SysParameterApi {
 
     @Override
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA)
-    public void saveSqlBotConfig(SQLBotConfigCreator creator) {
+    public void saveSqlBotConfig(@RequestBody SQLBotConfigCreator creator) {
+        CrestPermissionUtils.requireAdmin();
         assertFullModeFeature();
         sysParameterManage.saveSqlBotConfig(creator);
     }

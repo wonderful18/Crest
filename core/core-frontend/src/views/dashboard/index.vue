@@ -214,8 +214,8 @@ onMounted(async () => {
         watermarkBaseInfo = rsp.data
         watermarkBaseInfo.settingContent = JSON.parse(watermarkBaseInfo.settingContent)
       })
-    } catch (e) {
-      console.error('can not find watermark info')
+    } catch {
+      // keep creating the resource when watermark settings are unavailable
     }
     let templatePayload
     let preName

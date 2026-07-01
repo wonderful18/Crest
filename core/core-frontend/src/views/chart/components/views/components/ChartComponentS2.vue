@@ -709,8 +709,8 @@ onBeforeUnmount(() => {
     myChart?.destroy()
     myChart = null
     resizeObserver?.disconnect()
-  } catch (e) {
-    console.warn(e)
+  } catch {
+    // ignore chart cleanup failures
   }
 })
 

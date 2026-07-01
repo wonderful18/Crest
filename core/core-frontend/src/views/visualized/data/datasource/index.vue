@@ -38,6 +38,7 @@ import {
   ElAside
 } from 'element-plus-secondary'
 import { treeDraggble } from '@/utils/treeDraggble'
+import { secureRandomInt } from '@/utils/secureRandom'
 import GridTable from '@/components/grid-table/src/GridTable.vue'
 import ArrowSide from '@/views/common/CrestResourceArrow.vue'
 import relationChart from '@/components/relation-chart/index.vue'
@@ -524,9 +525,7 @@ const setSupportSetKey = () => {
     .then(response => {
       isSupportSetKey.value = response.data
     })
-    .catch(error => {
-      console.warn(error?.message)
-    })
+    .catch(() => undefined)
 }
 const changeDsStatus = (ds, id, extraFlag) => {
   ds.some(ele => {
@@ -756,7 +755,9 @@ const addExcelEditRow = () => {
     return
   }
   const row = {
-    [EXCEL_EDIT_ROW_ID]: `new_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    [EXCEL_EDIT_ROW_ID]: `new_${Date.now()}_${secureRandomInt(0x100000000)
+      .toString(16)
+      .padStart(8, '0')}`,
     __dirty: true,
     __isNew: true
   }
