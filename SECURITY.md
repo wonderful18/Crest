@@ -1,6 +1,6 @@
 # Security Policy
 
-本文说明 Crest 的安全报告方式、公开仓库检查项和部署加固建议。
+本文说明 Crest 的漏洞反馈方式、公开仓库检查项和部署加固建议。
 
 发布前安全基线见 [SECURITY_BASELINE.md](./SECURITY_BASELINE.md)。
 

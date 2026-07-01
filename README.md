@@ -488,8 +488,6 @@ git clean -fdXn
 | --- | --- |
 | [docs/development.md](./docs/development.md) | 仓库结构、开发工具链、构建命令、迁移规则和提交前检查 |
 | [docs/release/v1.5.14.md](./docs/release/v1.5.14.md) | v1.5.14 发布说明、镜像、离线包、源码包和安装注意事项 |
-| [docs/release/v1.5.14-security-review.md](./docs/release/v1.5.14-security-review.md) | v1.5.14 安全修复范围、验证结果和剩余风险说明 |
-| [docs/release/v1.5.14-security-report-ledger.md](./docs/release/v1.5.14-security-report-ledger.md) | v1.5.14 安全扫描报告处置台账 |
 | [docs/release/v1.5.9.md](./docs/release/v1.5.9.md) | v1.5.9 发布说明、镜像、离线包、源码包和安装注意事项 |
 | [docs/release/v1.5.8.md](./docs/release/v1.5.8.md) | v1.5.8 发布说明、镜像、离线包、源码包和安装注意事项 |
 | [docs/release/v1.5.7.md](./docs/release/v1.5.7.md) | v1.5.7 发布说明、镜像、离线包、源码包和安装注意事项 |
@@ -503,7 +501,7 @@ git clean -fdXn
 | [installer/README.md](./installer/README.md) | 单机安装、离线包制作、升级、备份和故障排查 |
 | [deploy/kubernetes/README.md](./deploy/kubernetes/README.md) | Kubernetes 部署、Secret 配置、验证和运维说明 |
 | [core/core-frontend/README.md](./core/core-frontend/README.md) | 前端工程结构、构建命令、品牌资源和页面约定 |
-| [SECURITY.md](./SECURITY.md) | 安全报告、公开仓库检查和部署加固建议 |
+| [SECURITY.md](./SECURITY.md) | 漏洞反馈、公开仓库检查和部署加固建议 |
 | [SECURITY_BASELINE.md](./SECURITY_BASELINE.md) | 发布前安全基线、初始化脚本和部署检查项 |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | 贡献流程、分支、提交、测试和文档要求 |
 
