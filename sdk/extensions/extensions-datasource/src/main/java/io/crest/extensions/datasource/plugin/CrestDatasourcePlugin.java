@@ -99,6 +99,8 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
     @SuppressWarnings("java/zipslip")
     public void unloadPlugin() {
         try {
+            PluginDatasourceVO config = getConfig();
+            File driverDirectory = pluginDriverDirectory(config);
             ProtectionDomain protectionDomain = this.getClass().getProtectionDomain();
             URI uri = protectionDomain.getCodeSource().getLocation().toURI();
             try (JarFile jarFile = new JarFile(new File(uri))) {
@@ -107,7 +109,7 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
                     JarEntry entry = entries.nextElement();
                     String name = entry.getName();
                     if (Strings.CS.endsWith(name, ".jar")) {
-                        File file = FileUtils.resolveUnderDirectory(DEFAULT_FILE_PATH, Paths.get(name).getFileName().toString());
+                        File file = FileUtils.resolveUnderDirectory(driverDirectory.getPath(), Paths.get(name).getFileName().toString());
                         file.delete();
                     }
                 }

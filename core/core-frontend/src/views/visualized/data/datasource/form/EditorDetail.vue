@@ -97,6 +97,7 @@ const loading = ref(false)
 const dsForm = ref<FormInstance>()
 
 const cronEdit = ref(true)
+const sshAuthTypePassword = 'password'
 
 const defaultRule = {
   name: [
@@ -1371,13 +1372,13 @@ defineExpose({
             </el-form-item>
             <el-form-item :label="t('data_source.connection_method')">
               <el-radio-group v-model="form.configuration.sshType">
-                <el-radio value="password">{{ t('data_source.password') }}</el-radio>
+                <el-radio :value="sshAuthTypePassword">{{ t('data_source.password') }}</el-radio>
                 <el-radio value="sshkey">ssh key</el-radio>
               </el-radio-group>
             </el-form-item>
             <el-form-item
               :label="t('datasource.password')"
-              v-if="form.configuration.sshType === 'password'"
+              v-if="form.configuration.sshType === sshAuthTypePassword"
               prop="configuration.sshPassword"
             >
               <CustomPassword

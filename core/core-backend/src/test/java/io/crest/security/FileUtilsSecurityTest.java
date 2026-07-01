@@ -4,6 +4,7 @@ import io.crest.exception.CrestException;
 import io.crest.utils.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -62,5 +63,30 @@ class FileUtilsSecurityTest {
         FileUtils.validateExist(directory.toString());
 
         assertTrue(Files.isDirectory(directory));
+    }
+
+    @Test
+    void validateUploadFileSizeRejectsOversizedFile() {
+        MockMultipartFile file = new MockMultipartFile("file", "demo.txt", "text/plain", new byte[]{1, 2, 3});
+
+        CrestException exception = assertThrows(CrestException.class,
+                () -> FileUtils.validateUploadFileSize(file, 2, "测试文件"));
+
+        assertEquals("测试文件不能超过2B", exception.getMsg());
+    }
+
+    @Test
+    void validateUploadFileSizeAllowsFileWithinLimit() {
+        MockMultipartFile file = new MockMultipartFile("file", "demo.txt", "text/plain", new byte[]{1, 2, 3});
+
+        assertDoesNotThrow(() -> FileUtils.validateUploadFileSize(file, 3, "测试文件"));
+    }
+
+    @Test
+    void validateContentSizeRejectsOversizedContent() {
+        CrestException exception = assertThrows(CrestException.class,
+                () -> FileUtils.validateContentSize(new byte[]{1, 2, 3}, 2, "静态资源文件"));
+
+        assertEquals("静态资源文件不能超过2B", exception.getMsg());
     }
 }

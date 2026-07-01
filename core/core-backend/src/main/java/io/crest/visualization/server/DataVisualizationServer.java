@@ -94,6 +94,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class DataVisualizationServer implements DataVisualizationApi {
 
+    private static final long MAX_TEMPLATE_FILE_BYTES = 50L * 1024L * 1024L;
+
     @Resource
     private DataVisualizationInfoMapper visualizationInfoMapper;
 
@@ -1352,6 +1354,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
         if (file == null || file.isEmpty()) {
             CrestException.throwException("请选择模板文件");
         }
+        FileUtils.validateUploadFileSize(file, MAX_TEMPLATE_FILE_BYTES, "模板文件");
         String fileName = StringUtils.defaultString(file.getOriginalFilename());
         FileUtils.validateUploadFilename(fileName);
         String lowerFileName = fileName.toLowerCase(Locale.ROOT);

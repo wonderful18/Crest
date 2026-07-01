@@ -88,6 +88,7 @@ public class DatasourceServer implements DatasourceApi {
     private static final String EXCEL_EDIT_ROW_ID = "_rowId";
     private static final int MAX_EXCEL_EDIT_PAGE_SIZE = 500;
     private static final int MAX_EXCEL_EDIT_BATCH_SIZE = 5000;
+    private static final long MAX_EXCEL_UPLOAD_BYTES = 500L * 1024L * 1024L;
     private static final List<String> EXCEL_UPLOAD_SUFFIXES = List.of("xlsx", "xls", "csv");
 
     @Resource
@@ -1024,6 +1025,7 @@ public class DatasourceServer implements DatasourceApi {
         if (!EXCEL_UPLOAD_SUFFIXES.contains(suffix)) {
             CrestException.throwException(Translator.get("i18n_unsupported_file_format"));
         }
+        FileUtils.validateUploadFileSize(file, MAX_EXCEL_UPLOAD_BYTES, "Excel文件");
         FileUtils.validateUploadFilename(fileName);
     }
 

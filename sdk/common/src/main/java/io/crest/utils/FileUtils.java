@@ -29,11 +29,46 @@ public class FileUtils {
         }
     }
 
+    public static void validateUploadFileSize(MultipartFile file, long maxBytes, String fileType) {
+        if (file == null || file.isEmpty()) {
+            CrestException.throwException(fileType + "不能为空");
+        }
+        validateContentSize(file.getSize(), maxBytes, fileType);
+    }
+
+    public static void validateContentSize(byte[] content, long maxBytes, String fileType) {
+        if (content == null || content.length == 0) {
+            CrestException.throwException(fileType + "不能为空");
+        }
+        validateContentSize(content.length, maxBytes, fileType);
+    }
+
+    private static void validateContentSize(long size, long maxBytes, String fileType) {
+        if (maxBytes <= 0) {
+            throw new IllegalArgumentException("maxBytes must be positive");
+        }
+        if (size > maxBytes) {
+            CrestException.throwException(fileType + "不能超过" + readableSize(maxBytes));
+        }
+    }
+
+    private static String readableSize(long bytes) {
+        long mb = 1024L * 1024L;
+        if (bytes % mb == 0) {
+            return (bytes / mb) + "MB";
+        }
+        long kb = 1024L;
+        if (bytes % kb == 0) {
+            return (bytes / kb) + "KB";
+        }
+        return bytes + "B";
+    }
+
     public static File ensureDirectory(String directoryPath) throws IOException {
         if (StringUtils.isBlank(directoryPath) || directoryPath.indexOf('\0') >= 0) {
             CrestException.throwException(Translator.get("i18n_invalid_file_name"));
         }
-        File directory = new File(directoryPath).getCanonicalFile();
+        File directory = Path.of(directoryPath).toAbsolutePath().normalize().toFile().getCanonicalFile();
         if (!directory.exists() && !directory.mkdirs()) {
             throw new IOException("Failed to create directory: " + directory.getPath());
         }
@@ -57,7 +92,7 @@ public class FileUtils {
     public static File resolveSubDirectory(String directoryPath, String directoryName) throws IOException {
         validateUploadFilename(directoryName);
         File directory = ensureDirectory(directoryPath);
-        File target = new File(directory, directoryName).getCanonicalFile();
+        File target = directory.toPath().resolve(directoryName).normalize().toFile().getCanonicalFile();
         if (!target.toPath().startsWith(directory.toPath())) {
             CrestException.throwException(Translator.get("i18n_invalid_file_name"));
         }
@@ -67,7 +102,7 @@ public class FileUtils {
     public static File resolveUnderDirectory(String directoryPath, String filename) throws IOException {
         validateUploadFilename(filename);
         File directory = ensureDirectory(directoryPath);
-        File target = new File(directory, filename).getCanonicalFile();
+        File target = directory.toPath().resolve(filename).normalize().toFile().getCanonicalFile();
         if (!target.toPath().startsWith(directory.toPath())) {
             CrestException.throwException(Translator.get("i18n_invalid_file_name"));
         }
@@ -240,7 +275,7 @@ public class FileUtils {
     public static void deleteFile(String path) {
         File file;
         try {
-            file = new File(path).getCanonicalFile();
+            file = Path.of(path).toAbsolutePath().normalize().toFile().getCanonicalFile();
         } catch (IOException e) {
             CrestException.throwException("文件不存在");
             return;
@@ -286,7 +321,7 @@ public class FileUtils {
     public static byte[] readBytes(String path) {
         File file;
         try {
-            file = new File(path).getCanonicalFile();
+            file = Path.of(path).toAbsolutePath().normalize().toFile().getCanonicalFile();
         } catch (IOException e) {
             CrestException.throwException("文件不存在");
             return null;
@@ -314,7 +349,7 @@ public class FileUtils {
     public static boolean deleteDirectoryRecursively(String directoryPath) {
         File directory;
         try {
-            directory = new File(directoryPath).getCanonicalFile();
+            directory = Path.of(directoryPath).toAbsolutePath().normalize().toFile().getCanonicalFile();
         } catch (IOException e) {
             return false;
         }

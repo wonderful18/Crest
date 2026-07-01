@@ -37,6 +37,8 @@ import java.util.Map;
 @RequestMapping("/datasource-driver")
 public class DatasourceDriverServer implements DatasourceDriverApi {
 
+    private static final long MAX_DRIVER_JAR_BYTES = 200L * 1024L * 1024L;
+
     @Value("${crest.path.custom-drivers:/opt/crest/custom-drivers/}")
     private String DRIVER_PATH;
 
@@ -137,6 +139,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
         if (coreDriver == null) {
             throw new RuntimeException("DRIVER_NOT_FOUND");
         }
+        FileUtils.validateUploadFileSize(jarFile, MAX_DRIVER_JAR_BYTES, "驱动文件");
         String filename = jarFile.getOriginalFilename();
         FileUtils.validateUploadFilename(filename);
         if (!filename.endsWith(".jar")) {

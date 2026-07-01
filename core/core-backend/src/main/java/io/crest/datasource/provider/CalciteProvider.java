@@ -288,7 +288,8 @@ public class CalciteProvider extends Provider {
         Connection connection = take();
         try {
             CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
-            statement = calciteConnection.prepareStatement(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()));
+            String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
+            statement = calciteConnection.prepareStatement(readQuery);
             bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
             resultSet = statement.executeQuery();
             ResultSetMetaData metaData = resultSet.getMetaData();
@@ -476,7 +477,8 @@ public class CalciteProvider extends Provider {
             List<TableField> datasetTableFields = new ArrayList<>();
             try (Connection connection = take()) {
                 CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
-                try (PreparedStatement statement = calciteConnection.prepareStatement(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()))) {
+                String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
+                try (PreparedStatement statement = calciteConnection.prepareStatement(readQuery)) {
                     bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
                     try (ResultSet resultSet = statement.executeQuery()) {
                         ResultSetMetaData metaData = resultSet.getMetaData();
@@ -516,7 +518,8 @@ public class CalciteProvider extends Provider {
                 boolean readOnly = shouldUseReadOnlyConnection(datasourceRequest, datasourceConfiguration, datasourceSchemaDTO.getType());
                 setConnectionReadOnly(con, readOnly);
                 try {
-                    resultSet = statement.executeQuery(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()));
+                    String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
+                    resultSet = statement.executeQuery(readQuery);
                     datasetTableFields.addAll(getField(resultSet, datasourceRequest));
                 } finally {
                     resetConnectionReadOnly(con, readOnly);
@@ -544,13 +547,16 @@ public class CalciteProvider extends Provider {
                 try {
                     datasourceRequest.setDsVersion(con.getMetaData().getDatabaseMajorVersion());
                     if (datasourceRequest.getDatasource().getType().equalsIgnoreCase("mongo")) {
-                        resultSet = statement.executeQuery("select * from " + quoteQualifiedIdentifier(table) + " limit 0 offset 0 ");
+                        String fieldSql = "select * from " + quoteQualifiedIdentifier(table) + " limit 0 offset 0 ";
+                        resultSet = statement.executeQuery(fieldSql);
                         return fetchResultField(resultSet);
                     }
                     if (isDorisCatalog(datasourceRequest)) {
-                        resultSet = statement.executeQuery("desc " + quoteQualifiedIdentifier(table));
+                        String fieldSql = "desc " + quoteQualifiedIdentifier(table);
+                        resultSet = statement.executeQuery(fieldSql);
                     } else {
-                        resultSet = statement.executeQuery(getTableFiledSql(datasourceRequest));
+                        String fieldSql = getTableFiledSql(datasourceRequest);
+                        resultSet = statement.executeQuery(fieldSql);
                     }
 
                     Map<String, Integer> tableTypeMap = getTableTypeMap(datasourceRequest, datasourceConfiguration, table);
@@ -779,7 +785,8 @@ public class CalciteProvider extends Provider {
                     }
                     resultSet = ((PreparedStatement) statement).executeQuery();
                 } else {
-                    resultSet = statement.executeQuery(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()));
+                    String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
+                    resultSet = statement.executeQuery(readQuery);
                 }
                 fieldList = getField(resultSet, datasourceRequest);
                 dataList = data(resultSet, datasourceRequest);
@@ -1876,9 +1883,11 @@ public class CalciteProvider extends Provider {
             try {
                 if (StringUtils.isNotBlank(autoIncrementPkName)) {
                     String[] generatedColumns = {pkName};
-                    stat = connection.prepareStatement(SqlSecurityPolicy.validateSingleStatement(sql), generatedColumns);
+                    String validatedSql = SqlSecurityPolicy.validateSingleStatement(sql);
+                    stat = connection.prepareStatement(validatedSql, generatedColumns);
                 } else {
-                    stat = connection.prepareStatement(SqlSecurityPolicy.validateSingleStatement(sql));
+                    String validatedSql = SqlSecurityPolicy.validateSingleStatement(sql);
+                    stat = connection.prepareStatement(validatedSql);
                 }
                 stat.setQueryTimeout(queryTimeout);
             } catch (Exception e) {
@@ -2117,8 +2126,9 @@ public class CalciteProvider extends Provider {
         int queryTimeout = configuration.getQueryTimeout();
         DatasourceDTO datasource = new DatasourceDTO();
         BeanUtils.copyBean(datasource, engineRequest.getEngine());
+        String readQuery = SqlSecurityPolicy.validateReadQuery(engineRequest.getQuery());
         try (Connection connection = getConnectionFromPool(datasource.getId());
-             PreparedStatement preparedStatement = connection.prepareStatement(SqlSecurityPolicy.validateReadQuery(engineRequest.getQuery()))) {
+             PreparedStatement preparedStatement = connection.prepareStatement(readQuery)) {
             preparedStatement.setQueryTimeout(queryTimeout);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 Map<String, Object> map = new LinkedHashMap<>();
@@ -2135,8 +2145,9 @@ public class CalciteProvider extends Provider {
         int queryTimeout = configuration.getQueryTimeout();
         DatasourceDTO datasource = new DatasourceDTO();
         BeanUtils.copyBean(datasource, engineRequest.getEngine());
+        String validatedSql = SqlSecurityPolicy.validateSingleStatement(engineRequest.getQuery());
         try (Connection connection = getConnectionFromPool(datasource.getId());
-             PreparedStatement preparedStatement = connection.prepareStatement(SqlSecurityPolicy.validateSingleStatement(engineRequest.getQuery()))) {
+             PreparedStatement preparedStatement = connection.prepareStatement(validatedSql)) {
             preparedStatement.setQueryTimeout(queryTimeout);
             Boolean result = preparedStatement.execute();
         } catch (Exception e) {

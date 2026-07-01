@@ -40,6 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -188,6 +189,19 @@ class DataVisualizationServerImportTest {
         CrestException exception = assertThrows(CrestException.class, () -> server.decompressionLocalFile(file));
 
         assertEquals("仅支持 DET2 或 DET2APP 模板文件", exception.getMsg());
+    }
+
+    @Test
+    void decompressionLocalFileShouldRejectOversizedTemplateBeforeReadingContent() throws Exception {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(false);
+        when(file.getSize()).thenReturn(50L * 1024L * 1024L + 1L);
+        when(file.getOriginalFilename()).thenReturn("risk-screen.det2");
+
+        CrestException exception = assertThrows(CrestException.class, () -> server.decompressionLocalFile(file));
+
+        assertEquals("模板文件不能超过50MB", exception.getMsg());
+        verify(file, never()).getBytes();
     }
 
     @Test

@@ -194,14 +194,15 @@ const copyPassword = async (password: string) => {
   ElMessage.success('密码已复制')
 }
 
-const showPasswordNotice = async (title: string, message: string, password: string) => {
+const showPasswordNotice = async (title: string, noticeText: string, temporaryPassword: string) => {
+  const noticeOptions = {
+    confirmButtonText: '复制密码',
+    cancelButtonText: '关闭',
+    type: 'success' as const
+  }
   try {
-    await ElMessageBox.confirm(message, title, {
-      confirmButtonText: '复制密码',
-      cancelButtonText: '关闭',
-      type: 'success'
-    })
-    await copyPassword(password)
+    await ElMessageBox.confirm(noticeText, title, noticeOptions)
+    await copyPassword(temporaryPassword)
   } catch {
     // 关闭提示框不影响已完成的账号操作。
   }

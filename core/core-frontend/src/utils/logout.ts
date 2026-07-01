@@ -33,7 +33,7 @@ export const logoutHandler = (justClean?: boolean, save_platform_status = false)
         pathname = pathname.replace('mobile.html', '')
       }
       pathname = pathname.substring(0, pathname.length - 1)
-      window.location.href = pathname + '/oidcbi/oidc/logout'
+      window.location.assign(buildSameOriginUrl(pathname, '/oidcbi/oidc/logout'))
       return
     } else if (pathname.includes('casbi/')) {
       if (save_platform_status) {
@@ -44,8 +44,9 @@ export const logoutHandler = (justClean?: boolean, save_platform_status = false)
         pathname = pathname.replace('mobile.html', '')
       }
       pathname = pathname.substring(0, pathname.length - 1)
-      const uri = encodeURIComponent(window.location.href)
-      window.location.href = pathname + '/casbi/cas/logout?service=' + uri
+      const logoutUrl = new URL(buildSameOriginUrl(pathname, '/casbi/cas/logout'))
+      logoutUrl.searchParams.set('service', window.location.href)
+      window.location.assign(logoutUrl.toString())
       return
     }
     pathname = pathname.substring(0, pathname.length - 1)
@@ -55,6 +56,10 @@ export const logoutHandler = (justClean?: boolean, save_platform_status = false)
     window.location.href = customLogoutUrl
   }
   router.push(justClean ? queryRedirectPath : `/login?redirect=${queryRedirectPath}`)
+}
+
+const buildSameOriginUrl = (basePath: string, logoutPath: string) => {
+  return new URL(`${basePath}${logoutPath}`, window.location.origin).toString()
 }
 
 const safeLogoutUrl = (url?: string) => {

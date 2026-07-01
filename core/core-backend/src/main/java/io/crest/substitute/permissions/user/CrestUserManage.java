@@ -53,6 +53,7 @@ public class CrestUserManage {
     public static final String AUTH_TYPE_LOCAL = "LOCAL";
     public static final String AUTH_TYPE_SSO = "SSO";
 
+    private static final long MAX_USER_IMPORT_BYTES = 10L * 1024L * 1024L;
     private static final String INITIAL_PASSWORD_PROPERTY = "crest.user.initial-password";
     private static final Pattern ACCOUNT_PATTERN = Pattern.compile("^[A-Za-z0-9._@-]{1,64}$");
     private static final Pattern UNSAFE_DISPLAY_NAME_PATTERN = Pattern.compile("[<>\\p{Cntrl}]");
@@ -325,6 +326,7 @@ public class CrestUserManage {
         if (file == null || file.isEmpty()) {
             CrestException.throwException("导入文件不能为空");
         }
+        FileUtils.validateUploadFileSize(file, MAX_USER_IMPORT_BYTES, "用户导入文件");
         List<UserImportRow> rows = readImportRows(file);
         int success = 0;
         int failed = 0;
