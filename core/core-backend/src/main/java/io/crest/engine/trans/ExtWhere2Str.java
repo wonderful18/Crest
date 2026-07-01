@@ -278,7 +278,9 @@ public class ExtWhere2Str {
                                     && Strings.CI.equals(dsType, DatasourceConfiguration.DatasourceType.sqlServer.getType())) {
                                 whereValue = String.format(SQLConstants.WHERE_VALUE_VALUE_CH, sanitizeSqlLiteral(value.get(0)));
                             } else {
-                                if (request.getDatasetTableField().getFieldType() == 2
+                                if (request.getDatasetTableField().getFieldType() == 1) {
+                                    whereValue = getTimeSingleValue(request, isCross);
+                                } else if (request.getDatasetTableField().getFieldType() == 2
                                         || request.getDatasetTableField().getFieldType() == 3
                                         || request.getDatasetTableField().getFieldType() == 4) {
                                     whereValue = String.format(SQLConstants.WHERE_NUMBER_VALUE, sanitizeNumberLiteral(value.get(0)));
@@ -310,6 +312,26 @@ public class ExtWhere2Str {
             default:
                 return null;
         }
+    }
+
+    private static String getTimeSingleValue(ChartExtFilterDTO request, boolean isCross) {
+        DatasetTableFieldDTO field = request.getDatasetTableField();
+        String value = request.getValue().get(0);
+        if (field.getExtractedFieldType() == 2
+                || field.getExtractedFieldType() == 3
+                || field.getExtractedFieldType() == 4
+                || isCross) {
+            return isCross
+                    ? String.format(SQLConstants.WHERE_NUMBER_VALUE, sanitizeNumberLiteral(value))
+                    : String.format(SQLConstants.WHERE_VALUE_VALUE, Utils.transLong2Str(Long.parseLong(value)));
+        }
+        String timeValue = Utils.transLong2Str(Long.parseLong(value));
+        if (Strings.CI.equals(field.getType(), "date")) {
+            String day = Utils.transLong2StrShort(Long.parseLong(value));
+            timeValue = day + (Strings.CI.equals(request.getOperator(), "le")
+                    || Strings.CI.equals(request.getOperator(), "lt") ? " 23:59:59" : " 00:00:00");
+        }
+        return String.format(SQLConstants.WHERE_VALUE_VALUE, sanitizeSqlLiteral(timeValue));
     }
 
     private static String sanitizeSqlLiteral(String value) {

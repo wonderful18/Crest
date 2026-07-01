@@ -326,6 +326,22 @@ declare interface ChartBasicStyle {
     summary: string
     originName?: string
   }>
+  summaryColumns?: Array<{
+    id: string
+    name: string
+    show: boolean
+    summary: string
+    field?: string
+    originName?: string
+    position?: string
+    format?: {
+      decimal?: number
+      unit?: string
+      percent?: boolean
+      thousandSeparator?: boolean
+      emptyText?: string
+    }
+  }>
   /**
    * 符号地图符号大小最小值
    */

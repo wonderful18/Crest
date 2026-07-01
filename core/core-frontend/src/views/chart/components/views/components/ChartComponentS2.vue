@@ -249,6 +249,9 @@ const debounceRender = debounce(() => {
     resizeAction,
     touchAction
   })
+  if (!myChart) {
+    return
+  }
   myChart?.render()
   dvMainStore.setViewInstanceInfo(actualChart.id, myChart)
   initScroll()

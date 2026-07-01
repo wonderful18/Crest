@@ -116,8 +116,14 @@
                     LEFT JOIN bi_visualization dvi ON vlji.target_dv_id = dvi.id
                     LEFT JOIN snapshot_visualization_link_jump_target_view_info vljtvi ON vlji.id = vljtvi.link_jump_info_id
                     <if test="!isDesktop">
-                    LEFT JOIN share_link ON share_link.creator = #{uid}
-                    AND vlji.target_dv_id = share_link.resource_id
+                    LEFT JOIN share_link ON vlji.target_dv_id = share_link.resource_id
+                    AND share_link.id = (
+                        SELECT sl.id
+                        FROM share_link sl
+                        WHERE sl.resource_id = vlji.target_dv_id
+                        ORDER BY sl.time DESC, sl.id DESC
+                        LIMIT 1
+                    )
                     </if>
                     left join snapshot_visualization_outer_params_info vopi on vopi.params_info_id = vljtvi.target_view_id
             WHERE
@@ -167,8 +173,14 @@
                 LEFT JOIN bi_visualization dvi ON vlji.target_dv_id = dvi.id
                 LEFT JOIN visualization_link_jump_target_view_info vljtvi ON vlji.id = vljtvi.link_jump_info_id
                 <if test="!isDesktop">
-                LEFT JOIN share_link ON share_link.creator = #{uid}
-                AND vlji.target_dv_id = share_link.resource_id
+                LEFT JOIN share_link ON vlji.target_dv_id = share_link.resource_id
+                AND share_link.id = (
+                    SELECT sl.id
+                    FROM share_link sl
+                    WHERE sl.resource_id = vlji.target_dv_id
+                    ORDER BY sl.time DESC, sl.id DESC
+                    LIMIT 1
+                )
                 </if>
                 left join visualization_outer_params_info vopi on vopi.params_info_id = vljtvi.target_view_id
         WHERE

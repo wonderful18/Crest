@@ -543,6 +543,7 @@ const jumpClick = param => {
         if (isPublicLinkHash(window.location.hash)) {
           const publicLinkUrl = buildPublicLinkTargetUrl({
             hash: window.location.hash,
+            publicJumpId: jumpInfo.publicJumpId,
             targetDvId: jumpInfo.targetDvId,
             targetDvType: jumpInfo.targetDvType,
             attachParamsInfo,

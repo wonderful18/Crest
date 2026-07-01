@@ -140,9 +140,10 @@ public class CalciteProvider extends Provider {
 
     @PostConstruct
     public void init() throws Exception {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        extendedJdbcClassLoader = new ExtendedJdbcClassLoader(new URL[0], classLoader);
         try {
             File file = FileUtils.ensureDirectory(FILE_PATH);
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             extendedJdbcClassLoader = new ExtendedJdbcClassLoader(new URL[]{file.toURI().toURL()}, classLoader);
             File[] array = file.listFiles();
             Optional.ofNullable(array).ifPresent(files -> {
@@ -157,7 +158,7 @@ public class CalciteProvider extends Provider {
                 }
             });
         } catch (Exception e) {
-
+            LogUtil.warn("数据源驱动目录不可用，将使用应用内置驱动");
         }
     }
 

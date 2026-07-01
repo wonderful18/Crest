@@ -37,4 +37,18 @@ describe('public link jump url', () => {
       '#/link/shareDemo01?targetDvId=9000000002&targetDvType=dashboard&fromLink=true&attachParams=yyy&jumpInfoParam=xxx'
     )
   })
+
+  it('opens target public link directly when the target visualization has one', () => {
+    const url = buildPublicLinkTargetUrl({
+      hash: '#/link/shareDemo01?ticket=source-ticket',
+      publicJumpId: 'targetShare02',
+      targetDvId: '9000000002',
+      targetDvType: 'dataV'
+    })
+
+    assert.equal(
+      url,
+      '#/link/targetShare02?targetDvId=9000000002&targetDvType=dataV&fromLink=true&ignoreParams=true'
+    )
+  })
 })
