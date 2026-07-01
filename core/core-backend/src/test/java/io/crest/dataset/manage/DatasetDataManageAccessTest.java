@@ -1,6 +1,7 @@
 package io.crest.dataset.manage;
 
 import io.crest.api.dataset.dto.EnumObj;
+import io.crest.api.dataset.dto.MultFieldValuesRequest;
 import io.crest.api.dataset.dto.PreviewSqlDTO;
 import io.crest.api.dataset.union.DatasetGroupInfoDTO;
 import io.crest.api.dataset.union.UnionDTO;
@@ -94,6 +95,28 @@ class DatasetDataManageAccessTest {
         CrestException exception = assertThrows(CrestException.class, () -> manage.getFieldEnumDs(request));
 
         assertEquals("当前用户无权访问该资源", exception.getMsg());
+        verifyNoInteractions(datasetSQLManage);
+    }
+
+    @Test
+    void fieldEnumReturnsEmptyForMissingRequest() throws Exception {
+        DatasetDataManage manage = new DatasetDataManage();
+
+        assertEquals(List.of(), manage.getFieldEnum(null));
+    }
+
+    @Test
+    void fieldValueTreeRejectsMissingFirstFieldBeforeSqlBuild() {
+        DatasetDataManage manage = new DatasetDataManage();
+        DatasetTableFieldManage datasetTableFieldManage = mock(DatasetTableFieldManage.class);
+        DatasetSQLManage datasetSQLManage = mock(DatasetSQLManage.class);
+        ReflectionTestUtils.setField(manage, "datasetTableFieldManage", datasetTableFieldManage);
+        ReflectionTestUtils.setField(manage, "datasetSQLManage", datasetSQLManage);
+
+        MultFieldValuesRequest request = new MultFieldValuesRequest();
+        request.setFieldIds(List.of(100L));
+
+        assertThrows(CrestException.class, () -> manage.getFieldValueTree(request));
         verifyNoInteractions(datasetSQLManage);
     }
 

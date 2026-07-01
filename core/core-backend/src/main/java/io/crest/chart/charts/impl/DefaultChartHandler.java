@@ -384,15 +384,18 @@ public class DefaultChartHandler extends AbstractChartPlugin {
 
     private List<ChartSeniorAssistDTO> getConditionFields(ChartSeniorThresholdDTO condition) {
         List<ChartSeniorAssistDTO> list = new ArrayList<>();
+        if (condition == null) {
+            return list;
+        }
         if ("between".equals(condition.getTerm())) {
-            if (!Strings.CI.equals(condition.getDynamicMaxField().getSummary(), "value")) {
+            if (condition.getDynamicMaxField() != null && !Strings.CI.equals(condition.getDynamicMaxField().getSummary(), "value")) {
                 list.add(of(condition.getDynamicMaxField()));
             }
-            if (!Strings.CI.equals(condition.getDynamicMinField().getSummary(), "value")) {
+            if (condition.getDynamicMinField() != null && !Strings.CI.equals(condition.getDynamicMinField().getSummary(), "value")) {
                 list.add(of(condition.getDynamicMinField()));
             }
         } else {
-            if (!Strings.CI.equals(condition.getDynamicField().getSummary(), "value")) {
+            if (condition.getDynamicField() != null && !Strings.CI.equals(condition.getDynamicField().getSummary(), "value")) {
                 list.add(of(condition.getDynamicField()));
             }
         }
@@ -769,6 +772,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
     }
 
     private boolean checkCalcType(String dateStyle, String calcType) {
+        if (StringUtils.isBlank(dateStyle)) {
+            return false;
+        }
         switch (dateStyle) {
             case "y":
                 return Strings.CI.equals(calcType, "year_mom");

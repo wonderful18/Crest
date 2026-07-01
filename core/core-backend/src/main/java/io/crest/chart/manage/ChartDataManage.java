@@ -279,6 +279,9 @@ public class ChartDataManage {
                     }
                 } else {
                     DatasetTableFieldDTO datasetTableField = datasetTableFieldManage.selectById(Long.valueOf(request.getFieldId()));
+                    if (ObjectUtils.isEmpty(datasetTableField)) {
+                        continue;
+                    }
                     request.setDatasetTableField(datasetTableField);
                     request.setFilterType(2);
                     // 相同数据集
@@ -308,6 +311,9 @@ public class ChartDataManage {
                     // 将钻取值作为条件传递，将所有钻取字段作为xAxis并加上下一个钻取字段
                     if (Objects.equals(dim.getId(), viewField.getId())) {
                         DatasetTableFieldDTO datasetTableField = datasetTableFieldManage.selectById(dim.getId());
+                        if (ObjectUtils.isEmpty(datasetTableField)) {
+                            continue;
+                        }
                         ChartViewFieldDTO d = new ChartViewFieldDTO();
                         BeanUtils.copyBean(d, datasetTableField);
 

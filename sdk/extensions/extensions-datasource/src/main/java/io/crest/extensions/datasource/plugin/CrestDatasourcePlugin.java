@@ -90,6 +90,10 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
             return null;
         }
         String config = pluginInfo.getConfig();
+        if (StringUtils.isBlank(config)) {
+            CrestException.throwException("Plugin config not exists");
+            return null;
+        }
         PluginDatasourceVO vo = JsonUtil.parseObject(config, PluginDatasourceVO.class);
         vo.setIcon(pluginInfo.getIcon());
         return vo;

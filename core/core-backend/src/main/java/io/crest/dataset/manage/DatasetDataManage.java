@@ -794,7 +794,7 @@ public class DatasetDataManage {
     }
 
     public List<String> getFieldEnum(MultFieldValuesRequest multFieldValuesRequest) throws Exception {
-        if (CollectionUtils.isEmpty(multFieldValuesRequest.getFieldIds())) {
+        if (multFieldValuesRequest == null || CollectionUtils.isEmpty(multFieldValuesRequest.getFieldIds())) {
             return Collections.emptyList();
         }
         // 根据前端传的查询组件field ids，获取所有字段枚举值并去重合并
@@ -1226,6 +1226,9 @@ public class DatasetDataManage {
         // 根据图表计算字段，获取数据集
         List<DatasetTableFieldDTO> allFields = new ArrayList<>();
         DatasetTableFieldDTO field = datasetTableFieldManage.selectById(ids.getFirst());
+        if (field == null) {
+            CrestException.throwException(Translator.get("i18n_no_field"));
+        }
         Long datasetGroupId = field.getDatasetGroupId();
         if (field.getChartId() != null) {
             allFields.addAll(datasetTableFieldManage.getChartCalcFields(field.getChartId()));

@@ -9,6 +9,7 @@ import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.utils.AuthUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.InvocationTargetException;
@@ -58,6 +59,39 @@ class DatasourceServerTest {
         CrestException exception = assertThrows(CrestException.class, () -> server.loadRemoteFile(request));
 
         assertEquals("当前用户无权访问该资源", exception.getMsg());
+    }
+
+    @Test
+    void uploadFileRequiresDatasourceAccessBeforeParsingFile() {
+        AuthUtils.setUser(new TokenUserBO(2L, 1L));
+        DatasourceServer server = new DatasourceServer();
+        DataSourceManage dataSourceManage = mock(DataSourceManage.class);
+        ReflectionTestUtils.setField(server, "dataSourceManage", dataSourceManage);
+
+        CoreDatasource datasource = new CoreDatasource();
+        datasource.setId(10L);
+        datasource.setCreateBy("3");
+        when(dataSourceManage.getCoreDatasource(10L)).thenReturn(datasource);
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "data.csv",
+                "text/csv",
+                "name\nalice\n".getBytes());
+
+        CrestException exception = assertThrows(CrestException.class, () -> server.uploadFile(file, 10L, 0));
+
+        assertEquals("当前用户无权访问该资源", exception.getMsg());
+    }
+
+    @Test
+    void invokeMethodRejectsUnsupportedMethodNameBeforeReflection() {
+        DatasourceServer server = new DatasourceServer();
+
+        CrestException exception = assertThrows(CrestException.class,
+                () -> server.invokeMethod("API", "forName", Object.class, new Object()));
+
+        assertEquals("Datasource API method not supported", exception.getMsg());
     }
 
     @Test

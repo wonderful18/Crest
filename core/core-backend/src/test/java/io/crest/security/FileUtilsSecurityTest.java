@@ -7,6 +7,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -63,6 +64,16 @@ class FileUtilsSecurityTest {
         FileUtils.validateExist(directory.toString());
 
         assertTrue(Files.isDirectory(directory));
+    }
+
+    @Test
+    void ensureDirectoryDoesNotExposeLocalPathInErrorMessage() throws Exception {
+        Path filePath = Files.createFile(tempDir.resolve("not-directory"));
+
+        IOException exception = assertThrows(IOException.class, () -> FileUtils.ensureDirectory(filePath.toString()));
+
+        assertEquals("路径不是目录", exception.getMessage());
+        assertFalse(exception.getMessage().contains(tempDir.toString()));
     }
 
     @Test

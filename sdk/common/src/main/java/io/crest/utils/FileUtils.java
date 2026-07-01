@@ -71,10 +71,10 @@ public class FileUtils {
         }
         File directory = Path.of(directoryPath).toAbsolutePath().normalize().toFile().getCanonicalFile();
         if (!directory.exists() && !directory.mkdirs()) {
-            throw new IOException("Failed to create directory: " + directory.getPath());
+            throw new IOException("目录创建失败");
         }
         if (!directory.isDirectory()) {
-            throw new IOException("Path is not a directory: " + directory.getPath());
+            throw new IOException("路径不是目录");
         }
         return directory;
     }
@@ -82,10 +82,10 @@ public class FileUtils {
     public static File ensureSubDirectory(String directoryPath, String directoryName) throws IOException {
         File target = resolveSubDirectory(directoryPath, directoryName);
         if (!target.exists() && !target.mkdirs()) {
-            throw new IOException("Failed to create directory: " + target.getPath());
+            throw new IOException("目录创建失败");
         }
         if (!target.isDirectory()) {
-            throw new IOException("Path is not a directory: " + target.getPath());
+            throw new IOException("路径不是目录");
         }
         return target;
     }

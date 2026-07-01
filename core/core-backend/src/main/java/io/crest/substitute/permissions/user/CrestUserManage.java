@@ -356,8 +356,8 @@ public class CrestUserManage {
     private List<UserImportRow> readImportRows(MultipartFile file) throws Exception {
         String originalFilename = StringUtils.defaultString(file.getOriginalFilename());
         FileUtils.validateUploadFilename(originalFilename);
-        String filename = originalFilename.toLowerCase(Locale.ROOT);
-        if (filename.endsWith(".xlsx") || filename.endsWith(".xls")) {
+        String normalizedFilename = originalFilename.toLowerCase(Locale.ROOT);
+        if (normalizedFilename.endsWith(".xlsx") || normalizedFilename.endsWith(".xls")) {
             try (InputStream inputStream = file.getInputStream()) {
                 return EasyExcel.read(inputStream)
                         .head(UserImportRow.class)
@@ -365,7 +365,7 @@ public class CrestUserManage {
                         .doReadSync();
             }
         }
-        if (!filename.endsWith(".csv")) {
+        if (!normalizedFilename.endsWith(".csv")) {
             CrestException.throwException("仅支持 xlsx、xls、csv 格式的用户导入文件");
         }
         String text = new String(file.getBytes(), StandardCharsets.UTF_8);
