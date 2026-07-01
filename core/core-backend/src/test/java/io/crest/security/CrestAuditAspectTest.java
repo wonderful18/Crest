@@ -21,6 +21,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -79,6 +80,65 @@ class CrestAuditAspectTest {
                 anyLong(), eq(200), eq("success"));
         assertEquals("SCREEN", resourceType.getValue());
         assertEquals("9", resourceId.getValue());
+    }
+
+    @Test
+    @DisplayName("审计表达式不允许执行方法调用")
+    void shouldRejectExecutableAuditExpression() throws Throwable {
+        CrestAuditAspect aspect = new CrestAuditAspect();
+        injectAuditLogService(aspect);
+
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getRequestURI()).thenReturn("/data-visualization/canvas");
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        when(point.proceed()).thenReturn("ok");
+
+        when(deLog.id()).thenReturn("#p0.getClass().name");
+        when(deLog.stExp()).thenReturn("");
+        when(deLog.st()).thenReturn(LogST.USER);
+        when(deLog.ot()).thenReturn(LogOT.MODIFY);
+
+        aspect.around(point, deLog);
+
+        ArgumentCaptor<String> resourceId = ArgumentCaptor.forClass(String.class);
+        verify(auditLogService).log(eq(LogOT.MODIFY), eq("USER"), resourceId.capture(),
+                anyString(), eq("POST"), eq("/data-visualization/canvas"),
+                isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                anyLong(), eq(200), eq("success"));
+        assertNull(resourceId.getValue());
+    }
+
+    @Test
+    @DisplayName("审计表达式不允许访问元类型属性")
+    void shouldRejectClassMetadataAuditExpression() throws Throwable {
+        CrestAuditAspect aspect = new CrestAuditAspect();
+        injectAuditLogService(aspect);
+
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getRequestURI()).thenReturn("/data-visualization/canvas");
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        when(signature.getMethod()).thenReturn(TestEndpoint.class.getDeclaredMethod("save", VisualizationRequest.class));
+        when(point.getSignature()).thenReturn(signature);
+        when(point.getArgs()).thenReturn(new Object[]{new VisualizationRequest(9L, "dataV")});
+        when(point.proceed()).thenReturn("ok");
+
+        when(deLog.id()).thenReturn("#p0.class.name");
+        when(deLog.stExp()).thenReturn("");
+        when(deLog.st()).thenReturn(LogST.USER);
+        when(deLog.ot()).thenReturn(LogOT.MODIFY);
+
+        aspect.around(point, deLog);
+
+        ArgumentCaptor<String> resourceId = ArgumentCaptor.forClass(String.class);
+        verify(auditLogService).log(eq(LogOT.MODIFY), eq("USER"), resourceId.capture(),
+                anyString(), eq("POST"), eq("/data-visualization/canvas"),
+                isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                anyLong(), eq(200), eq("success"));
+        assertNull(resourceId.getValue());
     }
 
     private void injectAuditLogService(CrestAuditAspect aspect) throws ReflectiveOperationException {

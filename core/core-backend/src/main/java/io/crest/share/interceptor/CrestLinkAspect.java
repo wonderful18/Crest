@@ -8,20 +8,16 @@ import io.crest.utils.LogUtil;
 import io.crest.utils.ServletUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.Expression;
-import org.springframework.expression.ExpressionParser;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
-import java.util.Objects;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 @Aspect
 @Component
@@ -29,8 +25,8 @@ public class CrestLinkAspect {
 
     private static final String PARAM_VARIABLE_PREFIX = "p";
     private static final String SPRING_EL_FLAG = "#";
+    private static final Pattern LINK_EXPRESSION_PATTERN = Pattern.compile("#p\\d+(\\.[A-Za-z_$][\\w$]*)*");
 
-    private final ExpressionParser parser = new SpelExpressionParser();
     private final ShareLinkAccessManage shareLinkAccessManage;
 
     public CrestLinkAspect(ShareLinkAccessManage shareLinkAccessManage) {
@@ -70,30 +66,47 @@ public class CrestLinkAspect {
     }
 
     public Long getExpression(Object[] params, String expression) {
-        StandardEvaluationContext context = buildContext(params);
-        Object o = resolveValue(expression, context);
+        Object o = resolveValue(params, expression);
         if (ObjectUtils.isNotEmpty(o)) return Long.parseLong(o.toString());
         return null;
     }
 
-    private StandardEvaluationContext buildContext(Object[] params) {
-        StandardEvaluationContext context = new StandardEvaluationContext();
-        if (params != null && params.length == 1) {
-            context.setRootObject(params[0]);
+    private Object resolveValue(Object[] params, String expression) {
+        if (StringUtils.isBlank(expression)) {
+            return null;
         }
-        for (int i = 0; i < Objects.requireNonNull(params).length; i++) {
-            Object paramValue = params[i];
-            context.setVariable(PARAM_VARIABLE_PREFIX + i, paramValue);
+        String normalized = expression.trim();
+        if (!normalized.startsWith(SPRING_EL_FLAG)) {
+            return normalized;
         }
-        return context;
+        if (!LINK_EXPRESSION_PATTERN.matcher(normalized).matches()) {
+            LogUtil.debug("分享链接表达式不受支持: " + expression);
+            return null;
+        }
+        return resolvePathValue(params, normalized);
     }
 
-    // nosemgrep: java.spring.security.audit.spel-injection.spel-injection
-    private Object resolveValue(String exp, EvaluationContext context) {
-        if (Strings.CS.contains(exp, SPRING_EL_FLAG)) {
-            Expression expression = parser.parseExpression(exp); // nosemgrep: java.spring.security.audit.spel-injection.spel-injection
-            return expression.getValue(context);
+    private Object resolvePathValue(Object[] params, String expression) {
+        String[] parts = expression.substring(1).split("\\.");
+        int index = Integer.parseInt(parts[0].substring(PARAM_VARIABLE_PREFIX.length()));
+        if (params == null || index < 0 || index >= params.length) {
+            return null;
         }
-        return exp;
+        Object value = params[index];
+        for (int i = 1; i < parts.length && value != null; i++) {
+            value = resolvePropertyValue(value, parts[i]);
+        }
+        return value;
+    }
+
+    private Object resolvePropertyValue(Object source, String propertyName) {
+        if ("class".equals(propertyName)) {
+            return null;
+        }
+        if (source instanceof Map<?, ?> map) {
+            return map.get(propertyName);
+        }
+        BeanWrapperImpl wrapper = new BeanWrapperImpl(source);
+        return wrapper.isReadableProperty(propertyName) ? wrapper.getPropertyValue(propertyName) : null;
     }
 }

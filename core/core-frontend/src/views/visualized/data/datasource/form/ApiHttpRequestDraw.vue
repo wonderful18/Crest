@@ -93,9 +93,7 @@ let apiItem = reactive<ApiItem>({
       kvs: []
     },
     authManager: {
-      verification: '',
-      username: '',
-      password: ''
+      verification: ''
     },
     page: {
       pageType: 'empty',

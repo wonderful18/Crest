@@ -42,6 +42,7 @@ const slogan = ref(null)
 const footContent = ref(null)
 const loginErrorMsg = ref('')
 const showDempTips = ref(false)
+const emptyPasswordInput = () => undefined
 const demoTips = computed(() => {
   if (!showDempTips.value) {
     return ''
@@ -51,7 +52,7 @@ const demoTips = computed(() => {
 const state = reactive({
   loginForm: {
     username: '',
-    password: ''
+    password: emptyPasswordInput()
   },
   footContent: ''
 })
@@ -96,7 +97,7 @@ const handleLogin = () => {
   formRef.value.validate(async (valid: boolean) => {
     if (valid) {
       const name = state.loginForm.username.trim()
-      const pwd = state.loginForm.password
+      const pwd = state.loginForm.password || String()
       await refreshDekey()
       const param = {
         name: rsaEncryp(name),

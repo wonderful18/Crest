@@ -435,7 +435,7 @@ public class HttpClientUtil {
 
     public static void validateRemoteDownloadUrl(String url) {
         try {
-            URI uri = URI.create(url);
+            URI uri = new URI(url);
             String scheme = uri.getScheme();
             if (!Strings.CI.equalsAny(scheme, "http", "https")) {
                 throw new IllegalArgumentException("only http and https downloads are allowed");

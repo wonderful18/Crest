@@ -12,6 +12,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -189,9 +190,9 @@ public class FileUtils {
 
     public static void copyFolder(String sourcePath, String targetPath) throws Exception {
         //源文件夹路径
-        File sourceFile = new File(sourcePath);
+        File sourceFile = Path.of(sourcePath).toAbsolutePath().normalize().toFile().getCanonicalFile();
         //目标文件夹路径
-        File targetFile = new File(targetPath);
+        File targetFile = Path.of(targetPath).toAbsolutePath().normalize().toFile().getCanonicalFile();
 
         if (!sourceFile.exists()) {
             throw new Exception("文件夹不存在");
@@ -200,7 +201,7 @@ public class FileUtils {
             throw new Exception("源文件夹不是目录");
         }
         if (!targetFile.exists()) {
-            targetFile.mkdirs();
+            Files.createDirectories(targetFile.toPath());
         }
         if (!targetFile.isDirectory()) {
             throw new Exception("目标文件夹不是目录");
@@ -213,20 +214,13 @@ public class FileUtils {
 
         for (File file : files) {
             //文件要移动的路径
-            String movePath = targetFile + File.separator + file.getName();
+            File targetChild = FileUtils.resolveUnderDirectory(targetFile.getPath(), file.getName());
             if (file.isDirectory()) {
                 //如果是目录则递归调用
-                copyFolder(file.getAbsolutePath(), movePath);
+                copyFolder(file.getAbsolutePath(), targetChild.getPath());
             } else {
                 //如果是文件则复制文件
-                try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
-                     BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(movePath))) {
-                    byte[] b = new byte[1024];
-                    int temp;
-                    while ((temp = in.read(b)) != -1) {
-                        out.write(b, 0, temp);
-                    }
-                }
+                Files.copy(file.toPath(), targetChild.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
         }
     }
@@ -330,14 +324,8 @@ public class FileUtils {
             CrestException.throwException("文件不存在");
         }
 
-        try (FileInputStream fis = new FileInputStream(file);
-             ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = fis.read(buffer)) != -1) {
-                bos.write(buffer, 0, bytesRead);
-            }
-            return bos.toByteArray();
+        try {
+            return Files.readAllBytes(file.toPath());
         } catch (Exception e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
             return null;

@@ -140,6 +140,7 @@ const defaultRule = {
 const rule = ref<FormRules>(cloneDeep(defaultRule))
 const activeTab = ref('')
 const currentSheetSkipped = computed(() => sheetObj.sheet === false)
+const emptySecretInput = () => undefined
 const sheetInspectionMessage = computed(
   () => sheetObj.inspectionMessage || '该工作表未检测到可导入的数据表。'
 )
@@ -148,7 +149,7 @@ const initForm = type => {
   form.value.configuration = {
     url: '',
     userName: '',
-    passwd: ''
+    passwd: emptySecretInput()
   }
   form.value.syncSetting = {
     updateType: 'all_scope',

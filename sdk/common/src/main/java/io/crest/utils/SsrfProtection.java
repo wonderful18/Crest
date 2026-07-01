@@ -128,15 +128,15 @@ public class SsrfProtection {
                 || address.isMulticastAddress()) {
             return true;
         }
-        byte[] bytes = address.getAddress();
-        if (bytes.length == 4) {
-            int first = bytes[0] & 0xff;
-            int second = bytes[1] & 0xff;
+        byte[] rawAddressBytes = address.getAddress();
+        if (rawAddressBytes.length == 4) {
+            int first = rawAddressBytes[0] & 0xff;
+            int second = rawAddressBytes[1] & 0xff;
             return first == 0
                     || first == 127
                     || first == 169 && second == 254
                     || first == 100 && second >= 64 && second <= 127;
         }
-        return bytes.length == 16 && (bytes[0] & 0xfe) == 0xfc;
+        return rawAddressBytes.length == 16 && (rawAddressBytes[0] & 0xfe) == 0xfc;
     }
 }

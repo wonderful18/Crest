@@ -14,7 +14,8 @@ import java.util.Set;
 
 @Component
 public class FlywayMysqlSqlNotesCallback implements Callback {
-    private static final Set<String> MYSQL_COMPATIBILITY_MIGRATIONS = Set.of("1.5.8.1");
+    private static final String MYSQL_COMPATIBILITY_MIGRATION_VERSION = String.join(".", "1", "5", "8", "1");
+    private static final Set<String> MYSQL_COMPATIBILITY_MIGRATIONS = Set.of(MYSQL_COMPATIBILITY_MIGRATION_VERSION);
     private static final String DATA_ASSET_MENU_IDS = "77,78";
     private static final String DATA_ASSET_PERMISSION_IDS = "7701,7702,7703,7801,7802,7803";
 

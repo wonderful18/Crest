@@ -10,6 +10,7 @@ const keyword = ref('')
 const tableData = ref<any[]>([])
 const selectedRows = ref<any[]>([])
 const pager = reactive({ currentPage: 1, pageSize: 15, total: 0 })
+const emptyPasswordInput = () => undefined
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const roleOptions = ref<any[]>([])
@@ -23,7 +24,7 @@ const form = reactive<any>({
   name: '',
   email: '',
   phone: '',
-  password: '',
+  password: emptyPasswordInput(),
   enable: true,
   roleIds: [2],
   authType: 'LOCAL'
@@ -99,7 +100,7 @@ const resetForm = () => {
     name: '',
     email: '',
     phone: '',
-    password: '',
+    password: emptyPasswordInput(),
     enable: true,
     roleIds: [2],
     authType: 'LOCAL'

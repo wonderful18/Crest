@@ -33,7 +33,7 @@ const props = defineProps({
     type: Object as PropType<ApiRequest>,
     default: () => ({
       changeId: '',
-      authManager: { verification: '', username: '', password: '' },
+      authManager: { verification: '' },
       headers: [],
       rest: [],
       arguments: [],

@@ -108,13 +108,8 @@ public class ExcelWatermarkUtils {
         int height = Math.min(MAX_IMAGE_EDGE, Math.max(fontSize + 10, (int) Math.round(fontSize + width * Math.sin(radians))));
         Color baseColor = resolveColor(watermarkContent);
 
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage image = createWatermarkCanvas(width, height);
         Graphics2D g2d = image.createGraphics();
-
-        // 设置透明背景
-        image = g2d.getDeviceConfiguration().createCompatibleImage(width, height, Transparency.TRANSLUCENT);
-        g2d.dispose();
-        g2d = image.createGraphics();
 
         // 设置抗锯齿
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -156,6 +151,12 @@ public class ExcelWatermarkUtils {
             return Color.BLACK;
         }
         return Color.decode(color.startsWith("#") ? color : "#" + color);
+    }
+
+    private static BufferedImage createWatermarkCanvas(int width, int height) {
+        int safeWidth = Math.max(1, Math.min(MAX_IMAGE_EDGE, width));
+        int safeHeight = Math.max(1, Math.min(MAX_IMAGE_EDGE, height));
+        return new BufferedImage(safeWidth, safeHeight, BufferedImage.TYPE_INT_ARGB);
     }
 
     private static String defaultString(String value) {

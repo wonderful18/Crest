@@ -43,7 +43,7 @@
 
 ```bash
 git status --short --ignored
-rg -n "(BEGIN .*PRIVATE KEY|AKIA[0-9A-Z]{16}|secret_access_key|password\\s*[:=]|token\\s*[:=])" .
+rg -n "(?i)(private[ _-]?key|access[ _-]?key|password\\s*[:=]|token\\s*[:=])" .
 ```
 
 命中代码里的字段名、配置模板或脱敏示例时可以保留；命中真实值时必须移除或改为占位符。

@@ -1019,7 +1019,7 @@ public class ExcelUtils {
         int port = 21;
         String filePath = "";
         try {
-            URI uri = URI.create(remoteExcelRequest.getUrl());
+            URI uri = new URI(remoteExcelRequest.getUrl());
             if (!Strings.CI.equals(uri.getScheme(), "ftp") || StringUtils.isBlank(uri.getHost())) {
                 CrestException.throwException(Translator.get("i18n_invalid_address"));
             }

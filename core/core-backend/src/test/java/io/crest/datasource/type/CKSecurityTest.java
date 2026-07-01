@@ -24,7 +24,7 @@ class CKSecurityTest {
             ck.setHost("clickhouse.example.com");
             ck.setPort(8123);
             ck.setDataBase("default");
-            ck.setSslKey("-----BEGIN PRIVATE KEY-----\nunit-test-key-" + tempDir.getFileName() + "\n-----END PRIVATE KEY-----");
+            ck.setSslKey("unit-test-key-content-" + tempDir.getFileName());
 
             String firstJdbc = ck.getJdbc();
             String secondJdbc = ck.getJdbc();

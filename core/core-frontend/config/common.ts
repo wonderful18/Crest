@@ -14,16 +14,37 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components-secondary/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components-secondary/resolvers'
 const root = process.cwd()
+const MAX_ELEMENT_PLUS_SECONDARY_COMPONENTS = 500
+
+const isDirectory = (dir: string) => {
+  try {
+    return fs.statSync(dir).isDirectory()
+  } catch {
+    return false
+  }
+}
+
+const isFile = (file: string) => {
+  try {
+    return fs.statSync(file).isFile()
+  } catch {
+    return false
+  }
+}
+
 const elementPlusSecondaryStyleDeps = (() => {
   const componentsDir = path.resolve(root, 'node_modules/element-plus-secondary/es/components')
-  if (!fs.existsSync(componentsDir)) {
+  if (!isDirectory(componentsDir)) {
     return []
   }
-  return fs
-    .readdirSync(componentsDir, { withFileTypes: true })
+  const componentEntries = fs.readdirSync(componentsDir, { withFileTypes: true })
+  if (componentEntries.length > MAX_ELEMENT_PLUS_SECONDARY_COMPONENTS) {
+    throw new Error(`element-plus-secondary component count exceeds ${MAX_ELEMENT_PLUS_SECONDARY_COMPONENTS}`)
+  }
+  return componentEntries
     .filter(item => {
       return (
-        item.isDirectory() && fs.existsSync(path.join(componentsDir, item.name, 'style/css.mjs'))
+        item.isDirectory() && isFile(path.join(componentsDir, item.name, 'style/css.mjs'))
       )
     })
     .map(item => `element-plus-secondary/es/components/${item.name}/style/css`)

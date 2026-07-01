@@ -14,7 +14,7 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -93,8 +93,7 @@ public class VisualizationExcelUtils {
             }
             folder = FileUtils.ensureSubDirectory(folder.getPath(), String.valueOf(Thread.currentThread().getId()));
             File result = FileUtils.resolveUnderDirectory(folder.getPath(), realFileName.get());
-            try (FileOutputStream fos = new FileOutputStream(result);
-                 BufferedOutputStream outputStream = new BufferedOutputStream(fos)) {
+            try (BufferedOutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(result.toPath()))) {
                 wb.write(outputStream);
             } catch (Exception e) {
                 LogUtil.error(e.getMessage(), new Throwable(e));

@@ -241,6 +241,7 @@ const shareStore = useShareStoreWithOut()
 const embeddedStore = useEmbedded()
 const { toClipboard } = useClipboard()
 const { t } = useI18n()
+const clearSharePassword = () => String()
 const props = defineProps({
   resourceId: propTypes.string.def(''),
   resourceType: propTypes.string.def(''),
@@ -267,7 +268,6 @@ const state = reactive({
   detailInfo: {
     id: '',
     uuid: '',
-    pwd: '',
     exp: 0,
     autoPwd: true
   } as ShareInfo
@@ -280,7 +280,6 @@ watch(
     state.detailInfo = {
       id: '',
       uuid: '',
-      pwd: '',
       exp: 0,
       autoPwd: true
     }
@@ -466,7 +465,7 @@ const expChangeHandler = exp => {
 }
 
 const pwdEnableSwitcher = val => {
-  let pwd = ''
+  let pwd = clearSharePassword()
   if (val) {
     pwd = getUuid()
   }
@@ -611,7 +610,7 @@ const autoEnableSwitcher = val => {
     showPageError(null, pwdRef)
     resetPwd()
   } else {
-    state.detailInfo.pwd = ''
+    state.detailInfo.pwd = clearSharePassword()
     nextTick(() => {
       pwdRef.value.input.focus()
     })

@@ -54,6 +54,7 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 
@@ -223,10 +224,10 @@ public class CalciteProvider extends Provider {
             try {
                 datasourceRequest.setDsVersion(con.getConnection().getMetaData().getDatabaseMajorVersion());
                 QueryAndParams queryAndParams = tablesSql(datasourceRequest).get(0);
-                try (PreparedStatement statement = prepareStatement(con.getConnection(), queryAndParams, 30);
-                     ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet != null) {
-                        resultSet.close();
+                try (PreparedStatement statement = con.getConnection().prepareStatement(queryAndParams.sql())) {
+                    configureStatement(statement, queryAndParams, 30);
+                    try (ResultSet ignored = statement.executeQuery()) {
+                        // 验证连接和元数据查询能正常执行即可。
                     }
                 }
             } finally {
@@ -256,10 +257,12 @@ public class CalciteProvider extends Provider {
                 datasourceRequest.setDsVersion(con.getMetaData().getDatabaseMajorVersion());
                 List<QueryAndParams> tablesSqls = tablesSql(datasourceRequest);
                 for (QueryAndParams tablesSql : tablesSqls) {
-                    try (PreparedStatement statement = prepareStatement(con, tablesSql, 30);
-                         ResultSet resultSet = statement.executeQuery()) {
-                        while (resultSet.next()) {
-                            tables.add(getTableDesc(datasourceRequest, resultSet));
+                    try (PreparedStatement statement = con.prepareStatement(tablesSql.sql())) {
+                        configureStatement(statement, tablesSql, 30);
+                        try (ResultSet resultSet = statement.executeQuery()) {
+                            while (resultSet.next()) {
+                                tables.add(getTableDesc(datasourceRequest, resultSet));
+                            }
                         }
                     }
                 }
@@ -475,7 +478,8 @@ public class CalciteProvider extends Provider {
     public List<TableField> fetchTableField(DatasourceRequest datasourceRequest) throws CrestException {
         if (datasourceRequest.getIsCross() != null && datasourceRequest.getIsCross()) {
             List<TableField> datasetTableFields = new ArrayList<>();
-            try (Connection connection = take()) {
+            try {
+                Connection connection = take();
                 CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
                 String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
                 try (PreparedStatement statement = calciteConnection.prepareStatement(readQuery)) {
@@ -1813,14 +1817,12 @@ public class CalciteProvider extends Provider {
 
     }
 
-    private PreparedStatement prepareStatement(Connection connection, QueryAndParams queryAndParams, int queryTimeout) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement(queryAndParams.sql());
+    private void configureStatement(PreparedStatement statement, QueryAndParams queryAndParams, int queryTimeout) throws SQLException {
         statement.setQueryTimeout(queryTimeout);
         List<Object> params = queryAndParams.params();
         for (int i = 0; i < params.size(); i++) {
             statement.setObject(i + 1, params.get(i));
         }
-        return statement;
     }
 
     private record QueryAndParams(String sql, List<Object> params) {
@@ -1952,7 +1954,7 @@ public class CalciteProvider extends Provider {
         return null;
     }
 
-    private volatile Connection connection = null;
+    private final AtomicReference<Connection> calciteConnectionRef = new AtomicReference<>();
 
     public void initConnectionPool() {
         LogUtil.info("Begin to init datasource pool...");
@@ -1974,7 +1976,7 @@ public class CalciteProvider extends Provider {
             dsMap.put(datasourceSchemaDTO.getId(), datasourceSchemaDTO);
             commonThreadPool.addTask(() -> {
                 try {
-                    connection = initConnection(dsMap);
+                    initConnection(dsMap);
                 } catch (Exception ignore) {
                 }
             });
@@ -2005,7 +2007,7 @@ public class CalciteProvider extends Provider {
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDsList(Map.of(datasourceSchemaDTO.getId(), datasourceSchemaDTO));
         try {
-            CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
+            CalciteConnection calciteConnection = take().unwrap(CalciteConnection.class);
             SchemaPlus rootSchema = calciteConnection.getRootSchema();
             if (rootSchema.getSubSchema(datasourceSchemaDTO.getSchemaAlias()) == null) {
                 buildSchema(datasourceRequest, calciteConnection);
@@ -2048,17 +2050,28 @@ public class CalciteProvider extends Provider {
     }
 
     public Connection take() {
-        Connection currentConnection = connection;
-        if (currentConnection == null) {
+        Connection currentConnection = calciteConnectionRef.get();
+        if (isClosed(currentConnection)) {
             synchronized (this) {
-                currentConnection = connection;
-                if (currentConnection == null) {
+                currentConnection = calciteConnectionRef.get();
+                if (isClosed(currentConnection)) {
                     currentConnection = getCalciteConnection();
-                    connection = currentConnection;
+                    calciteConnectionRef.set(currentConnection);
                 }
             }
         }
         return currentConnection;
+    }
+
+    private boolean isClosed(Connection connection) {
+        if (connection == null) {
+            return true;
+        }
+        try {
+            return connection.isClosed();
+        } catch (SQLException e) {
+            return true;
+        }
     }
 
     private void removeSubSchema(SchemaPlus rootSchema, String schemaAlias) {

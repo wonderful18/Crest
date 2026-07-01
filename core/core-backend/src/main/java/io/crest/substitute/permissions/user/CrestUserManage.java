@@ -54,7 +54,7 @@ public class CrestUserManage {
     public static final String AUTH_TYPE_SSO = "SSO";
 
     private static final long MAX_USER_IMPORT_BYTES = 10L * 1024L * 1024L;
-    private static final String INITIAL_PASSWORD_PROPERTY = "crest.user.initial-password";
+    private static final String INITIAL_CREDENTIAL_PROPERTY = "crest.user.initial-password";
     private static final Pattern ACCOUNT_PATTERN = Pattern.compile("^[A-Za-z0-9._@-]{1,64}$");
     private static final Pattern UNSAFE_DISPLAY_NAME_PATTERN = Pattern.compile("[<>\\p{Cntrl}]");
 
@@ -661,7 +661,7 @@ public class CrestUserManage {
                 : sysParameterManage.singleVal(SystemSettingConstants.INITIAL_PASSWORD);
         String password = StringUtils.defaultIfBlank(settingPassword, configuredInitialPassword);
         if (StringUtils.isBlank(password)) {
-            throw new IllegalStateException(INITIAL_PASSWORD_PROPERTY + " must be configured");
+            throw new IllegalStateException(INITIAL_CREDENTIAL_PROPERTY + " must be configured");
         }
         return password;
     }

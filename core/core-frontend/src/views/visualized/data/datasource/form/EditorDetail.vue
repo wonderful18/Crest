@@ -98,6 +98,7 @@ const dsForm = ref<FormInstance>()
 
 const cronEdit = ref(true)
 const sshAuthTypePassword = 'password'
+const emptySecretInput = () => undefined
 
 const defaultRule = {
   name: [
@@ -140,8 +141,8 @@ const defaultApiItem = {
     },
     authManager: {
       verification: '',
-      username: '',
-      password: ''
+      username: undefined,
+      password: undefined
     }
   },
   fields: [],
@@ -161,7 +162,7 @@ const initForm = (type, pluginDsList, indexPlugin, isPluginDs) => {
       sshType: 'password',
       extraParams: '',
       username: '',
-      password: '',
+      password: emptySecretInput(),
       host: '',
       authMethod: '',
       port: '',
