@@ -1,0 +1,62 @@
+diff --git a/es/components/color-picker/src/color-picker.mjs b/es/components/color-picker/src/color-picker.mjs
+index 48360aec03936e6a63df101213998127a8e31451..d3d008f156f9b5da417c7b1cc0c6a766fe705258 100644
+--- a/es/components/color-picker/src/color-picker.mjs
++++ b/es/components/color-picker/src/color-picker.mjs
+@@ -382,8 +382,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
+                 size: "small"
+               }, {
+                 default: withCtx(() => [
+-                  createVNode(unref(ElRadioButton), { label: "HEX" }),
+-                  createVNode(unref(ElRadioButton), { label: "RGB" })
++                  createVNode(unref(ElRadioButton), { value: "HEX" }),
++                  createVNode(unref(ElRadioButton), { value: "RGB" })
+                 ]),
+                 _: 1
+               }, 8, ["modelValue", "onUpdate:modelValue"])
+diff --git a/es/components/slot/src/only-child.mjs b/es/components/slot/src/only-child.mjs
+index 2d6575acf713e4190204e5c8a6ced6cdcd0bb3b5..3a3ce3f6b292fae83288ca20ed097ff54d14e1ea 100644
+--- a/es/components/slot/src/only-child.mjs
++++ b/es/components/slot/src/only-child.mjs
+@@ -24,10 +24,8 @@ const OnlyChild = defineComponent({
+         return null;
+       }
+       const firstLegitNode = findFirstLegitChild(defaultSlot);
+-      if (!firstLegitNode) {
+-        debugWarn(NAME, "no valid child node found");
++      if (!firstLegitNode)
+         return null;
+-      }
+       return withDirectives(cloneVNode(firstLegitNode, attrs), [[forwardRefDirective]]);
+     };
+   }
+diff --git a/lib/components/color-picker/src/color-picker.js b/lib/components/color-picker/src/color-picker.js
+index 7fb03e9c2123c82c9f8fa0d80d6c51037c756ad5..ad1d3aaa0f2c02fe1636e8bc8a65887e649c760a 100644
+--- a/lib/components/color-picker/src/color-picker.js
++++ b/lib/components/color-picker/src/color-picker.js
+@@ -386,8 +386,8 @@ const _sfc_main = /* @__PURE__ */ vue.defineComponent({
+                 size: "small"
+               }, {
+                 default: vue.withCtx(() => [
+-                  vue.createVNode(vue.unref(index$6.ElRadioButton), { label: "HEX" }),
+-                  vue.createVNode(vue.unref(index$6.ElRadioButton), { label: "RGB" })
++                  vue.createVNode(vue.unref(index$6.ElRadioButton), { value: "HEX" }),
++                  vue.createVNode(vue.unref(index$6.ElRadioButton), { value: "RGB" })
+                 ]),
+                 _: 1
+               }, 8, ["modelValue", "onUpdate:modelValue"])
+diff --git a/lib/components/slot/src/only-child.js b/lib/components/slot/src/only-child.js
+index e738aba51e0a319b7c8a69bc418113883af2b377..309afd1f3a753632067b40efca7457099dc62677 100644
+--- a/lib/components/slot/src/only-child.js
++++ b/lib/components/slot/src/only-child.js
+@@ -28,10 +28,8 @@ const OnlyChild = vue.defineComponent({
+         return null;
+       }
+       const firstLegitNode = findFirstLegitChild(defaultSlot);
+-      if (!firstLegitNode) {
+-        error.debugWarn(NAME, "no valid child node found");
++      if (!firstLegitNode)
+         return null;
+-      }
+       return vue.withDirectives(vue.cloneVNode(firstLegitNode, attrs), [[forwardRefDirective]]);
+     };
+   }

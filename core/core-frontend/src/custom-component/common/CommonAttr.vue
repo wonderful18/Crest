@@ -14,6 +14,7 @@ import CommonBorderSetting from '@/custom-component/common/CommonBorderSetting.v
 import CollapseSwitchItem from '../../components/collapse-switch-item/src/CollapseSwitchItem.vue'
 import TabBackgroundOverall from '@/custom-component/tabs/TabBackgroundOverall.vue'
 import CustomTabsSortSide from '@/custom-component/tabs/CustomTabsSortSide.vue'
+import ChartGroupSetting from '@/custom-component/common/ChartGroupSetting.vue'
 const snapshotStore = snapshotStoreWithOut()
 
 const { t } = useI18n()
@@ -120,6 +121,14 @@ const titleBackgroundShow = computed(
   () => ['Tabs', 'Screen'].includes(element.value.component) && element.value.titleBackground
 )
 
+const chartGroupSettingShow = computed(() => {
+  return (
+    element.value &&
+    !dashboardActive.value &&
+    !['Group', 'GroupArea', 'CanvasBoard'].includes(element.value.component)
+  )
+})
+
 const tabTitleShow = computed(() => {
   return (
     element.value && element.value.style && ['Tabs', 'Screen'].includes(element.value.component)
@@ -148,6 +157,11 @@ onMounted(() => {
 
 <template>
   <div class="v-common-attr" ref="containerRef">
+    <chart-group-setting
+      v-if="chartGroupSettingShow"
+      :element="element"
+      :themes="themes"
+    ></chart-group-setting>
     <el-collapse v-model="activeName" @change="onChange()">
       <el-collapse-item
         :effect="themes"

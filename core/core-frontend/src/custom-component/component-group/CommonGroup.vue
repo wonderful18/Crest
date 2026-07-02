@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { reactive, ref } from 'vue'
+import { markRaw, reactive, ref } from 'vue'
 import eventBus from '@/utils/eventBus'
 import Icon from '@/components/icon-custom/src/Icon.vue'
 import { CANVAS_MATERIAL } from '@/custom-component/common/ComponentConfig'
@@ -22,6 +22,14 @@ defineProps({
 })
 
 const commonGroup = ref<InstanceType<typeof ElScrollbar>>()
+
+CANVAS_MATERIAL.forEach(group => {
+  group.details.forEach(item => {
+    if (item.icon && typeof item.icon === 'object') {
+      item.icon = markRaw(item.icon)
+    }
+  })
+})
 
 const state = reactive({
   curCategory: 'CanvasBoard',

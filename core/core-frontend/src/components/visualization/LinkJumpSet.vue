@@ -1,6 +1,5 @@
 <template>
   <el-dialog
-    v-loading="state.loading"
     ref="enlargeDialog"
     :append-to-body="true"
     :title="t('visualization.jump_set')"

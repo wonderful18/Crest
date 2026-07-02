@@ -12,6 +12,11 @@ import {
 import { createGroupStyle, getComponentRotatedStyle } from '@/utils/style'
 import eventBus from '@/utils/eventBus'
 import { canvasIdMapCheck, checkJoinGroup, isTabCanvas } from '@/utils/canvasUtils'
+import {
+  calculateChartGroupBounds,
+  findChartGroupParent,
+  normalizeChartGroupContainer
+} from '@/utils/chartGroupContainer'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
 
@@ -135,17 +140,40 @@ export const composeStore = defineStore('compose', {
       })
     },
 
-    compose: function (canvasId = 'canvas-main') {
+    createChartGroupFromComponents(components, canvasId = 'canvas-main') {
+      const joinableComponents = components.filter(
+        component => component.component !== 'GroupArea' && checkJoinGroup(component)
+      )
+      if (joinableComponents.length !== components.length || !joinableComponents.length) {
+        return false
+      }
+      const bounds = calculateChartGroupBounds(joinableComponents)
+      if (!bounds) {
+        return false
+      }
+      this.setAreaData({
+        style: bounds,
+        components: joinableComponents
+      })
+      this.compose(canvasId, true)
+      return true
+    },
+
+    compose: function (canvasId = 'canvas-main', allowSingle = false) {
       const editor = this.editorMap[canvasId]
       const { areaData } = this
-      if (areaData.components.length === 1) {
+      if (areaData.components.length === 1 && !allowSingle) {
         // 一个组件不进行组合直接释放
         areaData.components = []
         return
       }
       if (areaData.components.length > 0) {
         // 计算组合区域
-        this.calcComposeArea()
+        const bounds = calculateChartGroupBounds(areaData.components)
+        if (!bounds) {
+          return
+        }
+        areaData.style = bounds
       }
 
       const components = []
@@ -167,6 +195,9 @@ export const composeStore = defineStore('compose', {
           components.push(component)
         }
       })
+      if (!components.length) {
+        return
+      }
 
       const newId = generateID()
       components.forEach(component => {
@@ -193,6 +224,7 @@ export const composeStore = defineStore('compose', {
         propValue: components
       })
 
+      normalizeChartGroupContainer(groupComponent)
       createGroupStyle(groupComponent)
       dvMainStore.addComponent({
         component: groupComponent,
@@ -207,6 +239,32 @@ export const composeStore = defineStore('compose', {
       })
 
       this.areaData.components = []
+    },
+
+    removeComponentFromChartGroup(componentId) {
+      const parentInfo = findChartGroupParent(componentData.value, componentId)
+      if (!parentInfo) {
+        return false
+      }
+      const { group, component, componentIndex, ownerComponents } = parentInfo
+      group.propValue.splice(componentIndex, 1)
+      decomposeComponent(component, null, group.style, group.canvasId || 'canvas-main')
+      const groupIndex = ownerComponents.findIndex(item => item.id === group.id)
+      if (group.propValue.length === 0 && groupIndex > -1) {
+        ownerComponents.splice(groupIndex, 1, component)
+        dvMainStore.setCurComponent({
+          component,
+          index: groupIndex
+        })
+        return true
+      }
+      const insertIndex = groupIndex > -1 ? groupIndex + 1 : ownerComponents.length
+      ownerComponents.splice(insertIndex, 0, component)
+      dvMainStore.setCurComponent({
+        component,
+        index: insertIndex
+      })
+      return true
     },
 
     // 将已经放到 Group 组件数据删除，也就是在 componentData 中删除，因为它们已经从 componentData 挪到 Group 组件中了

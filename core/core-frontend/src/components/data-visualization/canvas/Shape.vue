@@ -969,11 +969,15 @@ const blurBgStyle = computed(() => {
 
 const componentBackgroundStyle = computed(() => {
   if (element.value.commonBackground && element.value.component !== 'GroupArea') {
-    return getComponentBackgroundStyle(element.value.commonBackground, {
+    const style = getComponentBackgroundStyle(element.value.commonBackground, {
       scale: scale.value,
       isUserView: element.value.component === 'UserView',
-      forceNoPadding: ['Group'].includes(element.value.component)
+      forceNoPadding: false
     })
+    if (element.value.component === 'Group') {
+      style.overflow = element.value.chartGroupContainer?.clipOverflow === false ? 'visible' : 'hidden'
+    }
+    return style
   }
   return {}
 })

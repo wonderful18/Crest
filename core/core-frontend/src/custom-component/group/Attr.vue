@@ -3,6 +3,7 @@ import CommonAttr from '@/custom-component/common/CommonAttr.vue'
 import { toRefs } from 'vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
+import ChartGroupSetting from '@/custom-component/common/ChartGroupSetting.vue'
 const props = defineProps({
   themes: {
     type: String,
@@ -17,6 +18,7 @@ const { curComponent } = storeToRefs(dvMainStore)
 
 <template>
   <div class="attr-list de-collapse-style">
+    <ChartGroupSetting :themes="themes" :element="curComponent" />
     <CommonAttr :themes="themes" :element="curComponent"></CommonAttr>
   </div>
 </template>

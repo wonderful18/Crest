@@ -37,9 +37,9 @@
               size="mini"
               @change="changeTitleStyle('hPosition')"
             >
-              <el-radio-button label="left">{{ t('chart.text_pos_left') }}</el-radio-button>
-              <el-radio-button label="center">{{ t('chart.text_pos_center') }}</el-radio-button>
-              <el-radio-button label="right">{{ t('chart.text_pos_right') }}</el-radio-button>
+              <el-radio-button value="left">{{ t('chart.text_pos_left') }}</el-radio-button>
+              <el-radio-button value="center">{{ t('chart.text_pos_center') }}</el-radio-button>
+              <el-radio-button value="right">{{ t('chart.text_pos_right') }}</el-radio-button>
             </el-radio-group>
           </el-form-item>
           <el-form-item :label="t('chart.text_v_position')" class="form-item">
@@ -48,9 +48,9 @@
               size="mini"
               @change="changeTitleStyle('vPosition')"
             >
-              <el-radio-button label="top">{{ t('chart.text_pos_top') }}</el-radio-button>
-              <el-radio-button label="center">{{ t('chart.text_pos_center') }}</el-radio-button>
-              <el-radio-button label="bottom">{{ t('chart.text_pos_bottom') }}</el-radio-button>
+              <el-radio-button value="top">{{ t('chart.text_pos_top') }}</el-radio-button>
+              <el-radio-button value="center">{{ t('chart.text_pos_center') }}</el-radio-button>
+              <el-radio-button value="bottom">{{ t('chart.text_pos_bottom') }}</el-radio-button>
             </el-radio-group>
           </el-form-item>
           <el-form-item :label="t('chart.text_style')" class="form-item">

@@ -50,6 +50,7 @@ import CustomTabsSort from '@/custom-component/tabs/CustomTabsSort.vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { recoverToPublished } from '@/api/visualization/dataVisualization'
 import { ElMessage } from 'element-plus-secondary'
+import { resolveRouteQueryValue } from '@/utils/routeQuery'
 const interactiveStore = interactiveStoreWithOut()
 const embeddedStore = useEmbedded()
 const { wsCache } = useCache()
@@ -57,11 +58,13 @@ const dvPreviewRef = ref(null)
 const { t } = useI18n()
 const eventCheck = e => {
   if (e.key === 'screen-weight' && !compareStorage(e.oldValue, e.newValue)) {
-    const opt = embeddedStore.opt || router.currentRoute.value.query.opt
+    const routeQuery = router.currentRoute.value.query
+    const routeHash = window.location.hash
+    const opt = embeddedStore.opt || resolveRouteQueryValue(routeQuery, routeHash, 'opt')
     if (!(opt && opt === 'create')) {
       check(
         wsCache.get('screen-weight'),
-        embeddedStore.dvId || (router.currentRoute.value.query.dvId as string),
+        embeddedStore.dvId || resolveRouteQueryValue(routeQuery, routeHash, 'dvId'),
         4
       )
     }
@@ -389,16 +392,18 @@ onMounted(async () => {
   if (editMode.value === 'edit') {
     window.addEventListener('storage', eventCheck)
   }
-  const dvId = embeddedStore.dvId || router.currentRoute.value.query.dvId
-  const pid = embeddedStore.pid || router.currentRoute.value.query.pid
+  const routeQuery = router.currentRoute.value.query
+  const routeHash = window.location.hash
+  const dvId = embeddedStore.dvId || resolveRouteQueryValue(routeQuery, routeHash, 'dvId')
+  const pid = embeddedStore.pid || resolveRouteQueryValue(routeQuery, routeHash, 'pid')
   const templateParams =
-    embeddedStore.templateParams || router.currentRoute.value.query.templateParams
+    embeddedStore.templateParams || resolveRouteQueryValue(routeQuery, routeHash, 'templateParams')
   const templatePayloadKey =
     embeddedStore.templateParams ||
-    router.currentRoute.value.query.templatePayloadKey ||
-    router.currentRoute.value.query.templateParams
-  createType = embeddedStore.createType || router.currentRoute.value.query.createType
-  const opt = embeddedStore.opt || router.currentRoute.value.query.opt
+    resolveRouteQueryValue(routeQuery, routeHash, 'templatePayloadKey') ||
+    resolveRouteQueryValue(routeQuery, routeHash, 'templateParams')
+  createType = embeddedStore.createType || resolveRouteQueryValue(routeQuery, routeHash, 'createType')
+  const opt = embeddedStore.opt || resolveRouteQueryValue(routeQuery, routeHash, 'opt')
   const checkDvId = opt && opt === 'copy' ? null : dvId
   const checkResult = await checkPer(checkDvId)
   if (!checkResult) {

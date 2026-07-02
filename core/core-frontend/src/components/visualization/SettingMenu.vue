@@ -1,7 +1,7 @@
 <template>
   <div>
     <div style="width: 100%">
-      <el-dropdown trigger="click" @mouseup="handleMouseUp">
+      <el-dropdown v-if="$slots.icon" trigger="click" @mouseup="handleMouseUp">
         <slot name="icon" />
         <el-dropdown-menu v-if="curComponent">
           <el-dropdown-item

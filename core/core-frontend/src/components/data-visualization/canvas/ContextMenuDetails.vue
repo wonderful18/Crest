@@ -251,7 +251,7 @@ const editQueryCriteria = () => {
     <ul @mouseup="handleMouseUp">
       <template v-if="areaData.components.length">
         <li @mousedown="handleComposeMouseDown" @click="componentCompose">
-          {{ t('visualization.view_group') }}
+          {{ t('visualization.create_chart_group') }}
         </li>
         <el-dropdown
           style="width: 100%"

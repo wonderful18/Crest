@@ -82,7 +82,7 @@ getExampleValue()
             :effect="themes"
             v-for="radio in state.typeList"
             :key="radio.value"
-            :label="radio.value"
+            :value="radio.value"
             >{{ t('chart.' + radio.name) }}</el-radio
           >
         </el-radio-group>
