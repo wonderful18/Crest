@@ -92,6 +92,10 @@ const layoutMode = computed({
   }
 })
 
+const layoutModeLabel = computed(
+  () => layoutOptions.value.find(option => option.value === layoutMode.value)?.label || '保持位置'
+)
+
 const horizontalGap = computed({
   get: () => groupConfig.value?.chartGroupContainer.horizontalGap || 0,
   set: value => {
@@ -252,22 +256,36 @@ watch(
       <template v-else-if="isGroup && groupConfig">
         <el-form class="chart-group-form" label-position="top">
           <el-form-item :label="tr('visualization.chart_group_name', '图表组名称')">
-            <el-input size="small" v-model="groupName" @change="onGroupNameChange" />
+            <el-input
+              size="small"
+              :effect="themes"
+              v-model="groupName"
+              @change="onGroupNameChange"
+            />
           </el-form-item>
           <el-form-item :label="tr('visualization.chart_group_layout_mode', '布局模式')">
-            <el-select size="small" v-model="layoutMode">
-              <el-option
-                v-for="option in layoutOptions"
-                :key="option.value"
-                :label="option.label"
-                :value="option.value"
-              />
-            </el-select>
+            <div class="chart-group-select-wrap">
+              <el-select
+                size="small"
+                :effect="themes"
+                v-model="layoutMode"
+                :placeholder="layoutModeLabel"
+              >
+                <el-option
+                  v-for="option in layoutOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
+              <span class="chart-group-select-display">{{ layoutModeLabel }}</span>
+            </div>
           </el-form-item>
           <div class="chart-group-grid">
             <el-form-item :label="tr('visualization.chart_group_horizontal_gap', '横向间距')">
               <el-input-number
                 size="small"
+                :effect="themes"
                 v-model="horizontalGap"
                 :min="0"
                 controls-position="right"
@@ -276,6 +294,7 @@ watch(
             <el-form-item :label="tr('visualization.chart_group_vertical_gap', '纵向间距')">
               <el-input-number
                 size="small"
+                :effect="themes"
                 v-model="verticalGap"
                 :min="0"
                 controls-position="right"
@@ -284,6 +303,7 @@ watch(
           </div>
         </el-form>
         <el-checkbox
+          :effect="themes"
           v-model="clipOverflow"
           @change="() => recordSnapshot('chartGroupClipOverflow', true)"
         >
@@ -360,6 +380,11 @@ watch(
     color: #646a73;
     font-size: 12px;
     line-height: 20px;
+  }
+
+  :deep(.ed-form-item__content) {
+    display: block;
+    width: 100%;
   }
 
   :deep(.ed-input),
@@ -460,6 +485,32 @@ watch(
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
+}
+
+.chart-group-select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.chart-group-select-display {
+  position: absolute;
+  top: 50%;
+  right: 28px;
+  left: 11px;
+  overflow: hidden;
+  color: #1f2329;
+  font-size: 12px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.theme-dark {
+  .chart-group-select-display {
+    color: #ebebeb;
+  }
 }
 
 .chart-group-actions {

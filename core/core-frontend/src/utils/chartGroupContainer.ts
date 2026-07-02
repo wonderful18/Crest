@@ -1,6 +1,13 @@
 type ComponentConfig = Record<string, any>
 export type ChartGroupLayoutMode = 'keep' | 'horizontal' | 'vertical' | 'grid'
 
+const chartGroupLayoutModes: ChartGroupLayoutMode[] = ['keep', 'horizontal', 'vertical', 'grid']
+
+const normalizeChartGroupLayoutMode = (mode?: string): ChartGroupLayoutMode =>
+  chartGroupLayoutModes.includes(mode as ChartGroupLayoutMode)
+    ? (mode as ChartGroupLayoutMode)
+    : 'keep'
+
 const zeroEdgeValues = () => ({
   mode: 'uniform',
   top: 0,
@@ -27,7 +34,7 @@ export function normalizeChartGroupContainer(group?: ComponentConfig) {
   group.chartGroupContainer = {
     clipOverflow: group.chartGroupContainer?.clipOverflow !== false,
     seamless: group.chartGroupContainer?.seamless === true,
-    layoutMode: group.chartGroupContainer?.layoutMode || 'keep',
+    layoutMode: normalizeChartGroupLayoutMode(group.chartGroupContainer?.layoutMode),
     horizontalGap: Number(group.chartGroupContainer?.horizontalGap) || 0,
     verticalGap: Number(group.chartGroupContainer?.verticalGap) || 0
   }

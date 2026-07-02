@@ -30,6 +30,9 @@ describe('chartGroupContainer', () => {
     const { normalizeChartGroupContainer } = loadChartGroupContainer()
     const group = {
       component: 'Group',
+      chartGroupContainer: {
+        layoutMode: 'free'
+      },
       commonBackground: {
         backgroundColorSelect: true,
         backgroundColor: 'rgba(1,2,3,1)'
@@ -41,6 +44,7 @@ describe('chartGroupContainer', () => {
 
     assert.equal(group.chartGroupContainer.clipOverflow, true)
     assert.equal(group.chartGroupContainer.seamless, false)
+    assert.equal(group.chartGroupContainer.layoutMode, 'keep')
     assert.equal(group.commonBackground.backgroundColor, 'rgba(1,2,3,1)')
     assert.deepEqual(group.commonBackground.innerPadding, {
       mode: 'uniform',
