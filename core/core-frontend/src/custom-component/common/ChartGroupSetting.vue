@@ -33,12 +33,23 @@ const snapshotStore = snapshotStoreWithOut()
 const { componentData } = storeToRefs(dvMainStore)
 const { areaData } = storeToRefs(composeStore)
 
-const layoutOptions: Array<{ label: string; value: ChartGroupLayoutMode }> = [
-  { label: t('visualization.chart_group_layout_keep'), value: 'keep' },
-  { label: t('visualization.chart_group_layout_horizontal'), value: 'horizontal' },
-  { label: t('visualization.chart_group_layout_vertical'), value: 'vertical' },
-  { label: t('visualization.chart_group_layout_grid'), value: 'grid' }
-]
+const tr = (key: string, fallback: string, named?: Record<string, string | number>) => {
+  const value = named ? t(key, named) : t(key)
+  if (value && value !== key) {
+    return value
+  }
+  return Object.entries(named || {}).reduce(
+    (text, [name, val]) => text.replace(`{${name}}`, String(val)),
+    fallback
+  )
+}
+
+const layoutOptions = computed<Array<{ label: string; value: ChartGroupLayoutMode }>>(() => [
+  { label: tr('visualization.chart_group_layout_keep', '保持位置'), value: 'keep' },
+  { label: tr('visualization.chart_group_layout_horizontal', '横向贴合'), value: 'horizontal' },
+  { label: tr('visualization.chart_group_layout_vertical', '纵向贴合'), value: 'vertical' },
+  { label: tr('visualization.chart_group_layout_grid', '网格贴合'), value: 'grid' }
+])
 
 const selectedComponents = computed(() =>
   (areaData.value.components || []).filter(component => component.component !== 'GroupArea')
@@ -131,7 +142,7 @@ const createCurrentGroup = () => {
     element.canvasId || 'canvas-main'
   )
   if (!ok) {
-    ElMessage.warning(t('visualization.chart_group_create_failed'))
+    ElMessage.warning(tr('visualization.chart_group_create_failed', '当前组件无法创建图表组'))
     return
   }
   recordSnapshot('createChartGroup', true)
@@ -139,12 +150,12 @@ const createCurrentGroup = () => {
 
 const createSelectedGroup = () => {
   if (selectedComponents.value.length < 2) {
-    ElMessage.warning(t('visualization.chart_group_select_more'))
+    ElMessage.warning(tr('visualization.chart_group_select_more', '请选择至少两个组件'))
     return
   }
   const ok = composeStore.createChartGroupFromComponents(selectedComponents.value)
   if (!ok) {
-    ElMessage.warning(t('visualization.chart_group_create_failed'))
+    ElMessage.warning(tr('visualization.chart_group_create_failed', '当前组件无法创建图表组'))
     return
   }
   dvMainStore.setBatchOptStatus(false)
@@ -168,7 +179,7 @@ const removeFromGroup = () => {
   }
   const ok = composeStore.removeComponentFromChartGroup(element.id)
   if (!ok) {
-    ElMessage.warning(t('visualization.chart_group_parent_missing'))
+    ElMessage.warning(tr('visualization.chart_group_parent_missing', '未找到所属图表组'))
     return
   }
   recordSnapshot('removeFromChartGroup', true)
@@ -192,7 +203,7 @@ const applyLayout = () => {
     verticalGap: verticalGap.value
   })
   if (!ok) {
-    ElMessage.warning(t('visualization.chart_group_grid_unavailable'))
+    ElMessage.warning(tr('visualization.chart_group_grid_unavailable', '当前图表组无法识别为稳定网格'))
     return
   }
   recordSnapshot('applyChartGroupLayout', true)
@@ -215,92 +226,103 @@ watch(
 
 <template>
   <el-collapse v-model="activeName" class="chart-group-setting" :class="`theme-${themes}`">
-    <el-collapse-item :effect="themes" :title="t('visualization.chart_group_container')" name="chartGroup">
+    <el-collapse-item
+      :effect="themes"
+      :title="tr('visualization.chart_group_container', '图表组')"
+      name="chartGroup"
+    >
       <template v-if="batch">
         <div class="chart-group-status">
-          {{ t('visualization.chart_group_selected_count', { count: selectedComponents.length }) }}
+          {{
+            tr('visualization.chart_group_selected_count', '已选择 {count} 个组件', {
+              count: selectedComponents.length
+            })
+          }}
         </div>
         <el-button
           size="small"
           type="primary"
-          plain
           :disabled="selectedComponents.length < 2"
           @click="createSelectedGroup"
         >
-          {{ t('visualization.chart_group_create_selected') }}
+          {{ tr('visualization.chart_group_create_selected', '用选中图表创建图表组') }}
         </el-button>
       </template>
 
       <template v-else-if="isGroup && groupConfig">
-        <div class="chart-group-field">
-          <span>{{ t('visualization.chart_group_name') }}</span>
-          <el-input size="small" v-model="groupName" @change="onGroupNameChange" />
-        </div>
-        <div class="chart-group-field">
-          <span>{{ t('visualization.chart_group_layout_mode') }}</span>
-          <el-select size="small" v-model="layoutMode">
-            <el-option
-              v-for="option in layoutOptions"
-              :key="option.value"
-              :label="option.label"
-              :value="option.value"
-            />
-          </el-select>
-        </div>
-        <div class="chart-group-grid">
-          <div class="chart-group-field">
-            <span>{{ t('visualization.chart_group_horizontal_gap') }}</span>
-            <el-input-number
-              size="small"
-              v-model="horizontalGap"
-              :min="0"
-              controls-position="right"
-            />
+        <el-form class="chart-group-form" label-position="top">
+          <el-form-item :label="tr('visualization.chart_group_name', '图表组名称')">
+            <el-input size="small" v-model="groupName" @change="onGroupNameChange" />
+          </el-form-item>
+          <el-form-item :label="tr('visualization.chart_group_layout_mode', '布局模式')">
+            <el-select size="small" v-model="layoutMode">
+              <el-option
+                v-for="option in layoutOptions"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
+              />
+            </el-select>
+          </el-form-item>
+          <div class="chart-group-grid">
+            <el-form-item :label="tr('visualization.chart_group_horizontal_gap', '横向间距')">
+              <el-input-number
+                size="small"
+                v-model="horizontalGap"
+                :min="0"
+                controls-position="right"
+              />
+            </el-form-item>
+            <el-form-item :label="tr('visualization.chart_group_vertical_gap', '纵向间距')">
+              <el-input-number
+                size="small"
+                v-model="verticalGap"
+                :min="0"
+                controls-position="right"
+              />
+            </el-form-item>
           </div>
-          <div class="chart-group-field">
-            <span>{{ t('visualization.chart_group_vertical_gap') }}</span>
-            <el-input-number
-              size="small"
-              v-model="verticalGap"
-              :min="0"
-              controls-position="right"
-            />
-          </div>
-        </div>
+        </el-form>
         <el-checkbox
           v-model="clipOverflow"
           @change="() => recordSnapshot('chartGroupClipOverflow', true)"
         >
-          {{ t('visualization.chart_group_clip_overflow') }}
+          {{ tr('visualization.chart_group_clip_overflow', '裁剪溢出') }}
         </el-checkbox>
         <div class="chart-group-actions">
-          <el-button size="small" type="primary" plain @click="applyLayout">
-            {{ t('visualization.chart_group_apply_layout') }}
+          <el-button size="small" type="primary" @click="applyLayout">
+            {{ tr('visualization.chart_group_apply_layout', '应用布局') }}
           </el-button>
-          <el-button size="small" plain @click="cancelGroup">
-            {{ t('visualization.chart_group_cancel') }}
+          <el-button size="small" @click="cancelGroup">
+            {{ tr('visualization.chart_group_cancel', '取消图表组') }}
           </el-button>
         </div>
       </template>
 
       <template v-else-if="parentInfo">
         <div class="chart-group-status">
-          {{ t('visualization.chart_group_joined', { name: parentInfo.group.name }) }}
+          {{
+            tr('visualization.chart_group_joined', '已加入图表组：{name}', {
+              name: parentInfo.group.name
+            })
+          }}
         </div>
         <div class="chart-group-actions">
-          <el-button size="small" type="primary" plain @click="editParentGroup">
-            {{ t('visualization.chart_group_edit') }}
+          <el-button size="small" type="primary" @click="editParentGroup">
+            {{ tr('visualization.chart_group_edit', '编辑图表组') }}
           </el-button>
-          <el-button size="small" plain @click="removeFromGroup">
-            {{ t('visualization.chart_group_remove') }}
+          <el-button size="small" @click="removeFromGroup">
+            {{ tr('visualization.chart_group_remove', '从图表组移出') }}
           </el-button>
         </div>
       </template>
 
       <template v-else-if="canCreateCurrent">
-        <div class="chart-group-status">{{ t('visualization.chart_group_not_joined') }}</div>
-        <el-button size="small" type="primary" plain @click="createCurrentGroup">
-          {{ t('visualization.chart_group_create') }}
+        <div class="chart-group-status">
+          {{ tr('visualization.chart_group_not_joined', '未加入图表组') }}
+        </div>
+        <el-button size="small" type="primary" @click="createCurrentGroup">
+          {{ tr('visualization.chart_group_create', '创建图表组') }}
         </el-button>
       </template>
     </el-collapse-item>
@@ -313,37 +335,130 @@ watch(
   border-bottom: 0;
 
   :deep(.ed-collapse-item__header) {
-    height: 34px;
-    line-height: 34px;
-    padding-left: 6px;
+    height: 36px !important;
+    line-height: 36px !important;
+    padding: 0 !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+  }
+
+  :deep(.ed-collapse-item__content) {
+    padding: 16px 10px 0 !important;
+    border: none;
+  }
+
+  :deep(.ed-form-item) {
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  :deep(.ed-form-item__label) {
+    display: block;
+    justify-content: flex-start;
+    height: auto;
+    padding: 0 0 4px;
+    color: #646a73;
+    font-size: 12px;
+    line-height: 20px;
+  }
+
+  :deep(.ed-input),
+  :deep(.ed-select),
+  :deep(.ed-input-number) {
+    width: 100%;
+    --ed-input-height: 28px;
+  }
+
+  :deep(.ed-input__wrapper),
+  :deep(.ed-select__wrapper) {
+    min-height: 28px;
+  }
+
+  :deep(.ed-input__inner) {
     font-size: 12px;
     font-weight: 400;
   }
 
-  :deep(.ed-collapse-item__content) {
-    padding: 12px 16px;
+  :deep(.ed-input-number .ed-input__inner) {
+    text-align: left;
+  }
+
+  :deep(.ed-input-number__decrease),
+  :deep(.ed-input-number__increase) {
+    --ed-input-number-controls-height: 13px;
+  }
+
+  :deep(.ed-checkbox) {
+    height: 20px;
+    margin-top: 2px;
+
+    .ed-checkbox__label {
+      font-size: 12px;
+      line-height: 20px;
+    }
+  }
+
+  :deep(.ed-button) {
+    height: 28px;
+    margin-left: 0;
+    padding: 0 8px;
+    font-size: 12px;
+    border-radius: 2px;
+  }
+
+  :deep(.ed-button + .ed-button) {
+    margin-left: 0;
+  }
+
+  &.theme-dark {
+    :deep(.ed-form-item__label),
+    :deep(.ed-checkbox__label) {
+      color: #a6a6a6;
+    }
+
+    :deep(.ed-input__wrapper),
+    :deep(.ed-select__wrapper) {
+      background-color: #373737;
+      box-shadow: 0 0 0 1px #505050 inset;
+    }
+
+    :deep(.ed-input__inner),
+    :deep(.ed-select__placeholder),
+    :deep(.ed-select__selected-item) {
+      color: #ebebeb;
+    }
+
+    :deep(.ed-input-number__decrease),
+    :deep(.ed-input-number__increase) {
+      background-color: #373737;
+      border-color: #505050;
+      color: #a6a6a6;
+    }
+
+    :deep(.ed-button:not(.ed-button--primary)) {
+      background-color: #373737;
+      border-color: #505050;
+      color: #a6a6a6;
+    }
+  }
+
+  &.theme-light {
+    :deep(.ed-form-item__label) {
+      color: #646a73;
+    }
   }
 }
 
 .chart-group-status {
   margin-bottom: 10px;
-  color: #9ea6b2;
+  color: #a6a6a6;
   font-size: 12px;
   line-height: 18px;
 }
 
-.chart-group-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
-  color: #9ea6b2;
-  font-size: 12px;
-}
-
 .chart-group-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -351,6 +466,6 @@ watch(
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 </style>
