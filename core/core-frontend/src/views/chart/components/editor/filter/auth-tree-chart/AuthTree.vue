@@ -6,7 +6,7 @@ export default {
 }
 </script>
 <script lang="ts" setup>
-import { useI18n } from '@/hooks/web/useI18n'
+import { useI18n } from 'vue-i18n'
 import { PropType, computed, toRefs } from 'vue'
 import FilterFiled from './FilterFiled.vue'
 import type { Item } from './FilterFiled.vue'
@@ -143,7 +143,7 @@ const del = (index, child) => {
 <style lang="less" scoped>
 .logic {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   position: relative;
   z-index: 1;
   width: 100%;
@@ -155,6 +155,7 @@ const del = (index, child) => {
     position: relative;
     align-items: center;
     z-index: 10;
+    margin-top: 6px;
 
     .operate-title {
       font-family: var(--crest-custom_font, 'PingFang');
@@ -214,6 +215,11 @@ const del = (index, child) => {
         z-index: 10;
       }
     }
+  }
+
+  .logic-right {
+    flex: 1;
+    min-width: 0;
   }
 
   .logic-right-add {

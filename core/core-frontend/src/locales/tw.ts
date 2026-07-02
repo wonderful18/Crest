@@ -1429,6 +1429,8 @@ export default {
     summary_column_unit: '單位',
     summary_column_empty_text: '空值展示',
     summary_column_no_quota: '請先新增數值指標',
+    summary_column_field_required: '請選擇匯總指標欄位',
+    summary_column_formula_required: '請先配置自訂匯總公式',
     table_header_show_horizon_border: '表頭橫邊框線',
     table_header_show_vertical_border: '表頭縱邊框線',
     table_cell_show_horizon_border: '單元格橫邊框線',

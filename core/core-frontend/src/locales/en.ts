@@ -1467,6 +1467,8 @@ export default {
     summary_column_unit: 'Unit',
     summary_column_empty_text: 'Empty value',
     summary_column_no_quota: 'Add a numeric metric first',
+    summary_column_field_required: 'Select a summary metric field',
+    summary_column_formula_required: 'Configure a custom summary formula first',
     table_header_show_horizon_border: 'Header horizontal border',
     table_header_show_vertical_border: 'Header vertical border',
     table_cell_show_horizon_border: 'Horizontal cell border',

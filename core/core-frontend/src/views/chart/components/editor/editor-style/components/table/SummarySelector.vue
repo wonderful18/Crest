@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useI18n } from '@/hooks/web/useI18n'
 import { computed, onMounted, PropType, reactive, watch, ref, nextTick, inject } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { DEFAULT_BASIC_STYLE } from '@/views/chart/components/editor/util/chart'
 import { cloneDeep, defaultsDeep, filter, find } from 'lodash-es'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
@@ -8,6 +8,11 @@ import { storeToRefs } from 'pinia'
 import CustomAggrEdit from './CustomAggrEdit.vue'
 import { v4 as uuidV4 } from 'uuid'
 import { ElMessage } from 'element-plus-secondary'
+import {
+  normalizeSummaryColumn as normalizeSummaryColumnConfig,
+  SUMMARY_COLUMN_VALIDATION,
+  validateSummaryColumn
+} from './summaryColumnConfig.mjs'
 
 const dvMainStore = dvMainStoreWithOut()
 const { batchOptStatus } = storeToRefs(dvMainStore)
@@ -100,6 +105,10 @@ const summaryColumnTypes = [
   ...summaryTypes,
   { key: 'count', name: t('chart.count') }
 ]
+const summaryColumnValidationMessages = {
+  [SUMMARY_COLUMN_VALIDATION.FIELD_REQUIRED]: 'chart.summary_column_field_required',
+  [SUMMARY_COLUMN_VALIDATION.FORMULA_REQUIRED]: 'chart.summary_column_formula_required'
+}
 
 function onSelectAxis(value) {
   state.currentAxisSummary = find(state.basicStyleForm.seriesSummary, s => s.field === value)
@@ -137,7 +146,7 @@ const editSummaryColumnField = column => {
   state.editTarget = 'summaryColumn'
   editCalcField.value = true
   nextTick(() => {
-    calcEdit.value.initEdit(column, quotaOptions.value)
+    calcEdit.value.initEdit({ ...column, summary: 'custom' }, quotaOptions.value)
   })
 }
 const closeEditCalc = () => {
@@ -147,9 +156,13 @@ const confirmEditCalc = () => {
   calcEdit.value.setFieldForm()
   const obj = cloneDeep(calcEdit.value.fieldForm)
   if (state.editTarget === 'summaryColumn') {
-    state.currentSummaryColumn.originName = obj.originName
+    state.currentSummaryColumn.originName = obj.originName?.trim?.() || ''
+    state.currentSummaryColumn.summary = 'custom'
+    if (!validateCurrentSummaryColumn(state.currentSummaryColumn)) {
+      return
+    }
     closeEditCalc()
-    changeBasicStyle('summaryColumns', true)
+    changeSummaryColumns()
     return
   }
   state.currentAxisSummary.originName = obj.originName
@@ -158,26 +171,34 @@ const confirmEditCalc = () => {
   changeSummaryType()
 }
 const normalizeSummaryColumn = (column: Partial<SummaryColumn>): SummaryColumn => {
-  return {
-    id: column.id || `summary_${uuidV4()}`,
-    name: column.name || t('chart.summary_column'),
-    show: column.show !== false,
-    summary: column.summary || 'sum',
-    field: column.field,
-    originName: column.originName || '',
-    position: column.position || 'append',
-    format: {
-      decimal: column.format?.decimal ?? 2,
-      unit: column.format?.unit ?? '',
-      percent: column.format?.percent ?? false,
-      thousandSeparator: column.format?.thousandSeparator ?? true,
-      emptyText: column.format?.emptyText ?? '--'
-    }
+  return normalizeSummaryColumnConfig(column, {
+    defaultName: t('chart.summary_column'),
+    idFactory: () => `summary_${uuidV4()}`
+  }) as SummaryColumn
+}
+const validateCurrentSummaryColumn = (column: SummaryColumn): boolean => {
+  const result = validateSummaryColumn(column)
+  if (result.valid) {
+    return true
   }
+  ElMessage.warning(t(summaryColumnValidationMessages[result.reason]))
+  return false
 }
 const changeSummaryColumns = () => {
   state.basicStyleForm.summaryColumns = state.basicStyleForm.summaryColumns.map(normalizeSummaryColumn)
+  const invalidColumn = state.basicStyleForm.summaryColumns.find(
+    column => !validateSummaryColumn(column).valid
+  )
+  if (invalidColumn && !validateCurrentSummaryColumn(invalidColumn)) {
+    return
+  }
   changeBasicStyle('summaryColumns', true)
+}
+const changeSummaryColumnType = (column: SummaryColumn) => {
+  if (column.summary !== 'custom') {
+    column.originName = ''
+  }
+  changeSummaryColumns()
 }
 const addSummaryColumn = () => {
   if (!quotaOptions.value.length) {
@@ -259,7 +280,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div style="width: 100%">
+  <div class="summary-selector" :class="'summary-selector-' + themes">
     <el-form
       ref="summaryForm"
       :disabled="!state.basicStyleForm.showSummary"
@@ -346,15 +367,16 @@ onMounted(() => {
         class="summary-column-item"
       >
         <div class="summary-column-row">
-          <el-checkbox v-model="column.show" @change="changeSummaryColumns" />
+          <el-checkbox :effect="themes" v-model="column.show" @change="changeSummaryColumns" />
           <el-input
             v-model="column.name"
+            :effect="themes"
             :placeholder="t('chart.summary_column_name')"
             @blur="changeSummaryColumns"
           />
         </div>
         <div class="summary-column-row">
-          <el-select v-model="column.summary" @change="changeSummaryColumns">
+          <el-select v-model="column.summary" :effect="themes" @change="changeSummaryColumnType(column)">
             <el-option
               v-for="c in summaryColumnTypes"
               :key="c.key"
@@ -364,6 +386,7 @@ onMounted(() => {
           </el-select>
           <el-select
             v-model="column.field"
+            :effect="themes"
             :placeholder="t('chart.summary_column_field')"
             @change="changeSummaryColumns"
           >
@@ -385,25 +408,31 @@ onMounted(() => {
           />
           <el-input
             v-model="column.format.unit"
+            :effect="themes"
             :placeholder="t('chart.summary_column_unit')"
             @blur="changeSummaryColumns"
           />
         </div>
         <div class="summary-column-row summary-column-actions">
-          <el-checkbox v-model="column.format.percent" @change="changeSummaryColumns">
+          <el-checkbox :effect="themes" v-model="column.format.percent" @change="changeSummaryColumns">
             {{ t('chart.value_formatter_percent') }}
           </el-checkbox>
-          <el-checkbox v-model="column.format.thousandSeparator" @change="changeSummaryColumns">
+          <el-checkbox
+            :effect="themes"
+            v-model="column.format.thousandSeparator"
+            @change="changeSummaryColumns"
+          >
             {{ t('chart.value_formatter_thousand_separator') }}
           </el-checkbox>
         </div>
         <div class="summary-column-row summary-column-actions">
           <el-input
             v-model="column.format.emptyText"
+            :effect="themes"
             :placeholder="t('chart.summary_column_empty_text')"
             @blur="changeSummaryColumns"
           />
-          <el-icon @click="editSummaryColumnField(column)"><Setting /></el-icon>
+          <el-icon :title="t('commons.custom')" @click="editSummaryColumnField(column)"><Setting /></el-icon>
           <el-icon @click="moveSummaryColumn(index, -1)"><ArrowUp /></el-icon>
           <el-icon @click="moveSummaryColumn(index, 1)"><ArrowDown /></el-icon>
           <el-icon @click="removeSummaryColumn(index)"><Delete /></el-icon>
@@ -427,6 +456,10 @@ onMounted(() => {
 </template>
 
 <style scoped lang="less">
+.summary-selector {
+  width: 100%;
+}
+
 .indented-container {
   margin-top: 8px;
   width: 100%;
@@ -452,18 +485,47 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   margin-bottom: 6px;
+  min-width: 0;
 
   .ed-select,
   .ed-input,
   .ed-input-number {
     flex: 1;
+    min-width: 0;
   }
 }
 
 .summary-column-actions {
+  flex-wrap: wrap;
+  row-gap: 4px;
+
+  :deep(.ed-checkbox) {
+    margin-right: 0;
+  }
+
   .ed-icon {
     cursor: pointer;
     color: #646a73;
+  }
+}
+
+.summary-selector-dark {
+  .summary-column-header {
+    color: #c9d1d9;
+  }
+
+  .summary-column-item {
+    border-top-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .summary-column-actions {
+    :deep(.ed-checkbox__label) {
+      color: #c9d1d9;
+    }
+
+    .ed-icon {
+      color: #a8b1bd;
+    }
   }
 }
 </style>

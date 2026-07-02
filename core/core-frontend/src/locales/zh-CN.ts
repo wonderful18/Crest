@@ -1434,6 +1434,8 @@ export default {
     summary_column_unit: '单位',
     summary_column_empty_text: '空值展示',
     summary_column_no_quota: '请先添加数值指标',
+    summary_column_field_required: '请选择汇总指标字段',
+    summary_column_formula_required: '请先配置自定义汇总公式',
     table_header_show_horizon_border: '表头横边框线',
     table_header_show_vertical_border: '表头纵边框线',
     table_cell_show_horizon_border: '单元格横边框线',
