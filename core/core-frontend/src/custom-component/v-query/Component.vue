@@ -1248,10 +1248,17 @@ const autoStyle = computed(() => {
     }
   }
   .query-button {
-    align-self: flex-end;
-    line-height: 40px;
-    margin: auto 0 5px auto;
+    align-self: center;
+    line-height: v-bind(boxHeight);
+    margin: 5px 0 5px auto;
     z-index: 0;
+
+    :deep(.ed-button) {
+      height: v-bind(boxHeight);
+      min-height: 22px;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
   }
 
   &.title-show {

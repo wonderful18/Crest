@@ -128,7 +128,7 @@ const editField = () => {
   nextTick(() => {
     calcEdit.value.initEdit(
       state.currentAxisSummary,
-      quota().filter(ele => ele.id !== '-1')
+      getAxisList().filter(ele => ele.id !== '-1')
     )
   })
 }

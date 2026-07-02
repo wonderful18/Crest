@@ -167,6 +167,7 @@
                                     <skip>${crest.copy.frontend.skip}</skip>
                                     <target>
                                         <delete dir="src/main/resources/static" quiet="true" includeemptydirs="true"/>
+                                        <delete dir="${project.build.outputDirectory}/static" quiet="true" includeemptydirs="true"/>
                                         <mkdir dir="src/main/resources/static"/>
                                         <copy todir="src/main/resources/static">
                                             <fileset dir="../core-frontend/dist">
