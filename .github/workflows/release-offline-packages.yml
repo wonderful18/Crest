@@ -29,19 +29,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
         with:
           ref: ${{ inputs.version }}
 
       - name: Log in to GHCR
-        uses: docker/login-action@v4.2.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4.1.0
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Load target-architecture images
         env:
@@ -88,8 +88,33 @@ jobs:
           FRONTEND_IMAGE="ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}" \
           bash installer/make-offline-package.sh "${VERSION}" "${PACKAGE_PLATFORM}"
 
+      - name: Verify offline package contents
+        env:
+          VERSION: ${{ inputs.version }}
+          PACKAGE_PLATFORM: ${{ matrix.package_platform }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+
+          package_dir="crest-offline-${VERSION}-${PACKAGE_PLATFORM}"
+          package_file="offline-packages/${package_dir}.tar.gz"
+          tar -tzf "${package_file}" > /tmp/crest-offline-package-files.txt
+
+          grep -Fqx "${package_dir}/OFFLINE-README.md" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/install.conf" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/install.sh" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/crest/docker-compose.yml" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/upgrade-sql/v1.5.4_to_v1.5.5.sql" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/upgrade-sql/v1.5.7_to_v1.5.8.sql" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/upgrade-sql/v1.5.13_to_${VERSION}.sql" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-service_${VERSION}-${ARCH}.tar.gz" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-web_${VERSION}-${ARCH}.tar.gz" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/images/mysql_8.0.43.tar.gz" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/images/prom_prometheus_v3.12.0.tar.gz" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/images/grafana_grafana-oss_13.0.1.tar.gz" /tmp/crest-offline-package-files.txt
+
       - name: Upload package artifact
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: crest-offline-${{ inputs.version }}-${{ matrix.package_platform }}
           path: offline-packages/crest-offline-${{ inputs.version }}-${{ matrix.package_platform }}.tar.gz
@@ -103,12 +128,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
         with:
           ref: ${{ inputs.version }}
 
       - name: Download package artifacts
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: offline-packages
           merge-multiple: true
@@ -127,7 +152,7 @@ jobs:
             > crest-${VERSION}-checksums.txt
 
       - name: Publish release
-        uses: softprops/action-gh-release@v3.0.0
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           tag_name: ${{ inputs.version }}
           name: Crest ${{ inputs.version }}

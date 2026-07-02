@@ -13,6 +13,7 @@ import io.crest.utils.CrestPermissionUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,14 +37,14 @@ public class SsoServer implements SsoApi {
 
     @Override
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA)
-    public void save(SsoConfigRequest request) {
+    public void save(@RequestBody SsoConfigRequest request) {
         CrestPermissionUtils.requireAdmin();
         ssoManage.save(request);
     }
 
     @Override
     @CrestAudit(ot = LogOT.READ, st = LogST.DATA)
-    public void validate(SsoConfigRequest request) {
+    public void validate(@RequestBody SsoConfigRequest request) {
         CrestPermissionUtils.requireAdmin();
         ssoManage.validate(request);
     }

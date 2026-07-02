@@ -1407,8 +1407,8 @@ public class ChartDataBuild {
         Map<String, List<String[]>> groupDataList = detailData.stream().collect(Collectors.groupingBy(item -> "(" + StringUtils.join(ArrayUtils.subarray(item, 0, xEndIndex), ")-de-(") + ")"));
 
         tableRow.forEach(row -> {
-            String key = xAxis.stream().map(x -> String.format(format, row.get(x.getEngineFieldName()).toString())).collect(Collectors.joining("-de-"));
-            List<String[]> detailFieldValueList = groupDataList.get(key);
+            String key = formatDetailKey(xAxis, row);
+            List<String[]> detailFieldValueList = Optional.ofNullable(groupDataList.get(key)).orElse(Collections.emptyList());
             List<Map<String, Object>> detailValueMapList = detailFieldValueList.stream().map((detailArr -> {
                 Map<String, Object> temp = new HashMap<>();
                 for (int i = 0; i < realDetailFields.size(); i++) {
@@ -1429,6 +1429,12 @@ public class ChartDataBuild {
         map.put("detailFields", realDetailFields);
         map.put("tableRow", tableRow);
         return map;
+    }
+
+    private static String formatDetailKey(List<ChartViewFieldDTO> xAxis, Map<String, Object> row) {
+        return xAxis.stream()
+                .map(x -> String.format(format, StringUtils.defaultString(Objects.toString(row.get(x.getEngineFieldName()), null))))
+                .collect(Collectors.joining("-de-"));
     }
 
     // 表格
@@ -2025,7 +2031,7 @@ public class ChartDataBuild {
         String extBubbleEngineFieldName = ObjectUtils.isNotEmpty(extBubble) ? extBubble.get(0).getEngineFieldName() : "";
         tableRow.forEach(row -> {
             BigDecimal rowValue = row.get(extBubbleEngineFieldName) == null ? BigDecimal.ZERO : new BigDecimal(row.get(extBubbleEngineFieldName).toString());
-            String key = xAxis.stream().map(x -> String.format(format, row.get(x.getEngineFieldName()).toString())).collect(Collectors.joining("-de-"));
+            String key = formatDetailKey(xAxis, row);
             List<String[]> detailFieldValueList = groupDataList.get(key);
             List<Map<String, Object>> detailValueMapList = Optional.ofNullable(detailFieldValueList).orElse(new ArrayList<>()).stream().map((detailArr -> {
                 Map<String, Object> temp = new HashMap<>();

@@ -37,8 +37,26 @@ UPGRADE_SQL_FROM_1_5_7="v1.5.7_to_${VERSION}.sql"
 if [ ! -f "${INSTALLER_DIR}/upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}" ]; then
   UPGRADE_SQL_FROM_1_5_7="v1.5.7_to_v1.5.8.sql"
 fi
-UPGRADE_SQL_TARGET_VERSION="${UPGRADE_SQL_FROM_1_5_7#v1.5.7_to_}"
-UPGRADE_SQL_TARGET_VERSION="${UPGRADE_SQL_TARGET_VERSION%.sql}"
+CURRENT_PATCH_UPGRADE_SQL="v1.5.13_to_${VERSION}.sql"
+CURRENT_PATCH_SQL_COMMAND=""
+CURRENT_PATCH_SQL_TEXT=""
+CURRENT_PATCH_SQL_SECTION=""
+if [ -f "${INSTALLER_DIR}/upgrade-sql/${CURRENT_PATCH_UPGRADE_SQL}" ]; then
+  CURRENT_PATCH_SQL_COMMAND="docker exec -i mysql-crest mysql -uroot -p\"\${CREST_DB_PASSWORD}\" \"\${CREST_DB_NAME:-crest}\" < upgrade-sql/${CURRENT_PATCH_UPGRADE_SQL}"
+  CURRENT_PATCH_SQL_TEXT="，再执行 ${CURRENT_PATCH_UPGRADE_SQL}"
+  CURRENT_PATCH_SQL_SECTION=$(cat <<EOF
+已有 v1.5.8 及之后版本升级到 ${VERSION} 时，请先备份元数据库，再在本包目录执行 ${CURRENT_PATCH_UPGRADE_SQL}：
+
+\`\`\`bash
+set -a
+source /opt/crest/.env
+set +a
+${CURRENT_PATCH_SQL_COMMAND}
+\`\`\`
+
+EOF
+)
+fi
 
 log() {
   echo "[app-image-package] $*"
@@ -157,16 +175,20 @@ bash load-images.sh
 
 ## 执行升级 SQL
 
-全新安装不需要执行升级 SQL。已有 v1.5.7 环境升级到 ${VERSION} 时，请先备份元数据库，再在本包目录执行 ${UPGRADE_SQL_TARGET_VERSION} 元数据库升级 SQL：
+全新安装不需要执行升级 SQL。
+
+${CURRENT_PATCH_SQL_SECTION}
+已有 v1.5.7 环境升级到 ${VERSION} 时，请先备份元数据库，再在本包目录先执行 ${UPGRADE_SQL_FROM_1_5_7}${CURRENT_PATCH_SQL_TEXT}：
 
 \`\`\`bash
 set -a
 source /opt/crest/.env
 set +a
 docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}
+${CURRENT_PATCH_SQL_COMMAND}
 \`\`\`
 
-已有 v1.5.4 环境升级到 ${VERSION} 时，请先执行 v1.5.4 到 v1.5.5 的升级 SQL，再执行 v1.5.7 到 ${UPGRADE_SQL_TARGET_VERSION} 的升级 SQL：
+已有 v1.5.4 环境升级到 ${VERSION} 时，请先执行 v1.5.4 到 v1.5.5 的升级 SQL，再执行 ${UPGRADE_SQL_FROM_1_5_7}${CURRENT_PATCH_SQL_TEXT}：
 
 \`\`\`bash
 set -a
@@ -174,6 +196,7 @@ source /opt/crest/.env
 set +a
 docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.4_to_v1.5.5.sql
 docker exec -i mysql-crest mysql -uroot -p"\${CREST_DB_PASSWORD}" "\${CREST_DB_NAME:-crest}" < upgrade-sql/${UPGRADE_SQL_FROM_1_5_7}
+${CURRENT_PATCH_SQL_COMMAND}
 \`\`\`
 
 外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 元数据库。

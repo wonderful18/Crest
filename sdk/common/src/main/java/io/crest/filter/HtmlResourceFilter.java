@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 public class HtmlResourceFilter implements Filter, Ordered {
 
     private static final Pattern VERSIONED_FRONTEND_ASSET = Pattern.compile(
-            "^(js|assets/(?:chunk|css|svg|png|jpg|jpeg|gif|ico|woff2?))/(.+)-\\d+\\.\\d+\\.\\d+-(crest.*)$"
+            "^(js|assets/(?:chunk|css|svg|png|jpg|jpeg|gif|ico|woff2?))/([^/]+)-\\d+\\.\\d+\\.\\d+-(crest[^/]*)$"
     );
     private static final String FRONTEND_CONTENT_SECURITY_POLICY = String.join("; ",
             "default-src 'self'",
@@ -92,13 +92,26 @@ public class HtmlResourceFilter implements Filter, Ordered {
         }
 
         String currentPath = matcher.group(1) + "/" + matcher.group(2) + "-" + currentVersion + "-" + matcher.group(3);
+        if (!isSafeStaticForwardPath(currentPath)) {
+            return false;
+        }
         if (!new ClassPathResource("static/" + currentPath).exists()) {
             return false;
         }
 
         applyNoCache(response);
-        request.getRequestDispatcher("/" + currentPath).forward(request, response);
+        forwardStaticAsset(request, response, currentPath);
         return true;
+    }
+
+    private boolean isSafeStaticForwardPath(String currentPath) {
+        return currentPath.indexOf('\\') < 0
+                && !currentPath.contains("..")
+                && VERSIONED_FRONTEND_ASSET.matcher(currentPath).matches();
+    }
+
+    private void forwardStaticAsset(HttpServletRequest request, HttpServletResponse response, String staticAssetPath) throws ServletException, IOException {
+        request.getRequestDispatcher("/" + staticAssetPath).forward(request, response);
     }
 
     private String currentVersion() {

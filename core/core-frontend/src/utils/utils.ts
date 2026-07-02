@@ -109,8 +109,7 @@ export const cleanPlatformFlag = () => {
 export const isInIframe = () => {
   try {
     return window.top !== window.self
-  } catch (error) {
-    console.error(error)
+  } catch {
     return true
   }
 }

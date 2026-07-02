@@ -4,6 +4,7 @@ import io.crest.api.chart.dto.ChartSortFieldDTO;
 import io.crest.api.dataset.dto.*;
 import io.crest.api.dataset.union.DatasetGroupInfoDTO;
 import io.crest.api.dataset.union.DatasetTableInfoDTO;
+import io.crest.api.dataset.union.UnionDTO;
 import io.crest.api.permissions.auth.dto.BusiPerCheckDTO;
 import io.crest.api.permissions.dataset.api.RowPermissionsApi;
 import io.crest.api.permissions.dataset.dto.DataSetRowPermissionsTreeDTO;
@@ -110,10 +111,12 @@ public class DatasetDataManage {
     public List<DatasetTableFieldDTO> getTableFields(DatasetTableDTO datasetTableDTO) throws Exception {
         List<DatasetTableFieldDTO> list = null;
         List<TableField> tableFields = null;
+        CoreDatasource authorizedDatasource = requireDatasourceAccess(
+                datasetTableDTO == null ? null : datasetTableDTO.getDatasourceId());
         String type = datasetTableDTO.getType();
         DatasetTableInfoDTO tableInfoDTO = JsonUtil.parseObject(datasetTableDTO.getInfo(), DatasetTableInfoDTO.class);
         if (Strings.CI.equals(type, DatasetTableType.DB) || Strings.CI.equals(type, DatasetTableType.SQL)) {
-            CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(datasetTableDTO.getDatasourceId());
+            CoreDatasource coreDatasource = authorizedDatasource;
             if (coreDatasource != null && coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name())
                     && Strings.CI.equals(type, DatasetTableType.DB)) {
                 DatasourceRequest datasourceRequest = new DatasourceRequest();
@@ -184,7 +187,7 @@ public class DatasetDataManage {
 
             tableFields = provider.fetchTableField(datasourceRequest);
         } else if (Strings.CI.equals(type, DatasetTableType.Es)) {
-            CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(datasetTableDTO.getDatasourceId());
+            CoreDatasource coreDatasource = authorizedDatasource;
             Provider provider = ProviderFactory.getProvider(type);
             DatasourceRequest datasourceRequest = new DatasourceRequest();
             DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
@@ -194,7 +197,7 @@ public class DatasetDataManage {
             tableFields = provider.fetchTableField(datasourceRequest);
         } else {
             // excel,api
-            CoreDatasource sourceDatasource = dataSourceManage.getCoreDatasource(datasetTableDTO.getDatasourceId());
+            CoreDatasource sourceDatasource = authorizedDatasource;
             if (sourceDatasource != null && sourceDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name())) {
                 DatasourceRequest datasourceRequest = new DatasourceRequest();
                 DatasourceDTO datasourceDTO = new DatasourceDTO();
@@ -247,9 +250,13 @@ public class DatasetDataManage {
     }
 
     public Map<String, Object> previewDataWithLimit(DatasetGroupInfoDTO datasetGroupInfoDTO, Integer start, Integer count, boolean checkPermission, boolean encode) throws Exception {
+        if (datasetGroupInfoDTO == null) {
+            CrestException.throwException("数据集不能为空");
+        }
         if (encode) {
             DatasetUtils.dsDecode(datasetGroupInfoDTO);
         }
+        requireDatasetPreviewAccess(datasetGroupInfoDTO);
 
         // 获取allFields
         List<DatasetTableFieldDTO> fields = datasetGroupInfoDTO.getAllFields();
@@ -486,7 +493,10 @@ public class DatasetDataManage {
     }
 
     public Map<String, Object> previewSql(PreviewSqlDTO dto) throws CrestException {
-        CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(dto.getDatasourceId());
+        if (dto == null) {
+            CrestException.throwException("SQL预览参数不能为空");
+        }
+        CoreDatasource coreDatasource = requireDatasourceAccess(dto.getDatasourceId());
         DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
         if (coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.API.name()) || coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name())) {
             BeanUtils.copyBean(datasourceSchemaDTO, engineManage.getEngineDatasource());
@@ -662,6 +672,7 @@ public class DatasetDataManage {
         if (field == null) {
             CrestException.throwException(Translator.get("i18n_no_field"));
         }
+        requireDatasetPreviewAccess(datasetGroupInfoDTO);
         List<DatasetTableFieldDTO> allFields = new ArrayList<>();
 
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, new ChartExtRequest());
@@ -749,8 +760,41 @@ public class DatasetDataManage {
         return previewData;
     }
 
+    private void requireDatasetPreviewAccess(DatasetGroupInfoDTO datasetGroupInfoDTO) {
+        if (datasetGroupInfoDTO == null) {
+            CrestException.throwException("数据集不能为空");
+        }
+        if (ObjectUtils.isNotEmpty(datasetGroupInfoDTO.getId())) {
+            datasetGroupManage.requireDatasetAccess(datasetGroupInfoDTO.getId());
+        }
+        requireUnionDatasourceAccess(datasetGroupInfoDTO.getUnion());
+    }
+
+    private void requireUnionDatasourceAccess(List<UnionDTO> unionList) {
+        if (CollectionUtils.isEmpty(unionList)) {
+            return;
+        }
+        for (UnionDTO union : unionList) {
+            if (union == null) {
+                continue;
+            }
+            DatasetTableDTO current = union.getCurrentDs();
+            if (current != null && ObjectUtils.isNotEmpty(current.getDatasourceId())) {
+                requireDatasourceAccess(current.getDatasourceId());
+            }
+            requireUnionDatasourceAccess(union.getChildrenDs());
+        }
+    }
+
+    private CoreDatasource requireDatasourceAccess(Long datasourceId) {
+        if (ObjectUtils.isEmpty(datasourceId)) {
+            CrestException.throwException(Translator.get("i18n_datasource_not_exists"));
+        }
+        return datasetGroupManage.requireDatasourceAccess(datasourceId);
+    }
+
     public List<String> getFieldEnum(MultFieldValuesRequest multFieldValuesRequest) throws Exception {
-        if (CollectionUtils.isEmpty(multFieldValuesRequest.getFieldIds())) {
+        if (multFieldValuesRequest == null || CollectionUtils.isEmpty(multFieldValuesRequest.getFieldIds())) {
             return Collections.emptyList();
         }
         // 根据前端传的查询组件field ids，获取所有字段枚举值并去重合并
@@ -969,6 +1013,9 @@ public class DatasetDataManage {
             fields.add(field);
         }
 
+        if (datasetGroupInfoDTO == null || sqlMap == null || CollectionUtils.isEmpty(dsMap)) {
+            CrestException.throwException("数据集配置不完整");
+        }
         // 获取allFields
         Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
         fields = permissionManage.filterColumnPermissions(fields, desensitizationList, datasetGroupInfoDTO.getId(), null);
@@ -1179,6 +1226,9 @@ public class DatasetDataManage {
         // 根据图表计算字段，获取数据集
         List<DatasetTableFieldDTO> allFields = new ArrayList<>();
         DatasetTableFieldDTO field = datasetTableFieldManage.selectById(ids.getFirst());
+        if (field == null) {
+            CrestException.throwException(Translator.get("i18n_no_field"));
+        }
         Long datasetGroupId = field.getDatasetGroupId();
         if (field.getChartId() != null) {
             allFields.addAll(datasetTableFieldManage.getChartCalcFields(field.getChartId()));

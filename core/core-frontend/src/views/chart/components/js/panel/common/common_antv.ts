@@ -42,6 +42,18 @@ type GeoFeatureCollection = {
 
 type Listener = (...args: any[]) => void
 
+const escapeHtmlAttribute = (value?: string | null) =>
+  String(value || '').replace(/[&<>"']/g, char => {
+    const entityMap: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }
+    return entityMap[char]
+  })
+
 const L7_LEGEND_CONTAINER_TPL = '<div><div class="l7plot-legend__category-list"></div></div>'
 const L7_LEGEND_ITEM_TPL = '<div class="l7plot-legend__category-item"></div>'
 const L7_LEGEND_LIST_CLASS = 'l7plot-legend__category-list'
@@ -1429,9 +1441,10 @@ export class CustomZoom extends LiteZoom {
     let zoomOutText = ZOOM_OUT_BTN
     let resetText = RESET_BTN
     if (buttonColor) {
-      zoomInText = zoomInText.replace('${fill}', buttonColor)
-      zoomOutText = zoomOutText.replace('${fill}', buttonColor)
-      resetText = resetText.replace('${fill}', buttonColor)
+      const fill = escapeHtmlAttribute(buttonColor)
+      zoomInText = zoomInText.replace('${fill}', fill)
+      zoomOutText = zoomOutText.replace('${fill}', fill)
+      resetText = resetText.replace('${fill}', fill)
     }
     return {
       ...option,
@@ -2192,7 +2205,7 @@ const AXIS_LABEL_TOOLTIP_STYLE = {
   visibility: 'visible'
 }
 const AXIS_LABEL_TOOLTIP_TPL =
-  '<div class="g2-axis-label-tooltip">' + '<div class="g2-tooltip-title">{title}</div>' + '</div>'
+  '<div class="g2-axis-label-tooltip">' + '<div class="g2-tooltip-title"></div>' + '</div>'
 export function configAxisLabelLengthLimit(chart, plot, triggerObjName = 'axis-label') {
   // 设置触发事件的名称，如果未传入，则默认为 'axis-label'
   const triggerName = triggerObjName
@@ -2238,14 +2251,14 @@ export function configAxisLabelLengthLimit(chart, plot, triggerObjName = 'axis-l
     let labelTooltipDom = parentNode.getElementsByClassName('g2-axis-label-tooltip')[0]
 
     // 获取轴的标题
-    const title =
+    const title = String(
       e.target.cfg.delegateObject.item?.name ||
-      e.target.cfg.delegateObject.axis.cfg.title.originalText
+        e.target.cfg.delegateObject.axis.cfg.title.originalText
+    )
 
     // 如果没有 tooltip，创建新的 tooltip DOM 元素
     if (!labelTooltipDom) {
-      const domStr = substitute(AXIS_LABEL_TOOLTIP_TPL, { title })
-      labelTooltipDom = createDom(domStr)
+      labelTooltipDom = createDom(AXIS_LABEL_TOOLTIP_TPL)
 
       // 设置 tooltip 的样式
       AXIS_LABEL_TOOLTIP_STYLE.backgroundColor = tooltip.backgroundColor
@@ -2257,9 +2270,9 @@ export function configAxisLabelLengthLimit(chart, plot, triggerObjName = 'axis-l
       parentNode.appendChild(labelTooltipDom)
     } else {
       // 如果已有 tooltip，更新其标题并使其可见
-      labelTooltipDom.getElementsByClassName('g2-tooltip-title')[0].innerHTML = title
       labelTooltipDom.style.visibility = 'visible'
     }
+    labelTooltipDom.getElementsByClassName('g2-tooltip-title')[0].textContent = title
 
     // 获取父节点的尺寸和 tooltip 的尺寸
     const { height, width } = parentNode.getBoundingClientRect()

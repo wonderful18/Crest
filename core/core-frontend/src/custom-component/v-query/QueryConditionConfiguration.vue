@@ -1478,7 +1478,7 @@ const validate = () => {
       if (!ele.defaultValueCheck) return false
       if (ele.timeType === 'fixed') {
         const [s, e] = ele.defaultValue || []
-        if (!s || !e) {
+        if (!s && !e) {
           ElMessage.error(t('v_query.cannot_be_empty_time'))
           return true
         }

@@ -7,7 +7,9 @@ import io.crest.api.dataset.dto.DatasetSyncTaskDTO;
 import io.crest.commons.constants.TaskStatus;
 import io.crest.dataset.dao.auto.entity.CoreDatasetSyncTask;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetSyncTaskMapper;
+import io.crest.dataset.manage.DatasetGroupManage;
 import io.crest.datasource.server.DatasourceTaskServer;
+import io.crest.exception.CrestException;
 import io.crest.job.schedule.DatasetSyncJob;
 import io.crest.job.schedule.ScheduleManager;
 import org.h2.jdbcx.JdbcDataSource;
@@ -21,9 +23,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -131,6 +135,7 @@ class DatasetSyncTaskManageTest {
         ScheduleManager scheduleManager = mock(ScheduleManager.class);
         ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
         ReflectionTestUtils.setField(manage, "scheduleManager", scheduleManager);
+        allowDatasetAccess(manage);
 
         CoreDatasetSyncTask exists = new CoreDatasetSyncTask();
         exists.setId(1262155861866975232L);
@@ -185,6 +190,7 @@ class DatasetSyncTaskManageTest {
         ScheduleManager scheduleManager = mock(ScheduleManager.class);
         ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
         ReflectionTestUtils.setField(manage, "scheduleManager", scheduleManager);
+        allowDatasetAccess(manage);
 
         CoreDatasetSyncTask exists = new CoreDatasetSyncTask();
         exists.setId(1262155861866975232L);
@@ -230,6 +236,7 @@ class DatasetSyncTaskManageTest {
         ScheduleManager scheduleManager = mock(ScheduleManager.class);
         ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
         ReflectionTestUtils.setField(manage, "scheduleManager", scheduleManager);
+        allowDatasetAccess(manage);
 
         CoreDatasetSyncTask exists = new CoreDatasetSyncTask();
         exists.setId(1262155861866975232L);
@@ -255,6 +262,7 @@ class DatasetSyncTaskManageTest {
         ScheduleManager scheduleManager = mock(ScheduleManager.class);
         ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
         ReflectionTestUtils.setField(manage, "scheduleManager", scheduleManager);
+        allowDatasetAccess(manage);
 
         CoreDatasetSyncTask exists = new CoreDatasetSyncTask();
         exists.setId(1262155861866975232L);
@@ -278,6 +286,26 @@ class DatasetSyncTaskManageTest {
     }
 
     @Test
+    void saveRejectsDatasetWithoutAccessBeforeWritingTask() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        DatasetGroupManage datasetGroupManage = mock(DatasetGroupManage.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "datasetGroupManage", datasetGroupManage);
+        when(datasetGroupManage.requireDatasetAccess(982004L))
+                .thenThrow(new CrestException(500, "当前用户无权访问该资源"));
+
+        DatasetSyncTaskDTO request = new DatasetSyncTaskDTO();
+        request.setDatasetGroupId(982004L);
+
+        CrestException exception = assertThrows(CrestException.class, () -> manage.save(request));
+
+        assertEquals("当前用户无权访问该资源", exception.getMsg());
+        verify(taskMapper, never()).insert(any());
+        verify(taskMapper, never()).updateById(any());
+    }
+
+    @Test
     void shouldRestoreScheduleSkipsManualPausedAndStoppedTasks() {
         DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
 
@@ -298,6 +326,10 @@ class DatasetSyncTaskManageTest {
         task.setCron("0 0/30 * * * ? *");
         task.setTaskStatus(taskStatus);
         return task;
+    }
+
+    private void allowDatasetAccess(DatasetSyncTaskManage manage) {
+        ReflectionTestUtils.setField(manage, "datasetGroupManage", mock(DatasetGroupManage.class));
     }
 
     private JdbcDataSource h2(String name) {

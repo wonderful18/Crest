@@ -102,7 +102,7 @@ const preview = (row, disabled = false) => {
       path: '/preview',
       query: { dvId: id, dvType }
     })
-    window.open(routeUrl.href, '_blank')
+    window.open(routeUrl.href, '_blank', 'noopener,noreferrer')
   }
 }
 
@@ -111,7 +111,7 @@ const openDataset = id => {
     path: '/dataset-form',
     query: { id: id }
   })
-  window.open(routeUrl.href, openType)
+  window.open(routeUrl.href, openType, openType === '_blank' ? 'noopener,noreferrer' : undefined)
 }
 const formatterTime = (_, _column, cellValue) => {
   if (!cellValue) return '-'

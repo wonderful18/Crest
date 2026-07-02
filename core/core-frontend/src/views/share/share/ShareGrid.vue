@@ -47,7 +47,7 @@ const triggerFilterPanel = () => {
 const preview = (id, disabled = false) => {
   if (!disabled) {
     const routeUrl = `/#/preview?dvId=${id}`
-    window.open(routeUrl, '_blank')
+    window.open(routeUrl, '_blank', 'noopener,noreferrer')
   }
 }
 const formatterTime = (_, _column, cellValue) => {

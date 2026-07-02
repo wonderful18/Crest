@@ -173,7 +173,6 @@ export abstract class G2PlotChartView<
   public setupSeriesColor(chart: ChartObj, data?: any[]): ChartBasicStyle['seriesColor'] {
     return setupSeriesColor(chart)
   }
-  // eslint-disable-next-line
   public setupSubSeriesColor(chart: ChartObj, data?: any[]): ChartBasicStyle['seriesColor'] {
     return undefined
   }

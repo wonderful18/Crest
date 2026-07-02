@@ -99,11 +99,10 @@ export function download2AppTemplate(downloadType, canvasDom, name, attachParams
         }
       })
     })
-  } catch (e) {
+  } catch {
     if (callBack) {
       callBack()
     }
-    console.error(e)
   }
 }
 
@@ -135,8 +134,7 @@ export function downloadCanvas(type, canvasDom, name, callBack?) {
           callBack()
         }
       })
-      .catch(error => {
-        console.error('oops, something went wrong!', error)
+      .catch(() => {
         if (callBack) {
           callBack()
         }
@@ -166,11 +164,10 @@ export function downloadCanvas2(type, canvasDom, name, callBack?) {
         callBack()
       }
     })
-    .catch(error => {
+    .catch(() => {
       if (callBack) {
         callBack()
       }
-      console.error('oops, something went wrong!', error)
     })
 }
 
@@ -239,8 +236,7 @@ export function findStaticSource(callBack) {
       resourceBase64({ resourcePathList: staticResource }).then(rsp => {
         callBack(rsp.data)
       })
-    } catch (e) {
-      console.error('resourceBase64 error', e)
+    } catch {
       callBack()
     }
   } else {

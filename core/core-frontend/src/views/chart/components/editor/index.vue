@@ -1544,7 +1544,11 @@ const addDsWindow = () => {
     embeddedStore.getToken && appStore.getIsIframe ? 'dataset-embedded-form' : '/dataset-form'
   let routeData = router.resolve(path)
   const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
-  const newWindow = window.open(routeData.href, openType)
+  const newWindow = window.open(
+    routeData.href,
+    openType,
+    openType === '_blank' ? 'noopener,noreferrer' : undefined
+  )
   initOpenHandler(newWindow)
 }
 const editDs = () => {
@@ -1570,11 +1574,15 @@ const editDs = () => {
     }
     canvasSave(() => {
       wsCache.delete('CREST-DV-CACHE-' + dvInfo.value.id)
-      const newWindow = window.open(routeData.href, openType)
+      const newWindow = window.open(routeData.href, openType, undefined)
       initOpenHandler(newWindow)
     })
   } else {
-    const newWindow = window.open(routeData.href, openType)
+    const newWindow = window.open(
+      routeData.href,
+      openType,
+      openType === '_blank' ? 'noopener,noreferrer' : undefined
+    )
     initOpenHandler(newWindow)
   }
 }
@@ -3379,7 +3387,7 @@ const chartStyleScroll = (val: any) => {
                               size="small"
                               @change="recordSnapshotInfo('render')"
                             >
-                              <el-radio class="margin20-radio" label="all" :effect="themes">
+                              <el-radio class="margin20-radio" value="all" :effect="themes">
                                 <span
                                   class="result-count-label"
                                   :class="{ dark: themes === 'dark' }"
@@ -3387,7 +3395,7 @@ const chartStyleScroll = (val: any) => {
                                   {{ t('chart.result_mode_all') }}
                                 </span>
                               </el-radio>
-                              <el-radio label="custom" :effect="themes">
+                              <el-radio value="custom" :effect="themes">
                                 <el-input-number
                                   v-model="view.resultCount"
                                   :min="1"

@@ -1,7 +1,8 @@
 import pkg from '../package.json'
-import viteCompression from 'vite-plugin-compression'
+import { gzipSync } from 'node:zlib'
 
 const enableGzip = process.env.CREST_ENABLE_VITE_GZIP === 'true'
+const GZIP_THRESHOLD = 10240
 const emptyProxyPackages = new Set([
   'lodash-unified',
   'vue-demi',
@@ -37,19 +38,32 @@ function vendorChunkName(id: string) {
     .replace(/^\.+/, 'vendor-')
 }
 
-export default {
-  plugins: enableGzip
-    ? [
-        viteCompression({
-          // gzip静态资源压缩配置
-          verbose: false, // 是否在控制台输出压缩结果
-          disable: false, // 是否禁用压缩
-          threshold: 10240, // 启用压缩的文件大小限制
-          algorithm: 'gzip', // 采用的压缩算法
-          ext: '.gz' // 生成的压缩包后缀
+function gzipAssetsPlugin() {
+  return {
+    name: 'crest-gzip-assets',
+    apply: 'build',
+    generateBundle(_, bundle) {
+      Object.entries(bundle).forEach(([fileName, item]) => {
+        if (fileName.endsWith('.gz') || item.type !== 'asset' && item.type !== 'chunk') {
+          return
+        }
+        const source = item.type === 'chunk' ? item.code : item.source
+        const input = typeof source === 'string' ? Buffer.from(source) : Buffer.from(source)
+        if (input.length < GZIP_THRESHOLD) {
+          return
+        }
+        this.emitFile({
+          type: 'asset',
+          fileName: `${fileName}.gz`,
+          source: gzipSync(input)
         })
-      ]
-    : [],
+      })
+    }
+  }
+}
+
+export default {
+  plugins: enableGzip ? [gzipAssetsPlugin()] : [],
   build: {
     reportCompressedSize: false,
     chunkSizeWarningLimit: 10000,

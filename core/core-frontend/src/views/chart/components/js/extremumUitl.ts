@@ -125,7 +125,6 @@ const chartPointParentId = chart => {
 function removeDivsWithPrefix(parentDivId, prefix) {
   const parentDiv = document.getElementById(parentDivId)
   if (!parentDiv) {
-    console.error('Parent div not found')
     return
   }
   const childDivs = parentDiv.getElementsByTagName('div')

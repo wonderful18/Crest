@@ -533,12 +533,11 @@ const htmlToImage = () => {
         useEmitt().emitter.emit('renderChart-viewDialog-' + viewInfo.value.id)
         initWatermark()
       })
-      .catch(error => {
+      .catch(() => {
         downLoading.value = false
         initWatermark()
         useEmitt().emitter.emit('l7-unprepare-picture', viewInfo.value.id)
         useEmitt().emitter.emit('renderChart-viewDialog-' + viewInfo.value.id)
-        console.error('oops, something went wrong!', error)
       })
   }, renderTime)
 }

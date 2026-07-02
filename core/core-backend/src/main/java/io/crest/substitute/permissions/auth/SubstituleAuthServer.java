@@ -17,6 +17,7 @@ import io.crest.log.CrestAudit;
 import io.crest.utils.IDUtils;
 import jakarta.annotation.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -53,7 +54,7 @@ public class SubstituleAuthServer implements AuthApi {
     }
 
     @Override
-    public PermissionVO busiPermission(BusiPermissionRequest request) {
+    public PermissionVO busiPermission(@RequestBody BusiPermissionRequest request) {
         PermissionVO vo = new PermissionVO();
         vo.setRoot(false);
         vo.setReadonly(false);
@@ -73,7 +74,7 @@ public class SubstituleAuthServer implements AuthApi {
     }
 
     @Override
-    public PermissionVO busiTargetPermission(BusiPermissionRequest request) {
+    public PermissionVO busiTargetPermission(@RequestBody BusiPermissionRequest request) {
         return busiPermission(request);
     }
 
@@ -112,7 +113,7 @@ public class SubstituleAuthServer implements AuthApi {
     }
 
     @Override
-    public PermissionVO menuPermission(MenuPermissionRequest request) {
+    public PermissionVO menuPermission(@RequestBody MenuPermissionRequest request) {
         PermissionVO vo = new PermissionVO();
         vo.setRoot(false);
         vo.setReadonly(false);
@@ -122,13 +123,13 @@ public class SubstituleAuthServer implements AuthApi {
     }
 
     @Override
-    public PermissionVO menuTargetPermission(MenuPermissionRequest request) {
+    public PermissionVO menuTargetPermission(@RequestBody MenuPermissionRequest request) {
         return menuPermission(request);
     }
 
     @Override
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.DATA, id = "#p0.id")
-    public void saveBusiPer(BusiPerEditor editor) {
+    public void saveBusiPer(@RequestBody BusiPerEditor editor) {
         platformPermissionManage.requireSystemAdmin();
         String targetType = targetType(editor.getType());
         jdbcTemplate.update("""
@@ -146,7 +147,7 @@ public class SubstituleAuthServer implements AuthApi {
 
     @Override
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.DATA)
-    public void saveBusiTargetPer(BusiTargetPerCreator creator) {
+    public void saveBusiTargetPer(@RequestBody BusiTargetPerCreator creator) {
         platformPermissionManage.requireSystemAdmin();
         if (creator.getPermissions() == null || creator.getIds() == null) {
             return;
@@ -166,7 +167,7 @@ public class SubstituleAuthServer implements AuthApi {
 
     @Override
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.MENU, id = "#p0.id")
-    public void saveMenuPer(MenuPerEditor editor) {
+    public void saveMenuPer(@RequestBody MenuPerEditor editor) {
         platformPermissionManage.requireSystemAdmin();
         jdbcTemplate.update("DELETE FROM iam_role_menu_permission WHERE rid = ?", editor.getId());
         if (editor.getPermissions() == null) {
@@ -183,7 +184,7 @@ public class SubstituleAuthServer implements AuthApi {
 
     @Override
     @CrestAudit(ot = LogOT.AUTHORIZE, st = LogST.MENU)
-    public void saveMenuTargetPer(MenuTargetPerCreator creator) {
+    public void saveMenuTargetPer(@RequestBody MenuTargetPerCreator creator) {
         platformPermissionManage.requireSystemAdmin();
         if (creator.getPermissions() == null || creator.getIds() == null) {
             return;
@@ -197,7 +198,7 @@ public class SubstituleAuthServer implements AuthApi {
     }
 
     @Override
-    public List<ResourceItemVO> busiTargetPermissionAll(BusiPermissionRequest request) {
+    public List<ResourceItemVO> busiTargetPermissionAll(@RequestBody BusiPermissionRequest request) {
         String targetType = targetType(request.getType());
         if ("user".equals(targetType)) {
             return jdbcTemplate.query("""

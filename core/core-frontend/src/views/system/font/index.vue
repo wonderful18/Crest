@@ -15,6 +15,21 @@ const fontKeyword = ref('')
 const fontList = ref([])
 const basePath = import.meta.env.VITE_API_BASEPATH
 
+const escapeCssString = (value?: string | null) =>
+  String(value || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/[\n\r\f]/g, '\\A ')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+
+const cssFontFamily = (name?: string | null) => (name ? `'${escapeCssString(name)}'` : '')
+const cssUrl = (url?: string | null) => `"${escapeCssString(url)}"`
+const setCustomFontVariables = (name?: string | null) => {
+  const fontFamily = cssFontFamily(name)
+  document.documentElement.style.setProperty('--crest-custom_font', fontFamily)
+  document.documentElement.style.setProperty('--van-base-font', fontFamily)
+}
+
 const uploadDetail = ref()
 const loading = ref(false)
 const uploadFont = (title, type, item) => {
@@ -78,23 +93,26 @@ const setDefaultFont = (url, name, fileTransName) => {
     fontStyleElement.setAttribute('id', 'crest-custom_font')
     document.querySelector('head').appendChild(fontStyleElement)
   }
-  fontStyleElement.innerHTML =
+  if (!fontStyleElement) {
+    setCustomFontVariables('')
+    return
+  }
+  fontStyleElement.textContent =
     name && fileTransName
       ? `@font-face {
-              font-family: '${name}';
-              src: url(${url});
+              font-family: ${cssFontFamily(name)};
+              src: url(${cssUrl(url)});
               font-weight: normal;
               font-style: normal;
               }`
       : ''
-  document.documentElement.style.setProperty('--crest-custom_font', `${name ? name : ''}`)
-  document.documentElement.style.setProperty('--van-base-font', `${name ? name : ''}`)
+  setCustomFontVariables(name)
 }
 const getDefaultFont = () => {
   defaultFont().then(res => {
     const [font] = res || []
     setDefaultFont(
-      `${basePath}/typeface/download/${font?.fileTransName}`,
+      `${basePath}/typeface/download/${encodeURIComponent(font?.fileTransName || '')}`,
       font?.name,
       font?.fileTransName
     )

@@ -19,6 +19,8 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.util.Locale;
+
 @RestControllerAdvice
 @SuppressWarnings("deprecation")
 public class GlobalExceptionHandler {
@@ -36,7 +38,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CrestException.class)
     public ResultMessage crestExceptionHandler(CrestException e) {
         LogUtil.info(e.getMessage());
-        return new ResultMessage(e.getCode(), e.getMessage());
+        return new ResultMessage(e.getCode(), safeClientMessage(e.getMessage(), "请求处理失败，请检查参数后重试"));
     }
 
     @ExceptionHandler(ClientAbortException.class)
@@ -54,7 +56,7 @@ public class GlobalExceptionHandler {
     public ResultMessage noResourceFoundExceptionHandler(NoResourceFoundException e) {
         String message = StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName());
         LogUtil.debug(message);
-        return new ResultMessage(ResultCode.RESOURCE_NOT_FOUND.code(), message);
+        return new ResultMessage(ResultCode.RESOURCE_NOT_FOUND.code(), "资源不存在");
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
@@ -88,6 +90,23 @@ public class GlobalExceptionHandler {
         LogUtil.error("系统内部错误: " + e.getMessage(), e);
         // 返回通用错误消息，不泄露内部信息
         return new ResultMessage(ResultCode.SYSTEM_INNER_ERROR.code(), "系统内部错误，请联系管理员");
+    }
+
+    private String safeClientMessage(String message, String fallback) {
+        if (StringUtils.isBlank(message)) {
+            return fallback;
+        }
+        String normalized = message.replaceAll("\\p{Cntrl}", " ").trim();
+        if (StringUtils.isBlank(normalized) || normalized.length() > 200) {
+            return fallback;
+        }
+        String lower = normalized.toLowerCase(Locale.ROOT);
+        if (StringUtils.containsAny(lower,
+                "exception", "sql", "select ", "insert ", "update ", "delete ", "drop ",
+                "java.", "org.", " at ", "ora-", "syntax error", "connection", "/users/")) {
+            return fallback;
+        }
+        return normalized;
     }
 
 }

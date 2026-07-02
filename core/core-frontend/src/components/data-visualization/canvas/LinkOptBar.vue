@@ -121,16 +121,26 @@ const toggleFullscreen = () => {
     useEmitt().emitter.emit('canvasFullscreen')
   } else {
     // 如果当前是全屏状态，则退出全屏
-    document.exitFullscreen().catch(error => {
-      console.error('Exit fullscreen failed:', error)
-    })
+    document.exitFullscreen().catch(() => undefined)
   }
 }
 const back2Last = () => {
   const parentUrl = localStorage.getItem('beforeJumpUrl')
   localStorage.removeItem('beforeJumpUrl')
-  window.location.href = parentUrl
-  window.location.reload()
+  window.location.assign(safeSameOriginUrl(parentUrl))
+}
+
+const safeSameOriginUrl = (url?: string | null) => {
+  if (!url) return '/'
+  try {
+    const target = new URL(url, window.location.origin)
+    if (target.origin !== window.location.origin) {
+      return '/'
+    }
+    return `${target.pathname}${target.search}${target.hash}`
+  } catch (e) {
+    return '/'
+  }
 }
 const exportPDF = () => {
   useEmitt().emitter.emit('canvasDownload', 'pdf')

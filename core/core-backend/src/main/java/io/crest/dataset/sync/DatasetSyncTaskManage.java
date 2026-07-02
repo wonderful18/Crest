@@ -18,6 +18,7 @@ import io.crest.datasource.provider.ProviderUtil;
 import io.crest.datasource.provider.CalciteProvider;
 import io.crest.datasource.request.EngineRequest;
 import io.crest.datasource.server.DatasourceTaskServer;
+import io.crest.dataset.manage.DatasetGroupManage;
 import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import io.crest.job.schedule.DatasetSyncJob;
@@ -63,6 +64,8 @@ public class DatasetSyncTaskManage {
     private JdbcTemplate jdbcTemplate;
     @Resource
     private PlatformPermissionManage platformPermissionManage;
+    @Resource
+    private DatasetGroupManage datasetGroupManage;
 
     public CoreDatasetSyncTask selectById(Long id) {
         return taskMapper.selectById(id);
@@ -219,6 +222,7 @@ public class DatasetSyncTaskManage {
         if (task == null || task.getDatasetGroupId() == null) {
             CrestException.throwException("datasetGroupId can not be empty");
         }
+        requireDatasetAccess(task.getDatasetGroupId());
         CoreDatasetSyncTask record = normalize(task);
         CoreDatasetSyncTask exists = selectByDatasetGroupId(record.getDatasetGroupId());
         long now = System.currentTimeMillis();
@@ -268,11 +272,13 @@ public class DatasetSyncTaskManage {
     }
 
     public DatasetSyncTaskDTO task(Long datasetGroupId) {
+        requireDatasetAccess(datasetGroupId);
         CoreDatasetSyncTask task = selectByDatasetGroupId(datasetGroupId);
         return task == null ? null : toDTO(task);
     }
 
     public List<DatasetSyncLogDTO> logs(Long datasetGroupId) {
+        requireDatasetAccess(datasetGroupId);
         QueryWrapper<CoreDatasetSyncTaskLog> wrapper = new QueryWrapper<>();
         wrapper.eq("dataset_group_id", datasetGroupId);
         wrapper.orderByDesc("start_time");
@@ -374,6 +380,7 @@ public class DatasetSyncTaskManage {
     }
 
     public void stop(Long datasetGroupId) {
+        requireDatasetAccess(datasetGroupId);
         CoreDatasetSyncTask task = selectByDatasetGroupId(datasetGroupId);
         if (task == null) {
             return;
@@ -388,6 +395,7 @@ public class DatasetSyncTaskManage {
     }
 
     public DatasetSyncTaskDTO pause(Long datasetGroupId) {
+        requireDatasetAccess(datasetGroupId);
         CoreDatasetSyncTask task = selectByDatasetGroupId(datasetGroupId);
         if (task == null) {
             return null;
@@ -403,6 +411,7 @@ public class DatasetSyncTaskManage {
     }
 
     public DatasetSyncTaskDTO resume(Long datasetGroupId) {
+        requireDatasetAccess(datasetGroupId);
         CoreDatasetSyncTask task = selectByDatasetGroupId(datasetGroupId);
         if (task == null) {
             return null;
@@ -421,6 +430,10 @@ public class DatasetSyncTaskManage {
             refreshSchedule(task);
         }
         return task(datasetGroupId);
+    }
+
+    private void requireDatasetAccess(Long datasetGroupId) {
+        datasetGroupManage.requireDatasetAccess(datasetGroupId);
     }
 
     public void deleteByDatasetGroupId(Long datasetGroupId) {

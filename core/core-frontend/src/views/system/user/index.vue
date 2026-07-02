@@ -10,6 +10,7 @@ const keyword = ref('')
 const tableData = ref<any[]>([])
 const selectedRows = ref<any[]>([])
 const pager = reactive({ currentPage: 1, pageSize: 15, total: 0 })
+const emptyPasswordInput = () => undefined
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const roleOptions = ref<any[]>([])
@@ -23,7 +24,7 @@ const form = reactive<any>({
   name: '',
   email: '',
   phone: '',
-  password: '',
+  password: emptyPasswordInput(),
   enable: true,
   roleIds: [2],
   authType: 'LOCAL'
@@ -99,7 +100,7 @@ const resetForm = () => {
     name: '',
     email: '',
     phone: '',
-    password: '',
+    password: emptyPasswordInput(),
     enable: true,
     roleIds: [2],
     authType: 'LOCAL'
@@ -179,15 +180,14 @@ const resetPwd = async row => {
       ElMessage.success('密码重置完成')
       return
     }
-    await showPasswordNotice('密码已重置', `用户「${row.name}」的新密码：${newPwd}`, newPwd)
+    await showPasswordNotice(
+      '密码已重置',
+      `用户「${row.name}」的新密码已生成，请及时复制并妥善保存`,
+      newPwd
+    )
   } catch (e: any) {
     // ElMessageBox cancel or axios interceptor already shows error message
   }
-}
-
-const queryDefaultPassword = async () => {
-  const res = await request.get({ url: '/user/default-password' })
-  return String(res.data || '')
 }
 
 const copyPassword = async (password: string) => {
@@ -195,32 +195,29 @@ const copyPassword = async (password: string) => {
   ElMessage.success('密码已复制')
 }
 
-const showPasswordNotice = async (title: string, message: string, password: string) => {
+const showPasswordNotice = async (title: string, noticeText: string, temporaryPassword: string) => {
+  const noticeOptions = {
+    confirmButtonText: '复制密码',
+    cancelButtonText: '关闭',
+    type: 'success' as const
+  }
   try {
-    await ElMessageBox.confirm(message, title, {
-      confirmButtonText: '复制密码',
-      cancelButtonText: '关闭',
-      type: 'success'
-    })
-    await copyPassword(password)
+    await ElMessageBox.confirm(noticeText, title, noticeOptions)
+    await copyPassword(temporaryPassword)
   } catch {
     // 关闭提示框不影响已完成的账号操作。
   }
 }
 
 const showDefaultPasswordNotice = async (title: string, message: string) => {
-  let password = ''
-  try {
-    password = await queryDefaultPassword()
-  } catch {
-    ElMessage.warning('默认密码未配置，请先在系统参数的账号安全中设置')
-    return
-  }
-  if (!password) {
-    ElMessage.warning('默认密码未配置，请先在系统参数的账号安全中设置')
-    return
-  }
-  await showPasswordNotice(title, `${message}，默认密码：${password}`, password)
+  await ElMessageBox.alert(
+    `${message}，已按系统初始密码策略创建。请在账号安全参数中确认交付方式，或通过“重置密码”生成一次性密码。`,
+    title,
+    {
+      confirmButtonText: '知道了',
+      type: 'success'
+    }
+  )
 }
 
 const remove = async row => {
@@ -490,7 +487,7 @@ onMounted(async () => {
             v-model.trim="form.password"
             type="password"
             show-password
-            :placeholder="isEdit ? '不填写则保持原密码' : '留空则使用系统默认密码'"
+            :placeholder="isEdit ? '不填写则保持原密码' : '留空则按系统初始密码策略创建'"
             maxlength="100"
           />
         </el-form-item>

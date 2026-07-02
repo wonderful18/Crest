@@ -238,14 +238,14 @@ const downLoadAll = () => {
   if (multipleSelection.value.length === 0) {
     tableData.value.forEach(item => {
       generateDownloadUri(item.id).then(uri => {
-        window.open(PATH_URL + uri)
+        window.open(PATH_URL + uri, openType, openType === '_blank' ? 'noopener,noreferrer' : undefined)
       })
     })
     return
   }
   multipleSelection.value.map(ele => {
     generateDownloadUri(ele.id).then(uri => {
-      window.open(PATH_URL + uri)
+      window.open(PATH_URL + uri, openType, openType === '_blank' ? 'noopener,noreferrer' : undefined)
     })
   })
 }
@@ -264,7 +264,7 @@ import { PATH_URL } from '@/config/axios/service'
 import GridTable from '../../../../components/grid-table/src/GridTable.vue'
 const downloadClick = item => {
   generateDownloadUri(item.id).then(uri => {
-    window.open(PATH_URL + uri, openType)
+    window.open(PATH_URL + uri, openType, openType === '_blank' ? 'noopener,noreferrer' : undefined)
   })
 }
 

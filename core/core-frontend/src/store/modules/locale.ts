@@ -54,8 +54,7 @@ const loadCustomLocaleData = async (lang: string) => {
     const localeModule = await import(`../../locales/${lang}.ts`)
     const localeData = localeModule.default || localeModule
     return localeData.element_plus || {}
-  } catch (error) {
-    console.warn('Failed to load custom locale data', lang, error)
+  } catch {
     return {}
   }
 }

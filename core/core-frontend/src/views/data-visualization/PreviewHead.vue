@@ -48,7 +48,7 @@ const preview = () => {
     '&dvType=' +
     dvInfo.value['type'] +
     '&ignoreParams=true'
-  const newWindow = window.open(url, '_blank')
+  const newWindow = window.open(url, '_blank', 'noopener,noreferrer')
   initOpenHandler(newWindow)
 }
 const isCrestBi = computed(() => appStore.getIsCrestBi)
@@ -83,7 +83,11 @@ const dvEdit = () => {
     return
   }
   const baseUrl = dvInfo.value.type === 'dataV' ? '#/dvCanvas?dvId=' : '#/dashboard?resourceId='
-  const newWindow = window.open(baseUrl + dvInfo.value.id, openType)
+  const newWindow = window.open(
+    baseUrl + dvInfo.value.id,
+    openType,
+    openType === '_blank' ? 'noopener,noreferrer' : undefined
+  )
   initOpenHandler(newWindow)
 }
 

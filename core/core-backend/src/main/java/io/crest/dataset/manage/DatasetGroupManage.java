@@ -711,7 +711,7 @@ public class DatasetGroupManage {
         return list;
     }
 
-    private CoreDatasetGroup requireDatasetAccess(Long datasetId) {
+    public CoreDatasetGroup requireDatasetAccess(Long datasetId) {
         CoreDatasetGroup dataset = coreDatasetGroupMapper.selectById(datasetId);
         if (dataset == null) {
             CrestException.throwException("resource not exist");
@@ -720,7 +720,7 @@ public class DatasetGroupManage {
         return dataset;
     }
 
-    private CoreDatasource requireDatasourceAccess(Long datasourceId) {
+    CoreDatasource requireDatasourceAccess(Long datasourceId) {
         CoreDatasource datasource = coreDatasourceMapper.selectById(datasourceId);
         if (datasource == null) {
             CrestException.throwException(Translator.get("i18n_datasource_not_exists"));

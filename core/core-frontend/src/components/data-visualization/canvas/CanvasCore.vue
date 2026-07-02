@@ -282,8 +282,8 @@ const initWatermark = (waterDomId = 'editor-canvas-main') => {
     ) {
       activeWatermarkCheckUser(waterDomId, canvasId.value, curScale.value)
     }
-  } catch (e) {
-    console.warn('Watermarks are not supported!')
+  } catch {
+    // watermark rendering is optional
   }
 }
 
@@ -753,8 +753,8 @@ function addItemToPositionBox(item) {
         if (pb[j][i]) {
           pb[j][i].el = item
         }
-      } catch (e) {
-        console.warn('addItemToPositionBox-warn:', e)
+      } catch {
+        // ignore stale position cells
       }
     }
   }
@@ -776,8 +776,10 @@ function fillPositionBox(maxY) {
   }
 
   itemMaxY.value = maxY
-  //problem
-  $(container.value).css('height', (itemMaxY.value + 2) * cellHeight.value + 'px')
+  const height = Number((itemMaxY.value + 2) * cellHeight.value)
+  if (container.value) {
+    container.value.style.height = `${Number.isFinite(height) && height > 0 ? height : 0}px`
+  }
 }
 
 function removeItemFromPositionBox(item) {
@@ -789,8 +791,8 @@ function removeItemFromPositionBox(item) {
         if (pb[j][i]) {
           pb[j][i].el = false
         }
-      } catch (e) {
-        console.warn(e)
+      } catch {
+        // ignore stale position cells
       }
     }
   }

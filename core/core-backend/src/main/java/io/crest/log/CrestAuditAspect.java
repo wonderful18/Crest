@@ -12,17 +12,16 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.ExpressionParser;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * CrestAudit 注解 AOP 切面
@@ -36,8 +35,8 @@ public class CrestAuditAspect {
     @Autowired
     private AuditLogService auditLogService;
 
-    private final ExpressionParser parser = new SpelExpressionParser();
     private final ParameterNameDiscoverer discoverer = new DefaultParameterNameDiscoverer();
+    private static final Pattern AUDIT_EXPRESSION_PATTERN = Pattern.compile("#[A-Za-z_$][\\w$]*(\\.[A-Za-z_$][\\w$]*)*");
 
     @Around("@annotation(audit)")
     public Object around(ProceedingJoinPoint point, CrestAudit audit) throws Throwable {
@@ -115,10 +114,15 @@ public class CrestAuditAspect {
     }
 
     /**
-     * 解析 SpEL 表达式
+     * 仅支持审计注解需要的参数路径表达式，例如 #p0、#p0.id、#request.id。
      */
     private String parseExpression(String expression, ProceedingJoinPoint point) {
         if (expression == null || expression.isEmpty()) {
+            return null;
+        }
+        String normalized = expression.trim();
+        if (!AUDIT_EXPRESSION_PATTERN.matcher(normalized).matches()) {
+            LogUtil.debug("审计表达式不受支持: " + expression);
             return null;
         }
 
@@ -127,23 +131,52 @@ public class CrestAuditAspect {
             Method method = signature.getMethod();
             String[] paramNames = discoverer.getParameterNames(method);
             Object[] args = point.getArgs();
-
-            EvaluationContext context = new StandardEvaluationContext();
-            for (int i = 0; i < args.length; i++) {
-                context.setVariable("p" + i, args[i]);
-            }
-            if (paramNames != null) {
-                for (int i = 0; i < paramNames.length && i < args.length; i++) {
-                    context.setVariable(paramNames[i], args[i]);
-                }
-            }
-
-            Object value = parser.parseExpression(expression).getValue(context);
+            Object value = resolveAuditExpression(normalized, paramNames, args);
             return value != null ? value.toString() : null;
         } catch (Exception e) {
-            LogUtil.debug("SpEL表达式解析失败: " + expression + ", " + e.getMessage());
+            LogUtil.debug("审计表达式解析失败: " + expression + ", " + e.getMessage());
             return null;
         }
+    }
+
+    private Object resolveAuditExpression(String expression, String[] paramNames, Object[] args) {
+        String[] parts = expression.substring(1).split("\\.");
+        Object value = resolveRootValue(parts[0], paramNames, args);
+        for (int i = 1; i < parts.length && value != null; i++) {
+            value = resolvePropertyValue(value, parts[i]);
+        }
+        return value;
+    }
+
+    private Object resolveRootValue(String name, String[] paramNames, Object[] args) {
+        if (name.startsWith("p")) {
+            try {
+                int index = Integer.parseInt(name.substring(1));
+                return index >= 0 && index < args.length ? args[index] : null;
+            } catch (NumberFormatException ignored) {
+                // 不是 #p0 形式时继续按参数名解析。
+            }
+        }
+        if (paramNames == null) {
+            return null;
+        }
+        for (int i = 0; i < paramNames.length && i < args.length; i++) {
+            if (name.equals(paramNames[i])) {
+                return args[i];
+            }
+        }
+        return null;
+    }
+
+    private Object resolvePropertyValue(Object source, String propertyName) {
+        if ("class".equals(propertyName)) {
+            return null;
+        }
+        if (source instanceof Map<?, ?> map) {
+            return map.get(propertyName);
+        }
+        BeanWrapperImpl wrapper = new BeanWrapperImpl(source);
+        return wrapper.isReadableProperty(propertyName) ? wrapper.getPropertyValue(propertyName) : null;
     }
 
     private LogST resolveResourceType(CrestAudit audit, ProceedingJoinPoint point) {

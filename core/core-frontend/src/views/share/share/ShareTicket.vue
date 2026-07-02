@@ -205,8 +205,7 @@ const getArgCount = row => {
   try {
     const obj = JSON.parse(args)
     return Object.keys(obj).length
-  } catch (error) {
-    console.error(error)
+  } catch {
     return 0
   }
 }

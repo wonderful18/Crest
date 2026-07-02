@@ -1,8 +1,8 @@
 package io.crest.websocket.handler;
 
+import io.crest.auth.bo.TokenUserBO;
+import io.crest.utils.AuthUtils;
 import io.crest.websocket.entity.CrestPrincipal;
-import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.socket.WebSocketHandler;
@@ -16,13 +16,11 @@ public class PrincipalHandshakeHandler extends DefaultHandshakeHandler {
     @Override
     protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler, Map<String, Object> attributes) {
         if (request instanceof ServletServerHttpRequest) {
-            ServletServerHttpRequest servletServerHttpRequest = (ServletServerHttpRequest) request;
-            HttpServletRequest httpRequest = servletServerHttpRequest.getServletRequest();
-            final String userId = httpRequest.getParameter("userId");
-            if (StringUtils.isEmpty(userId)) {
+            TokenUserBO user = AuthUtils.getUser();
+            if (user == null || user.getUserId() == null) {
                 return null;
             }
-            return new CrestPrincipal(userId);
+            return new CrestPrincipal(String.valueOf(user.getUserId()));
         }
         return null;
     }

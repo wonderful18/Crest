@@ -195,8 +195,11 @@ public class DataSourceManage {
     }
     public void move(DatasourceDTO dataSourceDTO) {
         Long id = dataSourceDTO.getId();
-        CoreDatasource sourceData = null;
-        if (ObjectUtils.isEmpty(id) || ObjectUtils.isEmpty(sourceData = getCoreDatasource(id))) {
+        if (ObjectUtils.isEmpty(id)) {
+            CrestException.throwException("resource not exist");
+        }
+        CoreDatasource sourceData = getCoreDatasource(id);
+        if (ObjectUtils.isEmpty(sourceData)) {
             CrestException.throwException("resource not exist");
         }
         checkName(dataSourceDTO);

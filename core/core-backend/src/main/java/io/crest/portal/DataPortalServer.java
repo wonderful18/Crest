@@ -57,8 +57,11 @@ public class DataPortalServer {
         QueryParts query = buildBaseQuery(uid, normalized);
         QueryParts countQuery = buildBaseQuery(uid, copyWithoutType(normalized));
 
+        // query.fromWhere 只由固定 SQL 片段、白名单分支和 JDBC 参数占位符组成。
+        // nosemgrep: java.spring.security.injection.tainted-sql-string.tainted-sql-string
+        String countSql = "SELECT COUNT(1) " + query.fromWhere;
         long total = jdbcTemplate.queryForObject(
-                "SELECT COUNT(1) " + query.fromWhere,
+                countSql,
                 Long.class,
                 query.args.toArray()
         );

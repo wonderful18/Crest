@@ -21,7 +21,8 @@ import {
   parseLoginRedirect,
   resolveDefaultLoginPath,
   shouldShowLocalLogin,
-  shouldUseEmergencyLogin
+  shouldUseEmergencyLogin,
+  stringifyLoginRedirect
 } from './loginEntryPolicy.mjs'
 import xss from 'xss'
 const { wsCache } = useCache()
@@ -41,6 +42,7 @@ const slogan = ref(null)
 const footContent = ref(null)
 const loginErrorMsg = ref('')
 const showDempTips = ref(false)
+const emptyPasswordInput = () => undefined
 const demoTips = computed(() => {
   if (!showDempTips.value) {
     return ''
@@ -50,7 +52,7 @@ const demoTips = computed(() => {
 const state = reactive({
   loginForm: {
     username: '',
-    password: ''
+    password: emptyPasswordInput()
   },
   footContent: ''
 })
@@ -95,7 +97,7 @@ const handleLogin = () => {
   formRef.value.validate(async (valid: boolean) => {
     if (valid) {
       const name = state.loginForm.username.trim()
-      const pwd = state.loginForm.password
+      const pwd = state.loginForm.password || String()
       await refreshDekey()
       const param = {
         name: rsaEncryp(name),
@@ -145,7 +147,9 @@ const loadSsoStatus = async () => {
 }
 const handleSsoLogin = () => {
   cleanPlatformFlag()
-  const redirect = (router.currentRoute.value.query.redirect as string) || '/portal'
+  const redirect = stringifyLoginRedirect(
+    (router.currentRoute.value.query.redirect as string) || '/portal'
+  )
   const apiBase = PATH_URL.startsWith('./') ? PATH_URL.substring(1) : PATH_URL
   window.location.href = `${apiBase}/sso/login?redirect=${encodeURIComponent(redirect)}`
 }
@@ -339,7 +343,6 @@ onMounted(async () => {
                     :placeholder="`${t('common.account')}${
                       activeName === 'simple' ? '/' + t('commons.email') : ''
                     }`"
-                    autofocus
                   />
                 </el-form-item>
                 <el-form-item class="login-input-module" prop="password">

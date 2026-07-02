@@ -64,7 +64,7 @@ public class StaticResourceUtils {
         byte[] buffer = null;
         //Read picture byte array
         try {
-            inputStream = new FileInputStream(FILE_BASE_PATH + FILE_SEPARATOR + imgFile);
+            inputStream = new FileInputStream(FileUtils.resolveUnderDirectory(FILE_BASE_PATH, imgFile));
             int count = 0;
             while (count == 0) {
                 count = inputStream.available();

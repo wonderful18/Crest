@@ -4,8 +4,8 @@ import { useI18n } from '@/hooks/web/useI18n'
 
 export interface AuthConfig {
   verification: string
-  username: string
-  password: string
+  username?: string
+  password?: string
 }
 
 const props = defineProps({
@@ -22,8 +22,8 @@ const options = [{ name: 'No Auth' }, { name: 'Basic Auth' }]
 const change = () => {
   const { username, password, verification } = request.value.authManager
   const isBasic = verification === 'Basic Auth'
-  request.value.authManager.username = isBasic ? username : ''
-  request.value.authManager.password = isBasic ? password : ''
+  request.value.authManager.username = isBasic ? username : undefined
+  request.value.authManager.password = isBasic ? password : undefined
 }
 </script>
 

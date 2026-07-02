@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import {
   hexColorToRGBA,
   isAlphaColor,
@@ -81,6 +80,7 @@ import {
 } from './tableAuxiliaryHeader.mjs'
 import { buildMergeCellsInfo } from './tableMergeCells.mjs'
 import { spanSeriesNumberHeader } from './tableSeriesNumber.mjs'
+import { compactSummaryTableHeight, resolveS2ConfiguredHeight } from './tableSummaryHeight.mjs'
 
 const { t: i18nt } = useI18n()
 
@@ -3657,6 +3657,10 @@ export function getSummaryRow(data, axis, sumCon = [], customSumResult = {}) {
     if (!savedAxis.show) {
       continue
     }
+    if (customSumResult[a] !== undefined && customSumResult[a] !== null) {
+      summaryObj[a] = customSumResult[a]
+      continue
+    }
     // 根据汇总方式处理数据
     switch (savedAxis.summary) {
       case 'sum':
@@ -3879,13 +3883,15 @@ export function summaryRowStyle(newChart, newData, tableCell, tableHeader, showS
   const showHeader = tableHeader.showTableHeader === true
   // 不显示表头时，减少一个表头的高度
   const headerAndSummaryHeight = showHeader ? getMaxTreeDepth(columns) + 1 : 1
+  const configuredHeight = resolveS2ConfiguredHeight(newChart)
+  if (!configuredHeight) return
   newChart.on(S2Event.LAYOUT_BEFORE_RENDER, () => {
     const totalHeight =
       tableHeader.tableTitleHeight * headerAndSummaryHeight +
       tableCell.tableItemHeight * (newData.length - 1)
-    if (totalHeight < newChart.container.cfg.height) {
-      newChart.options.height =
-        totalHeight < newChart.container.cfg.height - 8 ? totalHeight + 8 : totalHeight
+    const compactHeight = compactSummaryTableHeight(totalHeight, configuredHeight)
+    if (compactHeight !== null) {
+      newChart.options.height = compactHeight
     }
   })
 }

@@ -236,10 +236,12 @@ import { useEmbedded } from '@/store/modules/embedded'
 import { useShareStoreWithOut } from '@/store/modules/share'
 import CustomLinkPwd from './CustomLinkPwd.vue'
 import TicketDialog from './TicketDialog.vue'
+import { secureRandomChar, secureShuffle } from '@/utils/secureRandom'
 const shareStore = useShareStoreWithOut()
 const embeddedStore = useEmbedded()
 const { toClipboard } = useClipboard()
 const { t } = useI18n()
+const clearSharePassword = () => String()
 const props = defineProps({
   resourceId: propTypes.string.def(''),
   resourceType: propTypes.string.def(''),
@@ -266,7 +268,6 @@ const state = reactive({
   detailInfo: {
     id: '',
     uuid: '',
-    pwd: '',
     exp: 0,
     autoPwd: true
   } as ShareInfo
@@ -279,7 +280,6 @@ watch(
     state.detailInfo = {
       id: '',
       uuid: '',
-      pwd: '',
       exp: 0,
       autoPwd: true
     }
@@ -465,7 +465,7 @@ const expChangeHandler = exp => {
 }
 
 const pwdEnableSwitcher = val => {
-  let pwd = ''
+  let pwd = clearSharePassword()
   if (val) {
     pwd = getUuid()
   }
@@ -494,21 +494,17 @@ const getUuid = () => {
 
   for (let i = 0; i < length; i++) {
     if (i === 0) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length))
+      result += secureRandomChar(characters)
     } else {
       if (!hasSpecialChar && i < length - 2) {
-        result += specialChars.charAt(Math.floor(Math.random() * specialChars.length))
+        result += secureRandomChar(specialChars)
         hasSpecialChar = true
       } else {
-        result += characters.charAt(Math.floor(Math.random() * characters.length))
+        result += secureRandomChar(characters)
       }
     }
   }
-  result = result
-    .split('')
-    .sort(() => 0.5 - Math.random())
-    .join('')
-  return result
+  return secureShuffle(result)
 }
 const validatePeRequire = () => {
   if (shareEnable.value && sharePeRequire.value) {
@@ -614,7 +610,7 @@ const autoEnableSwitcher = val => {
     showPageError(null, pwdRef)
     resetPwd()
   } else {
-    state.detailInfo.pwd = ''
+    state.detailInfo.pwd = clearSharePassword()
     nextTick(() => {
       pwdRef.value.input.focus()
     })

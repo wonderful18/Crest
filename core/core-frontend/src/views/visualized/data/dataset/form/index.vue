@@ -793,8 +793,7 @@ const initEdite = async () => {
     dataSource.value = fir?.currentDs?.datasourceId
     dsChange(dataSource.value)
     datasetDrag.value.initState(arr)
-  } catch (error) {
-    console.error(error)
+  } catch {
     loading.value = false
   }
 }

@@ -250,13 +250,13 @@ const isDatasourceMatch = computed(() => state.form.dataType === 'datasource')
 const addDatasourceWindow = () => {
   // do addDsWindow
   const url = '#/data/datasource?opt=create'
-  window.open(url, openType)
+  window.open(url, openType, openType === '_blank' ? 'noopener,noreferrer' : undefined)
 }
 
 const addDatasetWindow = () => {
   // do addDsWindow
   const url = '#/data/dataset?opt=create'
-  window.open(url, openType)
+  window.open(url, openType, openType === '_blank' ? 'noopener,noreferrer' : undefined)
 }
 
 const state = reactive({

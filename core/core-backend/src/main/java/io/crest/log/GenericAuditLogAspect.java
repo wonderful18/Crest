@@ -252,7 +252,7 @@ public class GenericAuditLogAspect {
                 "/auth/busipermission", "/auth/busitargetpermission", "/auth/busiresource",
                 "/auth/menupermission", "/auth/menutargetpermission", "/auth/menuresource",
                 "/role/by-current-org", "/role/bycurorg", "/role/list", "/role/detail", "/role/listwithoid",
-                "/user/by-current-org", "/user/bycurorg", "/user/default-password", "/user/defaultpwd", "/org/mounted");
+                "/user/by-current-org", "/user/bycurorg", "/org/mounted");
     }
 
     private boolean isReadOperation(String uri, String methodName) {

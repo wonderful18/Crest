@@ -3,10 +3,11 @@ import icon_searchOutline_outlined from '@/assets/svg/icon_search-outline_outlin
 import icon_close_outlined from '@/assets/svg/icon_close_outlined.svg'
 import icon_deleteTrash_outlined from '@/assets/svg/icon_delete-trash_outlined.svg'
 import { ref, inject, computed, watch, onBeforeMount, toRefs, nextTick } from 'vue'
-import { useI18n } from '@/hooks/web/useI18n'
+import { useI18n } from 'vue-i18n'
 import type { SelectConfig } from '../TimeDialog.vue'
 import TimeDialog from '@/views/chart/components/editor/filter/TimeDialog.vue'
 import { multFieldValuesForPermissions } from '@/api/dataset'
+import { normalizeDynamicDateFilterRule } from './dynamicDateFilterRule.mjs'
 import {
   textOptions,
   dateOptions,
@@ -283,6 +284,7 @@ const confirmTimeSelect = () => {
       }
     ].find(ele => ele.value === relativeToCurrent)?.label
     item.value.timeValue = presetTimeLabel || relativeToCurrent || ''
+    item.value.term = normalizeDynamicDateFilterRule(item.value).term
     dialogVisible.value = false
     return
   }
@@ -292,6 +294,7 @@ const confirmTimeSelect = () => {
   if (timeGranularity === 'datetime') {
     item.value.timeValue += new Date(arbitraryTime).toLocaleString().split(' ')[1]
   }
+  item.value.term = normalizeDynamicDateFilterRule(item.value).term
 
   dialogVisible.value = false
 }

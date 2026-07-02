@@ -34,6 +34,7 @@ declare interface Chart {
     }
     customCalc: any
     customSumResult?: Record<string, any>
+    summaryColumnResult?: Record<string, any>
     [key: string]: any
   }
   xAxis?: Axis[]

@@ -4,6 +4,7 @@ import io.crest.api.dataset.DatasetTableSqlLogApi;
 import io.crest.api.dataset.dto.SqlLogDTO;
 import io.crest.dataset.manage.DatasetTableSqlLogManage;
 import jakarta.annotation.Resource;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -16,12 +17,12 @@ public class DatasetTableSqlLogServer implements DatasetTableSqlLogApi {
     private DatasetTableSqlLogManage datasetTableSqlLogManage;
 
     @Override
-    public void save(SqlLogDTO sqlLogDTO) throws Exception {
+    public void save(@RequestBody SqlLogDTO sqlLogDTO) throws Exception {
         datasetTableSqlLogManage.save(sqlLogDTO);
     }
 
     @Override
-    public List<SqlLogDTO> listByTableId(SqlLogDTO sqlLogDTO) throws Exception {
+    public List<SqlLogDTO> listByTableId(@RequestBody SqlLogDTO sqlLogDTO) throws Exception {
         return datasetTableSqlLogManage.listByTableId(sqlLogDTO);
     }
 

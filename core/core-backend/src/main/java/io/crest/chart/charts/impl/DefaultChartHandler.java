@@ -171,6 +171,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
             if (calcResult.getData() != null && calcResult.getData().get("customSumResult") != null) {
                 sourceInfo.put("customSumResult", calcResult.getData().get("customSumResult"));
             }
+            if (calcResult.getData() != null && calcResult.getData().get("summaryColumnResult") != null) {
+                sourceInfo.put("summaryColumnResult", calcResult.getData().get("summaryColumnResult"));
+            }
             view.setData(sourceInfo);
             return view;
         }
@@ -384,15 +387,18 @@ public class DefaultChartHandler extends AbstractChartPlugin {
 
     private List<ChartSeniorAssistDTO> getConditionFields(ChartSeniorThresholdDTO condition) {
         List<ChartSeniorAssistDTO> list = new ArrayList<>();
+        if (condition == null) {
+            return list;
+        }
         if ("between".equals(condition.getTerm())) {
-            if (!Strings.CI.equals(condition.getDynamicMaxField().getSummary(), "value")) {
+            if (condition.getDynamicMaxField() != null && !Strings.CI.equals(condition.getDynamicMaxField().getSummary(), "value")) {
                 list.add(of(condition.getDynamicMaxField()));
             }
-            if (!Strings.CI.equals(condition.getDynamicMinField().getSummary(), "value")) {
+            if (condition.getDynamicMinField() != null && !Strings.CI.equals(condition.getDynamicMinField().getSummary(), "value")) {
                 list.add(of(condition.getDynamicMinField()));
             }
         } else {
-            if (!Strings.CI.equals(condition.getDynamicField().getSummary(), "value")) {
+            if (condition.getDynamicField() != null && !Strings.CI.equals(condition.getDynamicField().getSummary(), "value")) {
                 list.add(of(condition.getDynamicField()));
             }
         }
@@ -721,6 +727,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                         simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
                     }
                 }
+                if (simpleDateFormat == null) {
+                    return cTime;
+                }
                 Date date = simpleDateFormat.parse(cTime);
                 calendar.setTime(date);
                 calendar.add(Calendar.YEAR, -1);
@@ -751,6 +760,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                         simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
                     }
                 }
+                if (simpleDateFormat == null) {
+                    return cTime;
+                }
                 Date date = simpleDateFormat.parse(cTime);
                 calendar.setTime(date);
                 calendar.add(Calendar.MONTH, -1);
@@ -763,6 +775,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
     }
 
     private boolean checkCalcType(String dateStyle, String calcType) {
+        if (StringUtils.isBlank(dateStyle)) {
+            return false;
+        }
         switch (dateStyle) {
             case "y":
                 return Strings.CI.equals(calcType, "year_mom");
@@ -773,8 +788,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                 return Strings.CI.equals(calcType, "day_mom")
                         || Strings.CI.equals(calcType, "month_yoy")
                         || Strings.CI.equals(calcType, "year_yoy");
+            default:
+                return false;
         }
-        return false;
     }
 
     protected boolean checkYoyFilter(List<ChartExtFilterDTO> filter, List<ChartViewFieldDTO> yoyAxis) {

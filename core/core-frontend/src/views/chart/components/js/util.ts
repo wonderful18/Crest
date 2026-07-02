@@ -611,7 +611,6 @@ export const exportExcelDownload = (chart, preFix, callBack?) => {
       }
     })
     .catch(() => {
-      console.error('Excel download error')
       callBack('error')
     })
 }

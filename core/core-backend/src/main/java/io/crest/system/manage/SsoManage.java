@@ -44,6 +44,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -423,18 +424,92 @@ public class SsoManage {
         if (request == null) {
             return "/sso/callback";
         }
-        String proto = StringUtils.defaultIfBlank(request.getHeader("X-Forwarded-Proto"), request.getScheme());
-        String host = StringUtils.defaultIfBlank(request.getHeader("X-Forwarded-Host"), request.getServerName());
-        if (!host.contains(":")) {
-            String port = request.getHeader("X-Forwarded-Port");
-            int serverPort = StringUtils.isNotBlank(port) ? Integer.parseInt(port) : request.getServerPort();
-            boolean defaultPort = (Strings.CI.equals(proto, "https") && serverPort == 443)
-                    || (Strings.CI.equals(proto, "http") && serverPort == 80);
-            if (!defaultPort) {
-                host += ":" + serverPort;
-            }
+        String proto = normalizeCallbackScheme(StringUtils.defaultIfBlank(
+                firstForwardedHeader(request.getHeader("X-Forwarded-Proto")), request.getScheme()));
+        HostPort hostPort = normalizeCallbackHost(StringUtils.defaultIfBlank(
+                firstForwardedHeader(request.getHeader("X-Forwarded-Host")), request.getServerName()));
+        int serverPort = hostPort.port() == null
+                ? parseCallbackPort(StringUtils.defaultIfBlank(
+                firstForwardedHeader(request.getHeader("X-Forwarded-Port")), String.valueOf(request.getServerPort())))
+                : hostPort.port();
+        String host = hostPort.host();
+        boolean defaultPort = (Strings.CI.equals(proto, "https") && serverPort == 443)
+                || (Strings.CI.equals(proto, "http") && serverPort == 80);
+        if (!defaultPort) {
+            host += ":" + serverPort;
         }
         return proto + "://" + host + request.getContextPath() + AuthConstant.CREST_API_PREFIX + "/sso/callback";
+    }
+
+    private String firstForwardedHeader(String value) {
+        if (StringUtils.isBlank(value)) {
+            return "";
+        }
+        String first = StringUtils.substringBefore(value, ",").trim();
+        if (first.chars().anyMatch(Character::isISOControl)) {
+            CrestException.throwException("回调地址头部格式无效");
+        }
+        return first;
+    }
+
+    private String normalizeCallbackScheme(String value) {
+        if (!Strings.CI.equalsAny(value, "http", "https")) {
+            CrestException.throwException("回调地址协议无效");
+        }
+        return value.toLowerCase(Locale.ROOT);
+    }
+
+    private HostPort normalizeCallbackHost(String value) {
+        String hostValue = StringUtils.trimToEmpty(value);
+        if (StringUtils.isBlank(hostValue)
+                || StringUtils.containsAny(hostValue, '/', '\\', '?', '#', '@')
+                || hostValue.chars().anyMatch(Character::isISOControl)) {
+            CrestException.throwException("回调地址主机无效");
+        }
+        Integer port = null;
+        String host = hostValue;
+        if (hostValue.startsWith("[")) {
+            int close = hostValue.indexOf(']');
+            if (close < 0) {
+                CrestException.throwException("回调地址主机无效");
+            }
+            host = hostValue.substring(0, close + 1);
+            if (close + 1 < hostValue.length()) {
+                if (hostValue.charAt(close + 1) != ':') {
+                    CrestException.throwException("回调地址主机无效");
+                }
+                port = parseCallbackPort(hostValue.substring(close + 2));
+            }
+        } else {
+            int colon = hostValue.indexOf(':');
+            if (colon >= 0) {
+                if (hostValue.indexOf(':', colon + 1) >= 0) {
+                    CrestException.throwException("回调地址主机无效");
+                }
+                host = hostValue.substring(0, colon);
+                port = parseCallbackPort(hostValue.substring(colon + 1));
+            }
+            if (!host.matches("[A-Za-z0-9.-]+")
+                    || host.startsWith(".")
+                    || host.endsWith(".")
+                    || host.contains("..")) {
+                CrestException.throwException("回调地址主机无效");
+            }
+        }
+        return new HostPort(host, port);
+    }
+
+    private int parseCallbackPort(String value) {
+        try {
+            int port = Integer.parseInt(StringUtils.trimToEmpty(value));
+            if (port < 1 || port > 65535) {
+                CrestException.throwException("回调地址端口无效");
+            }
+            return port;
+        } catch (NumberFormatException e) {
+            CrestException.throwException("回调地址端口无效");
+            return -1;
+        }
     }
 
     private void redirectTicket(HttpServletRequest request, HttpServletResponse response, String ticket, String redirect) throws IOException {
@@ -443,10 +518,15 @@ public class SsoManage {
 
     private void redirectError(HttpServletRequest request, HttpServletResponse response, String message) {
         try {
-            response.sendRedirect(request.getContextPath() + "/#/sso/callback?error=" + encode(StringUtils.defaultIfBlank(message, "单点登录失败")));
+            response.sendRedirect(request.getContextPath() + "/#/sso/callback?error=" + encode(safeRedirectMessage(message)));
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private String safeRedirectMessage(String message) {
+        String value = StringUtils.defaultIfBlank(message, "单点登录失败").replaceAll("\\p{Cntrl}", " ").trim();
+        return StringUtils.abbreviate(StringUtils.defaultIfBlank(value, "单点登录失败"), 120);
     }
 
     private String normalizeRedirect(String redirect) {
@@ -454,7 +534,10 @@ public class SsoManage {
             return DEFAULT_REDIRECT;
         }
         String value = redirect.trim();
-        if (Strings.CI.startsWithAny(value, "http://", "https://", "//")) {
+        if (Strings.CI.startsWithAny(value, "http://", "https://", "//")
+                || value.contains("\\")
+                || value.chars().anyMatch(Character::isISOControl)
+                || value.matches("(?i)^[a-z][a-z\\d+.-]*:.*")) {
             return DEFAULT_REDIRECT;
         }
         return Strings.CS.startsWith(value, "/") ? value : "/" + value;
@@ -476,5 +559,8 @@ public class SsoManage {
     private record SsoState(String redirect, String nonce) implements Serializable {
         @Serial
         private static final long serialVersionUID = 4056989861841419822L;
+    }
+
+    private record HostPort(String host, Integer port) {
     }
 }

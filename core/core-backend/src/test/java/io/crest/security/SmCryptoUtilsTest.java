@@ -13,6 +13,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
@@ -78,6 +79,19 @@ class SmCryptoUtilsTest {
         assertEquals("SM3-HMAC", decodedJWT.getAlgorithm());
         assertEquals(1L, decodedJWT.getClaim("uid").asLong());
         assertEquals(1L, decodedJWT.getClaim("oid").asLong());
+    }
+
+    @Test
+    void shouldHashCharPasswordWithStableSm3HmacOutput() {
+        char[] password = "密钥Secret1".toCharArray();
+        char[] original = Arrays.copyOf(password, password.length);
+        byte[] salt = "salt".getBytes(StandardCharsets.UTF_8);
+
+        byte[] first = SmCryptoUtils.sm3HmacHash(password, salt, 2);
+        byte[] second = SmCryptoUtils.sm3HmacHash(password, salt, 2);
+
+        assertArrayEquals(first, second);
+        assertArrayEquals(original, password);
     }
 
     @Test

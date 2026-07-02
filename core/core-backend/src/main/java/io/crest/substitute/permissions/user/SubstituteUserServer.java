@@ -41,6 +41,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 
 import static io.crest.constant.CacheConstant.UserCacheConstant.USER_COMMUNITY_LANGUAGE;
 
@@ -129,12 +130,6 @@ public class SubstituteUserServer {
         crestUserManage.enable(request);
     }
 
-    @GetMapping("/default-password")
-    public String defaultPwd() {
-        CrestPermissionUtils.requireAdmin();
-        return crestUserManage.defaultPwd();
-    }
-
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER, id = "#p0")
     @PostMapping("/reset-password/{id}")
     public String resetPwd(@PathVariable("id") Long id) {
@@ -145,7 +140,10 @@ public class SubstituteUserServer {
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER)
     @PostMapping("/modify-password")
     public void modifyPwd(@RequestBody ModifyPwdRequest request) {
-        Long uid = ObjectUtils.isEmpty(request.getUid()) ? AuthUtils.getUser().getUserId() : request.getUid();
+        Long uid = AuthUtils.getUser().getUserId();
+        if (ObjectUtils.isNotEmpty(request.getUid()) && !Objects.equals(request.getUid(), uid)) {
+            CrestException.throwException("只能修改当前用户密码");
+        }
         crestUserManage.modifyPwd(uid, RsaUtils.decryptStr(request.getPwd()), RsaUtils.decryptStr(request.getNewPwd()));
     }
 
@@ -183,8 +181,6 @@ public class SubstituteUserServer {
         UserImportRow row = new UserImportRow();
         row.setAccount("user01");
         row.setName("张三");
-        row.setEmail("user01@example.com");
-        row.setPhone("13800000000");
         CommonExcelUtils.writeExcel(response, List.of(row), UserImportRow.class, List.of(), "user-import-template", "用户导入模板");
     }
 

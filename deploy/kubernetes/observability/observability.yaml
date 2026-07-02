@@ -192,6 +192,7 @@ spec:
               memory: 768Mi
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
@@ -205,6 +206,10 @@ spec:
               readOnly: true
             - name: grafana-data
               mountPath: /var/lib/grafana
+            - name: grafana-logs
+              mountPath: /var/log/grafana
+            - name: grafana-tmp
+              mountPath: /tmp
       volumes:
         - name: grafana-datasources
           configMap:
@@ -215,6 +220,12 @@ spec:
         - name: grafana-data
           persistentVolumeClaim:
             claimName: crest-grafana-data
+        - name: grafana-logs
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: grafana-tmp
+          emptyDir:
+            sizeLimit: 256Mi
 ---
 apiVersion: v1
 kind: Service

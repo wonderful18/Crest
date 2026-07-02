@@ -249,6 +249,9 @@ const debounceRender = debounce(() => {
     resizeAction,
     touchAction
   })
+  if (!myChart) {
+    return
+  }
   myChart?.render()
   dvMainStore.setViewInstanceInfo(actualChart.id, myChart)
   initScroll()
@@ -709,8 +712,8 @@ onBeforeUnmount(() => {
     myChart?.destroy()
     myChart = null
     resizeObserver?.disconnect()
-  } catch (e) {
-    console.warn(e)
+  } catch {
+    // ignore chart cleanup failures
   }
 })
 

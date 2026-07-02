@@ -67,9 +67,7 @@ export const configHandler = config => {
               delayExecute(null)
             }
           })
-          .catch(e => {
-            console.error(e)
-          })
+          .catch(() => undefined)
           .finally(() => {
             setRefreshStatus(false)
           })

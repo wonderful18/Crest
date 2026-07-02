@@ -460,6 +460,13 @@ public class ChartViewManege {
     public ChartBaseVO chartBaseInfo(Long id, String resourceTable) {
         ChartBasePO po = extChartViewMapper.queryChart(id, resourceTable);
         if (ObjectUtils.isEmpty(po)) return null;
+        if (po.getResourceId() != null) {
+            requireSceneReadAccess(po.getResourceId());
+        } else if (po.getTableId() != null) {
+            requireDatasetAccess(po.getTableId());
+        } else {
+            CrestPermissionUtils.requireCreator(null);
+        }
         ChartBaseVO vo = BeanUtils.copyBean(new ChartBaseVO(), po);
         TypeReference<List<ChartViewFieldDTO>> tokenType = new TypeReference<>() {
         };
@@ -611,11 +618,9 @@ public class ChartViewManege {
     }
 
     public String checkSameDataSet(String viewIdSource, String viewIdTarget) {
-        QueryWrapper<CoreChartView> wrapper = new QueryWrapper<>();
-        wrapper.select("distinct table_id");
-        wrapper.in("id", Arrays.asList(viewIdSource, viewIdTarget));
-        coreChartViewMapper.selectCount(wrapper);
-        if (coreChartViewMapper.selectCount(wrapper) == 1) {
+        CoreChartView source = requireChartReadAccessById(viewIdSource);
+        CoreChartView target = requireChartReadAccessById(viewIdTarget);
+        if (source != null && target != null && Objects.equals(source.getTableId(), target.getTableId())) {
             return "YES";
         } else {
             return "NO";
@@ -624,6 +629,7 @@ public class ChartViewManege {
     }
 
     public List<ViewSelectorVO> viewOption(Long resourceId) {
+        requireSceneReadAccess(resourceId);
         List<ViewSelectorVO> result = extChartViewMapper.queryViewOption(resourceId);
         DataVisualizationInfo dvInfo = visualizationInfoMapper.selectById(resourceId);
         if (dvInfo != null && !CollectionUtils.isEmpty(result)) {
@@ -636,5 +642,28 @@ public class ChartViewManege {
 
     public ChartViewDTO findChartViewAround(String viewId) {
         return extChartViewMapper.findChartViewAround(viewId);
+    }
+
+    private CoreChartView requireChartReadAccessById(String id) {
+        Long chartId = parseChartId(id);
+        CoreChartView chart = coreChartViewMapper.selectById(chartId);
+        if (chart == null) {
+            return null;
+        }
+        requireChartReadAccess(chart.getCreateBy(), chart.getSceneId(), chart.getTableId());
+        return chart;
+    }
+
+    private Long parseChartId(String id) {
+        String trimmed = StringUtils.trimToNull(id);
+        if (trimmed == null) {
+            CrestException.throwException("图表ID不能为空");
+        }
+        try {
+            return Long.valueOf(trimmed);
+        } catch (NumberFormatException e) {
+            CrestException.throwException("图表ID不合法");
+            return null;
+        }
     }
 }

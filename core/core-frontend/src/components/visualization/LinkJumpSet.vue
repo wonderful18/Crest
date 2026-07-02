@@ -1104,7 +1104,11 @@ const resourceEdit = async resourceId => {
     )
     return
   }
-  const newWindow = window.open(baseUrl + resourceId, openType)
+  const newWindow = window.open(
+    baseUrl + resourceId,
+    openType,
+    openType === '_blank' ? 'noopener,noreferrer' : undefined
+  )
   initOpenHandler(newWindow)
 }
 

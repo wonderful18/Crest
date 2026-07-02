@@ -95,9 +95,8 @@ const getFields = async () => {
     nodeField.value.forEach(ele => {
       ele.checked = n.currentDsFields.map(ele => ele.originName).includes(ele.originName)
     })
-  } catch (error) {
+  } catch {
     loading.value = false
-    console.error(error)
   }
 }
 

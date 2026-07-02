@@ -74,9 +74,8 @@ export default {
             })
           })
         },
-        error => {
+        () => {
           disconnect()
-          console.error('连接失败: ' + error)
         }
       )
     }
@@ -84,12 +83,8 @@ export default {
     function disconnect() {
       if (stompClient && stompClient.connected) {
         stompClient.disconnect(
-          function () {
-            console.info('断开连接')
-          },
-          function (error) {
-            console.info('断开连接失败: ' + error)
-          }
+          function () {},
+          function () {}
         )
       }
       stompClient = null

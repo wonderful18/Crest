@@ -10,6 +10,7 @@ import io.crest.api.share.vo.TicketVO;
 import io.crest.commons.utils.CodingUtil;
 import io.crest.share.manage.ShareTicketManage;
 import jakarta.annotation.Resource;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,17 +23,17 @@ public class ShareTicketServer implements ShareTicketApi {
 
     @Override
     @SuppressWarnings("java/xss")
-    public String saveTicket(TicketCreator creator) {
+    public String saveTicket(@RequestBody TicketCreator creator) {
         return shareTicketManage.saveTicket(creator);
     }
 
     @Override
-    public void deleteTicket(TicketDelRequest request) {
+    public void deleteTicket(@RequestBody TicketDelRequest request) {
         shareTicketManage.deleteTicket(request);
     }
 
     @Override
-    public void switchRequire(TicketSwitchRequest request) {
+    public void switchRequire(@RequestBody TicketSwitchRequest request) {
         shareTicketManage.switchRequire(request);
     }
 

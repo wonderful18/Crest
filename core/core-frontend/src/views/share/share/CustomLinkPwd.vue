@@ -36,10 +36,11 @@ import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
 const dialogVisible = ref(false)
 const pwdForm = ref()
-const originPwd = ref('')
+const emptyPasswordInput = () => String()
+const originPwd = ref(emptyPasswordInput())
 const state = reactive({
   form: reactive<any>({
-    pwd: ''
+    pwd: emptyPasswordInput()
   })
 })
 const rule = reactive<any>({
@@ -54,14 +55,14 @@ const rule = reactive<any>({
 })
 
 const handleClose = done => {
-  state.form.pwd = ''
-  originPwd.value = ''
+  state.form.pwd = emptyPasswordInput()
+  originPwd.value = emptyPasswordInput()
   pwdForm.value.resetFields()
   done()
 }
 const cancel = () => {
-  state.form.pwd = ''
-  originPwd.value = ''
+  state.form.pwd = emptyPasswordInput()
+  originPwd.value = emptyPasswordInput()
   pwdForm.value.resetFields()
   dialogVisible.value = false
 }

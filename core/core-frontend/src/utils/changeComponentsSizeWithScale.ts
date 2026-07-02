@@ -79,9 +79,8 @@ function changeComponentsSizeWithScaleCircle(componentDataCopy, scale) {
     if (['Group', 'Tabs'].includes(component.component)) {
       try {
         nextTick(() => groupSizeStyleAdaptor(component))
-      } catch (e) {
+      } catch {
         // 旧Group适配
-        console.error('group adaptor error:' + e)
       }
     }
   })

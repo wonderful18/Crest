@@ -91,16 +91,16 @@ const loadCanvasDataAsync = async (dvId, dvType, ignoreParams = false) => {
       await queryTargetVisualizationJumpInfo(jumpRequestParam).then(rsp => {
         dvMainStore.setNowTargetPanelJumpInfo(rsp.data)
       })
-    } catch (e) {
-      console.error(e)
+    } catch {
+      // ignore target jump metadata loading failures
     }
   }
 
   let argsObject = null
   try {
     argsObject = JSON.parse(props.ticketArgs)
-  } catch (error) {
-    console.error(error)
+  } catch {
+    // ignore invalid ticket argument payloads
   }
   const hasTicketArgs = argsObject && Object.keys(argsObject)
 
@@ -122,8 +122,7 @@ const loadCanvasDataAsync = async (dvId, dvType, ignoreParams = false) => {
       if (hasTicketArgs) {
         attachParam = Object.assign({}, attachParam, argsObject)
       }
-    } catch (e) {
-      console.error(e)
+    } catch {
       ElMessage.error(t('visualization.outer_param_decode_error'))
     }
   }

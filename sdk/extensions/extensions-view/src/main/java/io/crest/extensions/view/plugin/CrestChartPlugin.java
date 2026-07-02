@@ -6,6 +6,7 @@ import io.crest.extensions.view.vo.PluginViewVO;
 import io.crest.plugins.template.CrestPlugin;
 import io.crest.plugins.vo.CrestPluginVO;
 import io.crest.utils.JsonUtil;
+import org.apache.commons.lang3.StringUtils;
 
 public abstract class CrestChartPlugin extends AbstractChartPlugin implements CrestPlugin {
 
@@ -21,9 +22,22 @@ public abstract class CrestChartPlugin extends AbstractChartPlugin implements Cr
             pluginInfo = getPluginInfo();
         } catch (Exception e) {
             CrestException.throwException(e);
+            return null;
+        }
+        if (pluginInfo == null) {
+            CrestException.throwException("Plugin info not exists");
+            return null;
         }
         String config = pluginInfo.getConfig();
+        if (StringUtils.isBlank(config)) {
+            CrestException.throwException("Plugin config not exists");
+            return null;
+        }
         PluginViewVO vo = JsonUtil.parseObject(config, PluginViewVO.class);
+        if (vo == null) {
+            CrestException.throwException("Plugin config not exists");
+            return null;
+        }
         vo.setIcon(pluginInfo.getIcon());
         return vo;
     }

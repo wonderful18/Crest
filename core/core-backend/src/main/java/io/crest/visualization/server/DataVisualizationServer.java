@@ -94,6 +94,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class DataVisualizationServer implements DataVisualizationApi {
 
+    private static final long MAX_TEMPLATE_FILE_BYTES = 50L * 1024L * 1024L;
+
     @Resource
     private DataVisualizationInfoMapper visualizationInfoMapper;
 
@@ -200,12 +202,22 @@ public class DataVisualizationServer implements DataVisualizationApi {
     @CrestLinkPermit("#p0.id")
     @CrestAudit(id = "#p0.id", ot = LogOT.READ, stExp = "#p0.busiFlag")
     @Override
-    public DataVisualizationVO findById(DataVisualizationBaseRequest request) {
+    public DataVisualizationVO findById(@RequestBody DataVisualizationBaseRequest request) {
         Long dvId = request.getId();
         String busiFlag = request.getBusiFlag();
         String resourceTable = request.getResourceTable();
+        boolean mainEdit = DataVisualizationConstants.QUERY_SOURCE.MAIN_EDIT.equals(request.getSource());
+        if (mainEdit && CrestPermissionUtils.currentUserId() != null) {
+            DataVisualizationVO permissionSource = extDataVisualizationMapper.findDvInfo(dvId, busiFlag, CommonConstants.RESOURCE_TABLE.CORE);
+            if (permissionSource == null) {
+                permissionSource = extDataVisualizationMapper.findDvInfo(dvId, busiFlag, resourceTable);
+            }
+            if (permissionSource != null) {
+                CrestPermissionUtils.requireCreator(permissionSource.getCreateBy());
+            }
+        }
         // 如果是编辑查询 则进行镜像检查
-        if (DataVisualizationConstants.QUERY_SOURCE.MAIN_EDIT.equals(request.getSource())) {
+        if (mainEdit) {
             QueryWrapper<SnapshotDataVisualizationInfo> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("id", dvId);
             queryWrapper.in("status", Arrays.asList(CommonConstants.DV_STATUS.UNPUBLISHED, CommonConstants.DV_STATUS.SAVED_UNPUBLISHED)); // 状态为0 未发布 和 2 已保存未发布的 不需要重置镜像
@@ -216,8 +228,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
         DataVisualizationVO result = extDataVisualizationMapper.findDvInfo(dvId, busiFlag, resourceTable);
         if (result != null) {
             if (
-                    DataVisualizationConstants.QUERY_SOURCE.MAIN_EDIT.equals(request.getSource())
-                            && CrestPermissionUtils.currentUserId() != null
+                    mainEdit && CrestPermissionUtils.currentUserId() != null
             ) {
                 CrestPermissionUtils.requireCreator(result.getCreateBy());
             } else if (
@@ -394,7 +405,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, stExp = "#p0.type")
     @Override
     @Transactional
-    public String saveCanvas(DataVisualizationBaseRequest request) throws Exception {
+    public String saveCanvas(@RequestBody DataVisualizationBaseRequest request) throws Exception {
         /*
          * 发布兼容逻辑
          * saveCanvas 为初次保存 包括 模板 应用 普通创建 所有变更操作都走snapshot表
@@ -881,7 +892,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     }
 
     @Override
-    public String appCanvasNameCheck(DataVisualizationBaseRequest request) throws Exception {
+    public String appCanvasNameCheck(@RequestBody DataVisualizationBaseRequest request) throws Exception {
         Long datasetFolderPid = request.getDatasetFolderPid();
         String datasetFolderName = request.getDatasetFolderName();
         QueryWrapper<CoreDatasetGroup> queryWrapper = new QueryWrapper<>();
@@ -896,7 +907,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     }
 
     @Override
-    public String checkCanvasChange(DataVisualizationBaseRequest request) {
+    public String checkCanvasChange(@RequestBody DataVisualizationBaseRequest request) {
         Long dvId = request.getId();
         if (dvId == null) {
             CrestException.throwException("ID can not be null");
@@ -914,7 +925,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, stExp = "#p0.type")
     @Override
     @Transactional
-    public DataVisualizationVO updateCanvas(DataVisualizationBaseRequest request) {
+    public DataVisualizationVO updateCanvas(@RequestBody DataVisualizationBaseRequest request) {
         for (Map.Entry<Long, ChartViewDTO> ele : request.getCanvasViewInfo().entrySet()) {
             DatasetUtils.viewDecode(ele.getValue());
         }
@@ -952,7 +963,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     @Override
     @Transactional
-    public void updatePublishStatus(DataVisualizationBaseRequest request) {
+    public void updatePublishStatus(@RequestBody DataVisualizationBaseRequest request) {
         /**
          * 如果当前传入状态是1（已发布），则原始状态0（未发布）-》1（已发布）；2（已保存未发布）-》1（已发布）
          * 统一处理为1.删除主表数据，2.将镜像表数据统一copy到主表 不删除镜像数据（发布状态后镜像数据和主表数据是保持一致的）
@@ -977,7 +988,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
     }
 
     @Override
-    public void recoverToPublished(DataVisualizationBaseRequest request) {
+    public void recoverToPublished(@RequestBody DataVisualizationBaseRequest request) {
+        DataVisualizationInfo current = visualizationInfoMapper.selectById(request.getId());
+        coreVisualizationManage.requireVisualizationManage(current);
         coreVisualizationManage.dvSnapshotRecover(request.getId());
         DataVisualizationInfo visualizationInfo = new DataVisualizationInfo();
         visualizationInfo.setId(request.getId());
@@ -993,7 +1006,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, stExp = "#p0.type")
     @Override
     @Transactional
-    public void updateBase(DataVisualizationBaseRequest request) {
+    public void updateBase(@RequestBody DataVisualizationBaseRequest request) {
         if (request.getId() != null) {
             coreVisualizationManage.innerEdit(BeanUtils.copyBean(new DataVisualizationInfo(), request));
         } else {
@@ -1022,7 +1035,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     @CrestAudit(ot = LogOT.READ, st = LogST.PANEL)
     @Override
-    public List<BusiNodeVO> tree(BusiNodeRequest request) {
+    public List<BusiNodeVO> tree(@RequestBody BusiNodeRequest request) {
         if (StringUtils.isEmpty(request.getResourceTable())) {
             request.setResourceTable(CommonConstants.RESOURCE_TABLE.SNAPSHOT);
         }
@@ -1066,14 +1079,14 @@ public class DataVisualizationServer implements DataVisualizationApi {
     }
 
     @Override
-    public Map<String, List<BusiNodeVO>> interactiveTree(Map<String, BusiNodeRequest> requestMap) {
+    public Map<String, List<BusiNodeVO>> interactiveTree(@RequestBody Map<String, BusiNodeRequest> requestMap) {
         return coreBusiManage.interactiveTree(requestMap);
     }
 
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.MODIFY, stExp = "#p0.type")
     @Transactional
     @Override
-    public void move(DataVisualizationBaseRequest request) {
+    public void move(@RequestBody DataVisualizationBaseRequest request) {
         coreVisualizationManage.move(request);
     }
 
@@ -1090,7 +1103,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
      */
     @Transactional
     @Override
-    public String copy(DataVisualizationBaseRequest request) {
+    public String copy(@RequestBody DataVisualizationBaseRequest request) {
         Long sourceDvId = request.getId(); //源仪表板ID
         Long newDvId = IDUtils.snowID(); //目标仪表板ID
         Long copyId = IDUtils.snowID() / 100; // 本次复制执行ID
@@ -1144,6 +1157,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     @Override
     public String updateCheckVersion(Long dvId) {
+        DataVisualizationInfo current = visualizationInfoMapper.selectById(dvId);
+        coreVisualizationManage.requireVisualizationManage(current);
         DataVisualizationInfo updateInfo = new DataVisualizationInfo();
         updateInfo.setId(dvId);
         updateInfo.setCheckVersion(crestVersion);
@@ -1152,7 +1167,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     }
 
     @Override
-    public DataVisualizationVO decompression(DataVisualizationBaseRequest request) throws Exception {
+    public DataVisualizationVO decompression(@RequestBody DataVisualizationBaseRequest request) throws Exception {
         try {
             Long newDvId = IDUtils.snowID();
             String newFrom = request.getNewFrom();
@@ -1339,7 +1354,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
         if (file == null || file.isEmpty()) {
             CrestException.throwException("请选择模板文件");
         }
+        FileUtils.validateUploadFileSize(file, MAX_TEMPLATE_FILE_BYTES, "模板文件");
         String fileName = StringUtils.defaultString(file.getOriginalFilename());
+        FileUtils.validateUploadFilename(fileName);
         String lowerFileName = fileName.toLowerCase(Locale.ROOT);
         if (!lowerFileName.endsWith(".det2") && !lowerFileName.endsWith(".det2app")) {
             CrestException.throwException("仅支持 DET2 或 DET2APP 模板文件");
@@ -1414,6 +1431,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     @Override
     public List<VisualizationViewTableDTO> detailList(Long dvId) {
+        requireVisualizationRead(dvId);
         List<VisualizationViewTableDTO> result = extDataVisualizationMapper.getVisualizationViewDetails(dvId);
         SnapshotDataVisualizationInfo dvInfo = snapshotMapper.selectById(dvId);
         if (dvInfo != null && !CollectionUtils.isEmpty(result)) {
@@ -1425,7 +1443,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
     }
 
     @Override
-    public VisualizationExport2AppVO export2AppCheck(VisualizationAppExportRequest appExportRequest) {
+    public VisualizationExport2AppVO export2AppCheck(@RequestBody VisualizationAppExportRequest appExportRequest) {
+        validateAppExportScope(appExportRequest);
         List<Long> viewIds = appExportRequest.getViewIds();
         List<Long> dsIds = appExportRequest.getDsIds();
         Long dvId = appExportRequest.getDvId();
@@ -1496,29 +1515,65 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 .collect(Collectors.toList());
     }
 
+    private void validateAppExportScope(VisualizationAppExportRequest request) {
+        if (request == null || request.getDvId() == null) {
+            CrestException.throwException("资源不存在");
+            return;
+        }
+        Long dvId = request.getDvId();
+        DataVisualizationInfo current = visualizationInfoMapper.selectById(dvId);
+        coreVisualizationManage.requireVisualizationManage(current);
+
+        Set<Long> enabledViewIds = new LinkedHashSet<>();
+        enabledViewIds.addAll(getEnabledViewIds(dvId, CommonConstants.RESOURCE_TABLE.CORE));
+        enabledViewIds.addAll(getEnabledViewIds(dvId, CommonConstants.RESOURCE_TABLE.SNAPSHOT));
+        List<Long> requestedViewIds = Optional.ofNullable(request.getViewIds()).orElseGet(List::of);
+        if (requestedViewIds.stream().anyMatch(Objects::isNull)
+                || !enabledViewIds.containsAll(requestedViewIds)) {
+            CrestException.throwException("导出范围包含无效图表");
+        }
+
+        List<Long> requestedDsIds = Optional.ofNullable(request.getDsIds()).orElseGet(List::of);
+        if (requestedDsIds.stream().anyMatch(Objects::isNull)) {
+            CrestException.throwException("导出范围包含无效数据集");
+        }
+        if (!requestedDsIds.isEmpty()) {
+            if (enabledViewIds.isEmpty()) {
+                CrestException.throwException("导出范围包含无效数据集");
+            }
+            Set<Long> allowedDsIds = findAppChartViews(new ArrayList<>(enabledViewIds)).stream()
+                    .map(AppCoreChartViewVO::getTableId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            if (!allowedDsIds.containsAll(requestedDsIds)) {
+                CrestException.throwException("导出范围包含无效数据集");
+            }
+        }
+    }
+
     @CrestAudit(id = "#p0.id", ot = LogOT.APP_TEMPLATE_EXPORT, stExp = "#p0.type")
-    public void exportLogApp(DataVisualizationBaseRequest request) {
+    public void exportLogApp(@RequestBody DataVisualizationBaseRequest request) {
 
     }
 
     @CrestAudit(id = "#p0.id", ot = LogOT.TEMPLATE_EXPORT, stExp = "#p0.type")
-    public void exportLogTemplate(DataVisualizationBaseRequest request) {
+    public void exportLogTemplate(@RequestBody DataVisualizationBaseRequest request) {
 
     }
 
     @CrestAudit(id = "#p0.id", ot = LogOT.PDF_EXPORT, stExp = "#p0.type")
-    public void exportLogPDF(DataVisualizationBaseRequest request) {
+    public void exportLogPDF(@RequestBody DataVisualizationBaseRequest request) {
 
     }
 
     @CrestAudit(id = "#p0.id", ot = LogOT.IMG_EXPORT, stExp = "#p0.type")
-    public void exportLogImg(DataVisualizationBaseRequest request) {
+    public void exportLogImg(@RequestBody DataVisualizationBaseRequest request) {
 
     }
 
 
     @Override
-    public void nameCheck(DataVisualizationBaseRequest request) {
+    public void nameCheck(@RequestBody DataVisualizationBaseRequest request) {
         QueryWrapper<DataVisualizationInfo> wrapper = new QueryWrapper<>();
         if (DataVisualizationConstants.RESOURCE_OPT_TYPE.MOVE.equals(request.getOpt()) || DataVisualizationConstants.RESOURCE_OPT_TYPE.RENAME.equals(request.getOpt()) || DataVisualizationConstants.RESOURCE_OPT_TYPE.EDIT.equals(request.getOpt()) || DataVisualizationConstants.RESOURCE_OPT_TYPE.COPY.equals(request.getOpt())) {
             if (request.getPid() == null) {
@@ -1593,6 +1648,22 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
         }
         return result;
+    }
+
+    private void requireVisualizationRead(Long dvId) {
+        if (dvId == null) {
+            CrestException.throwException("资源不存在");
+            return;
+        }
+        DataVisualizationInfo info = visualizationInfoMapper.selectById(dvId);
+        if (info == null) {
+            CrestException.throwException("资源不存在");
+            return;
+        }
+        if (CrestPermissionUtils.currentUserId() != null
+                && !dataPortalPermissionManage.canReadPublishedVisualization(dvId, info.getType())) {
+            CrestPermissionUtils.requireCreator(info.getCreateBy());
+        }
     }
 
     @Resource

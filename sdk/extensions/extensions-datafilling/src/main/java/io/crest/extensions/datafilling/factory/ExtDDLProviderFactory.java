@@ -23,6 +23,8 @@ public class ExtDDLProviderFactory {
             case mysql, mariadb -> {
                 return SpringContextUtil.getApplicationContext().getBean("mysqlExtDDLProvider", ExtDDLProvider.class);
             }
+            default -> {
+            }
         }
         ExtDDLProvider instance = getInstance(type);
         if (instance == null) {

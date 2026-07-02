@@ -1,11 +1,11 @@
 package io.crest.embedded.server;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.crest.exception.CrestException;
 import io.crest.utils.ServletUtils;
+import io.crest.utils.TokenUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,7 +34,7 @@ public class EmbeddedTokenServer {
             return Map.of();
         }
         try {
-            DecodedJWT jwt = JWT.decode(token);
+            DecodedJWT jwt = TokenUtils.verifyUserToken(token);
             Map<String, Object> result = new LinkedHashMap<>();
             ARG_CONTAINER_CLAIMS.forEach(claimName -> putMapClaim(result, jwt.getClaim(claimName)));
             jwt.getClaims().forEach((key, claim) -> {
@@ -46,7 +46,7 @@ public class EmbeddedTokenServer {
                 }
             });
             return result;
-        } catch (JWTDecodeException e) {
+        } catch (CrestException | JWTVerificationException e) {
             CrestException.throwException("embedded token is invalid");
             return Map.of();
         }

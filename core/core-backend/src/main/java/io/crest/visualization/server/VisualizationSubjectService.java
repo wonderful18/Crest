@@ -6,6 +6,7 @@ import io.crest.api.visualization.request.VisualizationSubjectRequest;
 import io.crest.api.visualization.vo.VisualizationSubjectVO;
 import io.crest.exception.CrestException;
 import io.crest.utils.BeanUtils;
+import io.crest.utils.CrestPermissionUtils;
 import io.crest.utils.IDUtils;
 import io.crest.visualization.dao.auto.entity.VisualizationSubject;
 import io.crest.visualization.dao.auto.mapper.VisualizationSubjectMapper;
@@ -13,6 +14,7 @@ import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,7 +34,7 @@ public class VisualizationSubjectService implements VisualizationSubjectApi {
     @Resource
     VisualizationSubjectMapper subjectMapper;
     @Override
-    public List<VisualizationSubjectVO> query(VisualizationSubjectRequest request) {
+    public List<VisualizationSubjectVO> query(@RequestBody VisualizationSubjectRequest request) {
         QueryWrapper<VisualizationSubject> wrapper = new QueryWrapper<>();
         wrapper.eq("delete_flag", 0);
         List<VisualizationSubject> result =subjectMapper.selectList(wrapper);
@@ -44,7 +46,7 @@ public class VisualizationSubjectService implements VisualizationSubjectApi {
     }
 
     @Override
-    public List querySubjectWithGroup(VisualizationSubjectRequest request) {
+    public List querySubjectWithGroup(@RequestBody VisualizationSubjectRequest request) {
         List result = new ArrayList();
         int pageSize = 4;
         QueryWrapper<VisualizationSubject> wrapper = new QueryWrapper<>();
@@ -57,7 +59,8 @@ public class VisualizationSubjectService implements VisualizationSubjectApi {
         return result;
     }
     @Override
-    public synchronized void update(VisualizationSubjectRequest request) {
+    public synchronized void update(@RequestBody VisualizationSubjectRequest request) {
+        CrestPermissionUtils.requireAdmin();
         if (StringUtils.isEmpty(request.getId())) {
             QueryWrapper<VisualizationSubject> wrapper = new QueryWrapper<>();
             wrapper.eq("name", request.getName());

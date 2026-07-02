@@ -6,7 +6,10 @@ import io.crest.exception.CrestException;
 import io.crest.font.manage.FontManage;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,12 +28,12 @@ public class FontServer implements FontApi {
     }
 
     @Override
-    public FontDto create(FontDto fontDto) {
+    public FontDto create(@RequestBody FontDto fontDto) {
         return fontManage.create(fontDto);
     }
 
     @Override
-    public FontDto edit(FontDto fontDto) {
+    public FontDto edit(@RequestBody FontDto fontDto) {
         return fontManage.edit(fontDto);
     }
 
@@ -40,17 +43,17 @@ public class FontServer implements FontApi {
     }
 
     @Override
-    public void changeDefault(FontDto fontDto) {
+    public void changeDefault(@RequestBody FontDto fontDto) {
         fontManage.changeDefault(fontDto);
     }
 
     @Override
-    public FontDto upload(MultipartFile file) throws CrestException {
+    public FontDto upload(@RequestParam("file") MultipartFile file) throws CrestException {
         return fontManage.upload(file);
     }
 
     @Override
-    public void download(String file, HttpServletResponse response) throws CrestException {
+    public void download(@PathVariable("file") String file, HttpServletResponse response) throws CrestException {
         fontManage.download(file, response);
     }
 

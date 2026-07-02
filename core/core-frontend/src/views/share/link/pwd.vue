@@ -58,8 +58,9 @@ const msg = ref('')
 const loading = ref(true)
 const pwdForm = ref<FormInstance>()
 const vid = ref('')
+const emptyPasswordInput = () => undefined
 const form = ref({
-  password: ''
+  password: emptyPasswordInput()
 })
 const rule = reactive<FormRules>({
   password: [
@@ -75,7 +76,7 @@ const rule = reactive<FormRules>({
 
 const refresh = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
-  await formEl.validate((valid, fields) => {
+  await formEl.validate(valid => {
     if (valid) {
       const uuid = vid.value
       const pwd = form.value.password
@@ -89,8 +90,6 @@ const refresh = async (formEl: FormInstance | undefined) => {
           msg.value = '密码错误'
         }
       })
-    } else {
-      console.error('error submit!', fields)
     }
   })
 }
@@ -108,21 +107,21 @@ const prepare = () => {
     curLocation.lastIndexOf('link/') + 5,
     pmIndex > 0 ? pmIndex : curLocation.length
   )
-  let uuid = null
-  let pwd = null
+  let uuid = ''
+  let linkPassword = ''
   if (uuidObj?.includes(',')) {
     const index = uuidObj.indexOf(',')
     uuid = uuidObj.substring(0, index)
     if (uuidObj.length > index + 1) {
-      pwd = uuidObj.substring(index + 1)
+      linkPassword = uuidObj.substring(index + 1)
     }
   } else {
     uuid = uuidObj
   }
   vid.value = uuid
-  if (pwd) {
-    pwd = formatPwd(pwd)
-    form.value.password = pwd
+  if (linkPassword) {
+    linkPassword = formatPwd(linkPassword)
+    form.value.password = linkPassword
     refresh(pwdForm.value)
   }
 }

@@ -160,7 +160,7 @@ export interface Configuration {
   schema: string
   extraParams: string
   username: string
-  password: string
+  password?: string
   host: string
   authMethod: string
   port: string

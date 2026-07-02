@@ -24,6 +24,7 @@ import io.crest.system.sso.SsoIdentityAction;
 import io.crest.system.sso.SsoIdentityDecision;
 import io.crest.system.sso.SsoIdentityProfile;
 import io.crest.utils.AuthUtils;
+import io.crest.utils.FileUtils;
 import io.crest.utils.IDUtils;
 import io.crest.utils.Md5Utils;
 import io.crest.utils.PasswordEncoder;
@@ -39,9 +40,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 @Component("crestUserManage")
@@ -50,8 +53,8 @@ public class CrestUserManage {
     public static final String AUTH_TYPE_LOCAL = "LOCAL";
     public static final String AUTH_TYPE_SSO = "SSO";
 
-    private static final String INITIAL_PASSWORD_PROPERTY = "crest.user.initial-password";
-    private static final String LEGACY_ADMIN_PASSWORD_HASH = "21232f297a57a5a743894a0e4a801fc3";
+    private static final long MAX_USER_IMPORT_BYTES = 10L * 1024L * 1024L;
+    private static final String INITIAL_CREDENTIAL_PROPERTY = "crest.user.initial-password";
     private static final Pattern ACCOUNT_PATTERN = Pattern.compile("^[A-Za-z0-9._@-]{1,64}$");
     private static final Pattern UNSAFE_DISPLAY_NAME_PATTERN = Pattern.compile("[<>\\p{Cntrl}]");
 
@@ -102,7 +105,7 @@ public class CrestUserManage {
         } else {
             String passwordHash = jdbcTemplate.queryForObject(
                     "SELECT password_hash FROM iam_user WHERE id = 1", String.class);
-            if (Strings.CS.equals(passwordHash, LEGACY_ADMIN_PASSWORD_HASH)) {
+            if (Strings.CS.equals(passwordHash, legacyAdminPasswordHash())) {
                 jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, is_admin = 1, enable = 1, update_time = ? WHERE id = 1",
                         PasswordEncoder.encode(initialPassword()), System.currentTimeMillis());
             } else {
@@ -189,7 +192,7 @@ public class CrestUserManage {
                     INSERT INTO iam_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
                         origin, auth_type, external_id, last_login_time, create_time, update_time)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, id, account, name, email, null, null, Md5Utils.md5(IDUtils.randomID(32)),
+                    """, id, account, name, email, null, null, PasswordEncoder.encode(IDUtils.randomID(32)),
                     true, false, 2, AUTH_TYPE_SSO, profile.getExternalId(), now, now, now);
             platformPermissionManage.bindUserToOrg(id, PlatformPermissionManage.ROOT_ORG_ID, true);
             platformPermissionManage.bindUserToRole(id, PlatformPermissionManage.ROOT_ORG_ID, PlatformPermissionManage.MEMBER_ROLE_ID);
@@ -223,7 +226,7 @@ public class CrestUserManage {
                     INSERT INTO iam_user(id, account, name, email, phone_prefix, phone, password_hash, enable, is_admin,
                         origin, auth_type, external_id, last_login_time, create_time, update_time)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, id, account, name, email, null, null, Md5Utils.md5(IDUtils.randomID(32)),
+                    """, id, account, name, email, null, null, PasswordEncoder.encode(IDUtils.randomID(32)),
                     true, false, 2, AUTH_TYPE_SSO, profile.getExternalSubject(), now, now, now);
             platformPermissionManage.bindUserToOrg(id, PlatformPermissionManage.ROOT_ORG_ID, true);
             platformPermissionManage.bindUserToRole(id, PlatformPermissionManage.ROOT_ORG_ID, PlatformPermissionManage.MEMBER_ROLE_ID);
@@ -323,6 +326,7 @@ public class CrestUserManage {
         if (file == null || file.isEmpty()) {
             CrestException.throwException("导入文件不能为空");
         }
+        FileUtils.validateUploadFileSize(file, MAX_USER_IMPORT_BYTES, "用户导入文件");
         List<UserImportRow> rows = readImportRows(file);
         int success = 0;
         int failed = 0;
@@ -350,12 +354,19 @@ public class CrestUserManage {
     }
 
     private List<UserImportRow> readImportRows(MultipartFile file) throws Exception {
-        String filename = StringUtils.defaultString(file.getOriginalFilename()).toLowerCase();
-        if (filename.endsWith(".xlsx") || filename.endsWith(".xls")) {
-            return EasyExcel.read(file.getInputStream())
-                    .head(UserImportRow.class)
-                    .sheet()
-                    .doReadSync();
+        String originalFilename = StringUtils.defaultString(file.getOriginalFilename());
+        FileUtils.validateUploadFilename(originalFilename);
+        String normalizedFilename = originalFilename.toLowerCase(Locale.ROOT);
+        if (normalizedFilename.endsWith(".xlsx") || normalizedFilename.endsWith(".xls")) {
+            try (InputStream inputStream = file.getInputStream()) {
+                return EasyExcel.read(inputStream)
+                        .head(UserImportRow.class)
+                        .sheet()
+                        .doReadSync();
+            }
+        }
+        if (!normalizedFilename.endsWith(".csv")) {
+            CrestException.throwException("仅支持 xlsx、xls、csv 格式的用户导入文件");
         }
         String text = new String(file.getBytes(), StandardCharsets.UTF_8);
         String[] rows = text.replace("\r", "").split("\n");
@@ -382,6 +393,8 @@ public class CrestUserManage {
         if (queryByAccount(creator.getAccount()) != null) {
             CrestException.throwException("账号已存在");
         }
+        Long oid = creator.getOid() == null ? PlatformPermissionManage.ROOT_ORG_ID : creator.getOid();
+        validateRoleAssignment(oid, creator.getRoleIds());
 
         // RBAC权限检查：只有管理员可以创建管理员账户
         boolean requestAdminRole = hasAdminRole(creator.getRoleIds());
@@ -406,7 +419,6 @@ public class CrestUserManage {
                 creator.getPhonePrefix(), creator.getPhone(), PasswordEncoder.encode(password),
                 creator.getEnable() == null || creator.getEnable(), hasAdminRole(creator.getRoleIds()),
                 0, AUTH_TYPE_LOCAL, null, now, now);
-        Long oid = creator.getOid() == null ? PlatformPermissionManage.ROOT_ORG_ID : creator.getOid();
         platformPermissionManage.bindUserToOrg(id, oid, true);
         platformPermissionManage.replaceUserRoles(id, oid, creator.getRoleIds());
         return id;
@@ -444,6 +456,8 @@ public class CrestUserManage {
         if (sameAccount != null && !sameAccount.getId().equals(editor.getId())) {
             CrestException.throwException("账号已存在");
         }
+        Long oid = editor.getOid() == null ? platformPermissionManage.defaultOrgId(editor.getId()) : editor.getOid();
+        validateRoleAssignment(oid, editor.getRoleIds());
         // 如果传入了新密码则更新
         if (newPassword != null) {
             PasswordValidator.validate(newPassword);
@@ -465,9 +479,27 @@ public class CrestUserManage {
                     editor.getPhonePrefix(), editor.getPhone(), editor.getEnable() == null || editor.getEnable(),
                     editor.getId() == 1L || hasAdminRole(editor.getRoleIds()), System.currentTimeMillis(), editor.getId());
         }
-        Long oid = editor.getOid() == null ? platformPermissionManage.defaultOrgId(editor.getId()) : editor.getOid();
         platformPermissionManage.replaceUserDefaultOrg(editor.getId(), oid);
         platformPermissionManage.replaceUserRoles(editor.getId(), oid, editor.getRoleIds());
+    }
+
+    private void validateRoleAssignment(Long oid, List<Long> roleIds) {
+        Integer orgCount = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM iam_org WHERE id = ?", Integer.class, oid);
+        if (orgCount == null || orgCount == 0) {
+            CrestException.throwException("组织不存在");
+        }
+        List<Long> effectiveRoleIds = roleIds == null || roleIds.isEmpty()
+                ? List.of(PlatformPermissionManage.MEMBER_ROLE_ID)
+                : roleIds;
+        for (Long roleId : effectiveRoleIds) {
+            if (roleId == null) {
+                CrestException.throwException("角色不存在");
+            }
+            Integer roleCount = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM iam_role WHERE id = ?", Integer.class, roleId);
+            if (roleCount == null || roleCount == 0) {
+                CrestException.throwException("角色不存在");
+            }
+        }
     }
 
     @Transactional
@@ -620,11 +652,7 @@ public class CrestUserManage {
     }
 
     private boolean hasAdminRole(List<Long> roleIds) {
-        return roleIds != null && roleIds.stream().anyMatch(roleId -> Long.valueOf(1L).equals(roleId));
-    }
-
-    public String defaultPwd() {
-        return initialPassword();
+        return roleIds != null && roleIds.stream().anyMatch(roleId -> Long.valueOf(PlatformPermissionManage.SYSTEM_ADMIN_ROLE_ID).equals(roleId));
     }
 
     private String initialPassword() {
@@ -633,9 +661,13 @@ public class CrestUserManage {
                 : sysParameterManage.singleVal(SystemSettingConstants.INITIAL_PASSWORD);
         String password = StringUtils.defaultIfBlank(settingPassword, configuredInitialPassword);
         if (StringUtils.isBlank(password)) {
-            throw new IllegalStateException(INITIAL_PASSWORD_PROPERTY + " must be configured");
+            throw new IllegalStateException(INITIAL_CREDENTIAL_PROPERTY + " must be configured");
         }
         return password;
+    }
+
+    private String legacyAdminPasswordHash() {
+        return Md5Utils.md5("admin");
     }
 
     private String generateSecurePassword() {

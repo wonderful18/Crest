@@ -33,7 +33,7 @@ export const logoutHandler = (justClean?: boolean, save_platform_status = false)
         pathname = pathname.replace('mobile.html', '')
       }
       pathname = pathname.substring(0, pathname.length - 1)
-      window.location.href = pathname + '/oidcbi/oidc/logout'
+      window.location.assign(buildSameOriginUrl(pathname, '/oidcbi/oidc/logout'))
       return
     } else if (pathname.includes('casbi/')) {
       if (save_platform_status) {
@@ -44,16 +44,38 @@ export const logoutHandler = (justClean?: boolean, save_platform_status = false)
         pathname = pathname.replace('mobile.html', '')
       }
       pathname = pathname.substring(0, pathname.length - 1)
-      const uri = window.location.href
-      window.location.href = pathname + '/casbi/cas/logout?service=' + uri
+      const logoutUrl = new URL(buildSameOriginUrl(pathname, '/casbi/cas/logout'))
+      logoutUrl.searchParams.set('service', window.location.href)
+      window.location.assign(logoutUrl.toString())
       return
     }
     pathname = pathname.substring(0, pathname.length - 1)
   }
-  if (wsCache.get('custom_auth_logout_url')) {
-    window.location.href = wsCache.get('custom_auth_logout_url')
+  const customLogoutUrl = safeLogoutUrl(wsCache.get('custom_auth_logout_url'))
+  if (customLogoutUrl) {
+    window.location.href = customLogoutUrl
   }
   router.push(justClean ? queryRedirectPath : `/login?redirect=${queryRedirectPath}`)
+}
+
+const buildSameOriginUrl = (basePath: string, logoutPath: string) => {
+  return new URL(`${basePath}${logoutPath}`, window.location.origin).toString()
+}
+
+const safeLogoutUrl = (url?: string) => {
+  if (!url) return null
+  try {
+    const target = new URL(url, window.location.origin)
+    if (!['http:', 'https:'].includes(target.protocol)) {
+      return null
+    }
+    if (target.username || target.password) {
+      return null
+    }
+    return target.href
+  } catch {
+    return null
+  }
 }
 
 const removeCache = () => {

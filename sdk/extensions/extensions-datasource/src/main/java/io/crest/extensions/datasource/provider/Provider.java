@@ -20,7 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.Statement;
@@ -434,11 +435,13 @@ public abstract class Provider {
     }
 
     public boolean isPortAvailable(int port) {
-        // Localhost-only port probe; no application data or credentials are sent.
-        try (Socket socket = new Socket("127.0.0.1", port)) { // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
-            return false;
-        } catch (IOException e) {
+        // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            serverSocket.setReuseAddress(false);
+            serverSocket.bind(new InetSocketAddress("127.0.0.1", port));
             return true;
+        } catch (IOException e) {
+            return false;
         }
     }
 

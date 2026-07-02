@@ -137,8 +137,8 @@ const clearLinkage = () => {
     myChart?.setState('active', () => true, false)
     myChart?.setState('inactive', () => true, false)
     myChart?.setState('selected', () => true, false)
-  } catch (e) {
-    console.warn('clearLinkage error')
+  } catch {
+    // ignore stale linkage state
   }
 }
 const reDrawView = () => {
@@ -372,8 +372,8 @@ const renderG2Plot = async (chart, chartView: G2PlotChartView<any, any>) => {
       if (linkageActiveHistory.value) {
         linkageActive()
       }
-    } catch (e) {
-      console.error('renderG2Plot error', e)
+    } catch {
+      // keep the previous chart state when rendering fails
     }
   }, 300)
 }
@@ -801,8 +801,8 @@ onBeforeUnmount(() => {
     myChart?.destroy()
     resizeObserver?.disconnect()
     intersectionObserver?.disconnect()
-  } catch (e) {
-    console.warn(e)
+  } catch {
+    // ignore chart cleanup failures
   }
 })
 

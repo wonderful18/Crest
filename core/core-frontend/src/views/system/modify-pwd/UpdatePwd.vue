@@ -11,12 +11,17 @@ import { isMobile } from '@/utils/utils'
 
 const { t } = useI18n()
 
-const defaultForm = {
-  pwd: '',
-  newPwd: '',
-  confirm: ''
+type PasswordForm = {
+  pwd?: string
+  newPwd?: string
+  confirm?: string
 }
-const pwdForm = reactive(cloneDeep(defaultForm))
+const defaultForm: PasswordForm = {
+  pwd: undefined,
+  newPwd: undefined,
+  confirm: undefined
+}
+const pwdForm = reactive<PasswordForm>(cloneDeep(defaultForm))
 
 const validatePwd = (_: any, value: any, callback: any) => {
   if (value === pwdForm.pwd) {
@@ -85,8 +90,8 @@ const emits = defineEmits(['success'])
 const save = () => {
   updatePwdForm.value.validate(val => {
     if (val) {
-      const pwd = rsaEncryp(pwdForm.pwd)
-      const newPwd = rsaEncryp(pwdForm.newPwd)
+      const pwd = rsaEncryp(pwdForm.pwd || String())
+      const newPwd = rsaEncryp(pwdForm.newPwd || String())
       request.post({ url: '/user/modify-password', data: { pwd, newPwd } }).then(() => {
         if (isMobile()) {
           emits('success')

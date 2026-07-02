@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
-import { useI18n } from '@/hooks/web/useI18n'
+import { useI18n } from 'vue-i18n'
 import AuthTree from './AuthTree.vue'
+import { normalizeDynamicDateFilterRule } from './dynamicDateFilterRule.mjs'
 
 const { t } = useI18n()
 
@@ -96,10 +97,10 @@ const errorDetected = ({
 
 const getTimeValue = dynamicTimeSetting => {
   const relativeToCurrentTypeMap = {
-    year: '年',
-    month: '月',
-    date: '日',
-    datetime: '日'
+    year: t('cron.year'),
+    month: t('cron.month'),
+    date: t('cron.day'),
+    datetime: t('cron.day')
   }
   let timeValue = ''
   const {
@@ -113,42 +114,42 @@ const getTimeValue = dynamicTimeSetting => {
   if (relativeToCurrent !== 'custom') {
     timeValue = [
       {
-        label: '今年',
+        label: t('dynamic_year.current'),
         value: 'thisYear'
       },
       {
-        label: '去年',
+        label: t('dynamic_year.last'),
         value: 'lastYear'
       },
       {
-        label: '本月',
+        label: t('cron.this_month'),
         value: 'thisMonth'
       },
       {
-        label: '上月',
+        label: t('dynamic_month.last'),
         value: 'lastMonth'
       },
       {
-        label: '今天',
+        label: t('dynamic_time.today'),
         value: 'today'
       },
       {
-        label: '昨天',
+        label: t('dynamic_time.yesterday'),
         value: 'yesterday'
       },
       {
-        label: '月初',
+        label: t('dynamic_time.firstOfMonth'),
         value: 'monthBeginning'
       },
       {
-        label: '年初',
+        label: t('dynamic_time.firstOfYear'),
         value: 'yearBeginning'
       }
     ].find(ele => ele.value === relativeToCurrent)?.label
     return timeValue
   }
   timeValue = `${timeNum}${relativeToCurrentTypeMap[relativeToCurrentType]}${
-    around === 'f' ? '前' : '后'
+    around === 'f' ? t('dynamic_time.before') : t('dynamic_time.after')
   }`
   if (timeGranularity === 'datetime') {
     timeValue += new Date(arbitraryTime).toLocaleString().split(' ')[1]
@@ -228,11 +229,22 @@ const dfsSubmit = arr => {
         name,
         timeValue
       } = ele
-      errorDetected({
+      const normalized = normalizeDynamicDateFilterRule({
         fieldType,
         enumValue,
         filterType,
         term,
+        value,
+        name,
+        timeValue,
+        filterTypeTime,
+        dynamicTimeSetting
+      })
+      errorDetected({
+        fieldType,
+        enumValue,
+        filterType,
+        term: normalized.term,
         value,
         name,
         timeValue,
@@ -246,7 +258,7 @@ const dfsSubmit = arr => {
           filterType,
           filterTypeTime,
           dynamicTimeSetting,
-          term,
+          term: normalized.term,
           timeType,
           value,
           type: 'item',

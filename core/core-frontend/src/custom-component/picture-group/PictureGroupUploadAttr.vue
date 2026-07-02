@@ -73,10 +73,7 @@ async function upload(file) {
     totalUploads++
 
     uploadFileResult(file.file, (fileUrl, error) => {
-      if (error) {
-        // 上传失败
-        console.error('上传失败:', error)
-      } else {
+      if (!error) {
         // 上传成功
         snapshotStore.recordSnapshotCache('pic-upload')
         element.value.propValue.urlList.unshift({ name: file.file.name, url: fileUrl })

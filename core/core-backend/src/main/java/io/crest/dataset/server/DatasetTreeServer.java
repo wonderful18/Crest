@@ -18,6 +18,7 @@ import io.crest.model.BusiNodeRequest;
 import io.crest.model.BusiNodeVO;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -38,25 +39,25 @@ public class DatasetTreeServer implements DatasetTreeApi {
 
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, st = LogST.DATASET)
     @Override
-    public DatasetGroupInfoDTO save(DatasetGroupInfoDTO datasetNodeDTO) throws Exception {
+    public DatasetGroupInfoDTO save(@RequestBody DatasetGroupInfoDTO datasetNodeDTO) throws Exception {
         return datasetGroupManage.save(datasetNodeDTO, false, true);
     }
 
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, st = LogST.DATASET)
     @Override
-    public DatasetNodeDTO rename(DatasetGroupInfoDTO dto) throws Exception {
+    public DatasetNodeDTO rename(@RequestBody DatasetGroupInfoDTO dto) throws Exception {
         return datasetGroupManage.save(dto, true, false);
     }
 
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, st = LogST.DATASET)
     @Override
-    public DatasetNodeDTO create(DatasetGroupInfoDTO dto) throws Exception {
+    public DatasetNodeDTO create(@RequestBody DatasetGroupInfoDTO dto) throws Exception {
         return datasetGroupManage.save(dto, false, true);
     }
 
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, st = LogST.DATASET)
     @Override
-    public DatasetNodeDTO move(DatasetGroupInfoDTO dto) throws Exception {
+    public DatasetNodeDTO move(@RequestBody DatasetGroupInfoDTO dto) throws Exception {
         return datasetGroupManage.move(dto);
     }
 
@@ -73,7 +74,7 @@ public class DatasetTreeServer implements DatasetTreeApi {
 
 
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASET)
-    public List<BusiNodeVO> tree(BusiNodeRequest request) {
+    public List<BusiNodeVO> tree(@RequestBody BusiNodeRequest request) {
         return datasetGroupManage.tree(request);
     }
 
@@ -93,22 +94,22 @@ public class DatasetTreeServer implements DatasetTreeApi {
     }
 
     @Override
-    public List<DatasetTableDTO> panelGetDsDetails(List<Long> ids) throws Exception {
+    public List<DatasetTableDTO> panelGetDsDetails(@RequestBody List<Long> ids) throws Exception {
         return datasetGroupManage.getDetail(ids);
     }
 
     @Override
-    public List<SqlVariableDetails> sqlParams(List<Long> ids) throws Exception {
+    public List<SqlVariableDetails> sqlParams(@RequestBody List<Long> ids) throws Exception {
         return datasetGroupManage.sqlParams(ids);
     }
 
     @Override
-    public List<DatasetTableDTO> detailWithPerm(List<Long> ids) throws Exception {
+    public List<DatasetTableDTO> detailWithPerm(@RequestBody List<Long> ids) throws Exception {
         return datasetGroupManage.getDetailWithPerm(ids);
     }
 
     @Override
-    public void exportDataset(DataSetExportRequest request, HttpServletResponse response) throws Exception {
+    public void exportDataset(@RequestBody DataSetExportRequest request, HttpServletResponse response) throws Exception {
         if (request.isEmbeddedExport()) {
             exportCenterDownLoadManage.downloadDataset(request, response);
         } else {

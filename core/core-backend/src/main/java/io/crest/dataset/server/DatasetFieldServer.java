@@ -27,25 +27,25 @@ public class DatasetFieldServer implements DatasetTableApi {
     private DatasetDataManage datasetDataManage;
 
     @Override
-    public DatasetTableFieldDTO save(DatasetTableFieldDTO datasetTableFieldDTO) throws Exception {
+    public DatasetTableFieldDTO save(@RequestBody DatasetTableFieldDTO datasetTableFieldDTO) throws Exception {
         return datasetTableFieldManage.chartFieldSave(datasetTableFieldDTO);
     }
 
     @Override
     public DatasetTableFieldDTO get(Long id) {
-        return datasetTableFieldManage.selectById(id);
+        return datasetTableFieldManage.selectByIdWithAccess(id);
     }
 
     @Override
     public List<DatasetTableFieldDTO> listByDatasetGroup(Long id) {
-        List<DatasetTableFieldDTO> datasetTableFieldDTOS = datasetTableFieldManage.selectByDatasetGroupId(id);
+        List<DatasetTableFieldDTO> datasetTableFieldDTOS = datasetTableFieldManage.selectByDatasetGroupIdWithAccess(id);
         DatasetUtils.listEncode(datasetTableFieldDTOS);
         return datasetTableFieldDTOS;
     }
 
     @Override
-    public Map<String, List<DatasetTableFieldDTO>> listByDsIds(List<Long> ids) {
-        return datasetTableFieldManage.selectByDatasetGroupIds(ids);
+    public Map<String, List<DatasetTableFieldDTO>> listByDsIds(@RequestBody List<Long> ids) {
+        return datasetTableFieldManage.selectByDatasetGroupIdsWithAccess(ids);
     }
 
     @Override
@@ -55,7 +55,7 @@ public class DatasetFieldServer implements DatasetTableApi {
 
     @Override
     public Map<String, List<DatasetTableFieldDTO>> listByDQ(Long id) {
-        return datasetTableFieldManage.listByDQ(id);
+        return datasetTableFieldManage.listByDQWithAccess(id);
     }
 
     @Override

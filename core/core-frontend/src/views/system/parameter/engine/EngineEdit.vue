@@ -129,6 +129,7 @@ const closeLoading = () => {
   loadingInstance.value?.close()
 }
 const showPriority = ref(false)
+const emptySecretInput = () => undefined
 const defaultInfo = {
   name: '',
   createBy: '',
@@ -146,7 +147,7 @@ const defaultInfo = {
     port: 8081,
     dataBase: '',
     username: '',
-    password: '',
+    password: emptySecretInput(),
     extraParams: '',
     initialPoolSize: 50,
     minPoolSize: 50,

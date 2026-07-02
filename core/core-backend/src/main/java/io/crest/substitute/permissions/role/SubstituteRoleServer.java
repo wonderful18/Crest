@@ -16,6 +16,7 @@ import io.crest.constant.LogST;
 import io.crest.log.CrestAudit;
 import io.crest.model.KeywordRequest;
 import jakarta.annotation.Resource;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,31 +30,31 @@ public class SubstituteRoleServer implements RoleApi {
     private CrestRoleManage crestRoleManage;
 
     @Override
-    public List<RoleVO> query(KeywordRequest request) {
+    public List<RoleVO> query(@RequestBody KeywordRequest request) {
         return crestRoleManage.query(request == null ? null : request.getKeyword());
     }
 
     @Override
     @CrestAudit(ot = LogOT.CREATE, st = LogST.ROLE)
-    public Long create(RoleCreator creator) {
+    public Long create(@RequestBody RoleCreator creator) {
         return crestRoleManage.create(creator);
     }
 
     @Override
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.ROLE, id = "#p0.id")
-    public void edit(RoleEditor editor) {
+    public void edit(@RequestBody RoleEditor editor) {
         crestRoleManage.edit(editor);
     }
 
     @Override
     @CrestAudit(ot = LogOT.BIND, st = LogST.ROLE, id = "#p0.rid")
-    public void mountUser(MountUserRequest request) {
+    public void mountUser(@RequestBody MountUserRequest request) {
         crestRoleManage.mountUsers(request.getRid(), request.getUids());
     }
 
     @Override
     @CrestAudit(ot = LogOT.BIND, st = LogST.ROLE, id = "#p0.rid")
-    public void mountExternalUser(MountExternalUserRequest request) {
+    public void mountExternalUser(@RequestBody MountExternalUserRequest request) {
         crestRoleManage.mountUsers(request.getRid(), List.of(request.getUid()));
     }
 
@@ -64,17 +65,17 @@ public class SubstituteRoleServer implements RoleApi {
 
     @Override
     @CrestAudit(ot = LogOT.UNBIND, st = LogST.ROLE, id = "#p0.rid")
-    public void unMountUser(UnmountUserRequest request) {
+    public void unMountUser(@RequestBody UnmountUserRequest request) {
         crestRoleManage.unmountUser(request.getRid(), request.getUid());
     }
 
     @Override
-    public List<RoleVO> optionForUser(RoleRequest request) {
+    public List<RoleVO> optionForUser(@RequestBody RoleRequest request) {
         return crestRoleManage.query(request == null ? null : request.getKeyword());
     }
 
     @Override
-    public List<RoleVO> selectedForUser(RoleRequest request) {
+    public List<RoleVO> selectedForUser(@RequestBody RoleRequest request) {
         if (request == null || request.getUid() == null) {
             return List.of();
         }
@@ -93,13 +94,13 @@ public class SubstituteRoleServer implements RoleApi {
     }
 
     @Override
-    public Integer beforeUnmountInfo(UnmountUserRequest request) {
+    public Integer beforeUnmountInfo(@RequestBody UnmountUserRequest request) {
         return crestRoleManage.beforeUnmountInfo(request.getRid(), request.getUid());
     }
 
     @Override
     @CrestAudit(ot = LogOT.CREATE, st = LogST.ROLE, id = "#p0.copyId")
-    public void copy(RoleCopyRequest request) {
+    public void copy(@RequestBody RoleCopyRequest request) {
         RoleDetailVO detail = crestRoleManage.detail(request.getCopyId());
         RoleCreator creator = new RoleCreator();
         creator.setName(request.getName() == null ? detail.getName() + " 副本" : request.getName());
@@ -109,7 +110,7 @@ public class SubstituteRoleServer implements RoleApi {
     }
 
     @Override
-    public List<RoleVO> byCurOrg(KeywordRequest request) {
+    public List<RoleVO> byCurOrg(@RequestBody KeywordRequest request) {
         return query(request);
     }
 

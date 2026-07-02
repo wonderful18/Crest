@@ -6,6 +6,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Objects;
 
 public class ConfigUtils {
@@ -20,7 +21,7 @@ public class ConfigUtils {
         try {
             String filePath = System.getProperty("user.home");
             filePath = filePath.replace("file:", "");
-            Resource resource = new FileSystemResource(filePath + File.separator + configPath);
+            Resource resource = new FileSystemResource(resolveUserConfigFile(filePath));
             YamlPropertiesFactoryBean factory = new YamlPropertiesFactoryBean();
             factory.setResources(resource);
 
@@ -32,6 +33,15 @@ public class ConfigUtils {
         } catch (Exception e) {
         }
         return defaultValue;
+    }
+
+    private static File resolveUserConfigFile(String userHome) throws IOException {
+        File home = FileUtils.ensureDirectory(userHome);
+        File configFile = new File(home, configPath).getCanonicalFile();
+        if (!configFile.toPath().startsWith(home.toPath())) {
+            throw new IOException("Invalid config path");
+        }
+        return configFile;
     }
 
     private static String getRuntimeProperty(String key) {

@@ -8,6 +8,7 @@ import io.crest.api.dataset.dto.DatasetSyncTaskDTO;
 import io.crest.dataset.sync.DatasetSyncManage;
 import io.crest.dataset.sync.DatasetSyncTaskManage;
 import jakarta.annotation.Resource;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,7 +24,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     private DatasetSyncManage syncManage;
 
     @Override
-    public DatasetSyncTaskPageVO page(Integer page, Integer pageSize, DatasetSyncTaskRequest request) {
+    public DatasetSyncTaskPageVO page(Integer page, Integer pageSize, @RequestBody(required = false) DatasetSyncTaskRequest request) {
         return taskManage.page(page, pageSize, request);
     }
 
@@ -33,7 +34,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     }
 
     @Override
-    public DatasetSyncTaskDTO save(DatasetSyncTaskDTO task) {
+    public DatasetSyncTaskDTO save(@RequestBody DatasetSyncTaskDTO task) {
         return taskManage.save(task);
     }
 

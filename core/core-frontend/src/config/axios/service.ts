@@ -51,41 +51,36 @@ export interface AxiosInstanceWithLoading extends AxiosInstance {
   ): Promise<R>
 }
 
-const getTimeOut = () => {
-  let time = 100
+const refreshTimeOut = async () => {
   const url = PATH_URL + '/sys-parameter/request-timeout'
-  const xhr = new XMLHttpRequest()
-  xhr.onreadystatechange = () => {
-    if (xhr.readyState === 4 && xhr.status === 200) {
-      if (xhr.responseText) {
-        try {
-          const response = JSON.parse(xhr.responseText)
-          if (response.code === 0) {
-            time = response.data
-          } else {
-            ElMessage.error('系统异常，请联系管理员')
-          }
-        } catch (e) {
-          ElMessage.error('系统异常，请联系管理员')
-        }
-      } else {
-        ElMessage.error('网络异常，请联系网管')
-      }
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' }
+    })
+    if (!res.ok) {
+      return
     }
+    const response = await res.json()
+    if (response?.code === 0 && Number.isFinite(Number(response.data))) {
+      const timeout = Number(response.data)
+      service.defaults.timeout = timeout * 1000
+      window._crest_get_time_out = timeout
+    }
+  } catch {
+    // keep the default timeout when the runtime setting cannot be loaded
   }
-
-  xhr.open('get', url, false)
-  xhr.send()
-  return time
 }
 
 // 创建axios实例
-const time = getTimeOut()
-window._crest_get_time_out = time
+const timeoutMs = config.request_timeout
+window._crest_get_time_out = Math.ceil(timeoutMs / 1000)
 const service: AxiosInstanceWithLoading = axios.create({
   baseURL: PATH_URL, // api 的 base_url
-  timeout: time ? time * 1000 : config.request_timeout // 请求超时时间
+  timeout: timeoutMs // 请求超时时间
 })
+void refreshTimeOut()
 const mapping = {
   'zh-CN': 'zh-CN',
   en: 'en-US',
@@ -328,15 +323,11 @@ const cancelRequestBatch = cancelKey => {
       const cancelKeyPre = cancelKey.split('/**')[0]
       Object.keys(cancelMap).forEach(key => {
         if (key.indexOf(cancelKeyPre) > -1) {
-          cancelMap[key]?.(() => {
-            console.warn('Operation canceled by the user,url:' + key)
-          })
+          cancelMap[key]?.(() => undefined)
         }
       })
     } else {
-      cancelMap[cancelKey]?.(() => {
-        console.warn('Operation canceled by the user,url:' + cancelKey)
-      })
+      cancelMap[cancelKey]?.(() => undefined)
     }
   }
 }

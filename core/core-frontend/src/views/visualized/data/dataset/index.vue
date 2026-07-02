@@ -147,7 +147,7 @@ const exportPermissions = computed(() => exportPermission(nodeInfo.weight, nodeI
 const createPanel = path => {
   const baseUrl = `#/${path}?opt=create&id=${nodeInfo.id}`
   wsCache.set('dataset-info-id', nodeInfo.id)
-  window.open(baseUrl, openType)
+  window.open(baseUrl, openType, openType === '_blank' ? 'noopener,noreferrer' : undefined)
 }
 
 const resourceOptFinish = param => {
@@ -193,7 +193,11 @@ const resourceCreate = (pid, name) => {
   }
   saveVisualization(canvasInfo as any).then(() => {
     const baseUrl = curCanvasType.value === 'dataV' ? '#/dvCanvas?dvId=' : '#/dashboard?resourceId='
-    window.open(baseUrl + newResourceId, openType)
+    window.open(
+      baseUrl + newResourceId,
+      openType,
+      openType === '_blank' ? 'noopener,noreferrer' : undefined
+    )
   })
 }
 
