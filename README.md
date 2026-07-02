@@ -1,5 +1,16 @@
 # Crest
 
+Crest is a self-hosted BI platform for datasets, dashboards, reports, data screens, and OceanBase-oriented integration work.
+
+## Project snapshot
+
+| Item | Details |
+| --- | --- |
+| Category | BI, reporting, dashboards, data visualization |
+| Runtime | Java, Vue 3, Vite, Spring Boot |
+| Status | Public project under active development |
+| License | GPLv3; see [LICENSE](./LICENSE) |
+
 Crest 是面向私有化部署的 BI 平台，覆盖数据源接入、数据集建模、图表、仪表盘、数据大屏、分享、导出、系统管理和字段级数据血缘。当前工程版本为 `v2.0.3`。
 
 Crest 基于 DataEase 2.10.22 开源版本继续开发，并合入 2.10.23 相关安全加固和依赖升级。仓库保留上游版权和 GPLv3 许可声明；品牌、部署脚本、演示资源、OceanBase 支持、数据血缘和研发效能分析能力由 Crest 独立维护。
