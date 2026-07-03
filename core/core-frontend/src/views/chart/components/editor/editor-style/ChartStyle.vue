@@ -35,7 +35,7 @@ import BulletRangeSelector from '@/views/chart/components/editor/editor-style/co
 const snapshotStore = snapshotStoreWithOut()
 
 const dvMainStore = dvMainStoreWithOut()
-const { dvInfo, batchOptStatus, mobileInPc } = storeToRefs(dvMainStore)
+const { dvInfo, batchOptStatus, mobileInPc, curComponent } = storeToRefs(dvMainStore)
 const { t } = useI18n()
 
 const state = {
@@ -136,6 +136,12 @@ const positionComponentShow = computed(() => {
 })
 
 const showProperties = (property: EditorProperty) => properties.value?.includes(property)
+
+const backgroundPanelKey = computed(() => {
+  const currentComponentOwnsBackground = commonBackgroundPop.value === curComponent.value?.commonBackground
+  const ownerId = currentComponentOwnsBackground ? curComponent.value?.id : chart.value?.id
+  return `chart-background-${ownerId || 'unknown'}`
+})
 
 const onMiscChange = (val, prop) => {
   emit('onMiscChange', val, prop)
@@ -359,6 +365,7 @@ watch(
             v-if="showProperties('background-overall-component') && commonBackgroundPop"
           >
             <background-overall-common
+              :key="backgroundPanelKey"
               :common-background-pop="commonBackgroundPop"
               :themes="themes"
               @onBackgroundChange="onBackgroundChange"

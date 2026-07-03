@@ -39,4 +39,5 @@ overrides:
   tmp: 0.2.7
   uuid: ^11.1.1
 patchedDependencies:
+  element-plus-secondary@1.2.13: patches/element-plus-secondary@1.2.13.patch
   tinymce@8.5.1: patches/tinymce@8.5.1.patch

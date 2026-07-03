@@ -71,6 +71,7 @@ import {
 } from '@/components/icon-group/field-calculated-list'
 import { useCache } from '@/hooks/web/useCache'
 import { canvasSave } from '@/utils/canvasUtils'
+import ChartGroupSetting from '@/custom-component/common/ChartGroupSetting.vue'
 
 const { wsCache } = useCache('localStorage')
 const embeddedStore = useEmbedded()
@@ -195,19 +196,17 @@ const clearRemove = items => {
   }
 }
 
+useEmitt({
+  name: 'clear-remove',
+  callback: clearRemove
+})
+
 onBeforeMount(() => {
   cacheId = route.query.id as unknown as string
 })
 
 onBeforeUnmount(() => {
   cacheId = ''
-})
-
-onMounted(() => {
-  useEmitt({
-    name: 'clear-remove',
-    callback: clearRemove
-  })
 })
 
 const appStore = useAppStoreWithOut()
@@ -2051,6 +2050,7 @@ const chartStyleScroll = (val: any) => {
     <template v-if="mobileInPc">
       <el-container direction="vertical">
         <el-scrollbar class="drag_main_area">
+          <ChartGroupSetting v-if="curComponent" :element="curComponent" :themes="themes" />
           <VQueryChartStyle
             v-if="view.type === 'VQuery' && curComponent"
             :element="curComponent"
@@ -2151,6 +2151,7 @@ const chartStyleScroll = (val: any) => {
                 </el-popover>
               </div>
             </el-row>
+            <ChartGroupSetting v-if="curComponent" :element="curComponent" :themes="themes" />
 
             <el-row :style="elRowStyle">
               <el-scrollbar v-if="view.type === 'VQuery' && curComponent">

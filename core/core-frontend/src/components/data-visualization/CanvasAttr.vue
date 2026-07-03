@@ -106,7 +106,7 @@ onMounted(() => {
         <el-form label-position="left" :label-width="14">
           <el-row :gutter="8" class="m-size">
             <el-col :span="12">
-              <el-form-item class="form-item form-item-dark" label="W">
+              <el-form-item class="form-item form-item-dark" label="宽">
                 <el-input-number
                   effect="dark"
                   size="small"
@@ -119,7 +119,7 @@ onMounted(() => {
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item class="form-item form-item-dark" label="H">
+              <el-form-item class="form-item form-item-dark" label="高">
                 <el-input-number
                   effect="dark"
                   size="small"

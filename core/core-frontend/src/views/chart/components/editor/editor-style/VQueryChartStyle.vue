@@ -40,6 +40,9 @@ const props = defineProps({
   }
 })
 const { chart, commonBackgroundPop, element } = toRefs(props)
+const backgroundPanelKey = computed(() => {
+  return `query-background-${element.value?.id || chart.value?.id || 'unknown'}`
+})
 const toolTip = computed(() => {
   return props.themes === 'dark' ? 'light' : 'dark'
 })
@@ -368,6 +371,7 @@ const onPlaceholderChange = () => {
               </el-radio-group>
             </el-form-item>
             <background-overall-common
+              :key="backgroundPanelKey"
               :common-background-pop="commonBackgroundPop"
               :themes="themes"
               @onBackgroundChange="onBackgroundChangeV2"

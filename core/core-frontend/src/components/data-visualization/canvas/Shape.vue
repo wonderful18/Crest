@@ -526,7 +526,10 @@ const handleInnerMouseDownOnShape = e => {
   }
   batchSelected(e)
   // ctrl or command 按下时 鼠标点击为选择需要组合的组件(取消需要组合的组件在ComposeShow组件中)
-  if (isCtrlOrCmdDown.value && !areaData.value.components.includes(element)) {
+  if (
+    (isCtrlOrCmdDown.value || e.ctrlKey || e.metaKey) &&
+    !areaData.value.components.includes(element.value)
+  ) {
     areaDataPush(element.value)
     if (curComponent.value && curComponent.value.id !== element.value.id) {
       areaDataPush(curComponent.value)
@@ -969,11 +972,15 @@ const blurBgStyle = computed(() => {
 
 const componentBackgroundStyle = computed(() => {
   if (element.value.commonBackground && element.value.component !== 'GroupArea') {
-    return getComponentBackgroundStyle(element.value.commonBackground, {
+    const style = getComponentBackgroundStyle(element.value.commonBackground, {
       scale: scale.value,
       isUserView: element.value.component === 'UserView',
-      forceNoPadding: ['Group'].includes(element.value.component)
+      forceNoPadding: false
     })
+    if (element.value.component === 'Group') {
+      style.overflow = element.value.chartGroupContainer?.clipOverflow === false ? 'visible' : 'hidden'
+    }
+    return style
   }
   return {}
 })

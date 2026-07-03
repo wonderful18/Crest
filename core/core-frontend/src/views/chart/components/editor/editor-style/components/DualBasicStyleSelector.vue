@@ -228,7 +228,7 @@ onMounted(() => {
               <el-radio value="roundAngle" :effect="themes">{{ t('chart.roundAngle') }}</el-radio>
               <el-radio
                 v-if="!props.chart.type.includes('-stack')"
-                label="topRoundAngle"
+                value="topRoundAngle"
                 :effect="themes"
               >
                 {{ t('chart.topRoundAngle') }}</el-radio

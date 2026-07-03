@@ -1,5 +1,6 @@
 <template>
   <div class="batch-opt-main view-panel-row tab-header">
+    <ChartGroupSetting :themes="themes" batch />
     <chart-style
       v-if="mixProperties && batchOptComponentInfo && batchOptComponentType === 'UserView'"
       class="chart-style-main"
@@ -50,6 +51,7 @@ import ChartStyle from '@/views/chart/components/editor/editor-style/ChartStyle.
 import { reactive } from 'vue'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import CommonAttr from '@/custom-component/common/CommonAttr.vue'
+import ChartGroupSetting from '@/custom-component/common/ChartGroupSetting.vue'
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 import { useI18n } from '@/hooks/web/useI18n'

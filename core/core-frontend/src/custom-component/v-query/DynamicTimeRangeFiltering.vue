@@ -80,6 +80,29 @@ const timeInterval = computed<DatePickType>(() => {
     ? (noTime as DatePickType)
     : (noTime.split('range')[0] as DatePickType)
 })
+const rangeSingleType = computed<DatePickType>(() => {
+  return (timeInterval.value as string).replace('range', '') as DatePickType
+})
+const rangeStartValue = computed({
+  get: () => config.value.regularOrTrendsValue?.[0],
+  set: val => {
+    const value = Array.isArray(config.value.regularOrTrendsValue)
+      ? [...config.value.regularOrTrendsValue]
+      : []
+    value[0] = val
+    config.value.regularOrTrendsValue = value as [Date, Date]
+  }
+})
+const rangeEndValue = computed({
+  get: () => config.value.regularOrTrendsValue?.[1],
+  set: val => {
+    const value = Array.isArray(config.value.regularOrTrendsValue)
+      ? [...config.value.regularOrTrendsValue]
+      : []
+    value[1] = val
+    config.value.regularOrTrendsValue = value as [Date, Date]
+  }
+})
 watch(
   () => timeConfig.value,
   () => {
@@ -144,21 +167,48 @@ const formatDate = computed(() => {
 </script>
 
 <template>
-  <el-date-picker
-    :disabled="config.regularOrTrends !== 'fixed'"
-    v-model="config.regularOrTrendsValue"
-    :key="timeInterval"
-    :type="timeInterval"
-    :prefix-icon="Calendar"
-    :format="formatDate"
-    :popper-class="'custom-dynamic-time-range-filter-popper_class'"
-    :range-separator="$t('cron.to')"
-    :start-placeholder="$t('datasource.start_time')"
-    :end-placeholder="$t('datasource.end_time')"
-  />
+  <div class="time-range-filter-editor">
+    <el-date-picker
+      v-model="rangeStartValue"
+      :disabled="config.regularOrTrends !== 'fixed'"
+      :key="rangeSingleType + '-start'"
+      :type="rangeSingleType"
+      :prefix-icon="Calendar"
+      :format="formatDate"
+      :popper-class="'custom-dynamic-time-range-filter-popper_class'"
+      :placeholder="$t('datasource.start_time')"
+    />
+    <span class="time-range-filter-separator">{{ $t('cron.to') }}</span>
+    <el-date-picker
+      v-model="rangeEndValue"
+      :disabled="config.regularOrTrends !== 'fixed'"
+      :key="rangeSingleType + '-end'"
+      :type="rangeSingleType"
+      :prefix-icon="Calendar"
+      :format="formatDate"
+      :popper-class="'custom-dynamic-time-range-filter-popper_class'"
+      :placeholder="$t('datasource.end_time')"
+    />
+  </div>
 </template>
 
 <style lang="less">
+.time-range-filter-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .ed-date-editor {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+.time-range-filter-separator {
+  color: var(--ed-text-color-secondary);
+  white-space: nowrap;
+}
+
 .custom-dynamic-time-range-filter-popper_class {
   font-family: var(--crest-canvas_custom_font);
 }

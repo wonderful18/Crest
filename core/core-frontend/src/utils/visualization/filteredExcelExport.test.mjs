@@ -65,6 +65,41 @@ describe('filtered excel export helpers', () => {
     })
   })
 
+  it('validates required query controls inside chart groups', () => {
+    const components = [
+      {
+        component: 'Group',
+        propValue: [
+          {
+            component: 'VQuery',
+            id: 'query-in-group',
+            propValue: [
+              {
+                id: 'filter-in-group',
+                name: '区域',
+                required: true,
+                displayType: '0',
+                selectValue: '',
+                checkedFields: ['chart-1'],
+                checkedFieldsMap: {
+                  'chart-1': 'field-1'
+                }
+              }
+            ]
+          },
+          { component: 'UserView', id: 'chart-1' }
+        ]
+      }
+    ]
+
+    assert.deepEqual(validateQueryComponentsForExport(components, 'chart-1'), {
+      valid: false,
+      reason: 'required',
+      queryName: '区域',
+      componentId: 'query-in-group'
+    })
+  })
+
   it('validates incomplete and reversed number ranges', () => {
     const components = [
       {

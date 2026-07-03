@@ -232,11 +232,15 @@ const blurBgStyle = computed(() => {
 
 const componentBackgroundStyle = computed(() => {
   if (config.value.commonBackground) {
-    return getComponentBackgroundStyle(config.value.commonBackground, {
+    const style = getComponentBackgroundStyle(config.value.commonBackground, {
       scale: deepScale.value,
       isUserView: config.value.component === 'UserView',
-      forceNoPadding: ['Group'].includes(config.value.component)
+      forceNoPadding: false
     })
+    if (config.value.component === 'Group') {
+      style.overflow = config.value.chartGroupContainer?.clipOverflow === false ? 'visible' : 'hidden'
+    }
+    return style
   }
   return {}
 })

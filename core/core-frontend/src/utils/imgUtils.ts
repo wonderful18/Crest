@@ -85,9 +85,9 @@ export function download2AppTemplate(downloadType, canvasDom, name, attachParams
               }
               const blob = new Blob([JSON.stringify(templateInfo)], { type: '' })
               if (downloadType === 'template') {
-                FileSaver.saveAs(blob, name + '-TEMPLATE.DET2')
+                FileSaver.saveAs(blob, name + '-TEMPLATE.crest')
               } else if (downloadType === 'app') {
-                FileSaver.saveAs(blob, templateName + '-APP.DET2APP')
+                FileSaver.saveAs(blob, templateName + '-APP.crest')
               }
               if (callBack) {
                 callBack()
@@ -184,36 +184,36 @@ export function dataURLToBlob(dataUrl) {
   return new Blob([u8arr], { type: mime })
 }
 
-function findStaticSourceInner(componentDataInfo, staticResource) {
+export function findStaticSourceInner(componentDataInfo, staticResource) {
   componentDataInfo?.forEach(item => {
     if (
-      typeof item.commonBackground.outerImage === 'string' &&
+      typeof item.commonBackground?.outerImage === 'string' &&
       item.commonBackground.outerImage.indexOf('static-resource') > -1
     ) {
       staticResource.push(item.commonBackground.outerImage)
     }
     if (
       item.component === 'Picture' &&
-      item.propValue['url'] &&
-      typeof item.propValue['url'] === 'string' &&
-      item.propValue['url'].indexOf('static-resource') > -1
+      item.propValue?.['url'] &&
+      typeof item.propValue?.['url'] === 'string' &&
+      item.propValue?.['url'].indexOf('static-resource') > -1
     ) {
       staticResource.push(item.propValue['url'])
     } else if (
       item.component === 'UserView' &&
       item.innerType === 'picture-group' &&
-      item.propValue['urlList'] &&
-      item.propValue['urlList'].length > 0
+      item.propValue?.['urlList'] &&
+      item.propValue?.['urlList'].length > 0
     ) {
       item.propValue['urlList'].forEach(urlInfo => {
-        if (urlInfo.url.indexOf('static-resource') > -1) {
+        if (urlInfo?.url?.indexOf('static-resource') > -1) {
           staticResource.push(urlInfo.url)
         }
       })
     } else if (item.component === 'Group') {
       findStaticSourceInner(item.propValue, staticResource)
     } else if (item.component === 'Tabs') {
-      item.propValue.forEach(tabItem => {
+      item.propValue?.forEach(tabItem => {
         findStaticSourceInner(tabItem.componentData, staticResource)
       })
     }

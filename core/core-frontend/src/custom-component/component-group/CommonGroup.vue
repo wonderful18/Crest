@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { reactive, ref } from 'vue'
+import { markRaw, reactive, ref } from 'vue'
 import eventBus from '@/utils/eventBus'
 import Icon from '@/components/icon-custom/src/Icon.vue'
 import { CANVAS_MATERIAL } from '@/custom-component/common/ComponentConfig'
@@ -23,6 +23,14 @@ defineProps({
 
 const commonGroup = ref<InstanceType<typeof ElScrollbar>>()
 
+CANVAS_MATERIAL.forEach(group => {
+  group.details.forEach(item => {
+    if (item.icon && typeof item.icon === 'object') {
+      item.icon = markRaw(item.icon)
+    }
+  })
+})
+
 const state = reactive({
   curCategory: 'CanvasBoard',
   groupList: CANVAS_MATERIAL as any[]
@@ -42,7 +50,10 @@ const newComponent = ({ category, innerType }) => {
 }
 
 const handleDragStart = e => {
-  e.dataTransfer.setData('id', e.target.dataset.id)
+  const dragTarget = e.target?.closest?.('[data-id]')
+  if (dragTarget?.dataset?.id) {
+    e.dataTransfer.setData('id', dragTarget.dataset.id)
+  }
 }
 
 const groupActiveChange = category => {
@@ -85,27 +96,35 @@ const findUrl = name => {
           :key="chartInfo.title"
         >
           <div
-            v-on:click="newComponent({ category: groupInfo.category, innerType: chartInfo.value })"
-            class="item-top"
+            class="component-card"
+            role="button"
+            tabindex="0"
             draggable="true"
             :data-id="groupInfo.category + '&' + chartInfo.value"
             :title="chartInfo.title"
+            v-on:click="newComponent({ category: groupInfo.category, innerType: chartInfo.value })"
+            @keydown.enter="newComponent({ category: groupInfo.category, innerType: chartInfo.value })"
+            @keydown.space.prevent="
+              newComponent({ category: groupInfo.category, innerType: chartInfo.value })
+            "
           >
-            <Icon
-              v-if="['outer_svg', 'graphical'].includes(chartInfo.type)"
-              class-name="item-top-icon"
-              ><component class="svg-icon item-top-icon" :is="chartInfo.icon"></component
-            ></Icon>
-            <Decoration
-              :curStyle="{ width: 530, height: 373 }"
-              :element="{ innerType: chartInfo.value }"
-              :scale="0.15"
-              v-else-if="['decoration'].includes(chartInfo.type)"
-            ></Decoration>
-            <component v-else style="color: #a6a6a6" :is="chartInfo.icon"></component>
-          </div>
-          <div v-if="chartInfo.title" class="item-bottom">
-            <span>{{ chartInfo.title }}</span>
+            <div class="item-top">
+              <Icon
+                v-if="['outer_svg', 'graphical'].includes(chartInfo.type)"
+                class-name="item-top-icon"
+                ><component class="svg-icon item-top-icon" :is="chartInfo.icon"></component
+              ></Icon>
+              <Decoration
+                :curStyle="{ width: 530, height: 373 }"
+                :element="{ innerType: chartInfo.value }"
+                :scale="0.15"
+                v-else-if="['decoration'].includes(chartInfo.type)"
+              ></Decoration>
+              <component v-else style="color: #a6a6a6" :is="chartInfo.icon"></component>
+            </div>
+            <div v-if="chartInfo.title" class="item-bottom">
+              <span>{{ chartInfo.title }}</span>
+            </div>
           </div>
         </el-col>
       </el-row>
@@ -165,6 +184,15 @@ const findUrl = name => {
   .li-a {
     color: var(--ed-color-primary) !important;
   }
+}
+
+.component-card {
+  cursor: pointer;
+  outline: none;
+}
+
+.component-card:focus-visible .item-top {
+  outline: 1px solid var(--ed-color-primary);
 }
 
 .item8 {

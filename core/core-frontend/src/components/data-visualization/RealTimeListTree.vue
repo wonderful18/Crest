@@ -166,7 +166,10 @@ const onClick = (e, index) => {
     composeStore.setLaterIndex(null)
   }
   // ctrl or command 按下时 鼠标点击为选择需要组合的组件(取消需要组合的组件在ComposeShow组件中)
-  if (isCtrlOrCmdDown.value && !areaData.value.components.includes(componentData.value[index])) {
+  if (
+    (isCtrlOrCmdDown.value || e.ctrlKey || e.metaKey) &&
+    !areaData.value.components.includes(componentData.value[index])
+  ) {
     areaDataPush(componentData.value[index])
     if (curComponent.value && curComponent.value.id !== componentData.value[index].id) {
       areaDataPush(curComponent.value)
@@ -177,7 +180,7 @@ const onClick = (e, index) => {
     return
   }
   //shift操作逻辑
-  if (isShiftDown.value) {
+  if (isShiftDown.value || e.shiftKey) {
     shiftDataPush(index)
     return
   }

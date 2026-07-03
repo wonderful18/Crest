@@ -38,10 +38,15 @@ import { BusiTreeNode, BusiTreeRequest } from '@/models/tree/TreeNode'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { useAppStoreWithOut } from '@/store/modules/app'
 import { storeToRefs } from 'pinia'
-import { secureRandomInt } from '@/utils/secureRandom'
 import DvHandleMore from '@/components/handle-more/src/DvHandleMore.vue'
 import { interactiveStoreWithOut } from '@/store/modules/interactive'
 import { useShareStoreWithOut } from '@/store/modules/share'
+import {
+  buildImportedTemplateCacheKey,
+  isSupportedVisualizationTemplateFile,
+  navigateImportedTemplateEditor,
+  resetNativeFileInput
+} from '@/views/common/importTemplateFlow'
 const shareStore = useShareStoreWithOut()
 const interactiveStore = interactiveStoreWithOut()
 import { useI18n } from '@/hooks/web/useI18n'
@@ -92,7 +97,7 @@ const filterText = ref(null)
 const expandedArray = ref([])
 const resourceListTree = ref()
 const resourceGroupOpt = ref()
-const importUploadRef = ref()
+const importFileInputRef = ref<HTMLInputElement | null>(null)
 const returnMounted = ref(false)
 const importLoading = ref(false)
 const state = reactive({
@@ -376,17 +381,32 @@ const copyLoading = ref(false)
 const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
 const emit = defineEmits(['nodeClick'])
 
-const beforeImportTemplateUpload = file => {
-  if (!/\.(det2|det2app)$/i.test(file.name || '')) {
-    ElMessage.error(t('visualization.template_file_type_limit'))
-    return false
+const triggerImportTemplateFile = () => {
+  if (importLoading.value) {
+    return
   }
-  return true
+  importFileInputRef.value?.click()
 }
 
-const importTemplateFile = uploadFile => {
+const importTemplateFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement | null
+  const file = input?.files?.[0]
+  if (!file) {
+    return
+  }
+  if (!isSupportedVisualizationTemplateFile(file.name)) {
+    ElMessage.error(t('visualization.template_file_type_limit'))
+    resetNativeFileInput(input)
+    return
+  }
+  importTemplateFile(file)
+    .catch(() => undefined)
+    .finally(() => resetNativeFileInput(input))
+}
+
+const importTemplateFile = (file: File) => {
   const formData = new FormData()
-  formData.append('file', uploadFile.file)
+  formData.append('file', file)
   importLoading.value = true
   return decompressionLocalFile(formData)
     .then(res => {
@@ -395,14 +415,11 @@ const importTemplateFile = uploadFile => {
         ElMessage.error(t('visualization.template_type_mismatch'))
         return
       }
-      const cacheKey = `CREST-VISUALIZATION-IMPORT-${Date.now()}-${secureRandomInt(0x100000000)
-        .toString(36)
-        .padStart(7, '0')}`
+      const cacheKey = buildImportedTemplateCacheKey()
       window.sessionStorage.setItem(cacheKey, JSON.stringify(payload))
       openImportedTemplateEditor(cacheKey)
     })
     .finally(() => {
-      importUploadRef.value?.clearFiles()
       importLoading.value = false
     })
 }
@@ -419,16 +436,7 @@ const openImportedTemplateEditor = cacheKey => {
     )
     return
   }
-  const query = `opt=create&createType=uploadedTemplate&templatePayloadKey=${encodeURIComponent(
-    cacheKey
-  )}`
-  const baseUrl = curCanvasType.value === 'dataV' ? `#/dvCanvas?${query}` : `#/dashboard?${query}`
-  const newWindow = window.open(
-    baseUrl,
-    openType,
-    openType === '_blank' ? 'noopener,noreferrer' : undefined
-  )
-  initOpenHandler(newWindow)
+  navigateImportedTemplateEditor(curCanvasType.value, cacheKey)
 }
 
 const operation = (cmd: string, data: BusiTreeNode, nodeType: string) => {
@@ -750,28 +758,26 @@ defineExpose({
                   </el-icon>
                   {{ t('work_branch.new_empty') }}
                 </el-dropdown-item>
-                <el-dropdown-item @click.stop>
-                  <el-upload
-                    ref="importUploadRef"
-                    class="resource-import-upload"
-                    :show-file-list="false"
-                    accept=".DET2,.DET2APP,.det2,.det2app"
-                    :before-upload="beforeImportTemplateUpload"
-                    :http-request="importTemplateFile"
-                  >
-                    <div class="resource-import-entry">
-                      <el-icon :class="`handle-icon color-${curCanvasType}`">
-                        <Icon name="icon_upload_outlined">
-                          <icon_upload_outlined class="svg-icon" />
-                        </Icon>
-                      </el-icon>
-                      <span>{{ t('visualization.import_app_template') }}</span>
-                    </div>
-                  </el-upload>
+                <el-dropdown-item @click.stop="triggerImportTemplateFile">
+                  <div class="resource-import-entry">
+                    <el-icon :class="`handle-icon color-${curCanvasType}`">
+                      <Icon name="icon_upload_outlined">
+                        <icon_upload_outlined class="svg-icon" />
+                      </Icon>
+                    </el-icon>
+                    <span>{{ t('visualization.import_app_template') }}</span>
+                  </div>
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+          <input
+            ref="importFileInputRef"
+            class="resource-import-input"
+            type="file"
+            accept=".crest,.CREST"
+            @change="importTemplateFileChange"
+          />
         </div>
       </div>
       <el-input
@@ -1047,18 +1053,14 @@ defineExpose({
   padding: 10px 0 0;
 }
 
-.resource-import-upload {
-  width: 100%;
-
-  :deep(.ed-upload) {
-    width: 100%;
-  }
-}
-
 .resource-import-entry {
   width: 100%;
   display: flex;
   align-items: center;
+}
+
+.resource-import-input {
+  display: none;
 }
 
 .custom-tree-node {

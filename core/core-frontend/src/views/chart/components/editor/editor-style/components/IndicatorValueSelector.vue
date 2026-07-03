@@ -285,7 +285,7 @@ defineExpose({ getFormData })
                 </div>
               </el-tooltip>
             </el-radio>
-            <el-radio :effect="themes" label="center">
+            <el-radio :effect="themes" value="center">
               <el-tooltip :effect="toolTip" placement="top">
                 <template #content>
                   {{ t('chart.text_pos_center') }}
@@ -305,7 +305,7 @@ defineExpose({ getFormData })
                 </div>
               </el-tooltip>
             </el-radio>
-            <el-radio :effect="themes" label="right">
+            <el-radio :effect="themes" value="right">
               <el-tooltip :effect="toolTip" placement="top">
                 <template #content>
                   {{ t('chart.text_pos_right') }}
