@@ -43,9 +43,7 @@ const elementPlusSecondaryStyleDeps = (() => {
       if (!/^[a-z0-9-]+$/i.test(item.name)) {
         return false
       }
-      return (
-        item.isDirectory() && fs.existsSync(`${componentsDir}/${item.name}/style/css.mjs`)
-      )
+      return item.isDirectory() && fs.existsSync(`${componentsDir}/${item.name}/style/css.mjs`)
     })
     .map(item => `element-plus-secondary/es/components/${item.name}/style/css`)
 })()
