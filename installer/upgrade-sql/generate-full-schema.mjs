@@ -4,12 +4,26 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(__dirname, '../..')
-const fullSchemaVersion = 'v2.0.3'
 
-const definitions = [
+const releases = [
+  {
+    version: 'v2.1.0',
+    extraSources: {
+      MySQL: ['core/core-backend/src/main/resources/db/migration/V2.0.2.2__rotate_default_crypto_key.sql'],
+      'OceanBase MySQL': [
+        'core/core-backend/src/main/resources/db/migration-ob-mysql/V2.0.2.2__rotate_default_crypto_key.sql'
+      ],
+      'OceanBase Oracle': [
+        'core/core-backend/src/main/resources/db/migration-ob-oracle/V2.0.2.2__rotate_default_crypto_key.sql'
+      ]
+    }
+  }
+]
+
+const baseDefinitions = [
   {
     name: 'MySQL',
-    output: 'v2.0.3_full_schema_mysql.sql',
+    outputSuffix: 'full_schema_mysql.sql',
     sources: [
       'core/core-backend/src/main/resources/db/migration/V1.5.0.1__initial_schema.sql',
       'core/core-backend/src/main/resources/db/migration/V1.5.8.1__data_asset_center.sql',
@@ -27,7 +41,7 @@ const definitions = [
   },
   {
     name: 'OceanBase MySQL',
-    output: 'v2.0.3_full_schema_ob_mysql.sql',
+    outputSuffix: 'full_schema_ob_mysql.sql',
     sources: [
       'core/core-backend/src/main/resources/db/migration-ob-mysql/V1.5.0.1__initial_schema.sql',
       'core/core-backend/src/main/resources/db/migration-ob-mysql/V1.5.8.1__data_asset_center.sql',
@@ -45,7 +59,7 @@ const definitions = [
   },
   {
     name: 'OceanBase Oracle',
-    output: 'v2.0.3_full_schema_ob_oracle.sql',
+    outputSuffix: 'full_schema_ob_oracle.sql',
     sources: [
       'core/core-backend/src/main/resources/db/migration-ob-oracle/V1.5.0.1__initial_schema.sql',
       'core/core-backend/src/main/resources/db/migration-ob-oracle/V2.0.0.1__export_task_queue.sql',
@@ -61,6 +75,15 @@ const definitions = [
     ]
   }
 ]
+
+const definitions = releases.flatMap(release =>
+  baseDefinitions.map(definition => ({
+    ...definition,
+    version: release.version,
+    output: `${release.version}_${definition.outputSuffix}`,
+    sources: [...definition.sources, ...(release.extraSources[definition.name] || [])]
+  }))
+)
 
 const checkMode = process.argv.includes('--check')
 const skippedSourceNames = new Set([
@@ -501,9 +524,9 @@ const separator = source =>
 
 const buildContent = definition => {
   const header = [
-    `-- Crest ${fullSchemaVersion} ${definition.name} 空库一次性初始化 SQL。`,
+    `-- Crest ${definition.version} ${definition.name} 空库一次性初始化 SQL。`,
     '-- 仅适用于新建 Crest 系统库；已有系统库请执行对应增量升级 SQL。',
-    `-- 本文件直接使用 ${fullSchemaVersion} 最终命名，不包含升级过程中的重命名 SQL。`,
+    `-- 本文件直接使用 ${definition.version} 最终命名，不包含升级过程中的重命名 SQL。`,
     '-- 本文件由 installer/upgrade-sql/generate-full-schema.mjs 生成。',
     ''
   ].join('\n')
@@ -517,7 +540,10 @@ const buildContent = definition => {
     .join('\n')
   const oracleComments =
     definition.name === 'OceanBase Oracle'
-      ? buildOracleComments(body, buildContent(definitions.find(item => item.name === 'OceanBase MySQL')))
+      ? buildOracleComments(
+        body,
+        buildContent(definitions.find(item => item.version === definition.version && item.name === 'OceanBase MySQL'))
+      )
       : ''
 
   return `${header}${body}${oracleComments}`

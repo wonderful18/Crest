@@ -1,6 +1,6 @@
--- Crest v2.0.3 MySQL 空库一次性初始化 SQL。
+-- Crest v2.1.0 MySQL 空库一次性初始化 SQL。
 -- 仅适用于新建 Crest 系统库；已有系统库请执行对应增量升级 SQL。
--- 本文件直接使用 v2.0.3 最终命名，不包含升级过程中的重命名 SQL。
+-- 本文件直接使用 v2.1.0 最终命名，不包含升级过程中的重命名 SQL。
 -- 本文件由 installer/upgrade-sql/generate-full-schema.mjs 生成。
 
 -- ----------------------------------------------------------------------
@@ -2099,3 +2099,12 @@ CREATE TABLE `core_scheduled_task_queue_state` (
 -- Source: core/core-backend/src/main/resources/db/migration/V2.0.0.6__audit_log_filter_index.sql
 -- ----------------------------------------------------------------------
 CREATE INDEX idx_audit_log_filter_time ON core_audit_log (operation_type, resource_type, operation_time);
+
+
+-- ----------------------------------------------------------------------
+-- Source: core/core-backend/src/main/resources/db/migration/V2.0.2.2__rotate_default_crypto_key.sql
+-- ----------------------------------------------------------------------
+-- 清理早期初始化脚本写入的固定系统密钥。服务启动时会自动生成部署专属密钥。
+DELETE FROM core_crypto_key
+WHERE id = 1
+  AND create_time = 1779664249927;
