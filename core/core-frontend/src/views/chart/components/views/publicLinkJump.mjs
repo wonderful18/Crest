@@ -3,6 +3,7 @@ export const isPublicLinkHash = hash => String(hash || '').startsWith('#/link/')
 
 export const buildPublicLinkTargetUrl = ({
   hash,
+  publicJumpId,
   targetDvId,
   targetDvType,
   attachParamsInfo = '',
@@ -13,7 +14,8 @@ export const buildPublicLinkTargetUrl = ({
   const [linkPath, queryText = ''] = currentHash.split('?')
   const currentParams = new URLSearchParams(queryText)
   const params = new URLSearchParams()
-  const ticket = currentParams.get('ticket')
+  const targetLinkPath = publicJumpId ? `#/link/${publicJumpId}` : linkPath
+  const ticket = publicJumpId ? '' : currentParams.get('ticket')
   if (ticket) {
     params.set('ticket', ticket)
   }
@@ -22,7 +24,7 @@ export const buildPublicLinkTargetUrl = ({
     params.set('targetDvType', String(targetDvType))
   }
   params.set('fromLink', 'true')
-  let url = `${linkPath}?${params.toString()}`
+  let url = `${targetLinkPath}?${params.toString()}`
   if (attachParamsInfo) {
     url += attachParamsInfo
   } else {
