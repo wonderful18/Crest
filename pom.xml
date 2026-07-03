@@ -43,7 +43,7 @@
         <velocity.version>2.4.1</velocity.version>
         <ehcache.version>3.10.8</ehcache.version>
         <bcprov.version>1.84</bcprov.version>
-        <logback.version>1.5.25</logback.version>
+        <logback.version>1.5.33</logback.version>
         <tomcat.version>10.1.55</tomcat.version>
         <jackson-bom.version>2.22.0</jackson-bom.version>
         <netty.version>4.2.15.Final</netty.version>
