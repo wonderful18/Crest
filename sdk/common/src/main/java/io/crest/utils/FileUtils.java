@@ -31,7 +31,65 @@ public class FileUtils {
                 || filename.contains("..")
                 || filename.indexOf('\0') >= 0
                 || containsControlCharacter(filename)) {
-            CrestException.throwException(Translator.get("i18n_invalid_file_name"));
+            CrestException.throwException(invalidFileNameMessage());
+        }
+    }
+
+    /**
+     * 校验上传内容大小，避免空文件和超大文件进入后续解析流程
+     */
+    public static void validateUploadFileSize(MultipartFile file, long maxBytes, String fileType) {
+        if (file == null || file.isEmpty()) {
+            CrestException.throwException(fileType + "不能为空");
+        }
+        validateContentSize(file.getSize(), maxBytes, fileType);
+    }
+
+    /**
+     * 校验字节内容大小
+     */
+    public static void validateContentSize(byte[] content, long maxBytes, String fileType) {
+        if (content == null || content.length == 0) {
+            CrestException.throwException(fileType + "不能为空");
+        }
+        validateContentSize(content.length, maxBytes, fileType);
+    }
+
+    /**
+     * 校验内容长度不超过上限
+     */
+    private static void validateContentSize(long size, long maxBytes, String fileType) {
+        if (maxBytes <= 0) {
+            throw new IllegalArgumentException("maxBytes must be positive");
+        }
+        if (size > maxBytes) {
+            CrestException.throwException(fileType + "不能超过" + readableSize(maxBytes));
+        }
+    }
+
+    /**
+     * 将字节上限转换为用户可读格式
+     */
+    private static String readableSize(long bytes) {
+        long mb = 1024L * 1024L;
+        if (bytes % mb == 0) {
+            return (bytes / mb) + "MB";
+        }
+        long kb = 1024L;
+        if (bytes % kb == 0) {
+            return (bytes / kb) + "KB";
+        }
+        return bytes + "B";
+    }
+
+    /**
+     * 非 Web 测试上下文可能没有初始化 i18n，文件名校验仍需返回稳定业务错误
+     */
+    private static String invalidFileNameMessage() {
+        try {
+            return Translator.get("i18n_invalid_file_name");
+        } catch (RuntimeException e) {
+            return "文件名不合法";
         }
     }
 
@@ -40,7 +98,7 @@ public class FileUtils {
      */
     public static File ensureDirectory(String directoryPath) throws IOException {
         if (StringUtils.isBlank(directoryPath) || directoryPath.indexOf('\0') >= 0) {
-            CrestException.throwException(Translator.get("i18n_invalid_file_name"));
+            CrestException.throwException(invalidFileNameMessage());
         }
         File directory = new File(directoryPath).getCanonicalFile();
         if (!directory.exists() && !directory.mkdirs()) {
@@ -60,7 +118,7 @@ public class FileUtils {
         File directory = ensureDirectory(directoryPath);
         File target = new File(directory, filename).getCanonicalFile();
         if (!target.toPath().startsWith(directory.toPath())) {
-            CrestException.throwException(Translator.get("i18n_invalid_file_name"));
+            CrestException.throwException(invalidFileNameMessage());
         }
         return target;
     }

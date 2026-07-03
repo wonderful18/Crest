@@ -96,6 +96,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class DataVisualizationServer implements DataVisualizationApi {
 
+    private static final long MAX_TEMPLATE_FILE_BYTES = 50L * 1024L * 1024L;
+
     @Resource
     private DataVisualizationInfoMapper visualizationInfoMapper;
 
@@ -1443,8 +1445,10 @@ public class DataVisualizationServer implements DataVisualizationApi {
         if (file == null || file.isEmpty()) {
             CrestException.throwException("请选择模板文件");
         }
+        FileUtils.validateUploadFileSize(file, MAX_TEMPLATE_FILE_BYTES, "模板文件");
         String fileName = StringUtils.defaultString(file.getOriginalFilename());
-        if (!isCrestTemplateFile(fileName)) {
+        FileUtils.validateUploadFilename(fileName);
+        if (!isSupportedTemplateFile(fileName)) {
             CrestException.throwException("仅支持 .crest 模板文件");
         }
 
@@ -1480,8 +1484,11 @@ public class DataVisualizationServer implements DataVisualizationApi {
     /**
      * 判断上传文件是否为 Crest 模板文件
      */
-    static boolean isCrestTemplateFile(String fileName) {
-        return Strings.CI.endsWith(StringUtils.defaultString(fileName), ".crest");
+    static boolean isSupportedTemplateFile(String fileName) {
+        String normalized = StringUtils.defaultString(fileName);
+        return Strings.CI.endsWith(normalized, ".crest")
+                || Strings.CI.endsWith(normalized, ".det2")
+                || Strings.CI.endsWith(normalized, ".det2app");
     }
 
     /**
