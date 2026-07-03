@@ -81,7 +81,11 @@ import {
 } from './tableAuxiliaryHeader.mjs'
 import { buildMergeCellsInfo } from './tableMergeCells.mjs'
 import { spanSeriesNumberHeader } from './tableSeriesNumber.mjs'
-import { getTooltipPointerPosition, hasTooltipContent, isSortTooltipRequest } from './tableSortTooltip.mjs'
+import {
+  getTooltipPointerPosition,
+  hasTooltipContent,
+  isSortTooltipRequest
+} from './tableSortTooltip.mjs'
 
 const { t: i18nt } = useI18n()
 
@@ -609,10 +613,11 @@ export function getStyle(chart: Chart, dataConfig: S2DataConfig): Style {
         style.layoutWidthType = 'colAdaptive'
         const parentNodeWidthMap = {}
         const nodeMaxWidthMap = {}
-        const quotaLabelMap = chart.yAxis?.reduce((p, n) => {
-          p[n.engineFieldName] = n.chartShowName || n.name
-          return p
-        }, {}) || {}
+        const quotaLabelMap =
+          chart.yAxis?.reduce((p, n) => {
+            p[n.engineFieldName] = n.chartShowName || n.name
+            return p
+          }, {}) || {}
         let calcCount = 50
         //只计算最后两层表头的宽度，采样 50 个数据
         style.colCfg.width = node => {
@@ -633,7 +638,8 @@ export function getStyle(chart: Chart, dataConfig: S2DataConfig): Style {
           const parentWidth = parentNodeWidthMap[node.parent.id]
           if (!parentWidth || (parentWidth && calcCount < 50)) {
             const parentLabel = node.parent.label
-            const parentTextWidth = spreadsheet.measureTextWidth(parentLabel, colHeaderTheme) + paddingWidth
+            const parentTextWidth =
+              spreadsheet.measureTextWidth(parentLabel, colHeaderTheme) + paddingWidth
             parentNodeWidthMap[node.parent.id] = parentTextWidth
             const siblings = node.parent.children
             const siblingsTextWidthMap = {}
@@ -653,7 +659,8 @@ export function getStyle(chart: Chart, dataConfig: S2DataConfig): Style {
               const offsetWidth = parentTextWidth - siblingsWidth
               const expandOffsetWidth = offsetWidth / Object.keys(siblingsTextWidthMap).length
               for (const key in siblingsTextWidthMap) {
-                const tmpWidth = siblingsTextWidthMap[key] + Math.ceil(expandOffsetWidth) + paddingWidth
+                const tmpWidth =
+                  siblingsTextWidthMap[key] + Math.ceil(expandOffsetWidth) + paddingWidth
                 const maxWidth = nodeMaxWidthMap[key]
                 if (!maxWidth || (maxWidth && tmpWidth > maxWidth)) {
                   nodeMaxWidthMap[key] = tmpWidth
@@ -674,7 +681,8 @@ export function getStyle(chart: Chart, dataConfig: S2DataConfig): Style {
             if (fieldWidth) {
               return fieldWidth
             }
-            const textWidth = spreadsheet.measureTextWidth(node.label, colHeaderTheme) + paddingWidth
+            const textWidth =
+              spreadsheet.measureTextWidth(node.label, colHeaderTheme) + paddingWidth
             return textWidth
           }
         }
@@ -765,7 +773,7 @@ export function getConditions(chart: Chart) {
 
     for (let i = 0; i < conditions.length; i++) {
       const fieldItem = conditions[i]
-      if (!fieldItem.conditions) continue;
+      if (!fieldItem.conditions) continue
 
       for (let j = 0; j < fieldItem.conditions.length; j++) {
         const rule = fieldItem.conditions[j]
@@ -1031,7 +1039,7 @@ export function mappingColor(value, defaultColor, rules, type, filedValueMap?, r
     const t = rule
     let targetValue, max, min
 
-    let checkValue = value;
+    let checkValue = value
     if (sourceField.engineFieldName) {
       checkValue = rowData?.[sourceField.engineFieldName]
       if (checkValue === undefined) {
@@ -1055,7 +1063,7 @@ export function mappingColor(value, defaultColor, rules, type, filedValueMap?, r
       }
     }
 
-    const val = checkValue;
+    const val = checkValue
 
     if (sourceField.fieldType === 2 || sourceField.fieldType === 3 || sourceField.fieldType === 4) {
       targetValue = parseFloat(targetValue)
@@ -1170,52 +1178,52 @@ export function mappingColor(value, defaultColor, rules, type, filedValueMap?, r
       if (!targetValue || !val) {
         break
       } else {
-          // 特殊时间格式不转换, 包含时或者包含时、分时(不包含秒), 直接比较字符串，因为new Date转换会有误差
-          const isSpecialTimeFormat = (dateStyle?: string) =>
-            dateStyle === 'H_m_s' || (dateStyle && dateStyle.length > 5 && dateStyle.length < 11)
+        // 特殊时间格式不转换, 包含时或者包含时、分时(不包含秒), 直接比较字符串，因为new Date转换会有误差
+        const isSpecialTimeFormat = (dateStyle?: string) =>
+          dateStyle === 'H_m_s' || (dateStyle && dateStyle.length > 5 && dateStyle.length < 11)
 
-          let v: number | string
-          let compareTv = targetValue;
-          if (isSpecialTimeFormat(sourceField?.dateStyle)) {
-            v = val
-          } else {
-            v = new Date(val.replace(/-/g, '/') + ' GMT+8').getTime()
-            compareTv = new Date(targetValue.toString().replace(/-/g, '/') + ' GMT+8').getTime()
-          }
-          if (fc.term === 'eq') {
-            if (v === compareTv) {
-              color = fc[type]
-              flag = true
-            }
-          } else if (fc.term === 'not_eq') {
-            if (v !== compareTv) {
-              color = fc[type]
-              flag = true
-            }
-          } else if (fc.term === 'lt') {
-            if (v < compareTv) {
-              color = fc[type]
-              flag = true
-            }
-          } else if (fc.term === 'gt') {
-            if (v > compareTv) {
-              color = fc[type]
-              flag = true
-            }
-          } else if (fc.term === 'le') {
-            if (v <= compareTv) {
-              color = fc[type]
-              flag = true
-            }
-          } else if (fc.term === 'ge') {
-            if (v >= compareTv) {
-              color = fc[type]
-              flag = true
-            }
-          } else if (fc.term === 'default') {
+        let v: number | string
+        let compareTv = targetValue
+        if (isSpecialTimeFormat(sourceField?.dateStyle)) {
+          v = val
+        } else {
+          v = new Date(val.replace(/-/g, '/') + ' GMT+8').getTime()
+          compareTv = new Date(targetValue.toString().replace(/-/g, '/') + ' GMT+8').getTime()
+        }
+        if (fc.term === 'eq') {
+          if (v === compareTv) {
             color = fc[type]
             flag = true
           }
+        } else if (fc.term === 'not_eq') {
+          if (v !== compareTv) {
+            color = fc[type]
+            flag = true
+          }
+        } else if (fc.term === 'lt') {
+          if (v < compareTv) {
+            color = fc[type]
+            flag = true
+          }
+        } else if (fc.term === 'gt') {
+          if (v > compareTv) {
+            color = fc[type]
+            flag = true
+          }
+        } else if (fc.term === 'le') {
+          if (v <= compareTv) {
+            color = fc[type]
+            flag = true
+          }
+        } else if (fc.term === 'ge') {
+          if (v >= compareTv) {
+            color = fc[type]
+            flag = true
+          }
+        } else if (fc.term === 'default') {
+          color = fc[type]
+          flag = true
+        }
       }
       if (flag) {
         break
@@ -1224,7 +1232,7 @@ export function mappingColor(value, defaultColor, rules, type, filedValueMap?, r
   }
 
   if (!color) {
-      color = defaultColor;
+    color = defaultColor
   }
   return color
 }
@@ -1271,15 +1279,13 @@ export function getPivotConditions(chart: Chart) {
       : hexColorToRGBA(tableHeader.tableHeaderBgColor, basicStyle.alpha)
     // 行头字体颜色
     const rowHeaderValueColor = isAlphaColor(tableHeader.tableHeaderColFontColor)
-    ? tableHeader.tableHeaderColFontColor
-    : hexColorToRGBA(tableHeader.tableHeaderColFontColor, basicStyle.alpha)
+      ? tableHeader.tableHeaderColFontColor
+      : hexColorToRGBA(tableHeader.tableHeaderColFontColor, basicStyle.alpha)
     // 行头背景颜色
     const rowHeaderBgColor = isAlphaColor(tableHeader.tableHeaderColBgColor)
       ? tableHeader.tableHeaderColBgColor
       : hexColorToRGBA(tableHeader.tableHeaderColBgColor, basicStyle.alpha)
     const filedValueMap = getFieldValueMap(chart)
-
-
 
     const targetRulesMap = {} // columnName -> Array<{ rule, sourceField }>
     const xFields = chart.xAxis.map(f => f.engineFieldName)
@@ -1287,7 +1293,7 @@ export function getPivotConditions(chart: Chart) {
     const yFields = chart.yAxis.map(f => f.engineFieldName)
     for (let i = 0; i < conditions.length; i++) {
       const fieldItem = conditions[i]
-      if (!fieldItem.conditions) continue;
+      if (!fieldItem.conditions) continue
 
       for (let j = 0; j < fieldItem.conditions.length; j++) {
         const rule = fieldItem.conditions[j]
@@ -1350,7 +1356,14 @@ export function getPivotConditions(chart: Chart) {
           }
 
           return {
-            fill: mappingPivotColor(value, defaultValueColor, rules.toReversed(), 'color', filedValueMap, rowData)
+            fill: mappingPivotColor(
+              value,
+              defaultValueColor,
+              rules.toReversed(),
+              'color',
+              filedValueMap,
+              rowData
+            )
           }
         }
       })
@@ -1394,7 +1407,7 @@ export function mappingPivotColor(value, defaultColor, rules, type, filedValueMa
     const t = rule
     let targetValue, max, min
 
-    let checkValue = value;
+    let checkValue = value
     if (sourceField.engineFieldName) {
       checkValue = rowData?.[sourceField.engineFieldName]
       if (checkValue === undefined) {
@@ -1435,7 +1448,7 @@ export function mappingPivotColor(value, defaultColor, rules, type, filedValueMa
       }
     }
 
-    const val = checkValue;
+    const val = checkValue
 
     if (sourceField.fieldType === 2 || sourceField.fieldType === 3 || sourceField.fieldType === 4) {
       targetValue = parseFloat(targetValue)
@@ -1550,52 +1563,52 @@ export function mappingPivotColor(value, defaultColor, rules, type, filedValueMa
       if (!targetValue || !val) {
         break
       } else {
-          // 特殊时间格式不转换, 包含时或者包含时、分时(不包含秒), 直接比较字符串，因为new Date转换会有误差
-          const isSpecialTimeFormat = (dateStyle?: string) =>
-            dateStyle === 'H_m_s' || (dateStyle && dateStyle.length > 5 && dateStyle.length < 11)
+        // 特殊时间格式不转换, 包含时或者包含时、分时(不包含秒), 直接比较字符串，因为new Date转换会有误差
+        const isSpecialTimeFormat = (dateStyle?: string) =>
+          dateStyle === 'H_m_s' || (dateStyle && dateStyle.length > 5 && dateStyle.length < 11)
 
-          let v: number | string
-          let compareTv = targetValue;
-          if (isSpecialTimeFormat(sourceField?.dateStyle)) {
-            v = val
-          } else {
-            v = new Date(val.replace(/-/g, '/') + ' GMT+8').getTime()
-            compareTv = new Date(targetValue.toString().replace(/-/g, '/') + ' GMT+8').getTime()
-          }
-          if (fc.term === 'eq') {
-            if (v === compareTv) {
-              color = fc[type]
-              flag = true
-            }
-          } else if (fc.term === 'not_eq') {
-            if (v !== compareTv) {
-              color = fc[type]
-              flag = true
-            }
-          } else if (fc.term === 'lt') {
-            if (v < compareTv) {
-              color = fc[type]
-              flag = true
-            }
-          } else if (fc.term === 'gt') {
-            if (v > compareTv) {
-              color = fc[type]
-              flag = true
-            }
-          } else if (fc.term === 'le') {
-            if (v <= compareTv) {
-              color = fc[type]
-              flag = true
-            }
-          } else if (fc.term === 'ge') {
-            if (v >= compareTv) {
-              color = fc[type]
-              flag = true
-            }
-          } else if (fc.term === 'default') {
+        let v: number | string
+        let compareTv = targetValue
+        if (isSpecialTimeFormat(sourceField?.dateStyle)) {
+          v = val
+        } else {
+          v = new Date(val.replace(/-/g, '/') + ' GMT+8').getTime()
+          compareTv = new Date(targetValue.toString().replace(/-/g, '/') + ' GMT+8').getTime()
+        }
+        if (fc.term === 'eq') {
+          if (v === compareTv) {
             color = fc[type]
             flag = true
           }
+        } else if (fc.term === 'not_eq') {
+          if (v !== compareTv) {
+            color = fc[type]
+            flag = true
+          }
+        } else if (fc.term === 'lt') {
+          if (v < compareTv) {
+            color = fc[type]
+            flag = true
+          }
+        } else if (fc.term === 'gt') {
+          if (v > compareTv) {
+            color = fc[type]
+            flag = true
+          }
+        } else if (fc.term === 'le') {
+          if (v <= compareTv) {
+            color = fc[type]
+            flag = true
+          }
+        } else if (fc.term === 'ge') {
+          if (v >= compareTv) {
+            color = fc[type]
+            flag = true
+          }
+        } else if (fc.term === 'default') {
+          color = fc[type]
+          flag = true
+        }
       }
       if (flag) {
         break
@@ -1604,7 +1617,7 @@ export function mappingPivotColor(value, defaultColor, rules, type, filedValueMa
   }
 
   if (!color) {
-      color = defaultColor;
+    color = defaultColor
   }
   return color
 }
@@ -1624,7 +1637,7 @@ function getFieldValueMap(view) {
 function getValue(field, filedValueMap, rowData) {
   if (field.summary === 'value') {
     // 单元格数据
-    let value =  rowData?.[field.field?.engineFieldName]
+    let value = rowData?.[field.field?.engineFieldName]
     // 表头数据
     if (value === undefined) {
       value = rowData.query?.[field.field?.engineFieldName]
@@ -1879,7 +1892,10 @@ export function configTooltip(chart: Chart, option: S2Options) {
 }
 
 // 配置表格复制模式，支持可见区域复制和原生格式复制
-export function configTableCopyInteraction(option: S2Options, copyConfig: Record<string, any> = {}) {
+export function configTableCopyInteraction(
+  option: S2Options,
+  copyConfig: Record<string, any> = {}
+) {
   ;(option as Record<string, any>).crestCopy = copyConfig
   const useVisibleTableCopy = copyConfig.visibleTable === true
   option.interaction = {
@@ -1995,8 +2011,7 @@ function isCopyShortcut(event) {
 function hasCopySelection(s2Instance: SpreadSheet) {
   const selectState = s2Instance.interaction.getState()
   return (
-    selectState?.stateName === InteractionStateName.ALL_SELECTED ||
-    !!selectState?.cells?.length
+    selectState?.stateName === InteractionStateName.ALL_SELECTED || !!selectState?.cells?.length
   )
 }
 
@@ -2096,12 +2111,16 @@ function getCopySelectionIndexes(s2Instance: SpreadSheet) {
   // 判断选中项是否为行头单元格
   const isRowCell = cell => {
     const type = getCellType(cell)
-    return Number.isInteger(cell?.rowIndex) && (type === 'rowCell' || !Number.isInteger(cell?.colIndex))
+    return (
+      Number.isInteger(cell?.rowIndex) && (type === 'rowCell' || !Number.isInteger(cell?.colIndex))
+    )
   }
   // 判断选中项是否为列表头单元格
   const isColCell = cell => {
     const type = getCellType(cell)
-    return Number.isInteger(cell?.colIndex) && (type === 'colCell' || !Number.isInteger(cell?.rowIndex))
+    return (
+      Number.isInteger(cell?.colIndex) && (type === 'colCell' || !Number.isInteger(cell?.rowIndex))
+    )
   }
 
   const dataCells = cells.filter(isDataCell)
@@ -2213,7 +2232,12 @@ function getVisibleTableHeaderRows(
 }
 
 // 获取可见表格指定行列的复制值
-function getVisibleTableValue(rowIndex: number, colIndex: number, fieldMeta, s2Instance: SpreadSheet) {
+function getVisibleTableValue(
+  rowIndex: number,
+  colIndex: number,
+  fieldMeta,
+  s2Instance: SpreadSheet
+) {
   const copyConfig = getTableCopyConfig(s2Instance)
   if (copyConfig.showSeriesNumber && colIndex === 0) {
     const mergedCellsInfo = s2Instance.options.mergedCellsInfo
@@ -2232,12 +2256,22 @@ function getVisibleTableValue(rowIndex: number, colIndex: number, fieldMeta, s2I
 }
 
 // 按选区行列构建可见表格复制数据
-function buildVisibleTableCopy(s2Instance: SpreadSheet, fieldMeta, rowIndexes: number[], colIndexes: number[]) {
+function buildVisibleTableCopy(
+  s2Instance: SpreadSheet,
+  fieldMeta,
+  rowIndexes: number[],
+  colIndexes: number[]
+) {
   if (!colIndexes.length) {
     return null
   }
 
-  const headerRows = getVisibleTableHeaderRows(s2Instance, fieldMeta, colIndexes, rowIndexes[0] ?? 0)
+  const headerRows = getVisibleTableHeaderRows(
+    s2Instance,
+    fieldMeta,
+    colIndexes,
+    rowIndexes[0] ?? 0
+  )
 
   const rows = rowIndexes.map(rowIndex =>
     colIndexes.map(colIndex => getVisibleTableValue(rowIndex, colIndex, fieldMeta, s2Instance))
@@ -2391,7 +2425,10 @@ export function copyContent(s2Instance: SpreadSheet, event, fieldMeta) {
     if (selectState.stateName !== InteractionStateName.ALL_SELECTED && !cells?.length) {
       return
     }
-    if (selectState.stateName === InteractionStateName.ALL_SELECTED || isCellInSelection(cellMeta, cells)) {
+    if (
+      selectState.stateName === InteractionStateName.ALL_SELECTED ||
+      isCellInSelection(cellMeta, cells)
+    ) {
       copyVisibleSelection(s2Instance, fieldMeta)
     }
     s2Instance.interaction.clearState()
@@ -2402,9 +2439,12 @@ export function copyContent(s2Instance: SpreadSheet, event, fieldMeta) {
     return
   }
   // 单元格
-  const content = getTableCellCopyText(getVisibleTableValue(cellMeta.rowIndex, cellMeta.colIndex, fieldMeta, s2Instance), {
-    preserveLineBreaks: true
-  })
+  const content = getTableCellCopyText(
+    getVisibleTableValue(cellMeta.rowIndex, cellMeta.colIndex, fieldMeta, s2Instance),
+    {
+      preserveLineBreaks: true
+    }
+  )
   if (content !== '') {
     const headerRows = getVisibleTableHeaderRows(
       s2Instance,
@@ -2622,7 +2662,7 @@ export async function exportGridPivot(instance: PivotSheet, chart: ChartObj) {
       const { fieldValue } = dataCellMeta
       const cell = worksheet.getCell(rowIndex + maxColHeight + 1, rowLength + colIndex + 1)
       cell.alignment = { vertical: 'middle', horizontal: 'center' }
-      if (fieldValue === "-" || fieldValue === null || fieldValue === undefined) {
+      if (fieldValue === '-' || fieldValue === null || fieldValue === undefined) {
         cell.value = '-'
         continue
       }
@@ -2815,7 +2855,7 @@ export async function exportRowQuotaGridPivot(instance: PivotSheet, chart: Chart
       const { fieldValue } = dataCellMeta
       const cell = worksheet.getCell(rowIndex + maxColHeight + 1, rowLength + colIndex + 2)
       cell.alignment = { vertical: 'middle', horizontal: 'center' }
-      if (fieldValue === "-" || fieldValue === null || fieldValue === undefined) {
+      if (fieldValue === '-' || fieldValue === null || fieldValue === undefined) {
         cell.value = '-'
         continue
       }
@@ -2958,7 +2998,7 @@ export async function exportTreePivot(instance: PivotSheet, chart: ChartObj) {
       const { fieldValue } = dataCellMeta
       const cell = worksheet.getCell(rowIndex + maxColHeight + 1, colIndex + 1 + 1)
       cell.alignment = { vertical: 'middle', horizontal: 'center' }
-      if (fieldValue === "-" || fieldValue === null || fieldValue === undefined) {
+      if (fieldValue === '-' || fieldValue === null || fieldValue === undefined) {
         cell.value = '-'
         continue
       }
@@ -3102,7 +3142,7 @@ export async function exportRowQuotaTreePivot(instance: PivotSheet, chart: Chart
       const { fieldValue } = dataCellMeta
       const cell = worksheet.getCell(rowIndex + maxColHeight + 1, colIndex + 2)
       cell.alignment = { vertical: 'middle', horizontal: 'center' }
-      if (fieldValue === "-" || fieldValue === null || fieldValue === undefined) {
+      if (fieldValue === '-' || fieldValue === null || fieldValue === undefined) {
         cell.value = '-'
         continue
       }
@@ -3346,7 +3386,6 @@ class CustomMergedCell extends MergedCell {
     } as any)
   }
 
-
   protected getTextStyle(): any {
     const textStyle = super.getTextStyle() as any
     const dataCellAlignConfig = this.theme.dataCellAlignConfig
@@ -3421,10 +3460,10 @@ export class CustomDataCell extends TableDataCell {
    * @protected
    */
   drawTextShape() {
-    if (this.meta.isMergedCell) {
+    if (this.meta?.isMergedCell) {
       return
     }
-    if (this.meta.autoWrap) {
+    if (this.meta?.autoWrap && this.meta?.width && this.meta?.height) {
       drawTextShape(this, false)
     } else {
       super.drawTextShape()
@@ -3499,7 +3538,7 @@ export class CustomTableColCell extends TableColCell {
   drawTextShape() {
     if (this.isAuxiliaryHeaderCell()) {
       super.drawTextShape()
-    } else if (this.meta.autoWrap) {
+    } else if (this.meta?.autoWrap && this.meta?.width) {
       drawTextShape(this, true)
     } else {
       super.drawTextShape()
@@ -3513,16 +3552,18 @@ export class CustomTableColCell extends TableColCell {
  * @param isHeader
  */
 const drawTextShape = (cell, isHeader) => {
+  if (!cell?.meta || !cell?.spreadsheet) {
+    return
+  }
+  const cellMeta = cell.meta
   // 换行符
   const lineBreak = '\n'
   // 省略号
   const ellipsis = '...'
   // 用户配置的最大行数
-  const maxLines = cell.meta.maxLines ?? 1
-  const {
-    options: { placeholder }
-  } = cell.spreadsheet
-  const emptyPlaceholder = getEmptyPlaceholder(this, placeholder)
+  const maxLines = cellMeta.maxLines ?? 1
+  const placeholder = cell.spreadsheet.options?.placeholder
+  const emptyPlaceholder = getEmptyPlaceholder(cell, placeholder)
   // 单元格文本
   const { formattedValue } = cell.getFormattedFieldValue()
   const cellText =
@@ -3536,7 +3577,7 @@ const drawTextShape = (cell, isHeader) => {
   let wrapText = getWrapText(
     cellText,
     textStyle,
-    cell.meta.width,
+    cellMeta.width ?? cell.getBBoxByType?.()?.width ?? 0,
     cell.spreadsheet
   )
   const lines = wrapText.split(lineBreak)
@@ -3549,7 +3590,8 @@ const drawTextShape = (cell, isHeader) => {
       cell.spreadsheet,
       maxLines
     )
-    const lineCountInCell = Math.floor(cell.meta.height / textHeight)
+    const cellHeight = cellMeta.height ?? cell.getBBoxByType?.()?.height ?? textHeight
+    const lineCountInCell = Math.max(1, Math.floor(cellHeight / textHeight))
     const wrapTextArr = lines.slice(0, lineCountInCell)
 
     // 根据行数调整换行后的文本内容
@@ -3992,12 +4034,15 @@ export function summaryRowStyle(newChart, newData, tableCell, tableHeader, showS
   // 不显示表头时，减少一个表头的高度
   const headerAndSummaryHeight = showHeader ? getMaxTreeDepth(columns) + 1 : 1
   newChart.on(S2Event.LAYOUT_BEFORE_RENDER, () => {
+    const containerHeight = newChart.container?.cfg?.height ?? newChart.options?.height
+    if (!Number.isFinite(containerHeight)) {
+      return
+    }
     const totalHeight =
       tableHeader.tableTitleHeight * headerAndSummaryHeight +
       tableCell.tableItemHeight * (newData.length - 1)
-    if (totalHeight < newChart.container.cfg.height) {
-      newChart.options.height =
-        totalHeight < newChart.container.cfg.height - 8 ? totalHeight + 8 : totalHeight
+    if (totalHeight < containerHeight) {
+      newChart.options.height = totalHeight < containerHeight - 8 ? totalHeight + 8 : totalHeight
     }
   })
 }

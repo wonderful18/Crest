@@ -27,6 +27,9 @@ overrides:
 
 pnpmfileChecksum: sha256-0bHDlZes/og7pm/Qbxmb/XBT4+fCsyNbylHUl+W1GDY=
 
+patchedDependencies:
+  element-plus-secondary@1.2.13: 3076183a3f89c3bb2b1a5d2d3be30a42e4b775c283ddd5b8df506197be587a11
+
 importers:
 
   .:
@@ -105,7 +108,7 @@ importers:
         version: 6.1.0
       element-plus-secondary:
         specifier: ^1.0.0
-        version: 1.2.13(vue@3.5.34(typescript@5.9.3))
+        version: 1.2.13(patch_hash=3076183a3f89c3bb2b1a5d2d3be30a42e4b775c283ddd5b8df506197be587a11)(vue@3.5.34(typescript@5.9.3))
       element-resize-detector:
         specifier: ^1.2.4
         version: 1.2.4
@@ -5940,7 +5943,7 @@ snapshots:
 
   electron-to-chromium@1.5.360: {}
 
-  element-plus-secondary@1.2.13(vue@3.5.34(typescript@5.9.3)):
+  element-plus-secondary@1.2.13(patch_hash=3076183a3f89c3bb2b1a5d2d3be30a42e4b775c283ddd5b8df506197be587a11)(vue@3.5.34(typescript@5.9.3)):
     dependencies:
       '@ctrl/tinycolor': 4.2.0
       '@element-plus/icons-vue': 2.3.2(vue@3.5.34(typescript@5.9.3))

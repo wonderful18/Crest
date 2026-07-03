@@ -1261,10 +1261,10 @@ defineExpose({
             :label="t('datasource.connection_mode')"
             prop="configuration.connectionType"
           >
-            <el-radio v-model="form.configuration.connectionType" label="sid"
+            <el-radio v-model="form.configuration.connectionType" value="sid"
               >{{ t('datasource.oracle_sid') }}
             </el-radio>
-            <el-radio v-model="form.configuration.connectionType" label="serviceName">
+            <el-radio v-model="form.configuration.connectionType" value="serviceName">
               {{ t('datasource.oracle_service_name') }}
             </el-radio>
           </el-form-item>
@@ -1710,9 +1710,9 @@ defineExpose({
           </el-form-item>
           <el-form-item :label="t('datasetUi.parameter_type')" prop="fieldType">
             <el-radio-group v-model="paramsObj.fieldType">
-              <el-radio :value="0" :label="t('data_source.text')"></el-radio>
-              <el-radio :value="2" :label="t('data_source.numerical_value')"></el-radio>
-              <el-radio :value="3" :label="t('data_source.numeric_value_decimal')"></el-radio>
+              <el-radio :value="0">{{ t('data_source.text') }}</el-radio>
+              <el-radio :value="2">{{ t('data_source.numerical_value') }}</el-radio>
+              <el-radio :value="3">{{ t('data_source.numeric_value_decimal') }}</el-radio>
             </el-radio-group>
           </el-form-item>
         </el-form>

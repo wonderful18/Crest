@@ -108,19 +108,19 @@ watch(
         </el-form-item>
         <el-form-item label="导出范围" :class="'form-item-' + themes">
           <el-radio-group v-model="exportButton.scope" @change="onExportButtonChange">
-            <el-radio :effect="themes" :label="EXCEL_EXPORT_SCOPE.CURRENT_FILTERED">
+            <el-radio :effect="themes" :value="EXCEL_EXPORT_SCOPE.CURRENT_FILTERED">
               当前筛选结果
             </el-radio>
-            <el-radio :effect="themes" :label="EXCEL_EXPORT_SCOPE.ALL">全部数据</el-radio>
+            <el-radio :effect="themes" :value="EXCEL_EXPORT_SCOPE.ALL">全部数据</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="导出内容" :class="'form-item-' + themes">
           <el-radio-group v-model="exportButton.content" @change="onExportButtonChange">
-            <el-radio :effect="themes" :label="EXCEL_EXPORT_CONTENT.VIEW">展示列表数据</el-radio>
+            <el-radio :effect="themes" :value="EXCEL_EXPORT_CONTENT.VIEW">展示列表数据</el-radio>
             <el-radio
               :effect="themes"
               :disabled="formattedExportDisabled"
-              :label="EXCEL_EXPORT_CONTENT.FORMATTED"
+              :value="EXCEL_EXPORT_CONTENT.FORMATTED"
             >
               透视表带格式
             </el-radio>

@@ -326,9 +326,15 @@ const onPointClick = param => {
 const eventEnable = computed(
   () =>
     showPositionActive.value.includes('preview') &&
-    (['Picture', 'CanvasIcon', 'CircleShape', 'SvgTriangle', 'RectShape', 'ScrollText'].includes(
-      config.value.component
-    ) ||
+    ([
+      'Picture',
+      'CanvasIcon',
+      'CircleShape',
+      'SvgTriangle',
+      'RectShape',
+      'BackgroundCard',
+      'ScrollText'
+    ].includes(config.value.component) ||
       ['indicator', 'rich-text'].includes(config.value.innerType)) &&
     config.value.events &&
     config.value.events.checked &&

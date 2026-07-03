@@ -298,8 +298,8 @@ const list: any[] = [
     // GroupArea 用固定 id 区分区域分组，便于画布序列化时保持兼容。
     id: 100000001,
     component: 'GroupArea',
-    name: 'group_area',
-    label: 'group_area',
+    name: t('visualization.group_area'),
+    label: t('visualization.group_area'),
     propValue: '&nbsp;',
     icon: 'icon_graphical',
     innerType: 'GroupArea',
@@ -578,6 +578,22 @@ const list: any[] = [
       height: 300,
       backgroundColor: 'rgba(236,231,231,0.1)',
       borderActive: false,
+      backdropFilter: 'blur(0px)'
+    }
+  },
+  {
+    // 背景卡片复用矩形渲染能力，用于承托多个图表形成视觉整体。
+    component: 'BackgroundCard',
+    name: t('visualization.background_card'),
+    label: t('visualization.background_card'),
+    propValue: '&nbsp;',
+    icon: 'icon_graphical',
+    style: {
+      width: 600,
+      height: 300,
+      backgroundColor: 'rgba(19,28,66,0.72)',
+      borderActive: false,
+      borderRadius: 6,
       backdropFilter: 'blur(0px)'
     }
   },

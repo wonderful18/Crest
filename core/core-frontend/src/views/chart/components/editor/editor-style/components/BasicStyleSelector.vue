@@ -562,7 +562,7 @@ onMounted(() => {
         <el-radio value="roundAngle" :effect="themes">{{ t('chart.roundAngle') }}</el-radio>
         <el-radio
           v-if="!props.chart.type.includes('-stack')"
-          label="topRoundAngle"
+          value="topRoundAngle"
           :effect="themes"
           >{{ t('chart.topRoundAngle') }}</el-radio
         >
@@ -581,8 +581,8 @@ onMounted(() => {
         v-model="state.basicStyleForm.layout"
         @change="changeBasicStyle('layout')"
       >
-        <el-radio :effect="themes" label="horizontal">{{ t('chart.horizontal') }}</el-radio>
-        <el-radio :effect="themes" label="vertical">{{ t('chart.vertical') }}</el-radio>
+        <el-radio :effect="themes" value="horizontal">{{ t('chart.horizontal') }}</el-radio>
+        <el-radio :effect="themes" value="vertical">{{ t('chart.vertical') }}</el-radio>
       </el-radio-group>
     </el-form-item>
     <!-- 地图热力图和流向地图基础渲染参数。 -->
@@ -923,8 +923,8 @@ onMounted(() => {
         v-model="state.basicStyleForm.tablePageMode"
         @change="changeBasicStyle('tablePageMode', true)"
       >
-        <el-radio :effect="themes" label="page">{{ t('chart.page_mode_page') }}</el-radio>
-        <el-radio :effect="themes" label="pull">{{ t('chart.page_mode_pull') }}</el-radio>
+        <el-radio :effect="themes" value="page">{{ t('chart.page_mode_page') }}</el-radio>
+        <el-radio :effect="themes" value="pull">{{ t('chart.page_mode_pull') }}</el-radio>
       </el-radio-group>
     </el-form-item>
     <el-form-item
@@ -938,8 +938,8 @@ onMounted(() => {
         v-model="state.basicStyleForm.tablePageStyle"
         @change="changeBasicStyle('tablePageStyle', false)"
       >
-        <el-radio :effect="themes" label="simple">{{ t('chart.page_pager_simple') }}</el-radio>
-        <el-radio :effect="themes" label="general">{{ t('chart.page_pager_general') }}</el-radio>
+        <el-radio :effect="themes" value="simple">{{ t('chart.page_pager_simple') }}</el-radio>
+        <el-radio :effect="themes" value="general">{{ t('chart.page_pager_general') }}</el-radio>
       </el-radio-group>
     </el-form-item>
     <el-form-item
@@ -985,10 +985,10 @@ onMounted(() => {
         <el-radio value="custom" :effect="themes">
           {{ t('chart.table_column_fixed') }}
         </el-radio>
-        <el-radio v-show="chart.type !== 'table-pivot'" label="field" :effect="themes">
+        <el-radio v-show="chart.type !== 'table-pivot'" value="field" :effect="themes">
           {{ t('chart.table_column_custom') }}
         </el-radio>
-        <el-radio v-show="chart.type === 'table-pivot'" label="colAdapt" :effect="themes">
+        <el-radio v-show="chart.type === 'table-pivot'" value="colAdapt" :effect="themes">
           {{ t('chart.table_column_col_adapt') }}
         </el-radio>
       </el-radio-group>
@@ -1053,7 +1053,7 @@ onMounted(() => {
         <el-radio value="fixed" :effect="themes">
           {{ t('chart.table_row_header_fixed') }}
         </el-radio>
-        <el-radio label="percent" :effect="themes">
+        <el-radio value="percent" :effect="themes">
           {{ t('chart.table_row_header_percent') }}
         </el-radio>
       </el-radio-group>
@@ -1338,8 +1338,8 @@ onMounted(() => {
         v-model="state.basicStyleForm.radarShape"
         @change="changeBasicStyle('radarShape')"
       >
-        <el-radio :effect="themes" label="polygon">{{ t('chart.polygon') }}</el-radio>
-        <el-radio :effect="themes" label="circle">{{ t('chart.circle') }}</el-radio>
+        <el-radio :effect="themes" value="polygon">{{ t('chart.polygon') }}</el-radio>
+        <el-radio :effect="themes" value="circle">{{ t('chart.circle') }}</el-radio>
       </el-radio-group>
     </el-form-item>
     <el-form-item

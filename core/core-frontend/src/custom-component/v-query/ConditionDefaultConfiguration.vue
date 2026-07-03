@@ -477,8 +477,8 @@ defineExpose({
         @change="val => multipleChange(val as boolean, true)"
         v-model="multiple"
       >
-        <el-radio :label="false">{{ t('visualization.single_choice') }}</el-radio>
-        <el-radio :label="true">{{ t('visualization.multiple_choice') }}</el-radio>
+        <el-radio :value="false">{{ t('visualization.single_choice') }}</el-radio>
+        <el-radio :value="true">{{ t('visualization.multiple_choice') }}</el-radio>
       </el-radio-group>
     </div>
   </div>
