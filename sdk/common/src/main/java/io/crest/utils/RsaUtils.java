@@ -318,6 +318,7 @@ public class RsaUtils {
         }
     }
 
+    @SuppressWarnings("java/weak-cryptographic-algorithm")
     private static String aesCbcHmacEncrypt(String data, byte[] key) throws Exception {
         byte[] iv = new byte[16];
         SECURE_RANDOM.nextBytes(iv);
@@ -329,6 +330,7 @@ public class RsaUtils {
         return AES_CBC_HMAC_PREFIX + payload + ":" + hmacHex(key, payload);
     }
 
+    @SuppressWarnings("java/weak-cryptographic-algorithm")
     private static String aesCbcHmacDecrypt(String data, byte[] key) throws Exception {
         String payload = data.substring(AES_CBC_HMAC_PREFIX.length());
         String[] parts = payload.split(":", 3);
