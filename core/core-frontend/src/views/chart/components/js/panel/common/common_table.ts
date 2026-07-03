@@ -81,6 +81,7 @@ import {
 } from './tableAuxiliaryHeader.mjs'
 import { buildMergeCellsInfo } from './tableMergeCells.mjs'
 import { spanSeriesNumberHeader } from './tableSeriesNumber.mjs'
+import { getTooltipPointerPosition, hasTooltipContent, isSortTooltipRequest } from './tableSortTooltip.mjs'
 
 const { t: i18nt } = useI18n()
 
@@ -1670,16 +1671,32 @@ export function handleTableEmptyStrategy(chart: Chart) {
 
 export class SortTooltip extends BaseTooltip {
   show(showOptions) {
-    const { iconName } = showOptions
-    if (iconName) {
-      this.showSortTooltip(showOptions)
+    const sortMeta = this.getSortTooltipMeta(showOptions)
+    if (sortMeta) {
+      this.showSortTooltip({ ...showOptions, meta: sortMeta })
       return
     }
-    super.show(showOptions)
+    if (hasTooltipContent(showOptions)) {
+      super.show(showOptions)
+      return
+    }
+    this.hide()
+  }
+
+  getSortTooltipMeta(showOptions) {
+    if (isSortTooltipRequest(showOptions)) {
+      return showOptions.meta
+    }
+    return null
   }
 
   showSortTooltip(showOptions) {
-    const { position, options, meta, event } = showOptions
+    const { position, meta, event } = showOptions
+    if (!position || !meta) {
+      this.hide()
+      return
+    }
+    const { options } = showOptions
     const { enterable } = getTooltipDefaultOptions(options) as { enterable?: boolean }
     const { autoAdjustBoundary, adjustPosition } = this.spreadsheet.options.tooltip || {}
     this.visible = true
@@ -1796,8 +1813,9 @@ export function configHeaderInteraction(chart: Chart, option: S2Options) {
             y: event.clientY
           },
           event,
+          sortMenu: true,
           ...props
-        })
+        } as any)
         const parent = document.getElementById(chart.container)
         if (parent?.childNodes?.length) {
           const child = Array.from(parent.childNodes)
@@ -1816,6 +1834,25 @@ export function configHeaderInteraction(chart: Chart, option: S2Options) {
       }
     }
   ]
+}
+
+export function bindHeaderSortInteraction(sheet: SpreadSheet, enabled = false) {
+  if (!enabled) {
+    return
+  }
+  sheet.on(S2Event.COL_CELL_CLICK, event => {
+    const position = getTooltipPointerPosition(event)
+    const meta = (event as any)?.meta
+    if (!position || !meta) {
+      return
+    }
+    sheet.showTooltip({
+      position,
+      event,
+      meta,
+      sortMenu: true
+    } as any)
+  })
 }
 
 // 根据图表 tooltip 样式覆盖 S2 默认提示框样式

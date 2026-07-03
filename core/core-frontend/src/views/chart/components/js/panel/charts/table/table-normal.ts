@@ -2,6 +2,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { formatterItem, valueFormatter } from '@/views/chart/components/js/formatter'
 import {
   bindTableCopyEvents,
+  bindHeaderSortInteraction,
   configAuxiliaryHeaderLayout,
   configEmptyDataStyle,
   configTableCopyInteraction,
@@ -260,6 +261,7 @@ export class TableNormal extends S2ChartView<TableSheet> {
     this.configSummaryRowAndIndex(chart, pageInfo, s2Options, s2DataConfig)
     // 开始渲染
     const newChart = new TableSheet(containerDom, s2DataConfig, s2Options)
+    bindHeaderSortInteraction(newChart, tableHeader.tableHeaderSort)
     // 总计紧贴在单元格后面
     summaryRowStyle(newChart, newData, tableCell, tableHeader, basicStyle.showSummary)
     // 自适应铺满

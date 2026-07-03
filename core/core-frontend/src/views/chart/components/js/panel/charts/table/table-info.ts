@@ -18,6 +18,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { cloneDeep, filter, isEqual, merge } from 'lodash-es'
 import {
   bindTableCopyEvents,
+  bindHeaderSortInteraction,
   calcTreeWidth,
   calculateGroupHeaderHeight,
   calculateHeaderHeight,
@@ -273,6 +274,7 @@ export class TableInfo extends S2ChartView<TableSheet> {
     this.configSummaryRowAndIndex(chart, pageInfo, s2Options, s2DataConfig)
     // 开始渲染
     const newChart = new TableSheet(containerDom, s2DataConfig, s2Options)
+    bindHeaderSortInteraction(newChart, tableHeader.tableHeaderSort)
     // 总计紧贴在单元格后面
     summaryRowStyle(newChart, newData, tableCell, tableHeader, basicStyle.showSummary)
     // 开启自动换行
