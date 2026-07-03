@@ -118,21 +118,32 @@ public class FlywayMysqlSqlNotesCallback implements Callback {
      */
     private void cleanDataAssetSeedRows(Context context) {
         try (Statement statement = context.getConnection().createStatement()) {
-            deleteSeedRows(statement, DELETE_CORE_ROLE_MENU_PERMISSION, DELETE_LEGACY_ROLE_MENU_PERMISSION);
-            deleteSeedRows(statement, DELETE_CORE_MENU, DELETE_LEGACY_MENU);
+            deleteRolePermissionSeedRows(statement);
+            deleteMenuSeedRows(statement);
         } catch (SQLException e) {
             LogUtil.debug("Flyway data asset seed cleanup skipped: " + e.getMessage());
         }
     }
 
     /**
-     * 清理当前元数据表；历史迁移阶段新表尚不存在时回退到旧表
+     * 清理当前权限表；历史迁移阶段新表尚不存在时回退到旧表
      */
-    private void deleteSeedRows(Statement statement, String currentSchemaSql, String legacySchemaSql) throws SQLException {
+    private void deleteRolePermissionSeedRows(Statement statement) throws SQLException {
         try {
-            statement.execute(currentSchemaSql);
+            statement.execute(DELETE_CORE_ROLE_MENU_PERMISSION);
         } catch (SQLException e) {
-            statement.execute(legacySchemaSql);
+            statement.execute(DELETE_LEGACY_ROLE_MENU_PERMISSION);
+        }
+    }
+
+    /**
+     * 清理当前菜单表；历史迁移阶段新表尚不存在时回退到旧表
+     */
+    private void deleteMenuSeedRows(Statement statement) throws SQLException {
+        try {
+            statement.execute(DELETE_CORE_MENU);
+        } catch (SQLException e) {
+            statement.execute(DELETE_LEGACY_MENU);
         }
     }
 }

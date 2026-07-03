@@ -321,10 +321,24 @@ const orderedTextReplacements = [...schedulerMetadataReplacements, ...commentTex
   (left, right) => right[0].length - left[0].length
 )
 
-const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const isSqlIdentifierChar = value => /[A-Za-z0-9_]/.test(value)
 
-const replaceSqlIdentifier = (source, oldName, newName) =>
-  source.replace(new RegExp(`(?<![A-Za-z0-9_])${escapeRegExp(oldName)}(?![A-Za-z0-9_])`, 'g'), newName)
+const replaceSqlIdentifier = (source, oldName, newName) => {
+  let result = ''
+  let cursor = 0
+  let matchIndex = source.indexOf(oldName)
+  while (matchIndex !== -1) {
+    const before = matchIndex > 0 ? source[matchIndex - 1] : ''
+    const afterIndex = matchIndex + oldName.length
+    const after = afterIndex < source.length ? source[afterIndex] : ''
+    if (!isSqlIdentifierChar(before) && !isSqlIdentifierChar(after)) {
+      result += source.slice(cursor, matchIndex) + newName
+      cursor = afterIndex
+    }
+    matchIndex = source.indexOf(oldName, afterIndex)
+  }
+  return result + source.slice(cursor)
+}
 
 const applyFinalNaming = source => {
   const withTableNames = orderedTableNameReplacements.reduce(
