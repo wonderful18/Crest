@@ -40,6 +40,10 @@ import {
   isTableSeriesNumberCell,
   isTableSeriesNumberNode
 } from '@/views/chart/components/js/panel/common/tableSeriesNumber.mjs'
+import {
+  appendSummaryColumnsToS2Config,
+  buildSummaryRowWithColumns
+} from '@/views/chart/components/js/panel/common/tableSummaryColumns.mjs'
 
 const { t } = useI18n()
 /**
@@ -194,6 +198,7 @@ export class TableNormal extends S2ChartView<TableSheet> {
       meta: meta,
       data: newData
     }
+    appendSummaryColumnsToS2Config(s2DataConfig, basicStyle.summaryColumns)
 
     // options
     const s2Options: S2Options = {
@@ -421,12 +426,17 @@ export class TableNormal extends S2ChartView<TableSheet> {
       s2Options.style.rowCfg = { heightByField }
       // 计算汇总加入到数据里，冻结最后一行
       s2Options.frozenTrailingRowCount = 1
-      const summaryObj = getSummaryRow(
+      let summaryObj = getSummaryRow(
         data,
         yAxis,
         basicStyle.seriesSummary,
         chart.data.customSumResult
       ) as any
+      summaryObj = buildSummaryRowWithColumns(
+        summaryObj,
+        basicStyle.summaryColumns,
+        chart.data.summaryColumnResult
+      )
       data.push(summaryObj)
     }
     s2Options.dataCell = (viewMeta, spreadsheet) => {

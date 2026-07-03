@@ -5,6 +5,7 @@ import io.crest.api.chart.dto.PageInfo;
 import io.crest.api.dataset.union.DatasetGroupInfoDTO;
 import io.crest.chart.charts.impl.DefaultChartHandler;
 import io.crest.chart.constant.ChartConstants;
+import io.crest.chart.server.ChartDataServer;
 import io.crest.constant.FieldTypeConstants;
 import io.crest.engine.constant.ExtFieldConstant;
 import io.crest.engine.sql.SQLProvider;
@@ -249,62 +250,81 @@ public class TableNormalHandler extends DefaultChartHandler {
         }
         // 自定义汇总
         var basicStyle = (Map<String, Object>) view.getCustomAttr().get("basicStyle");
-        var showSummary = BooleanUtils.isTrue((Boolean) basicStyle.get("showSummary"));
+        var showSummary = basicStyle.get("showSummary") != null && BooleanUtils.toBoolean(basicStyle.get("showSummary").toString());
         if (showSummary) {
-            var fieldList = (List) basicStyle.get("seriesSummary");
-            if (CollectionUtils.isNotEmpty(fieldList)) {
-                var customCalcFields = new ArrayList<ChartViewFieldDTO>();
-                var seriesList = JsonUtil.parseList(JsonUtil.toJSONString(fieldList).toString(), new TypeReference<List<ChartViewFieldDTO>>(){});
-                var quotaIds = allFields.stream().map(DatasetTableFieldDTO::getEngineFieldName).collect(Collectors.toSet());
-                seriesList.forEach(field -> {
-                    if (!BooleanUtils.isTrue(field.getShow()) || !"custom".equalsIgnoreCase(field.getSummary())) {
-                        return;
-                    }
-                    if (StringUtils.isBlank(field.getOriginName())) {
-                        return;
-                    }
-                    if (!quotaIds.contains(field.getField())) {
-                        return;
-                    }
-                    field.setSummary("");
-                    field.setFieldType(FieldTypeConstants.FLOAT);
-                    field.setId(IDUtils.snowID());
-                    field.setExtField(ExtFieldConstant.EXT_CALC);
-                    customCalcFields.add(field);
-                });
-                if (!customCalcFields.isEmpty()) {
-                    var xFields = sqlMeta.getXFields();
-                    var xOrder = sqlMeta.getXOrders();
-                    // 清空维度值，获取完结果再设置回去
-                    sqlMeta.setXFields(Collections.emptyList());
-                    sqlMeta.setXOrders(Collections.emptyList());
-                    List<DatasetTableFieldDTO> tmpList = FieldUtil.transFields(allFields);
-                    tmpList.addAll(customCalcFields);
-                    Quota2SQLObj.quota2sqlObj(sqlMeta, customCalcFields, tmpList, crossDs, dsMap, Utils.getParams(FieldUtil.transFields(allFields)), view.getCalParams(), pluginManage);
-                    String customSumSql = SQLProvider.createQuerySQL(sqlMeta, false, !Strings.CI.equals(dsMap.values().iterator().next().getType(), "es"), view);
-                    customSumSql = provider.rebuildSQL(customSumSql, sqlMeta, crossDs, dsMap);
-                    var customSumReq = new DatasourceRequest();
-                    fillDatasourceRequest(customSumReq, crossDs, dsMap, sqlMap);
-                    customSumReq.setQuery(customSumSql);
-                    var customSumData = (List<String[]>) provider.fetchResultField(customSumReq).get("data");
-                    if (CollectionUtils.isNotEmpty(customSumData)) {
-                        var customSumResult = new HashMap<String, BigDecimal>();
-                        // 只取第一行结果
-                        var customSumArr = customSumData.get(0);
-                        for (int i = 0; i < customSumArr.length; i++) {
-                            if (customCalcFields.get(i) != null && customSumArr[i] != null) {
-                                try {
-                                    customSumResult.put(customCalcFields.get(i).getField(), new BigDecimal(customSumArr[i]));
-                                } catch (Exception e) {
-                                    customSumResult.put(customCalcFields.get(i).getField(), new BigDecimal(0));
+            try {
+                var fieldList = (List) basicStyle.get("seriesSummary");
+                var summaryColumnFields = ChartDataServer.buildSummaryColumnCalcFields(view, allFields);
+                if (CollectionUtils.isNotEmpty(fieldList) || CollectionUtils.isNotEmpty(summaryColumnFields)) {
+                    var customCalcFields = new ArrayList<ChartViewFieldDTO>();
+                    var seriesList = CollectionUtils.isEmpty(fieldList)
+                            ? Collections.<ChartViewFieldDTO>emptyList()
+                            : JsonUtil.parseList(JsonUtil.toJSONString(fieldList).toString(), new TypeReference<List<ChartViewFieldDTO>>(){});
+                    var quotaIds = allFields.stream().map(DatasetTableFieldDTO::getEngineFieldName).collect(Collectors.toSet());
+                    seriesList.forEach(field -> {
+                        if (!BooleanUtils.isTrue(field.getShow()) || !"custom".equalsIgnoreCase(field.getSummary())) {
+                            return;
+                        }
+                        if (StringUtils.isBlank(field.getOriginName())) {
+                            return;
+                        }
+                        if (!quotaIds.contains(field.getField())) {
+                            return;
+                        }
+                        field.setSummary("");
+                        field.setFieldType(FieldTypeConstants.FLOAT);
+                        field.setId(IDUtils.snowID());
+                        field.setExtField(ExtFieldConstant.EXT_CALC);
+                        customCalcFields.add(field);
+                    });
+                    var customColumnStartIndex = customCalcFields.size();
+                    customCalcFields.addAll(summaryColumnFields);
+                    if (!customCalcFields.isEmpty()) {
+                        var xFields = sqlMeta.getXFields();
+                        var xOrder = sqlMeta.getXOrders();
+                        try {
+                            // 清空维度值，获取完结果再设置回去
+                            sqlMeta.setXFields(Collections.emptyList());
+                            sqlMeta.setXOrders(Collections.emptyList());
+                            List<DatasetTableFieldDTO> tmpList = FieldUtil.transFields(allFields);
+                            tmpList.addAll(customCalcFields);
+                            Quota2SQLObj.quota2sqlObj(sqlMeta, customCalcFields, tmpList, crossDs, dsMap, Utils.getParams(FieldUtil.transFields(allFields)), view.getCalParams(), pluginManage);
+                            String customSumSql = SQLProvider.createQuerySQL(sqlMeta, false, !Strings.CI.equals(dsMap.values().iterator().next().getType(), "es"), view);
+                            customSumSql = provider.rebuildSQL(customSumSql, sqlMeta, crossDs, dsMap);
+                            var customSumReq = new DatasourceRequest();
+                            fillDatasourceRequest(customSumReq, crossDs, dsMap, sqlMap);
+                            customSumReq.setQuery(customSumSql);
+                            var customSumData = (List<String[]>) provider.fetchResultField(customSumReq).get("data");
+                            if (CollectionUtils.isNotEmpty(customSumData)) {
+                                var customSumResult = new HashMap<String, BigDecimal>();
+                                var summaryColumnResult = new HashMap<String, BigDecimal>();
+                                // 只取第一行结果
+                                var customSumArr = customSumData.get(0);
+                                for (int i = 0; i < customSumArr.length && i < customCalcFields.size(); i++) {
+                                    if (customCalcFields.get(i) != null && customSumArr[i] != null) {
+                                        var resultMap = i < customColumnStartIndex ? customSumResult : summaryColumnResult;
+                                        try {
+                                            resultMap.put(customCalcFields.get(i).getField(), new BigDecimal(customSumArr[i]));
+                                        } catch (Exception e) {
+                                            resultMap.put(customCalcFields.get(i).getField(), BigDecimal.ZERO);
+                                        }
+                                    }
+                                }
+                                if (!customSumResult.isEmpty()) {
+                                    result.put("customSumResult", customSumResult);
+                                }
+                                if (!summaryColumnResult.isEmpty()) {
+                                    result.put("summaryColumnResult", summaryColumnResult);
                                 }
                             }
+                        } finally {
+                            sqlMeta.setXFields(xFields);
+                            sqlMeta.setXOrders(xOrder);
                         }
-                        result.put("customSumResult", customSumResult);
                     }
-                    sqlMeta.setXFields(xFields);
-                    sqlMeta.setXOrders(xOrder);
                 }
+            } catch (Exception e) {
+                io.crest.utils.LogUtil.error(e.getMessage(), e);
             }
         }
         return calcResult;

@@ -1799,6 +1799,7 @@ export const DEFAULT_BASIC_STYLE: ChartBasicStyle = {
   gaugePercentLabel: true,
   showSummary: false,
   summaryLabel: t('chart.total_show'),
+  summaryColumns: [],
   seriesColor: [],
   layout: 'horizontal',
   mapSymbolSizeMin: 4,
