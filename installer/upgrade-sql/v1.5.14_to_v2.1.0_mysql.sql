@@ -1,6 +1,6 @@
 -- Crest v1.5.14 -> v2.1.0 upgrade entrypoint for MySQL.
 -- Run this file with the mysql client from the extracted Crest package root:
--- mysql -u<user> -p <crest_database> < upgrade-sql/v1.5.14_to_v2.1.0_mysql.sql
+-- mysql --commands=ON -u<user> -p <crest_database> < upgrade-sql/v1.5.14_to_v2.1.0_mysql.sql
 --
 -- This file intentionally reuses the reviewed incremental scripts in this
 -- directory. Do not run a full-schema file against an existing v1.5.14 database.

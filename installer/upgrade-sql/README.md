@@ -53,7 +53,7 @@ OceanBase MySQL 租户执行文件名带 `ob_mysql` 的脚本。OceanBase Oracle
 
 2.0.2 升级到 2.0.3 时没有新增数据库升级 SQL，替换前后端应用镜像即可。
 
-1.5.14 升级到 2.1.0 时，MySQL 环境在离线包根目录执行 `upgrade-sql/v1.5.14_to_v2.1.0_mysql.sql`。该入口脚本会先检查 v1.5.14 元数据表，再按顺序调用已有 2.0.x 增量脚本和 `v2.0.3_to_v2.1.0_mysql.sql`。不要对已有 v1.5.14 系统库执行 full schema 文件。
+1.5.14 升级到 2.1.0 时，MySQL 环境在离线包根目录执行 `mysql --commands=ON -u<user> -p <crest_database> < upgrade-sql/v1.5.14_to_v2.1.0_mysql.sql`。该入口脚本会先检查 v1.5.14 元数据表，再按顺序调用已有 2.0.x 增量脚本和 `v2.0.3_to_v2.1.0_mysql.sql`。不要对已有 v1.5.14 系统库执行 full schema 文件。
 
 2.0.3 升级到 2.1.0 时，按数据库类型选择对应脚本：
 
