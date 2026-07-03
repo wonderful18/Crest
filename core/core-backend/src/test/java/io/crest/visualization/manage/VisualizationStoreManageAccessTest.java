@@ -38,6 +38,7 @@ class VisualizationStoreManageAccessTest {
     }
 
     @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
     void executeRejectsUnreadableResourceBeforeCreatingFavorite() {
         AuthUtils.setUser(new TokenUserBO(2L, 1L));
         CoreStoreMapper storeMapper = mock(CoreStoreMapper.class);
