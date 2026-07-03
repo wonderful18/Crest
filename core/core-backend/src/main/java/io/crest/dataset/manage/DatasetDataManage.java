@@ -4,6 +4,7 @@ import io.crest.api.chart.dto.ChartSortFieldDTO;
 import io.crest.api.dataset.dto.*;
 import io.crest.api.dataset.union.DatasetGroupInfoDTO;
 import io.crest.api.dataset.union.DatasetTableInfoDTO;
+import io.crest.api.dataset.union.UnionDTO;
 import io.crest.api.permissions.auth.dto.BusiPerCheckDTO;
 import io.crest.api.permissions.dataset.api.RowPermissionsApi;
 import io.crest.api.permissions.dataset.dto.DataSetRowPermissionsTreeDTO;
@@ -50,6 +51,7 @@ import io.crest.portal.DataPortalPermissionManage;
 import io.crest.system.manage.CorePermissionManage;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.BeanUtils;
+import io.crest.utils.CrestPermissionUtils;
 import io.crest.utils.JsonUtil;
 import io.crest.utils.TreeUtils;
 import jakarta.annotation.Resource;
@@ -114,6 +116,45 @@ public class DatasetDataManage {
     }
 
     /**
+     * 加载数据源并校验当前用户是否拥有创建者权限，避免在未授权场景提前探测元数据或构造 SQL
+     */
+    private CoreDatasource requireDatasourceAccess(Long datasourceId) {
+        return requireDatasourceAccess(datasourceId, "i18n_datasource_not_exists");
+    }
+
+    private CoreDatasource requireDatasourceAccess(Long datasourceId, String missingMessageKey) {
+        CoreDatasource datasource = dataSourceManage.getCoreDatasource(datasourceId);
+        if (datasource == null) {
+            CrestException.throwException(Translator.get(missingMessageKey));
+        }
+        CrestPermissionUtils.requireCreator(datasource.getCreateBy());
+        return datasource;
+    }
+
+    private void requireUnionDatasourceAccess(DatasetGroupInfoDTO datasetGroupInfoDTO) {
+        if (datasetGroupInfoDTO == null) {
+            return;
+        }
+        requireUnionDatasourceAccess(datasetGroupInfoDTO.getUnion());
+    }
+
+    private void requireUnionDatasourceAccess(List<UnionDTO> unionList) {
+        if (CollectionUtils.isEmpty(unionList)) {
+            return;
+        }
+        for (UnionDTO union : unionList) {
+            if (union == null) {
+                continue;
+            }
+            DatasetTableDTO currentDs = union.getCurrentDs();
+            if (currentDs != null && ObjectUtils.isNotEmpty(currentDs.getDatasourceId())) {
+                requireDatasourceAccess(currentDs.getDatasourceId());
+            }
+            requireUnionDatasourceAccess(union.getChildrenDs());
+        }
+    }
+
+    /**
      * 不支持 FULL JOIN 的数据源类型列表，预览前需要提前阻断
      */
     public static final List<String> notFullDs = List.of("mysql", "obMysql", "mariadb", "Excel", "API", "H2", "h2");
@@ -129,10 +170,7 @@ public class DatasetDataManage {
         String type = StringUtils.defaultIfBlank(datasetTableDTO.getType(), DatasetTableType.DB);
         DatasetTableInfoDTO tableInfoDTO = resolveTableInfo(datasetTableDTO, type);
         if (Strings.CI.equals(type, DatasetTableType.DB) || Strings.CI.equals(type, DatasetTableType.SQL)) {
-            CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(datasetTableDTO.getDatasourceId());
-            if (coreDatasource == null) {
-                CrestException.throwException(Translator.get("i18n_datasource_delete"));
-            }
+            CoreDatasource coreDatasource = requireDatasourceAccess(datasetTableDTO.getDatasourceId(), "i18n_datasource_delete");
             if (coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name())
                     && Strings.CI.equals(type, DatasetTableType.DB)) {
                 DatasourceRequest datasourceRequest = new DatasourceRequest();
@@ -203,10 +241,7 @@ public class DatasetDataManage {
 
             tableFields = provider.fetchTableField(datasourceRequest);
         } else if (Strings.CI.equals(type, DatasetTableType.Es)) {
-            CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(datasetTableDTO.getDatasourceId());
-            if (coreDatasource == null) {
-                CrestException.throwException(Translator.get("i18n_datasource_delete"));
-            }
+            CoreDatasource coreDatasource = requireDatasourceAccess(datasetTableDTO.getDatasourceId(), "i18n_datasource_delete");
             Provider provider = ProviderFactory.getProvider(type);
             DatasourceRequest datasourceRequest = new DatasourceRequest();
             DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
@@ -216,7 +251,10 @@ public class DatasetDataManage {
             tableFields = provider.fetchTableField(datasourceRequest);
         } else {
             // Excel 和 API 最终落在引擎库，字段探测按同步后的物理表处理
-            CoreDatasource sourceDatasource = dataSourceManage.getCoreDatasource(datasetTableDTO.getDatasourceId());
+            CoreDatasource sourceDatasource = null;
+            if (ObjectUtils.isNotEmpty(datasetTableDTO.getDatasourceId())) {
+                sourceDatasource = requireDatasourceAccess(datasetTableDTO.getDatasourceId(), "i18n_datasource_delete");
+            }
             if (sourceDatasource != null && sourceDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name())) {
                 DatasourceRequest datasourceRequest = new DatasourceRequest();
                 DatasourceDTO datasourceDTO = new DatasourceDTO();
@@ -310,6 +348,7 @@ public class DatasetDataManage {
             CrestException.throwException(Translator.get("i18n_no_fields"));
         }
 
+        requireUnionDatasourceAccess(datasetGroupInfoDTO);
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null);
         if (checkPermission || encode) {
             sqlMap = datasetSyncQueryManage.routeIfSynced(datasetGroupInfoDTO, sqlMap);
@@ -573,7 +612,7 @@ public class DatasetDataManage {
      * 预览单段自定义 SQL，负责变量解析、方言转换、分页包装和结果字段还原
      */
     public Map<String, Object> previewSql(PreviewSqlDTO dto) throws CrestException {
-        CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(dto.getDatasourceId());
+        CoreDatasource coreDatasource = requireDatasourceAccess(dto.getDatasourceId());
         DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
         if (coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.API.name()) || coreDatasource.getType().contains(DatasourceConfiguration.DatasourceType.Excel.name())) {
             BeanUtils.copyBean(datasourceSchemaDTO, engineManage.getEngineDatasource());
@@ -764,6 +803,7 @@ public class DatasetDataManage {
         }
         List<DatasetTableFieldDTO> allFields = new ArrayList<>();
 
+        requireUnionDatasourceAccess(datasetGroupInfoDTO);
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, new ChartExtRequest());
         sqlMap = datasetSyncQueryManage.routeIfSynced(datasetGroupInfoDTO, sqlMap);
         String sql = (String) sqlMap.get("sql");
@@ -852,7 +892,7 @@ public class DatasetDataManage {
      * 查询多个字段的枚举值并合并去重，适用于查询组件的备选项加载
      */
     public List<String> getFieldEnum(MultFieldValuesRequest multFieldValuesRequest) throws Exception {
-        if (CollectionUtils.isEmpty(multFieldValuesRequest.getFieldIds())) {
+        if (multFieldValuesRequest == null || CollectionUtils.isEmpty(multFieldValuesRequest.getFieldIds())) {
             return Collections.emptyList();
         }
         // 每个字段独立生成枚举 SQL，最后按出现顺序合并去重
@@ -1285,6 +1325,9 @@ public class DatasetDataManage {
         // 以第一个字段确定数据集，再加载图表计算字段作为表达式解析上下文
         List<DatasetTableFieldDTO> allFields = new ArrayList<>();
         DatasetTableFieldDTO field = datasetTableFieldManage.selectById(ids.getFirst());
+        if (field == null) {
+            CrestException.throwException(Translator.get("i18n_no_field"));
+        }
         Long datasetGroupId = field.getDatasetGroupId();
         if (field.getChartId() != null) {
             allFields.addAll(datasetTableFieldManage.getChartCalcFields(field.getChartId()));
