@@ -36,13 +36,13 @@ public class DatasetFieldServer implements DatasetTableApi {
     // 查询单个数据集字段
     @Override
     public DatasetTableFieldDTO get(Long id) {
-        return datasetTableFieldManage.selectById(id);
+        return datasetTableFieldManage.selectByIdWithAccess(id);
     }
 
     // 查询数据集下的字段列表
     @Override
     public List<DatasetTableFieldDTO> listByDatasetGroup(Long id) {
-        List<DatasetTableFieldDTO> datasetTableFieldDTOS = datasetTableFieldManage.selectByDatasetGroupId(id);
+        List<DatasetTableFieldDTO> datasetTableFieldDTOS = datasetTableFieldManage.selectByDatasetGroupIdWithAccess(id);
         DatasetUtils.listEncode(datasetTableFieldDTOS);
         return datasetTableFieldDTOS;
     }
@@ -50,7 +50,7 @@ public class DatasetFieldServer implements DatasetTableApi {
     // 按数据集 ID 批量查询字段列表
     @Override
     public Map<String, List<DatasetTableFieldDTO>> listByDsIds(List<Long> ids) {
-        return datasetTableFieldManage.selectByDatasetGroupIds(ids);
+        return datasetTableFieldManage.selectByDatasetGroupIdsWithAccess(ids);
     }
 
     // 删除数据集字段
@@ -62,7 +62,7 @@ public class DatasetFieldServer implements DatasetTableApi {
     // 查询维度和指标字段分组
     @Override
     public Map<String, List<DatasetTableFieldDTO>> listByDQ(Long id) {
-        return datasetTableFieldManage.listByDQ(id);
+        return datasetTableFieldManage.listByDQWithAccess(id);
     }
 
     // 查询智能助手可用字段
