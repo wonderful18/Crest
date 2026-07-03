@@ -1372,7 +1372,7 @@ INSERT INTO sys_setting VALUES (1,'basic.dsIntervalTime','6','text',11);
 INSERT INTO sys_setting VALUES (2,'basic.dsExecuteTime','minute','text',3);
 INSERT INTO sys_setting VALUES (3,'ai.baseUrl','','text',0);
 INSERT INTO sys_setting VALUES (7,'template.url','','text',0);
-INSERT INTO sys_setting VALUES (8,'template.accessKey','crest','text',1);
+INSERT INTO sys_setting VALUES (8,'template.accessKey','','text',1);
 INSERT INTO sys_setting VALUES (9,'basic.frontTimeOut','60','text',1);
 INSERT INTO sys_setting VALUES (10,'basic.exportFileLiveTime','30','text',2);
 INSERT INTO sys_setting VALUES (100102206800000001,'basic.siteTitle','Crest','text',9);
