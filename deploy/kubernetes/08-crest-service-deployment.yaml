@@ -18,11 +18,23 @@ spec:
         app.kubernetes.io/component: backend
     spec:
       securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
         fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: crest-service
           image: ghcr.io/sevoniva/crest-service:v2.0.3-amd64
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
             - name: http
               containerPort: 8100
@@ -65,7 +77,22 @@ spec:
           volumeMounts:
             - name: crest-data
               mountPath: /opt/crest/data
+            - name: crest-logs
+              mountPath: /opt/crest/logs
+            - name: crest-cache
+              mountPath: /opt/crest/cache
+            - name: crest-tmp
+              mountPath: /tmp
       volumes:
         - name: crest-data
           persistentVolumeClaim:
             claimName: crest-data
+        - name: crest-logs
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: crest-cache
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: crest-tmp
+          emptyDir:
+            sizeLimit: 512Mi

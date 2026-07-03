@@ -17,10 +17,24 @@ spec:
         app.kubernetes.io/name: crest-redis
         app.kubernetes.io/component: redis
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: redis
           image: redis:6.2.19
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           args:
             - redis-server
             - /etc/redis/redis.conf
@@ -58,6 +72,8 @@ spec:
               readOnly: true
             - name: redis-data
               mountPath: /data
+            - name: redis-tmp
+              mountPath: /tmp
       volumes:
         - name: redis-config
           configMap:
@@ -65,3 +81,6 @@ spec:
         - name: redis-data
           persistentVolumeClaim:
             claimName: crest-redis-data
+        - name: redis-tmp
+          emptyDir:
+            sizeLimit: 256Mi
