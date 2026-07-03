@@ -6,6 +6,7 @@ import io.crest.api.visualization.request.VisualizationSubjectRequest;
 import io.crest.api.visualization.vo.VisualizationSubjectVO;
 import io.crest.exception.CrestException;
 import io.crest.utils.BeanUtils;
+import io.crest.utils.CrestPermissionUtils;
 import io.crest.utils.IDUtils;
 import io.crest.visualization.dao.auto.entity.VisualizationSubject;
 import io.crest.visualization.dao.auto.mapper.VisualizationSubjectMapper;
@@ -72,6 +73,7 @@ public class VisualizationSubjectService implements VisualizationSubjectApi {
      */
     @Override
     public synchronized void update(VisualizationSubjectRequest request) {
+        CrestPermissionUtils.requireAdmin();
         if (StringUtils.isEmpty(request.getId())) {
             QueryWrapper<VisualizationSubject> wrapper = new QueryWrapper<>();
             wrapper.eq("name", request.getName());

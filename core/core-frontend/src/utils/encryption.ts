@@ -9,14 +9,18 @@ const appStore = useAppStoreWithOut()
 
 const { wsCache } = useCache()
 
-const rsaKey = '-pk_separator-'
+const legacyPublicKeySeparator = '-pk_separator-'
 const crypt = new JSEncrypt()
 const smSuitePublicKeyPrefix = 'sm-suite:v1:sm2-public:'
 const sm2CipherPrefix = 'sm-suite:v1:sm2:'
 const sm4CipherPrefix = 'sm-suite:v1:sm4:'
+const aesCbcHmacPrefix = 'aes-cbc-hmac:v1:'
 
 // 后端下发的 RSA 公钥会先用 AES 包装，前端按固定 IV 解出真实公钥
 const aesDecrypt = (word, keyStr) => {
+  if (typeof word === 'string' && word.startsWith(aesCbcHmacPrefix)) {
+    return aesCbcHmacDecrypt(word, CryptoJS.enc.Utf8.parse(keyStr))
+  }
   const keyHex = CryptoJS.enc.Utf8.parse(keyStr) //
   const ivHex = CryptoJS.enc.Utf8.parse('0000000000000000')
   const decrypt = CryptoJS.AES.decrypt(word, keyHex, {
@@ -34,7 +38,7 @@ export const rsaEncryp = word => {
     const publicKey = clientKey.substring(smSuitePublicKeyPrefix.length)
     return sm2CipherPrefix + sm2.doEncrypt(word, publicKey, 1)
   }
-  const separator = Base64.encodeURI(rsaKey) + '='
+  const separator = Base64.encodeURI(legacyPublicKeySeparator) + '='
   const keyArray = clientKey.split(separator)
   const k1 = keyArray[0]
   const k2 = keyArray[1]
@@ -55,6 +59,9 @@ export const symmetricDecrypt = (data, keyStr) => {
       mode: 'cbc',
       iv
     })
+  }
+  if (typeof data === 'string' && data.startsWith(aesCbcHmacPrefix)) {
+    return aesCbcHmacDecrypt(data, CryptoJS.enc.Base64.parse(keyStr))
   }
   const iv = CryptoJS.enc.Utf8.parse('0000000000000000')
   const key = CryptoJS.enc.Base64.parse(keyStr)
@@ -77,4 +84,23 @@ const constantTimeEqualsHex = (left: string, right: string) => {
     result |= left.charCodeAt(index) ^ right.charCodeAt(index)
   }
   return result === 0
+}
+
+const aesCbcHmacDecrypt = (data: string, key) => {
+  const [iv, ciphertext, mac] = data.substring(aesCbcHmacPrefix.length).split(':')
+  if (!iv || !ciphertext || !mac) {
+    throw new Error('AES payload format is invalid')
+  }
+  const signedPayload = `${iv}:${ciphertext}`
+  if (
+    !constantTimeEqualsHex(CryptoJS.HmacSHA256(signedPayload, key).toString(CryptoJS.enc.Hex), mac)
+  ) {
+    throw new Error('AES payload integrity check failed')
+  }
+  const decrypt = CryptoJS.AES.decrypt({ ciphertext: CryptoJS.enc.Base64.parse(ciphertext) }, key, {
+    iv: CryptoJS.enc.Base64.parse(iv),
+    mode: CryptoJS.mode.CBC,
+    padding: CryptoJS.pad.Pkcs7
+  })
+  return decrypt.toString(CryptoJS.enc.Utf8)
 }

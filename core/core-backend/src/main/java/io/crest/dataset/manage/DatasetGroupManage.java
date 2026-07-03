@@ -848,7 +848,7 @@ public class DatasetGroupManage {
     /**
      * 加载数据集并校验当前用户是否拥有创建者权限
      */
-    private CoreDatasetGroup requireDatasetAccess(Long datasetId) {
+    CoreDatasetGroup requireDatasetAccess(Long datasetId) {
         CoreDatasetGroup dataset = coreDatasetGroupMapper.selectById(datasetId);
         if (dataset == null) {
             CrestException.throwException("resource not exist");

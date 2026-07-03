@@ -1235,6 +1235,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
      */
     @Override
     public String updateCheckVersion(Long dvId) {
+        DataVisualizationInfo current = visualizationInfoMapper.selectById(dvId);
+        coreVisualizationManage.requireVisualizationManage(current);
         DataVisualizationInfo updateInfo = new DataVisualizationInfo();
         updateInfo.setId(dvId);
         updateInfo.setCheckVersion(crestVersion);
@@ -1543,6 +1545,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
      */
     @Override
     public List<VisualizationViewTableDTO> detailList(Long dvId) {
+        requireVisualizationRead(dvId);
         List<VisualizationViewTableDTO> result = extDataVisualizationMapper.getVisualizationViewDetails(dvId);
         SnapshotDataVisualizationInfo dvInfo = snapshotMapper.selectById(dvId);
         if (dvInfo != null && !CollectionUtils.isEmpty(result)) {
@@ -1551,6 +1554,21 @@ public class DataVisualizationServer implements DataVisualizationApi {
         } else {
             return result;
         }
+    }
+
+    /**
+     * 明细图表列表是画布配置辅助接口，必须和画布读取保持一致的资源边界。
+     */
+    private DataVisualizationInfo requireVisualizationRead(Long dvId) {
+        DataVisualizationInfo info = visualizationInfoMapper.selectById(dvId);
+        if (info == null) {
+            CrestException.throwException(Translator.get("i18n_resource_not_exists"));
+        }
+        if (CrestPermissionUtils.currentUserId() != null
+                && !dataPortalPermissionManage.canReadPublishedVisualization(dvId, info.getType())) {
+            CrestPermissionUtils.requireCreator(info.getCreateBy());
+        }
+        return info;
     }
 
     /**

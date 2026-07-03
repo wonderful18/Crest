@@ -2,7 +2,10 @@ package io.crest.font.manage;
 
 import io.crest.font.dao.auto.entity.CoreFont;
 import io.crest.font.dao.auto.mapper.CoreFontMapper;
+import io.crest.auth.bo.TokenUserBO;
 import io.crest.storage.LocalStorageService;
+import io.crest.utils.AuthUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -24,6 +27,11 @@ class FontManageStorageTest {
     @TempDir
     Path tempDir;
 
+    @AfterEach
+    void tearDown() {
+        AuthUtils.remove();
+    }
+
     @Test
     @DisplayName("字体下载应通过存储服务读取共享目录文件")
     void downloadShouldReadFontFromStorageService() throws Exception {
@@ -42,6 +50,7 @@ class FontManageStorageTest {
     @Test
     @DisplayName("字体删除应通过存储服务删除共享目录文件")
     void deleteShouldRemoveFontFromStorageService() throws Exception {
+        AuthUtils.setUser(new TokenUserBO(1L, 1L));
         FontManage manage = fontManage();
         CoreFontMapper mapper = mapper(manage);
         CoreFont font = font("remove.ttf");

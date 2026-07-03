@@ -7,6 +7,7 @@ import org.apache.commons.lang3.Strings;
 
 import java.net.InetAddress;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 // 提供当前模块复用的工具能力
 public class IPUtils {
@@ -17,6 +18,9 @@ public class IPUtils {
 
     private static final String LOCAL_IP_KEY = "0:0:0:0:0:0:0:1";
     private static final String LOCAL_IP_VAL = "127.0.0.1";
+    private static final int MAX_IP_LENGTH = 64;
+    private static final Pattern IPV4_PATTERN = Pattern.compile("^(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}$");
+    private static final Pattern IPV6_CHARS = Pattern.compile("^[0-9a-fA-F:]+$");
 
     public static String get() {
 
@@ -34,17 +38,20 @@ public class IPUtils {
         String[] keyArr = HEAD_KEYS.split(",");
         for (String key : keyArr) {
             String header = request.getHeader(key.trim());
-            if (StringUtils.isNotBlank(header) && !Strings.CI.equals(UNKNOWN, header)) {
-                ipStr = header;
+            String proxyIp = firstValidIp(header);
+            if (StringUtils.isNotBlank(proxyIp)) {
+                ipStr = proxyIp;
                 isProxy = true;
                 break;
             }
         }
 
         if (!isProxy) {
-            ipStr = request.getRemoteAddr();
+            ipStr = firstValidIp(request.getRemoteAddr());
         }
-        ipStr = Arrays.stream(ipStr.split(",")).filter(item -> StringUtils.isNotBlank(item) && !Strings.CI.equals(UNKNOWN, item.trim())).findFirst().orElse(ipStr);
+        if (StringUtils.isBlank(ipStr)) {
+            return LOCAL_IP_VAL;
+        }
         return Strings.CS.equals(LOCAL_IP_KEY, ipStr) ? LOCAL_IP_VAL : ipStr;
     }
 
@@ -53,6 +60,47 @@ public class IPUtils {
             return InetAddress.getLocalHost().getHostAddress();
         } catch (Exception e) {
             return LOCAL_IP_VAL;
+        }
+    }
+
+    private static String firstValidIp(String value) {
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
+        return Arrays.stream(value.split(","))
+                .map(IPUtils::normalizeIpCandidate)
+                .filter(StringUtils::isNotBlank)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static String normalizeIpCandidate(String value) {
+        String candidate = StringUtils.trimToEmpty(value);
+        if (StringUtils.isBlank(candidate) || Strings.CI.equals(UNKNOWN, candidate) || candidate.length() > MAX_IP_LENGTH) {
+            return null;
+        }
+        if (candidate.startsWith("[") && candidate.contains("]")) {
+            candidate = candidate.substring(1, candidate.indexOf(']'));
+        } else if (candidate.indexOf(':') == candidate.lastIndexOf(':')) {
+            int portIndex = candidate.indexOf(':');
+            if (portIndex > 0 && IPV4_PATTERN.matcher(candidate.substring(0, portIndex)).matches()) {
+                candidate = candidate.substring(0, portIndex);
+            }
+        }
+        if (IPV4_PATTERN.matcher(candidate).matches() || isIpv6Literal(candidate)) {
+            return candidate;
+        }
+        return null;
+    }
+
+    private static boolean isIpv6Literal(String candidate) {
+        if (!candidate.contains(":") || !IPV6_CHARS.matcher(candidate).matches()) {
+            return false;
+        }
+        try {
+            return InetAddress.getByName(candidate).getHostAddress().contains(":");
+        } catch (Exception e) {
+            return false;
         }
     }
 }

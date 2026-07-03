@@ -9,12 +9,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class EmbeddedTokenServerTest {
@@ -38,6 +43,8 @@ class EmbeddedTokenServerTest {
 
         assertEquals("P100", args.get("projectId"));
         assertEquals("demo", args.get("tenant"));
+        assertFalse(args.containsKey("uid"));
+        assertFalse(args.containsKey("resourceId"));
     }
 
     @Test
@@ -48,6 +55,17 @@ class EmbeddedTokenServerTest {
         requestWithEmbeddedToken(forged);
 
         assertThrows(CrestException.class, server::getTokenArgs);
+    }
+
+    @Test
+    void tokenArgsKeepCurrentAndLegacyRoutes() throws NoSuchMethodException {
+        Method method = EmbeddedTokenServer.class.getDeclaredMethod("getTokenArgs");
+        GetMapping mapping = method.getAnnotation(GetMapping.class);
+
+        assertNotNull(mapping);
+        assertEquals(2, mapping.value().length);
+        assertFalse(Arrays.stream(mapping.value()).noneMatch("/token-args"::equals));
+        assertFalse(Arrays.stream(mapping.value()).noneMatch("/getTokenArgs"::equals));
     }
 
     private void requestWithEmbeddedToken(String token) {

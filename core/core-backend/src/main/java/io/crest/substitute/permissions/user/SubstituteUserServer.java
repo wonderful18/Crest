@@ -158,7 +158,11 @@ public class SubstituteUserServer {
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER)
     @PostMapping("/modify-password")
     public void modifyPwd(@RequestBody ModifyPwdRequest request) {
-        Long uid = ObjectUtils.isEmpty(request.getUid()) ? AuthUtils.getUser().getUserId() : request.getUid();
+        Long currentUid = currentUserId();
+        Long uid = ObjectUtils.isEmpty(request.getUid()) ? currentUid : request.getUid();
+        if (!currentUid.equals(uid)) {
+            CrestException.throwException("只能修改当前用户密码");
+        }
         crestUserManage.modifyPwd(uid, RsaUtils.decryptStr(request.getPwd()), RsaUtils.decryptStr(request.getNewPwd()));
     }
 

@@ -37,6 +37,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.core.env.Environment;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -127,21 +128,29 @@ public class CrestUserManage {
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM core_iam_user WHERE id = 1", Integer.class);
         if (count == null || count == 0) {
             long now = System.currentTimeMillis();
-            jdbcTemplate.update("""
-                    INSERT INTO core_iam_user(id, account, name, password_hash, enable, is_admin, origin, create_time, update_time)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, 1L, "admin", "管理员", PasswordEncoder.encode(initialPassword()), true, true, 0, now, now);
-            platformPermissionManage.bindUserToOrg(1L, PlatformPermissionManage.ROOT_ORG_ID, true);
-            platformPermissionManage.bindUserToRole(1L, PlatformPermissionManage.ROOT_ORG_ID, PlatformPermissionManage.SYSTEM_ADMIN_ROLE_ID);
-        } else {
-            String passwordHash = jdbcTemplate.queryForObject(
-                    "SELECT password_hash FROM core_iam_user WHERE id = 1", String.class);
-            if (Strings.CS.equals(passwordHash, LEGACY_ADMIN_PASSWORD_HASH)) {
-                jdbcTemplate.update("UPDATE core_iam_user SET password_hash = ?, is_admin = 1, enable = 1, update_time = ? WHERE id = 1",
-                        PasswordEncoder.encode(initialPassword()), System.currentTimeMillis());
-            } else {
-                jdbcTemplate.update("UPDATE core_iam_user SET is_admin = 1, enable = 1 WHERE id = 1");
+            try {
+                jdbcTemplate.update("""
+                        INSERT INTO core_iam_user(id, account, name, password_hash, enable, is_admin, origin, create_time, update_time)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, 1L, "admin", "管理员", PasswordEncoder.encode(initialPassword()), true, true, 0, now, now);
+                platformPermissionManage.bindUserToOrg(1L, PlatformPermissionManage.ROOT_ORG_ID, true);
+                platformPermissionManage.bindUserToRole(1L, PlatformPermissionManage.ROOT_ORG_ID, PlatformPermissionManage.SYSTEM_ADMIN_ROLE_ID);
+                return;
+            } catch (DuplicateKeyException ignored) {
+                // 其他实例可能已经完成首个管理员创建，继续执行规范化逻辑即可。
             }
+        }
+        normalizeAdmin();
+    }
+
+    private void normalizeAdmin() {
+        String passwordHash = jdbcTemplate.queryForObject(
+                "SELECT password_hash FROM core_iam_user WHERE id = 1", String.class);
+        if (Strings.CS.equals(passwordHash, LEGACY_ADMIN_PASSWORD_HASH)) {
+            jdbcTemplate.update("UPDATE core_iam_user SET password_hash = ?, is_admin = 1, enable = 1, update_time = ? WHERE id = 1",
+                    PasswordEncoder.encode(initialPassword()), System.currentTimeMillis());
+        } else {
+            jdbcTemplate.update("UPDATE core_iam_user SET is_admin = 1, enable = 1 WHERE id = 1");
         }
     }
 
