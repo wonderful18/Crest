@@ -103,6 +103,7 @@ public class DatasourceServer implements DatasourceApi {
             "listTables",
             "listViews"
     );
+    private static final long MAX_EXCEL_UPLOAD_BYTES = 500L * 1024L * 1024L;
     private static final List<String> EXCEL_UPLOAD_SUFFIXES = List.of("xlsx", "xls", "csv");
 
     @Resource
@@ -1178,6 +1179,7 @@ public class DatasourceServer implements DatasourceApi {
         if (!EXCEL_UPLOAD_SUFFIXES.contains(suffix)) {
             CrestException.throwException(Translator.get("i18n_unsupported_file_format"));
         }
+        FileUtils.validateUploadFileSize(file, MAX_EXCEL_UPLOAD_BYTES, "Excel文件");
         FileUtils.validateUploadFilename(fileName);
     }
 

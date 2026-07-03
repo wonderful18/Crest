@@ -44,6 +44,8 @@ import java.util.*;
 @SuppressWarnings("unchecked")
 public class StaticResourceServer implements StaticResourceApi {
 
+    private static final long MAX_STATIC_RESOURCE_BYTES = 20L * 1024L * 1024L;
+
     /**
      * 允许上传和保存的图片扩展名
      */
@@ -76,6 +78,7 @@ public class StaticResourceServer implements StaticResourceApi {
         // 校验上传文件并确保写入路径不会逃逸静态资源目录
         Assert.notNull(file, "Multipart file must not be null");
         try {
+            FileUtils.validateUploadFileSize(file, MAX_STATIC_RESOURCE_BYTES, "静态资源文件");
             String originName = file.getOriginalFilename();
             validateImageFilename(originName);
             String newFileName = fileId + originName.substring(originName.lastIndexOf("."), originName.length());
@@ -172,6 +175,7 @@ public class StaticResourceServer implements StaticResourceApi {
                 CrestException.throwException("静态资源内容不能为空");
             }
             byte[] fileBytes = decodeBase64Content(content);
+            FileUtils.validateContentSize(fileBytes, MAX_STATIC_RESOURCE_BYTES, "静态资源文件");
             validateImageContent(fileName, fileBytes, null, false);
             writeFileIfAbsent(fileName, fileBytes);
         } catch (CrestException e) {

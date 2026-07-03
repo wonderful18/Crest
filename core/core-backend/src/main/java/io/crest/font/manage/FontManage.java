@@ -34,6 +34,8 @@ import java.util.UUID;
  */
 public class FontManage {
 
+    private static final long MAX_FONT_BYTES = 20L * 1024L * 1024L;
+
     @Value("${crest.path.font:/opt/crest/data/font/}")
     private String path;
 
@@ -189,6 +191,7 @@ public class FontManage {
             if (StringUtils.isEmpty(filename) || !filename.toLowerCase().endsWith(".ttf")) {
                 CrestException.throwException("非法格式的文件！");
             }
+            FileUtils.validateUploadFileSize(file, MAX_FONT_BYTES, "字体文件");
             FileUtils.validateUploadFilename(filename);
             String suffix = filename.substring(filename.lastIndexOf(".") + 1);
             File f = storageService.resolve(path, fileNameUUID + "." + suffix);

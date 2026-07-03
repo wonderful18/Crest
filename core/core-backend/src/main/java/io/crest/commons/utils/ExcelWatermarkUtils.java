@@ -14,17 +14,19 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Excel 水印工具，负责生成文字水印图片并铺设到工作表中
  */
 public class ExcelWatermarkUtils {
-    /**
-     * 水印时间占位符使用的统一格式
-     */
-    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter WATERMARK_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final int DEFAULT_FONT_SIZE = 14;
+    private static final int MIN_FONT_SIZE = 8;
+    private static final int MAX_FONT_SIZE = 72;
+    private static final int MAX_WATERMARK_TEXT_LENGTH = 128;
+    private static final int MAX_IMAGE_EDGE = 4096;
 
 
     /**
@@ -32,18 +34,22 @@ public class ExcelWatermarkUtils {
      */
     public static String transContent(WatermarkContentDTO watermarkContent, UserFormVO userInfo) {
         String content = "";
-        switch (watermarkContent.getType()) {
-            case "custom" -> content = watermarkContent.getContent();
+        String type = watermarkContent == null ? null : watermarkContent.getType();
+        switch (type) {
+            case "custom" -> content = defaultString(watermarkContent.getContent());
             case "nickName" -> content = "${nickName}";
             case "ip" -> content = "${ip}";
             case "time" -> content = "${time}";
             default -> content = "${username}";
         }
-        String nickName = userInfo.getName().contains("i18n_") ?Translator.get(userInfo.getName()):userInfo.getName();
-        content = content.replaceAll("\\$\\{ip}", IPUtils.get() == null ? "127.0.0.1" : IPUtils.get());
-        content = content.replaceAll("\\$\\{username}", userInfo.getAccount());
-        content = content.replaceAll("\\$\\{nickName}", nickName);
-        content = content.replaceAll("\\$\\{time}", sdf.format(new Date()));
+        String userName = userInfo == null ? "" : defaultString(userInfo.getName());
+        String nickName = userName.contains("i18n_") ? Translator.get(userName) : userName;
+        String ip = defaultString(IPUtils.get());
+        ip = ip.isEmpty() ? "127.0.0.1" : ip;
+        content = content.replace("${ip}", ip);
+        content = content.replace("${username}", userInfo == null ? "" : defaultString(userInfo.getAccount()));
+        content = content.replace("${nickName}", nickName);
+        content = content.replace("${time}", WATERMARK_TIME_FORMATTER.format(LocalDateTime.now()));
         return content;
     }
 
@@ -107,19 +113,18 @@ public class ExcelWatermarkUtils {
      * 根据文字、字体大小和颜色生成透明背景的 PNG 水印图片
      */
     public static byte[] createTextImage(String text, WatermarkContentDTO watermarkContent) {
+        String safeText = defaultString(text);
+        if (safeText.length() > MAX_WATERMARK_TEXT_LENGTH) {
+            safeText = safeText.substring(0, MAX_WATERMARK_TEXT_LENGTH);
+        }
         double radians = Math.toRadians(15);// 15度偏转
-        int width = watermarkContent.getWatermark_fontsize() * text.length();
-        int height = (int) Math.round(watermarkContent.getWatermark_fontsize() + width * Math.sin(radians));
-        int fontSize = watermarkContent.getWatermark_fontsize();
-        Color baseColor = Color.decode(watermarkContent.getWatermark_color());
+        int fontSize = resolveFontSize(watermarkContent);
+        int width = Math.min(MAX_IMAGE_EDGE, Math.max(fontSize, fontSize * Math.max(safeText.length(), 1)));
+        int height = Math.min(MAX_IMAGE_EDGE, Math.max(fontSize + 10, (int) Math.round(fontSize + width * Math.sin(radians))));
+        Color baseColor = resolveColor(watermarkContent);
 
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage image = createWatermarkCanvas(width, height);
         Graphics2D g2d = image.createGraphics();
-
-        // 设置透明背景
-        image = g2d.getDeviceConfiguration().createCompatibleImage(width, height, Transparency.TRANSLUCENT);
-        g2d.dispose();
-        g2d = image.createGraphics();
 
         // 设置抗锯齿
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -130,11 +135,11 @@ public class ExcelWatermarkUtils {
         g2d.rotate(radians, width / 2.0, height / 2.0); // 旋转文字
         // 绘制文字
         FontMetrics fontMetrics = g2d.getFontMetrics();
-        int textWidth = fontMetrics.stringWidth(text);
+        int textWidth = fontMetrics.stringWidth(safeText);
         int textHeight = fontMetrics.getHeight();
         int x = (width - textWidth) / 2;
         int y = (height + textHeight) / 2 - fontMetrics.getDescent();
-        g2d.drawString(text, x, y);
+        g2d.drawString(safeText, x, y);
 
         g2d.dispose();
 
@@ -146,5 +151,30 @@ public class ExcelWatermarkUtils {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         return baos.toByteArray();
+    }
+
+    private static int resolveFontSize(WatermarkContentDTO watermarkContent) {
+        if (watermarkContent == null || watermarkContent.getWatermark_fontsize() == null) {
+            return DEFAULT_FONT_SIZE;
+        }
+        return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, watermarkContent.getWatermark_fontsize()));
+    }
+
+    private static Color resolveColor(WatermarkContentDTO watermarkContent) {
+        String color = watermarkContent == null ? null : watermarkContent.getWatermark_color();
+        if (color == null || !color.matches("#?[0-9a-fA-F]{6}")) {
+            return Color.BLACK;
+        }
+        return Color.decode(color.startsWith("#") ? color : "#" + color);
+    }
+
+    private static BufferedImage createWatermarkCanvas(int width, int height) {
+        int safeWidth = Math.max(1, Math.min(MAX_IMAGE_EDGE, width));
+        int safeHeight = Math.max(1, Math.min(MAX_IMAGE_EDGE, height));
+        return new BufferedImage(safeWidth, safeHeight, BufferedImage.TYPE_INT_ARGB);
+    }
+
+    private static String defaultString(String value) {
+        return value == null ? "" : value;
     }
 }

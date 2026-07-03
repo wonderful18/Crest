@@ -54,6 +54,7 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 
@@ -539,7 +540,8 @@ public class CalciteProvider extends Provider {
     public List<TableField> fetchTableField(DatasourceRequest datasourceRequest) throws CrestException {
         if (datasourceRequest.getIsCross() != null && datasourceRequest.getIsCross()) {
             List<TableField> datasetTableFields = new ArrayList<>();
-            try (Connection connection = take()) {
+            try {
+                Connection connection = take();
                 CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
                 try (PreparedStatement statement = calciteConnection.prepareStatement(SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery()))) {
                     bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
@@ -2161,7 +2163,7 @@ public class CalciteProvider extends Provider {
         return null;
     }
 
-    private volatile Connection connection = null;
+    private final AtomicReference<Connection> calciteConnectionRef = new AtomicReference<>();
 
     /**
      * 启动时为可用连接型数据源和引擎数据源异步初始化 Calcite schema
@@ -2186,7 +2188,7 @@ public class CalciteProvider extends Provider {
             dsMap.put(datasourceSchemaDTO.getId(), datasourceSchemaDTO);
             commonThreadPool.addTask(() -> {
                 try {
-                    connection = initConnection(dsMap);
+                    initConnection(dsMap);
                 } catch (Exception ignore) {
                 }
             });
@@ -2205,7 +2207,7 @@ public class CalciteProvider extends Provider {
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDsList(Map.of(datasourceSchemaDTO.getId(), datasourceSchemaDTO));
         try {
-            Connection conn = (connection != null) ? connection : getCalciteConnection();
+            Connection conn = take();
             CalciteConnection calciteConnection = conn.unwrap(CalciteConnection.class);
             SchemaPlus rootSchema = buildSchema(datasourceRequest, calciteConnection);
         } catch (Exception e) {
@@ -2251,7 +2253,7 @@ public class CalciteProvider extends Provider {
         BeanUtils.copyBean(datasourceSchemaDTO, datasource);
         datasourceSchemaDTO.setSchemaAlias(String.format(SQLConstants.SCHEMA, datasourceSchemaDTO.getId()));
         try {
-            Connection conn = (connection != null) ? connection : getCalciteConnection();
+            Connection conn = take();
             CalciteConnection calciteConnection = conn.unwrap(CalciteConnection.class);
             SchemaPlus rootSchema = calciteConnection.getRootSchema();
             if (rootSchema.getSubSchema(datasourceSchemaDTO.getSchemaAlias()) != null) {
@@ -2274,17 +2276,28 @@ public class CalciteProvider extends Provider {
      * 获取全局 Calcite 连接，首次调用时延迟创建并缓存
      */
     public Connection take() {
-        Connection currentConnection = connection;
-        if (currentConnection == null) {
+        Connection currentConnection = calciteConnectionRef.get();
+        if (isClosed(currentConnection)) {
             synchronized (this) {
-                currentConnection = connection;
-                if (currentConnection == null) {
+                currentConnection = calciteConnectionRef.get();
+                if (isClosed(currentConnection)) {
                     currentConnection = getCalciteConnection();
-                    connection = currentConnection;
+                    calciteConnectionRef.set(currentConnection);
                 }
             }
         }
         return currentConnection;
+    }
+
+    private boolean isClosed(Connection connection) {
+        if (connection == null) {
+            return true;
+        }
+        try {
+            return connection.isClosed();
+        } catch (SQLException e) {
+            return true;
+        }
     }
 
     /**
