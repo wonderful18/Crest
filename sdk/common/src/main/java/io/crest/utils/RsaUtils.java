@@ -226,7 +226,7 @@ public class RsaUtils {
     }
 
     public static final String IV_KEY = "0000000000000000";
-    private static final String AES_CBC_HMAC_PREFIX = "aes-cbc-hmac:v1:";
+    private static final String AES_CTR_HMAC_PREFIX = "aes-ctr-hmac:v1:";
     private static final String HMAC_ALGORITHM = "HmacSHA256";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -240,7 +240,7 @@ public class RsaUtils {
     private static String ascEncrypt(String message, String key) {
         try {
             byte[] baseKey = key.getBytes(StandardCharsets.UTF_8);
-            return aesCbcHmacEncrypt(message, baseKey);
+            return aesCtrHmacEncrypt(message, baseKey);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -284,7 +284,7 @@ public class RsaUtils {
 
     static String symmetricEncrypt(String data, String base64Key) {
         try {
-            return aesCbcHmacEncrypt(data, Base64.getDecoder().decode(base64Key));
+            return aesCtrHmacEncrypt(data, Base64.getDecoder().decode(base64Key));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -302,8 +302,8 @@ public class RsaUtils {
     static String symmetricDecrypt(String data, String base64Key) {
         try {
             byte[] key = Base64.getDecoder().decode(base64Key);
-            if (data != null && data.startsWith(AES_CBC_HMAC_PREFIX)) {
-                return aesCbcHmacDecrypt(data, key);
+            if (data != null && data.startsWith(AES_CTR_HMAC_PREFIX)) {
+                return aesCtrHmacDecrypt(data, key);
             }
             byte[] iv = IV_KEY.getBytes(StandardCharsets.UTF_8);
             IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
@@ -318,21 +318,19 @@ public class RsaUtils {
         }
     }
 
-    @SuppressWarnings("java/weak-cryptographic-algorithm")
-    private static String aesCbcHmacEncrypt(String data, byte[] key) throws Exception {
+    private static String aesCtrHmacEncrypt(String data, byte[] key) throws Exception {
         byte[] iv = new byte[16];
         SECURE_RANDOM.nextBytes(iv);
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
+        Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, ALGORITHM), new IvParameterSpec(iv));
         String ivText = Base64.getEncoder().encodeToString(iv);
         String ciphertext = Base64.getEncoder().encodeToString(cipher.doFinal(data.getBytes(StandardCharsets.UTF_8)));
         String payload = ivText + ":" + ciphertext;
-        return AES_CBC_HMAC_PREFIX + payload + ":" + hmacHex(key, payload);
+        return AES_CTR_HMAC_PREFIX + payload + ":" + hmacHex(key, payload);
     }
 
-    @SuppressWarnings("java/weak-cryptographic-algorithm")
-    private static String aesCbcHmacDecrypt(String data, byte[] key) throws Exception {
-        String payload = data.substring(AES_CBC_HMAC_PREFIX.length());
+    private static String aesCtrHmacDecrypt(String data, byte[] key) throws Exception {
+        String payload = data.substring(AES_CTR_HMAC_PREFIX.length());
         String[] parts = payload.split(":", 3);
         if (parts.length != 3) {
             CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
@@ -341,7 +339,7 @@ public class RsaUtils {
         if (!MessageDigest.isEqual(hexToBytes(hmacHex(key, signedPayload)), hexToBytes(parts[2]))) {
             CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
         }
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
+        Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
         cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, ALGORITHM), new IvParameterSpec(Base64.getDecoder().decode(parts[0])));
         return new String(cipher.doFinal(Base64.getDecoder().decode(parts[1])), StandardCharsets.UTF_8);
     }

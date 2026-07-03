@@ -24,7 +24,7 @@ class RsaUtilsSymmetricTest {
         String first = RsaUtils.symmetricEncrypt("{\"password\":\"secret\"}", KEY);
         String second = RsaUtils.symmetricEncrypt("{\"password\":\"secret\"}", KEY);
 
-        assertTrue(first.startsWith("aes-cbc-hmac:v1:"));
+        assertTrue(first.startsWith("aes-ctr-hmac:v1:"));
         assertNotEquals(first, second);
         assertEquals("{\"password\":\"secret\"}", RsaUtils.symmetricDecrypt(first, KEY));
     }

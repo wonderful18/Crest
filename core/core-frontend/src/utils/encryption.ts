@@ -15,9 +15,13 @@ const smSuitePublicKeyPrefix = 'sm-suite:v1:sm2-public:'
 const sm2CipherPrefix = 'sm-suite:v1:sm2:'
 const sm4CipherPrefix = 'sm-suite:v1:sm4:'
 const aesCbcHmacPrefix = 'aes-cbc-hmac:v1:'
+const aesCtrHmacPrefix = 'aes-ctr-hmac:v1:'
 
 // 后端下发的 RSA 公钥会先用 AES 包装，前端按固定 IV 解出真实公钥
 const aesDecrypt = (word, keyStr) => {
+  if (typeof word === 'string' && word.startsWith(aesCtrHmacPrefix)) {
+    return aesCtrHmacDecrypt(word, CryptoJS.enc.Utf8.parse(keyStr))
+  }
   if (typeof word === 'string' && word.startsWith(aesCbcHmacPrefix)) {
     return aesCbcHmacDecrypt(word, CryptoJS.enc.Utf8.parse(keyStr))
   }
@@ -63,6 +67,9 @@ export const symmetricDecrypt = (data, keyStr) => {
   if (typeof data === 'string' && data.startsWith(aesCbcHmacPrefix)) {
     return aesCbcHmacDecrypt(data, CryptoJS.enc.Base64.parse(keyStr))
   }
+  if (typeof data === 'string' && data.startsWith(aesCtrHmacPrefix)) {
+    return aesCtrHmacDecrypt(data, CryptoJS.enc.Base64.parse(keyStr))
+  }
   const iv = CryptoJS.enc.Utf8.parse('0000000000000000')
   const key = CryptoJS.enc.Base64.parse(keyStr)
   const decodedCiphertext = CryptoJS.enc.Base64.parse(data)
@@ -101,6 +108,25 @@ const aesCbcHmacDecrypt = (data: string, key) => {
     iv: CryptoJS.enc.Base64.parse(iv),
     mode: CryptoJS.mode.CBC,
     padding: CryptoJS.pad.Pkcs7
+  })
+  return decrypt.toString(CryptoJS.enc.Utf8)
+}
+
+const aesCtrHmacDecrypt = (data: string, key) => {
+  const [iv, ciphertext, mac] = data.substring(aesCtrHmacPrefix.length).split(':')
+  if (!iv || !ciphertext || !mac) {
+    throw new Error('AES payload format is invalid')
+  }
+  const signedPayload = `${iv}:${ciphertext}`
+  if (
+    !constantTimeEqualsHex(CryptoJS.HmacSHA256(signedPayload, key).toString(CryptoJS.enc.Hex), mac)
+  ) {
+    throw new Error('AES payload integrity check failed')
+  }
+  const decrypt = CryptoJS.AES.decrypt({ ciphertext: CryptoJS.enc.Base64.parse(ciphertext) }, key, {
+    iv: CryptoJS.enc.Base64.parse(iv),
+    mode: CryptoJS.mode.CTR,
+    padding: CryptoJS.pad.NoPadding
   })
   return decrypt.toString(CryptoJS.enc.Utf8)
 }
