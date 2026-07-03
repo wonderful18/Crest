@@ -432,7 +432,12 @@ const fullScreenPreview = () => {
           >
             <media-group></media-group>
           </component-group>
-          <component-group is-label :base-width="115" :icon-name="dvTab" title="Tab">
+          <component-group
+            is-label
+            :base-width="115"
+            :icon-name="dvTab"
+            :title="t('visualization.tabs')"
+          >
             <tabs-group :dv-model="dvModel"></tabs-group>
           </component-group>
           <component-group

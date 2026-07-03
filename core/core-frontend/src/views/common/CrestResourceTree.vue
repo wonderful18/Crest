@@ -775,7 +775,7 @@ defineExpose({
             ref="importFileInputRef"
             class="resource-import-input"
             type="file"
-            accept=".DET2,.DET2APP,.det2,.det2app"
+            accept=".crest,.CREST"
             @change="importTemplateFileChange"
           />
         </div>

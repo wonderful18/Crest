@@ -140,7 +140,7 @@ class DataVisualizationServerImportTest {
     void decompressionLocalFileShouldParseDet2AppTemplate() {
         MockMultipartFile file = new MockMultipartFile(
                 "file",
-                "risk-screen-APP.DET2APP",
+                "risk-screen.crest",
                 "application/octet-stream",
                 det2AppJson().getBytes(StandardCharsets.UTF_8)
         );
@@ -188,7 +188,7 @@ class DataVisualizationServerImportTest {
 
         CrestException exception = assertThrows(CrestException.class, () -> server.decompressionLocalFile(file));
 
-        assertEquals("仅支持 DET2 或 DET2APP 模板文件", exception.getMsg());
+        assertEquals("仅支持 CREST 模板文件", exception.getMsg());
     }
 
     @Test

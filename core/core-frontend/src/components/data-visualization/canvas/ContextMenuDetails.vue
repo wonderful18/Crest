@@ -206,8 +206,10 @@ const customSort = () => {
 }
 
 const componentCompose = () => {
-  composeStore.compose()
-  snapshotStore.recordSnapshotCache('componentCompose')
+  const canvasId = areaData.value.components[0]?.canvasId || 'canvas-main'
+  if (composeStore.createBackgroundCardFromComponents(areaData.value.components, canvasId)) {
+    snapshotStore.recordSnapshotCache('addBackgroundCard')
+  }
   menuOpt('componentCompose')
 }
 
@@ -249,9 +251,9 @@ const editQueryCriteria = () => {
 <template>
   <div class="context-menu-base context-menu-details" @mousedown="handleComposeMouseDown">
     <ul @mouseup="handleMouseUp">
-      <template v-if="areaData.components.length">
+      <template v-if="areaData.components.length > 1">
         <li @mousedown="handleComposeMouseDown" @click="componentCompose">
-          {{ t('visualization.create_chart_group') }}
+          {{ t('visualization.add_background_card') }}
         </li>
         <el-dropdown
           style="width: 100%"

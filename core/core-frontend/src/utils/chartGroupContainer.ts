@@ -25,6 +25,7 @@ const zeroCornerValues = () => ({
 })
 
 const isGroup = (component?: ComponentConfig) => component?.component === 'Group'
+const defaultGroupBackgroundColors = new Set(['rgba(19,28,66,1)', '#131e42'])
 
 export function normalizeChartGroupContainer(group?: ComponentConfig) {
   if (!isGroup(group)) {
@@ -114,6 +115,37 @@ export function calculateChartGroupBounds(components: ComponentConfig[] = []) {
   }
 }
 
+export function calculateBackgroundCardBounds(components: ComponentConfig[] = [], padding = 16) {
+  const bounds = calculateChartGroupBounds(components)
+  if (!bounds) {
+    return null
+  }
+
+  const left = Math.max(0, bounds.left - padding)
+  const top = Math.max(0, bounds.top - padding)
+  const right = bounds.left + bounds.width + padding
+  const bottom = bounds.top + bounds.height + padding
+
+  return {
+    left,
+    top,
+    width: right - left,
+    height: bottom - top
+  }
+}
+
+export function getBackgroundCardInsertIndex(
+  componentData: ComponentConfig[] = [],
+  components: ComponentConfig[] = []
+) {
+  const selectedIds = new Set(components.map(component => component?.id).filter(Boolean))
+  const indexes = componentData
+    .map((component, index) => (selectedIds.has(component?.id) ? index : -1))
+    .filter(index => index > -1)
+
+  return indexes.length ? Math.min(...indexes) : undefined
+}
+
 const visitChildren = (component: ComponentConfig, callback: (child: ComponentConfig) => void) => {
   if (!component) {
     return
@@ -149,6 +181,74 @@ const clearChildFrame = (component: ComponentConfig) => {
     component.style.borderActive = false
     component.style.borderWidth = 0
     component.style.borderRadius = 0
+  }
+}
+
+const findChildBackgroundColor = (component: ComponentConfig): string | null => {
+  const backgroundColor = component.commonBackground?.backgroundColor
+  if (typeof backgroundColor === 'string' && backgroundColor.trim()) {
+    return backgroundColor
+  }
+
+  if (Array.isArray(component.propValue)) {
+    if (component.component === 'Group' || component.innerType === 'Group') {
+      for (const child of component.propValue) {
+        const color = findChildBackgroundColor(child)
+        if (color) {
+          return color
+        }
+      }
+    }
+    if (component.component === 'Tabs' || component.innerType === 'Tabs') {
+      for (const tab of component.propValue) {
+        for (const child of tab?.componentData || []) {
+          const color = findChildBackgroundColor(child)
+          if (color) {
+            return color
+          }
+        }
+      }
+    }
+  }
+
+  return null
+}
+
+const normalizeBackgroundColor = (color?: unknown) =>
+  typeof color === 'string' ? color.replace(/\s+/g, '').toLowerCase() : ''
+
+const shouldUseChildBackgroundColor = (group: ComponentConfig, childBackgroundColor: string | null) => {
+  if (!childBackgroundColor) {
+    return false
+  }
+
+  const commonBackground = group.commonBackground || {}
+  if (commonBackground.backgroundImageEnable === true) {
+    return false
+  }
+  if (commonBackground.backgroundColorSelect !== true) {
+    return true
+  }
+
+  const currentColor = normalizeBackgroundColor(commonBackground.backgroundColor)
+  return !currentColor || defaultGroupBackgroundColors.has(currentColor)
+}
+
+const ensureSeamlessGroupBackground = (group: ComponentConfig) => {
+  const childBackgroundColor = group.propValue.map(findChildBackgroundColor).find(Boolean) || null
+  if (!shouldUseChildBackgroundColor(group, childBackgroundColor)) {
+    return
+  }
+  group.commonBackground.backgroundColor = childBackgroundColor
+  group.commonBackground.backgroundColorSelect = true
+  group.commonBackground.backgroundImageEnable = false
+}
+
+const getSeamlessGroupBackground = (group: ComponentConfig) => {
+  ensureSeamlessGroupBackground(group)
+  return {
+    ...group.commonBackground,
+    innerPadding: zeroEdgeValues()
   }
 }
 
@@ -345,7 +445,7 @@ export function applyChartGroupSeamlessLayout(group: ComponentConfig) {
   normalizeChartGroupContainer(group)
   group.chartGroupContainer.seamless = true
   group.chartGroupContainer.clipOverflow = true
-  group.commonBackground.innerPadding = zeroEdgeValues()
+  group.commonBackground = getSeamlessGroupBackground(group)
   compactDirectChildren(group)
 
   group.propValue.forEach(child => {

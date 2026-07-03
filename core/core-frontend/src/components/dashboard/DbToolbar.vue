@@ -608,7 +608,13 @@ const initOpenHandler = newWindow => {
           >
             <media-group themes="light" :dv-model="dvModel"></media-group>
           </component-group>
-          <component-group themes="light" is-label :base-width="115" :icon-name="dvTab" title="Tab">
+          <component-group
+            themes="light"
+            is-label
+            :base-width="115"
+            :icon-name="dvTab"
+            :title="t('visualization.tabs')"
+          >
             <tabs-group themes="light" :dv-model="dvModel"></tabs-group>
           </component-group>
           <component-group

@@ -402,7 +402,7 @@
 <script setup lang="ts">
 import { queryVisualizationBackground } from '@/api/visualization/visualizationBackground'
 import { COLOR_PANEL } from '@/views/chart/components/editor/util/chart'
-import { computed, effect, nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { imgUrlTrans } from '@/utils/imgUtils'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import { beforeUploadCheck, uploadFileResult } from '@/api/staticResource'
@@ -466,6 +466,25 @@ const cornerModes = Object.values(ShorthandMode).map(item => ({
   value: item
 })) as { label: string; value: ShorthandMode }[]
 
+const backgroundSyncKey = commonBackground => {
+  if (!commonBackground) {
+    return ''
+  }
+  return JSON.stringify({
+    backgroundColorSelect: commonBackground.backgroundColorSelect,
+    backgroundColor: commonBackground.backgroundColor,
+    backgroundImageEnable: commonBackground.backgroundImageEnable,
+    backgroundType: commonBackground.backgroundType,
+    innerImage: commonBackground.innerImage,
+    innerImageColor: commonBackground.innerImageColor,
+    outerImage: commonBackground.outerImage,
+    innerPadding: commonBackground.innerPadding,
+    borderRadius: commonBackground.borderRadius,
+    backdropFilterEnable: commonBackground.backdropFilterEnable,
+    backdropFilter: commonBackground.backdropFilter
+  })
+}
+
 const goFile = () => {
   files.value.click()
 }
@@ -494,7 +513,7 @@ const queryBackground = () => {
 }
 
 const init = () => {
-  const commonBackgroundPop = deepCopy(props.commonBackgroundPop)
+  const commonBackgroundPop = deepCopy(props.commonBackgroundPop || {})
   const innerPadding = commonBackgroundPop.innerPadding
   if (typeof innerPadding === 'number') {
     commonBackgroundPop.innerPadding = {
@@ -503,6 +522,14 @@ const init = () => {
       right: innerPadding,
       bottom: innerPadding,
       left: innerPadding
+    }
+  } else if (!innerPadding) {
+    commonBackgroundPop.innerPadding = {
+      mode: ShorthandMode.Uniform,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
     }
   }
   const borderRadius = commonBackgroundPop.borderRadius
@@ -513,6 +540,14 @@ const init = () => {
       topRight: borderRadius,
       bottomLeft: borderRadius,
       bottomRight: borderRadius
+    }
+  } else if (!borderRadius) {
+    commonBackgroundPop.borderRadius = {
+      mode: ShorthandMode.Uniform,
+      topLeft: 0,
+      topRight: 0,
+      bottomLeft: 0,
+      bottomRight: 0
     }
   }
   state.commonBackground = commonBackgroundPop
@@ -594,7 +629,6 @@ const computedBackgroundBorderSelectWidth = computed(() => {
 })
 
 onMounted(() => {
-  init()
   const erd = elementResizeDetectorMaker()
   containerWidth.value = bgForm.value?.offsetWidth
   erd.listenTo(bgForm.value, () => {
@@ -605,10 +639,11 @@ onMounted(() => {
 })
 
 watch(
-  () => props.commonBackgroundPop,
+  () => backgroundSyncKey(props.commonBackgroundPop),
   () => {
     init()
-  }
+  },
+  { immediate: true }
 )
 </script>
 

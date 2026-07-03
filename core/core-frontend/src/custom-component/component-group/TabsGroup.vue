@@ -4,6 +4,9 @@ import { toRefs } from 'vue'
 import eventBus from '@/utils/eventBus'
 import DragComponent from '@/custom-component/component-group/DragComponent.vue'
 import { commonHandleDragEnd, commonHandleDragStart } from '@/utils/canvasUtils'
+import { useI18n } from '@/hooks/web/useI18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   propValue: {
@@ -52,7 +55,7 @@ const handleDragEnd = e => {
     <drag-component
       :themes="themes"
       :icon="dvTabShow"
-      label="Tab"
+      :label="t('visualization.tabs')"
       drag-info="Tabs&Tabs"
     ></drag-component>
   </div>

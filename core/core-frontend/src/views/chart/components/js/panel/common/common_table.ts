@@ -19,7 +19,6 @@ import {
   getAutoAdjustPosition,
   getEmptyPlaceholder,
   getPolygonPoints,
-  getTooltipDefaultOptions,
   InteractionStateName,
   type LayoutResult,
   MergedCell,
@@ -81,6 +80,7 @@ import {
 import { buildMergeCellsInfo } from './tableMergeCells.mjs'
 import { spanSeriesNumberHeader } from './tableSeriesNumber.mjs'
 import { compactSummaryTableHeight, resolveS2ConfiguredHeight } from './tableSummaryHeight.mjs'
+import { getTooltipPointerPosition, hasTooltipContent, isSortTooltipRequest } from './tableSortTooltip.mjs'
 
 const { t: i18nt } = useI18n()
 
@@ -1659,17 +1659,31 @@ export function handleTableEmptyStrategy(chart: Chart) {
 
 export class SortTooltip extends BaseTooltip {
   show(showOptions) {
-    const { iconName } = showOptions
-    if (iconName) {
-      this.showSortTooltip(showOptions)
+    const sortMeta = this.getSortTooltipMeta(showOptions)
+    if (sortMeta) {
+      this.showSortTooltip({ ...showOptions, meta: sortMeta })
       return
     }
-    super.show(showOptions)
+    if (hasTooltipContent(showOptions)) {
+      super.show(showOptions)
+      return
+    }
+    this.hide()
+  }
+
+  getSortTooltipMeta(showOptions) {
+    if (isSortTooltipRequest(showOptions)) {
+      return showOptions.meta
+    }
+    return null
   }
 
   showSortTooltip(showOptions) {
-    const { position, options, meta, event } = showOptions
-    const { enterable } = getTooltipDefaultOptions(options) as { enterable?: boolean }
+    const { position, meta, event } = showOptions
+    if (!position || !meta) {
+      this.hide()
+      return
+    }
     const { autoAdjustBoundary, adjustPosition } = this.spreadsheet.options.tooltip || {}
     this.visible = true
     this.options = showOptions
@@ -1679,9 +1693,8 @@ export class SortTooltip extends BaseTooltip {
       table: this.spreadsheet,
       meta
     })
-    this.spreadsheet.tooltip.container.innerHTML = ''
     const childElement = document.createElement('div')
-    this.spreadsheet.tooltip.container.appendChild(childElement)
+    this.spreadsheet.tooltip.container.replaceChildren(childElement)
     render(vNode, childElement)
 
     const { x, y } = getAutoAdjustPosition({
@@ -1700,7 +1713,7 @@ export class SortTooltip extends BaseTooltip {
       style: {
         left: `${this.position?.x}px`,
         top: `${this.position?.y}px`,
-        pointerEvents: enterable ? 'all' : 'none',
+        pointerEvents: 'all',
         zIndex: 9999,
         position: 'absolute',
         color: 'black',
@@ -1777,14 +1790,17 @@ export function configHeaderInteraction(chart: Chart, option: S2Options) {
       },
       onClick: props => {
         const { meta, event } = props
+        const position = getTooltipPointerPosition(event)
+        if (!position || !meta?.spreadsheet) {
+          return
+        }
         meta.spreadsheet.showTooltip({
-          position: {
-            x: event.clientX,
-            y: event.clientY
-          },
+          ...props,
+          position,
           event,
-          ...props
-        })
+          sortMenu: true,
+          iconName: props.name
+        } as any)
         const parent = document.getElementById(chart.container)
         if (parent?.childNodes?.length) {
           const child = Array.from(parent.childNodes)
@@ -1803,6 +1819,31 @@ export function configHeaderInteraction(chart: Chart, option: S2Options) {
       }
     }
   ]
+}
+
+export function bindHeaderSortInteraction(sheet: SpreadSheet, enabled = false) {
+  if (!enabled) {
+    return
+  }
+  sheet.on(S2Event.COL_CELL_CLICK, event => {
+    const position = getTooltipPointerPosition(event)
+    if (!position || !event.target) {
+      return
+    }
+    const cell = sheet.getCell(event.target)
+    const meta = cell?.getMeta?.()
+    if (!meta?.field || meta.field === SERIES_NUMBER_FIELD || meta.colIndex === -1) {
+      return
+    }
+    window.setTimeout(() => {
+      sheet.showTooltip({
+        position,
+        event,
+        meta,
+        sortMenu: true
+      } as any)
+    })
+  })
 }
 
 export function configTooltip(chart: Chart, option: S2Options) {

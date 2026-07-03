@@ -8,6 +8,7 @@ import { composeStoreWithOut } from '@/store/modules/data-visualization/compose'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import {
   applyChartGroupLayout,
+  applyChartGroupSeamlessLayout,
   findChartGroupParent,
   normalizeChartGroupContainer,
   type ChartGroupLayoutMode
@@ -55,6 +56,11 @@ const selectedComponents = computed(() =>
   (areaData.value.components || []).filter(component => component.component !== 'GroupArea')
 )
 const currentElement = computed(() => props.element)
+const panelTitle = computed(() =>
+  props.batch
+    ? tr('visualization.visual_group', '背景卡片')
+    : tr('visualization.chart_group_container', '组合布局')
+)
 const isGroup = computed(() => currentElement.value?.component === 'Group')
 const parentInfo = computed(() => {
   if (!currentElement.value || isGroup.value) {
@@ -62,12 +68,7 @@ const parentInfo = computed(() => {
   }
   return findChartGroupParent(componentData.value, currentElement.value.id)
 })
-const canCreateCurrent = computed(
-  () => currentElement.value && !props.batch && !isGroup.value && !parentInfo.value
-)
-const groupConfig = computed(() =>
-  isGroup.value ? normalizeChartGroupContainer(currentElement.value) : null
-)
+const groupConfig = computed(() => (isGroup.value ? currentElement.value : null))
 
 const groupName = computed({
   get: () => groupConfig.value?.name || '',
@@ -82,49 +83,49 @@ const groupName = computed({
 })
 
 const layoutMode = computed({
-  get: () => groupConfig.value?.chartGroupContainer.layoutMode || 'keep',
+  get: () => groupConfig.value?.chartGroupContainer?.layoutMode || 'keep',
   set: (value: ChartGroupLayoutMode) => {
     const group = groupConfig.value
     if (!group) {
       return
     }
+    normalizeChartGroupContainer(group)
     group.chartGroupContainer.layoutMode = value
   }
 })
 
-const layoutModeLabel = computed(
-  () => layoutOptions.value.find(option => option.value === layoutMode.value)?.label || '保持位置'
-)
-
 const horizontalGap = computed({
-  get: () => groupConfig.value?.chartGroupContainer.horizontalGap || 0,
+  get: () => groupConfig.value?.chartGroupContainer?.horizontalGap || 0,
   set: value => {
     const group = groupConfig.value
     if (!group) {
       return
     }
+    normalizeChartGroupContainer(group)
     group.chartGroupContainer.horizontalGap = Number(value) || 0
   }
 })
 
 const verticalGap = computed({
-  get: () => groupConfig.value?.chartGroupContainer.verticalGap || 0,
+  get: () => groupConfig.value?.chartGroupContainer?.verticalGap || 0,
   set: value => {
     const group = groupConfig.value
     if (!group) {
       return
     }
+    normalizeChartGroupContainer(group)
     group.chartGroupContainer.verticalGap = Number(value) || 0
   }
 })
 
 const clipOverflow = computed({
-  get: () => groupConfig.value?.chartGroupContainer.clipOverflow !== false,
+  get: () => groupConfig.value?.chartGroupContainer?.clipOverflow !== false,
   set: value => {
     const group = groupConfig.value
     if (!group) {
       return
     }
+    normalizeChartGroupContainer(group)
     group.chartGroupContainer.clipOverflow = value
   }
 })
@@ -136,34 +137,19 @@ const recordSnapshot = (name: string, immediate = false) => {
   }
 }
 
-const createCurrentGroup = () => {
-  const element = currentElement.value
-  if (!element) {
-    return
-  }
-  const ok = composeStore.createChartGroupFromComponents(
-    [element],
-    element.canvasId || 'canvas-main'
-  )
-  if (!ok) {
-    ElMessage.warning(tr('visualization.chart_group_create_failed', '当前组件无法创建图表组'))
-    return
-  }
-  recordSnapshot('createChartGroup', true)
-}
-
-const createSelectedGroup = () => {
+const addBackgroundCard = () => {
   if (selectedComponents.value.length < 2) {
-    ElMessage.warning(tr('visualization.chart_group_select_more', '请选择至少两个组件'))
+    ElMessage.warning(tr('visualization.background_card_select_more', '请选择至少两个普通组件'))
     return
   }
-  const ok = composeStore.createChartGroupFromComponents(selectedComponents.value)
+  const canvasId = selectedComponents.value[0]?.canvasId || 'canvas-main'
+  const ok = composeStore.createBackgroundCardFromComponents(selectedComponents.value, canvasId)
   if (!ok) {
-    ElMessage.warning(tr('visualization.chart_group_create_failed', '当前组件无法创建图表组'))
+    ElMessage.warning(tr('visualization.background_card_create_failed', '当前组件无法添加背景卡片'))
     return
   }
   dvMainStore.setBatchOptStatus(false)
-  recordSnapshot('createSelectedChartGroup', true)
+  recordSnapshot('addBackgroundCard', true)
 }
 
 const editParentGroup = () => {
@@ -183,7 +169,7 @@ const removeFromGroup = () => {
   }
   const ok = composeStore.removeComponentFromChartGroup(element.id)
   if (!ok) {
-    ElMessage.warning(tr('visualization.chart_group_parent_missing', '未找到所属图表组'))
+    ElMessage.warning(tr('visualization.chart_group_parent_missing', '未找到所属组合'))
     return
   }
   recordSnapshot('removeFromChartGroup', true)
@@ -207,9 +193,10 @@ const applyLayout = () => {
     verticalGap: verticalGap.value
   })
   if (!ok) {
-    ElMessage.warning(tr('visualization.chart_group_grid_unavailable', '当前图表组无法识别为稳定网格'))
+    ElMessage.warning(tr('visualization.chart_group_grid_unavailable', '当前组合无法识别为稳定网格'))
     return
   }
+  applyChartGroupSeamlessLayout(group)
   recordSnapshot('applyChartGroupLayout', true)
 }
 
@@ -232,7 +219,7 @@ watch(
   <el-collapse v-model="activeName" class="chart-group-setting" :class="`theme-${themes}`">
     <el-collapse-item
       :effect="themes"
-      :title="tr('visualization.chart_group_container', '图表组')"
+      :title="panelTitle"
       name="chartGroup"
     >
       <template v-if="batch">
@@ -247,15 +234,15 @@ watch(
           size="small"
           type="primary"
           :disabled="selectedComponents.length < 2"
-          @click="createSelectedGroup"
+          @click="addBackgroundCard"
         >
-          {{ tr('visualization.chart_group_create_selected', '用选中图表创建图表组') }}
+          {{ tr('visualization.add_background_card', '添加背景卡片') }}
         </el-button>
       </template>
 
       <template v-else-if="isGroup && groupConfig">
         <el-form class="chart-group-form" label-position="top">
-          <el-form-item :label="tr('visualization.chart_group_name', '图表组名称')">
+          <el-form-item :label="tr('visualization.chart_group_name', '组合名称')">
             <el-input
               size="small"
               :effect="themes"
@@ -264,22 +251,14 @@ watch(
             />
           </el-form-item>
           <el-form-item :label="tr('visualization.chart_group_layout_mode', '布局模式')">
-            <div class="chart-group-select-wrap">
-              <el-select
-                size="small"
-                :effect="themes"
-                v-model="layoutMode"
-                :placeholder="layoutModeLabel"
-              >
-                <el-option
-                  v-for="option in layoutOptions"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                />
-              </el-select>
-              <span class="chart-group-select-display">{{ layoutModeLabel }}</span>
-            </div>
+            <el-select size="small" :effect="themes" v-model="layoutMode">
+              <el-option
+                v-for="option in layoutOptions"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
+              />
+            </el-select>
           </el-form-item>
           <div class="chart-group-grid">
             <el-form-item :label="tr('visualization.chart_group_horizontal_gap', '横向间距')">
@@ -311,10 +290,10 @@ watch(
         </el-checkbox>
         <div class="chart-group-actions">
           <el-button size="small" type="primary" @click="applyLayout">
-            {{ tr('visualization.chart_group_apply_layout', '应用布局') }}
+            {{ tr('visualization.apply_seamless_chart_group', '应用无缝布局') }}
           </el-button>
           <el-button size="small" @click="cancelGroup">
-            {{ tr('visualization.chart_group_cancel', '取消图表组') }}
+            {{ tr('visualization.chart_group_cancel', '取消组合') }}
           </el-button>
         </div>
       </template>
@@ -322,28 +301,19 @@ watch(
       <template v-else-if="parentInfo">
         <div class="chart-group-status">
           {{
-            tr('visualization.chart_group_joined', '已加入图表组：{name}', {
+            tr('visualization.chart_group_joined', '已加入组合：{name}', {
               name: parentInfo.group.name
             })
           }}
         </div>
         <div class="chart-group-actions">
           <el-button size="small" type="primary" @click="editParentGroup">
-            {{ tr('visualization.chart_group_edit', '编辑图表组') }}
+            {{ tr('visualization.chart_group_edit', '编辑组合') }}
           </el-button>
           <el-button size="small" @click="removeFromGroup">
-            {{ tr('visualization.chart_group_remove', '从图表组移出') }}
+            {{ tr('visualization.chart_group_remove', '从组合移出') }}
           </el-button>
         </div>
-      </template>
-
-      <template v-else-if="canCreateCurrent">
-        <div class="chart-group-status">
-          {{ tr('visualization.chart_group_not_joined', '未加入图表组') }}
-        </div>
-        <el-button size="small" type="primary" @click="createCurrentGroup">
-          {{ tr('visualization.chart_group_create', '创建图表组') }}
-        </el-button>
       </template>
     </el-collapse-item>
   </el-collapse>
@@ -485,32 +455,6 @@ watch(
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
-}
-
-.chart-group-select-wrap {
-  position: relative;
-  width: 100%;
-}
-
-.chart-group-select-display {
-  position: absolute;
-  top: 50%;
-  right: 28px;
-  left: 11px;
-  overflow: hidden;
-  color: #1f2329;
-  font-size: 12px;
-  line-height: 20px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  pointer-events: none;
-  transform: translateY(-50%);
-}
-
-.theme-dark {
-  .chart-group-select-display {
-    color: #ebebeb;
-  }
 }
 
 .chart-group-actions {

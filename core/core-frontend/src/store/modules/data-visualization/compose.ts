@@ -13,12 +13,18 @@ import { createGroupStyle, getComponentRotatedStyle } from '@/utils/style'
 import eventBus from '@/utils/eventBus'
 import { canvasIdMapCheck, checkJoinGroup, isTabCanvas } from '@/utils/canvasUtils'
 import {
+  calculateBackgroundCardBounds,
   calculateChartGroupBounds,
   findChartGroupParent,
+  getBackgroundCardInsertIndex,
   normalizeChartGroupContainer
 } from '@/utils/chartGroupContainer'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
+const translateOrFallback = (key: string, fallback: string) => {
+  const value = t(key)
+  return value && value !== key ? value : fallback
+}
 
 const dvMainStore = dvMainStoreWithOut()
 const { curComponent, componentData, curOriginThemes } = storeToRefs(dvMainStore)
@@ -156,6 +162,71 @@ export const composeStore = defineStore('compose', {
         components: joinableComponents
       })
       this.compose(canvasId, true)
+      return true
+    },
+
+    createBackgroundCardFromComponents(components, canvasId = 'canvas-main') {
+      const targetComponents = components.filter(
+        component =>
+          component.component !== 'GroupArea' &&
+          component.component !== 'Group' &&
+          (component.canvasId || 'canvas-main') === canvasId
+      )
+      if (targetComponents.length < 2) {
+        return false
+      }
+      const bounds = calculateBackgroundCardBounds(targetComponents)
+      const insertIndex = getBackgroundCardInsertIndex(componentData.value, targetComponents)
+      if (!bounds || insertIndex === undefined) {
+        return false
+      }
+
+      const backgroundCardName = translateOrFallback('visualization.background_card', '背景卡片')
+      const backgroundCard = deepCopy({
+        ...commonAttr,
+        id: generateID(),
+        component: 'RectShape',
+        innerType: 'BackgroundCard',
+        canvasId,
+        canvasActive: false,
+        name: backgroundCardName,
+        label: backgroundCardName,
+        propValue: '&nbsp;',
+        icon: 'icon_graphical',
+        commonBackground: {
+          ...COMMON_COMPONENT_BACKGROUND_MAP[curOriginThemes.value],
+          backgroundColorSelect: true,
+          backgroundColor: '#ffffff',
+          innerPadding: {
+            mode: 'uniform',
+            top: 0
+          },
+          borderRadius: {
+            mode: 'uniform',
+            topLeft: 6
+          },
+          backdropFilter: 0
+        },
+        style: {
+          ...commonStyle,
+          ...bounds,
+          backgroundColor: 'rgba(255, 255, 255, 0)',
+          opacity: 0.92,
+          borderActive: false,
+          borderWidth: 1,
+          borderRadius: 6,
+          borderStyle: 'solid',
+          borderColor: '#cccccc',
+          backdropFilter: 'blur(0px)'
+        }
+      })
+
+      dvMainStore.addComponent({
+        component: backgroundCard,
+        index: insertIndex
+      })
+      eventBus.emit('hideArea-canvas-main')
+      this.areaData.components = []
       return true
     },
 

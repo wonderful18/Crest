@@ -18,8 +18,8 @@ const { curComponent } = storeToRefs(dvMainStore)
 
 <template>
   <div class="attr-list de-collapse-style">
-    <ChartGroupSetting :themes="themes" :element="curComponent" />
     <CommonAttr :themes="themes" :element="curComponent"></CommonAttr>
+    <ChartGroupSetting :themes="themes" :element="curComponent" />
   </div>
 </template>
 

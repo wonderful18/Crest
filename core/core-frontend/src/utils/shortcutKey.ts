@@ -237,8 +237,10 @@ function undo() {
 
 function compose() {
   if (areaData.value.components.length) {
-    composeStore.compose()
-    snapshotStore.recordSnapshotCache('key-compose')
+    const canvasId = areaData.value.components[0]?.canvasId || 'canvas-main'
+    if (composeStore.createBackgroundCardFromComponents(areaData.value.components, canvasId)) {
+      snapshotStore.recordSnapshotCache('key-add-background-card')
+    }
   }
 }
 

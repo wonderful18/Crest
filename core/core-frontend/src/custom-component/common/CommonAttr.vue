@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, toRefs } from 'vue'
+import { computed, nextTick, onMounted, ref, toRefs, unref } from 'vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 import ComponentPosition from '@/components/visualization/common/ComponentPosition.vue'
@@ -15,6 +15,7 @@ import CollapseSwitchItem from '../../components/collapse-switch-item/src/Collap
 import TabBackgroundOverall from '@/custom-component/tabs/TabBackgroundOverall.vue'
 import CustomTabsSortSide from '@/custom-component/tabs/CustomTabsSortSide.vue'
 import ChartGroupSetting from '@/custom-component/common/ChartGroupSetting.vue'
+import { findChartGroupParent } from '@/utils/chartGroupContainer'
 const snapshotStore = snapshotStoreWithOut()
 
 const { t } = useI18n()
@@ -39,12 +40,21 @@ const props = withDefaults(
 
 const { themes, element } = toRefs(props)
 const dvMainStore = dvMainStoreWithOut()
-const { dvInfo, batchOptStatus, mobileInPc } = storeToRefs(dvMainStore)
+const { dvInfo, batchOptStatus, mobileInPc, curComponent, componentData } = storeToRefs(dvMainStore)
 const activeName = ref(element.value.collapseName)
 
 const onChange = () => {
   element.value.collapseName = activeName
 }
+
+const propElement = computed(() => unref(element.value))
+
+const backgroundElement = computed(() => {
+  if (curComponent.value?.id && propElement.value?.id === curComponent.value.id) {
+    return curComponent.value
+  }
+  return propElement.value
+})
 
 const positionComponentShow = computed(() => {
   return !batchOptStatus.value && !dashboardActive.value
@@ -54,8 +64,16 @@ const dashboardActive = computed(() => {
   return dvInfo.value.type === 'dashboard'
 })
 
+const backgroundPanelKey = computed(() => {
+  return `${backgroundElement.value?.component || 'component'}-${backgroundElement.value?.id || 'unknown'}`
+})
+
+const backgroundCardShow = computed(() => backgroundElement.value?.innerType === 'BackgroundCard')
+
 const onBackgroundChange = val => {
-  element.value.commonBackground = val
+  if (backgroundElement.value) {
+    backgroundElement.value.commonBackground = val
+  }
   snapshotStore.recordSnapshotCacheToMobile('commonBackground')
   emits('onAttrChange', { custom: 'commonBackground' })
 }
@@ -105,6 +123,7 @@ const carouselShow = computed(() => {
 const backgroundCustomShow = computed(() => {
   return (
     dashboardActive.value ||
+    backgroundCardShow.value ||
     (!dashboardActive.value &&
       ![
         'CanvasBoard',
@@ -113,7 +132,7 @@ const backgroundCustomShow = computed(() => {
         'RectShape',
         'Decoration',
         'DynamicBackground'
-      ].includes(element.value.component))
+      ].includes(backgroundElement.value?.component))
   )
 })
 
@@ -125,6 +144,7 @@ const chartGroupSettingShow = computed(() => {
   return (
     element.value &&
     !dashboardActive.value &&
+    !!findChartGroupParent(componentData.value, element.value.id) &&
     !['Group', 'GroupArea', 'CanvasBoard'].includes(element.value.component)
   )
 })
@@ -175,11 +195,12 @@ onMounted(() => {
         :effect="themes"
         :title="t('visualization.background')"
         name="background"
-        v-if="element && backgroundCustomShow"
+        v-if="backgroundElement && backgroundCustomShow"
       >
         <background-overall-common
+          :key="backgroundPanelKey"
           :themes="themes"
-          :common-background-pop="element.commonBackground"
+          :common-background-pop="backgroundElement.commonBackground"
           component-position="component"
           @onBackgroundChange="onBackgroundChange"
           :background-color-picker-width="backgroundColorPickerWidth"

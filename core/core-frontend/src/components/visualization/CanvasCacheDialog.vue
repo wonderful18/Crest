@@ -20,8 +20,8 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button size="mini" @click="doUseCache(false)">{{ t('visualization.no') }}</el-button>
-        <el-button type="primary" size="mini" @click="doUseCache(true)"
+        <el-button size="small" @click="doUseCache(false)">{{ t('visualization.no') }}</el-button>
+        <el-button type="primary" size="small" @click="doUseCache(true)"
           >{{ t('visualization.yes') }}
         </el-button>
       </div>

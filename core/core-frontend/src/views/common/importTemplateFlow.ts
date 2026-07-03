@@ -3,7 +3,7 @@ import { secureRandomInt } from '@/utils/secureRandom'
 export type ImportedTemplateCanvasType = 'dataV' | 'dashboard' | string
 
 export const isSupportedVisualizationTemplateFile = (fileName?: string): boolean => {
-  return /\.(det2|det2app)$/i.test(fileName || '')
+  return /\.(crest|det2|det2app)$/i.test(fileName || '')
 }
 
 export const buildImportedTemplateCacheKey = (now = Date.now): string => {

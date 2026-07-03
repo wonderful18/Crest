@@ -1358,8 +1358,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
         String fileName = StringUtils.defaultString(file.getOriginalFilename());
         FileUtils.validateUploadFilename(fileName);
         String lowerFileName = fileName.toLowerCase(Locale.ROOT);
-        if (!lowerFileName.endsWith(".det2") && !lowerFileName.endsWith(".det2app")) {
-            CrestException.throwException("仅支持 DET2 或 DET2APP 模板文件");
+        if (!lowerFileName.endsWith(".crest") && !lowerFileName.endsWith(".det2") && !lowerFileName.endsWith(".det2app")) {
+            CrestException.throwException("仅支持 CREST 模板文件");
         }
 
         String content = new String(file.getBytes(), StandardCharsets.UTF_8);

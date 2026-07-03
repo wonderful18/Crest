@@ -49,7 +49,9 @@ const {
 } = loadImportTemplateFlow()
 
 describe('importTemplateFlow', () => {
-  it('accepts only DET2 and DET2APP template files case-insensitively', () => {
+  it('accepts CREST template files and legacy DET2 files case-insensitively', () => {
+    assert.equal(isSupportedVisualizationTemplateFile('risk-screen.crest'), true)
+    assert.equal(isSupportedVisualizationTemplateFile('risk-screen.CREST'), true)
     assert.equal(isSupportedVisualizationTemplateFile('risk-screen.DET2'), true)
     assert.equal(isSupportedVisualizationTemplateFile('risk-screen.det2app'), true)
     assert.equal(isSupportedVisualizationTemplateFile('risk-screen.json'), false)

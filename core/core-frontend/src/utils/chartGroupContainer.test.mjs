@@ -55,6 +55,29 @@ describe('chartGroupContainer', () => {
     })
   })
 
+  it('calculates a padded background card around selected components', () => {
+    const { calculateBackgroundCardBounds } = loadChartGroupContainer()
+    const bounds = calculateBackgroundCardBounds([
+      { style: { left: 10, top: 20, width: 100, height: 80 } },
+      { style: { left: 180, top: 120, width: 60, height: 50 } }
+    ])
+
+    assert.deepEqual(bounds, {
+      left: 0,
+      top: 4,
+      width: 256,
+      height: 182
+    })
+  })
+
+  it('returns the lowest selected component index for background card insertion', () => {
+    const { getBackgroundCardInsertIndex } = loadChartGroupContainer()
+    const componentData = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+
+    assert.equal(getBackgroundCardInsertIndex(componentData, [{ id: 'c' }, { id: 'b' }]), 1)
+    assert.equal(getBackgroundCardInsertIndex(componentData, [{ id: 'x' }]), undefined)
+  })
+
   it('applies seamless layout only to the selected group and its children', () => {
     const { applyChartGroupSeamlessLayout } = loadChartGroupContainer()
     const group = {
@@ -94,13 +117,15 @@ describe('chartGroupContainer', () => {
       style: { borderActive: true },
       commonBackground: { backgroundColorSelect: true }
     }
+    const originalGroupBackground = group.commonBackground
 
     applyChartGroupSeamlessLayout(group)
 
     assert.equal(group.chartGroupContainer.seamless, true)
     assert.equal(group.style.borderActive, true)
+    assert.notEqual(group.commonBackground, originalGroupBackground)
     assert.equal(group.commonBackground.backgroundColorSelect, true)
-    assert.equal(group.commonBackground.backgroundColor, 'rgba(19,28,66,1)')
+    assert.equal(group.commonBackground.backgroundColor, 'rgba(255,255,255,1)')
     assert.deepEqual(group.commonBackground.innerPadding, {
       mode: 'uniform',
       top: 0,
@@ -121,6 +146,95 @@ describe('chartGroupContainer', () => {
       bottomLeft: 0
     })
     assert.deepEqual(unrelated.commonBackground, { backgroundColorSelect: true })
+  })
+
+  it('uses child background color for seamless groups when group background is disabled', () => {
+    const { applyChartGroupSeamlessLayout } = loadChartGroupContainer()
+    const group = {
+      component: 'Group',
+      commonBackground: {
+        backgroundColorSelect: false,
+        backgroundColor: 'rgba(19,28,66,1)',
+        backgroundImageEnable: false
+      },
+      propValue: [
+        {
+          component: 'UserView',
+          commonBackground: {
+            backgroundColorSelect: false,
+            backgroundColor: 'rgba(255,255,255,.92)',
+            backgroundImageEnable: false
+          },
+          style: {}
+        }
+      ]
+    }
+
+    applyChartGroupSeamlessLayout(group)
+
+    assert.equal(group.commonBackground.backgroundColorSelect, true)
+    assert.equal(group.commonBackground.backgroundColor, 'rgba(255,255,255,.92)')
+    assert.equal(group.commonBackground.backgroundImageEnable, false)
+    assert.equal(group.propValue[0].commonBackground.backgroundColorSelect, false)
+  })
+
+  it('keeps an explicit group background color when applying seamless layout again', () => {
+    const { applyChartGroupSeamlessLayout } = loadChartGroupContainer()
+    const group = {
+      component: 'Group',
+      commonBackground: {
+        backgroundColorSelect: true,
+        backgroundColor: 'rgba(10,20,30,1)',
+        backgroundImageEnable: false
+      },
+      propValue: [
+        {
+          component: 'UserView',
+          commonBackground: {
+            backgroundColorSelect: true,
+            backgroundColor: 'rgba(255,255,255,.92)'
+          },
+          style: {}
+        }
+      ]
+    }
+
+    applyChartGroupSeamlessLayout(group)
+
+    assert.equal(group.commonBackground.backgroundColorSelect, true)
+    assert.equal(group.commonBackground.backgroundColor, 'rgba(10,20,30,1)')
+    assert.equal(group.propValue[0].commonBackground.backgroundColorSelect, false)
+  })
+
+  it('keeps an explicit group background image when applying seamless layout again', () => {
+    const { applyChartGroupSeamlessLayout } = loadChartGroupContainer()
+    const group = {
+      component: 'Group',
+      commonBackground: {
+        backgroundColorSelect: true,
+        backgroundColor: 'rgba(10,20,30,1)',
+        backgroundImageEnable: true,
+        backgroundType: 'outerImage',
+        outerImage: 'static-resource/group-custom-bg.png'
+      },
+      propValue: [
+        {
+          component: 'UserView',
+          commonBackground: {
+            backgroundColorSelect: true,
+            backgroundColor: 'rgba(255,255,255,.92)'
+          },
+          style: {}
+        }
+      ]
+    }
+
+    applyChartGroupSeamlessLayout(group)
+
+    assert.equal(group.commonBackground.backgroundColor, 'rgba(10,20,30,1)')
+    assert.equal(group.commonBackground.backgroundImageEnable, true)
+    assert.equal(group.commonBackground.outerImage, 'static-resource/group-custom-bg.png')
+    assert.equal(group.propValue[0].commonBackground.backgroundColorSelect, false)
   })
 
   it('removes direct child gaps along the dominant layout axis', () => {
