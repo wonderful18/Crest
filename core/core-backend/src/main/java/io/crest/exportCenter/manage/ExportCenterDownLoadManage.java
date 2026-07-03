@@ -356,6 +356,7 @@ public class ExportCenterDownLoadManage {
                 DatasetOrder2SQLObj.getOrders(sqlMeta, dto.getSortFields(), allFields);
                 String replaceSql = provider.rebuildSQL(SQLProvider.createQuerySQL(sqlMeta, false, false, false), sqlMeta, crossDs, dsMap);
                 Long totalCount = datasetDataManage.datasetTotal(dto, replaceSql, null);
+                totalCount = Objects.requireNonNullElse(totalCount, 0L);
                 Long curLimit = ExportCenterUtils.getExportLimit("dataset");
                 // 导出行数受系统限制保护，避免一次任务生成超大文件。
                 totalCount = totalCount > curLimit ? curLimit : totalCount;
@@ -872,6 +873,7 @@ public class ExportCenterDownLoadManage {
             Order2SQLObj.getOrders(sqlMeta, dto.getSortFields(), allFields, crossDs, dsMap, Utils.getParams(allFields), null, pluginManage);
             String replaceSql = provider.rebuildSQL(SQLProvider.createQuerySQL(sqlMeta, false, false, false), sqlMeta, crossDs, dsMap);
             Long totalCount = datasetDataManage.datasetTotal(dto, replaceSql, null);
+            totalCount = Objects.requireNonNullElse(totalCount, 0L);
             Long curLimit = ExportCenterUtils.getExportLimit("dataset");
             // 同步下载也受数据集导出上限约束。
             totalCount = totalCount > curLimit ? curLimit : totalCount;

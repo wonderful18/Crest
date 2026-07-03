@@ -7,6 +7,7 @@ import io.crest.extensions.datafilling.vo.PluginDataFillingVO;
 import io.crest.plugins.template.CrestPlugin;
 import io.crest.plugins.vo.CrestPluginVO;
 import io.crest.utils.JsonUtil;
+import org.apache.commons.lang3.StringUtils;
 
 // 定义插件扩展能力的基础类型
 public abstract class DataFillingPlugin extends ExtDDLProvider implements CrestPlugin {
@@ -27,7 +28,15 @@ public abstract class DataFillingPlugin extends ExtDDLProvider implements CrestP
             CrestException.throwException(e);
         }
         String config = pluginInfo.getConfig();
+        if (StringUtils.isBlank(config)) {
+            CrestException.throwException("Plugin config not exists");
+            return null;
+        }
         PluginDataFillingVO vo = JsonUtil.parseObject(config, PluginDataFillingVO.class);
+        if (vo == null) {
+            CrestException.throwException("Plugin config not exists");
+            return null;
+        }
         vo.setIcon(pluginInfo.getIcon());
         return vo;
     }

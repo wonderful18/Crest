@@ -26,6 +26,7 @@ import io.crest.system.sso.SsoIdentityAction;
 import io.crest.system.sso.SsoIdentityDecision;
 import io.crest.system.sso.SsoIdentityProfile;
 import io.crest.utils.AuthUtils;
+import io.crest.utils.FileUtils;
 import io.crest.utils.IDUtils;
 import io.crest.utils.Md5Utils;
 import io.crest.utils.PasswordEncoder;
@@ -45,6 +46,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 // 内置用户管理服务，负责本地用户、单点登录用户和权限绑定的持久化操作
@@ -404,12 +406,17 @@ public class CrestUserManage {
 
     // 读取 Excel 或 CSV 导入文件并转换为用户导入行
     private List<UserImportRow> readImportRows(MultipartFile file) throws Exception {
-        String filename = StringUtils.defaultString(file.getOriginalFilename()).toLowerCase();
-        if (filename.endsWith(".xlsx") || filename.endsWith(".xls")) {
+        String originalFilename = StringUtils.defaultString(file.getOriginalFilename());
+        FileUtils.validateUploadFilename(originalFilename);
+        String normalizedFilename = originalFilename.toLowerCase(Locale.ROOT);
+        if (normalizedFilename.endsWith(".xlsx") || normalizedFilename.endsWith(".xls")) {
             return EasyExcel.read(file.getInputStream())
                     .head(UserImportRow.class)
                     .sheet()
                     .doReadSync();
+        }
+        if (!normalizedFilename.endsWith(".csv")) {
+            CrestException.throwException("仅支持 xlsx、xls、csv 格式的用户导入文件");
         }
         String text = new String(file.getBytes(), StandardCharsets.UTF_8);
         String[] rows = text.replace("\r", "").split("\n");

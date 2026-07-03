@@ -107,13 +107,26 @@ public class HtmlResourceFilter implements Filter, Ordered {
         }
 
         String currentPath = matcher.group(1) + "/" + matcher.group(2) + "-" + currentVersion + "-" + matcher.group(3);
+        if (!isSafeStaticForwardPath(currentPath)) {
+            return false;
+        }
         if (!new ClassPathResource("static/" + currentPath).exists()) {
             return false;
         }
 
         applyNoCache(response);
-        request.getRequestDispatcher("/" + currentPath).forward(request, response);
+        forwardStaticAsset(request, response, currentPath);
         return true;
+    }
+
+    private boolean isSafeStaticForwardPath(String currentPath) {
+        return currentPath.indexOf('\\') < 0
+                && !currentPath.contains("..")
+                && VERSIONED_FRONTEND_ASSET.matcher(currentPath).matches();
+    }
+
+    private void forwardStaticAsset(HttpServletRequest request, HttpServletResponse response, String staticAssetPath) throws ServletException, IOException {
+        request.getRequestDispatcher("/" + staticAssetPath).forward(request, response);
     }
 
     /**
