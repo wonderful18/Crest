@@ -1,0 +1,66 @@
+name: CodeQL
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+      - 'release/**'
+  push:
+    branches:
+      - main
+      - dev
+      - 'release/**'
+      - 'hotfix/**'
+      - 'feat/**'
+      - 'fix/**'
+  schedule:
+    - cron: '28 19 * * 1'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  packages: read
+  security-events: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - actions
+          - java-kotlin
+          - javascript-typescript
+          - python
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Initialize CodeQL
+        if: matrix.language != 'java-kotlin'
+        uses: github/codeql-action/init@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4
+        with:
+          languages: ${{ matrix.language }}
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Initialize CodeQL for Java
+        if: matrix.language == 'java-kotlin'
+        uses: github/codeql-action/init@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4
+        with:
+          category: '/language:${{ matrix.language }}'
