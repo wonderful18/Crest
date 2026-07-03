@@ -58,7 +58,7 @@ public class CrestUserManage {
     public static final String AUTH_TYPE_SSO = "SSO";
 
     private static final String INITIAL_PASSWORD_PROPERTY = "crest.user.initial-password";
-    private static final String LEGACY_ADMIN_PASSWORD_HASH = "21232f297a57a5a743894a0e4a801fc3";
+    private static final String LEGACY_ADMIN_PASSWORD_HASH = Md5Utils.md5("admin");
     private static final Pattern ACCOUNT_PATTERN = Pattern.compile("^[A-Za-z0-9._@-]{1,64}$");
     private static final Pattern UNSAFE_DISPLAY_NAME_PATTERN = Pattern.compile("[<>\\p{Cntrl}]");
     private static final String USER_GRID_COLUMNS = """

@@ -1,0 +1,9 @@
+title = "Crest gitleaks configuration"
+
+[allowlist]
+description = "Schema field names and Java bean assignments that do not contain secret values."
+regexTarget = "match"
+regexes = [
+  '''(?i)\b(aes_key|private_key|sm2_private_key)\s+(CLOB|text)\s+(DEFAULT\s+)?(NOT\s+)?NULL\b''',
+  '''this\.sm2PrivateKey\s*=\s*sm2PrivateKey;''',
+]

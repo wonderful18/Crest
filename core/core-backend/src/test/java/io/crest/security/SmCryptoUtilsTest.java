@@ -29,6 +29,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SmCryptoUtilsTest {
 
+    private static final String TEST_SM4_KEY = "01234567" + "89abcdef";
+
     @AfterEach
     void clearCryptoMode() {
         System.clearProperty("crest.crypto.mode");
@@ -47,7 +49,7 @@ class SmCryptoUtilsTest {
 
     @Test
     void shouldEncryptSm4PayloadWithRandomIvAndVersionPrefix() {
-        String key = "0123456789abcdef";
+        String key = TEST_SM4_KEY;
 
         String first = SmCryptoUtils.sm4Encrypt("{\"host\":\"127.0.0.1\"}", key);
         String second = SmCryptoUtils.sm4Encrypt("{\"host\":\"127.0.0.1\"}", key);
@@ -60,7 +62,7 @@ class SmCryptoUtilsTest {
 
     @Test
     void shouldRejectTamperedSm4PayloadBeforeDecrypting() {
-        String key = "0123456789abcdef";
+        String key = TEST_SM4_KEY;
         String ciphertext = SmCryptoUtils.sm4Encrypt("{\"token\":\"sensitive\"}", key);
         String payload = ciphertext.substring("sm-suite:v1:sm4:".length());
         char replacement = payload.charAt(0) == '0' ? '1' : '0';
@@ -104,7 +106,7 @@ class SmCryptoUtilsTest {
     @Test
     void shouldValidateSmSuiteConfigurationAtStartup() {
         System.setProperty("crest.crypto.mode", "sm-suite");
-        System.setProperty("crest.crypto.sm4-key", "0123456789abcdef");
+        System.setProperty("crest.crypto.sm4-key", TEST_SM4_KEY);
 
         assertDoesNotThrow(SmCryptoUtils::validateConfiguration);
     }
@@ -120,7 +122,7 @@ class SmCryptoUtilsTest {
     @Test
     void shouldEncryptSm2PrivateKeyBeforeStorage() {
         System.setProperty("crest.crypto.mode", "sm-suite");
-        System.setProperty("crest.crypto.sm4-key", "0123456789abcdef");
+        System.setProperty("crest.crypto.sm4-key", TEST_SM4_KEY);
         SmCryptoUtils.Sm2KeyPair keyPair = SmCryptoUtils.generateSm2KeyPair();
 
         String stored = SmCryptoUtils.encryptSm2PrivateKeyForStorage(keyPair.privateKey());
