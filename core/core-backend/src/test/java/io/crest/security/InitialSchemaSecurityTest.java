@@ -61,8 +61,13 @@ class InitialSchemaSecurityTest {
             assertThat(sql)
                     .as(file)
                     .contains("SET pval = ''")
-                    .contains("pkey = 'template.accessKey'")
-                    .contains("pval = 'crest'");
+                    .contains("pkey = 'template.accessKey'");
+
+            assertThat(sql)
+                    .as(file)
+                    .contains(file.endsWith("_ob_oracle.sql")
+                            ? "DBMS_LOB.SUBSTR(pval, 4000, 1) = 'crest'"
+                            : "pval = 'crest'");
         }
 
         String v1514Upgrade = readFile("installer/upgrade-sql/v1.5.14_to_v2.1.0_mysql.sql");
