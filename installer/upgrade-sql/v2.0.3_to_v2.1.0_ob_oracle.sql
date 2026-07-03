@@ -5,8 +5,8 @@
 UPDATE core_system_setting
 SET pval = ''
 WHERE pkey = 'template.accessKey'
-  AND pval = 'crest';
+  AND DBMS_LOB.SUBSTR(pval, 4000, 1) = 'crest';
 
-SELECT pkey, pval
+SELECT pkey, DBMS_LOB.SUBSTR(pval, 4000, 1) AS pval
 FROM core_system_setting
 WHERE pkey = 'template.accessKey';
