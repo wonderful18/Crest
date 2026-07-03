@@ -1,0 +1,7 @@
+[[IgnoredVulns]]
+id = "GHSA-q742-qvgc-gc2f"
+reason = "GitHub Advisory lists TinyMCE 8.x as affected only before 8.5.1; this project uses tinymce 8.7.0."
+
+[[IgnoredVulns]]
+id = "GHSA-v98h-vmpc-fpqv"
+reason = "GitHub Advisory lists TinyMCE 8.x as affected only before 8.5.1; this project uses tinymce 8.7.0."
