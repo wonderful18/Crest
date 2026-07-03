@@ -1094,7 +1094,9 @@ const datasetMode = computed(() => (syncSupportedDataset.value && syncMode.value
 // 可作为增量字段的普通选中字段
 const syncFieldOptions = computed(() => allfields.value.filter(isDatasetSyncField))
 // 可作为增量水位的字段
-const incrementalFieldOptions = computed(() => syncFieldOptions.value.filter(isDatasetIncrementalField))
+const incrementalFieldOptions = computed(() =>
+  syncFieldOptions.value.filter(isDatasetIncrementalField)
+)
 // 时间类型增量候选字段
 const timeIncrementalFields = computed(() =>
   incrementalFieldOptions.value.filter(

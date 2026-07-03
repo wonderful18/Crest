@@ -198,7 +198,8 @@ const validateCurrentSummaryColumn = (column: SummaryColumn): boolean => {
   return false
 }
 const changeSummaryColumns = () => {
-  state.basicStyleForm.summaryColumns = state.basicStyleForm.summaryColumns.map(normalizeSummaryColumn)
+  state.basicStyleForm.summaryColumns =
+    state.basicStyleForm.summaryColumns.map(normalizeSummaryColumn)
   const invalidColumn = state.basicStyleForm.summaryColumns.find(
     column => !validateSummaryColumn(column).valid
   )

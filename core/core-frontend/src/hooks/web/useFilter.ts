@@ -593,8 +593,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
                 )
                 if ([1, 7].includes(+displayType) && operator !== 'between') {
                   const mappedEndFieldId = item.checkedFieldsMapEnd[curComponentId]
-                  const startTimeFieldId =
-                    fieldId === mappedEndFieldId ? endTimeFieldId : fieldId
+                  const startTimeFieldId = fieldId === mappedEndFieldId ? endTimeFieldId : fieldId
                   const targetFieldId = operator === 'le' ? mappedEndFieldId : startTimeFieldId
                   parametersFilter = duplicateRemoval(
                     item.parametersArr[curComponentId].filter(e => e.id === targetFieldId)
