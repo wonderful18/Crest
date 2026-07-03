@@ -1,6 +1,7 @@
 package io.crest.extensions.datasource.provider;
 
 import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Proxy;
 import com.jcraft.jsch.Session;
 import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
@@ -20,6 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -35,6 +39,57 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings("deprecation")
 public abstract class Provider {
+
+    /**
+     * 数据源 SSH 隧道必须直连跳板机，避免 JVM 全局 HTTP/SOCKS 代理接管内网 SSH 连接
+     */
+    private static final class DirectSshProxy implements Proxy {
+        private Socket socket;
+
+        @Override
+        public void connect(com.jcraft.jsch.SocketFactory socketFactory, String host, int port, int timeout) throws Exception {
+            socket = new Socket(java.net.Proxy.NO_PROXY); // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
+            socket.connect(new InetSocketAddress(host, port), timeout);
+            if (timeout > 0) {
+                socket.setSoTimeout(timeout);
+            }
+        }
+
+        @Override
+        public InputStream getInputStream() {
+            try {
+                return socket.getInputStream();
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        @Override
+        public OutputStream getOutputStream() {
+            try {
+                return socket.getOutputStream();
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        @Override
+        public Socket getSocket() {
+            return socket;
+        }
+
+        @Override
+        public void close() {
+            if (socket == null) {
+                return;
+            }
+            try {
+                socket.close();
+            } catch (IOException ignored) {
+                // 关闭隧道连接时忽略 socket 资源释放异常
+            }
+        }
+    }
 
     /**
      * Provider 通用日志对象
@@ -553,16 +608,18 @@ public abstract class Provider {
     public Session initSession(DatasourceConfiguration configuration) throws Exception {
         JSch jsch = new JSch();
         Session session = jsch.getSession(configuration.getSshUserName(), configuration.getSshHost(), configuration.getSshPort());
+        session.setProxy(new DirectSshProxy());
         if (!configuration.getSshType().equalsIgnoreCase("password")) {
             session.setConfig("PreferredAuthentications", "publickey");
             jsch.addIdentity("sshkey", configuration.getSshKey().getBytes(StandardCharsets.UTF_8), null, configuration.getSshKeyPassword() == null ? null : configuration.getSshKeyPassword().getBytes(StandardCharsets.UTF_8));
         }
         if (configuration.getSshType().equalsIgnoreCase("password")) {
+            session.setConfig("PreferredAuthentications", "password,keyboard-interactive");
             session.setPassword(configuration.getSshPassword());
         }
         session.setConfig("StrictHostKeyChecking", "no");
         try {
-            session.connect(1000 * 5);
+            session.connect(1000 * 10);
         } catch (Exception e) {
             CrestException.throwException("SSH 连接失败：" + e.getMessage());
         }
