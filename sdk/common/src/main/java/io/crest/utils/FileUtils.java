@@ -12,6 +12,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -100,14 +101,41 @@ public class FileUtils {
         if (StringUtils.isBlank(directoryPath) || directoryPath.indexOf('\0') >= 0) {
             CrestException.throwException(invalidFileNameMessage());
         }
-        File directory = new File(directoryPath).getCanonicalFile();
+        File directory = Path.of(directoryPath).toAbsolutePath().normalize().toFile().getCanonicalFile();
         if (!directory.exists() && !directory.mkdirs()) {
-            throw new IOException("Failed to create directory: " + directory.getPath());
+            throw new IOException("目录创建失败");
         }
         if (!directory.isDirectory()) {
-            throw new IOException("Path is not a directory: " + directory.getPath());
+            throw new IOException("路径不是目录");
         }
         return directory;
+    }
+
+    /**
+     * 在指定目录下创建安全子目录
+     */
+    public static File ensureSubDirectory(String directoryPath, String directoryName) throws IOException {
+        File target = resolveSubDirectory(directoryPath, directoryName);
+        if (!target.exists() && !target.mkdirs()) {
+            throw new IOException("目录创建失败");
+        }
+        if (!target.isDirectory()) {
+            throw new IOException("路径不是目录");
+        }
+        return target;
+    }
+
+    /**
+     * 在指定目录下解析安全子目录，不主动创建目录
+     */
+    public static File resolveSubDirectory(String directoryPath, String directoryName) throws IOException {
+        validateUploadFilename(directoryName);
+        File directory = ensureDirectory(directoryPath);
+        File target = directory.toPath().resolve(directoryName).normalize().toFile().getCanonicalFile();
+        if (!target.toPath().startsWith(directory.toPath())) {
+            CrestException.throwException(invalidFileNameMessage());
+        }
+        return target;
     }
 
     /**
@@ -116,7 +144,7 @@ public class FileUtils {
     public static File resolveUnderDirectory(String directoryPath, String filename) throws IOException {
         validateUploadFilename(filename);
         File directory = ensureDirectory(directoryPath);
-        File target = new File(directory, filename).getCanonicalFile();
+        File target = directory.toPath().resolve(filename).normalize().toFile().getCanonicalFile();
         if (!target.toPath().startsWith(directory.toPath())) {
             CrestException.throwException(invalidFileNameMessage());
         }
@@ -179,9 +207,11 @@ public class FileUtils {
      * 确保指定路径存在，不存在时创建目录
      */
     public static void validateExist(String path) {
-        File dir = new File(path);
-        if (dir.exists()) return;
-        dir.mkdirs();
+        try {
+            ensureDirectory(path);
+        } catch (IOException e) {
+            CrestException.throwException(e.getMessage());
+        }
     }
 
     /**
@@ -213,9 +243,9 @@ public class FileUtils {
      */
     public static void copyFolder(String sourcePath, String targetPath) throws Exception {
         // 源文件夹路径
-        File sourceFile = new File(sourcePath);
+        File sourceFile = Path.of(sourcePath).toAbsolutePath().normalize().toFile().getCanonicalFile();
         // 目标文件夹路径
-        File targetFile = new File(targetPath);
+        File targetFile = Path.of(targetPath).toAbsolutePath().normalize().toFile().getCanonicalFile();
 
         if (!sourceFile.exists()) {
             throw new Exception("文件夹不存在");
@@ -224,7 +254,7 @@ public class FileUtils {
             throw new Exception("源文件夹不是目录");
         }
         if (!targetFile.exists()) {
-            targetFile.mkdirs();
+            Files.createDirectories(targetFile.toPath());
         }
         if (!targetFile.isDirectory()) {
             throw new Exception("目标文件夹不是目录");
@@ -237,22 +267,13 @@ public class FileUtils {
 
         for (File file : files) {
             // 文件要复制到的路径
-            String movePath = targetFile + File.separator + file.getName();
+            File targetChild = FileUtils.resolveUnderDirectory(targetFile.getPath(), file.getName());
             if (file.isDirectory()) {
                 // 目录节点递归复制
-                copyFolder(file.getAbsolutePath(), movePath);
+                copyFolder(file.getAbsolutePath(), targetChild.getPath());
             } else {
                 // 文件节点直接复制内容
-                BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
-                BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(movePath));
-
-                byte[] b = new byte[1024];
-                int temp = 0;
-                while ((temp = in.read(b)) != -1) {
-                    out.write(b, 0, temp);
-                }
-                out.close();
-                in.close();
+                Files.copy(file.toPath(), targetChild.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
         }
     }
@@ -281,15 +302,9 @@ public class FileUtils {
      * 使用 NIO 通道复制文件内容
      */
     private static void copyFileUsingFileChannels(File source, File dest) throws IOException {
-        FileChannel inputChannel = null;
-        FileChannel outputChannel = null;
-        try {
-            inputChannel = new FileInputStream(source).getChannel();
-            outputChannel = new FileOutputStream(dest).getChannel();
+        try (FileChannel inputChannel = new FileInputStream(source).getChannel();
+             FileChannel outputChannel = new FileOutputStream(dest).getChannel()) {
             outputChannel.transferFrom(inputChannel, 0, inputChannel.size());
-        } finally {
-            inputChannel.close();
-            outputChannel.close();
         }
     }
 
@@ -319,7 +334,7 @@ public class FileUtils {
     public static void deleteFile(String path) {
         File file;
         try {
-            file = new File(path).getCanonicalFile();
+            file = Path.of(path).toAbsolutePath().normalize().toFile().getCanonicalFile();
         } catch (IOException e) {
             CrestException.throwException("文件不存在");
             return;
@@ -380,7 +395,7 @@ public class FileUtils {
     public static byte[] readBytes(String path) {
         File file;
         try {
-            file = new File(path).getCanonicalFile();
+            file = Path.of(path).toAbsolutePath().normalize().toFile().getCanonicalFile();
         } catch (IOException e) {
             CrestException.throwException("文件不存在");
             return null;
@@ -411,7 +426,7 @@ public class FileUtils {
     public static boolean deleteDirectoryRecursively(String directoryPath) {
         File directory;
         try {
-            directory = new File(directoryPath).getCanonicalFile();
+            directory = Path.of(directoryPath).toAbsolutePath().normalize().toFile().getCanonicalFile();
         } catch (IOException e) {
             return false;
         }
