@@ -61,6 +61,12 @@ offline-packages/
 release/
 !docs/release/
 !docs/release/*.md
+docs/release/*security-report*.md
+docs/release/*security-review*.md
+docs/release/*security-scan*.md
+docs/release/*security-fix*.md
+docs/release/*scan-fix*.md
+docs/release/*security-rescan*.md
 releases/
 artifacts/
 packages/
@@ -108,6 +114,11 @@ mapFiles/156/*.json
 !mapFiles/156/156.json
 reports/
 /tools/security/
+security-reports/
+trivy*.json
+semgrep*.json
+osv*.json
+dependency-check-report.*
 docs/governance/
 scripts/governance/
 .dependency-check-cache/
@@ -120,6 +131,10 @@ __pycache__/
 .env
 .env.*
 !.env.example
+!/core/core-frontend/.env.base
+!/core/core-frontend/.env.desktop
+!/core/core-frontend/.env.dev
+!/core/core-frontend/.env.distributed
 *.local
 *.local.*
 *.local.sql

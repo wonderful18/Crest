@@ -1,12 +1,13 @@
 package io.crest.embedded.server;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.crest.exception.CrestException;
+import io.crest.utils.SignedTokenUtils;
 import io.crest.utils.ServletUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,6 +29,9 @@ public class EmbeddedTokenServer {
 
     private static final Set<String> ARG_CONTAINER_CLAIMS = Set.of("args", "params", "tokenArgs");
 
+    @Value("${crest.security.token-secret:}")
+    private String tokenSecret;
+
     @GetMapping({"/token-args", "/getTokenArgs"})
     // 构建嵌入式令牌所需的参数
     public Map<String, Object> getTokenArgs() {
@@ -36,7 +40,10 @@ public class EmbeddedTokenServer {
             return Map.of();
         }
         try {
-            DecodedJWT jwt = JWT.decode(token);
+            if (StringUtils.isBlank(tokenSecret)) {
+                CrestException.throwException("embedded token secret is not configured");
+            }
+            DecodedJWT jwt = SignedTokenUtils.verify(token, tokenSecret);
             Map<String, Object> result = new LinkedHashMap<>();
             ARG_CONTAINER_CLAIMS.forEach(claimName -> putMapClaim(result, jwt.getClaim(claimName)));
             jwt.getClaims().forEach((key, claim) -> {
@@ -48,7 +55,7 @@ public class EmbeddedTokenServer {
                 }
             });
             return result;
-        } catch (JWTDecodeException e) {
+        } catch (JWTVerificationException e) {
             CrestException.throwException("embedded token is invalid");
             return Map.of();
         }

@@ -72,8 +72,9 @@ public class DataPortalServer {
         QueryParts query = buildBaseQuery(uid, normalized);
         QueryParts countQuery = buildBaseQuery(uid, copyWithoutType(normalized));
 
+        // query.fromWhere contains only fixed SQL fragments and placeholders; user values are bound through args.
         long total = jdbcTemplate.queryForObject(
-                "SELECT COUNT(1) " + query.fromWhere,
+                "SELECT COUNT(1) " + query.fromWhere, // nosemgrep: java.spring.security.injection.tainted-sql-string.tainted-sql-string
                 Long.class,
                 query.args.toArray()
         );

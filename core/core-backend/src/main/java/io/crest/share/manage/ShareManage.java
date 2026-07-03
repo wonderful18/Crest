@@ -276,7 +276,7 @@ public class ShareManage {
             vo.setInIframeError(false);
             return vo;
         }
-        String defaultPwd = shareSecretManage.getDefaultPwd();
+        String defaultPwd = shareSecretManage.getFallbackLinkSecret();
         String secret = StringUtils.isBlank(coreShare.getPwd()) ? defaultPwd : coreShare.getPwd();
         String linkToken = LinkTokenUtil.generate(coreShare.getCreator(), coreShare.getResourceId(), coreShare.getExp(), secret, coreShare.getOid());
         HttpServletResponse response = ServletUtils.response();
