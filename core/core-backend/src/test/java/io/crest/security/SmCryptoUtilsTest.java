@@ -167,6 +167,7 @@ class SmCryptoUtilsTest {
         }
 
         public String secretByUid(Long uid) {
+            assertNotNull(uid);
             return secret;
         }
     }
