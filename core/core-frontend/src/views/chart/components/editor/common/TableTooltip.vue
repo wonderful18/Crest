@@ -4,7 +4,11 @@ import { PropType } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { S2Event, SortFuncParam } from '@antv/s2'
 import { SortUp, SortDown, Sort } from '@element-plus/icons-vue'
-import { cloneDeep } from 'lodash-es'
+import {
+  getHeaderSortField,
+  getHeaderSortStateId,
+  sortTableRowsForHeader
+} from '@/views/chart/components/js/panel/common/tableSortTooltip.mjs'
 
 const { t } = useI18n()
 // 定义组件入参，约束外部传入配置
@@ -20,43 +24,21 @@ const props = defineProps({
 })
 // 处理排序配置并同步展示顺序
 const sortFunc = (sortParams: SortFuncParam) => {
-  if (!sortParams.sortMethod) {
-    return sortParams.data
-  }
-  const data = cloneDeep(sortParams.data)
-  return data.sort((a, b) => {
-    // 总计行放最后
-    if (a['SUMMARY']) {
-      return 1
-    }
-    const field = sortParams.sortFieldId
-    const aValue = a[field]
-    const bValue = b[field]
-    if (aValue === bValue) {
-      return 0
-    }
-    if (sortParams.sortMethod === 'asc') {
-      if (typeof aValue === 'number') {
-        return aValue - bValue
-      }
-      return aValue < bValue ? -1 : 1
-    }
-    if (typeof aValue === 'number') {
-      return bValue - aValue
-    }
-    return aValue > bValue ? -1 : 1
-  })
+  return sortTableRowsForHeader(sortParams)
 }
 // 处理排序配置并同步展示顺序
 const sort = (type?) => {
-  props.table.updateSortMethodMap(props.meta.field, type, true)
+  const sortFieldId = getHeaderSortField(props.meta)
+  const sortStateId = getHeaderSortStateId(props.meta)
+  props.table.updateSortMethodMap(sortStateId, type, true)
   props.table.emit(S2Event.RANGE_SORT, [
     {
-      sortFieldId: props.meta.field,
+      sortFieldId,
       sortMethod: type,
       sortFunc
     }
   ])
+  props.table.hideTooltip()
 }
 </script>
 <template>

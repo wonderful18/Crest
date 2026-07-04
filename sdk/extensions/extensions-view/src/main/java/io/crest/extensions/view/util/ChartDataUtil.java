@@ -47,11 +47,12 @@ public class ChartDataUtil {
             axisList = tmp;
         }
         if (axisList.size() > 0) {
-            // 找到对应维度
+            // 找到开启自定义排序的字段
             for (int i = 0; i < axisList.size(); i++) {
                 ChartViewFieldDTO item = axisList.get(i);
-                if (Strings.CI.equals(item.getSort(), "custom_sort") && Objects.equals(item.getGroupType(), "d")) {
-                    // 获取自定义值与data对应列的结果
+                Integer sortIndex = dataIndexMap.get(item.getId());
+                if (Strings.CI.equals(item.getSort(), "custom_sort") && sortIndex != null) {
+                    // 获取自定义值与 data 对应列的结果
                     if (i > 0) {
                         // 首先根据优先级高的字段分类，在每个前置字段相同的组里排序
                         Map<String, List<String[]>> map = new LinkedHashMap<>();
@@ -75,13 +76,13 @@ public class ChartDataUtil {
                             if (next.getValue().size() == 1) {
                                 list.addAll(next.getValue());
                             } else {
-                                list.addAll(customSort(Optional.ofNullable(item.getCustomSort()).orElse(new ArrayList<>()), next.getValue(), dataIndexMap.get(axisList.get(i).getId())));
+                                list.addAll(customSort(Optional.ofNullable(item.getCustomSort()).orElse(new ArrayList<>()), next.getValue(), sortIndex));
                             }
                         }
                         res.clear();
                         res.addAll(list);
                     } else {
-                        res = customSort(Optional.ofNullable(item.getCustomSort()).orElse(new ArrayList<>()), res, dataIndexMap.get(axisList.get(i).getId()));
+                        res = customSort(Optional.ofNullable(item.getCustomSort()).orElse(new ArrayList<>()), res, sortIndex);
                     }
                 }
             }

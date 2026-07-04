@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="richMainRef"
     class="rich-main-class"
     :class="{ 'edit-model': canEdit }"
     @keydown.stop
@@ -9,8 +10,15 @@
     :style="richTextStyle"
   >
     <chart-error v-if="isError" :err-msg="errMsg" />
+    <!-- nosemgrep: javascript.vue.security.audit.xss.templates.avoid-v-html.avoid-v-html -->
+    <div
+      v-if="staticRender && !isError"
+      class="custom-text-content rich-static-content"
+      :style="wrapperStyle"
+      v-html="staticRichTextContent"
+    />
     <Editor
-      v-if="editShow && !isError"
+      v-else-if="editShow && !isError"
       v-model="myValue"
       class="custom-text-content"
       :style="wrapperStyle"
@@ -63,6 +71,7 @@ import { parseJson } from '@/views/chart/components/js/util'
 import { mappingColorCustom } from '@/views/chart/components/js/panel/common/common_table'
 import { CHART_FONT_FAMILY_ORIGIN } from '@/views/chart/components/editor/util/chart'
 import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
+import { isStaticRichTextRender, sanitizeRichTextHtml } from './richTextStaticRender.mjs'
 /** 快照状态仓库 */
 const snapshotStore = snapshotStoreWithOut()
 /** 图表渲染错误提示 */
@@ -163,6 +172,22 @@ const tinymceId =
   'tinymce-view-' + element.value.id + '-' + suffixId.value + '-' + showPosition.value
 /** 富文本编辑器内容 */
 const myValue = ref('')
+/** 当前富文本组件根节点 */
+const richMainRef = ref<HTMLElement>()
+
+/** 分享和预览禁用态直接渲染保存内容，避免 TinyMCE 禁用实例首屏空白 */
+const staticRender = computed(() =>
+  isStaticRichTextRender({
+    showPosition: showPosition.value,
+    disabled: disabled.value,
+    canEdit: canEdit.value
+  })
+)
+
+/** 静态富文本展示内容，保留 TinyMCE 常用格式并清理可执行内容 */
+const staticRichTextContent = computed(() =>
+  sanitizeRichTextHtml(myValue.value || element.value?.propValue?.textValue)
+)
 
 /** 系统内置字体名称列表 */
 const systemFontFamily = appearanceStore.fontList.map(item => item.name)
@@ -395,17 +420,13 @@ const initCurFieldsChange = () => {
 /** 为富文本中的链接段落补充点击阻断，避免触发画布事件 */
 const jumpTargetAdaptor = () => {
   setTimeout(() => {
-    const paragraphs = document.querySelectorAll('p')
+    const paragraphs = richMainRef.value?.querySelectorAll('p') || []
     paragraphs.forEach(p => {
-      // 如果 p 标签已经有 onclick 且包含 event.stopPropagation，则跳过
-      if (
-        p.getAttribute('onclick') &&
-        p.getAttribute('onclick').includes('event.stopPropagation()')
-      ) {
-        return // 已经有 stopPropagation，跳过。
+      if (p.getAttribute('data-crest-stop-propagation-bound') === 'true') {
+        return
       }
-      // 否则添加 onclick 事件
-      p.setAttribute('onclick', 'event.stopPropagation()')
+      p.addEventListener('click', event => event.stopPropagation())
+      p.setAttribute('data-crest-stop-propagation-bound', 'true')
     })
   }, 1000)
 }
@@ -934,5 +955,10 @@ defineExpose({
   ol {
     list-style-type: decimal;
   }
+}
+
+.rich-static-content {
+  height: 100%;
+  overflow-wrap: anywhere;
 }
 </style>

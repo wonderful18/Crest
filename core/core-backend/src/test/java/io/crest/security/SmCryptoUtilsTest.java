@@ -1,13 +1,17 @@
 package io.crest.security;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import io.crest.utils.CommonBeanFactory;
 import io.crest.utils.SignedTokenUtils;
 import io.crest.utils.SmCryptoUtils;
+import io.crest.utils.TokenUtils;
 import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -26,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class SmCryptoUtilsTest {
 
@@ -35,6 +41,7 @@ class SmCryptoUtilsTest {
     void clearCryptoMode() {
         System.clearProperty("crest.crypto.mode");
         System.clearProperty("crest.crypto.sm4-key");
+        new CommonBeanFactory().setApplicationContext(null);
     }
 
     @Test
@@ -91,6 +98,20 @@ class SmCryptoUtilsTest {
     }
 
     @Test
+    void tokenValidationUsesCurrentUserSecret() {
+        ApplicationContext applicationContext = mock(ApplicationContext.class);
+        when(applicationContext.getBean("crestUserManage")).thenReturn(new UserSecretManage("new-secret"));
+        new CommonBeanFactory().setApplicationContext(applicationContext);
+        String token = SignedTokenUtils.sign(
+                Map.of("uid", 7L, "oid", 1L),
+                "old-secret",
+                new Date(System.currentTimeMillis() + 60_000)
+        );
+
+        assertThrows(JWTVerificationException.class, () -> TokenUtils.validate(token));
+    }
+
+    @Test
     void shouldHashCharPasswordWithStableSm3HmacOutput() {
         char[] password = "密钥Secret1".toCharArray();
         char[] original = Arrays.copyOf(password, password.length);
@@ -136,6 +157,19 @@ class SmCryptoUtilsTest {
         SmCryptoUtils.Sm2KeyPair keyPair = SmCryptoUtils.generateSm2KeyPair();
 
         assertEquals(keyPair.privateKey(), SmCryptoUtils.readSm2PrivateKeyFromStorage(keyPair.privateKey()));
+    }
+
+    public static class UserSecretManage {
+        private final String secret;
+
+        UserSecretManage(String secret) {
+            this.secret = secret;
+        }
+
+        public String secretByUid(Long uid) {
+            assertNotNull(uid);
+            return secret;
+        }
     }
 
     @Test

@@ -25,7 +25,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: crest
-          image: ghcr.io/sevoniva/crest-web:v2.0.3-amd64
+          image: ghcr.io/sevoniva/crest-web:v2.1.1-amd64
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

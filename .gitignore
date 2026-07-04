@@ -121,6 +121,7 @@ osv*.json
 dependency-check-report.*
 docs/governance/
 scripts/governance/
+docs/superpowers/
 .dependency-check-cache/
 *.pid
 *.out
