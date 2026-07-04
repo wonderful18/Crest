@@ -60,3 +60,11 @@ OceanBase MySQL 租户执行文件名带 `ob_mysql` 的脚本。OceanBase Oracle
 - MySQL：`v2.0.3_to_v2.1.0_mysql.sql`
 - OceanBase MySQL 模式：`v2.0.3_to_v2.1.0_ob_mysql.sql`
 - OceanBase Oracle 模式：`v2.0.3_to_v2.1.0_ob_oracle.sql`
+
+升级后应启动目标版本服务并检查登录、数据源、数据集、图表、大屏、模板、分享链接和后台日志。若升级脚本失败或升级后核心功能不可用，应停止目标版本服务，恢复升级前系统库和运行目录，再启动原版本服务。不要在部分升级成功的系统库上执行 full schema 或跳过失败步骤继续启动服务。
+
+已知限制：
+
+- `v1.5.14 -> v2.1.0` 仅提供 MySQL 系统库升级入口。
+- OceanBase MySQL 和 OceanBase Oracle 系统库支持 `v2.0.3 -> v2.1.0` 升级与 v2.1.0 新装初始化。
+- 自定义数据源驱动、第三方插件和现场部署脚本应在测试环境完成兼容性验证后再升级生产环境。
