@@ -108,7 +108,13 @@ public class CrestLinkAspect {
 
     private Object resolvePathValue(Object[] params, String expression) {
         String[] parts = expression.substring(1).split("\\.");
-        int index = Integer.parseInt(parts[0].substring(PARAM_VARIABLE_PREFIX.length()));
+        int index;
+        try {
+            index = Integer.parseInt(parts[0].substring(PARAM_VARIABLE_PREFIX.length()));
+        } catch (NumberFormatException e) {
+            LogUtil.debug("分享链接表达式参数索引不合法: " + expression);
+            return null;
+        }
         if (params == null || index < 0 || index >= params.length) {
             return null;
         }

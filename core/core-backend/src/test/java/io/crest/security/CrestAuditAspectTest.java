@@ -43,8 +43,8 @@ class CrestAuditAspectTest {
     }
 
     private static class TestEndpoint {
-        @SuppressWarnings("unused")
         void save(AuditRequest request) {
+            request.getId();
         }
     }
 

@@ -302,8 +302,10 @@ public class FileUtils {
      * 使用 NIO 通道复制文件内容
      */
     private static void copyFileUsingFileChannels(File source, File dest) throws IOException {
-        try (FileChannel inputChannel = new FileInputStream(source).getChannel();
-             FileChannel outputChannel = new FileOutputStream(dest).getChannel()) {
+        try (FileInputStream inputStream = new FileInputStream(source);
+             FileOutputStream outputStream = new FileOutputStream(dest);
+             FileChannel inputChannel = inputStream.getChannel();
+             FileChannel outputChannel = outputStream.getChannel()) {
             outputChannel.transferFrom(inputChannel, 0, inputChannel.size());
         }
     }

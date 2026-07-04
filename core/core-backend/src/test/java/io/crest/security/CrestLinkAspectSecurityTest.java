@@ -32,6 +32,11 @@ class CrestLinkAspectSecurityTest {
         assertNull(aspect.getExpression(new Object[]{new LinkRequest(12L)}, "#p0.class.name"));
     }
 
+    @Test
+    void shouldRejectMalformedParameterIndex() {
+        assertNull(aspect.getExpression(new Object[]{new LinkRequest(12L)}, "#p999999999999999999999.id"));
+    }
+
     private static class LinkRequest {
         private final Long id;
 

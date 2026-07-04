@@ -34,7 +34,7 @@ public class ExcelWatermarkUtils {
      */
     public static String transContent(WatermarkContentDTO watermarkContent, UserFormVO userInfo) {
         String content = "";
-        String type = watermarkContent == null ? null : watermarkContent.getType();
+        String type = watermarkContent == null ? "" : defaultString(watermarkContent.getType());
         switch (type) {
             case "custom" -> content = defaultString(watermarkContent.getContent());
             case "nickName" -> content = "${nickName}";
