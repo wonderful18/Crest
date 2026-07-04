@@ -106,7 +106,7 @@ jobs:
           grep -Fqx "${package_dir}/crest/docker-compose.yml" /tmp/crest-offline-package-files.txt
           grep -Fqx "${package_dir}/upgrade-sql/v1.5.4_to_v1.5.5.sql" /tmp/crest-offline-package-files.txt
           grep -Fqx "${package_dir}/upgrade-sql/v1.5.7_to_v1.5.8.sql" /tmp/crest-offline-package-files.txt
-          grep -Fqx "${package_dir}/upgrade-sql/v1.5.13_to_${VERSION}.sql" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/upgrade-sql/v1.5.13_to_v1.5.14.sql" /tmp/crest-offline-package-files.txt
           grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-service_${VERSION}-${ARCH}.tar.gz" /tmp/crest-offline-package-files.txt
           grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-web_${VERSION}-${ARCH}.tar.gz" /tmp/crest-offline-package-files.txt
           grep -Fqx "${package_dir}/images/mysql_8.0.43.tar.gz" /tmp/crest-offline-package-files.txt
