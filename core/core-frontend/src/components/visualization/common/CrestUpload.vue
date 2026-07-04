@@ -66,13 +66,23 @@ const state = reactive({
   uploadDisabled: false
 })
 
+const syncFileList = url => {
+  state.fileList = url ? [{ url: imgUrlTrans(url) }] : []
+}
+
+const applyUploadedImage = fileUrl => {
+  if (!fileUrl) {
+    return
+  }
+  snapshotStore.recordSnapshotCache('upload')
+  imgUrlInner.value = fileUrl
+  syncFileList(fileUrl)
+  emits('onImgChange', fileUrl)
+}
+
 const init = () => {
   imgUrlInner.value = imgUrl.value
-  if (imgUrlInner.value) {
-    state.fileList.push({ url: imgUrlTrans(imgUrlInner.value) })
-  } else {
-    state.fileList = []
-  }
+  syncFileList(imgUrlInner.value)
 }
 
 const handleRemove = () => {
@@ -86,24 +96,19 @@ const handlePictureCardPreview = file => {
   state.dialogVisible = true
 }
 const upload = file => {
-  uploadFileResult(file.file, fileUrl => {
-    snapshotStore.recordSnapshotCache('upload')
-    imgUrlInner.value = fileUrl
-    emits('onImgChange', fileUrl)
-  })
+  uploadFileResult(file.file, applyUploadedImage)
 }
 
 const reUpload = e => {
   const file = e.target.files[0]
+  if (!file) {
+    return
+  }
   if (file.size > maxImageSize) {
     sizeMessage()
     return
   }
-  uploadFileResult(file, fileUrl => {
-    snapshotStore.recordSnapshotCache('uploadFileResult')
-    imgUrlInner.value = fileUrl
-    emits('onImgChange', fileUrl)
-  })
+  uploadFileResult(file, applyUploadedImage)
 }
 
 const sizeMessage = () => {

@@ -211,7 +211,10 @@ public class CoreVisualizationManage {
         return visualizationInfo.getId();
     }
     public void innerEdit(DataVisualizationInfo visualizationInfo) {
-        requireVisualizationAccess(visualizationInfo.getId());
+        DataVisualizationInfo current = requireVisualizationAccess(visualizationInfo.getId());
+        if (StringUtils.isBlank(visualizationInfo.getType())) {
+            visualizationInfo.setType(current.getType());
+        }
         keepExistingNameIfMissing(visualizationInfo);
         // 镜像和主表保持名称一致
         visualizationInfo.setUpdateTime(System.currentTimeMillis());
@@ -425,10 +428,7 @@ public class CoreVisualizationManage {
 
     @Transactional
     public void dvRestore(Long dvId) {
-        // dvRestore 从镜像表恢复主表，调用前主表可能已被 removeDvCore 删除，
-        // 因此不能用查主表的 requireVisualizationAccess 校验。调用方需自行校验权限：
-        // - updatePublishStatus 通过 innerEdit 已校验
-        // - recoverToPublished 通过 requireVisualizationManage 已校验
+        requireVisualizationRestoreAccess(dvId);
         extDataVisualizationMapper.restoreDataV(dvId);
         extDataVisualizationMapper.restoreViews(dvId);
         extDataVisualizationMapper.restoreLinkJumpTargetViewInfo(dvId);
@@ -441,6 +441,22 @@ public class CoreVisualizationManage {
         extDataVisualizationMapper.restoreOuterParams(dvId);
         //阈值告警
         chartViewManege.restoreThreshold(dvId, CommonConstants.RESOURCE_TABLE.CORE);
+    }
+
+    private void requireVisualizationRestoreAccess(Long id) {
+        if (ObjectUtils.isEmpty(id)) {
+            CrestException.throwException("resource not exist");
+        }
+        DataVisualizationInfo info = mapper.selectById(id);
+        if (ObjectUtils.isNotEmpty(info)) {
+            CrestPermissionUtils.requireCreator(info.getCreateBy());
+            return;
+        }
+        SnapshotDataVisualizationInfo snapshotInfo = snapshotMapper.selectById(id);
+        if (ObjectUtils.isEmpty(snapshotInfo)) {
+            CrestException.throwException("resource not exist");
+        }
+        CrestPermissionUtils.requireCreator(snapshotInfo.getCreateBy());
     }
 
 }

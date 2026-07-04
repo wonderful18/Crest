@@ -493,17 +493,29 @@ const sizeMessage = () => {
   ElMessage.error('图片大小不能超过15M')
 }
 
+const syncFileList = url => {
+  state.fileList = url ? [{ name: 'background', url: imgUrlTrans(url) }] : []
+}
+
+const applyUploadedBackground = fileUrl => {
+  if (!fileUrl) {
+    return
+  }
+  state.commonBackground.outerImage = fileUrl
+  syncFileList(fileUrl)
+  onBackgroundChange()
+}
+
 const reUpload = e => {
   const file = e.target.files[0]
+  if (!file) {
+    return
+  }
   if (file.size > maxImageSize) {
     sizeMessage()
     return
   }
-  uploadFileResult(file, fileUrl => {
-    state.commonBackground.outerImage = fileUrl
-    state.fileList = [{ name: 'background', url: imgUrlTrans(state.commonBackground.outerImage) }]
-    onBackgroundChange()
-  })
+  uploadFileResult(file, applyUploadedBackground)
 }
 
 const queryBackground = () => {
@@ -553,11 +565,7 @@ const init = () => {
   state.commonBackground = commonBackgroundPop
   updateInnerPadding()
   updateBorderRadius()
-  if (state.commonBackground.outerImage) {
-    state.fileList = [{ name: 'background', url: imgUrlTrans(state.commonBackground.outerImage) }]
-  } else {
-    state.fileList = []
-  }
+  syncFileList(state.commonBackground.outerImage)
 }
 queryBackground()
 const commitStyle = () => {
@@ -576,10 +584,7 @@ const handlePictureCardPreview = file => {
   state.dialogVisible = true
 }
 const upload = file => {
-  uploadFileResult(file.file, fileUrl => {
-    state.commonBackground.outerImage = fileUrl
-    onBackgroundChange()
-  })
+  uploadFileResult(file.file, applyUploadedBackground)
 }
 
 const updateInnerPadding = () => {

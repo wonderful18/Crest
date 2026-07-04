@@ -184,53 +184,39 @@ export function dataURLToBlob(dataUrl) {
   return new Blob([u8arr], { type: mime })
 }
 
+function pushStaticResource(url, staticResource) {
+  if (!staticResource.includes(url)) {
+    staticResource.push(url)
+  }
+}
+
+export function collectStaticResourceUrls(value, staticResource) {
+  if (value === null || value === undefined) {
+    return
+  }
+  if (typeof value === 'string') {
+    const matches = value.match(/(?:\/?api\/v1)?\/?static-resource\/[^"'()\s]+/g) || []
+    matches.forEach(url => pushStaticResource(url, staticResource))
+    return
+  }
+  if (Array.isArray(value)) {
+    value.forEach(item => collectStaticResourceUrls(item, staticResource))
+    return
+  }
+  if (typeof value === 'object') {
+    Object.values(value).forEach(item => collectStaticResourceUrls(item, staticResource))
+  }
+}
+
 export function findStaticSourceInner(componentDataInfo, staticResource) {
-  componentDataInfo?.forEach(item => {
-    if (
-      typeof item.commonBackground?.outerImage === 'string' &&
-      item.commonBackground.outerImage.indexOf('static-resource') > -1
-    ) {
-      staticResource.push(item.commonBackground.outerImage)
-    }
-    if (
-      item.component === 'Picture' &&
-      item.propValue?.['url'] &&
-      typeof item.propValue?.['url'] === 'string' &&
-      item.propValue?.['url'].indexOf('static-resource') > -1
-    ) {
-      staticResource.push(item.propValue['url'])
-    } else if (
-      item.component === 'UserView' &&
-      item.innerType === 'picture-group' &&
-      item.propValue?.['urlList'] &&
-      item.propValue?.['urlList'].length > 0
-    ) {
-      item.propValue['urlList'].forEach(urlInfo => {
-        if (urlInfo?.url?.indexOf('static-resource') > -1) {
-          staticResource.push(urlInfo.url)
-        }
-      })
-    } else if (item.component === 'Group') {
-      findStaticSourceInner(item.propValue, staticResource)
-    } else if (item.component === 'Tabs') {
-      item.propValue?.forEach(tabItem => {
-        findStaticSourceInner(tabItem.componentData, staticResource)
-      })
-    }
-  })
+  collectStaticResourceUrls(componentDataInfo, staticResource)
 }
 
 // 解析静态文件
 export function findStaticSource(callBack) {
   const staticResource = []
-  // 系统背景文件
-  if (
-    typeof canvasStyleData.value.background === 'string' &&
-    canvasStyleData.value.background.indexOf('static-resource') > -1
-  ) {
-    staticResource.push(canvasStyleData.value.background)
-  }
-  findStaticSourceInner(componentData.value, staticResource)
+  collectStaticResourceUrls(canvasStyleData.value, staticResource)
+  collectStaticResourceUrls(componentData.value, staticResource)
   if (staticResource.length > 0) {
     try {
       resourceBase64({ resourcePathList: staticResource }).then(rsp => {

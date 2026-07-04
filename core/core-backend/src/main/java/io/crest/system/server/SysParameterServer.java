@@ -14,7 +14,6 @@ import io.crest.log.CrestAudit;
 import io.crest.system.dao.auto.entity.CoreSysSetting;
 import io.crest.system.manage.SysParameterManage;
 import io.crest.utils.CrestPermissionUtils;
-import io.crest.utils.FileUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -27,20 +26,30 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/sys-parameter")
 public class SysParameterServer implements SysParameterApi {
+
+    private static final Pattern CUSTOM_I18N_FILE_PATTERN = Pattern.compile("^custom_(.+)_front_(.+)\\.js$");
 
     @Resource
     private SysParameterManage sysParameterManage;
 
     @Value("${crest.internal-lite.enabled:false}")
     private boolean internalLiteEnabled;
+
+    @Value("${crest.path.i18n.front:}")
+    private String i18nFrontPath;
 
     @Override
     public String singleVal(String key) {
@@ -107,28 +116,36 @@ public class SysParameterServer implements SysParameterApi {
 
     @Override
     public Map<String, String> i18nOptions() {
-        File dir;
-        try {
-            File i18nRoot = FileUtils.resolveSubDirectory(StaticResourceConstants.USER_HOME, "i18n");
-            dir = FileUtils.resolveSubDirectory(i18nRoot.getPath(), "front");
-        } catch (IOException e) {
-            CrestException.throwException("国际化资源目录无效");
-            return null;
-        }
-        File[] files = null;
-        if (!dir.exists() || ObjectUtils.isEmpty(files = dir.listFiles())) {
-            return null;
+        File dir = resolveI18nFrontDir();
+        File[] files;
+        if (dir == null || !dir.isDirectory() || ObjectUtils.isEmpty(files = dir.listFiles())) {
+            return Collections.emptyMap();
         }
         Map<String, String> result = new HashMap<>();
         for (File file : files) {
+            if (!file.isFile()) {
+                continue;
+            }
             String name = file.getName();
-            int start = name.indexOf("custom_") + 7;
-            int end = name.indexOf("front");
-            String i18nName = name.substring(start, end - 1).replace("_", "-");
-            String languageName = name.substring(end + 6, name.lastIndexOf("."));
-            result.put(i18nName, languageName);
+            Matcher matcher = CUSTOM_I18N_FILE_PATTERN.matcher(name);
+            if (!matcher.matches()) {
+                continue;
+            }
+            result.put(matcher.group(1).replace("_", "-"), matcher.group(2));
         }
         return result;
+    }
+
+    private File resolveI18nFrontDir() {
+        String path = StringUtils.isBlank(i18nFrontPath) ? StaticResourceConstants.I18N_DIR : i18nFrontPath;
+        if (path.startsWith(StaticResourceConstants.FILE_PROTOCOL)) {
+            path = path.substring(StaticResourceConstants.FILE_PROTOCOL.length());
+        }
+        try {
+            return Path.of(path).toAbsolutePath().normalize().toFile().getCanonicalFile();
+        } catch (InvalidPathException | IOException e) {
+            return null;
+        }
     }
 
     @Override
