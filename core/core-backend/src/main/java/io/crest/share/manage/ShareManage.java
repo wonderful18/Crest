@@ -25,6 +25,8 @@ import io.crest.share.dao.ext.po.SharePO;
 import io.crest.share.util.LinkTokenUtil;
 import io.crest.system.manage.SysParameterManage;
 import io.crest.utils.*;
+import io.crest.visualization.dao.auto.entity.DataVisualizationInfo;
+import io.crest.visualization.dao.auto.mapper.DataVisualizationInfoMapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.CollectionUtils;
@@ -64,6 +66,9 @@ public class ShareManage {
 
     @Resource
     private ShareSecretManage shareSecretManage;
+
+    @Resource
+    private DataVisualizationInfoMapper dataVisualizationInfoMapper;
 
     // 删除资源关联的分享链接和 ticket
     public void deleteByResource(Long resourceId) {
@@ -105,6 +110,7 @@ public class ShareManage {
             shareTicketManage.deleteByShare(originData.getUuid());
             return;
         }
+        requireShareResourceAccess(resourceId);
         TokenUserBO user = AuthUtils.getUser();
         Long userId = user.getUserId();
         CoreShare coreShare = new CoreShare();
@@ -117,6 +123,14 @@ public class ShareManage {
         String dType = shareExtMapper.visualizationType(resourceId);
         coreShare.setType(Strings.CI.equals("dataV", dType) ? 2 : 1);
         coreShareMapper.insert(coreShare);
+    }
+
+    private void requireShareResourceAccess(Long resourceId) {
+        DataVisualizationInfo info = dataVisualizationInfoMapper.selectById(resourceId);
+        if (info == null) {
+            CrestException.throwException(Translator.get("i18n_resource_not_exists"));
+        }
+        CrestPermissionUtils.requireCreator(info.getCreateBy());
     }
 
     // 修改资源分享链接 UUID
@@ -276,7 +290,7 @@ public class ShareManage {
             vo.setInIframeError(false);
             return vo;
         }
-        String defaultPwd = shareSecretManage.getDefaultPwd();
+        String defaultPwd = shareSecretManage.getFallbackLinkSecret();
         String secret = StringUtils.isBlank(coreShare.getPwd()) ? defaultPwd : coreShare.getPwd();
         String linkToken = LinkTokenUtil.generate(coreShare.getCreator(), coreShare.getResourceId(), coreShare.getExp(), secret, coreShare.getOid());
         HttpServletResponse response = ServletUtils.response();

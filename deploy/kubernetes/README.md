@@ -82,7 +82,12 @@ obclient --default-character-set=utf8mb4 \
 
 ```bash
 node scripts/verify-kubernetes-production.mjs deploy/kubernetes
-kubectl create --dry-run=client -f deploy/kubernetes -o name
+```
+
+有可用集群凭据时，可再执行一次服务端 dry-run：
+
+```bash
+kubectl apply --dry-run=server --validate=strict -f deploy/kubernetes -o name
 ```
 
 部署后确认后端 readiness 返回数据库和 Redis 都为 `UP`，后端日志不应持续出现 `ERROR`、`WARN`、`Exception`、数据库连接失败或 Redis 连接失败。

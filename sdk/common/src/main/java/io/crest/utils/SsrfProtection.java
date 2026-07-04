@@ -44,13 +44,21 @@ public class SsrfProtection {
         }
 
         try {
-            URI uri = new URI(url.trim());
+            String value = url.trim();
+            if (value.chars().anyMatch(Character::isISOControl)) {
+                throw new CrestException(ResultCode.PARAM_IS_INVALID.code(), "URL 不能包含控制字符");
+            }
+            URI uri = new URI(value);
 
             // 1. 检查协议
             String scheme = uri.getScheme();
-            if (scheme == null || !ALLOWED_PROTOCOLS.contains(scheme.toLowerCase())) {
+            if (scheme == null || !ALLOWED_PROTOCOLS.contains(scheme.toLowerCase(Locale.ROOT))) {
                 throw new CrestException(ResultCode.PARAM_IS_INVALID.code(),
                         "不允许的协议: " + scheme);
+            }
+            if (uri.getUserInfo() != null) {
+                throw new CrestException(ResultCode.PARAM_IS_INVALID.code(),
+                        "URL 不能包含用户名或密码");
             }
 
             // 2. 检查主机名
@@ -67,7 +75,7 @@ public class SsrfProtection {
                         "不允许访问内部地址: " + host);
             }
 
-            // 4. 解析主机名并检查所有解析结果，避免非标准 IP 表示法和 DNS 指向私有网络的绕过。
+            // 4. 解析主机名并检查所有解析结果，避免非标准 IP 表示法和 DNS 指向内网的绕过。
             try {
                 InetAddress[] addresses = InetAddress.getAllByName(normalizedHost);
                 for (InetAddress address : addresses) {
@@ -112,7 +120,6 @@ public class SsrfProtection {
         return normalized;
     }
 
-    // 判断当前类型是否满足业务分类
     private static boolean isBlockedAddress(InetAddress address) {
         if (address.isAnyLocalAddress()
                 || address.isLoopbackAddress()
@@ -121,15 +128,15 @@ public class SsrfProtection {
                 || address.isMulticastAddress()) {
             return true;
         }
-        byte[] bytes = address.getAddress();
-        if (bytes.length == 4) {
-            int first = bytes[0] & 0xff;
-            int second = bytes[1] & 0xff;
+        byte[] rawAddressBytes = address.getAddress();
+        if (rawAddressBytes.length == 4) {
+            int first = rawAddressBytes[0] & 0xff;
+            int second = rawAddressBytes[1] & 0xff;
             return first == 0
                     || first == 127
                     || first == 169 && second == 254
                     || first == 100 && second >= 64 && second <= 127;
         }
-        return bytes.length == 16 && (bytes[0] & 0xfe) == 0xfc;
+        return rawAddressBytes.length == 16 && (rawAddressBytes[0] & 0xfe) == 0xfc;
     }
 }

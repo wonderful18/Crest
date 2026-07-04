@@ -26,4 +26,11 @@ public interface CoreStoreExtMapper {
             ${ew.customSqlSegment}
             """)
     IPage<StorePO> query(IPage<StorePO> page, @Param("ew") QueryWrapper<Object> ew);
+
+    @Select("""
+            select count(1)
+            from core_visualization v
+            ${ew.customSqlSegment}
+            """)
+    long countReadable(@Param("ew") QueryWrapper<Object> ew);
 }

@@ -1,0 +1,20 @@
+name: Crest CodeQL
+
+paths:
+  - .github/workflows
+  - core/core-backend/src
+  - core/core-frontend/config
+  - core/core-frontend/scripts
+  - core/core-frontend/src
+  - core/core-frontend/types
+  - sdk
+
+paths-ignore:
+  - '**/.vite'
+  - '**/build'
+  - '**/coverage'
+  - '**/dist'
+  - '**/node_modules'
+  - '**/target'
+  - '**/*.min.js'
+  - '**/*.vue'

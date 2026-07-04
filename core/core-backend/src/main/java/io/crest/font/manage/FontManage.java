@@ -8,6 +8,7 @@ import io.crest.font.dao.auto.entity.CoreFont;
 import io.crest.font.dao.auto.mapper.CoreFontMapper;
 import io.crest.storage.StorageService;
 import io.crest.utils.BeanUtils;
+import io.crest.utils.CrestPermissionUtils;
 import io.crest.utils.FileUtils;
 import io.crest.utils.IDUtils;
 import jakarta.annotation.Resource;
@@ -26,6 +27,7 @@ import java.awt.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Component
@@ -33,6 +35,8 @@ import java.util.UUID;
  * 字体管理服务，负责字体元数据维护和字体文件上传下载
  */
 public class FontManage {
+
+    private static final long MAX_FONT_BYTES = 20L * 1024L * 1024L;
 
     @Value("${crest.path.font:/opt/crest/data/font/}")
     private String path;
@@ -64,6 +68,7 @@ public class FontManage {
      * 创建字体元数据
      */
     public FontDto create(FontDto fontDto) {
+        CrestPermissionUtils.requireAdmin();
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("name", fontDto.getName());
         if (CollectionUtils.isNotEmpty(coreFontMapper.selectList(queryWrapper))) {
@@ -82,6 +87,7 @@ public class FontManage {
      * 编辑字体元数据，默认字体会同步清理其他默认标记
      */
     public FontDto edit(FontDto fontDto) {
+        CrestPermissionUtils.requireAdmin();
         if (ObjectUtils.isEmpty(fontDto.getId())) {
             return create(fontDto);
         }
@@ -103,6 +109,7 @@ public class FontManage {
      * 删除字体元数据和对应字体文件
      */
     public void delete(Long id) {
+        CrestPermissionUtils.requireAdmin();
         CoreFont coreFont = coreFontMapper.selectById(id);
         if (coreFont != null) {
             coreFontMapper.deleteById(id);
@@ -117,6 +124,7 @@ public class FontManage {
      * 更新字体默认状态
      */
     public void changeDefault(FontDto fontDto) {
+        CrestPermissionUtils.requireAdmin();
         QueryWrapper<CoreFont> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("id", fontDto.getId());
         CoreFont record = new CoreFont();
@@ -128,6 +136,7 @@ public class FontManage {
      * 上传字体文件并返回字体信息
      */
     public FontDto upload(MultipartFile file) {
+        CrestPermissionUtils.requireAdmin();
         String fileUuid = UUID.randomUUID().toString();
         return saveFile(file, fileUuid);
     }
@@ -185,10 +194,14 @@ public class FontManage {
     private FontDto saveFile(MultipartFile file, String fileNameUUID) throws CrestException {
         FontDto fontDto = new FontDto();
         try {
+            if (file == null || file.isEmpty()) {
+                CrestException.throwException("字体文件不能为空");
+            }
             String filename = file.getOriginalFilename();
-            if (StringUtils.isEmpty(filename) || !filename.toLowerCase().endsWith(".ttf")) {
+            if (StringUtils.isEmpty(filename) || !filename.toLowerCase(Locale.ROOT).endsWith(".ttf")) {
                 CrestException.throwException("非法格式的文件！");
             }
+            FileUtils.validateUploadFileSize(file, MAX_FONT_BYTES, "字体文件");
             FileUtils.validateUploadFilename(filename);
             String suffix = filename.substring(filename.lastIndexOf(".") + 1);
             File f = storageService.resolve(path, fileNameUUID + "." + suffix);

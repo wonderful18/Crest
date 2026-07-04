@@ -9,11 +9,11 @@
               size="mini"
               @change="themeChange('horizontal')"
             >
-              <el-radio-button label="left">{{ t('chart.text_pos_left') }}</el-radio-button>
-              <el-radio-button :disabled="filterForm.vertical === 'center'" label="center"
+              <el-radio-button value="left">{{ t('chart.text_pos_left') }}</el-radio-button>
+              <el-radio-button :disabled="filterForm.vertical === 'center'" value="center"
                 >{{ t('chart.text_pos_center') }}
               </el-radio-button>
-              <el-radio-button label="right">{{ t('chart.text_pos_right') }}</el-radio-button>
+              <el-radio-button value="right">{{ t('chart.text_pos_right') }}</el-radio-button>
             </el-radio-group>
           </el-form-item>
           <el-form-item :label="t('chart.text_v_position')" class="form-item">
@@ -22,8 +22,8 @@
               size="mini"
               @change="themeChange('vertical')"
             >
-              <el-radio-button label="top">{{ t('chart.text_pos_top') }}</el-radio-button>
-              <el-radio-button :disabled="filterForm.horizontal === 'center'" label="center"
+              <el-radio-button value="top">{{ t('chart.text_pos_top') }}</el-radio-button>
+              <el-radio-button :disabled="filterForm.horizontal === 'center'" value="center"
                 >{{ t('chart.text_pos_center') }}
               </el-radio-button>
             </el-radio-group>

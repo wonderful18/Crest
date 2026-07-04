@@ -41,6 +41,12 @@ import { storeToRefs } from 'pinia'
 import DvHandleMore from '@/components/handle-more/src/DvHandleMore.vue'
 import { interactiveStoreWithOut } from '@/store/modules/interactive'
 import { useShareStoreWithOut } from '@/store/modules/share'
+import {
+  buildImportedTemplateCacheKey,
+  isSupportedVisualizationTemplateFile,
+  navigateImportedTemplateEditor,
+  resetNativeFileInput
+} from '@/views/common/importTemplateFlow'
 const shareStore = useShareStoreWithOut()
 const interactiveStore = interactiveStoreWithOut()
 import { useI18n } from '@/hooks/web/useI18n'
@@ -110,7 +116,7 @@ const resourceListTree = ref()
 // 批量操作组件实例引用
 const resourceGroupOpt = ref()
 // 导入上传组件实例引用
-const importUploadRef = ref()
+const importFileInputRef = ref<HTMLInputElement | null>(null)
 // 是否需要在挂载后回选缓存资源
 const returnMounted = ref(false)
 // 导入资源时的加载状态
@@ -417,19 +423,33 @@ const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
 // 向父组件抛出资源节点点击事件
 const emit = defineEmits(['nodeClick'])
 
-// 导入前校验模板文件扩展名
-const beforeImportTemplateUpload = file => {
-  if (!/\.crest$/i.test(file.name || '')) {
-    ElMessage.error(t('visualization.template_file_type_limit'))
-    return false
+// 打开本地模板文件选择器
+const triggerImportTemplateFile = () => {
+  importFileInputRef.value?.click()
+}
+
+// 读取本地模板文件并进入导入流程
+const importTemplateFileChange = event => {
+  const input = event.target as HTMLInputElement
+  const file = input?.files?.[0]
+  if (!file) {
+    resetNativeFileInput(input)
+    return
   }
-  return true
+  if (!isSupportedVisualizationTemplateFile(file.name)) {
+    ElMessage.error(t('visualization.template_file_type_limit'))
+    resetNativeFileInput(input)
+    return
+  }
+  importTemplateFile(file)
+    .catch(() => undefined)
+    .finally(() => resetNativeFileInput(input))
 }
 
 // 上传并解析本地模板包，成功后进入模板编辑流程
-const importTemplateFile = uploadFile => {
+const importTemplateFile = (file: File) => {
   const formData = new FormData()
-  formData.append('file', uploadFile.file)
+  formData.append('file', file)
   importLoading.value = true
   return decompressionLocalFile(formData)
     .then(res => {
@@ -438,14 +458,11 @@ const importTemplateFile = uploadFile => {
         ElMessage.error(t('visualization.template_type_mismatch'))
         return
       }
-      const cacheKey = `CREST-VISUALIZATION-IMPORT-${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2)}`
+      const cacheKey = buildImportedTemplateCacheKey()
       window.sessionStorage.setItem(cacheKey, JSON.stringify(payload))
       openImportedTemplateEditor(cacheKey)
     })
     .finally(() => {
-      importUploadRef.value?.clearFiles()
       importLoading.value = false
     })
 }
@@ -463,12 +480,7 @@ const openImportedTemplateEditor = cacheKey => {
     )
     return
   }
-  const query = `opt=create&createType=uploadedTemplate&templatePayloadKey=${encodeURIComponent(
-    cacheKey
-  )}`
-  const baseUrl = curCanvasType.value === 'dataV' ? `#/dvCanvas?${query}` : `#/dashboard?${query}`
-  const newWindow = window.open(baseUrl, openType)
-  initOpenHandler(newWindow)
+  navigateImportedTemplateEditor(curCanvasType.value, cacheKey)
 }
 
 // 统一处理资源和目录的右键菜单命令
@@ -790,28 +802,26 @@ defineExpose({
                   </el-icon>
                   {{ t('work_branch.new_empty') }}
                 </el-dropdown-item>
-                <el-dropdown-item @click.stop>
-                  <el-upload
-                    ref="importUploadRef"
-                    class="resource-import-upload"
-                    :show-file-list="false"
-                    accept=".crest"
-                    :before-upload="beforeImportTemplateUpload"
-                    :http-request="importTemplateFile"
-                  >
-                    <div class="resource-import-entry">
-                      <el-icon :class="`handle-icon color-${curCanvasType}`">
-                        <Icon name="icon_upload_outlined">
-                          <icon_upload_outlined class="svg-icon" />
-                        </Icon>
-                      </el-icon>
-                      <span>{{ t('visualization.import_app_template') }}</span>
-                    </div>
-                  </el-upload>
+                <el-dropdown-item @click.stop="triggerImportTemplateFile">
+                  <div class="resource-import-entry">
+                    <el-icon :class="`handle-icon color-${curCanvasType}`">
+                      <Icon name="icon_upload_outlined">
+                        <icon_upload_outlined class="svg-icon" />
+                      </Icon>
+                    </el-icon>
+                    <span>{{ t('visualization.import_app_template') }}</span>
+                  </div>
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+          <input
+            ref="importFileInputRef"
+            class="resource-import-input"
+            type="file"
+            accept=".crest,.CREST,.det2,.DET2,.det2app,.DET2APP"
+            @change="importTemplateFileChange"
+          />
         </div>
       </div>
       <el-input
@@ -1087,18 +1097,14 @@ defineExpose({
   padding: 10px 0 0;
 }
 
-.resource-import-upload {
-  width: 100%;
-
-  :deep(.ed-upload) {
-    width: 100%;
-  }
-}
-
 .resource-import-entry {
   width: 100%;
   display: flex;
   align-items: center;
+}
+
+.resource-import-input {
+  display: none;
 }
 
 .custom-tree-node {

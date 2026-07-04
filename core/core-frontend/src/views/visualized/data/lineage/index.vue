@@ -670,7 +670,7 @@ onBeforeUnmount(() => {
           @click="handleReset"
         ></el-button>
         <el-radio-group v-model="layoutMode" class="layout-mode-group" size="small">
-          <el-radio-button v-for="item in layoutOptions" :key="item.value" :label="item.value">
+          <el-radio-button v-for="item in layoutOptions" :key="item.value" :value="item.value">
             {{ item.label }}
           </el-radio-button>
         </el-radio-group>

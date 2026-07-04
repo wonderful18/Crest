@@ -1,5 +1,5 @@
 <template>
-  <div class="circle-shape"></div>
+  <div class="rect-shape"></div>
 </template>
 
 <script setup lang="ts">

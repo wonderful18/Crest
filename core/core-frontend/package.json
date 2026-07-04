@@ -1,7 +1,7 @@
 {
   "name": "crest",
   "private": true,
-  "version": "2.0.3",
+  "version": "2.1.0",
   "packageManager": "pnpm@11.1.2",
   "scripts": {
     "dev:win": "set NODE_OPTIONS=--max_old_space_size=4096 && vite --mode dev --host 0.0.0.0",
@@ -67,7 +67,7 @@
     "screenfull": "^6.0.2",
     "sm-crypto": "^0.4.0",
     "snowflake-id": "^1.1.0",
-    "tinymce": "^8.5.1",
+    "tinymce": "^8.7.0",
     "tslib": "^2.8.1",
     "uuid": "^11.1.1",
     "vant": "^4.8.3",
@@ -148,29 +148,5 @@
       "tmp": "0.2.7"
     },
     "d3-color": "^3.1.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "glob>inflight": "npm:inflight-lru@^1.0.0",
-      "uuid": "^11.1.1",
-      "tmp": "0.2.7",
-      "form-data": "4.0.6",
-      "dompurify": "3.4.11",
-      "@babel/core": "7.29.7",
-      "js-yaml": "4.2.0",
-      "exceljs>uuid": "^11.1.1",
-      "exceljs@4.4.0>uuid": "^11.1.1",
-      "exceljs>tmp": "0.2.7",
-      "exceljs@4.4.0>tmp": "0.2.7",
-      "d3-color": "^3.1.0"
-    },
-    "onlyBuiltDependencies": [
-      "bufferutil",
-      "core-js",
-      "es5-ext",
-      "esbuild",
-      "utf-8-validate",
-      "vue-demi"
-    ]
   }
 }

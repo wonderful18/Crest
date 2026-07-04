@@ -6,16 +6,29 @@ settings:
 
 overrides:
   '@babel/core': 7.29.7
+  '@ctrl/tinycolor': 4.2.0
+  axios>form-data: 4.0.6
+  d3-color: ^3.1.0
+  debug: 4.4.3
   dompurify: 3.4.11
   esbuild: 0.28.1
+  exceljs>tmp: 0.2.7
+  exceljs>uuid: ^11.1.1
+  exceljs@4.4.0>tmp: 0.2.7
+  exceljs@4.4.0>uuid: ^11.1.1
+  fast-uri: 4.0.0
   form-data: 4.0.6
+  glob>inflight: npm:inflight-lru@^1.0.0
+  is-arrayish: 0.3.4
+  jspdf>dompurify: 3.4.11
   js-yaml: 4.2.0
   tmp: 0.2.7
+  uuid: ^11.1.1
 
 pnpmfileChecksum: sha256-0bHDlZes/og7pm/Qbxmb/XBT4+fCsyNbylHUl+W1GDY=
 
 patchedDependencies:
-  tinymce@8.5.1: 7d6b7257d030e8041f73b30c95bfa33a8f9f3fe6392ab297993020f92738a180
+  element-plus-secondary@1.2.13: 3076183a3f89c3bb2b1a5d2d3be30a42e4b775c283ddd5b8df506197be587a11
 
 importers:
 
@@ -59,7 +72,7 @@ importers:
         version: 0.0.7
       '@tinymce/tinymce-vue':
         specifier: ^6.3.0
-        version: 6.3.0(tinymce@8.5.1(patch_hash=7d6b7257d030e8041f73b30c95bfa33a8f9f3fe6392ab297993020f92738a180))(vue@3.5.34(typescript@5.9.3))
+        version: 6.3.0(tinymce@8.7.0)(vue@3.5.34(typescript@5.9.3))
       '@videojs-player/vue':
         specifier: ^1.0.0
         version: 1.0.0(@types/video.js@7.3.58)(video.js@7.21.7)(vue@3.5.34(typescript@5.9.3))
@@ -95,7 +108,7 @@ importers:
         version: 6.1.0
       element-plus-secondary:
         specifier: ^1.0.0
-        version: 1.2.13(vue@3.5.34(typescript@5.9.3))
+        version: 1.2.13(patch_hash=3076183a3f89c3bb2b1a5d2d3be30a42e4b775c283ddd5b8df506197be587a11)(vue@3.5.34(typescript@5.9.3))
       element-resize-detector:
         specifier: ^1.2.4
         version: 1.2.4
@@ -163,8 +176,8 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0
       tinymce:
-        specifier: ^8.5.1
-        version: 8.5.1(patch_hash=7d6b7257d030e8041f73b30c95bfa33a8f9f3fe6392ab297993020f92738a180)
+        specifier: ^8.7.0
+        version: 8.7.0
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -648,9 +661,9 @@ packages:
     peerDependencies:
       postcss-selector-parser: ^6.0.13
 
-  '@ctrl/tinycolor@3.6.1':
-    resolution: {integrity: sha512-SITSV6aIXsuVNV3f3O0f2n/cgyEDWoSqtZMYiAmcsYHydcKrOz3gUxB/iXd/Qf08+IZX4KpgNbvUdMBmWz+kcA==}
-    engines: {node: '>=10'}
+  '@ctrl/tinycolor@4.2.0':
+    resolution: {integrity: sha512-kzyuwOAQnXJNLS9PSyrk0CWk35nWJW/zl/6KvnTBMFK65gm7U1/Z5BqjxeapjZCIhQcM/DsrEmcbRwDyXyXK4A==}
+    engines: {node: '>=14'}
 
   '@element-plus/icons-vue@2.3.2':
     resolution: {integrity: sha512-OzIuTaIfC8QXEPmJvB4Y4kw34rSXdCJzxcD1kFStBvr8bK6X1zQAYDo0CNMjojnfTqRQCJ0I7prlErcoRiET2A==}
@@ -1943,22 +1956,6 @@ packages:
   dayjs@1.11.20:
     resolution: {integrity: sha512-YbwwqR/uYpeoP4pu043q+LTDLFBLApUP6VxRihdfNTqu4ubqMlGDLd6ErXhEgsyvY0K6nCs7nggYumAN+9uEuQ==}
 
-  debug@2.6.9:
-    resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
-
-  debug@3.2.7:
-    resolution: {integrity: sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
-
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
     engines: {node: '>=6.0'}
@@ -2286,8 +2283,8 @@ packages:
   fast-png@6.4.0:
     resolution: {integrity: sha512-kAqZq1TlgBjZcLr5mcN6NP5Rv4V2f22z00c3g8vRrwkcqjerx7BEhPbOnWCPqaHUl2XWQBJQvOT/FQhdMT7X/Q==}
 
-  fast-uri@3.1.2:
-    resolution: {integrity: sha512-rVjf7ArG3LTk+FS6Yw81V1DLuZl1bRbNrev6Tmd/9RaroeeRRJhAt7jg/6YFxbvAQXUCavSoZhPPj6oOx+5KjQ==}
+  fast-uri@4.0.0:
+    resolution: {integrity: sha512-l90y339r2DkZs/ldcWQXcwTjkbp/NbuJDGYoQ3awBgaT3GXOFkm3OkVpz6Z86TywYcya0eVP2r1kTV90f3krGQ==}
 
   fastest-levenshtein@1.0.16:
     resolution: {integrity: sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg==}
@@ -2554,9 +2551,8 @@ packages:
   individual@2.0.0:
     resolution: {integrity: sha512-pWt8hBCqJsUWI/HtcfWod7+N9SgAqyPEaF7JQjwzjn5vGrpg6aQ5qeAFQ7dx//UH4J1O+7xqew+gCeeFt6xN/g==}
 
-  inflight@1.0.6:
-    resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}
-    deprecated: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+  inflight-lru@1.0.0:
+    resolution: {integrity: sha512-QbHseAGzD24jTNAgcgUL/dYRpLSA+nLE5EbLE+M/0KUYUJHfM6RmH/zXuP8u3mjd7Bsmhjpx8ut7hxaxkkIJKQ==}
 
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
@@ -2571,8 +2567,8 @@ packages:
   iobuffer@5.4.0:
     resolution: {integrity: sha512-DRebOWuqDvxunfkNJAlc3IzWIPD5xVxwUNbHr7xKB8E6aLJxIPfNX3CoMJghcFjpv6RWQsrcJbghtEwSPoJqMA==}
 
-  is-arrayish@0.2.1:
-    resolution: {integrity: sha512-zz06S8t0ozoDXMG+ube26zeCTNXcKIPJZJi8hBrF4idCLms4CG9QtK7qBl1boi5ODzFpjswb5JPmHCbMpjaYzg==}
+  is-arrayish@0.3.4:
+    resolution: {integrity: sha512-m6UrgzFVUYawGBh1dUsWR5M2Clqic9RVXC/9f8ceNlv2IcO9j9J/z8UoCLPqtsPBFNzEpfR3xftohbfqDx8EQA==}
 
   is-binary-path@2.1.0:
     resolution: {integrity: sha512-ZMERYes6pDydyuGidse7OsHxtbI7WVeUEozgR/g7rd0xUimYNlvZRE/K2MgZTjWy725IfelLeVcEM97mmtRGXw==}
@@ -2796,6 +2792,10 @@ packages:
   lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
 
+  lru-cache@11.5.1:
+    resolution: {integrity: sha512-RPimw/7aMdv2oqRrxKwvZXcPfwBrn/JZ2xYcY9Hus/6LaS3VOAKVWKWgNLCFSiOm1ESXinjsDlidVU7JlnCN2A==}
+    engines: {node: 20 || >=22}
+
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
@@ -2927,9 +2927,6 @@ packages:
   mpd-parser@0.22.1:
     resolution: {integrity: sha512-fwBebvpyPUU8bOzvhX0VQZgSohncbgYwUyJJoTSNpmy7ccD2ryiCvM7oRkn/xQH5cv73/xU7rJSNCLjdGFor0Q==}
     hasBin: true
-
-  ms@2.0.0:
-    resolution: {integrity: sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A==}
 
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
@@ -3563,8 +3560,8 @@ packages:
     resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
     engines: {node: '>=12.0.0'}
 
-  tinymce@8.5.1:
-    resolution: {integrity: sha512-Wd4OrokDEwlXppSR+ijXngLa2+s3v8NZax9WCvAHeQhqvFsj9tGt19PmrnAdGLiQFkBBYzdOLW23tsBTPMiJYw==}
+  tinymce@8.7.0:
+    resolution: {integrity: sha512-V3fBgEzKxKT5d41/3qkXs//2SjANGHzo1MWnU2ai8nss8YrzPprrRFlDbX2X9Z6ClyQAknojs7CzEgcsTdqhPQ==}
 
   tmp@0.2.7:
     resolution: {integrity: sha512-e0votIpp4Uo2AJYSzVHV6xCcawuiez3DzqDAbrTc3YxBkplN6e+dM13ZeIcZnDg/QpSuU2zfZ3rzwY8ukEnaXw==}
@@ -4551,7 +4548,7 @@ snapshots:
     dependencies:
       postcss-selector-parser: 6.1.2
 
-  '@ctrl/tinycolor@3.6.1': {}
+  '@ctrl/tinycolor@4.2.0': {}
 
   '@element-plus/icons-vue@2.3.2(vue@3.5.34(typescript@5.9.3))':
     dependencies:
@@ -4901,11 +4898,11 @@ snapshots:
 
   '@sxzz/popperjs-es@2.11.8': {}
 
-  '@tinymce/tinymce-vue@6.3.0(tinymce@8.5.1(patch_hash=7d6b7257d030e8041f73b30c95bfa33a8f9f3fe6392ab297993020f92738a180))(vue@3.5.34(typescript@5.9.3))':
+  '@tinymce/tinymce-vue@6.3.0(tinymce@8.7.0)(vue@3.5.34(typescript@5.9.3))':
     dependencies:
       vue: 3.5.34(typescript@5.9.3)
     optionalDependencies:
-      tinymce: 8.5.1(patch_hash=7d6b7257d030e8041f73b30c95bfa33a8f9f3fe6392ab297993020f92738a180)
+      tinymce: 8.7.0
 
   '@types/d3-array@3.2.2': {}
 
@@ -5232,7 +5229,7 @@ snapshots:
 
   '@vue/compiler-core@3.5.34':
     dependencies:
-      '@babel/parser': 7.29.3
+      '@babel/parser': 7.29.7
       '@vue/shared': 3.5.34
       entities: 7.0.1
       estree-walker: 2.0.2
@@ -5360,7 +5357,7 @@ snapshots:
   ajv@8.20.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.2
+      fast-uri: 4.0.0
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -5862,15 +5859,6 @@ snapshots:
 
   dayjs@1.11.20: {}
 
-  debug@2.6.9:
-    dependencies:
-      ms: 2.0.0
-    optional: true
-
-  debug@3.2.7:
-    dependencies:
-      ms: 2.1.3
-
   debug@4.4.3:
     dependencies:
       ms: 2.1.3
@@ -5955,9 +5943,9 @@ snapshots:
 
   electron-to-chromium@1.5.360: {}
 
-  element-plus-secondary@1.2.13(vue@3.5.34(typescript@5.9.3)):
+  element-plus-secondary@1.2.13(patch_hash=3076183a3f89c3bb2b1a5d2d3be30a42e4b775c283ddd5b8df506197be587a11)(vue@3.5.34(typescript@5.9.3)):
     dependencies:
-      '@ctrl/tinycolor': 3.6.1
+      '@ctrl/tinycolor': 4.2.0
       '@element-plus/icons-vue': 2.3.2(vue@3.5.34(typescript@5.9.3))
       '@floating-ui/dom': 1.7.6
       '@popperjs/core': '@sxzz/popperjs-es@2.11.8'
@@ -6002,7 +5990,7 @@ snapshots:
 
   error-ex@1.3.4:
     dependencies:
-      is-arrayish: 0.2.1
+      is-arrayish: 0.3.4
 
   es-define-property@1.0.1: {}
 
@@ -6284,7 +6272,7 @@ snapshots:
       iobuffer: 5.4.0
       pako: 2.1.0
 
-  fast-uri@3.1.2: {}
+  fast-uri@4.0.0: {}
 
   fastest-levenshtein@1.0.16: {}
 
@@ -6405,7 +6393,7 @@ snapshots:
   glob@7.2.3:
     dependencies:
       fs.realpath: 1.0.0
-      inflight: 1.0.6
+      inflight: inflight-lru@1.0.0
       inherits: 2.0.4
       minimatch: 3.1.5
       once: 1.4.0
@@ -6540,8 +6528,9 @@ snapshots:
 
   individual@2.0.0: {}
 
-  inflight@1.0.6:
+  inflight-lru@1.0.0:
     dependencies:
+      lru-cache: 11.5.1
       once: 1.4.0
       wrappy: 1.0.2
 
@@ -6553,7 +6542,7 @@ snapshots:
 
   iobuffer@5.4.0: {}
 
-  is-arrayish@0.2.1: {}
+  is-arrayish@0.3.4: {}
 
   is-binary-path@2.1.0:
     dependencies:
@@ -6750,6 +6739,8 @@ snapshots:
 
   lru-cache@10.4.3: {}
 
+  lru-cache@11.5.1: {}
+
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
@@ -6896,9 +6887,6 @@ snapshots:
       '@videojs/vhs-utils': 3.0.5
       '@xmldom/xmldom': 0.8.13
       global: 4.4.0
-
-  ms@2.0.0:
-    optional: true
 
   ms@2.1.3: {}
 
@@ -7371,7 +7359,7 @@ snapshots:
 
   sockjs-client@1.6.1:
     dependencies:
-      debug: 3.2.7
+      debug: 4.4.3
       eventsource: 2.0.2
       faye-websocket: 0.11.4
       inherits: 2.0.4
@@ -7579,7 +7567,7 @@ snapshots:
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
 
-  tinymce@8.5.1(patch_hash=7d6b7257d030e8041f73b30c95bfa33a8f9f3fe6392ab297993020f92738a180): {}
+  tinymce@8.7.0: {}
 
   tmp@0.2.7: {}
 
@@ -7973,7 +7961,7 @@ snapshots:
   websocket@1.0.35:
     dependencies:
       bufferutil: 4.1.0
-      debug: 2.6.9
+      debug: 4.4.3
       es5-ext: 0.10.64
       typedarray-to-buffer: 3.1.5
       utf-8-validate: 5.0.10

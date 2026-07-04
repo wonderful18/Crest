@@ -11,6 +11,7 @@ import io.crest.exception.CrestException;
 import io.crest.metadata.MetadataDbDialect;
 import io.crest.metadata.MetadataDbDialects;
 import io.crest.system.manage.CoreUserManage;
+import io.crest.substitute.permissions.auth.PlatformPermissionManage;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.CommonBeanFactory;
 import io.crest.utils.CommunityUtils;
@@ -46,6 +47,9 @@ public class VisualizationStoreManage {
     private CoreUserManage coreUserManage;
 
     @Resource
+    private PlatformPermissionManage platformPermissionManage;
+
+    @Resource
     private Environment environment;
 
     /**
@@ -63,6 +67,7 @@ public class VisualizationStoreManage {
         }
         String type = request.getType();
         BusiResourceEnum busiResourceEnum = busiResourceType(type);
+        requireReadableResource(resourceId, type);
         CoreStore coreStore = new CoreStore();
         coreStore.setId(IDUtils.snowID());
         coreStore.setTime(System.currentTimeMillis());
@@ -120,6 +125,7 @@ public class VisualizationStoreManage {
      * 按筛选条件分页查询收藏资源原始记录
      */
     public IPage<StorePO> queryStorePage(int goPage, int pageSize, VisualizationWorkbranchQueryRequest request) {
+        request = request == null ? new VisualizationWorkbranchQueryRequest() : request;
         Long uid = AuthUtils.getUser().getUserId();
         QueryWrapper<Object> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("s.uid", uid);
@@ -135,6 +141,7 @@ public class VisualizationStoreManage {
         if (StringUtils.isNotBlank(info)) {
             queryWrapper.notExists(String.format(info, "s.resource_id"));
         }
+        applyVisualizationScope(queryWrapper);
         queryWrapper.orderBy(true, request.isAsc(), "v.update_time");
         Page<StorePO> page = new Page<>(goPage, pageSize);
         return coreStoreExtMapper.query(page, queryWrapper);
@@ -150,6 +157,54 @@ public class VisualizationStoreManage {
             CrestException.throwException("type is invalid");
             return null;
         }
+    }
+
+    /**
+     * 收藏写入前确认当前用户仍能读取目标资源，避免通过收藏接口探测或绑定无权限资源。
+     */
+    private void requireReadableResource(Long resourceId, String type) {
+        if (resourceId == null) {
+            CrestException.throwException("资源不存在或无访问权限");
+        }
+        String scopeSql = platformPermissionManage.resourceScopeSql(type, "v.id", "v.create_by", "v.org_id");
+        QueryWrapper<Object> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("v.id", resourceId);
+        queryWrapper.eq("v.delete_flag", false);
+        queryWrapper.eq("v.node_type", "leaf");
+        if (BusiResourceEnum.SCREEN.name().equalsIgnoreCase(type)) {
+            queryWrapper.eq("v.type", "dataV");
+        } else if (BusiResourceEnum.PANEL.name().equalsIgnoreCase(type)) {
+            queryWrapper.eq("v.type", "dashboard");
+        }
+        if (StringUtils.isNotBlank(scopeSql)) {
+            queryWrapper.apply(scopeSql);
+        }
+        long count = coreStoreExtMapper.countReadable(queryWrapper);
+        if (count <= 0) {
+            CrestException.throwException("资源不存在或无访问权限");
+        }
+    }
+
+    /**
+     * 收藏列表同时叠加大屏和仪表板的资源范围，避免展示已失权的历史收藏。
+     */
+    private void applyVisualizationScope(QueryWrapper<Object> queryWrapper) {
+        String screenScope = platformPermissionManage.resourceScopeSql("screen", "v.id", "v.create_by", "v.org_id");
+        String panelScope = platformPermissionManage.resourceScopeSql("panel", "v.id", "v.create_by", "v.org_id");
+        if (StringUtils.isBlank(screenScope) && StringUtils.isBlank(panelScope)) {
+            return;
+        }
+        queryWrapper.and(wrapper -> {
+            if (StringUtils.isNotBlank(screenScope)) {
+                wrapper.apply("(v.type = 'dataV' AND " + screenScope + ")");
+            }
+            if (StringUtils.isNotBlank(panelScope)) {
+                if (StringUtils.isNotBlank(screenScope)) {
+                    wrapper.or();
+                }
+                wrapper.apply("(v.type = 'dashboard' AND " + panelScope + ")");
+            }
+        });
     }
 
     /**

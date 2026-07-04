@@ -24,11 +24,6 @@ function assert(condition, message) {
 }
 
 function renderOverlay() {
-  execFileSync("kubectl", ["create", "--dry-run=client", "-f", overlay], {
-    cwd: repoRoot,
-    stdio: ["ignore", "ignore", "pipe"],
-  });
-
   const overlayPath = path.resolve(repoRoot, overlay);
   const files = manifestFiles(overlayPath);
   assert(files.length > 0, `${overlay} must contain Kubernetes YAML files`);
@@ -79,6 +74,22 @@ function allByKind(items, kind) {
   return items.filter((item) => item.kind === kind);
 }
 
+function checkResourceShapes(items) {
+  const allowedResources = new Set([
+    "apps/v1/Deployment",
+    "v1/ConfigMap",
+    "v1/PersistentVolumeClaim",
+    "v1/Secret",
+    "v1/Service",
+  ]);
+  for (const item of items) {
+    const resourceId = `${item.apiVersion}/${item.kind}`;
+    assert(allowedResources.has(resourceId), `unexpected Kubernetes resource ${resourceId}`);
+    assert(typeof item.metadata?.name === "string" && item.metadata.name.length > 0,
+      `${resourceId} must set metadata.name`);
+  }
+}
+
 function container(deployment) {
   return deployment?.spec?.template?.spec?.containers?.[0];
 }
@@ -106,6 +117,30 @@ function hasVolume(deployment, name, type) {
 
 function hasVolumeMount(containerSpec, name, mountPath) {
   return (containerSpec?.volumeMounts || []).some((item) => item.name === name && item.mountPath === mountPath);
+}
+
+function assertPodSecurityContext(deployment, name, userId, groupId = userId, fsGroup = userId) {
+  const securityContext = deployment?.spec?.template?.spec?.securityContext || {};
+  assert(securityContext.runAsNonRoot === true, `${name} must set runAsNonRoot=true`);
+  assert(securityContext.runAsUser === userId, `${name} must set runAsUser=${userId}`);
+  assert(securityContext.runAsGroup === groupId, `${name} must set runAsGroup=${groupId}`);
+  if (fsGroup !== null && fsGroup !== undefined) {
+    assert(securityContext.fsGroup === fsGroup, `${name} must set fsGroup=${fsGroup}`);
+    assert(securityContext.fsGroupChangePolicy === "OnRootMismatch",
+      `${name} must set fsGroupChangePolicy=OnRootMismatch`);
+  }
+  assert(securityContext.seccompProfile?.type === "RuntimeDefault",
+    `${name} must set seccompProfile RuntimeDefault`);
+}
+
+function assertContainerSecurityContext(containerSpec, name) {
+  const securityContext = containerSpec?.securityContext || {};
+  assert(securityContext.allowPrivilegeEscalation === false,
+    `${name} must disable privilege escalation`);
+  assert(securityContext.readOnlyRootFilesystem === true,
+    `${name} must use a read-only root filesystem`);
+  assert((securityContext.capabilities?.drop || []).includes("ALL"),
+    `${name} must drop all Linux capabilities`);
 }
 
 function checkConfig(items) {
@@ -136,10 +171,10 @@ function checkBackendDeployment(items) {
   assert(deployment.spec?.replicas === 1, "crest-service must run 1 replica in minimal deployment");
   assert((deployment.spec?.template?.spec?.initContainers || []).length === 0,
     "crest-service must not use initContainers in cloud-platform manifest");
-  assert(deployment.spec?.template?.spec?.securityContext?.fsGroup === 10001,
-    "crest-service must set fsGroup=10001 for persistent volume write access");
+  assertPodSecurityContext(deployment, "crest-service", 10001);
 
   const appContainer = container(deployment);
+  assertContainerSecurityContext(appContainer, "crest-service");
   assert(!appContainer.command && !appContainer.args, "crest-service must not override command or args");
   assert(envValue(appContainer, "CREST_RUNTIME_ROLE") === "all",
     "crest-service must set CREST_RUNTIME_ROLE=all");
@@ -156,8 +191,17 @@ function checkBackendDeployment(items) {
   assert(appContainer.readinessProbe?.httpGet && appContainer.livenessProbe?.httpGet,
     "crest-service probes must use HTTP GET");
   assert(hasVolume(deployment, "crest-data", "persistentVolumeClaim"), "crest-service must mount crest-data PVC");
+  assert(hasVolume(deployment, "crest-logs", "emptyDir"), "crest-service must mount writable logs emptyDir");
+  assert(hasVolume(deployment, "crest-cache", "emptyDir"), "crest-service must mount writable cache emptyDir");
+  assert(hasVolume(deployment, "crest-tmp", "emptyDir"), "crest-service must mount writable tmp emptyDir");
   assert(hasVolumeMount(appContainer, "crest-data", "/opt/crest/data"),
     "crest-service must mount persistent data path");
+  assert(hasVolumeMount(appContainer, "crest-logs", "/opt/crest/logs"),
+    "crest-service must mount writable log path");
+  assert(hasVolumeMount(appContainer, "crest-cache", "/opt/crest/cache"),
+    "crest-service must mount writable cache path");
+  assert(hasVolumeMount(appContainer, "crest-tmp", "/tmp"),
+    "crest-service must mount writable /tmp path");
 }
 
 function checkRedisDeployment(items) {
@@ -166,8 +210,10 @@ function checkRedisDeployment(items) {
   assert(deployment.spec?.replicas === 1, "crest-redis must run 1 replica");
   assert((deployment.spec?.template?.spec?.initContainers || []).length === 0,
     "crest-redis must not use initContainers");
+  assertPodSecurityContext(deployment, "crest-redis", 999);
 
   const appContainer = container(deployment);
+  assertContainerSecurityContext(appContainer, "crest-redis");
   assert(!appContainer.command, "crest-redis must not override command");
   const args = appContainer.args || [];
   assert(args.includes("redis-server") && args.includes("/etc/redis/redis.conf"),
@@ -180,10 +226,13 @@ function checkRedisDeployment(items) {
     "crest-redis probes must use TCP socket checks");
   assert(hasVolume(deployment, "redis-config", "configMap"), "crest-redis must mount Redis ConfigMap");
   assert(hasVolume(deployment, "redis-data", "persistentVolumeClaim"), "crest-redis must mount redis data PVC");
+  assert(hasVolume(deployment, "redis-tmp", "emptyDir"), "crest-redis must mount writable tmp emptyDir");
   assert(hasVolumeMount(appContainer, "redis-config", "/etc/redis/redis.conf"),
     "crest-redis must mount redis.conf");
   assert(hasVolumeMount(appContainer, "redis-data", "/data"),
     "crest-redis must mount /data");
+  assert(hasVolumeMount(appContainer, "redis-tmp", "/tmp"),
+    "crest-redis must mount writable /tmp path");
 }
 
 function checkFrontendDeployment(items) {
@@ -192,10 +241,23 @@ function checkFrontendDeployment(items) {
   assert(deployment.spec?.replicas === 1, "frontend must run 1 replica in minimal deployment");
   assert((deployment.spec?.template?.spec?.initContainers || []).length === 0,
     "frontend must not use initContainers in cloud-platform manifest");
+  assertPodSecurityContext(deployment, "frontend", 10001, 10001, null);
   const appContainer = container(deployment);
+  assertContainerSecurityContext(appContainer, "frontend");
   assert(!appContainer.command && !appContainer.args, "frontend must not override command or args");
   assert(appContainer?.readinessProbe?.httpGet && appContainer?.livenessProbe?.httpGet,
     "frontend probes must use HTTP GET");
+  for (const [volumeName, mountPath] of [
+    ["nginx-run", "/var/run/nginx"],
+    ["nginx-client-temp", "/var/cache/nginx/client_temp"],
+    ["nginx-proxy-temp", "/var/cache/nginx/proxy_temp"],
+    ["nginx-fastcgi-temp", "/var/cache/nginx/fastcgi_temp"],
+    ["nginx-uwsgi-temp", "/var/cache/nginx/uwsgi_temp"],
+    ["nginx-scgi-temp", "/var/cache/nginx/scgi_temp"],
+  ]) {
+    assert(hasVolume(deployment, volumeName, "emptyDir"), `frontend must define ${volumeName} emptyDir`);
+    assert(hasVolumeMount(appContainer, volumeName, mountPath), `frontend must mount ${mountPath}`);
+  }
 }
 
 function checkSupportResources(items) {
@@ -245,6 +307,7 @@ function checkSupportResources(items) {
 const rendered = renderOverlay();
 const items = rendered.items || [];
 
+checkResourceShapes(items);
 checkConfig(items);
 checkBackendDeployment(items);
 checkRedisDeployment(items);

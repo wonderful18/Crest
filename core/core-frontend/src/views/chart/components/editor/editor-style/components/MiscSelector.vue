@@ -457,8 +457,8 @@ onMounted(() => {
           @change="changeQuotaField('min')"
           :disabled="quotaData.length === 0"
         >
-          <el-radio :effect="themes" label="fix">{{ t('chart.fix') }}</el-radio>
-          <el-radio :effect="themes" label="dynamic">{{ t('chart.dynamic') }}</el-radio>
+          <el-radio :effect="themes" value="fix">{{ t('chart.fix') }}</el-radio>
+          <el-radio :effect="themes" value="dynamic">{{ t('chart.dynamic') }}</el-radio>
         </el-radio-group>
       </el-form-item>
       <el-form-item
@@ -558,8 +558,8 @@ onMounted(() => {
           @change="changeQuotaField('max')"
           :disabled="quotaData.length === 0"
         >
-          <el-radio :effect="themes" label="fix">{{ t('chart.fix') }}</el-radio>
-          <el-radio :effect="themes" label="dynamic">{{ t('chart.dynamic') }}</el-radio>
+          <el-radio :effect="themes" value="fix">{{ t('chart.fix') }}</el-radio>
+          <el-radio :effect="themes" value="dynamic">{{ t('chart.dynamic') }}</el-radio>
         </el-radio-group>
       </el-form-item>
       <el-form-item
@@ -761,10 +761,10 @@ onMounted(() => {
         @change="changeQuotaField('max')"
         :disabled="quotaData.length === 0"
       >
-        <el-radio :effect="themes" label="fix">
+        <el-radio :effect="themes" value="fix">
           {{ t('chart.fix') }}
         </el-radio>
-        <el-radio :effect="themes" label="dynamic">{{ t('chart.dynamic') }}</el-radio>
+        <el-radio :effect="themes" value="dynamic">{{ t('chart.dynamic') }}</el-radio>
       </el-radio-group>
     </el-form-item>
 

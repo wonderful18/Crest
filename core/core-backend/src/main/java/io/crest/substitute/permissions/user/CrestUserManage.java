@@ -26,6 +26,7 @@ import io.crest.system.sso.SsoIdentityAction;
 import io.crest.system.sso.SsoIdentityDecision;
 import io.crest.system.sso.SsoIdentityProfile;
 import io.crest.utils.AuthUtils;
+import io.crest.utils.FileUtils;
 import io.crest.utils.IDUtils;
 import io.crest.utils.Md5Utils;
 import io.crest.utils.PasswordEncoder;
@@ -36,6 +37,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.core.env.Environment;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -45,6 +47,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 // 内置用户管理服务，负责本地用户、单点登录用户和权限绑定的持久化操作
@@ -55,7 +58,7 @@ public class CrestUserManage {
     public static final String AUTH_TYPE_SSO = "SSO";
 
     private static final String INITIAL_PASSWORD_PROPERTY = "crest.user.initial-password";
-    private static final String LEGACY_ADMIN_PASSWORD_HASH = "21232f297a57a5a743894a0e4a801fc3";
+    private static final String LEGACY_ADMIN_PASSWORD_HASH = Md5Utils.md5("admin");
     private static final Pattern ACCOUNT_PATTERN = Pattern.compile("^[A-Za-z0-9._@-]{1,64}$");
     private static final Pattern UNSAFE_DISPLAY_NAME_PATTERN = Pattern.compile("[<>\\p{Cntrl}]");
     private static final String USER_GRID_COLUMNS = """
@@ -125,21 +128,29 @@ public class CrestUserManage {
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM core_iam_user WHERE id = 1", Integer.class);
         if (count == null || count == 0) {
             long now = System.currentTimeMillis();
-            jdbcTemplate.update("""
-                    INSERT INTO core_iam_user(id, account, name, password_hash, enable, is_admin, origin, create_time, update_time)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, 1L, "admin", "管理员", PasswordEncoder.encode(initialPassword()), true, true, 0, now, now);
-            platformPermissionManage.bindUserToOrg(1L, PlatformPermissionManage.ROOT_ORG_ID, true);
-            platformPermissionManage.bindUserToRole(1L, PlatformPermissionManage.ROOT_ORG_ID, PlatformPermissionManage.SYSTEM_ADMIN_ROLE_ID);
-        } else {
-            String passwordHash = jdbcTemplate.queryForObject(
-                    "SELECT password_hash FROM core_iam_user WHERE id = 1", String.class);
-            if (Strings.CS.equals(passwordHash, LEGACY_ADMIN_PASSWORD_HASH)) {
-                jdbcTemplate.update("UPDATE core_iam_user SET password_hash = ?, is_admin = 1, enable = 1, update_time = ? WHERE id = 1",
-                        PasswordEncoder.encode(initialPassword()), System.currentTimeMillis());
-            } else {
-                jdbcTemplate.update("UPDATE core_iam_user SET is_admin = 1, enable = 1 WHERE id = 1");
+            try {
+                jdbcTemplate.update("""
+                        INSERT INTO core_iam_user(id, account, name, password_hash, enable, is_admin, origin, create_time, update_time)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, 1L, "admin", "管理员", PasswordEncoder.encode(initialPassword()), true, true, 0, now, now);
+                platformPermissionManage.bindUserToOrg(1L, PlatformPermissionManage.ROOT_ORG_ID, true);
+                platformPermissionManage.bindUserToRole(1L, PlatformPermissionManage.ROOT_ORG_ID, PlatformPermissionManage.SYSTEM_ADMIN_ROLE_ID);
+                return;
+            } catch (DuplicateKeyException ignored) {
+                // 其他实例可能已经完成首个管理员创建，继续执行规范化逻辑即可。
             }
+        }
+        normalizeAdmin();
+    }
+
+    private void normalizeAdmin() {
+        String passwordHash = jdbcTemplate.queryForObject(
+                "SELECT password_hash FROM core_iam_user WHERE id = 1", String.class);
+        if (Strings.CS.equals(passwordHash, LEGACY_ADMIN_PASSWORD_HASH)) {
+            jdbcTemplate.update("UPDATE core_iam_user SET password_hash = ?, is_admin = 1, enable = 1, update_time = ? WHERE id = 1",
+                    PasswordEncoder.encode(initialPassword()), System.currentTimeMillis());
+        } else {
+            jdbcTemplate.update("UPDATE core_iam_user SET is_admin = 1, enable = 1 WHERE id = 1");
         }
     }
 
@@ -404,12 +415,17 @@ public class CrestUserManage {
 
     // 读取 Excel 或 CSV 导入文件并转换为用户导入行
     private List<UserImportRow> readImportRows(MultipartFile file) throws Exception {
-        String filename = StringUtils.defaultString(file.getOriginalFilename()).toLowerCase();
-        if (filename.endsWith(".xlsx") || filename.endsWith(".xls")) {
+        String originalFilename = StringUtils.defaultString(file.getOriginalFilename());
+        FileUtils.validateUploadFilename(originalFilename);
+        String normalizedFilename = originalFilename.toLowerCase(Locale.ROOT);
+        if (normalizedFilename.endsWith(".xlsx") || normalizedFilename.endsWith(".xls")) {
             return EasyExcel.read(file.getInputStream())
                     .head(UserImportRow.class)
                     .sheet()
                     .doReadSync();
+        }
+        if (!normalizedFilename.endsWith(".csv")) {
+            CrestException.throwException("仅支持 xlsx、xls、csv 格式的用户导入文件");
         }
         String text = new String(file.getBytes(), StandardCharsets.UTF_8);
         String[] rows = text.replace("\r", "").split("\n");

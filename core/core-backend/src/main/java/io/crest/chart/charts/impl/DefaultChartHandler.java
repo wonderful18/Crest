@@ -180,6 +180,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
             if (calcResult.getData() != null && calcResult.getData().get("customSumResult") != null) {
                 sourceInfo.put("customSumResult", calcResult.getData().get("customSumResult"));
             }
+            if (calcResult.getData() != null && calcResult.getData().get("summaryColumnResult") != null) {
+                sourceInfo.put("summaryColumnResult", calcResult.getData().get("summaryColumnResult"));
+            }
             view.setData(sourceInfo);
             return view;
         }
@@ -404,15 +407,18 @@ public class DefaultChartHandler extends AbstractChartPlugin {
     // 从单个阈值条件中提取动态字段引用
     private List<ChartSeniorAssistDTO> getConditionFields(ChartSeniorThresholdDTO condition) {
         List<ChartSeniorAssistDTO> list = new ArrayList<>();
+        if (condition == null) {
+            return list;
+        }
         if ("between".equals(condition.getTerm())) {
-            if (!Strings.CI.equals(condition.getDynamicMaxField().getSummary(), "value")) {
+            if (condition.getDynamicMaxField() != null && !Strings.CI.equals(condition.getDynamicMaxField().getSummary(), "value")) {
                 list.add(of(condition.getDynamicMaxField()));
             }
-            if (!Strings.CI.equals(condition.getDynamicMinField().getSummary(), "value")) {
+            if (condition.getDynamicMinField() != null && !Strings.CI.equals(condition.getDynamicMinField().getSummary(), "value")) {
                 list.add(of(condition.getDynamicMinField()));
             }
         } else {
-            if (!Strings.CI.equals(condition.getDynamicField().getSummary(), "value")) {
+            if (condition.getDynamicField() != null && !Strings.CI.equals(condition.getDynamicField().getSummary(), "value")) {
                 list.add(of(condition.getDynamicField()));
             }
         }
@@ -791,6 +797,9 @@ public class DefaultChartHandler extends AbstractChartPlugin {
 
     // 校验日期粒度是否支持指定同环比计算类型
     private boolean checkCalcType(String dateStyle, String calcType) {
+        if (StringUtils.isBlank(dateStyle)) {
+            return false;
+        }
         switch (dateStyle) {
             case "y":
                 return Strings.CI.equals(calcType, "year_mom");

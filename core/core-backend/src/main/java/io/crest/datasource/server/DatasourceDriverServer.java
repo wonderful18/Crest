@@ -11,6 +11,7 @@ import io.crest.datasource.dao.auto.mapper.CoreDriverMapper;
 import io.crest.extensions.datasource.dto.DatasourceDTO;
 import io.crest.storage.StorageService;
 import io.crest.utils.BeanUtils;
+import io.crest.utils.CrestPermissionUtils;
 import io.crest.utils.FileUtils;
 import io.crest.utils.Md5Utils;
 import jakarta.annotation.Resource;
@@ -36,6 +37,8 @@ import java.util.Map;
  * 数据源驱动接口控制器，负责驱动配置和驱动包管理
  */
 public class DatasourceDriverServer implements DatasourceDriverApi {
+
+    private static final long MAX_DRIVER_JAR_BYTES = 200L * 1024L * 1024L;
 
     @Value("${crest.path.custom-drivers:/opt/crest/custom-drivers/}")
     private String DRIVER_PATH;
@@ -92,6 +95,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
      */
     @Override
     public DriveDTO save(DriveDTO datasourceDrive) {
+        CrestPermissionUtils.requireAdmin();
         CoreDriver coreDriver = new CoreDriver();
         BeanUtils.copyBean(coreDriver, datasourceDrive);
         coreDriverMapper.insert(coreDriver);
@@ -103,6 +107,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
      */
     @Override
     public DriveDTO update(DriveDTO datasourceDrive) {
+        CrestPermissionUtils.requireAdmin();
         CoreDriver coreDriver = new CoreDriver();
         BeanUtils.copyBean(coreDriver, datasourceDrive);
         coreDriverMapper.updateById(coreDriver);
@@ -114,6 +119,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
      */
     @Override
     public void delete(String driverId) {
+        CrestPermissionUtils.requireAdmin();
         coreDriverMapper.deleteById(driverId);
         Map<String, Object> map = new HashMap<>();
         map.put("driverId", driverId);
@@ -142,6 +148,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
      */
     @Override
     public void deleteDriverJar(String jarId) {
+        CrestPermissionUtils.requireAdmin();
         CoreDriverJar driverJar = coreDriverJarMapper.selectById(jarId);
         coreDriverJarMapper.deleteById(jarId);
         storageService.deleteFile(DRIVER_PATH, driverJar.getDriverId(), driverJar.getTransName());
@@ -153,10 +160,12 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
      */
     @Override
     public DriveJarDTO uploadJar(@RequestParam("driverId") String driverId, @RequestParam("jarFile") MultipartFile jarFile) throws Exception {
+        CrestPermissionUtils.requireAdmin();
         CoreDriver coreDriver = coreDriverMapper.selectById(driverId);
         if (coreDriver == null) {
             throw new RuntimeException("DRIVER_NOT_FOUND");
         }
+        FileUtils.validateUploadFileSize(jarFile, MAX_DRIVER_JAR_BYTES, "驱动文件");
         String filename = jarFile.getOriginalFilename();
         if (filename == null || !filename.endsWith(".jar")) {
             throw new RuntimeException("NOT_JAR");

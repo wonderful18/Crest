@@ -6,6 +6,8 @@ import { CANVAS_MATERIAL } from '@/custom-component/common/ComponentConfig'
 import { ElScrollbar } from 'element-plus-secondary'
 import Decoration from '@/custom-component/decoration/Component.vue'
 
+const groupList = CANVAS_MATERIAL as any[]
+
 defineProps({
   propValue: {
     type: Array,
@@ -24,10 +26,9 @@ defineProps({
 // 持有组件分组滚动容器实例
 const commonGroup = ref<InstanceType<typeof ElScrollbar>>()
 
-// 保存当前激活分类和组件分组列表
+// 保存当前激活分类
 const state = reactive({
-  curCategory: 'CanvasBoard',
-  groupList: CANVAS_MATERIAL as any[]
+  curCategory: 'CanvasBoard'
 })
 
 // 滚动到指定的分组位置
@@ -70,7 +71,7 @@ const findUrl = name => {
         <li
           class="li-custom"
           :class="{ 'li-custom-active': state.curCategory === groupInfo.category }"
-          v-for="groupInfo in state.groupList"
+          v-for="groupInfo in groupList"
           :key="groupInfo.category"
           @click="groupActiveChange(groupInfo.category)"
         >
@@ -82,7 +83,7 @@ const findUrl = name => {
       <el-row
         style="padding: 1px"
         :id="groupInfo.category"
-        v-for="groupInfo in state.groupList"
+        v-for="groupInfo in groupList"
         :key="groupInfo.title"
       >
         <el-col

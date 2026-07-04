@@ -4,6 +4,7 @@ import io.crest.api.visualization.VisualizationWatermarkApi;
 import io.crest.api.visualization.request.VisualizationWatermarkRequest;
 import io.crest.api.visualization.vo.VisualizationWatermarkVO;
 import io.crest.utils.BeanUtils;
+import io.crest.utils.CrestPermissionUtils;
 import io.crest.visualization.dao.auto.entity.VisualizationWatermark;
 import io.crest.visualization.dao.auto.mapper.VisualizationWatermarkMapper;
 import jakarta.annotation.Resource;
@@ -33,6 +34,7 @@ public class VisualizationWatermarkService implements VisualizationWatermarkApi 
     @Override
     // 保存当前业务数据
     public void saveWatermarkInfo(VisualizationWatermarkRequest watermarkRequest) {
+        CrestPermissionUtils.requireAdmin();
         VisualizationWatermark watermark =  new VisualizationWatermark();
         BeanUtils.copyBean(watermark,watermarkRequest);
         watermark.setId(DEFAULT_ID);

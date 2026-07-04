@@ -439,7 +439,7 @@ onMounted(() => {
               </div>
             </el-tooltip>
           </el-radio>
-          <el-radio label="custom" v-if="showCustomAlign">
+          <el-radio value="custom" v-if="showCustomAlign">
             <el-tooltip effect="dark" placement="top">
               <template #content>
                 {{ t('commons.custom') }}
@@ -483,7 +483,7 @@ onMounted(() => {
           v-model="alignConfig.align"
           @change="changeTableCell('alignConfig')"
         >
-          <el-radio label="left">
+          <el-radio value="left">
             <el-tooltip effect="dark" placement="top">
               <template #content>
                 {{ t('chart.text_pos_left') }}
@@ -503,7 +503,7 @@ onMounted(() => {
               </div>
             </el-tooltip>
           </el-radio>
-          <el-radio label="center">
+          <el-radio value="center">
             <el-tooltip effect="dark" placement="top">
               <template #content>
                 {{ t('chart.text_pos_center') }}
@@ -523,7 +523,7 @@ onMounted(() => {
               </div>
             </el-tooltip>
           </el-radio>
-          <el-radio label="right">
+          <el-radio value="right">
             <el-tooltip effect="dark" placement="top">
               <template #content>
                 {{ t('chart.text_pos_right') }}

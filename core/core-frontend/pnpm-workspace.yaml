@@ -7,10 +7,23 @@ allowBuilds:
   vue-demi: true
 overrides:
   '@babel/core': 7.29.7
+  '@ctrl/tinycolor': 4.2.0
+  axios>form-data: 4.0.6
+  d3-color: ^3.1.0
+  debug: 4.4.3
   dompurify: 3.4.11
   esbuild: 0.28.1
+  exceljs>tmp: 0.2.7
+  exceljs>uuid: ^11.1.1
+  exceljs@4.4.0>tmp: 0.2.7
+  exceljs@4.4.0>uuid: ^11.1.1
+  fast-uri: 4.0.0
   form-data: 4.0.6
+  glob>inflight: npm:inflight-lru@^1.0.0
+  is-arrayish: 0.3.4
+  jspdf>dompurify: 3.4.11
   js-yaml: 4.2.0
   tmp: 0.2.7
+  uuid: ^11.1.1
 patchedDependencies:
-  tinymce@8.5.1: patches/tinymce@8.5.1.patch
+  element-plus-secondary@1.2.13: patches/element-plus-secondary@1.2.13.patch

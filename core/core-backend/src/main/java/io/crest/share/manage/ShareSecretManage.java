@@ -5,24 +5,50 @@ import io.crest.exception.CrestException;
 import io.crest.share.dao.auto.entity.CoreShare;
 import io.crest.share.dao.auto.mapper.CoreShareMapper;
 import jakarta.annotation.Resource;
-import lombok.Getter;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Base64;
+
 @Component("shareSecretManage")
 // 封装当前业务的持久化和查询逻辑
 public class ShareSecretManage {
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final Base64.Encoder BASE64_URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
 
-    @Getter
-    @Value("${crest.default-link-pwd:crest-link-pwd}")
-    private String defaultPwd;
+    @Value("${crest.default-link-pwd:}")
+    private String configuredFallbackLinkSecret;
 
+    @Value("${crest.crypto.aes-key:}")
+    private String aesKey;
+
+    @Value("${crest.security.token-secret:}")
+    private String tokenSecret;
+
+    private volatile String runtimeFallbackLinkSecret;
 
     @Resource
     private CoreShareMapper coreShareMapper;
+
+    public String getFallbackLinkSecret() {
+        if (StringUtils.isNotBlank(configuredFallbackLinkSecret)) {
+            return configuredFallbackLinkSecret;
+        }
+        if (StringUtils.isNotBlank(aesKey)) {
+            return deriveFallbackLinkSecret(aesKey);
+        }
+        if (StringUtils.isNotBlank(tokenSecret)) {
+            return deriveFallbackLinkSecret(tokenSecret);
+        }
+        return runtimeFallbackLinkSecret();
+    }
 
     public String getSecret(Long resourceId, Long uid) {
         QueryWrapper<CoreShare> queryWrapper = new QueryWrapper<>();
@@ -31,6 +57,31 @@ public class ShareSecretManage {
         CoreShare coreShare = coreShareMapper.selectOne(queryWrapper);
         if (ObjectUtils.isEmpty(coreShare)) CrestException.throwException("Share resource do not exist");
         String sharePwd = coreShare.getPwd();
-        return StringUtils.isNotBlank(sharePwd) ? sharePwd : defaultPwd;
+        return StringUtils.isNotBlank(sharePwd) ? sharePwd : getFallbackLinkSecret();
+    }
+
+    private String deriveFallbackLinkSecret(String source) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(("crest-link-token:" + source).getBytes(StandardCharsets.UTF_8));
+            return "crest-link-token:" + BASE64_URL_ENCODER.encodeToString(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm is not available", e);
+        }
+    }
+
+    private String runtimeFallbackLinkSecret() {
+        String current = runtimeFallbackLinkSecret;
+        if (StringUtils.isNotBlank(current)) {
+            return current;
+        }
+        synchronized (this) {
+            if (StringUtils.isBlank(runtimeFallbackLinkSecret)) {
+                byte[] secret = new byte[32];
+                SECURE_RANDOM.nextBytes(secret);
+                runtimeFallbackLinkSecret = "crest-link-token:" + BASE64_URL_ENCODER.encodeToString(secret);
+            }
+            return runtimeFallbackLinkSecret;
+        }
     }
 }

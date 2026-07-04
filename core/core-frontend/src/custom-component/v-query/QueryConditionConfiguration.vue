@@ -2676,7 +2676,7 @@ defineExpose({
           <div class="title flex-align-center">
             {{ t('v_query.chart_and_field') }}
             <el-radio-group class="ml-4 larger-radio" v-model="curComponent.auto">
-              <el-radio :disabled="!curComponent.auto" :label="true">
+              <el-radio :disabled="!curComponent.auto" :value="true">
                 <div class="flex-align-center">
                   {{ t('chart.margin_model_auto') }}
                   <el-tooltip effect="dark" placement="top">
@@ -2693,7 +2693,7 @@ defineExpose({
                   </el-tooltip>
                 </div>
               </el-radio>
-              <el-radio :label="false">{{ t('commons.custom') }}</el-radio>
+              <el-radio :value="false">{{ t('commons.custom') }}</el-radio>
             </el-radio-group>
           </div>
           <div class="select-all">
@@ -3143,7 +3143,7 @@ defineExpose({
               </div>
               <div class="value">
                 <el-radio-group class="larger-radio icon-info" v-model="curComponent.resultMode">
-                  <el-radio :label="0"
+                  <el-radio :value="0"
                     >{{ t('login.default_login') }}
                     <el-tooltip effect="dark" :content="t('common.up_to_options')" placement="top">
                       <el-icon style="margin-left: 4px; color: #646a73">
@@ -3153,7 +3153,7 @@ defineExpose({
                       </el-icon> </el-tooltip
                   ></el-radio>
 
-                  <el-radio :label="1">{{ t('chart.result_mode_all') }}</el-radio>
+                  <el-radio :value="1">{{ t('chart.result_mode_all') }}</el-radio>
                 </el-radio-group>
               </div>
             </div>
@@ -3294,11 +3294,11 @@ defineExpose({
                     @change="handleValueSourceChange"
                     v-model="curComponent.optionValueSource"
                   >
-                    <el-radio :disabled="!!curComponent.parameters.length" :label="0">{{
+                    <el-radio :disabled="!!curComponent.parameters.length" :value="0">{{
                       t('chart.margin_model_auto')
                     }}</el-radio>
-                    <el-radio :label="1">{{ t('chart.select_dataset') }}</el-radio>
-                    <el-radio :label="2">{{ t('v_query.manual_input') }}</el-radio>
+                    <el-radio :value="1">{{ t('chart.select_dataset') }}</el-radio>
+                    <el-radio :value="2">{{ t('v_query.manual_input') }}</el-radio>
                   </el-radio-group>
                 </div>
                 <template v-if="curComponent.optionValueSource === 1">
@@ -3623,8 +3623,8 @@ defineExpose({
                     class="larger-radio icon-info"
                     v-model="curComponent.displayFormat"
                   >
-                    <el-radio :label="0">{{ t('common.dropdown_display') }} </el-radio>
-                    <el-radio :label="1">{{ t('common.tile_display') }}</el-radio>
+                    <el-radio :value="0">{{ t('common.dropdown_display') }} </el-radio>
+                    <el-radio :value="1">{{ t('common.tile_display') }}</el-radio>
                   </el-radio-group>
                 </div>
               </template>
@@ -3637,7 +3637,7 @@ defineExpose({
               </div>
               <div class="value" style="margin-top: 10.5px">
                 <el-radio-group class="larger-radio icon-info" v-model="curComponent.resultMode">
-                  <el-radio :label="0"
+                  <el-radio :value="0"
                     >{{ t('chart.default') }}
                     <el-tooltip effect="dark" :content="t('common.up_to_options')" placement="top">
                       <el-icon style="margin-left: 4px; color: #646a73">
@@ -3646,7 +3646,7 @@ defineExpose({
                         /></icon>
                       </el-icon> </el-tooltip
                   ></el-radio>
-                  <el-radio :label="1">{{ t('data_set.all') }}</el-radio>
+                  <el-radio :value="1">{{ t('data_set.all') }}</el-radio>
                 </el-radio-group>
               </div>
             </div>
@@ -3657,11 +3657,11 @@ defineExpose({
               <div class="value">
                 <div class="value">
                   <el-radio-group class="larger-radio" v-model="curComponent.conditionType">
-                    <el-radio :label="0">{{ t('v_query.single_condition') }}</el-radio>
-                    <el-radio :label="1" :disabled="!!curComponent.parameters.length">{{
+                    <el-radio :value="0">{{ t('v_query.single_condition') }}</el-radio>
+                    <el-radio :value="1" :disabled="!!curComponent.parameters.length">{{
                       t('v_query.with_condition')
                     }}</el-radio>
-                    <el-radio :label="2" :disabled="!!curComponent.parameters.length">{{
+                    <el-radio :value="2" :disabled="!!curComponent.parameters.length">{{
                       t('v_query.or_condition')
                     }}</el-radio>
                   </el-radio-group>
@@ -3710,9 +3710,9 @@ defineExpose({
     <el-form label-position="top">
       <el-form-item :label="t('v_query.time_type')" class="form-item" prop="name">
         <el-radio-group v-model="timeParameterType">
-          <el-radio :label="0">{{ t('data_set.time') }}</el-radio>
-          <el-radio :label="1">{{ t('datasource.start_time') }}</el-radio>
-          <el-radio :label="2">{{ t('datasource.end_time') }}</el-radio>
+          <el-radio :value="0">{{ t('data_set.time') }}</el-radio>
+          <el-radio :value="1">{{ t('datasource.start_time') }}</el-radio>
+          <el-radio :value="2">{{ t('datasource.end_time') }}</el-radio>
         </el-radio-group>
       </el-form-item>
     </el-form>
@@ -3725,9 +3725,9 @@ defineExpose({
     <el-form label-position="top">
       <el-form-item :label="t('chart.map_line_type')" class="form-item" prop="name">
         <el-radio-group v-model="numParameterType">
-          <el-radio :label="0">{{ t('chart.value_formatter_value') }}</el-radio>
-          <el-radio :label="1">{{ t('chart.min') }}</el-radio>
-          <el-radio :label="2">{{ t('chart.max') }}</el-radio>
+          <el-radio :value="0">{{ t('chart.value_formatter_value') }}</el-radio>
+          <el-radio :value="1">{{ t('chart.min') }}</el-radio>
+          <el-radio :value="2">{{ t('chart.max') }}</el-radio>
         </el-radio-group>
       </el-form-item>
     </el-form>

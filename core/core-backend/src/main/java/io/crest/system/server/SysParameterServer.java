@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -114,7 +115,12 @@ public class SysParameterServer implements SysParameterApi {
     // 查询自定义国际化选项
     @Override
     public Map<String, String> i18nOptions() {
-        File dir = new File(StaticResourceConstants.I18N_DIR);
+        Path home = Path.of(StaticResourceConstants.USER_HOME).toAbsolutePath().normalize();
+        Path i18nPath = home.resolve("i18n").resolve("front").normalize();
+        if (!i18nPath.startsWith(home)) {
+            return null;
+        }
+        File dir = i18nPath.toFile();
         File[] files = null;
         if (!dir.exists() || ObjectUtils.isEmpty(files = dir.listFiles())) {
             return null;
@@ -159,6 +165,7 @@ public class SysParameterServer implements SysParameterApi {
     @Override
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA)
     public void saveSqlBotConfig(SQLBotConfigCreator creator) {
+        CrestPermissionUtils.requireAdmin();
         assertFullModeFeature();
         sysParameterManage.saveSqlBotConfig(creator);
     }

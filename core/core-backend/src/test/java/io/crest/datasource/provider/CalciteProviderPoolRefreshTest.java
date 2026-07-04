@@ -10,6 +10,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.sql.Connection;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -43,7 +44,9 @@ class CalciteProviderPoolRefreshTest {
 
         provider.updateDsPoolAfterCheckStatus(datasource);
 
-        Connection connection = (Connection) ReflectionTestUtils.getField(provider, "connection");
-        assertThat(connection).isNotNull();
+        Object connectionRef = ReflectionTestUtils.getField(provider, "calciteConnectionRef");
+        assertThat(connectionRef).isNotNull();
+        assertThat(connectionRef).isInstanceOf(AtomicReference.class);
+        assertThat(((AtomicReference<?>) connectionRef).get()).isInstanceOf(Connection.class);
     }
 }

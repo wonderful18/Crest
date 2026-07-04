@@ -14,23 +14,32 @@ const getDynamicRangeTime = (type: number, selectValue: any, timeGranularityMult
 
   if ('datetimerange' === timeGranularityMultiple || type === 1 || !timeType) {
     // 日期时间范围和单日期组件保留用户选择的精确时间。
-    return selectValue.map(ele => +new Date(ele))
+    return selectValue.filter(hasFilterValue).map(ele => +new Date(ele))
   }
 
   if (timeGranularityMultiple.includes('range') && type === 7) {
     // 年/月/日范围需要扩展到对应粒度的完整起止时间。
-    return [
-      +new Date(
-        dayjs(selectValue[0])
-          .startOf(timeType as 'month' | 'year' | 'date')
-          .format('YYYY/MM/DD HH:mm:ss')
-      ),
-      +new Date(
-        dayjs(selectValue[1])
-          .endOf(timeType as 'month' | 'year' | 'date')
-          .format('YYYY/MM/DD HH:mm:ss')
+    const [start, end] = selectValue
+    const result = []
+    if (hasFilterValue(start)) {
+      result.push(
+        +new Date(
+          dayjs(start)
+            .startOf(timeType as 'month' | 'year' | 'date')
+            .format('YYYY/MM/DD HH:mm:ss')
+        )
       )
-    ]
+    }
+    if (hasFilterValue(end)) {
+      result.push(
+        +new Date(
+          dayjs(end)
+            .endOf(timeType as 'month' | 'year' | 'date')
+            .format('YYYY/MM/DD HH:mm:ss')
+        )
+      )
+    }
+    return result
   }
 
   const [start] = selectValue
@@ -326,6 +335,25 @@ const getOperator = (
   return [1, 7].includes(+displayType) ? 'between' : 'in'
 }
 
+const hasFilterValue = value => value !== '' && value !== null && value !== undefined
+
+// 时间范围只填写单侧时，转为大于等于或小于等于查询。
+const getTimeRangeOperator = selectValue => {
+  if (!Array.isArray(selectValue)) {
+    return 'between'
+  }
+  const [start, end] = selectValue
+  const hasStart = hasFilterValue(start)
+  const hasEnd = hasFilterValue(end)
+  if (hasStart && !hasEnd) {
+    return 'ge'
+  }
+  if (!hasStart && hasEnd) {
+    return 'le'
+  }
+  return 'between'
+}
+
 // 根据字段 ID 对参数数组去重，保留每个字段最后一次出现的参数配置。
 const duplicateRemoval = arr => {
   const objList = []
@@ -524,7 +552,7 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
               timeGranularity,
               timeGranularityMultiple
             )
-            const operator = getOperator(
+            let operator = getOperator(
               displayType,
               multiple,
               conditionType,
@@ -538,6 +566,9 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
               conditionValueS,
               firstLoad
             )
+            if ([1, 7].includes(+displayType) && Array.isArray(selectValue)) {
+              operator = getTimeRangeOperator(selectValue)
+            }
             if (result?.length) {
               let fieldId = item.checkedFieldsMap[curComponentId]
               if (isTree) {
@@ -560,33 +591,44 @@ export const searchQuery = (queryComponentList, filter, curComponentId, firstLoa
                 const endTimeFieldId = item.checkedFieldsMapArr?.[curComponentId].find(
                   element => element !== fieldId
                 )
-                const resultEnd = Array(2).fill(
-                  endTimeFieldId === item.checkedFieldsMapEnd[curComponentId]
-                    ? result[1]
-                    : result[0]
-                )
-                result = Array(2).fill(
-                  endTimeFieldId === item.checkedFieldsMapEnd[curComponentId]
-                    ? result[0]
-                    : result[1]
-                )
-                parametersFilter = duplicateRemoval(
-                  item.parametersArr[curComponentId].filter(e => e.id === fieldId)
-                )
+                if ([1, 7].includes(+displayType) && operator !== 'between') {
+                  const mappedEndFieldId = item.checkedFieldsMapEnd[curComponentId]
+                  const startTimeFieldId = fieldId === mappedEndFieldId ? endTimeFieldId : fieldId
+                  const targetFieldId = operator === 'le' ? mappedEndFieldId : startTimeFieldId
+                  parametersFilter = duplicateRemoval(
+                    item.parametersArr[curComponentId].filter(e => e.id === targetFieldId)
+                  )
+                  fieldId = targetFieldId
+                  result = [result[0]]
+                } else {
+                  const resultEnd = Array(2).fill(
+                    endTimeFieldId === item.checkedFieldsMapEnd[curComponentId]
+                      ? result[1]
+                      : result[0]
+                  )
+                  result = Array(2).fill(
+                    endTimeFieldId === item.checkedFieldsMapEnd[curComponentId]
+                      ? result[0]
+                      : result[1]
+                  )
+                  parametersFilter = duplicateRemoval(
+                    item.parametersArr[curComponentId].filter(e => e.id === fieldId)
+                  )
 
-                const parametersFilterEnd = duplicateRemoval(
-                  item.parametersArr[curComponentId].filter(e => e.id === endTimeFieldId)
-                )
-                filter.push({
-                  filterId: id,
-                  componentId: ele.id,
-                  fieldId: endTimeFieldId,
-                  arrayType: 'END',
-                  operator,
-                  value: resultEnd,
-                  parameters: parametersFilterEnd,
-                  isTree
-                })
+                  const parametersFilterEnd = duplicateRemoval(
+                    item.parametersArr[curComponentId].filter(e => e.id === endTimeFieldId)
+                  )
+                  filter.push({
+                    filterId: id,
+                    componentId: ele.id,
+                    fieldId: endTimeFieldId,
+                    arrayType: 'END',
+                    operator,
+                    value: resultEnd,
+                    parameters: parametersFilterEnd,
+                    isTree
+                  })
+                }
               }
 
               if (item.checkedFieldsMapArrNum?.[curComponentId]?.length) {

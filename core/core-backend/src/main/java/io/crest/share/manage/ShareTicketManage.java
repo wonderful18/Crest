@@ -18,6 +18,7 @@ import io.crest.share.dao.ext.mapper.ShareExtMapper;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.BeanUtils;
 import io.crest.utils.CommonBeanFactory;
+import io.crest.utils.CrestPermissionUtils;
 import io.crest.utils.IDUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
@@ -54,11 +55,16 @@ public class ShareTicketManage {
     // 保存或更新分享访问口令
     @Transactional
     public String saveTicket(TicketCreator creator) {
+        if (creator == null) {
+            CrestException.throwException("票据信息不能为空");
+        }
         String ticket = creator.getTicket();
         validateTicket(ticket);
         if (StringUtils.isNotBlank(ticket)) {
             CoreShareTicket ticketEntity = getByTicket(ticket);
             if (ObjectUtils.isNotEmpty(ticketEntity)) {
+                String targetUuid = StringUtils.defaultIfBlank(creator.getUuid(), ticketEntity.getUuid());
+                requireShareAccessByUuid(targetUuid);
                 if (creator.isGenerateNew()) {
                     ticketEntity.setAccessTime(null);
                     ticketEntity.setTicket(CodingUtil.shortUuid());
@@ -68,7 +74,7 @@ public class ShareTicketManage {
                 }
                 ticketEntity.setArgs(creator.getArgs());
                 ticketEntity.setExp(creator.getExp());
-                ticketEntity.setUuid(creator.getUuid());
+                ticketEntity.setUuid(targetUuid);
                 coreShareTicketMapper.deleteById(ticketEntity);
                 coreShareTicketMapper.insert(ticketEntity);
                 return ticketEntity.getTicket();
@@ -77,6 +83,7 @@ public class ShareTicketManage {
         if (StringUtils.isBlank(ticket)) {
             ticket = CodingUtil.shortUuid();
         }
+        requireShareAccessByUuid(creator.getUuid());
         CoreShareTicket linkTicket = new CoreShareTicket();
         linkTicket.setId(IDUtils.snowID());
         linkTicket.setTicket(ticket);
@@ -110,10 +117,14 @@ public class ShareTicketManage {
 
     // 删除指定分享口令
     public void deleteTicket(TicketDelRequest request) {
+        if (request == null) {
+            CrestException.throwException("ticket为必填参数");
+        }
         String ticket = request.getTicket();
         if (StringUtils.isBlank(ticket)) {
             CrestException.throwException("ticket为必填参数");
         }
+        requireTicketAccess(ticket);
         QueryWrapper<CoreShareTicket> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("ticket", ticket);
         coreShareTicketMapper.delete(queryWrapper);
@@ -121,12 +132,27 @@ public class ShareTicketManage {
 
     // 切换分享是否需要口令
     public void switchRequire(TicketSwitchRequest request) {
+        if (request == null) {
+            CrestException.throwException("资源ID不能为空");
+        }
         String resourceId = request.getResourceId();
         Boolean require = request.getRequire();
+        if (StringUtils.isBlank(resourceId)) {
+            CrestException.throwException("资源ID不能为空");
+        }
         QueryWrapper<CoreShare> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("resource_id", resourceId);
-        queryWrapper.eq("creator", AuthUtils.getUser().getUserId());
+        if (!CrestPermissionUtils.currentUserIsAdmin()) {
+            Long uid = CrestPermissionUtils.currentUserId();
+            if (uid == null) {
+                CrestException.throwException("分享资源不存在或无访问权限");
+            }
+            queryWrapper.eq("creator", uid);
+        }
         CoreShare coreShare = coreShareMapper.selectOne(queryWrapper);
+        if (ObjectUtils.isEmpty(coreShare)) {
+            CrestException.throwException("分享资源不存在或无访问权限");
+        }
         coreShare.setTicketRequire(require);
         coreShareMapper.updateById(coreShare);
     }
@@ -212,5 +238,31 @@ public class ShareTicketManage {
         QueryWrapper<CoreShareTicket> ticketQueryWrapper = new QueryWrapper<>();
         ticketQueryWrapper.eq("uuid", uuid);
         return coreShareTicketMapper.selectCount(ticketQueryWrapper);
+    }
+
+    private CoreShareTicket requireTicketAccess(String ticket) {
+        CoreShareTicket ticketEntity = getByTicket(ticket);
+        if (ObjectUtils.isEmpty(ticketEntity)) {
+            CrestException.throwException("票据不存在或无访问权限");
+        }
+        requireShareAccessByUuid(ticketEntity.getUuid());
+        return ticketEntity;
+    }
+
+    private CoreShare requireShareAccessByUuid(String uuid) {
+        if (StringUtils.isBlank(uuid)) {
+            CrestException.throwException("分享标识不能为空");
+        }
+        QueryWrapper<CoreShare> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("uuid", uuid);
+        CoreShare share = coreShareMapper.selectOne(queryWrapper);
+        if (ObjectUtils.isEmpty(share)) {
+            CrestException.throwException("分享资源不存在或无访问权限");
+        }
+        Long uid = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
+        if (!CrestPermissionUtils.currentUserIsAdmin() && !Objects.equals(share.getCreator(), uid)) {
+            CrestException.throwException("分享资源不存在或无访问权限");
+        }
+        return share;
     }
 }

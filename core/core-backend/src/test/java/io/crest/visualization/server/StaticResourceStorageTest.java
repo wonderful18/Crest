@@ -1,18 +1,23 @@
 package io.crest.visualization.server;
 
 import io.crest.api.visualization.request.StaticResourceRequest;
+import io.crest.api.visualization.request.DataVisualizationBaseRequest;
+import io.crest.exception.CrestException;
 import io.crest.storage.LocalStorageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class StaticResourceStorageTest {
 
@@ -48,17 +53,62 @@ class StaticResourceStorageTest {
     @Test
     @DisplayName("模板文件应接受 .crest 后缀")
     void crestTemplateFileExtensionShouldBeAcceptedCaseInsensitively() {
-        assertThat(DataVisualizationServer.isCrestTemplateFile("sales.crest")).isTrue();
-        assertThat(DataVisualizationServer.isCrestTemplateFile("sales.CREST")).isTrue();
+        assertThat(DataVisualizationServer.isSupportedTemplateFile("sales.crest")).isTrue();
+        assertThat(DataVisualizationServer.isSupportedTemplateFile("sales.CREST")).isTrue();
     }
 
     @Test
-    @DisplayName("模板文件应拒绝旧后缀")
-    void legacyTemplateFileExtensionsShouldBeRejected() {
-        assertThat(DataVisualizationServer.isCrestTemplateFile("sales.DET2")).isFalse();
-        assertThat(DataVisualizationServer.isCrestTemplateFile("sales.DET2APP")).isFalse();
-        assertThat(DataVisualizationServer.isCrestTemplateFile("sales.json")).isFalse();
-        assertThat(DataVisualizationServer.isCrestTemplateFile(null)).isFalse();
+    @DisplayName("模板导入应兼容旧模板后缀")
+    void legacyTemplateFileExtensionsShouldBeAcceptedForImportCompatibility() {
+        assertThat(DataVisualizationServer.isSupportedTemplateFile("sales.DET2")).isTrue();
+        assertThat(DataVisualizationServer.isSupportedTemplateFile("sales.DET2APP")).isTrue();
+        assertThat(DataVisualizationServer.isSupportedTemplateFile("sales.json")).isFalse();
+        assertThat(DataVisualizationServer.isSupportedTemplateFile(null)).isFalse();
+    }
+
+    @Test
+    @DisplayName("模板导入应拒绝非法文件名")
+    void templateImportShouldRejectUnsafeFilename() {
+        DataVisualizationServer server = new DataVisualizationServer();
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "../sales.crest",
+                "application/json",
+                templateJson().getBytes(StandardCharsets.UTF_8)
+        );
+
+        assertThrows(CrestException.class, () -> parseLocalTemplate(server, file));
+    }
+
+    @Test
+    @DisplayName("模板导入应兼容旧 DET2 文件")
+    void templateImportShouldAcceptLegacyDet2File() throws Exception {
+        DataVisualizationServer server = new DataVisualizationServer();
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "sales.DET2",
+                "application/json",
+                templateJson().getBytes(StandardCharsets.UTF_8)
+        );
+
+        DataVisualizationBaseRequest request = parseLocalTemplate(server, file);
+
+        assertThat(request.getName()).isEqualTo("sales");
+        assertThat(request.getType()).isEqualTo("dataV");
+    }
+
+    @Test
+    @DisplayName("模板导入应拒绝空文件")
+    void templateImportShouldRejectEmptyFile() {
+        DataVisualizationServer server = new DataVisualizationServer();
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "sales.crest",
+                "application/json",
+                new byte[0]
+        );
+
+        assertThrows(CrestException.class, () -> parseLocalTemplate(server, file));
     }
 
     private StaticResourceServer staticResourceServer() {
@@ -66,5 +116,23 @@ class StaticResourceStorageTest {
         ReflectionTestUtils.setField(server, "staticDir", tempDir.toString());
         ReflectionTestUtils.setField(server, "storageService", new LocalStorageService());
         return server;
+    }
+
+    private DataVisualizationBaseRequest parseLocalTemplate(DataVisualizationServer server, MockMultipartFile file) {
+        return ReflectionTestUtils.invokeMethod(server, "parseLocalTemplate", file);
+    }
+
+    private String templateJson() {
+        return """
+                {
+                  "name": "sales",
+                  "dvType": "dataV",
+                  "version": 3,
+                  "canvasStyleData": "{}",
+                  "componentData": "[]",
+                  "dynamicData": "{}",
+                  "staticResource": "{}"
+                }
+                """;
     }
 }

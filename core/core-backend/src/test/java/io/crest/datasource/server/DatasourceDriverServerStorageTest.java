@@ -4,8 +4,11 @@ import io.crest.datasource.dao.auto.entity.CoreDriver;
 import io.crest.datasource.dao.auto.entity.CoreDriverJar;
 import io.crest.datasource.dao.auto.mapper.CoreDriverJarMapper;
 import io.crest.datasource.dao.auto.mapper.CoreDriverMapper;
+import io.crest.auth.bo.TokenUserBO;
 import io.crest.storage.LocalStorageService;
+import io.crest.utils.AuthUtils;
 import io.crest.utils.Md5Utils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -28,9 +31,15 @@ class DatasourceDriverServerStorageTest {
     @TempDir
     Path tempDir;
 
+    @AfterEach
+    void tearDown() {
+        AuthUtils.remove();
+    }
+
     @Test
     @DisplayName("驱动上传应通过存储服务写入共享目录")
     void uploadJarShouldWriteDriverJarToStorageService() throws Exception {
+        AuthUtils.setUser(new TokenUserBO(1L, 1L));
         DatasourceDriverServer server = server();
         CoreDriverMapper driverMapper = driverMapper(server);
         CoreDriverJarMapper jarMapper = jarMapper(server);
@@ -53,6 +62,7 @@ class DatasourceDriverServerStorageTest {
     @Test
     @DisplayName("驱动删除应通过存储服务移除共享目录文件")
     void deleteDriverJarShouldRemoveDriverJarFromStorageService() throws Exception {
+        AuthUtils.setUser(new TokenUserBO(1L, 1L));
         DatasourceDriverServer server = server();
         CoreDriverJarMapper jarMapper = jarMapper(server);
         Path driverDir = Files.createDirectories(tempDir.resolve("12"));

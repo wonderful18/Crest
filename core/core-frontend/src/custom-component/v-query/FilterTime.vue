@@ -326,7 +326,7 @@ watch(
       <div class="setting-content">
         <div class="setting">
           <el-radio-group v-model="timeRange.intervalType">
-            <el-radio v-for="ele in intervalTypeList" :key="ele.value" :label="ele.value">{{
+            <el-radio v-for="ele in intervalTypeList" :key="ele.value" :value="ele.value">{{
               ele.label
             }}</el-radio>
           </el-radio-group>

@@ -1,0 +1,42 @@
+diff --git a/es/components/cascader-panel/src/node2.mjs b/es/components/cascader-panel/src/node2.mjs
+index a7ce29dfdca70f58c338838424d0c16fb20cd8af..d010aa0b16ff7fc87003b0070c712fff611469be 100644
+--- a/es/components/cascader-panel/src/node2.mjs
++++ b/es/components/cascader-panel/src/node2.mjs
+@@ -162,6 +162,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+     }, null, 8, ["model-value", "indeterminate", "disabled", "onClick", "onUpdate:modelValue"])) : _ctx.checkStrictly ? (openBlock(), createBlock(_component_el_radio, {
+       key: 1,
+       "model-value": _ctx.checkedNodeId,
++      value: _ctx.node.uid,
+       label: _ctx.node.uid,
+       disabled: _ctx.isDisabled,
+       "onUpdate:modelValue": _ctx.handleSelectCheck,
+@@ -173,7 +174,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+         createElementVNode("span")
+       ]),
+       _: 1
+-    }, 8, ["model-value", "label", "disabled", "onUpdate:modelValue", "onClick"])) : createCommentVNode("v-if", true),
++    }, 8, ["model-value", "value", "label", "disabled", "onUpdate:modelValue", "onClick"])) : createCommentVNode("v-if", true),
+     createCommentVNode(" content "),
+     createVNode(_component_node_content),
+     _ctx.isLeaf && _ctx.node.checked ? (openBlock(), createBlock(_component_el_icon, {
+diff --git a/lib/components/cascader-panel/src/node2.js b/lib/components/cascader-panel/src/node2.js
+index 06725243e9296caff7ff67baebb1342b035e9bf8..9cdbd36e588716903937322cfe1d19bc941966a8 100644
+--- a/lib/components/cascader-panel/src/node2.js
++++ b/lib/components/cascader-panel/src/node2.js
+@@ -166,6 +166,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+     }, null, 8, ["model-value", "indeterminate", "disabled", "onClick", "onUpdate:modelValue"])) : _ctx.checkStrictly ? (vue.openBlock(), vue.createBlock(_component_el_radio, {
+       key: 1,
+       "model-value": _ctx.checkedNodeId,
++      value: _ctx.node.uid,
+       label: _ctx.node.uid,
+       disabled: _ctx.isDisabled,
+       "onUpdate:modelValue": _ctx.handleSelectCheck,
+@@ -177,7 +178,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+         vue.createElementVNode("span")
+       ]),
+       _: 1
+-    }, 8, ["model-value", "label", "disabled", "onUpdate:modelValue", "onClick"])) : vue.createCommentVNode("v-if", true),
++    }, 8, ["model-value", "value", "label", "disabled", "onUpdate:modelValue", "onClick"])) : vue.createCommentVNode("v-if", true),
+     vue.createCommentVNode(" content "),
+     vue.createVNode(_component_node_content),
+     _ctx.isLeaf && _ctx.node.checked ? (vue.openBlock(), vue.createBlock(_component_el_icon, {

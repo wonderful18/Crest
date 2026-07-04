@@ -6,9 +6,9 @@
 
 如果由 DBA 先手工初始化空系统库，并关闭服务端自动迁移，可执行对应数据库类型的一次性空库初始化 SQL：
 
-- MySQL：`v2.0.3_full_schema_mysql.sql`
-- OceanBase MySQL 模式：`v2.0.3_full_schema_ob_mysql.sql`
-- OceanBase Oracle 模式：`v2.0.3_full_schema_ob_oracle.sql`
+- MySQL：`v2.1.0_full_schema_mysql.sql`
+- OceanBase MySQL 模式：`v2.1.0_full_schema_ob_mysql.sql`
+- OceanBase Oracle 模式：`v2.1.0_full_schema_ob_oracle.sql`
 
 一次性空库初始化 SQL 只适用于新建系统库。已有系统库升级时不要执行这些完整建库 SQL，应执行对应源版本到目标版本的增量 SQL。
 
@@ -52,3 +52,19 @@ OceanBase MySQL 租户执行文件名带 `ob_mysql` 的脚本。OceanBase Oracle
 - OceanBase Oracle 模式：`v2.0.1_to_v2.0.2_metadata_names_ob_oracle.sql`、`v2.0.1_to_v2.0.2_rotate_default_crypto_key_ob_oracle.sql`
 
 2.0.2 升级到 2.0.3 时没有新增数据库升级 SQL，替换前后端应用镜像即可。
+
+1.5.14 升级到 2.1.0 时，MySQL 环境在离线包根目录执行 `mysql --commands=ON -u<user> -p <crest_database> < upgrade-sql/v1.5.14_to_v2.1.0_mysql.sql`。该入口脚本会先检查 v1.5.14 元数据表，再按顺序调用已有 2.0.x 增量脚本和 `v2.0.3_to_v2.1.0_mysql.sql`。不要对已有 v1.5.14 系统库执行 full schema 文件。
+
+2.0.3 升级到 2.1.0 时，按数据库类型选择对应脚本：
+
+- MySQL：`v2.0.3_to_v2.1.0_mysql.sql`
+- OceanBase MySQL 模式：`v2.0.3_to_v2.1.0_ob_mysql.sql`
+- OceanBase Oracle 模式：`v2.0.3_to_v2.1.0_ob_oracle.sql`
+
+升级后应启动目标版本服务并检查登录、数据源、数据集、图表、大屏、模板、分享链接和后台日志。若升级脚本失败或升级后核心功能不可用，应停止目标版本服务，恢复升级前系统库和运行目录，再启动原版本服务。不要在部分升级成功的系统库上执行 full schema 或跳过失败步骤继续启动服务。
+
+已知限制：
+
+- `v1.5.14 -> v2.1.0` 仅提供 MySQL 系统库升级入口。
+- OceanBase MySQL 和 OceanBase Oracle 系统库支持 `v2.0.3 -> v2.1.0` 升级与 v2.1.0 新装初始化。
+- 自定义数据源驱动、第三方插件和现场部署脚本应在测试环境完成兼容性验证后再升级生产环境。

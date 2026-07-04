@@ -2,6 +2,7 @@ package io.crest.auth.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.crest.utils.CommonBeanFactory;
+import io.crest.utils.FileUtils;
 import io.crest.utils.LogUtil;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -28,6 +29,7 @@ import java.util.UUID;
 public class SubstituleLoginConfig {
     private static final String PWD_KEY = "pwd";
     private static final String TOKEN_SECRET_KEY = "tokenSecret";
+    private static final String DEFAULT_PWD_PROPERTY = "crest.default-pwd";
     private static final String TOKEN_SECRET_PROPERTY = "crest.security.token-secret";
 
     @Value("${crest.path.substitule:classpath:substitule.json}")
@@ -47,13 +49,13 @@ public class SubstituleLoginConfig {
      */
     public Map<String, Object> substituleLoginData(ResourceLoader resourceLoader) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
-        File jsonFile = new File(jsonFilePath);
+        File jsonFile = resolveConfigFile(jsonFilePath);
         Map<String, Object> data = jsonFile.exists() ? objectMapper.readValue(jsonFile, Map.class) : new HashMap<>();
         boolean updated = false;
-        String configuredPwd = CommonBeanFactory.getBean(Environment.class).getProperty("crest.default-pwd", "admin");
+        String configuredInitialPassword = configuredInitialPassword();
         pwd = readString(data, PWD_KEY);
         if (StringUtils.isBlank(pwd)) {
-            pwd = configuredPwd;
+            pwd = StringUtils.defaultIfBlank(configuredInitialPassword, generateSecret());
             data.put(PWD_KEY, pwd);
             updated = true;
         }
@@ -102,7 +104,7 @@ public class SubstituleLoginConfig {
                 tokenSecretExternal = true;
             }
             if (StringUtils.isBlank(pwd)) {
-                pwd = CommonBeanFactory.getBean(Environment.class).getProperty("crest.default-pwd", "admin");
+                pwd = StringUtils.defaultIfBlank(configuredInitialPassword(), generateSecret());
             }
             return pwd;
         }
@@ -130,9 +132,15 @@ public class SubstituleLoginConfig {
      */
     public void modifyPwd(String pwd) {
         ObjectMapper objectMapper = new ObjectMapper();
-        File file = new File(jsonFilePath);
+        File file = null;
         Map<String, String> myObject = new HashMap<>();
         String fileTokenSecret = null;
+        try {
+            file = resolveConfigFile(jsonFilePath);
+        } catch (IOException e) {
+            LogUtil.error(e.getCause(), new Throwable(e));
+            return;
+        }
         if (file.exists()) {
             try {
                 fileTokenSecret = readString(objectMapper.readValue(file, Map.class), TOKEN_SECRET_KEY);
@@ -159,9 +167,20 @@ public class SubstituleLoginConfig {
      */
     private static void writeConfig(File file, Map<?, ?> config) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
+        File parent = file.getParentFile();
+        if (parent != null) {
+            FileUtils.ensureDirectory(parent.getPath());
+        }
         try (FileOutputStream fos = new FileOutputStream(file)) {
             mapper.writeValue(fos, config);
         }
+    }
+
+    private static File resolveConfigFile(String path) throws IOException {
+        if (StringUtils.isBlank(path) || path.indexOf('\0') >= 0) {
+            throw new IOException("invalid substitule config path");
+        }
+        return new File(path).getCanonicalFile();
     }
 
     /**
@@ -179,6 +198,11 @@ public class SubstituleLoginConfig {
         }
         return StringUtils.defaultIfBlank(environment.getProperty(TOKEN_SECRET_PROPERTY),
                 environment.getProperty("CREST_TOKEN_SECRET"));
+    }
+
+    private static String configuredInitialPassword() {
+        Environment environment = CommonBeanFactory.getBean(Environment.class);
+        return environment == null ? null : StringUtils.trimToNull(environment.getProperty(DEFAULT_PWD_PROPERTY));
     }
 
     /**

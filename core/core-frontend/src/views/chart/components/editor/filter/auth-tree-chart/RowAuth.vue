@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import AuthTree from './AuthTree.vue'
+import { normalizeDynamicDateFilterRule } from './dynamicDateFilterRule.mjs'
 
 const { t } = useI18n()
 
@@ -239,11 +240,22 @@ const dfsSubmit = arr => {
         name,
         timeValue
       } = ele
-      errorDetected({
+      const normalized = normalizeDynamicDateFilterRule({
         fieldType,
         enumValue,
         filterType,
         term,
+        value,
+        name,
+        timeValue,
+        filterTypeTime,
+        dynamicTimeSetting
+      })
+      errorDetected({
+        fieldType,
+        enumValue,
+        filterType,
+        term: normalized.term,
         value,
         name,
         timeValue,
@@ -257,7 +269,7 @@ const dfsSubmit = arr => {
           filterType,
           filterTypeTime,
           dynamicTimeSetting,
-          term,
+          term: normalized.term,
           timeType,
           value,
           type: 'item',

@@ -2,6 +2,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { formatterItem, valueFormatter } from '@/views/chart/components/js/formatter'
 import {
   bindTableCopyEvents,
+  bindHeaderSortInteraction,
   configAuxiliaryHeaderLayout,
   configEmptyDataStyle,
   configTableCopyInteraction,
@@ -40,6 +41,10 @@ import {
   isTableSeriesNumberCell,
   isTableSeriesNumberNode
 } from '@/views/chart/components/js/panel/common/tableSeriesNumber.mjs'
+import {
+  appendSummaryColumnsToS2Config,
+  buildSummaryRowWithColumns
+} from '@/views/chart/components/js/panel/common/tableSummaryColumns.mjs'
 
 const { t } = useI18n()
 /**
@@ -194,6 +199,7 @@ export class TableNormal extends S2ChartView<TableSheet> {
       meta: meta,
       data: newData
     }
+    appendSummaryColumnsToS2Config(s2DataConfig, basicStyle.summaryColumns)
 
     // options
     const s2Options: S2Options = {
@@ -255,6 +261,7 @@ export class TableNormal extends S2ChartView<TableSheet> {
     this.configSummaryRowAndIndex(chart, pageInfo, s2Options, s2DataConfig)
     // 开始渲染
     const newChart = new TableSheet(containerDom, s2DataConfig, s2Options)
+    bindHeaderSortInteraction(newChart, tableHeader.tableHeaderSort)
     // 总计紧贴在单元格后面
     summaryRowStyle(newChart, newData, tableCell, tableHeader, basicStyle.showSummary)
     // 自适应铺满
@@ -421,12 +428,17 @@ export class TableNormal extends S2ChartView<TableSheet> {
       s2Options.style.rowCfg = { heightByField }
       // 计算汇总加入到数据里，冻结最后一行
       s2Options.frozenTrailingRowCount = 1
-      const summaryObj = getSummaryRow(
+      let summaryObj = getSummaryRow(
         data,
         yAxis,
         basicStyle.seriesSummary,
         chart.data.customSumResult
       ) as any
+      summaryObj = buildSummaryRowWithColumns(
+        summaryObj,
+        basicStyle.summaryColumns,
+        chart.data.summaryColumnResult
+      )
       data.push(summaryObj)
     }
     s2Options.dataCell = (viewMeta, spreadsheet) => {

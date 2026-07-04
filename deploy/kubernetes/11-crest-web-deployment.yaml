@@ -17,10 +17,22 @@ spec:
         app.kubernetes.io/name: crest
         app.kubernetes.io/component: frontend
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: crest
           image: ghcr.io/sevoniva/crest-web:v2.0.3-amd64
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
             - name: http
               containerPort: 8080
@@ -55,7 +67,37 @@ spec:
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: default.conf
               readOnly: true
+            - name: nginx-run
+              mountPath: /var/run/nginx
+            - name: nginx-client-temp
+              mountPath: /var/cache/nginx/client_temp
+            - name: nginx-proxy-temp
+              mountPath: /var/cache/nginx/proxy_temp
+            - name: nginx-fastcgi-temp
+              mountPath: /var/cache/nginx/fastcgi_temp
+            - name: nginx-uwsgi-temp
+              mountPath: /var/cache/nginx/uwsgi_temp
+            - name: nginx-scgi-temp
+              mountPath: /var/cache/nginx/scgi_temp
       volumes:
         - name: crest-nginx-config
           configMap:
             name: crest-nginx-config
+        - name: nginx-run
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: nginx-client-temp
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: nginx-proxy-temp
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: nginx-fastcgi-temp
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: nginx-uwsgi-temp
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: nginx-scgi-temp
+          emptyDir:
+            sizeLimit: 256Mi

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -60,6 +61,7 @@ public class RsaUtils {
         } catch (NoSuchAlgorithmException e) {
             LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
+            return null;
         }
         generator.initialize(2048);
         return generator.generateKeyPair();
@@ -144,8 +146,12 @@ public class RsaUtils {
     // 生成 RSA 密钥和 AES 密钥组合
     public static RSAModel generate() {
         KeyPair keyPair = getKeyPair();
-        String privateKey = new String(Base64.getEncoder().encode(keyPair.getPrivate().getEncoded()));
-        String publicKey = new String(Base64.getEncoder().encode(keyPair.getPublic().getEncoded()));
+        if (keyPair == null) {
+            CrestException.throwException("RSA key pair generate failed");
+            return null;
+        }
+        String privateKey = Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded());
+        String publicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
         RSAModel rsaModel = new RSAModel();
         rsaModel.setPrivateKey(privateKey);
         rsaModel.setPublicKey(publicKey);
@@ -220,6 +226,9 @@ public class RsaUtils {
     }
 
     public static final String IV_KEY = "0000000000000000";
+    private static final String AES_CTR_HMAC_PREFIX = "aes-ctr-hmac:v1:";
+    private static final String HMAC_ALGORITHM = "HmacSHA256";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     // 生成 AES 密钥文本
     private static String generateAesKey() {
@@ -229,17 +238,9 @@ public class RsaUtils {
     // 使用 AES 加密公钥载荷
     @SuppressWarnings("java/weak-cryptographic-algorithm")
     private static String ascEncrypt(String message, String key) {
-        Cipher cipher = null;
         try {
             byte[] baseKey = key.getBytes(StandardCharsets.UTF_8);
-            byte[] ivBytes = IV_KEY.getBytes(StandardCharsets.UTF_8);
-            byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
-            cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
-            SecretKey keySpec = new SecretKeySpec(baseKey, "AES");
-            IvParameterSpec ivps = new IvParameterSpec(ivBytes);
-            cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivps);
-            byte[] data = cipher.doFinal(messageBytes);
-            return Base64.getEncoder().encodeToString(data);
+            return aesCtrHmacEncrypt(message, baseKey);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -278,14 +279,12 @@ public class RsaUtils {
         if (CryptoMode.isSmSuite()) {
             return SmCryptoUtils.sm4EncryptWithBase64Key(data, generateSymmetricKey());
         }
+        return symmetricEncrypt(data, generateSymmetricKey());
+    }
+
+    static String symmetricEncrypt(String data, String base64Key) {
         try {
-            byte[] iv = IV_KEY.getBytes(StandardCharsets.UTF_8);
-            IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
-            SecretKeySpec secretKeySpec = new SecretKeySpec(Base64.getDecoder().decode(generateSymmetricKey()), ALGORITHM);
-            cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivParameterSpec);
-            byte[] ciphertext = cipher.doFinal(data.getBytes("UTF-8"));
-            return Base64.getEncoder().encodeToString(ciphertext);
+            return aesCtrHmacEncrypt(data, Base64.getDecoder().decode(base64Key));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -297,17 +296,82 @@ public class RsaUtils {
         if (SmCryptoUtils.isSm4Ciphertext(data)) {
             return SmCryptoUtils.sm4DecryptWithBase64Key(data, generateSymmetricKey());
         }
+        return symmetricDecrypt(data, generateSymmetricKey());
+    }
+
+    static String symmetricDecrypt(String data, String base64Key) {
         try {
+            byte[] key = Base64.getDecoder().decode(base64Key);
+            if (data != null && data.startsWith(AES_CTR_HMAC_PREFIX)) {
+                return aesCtrHmacDecrypt(data, key);
+            }
             byte[] iv = IV_KEY.getBytes(StandardCharsets.UTF_8);
             IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-            SecretKeySpec secretKeySpec = new SecretKeySpec(Base64.getDecoder().decode(generateSymmetricKey()), ALGORITHM);
+            SecretKeySpec secretKeySpec = new SecretKeySpec(key, ALGORITHM);
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
             cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec);
             byte[] decodedCiphertext = Base64.getDecoder().decode(data);
             byte[] decryptedText = cipher.doFinal(decodedCiphertext);
-            return new String(decryptedText, "UTF-8");
+            return new String(decryptedText, StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static String aesCtrHmacEncrypt(String data, byte[] key) throws Exception {
+        byte[] iv = new byte[16];
+        SECURE_RANDOM.nextBytes(iv);
+        Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+        cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, ALGORITHM), new IvParameterSpec(iv));
+        String ivText = Base64.getEncoder().encodeToString(iv);
+        String ciphertext = Base64.getEncoder().encodeToString(cipher.doFinal(data.getBytes(StandardCharsets.UTF_8)));
+        String payload = ivText + ":" + ciphertext;
+        return AES_CTR_HMAC_PREFIX + payload + ":" + hmacHex(key, payload);
+    }
+
+    private static String aesCtrHmacDecrypt(String data, byte[] key) throws Exception {
+        String payload = data.substring(AES_CTR_HMAC_PREFIX.length());
+        String[] parts = payload.split(":", 3);
+        if (parts.length != 3) {
+            CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
+        }
+        String signedPayload = parts[0] + ":" + parts[1];
+        if (!MessageDigest.isEqual(hexToBytes(hmacHex(key, signedPayload)), hexToBytes(parts[2]))) {
+            CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
+        }
+        Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+        cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, ALGORITHM), new IvParameterSpec(Base64.getDecoder().decode(parts[0])));
+        return new String(cipher.doFinal(Base64.getDecoder().decode(parts[1])), StandardCharsets.UTF_8);
+    }
+
+    private static String hmacHex(byte[] key, String payload) throws Exception {
+        Mac mac = Mac.getInstance(HMAC_ALGORITHM);
+        mac.init(new SecretKeySpec(key, HMAC_ALGORITHM));
+        byte[] digest = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
+        StringBuilder hex = new StringBuilder(digest.length * 2);
+        for (byte b : digest) {
+            String h = Integer.toHexString(b & 0xff);
+            if (h.length() == 1) {
+                hex.append('0');
+            }
+            hex.append(h);
+        }
+        return hex.toString();
+    }
+
+    private static byte[] hexToBytes(String value) {
+        if (value == null || value.length() % 2 != 0) {
+            return new byte[0];
+        }
+        byte[] bytes = new byte[value.length() / 2];
+        for (int i = 0; i < value.length(); i += 2) {
+            int high = Character.digit(value.charAt(i), 16);
+            int low = Character.digit(value.charAt(i + 1), 16);
+            if (high < 0 || low < 0) {
+                return new byte[0];
+            }
+            bytes[i / 2] = (byte) ((high << 4) + low);
+        }
+        return bytes;
     }
 }

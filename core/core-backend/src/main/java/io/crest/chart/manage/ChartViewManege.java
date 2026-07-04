@@ -695,6 +695,14 @@ public class ChartViewManege {
      * 判断两个图表视图是否来自同一个数据集
      */
     public String checkSameDataSet(String viewIdSource, String viewIdTarget) {
+        CoreChartView source = coreChartViewMapper.selectById(viewIdSource);
+        if (source != null) {
+            requireChartReadAccess(source.getCreateBy(), source.getSceneId(), source.getTableId());
+        }
+        CoreChartView target = coreChartViewMapper.selectById(viewIdTarget);
+        if (target != null) {
+            requireChartReadAccess(target.getCreateBy(), target.getSceneId(), target.getTableId());
+        }
         QueryWrapper<CoreChartView> wrapper = new QueryWrapper<>();
         wrapper.select("distinct table_id");
         wrapper.in("id", Arrays.asList(viewIdSource, viewIdTarget));
@@ -711,8 +719,13 @@ public class ChartViewManege {
      * 查询资源下仍被组件引用的视图选项
      */
     public List<ViewSelectorVO> viewOption(Long resourceId) {
-        List<ViewSelectorVO> result = extChartViewMapper.queryViewOption(resourceId);
         DataVisualizationInfo dvInfo = visualizationInfoMapper.selectById(resourceId);
+        if (dvInfo != null
+                && !CrestPermissionUtils.canAccessCreator(dvInfo.getCreateBy())
+                && !dataPortalPermissionManage.canReadPublishedVisualization(resourceId, null)) {
+            CrestPermissionUtils.requireCreator(dvInfo.getCreateBy());
+        }
+        List<ViewSelectorVO> result = extChartViewMapper.queryViewOption(resourceId);
         if (dvInfo != null && !CollectionUtils.isEmpty(result)) {
             String componentData = dvInfo.getComponentData();
             return result.stream().filter(item -> componentData.indexOf(String.valueOf(item.getId())) > 0).toList();

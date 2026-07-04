@@ -3,7 +3,7 @@
     <el-form @submit.prevent :effect="themes" ref="form" size="mini" style="width: 100%">
       <el-form-item :effect="themes" :label="t('visualization.video_type')">
         <el-radio-group :effect="themes" v-model="state.streamMediaInfoTemp.videoType">
-          <el-radio :effect="themes" :label="'flv'">FLV</el-radio>
+          <el-radio :effect="themes" value="flv">FLV</el-radio>
         </el-radio-group>
       </el-form-item>
       <el-row v-if="state.streamMediaInfoTemp.videoType === 'flv'" style="display: block">
@@ -13,8 +13,8 @@
             @change="onChange"
             v-model="state.streamMediaInfoTemp[state.streamMediaInfoTemp.videoType].isLive"
           >
-            <el-radio :effect="themes" :label="true">{{ t('visualization.yes') }}</el-radio>
-            <el-radio :effect="themes" :label="false">{{ t('visualization.no') }}</el-radio>
+            <el-radio :effect="themes" :value="true">{{ t('visualization.yes') }}</el-radio>
+            <el-radio :effect="themes" :value="false">{{ t('visualization.no') }}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item
@@ -27,8 +27,8 @@
             @change="onChange"
             v-model="state.streamMediaInfoTemp[state.streamMediaInfoTemp.videoType].loop"
           >
-            <el-radio :effect="themes" :label="false">{{ t('visualization.play_once') }}</el-radio>
-            <el-radio :effect="themes" :label="true">{{ t('visualization.play_circle') }}</el-radio>
+            <el-radio :effect="themes" :value="false">{{ t('visualization.play_once') }}</el-radio>
+            <el-radio :effect="themes" :value="true">{{ t('visualization.play_circle') }}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item :effect="themes" :label="t('visualization.video_links')">

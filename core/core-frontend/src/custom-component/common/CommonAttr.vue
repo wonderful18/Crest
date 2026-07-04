@@ -106,9 +106,15 @@ const borderSettingShow = computed(() => {
 /** 判断当前组件是否支持通用事件配置 */
 const eventsShow = computed(() => {
   return (
-    ['Picture', 'CanvasIcon', 'CircleShape', 'SvgTriangle', 'RectShape', 'ScrollText'].includes(
-      element.value.component
-    ) || element.value.innerType === 'rich-text'
+    [
+      'Picture',
+      'CanvasIcon',
+      'CircleShape',
+      'SvgTriangle',
+      'RectShape',
+      'BackgroundCard',
+      'ScrollText'
+    ].includes(element.value.component) || element.value.innerType === 'rich-text'
   )
 })
 
@@ -131,6 +137,7 @@ const backgroundCustomShow = computed(() => {
         'CanvasIcon',
         'CircleShape',
         'RectShape',
+        'BackgroundCard',
         'Decoration',
         'DynamicBackground'
       ].includes(element.value.component))

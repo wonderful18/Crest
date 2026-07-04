@@ -48,6 +48,8 @@ import { isDesktop } from '@/utils/ModelUtil'
 import { ShorthandMode } from '@/Types'
 import { formatterItem } from '@/views/chart/components/js/formatter'
 import { normalizeLegacyComponent, normalizeLegacyComponentData } from '@/utils/legacyComponent'
+import { normalizeCanvasChartColor } from '@/utils/canvasChartColorDefaults'
+import { normalizeCanvasComponentDefaults } from '@/utils/canvasComponentDefaults'
 const { t } = useI18n()
 const appearanceStore = useAppearanceStoreWithOut()
 const { wsCache } = useCache()
@@ -210,6 +212,7 @@ export function historyItemAdaptor(
   canvasInfo
 ) {
   normalizeLegacyComponent(componentItem)
+  normalizeCanvasComponentDefaults(componentItem, dvMainStore.curOriginThemes)
   componentItem['canvasActive'] = false
   if (componentItem.component === 'VQuery') {
     componentItem['freeze'] = componentItem['freeze'] || false // 冻结字段适配
@@ -388,20 +391,9 @@ export function historyAdaptor(
   canvasStyleResult['component']['formatterItem'] =
     canvasStyleResult['component']['formatterItem'] || deepCopy(formatterItem)
 
-  canvasStyleResult.component.chartColor = {
-    ...canvasStyleResult.component.chartColor,
-    label: {
-      color: '#000000',
-      fontSize: 12,
-      ...(canvasStyleResult.component.chartColor?.label || {})
-    },
-    tooltip: {
-      color: '#000000',
-      fontSize: 12,
-      backgroundColor: '#FFFFFF',
-      ...(canvasStyleResult.component.chartColor?.tooltip || {})
-    }
-  }
+  canvasStyleResult.component.chartColor = normalizeCanvasChartColor(
+    canvasStyleResult.component.chartColor
+  )
 
   canvasDataResult.forEach(componentItem => {
     historyItemAdaptor(componentItem, reportFilterInfo, attachInfo, canvasVersion, canvasInfo)

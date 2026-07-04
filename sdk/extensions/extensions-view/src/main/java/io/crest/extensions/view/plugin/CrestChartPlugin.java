@@ -6,6 +6,7 @@ import io.crest.extensions.view.vo.PluginViewVO;
 import io.crest.plugins.template.CrestPlugin;
 import io.crest.plugins.vo.CrestPluginVO;
 import io.crest.utils.JsonUtil;
+import org.apache.commons.lang3.StringUtils;
 
 // 定义插件扩展能力的基础类型
 public abstract class CrestChartPlugin extends AbstractChartPlugin implements CrestPlugin {
@@ -25,7 +26,15 @@ public abstract class CrestChartPlugin extends AbstractChartPlugin implements Cr
             CrestException.throwException(e);
         }
         String config = pluginInfo.getConfig();
+        if (StringUtils.isBlank(config)) {
+            CrestException.throwException("Plugin config not exists");
+            return null;
+        }
         PluginViewVO vo = JsonUtil.parseObject(config, PluginViewVO.class);
+        if (vo == null) {
+            CrestException.throwException("Plugin config not exists");
+            return null;
+        }
         vo.setIcon(pluginInfo.getIcon());
         return vo;
     }

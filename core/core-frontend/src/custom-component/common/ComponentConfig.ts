@@ -171,6 +171,12 @@ export const CANVAS_MATERIAL = [
     span: 8,
     details: [
       {
+        value: 'BackgroundCard',
+        type: 'graphical',
+        title: t('visualization.background_card'),
+        icon: graphicalRect
+      },
+      {
         value: 'RectShape',
         type: 'graphical',
         title: t('visualization.rect_shape'),

@@ -3,7 +3,11 @@ package io.crest.dataset.manage;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.crest.api.dataset.union.DatasetGroupInfoDTO;
+import io.crest.chart.dao.auto.entity.CoreChartView;
+import io.crest.chart.dao.auto.mapper.CoreChartViewMapper;
+import io.crest.dataset.dao.auto.entity.CoreDatasetGroup;
 import io.crest.dataset.dao.auto.entity.CoreDatasetTableField;
+import io.crest.dataset.dao.auto.mapper.CoreDatasetGroupMapper;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetTableFieldMapper;
 import io.crest.dataset.utils.DatasetUtils;
 import io.crest.dataset.utils.TableUtils;
@@ -21,6 +25,7 @@ import io.crest.extensions.view.dto.ColumnPermissionItem;
 import io.crest.i18n.Translator;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.BeanUtils;
+import io.crest.utils.CrestPermissionUtils;
 import io.crest.utils.IDUtils;
 import io.crest.utils.JsonUtil;
 import jakarta.annotation.Resource;
@@ -47,6 +52,10 @@ public class DatasetTableFieldManage {
      */
     @Resource
     private CoreDatasetTableFieldMapper coreDatasetTableFieldMapper;
+    @Resource
+    private CoreChartViewMapper coreChartViewMapper;
+    @Resource
+    private CoreDatasetGroupMapper coreDatasetGroupMapper;
     /**
      * 字段权限管理器，用于按用户过滤字段可见性
      */
@@ -85,6 +94,7 @@ public class DatasetTableFieldManage {
      * 保存图表计算字段，并校验同图表下字段名称是否重复
      */
     public DatasetTableFieldDTO chartFieldSave(DatasetTableFieldDTO datasetTableFieldDTO) {
+        requireChartAccess(datasetTableFieldDTO.getChartId());
         checkNameLength(datasetTableFieldDTO.getName());
         CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldMapper.selectById(datasetTableFieldDTO.getId());
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
@@ -153,6 +163,10 @@ public class DatasetTableFieldManage {
      * 根据字段 ID 删除字段记录
      */
     public void deleteById(Long id) {
+        CoreDatasetTableField field = coreDatasetTableFieldMapper.selectById(id);
+        if (field != null) {
+            requireFieldAccess(field);
+        }
         coreDatasetTableFieldMapper.deleteById(id);
     }
 
@@ -213,6 +227,7 @@ public class DatasetTableFieldManage {
      * 删除指定图表下的字段
      */
     public void deleteChartFields(Long chartId) {
+        requireChartAccess(chartId);
         QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
         wrapper.eq("chart_id", chartId);
         coreDatasetTableFieldMapper.delete(wrapper);
@@ -239,6 +254,14 @@ public class DatasetTableFieldManage {
     }
 
     /**
+     * 外部接口查询数据集字段时先校验数据集访问权限。
+     */
+    public List<DatasetTableFieldDTO> selectByDatasetGroupIdWithAccess(Long id) {
+        requireDatasetAccess(id);
+        return selectByDatasetGroupId(id);
+    }
+
+    /**
      * 批量查询多个数据集分组下的已勾选基础字段
      */
     public Map<String, List<DatasetTableFieldDTO>> selectByDatasetGroupIds(List<Long> ids) {
@@ -252,6 +275,17 @@ public class DatasetTableFieldManage {
             map.put(String.valueOf(id), transDTO(coreDatasetTableFieldMapper.selectList(wrapper)));
         }
         return map;
+    }
+
+    /**
+     * 外部接口批量查询字段时逐个校验数据集访问权限。
+     */
+    public Map<String, List<DatasetTableFieldDTO>> selectByDatasetGroupIdsWithAccess(List<Long> ids) {
+        if (ids == null) {
+            return Collections.emptyMap();
+        }
+        ids.forEach(this::requireDatasetAccess);
+        return selectByDatasetGroupIds(ids);
     }
 
     /**
@@ -273,6 +307,16 @@ public class DatasetTableFieldManage {
     }
 
     /**
+     * 外部接口查询单个字段时校验字段所属图表或数据集访问权限。
+     */
+    public DatasetTableFieldDTO selectByIdWithAccess(Long id) {
+        CoreDatasetTableField field = coreDatasetTableFieldMapper.selectById(id);
+        if (field == null) return null;
+        requireFieldAccess(field);
+        return transObj(field);
+    }
+
+    /**
      * 返回维度、指标列表
      *
      * @return
@@ -288,6 +332,14 @@ public class DatasetTableFieldManage {
         map.put("dimensionList", dimensionList);
         map.put("quotaList", quotaList);
         return map;
+    }
+
+    /**
+     * 外部接口查询字段分组前校验数据集访问权限。
+     */
+    public Map<String, List<DatasetTableFieldDTO>> listByDQWithAccess(Long id) {
+        requireDatasetAccess(id);
+        return listByDQ(id);
     }
 
     /**
@@ -326,6 +378,7 @@ public class DatasetTableFieldManage {
      * 查询带列权限和脱敏标记的字段列表
      */
     public List<DatasetTableFieldDTO> listFieldsWithPermissions(Long id) {
+        requireDatasetAccess(id);
         List<DatasetTableFieldDTO> fields = selectByDatasetGroupId(id);
         Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
         Long userId = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
@@ -342,6 +395,7 @@ public class DatasetTableFieldManage {
      * 查询带权限的字段列表，并剔除聚合函数型计算字段
      */
     public List<DatasetTableFieldDTO> listFieldsWithPermissionsRemoveAgg(Long id) {
+        requireDatasetAccess(id);
         List<DatasetTableFieldDTO> fields = selectByDatasetGroupId(id);
         Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
         Long userId = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
@@ -368,6 +422,51 @@ public class DatasetTableFieldManage {
         tmp.forEach(ele -> ele.setDesensitized(desensitizationList.containsKey(ele.getEngineFieldName())));
         DatasetUtils.listEncode(tmp);
         return tmp;
+    }
+
+    private void requireFieldAccess(CoreDatasetTableField field) {
+        if (field.getChartId() != null) {
+            requireChartAccess(field.getChartId());
+            return;
+        }
+        if (field.getDatasetGroupId() != null) {
+            requireDatasetAccess(field.getDatasetGroupId());
+            return;
+        }
+        CrestPermissionUtils.requireCreator(null);
+    }
+
+    private void requireChartAccess(Long chartId) {
+        if (chartId == null) {
+            CrestPermissionUtils.requireCreator(null);
+            return;
+        }
+        CoreChartView chart = coreChartViewMapper.selectById(chartId);
+        if (chart == null) {
+            CrestPermissionUtils.requireCreator(null);
+            return;
+        }
+        if (CrestPermissionUtils.canAccessCreator(chart.getCreateBy())) {
+            return;
+        }
+        if (chart.getTableId() != null && canAccessDataset(chart.getTableId())) {
+            return;
+        }
+        CrestPermissionUtils.requireCreator(chart.getCreateBy());
+    }
+
+    private void requireDatasetAccess(Long datasetGroupId) {
+        if (!canAccessDataset(datasetGroupId)) {
+            CrestPermissionUtils.requireCreator(null);
+        }
+    }
+
+    private boolean canAccessDataset(Long datasetGroupId) {
+        if (datasetGroupId == null) {
+            return false;
+        }
+        CoreDatasetGroup dataset = coreDatasetGroupMapper.selectById(datasetGroupId);
+        return dataset != null && CrestPermissionUtils.canAccessCreator(dataset.getCreateBy());
     }
 
     /**

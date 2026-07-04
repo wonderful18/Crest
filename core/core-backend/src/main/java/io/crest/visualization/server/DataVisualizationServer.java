@@ -96,6 +96,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class DataVisualizationServer implements DataVisualizationApi {
 
+    private static final long MAX_TEMPLATE_FILE_BYTES = 50L * 1024L * 1024L;
+
     @Resource
     private DataVisualizationInfoMapper visualizationInfoMapper;
 
@@ -1233,6 +1235,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
      */
     @Override
     public String updateCheckVersion(Long dvId) {
+        DataVisualizationInfo current = visualizationInfoMapper.selectById(dvId);
+        coreVisualizationManage.requireVisualizationManage(current);
         DataVisualizationInfo updateInfo = new DataVisualizationInfo();
         updateInfo.setId(dvId);
         updateInfo.setCheckVersion(crestVersion);
@@ -1443,8 +1447,10 @@ public class DataVisualizationServer implements DataVisualizationApi {
         if (file == null || file.isEmpty()) {
             CrestException.throwException("请选择模板文件");
         }
+        FileUtils.validateUploadFileSize(file, MAX_TEMPLATE_FILE_BYTES, "模板文件");
         String fileName = StringUtils.defaultString(file.getOriginalFilename());
-        if (!isCrestTemplateFile(fileName)) {
+        FileUtils.validateUploadFilename(fileName);
+        if (!isSupportedTemplateFile(fileName)) {
             CrestException.throwException("仅支持 .crest 模板文件");
         }
 
@@ -1480,8 +1486,11 @@ public class DataVisualizationServer implements DataVisualizationApi {
     /**
      * 判断上传文件是否为 Crest 模板文件
      */
-    static boolean isCrestTemplateFile(String fileName) {
-        return Strings.CI.endsWith(StringUtils.defaultString(fileName), ".crest");
+    static boolean isSupportedTemplateFile(String fileName) {
+        String normalized = StringUtils.defaultString(fileName);
+        return Strings.CI.endsWith(normalized, ".crest")
+                || Strings.CI.endsWith(normalized, ".det2")
+                || Strings.CI.endsWith(normalized, ".det2app");
     }
 
     /**
@@ -1536,6 +1545,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
      */
     @Override
     public List<VisualizationViewTableDTO> detailList(Long dvId) {
+        requireVisualizationRead(dvId);
         List<VisualizationViewTableDTO> result = extDataVisualizationMapper.getVisualizationViewDetails(dvId);
         SnapshotDataVisualizationInfo dvInfo = snapshotMapper.selectById(dvId);
         if (dvInfo != null && !CollectionUtils.isEmpty(result)) {
@@ -1544,6 +1554,21 @@ public class DataVisualizationServer implements DataVisualizationApi {
         } else {
             return result;
         }
+    }
+
+    /**
+     * 明细图表列表是画布配置辅助接口，必须和画布读取保持一致的资源边界。
+     */
+    private DataVisualizationInfo requireVisualizationRead(Long dvId) {
+        DataVisualizationInfo info = visualizationInfoMapper.selectById(dvId);
+        if (info == null) {
+            CrestException.throwException(Translator.get("i18n_resource_not_exists"));
+        }
+        if (CrestPermissionUtils.currentUserId() != null
+                && !dataPortalPermissionManage.canReadPublishedVisualization(dvId, info.getType())) {
+            CrestPermissionUtils.requireCreator(info.getCreateBy());
+        }
+        return info;
     }
 
     /**
