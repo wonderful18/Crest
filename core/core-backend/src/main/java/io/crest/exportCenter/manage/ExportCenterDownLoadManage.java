@@ -253,6 +253,22 @@ public class ExportCenterDownLoadManage {
         Running_Task.put(exportTask.getId(), future);
     }
 
+    static List<ChartSortFieldDTO> buildDatasetSortFields(List<DatasetTableFieldDTO> fields) {
+        if (CollectionUtils.isEmpty(fields)) {
+            return new ArrayList<>();
+        }
+        List<ChartSortFieldDTO> sortFields = new ArrayList<>();
+        for (DatasetTableFieldDTO field : fields) {
+            if (Boolean.TRUE.equals(field.getOrderChecked())) {
+                ChartSortFieldDTO sortField = new ChartSortFieldDTO();
+                BeanUtils.copyBean(sortField, field);
+                sortField.setOrderDirection("asc");
+                sortFields.add(sortField);
+            }
+        }
+        return sortFields;
+    }
+
     private Future submitDatasetTask(CoreExportTask exportTask, DataSetExportRequest request) {
         prepareTaskDirectory(exportTask.getId());
         File exportFile = storageService.resolve(exportData_path, exportTask.getId(), exportTask.getId() + ".xlsx");
@@ -343,16 +359,7 @@ public class ExportCenterDownLoadManage {
                 Table2SQLObj.table2sqlobj(sqlMeta, null, "(" + sql + ")", crossDs);
                 Field2SQLObj.field2sqlObj(sqlMeta, allFields, allFields, crossDs, dsMap, Utils.getParams(allFields), null, pluginManage);
                 WhereTree2Str.transFilterTrees(sqlMeta, rowPermissionsTree, allFields, crossDs, dsMap, Utils.getParams(allFields), null, pluginManage);
-                List<ChartSortFieldDTO> sortFields = new ArrayList<>();
-                for (DatasetTableFieldDTO field : allFields) {
-                    if (field.getOrderChecked()) {
-                        ChartSortFieldDTO sortField = new ChartSortFieldDTO();
-                        BeanUtils.copyBean(sortField, field);
-                        sortField.setOrderDirection("asc");
-                        sortFields.add(sortField);
-                    }
-                }
-                dto.setSortFields(sortFields);
+                dto.setSortFields(buildDatasetSortFields(allFields));
                 DatasetOrder2SQLObj.getOrders(sqlMeta, dto.getSortFields(), allFields);
                 String replaceSql = provider.rebuildSQL(SQLProvider.createQuerySQL(sqlMeta, false, false, false), sqlMeta, crossDs, dsMap);
                 Long totalCount = datasetDataManage.datasetTotal(dto, replaceSql, null);
@@ -870,6 +877,7 @@ public class ExportCenterDownLoadManage {
             Table2SQLObj.table2sqlobj(sqlMeta, null, "(" + sql + ")", crossDs);
             Field2SQLObj.field2sqlObj(sqlMeta, allFields, allFields, crossDs, dsMap, Utils.getParams(allFields), null, pluginManage);
             WhereTree2Str.transFilterTrees(sqlMeta, rowPermissionsTree, allFields, crossDs, dsMap, Utils.getParams(allFields), null, pluginManage);
+            dto.setSortFields(buildDatasetSortFields(allFields));
             Order2SQLObj.getOrders(sqlMeta, dto.getSortFields(), allFields, crossDs, dsMap, Utils.getParams(allFields), null, pluginManage);
             String replaceSql = provider.rebuildSQL(SQLProvider.createQuerySQL(sqlMeta, false, false, false), sqlMeta, crossDs, dsMap);
             Long totalCount = datasetDataManage.datasetTotal(dto, replaceSql, null);

@@ -86,6 +86,10 @@ public class SsoManage {
      * SSO 登录完成后的默认前端落点
      */
     private static final String DEFAULT_REDIRECT = "/workbranch/index";
+    /**
+     * SSO 登录换取的系统访问令牌有效期，与本地登录保持一致
+     */
+    private static final long ACCESS_TOKEN_EXPIRATION_MILLIS = 24 * 60 * 60 * 1000L;
 
     /**
      * 系统参数服务，负责读取和保存 SSO 配置项
@@ -524,8 +528,12 @@ public class SsoManage {
         Map<String, Object> claims = new LinkedHashMap<>();
         claims.put("uid", bo.getUserId());
         claims.put("oid", bo.getDefaultOid());
-        String token = SignedTokenUtils.sign(claims, user.getPasswordHash(), null);
-        return new TokenVO(token, 0L);
+        String token = SignedTokenUtils.sign(
+                claims,
+                user.getPasswordHash(),
+                new java.util.Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION_MILLIS)
+        );
+        return new TokenVO(token, ACCESS_TOKEN_EXPIRATION_MILLIS);
     }
 
     /**

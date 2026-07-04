@@ -40,3 +40,33 @@ index 06725243e9296caff7ff67baebb1342b035e9bf8..9cdbd36e588716903937322cfe1d19bc
      vue.createCommentVNode(" content "),
      vue.createVNode(_component_node_content),
      _ctx.isLeaf && _ctx.node.checked ? (vue.openBlock(), vue.createBlock(_component_el_icon, {
+diff --git a/es/components/color-picker/src/color-picker.mjs b/es/components/color-picker/src/color-picker.mjs
+index 73a1ba8d4e654fca5280f944d14a57925498f12c..63a890f1943a66d6514088840bb4103370fc91dd 100644
+--- a/es/components/color-picker/src/color-picker.mjs
++++ b/es/components/color-picker/src/color-picker.mjs
+@@ -382,8 +382,8 @@ const ColorPicker = defineComponent({
+                 size: "small"
+               }, {
+                 default: withCtx(() => [
+-                  createVNode(unref(ElRadioButton), { label: "HEX" }),
+-                  createVNode(unref(ElRadioButton), { label: "RGB" })
++                  createVNode(unref(ElRadioButton), { value: "HEX", label: "HEX" }),
++                  createVNode(unref(ElRadioButton), { value: "RGB", label: "RGB" })
+                 ]),
+                 _: 1
+               }, 8, ["modelValue", "onUpdate:modelValue"])
+diff --git a/lib/components/color-picker/src/color-picker.js b/lib/components/color-picker/src/color-picker.js
+index 9803de135031d0e3ceda0287f682179cbff0cc61..5ba2ecfd39a3a8d668d131b04f00cfc670b10734 100644
+--- a/lib/components/color-picker/src/color-picker.js
++++ b/lib/components/color-picker/src/color-picker.js
+@@ -386,8 +386,8 @@ const ColorPicker = vue.defineComponent({
+                 size: "small"
+               }, {
+                 default: vue.withCtx(() => [
+-                  vue.createVNode(vue.unref(index$6.ElRadioButton), { label: "HEX" }),
+-                  vue.createVNode(vue.unref(index$6.ElRadioButton), { label: "RGB" })
++                  vue.createVNode(vue.unref(index$6.ElRadioButton), { value: "HEX", label: "HEX" }),
++                  vue.createVNode(vue.unref(index$6.ElRadioButton), { value: "RGB", label: "RGB" })
+                 ]),
+                 _: 1
+               }, 8, ["modelValue", "onUpdate:modelValue"])

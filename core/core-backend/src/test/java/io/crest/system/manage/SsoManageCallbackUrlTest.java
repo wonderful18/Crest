@@ -1,15 +1,24 @@
 package io.crest.system.manage;
 
 import io.crest.api.system.vo.SsoConfigVO;
+import io.crest.auth.vo.TokenVO;
 import io.crest.exception.CrestException;
+import io.crest.substitute.permissions.auth.PlatformPermissionManage;
+import io.crest.substitute.permissions.user.model.CrestUser;
+import io.crest.utils.SignedTokenUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class SsoManageCallbackUrlTest {
 
@@ -60,6 +69,23 @@ class SsoManageCallbackUrlTest {
         assertEquals("/workbranch/index", invokeNormalizeRedirect("workbranch/index"));
     }
 
+    @Test
+    void ssoTokenUsesAccessTokenExpiration() throws Exception {
+        SsoManage manage = new SsoManage();
+        PlatformPermissionManage platformPermissionManage = mock(PlatformPermissionManage.class);
+        when(platformPermissionManage.defaultOrgId(7L)).thenReturn(1L);
+        ReflectionTestUtils.setField(manage, "platformPermissionManage", platformPermissionManage);
+        CrestUser user = new CrestUser();
+        user.setId(7L);
+        user.setPasswordHash("sso-token-secret");
+
+        TokenVO token = invokeGenerate(manage, user);
+
+        assertEquals(24 * 60 * 60 * 1000L, token.getExp());
+        assertNotNull(SignedTokenUtils.verify(token.getToken(), "sso-token-secret").getExpiresAt());
+        assertTrue(SignedTokenUtils.verify(token.getToken(), "sso-token-secret").getExpiresAt().getTime() > System.currentTimeMillis());
+    }
+
     private MockHttpServletRequest forwardedRequest(String proto, String host, String port) {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/sso/login");
         request.setScheme("http");
@@ -90,5 +116,11 @@ class SsoManageCallbackUrlTest {
         Method normalizeRedirectMethod = SsoManage.class.getDeclaredMethod("normalizeRedirect", String.class);
         normalizeRedirectMethod.setAccessible(true);
         return (String) normalizeRedirectMethod.invoke(manage, redirect);
+    }
+
+    private TokenVO invokeGenerate(SsoManage manage, CrestUser user) throws Exception {
+        Method generateMethod = SsoManage.class.getDeclaredMethod("generate", CrestUser.class);
+        generateMethod.setAccessible(true);
+        return (TokenVO) generateMethod.invoke(manage, user);
     }
 }

@@ -325,12 +325,18 @@ const handleCheckAllChange = (val: boolean) => {
   val && setSameId()
 }
 
+// 同步字段组件勾选状态，不改变已保存的字段、展示类型和默认值配置。
+const syncCheckedFieldsStatus = (value: string[] = []) => {
+  const checkedCount = value.length
+  const fieldCount = fields.value?.length || 0
+  checkAll.value = fieldCount > 0 && checkedCount === fieldCount
+  isIndeterminate.value = checkedCount > 0 && checkedCount < fieldCount
+}
+
 // 普通字段组件选择变化后刷新选择状态、关闭弹层并重新推导展示类型。
 const handleCheckedFieldsChange = (value: string[]) => {
   handleDialogClick()
-  const checkedCount = value.length
-  checkAll.value = checkedCount === fields.value.length
-  isIndeterminate.value = checkedCount > 0 && checkedCount < fields.value.length
+  syncCheckedFieldsStatus(value)
   if (curComponent.value.displayType === '8') return
   setType()
 }
@@ -1206,9 +1212,7 @@ const isInRange = (ele, startWindowTime, timeStamp) => {
         startTime = getThisStart('quarter')
         break
       case 'thisWeek':
-        startTime = new Date(
-          dayjs().startOf('week').add(1, 'day').startOf('day').format('YYYY/MM/DD HH:mm:ss')
-        )
+        startTime = getCustomRange('thisWeek')[0]
         break
       case 'today':
         startTime = getThisStart('day')
@@ -1864,7 +1868,7 @@ const init = (queryId: string) => {
           setTreeDefault()
         })
       }
-      handleCheckedFieldsChange(curComponent.value.checkedFields)
+      syncCheckedFieldsStatus(curComponent.value.checkedFields)
     })
 }
 
@@ -1964,13 +1968,16 @@ const handleCondition = (item, idx = 0) => {
     obj.parametersArr = {}
   }
   curComponent.value = obj
-  curComponent.value.dataset.fields = []
   nextTick(() => {
     defaultConfigurationRef.value.changeMultiple(curComponent.value.multiple)
   })
-  if (curComponent.value.dataset.id) {
-    listFieldsWithPermissions(curComponent.value.dataset.id).then(res => {
-      curComponent.value.dataset.fields = res.data
+  const selectedCondition = obj
+  const selectedDatasetId = selectedCondition.dataset?.id
+  if (selectedDatasetId) {
+    listFieldsWithPermissions(selectedDatasetId).then(res => {
+      if (selectedCondition.dataset?.id === selectedDatasetId) {
+        selectedCondition.dataset.fields = res.data || []
+      }
     })
   }
   if (!curComponent.value.checkedFieldsMapStart) {
@@ -2034,7 +2041,7 @@ const handleCondition = (item, idx = 0) => {
         curComponent.value.checkedFieldsMap[ele.componentId]
       )
     })
-    handleCheckedFieldsChange(curComponent.value.checkedFields)
+    syncCheckedFieldsStatus(curComponent.value.checkedFields)
   }
   multipleChange(curComponent.value.multiple)
   // 手动值来源编辑使用副本，切换条件时重新从当前条件恢复。

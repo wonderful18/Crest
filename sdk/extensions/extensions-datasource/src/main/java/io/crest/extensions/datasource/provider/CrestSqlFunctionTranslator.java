@@ -19,11 +19,16 @@ public final class CrestSqlFunctionTranslator {
     );
     private static final Set<String> MYSQL_FAMILY = Set.of(
             "mysql",
+            "obmysql",
             "mongo",
             "mariadb",
             "tidb",
             "starrocks",
             "doris"
+    );
+    private static final Set<String> ORACLE_FAMILY = Set.of(
+            "oracle",
+            "oboracle"
     );
 
     private CrestSqlFunctionTranslator() {
@@ -31,10 +36,17 @@ public final class CrestSqlFunctionTranslator {
 
     // 按数据源类型翻译 SQL 中的内置日期函数
     public static String translate(String sql, DatasourceSchemaDTO datasource) {
-        if (StringUtils.isBlank(sql) || datasource == null || !isMysqlFamily(datasource.getType())) {
+        if (StringUtils.isBlank(sql) || datasource == null) {
             return sql;
         }
-        return rewriteMysql(sql);
+        String type = datasource.getType();
+        if (isMysqlFamily(type)) {
+            return rewriteMysql(sql);
+        }
+        if (isOracleFamily(type)) {
+            return rewriteOracle(sql);
+        }
+        return sql;
     }
 
     // 判断数据源类型是否属于 MySQL 兼容语法族
@@ -45,8 +57,26 @@ public final class CrestSqlFunctionTranslator {
         return MYSQL_FAMILY.stream().anyMatch(item -> Strings.CI.equals(item, type));
     }
 
+    // 判断数据源类型是否属于 Oracle 兼容语法族
+    private static boolean isOracleFamily(String type) {
+        if (StringUtils.isBlank(type)) {
+            return false;
+        }
+        return ORACLE_FAMILY.stream().anyMatch(item -> Strings.CI.equals(item, type));
+    }
+
     // 重写 MySQL 兼容 SQL 中的内置日期函数调用
     private static String rewriteMysql(String sql) {
+        return rewriteFunctions(sql, CrestSqlFunctionTranslator::rewriteMysqlFunction);
+    }
+
+    // 重写 Oracle 兼容 SQL 中的内置日期函数调用
+    private static String rewriteOracle(String sql) {
+        return rewriteFunctions(sql, CrestSqlFunctionTranslator::rewriteOracleFunction);
+    }
+
+    // 重写 SQL 中的内置日期函数调用
+    private static String rewriteFunctions(String sql, FunctionRewriter rewriter) {
         StringBuilder result = new StringBuilder(sql.length());
         int index = 0;
         while (index < sql.length()) {
@@ -61,7 +91,7 @@ public final class CrestSqlFunctionTranslator {
                 int closeParen = findClosingParen(sql, openParen);
                 if (closeParen > openParen) {
                     List<String> args = splitArguments(sql.substring(openParen + 1, closeParen));
-                    String replacement = rewriteMysqlFunction(functionMatch.name(), args);
+                    String replacement = rewriter.rewrite(functionMatch.name(), args);
                     if (replacement != null) {
                         removeTrailingQualifier(sql, index, result);
                         result.append(replacement);
@@ -93,8 +123,11 @@ public final class CrestSqlFunctionTranslator {
 
     // 定位函数限定符的起始位置
     private static int findQualifierStart(String sql, int end) {
-        if (sql.charAt(end) == '`') {
+        if (sql.charAt(end) == '`' || sql.charAt(end) == '"') {
             int start = sql.lastIndexOf('`', end - 1);
+            if (sql.charAt(end) == '"') {
+                start = sql.lastIndexOf('"', end - 1);
+            }
             return start >= 0 ? start : -1;
         }
         int index = end;
@@ -128,6 +161,31 @@ public final class CrestSqlFunctionTranslator {
         return null;
     }
 
+    // 将单个内置日期函数转换为 Oracle 兼容函数
+    private static String rewriteOracleFunction(String functionName, List<String> args) {
+        String normalized = functionName.toUpperCase();
+        if (Strings.CS.equals(normalized, "CREST_STR_TO_DATE") && args.size() >= 2) {
+            return "TO_DATE(" + rewriteOracle(args.get(0).trim()) + ", " + oracleFormat(args.get(1)) + ")";
+        }
+        if (Strings.CS.equals(normalized, "CREST_DATE_FORMAT") && args.size() >= 2) {
+            return "TO_CHAR(" + rewriteOracle(args.get(0).trim()) + ", " + oracleFormat(args.get(1)) + ")";
+        }
+        if (Strings.CS.equals(normalized, "CREST_CAST_DATE_FORMAT") && args.size() >= 3) {
+            return "TO_CHAR(" + rewriteOracle(args.get(0).trim()) + ", " + oracleFormat(args.get(2)) + ")";
+        }
+        if (Strings.CS.equals(normalized, "CREST_FROM_UNIXTIME") && !args.isEmpty()) {
+            String epochExpression = "TIMESTAMP '1970-01-01 00:00:00' + NUMTODSINTERVAL(" + rewriteOracle(args.get(0).trim()) + ", 'SECOND')";
+            if (args.size() >= 2) {
+                return "TO_CHAR(" + epochExpression + ", " + oracleFormat(args.get(1)) + ")";
+            }
+            return epochExpression;
+        }
+        if (Strings.CS.equals(normalized, "CREST_UNIX_TIMESTAMP") && !args.isEmpty()) {
+            return "((CAST(" + rewriteOracle(args.get(0).trim()) + " AS DATE) - DATE '1970-01-01') * 86400)";
+        }
+        return null;
+    }
+
     // 从当前位置匹配支持翻译的函数名
     private static FunctionMatch matchFunctionName(String sql, int start) {
         for (String functionName : DATE_FUNCTIONS) {
@@ -136,6 +194,10 @@ public final class CrestSqlFunctionTranslator {
                 return match;
             }
             match = matchBacktickQuotedFunctionName(sql, start, functionName);
+            if (match != null) {
+                return match;
+            }
+            match = matchDoubleQuotedFunctionName(sql, start, functionName);
             if (match != null) {
                 return match;
             }
@@ -150,6 +212,22 @@ public final class CrestSqlFunctionTranslator {
         }
         int end = start + functionName.length();
         if (end > sql.length() || !sql.regionMatches(true, start, functionName, 0, functionName.length())) {
+            return null;
+        }
+        int next = skipWhitespace(sql, end);
+        return next < sql.length() && sql.charAt(next) == '(' ? new FunctionMatch(functionName, end) : null;
+    }
+
+    // 匹配 Calcite 为 Oracle 生成的双引号函数名
+    private static FunctionMatch matchDoubleQuotedFunctionName(String sql, int start, String functionName) {
+        if (sql.charAt(start) != '"') {
+            return null;
+        }
+        int end = start + functionName.length() + 2;
+        if (end > sql.length() || sql.charAt(end - 1) != '"') {
+            return null;
+        }
+        if (!sql.regionMatches(true, start + 1, functionName, 0, functionName.length())) {
             return null;
         }
         int next = skipWhitespace(sql, end);
@@ -275,6 +353,11 @@ public final class CrestSqlFunctionTranslator {
         return "'" + javaDateFormatToMysql(stripSqlLiteral(sqlFormat)).replace("'", "''") + "'";
     }
 
+    // 将日期格式参数转换为 Oracle 格式字面量
+    private static String oracleFormat(String sqlFormat) {
+        return "'" + javaDateFormatToOracle(stripSqlLiteral(sqlFormat)).replace("'", "''") + "'";
+    }
+
     // 去掉 SQL 字符串字面量外层引号
     private static String stripSqlLiteral(String value) {
         String text = StringUtils.trimToEmpty(value);
@@ -304,9 +387,50 @@ public final class CrestSqlFunctionTranslator {
                 .replace("SS", "%s");
     }
 
+    // 将 Java 或 MySQL 风格日期格式转换为 Oracle 日期格式
+    private static String javaDateFormatToOracle(String format) {
+        return format
+                .replace("HH24", "{0}")
+                .replace("HH12", "{1}")
+                .replace("YYYY", "{2}")
+                .replace("YY", "{3}")
+                .replace("MI", "{4}")
+                .replace("SS", "{5}")
+                .replace("MM", "{6}")
+                .replace("DD", "{7}")
+                .replace("%Y", "{2}")
+                .replace("%y", "{3}")
+                .replace("%m", "{6}")
+                .replace("%d", "{7}")
+                .replace("%H", "{0}")
+                .replace("%h", "{1}")
+                .replace("%i", "{4}")
+                .replace("%s", "{5}")
+                .replace("yyyy", "{2}")
+                .replace("yy", "{3}")
+                .replace("dd", "{7}")
+                .replace("HH", "{0}")
+                .replace("hh", "{1}")
+                .replace("mm", "{4}")
+                .replace("ss", "{5}")
+                .replace("{2}", "YYYY")
+                .replace("{3}", "YY")
+                .replace("{6}", "MM")
+                .replace("{7}", "DD")
+                .replace("{0}", "HH24")
+                .replace("{1}", "HH12")
+                .replace("{4}", "MI")
+                .replace("{5}", "SS");
+    }
+
     // 判断字符是否可作为函数标识符的一部分
     private static boolean isIdentifierChar(char value) {
         return Character.isLetterOrDigit(value) || value == '_' || value == '$';
+    }
+
+    @FunctionalInterface
+    private interface FunctionRewriter {
+        String rewrite(String functionName, List<String> args);
     }
 
     // 保存匹配到的函数名和结束位置

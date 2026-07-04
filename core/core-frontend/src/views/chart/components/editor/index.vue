@@ -3726,12 +3726,12 @@ const chartStyleScroll = (val: any) => {
                   @on-dataset-change="changeDataset"
                 />
                 <el-tooltip
+                  v-if="curDatasetWeight >= 7 && !isCrestBi"
                   :effect="toolTip"
                   :content="$t('datasetUi.edit_dataset')"
                   placement="top"
                 >
                   <el-icon
-                    v-if="curDatasetWeight >= 7 && !isCrestBi"
                     class="field-search-icon-btn"
                     :class="{ dark: themes === 'dark' }"
                     style="margin-left: 8px"
