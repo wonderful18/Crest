@@ -425,7 +425,10 @@ public class CoreVisualizationManage {
 
     @Transactional
     public void dvRestore(Long dvId) {
-        requireVisualizationAccess(dvId);
+        // dvRestore 从镜像表恢复主表，调用前主表可能已被 removeDvCore 删除，
+        // 因此不能用查主表的 requireVisualizationAccess 校验。调用方需自行校验权限：
+        // - updatePublishStatus 通过 innerEdit 已校验
+        // - recoverToPublished 通过 requireVisualizationManage 已校验
         extDataVisualizationMapper.restoreDataV(dvId);
         extDataVisualizationMapper.restoreViews(dvId);
         extDataVisualizationMapper.restoreLinkJumpTargetViewInfo(dvId);

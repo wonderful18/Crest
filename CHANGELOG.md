@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.5.15 - 2026-07-04
+
+v1.5.15 是 v1.5.14 之后的 1.5 LTS 稳定补丁版本，修复大屏发布时提示"资源不存在"的回归问题。本版本没有新增数据库结构，无需执行升级 SQL。
+
+### 修复
+
+- 修复大屏发布时提示"资源不存在"的问题。v1.5.14 的安全加固为 `dvRestore` 增加了 `requireVisualizationAccess` 校验，但发布流程在同一事务内先由 `removeDvCore` 物理删除主表记录、再由 `dvRestore` 从镜像表恢复主表，导致 `dvRestore` 内的主表查询必然返回空并抛出"resource not exist"。移除 `dvRestore` 内冗余的主表存在性校验，权限校验由调用方（`updatePublishStatus` 经 `innerEdit`、`recoverToPublished` 经 `requireVisualizationManage`）保证。
+
 ## v1.5.14 - 2026-07-03
 
 v1.5.14 是 v1.5.13 之后的 1.5 LTS 稳定补丁版本，覆盖安全加固、公共分享内部跳转、查询条件、表格汇总、模板导入导出、画布组合编排和交付包稳定性。本版本没有新增数据库结构；初始化数据仅清理模板中心访问密钥的旧默认值，已有环境升级时需要执行对应升级 SQL。
