@@ -147,4 +147,31 @@ describe('imgUtils', () => {
 
     assert.deepEqual(resources, ['static-resource/valid.png'])
   })
+
+  it('collects static resources from arbitrary nested template fields', () => {
+    const { findStaticSourceInner } = loadImgUtils()
+    const resources = []
+
+    findStaticSourceInner(
+      [
+        {
+          component: 'UserView',
+          propValue: {
+            cover: {
+              url: '/static-resource/media-cover.png'
+            }
+          },
+          customStyle: {
+            background: 'url("/static-resource/custom-bg.png")'
+          }
+        }
+      ],
+      resources
+    )
+
+    assert.deepEqual(resources, [
+      '/static-resource/media-cover.png',
+      '/static-resource/custom-bg.png'
+    ])
+  })
 })

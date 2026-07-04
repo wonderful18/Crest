@@ -1,13 +1,11 @@
 <script lang="tsx" setup>
-import { ElMessage, ElMessageBox } from 'element-plus-secondary'
+import { ElMessageBox } from 'element-plus-secondary'
 import icon_bold_outlined from '@/assets/svg/icon_bold_outlined.svg'
-import { uploadFileResult } from '@/api/staticResource'
 import icon_italic_outlined from '@/assets/svg/icon_italic_outlined.svg'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import icon_info_outlined from '@/assets/svg/icon_info_outlined.svg'
 import { useI18n } from '@/hooks/web/useI18n'
 import { PropType, toRefs, computed, reactive, watch, ref, onMounted } from 'vue'
-import { imgUrlTrans } from '@/utils/imgUtils'
 import { COLOR_PANEL } from '@/views/chart/components/editor/util/chart'
 import CollapseSwitchItem from '@/components/collapse-switch-item/src/CollapseSwitchItem.vue'
 import { cloneDeep } from 'lodash-es'
@@ -55,13 +53,9 @@ for (let i = 10; i <= 60; i = i + 2) {
   })
 }
 const snapshotStore = snapshotStoreWithOut()
-const files = ref(null)
 
 const state = reactive({
-  commonBackground: {},
-  fileList: [],
-  dialogImageUrl: '',
-  dialogVisible: false
+  commonBackground: {}
 })
 
 const mobileStyleChange = () => {
@@ -181,37 +175,14 @@ const handleCurrentPlaceholder = val => {
 
 const init = () => {
   state.commonBackground = cloneDeep(props.commonBackgroundPop)
-  if (state.commonBackground['outerImage']) {
-    state.fileList.push({ url: imgUrlTrans(state.commonBackground['outerImage']) })
-  } else {
-    state.fileList = []
-  }
 }
 const onBackgroundChangeV2 = val => {
   snapshotStore.recordSnapshotCache('onBackgroundChange')
   element.value.commonBackground = val
 }
-
-const onBackgroundChange = () => {
-  snapshotStore.recordSnapshotCache('onBackgroundChange')
-  commonBackgroundPop.value.outerImage = state.commonBackground['outerImage']
-}
 onMounted(() => {
   init()
 })
-
-const reUpload = e => {
-  const file = e.target.files[0]
-  if (file.size > 15000000) {
-    ElMessage.error('图片大小不能超过15M')
-    return
-  }
-  uploadFileResult(file, fileUrl => {
-    state.commonBackground['outerImage'] = fileUrl
-    state.fileList = [{ url: imgUrlTrans(state.commonBackground['outerImage']) }]
-    onBackgroundChange()
-  })
-}
 
 const checkBold = type => {
   if (!chart.value.customStyle.component.labelShow) return
@@ -296,19 +267,6 @@ const onPlaceholderChange = () => {
 
 <template>
   <div class="attr-style">
-    <input
-      id="input"
-      ref="files"
-      type="file"
-      accept=".jpeg,.jpg,.png,.gif,.svg"
-      hidden
-      @click="
-        e => {
-          e.target.value = ''
-        }
-      "
-      @change="reUpload"
-    />
     <el-row class="de-collapse-style">
       <el-collapse v-model="styleActiveNames" class="style-collapse">
         <el-collapse-item :effect="themes" name="basicStyle" :title="t('chart.basic_style')">

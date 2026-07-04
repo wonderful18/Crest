@@ -207,25 +207,33 @@ const sizeMessage = () => {
   ElMessage.success(t('visualization.pic_size_error'))
 }
 
+const syncFileList = url => {
+  state.fileList = url ? [{ url: imgUrlTrans(url) }] : []
+}
+
+const applyUploadedBackground = fileUrl => {
+  if (!fileUrl) {
+    return
+  }
+  canvasStyleData.value.background = fileUrl
+  syncFileList(fileUrl)
+  onBackgroundChange()
+}
+
 const reUpload = e => {
   const file = e.target.files[0]
+  if (!file) {
+    return
+  }
   if (file.size > maxImageSize) {
     sizeMessage()
     return
   }
-  uploadFileResult(file, fileUrl => {
-    canvasStyleData.value.background = fileUrl
-    state.fileList = [{ url: imgUrlTrans(canvasStyleData.value.background) }]
-    onBackgroundChange()
-  })
+  uploadFileResult(file, applyUploadedBackground)
 }
 
 const init = () => {
-  if (canvasStyleData.value.background) {
-    state.fileList.push({ url: imgUrlTrans(canvasStyleData.value.background) })
-  } else {
-    state.fileList = []
-  }
+  syncFileList(canvasStyleData.value.background)
 }
 
 const handleRemove = () => {
@@ -239,10 +247,7 @@ const handlePictureCardPreview = file => {
   state.dialogVisible = true
 }
 const upload = file => {
-  uploadFileResult(file.file, fileUrl => {
-    canvasStyleData.value.background = fileUrl
-    onBackgroundChange()
-  })
+  uploadFileResult(file.file, applyUploadedBackground)
 }
 
 const onBackgroundChange = () => {
