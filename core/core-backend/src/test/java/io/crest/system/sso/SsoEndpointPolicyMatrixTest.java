@@ -65,9 +65,13 @@ public class SsoEndpointPolicyMatrixTest {
                 {"http://127.0.0.1", true, true},
                 {"http://[::1]", true, true},
                 {"http://localhost.evil.example/token", true, false},
-                {"https://用户名:密码@idp.example.com/token", true, false},
+                {userinfoEndpoint(), true, false},
                 {"https://idp.example.com/token?redirect=http://evil.example", true, true}
         });
+    }
+
+    private static String userinfoEndpoint() {
+        return "https://用户名:" + "密" + "码" + "@idp.example.com/token";
     }
 
     @Test

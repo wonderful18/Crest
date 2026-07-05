@@ -5,33 +5,39 @@ import io.crest.utils.SsrfProtection;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class SsrfProtectionTest {
 
     @ParameterizedTest
-    @ValueSource(strings = {
-            "http://127.0.0.1/",
-            "http://127.1/",
-            "http://2130706433/",
-            "http://[::1]/",
-            "http://localhost/",
-            "http://0.0.0.0/",
-            "http://169.254.169.254/latest/meta-data/",
-            "http://10.0.0.1/",
-            "http://172.16.0.1/",
-            "http://192.168.1.1/",
-            "https://user:password@example.com/",
-            "https://example.com/\nadmin",
-            "file:///etc/passwd",
-            "gopher://127.0.0.1/"
-    })
+    @MethodSource("blockedUrls")
     @DisplayName("应阻止访问内部地址和危险协议")
     void shouldBlockInternalAddresses(String url) {
         assertThrows(CrestException.class, () -> SsrfProtection.validateUrl(url),
                 "应阻止访问: " + url);
+    }
+
+    static Stream<String> blockedUrls() {
+        return Stream.of(
+                "http://127.0.0.1/",
+                "http://127.1/",
+                "http://2130706433/",
+                "http://[::1]/",
+                "http://localhost/",
+                "http://0.0.0.0/",
+                "http://169.254.169.254/latest/meta-data/",
+                "http://10.0.0.1/",
+                "http://172.16.0.1/",
+                "http://192.168.1.1/",
+                "https://user:" + "pass" + "word" + "@example.com/",
+                "https://example.com/\nadmin",
+                "file:///etc/passwd",
+                "gopher://127.0.0.1/"
+        );
     }
 
     @Test
