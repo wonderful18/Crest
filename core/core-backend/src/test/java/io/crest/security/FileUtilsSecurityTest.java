@@ -19,7 +19,7 @@ class FileUtilsSecurityTest {
     Path tempDir;
 
     @Test
-    void resolveUnderDirectoryAllowsSafeFileName() throws Exception {
+    void resolveUnderDirectoryAllowsSafeFileName() throws IOException {
         File file = FileUtils.resolveUnderDirectory(tempDir.toString(), "safe.xlsx");
 
         assertTrue(file.toPath().startsWith(tempDir.toRealPath()));
@@ -34,7 +34,7 @@ class FileUtilsSecurityTest {
     }
 
     @Test
-    void ensureSubDirectoryAllowsSafeDirectoryName() throws Exception {
+    void ensureSubDirectoryAllowsSafeDirectoryName() throws IOException {
         File directory = FileUtils.ensureSubDirectory(tempDir.toString(), "1267813530418155520");
 
         assertTrue(directory.isDirectory());
@@ -42,7 +42,7 @@ class FileUtilsSecurityTest {
     }
 
     @Test
-    void resolveSubDirectoryDoesNotCreateDirectory() throws Exception {
+    void resolveSubDirectoryDoesNotCreateDirectory() throws IOException {
         File directory = FileUtils.resolveSubDirectory(tempDir.toString(), "missing-task");
 
         assertFalse(directory.exists());
@@ -67,7 +67,7 @@ class FileUtilsSecurityTest {
     }
 
     @Test
-    void ensureDirectoryDoesNotExposeLocalPathInErrorMessage() throws Exception {
+    void ensureDirectoryDoesNotExposeLocalPathInErrorMessage() throws IOException {
         Path filePath = Files.createFile(tempDir.resolve("not-directory"));
 
         IOException exception = assertThrows(IOException.class, () -> FileUtils.ensureDirectory(filePath.toString()));

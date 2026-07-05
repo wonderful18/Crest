@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -20,7 +21,7 @@ import static org.mockito.Mockito.when;
 class FlywayMysqlSqlNotesCallbackTest {
 
     @Test
-    void supportsOnlyMysqlCompatibilityMigrationEvents() throws Exception {
+    void supportsOnlyMysqlCompatibilityMigrationEvents() throws SQLException {
         FlywayMysqlSqlNotesCallback callback = new FlywayMysqlSqlNotesCallback();
 
         assertTrue(callback.supports(Event.BEFORE_EACH_MIGRATE, context("MySQL", mysqlCompatibilityVersion())));
@@ -33,7 +34,7 @@ class FlywayMysqlSqlNotesCallbackTest {
     }
 
     @Test
-    void beforeMigrationDisablesSqlNotesAndAfterMigrationRestoresThem() throws Exception {
+    void beforeMigrationDisablesSqlNotesAndAfterMigrationRestoresThem() throws SQLException {
         FlywayMysqlSqlNotesCallback callback = new FlywayMysqlSqlNotesCallback();
         Context context = context("MySQL", mysqlCompatibilityVersion());
         Statement statement = context.getConnection().createStatement();
@@ -48,7 +49,7 @@ class FlywayMysqlSqlNotesCallbackTest {
     }
 
     @Test
-    void unsupportedMigrationDoesNotRunStatements() throws Exception {
+    void unsupportedMigrationDoesNotRunStatements() throws SQLException {
         FlywayMysqlSqlNotesCallback callback = new FlywayMysqlSqlNotesCallback();
         Context context = context("MySQL", unsupportedVersion());
         Statement statement = context.getConnection().createStatement();
@@ -60,7 +61,7 @@ class FlywayMysqlSqlNotesCallbackTest {
         verify(statement, never()).execute("SET SESSION sql_notes = 0");
     }
 
-    private Context context(String databaseProductName, String version) throws Exception {
+    private Context context(String databaseProductName, String version) throws SQLException {
         Context context = mock(Context.class);
         Connection connection = mock(Connection.class);
         DatabaseMetaData metaData = mock(DatabaseMetaData.class);

@@ -20,6 +20,7 @@ import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.MysqlSqlDialect;
 import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.parser.SqlParseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -39,7 +40,7 @@ import static org.mockito.Mockito.mock;
 class ProviderSqlCompatibilityTest {
 
     @Test
-    void restoresUnicodeStringLiteralsProducedByOfficialCalcite() throws Exception {
+    void restoresUnicodeStringLiteralsProducedByOfficialCalcite() throws SqlParseException {
         SqlParser parser = SqlParser.create(
                 "SELECT * FROM t WHERE department IN ('交易履约部')",
                 SqlParser.Config.DEFAULT.withLex(Lex.JAVA)

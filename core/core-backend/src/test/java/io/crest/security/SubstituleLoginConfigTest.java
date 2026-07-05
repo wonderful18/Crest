@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ class SubstituleLoginConfigTest {
 
     @Test
     @DisplayName("未显式配置时不应写入固定初始口令")
-    void shouldGeneratePasswordWhenNoInitialPasswordConfigured() throws Exception {
+    void shouldGeneratePasswordWhenNoInitialPasswordConfigured() throws IOException {
         SubstituleLoginConfig config = new SubstituleLoginConfig();
         ReflectionTestUtils.setField(config, "jsonFilePath", tempDir.resolve("substitule.json").toString());
 

@@ -127,7 +127,7 @@ class DatasourceServerTest {
     }
 
     @Test
-    void quoteIdentifierRejectsSqlControlCharactersInTableName() throws Exception {
+    void quoteIdentifierRejectsSqlControlCharactersInTableName() throws ReflectiveOperationException {
         DatasourceServer server = new DatasourceServer();
         Method quoteIdentifier = DatasourceServer.class.getDeclaredMethod("quoteIdentifier", String.class);
         quoteIdentifier.setAccessible(true);
@@ -140,7 +140,7 @@ class DatasourceServerTest {
     }
 
     @Test
-    void quoteExcelIdentifierEscapesFieldNameAsSingleIdentifier() throws Exception {
+    void quoteExcelIdentifierEscapesFieldNameAsSingleIdentifier() throws ReflectiveOperationException {
         DatasourceServer server = new DatasourceServer();
         Method quoteExcelIdentifier = DatasourceServer.class.getDeclaredMethod("quoteExcelIdentifier", String.class);
         quoteExcelIdentifier.setAccessible(true);
@@ -196,7 +196,7 @@ class DatasourceServerTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void maskDatasourceConfigurationRemovesStoredSecretsBeforeTransportEncryption() throws Exception {
+    void maskDatasourceConfigurationRemovesStoredSecretsBeforeTransportEncryption() throws ReflectiveOperationException {
         Method method = DatasourceServer.class.getDeclaredMethod("maskDatasourceConfiguration", String.class);
         method.setAccessible(true);
         String sourceConfiguration = datasourceConfiguration("stored-db-value", "stored-ssh-value",
@@ -217,7 +217,7 @@ class DatasourceServerTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void restoreMaskedDatasourceSecretsKeepsExistingSecretsWhenClientDidNotChangeThem() throws Exception {
+    void restoreMaskedDatasourceSecretsKeepsExistingSecretsWhenClientDidNotChangeThem() throws ReflectiveOperationException {
         Method method = DatasourceServer.class.getDeclaredMethod("restoreMaskedDatasourceSecrets", String.class, String.class);
         method.setAccessible(true);
         String requestConfiguration = datasourceConfiguration(MASKED_VALUE, "", MASKED_VALUE, MASKED_VALUE, MASKED_VALUE);
@@ -239,7 +239,7 @@ class DatasourceServerTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void restoreMaskedDatasourceSecretsUsesStableApiKeysWhenDefinitionsAreReordered() throws Exception {
+    void restoreMaskedDatasourceSecretsUsesStableApiKeysWhenDefinitionsAreReordered() throws ReflectiveOperationException {
         Method method = DatasourceServer.class.getDeclaredMethod("restoreMaskedDatasourceSecrets", String.class, String.class);
         method.setAccessible(true);
         String requestConfiguration = json(List.of(
@@ -268,7 +268,7 @@ class DatasourceServerTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void restoreMaskedDatasourceSecretsKeepsNewSecretsWhenClientChangedThem() throws Exception {
+    void restoreMaskedDatasourceSecretsKeepsNewSecretsWhenClientChangedThem() throws ReflectiveOperationException {
         Method method = DatasourceServer.class.getDeclaredMethod("restoreMaskedDatasourceSecrets", String.class, String.class);
         method.setAccessible(true);
         String requestConfiguration = datasourceConfiguration("new-db-value", null, null, "new-url-value", "new-api-value");

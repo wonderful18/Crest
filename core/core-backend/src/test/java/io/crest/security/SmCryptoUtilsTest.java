@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Base64;
@@ -176,7 +177,7 @@ class SmCryptoUtilsTest {
     }
 
     @Test
-    void shouldMatchSm4StandardBlockCipherVector() throws Exception {
+    void shouldMatchSm4StandardBlockCipherVector() throws GeneralSecurityException {
         SmCryptoUtils.ensureProvider();
         Cipher cipher = Cipher.getInstance("SM4/ECB/NoPadding", BouncyCastleProvider.PROVIDER_NAME);
         byte[] standardBlock = Hex.decode(sm4StandardBlock());

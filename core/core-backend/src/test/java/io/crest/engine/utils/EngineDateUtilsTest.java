@@ -2,6 +2,7 @@ package io.crest.engine.utils;
 
 import org.junit.jupiter.api.Test;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Map;
@@ -26,7 +27,7 @@ class EngineDateUtilsTest {
     }
 
     @Test
-    void parseDateTimeValueBuildsMonthRange() throws Exception {
+    void parseDateTimeValueBuildsMonthRange() throws ParseException {
         Map<String, Long> range = Utils.parseDateTimeValue("2026-06");
 
         long expectedStart = new SimpleDateFormat("yyyy-MM").parse("2026-06").getTime();

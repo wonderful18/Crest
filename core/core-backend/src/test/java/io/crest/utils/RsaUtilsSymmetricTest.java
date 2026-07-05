@@ -7,6 +7,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -55,7 +56,7 @@ class RsaUtilsSymmetricTest {
 
     @Test
     @DisplayName("旧版固定 IV 密文应保持兼容解密")
-    void shouldDecryptLegacyCiphertext() throws Exception {
+    void shouldDecryptLegacyCiphertext() throws GeneralSecurityException {
         byte[] key = Base64.getDecoder().decode(AES_KEY_SAMPLE);
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         cipher.init(Cipher.ENCRYPT_MODE,

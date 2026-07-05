@@ -42,6 +42,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -192,7 +193,7 @@ class DataVisualizationServerImportTest {
     }
 
     @Test
-    void decompressionLocalFileShouldRejectOversizedTemplateBeforeReadingContent() throws Exception {
+    void decompressionLocalFileShouldRejectOversizedTemplateBeforeReadingContent() throws IOException {
         MultipartFile file = mock(MultipartFile.class);
         when(file.isEmpty()).thenReturn(false);
         when(file.getSize()).thenReturn(50L * 1024L * 1024L + 1L);
@@ -205,7 +206,7 @@ class DataVisualizationServerImportTest {
     }
 
     @Test
-    void saveCanvasShouldPersistImportedInnerJumpTargets() throws Exception {
+    void saveCanvasShouldPersistImportedInnerJumpTargets() {
         when(coreVisualizationManage.innerSave(any())).thenReturn(9000L);
 
         DataVisualizationBaseRequest request = new DataVisualizationBaseRequest();

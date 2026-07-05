@@ -43,7 +43,7 @@ public class CalciteProviderObOracleCommentsTest {
     }
 
     @Test
-    public void parseDatasourceConfigurationUsesObOracleDefaultSchema() throws Exception {
+    public void parseDatasourceConfigurationUsesObOracleDefaultSchema() throws ReflectiveOperationException {
         CalciteProvider provider = new CalciteProvider();
         Method method = CalciteProvider.class.getDeclaredMethod("parseDatasourceConfiguration", String.class, String.class);
         method.setAccessible(true);
@@ -59,7 +59,7 @@ public class CalciteProviderObOracleCommentsTest {
     }
 
     @Test
-    public void parseDatasourceConfigurationKeepsObOracleReadOnlySwitch() throws Exception {
+    public void parseDatasourceConfigurationKeepsObOracleReadOnlySwitch() throws ReflectiveOperationException {
         CalciteProvider provider = new CalciteProvider();
         Method method = CalciteProvider.class.getDeclaredMethod("parseDatasourceConfiguration", String.class, String.class);
         method.setAccessible(true);

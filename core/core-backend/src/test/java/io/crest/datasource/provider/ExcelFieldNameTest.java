@@ -21,6 +21,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.lang.reflect.Method;
 import java.util.HashSet;
@@ -70,7 +71,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportSkipsSqlDescriptionSheetAndKeepsDataSheet() throws Exception {
+    void excelImportSkipsSqlDescriptionSheetAndKeepsDataSheet() throws ReflectiveOperationException, IOException {
         List<ExcelSheetData> sheets = parseWorkbook(workbookWithSqlDescriptionSheet());
 
         assertEquals(2, sheets.size());
@@ -91,7 +92,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportDoesNotSkipTabularHeaderContainingSqlWords() throws Exception {
+    void excelImportDoesNotSkipTabularHeaderContainingSqlWords() throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("数据");
             Row header = sheet.createRow(0);
@@ -111,7 +112,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportMakesDuplicateHeadersUnique() throws Exception {
+    void excelImportMakesDuplicateHeadersUnique() throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("重复表头");
             Row header = sheet.createRow(0);
@@ -135,7 +136,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportStoresCanonicalFieldType() throws Exception {
+    void excelImportStoresCanonicalFieldType() throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("字段类型");
             Row header = sheet.createRow(0);
@@ -156,7 +157,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportDefaultsColumnsWithLeadingBlankCellsToSafeTextType() throws Exception {
+    void excelImportDefaultsColumnsWithLeadingBlankCellsToSafeTextType() throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("空值");
             Row header = sheet.createRow(0);
@@ -179,7 +180,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportPromotesMixedNumericAndTextColumnsToText() throws Exception {
+    void excelImportPromotesMixedNumericAndTextColumnsToText() throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("混合类型");
             Row header = sheet.createRow(0);
@@ -199,7 +200,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportHandlesWideSheetWithNullsAndMixedFieldTypes() throws Exception {
+    void excelImportHandlesWideSheetWithNullsAndMixedFieldTypes() throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("宽表");
             Row header = sheet.createRow(0);
@@ -300,7 +301,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportHandlesLargeSparseSheetWithoutColumnShift() throws Exception {
+    void excelImportHandlesLargeSparseSheetWithoutColumnShift() throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("复杂宽表");
             Row header = sheet.createRow(0);
@@ -450,7 +451,7 @@ class ExcelFieldNameTest {
             "投产月份|202606",
             "投产年月|202601"
     })
-    void excelImportKeepsIdentifierAndDateLikeNumericTextAsText(String headerName, String value) throws Exception {
+    void excelImportKeepsIdentifierAndDateLikeNumericTextAsText(String headerName, String value) throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("类型识别");
             Row header = sheet.createRow(0);
@@ -477,7 +478,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportInfersWideOperationalSheetWithNullsIdentifiersAndMetrics() throws Exception {
+    void excelImportInfersWideOperationalSheetWithNullsIdentifiersAndMetrics() throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("运营宽表");
             Row header = sheet.createRow(0);
@@ -579,7 +580,7 @@ class ExcelFieldNameTest {
             String headerName,
             String expectedType,
             int expectedFieldType
-    ) throws Exception {
+    ) throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("小数语义字段");
             Row header = sheet.createRow(0);
@@ -596,7 +597,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportTreatsLiteralNullPlaceholdersAsMissingValuesWhenInferringTypes() throws Exception {
+    void excelImportTreatsLiteralNullPlaceholdersAsMissingValuesWhenInferringTypes() throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("空值占位符");
             Row header = sheet.createRow(0);
@@ -654,7 +655,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportInfersRepresentativeRequirementProductionExportWithManyNullableFields() throws Exception {
+    void excelImportInfersRepresentativeRequirementProductionExportWithManyNullableFields() throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("需求投产明细");
             Row header = sheet.createRow(0);
@@ -814,7 +815,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportCoversWideRequirementFieldMatrixWithBlankAndNullCells() throws Exception {
+    void excelImportCoversWideRequirementFieldMatrixWithBlankAndNullCells() throws ReflectiveOperationException, IOException {
         Object[][] fieldCases = {
                 {"项目编号", " null ", "A20210186", "A20220005", "TEXT", 0},
                 {"项目类型", "", "非商务类项目模板", "一般项目", "TEXT", 0},
@@ -888,7 +889,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportCoversMessyWideExportWithAllNullableConversionCandidates() throws Exception {
+    void excelImportCoversMessyWideExportWithAllNullableConversionCandidates() throws ReflectiveOperationException, IOException {
         Object[][] fieldCases = {
                 {"项目编号", "null", "000001", "000002", "TEXT", 0},
                 {"需求编号", "NULL", "REQ-202605150001", "202605150002", "TEXT", 0},
@@ -963,7 +964,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void csvImportKeepsIdentifierAndDateLikeNumericTextAsText() throws Exception {
+    void csvImportKeepsIdentifierAndDateLikeNumericTextAsText() throws ReflectiveOperationException, IOException {
         List<ExcelSheetData> sheets = parseCsv("""
                 项目编号,需求编号,投产月份,需求数,平均耗时,空值列
                 000001,202605150001,202606, 12 , 18.50 ,
@@ -983,7 +984,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void csvImportIgnoresWhitespaceOnlyCellsDuringTypeInference() throws Exception {
+    void csvImportIgnoresWhitespaceOnlyCellsDuringTypeInference() throws ReflectiveOperationException, IOException {
         List<ExcelSheetData> sheets = parseCsv("""
                 需求数,平均耗时,说明
                    ,   ,首行空白
@@ -1000,7 +1001,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void csvImportTreatsLiteralNullPlaceholdersAsMissingValuesForTypeInference() throws Exception {
+    void csvImportTreatsLiteralNullPlaceholdersAsMissingValuesForTypeInference() throws ReflectiveOperationException, IOException {
         List<ExcelSheetData> sheets = parseCsv("""
                 项目编号,需求数,平均耗时,备注
                 A001,null,18.5,NULL
@@ -1021,7 +1022,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportDoesNotTreatOrdinaryEnglishWordsEndingWithIdAsIdentifiers() throws Exception {
+    void excelImportDoesNotTreatOrdinaryEnglishWordsEndingWithIdAsIdentifiers() throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("英文后缀");
             Row header = sheet.createRow(0);
@@ -1042,7 +1043,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelImportSkipsSheetWithBlankHeaderGap() throws Exception {
+    void excelImportSkipsSheetWithBlankHeaderGap() throws ReflectiveOperationException, IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("空表头");
             Row header = sheet.createRow(0);
@@ -1065,7 +1066,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void csvImportPreservesQuotedCommasAndMissingCellsAsSafeValues() throws Exception {
+    void csvImportPreservesQuotedCommasAndMissingCellsAsSafeValues() throws ReflectiveOperationException, IOException {
         List<ExcelSheetData> sheets = parseCsv("部门,说明,数量,空值\n研发,\"包含,逗号\",12,\n测试,,,\n");
 
         ExcelSheetData dataSheet = sheets.get(0);
@@ -1083,7 +1084,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void csvImportParsesQuotedHeadersWithCommas() throws Exception {
+    void csvImportParsesQuotedHeadersWithCommas() throws ReflectiveOperationException, IOException {
         List<ExcelSheetData> sheets = parseCsv("\"部门,名称\",数量\n研发一室,12\n");
 
         ExcelSheetData dataSheet = sheets.get(0);
@@ -1096,7 +1097,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelGetTableFieldsNormalizesLegacyFieldsWithoutType() throws Exception {
+    void excelGetTableFieldsNormalizesLegacyFieldsWithoutType() throws ReflectiveOperationException, IOException {
         ExcelSheetData sheet = new ExcelSheetData();
         sheet.setSheet(true);
         sheet.setDisplayTableName("excel_legacy");
@@ -1223,7 +1224,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void csvImportSkipsSheetWithBlankHeaderCell() throws Exception {
+    void csvImportSkipsSheetWithBlankHeaderCell() throws ReflectiveOperationException, IOException {
         List<ExcelSheetData> sheets = parseCsv("月份,   ,数量\n2026年1月,12,24\n");
 
         assertEquals(1, sheets.size());
@@ -1236,7 +1237,7 @@ class ExcelFieldNameTest {
     }
 
     @Test
-    void excelTablesExposeOnlyImportableSheets() throws Exception {
+    void excelTablesExposeOnlyImportableSheets() throws ReflectiveOperationException, IOException {
         List<ExcelSheetData> sheets = parseWorkbook(workbookWithSqlDescriptionSheet());
         fillSavedSheetMetadata(sheets);
         DatasourceRequest request = new DatasourceRequest();
@@ -1311,7 +1312,7 @@ class ExcelFieldNameTest {
     }
 
     @SuppressWarnings("unchecked")
-    private List<ExcelSheetData> parseWorkbook(Workbook workbook) throws Exception {
+    private List<ExcelSheetData> parseWorkbook(Workbook workbook) throws ReflectiveOperationException, IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         workbook.write(outputStream);
         workbook.close();
@@ -1334,7 +1335,7 @@ class ExcelFieldNameTest {
     }
 
     @SuppressWarnings("unchecked")
-    private List<ExcelSheetData> parseCsv(String content) throws Exception {
+    private List<ExcelSheetData> parseCsv(String content) throws ReflectiveOperationException, IOException {
         ExcelUtils excelUtils = new ExcelUtils();
         Method parseExcel = ExcelUtils.class.getDeclaredMethod(
                 "parseExcel",

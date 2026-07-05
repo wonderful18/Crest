@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
 class DataPortalServerTest {
 
     @Test
-    void trustedAssetOrderingKeepsDeprecatedResourcesBehindTrustedResources() throws Exception {
+    void trustedAssetOrderingKeepsDeprecatedResourcesBehindTrustedResources() throws ReflectiveOperationException {
         DataPortalServer server = new DataPortalServer();
         Method method = DataPortalServer.class.getDeclaredMethod(
                 "orderExpression", DataPortalResourceRequest.class, String.class);
@@ -47,7 +47,7 @@ class DataPortalServerTest {
     }
 
     @Test
-    void baseQueryBindsUserFiltersAsParameters() throws Exception {
+    void baseQueryBindsUserFiltersAsParameters() throws ReflectiveOperationException {
         DataPortalServer server = new DataPortalServer();
         DataPortalPermissionManage permissionManage = mock(DataPortalPermissionManage.class);
         doAnswer(invocation -> null)

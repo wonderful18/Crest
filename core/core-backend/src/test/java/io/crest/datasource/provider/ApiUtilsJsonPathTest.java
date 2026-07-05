@@ -5,8 +5,9 @@ import com.sun.net.httpserver.HttpServer;
 import io.crest.extensions.datasource.dto.ApiDefinition;
 import io.crest.extensions.datasource.dto.ApiDefinitionRequest;
 import io.crest.extensions.datasource.dto.TableField;
-import java.net.InetSocketAddress;
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +40,7 @@ public class ApiUtilsJsonPathTest {
     }
 
     @Test
-    public void jsonPathModeAcceptsDollarPathWithoutDotAndBuildsNestedFields() throws Exception {
+    public void jsonPathModeAcceptsDollarPathWithoutDotAndBuildsNestedFields() throws ReflectiveOperationException {
         ApiDefinition definition = new ApiDefinition();
         definition.setUseJsonPath(true);
         definition.setJsonPath("$data.dataList");
@@ -63,7 +64,7 @@ public class ApiUtilsJsonPathTest {
     }
 
     @Test
-    public void apiStructurePreviewUsesJsonPathRowsWhenJsonPathIsEnabled() throws Exception {
+    public void apiStructurePreviewUsesJsonPathRowsWhenJsonPathIsEnabled() throws ReflectiveOperationException {
         ApiDefinition definition = new ApiDefinition();
         definition.setShowApiStructure(true);
         definition.setUseJsonPath(true);
@@ -80,7 +81,7 @@ public class ApiUtilsJsonPathTest {
     }
 
     @Test
-    public void jsonPathModeFetchesNestedFieldsFromSelectedRows() throws Exception {
+    public void jsonPathModeFetchesNestedFieldsFromSelectedRows() throws ReflectiveOperationException {
         ApiDefinition definition = new ApiDefinition();
         definition.setUseJsonPath(true);
         definition.setJsonPath("$data.dataList");
@@ -102,7 +103,7 @@ public class ApiUtilsJsonPathTest {
     }
 
     @Test
-    public void jsonPathModeKeepsMultipleNestedValuesInCurrentRow() throws Exception {
+    public void jsonPathModeKeepsMultipleNestedValuesInCurrentRow() throws ReflectiveOperationException {
         String response = """
                 {
                   "data": {
@@ -131,7 +132,7 @@ public class ApiUtilsJsonPathTest {
     }
 
     @Test
-    public void execHttpRequestSendsFixedAuthorizationHeader() throws Exception {
+    public void execHttpRequestSendsFixedAuthorizationHeader() throws IOException {
         AtomicReference<String> authorization = new AtomicReference<>();
         HttpServer server = HttpServer.create(new InetSocketAddress(loopbackAddress(), 0), 0);
         server.createContext("/users", exchange -> {
@@ -164,14 +165,14 @@ public class ApiUtilsJsonPathTest {
         }
     }
 
-    private ApiDefinition invokeCheckApiDefinition(ApiDefinition definition, String response) throws Exception {
+    private ApiDefinition invokeCheckApiDefinition(ApiDefinition definition, String response) throws ReflectiveOperationException {
         Method method = ApiUtils.class.getDeclaredMethod("checkApiDefinition", ApiDefinition.class, String.class);
         method.setAccessible(true);
         return (ApiDefinition) method.invoke(null, definition, response);
     }
 
     @SuppressWarnings("unchecked")
-    private List<String[]> invokeFetchResult(String response, ApiDefinition definition) throws Exception {
+    private List<String[]> invokeFetchResult(String response, ApiDefinition definition) throws ReflectiveOperationException {
         Method method = ApiUtils.class.getDeclaredMethod("fetchResult", String.class, ApiDefinition.class);
         method.setAccessible(true);
         return (List<String[]>) method.invoke(null, response, definition);

@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -89,7 +90,7 @@ class ExportCenterManageTest {
 
     @Test
     @DisplayName("下载票据应允许导出中心刷新下载任务时间")
-    void downloadTicketShouldSurviveDownloadTaskTimeRefresh() throws Exception {
+    void downloadTicketShouldSurviveDownloadTaskTimeRefresh() throws IOException {
         ExportCenterManage manage = new ExportCenterManage();
         ReflectionTestUtils.setField(manage, "exportTaskMapper", exportTaskMapper);
         ReflectionTestUtils.setField(manage, "coreExportDownloadTaskMapper", coreExportDownloadTaskMapper);

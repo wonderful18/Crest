@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 class DatasetSyncManageTest {
 
     @Test
-    void executeNowRejectsDisabledSyncModeBeforeSubmittingAsyncTask() throws Exception {
+    void executeNowRejectsDisabledSyncModeBeforeSubmittingAsyncTask() {
         DatasetSyncManage manage = new DatasetSyncManage();
         DatasetSyncTaskManage taskManage = mock(DatasetSyncTaskManage.class);
         DatasetGroupManage datasetGroupManage = mock(DatasetGroupManage.class);

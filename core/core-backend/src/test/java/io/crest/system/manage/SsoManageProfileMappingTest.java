@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 public class SsoManageProfileMappingTest {
 
     @Test
-    public void mapsConfiguredProviderTypeAndUnionIdClaim() throws Exception {
+    public void mapsConfiguredProviderTypeAndUnionIdClaim() throws ReflectiveOperationException {
         SsoConfigVO config = new SsoConfigVO();
         config.setProviderType("FEISHU");
         config.setUserIdAttribute("open_id");
@@ -40,7 +40,7 @@ public class SsoManageProfileMappingTest {
         assertEquals("onion_xxx", profile.getUnionId());
     }
 
-    private SsoIdentityProfile invokeProfile(SsoConfigVO config, Map<String, Object> claims) throws Exception {
+    private SsoIdentityProfile invokeProfile(SsoConfigVO config, Map<String, Object> claims) throws ReflectiveOperationException {
         SsoManage manage = new SsoManage();
         Method profileMethod = SsoManage.class.getDeclaredMethod("profile", SsoConfigVO.class, Map.class);
         profileMethod.setAccessible(true);

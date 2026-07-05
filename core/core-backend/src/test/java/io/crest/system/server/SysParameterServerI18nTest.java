@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -24,7 +25,7 @@ class SysParameterServerI18nTest {
     }
 
     @Test
-    void i18nOptionsShouldReadValidCustomFrontLanguageFiles() throws Exception {
+    void i18nOptionsShouldReadValidCustomFrontLanguageFiles() throws IOException {
         Path frontDir = tempDir.resolve("front");
         Files.createDirectories(frontDir);
         Files.writeString(frontDir.resolve("custom_en_US_front_English.js"), "export default {}");

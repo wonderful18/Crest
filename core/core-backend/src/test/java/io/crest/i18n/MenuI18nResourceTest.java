@@ -2,6 +2,7 @@ package io.crest.i18n;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Properties;
@@ -19,7 +20,7 @@ class MenuI18nResourceTest {
     );
 
     @Test
-    void menuKeysShouldExistInAllBackendBundles() throws Exception {
+    void menuKeysShouldExistInAllBackendBundles() throws IOException {
         TreeSet<String> allMenuKeys = new TreeSet<>();
         for (String bundleName : BUNDLE_NAMES) {
             allMenuKeys.addAll(menuKeys(loadBundle(bundleName)));
@@ -34,7 +35,7 @@ class MenuI18nResourceTest {
         }
     }
 
-    private Properties loadBundle(String bundleName) throws Exception {
+    private Properties loadBundle(String bundleName) throws IOException {
         Properties properties = new Properties();
         try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(bundleName)) {
             assertTrue(inputStream != null, "Missing bundle: " + bundleName);

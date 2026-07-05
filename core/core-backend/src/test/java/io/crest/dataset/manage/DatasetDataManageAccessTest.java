@@ -99,7 +99,7 @@ class DatasetDataManageAccessTest {
     }
 
     @Test
-    void fieldEnumReturnsEmptyForMissingRequest() throws Exception {
+    void fieldEnumReturnsEmptyForMissingRequest() {
         DatasetDataManage manage = new DatasetDataManage();
 
         assertEquals(List.of(), manage.getFieldEnum(null));
@@ -121,7 +121,7 @@ class DatasetDataManageAccessTest {
     }
 
     @Test
-    void previewDataAllowsAuthorizedDatasourceToReachSqlBuild() throws Exception {
+    void previewDataAllowsAuthorizedDatasourceToReachSqlBuild() {
         DatasetDataManage manage = datasetDataManageWithDatasource("2");
         DatasetSQLManage datasetSQLManage = mock(DatasetSQLManage.class);
         ReflectionTestUtils.setField(manage, "datasetSQLManage", datasetSQLManage);

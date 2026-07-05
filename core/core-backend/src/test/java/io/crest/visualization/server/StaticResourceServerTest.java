@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,7 +22,7 @@ class StaticResourceServerTest {
     Path tempDir;
 
     @Test
-    void uploadAcceptsValidMultipartPng() throws Exception {
+    void uploadAcceptsValidMultipartPng() throws IOException {
         StaticResourceServer server = server();
         byte[] png = Base64.getDecoder().decode(
                 "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=");
@@ -33,7 +34,7 @@ class StaticResourceServerTest {
     }
 
     @Test
-    void saveSingleFileToServeAcceptsDataUriBase64Image() throws Exception {
+    void saveSingleFileToServeAcceptsDataUriBase64Image() throws IOException {
         StaticResourceServer server = server();
         byte[] png = Base64.getDecoder().decode(
                 "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=");

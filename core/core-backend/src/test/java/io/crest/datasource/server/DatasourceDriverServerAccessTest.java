@@ -16,6 +16,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -99,7 +100,7 @@ class DatasourceDriverServerAccessTest {
     }
 
     @Test
-    void uploadJarAcceptsCaseInsensitiveJarExtensionWithZipContent() throws Exception {
+    void uploadJarAcceptsCaseInsensitiveJarExtensionWithZipContent() throws IOException {
         AuthUtils.setUser(new TokenUserBO(1L, 1L));
         CoreDriverJarMapper jarMapper = mock(CoreDriverJarMapper.class);
         when(jarMapper.selectList(any())).thenReturn(List.of());
@@ -128,7 +129,7 @@ class DatasourceDriverServerAccessTest {
         return server;
     }
 
-    private byte[] jarBytes() throws Exception {
+    private byte[] jarBytes() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(out)) {
             zip.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));

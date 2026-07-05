@@ -1,6 +1,7 @@
 package io.crest.visualization.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.crest.api.visualization.request.DataVisualizationBaseRequest;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +12,7 @@ class DataVisualizationBaseRequestJsonTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void shouldAcceptBooleanStatusFromCopyPayload() throws Exception {
+    void shouldAcceptBooleanStatusFromCopyPayload() throws JsonProcessingException {
         DataVisualizationBaseRequest request = objectMapper.readValue("""
                 {
                   "id": 10,
@@ -28,7 +29,7 @@ class DataVisualizationBaseRequestJsonTest {
     }
 
     @Test
-    void shouldAcceptNumericStatusFromVisualizationPayload() throws Exception {
+    void shouldAcceptNumericStatusFromVisualizationPayload() throws JsonProcessingException {
         DataVisualizationBaseRequest request = objectMapper.readValue("""
                 {
                   "id": 10,

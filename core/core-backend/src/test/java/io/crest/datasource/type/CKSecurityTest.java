@@ -3,6 +3,7 @@ package io.crest.datasource.type;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
@@ -16,7 +17,7 @@ class CKSecurityTest {
     Path tempDir;
 
     @Test
-    void sslCertificateContentUsesStableSingleFile() throws Exception {
+    void sslCertificateContentUsesStableSingleFile() throws IOException {
         String originalTmpDir = System.getProperty("java.io.tmpdir");
         System.setProperty("java.io.tmpdir", tempDir.toString());
         try {

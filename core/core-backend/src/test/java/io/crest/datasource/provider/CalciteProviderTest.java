@@ -6,9 +6,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.dto.DatasourceDTO;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,7 +26,7 @@ class CalciteProviderTest {
     Path tempDir;
 
     @Test
-    void initKeepsDefaultClassLoaderWhenDriverDirectoryIsUnavailable() throws Exception {
+    void initKeepsDefaultClassLoaderWhenDriverDirectoryIsUnavailable() throws IOException {
         Path notDirectory = Files.createFile(tempDir.resolve("drivers"));
         CalciteProvider provider = new CalciteProvider();
         ReflectionTestUtils.setField(provider, "FILE_PATH", notDirectory.toString());
@@ -36,7 +38,7 @@ class CalciteProviderTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void closeCalciteConnectionClosesSharedConnectionAndClearsReference() throws Exception {
+    void closeCalciteConnectionClosesSharedConnectionAndClearsReference() throws SQLException {
         CalciteProvider provider = new CalciteProvider();
         Connection connection = mock(Connection.class);
         AtomicReference<Connection> reference = (AtomicReference<Connection>) ReflectionTestUtils.getField(provider, "calciteConnectionRef");

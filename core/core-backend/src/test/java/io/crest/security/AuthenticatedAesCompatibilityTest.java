@@ -8,6 +8,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,7 +50,7 @@ class AuthenticatedAesCompatibilityTest {
     }
 
     @Test
-    void aesUtilsKeepsLegacyFixedIvDecryptCompatibility() throws Exception {
+    void aesUtilsKeepsLegacyFixedIvDecryptCompatibility() throws GeneralSecurityException {
         assertEquals("legacy", AesUtils.aesDecrypt(legacyCiphertext("legacy", AES_KEY_SAMPLE, AES_IV_SAMPLE), AES_KEY_SAMPLE, AES_IV_SAMPLE));
     }
 
@@ -74,11 +75,11 @@ class AuthenticatedAesCompatibilityTest {
     }
 
     @Test
-    void encryptUtilsKeepsLegacyFixedIvDecryptCompatibility() throws Exception {
+    void encryptUtilsKeepsLegacyFixedIvDecryptCompatibility() throws GeneralSecurityException {
         assertEquals("legacy", EncryptUtils.aesDecrypt(legacyCiphertext("legacy", AES_KEY_SAMPLE, AES_IV_SAMPLE), AES_KEY_SAMPLE, AES_IV_SAMPLE));
     }
 
-    private String legacyCiphertext(String plainText, String key, String iv) throws Exception {
+    private String legacyCiphertext(String plainText, String key, String iv) throws GeneralSecurityException {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         cipher.init(Cipher.ENCRYPT_MODE,
                 new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES"),
