@@ -301,29 +301,29 @@ public class CalciteProvider extends Provider {
 
         List<TableField> datasetTableFields = new ArrayList<>();
         List<String[]> list = new LinkedList<>();
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
         Connection connection = take();
         try {
             CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
             String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
-            statement = calciteConnection.prepareStatement(readQuery);
-            bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
-            resultSet = statement.executeQuery();
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
-            for (int i = 1; i <= columnCount; i++) {
-                TableField tableField = new TableField();
-                tableField.setOriginName(metaData.getColumnLabel(i));
-                tableField.setType(metaData.getColumnTypeName(i));
-                tableField.setPrecision(metaData.getPrecision(i));
-                int fieldType = FieldUtils.resolveFieldType(tableField.getType());
-                tableField.setExtractedFieldType(fieldType);
-                tableField.setFieldType(fieldType);
-                tableField.setScale(metaData.getScale(i));
-                datasetTableFields.add(tableField);
+            try (PreparedStatement statement = calciteConnection.prepareStatement(readQuery)) {
+                bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    ResultSetMetaData metaData = resultSet.getMetaData();
+                    int columnCount = metaData.getColumnCount();
+                    for (int i = 1; i <= columnCount; i++) {
+                        TableField tableField = new TableField();
+                        tableField.setOriginName(metaData.getColumnLabel(i));
+                        tableField.setType(metaData.getColumnTypeName(i));
+                        tableField.setPrecision(metaData.getPrecision(i));
+                        int fieldType = FieldUtils.resolveFieldType(tableField.getType());
+                        tableField.setExtractedFieldType(fieldType);
+                        tableField.setFieldType(fieldType);
+                        tableField.setScale(metaData.getScale(i));
+                        datasetTableFields.add(tableField);
+                    }
+                    list = dataResult(resultSet);
+                }
             }
-            list = dataResult(resultSet);
         } catch (SQLException | RuntimeException | AssertionError e) {
             String msg;
             if (e.getCause() != null && e.getCause().getCause() != null) {
@@ -332,13 +332,6 @@ public class CalciteProvider extends Provider {
                 msg = e.getMessage();
             }
             CrestException.throwException(Translator.get("i18n_fetch_error") + msg);
-        } finally {
-            try {
-                if (resultSet != null) resultSet.close();
-                if (statement != null) statement.close();
-            } catch (SQLException e) {
-                LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
-            }
         }
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("fields", datasetTableFields);
