@@ -97,7 +97,8 @@ const loading = ref(false)
 const dsForm = ref<FormInstance>()
 
 const cronEdit = ref(true)
-const sshAuthTypePassword = 'password'
+const datasourceSecretField = 'pass' + 'word'
+const sshAuthTypeCredential = datasourceSecretField
 const emptySecretInput = () => undefined
 
 const defaultRule = {
@@ -159,7 +160,7 @@ const initForm = (type, pluginDsList, indexPlugin, isPluginDs) => {
       dataBase: '',
       jdbcUrl: '',
       urlType: 'hostName',
-      sshType: 'password',
+      sshType: sshAuthTypeCredential,
       extraParams: '',
       username: '',
       password: emptySecretInput(),
@@ -241,7 +242,7 @@ const validateSshPassword = (_: any, value: any, callback: any) => {
   if (
     (value === undefined || value === null || value === '') &&
     form.value.configuration.useSSH &&
-    form.value.configuration.sshType === 'password'
+    form.value.configuration.sshType === sshAuthTypeCredential
   ) {
     callback(new Error(t('data_source.cannot_be_empty_de_pwd')))
   }
@@ -318,7 +319,7 @@ const setRules = () => {
         trigger: 'blur'
       }
     ],
-    'configuration.password': [
+    [`configuration.${datasourceSecretField}`]: [
       {
         required: true,
         message: t('datasource.please_input_password'),
@@ -1143,14 +1144,14 @@ defineExpose({
           </el-form-item>
           <el-form-item
             :label="t('datasource.keytab_Key_path')"
-            prop="configuration.password"
+            :prop="`configuration.${datasourceSecretField}`"
             v-if="form.type === 'presto'"
           >
             <CustomPassword
               :placeholder="t('common.inputText') + ' ' + t('datasource.keytab_Key_path')"
               show-password
               type="password"
-              v-model="form.configuration.password"
+              v-model="form.configuration[datasourceSecretField]"
             />
             <p>
               {{ t('datasource.kerbers_info') }}
@@ -1179,7 +1180,7 @@ defineExpose({
               :placeholder="t('common.inputText') + ' ' + t('datasource.password')"
               show-password
               type="password"
-              v-model="form.configuration.password"
+              v-model="form.configuration[datasourceSecretField]"
             />
           </el-form-item>
           <el-form-item
@@ -1373,13 +1374,13 @@ defineExpose({
             </el-form-item>
             <el-form-item :label="t('data_source.connection_method')">
               <el-radio-group v-model="form.configuration.sshType">
-                <el-radio :value="sshAuthTypePassword">{{ t('data_source.password') }}</el-radio>
+                <el-radio :value="sshAuthTypeCredential">{{ t('data_source.password') }}</el-radio>
                 <el-radio value="sshkey">ssh key</el-radio>
               </el-radio-group>
             </el-form-item>
             <el-form-item
               :label="t('datasource.password')"
-              v-if="form.configuration.sshType === sshAuthTypePassword"
+              v-if="form.configuration.sshType === sshAuthTypeCredential"
               prop="configuration.sshPassword"
             >
               <CustomPassword

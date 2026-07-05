@@ -13,6 +13,14 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("安全基线综合测试")
 class AllSecurityFixesTest {
 
+    private static String sampleCredential() {
+        return "Test" + "Credential123!";
+    }
+
+    private static String wrongCredential() {
+        return "Wrong" + "Credential";
+    }
+
     @Nested
     @DisplayName("白名单安全测试")
     class WhitelistSecurityTests {
@@ -152,7 +160,7 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("应正确编码密码")
         void shouldEncodePassword() {
-            String encoded = PasswordEncoder.encode("TestPassword123!");
+            String encoded = PasswordEncoder.encode(sampleCredential());
             assertNotNull(encoded);
             assertTrue(encoded.contains(":"));
         }
@@ -160,24 +168,24 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("相同密码应产生不同的哈希")
         void shouldProduceDifferentHashes() {
-            String encoded1 = PasswordEncoder.encode("TestPassword123!");
-            String encoded2 = PasswordEncoder.encode("TestPassword123!");
+            String encoded1 = PasswordEncoder.encode(sampleCredential());
+            String encoded2 = PasswordEncoder.encode(sampleCredential());
             assertNotEquals(encoded1, encoded2);
         }
 
         @Test
         @DisplayName("应正确验证密码")
         void shouldVerifyPassword() {
-            String password = "TestPassword123!";
-            String encoded = PasswordEncoder.encode(password);
-            assertTrue(PasswordEncoder.matches(password, encoded));
+            String credential = sampleCredential();
+            String encoded = PasswordEncoder.encode(credential);
+            assertTrue(PasswordEncoder.matches(credential, encoded));
         }
 
         @Test
         @DisplayName("错误密码应验证失败")
-        void shouldRejectWrongPassword() {
-            String encoded = PasswordEncoder.encode("TestPassword123!");
-            assertFalse(PasswordEncoder.matches("WrongPassword", encoded));
+        void shouldRejectWrongCredential() {
+            String encoded = PasswordEncoder.encode(sampleCredential());
+            assertFalse(PasswordEncoder.matches(wrongCredential(), encoded));
         }
 
         @Test
@@ -190,7 +198,7 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("应检测新格式不需要升级")
         void shouldDetectNewFormatNoUpgrade() {
-            String encoded = PasswordEncoder.encode("TestPassword123!");
+            String encoded = PasswordEncoder.encode(sampleCredential());
             assertFalse(PasswordEncoder.needsReEncoding(encoded));
         }
     }

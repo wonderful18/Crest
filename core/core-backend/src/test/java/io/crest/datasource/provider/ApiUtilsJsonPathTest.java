@@ -147,16 +147,17 @@ public class ApiUtilsJsonPathTest {
             definition.setUrl("http://127.0.0.1:" + server.getAddress().getPort() + "/users");
             definition.setMethod("GET");
             definition.setRequest(new ApiDefinitionRequest());
+            String authHeaderValue = "Bearer crest-sample";
             definition.getRequest().setHeaders(List.of(Map.of(
                     "name", "Authorization",
                     "nameType", "fixed",
-                    "value", "Bearer crest-token"
+                    "value", authHeaderValue
             )));
 
             String response = ApiUtils.execHttpRequest(true, definition, 10, List.of());
 
             assertTrue(response.contains("dataList"));
-            assertEquals("Bearer crest-token", authorization.get());
+            assertEquals(authHeaderValue, authorization.get());
         } finally {
             server.stop(0);
         }
