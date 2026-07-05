@@ -19,7 +19,10 @@ const safeRedirectUrl = (url?: string) => {
   if (!text || /[\u0000-\u001f\u007f]/.test(text)) return null
   try {
     const target = new URL(text, window.location.href)
-    return ['http:', 'https:'].includes(target.protocol) ? text : null
+    if (!['http:', 'https:'].includes(target.protocol) || target.username || target.password) {
+      return null
+    }
+    return target.href
   } catch {
     return null
   }
