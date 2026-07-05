@@ -41,9 +41,9 @@ git checkout -b feat/your-change
 已发布版本补丁从维护分支创建：
 
 ```bash
-git checkout release/1.5
+git checkout release/1.5-lts
 git pull --ff-only
-git checkout -b hotfix/1.5.6-your-fix
+git checkout -b hotfix/1.5.15-your-fix
 ```
 
 提交信息使用简洁的 Conventional Commit 风格：
