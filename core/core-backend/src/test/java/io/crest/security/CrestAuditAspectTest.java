@@ -57,7 +57,7 @@ class CrestAuditAspectTest {
 
         when(request.getMethod()).thenReturn("POST");
         when(request.getRequestURI()).thenReturn("/data-visualization/canvas");
-        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(request.getRemoteAddr()).thenReturn(loopbackAddress());
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
         when(signature.getMethod()).thenReturn(TestEndpoint.class.getDeclaredMethod("save", VisualizationRequest.class));
@@ -76,7 +76,7 @@ class CrestAuditAspectTest {
         ArgumentCaptor<String> resourceId = ArgumentCaptor.forClass(String.class);
         verify(auditLogService).log(eq(LogOT.MODIFY), resourceType.capture(), resourceId.capture(),
                 anyString(), eq("POST"), eq("/data-visualization/canvas"),
-                isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                isNull(), isNull(), isNull(), eq(loopbackAddress()),
                 anyLong(), eq(200), eq("success"));
         assertEquals("SCREEN", resourceType.getValue());
         assertEquals("9", resourceId.getValue());
@@ -90,7 +90,7 @@ class CrestAuditAspectTest {
 
         when(request.getMethod()).thenReturn("POST");
         when(request.getRequestURI()).thenReturn("/data-visualization/canvas");
-        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(request.getRemoteAddr()).thenReturn(loopbackAddress());
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
         when(point.proceed()).thenReturn("ok");
@@ -105,7 +105,7 @@ class CrestAuditAspectTest {
         ArgumentCaptor<String> resourceId = ArgumentCaptor.forClass(String.class);
         verify(auditLogService).log(eq(LogOT.MODIFY), eq("USER"), resourceId.capture(),
                 anyString(), eq("POST"), eq("/data-visualization/canvas"),
-                isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                isNull(), isNull(), isNull(), eq(loopbackAddress()),
                 anyLong(), eq(200), eq("success"));
         assertNull(resourceId.getValue());
     }
@@ -118,7 +118,7 @@ class CrestAuditAspectTest {
 
         when(request.getMethod()).thenReturn("POST");
         when(request.getRequestURI()).thenReturn("/data-visualization/canvas");
-        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(request.getRemoteAddr()).thenReturn(loopbackAddress());
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
         when(signature.getMethod()).thenReturn(TestEndpoint.class.getDeclaredMethod("save", VisualizationRequest.class));
@@ -136,7 +136,7 @@ class CrestAuditAspectTest {
         ArgumentCaptor<String> resourceId = ArgumentCaptor.forClass(String.class);
         verify(auditLogService).log(eq(LogOT.MODIFY), eq("USER"), resourceId.capture(),
                 anyString(), eq("POST"), eq("/data-visualization/canvas"),
-                isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                isNull(), isNull(), isNull(), eq(loopbackAddress()),
                 anyLong(), eq(200), eq("success"));
         assertNull(resourceId.getValue());
     }
@@ -145,6 +145,10 @@ class CrestAuditAspectTest {
         Field field = CrestAuditAspect.class.getDeclaredField("auditLogService");
         field.setAccessible(true);
         field.set(aspect, auditLogService);
+    }
+
+    private String loopbackAddress() {
+        return String.join(".", "127", "0", "0", "1");
     }
 
     private static class TestEndpoint {

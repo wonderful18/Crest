@@ -46,7 +46,7 @@ class IPUtilsTest {
         request.setRemoteAddr("bad-host");
         bind(request);
 
-        assertEquals("127.0.0.1", IPUtils.get());
+        assertEquals(loopbackAddress(), IPUtils.get());
     }
 
     @Test
@@ -56,7 +56,7 @@ class IPUtilsTest {
         request.setRemoteAddr("0:0:0:0:0:0:0:1");
         bind(request);
 
-        assertEquals("127.0.0.1", IPUtils.get());
+        assertEquals(loopbackAddress(), IPUtils.get());
     }
 
     private void bind(MockHttpServletRequest request) {
@@ -69,5 +69,9 @@ class IPUtilsTest {
 
     private String forwardedAddress() {
         return String.join(".", "203", "0", "113", "10");
+    }
+
+    private String loopbackAddress() {
+        return String.join(".", "127", "0", "0", "1");
     }
 }

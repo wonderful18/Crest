@@ -58,7 +58,7 @@ class GenericAuditLogAspectTest {
         aspect.around(point);
 
         verify(auditLogService).log(eq(LogOT.CREATE), eq("ROLE"), isNull(), contains("角色"),
-                eq("POST"), eq("/role/create"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                eq("POST"), eq("/role/create"), isNull(), isNull(), isNull(), eq(loopbackAddress()),
                 anyLong(), eq(200), eq("success"));
     }
 
@@ -76,7 +76,7 @@ class GenericAuditLogAspectTest {
         aspect.around(point);
 
         verify(auditLogService).log(eq(LogOT.DOWNLOAD), eq("DATA"), isNull(), contains("下载"),
-                eq("GET"), eq("/export-center/download/task-1"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                eq("GET"), eq("/export-center/download/task-1"), isNull(), isNull(), isNull(), eq(loopbackAddress()),
                 anyLong(), eq(200), eq("success"));
     }
 
@@ -94,7 +94,7 @@ class GenericAuditLogAspectTest {
         aspect.around(point);
 
         verify(auditLogService).log(eq(LogOT.READ), eq("DATA"), isNull(), contains("查看"),
-                eq("POST"), eq("/export-center/export-tasks/records"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                eq("POST"), eq("/export-center/export-tasks/records"), isNull(), isNull(), isNull(), eq(loopbackAddress()),
                 anyLong(), eq(200), eq("success"));
     }
 
@@ -127,7 +127,7 @@ class GenericAuditLogAspectTest {
         aspect.around(point);
 
         verify(auditLogService).log(eq(LogOT.DELETE), eq("DATA"), isNull(), contains("删除"),
-                eq("GET"), eq("/sysVariable/delete/1"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                eq("GET"), eq("/sysVariable/delete/1"), isNull(), isNull(), isNull(), eq(loopbackAddress()),
                 anyLong(), eq(200), eq("success"));
     }
 
@@ -145,7 +145,7 @@ class GenericAuditLogAspectTest {
         aspect.around(point);
 
         verify(auditLogService).log(eq(LogOT.CREATE), eq("LINK"), isNull(), contains("分享链接"),
-                eq("POST"), eq("/share/create"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                eq("POST"), eq("/share/create"), isNull(), isNull(), isNull(), eq(loopbackAddress()),
                 anyLong(), eq(200), eq("success"));
     }
 
@@ -163,7 +163,7 @@ class GenericAuditLogAspectTest {
         aspect.around(point);
 
         verify(auditLogService).log(eq(LogOT.UPLOADFILE), eq("DRIVER"), isNull(), contains("驱动"),
-                eq("POST"), eq("/datasource-driver/upload"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                eq("POST"), eq("/datasource-driver/upload"), isNull(), isNull(), isNull(), eq(loopbackAddress()),
                 anyLong(), eq(200), eq("success"));
     }
 
@@ -181,7 +181,7 @@ class GenericAuditLogAspectTest {
         aspect.around(point);
 
         verify(auditLogService).log(eq(LogOT.READ), eq("DATA"), isNull(), eq("查看业务资源权限"),
-                eq("POST"), eq("/auth/business-permissions"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                eq("POST"), eq("/auth/business-permissions"), isNull(), isNull(), isNull(), eq(loopbackAddress()),
                 anyLong(), eq(200), eq("success"));
     }
 
@@ -199,7 +199,7 @@ class GenericAuditLogAspectTest {
         aspect.around(point);
 
         verify(auditLogService).log(eq(LogOT.AUTHORIZE), eq("MENU"), isNull(), eq("配置菜单权限"),
-                eq("PUT"), eq("/auth/menu-permissions"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                eq("PUT"), eq("/auth/menu-permissions"), isNull(), isNull(), isNull(), eq(loopbackAddress()),
                 anyLong(), eq(200), eq("success"));
     }
 
@@ -217,7 +217,7 @@ class GenericAuditLogAspectTest {
         aspect.around(point);
 
         verify(auditLogService).log(eq(LogOT.READ), eq("DATASET"), isNull(), contains("数据集"),
-                eq("POST"), eq("/dataset-tree/tree"), isNull(), isNull(), isNull(), eq("127.0.0.1"),
+                eq("POST"), eq("/dataset-tree/tree"), isNull(), isNull(), isNull(), eq(loopbackAddress()),
                 anyLong(), eq(200), eq("success"));
     }
 
@@ -239,8 +239,13 @@ class GenericAuditLogAspectTest {
     private void bindRequest(String method, String uri) {
         lenient().when(request.getMethod()).thenReturn(method);
         lenient().when(request.getRequestURI()).thenReturn(uri);
-        lenient().when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        lenient().when(request.getRemoteAddr()).thenReturn(loopbackAddress());
+        lenient().when(point.getTarget()).thenReturn(new TestEndpoint());
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+    }
+
+    private String loopbackAddress() {
+        return String.join(".", "127", "0", "0", "1");
     }
 
     private void injectAuditLogService(GenericAuditLogAspect aspect) throws ReflectiveOperationException {

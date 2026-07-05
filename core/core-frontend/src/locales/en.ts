@@ -623,7 +623,7 @@ export default {
     in_json_format: 'Please enter json format',
     ldap_settings: 'LDAP settings',
     ldap_address: 'LDAP address',
-    such_as_ldap: 'LDAP address (such as ldap://127.0.0.1:389)',
+    such_as_ldap: 'LDAP address (such as ldap://ldap.example.com:389)',
     bind_dn: 'Bind DN',
     user_ou: 'User OU',
     separate_each_ou: 'OU (use | to separate each OU)',
@@ -1218,7 +1218,7 @@ export default {
     input_view_id: 'Please select a view',
     remote_excel_url: 'Remote Excel/CSV Address',
     remote_excel_url_placeholder:
-      'Please enter the remote Excel/CSV address, for example, ftp://192.168.1.101/files/data.xlsx',
+      'Please enter the remote Excel/CSV address, for example, ftp://files.example.com/files/data.xlsx',
     remote_excel_url_empty: 'Please enter the remote Excel/CSV address',
     load_data: 'Load Data'
   },

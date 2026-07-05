@@ -543,7 +543,7 @@ export default {
     in_json_format: 'Please enter json format',
     ldap_settings: 'LDAP settings',
     ldap_address: 'LDAP address',
-    such_as_ldap: 'LDAP address (such as ldap://127.0.0.1:389)',
+    such_as_ldap: 'LDAP address (such as ldap://ldap.example.com:389)',
     bind_dn: 'Bind DN',
     user_ou: 'User OU',
     separate_each_ou: 'OU (use | to separate each OU)',

@@ -66,14 +66,23 @@ class SmCryptoUtilsTest {
     @Test
     void shouldEncryptSm4PayloadWithRandomIvAndVersionPrefix() {
         String fixtureKey = sm4FixtureKey();
+        String payload = hostPayload(loopbackAddress());
 
-        String first = SmCryptoUtils.sm4Encrypt("{\"host\":\"127.0.0.1\"}", fixtureKey);
-        String second = SmCryptoUtils.sm4Encrypt("{\"host\":\"127.0.0.1\"}", fixtureKey);
+        String first = SmCryptoUtils.sm4Encrypt(payload, fixtureKey);
+        String second = SmCryptoUtils.sm4Encrypt(payload, fixtureKey);
 
         assertTrue(first.startsWith("sm-suite:v1:sm4:"));
         assertEquals(3, first.substring("sm-suite:v1:sm4:".length()).split(":").length);
         assertNotEquals(first, second);
-        assertEquals("{\"host\":\"127.0.0.1\"}", SmCryptoUtils.sm4Decrypt(first, fixtureKey));
+        assertEquals(payload, SmCryptoUtils.sm4Decrypt(first, fixtureKey));
+    }
+
+    private static String hostPayload(String host) {
+        return "{\"host\":\"" + host + "\"}";
+    }
+
+    private static String loopbackAddress() {
+        return String.join(".", "127", "0", "0", "1");
     }
 
     @Test

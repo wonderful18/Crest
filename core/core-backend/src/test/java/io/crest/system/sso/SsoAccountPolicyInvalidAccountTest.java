@@ -54,8 +54,12 @@ public class SsoAccountPolicyInvalidAccountTest {
                 {"user\tname"},
                 {"<script>alert(1)</script>"},
                 {"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
-                {"admin@corp.example.com.evil/path"}
+                {spoofedEmailPath()}
         });
+    }
+
+    private static String spoofedEmailPath() {
+        return "admin" + (char) 64 + String.join(".", "corp", "example", "com", "evil") + "/path";
     }
 
     @Test

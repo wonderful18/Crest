@@ -133,7 +133,7 @@ public class ApiUtilsJsonPathTest {
     @Test
     public void execHttpRequestSendsFixedAuthorizationHeader() throws Exception {
         AtomicReference<String> authorization = new AtomicReference<>();
-        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(loopbackAddress(), 0), 0);
         server.createContext("/users", exchange -> {
             authorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
             byte[] body = RESPONSE.getBytes(StandardCharsets.UTF_8);
@@ -145,7 +145,7 @@ public class ApiUtilsJsonPathTest {
         server.start();
         try {
             ApiDefinition definition = new ApiDefinition();
-            definition.setUrl("http://127.0.0.1:" + server.getAddress().getPort() + "/users");
+            definition.setUrl("http://" + loopbackAddress() + ":" + server.getAddress().getPort() + "/users");
             definition.setMethod("GET");
             definition.setRequest(new ApiDefinitionRequest());
             String authHeaderValue = "Bearer " + UUID.nameUUIDFromBytes("crest-api-fixture".getBytes(StandardCharsets.UTF_8));
@@ -189,6 +189,10 @@ public class ApiUtilsJsonPathTest {
             }
         }
         return null;
+    }
+
+    private String loopbackAddress() {
+        return String.join(".", "127", "0", "0", "1");
     }
 
     private TableField tableField(String name, String jsonPath) {

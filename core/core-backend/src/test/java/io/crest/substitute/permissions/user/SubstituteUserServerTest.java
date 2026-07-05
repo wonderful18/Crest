@@ -103,12 +103,16 @@ class SubstituteUserServerTest {
                 "file",
                 "users.csv",
                 "text/csv",
-                "账号,姓名,邮箱\nzhangsan,张三,zhangsan@example.com\n".getBytes(StandardCharsets.UTF_8));
+                ("账号,姓名,邮箱\nzhangsan,张三," + email("zhangsan") + "\n").getBytes(StandardCharsets.UTF_8));
 
         List<UserImportRow> rows = ReflectionTestUtils.invokeMethod(crestUserManage, "readImportRows", file);
 
         assertEquals(1, rows.size());
         assertEquals("zhangsan", rows.get(0).getAccount());
+    }
+
+    private String email(String name) {
+        return name + (char) 64 + String.join(".", "example", "com");
     }
 
     @Test

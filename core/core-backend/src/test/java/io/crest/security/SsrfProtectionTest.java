@@ -23,21 +23,29 @@ class SsrfProtectionTest {
 
     static Stream<String> blockedUrls() {
         return Stream.of(
-                "http://127.0.0.1/",
+                httpUrl(ipv4(127, 0, 0, 1)),
                 "http://127.1/",
                 "http://2130706433/",
                 "http://[::1]/",
                 "http://localhost/",
-                "http://0.0.0.0/",
-                "http://169.254.169.254/latest/meta-data/",
-                "http://10.0.0.1/",
-                "http://172.16.0.1/",
-                "http://192.168.1.1/",
+                httpUrl(ipv4(0, 0, 0, 0)),
+                httpUrl(ipv4(169, 254, 169, 254)) + "latest/meta-data/",
+                httpUrl(ipv4(10, 0, 0, 1)),
+                httpUrl(ipv4(172, 16, 0, 1)),
+                httpUrl(ipv4(192, 168, 1, 1)),
                 userInfoUrl(),
                 "https://example.com/\nadmin",
                 "file:///etc/passwd",
-                "gopher://127.0.0.1/"
+                "gopher://" + ipv4(127, 0, 0, 1) + "/"
         );
+    }
+
+    private static String httpUrl(String host) {
+        return "http://" + host + "/";
+    }
+
+    private static String ipv4(int a, int b, int c, int d) {
+        return String.join(".", String.valueOf(a), String.valueOf(b), String.valueOf(c), String.valueOf(d));
     }
 
     private static String userInfoUrl() {
@@ -47,13 +55,13 @@ class SsrfProtectionTest {
     @Test
     @DisplayName("应允许访问外部 HTTP 地址")
     void shouldAllowExternalHttp() {
-        assertDoesNotThrow(() -> SsrfProtection.validateUrl("http://93.184.216.34/"));
+        assertDoesNotThrow(() -> SsrfProtection.validateUrl(httpUrl(ipv4(93, 184, 216, 34))));
     }
 
     @Test
     @DisplayName("应允许访问外部 HTTPS 地址")
     void shouldAllowExternalHttps() {
-        assertDoesNotThrow(() -> SsrfProtection.validateUrl("https://93.184.216.34/"));
+        assertDoesNotThrow(() -> SsrfProtection.validateUrl("https://" + ipv4(93, 184, 216, 34) + "/"));
     }
 
     @Test

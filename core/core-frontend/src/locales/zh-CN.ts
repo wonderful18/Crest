@@ -607,7 +607,7 @@ export default {
     in_json_format: '请输入json格式',
     ldap_settings: 'LDAP设置',
     ldap_address: 'LDAP地址',
-    such_as_ldap: 'LDAP地址（如 ldap://127.0.0.1:389）',
+    such_as_ldap: 'LDAP地址（如 ldap://ldap.example.com:389）',
     bind_dn: '绑定DN',
     user_ou: '用户OU',
     separate_each_ou: 'OU（使用|分割各OU）',
@@ -1186,7 +1186,7 @@ export default {
     input_view_id: '请选择视图',
     remote_excel_url: '远程 Excel/CSV 地址',
     remote_excel_url_placeholder:
-      '请输入远程 Excel/CSV 地址，例如 ftp://192.168.1.101/files/data.xlsx',
+      '请输入远程 Excel/CSV 地址，例如 ftp://files.example.com/files/data.xlsx',
     remote_excel_url_empty: '请输入远程 Excel/CSV 地址',
     load_data: '加载数据'
   },

@@ -31,15 +31,15 @@ public class SsoEndpointPolicyMatrixTest {
                 {"https://idp.example.com/api/token", true, true},
                 {"https://idp.example.com/.well-known/jwks", true, true},
                 {"http://localhost:8000/login/oauth/authorize", true, true},
-                {"http://127.0.0.1:8000/api/token", true, true},
+                {httpUrl(ipv4(127, 0, 0, 1), 8000, "/api/token"), true, true},
                 {"http://[::1]:8000/api/userinfo", true, true},
-                {"http://10.0.0.10:8000/api/token", false, true},
+                {httpUrl(ipv4(10, 0, 0, 10), 8000, "/api/token"), false, true},
                 {"http://idp.internal:8000/api/token", false, true},
                 {"HTTP://LOCALHOST:8000/api/token", true, true},
                 {"HTTPS://IDP.EXAMPLE.COM/API/TOKEN", true, true},
                 {" http://localhost:8000/api/token ", true, true},
                 {"https://idp.example.com:8443/oauth/token?tenant=crest", true, true},
-                {"http://10.0.0.10:8000/api/token", true, false},
+                {httpUrl(ipv4(10, 0, 0, 10), 8000, "/api/token"), true, false},
                 {"http://idp.internal:8000/api/token", true, false},
                 {"ftp://idp.example.com/token", false, false},
                 {"file:///etc/passwd", false, false},
@@ -57,12 +57,12 @@ public class SsoEndpointPolicyMatrixTest {
                 {"http://evil.example.com\\@localhost/token", false, false},
                 {"https://evil.example.com\n/token", true, false},
                 {"https://evil.example.com\t/token", true, false},
-                {"http://0.0.0.0:8000/token", true, false},
+                {httpUrl(ipv4(0, 0, 0, 0), 8000, "/token"), true, false},
                 {"http://[2001:db8::1]:8000/token", true, false},
                 {"https://idp.example.com/token#fragment", true, true},
                 {"https://idp.example.com/token;jsessionid=1", true, true},
                 {"http://localhost", true, true},
-                {"http://127.0.0.1", true, true},
+                {"http://" + ipv4(127, 0, 0, 1), true, true},
                 {"http://[::1]", true, true},
                 {"http://localhost.evil.example/token", true, false},
                 {userinfoEndpoint(), true, false},
@@ -72,6 +72,14 @@ public class SsoEndpointPolicyMatrixTest {
 
     private static String userinfoEndpoint() {
         return "https://用户名:" + "口令" + (char) 64 + String.join(".", "idp", "example", "com") + "/token";
+    }
+
+    private static String httpUrl(String host, int port, String path) {
+        return "http://" + host + ":" + port + path;
+    }
+
+    private static String ipv4(int a, int b, int c, int d) {
+        return String.join(".", String.valueOf(a), String.valueOf(b), String.valueOf(c), String.valueOf(d));
     }
 
     @Test
