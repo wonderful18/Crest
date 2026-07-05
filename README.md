@@ -139,7 +139,7 @@ crestctl restart
 crestctl clear-logs
 ```
 
-全新环境可直接使用安装脚本部署 `v1.5.16`。`v1.5.16` 没有新增升级 SQL，已有 `v1.5.8` 及之后版本升级到 `v1.5.16` 时，只需替换前后端镜像；如环境中尚未执行过 `upgrade-sql/v1.5.13_to_v1.5.14.sql`，请先备份元数据库和运行目录并执行该 SQL，再替换前后端镜像。已有 `v1.5.7` 环境升级到 `v1.5.16` 时，请先执行 `upgrade-sql/v1.5.7_to_v1.5.8.sql`，再执行 `upgrade-sql/v1.5.13_to_v1.5.14.sql` 并替换前后端镜像。更早版本迁移到 `v1.5.16` 时，请先完成数据备份和资源导出，再在新环境中导入业务资源。
+全新环境可直接使用安装脚本部署 `v1.5.16`。已有 `v1.5.14` 或 `v1.5.15` 环境升级到 `v1.5.16` 时，请先备份元数据库和运行目录，执行 `upgrade-sql/v1.5.15_to_v1.5.16.sql`，再替换前后端镜像。已有 `v1.5.8` 到 `v1.5.13` 环境升级时，请先执行 `upgrade-sql/v1.5.13_to_v1.5.14.sql`，再执行 `upgrade-sql/v1.5.15_to_v1.5.16.sql` 并替换镜像。已有 `v1.5.7` 环境升级时，请先执行 `upgrade-sql/v1.5.7_to_v1.5.8.sql`，再执行后续升级 SQL。更早版本迁移到 `v1.5.16` 时，请先完成数据备份和资源导出，再在新环境中导入业务资源。
 
 已有 `v1.5.x` 环境只替换后端镜像时，可在运行目录执行 `docker-compose up -d --no-deps crest-service`；只替换前端镜像时执行 `docker-compose up -d --no-deps crest`。
 
@@ -194,7 +194,7 @@ set +a
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.4_to_v1.5.5.sql
 ```
 
-v1.5.16 没有新增升级 SQL。已有 v1.5.14 环境升级到 v1.5.16 时，只需替换前后端镜像。已有 v1.5.8 及之后版本升级到 v1.5.16 时，请先备份元数据库，再执行 `upgrade-sql/v1.5.13_to_v1.5.14.sql` 并替换前后端镜像。已有 v1.5.7 环境升级到 v1.5.16 时，请先备份元数据库，再执行 `upgrade-sql/v1.5.7_to_v1.5.8.sql` 和 `upgrade-sql/v1.5.13_to_v1.5.14.sql` 并替换前后端镜像。已有 v1.5.5 或 v1.5.6 环境升级到 v1.5.16 时，同样需要执行这两个升级 SQL；v1.5.4 环境还需先执行 `upgrade-sql/v1.5.4_to_v1.5.5.sql`。
+已有 v1.5.14 或 v1.5.15 环境升级到 v1.5.16 时，请先备份元数据库，再执行 `upgrade-sql/v1.5.15_to_v1.5.16.sql` 并替换前后端镜像。已有 v1.5.8 到 v1.5.13 环境升级到 v1.5.16 时，请先备份元数据库，再执行 `upgrade-sql/v1.5.13_to_v1.5.14.sql` 和 `upgrade-sql/v1.5.15_to_v1.5.16.sql` 并替换前后端镜像。已有 v1.5.7 环境升级到 v1.5.16 时，请先备份元数据库，再执行 `upgrade-sql/v1.5.7_to_v1.5.8.sql`、`upgrade-sql/v1.5.13_to_v1.5.14.sql` 和 `upgrade-sql/v1.5.15_to_v1.5.16.sql`。已有 v1.5.5 或 v1.5.6 环境同样需要补齐后续升级 SQL；v1.5.4 环境还需先执行 `upgrade-sql/v1.5.4_to_v1.5.5.sql`。
 
 如需把 Prometheus 和 Grafana 镜像一起放进离线包，制作前先准备对应架构镜像，并设置：
 
