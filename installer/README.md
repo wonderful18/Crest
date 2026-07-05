@@ -178,16 +178,26 @@ cd /opt/crest
 docker-compose up -d --no-deps crest-service crest
 ```
 
-v1.5.16 没有新增升级 SQL。v1.5.8 及之后版本升级到 v1.5.16 时，只需替换前后端镜像，无需执行升级 SQL；如环境中尚未执行过 v1.5.13 到 v1.5.14 的升级 SQL，在离线包目录执行：
+v1.5.14 或 v1.5.15 升级到 v1.5.16 时，在离线包目录执行：
+
+```bash
+set -a
+source /opt/crest/.env
+set +a
+docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.15_to_v1.5.16.sql
+```
+
+v1.5.8 到 v1.5.13 升级到 v1.5.16 时，先执行 v1.5.13 到 v1.5.14 的升级 SQL，再执行 v1.5.15 到 v1.5.16 的升级 SQL：
 
 ```bash
 set -a
 source /opt/crest/.env
 set +a
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.13_to_v1.5.14.sql
+docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.15_to_v1.5.16.sql
 ```
 
-v1.5.7 升级到 v1.5.16 时，先执行 v1.5.7 到 v1.5.8 的升级 SQL，再执行 v1.5.13 到 v1.5.14 的升级 SQL：
+v1.5.7 升级到 v1.5.16 时，先执行 v1.5.7 到 v1.5.8 的升级 SQL，再执行 v1.5.13 到 v1.5.14 和 v1.5.15 到 v1.5.16 的升级 SQL：
 
 ```bash
 set -a
@@ -195,9 +205,10 @@ source /opt/crest/.env
 set +a
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.7_to_v1.5.8.sql
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.13_to_v1.5.14.sql
+docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.15_to_v1.5.16.sql
 ```
 
-v1.5.4 升级到 v1.5.16 时，请先执行 v1.5.4 到 v1.5.5 的升级 SQL，再执行 v1.5.7 到 v1.5.8 和 v1.5.13 到 v1.5.14 的升级 SQL：
+v1.5.4 升级到 v1.5.16 时，请先执行 v1.5.4 到 v1.5.5 的升级 SQL，再执行 v1.5.7 到 v1.5.8、v1.5.13 到 v1.5.14 和 v1.5.15 到 v1.5.16 的升级 SQL：
 
 ```bash
 set -a
@@ -206,6 +217,7 @@ set +a
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.4_to_v1.5.5.sql
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.7_to_v1.5.8.sql
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.13_to_v1.5.14.sql
+docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.15_to_v1.5.16.sql
 ```
 
 如安装时修改过 `CREST_BASE`，请把 `/opt/crest/.env` 换成实际运行目录中的 `.env`。外部 MySQL 环境可在数据库服务器或运维机执行同一 SQL 文件，目标库为 Crest 元数据库。

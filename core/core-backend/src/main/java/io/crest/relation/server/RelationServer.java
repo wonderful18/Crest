@@ -1,5 +1,8 @@
 package io.crest.relation.server;
 
+import io.crest.auth.CrestApiPath;
+import io.crest.auth.CrestPermit;
+import io.crest.constant.AuthResourceEnum;
 import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
 import io.crest.log.CrestAudit;
@@ -21,6 +24,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/relation")
+@CrestApiPath(value = "/relation", rt = AuthResourceEnum.ASSOCIATION)
 @Tag(name = "数据血缘")
 public class RelationServer {
 
@@ -29,6 +33,7 @@ public class RelationServer {
 
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASOURCE)
     @PostMapping("/overview")
+    @CrestPermit("m:read")
     @Operation(summary = "查询全局血缘")
     public RelationGraphDTO overview() {
         return relationManage.overview();
@@ -36,6 +41,7 @@ public class RelationServer {
 
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASOURCE, id = "#p0")
     @PostMapping("/datasource/{id}")
+    @CrestPermit("m:read")
     @Operation(summary = "查询数据源血缘")
     public RelationGraphDTO datasource(@PathVariable("id") Long id) {
         return relationManage.datasource(id);
@@ -43,6 +49,7 @@ public class RelationServer {
 
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASET, id = "#p0")
     @PostMapping("/dataset/{id}")
+    @CrestPermit("m:read")
     @Operation(summary = "查询数据集血缘")
     public RelationGraphDTO dataset(@PathVariable("id") Long id) {
         return relationManage.dataset(id);
@@ -50,6 +57,7 @@ public class RelationServer {
 
     @CrestAudit(ot = LogOT.READ, st = LogST.PANEL, id = "#p0")
     @PostMapping("/dv/{id}")
+    @CrestPermit("m:read")
     @Operation(summary = "查询仪表板或大屏血缘")
     public RelationGraphDTO dv(@PathVariable("id") Long id) {
         return relationManage.dv(id);
@@ -57,6 +65,7 @@ public class RelationServer {
 
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASOURCE)
     @PostMapping("/resources/{type}")
+    @CrestPermit("m:read")
     @Operation(summary = "查询血缘资源")
     public List<RelationResourceDTO> resources(@PathVariable("type") String type, @Valid @RequestBody(required = false) RelationResourceRequest request) {
         return relationManage.resources(type, request);
