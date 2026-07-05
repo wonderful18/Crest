@@ -14,8 +14,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -123,5 +125,45 @@ class SubstituteUserServerTest {
                 () -> ReflectionTestUtils.invokeMethod(crestUserManage, "readImportRows", file));
 
         assertEquals("无效的 xlsx 用户导入文件", exception.getMsg());
+    }
+
+    @Test
+    void queryByAccountRequiresAdmin() {
+        AuthUtils.setUser(new TokenUserBO(2L, 1L));
+        CrestUserManage crestUserManage = mock(CrestUserManage.class);
+        SubstituteUserServer server = new SubstituteUserServer();
+        ReflectionTestUtils.setField(server, "crestUserManage", crestUserManage);
+
+        CrestException exception = assertThrows(CrestException.class, () -> server.queryByAccount("admin"));
+
+        assertEquals("当前用户没有管理员权限", exception.getMsg());
+        verify(crestUserManage, never()).queryByAccount(any());
+    }
+
+    @Test
+    void byCurrentOrgRequiresAdmin() {
+        AuthUtils.setUser(new TokenUserBO(2L, 1L));
+        CrestUserManage crestUserManage = mock(CrestUserManage.class);
+        SubstituteUserServer server = new SubstituteUserServer();
+        ReflectionTestUtils.setField(server, "crestUserManage", crestUserManage);
+
+        CrestException exception = assertThrows(CrestException.class, () -> server.byCurOrg(null));
+
+        assertEquals("当前用户没有管理员权限", exception.getMsg());
+        verify(crestUserManage, never()).usersByCurrentOrg(any());
+    }
+
+    @Test
+    void importErrorRecordEndpointsRequireAdmin() throws IOException {
+        AuthUtils.setUser(new TokenUserBO(2L, 1L));
+        SubstituteUserServer server = new SubstituteUserServer();
+
+        CrestException downloadException = assertThrows(CrestException.class,
+                () -> server.errorRecord("import-key", new MockHttpServletResponse()));
+        CrestException clearException = assertThrows(CrestException.class,
+                () -> server.clearErrorRecord("import-key"));
+
+        assertEquals("当前用户没有管理员权限", downloadException.getMsg());
+        assertEquals("当前用户没有管理员权限", clearException.getMsg());
     }
 }

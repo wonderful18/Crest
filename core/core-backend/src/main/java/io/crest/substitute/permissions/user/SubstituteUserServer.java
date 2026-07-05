@@ -152,11 +152,13 @@ public class SubstituteUserServer {
     @CrestAudit(ot = LogOT.READ, st = LogST.USER)
     @GetMapping("/account/{account}")
     public CurUserVO queryByAccount(@PathVariable("account") String account) {
+        CrestPermissionUtils.requireAdmin();
         return crestUserManage.toCurrent(crestUserManage.queryByAccount(account));
     }
 
     @PostMapping("/by-current-org")
     public List<UserItem> byCurOrg(@Valid @RequestBody(required = false) UserGridRequest request) {
+        CrestPermissionUtils.requireAdmin();
         return crestUserManage.usersByCurrentOrg(request == null ? null : request.getKeyword());
     }
 
@@ -188,12 +190,14 @@ public class SubstituteUserServer {
 
     @GetMapping("/error-record/{key}")
     public void errorRecord(@PathVariable("key") String key, HttpServletResponse response) throws IOException {
+        CrestPermissionUtils.requireAdmin();
         response.setContentType("text/plain;charset=UTF-8");
         response.getOutputStream().write("导入失败记录请根据返回数量检查源文件。".getBytes(StandardCharsets.UTF_8));
     }
 
     @GetMapping("/clear-error-record/{key}")
     public void clearErrorRecord(@PathVariable("key") String key) {
+        CrestPermissionUtils.requireAdmin();
         if (StringUtils.isBlank(key)) {
             return;
         }
