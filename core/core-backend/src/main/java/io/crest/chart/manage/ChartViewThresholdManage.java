@@ -111,21 +111,28 @@ public class ChartViewThresholdManage {
     }
 
     private String convertTree(FilterTreeObj filterTreeObj, Map<String, DatasetTableFieldDTO> fieldMap) {
+        if (filterTreeObj == null || CollectionUtils.isEmpty(filterTreeObj.getItems())) {
+            return null;
+        }
         String logic = filterTreeObj.getLogic();
         String logicText = translateLogic(logic);
         List<FilterTreeItem> items = filterTreeObj.getItems();
 
         StringBuilder result = new StringBuilder();
         for (FilterTreeItem item : items) {
-            String type = item.getType();
-            if (Strings.CS.equals("tree", type) && ObjectUtils.isNotEmpty(item.getSubTree())) {
-                String childResult = convertTree(item.getSubTree(), fieldMap);
-                result.append(childResult);
-            } else {
-                String itemResult = convertItem(item, fieldMap);
-                result.append(itemResult);
+            if (item == null) {
+                continue;
             }
-            result.append(logicText);
+            String type = item.getType();
+            String itemResult;
+            if (Strings.CS.equals("tree", type) && ObjectUtils.isNotEmpty(item.getSubTree())) {
+                itemResult = convertTree(item.getSubTree(), fieldMap);
+            } else {
+                itemResult = convertItem(item, fieldMap);
+            }
+            if (StringUtils.isNotBlank(itemResult)) {
+                result.append(itemResult).append(logicText);
+            }
         }
         int lastIndex = -1;
         if ((!result.isEmpty()) && (lastIndex = result.lastIndexOf(logicText)) > 0) {
@@ -138,10 +145,13 @@ public class ChartViewThresholdManage {
     private String convertItem(FilterTreeItem item, Map<String, DatasetTableFieldDTO> fieldMap) {
         String filterType = item.getFilterType();
         Long fieldId = item.getFieldId();
-        DatasetTableFieldDTO map = fieldMap.get(fieldId.toString());
+        DatasetTableFieldDTO map = fieldId == null ? null : fieldMap.get(fieldId.toString());
+        if (map == null) {
+            return null;
+        }
         String fieldName = map.getName();
         if (Strings.CS.equals(filterType, "enum")) {
-            List<String> enumValue = item.getEnumValue();
+            List<String> enumValue = Optional.ofNullable(item.getEnumValue()).orElseGet(List::of);
             String enumValueText = String.join(",", enumValue);
             return fieldName + " " + Translator.get("i18n_threshold_logic_in") + " " + "( " + enumValueText + " )";
         } else {
