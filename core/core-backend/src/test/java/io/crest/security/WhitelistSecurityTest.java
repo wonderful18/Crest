@@ -79,6 +79,15 @@ class WhitelistSecurityTest {
     }
 
     @Test
+    @DisplayName("数据门户接口应保留登录态")
+    void dataPortalShouldNotBeWhitelisted() {
+        assertFalse(WhitelistUtils.match("/api/v1/data-portal/overview"),
+                "数据门户接口必须经过登录态或分享令牌校验");
+        assertFalse(WhitelistUtils.match("/api/v1/data-portal/resources"),
+                "数据门户资源列表不能进入匿名白名单");
+    }
+
+    @Test
     @DisplayName("/symmetric-key 不应在白名单中（通过match方法验证）")
     void symmetricKeyShouldNotMatch() {
         assertFalse(WhitelistUtils.match("/api/v1/symmetric-key"),
