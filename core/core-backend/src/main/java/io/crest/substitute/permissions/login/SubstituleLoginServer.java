@@ -15,6 +15,7 @@ import io.crest.utils.LogUtil;
 import io.crest.utils.RsaUtils;
 import io.crest.utils.SignedTokenUtils;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -40,7 +41,7 @@ public class SubstituleLoginServer {
 
     @CrestAudit(ot = LogOT.LOGIN, st = LogST.USER)
     @PostMapping("/login/local-login")
-    public TokenVO localLogin(@RequestBody PwdLoginDTO dto) {
+    public TokenVO localLogin(@Valid @RequestBody PwdLoginDTO dto) {
         if (dto == null || StringUtils.isAnyBlank(dto.getName(), dto.getPwd())) {
             CrestException.throwException("用户名或密码错误");
         }

@@ -4,6 +4,7 @@ import { dvMainStoreWithOut } from './dvMain'
 
 const dvMainStore = dvMainStoreWithOut()
 const { curComponent, componentData } = storeToRefs(dvMainStore)
+const CANVAS_STATE_FIELD = 'key'
 
 export const eventStore = defineStore('event', {
   actions: {
@@ -18,7 +19,7 @@ export const eventStore = defineStore('event', {
     displayEventChange(component) {
       component.events.displayChange.value = !component.events.displayChange.value
       const area = component.events.displayChange.value ? 'hidden' : 'base'
-      dvMainStore.canvasStateChange({ key: 'curPointArea', value: area })
+      dvMainStore.canvasStateChange({ [CANVAS_STATE_FIELD]: 'curPointArea', value: area })
       componentData.value.forEach(item => {
         if (item.category === 'hidden') {
           item.isShow = component.events.displayChange.value

@@ -55,6 +55,7 @@ public class TemplateManageService implements TemplateManageApi {
 
     @Override
     public List<TemplateManageDTO> templateList(@RequestBody TemplateManageRequest request) {
+        CrestPermissionUtils.requireAdmin();
         request.setWithBlobs("N");
         List<TemplateManageDTO> templateList = extTemplateMapper.findTemplateList(request);
         if (request.getWithChildren()) {
@@ -72,6 +73,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     public List<TemplateManageDTO> getSystemTemplateType(TemplateManageRequest request) {
+        CrestPermissionUtils.requireAdmin();
         return extTemplateMapper.findTemplateList(request);
     }
 
@@ -185,6 +187,7 @@ public class TemplateManageService implements TemplateManageApi {
     //分类下模板名称检查
     @Override
     public String categoryTemplateNameCheck(@RequestBody TemplateManageRequest request) {
+        CrestPermissionUtils.requireAdmin();
         Long result = extTemplateMapper.checkCategoryTemplateName(request.getName(), request.getCategories());
         if (result == 0) {
             return CommonConstants.CHECK_RESULT.NONE;
@@ -195,6 +198,7 @@ public class TemplateManageService implements TemplateManageApi {
 
     @Override
     public String checkCategoryTemplateBatchNames(@RequestBody TemplateManageRequest request) {
+        CrestPermissionUtils.requireAdmin();
         Long result = extTemplateMapper.checkCategoryTemplateBatchNames(request.getTemplateNames(), request.getCategories(), request.getTemplateArray());
         if (result == 0) {
             return CommonConstants.CHECK_RESULT.NONE;
@@ -222,6 +226,7 @@ public class TemplateManageService implements TemplateManageApi {
 
     @Override
     public String nameCheck(@RequestBody TemplateManageRequest request) {
+        CrestPermissionUtils.requireAdmin();
         return nameCheck(request.getOptType(), request.getName(), request.getId());
     }
 
@@ -261,6 +266,7 @@ public class TemplateManageService implements TemplateManageApi {
 
     @Override
     public VisualizationTemplateVO findOne(String templateId) {
+        CrestPermissionUtils.requireAdmin();
         VisualizationTemplate template = templateMapper.selectById(templateId);
         if (template != null) {
             VisualizationTemplateVO templateVO = new VisualizationTemplateVO();
@@ -275,7 +281,8 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     @Override
-    public List<String> findCategoriesByTemplateIds(@RequestBody TemplateManageRequest request) throws Exception {
+    public List<String> findCategoriesByTemplateIds(@RequestBody TemplateManageRequest request) {
+        CrestPermissionUtils.requireAdmin();
         if (!CollectionUtils.isEmpty(request.getTemplateArray())) {
             List<String> result = extTemplateMapper.findTemplateArrayCategories(request.getTemplateArray());
             if (!CollectionUtils.isEmpty(result) && result.size() == 1) {
@@ -287,11 +294,13 @@ public class TemplateManageService implements TemplateManageApi {
 
     @Override
     public List<TemplateManageDTO> find(@RequestBody TemplateManageRequest request) {
+        CrestPermissionUtils.requireAdmin();
         return extTemplateMapper.findTemplateList(request);
     }
 
     @Override
     public List<TemplateManageDTO> findCategories(@RequestBody TemplateManageRequest request) {
+        CrestPermissionUtils.requireAdmin();
         return extTemplateMapper.findCategories(request);
     }
 

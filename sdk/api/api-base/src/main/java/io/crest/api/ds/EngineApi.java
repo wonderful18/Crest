@@ -24,13 +24,13 @@ public interface EngineApi {
 
     @Operation(summary = "校验")
     @PostMapping("/validate")
-    void validate(@RequestBody DatasourceDTO datasourceDTO) throws Exception;
+    void validate(@RequestBody DatasourceDTO datasourceDTO);
 
     @Operation(summary = "根据ID校验")
     @PostMapping("/validate/{id}")
-    void validateById(@PathVariable Long id) throws Exception;
+    void validateById(@PathVariable Long id);
 
     @Operation(summary = "是否支持设置主键")
     @GetMapping("/support-set-key")
-    boolean supportSetKey() throws Exception;
+    boolean supportSetKey();
 }

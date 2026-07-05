@@ -138,7 +138,7 @@ watch(() => props.color, mergeColor, { immediate: true })
   </div>
 </template>
 
-<style lang="less">
+<style lang="less" scoped>
 .dv-decoration-5 {
   position: relative;
   width: 100%;

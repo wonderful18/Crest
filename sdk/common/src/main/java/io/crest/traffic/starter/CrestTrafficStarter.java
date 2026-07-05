@@ -13,10 +13,10 @@ public class CrestTrafficStarter implements ApplicationRunner {
     @Resource
     private CoreApiTrafficMapper coreApiTrafficMapper;
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         try {
             coreApiTrafficMapper.cleanTraffic();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage(), new Throwable(e));
         }
     }

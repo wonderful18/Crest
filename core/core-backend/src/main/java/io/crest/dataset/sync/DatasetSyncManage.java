@@ -66,7 +66,7 @@ public class DatasetSyncManage {
     @Resource
     private CommonThreadPool commonThreadPool;
 
-    public DatasetSyncTaskDTO executeNow(Long datasetGroupId) throws Exception {
+    public DatasetSyncTaskDTO executeNow(Long datasetGroupId) {
         assertDatasetSyncModeEnabled(datasetGroupId);
         CoreDatasetSyncTask task = taskManage.selectByDatasetGroupId(datasetGroupId);
         if (task == null) {
@@ -80,7 +80,7 @@ public class DatasetSyncManage {
         commonThreadPool.addTask(() -> {
             try {
                 execute(datasetGroupId, taskId, DatasourceTaskServer.ScheduleType.MANUAL.name(), null, true);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 LogUtil.error(e.getMessage(), e);
             }
         });
@@ -97,12 +97,12 @@ public class DatasetSyncManage {
                 return;
             }
             execute(task.getDatasetGroupId(), task.getId(), task.getSyncRate(), context, false);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage(), e);
         }
     }
 
-    private void execute(Long datasetGroupId, Long taskId, String triggerType, JobExecutionContext context, boolean manual) throws Exception {
+    private void execute(Long datasetGroupId, Long taskId, String triggerType, JobExecutionContext context, boolean manual) {
         CoreDatasetSyncTask task = taskManage.selectById(taskId);
         if (task == null) {
             return;
@@ -144,7 +144,7 @@ public class DatasetSyncManage {
                 log.setInfo("同步完成");
             }
             updateDatasetSyncStatus(datasetGroupId, TaskStatus.Completed, context);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             status = TaskStatus.Error;
             log.setInfo(StringUtils.defaultString(e.getMessage()));
             updateDatasetSyncStatus(datasetGroupId, TaskStatus.Error, context);
@@ -163,7 +163,7 @@ public class DatasetSyncManage {
     }
 
     @SuppressWarnings("unchecked")
-    private SyncContext prepareContext(Long datasetGroupId) throws Exception {
+    private SyncContext prepareContext(Long datasetGroupId) {
         DatasetGroupInfoDTO dataset = assertDatasetSyncModeEnabled(datasetGroupId);
         if (Objects.equals(dataset.getIsCross(), true)) {
             CrestException.throwException("数据集缓存暂不支持跨源数据集");
@@ -196,7 +196,7 @@ public class DatasetSyncManage {
         return new SyncContext(dataset, sourceSql, dsMap, sourceProvider, engine, engineProvider, syncFields, tableFields);
     }
 
-    private DatasetGroupInfoDTO assertDatasetSyncModeEnabled(Long datasetGroupId) throws Exception {
+    private DatasetGroupInfoDTO assertDatasetSyncModeEnabled(Long datasetGroupId) {
         DatasetGroupInfoDTO dataset = datasetGroupManage.getForCount(datasetGroupId);
         if (dataset == null || !Strings.CI.equals(dataset.getNodeType(), "dataset")) {
             CrestException.throwException("数据集不存在");
@@ -207,7 +207,7 @@ public class DatasetSyncManage {
         return dataset;
     }
 
-    private SyncResult syncFull(SyncContext context, CoreDatasetSyncTask task, long syncStartTime) throws Exception {
+    private SyncResult syncFull(SyncContext context, CoreDatasetSyncTask task, long syncStartTime) {
         assertTaskRunnable(task, syncStartTime);
         String tableName = DatasetSyncUtils.cacheTableName(context.dataset.getId());
         createEngineTable(context, tableName);
@@ -236,13 +236,13 @@ public class DatasetSyncManage {
             result.fullSync = true;
             reconcile(context, tableName, incrementalField, task, result);
             return result;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             dropEngineTable(context, DatasetSyncUtils.tmpCacheTableName(context.dataset.getId()));
             throw e;
         }
     }
 
-    private SyncResult syncIncremental(SyncContext context, CoreDatasetSyncTask task, long syncStartTime) throws Exception {
+    private SyncResult syncIncremental(SyncContext context, CoreDatasetSyncTask task, long syncStartTime) {
         assertTaskRunnable(task, syncStartTime);
         DatasetTableFieldDTO incrementalField = incrementalField(context.dataset, task);
         if (incrementalField == null || !DatasetSyncUtils.isWatermarkCompatible(incrementalField, task.getIncrementalLastValue())) {
@@ -293,7 +293,7 @@ public class DatasetSyncManage {
             result.fullSync = false;
             reconcile(context, tableName, incrementalField, task, result);
             return result;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             dropEngineTable(context, DatasetSyncUtils.tmpCacheTableName(context.dataset.getId()));
             throw e;
         }
@@ -344,7 +344,7 @@ public class DatasetSyncManage {
         }
     }
 
-    private void insertRows(SyncContext context, String tableName, DatasourceServer.UpdateType updateType, List<String[]> rows) throws Exception {
+    private void insertRows(SyncContext context, String tableName, DatasourceServer.UpdateType updateType, List<String[]> rows) {
         if (rows == null || rows.isEmpty()) {
             return;
         }
@@ -360,10 +360,19 @@ public class DatasetSyncManage {
                 rows.size(),
                 context.tableFields
         ));
+        request.setTableFieldWithValues(context.engineProvider.insertParams(
+                datasource.getType(),
+                tableName,
+                updateType,
+                rows,
+                1,
+                rows.size(),
+                context.tableFields
+        ));
         calciteProvider.exec(request);
     }
 
-    private void copyRetainedCacheRows(SyncContext context, String tableName, DatasetTableFieldDTO incrementalField, String lastValue) throws Exception {
+    private void copyRetainedCacheRows(SyncContext context, String tableName, DatasetTableFieldDTO incrementalField, String lastValue) {
         DatasourceConfiguration.DatasourceType engineType = DatasourceConfiguration.DatasourceType.valueOf(context.engine.getType());
         String predicate = DatasetSyncUtils.buildCacheWatermarkPredicate(
                 incrementalField,
@@ -379,7 +388,7 @@ public class DatasetSyncManage {
         calciteProvider.exec(request);
     }
 
-    private void createEngineTable(SyncContext context, String tableName) throws Exception {
+    private void createEngineTable(SyncContext context, String tableName) {
         EngineRequest request = new EngineRequest();
         request.setEngine(context.engine);
         request.setQuery(context.engineProvider.createTableSql(tableName, context.tableFields, context.engine));
@@ -394,7 +403,7 @@ public class DatasetSyncManage {
             request.setQuery("SELECT 1 FROM " + DatasetSyncUtils.quote(tableName, engineType.getPrefix(), engineType.getSuffix()) + " WHERE 1 = 0");
             calciteProvider.exec(request);
             return true;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.warn("Dataset sync cache table is not available, fallback to full sync: " + tableName + ", " + e.getMessage());
             return false;
         }
@@ -420,7 +429,7 @@ public class DatasetSyncManage {
                         + ") FROM " + quotedEngineTable(context, tableName));
             }
             result.reconcileResult = DatasetSyncUtils.reconcile(result.sourceRowCount, result.cacheRowCount, sourceWatermark, cacheWatermark);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             result.reconcileResult = new DatasetSyncUtils.ReconcileResult("WARNING", "数据一致性校验失败：" + e.getMessage());
         }
     }
@@ -441,13 +450,13 @@ public class DatasetSyncManage {
         return firstCell((List<String[]>) data.get("data"));
     }
 
-    private Long engineLong(SyncContext context, String sql) throws Exception {
+    private Long engineLong(SyncContext context, String sql) {
         String value = engineString(context, sql);
         return StringUtils.isBlank(value) ? null : new BigDecimal(value).longValue();
     }
 
     @SuppressWarnings("unchecked")
-    private String engineString(SyncContext context, String sql) throws Exception {
+    private String engineString(SyncContext context, String sql) {
         EngineRequest request = new EngineRequest();
         request.setEngine(context.engine);
         request.setQuery(sql);
@@ -472,14 +481,14 @@ public class DatasetSyncManage {
         return DatasetSyncUtils.quote(columnName, engineType.getPrefix(), engineType.getSuffix());
     }
 
-    private void dropEngineTable(SyncContext context, String tableName) throws Exception {
+    private void dropEngineTable(SyncContext context, String tableName) {
         EngineRequest request = new EngineRequest();
         request.setEngine(context.engine);
         request.setQuery(context.engineProvider.dropTable(tableName));
         calciteProvider.exec(request);
     }
 
-    private void replaceTable(SyncContext context, String tableName) throws Exception {
+    private void replaceTable(SyncContext context, String tableName) {
         String[] sqls = context.engineProvider.replaceTable(tableName).split(";");
         for (String sql : sqls) {
             if (StringUtils.isBlank(sql)) {

@@ -22,7 +22,7 @@ public final class SqlSecurityPolicy {
                 || lower.startsWith("explain"))) {
             CrestException.throwException("Only read-only SQL is allowed in this context");
         }
-        return sql;
+        return normalized;
     }
 
     public static String validateSingleStatement(String sql) {

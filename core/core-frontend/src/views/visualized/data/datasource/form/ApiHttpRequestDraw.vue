@@ -15,6 +15,7 @@ import { fieldType } from '@/utils/attr'
 import type { ApiConfiguration } from '@/views/visualized/data/datasource/form/option'
 import { cancelMap } from '@/config/axios/service'
 import { iconFieldMap } from '@/components/icon-group/field-list'
+const DEFAULT_API_REQUEST_METHOD = 'GET'
 
 export interface Field {
   name: string
@@ -81,7 +82,7 @@ let apiItem = reactive<ApiItem>({
   viewId: '',
   url: '',
   copy: false,
-  method: 'GET',
+  method: DEFAULT_API_REQUEST_METHOD,
   request: {
     changeId: '',
     rest: [],

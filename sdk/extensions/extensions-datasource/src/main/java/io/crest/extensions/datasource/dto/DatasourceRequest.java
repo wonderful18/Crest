@@ -10,7 +10,7 @@ import java.util.Map;
 @Data
 @SuppressWarnings("deprecation")
 public class DatasourceRequest implements Serializable {
-    private final String REG_WITH_SQL_FRAGMENT = "((?i)WITH[\\s\\S]+(?i)AS?\\s*\\([\\s\\S]+\\))\\s*(?i)SELECT";
+    private static final String REG_WITH_SQL_FRAGMENT = "((?i)WITH[\\s\\S]+(?i)AS?\\s*\\([\\s\\S]+\\))\\s*(?i)SELECT";
     protected String query;
     protected String table;
     protected DatasourceDTO datasource;
@@ -56,7 +56,6 @@ public class DatasourceRequest implements Serializable {
     }
 
     public String getREG_WITH_SQL_FRAGMENT() {
-        this.getClass();
-        return "((?i)WITH[\\s\\S]+(?i)AS?\\s*\\([\\s\\S]+\\))\\s*(?i)SELECT";
+        return REG_WITH_SQL_FRAGMENT;
     }
 }

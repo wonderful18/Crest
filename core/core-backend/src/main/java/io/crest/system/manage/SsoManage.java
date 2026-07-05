@@ -37,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 @Component
 public class SsoManage {
@@ -58,6 +60,8 @@ public class SsoManage {
     private static final String DEFAULT_ACCOUNT_ATTRIBUTE = "preferred_username";
     private static final String DEFAULT_NAME_ATTRIBUTE = "name";
     private static final String DEFAULT_EMAIL_ATTRIBUTE = "email";
+    private static final Pattern CALLBACK_HOST_PATTERN = Pattern.compile("[A-Za-z0-9.-]+");
+    private static final Pattern ABSOLUTE_URI_PATTERN = Pattern.compile("(?i)^[a-z][a-z\\d+.-]*:.*");
     private static final String DEFAULT_REDIRECT = "/workbranch/index";
 
     @Resource
@@ -154,7 +158,7 @@ public class SsoManage {
                     .addParameter("state", state)
                     .addParameter("nonce", nonce);
             response.sendRedirect(builder.build().toString());
-        } catch (Exception e) {
+        } catch (IOException | URISyntaxException | RuntimeException e) {
             CrestException.throwException("单点登录跳转地址生成失败：" + e.getMessage());
         }
     }
@@ -189,7 +193,7 @@ public class SsoManage {
             String ticket = IDUtils.randomID(48);
             CacheUtils.put(CacheConstant.UserCacheConstant.SSO_TICKET_CACHE, ticket, tokenVO, 1L, TimeUnit.MINUTES);
             redirectTicket(request, response, ticket, ssoState.redirect());
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             redirectError(request, response, e.getMessage());
         }
     }
@@ -214,7 +218,7 @@ public class SsoManage {
         validateConfig(config, encryptedSecret);
         try {
             config.setClientSecret(AesUtils.aesDecrypt(encryptedSecret).toString());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException("单点登录客户端密钥无法解密，请检查加密配置");
         }
         return config;
@@ -338,7 +342,7 @@ public class SsoManage {
         mergeNonBlank(claims, jwtClaims(accessToken));
         try {
             mergeNonBlank(claims, fetchUserInfo(config.getUserInfoEndpoint(), accessToken));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             if (claims.isEmpty()) {
                 throw new IllegalStateException(e.getMessage(), e);
             }
@@ -358,7 +362,7 @@ public class SsoManage {
             String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
             Map<String, Object> result = JsonUtil.parseObject(payload, new TypeReference<>() {});
             return result == null ? Map.of() : result;
-        } catch (Exception ignored) {
+        } catch (IllegalArgumentException ignored) {
             return Map.of();
         }
     }
@@ -489,7 +493,7 @@ public class SsoManage {
                 host = hostValue.substring(0, colon);
                 port = parseCallbackPort(hostValue.substring(colon + 1));
             }
-            if (!host.matches("[A-Za-z0-9.-]+")
+            if (!CALLBACK_HOST_PATTERN.matcher(host).matches()
                     || host.startsWith(".")
                     || host.endsWith(".")
                     || host.contains("..")) {
@@ -537,7 +541,7 @@ public class SsoManage {
         if (Strings.CI.startsWithAny(value, "http://", "https://", "//")
                 || value.contains("\\")
                 || value.chars().anyMatch(Character::isISOControl)
-                || value.matches("(?i)^[a-z][a-z\\d+.-]*:.*")) {
+                    || ABSOLUTE_URI_PATTERN.matcher(value).matches()) {
             return DEFAULT_REDIRECT;
         }
         return Strings.CS.startsWith(value, "/") ? value : "/" + value;

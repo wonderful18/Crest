@@ -90,7 +90,7 @@ public class Translator {
                     try {
                         Object jsonObject = JsonUtil.parse(rawString, Object.class);
                         return JsonUtil.toJSONString(translateObject(jsonObject));
-                    } catch (Exception e) {
+                    } catch (RuntimeException e) {
                         LogUtil.error("Failed to translate object: " + rawString, e);
                         LogUtil.warn("Failed to translate object " + rawString + ". Error: " + ExceptionUtils.getStackTrace(e));
                         return translateRawString(null, rawString);
@@ -156,7 +156,7 @@ public class Translator {
                             translateObject(v);
                         }
                     }
-                } catch (Exception e) {
+                } catch (ReflectiveOperationException | RuntimeException e) {
                     LogUtil.error(e.getMessage());
                     CrestException.throwException(e);
                 }

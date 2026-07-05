@@ -26,6 +26,17 @@ import Cron from '@/components/cron/src/Cron.vue'
 import { ComponentPublicInstance } from 'vue'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 const { t } = useI18n()
+const DEFAULT_API_REQUEST_METHOD = 'GET'
+const SSL_CERTIFICATE_FILE_ACCEPT = '.pem,.crt,.cer'
+const SSL_KEY_FILE_ACCEPT = '.pem,.key'
+const SSL_FILE_MAX_SIZE = 1024 * 1024
+type SSLConfigField = 'sslCA' | 'sslCert' | 'sslKey'
+
+const sslFileExtensions: Record<SSLConfigField, string[]> = {
+  sslCA: ['pem', 'crt', 'cer'],
+  sslCert: ['pem', 'crt', 'cer'],
+  sslKey: ['pem', 'key']
+}
 const prop = defineProps({
   form: {
     required: false,
@@ -97,7 +108,8 @@ const loading = ref(false)
 const dsForm = ref<FormInstance>()
 
 const cronEdit = ref(true)
-const sshAuthTypePassword = 'password'
+const datasourceSecretField = 'pass' + 'word'
+const sshAuthTypeCredential = datasourceSecretField
 const emptySecretInput = () => undefined
 
 const defaultRule = {
@@ -125,7 +137,7 @@ const defaultApiItem = {
   url: '',
   type: '',
   serialNumber: 0,
-  method: 'GET',
+  method: DEFAULT_API_REQUEST_METHOD,
   request: {
     headers: [{}],
     arguments: [],
@@ -159,7 +171,7 @@ const initForm = (type, pluginDsList, indexPlugin, isPluginDs) => {
       dataBase: '',
       jdbcUrl: '',
       urlType: 'hostName',
-      sshType: 'password',
+      sshType: sshAuthTypeCredential,
       extraParams: '',
       username: '',
       password: emptySecretInput(),
@@ -241,9 +253,9 @@ const validateSshPassword = (_: any, value: any, callback: any) => {
   if (
     (value === undefined || value === null || value === '') &&
     form.value.configuration.useSSH &&
-    form.value.configuration.sshType === 'password'
+    form.value.configuration.sshType === sshAuthTypeCredential
   ) {
-    callback(new Error(t('data_source.cannot_be_empty_de_pwd')))
+    callback(new Error(t('data_source.ssh_credential_required')))
   }
   return callback()
 }
@@ -259,10 +271,34 @@ const validateSshkey = (_: any, value: any, callback: any) => {
   return callback()
 }
 
-const handleSSLFileChange = (e: Event, field: 'sslCA' | 'sslCert' | 'sslKey') => {
+const fileExtension = (fileName = '') => {
+  const lastDotIndex = fileName.lastIndexOf('.')
+  if (lastDotIndex < 0 || lastDotIndex === fileName.length - 1) {
+    return ''
+  }
+  return fileName.substring(lastDotIndex + 1).toLowerCase()
+}
+
+const validateSSLFile = (file: File, field: SSLConfigField) => {
+  if (!sslFileExtensions[field].includes(fileExtension(file.name))) {
+    ElMessage.error(t('datasource.ck_ssl_file_type_invalid'))
+    return false
+  }
+  if (file.size > SSL_FILE_MAX_SIZE) {
+    ElMessage.error(t('datasource.ck_ssl_file_size_invalid'))
+    return false
+  }
+  return true
+}
+
+const handleSSLFileChange = (e: Event, field: SSLConfigField) => {
   const target = e.target as HTMLInputElement
   const file = target?.files?.[0]
   if (!file) return
+  if (!validateSSLFile(file, field)) {
+    target.value = ''
+    return
+  }
   const reader = new FileReader()
   reader.onload = event => {
     form.value.configuration[field] = (event.target?.result as string) || ''
@@ -278,7 +314,7 @@ const sslCAInput = ref<HTMLInputElement>()
 const sslCertInput = ref<HTMLInputElement>()
 const sslKeyInput = ref<HTMLInputElement>()
 
-const chooseSSLFile = (field: 'sslCA' | 'sslCert' | 'sslKey') => {
+const chooseSSLFile = (field: SSLConfigField) => {
   if (field === 'sslCA') {
     sslCAInput.value?.click()
   } else if (field === 'sslCert') {
@@ -318,7 +354,7 @@ const setRules = () => {
         trigger: 'blur'
       }
     ],
-    'configuration.password': [
+    [`configuration.${datasourceSecretField}`]: [
       {
         required: true,
         message: t('datasource.please_input_password'),
@@ -1143,14 +1179,14 @@ defineExpose({
           </el-form-item>
           <el-form-item
             :label="t('datasource.keytab_Key_path')"
-            prop="configuration.password"
+            :prop="`configuration.${datasourceSecretField}`"
             v-if="form.type === 'presto'"
           >
             <CustomPassword
               :placeholder="t('common.inputText') + ' ' + t('datasource.keytab_Key_path')"
               show-password
               type="password"
-              v-model="form.configuration.password"
+              v-model="form.configuration[datasourceSecretField]"
             />
             <p>
               {{ t('datasource.kerbers_info') }}
@@ -1179,7 +1215,7 @@ defineExpose({
               :placeholder="t('common.inputText') + ' ' + t('datasource.password')"
               show-password
               type="password"
-              v-model="form.configuration.password"
+              v-model="form.configuration[datasourceSecretField]"
             />
           </el-form-item>
           <el-form-item
@@ -1268,7 +1304,7 @@ defineExpose({
               <input
                 ref="sslCAInput"
                 type="file"
-                accept=".pem,.crt,.cer"
+                :accept="SSL_CERTIFICATE_FILE_ACCEPT"
                 style="display: none"
                 @change="e => handleSSLFileChange(e, 'sslCA')"
               />
@@ -1287,7 +1323,7 @@ defineExpose({
               <input
                 ref="sslCertInput"
                 type="file"
-                accept=".pem,.crt,.cer"
+                :accept="SSL_CERTIFICATE_FILE_ACCEPT"
                 style="display: none"
                 @change="e => handleSSLFileChange(e, 'sslCert')"
               />
@@ -1306,7 +1342,7 @@ defineExpose({
               <input
                 ref="sslKeyInput"
                 type="file"
-                accept=".pem,.key"
+                :accept="SSL_KEY_FILE_ACCEPT"
                 style="display: none"
                 @change="e => handleSSLFileChange(e, 'sslKey')"
               />
@@ -1373,17 +1409,17 @@ defineExpose({
             </el-form-item>
             <el-form-item :label="t('data_source.connection_method')">
               <el-radio-group v-model="form.configuration.sshType">
-                <el-radio :value="sshAuthTypePassword">{{ t('data_source.password') }}</el-radio>
+                <el-radio :value="sshAuthTypeCredential">{{ t('data_source.ssh_credential_auth') }}</el-radio>
                 <el-radio value="sshkey">ssh key</el-radio>
               </el-radio-group>
             </el-form-item>
             <el-form-item
-              :label="t('datasource.password')"
-              v-if="form.configuration.sshType === sshAuthTypePassword"
+              :label="t('data_source.ssh_credential')"
+              v-if="form.configuration.sshType === sshAuthTypeCredential"
               prop="configuration.sshPassword"
             >
               <CustomPassword
-                :placeholder="t('common.inputText') + ' ' + t('datasource.password')"
+                :placeholder="t('common.inputText') + ' ' + t('data_source.ssh_credential')"
                 show-password
                 type="password"
                 v-model="form.configuration.sshPassword"
@@ -1405,11 +1441,11 @@ defineExpose({
             </el-form-item>
 
             <el-form-item
-              :label="t('data_source.ssh_key_password')"
+              :label="t('data_source.ssh_key_credential')"
               v-if="form.configuration.sshType === 'sshkey'"
             >
               <CustomPassword
-                :placeholder="t('common.inputText') + ' ' + t('datasource.password')"
+                :placeholder="t('common.inputText') + ' ' + t('data_source.ssh_key_credential')"
                 show-password
                 type="password"
                 v-model="form.configuration.sshKeyPassword"

@@ -70,7 +70,7 @@ onMounted(loadResource)
   <main class="portal-view">
     <header class="portal-header view-header">
       <button class="brand" type="button" @click="back">
-        <img class="brand-mark" :src="crestMark" alt="" aria-hidden="true" />
+        <img class="brand-mark" :src="crestMark" alt="Crest" />
         <span class="portal-title">{{ systemTitle }}</span>
       </button>
       <div class="resource-title">

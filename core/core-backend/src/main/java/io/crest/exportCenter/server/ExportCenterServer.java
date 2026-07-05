@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
@@ -95,7 +96,7 @@ public class ExportCenterServer implements ExportCenterApi {
     @Override
     @CrestAudit(id = "#p0", ot = LogOT.DOWNLOAD, st = LogST.DATA)
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public void download(String id, String ticket, HttpServletResponse response) throws Exception {
+    public void download(String id, String ticket, HttpServletResponse response) throws IOException {
         try {
             exportCenterManage.download(id, ticket, response);
         } catch (CrestException e) {
@@ -104,7 +105,7 @@ public class ExportCenterServer implements ExportCenterApi {
     }
 
     @SuppressWarnings("java/xss")
-    private void writeForbidden(HttpServletResponse response, CrestException e) throws Exception {
+    private void writeForbidden(HttpServletResponse response, CrestException e) throws IOException {
         if (response.isCommitted()) {
             return;
         }
@@ -120,7 +121,7 @@ public class ExportCenterServer implements ExportCenterApi {
 
     @Override
     @CrestAudit(id = "#p0", ot = LogOT.READ, st = LogST.DATA)
-    public String generateDownloadUri(String id) throws Exception {
+    public String generateDownloadUri(String id) {
         return exportCenterManage.generateDownloadUri(id);
     }
 

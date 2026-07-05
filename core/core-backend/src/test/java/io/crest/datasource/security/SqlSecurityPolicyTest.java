@@ -4,6 +4,7 @@ import io.crest.exception.CrestException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SqlSecurityPolicyTest {
@@ -32,6 +33,11 @@ class SqlSecurityPolicyTest {
         assertDoesNotThrow(() -> SqlSecurityPolicy.validateReadQuery("select * from demo_table where id = ?"));
         assertDoesNotThrow(() -> SqlSecurityPolicy.validateReadQuery("with base as (select 1 as id) select * from base"));
         assertDoesNotThrow(() -> SqlSecurityPolicy.validateReadQuery("desc demo_table"));
+    }
+
+    @Test
+    void validateReadQueryShouldReturnNormalizedStatement() {
+        assertEquals("select * from demo_table", SqlSecurityPolicy.validateReadQuery("  select * from demo_table  "));
     }
 
     @Test

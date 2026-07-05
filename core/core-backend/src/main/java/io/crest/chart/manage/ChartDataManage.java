@@ -81,7 +81,7 @@ public class ChartDataManage {
 
     private static final Logger logger = LoggerFactory.getLogger(ChartDataManage.class);
 
-    public ChartViewDTO calcData(ChartViewDTO view) throws Exception {
+    public ChartViewDTO calcData(ChartViewDTO view) {
         ChartExtRequest chartExtRequest = view.getChartExtRequest();
         if (chartExtRequest == null) {
             chartExtRequest = new ChartExtRequest();
@@ -439,7 +439,7 @@ public class ChartDataManage {
         return chartHandler.buildChart(view, calcResult, formatResult, filterResult);
     }
 
-    private List<ChartViewFieldDTO> getSizeField(ChartViewDTO view) throws Exception {
+    private List<ChartViewFieldDTO> getSizeField(ChartViewDTO view) {
         List<ChartViewFieldDTO> list = new ArrayList<>();
         Map<String, Object> customAttr = view.getCustomAttr();
 
@@ -590,7 +590,7 @@ public class ChartDataManage {
         return res;
     }
 
-    public List<String> getFieldData(ChartViewDTO view, Long fieldId, String fieldType) throws Exception {
+    public List<String> getFieldData(ChartViewDTO view, Long fieldId, String fieldType) {
         ChartExtRequest requestList = view.getChartExtRequest();
         List<String[]> sqlData = sqlData(view, requestList, fieldId);
         List<ChartViewFieldDTO> fieldList = new ArrayList<>();
@@ -653,7 +653,7 @@ public class ChartDataManage {
         return res.stream().distinct().collect(Collectors.toList());
     }
 
-    public List<String[]> sqlData(ChartViewDTO view, ChartExtRequest requestList, Long fieldId) throws Exception {
+    public List<String[]> sqlData(ChartViewDTO view, ChartExtRequest requestList, Long fieldId) {
         if (ObjectUtils.isEmpty(view)) {
             CrestException.throwException(Translator.get("i18n_chart_delete"));
         }
@@ -817,7 +817,7 @@ public class ChartDataManage {
 
             querySql = provider.rebuildSQL(querySql, sqlMeta, crossDs, dsMap);
             datasourceRequest.setQuery(querySql);
-            logger.debug("calcite chart get field enum sql: {}", querySql);
+            logger.debug("calcite chart get field enum sql generated");
 
             data = (List<String[]>) provider.fetchResultField(datasourceRequest).get("data");
         }
@@ -843,7 +843,7 @@ public class ChartDataManage {
                     try {
                         chartViewDTO.setSceneId(sceneId);
                         chartViewManege.save(chartViewDTO);
-                    } catch (Exception e) {
+                    } catch (RuntimeException e) {
                         CrestException.throwException(e);
                     }
                 } else {
@@ -857,7 +857,7 @@ public class ChartDataManage {
         }
     }
 
-    public List<String> getDrillFieldData(ChartViewDTO view, Long fieldId) throws Exception {
+    public List<String> getDrillFieldData(ChartViewDTO view, Long fieldId) {
         List<ChartViewFieldDTO> drillField = view.getDrillFields();
         ChartViewFieldDTO targetField = null;
         for (int i = 0; i < drillField.size(); i++) {

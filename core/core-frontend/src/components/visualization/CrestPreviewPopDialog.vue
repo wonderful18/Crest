@@ -28,7 +28,7 @@
         id="iframe-de-preview-pop"
         :src="state.url.startsWith('#/') ? `?${new Date().getTime()}${state.url}` : state.url"
         scrolling="auto"
-        frameborder="0"
+        title="Crest preview"
       />
     </div>
   </el-dialog>
@@ -145,6 +145,7 @@ defineExpose({
     .preview-main-frame {
       width: 100%;
       height: 100%;
+      border: 0;
     }
   }
   .ed-dialog__body {

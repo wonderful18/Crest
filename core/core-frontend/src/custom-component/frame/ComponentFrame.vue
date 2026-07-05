@@ -6,7 +6,7 @@
         :id="'iframe-' + element.id"
         :src="element.frameLinks.src"
         scrolling="auto"
-        frameborder="0"
+        title="Crest frame"
         class="main-frame main-de-iframe"
       />
       <div v-if="isEdit" class="frame-mask edit-mask">
@@ -99,6 +99,10 @@ onMounted(() => {
 .main-frame {
   height: 100%;
   width: 100%;
+}
+
+.main-de-iframe {
+  border: 0;
 }
 
 .frame-mask {

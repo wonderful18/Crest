@@ -20,7 +20,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("不支持的 HTTP 方法应按 405 处理")
-    void shouldHandleUnsupportedMethodAs405() throws Exception {
+    void shouldHandleUnsupportedMethodAs405() throws ReflectiveOperationException {
         GlobalExceptionHandler handler = new GlobalExceptionHandler();
         HttpRequestMethodNotSupportedException exception =
                 new HttpRequestMethodNotSupportedException("GET", List.of("POST"));

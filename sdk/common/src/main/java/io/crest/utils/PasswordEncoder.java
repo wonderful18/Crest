@@ -4,6 +4,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 
 /**
@@ -83,7 +84,7 @@ public class PasswordEncoder {
 
             // 比较哈希（常量时间比较，防止时序攻击）
             return constantTimeEquals(expectedHash, actualHash);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return false;
         }
     }
@@ -119,7 +120,7 @@ public class PasswordEncoder {
 
             int iterations = Integer.parseInt(parts[0]);
             return iterations < ITERATIONS;
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             return true;
         }
     }
@@ -132,9 +133,7 @@ public class PasswordEncoder {
             PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, keyLength);
             SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM);
             return factory.generateSecret(spec).getEncoded();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("不支持的算法: " + ALGORITHM, e);
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException("密码编码失败", e);
         }
     }

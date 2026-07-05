@@ -22,7 +22,7 @@ public class ScheduledTaskJob implements Job {
             if (!taskLoaded) {
                 Objects.requireNonNull(CommonBeanFactory.getBean(ScheduleManager.class)).removeJob(jobKey, trigger.getKey());
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage(), e.getCause());
         }
     }

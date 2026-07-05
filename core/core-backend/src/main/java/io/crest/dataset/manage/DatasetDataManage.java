@@ -108,7 +108,7 @@ public class DatasetDataManage {
 
     public static final List<String> notFullDs = List.of("mysql", "mariadb", "Excel", "API", "H2", "h2");
 
-    public List<DatasetTableFieldDTO> getTableFields(DatasetTableDTO datasetTableDTO) throws Exception {
+    public List<DatasetTableFieldDTO> getTableFields(DatasetTableDTO datasetTableDTO) {
         List<DatasetTableFieldDTO> list = null;
         List<TableField> tableFields = null;
         CoreDatasource authorizedDatasource = requireDatasourceAccess(
@@ -161,7 +161,7 @@ public class DatasetDataManage {
                 }
             } else {
                 // parser sql params and replace default value
-                String s = new String(Base64.getDecoder().decode(tableInfoDTO.getSql()));
+                String s = DatasetUtils.getDecode(tableInfoDTO.getSql());
                 SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(s, datasetTableDTO.getSqlVariableDetails(), true, false, null, datasourceRequest.getIsCross(), datasourceRequest.getDsList(), pluginManage, getUserEntity());
                 String originSql = sqlResult.getSql();
                 datasourceRequest.setTableFieldWithValues(sqlResult.getTableFieldWithValues());
@@ -178,8 +178,8 @@ public class DatasetDataManage {
                     sql = SqlUtils.addSchema(originSql, tableSchema);
                 }
             }
-            datasourceRequest.setQuery(sql.replaceAll("\r\n", " ").replaceAll("\n", " "));
-            logger.debug("calcite data table field sql: " + datasourceRequest.getQuery());
+            datasourceRequest.setQuery(sql.replace("\r\n", " ").replace("\n", " "));
+            logger.debug("calcite data table field sql generated");
             // 获取数据源表的原始字段
             if (Strings.CI.equals(type, DatasetTableType.DB)) {
                 datasourceRequest.setTable(tableInfoDTO.getTable());
@@ -220,7 +220,7 @@ public class DatasetDataManage {
             sql = Utils.replaceSchemaAlias(sql, datasourceRequest.getDsList());
             sql = provider.transSqlDialect(sql, datasourceRequest.getDsList());
             datasourceRequest.setQuery(sql);
-            logger.debug("calcite data table field sql: " + datasourceRequest.getQuery());
+            logger.debug("calcite data table field sql generated");
             tableFields = provider.fetchTableField(datasourceRequest);
         }
         return transFields(tableFields, true);
@@ -249,7 +249,7 @@ public class DatasetDataManage {
         }).collect(Collectors.toList());
     }
 
-    public Map<String, Object> previewDataWithLimit(DatasetGroupInfoDTO datasetGroupInfoDTO, Integer start, Integer count, boolean checkPermission, boolean encode) throws Exception {
+    public Map<String, Object> previewDataWithLimit(DatasetGroupInfoDTO datasetGroupInfoDTO, Integer start, Integer count, boolean checkPermission, boolean encode) {
         if (datasetGroupInfoDTO == null) {
             CrestException.throwException("数据集不能为空");
         }
@@ -317,7 +317,7 @@ public class DatasetDataManage {
             querySQL = SQLProvider.createQuerySQLWithLimit(sqlMeta, false, needOrder, false, start, count);
         }
         querySQL = provider.rebuildSQL(querySQL, sqlMeta, crossDs, dsMap);
-        logger.debug("calcite data preview sql: " + querySQL);
+        logger.debug("calcite data preview sql generated");
 
         // 通过数据源请求数据
         // 调用数据源的calcite获得data
@@ -341,11 +341,11 @@ public class DatasetDataManage {
             }
             map.put("allFields", fieldList);
         }
-        map.put("sql", Base64.getEncoder().encodeToString(querySQL.getBytes()));
+        map.put("sql", DatasetUtils.getEncode(querySQL));
         return map;
     }
 
-    public Long datasetTotal(Long datasetGroupId) throws Exception {
+    public Long datasetTotal(Long datasetGroupId) {
         DatasetGroupInfoDTO dto = datasetGroupManage.getForCount(datasetGroupId);
         if (ObjectUtils.isEmpty(dto)) return 0L;
         if (Strings.CI.equals(dto.getNodeType(), "dataset")) {
@@ -404,12 +404,12 @@ public class DatasetDataManage {
             Order2SQLObj.getOrders(sqlMeta, datasetGroupInfoDTO.getSortFields(), fields, crossDs, dsMap, Utils.getParams(fields), null, pluginManage);
             String replaceSql = provider.rebuildSQL(SQLProvider.createQuerySQL(sqlMeta, false, false, false), sqlMeta, crossDs, dsMap);
             return datasetTotal(datasetGroupInfoDTO, replaceSql, null);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return null;
         }
     }
 
-    public Long datasetTotal(DatasetGroupInfoDTO datasetGroupInfoDTO, String s, ChartExtRequest request) throws Exception {
+    public Long datasetTotal(DatasetGroupInfoDTO datasetGroupInfoDTO, String s, ChartExtRequest request) {
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, request);
         sqlMap = datasetSyncQueryManage.routeIfSynced(datasetGroupInfoDTO, sqlMap);
         Map<Long, DatasourceSchemaDTO> dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");
@@ -424,7 +424,7 @@ public class DatasetDataManage {
             sql = s;
         }
         String querySQL = "SELECT COUNT(*) FROM (" + sql + ") t_a_0";
-        logger.debug("calcite data count sql: " + querySQL);
+        logger.debug("calcite data count sql generated");
 
         // 通过数据源请求数据
         // 调用数据源的calcite获得data
@@ -453,7 +453,7 @@ public class DatasetDataManage {
             return null;
         }
         SqlLogDTO sqlLogDTO = new SqlLogDTO();
-        String sql = new String(Base64.getDecoder().decode(dto.getSql()));
+        String sql = DatasetUtils.getDecode(dto.getSql());
         sqlLogDTO.setSql(sql);
         Map<String, Object> map = null;
         try {
@@ -462,7 +462,7 @@ public class DatasetDataManage {
             sqlLogDTO.setEndTime(System.currentTimeMillis());
             sqlLogDTO.setSpend(sqlLogDTO.getEndTime() - sqlLogDTO.getStartTime());
             sqlLogDTO.setStatus("Completed");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             sqlLogDTO.setStatus("Error");
             CrestException.throwException(e.getMessage());
         } finally {
@@ -520,7 +520,7 @@ public class DatasetDataManage {
 
         // 解析 SQL 参数并替换默认值。
 
-        String s = new String(Base64.getDecoder().decode(dto.getSql()));
+        String s = DatasetUtils.getDecode(dto.getSql());
         SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(datasetSQLManage.subPrefixSuffixChar(s), dto.getSqlVariableDetails(), true, true, null, dto.getIsCross(), dsMap, pluginManage, getUserEntity());
         String originSql = sqlResult.getSql();
         datasourceRequest.setTableFieldWithValues(sqlResult.getTableFieldWithValues());
@@ -574,7 +574,7 @@ public class DatasetDataManage {
             sql = replacePreviewTablePlaceholderAndTranslate(provider, sql, originSql, datasourceSchemaDTO);
         }
 
-        logger.debug("calcite data preview sql: " + sql);
+        logger.debug("calcite data preview sql generated");
         datasourceRequest.setQuery(sql);
         Map<String, Object> data = provider.fetchResultField(datasourceRequest);
         // 重新构造data
@@ -583,7 +583,7 @@ public class DatasetDataManage {
         Map<String, Object> previewData = buildPreviewData(data, fields, new HashMap<>(), false);
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("data", previewData);
-        map.put("sql", Base64.getEncoder().encodeToString(sql.getBytes()));
+        map.put("sql", DatasetUtils.getEncode(sql));
         return map;
     }
 
@@ -666,7 +666,7 @@ public class DatasetDataManage {
         }
     }
 
-    public List<String> getFieldEnumDs(EnumObj map) throws Exception {
+    public List<String> getFieldEnumDs(EnumObj map) {
         DatasetTableFieldDTO field = map.getField();
         DatasetGroupInfoDTO datasetGroupInfoDTO = map.getDataset();
         if (field == null) {
@@ -720,7 +720,7 @@ public class DatasetDataManage {
         String querySQL;
         querySQL = SQLProvider.createQuerySQL(sqlMeta, false, needOrder, !Strings.CI.equals(dsType, "es"));
         querySQL = provider.rebuildSQL(querySQL, sqlMeta, crossDs, dsMap);
-        logger.debug("calcite data enum sql: " + querySQL);
+        logger.debug("calcite data enum sql generated");
 
         // 通过数据源请求数据
         // 调用数据源的calcite获得data
@@ -793,7 +793,7 @@ public class DatasetDataManage {
         return datasetGroupManage.requireDatasourceAccess(datasourceId);
     }
 
-    public List<String> getFieldEnum(MultFieldValuesRequest multFieldValuesRequest) throws Exception {
+    public List<String> getFieldEnum(MultFieldValuesRequest multFieldValuesRequest) {
         if (multFieldValuesRequest == null || CollectionUtils.isEmpty(multFieldValuesRequest.getFieldIds())) {
             return Collections.emptyList();
         }
@@ -884,7 +884,7 @@ public class DatasetDataManage {
                 querySQL = SQLProvider.createQuerySQL(sqlMeta, false, needOrder, !Strings.CI.equals(dsType, "es"));
             }
             querySQL = provider.rebuildSQL(querySQL, sqlMeta, crossDs, dsMap);
-            logger.debug("calcite data enum sql: " + querySQL);
+            logger.debug("calcite data enum sql generated");
 
             // 通过数据源请求数据
             // 调用数据源的calcite获得data
@@ -938,7 +938,7 @@ public class DatasetDataManage {
         return result.stream().toList();
     }
 
-    public List<Map<String, Object>> getFieldEnumObj(EnumValueRequest request) throws Exception {
+    public List<Map<String, Object>> getFieldEnumObj(EnumValueRequest request) {
         List<Long> ids = new ArrayList<>();
         if (ObjectUtils.isNotEmpty(request.getQueryId())) {
             ids.add(request.getQueryId());
@@ -1155,7 +1155,7 @@ public class DatasetDataManage {
             querySQL = SQLProvider.createQuerySQL(sqlMeta, false, needOrder, sortDistinct && ids.size() == 1 && !Strings.CI.equals(dsType, "es"));
         }
         querySQL = provider.rebuildSQL(querySQL, sqlMeta, crossDs, dsMap);
-        logger.debug("calcite data enum sql: " + querySQL);
+        logger.debug("calcite data enum sql generated");
 
         // 通过数据源请求数据
         // 调用数据源的calcite获得data
@@ -1214,7 +1214,7 @@ public class DatasetDataManage {
         return previewData;
     }
 
-    public List<BaseTreeNodeDTO> getFieldValueTree(MultFieldValuesRequest multFieldValuesRequest) throws Exception {
+    public List<BaseTreeNodeDTO> getFieldValueTree(MultFieldValuesRequest multFieldValuesRequest) {
         List<Long> ids = multFieldValuesRequest.getFieldIds();
         if (ids.isEmpty()) {
             CrestException.throwException("no field selected.");
@@ -1363,7 +1363,7 @@ public class DatasetDataManage {
             querySQL = SQLProvider.createQuerySQL(sqlMeta, false, needOrder, false);
         }
         querySQL = provider.rebuildSQL(querySQL, sqlMeta, crossDs, dsMap);
-        logger.debug("filter tree sql: " + querySQL);
+        logger.debug("filter tree sql generated");
 
         // 通过数据源请求数据
         // 调用数据源的calcite获得data

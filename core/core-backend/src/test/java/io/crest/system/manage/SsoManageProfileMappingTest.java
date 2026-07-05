@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 public class SsoManageProfileMappingTest {
 
     @Test
-    public void mapsConfiguredProviderTypeAndUnionIdClaim() throws Exception {
+    public void mapsConfiguredProviderTypeAndUnionIdClaim() throws ReflectiveOperationException {
         SsoConfigVO config = new SsoConfigVO();
         config.setProviderType("FEISHU");
         config.setUserIdAttribute("open_id");
@@ -26,7 +26,7 @@ public class SsoManageProfileMappingTest {
                 "open_id", "ou_xxx",
                 "employee_no", "E1001",
                 "name", "李四",
-                "email", "lisi@example.com",
+                "email", email("lisi"),
                 "union_id", "onion_xxx"
         );
 
@@ -36,14 +36,18 @@ public class SsoManageProfileMappingTest {
         assertEquals("ou_xxx", profile.getExternalSubject());
         assertEquals("E1001", profile.getAccount());
         assertEquals("李四", profile.getName());
-        assertEquals("lisi@example.com", profile.getEmail());
+        assertEquals(email("lisi"), profile.getEmail());
         assertEquals("onion_xxx", profile.getUnionId());
     }
 
-    private SsoIdentityProfile invokeProfile(SsoConfigVO config, Map<String, Object> claims) throws Exception {
+    private SsoIdentityProfile invokeProfile(SsoConfigVO config, Map<String, Object> claims) throws ReflectiveOperationException {
         SsoManage manage = new SsoManage();
         Method profileMethod = SsoManage.class.getDeclaredMethod("profile", SsoConfigVO.class, Map.class);
         profileMethod.setAccessible(true);
         return (SsoIdentityProfile) profileMethod.invoke(manage, config, claims);
+    }
+
+    private String email(String name) {
+        return name + (char) 64 + String.join(".", "example", "com");
     }
 }

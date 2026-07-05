@@ -1,6 +1,6 @@
 <template>
   <div class="img-option-prefix">
-    <img draggable="false" :src="imgUrlTrans(url)" />
+    <img draggable="false" :src="imgUrlTrans(url)" alt="picture option" />
   </div>
 </template>
 

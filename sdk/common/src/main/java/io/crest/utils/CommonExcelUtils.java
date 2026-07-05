@@ -57,12 +57,12 @@ public class CommonExcelUtils {
                 writerBuilder.inMemory(Boolean.TRUE).registerWriteHandler(new ErrWriteHandler(errMsgList));
             }
             writerBuilder.registerWriteHandler(new AutoAdaptWidthStyleStrategy()).registerWriteHandler(horizontalCellStyleStrategy).sheet(sheetName).doWrite(objects);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void importExcel(InputStream inputStream, Class clazsz, AnalysisEventListener analysisEventListener) throws Exception {
+    public static void importExcel(InputStream inputStream, Class clazsz, AnalysisEventListener analysisEventListener) {
         EasyExcel.read(inputStream, clazsz, analysisEventListener).sheet().headRowNumber(0).doRead();
     }
 

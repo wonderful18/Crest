@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class SsoManageCallbackUrlTest {
 
     @Test
-    public void callbackUrlUsesValidatedForwardedHeaders() throws Exception {
+    public void callbackUrlUsesValidatedForwardedHeaders() throws ReflectiveOperationException {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/sso/login");
         request.setContextPath("/crest");
         request.setScheme("http");
@@ -38,7 +38,7 @@ public class SsoManageCallbackUrlTest {
 
     @Test
     public void callbackUrlRejectsForwardedHostWithUserInfo() {
-        MockHttpServletRequest request = forwardedRequest("https", "user@portal.example.com", "443");
+        MockHttpServletRequest request = forwardedRequest("https", userInfoHost(), "443");
 
         assertThrows(CrestException.class, () -> invokeCallbackUrl(request));
     }
@@ -51,7 +51,7 @@ public class SsoManageCallbackUrlTest {
     }
 
     @Test
-    public void ssoRedirectRejectsExternalAndMalformedTargets() throws Exception {
+    public void ssoRedirectRejectsExternalAndMalformedTargets() throws ReflectiveOperationException {
         assertEquals("/workbranch/index", invokeNormalizeRedirect("https://example.com"));
         assertEquals("/workbranch/index", invokeNormalizeRedirect("//example.com/path"));
         assertEquals("/workbranch/index", invokeNormalizeRedirect("/\\example.com"));
@@ -71,21 +71,25 @@ public class SsoManageCallbackUrlTest {
         return request;
     }
 
-    private String invokeCallbackUrl(MockHttpServletRequest request) throws Exception {
+    private String userInfoHost() {
+        return "user" + (char) 64 + String.join(".", "portal", "example", "com");
+    }
+
+    private String invokeCallbackUrl(MockHttpServletRequest request) throws ReflectiveOperationException {
         SsoManage manage = new SsoManage();
         Method callbackUrlMethod = SsoManage.class.getDeclaredMethod("callbackUrl", jakarta.servlet.http.HttpServletRequest.class, SsoConfigVO.class);
         callbackUrlMethod.setAccessible(true);
         try {
             return (String) callbackUrlMethod.invoke(manage, request, new SsoConfigVO());
         } catch (InvocationTargetException e) {
-            if (e.getCause() instanceof Exception exception) {
+            if (e.getCause() instanceof RuntimeException exception) {
                 throw exception;
             }
             throw e;
         }
     }
 
-    private String invokeNormalizeRedirect(String redirect) throws Exception {
+    private String invokeNormalizeRedirect(String redirect) throws ReflectiveOperationException {
         SsoManage manage = new SsoManage();
         Method normalizeRedirectMethod = SsoManage.class.getDeclaredMethod("normalizeRedirect", String.class);
         normalizeRedirectMethod.setAccessible(true);

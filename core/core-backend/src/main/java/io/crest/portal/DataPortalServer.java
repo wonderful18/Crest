@@ -4,6 +4,7 @@ import io.crest.commons.constants.OptConstants;
 import io.crest.exception.CrestException;
 import io.crest.operation.manage.CoreOptRecentManage;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -51,7 +52,7 @@ public class DataPortalServer {
     }
 
     @PostMapping("/resources")
-    public DataPortalPageVO resources(@RequestBody(required = false) DataPortalResourceRequest request) {
+    public DataPortalPageVO resources(@Valid @RequestBody(required = false) DataPortalResourceRequest request) {
         Long uid = dataPortalPermissionManage.currentUid();
         DataPortalResourceRequest normalized = normalizeRequest(request);
         QueryParts query = buildBaseQuery(uid, normalized);

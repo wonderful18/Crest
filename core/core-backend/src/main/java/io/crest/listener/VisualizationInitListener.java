@@ -28,7 +28,7 @@ public class VisualizationInitListener implements ApplicationListener<Applicatio
         }
         try{
             coreVisualizationManage.dataVisualizationInit();
-        }catch (Exception e){
+        }catch (RuntimeException e){
             LogUtil.error("=====Visualization init from code ERROR=====");
         }
         LogUtil.info("=====Visualization init from code [End]=====");

@@ -4,9 +4,9 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 
 import { storeToRefs } from 'pinia'
-import { ElIcon, ElMessage } from 'element-plus-secondary'
+import { ElIcon } from 'element-plus-secondary'
 import { ref, onMounted, onBeforeUnmount, watch, PropType } from 'vue'
-import { beforeUploadCheck, uploadFileResult } from '@/api/staticResource'
+import { beforeUploadCheck, STATIC_IMAGE_FILE_ACCEPT, uploadFileResult } from '@/api/staticResource'
 import { imgUrlTrans } from '@/utils/imgUtils'
 import eventBus from '@/utils/eventBus'
 import ImgViewDialog from '@/custom-component/ImgViewDialog.vue'
@@ -30,7 +30,6 @@ const dialogImageUrl = ref('')
 const dialogVisible = ref(false)
 const uploadDisabled = ref(false)
 const files = ref(null)
-const maxImageSize = 15000000
 
 const handlePictureCardPreview = file => {
   dialogImageUrl.value = file.url
@@ -58,10 +57,19 @@ const goFile = () => {
   files.value.click()
 }
 
+const resetNativeImageInput = (e: Event) => {
+  const input = e.target as HTMLInputElement | null
+  if (input) {
+    input.value = ''
+  }
+}
+
 const reUpload = e => {
   const file = e.target.files[0]
-  if (file.size > maxImageSize) {
-    sizeMessage()
+  if (!file) {
+    return
+  }
+  if (!beforeUploadCheck(file)) {
     return
   }
   uploadFileResult(file, fileUrl => {
@@ -71,9 +79,6 @@ const reUpload = e => {
   })
 }
 
-const sizeMessage = () => {
-  ElMessage.error('图片大小不能超过15M')
-}
 const init = () => {
   if (curComponent.value.propValue.url) {
     fileList.value = [{ url: imgUrlTrans(curComponent.value.propValue.url) }]
@@ -104,13 +109,9 @@ onBeforeUnmount(() => {
       id="input"
       ref="files"
       type="file"
-      accept=".jpeg,.jpg,.png,.gif,.svg"
+      :accept="STATIC_IMAGE_FILE_ACCEPT"
       hidden
-      @click="
-        e => {
-          e.target.value = ''
-        }
-      "
+      @click="resetNativeImageInput"
       @change="reUpload"
     />
     <CommonAttr
@@ -130,7 +131,7 @@ onBeforeUnmount(() => {
             <el-upload
               :themes="themes"
               action=""
-              accept=".jpeg,.jpg,.png,.gif,.svg"
+              :accept="STATIC_IMAGE_FILE_ACCEPT"
               class="avatar-uploader"
               list-type="picture-card"
               :class="{ disabled: uploadDisabled }"

@@ -1169,7 +1169,7 @@ const emits = defineEmits([
       v-if="maskShow"
     ></div>
     <div class="zero" v-if="!state.nodeList.length">
-      <img :src="zeroNodeImg" alt="" />
+      <img :src="zeroNodeImg" :alt="t('commons.no_result')" />
       <p>{{ t('data_set.on_the_left') }}</p>
       <p>{{ t('data_set.a_data_set') }}</p>
     </div>

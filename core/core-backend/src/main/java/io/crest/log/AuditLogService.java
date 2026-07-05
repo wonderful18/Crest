@@ -69,7 +69,7 @@ public class AuditLogService {
                     operatorId, operatorName, operatorAccount, operatorIp,
                     duration, responseCode, responseMsg);
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             // 审计日志记录失败不应影响业务
             LogUtil.error("审计日志记录失败: " + e.getMessage());
         }
@@ -96,7 +96,7 @@ public class AuditLogService {
                     truncate(account, OPERATOR_ACCOUNT_MAX_LENGTH), truncate(ip, OPERATOR_IP_MAX_LENGTH),
                     success ? 200 : 401, truncate(maskSensitive(msg), RESPONSE_MSG_MAX_LENGTH));
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error("登录日志记录失败: " + e.getMessage());
         }
     }

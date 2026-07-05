@@ -82,6 +82,7 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 import { useI18n } from '@/hooks/web/useI18n'
 import { isMobile } from '@/utils/utils'
+import { safeSameOriginRoute } from '@/utils/securityUrl'
 const dvMainStore = dvMainStoreWithOut()
 const props = defineProps({
   canvasStyleData: {
@@ -127,20 +128,7 @@ const toggleFullscreen = () => {
 const back2Last = () => {
   const parentUrl = localStorage.getItem('beforeJumpUrl')
   localStorage.removeItem('beforeJumpUrl')
-  window.location.assign(safeSameOriginUrl(parentUrl))
-}
-
-const safeSameOriginUrl = (url?: string | null) => {
-  if (!url) return '/'
-  try {
-    const target = new URL(url, window.location.origin)
-    if (target.origin !== window.location.origin) {
-      return '/'
-    }
-    return `${target.pathname}${target.search}${target.hash}`
-  } catch (e) {
-    return '/'
-  }
+  router.replace(safeSameOriginRoute(parentUrl)).catch(() => undefined)
 }
 const exportPDF = () => {
   useEmitt().emitter.emit('canvasDownload', 'pdf')

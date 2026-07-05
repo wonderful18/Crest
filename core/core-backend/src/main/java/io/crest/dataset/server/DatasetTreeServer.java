@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
+import java.io.IOException;
 import java.util.*;
 
 
@@ -39,25 +40,25 @@ public class DatasetTreeServer implements DatasetTreeApi {
 
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, st = LogST.DATASET)
     @Override
-    public DatasetGroupInfoDTO save(@RequestBody DatasetGroupInfoDTO datasetNodeDTO) throws Exception {
+    public DatasetGroupInfoDTO save(@RequestBody DatasetGroupInfoDTO datasetNodeDTO) {
         return datasetGroupManage.save(datasetNodeDTO, false, true);
     }
 
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, st = LogST.DATASET)
     @Override
-    public DatasetNodeDTO rename(@RequestBody DatasetGroupInfoDTO dto) throws Exception {
+    public DatasetNodeDTO rename(@RequestBody DatasetGroupInfoDTO dto) {
         return datasetGroupManage.save(dto, true, false);
     }
 
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, st = LogST.DATASET)
     @Override
-    public DatasetNodeDTO create(@RequestBody DatasetGroupInfoDTO dto) throws Exception {
+    public DatasetNodeDTO create(@RequestBody DatasetGroupInfoDTO dto) {
         return datasetGroupManage.save(dto, false, true);
     }
 
     @CrestAudit(id = "#p0.id", ot = LogOT.MODIFY, st = LogST.DATASET)
     @Override
-    public DatasetNodeDTO move(@RequestBody DatasetGroupInfoDTO dto) throws Exception {
+    public DatasetNodeDTO move(@RequestBody DatasetGroupInfoDTO dto) {
         return datasetGroupManage.move(dto);
     }
 
@@ -84,32 +85,32 @@ public class DatasetTreeServer implements DatasetTreeApi {
     }
 
     @Override
-    public DatasetGroupInfoDTO get(Long id) throws Exception {
+    public DatasetGroupInfoDTO get(Long id) {
         return datasetGroupManage.datasetGroupInfoDTO(id, "preview");
     }
 
     @Override
-    public DatasetGroupInfoDTO details(Long id) throws Exception {
+    public DatasetGroupInfoDTO details(Long id) {
         return datasetGroupManage.getDetail(id);
     }
 
     @Override
-    public List<DatasetTableDTO> panelGetDsDetails(@RequestBody List<Long> ids) throws Exception {
+    public List<DatasetTableDTO> panelGetDsDetails(@RequestBody List<Long> ids) {
         return datasetGroupManage.getDetail(ids);
     }
 
     @Override
-    public List<SqlVariableDetails> sqlParams(@RequestBody List<Long> ids) throws Exception {
+    public List<SqlVariableDetails> sqlParams(@RequestBody List<Long> ids) {
         return datasetGroupManage.sqlParams(ids);
     }
 
     @Override
-    public List<DatasetTableDTO> detailWithPerm(@RequestBody List<Long> ids) throws Exception {
+    public List<DatasetTableDTO> detailWithPerm(@RequestBody List<Long> ids) {
         return datasetGroupManage.getDetailWithPerm(ids);
     }
 
     @Override
-    public void exportDataset(@RequestBody DataSetExportRequest request, HttpServletResponse response) throws Exception {
+    public void exportDataset(@RequestBody DataSetExportRequest request, HttpServletResponse response) throws IOException {
         if (request.isEmbeddedExport()) {
             exportCenterDownLoadManage.downloadDataset(request, response);
         } else {

@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ public class Redshift extends DatasourceConfiguration {
     public String getJdbc() {
         if (StringUtils.isNoneEmpty(getUrlType()) && !getUrlType().equalsIgnoreCase("hostName")) {
             for (String illegalParameter : illegalParameters) {
-                if (URLDecoder.decode(getJdbcUrl()).contains(illegalParameter)) {
+                if (URLDecoder.decode(getJdbcUrl(), StandardCharsets.UTF_8).contains(illegalParameter)) {
                     CrestException.throwException("Illegal parameter: " + illegalParameter);
                 }
             }
@@ -43,7 +44,7 @@ public class Redshift extends DatasourceConfiguration {
                 .replace("PORT", getLPort().toString().trim())
                 .replace("DATABASE", getDataBase().trim());
         for (String illegalParameter : illegalParameters) {
-            if (URLDecoder.decode(jdbcUrl).contains(illegalParameter)) {
+            if (URLDecoder.decode(jdbcUrl, StandardCharsets.UTF_8).contains(illegalParameter)) {
                 CrestException.throwException("Illegal parameter: " + illegalParameter);
             }
         }

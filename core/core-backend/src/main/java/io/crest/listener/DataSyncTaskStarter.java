@@ -27,17 +27,17 @@ public class DataSyncTaskStarter implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         try {
             taskExecutor.init();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage(), e.getCause());
         }
         try {
             dataFillingTaskExecutor.init();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage(), e.getCause());
         }
         try {
             dataSyncTaskExecutor.init();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage(), e.getCause());
         }
     }

@@ -407,7 +407,7 @@ const emits = defineEmits(['finish'])
             </template>
           </el-tree>
           <div v-if="searchEmpty" class="empty-search">
-            <img :src="nothingTree" />
+            <img :src="nothingTree" :alt="t('commons.no_result')" />
             <span>{{ t('visualization.no_content') }}</span>
           </div>
         </div>

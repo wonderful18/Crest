@@ -22,6 +22,7 @@ import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -32,6 +33,11 @@ import java.util.stream.Collectors;
 @Component("chartViewThresholdManage")
 @SuppressWarnings("unchecked")
 public class ChartViewThresholdManage {
+    private static final Pattern CHANGE_TEXT_STYLE_PATTERN = Pattern.compile("<span\\s+id=\"(changeText-0|changeText-1)\"\\s+style=\"([^\"]*)\">");
+    private static final Pattern TRANSLUCENT_BACKGROUND_PATTERN = Pattern.compile("background: #[0-9A-Fa-f]{6}33");
+    private static final Pattern THRESHOLD_VALUE_SPAN_PATTERN = Pattern.compile("<span[^>]*id=\"changeText-(-?\\d+)(?!0$)(?!1$)\"[^>]*>.*?</span>", Pattern.DOTALL);
+    private static final Pattern THRESHOLD_DATA_PATTERN = Pattern.compile("<span id=\"changeText-(\\d+)\"[^>]*?style=\"([^\"]*?)\"[^>]*?>\\s*<span[^>]*?data-mce-content=\"\\[告警数据\\]\"[^>]*?>\\[告警数据\\]</span>\\s*</span>", Pattern.DOTALL);
+    private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^0-9]");
 
 
     @Resource
@@ -105,21 +111,28 @@ public class ChartViewThresholdManage {
     }
 
     private String convertTree(FilterTreeObj filterTreeObj, Map<String, DatasetTableFieldDTO> fieldMap) {
+        if (filterTreeObj == null || CollectionUtils.isEmpty(filterTreeObj.getItems())) {
+            return null;
+        }
         String logic = filterTreeObj.getLogic();
         String logicText = translateLogic(logic);
         List<FilterTreeItem> items = filterTreeObj.getItems();
 
         StringBuilder result = new StringBuilder();
         for (FilterTreeItem item : items) {
-            String type = item.getType();
-            if (Strings.CS.equals("tree", type) && ObjectUtils.isNotEmpty(item.getSubTree())) {
-                String childResult = convertTree(item.getSubTree(), fieldMap);
-                result.append(childResult);
-            } else {
-                String itemResult = convertItem(item, fieldMap);
-                result.append(itemResult);
+            if (item == null) {
+                continue;
             }
-            result.append(logicText);
+            String type = item.getType();
+            String itemResult;
+            if (Strings.CS.equals("tree", type) && ObjectUtils.isNotEmpty(item.getSubTree())) {
+                itemResult = convertTree(item.getSubTree(), fieldMap);
+            } else {
+                itemResult = convertItem(item, fieldMap);
+            }
+            if (StringUtils.isNotBlank(itemResult)) {
+                result.append(itemResult).append(logicText);
+            }
         }
         int lastIndex = -1;
         if ((!result.isEmpty()) && (lastIndex = result.lastIndexOf(logicText)) > 0) {
@@ -132,10 +145,13 @@ public class ChartViewThresholdManage {
     private String convertItem(FilterTreeItem item, Map<String, DatasetTableFieldDTO> fieldMap) {
         String filterType = item.getFilterType();
         Long fieldId = item.getFieldId();
-        DatasetTableFieldDTO map = fieldMap.get(fieldId.toString());
+        DatasetTableFieldDTO map = fieldId == null ? null : fieldMap.get(fieldId.toString());
+        if (map == null) {
+            return null;
+        }
         String fieldName = map.getName();
         if (Strings.CS.equals(filterType, "enum")) {
-            List<String> enumValue = item.getEnumValue();
+            List<String> enumValue = Optional.ofNullable(item.getEnumValue()).orElseGet(List::of);
             String enumValueText = String.join(",", enumValue);
             return fieldName + " " + Translator.get("i18n_threshold_logic_in") + " " + "( " + enumValueText + " )";
         } else {
@@ -182,18 +198,7 @@ public class ChartViewThresholdManage {
                 if (unit > 3) {
                     time = getCustomTimeValue(format, unit, suffix, count, false);
                 }
-                List<String> unitLabels = null;
-                if (Strings.CI.equals("YYYY", format)) {
-                    unitLabels = List.of(Translator.get("i18n_time_year"));
-                } else if (Strings.CI.equals("YYYY-MM", format)) {
-                    unitLabels = List.of(Translator.get("i18n_time_year"), Translator.get("i18n_time_month"));
-                } else if (Strings.CI.equals("YYYY-MM-DD", format)) {
-                    unitLabels = List.of(Translator.get("i18n_time_year"), Translator.get("i18n_time_month"), Translator.get("i18n_time_date"));
-                } else if (Strings.CI.equals("HH:mm:ss", format)) {
-                    CrestException.throwException("纯时间格式不支持动态格式");
-                } else {
-                    unitLabels = List.of(Translator.get("i18n_time_year"), Translator.get("i18n_time_month"), Translator.get("i18n_time_date"), Translator.get("i18n_time_hour"));
-                }
+                List<String> unitLabels = dynamicTimeUnitLabels(format);
                 if (unit < 1 || unit > unitLabels.size()) {
                     CrestException.throwException("动态时间单位无效");
                 }
@@ -226,10 +231,26 @@ public class ChartViewThresholdManage {
                 return shortLabels.get(timeFlag - 1);
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error("动态时间配置错误，请重新配置！");
             return value;
         }
+    }
+
+    private List<String> dynamicTimeUnitLabels(String format) {
+        if (Strings.CI.equals("YYYY", format)) {
+            return List.of(Translator.get("i18n_time_year"));
+        }
+        if (Strings.CI.equals("YYYY-MM", format)) {
+            return List.of(Translator.get("i18n_time_year"), Translator.get("i18n_time_month"));
+        }
+        if (Strings.CI.equals("YYYY-MM-DD", format)) {
+            return List.of(Translator.get("i18n_time_year"), Translator.get("i18n_time_month"), Translator.get("i18n_time_date"));
+        }
+        if (Strings.CI.equals("HH:mm:ss", format)) {
+            CrestException.throwException("纯时间格式不支持动态格式");
+        }
+        return List.of(Translator.get("i18n_time_year"), Translator.get("i18n_time_month"), Translator.get("i18n_time_date"), Translator.get("i18n_time_hour"));
     }
 
     private String translateTerm(String term) {
@@ -248,19 +269,17 @@ public class ChartViewThresholdManage {
     }
 
     private String convertStyle(String htmlString) {
-        String regex = "<span\\s+id=\"(changeText-0|changeText-1)\"\\s+style=\"([^\"]*)\">";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(htmlString);
+        Matcher matcher = CHANGE_TEXT_STYLE_PATTERN.matcher(htmlString);
         if (matcher.find()) {
             String styleAttribute = matcher.group();
-            String newStyle = styleAttribute.replaceAll("background: #[0-9A-Fa-f]{6}33", "background: #FFFFFF")
+            String newStyle = TRANSLUCENT_BACKGROUND_PATTERN.matcher(styleAttribute).replaceAll("background: #FFFFFF")
                     .replace("color: #2b5fd9", "color: #000000");
             return matcher.replaceAll(Matcher.quoteReplacement(newStyle));
         }
         return htmlString;
     }
 
-    public ThresholdCheckVO checkThreshold(ThresholdCheckRequest request) throws Exception {
+    public ThresholdCheckVO checkThreshold(ThresholdCheckRequest request) {
         String thresholdTemplate = request.getThresholdTemplate();
         String thresholdRules = request.getThresholdRules();
         Long chartId = request.getChartId();
@@ -284,9 +303,7 @@ public class ChartViewThresholdManage {
             if (CollectionUtils.isEmpty(rows)) {
                 return new ThresholdCheckVO(false, null, null, null);
             }
-            String regex = "<span[^>]*id=\"changeText-(-?\\d+)(?!0$)(?!1$)\"[^>]*>.*?</span>";
-            Pattern pattern = Pattern.compile(regex, Pattern.DOTALL);
-            Matcher matcher = pattern.matcher(thresholdTemplate);
+            Matcher matcher = THRESHOLD_VALUE_SPAN_PATTERN.matcher(thresholdTemplate);
             StringBuilder sb = new StringBuilder();
 
             boolean withThresholdData = false;
@@ -375,10 +392,7 @@ public class ChartViewThresholdManage {
 
                 }
 
-                String thresholdDataRex = "<span id=\"changeText-(\\d+)\"[^>]*?style=\"([^\"]*?)\"[^>]*?>\\s*<span[^>]*?data-mce-content=\"\\[告警数据\\]\"[^>]*?>\\[告警数据\\]</span>\\s*</span>";
-
-                Pattern thresholdDataPattern = Pattern.compile(thresholdDataRex, Pattern.DOTALL);
-                Matcher thresholdDataMatcher = thresholdDataPattern.matcher(result);
+                Matcher thresholdDataMatcher = THRESHOLD_DATA_PATTERN.matcher(result);
                 if (thresholdDataMatcher.find()) {
                     String originStyle = thresholdDataMatcher.group(2);
                     String tableStyleHtml = tableHtml.toString().replace("min-width:35%;", originStyle + "min-width:35%;");
@@ -386,7 +400,7 @@ public class ChartViewThresholdManage {
                 }
             }
             return new ThresholdCheckVO(true, result, null, null);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage(), new Throwable(e));
             return new ThresholdCheckVO(false, null, e.getMessage(), null);
         }
@@ -479,7 +493,7 @@ public class ChartViewThresholdManage {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error("动态时间配置错误，请重新配置！" + e.getMessage());
             return value;
         }
@@ -526,34 +540,34 @@ public class ChartViewThresholdManage {
         DatasetTableFieldDTO field = item.getField();
         String engineFieldName = field.getEngineFieldName();
         String value = item.getValue();
-        Float tempFVal = Strings.CS.equalsAny(value, "min", "max") ? null : 0f;
+        BigDecimal tempFVal = Strings.CS.equalsAny(value, "min", "max") ? null : BigDecimal.ZERO;
         int validLen = 0;
 
         for (Map<String, Object> row : rows) {
             Object o = row.get(engineFieldName);
             if (ObjectUtils.isEmpty(o)) continue;
-            float fvalue = Float.parseFloat(o.toString());
+            BigDecimal fvalue = new BigDecimal(o.toString());
             if (Strings.CS.equals("min", value)) {
                 if (ObjectUtils.isEmpty(tempFVal)) {
                     tempFVal = fvalue;
                 } else {
-                    tempFVal = Math.min(tempFVal, fvalue);
+                    tempFVal = tempFVal.min(fvalue);
                 }
             } else if (Strings.CS.equals("max", value)) {
                 if (ObjectUtils.isEmpty(tempFVal)) {
                     tempFVal = fvalue;
                 } else {
-                    tempFVal = Math.max(tempFVal, fvalue);
+                    tempFVal = tempFVal.max(fvalue);
                 }
             } else if (Strings.CS.equals("average", value)) {
-                tempFVal += fvalue;
+                tempFVal = tempFVal.add(fvalue);
                 validLen++;
             }
         }
         if (Strings.CS.equals("average", value)) {
-            return validLen == 0 ? "0f" : String.valueOf((tempFVal / validLen));
+            return validLen == 0 ? "0f" : tempFVal.divide(BigDecimal.valueOf(validLen), 10, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
         }
-        return String.valueOf(tempFVal);
+        return tempFVal == null ? "null" : tempFVal.stripTrailingZeros().toPlainString();
     }
 
     public List<Map<String, Object>> filterRows(List<Map<String, Object>> rows, FilterTreeObj conditionTree, Map<Long, DatasetTableFieldDTO> fieldMap) {
@@ -678,8 +692,8 @@ public class ChartViewThresholdManage {
         if (ObjectUtils.isEmpty(valueObj)) return false;
         String valueText = valueObj.toString();
         String target = item.getValue();
-        target = target.replaceAll("[^0-9]", "");
-        valueText = valueText.replaceAll("[^0-9]", "");
+        target = NON_DIGIT_PATTERN.matcher(target).replaceAll("");
+        valueText = NON_DIGIT_PATTERN.matcher(valueText).replaceAll("");
         long targetLong = Long.parseLong(target);
         long valueLong = Long.parseLong(valueText);
         String term = item.getTerm();

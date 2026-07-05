@@ -24,6 +24,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.awt.*;
 import java.io.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -33,6 +35,9 @@ import java.util.UUID;
 public class FontManage {
 
     private static final long MAX_FONT_BYTES = 20L * 1024L * 1024L;
+    private static final long KIB = 1024L;
+    private static final long MIB = KIB * 1024L;
+    private static final long GIB = MIB * 1024L;
 
     @Value("${crest.path.font:/opt/crest/data/font/}")
     private String path;
@@ -164,6 +169,7 @@ public class FontManage {
     @SuppressWarnings("java/path-injection")
     private FontDto saveFile(MultipartFile file, String fileNameUUID) throws CrestException {
         FontDto fontDto = new FontDto();
+        File targetFile = null;
         try {
             if (file == null || file.isEmpty()) {
                 CrestException.throwException("字体文件不能为空");
@@ -174,8 +180,9 @@ public class FontManage {
                 CrestException.throwException("非法格式的文件！");
             }
             FileUtils.validateUploadFilename(filename);
-            String suffix = filename.substring(filename.lastIndexOf(".") + 1);
+            String suffix = filename.substring(filename.lastIndexOf('.') + 1);
             File f = FileUtils.resolveUnderDirectory(path, fileNameUUID + "." + suffix);
+            targetFile = f;
             try (FileOutputStream fileOutputStream = new FileOutputStream(f)) {
                 fileOutputStream.write(file.getBytes());
                 fileOutputStream.flush();
@@ -183,27 +190,37 @@ public class FontManage {
             fontDto.setFileTransName(fileNameUUID + "." + suffix);
 
             long length = file.getSize();
-            String unit = "MB";
-            Double size = 0.0;
-            if ((double) length / 1024 / 1024 > 1) {
-                if ((double) length / 1024 / 1024 / 1024 > 1) {
+            String unit;
+            double size;
+            if (length > MIB) {
+                if (length > GIB) {
                     unit = "GB";
-                    size = Double.valueOf(String.format("%.2f", (double) length / 1024 / 1024 / 1024));
+                    size = displaySize(length, GIB);
                 } else {
-                    size = Double.valueOf(String.format("%.2f", (double) length / 1024 / 1024));
+                    unit = "MB";
+                    size = displaySize(length, MIB);
                 }
             } else {
                 unit = "KB";
-                size = Double.valueOf(String.format("%.2f", (double) length / 1024));
+                size = displaySize(length, KIB);
             }
             Font font = Font.createFont(Font.TRUETYPE_FONT, f);
             fontDto.setSize(size);
             fontDto.setSizeType(unit);
             fontDto.setName(font.getFontName());
-        } catch (Exception e) {
+        } catch (IOException | FontFormatException | RuntimeException e) {
+            if (targetFile != null && targetFile.exists()) {
+                FileUtils.deleteFile(targetFile.getPath());
+            }
             CrestException.throwException(e);
         }
         return fontDto;
+    }
+
+    private double displaySize(long length, long unitBytes) {
+        return BigDecimal.valueOf(length)
+                .divide(BigDecimal.valueOf(unitBytes), 2, RoundingMode.HALF_UP)
+                .doubleValue();
     }
 
 }

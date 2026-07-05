@@ -59,8 +59,8 @@ public class ObOracle extends DatasourceConfiguration {
         if (StringUtils.isBlank(username)) {
             return schema;
         }
-        int atIndex = username.indexOf("@");
-        int clusterIndex = username.indexOf("#");
+        int atIndex = username.indexOf('@');
+        int clusterIndex = username.indexOf('#');
         int endIndex = username.length();
         if (atIndex >= 0) {
             endIndex = Math.min(endIndex, atIndex);

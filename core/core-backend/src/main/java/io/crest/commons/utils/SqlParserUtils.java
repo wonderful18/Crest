@@ -13,6 +13,7 @@ import io.crest.extensions.datasource.vo.PluginDatasourceVO;
 import io.crest.extensions.view.dto.SqlVariableDetails;
 import io.crest.i18n.Translator;
 import io.crest.utils.JsonUtil;
+import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
@@ -146,7 +147,7 @@ public class SqlParserUtils {
                         sqlItem = sqlItem.replace(SubstitutedSystemParamPrefix + sysVariableId, value);
                         replaceParamItem = true;
                     }
-                } catch (Exception e) {
+                } catch (JSQLParserException e) {
                     io.crest.utils.LogUtil.error(e.getMessage(), e);
                 }
                 if (!replaceParamItem) {
@@ -194,7 +195,7 @@ public class SqlParserUtils {
                     sql = sql.replace("`" + quotedIdentifier.content() + "`", prefix + quotedIdentifier.content() + suffix);
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         SqlVariableHandleResult result = new SqlVariableHandleResult(sql);
@@ -233,7 +234,7 @@ public class SqlParserUtils {
         try {
             Long.valueOf(paramId);
             isLong = true;
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             isLong = false;
         }
         if (paramId.length() >= 18 && isLong) {

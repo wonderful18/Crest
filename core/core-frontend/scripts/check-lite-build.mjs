@@ -6,6 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(__dirname, '..')
 const repoRoot = path.resolve(root, '..', '..')
 const dist = path.join(root, 'dist')
+const MAX_WALK_ENTRIES = 10000
 
 const blockedFileNamePatterns = [
   /mapbox/i,
@@ -23,15 +24,37 @@ const blockedContentPatterns = [
 ]
 
 function walk(dir, result = []) {
-  for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
+  for (const item of readDirectoryEntries(dir)) {
     const fullPath = path.join(dir, item.name)
     if (item.isDirectory()) {
       walk(fullPath, result)
     } else {
       result.push(fullPath)
+      if (result.length > MAX_WALK_ENTRIES) {
+        throw new Error(`Walked file count exceeds ${MAX_WALK_ENTRIES}`)
+      }
     }
   }
   return result
+}
+
+function readDirectoryEntries(dir) {
+  const directory = fs.opendirSync(dir)
+  const entries = []
+  try {
+    for (;;) {
+      const entry = directory.readSync()
+      if (!entry) {
+        return entries
+      }
+      entries.push(entry)
+      if (entries.length > MAX_WALK_ENTRIES) {
+        throw new Error(`Directory entry count exceeds ${MAX_WALK_ENTRIES}`)
+      }
+    }
+  } finally {
+    directory.closeSync()
+  }
 }
 
 function fail(message, details = []) {

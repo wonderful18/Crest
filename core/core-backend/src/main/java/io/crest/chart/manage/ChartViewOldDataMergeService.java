@@ -47,7 +47,7 @@ public class ChartViewOldDataMergeService {
             // 尝试将历史数据转成list，如果转换出现异常，则忽略该视图继续执行下一个
             try {
                 fieldCustomFilter = JsonUtil.parseList(view.getCustomFilter(), tokenType);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 continue;
             }
 
@@ -62,7 +62,7 @@ public class ChartViewOldDataMergeService {
 
             try {
                 coreChartViewMapper.updateById(view);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 // do nothing,to continue
                 io.crest.utils.LogUtil.error(e.getMessage(), e);
             }
@@ -162,7 +162,7 @@ public class ChartViewOldDataMergeService {
             FilterTreeObj filterTreeObj;
             try {
                 filterTreeObj = JsonUtil.parseObject(view.getCustomFilter(), FilterTreeObj.class);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 continue;
             }
 
@@ -176,7 +176,7 @@ public class ChartViewOldDataMergeService {
 
             try {
                 coreChartViewMapper.updateById(view);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 // do nothing,to continue
                 io.crest.utils.LogUtil.error(e.getMessage(), e);
             }

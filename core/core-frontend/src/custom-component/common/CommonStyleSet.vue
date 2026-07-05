@@ -17,7 +17,10 @@
                 v-model="styleForm[styleOptionKey.value]"
                 size="small"
                 @change="
-                  changeStyle({ key: styleOptionKey.value, value: styleForm[styleOptionKey.value] })
+                  changeStyle({
+                    [STYLE_FIELD_KEY]: styleOptionKey.value,
+                    value: styleForm[styleOptionKey.value]
+                  })
                 "
               >
                 <template #prefix>
@@ -60,7 +63,10 @@
                 show-alpha
                 :predefine="state.predefineColors"
                 @change="
-                  changeStyle({ key: styleColorKey.value, value: styleForm[styleColorKey.value] })
+                  changeStyle({
+                    [STYLE_FIELD_KEY]: styleColorKey.value,
+                    value: styleForm[styleColorKey.value]
+                  })
                 "
               >
               </el-color-picker>
@@ -325,6 +331,7 @@ import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapsho
 import { storeToRefs } from 'pinia'
 import { ElIcon } from 'element-plus-secondary'
 const { t } = useI18n()
+const STYLE_FIELD_KEY = 'key'
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 
@@ -482,7 +489,7 @@ const fontSizeList = computed(() => {
 const styleOptionKeyArrayPre = [
   {
     value: 'fontFamily',
-    label: t('visualization.font_family'),
+    label: t('chart.font_family'),
     customOption: fontFamilyList,
     width: '188px',
     icon: dvStyleFontFamily
@@ -571,7 +578,7 @@ const checkBold = () => {
   } else {
     styleForm.value.fontWeight = 'normal'
   }
-  changeStyle({ key: 'fontWeight', value: styleForm.value.fontWeight })
+  changeStyle({ [STYLE_FIELD_KEY]: 'fontWeight', value: styleForm.value.fontWeight })
 }
 
 const checkItalic = () => {
@@ -580,7 +587,7 @@ const checkItalic = () => {
   } else {
     styleForm.value.fontStyle = 'normal'
   }
-  changeStyle({ key: 'fontStyle', value: styleForm.value.fontStyle })
+  changeStyle({ [STYLE_FIELD_KEY]: 'fontStyle', value: styleForm.value.fontStyle })
 }
 
 const checkTextDecoration = () => {
@@ -589,7 +596,7 @@ const checkTextDecoration = () => {
   } else {
     styleForm.value.textDecoration = 'none'
   }
-  changeStyle({ key: 'textDecoration', value: styleForm.value.textDecoration })
+  changeStyle({ [STYLE_FIELD_KEY]: 'textDecoration', value: styleForm.value.textDecoration })
 }
 
 function setPosition(key, p: 'left' | 'center' | 'right') {

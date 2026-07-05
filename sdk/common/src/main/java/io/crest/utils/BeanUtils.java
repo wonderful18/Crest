@@ -1,6 +1,7 @@
 package io.crest.utils;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeansException;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
@@ -15,7 +16,7 @@ public class BeanUtils {
         try {
             org.springframework.beans.BeanUtils.copyProperties(source, target);
             return target;
-        } catch (Exception e) {
+        } catch (BeansException | IllegalArgumentException e) {
             throw new RuntimeException("Failed to copy object: ", e);
         }
     }
@@ -24,7 +25,7 @@ public class BeanUtils {
         try {
             org.springframework.beans.BeanUtils.copyProperties(source, target, ignoreProperties);
             return target;
-        } catch (Exception e) {
+        } catch (BeansException | IllegalArgumentException e) {
             throw new RuntimeException("Failed to copy object: ", e);
         }
     }
@@ -38,7 +39,7 @@ public class BeanUtils {
             String getter = "get" + firstLetter + fieldName.substring(1);
             Method method = bean.getClass().getMethod(getter);
             return method.invoke(bean);
-        } catch (Exception e) {
+        } catch (ReflectiveOperationException | RuntimeException e) {
             LogUtil.error("failed to getFieldValueByName. ", e);
             return null;
         }
@@ -53,7 +54,7 @@ public class BeanUtils {
             String setter = "set" + firstLetter + fieldName.substring(1);
             Method method = bean.getClass().getMethod(setter, type);
             method.invoke(bean, value);
-        } catch (Exception e) {
+        } catch (ReflectiveOperationException | RuntimeException e) {
             LogUtil.error("failed to setFieldValueByName. ", e);
         }
     }
@@ -66,7 +67,7 @@ public class BeanUtils {
             String firstLetter = fieldName.substring(0, 1).toUpperCase();
             String setter = "set" + firstLetter + fieldName.substring(1);
             return bean.getClass().getMethod(setter, type);
-        } catch (Exception e) {
+        } catch (ReflectiveOperationException | RuntimeException e) {
             return null;
         }
     }
@@ -115,7 +116,7 @@ public class BeanUtils {
                         // 可选：添加类型转换逻辑来处理类型不匹配的情况
                         Object convertedValue = convertTypeIfNeeded(value, descriptor.getPropertyType());
                         descriptor.getWriteMethod().invoke(bean, convertedValue);
-                    } catch (IllegalArgumentException e) {
+                    } catch (IllegalArgumentException | ReflectiveOperationException e) {
                         // 类型不匹配时跳过该属性，而不是抛出异常
                         LogUtil.debug(
                                 "类型不匹配跳过属性: " + propertyName + ", 期望类型: "
@@ -125,7 +126,7 @@ public class BeanUtils {
                 }
             }
             return bean;
-        } catch (Exception e) {
+        } catch (ReflectiveOperationException | RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
             throw new RuntimeException("Map转Bean失败", e);
         }
@@ -171,7 +172,7 @@ public class BeanUtils {
                 }
             }
             // 可以继续添加其他类型的转换...
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             // 转换失败时返回原值，让后续逻辑处理
             LogUtil.debug("类型转换失败，目标类型: " + targetType.getName());
         }

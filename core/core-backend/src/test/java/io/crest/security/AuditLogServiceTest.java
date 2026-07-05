@@ -19,7 +19,7 @@ class AuditLogServiceTest {
 
     @Test
     @DisplayName("审计日志字段入库前应按表结构截断")
-    void shouldTruncateLongAuditFieldsBeforeInsert() throws Exception {
+    void shouldTruncateLongAuditFieldsBeforeInsert() throws ReflectiveOperationException {
         AuditLogService service = new AuditLogService();
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         injectJdbcTemplate(service, jdbcTemplate);
@@ -34,7 +34,7 @@ class AuditLogServiceTest {
         assertTrue(Arrays.stream(values).noneMatch(value -> value instanceof String text && text.length() > 500));
     }
 
-    private void injectJdbcTemplate(AuditLogService service, JdbcTemplate jdbcTemplate) throws Exception {
+    private void injectJdbcTemplate(AuditLogService service, JdbcTemplate jdbcTemplate) throws ReflectiveOperationException {
         Field field = AuditLogService.class.getDeclaredField("jdbcTemplate");
         field.setAccessible(true);
         field.set(service, jdbcTemplate);

@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 
 @Component("shareManage")
 public class ShareManage {
+    private static final Pattern SHARE_UUID_PATTERN = Pattern.compile("^[a-zA-Z0-9]{8,16}$");
 
     @Resource(name = "coreShareMapper")
     private CoreShareMapper coreShareMapper;
@@ -148,9 +149,7 @@ public class ShareManage {
         if (coreShareMapper.selectCount(queryWrapper) > 0) {
             return "已存在相同的链接，请重新输入！";
         }
-        String regex = "^[a-zA-Z0-9]{8,16}$";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(uuid);
+        Matcher matcher = SHARE_UUID_PATTERN.matcher(uuid);
         if (!matcher.matches()) {
             return "仅支持8-16位(字母数字)，请重新输入！";
         }
@@ -261,10 +260,6 @@ public class ShareManage {
             vo.setShareDisable(true);
             return vo;
         }
-        boolean inIframeError = request.isInIframe() && false;
-        if (inIframeError) {
-            return new ShareProxyVO();
-        }
         QueryWrapper<CoreShare> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("uuid", request.getUuid());
         CoreShare coreShare = coreShareMapper.selectOne(queryWrapper);
@@ -284,7 +279,7 @@ public class ShareManage {
         Integer type = coreShare.getType();
         String typeText = (ObjectUtils.isNotEmpty(type) && type == 1) ? "dashboard" : "dataV";
         TicketValidVO validVO = shareTicketManage.validateTicket(request.getTicket(), coreShare);
-        return new ShareProxyVO(coreShare.getResourceId(), coreShare.getCreator(), linkExp(coreShare), pwdValid(coreShare, request.getCiphertext()), typeText, inIframeError, false, true, validVO);
+        return new ShareProxyVO(coreShare.getResourceId(), coreShare.getCreator(), linkExp(coreShare), pwdValid(coreShare, request.getCiphertext()), typeText, false, false, true, validVO);
     }
 
     private boolean linkExp(CoreShare coreShare) {
@@ -296,7 +291,7 @@ public class ShareManage {
         if (StringUtils.isBlank(coreShare.getPwd())) return true;
         if (StringUtils.isBlank(ciphertext)) return false;
         String text = RsaUtils.decryptStr(ciphertext);
-        int splitIndex = text.indexOf(",");
+        int splitIndex = text.indexOf(',');
         String pwd;
         if (splitIndex == -1) {
             splitIndex = 8;
@@ -311,7 +306,7 @@ public class ShareManage {
     public boolean validatePwd(SharePwdValidator validator) {
         String ciphertext = RsaUtils.decryptStr(validator.getCiphertext());
         String pwd;
-        int splitIndex = ciphertext.indexOf(",");
+        int splitIndex = ciphertext.indexOf(',');
         if (splitIndex == -1) {
             splitIndex = 8;
             pwd = ciphertext.substring(splitIndex);

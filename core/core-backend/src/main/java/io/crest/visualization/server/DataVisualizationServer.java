@@ -83,6 +83,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -290,7 +291,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
             List<Map<String, Object>> components = JsonUtil.parseList(componentData, new TypeReference<List<Map<String, Object>>>() {
             });
             return containsComponentId(components, viewIdText);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return componentData.contains("\"id\":\"" + viewIdText + "\"")
                     || componentData.contains("\"id\": \"" + viewIdText + "\"");
         }
@@ -405,7 +406,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, stExp = "#p0.type")
     @Override
     @Transactional
-    public String saveCanvas(@RequestBody DataVisualizationBaseRequest request) throws Exception {
+    public String saveCanvas(@RequestBody DataVisualizationBaseRequest request) {
         /*
          * 发布兼容逻辑
          * saveCanvas 为初次保存 包括 模板 应用 普通创建 所有变更操作都走snapshot表
@@ -494,7 +495,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                             try {
                                 newDsGroupInfo.add(datasetNewRequest);
                                 dsGroupIdMap.put(oldId, newId);
-                            } catch (Exception e) {
+                            } catch (RuntimeException e) {
                                 throw new RuntimeException(e);
                             }
                         }
@@ -561,7 +562,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
                 } catch (CrestException e) {
                     throw e;
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     LogUtil.error("应用导入保存失败", e);
                     CrestException.throwException(e);
                 }
@@ -713,7 +714,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 tableDTO.setInfo(Objects.requireNonNull(JsonUtil.toJSONString(infoDTO)).toString());
             }
             return Objects.requireNonNull(JsonUtil.toJSONString(unionDTOList)).toString();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return content;
         }
     }
@@ -851,7 +852,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 tableDTO.setInfo(replaceDatasetTableSql(tableDTO.getInfo(), tableNameMap));
             });
             return Objects.requireNonNull(JsonUtil.toJSONString(unionDTOList)).toString();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return replaceTableNames(info, tableNameMap);
         }
     }
@@ -871,7 +872,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 infoDTO.setSql(Base64.getEncoder().encodeToString(replaceTableNames(sql, tableNameMap).getBytes(StandardCharsets.UTF_8)));
             }
             return Objects.requireNonNull(JsonUtil.toJSONString(infoDTO)).toString();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return replaceTableNames(info, tableNameMap);
         }
     }
@@ -892,7 +893,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     }
 
     @Override
-    public String appCanvasNameCheck(@RequestBody DataVisualizationBaseRequest request) throws Exception {
+    public String appCanvasNameCheck(@RequestBody DataVisualizationBaseRequest request) {
         Long datasetFolderPid = request.getDatasetFolderPid();
         String datasetFolderName = request.getDatasetFolderName();
         QueryWrapper<CoreDatasetGroup> queryWrapper = new QueryWrapper<>();
@@ -964,12 +965,17 @@ public class DataVisualizationServer implements DataVisualizationApi {
     @Override
     @Transactional
     public void updatePublishStatus(@RequestBody DataVisualizationBaseRequest request) {
+        if (request == null || request.getId() == null) {
+            CrestException.throwException("ID can not be null");
+        }
         /**
          * 如果当前传入状态是1（已发布），则原始状态0（未发布）-》1（已发布）；2（已保存未发布）-》1（已发布）
          * 统一处理为1.删除主表数据，2.将镜像表数据统一copy到主表 不删除镜像数据（发布状态后镜像数据和主表数据是保持一致的）
          * 其他状态仅更新主表和镜像表状态
          * */
         Long dvId = request.getId();
+        DataVisualizationInfo current = visualizationInfoMapper.selectById(dvId);
+        coreVisualizationManage.requireVisualizationManage(current);
         DataVisualizationInfo visualizationInfo = new DataVisualizationInfo();
         visualizationInfo.setMobileLayout(request.getMobileLayout());
         visualizationInfo.setId(dvId);
@@ -1167,7 +1173,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     }
 
     @Override
-    public DataVisualizationVO decompression(@RequestBody DataVisualizationBaseRequest request) throws Exception {
+    public DataVisualizationVO decompression(@RequestBody DataVisualizationBaseRequest request) {
         try {
             Long newDvId = IDUtils.snowID();
             String newFrom = request.getNewFrom();
@@ -1230,7 +1236,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     VisualizationBaseInfoVO baseInfoVO = JsonUtil.parseObject(dvInfo, VisualizationBaseInfoVO.class);
                     Long sourceDvId = baseInfoVO.getId();
                     appDataStr = appDataStr.replace(sourceDvId.toString(), newDvId.toString());
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     LogUtil.error(e);
                     appDataStr = null;
                 }
@@ -1250,7 +1256,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     if (viewInfo instanceof Map && ((Map) viewInfo).get("customFilter") instanceof ArrayList) {
                         ((Map) viewInfo).put("customFilter", new HashMap<>());
                     }
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     LogUtil.error("History Adaptor Error", e);
                 }
                 String originViewData = JsonUtil.toJSONString(entry.getValue()).toString();
@@ -1285,7 +1291,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
             //Store static resource into the server
             staticResourceServer.saveFilesToServe(staticResource);
             return new DataVisualizationVO(newDvId, name, dvType, version, templateStyle, templateData, appDataStr, canvasViewInfo, null,viewIdsMap);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
             CrestException.throwException("解析错误");
             return null;
@@ -1343,14 +1349,14 @@ public class DataVisualizationServer implements DataVisualizationApi {
             return decompression(request);
         } catch (CrestException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             LogUtil.error("Import visualization template file error", e);
             CrestException.throwException("模板文件解析失败，请确认文件格式是否正确");
             return null;
         }
     }
 
-    private DataVisualizationBaseRequest parseLocalTemplate(MultipartFile file) throws Exception {
+    private DataVisualizationBaseRequest parseLocalTemplate(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
             CrestException.throwException("请选择模板文件");
         }
@@ -1553,22 +1559,22 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     @CrestAudit(id = "#p0.id", ot = LogOT.APP_TEMPLATE_EXPORT, stExp = "#p0.type")
     public void exportLogApp(@RequestBody DataVisualizationBaseRequest request) {
-
+        LogUtil.debug("record app template export audit");
     }
 
     @CrestAudit(id = "#p0.id", ot = LogOT.TEMPLATE_EXPORT, stExp = "#p0.type")
     public void exportLogTemplate(@RequestBody DataVisualizationBaseRequest request) {
-
+        LogUtil.debug("record template export audit");
     }
 
     @CrestAudit(id = "#p0.id", ot = LogOT.PDF_EXPORT, stExp = "#p0.type")
     public void exportLogPDF(@RequestBody DataVisualizationBaseRequest request) {
-
+        LogUtil.debug("record pdf export audit");
     }
 
     @CrestAudit(id = "#p0.id", ot = LogOT.IMG_EXPORT, stExp = "#p0.type")
     public void exportLogImg(@RequestBody DataVisualizationBaseRequest request) {
-
+        LogUtil.debug("record image export audit");
     }
 
 
@@ -1643,8 +1649,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
         DataVisualizationVO dvInfo = extDataVisualizationMapper.findDvInfo(dvId, null, resourceTable);
         List<CoreChartView> views = extChartViewMapper.selectListCustom(dvId, resourceTable);
         if (CollectionUtils.isNotEmpty(views) && dvInfo != null) {
-            String componentData = dvInfo.getComponentData();
-            result = views.stream().filter(item -> componentData.indexOf("\"id\":\"" + item.getId()) > 0).map(CoreChartView::getId).collect(Collectors.toList());
+            String componentData = StringUtils.defaultString(dvInfo.getComponentData());
+            result = views.stream().filter(item -> componentData.contains("\"id\":\"" + item.getId())).map(CoreChartView::getId).collect(Collectors.toList());
 
         }
         return result;

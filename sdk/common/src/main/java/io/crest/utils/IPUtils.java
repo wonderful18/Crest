@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
@@ -29,7 +30,7 @@ public class IPUtils {
         HttpServletRequest request = null;
         try {
             request = ServletUtils.request();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage(), e);
             return null;
         }
@@ -57,7 +58,7 @@ public class IPUtils {
     public static String domain() {
         try {
             return InetAddress.getLocalHost().getHostAddress();
-        } catch (Exception e) {
+        } catch (UnknownHostException e) {
             return LOCAL_IP_VAL;
         }
     }
@@ -98,7 +99,7 @@ public class IPUtils {
         }
         try {
             return InetAddress.getByName(candidate).getHostAddress().contains(":");
-        } catch (Exception e) {
+        } catch (UnknownHostException e) {
             return false;
         }
     }

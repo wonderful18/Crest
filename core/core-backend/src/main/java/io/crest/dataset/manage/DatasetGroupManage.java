@@ -101,7 +101,7 @@ public class DatasetGroupManage {
 
 
     @Transactional
-    public DatasetGroupInfoDTO save(DatasetGroupInfoDTO datasetGroupInfoDTO, boolean rename, boolean encode) throws Exception {
+    public DatasetGroupInfoDTO save(DatasetGroupInfoDTO datasetGroupInfoDTO, boolean rename, boolean encode) {
         try {
             boolean isCreate;
             // 用于重命名获取pid
@@ -169,7 +169,7 @@ public class DatasetGroupManage {
                 datasetGroupInfoDTO.setUnionSql(DatasetUtils.getEncode(datasetGroupInfoDTO.getUnionSql()));
             }
             return datasetGroupInfoDTO;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(e.getMessage());
         }
         return null;
@@ -328,6 +328,9 @@ public class DatasetGroupManage {
     }
 
     public void checkName(DatasetGroupInfoDTO dto) {
+        if (dto == null) {
+            return;
+        }
     }
 
     public void saveTable(DatasetGroupInfoDTO datasetGroupInfoDTO, List<UnionDTO> union, List<Long> tableIds, boolean isCreate) {
@@ -352,7 +355,7 @@ public class DatasetGroupManage {
         }
     }
 
-    public void saveField(DatasetGroupInfoDTO datasetGroupInfoDTO, List<Long> fieldIds) throws Exception {
+    public void saveField(DatasetGroupInfoDTO datasetGroupInfoDTO, List<Long> fieldIds) {
         if (ObjectUtils.isEmpty(datasetGroupInfoDTO.getUnion())) {
             return;
         }
@@ -402,7 +405,7 @@ public class DatasetGroupManage {
         }
     }
 
-    public DatasetGroupInfoDTO getForCount(Long id) throws Exception {
+    public DatasetGroupInfoDTO getForCount(Long id) {
         requireDatasetAccess(id);
         CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(id);
         if (coreDatasetGroup == null) {
@@ -427,7 +430,7 @@ public class DatasetGroupManage {
         return dto;
     }
 
-    public DatasetGroupInfoDTO getDetail(Long id) throws Exception {
+    public DatasetGroupInfoDTO getDetail(Long id) {
         requireDatasetAccess(id);
         CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(id);
         if (coreDatasetGroup == null) {
@@ -469,17 +472,17 @@ public class DatasetGroupManage {
         return dto;
     }
 
-    public DatasetGroupInfoDTO datasetGroupInfoDTO(Long id, String type) throws Exception {
+    public DatasetGroupInfoDTO datasetGroupInfoDTO(Long id, String type) {
         return datasetGroupInfoDTO(id, type, true);
     }
 
-    public DatasetGroupInfoDTO datasetGroupInfoDTOForVisualizationRead(Long id, String type, Long visualizationId) throws Exception {
+    public DatasetGroupInfoDTO datasetGroupInfoDTOForVisualizationRead(Long id, String type, Long visualizationId) {
         boolean skipDatasetAccess = visualizationId != null
                 && dataPortalPermissionManage.canReadPublishedVisualizationDataset(visualizationId, id);
         return datasetGroupInfoDTO(id, type, !skipDatasetAccess);
     }
 
-    private DatasetGroupInfoDTO datasetGroupInfoDTO(Long id, String type, boolean checkAccess) throws Exception {
+    private DatasetGroupInfoDTO datasetGroupInfoDTO(Long id, String type, boolean checkAccess) {
         if (checkAccess) {
             requireDatasetAccess(id);
         }

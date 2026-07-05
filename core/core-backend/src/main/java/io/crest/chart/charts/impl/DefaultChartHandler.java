@@ -43,6 +43,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -135,7 +136,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
         String querySql = SQLProvider.createQuerySQL(sqlMeta, true, needOrder, view);
         querySql = provider.rebuildSQL(querySql, sqlMeta, crossDs, dsMap);
         datasourceRequest.setQuery(querySql);
-        logger.debug("calcite chart sql: " + querySql);
+        logger.debug("calcite chart sql generated");
         List<String[]> data = (List<String[]>) provider.fetchResultField(datasourceRequest).get("data");
         //自定义排序
         data = ChartDataUtil.resultCustomSort(xAxis, yAxis, view.getSortPriority(), data);
@@ -769,7 +770,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                 lastTime = simpleDateFormat.format(calendar.getTime());
             }
             return lastTime;
-        } catch (Exception e) {
+        } catch (ParseException | RuntimeException e) {
             return cTime;
         }
     }
@@ -813,7 +814,8 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                                 calendar.add(Calendar.YEAR, -1);
                                 filterDTO.getValue().set(0, String.valueOf(calendar.getTime().getTime()));
                                 flag = true;
-                            } catch (Exception e) {
+                            } catch (NumberFormatException e) {
+                                // 无效时间戳不参与同比过滤修正。
                             }
                         }
                     }

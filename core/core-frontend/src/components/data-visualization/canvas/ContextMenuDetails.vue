@@ -12,6 +12,7 @@ import eventBus from '@/utils/eventBus'
 import { componentArraySort, getCurInfo } from '@/store/modules/data-visualization/common'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import { useI18n } from '@/hooks/web/useI18n'
+const CANVAS_STATE_FIELD = 'key'
 const dvMainStore = dvMainStoreWithOut()
 const copyStore = copyStoreWithOut()
 const lockStore = lockStoreWithOut()
@@ -120,7 +121,7 @@ const categoryChange = type => {
     snapshotStore.recordSnapshotCache('categoryChange')
     curComponent.value['category'] = type
     if (type === 'hidden') {
-      dvMainStore.canvasStateChange({ key: 'curPointArea', value: 'hidden' })
+      dvMainStore.canvasStateChange({ [CANVAS_STATE_FIELD]: 'curPointArea', value: 'hidden' })
     }
   }
 }
@@ -250,11 +251,11 @@ const editQueryCriteria = () => {
 
 <template>
   <div class="context-menu-base context-menu-details" @mousedown="handleComposeMouseDown">
-    <ul @mouseup="handleMouseUp">
+    <div class="context-menu-list" role="menu" @mouseup="handleMouseUp">
       <template v-if="areaData.components.length > 1">
-        <li @mousedown="handleComposeMouseDown" @click="componentCompose">
+        <div class="context-menu-item" role="menuitem" @mousedown="handleComposeMouseDown" @click="componentCompose">
           {{ t('visualization.add_background_card') }}
-        </li>
+        </div>
         <el-dropdown
           style="width: 100%"
           trigger="hover"
@@ -263,12 +264,12 @@ const editQueryCriteria = () => {
           :teleported="false"
           popper-class="context-menu-details"
         >
-          <li>
+          <div class="context-menu-item" role="menuitem">
             <div>
               <span>{{ t('visualization.alignment') }}</span
               ><el-icon><ArrowRight /></el-icon>
             </div>
-          </li>
+          </div>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item style="width: 118px" @click="alignment('left')">{{
@@ -293,74 +294,94 @@ const editQueryCriteria = () => {
           </template>
         </el-dropdown>
         <el-divider class="custom-divider" />
-        <li @click="copy">{{ t('visualization.copy') }}</li>
-        <li @click="paste">{{ t('visualization.paste') }}</li>
-        <li @click="cut">{{ t('visualization.cut') }}</li>
+        <div class="context-menu-item" role="menuitem" @click="copy">{{ t('visualization.copy') }}</div>
+        <div class="context-menu-item" role="menuitem" @click="paste">{{ t('visualization.paste') }}</div>
+        <div class="context-menu-item" role="menuitem" @click="cut">{{ t('visualization.cut') }}</div>
         <el-divider class="custom-divider" />
-        <li @click="deleteComponent">{{ t('visualization.delete') }}</li>
+        <div class="context-menu-item" role="menuitem" @click="deleteComponent">{{ t('visualization.delete') }}</div>
       </template>
       <template v-else>
-        <li
+        <div
+          class="context-menu-item"
+          role="menuitem"
           v-show="
             !(!curComponent || curComponent['isLock'] || curComponent['component'] != 'Group')
           "
           @click="decompose()"
         >
           {{ t('visualization.cancel_group') }}
-        </li>
+        </div>
         <el-divider class="custom-divider" v-show="composeDivider" />
         <template v-if="curComponent">
           <template v-if="!curComponent['isLock'] && curComponent.category === 'hidden'">
-            <li @click="categoryChange('base')">{{ t('visualization.move_to_screen_show') }}</li>
-            <li @click="editQueryCriteria">{{ t('visualization.edit') }}</li>
-            <li v-if="activePosition === 'aside'" @click="rename">
+            <div class="context-menu-item" role="menuitem" @click="categoryChange('base')">
+              {{ t('visualization.move_to_screen_show') }}
+            </div>
+            <div class="context-menu-item" role="menuitem" @click="editQueryCriteria">{{ t('visualization.edit') }}</div>
+            <div class="context-menu-item" role="menuitem" v-if="activePosition === 'aside'" @click="rename">
               {{ t('visualization.rename') }}
-            </li>
-            <li @click="copy">{{ t('visualization.copy') }}</li>
-            <li @click="paste">{{ t('visualization.paste') }}</li>
+            </div>
+            <div class="context-menu-item" role="menuitem" @click="copy">{{ t('visualization.copy') }}</div>
+            <div class="context-menu-item" role="menuitem" @click="paste">{{ t('visualization.paste') }}</div>
             <el-divider class="custom-divider" />
-            <li @click="deleteComponent">{{ t('visualization.delete') }}</li>
+            <div class="context-menu-item" role="menuitem" @click="deleteComponent">{{ t('visualization.delete') }}</div>
           </template>
           <template v-if="!curComponent['isLock'] && curComponent.category !== 'hidden'">
-            <li v-if="curComponent.component === 'VQuery'" @click="editQueryCriteria">
+            <div
+              class="context-menu-item"
+              role="menuitem"
+              v-if="curComponent.component === 'VQuery'"
+              @click="editQueryCriteria"
+            >
               {{ t('visualization.edit') }}
-            </li>
-            <li @click="upComponent">{{ t('visualization.up_component') }}</li>
-            <li @click="downComponent">{{ t('visualization.down_component') }}</li>
-            <li @click="topComponent">{{ t('visualization.top_component') }}</li>
-            <li @click="bottomComponent">{{ t('visualization.bottom_component') }}</li>
-            <li @click="customSort" v-if="curComponent.component === 'Tabs'">
+            </div>
+            <div class="context-menu-item" role="menuitem" @click="upComponent">{{ t('visualization.up_component') }}</div>
+            <div class="context-menu-item" role="menuitem" @click="downComponent">{{ t('visualization.down_component') }}</div>
+            <div class="context-menu-item" role="menuitem" @click="topComponent">{{ t('visualization.top_component') }}</div>
+            <div class="context-menu-item" role="menuitem" @click="bottomComponent">
+              {{ t('visualization.bottom_component') }}
+            </div>
+            <div class="context-menu-item" role="menuitem" @click="customSort" v-if="curComponent.component === 'Tabs'">
               {{ t('visualization.sort') }}
-            </li>
-            <li @click="categoryChange('hidden')" v-show="showMoveMenu">
+            </div>
+            <div class="context-menu-item" role="menuitem" @click="categoryChange('hidden')" v-show="showMoveMenu">
               {{ t('visualization.move_to_pop_area') }}
-            </li>
+            </div>
             <el-divider class="custom-divider" />
-            <li @click="hide" v-show="curComponent['isShow']">{{ t('visualization.hidden') }}</li>
-            <li @click="show" v-show="!curComponent['isShow'] || isGroupArea">
+            <div class="context-menu-item" role="menuitem" @click="hide" v-show="curComponent['isShow']">
+              {{ t('visualization.hidden') }}
+            </div>
+            <div class="context-menu-item" role="menuitem" @click="show" v-show="!curComponent['isShow'] || isGroupArea">
               {{ t('visualization.cancel_hidden') }}
-            </li>
-            <li @click="lock">{{ t('visualization.lock') }}</li>
-            <li v-if="curComponent['isLock'] || isGroupArea" @click="unlock">
+            </div>
+            <div class="context-menu-item" role="menuitem" @click="lock">{{ t('visualization.lock') }}</div>
+            <div class="context-menu-item" role="menuitem" v-if="curComponent['isLock'] || isGroupArea" @click="unlock">
               {{ t('visualization.unlock') }}
-            </li>
+            </div>
             <el-divider class="custom-divider" />
-            <li v-if="activePosition === 'aside'" @click="rename">
+            <div class="context-menu-item" role="menuitem" v-if="activePosition === 'aside'" @click="rename">
               {{ t('visualization.rename') }}
-            </li>
-            <li @click="copy">{{ t('visualization.copy') }}</li>
-            <li @click="paste">{{ t('visualization.paste') }}</li>
-            <li @click="cut">{{ t('visualization.cut') }}</li>
+            </div>
+            <div class="context-menu-item" role="menuitem" @click="copy">{{ t('visualization.copy') }}</div>
+            <div class="context-menu-item" role="menuitem" @click="paste">{{ t('visualization.paste') }}</div>
+            <div class="context-menu-item" role="menuitem" @click="cut">{{ t('visualization.cut') }}</div>
             <el-divider class="custom-divider" />
-            <li @click="deleteComponent">{{ t('visualization.delete') }}</li>
+            <div class="context-menu-item" role="menuitem" @click="deleteComponent">{{ t('visualization.delete') }}</div>
           </template>
-          <li v-if="curComponent['isLock']" @click="unlock">{{ t('visualization.unlock') }}</li>
+          <div class="context-menu-item" role="menuitem" v-if="curComponent['isLock']" @click="unlock">
+            {{ t('visualization.unlock') }}
+          </div>
         </template>
-        <li v-else-if="!curComponent && !areaData.components.length" @click="paste">
+        <div
+          class="context-menu-item"
+          role="menuitem"
+          v-else-if="!curComponent && !areaData.components.length"
+          @click="paste"
+        >
           {{ t('visualization.paste') }}
-        </li>
+        </div>
       </template>
-    </ul>
+    </div>
   </div>
 </template>
 
@@ -371,7 +392,7 @@ const editQueryCriteria = () => {
 .context-menu-details {
   z-index: 1000;
   border: #434343 1px solid;
-  ul {
+  .context-menu-list {
     padding: 4px 0;
     background-color: #292929;
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
@@ -380,7 +401,7 @@ const editQueryCriteria = () => {
       margin: 8px 0;
     }
 
-    li {
+    .context-menu-item {
       width: 100%;
       font-size: 14px;
       padding: 0 12px;

@@ -11,6 +11,7 @@ import io.crest.constant.SQLConstants;
 import io.crest.dataset.constant.DatasetTableType;
 import io.crest.dataset.dao.auto.entity.CoreDatasetGroup;
 import io.crest.dataset.dao.auto.mapper.CoreDatasetGroupMapper;
+import io.crest.dataset.utils.DatasetUtils;
 import io.crest.dataset.utils.DatasetTableTypeConstants;
 import io.crest.dataset.utils.SqlUtils;
 import io.crest.dataset.utils.TableUtils;
@@ -122,11 +123,11 @@ public class DatasetSQLManage {
         }
     }
 
-    public Map<String, Object> getUnionSQLForEdit(DatasetGroupInfoDTO dataTableInfoDTO, ChartExtRequest chartExtRequest) throws Exception {
+    public Map<String, Object> getUnionSQLForEdit(DatasetGroupInfoDTO dataTableInfoDTO, ChartExtRequest chartExtRequest) {
         return getUnionSQLForEdit(dataTableInfoDTO, chartExtRequest, null, chartExtRequest == null);
     }
 
-    public Map<String, Object> getUnionSQLForEdit(DatasetGroupInfoDTO dataTableInfoDTO, ChartExtRequest chartExtRequest, CoreDatasource coreDatasource, boolean isFromDataSet) throws Exception {
+    public Map<String, Object> getUnionSQLForEdit(DatasetGroupInfoDTO dataTableInfoDTO, ChartExtRequest chartExtRequest, CoreDatasource coreDatasource, boolean isFromDataSet) {
         Map<Long, DatasourceSchemaDTO> dsMap = new LinkedHashMap<>();
         // 获取所有字段，将engineFieldName赋值给currentField中的engineFieldName
         List<DatasetTableFieldDTO> allFields = dataTableInfoDTO.getAllFields();
@@ -308,7 +309,7 @@ public class DatasetSQLManage {
             }
             sql = MessageFormat.format("SELECT {0} FROM {1}", f, TableUtils.getTableAndAlias(tableName, datasourceType(dsMap, currentDs.getDatasourceId()), isCross));
         }
-        logger.debug("calcite origin sql: " + sql);
+        logger.debug("calcite origin sql generated");
         Map<String, Object> map = new HashMap<>();
         map.put("sql", sql);
         map.put("field", checkedFields);
@@ -325,7 +326,7 @@ public class DatasetSQLManage {
                                  List<UnionParamDTO> unionList, List<DatasetTableFieldDTO> checkedFields,
                                  Map<Long, DatasourceSchemaDTO> dsMap, ChartExtRequest chartExtRequest,
                                  boolean isCross, List<DatasetTableFieldDTO> allFields,
-                                 List<TableFieldWithValue> tableFieldWithValues) throws Exception {
+                                 List<TableFieldWithValue> tableFieldWithValues) {
         for (int i = 0; i < childrenDs.size(); i++) {
             int index = unionList.size() + 1;
 
@@ -491,7 +492,7 @@ public class DatasetSQLManage {
         } else if (Strings.CI.equals(currentDs.getType(), DatasetTableTypeConstants.DATASET_TABLE_SQL)) {
             Provider provider = ProviderFactory.getProvider(dsMap.entrySet().iterator().next().getValue().getType());
             // parser sql params and replace default value
-            String s = new String(Base64.getDecoder().decode(infoDTO.getSql()));
+            String s = DatasetUtils.getDecode(infoDTO.getSql());
             SqlVariableHandleResult sqlResult = new SqlParserUtils().handleVariableDefaultValueWithPreparedParams(s, currentDs.getSqlVariableDetails(), false, isFromDataSet, parameters, isCross, dsMap, pluginManage, getUserEntity());
             String sql = sqlResult.getSql();
             tableFieldWithValues.addAll(sqlResult.getTableFieldWithValues());

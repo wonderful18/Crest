@@ -27,9 +27,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
+import org.quartz.SchedulerException;
 import org.quartz.TriggerKey;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.*;
 
 import static io.crest.datasource.server.DatasourceTaskServer.ScheduleType.CRON;
@@ -78,16 +80,11 @@ public class DatasourceSyncManage {
                 }
                 datasetTableTaskLog.setInfo(datasetTableTaskLog.getInfo() + "/n End to sync datatable: " + datasourceRequest.getTable());
                 datasetTableTaskLog.setTaskStatus(TaskStatus.Completed.toString());
-            } catch (Exception e) {
-                try {
-                    if (updateType.equals(DatasourceServer.UpdateType.all_scope)) {
-                        dropEngineTable(TableUtils.tmpName(datasourceRequest.getTable()));
-                    }
-                } catch (Exception ignore) {
-                }
+            } catch (RuntimeException e) {
+                dropTemporaryEngineTableQuietly(datasourceRequest, updateType);
                 datasetTableTaskLog.setTaskStatus(TaskStatus.Error.toString());
                 datasetTableTaskLog.setInfo(datasetTableTaskLog.getInfo() + "/n Failed to sync datatable: " + datasourceRequest.getTable() + ", " + e.getMessage());
-                if (e.getMessage().contains("Duplicate entry")) {
+                if (StringUtils.contains(e.getMessage(), "Duplicate entry")) {
                     CrestException.throwException("不能追加主键相同的数据, " + e.getMessage());
                 } else {
                     CrestException.throwException(e);
@@ -134,7 +131,7 @@ public class DatasourceSyncManage {
             } else {
                 extractedData(taskId, coreDatasource, updateType, coreDatasourceTask.getSyncRate());
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e);
         } finally {
             datasourceTaskServer.updateTaskStatus(coreDatasourceTask);
@@ -163,13 +160,8 @@ public class DatasourceSyncManage {
                 datasetTableTaskLog.setInfo(datasetTableTaskLog.getInfo() + "/n End to sync datatable: " + datasourceRequest.getTable());
                 datasetTableTaskLog.setTaskStatus(TaskStatus.Completed.toString());
                 datasetTableTaskLog.setEndTime(System.currentTimeMillis());
-            } catch (Exception e) {
-                try {
-                    if (updateType.equals(DatasourceServer.UpdateType.all_scope)) {
-                        dropEngineTable(TableUtils.tmpName(datasourceRequest.getTable()));
-                    }
-                } catch (Exception ignore) {
-                }
+            } catch (RuntimeException e) {
+                dropTemporaryEngineTableQuietly(datasourceRequest, updateType);
                 datasetTableTaskLog.setInfo(datasetTableTaskLog.getInfo() + "/n Failed to sync datatable: " + datasourceRequest.getTable() + ", " + e.getMessage());
                 datasetTableTaskLog.setTaskStatus(TaskStatus.Error.toString());
                 datasetTableTaskLog.setEndTime(System.currentTimeMillis());
@@ -201,13 +193,8 @@ public class DatasourceSyncManage {
                 datasetTableTaskLog.setInfo(datasetTableTaskLog.getInfo() + "/n End to sync datatable: " + datasourceRequest.getTable());
                 datasetTableTaskLog.setTaskStatus(TaskStatus.Completed.toString());
                 datasetTableTaskLog.setEndTime(System.currentTimeMillis());
-            } catch (Exception e) {
-                try {
-                    if (updateType.equals(DatasourceServer.UpdateType.all_scope)) {
-                        dropEngineTable(TableUtils.tmpName(datasourceRequest.getTable()));
-                    }
-                } catch (Exception ignore) {
-                }
+            } catch (RuntimeException e) {
+                dropTemporaryEngineTableQuietly(datasourceRequest, updateType);
                 datasetTableTaskLog.setInfo(datasetTableTaskLog.getInfo() + "/n Failed to sync datatable: " + datasourceRequest.getTable() + ", " + e.getMessage());
                 datasetTableTaskLog.setTaskStatus(TaskStatus.Error.toString());
                 datasetTableTaskLog.setEndTime(System.currentTimeMillis());
@@ -256,13 +243,8 @@ public class DatasourceSyncManage {
                     datasetTableTaskLog.setInfo(datasetTableTaskLog.getInfo() + "/n End to sync datatable: " + datasourceRequest.getTable());
                     datasetTableTaskLog.setTaskStatus(TaskStatus.Completed.name());
                     datasetTableTaskLog.setEndTime(System.currentTimeMillis());
-                } catch (Exception e) {
-                    try {
-                        if (updateType.equals(DatasourceServer.UpdateType.all_scope)) {
-                            dropEngineTable(TableUtils.tmpName(datasourceRequest.getTable()));
-                        }
-                    } catch (Exception ignore) {
-                    }
+                } catch (RuntimeException e) {
+                    dropTemporaryEngineTableQuietly(datasourceRequest, updateType);
                     datasetTableTaskLog.setInfo(datasetTableTaskLog.getInfo() + "/n Failed to sync datatable: " + datasourceRequest.getTable() + ", " + e.getMessage());
                     datasetTableTaskLog.setTaskStatus(TaskStatus.Error.name());
                     datasetTableTaskLog.setEndTime(System.currentTimeMillis());
@@ -273,7 +255,18 @@ public class DatasourceSyncManage {
         }
     }
 
-    private void extractApiData(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType extractType, List<TableField> tableFields) throws Exception {
+    private void dropTemporaryEngineTableQuietly(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType updateType) {
+        if (!DatasourceServer.UpdateType.all_scope.equals(updateType)) {
+            return;
+        }
+        try {
+            dropEngineTable(TableUtils.tmpName(datasourceRequest.getTable()));
+        } catch (RuntimeException e) {
+            LogUtil.debug("Drop temporary engine table failed: " + datasourceRequest.getTable());
+        }
+    }
+
+    private void extractApiData(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType extractType, List<TableField> tableFields) {
         Map<String, Object> result = (Map<String, Object>) datasourceServer.invokeMethod(datasourceRequest.getDatasource().getType(), "fetchApiResultField", DatasourceRequest.class, datasourceRequest);
         List<String[]> dataList = (List<String[]>) result.get("dataList");
         CoreEngine engine = engineManage.info();
@@ -289,13 +282,20 @@ public class DatasourceSyncManage {
         }
         for (int page = 1; page <= totalPage; page++) {
             engineRequest.setQuery(engineProvider.insertSql(DatasourceConfiguration.DatasourceType.API.name(), datasourceRequest.getTable(), extractType, dataList, page, pageNumber, tableFields));
+            engineRequest.setTableFieldWithValues(engineProvider.insertParams(DatasourceConfiguration.DatasourceType.API.name(), datasourceRequest.getTable(), extractType, dataList, page, pageNumber, tableFields));
             calciteProvider.exec(engineRequest);
         }
     }
 
-    private void extractExcelData(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType extractType, List<TableField> tableFields) throws Exception {
+    private void extractExcelData(DatasourceRequest datasourceRequest, DatasourceServer.UpdateType extractType, List<TableField> tableFields) {
         ExcelUtils excelUtils = new ExcelUtils();
-        List<String[]> dataList = excelUtils.fetchDataList(datasourceRequest);
+        List<String[]> dataList;
+        try {
+            dataList = excelUtils.fetchDataList(datasourceRequest);
+        } catch (IOException e) {
+            CrestException.throwException(e);
+            return;
+        }
         CoreEngine engine = engineManage.info();
         EngineRequest engineRequest = new EngineRequest();
         engineRequest.setEngine(engine);
@@ -309,11 +309,12 @@ public class DatasourceSyncManage {
         }
         for (int page = 1; page <= totalPage; page++) {
             engineRequest.setQuery(engineProvider.insertSql(DatasourceConfiguration.DatasourceType.Excel.name(), datasourceRequest.getTable(), extractType, dataList, page, pageNumber, tableFields));
+            engineRequest.setTableFieldWithValues(engineProvider.insertParams(DatasourceConfiguration.DatasourceType.Excel.name(), datasourceRequest.getTable(), extractType, dataList, page, pageNumber, tableFields));
             calciteProvider.exec(engineRequest);
         }
     }
 
-    private void replaceTable(String tableName) throws Exception {
+    private void replaceTable(String tableName) {
         CoreEngine engine = engineManage.info();
         EngineRequest engineRequest = new EngineRequest();
         engineRequest.setEngine(engine);
@@ -327,7 +328,7 @@ public class DatasourceSyncManage {
         }
     }
 
-    public void createEngineTable(String tableName, List<TableField> tableFields) throws Exception {
+    public void createEngineTable(String tableName, List<TableField> tableFields) {
         CoreEngine engine = engineManage.info();
         EngineRequest engineRequest = new EngineRequest();
         engineRequest.setEngine(engine);
@@ -336,7 +337,7 @@ public class DatasourceSyncManage {
         calciteProvider.exec(engineRequest);
     }
 
-    public void dropEngineTable(String tableName) throws Exception {
+    public void dropEngineTable(String tableName) {
         CoreEngine engine = engineManage.info();
         EngineRequest engineRequest = new EngineRequest();
         engineRequest.setEngine(engine);
@@ -368,7 +369,7 @@ public class DatasourceSyncManage {
         scheduleManager.removeJob(new JobKey(datasourceTask.getId().toString(), datasourceTask.getDsId().toString()), new TriggerKey(datasourceTask.getId().toString(), datasourceTask.getDsId().toString()));
     }
 
-    public void fireNow(CoreDatasourceTask datasourceTask) throws Exception {
+    public void fireNow(CoreDatasourceTask datasourceTask) throws SchedulerException {
         scheduleManager.fireNow(datasourceTask.getId().toString(), datasourceTask.getDsId().toString());
     }
 

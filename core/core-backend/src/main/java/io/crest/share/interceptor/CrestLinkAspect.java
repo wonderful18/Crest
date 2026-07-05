@@ -57,12 +57,7 @@ public class CrestLinkAspect {
                 return false;
             }
         }
-        try {
-            return point.proceed(params);
-        } catch (Exception e) {
-            LogUtil.info(e.getMessage());
-            throw e;
-        }
+        return point.proceed(params);
     }
 
     public Long getExpression(Object[] params, String expression) {

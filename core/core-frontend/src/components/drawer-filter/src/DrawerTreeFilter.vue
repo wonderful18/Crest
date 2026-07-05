@@ -96,7 +96,7 @@ defineExpose({
     </div>
   </div>
 </template>
-<style lang="less" scope>
+<style lang="less" scoped>
 .draw-filter_tree {
   margin-bottom: 16px;
 

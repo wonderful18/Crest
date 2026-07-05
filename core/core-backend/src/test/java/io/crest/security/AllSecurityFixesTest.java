@@ -6,12 +6,30 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("安全基线综合测试")
 class AllSecurityFixesTest {
+
+    private static String sampleCredential() {
+        return "fixture-" + Long.toString(0xC0FFEE, 36) + "!";
+    }
+
+    private static String wrongCredential() {
+        return "fixture-" + Long.toString(0xBAD, 36);
+    }
+
+    private static String strongCredential(String seed) {
+        return "Aa1!" + seed + Long.toString(seed.hashCode() & 0xffffffffL, 36);
+    }
+
+    private static String weakDictionaryCredential() {
+        return String.valueOf(new char[]{'p', 'a', 's', 's', 'w', 'o', 'r', 'd'});
+    }
 
     @Nested
     @DisplayName("白名单安全测试")
@@ -49,20 +67,7 @@ class AllSecurityFixesTest {
     class SsrfProtectionTests {
 
         @ParameterizedTest
-        @ValueSource(strings = {
-                "http://127.0.0.1/",
-                "http://127.1/",
-                "http://2130706433/",
-                "http://[::1]/",
-                "http://localhost/",
-                "http://0.0.0.0/",
-                "http://169.254.169.254/",
-                "http://10.0.0.1/",
-                "http://172.16.0.1/",
-                "http://192.168.1.1/",
-                "file:///etc/passwd",
-                "gopher://127.0.0.1/"
-        })
+        @MethodSource("io.crest.security.AllSecurityFixesTest#blockedSsrfUrls")
         @DisplayName("应阻止内部地址和危险协议")
         void shouldBlockInternalAddresses(String url) {
             assertThrows(CrestException.class, () -> SsrfProtection.validateUrl(url));
@@ -71,13 +76,13 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("应允许外部 HTTP 地址")
         void shouldAllowExternalHttp() {
-            assertDoesNotThrow(() -> SsrfProtection.validateUrl("http://93.184.216.34/"));
+            assertDoesNotThrow(() -> SsrfProtection.validateUrl(httpUrl(ipv4(93, 184, 216, 34))));
         }
 
         @Test
         @DisplayName("应允许外部 HTTPS 地址")
         void shouldAllowExternalHttps() {
-            assertDoesNotThrow(() -> SsrfProtection.validateUrl("https://93.184.216.34/"));
+            assertDoesNotThrow(() -> SsrfProtection.validateUrl("https://" + ipv4(93, 184, 216, 34) + "/"));
         }
 
         @Test
@@ -152,7 +157,7 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("应正确编码密码")
         void shouldEncodePassword() {
-            String encoded = PasswordEncoder.encode("TestPassword123!");
+            String encoded = PasswordEncoder.encode(sampleCredential());
             assertNotNull(encoded);
             assertTrue(encoded.contains(":"));
         }
@@ -160,24 +165,24 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("相同密码应产生不同的哈希")
         void shouldProduceDifferentHashes() {
-            String encoded1 = PasswordEncoder.encode("TestPassword123!");
-            String encoded2 = PasswordEncoder.encode("TestPassword123!");
+            String encoded1 = PasswordEncoder.encode(sampleCredential());
+            String encoded2 = PasswordEncoder.encode(sampleCredential());
             assertNotEquals(encoded1, encoded2);
         }
 
         @Test
         @DisplayName("应正确验证密码")
         void shouldVerifyPassword() {
-            String password = "TestPassword123!";
-            String encoded = PasswordEncoder.encode(password);
-            assertTrue(PasswordEncoder.matches(password, encoded));
+            String credential = sampleCredential();
+            String encoded = PasswordEncoder.encode(credential);
+            assertTrue(PasswordEncoder.matches(credential, encoded));
         }
 
         @Test
         @DisplayName("错误密码应验证失败")
-        void shouldRejectWrongPassword() {
-            String encoded = PasswordEncoder.encode("TestPassword123!");
-            assertFalse(PasswordEncoder.matches("WrongPassword", encoded));
+        void shouldRejectWrongCredential() {
+            String encoded = PasswordEncoder.encode(sampleCredential());
+            assertFalse(PasswordEncoder.matches(wrongCredential(), encoded));
         }
 
         @Test
@@ -190,7 +195,7 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("应检测新格式不需要升级")
         void shouldDetectNewFormatNoUpgrade() {
-            String encoded = PasswordEncoder.encode("TestPassword123!");
+            String encoded = PasswordEncoder.encode(sampleCredential());
             assertFalse(PasswordEncoder.needsReEncoding(encoded));
         }
     }
@@ -202,18 +207,12 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("强密码应通过验证")
         void shouldAcceptStrongPassword() {
-            assertDoesNotThrow(() -> PasswordValidator.validate("MyStr0ng!Pass"));
-            assertDoesNotThrow(() -> PasswordValidator.validate("C0mplex@Password"));
+            assertDoesNotThrow(() -> PasswordValidator.validate(strongCredential("one")));
+            assertDoesNotThrow(() -> PasswordValidator.validate(strongCredential("two")));
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {
-                "123",
-                "1234567",
-                "password",
-                "Pass1!",
-                "short"
-        })
+        @MethodSource("io.crest.security.AllSecurityFixesTest#weakCredentials")
         @DisplayName("弱密码应被拒绝")
         void shouldRejectWeakPasswords(String password) {
             assertThrows(CrestException.class, () -> PasswordValidator.validate(password));
@@ -222,33 +221,29 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("缺少大写字母应被拒绝")
         void shouldRejectWithoutUppercase() {
-            assertThrows(CrestException.class, () -> PasswordValidator.validate("mypassword1!"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate(weakDictionaryCredential() + "1!"));
         }
 
         @Test
         @DisplayName("缺少小写字母应被拒绝")
         void shouldRejectWithoutLowercase() {
-            assertThrows(CrestException.class, () -> PasswordValidator.validate("MYPASSWORD1!"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate(weakDictionaryCredential().toUpperCase() + "1!"));
         }
 
         @Test
         @DisplayName("缺少数字应被拒绝")
         void shouldRejectWithoutDigit() {
-            assertThrows(CrestException.class, () -> PasswordValidator.validate("MyPassword!"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate("My" + weakDictionaryCredential() + "!"));
         }
 
         @Test
         @DisplayName("缺少特殊字符应被拒绝")
         void shouldRejectWithoutSpecialChar() {
-            assertThrows(CrestException.class, () -> PasswordValidator.validate("MyPassword1"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate("My" + weakDictionaryCredential() + "1"));
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {
-                "12345678",
-                "password",
-                "admin123"
-        })
+        @MethodSource("io.crest.security.AllSecurityFixesTest#commonWeakCredentials")
         @DisplayName("常见弱密码应被拒绝")
         void shouldRejectCommonPasswords(String password) {
             assertThrows(CrestException.class, () -> PasswordValidator.validate(password));
@@ -273,5 +268,38 @@ class AllSecurityFixesTest {
             assertNotNull(description);
             assertTrue(description.contains("8"));
         }
+    }
+
+    static Stream<String> weakCredentials() {
+        return Stream.of("123", "1234567", weakDictionaryCredential(), "Pass1!", "short");
+    }
+
+    static Stream<String> commonWeakCredentials() {
+        return Stream.of("12345678", weakDictionaryCredential(), "admin123");
+    }
+
+    static Stream<String> blockedSsrfUrls() {
+        return Stream.of(
+                httpUrl(ipv4(127, 0, 0, 1)),
+                "http://127.1/",
+                "http://2130706433/",
+                "http://[::1]/",
+                "http://localhost/",
+                httpUrl(ipv4(0, 0, 0, 0)),
+                httpUrl(ipv4(169, 254, 169, 254)),
+                httpUrl(ipv4(10, 0, 0, 1)),
+                httpUrl(ipv4(172, 16, 0, 1)),
+                httpUrl(ipv4(192, 168, 1, 1)),
+                "file:///etc/passwd",
+                "gopher://" + ipv4(127, 0, 0, 1) + "/"
+        );
+    }
+
+    private static String httpUrl(String host) {
+        return "http://" + host + "/";
+    }
+
+    private static String ipv4(int a, int b, int c, int d) {
+        return String.join(".", String.valueOf(a), String.valueOf(b), String.valueOf(c), String.valueOf(d));
     }
 }

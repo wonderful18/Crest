@@ -5,7 +5,7 @@ import icon_rightAlign_outlined from '@/assets/svg/icon_right-align_outlined.svg
 import icon_topAlign_outlined from '@/assets/svg/icon_top-align_outlined.svg'
 import icon_verticalAlign_outlined from '@/assets/svg/icon_vertical-align_outlined.svg'
 import icon_bottomAlign_outlined from '@/assets/svg/icon_bottom-align_outlined.svg'
-import { computed, onMounted, reactive, watch, ref } from 'vue'
+import { computed, onMounted, reactive, watch, ref, useAttrs } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import {
   COLOR_PANEL,
@@ -22,6 +22,8 @@ import { storeToRefs } from 'pinia'
 const dvMainStore = dvMainStoreWithOut()
 const { batchOptStatus } = storeToRefs(dvMainStore)
 const { t } = useI18n()
+defineOptions({ inheritAttrs: false })
+const attrs = useAttrs()
 
 const props = withDefaults(
   defineProps<{
@@ -288,13 +290,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <el-form
-    ref="legendForm"
-    :disabled="!state.legendForm.show"
-    :model="state.legendForm"
-    label-position="top"
-    size="small"
-  >
+  <div v-bind="attrs">
+    <el-form
+      ref="legendForm"
+      :disabled="!state.legendForm.show"
+      :model="state.legendForm"
+      label-position="top"
+      size="small"
+    >
     <el-row :gutter="8">
       <el-col :span="12">
         <el-form-item
@@ -767,31 +770,32 @@ onMounted(() => {
         />
       </el-select>
     </el-form-item>
-  </el-form>
-  <el-dialog
-    v-if="state.showCustomSort"
-    v-model="state.showCustomSort"
-    :title="t('chart.custom_sort') + t('chart.sort')"
-    :visible="state.showCustomSort"
-    :close-on-click-modal="false"
-    destroy-on-close
-    width="372px"
-    class="dialog-css custom_sort_dialog"
-  >
-    <custom-sort-edit
-      :field-type="sortAxis"
-      :chart="chart"
-      :field="state.customSortField"
-      :origin-sort-list="state.legendForm.customSort"
-      @on-sort-change="customSortChange"
-    />
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="closeCustomSort">{{ t('chart.cancel') }} </el-button>
-        <el-button type="primary" @click="saveCustomSort">{{ t('chart.confirm') }} </el-button>
-      </div>
-    </template>
-  </el-dialog>
+    </el-form>
+    <el-dialog
+      v-if="state.showCustomSort"
+      v-model="state.showCustomSort"
+      :title="t('chart.custom_sort') + t('chart.sort')"
+      :visible="state.showCustomSort"
+      :close-on-click-modal="false"
+      destroy-on-close
+      width="372px"
+      class="dialog-css custom_sort_dialog"
+    >
+      <custom-sort-edit
+        :field-type="sortAxis"
+        :chart="chart"
+        :field="state.customSortField"
+        :origin-sort-list="state.legendForm.customSort"
+        @on-sort-change="customSortChange"
+      />
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeCustomSort">{{ t('chart.cancel') }} </el-button>
+          <el-button type="primary" @click="saveCustomSort">{{ t('chart.confirm') }} </el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <style lang="less" scoped>

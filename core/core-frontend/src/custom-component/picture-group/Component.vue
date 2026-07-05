@@ -6,6 +6,7 @@
       v-else-if="state.showUrl"
       :style="imageAdapter"
       :src="imgUrlTrans(state.showUrl)"
+      :alt="view?.title || 'picture group'"
     />
     <template v-else>
       <chart-empty-info :view-icon="view.type"></chart-empty-info>

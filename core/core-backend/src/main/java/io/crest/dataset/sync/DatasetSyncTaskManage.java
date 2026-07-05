@@ -517,7 +517,7 @@ public class DatasetSyncTaskManage {
             ) + " WHERE 1 = 0");
             calciteProvider.exec(request);
             return true;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.warn("Dataset sync cache table is not available: " + datasetGroupId + ", " + e.getMessage());
             return false;
         }
@@ -849,7 +849,7 @@ public class DatasetSyncTaskManage {
             request.setEngine(engine);
             request.setQuery(engineProvider.dropTable(tableName));
             calciteProvider.exec(request);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.warn("Drop dataset sync cache table failed: " + tableName + ", " + e.getMessage());
         }
     }

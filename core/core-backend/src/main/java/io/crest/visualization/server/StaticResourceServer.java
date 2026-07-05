@@ -21,7 +21,9 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.imageio.ImageIO;
 import javax.xml.XMLConstants;
@@ -38,6 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/static-resource")
@@ -45,6 +48,7 @@ import java.util.*;
 public class StaticResourceServer implements StaticResourceApi {
 
     private static final long MAX_STATIC_RESOURCE_BYTES = 20L * 1024L * 1024L;
+    private static final Pattern BASE64_SCRIPT_PAYLOAD_PATTERN = Pattern.compile(".*base64\\s*,\\s*[a-z0-9+/=]{20,}.*");
 
     private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = Set.of(
             ".gif", ".svg", ".png", ".jpeg", ".jpg"
@@ -67,7 +71,7 @@ public class StaticResourceServer implements StaticResourceApi {
             FileUtils.validateUploadFileSize(file, MAX_STATIC_RESOURCE_BYTES, "静态资源文件");
             String originName = file.getOriginalFilename();
             validateImageFilename(originName);
-            String newFileName = fileId + originName.substring(originName.lastIndexOf("."), originName.length());
+            String newFileName = fileId + originName.substring(originName.lastIndexOf('.'), originName.length());
             validateImageFilename(newFileName);
             byte[] fileBytes = file.getBytes();
             validateImageContent(newFileName, fileBytes, file.getContentType(), true);
@@ -77,24 +81,9 @@ public class StaticResourceServer implements StaticResourceApi {
         } catch (IOException e) {
             LogUtil.error("文件上传失败", e);
             CrestException.throwException("文件上传失败");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(e);
         }
-    }
-
-    private boolean isImage(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            return false;
-        }
-        String mimeType = file.getContentType();
-        if (StringUtils.isEmpty(mimeType)) {
-            return false;
-        }
-        if (!hasValidImageExtension(file.getOriginalFilename())) {
-            return false;
-        }
-        // 判断是否为图片或SVG
-        return (isImageOther(file)) || isValidSVG(file);
     }
 
     private boolean hasValidImageExtension(String filename) {
@@ -109,20 +98,6 @@ public class StaticResourceServer implements StaticResourceApi {
         }
 
         return false;
-    }
-
-    private boolean isImageOther(MultipartFile file) {
-        BufferedImage image = null;
-        try (InputStream input = file.getInputStream()) {
-            image = ImageIO.read(input);
-        } catch (IOException e) {
-            LogUtil.error(e.getMessage(), e);
-            return false;
-        }
-        if (image == null || image.getWidth() <= 0 || image.getHeight() <= 0) {
-            return false;
-        }
-        return true;
     }
 
     public void saveFilesToServe(String staticResource) {
@@ -151,7 +126,7 @@ public class StaticResourceServer implements StaticResourceApi {
             writeFileIfAbsent(fileName, fileBytes);
         } catch (CrestException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             LogUtil.error("template static resource save error", e);
             CrestException.throwException(e);
         }
@@ -201,8 +176,16 @@ public class StaticResourceServer implements StaticResourceApi {
     }
 
     private byte[] decodeBase64Content(String content) {
+        String base64Content = content.trim();
+        if (base64Content.regionMatches(true, 0, "data:", 0, 5)) {
+            int commaIndex = base64Content.indexOf(',');
+            if (commaIndex < 0 || !base64Content.substring(0, commaIndex).toLowerCase(Locale.ROOT).contains(";base64")) {
+                CrestException.throwException("静态资源Base64内容无效");
+            }
+            base64Content = base64Content.substring(commaIndex + 1);
+        }
         try {
-            return Base64.getDecoder().decode(content);
+            return Base64.getDecoder().decode(base64Content);
         } catch (IllegalArgumentException e) {
             CrestException.throwException("静态资源Base64内容无效");
             return new byte[0];
@@ -236,7 +219,7 @@ public class StaticResourceServer implements StaticResourceApi {
             BufferedImage image = ImageIO.read(input);
             return image != null && image.getWidth() > 0 && image.getHeight() > 0;
         } catch (IOException e) {
-            LogUtil.error(e.getMessage(), e);
+            LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
             return false;
         }
     }
@@ -247,6 +230,7 @@ public class StaticResourceServer implements StaticResourceApi {
         }
         try (InputStream inputStream = new ByteArrayInputStream(content)) {
             DocumentBuilder db = secureSvgDocumentBuilderFactory().newDocumentBuilder();
+            db.setErrorHandler(silentSvgErrorHandler());
             Document doc = db.parse(inputStream);
             if (!"svg".equals(doc.getDocumentElement().getNodeName())) {
                 CrestException.throwException("根元素必须是svg");
@@ -261,54 +245,6 @@ public class StaticResourceServer implements StaticResourceApi {
                 CrestException.throwException("SVG解析失败: " + e.getMessage());
             }
         }
-    }
-
-    private static boolean isValidSVG(MultipartFile file){
-        if (file == null || file.isEmpty()) {
-            return false;
-        }
-
-        // MIME类型预检查
-        if (!isValidSvgMimeType(file)) {
-            CrestException.throwException("无效的SVG文件MIME类型");
-            return false;
-        }
-
-        try (InputStream inputStream = file.getInputStream()) {
-            DocumentBuilder db = secureSvgDocumentBuilderFactory().newDocumentBuilder();
-            Document doc = db.parse(inputStream);
-
-            // 检查根元素是否是<svg>
-            if (!"svg".equals(doc.getDocumentElement().getNodeName())) {
-                CrestException.throwException("根元素必须是svg");
-                return false;
-            }
-
-            // 安全检查：如果发现任何危险内容，直接返回false
-            if (containsDangerousContent(doc)) {
-                CrestException.throwException("SVG包含不允许的脚本或事件处理器");
-                return false;
-            }
-
-            return true;
-
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            // 如果出现任何解析错误，说明该文件不是合法的SVG
-            if(e.getMessage() != null && e.getMessage().contains("DOCTYPE")){
-                CrestException.throwException("svg 内容禁止使用 DOCTYPE");
-            } else {
-                CrestException.throwException("SVG解析失败: " + e.getMessage());
-            }
-        }
-        return false;
-    }
-
-    /**
-     * MIME类型检查
-     */
-    private static boolean isValidSvgMimeType(MultipartFile file) {
-        String contentType = file.getContentType();
-        return isValidSvgMimeType(contentType);
     }
 
     private static boolean isValidSvgMimeType(String contentType) {
@@ -331,6 +267,25 @@ public class StaticResourceServer implements StaticResourceApi {
         dbf.setXIncludeAware(false);
         dbf.setExpandEntityReferences(false);
         return dbf;
+    }
+
+    private static ErrorHandler silentSvgErrorHandler() {
+        return new ErrorHandler() {
+            @Override
+            public void warning(SAXParseException exception) throws SAXException {
+                throw exception;
+            }
+
+            @Override
+            public void error(SAXParseException exception) throws SAXException {
+                throw exception;
+            }
+
+            @Override
+            public void fatalError(SAXParseException exception) throws SAXException {
+                throw exception;
+            }
+        };
     }
 
     /**
@@ -429,7 +384,7 @@ public class StaticResourceServer implements StaticResourceApi {
         // 检查base64编码的潜在脚本
         if (lowerValue.contains("base64")) {
             // 简单的base64解码检查，这里可以根据需要实现更复杂的检测
-            return lowerValue.matches(".*base64\\s*,\\s*[a-z0-9+/=]{20,}.*");
+            return BASE64_SCRIPT_PAYLOAD_PATTERN.matcher(lowerValue).matches();
         }
 
         return false;
@@ -478,69 +433,5 @@ public class StaticResourceServer implements StaticResourceApi {
         }
 
         return false;
-    }
-    public static FileType getFileType(InputStream is) throws IOException {
-        byte[] src = new byte[28];
-        is.read(src, 0, 28);
-        StringBuilder stringBuilder = new StringBuilder("");
-        if (src == null || src.length <= 0) {
-            return null;
-        }
-        for (int i = 0; i < src.length; i++) {
-            int v = src[i] & 0xFF;
-            String hv = Integer.toHexString(v).toUpperCase(Locale.ROOT);
-            if (hv.length() < 2) {
-                stringBuilder.append(0);
-            }
-            stringBuilder.append(hv);
-        }
-        FileType[] fileTypes = FileType.values();
-        for (FileType fileType : fileTypes) {
-            if (stringBuilder.toString().startsWith(fileType.getValue())) {
-                return fileType;
-            }
-        }
-        return null;
-    }
-
-    private static Boolean isImageCheckType(MultipartFile file) {
-        try (InputStream inputStream = file.getInputStream()) {
-            return getFileType(inputStream) != null;
-        } catch (Exception e) {
-            LogUtil.error(e.getMessage());
-            return false;
-        }
-    }
-
-    public static String getImageType(InputStream fileInputStream) {
-        byte[] b = new byte[10];
-        int l = -1;
-        try {
-            l = fileInputStream.read(b);
-            fileInputStream.close();
-        } catch (Exception e) {
-            return null;
-        }
-        if (l == 10) {
-            byte b0 = b[0];
-            byte b1 = b[1];
-            byte b2 = b[2];
-            byte b3 = b[3];
-            byte b6 = b[6];
-            byte b7 = b[7];
-            byte b8 = b[8];
-            byte b9 = b[9];
-            if (b0 == (byte) 'G' && b1 == (byte) 'I' && b2 == (byte) 'F') {
-                return "gif";
-            } else if (b1 == (byte) 'P' && b2 == (byte) 'N' && b3 == (byte) 'G') {
-                return "png";
-            } else if (b6 == (byte) 'J' && b7 == (byte) 'F' && b8 == (byte) 'I' && b9 == (byte) 'F') {
-                return "jpg";
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
     }
 }

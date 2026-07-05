@@ -84,10 +84,10 @@
           style="position: relative; width: 100%; height: 100%; padding: 20px"
         >
           <div class="demo-preview">
-            <img style="height: 100%" src="@/assets/img/watermark-demo-light.png" />
+            <img style="height: 100%" src="@/assets/img/watermark-demo-light.png" :alt="t('watermark.preview')" />
           </div>
           <div class="demo-preview" style="margin-top: 15px">
-            <img style="height: 100%" src="@/assets/img/watermark-demo-dark.png" />
+            <img style="height: 100%" src="@/assets/img/watermark-demo-dark.png" :alt="t('watermark.preview')" />
           </div>
         </div>
       </el-col>

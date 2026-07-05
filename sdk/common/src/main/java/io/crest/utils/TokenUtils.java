@@ -57,7 +57,7 @@ public class TokenUtils {
             }
         } catch (CrestException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException("token is invalid");
         }
         CrestException.throwException("token is invalid");

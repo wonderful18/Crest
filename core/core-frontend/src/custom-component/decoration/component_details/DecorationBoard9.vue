@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import { customMergeColor } from '@/custom-component/decoration/component_details/config'
 import { cloneDeep } from 'lodash-es'
+import { secureRandomToken } from '@/utils/secureRandom'
 
 interface Props {
   color?: string[]
@@ -25,7 +26,7 @@ const width = computed(() => props.curStyle.width)
 const height = computed(() => props.curStyle.height)
 
 // 生成更简洁的ID
-const generateId = () => Math.random().toString(36).substring(2, 8)
+const generateId = () => secureRandomToken(6)
 const gradientId = `grad-${generateId()}`
 const maskId = `mask-${generateId()}`
 
@@ -192,7 +193,7 @@ onMounted(mergeColor)
   </div>
 </template>
 
-<style lang="less">
+<style lang="less" scoped>
 .dv-border-box-9 {
   position: relative;
   width: 100%;

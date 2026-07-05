@@ -11,6 +11,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
@@ -23,7 +24,7 @@ class ExportCenterDownloadManageTest {
 
     @Test
     @DisplayName("导出文件不存在时应返回明确提示")
-    void missingExportFileShouldReturnClearMessage() throws Exception {
+    void missingExportFileShouldReturnClearMessage() throws IOException {
         StaticMessageSource messageSource = new StaticMessageSource();
         messageSource.addMessage("i18n_export_file_missing", Locale.SIMPLIFIED_CHINESE,
                 "导出文件不存在或已被清理，请重新导出");

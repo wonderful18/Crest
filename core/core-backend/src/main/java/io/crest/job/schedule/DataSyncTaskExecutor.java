@@ -1,6 +1,7 @@
 package io.crest.job.schedule;
 
 import jakarta.annotation.Resource;
+import io.crest.utils.LogUtil;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
@@ -22,6 +23,7 @@ public class DataSyncTaskExecutor {
         return false;
     }
     public void init() {
+        LogUtil.debug("data sync task executor initialized");
     }
 
     /**

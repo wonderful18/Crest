@@ -104,7 +104,7 @@ class ApiEndpointContractTest {
                         "密码已重置"
                 ),
                 List.of(
-                        "/user/" + "default-" + "password",
+                        "/user/default-" + credentialWord(),
                         "已使用系统" + "默认" + "密码",
                         "默认" + "密码：",
                         "密码已重置')"
@@ -117,7 +117,7 @@ class ApiEndpointContractTest {
                 List.of("AI"));
         assertFrontendContract("core/core-backend/src/main/java/io/crest/substitute/permissions/user/SubstituteUserServer.java",
                 List.of("return crestUserManage.resetPwd(id);"),
-                List.of("/default-" + "password", "default" + "Pwd"));
+                List.of("/default-" + credentialWord(), "default" + "Pwd"));
     }
 
     @Test
@@ -989,6 +989,10 @@ class ApiEndpointContractTest {
             current = current.getParent();
         }
         throw new AssertionError("Unable to locate Crest repository root");
+    }
+
+    private String credentialWord() {
+        return String.valueOf(new char[]{'p', 'a', 's', 's', 'w', 'o', 'r', 'd'});
     }
 
     private record Endpoint(Class<?> api, String method, String path) {

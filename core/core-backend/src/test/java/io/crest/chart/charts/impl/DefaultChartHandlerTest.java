@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 class DefaultChartHandlerTest {
 
     @Test
-    void checkCalcTypeRejectsBlankDateStyle() throws Exception {
+    void checkCalcTypeRejectsBlankDateStyle() throws ReflectiveOperationException {
         DefaultChartHandler handler = new DefaultChartHandler();
         Method method = DefaultChartHandler.class.getDeclaredMethod("checkCalcType", String.class, String.class);
         method.setAccessible(true);

@@ -24,6 +24,7 @@ import { Datum } from '@antv/g2plot/esm/types/common'
 import { useI18n } from '@/hooks/web/useI18n'
 import { DEFAULT_BASIC_STYLE } from '@/views/chart/components/editor/util/chart'
 import { Group } from '@antv/g-canvas'
+import { secureRandomInt } from '@/utils/secureRandom'
 
 const { t } = useI18n()
 const DEFAULT_DATA = []
@@ -91,7 +92,7 @@ export class RangeBar extends G2PlotChartView<BarOptions, Bar> {
     const data: Array<any> = cloneDeep(chart.data.data)
 
     data.forEach(d => {
-      d.tempId = (Math.random() * 10000000).toString()
+      d.tempId = secureRandomInt(10000000).toString()
     })
 
     const ifAggregate = !!chart.aggregate

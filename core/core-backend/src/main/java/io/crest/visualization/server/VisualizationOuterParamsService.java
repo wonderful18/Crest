@@ -196,7 +196,7 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
     private Long parseVisualizationId(String visualizationId) {
         try {
             return Long.valueOf(visualizationId);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             coreVisualizationManage.requireVisualizationManage(null);
             return null;
         }

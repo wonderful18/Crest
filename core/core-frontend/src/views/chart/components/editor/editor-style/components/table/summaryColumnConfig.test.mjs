@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  buildSummaryColumnFieldOptions,
   normalizeSummaryColumn,
   validateSummaryColumn,
   SUMMARY_COLUMN_VALIDATION
@@ -75,4 +76,32 @@ test('custom summary column accepts a formula expression', () => {
   })
 
   assert.equal(result.valid, true)
+})
+
+test('non-count summary columns only expose numeric fields', () => {
+  const fields = [
+    { engineFieldName: 'f_3', name: '项目名称', fieldType: 0 },
+    { engineFieldName: 'f_9', name: '投入工时', fieldType: 2 }
+  ]
+
+  const options = buildSummaryColumnFieldOptions(fields)
+
+  assert.deepEqual(
+    options.map(field => field.engineFieldName),
+    ['f_9']
+  )
+})
+
+test('count summary columns can expose dimension fields for legacy selections', () => {
+  const fields = [
+    { engineFieldName: 'f_3', name: '项目名称', fieldType: 0 },
+    { engineFieldName: 'f_9', name: '投入工时', fieldType: 2 }
+  ]
+
+  const options = buildSummaryColumnFieldOptions(fields, { includeNonNumeric: true })
+
+  assert.deepEqual(
+    options.map(field => `${field.engineFieldName}:${field.name}`),
+    ['f_3:项目名称', 'f_9:投入工时']
+  )
 })

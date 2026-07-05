@@ -2,6 +2,7 @@ package io.crest.commons.utils;
 
 import io.crest.utils.BeanUtils;
 import io.crest.utils.ConfigUtils;
+import io.crest.utils.Md5Utils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -69,6 +70,6 @@ public class EncryptUtils extends CodingUtil {
         if (o == null) {
             return null;
         }
-        return md5(o.toString());
+        return Md5Utils.md5(o.toString());
     }
 }

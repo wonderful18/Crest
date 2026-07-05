@@ -363,7 +363,7 @@ onBeforeMount(() => {
   ></app-export-form>
 </template>
 
-<style lang="less">
+<style lang="less" scoped>
 .dv-preview {
   width: 100%;
   height: 100%;

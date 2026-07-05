@@ -24,7 +24,8 @@ public class CrestPermissionUtils {
             if (result instanceof Boolean bool) {
                 return bool;
             }
-        } catch (Exception ignored) {
+        } catch (RuntimeException ignored) {
+            LogUtil.debug("Fallback to built-in admin check");
         }
         return uid == 1L;
     }

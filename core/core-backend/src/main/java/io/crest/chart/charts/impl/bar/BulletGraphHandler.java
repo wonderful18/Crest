@@ -73,12 +73,12 @@ public class BulletGraphHandler extends YoyChartHandler {
                 req.setDsList(dsMap);
                 var assistSql = assistSQL(originSql, assistFields, dsMap, ((DatasetGroupInfoDTO) formatResult.getContext().get("dataset")).getIsCross());
                 req.setQuery(assistSql);
-                logger.debug("calcite assistSql sql: " + assistSql);
+                logger.debug("calcite assist sql generated");
                 var assistData = (List<String[]>) provider.fetchResultField(req).get("data");
                 result.setAssistData(assistData);
                 result.setDynamicAssistFields(dynamicAssistFields);
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         return result;

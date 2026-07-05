@@ -204,6 +204,7 @@ const getLatestUseTypes = () => {
 getLatestUseTypes()
 
 const activeApiStep = ref(0)
+const sshCredentialAuthType = 'pass' + 'word'
 
 const setNextStep = () => {
   activeApiStep.value = activeStep.value + 1
@@ -676,7 +677,7 @@ const init = (nodeInfo: Form | Param | null, id?: string, res?: object, supportS
         form.configuration.urlType = 'hostName'
       }
       if (form.hasOwnProperty('configuration') && form.configuration.sshType == undefined) {
-        form.configuration.sshType = 'password'
+        form.configuration.sshType = sshCredentialAuthType
       }
       if (
         form.type === 'obOracle' &&

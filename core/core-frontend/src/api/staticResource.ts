@@ -3,6 +3,24 @@ import { guid } from '@/views/visualized/data/dataset/form/util.js'
 import { ElMessage } from 'element-plus-secondary'
 
 const staticResourcePath = '/static-resource/'
+const supportedImageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg']
+export const STATIC_IMAGE_FILE_ACCEPT = supportedImageExtensions.map(ext => `.${ext}`).join(',')
+
+function fileExtension(fileName = '') {
+  const lastDotIndex = fileName.lastIndexOf('.')
+  if (lastDotIndex < 0 || lastDotIndex === fileName.length - 1) {
+    return ''
+  }
+  return fileName.substring(lastDotIndex + 1).toLowerCase()
+}
+
+export function isSupportedStaticImage(file) {
+  const extension = fileExtension(file?.name)
+  const mimeType = file?.type || ''
+  const isSupportedExtension = supportedImageExtensions.includes(extension)
+  return isSupportedExtension && (!mimeType || mimeType.startsWith('image/'))
+}
+
 export const uploadFile = (fileId: number | string, param) =>
   request.post({
     url: '/static-resource/upload/' + fileId,
@@ -12,11 +30,11 @@ export const uploadFile = (fileId: number | string, param) =>
   })
 
 export function beforeUploadCheck(file) {
-  const isImage = file.type.startsWith('image/')
+  const isImage = isSupportedStaticImage(file)
   const isSizeValid = file.size / 1024 / 1024 < 15 // 15MB
 
   if (!isImage) {
-    ElMessage.error('请上传图片')
+    ElMessage.error('仅支持 JPG、JPEG、PNG、GIF、SVG 图片')
     return false
   }
   if (!isSizeValid) {

@@ -9,13 +9,17 @@ import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import java.io.IOException;
+
+import jakarta.servlet.ServletException;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class PrometheusMetricsAccessFilterTest {
 
     @Test
     @DisplayName("Prometheus 未开启时指标端点应返回 404")
-    void prometheusEndpointShouldBeHiddenWhenDisabled() throws Exception {
+    void prometheusEndpointShouldBeHiddenWhenDisabled() throws IOException, ServletException {
         PrometheusMetricsAccessFilter filter = new PrometheusMetricsAccessFilter(defaultProperties(false, "secret"));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/actuator/prometheus");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -29,7 +33,7 @@ class PrometheusMetricsAccessFilterTest {
 
     @Test
     @DisplayName("Prometheus 开启但未配置 token 时应失败关闭")
-    void prometheusEndpointShouldFailClosedWhenTokenMissing() throws Exception {
+    void prometheusEndpointShouldFailClosedWhenTokenMissing() throws IOException, ServletException {
         PrometheusMetricsAccessFilter filter = new PrometheusMetricsAccessFilter(defaultProperties(true, ""));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/actuator/prometheus");
         request.addHeader("Authorization", "Bearer any");
@@ -44,7 +48,7 @@ class PrometheusMetricsAccessFilterTest {
 
     @Test
     @DisplayName("Prometheus token 错误时应拒绝访问")
-    void prometheusEndpointShouldRejectInvalidToken() throws Exception {
+    void prometheusEndpointShouldRejectInvalidToken() throws IOException, ServletException {
         PrometheusMetricsAccessFilter filter = new PrometheusMetricsAccessFilter(defaultProperties(true, "secret"));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/actuator/prometheus");
         request.addHeader("Authorization", "Bearer wrong");
@@ -60,7 +64,7 @@ class PrometheusMetricsAccessFilterTest {
 
     @Test
     @DisplayName("Prometheus token 正确时应标记专用认证并放行")
-    void prometheusEndpointShouldPassWithValidToken() throws Exception {
+    void prometheusEndpointShouldPassWithValidToken() throws IOException, ServletException {
         PrometheusMetricsAccessFilter filter = new PrometheusMetricsAccessFilter(defaultProperties(true, "secret"));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/actuator/prometheus");
         request.addHeader("Authorization", "Bearer secret");
@@ -76,7 +80,7 @@ class PrometheusMetricsAccessFilterTest {
 
     @Test
     @DisplayName("带 context-path 的指标端点应能正确匹配")
-    void prometheusEndpointShouldMatchContextPath() throws Exception {
+    void prometheusEndpointShouldMatchContextPath() throws IOException, ServletException {
         PrometheusMetricsAccessFilter filter = new PrometheusMetricsAccessFilter(defaultProperties(true, "secret"));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/crest/api/v1/actuator/prometheus");
         request.setContextPath("/crest");

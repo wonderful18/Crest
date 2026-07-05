@@ -49,11 +49,11 @@ public interface DataVisualizationApi {
     @PostMapping("/canvas")
     @CrestPermit(value = {"#p0.pid + ':manage'"}, busiFlag = "#p0.type")
     @Operation(summary = "画布保存")
-    String saveCanvas(@RequestBody DataVisualizationBaseRequest request) throws Exception;
+    String saveCanvas(@RequestBody DataVisualizationBaseRequest request);
 
     @PostMapping("/canvas-name-check")
     @Operation(summary = "应用名称检查")
-    String appCanvasNameCheck(@RequestBody DataVisualizationBaseRequest request) throws Exception;
+    String appCanvasNameCheck(@RequestBody DataVisualizationBaseRequest request);
 
     @PostMapping("/canvas-change-impact")
     @CrestPermit(value = {"#p0.id + ':manage'"}, busiFlag = "#p0.type")
@@ -131,7 +131,7 @@ public interface DataVisualizationApi {
      */
     @PostMapping("/decompression")
     @Operation(summary = "解析可视化资源模板信息")
-    DataVisualizationVO decompression(@RequestBody DataVisualizationBaseRequest request) throws Exception;
+    DataVisualizationVO decompression(@RequestBody DataVisualizationBaseRequest request);
 
     /**
      * 从模板解压可视化资源 模板来源包括本地上传
@@ -154,23 +154,23 @@ public interface DataVisualizationApi {
 
     @PostMapping("/export-logs/app")
     @Operation(summary = "导出应用模板日志记录")
-    void exportLogApp(@RequestBody DataVisualizationBaseRequest request) throws Exception;
+    void exportLogApp(@RequestBody DataVisualizationBaseRequest request);
 
 
     @PostMapping("/export-logs/template")
     @Operation(summary = "导出样式模板日志记录")
-    void exportLogTemplate(@RequestBody DataVisualizationBaseRequest request) throws Exception;
+    void exportLogTemplate(@RequestBody DataVisualizationBaseRequest request);
 
 
 
     @PostMapping("/export-logs/pdf")
     @Operation(summary = "导出PDF日志记录")
-    void exportLogPDF(@RequestBody DataVisualizationBaseRequest request) throws Exception;
+    void exportLogPDF(@RequestBody DataVisualizationBaseRequest request);
 
 
     @PostMapping("/export-logs/image")
     @Operation(summary = "导出图片日志记录")
-    void exportLogImg(@RequestBody DataVisualizationBaseRequest request) throws Exception;
+    void exportLogImg(@RequestBody DataVisualizationBaseRequest request);
 
 
     @Hidden

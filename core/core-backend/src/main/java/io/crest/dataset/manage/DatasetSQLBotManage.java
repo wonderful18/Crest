@@ -18,6 +18,7 @@ import io.crest.commons.utils.EncryptUtils;
 import io.crest.constant.ColumnPermissionConstants;
 import io.crest.dataset.dao.auto.entity.CoreDatasetGroup;
 import io.crest.dataset.dao.ext.mapper.DataSetAssistantMapper;
+import io.crest.dataset.utils.DatasetUtils;
 import io.crest.dataset.utils.TableUtils;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
 import io.crest.datasource.manage.EngineManage;
@@ -340,7 +341,7 @@ public class DatasetSQLBotManage {
         }
         try {
             sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null, coreDatasource, true);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
         String sql = (String) sqlMap.get("sql");
@@ -435,7 +436,7 @@ public class DatasetSQLBotManage {
                 if (table.isNeedTransform() || ObjectUtils.isNotEmpty(columnPermissionsDTOS) || ObjectUtils.isNotEmpty(rowPermissionsTreeDTOS)) {
                     try {
                         rebuildTable(table, columnPermissionsDTOS, rowPermissionsTreeDTOS, dsRowData);
-                    } catch (Exception e) {
+                    } catch (RuntimeException e) {
                         LogUtil.error(e);
                         // 遇到异常，移除当前table
                         tableIterator.remove();
@@ -448,22 +449,6 @@ public class DatasetSQLBotManage {
                 voIterator.remove();
             }
         }
-        /*vos.forEach(vo -> {
-            Map<String, Object> dsRowData = vo.getRowData();
-            List<SQLBotAssistanTable> tables = vo.getTables();
-            tables.forEach(table -> {
-                Long datasetGroupId = table.getDatasetGroupId();
-                List<DataSetColumnPermissionsDTO> columnPermissionsDTOS = ObjectUtils.isEmpty(colPermissionMap) ? null : colPermissionMap.get(datasetGroupId);
-                List<DataSetRowPermissionsTreeDTO> rowPermissionsTreeDTOS = ObjectUtils.isEmpty(rowPermissionMap) ? null : rowPermissionMap.get(datasetGroupId);
-                if (table.isNeedTransform() || ObjectUtils.isNotEmpty(columnPermissionsDTOS) || ObjectUtils.isNotEmpty(rowPermissionsTreeDTOS)) {
-                    try {
-                        rebuildTable(table, columnPermissionsDTOS, rowPermissionsTreeDTOS, dsRowData);
-                    } catch (Exception e) {
-                        LogUtil.error(e);
-                    }
-                }
-            });
-        });*/
     }
 
     private SQLBotAssistantField buildField(Map<String, Object> row) {
@@ -587,7 +572,7 @@ public class DatasetSQLBotManage {
             String info = infoObj.toString();
             DatasetTableInfoDTO tableInfoDTO = JsonUtil.parseObject(info, DatasetTableInfoDTO.class);
             if (StringUtils.isNotBlank(tableInfoDTO.getSql())) {
-                String sql = new String(Base64.getDecoder().decode(tableInfoDTO.getSql()));
+                String sql = DatasetUtils.getDecode(tableInfoDTO.getSql());
                 if (StringUtils.isNotBlank(sql) && Strings.CS.contains(sql, "$CREST_PARAM")) {
                     table.setNeedTransform(true);
                 }

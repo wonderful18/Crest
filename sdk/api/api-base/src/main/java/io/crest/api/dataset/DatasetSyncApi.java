@@ -38,7 +38,7 @@ public interface DatasetSyncApi {
     @Operation(summary = "保存数据集同步任务")
     @CrestPermit({"#p0.datasetGroupId+':manage'"})
     @PostMapping("record")
-    DatasetSyncTaskDTO save(@RequestBody DatasetSyncTaskDTO task) throws Exception;
+    DatasetSyncTaskDTO save(@RequestBody DatasetSyncTaskDTO task);
 
     @Operation(summary = "查询数据集同步任务")
     @CrestPermit({"#p0+':read'"})
@@ -48,7 +48,7 @@ public interface DatasetSyncApi {
     @Operation(summary = "立即执行数据集同步")
     @CrestPermit({"#p0+':manage'"})
     @PostMapping("runs/{datasetGroupId}")
-    DatasetSyncTaskDTO execute(@PathVariable("datasetGroupId") Long datasetGroupId) throws Exception;
+    DatasetSyncTaskDTO execute(@PathVariable("datasetGroupId") Long datasetGroupId);
 
     @Operation(summary = "停止数据集同步")
     @CrestPermit({"#p0+':manage'"})
@@ -68,7 +68,7 @@ public interface DatasetSyncApi {
     @Operation(summary = "重试数据集同步")
     @CrestPermit({"#p0+':manage'"})
     @PostMapping("lifecycle/retry/{datasetGroupId}")
-    DatasetSyncTaskDTO retry(@PathVariable("datasetGroupId") Long datasetGroupId) throws Exception;
+    DatasetSyncTaskDTO retry(@PathVariable("datasetGroupId") Long datasetGroupId);
 
     @Operation(summary = "查询数据集同步日志")
     @CrestPermit({"#p0+':read'"})

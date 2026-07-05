@@ -20,11 +20,10 @@ public interface DatasetTableApi {
      *
      * @param datasetTableFieldDTO
      * @return
-     * @throws Exception
      */
     @Operation(summary = "保存字段")
     @PostMapping("record")
-    DatasetTableFieldDTO save(@RequestBody DatasetTableFieldDTO datasetTableFieldDTO) throws Exception;
+    DatasetTableFieldDTO save(@RequestBody DatasetTableFieldDTO datasetTableFieldDTO);
 
     @Operation(summary = "查询字段")
     @PostMapping("detail/{id}")
@@ -48,7 +47,7 @@ public interface DatasetTableApi {
 
     @Operation(summary = "获取copilot字段分组")
     @PostMapping("copilot-fields/{id}")
-    Map<String, List<DatasetTableFieldDTO>> copilotFields(@PathVariable Long id) throws Exception;
+    Map<String, List<DatasetTableFieldDTO>> copilotFields(@PathVariable Long id);
 
     @Operation(summary = "获取字段")
     @GetMapping("with-permissions/{id}")
@@ -56,7 +55,7 @@ public interface DatasetTableApi {
 
     @Operation(summary = "获取枚举值")
     @PostMapping("permission-field-values")
-    List<String> multFieldValuesForPermissions(@RequestBody MultFieldValuesRequest multFieldValuesRequest) throws Exception;
+    List<String> multFieldValuesForPermissions(@RequestBody MultFieldValuesRequest multFieldValuesRequest);
 
     @Operation(summary = "获取计算字段函数")
     @PostMapping("functions")

@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -45,7 +46,7 @@ public class Sqlserver extends DatasourceConfiguration {
                     .replace("EXTRA_PARAMS", getExtraParams().trim());
         }
         for (String illegalParameter : illegalParameters) {
-            if (URLDecoder.decode(jdbcUrl).toLowerCase().contains(illegalParameter.toLowerCase()) || URLDecoder.decode(jdbcUrl).contains(illegalParameter.toLowerCase())) {
+            if (URLDecoder.decode(jdbcUrl, StandardCharsets.UTF_8).toLowerCase().contains(illegalParameter.toLowerCase()) || URLDecoder.decode(jdbcUrl, StandardCharsets.UTF_8).contains(illegalParameter.toLowerCase())) {
                 CrestException.throwException("Illegal parameter: " + illegalParameter);
             }
         }

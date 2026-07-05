@@ -12,7 +12,7 @@
         <img
           v-if="subjectItem.coverUrl"
           :src="imgUrlTrans(subjectItem.coverUrl)"
-          alt=""
+          :alt="t(subjectItem.name)"
           width="172"
           height="79"
         />

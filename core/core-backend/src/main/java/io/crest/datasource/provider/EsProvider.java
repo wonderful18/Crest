@@ -40,7 +40,7 @@ public class EsProvider extends Provider {
             tables.forEach(table -> {
                 table.setDatasourceId(datasourceRequest.getDatasource().getId());
             });
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             e.getMessage();
             CrestException.throwException(e);
         }
@@ -48,21 +48,21 @@ public class EsProvider extends Provider {
     }
 
     @Override
-    public ConnectionObj getConnection(DatasourceDTO coreDatasource) throws Exception {
+    public ConnectionObj getConnection(DatasourceDTO coreDatasource) {
         return null;
     }
 
     @Override
-    public String checkStatus(DatasourceRequest datasourceRequest) throws Exception {
+    public String checkStatus(DatasourceRequest datasourceRequest) {
         Es es = JsonUtil.parseObject(datasourceRequest.getDatasource().getConfiguration(), Es.class);
         String response = execGetQuery(datasourceRequest);
         if (JsonParser.parseString(response).getAsJsonObject().getAsJsonObject("error") != null) {
-            throw new Exception(JsonParser.parseString(response).getAsJsonObject().getAsJsonObject("error").get("reason").getAsString());
+            CrestException.throwException(JsonParser.parseString(response).getAsJsonObject().getAsJsonObject("error").get("reason").getAsString());
         }
         String version = JsonParser.parseString(response).getAsJsonObject().getAsJsonObject("version").get("number").getAsString();
         String[] versionList = version.split("\\.");
         if (Integer.valueOf(versionList[0]) < 7 && Integer.valueOf(versionList[1]) < 3) {
-            throw new Exception(Translator.get("i18n_es_limit"));
+            CrestException.throwException(Translator.get("i18n_es_limit"));
         }
         if (Integer.valueOf(versionList[0]) == 6) {
             es.setUri("_sql");
@@ -82,7 +82,7 @@ public class EsProvider extends Provider {
             String response = execQuery(datasourceRequest, datasourceRequest.getQuery(), "?format=json");
             result.put("data", fetchResultData(response));
             result.put("fields", fetchResultField4Sql(response));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
@@ -104,7 +104,7 @@ public class EsProvider extends Provider {
             }
             String response = execQuery(datasourceRequest, sql, "?format=json");
             tableFields = fetchResultField4Sql(response);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(e);
         }
         return tableFields;
@@ -113,28 +113,31 @@ public class EsProvider extends Provider {
 
     @Override
     public void hidePW(DatasourceDTO datasourceDTO) {
+        if (datasourceDTO == null) {
+            return;
+        }
     }
 
 
-    private List<String[]> fetchResultData(String response) throws Exception {
+    private List<String[]> fetchResultData(String response) {
         EsResponse esResponse = new Gson().fromJson(response, EsResponse.class);
         return fetchResultData(esResponse);
     }
 
-    private List<String[]> fetchResultData(EsResponse esResponse) throws Exception {
+    private List<String[]> fetchResultData(EsResponse esResponse) {
         List<String[]> list = new LinkedList<>();
         if (esResponse.getError() != null) {
-            throw new Exception(esResponse.getError().getReason());
+            CrestException.throwException(esResponse.getError().getReason());
         }
         list.addAll(esResponse.getRows());
         return list;
     }
 
-    private List<TableField> fetchResultField4Sql(String response) throws Exception {
+    private List<TableField> fetchResultField4Sql(String response) {
         List<TableField> fieldList = new ArrayList<>();
         EsResponse esResponse = new Gson().fromJson(response, EsResponse.class);
         if (esResponse.getError() != null) {
-            throw new Exception(esResponse.getError().getReason());
+            CrestException.throwException(esResponse.getError().getReason());
         }
 
         for (EsResponse.Column column : esResponse.getColumns()) {
@@ -152,11 +155,11 @@ public class EsProvider extends Provider {
         return fieldList;
     }
 
-    private List<DatasetTableDTO> fetchTables(String response) throws Exception {
+    private List<DatasetTableDTO> fetchTables(String response) {
         List<DatasetTableDTO> tables = new ArrayList<>();
         EsResponse esResponse = new Gson().fromJson(response, EsResponse.class);
         if (esResponse.getError() != null) {
-            throw new Exception(esResponse.getError().getReason());
+            CrestException.throwException(esResponse.getError().getReason());
         }
 
         for (String[] row : esResponse.getRows()) {
@@ -191,8 +194,7 @@ public class EsProvider extends Provider {
         HttpClientConfig httpClientConfig = new HttpClientConfig();
         if (StringUtils.isNotEmpty(es.getUsername()) && StringUtils.isNotEmpty(es.getPassword())) {
             String auth = es.getUsername() + ":" + es.getPassword();
-            byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(StandardCharsets.UTF_8));
-            httpClientConfig.addHeader(HttpHeaders.AUTHORIZATION, "Basic " + new String(encodedAuth));
+            httpClientConfig.addHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.encodeBase64String(auth.getBytes(StandardCharsets.UTF_8)));
         }
         Request request = new Request();
         request.setQuery(sql);
@@ -207,8 +209,7 @@ public class EsProvider extends Provider {
         HttpClientConfig httpClientConfig = new HttpClientConfig();
         if (StringUtils.isNotEmpty(es.getUsername()) && StringUtils.isNotEmpty(es.getPassword())) {
             String auth = es.getUsername() + ":" + es.getPassword();
-            byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(StandardCharsets.UTF_8));
-            httpClientConfig.addHeader(HttpHeaders.AUTHORIZATION, "Basic " + new String(encodedAuth));
+            httpClientConfig.addHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.encodeBase64String(auth.getBytes(StandardCharsets.UTF_8)));
         }
         return HttpClientUtil.get(es.getUrl(), httpClientConfig);
     }

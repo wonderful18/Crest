@@ -40,7 +40,7 @@ public class ShareSecretManage {
         if (StringUtils.isNotBlank(aesKey)) {
             return deriveFallbackLinkSecret(aesKey);
         }
-        return runtimeFallbackLinkSecret();
+        return getRuntimeFallbackLinkSecret();
     }
 
     public String getSecret(Long resourceId, Long uid) {
@@ -63,7 +63,7 @@ public class ShareSecretManage {
         }
     }
 
-    private String runtimeFallbackLinkSecret() {
+    private String getRuntimeFallbackLinkSecret() {
         String current = runtimeFallbackLinkSecret;
         if (StringUtils.isNotBlank(current)) {
             return current;

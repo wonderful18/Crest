@@ -6,18 +6,19 @@ import org.apache.commons.lang3.StringUtils;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.UUID;
 
 /**
  * 通用编码和摘要工具，提供 MD5、Base64、AES 等兼容能力。
  */
 public class CodingUtil {
-
-    private static final String UTF_8 = "UTF-8";
-
-    private static final char[] HEX_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
+    private static final String AES_CBC_HMAC_PREFIX = "aes-cbc-hmac:v1:";
+    private static final String HMAC_ALGORITHM = "HmacSHA256";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     public static String[] chars = new String[] { "a", "b", "c", "d", "e", "f",
             "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
@@ -25,44 +26,6 @@ public class CodingUtil {
             "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I",
             "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V",
             "W", "X", "Y", "Z" };
-    /**
-     * MD5加密
-     *
-     * @param src 要加密的串
-     * @return 加密后的字符串
-     */
-    public static String md5(String src) {
-        return md5(src, UTF_8);
-    }
-
-    /**
-     * MD5加密
-     *
-     * @param src     要加密的串
-     * @param charset 加密字符集
-     * @return 加密后的字符串
-     */
-    public static String md5(String src, String charset) {
-        try {
-            byte[] strTemp = StringUtils.isEmpty(charset) ? src.getBytes() : src.getBytes(charset);
-            MessageDigest mdTemp = MessageDigest.getInstance("MD5"); // nosemgrep: java.lang.security.audit.crypto.use-of-md5.use-of-md5
-            mdTemp.update(strTemp);
-
-            byte[] md = mdTemp.digest();
-            int j = md.length;
-            char[] str = new char[j * 2];
-            int k = 0;
-
-            for (byte byte0 : md) {
-                str[k++] = HEX_DIGITS[byte0 >>> 4 & 0xf];
-                str[k++] = HEX_DIGITS[byte0 & 0xf];
-            }
-
-            return new String(str);
-        } catch (Exception e) {
-            throw new RuntimeException("MD5 encrypt error:", e);
-        }
-    }
 
     /**
      * BASE64解密
@@ -71,15 +34,10 @@ public class CodingUtil {
      * @return 解密后的字符串
      */
     public static String base64Decoding(String src) {
-        byte[] b;
         String result = null;
         if (src != null) {
-            try {
-                b = Base64.decodeBase64(src);
-                result = new String(b, UTF_8);
-            } catch (Exception e) {
-                throw new RuntimeException("BASE64 decoding error:", e);
-            }
+            byte[] b = Base64.decodeBase64(src);
+            result = new String(b, StandardCharsets.UTF_8);
         }
         return result;
     }
@@ -93,11 +51,7 @@ public class CodingUtil {
     public static String base64Encoding(String src) {
         String result = null;
         if (src != null) {
-            try {
-                result = Base64.encodeBase64String(src.getBytes(UTF_8));
-            } catch (Exception e) {
-                throw new RuntimeException("BASE64 encoding error:", e);
-            }
+            result = Base64.encodeBase64String(src.getBytes(StandardCharsets.UTF_8));
         }
         return result;
     }
@@ -117,15 +71,8 @@ public class CodingUtil {
         }
 
         try {
-            byte[] raw = secretKey.getBytes(UTF_8);
-            SecretKeySpec secretKeySpec = new SecretKeySpec(raw, "AES");
-            // "算法/模式/补码方式" ECB
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
-            IvParameterSpec iv1 = new IvParameterSpec(iv.getBytes());
-            cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, iv1);
-            byte[] encrypted = cipher.doFinal(src.getBytes(UTF_8));
-            return Base64.encodeBase64String(encrypted);
-        } catch (Exception e) {
+            return aesCbcHmacEncrypt(src, secretKey.getBytes(StandardCharsets.UTF_8));
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
             throw new RuntimeException("AES encrypt error:", e);
         }
 
@@ -144,21 +91,80 @@ public class CodingUtil {
         if (StringUtils.isBlank(secretKey)) {
             throw new RuntimeException("secretKey is empty");
         }
+        if (src != null && src.startsWith(AES_CBC_HMAC_PREFIX)) {
+            try {
+                return aesCbcHmacDecrypt(src, secretKey.getBytes(StandardCharsets.UTF_8));
+            } catch (GeneralSecurityException | IllegalArgumentException e) {
+                throw new RuntimeException("decrypt error，please check parameters", e);
+            }
+        }
         try {
-            byte[] raw = secretKey.getBytes(UTF_8);
+            byte[] raw = secretKey.getBytes(StandardCharsets.UTF_8);
             SecretKeySpec secretKeySpec = new SecretKeySpec(raw, "AES");
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
-            IvParameterSpec iv1 = new IvParameterSpec(iv.getBytes());
+            IvParameterSpec iv1 = new IvParameterSpec(iv.getBytes(StandardCharsets.UTF_8));
             cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, iv1);
             byte[] encrypted1 = Base64.decodeBase64(src);
             byte[] original = cipher.doFinal(encrypted1);
-            return new String(original, UTF_8);
+            return new String(original, StandardCharsets.UTF_8);
         } catch (BadPaddingException | IllegalBlockSizeException e) {
             // 解密的原字符串为非加密字符串，则直接返回原字符串
             return src;
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
             throw new RuntimeException("decrypt error，please check parameters", e);
         }
+    }
+
+    private static String aesCbcHmacEncrypt(String src, byte[] key) throws GeneralSecurityException {
+        byte[] iv = new byte[16];
+        SECURE_RANDOM.nextBytes(iv);
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
+        cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(iv));
+        String ivText = Base64.encodeBase64String(iv);
+        String ciphertext = Base64.encodeBase64String(cipher.doFinal(src.getBytes(StandardCharsets.UTF_8)));
+        String payload = ivText + ":" + ciphertext;
+        return AES_CBC_HMAC_PREFIX + payload + ":" + hmacHex(key, payload);
+    }
+
+    private static String aesCbcHmacDecrypt(String src, byte[] key) throws GeneralSecurityException {
+        String payload = src.substring(AES_CBC_HMAC_PREFIX.length());
+        String[] parts = payload.split(":", 3);
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("AES payload format is invalid");
+        }
+        String signedPayload = parts[0] + ":" + parts[1];
+        if (!MessageDigest.isEqual(hexToBytes(hmacHex(key, signedPayload)), hexToBytes(parts[2]))) {
+            throw new IllegalArgumentException("AES payload integrity check failed");
+        }
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
+        cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(Base64.decodeBase64(parts[0])));
+        return new String(cipher.doFinal(Base64.decodeBase64(parts[1])), StandardCharsets.UTF_8);
+    }
+
+    private static String hmacHex(byte[] key, String payload) throws GeneralSecurityException {
+        Mac mac = Mac.getInstance(HMAC_ALGORITHM);
+        mac.init(new SecretKeySpec(key, HMAC_ALGORITHM));
+        byte[] digest = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
+        StringBuilder hex = new StringBuilder(digest.length * 2);
+        for (byte b : digest) {
+            String h = Integer.toHexString(b & 0xff);
+            if (h.length() == 1) {
+                hex.append('0');
+            }
+            hex.append(h);
+        }
+        return hex.toString();
+    }
+
+    private static byte[] hexToBytes(String hex) {
+        if (hex == null || (hex.length() & 1) == 1) {
+            throw new IllegalArgumentException("Invalid hex value");
+        }
+        byte[] result = new byte[hex.length() / 2];
+        for (int i = 0; i < hex.length(); i += 2) {
+            result[i / 2] = (byte) Integer.parseInt(hex.substring(i, i + 2), 16);
+        }
+        return result;
     }
 
 
@@ -168,7 +174,7 @@ public class CodingUtil {
             keyGen.init(128);
             SecretKey secretKey = keyGen.generateKey();
             return Base64.encodeBase64String(secretKey.getEncoded());
-        } catch (Exception e) {
+        } catch (GeneralSecurityException e) {
             throw new RuntimeException("generate secretKey error", e);
         }
 
@@ -186,7 +192,7 @@ public class CodingUtil {
 
 
     public static String shortUuid() {
-        StringBuffer shortBuffer = new StringBuffer();
+        StringBuilder shortBuffer = new StringBuilder();
         String uuid = UUID.randomUUID().toString().replace("-", "");
         for (int i = 0; i < 8; i++) {
             String str = uuid.substring(i * 4, i * 4 + 4);
@@ -197,7 +203,7 @@ public class CodingUtil {
     }
 
     public static Integer string2Integer(String str) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (StringUtils.isBlank(str)) return null;
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);

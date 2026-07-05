@@ -25,6 +25,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -148,7 +149,7 @@ public class SmCryptoUtils {
             String ivHex = Hex.toHexString(iv);
             String ciphertextHex = Hex.toHexString(encrypted);
             return SM4_PREFIX + ivHex + ":" + ciphertextHex + ":" + sm4MacHex(key, ivHex, ciphertextHex);
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | RuntimeException e) {
             throw new IllegalStateException("SM4 encrypt error", e);
         }
     }
@@ -188,7 +189,7 @@ public class SmCryptoUtils {
             return new String(cipher.doFinal(Hex.decode(parts[1])), StandardCharsets.UTF_8);
         } catch (IllegalArgumentException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | RuntimeException e) {
             throw new IllegalArgumentException("SM4 ciphertext is invalid", e);
         }
     }
@@ -199,7 +200,7 @@ public class SmCryptoUtils {
             KeyGenerator keyGenerator = KeyGenerator.getInstance("SM4", BouncyCastleProvider.PROVIDER_NAME);
             keyGenerator.init(128, SECURE_RANDOM);
             return Base64.getEncoder().encodeToString(keyGenerator.generateKey().getEncoded());
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | RuntimeException e) {
             throw new IllegalStateException("SM4 key generation error", e);
         }
     }
@@ -306,7 +307,7 @@ public class SmCryptoUtils {
         byte[] actual;
         try {
             actual = Hex.decode(macHex);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new IllegalArgumentException("SM4 ciphertext is invalid", e);
         }
         if (!MessageDigest.isEqual(expected, actual)) {

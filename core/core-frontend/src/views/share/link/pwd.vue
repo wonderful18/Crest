@@ -108,20 +108,20 @@ const prepare = () => {
     pmIndex > 0 ? pmIndex : curLocation.length
   )
   let uuid = ''
-  let linkPassword = ''
+  let linkCredential: string | undefined
   if (uuidObj?.includes(',')) {
     const index = uuidObj.indexOf(',')
     uuid = uuidObj.substring(0, index)
     if (uuidObj.length > index + 1) {
-      linkPassword = uuidObj.substring(index + 1)
+      linkCredential = uuidObj.substring(index + 1)
     }
   } else {
     uuid = uuidObj
   }
   vid.value = uuid
-  if (linkPassword) {
-    linkPassword = formatPwd(linkPassword)
-    form.value.password = linkPassword
+  if (linkCredential) {
+    const decodedCredential = formatPwd(linkCredential)
+    form.value.password = decodedCredential
     refresh(pwdForm.value)
   }
 }

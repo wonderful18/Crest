@@ -99,7 +99,7 @@ public class MybatisInterceptor implements Interceptor {
         return result;
     }
 
-    private Object process(Object obj) throws Throwable {
+    private Object process(Object obj) throws ReflectiveOperationException {
         if (obj instanceof Map) {
             Map paramMap = (Map) obj;
             for (Object key : paramMap.keySet()) {
@@ -142,7 +142,7 @@ public class MybatisInterceptor implements Interceptor {
     }
 
 
-    private Object undo(Object obj) throws Throwable {
+    private Object undo(Object obj) throws ReflectiveOperationException {
         Map<String, Map<String, MybatisInterceptorConfig>> localDecryptConfigMap = getConfig(obj);
         Object result;
         if (isEmpty(localDecryptConfigMap)) {
@@ -189,6 +189,9 @@ public class MybatisInterceptor implements Interceptor {
 
     @Override
     public void setProperties(Properties properties) {
+        if (properties == null || properties.isEmpty()) {
+            return;
+        }
     }
 
     public List<MybatisInterceptorConfig> getInterceptorConfigList() {

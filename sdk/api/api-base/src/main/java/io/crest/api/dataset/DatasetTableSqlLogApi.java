@@ -15,13 +15,13 @@ import java.util.List;
 public interface DatasetTableSqlLogApi {
     @Operation(summary = "保存")
     @PostMapping("record")
-    void save(@RequestBody SqlLogDTO sqlLogDTO) throws Exception;
+    void save(@RequestBody SqlLogDTO sqlLogDTO);
 
     @Operation(summary = "查看SQL片段执行记录")
     @PostMapping("by-table")
-    List<SqlLogDTO> listByTableId(@RequestBody SqlLogDTO sqlLogDTO) throws Exception;
+    List<SqlLogDTO> listByTableId(@RequestBody SqlLogDTO sqlLogDTO);
 
     @Operation(summary = "删除日志")
     @DeleteMapping("/tables/{id}")
-    void tableRemoval(@PathVariable String id) throws Exception;
+    void tableRemoval(@PathVariable String id);
 }

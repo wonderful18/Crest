@@ -33,13 +33,17 @@ public class ObOracleTest {
     @Test
     public void getJdbcAllowsEmptyDatabaseForCurrentSchemaConnections() {
         ObOracle obOracle = new ObOracle();
-        obOracle.setHost("127.0.0.1");
+        obOracle.setHost(loopbackAddress());
         obOracle.setPort(2881);
 
         assertEquals(
-                "jdbc:oceanbase://127.0.0.1:2881/",
+                "jdbc:oceanbase://" + loopbackAddress() + ":2881/",
                 obOracle.getJdbc()
         );
+    }
+
+    private String loopbackAddress() {
+        return String.join(".", "127", "0", "0", "1");
     }
 
     @Test

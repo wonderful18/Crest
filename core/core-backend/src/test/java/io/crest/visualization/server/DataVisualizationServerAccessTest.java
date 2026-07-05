@@ -1,6 +1,8 @@
 package io.crest.visualization.server;
 
+import io.crest.api.visualization.request.DataVisualizationBaseRequest;
 import io.crest.auth.bo.TokenUserBO;
+import io.crest.constant.CommonConstants;
 import io.crest.exception.CrestException;
 import io.crest.portal.DataPortalPermissionManage;
 import io.crest.utils.AuthUtils;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -20,7 +23,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -107,5 +112,31 @@ class DataVisualizationServerAccessTest {
         verify(visualizationInfoMapper).updateById(captor.capture());
         assertEquals(10L, captor.getValue().getId());
         assertEquals("1.5.14", captor.getValue().getCheckVersion());
+    }
+
+    @Test
+    void updatePublishStatusRequiresManagePermissionBeforeUpdating() {
+        DataVisualizationInfoMapper visualizationInfoMapper = mock(DataVisualizationInfoMapper.class);
+        CoreVisualizationManage coreVisualizationManage = mock(CoreVisualizationManage.class);
+        DataVisualizationServer server = new DataVisualizationServer();
+        ReflectionTestUtils.setField(server, "visualizationInfoMapper", visualizationInfoMapper);
+        ReflectionTestUtils.setField(server, "coreVisualizationManage", coreVisualizationManage);
+
+        DataVisualizationInfo current = new DataVisualizationInfo();
+        current.setId(10L);
+        current.setType("dataV");
+        current.setCreateBy("2");
+        when(visualizationInfoMapper.selectById(10L)).thenReturn(current);
+
+        DataVisualizationBaseRequest request = new DataVisualizationBaseRequest();
+        request.setId(10L);
+        request.setName("安全验证大屏");
+        request.setStatus(CommonConstants.DV_STATUS.SAVED_UNPUBLISHED);
+
+        server.updatePublishStatus(request);
+
+        InOrder inOrder = inOrder(coreVisualizationManage);
+        inOrder.verify(coreVisualizationManage).requireVisualizationManage(current);
+        inOrder.verify(coreVisualizationManage).innerEdit(any(DataVisualizationInfo.class));
     }
 }

@@ -14,6 +14,7 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,6 +26,7 @@ public class VisualizationExcelUtils {
 
     private static final String suffix = ".xlsx";
     private static final String BASE_ROOT = getBaseRoot();
+    private static final Pattern INVALID_SHEET_NAME_PATTERN = Pattern.compile("[\\s\\\\/:\\*\\?\\\"<>\\|]");
 
     public static String getBaseRoot() {
         if (ModelUtils.isDesktop()) {
@@ -34,7 +36,7 @@ public class VisualizationExcelUtils {
         }
     }
 
-    public static File exportExcel(List<ExcelSheetModel> sheets, String fileName, String folderId) throws Exception {
+    public static File exportExcel(List<ExcelSheetModel> sheets, String fileName, String folderId) throws IOException {
         AtomicReference<String> realFileName = new AtomicReference<>(fileName);
         try (Workbook wb = new SXSSFWorkbook()) {
 
@@ -44,8 +46,7 @@ public class VisualizationExcelUtils {
                 List<Integer> fieldTypes = sheet.getFiledTypes();
                 details.add(0, sheet.getHeads());
                 String sheetName = sheet.getSheetName();
-                Pattern pattern = Pattern.compile("[\\s\\\\/:\\*\\?\\\"<>\\|]");
-                Matcher matcher = pattern.matcher(sheetName);
+                Matcher matcher = INVALID_SHEET_NAME_PATTERN.matcher(sheetName);
                 sheetName = matcher.replaceAll("-");
                 Sheet curSheet = wb.createSheet(sheetName);
                 if (StringUtils.isBlank(fileName)) {
@@ -95,7 +96,7 @@ public class VisualizationExcelUtils {
             File result = FileUtils.resolveUnderDirectory(folder.getPath(), realFileName.get());
             try (BufferedOutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(result.toPath()))) {
                 wb.write(outputStream);
-            } catch (Exception e) {
+            } catch (IOException e) {
                 LogUtil.error(e.getMessage(), new Throwable(e));
                 throw e;
             }

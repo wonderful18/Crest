@@ -11,6 +11,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class ChartDataServerAuxiliaryHeaderTest {
 
     @Test
-    void tableExportShouldWriteHeaderDescriptionBeforeDataRows() throws Exception {
+    void tableExportShouldWriteHeaderDescriptionBeforeDataRows() throws IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("数据");
             CellStyle headerStyle = workbook.createCellStyle();
@@ -36,7 +37,7 @@ class ChartDataServerAuxiliaryHeaderTest {
                     header,
                     details,
                     null,
-                    new Integer[]{FieldTypeConstants.STRING, FieldTypeConstants.INTEGER},
+                    new Integer[]{FieldTypeConstants.STRING, FieldTypeConstants.STRING},
                     viewInfo(),
                     workbook
             );
@@ -55,7 +56,7 @@ class ChartDataServerAuxiliaryHeaderTest {
         ChartViewDTO viewInfo = new ChartViewDTO();
         viewInfo.setType("table-info");
         viewInfo.setDownloadType("chart");
-        viewInfo.setXAxis(List.of(field("month", "月份", FieldTypeConstants.STRING), field("duration", "耗时", FieldTypeConstants.INTEGER)));
+        viewInfo.setXAxis(List.of(field("month", "月份", FieldTypeConstants.STRING), field("duration", "耗时", FieldTypeConstants.STRING)));
         viewInfo.setYAxis(Collections.emptyList());
         viewInfo.setXAxisExt(Collections.emptyList());
         viewInfo.setYAxisExt(Collections.emptyList());

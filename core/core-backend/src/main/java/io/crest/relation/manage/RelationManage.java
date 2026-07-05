@@ -154,6 +154,7 @@ public class RelationManage implements RelationApi {
     @Override
     public void checkAuth() throws CrestException {
         // Community build uses the same local resource metadata and does not require extra auth.
+        return;
     }
 
     private void addAllEdges(GraphBuilder builder, RelationContext context, Long datasourceId, Long datasetId, Long dvId, boolean includeFields) {

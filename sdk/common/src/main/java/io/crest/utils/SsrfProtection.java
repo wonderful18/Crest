@@ -5,6 +5,7 @@ import io.crest.result.ResultCode;
 
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
@@ -103,7 +104,7 @@ public class SsrfProtection {
 
         } catch (CrestException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (URISyntaxException | IllegalArgumentException e) {
             throw new CrestException(ResultCode.PARAM_IS_INVALID.code(),
                     "无效的 URL: " + e.getMessage());
         }

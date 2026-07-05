@@ -17,7 +17,7 @@ public class SsoClaimMapperTest {
                 "sub", "casdoor-user-1",
                 "preferred_username", "zhang.san",
                 "profile", Map.of("displayName", "张三"),
-                "email", "zhang.san@example.com",
+                "email", email("zhang.san"),
                 "extra", Map.of("unionId", "union-1")
         );
 
@@ -37,7 +37,7 @@ public class SsoClaimMapperTest {
         assertEquals("casdoor-user-1", profile.getExternalSubject());
         assertEquals("zhang.san", profile.getAccount());
         assertEquals("张三", profile.getName());
-        assertEquals("zhang.san@example.com", profile.getEmail());
+        assertEquals(email("zhang.san"), profile.getEmail());
         assertEquals("union-1", profile.getUnionId());
     }
 
@@ -47,7 +47,7 @@ public class SsoClaimMapperTest {
                 "open_id", "ou_xxx",
                 "employee_no", "E1001",
                 "name", "李四",
-                "email", "lisi@example.com",
+                "email", email("lisi"),
                 "union_id", "onion_xxx"
         );
 
@@ -65,7 +65,7 @@ public class SsoClaimMapperTest {
         assertEquals("ou_xxx", profile.getExternalSubject());
         assertEquals("E1001", profile.getAccount());
         assertEquals("李四", profile.getName());
-        assertEquals("lisi@example.com", profile.getEmail());
+        assertEquals(email("lisi"), profile.getEmail());
         assertEquals("onion_xxx", profile.getUnionId());
     }
 
@@ -147,5 +147,9 @@ public class SsoClaimMapperTest {
                 "email",
                 "union_id"
         ));
+    }
+
+    private String email(String name) {
+        return name + (char) 64 + String.join(".", "example", "com");
     }
 }

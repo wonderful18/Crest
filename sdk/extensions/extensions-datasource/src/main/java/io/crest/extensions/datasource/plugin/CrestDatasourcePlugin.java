@@ -14,8 +14,10 @@ import org.apache.commons.lang3.Strings;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
@@ -41,13 +43,13 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
         ProviderFactory.loadPlugin(datasourceConfig.getType(), this);
         try {
             loadDriver();
-        } catch (Exception e) {
+        } catch (IOException | URISyntaxException | RuntimeException e) {
             CrestException.throwException(e);
         }
     }
 
     @SuppressWarnings("java/zipslip")
-    private void loadDriver() throws Exception {
+    private void loadDriver() throws IOException, URISyntaxException {
         PluginDatasourceVO config = getConfig();
         File driverDirectory = pluginDriverDirectory(config);
         ProtectionDomain protectionDomain = this.getClass().getProtectionDomain();
@@ -73,7 +75,7 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
         }
     }
 
-    private File pluginDriverDirectory(PluginDatasourceVO config) throws Exception {
+    private File pluginDriverDirectory(PluginDatasourceVO config) throws IOException {
         String localPath = StringUtils.isEmpty(config.getDriverPath()) ? DEFAULT_FILE_PATH : config.getDriverPath();
         return FileUtils.ensureDirectory(localPath);
     }
@@ -118,7 +120,7 @@ public abstract class CrestDatasourcePlugin extends Provider implements CrestPlu
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException | URISyntaxException | RuntimeException e) {
             CrestException.throwException(e);
         }
     }

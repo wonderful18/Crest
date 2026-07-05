@@ -44,7 +44,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     }
 
     @Override
-    public DatasetSyncTaskDTO execute(Long datasetGroupId) throws Exception {
+    public DatasetSyncTaskDTO execute(Long datasetGroupId) {
         return syncManage.executeNow(datasetGroupId);
     }
 
@@ -64,7 +64,7 @@ public class DatasetSyncServer implements DatasetSyncApi {
     }
 
     @Override
-    public DatasetSyncTaskDTO retry(Long datasetGroupId) throws Exception {
+    public DatasetSyncTaskDTO retry(Long datasetGroupId) {
         return syncManage.executeNow(datasetGroupId);
     }
 

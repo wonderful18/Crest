@@ -36,6 +36,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -73,7 +74,7 @@ public class HttpClientUtil {
                 // http
                 return HttpClientBuilder.create().build();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         }
     }
@@ -96,7 +97,7 @@ public class HttpClientUtil {
                 // http
                 return HttpClientBuilder.create().build();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         }
     }
@@ -121,10 +122,10 @@ public class HttpClientUtil {
                 if (StringUtils.isEmpty(msg)) {
                     msg = "StatusCode: " + response.getStatusLine().getStatusCode();
                 }
-                throw new Exception(msg);
+                throw new CrestException(SYSTEM_INNER_ERROR.code(), msg);
             }
             return true;
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("HttpClient查询失败", e);
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
@@ -132,7 +133,7 @@ public class HttpClientUtil {
                 if (httpClient != null) {
                     httpClient.close();
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.error("HttpClient关闭连接失败", e);
             }
         }
@@ -162,7 +163,7 @@ public class HttpClientUtil {
             }
             HttpResponse response = httpClient.execute(httpGet);
             return getResponseStr(response, config);
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("HttpClient查询失败", e);
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
@@ -170,7 +171,7 @@ public class HttpClientUtil {
                 if (httpClient != null) {
                     httpClient.close();
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.error("HttpClient关闭连接失败", e);
             }
         }
@@ -193,13 +194,13 @@ public class HttpClientUtil {
             httpPatch.setEntity(requestEntity);
             HttpResponse response = httpClient.execute(httpPatch);
             return getResponseStr(response, config);
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("HttpClient查询失败", e);
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
             try {
                 httpClient.close();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.error("HttpClient关闭连接失败", e);
             }
         }
@@ -234,7 +235,7 @@ public class HttpClientUtil {
 
             HttpResponse response = httpClient.execute(httpPost);
             return getResponseStr(response, config);
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("HttpClient查询失败", e);
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
@@ -242,7 +243,7 @@ public class HttpClientUtil {
                 if (httpClient != null) {
                     httpClient.close();
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.error("HttpClient关闭连接失败", e);
             }
         }
@@ -269,7 +270,7 @@ public class HttpClientUtil {
 
             HttpResponse response = httpClient.execute(httpPost);
             return response;
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("HttpClient查询失败", e);
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
@@ -277,7 +278,7 @@ public class HttpClientUtil {
                 if (httpClient != null) {
                     httpClient.close();
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.error("HttpClient关闭连接失败", e);
             }
         }
@@ -304,7 +305,7 @@ public class HttpClientUtil {
 
             HttpResponse response = httpClient.execute(httpPut);
             return getResponseStr(response, config);
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("HttpClient查询失败", e);
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
@@ -312,7 +313,7 @@ public class HttpClientUtil {
                 if (httpClient != null) {
                     httpClient.close();
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.error("HttpClient关闭连接失败", e);
             }
         }
@@ -355,7 +356,7 @@ public class HttpClientUtil {
                 }
                 try {
                     httpPost.setEntity(new UrlEncodedFormEntity(nvps, config.getCharset()));
-                } catch (Exception e) {
+                } catch (UnsupportedEncodingException e) {
                     logger.error("HttpClient转换编码错误", e);
                     throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient转换编码错误: " + e.getMessage());
                 }
@@ -363,19 +364,19 @@ public class HttpClientUtil {
 
             HttpResponse response = httpClient.execute(httpPost);
             return getResponseStr(response, config);
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("HttpClient查询失败", e);
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         }
     }
 
-    private static String getResponseStr(HttpResponse response, HttpClientConfig config) throws Exception {
+    private static String getResponseStr(HttpResponse response, HttpClientConfig config) throws IOException {
         if (response.getStatusLine().getStatusCode() >= 400) {
             String msg = EntityUtils.toString(response.getEntity(), config.getCharset());
             if (StringUtils.isEmpty(msg)) {
                 msg = "StatusCode: " + response.getStatusLine().getStatusCode();
             }
-            throw new Exception(msg);
+            throw new CrestException(SYSTEM_INNER_ERROR.code(), msg);
         }
         return EntityUtils.toString(response.getEntity(), config.getCharset());
     }
@@ -401,7 +402,7 @@ public class HttpClientUtil {
                 if (StringUtils.isEmpty(msg)) {
                     msg = "StatusCode: " + response.getStatusLine().getStatusCode();
                 }
-                throw new Exception(msg);
+                throw new CrestException(SYSTEM_INNER_ERROR.code(), msg);
             }
             String fileName = extractFileName(response, url);
             validateRemoteExcelFilename(fileName);
@@ -418,7 +419,7 @@ public class HttpClientUtil {
                     outputStream.write(buffer, 0, bytesRead);
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("HttpClient查询失败", e);
             throw new RuntimeException("HttpClient查询失败: " + e.getMessage(), e);
         }
@@ -441,7 +442,7 @@ public class HttpClientUtil {
                 throw new IllegalArgumentException("only http and https downloads are allowed");
             }
             assertRemoteHostAllowed(uri.getHost());
-        } catch (Exception e) {
+        } catch (URISyntaxException | UnknownHostException | IllegalArgumentException e) {
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "远程下载地址不合法: " + e.getMessage());
         }
     }
@@ -533,7 +534,7 @@ public class HttpClientUtil {
 
                 return outputStream.toByteArray();
             }
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("HttpClient查询失败", e);
             throw new RuntimeException("HttpClient查询失败: " + e.getMessage(), e);
         }
@@ -570,9 +571,9 @@ public class HttpClientUtil {
         try {
             postRequest.setEntity((HttpEntity) builder.build());
             return getResponseStr(httpClient.execute(postRequest), config);
-        } catch (Exception var11) {
-            logger.error("HttpClient查询失败", var11);
-            throw new RuntimeException("HttpClient查询失败: " + var11.getMessage());
+        } catch (IOException | RuntimeException e) {
+            logger.error("HttpClient查询失败", e);
+            throw new RuntimeException("HttpClient查询失败: " + e.getMessage(), e);
         }
     }
 
@@ -620,9 +621,9 @@ public class HttpClientUtil {
         try {
             postRequest.setEntity(builder.build());
             return getResponseStr(httpClient.execute(postRequest), config);
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("HttpClient查询失败", e);
-            throw new RuntimeException("HttpClient查询失败: " + e.getMessage());
+            throw new RuntimeException("HttpClient查询失败: " + e.getMessage(), e);
         }
     }
 
@@ -650,7 +651,7 @@ public class HttpClientUtil {
             }
             HttpResponse response = httpClient.execute(httpDelete);
             return getResponseStr(response, config);
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("HttpClient查询失败", e);
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
@@ -658,7 +659,7 @@ public class HttpClientUtil {
                 if (httpClient != null) {
                     httpClient.close();
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.error("HttpClient关闭连接失败", e);
             }
         }
@@ -716,14 +717,14 @@ public class HttpClientUtil {
                 try {
                     UrlEncodedFormEntity entity = new UrlEncodedFormEntity(nvps, config.getCharset());
                     httpPost.setEntity(entity);
-                } catch (Exception e) {
+                } catch (UnsupportedEncodingException e) {
                     logger.error("HttpClient转换编码错误", e);
                     throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient转换编码错误: " + e.getMessage());
                 }
             }
             HttpResponse response = httpClient.execute(httpPost);
             return getResponseStr(response, config);
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             logger.error("HttpClient查询失败", e);
             throw new CrestException(SYSTEM_INNER_ERROR.code(), "HttpClient查询失败: " + e.getMessage());
         } finally {
@@ -731,7 +732,7 @@ public class HttpClientUtil {
                 if (httpClient != null) {
                     httpClient.close();
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 logger.error("HttpClient关闭连接失败", e);
             }
         }

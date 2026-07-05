@@ -90,6 +90,7 @@ const layerStore = layerStoreWithOut()
 const composeStore = composeStoreWithOut()
 const contextmenuStore = contextmenuStoreWithOut()
 const { t } = useI18n()
+const CANVAS_STATE_FIELD = 'key'
 
 const { areaData, isCtrlOrCmdDown, isShiftDown, laterIndex } = storeToRefs(composeStore)
 
@@ -396,7 +397,7 @@ const handleContextMenu = e => {
 
 const areaClick = area => {
   dvMainStore.setCurComponent({ component: null, index: null })
-  dvMainStore.canvasStateChange({ key: 'curPointArea', value: area })
+  dvMainStore.canvasStateChange({ [CANVAS_STATE_FIELD]: 'curPointArea', value: area })
 }
 
 const popupAvailableChange = () => {

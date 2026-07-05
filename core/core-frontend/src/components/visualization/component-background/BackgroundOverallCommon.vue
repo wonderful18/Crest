@@ -4,13 +4,9 @@
       id="input"
       ref="files"
       type="file"
-      accept=".jpeg,.jpg,.png,.gif,.svg"
+      :accept="STATIC_IMAGE_FILE_ACCEPT"
       hidden
-      @click="
-        e => {
-          e.target.value = ''
-        }
-      "
+      @click="resetNativeImageInput"
       @change="reUpload"
     />
     <el-form size="small" label-position="top" style="width: 100%">
@@ -357,7 +353,7 @@
             <el-upload
               action=""
               :effect="themes"
-              accept=".jpeg,.jpg,.png,.gif,.svg"
+              :accept="STATIC_IMAGE_FILE_ACCEPT"
               class="avatar-uploader"
               list-type="picture-card"
               :on-preview="handlePictureCardPreview"
@@ -405,11 +401,10 @@ import { COLOR_PANEL } from '@/views/chart/components/editor/util/chart'
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { imgUrlTrans } from '@/utils/imgUtils'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
-import { beforeUploadCheck, uploadFileResult } from '@/api/staticResource'
+import { beforeUploadCheck, STATIC_IMAGE_FILE_ACCEPT, uploadFileResult } from '@/api/staticResource'
 import { useI18n } from '@/hooks/web/useI18n'
 import { deepCopy } from '@/utils/utils'
 import elementResizeDetectorMaker from 'element-resize-detector'
-import { ElMessage } from 'element-plus-secondary'
 import BoardItem from '@/components/visualization/component-background/BoardItem.vue'
 import ImgViewDialog from '@/custom-component/ImgViewDialog.vue'
 import BorderOptionPrefix from '@/components/visualization/component-background/BorderOptionPrefix.vue'
@@ -417,7 +412,6 @@ const snapshotStore = snapshotStoreWithOut()
 const { t } = useI18n()
 const emits = defineEmits(['onBackgroundChange'])
 const files = ref(null)
-const maxImageSize = 15000000
 
 const props = withDefaults(
   defineProps<{
@@ -489,8 +483,11 @@ const goFile = () => {
   files.value.click()
 }
 
-const sizeMessage = () => {
-  ElMessage.error('图片大小不能超过15M')
+const resetNativeImageInput = (e: Event) => {
+  const input = e.target as HTMLInputElement | null
+  if (input) {
+    input.value = ''
+  }
 }
 
 const syncFileList = url => {
@@ -511,8 +508,7 @@ const reUpload = e => {
   if (!file) {
     return
   }
-  if (file.size > maxImageSize) {
-    sizeMessage()
+  if (!beforeUploadCheck(file)) {
     return
   }
   uploadFileResult(file, applyUploadedBackground)

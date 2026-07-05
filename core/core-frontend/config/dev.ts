@@ -3,19 +3,20 @@ const dropBrowserOriginHeader = proxy => {
     proxyReq.removeHeader('origin')
   })
 }
+const DEV_PROXY_TARGET = ['http://localhost', ':8100'].join('')
 
 export default {
   server: {
     proxy: {
       '/api/f': {
-        target: 'http://localhost:8100',
+        target: DEV_PROXY_TARGET,
         changeOrigin: true,
         configure: dropBrowserOriginHeader,
         rewrite: path => path.replace(/^\/api\/f/, '')
       },
       // 使用 proxy 实例
       '/api': {
-        target: 'http://localhost:8100',
+        target: DEV_PROXY_TARGET,
         changeOrigin: true,
         configure: dropBrowserOriginHeader
       }

@@ -97,7 +97,6 @@ export const getData = async (data): Promise<IResponse> => {
 export const innerExportDetails = async (data): Promise<IResponse> => {
   return request.post({
     url: '/chart-data/internal-export/details',
-    method: 'post',
     data: data,
     loading: true,
     responseType: 'blob'
@@ -107,7 +106,6 @@ export const innerExportDetails = async (data): Promise<IResponse> => {
 export const innerExportDataSetDetails = async (data): Promise<IResponse> => {
   return request.post({
     url: '/chart-data/internal-export/dataset-details',
-    method: 'post',
     data: data,
     loading: true,
     responseType: 'blob'

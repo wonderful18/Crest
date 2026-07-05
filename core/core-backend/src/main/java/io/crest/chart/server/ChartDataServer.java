@@ -47,6 +47,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
@@ -84,7 +85,7 @@ public class ChartDataServer implements ChartDataApi {
 
     @CrestLinkPermit("#p0.sceneId")
     @Override
-    public ChartViewDTO getData(@RequestBody ChartViewDTO chartViewDTO) throws Exception {
+    public ChartViewDTO getData(@RequestBody ChartViewDTO chartViewDTO) {
         try {
             // 从模板数据获取
             if (CommonConstants.VIEW_DATA_FROM.TEMPLATE.equalsIgnoreCase(chartViewDTO.getDataFrom())) {
@@ -96,7 +97,7 @@ public class ChartDataServer implements ChartDataApi {
                 chartDataManage.encodeData(dto);
                 return dto;
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(ResultCode.DATA_IS_WRONG.code(), e.getMessage() + "\n\n" + ExceptionUtils.getStackTrace(e));
         }
         return null;
@@ -152,7 +153,7 @@ public class ChartDataServer implements ChartDataApi {
             }
             request.setDetails(tableRow);
             request.setData(chartViewInfo.getData());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
         return chartViewInfo;
@@ -240,7 +241,7 @@ public class ChartDataServer implements ChartDataApi {
 
     @CrestLinkPermit("#p0.dvId")
     @Override
-    public void innerExportDetails(@RequestBody ChartExcelRequest request, HttpServletResponse response) throws Exception {
+    public void innerExportDetails(@RequestBody ChartExcelRequest request, HttpServletResponse response) {
         ensureExportRequest(request);
         HttpServletRequest httpServletRequest = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         String linkToken = httpServletRequest.getHeader(AuthConstant.LINK_TOKEN_KEY);
@@ -269,14 +270,13 @@ public class ChartDataServer implements ChartDataApi {
 
                     boolean summaryEnabled = !"dataset".equals(request.getDownloadType()) && isSummaryEnabled(request.getViewInfo());
                     SummaryConfig summaryConfig = null;
-                    SummaryAccumulator summaryAcc = null;
-                    List<ChartViewFieldDTO> allExportColumns = null;
+                    SummaryAccumulator summaryAcc = new SummaryAccumulator();
+                    List<ChartViewFieldDTO> allExportColumns = Collections.emptyList();
                     Map<String, BigDecimal> customSumResult = null;
                     Map<String, BigDecimal> summaryColumnResult = null;
                     if (summaryEnabled) {
                         summaryConfig = parseSummaryConfig(request.getViewInfo());
-                        summaryAcc = new SummaryAccumulator();
-                        allExportColumns = getAllExportColumns(request.getViewInfo());
+                            allExportColumns = getAllExportColumns(request.getViewInfo());
                     }
 
                     request.getViewInfo().getChartExtRequest().setPageSize(Long.valueOf(extractPageSize));
@@ -284,7 +284,7 @@ public class ChartDataServer implements ChartDataApi {
                     for (long i = 1; i < chartViewDTO.getTotalPage() + 1; i++) {
                         request.getViewInfo().getChartExtRequest().setGoPage(i);
                         ChartViewDTO pageDto = findExcelData(request);
-                        List<Object[]> pageDetails = request.getDetails();
+                        List<Object[]> pageDetails = safeDetailRows(request.getDetails());
                         if (summaryEnabled) {
                             appendSummaryColumnPlaceholders(pageDetails, summaryConfig);
                         }
@@ -341,7 +341,7 @@ public class ChartDataServer implements ChartDataApi {
                 } else {
                     findExcelData(request);
                     if (CollectionUtils.isEmpty(request.getMultiInfo())) {
-                        List<Object[]> details = request.getDetails();
+                        List<Object[]> details = safeDetailRows(request.getDetails());
                         Integer[] excelTypes = request.getExcelTypes();
                         details.add(0, request.getHeader());
                         ViewDetailField[] detailFields = request.getDetailFields();
@@ -355,7 +355,7 @@ public class ChartDataServer implements ChartDataApi {
                     } else {
                         for (int i = 0; i < request.getMultiInfo().size(); i++) {
                             ChartExcelRequestInner requestInner = request.getMultiInfo().get(i);
-                            List<Object[]> details = requestInner.getDetails();
+                            List<Object[]> details = safeDetailRows(requestInner.getDetails());
                             Integer[] excelTypes = requestInner.getExcelTypes();
                             details.add(0, requestInner.getHeader());
                             ViewDetailField[] detailFields = requestInner.getDetailFields();
@@ -378,10 +378,10 @@ public class ChartDataServer implements ChartDataApi {
                     } else {
                         CommonBeanFactory.proxy(this.getClass()).exportScreenViewLog(Long.parseLong(request.getViewId()));
                     }
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     LogUtil.error(e);
                 }
-            } catch (Exception e) {
+            } catch (IOException | RuntimeException e) {
                 CrestException.throwException(e);
             }
         } else {
@@ -411,7 +411,7 @@ public class ChartDataServer implements ChartDataApi {
 
     @CrestLinkPermit("#p0.dvId")
     @Override
-    public void innerExportDataSetDetails(@RequestBody ChartExcelRequest request, HttpServletResponse response) throws Exception {
+    public void innerExportDataSetDetails(@RequestBody ChartExcelRequest request, HttpServletResponse response) {
         this.innerExportDetails(request, response);
     }
 
@@ -639,7 +639,7 @@ public class ChartDataServer implements ChartDataApi {
                                         } else {
                                             cell.setCellValue(numericText);
                                         }
-                                    } catch (Exception e) {
+                                    } catch (NumberFormatException e) {
                                         cell.setCellValue(cellValObj.toString());
                                     }
                                 } else {
@@ -650,7 +650,7 @@ public class ChartDataServer implements ChartDataApi {
                                         cell.setCellValue(numericText);
                                     }
                                 }
-                            } catch (Exception e) {
+                            } catch (RuntimeException e) {
                                 LogUtil.warn("export excel data transform error");
                             }
                         } else {
@@ -1081,21 +1081,23 @@ public class ChartDataServer implements ChartDataApi {
     }
 
     @Override
-    public List<String> getFieldData(@RequestBody ChartViewDTO view, Long fieldId, String fieldType) throws Exception {
+    public List<String> getFieldData(@RequestBody ChartViewDTO view, Long fieldId, String fieldType) {
         return chartDataManage.getFieldData(view, fieldId, fieldType);
     }
 
     @Override
-    public List<String> getDrillFieldData(@RequestBody ChartViewDTO view, Long fieldId) throws Exception {
+    public List<String> getDrillFieldData(@RequestBody ChartViewDTO view, Long fieldId) {
         return chartDataManage.getDrillFieldData(view, fieldId);
     }
 
     @CrestAudit(id = "#p0", ot = LogOT.EXPORT, st = LogST.PANEL)
     public void exportPanelViewLog(Long id) {
+        LogUtil.debug("record panel chart export audit");
     }
 
     @CrestAudit(id = "#p0", ot = LogOT.EXPORT, st = LogST.SCREEN)
     public void exportScreenViewLog(Long id) {
+        LogUtil.debug("record screen chart export audit");
     }
 
     public static boolean isSummaryEnabled(ChartViewDTO viewInfo) {
@@ -1223,7 +1225,8 @@ public class ChartDataServer implements ChartDataApi {
                             }
                             break;
                     }
-                } catch (Exception ignored) {
+                } catch (NumberFormatException ignored) {
+                    // 非法数值不参与汇总计算。
                 }
             }
         }
@@ -1331,6 +1334,10 @@ public class ChartDataServer implements ChartDataApi {
 
     private static List<ChartViewFieldDTO> safeAxis(List<ChartViewFieldDTO> fields) {
         return fields == null ? Collections.emptyList() : fields;
+    }
+
+    public static List<Object[]> safeDetailRows(List<Object[]> details) {
+        return details == null ? new ArrayList<>() : details;
     }
 
     public static List<ChartViewFieldDTO> buildSummaryColumnFields(SummaryConfig config) {

@@ -1,5 +1,7 @@
 import { isString, isObject, isNumber, isNull, isInteger, isEmpty, isBoolean } from 'lodash-es'
 const isArray = Array.isArray
+const MAX_SCHEMA_DEPTH = 80
+const MAX_SCHEMA_NODES = 5000
 
 class Convert {
   constructor() {
@@ -8,6 +10,8 @@ class Convert {
       $schema: 'http://json-schema.org/draft-07/schema#'
     }
     this._object = null
+    this._visited = null
+    this._nodeCount = 0
   }
 
   /**
@@ -24,33 +28,42 @@ class Convert {
     this._option = Object.assign(this._option, option)
     // 需要转换的对象
     this._object = object
-    let convertRes
-    // 数组类型和对象类型结构不一样
-    if (isArray(object)) {
-      convertRes = this._arrayToSchema()
-    } else {
-      convertRes = this._objectToSchema()
+    this._visited = new WeakSet()
+    this._nodeCount = 0
+    try {
+      let convertRes
+      // 数组类型和对象类型结构不一样
+      if (isArray(object)) {
+        convertRes = this._arrayToSchema()
+      } else {
+        convertRes = this._objectToSchema()
+      }
+      return convertRes
+    } finally {
+      // 释放
+      this._object = null
+      this._visited = null
+      this._nodeCount = 0
     }
-    // 释放
-    this._object = null
-    return convertRes
   }
 
   /**
    * 数组类型转换成JSONSCHEMA
    */
   _arrayToSchema() {
+    this._checkSchemaBudget(this._object, 0)
     // root节点基本信息
     const result = this._value2object(this._object, this._option.$id, '', true)
     if (this._object.length > 0) {
       const itemArr = []
       for (let index = 0; index < this._object.length; index++) {
+        this._checkSchemaBudget(null, 1)
         // 创建items对象的基本信息
         const objectItem = this._object[index]
         let item = this._value2object(objectItem, `#/items`, 'items')
         if (isObject(objectItem) && !isEmpty(objectItem)) {
           // 递归遍历
-          const objectItemSchema = this._json2schema(objectItem, `#/items`)
+          const objectItemSchema = this._json2schema(objectItem, `#/items`, 2)
           // 合并对象
           item = Object.assign(item, objectItemSchema)
         }
@@ -71,10 +84,13 @@ class Convert {
     return baseResult
   }
 
-  _json2schema(object, name = '') {
+  _json2schema(object, name = '', depth = 0) {
     // 如果递归值不是对象，那么return掉
     if (!isObject(object)) {
       return
+    }
+    if (!this._checkSchemaBudget(object, depth)) {
+      return {}
     }
     // 处理当前路径$id
     if (name === '' || name === undefined) {
@@ -90,6 +106,7 @@ class Convert {
     // 遍历传入的对象
     for (const key in object) {
       if (Object.prototype.hasOwnProperty.call(object, key)) {
+        this._checkSchemaBudget(null, depth + 1)
         const element = object[key]
         // 如果只是undefined。跳过
         if (element === undefined) {
@@ -115,7 +132,7 @@ class Convert {
                 // 判断第一项是否是对象,且对象属性不为空
                 if (isObject(elementItem) && !isEmpty(elementItem)) {
                   // 新增的properties才合并进来
-                  item = Object.assign(item, this._json2schema(elementItem, `${$id}/items`))
+                  item = Object.assign(item, this._json2schema(elementItem, `${$id}/items`, depth + 2))
                 }
                 itemArr.push(item)
               }
@@ -125,7 +142,7 @@ class Convert {
             // 不是数组，递归遍历获取，然后合并对象属性
             result['properties'][key] = Object.assign(
               result['properties'][key],
-              this._json2schema(element, $id)
+              this._json2schema(element, $id, depth + 1)
             )
           }
         } else {
@@ -139,13 +156,31 @@ class Convert {
     return result
   }
 
+  _checkSchemaBudget(value, depth) {
+    if (depth > MAX_SCHEMA_DEPTH) {
+      throw new RangeError('JSON schema conversion depth exceeds limit')
+    }
+    this._nodeCount += 1
+    if (this._nodeCount > MAX_SCHEMA_NODES) {
+      throw new RangeError('JSON schema conversion node count exceeds limit')
+    }
+    if (!isObject(value)) {
+      return true
+    }
+    if (this._visited.has(value)) {
+      return false
+    }
+    this._visited.add(value)
+    return true
+  }
+
   /**
    * 把json的值转换成对象类型
    * @param {*} value
    * @param {*} $id
    * @param {*} key
    */
-  _value2object(value, $id, key = '', root = false) {
+  _value2object(value, $id, key = 'value', root = false) {
     const objectTemplate = {
       $id: $id,
       title: `The ${key} Schema`,

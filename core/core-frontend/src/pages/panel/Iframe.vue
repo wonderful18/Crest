@@ -8,12 +8,13 @@ const outerUrl = computed(() => {
 </script>
 
 <template>
-  <iframe class="de-jump_outer_url" :src="outerUrl" frameborder="0"></iframe>
+  <iframe class="de-jump_outer_url" :src="outerUrl" title="Crest embedded panel"></iframe>
 </template>
 
 <style lang="less" scoped>
 .de-jump_outer_url {
   width: 100%;
   height: 100%;
+  border: 0;
 }
 </style>

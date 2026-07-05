@@ -91,7 +91,7 @@ public class YoyChartHandler extends DefaultChartHandler {
             var request = new DatasourceRequest();
             fillDatasourceRequest(request, crossDs, dsMap, sqlMap);
             request.setQuery(originSql);
-            logger.debug("calcite yoy sql: " + originSql);
+            logger.debug("calcite yoy sql generated");
             // 实际过滤后的数据
             var originData = (List<String[]>) provider.fetchResultField(request).get("data");
             List<String[]> resultData = new ArrayList<>();

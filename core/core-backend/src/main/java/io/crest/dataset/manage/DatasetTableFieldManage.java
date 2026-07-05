@@ -313,7 +313,7 @@ public class DatasetTableFieldManage {
         return listByDQ(id);
     }
 
-    public Map<String, List<DatasetTableFieldDTO>> copilotFields(Long id) throws Exception {
+    public Map<String, List<DatasetTableFieldDTO>> copilotFields(Long id) {
         DatasetGroupInfoDTO datasetGroupInfoDTO = datasetGroupManage.datasetGroupInfoDTO(id, null);
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null);
         Map<Long, DatasourceSchemaDTO> dsMap = (Map<Long, DatasourceSchemaDTO>) sqlMap.get("dsMap");

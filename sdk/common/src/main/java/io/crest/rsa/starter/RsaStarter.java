@@ -14,14 +14,14 @@ public class RsaStarter implements ApplicationRunner {
     private RsaManage rsaManage;
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         checkRsa();
     }
 
     private void checkRsa() {
         try {
             rsaManage.check();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage());
         }
     }

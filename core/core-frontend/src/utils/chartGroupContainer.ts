@@ -362,11 +362,11 @@ const applyLinearLayout = (
   return true
 }
 
-const groupByPosition = (children: ComponentConfig[], key: 'top' | 'left') => {
-  const values = Array.from(new Set(children.map(child => child.style[key]))).sort((a, b) => a - b)
+const groupByPosition = (children: ComponentConfig[], axis: 'top' | 'left') => {
+  const values = Array.from(new Set(children.map(child => child.style[axis]))).sort((a, b) => a - b)
   return values.map(value =>
     children
-      .filter(child => child.style[key] === value)
+      .filter(child => child.style[axis] === value)
       .sort((left, right) => left.style.left - right.style.left)
   )
 }

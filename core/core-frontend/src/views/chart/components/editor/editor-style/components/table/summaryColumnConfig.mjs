@@ -4,6 +4,24 @@ export const SUMMARY_COLUMN_VALIDATION = {
 }
 
 const isBlank = value => value === '' || value === null || value === undefined
+const SUMMARY_COLUMN_NUMERIC_FIELD_TYPES = [2, 3, 4]
+
+export const getSummaryColumnFieldKey = field => field?.engineFieldName || field?.field
+
+export const buildSummaryColumnFieldOptions = (fields = [], { includeNonNumeric = false } = {}) => {
+  const result = new Map()
+  fields.forEach(field => {
+    const key = getSummaryColumnFieldKey(field)
+    if (!key || field?.id === '-1' || result.has(key)) {
+      return
+    }
+    if (!includeNonNumeric && !SUMMARY_COLUMN_NUMERIC_FIELD_TYPES.includes(field?.fieldType)) {
+      return
+    }
+    result.set(key, { ...field, id: field.id || key, engineFieldName: key })
+  })
+  return Array.from(result.values())
+}
 
 export const normalizeSummaryColumn = (
   column = {},

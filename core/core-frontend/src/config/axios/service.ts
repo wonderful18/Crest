@@ -44,6 +44,7 @@ const basePath = import.meta.env.VITE_API_BASEPATH
 const embeddedBasePath =
   basePath.startsWith('./') && basePath.length > 2 ? basePath.substring(2) : basePath
 export const PATH_URL = embeddedStore.baseUrl ? embeddedStore?.baseUrl + embeddedBasePath : basePath
+const FETCH_METHOD_GET = 'GET'
 
 export interface AxiosInstanceWithLoading extends AxiosInstance {
   <T = any, R = AxiosResponse<T>, D = any>(
@@ -55,7 +56,7 @@ const refreshTimeOut = async () => {
   const url = PATH_URL + '/sys-parameter/request-timeout'
   try {
     const res = await fetch(url, {
-      method: 'GET',
+      method: FETCH_METHOD_GET,
       credentials: 'same-origin',
       headers: { Accept: 'application/json' }
     })
@@ -304,15 +305,15 @@ const showMsg = (msg: string, id: string) => {
 }
 
 const executeVersionHandler = (response: AxiosResponse) => {
-  const key = 'x-crest-execute-version'
-  const executeVersion = response.headers[key]
-  const cacheVal = wsCache.get(key)
+  const executeVersionHeader = 'x-crest-execute-version'
+  const executeVersion = response.headers[executeVersionHeader]
+  const cacheVal = wsCache.get(executeVersionHeader)
   if (!cacheVal) {
-    wsCache.set(key, executeVersion)
+    wsCache.set(executeVersionHeader, executeVersion)
     return
   }
   if (executeVersion && executeVersion !== cacheVal) {
-    wsCache.set(key, executeVersion)
+    wsCache.set(executeVersionHeader, executeVersion)
     showMsg('系统有升级，请点击刷新页面', '-sys-upgrade-')
   }
 }

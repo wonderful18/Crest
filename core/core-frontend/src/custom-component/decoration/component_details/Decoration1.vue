@@ -7,7 +7,7 @@
     >
       <template v-for="(point, i) in points" :key="i">
         <rect
-          v-if="Math.random() > 0.6"
+          v-if="animationConfigs[i]?.visible"
           :fill="mergedColor[0]"
           :x="point[0] - halfPointSideLength"
           :y="point[1] - halfPointSideLength"
@@ -15,11 +15,11 @@
           :height="pointSideLength"
         >
           <animate
-            v-if="Math.random() > 0.6"
+            v-if="animationConfigs[i]?.animated"
             attributeName="fill"
             :values="`${mergedColor[0]};transparent`"
             dur="1s"
-            :begin="Math.random() * 2"
+            :begin="animationConfigs[i].begin"
             repeatCount="indefinite"
           />
         </rect>
@@ -83,6 +83,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { cloneDeep } from 'lodash-es'
 import { customMergeColor } from '@/custom-component/decoration/component_details/config'
+import { secureRandomFraction } from '@/utils/secureRandom'
 
 interface Props {
   color?: string[]
@@ -120,6 +121,7 @@ const rowPoints = 20
 const halfPointSideLength = computed(() => pointSideLength / 2)
 const points = ref<number[][]>([])
 const rects = ref<number[][]>([])
+const animationConfigs = ref<{ visible: boolean; animated: boolean; begin: number }[]>([])
 const defaultColor = ref(['#fff', '#0de7c2'])
 const mergedColor = ref<string[]>([])
 
@@ -135,6 +137,11 @@ const calcPointsPosition = () => {
     )
 
   points.value = pointsArray.reduce((all, item) => [...all, ...item], [])
+  animationConfigs.value = points.value.map(() => ({
+    visible: secureRandomFraction() > 0.6,
+    animated: secureRandomFraction() > 0.6,
+    begin: secureRandomFraction() * 2
+  }))
 }
 
 const calcRectsPosition = () => {
@@ -181,7 +188,7 @@ watch([width, height], () => {
 })
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 .dv-decoration-1 {
   position: relative;
   width: 100%;

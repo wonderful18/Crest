@@ -17,7 +17,7 @@ function angleToRadian(angle) {
  * @param   {Object}  center 旋转中心
  * @param   {Number}  rotate 旋转的角度
  * @return  {Object}         旋转后的坐标
- * https://www.zhihu.com/question/67425734/answer/252724399 旋转矩阵公式
+ * 旋转矩阵公式
  */
 export function calculateRotatedPointCoordinate(point, center, rotate) {
   /**

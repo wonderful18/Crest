@@ -16,9 +16,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.regex.Pattern;
 
 public class ExcelWatermarkUtils {
     private static final DateTimeFormatter WATERMARK_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final Pattern HEX_COLOR_PATTERN = Pattern.compile("#?[0-9a-fA-F]{6}");
     private static final int DEFAULT_FONT_SIZE = 14;
     private static final int MIN_FONT_SIZE = 8;
     private static final int MAX_FONT_SIZE = 72;
@@ -147,7 +149,7 @@ public class ExcelWatermarkUtils {
 
     private static Color resolveColor(WatermarkContentDTO watermarkContent) {
         String color = watermarkContent == null ? null : watermarkContent.getWatermark_color();
-        if (color == null || !color.matches("#?[0-9a-fA-F]{6}")) {
+        if (color == null || !HEX_COLOR_PATTERN.matcher(color).matches()) {
             return Color.BLACK;
         }
         return Color.decode(color.startsWith("#") ? color : "#" + color);

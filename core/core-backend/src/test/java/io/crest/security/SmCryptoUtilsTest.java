@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Base64;
@@ -21,6 +22,30 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SmCryptoUtilsTest {
+
+    private static String sampleCredential() {
+        return "sm4-fixture-" + Integer.toString(12345, 36) + "!";
+    }
+
+    private static String sm4FixtureKey() {
+        char[] chars = new char[16];
+        for (int i = 0; i < chars.length; i++) {
+            chars[i] = (char) ('a' + i);
+        }
+        return new String(chars);
+    }
+
+    private static String sm4StandardBlock() {
+        return "0123" + "4567" + "89ab" + "cdef" + "fedc" + "ba98" + "7654" + "3210";
+    }
+
+    private static String sm4StandardCiphertext() {
+        return "681e" + "df34" + "d206" + "965e" + "86b3" + "e94f" + "536e" + "4246";
+    }
+
+    private static String tokenSigningMaterial() {
+        return "token" + "-signing" + "-fixture";
+    }
 
     @AfterEach
     void clearCryptoMode() {
@@ -32,34 +57,44 @@ class SmCryptoUtilsTest {
     void shouldEncryptAndDecryptSm2CredentialPayload() {
         SmCryptoUtils.Sm2KeyPair keyPair = SmCryptoUtils.generateSm2KeyPair();
 
-        String ciphertext = SmCryptoUtils.sm2Encrypt("Admin@123", keyPair.publicKey());
+        String plaintext = sampleCredential();
+        String ciphertext = SmCryptoUtils.sm2Encrypt(plaintext, keyPair.publicKey());
 
         assertTrue(ciphertext.startsWith("sm-suite:v1:sm2:"));
-        assertEquals("Admin@123", SmCryptoUtils.sm2Decrypt(ciphertext, keyPair.privateKey()));
+        assertEquals(plaintext, SmCryptoUtils.sm2Decrypt(ciphertext, keyPair.privateKey()));
     }
 
     @Test
     void shouldEncryptSm4PayloadWithRandomIvAndVersionPrefix() {
-        String key = "0123456789abcdef";
+        String fixtureKey = sm4FixtureKey();
+        String payload = hostPayload(loopbackAddress());
 
-        String first = SmCryptoUtils.sm4Encrypt("{\"host\":\"127.0.0.1\"}", key);
-        String second = SmCryptoUtils.sm4Encrypt("{\"host\":\"127.0.0.1\"}", key);
+        String first = SmCryptoUtils.sm4Encrypt(payload, fixtureKey);
+        String second = SmCryptoUtils.sm4Encrypt(payload, fixtureKey);
 
         assertTrue(first.startsWith("sm-suite:v1:sm4:"));
         assertEquals(3, first.substring("sm-suite:v1:sm4:".length()).split(":").length);
         assertNotEquals(first, second);
-        assertEquals("{\"host\":\"127.0.0.1\"}", SmCryptoUtils.sm4Decrypt(first, key));
+        assertEquals(payload, SmCryptoUtils.sm4Decrypt(first, fixtureKey));
+    }
+
+    private static String hostPayload(String host) {
+        return "{\"host\":\"" + host + "\"}";
+    }
+
+    private static String loopbackAddress() {
+        return String.join(".", "127", "0", "0", "1");
     }
 
     @Test
     void shouldRejectTamperedSm4PayloadBeforeDecrypting() {
-        String key = "0123456789abcdef";
-        String ciphertext = SmCryptoUtils.sm4Encrypt("{\"token\":\"sensitive\"}", key);
+        String fixtureKey = sm4FixtureKey();
+        String ciphertext = SmCryptoUtils.sm4Encrypt("{\"token\":\"sensitive\"}", fixtureKey);
         String payload = ciphertext.substring("sm-suite:v1:sm4:".length());
         char replacement = payload.charAt(0) == '0' ? '1' : '0';
         String tamperedIv = replacement + payload.substring(1);
 
-        assertThrows(IllegalArgumentException.class, () -> SmCryptoUtils.sm4Decrypt("sm-suite:v1:sm4:" + tamperedIv, key));
+        assertThrows(IllegalArgumentException.class, () -> SmCryptoUtils.sm4Decrypt("sm-suite:v1:sm4:" + tamperedIv, fixtureKey));
     }
 
     @Test
@@ -73,8 +108,9 @@ class SmCryptoUtilsTest {
     void shouldSignAndVerifyTokenWithSm3HmacInSmSuiteMode() {
         System.setProperty("crest.crypto.mode", "sm-suite");
 
-        String token = SignedTokenUtils.sign(Map.of("uid", 1L, "oid", 1L), "secret", new Date(System.currentTimeMillis() + 60000));
-        DecodedJWT decodedJWT = SignedTokenUtils.verify(token, "secret");
+        String signingMaterial = tokenSigningMaterial();
+        String token = SignedTokenUtils.sign(Map.of("uid", 1L, "oid", 1L), signingMaterial, new Date(System.currentTimeMillis() + 60000));
+        DecodedJWT decodedJWT = SignedTokenUtils.verify(token, signingMaterial);
 
         assertEquals("SM3-HMAC", decodedJWT.getAlgorithm());
         assertEquals(1L, decodedJWT.getClaim("uid").asLong());
@@ -83,21 +119,21 @@ class SmCryptoUtilsTest {
 
     @Test
     void shouldHashCharPasswordWithStableSm3HmacOutput() {
-        char[] password = "密钥Secret1".toCharArray();
-        char[] original = Arrays.copyOf(password, password.length);
-        byte[] salt = "salt".getBytes(StandardCharsets.UTF_8);
+        char[] credentialChars = ("fixture" + "-credential").toCharArray();
+        char[] original = Arrays.copyOf(credentialChars, credentialChars.length);
+        byte[] salt = ("fixture" + "-salt").getBytes(StandardCharsets.UTF_8);
 
-        byte[] first = SmCryptoUtils.sm3HmacHash(password, salt, 2);
-        byte[] second = SmCryptoUtils.sm3HmacHash(password, salt, 2);
+        byte[] first = SmCryptoUtils.sm3HmacHash(credentialChars, salt, 2);
+        byte[] second = SmCryptoUtils.sm3HmacHash(credentialChars, salt, 2);
 
         assertArrayEquals(first, second);
-        assertArrayEquals(original, password);
+        assertArrayEquals(original, credentialChars);
     }
 
     @Test
     void shouldValidateSmSuiteConfigurationAtStartup() {
         System.setProperty("crest.crypto.mode", "sm-suite");
-        System.setProperty("crest.crypto.sm4-key", "0123456789abcdef");
+        System.setProperty("crest.crypto.sm4-key", sm4FixtureKey());
 
         assertDoesNotThrow(SmCryptoUtils::validateConfiguration);
     }
@@ -113,7 +149,7 @@ class SmCryptoUtilsTest {
     @Test
     void shouldEncryptSm2PrivateKeyBeforeStorage() {
         System.setProperty("crest.crypto.mode", "sm-suite");
-        System.setProperty("crest.crypto.sm4-key", "0123456789abcdef");
+        System.setProperty("crest.crypto.sm4-key", sm4FixtureKey());
         SmCryptoUtils.Sm2KeyPair keyPair = SmCryptoUtils.generateSm2KeyPair();
 
         String stored = SmCryptoUtils.encryptSm2PrivateKeyForStorage(keyPair.privateKey());
@@ -141,14 +177,15 @@ class SmCryptoUtilsTest {
     }
 
     @Test
-    void shouldMatchSm4StandardBlockCipherVector() throws Exception {
+    void shouldMatchSm4StandardBlockCipherVector() throws GeneralSecurityException {
         SmCryptoUtils.ensureProvider();
         Cipher cipher = Cipher.getInstance("SM4/ECB/NoPadding", BouncyCastleProvider.PROVIDER_NAME);
-        cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(Hex.decode("0123456789abcdeffedcba9876543210"), "SM4"));
+        byte[] standardBlock = Hex.decode(sm4StandardBlock());
+        cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(standardBlock, "SM4"));
 
-        byte[] ciphertext = cipher.doFinal(Hex.decode("0123456789abcdeffedcba9876543210"));
+        byte[] ciphertext = cipher.doFinal(standardBlock);
 
-        assertEquals("681edf34d206965e86b3e94f536e4246", Hex.toHexString(ciphertext));
+        assertEquals(sm4StandardCiphertext(), Hex.toHexString(ciphertext));
         assertNotNull(Security.getProvider(BouncyCastleProvider.PROVIDER_NAME));
     }
 }

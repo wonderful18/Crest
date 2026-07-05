@@ -357,10 +357,10 @@ const resolveSafeJumpUrl = (url?: string) => {
   if (!text || /[\u0000-\u001f\u007f]/.test(text)) return null
   try {
     const target = new URL(text, window.location.href)
-    if (!['http:', 'https:'].includes(target.protocol)) {
+    if (!['http:', 'https:'].includes(target.protocol) || target.username || target.password) {
       return null
     }
-    return text
+    return target.href
   } catch {
     return null
   }

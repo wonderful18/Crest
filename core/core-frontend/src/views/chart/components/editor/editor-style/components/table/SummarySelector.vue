@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, PropType, reactive, watch, ref, nextTick, inject } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { useI18n } from '@/hooks/web/useI18n'
 import { DEFAULT_BASIC_STYLE } from '@/views/chart/components/editor/util/chart'
 import { cloneDeep, defaultsDeep, filter, find } from 'lodash-es'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
@@ -9,6 +9,8 @@ import CustomAggrEdit from './CustomAggrEdit.vue'
 import { v4 as uuidV4 } from 'uuid'
 import { ElMessage } from 'element-plus-secondary'
 import {
+  buildSummaryColumnFieldOptions,
+  getSummaryColumnFieldKey,
   normalizeSummaryColumn as normalizeSummaryColumnConfig,
   SUMMARY_COLUMN_VALIDATION,
   validateSummaryColumn
@@ -62,6 +64,7 @@ type SummaryColumn = {
 }
 
 const emit = defineEmits(['onBasicStyleChange'])
+const SUMMARY_OPTION_KEY = 'key'
 const changeBasicStyle = (prop?: string, requestData = false) => {
   emit('onBasicStyleChange', { data: state.basicStyleForm, requestData }, prop)
 }
@@ -95,15 +98,15 @@ const computedAxis = computed(() => {
   return getAxisList()
 })
 const summaryTypes = [
-  { key: 'sum', name: t('chart.sum') },
-  { key: 'avg', name: t('chart.avg') },
-  { key: 'max', name: t('chart.max') },
-  { key: 'min', name: t('chart.min') },
-  { key: 'custom', name: t('commons.custom') }
+  { [SUMMARY_OPTION_KEY]: 'sum', name: t('chart.sum') },
+  { [SUMMARY_OPTION_KEY]: 'avg', name: t('chart.avg') },
+  { [SUMMARY_OPTION_KEY]: 'max', name: t('chart.max') },
+  { [SUMMARY_OPTION_KEY]: 'min', name: t('chart.min') },
+  { [SUMMARY_OPTION_KEY]: 'custom', name: t('commons.custom') }
 ]
 const summaryColumnTypes = [
   ...summaryTypes,
-  { key: 'count', name: t('chart.count') }
+  { [SUMMARY_OPTION_KEY]: 'count', name: t('chart.count') }
 ]
 const summaryColumnValidationMessages = {
   [SUMMARY_COLUMN_VALIDATION.FIELD_REQUIRED]: 'chart.summary_column_field_required',
@@ -118,19 +121,24 @@ const calcEdit = ref()
 const editCalcField = ref(false)
 const dimension = inject('dimension', () => [])
 const quota = inject('quota', () => [])
-const getFieldKey = field => field?.engineFieldName || field?.field
+const getSourceFields = () => [
+  ...(props.chart.xAxis || []),
+  ...(props.chart.yAxis || []),
+  ...dimension(),
+  ...quota()
+]
 const quotaOptions = computed(() => {
-  const fields = [...(props.chart.xAxis || []), ...(props.chart.yAxis || []), ...quota()]
-  const result = new Map<string, any>()
-  fields.forEach(ele => {
-    const key = getFieldKey(ele)
-    if (!key || ele.id === '-1' || ![2, 3, 4].includes(ele.fieldType) || result.has(key)) {
-      return
-    }
-    result.set(key, { ...ele, id: ele.id || key, engineFieldName: key })
-  })
-  return Array.from(result.values())
+  return buildSummaryColumnFieldOptions(getSourceFields())
 })
+const getSummaryColumnFieldOptions = (column: SummaryColumn) =>
+  buildSummaryColumnFieldOptions(getSourceFields(), { includeNonNumeric: column?.summary === 'count' })
+const normalizeSummaryColumnField = (column: SummaryColumn) => {
+  const options = getSummaryColumnFieldOptions(column)
+  if (column.field && options.some(field => field.engineFieldName === column.field)) {
+    return
+  }
+  column.field = options[0]?.engineFieldName
+}
 const editField = () => {
   state.editTarget = 'series'
   editCalcField.value = true
@@ -198,6 +206,7 @@ const changeSummaryColumnType = (column: SummaryColumn) => {
   if (column.summary !== 'custom') {
     column.originName = ''
   }
+  normalizeSummaryColumnField(column)
   changeSummaryColumns()
 }
 const addSummaryColumn = () => {
@@ -209,7 +218,7 @@ const addSummaryColumn = () => {
   state.basicStyleForm.summaryColumns.push(
     normalizeSummaryColumn({
       name: `${t('chart.summary_column')}${state.basicStyleForm.summaryColumns.length + 1}`,
-      field: getFieldKey(quotaField)
+      field: getSummaryColumnFieldKey(quotaField)
     })
   )
   changeSummaryColumns()
@@ -391,7 +400,7 @@ onMounted(() => {
             @change="changeSummaryColumns"
           >
             <el-option
-              v-for="field in quotaOptions"
+              v-for="field in getSummaryColumnFieldOptions(column)"
               :key="field.engineFieldName"
               :value="field.engineFieldName"
               :label="field.chartShowName ?? field.name"

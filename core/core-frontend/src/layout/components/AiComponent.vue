@@ -47,7 +47,7 @@ onMounted(() => {
             class="svg-icon"
           ></component></Icon
       ></el-icon>
-      <iframe :src="baseUrl" style="width: 100%; height: 100%" frameborder="0" allow="microphone">
+      <iframe :src="baseUrl" style="width: 100%; height: 100%; border: 0" title="AI assistant" allow="microphone">
       </iframe>
     </div>
   </div>

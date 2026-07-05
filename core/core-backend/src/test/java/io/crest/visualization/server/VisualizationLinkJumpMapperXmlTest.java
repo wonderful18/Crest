@@ -2,6 +2,7 @@ package io.crest.visualization.server;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -11,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class VisualizationLinkJumpMapperXmlTest {
 
     @Test
-    void viewTableDetailsShouldMapRawAndCrestFieldTypesSeparately() throws Exception {
+    void viewTableDetailsShouldMapRawAndCrestFieldTypesSeparately() throws IOException {
         String mapper = Files.readString(Path.of("src/main/resources/mybatis/ExtVisualizationLinkJumpMapper.xml"));
 
         assertTrue(mapper.contains("dataset_field.type AS raw_field_type"));
@@ -22,7 +23,7 @@ class VisualizationLinkJumpMapperXmlTest {
     }
 
     @Test
-    void publicJumpIdShouldComeFromTargetShareLinkWithoutCreatorLimit() throws Exception {
+    void publicJumpIdShouldComeFromTargetShareLinkWithoutCreatorLimit() throws IOException {
         String mapper = Files.readString(Path.of("src/main/resources/mybatis/ExtVisualizationLinkJumpMapper.xml"));
 
         assertTrue(mapper.contains("share_link.uuid AS publicJumpId"));

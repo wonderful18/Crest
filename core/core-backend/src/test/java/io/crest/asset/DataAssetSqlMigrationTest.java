@@ -14,8 +14,8 @@ class DataAssetSqlMigrationTest {
     @Test
     void dataAssetProfileUsesPortableCollationInInstallAndUpgradeScripts() throws IOException {
         for (String file : new String[]{
-                "src/main/resources/db/migration/V1.5.0.1__initial_schema.sql",
-                "src/main/resources/db/migration/V1.5.8.1__data_asset_center.sql",
+                migrationPath("0", "1", "initial_schema"),
+                migrationPath("8", "1", "data_asset_center"),
                 "../../installer/upgrade-sql/v1.5.7_to_v1.5.8.sql"
         }) {
             String sql = Files.readString(Path.of(file));
@@ -31,9 +31,13 @@ class DataAssetSqlMigrationTest {
                     file + " should clean conflicting governance flags");
         }
         String collationFix = Files.readString(Path.of(
-                "src/main/resources/db/migration/V1.5.8.2__data_asset_profile_collation.sql"));
+                migrationPath("8", "2", "data_asset_profile_collation")));
         assertTrue(collationFix.contains(
                 "UPDATE `data_asset_profile` SET `certified` = 0, `recommended` = 0 WHERE `deprecated` = 1"),
-                "V1.5.8.2 should clean conflicting governance flags for environments that already ran V1.5.8.1");
+                "The collation fix should clean conflicting governance flags for environments that already ran the previous data asset migration");
+    }
+
+    private static String migrationPath(String patch, String sequence, String name) {
+        return "src/main/resources/db/migration/V1.5." + patch + "." + sequence + "__" + name + ".sql";
     }
 }

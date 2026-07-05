@@ -33,7 +33,7 @@ public class DefaultCacheImpl implements CrestCacheService {
         if (ObjectUtils.isEmpty(cache = cacheManager.getCache(cacheName))) {
             try {
                 cache = cacheManager.createCache(cacheName, configuration(expTime, unit));
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 LogUtil.error(e.getMessage(), e);
                 cache = cacheManager.getCache(cacheName);
             }

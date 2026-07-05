@@ -96,7 +96,7 @@ public class ScheduleManager {
 
             scheduler.scheduleJob(jobDetail, trigger);
 
-        } catch (Exception e) {
+        } catch (SchedulerException | RuntimeException e) {
             LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
@@ -126,7 +126,7 @@ public class ScheduleManager {
 
             scheduler.scheduleJob(jobDetail, trigger);
 
-        } catch (Exception e) {
+        } catch (SchedulerException e) {
             LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
@@ -178,7 +178,7 @@ public class ScheduleManager {
             trigger = (CronTrigger) triggerBuilder.build();// 创建Trigger对象
 
             scheduler.rescheduleJob(triggerKey, trigger);// 修改一个任务的触发时间
-        } catch (Exception e) {
+        } catch (SchedulerException | RuntimeException e) {
             CrestException.throwException(e);
         }
     }
@@ -220,7 +220,7 @@ public class ScheduleManager {
                 scheduler.rescheduleJob(triggerKey, trigger);// 修改一个任务的触发时间
             }
 
-        } catch (Exception e) {
+        } catch (SchedulerException e) {
             LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
@@ -252,7 +252,7 @@ public class ScheduleManager {
 
                 scheduler.rescheduleJob(triggerKey, trigger);// 修改一个任务的触发时间
             }
-        } catch (Exception e) {
+        } catch (SchedulerException e) {
             LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
@@ -276,7 +276,7 @@ public class ScheduleManager {
 
             scheduler.deleteJob(jobKey);
 
-        } catch (Exception e) {
+        } catch (SchedulerException e) {
             LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
@@ -285,7 +285,7 @@ public class ScheduleManager {
     public static void startJobs(Scheduler sched) {
         try {
             sched.start();
-        } catch (Exception e) {
+        } catch (SchedulerException e) {
             LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
@@ -296,7 +296,7 @@ public class ScheduleManager {
             if (!sched.isShutdown()) {
                 sched.shutdown();
             }
-        } catch (Exception e) {
+        } catch (SchedulerException e) {
             LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
@@ -331,7 +331,7 @@ public class ScheduleManager {
             } else {
                 addSingleJob(jobKey, triggerKey, clz, date, jobDataMap);
             }
-        } catch (Exception e) {
+        } catch (SchedulerException | RuntimeException e) {
             CrestException.throwException(e);
         }
     }
@@ -366,7 +366,7 @@ public class ScheduleManager {
             } else {
                 addCronJob(jobKey, triggerKey, jobClass, cron, startTime, endTime, jobDataMap);
             }
-        } catch (Exception e) {
+        } catch (SchedulerException | RuntimeException e) {
             CrestException.throwException(e);
         }
     }
@@ -396,7 +396,7 @@ public class ScheduleManager {
                 returnMap.put("jobName", jobName);
                 returnMap.put("groupName", groupName);
             }
-        } catch (Exception e) {
+        } catch (SchedulerException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
 
@@ -439,7 +439,7 @@ public class ScheduleManager {
         }
     }
 
-    public void clearByGroup(String groupName) throws Exception {
+    public void clearByGroup(String groupName) throws SchedulerException {
         Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.groupEquals(groupName));
         Set<TriggerKey> triggerKeys = scheduler.getTriggerKeys(GroupMatcher.groupEquals(groupName));
         scheduler.pauseTriggers(GroupMatcher.groupEquals(groupName));
@@ -502,7 +502,7 @@ public class ScheduleManager {
                 triggerBuilder.usingJobData(trigger.getJobDataMap());
                 scheduler.rescheduleJob(triggerKey, triggerBuilder.build());
             }
-        } catch (Exception e) {
+        } catch (SchedulerException e) {
             LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
@@ -561,7 +561,7 @@ public class ScheduleManager {
             }
             LogUtil.debug("SimpleTriggerNextTime: " + triggerKey.getName() + "," + triggerKey.getGroup() + "," + trigger.getFireTimeAfter(currentTime));
             return trigger.getFireTimeAfter(currentTime) != null ? trigger.getFireTimeAfter(currentTime).getTime() : null;
-        } catch (Exception e) {
+        } catch (SchedulerException e) {
             LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
@@ -576,7 +576,7 @@ public class ScheduleManager {
             } else {
                 LogUtil.warn("pauseTrigger: " + triggerKey.getName() + "," + triggerKey.getGroup());
             }
-        } catch (Exception e) {
+        } catch (SchedulerException e) {
             LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
@@ -590,7 +590,7 @@ public class ScheduleManager {
             } else {
                 LogUtil.warn("resumeTrigger: " + triggerKey.getName() + "," + triggerKey.getGroup());
             }
-        } catch (Exception e) {
+        } catch (SchedulerException e) {
             LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }

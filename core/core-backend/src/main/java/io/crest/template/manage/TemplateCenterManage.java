@@ -56,7 +56,7 @@ public class TemplateCenterManage {
     public TemplateManageFileDTO getTemplateFromMarket(String templateUrl) {
         String sufUrl = templateBaseUrl();
         if (StringUtils.isNotEmpty(sufUrl) && StringUtils.isNotEmpty(templateUrl)) {
-            String templateName = templateUrl.substring(templateUrl.lastIndexOf("/") + 1, templateUrl.length());
+            String templateName = templateUrl.substring(templateUrl.lastIndexOf('/') + 1, templateUrl.length());
             templateUrl = templateUrl.replace(templateName, URLEncoder.encode(templateName, StandardCharsets.UTF_8).replace("+", "%20"));
             String templateInfo = HttpClientUtil.get(sufUrl + templateUrl, null);
             return JsonUtil.parseObject(templateInfo, TemplateManageFileDTO.class);
@@ -113,7 +113,7 @@ public class TemplateCenterManage {
             String result = marketGet(templateUrl + POSTS_API_V2, null);
             MarketTemplateV2BaseResponse postsResult = JsonUtil.parseObject(result, MarketTemplateV2BaseResponse.class);
             return postsResult;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e);
             return null;
         }
@@ -123,7 +123,7 @@ public class TemplateCenterManage {
         try {
             Map<String, String> templateParams = sysParameterManage.groupVal("template.");
             return baseResponseV2Trans(templateQuery(templateParams), searchTemplateFromManage(), templateBaseUrl(templateParams));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e);
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
@@ -137,7 +137,7 @@ public class TemplateCenterManage {
             Map<String, String> categoryMap = categories.stream()
                     .collect(Collectors.toMap(TemplateManageDTO::getId, TemplateManageDTO::getName));
             return baseManage2MarketTrans(manageResult, categoryMap);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(e);
         }
         return null;
@@ -162,11 +162,7 @@ public class TemplateCenterManage {
         MarketTemplateV2BaseResponse v2BaseResponse = null;
         Map<String, String> templateParams = sysParameterManage.groupVal("template.");
         // 模版市场推荐
-        try {
-            v2BaseResponse = templateQuery(templateParams);
-        } catch (Exception e) {
-            CrestException.throwException(e);
-        }
+        v2BaseResponse = templateQuery(templateParams);
         // 模版管理使用次数推荐
         List<TemplateMarketDTO> manage = searchTemplateFromManage();
         return baseResponseV2TransRecommend(v2BaseResponse, manage, templateBaseUrl(templateParams));
@@ -187,7 +183,7 @@ public class TemplateCenterManage {
             });
             return new MarketPreviewBaseResponse(baseContentRsp.getBaseUrl(), categories.stream().map(MarketMetaDataVO::getLabel)
                     .collect(Collectors.toList()), previewContents);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e);
         }
         return null;
@@ -197,7 +193,7 @@ public class TemplateCenterManage {
         try {
             return template.getCategories().stream()
                     .anyMatch(category -> categoryNameMatch.equals(category.getName()));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
             return false;
         }
@@ -299,7 +295,7 @@ public class TemplateCenterManage {
             MarketMetaDataBaseResponse metaData = JsonUtil.parseObject(resultStr, MarketMetaDataBaseResponse.class);
             allCategories.addAll(metaData.getLabels());
             allCategories.add(0, new MarketMetaDataVO("suggest", Translator.get("i18n_template_recommend"), CommonConstants.TEMPLATE_SOURCE.PUBLIC));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error("模板市场分类获取错误", e);
         }
 

@@ -2,6 +2,7 @@ package io.crest.chart.manage;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.crest.api.chart.vo.ChartBaseVO;
@@ -91,7 +92,7 @@ public class ChartViewManege {
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional
-    public ChartViewDTO save(ChartViewDTO chartViewDTO) throws Exception {
+    public ChartViewDTO save(ChartViewDTO chartViewDTO) {
         if (chartViewDTO.getTitle().length() > 100) {
             CrestException.throwException(Translator.get("i18n_name_limit_100"));
         }
@@ -100,7 +101,13 @@ public class ChartViewManege {
             CrestException.throwException(Translator.get("i18n_no_id"));
         }
         SnapshotCoreChartView coreChartView = snapshotCoreChartViewMapper.selectById(id);
-        SnapshotCoreChartView record = transDTO2Record(chartViewDTO);
+        SnapshotCoreChartView record;
+        try {
+            record = transDTO2Record(chartViewDTO);
+        } catch (JsonProcessingException e) {
+            CrestException.throwException(e);
+            return null;
+        }
         requireChartAccess(record.getCreateBy(), record.getSceneId(), record.getTableId());
         if (ObjectUtils.isEmpty(coreChartView)) {
             snapshotCoreChartViewMapper.deleteById(record.getId());
@@ -121,19 +128,30 @@ public class ChartViewManege {
         coreChartViewMapper.deleteById(id);
     }
     public void disuse(List<Long> chartIdList) {
+        if (CollectionUtils.isEmpty(chartIdList)) {
+            return;
+        }
     }
 
     //镜像操作发布
     public void publishThreshold(Long resourceId, List<Long> chartIdList) {
+        if (resourceId == null || CollectionUtils.isEmpty(chartIdList)) {
+            return;
+        }
     }
 
     //镜像操作删除
     public void removeThreshold(Long resourceId, String resourceTable) {
-
+        if (resourceId == null || StringUtils.isBlank(resourceTable)) {
+            return;
+        }
     }
 
     //镜像操作恢复
     public void restoreThreshold(Long resourceId, String resourceTable) {
+        if (resourceId == null || StringUtils.isBlank(resourceTable)) {
+            return;
+        }
     }
 
     @Transactional
@@ -235,7 +253,7 @@ public class ChartViewManege {
         }).collect(Collectors.toList());
     }
 
-    public ChartViewDTO getChart(Long id, String resourceTable, boolean forThreshold) throws Exception {
+    public ChartViewDTO getChart(Long id, String resourceTable, boolean forThreshold) {
         ChartViewDTO details = getDetails(id, resourceTable);
         if (details == null) {
             return null;
@@ -254,7 +272,7 @@ public class ChartViewManege {
         return chartDataManage.calcData(details);
     }
 
-    public ChartViewDTO getChart(Long id, String resourceTable) throws Exception {
+    public ChartViewDTO getChart(Long id, String resourceTable) {
         return getChart(id, resourceTable, false);
     }
 
@@ -532,7 +550,7 @@ public class ChartViewManege {
         }).collect(Collectors.toList());
     }
 
-    public SnapshotCoreChartView transDTO2Record(ChartViewDTO dto) throws Exception {
+    public SnapshotCoreChartView transDTO2Record(ChartViewDTO dto) throws JsonProcessingException {
         SnapshotCoreChartView record = new SnapshotCoreChartView();
         BeanUtils.copyBean(record, dto);
 

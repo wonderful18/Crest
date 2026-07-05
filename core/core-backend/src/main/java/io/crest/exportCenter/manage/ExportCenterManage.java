@@ -77,7 +77,7 @@ public class ExportCenterManage implements BaseExportApi {
     private static final long LEGACY_EXPORT_FILE_TIME = 1730277243491L;
     static private List<String> STATUS = Arrays.asList("SUCCESS", "FAILED", "PENDING", "IN_PROGRESS", "ALL");
     private Map<String, Future> Running_Task = new HashMap<>();
-    public void download(String id, String ticket, HttpServletResponse response) throws Exception {
+    public void download(String id, String ticket, HttpServletResponse response) throws IOException {
         CoreExportTask exportTask = validateDownloadTask(id, ticket);
         exportCenterDownLoadManage.download(exportTask, response);
     }
@@ -130,7 +130,7 @@ public class ExportCenterManage implements BaseExportApi {
                 prepareDatasetExportRequest(exportTask.getExportFrom(), request);
                 exportTask.setFileName(request.getFilename() + ".xlsx");
                 exportTask.setParams(JsonUtil.toJSONString(request).toString());
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 exportTask.setMsg(e.getMessage());
                 exportTask.setExportStatus("FAILED");
                 exportTaskMapper.updateById(exportTask);
@@ -199,6 +199,9 @@ public class ExportCenterManage implements BaseExportApi {
     }
 
     public void setOrg(ExportTaskDTO exportTaskDTO) {
+        if (exportTaskDTO == null) {
+            return;
+        }
     }
 
     private ExportCenterManage proxy() {
@@ -223,7 +226,7 @@ public class ExportCenterManage implements BaseExportApi {
         try {
             InetAddress localMachine = InetAddress.getLocalHost();
             hostname = localMachine.getHostName();
-        } catch (Exception e) {
+        } catch (IOException e) {
             CrestException.throwException("请设置主机名！");
         }
         return hostname;
@@ -232,7 +235,7 @@ public class ExportCenterManage implements BaseExportApi {
     private String taskDirectoryPath(String taskId) {
         try {
             return FileUtils.ensureSubDirectory(exportData_path, taskId).getPath();
-        } catch (Exception e) {
+        } catch (IOException e) {
             CrestException.throwException(e.getMessage());
             return null;
         }
@@ -260,7 +263,7 @@ public class ExportCenterManage implements BaseExportApi {
 
     }
 
-    public void addTask(Long exportFrom, String exportFromType, DataSetExportRequest request) throws Exception {
+    public void addTask(Long exportFrom, String exportFromType, DataSetExportRequest request) {
         prepareDatasetExportRequest(exportFrom, request);
         Long currentUserId = currentUserId();
         CoreExportTask exportTask = new CoreExportTask();
@@ -278,7 +281,7 @@ public class ExportCenterManage implements BaseExportApi {
         exportCenterDownLoadManage.startDatasetTask(exportTask, request);
     }
 
-    private void prepareDatasetExportRequest(Long exportFrom, DataSetExportRequest request) throws Exception {
+    private void prepareDatasetExportRequest(Long exportFrom, DataSetExportRequest request) {
         DatasetGroupInfoDTO dataset = datasetGroupManage.datasetGroupInfoDTO(exportFrom, null);
         Map<String, Object> sqlMap = datasetSQLManage.getUnionSQLForEdit(dataset, null);
         if (sqlMap == null || StringUtils.isBlank((String) sqlMap.get("sql"))) {
@@ -307,8 +310,8 @@ public class ExportCenterManage implements BaseExportApi {
     }
 
     public void cleanLog() {
-        String key = "basic.exportFileLiveTime";
-        String val = sysParameterManage.singleVal(key);
+        String configName = "basic.exportFileLiveTime";
+        String val = sysParameterManage.singleVal(configName);
         if (StringUtils.isBlank(val)) {
             CrestException.throwException("未获取到文件保留时间");
         }
@@ -411,7 +414,7 @@ public class ExportCenterManage implements BaseExportApi {
         DecodedJWT jwt = null;
         try {
             jwt = SignedTokenUtils.verify(ticket, resolveTicketSecret(exportTask));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(Translator.get("i18n_download_link_invalid"));
         }
         if (jwt == null) {

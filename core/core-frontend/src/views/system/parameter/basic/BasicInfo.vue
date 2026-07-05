@@ -87,21 +87,22 @@ const pvpOptions = [
   { value: '3', label: t('commons.date.three_months') },
   { value: '4', label: t('commons.date.one_month') }
 ]
+const TOOLTIP_KEY = 'key'
 const tooltips = [
   {
-    key: 'setting_basic.defaultOpen',
+    [TOOLTIP_KEY]: 'setting_basic.defaultOpen',
     val: t('setting_basic.default_open_tips')
   },
   {
-    key: 'setting_basic.frontTimeOut',
+    [TOOLTIP_KEY]: 'setting_basic.frontTimeOut',
     val: t('system.to_take_effect')
   },
   {
-    key: 'setting_basic.platformOid',
+    [TOOLTIP_KEY]: 'setting_basic.platformOid',
     val: t('system.and_platform_docking')
   },
   {
-    key: 'setting_basic.platformRid',
+    [TOOLTIP_KEY]: 'setting_basic.platformRid',
     val: t('system.and_platform_docking')
   }
 ]

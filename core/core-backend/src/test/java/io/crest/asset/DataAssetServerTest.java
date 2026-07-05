@@ -40,7 +40,7 @@ class DataAssetServerTest {
     void saveProfileKeepsDataAssetAuditMetadata() throws NoSuchMethodException {
         Method method = DataAssetServer.class.getMethod("saveProfile", DataAssetProfileRequest.class);
         CrestAudit audit = method.getAnnotation(CrestAudit.class);
-        assertPermit(method, "m:read");
+        assertPermit(method, "m:manage");
 
         assertNotNull(audit);
         assertEquals(LogOT.MODIFY, audit.ot());

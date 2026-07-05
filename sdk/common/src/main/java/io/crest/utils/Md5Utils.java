@@ -1,6 +1,8 @@
 package io.crest.utils;
 
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class Md5Utils {
     private static final char[] HEX_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
@@ -27,7 +29,7 @@ public class Md5Utils {
             }
 
             return new String(str);
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
             throw new RuntimeException("MD5 encrypt error:", e);
         }
     }

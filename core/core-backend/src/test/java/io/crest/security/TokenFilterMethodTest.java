@@ -2,10 +2,13 @@ package io.crest.security;
 
 import io.crest.auth.filter.TokenFilter;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -16,7 +19,7 @@ class TokenFilterMethodTest {
 
     @Test
     @DisplayName("PUT 请求不应被鉴权过滤器直接拒绝")
-    void putRequestsShouldPassMethodValidation() throws Exception {
+    void putRequestsShouldPassMethodValidation() throws IOException, ServletException {
         TokenFilter filter = new TokenFilter();
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
@@ -33,7 +36,7 @@ class TokenFilterMethodTest {
 
     @Test
     @DisplayName("未支持的请求方法仍应被拒绝")
-    void unsupportedMethodsShouldBeRejected() throws Exception {
+    void unsupportedMethodsShouldBeRejected() throws IOException, ServletException {
         TokenFilter filter = new TokenFilter();
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);

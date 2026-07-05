@@ -1157,13 +1157,6 @@ onMounted(() => {
   if (curComponent.value) {
     cursors.value = getCursor() // 根据旋转角度获取光标位置
   }
-  eventBus.on('runAnimation', () => {
-    if (element.value == curComponent.value) {
-    }
-  })
-  eventBus.on('stopAnimation', () => {
-    // do stopAnimation
-  })
   settingAttribute()
   const methodName = 'componentImageDownload-' + element.value.id
   if (!useEmitt().emitter.all.get(methodName)?.length) {
@@ -1317,7 +1310,7 @@ onMounted(() => {
 }
 
 .de-drag-top {
-  left: 1px;
+  left: var(--de-drag-edge-offset, 1px);
   top: 1px;
   height: 12px;
   width: calc(100% - 2px);
@@ -1338,7 +1331,7 @@ onMounted(() => {
 }
 
 .de-drag-left {
-  left: 1px;
+  left: var(--de-drag-edge-offset, 1px);
   top: 1px;
   width: 16px;
   height: calc(100% - 40px);

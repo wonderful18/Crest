@@ -1,6 +1,7 @@
 package io.crest.extensions.datasource.provider;
 
 import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import io.crest.exception.CrestException;
 import io.crest.extensions.datasource.constant.SqlPlaceholderConstants;
@@ -13,6 +14,7 @@ import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.*;
+import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -24,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
@@ -57,18 +60,18 @@ public abstract class Provider {
      *
      * @param coreDatasource
      * @return
-     * @throws Exception
+     * @throws CrestException
      */
-    public abstract ConnectionObj getConnection(DatasourceDTO coreDatasource) throws Exception;
+    public abstract ConnectionObj getConnection(DatasourceDTO coreDatasource) throws CrestException;
 
     /**
      * 检测数据源状态是否有效
      *
      * @param datasourceRequest
      * @return
-     * @throws Exception
+     * @throws CrestException
      */
-    public abstract String checkStatus(DatasourceRequest datasourceRequest) throws Exception;
+    public abstract String checkStatus(DatasourceRequest datasourceRequest) throws CrestException;
 
     /**
      * 获取数据
@@ -117,7 +120,7 @@ public abstract class Provider {
         try {
             stat = connection.createStatement();
             stat.setQueryTimeout(queryTimeout);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             CrestException.throwException(e.getMessage());
         }
         return stat;
@@ -127,7 +130,7 @@ public abstract class Provider {
         return rebuildSQL(sql, sqlMeta, crossDs, dsMap, false);
     }
     public String rebuildSQL(String sql, SQLMeta sqlMeta, boolean crossDs, Map<Long, DatasourceSchemaDTO> dsMap, boolean forSqlbot) {
-        logger.debug("calcite sql: " + sql);
+        logger.debug("calcite sql generated");
         if (crossDs) {
             return sql;
         }
@@ -170,13 +173,13 @@ public abstract class Provider {
                 dialect = dialect.replaceAll("\\[CONCAT]", "CONCAT");
             }
             return dialect;
-        } catch (Exception e) {
+        } catch (SQLException | SqlParseException | RuntimeException e) {
             CrestException.throwException(e.getMessage());
         } finally {
             if (connection != null) {
                 try {
                     connection.close();
-                } catch (Exception e) {
+                } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -420,7 +423,7 @@ public abstract class Provider {
         return sqlDialect;
     }
 
-    synchronized public Integer getLport(Long datasourceId) throws Exception {
+    synchronized public Integer getLport(Long datasourceId) {
         for (int i = 10000; i < 20000; i++) {
             if (isPortAvailable(i) && !lPorts.values().contains(i)) {
                 if (datasourceId == null) {
@@ -431,7 +434,8 @@ public abstract class Provider {
                 return i;
             }
         }
-        throw new Exception("localhost无可用端口！");
+        CrestException.throwException("localhost无可用端口！");
+        return null;
     }
 
     public boolean isPortAvailable(int port) {
@@ -445,7 +449,7 @@ public abstract class Provider {
         }
     }
 
-    public void startSshSession(DatasourceConfiguration configuration, ConnectionObj connectionObj, Long datasourceId) throws Exception {
+    public void startSshSession(DatasourceConfiguration configuration, ConnectionObj connectionObj, Long datasourceId) {
         if (configuration.isUseSSH()) {
             if (datasourceId == null) {
                 configuration.setLPort(getLport(null));
@@ -471,24 +475,24 @@ public abstract class Provider {
         }
     }
 
-    public Session initSession(DatasourceConfiguration configuration) throws Exception {
-        JSch jsch = new JSch();
-        Session session = jsch.getSession(configuration.getSshUserName(), configuration.getSshHost(), configuration.getSshPort());
-        if (!configuration.getSshType().equalsIgnoreCase("password")) {
-            session.setConfig("PreferredAuthentications", "publickey");
-            jsch.addIdentity("sshkey", configuration.getSshKey().getBytes(StandardCharsets.UTF_8), null, configuration.getSshKeyPassword() == null ? null : configuration.getSshKeyPassword().getBytes(StandardCharsets.UTF_8));
-        }
-        if (configuration.getSshType().equalsIgnoreCase("password")) {
-            session.setPassword(configuration.getSshPassword());
-        }
-        session.setConfig("StrictHostKeyChecking", "no");
+    public Session initSession(DatasourceConfiguration configuration) {
         try {
+            JSch jsch = new JSch();
+            Session session = jsch.getSession(configuration.getSshUserName(), configuration.getSshHost(), configuration.getSshPort());
+            if (!configuration.getSshType().equalsIgnoreCase("password")) {
+                session.setConfig("PreferredAuthentications", "publickey");
+                jsch.addIdentity("sshkey", configuration.getSshKey().getBytes(StandardCharsets.UTF_8), null, configuration.getSshKeyPassword() == null ? null : configuration.getSshKeyPassword().getBytes(StandardCharsets.UTF_8));
+            }
+            if (configuration.getSshType().equalsIgnoreCase("password")) {
+                session.setPassword(configuration.getSshPassword());
+            }
+            session.setConfig("StrictHostKeyChecking", "no");
             session.connect(1000 * 5);
-        } catch (Exception e) {
+            session.setPortForwardingL(configuration.getLPort(), configuration.getHost(), configuration.getPort());
+            return session;
+        } catch (JSchException e) {
             CrestException.throwException("SSH 连接失败：" + e.getMessage());
+            return null;
         }
-        session.setPortForwardingL(configuration.getLPort(), configuration.getHost(), configuration.getPort());
-
-        return session;
     }
 }

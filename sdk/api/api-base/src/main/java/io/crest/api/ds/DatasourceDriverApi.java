@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 @Tag(name = "数据源管理:驱动")
 @ApiSupport(order = 968)
@@ -53,5 +54,5 @@ public interface DatasourceDriverApi {
 
     @Operation(summary = "上传驱动jar")
     @PostMapping("/driver-jars/upload")
-    DriveJarDTO uploadJar(@RequestParam("driverId") String driverId, @RequestParam("jarFile") MultipartFile jarFile) throws Exception;
+    DriveJarDTO uploadJar(@RequestParam("driverId") String driverId, @RequestParam("jarFile") MultipartFile jarFile) throws IOException;
 }

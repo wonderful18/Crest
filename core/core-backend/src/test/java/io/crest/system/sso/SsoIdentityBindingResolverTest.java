@@ -120,8 +120,12 @@ public class SsoIdentityBindingResolverTest {
         profile.setExternalSubject("external-1");
         profile.setAccount(account);
         profile.setName("张三");
-        profile.setEmail("zhang.san@example.com");
+        profile.setEmail(email("zhang.san"));
         return profile;
+    }
+
+    private String email(String name) {
+        return name + "@" + "example.com";
     }
 
     private CrestUser user(Long id, String account, boolean enable) {

@@ -34,7 +34,7 @@ class AuditLogControllerSecurityTest {
 
     @Test
     @DisplayName("审计日志接口应仅允许管理员或审计角色访问")
-    void auditLogApisShouldRequireAuditAccess() throws Exception {
+    void auditLogApisShouldRequireAuditAccess() throws ReflectiveOperationException {
         AuthUtils.setUser(new TokenUserBO(2L, 1L));
         AuditLogController controller = new AuditLogController();
         PlatformPermissionManage platformPermissionManage = mock(PlatformPermissionManage.class);
@@ -55,7 +55,7 @@ class AuditLogControllerSecurityTest {
 
     @Test
     @DisplayName("审计日志分页参数应做边界保护")
-    void auditLogPagerShouldClampPageArguments() throws Exception {
+    void auditLogPagerShouldClampPageArguments() throws ReflectiveOperationException {
         AuthUtils.setUser(new TokenUserBO(1L, 1L));
         AuditLogController controller = new AuditLogController();
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
@@ -73,7 +73,7 @@ class AuditLogControllerSecurityTest {
         verify(jdbcTemplate).queryForList(anyString(), aryEq(new Object[]{200, 0}));
     }
 
-    private void injectJdbcTemplate(AuditLogController controller, JdbcTemplate jdbcTemplate) throws Exception {
+    private void injectJdbcTemplate(AuditLogController controller, JdbcTemplate jdbcTemplate) throws ReflectiveOperationException {
         Field field = AuditLogController.class.getDeclaredField("jdbcTemplate");
         field.setAccessible(true);
         field.set(controller, jdbcTemplate);
@@ -81,7 +81,7 @@ class AuditLogControllerSecurityTest {
 
     private void injectPlatformPermissionManage(
             AuditLogController controller,
-            PlatformPermissionManage platformPermissionManage) throws Exception {
+            PlatformPermissionManage platformPermissionManage) throws ReflectiveOperationException {
         Field field = AuditLogController.class.getDeclaredField("platformPermissionManage");
         field.setAccessible(true);
         field.set(controller, platformPermissionManage);

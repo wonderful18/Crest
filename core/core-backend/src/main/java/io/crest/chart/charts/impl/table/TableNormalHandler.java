@@ -123,7 +123,7 @@ public class TableNormalHandler extends DefaultChartHandler {
             totalPageSql = provider.rebuildSQL(totalPageSql, sqlMeta, crossDs, dsMap);
             datasourceRequest.setQuery(totalPageSql);
             datasourceRequest.setTotalPageFlag(true);
-            logger.debug("calcite total sql: " + totalPageSql);
+            logger.debug("calcite total sql generated");
             List<String[]> tmpData = (List<String[]>) provider.fetchResultField(datasourceRequest).get("data");
             var totalItems = ObjectUtils.isEmpty(tmpData) ? 0 : Long.valueOf(tmpData.get(0)[0]);
             if (Strings.CI.equals(view.getResultMode(), "custom")) {
@@ -136,7 +136,7 @@ public class TableNormalHandler extends DefaultChartHandler {
 
         querySql = provider.rebuildSQL(querySql, sqlMeta, crossDs, dsMap);
         datasourceRequest.setQuery(querySql);
-        logger.debug("calcite chart sql: " + querySql);
+        logger.debug("calcite chart sql generated");
         List<String[]> data = (List<String[]>) provider.fetchResultField(datasourceRequest).get("data");
         //自定义排序
         data = ChartDataUtil.resultCustomSort(xAxis, yAxis, view.getSortPriority(), data);
@@ -150,7 +150,7 @@ public class TableNormalHandler extends DefaultChartHandler {
             var expandedReq = new DatasourceRequest();
             fillDatasourceRequest(expandedReq, crossDs, dsMap, sqlMap);
             expandedReq.setQuery(expandedSql);
-            logger.debug("expanded sql: " + expandedSql);
+            logger.debug("expanded sql generated");
             var expandedData = (List<String[]>) provider.fetchResultField(expandedReq).get("data");
             logger.debug("expanded data: " + expandedData);
             var tmpAxis = (String) JsonUtil.toJSONString(yAxis);
@@ -227,7 +227,7 @@ public class TableNormalHandler extends DefaultChartHandler {
                     var assistSql = assistSQL(originSql, assistFields, dsMap, crossDs);
                     var tmpSql = provider.rebuildSQL(assistSql, sqlMeta, crossDs, dsMap);
                     req.setQuery(tmpSql);
-                    logger.debug("calcite assistSql sql: " + tmpSql);
+                    logger.debug("calcite assist sql generated");
                     var assistData = (List<String[]>) provider.fetchResultField(req).get("data");
                     calcResult.setAssistData(assistData);
                     calcResult.setDynamicAssistFields(assists);
@@ -238,13 +238,13 @@ public class TableNormalHandler extends DefaultChartHandler {
                     var assistSqlOriginList = assistSQLOriginList(originSql, assistFields, dsMap, crossDs);
                     var tmpSql = provider.rebuildSQL(assistSqlOriginList, sqlMeta, crossDs, dsMap);
                     req.setQuery(tmpSql);
-                    logger.debug("calcite assistSql sql origin list: " + tmpSql);
+                    logger.debug("calcite assist origin sql generated");
                     var assistDataOriginList = (List<String[]>) provider.fetchResultField(req).get("data");
                     calcResult.setAssistDataOriginList(assistDataOriginList);
                     calcResult.setDynamicAssistFieldsOriginList(assistsOriginList);
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         // 自定义汇总
@@ -304,7 +304,8 @@ public class TableNormalHandler extends DefaultChartHandler {
                                         try {
                                             var resultMap = i < customColumnStartIndex ? customSumResult : summaryColumnResult;
                                             resultMap.put(customCalcFields.get(i).getField(), new BigDecimal(customSumArr[i]));
-                                        } catch (Exception e) {
+                                        } catch (NumberFormatException e) {
+                                            // 非数值汇总字段不参与数值计算。
                                         }
                                     }
                                 }
@@ -321,7 +322,7 @@ public class TableNormalHandler extends DefaultChartHandler {
                         }
                     }
                 }
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 io.crest.utils.LogUtil.error(e.getMessage(), e);
             }
         }
