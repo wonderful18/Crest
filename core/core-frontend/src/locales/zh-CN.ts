@@ -1076,6 +1076,8 @@ export default {
     ck_ssl_upload_hint: '支持 .pem/.crt/.cer/.key，上传后可自动填充内容',
     ck_ssl_pem_placeholder: '请输入或上传 PEM 内容',
     ck_ssl_read_failed: 'SSL 证书读取失败',
+    ck_ssl_file_type_invalid: '仅支持 PEM、CRT、CER、KEY 证书文件',
+    ck_ssl_file_size_invalid: '证书文件大小不能超过 1MB',
     please_input_dataPath: '请输入 JsonPath 数据路径',
     show_api_data: '查看API数据结构',
     warning: '包含无效数据表',

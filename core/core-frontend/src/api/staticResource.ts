@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus-secondary'
 
 const staticResourcePath = '/static-resource/'
 const supportedImageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg']
+export const STATIC_IMAGE_FILE_ACCEPT = supportedImageExtensions.map(ext => `.${ext}`).join(',')
 
 function fileExtension(fileName = '') {
   const lastDotIndex = fileName.lastIndexOf('.')

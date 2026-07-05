@@ -4,13 +4,9 @@
       id="input"
       ref="files"
       type="file"
-      accept=".jpeg,.jpg,.png,.gif,.svg"
+      :accept="STATIC_IMAGE_FILE_ACCEPT"
       hidden
-      @click="
-        e => {
-          e.target.value = ''
-        }
-      "
+      @click="resetNativeImageInput"
       @change="reUpload"
     />
     <el-form size="small" label-position="top" style="width: 100%; margin-bottom: 16px">
@@ -75,7 +71,7 @@
             <el-upload
               action=""
               :effect="themes"
-              accept=".jpeg,.jpg,.png,.gif,.svg"
+              :accept="STATIC_IMAGE_FILE_ACCEPT"
               class="avatar-uploader"
               list-type="picture-card"
               :on-preview="handlePictureCardPreview"
@@ -157,7 +153,7 @@ import { COLOR_PANEL } from '@/views/chart/components/editor/util/chart'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { imgUrlTrans } from '@/utils/imgUtils'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
-import { beforeUploadCheck, uploadFileResult } from '@/api/staticResource'
+import { beforeUploadCheck, STATIC_IMAGE_FILE_ACCEPT, uploadFileResult } from '@/api/staticResource'
 import { useI18n } from '@/hooks/web/useI18n'
 import { ElButton } from 'element-plus-secondary'
 import ImgViewDialog from '@/custom-component/ImgViewDialog.vue'
@@ -200,6 +196,13 @@ const showWatermarkSetting = computed(() => {
 
 const goFile = () => {
   files.value.click()
+}
+
+const resetNativeImageInput = (e: Event) => {
+  const input = e.target as HTMLInputElement | null
+  if (input) {
+    input.value = ''
+  }
 }
 
 const syncFileList = url => {

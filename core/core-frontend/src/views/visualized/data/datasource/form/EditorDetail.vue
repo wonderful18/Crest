@@ -27,6 +27,16 @@ import { ComponentPublicInstance } from 'vue'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 const { t } = useI18n()
 const DEFAULT_API_REQUEST_METHOD = 'GET'
+const SSL_CERTIFICATE_FILE_ACCEPT = '.pem,.crt,.cer'
+const SSL_KEY_FILE_ACCEPT = '.pem,.key'
+const SSL_FILE_MAX_SIZE = 1024 * 1024
+type SSLConfigField = 'sslCA' | 'sslCert' | 'sslKey'
+
+const sslFileExtensions: Record<SSLConfigField, string[]> = {
+  sslCA: ['pem', 'crt', 'cer'],
+  sslCert: ['pem', 'crt', 'cer'],
+  sslKey: ['pem', 'key']
+}
 const prop = defineProps({
   form: {
     required: false,
@@ -261,10 +271,34 @@ const validateSshkey = (_: any, value: any, callback: any) => {
   return callback()
 }
 
-const handleSSLFileChange = (e: Event, field: 'sslCA' | 'sslCert' | 'sslKey') => {
+const fileExtension = (fileName = '') => {
+  const lastDotIndex = fileName.lastIndexOf('.')
+  if (lastDotIndex < 0 || lastDotIndex === fileName.length - 1) {
+    return ''
+  }
+  return fileName.substring(lastDotIndex + 1).toLowerCase()
+}
+
+const validateSSLFile = (file: File, field: SSLConfigField) => {
+  if (!sslFileExtensions[field].includes(fileExtension(file.name))) {
+    ElMessage.error(t('datasource.ck_ssl_file_type_invalid'))
+    return false
+  }
+  if (file.size > SSL_FILE_MAX_SIZE) {
+    ElMessage.error(t('datasource.ck_ssl_file_size_invalid'))
+    return false
+  }
+  return true
+}
+
+const handleSSLFileChange = (e: Event, field: SSLConfigField) => {
   const target = e.target as HTMLInputElement
   const file = target?.files?.[0]
   if (!file) return
+  if (!validateSSLFile(file, field)) {
+    target.value = ''
+    return
+  }
   const reader = new FileReader()
   reader.onload = event => {
     form.value.configuration[field] = (event.target?.result as string) || ''
@@ -280,7 +314,7 @@ const sslCAInput = ref<HTMLInputElement>()
 const sslCertInput = ref<HTMLInputElement>()
 const sslKeyInput = ref<HTMLInputElement>()
 
-const chooseSSLFile = (field: 'sslCA' | 'sslCert' | 'sslKey') => {
+const chooseSSLFile = (field: SSLConfigField) => {
   if (field === 'sslCA') {
     sslCAInput.value?.click()
   } else if (field === 'sslCert') {
@@ -1270,7 +1304,7 @@ defineExpose({
               <input
                 ref="sslCAInput"
                 type="file"
-                accept=".pem,.crt,.cer"
+                :accept="SSL_CERTIFICATE_FILE_ACCEPT"
                 style="display: none"
                 @change="e => handleSSLFileChange(e, 'sslCA')"
               />
@@ -1289,7 +1323,7 @@ defineExpose({
               <input
                 ref="sslCertInput"
                 type="file"
-                accept=".pem,.crt,.cer"
+                :accept="SSL_CERTIFICATE_FILE_ACCEPT"
                 style="display: none"
                 @change="e => handleSSLFileChange(e, 'sslCert')"
               />
@@ -1308,7 +1342,7 @@ defineExpose({
               <input
                 ref="sslKeyInput"
                 type="file"
-                accept=".pem,.key"
+                :accept="SSL_KEY_FILE_ACCEPT"
                 style="display: none"
                 @change="e => handleSSLFileChange(e, 'sslKey')"
               />

@@ -2,6 +2,8 @@ import { secureRandomInt } from '@/utils/secureRandom'
 
 export type ImportedTemplateCanvasType = 'dataV' | 'dashboard' | string
 
+export const VISUALIZATION_TEMPLATE_FILE_ACCEPT = '.crest,.CREST'
+
 export const isSupportedVisualizationTemplateFile = (fileName?: string): boolean => {
   return /\.(crest|det2|det2app)$/i.test(fileName || '')
 }

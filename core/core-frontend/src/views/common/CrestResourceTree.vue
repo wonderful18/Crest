@@ -45,7 +45,8 @@ import {
   buildImportedTemplateCacheKey,
   isSupportedVisualizationTemplateFile,
   navigateImportedTemplateEditor,
-  resetNativeFileInput
+  resetNativeFileInput,
+  VISUALIZATION_TEMPLATE_FILE_ACCEPT
 } from '@/views/common/importTemplateFlow'
 const shareStore = useShareStoreWithOut()
 const interactiveStore = interactiveStoreWithOut()
@@ -775,7 +776,7 @@ defineExpose({
             ref="importFileInputRef"
             class="resource-import-input"
             type="file"
-            accept=".crest,.CREST"
+            :accept="VISUALIZATION_TEMPLATE_FILE_ACCEPT"
             @change="importTemplateFileChange"
           />
         </div>

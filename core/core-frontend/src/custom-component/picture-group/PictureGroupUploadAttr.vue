@@ -5,7 +5,7 @@ import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapsho
 import { storeToRefs } from 'pinia'
 import { ElIcon } from 'element-plus-secondary'
 import { ref, onMounted, onBeforeUnmount, watch, PropType, nextTick } from 'vue'
-import { beforeUploadCheck, uploadFileResult } from '@/api/staticResource'
+import { beforeUploadCheck, STATIC_IMAGE_FILE_ACCEPT, uploadFileResult } from '@/api/staticResource'
 import { imgUrlTrans } from '@/utils/imgUtils'
 import eventBus from '@/utils/eventBus'
 import ImgViewDialog from '@/custom-component/ImgViewDialog.vue'
@@ -141,7 +141,7 @@ onBeforeUnmount(() => {
           :themes="themes"
           :limit="10"
           action=""
-          accept=".jpeg,.jpg,.png,.gif,.svg"
+          :accept="STATIC_IMAGE_FILE_ACCEPT"
           class="avatar-uploader"
           list-type="picture-card"
           :class="{ disabled: uploadDisabled || element.propValue.urlList.length >= 10 }"

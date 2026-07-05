@@ -1110,6 +1110,8 @@ export default {
     ck_ssl_upload_hint: 'Supports .pem/.crt/.cer/.key; content will be auto-filled after upload',
     ck_ssl_pem_placeholder: 'Enter or upload PEM content',
     ck_ssl_read_failed: 'Failed to read SSL certificate file',
+    ck_ssl_file_type_invalid: 'Only PEM, CRT, CER, and KEY certificate files are supported',
+    ck_ssl_file_size_invalid: 'Certificate file size cannot exceed 1 MB',
     please_input_dataPath: 'Please enter the JsonPath data path',
     show_api_data: 'View API data structure',
     warning: 'Invalid data table included',

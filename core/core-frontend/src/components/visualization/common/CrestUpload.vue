@@ -3,7 +3,7 @@
     <el-upload
       action=""
       :effect="themes"
-      accept=".jpeg,.jpg,.png,.gif,.svg"
+      :accept="STATIC_IMAGE_FILE_ACCEPT"
       class="avatar-uploader"
       list-type="picture-card"
       :class="{ disabled: state.uploadDisabled }"
@@ -20,14 +20,10 @@
       id="input"
       ref="files"
       type="file"
-      accept=".jpeg,.jpg,.png,.gif,.svg"
+      :accept="STATIC_IMAGE_FILE_ACCEPT"
       hidden
-      @click="
-        e => {
-          e.target.value = ''
-        }
-      "
-      v-on:change="reUpload"
+      @click="resetNativeImageInput"
+      @change="reUpload"
     />
 
     <img-view-dialog v-model="state.dialogVisible" :image-url="state.dialogImageUrl" />
@@ -38,7 +34,7 @@
 import { onMounted, reactive, ref, toRefs, watch } from 'vue'
 import { imgUrlTrans } from '@/utils/imgUtils'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
-import { beforeUploadCheck, uploadFileResult } from '@/api/staticResource'
+import { beforeUploadCheck, STATIC_IMAGE_FILE_ACCEPT, uploadFileResult } from '@/api/staticResource'
 import ImgViewDialog from '@/custom-component/ImgViewDialog.vue'
 const snapshotStore = snapshotStoreWithOut()
 const emits = defineEmits(['onImgChange'])
@@ -95,6 +91,13 @@ const handlePictureCardPreview = file => {
 }
 const upload = file => {
   uploadFileResult(file.file, applyUploadedImage)
+}
+
+const resetNativeImageInput = (e: Event) => {
+  const input = e.target as HTMLInputElement | null
+  if (input) {
+    input.value = ''
+  }
 }
 
 const reUpload = e => {

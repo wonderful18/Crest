@@ -50,7 +50,7 @@ defineExpose({
     </div>
   </div>
 </template>
-<style lang="less" scope>
+<style lang="less" scoped>
 .draw-filter_enum {
   margin-bottom: 4px;
 

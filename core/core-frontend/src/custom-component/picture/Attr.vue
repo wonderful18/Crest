@@ -6,7 +6,7 @@ import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapsho
 import { storeToRefs } from 'pinia'
 import { ElIcon } from 'element-plus-secondary'
 import { ref, onMounted, onBeforeUnmount, watch, PropType } from 'vue'
-import { beforeUploadCheck, uploadFileResult } from '@/api/staticResource'
+import { beforeUploadCheck, STATIC_IMAGE_FILE_ACCEPT, uploadFileResult } from '@/api/staticResource'
 import { imgUrlTrans } from '@/utils/imgUtils'
 import eventBus from '@/utils/eventBus'
 import ImgViewDialog from '@/custom-component/ImgViewDialog.vue'
@@ -57,6 +57,13 @@ const goFile = () => {
   files.value.click()
 }
 
+const resetNativeImageInput = (e: Event) => {
+  const input = e.target as HTMLInputElement | null
+  if (input) {
+    input.value = ''
+  }
+}
+
 const reUpload = e => {
   const file = e.target.files[0]
   if (!file) {
@@ -102,13 +109,9 @@ onBeforeUnmount(() => {
       id="input"
       ref="files"
       type="file"
-      accept=".jpeg,.jpg,.png,.gif,.svg"
+      :accept="STATIC_IMAGE_FILE_ACCEPT"
       hidden
-      @click="
-        e => {
-          e.target.value = ''
-        }
-      "
+      @click="resetNativeImageInput"
       @change="reUpload"
     />
     <CommonAttr
@@ -128,7 +131,7 @@ onBeforeUnmount(() => {
             <el-upload
               :themes="themes"
               action=""
-              accept=".jpeg,.jpg,.png,.gif,.svg"
+              :accept="STATIC_IMAGE_FILE_ACCEPT"
               class="avatar-uploader"
               list-type="picture-card"
               :class="{ disabled: uploadDisabled }"
