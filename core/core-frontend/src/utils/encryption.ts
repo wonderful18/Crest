@@ -15,13 +15,14 @@ const smSuitePublicKeyPrefix = 'sm-suite:v1:sm2-public:'
 const sm2CipherPrefix = 'sm-suite:v1:sm2:'
 const sm4CipherPrefix = 'sm-suite:v1:sm4:'
 const aesCbcHmacPrefix = 'aes-cbc-hmac:v1:'
+const legacyAesIvText = () => '0'.repeat(16)
 
 const aesDecrypt = (word, keyStr) => {
   if (typeof word === 'string' && word.startsWith(aesCbcHmacPrefix)) {
     return aesCbcHmacDecrypt(word, CryptoJS.enc.Utf8.parse(keyStr))
   }
   const keyHex = CryptoJS.enc.Utf8.parse(keyStr) //
-  const ivHex = CryptoJS.enc.Utf8.parse('0000000000000000')
+  const ivHex = CryptoJS.enc.Utf8.parse(legacyAesIvText())
   const decrypt = CryptoJS.AES.decrypt(word, keyHex, {
     iv: ivHex,
     mode: CryptoJS.mode.CBC,
@@ -60,7 +61,7 @@ export const symmetricDecrypt = (data, keyStr) => {
   if (typeof data === 'string' && data.startsWith(aesCbcHmacPrefix)) {
     return aesCbcHmacDecrypt(data, CryptoJS.enc.Base64.parse(keyStr))
   }
-  const iv = CryptoJS.enc.Utf8.parse('0000000000000000')
+  const iv = CryptoJS.enc.Utf8.parse(legacyAesIvText())
   const key = CryptoJS.enc.Base64.parse(keyStr)
   const decodedCiphertext = CryptoJS.enc.Base64.parse(data)
   const decrypted = CryptoJS.AES.decrypt({ ciphertext: decodedCiphertext }, key, {

@@ -155,9 +155,9 @@ public class SysParameterManage {
 
     public void saveSqlBotConfig(SQLBotConfigCreator configVO) {
         List<CoreSysSetting> configList = new ArrayList<>();
-        String key = "sqlbot.";
+        String configPrefix = "sqlbot.";
         CoreSysSetting domainVo = new CoreSysSetting();
-        domainVo.setPkey(key + "domain");
+        domainVo.setPkey(configPrefix + "domain");
         domainVo.setPval(configVO.getDomain());
         domainVo.setType("text");
         domainVo.setSort(0);
@@ -165,7 +165,7 @@ public class SysParameterManage {
         configList.add(domainVo);
 
         CoreSysSetting idVo = new CoreSysSetting();
-        idVo.setPkey(key + "id");
+        idVo.setPkey(configPrefix + "id");
         idVo.setPval(configVO.getId());
         idVo.setType("text");
         idVo.setSort(0);
@@ -173,7 +173,7 @@ public class SysParameterManage {
         configList.add(idVo);
 
         CoreSysSetting enabledVo = new CoreSysSetting();
-        enabledVo.setPkey(key + "enabled");
+        enabledVo.setPkey(configPrefix + "enabled");
         enabledVo.setPval(configVO.getEnabled().toString());
         enabledVo.setType("text");
         enabledVo.setSort(0);
@@ -181,7 +181,7 @@ public class SysParameterManage {
         configList.add(enabledVo);
 
         CoreSysSetting validVo = new CoreSysSetting();
-        validVo.setPkey(key + "valid");
+        validVo.setPkey(configPrefix + "valid");
         validVo.setPval(configVO.getValid().toString());
         validVo.setType("text");
         validVo.setSort(0);
@@ -190,15 +190,15 @@ public class SysParameterManage {
 
 
         QueryWrapper<CoreSysSetting> queryWrapper = new QueryWrapper<>();
-        queryWrapper.likeRight("pkey", key);
+        queryWrapper.likeRight("pkey", configPrefix);
         coreSysSettingMapper.delete(queryWrapper);
 
         extCoreSysSettingMapper.saveBatch(configList);
     }
     @Transactional
     public void saveBasic(List<SettingItemVO> vos) {
-        String key = "basic.";
-        proxy().saveGroup(vos, key);
+        String configPrefix = "basic.";
+        proxy().saveGroup(vos, configPrefix);
     }
 
     private SysParameterManage proxy() {

@@ -100,8 +100,8 @@ public class SysParameterServer implements SysParameterApi {
     }
 
     private List<SettingItemVO> basicSettingItems() {
-        String key = "basic.";
-        List<CoreSysSetting> coreSysSettings = sysParameterManage.groupList(key);
+        String configPrefix = "basic.";
+        List<CoreSysSetting> coreSysSettings = sysParameterManage.groupList(configPrefix);
         return sysParameterManage.convert(coreSysSettings);
     }
 
@@ -158,18 +158,18 @@ public class SysParameterServer implements SysParameterApi {
     public SQLBotConfigVO sqlBotConfig() {
         CrestPermissionUtils.requireAdmin();
         assertFullModeFeature();
-        String key = "sqlbot.";
-        List<CoreSysSetting> coreSysSettings = sysParameterManage.groupList(key);
+        String configPrefix = "sqlbot.";
+        List<CoreSysSetting> coreSysSettings = sysParameterManage.groupList(configPrefix);
         if (CollectionUtils.isNotEmpty(coreSysSettings)) {
             SQLBotConfigVO vo = new SQLBotConfigVO();
             coreSysSettings.forEach(sysSetting -> {
-                if (sysSetting.getPkey().equalsIgnoreCase(key + "domain")) {
+                if (sysSetting.getPkey().equalsIgnoreCase(configPrefix + "domain")) {
                     vo.setDomain(sysSetting.getPval());
-                } else if (sysSetting.getPkey().equalsIgnoreCase(key + "id")) {
+                } else if (sysSetting.getPkey().equalsIgnoreCase(configPrefix + "id")) {
                     vo.setId(sysSetting.getPval());
-                } else if (sysSetting.getPkey().equalsIgnoreCase(key + "enabled")) {
+                } else if (sysSetting.getPkey().equalsIgnoreCase(configPrefix + "enabled")) {
                     vo.setEnabled(StringUtils.isNotBlank(sysSetting.getPval()) && Strings.CI.equals(sysSetting.getPval(), "true"));
-                } else if (sysSetting.getPkey().equalsIgnoreCase(key + "valid")) {
+                } else if (sysSetting.getPkey().equalsIgnoreCase(configPrefix + "valid")) {
                     vo.setValid(StringUtils.isNotBlank(sysSetting.getPval()) && Strings.CI.equals(sysSetting.getPval(), "true"));
                 }
             });

@@ -310,8 +310,8 @@ public class ExportCenterManage implements BaseExportApi {
     }
 
     public void cleanLog() {
-        String key = "basic.exportFileLiveTime";
-        String val = sysParameterManage.singleVal(key);
+        String configName = "basic.exportFileLiveTime";
+        String val = sysParameterManage.singleVal(configName);
         if (StringUtils.isBlank(val)) {
             CrestException.throwException("未获取到文件保留时间");
         }
