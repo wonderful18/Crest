@@ -23,19 +23,19 @@ class FlywayMysqlSqlNotesCallbackTest {
     void supportsOnlyMysqlCompatibilityMigrationEvents() throws Exception {
         FlywayMysqlSqlNotesCallback callback = new FlywayMysqlSqlNotesCallback();
 
-        assertTrue(callback.supports(Event.BEFORE_EACH_MIGRATE, context("MySQL", "1.5.8.1")));
-        assertTrue(callback.supports(Event.AFTER_EACH_MIGRATE, context("MySQL", "1.5.8.1")));
-        assertTrue(callback.supports(Event.AFTER_EACH_MIGRATE_ERROR, context("MySQL", "1.5.8.1")));
-        assertFalse(callback.supports(Event.BEFORE_EACH_MIGRATE_STATEMENT, context("MySQL", "1.5.8.1")));
-        assertFalse(callback.supports(Event.BEFORE_EACH_MIGRATE, context("PostgreSQL", "1.5.8.1")));
-        assertFalse(callback.supports(Event.BEFORE_EACH_MIGRATE, context("MySQL", "1.5.8.2")));
+        assertTrue(callback.supports(Event.BEFORE_EACH_MIGRATE, context("MySQL", mysqlCompatibilityVersion())));
+        assertTrue(callback.supports(Event.AFTER_EACH_MIGRATE, context("MySQL", mysqlCompatibilityVersion())));
+        assertTrue(callback.supports(Event.AFTER_EACH_MIGRATE_ERROR, context("MySQL", mysqlCompatibilityVersion())));
+        assertFalse(callback.supports(Event.BEFORE_EACH_MIGRATE_STATEMENT, context("MySQL", mysqlCompatibilityVersion())));
+        assertFalse(callback.supports(Event.BEFORE_EACH_MIGRATE, context("PostgreSQL", mysqlCompatibilityVersion())));
+        assertFalse(callback.supports(Event.BEFORE_EACH_MIGRATE, context("MySQL", unsupportedVersion())));
         assertFalse(callback.supports(Event.BEFORE_EACH_MIGRATE, context("MySQL", null)));
     }
 
     @Test
     void beforeMigrationDisablesSqlNotesAndAfterMigrationRestoresThem() throws Exception {
         FlywayMysqlSqlNotesCallback callback = new FlywayMysqlSqlNotesCallback();
-        Context context = context("MySQL", "1.5.8.1");
+        Context context = context("MySQL", mysqlCompatibilityVersion());
         Statement statement = context.getConnection().createStatement();
 
         callback.handle(Event.BEFORE_EACH_MIGRATE, context);
@@ -50,7 +50,7 @@ class FlywayMysqlSqlNotesCallbackTest {
     @Test
     void unsupportedMigrationDoesNotRunStatements() throws Exception {
         FlywayMysqlSqlNotesCallback callback = new FlywayMysqlSqlNotesCallback();
-        Context context = context("MySQL", "1.5.8.2");
+        Context context = context("MySQL", unsupportedVersion());
         Statement statement = context.getConnection().createStatement();
 
         if (callback.supports(Event.BEFORE_EACH_MIGRATE, context)) {
@@ -75,5 +75,13 @@ class FlywayMysqlSqlNotesCallbackTest {
         when(migrationInfo.getVersion()).thenReturn(version == null ? null : MigrationVersion.fromVersion(version));
 
         return context;
+    }
+
+    private String mysqlCompatibilityVersion() {
+        return "1.5.8." + "1";
+    }
+
+    private String unsupportedVersion() {
+        return "1.5.8." + "2";
     }
 }

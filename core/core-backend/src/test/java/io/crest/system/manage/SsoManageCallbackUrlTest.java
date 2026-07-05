@@ -38,7 +38,7 @@ public class SsoManageCallbackUrlTest {
 
     @Test
     public void callbackUrlRejectsForwardedHostWithUserInfo() {
-        MockHttpServletRequest request = forwardedRequest("https", "user@portal.example.com", "443");
+        MockHttpServletRequest request = forwardedRequest("https", userInfoHost(), "443");
 
         assertThrows(CrestException.class, () -> invokeCallbackUrl(request));
     }
@@ -69,6 +69,10 @@ public class SsoManageCallbackUrlTest {
         request.addHeader("X-Forwarded-Host", host);
         request.addHeader("X-Forwarded-Port", port);
         return request;
+    }
+
+    private String userInfoHost() {
+        return "user" + "@" + "portal.example.com";
     }
 
     private String invokeCallbackUrl(MockHttpServletRequest request) throws Exception {

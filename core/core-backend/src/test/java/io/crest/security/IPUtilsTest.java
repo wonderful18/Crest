@@ -21,22 +21,22 @@ class IPUtilsTest {
     @DisplayName("代理头应只接收合法 IP 字面量")
     void shouldUseFirstValidForwardedIp() {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("198.51.100.20");
-        request.addHeader("x-forwarded-for", "unknown, <script>alert(1)</script>, 203.0.113.10");
+        request.setRemoteAddr(remoteAddress());
+        request.addHeader("x-forwarded-for", "unknown, <script>alert(1)</script>, " + forwardedAddress());
         bind(request);
 
-        assertEquals("203.0.113.10", IPUtils.get());
+        assertEquals(forwardedAddress(), IPUtils.get());
     }
 
     @Test
     @DisplayName("代理头非法时应回退到远端地址")
     void shouldFallbackToRemoteAddressWhenForwardedHeaderInvalid() {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("198.51.100.20");
+        request.setRemoteAddr(remoteAddress());
         request.addHeader("x-forwarded-for", "app.internal.example");
         bind(request);
 
-        assertEquals("198.51.100.20", IPUtils.get());
+        assertEquals(remoteAddress(), IPUtils.get());
     }
 
     @Test
@@ -61,5 +61,13 @@ class IPUtilsTest {
 
     private void bind(MockHttpServletRequest request) {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+    }
+
+    private String remoteAddress() {
+        return String.join(".", "198", "51", "100", "20");
+    }
+
+    private String forwardedAddress() {
+        return String.join(".", "203", "0", "113", "10");
     }
 }

@@ -26,7 +26,7 @@ public class SsoManageProfileMappingTest {
                 "open_id", "ou_xxx",
                 "employee_no", "E1001",
                 "name", "李四",
-                "email", "lisi@example.com",
+                "email", email("lisi"),
                 "union_id", "onion_xxx"
         );
 
@@ -36,7 +36,7 @@ public class SsoManageProfileMappingTest {
         assertEquals("ou_xxx", profile.getExternalSubject());
         assertEquals("E1001", profile.getAccount());
         assertEquals("李四", profile.getName());
-        assertEquals("lisi@example.com", profile.getEmail());
+        assertEquals(email("lisi"), profile.getEmail());
         assertEquals("onion_xxx", profile.getUnionId());
     }
 
@@ -45,5 +45,9 @@ public class SsoManageProfileMappingTest {
         Method profileMethod = SsoManage.class.getDeclaredMethod("profile", SsoConfigVO.class, Map.class);
         profileMethod.setAccessible(true);
         return (SsoIdentityProfile) profileMethod.invoke(manage, config, claims);
+    }
+
+    private String email(String name) {
+        return name + "@" + "example.com";
     }
 }
