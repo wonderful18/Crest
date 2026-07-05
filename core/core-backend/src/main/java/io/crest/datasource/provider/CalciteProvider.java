@@ -529,7 +529,6 @@ public class CalciteProvider extends Provider {
 
         String table = datasourceRequest.getTable();
         if (StringUtils.isEmpty(table)) {
-            ResultSet resultSet = null;
             try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId());
                  Statement statement = getStatement(con, 30)) {
                 if (isOracleLike(datasourceSchemaDTO.getType())) {
@@ -539,27 +538,19 @@ public class CalciteProvider extends Provider {
                 setConnectionReadOnly(con, readOnly);
                 try {
                     String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
-                    resultSet = statement.executeQuery(readQuery);
-                    datasetTableFields.addAll(getField(resultSet, datasourceRequest));
+                    try (ResultSet resultSet = statement.executeQuery(readQuery)) {
+                        datasetTableFields.addAll(getField(resultSet, datasourceRequest));
+                    }
                 } finally {
                     resetConnectionReadOnly(con, readOnly);
                 }
             } catch (SQLException | RuntimeException e) {
                 CrestException.throwException(e.getMessage());
-            } finally {
-                if (resultSet != null) {
-                    try {
-                        resultSet.close();
-                    } catch (SQLException e) {
-                        io.crest.utils.LogUtil.error(e.getMessage(), e);
-                    }
-                }
             }
         } else {
             if (!tables(datasourceRequest).stream().map(DatasetTableDTO::getTableName).collect(Collectors.toList()).contains(table)) {
                 CrestException.throwException(Translator.get("i18n_invalid_table_name"));
             }
-            ResultSet resultSet = null;
             try (Connection con = getConnectionFromPool(datasourceRequest.getDatasource().getId());
                  Statement statement = getStatement(con, 30)) {
                 boolean readOnly = shouldUseReadOnlyConnection(datasourceRequest, datasourceConfiguration, datasourceSchemaDTO.getType());
@@ -568,30 +559,32 @@ public class CalciteProvider extends Provider {
                     datasourceRequest.setDsVersion(con.getMetaData().getDatabaseMajorVersion());
                     if (datasourceRequest.getDatasource().getType().equalsIgnoreCase("mongo")) {
                         String fieldSql = "select * from " + quoteQualifiedIdentifier(table) + " limit 0 offset 0 ";
-                        resultSet = statement.executeQuery(fieldSql);
-                        return fetchResultField(resultSet);
+                        try (ResultSet resultSet = statement.executeQuery(fieldSql)) {
+                            return fetchResultField(resultSet);
+                        }
                     }
+                    String fieldSql;
                     if (isDorisCatalog(datasourceRequest)) {
-                        String fieldSql = "desc " + quoteQualifiedIdentifier(table);
-                        resultSet = statement.executeQuery(fieldSql);
+                        fieldSql = "desc " + quoteQualifiedIdentifier(table);
                     } else {
-                        String fieldSql = getTableFiledSql(datasourceRequest);
-                        resultSet = statement.executeQuery(fieldSql);
+                        fieldSql = getTableFiledSql(datasourceRequest);
                     }
 
                     Map<String, Integer> tableTypeMap = getTableTypeMap(datasourceRequest, datasourceConfiguration, table);
 
-                    while (resultSet.next()) {
-                        TableField tableFieldDesc = getTableFieldDesc(datasourceRequest, resultSet, 3, tableTypeMap);
-                        boolean repeat = false;
-                        for (TableField ele : datasetTableFields) {
-                            if (Strings.CI.equals(ele.getOriginName(), tableFieldDesc.getOriginName())) {
-                                repeat = true;
-                                break;
+                    try (ResultSet resultSet = statement.executeQuery(fieldSql)) {
+                        while (resultSet.next()) {
+                            TableField tableFieldDesc = getTableFieldDesc(datasourceRequest, resultSet, 3, tableTypeMap);
+                            boolean repeat = false;
+                            for (TableField ele : datasetTableFields) {
+                                if (Strings.CI.equals(ele.getOriginName(), tableFieldDesc.getOriginName())) {
+                                    repeat = true;
+                                    break;
+                                }
                             }
-                        }
-                        if (!repeat) {
-                            datasetTableFields.add(tableFieldDesc);
+                            if (!repeat) {
+                                datasetTableFields.add(tableFieldDesc);
+                            }
                         }
                     }
                     if (isObOracle(datasourceRequest.getDatasource().getType())) {
@@ -603,14 +596,6 @@ public class CalciteProvider extends Provider {
                 }
             } catch (SQLException | RuntimeException e) {
                 CrestException.throwException(e.getMessage());
-            } finally {
-                if (resultSet != null) {
-                    try {
-                        resultSet.close();
-                    } catch (SQLException e) {
-                        io.crest.utils.LogUtil.error(e.getMessage(), e);
-                    }
-                }
             }
         }
 
