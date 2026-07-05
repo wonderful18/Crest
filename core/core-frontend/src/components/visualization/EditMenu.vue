@@ -43,22 +43,3 @@ onMounted(() => {
     </template>
   </el-dropdown>
 </template>
-
-<style lang="less">
-.right-menu-item {
-  display: inline-block;
-  padding: 10px 8px;
-  height: 100%;
-
-  vertical-align: text-bottom;
-
-  &.hover-effect {
-    cursor: pointer;
-    transition: background 0.3s;
-
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.025);
-    }
-  }
-}
-</style>

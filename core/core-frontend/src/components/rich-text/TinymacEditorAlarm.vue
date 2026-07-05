@@ -190,7 +190,7 @@ defineExpose({
 })
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 .de-tinymce-container_alarm {
   --ed-input-text-color: var(--ed-text-color-regular);
   --ed-input-border: var(--ed-border);
@@ -210,11 +210,11 @@ defineExpose({
   max-height: 300px;
   overflow-y: scroll;
   padding: 0;
-  .tox-statusbar {
+  :deep(.tox-statusbar) {
     display: none !important;
   }
 
-  .tox-split-button {
+  :deep(.tox-split-button) {
     height: 24px !important;
   }
 }
