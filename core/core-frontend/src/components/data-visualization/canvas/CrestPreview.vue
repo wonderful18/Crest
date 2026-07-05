@@ -34,6 +34,7 @@ import { isMobile } from '@/utils/utils'
 import { useI18n } from '@/hooks/web/useI18n'
 import { resolvePostMessageTargetOrigin } from '@/utils/securityUrl'
 const dvMainStore = dvMainStoreWithOut()
+const CANVAS_STATE_FIELD = 'key'
 const { pcMatrixCount, curComponent, mobileInPc, canvasState, inMobile } = storeToRefs(dvMainStore)
 const openHandler = ref(null)
 const customDatasetParamsRef = ref(null)
@@ -455,7 +456,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   //初始化隐藏弹框区
-  dvMainStore.canvasStateChange({ key: 'curPointArea', value: 'base' })
+  dvMainStore.canvasStateChange({ [CANVAS_STATE_FIELD]: 'curPointArea', value: 'base' })
   clearInterval(refreshTimer.value)
   window.removeEventListener('message', winMsgHandle)
 })
@@ -473,7 +474,7 @@ const handleMouseDown = () => {
   if (showPosition.value !== 'viewDialog') {
     dvMainStore.setCurComponent({ component: null, index: null })
     if (!curComponent.value || (curComponent.value && curComponent.value.category !== 'hidden')) {
-      dvMainStore.canvasStateChange({ key: 'curPointArea', value: 'base' })
+      dvMainStore.canvasStateChange({ [CANVAS_STATE_FIELD]: 'curPointArea', value: 'base' })
     }
   }
 }

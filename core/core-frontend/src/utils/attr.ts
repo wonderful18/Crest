@@ -1,36 +1,38 @@
+const ATTR_FIELD_KEY = 'key'
+
 export const positionData = [
-  { key: 'left', label: '左', min: -1000, max: 20000, step: 1 },
-  { key: 'width', label: '宽', min: 2, max: 20000, step: 1 },
-  { key: 'top', label: '上', min: -1000, max: 20000, step: 1 },
-  { key: 'height', label: '高', min: 2, max: 20000, step: 1 }
+  { [ATTR_FIELD_KEY]: 'left', label: '左', min: -1000, max: 20000, step: 1 },
+  { [ATTR_FIELD_KEY]: 'width', label: '宽', min: 2, max: 20000, step: 1 },
+  { [ATTR_FIELD_KEY]: 'top', label: '上', min: -1000, max: 20000, step: 1 },
+  { [ATTR_FIELD_KEY]: 'height', label: '高', min: 2, max: 20000, step: 1 }
 ]
 
 export const multiDimensionalData = [
-  { key: 'x', label: 'X', min: -360, max: 360, step: 1 },
-  { key: 'y', label: 'W', min: -360, max: 360, step: 1 },
-  { key: 'z', label: 'Y', min: -360, max: 360, step: 1 }
+  { [ATTR_FIELD_KEY]: 'x', label: 'X', min: -360, max: 360, step: 1 },
+  { [ATTR_FIELD_KEY]: 'y', label: 'W', min: -360, max: 360, step: 1 },
+  { [ATTR_FIELD_KEY]: 'z', label: 'Y', min: -360, max: 360, step: 1 }
 ]
 
 export const styleData = [
-  { key: 'lineHeight', label: '行高', min: 0, max: 50, step: 1 },
-  { key: 'opacity', label: '不透明度', min: 0, max: 1, step: 0.1 },
-  { key: 'borderWidth', label: '边框宽度', min: 0, max: 20, step: 1 },
-  { key: 'borderStyle', label: '边框风格' },
-  { key: 'borderColor', label: '边框颜色' },
-  { key: 'borderRadius', label: '圆角', min: 0, max: 50, step: 1 },
-  { key: 'letterSpacing', label: '字间距', min: 0, max: 50, step: 1 },
-  { key: 'fontSize', label: '字体大小', min: 0, max: 128, step: 1 },
-  { key: 'activeFontSize', label: '激活字体大小', min: 0, max: 128, step: 1 },
-  { key: 'headFontColor', label: '标题字体颜色' },
-  { key: 'headFontActiveColor', label: '标题字体激活颜色' },
-  { key: 'headBorderColor', label: '标题边框颜色' },
-  { key: 'headBorderActiveColor', label: '标题激活边框颜色' },
-  { key: 'headHorizontalPosition', label: '标题位置' },
-  { key: 'fontWeight', label: '字体粗细', min: 100, max: 900, step: 100 },
-  { key: 'textAlign', label: '左右对齐' },
-  { key: 'verticalAlign', label: '上下对齐' },
-  { key: 'color', label: '颜色' },
-  { key: 'backgroundColor', label: '背景色' }
+  { [ATTR_FIELD_KEY]: 'lineHeight', label: '行高', min: 0, max: 50, step: 1 },
+  { [ATTR_FIELD_KEY]: 'opacity', label: '不透明度', min: 0, max: 1, step: 0.1 },
+  { [ATTR_FIELD_KEY]: 'borderWidth', label: '边框宽度', min: 0, max: 20, step: 1 },
+  { [ATTR_FIELD_KEY]: 'borderStyle', label: '边框风格' },
+  { [ATTR_FIELD_KEY]: 'borderColor', label: '边框颜色' },
+  { [ATTR_FIELD_KEY]: 'borderRadius', label: '圆角', min: 0, max: 50, step: 1 },
+  { [ATTR_FIELD_KEY]: 'letterSpacing', label: '字间距', min: 0, max: 50, step: 1 },
+  { [ATTR_FIELD_KEY]: 'fontSize', label: '字体大小', min: 0, max: 128, step: 1 },
+  { [ATTR_FIELD_KEY]: 'activeFontSize', label: '激活字体大小', min: 0, max: 128, step: 1 },
+  { [ATTR_FIELD_KEY]: 'headFontColor', label: '标题字体颜色' },
+  { [ATTR_FIELD_KEY]: 'headFontActiveColor', label: '标题字体激活颜色' },
+  { [ATTR_FIELD_KEY]: 'headBorderColor', label: '标题边框颜色' },
+  { [ATTR_FIELD_KEY]: 'headBorderActiveColor', label: '标题激活边框颜色' },
+  { [ATTR_FIELD_KEY]: 'headHorizontalPosition', label: '标题位置' },
+  { [ATTR_FIELD_KEY]: 'fontWeight', label: '字体粗细', min: 100, max: 900, step: 100 },
+  { [ATTR_FIELD_KEY]: 'textAlign', label: '左右对齐' },
+  { [ATTR_FIELD_KEY]: 'verticalAlign', label: '上下对齐' },
+  { [ATTR_FIELD_KEY]: 'color', label: '颜色' },
+  { [ATTR_FIELD_KEY]: 'backgroundColor', label: '背景色' }
 ]
 
 export const styleMap = {

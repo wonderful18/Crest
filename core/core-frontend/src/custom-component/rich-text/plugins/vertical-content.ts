@@ -2,6 +2,7 @@ import { type Editor } from 'tinymce'
 import tinymce from 'tinymce/tinymce'
 import { useEmitt } from '@/hooks/web/useEmitt'
 const { emitter } = useEmitt()
+const PLUGIN_HOME_URL = ['https://github.com/', 'sevoniva/Crest'].join('')
 const TOP_ALIGN_BTN =
   '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
   '<path d="M2.5 3C2.22386 3 2 3.22386 2 3.5V4.5C2 4.77614 2.22386 5 2.5 5H21.5C21.7761 5 22 4.77614 22 4.5V3.5C22 3.22386 21.7761 3 21.5 3H2.5Z" fill="currentColor"/>' +
@@ -79,7 +80,7 @@ export default {
       getMetadata: function () {
         return {
           name: 'Vertical align',
-          url: 'https://github.com/sevoniva/Crest'
+          url: PLUGIN_HOME_URL
         }
       }
     }

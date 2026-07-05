@@ -779,6 +779,7 @@ init()
                     v-if="item.url"
                     class="pic-group-img"
                     :src="imgUrlTrans(item.url)"
+                    :alt="t('visualization.picture')"
                   />
                 </div>
               </template>

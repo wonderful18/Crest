@@ -133,7 +133,6 @@ export const decompressionLocalFile = async data =>
 export const viewDetailList = dvId => {
   return request.get({
     url: '/data-visualization/view-detail-list/' + dvId,
-    method: 'get',
     loading: false
   })
 }
@@ -156,7 +155,6 @@ export const export2AppCheck = params => {
 export const queryOuterParamsDsInfo = async dvId => {
   return request.get({
     url: '/outer-params/datasources/by-visualization/' + dvId,
-    method: 'get',
     loading: false
   })
 }

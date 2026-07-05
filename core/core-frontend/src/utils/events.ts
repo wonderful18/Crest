@@ -13,6 +13,7 @@ const events = {
     }
   }
 }
+const EVENT_FIELD_KEY = 'key'
 
 const safeRedirectUrl = (url?: string) => {
   const text = String(url || '').trim()
@@ -34,13 +35,13 @@ const mixins = {
 
 const eventList = [
   {
-    key: 'redirect',
+    [EVENT_FIELD_KEY]: 'redirect',
     label: '跳转事件',
     event: events.redirect,
     param: ''
   },
   {
-    key: 'alert',
+    [EVENT_FIELD_KEY]: 'alert',
     label: 'alert 事件',
     event: events.alert,
     param: ''

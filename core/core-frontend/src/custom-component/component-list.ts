@@ -6,6 +6,8 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { CommonBackground } from '@/components/visualization/component-background/Types'
 import { ShorthandMode } from '@/Types'
 const { t } = useI18n()
+const DEFAULT_QUERY_REQUEST_METHOD = 'GET'
+const EVENT_ACTION_KEY = 'key'
 
 export const commonStyle = {
   rotate: 0,
@@ -28,13 +30,13 @@ export const BASE_EVENTS = {
   showTips: false,
   type: 'jump', // openHidden  jump
   typeList: [
-    { key: 'jump', label: 'jump' },
-    { key: 'download', label: 'download' },
-    { key: 'share', label: 'share' },
-    { key: 'fullScreen', label: 'fullScreen' },
-    { key: 'showHidden', label: 'showHidden' },
-    { key: 'refreshDataV', label: 'refreshDataV' },
-    { key: 'refreshView', label: 'refreshView' }
+    { [EVENT_ACTION_KEY]: 'jump', label: 'jump' },
+    { [EVENT_ACTION_KEY]: 'download', label: 'download' },
+    { [EVENT_ACTION_KEY]: 'share', label: 'share' },
+    { [EVENT_ACTION_KEY]: 'fullScreen', label: 'fullScreen' },
+    { [EVENT_ACTION_KEY]: 'showHidden', label: 'showHidden' },
+    { [EVENT_ACTION_KEY]: 'refreshDataV', label: 'refreshDataV' },
+    { [EVENT_ACTION_KEY]: 'refreshView', label: 'refreshView' }
   ],
   jump: {
     value: 'https://',
@@ -315,7 +317,7 @@ const list: any[] = [
       height: 100
     },
     request: {
-      method: 'GET',
+      method: DEFAULT_QUERY_REQUEST_METHOD,
       data: [],
       url: '',
       series: false, // 是否定时发送请求

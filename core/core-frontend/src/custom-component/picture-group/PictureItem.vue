@@ -1,7 +1,7 @@
 <template>
   <div class="img-option">
     <div class="img-area" :class="{ 'selected-active': active }">
-      <img draggable="false" :src="imgUrlTrans(urlInfo.url)" />
+      <img draggable="false" :src="imgUrlTrans(urlInfo.url)" :alt="urlInfo.name || 'picture'" />
     </div>
     <span :title="urlInfo.name" class="name-area">{{ urlInfo.name }}</span>
   </div>

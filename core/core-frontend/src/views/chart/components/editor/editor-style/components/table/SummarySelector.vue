@@ -64,6 +64,7 @@ type SummaryColumn = {
 }
 
 const emit = defineEmits(['onBasicStyleChange'])
+const SUMMARY_OPTION_KEY = 'key'
 const changeBasicStyle = (prop?: string, requestData = false) => {
   emit('onBasicStyleChange', { data: state.basicStyleForm, requestData }, prop)
 }
@@ -97,15 +98,15 @@ const computedAxis = computed(() => {
   return getAxisList()
 })
 const summaryTypes = [
-  { key: 'sum', name: t('chart.sum') },
-  { key: 'avg', name: t('chart.avg') },
-  { key: 'max', name: t('chart.max') },
-  { key: 'min', name: t('chart.min') },
-  { key: 'custom', name: t('commons.custom') }
+  { [SUMMARY_OPTION_KEY]: 'sum', name: t('chart.sum') },
+  { [SUMMARY_OPTION_KEY]: 'avg', name: t('chart.avg') },
+  { [SUMMARY_OPTION_KEY]: 'max', name: t('chart.max') },
+  { [SUMMARY_OPTION_KEY]: 'min', name: t('chart.min') },
+  { [SUMMARY_OPTION_KEY]: 'custom', name: t('commons.custom') }
 ]
 const summaryColumnTypes = [
   ...summaryTypes,
-  { key: 'count', name: t('chart.count') }
+  { [SUMMARY_OPTION_KEY]: 'count', name: t('chart.count') }
 ]
 const summaryColumnValidationMessages = {
   [SUMMARY_COLUMN_VALIDATION.FIELD_REQUIRED]: 'chart.summary_column_field_required',

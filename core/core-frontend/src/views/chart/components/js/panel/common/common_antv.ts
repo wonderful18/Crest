@@ -19,6 +19,7 @@ import type { PickOptions } from '@antv/g2plot/lib/core/plot'
 import { defaults, find } from 'lodash-es'
 import { useI18n } from '@/hooks/web/useI18n'
 import { isMobile } from '@/utils/utils'
+import { secureRandomInt } from '@/utils/secureRandom'
 import ChartCarouselTooltip, {
   isPie,
   isColumn,
@@ -2088,7 +2089,7 @@ export function configPlotTooltipEvent(chart: Chart, plot: any) {
       }
     }
     plotAny.chart.getOptions().tooltip.follow = false
-    ;(tooltipCtl as any).title = Math.random().toString()
+    ;(tooltipCtl as any).title = secureRandomInt(0x100000000).toString()
     // 当显示提示为事件触发时，使用event的client坐标，否则使用tooltipCtl.point 数据点的位置，在图表中，需要加上图表在绘制区的位置
     chartElement = getChartElements(chart)
     const { x, y } = calculateTooltipPosition(chart, isCarousel, tooltipCtl, chartElement, event)

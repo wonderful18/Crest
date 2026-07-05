@@ -405,7 +405,7 @@ const emits = defineEmits(['finish', 'onDatasetSave'])
             </template>
           </el-tree>
           <div v-if="searchEmpty" class="empty-search">
-            <img :src="nothingTree" />
+            <img :src="nothingTree" :alt="t('commons.no_result')" />
             <span>{{ t('data_set.relevant_content_found') }}</span>
           </div>
         </div>

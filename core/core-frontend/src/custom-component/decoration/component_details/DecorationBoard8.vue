@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import { customMergeColor } from '@/custom-component/decoration/component_details/config'
 import { cloneDeep } from 'lodash-es'
+import { secureRandomToken } from '@/utils/secureRandom'
 
 interface Props {
   color?: string[]
@@ -29,7 +30,7 @@ const defaultColor = ref(['#2862b7', '#2862b7'])
 const mergedColor = ref<string[]>([])
 
 // 生成唯一ID
-const generateId = () => Math.random().toString(36).substring(2, 11)
+const generateId = () => secureRandomToken(9)
 const pathId = `path-${generateId()}`
 const gradientId = `gradient-${generateId()}`
 const maskId = `mask-${generateId()}`

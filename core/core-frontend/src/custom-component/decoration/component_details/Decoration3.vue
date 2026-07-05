@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { customMergeColor } from '@/custom-component/decoration/component_details/config'
 import { cloneDeep } from 'lodash-es'
+import { secureRandomFraction } from '@/utils/secureRandom'
 
 interface Props {
   color?: string[]
@@ -52,9 +53,9 @@ const points = ref<number[][]>([])
 // 预生成动画配置（优化随机性能）
 const animationConfigs = computed(() => {
   return points.value.map((_, i) => ({
-    shouldAnimate: Math.random() <= props.animationRatio,
-    duration: 1 + Math.random(), // 1-2秒
-    delay: Math.random() * 2 // 0-2秒
+    shouldAnimate: secureRandomFraction() <= props.animationRatio,
+    duration: 1 + secureRandomFraction(), // 1-2秒
+    delay: secureRandomFraction() * 2 // 0-2秒
   }))
 })
 

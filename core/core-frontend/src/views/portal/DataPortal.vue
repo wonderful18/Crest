@@ -374,7 +374,7 @@ onMounted(reload)
   <main class="portal-page">
     <header class="portal-header">
       <button class="brand" type="button" @click="backHome">
-        <img class="brand-mark" :src="crestMark" alt="" aria-hidden="true" />
+        <img class="brand-mark" :src="crestMark" alt="Crest" />
         <span class="portal-title">{{ systemTitle }}</span>
       </button>
       <div class="header-actions">

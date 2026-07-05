@@ -17,6 +17,22 @@ export function secureRandomChar(characters: string): string {
   return characters.charAt(secureRandomInt(characters.length))
 }
 
+export function secureRandomFraction(): number {
+  return secureRandomInt(0x100000000) / 0x100000000
+}
+
+export function secureRandomToken(length: number): string {
+  if (!Number.isInteger(length) || length <= 0) {
+    throw new Error('length must be a positive integer')
+  }
+  let token = ''
+  const characters = '0123456789abcdefghijklmnopqrstuvwxyz'
+  for (let i = 0; i < length; i++) {
+    token += secureRandomChar(characters)
+  }
+  return token
+}
+
 export function secureShuffle(value: string): string {
   const chars = value.split('')
   for (let i = chars.length - 1; i > 0; i--) {

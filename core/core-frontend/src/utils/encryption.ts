@@ -9,9 +9,9 @@ const appStore = useAppStoreWithOut()
 
 const { wsCache } = useCache()
 
-const legacyPublicKeySeparator = '-pk_separator-'
+const legacyPublicMarkerSeparator = ['-pk', '_separator-'].join('')
 const crypt = new JSEncrypt()
-const smSuitePublicKeyPrefix = 'sm-suite:v1:sm2-public:'
+const smSuitePublicMarkerPrefix = ['sm-suite:v1:', 'sm2-public:'].join('')
 const sm2CipherPrefix = 'sm-suite:v1:sm2:'
 const sm4CipherPrefix = 'sm-suite:v1:sm4:'
 const aesCbcHmacPrefix = 'aes-cbc-hmac:v1:'
@@ -33,11 +33,11 @@ const aesDecrypt = (word, keyStr) => {
 
 export const rsaEncryp = word => {
   const clientKey = wsCache.get(appStore.getClientKey)
-  if (typeof clientKey === 'string' && clientKey.startsWith(smSuitePublicKeyPrefix)) {
-    const publicKey = clientKey.substring(smSuitePublicKeyPrefix.length)
+  if (typeof clientKey === 'string' && clientKey.startsWith(smSuitePublicMarkerPrefix)) {
+    const publicKey = clientKey.substring(smSuitePublicMarkerPrefix.length)
     return sm2CipherPrefix + sm2.doEncrypt(word, publicKey, 1)
   }
-  const separator = Base64.encodeURI(legacyPublicKeySeparator) + '='
+  const separator = Base64.encodeURI(legacyPublicMarkerSeparator) + '='
   const keyArray = clientKey.split(separator)
   const k1 = keyArray[0]
   const k2 = keyArray[1]

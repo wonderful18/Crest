@@ -1,6 +1,6 @@
 <template>
   <div class="circle-shape">
-    <img class="dynamic-shape" :src="findUrl(element.innerType)" alt="" />
+    <img class="dynamic-shape" :src="findUrl(element.innerType)" alt="dynamic background" />
   </div>
 </template>
 

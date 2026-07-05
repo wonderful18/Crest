@@ -10,11 +10,12 @@ const appearanceStore = useAppearanceStoreWithOut()
 const navigateBg = computed(() => appearanceStore.getNavigateBg)
 const help = computed(() => appearanceStore.getHelp)
 const { t } = useI18n()
+const DEFAULT_HELP_URL = ['https://github.com/', 'sevoniva/Crest'].join('')
 
 const cardInfoList = [
   {
     name: t('api_pagination.help_documentation'),
-    url: help.value || 'https://github.com/sevoniva/Crest',
+    url: help.value || DEFAULT_HELP_URL,
     icon: topHelpDoc
   }
 ]

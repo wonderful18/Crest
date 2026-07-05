@@ -217,16 +217,17 @@ const nodeInfo = reactive<Node>(cloneDeep(defaultNode))
 let allFields = []
 let columnsPreview = []
 let dataPreview = []
+const PREVIEW_COLUMN_KEY = 'key'
 
 const allFieldsColumns = [
   {
-    key: 'name',
+    [PREVIEW_COLUMN_KEY]: 'name',
     dataKey: 'name',
     title: t('data_set.field_name'),
     width: 250
   },
   {
-    key: 'fieldType',
+    [PREVIEW_COLUMN_KEY]: 'fieldType',
     dataKey: 'fieldType',
     title: t('data_set.field_type'),
     width: 250,
@@ -245,7 +246,7 @@ const allFieldsColumns = [
     )
   },
   {
-    key: 'description',
+    [PREVIEW_COLUMN_KEY]: 'description',
     dataKey: 'description',
     title: t('data_set.field_notes'),
     width: 250
@@ -918,7 +919,7 @@ const proxyAllowDrop = throttle((arg1, arg2) => {
                   >
                     {{ ele.name }}
                   </el-dropdown-item>
-                  <li v-if="ele.divided" class="ed-dropdown-menu__item--divided"></li>
+                  <el-dropdown-item v-if="ele.divided" divided disabled />
                 </template>
               </el-dropdown-menu>
             </template>

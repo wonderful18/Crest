@@ -807,7 +807,11 @@ const tablePageClass = computed(() => {
   </div>
   <el-dialog v-model="state.imgEnlarge" append-to-body class="image-dialog">
     <div class="enlarge-image">
-      <img :src="state.imgSrc" style="width: 100%; height: 100%; object-fit: contain" />
+      <img
+        :src="state.imgSrc"
+        :alt="view?.title || t('chart.chart')"
+        style="width: 100%; height: 100%; object-fit: contain"
+      />
     </div>
   </el-dialog>
 </template>

@@ -17,7 +17,6 @@ export function updateOuterParamsSet(requestInfo) {
 export function getOuterParamsInfo(dvId) {
   return request.get({
     url: '/outer-params/outer-params-info/' + dvId,
-    method: 'get',
     loading: false
   })
 }

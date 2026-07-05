@@ -1440,7 +1440,7 @@ const getMenuList = (val: boolean) => {
                   >
                     {{ ele.name }}
                   </el-dropdown-item>
-                  <li v-if="ele.divided" class="ed-dropdown-menu__item--divided"></li>
+                  <el-dropdown-item v-if="ele.divided" divided disabled />
                 </template>
               </el-dropdown-menu>
             </template>

@@ -81,6 +81,7 @@ import { buildMergeCellsInfo } from './tableMergeCells.mjs'
 import { spanSeriesNumberHeader } from './tableSeriesNumber.mjs'
 import { compactSummaryTableHeight, resolveS2ConfiguredHeight } from './tableSummaryHeight.mjs'
 import { getTooltipPointerPosition, hasTooltipContent, isSortTooltipRequest } from './tableSortTooltip.mjs'
+import { secureRandomInt } from '@/utils/secureRandom'
 
 const { t: i18nt } = useI18n()
 
@@ -1746,7 +1747,7 @@ export function configHeaderInteraction(chart: Chart, option: S2Options) {
   const sortUp = svg2Base64(SORT_UP.replace('{fill}', iconColor))
   const sortDown = svg2Base64(SORT_DOWN.replace('{fill}', iconColor))
   // 防止缓存
-  const randomSuffix = Math.random()
+  const randomSuffix = secureRandomInt(0x100000000).toString(36)
   const sortIconMap = {
     asc: `customSortUp${randomSuffix}`,
     desc: `customSortDown${randomSuffix}`

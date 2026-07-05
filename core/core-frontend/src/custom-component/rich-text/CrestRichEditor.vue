@@ -24,6 +24,7 @@ import '@npkg/tinymce-plugins/letterspacing'
 import { reactive, ref } from 'vue'
 import { onMounted, watch } from 'vue'
 import axios from 'axios'
+import { secureRandomInt } from '@/utils/secureRandom'
 // import { updateImg } from '@/api/order/order'
 const emits = defineEmits(['getContent'])
 // 通过 props 暴露编辑器配置，便于复用到不同富文本场景。
@@ -54,7 +55,7 @@ const props = defineProps({
 })
 // 与外部 value 保持同步。
 const myValue = ref(props.value)
-const tinymceId = ref('vue-tinymce-' + +new Date() + ((Math.random() * 1000).toFixed(0) + ''))
+const tinymceId = ref(`vue-tinymce-${Date.now()}${secureRandomInt(1000).toString().padStart(3, '0')}`)
 // TinyMCE 初始化配置。
 const init = reactive({
   selector: '#' + tinymceId.value, // 富文本编辑器实例 ID。

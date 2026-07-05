@@ -231,7 +231,6 @@ export const delDatasetTree = async (id): Promise<IResponse> => {
 export const exportDatasetData = (data = {}) => {
   return request.post({
     url: '/dataset-tree/export-dataset',
-    method: 'post',
     data: data,
     loading: true,
     responseType: 'blob'

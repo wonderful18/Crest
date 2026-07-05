@@ -481,7 +481,7 @@ const emits = defineEmits(['update:item', 'del'])
           <div class="de-panel clearfix">
             <div class="mod-left">
               <el-input :placeholder="t('auth.enter_keywords')" v-model="filterFiled"> </el-input>
-              <ul class="autochecker-list" style="height: 260px">
+              <div class="autochecker-list" role="list" style="height: 260px">
                 <div class="select-all">
                   <el-checkbox
                     v-model="checkAll"
@@ -492,14 +492,14 @@ const emits = defineEmits(['update:item', 'del'])
                 </div>
                 <el-checkbox-group v-model="checkboxlist" @change="selectedChange">
                   <el-scrollbar height="230px">
-                    <li :key="i" v-for="i in checkListWithFilter" :title="i">
+                    <div class="autochecker-item" role="listitem" :key="i" v-for="i in checkListWithFilter" :title="i">
                       <el-checkbox :label="i">
                         {{ i }}
                       </el-checkbox>
-                    </li>
+                    </div>
                   </el-scrollbar>
                 </el-checkbox-group>
-              </ul>
+              </div>
             </div>
             <div class="mod-left right-de">
               <div class="right-top clearfix">
@@ -530,20 +530,20 @@ const emits = defineEmits(['update:item', 'del'])
                   </transition>
                 </div>
               </div>
-              <ul class="autochecker-list">
+              <div class="autochecker-list" role="list">
                 <div class="clear-checkbox__label">
                   <span>{{ t('auth.added') + ' ' + checklist.length }}</span
                   ><span @click="clearAll">{{ t('user.clear_button') }}</span>
                 </div>
                 <el-scrollbar height="230px">
-                  <li :key="i" v-for="(i, idx) in checklist">
+                  <div class="autochecker-item" role="listitem" :key="i" v-for="(i, idx) in checklist">
                     <div :title="i" class="right-checkbox__label">{{ i }}</div>
                     <el-icon @click="delChecks(idx, i)" class="remove-hover-icon">
                       <Icon><icon_close_outlined class="svg-icon" /></Icon>
                     </el-icon>
-                  </li>
+                  </div>
                 </el-scrollbar>
-              </ul>
+              </div>
             </div>
             <div class="right-menu-foot">
               <el-button secondary @click="cancelSelect">
@@ -956,7 +956,7 @@ const emits = defineEmits(['update:item', 'del'])
         font-size: 14px;
       }
 
-      li {
+      .autochecker-item {
         padding: 0 5px;
         list-style: none;
         display: flex;

@@ -1,15 +1,17 @@
 // 替换所有 标准模板格式 为 $panelName$
+import { secureRandomInt } from '@/utils/secureRandom'
+
 export function pdfTemplateReplaceAll(content, source, target) {
   return String(content).split(`$${source}$`).join(target)
 }
 
 export function randomRange(min, max) {
   let returnStr = ''
-  const range = max ? Math.round(Math.random() * (max - min)) + min : min
+  const range = max ? secureRandomInt(max - min + 1) + min : min
   const charStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
   for (let i = 0; i < range; i++) {
-    const index = Math.round(Math.random() * (charStr.length - 1))
+    const index = secureRandomInt(charStr.length)
     returnStr += charStr.substring(index, index + 1)
   }
   return returnStr

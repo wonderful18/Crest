@@ -26,6 +26,7 @@ import Cron from '@/components/cron/src/Cron.vue'
 import { ComponentPublicInstance } from 'vue'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 const { t } = useI18n()
+const DEFAULT_API_REQUEST_METHOD = 'GET'
 const prop = defineProps({
   form: {
     required: false,
@@ -126,7 +127,7 @@ const defaultApiItem = {
   url: '',
   type: '',
   serialNumber: 0,
-  method: 'GET',
+  method: DEFAULT_API_REQUEST_METHOD,
   request: {
     headers: [{}],
     arguments: [],

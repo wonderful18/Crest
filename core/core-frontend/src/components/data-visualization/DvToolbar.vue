@@ -56,6 +56,7 @@ let inputName = ref('')
 let nameInput = ref(null)
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
+const CANVAS_STATE_FIELD = 'key'
 const { styleChangeTimes, snapshotIndex } = storeToRefs(snapshotStore)
 const resourceGroupOpt = ref(null)
 const resourceAppOpt = ref(null)
@@ -265,7 +266,7 @@ const backHandler = (url: string) => {
     openHandler.value.invokeMethod(pm)
     return
   }
-  dvMainStore.canvasStateChange({ key: 'curPointArea', value: 'base' })
+  dvMainStore.canvasStateChange({ [CANVAS_STATE_FIELD]: 'curPointArea', value: 'base' })
   wsCache.delete('CREST-DV-CACHE-' + dvInfo.value.id)
   wsCache.set('dv-info-id', dvInfo.value.id)
   if (!!history.state.back) {
@@ -343,7 +344,7 @@ const publishStatusChange = status => {
 
 const isIframe = computed(() => appStore.getIsIframe)
 const fullScreenPreview = () => {
-  dvMainStore.canvasStateChange({ key: 'curPointArea', value: 'base' })
+  dvMainStore.canvasStateChange({ [CANVAS_STATE_FIELD]: 'curPointArea', value: 'base' })
   fullScreeRef.value.toggleFullscreen()
 }
 </script>

@@ -5,6 +5,7 @@
       v-if="propValue['url']"
       :style="imageAdapter"
       :src="imgUrlTrans(propValue['url'])"
+      :alt="propValue['name'] || t('visualization.picture')"
     />
     <div v-else class="pic-upload">
       <span
