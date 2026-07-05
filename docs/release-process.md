@@ -14,9 +14,10 @@
 
 | 分支 | 用途 | 合入方式 |
 | --- | --- | --- |
-| `main` | 稳定主线，代表最新可发布状态 | 只接受 PR，不直接 push |
+| `main` | 前向集成分支，承载活跃开发与最新发布集成，不绑定具体 LTS 系列 | 只接受 PR，不直接 push |
 | `dev` | 新功能和非紧急修复集成分支 | 只接受 PR，不直接 push |
 | `release/1.5-lts` | 1.5 系列 LTS 维护分支，产出 `v1.5.8` 及之后的 1.5 补丁版本 | 只接受 PR，不直接 push |
+| `release/2.1-lts` | 2.x 系列 LTS 维护分支，产出 `v2.1.x` 补丁版本 | 只接受 PR，不直接 push |
 
 ## 临时分支命名
 
@@ -24,9 +25,9 @@
 | --- | --- | --- |
 | 新功能 | `feat/<short-name>` | `dev` |
 | 普通缺陷，尚未发布 | `fix/<short-name>` | `dev` |
-| 已发布版本补丁 | `hotfix/<next-version>-<short-name>` | `release/1.5-lts` |
-| 安全修复 | `security/<short-name>` 或 `hotfix/<next-version>-security-<short-name>` | `dev` 或 `release/1.5-lts` |
-| 发布流程、CI、打包脚本 | `ci/<short-name>` 或 `chore/<short-name>` | `dev`、`main` 或 `release/1.5-lts`，按影响范围选择 |
+| 已发布版本补丁 | `hotfix/<next-version>-<short-name>` | `release/1.5-lts` 或 `release/2.1-lts`（按受影响版本） |
+| 安全修复 | `security/<short-name>` 或 `hotfix/<next-version>-security-<short-name>` | `dev`、`release/1.5-lts` 或 `release/2.1-lts`（按受影响版本） |
+| 发布流程、CI、打包脚本 | `ci/<short-name>` 或 `chore/<short-name>` | `dev`、`main`、`release/1.5-lts` 或 `release/2.1-lts`，按影响范围选择 |
 | 文档 | `docs/<short-name>` | 对应长期分支 |
 | 实验验证 | `spike/<short-name>` | 不直接合入受保护分支，需整理为正式分支后再 PR |
 
@@ -122,6 +123,7 @@ v1.5.13_to_v1.5.14.sql
 自动化协作者看到任务时，先按以下规则判断：
 
 - 用户说“线上、内网、已发布、1.5.x 有 bug、重新打包并修复”：按 hotfix 流程，目标分支是 `release/1.5-lts`，版本应提升到下一个补丁版本。
+- 用户说“v2.x 有 bug、2.1 有 bug、已发布 2.x 需修复”：按 hotfix 流程，目标分支是 `release/2.1-lts`，版本应提升到下一个 `2.1.x` 补丁版本。
 - 用户说“新功能、优化、规划中的能力”：从 `feat/*` 做到 `dev`。
 - 用户说“包没传、附件漏了、checksum 不对、workflow 失败”：判断代码和镜像是否变化；未变化时只修打包流程并重跑附件 workflow。
 - 用户说“SQL 变更、系统参数、初始化数据、表结构”：必须检查并维护 `installer/upgrade-sql/`。
