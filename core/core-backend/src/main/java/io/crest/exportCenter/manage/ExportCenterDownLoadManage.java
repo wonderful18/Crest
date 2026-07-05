@@ -474,10 +474,11 @@ public class ExportCenterDownLoadManage {
                             request.getViewInfo().getChartExtRequest().setGoPage(i);
                             request.getViewInfo().setExtStack(request.getViewInfo().getExtStack().stream().filter(ele -> !ele.isHide()).collect(Collectors.toList()));
                             ChartViewDTO pageDto = chartDataServer.findExcelData(request);
-                            details.addAll(request.getDetails());
+                            List<Object[]> pageDetails = ChartDataServer.safeDetailRows(request.getDetails());
+                            details.addAll(pageDetails);
 
                             if (summaryEnabled) {
-                                ChartDataServer.accumulatePageStats(summaryAcc, request.getDetails(), allExportColumns, summaryConfig);
+                                ChartDataServer.accumulatePageStats(summaryAcc, pageDetails, allExportColumns, summaryConfig);
                                 if (i == chartViewDTO.getTotalPage() && pageDto.getData() != null && pageDto.getData().get("customSumResult") != null) {
                                     customSumResult = (Map<String, java.math.BigDecimal>) pageDto.getData().get("customSumResult");
                                 }
@@ -560,7 +561,7 @@ public class ExportCenterDownLoadManage {
         cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         if (CollectionUtils.isEmpty(request.getMultiInfo())) {
             if (!request.getViewInfo().getType().equalsIgnoreCase("chart-mix-dual-line")) {
-                List<Object[]> details = request.getDetails();
+                List<Object[]> details = ChartDataServer.safeDetailRows(request.getDetails());
                 Integer[] excelTypes = request.getExcelTypes();
                 details.add(0, request.getHeader());
                 ViewDetailField[] detailFields = request.getDetailFields();

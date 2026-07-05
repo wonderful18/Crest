@@ -284,7 +284,7 @@ public class ChartDataServer implements ChartDataApi {
                     for (long i = 1; i < chartViewDTO.getTotalPage() + 1; i++) {
                         request.getViewInfo().getChartExtRequest().setGoPage(i);
                         ChartViewDTO pageDto = findExcelData(request);
-                        List<Object[]> pageDetails = request.getDetails();
+                        List<Object[]> pageDetails = safeDetailRows(request.getDetails());
                         if (summaryEnabled) {
                             appendSummaryColumnPlaceholders(pageDetails, summaryConfig);
                         }
@@ -341,7 +341,7 @@ public class ChartDataServer implements ChartDataApi {
                 } else {
                     findExcelData(request);
                     if (CollectionUtils.isEmpty(request.getMultiInfo())) {
-                        List<Object[]> details = request.getDetails();
+                        List<Object[]> details = safeDetailRows(request.getDetails());
                         Integer[] excelTypes = request.getExcelTypes();
                         details.add(0, request.getHeader());
                         ViewDetailField[] detailFields = request.getDetailFields();
@@ -355,7 +355,7 @@ public class ChartDataServer implements ChartDataApi {
                     } else {
                         for (int i = 0; i < request.getMultiInfo().size(); i++) {
                             ChartExcelRequestInner requestInner = request.getMultiInfo().get(i);
-                            List<Object[]> details = requestInner.getDetails();
+                            List<Object[]> details = safeDetailRows(requestInner.getDetails());
                             Integer[] excelTypes = requestInner.getExcelTypes();
                             details.add(0, requestInner.getHeader());
                             ViewDetailField[] detailFields = requestInner.getDetailFields();
@@ -1334,6 +1334,10 @@ public class ChartDataServer implements ChartDataApi {
 
     private static List<ChartViewFieldDTO> safeAxis(List<ChartViewFieldDTO> fields) {
         return fields == null ? Collections.emptyList() : fields;
+    }
+
+    public static List<Object[]> safeDetailRows(List<Object[]> details) {
+        return details == null ? new ArrayList<>() : details;
     }
 
     public static List<ChartViewFieldDTO> buildSummaryColumnFields(SummaryConfig config) {
