@@ -4,7 +4,7 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 
 import { storeToRefs } from 'pinia'
-import { ElIcon, ElMessage } from 'element-plus-secondary'
+import { ElIcon } from 'element-plus-secondary'
 import { ref, onMounted, onBeforeUnmount, watch, PropType } from 'vue'
 import { beforeUploadCheck, uploadFileResult } from '@/api/staticResource'
 import { imgUrlTrans } from '@/utils/imgUtils'
@@ -30,7 +30,6 @@ const dialogImageUrl = ref('')
 const dialogVisible = ref(false)
 const uploadDisabled = ref(false)
 const files = ref(null)
-const maxImageSize = 15000000
 
 const handlePictureCardPreview = file => {
   dialogImageUrl.value = file.url
@@ -60,8 +59,10 @@ const goFile = () => {
 
 const reUpload = e => {
   const file = e.target.files[0]
-  if (file.size > maxImageSize) {
-    sizeMessage()
+  if (!file) {
+    return
+  }
+  if (!beforeUploadCheck(file)) {
     return
   }
   uploadFileResult(file, fileUrl => {
@@ -71,9 +72,6 @@ const reUpload = e => {
   })
 }
 
-const sizeMessage = () => {
-  ElMessage.error('图片大小不能超过15M')
-}
 const init = () => {
   if (curComponent.value.propValue.url) {
     fileList.value = [{ url: imgUrlTrans(curComponent.value.propValue.url) }]

@@ -1026,6 +1026,40 @@ public class DatasourceServer implements DatasourceApi {
         }
         FileUtils.validateUploadFileSize(file, MAX_EXCEL_UPLOAD_BYTES, "Excel文件");
         FileUtils.validateUploadFilename(fileName);
+        validateExcelUploadContent(file, suffix);
+    }
+
+    private void validateExcelUploadContent(MultipartFile file, String suffix) {
+        byte[] header = new byte[8];
+        int length;
+        try (InputStream inputStream = file.getInputStream()) {
+            length = inputStream.read(header);
+        } catch (IOException e) {
+            CrestException.throwException("Excel文件读取失败");
+            return;
+        }
+        if (length <= 0) {
+            CrestException.throwException("Excel文件不能为空");
+        }
+        byte[] actual = Arrays.copyOf(header, length);
+        if ("xlsx".equals(suffix)) {
+            if (length < 2 || actual[0] != 0x50 || actual[1] != 0x4B) {
+                CrestException.throwException("无效的 xlsx 文件");
+            }
+            return;
+        }
+        if ("xls".equals(suffix)) {
+            byte[] oleSignature = new byte[]{(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0, (byte) 0xA1, (byte) 0xB1, 0x1A, (byte) 0xE1};
+            if (length < oleSignature.length || !Arrays.equals(actual, oleSignature)) {
+                CrestException.throwException("无效的 xls 文件");
+            }
+            return;
+        }
+        for (byte value : actual) {
+            if (value == 0) {
+                CrestException.throwException("无效的 csv 文件");
+            }
+        }
     }
 
 

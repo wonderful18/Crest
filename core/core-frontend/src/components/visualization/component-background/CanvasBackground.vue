@@ -159,14 +159,13 @@ import { imgUrlTrans } from '@/utils/imgUtils'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import { beforeUploadCheck, uploadFileResult } from '@/api/staticResource'
 import { useI18n } from '@/hooks/web/useI18n'
-import { ElButton, ElMessage } from 'element-plus-secondary'
+import { ElButton } from 'element-plus-secondary'
 import ImgViewDialog from '@/custom-component/ImgViewDialog.vue'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { storeToRefs } from 'pinia'
 const snapshotStore = snapshotStoreWithOut()
 const { t } = useI18n()
 const files = ref(null)
-const maxImageSize = 15000000
 
 const dvMainStore = dvMainStoreWithOut()
 const { canvasStyleData, dvInfo } = storeToRefs(dvMainStore)
@@ -203,10 +202,6 @@ const goFile = () => {
   files.value.click()
 }
 
-const sizeMessage = () => {
-  ElMessage.success(t('visualization.pic_size_error'))
-}
-
 const syncFileList = url => {
   state.fileList = url ? [{ url: imgUrlTrans(url) }] : []
 }
@@ -225,8 +220,7 @@ const reUpload = e => {
   if (!file) {
     return
   }
-  if (file.size > maxImageSize) {
-    sizeMessage()
+  if (!beforeUploadCheck(file)) {
     return
   }
   uploadFileResult(file, applyUploadedBackground)

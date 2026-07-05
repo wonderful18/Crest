@@ -15,6 +15,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -136,5 +137,49 @@ class DatasourceServerTest {
         String quoted = (String) quoteExcelIdentifier.invoke(server, "field` FROM t; DROP TABLE t; --");
 
         assertEquals("`field`` FROM t; DROP TABLE t; --`", quoted);
+    }
+
+    @Test
+    void validateExcelUploadFileRejectsForgedXlsxContent() {
+        DatasourceServer server = new DatasourceServer();
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "data.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "not an xlsx".getBytes());
+
+        assertThrows(CrestException.class, () ->
+                ReflectionTestUtils.invokeMethod(server, "validateExcelUploadFile", file));
+    }
+
+    @Test
+    void validateExcelUploadFileAllowsExpectedHeaders() {
+        DatasourceServer server = new DatasourceServer();
+        MockMultipartFile xlsx = new MockMultipartFile(
+                "file",
+                "data.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                new byte[]{0x50, 0x4B, 0x03, 0x04});
+        MockMultipartFile csv = new MockMultipartFile(
+                "file",
+                "data.csv",
+                "text/csv",
+                "name\nalice\n".getBytes());
+
+        assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(server, "validateExcelUploadFile", xlsx));
+        assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(server, "validateExcelUploadFile", csv));
+    }
+
+    @Test
+    void validateExcelUploadFileRejectsBinaryCsvContent() {
+        DatasourceServer server = new DatasourceServer();
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "data.csv",
+                "text/csv",
+                new byte[]{'n', 'a', 'm', 'e', 0, 'x'});
+
+        assertThrows(CrestException.class, () ->
+                ReflectionTestUtils.invokeMethod(server, "validateExcelUploadFile", file));
     }
 }

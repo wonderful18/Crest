@@ -409,7 +409,6 @@ import { beforeUploadCheck, uploadFileResult } from '@/api/staticResource'
 import { useI18n } from '@/hooks/web/useI18n'
 import { deepCopy } from '@/utils/utils'
 import elementResizeDetectorMaker from 'element-resize-detector'
-import { ElMessage } from 'element-plus-secondary'
 import BoardItem from '@/components/visualization/component-background/BoardItem.vue'
 import ImgViewDialog from '@/custom-component/ImgViewDialog.vue'
 import BorderOptionPrefix from '@/components/visualization/component-background/BorderOptionPrefix.vue'
@@ -417,7 +416,6 @@ const snapshotStore = snapshotStoreWithOut()
 const { t } = useI18n()
 const emits = defineEmits(['onBackgroundChange'])
 const files = ref(null)
-const maxImageSize = 15000000
 
 const props = withDefaults(
   defineProps<{
@@ -489,10 +487,6 @@ const goFile = () => {
   files.value.click()
 }
 
-const sizeMessage = () => {
-  ElMessage.error('图片大小不能超过15M')
-}
-
 const syncFileList = url => {
   state.fileList = url ? [{ name: 'background', url: imgUrlTrans(url) }] : []
 }
@@ -511,8 +505,7 @@ const reUpload = e => {
   if (!file) {
     return
   }
-  if (file.size > maxImageSize) {
-    sizeMessage()
+  if (!beforeUploadCheck(file)) {
     return
   }
   uploadFileResult(file, applyUploadedBackground)
