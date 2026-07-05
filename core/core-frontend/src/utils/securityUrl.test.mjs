@@ -29,12 +29,17 @@ function loadSecurityUrl() {
 
 describe('securityUrl', () => {
   it('keeps back navigation on the current origin', () => {
-    const { safeSameOriginUrl } = loadSecurityUrl()
+    const { safeSameOriginUrl, safeSameOriginRoute } = loadSecurityUrl()
 
     assert.equal(
       safeSameOriginUrl('https://crest.example.com/#/screen/index?dvId=1', 'https://crest.example.com'),
       '/#/screen/index?dvId=1'
     )
+    assert.equal(
+      safeSameOriginRoute('https://crest.example.com/#/screen/index?dvId=1', 'https://crest.example.com'),
+      '/screen/index?dvId=1'
+    )
+    assert.equal(safeSameOriginRoute('https://evil.example.com/phish', 'https://crest.example.com'), '/')
     assert.equal(safeSameOriginUrl('https://evil.example.com/phish', 'https://crest.example.com'), '/')
     assert.equal(safeSameOriginUrl('javascript:alert(1)', 'https://crest.example.com'), '/')
   })

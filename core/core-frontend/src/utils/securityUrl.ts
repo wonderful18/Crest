@@ -14,6 +14,17 @@ export const safeSameOriginUrl = (
   }
 }
 
+export const safeSameOriginRoute = (
+  url?: string | null,
+  currentOrigin = window.location.origin
+) => {
+  const safeUrl = safeSameOriginUrl(url, currentOrigin)
+  const hashIndex = safeUrl.indexOf('#')
+  if (hashIndex < 0) return safeUrl
+  const route = safeUrl.slice(hashIndex + 1)
+  return route.startsWith('/') ? route : '/'
+}
+
 export const resolvePostMessageTargetOrigin = (
   referrer = document.referrer,
   currentOrigin = window.location.origin,
