@@ -1,0 +1,9 @@
+[[IgnoredVulns]]
+id = "GHSA-q742-qvgc-gc2f"
+ignoreUntil = 2026-08-31
+reason = "TinyMCE 8.7.0 is above the 8.5.1 patched version listed by the GitHub advisory; OSV currently marks npm tinymce with an extra unbounded range."
+
+[[IgnoredVulns]]
+id = "GHSA-v98h-vmpc-fpqv"
+ignoreUntil = 2026-08-31
+reason = "TinyMCE 8.7.0 is above the 8.5.1 patched version listed by the GitHub advisory; OSV currently marks npm tinymce with an extra unbounded range."

@@ -21,9 +21,11 @@ class JsonUtilSecurityTest {
     @Test
     void springObjectMapperShouldKeepCaseInsensitivePropertiesDisabled() {
         JacksonConfig config = new JacksonConfig();
+        Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder()
+                .featuresToEnable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
+        config.customJackson().customize(builder);
 
-        assertFalse(config.jacksonObjectMapper(new Jackson2ObjectMapperBuilder())
-                .isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES));
+        assertFalse(config.jacksonObjectMapper(builder).isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES));
     }
 
     @JsonIgnoreProperties({"secret"})
