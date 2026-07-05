@@ -192,7 +192,7 @@
       <span class="dialog-footer">
         <el-button secondary @click="openTicket">{{ t('work_branch.ticket_setting') }}</el-button>
         <el-button :disabled="!shareEnable || expError" type="primary" @click.stop="copyInfo">
-          {{ passwdEnable ? t('visualization.copy_link_passwd') : t('visualization.copy_link') }}
+          {{ t('visualization.copy_link') }}
         </el-button>
       </span>
     </template>
@@ -357,11 +357,7 @@ const copyInfo = async () => {
         }
       }
       formatLinkAddr()
-      let info = linkAddr.value
-      if (passwdEnable.value) {
-        info += `,${state.detailInfo.pwd}`
-      }
-      await toClipboard(info)
+      await toClipboard(linkAddr.value)
       ElMessage.success(t('common.copy_success'))
     } catch (e) {
       ElMessage.warning(t('common.copy_unsupported'))

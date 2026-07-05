@@ -82,7 +82,7 @@ const disableShare = async row => {
 }
 
 const copyLink = async () => {
-  await toClipboard(current.pwd ? `${shareLink.value},${current.pwd}` : shareLink.value)
+  await toClipboard(shareLink.value)
   ElMessage.success('链接已复制')
 }
 
