@@ -53,14 +53,14 @@ public class SysParameterServer implements SysParameterApi {
 
     @Override
     public String singleVal(String key) {
+        CrestPermissionUtils.requireAdmin();
         return sysParameterManage.singleVal(key);
     }
 
     @Override
     public List<SettingItemVO> queryBasicSetting() {
-        String key = "basic.";
-        List<CoreSysSetting> coreSysSettings = sysParameterManage.groupList(key);
-        return sysParameterManage.convert(coreSysSettings);
+        CrestPermissionUtils.requireAdmin();
+        return basicSettingItems();
     }
 
     @Override
@@ -73,7 +73,7 @@ public class SysParameterServer implements SysParameterApi {
     @Override
     public Integer RequestTimeOut() {
         int frontTimeOut = 60;
-        List<SettingItemVO> settingItemVOS = queryBasicSetting();
+        List<SettingItemVO> settingItemVOS = basicSettingItems();
         for (SettingItemVO settingItemVO : settingItemVOS) {
             if (StringUtils.isNotBlank(settingItemVO.getPkey()) && settingItemVO.getPkey().equalsIgnoreCase(SystemSettingConstants.Front_Time_Out) && StringUtils.isNotBlank(settingItemVO.getPval())) {
                 frontTimeOut = Integer.parseInt(settingItemVO.getPval());
@@ -87,7 +87,7 @@ public class SysParameterServer implements SysParameterApi {
         Map<String, Object> map = new HashMap<>();
         map.put(SystemSettingConstants.DEFAULT_SORT, "1");
 
-        List<SettingItemVO> settingItemVOS = queryBasicSetting();
+        List<SettingItemVO> settingItemVOS = basicSettingItems();
         for (SettingItemVO settingItemVO : settingItemVOS) {
             if (StringUtils.isNotBlank(settingItemVO.getPkey()) && settingItemVO.getPkey().equalsIgnoreCase(SystemSettingConstants.DEFAULT_SORT) && StringUtils.isNotBlank(settingItemVO.getPval())) {
                 map.put(SystemSettingConstants.DEFAULT_SORT, settingItemVO.getPval());
@@ -97,6 +97,12 @@ public class SysParameterServer implements SysParameterApi {
             }
         }
         return map;
+    }
+
+    private List<SettingItemVO> basicSettingItems() {
+        String key = "basic.";
+        List<CoreSysSetting> coreSysSettings = sysParameterManage.groupList(key);
+        return sysParameterManage.convert(coreSysSettings);
     }
 
     @Override
@@ -150,6 +156,7 @@ public class SysParameterServer implements SysParameterApi {
 
     @Override
     public SQLBotConfigVO sqlBotConfig() {
+        CrestPermissionUtils.requireAdmin();
         assertFullModeFeature();
         String key = "sqlbot.";
         List<CoreSysSetting> coreSysSettings = sysParameterManage.groupList(key);
