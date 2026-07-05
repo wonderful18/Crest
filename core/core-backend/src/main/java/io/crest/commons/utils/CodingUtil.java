@@ -6,14 +6,14 @@ import org.apache.commons.lang3.StringUtils;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.UUID;
 
 /**
  * 通用编码和摘要工具，提供 MD5、Base64、AES 等兼容能力。
  */
 public class CodingUtil {
-
-    private static final String UTF_8 = "UTF-8";
 
     public static String[] chars = new String[] { "a", "b", "c", "d", "e", "f",
             "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
@@ -29,15 +29,10 @@ public class CodingUtil {
      * @return 解密后的字符串
      */
     public static String base64Decoding(String src) {
-        byte[] b;
         String result = null;
         if (src != null) {
-            try {
-                b = Base64.decodeBase64(src);
-                result = new String(b, UTF_8);
-            } catch (Exception e) {
-                throw new RuntimeException("BASE64 decoding error:", e);
-            }
+            byte[] b = Base64.decodeBase64(src);
+            result = new String(b, StandardCharsets.UTF_8);
         }
         return result;
     }
@@ -51,11 +46,7 @@ public class CodingUtil {
     public static String base64Encoding(String src) {
         String result = null;
         if (src != null) {
-            try {
-                result = Base64.encodeBase64String(src.getBytes(UTF_8));
-            } catch (Exception e) {
-                throw new RuntimeException("BASE64 encoding error:", e);
-            }
+            result = Base64.encodeBase64String(src.getBytes(StandardCharsets.UTF_8));
         }
         return result;
     }
@@ -75,15 +66,15 @@ public class CodingUtil {
         }
 
         try {
-            byte[] raw = secretKey.getBytes(UTF_8);
+            byte[] raw = secretKey.getBytes(StandardCharsets.UTF_8);
             SecretKeySpec secretKeySpec = new SecretKeySpec(raw, "AES");
             // "算法/模式/补码方式" ECB
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
-            IvParameterSpec iv1 = new IvParameterSpec(iv.getBytes());
+            IvParameterSpec iv1 = new IvParameterSpec(iv.getBytes(StandardCharsets.UTF_8));
             cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, iv1);
-            byte[] encrypted = cipher.doFinal(src.getBytes(UTF_8));
+            byte[] encrypted = cipher.doFinal(src.getBytes(StandardCharsets.UTF_8));
             return Base64.encodeBase64String(encrypted);
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
             throw new RuntimeException("AES encrypt error:", e);
         }
 
@@ -103,18 +94,18 @@ public class CodingUtil {
             throw new RuntimeException("secretKey is empty");
         }
         try {
-            byte[] raw = secretKey.getBytes(UTF_8);
+            byte[] raw = secretKey.getBytes(StandardCharsets.UTF_8);
             SecretKeySpec secretKeySpec = new SecretKeySpec(raw, "AES");
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
-            IvParameterSpec iv1 = new IvParameterSpec(iv.getBytes());
+            IvParameterSpec iv1 = new IvParameterSpec(iv.getBytes(StandardCharsets.UTF_8));
             cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, iv1);
             byte[] encrypted1 = Base64.decodeBase64(src);
             byte[] original = cipher.doFinal(encrypted1);
-            return new String(original, UTF_8);
+            return new String(original, StandardCharsets.UTF_8);
         } catch (BadPaddingException | IllegalBlockSizeException e) {
             // 解密的原字符串为非加密字符串，则直接返回原字符串
             return src;
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
             throw new RuntimeException("decrypt error，please check parameters", e);
         }
     }
@@ -126,7 +117,7 @@ public class CodingUtil {
             keyGen.init(128);
             SecretKey secretKey = keyGen.generateKey();
             return Base64.encodeBase64String(secretKey.getEncoded());
-        } catch (Exception e) {
+        } catch (GeneralSecurityException e) {
             throw new RuntimeException("generate secretKey error", e);
         }
 

@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 import static io.crest.constant.AuthResourceEnum.DATASET;
@@ -33,34 +34,32 @@ public interface DatasetTreeApi {
      *
      * @param dto
      * @return
-     * @throws Exception
      */
     @Operation(summary = "保存数据集", hidden = true)
     @CrestPermit({"#p0.id+':manage'"})
     @PostMapping("record")
-    DatasetNodeDTO save(@RequestBody DatasetGroupInfoDTO dto) throws Exception;
+    DatasetNodeDTO save(@RequestBody DatasetGroupInfoDTO dto);
 
     @Operation(summary = "重命名数据集")
     @CrestPermit({"#p0.id+':manage'"})
     @PostMapping("rename")
-    DatasetNodeDTO rename(@RequestBody DatasetGroupInfoDTO dto) throws Exception;
+    DatasetNodeDTO rename(@RequestBody DatasetGroupInfoDTO dto);
 
     /**
      * 新建
      *
      * @param dto
      * @return
-     * @throws Exception
      */
     @Operation(summary = "创建数据集")
     @CrestPermit({"#p0.pid+':manage'"})
     @PostMapping
-    DatasetNodeDTO create(@RequestBody DatasetGroupInfoDTO dto) throws Exception;
+    DatasetNodeDTO create(@RequestBody DatasetGroupInfoDTO dto);
 
     @Operation(summary = "移动数据集")
     @CrestPermit({"#p0.id+':manage'", "#p0.pid+':manage'"})
     @PostMapping("move")
-    DatasetNodeDTO move(@RequestBody DatasetGroupInfoDTO dto) throws Exception;
+    DatasetNodeDTO move(@RequestBody DatasetGroupInfoDTO dto);
 
     @Operation(summary = "是否有仪表板、大屏正在使用此数据集")
     @CrestPermit({"#p0+':manage'"})
@@ -82,26 +81,26 @@ public interface DatasetTreeApi {
 
     @Operation(summary = "查询数据集")
     @PostMapping("detail/{id}")
-    DatasetGroupInfoDTO get(@PathVariable("id") Long id) throws Exception;
+    DatasetGroupInfoDTO get(@PathVariable("id") Long id);
 
     @Operation(summary = "获取数据集详情")
     @PostMapping("details/{id}")
-    DatasetGroupInfoDTO details(@PathVariable("id") Long id) throws Exception;
+    DatasetGroupInfoDTO details(@PathVariable("id") Long id);
 
     @Operation(summary = "获取数据集详情")
     @PostMapping("dataset-details")
-    List<DatasetTableDTO> panelGetDsDetails(@RequestBody List<Long> ids) throws Exception;
+    List<DatasetTableDTO> panelGetDsDetails(@RequestBody List<Long> ids);
 
     @Operation(summary = "获取SQL参数")
     @PostMapping("sql-params")
-    List<SqlVariableDetails> sqlParams(@RequestBody List<Long> ids) throws Exception;
+    List<SqlVariableDetails> sqlParams(@RequestBody List<Long> ids);
 
     @Operation(summary = "带权限查询数据集详情")
     @PostMapping("detail-with-permission")
-    List<DatasetTableDTO> detailWithPerm(@RequestBody List<Long> ids) throws Exception;
+    List<DatasetTableDTO> detailWithPerm(@RequestBody List<Long> ids);
 
     @CrestPermit(value = {"#p0.id+':export'"})
     @Operation(summary = "数据集导出")
     @PostMapping("/export-dataset")
-    void exportDataset(@RequestBody DataSetExportRequest request, HttpServletResponse response) throws Exception;
+    void exportDataset(@RequestBody DataSetExportRequest request, HttpServletResponse response) throws IOException;
 }

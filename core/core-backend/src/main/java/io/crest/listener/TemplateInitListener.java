@@ -9,6 +9,8 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+
 @Component
 @Order(value = 3)
 public class TemplateInitListener implements ApplicationListener<ApplicationReadyEvent> {
@@ -28,7 +30,7 @@ public class TemplateInitListener implements ApplicationListener<ApplicationRead
         LogUtil.info("=====Template init from code [Start]=====");
         try{
             templateLocalParseManage.doInit();
-        }catch (Exception e){
+        }catch (IOException | RuntimeException e){
             LogUtil.error("=====Template init from code ERROR=====");
         }
         LogUtil.info("=====Template init from code [End]=====");

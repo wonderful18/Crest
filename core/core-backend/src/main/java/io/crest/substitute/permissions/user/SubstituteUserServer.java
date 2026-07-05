@@ -40,6 +40,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
@@ -161,7 +162,7 @@ public class SubstituteUserServer {
 
     @PostMapping("/batch-import")
     @CrestAudit(ot = LogOT.UPLOADFILE, st = LogST.USER)
-    public UserImportVO batchImport(@RequestParam("file") MultipartFile file) throws Exception {
+    public UserImportVO batchImport(@RequestParam("file") MultipartFile file) throws IOException {
         CrestPermissionUtils.requireAdmin();
         return crestUserManage.importUsers(file);
     }
@@ -177,7 +178,7 @@ public class SubstituteUserServer {
 
     @PostMapping("/excel-template")
     @CrestAudit(ot = LogOT.DOWNLOAD, st = LogST.USER)
-    public void excelTemplate(HttpServletResponse response) throws Exception {
+    public void excelTemplate(HttpServletResponse response) throws IOException {
         CrestPermissionUtils.requireAdmin();
         UserImportRow row = new UserImportRow();
         row.setAccount("user01");
@@ -186,7 +187,7 @@ public class SubstituteUserServer {
     }
 
     @GetMapping("/error-record/{key}")
-    public void errorRecord(@PathVariable("key") String key, HttpServletResponse response) throws Exception {
+    public void errorRecord(@PathVariable("key") String key, HttpServletResponse response) throws IOException {
         response.setContentType("text/plain;charset=UTF-8");
         response.getOutputStream().write("导入失败记录请根据返回数量检查源文件。".getBytes(StandardCharsets.UTF_8));
     }

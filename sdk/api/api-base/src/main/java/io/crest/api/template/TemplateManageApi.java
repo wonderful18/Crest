@@ -30,11 +30,11 @@ public interface TemplateManageApi {
 
     @GetMapping("/detail/{templateId}")
     @Operation(summary = "明细查询")
-    VisualizationTemplateVO findOne(@PathVariable String templateId) throws Exception;
+    VisualizationTemplateVO findOne(@PathVariable String templateId);
 
     @PostMapping("/categories/by-template-ids")
     @Operation(summary = "明细查询")
-    List<String> findCategoriesByTemplateIds(@RequestBody TemplateManageRequest request) throws Exception;
+    List<String> findCategoriesByTemplateIds(@RequestBody TemplateManageRequest request);
 
 
     @PostMapping("/list")

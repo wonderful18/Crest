@@ -20,7 +20,7 @@ import java.util.Map;
 public interface ChartViewApi {
     @Operation(summary = "查询图表详情并同时计算数据", hidden = true)
     @PostMapping("detail/{id}")
-    ChartViewDTO getData(@PathVariable Long id) throws Exception;
+    ChartViewDTO getData(@PathVariable Long id);
 
     @Operation(summary = "获取图表字段")
     @PostMapping("by-dataset-query/{id}/{chartId}")
@@ -28,7 +28,7 @@ public interface ChartViewApi {
 
     @Operation(summary = "保存图表")
     @PostMapping("record")
-    ChartViewDTO save(@RequestBody ChartViewDTO dto) throws Exception;
+    ChartViewDTO save(@RequestBody ChartViewDTO dto);
 
     @Operation(summary = "检查是否同数据集")
     @GetMapping("/same-dataset-check/{viewIdSource}/{viewIdTarget}")

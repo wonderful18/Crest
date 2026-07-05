@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -45,11 +46,11 @@ public interface ExportCenterApi {
 
     @Operation(summary = "下载")
     @GetMapping("/download/{id}")
-    public void download(@PathVariable String id, @RequestParam(required = false) String ticket, HttpServletResponse response) throws Exception;
+    public void download(@PathVariable String id, @RequestParam(required = false) String ticket, HttpServletResponse response) throws IOException;
 
     @Operation(summary = "生成下载Url")
     @GetMapping("/download-tickets/{id}")
-    public String generateDownloadUri(@PathVariable String id) throws Exception;
+    public String generateDownloadUri(@PathVariable String id);
 
     @Operation(summary = "重试")
     @PostMapping("/retry/{id}")

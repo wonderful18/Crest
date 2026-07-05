@@ -27,7 +27,7 @@ public class DatasetFieldServer implements DatasetTableApi {
     private DatasetDataManage datasetDataManage;
 
     @Override
-    public DatasetTableFieldDTO save(@RequestBody DatasetTableFieldDTO datasetTableFieldDTO) throws Exception {
+    public DatasetTableFieldDTO save(@RequestBody DatasetTableFieldDTO datasetTableFieldDTO) {
         return datasetTableFieldManage.chartFieldSave(datasetTableFieldDTO);
     }
 
@@ -59,7 +59,7 @@ public class DatasetFieldServer implements DatasetTableApi {
     }
 
     @Override
-    public Map<String, List<DatasetTableFieldDTO>> copilotFields(Long id) throws Exception {
+    public Map<String, List<DatasetTableFieldDTO>> copilotFields(Long id) {
         return datasetTableFieldManage.copilotFields(id);
     }
 
@@ -69,7 +69,7 @@ public class DatasetFieldServer implements DatasetTableApi {
     }
 
     @Override
-    public List<String> multFieldValuesForPermissions(@RequestBody MultFieldValuesRequest multFieldValuesRequest) throws Exception {
+    public List<String> multFieldValuesForPermissions(@RequestBody MultFieldValuesRequest multFieldValuesRequest) {
         return datasetDataManage.getFieldEnum(multFieldValuesRequest);
     }
 

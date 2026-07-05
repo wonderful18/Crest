@@ -70,7 +70,7 @@ public class EngineServer implements EngineApi {
     }
 
     @Override
-    public void validate(@RequestBody DatasourceDTO datasourceDTO) throws Exception {
+    public void validate(@RequestBody DatasourceDTO datasourceDTO) {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
             CrestException.throwException("非管理员，无权访问！");
         }
@@ -81,7 +81,7 @@ public class EngineServer implements EngineApi {
     }
 
     @Override
-    public void validateById(Long id) throws Exception {
+    public void validateById(Long id) {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
             CrestException.throwException("非管理员，无权访问！");
         }
@@ -89,7 +89,7 @@ public class EngineServer implements EngineApi {
     }
 
     @Override
-    public boolean supportSetKey() throws Exception {
+    public boolean supportSetKey() {
         List<CoreEngine> engines = engineMapper.selectList(null);
         if (CollectionUtils.isEmpty(engines)) {
             return false;

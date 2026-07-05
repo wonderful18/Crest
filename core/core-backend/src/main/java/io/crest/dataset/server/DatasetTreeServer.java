@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
+import java.io.IOException;
 import java.util.*;
 
 
@@ -109,7 +110,7 @@ public class DatasetTreeServer implements DatasetTreeApi {
     }
 
     @Override
-    public void exportDataset(@RequestBody DataSetExportRequest request, HttpServletResponse response) throws Exception {
+    public void exportDataset(@RequestBody DataSetExportRequest request, HttpServletResponse response) throws IOException {
         if (request.isEmbeddedExport()) {
             exportCenterDownLoadManage.downloadDataset(request, response);
         } else {

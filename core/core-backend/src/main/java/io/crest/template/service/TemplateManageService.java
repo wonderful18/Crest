@@ -275,7 +275,7 @@ public class TemplateManageService implements TemplateManageApi {
     }
 
     @Override
-    public List<String> findCategoriesByTemplateIds(@RequestBody TemplateManageRequest request) throws Exception {
+    public List<String> findCategoriesByTemplateIds(@RequestBody TemplateManageRequest request) {
         if (!CollectionUtils.isEmpty(request.getTemplateArray())) {
             List<String> result = extTemplateMapper.findTemplateArrayCategories(request.getTemplateArray());
             if (!CollectionUtils.isEmpty(result) && result.size() == 1) {

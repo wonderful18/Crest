@@ -17,17 +17,17 @@ public class DatasetTableSqlLogServer implements DatasetTableSqlLogApi {
     private DatasetTableSqlLogManage datasetTableSqlLogManage;
 
     @Override
-    public void save(@RequestBody SqlLogDTO sqlLogDTO) throws Exception {
+    public void save(@RequestBody SqlLogDTO sqlLogDTO) {
         datasetTableSqlLogManage.save(sqlLogDTO);
     }
 
     @Override
-    public List<SqlLogDTO> listByTableId(@RequestBody SqlLogDTO sqlLogDTO) throws Exception {
+    public List<SqlLogDTO> listByTableId(@RequestBody SqlLogDTO sqlLogDTO) {
         return datasetTableSqlLogManage.listByTableId(sqlLogDTO);
     }
 
     @Override
-    public void tableRemoval(String id) throws Exception {
+    public void tableRemoval(String id) {
         datasetTableSqlLogManage.tableRemoval(id);
     }
 }

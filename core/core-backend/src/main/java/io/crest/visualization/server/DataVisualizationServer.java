@@ -406,7 +406,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     @CrestAudit(id = "#p0.id", pid = "#p0.pid", ot = LogOT.CREATE, stExp = "#p0.type")
     @Override
     @Transactional
-    public String saveCanvas(@RequestBody DataVisualizationBaseRequest request) throws Exception {
+    public String saveCanvas(@RequestBody DataVisualizationBaseRequest request) {
         /*
          * 发布兼容逻辑
          * saveCanvas 为初次保存 包括 模板 应用 普通创建 所有变更操作都走snapshot表

@@ -221,7 +221,7 @@ public class ChartViewThresholdManage {
                 return shortLabels.get(timeFlag - 1);
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error("动态时间配置错误，请重新配置！");
             return value;
         }
@@ -269,7 +269,7 @@ public class ChartViewThresholdManage {
         return htmlString;
     }
 
-    public ThresholdCheckVO checkThreshold(ThresholdCheckRequest request) throws Exception {
+    public ThresholdCheckVO checkThreshold(ThresholdCheckRequest request) {
         String thresholdTemplate = request.getThresholdTemplate();
         String thresholdRules = request.getThresholdRules();
         Long chartId = request.getChartId();
@@ -390,7 +390,7 @@ public class ChartViewThresholdManage {
                 }
             }
             return new ThresholdCheckVO(true, result, null, null);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage(), new Throwable(e));
             return new ThresholdCheckVO(false, null, e.getMessage(), null);
         }
@@ -483,7 +483,7 @@ public class ChartViewThresholdManage {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error("动态时间配置错误，请重新配置！" + e.getMessage());
             return value;
         }

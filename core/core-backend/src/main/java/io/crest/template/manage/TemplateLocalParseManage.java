@@ -35,7 +35,7 @@ public class TemplateLocalParseManage {
     @Resource(type = ResourceLoader.class)
     private ResourceLoader resourceLoader;
 
-    public void doInit() throws Exception {
+    public void doInit() throws IOException {
         org.springframework.core.io.Resource[] templateFiles = getAllFilesInResourceDirectory("template");
         if (templateFiles != null && templateFiles.length > 0) {
             for (int i = 0; i < templateFiles.length; i++) {
@@ -53,7 +53,7 @@ public class TemplateLocalParseManage {
                         parseCore(template);
                         version.setSuccess(true);
                         templateVersionMapper.insert(version);
-                    } catch (Exception e) {
+                    } catch (IOException | RuntimeException e) {
                         LogUtil.error("De Template Version Error : " + templateName);
                         version.setSuccess(false);
                         templateVersionMapper.insert(version);
@@ -71,7 +71,7 @@ public class TemplateLocalParseManage {
     }
 
 
-    public org.springframework.core.io.Resource[] getAllFilesInResourceDirectory(String directoryName) throws Exception {
+    public org.springframework.core.io.Resource[] getAllFilesInResourceDirectory(String directoryName) throws IOException {
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(resourceLoader);
 
         // 当前内置模板固定加载 classpath:template 目录。

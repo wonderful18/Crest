@@ -46,12 +46,12 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         try {
             engineManage.initSimpleEngine();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         try {
             calciteProvider.initConnectionPool();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         List<CoreDatasourceTask> list = datasourceTaskServer.listAll();
@@ -68,7 +68,7 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
                         datasourceSyncManage.addSchedule(task);
                     }
                 }
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 io.crest.utils.LogUtil.error(e.getMessage(), e);
             }
         }
@@ -77,7 +77,7 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
         try {
             datasetSyncTaskManage.recoverInterruptedTasks();
             datasetSyncTasks = datasetSyncTaskManage.listAll();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         for (CoreDatasetSyncTask task : datasetSyncTasks) {
@@ -93,7 +93,7 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
                         datasetSyncTaskManage.addSchedule(task);
                     }
                 }
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 io.crest.utils.LogUtil.error(e.getMessage(), e);
             }
         }
@@ -101,7 +101,7 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
         try {
             List<CoreSysSetting> coreSysSettings = sysParameterManage.groupList("basic.");
             datasourceServer.addJob(coreSysSettings);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         dataSourceManage.encryptDsConfig();

@@ -22,23 +22,23 @@ import static io.crest.constant.AuthResourceEnum.PANEL;
 public interface ChartDataApi {
     @Operation(summary = "获取图表数据")
     @PostMapping("data")
-    ChartViewDTO getData(@RequestBody ChartViewDTO chartViewDTO) throws Exception;
+    ChartViewDTO getData(@RequestBody ChartViewDTO chartViewDTO);
 
     @Operation(summary = "导出数据")
     @PostMapping("/internal-export/details")
     @CrestPermit(value = {"#p0.dvId+':export_view'"}, busiFlag = "#p0.busiFlag")
-    void innerExportDetails(@RequestBody ChartExcelRequest request, HttpServletResponse response) throws Exception;
+    void innerExportDetails(@RequestBody ChartExcelRequest request, HttpServletResponse response);
 
     @Operation(summary = "导出明细数据")
     @PostMapping("/internal-export/dataset-details")
     @CrestPermit(value = {"#p0.dvId+':export_detail'"}, busiFlag = "#p0.busiFlag")
-    void innerExportDataSetDetails(@RequestBody ChartExcelRequest request, HttpServletResponse response) throws Exception;
+    void innerExportDataSetDetails(@RequestBody ChartExcelRequest request, HttpServletResponse response);
 
     @Operation(summary = "获取字段值")
     @PostMapping("/field-values/{fieldId}/{fieldType}")
-    List<String> getFieldData(@RequestBody ChartViewDTO view, @PathVariable Long fieldId, @PathVariable String fieldType) throws Exception;
+    List<String> getFieldData(@RequestBody ChartViewDTO view, @PathVariable Long fieldId, @PathVariable String fieldType);
 
     @Operation(summary = "获取下钻字段值")
     @PostMapping("/drill-field-values/{fieldId}")
-    List<String> getDrillFieldData(@RequestBody ChartViewDTO view, @PathVariable Long fieldId) throws Exception;
+    List<String> getDrillFieldData(@RequestBody ChartViewDTO view, @PathVariable Long fieldId);
 }

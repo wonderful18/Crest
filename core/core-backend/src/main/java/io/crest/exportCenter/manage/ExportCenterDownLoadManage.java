@@ -150,7 +150,7 @@ public class ExportCenterDownLoadManage {
                     setExportFromName(exportTaskDTO);
                     WsMessage message = new WsMessage(exportTask.getUserId(), "/task-export-topic", exportTaskDTO);
                     wsService.releaseMessage(message);
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     LogUtil.debug("Release export task message failed: " + entry.getKey());
                 }
             }
@@ -182,7 +182,7 @@ public class ExportCenterDownLoadManage {
                 exportTaskMapper.updateById(exportTask);
                 CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(exportTask.getExportFrom());
                 if (coreDatasetGroup == null) {
-                    throw new Exception("Not found dataset group: " + exportTask.getExportFrom());
+                    CrestException.throwException("Not found dataset group: " + exportTask.getExportFrom());
                 }
                 DatasetGroupInfoDTO dto = new DatasetGroupInfoDTO();
                 BeanUtils.copyBean(dto, coreDatasetGroup);
@@ -372,7 +372,7 @@ public class ExportCenterDownLoadManage {
                 exportTask.setMsg(null);
                 setFileSize(exportFile, exportTask);
 
-            } catch (Exception e) {
+            } catch (IOException | RuntimeException e) {
                 LogUtil.error("Failed to export data", e);
                 exportTask.setMsg(e.getMessage());
                 exportTask.setExportStatus("FAILED");
@@ -532,7 +532,7 @@ public class ExportCenterDownLoadManage {
                 exportTask.setExportStatus("SUCCESS");
                 exportTask.setMsg(null);
                 setFileSize(exportFile, exportTask);
-            } catch (Exception e) {
+            } catch (IOException | RuntimeException e) {
                 exportTask.setMsg(e.getMessage());
                 LogUtil.error("Failed to export data", e);
                 exportTask.setExportStatus("FAILED");
@@ -680,7 +680,7 @@ public class ExportCenterDownLoadManage {
         }
     }
 
-    public void download(CoreExportTask exportTask, HttpServletResponse response) throws Exception {
+    public void download(CoreExportTask exportTask, HttpServletResponse response) throws IOException {
         File exportFile;
         File exportDirectory = resolveTaskDirectory(exportTask.getId());
         if (exportTask.getExportTime() != null && exportTask.getExportTime() < 1730277243491L) {
@@ -707,12 +707,12 @@ public class ExportCenterDownLoadManage {
     }
 
     @CrestAudit(id = "#p0.id", ot = LogOT.EXPORT, st = LogST.DATASET)
-    public void downloadDataset(DataSetExportRequest request, HttpServletResponse response) throws Exception {
+    public void downloadDataset(DataSetExportRequest request, HttpServletResponse response) throws IOException {
         try (OutputStream outputStream = response.getOutputStream();
              Workbook wb = new SXSSFWorkbook()) {
             CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(request.getId());
             if (coreDatasetGroup == null) {
-                throw new Exception("Not found dataset group: " + request.getFilename());
+                CrestException.throwException("Not found dataset group: " + request.getFilename());
             }
             DatasetGroupInfoDTO dto = new DatasetGroupInfoDTO();
             BeanUtils.copyBean(dto, coreDatasetGroup);
@@ -889,7 +889,7 @@ public class ExportCenterDownLoadManage {
             response.setHeader("Content-disposition", "attachment;filename=" + URLEncoder.encode(request.getFilename(), StandardCharsets.UTF_8) + ".xlsx");
             wb.write(outputStream);
             outputStream.flush();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(e);
         }
     }

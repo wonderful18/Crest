@@ -41,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -323,7 +324,7 @@ public class CrestUserManage {
     }
 
     @Transactional
-    public UserImportVO importUsers(MultipartFile file) throws Exception {
+    public UserImportVO importUsers(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
             CrestException.throwException("导入文件不能为空");
         }
@@ -347,14 +348,14 @@ public class CrestUserManage {
                 creator.setRoleIds(List.of(PlatformPermissionManage.MEMBER_ROLE_ID));
                 create(creator);
                 success++;
-            } catch (Exception ignored) {
+            } catch (RuntimeException ignored) {
                 failed++;
             }
         }
         return new UserImportVO("user-import", success, failed);
     }
 
-    private List<UserImportRow> readImportRows(MultipartFile file) throws Exception {
+    private List<UserImportRow> readImportRows(MultipartFile file) throws IOException {
         String originalFilename = StringUtils.defaultString(file.getOriginalFilename());
         FileUtils.validateUploadFilename(originalFilename);
         String normalizedFilename = originalFilename.toLowerCase(Locale.ROOT);
@@ -389,7 +390,7 @@ public class CrestUserManage {
         return result;
     }
 
-    private void validateImportContent(MultipartFile file, String normalizedFilename) throws Exception {
+    private void validateImportContent(MultipartFile file, String normalizedFilename) throws IOException {
         byte[] header = new byte[8];
         int length;
         try (InputStream inputStream = file.getInputStream()) {

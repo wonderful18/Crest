@@ -78,9 +78,9 @@ public class EngineManage {
         return coreDatasource;
     }
 
-    public void validate(CoreEngine engine) throws Exception {
+    public void validate(CoreEngine engine) {
         if (StringUtils.isEmpty(engine.getType()) || StringUtils.isEmpty(engine.getConfiguration())) {
-            throw new Exception("未完整设置数据引擎");
+            CrestException.throwException("未完整设置数据引擎");
         }
         try {
 
@@ -89,12 +89,12 @@ public class EngineManage {
             BeanUtils.copyBean(datasource, engine);
             datasourceRequest.setDatasource(datasource);
             ProviderFactory.getProvider(engine.getType()).checkStatus(datasourceRequest);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException("校验失败：" + e.getMessage());
         }
     }
 
-    public ResultMessage save(CoreEngine engine) throws Exception {
+    public ResultMessage save(CoreEngine engine) {
         if (engine.getId() == null) {
             engineMapper.insert(engine);
         } else {
@@ -103,7 +103,7 @@ public class EngineManage {
         return ResultMessage.success(engine);
     }
 
-    public void initSimpleEngine() throws Exception {
+    public void initSimpleEngine() {
         initLocalDataSource();
         QueryWrapper<CoreEngine> queryWrapper = new QueryWrapper<>();
         if (ModelUtils.isDesktop()) {
