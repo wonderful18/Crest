@@ -59,6 +59,32 @@ class ChartDataBuildTest {
         assertEquals("2026-06-05", result.get("maxTime"));
     }
 
+    @Test
+    void transBarRangeDataAntVToleratesInvalidDateRangeValues() {
+        ChartViewFieldDTO dimension = field(1L, "项目", null, null);
+        ChartViewFieldDTO start = field(2L, "开始日期", "y_M_d", "date_sub");
+        ChartViewFieldDTO end = field(3L, "结束日期", "y_M_d", "date_sub");
+        ChartViewDTO view = new ChartViewDTO();
+        view.setAggregate(false);
+
+        Map<String, Object> result = assertDoesNotThrow(() -> ChartDataBuild.transBarRangeDataAntV(
+                false,
+                true,
+                List.of(dimension),
+                List.of(dimension, start, end),
+                List.of(),
+                view,
+                List.<String[]>of(new String[]{"需求A", "invalid-start", "invalid-end"}),
+                false
+        ));
+
+        List<?> rows = (List<?>) result.get("data");
+        assertEquals(1, rows.size());
+        assertEquals("", ((Map<?, ?>) rows.get(0)).get("gap"));
+        assertEquals(null, result.get("minTime"));
+        assertEquals(null, result.get("maxTime"));
+    }
+
     private static ChartViewFieldDTO field(Long id, String name, String dateStyle, String datePattern) {
         ChartViewFieldDTO field = new ChartViewFieldDTO();
         field.setId(id);
