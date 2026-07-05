@@ -1,0 +1,42 @@
+diff --git a/esm/util/draw.js b/esm/util/draw.js
+index ce626a194c579c1d3517cb1ce38299285acaeaf4..14205401829e0d5aa182cbafdf88882837e0ef80 100644
+--- a/esm/util/draw.js
++++ b/esm/util/draw.js
+@@ -14,6 +14,9 @@ export function applyAttrsToContext(context, element) {
+         var v = attrs[k];
+         // 转换一下不与 canvas 兼容的属性名
+         var name_1 = SHAPE_ATTRS_MAP[k] ? SHAPE_ATTRS_MAP[k] : k;
++        if (name_1 === 'direction') {
++            continue;
++        }
+         if (name_1 === 'matrix' && v) {
+             // 设置矩阵
+             context.transform(v[0], v[1], v[3], v[4], v[6], v[7]);
+diff --git a/lib/util/draw.js b/lib/util/draw.js
+index f5d0c5dfe22716c0b5533decf61cf8847986e599..7303f08318f626df8d36c3681504effee74adb84 100644
+--- a/lib/util/draw.js
++++ b/lib/util/draw.js
+@@ -17,6 +17,9 @@ function applyAttrsToContext(context, element) {
+         var v = attrs[k];
+         // 转换一下不与 canvas 兼容的属性名
+         var name_1 = SHAPE_ATTRS_MAP[k] ? SHAPE_ATTRS_MAP[k] : k;
++        if (name_1 === 'direction') {
++            continue;
++        }
+         if (name_1 === 'matrix' && v) {
+             // 设置矩阵
+             context.transform(v[0], v[1], v[3], v[4], v[6], v[7]);
+diff --git a/src/util/draw.ts b/src/util/draw.ts
+index d74a1283f35cdb2f596b0881b74f201c2f27e6e2..8cddf1ea7a35b55493874cd5565273be532eda22 100644
+--- a/src/util/draw.ts
++++ b/src/util/draw.ts
+@@ -18,6 +18,9 @@ export function applyAttrsToContext(context: CanvasRenderingContext2D, element:
+     let v = attrs[k];
+     // 转换一下不与 canvas 兼容的属性名
+     const name = SHAPE_ATTRS_MAP[k] ? SHAPE_ATTRS_MAP[k] : k;
++    if (name === 'direction') {
++      continue;
++    }
+     if (name === 'matrix' && v) {
+       // 设置矩阵
+       context.transform(v[0], v[1], v[3], v[4], v[6], v[7]);
