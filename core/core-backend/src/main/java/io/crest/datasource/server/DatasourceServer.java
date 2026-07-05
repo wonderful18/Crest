@@ -74,6 +74,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -90,6 +91,11 @@ public class DatasourceServer implements DatasourceApi {
     private static final String EXCEL_EDIT_ROW_ID = "_rowId";
     private static final int MAX_EXCEL_EDIT_PAGE_SIZE = 500;
     private static final int MAX_EXCEL_EDIT_BATCH_SIZE = 5000;
+    private static final String MASKED_SECRET = "******";
+    private static final Set<String> SECRET_CONFIG_KEYS = Set.of(
+            "password", "passwd", "sshPassword", "sshKey", "sshKeyPassword",
+            "token", "appToken", "apiKey", "accessKey", "secretKey", "clientSecret", "appSecret");
+    private static final Pattern JDBC_PASSWORD_PATTERN = Pattern.compile("(?i)(^|[?&;])(password=)([^&;]*)");
     private static final Set<String> ALLOWED_API_METHODS = Set.of(
             "getApiTables",
             "getTableFields",
@@ -420,6 +426,7 @@ public class DatasourceServer implements DatasourceApi {
         DatasourceDTO sourceData = dataSourceManage.getDs(pk);
         requireDatasourceAccess(pk);
         dataSourceDTO.setConfiguration(decodeBase64RequestValue(dataSourceDTO.getConfiguration(), "数据源配置"));
+        dataSourceDTO.setConfiguration(restoreMaskedDatasourceSecrets(dataSourceDTO.getConfiguration(), sourceData.getConfiguration()));
         dataSourceDTO.setPid(sourceData.getPid());
         preCheckDs(dataSourceDTO);
 
@@ -599,7 +606,7 @@ public class DatasourceServer implements DatasourceApi {
 
     @Override
     public DatasourceDTO get(Long datasourceId) throws CrestException {
-        return datasourceDTOById(datasourceId, false);
+        return datasourceDTOById(datasourceId, true);
     }
 
     @Override
@@ -1803,6 +1810,9 @@ public class DatasourceServer implements DatasourceApi {
     private DatasourceDTO convertCoreDatasource(Long datasourceId, boolean hidePw, CoreDatasource datasource) {
         DatasourceDTO datasourceDTO = new DatasourceDTO();
         BeanUtils.copyBean(datasourceDTO, datasource);
+        if (hidePw) {
+            datasourceDTO.setConfiguration(maskDatasourceConfiguration(datasourceDTO.getConfiguration()));
+        }
 
         if (datasourceDTO.getType().contains(DatasourceConfiguration.DatasourceType.API.toString())) {
             List<ApiDefinition> apiDefinitionList = JsonUtil.parseList(datasourceDTO.getConfiguration(), listTypeReference);
@@ -1842,11 +1852,6 @@ public class DatasourceServer implements DatasourceApi {
                     datasourceDTO.setStatus("Error");
                 }
             }
-        } else {
-            if (hidePw) {
-                Provider provider = ProviderFactory.getProvider(datasourceDTO.getType());
-                provider.hidePW(datasourceDTO);
-            }
         }
         if (datasourceDTO.getType().contains(DatasourceConfiguration.DatasourceType.Excel.toString())) {
             datasourceDTO.setFileName(ExcelUtils.getFileName(datasource));
@@ -1865,6 +1870,162 @@ public class DatasourceServer implements DatasourceApi {
         datasourceDTO.setConfiguration(RsaUtils.symmetricEncrypt(datasourceDTO.getConfiguration()));
         datasourceDTO.setCreator(coreUserManage.getUserName(Long.valueOf(datasourceDTO.getCreateBy())));
         return datasourceDTO;
+    }
+
+    private static String maskDatasourceConfiguration(String configuration) {
+        Object config = parseDatasourceConfigurationTree(configuration);
+        if (config == null) {
+            return configuration;
+        }
+        maskSecrets(config);
+        return serializeDatasourceConfiguration(config);
+    }
+
+    private static String restoreMaskedDatasourceSecrets(String requestConfiguration, String sourceConfiguration) {
+        Object requestConfig = parseDatasourceConfigurationTree(requestConfiguration);
+        Object sourceConfig = parseDatasourceConfigurationTree(sourceConfiguration);
+        if (requestConfig == null || sourceConfig == null) {
+            return requestConfiguration;
+        }
+        restoreSecrets(requestConfig, sourceConfig);
+        return serializeDatasourceConfiguration(requestConfig);
+    }
+
+    private static String serializeDatasourceConfiguration(Object configuration) {
+        Object serialized = JsonUtil.toJSONString(configuration);
+        if (serialized == null) {
+            CrestException.throwException("数据源配置处理失败");
+        }
+        return serialized.toString();
+    }
+
+    private static Object parseDatasourceConfigurationTree(String configuration) {
+        String trimmed = StringUtils.trimToEmpty(configuration);
+        if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+            return null;
+        }
+        return JsonUtil.parseObject(trimmed, Object.class);
+    }
+
+    private static void maskSecrets(Object value) {
+        if (value instanceof Map<?, ?> rawMap) {
+            Map<String, Object> map = (Map<String, Object>) rawMap;
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                String key = entry.getKey();
+                Object entryValue = entry.getValue();
+                if (isSecretKey(key)) {
+                    if (StringUtils.isNotBlank(Objects.toString(entryValue, null))) {
+                        entry.setValue(MASKED_SECRET);
+                    }
+                } else if (Strings.CI.equals(key, "jdbcUrl")) {
+                    entry.setValue(maskJdbcPassword(Objects.toString(entryValue, null)));
+                } else {
+                    maskSecrets(entryValue);
+                }
+            }
+        } else if (value instanceof List<?> list) {
+            list.forEach(DatasourceServer::maskSecrets);
+        }
+    }
+
+    private static void restoreSecrets(Object requestValue, Object sourceValue) {
+        if (requestValue instanceof Map<?, ?> requestRawMap && sourceValue instanceof Map<?, ?> sourceRawMap) {
+            Map<String, Object> requestMap = (Map<String, Object>) requestRawMap;
+            Map<String, Object> sourceMap = (Map<String, Object>) sourceRawMap;
+            for (String secretKey : SECRET_CONFIG_KEYS) {
+                if (sourceMap.containsKey(secretKey) && shouldRestoreSecret(requestMap.get(secretKey))) {
+                    requestMap.put(secretKey, sourceMap.get(secretKey));
+                }
+            }
+            for (Map.Entry<String, Object> entry : requestMap.entrySet()) {
+                String key = entry.getKey();
+                Object requestEntryValue = entry.getValue();
+                Object sourceEntryValue = sourceMap.get(key);
+                if (Strings.CI.equals(key, "jdbcUrl") && requestEntryValue instanceof String requestJdbcUrl && sourceEntryValue instanceof String sourceJdbcUrl) {
+                    entry.setValue(restoreJdbcPassword(requestJdbcUrl, sourceJdbcUrl));
+                } else if (!isSecretKey(key)) {
+                    restoreSecrets(requestEntryValue, sourceEntryValue);
+                }
+            }
+        } else if (requestValue instanceof List<?> requestList && sourceValue instanceof List<?> sourceList) {
+            int limit = Math.min(requestList.size(), sourceList.size());
+            for (int i = 0; i < limit; i++) {
+                restoreSecrets(requestList.get(i), findMatchingSourceListItem(requestList.get(i), sourceList, i));
+            }
+        }
+    }
+
+    private static Object findMatchingSourceListItem(Object requestItem, List<?> sourceList, int fallbackIndex) {
+        if (!(requestItem instanceof Map<?, ?> requestMap)) {
+            return sourceList.get(fallbackIndex);
+        }
+        String requestKey = stableListItemKey(requestMap);
+        if (StringUtils.isBlank(requestKey)) {
+            return sourceList.get(fallbackIndex);
+        }
+        List<?> matches = sourceList.stream()
+                .filter(sourceItem -> sourceItem instanceof Map<?, ?> sourceMap
+                        && Strings.CS.equals(requestKey, stableListItemKey(sourceMap)))
+                .toList();
+        return matches.size() == 1 ? matches.get(0) : sourceList.get(fallbackIndex);
+    }
+
+    private static String stableListItemKey(Map<?, ?> item) {
+        for (String key : List.of("displayTableName", "name", "orgName")) {
+            String value = Objects.toString(item.get(key), "");
+            if (StringUtils.isNotBlank(value)) {
+                return key + ":" + value;
+            }
+        }
+        return null;
+    }
+
+    private static boolean shouldRestoreSecret(Object value) {
+        String text = Objects.toString(value, null);
+        return StringUtils.isBlank(text) || Strings.CS.equals(text, MASKED_SECRET);
+    }
+
+    private static boolean isSecretKey(String key) {
+        return SECRET_CONFIG_KEYS.stream().anyMatch(secretKey -> Strings.CI.equals(secretKey, key));
+    }
+
+    private static String maskJdbcPassword(String jdbcUrl) {
+        if (StringUtils.isBlank(jdbcUrl)) {
+            return jdbcUrl;
+        }
+        return replaceJdbcPassword(jdbcUrl, ignored -> MASKED_SECRET);
+    }
+
+    private static String restoreJdbcPassword(String requestJdbcUrl, String sourceJdbcUrl) {
+        if (StringUtils.isBlank(requestJdbcUrl) || !Strings.CI.contains(requestJdbcUrl, "password=")) {
+            return requestJdbcUrl;
+        }
+        String sourcePassword = extractJdbcPassword(sourceJdbcUrl);
+        if (StringUtils.isBlank(sourcePassword)) {
+            return requestJdbcUrl;
+        }
+        return replaceJdbcPassword(requestJdbcUrl, current -> Strings.CS.equals(current, MASKED_SECRET) ? sourcePassword : current);
+    }
+
+    private static String extractJdbcPassword(String jdbcUrl) {
+        if (StringUtils.isBlank(jdbcUrl)) {
+            return null;
+        }
+        Matcher matcher = JDBC_PASSWORD_PATTERN.matcher(jdbcUrl);
+        while (matcher.find()) {
+            return matcher.group(3);
+        }
+        return null;
+    }
+
+    private static String replaceJdbcPassword(String jdbcUrl, java.util.function.Function<String, String> replacement) {
+        Matcher matcher = JDBC_PASSWORD_PATTERN.matcher(jdbcUrl);
+        StringBuffer result = new StringBuffer();
+        while (matcher.find()) {
+            matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(1) + matcher.group(2) + replacement.apply(matcher.group(3))));
+        }
+        matcher.appendTail(result);
+        return result.toString();
     }
 
     private String apiDefinitionStatus(String datasourceStatus, String apiName) {
