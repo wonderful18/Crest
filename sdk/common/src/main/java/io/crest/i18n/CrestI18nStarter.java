@@ -14,7 +14,7 @@ public class CrestI18nStarter implements ApplicationRunner {
     private String i18nPath;
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         DynamicI18nUtils.addOrUpdate(i18nPath);
     }
 

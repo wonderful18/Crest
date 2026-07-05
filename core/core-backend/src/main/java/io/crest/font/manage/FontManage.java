@@ -208,7 +208,7 @@ public class FontManage {
             fontDto.setSize(size);
             fontDto.setSizeType(unit);
             fontDto.setName(font.getFontName());
-        } catch (Exception e) {
+        } catch (IOException | FontFormatException | RuntimeException e) {
             if (targetFile != null && targetFile.exists()) {
                 FileUtils.deleteFile(targetFile.getPath());
             }

@@ -81,7 +81,7 @@ public class StaticResourceServer implements StaticResourceApi {
         } catch (IOException e) {
             LogUtil.error("文件上传失败", e);
             CrestException.throwException("文件上传失败");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(e);
         }
     }
@@ -126,7 +126,7 @@ public class StaticResourceServer implements StaticResourceApi {
             writeFileIfAbsent(fileName, fileBytes);
         } catch (CrestException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             LogUtil.error("template static resource save error", e);
             CrestException.throwException(e);
         }

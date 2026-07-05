@@ -244,7 +244,7 @@ public class TableNormalHandler extends DefaultChartHandler {
                     calcResult.setDynamicAssistFieldsOriginList(assistsOriginList);
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         // 自定义汇总
@@ -322,7 +322,7 @@ public class TableNormalHandler extends DefaultChartHandler {
                         }
                     }
                 }
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 io.crest.utils.LogUtil.error(e.getMessage(), e);
             }
         }

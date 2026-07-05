@@ -71,11 +71,14 @@ public class CommonThreadPool {
         scheduledThreadPoolExecutor.execute(() -> {
             ExecutorService executorService = Executors.newSingleThreadExecutor();
             try {
-                Future future = executorService.submit(task);
+                Future<?> future = executorService.submit(task);
                 future.get(timeOut, timeUnit); // 此行会阻塞，直到任务执行完或超时
             } catch (TimeoutException timeoutException) {
                 LogUtil.getLogger().error("timeout to execute task", timeoutException);
-            } catch (Exception exception) {
+            } catch (InterruptedException interruptedException) {
+                Thread.currentThread().interrupt();
+                LogUtil.getLogger().error("task execution interrupted", interruptedException);
+            } catch (ExecutionException | RuntimeException exception) {
                 LogUtil.getLogger().error("failed to execute task", exception);
             } finally {
                 if (!executorService.isShutdown()) {

@@ -34,7 +34,7 @@ public class VisualizationTemplateExtendDataManage {
                 if(chartViewTemplate != null){
                     view.setData(chartViewTemplate.getData());
                 }
-            }catch (Exception e){
+            } catch (RuntimeException e) {
                 LogUtil.error("未获取内置数据："+viewId);
             }
 

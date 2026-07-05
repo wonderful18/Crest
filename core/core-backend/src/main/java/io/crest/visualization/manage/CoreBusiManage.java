@@ -39,7 +39,7 @@ public class CoreBusiManage {
                 } else if (Strings.CI.equalsAny(key, "dashboard", "dataV")) {
                     result.put(key, coreVisualizationManage.tree(busiNodeRequest));
                 }
-            } catch (Exception ignored) {
+            } catch (RuntimeException ignored) {
                 result.put(key, new ArrayList<>());
             }
         }

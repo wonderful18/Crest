@@ -83,7 +83,7 @@ public class DataSourceManage {
                         flag = first.getFlag();
                     }
                 }
-            } catch (Exception ignored) {
+            } catch (RuntimeException ignored) {
                 flag = 27;
             }
         }

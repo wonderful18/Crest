@@ -131,7 +131,7 @@ public class StackAreaHandler extends YoyChartHandler {
                     result.setDynamicAssistFieldsOriginList(assistsOriginList);
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         return result;

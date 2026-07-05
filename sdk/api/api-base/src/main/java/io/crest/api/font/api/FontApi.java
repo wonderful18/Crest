@@ -18,7 +18,7 @@ public interface FontApi {
 
     @Operation(summary = "预览数据")
     @GetMapping("fonts")
-    List<FontDto> list() throws Exception;
+    List<FontDto> list();
 
     @Operation(summary = "创建")
     @PostMapping

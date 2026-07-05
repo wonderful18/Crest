@@ -18,7 +18,7 @@ public class ResourceService {
         boolean b;
         try {
             b = corePermissionManage.checkAuth(dto);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             b = false;
         }
         return b;

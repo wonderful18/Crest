@@ -119,7 +119,7 @@ public class GenericAuditLogAspect {
         try {
             Method targetMethod = point.getTarget().getClass().getMethod(method.getName(), method.getParameterTypes());
             return targetMethod.isAnnotationPresent(CrestAudit.class);
-        } catch (Exception ignored) {
+        } catch (NoSuchMethodException | SecurityException ignored) {
             return false;
         }
     }
@@ -200,7 +200,7 @@ public class GenericAuditLogAspect {
             if (user != null) {
                 return new Operator(operatorId, user.getName(), user.getAccount());
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.debug("获取审计操作人失败: " + e.getMessage());
         }
         return new Operator(operatorId, null, null);

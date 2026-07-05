@@ -136,7 +136,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     }
 
     @Override
-    public DriveJarDTO uploadJar(@RequestParam("driverId") String driverId, @RequestParam("jarFile") MultipartFile jarFile) throws Exception {
+    public DriveJarDTO uploadJar(@RequestParam("driverId") String driverId, @RequestParam("jarFile") MultipartFile jarFile) throws IOException {
         CrestPermissionUtils.requireAdmin();
         CoreDriver coreDriver = coreDriverMapper.selectById(driverId);
         if (coreDriver == null) {
@@ -153,7 +153,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
         QueryWrapper<CoreDriverJar> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("fileName", filename);
         if (!CollectionUtils.isEmpty(coreDriverJarMapper.selectList(queryWrapper))) {
-            throw new Exception("A file with the same name already exists：" + filename);
+            CrestException.throwException("A file with the same name already exists：" + filename);
         }
 
         File driverDirectory = FileUtils.ensureSubDirectory(DRIVER_PATH, driverId);
@@ -190,7 +190,7 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
         }
     }
 
-    private void saveJarFile(MultipartFile file, File f) throws Exception {
+    private void saveJarFile(MultipartFile file, File f) throws IOException {
         try (FileOutputStream fileOutputStream = new FileOutputStream(f)) {
             fileOutputStream.write(file.getBytes());
             fileOutputStream.flush();

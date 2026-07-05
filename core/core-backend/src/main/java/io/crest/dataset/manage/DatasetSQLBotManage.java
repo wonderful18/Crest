@@ -341,7 +341,7 @@ public class DatasetSQLBotManage {
         }
         try {
             sqlMap = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null, coreDatasource, true);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
         String sql = (String) sqlMap.get("sql");
@@ -436,7 +436,7 @@ public class DatasetSQLBotManage {
                 if (table.isNeedTransform() || ObjectUtils.isNotEmpty(columnPermissionsDTOS) || ObjectUtils.isNotEmpty(rowPermissionsTreeDTOS)) {
                     try {
                         rebuildTable(table, columnPermissionsDTOS, rowPermissionsTreeDTOS, dsRowData);
-                    } catch (Exception e) {
+                    } catch (RuntimeException e) {
                         LogUtil.error(e);
                         // 遇到异常，移除当前table
                         tableIterator.remove();
@@ -449,22 +449,6 @@ public class DatasetSQLBotManage {
                 voIterator.remove();
             }
         }
-        /*vos.forEach(vo -> {
-            Map<String, Object> dsRowData = vo.getRowData();
-            List<SQLBotAssistanTable> tables = vo.getTables();
-            tables.forEach(table -> {
-                Long datasetGroupId = table.getDatasetGroupId();
-                List<DataSetColumnPermissionsDTO> columnPermissionsDTOS = ObjectUtils.isEmpty(colPermissionMap) ? null : colPermissionMap.get(datasetGroupId);
-                List<DataSetRowPermissionsTreeDTO> rowPermissionsTreeDTOS = ObjectUtils.isEmpty(rowPermissionMap) ? null : rowPermissionMap.get(datasetGroupId);
-                if (table.isNeedTransform() || ObjectUtils.isNotEmpty(columnPermissionsDTOS) || ObjectUtils.isNotEmpty(rowPermissionsTreeDTOS)) {
-                    try {
-                        rebuildTable(table, columnPermissionsDTOS, rowPermissionsTreeDTOS, dsRowData);
-                    } catch (Exception e) {
-                        LogUtil.error(e);
-                    }
-                }
-            });
-        });*/
     }
 
     private SQLBotAssistantField buildField(Map<String, Object> row) {

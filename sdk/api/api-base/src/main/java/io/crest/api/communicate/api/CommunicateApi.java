@@ -17,7 +17,7 @@ public interface CommunicateApi {
     void send(@RequestBody MessageDTO dto);
 
     @GetMapping("/down/{fileId}/{fileName}/{suffix}")
-    ResponseEntity<ByteArrayResource> down(@PathVariable("fileId") String fileId, @PathVariable("fileName") String fileName, @PathVariable("suffix") String suffix) throws Exception;
+    ResponseEntity<ByteArrayResource> down(@PathVariable("fileId") String fileId, @PathVariable("fileName") String fileName, @PathVariable("suffix") String suffix);
 
     @GetMapping(value = "/image/{imageId}", produces = {MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE})
     ResponseEntity<byte[]> image(@PathVariable("imageId") String imageId);

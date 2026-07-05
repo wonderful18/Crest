@@ -29,6 +29,7 @@ import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,7 +63,7 @@ public class CoreVisualizationExportManage {
         return visualization.getName();
     }
 
-    public File exportExcel(Long dvId, String busiFlag, List<Long> viewIdList, boolean onlyDisplay, String filterJson) throws Exception {
+    public File exportExcel(Long dvId, String busiFlag, List<Long> viewIdList, boolean onlyDisplay, String filterJson) throws IOException {
         DataVisualizationVO visualization = extDataVisualizationMapper.findDvInfo(dvId, busiFlag, "core");
         if (ObjectUtils.isEmpty(visualization)) CrestException.throwException("资源不存在或已经被删除...");
         List<ChartViewDTO> chartViewDTOS = chartViewManege.listBySceneId(dvId, CommonConstants.RESOURCE_TABLE.CORE);
@@ -167,7 +168,7 @@ public class CoreVisualizationExportManage {
         } else {
             try {
                 chartViewDTO = chartDataManage.calcData(request);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 throw new RuntimeException(e);
             }
         }

@@ -43,6 +43,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -769,7 +770,7 @@ public class DefaultChartHandler extends AbstractChartPlugin {
                 lastTime = simpleDateFormat.format(calendar.getTime());
             }
             return lastTime;
-        } catch (Exception e) {
+        } catch (ParseException | RuntimeException e) {
             return cTime;
         }
     }

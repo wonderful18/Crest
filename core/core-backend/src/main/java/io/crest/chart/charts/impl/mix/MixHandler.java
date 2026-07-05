@@ -118,7 +118,7 @@ public class MixHandler extends YoyChartHandler {
                     leftResult.setDynamicAssistFieldsOriginList(assistsOriginList);
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
 
@@ -189,7 +189,7 @@ public class MixHandler extends YoyChartHandler {
                     rightResult.setDynamicAssistFieldsOriginList(assistsOriginList);
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         }
         var mixResult = (T) new ChartCalcDataResult();

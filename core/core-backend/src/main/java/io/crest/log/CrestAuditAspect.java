@@ -61,7 +61,7 @@ public class CrestAuditAspect {
                     operatorName = user.getName();
                     operatorAccount = user.getAccount();
                 }
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 LogUtil.debug("获取用户信息失败: " + e.getMessage());
             }
         }
@@ -70,7 +70,7 @@ public class CrestAuditAspect {
         String resourceId = null;
         try {
             resourceId = parseExpression(audit.id(), point);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.debug("解析资源ID失败: " + e.getMessage());
         }
 
@@ -133,7 +133,7 @@ public class CrestAuditAspect {
             Object[] args = point.getArgs();
             Object value = resolveAuditExpression(normalized, paramNames, args);
             return value != null ? value.toString() : null;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.debug("审计表达式解析失败: " + expression + ", " + e.getMessage());
             return null;
         }

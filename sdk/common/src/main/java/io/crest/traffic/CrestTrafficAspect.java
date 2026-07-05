@@ -60,7 +60,7 @@ public class CrestTrafficAspect {
                 result = point.proceed();
                 return result;
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage(), e);
         } finally {
             if (access) {

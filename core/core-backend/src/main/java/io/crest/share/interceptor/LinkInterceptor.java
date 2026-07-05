@@ -30,7 +30,7 @@ public class LinkInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         String linkToken = ServletUtils.getHead(AuthConstant.LINK_TOKEN_KEY);
         if (linkToken == null) {
             return true;

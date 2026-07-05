@@ -105,7 +105,7 @@ public class SqlUtils {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException("使用 Calcite 进行语法分析发生了异常:" + e);
         }
     }

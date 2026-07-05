@@ -6,6 +6,7 @@ import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
+import org.quartz.SchedulerException;
 import org.quartz.TriggerKey;
 import org.springframework.stereotype.Component;
 
@@ -81,7 +82,7 @@ public class ScheduledTaskExecutor {
         scheduleManager.addOrUpdateCronJob(jobKey, triggerKey, ScheduledTaskJob.class, cron, new Date(now), end, jobDataMap);
     }
 
-    public boolean fireNow(Long taskId) throws Exception {
+    public boolean fireNow(Long taskId) throws SchedulerException {
         String key = taskId.toString();
         JobKey jobKey = new JobKey(key, JOB_GROUP);
         if (scheduleManager.exist(jobKey)) {
@@ -123,7 +124,7 @@ public class ScheduledTaskExecutor {
         scheduleManager.removeJob(jobKey, triggerKey);
     }
 
-    public void clearRetryTask() throws Exception {
+    public void clearRetryTask() throws SchedulerException {
         scheduleManager.clearByGroup(RETRY_JOB_GROUP);
     }
 }

@@ -115,7 +115,7 @@ public interface DatasourceApi {
 
     @PostMapping("/api-data-sources/sync")
     @Operation(summary = "同步API数据源")
-    void syncApiDs(@RequestBody Map<String, String> req) throws Exception;
+    void syncApiDs(@RequestBody Map<String, String> req) throws CrestException;
 
     @PostMapping("tree")
     @Operation(summary = "数据源列表")
