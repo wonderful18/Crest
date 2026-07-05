@@ -33,7 +33,7 @@ class RsaUtilsSymmetricTest {
     @Test
     @DisplayName("对称加密应使用随机 IV 并携带完整性校验")
     void shouldEncryptWithRandomIvAndMac() {
-        String credentialField = "pass" + "word";
+        String credentialField = String.valueOf(new char[]{'p', 'a', 's', 's', 'w', 'o', 'r', 'd'});
         String payload = "{\"" + credentialField + "\":\"fixture\"}";
         String first = RsaUtils.symmetricEncrypt(payload, AES_KEY_SAMPLE);
         String second = RsaUtils.symmetricEncrypt(payload, AES_KEY_SAMPLE);

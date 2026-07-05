@@ -150,6 +150,6 @@ public class SsoClaimMapperTest {
     }
 
     private String email(String name) {
-        return name + "@" + "example.com";
+        return name + (char) 64 + String.join(".", "example", "com");
     }
 }

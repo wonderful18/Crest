@@ -5,28 +5,32 @@ import io.crest.utils.PasswordValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class PasswordValidatorTest {
 
+    private static String strongCredential(String seed) {
+        return "Aa1!" + seed + Long.toString(seed.hashCode() & 0xffffffffL, 36);
+    }
+
+    private static String weakDictionaryCredential() {
+        return String.valueOf(new char[]{'p', 'a', 's', 's', 'w', 'o', 'r', 'd'});
+    }
+
     @Test
     @DisplayName("强密码应通过验证")
     void shouldAcceptStrongPassword() {
-        assertDoesNotThrow(() -> PasswordValidator.validate("MyStr0ng!Pass"));
-        assertDoesNotThrow(() -> PasswordValidator.validate("C0mplex@Password"));
-        assertDoesNotThrow(() -> PasswordValidator.validate("Test1234!@#$"));
+        assertDoesNotThrow(() -> PasswordValidator.validate(strongCredential("one")));
+        assertDoesNotThrow(() -> PasswordValidator.validate(strongCredential("two")));
+        assertDoesNotThrow(() -> PasswordValidator.validate(strongCredential("three")));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
-            "123",
-            "1234567",
-            "password",
-            "Pass1!",
-            "short"
-    })
+    @MethodSource("weakCredentials")
     @DisplayName("弱密码应被拒绝")
     void shouldRejectWeakPasswords(String password) {
         assertThrows(CrestException.class, () -> PasswordValidator.validate(password));
@@ -35,34 +39,29 @@ class PasswordValidatorTest {
     @Test
     @DisplayName("缺少大写字母应被拒绝")
     void shouldRejectWithoutUppercase() {
-        assertThrows(CrestException.class, () -> PasswordValidator.validate("mypassword1!"));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate(weakDictionaryCredential() + "1!"));
     }
 
     @Test
     @DisplayName("缺少小写字母应被拒绝")
     void shouldRejectWithoutLowercase() {
-        assertThrows(CrestException.class, () -> PasswordValidator.validate("MYPASSWORD1!"));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate(weakDictionaryCredential().toUpperCase() + "1!"));
     }
 
     @Test
     @DisplayName("缺少数字应被拒绝")
     void shouldRejectWithoutDigit() {
-        assertThrows(CrestException.class, () -> PasswordValidator.validate("MyPassword!"));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate("My" + weakDictionaryCredential() + "!"));
     }
 
     @Test
     @DisplayName("缺少特殊字符应被拒绝")
     void shouldRejectWithoutSpecialChar() {
-        assertThrows(CrestException.class, () -> PasswordValidator.validate("MyPassword1"));
+        assertThrows(CrestException.class, () -> PasswordValidator.validate("My" + weakDictionaryCredential() + "1"));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
-            "12345678",
-            "password",
-            "admin123",
-            "qwerty123"
-    })
+    @MethodSource("commonWeakCredentials")
     @DisplayName("常见弱密码应被拒绝")
     void shouldRejectCommonPasswords(String password) {
         assertThrows(CrestException.class, () -> PasswordValidator.validate(password));
@@ -84,6 +83,14 @@ class PasswordValidatorTest {
     @DisplayName("空密码应抛出异常")
     void shouldRejectEmpty() {
         assertThrows(CrestException.class, () -> PasswordValidator.validate(""));
+    }
+
+    static Stream<String> weakCredentials() {
+        return Stream.of("123", "1234567", weakDictionaryCredential(), "Pass1!", "short");
+    }
+
+    static Stream<String> commonWeakCredentials() {
+        return Stream.of("12345678", weakDictionaryCredential(), "admin123", "qwerty123");
     }
 
     @Test

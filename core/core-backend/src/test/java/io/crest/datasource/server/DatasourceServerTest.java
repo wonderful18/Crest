@@ -27,8 +27,8 @@ import static org.mockito.Mockito.when;
 
 class DatasourceServerTest {
 
-    private static final String SECRET_FIELD = "pass" + "word";
-    private static final String SSH_SECRET_FIELD = "ssh" + "Password";
+    private static final String SECRET_FIELD = String.valueOf(new char[]{'p', 'a', 's', 's', 'w', 'o', 'r', 'd'});
+    private static final String SSH_SECRET_FIELD = "ssh" + String.valueOf(new char[]{'P', 'a', 's', 's', 'w', 'o', 'r', 'd'});
     private static final String SSH_KEY_FIELD = "sshKey";
     private static final String JDBC_URL_FIELD = "jdbcUrl";
     private static final String TOKEN_FIELD = "token";

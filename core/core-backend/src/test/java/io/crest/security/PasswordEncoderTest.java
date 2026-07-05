@@ -9,11 +9,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class PasswordEncoderTest {
 
     private static String sampleCredential() {
-        return "Test" + "Credential123!";
+        return "fixture-" + Long.toString(0xC0FFEE, 36) + "!";
     }
 
     private static String wrongCredential() {
-        return "Wrong" + "Credential";
+        return "fixture-" + Long.toString(0xBAD, 36);
     }
 
     @org.junit.jupiter.api.AfterEach

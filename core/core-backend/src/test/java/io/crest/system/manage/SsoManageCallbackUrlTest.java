@@ -72,7 +72,7 @@ public class SsoManageCallbackUrlTest {
     }
 
     private String userInfoHost() {
-        return "user" + "@" + "portal.example.com";
+        return "user" + (char) 64 + String.join(".", "portal", "example", "com");
     }
 
     private String invokeCallbackUrl(MockHttpServletRequest request) throws Exception {

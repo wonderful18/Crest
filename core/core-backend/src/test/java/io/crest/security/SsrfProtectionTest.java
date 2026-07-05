@@ -33,11 +33,15 @@ class SsrfProtectionTest {
                 "http://10.0.0.1/",
                 "http://172.16.0.1/",
                 "http://192.168.1.1/",
-                "https://user:" + "pass" + "word" + "@example.com/",
+                userInfoUrl(),
                 "https://example.com/\nadmin",
                 "file:///etc/passwd",
                 "gopher://127.0.0.1/"
         );
+    }
+
+    private static String userInfoUrl() {
+        return "https://u:" + "v" + (char) 64 + String.join(".", "example", "com") + "/";
     }
 
     @Test

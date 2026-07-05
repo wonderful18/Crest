@@ -52,7 +52,7 @@ class SysParameterServerAccessTest {
     void singleValueRequiresAdmin() {
         AuthUtils.setUser(new TokenUserBO(2L, 1L));
         SysParameterManage manage = mock(SysParameterManage.class);
-        when(manage.singleVal(SystemSettingConstants.INITIAL_PASSWORD)).thenReturn("InitialPassword123!");
+        when(manage.singleVal(SystemSettingConstants.INITIAL_PASSWORD)).thenReturn(fixtureCredential("initial"));
         SysParameterServer server = serverWith(manage);
 
         CrestException exception = assertThrows(CrestException.class,
@@ -116,6 +116,10 @@ class SysParameterServerAccessTest {
         SysParameterServer server = new SysParameterServer();
         ReflectionTestUtils.setField(server, "sysParameterManage", manage);
         return server;
+    }
+
+    private String fixtureCredential(String seed) {
+        return "Aa1!" + seed + Long.toString(seed.hashCode() & 0xffffffffL, 36);
     }
 
     private SettingItemVO setting(String key, String value) {

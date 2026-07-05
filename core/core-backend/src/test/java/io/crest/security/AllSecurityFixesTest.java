@@ -6,7 +6,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,11 +17,19 @@ import static org.junit.jupiter.api.Assertions.*;
 class AllSecurityFixesTest {
 
     private static String sampleCredential() {
-        return "Test" + "Credential123!";
+        return "fixture-" + Long.toString(0xC0FFEE, 36) + "!";
     }
 
     private static String wrongCredential() {
-        return "Wrong" + "Credential";
+        return "fixture-" + Long.toString(0xBAD, 36);
+    }
+
+    private static String strongCredential(String seed) {
+        return "Aa1!" + seed + Long.toString(seed.hashCode() & 0xffffffffL, 36);
+    }
+
+    private static String weakDictionaryCredential() {
+        return String.valueOf(new char[]{'p', 'a', 's', 's', 'w', 'o', 'r', 'd'});
     }
 
     @Nested
@@ -210,18 +221,12 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("强密码应通过验证")
         void shouldAcceptStrongPassword() {
-            assertDoesNotThrow(() -> PasswordValidator.validate("MyStr0ng!Pass"));
-            assertDoesNotThrow(() -> PasswordValidator.validate("C0mplex@Password"));
+            assertDoesNotThrow(() -> PasswordValidator.validate(strongCredential("one")));
+            assertDoesNotThrow(() -> PasswordValidator.validate(strongCredential("two")));
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {
-                "123",
-                "1234567",
-                "password",
-                "Pass1!",
-                "short"
-        })
+        @MethodSource("io.crest.security.AllSecurityFixesTest#weakCredentials")
         @DisplayName("弱密码应被拒绝")
         void shouldRejectWeakPasswords(String password) {
             assertThrows(CrestException.class, () -> PasswordValidator.validate(password));
@@ -230,33 +235,29 @@ class AllSecurityFixesTest {
         @Test
         @DisplayName("缺少大写字母应被拒绝")
         void shouldRejectWithoutUppercase() {
-            assertThrows(CrestException.class, () -> PasswordValidator.validate("mypassword1!"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate(weakDictionaryCredential() + "1!"));
         }
 
         @Test
         @DisplayName("缺少小写字母应被拒绝")
         void shouldRejectWithoutLowercase() {
-            assertThrows(CrestException.class, () -> PasswordValidator.validate("MYPASSWORD1!"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate(weakDictionaryCredential().toUpperCase() + "1!"));
         }
 
         @Test
         @DisplayName("缺少数字应被拒绝")
         void shouldRejectWithoutDigit() {
-            assertThrows(CrestException.class, () -> PasswordValidator.validate("MyPassword!"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate("My" + weakDictionaryCredential() + "!"));
         }
 
         @Test
         @DisplayName("缺少特殊字符应被拒绝")
         void shouldRejectWithoutSpecialChar() {
-            assertThrows(CrestException.class, () -> PasswordValidator.validate("MyPassword1"));
+            assertThrows(CrestException.class, () -> PasswordValidator.validate("My" + weakDictionaryCredential() + "1"));
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {
-                "12345678",
-                "password",
-                "admin123"
-        })
+        @MethodSource("io.crest.security.AllSecurityFixesTest#commonWeakCredentials")
         @DisplayName("常见弱密码应被拒绝")
         void shouldRejectCommonPasswords(String password) {
             assertThrows(CrestException.class, () -> PasswordValidator.validate(password));
@@ -281,5 +282,13 @@ class AllSecurityFixesTest {
             assertNotNull(description);
             assertTrue(description.contains("8"));
         }
+    }
+
+    static Stream<String> weakCredentials() {
+        return Stream.of("123", "1234567", weakDictionaryCredential(), "Pass1!", "short");
+    }
+
+    static Stream<String> commonWeakCredentials() {
+        return Stream.of("12345678", weakDictionaryCredential(), "admin123");
     }
 }

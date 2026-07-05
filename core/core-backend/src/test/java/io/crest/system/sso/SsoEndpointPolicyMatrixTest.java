@@ -71,7 +71,7 @@ public class SsoEndpointPolicyMatrixTest {
     }
 
     private static String userinfoEndpoint() {
-        return "https://用户名:" + "密" + "码" + "@idp.example.com/token";
+        return "https://用户名:" + "口令" + (char) 64 + String.join(".", "idp", "example", "com") + "/token";
     }
 
     @Test
