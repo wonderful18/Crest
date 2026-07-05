@@ -122,7 +122,7 @@ watch([width, height], updateLayout)
   </div>
 </template>
 
-<style lang="less">
+<style lang="less" scoped>
 .dv-decoration-3 {
   position: relative;
   width: 100%;

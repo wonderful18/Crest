@@ -148,12 +148,11 @@ defineExpose({
 <style lang="less" scoped>
 .editor-placeholder {
   width: 100%;
-}
-</style>
-<style lang="less">
-.cm-editor,
-.cm-scroller {
-  height: 100% !important;
-  background: #eff0f1;
+
+  :deep(.cm-editor),
+  :deep(.cm-scroller) {
+    height: 100% !important;
+    background: #eff0f1;
+  }
 }
 </style>

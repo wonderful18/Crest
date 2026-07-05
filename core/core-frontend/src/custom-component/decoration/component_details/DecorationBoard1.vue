@@ -117,7 +117,7 @@ onMounted(() => {
 })
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 .dv-border-box-1 {
   position: relative;
   /* 启用硬件加速 */

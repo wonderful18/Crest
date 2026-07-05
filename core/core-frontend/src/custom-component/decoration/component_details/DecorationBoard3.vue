@@ -80,7 +80,7 @@ onMounted(mergeColor)
   </div>
 </template>
 
-<style lang="less">
+<style lang="less" scoped>
 .dv-border-box-3 {
   position: relative;
   width: 100%;

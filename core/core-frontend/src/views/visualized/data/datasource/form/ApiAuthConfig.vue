@@ -68,7 +68,7 @@ const change = () => {
   </el-form>
 </template>
 
-<style lang="less">
+<style lang="less" scoped>
 .api-auth-config {
   margin-bottom: 16px !important;
 }

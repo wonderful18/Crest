@@ -14,7 +14,7 @@ defineProps({
   </div>
 </template>
 
-<style lang="less">
+<style lang="less" scoped>
 .base-info-item {
   margin-top: 16px;
   font-family: var(--crest-custom_font, 'PingFang');

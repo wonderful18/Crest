@@ -145,7 +145,7 @@ defineExpose({
   </div>
 </template>
 
-<style lang="less">
+<style lang="less" scoped>
 .content-outer {
   width: 100%;
   height: calc(100vh - 100px);

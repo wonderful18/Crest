@@ -11,7 +11,7 @@ import { Icon } from '@/components/icon-custom'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t } = useI18n()
 </script>
-<style lang="less">
+<style lang="less" scoped>
 .page-not-found {
   width: 100%;
   top: calc(50% - 100px);

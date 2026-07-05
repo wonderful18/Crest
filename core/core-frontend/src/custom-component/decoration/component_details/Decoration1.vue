@@ -188,7 +188,7 @@ watch([width, height], () => {
 })
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 .dv-decoration-1 {
   position: relative;
   width: 100%;

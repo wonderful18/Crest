@@ -106,7 +106,7 @@ onMounted(mergeColor)
   </div>
 </template>
 
-<style lang="less">
+<style lang="less" scoped>
 .dv-decoration-2 {
   position: relative;
   width: 100%;
