@@ -1194,6 +1194,29 @@ class ExcelFieldNameTest {
     }
 
     @Test
+    void engineCreateTableRejectsUnsafeColumnLength() {
+        TableField field = checkedTextField("字段", "f_name");
+        field.setLength("20); DROP TABLE users; --");
+
+        assertThrows(CrestException.class, () -> new MysqlEngineProvider().createTableSql("excel_sheet", List.of(field), engine("mysql")));
+        assertThrows(CrestException.class, () -> new H2EngineProvider().createTableSql("excel_sheet", List.of(field), engine("h2")));
+    }
+
+    @Test
+    void engineCreateTableAllowsBoundedNumericColumnLength() {
+        TableField mysqlField = checkedTextField("字段", "f_name");
+        mysqlField.setLength("64");
+        TableField h2Field = checkedTextField("字段", "f_name");
+        h2Field.setLength("64");
+
+        String mysqlSql = new MysqlEngineProvider().createTableSql("excel_sheet", List.of(mysqlField), engine("mysql"));
+        String h2Sql = new H2EngineProvider().createTableSql("excel_sheet", List.of(h2Field), engine("h2"));
+
+        assertTrue(mysqlSql.contains("`f_name` varchar(64)"));
+        assertTrue(h2Sql.contains("\"f_name\" varchar(64)"));
+    }
+
+    @Test
     void engineCreateViewRejectsNonReadOnlySql() {
         assertThrows(CrestException.class, () -> new MysqlEngineProvider().createView("v_safe", "select 1; drop table users"));
         assertThrows(CrestException.class, () -> new H2EngineProvider().createView("v_safe", "delete from users"));

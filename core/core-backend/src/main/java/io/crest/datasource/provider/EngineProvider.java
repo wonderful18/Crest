@@ -16,6 +16,9 @@ import java.util.regex.Pattern;
 import static io.crest.engine.utils.Utils.SQL_INJECTION_PATTERNS;
 
 public abstract class EngineProvider {
+    private static final int MAX_VARCHAR_LENGTH = 65535;
+    private static final Pattern COLUMN_LENGTH_PATTERN = Pattern.compile("\\d{1,5}");
+
     public abstract String createView(String name, String viewSQL);
 
     public abstract String dropTable(String name);
@@ -66,6 +69,21 @@ public abstract class EngineProvider {
 
     protected static String physicalFieldName(TableField field) {
         return StringUtils.defaultIfBlank(field.getDbFieldName(), field.getName());
+    }
+
+    protected static String varcharColumnLength(String value) {
+        String normalized = StringUtils.trimToNull(value);
+        if (normalized == null) {
+            return null;
+        }
+        if (!COLUMN_LENGTH_PATTERN.matcher(normalized).matches()) {
+            CrestException.throwException("Illegal column length");
+        }
+        int length = Integer.parseInt(normalized);
+        if (length < 1 || length > MAX_VARCHAR_LENGTH) {
+            CrestException.throwException("Illegal column length");
+        }
+        return String.valueOf(length);
     }
 
     protected static String mysqlIdentifier(String value) {

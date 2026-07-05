@@ -104,8 +104,9 @@ public class MysqlEngineProvider extends EngineProvider {
             int size = tableField.getPrecision() * 4;
             switch (tableField.getExtractedFieldType()) {
                 case 0:
-                    if (StringUtils.isNotEmpty(tableField.getLength())) {
-                        columnFields.append("varchar(length)".replace("length", tableField.getLength())).append(",`");
+                    String columnLength = varcharColumnLength(tableField.getLength());
+                    if (StringUtils.isNotEmpty(columnLength)) {
+                        columnFields.append("varchar(length)".replace("length", columnLength)).append(",`");
                     } else {
                         columnFields.append("longtext").append(",`");
                     }
