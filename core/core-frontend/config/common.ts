@@ -32,15 +32,35 @@ const isFile = (file: string) => {
   }
 }
 
+const readDirectoryEntries = (dir: string, maxEntries: number, label: string): fs.Dirent[] => {
+  const directory = fs.opendirSync(dir)
+  const entries: fs.Dirent[] = []
+  try {
+    for (;;) {
+      const entry = directory.readSync()
+      if (!entry) {
+        return entries
+      }
+      entries.push(entry)
+      if (entries.length > maxEntries) {
+        throw new Error(`${label} count exceeds ${maxEntries}`)
+      }
+    }
+  } finally {
+    directory.closeSync()
+  }
+}
+
 const elementPlusSecondaryStyleDeps = (() => {
   const componentsDir = path.resolve(root, 'node_modules/element-plus-secondary/es/components')
   if (!isDirectory(componentsDir)) {
     return []
   }
-  const componentEntries = fs.readdirSync(componentsDir, { withFileTypes: true })
-  if (componentEntries.length > MAX_ELEMENT_PLUS_SECONDARY_COMPONENTS) {
-    throw new Error(`element-plus-secondary component count exceeds ${MAX_ELEMENT_PLUS_SECONDARY_COMPONENTS}`)
-  }
+  const componentEntries = readDirectoryEntries(
+    componentsDir,
+    MAX_ELEMENT_PLUS_SECONDARY_COMPONENTS,
+    'element-plus-secondary component'
+  )
   return componentEntries
     .filter(item => {
       return (

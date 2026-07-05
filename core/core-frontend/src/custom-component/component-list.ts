@@ -264,7 +264,7 @@ export const commonAttr = {
         id: '', // 联动的组件 id
         label: '', // 联动的组件名称
         event: '', // 监听事件
-        style: [{ key: '', value: '' }] // 监听的事件触发时，需要改变的属性
+        style: [] // 监听的事件触发时，需要改变的属性
       }
     ]
   }

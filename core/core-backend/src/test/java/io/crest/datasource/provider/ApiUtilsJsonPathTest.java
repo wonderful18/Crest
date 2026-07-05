@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -147,7 +148,7 @@ public class ApiUtilsJsonPathTest {
             definition.setUrl("http://127.0.0.1:" + server.getAddress().getPort() + "/users");
             definition.setMethod("GET");
             definition.setRequest(new ApiDefinitionRequest());
-            String authHeaderValue = "Bearer crest-sample";
+            String authHeaderValue = "Bearer " + UUID.nameUUIDFromBytes("crest-api-fixture".getBytes(StandardCharsets.UTF_8));
             definition.getRequest().setHeaders(List.of(Map.of(
                     "name", "Authorization",
                     "nameType", "fixed",

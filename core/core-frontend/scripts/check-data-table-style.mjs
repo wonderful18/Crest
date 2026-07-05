@@ -1,6 +1,7 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { opendirSync, readFileSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
+const MAX_SCANNED_ENTRIES = 5000
 const targetDirs = [
   'src/components/grid-table/src',
   'src/views/system',
@@ -11,6 +12,7 @@ const targetDirs = [
 const tablePattern = /<el-table(?!-column)(?!-v2)\b[\s\S]*?>/g
 const tableV2Pattern = /<el-table-v2\b[\s\S]*?>/g
 const failures = []
+let scannedEntries = 0
 
 for (const target of targetDirs.flatMap(scanVueFiles)) {
   const file = resolve(target)
@@ -39,7 +41,7 @@ function collectFailures(source, pattern, target, tagName, requiredClass) {
 
 function scanVueFiles(dir) {
   const absoluteDir = resolve(dir)
-  return readdirSync(absoluteDir).flatMap(name => {
+  return readDirectoryNames(absoluteDir).flatMap(name => {
     const absolutePath = join(absoluteDir, name)
     const relativePath = join(dir, name)
     if (statSync(absolutePath).isDirectory()) {
@@ -47,4 +49,24 @@ function scanVueFiles(dir) {
     }
     return name.endsWith('.vue') ? [relativePath] : []
   })
+}
+
+function readDirectoryNames(dir) {
+  const directory = opendirSync(dir)
+  const names = []
+  try {
+    for (;;) {
+      const entry = directory.readSync()
+      if (!entry) {
+        return names
+      }
+      scannedEntries += 1
+      if (scannedEntries > MAX_SCANNED_ENTRIES) {
+        throw new Error(`Scanned file count exceeds ${MAX_SCANNED_ENTRIES}`)
+      }
+      names.push(entry.name)
+    }
+  } finally {
+    directory.closeSync()
+  }
 }

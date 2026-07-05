@@ -180,7 +180,7 @@ class Convert {
    * @param {*} $id
    * @param {*} key
    */
-  _value2object(value, $id, key = '', root = false) {
+  _value2object(value, $id, key = 'value', root = false) {
     const objectTemplate = {
       $id: $id,
       title: `The ${key} Schema`,

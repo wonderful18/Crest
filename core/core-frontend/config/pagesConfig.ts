@@ -1,5 +1,5 @@
 import path from 'path'
-import { readdirSync } from 'fs'
+import { opendirSync, type Dirent } from 'fs'
 
 const MAX_PAGE_DIRECTORIES = 200
 
@@ -12,10 +12,7 @@ export interface Page {
 function readPages(srcDir: string): Page[] {
   // nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
   const pagesDir = path.resolve(srcDir, 'pages')
-  const pageEntries = readdirSync(pagesDir, { withFileTypes: true })
-  if (pageEntries.length > MAX_PAGE_DIRECTORIES) {
-    throw new Error(`Page directory count exceeds ${MAX_PAGE_DIRECTORIES}`)
-  }
+  const pageEntries = readDirectoryEntries(pagesDir, MAX_PAGE_DIRECTORIES, 'Page directory')
   let pages: Page[] = pageEntries
     .filter(o => o.isDirectory() && !/^[._]/.test(o.name) && !/^lib/.test(o.name))
     // nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
@@ -30,6 +27,25 @@ function readPages(srcDir: string): Page[] {
   }
 
   return pages
+}
+
+function readDirectoryEntries(dir: string, maxEntries: number, label: string): Dirent[] {
+  const directory = opendirSync(dir)
+  const entries: Dirent[] = []
+  try {
+    for (;;) {
+      const entry = directory.readSync()
+      if (!entry) {
+        return entries
+      }
+      entries.push(entry)
+      if (entries.length > maxEntries) {
+        throw new Error(`${label} count exceeds ${maxEntries}`)
+      }
+    }
+  } finally {
+    directory.closeSync()
+  }
 }
 export const ROOT_DIR = path.resolve(__dirname, '../')
 

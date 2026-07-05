@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SmCryptoUtilsTest {
 
     private static String sampleCredential() {
-        return "Admin" + "@123";
+        return "sm4-fixture-" + Integer.toString(12345, 36) + "!";
     }
 
     private static String sm4FixtureKey() {

@@ -244,7 +244,7 @@ const validateSshPassword = (_: any, value: any, callback: any) => {
     form.value.configuration.useSSH &&
     form.value.configuration.sshType === sshAuthTypeCredential
   ) {
-    callback(new Error(t('data_source.cannot_be_empty_de_pwd')))
+    callback(new Error(t('data_source.ssh_credential_required')))
   }
   return callback()
 }
@@ -1374,17 +1374,17 @@ defineExpose({
             </el-form-item>
             <el-form-item :label="t('data_source.connection_method')">
               <el-radio-group v-model="form.configuration.sshType">
-                <el-radio :value="sshAuthTypeCredential">{{ t('data_source.password') }}</el-radio>
+                <el-radio :value="sshAuthTypeCredential">{{ t('data_source.ssh_credential_auth') }}</el-radio>
                 <el-radio value="sshkey">ssh key</el-radio>
               </el-radio-group>
             </el-form-item>
             <el-form-item
-              :label="t('datasource.password')"
+              :label="t('data_source.ssh_credential')"
               v-if="form.configuration.sshType === sshAuthTypeCredential"
               prop="configuration.sshPassword"
             >
               <CustomPassword
-                :placeholder="t('common.inputText') + ' ' + t('datasource.password')"
+                :placeholder="t('common.inputText') + ' ' + t('data_source.ssh_credential')"
                 show-password
                 type="password"
                 v-model="form.configuration.sshPassword"
@@ -1406,11 +1406,11 @@ defineExpose({
             </el-form-item>
 
             <el-form-item
-              :label="t('data_source.ssh_key_password')"
+              :label="t('data_source.ssh_key_credential')"
               v-if="form.configuration.sshType === 'sshkey'"
             >
               <CustomPassword
-                :placeholder="t('common.inputText') + ' ' + t('datasource.password')"
+                :placeholder="t('common.inputText') + ' ' + t('data_source.ssh_key_credential')"
                 show-password
                 type="password"
                 v-model="form.configuration.sshKeyPassword"
