@@ -31,6 +31,7 @@ public class ConfigUtils {
             String property = Objects.requireNonNull(factory.getObject()).getProperty(key, defaultValue);
             return property.replaceAll("\\$\\{base-path}", basePath);
         } catch (Exception e) {
+            LogUtil.debug("Fallback to default config value for " + key);
         }
         return defaultValue;
     }
@@ -58,6 +59,7 @@ public class ConfigUtils {
                 }
             }
         } catch (Exception ignored) {
+            LogUtil.debug("Spring environment is unavailable while reading " + key);
         }
         return null;
     }

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class DatasetSyncUtils {
@@ -31,6 +32,7 @@ public class DatasetSyncUtils {
     public static final int DEFAULT_CACHE_EXPIRE_HOURS = 26;
     public static final int DEFAULT_TASK_TIMEOUT_MINUTES = 360;
     public static final int DEFAULT_FAILURE_WARN_THRESHOLD = 1;
+    private static final Pattern NUMERIC_LITERAL_PATTERN = Pattern.compile("-?\\d+(\\.\\d+)?");
     private static final Set<String> SUPPORTED_CACHE_SOURCE_TYPES = Set.of(
             DatasourceConfiguration.DatasourceType.obOracle.name(),
             DatasourceConfiguration.DatasourceType.mysql.name()
@@ -259,7 +261,7 @@ public class DatasetSyncUtils {
     }
 
     private static boolean isNumericLiteral(String value) {
-        return StringUtils.defaultString(value).trim().matches("-?\\d+(\\.\\d+)?");
+        return NUMERIC_LITERAL_PATTERN.matcher(StringUtils.defaultString(value).trim()).matches();
     }
 
     public static String buildCacheSelectSql(Long datasetGroupId, List<DatasetTableFieldDTO> fields, String prefix, String suffix, String schemaAlias) {

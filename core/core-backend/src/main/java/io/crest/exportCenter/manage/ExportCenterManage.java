@@ -199,6 +199,9 @@ public class ExportCenterManage implements BaseExportApi {
     }
 
     public void setOrg(ExportTaskDTO exportTaskDTO) {
+        if (exportTaskDTO == null) {
+            return;
+        }
     }
 
     private ExportCenterManage proxy() {

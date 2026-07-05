@@ -108,7 +108,7 @@ public class MultiScatterHandler extends DefaultChartHandler {
         String querySql = SQLProvider.createQuerySQL(sqlMeta, false, needOrder, view);
         querySql = provider.rebuildSQL(querySql, sqlMeta, crossDs, dsMap);
         datasourceRequest.setQuery(querySql);
-        logger.debug("calcite multi-scatter chart sql: " + querySql);
+        logger.debug("calcite multi-scatter chart sql generated");
         List<String[]> data = (List<String[]>) provider.fetchResultField(datasourceRequest).get("data");
 
         // 自定义排序
@@ -151,4 +151,3 @@ public class MultiScatterHandler extends DefaultChartHandler {
                 .collect(Collectors.toList());
     }
 }
-

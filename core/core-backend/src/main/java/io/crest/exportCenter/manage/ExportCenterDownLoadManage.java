@@ -65,12 +65,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
-import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -83,6 +84,9 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ExportCenterDownLoadManage {
     private static final int EXCEL_NUMERIC_TEXT_LIMIT = 64;
+    private static final long KIB = 1024L;
+    private static final long MIB = KIB * 1024L;
+    private static final long GIB = MIB * 1024L;
     private static final Pattern EXCEL_NUMERIC_PATTERN = Pattern.compile("^-?\\d+(\\.\\d+)?$");
 
     @Resource
@@ -147,6 +151,7 @@ public class ExportCenterDownLoadManage {
                     WsMessage message = new WsMessage(exportTask.getUserId(), "/task-export-topic", exportTaskDTO);
                     wsService.releaseMessage(message);
                 } catch (Exception e) {
+                    LogUtil.debug("Release export task message failed: " + entry.getKey());
                 }
             }
         }
@@ -352,11 +357,7 @@ public class ExportCenterDownLoadManage {
                                 }
                             }
                             exportTask.setExportStatus("IN_PROGRESS");
-                            double exportRogress2 = (double) ((double) s - 1) / ((double) sheetCount);
-                            double exportRogress = (double) ((double) (p + 1) / (double) pageSize) * ((double) 1 / sheetCount);
-                            DecimalFormat df = new DecimalFormat("#.##");
-                            String formattedResult = df.format((exportRogress + exportRogress2) * 100);
-                            exportTask.setExportProgress(formattedResult);
+                            exportTask.setExportProgress(formatPagedProgress(s - 1, p + 1, pageSize, sheetCount));
                             exportTaskMapper.updateById(exportTask);
                         }
                     }
@@ -459,12 +460,11 @@ public class ExportCenterDownLoadManage {
                     if ("dataset".equals(request.getDownloadType()) || request.getViewInfo().getType().equalsIgnoreCase("table-info") || request.getViewInfo().getType().equalsIgnoreCase("table-normal")) {
                         boolean summaryEnabled = !"dataset".equals(request.getDownloadType()) && ChartDataServer.isSummaryEnabled(request.getViewInfo());
                         ChartDataServer.SummaryConfig summaryConfig = null;
-                        ChartDataServer.SummaryAccumulator summaryAcc = null;
-                        List<ChartViewFieldDTO> allExportColumns = null;
+                        ChartDataServer.SummaryAccumulator summaryAcc = new ChartDataServer.SummaryAccumulator();
+                        List<ChartViewFieldDTO> allExportColumns = Collections.emptyList();
                         Map<String, java.math.BigDecimal> customSumResult = null;
                         if (summaryEnabled) {
                             summaryConfig = ChartDataServer.parseSummaryConfig(request.getViewInfo());
-                            summaryAcc = new ChartDataServer.SummaryAccumulator();
                             allExportColumns = ChartDataServer.getAllExportColumns(request.getViewInfo());
                         }
 
@@ -515,10 +515,7 @@ public class ExportCenterDownLoadManage {
                                 details.clear();
                             }
                             exportTask.setExportStatus("IN_PROGRESS");
-                            double exportProgress = (double) ((double) i / (chartViewDTO.getTotalPage()));
-                            DecimalFormat df = new DecimalFormat("#.##");
-                            String formattedResult = df.format((exportProgress) * 100);
-                            exportTask.setExportProgress(formattedResult);
+                            exportTask.setExportProgress(formatProgress(i, chartViewDTO.getTotalPage()));
                             exportTaskMapper.updateById(exportTask);
                         }
                     } else {
@@ -562,8 +559,7 @@ public class ExportCenterDownLoadManage {
         //设置单元格填充样式(使用纯色背景颜色填充)
         cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         if (CollectionUtils.isEmpty(request.getMultiInfo())) {
-            if (request.getViewInfo().getType().equalsIgnoreCase("chart-mix-dual-line")) {
-            } else {
+            if (!request.getViewInfo().getType().equalsIgnoreCase("chart-mix-dual-line")) {
                 List<Object[]> details = request.getDetails();
                 Integer[] excelTypes = request.getExcelTypes();
                 details.add(0, request.getHeader());
@@ -595,22 +591,53 @@ public class ExportCenterDownLoadManage {
 
     private void setFileSize(File file, CoreExportTask exportTask) {
         long length = file.length();
-        String unit = "Mb";
-        Double size = 0.0;
-        if ((double) length / 1024 / 1024 > 1) {
-            if ((double) length / 1024 / 1024 / 1024 > 1) {
+        String unit;
+        double size;
+        if (length > MIB) {
+            if (length > GIB) {
                 unit = "Gb";
-                size = Double.valueOf(String.format("%.2f", (double) length / 1024 / 1024 / 1024));
+                size = displaySize(length, GIB);
             } else {
-                size = Double.valueOf(String.format("%.2f", (double) length / 1024 / 1024));
+                unit = "Mb";
+                size = displaySize(length, MIB);
             }
-
         } else {
             unit = "Kb";
-            size = Double.valueOf(String.format("%.2f", (double) length / 1024));
+            size = displaySize(length, KIB);
         }
         exportTask.setFileSize(size);
         exportTask.setFileSizeUnit(unit);
+    }
+
+    private String formatPagedProgress(long completedSheets, long currentPage, long pageSize, long sheetCount) {
+        if (pageSize <= 0 || sheetCount <= 0) {
+            return "0";
+        }
+        BigDecimal completed = BigDecimal.valueOf(completedSheets);
+        BigDecimal current = BigDecimal.valueOf(currentPage)
+                .divide(BigDecimal.valueOf(pageSize), 6, RoundingMode.HALF_UP);
+        return completed.add(current)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(sheetCount), 2, RoundingMode.HALF_UP)
+                .stripTrailingZeros()
+                .toPlainString();
+    }
+
+    private String formatProgress(long current, long total) {
+        if (total <= 0) {
+            return "0";
+        }
+        return BigDecimal.valueOf(current)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP)
+                .stripTrailingZeros()
+                .toPlainString();
+    }
+
+    private double displaySize(long length, long unitBytes) {
+        return BigDecimal.valueOf(length)
+                .divide(BigDecimal.valueOf(unitBytes), 2, RoundingMode.HALF_UP)
+                .doubleValue();
     }
 
     private File prepareTaskDirectory(String taskId) {

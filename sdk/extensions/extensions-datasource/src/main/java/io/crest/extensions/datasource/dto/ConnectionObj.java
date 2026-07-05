@@ -6,6 +6,7 @@ import io.crest.extensions.datasource.vo.DatasourceConfiguration;
 import lombok.Data;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 @Data
 public class ConnectionObj implements AutoCloseable {
@@ -17,7 +18,7 @@ public class ConnectionObj implements AutoCloseable {
     private DatasourceConfiguration configuration;
 
     @Override
-    public void close() throws Exception {
+    public void close() throws SQLException {
         if (this.connection != null) {
             this.connection.close();
         }

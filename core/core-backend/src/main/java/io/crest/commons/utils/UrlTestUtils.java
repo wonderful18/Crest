@@ -15,7 +15,7 @@ public class UrlTestUtils {
             co.setConnectTimeout(timeOutMillSeconds);
             co.connect();
             return true;
-        } catch (Exception e) {
+        } catch (IOException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
             return false;
         }

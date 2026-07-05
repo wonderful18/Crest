@@ -1,6 +1,7 @@
 package io.crest.job.schedule;
 
 import io.crest.commons.utils.CronUtils;
+import io.crest.utils.LogUtil;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
 import org.quartz.JobDataMap;
@@ -27,6 +28,7 @@ public class DataFillingTaskExecutor {
         return false;
     }
     public void init() {
+        LogUtil.debug("data filling task executor initialized");
     }
 
     public void addOrUpdateTask(Long taskId, String cron, Long startTime, Long endTime) {

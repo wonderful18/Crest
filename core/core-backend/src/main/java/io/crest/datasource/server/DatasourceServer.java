@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,6 +71,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
@@ -298,7 +300,7 @@ public class DatasourceServer implements DatasourceApi {
         dataSourceDTO.setUpdateTime(System.currentTimeMillis());
         try {
             checkDatasourceStatus(dataSourceDTO);
-        } catch (Exception ignore) {
+        } catch (RuntimeException ignore) {
             dataSourceDTO.setStatus("Error");
         }
         dataSourceDTO.setTaskStatus(TaskStatus.WaitingForExecution.name());
@@ -323,8 +325,8 @@ public class DatasourceServer implements DatasourceApi {
                 List<TableField> tableFields = ExcelUtils.getTableFields(datasourceRequest);
                 try {
                     datasourceSyncManage.createEngineTable(datasourceRequest.getTable(), tableFields);
-                } catch (Exception e) {
-                    if (e.getMessage().toLowerCase().contains("Row size too large".toLowerCase())) {
+                } catch (RuntimeException e) {
+                    if (Strings.CI.contains(e.getMessage(), "Row size too large")) {
                         CrestException.throwException("文本内容超出最大支持范围： " + datasourceRequest.getTable() + ", " + e.getMessage());
                     } else {
                         CrestException.throwException("Failed to create table " + datasourceRequest.getTable() + ", " + e.getMessage());
@@ -342,7 +344,7 @@ public class DatasourceServer implements DatasourceApi {
                 List<TableField> tableFields = (List<TableField>) invokeMethod(coreDatasource.getType(), "getTableFields", DatasourceRequest.class, datasourceRequest);
                 try {
                     datasourceSyncManage.createEngineTable(datasourceRequest.getTable(), tableFields);
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     CrestException.throwException("Failed to create table " + datasourceRequest.getTable() + ": " + e.getMessage());
                 }
             }
@@ -373,8 +375,8 @@ public class DatasourceServer implements DatasourceApi {
                 List<TableField> tableFields = ExcelUtils.getTableFields(datasourceRequest);
                 try {
                     datasourceSyncManage.createEngineTable(datasourceRequest.getTable(), tableFields);
-                } catch (Exception e) {
-                    if (e.getMessage().toLowerCase().contains("Row size too large".toLowerCase())) {
+                } catch (RuntimeException e) {
+                    if (Strings.CI.contains(e.getMessage(), "Row size too large")) {
                         CrestException.throwException("文本内容超出最大支持范围： " + datasourceRequest.getTable() + ", " + e.getMessage());
                     } else {
                         CrestException.throwException("Failed to create table " + datasourceRequest.getTable() + ", " + e.getMessage());
@@ -425,7 +427,7 @@ public class DatasourceServer implements DatasourceApi {
         dataSourceDTO.setUpdateBy(AuthUtils.getUser().getUserId());
         try {
             checkDatasourceStatus(dataSourceDTO);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             dataSourceDTO.setStatus("Error");
         }
 
@@ -482,7 +484,7 @@ public class DatasourceServer implements DatasourceApi {
             for (String deleteTable : toDeleteTables) {
                 try {
                     datasourceSyncManage.dropEngineTable(deleteTable);
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     CrestException.throwException("Failed to drop table " + deleteTable);
                 }
             }
@@ -490,7 +492,7 @@ public class DatasourceServer implements DatasourceApi {
                 datasourceRequest.setTable(toCreateTable);
                 try {
                     datasourceSyncManage.createEngineTable(toCreateTable, dataSourceDTO.getType().contains(DatasourceConfiguration.DatasourceType.API.name()) ? (List<TableField>) invokeMethod(sourceTableRequest.getDatasource().getType(), "getTableFields", DatasourceRequest.class, datasourceRequest) : ExcelUtils.getTableFields(datasourceRequest));
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     CrestException.throwException("Failed to create table " + toCreateTable + ", " + e.getMessage());
                 }
             }
@@ -508,14 +510,15 @@ public class DatasourceServer implements DatasourceApi {
                 for (String deleteTable : toDeleteTables) {
                     try {
                         datasourceSyncManage.dropEngineTable(deleteTable);
-                    } catch (Exception ignore) {
+                    } catch (RuntimeException e) {
+                        LogUtil.debug("Drop replaced Excel engine table failed: " + deleteTable);
                     }
                 }
                 for (String toCreateTable : toCreateTables) {
                     datasourceRequest.setTable(toCreateTable);
                     try {
                         datasourceSyncManage.createEngineTable(toCreateTable, ExcelUtils.getTableFields(datasourceRequest));
-                    } catch (Exception e) {
+                    } catch (RuntimeException e) {
                         CrestException.throwException("Failed to create table " + toCreateTable + ", " + e.getMessage());
                     }
                 }
@@ -641,20 +644,8 @@ public class DatasourceServer implements DatasourceApi {
                 List<ApiDefinition> apiDefinitionList = JsonUtil.parseList(datasourceDTO.getConfiguration(), listTypeReference);
                 int success = 0;
                 for (ApiDefinition apiDefinition : apiDefinitionList) {
-                    String status = null;
-                    if (StringUtils.isNotEmpty(datasourceDTO.getStatus())) {
-                        JsonNode jsonNode = null;
-                        try {
-                            jsonNode = objectMapper.readTree(datasourceDTO.getStatus());
-                            for (JsonNode node : jsonNode) {
-                                if (node.get("name").asText().equals(apiDefinition.getName())) {
-                                    status = node.get("status").asText();
-                                }
-                            }
-                            apiDefinition.setStatus(status);
-                        } catch (Exception ignore) {
-                        }
-                    }
+                    String status = apiDefinitionStatus(datasourceDTO.getStatus(), apiDefinition.getName());
+                    apiDefinition.setStatus(status);
                     if (StringUtils.isNotEmpty(status) && status.equalsIgnoreCase("Success")) {
                         success++;
                     }
@@ -709,7 +700,7 @@ public class DatasourceServer implements DatasourceApi {
                 datasourceRequest.setTable(table.getTableName());
                 try {
                     datasourceSyncManage.dropEngineTable(datasourceRequest.getTable());
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     CrestException.throwException("Failed to drop table " + datasourceRequest.getTable());
                 }
             }
@@ -722,7 +713,7 @@ public class DatasourceServer implements DatasourceApi {
                 datasourceRequest.setTable(api.getTableName());
                 try {
                     datasourceSyncManage.dropEngineTable(datasourceRequest.getTable());
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     CrestException.throwException("Failed to drop table " + datasourceRequest.getTable());
                 }
 
@@ -773,10 +764,10 @@ public class DatasourceServer implements DatasourceApi {
         String cron = "";
         switch (type) {
             case "hour":
-                cron = "0 0 0/hour *  * ? *".replace("hour", interval.toString());
+                cron = "0 0 0/hour *  * ? *".replace("hour", String.valueOf(interval));
                 break;
             default:
-                cron = "0 0/minute * *  * ? *".replace("minute", interval.toString());
+                cron = "0 0/minute * *  * ? *".replace("minute", String.valueOf(interval));
         }
         scheduleManager.addOrUpdateCronJob(new JobKey("Datasource", "check_status"),
                 new TriggerKey("Datasource", "check_status"),
@@ -907,7 +898,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @Override
-    public void syncApiDs(@RequestBody Map<String, String> req) throws Exception {
+    public void syncApiDs(@RequestBody Map<String, String> req) {
         Long datasourceId = Long.valueOf(req.get("datasourceId"));
         CoreDatasourceTask coreDatasourceTask = datasourceTaskServer.selectByDSId(datasourceId);
         CoreDatasource coreDatasource = dataSourceManage.getCoreDatasource(datasourceId);
@@ -1086,7 +1077,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     private boolean isCsv(String fileName) {
-        String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
+        String suffix = fileName.substring(fileName.lastIndexOf('.') + 1);
         return suffix.equalsIgnoreCase("csv");
     }
 
@@ -1160,7 +1151,7 @@ public class DatasourceServer implements DatasourceApi {
             coreDatasource.setStatus(status);
         } catch (CrestException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (FileNotFoundException | RuntimeException e) {
             LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
             CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "数据源配置不完整或无法连接");
         }
@@ -1229,7 +1220,7 @@ public class DatasourceServer implements DatasourceApi {
         Map<String, Object> result;
         try {
             result = calciteProvider.fetchResultField(engineRequest);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(e);
             return null;
         }
@@ -1280,7 +1271,7 @@ public class DatasourceServer implements DatasourceApi {
                 executeExcelUpdates(connection, queryTimeout, context.tableName, context.fields, updates);
                 executeExcelInserts(connection, queryTimeout, context.tableName, context.fields, inserts);
             });
-        } catch (Exception e) {
+        } catch (CrestException e) {
             CrestException.throwException(e);
         }
     }
@@ -1349,7 +1340,7 @@ public class DatasourceServer implements DatasourceApi {
             List<TableField> fields = (List<TableField>) result.get("fields");
             return fields.stream().anyMatch(field -> Strings.CI.equals(field.getOriginName(), columnName)
                     || Strings.CI.equals(field.getName(), columnName));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(e);
         }
         return false;
@@ -1364,7 +1355,7 @@ public class DatasourceServer implements DatasourceApi {
                 return 0L;
             }
             return Long.parseLong(data.get(0)[0]);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(e);
         }
         return 0L;
@@ -1373,7 +1364,7 @@ public class DatasourceServer implements DatasourceApi {
     private void executeEngineSql(CoreEngine engine, String sql) {
         try {
             calciteProvider.exec(buildEngineRequest(engine, sql));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(e);
         }
     }
@@ -1386,7 +1377,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @SuppressWarnings("java/sql-injection")
-    private void executeExcelDeletes(Connection connection, int queryTimeout, String tableName, List<String> deletes) throws Exception {
+    private void executeExcelDeletes(Connection connection, int queryTimeout, String tableName, List<String> deletes) throws SQLException {
         if (CollectionUtils.isEmpty(deletes)) {
             return;
         }
@@ -1409,7 +1400,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @SuppressWarnings("java/sql-injection")
-    private void executeExcelUpdates(Connection connection, int queryTimeout, String tableName, List<TableField> fields, List<Map<String, Object>> updates) throws Exception {
+    private void executeExcelUpdates(Connection connection, int queryTimeout, String tableName, List<TableField> fields, List<Map<String, Object>> updates) throws SQLException {
         if (CollectionUtils.isEmpty(updates)) {
             return;
         }
@@ -1439,7 +1430,7 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     @SuppressWarnings("java/sql-injection")
-    private void executeExcelInserts(Connection connection, int queryTimeout, String tableName, List<TableField> fields, List<Map<String, Object>> inserts) throws Exception {
+    private void executeExcelInserts(Connection connection, int queryTimeout, String tableName, List<TableField> fields, List<Map<String, Object>> inserts) throws SQLException {
         if (CollectionUtils.isEmpty(inserts)) {
             return;
         }
@@ -1468,7 +1459,7 @@ public class DatasourceServer implements DatasourceApi {
         }
     }
 
-    private int bindExcelFieldValues(PreparedStatement statement, List<TableField> fields, Map<String, Object> row, int startIndex) throws Exception {
+    private int bindExcelFieldValues(PreparedStatement statement, List<TableField> fields, Map<String, Object> row, int startIndex) throws SQLException {
         int index = startIndex;
         for (TableField field : fields) {
             Object normalized = normalizeExcelCellValue(field, excelCellValue(row, field));
@@ -1611,7 +1602,9 @@ public class DatasourceServer implements DatasourceApi {
                 commonThreadPool.addTask(() -> {
                     try {
                         validate(datasource);
-                    } catch (Exception e) {
+                    } catch (CrestException e) {
+                        LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+                    } catch (RuntimeException e) {
                         LogUtil.error(e.getMessage(), e);
                     } finally {
                         syncDsIds.removeIf(id -> id.equals(datasource.getId()));
@@ -1628,7 +1621,7 @@ public class DatasourceServer implements DatasourceApi {
 
         try {
             doUpdate();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
         } finally {
             isUpdatingStatus.set(false);
@@ -1783,20 +1776,8 @@ public class DatasourceServer implements DatasourceApi {
             List<ApiDefinition> params = new ArrayList<>();
             int success = 0;
             for (ApiDefinition apiDefinition : apiDefinitionList) {
-                String status = null;
-                if (StringUtils.isNotEmpty(datasourceDTO.getStatus())) {
-                    JsonNode jsonNode = null;
-                    try {
-                        jsonNode = objectMapper.readTree(datasourceDTO.getStatus());
-                        for (JsonNode node : jsonNode) {
-                            if (node.get("name").asText().equals(apiDefinition.getName())) {
-                                status = node.get("status").asText();
-                            }
-                        }
-                        apiDefinition.setStatus(status);
-                    } catch (Exception ignore) {
-                    }
-                }
+                String status = apiDefinitionStatus(datasourceDTO.getStatus(), apiDefinition.getName());
+                apiDefinition.setStatus(status);
                 if (StringUtils.isNotEmpty(status) && status.equalsIgnoreCase("Success")) {
                     success++;
                 }
@@ -1852,6 +1833,25 @@ public class DatasourceServer implements DatasourceApi {
         return datasourceDTO;
     }
 
+    private String apiDefinitionStatus(String datasourceStatus, String apiName) {
+        if (StringUtils.isEmpty(datasourceStatus)) {
+            return null;
+        }
+        try {
+            JsonNode jsonNode = objectMapper.readTree(datasourceStatus);
+            for (JsonNode node : jsonNode) {
+                JsonNode nameNode = node.get("name");
+                if (nameNode != null && nameNode.asText().equals(apiName)) {
+                    JsonNode statusNode = node.get("status");
+                    return statusNode == null ? null : statusNode.asText();
+                }
+            }
+        } catch (JsonProcessingException e) {
+            LogUtil.debug("Ignore invalid datasource API status JSON");
+        }
+        return null;
+    }
+
     private DatasourceDTO validate(CoreDatasource coreDatasource) {
         DatasourceDTO datasourceDTO = new DatasourceDTO();
         BeanUtils.copyBean(datasourceDTO, coreDatasource);
@@ -1863,7 +1863,7 @@ public class DatasourceServer implements DatasourceApi {
         } catch (CrestException e) {
             datasourceDTO.setStatus("Error");
             throw e;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             datasourceDTO.setStatus("Error");
             CrestException.throwException(e);
         } finally {
@@ -1939,7 +1939,7 @@ public class DatasourceServer implements DatasourceApi {
                 method = clazz.getMethod(methodName, classes);
             }
 
-        } catch (Exception e) {
+        } catch (ReflectiveOperationException | RuntimeException e) {
             CrestException.throwException("Cant find method: " + e.getMessage());
         }
         return method;
@@ -1950,7 +1950,7 @@ public class DatasourceServer implements DatasourceApi {
         try {
             Method method = getMethod(dsType, methodName, classes);
             resObj = method.invoke(null, object);
-        } catch (Exception e) {
+        } catch (ReflectiveOperationException | RuntimeException e) {
             CrestException.throwException(msg(e));
         }
         return resObj;

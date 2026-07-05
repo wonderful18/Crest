@@ -30,7 +30,7 @@ public class PlatformPermissionPolicy {
         return hasGrant(userGrants, normalizedAction) || hasGrant(roleGrants, normalizedAction);
     }
 
-    public Long resourceOrgId() {
+    public Long getResourceOrgId() {
         return resourceOrgId;
     }
 

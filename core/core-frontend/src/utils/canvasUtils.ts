@@ -31,6 +31,7 @@ import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapsho
 import { deepCopy, nameTrim } from '@/utils/utils'
 import { ElMessage, ElMessageBox } from 'element-plus-secondary'
 import { guid } from '@/views/visualized/data/dataset/form/util'
+import { resolvePostMessageTargetOrigin } from '@/utils/securityUrl'
 const dvMainStore = dvMainStoreWithOut()
 const {
   inMobile,
@@ -1124,19 +1125,6 @@ export function findComponentById(componentId) {
   return result
 }
 
-function resolveParentMessageOrigin() {
-  const currentOrigin = window.location.origin
-  if (!document.referrer) {
-    return currentOrigin
-  }
-  try {
-    const referrerUrl = new URL(document.referrer)
-    return ['http:', 'https:'].includes(referrerUrl.protocol) ? referrerUrl.origin : currentOrigin
-  } catch {
-    return currentOrigin
-  }
-}
-
 export function onInitReady(params, eventName = 'canvas_init_ready') {
   try {
     const targetPm = {
@@ -1144,7 +1132,7 @@ export function onInitReady(params, eventName = 'canvas_init_ready') {
       eventName: eventName,
       args: params
     }
-    window.parent.postMessage(targetPm, resolveParentMessageOrigin())
+    window.parent.postMessage(targetPm, resolvePostMessageTargetOrigin())
   } catch {
     // ignore embedded message failures
   }

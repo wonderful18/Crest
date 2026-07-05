@@ -1,5 +1,6 @@
 package io.crest.engine.utils;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 public class DateUtils {
@@ -20,56 +21,31 @@ public class DateUtils {
         String monthOnly1 = monthOnly;
         String yearOnly1 = yearOnly;
         if (date != null && date.contains("/")) {
-            format1 = format1.replaceAll("-", "/");
-            minuteFormat1 = minuteFormat1.replaceAll("-", "/");
-            hourFormat1 = hourFormat1.replaceAll("-", "/");
-            timeOnly1 = timeOnly1.replaceAll("-", "/");
-            dateOnly1 = dateOnly1.replaceAll("-", "/");
-            monthOnly1 = monthOnly1.replaceAll("-", "/");
-            yearOnly1 = yearOnly1.replaceAll("-", "/");
+            format1 = format1.replace("-", "/");
+            minuteFormat1 = minuteFormat1.replace("-", "/");
+            hourFormat1 = hourFormat1.replace("-", "/");
+            timeOnly1 = timeOnly1.replace("-", "/");
+            dateOnly1 = dateOnly1.replace("-", "/");
+            monthOnly1 = monthOnly1.replace("-", "/");
+            yearOnly1 = yearOnly1.replace("-", "/");
         }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format1);
-            simpleDateFormat.parse(date);
-            return format1;
-        } catch (Exception e) {
-        }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(minuteFormat1);
-            simpleDateFormat.parse(date);
-            return minuteFormat1;
-        } catch (Exception e) {
-        }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(hourFormat1);
-            simpleDateFormat.parse(date);
-            return hourFormat1;
-        } catch (Exception e) {
-        }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(timeOnly1);
-            simpleDateFormat.parse(date);
-            return timeOnly1;
-        } catch (Exception e) {
-        }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateOnly1);
-            simpleDateFormat.parse(date);
-            return dateOnly1;
-        } catch (Exception e) {
-        }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(monthOnly1);
-            simpleDateFormat.parse(date);
-            return monthOnly1;
-        } catch (Exception e) {
-        }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(yearOnly1);
-            simpleDateFormat.parse(date);
-            return yearOnly1;
-        } catch (Exception e) {
+        for (String pattern : new String[]{format1, minuteFormat1, hourFormat1, timeOnly1, dateOnly1, monthOnly1, yearOnly1}) {
+            if (canParse(date, pattern)) {
+                return pattern;
+            }
         }
         return format1;
+    }
+
+    private static boolean canParse(String date, String pattern) {
+        if (date == null) {
+            return false;
+        }
+        try {
+            new SimpleDateFormat(pattern).parse(date);
+            return true;
+        } catch (ParseException e) {
+            return false;
+        }
     }
 }

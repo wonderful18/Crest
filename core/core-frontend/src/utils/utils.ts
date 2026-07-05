@@ -2,6 +2,7 @@ import { BusiTreeNode } from '@/models/tree/TreeNode'
 import { useCache } from '@/hooks/web/useCache'
 import { loadScript } from '@/utils/RemoteJs'
 import { ElMessage } from 'element-plus-secondary'
+import { resolveInitialLocale } from '@/utils/localePolicy.mjs'
 
 const { wsCache } = useCache()
 export function deepCopy(target) {
@@ -225,7 +226,7 @@ export const getBrowserLocale = () => {
   return language
 }
 export const getLocale = () => {
-  return wsCache.get('user.language') || getBrowserLocale() || 'zh-CN'
+  return resolveInitialLocale(wsCache.get('user.language'))
 }
 
 export const isFreeFolder = (node, flag) => {

@@ -65,7 +65,7 @@ public class TablePivotHandler extends GroupChartHandler {
                 if (ObjectUtils.isNotEmpty(assists)) {
                     var assistSql = assistSQL(originSql, assistFields, dsMap, crossDs);
                     req.setQuery(assistSql);
-                    logger.debug("calcite assistSql sql: " + assistSql);
+                    logger.debug("calcite assist sql generated");
                     var assistData = (List<String[]>) provider.fetchResultField(req).get("data");
                     result.setAssistData(assistData);
                     result.setDynamicAssistFields(assists);
@@ -75,7 +75,7 @@ public class TablePivotHandler extends GroupChartHandler {
                 if (ObjectUtils.isNotEmpty(assistsOriginList)) {
                     var assistSqlOriginList = assistSQLOriginList(originSql, assistFields, dsMap, crossDs);
                     req.setQuery(assistSqlOriginList);
-                    logger.debug("calcite assistSql sql origin list: " + assistSqlOriginList);
+                    logger.debug("calcite assist origin sql generated");
                     var assistDataOriginList = (List<String[]>) provider.fetchResultField(req).get("data");
                     result.setAssistDataOriginList(assistDataOriginList);
                     result.setDynamicAssistFieldsOriginList(assistsOriginList);
@@ -349,7 +349,7 @@ public class TablePivotHandler extends GroupChartHandler {
         String querySql = SQLProvider.createQuerySQL(sqlMeta, true, needOrder, view);
         querySql = provider.rebuildSQL(querySql, sqlMeta, crossDs, dsMap);
         datasourceRequest.setQuery(querySql);
-        logger.debug("calcite chart sql: " + querySql);
+        logger.debug("calcite chart sql generated");
         List<String[]> data = (List<String[]>) provider.fetchResultField(datasourceRequest).get("data");
         nullToBlank(data);
         return Tuples.of(querySql, data);

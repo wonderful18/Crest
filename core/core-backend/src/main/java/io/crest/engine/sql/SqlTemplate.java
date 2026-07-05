@@ -1,7 +1,7 @@
 package io.crest.engine.sql;
 
 public class SqlTemplate {
-    public static String QUERY_SQL = "querySql(limitFiled, groups, aggregators, filters, orders, table, notUseAs, useAliasForGroup)\n" +
+    public static final String QUERY_SQL = "querySql(limitFiled, groups, aggregators, filters, orders, table, notUseAs, useAliasForGroup)\n" +
             "::=<<\n" +
             "SELECT\n" +
             "<if(limitFiled)>\n" +
@@ -40,7 +40,7 @@ public class SqlTemplate {
             "<endif>\n" +
             ">>";
 
-    public static String PREVIEW_SQL = "previewSql(limitFiled, groups, aggregators, filters, orders, table, isGroup, notUseAs, useAliasForGroup, distinct)\n" +
+    public static final String PREVIEW_SQL = "previewSql(limitFiled, groups, aggregators, filters, orders, table, isGroup, notUseAs, useAliasForGroup, distinct)\n" +
             "::=<<\n" +
             "SELECT\n" +
             "<if(limitFiled)>\n" +

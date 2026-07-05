@@ -11,6 +11,7 @@ import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
@@ -19,7 +20,7 @@ public class CorsConfig implements WebMvcConfigurer {
     private boolean corsStrict;
 
 
-    @Value("#{'${crest.origin-list:http://127.0.0.1:8100}'.split(',')}")
+    @Value("#{'${crest.origin-list:}'.split(',')}")
     private List<String> originList;
 
     private CorsRegistration operateCorsRegistration;
@@ -36,16 +37,35 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .maxAge(3600)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
-        operateCorsRegistration.allowedOrigins(originList.toArray(new String[0]));
+        String[] origins = normalizedOrigins(originList);
+        if (origins.length > 0) {
+            operateCorsRegistration.allowedOrigins(origins);
+        }
     }
 
     public void addAllowedOrigins(List<String> origins) {
         if (!corsStrict || CollectionUtils.isEmpty(origins)) {
             return;
         }
-        origins.addAll(originList);
-        List<String> newOrigins = origins.stream().distinct().toList();
+        List<String> newOrigins = Stream.concat(origins.stream(), originList.stream())
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .distinct()
+                .toList();
         String[] originArray = newOrigins.toArray(new String[0]);
-        operateCorsRegistration.allowedOrigins(originArray);
+        if (originArray.length > 0) {
+            operateCorsRegistration.allowedOrigins(originArray);
+        }
+    }
+
+    String[] normalizedOrigins(List<String> origins) {
+        if (CollectionUtils.isEmpty(origins)) {
+            return new String[0];
+        }
+        return origins.stream()
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .distinct()
+                .toArray(String[]::new);
     }
 }

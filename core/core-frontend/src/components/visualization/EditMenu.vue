@@ -3,9 +3,21 @@ import languageIcon from '@/assets/svg/language.svg'
 import { ref, onMounted } from 'vue'
 import { Icon } from '@/components/icon-custom'
 import { useUserStoreWithOut } from '@/store/modules/user'
+import { switchLangApi } from '@/api/user'
 const userStore = useUserStoreWithOut()
 const language = ref(null)
-const handleSetLanguage = lang => lang
+const handleSetLanguage = lang => {
+  if (language.value === lang) {
+    return
+  }
+  switchLangApi({ lang }).then(res => {
+    if (!res.msg) {
+      language.value = lang
+      userStore.setLanguage(lang)
+      window.location.reload()
+    }
+  })
+}
 onMounted(() => {
   language.value = userStore.getLanguage
 })

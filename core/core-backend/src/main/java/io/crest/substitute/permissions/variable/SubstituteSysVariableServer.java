@@ -6,6 +6,7 @@ import io.crest.api.permissions.variable.api.SysVariablesApi;
 import io.crest.api.permissions.variable.dto.SysVariableDto;
 import io.crest.api.permissions.variable.dto.SysVariableValueDto;
 import io.crest.exception.CrestException;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -18,14 +19,14 @@ public class SubstituteSysVariableServer implements SysVariablesApi {
 
     @Override
     @PostMapping
-    public SysVariableDto create(@RequestBody SysVariableDto sysVariableDto) {
+    public SysVariableDto create(@Valid @RequestBody SysVariableDto sysVariableDto) {
         throwUnsupported();
         return sysVariableDto;
     }
 
     @Override
     @PutMapping
-    public SysVariableDto edit(@RequestBody SysVariableDto sysVariableDto) {
+    public SysVariableDto edit(@Valid @RequestBody SysVariableDto sysVariableDto) {
         throwUnsupported();
         return sysVariableDto;
     }
@@ -45,20 +46,20 @@ public class SubstituteSysVariableServer implements SysVariablesApi {
 
     @Override
     @PostMapping("/list")
-    public List<SysVariableDto> query(@RequestBody(required = false) SysVariableDto sysVariableDto) {
+    public List<SysVariableDto> query(@Valid @RequestBody(required = false) SysVariableDto sysVariableDto) {
         return Collections.emptyList();
     }
 
     @Override
     @PostMapping("/value")
-    public SysVariableValueDto createValue(@RequestBody SysVariableValueDto sysVariableDto) {
+    public SysVariableValueDto createValue(@Valid @RequestBody SysVariableValueDto sysVariableDto) {
         throwUnsupported();
         return sysVariableDto;
     }
 
     @Override
     @PutMapping("/value")
-    public SysVariableValueDto editValue(@RequestBody SysVariableValueDto sysVariableDto) {
+    public SysVariableValueDto editValue(@Valid @RequestBody SysVariableValueDto sysVariableDto) {
         throwUnsupported();
         return sysVariableDto;
     }
@@ -77,7 +78,7 @@ public class SubstituteSysVariableServer implements SysVariablesApi {
 
     @Override
     @PostMapping("/value/selected/{goPage}/{pageSize}")
-    public IPage<SysVariableValueDto> selectPage(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody(required = false) SysVariableValueDto sysVariableValueDto) {
+    public IPage<SysVariableValueDto> selectPage(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @Valid @RequestBody(required = false) SysVariableValueDto sysVariableValueDto) {
         return new Page<SysVariableValueDto>(goPage, pageSize).setRecords(Collections.emptyList());
     }
 

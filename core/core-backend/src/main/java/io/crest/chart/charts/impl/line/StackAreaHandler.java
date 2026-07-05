@@ -115,7 +115,7 @@ public class StackAreaHandler extends YoyChartHandler {
                 if (ObjectUtils.isNotEmpty(assists)) {
                     var assistSql = assistSQL(originSql, assistFields, dsMap, crossDs);
                     req.setQuery(assistSql);
-                    logger.debug("calcite assistSql sql: " + assistSql);
+                    logger.debug("calcite assist sql generated");
                     var assistData = (List<String[]>) provider.fetchResultField(req).get("data");
                     result.setAssistData(assistData);
                     result.setDynamicAssistFields(assists);
@@ -125,7 +125,7 @@ public class StackAreaHandler extends YoyChartHandler {
                 if (ObjectUtils.isNotEmpty(assistsOriginList)) {
                     var assistSqlOriginList = assistSQLOriginList(originSql, assistFields, dsMap, crossDs);
                     req.setQuery(assistSqlOriginList);
-                    logger.debug("calcite assistSql sql origin list: " + assistSqlOriginList);
+                    logger.debug("calcite assist origin sql generated");
                     var assistDataOriginList = (List<String[]>) provider.fetchResultField(req).get("data");
                     result.setAssistDataOriginList(assistDataOriginList);
                     result.setDynamicAssistFieldsOriginList(assistsOriginList);

@@ -42,6 +42,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -357,6 +358,7 @@ public class CrestUserManage {
         String originalFilename = StringUtils.defaultString(file.getOriginalFilename());
         FileUtils.validateUploadFilename(originalFilename);
         String normalizedFilename = originalFilename.toLowerCase(Locale.ROOT);
+        validateImportContent(file, normalizedFilename);
         if (normalizedFilename.endsWith(".xlsx") || normalizedFilename.endsWith(".xls")) {
             try (InputStream inputStream = file.getInputStream()) {
                 return EasyExcel.read(inputStream)
@@ -385,6 +387,38 @@ public class CrestUserManage {
             result.add(importRow);
         }
         return result;
+    }
+
+    private void validateImportContent(MultipartFile file, String normalizedFilename) throws Exception {
+        byte[] header = new byte[8];
+        int length;
+        try (InputStream inputStream = file.getInputStream()) {
+            length = inputStream.read(header);
+        }
+        if (length <= 0) {
+            CrestException.throwException("导入文件不能为空");
+        }
+        byte[] actual = Arrays.copyOf(header, length);
+        if (normalizedFilename.endsWith(".xlsx")) {
+            if (length < 2 || actual[0] != 0x50 || actual[1] != 0x4B) {
+                CrestException.throwException("无效的 xlsx 用户导入文件");
+            }
+            return;
+        }
+        if (normalizedFilename.endsWith(".xls")) {
+            byte[] oleSignature = new byte[]{(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0, (byte) 0xA1, (byte) 0xB1, 0x1A, (byte) 0xE1};
+            if (length < oleSignature.length || !Arrays.equals(actual, oleSignature)) {
+                CrestException.throwException("无效的 xls 用户导入文件");
+            }
+            return;
+        }
+        if (normalizedFilename.endsWith(".csv")) {
+            for (byte value : file.getBytes()) {
+                if (value == 0) {
+                    CrestException.throwException("无效的 csv 用户导入文件");
+                }
+            }
+        }
     }
 
     @Transactional

@@ -176,7 +176,7 @@ const calcData = (viewInfo: Chart, callback, resetPageInfo = true) => {
 // 图表对象不用响应式
 let myChart: SpreadSheet = null
 // 实际渲染的图表信息，适应缩放
-let actualChart: ChartObj
+let actualChart: ChartObj | undefined
 const renderChartFromDialog = (viewInfo: Chart, chartDataInfo) => {
   chartData.value = chartDataInfo
   renderChart(viewInfo, false)
@@ -232,6 +232,9 @@ const renderChart = (viewInfo: Chart, resetPageInfo: boolean) => {
 }
 
 const debounceRender = debounce(() => {
+  if (!actualChart?.render || !actualChart?.type) {
+    return
+  }
   ;(myChart?.facet as any)?.timer?.stop()
   myChart?.facet?.cancelScrollFrame()
   myChart?.destroy()
@@ -240,6 +243,9 @@ const debounceRender = debounce(() => {
     actualChart.render,
     actualChart.type
   ) as S2ChartView<any>
+  if (!chartView) {
+    return
+  }
   myChart = chartView.drawChart({
     container: containerId,
     chart: toRaw(actualChart),

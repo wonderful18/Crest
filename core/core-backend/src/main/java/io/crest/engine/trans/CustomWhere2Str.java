@@ -319,8 +319,7 @@ public class CustomWhere2Str {
             DynamicTimeSetting dynamicTimeSetting = item.getDynamicTimeSetting();
             Calendar instance = Calendar.getInstance();
             if (Strings.CI.equals(dynamicTimeSetting.getTimeGranularity(), "year")) {
-                if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "thisYear")) {
-                } else if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "lastYear")) {
+                if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "lastYear")) {
                     instance.add(Calendar.YEAR, -1);
                 } else if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "custom")) {
                     if (Strings.CI.equals(dynamicTimeSetting.getAround(), "f")) {
@@ -331,8 +330,7 @@ public class CustomWhere2Str {
                 }
                 return "" + instance.get(Calendar.YEAR);
             } else if (Strings.CI.equals(dynamicTimeSetting.getTimeGranularity(), "month")) {
-                if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "thisMonth")) {
-                } else if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "lastMonth")) {
+                if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "lastMonth")) {
                     instance.add(Calendar.MONTH, -1);
                 } else if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "custom")) {
                     if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrentType(), "year")) {
@@ -351,8 +349,7 @@ public class CustomWhere2Str {
                 }
                 return instance.get(Calendar.YEAR) + "-" + (instance.get(Calendar.MONTH) + 1 < 10 ? "0" : "") + (instance.get(Calendar.MONTH) + 1);
             } else if (Strings.CI.equals(dynamicTimeSetting.getTimeGranularity(), "date")) {
-                if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "today")) {
-                } else if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "yesterday")) {
+                if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "yesterday")) {
                     instance.add(Calendar.DAY_OF_MONTH, -1);
                 } else if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "monthBeginning")) {
                     instance.set(Calendar.DAY_OF_MONTH, 1);
@@ -383,8 +380,7 @@ public class CustomWhere2Str {
                 return instance.get(Calendar.YEAR) + "-" + (instance.get(Calendar.MONTH) + 1 < 10 ? "0" : "") + (instance.get(Calendar.MONTH) + 1) + "-" + (instance.get(Calendar.DAY_OF_MONTH) < 10 ? "0" : "") + instance.get(Calendar.DAY_OF_MONTH);
             } else if (Strings.CI.equals(dynamicTimeSetting.getTimeGranularity(), "datetime")) {
                 String time = " 00:00:00";
-                if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "today")) {
-                } else if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "yesterday")) {
+                if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "yesterday")) {
                     instance.add(Calendar.DAY_OF_MONTH, -1);
                 } else if (Strings.CI.equals(dynamicTimeSetting.getRelativeToCurrent(), "monthBeginning")) {
                     instance.set(Calendar.DAY_OF_MONTH, 1);

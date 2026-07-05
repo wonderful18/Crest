@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -56,7 +57,7 @@ public class HealthController {
         }
         try (Connection connection = dataSource.getConnection()) {
             return connection.isValid(DATABASE_VALIDATION_TIMEOUT_SECONDS);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return false;
         }
     }

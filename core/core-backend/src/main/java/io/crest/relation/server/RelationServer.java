@@ -10,6 +10,7 @@ import io.crest.relation.manage.RelationManage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -57,7 +58,7 @@ public class RelationServer {
     @CrestAudit(ot = LogOT.READ, st = LogST.DATASOURCE)
     @PostMapping("/resources/{type}")
     @Operation(summary = "查询血缘资源")
-    public List<RelationResourceDTO> resources(@PathVariable("type") String type, @RequestBody(required = false) RelationResourceRequest request) {
+    public List<RelationResourceDTO> resources(@PathVariable("type") String type, @Valid @RequestBody(required = false) RelationResourceRequest request) {
         return relationManage.resources(type, request);
     }
 }

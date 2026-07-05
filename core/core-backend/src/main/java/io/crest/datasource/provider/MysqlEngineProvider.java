@@ -3,6 +3,7 @@ package io.crest.datasource.provider;
 
 import io.crest.dataset.utils.TableUtils;
 import io.crest.datasource.dao.auto.entity.CoreEngine;
+import io.crest.datasource.security.SqlSecurityPolicy;
 import io.crest.datasource.server.DatasourceServer;
 import io.crest.engine.utils.Utils;
 import io.crest.extensions.datasource.dto.TableField;
@@ -12,7 +13,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,8 +26,7 @@ public class MysqlEngineProvider extends EngineProvider {
 
     @Override
     public String createView(String name, String viewSQL) {
-        validateSqlInjectionRisk(name);
-        return "CREATE or replace view " + name + " AS (" + viewSQL + ")";
+        return "CREATE or replace view " + mysqlIdentifier(name) + " AS (" + SqlSecurityPolicy.validateReadQuery(viewSQL) + ")";
     }
 
     @Override
@@ -42,28 +41,8 @@ public class MysqlEngineProvider extends EngineProvider {
                 break;
         }
 
-        String insertSql = "INSERT INTO `TABLE_NAME` VALUES ".replace("TABLE_NAME", engineTableName);
-        StringBuffer values = new StringBuffer();
-
-        Integer realSize = page * pageNumber < dataList.size() ? page * pageNumber : dataList.size();
-        for (String[] strings : dataList.subList((page - 1) * pageNumber, realSize)) {
-            int length = 0;
-            String[] strings1 = new String[tableFields.stream().filter(TableField::isChecked).toList().size()];
-            for (int i = 0; i < strings.length; i++) {
-                if (tableFields.get(i).isChecked()) {
-                    if (StringUtils.isEmpty(strings[i])) {
-                        String type = tableFields.get(i).getType() == null ? tableFields.get(i).getNativeType() : tableFields.get(i).getType();
-                        strings1[length] = null;
-                    } else {
-                        strings1[length] = strings[i].replace("\\", "\\\\").replace("'", "\\'");
-                    }
-                    length++;
-                }
-            }
-            values.append("('").append(String.join("','", Arrays.asList(strings1)))
-                    .append("'),");
-        }
-        String insetSql = (insertSql + values.substring(0, values.length() - 1)).replaceAll("'null'", "null");
+        String insetSql = "INSERT INTO TABLE_NAME VALUES ".replace("TABLE_NAME", mysqlIdentifier(engineTableName))
+                + insertPlaceholders(dataList, page, pageNumber, tableFields);
         if (dsType.contains(DatasourceConfiguration.DatasourceType.API.name())) {
             List<TableField> keys = tableFields.stream().filter(tableField -> tableField.isPrimaryKey() && tableField.isChecked()).toList();
             List<TableField> notKeys = tableFields.stream().filter(tableField -> tableField.isChecked() && !tableField.isPrimaryKey()).toList();
@@ -71,7 +50,7 @@ public class MysqlEngineProvider extends EngineProvider {
                 insetSql = insetSql + " ON DUPLICATE KEY UPDATE ";
                 List<String> updateColumes = new ArrayList<>();
                 for (TableField notKey : notKeys) {
-                    String column = "`" + physicalFieldName(notKey) + "`";
+                    String column = mysqlIdentifier(physicalFieldName(notKey));
                     updateColumes.add(column + " = VALUES(" + column + ")");
                 }
                 insetSql = insetSql + updateColumes.stream().collect(Collectors.joining(","));
@@ -84,19 +63,22 @@ public class MysqlEngineProvider extends EngineProvider {
 
     @Override
     public String dropTable(String name) {
-        return "DROP TABLE IF EXISTS `" + name + "`";
+        return "DROP TABLE IF EXISTS " + mysqlIdentifier(name);
     }
 
     @Override
     public String dropView(String name) {
-        return "DROP VIEW IF EXISTS `" + name + "`";
+        return "DROP VIEW IF EXISTS " + mysqlIdentifier(name);
     }
 
     @Override
     public String replaceTable(String name) {
-        String replaceTableSql = "rename table `FROM_TABLE` to `FROM_TABLE_tmp`, `TO_TABLE` to `FROM_TABLE`, `FROM_TABLE_tmp` to `TO_TABLE`"
-                .replace("FROM_TABLE", name).replace("TO_TABLE", TableUtils.tmpName(name));
-        String dropTableSql = "DROP TABLE IF EXISTS `TABLE_NAME`".replace("TABLE_NAME", TableUtils.tmpName(name));
+        String tmpName = TableUtils.tmpName(name);
+        String backupName = name + "_tmp";
+        String replaceTableSql = "rename table " + mysqlIdentifier(name) + " to " + mysqlIdentifier(backupName)
+                + ", " + mysqlIdentifier(tmpName) + " to " + mysqlIdentifier(name)
+                + ", " + mysqlIdentifier(backupName) + " to " + mysqlIdentifier(tmpName);
+        String dropTableSql = "DROP TABLE IF EXISTS " + mysqlIdentifier(tmpName);
         return replaceTableSql + ";" + dropTableSql;
     }
 
@@ -104,7 +86,7 @@ public class MysqlEngineProvider extends EngineProvider {
     public String createTableSql(String tableName, List<TableField> tableFields, CoreEngine engine) {
         validateSqlInjectionRisk(tableName);
         String dorisTableColumnSql = createTableSql(tableFields);
-        return creatTableSql.replace("TABLE_NAME", tableName).replace("Column_Fields", dorisTableColumnSql);
+        return creatTableSql.replace("TABLE_NAME", escapedMysqlIdentifier(tableName)).replace("Column_Fields", dorisTableColumnSql);
     }
 
     private String createTableSql(final List<TableField> tableFields) {
@@ -114,7 +96,7 @@ public class MysqlEngineProvider extends EngineProvider {
             if (!tableField.isChecked()) {
                 continue;
             }
-            String fieldName = physicalFieldName(tableField);
+            String fieldName = escapedMysqlIdentifier(physicalFieldName(tableField));
             if (tableField.isPrimaryKey()) {
                 key.append("`").append(fieldName).append("`, ");
             }

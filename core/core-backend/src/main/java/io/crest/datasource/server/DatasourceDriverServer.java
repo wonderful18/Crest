@@ -27,10 +27,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.zip.ZipInputStream;
 
 @Transactional(rollbackFor = Exception.class)
 @RestController
@@ -142,9 +145,10 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
         FileUtils.validateUploadFileSize(jarFile, MAX_DRIVER_JAR_BYTES, "驱动文件");
         String filename = jarFile.getOriginalFilename();
         FileUtils.validateUploadFilename(filename);
-        if (!filename.endsWith(".jar")) {
-            throw new RuntimeException("NOT_JAR");
+        if (!filename.toLowerCase(Locale.ROOT).endsWith(".jar")) {
+            CrestException.throwException("仅支持 JAR 驱动文件");
         }
+        validateJarContent(jarFile);
 
         QueryWrapper<CoreDriverJar> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("fileName", filename);
@@ -175,6 +179,15 @@ public class DatasourceDriverServer implements DatasourceDriverApi {
     private File resolveDriverJar(String driverId, String transName) throws IOException {
         File driverDirectory = FileUtils.resolveSubDirectory(DRIVER_PATH, driverId);
         return FileUtils.resolveUnderDirectory(driverDirectory.getPath(), transName);
+    }
+
+    private void validateJarContent(MultipartFile jarFile) throws IOException {
+        try (InputStream inputStream = jarFile.getInputStream();
+             ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
+            if (zipInputStream.getNextEntry() == null) {
+                CrestException.throwException("驱动文件内容无效");
+            }
+        }
     }
 
     private void saveJarFile(MultipartFile file, File f) throws Exception {

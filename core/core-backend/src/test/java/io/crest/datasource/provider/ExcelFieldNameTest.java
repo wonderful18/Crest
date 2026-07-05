@@ -7,6 +7,9 @@ import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.extensions.datasource.dto.DatasourceDTO;
 import io.crest.extensions.datasource.dto.DatasourceRequest;
 import io.crest.extensions.datasource.dto.TableField;
+import io.crest.extensions.datasource.dto.TableFieldWithValue;
+import io.crest.datasource.server.DatasourceServer;
+import io.crest.exception.CrestException;
 import io.crest.utils.JsonUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -29,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ExcelFieldNameTest {
@@ -1118,6 +1122,81 @@ class ExcelFieldNameTest {
         assertEquals("LONG", fields.get(0).getNativeType());
         assertEquals(2, fields.get(0).getFieldType());
         assertEquals(2, fields.get(0).getExtractedFieldType());
+    }
+
+    @Test
+    void excelInsertUsesBindParametersForImportedCellValues() {
+        MysqlEngineProvider provider = new MysqlEngineProvider();
+        TableField note = checkedTextField("说明", "f_note");
+        TableField skipped = checkedTextField("跳过", "f_skip");
+        skipped.setChecked(false);
+        TableField quantity = checkedTextField("数量", "f_qty");
+        List<TableField> fields = List.of(note, skipped, quantity);
+        List<String[]> rows = List.of(
+                new String[]{"x'); DROP TABLE users; --", "ignored", "12"},
+                new String[]{"", "ignored"}
+        );
+
+        String sql = provider.insertSql("Excel", "excel_sheet", DatasourceServer.UpdateType.all_scope, rows, 1, 1000, fields);
+        List<TableFieldWithValue> values = provider.insertParams("Excel", "excel_sheet", DatasourceServer.UpdateType.all_scope, rows, 1, 1000, fields);
+        String h2Sql = new H2EngineProvider().insertSql("Excel", "excel_sheet", DatasourceServer.UpdateType.all_scope, rows, 1, 1000, fields);
+
+        assertEquals("INSERT INTO `tmp_excel_sheet` VALUES (?,?),(?,?)", sql);
+        assertEquals("INSERT INTO  \"tmp_excel_sheet\" VALUES (?,?),(?,?)", h2Sql);
+        assertFalse(sql.contains("DROP TABLE"));
+        assertFalse(h2Sql.contains("DROP TABLE"));
+        assertEquals("x'); DROP TABLE users; --", values.get(0).getValue());
+        assertEquals("12", values.get(1).getValue());
+        assertNull(values.get(2).getValue());
+        assertNull(values.get(3).getValue());
+    }
+
+    @Test
+    void mysqlEngineRejectsIdentifierDelimitersInGeneratedSql() {
+        TableField field = checkedTextField("字段", "f`name");
+
+        assertThrows(CrestException.class, () -> new MysqlEngineProvider().createTableSql("excel_sheet", List.of(field), engine("mysql")));
+        assertThrows(CrestException.class, () -> new MysqlEngineProvider().createTableSql("excel`sheet", List.of(checkedTextField("字段", "f_name")), engine("mysql")));
+    }
+
+    @Test
+    void mysqlEngineQuotesValidIdentifiersInGeneratedSql() {
+        TableField field = checkedTextField("字段", "f_name");
+
+        String createSql = new MysqlEngineProvider().createTableSql("excel_sheet", List.of(field), engine("mysql"));
+        String insertSql = new MysqlEngineProvider().insertSql("Excel", "excel_sheet", DatasourceServer.UpdateType.all_scope,
+                List.<String[]>of(new String[]{"1"}), 1, 1000, List.of(field));
+
+        assertTrue(createSql.contains("`excel_sheet`"));
+        assertTrue(createSql.contains("`f_name` longtext"));
+        assertEquals("INSERT INTO `tmp_excel_sheet` VALUES (?)", insertSql);
+    }
+
+    @Test
+    void h2EngineRejectsIdentifierDelimitersInGeneratedSql() {
+        TableField field = checkedTextField("字段", "f\"name");
+
+        assertThrows(CrestException.class, () -> new H2EngineProvider().createTableSql("excel_sheet", List.of(field), engine("h2")));
+        assertThrows(CrestException.class, () -> new H2EngineProvider().createTableSql("excel\"sheet", List.of(checkedTextField("字段", "f_name")), engine("h2")));
+    }
+
+    @Test
+    void h2EngineQuotesValidIdentifiersInGeneratedSql() {
+        TableField field = checkedTextField("字段", "f_name");
+
+        String createSql = new H2EngineProvider().createTableSql("excel_sheet", List.of(field), engine("h2"));
+        String insertSql = new H2EngineProvider().insertSql("Excel", "excel_sheet", DatasourceServer.UpdateType.all_scope,
+                List.<String[]>of(new String[]{"1"}), 1, 1000, List.of(field));
+
+        assertTrue(createSql.contains("\"excel_sheet\""));
+        assertTrue(createSql.contains("\"f_name\" longtext"));
+        assertEquals("INSERT INTO  \"tmp_excel_sheet\" VALUES (?)", insertSql);
+    }
+
+    @Test
+    void engineCreateViewRejectsNonReadOnlySql() {
+        assertThrows(CrestException.class, () -> new MysqlEngineProvider().createView("v_safe", "select 1; drop table users"));
+        assertThrows(CrestException.class, () -> new H2EngineProvider().createView("v_safe", "delete from users"));
     }
 
     @Test

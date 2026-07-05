@@ -18,6 +18,7 @@ import io.crest.commons.utils.EncryptUtils;
 import io.crest.constant.ColumnPermissionConstants;
 import io.crest.dataset.dao.auto.entity.CoreDatasetGroup;
 import io.crest.dataset.dao.ext.mapper.DataSetAssistantMapper;
+import io.crest.dataset.utils.DatasetUtils;
 import io.crest.dataset.utils.TableUtils;
 import io.crest.datasource.dao.auto.entity.CoreDatasource;
 import io.crest.datasource.manage.EngineManage;
@@ -587,7 +588,7 @@ public class DatasetSQLBotManage {
             String info = infoObj.toString();
             DatasetTableInfoDTO tableInfoDTO = JsonUtil.parseObject(info, DatasetTableInfoDTO.class);
             if (StringUtils.isNotBlank(tableInfoDTO.getSql())) {
-                String sql = new String(Base64.getDecoder().decode(tableInfoDTO.getSql()));
+                String sql = DatasetUtils.getDecode(tableInfoDTO.getSql());
                 if (StringUtils.isNotBlank(sql) && Strings.CS.contains(sql, "$CREST_PARAM")) {
                     table.setNeedTransform(true);
                 }

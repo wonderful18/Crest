@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.util.CollectionUtils;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -56,7 +57,7 @@ public class Utils {
                 datasourceType = getDs(pluginManage, next.getValue().getType());
             }
             return buildCalcField(chartField, tableObj, originFields, i, isCross, datasourceType, paramMap, true, chartField.getOriginName());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(Translator.get("i18n_field_circular_ref"));
         }
         return null;
@@ -71,13 +72,13 @@ public class Utils {
                 datasourceType = getDs(pluginManage, next.getValue());
             }
             return buildCalcField(chartField, tableObj, originFields, i, isCross, datasourceType, null, true, chartField.getOriginName());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(Translator.get("i18n_field_circular_ref"));
         }
         return null;
     }
 
-    public static String buildCalcField(DatasetTableFieldDTO chartField, SQLObj tableObj, List<DatasetTableFieldDTO> originFields, int i, boolean isCross, DsTypeDTO datasourceType, Map<String, String> paramMap, boolean isFirst, String fieldExpression) throws Exception {
+    public static String buildCalcField(DatasetTableFieldDTO chartField, SQLObj tableObj, List<DatasetTableFieldDTO> originFields, int i, boolean isCross, DsTypeDTO datasourceType, Map<String, String> paramMap, boolean isFirst, String fieldExpression) {
         try {
             i++;
             if (i > 100) {
@@ -113,7 +114,7 @@ public class Utils {
                 }
             }
             return originField;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(Translator.get("i18n_field_circular_error"));
         }
         return null;
@@ -321,40 +322,11 @@ public class Utils {
         if (value != null && value.contains("/")) {
             split = "/";
         }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy" + split + "MM" + split + "dd HH:mm:ss");
-            return simpleDateFormat.parse(value).getTime();
-        } catch (Exception e) {
-        }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy" + split + "MM" + split + "dd HH:mm");
-            return simpleDateFormat.parse(value).getTime();
-        } catch (Exception e) {
-        }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy" + split + "MM" + split + "dd HH");
-            return simpleDateFormat.parse(value).getTime();
-        } catch (Exception e) {
-        }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
-            return simpleDateFormat.parse(value).getTime();
-        } catch (Exception e) {
-        }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy" + split + "MM" + split + "dd");
-            return simpleDateFormat.parse(value).getTime();
-        } catch (Exception e) {
-        }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy" + split + "MM");
-            return simpleDateFormat.parse(value).getTime();
-        } catch (Exception e) {
-        }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy");
-            return simpleDateFormat.parse(value).getTime();
-        } catch (Exception e) {
+        for (String pattern : dateParsePatterns(split)) {
+            Date parsed = parseDate(value, pattern);
+            if (parsed != null) {
+                return parsed.getTime();
+            }
         }
         return 0;
     }
@@ -380,88 +352,102 @@ public class Utils {
         if (value != null && value.contains("/")) {
             split = "/";
         }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy" + split + "MM" + split + "dd HH:mm:ss");
-            startTime = simpleDateFormat.parse(value).getTime();
+        Date parsed = parseDate(value, "yyyy" + split + "MM" + split + "dd HH:mm:ss");
+        if (parsed != null) {
+            startTime = parsed.getTime();
             endTime = startTime + 999;
 
             map.put("startTime", startTime);
             map.put("endTime", endTime);
             return map;
-        } catch (Exception e) {
         }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy" + split + "MM" + split + "dd HH:mm");
-            startTime = simpleDateFormat.parse(value).getTime();
+        parsed = parseDate(value, "yyyy" + split + "MM" + split + "dd HH:mm");
+        if (parsed != null) {
+            startTime = parsed.getTime();
             endTime = startTime + (60 * 1000 - 1);
 
             map.put("startTime", startTime);
             map.put("endTime", endTime);
             return map;
-        } catch (Exception e) {
         }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy" + split + "MM" + split + "dd HH");
-            startTime = simpleDateFormat.parse(value).getTime();
+        parsed = parseDate(value, "yyyy" + split + "MM" + split + "dd HH");
+        if (parsed != null) {
+            startTime = parsed.getTime();
             endTime = startTime + (60 * 60 * 1000 - 1);
 
             map.put("startTime", startTime);
             map.put("endTime", endTime);
             return map;
-        } catch (Exception e) {
         }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
-            startTime = simpleDateFormat.parse(value).getTime();
+        parsed = parseDate(value, "HH:mm:ss");
+        if (parsed != null) {
+            startTime = parsed.getTime();
             endTime = startTime + 999;
 
             map.put("startTime", startTime);
             map.put("endTime", endTime);
             return map;
-        } catch (Exception e) {
         }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy" + split + "MM" + split + "dd");
-            startTime = simpleDateFormat.parse(value).getTime();
+        parsed = parseDate(value, "yyyy" + split + "MM" + split + "dd");
+        if (parsed != null) {
+            startTime = parsed.getTime();
             endTime = startTime + (24 * 60 * 60 * 1000 - 1);
 
             map.put("startTime", startTime);
             map.put("endTime", endTime);
             return map;
-        } catch (Exception e) {
         }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy" + split + "MM");
-            Date parse = simpleDateFormat.parse(value);
-            startTime = parse.getTime();
+        parsed = parseDate(value, "yyyy" + split + "MM");
+        if (parsed != null) {
+            startTime = parsed.getTime();
             Calendar calendar = Calendar.getInstance();
-            calendar.setTime(parse);
+            calendar.setTime(parsed);
             calendar.add(Calendar.MONTH, 1);
             endTime = calendar.getTime().getTime() - 1;
 
             map.put("startTime", startTime);
             map.put("endTime", endTime);
             return map;
-        } catch (Exception e) {
         }
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy");
-            Date parse = simpleDateFormat.parse(value);
-            startTime = parse.getTime();
+        parsed = parseDate(value, "yyyy");
+        if (parsed != null) {
+            startTime = parsed.getTime();
             Calendar calendar = Calendar.getInstance();
-            calendar.setTime(parse);
+            calendar.setTime(parsed);
             calendar.add(Calendar.YEAR, 1);
             endTime = calendar.getTime().getTime() - 1;
 
             map.put("startTime", startTime);
             map.put("endTime", endTime);
             return map;
-        } catch (Exception e) {
         }
 
         map.put("startTime", startTime);
         map.put("endTime", endTime);
         return map;
+    }
+
+    private static String[] dateParsePatterns(String split) {
+        return new String[]{
+                "yyyy" + split + "MM" + split + "dd HH:mm:ss",
+                "yyyy" + split + "MM" + split + "dd HH:mm",
+                "yyyy" + split + "MM" + split + "dd HH",
+                "HH:mm:ss",
+                "yyyy" + split + "MM" + split + "dd",
+                "yyyy" + split + "MM",
+                "yyyy"
+        };
+    }
+
+    private static Date parseDate(String value, String pattern) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return new SimpleDateFormat(pattern).parse(value);
+        } catch (ParseException e) {
+            return null;
+        }
     }
 
     public static String transLong2Str(Long ts) {
@@ -512,7 +498,7 @@ public class Utils {
             dto.setPrefix(datasourceType.getPrefix());
             dto.setSuffix(datasourceType.getSuffix());
             return dto;
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             List<PluginDatasourceVO> pluginDatasourceList = pluginManage.queryPluginDs();
             for (PluginDatasourceVO vo : pluginDatasourceList) {
                 if (Strings.CI.equals(vo.getType(), type)) {

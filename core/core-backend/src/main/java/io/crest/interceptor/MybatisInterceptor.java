@@ -189,6 +189,9 @@ public class MybatisInterceptor implements Interceptor {
 
     @Override
     public void setProperties(Properties properties) {
+        if (properties == null || properties.isEmpty()) {
+            return;
+        }
     }
 
     public List<MybatisInterceptorConfig> getInterceptorConfigList() {

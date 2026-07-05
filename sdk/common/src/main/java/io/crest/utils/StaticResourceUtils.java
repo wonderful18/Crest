@@ -60,30 +60,14 @@ public class StaticResourceUtils {
      */
     public static String getImgFileToBase64(String imgFile) {
         //Convert the picture file into byte array  and encode it with Base64
-        InputStream inputStream = null;
         byte[] buffer = null;
         //Read picture byte array
-        try {
-            inputStream = new FileInputStream(FileUtils.resolveUnderDirectory(FILE_BASE_PATH, imgFile));
-            int count = 0;
-            while (count == 0) {
-                count = inputStream.available();
-            }
-            buffer = new byte[count];
-            inputStream.read(buffer);
+        try (InputStream inputStream = new FileInputStream(FileUtils.resolveUnderDirectory(FILE_BASE_PATH, imgFile))) {
+            buffer = inputStream.readAllBytes();
         } catch (IOException e) {
             LogUtil.error(e);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e);
-        } finally {
-            if (inputStream != null) {
-                try {
-                    // Close InputStream
-                    inputStream.close();
-                } catch (IOException e) {
-                    io.crest.utils.LogUtil.error(e.getMessage(), e);
-                }
-            }
         }
         // Encode byte array as Base64
         if (buffer != null) {

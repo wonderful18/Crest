@@ -3,6 +3,7 @@ import { store } from '../index'
 import { useCache } from '@/hooks/web/useCache'
 import { useLocaleStoreWithOut } from './locale'
 import { useLocale } from '@/hooks/web/useLocale'
+import { resolveInitialLocale } from '@/utils/localePolicy.mjs'
 const { wsCache } = useCache()
 const { changeLocale } = useLocale()
 
@@ -118,9 +119,7 @@ export const userStore = defineStore('user', {
     },
     setLanguage(language: string) {
       const locale = useLocaleStoreWithOut()
-      if (!language || language === 'zh_CN') {
-        language = 'zh-CN'
-      }
+      language = resolveInitialLocale(language)
       wsCache.set('user.language', language)
       this.language = language
       locale.setLang(language)

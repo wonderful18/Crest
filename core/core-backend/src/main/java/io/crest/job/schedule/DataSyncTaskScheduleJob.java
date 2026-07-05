@@ -19,7 +19,7 @@ public class DataSyncTaskScheduleJob implements Job {
         assert taskExecutor != null;
         try {
             taskExecutor.execute(jobDataMap);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage(), e.getCause());
         }
     }

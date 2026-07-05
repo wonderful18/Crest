@@ -49,6 +49,16 @@ public class JsonUtil {
         return t;
     }
 
+    public static <T> T parseObjectQuietly(String json, Class<T> classOfT) {
+        if (json == null) return null;
+        try {
+            return objectMapper.readValue(json, classOfT);
+        } catch (JsonProcessingException e) {
+            LogUtil.debug(e.getMessage());
+            return null;
+        }
+    }
+
     public static <T> T parseObject(String json, TypeReference<T> typeReference) {
         if (json == null) return null;
         T t = null;

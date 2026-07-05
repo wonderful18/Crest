@@ -6,7 +6,6 @@ import org.apache.commons.lang3.StringUtils;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.MessageDigest;
 import java.util.UUID;
 
 /**
@@ -16,53 +15,12 @@ public class CodingUtil {
 
     private static final String UTF_8 = "UTF-8";
 
-    private static final char[] HEX_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
-
     public static String[] chars = new String[] { "a", "b", "c", "d", "e", "f",
             "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
             "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5",
             "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I",
             "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V",
             "W", "X", "Y", "Z" };
-    /**
-     * MD5加密
-     *
-     * @param src 要加密的串
-     * @return 加密后的字符串
-     */
-    public static String md5(String src) {
-        return md5(src, UTF_8);
-    }
-
-    /**
-     * MD5加密
-     *
-     * @param src     要加密的串
-     * @param charset 加密字符集
-     * @return 加密后的字符串
-     */
-    public static String md5(String src, String charset) {
-        try {
-            byte[] strTemp = StringUtils.isEmpty(charset) ? src.getBytes() : src.getBytes(charset);
-            MessageDigest mdTemp = MessageDigest.getInstance("MD5"); // nosemgrep: java.lang.security.audit.crypto.use-of-md5.use-of-md5
-            mdTemp.update(strTemp);
-
-            byte[] md = mdTemp.digest();
-            int j = md.length;
-            char[] str = new char[j * 2];
-            int k = 0;
-
-            for (byte byte0 : md) {
-                str[k++] = HEX_DIGITS[byte0 >>> 4 & 0xf];
-                str[k++] = HEX_DIGITS[byte0 & 0xf];
-            }
-
-            return new String(str);
-        } catch (Exception e) {
-            throw new RuntimeException("MD5 encrypt error:", e);
-        }
-    }
 
     /**
      * BASE64解密
@@ -186,7 +144,7 @@ public class CodingUtil {
 
 
     public static String shortUuid() {
-        StringBuffer shortBuffer = new StringBuffer();
+        StringBuilder shortBuffer = new StringBuilder();
         String uuid = UUID.randomUUID().toString().replace("-", "");
         for (int i = 0; i < 8; i++) {
             String str = uuid.substring(i * 4, i * 4 + 4);
@@ -197,7 +155,7 @@ public class CodingUtil {
     }
 
     public static Integer string2Integer(String str) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (StringUtils.isBlank(str)) return null;
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);

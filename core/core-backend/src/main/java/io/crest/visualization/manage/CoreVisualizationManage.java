@@ -128,17 +128,17 @@ public class CoreVisualizationManage {
         }
         requireVisualizationTreeAccess(id);
         Set<Long> delIds = new LinkedHashSet<>();
-        Stack<Long> stack = new Stack<>();
-        stack.add(id);
+        Deque<Long> stack = new ArrayDeque<>();
+        stack.addLast(id);
         while (!stack.isEmpty()) {
-            Long tempPid = stack.pop();
+            Long tempPid = stack.removeLast();
             if (isTopNode(tempPid)) continue;
             delIds.add(tempPid);
             List<Long> childrenIdList = extMapper.queryChildrenId(tempPid);
             if (CollectionUtils.isNotEmpty(childrenIdList)) {
                 childrenIdList.forEach(kid -> {
                     if (!delIds.contains(kid)) {
-                        stack.add(kid);
+                        stack.addLast(kid);
                     }
                 });
             }

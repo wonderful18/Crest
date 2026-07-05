@@ -1,14 +1,16 @@
 package io.crest.datasource.request;
 
 import io.crest.datasource.dao.auto.entity.CoreEngine;
+import io.crest.extensions.datasource.dto.TableFieldWithValue;
 import lombok.Data;
 
+import java.util.List;
 import java.util.Locale;
 
 @Data
 @SuppressWarnings("deprecation")
 public class EngineRequest {
-    private final String REG_WITH_SQL_FRAGMENT = "((?i)WITH[\\s\\S]+(?i)AS?\\s*\\([\\s\\S]+\\))\\s*(?i)SELECT";
+    private static final String REG_WITH_SQL_FRAGMENT = "((?i)WITH[\\s\\S]+(?i)AS?\\s*\\([\\s\\S]+\\))\\s*(?i)SELECT";
     protected String query;
     protected String table;
     protected CoreEngine engine;
@@ -19,11 +21,15 @@ public class EngineRequest {
     private boolean pageable = false;
     private boolean previewData = false;
     private boolean totalPageFlag;
+    private List<TableFieldWithValue> tableFieldWithValues;
 
     public EngineRequest() {
     }
 
     public String getQuery() {
+        if (this.query == null) {
+            return null;
+        }
         return this.rebuildSqlWithFragment(this.query);
     }
 
@@ -48,7 +54,6 @@ public class EngineRequest {
     }
 
     public String getREG_WITH_SQL_FRAGMENT() {
-        this.getClass();
-        return "((?i)WITH[\\s\\S]+(?i)AS?\\s*\\([\\s\\S]+\\))\\s*(?i)SELECT";
+        return REG_WITH_SQL_FRAGMENT;
     }
 }

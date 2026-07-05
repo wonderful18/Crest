@@ -242,7 +242,8 @@ public class CoreVisualizationExportManage {
                             }
                             break;
                     }
-                } catch (Exception ignored) {
+                } catch (NumberFormatException ignored) {
+                    // 非法数值不参与汇总计算。
                 }
             }
         }

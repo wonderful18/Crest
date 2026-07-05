@@ -12,6 +12,7 @@ import io.crest.constant.LogOT;
 import io.crest.constant.LogST;
 import io.crest.log.CrestAudit;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,7 +37,7 @@ public class DataAssetServer {
     @PostMapping("/page/{page}/{pageSize}")
     public DataAssetPageVO page(@PathVariable("page") Integer page,
                                 @PathVariable("pageSize") Integer pageSize,
-                                @RequestBody(required = false) DataAssetRequest request) {
+                                @Valid @RequestBody(required = false) DataAssetRequest request) {
         return dataAssetManage.page(page, pageSize, request);
     }
 
@@ -55,9 +56,9 @@ public class DataAssetServer {
     }
 
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.DATA, id = "#p0.assetId")
-    @CrestPermit("m:read")
+    @CrestPermit("m:manage")
     @PostMapping("/profile")
-    public DataAssetDetailVO saveProfile(@RequestBody DataAssetProfileRequest request) {
+    public DataAssetDetailVO saveProfile(@Valid @RequestBody DataAssetProfileRequest request) {
         return dataAssetManage.saveProfile(request);
     }
 

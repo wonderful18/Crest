@@ -34,8 +34,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
-import java.util.Stack;
 
 @Component
 public class DataSourceManage {
@@ -241,16 +242,16 @@ public class DataSourceManage {
             return null;
         }
         List<Long> result = new ArrayList<>();
-        Stack<Long> stack = new Stack<>();
-        stack.push(pid);
+        Deque<Long> stack = new ArrayDeque<>();
+        stack.addLast(pid);
         while (!stack.isEmpty()) {
-            Long cid = stack.pop();
+            Long cid = stack.removeLast();
             DsItem item = coreDatasourceExtMapper.queryItem(cid);
             if (ObjectUtils.isNotEmpty(item)) {
                 result.add(cid);
                 Long cpid = null;
                 if (ObjectUtils.isNotEmpty(cpid = item.getPid()) && !cpid.equals(0L)) {
-                    stack.add(cpid);
+                    stack.addLast(cpid);
                 }
             }
         }

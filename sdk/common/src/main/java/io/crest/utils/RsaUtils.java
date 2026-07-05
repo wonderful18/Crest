@@ -20,6 +20,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -71,7 +72,7 @@ public class RsaUtils {
             byte[] decodedKey = Base64.getDecoder().decode(privateKey.getBytes());
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
             return keyFactory.generatePrivate(keySpec);
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
             LogUtil.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
@@ -84,13 +85,13 @@ public class RsaUtils {
             byte[] decodedKey = Base64.getDecoder().decode(publicKey.getBytes());
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKey);
             return keyFactory.generatePublic(keySpec);
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
             LogUtil.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private static String encrypt(String data, PublicKey publicKey) throws Exception {
+    private static String encrypt(String data, PublicKey publicKey) throws GeneralSecurityException {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
         int inputLen = data.getBytes().length;
@@ -109,11 +110,10 @@ public class RsaUtils {
             offset = i * MAX_ENCRYPT_BLOCK;
         }
         byte[] encryptedData = out.toByteArray();
-        out.close();
         return Base64.getEncoder().encodeToString(encryptedData);
     }
 
-    private static String decrypt(String data, PrivateKey privateKey) throws Exception {
+    private static String decrypt(String data, PrivateKey privateKey) throws GeneralSecurityException {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
         byte[] dataBytes = Base64.getDecoder().decode(data);
@@ -132,7 +132,6 @@ public class RsaUtils {
             i++;
             offset = i * MAX_DECRYPT_BLOCK;
         }
-        out.close();
         return out.toString(StandardCharsets.UTF_8);
     }
 
@@ -158,7 +157,7 @@ public class RsaUtils {
         if (SmCryptoUtils.isSm2Ciphertext(data)) {
             try {
                 return SmCryptoUtils.sm2Decrypt(data, privateKey);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
                 CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
                 return "";
@@ -166,7 +165,7 @@ public class RsaUtils {
         }
         try {
             return decrypt(data, getPrivateKey(privateKey));
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | RuntimeException e) {
             LogUtil.debug(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
             CrestException.throwException(ResultCode.PARAM_IS_INVALID.code(), "加密参数格式无效");
             return "";
@@ -188,7 +187,7 @@ public class RsaUtils {
         }
         try {
             return encrypt(data, getPublicKey(publicKey()));
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | RuntimeException e) {
             LogUtil.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
@@ -226,7 +225,7 @@ public class RsaUtils {
         try {
             byte[] baseKey = key.getBytes(StandardCharsets.UTF_8);
             return aesCbcHmacEncrypt(message, baseKey);
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | RuntimeException e) {
             LogUtil.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
@@ -252,7 +251,7 @@ public class RsaUtils {
                 }
             }
             return CacheUtils.get(Symmetric_Key, SYMMETRIC_KEY_CACHE_ENTRY).toString();
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | RuntimeException e) {
             throw new RuntimeException(e);
         }
     }
@@ -268,7 +267,7 @@ public class RsaUtils {
     static String symmetricEncrypt(String data, String base64Key) {
         try {
             return aesCbcHmacEncrypt(data, Base64.getDecoder().decode(base64Key));
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
             throw new RuntimeException(e);
         }
     }
@@ -295,12 +294,12 @@ public class RsaUtils {
             byte[] decodedCiphertext = Base64.getDecoder().decode(data);
             byte[] decryptedText = cipher.doFinal(decodedCiphertext);
             return new String(decryptedText, StandardCharsets.UTF_8);
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | RuntimeException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static String aesCbcHmacEncrypt(String data, byte[] key) throws Exception {
+    private static String aesCbcHmacEncrypt(String data, byte[] key) throws GeneralSecurityException {
         byte[] iv = new byte[16];
         SECURE_RANDOM.nextBytes(iv);
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // nosemgrep: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
@@ -311,7 +310,7 @@ public class RsaUtils {
         return AES_CBC_HMAC_PREFIX + payload + ":" + hmacHex(key, payload);
     }
 
-    private static String aesCbcHmacDecrypt(String data, byte[] key) throws Exception {
+    private static String aesCbcHmacDecrypt(String data, byte[] key) throws GeneralSecurityException {
         String payload = data.substring(AES_CBC_HMAC_PREFIX.length());
         String[] parts = payload.split(":", 3);
         if (parts.length != 3) {
@@ -326,7 +325,7 @@ public class RsaUtils {
         return new String(cipher.doFinal(Base64.getDecoder().decode(parts[1])), StandardCharsets.UTF_8);
     }
 
-    private static String hmacHex(byte[] key, String payload) throws Exception {
+    private static String hmacHex(byte[] key, String payload) throws GeneralSecurityException {
         Mac mac = Mac.getInstance(HMAC_ALGORITHM);
         mac.init(new SecretKeySpec(key, HMAC_ALGORITHM));
         byte[] digest = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));

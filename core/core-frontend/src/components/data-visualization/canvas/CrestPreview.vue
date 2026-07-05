@@ -32,6 +32,7 @@ import LinkOptBar from '@/components/data-visualization/canvas/LinkOptBar.vue'
 import { isDesktop } from '@/utils/ModelUtil'
 import { isMobile } from '@/utils/utils'
 import { useI18n } from '@/hooks/web/useI18n'
+import { resolvePostMessageTargetOrigin } from '@/utils/securityUrl'
 const dvMainStore = dvMainStoreWithOut()
 const { pcMatrixCount, curComponent, mobileInPc, canvasState, inMobile } = storeToRefs(dvMainStore)
 const openHandler = ref(null)
@@ -494,24 +495,10 @@ const onPointClick = param => {
         eventName: 'crest_inner_params',
         args: param
       }
-      window.parent.postMessage(targetPm, getPostMessageTargetOrigin())
+      window.parent.postMessage(targetPm, resolvePostMessageTargetOrigin())
     }
   } catch {
     // ignore embedded message failures
-  }
-}
-
-const getPostMessageTargetOrigin = () => {
-  if (!document.referrer) {
-    return window.location.origin
-  }
-  try {
-    const referrerUrl = new URL(document.referrer)
-    return ['http:', 'https:'].includes(referrerUrl.protocol)
-      ? referrerUrl.origin
-      : window.location.origin
-  } catch {
-    return window.location.origin
   }
 }
 

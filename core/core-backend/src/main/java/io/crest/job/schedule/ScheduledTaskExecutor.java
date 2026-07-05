@@ -1,6 +1,7 @@
 package io.crest.job.schedule;
 
 import io.crest.commons.utils.CronUtils;
+import io.crest.utils.LogUtil;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
 import org.quartz.JobDataMap;
@@ -29,6 +30,7 @@ public class ScheduledTaskExecutor {
         return false;
     }
     public void init() {
+        LogUtil.debug("scheduled task executor initialized");
     }
 
     public void addThresholdTask(Long taskId, String cron) {

@@ -4,7 +4,7 @@ import java.util.Optional;
 
 public class SQLUtils {
     public static String transKeyword(String value) {
-        return Optional.ofNullable(value).orElse("").replaceAll("'", "''").replaceAll("\\\\","\\\\\\\\").replace("\n", "\\n");
+        return Optional.ofNullable(value).orElse("").replace("'", "''").replace("\\", "\\\\").replace("\n", "\\n");
     }
 
     public static String buildOriginPreviewSql(String sql, int limit, int offset) {

@@ -54,11 +54,11 @@ public class DatasetUtils {
     }
 
     public static String getEncode(String str) {
-        return Base64.getEncoder().encodeToString(str.getBytes());
+        return Base64.getEncoder().encodeToString(org.apache.commons.codec.binary.StringUtils.getBytesUtf8(str));
     }
 
     public static String getDecode(String str) {
-        return new String(Base64.getDecoder().decode(str));
+        return org.apache.commons.codec.binary.StringUtils.newStringUtf8(Base64.getDecoder().decode(str));
     }
 
     /**

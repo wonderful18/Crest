@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 @Component
 public class SsoManage {
@@ -58,6 +59,8 @@ public class SsoManage {
     private static final String DEFAULT_ACCOUNT_ATTRIBUTE = "preferred_username";
     private static final String DEFAULT_NAME_ATTRIBUTE = "name";
     private static final String DEFAULT_EMAIL_ATTRIBUTE = "email";
+    private static final Pattern CALLBACK_HOST_PATTERN = Pattern.compile("[A-Za-z0-9.-]+");
+    private static final Pattern ABSOLUTE_URI_PATTERN = Pattern.compile("(?i)^[a-z][a-z\\d+.-]*:.*");
     private static final String DEFAULT_REDIRECT = "/workbranch/index";
 
     @Resource
@@ -489,7 +492,7 @@ public class SsoManage {
                 host = hostValue.substring(0, colon);
                 port = parseCallbackPort(hostValue.substring(colon + 1));
             }
-            if (!host.matches("[A-Za-z0-9.-]+")
+            if (!CALLBACK_HOST_PATTERN.matcher(host).matches()
                     || host.startsWith(".")
                     || host.endsWith(".")
                     || host.contains("..")) {
@@ -537,7 +540,7 @@ public class SsoManage {
         if (Strings.CI.startsWithAny(value, "http://", "https://", "//")
                 || value.contains("\\")
                 || value.chars().anyMatch(Character::isISOControl)
-                || value.matches("(?i)^[a-z][a-z\\d+.-]*:.*")) {
+                    || ABSOLUTE_URI_PATTERN.matcher(value).matches()) {
             return DEFAULT_REDIRECT;
         }
         return Strings.CS.startsWith(value, "/") ? value : "/" + value;

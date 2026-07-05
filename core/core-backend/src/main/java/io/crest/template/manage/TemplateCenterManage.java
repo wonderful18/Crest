@@ -56,7 +56,7 @@ public class TemplateCenterManage {
     public TemplateManageFileDTO getTemplateFromMarket(String templateUrl) {
         String sufUrl = templateBaseUrl();
         if (StringUtils.isNotEmpty(sufUrl) && StringUtils.isNotEmpty(templateUrl)) {
-            String templateName = templateUrl.substring(templateUrl.lastIndexOf("/") + 1, templateUrl.length());
+            String templateName = templateUrl.substring(templateUrl.lastIndexOf('/') + 1, templateUrl.length());
             templateUrl = templateUrl.replace(templateName, URLEncoder.encode(templateName, StandardCharsets.UTF_8).replace("+", "%20"));
             String templateInfo = HttpClientUtil.get(sufUrl + templateUrl, null);
             return JsonUtil.parseObject(templateInfo, TemplateManageFileDTO.class);

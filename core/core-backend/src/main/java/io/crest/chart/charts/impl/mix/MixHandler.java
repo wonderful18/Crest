@@ -102,7 +102,7 @@ public class MixHandler extends YoyChartHandler {
                 if (ObjectUtils.isNotEmpty(assists)) {
                     var assistSql = assistSQL(originSql, assistFields, dsMap, crossDs);
                     req.setQuery(assistSql);
-                    logger.debug("calcite assistSql sql: " + assistSql);
+                    logger.debug("calcite assist sql generated");
                     var assistData = (List<String[]>) provider.fetchResultField(req).get("data");
                     leftResult.setAssistData(assistData);
                     leftResult.setDynamicAssistFields(assists);
@@ -112,7 +112,7 @@ public class MixHandler extends YoyChartHandler {
                 if (ObjectUtils.isNotEmpty(assistsOriginList)) {
                     var assistSqlOriginList = assistSQLOriginList(originSql, assistFields, dsMap, crossDs);
                     req.setQuery(assistSqlOriginList);
-                    logger.debug("calcite assistSql sql origin list: " + assistSqlOriginList);
+                    logger.debug("calcite assist origin sql generated");
                     var assistDataOriginList = (List<String[]>) provider.fetchResultField(req).get("data");
                     leftResult.setAssistDataOriginList(assistDataOriginList);
                     leftResult.setDynamicAssistFieldsOriginList(assistsOriginList);
@@ -173,7 +173,7 @@ public class MixHandler extends YoyChartHandler {
                 if (ObjectUtils.isNotEmpty(assists)) {
                     var assistSql = assistSQL(originSql, assistFields, dsMap, crossDs);
                     req.setQuery(assistSql);
-                    logger.debug("calcite assistSql sql: " + assistSql);
+                    logger.debug("calcite assist sql generated");
                     var assistData = (List<String[]>) provider.fetchResultField(req).get("data");
                     rightResult.setAssistData(assistData);
                     rightResult.setDynamicAssistFields(assists);
@@ -183,7 +183,7 @@ public class MixHandler extends YoyChartHandler {
                 if (ObjectUtils.isNotEmpty(assistsOriginList)) {
                     var assistSqlOriginList = assistSQLOriginList(originSql, assistFields, dsMap, crossDs);
                     req.setQuery(assistSqlOriginList);
-                    logger.debug("calcite assistSql sql origin list: " + assistSqlOriginList);
+                    logger.debug("calcite assist origin sql generated");
                     var assistDataOriginList = (List<String[]>) provider.fetchResultField(req).get("data");
                     rightResult.setAssistDataOriginList(assistDataOriginList);
                     rightResult.setDynamicAssistFieldsOriginList(assistsOriginList);

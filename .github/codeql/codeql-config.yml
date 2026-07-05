@@ -1,0 +1,9 @@
+name: Crest CodeQL
+
+paths-ignore:
+  - core/core-backend/src/main/resources/static/**
+  - core/core-frontend/dist/**
+  - core/core-frontend/node_modules/**
+  - core/core-frontend/public/tinymce-crest-private/**
+  - '**/*.min.js'
+  - '**/target/**'

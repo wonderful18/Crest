@@ -51,7 +51,6 @@ public class FieldUtils {
         switch (fieldType) {
             case 0:
             case 1:
-            case 5:
                 return "d";
             case 2:
             case 3:

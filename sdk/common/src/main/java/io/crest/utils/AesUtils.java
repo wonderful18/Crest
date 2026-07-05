@@ -9,6 +9,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -51,7 +52,7 @@ public class AesUtils {
         } catch (BadPaddingException | IllegalBlockSizeException e) {
             // 解密的原字符串为非加密字符串，则直接返回原字符串
             return src;
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
             throw new RuntimeException("decrypt error，please check parameters", e);
         }
     }
@@ -71,7 +72,7 @@ public class AesUtils {
             cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, iv1);
             byte[] encrypted = cipher.doFinal(src.getBytes(UTF_8));
             return Base64.encodeBase64String(encrypted);
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
             throw new RuntimeException("AES encrypt error:", e);
         }
 
@@ -123,7 +124,7 @@ public class AesUtils {
             System.arraycopy(encrypted, 0, ivAndCipher, iv.length, encrypted.length);
 
             return Base64.encodeBase64String(ivAndCipher);
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
             throw new RuntimeException("AES encrypt error:", e);
         }
     }

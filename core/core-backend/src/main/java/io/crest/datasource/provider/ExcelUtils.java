@@ -8,6 +8,7 @@ import com.alibaba.excel.enums.CellDataTypeEnum;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.alibaba.excel.metadata.data.ReadCellData;
 import com.alibaba.excel.read.metadata.ReadSheet;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,17 +38,22 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
 @SuppressWarnings({"deprecation", "unchecked"})
 public class ExcelUtils {
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
+    private static final Pattern NUMERIC_TEXT_PATTERN = Pattern.compile("^-?\\d+(\\.\\d+)?$");
     public static final String UFEFF = "\uFEFF";
     private static final int EXCEL_FIELD_DISPLAY_NAME_LIMIT = 100;
     private static final String DEFAULT_EXCEL_FIELD_TYPE = "TEXT";
@@ -185,7 +191,7 @@ public class ExcelUtils {
         if (cells.isEmpty() || cells.size() > 2) {
             return false;
         }
-        String firstRowText = String.join(" ", cells).toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+        String firstRowText = WHITESPACE_PATTERN.matcher(String.join(" ", cells).toLowerCase(Locale.ROOT)).replaceAll(" ");
         int sqlScore = 0;
         String[] keywords = {"select ", " from ", " where ", " join ", " group by ", " order by ", " insert ", " update ", " delete ", " create ", " alter ", " with "};
         for (String keyword : keywords) {
@@ -251,7 +257,7 @@ public class ExcelUtils {
                 datasetTableDTO.setLastUpdateTime(rootNode.get(i).get("lastUpdateTime") == null ? datasourceRequest.getDatasource().getCreateTime() : rootNode.get(i).get("lastUpdateTime").asLong(0L));
                 tableDescs.add(datasetTableDTO);
             }
-        } catch (Exception e) {
+        } catch (JsonProcessingException | RuntimeException e) {
             CrestException.throwException(e);
         }
 
@@ -268,10 +274,10 @@ public class ExcelUtils {
                 sheets = objectMapper.readTree(configuration).get("sheets").toString();
             }
             rootNode = objectMapper.readTree((String) EncryptUtils.aesDecrypt(sheets));
-        } catch (Exception e) {
+        } catch (JsonProcessingException | RuntimeException e) {
             try {
                 rootNode = objectMapper.readTree(sheets);
-            } catch (Exception ex) {
+            } catch (JsonProcessingException ex) {
                 CrestException.throwException(ex);
             }
         }
@@ -300,10 +306,10 @@ public class ExcelUtils {
         JsonNode rootNode = null;
         try {
             rootNode = objectMapper.readTree((String) EncryptUtils.aesDecrypt(datasource.getConfiguration()));
-        } catch (Exception e) {
+        } catch (JsonProcessingException | RuntimeException e) {
             try {
                 rootNode = objectMapper.readTree(datasource.getConfiguration());
-            } catch (Exception ex) {
+            } catch (JsonProcessingException ex) {
                 CrestException.throwException(ex);
             }
         }
@@ -327,7 +333,7 @@ public class ExcelUtils {
             for (int i = 0; i < rootNode.size(); i++) {
                 return rootNode.get(i).get("size").asText();
             }
-        } catch (Exception e) {
+        } catch (JsonProcessingException | RuntimeException e) {
             CrestException.throwException(e);
         }
         return "0 B";
@@ -353,7 +359,7 @@ public class ExcelUtils {
             for (ExcelSheetData sheet : excelConfiguration.getSheets()) {
                 if (sheet.getDisplayTableName().equalsIgnoreCase(datasourceRequest.getTable())) {
                     List<TableField> tableFields = sheet.getFields();
-                    String suffix = fileNames.get("fileName").substring(fileNames.get("fileName").lastIndexOf(".") + 1);
+                    String suffix = fileNames.get("fileName").substring(fileNames.get("fileName").lastIndexOf('.') + 1);
                     try (InputStream inputStream = new FileInputStream(excelTempFile(fileNames.get("tranName")))) {
                         if (Strings.CI.equals(suffix, "csv")) {
                             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
@@ -376,7 +382,7 @@ public class ExcelUtils {
                     if (rootNode.get(i).get("displayTableName").asText().equalsIgnoreCase(datasourceRequest.getTable())) {
                         List<TableField> tableFields = JsonUtil.parseList(rootNode.get(i).get("fields").toString(), TableFieldListTypeReference);
                         File excelFile = resolveStoredExcelFile(rootNode.get(i).get("path").asText());
-                        String suffix = excelFile.getName().substring(excelFile.getName().lastIndexOf(".") + 1);
+                        String suffix = excelFile.getName().substring(excelFile.getName().lastIndexOf('.') + 1);
                         try (InputStream inputStream = new FileInputStream(excelFile)) {
                             if (Strings.CI.equals(suffix, "csv")) {
                                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
@@ -389,7 +395,7 @@ public class ExcelUtils {
                         }
                     }
                 }
-            } catch (Exception e) {
+            } catch (JsonProcessingException | RuntimeException e) {
                 CrestException.throwException(e);
             }
         }
@@ -437,7 +443,7 @@ public class ExcelUtils {
                     tableFields.forEach(ExcelUtils::normalizeExcelTableField);
                 }
             }
-        } catch (Exception e) {
+        } catch (JsonProcessingException | RuntimeException e) {
             CrestException.throwException(e);
         }
         return tableFields;
@@ -452,11 +458,13 @@ public class ExcelUtils {
         List<ExcelSheetData> excelSheetDataList = null;
         try (InputStream inputStream = file.getInputStream()) {
             excelSheetDataList = parseExcel(filename, inputStream, true, filename);
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             CrestException.throwException(e);
         }
-        List<ExcelSheetData> returnSheetDataList = new ArrayList<>();
-        returnSheetDataList = excelSheetDataList;
+        if (CollectionUtils.isEmpty(excelSheetDataList)) {
+            CrestException.throwException("未解析到有效工作表");
+        }
+        List<ExcelSheetData> returnSheetDataList = excelSheetDataList;
         // save file
         String excelId = UUID.randomUUID().toString();
         String filePath = saveFile(file, excelId);
@@ -501,8 +509,6 @@ public class ExcelUtils {
         try {
             fileNames = downLoadRemoteExcel(excelConfiguration);
             return "Success";
-        } catch (Exception e) {
-            throw e;
         } finally {
             if (StringUtils.isNotEmpty(fileNames.get("tranName"))) {
                 FileUtils.deleteFile(excelTempFile(fileNames.get("tranName")).getPath());
@@ -516,7 +522,7 @@ public class ExcelUtils {
         List<ExcelSheetData> returnSheetDataList = new ArrayList<>();
         try (FileInputStream fileInputStream = new FileInputStream(excelTempFile(fileNames.get("tranName")))) {
             returnSheetDataList = parseExcel(fileNames.get("tranName"), fileInputStream, true, fileNames.get("fileName"));
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             CrestException.throwException(e);
         }
         for (ExcelSheetData excelSheetData : returnSheetDataList) {
@@ -590,7 +596,7 @@ public class ExcelUtils {
         try {
             String filename = file.getOriginalFilename();
             FileUtils.validateUploadFilename(filename);
-            String suffix = filename.substring(filename.lastIndexOf(".") + 1);
+            String suffix = filename.substring(filename.lastIndexOf('.') + 1);
             ensureExcelDirectory();
             File f = excelTempFile(fileNameUUID + "." + suffix);
             filePath = f.getPath();
@@ -598,7 +604,7 @@ public class ExcelUtils {
                 fileOutputStream.write(file.getBytes());
                 fileOutputStream.flush();
             }
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             CrestException.throwException(e);
         }
         return filePath;
@@ -635,7 +641,7 @@ public class ExcelUtils {
                     num++;
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             CrestException.throwException(e);
         }
         return data;
@@ -670,14 +676,12 @@ public class ExcelUtils {
         if (StringUtils.isEmpty(text) || text.length() > 19 || hasLeadingZeroNumericText(text)) {
             return "TEXT";
         }
-        String regex = "^-?\\d+(\\.\\d+)?$";
-        if (!text.matches(regex)) {
+        if (!NUMERIC_TEXT_PATTERN.matcher(text).matches()) {
             return "TEXT";
         }
         try {
-            Double d = Double.valueOf(text);
-            double eps = 1e-10;
-            if (d - Math.floor(d) < eps) {
+            BigDecimal decimal = new BigDecimal(text);
+            if (decimal.stripTrailingZeros().scale() <= 0) {
                 if (text.contains(".")) {
                     return "DOUBLE";
                 }
@@ -685,7 +689,7 @@ public class ExcelUtils {
             } else {
                 return "DOUBLE";
             }
-        } catch (Exception e2) {
+        } catch (NumberFormatException e2) {
             return "TEXT";
         }
     }
@@ -768,8 +772,38 @@ public class ExcelUtils {
         if (lowerName.equals(token)) {
             return true;
         }
-        return lowerName.matches(".*(^|[^a-z0-9])" + token + "($|[^a-z0-9]).*")
-                || lowerName.matches(".*[\\u4e00-\\u9fa5]" + token + "$");
+        return containsTokenWithAsciiBoundary(lowerName, token) || endsWithChineseToken(lowerName, token);
+    }
+
+    private boolean containsTokenWithAsciiBoundary(String lowerName, String token) {
+        int searchFrom = 0;
+        while (searchFrom < lowerName.length()) {
+            int index = lowerName.indexOf(token, searchFrom);
+            if (index < 0) {
+                return false;
+            }
+            int end = index + token.length();
+            boolean leftBoundary = index == 0 || !isAsciiLetterOrDigit(lowerName.charAt(index - 1));
+            boolean rightBoundary = end == lowerName.length() || !isAsciiLetterOrDigit(lowerName.charAt(end));
+            if (leftBoundary && rightBoundary) {
+                return true;
+            }
+            searchFrom = index + 1;
+        }
+        return false;
+    }
+
+    private boolean endsWithChineseToken(String lowerName, String token) {
+        int index = lowerName.length() - token.length();
+        return index > 0 && lowerName.endsWith(token) && isChineseCharacter(lowerName.charAt(index - 1));
+    }
+
+    private boolean isAsciiLetterOrDigit(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
+    }
+
+    private boolean isChineseCharacter(char c) {
+        return c >= '\u4e00' && c <= '\u9fa5';
     }
 
     private static String normalizeExcelCellValue(String value) {
@@ -837,6 +871,9 @@ public class ExcelUtils {
 
         @Override
         public void doAfterAllAnalysed(AnalysisContext analysisContext) {
+            if (analysisContext == null) {
+                return;
+            }
         }
 
         public void clear() {
@@ -872,7 +909,7 @@ public class ExcelUtils {
 
     private List<ExcelSheetData> parseExcel(String filename, InputStream inputStream, boolean isPreview, String originFilename) throws IOException {
         List<ExcelSheetData> excelSheetDataList = new ArrayList<>();
-        String suffix = filename.substring(filename.lastIndexOf(".") + 1);
+        String suffix = filename.substring(filename.lastIndexOf('.') + 1);
         if (Strings.CI.equals(suffix, "xlsx") || Strings.CI.equals(suffix, "xls")) {
             NoModelDataListener noModelDataListener = new NoModelDataListener();
             ExcelReader excelReader = EasyExcel.read(inputStream, noModelDataListener).build();
@@ -1019,6 +1056,9 @@ public class ExcelUtils {
         int port = 21;
         String filePath = "";
         try {
+            if (StringUtils.isBlank(remoteExcelRequest.getUrl())) {
+                CrestException.throwException(Translator.get("i18n_invalid_address"));
+            }
             URI uri = new URI(remoteExcelRequest.getUrl());
             if (!Strings.CI.equals(uri.getScheme(), "ftp") || StringUtils.isBlank(uri.getHost())) {
                 CrestException.throwException(Translator.get("i18n_invalid_address"));
@@ -1037,7 +1077,7 @@ public class ExcelUtils {
                     username = URLDecoder.decode(userInfo, StandardCharsets.UTF_8);
                 }
             }
-        } catch (Exception e) {
+        } catch (URISyntaxException | IllegalArgumentException e) {
             CrestException.throwException(Translator.get("i18n_invalid_address"));
         }
         if (StringUtils.isNotEmpty(remoteExcelRequest.getUserName())) {

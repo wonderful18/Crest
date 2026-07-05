@@ -25,10 +25,10 @@ public class ChartViewServer implements ChartViewApi {
     private ChartViewManege chartViewManege;
 
     @Override
-    public ChartViewDTO getData(Long id) throws Exception {
+    public ChartViewDTO getData(Long id) {
         try {
             return chartViewManege.getChart(id, CommonConstants.RESOURCE_TABLE.CORE);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             CrestException.throwException(ResultCode.DATA_IS_WRONG.code(), e.getMessage());
         }
         return null;
@@ -43,7 +43,7 @@ public class ChartViewServer implements ChartViewApi {
     }
 
     @Override
-    public ChartViewDTO save(@RequestBody ChartViewDTO dto) throws Exception {
+    public ChartViewDTO save(@RequestBody ChartViewDTO dto) {
         return chartViewManege.save(dto);
     }
 

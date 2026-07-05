@@ -7,6 +7,7 @@ import io.crest.api.report.bo.DatasetPermissionTemplate;
 import io.crest.api.report.bo.TableSysVariable;
 import io.crest.dataset.dao.auto.entity.CoreDatasetGroup;
 import io.crest.dataset.utils.DatasetTableTypeConstants;
+import io.crest.dataset.utils.DatasetUtils;
 import io.crest.extensions.datasource.dto.DatasetTableDTO;
 import io.crest.utils.JsonUtil;
 import io.crest.visualization.dao.perext.ResourcePermissionMapper;
@@ -29,7 +30,7 @@ public class ResourcePermissionManage {
     private ResourcePermissionMapper resourcePermissionMapper;
 
 
-    public static final String regex2 = "\\$crest\\[(.*?)\\]";
+    private static final Pattern SYS_VARIABLE_PATTERN = Pattern.compile("\\$crest\\[(.*?)\\]");
 
     public List<DatasetPermissionTemplate> queruDatasetPermissionTemplate(Long resourceId) {
         String componentDataText = resourcePermissionMapper.queryResourceData(resourceId);
@@ -50,23 +51,20 @@ public class ResourcePermissionManage {
         try {
             Long.valueOf(paramId);
             isLong = true;
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             isLong = false;
         }
-        if (paramId.length() >= 18 && isLong) {
-            return true;
-        }
-        return false;
+        return paramId.length() >= 18 && isLong;
     }
 
     private List<Map<String, Object>> getUserViewList(List<Map<String, Object>> componentData) {
         List<Map<String, Object>> userViewList = new ArrayList<>();
 
-        Stack<Map<String, Object>> stack = new Stack<>();
+        Deque<Map<String, Object>> stack = new ArrayDeque<>();
         stack.addAll(componentData);
 
         while (!stack.isEmpty()) {
-            Map<String, Object> node = stack.pop();
+            Map<String, Object> node = stack.removeLast();
             if ("UserView".equals(node.get("component"))) {
                 userViewList.add(node);
             }
@@ -98,21 +96,20 @@ public class ResourcePermissionManage {
             template.setDatasetId(group.getId());
             String info = group.getInfo();
             List<UnionDTO> unionList = JsonUtil.parseList(info, typeReference);
-            Stack<UnionDTO> stack = new Stack<>();
+            Deque<UnionDTO> stack = new ArrayDeque<>();
             stack.addAll(unionList);
             Set<Long> dsIdSet = new HashSet<>();
             List<TableSysVariable> tableSysVariables = new ArrayList<>();
             while (!stack.isEmpty()) {
-                UnionDTO union = stack.pop();
+                UnionDTO union = stack.removeLast();
                 DatasetTableDTO currentDs = union.getCurrentDs();
                 dsIdSet.add(currentDs.getDatasourceId());
                 Long currentTableId = currentDs.getId();
                 if (ObjectUtils.isNotEmpty(currentDs.getType()) && currentDs.getType().equals(DatasetTableTypeConstants.DATASET_TABLE_SQL)) {
                     String tableInfoText = currentDs.getInfo();
                     DatasetTableInfoDTO tableInfoDTO = JsonUtil.parseObject(tableInfoText, DatasetTableInfoDTO.class);
-                    String s = new String(Base64.getDecoder().decode(tableInfoDTO.getSql()));
-                    Pattern pattern = Pattern.compile(regex2);
-                    Matcher matcher = pattern.matcher(s);
+                    String s = DatasetUtils.getDecode(tableInfoDTO.getSql());
+                    Matcher matcher = SYS_VARIABLE_PATTERN.matcher(s);
                     List<String> sysVariables = new ArrayList<>();
                     while (matcher.find()) {
                         String paramId = matcher.group().substring(7, matcher.group().length() - 1);

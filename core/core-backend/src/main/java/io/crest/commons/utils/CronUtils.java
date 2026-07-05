@@ -28,7 +28,7 @@ public class CronUtils {
             CronTrigger trigger = getCronTrigger(cron);
             Date startDate = trigger.getStartTime();
             date = trigger.getFireTimeAfter(startDate);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LogUtil.error(e.getMessage(), e);
         }
         return date;

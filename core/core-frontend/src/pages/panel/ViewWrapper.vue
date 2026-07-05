@@ -11,6 +11,7 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { useI18n } from '@/hooks/web/useI18n'
 import EmptyBackground from '../../components/empty-background/src/EmptyBackground.vue'
 import exeRequest from '@/config/axios'
+import { resolvePostMessageTargetOrigin } from '@/utils/securityUrl'
 const { wsCache } = useCache()
 const interactiveStore = interactiveStoreWithOut()
 const embeddedStore = useEmbedded()
@@ -173,26 +174,13 @@ const onPointClick = param => {
         eventName: 'crest_inner_params',
         args: param
       }
-      window.parent.postMessage(targetPm, getPostMessageTargetOrigin())
+      window.parent.postMessage(targetPm, resolvePostMessageTargetOrigin())
     }
   } catch {
     // ignore embedded message failures
   }
 }
 
-const getPostMessageTargetOrigin = () => {
-  if (!document.referrer) {
-    return window.location.origin
-  }
-  try {
-    const referrerUrl = new URL(document.referrer)
-    return ['http:', 'https:'].includes(referrerUrl.protocol)
-      ? referrerUrl.origin
-      : window.location.origin
-  } catch {
-    return window.location.origin
-  }
-}
 const previewViewCanvas = ref(null)
 
 const resetLayout = () => {

@@ -25,6 +25,7 @@ public class VisualizationExcelUtils {
 
     private static final String suffix = ".xlsx";
     private static final String BASE_ROOT = getBaseRoot();
+    private static final Pattern INVALID_SHEET_NAME_PATTERN = Pattern.compile("[\\s\\\\/:\\*\\?\\\"<>\\|]");
 
     public static String getBaseRoot() {
         if (ModelUtils.isDesktop()) {
@@ -44,8 +45,7 @@ public class VisualizationExcelUtils {
                 List<Integer> fieldTypes = sheet.getFiledTypes();
                 details.add(0, sheet.getHeads());
                 String sheetName = sheet.getSheetName();
-                Pattern pattern = Pattern.compile("[\\s\\\\/:\\*\\?\\\"<>\\|]");
-                Matcher matcher = pattern.matcher(sheetName);
+                Matcher matcher = INVALID_SHEET_NAME_PATTERN.matcher(sheetName);
                 sheetName = matcher.replaceAll("-");
                 Sheet curSheet = wb.createSheet(sheetName);
                 if (StringUtils.isBlank(fileName)) {

@@ -182,29 +182,29 @@ public class FileUtils {
                 fileOutputStream.flush();
             }
             return dest;
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             LogUtil.error(e.getMessage(), e);
         }
         return null;
     }
 
-    public static void copyFolder(String sourcePath, String targetPath) throws Exception {
+    public static void copyFolder(String sourcePath, String targetPath) throws IOException {
         //源文件夹路径
         File sourceFile = Path.of(sourcePath).toAbsolutePath().normalize().toFile().getCanonicalFile();
         //目标文件夹路径
         File targetFile = Path.of(targetPath).toAbsolutePath().normalize().toFile().getCanonicalFile();
 
         if (!sourceFile.exists()) {
-            throw new Exception("文件夹不存在");
+            throw new FileNotFoundException("文件夹不存在");
         }
         if (!sourceFile.isDirectory()) {
-            throw new Exception("源文件夹不是目录");
+            throw new IOException("源文件夹不是目录");
         }
         if (!targetFile.exists()) {
             Files.createDirectories(targetFile.toPath());
         }
         if (!targetFile.isDirectory()) {
-            throw new Exception("目标文件夹不是目录");
+            throw new IOException("目标文件夹不是目录");
         }
 
         File[] files = sourceFile.listFiles();
@@ -259,7 +259,7 @@ public class FileUtils {
                 sb.append((char) ch);
             }
             return sb.toString();
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
             return null;
         }
@@ -326,7 +326,7 @@ public class FileUtils {
 
         try {
             return Files.readAllBytes(file.toPath());
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
             return null;
         }

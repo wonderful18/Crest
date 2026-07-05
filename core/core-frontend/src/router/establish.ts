@@ -37,8 +37,7 @@ export const generateRoutesFn2 = (routes: AppCustomRouteRecordRaw[]): AppRouteRe
         data.component = Layout
       } else if (route.component === 'LayoutTransition') {
         data.component = LayoutTransition
-      } else if (!comModule) {
-      } else {
+      } else if (comModule) {
         data.component = comModule
       }
     }

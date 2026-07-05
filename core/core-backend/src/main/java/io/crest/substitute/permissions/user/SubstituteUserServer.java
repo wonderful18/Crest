@@ -30,6 +30,7 @@ import io.crest.utils.CrestPermissionUtils;
 import io.crest.utils.IPUtils;
 import io.crest.utils.RsaUtils;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -63,7 +64,7 @@ public class SubstituteUserServer {
             CrestException.throwException(ResultCode.USER_NOT_EXIST.code(), ResultCode.USER_NOT_EXIST.message());
         }
         CurUserVO result = crestUserManage.toCurrent(user);
-        Object langObj = CacheUtils.get(USER_COMMUNITY_LANGUAGE, "de");
+        Object langObj = CacheUtils.get(USER_COMMUNITY_LANGUAGE, languageCacheKey(uid));
         if (ObjectUtils.isNotEmpty(langObj) && StringUtils.isNotBlank(langObj.toString())) {
             result.setLanguage(langObj.toString());
         }
@@ -90,7 +91,7 @@ public class SubstituteUserServer {
 
     @CrestAudit(ot = LogOT.READ, st = LogST.USER)
     @PostMapping("/page/{goPage}/{pageSize}")
-    public IPage<UserGridVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody UserGridRequest request) {
+    public IPage<UserGridVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @Valid @RequestBody UserGridRequest request) {
         CrestPermissionUtils.requireAdmin();
         return crestUserManage.pager(goPage, pageSize, request);
     }
@@ -104,14 +105,14 @@ public class SubstituteUserServer {
 
     @CrestAudit(ot = LogOT.CREATE, st = LogST.USER)
     @PostMapping
-    public Long create(@RequestBody UserCreator creator) {
+    public Long create(@Valid @RequestBody UserCreator creator) {
         CrestPermissionUtils.requireAdmin();
         return crestUserManage.create(creator);
     }
 
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER, id = "#p0.id")
     @PutMapping
-    public void edit(@RequestBody UserEditor editor) {
+    public void edit(@Valid @RequestBody UserEditor editor) {
         CrestPermissionUtils.requireAdmin();
         crestUserManage.edit(editor);
     }
@@ -125,7 +126,7 @@ public class SubstituteUserServer {
 
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER, id = "#p0.id")
     @PostMapping("/enable")
-    public void enable(@RequestBody EnableSwitchRequest request) {
+    public void enable(@Valid @RequestBody EnableSwitchRequest request) {
         CrestPermissionUtils.requireAdmin();
         crestUserManage.enable(request);
     }
@@ -139,7 +140,7 @@ public class SubstituteUserServer {
 
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER)
     @PostMapping("/modify-password")
-    public void modifyPwd(@RequestBody ModifyPwdRequest request) {
+    public void modifyPwd(@Valid @RequestBody ModifyPwdRequest request) {
         Long uid = AuthUtils.getUser().getUserId();
         if (ObjectUtils.isNotEmpty(request.getUid()) && !Objects.equals(request.getUid(), uid)) {
             CrestException.throwException("只能修改当前用户密码");
@@ -154,7 +155,7 @@ public class SubstituteUserServer {
     }
 
     @PostMapping("/by-current-org")
-    public List<UserItem> byCurOrg(@RequestBody(required = false) UserGridRequest request) {
+    public List<UserItem> byCurOrg(@Valid @RequestBody(required = false) UserGridRequest request) {
         return crestUserManage.usersByCurrentOrg(request == null ? null : request.getKeyword());
     }
 
@@ -192,11 +193,14 @@ public class SubstituteUserServer {
 
     @GetMapping("/clear-error-record/{key}")
     public void clearErrorRecord(@PathVariable("key") String key) {
+        if (StringUtils.isBlank(key)) {
+            return;
+        }
     }
 
     @CrestAudit(ot = LogOT.MODIFY, st = LogST.USER)
     @PostMapping("/switch-language")
-    public void switchLanguage(@RequestBody LangSwitchRequest request) {
+    public void switchLanguage(@Valid @RequestBody LangSwitchRequest request) {
         String lang = request.getLang();
         if (Strings.CI.equals(Lang.zh_CN.getDesc(), lang)) {
             lang = Lang.zh_CN.getDesc();
@@ -205,7 +209,11 @@ public class SubstituteUserServer {
         } else {
             CrestException.throwException("无效language");
         }
-        CacheUtils.put(USER_COMMUNITY_LANGUAGE, "de", lang);
+        CacheUtils.put(USER_COMMUNITY_LANGUAGE, languageCacheKey(currentUserId()), lang);
+    }
+
+    private String languageCacheKey(Long userId) {
+        return String.valueOf(userId);
     }
 
     private Long currentUserId() {

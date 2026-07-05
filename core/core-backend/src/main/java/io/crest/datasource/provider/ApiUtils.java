@@ -1,11 +1,13 @@
 package io.crest.datasource.provider;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import io.crest.extensions.datasource.dto.ApiDefinition;
@@ -22,6 +24,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -34,6 +37,7 @@ public class ApiUtils {
             .options(Option.DEFAULT_PATH_LEAF_TO_NULL, Option.ALWAYS_RETURN_LIST)
             .build();
     private static String path = "['%s']";
+    private static final Pattern PARAM_TEMPLATE_PATTERN = Pattern.compile("\\$\\{(.*?)}");
     public static ObjectMapper objectMapper = CommonBeanFactory.getBean(ObjectMapper.class);
 
     private static TypeReference<List<Object>> listTypeReference = new TypeReference<List<Object>>() {
@@ -77,7 +81,7 @@ public class ApiUtils {
     private static String toJsonString(Object object) {
         try {
             return objectMapper.writeValueAsString(object);
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
             return String.valueOf(object);
         }
     }
@@ -130,12 +134,12 @@ public class ApiUtils {
             if (list.size() == 1) {
                 return cellValue(list.get(0));
             }
-            return toJsonString(list).replaceAll("\n", " ").replaceAll("\r", " ");
+            return toJsonString(list).replace("\n", " ").replace("\r", " ");
         }
         if (value instanceof Map<?, ?> || value instanceof Collection<?>) {
-            return toJsonString(value).replaceAll("\n", " ").replaceAll("\r", " ");
+            return toJsonString(value).replace("\n", " ").replace("\r", " ");
         }
-        return String.valueOf(value).replaceAll("\n", " ").replaceAll("\r", " ");
+        return String.valueOf(value).replace("\n", " ").replace("\r", " ");
     }
 
     private static String formatTimeFunctionValue(String timeFormat) {
@@ -185,9 +189,15 @@ public class ApiUtils {
         try {
             JsonNode rootNode = objectMapper.readTree(configration);
             for (int i = 0; i < rootNode.size(); i++) {
-                result.put(rootNode.get(i).get("name").asText(), rootNode.get(i).get("displayTableName").asText());
+                JsonNode item = rootNode.get(i);
+                JsonNode nameNode = item.get("name");
+                JsonNode displayNameNode = item.get("displayTableName");
+                if (nameNode == null || displayNameNode == null) {
+                    throw new IllegalArgumentException("API datasource table name is incomplete");
+                }
+                result.put(nameNode.asText(), displayNameNode.asText());
             }
-        } catch (Exception e) {
+        } catch (JsonProcessingException | IllegalArgumentException e) {
             CrestException.throwException(e);
         }
 
@@ -224,7 +234,8 @@ public class ApiUtils {
                 String cursor = null;
                 try {
                     cursor = JsonPath.read(response, apiDefinition.getRequest().getPage().getResponseData().get(0).getResolutionPath()).toString();
-                } catch (Exception e) {
+                } catch (JsonPathException e) {
+                    LogUtil.debug("API cursor path cannot be resolved");
                 }
                 while (cursor != null) {
                     apiDefinition.getRequest().getPage().getRequestData().get(0).setParameterDefaultValue(cursor);
@@ -236,7 +247,7 @@ public class ApiUtils {
                         } else {
                             cursor = JsonPath.read(response, apiDefinition.getRequest().getPage().getResponseData().get(0).getResolutionPath()).toString();
                         }
-                    } catch (Exception e) {
+                    } catch (JsonPathException e) {
                         cursor = null;
                     }
                 }
@@ -270,13 +281,13 @@ public class ApiUtils {
                     tableFields = getTableFields(apiDefinition);
                 }
             }
-        } catch (Exception e) {
-
+        } catch (RuntimeException e) {
+            LogUtil.debug("API datasource fields cannot be resolved");
         }
         return tableFields;
     }
 
-    public static String checkAPIStatus(DatasourceRequest datasourceRequest) throws Exception {
+    public static String checkAPIStatus(DatasourceRequest datasourceRequest) {
         TypeReference<List<ApiDefinition>> listTypeReference = new TypeReference<List<ApiDefinition>>() {
         };
         List<ApiDefinition> apiDefinitionList = JsonUtil.parseList(datasourceRequest.getDatasource().getConfiguration(), listTypeReference);
@@ -291,7 +302,7 @@ public class ApiUtils {
                 data(datasourceRequest);
                 apiItemStatuses.put("name", apiDefinition.getName());
                 apiItemStatuses.put("status", "Success");
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 LogUtil.error("API status Error: " + datasourceRequest.getDatasource().getName() + "-" + apiDefinition.getName(), e);
                 apiItemStatuses.put("name", apiDefinition.getName());
                 apiItemStatuses.put("status", "Error");
@@ -301,7 +312,7 @@ public class ApiUtils {
         return JsonUtil.toJSONString(status).toString();
     }
 
-    private static List<String[]> data(DatasourceRequest datasourceRequest) throws Exception {
+    private static List<String[]> data(DatasourceRequest datasourceRequest) {
         ApiDefinition apiDefinition = getApiDefinition(datasourceRequest);
         if (apiDefinition == null) {
             CrestException.throwException("未找到");
@@ -356,9 +367,7 @@ public class ApiUtils {
                     }
                 } else if (header.get("nameType") != null && header.get("nameType").toString().equalsIgnoreCase("custom")) {
                     List<String> params = new ArrayList<>();
-                    String regex = "\\$\\{(.*?)\\}";
-                    Pattern pattern = Pattern.compile(regex);
-                    Matcher matcher = pattern.matcher(header.get("value").toString());
+                    Matcher matcher = PARAM_TEMPLATE_PATTERN.matcher(header.get("value").toString());
                     while (matcher.find()) {
                         params.add(matcher.group(1));
                     }
@@ -402,15 +411,18 @@ public class ApiUtils {
                 && StringUtils.isNotBlank(apiDefinitionRequest.getAuthManager().getPassword())
                 && apiDefinitionRequest.getAuthManager().getVerification().equals("Basic Auth")) {
             String authValue = "Basic " + Base64.getUrlEncoder().encodeToString((apiDefinitionRequest.getAuthManager().getUsername()
-                    + ":" + apiDefinitionRequest.getAuthManager().getPassword()).getBytes());
+                    + ":" + apiDefinitionRequest.getAuthManager().getPassword()).getBytes(StandardCharsets.UTF_8));
             httpClientConfig.addHeader("Authorization", authValue);
         }
 
         List<String> params = new ArrayList<>();
         for (Map<String, String> argument : apiDefinition.getRequest().getArguments()) {
-            if (StringUtils.isNotEmpty(argument.get("name")) && StringUtils.isNotEmpty(argument.get("value"))) {
-                if (argument.get("nameType") != null && argument.get("nameType").toString().equalsIgnoreCase("params")) {
-                    String param = argument.get("value").toString();
+            String name = argument.get("name");
+            String value = argument.get("value");
+            String nameType = argument.get("nameType");
+            if (StringUtils.isNotEmpty(name) && StringUtils.isNotEmpty(value)) {
+                if (nameType != null && nameType.equalsIgnoreCase("params")) {
+                    String param = value;
                     for (ApiDefinition definition : paramsList) {
                         for (int i = 0; i < definition.getFields().size(); i++) {
                             TableField field = definition.getFields().get(i);
@@ -423,15 +435,13 @@ public class ApiUtils {
                             }
                         }
                     }
-                } else if (argument.get("nameType") != null && argument.get("nameType").toString().equalsIgnoreCase("custom")) {
+                } else if (nameType != null && nameType.equalsIgnoreCase("custom")) {
                     List<String> arrayList = new ArrayList<>();
-                    String regex = "\\$\\{(.*?)\\}";
-                    Pattern pattern = Pattern.compile(regex);
-                    Matcher matcher = pattern.matcher(argument.get("value").toString());
+                    Matcher matcher = PARAM_TEMPLATE_PATTERN.matcher(value);
                     while (matcher.find()) {
                         arrayList.add(matcher.group(1));
                     }
-                    String result = argument.get("value").toString();
+                    String result = value;
                     for (String param : arrayList) {
                         for (ApiDefinition definition : paramsList) {
                             for (int i = 0; i < definition.getFields().size(); i++) {
@@ -446,14 +456,14 @@ public class ApiUtils {
                             }
                         }
                     }
-                    params.add(argument.get("name") + "=" + result);
-                } else if (argument.get("nameType") != null && argument.get("nameType").toString().equalsIgnoreCase("timeFun")) {
-                    String timeValue = formatTimeFunctionValue(argument.get("value").toString());
+                    params.add(name + "=" + result);
+                } else if (nameType != null && nameType.equalsIgnoreCase("timeFun")) {
+                    String timeValue = formatTimeFunctionValue(value);
                     if (StringUtils.isNotEmpty(timeValue)) {
-                        params.add(argument.get("name") + "=" + timeValue);
+                        params.add(name + "=" + timeValue);
                     }
                 } else {
-                    params.add(argument.get("name") + "=" + URLEncoder.encode(argument.get("value")));
+                    params.add(name + "=" + URLEncoder.encode(value, StandardCharsets.UTF_8));
                 }
             }
         }
@@ -476,9 +486,7 @@ public class ApiUtils {
                         raw = apiDefinitionRequest.getBody().get("raw").toString();
 
                         List<String> bodYparams = new ArrayList<>();
-                        String regex = "\\$\\{(.*?)\\}";
-                        Pattern pattern = Pattern.compile(regex);
-                        Matcher matcher = pattern.matcher(raw);
+                        Matcher matcher = PARAM_TEMPLATE_PATTERN.matcher(raw);
                         while (matcher.find()) {
                             bodYparams.add(matcher.group(1));
                         }
@@ -519,7 +527,7 @@ public class ApiUtils {
                         List<JsonNode> rootNode = null;
                         try {
                             rootNode = objectMapper.readValue(JsonUtil.toJSONString(apiDefinition.getRequest().getBody().get("kvs")).toString(), listTypeReference);
-                        } catch (Exception e) {
+                        } catch (JsonProcessingException e) {
                             io.crest.utils.LogUtil.error(e.getMessage(), e);
                             CrestException.throwException(e);
                         }
@@ -550,9 +558,7 @@ public class ApiUtils {
                                         }
                                     } else if (jsonNode.get("nameType") != null && jsonNode.get("nameType").asText().equalsIgnoreCase("custom")) {
                                         List<String> bodYparams = new ArrayList<>();
-                                        String regex = "\\$\\{(.*?)\\}";
-                                        Pattern pattern = Pattern.compile(regex);
-                                        Matcher matcher = pattern.matcher(jsonNode.get("value").asText());
+                                        Matcher matcher = PARAM_TEMPLATE_PATTERN.matcher(jsonNode.get("value").asText());
                                         while (matcher.find()) {
                                             bodYparams.add(matcher.group(1));
                                         }
@@ -663,7 +669,7 @@ public class ApiUtils {
                 JsonNode jsonArray = null;
                 try {
                     jsonArray = objectMapper.readTree(response);
-                } catch (Exception e) {
+                } catch (JsonProcessingException e) {
                     CrestException.throwException(e);
                 }
                 for (Object o : jsonArray) {
@@ -685,18 +691,13 @@ public class ApiUtils {
                 Object object = JsonPath.read(response, jsonPath);
                 jsonPathResultIsList = object instanceof List;
                 currentData = toRowList(object);
-            } catch (Exception e) {
+            } catch (JsonPathException | IllegalArgumentException e) {
                 CrestException.throwException(e);
                 return apiDefinition;
             }
             int i = 0;
-            try {
-                Object data = currentData.get(0);
-                if (!(data instanceof Map)) {
-                    CrestException.throwException("数据不符合规范");
-                }
-            } catch (Exception e) {
-                CrestException.throwException("数据不符合规范, " + e.getMessage());
+            if (currentData.isEmpty() || !(currentData.get(0) instanceof Map)) {
+                CrestException.throwException("数据不符合规范");
             }
             String rootPath = jsonPathResultIsList ? appendListWildcard(jsonPath) : jsonPath;
             for (Object data : currentData) {
@@ -722,7 +723,7 @@ public class ApiUtils {
 
             try {
                 jsonArray = objectMapper.readValue(jsonStr, listTypeReference);
-            } catch (Exception e) {
+            } catch (JsonProcessingException e) {
                 CrestException.throwException(e);
             }
             for (Object o : jsonArray) {
@@ -732,7 +733,7 @@ public class ApiUtils {
             JsonNode jsonNode = null;
             try {
                 jsonNode = objectMapper.readTree(jsonStr);
-            } catch (Exception e) {
+            } catch (JsonProcessingException e) {
                 CrestException.throwException(e);
             }
             Iterator<String> fieldNames = jsonNode.fieldNames();
@@ -749,7 +750,7 @@ public class ApiUtils {
                         List<Map<String, Object>> childrenField = new ArrayList<>();
                         for (JsonNode node : jsonArray) {
                             if (StringUtils.isNotEmpty(node.toString()) && !node.toString().startsWith("[") && !node.toString().startsWith("{")) {
-                                throw new Exception(node + "is not json type");
+                                throw new IllegalArgumentException(node + "is not json type");
                             }
                         }
                         for (JsonNode node : jsonArray) {
@@ -757,7 +758,7 @@ public class ApiUtils {
                         }
                         o.put("children", childrenField);
                         o.put("childrenDataType", "LIST");
-                    } catch (Exception e) {
+                    } catch (JsonProcessingException | IllegalArgumentException e) {
                         JSONArray array = new JSONArray();
                         array.add(StringUtils.isNotEmpty(jsonNode.get(fieldName).toString()) ? jsonNode.get(fieldName).toString() : "");
                         o.put("value", array);
@@ -780,7 +781,7 @@ public class ApiUtils {
                         if (!hasItem(apiDefinition, fields, o)) {
                             fields.add(o);
                         }
-                    } catch (Exception e) {
+                    } catch (JsonProcessingException | IllegalArgumentException e) {
                         Map<String, Object> o = new HashMap<>();
                         o.put("jsonPath", rootPath + "." + String.format(path, fieldName));
                         setProperty(apiDefinition, o, fieldName);
@@ -850,7 +851,7 @@ public class ApiUtils {
             try {
                 fieldChildren = objectMapper.readValue(JsonUtil.toJSONString(field.get("children")).toString(), listForMapTypeReference);
                 itemChildren = objectMapper.readValue(JsonUtil.toJSONString(item.get("children")).toString(), listForMapTypeReference);
-            } catch (Exception e) {
+            } catch (JsonProcessingException e) {
                 CrestException.throwException(e);
             }
             if (fieldChildren == null) {
@@ -899,7 +900,7 @@ public class ApiUtils {
                 }
                 field.put("children", fieldArrayChildren);
             }
-        } catch (Exception e) {
+        } catch (JsonProcessingException | IllegalArgumentException e) {
             io.crest.utils.LogUtil.error(e.getMessage(), e);
             CrestException.throwException(e);
         }
@@ -929,7 +930,7 @@ public class ApiUtils {
                     Object value;
                     try {
                         value = JsonPath.using(jsonPathConf).parse(rowJson).read(relativePath);
-                    } catch (Exception e) {
+                    } catch (JsonPathException e) {
                         value = data instanceof Map<?, ?> map ? map.get(field.getOriginName()) : null;
                     }
                     row[i] = cellValue(value);
@@ -966,7 +967,7 @@ public class ApiUtils {
             }
             for (int i = 0; i < columnDataList.size(); i++) {
                 for (int j = 0; j < columnDataList.get(i).size(); j++) {
-                    dataList.get(j)[i] = Optional.ofNullable(String.valueOf(columnDataList.get(i).get(j))).orElse("").replaceAll("\n", " ").replaceAll("\r", " ");
+                    dataList.get(j)[i] = Optional.ofNullable(String.valueOf(columnDataList.get(i).get(j))).orElse("").replace("\n", " ").replace("\r", " ");
                 }
             }
         }
