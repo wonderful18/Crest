@@ -11,6 +11,25 @@ const createFieldMap = fields =>
 const buildCellsForRange = ({ data, field, colIndex, start, end }) => {
   const mergeCells = []
   const nextRanges = []
+
+  const allSame = start < end && data[start]?.[field] != null &&
+    data.slice(start, end + 1).every(row => row?.[field] === data[start]?.[field])
+  if (allSame) {
+    const range = end - start + 1
+    const textIndex = range % 2 === 1 ? (range - 1) / 2 : range / 2 - 1
+    const tmpMergeCells = []
+    for (let j = 0; j < range; j++) {
+      tmpMergeCells.push({
+        colIndex,
+        rowIndex: start + j,
+        showText: j === textIndex
+      })
+    }
+    mergeCells.push(tmpMergeCells)
+    nextRanges.push([start, end])
+    return { mergeCells, nextRanges }
+  }
+
   let lastVal = data[start]?.[field]
   let lastIndex = start
 
@@ -67,6 +86,14 @@ const buildContextRanges = (data, contextFields) => {
   return ranges
 }
 
+const isFieldAllSame = (data, field) => {
+  if (data.length < 2) {
+    return false
+  }
+  const first = data[0]?.[field]
+  return data.every(row => row?.[field] === first)
+}
+
 export const getMergeableFieldOptions = axis => {
   const options = []
   for (const item of axis || []) {
@@ -115,10 +142,11 @@ export const buildMergeCellsInfo = ({ fields, meta, data, showIndex = false, mer
 
   if (isCustomMerge) {
     columnsToMerge.forEach(column => {
-      const contextFields = mergeableColumns
-        .filter(item => item.axisIndex < column.axisIndex)
-        .map(item => item.field)
-      const ranges = buildContextRanges(tableData, contextFields)
+      const ranges = isFieldAllSame(tableData, column.field)
+        ? [[0, tableData.length - 1]]
+        : buildContextRanges(tableData, mergeableColumns
+          .filter(item => item.axisIndex < column.axisIndex)
+          .map(item => item.field))
       ranges.forEach(([start, end]) => {
         const result = buildCellsForRange({
           data: tableData,
@@ -137,7 +165,10 @@ export const buildMergeCellsInfo = ({ fields, meta, data, showIndex = false, mer
 
   columnsToMerge.forEach(column => {
     const nextRanges = []
-    ranges.forEach(([start, end]) => {
+    const columnRanges = isFieldAllSame(tableData, column.field)
+      ? [[0, tableData.length - 1]]
+      : ranges
+    columnRanges.forEach(([start, end]) => {
       const result = buildCellsForRange({
         data: tableData,
         field: column.field,
