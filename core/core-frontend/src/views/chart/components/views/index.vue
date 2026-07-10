@@ -1070,7 +1070,7 @@ const showActionIcons = computed(() => {
   if (!chartHover.value) {
     return false
   }
-  return trackMenu.value.length > 0 || state.title_remark.show
+  return trackMenu.value.length > 0
 })
 const chartConfigs = ref(CHART_TYPE_CONFIGS)
 const pluginLoaded = computed(() => {
@@ -1180,6 +1180,28 @@ const clearG2Tooltip = () => {
           @change="onTitleChange"
         />
       </template>
+      <el-tooltip
+        :effect="toolTip"
+        placement="top"
+        v-if="state.title_remark.show"
+        class="title-remark-icon"
+      >
+        <template #content>
+          <div
+            :style="{
+              maxWidth: titleTooltipWidth,
+              wordBreak: 'break-all',
+              wordWrap: 'break-word',
+              whiteSpace: 'pre-wrap'
+            }"
+          >
+            {{ state.title_remark.remark }}
+          </div>
+        </template>
+        <el-icon :size="iconSize" class="inner-icon">
+          <Icon name="icon_info_outlined"><icon_info_outlined class="svg-icon" /></Icon>
+        </el-icon>
+      </el-tooltip>
       <transition name="fade">
         <div v-show="showActionIcons" class="icons-container-out">
           <div
@@ -1187,23 +1209,6 @@ const clearG2Tooltip = () => {
             :class="{ 'is-editing': titleEditStatus }"
             :style="titleIconStyle"
           >
-            <el-tooltip :effect="toolTip" placement="top" v-if="state.title_remark.show">
-              <template #content>
-                <div
-                  :style="{
-                    maxWidth: titleTooltipWidth,
-                    wordBreak: 'break-all',
-                    wordWrap: 'break-word',
-                    whiteSpace: 'pre-wrap'
-                  }"
-                >
-                  {{ state.title_remark.remark }}
-                </div>
-              </template>
-              <el-icon :size="iconSize" class="inner-icon">
-                <Icon name="icon_info_outlined"><icon_info_outlined class="svg-icon" /></Icon>
-              </el-icon>
-            </el-tooltip>
             <el-tooltip :effect="toolTip" placement="top" content="已设置联动" v-if="hasLinkIcon">
               <el-icon :size="iconSize" class="inner-icon">
                 <Icon name="icon_link-record_outlined"
@@ -1350,6 +1355,13 @@ const clearG2Tooltip = () => {
   justify-content: center;
 
   gap: 8px;
+
+  .title-remark-icon {
+    display: inline-flex;
+    align-items: center;
+    color: #646a73;
+    cursor: pointer;
+  }
 
   .icons-container-out {
     position: relative;
