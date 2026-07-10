@@ -6,7 +6,7 @@
     <groupId>io.crest</groupId>
     <artifactId>crest</artifactId>
     <name>crest-platform</name>
-    <version>1.5.16</version>
+    <version>1.5.17</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -21,7 +21,7 @@
     </parent>
 
     <properties>
-        <crest.version>1.5.16</crest.version>
+        <crest.version>1.5.17</crest.version>
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skipTests>false</skipTests>
