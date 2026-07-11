@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 
 @Schema(description = "批量导入结果")
 @Data
@@ -22,6 +23,8 @@ public class UserImportVO implements Serializable {
     private int successCount;
     @Schema(description = "失败数量")
     private int errorCount;
+    @Schema(description = "失败详情")
+    private List<String> errors;
 
     public UserImportVO(String dataKey) {
         this.dataKey = dataKey;

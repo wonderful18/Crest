@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Component
@@ -26,6 +27,9 @@ public class PlatformPermissionManage {
     public static final long SYSTEM_ADMIN_ROLE_ID = 1L;
     public static final long MEMBER_ROLE_ID = 2L;
     public static final long AUDITOR_ROLE_ID = 3L;
+
+    private static final Set<String> ALLOWED_RESOURCE_TYPES = Set.of("datasource", "dataset", "panel", "screen");
+    private static final Pattern ALLOWED_COLUMN_PATTERN = Pattern.compile("^[A-Za-z_][A-Za-z0-9_.]*$");
 
     @Resource
     private JdbcTemplate jdbcTemplate;
@@ -202,6 +206,14 @@ public class PlatformPermissionManage {
     }
 
     public String resourceScopeSql(String resourceType, String resourceIdColumn, String creatorColumn, String orgColumn) {
+        if (!ALLOWED_RESOURCE_TYPES.contains(resourceType)) {
+            throw new IllegalArgumentException("invalid resource type: " + resourceType);
+        }
+        validateColumn(creatorColumn, "creatorColumn");
+        validateColumn(resourceIdColumn, "resourceIdColumn");
+        if (StringUtils.isNotBlank(orgColumn)) {
+            validateColumn(orgColumn, "orgColumn");
+        }
         Long uid = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
         Long oid = AuthUtils.getUser() == null ? ROOT_ORG_ID : AuthUtils.getUser().getDefaultOid();
         if (uid == null || isSystemAdmin(uid)) {
@@ -324,6 +336,12 @@ public class PlatformPermissionManage {
         Long uid = AuthUtils.getUser() == null ? null : AuthUtils.getUser().getUserId();
         if (!isSystemAdmin(uid)) {
             CrestException.throwException("当前用户没有系统管理权限");
+        }
+    }
+
+    private void validateColumn(String column, String name) {
+        if (StringUtils.isBlank(column) || !ALLOWED_COLUMN_PATTERN.matcher(column).matches()) {
+            throw new IllegalArgumentException("invalid " + name + ": " + column);
         }
     }
 

@@ -1,5 +1,34 @@
 # Changelog
 
+## v1.5.18 - 2026-07-11
+
+v1.5.18 是 v1.5.17 之后的安全补丁版本，修复系统管理模块安全审计报告中遗留的 6 个高危问题。本版本没有新增数据库结构，无需执行升级 SQL。
+
+### 修复
+
+- 修复 SSO 回调缺少 nonce 校验的问题：callback 阶段现在会从 id_token 中提取 nonce 声明，与登录发起时缓存的 nonce 比对；id_token 未包含 nonce 时记录告警日志。
+- 修复 SSO id_token claims 未校验的问题：现在会校验 id_token 的 issuer（如已配置）、audience（与 clientId 比对）和 expiration 声明，防止伪造 id_token payload 中的用户身份。
+- 新增 SSO id_token 签名验证：配置 JWKS 公钥端点后，系统会从 JWKS 获取公钥验证 id_token 的 RSA 签名；未配置 JWKS 时保持 claims 校验模式（向后兼容）。
+- 修复 SSO 生成的 token 永不过期的问题：SSO 登录生成的 token 现在设置 24 小时有效期，与本地登录保持一致；密码修改后旧 token 将在过期后失效。
+- 修复权限范围 SQL 中 resourceType 参数未做白名单校验的问题：resourceScopeSql 现在对 resourceType 执行白名单校验（datasource、dataset、panel、screen），并对列名参数执行格式校验，防止 SQL 注入。
+- 修复 communityScopeSql 中 uid 值字符串拼接的问题：现在会校验 uid 字符串为纯数字后才拼接到 SQL，非数字值会跳过范围过滤并记录告警日志。
+- 修复用户批量导入静默失败的问题：导入异常现在会记录告警日志，并在返回结果中包含每条失败记录的账号和错误原因。
+
+### 验证
+
+- 新增 SSO nonce 校验、id_token claims 校验和 token 过期时间单元测试。
+- 新增 SSO id_token JWKS 签名验证单元测试（有效签名通过、篡改签名拒绝、异密钥拒绝、过期拒绝）。
+- 新增 resourceScopeSql 白名单和列名校验单元测试。
+- 新增用户导入异常收集和日志记录单元测试。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.18` 和 `ghcr.io/sevoniva/crest-web:v1.5.18`。
+- 默认离线包为 `crest-offline-v1.5.18-linux-amd64.tar.gz` 和 `crest-offline-v1.5.18-linux-arm64.tar.gz`。
+- 应用镜像升级包为 `crest-app-images-v1.5.18-linux-amd64.tar.gz` 和 `crest-app-images-v1.5.18-linux-arm64.tar.gz`。
+- 默认源码包为 `crest-source-v1.5.18.tar.gz`。
+- 从 v1.5.17 升级到 v1.5.18 时只需要替换前后端镜像，不需要新增升级 SQL。
+
 ## v1.5.17 - 2026-07-09
 
 v1.5.17 是 v1.5.16 之后的 1.5 LTS 补丁版本，修复明细表单元格合并的一个缺陷。本版本没有新增数据库结构，无需执行升级 SQL。

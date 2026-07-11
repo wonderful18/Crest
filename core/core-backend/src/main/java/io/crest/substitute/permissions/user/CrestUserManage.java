@@ -26,6 +26,7 @@ import io.crest.system.sso.SsoIdentityProfile;
 import io.crest.utils.AuthUtils;
 import io.crest.utils.FileUtils;
 import io.crest.utils.IDUtils;
+import io.crest.utils.LogUtil;
 import io.crest.utils.Md5Utils;
 import io.crest.utils.PasswordEncoder;
 import io.crest.utils.PasswordValidator;
@@ -332,9 +333,11 @@ public class CrestUserManage {
         List<UserImportRow> rows = readImportRows(file);
         int success = 0;
         int failed = 0;
+        List<String> errors = new ArrayList<>();
         for (UserImportRow row : rows) {
             if (row == null || StringUtils.isBlank(row.getAccount()) || StringUtils.isBlank(row.getName())) {
                 failed++;
+                errors.add("空行或缺少账号/姓名");
                 continue;
             }
             try {
@@ -348,11 +351,14 @@ public class CrestUserManage {
                 creator.setRoleIds(List.of(PlatformPermissionManage.MEMBER_ROLE_ID));
                 create(creator);
                 success++;
-            } catch (RuntimeException ignored) {
+            } catch (RuntimeException e) {
                 failed++;
+                String detail = row.getAccount().trim() + ": " + e.getMessage();
+                errors.add(detail);
+                LogUtil.warn("用户导入失败: {}", detail);
             }
         }
-        return new UserImportVO("user-import", success, failed);
+        return new UserImportVO("user-import", success, failed, errors);
     }
 
     private List<UserImportRow> readImportRows(MultipartFile file) throws IOException {
