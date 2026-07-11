@@ -63,15 +63,19 @@ public class CrestPermissionUtils {
         if (ObjectUtils.isEmpty(uid) || currentUserIsAdmin()) {
             return null;
         }
-        String safeUid = Strings.CS.replace(String.valueOf(uid), "'", "''");
-        return """
-                SELECT 1 FROM (
-                  SELECT CAST(id AS CHAR) AS resource_id, create_by FROM data_source
-                  UNION ALL SELECT CAST(id AS CHAR) AS resource_id, create_by FROM dataset_group
-                  UNION ALL SELECT CAST(id AS CHAR) AS resource_id, create_by FROM bi_chart
-                  UNION ALL SELECT CAST(id AS CHAR) AS resource_id, create_by FROM bi_visualization
-                ) resource_scope
-                WHERE resource_scope.resource_id = CAST(%s AS CHAR)
-                  AND (resource_scope.create_by IS NULL OR resource_scope.create_by <> '""" + safeUid + "')";
+        String uidStr = String.valueOf(uid);
+        if (uidStr.chars().allMatch(Character::isDigit)) {
+            return """
+                    SELECT 1 FROM (
+                      SELECT CAST(id AS CHAR) AS resource_id, create_by FROM data_source
+                      UNION ALL SELECT CAST(id AS CHAR) AS resource_id, create_by FROM dataset_group
+                      UNION ALL SELECT CAST(id AS CHAR) AS resource_id, create_by FROM bi_chart
+                      UNION ALL SELECT CAST(id AS CHAR) AS resource_id, create_by FROM bi_visualization
+                    ) resource_scope
+                    WHERE resource_scope.resource_id = CAST(%s AS CHAR)
+                      AND (resource_scope.create_by IS NULL OR resource_scope.create_by <> '""" + uidStr + "')";
+        }
+        LogUtil.warn("communityScopeSql uid is not numeric, skipping scope filter: {}", uidStr);
+        return null;
     }
 }

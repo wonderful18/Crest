@@ -24,6 +24,7 @@ import io.crest.utils.HttpClientConfig;
 import io.crest.utils.HttpClientUtil;
 import io.crest.utils.IDUtils;
 import io.crest.utils.JsonUtil;
+import io.crest.utils.LogUtil;
 import io.crest.utils.SignedTokenUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -49,6 +50,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.Date;
 
 @Component
 public class SsoManage {
@@ -63,6 +65,7 @@ public class SsoManage {
     private static final Pattern CALLBACK_HOST_PATTERN = Pattern.compile("[A-Za-z0-9.-]+");
     private static final Pattern ABSOLUTE_URI_PATTERN = Pattern.compile("(?i)^[a-z][a-z\\d+.-]*:.*");
     private static final String DEFAULT_REDIRECT = "/workbranch/index";
+    private static final long ACCESS_TOKEN_EXPIRATION_MILLIS = 24 * 60 * 60 * 1000L;
 
     @Resource
     private SysParameterManage sysParameterManage;
@@ -186,7 +189,7 @@ public class SsoManage {
             if (StringUtils.isBlank(accessToken)) {
                 throw new IllegalStateException("令牌响应中缺少 access_token");
             }
-            Map<String, Object> claims = identityClaims(config, token, accessToken);
+            Map<String, Object> claims = identityClaims(config, token, accessToken, ssoState);
             SsoIdentityProfile profile = profile(config, claims);
             CrestUser user = ssoLoginIdentityManage.resolve(profile, Boolean.TRUE.equals(config.getAutoCreateUser()), config.getProviderName());
             TokenVO tokenVO = generate(user);
@@ -336,9 +339,10 @@ public class SsoManage {
         return result;
     }
 
-    private Map<String, Object> identityClaims(SsoConfigVO config, Map<String, Object> token, String accessToken) {
+    private Map<String, Object> identityClaims(SsoConfigVO config, Map<String, Object> token, String accessToken, SsoState ssoState) {
         Map<String, Object> claims = new HashMap<>();
-        mergeNonBlank(claims, jwtClaims(asText(token.get("id_token"))));
+        Map<String, Object> idTokenClaims = verifiedIdTokenClaims(asText(token.get("id_token")), config, ssoState);
+        mergeNonBlank(claims, idTokenClaims);
         mergeNonBlank(claims, jwtClaims(accessToken));
         try {
             mergeNonBlank(claims, fetchUserInfo(config.getUserInfoEndpoint(), accessToken));
@@ -348,6 +352,54 @@ public class SsoManage {
             }
         }
         return claims;
+    }
+
+    private Map<String, Object> verifiedIdTokenClaims(String idToken, SsoConfigVO config, SsoState ssoState) {
+        Map<String, Object> claims = jwtClaims(idToken);
+        if (claims.isEmpty()) {
+            return claims;
+        }
+        validateIdTokenClaims(claims, config, ssoState);
+        return claims;
+    }
+
+    private void validateIdTokenClaims(Map<String, Object> claims, SsoConfigVO config, SsoState ssoState) {
+        String expectedIssuer = config.getIssuer();
+        if (StringUtils.isNotBlank(expectedIssuer)) {
+            Object actualIssuer = claims.get("iss");
+            if (actualIssuer == null || !expectedIssuer.equals(actualIssuer.toString())) {
+                throw new IllegalStateException("单点登录 id_token 签发方不匹配");
+            }
+        }
+        Object aud = claims.get("aud");
+        if (aud == null) {
+            throw new IllegalStateException("单点登录 id_token 缺少受众声明");
+        }
+        boolean audMatch = aud instanceof List<?> list
+                ? list.stream().anyMatch(item -> config.getClientId().equals(String.valueOf(item)))
+                : config.getClientId().equals(String.valueOf(aud));
+        if (!audMatch) {
+            throw new IllegalStateException("单点登录 id_token 受众不匹配");
+        }
+        Object expValue = claims.get("exp");
+        if (expValue instanceof Number number) {
+            long expSeconds = number.longValue();
+            if (expSeconds > 0 && System.currentTimeMillis() / 1000 > expSeconds) {
+                throw new IllegalStateException("单点登录 id_token 已过期");
+            }
+        }
+        if (ssoState != null && StringUtils.isNotBlank(ssoState.nonce())) {
+            Object tokenNonce = claims.get("nonce");
+            if (tokenNonce != null) {
+                if (!ssoState.nonce().equals(String.valueOf(tokenNonce))) {
+                    throw new IllegalStateException("单点登录 nonce 校验失败");
+                }
+            } else {
+                LogUtil.warn("SSO id_token 未包含 nonce 声明，建议确认身份提供方支持 OIDC nonce");
+            }
+        }
+        LogUtil.info("SSO id_token claims validated, nonce={}",
+                claims.get("nonce") != null ? "verified" : "absent");
     }
 
     private Map<String, Object> jwtClaims(String token) {
@@ -417,8 +469,9 @@ public class SsoManage {
         Map<String, Object> claims = new LinkedHashMap<>();
         claims.put("uid", bo.getUserId());
         claims.put("oid", bo.getDefaultOid());
-        String token = SignedTokenUtils.sign(claims, user.getPasswordHash(), null);
-        return new TokenVO(token, 0L);
+        Date expiresAt = new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION_MILLIS);
+        String token = SignedTokenUtils.sign(claims, user.getPasswordHash(), expiresAt);
+        return new TokenVO(token, ACCESS_TOKEN_EXPIRATION_MILLIS);
     }
 
     private String callbackUrl(HttpServletRequest request, SsoConfigVO config) {
