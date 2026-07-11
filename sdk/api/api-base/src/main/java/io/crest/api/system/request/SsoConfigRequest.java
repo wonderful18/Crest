@@ -66,4 +66,7 @@ public class SsoConfigRequest {
 
     @Schema(description = "退出后跳转地址")
     private String logoutRedirectUrl;
+
+    @Schema(description = "JWKS公钥端点，配置后会对id_token进行签名验证")
+    private String jwksUri;
 }

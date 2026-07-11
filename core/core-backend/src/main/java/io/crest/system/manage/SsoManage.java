@@ -1,5 +1,10 @@
 package io.crest.system.manage;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.crest.api.system.request.SsoConfigRequest;
 import io.crest.api.system.vo.SettingItemVO;
@@ -111,6 +116,7 @@ public class SsoManage {
         vo.setAllowLocalLogin(bool(values, "allowLocalLogin", true));
         vo.setRequireHttps(bool(values, "requireHttps", true));
         vo.setLogoutRedirectUrl(text(values, "logoutRedirectUrl", ""));
+        vo.setJwksUri(text(values, "jwksUri", ""));
         String encryptedSecret = text(values, "clientSecret", "");
         vo.setClientSecret("");
         vo.setSecretConfigured(StringUtils.isNotBlank(encryptedSecret));
@@ -248,6 +254,7 @@ public class SsoManage {
         vo.setAllowLocalLogin(request.getAllowLocalLogin() == null || request.getAllowLocalLogin());
         vo.setRequireHttps(request.getRequireHttps() == null || request.getRequireHttps());
         vo.setLogoutRedirectUrl(StringUtils.trimToEmpty(request.getLogoutRedirectUrl()));
+        vo.setJwksUri(StringUtils.trimToEmpty(request.getJwksUri()));
         return vo;
     }
 
@@ -268,6 +275,9 @@ public class SsoManage {
         }
         if (StringUtils.isNotBlank(config.getLogoutRedirectUrl())) {
             validateEndpoint(config.getLogoutRedirectUrl(), config.getRequireHttps(), "退出跳转地址");
+        }
+        if (StringUtils.isNotBlank(config.getJwksUri())) {
+            validateEndpoint(config.getJwksUri(), config.getRequireHttps(), "JWKS公钥端点");
         }
     }
 
@@ -297,6 +307,7 @@ public class SsoManage {
         add(items, "allowLocalLogin", config.getAllowLocalLogin(), 18);
         add(items, "requireHttps", config.getRequireHttps(), 19);
         add(items, "logoutRedirectUrl", config.getLogoutRedirectUrl(), 20);
+        add(items, "jwksUri", config.getJwksUri(), 21);
         return items;
     }
 
@@ -355,7 +366,15 @@ public class SsoManage {
     }
 
     private Map<String, Object> verifiedIdTokenClaims(String idToken, SsoConfigVO config, SsoState ssoState) {
-        Map<String, Object> claims = jwtClaims(idToken);
+        if (StringUtils.isBlank(idToken)) {
+            return Map.of();
+        }
+        Map<String, Object> claims;
+        if (StringUtils.isNotBlank(config.getJwksUri())) {
+            claims = verifyIdTokenSignature(idToken, config);
+        } else {
+            claims = jwtClaims(idToken);
+        }
         if (claims.isEmpty()) {
             return claims;
         }
@@ -400,6 +419,59 @@ public class SsoManage {
         }
         LogUtil.info("SSO id_token claims validated, nonce={}",
                 claims.get("nonce") != null ? "verified" : "absent");
+    }
+
+    private Map<String, Object> verifyIdTokenSignature(String idToken, SsoConfigVO config) {
+        try {
+            DecodedJWT decoded = JWT.decode(idToken);
+            String kid = decoded.getKeyId();
+            Algorithm algorithm = rsaAlgorithm(config, kid);
+            JWTVerifier verifier = JWT.require(algorithm)
+                    .withIssuer(config.getIssuer())
+                    .withAudience(config.getClientId())
+                    .build();
+            DecodedJWT verified = verifier.verify(idToken);
+            String payload = new String(Base64.getUrlDecoder().decode(verified.getPayload()), StandardCharsets.UTF_8);
+            Map<String, Object> result = JsonUtil.parseObject(payload, new TypeReference<>() {});
+            return result == null ? Map.of() : result;
+        } catch (JWTVerificationException e) {
+            throw new IllegalStateException("单点登录 id_token 签名验证失败: " + e.getMessage(), e);
+        }
+    }
+
+    private Algorithm rsaAlgorithm(SsoConfigVO config, String kid) {
+        try {
+            String jwksJson = fetchJwks(config.getJwksUri());
+            List<Map<String, Object>> keys = JsonUtil.parseObject(jwksJson,
+                    new TypeReference<Map<String, Object>>() {}).get("keys") instanceof List<?> list
+                    ? list.stream().map(item -> (Map<String, Object>) item).toList()
+                    : List.of();
+            Map<String, Object> matchedKey = keys.stream()
+                    .filter(key -> kid == null || kid.equals(String.valueOf(key.get("kid"))))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("JWKS中未找到匹配的密钥: kid=" + kid));
+            String n = String.valueOf(matchedKey.get("n"));
+            String e = String.valueOf(matchedKey.get("e"));
+            java.math.BigInteger modulus = new java.math.BigInteger(1, Base64.getUrlDecoder().decode(n));
+            java.math.BigInteger exponent = new java.math.BigInteger(1, Base64.getUrlDecoder().decode(e));
+            java.security.spec.RSAPublicKeySpec spec = new java.security.spec.RSAPublicKeySpec(modulus, exponent);
+            java.security.PublicKey publicKey = java.security.KeyFactory.getInstance("RSA").generatePublic(spec);
+            return Algorithm.RSA256((java.security.interfaces.RSAPublicKey) publicKey, null);
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("JWKS密钥获取或解析失败: " + e.getMessage(), e);
+        }
+    }
+
+    private String fetchJwks(String jwksUri) {
+        HttpClientConfig clientConfig = new HttpClientConfig();
+        clientConfig.addHeader("Accept", "application/json");
+        String response = HttpClientUtil.get(jwksUri, clientConfig);
+        if (StringUtils.isBlank(response)) {
+            throw new IllegalStateException("JWKS端点返回空响应");
+        }
+        return response;
     }
 
     private Map<String, Object> jwtClaims(String token) {
