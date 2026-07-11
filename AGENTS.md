@@ -6,7 +6,7 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 ## 0. Crest Branch and Release Rules
 
-Before making code changes, classify the request and choose the branch path from [docs/release-process.md](./docs/release-process.md).
+Before making code changes, classify the request and choose the branch path.
 
 - Released-version bug, production bug, internal bug on a released line, or "repackage after bug fix": use `hotfix/<next-version>-<short-name>` from the active LTS branch matching the affected line — `release/1.5-lts` for `v1.5.x`, `release/2.1-lts` for `v2.1.x`; bump to the next patch version and add release notes. Do not move or overwrite an existing released tag.
 - New feature or planned product change: use `feat/<short-name>` into `dev`.

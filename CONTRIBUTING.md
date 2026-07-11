@@ -28,7 +28,7 @@
 
 ## 分支和提交
 
-分支和发布规则见 [docs/release-process.md](./docs/release-process.md)。受保护分支包括 `main`、`dev` 和 `release/*`，必须通过 PR 合入。
+分支和发布规则：受保护分支包括 `main`、`dev` 和 `release/*`，必须通过 PR 合入。
 
 新功能从 `dev` 创建短生命周期分支：
 
