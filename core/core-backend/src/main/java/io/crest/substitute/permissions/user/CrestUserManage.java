@@ -48,7 +48,13 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import jakarta.annotation.PreDestroy;
 
 @Component("crestUserManage")
 public class CrestUserManage {
@@ -60,6 +66,22 @@ public class CrestUserManage {
     private static final String INITIAL_CREDENTIAL_PROPERTY = "crest.user.initial-password";
     private static final Pattern ACCOUNT_PATTERN = Pattern.compile("^[A-Za-z0-9._@-]{1,64}$");
     private static final Pattern UNSAFE_DISPLAY_NAME_PATTERN = Pattern.compile("[<>\\p{Cntrl}]");
+    // 注入防护：姓名/邮箱/手机号严格白名单，拒绝单引号、分号、注释符等 SQL 元字符
+    private static final Pattern SAFE_DISPLAY_NAME_PATTERN = Pattern.compile("^[\\w\\u4e00-\\u9fa5 .@+\\-_()]+$");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9+\\-()\\s]{5,20}$");
+
+    // token secret 缓存：避免每次校验 token 都回查数据库（MEDIUM-2）。
+    // 短 TTL + 写密码时显式失效，兼顾性能与“改密即失效旧 token”的语义。
+    private static final long SECRET_CACHE_TTL_MS = 60_000L;
+    private static final long SECRET_CACHE_SWEEP_MS = 30_000L;
+    private final Map<Long, SecretCacheEntry> secretCache = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService secretCacheSweeper =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "crest-secret-cache-sweeper");
+                t.setDaemon(true);
+                return t;
+            });
 
     @Resource
     private JdbcTemplate jdbcTemplate;
@@ -115,6 +137,7 @@ public class CrestUserManage {
                 jdbcTemplate.update("UPDATE iam_user SET is_admin = 1, enable = 1 WHERE id = 1");
             }
         }
+        invalidateSecretCache(1L);
     }
 
     public CrestUser queryByAccount(String account) {
@@ -137,8 +160,62 @@ public class CrestUserManage {
     }
 
     public String secretByUid(Long uid) {
+        if (uid == null) {
+            return null;
+        }
+        SecretCacheEntry entry = secretCache.get(uid);
+        if (entry != null && !entry.isExpired()) {
+            return entry.value;
+        }
         CrestUser user = queryById(uid);
-        return user == null ? null : user.getPasswordHash();
+        String secret = user == null ? null : user.getPasswordHash();
+        if (secret != null) {
+            secretCache.put(uid, new SecretCacheEntry(secret, SECRET_CACHE_TTL_MS));
+        } else {
+            // 不为空结果做缓存，保证用户被删除后 token 立即失效
+            secretCache.remove(uid);
+        }
+        return secret;
+    }
+
+    private void invalidateSecretCache(Long uid) {
+        if (uid != null) {
+            secretCache.remove(uid);
+        }
+    }
+
+    private void sweepSecretCache() {
+        long now = System.currentTimeMillis();
+        secretCache.entrySet().removeIf(e -> e.getValue().isExpired(now));
+    }
+
+    @PostConstruct
+    public void initSecretCacheSweeper() {
+        secretCacheSweeper.scheduleWithFixedDelay(this::sweepSecretCache,
+                SECRET_CACHE_SWEEP_MS, SECRET_CACHE_SWEEP_MS, TimeUnit.MILLISECONDS);
+    }
+
+    @PreDestroy
+    public void destroySecretCacheSweeper() {
+        secretCacheSweeper.shutdownNow();
+    }
+
+    private static final class SecretCacheEntry {
+        private final String value;
+        private final long expireAt;
+
+        SecretCacheEntry(String value, long ttlMs) {
+            this.value = value;
+            this.expireAt = System.currentTimeMillis() + ttlMs;
+        }
+
+        boolean isExpired() {
+            return System.currentTimeMillis() >= expireAt;
+        }
+
+        boolean isExpired(long now) {
+            return now >= expireAt;
+        }
     }
 
     public boolean passwordMatches(CrestUser user, String rawPassword) {
@@ -161,6 +238,7 @@ public class CrestUserManage {
             String newHash = PasswordEncoder.encode(rawPassword);
             jdbcTemplate.update("UPDATE iam_user SET password_hash = ? WHERE id = ?",
                     newHash, user.getId());
+            invalidateSecretCache(user.getId());
         }
 
         return matches;
@@ -176,7 +254,7 @@ public class CrestUserManage {
         if (profile == null || StringUtils.isBlank(profile.getExternalId())) {
             CrestException.throwException("单点登录用户唯一标识不能为空");
         }
-        validate(profile.getAccount(), StringUtils.defaultIfBlank(profile.getName(), profile.getAccount()));
+        validate(profile.getAccount(), StringUtils.defaultIfBlank(profile.getName(), profile.getAccount()), profile.getEmail(), null);
         String account = profile.getAccount().trim();
         String name = StringUtils.defaultIfBlank(profile.getName(), account).trim();
         String email = StringUtils.trimToNull(profile.getEmail());
@@ -199,6 +277,7 @@ public class CrestUserManage {
                     true, false, 2, AUTH_TYPE_SSO, profile.getExternalId(), now, now, now);
             platformPermissionManage.bindUserToOrg(id, PlatformPermissionManage.ROOT_ORG_ID, true);
             platformPermissionManage.bindUserToRole(id, PlatformPermissionManage.ROOT_ORG_ID, PlatformPermissionManage.MEMBER_ROLE_ID);
+            invalidateSecretCache(id);
             return queryById(id);
         }
         if (Boolean.FALSE.equals(user.getEnable())) {
@@ -233,6 +312,7 @@ public class CrestUserManage {
                     true, false, 2, AUTH_TYPE_SSO, profile.getExternalSubject(), now, now, now);
             platformPermissionManage.bindUserToOrg(id, PlatformPermissionManage.ROOT_ORG_ID, true);
             platformPermissionManage.bindUserToRole(id, PlatformPermissionManage.ROOT_ORG_ID, PlatformPermissionManage.MEMBER_ROLE_ID);
+            invalidateSecretCache(id);
             return queryById(id);
         }
         Long userId = decision.getUserId();
@@ -391,6 +471,7 @@ public class CrestUserManage {
             importRow.setName(cols.length > 1 ? StringUtils.trimToNull(cols[1]) : null);
             importRow.setEmail(cols.length > 2 ? StringUtils.trimToNull(cols[2]) : null);
             importRow.setPhone(cols.length > 3 ? StringUtils.trimToNull(cols[3]) : null);
+            validateProfileFields(importRow.getName(), importRow.getEmail(), importRow.getPhone());
             result.add(importRow);
         }
         return result;
@@ -430,7 +511,7 @@ public class CrestUserManage {
 
     @Transactional
     public Long create(UserCreator creator) {
-        validate(creator.getAccount(), creator.getName());
+        validate(creator.getAccount(), creator.getName(), creator.getEmail(), creator.getPhone());
         if (queryByAccount(creator.getAccount()) != null) {
             CrestException.throwException("账号已存在");
         }
@@ -462,6 +543,7 @@ public class CrestUserManage {
                 0, AUTH_TYPE_LOCAL, null, now, now);
         platformPermissionManage.bindUserToOrg(id, oid, true);
         platformPermissionManage.replaceUserRoles(id, oid, creator.getRoleIds());
+        invalidateSecretCache(id);
         return id;
     }
 
@@ -485,7 +567,7 @@ public class CrestUserManage {
             }
         }
 
-        validate(editor.getAccount(), editor.getName());
+        validate(editor.getAccount(), editor.getName(), editor.getEmail(), editor.getPhone());
         if (AUTH_TYPE_SSO.equalsIgnoreCase(user.getAuthType()) && !Strings.CS.equals(user.getAccount(), editor.getAccount().trim())) {
             CrestException.throwException("单点登录用户账号由身份提供方维护");
         }
@@ -511,6 +593,7 @@ public class CrestUserManage {
                     """, editor.getAccount().trim(), editor.getName().trim(), editor.getEmail(),
                     editor.getPhonePrefix(), editor.getPhone(), editor.getEnable() == null || editor.getEnable(),
                     editor.getId() == 1L || hasAdminRole(editor.getRoleIds()), PasswordEncoder.encode(newPassword), System.currentTimeMillis(), editor.getId());
+            invalidateSecretCache(editor.getId());
         } else {
             jdbcTemplate.update("""
                     UPDATE iam_user
@@ -594,6 +677,7 @@ public class CrestUserManage {
         String password = generateSecurePassword();
         jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, update_time = ? WHERE id = ?",
                 PasswordEncoder.encode(password), System.currentTimeMillis(), id);
+        invalidateSecretCache(id);
         return password;
     }
 
@@ -615,6 +699,7 @@ public class CrestUserManage {
 
         jdbcTemplate.update("UPDATE iam_user SET password_hash = ?, update_time = ? WHERE id = ?",
                 PasswordEncoder.encode(newPwd), System.currentTimeMillis(), id);
+        invalidateSecretCache(id);
     }
 
     public UserFormVO toForm(CrestUser user) {
@@ -673,7 +758,7 @@ public class CrestUserManage {
         return vo;
     }
 
-    private void validate(String account, String name) {
+    private void validate(String account, String name, String email, String phone) {
         if (StringUtils.isBlank(account)) {
             CrestException.throwException("账号不能为空");
         }
@@ -689,6 +774,19 @@ public class CrestUserManage {
         }
         if (UNSAFE_DISPLAY_NAME_PATTERN.matcher(displayName).find()) {
             CrestException.throwException("姓名不能包含 HTML 标签或控制字符");
+        }
+        validateProfileFields(displayName, email, phone);
+    }
+
+    private void validateProfileFields(String name, String email, String phone) {
+        if (StringUtils.isNotBlank(name) && !SAFE_DISPLAY_NAME_PATTERN.matcher(name.trim()).matches()) {
+            CrestException.throwException("姓名包含非法字符");
+        }
+        if (StringUtils.isNotBlank(email) && !EMAIL_PATTERN.matcher(email.trim()).matches()) {
+            CrestException.throwException("邮箱格式不正确");
+        }
+        if (StringUtils.isNotBlank(phone) && !PHONE_PATTERN.matcher(phone.trim()).matches()) {
+            CrestException.throwException("手机号格式不正确");
         }
     }
 

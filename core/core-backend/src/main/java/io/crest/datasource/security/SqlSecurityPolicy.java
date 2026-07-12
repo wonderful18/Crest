@@ -5,8 +5,15 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.text.Normalizer;
 import java.util.Locale;
+import java.util.Set;
 
 public final class SqlSecurityPolicy {
+
+    // 只读上下文绝不允许出现的写/DDL 原语（词边界匹配，避免误伤 create_time 等字段名）
+    private static final Set<String> WRITE_KEYWORDS = Set.of(
+            "insert", "update", "delete", "drop", "alter", "create",
+            "truncate", "grant", "revoke", "merge", "exec", "call", "replace"
+    );
 
     private SqlSecurityPolicy() {
     }
@@ -22,7 +29,39 @@ public final class SqlSecurityPolicy {
                 || lower.startsWith("explain"))) {
             CrestException.throwException("Only read-only SQL is allowed in this context");
         }
+        // 纵深防御：单语句内即便不带分号，也禁止写原语与文件写出（UNION 为数据集合法语法，不在此列）
+        assertNoWritePrimitives(lower);
         return normalized;
+    }
+
+    private static void assertNoWritePrimitives(String lowerSql) {
+        for (String keyword : WRITE_KEYWORDS) {
+            if (containsKeyword(lowerSql, keyword)) {
+                CrestException.throwException("Only read-only SQL is allowed in this context");
+            }
+        }
+        if (lowerSql.contains("into outfile")
+                || lowerSql.contains("into dumpfile")
+                || lowerSql.contains("into table")
+                || lowerSql.contains("for update")) {
+            CrestException.throwException("Only read-only SQL is allowed in this context");
+        }
+    }
+
+    private static boolean containsKeyword(String lowerSql, String keyword) {
+        int idx = 0;
+        while ((idx = lowerSql.indexOf(keyword, idx)) >= 0) {
+            boolean startBoundary = idx == 0
+                    || (!Character.isLetterOrDigit(lowerSql.charAt(idx - 1)) && lowerSql.charAt(idx - 1) != '_');
+            int end = idx + keyword.length();
+            boolean endBoundary = end >= lowerSql.length()
+                    || (!Character.isLetterOrDigit(lowerSql.charAt(end)) && lowerSql.charAt(end) != '_');
+            if (startBoundary && endBoundary) {
+                return true;
+            }
+            idx = end;
+        }
+        return false;
     }
 
     public static String validateSingleStatement(String sql) {

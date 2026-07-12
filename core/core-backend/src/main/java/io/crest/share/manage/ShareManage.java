@@ -119,6 +119,11 @@ public class ShareManage {
         coreShare.setOid(user.getDefaultOid());
         String dType = shareExtMapper.visualizationType(resourceId);
         coreShare.setType(Strings.CI.equals("dataV", dType) ? 2 : 1);
+        // 无密码分享也分配独立随机密钥，避免回落全局 fallback 导致跨资源伪造
+        if (StringUtils.isBlank(coreShare.getPwd())) {
+            coreShare.setPwd(shareSecretManage.generateRandomSecret());
+            coreShare.setAutoPwd(true);
+        }
         coreShareMapper.insert(coreShare);
     }
 
@@ -176,8 +181,14 @@ public class ShareManage {
         if (ObjectUtils.isEmpty(originData)) {
             CrestException.throwException("share instance not exist");
         }
-        originData.setPwd(pwd);
-        originData.setAutoPwd(ObjectUtils.isEmpty(autoPwd) || autoPwd);
+        // 清除密码（pwd 为空）时，分配独立随机密钥，避免回落全局 fallback 造成跨资源伪造
+        if (StringUtils.isBlank(pwd)) {
+            originData.setPwd(shareSecretManage.generateRandomSecret());
+            originData.setAutoPwd(true);
+        } else {
+            originData.setPwd(pwd);
+            originData.setAutoPwd(ObjectUtils.isEmpty(autoPwd) || autoPwd);
+        }
         coreShareMapper.updateById(originData);
     }
 

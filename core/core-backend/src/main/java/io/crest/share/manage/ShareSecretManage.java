@@ -43,6 +43,16 @@ public class ShareSecretManage {
         return getRuntimeFallbackLinkSecret();
     }
 
+    /**
+     * 生成一次性的强随机分享密钥（每次调用独立，不缓存）。
+     * 用于无密码分享：每个分享资源持有自己的密钥，避免共用全局 fallback 导致跨资源伪造。
+     */
+    public String generateRandomSecret() {
+        byte[] secret = new byte[32];
+        SECURE_RANDOM.nextBytes(secret);
+        return "crest-link-token:" + BASE64_URL_ENCODER.encodeToString(secret);
+    }
+
     public String getSecret(Long resourceId, Long uid) {
         QueryWrapper<CoreShare> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("creator", uid);
