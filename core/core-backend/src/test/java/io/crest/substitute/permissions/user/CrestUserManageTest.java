@@ -29,7 +29,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -158,6 +161,54 @@ public class CrestUserManageTest {
 
         assertFalse(current.getAdmin());
         assertFalse(current.getBackendAccess());
+    }
+
+    @Test
+    public void secretByUidCachesAcrossCalls() {
+        CrestUser user = new CrestUser();
+        user.setId(42L);
+        user.setPasswordHash("hash-v1");
+        when(jdbcTemplate.query(eq("SELECT * FROM iam_user WHERE id = ? LIMIT 1"),
+                ArgumentMatchers.<RowMapper<CrestUser>>any(), eq(42L))).thenReturn(List.of(user));
+
+        assertEquals("hash-v1", crestUserManage.secretByUid(42L));
+        assertEquals("hash-v1", crestUserManage.secretByUid(42L));
+
+        verify(jdbcTemplate, times(1)).query(anyString(), any(RowMapper.class), eq(42L));
+    }
+
+    @Test
+    public void invalidateSecretCacheForcesRefetch() {
+        CrestUser user = new CrestUser();
+        user.setId(42L);
+        user.setPasswordHash("hash-v1");
+        when(jdbcTemplate.query(eq("SELECT * FROM iam_user WHERE id = ? LIMIT 1"),
+                ArgumentMatchers.<RowMapper<CrestUser>>any(), eq(42L))).thenReturn(List.of(user));
+
+        assertEquals("hash-v1", crestUserManage.secretByUid(42L));
+        ReflectionTestUtils.invokeMethod(crestUserManage, "invalidateSecretCache", 42L);
+        user.setPasswordHash("hash-v2");
+        assertEquals("hash-v2", crestUserManage.secretByUid(42L));
+
+        verify(jdbcTemplate, times(2)).query(anyString(), any(RowMapper.class), eq(42L));
+    }
+
+    @Test
+    public void resetPwdInvalidatesCachedSecret() {
+        CrestUser user = new CrestUser();
+        user.setId(7L);
+        user.setAuthType(CrestUserManage.AUTH_TYPE_LOCAL);
+        user.setPasswordHash("old-hash");
+        when(jdbcTemplate.query(eq("SELECT * FROM iam_user WHERE id = ? LIMIT 1"),
+                ArgumentMatchers.<RowMapper<CrestUser>>any(), eq(7L))).thenReturn(List.of(user));
+
+        assertEquals("old-hash", crestUserManage.secretByUid(7L));
+        crestUserManage.resetPwd(7L);
+        user.setPasswordHash("new-hash");
+        assertEquals("new-hash", crestUserManage.secretByUid(7L));
+
+        // 失效后至少会再次回查数据库（resetPwd 自身也会查一次）
+        verify(jdbcTemplate, atLeast(2)).query(anyString(), any(RowMapper.class), eq(7L));
     }
 
     private String configuredInitialCredentialField() {

@@ -47,4 +47,30 @@ class SqlSecurityPolicyTest {
         assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("drop table demo_table"));
         assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("select 1; update demo_table set name = 'x'"));
     }
+
+    @Test
+    void validateReadQueryShouldAllowUnionForDatasetGeneration() {
+        assertDoesNotThrow(() -> SqlSecurityPolicy.validateReadQuery(
+                "select id from a union all select id from b"));
+        assertDoesNotThrow(() -> SqlSecurityPolicy.validateReadQuery(
+                "with base as (select 1 as id) select * from base union select 2"));
+    }
+
+    @Test
+    void validateReadQueryShouldRejectWritePrimitivesAndFileOut() {
+        assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("grant all on db.* to 'u'@'%'"));
+        assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("truncate table demo_table"));
+        assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("call proc()"));
+        assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("exec proc"));
+        assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("merge into t using s on t.id = s.id when matched then update set t.v = s.v"));
+        assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("select * from t where id = 1 for update"));
+        assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("select * from t into outfile '/tmp/x'"));
+        assertThrows(CrestException.class, () -> SqlSecurityPolicy.validateReadQuery("select * from t into dumpfile '/tmp/x'"));
+    }
+
+    @Test
+    void validateReadQueryShouldNotRejectCreateTimeColumn() {
+        assertDoesNotThrow(() -> SqlSecurityPolicy.validateReadQuery(
+                "select create_time, update_at from demo_table where id = ?"));
+    }
 }

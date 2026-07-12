@@ -137,15 +137,29 @@ public class SqlParserUtils {
                 sqlItem = sqlItem.replace(sysVariableToken, SubstitutedSystemParamPrefix + sysVariableId);
                 try {
                     Expression expression = CCJSqlParserUtil.parseCondExpression(sqlItem);
-                    String value = null;
                     if (expression instanceof InExpression) {
-                        value = handleSubstitutedSqlForIn(sysVariableId);
+                        // 系统变量走参数化绑定，避免用户可控值拼接进 SQL 造成注入
+                        List<TableFieldWithValue> values = handleSubstitutedSqlForIn(sysVariableId);
+                        if (values != null && !values.isEmpty()) {
+                            StringBuilder placeholders = new StringBuilder("(");
+                            for (int i = 0; i < values.size(); i++) {
+                                if (i > 0) {
+                                    placeholders.append(", ");
+                                }
+                                placeholders.append("?");
+                            }
+                            placeholders.append(")");
+                            sqlItem = sqlItem.replace(SubstitutedSystemParamPrefix + sysVariableId, placeholders.toString());
+                            sqlItemFieldWithValues.addAll(values);
+                            replaceParamItem = true;
+                        }
                     } else {
-                        value = handleSubstitutedSql(sysVariableId);
-                    }
-                    if (StringUtils.isNotEmpty(value)) {
-                        sqlItem = sqlItem.replace(SubstitutedSystemParamPrefix + sysVariableId, value);
-                        replaceParamItem = true;
+                        TableFieldWithValue value = handleSubstitutedSql(sysVariableId);
+                        if (value != null) {
+                            sqlItem = sqlItem.replace(SubstitutedSystemParamPrefix + sysVariableId, "?");
+                            sqlItemFieldWithValues.add(value);
+                            replaceParamItem = true;
+                        }
                     }
                 } catch (JSQLParserException e) {
                     io.crest.utils.LogUtil.error(e.getMessage(), e);
@@ -353,19 +367,26 @@ public class SqlParserUtils {
     private record PreparedSqlFragment(String replacement, List<TableFieldWithValue> tableFieldWithValues) {
     }
 
-    private String handleSubstitutedSql(String sysVariableId) {
+    private static TableFieldWithValue stringParam(String value) {
+        return new TableFieldWithValue()
+                .setValue(value)
+                .setType(Types.VARCHAR)
+                .setColumnTypeName("VARCHAR");
+    }
+
+    private TableFieldWithValue handleSubstitutedSql(String sysVariableId) {
         if (userEntity != null) {
             if (sysVariableId.equalsIgnoreCase("sysParams.userId")) {
-                return userEntity.getAccount();
+                return stringParam(userEntity.getAccount());
             }
             if (sysVariableId.equalsIgnoreCase("sysParams.userEmail")) {
-                return userEntity.getEmail();
+                return stringParam(userEntity.getEmail());
             }
             if (sysVariableId.equalsIgnoreCase("sysParams.userName")) {
-                return userEntity.getName();
+                return stringParam(userEntity.getName());
             }
             if (sysVariableId.equalsIgnoreCase("sysParams.userPhone")) {
-                return userEntity.getPhone();
+                return stringParam(userEntity.getPhone());
             }
             for (SysVariableValueItem variable : userEntity.getVariables()) {
                 if (!variable.isValid()) {
@@ -377,11 +398,11 @@ public class SqlParserUtils {
                 if (variable.getSysVariableDto().getType().equalsIgnoreCase("text")) {
                     for (SysVariableValueDto sysVariableValueDto : variable.getValueList()) {
                         if (variable.getVariableValueIds().contains(sysVariableValueDto.getId().toString())) {
-                            return sysVariableValueDto.getValue();
+                            return stringParam(sysVariableValueDto.getValue());
                         }
                     }
                 } else {
-                    return variable.getVariableValue();
+                    return stringParam(variable.getVariableValue());
                 }
             }
             return null;
@@ -391,10 +412,10 @@ public class SqlParserUtils {
     }
 
 
-    private String handleSubstitutedSqlForIn(String sysVariableId) {
+    private List<TableFieldWithValue> handleSubstitutedSqlForIn(String sysVariableId) {
         if (userEntity != null) {
             for (SysVariableValueItem variable : userEntity.getVariables()) {
-                List<String> values = new ArrayList<>();
+                List<TableFieldWithValue> values = new ArrayList<>();
                 if (!variable.isValid()) {
                     continue;
                 }
@@ -404,12 +425,12 @@ public class SqlParserUtils {
                 if (variable.getSysVariableDto().getType().equalsIgnoreCase("text")) {
                     for (SysVariableValueDto sysVariableValueDto : variable.getValueList()) {
                         if (variable.getVariableValueIds().contains(sysVariableValueDto.getId().toString())) {
-                            values.add(sysVariableValueDto.getValue());
+                            values.add(stringParam(sysVariableValueDto.getValue()));
                         }
                     }
                 }
-                if (CollectionUtils.isNotEmpty(values)) {
-                    return "'" + String.join("','", values) + "'";
+                if (!values.isEmpty()) {
+                    return values;
                 }
             }
             return null;
