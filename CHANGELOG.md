@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.5.19 - 2026-07-12
+
+v1.5.19 是 v1.5.18 之后的安全补丁版本，修复代码审计中确认的 1 个 HIGH 与 3 个 MEDIUM 问题。本版本没有新增数据库结构，无需执行升级 SQL。
+
+### 修复
+
+- 修复 `$crest[]` 系统变量以字符串拼接写入 SQL 的注入风险：改为 `?` 占位符参数化绑定（HIGH-1-B）。
+- 加固只读上下文校验：在 SELECT/WITH/SHOW/DESC/EXPLAIN 与单语句校验之上，新增写/DDL 原语与文件写出拦截；保留 UNION/UNION ALL（数据集生成依赖）（HIGH-1-C）。
+- 无密码分享分配独立随机密钥，避免回落全局 fallback 造成跨资源伪造（MEDIUM-1）。
+- token 签名密钥查询新增 60 秒 TTL 缓存，并在所有改密码路径显式失效，兼顾性能与“改密即失效旧 token”语义（MEDIUM-2）。
+
+### 验证
+
+- 新增/补充 4 个测试类，共 28 个用例全部通过（SqlSecurityPolicyTest、ShareSecretManageTest、CrestUserManageTest、SqlParserUtilsSecurityTest）。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.19` 和 `ghcr.io/sevoniva/crest-web:v1.5.19`。
+- 默认离线包为 `crest-offline-v1.5.19-linux-amd64.tar.gz` 和 `crest-offline-v1.5.19-linux-arm64.tar.gz`。
+- 应用镜像升级包为 `crest-app-images-v1.5.19-linux-amd64.tar.gz` 和 `crest-app-images-v1.5.19-linux-arm64.tar.gz`。
+- 默认源码包为 `crest-source-v1.5.19.tar.gz`。
+- 从 v1.5.18 升级到 v1.5.19 时只需要替换前后端镜像，不需要新增升级 SQL。
+
 ## v1.5.18 - 2026-07-11
 
 v1.5.18 是 v1.5.17 之后的安全补丁版本，修复系统管理模块安全审计报告中遗留的 6 个高危问题。本版本没有新增数据库结构，无需执行升级 SQL。
