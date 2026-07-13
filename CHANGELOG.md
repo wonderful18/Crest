@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.5.21 - 2026-07-13
+
+v1.5.21 是 v1.5.20 之后的缺陷修复版本，修复导出 Excel 时极小数值显示为科学计数法的问题。本版本没有新增数据库结构，无需执行升级 SQL。
+
+### 修复
+
+- 修复导出 Excel 时极小数值（如 1E-8）显示为科学计数法（0E-8/1E-08）：`createCellStyle` 在 formatter 为 null 或 auto 类型无小数点时由 `General` 改为 `0.######`，极小值四舍五入显示为 0。
+- 修复 `auto` 类型下 `split(".")` 正则 bug（`.` 未转义），此前小数位格式串计算异常。
+
+### 验证
+
+- 后端 `core-backend` 编译通过；`ChartDataServerExportModeTest`（11）与 `ChartDataServerAuxiliaryHeaderTest`（1）共 12 个用例全部通过。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.21` 和 `ghcr.io/sevoniva/crest-web:v1.5.21`。
+- 从 v1.5.20 升级到 v1.5.21 时只需要替换前后端镜像，不需要新增升级 SQL。
+
 ## v1.5.20 - 2026-07-13
 
 v1.5.20 是 v1.5.19 之后的缺陷修复版本，修复背景图上传、标题备注标识、iframe 嵌入导出按钮、导出原始明细多列等问题。本版本没有新增数据库结构，无需执行升级 SQL。
