@@ -447,7 +447,9 @@ public class ChartDataServer implements ChartDataApi {
         xAxis.addAll(viewInfo.getExtStack());
         xAxis.addAll(viewInfo.getDrillFields());
         SummaryConfig summaryConfig = null;
-        if (Strings.CI.equalsAny(viewInfo.getType(), "table-normal", "table-info") && isSummaryEnabled(viewInfo)) {
+        if (Strings.CI.equalsAny(viewInfo.getType(), "table-normal", "table-info")
+                && !"dataset".equalsIgnoreCase(viewInfo.getDownloadType())
+                && isSummaryEnabled(viewInfo)) {
             summaryConfig = parseSummaryConfig(viewInfo);
             xAxis.addAll(buildSummaryColumnFields(summaryConfig));
         }
