@@ -10,9 +10,12 @@
     :style="dialogStyle"
     @close="handleClose"
   >
-    <template #header v-if="!isIframe">
+    <template
+      #header
+      v-if="!isIframe || exportPermissions[0] || (excelExportEnabled && (exportPermissions[1] || exportPermissions[2]))"
+    >
       <div class="header-title">
-        <div>{{ viewInfo?.title }}</div>
+        <div v-if="!isIframe">{{ viewInfo?.title }}</div>
         <div class="export-button">
           <el-select
             v-if="optType === 'enlarge' && exportPermissions[0]"
