@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.5.20 - 2026-07-13
+
+v1.5.20 是 v1.5.19 之后的缺陷修复版本，修复背景图上传、标题备注标识、iframe 嵌入导出按钮、导出原始明细多列等问题。本版本没有新增数据库结构，无需执行升级 SQL。
+
+### 修复
+
+- 修复组件/画布上传背景图后不显示：`applyUploadedBackground` 上传后自动启用 `backgroundImageEnable` 并设置 `backgroundType='outerImage'`。
+- 图表标题备注 i 标识默认显示：`DEFAULT_TITLE_STYLE` 与 `DEFAULT_TITLE_STYLE_BASE` 的 `remarkShow` 改为 `true`。
+- 修复分享链接嵌入 iframe 后放大/详情弹窗的"导出数据"与"导出原始文件"按钮消失：header 改为有任意导出权限即渲染，标题在 iframe 下单独隐藏。
+- 修复开启汇总的表格导出原始明细时末尾多出空白汇总列：`setExcelData` 的 `isSummaryEnabled` 判断排除 dataset 模式，与外层判定一致。
+
+### 验证
+
+- 前端 `vue-tsc` 类型检查通过；前端单元测试 42 个用例全部通过。
+- 后端 `core-backend` 编译通过；`ChartDataServerExportModeTest`（11）与 `ChartDataServerAuxiliaryHeaderTest`（1）共 12 个用例全部通过。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.20` 和 `ghcr.io/sevoniva/crest-web:v1.5.20`。
+- 从 v1.5.19 升级到 v1.5.20 时只需要替换前后端镜像，不需要新增升级 SQL。
+
 ## v1.5.19 - 2026-07-12
 
 v1.5.19 是 v1.5.18 之后的安全补丁版本，修复代码审计中确认的 1 个 HIGH 与 3 个 MEDIUM 问题。本版本没有新增数据库结构，无需执行升级 SQL。
