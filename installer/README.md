@@ -68,8 +68,8 @@ Crest 单机安装默认采用前后端分离容器：
 | --- | --- | --- |
 | `CREST_BASE` | `/opt` | 安装基目录，实际运行目录为 `${CREST_BASE}/crest` |
 | `CREST_PORT` | `8100` | Web 访问端口 |
-| `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v1.5.19` | Crest 后端镜像 |
-| `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v1.5.19` | Crest 前端镜像 |
+| `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v1.5.22` | Crest 后端镜像 |
+| `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v1.5.22` | Crest 前端镜像 |
 | `CREST_MYSQL_IMAGE` | `mysql:8.0.43` | MySQL 镜像 |
 | `CREST_LOAD_DEMO` | `true` | 是否初始化内置演示资源；生产环境不需要示例数据时设为 `false` |
 | `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部 MySQL；默认安装内置 MySQL 容器 |
@@ -163,7 +163,7 @@ crestctl version
 
 ## 迁移和同发布线升级
 
-全新环境可直接使用安装脚本部署 v1.5.19。已有 v1.5.x 环境升级到 v1.5.19 时，请先备份元数据库和运行目录，再按当前版本执行对应升级步骤；更早版本迁移到 v1.5.19 时，请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
+全新环境可直接使用安装脚本部署 v1.5.22。已有 v1.5.x 环境升级到 v1.5.22 时，请先备份元数据库和运行目录，再按当前版本执行对应升级步骤；更早版本迁移到 v1.5.22 时，请先备份元数据库和运行目录，导出业务资源，再在新环境中导入。
 
 同一发布线的小版本升级前：
 
@@ -178,7 +178,7 @@ cd /opt/crest
 docker-compose up -d --no-deps crest-service crest
 ```
 
-v1.5.14 或 v1.5.15 升级到 v1.5.19 时，在离线包目录执行：
+v1.5.14 或 v1.5.15 升级到 v1.5.22 时，在离线包目录执行：
 
 ```bash
 set -a
@@ -187,7 +187,7 @@ set +a
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.15_to_v1.5.16.sql
 ```
 
-v1.5.8 到 v1.5.13 升级到 v1.5.19 时，先执行 v1.5.13 到 v1.5.14 的升级 SQL，再执行 v1.5.15 到 v1.5.16 的升级 SQL：
+v1.5.8 到 v1.5.13 升级到 v1.5.22 时，先执行 v1.5.13 到 v1.5.14 的升级 SQL，再执行 v1.5.15 到 v1.5.16 的升级 SQL：
 
 ```bash
 set -a
@@ -197,7 +197,7 @@ docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAM
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.15_to_v1.5.16.sql
 ```
 
-v1.5.7 升级到 v1.5.19 时，先执行 v1.5.7 到 v1.5.8 的升级 SQL，再执行 v1.5.13 到 v1.5.14 和 v1.5.15 到 v1.5.16 的升级 SQL：
+v1.5.7 升级到 v1.5.22 时，先执行 v1.5.7 到 v1.5.8 的升级 SQL，再执行 v1.5.13 到 v1.5.14 和 v1.5.15 到 v1.5.16 的升级 SQL：
 
 ```bash
 set -a
@@ -208,7 +208,7 @@ docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAM
 docker exec -i mysql-crest mysql -uroot -p"${CREST_DB_PASSWORD}" "${CREST_DB_NAME:-crest}" < upgrade-sql/v1.5.15_to_v1.5.16.sql
 ```
 
-v1.5.4 升级到 v1.5.19 时，请先执行 v1.5.4 到 v1.5.5 的升级 SQL，再执行 v1.5.7 到 v1.5.8、v1.5.13 到 v1.5.14 和 v1.5.15 到 v1.5.16 的升级 SQL：
+v1.5.4 升级到 v1.5.22 时，请先执行 v1.5.4 到 v1.5.5 的升级 SQL，再执行 v1.5.7 到 v1.5.8、v1.5.13 到 v1.5.14 和 v1.5.15 到 v1.5.16 的升级 SQL：
 
 ```bash
 set -a
@@ -257,10 +257,10 @@ bash cleanup-demo-data.sh --yes
 发布包按 CPU 架构分别制作：
 
 ```bash
-bash make-offline-package.sh v1.5.19 linux-amd64
-bash make-offline-package.sh v1.5.19 linux-arm64
-bash make-app-image-package.sh v1.5.19 linux-amd64
-bash make-app-image-package.sh v1.5.19 linux-arm64
+bash make-offline-package.sh v1.5.22 linux-amd64
+bash make-offline-package.sh v1.5.22 linux-arm64
+bash make-app-image-package.sh v1.5.22 linux-amd64
+bash make-app-image-package.sh v1.5.22 linux-arm64
 ```
 
 默认输出目录：
@@ -272,19 +272,19 @@ bash make-app-image-package.sh v1.5.19 linux-arm64
 发布包名：
 
 ```text
-crest-offline-v1.5.19-linux-amd64.tar.gz
-crest-offline-v1.5.19-linux-arm64.tar.gz
-crest-app-images-v1.5.19-linux-amd64.tar.gz
-crest-app-images-v1.5.19-linux-arm64.tar.gz
+crest-offline-v1.5.22-linux-amd64.tar.gz
+crest-offline-v1.5.22-linux-arm64.tar.gz
+crest-app-images-v1.5.22-linux-amd64.tar.gz
+crest-app-images-v1.5.22-linux-arm64.tar.gz
 ```
 
 制作前需要本机已有对应架构镜像：
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.19-amd64
-ghcr.io/sevoniva/crest-service:v1.5.19-arm64
-ghcr.io/sevoniva/crest-web:v1.5.19-amd64
-ghcr.io/sevoniva/crest-web:v1.5.19-arm64
+ghcr.io/sevoniva/crest-service:v1.5.22-amd64
+ghcr.io/sevoniva/crest-service:v1.5.22-arm64
+ghcr.io/sevoniva/crest-web:v1.5.22-amd64
+ghcr.io/sevoniva/crest-web:v1.5.22-arm64
 mysql:8.0.43
 ```
 
@@ -294,19 +294,19 @@ mysql:8.0.43
 INCLUDE_OBSERVABILITY_IMAGES=true \
 PROMETHEUS_IMAGE=prom/prometheus:v3.12.0 \
 GRAFANA_IMAGE=grafana/grafana-oss:13.0.1 \
-bash make-offline-package.sh v1.5.19 linux-amd64
+bash make-offline-package.sh v1.5.22 linux-amd64
 ```
 
 也可以通过环境变量指定来源镜像：
 
 ```bash
-SOURCE_BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.19-amd64 \
-BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.19-amd64 \
-SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.19-amd64 \
-FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.19-amd64 \
+SOURCE_BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.22-amd64 \
+BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.22-amd64 \
+SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.22-amd64 \
+FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.22-amd64 \
 SOURCE_MYSQL_IMAGE=mysql:8.0.43-amd64 \
 MYSQL_IMAGE=mysql:8.0.43 \
-bash make-offline-package.sh v1.5.19 linux-amd64
+bash make-offline-package.sh v1.5.22 linux-amd64
 ```
 
 完整离线安装包脚本会校验前端、后端和 MySQL 镜像架构，架构不一致会直接停止。`SOURCE_*_IMAGE` 用于本机制作来源，包内 `install.conf` 仍写入指定的目标镜像名。
@@ -320,8 +320,8 @@ bash make-offline-package.sh v1.5.19 linux-amd64
 在目标服务器执行：
 
 ```bash
-tar -zxf crest-offline-v1.5.19-linux-amd64.tar.gz
-cd crest-offline-v1.5.19-linux-amd64
+tar -zxf crest-offline-v1.5.22-linux-amd64.tar.gz
+cd crest-offline-v1.5.22-linux-amd64
 vi install.conf
 bash install.sh
 ```

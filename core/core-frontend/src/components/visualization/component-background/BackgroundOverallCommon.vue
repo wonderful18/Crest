@@ -499,6 +499,8 @@ const applyUploadedBackground = fileUrl => {
     return
   }
   state.commonBackground.outerImage = fileUrl
+  state.commonBackground.backgroundImageEnable = true
+  state.commonBackground.backgroundType = 'outerImage'
   syncFileList(fileUrl)
   onBackgroundChange()
 }

@@ -447,7 +447,9 @@ public class ChartDataServer implements ChartDataApi {
         xAxis.addAll(viewInfo.getExtStack());
         xAxis.addAll(viewInfo.getDrillFields());
         SummaryConfig summaryConfig = null;
-        if (Strings.CI.equalsAny(viewInfo.getType(), "table-normal", "table-info") && isSummaryEnabled(viewInfo)) {
+        if (Strings.CI.equalsAny(viewInfo.getType(), "table-normal", "table-info")
+                && !"dataset".equalsIgnoreCase(viewInfo.getDownloadType())
+                && isSummaryEnabled(viewInfo)) {
             summaryConfig = parseSummaryConfig(viewInfo);
             xAxis.addAll(buildSummaryColumnFields(summaryConfig));
         }
@@ -988,14 +990,14 @@ public class ChartDataServer implements ChartDataApi {
         DataFormat format = workbook.createDataFormat();
 
         if (formatter == null) {
-            cellStyle.setDataFormat(format.getFormat("General"));
+            cellStyle.setDataFormat(format.getFormat("0.######"));
             return cellStyle;
         }
         String formatStr = "";
         if (formatter.getType().equals("auto")) {
-            String[] valueSplit = String.valueOf(value).split(".");
+            String[] valueSplit = String.valueOf(value).split("\\.");
             if (StringUtils.isEmpty(value) || !value.contains(".")) {
-                formatStr = "General";
+                formatStr = "0.######";
             } else {
                 formatStr = "0." + new String(new char[valueSplit.length]).replace('\0', '0');
             }

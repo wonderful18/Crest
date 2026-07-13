@@ -1,5 +1,61 @@
 # Changelog
 
+## v1.5.22 - 2026-07-13
+
+v1.5.22 是 v1.5.21 之后的缺陷修复版本，修复组件/画布上传背景图后图片加载 404 导致不显示的问题。本版本没有新增数据库结构，无需执行升级 SQL。
+
+### 修复
+
+- 修复组件/画布上传背景图后缩略图不显示、画布背景图不生效：nginx 静态资源正则 location 优先级高于 `/api/v1/` 前缀，`GET /api/v1/static-resource/*.jpg` 被 `try_files` 拦截返回 404。正则加 `^(?!/api/)` 负向断言，`/api/` 下图片请求不再被拦截，正常代理到后端。上传与落盘一直正常，仅图片读取 404。
+
+### 验证
+
+- 重建前端镜像重启容器后 `GET /api/v1/static-resource/<id>.jpg` 返回 200；前端 `/assets/*.js` 仍 200 且带 30 天缓存头。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.22` 和 `ghcr.io/sevoniva/crest-web:v1.5.22`。
+- 从 v1.5.21 升级到 v1.5.22 只需要替换前后端镜像，不需要新增升级 SQL。
+
+## v1.5.21 - 2026-07-13
+
+v1.5.21 是 v1.5.20 之后的缺陷修复版本，修复导出 Excel 时极小数值显示为科学计数法的问题。本版本没有新增数据库结构，无需执行升级 SQL。
+
+### 修复
+
+- 修复导出 Excel 时极小数值（如 1E-8）显示为科学计数法（0E-8/1E-08）：`createCellStyle` 在 formatter 为 null 或 auto 类型无小数点时由 `General` 改为 `0.######`，极小值四舍五入显示为 0。
+- 修复 `auto` 类型下 `split(".")` 正则 bug（`.` 未转义），此前小数位格式串计算异常。
+
+### 验证
+
+- 后端 `core-backend` 编译通过；`ChartDataServerExportModeTest`（11）与 `ChartDataServerAuxiliaryHeaderTest`（1）共 12 个用例全部通过。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.21` 和 `ghcr.io/sevoniva/crest-web:v1.5.21`。
+- 从 v1.5.20 升级到 v1.5.21 时只需要替换前后端镜像，不需要新增升级 SQL。
+
+## v1.5.20 - 2026-07-13
+
+v1.5.20 是 v1.5.19 之后的缺陷修复版本，修复背景图上传、标题备注标识、iframe 嵌入导出按钮、导出原始明细多列等问题。本版本没有新增数据库结构，无需执行升级 SQL。
+
+### 修复
+
+- 修复组件/画布上传背景图后不显示：`applyUploadedBackground` 上传后自动启用 `backgroundImageEnable` 并设置 `backgroundType='outerImage'`。
+- 图表标题备注 i 标识默认显示：`DEFAULT_TITLE_STYLE` 与 `DEFAULT_TITLE_STYLE_BASE` 的 `remarkShow` 改为 `true`。
+- 修复分享链接嵌入 iframe 后放大/详情弹窗的"导出数据"与"导出原始文件"按钮消失：header 改为有任意导出权限即渲染，标题在 iframe 下单独隐藏。
+- 修复开启汇总的表格导出原始明细时末尾多出空白汇总列：`setExcelData` 的 `isSummaryEnabled` 判断排除 dataset 模式，与外层判定一致。
+
+### 验证
+
+- 前端 `vue-tsc` 类型检查通过；前端单元测试 42 个用例全部通过。
+- 后端 `core-backend` 编译通过；`ChartDataServerExportModeTest`（11）与 `ChartDataServerAuxiliaryHeaderTest`（1）共 12 个用例全部通过。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.20` 和 `ghcr.io/sevoniva/crest-web:v1.5.20`。
+- 从 v1.5.19 升级到 v1.5.20 时只需要替换前后端镜像，不需要新增升级 SQL。
+
 ## v1.5.19 - 2026-07-12
 
 v1.5.19 是 v1.5.18 之后的安全补丁版本，修复代码审计中确认的 1 个 HIGH 与 3 个 MEDIUM 问题。本版本没有新增数据库结构，无需执行升级 SQL。
