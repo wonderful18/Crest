@@ -634,7 +634,7 @@ public class ChartDataServer implements ChartDataApi {
                                 if (Strings.CI.equalsAny(viewInfo.getType(), "table-info", "table-normal") && Arrays.asList(FieldTypeConstants.INTEGER,FieldTypeConstants.FLOAT).contains(xAxis.get(j).getFieldType())) {
                                     try {
                                         FormatterCfgDTO formatterCfgDTO = xAxis.get(j).getFormatterCfg() == null ? new FormatterCfgDTO().setUnitLanguage(Lang.isChinese() ? "ch" : "en") : xAxis.get(j).getFormatterCfg();
-                                        String numericText = cellValObj.toString();
+                                        String numericText = normalizeScientificZero(cellValObj.toString());
                                         if (isSafeExcelNumericText(numericText)) {
                                             row.getCell(j).setCellStyle(styles.get(j));
                                             row.getCell(j).setCellValue(Double.parseDouble(cellValue(formatterCfgDTO, new BigDecimal(numericText))));
@@ -645,7 +645,7 @@ public class ChartDataServer implements ChartDataApi {
                                         cell.setCellValue(cellValObj.toString());
                                     }
                                 } else {
-                                    String numericText = cellValObj.toString();
+                                    String numericText = normalizeScientificZero(cellValObj.toString());
                                     if ((excelTypes[j].equals(FieldTypeConstants.INTEGER) || excelTypes[j].equals(FieldTypeConstants.FLOAT)) && isSafeExcelNumericText(numericText)) {
                                         cell.setCellValue(Double.parseDouble(StringUtils.trim(numericText)));
                                     } else if (cellValObj != null) {
@@ -983,6 +983,28 @@ public class ChartDataServer implements ChartDataApi {
         return StringUtils.isNotEmpty(text)
                 && text.length() <= EXCEL_NUMERIC_TEXT_LIMIT
                 && EXCEL_NUMERIC_PATTERN.matcher(text).matches();
+    }
+
+    private static String normalizeScientificZero(String value) {
+        if (StringUtils.isBlank(value)) {
+            return value;
+        }
+        try {
+            BigDecimal decimal = new BigDecimal(value.trim());
+            // 值为 0 时统一输出 "0"，避免 "0E-8" 等科学计数法形式
+            if (decimal.compareTo(BigDecimal.ZERO) == 0) {
+                return "0";
+            }
+            // 非零值若以科学计数法表示（含 E/e），转成普通十进制字符串，
+            // 否则 isSafeExcelNumericText 的正则无法匹配，会以文本写入 Excel，
+            // 导致导出明细里出现 "1E-8" 这类异常显示。
+            String trimmed = value.trim();
+            if (trimmed.indexOf('E') >= 0 || trimmed.indexOf('e') >= 0) {
+                return decimal.toPlainString();
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        return value;
     }
 
     private static CellStyle createCellStyle(Workbook workbook, FormatterCfgDTO formatter, String value) {
