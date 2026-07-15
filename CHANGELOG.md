@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.5.23 - 2026-07-15
+
+v1.5.23 是 v1.5.22 之后的缺陷修复版本，修复明细表开启自动换行后整表空白、仪表盘分享链接默认加密码后仍要求输入密码、以及导出明细科学计数法显示异常的问题。本版本没有新增数据库结构，无需执行升级 SQL。
+
+### 修复
+
+- 修复明细表勾选「自动换行」后整张表空白：`@antv/s2` 升级到 v2 后自定义换行渲染 `drawTextShape` 仍沿用 v1 已移除/变更的 API（`getTextAndIconPosition`、`renderText` 位置参数、`actualText`/`actualTextWidth` 只读 getter、`getCellArea`、`LayoutResult.spreadsheet`、g5.0 `Text` 缺 `wordWrapWidth`），逐一替换为 v2 对应实现。已知遗留：最大行数 `maxLines` 截断在部分场景未完全生效，后续单独处理。
+- 修复仪表盘分享链接默认加密码后仍要求输入密码：`autoPwd=true`（密钥仅用于链接签名）时后端 `pwdValid`/`valid` 仍走密码校验、`detail` 接口返回内部密钥导致前端误判。`autoPwd=true` 时直接放行并将 `pwd` 置空返回。
+- 修复导出明细科学计数法（`0E-8`/`1E-8`）显示异常：`ChartDataServer` 与 `ExportCenterDownLoadManage` 新增 `normalizeScientificZero`，零值统一输出 `0`、非零科学计数法值转 `toPlainString`，避免 `isSafeExcelNumericText` 正则不匹配导致以文本写入。
+
+### 验证
+
+- 明细表勾选「自动换行」后表格框架与单元格内容正常显示，控制台不再有 `getTextAndIconPosition`/`Cannot set property actualText`/`getCellArea`/`measureTextWidthRoughly of undefined` 等报错。
+- 仪表盘分享链接（未勾选密码保护）打开后不再要求输入密码。
+- 导出明细中 `0E-8` 等零值显示为 `0`，`1E-8` 等极小值显示为普通十进制。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.23` 和 `ghcr.io/sevoniva/crest-web:v1.5.23`。
+- 从 v1.5.22 升级到 v1.5.23 只需要替换前后端镜像，不需要新增升级 SQL。
+
 ## v1.5.22 - 2026-07-13
 
 v1.5.22 是 v1.5.21 之后的缺陷修复版本，修复组件/画布上传背景图后图片加载 404 导致不显示的问题。本版本没有新增数据库结构，无需执行升级 SQL。
