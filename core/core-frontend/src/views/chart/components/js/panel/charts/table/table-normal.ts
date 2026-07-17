@@ -231,8 +231,11 @@ export class TableNormal extends S2ChartView<TableSheet> {
     s2Options.style = this.configStyle(chart, s2DataConfig)
     // 行列冻结
     if (tableCell.tableFreeze) {
-      s2Options.frozenColCount = tableCell.tableColumnFreezeHead ?? 0
-      s2Options.frozenRowCount = tableCell.tableRowFreezeHead ?? 0
+      // s2 v2 将冻结配置从顶层属性改为 frozen 嵌套对象
+      s2Options.frozen = {
+        colCount: tableCell.tableColumnFreezeHead ?? 0,
+        rowCount: tableCell.tableRowFreezeHead ?? 0,
+      }
     }
     // tooltip
     this.configTooltip(chart, s2Options)
@@ -427,7 +430,11 @@ export class TableNormal extends S2ChartView<TableSheet> {
       heightByField[data.length] = tableHeader.tableTitleHeight
       s2Options.style.rowCfg = { heightByField }
       // 计算汇总加入到数据里，冻结最后一行
-      s2Options.frozenTrailingRowCount = 1
+      // s2 v2 将冻结配置从顶层属性改为 frozen 嵌套对象
+      s2Options.frozen = {
+        ...(s2Options.frozen || {}),
+        trailingRowCount: 1,
+      }
       let summaryObj = getSummaryRow(
         data,
         yAxis,

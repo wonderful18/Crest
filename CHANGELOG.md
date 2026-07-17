@@ -1,5 +1,47 @@
 # Changelog
 
+## v1.5.24 - 2026-07-17
+
+v1.5.24 是 v1.5.23 之后的缺陷修复版本，修复跨数据源自定义 SQL 查询（含中文 CASE WHEN 别名/字面量）执行失败、连续查询偶发 40001、以及明细表 s2 v2 冻结配置失效的问题。本版本没有新增数据库结构，无需执行升级 SQL。
+
+### 修复
+
+- 修复跨数据源查询含中文等非 ASCII 字符串（如 `CASE WHEN ... THEN '中文' ELSE '其他' END AS 中文列`）失败：Calcite planning 会给非 ASCII 字面量加 `_UTF-8'xxx'` 前缀，MySQL 不认识。`CalciteProvider.fetchResultField` / `fetchTableField` 跨源分支改为用 `getConnectionFromPool` 返回的底层 MySQL JDBC 连接直接执行 + 虚拟 schema 替换为真实库名，绕过 Calcite 的 `_UTF-8` 注入；新增 `NO_CHARSET_FACTORY`（`supportsCharSet()=false`）套用到所有 `JdbcSchema.create`；`SqlUtils.addSchema` 渲染后清理 `_UTF-8'` 前缀并还原 `LIMIT N`；新增 `convertSingleQuotedAliases` 把 `AS '别名'`/`AS "别名"` 转反引号，`Provider`/`transSqlDialect` 同步调用；Calcite 连接 Lex `JAVA`→`MYSQL` 并设 `CONFORMANCE=MYSQL_5`。
+- 修复连续跨源查询偶发 40001 / 连接池超时：上述两个跨源分支用 `take()` 借出连接后未 `close`，每次查询泄漏一个连接，池耗尽后 `getConnectionFromPool` borrow 超时（5s）抛 40001。改为 `try-with-resources` 确保归还。
+- 修复明细表冻结行/列及汇总行冻结失效：`@antv/s2` v2 把冻结配置从顶层属性（`frozenColCount`/`frozenRowCount`/`frozenTrailingRowCount`）改为 `frozen` 嵌套对象。`table-info`/`table-normal`/`common_table` 统一改写为 `options.frozen = { colCount, rowCount, trailingRowCount }`，汇总行冻结合并已有配置避免覆盖。
+
+### 验证
+
+- 跨数据源自定义 SQL 含中文 CASE WHEN 别名/字面量的数据集，预览、保存、运行均成功，后端日志不再出现 `_UTF-8'` 前缀；连续多次查询不再偶发 40001。
+- 明细表冻结行/列及汇总行冻结恢复正常生效。
+- 全量回归：前端表格 60 项单测全过；后端 core-backend 724 项无新增失败，新增 `SqlUtilsTest` 7 项全过；`Quota2SQLObjTest` 2 项「失败」为容器默认 UTC 时区所致（对照实验证实），生产镜像已设 `Asia/Shanghai` 不受影响。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.24` 和 `ghcr.io/sevoniva/crest-web:v1.5.24`。
+- 从 v1.5.23 升级到 v1.5.24 只需要替换前后端镜像，不需要新增升级 SQL。
+
+## v1.5.23 - 2026-07-15
+
+v1.5.23 是 v1.5.22 之后的缺陷修复版本，修复明细表开启自动换行后整表空白、仪表盘分享链接默认加密码后仍要求输入密码、以及导出明细科学计数法显示异常的问题。本版本没有新增数据库结构，无需执行升级 SQL。
+
+### 修复
+
+- 修复明细表勾选「自动换行」后整张表空白：`@antv/s2` 升级到 v2 后自定义换行渲染 `drawTextShape` 仍沿用 v1 已移除/变更的 API（`getTextAndIconPosition`、`renderText` 位置参数、`actualText`/`actualTextWidth` 只读 getter、`getCellArea`、`LayoutResult.spreadsheet`、g5.0 `Text` 缺 `wordWrapWidth`），逐一替换为 v2 对应实现。已知遗留：最大行数 `maxLines` 截断在部分场景未完全生效，后续单独处理。
+- 修复仪表盘分享链接默认加密码后仍要求输入密码：`autoPwd=true`（密钥仅用于链接签名）时后端 `pwdValid`/`valid` 仍走密码校验、`detail` 接口返回内部密钥导致前端误判。`autoPwd=true` 时直接放行并将 `pwd` 置空返回。
+- 修复导出明细科学计数法（`0E-8`/`1E-8`）显示异常：`ChartDataServer` 与 `ExportCenterDownLoadManage` 新增 `normalizeScientificZero`，零值统一输出 `0`、非零科学计数法值转 `toPlainString`，避免 `isSafeExcelNumericText` 正则不匹配导致以文本写入。
+
+### 验证
+
+- 明细表勾选「自动换行」后表格框架与单元格内容正常显示，控制台不再有 `getTextAndIconPosition`/`Cannot set property actualText`/`getCellArea`/`measureTextWidthRoughly of undefined` 等报错。
+- 仪表盘分享链接（未勾选密码保护）打开后不再要求输入密码。
+- 导出明细中 `0E-8` 等零值显示为 `0`，`1E-8` 等极小值显示为普通十进制。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.23` 和 `ghcr.io/sevoniva/crest-web:v1.5.23`。
+- 从 v1.5.22 升级到 v1.5.23 只需要替换前后端镜像，不需要新增升级 SQL。
+
 ## v1.5.22 - 2026-07-13
 
 v1.5.22 是 v1.5.21 之后的缺陷修复版本，修复组件/画布上传背景图后图片加载 404 导致不显示的问题。本版本没有新增数据库结构，无需执行升级 SQL。

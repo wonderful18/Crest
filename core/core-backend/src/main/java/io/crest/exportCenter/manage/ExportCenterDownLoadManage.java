@@ -415,15 +415,16 @@ public class ExportCenterDownLoadManage {
     }
 
     private void setExportCellValue(Cell cell, Integer fieldType, String value) {
-        if (isNumericExportField(fieldType) && isSafeExcelNumericText(value)) {
+        String normalizedValue = normalizeScientificZero(value);
+        if (isNumericExportField(fieldType) && isSafeExcelNumericText(normalizedValue)) {
             try {
-                cell.setCellValue(Double.parseDouble(StringUtils.trim(value)));
+                cell.setCellValue(Double.parseDouble(StringUtils.trim(normalizedValue)));
                 return;
             } catch (NumberFormatException ignored) {
                 // 保持原有导出行为：无法安全转成数字时按文本写入。
             }
         }
-        cell.setCellValue(value);
+        cell.setCellValue(normalizedValue);
     }
 
     private boolean isSafeExcelNumericText(String value) {
@@ -431,6 +432,28 @@ public class ExportCenterDownLoadManage {
         return StringUtils.isNotEmpty(text)
                 && text.length() <= EXCEL_NUMERIC_TEXT_LIMIT
                 && EXCEL_NUMERIC_PATTERN.matcher(text).matches();
+    }
+
+    private static String normalizeScientificZero(String value) {
+        if (StringUtils.isBlank(value)) {
+            return value;
+        }
+        try {
+            BigDecimal decimal = new BigDecimal(value.trim());
+            // 值为 0 时统一输出 "0"，避免 "0E-8" 等科学计数法形式
+            if (decimal.compareTo(BigDecimal.ZERO) == 0) {
+                return "0";
+            }
+            // 非零值若以科学计数法表示（含 E/e），转成普通十进制字符串，
+            // 否则 isSafeExcelNumericText 的正则无法匹配，会以文本写入 Excel，
+            // 导致导出明细里出现 "1E-8" 这类异常显示。
+            String trimmed = value.trim();
+            if (trimmed.indexOf('E') >= 0 || trimmed.indexOf('e') >= 0) {
+                return decimal.toPlainString();
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        return value;
     }
 
     public void startViewTask(CoreExportTask exportTask, ChartExcelRequest request) {

@@ -21,6 +21,8 @@ public class SqlUtils {
         if (sql.endsWith(";")) {
             sql = sql.substring(0, sql.length() - 1);
         }
+        // Lex.JAVA 下 AS '别名'（单引号字符串字面量）不能做别名，转成反引号标识符
+        sql = convertSingleQuotedAliases(sql);
 
         SqlParser.Config config =
                 SqlParser.config()
@@ -40,7 +42,31 @@ public class SqlUtils {
         String sqlRender = sqlNode.toString();
         // 处理sql中多余的`都替换成1个
         sqlRender = sqlRender.replaceAll("(`+)", "`");
+        // Calcite 的 toSqlString 会把非 ASCII 字符串标记为 _UTF-8'xxx'，MySQL 不认识，去掉前缀
+        // 用字符串替换而非正则，避免特殊字符匹配问题
+        logger.info("[addSchema-debug] before UTF-8 cleanup: {}", sqlRender);
+        while (sqlRender.contains("_UTF-8'")) {
+            sqlRender = sqlRender.replace("_UTF-8'", "'");
+        }
+        // 兜底：用正则匹配所有 _ 开头后跟字母数字到单引号的前缀（如 _UTF-8'、_UTF8' 等）
+        sqlRender = sqlRender.replaceAll("_[A-Za-z0-9-]+'", "'");
+        // Calcite 的 Lex.JAVA 会把 LIMIT N 转成 FETCH NEXT N ROWS ONLY，MySQL 不认识，转回 LIMIT
+        sqlRender = sqlRender.replaceAll("FETCH NEXT (\\d+) ROWS ONLY", "LIMIT $1");
+        logger.info("[addSchema-debug] after UTF-8 cleanup: {}", sqlRender);
         return sqlRender;
+    }
+
+    /**
+     * 将 SQL 中 AS '别名'（单引号）和 AS "别名"（双引号）形式的别名
+     * 统一转成反引号 `别名`，以兼容 Calcite Lex.JAVA
+     * （单引号是字符串字面量不能做别名；双引号在 Lex.JAVA 下也不识别）。
+     */
+    public static String convertSingleQuotedAliases(String sql) {
+        // AS 'xxx'（单引号）→ AS `xxx`
+        sql = sql.replaceAll("(?i)\\bAS\\s+'([^']*)'", "AS `$1`");
+        // AS "xxx"（双引号）→ AS `xxx`
+        sql = sql.replaceAll("(?i)\\bAS\\s+\"([^\"]*)\"", "AS `$1`");
+        return sql;
     }
 
     private static void addTableSchema(SqlNode sqlNode, Boolean fromOrJoin, String schema, SqlParser.Config config) {

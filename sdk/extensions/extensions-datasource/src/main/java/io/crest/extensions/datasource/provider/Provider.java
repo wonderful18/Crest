@@ -165,6 +165,9 @@ public abstract class Provider {
                     value.setDsVersion(connection.getConnection().getMetaData().getDatabaseMajorVersion());
                 }
             }
+            // Lex.JAVA 下 AS '别名'（单引号）和 AS "别名"（双引号）不能做别名，统一转成反引号
+            sql = sql.replaceAll("(?i)\\bAS\\s+'([^']*)'", "AS `$1`");
+            sql = sql.replaceAll("(?i)\\bAS\\s+\"([^\"]*)\"", "AS `$1`");
             SqlParser parser = SqlParser.create(sql, SqlParser.Config.DEFAULT.withLex(Lex.JAVA));
             SqlNode sqlNode = parser.parseStmt();
             String dialect = restoreUnicodeStringLiterals(sqlNode.toSqlString(getDialect(value)).toString());

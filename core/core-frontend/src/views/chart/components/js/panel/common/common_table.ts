@@ -3213,8 +3213,8 @@ export function configMergeCells(chart: Chart, options: S2Options, dataConfig: S
   const { mergeCells, mergeFields } = parseJson(chart.customAttr).tableCell
   const { showIndex } = parseJson(chart.customAttr).tableHeader
   if (mergeCells) {
-    options.frozenColCount = 0
-    options.frozenRowCount = 0
+    // s2 v2 将冻结配置从顶层属性改为 frozen 嵌套对象
+    options.frozen = { colCount: 0, rowCount: 0 }
     const fields = chart.data.fields || []
     const fieldsMap =
       fields.reduce((p, n) => {
@@ -3464,7 +3464,7 @@ const drawTextShape = (cell, isHeader) => {
   const {
     options: { placeholder }
   } = cell.spreadsheet
-  const emptyPlaceholder = getEmptyPlaceholder(this, placeholder)
+  const emptyPlaceholder = getEmptyPlaceholder(cell.meta, placeholder)
   // 单元格文本
   const { formattedValue } = cell.getFormattedFieldValue()
   const cellText =
@@ -3524,16 +3524,27 @@ const drawTextShape = (cell, isHeader) => {
       wrapText = temp.join(lineBreak)
     }
   }
-  // 设置最终文本和其宽度
-  cell.actualText = wrapText
-  cell.actualTextWidth = cell.spreadsheet.measureTextWidth(wrapText, textStyle)
+  // s2 v2 中 actualText/actualTextWidth 已改为只读 getter（从 textShape 派生），不可赋值
+  // getTextStartX 在 renderText 之前调用，此时 textShape 尚未更新，故将 wrapText 直接传入
 
   // 获取文本位置并渲染文本
-  const { y } = cell.getTextAndIconPosition()?.text || cell.getTextPosition()
-  const x = getTextStartX(cell, textStyle)
+  // s2 v2 已移除 getTextAndIconPosition，统一使用 getTextPosition
+  const { y } = cell.getTextPosition()
+  const x = getTextStartX(cell, textStyle, wrapText)
   // 绘制文本
-  cell.textShape = (renderText as any)(cell, [cell.textShape], x, y, wrapText, textStyle, {
-    fontSize: extraStyleFontSize
+  // s2 v2 (g5.0) 的 Text 需显式传 wordWrapWidth 才能正确度量文本宽度，否则 getBBox 宽度为 1
+  cell.textShape = (renderText as any)({
+    group: cell,
+    textShape: cell.textShape,
+    style: {
+      ...textStyle,
+      text: wrapText,
+      x,
+      y,
+      fontSize: extraStyleFontSize,
+      wordWrapWidth: cell.meta.width,
+      maxLines
+    }
   })
 
   // 将文本形状添加到形状数组
@@ -3545,12 +3556,12 @@ const drawTextShape = (cell, isHeader) => {
  * @param cell
  * @param textStyle
  */
-function getTextStartX(cell, textStyle) {
-  // 获取单元格区域
-  const area = cell.getCellArea()
+function getTextStartX(cell, textStyle, wrapText) {
+  // s2 v2 用 getBBoxByType() 取代了 getCellArea()
+  const area = cell.getBBoxByType()
   // 计算文本宽度,只计算第一行宽度
   const textWidth = cell.spreadsheet.measureTextWidthRoughly(
-    cell.actualText.split('\n')[0],
+    wrapText.split('\n')[0],
     textStyle
   )
   const padding = cell.theme.colCell?.cell?.padding ?? { left: 0, right: 0 }
@@ -3585,10 +3596,12 @@ export const calculateHeaderHeight = (info, newChart, tableHeader, basicStyle, l
   const maxLines = basicStyle.maxLines ?? 1
   const textStyle = { ...newChart.theme.cornerCell.text }
   const sourceText = info.info.meta.value
+  // s2 v2 的 LayoutResult 已移除 spreadsheet 属性，统一使用传入的 newChart（即 SpreadSheet 实例）
+  const spreadsheet = ev.spreadsheet || newChart
   let maxHeight = getWrapTextHeight(
-    getWrapText(sourceText, textStyle, info.info.resizedWidth, ev.spreadsheet),
+    getWrapText(sourceText, textStyle, info.info.resizedWidth, spreadsheet),
     textStyle,
-    ev.spreadsheet,
+    spreadsheet,
     maxLines
   )
 
@@ -3672,7 +3685,9 @@ const getWrapTextHeight = (wrapText, textStyle, spreadsheet, maxLines) => {
   }
   // 行数
   const lines = wrapText.split('\n').length
-  return Math.min(lines, maxLines) * maxHeight
+  const result = Math.min(lines, maxLines) * maxHeight
+  // 防止返回 0 导致除零
+  return result > 0 ? result : textStyle.fontSize || 14
 }
 
 // 导出获取汇总行的函数

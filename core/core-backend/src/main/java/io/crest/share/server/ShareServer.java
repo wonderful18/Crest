@@ -50,7 +50,12 @@ public class ShareServer implements ShareApi {
     public ShareVO detail(Long resourceId) {
         CoreShare coreShare = shareManage.queryByResource(resourceId);
         if (ObjectUtils.isEmpty(coreShare)) return null;
-        return BeanUtils.copyBean(new ShareVO(), coreShare);
+        ShareVO vo = BeanUtils.copyBean(new ShareVO(), coreShare);
+        // autoPwd 为 true 时不暴露内部密钥，避免前端误判密码保护已开启
+        if (Boolean.TRUE.equals(vo.getAutoPwd())) {
+            vo.setPwd(null);
+        }
+        return vo;
     }
 
     @Override

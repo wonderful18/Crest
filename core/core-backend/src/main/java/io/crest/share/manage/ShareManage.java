@@ -299,6 +299,8 @@ public class ShareManage {
     }
 
     private boolean pwdValid(CoreShare coreShare, String ciphertext) {
+        // autoPwd=true 表示密钥由系统自动生成（仅用于链接签名），不要求终端用户输入密码
+        if (Boolean.TRUE.equals(coreShare.getAutoPwd())) return true;
         if (StringUtils.isBlank(coreShare.getPwd())) return true;
         if (StringUtils.isBlank(ciphertext)) return false;
         String text = RsaUtils.decryptStr(ciphertext);
@@ -331,6 +333,8 @@ public class ShareManage {
         if (ObjectUtils.isEmpty(coreShare)) {
             return false;
         }
+        // autoPwd=true 表示密钥由系统自动生成（仅用于链接签名），不要求终端用户输入密码
+        if (Boolean.TRUE.equals(coreShare.getAutoPwd())) return true;
         return Strings.CS.equals(coreShare.getUuid(), uuid) && Strings.CS.equals(coreShare.getPwd(), pwd);
     }
 
