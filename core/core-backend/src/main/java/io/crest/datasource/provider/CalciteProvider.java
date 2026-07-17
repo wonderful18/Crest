@@ -33,7 +33,10 @@ import org.apache.calcite.jdbc.CalciteConnection;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlDialectFactory;
+import org.apache.calcite.sql.SqlDialectFactoryImpl;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.commons.collections4.CollectionUtils;
@@ -301,11 +304,24 @@ public class CalciteProvider extends Provider {
 
         List<TableField> datasetTableFields = new ArrayList<>();
         List<String[]> list = new LinkedList<>();
-        Connection connection = take();
+        // 跨源时直接用底层 MySQL JDBC 连接执行，避免 Calcite 内部生成 _UTF-8 前缀
+        // Calcite 的 prepareStatement 会在 planning 时给非 ASCII 字符串加 _UTF-8 前缀，
+        // MySQL 不认识该语法导致执行失败。
         try {
-            CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
+            DatasourceSchemaDTO dsDto = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
+            // SQL 中的虚拟 schema（s_a_xxx）替换为真实数据库名
             String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
-            try (PreparedStatement statement = calciteConnection.prepareStatement(readQuery)) {
+            String virtualSchema = String.format(SQLConstants.SCHEMA, dsDto.getId());
+            DatasourceConfiguration dsConfig = parseDatasourceConfiguration(dsDto.getConfiguration(), Mysql.class);
+            String realSchema = dsConfig.getDataBase();
+            if (realSchema != null) {
+                readQuery = readQuery.replace("`" + virtualSchema + "`.", "`" + realSchema + "`.")
+                        .replace(virtualSchema + ".", realSchema + ".");
+            }
+            // connection 必须在 try-with-resources 中关闭，否则每次跨源查询都会泄漏一个连接，
+            // 连接池耗尽后下一次 getConnectionFromPool 会 borrow 超时（5s）抛 40001。
+            try (Connection connection = getConnectionFromPool(dsDto.getId());
+                 PreparedStatement statement = connection.prepareStatement(readQuery)) {
                 bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
                 try (ResultSet resultSet = statement.executeQuery()) {
                     ResultSetMetaData metaData = resultSet.getMetaData();
@@ -347,6 +363,8 @@ public class CalciteProvider extends Provider {
             if (connection != null) {
                 value.setDsVersion(connection.getMetaData().getDatabaseMajorVersion());
             }
+            // Lex.JAVA 下 AS '别名'（单引号字符串字面量）不能做别名，转成反引号标识符
+            sql = io.crest.dataset.utils.SqlUtils.convertSingleQuotedAliases(sql);
             SqlParser parser = SqlParser.create(sql, SqlParser.Config.DEFAULT.withLex(Lex.JAVA));
             SqlNode sqlNode = parser.parseStmt();
             String dialect = restoreUnicodeStringLiterals(sqlNode.toSqlString(getDialect(value)).toString());
@@ -487,11 +505,22 @@ public class CalciteProvider extends Provider {
     public List<TableField> fetchTableField(DatasourceRequest datasourceRequest) throws CrestException {
         if (datasourceRequest.getIsCross() != null && datasourceRequest.getIsCross()) {
             List<TableField> datasetTableFields = new ArrayList<>();
+            // 跨源时直接用底层 MySQL JDBC 连接执行，避免 Calcite 内部生成 _UTF-8 前缀。
+            // 原实现用 take() 拿 CalciteConnection 再 prepareStatement，存在两个问题：
+            // 1) Calcite prepareStatement 在 planning 时给非 ASCII 字符串加 _UTF-8 前缀，MySQL 不认识导致执行失败；
+            // 2) take() 借出的连接没有 close，每次跨源取字段都会泄漏一个连接，池耗尽后 borrow 超时抛 40001。
             try {
-                Connection connection = take();
-                CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
+                DatasourceSchemaDTO dsDto = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
                 String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
-                try (PreparedStatement statement = calciteConnection.prepareStatement(readQuery)) {
+                String virtualSchema = String.format(SQLConstants.SCHEMA, dsDto.getId());
+                DatasourceConfiguration dsConfig = parseDatasourceConfiguration(dsDto.getConfiguration(), Mysql.class);
+                String realSchema = dsConfig.getDataBase();
+                if (realSchema != null) {
+                    readQuery = readQuery.replace("`" + virtualSchema + "`.", "`" + realSchema + "`.")
+                            .replace(virtualSchema + ".", realSchema + ".");
+                }
+                try (Connection connection = getConnectionFromPool(dsDto.getId());
+                     PreparedStatement statement = connection.prepareStatement(readQuery)) {
                     bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
                     try (ResultSet resultSet = statement.executeQuery()) {
                         ResultSetMetaData metaData = resultSet.getMetaData();
@@ -1275,11 +1304,12 @@ public class CalciteProvider extends Provider {
     private Connection getCalciteConnection() {
         registerDriver();
         Properties info = new Properties();
-        info.setProperty(CalciteConnectionProperty.LEX.camelName(), "JAVA");
+        info.setProperty(CalciteConnectionProperty.LEX.camelName(), "MYSQL");
         info.setProperty(CalciteConnectionProperty.FUN.camelName(), "all");
         info.setProperty(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), "false");
         info.setProperty(CalciteConnectionProperty.PARSER_FACTORY.camelName(), "org.apache.calcite.sql.parser.impl.SqlParserImpl#FACTORY");
         info.setProperty(CalciteConnectionProperty.DEFAULT_NULL_COLLATION.camelName(), NullCollation.LAST.name());
+        info.setProperty(CalciteConnectionProperty.CONFORMANCE.camelName(), "MYSQL_5");
         info.setProperty("remarks", "true");
         Connection connection = null;
         try {
@@ -1290,6 +1320,26 @@ public class CalciteProvider extends Provider {
         }
         return connection;
     }
+
+    /**
+     * 自定义 SqlDialectFactory：覆盖 supportsCharSet() 返回 false，
+     * 避免 Calcite 在 toSqlString 时给非 ASCII 字符串加 _UTF-8 前缀（MySQL 不认识）。
+     */
+    private static final SqlDialectFactory NO_CHARSET_FACTORY = new SqlDialectFactory() {
+        @Override
+        public SqlDialect create(DatabaseMetaData metaData) {
+            SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(metaData);
+            // 用 MysqlSqlDialect.DEFAULT_CONTEXT 构建覆盖 supportsCharSet 的子类
+            // 避免 Calcite 给非 ASCII 字符串加 _UTF-8 前缀（MySQL 不认识）
+            return new org.apache.calcite.sql.dialect.MysqlSqlDialect(
+                    org.apache.calcite.sql.dialect.MysqlSqlDialect.DEFAULT_CONTEXT) {
+                @Override
+                public boolean supportsCharSet() {
+                    return false;
+                }
+            };
+        }
+    };
 
     private void applyDatasourceUrl(BasicDataSource dataSource, DatasourceSchemaDTO ds, DatasourceConfiguration configuration) {
         CoreDriver customDriver = resolveCustomDriver(ds.getType(), configuration.getCustomDriver());
@@ -1347,7 +1397,7 @@ public class CalciteProvider extends Provider {
                                 dataSource.setMinIdle(configuration.getMinPoolSize());
                                 startSshSession(configuration, null, ds.getId());
                                 applyDatasourceUrl(dataSource, ds, configuration);
-                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, null, configuration.getDataBase());
+                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, NO_CHARSET_FACTORY, null, configuration.getDataBase());
                                 rootSchema.add(ds.getSchemaAlias(), schema);
                                 break;
                             case impala:
@@ -1364,7 +1414,7 @@ public class CalciteProvider extends Provider {
                                 dataSource.setDefaultQueryTimeout(Integer.valueOf(configuration.getQueryTimeout()));
                                 startSshSession(configuration, null, ds.getId());
                                 applyDatasourceUrl(dataSource, ds, configuration);
-                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, null, configuration.getDataBase());
+                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, NO_CHARSET_FACTORY, null, configuration.getDataBase());
                                 rootSchema.add(ds.getSchemaAlias(), schema);
                                 break;
                             case sqlServer:
@@ -1381,7 +1431,7 @@ public class CalciteProvider extends Provider {
                                 dataSource.setDefaultQueryTimeout(Integer.valueOf(configuration.getQueryTimeout()));
                                 startSshSession(configuration, null, ds.getId());
                                 applyDatasourceUrl(dataSource, ds, configuration);
-                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, null, configuration.getSchema());
+                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, NO_CHARSET_FACTORY, null, configuration.getSchema());
                                 rootSchema.add(ds.getSchemaAlias(), schema);
                                 break;
                             case oracle:
@@ -1400,7 +1450,7 @@ public class CalciteProvider extends Provider {
                                 dataSource.setDefaultQueryTimeout(Integer.valueOf(configuration.getQueryTimeout()));
                                 startSshSession(configuration, null, ds.getId());
                                 applyDatasourceUrl(dataSource, ds, configuration);
-                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, null, configuration.getSchema());
+                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, NO_CHARSET_FACTORY, null, configuration.getSchema());
                                 rootSchema.add(ds.getSchemaAlias(), schema);
                                 break;
                             case db2:
@@ -1418,7 +1468,7 @@ public class CalciteProvider extends Provider {
                                 dataSource.setDefaultQueryTimeout(Integer.valueOf(configuration.getQueryTimeout()));
                                 startSshSession(configuration, null, ds.getId());
                                 applyDatasourceUrl(dataSource, ds, configuration);
-                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, null, configuration.getSchema());
+                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, NO_CHARSET_FACTORY, null, configuration.getSchema());
                                 rootSchema.add(ds.getSchemaAlias(), schema);
                                 break;
                             case ck:
@@ -1435,7 +1485,7 @@ public class CalciteProvider extends Provider {
                                 dataSource.setDefaultQueryTimeout(Integer.valueOf(configuration.getQueryTimeout()));
                                 startSshSession(configuration, null, ds.getId());
                                 applyDatasourceUrl(dataSource, ds, configuration);
-                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, null, configuration.getDataBase());
+                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, NO_CHARSET_FACTORY, null, configuration.getDataBase());
                                 rootSchema.add(ds.getSchemaAlias(), schema);
                                 break;
                             case pg:
@@ -1452,7 +1502,7 @@ public class CalciteProvider extends Provider {
                                 dataSource.setDefaultQueryTimeout(Integer.valueOf(configuration.getQueryTimeout()));
                                 startSshSession(configuration, null, ds.getId());
                                 applyDatasourceUrl(dataSource, ds, configuration);
-                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, null, configuration.getSchema());
+                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, NO_CHARSET_FACTORY, null, configuration.getSchema());
                                 rootSchema.add(ds.getSchemaAlias(), schema);
                                 break;
                             case redshift:
@@ -1469,7 +1519,7 @@ public class CalciteProvider extends Provider {
                                 dataSource.setDefaultQueryTimeout(Integer.valueOf(configuration.getQueryTimeout()));
                                 startSshSession(configuration, null, ds.getId());
                                 applyDatasourceUrl(dataSource, ds, configuration);
-                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, null, configuration.getSchema());
+                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, NO_CHARSET_FACTORY, null, configuration.getSchema());
                                 rootSchema.add(ds.getSchemaAlias(), schema);
                                 break;
                             case h2:
@@ -1486,7 +1536,7 @@ public class CalciteProvider extends Provider {
                                 dataSource.setDefaultQueryTimeout(Integer.valueOf(configuration.getQueryTimeout()));
                                 startSshSession(configuration, null, ds.getId());
                                 applyDatasourceUrl(dataSource, ds, configuration);
-                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, null, configuration.getDataBase());
+                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, NO_CHARSET_FACTORY, null, configuration.getDataBase());
                                 rootSchema.add(ds.getSchemaAlias(), schema);
                                 break;
                             default:
@@ -1503,7 +1553,7 @@ public class CalciteProvider extends Provider {
                                 dataSource.setDefaultQueryTimeout(Integer.valueOf(configuration.getQueryTimeout()));
                                 startSshSession(configuration, null, ds.getId());
                                 applyDatasourceUrl(dataSource, ds, configuration);
-                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, null, configuration.getDataBase());
+                                schema = JdbcSchema.create(rootSchema, ds.getSchemaAlias(), dataSource, NO_CHARSET_FACTORY, null, configuration.getDataBase());
                                 rootSchema.add(ds.getSchemaAlias(), schema);
                         }
             } catch (CrestException e) {
