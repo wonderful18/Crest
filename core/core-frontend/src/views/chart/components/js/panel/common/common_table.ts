@@ -3213,8 +3213,8 @@ export function configMergeCells(chart: Chart, options: S2Options, dataConfig: S
   const { mergeCells, mergeFields } = parseJson(chart.customAttr).tableCell
   const { showIndex } = parseJson(chart.customAttr).tableHeader
   if (mergeCells) {
-    options.frozenColCount = 0
-    options.frozenRowCount = 0
+    // s2 v2 将冻结配置从顶层属性改为 frozen 嵌套对象
+    options.frozen = { colCount: 0, rowCount: 0 }
     const fields = chart.data.fields || []
     const fieldsMap =
       fields.reduce((p, n) => {
