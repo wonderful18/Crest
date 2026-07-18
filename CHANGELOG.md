@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.5.25 - 2026-07-18
+
+v1.5.25 是 v1.5.24 之后的缺陷修复版本，修复导出 Excel 整数列带多余小数点、以及日期列带多余 `00:00:00` 的问题。本版本没有新增数据库结构，无需执行升级 SQL。
+
+### 修复
+
+- 修复导出 Excel 整数列带多余小数点：整数类型字段被 `Double.parseDouble` 转 double 写入，POI 内部存为 `7.0`，格式 `0.######` 在部分 Excel/WPS 版本仍显示 `7.0`。改为整数字段强制设 `"0"` 格式（纯整数）并用 `longValueExact` 写入，确保显示 `7` 不带 `.0`；FLOAT 保留 double。`ChartDataServer.setExcelData`（table-info/table-normal 分支 + 其他视图分支）与 `ExportCenterDownLoadManage.setExportCellValue` 两条路径均已修复。
+- 修复导出 Excel 日期列带多余 `00:00:00`：数据源返回 `"2026-05-28 00:00:00"`（纯日期 + 零时分秒）原样写入。新增 `normalizeDateString`，对 TIME 类型若值形如 `yyyy-MM-dd 00:00:00` 截成 `yyyy-MM-dd`；带实际时分秒的完整 datetime 不变。两条路径均已接入。
+
+### 验证
+
+- 导出明细 Excel，整数列显示 `7`、`21`（不再 `7.0`、`21.0`）；日期列显示 `2026-05-28`（不再 `2026-05-28 00:00:00`）；FLOAT 列保持原样。
+
+### 安装说明
+
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.25` 和 `ghcr.io/sevoniva/crest-web:v1.5.25`。
+- 从 v1.5.24 升级到 v1.5.25 只需要替换前后端镜像，不需要新增升级 SQL。
+
 ## v1.5.24 - 2026-07-17
 
 v1.5.24 是 v1.5.23 之后的缺陷修复版本，修复跨数据源自定义 SQL 查询（含中文 CASE WHEN 别名/字面量）执行失败、连续查询偶发 40001、以及明细表 s2 v2 冻结配置失效的问题。本版本没有新增数据库结构，无需执行升级 SQL。
