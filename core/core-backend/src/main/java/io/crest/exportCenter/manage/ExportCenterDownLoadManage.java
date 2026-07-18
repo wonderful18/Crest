@@ -418,13 +418,42 @@ public class ExportCenterDownLoadManage {
         String normalizedValue = normalizeScientificZero(value);
         if (isNumericExportField(fieldType) && isSafeExcelNumericText(normalizedValue)) {
             try {
-                cell.setCellValue(Double.parseDouble(StringUtils.trim(normalizedValue)));
+                BigDecimal decimal = new BigDecimal(StringUtils.trim(normalizedValue));
+                // 整数类型按整数写入（截断小数部分），强制纯整数格式 "0" 避免 Excel 显示 "1.0"。
+                if (FieldTypeConstants.INTEGER.equals(fieldType)) {
+                    org.apache.poi.ss.usermodel.Workbook wb = cell.getSheet().getWorkbook();
+                    org.apache.poi.ss.usermodel.CellStyle intStyle = wb.createCellStyle();
+                    intStyle.setDataFormat(wb.createDataFormat().getFormat("0"));
+                    cell.setCellStyle(intStyle);
+                    cell.setCellValue(decimal.setScale(0, java.math.RoundingMode.DOWN).longValueExact());
+                } else {
+                    cell.setCellValue(decimal.doubleValue());
+                }
                 return;
-            } catch (NumberFormatException ignored) {
+            } catch (NumberFormatException | ArithmeticException ignored) {
                 // 保持原有导出行为：无法安全转成数字时按文本写入。
             }
         }
+        // 日期类型：纯日期（带 00:00:00 零时分秒）去掉多余的时分秒，只保留日期部分。
+        if (FieldTypeConstants.TIME.equals(fieldType)) {
+            normalizedValue = normalizeDateString(normalizedValue);
+        }
         cell.setCellValue(normalizedValue);
+    }
+
+    /**
+     * 日期值若形如 "yyyy-MM-dd 00:00:00"（纯日期 + 零时分秒），去掉多余的 00:00:00，
+     * 只保留日期部分；带实际时分秒的完整 datetime 保持不变。
+     */
+    private static String normalizeDateString(String value) {
+        if (StringUtils.isBlank(value)) {
+            return value;
+        }
+        String trimmed = value.trim();
+        if (trimmed.length() >= 19 && trimmed.substring(10, 19).equals(" 00:00:00")) {
+            return trimmed.substring(0, 10);
+        }
+        return value;
     }
 
     private boolean isSafeExcelNumericText(String value) {
