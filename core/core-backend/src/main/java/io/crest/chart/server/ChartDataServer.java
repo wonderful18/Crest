@@ -50,6 +50,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
@@ -636,19 +637,49 @@ public class ChartDataServer implements ChartDataApi {
                                         FormatterCfgDTO formatterCfgDTO = xAxis.get(j).getFormatterCfg() == null ? new FormatterCfgDTO().setUnitLanguage(Lang.isChinese() ? "ch" : "en") : xAxis.get(j).getFormatterCfg();
                                         String numericText = normalizeScientificZero(cellValObj.toString());
                                         if (isSafeExcelNumericText(numericText)) {
-                                            row.getCell(j).setCellStyle(styles.get(j));
-                                            row.getCell(j).setCellValue(Double.parseDouble(cellValue(formatterCfgDTO, new BigDecimal(numericText))));
+                                            CellStyle styleAtJ = styles.get(j);
+                                            row.getCell(j).setCellStyle(styleAtJ);
+                                            BigDecimal decimal = new BigDecimal(numericText);
+                                            // 整数类型按整数写入（截断小数部分），
+                                            // 避免 Excel 把 1.0 这类 double 显示成 "1.0"（带多余小数点）。
+                                            if (xAxis.get(j).getFieldType().equals(FieldTypeConstants.INTEGER)) {
+                                                // POI 内部把 long 存为 double，若格式含小数位(如 0.######)，
+                                                // 某些 Excel 版本仍显示 .0。强制用纯整数格式 "0" 确保无小数点。
+                                                if (styleAtJ != null) {
+                                                    styleAtJ.setDataFormat(wb.createDataFormat().getFormat("0"));
+                                                }
+                                                row.getCell(j).setCellValue(decimal.setScale(0, RoundingMode.DOWN).longValueExact());
+                                            } else {
+                                                row.getCell(j).setCellValue(Double.parseDouble(cellValue(formatterCfgDTO, decimal)));
+                                            }
                                         } else {
+                                            // 日期类型：纯日期（带 00:00:00 零时分秒）去掉多余的时分秒。
+                                            if (xAxis.get(j).getFieldType().equals(FieldTypeConstants.TIME)) {
+                                                numericText = normalizeDateString(numericText);
+                                            }
                                             cell.setCellValue(numericText);
                                         }
-                                    } catch (NumberFormatException e) {
+                                    } catch (NumberFormatException | ArithmeticException e) {
                                         cell.setCellValue(cellValObj.toString());
                                     }
                                 } else {
                                     String numericText = normalizeScientificZero(cellValObj.toString());
                                     if ((excelTypes[j].equals(FieldTypeConstants.INTEGER) || excelTypes[j].equals(FieldTypeConstants.FLOAT)) && isSafeExcelNumericText(numericText)) {
-                                        cell.setCellValue(Double.parseDouble(StringUtils.trim(numericText)));
+                                        BigDecimal decimal = new BigDecimal(StringUtils.trim(numericText));
+                                        // 整数类型按整数写入（截断小数部分），强制纯整数格式 "0" 避免 Excel 显示 "1.0"。
+                                        if (excelTypes[j].equals(FieldTypeConstants.INTEGER)) {
+                                            CellStyle intStyle = wb.createCellStyle();
+                                            intStyle.setDataFormat(wb.createDataFormat().getFormat("0"));
+                                            cell.setCellStyle(intStyle);
+                                            cell.setCellValue(decimal.setScale(0, RoundingMode.DOWN).longValueExact());
+                                        } else {
+                                            cell.setCellValue(decimal.doubleValue());
+                                        }
                                     } else if (cellValObj != null) {
+                                        // 日期类型：纯日期（带 00:00:00 零时分秒）去掉多余的时分秒。
+                                        if (excelTypes[j] != null && excelTypes[j].equals(FieldTypeConstants.TIME)) {
+                                            numericText = normalizeDateString(numericText);
+                                        }
                                         cell.setCellValue(numericText);
                                     }
                                 }
@@ -1003,6 +1034,21 @@ public class ChartDataServer implements ChartDataApi {
                 return decimal.toPlainString();
             }
         } catch (NumberFormatException ignored) {
+        }
+        return value;
+    }
+
+    /**
+     * 日期值若形如 "yyyy-MM-dd 00:00:00"（纯日期 + 零时分秒），去掉多余的 00:00:00，
+     * 只保留日期部分；带实际时分秒的完整 datetime 保持不变。
+     */
+    private static String normalizeDateString(String value) {
+        if (StringUtils.isBlank(value)) {
+            return value;
+        }
+        String trimmed = value.trim();
+        if (trimmed.length() >= 19 && trimmed.substring(10, 19).equals(" 00:00:00")) {
+            return trimmed.substring(0, 10);
         }
         return value;
     }
