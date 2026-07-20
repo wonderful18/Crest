@@ -102,6 +102,7 @@ public class DatasetSyncTaskManage {
                        t.cron,
                        t.simple_cron_value,
                        t.simple_cron_type,
+                       t.simple_cron_hour,
                        t.end_time,
                        t.create_time,
                        t.update_time,
@@ -176,6 +177,7 @@ public class DatasetSyncTaskManage {
                        t.cron,
                        t.simple_cron_value,
                        t.simple_cron_type,
+                       t.simple_cron_hour,
                        t.end_time,
                        t.create_time,
                        t.update_time,
@@ -587,7 +589,9 @@ public class DatasetSyncTaskManage {
         }
         if (Strings.CI.equals(type, "day")) {
             value = Math.max(1, Math.min(value, 31));
-            return "0 0 0 1/" + value + " * ? *";
+            long hour = Math.max(0, Math.min(
+                    Objects.requireNonNullElse(task.getSimpleCronHour(), 0L), 23L));
+            return "0 0 " + hour + " 1/" + value + " * ? *";
         }
         value = Math.max(1, Math.min(value, 59));
         return "0 0/" + value + " * * * ? *";
@@ -686,6 +690,7 @@ public class DatasetSyncTaskManage {
         task.setCron(rs.getString("cron"));
         task.setSimpleCronValue(longOrNull(rs, "simple_cron_value"));
         task.setSimpleCronType(rs.getString("simple_cron_type"));
+        task.setSimpleCronHour(longOrNull(rs, "simple_cron_hour"));
         task.setEndTime(longOrNull(rs, "end_time"));
         task.setCreateTime(longOrNull(rs, "create_time"));
         task.setUpdateTime(firstNonNull(longOrNull(rs, "update_time"), longOrNull(rs, "dataset_update_time")));

@@ -98,6 +98,7 @@ export interface DatasetSyncTask {
   cron?: string
   simpleCronValue?: number
   simpleCronType?: 'minute' | 'hour' | 'day'
+  simpleCronHour?: number
   endTime?: number
   lastExecTime?: number
   heartbeatTime?: number

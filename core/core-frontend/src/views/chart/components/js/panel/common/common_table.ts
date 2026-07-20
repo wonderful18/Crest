@@ -3239,6 +3239,9 @@ export function configMergeCells(chart: Chart, options: S2Options, dataConfig: S
     options.mergedCell = (sheet, cells, meta) => {
       if (showIndex && meta.colIndex === 0) {
         meta.fieldValue = getRowIndex(mergedCellsInfo, meta)
+      } else if (typeof meta.fieldValue === 'string') {
+        // 合并单元格统一显示大写，避免 Pos系统/POS系统/pos系统 合并后大小写不一
+        meta.fieldValue = meta.fieldValue.toUpperCase()
       }
       meta.fieldType = fieldsMap[meta.valueField]?.fieldType
       return new CustomMergedCell(sheet, cells, meta)

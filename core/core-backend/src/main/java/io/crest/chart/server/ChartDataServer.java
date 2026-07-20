@@ -650,7 +650,20 @@ public class ChartDataServer implements ChartDataApi {
                                                 }
                                                 row.getCell(j).setCellValue(decimal.setScale(0, RoundingMode.DOWN).longValueExact());
                                             } else {
-                                                row.getCell(j).setCellValue(Double.parseDouble(cellValue(formatterCfgDTO, decimal)));
+                                                // FLOAT 类型：值为整数（小数部分为 0，含 0）时按整数写入，
+                                                // 避免 0.###### 这类格式把 0.0 显示成 "0."（带多余小数点）。
+                                                if (decimal.setScale(0, RoundingMode.DOWN).compareTo(decimal) == 0) {
+                                                    if (styleAtJ != null) {
+                                                        styleAtJ.setDataFormat(wb.createDataFormat().getFormat("0"));
+                                                    }
+                                                    row.getCell(j).setCellValue(decimal.setScale(0, RoundingMode.DOWN).longValueExact());
+                                                } else {
+                                                    // FLOAT 非整数值：显式按小数格式写入，避免 formatter 配置的整数格式把小数显示成整数。
+                                                    CellStyle floatStyle = wb.createCellStyle();
+                                                    floatStyle.setDataFormat(wb.createDataFormat().getFormat("0.######"));
+                                                    row.getCell(j).setCellStyle(floatStyle);
+                                                    row.getCell(j).setCellValue(Double.parseDouble(cellValue(formatterCfgDTO, decimal)));
+                                                }
                                             }
                                         } else {
                                             // 日期类型：纯日期（带 00:00:00 零时分秒）去掉多余的时分秒。
@@ -673,7 +686,20 @@ public class ChartDataServer implements ChartDataApi {
                                             cell.setCellStyle(intStyle);
                                             cell.setCellValue(decimal.setScale(0, RoundingMode.DOWN).longValueExact());
                                         } else {
-                                            cell.setCellValue(decimal.doubleValue());
+                                            // FLOAT 类型：值为整数（小数部分为 0，含 0）时按整数写入，
+                                            // 避免 0.###### 格式把 0.0 显示成 "0."（带多余小数点）。
+                                            if (decimal.setScale(0, RoundingMode.DOWN).compareTo(decimal) == 0) {
+                                                CellStyle intStyle = wb.createCellStyle();
+                                                intStyle.setDataFormat(wb.createDataFormat().getFormat("0"));
+                                                cell.setCellStyle(intStyle);
+                                                cell.setCellValue(decimal.setScale(0, RoundingMode.DOWN).longValueExact());
+                                            } else {
+                                                // FLOAT 非整数值：显式按小数格式写入，避免单元格格式把小数显示成整数。
+                                                CellStyle floatStyle = wb.createCellStyle();
+                                                floatStyle.setDataFormat(wb.createDataFormat().getFormat("0.######"));
+                                                cell.setCellStyle(floatStyle);
+                                                cell.setCellValue(decimal.doubleValue());
+                                            }
                                         }
                                     } else if (cellValObj != null) {
                                         // 日期类型：纯日期（带 00:00:00 零时分秒）去掉多余的时分秒。

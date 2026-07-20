@@ -34,6 +34,8 @@ public class CoreDatasetSyncTask implements Serializable {
 
     private String simpleCronType;
 
+    private Long simpleCronHour;
+
     private Long endTime;
 
     private Long createTime;
