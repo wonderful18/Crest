@@ -242,6 +242,8 @@ public class DatasetTableFieldManage {
         wrapper.eq("dataset_group_id", id);
         wrapper.eq("checked", true);
         wrapper.isNull("chart_id");
+        // 按 columnIndex 排序（用户调整后的字段顺序）；null 排到最后保证旧数据兼容
+        wrapper.orderByAsc("column_index");
         return transDTO(coreDatasetTableFieldMapper.selectList(wrapper));
     }
 

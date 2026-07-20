@@ -15,6 +15,8 @@ import icon_copy_outlined from '@/assets/svg/icon_copy_outlined.svg'
 import icon_deleteTrash_outlined from '@/assets/svg/icon_delete-trash_outlined.svg'
 import icon_edit_outlined from '@/assets/svg/icon_edit_outlined.svg'
 import icon_info_outlined from '@/assets/svg/icon_info_outlined.svg'
+import icon_top_align_outlined from '@/assets/svg/icon_top-align_outlined.svg'
+import icon_down_outlined from '@/assets/svg/icon_down_outlined.svg'
 import dayjs from 'dayjs'
 import {
   iconFieldCalculatedMap,
@@ -145,6 +147,7 @@ const defaultSyncTask = (): DatasetSyncTask => ({
   syncRate: 'RIGHTNOW',
   simpleCronValue: 30,
   simpleCronType: 'minute',
+  simpleCronHour: 0,
   cron: '0 0/30 * * * ? *',
   fullSyncIntervalHours: 24,
   verifyEnabled: 1,
@@ -413,6 +416,29 @@ const editeSave = () => {
     .finally(() => {
       loading.value = false
     })
+}
+
+const moveField = (field, direction) => {
+  changeUpdate()
+  const groupType = field.groupType
+  // 在 allfields 中找到同 groupType 的字段索引列表
+  const sameTypeIndices = []
+  allfields.value.forEach((ele, idx) => {
+    if (ele.groupType === groupType) sameTypeIndices.push(idx)
+  })
+  // 找到当前 field 在 sameTypeIndices 中的位置
+  const posInType = sameTypeIndices.indexOf(allfields.value.indexOf(field))
+  if (posInType < 0) return
+  const swapWith = direction === 'up' ? posInType - 1 : posInType + 1
+  if (swapWith < 0 || swapWith >= sameTypeIndices.length) return
+  // 在 allfields 中交换两个元素
+  const idxA = sameTypeIndices[posInType]
+  const idxB = sameTypeIndices[swapWith]
+  const arr = [...allfields.value]
+  const tmp = arr[idxA]
+  arr[idxA] = arr[idxB]
+  arr[idxB] = tmp
+  allfields.value = arr
 }
 
 const handleFieldMore = (ele, type) => {
@@ -1110,7 +1136,9 @@ const refreshSimpleCron = () => {
   }
   if (syncTask.simpleCronType === 'day') {
     syncTask.simpleCronValue = Math.min(Math.max(value, 1), 31)
-    syncTask.cron = `0 0 0 1/${syncTask.simpleCronValue} * ? *`
+    const hour = Math.min(Math.max(Number(syncTask.simpleCronHour ?? 0), 0), 23)
+    syncTask.simpleCronHour = hour
+    syncTask.cron = `0 0 ${hour} 1/${syncTask.simpleCronValue} * ? *`
     return
   }
   syncTask.simpleCronValue = Math.min(Math.max(value, 1), 59)
@@ -2293,6 +2321,14 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                   <el-option label="小时" value="hour" />
                   <el-option label="天" value="day" />
                 </el-select>
+                <el-select
+                  v-if="syncTask.simpleCronType === 'day'"
+                  v-model="syncTask.simpleCronHour"
+                  class="sync-cron-hour"
+                  @change="refreshSimpleCron"
+                >
+                  <el-option v-for="h in 24" :key="h - 1" :label="`${h - 1}点`" :value="h - 1" />
+                </el-select>
               </div>
               <div class="sync-summary">
                 <span>{{ syncMethodText }}</span>
@@ -2819,8 +2855,32 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                       </template>
                     </el-table-column>
 
-                    <el-table-column fixed="right" width="168" :label="t('dataset.operator')">
+                    <el-table-column fixed="right" width="200" :label="t('dataset.operator')">
                       <template #default="scope">
+                        <el-tooltip effect="dark" :content="t('dataset.moveUp')" placement="top">
+                          <template #default>
+                            <el-button text @click="moveField(scope.row, 'up')">
+                              <template #icon>
+                                <Icon name="icon_top-align_outlined"
+                                  ><icon_top_align_outlined class="svg-icon"
+                                /></Icon>
+                              </template>
+                            </el-button>
+                          </template>
+                        </el-tooltip>
+
+                        <el-tooltip effect="dark" :content="t('dataset.moveDown')" placement="top">
+                          <template #default>
+                            <el-button text @click="moveField(scope.row, 'down')">
+                              <template #icon>
+                                <Icon name="icon_down_outlined"
+                                  ><icon_down_outlined class="svg-icon"
+                                /></Icon>
+                              </template>
+                            </el-button>
+                          </template>
+                        </el-tooltip>
+
                         <el-tooltip effect="dark" :content="t('dataset.copy')" placement="top">
                           <template #default>
                             <el-button text @click="handleFieldMore(scope.row, 'copy')">
@@ -3025,8 +3085,32 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                       </template>
                     </el-table-column>
 
-                    <el-table-column fixed="right" width="168" :label="t('dataset.operator')">
+                    <el-table-column fixed="right" width="200" :label="t('dataset.operator')">
                       <template #default="scope">
+                        <el-tooltip effect="dark" :content="t('dataset.moveUp')" placement="top">
+                          <template #default>
+                            <el-button text @click="moveField(scope.row, 'up')">
+                              <template #icon>
+                                <Icon name="icon_top-align_outlined"
+                                  ><icon_top_align_outlined class="svg-icon"
+                                /></Icon>
+                              </template>
+                            </el-button>
+                          </template>
+                        </el-tooltip>
+
+                        <el-tooltip effect="dark" :content="t('dataset.moveDown')" placement="top">
+                          <template #default>
+                            <el-button text @click="moveField(scope.row, 'down')">
+                              <template #icon>
+                                <Icon name="icon_down_outlined"
+                                  ><icon_down_outlined class="svg-icon"
+                                /></Icon>
+                              </template>
+                            </el-button>
+                          </template>
+                        </el-tooltip>
+
                         <el-tooltip effect="dark" :content="t('dataset.copy')" placement="top">
                           <template #default>
                             <el-button text @click="handleFieldMore(scope.row, 'copy')">
@@ -3767,6 +3851,11 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
 
           .sync-unit {
             flex: 1;
+          }
+
+          .sync-cron-hour {
+            width: 96px;
+            flex: 0 0 auto;
           }
         }
 

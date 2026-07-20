@@ -2459,6 +2459,8 @@ export default {
     sql_ds_union_error: 'SQL Dataset in direct connection mode, does not support association',
     api_data: 'API Dataset',
     copy: 'Copy',
+    moveUp: 'Move Up',
+    moveDown: 'Move Down',
     sync_log: 'Synchronize logs',
     field_edit_name: 'Field name',
     input_edit_name: 'Please enter the field name',

@@ -184,6 +184,97 @@ class DatasetSyncTaskManageTest {
 
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
+    void simpleCronDayUsesCustomHour() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ScheduleManager scheduleManager = mock(ScheduleManager.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "scheduleManager", scheduleManager);
+        allowDatasetAccess(manage);
+
+        CoreDatasetSyncTask exists = new CoreDatasetSyncTask();
+        exists.setId(1262155861866975232L);
+        exists.setDatasetGroupId(982004L);
+        exists.setName("角色分布透视");
+        exists.setUpdateType("all_scope");
+        exists.setSyncRate(DatasourceTaskServer.ScheduleType.RIGHTNOW.name());
+        exists.setCreateTime(1781080000000L);
+        exists.setTaskStatus(TaskStatus.Stopped.name());
+
+        when(taskMapper.selectOne(any())).thenReturn(exists);
+        CoreDatasetSyncTask[] updated = new CoreDatasetSyncTask[1];
+        when(taskMapper.updateById(any())).thenAnswer(invocation -> {
+            updated[0] = invocation.getArgument(0);
+            return 1;
+        });
+        when(taskMapper.selectById(1262155861866975232L)).thenAnswer(invocation -> updated[0]);
+        when(scheduleManager.getDefaultJobDataMap(eq("982004"), any(), eq("1262155861866975232"), any()))
+                .thenReturn(new JobDataMap());
+
+        DatasetSyncTaskDTO request = new DatasetSyncTaskDTO();
+        request.setDatasetGroupId(982004L);
+        request.setName("角色分布透视");
+        request.setUpdateType("all_scope");
+        request.setSyncRate(DatasourceTaskServer.ScheduleType.SIMPLE_CRON.name());
+        request.setSimpleCronValue(1L);
+        request.setSimpleCronType("day");
+        request.setSimpleCronHour(8L);
+
+        manage.save(request);
+
+        ArgumentCaptor<CoreDatasetSyncTask> recordCaptor = ArgumentCaptor.forClass(CoreDatasetSyncTask.class);
+        verify(taskMapper).updateById(recordCaptor.capture());
+        assertEquals("0 0 8 1/1 * ? *", recordCaptor.getValue().getCron());
+        assertEquals(8L, recordCaptor.getValue().getSimpleCronHour());
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void simpleCronDayDefaultsToMidnightWhenHourIsNull() {
+        DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
+        CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
+        ScheduleManager scheduleManager = mock(ScheduleManager.class);
+        ReflectionTestUtils.setField(manage, "taskMapper", taskMapper);
+        ReflectionTestUtils.setField(manage, "scheduleManager", scheduleManager);
+        allowDatasetAccess(manage);
+
+        CoreDatasetSyncTask exists = new CoreDatasetSyncTask();
+        exists.setId(1262155861866975232L);
+        exists.setDatasetGroupId(982004L);
+        exists.setName("角色分布透视");
+        exists.setUpdateType("all_scope");
+        exists.setSyncRate(DatasourceTaskServer.ScheduleType.RIGHTNOW.name());
+        exists.setCreateTime(1781080000000L);
+        exists.setTaskStatus(TaskStatus.Stopped.name());
+
+        when(taskMapper.selectOne(any())).thenReturn(exists);
+        CoreDatasetSyncTask[] updated = new CoreDatasetSyncTask[1];
+        when(taskMapper.updateById(any())).thenAnswer(invocation -> {
+            updated[0] = invocation.getArgument(0);
+            return 1;
+        });
+        when(taskMapper.selectById(1262155861866975232L)).thenAnswer(invocation -> updated[0]);
+        when(scheduleManager.getDefaultJobDataMap(eq("982004"), any(), eq("1262155861866975232"), any()))
+                .thenReturn(new JobDataMap());
+
+        DatasetSyncTaskDTO request = new DatasetSyncTaskDTO();
+        request.setDatasetGroupId(982004L);
+        request.setName("角色分布透视");
+        request.setUpdateType("all_scope");
+        request.setSyncRate(DatasourceTaskServer.ScheduleType.SIMPLE_CRON.name());
+        request.setSimpleCronValue(1L);
+        request.setSimpleCronType("day");
+        request.setSimpleCronHour(null);
+
+        manage.save(request);
+
+        ArgumentCaptor<CoreDatasetSyncTask> recordCaptor = ArgumentCaptor.forClass(CoreDatasetSyncTask.class);
+        verify(taskMapper).updateById(recordCaptor.capture());
+        assertEquals("0 0 0 1/1 * ? *", recordCaptor.getValue().getCron());
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
     void saveAllScopeClearsStaleIncrementalFields() {
         DatasetSyncTaskManage manage = new DatasetSyncTaskManage();
         CoreDatasetSyncTaskMapper taskMapper = mock(CoreDatasetSyncTaskMapper.class);
@@ -365,6 +456,7 @@ class DatasetSyncTaskManageTest {
                     cron VARCHAR(255),
                     simple_cron_value BIGINT,
                     simple_cron_type VARCHAR(50),
+                    simple_cron_hour INT,
                     end_time BIGINT,
                     create_time BIGINT,
                     update_time BIGINT,

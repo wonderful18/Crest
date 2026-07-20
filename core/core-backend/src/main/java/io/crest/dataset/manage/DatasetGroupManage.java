@@ -368,7 +368,10 @@ public class DatasetGroupManage {
             Map<String, Object> map = datasetSQLManage.getUnionSQLForEdit(datasetGroupInfoDTO, null);
             List<DatasetTableFieldDTO> unionFields = (List<DatasetTableFieldDTO>) map.get("field");
 
-            for (DatasetTableFieldDTO datasetTableFieldDTO : allFields) {
+            for (int i = 0; i < allFields.size(); i++) {
+                DatasetTableFieldDTO datasetTableFieldDTO = allFields.get(i);
+                // 记录字段顺序（用户调整后的顺序），导出时按此顺序排列列
+                datasetTableFieldDTO.setColumnIndex(i);
                 DatasetTableFieldDTO dto = datasetTableFieldManage.selectById(datasetTableFieldDTO.getId());
                 if (ObjectUtils.isEmpty(dto)) {
                     if (Objects.equals(datasetTableFieldDTO.getExtField(), ExtFieldConstant.EXT_NORMAL)) {

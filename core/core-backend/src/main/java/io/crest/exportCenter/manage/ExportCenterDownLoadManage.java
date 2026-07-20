@@ -427,7 +427,22 @@ public class ExportCenterDownLoadManage {
                     cell.setCellStyle(intStyle);
                     cell.setCellValue(decimal.setScale(0, java.math.RoundingMode.DOWN).longValueExact());
                 } else {
-                    cell.setCellValue(decimal.doubleValue());
+                    // FLOAT 类型：值为整数（小数部分为 0，含 0）时按整数写入，
+                    // 避免 0.###### 格式把 0.0 显示成 "0."（带多余小数点）。
+                    if (decimal.setScale(0, java.math.RoundingMode.DOWN).compareTo(decimal) == 0) {
+                        org.apache.poi.ss.usermodel.Workbook wb = cell.getSheet().getWorkbook();
+                        org.apache.poi.ss.usermodel.CellStyle intStyle = wb.createCellStyle();
+                        intStyle.setDataFormat(wb.createDataFormat().getFormat("0"));
+                        cell.setCellStyle(intStyle);
+                        cell.setCellValue(decimal.setScale(0, java.math.RoundingMode.DOWN).longValueExact());
+                    } else {
+                        // FLOAT 非整数值：显式按小数格式写入，避免单元格默认/继承格式把小数显示成整数。
+                        org.apache.poi.ss.usermodel.Workbook wb = cell.getSheet().getWorkbook();
+                        org.apache.poi.ss.usermodel.CellStyle floatStyle = wb.createCellStyle();
+                        floatStyle.setDataFormat(wb.createDataFormat().getFormat("0.######"));
+                        cell.setCellStyle(floatStyle);
+                        cell.setCellValue(decimal.doubleValue());
+                    }
                 }
                 return;
             } catch (NumberFormatException | ArithmeticException ignored) {

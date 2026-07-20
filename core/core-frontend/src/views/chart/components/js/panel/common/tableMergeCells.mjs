@@ -8,12 +8,25 @@ const createFieldMap = fields =>
     return pre
   }, {})
 
+// 合并单元格时按大小写不敏感比较值，使 Pos系统/POS系统/pos系统 这类仅大小写不同的相邻值合并为一行。
+// null 与 null 仍视为相等（保持原 === 语义），但 null 与非空值不相等，避免把空值误并入非空合并段。
+const sameValue = (a, b) => {
+  if (a == null || b == null) {
+    return a == null && b == null
+  }
+  if (typeof a === 'string' || typeof b === 'string') {
+    return String(a).toLowerCase() === String(b).toLowerCase()
+  }
+  return a === b
+}
+
 const buildCellsForRange = ({ data, field, colIndex, start, end }) => {
   const mergeCells = []
   const nextRanges = []
 
-  const allSame = start < end && data[start]?.[field] != null &&
-    data.slice(start, end + 1).every(row => row?.[field] === data[start]?.[field])
+  const startVal = data[start]?.[field]
+  const allSame = start < end && startVal != null &&
+    data.slice(start, end + 1).every(row => sameValue(row?.[field], startVal))
   if (allSame) {
     const range = end - start + 1
     const textIndex = range % 2 === 1 ? (range - 1) / 2 : range / 2 - 1
@@ -35,12 +48,12 @@ const buildCellsForRange = ({ data, field, colIndex, start, end }) => {
 
   for (let index = start; index <= end; index++) {
     const curVal = data[index]?.[field]
-    if (curVal !== lastVal || index === end) {
+    if (!sameValue(curVal, lastVal) || index === end) {
       const curRange = index - lastIndex
-      if (curRange > 1 || (index === end && curRange === 1 && lastVal === curVal)) {
+      if (curRange > 1 || (index === end && curRange === 1 && sameValue(lastVal, curVal))) {
         const tmpMergeCells = []
         let textIndex = curRange % 2 === 1 ? (curRange - 1) / 2 : curRange / 2 - 1
-        if (index === end && lastVal === curVal) {
+        if (index === end && sameValue(lastVal, curVal)) {
           textIndex = curRange % 2 === 1 ? (curRange - 1) / 2 : curRange / 2
         }
         for (let j = 0; j < curRange; j++) {
@@ -50,7 +63,7 @@ const buildCellsForRange = ({ data, field, colIndex, start, end }) => {
             showText: j === textIndex
           })
         }
-        if (index === end && lastVal === curVal) {
+        if (index === end && sameValue(lastVal, curVal)) {
           tmpMergeCells.push({
             colIndex,
             rowIndex: index,
@@ -58,7 +71,7 @@ const buildCellsForRange = ({ data, field, colIndex, start, end }) => {
           })
         }
         mergeCells.push(tmpMergeCells)
-        nextRanges.push([lastIndex, index === end && lastVal === curVal ? index : index - 1])
+        nextRanges.push([lastIndex, index === end && sameValue(lastVal, curVal) ? index : index - 1])
       }
       lastVal = curVal
       lastIndex = index
@@ -76,7 +89,7 @@ const buildContextRanges = (data, contextFields) => {
   const ranges = []
   let start = 0
   for (let index = 1; index < data.length; index++) {
-    const changed = contextFields.some(field => data[index]?.[field] !== data[index - 1]?.[field])
+    const changed = contextFields.some(field => !sameValue(data[index]?.[field], data[index - 1]?.[field]))
     if (changed) {
       ranges.push([start, index - 1])
       start = index
@@ -91,7 +104,7 @@ const isFieldAllSame = (data, field) => {
     return false
   }
   const first = data[0]?.[field]
-  return data.every(row => row?.[field] === first)
+  return data.every(row => sameValue(row?.[field], first))
 }
 
 export const getMergeableFieldOptions = axis => {
