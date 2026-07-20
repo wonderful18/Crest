@@ -1,5 +1,33 @@
 # Changelog
 
+## v1.5.26 - 2026-07-20
+
+v1.5.26 是 v1.5.25 之后的功能版本，新增数据集缓存按天自定义时点、明细表合并大小写、数据集字段上下移，并修复导出 Excel 小数显示缺陷。**本版本新增数据库结构，升级需执行升级 SQL（V1.5.9.1）。**
+
+### 新增
+
+- 数据集缓存按天自定义时点：按天更新支持 0-23 点选时点（如每天 8 点），新增 `simple_cron_hour` 字段与 Flyway 迁移 `V1.5.9.1__dataset_sync_task_simple_cron_hour.sql`。旧行 NULL 默认 0 点，向后兼容。
+- 明细表合并单元格大小写不敏感：`Pos系统/POS系统/pos系统` 相邻合并为一行，合并段统一显示大写。`tableMergeCells.mjs` 改 `sameValue` 大小写不敏感比较，`common_table.ts` 合并单元格 `fieldValue` 转大写。
+- 数据集字段上下移：字段列表支持上移/下移调整顺序，`column_index` 持久化，导出列按调整后顺序排列，null 排到最后兼容旧数据。
+
+### 修复
+
+- 修复导出 Excel FLOAT 整数显示 `0.`：FLOAT 整数值用纯整数格式 `"0"` 写入，显示 `0`/`12`（不再 `0.`/`12.0`）。
+- 修复导出 Excel FLOAT 小数被误取整（`3.14` 显示成 `3`）：FLOAT 非整数值显式用 `"0.######"` 小数格式写入，不被 formatter 整数格式覆盖。`ChartDataServer.setExcelData`（table-info/table-normal + 其他视图分支）与 `ExportCenterDownLoadManage.setExportCellValue` 两条路径均已修复。
+- 修复保存同步任务后「按天时点」丢失：前端 `buildDatasetSyncTaskPayload` 漏传 `simpleCronHour`，已补传。
+
+### 验证
+
+- 数据集缓存按天选 8 点保存后重开仍为 8 点，DB `simple_cron_hour=8`、`cron='0 0 8 1/1 * ? *'`。
+- 明细表含 Pos/POS/pos 相邻值合并为一行，中央显示 POS系统。
+- 字段上下移保存后导出 Excel 列顺序与调整后一致。
+- 导出 FLOAT 整数 `12.0`→`12`、`0`→`0`；小数 `3.14`→`3.14`。
+
+### 安装说明
+
+- **本次新增数据库结构，从 v1.5.25 升级需执行升级 SQL**：后端启动 Flyway 自动应用 `V1.5.9.1`（`dataset_sync_task` 加 `simple_cron_hour` 列）。
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.26` 和 `ghcr.io/sevoniva/crest-web:v1.5.26`。
+
 ## v1.5.25 - 2026-07-18
 
 v1.5.25 是 v1.5.24 之后的缺陷修复版本，修复导出 Excel 整数列带多余小数点、以及日期列带多余 `00:00:00` 的问题。本版本没有新增数据库结构，无需执行升级 SQL。
