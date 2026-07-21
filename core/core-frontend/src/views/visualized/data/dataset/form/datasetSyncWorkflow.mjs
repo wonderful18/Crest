@@ -9,7 +9,6 @@ export const buildDatasetSyncTaskPayload = ({ syncTask, datasetGroupId, datasetN
   cron: syncTask.cron,
   simpleCronValue: syncTask.simpleCronValue,
   simpleCronType: syncTask.simpleCronType,
-  simpleCronHour: syncTask.simpleCronHour,
   endTime: syncTask.endTime,
   fullSyncIntervalHours: syncTask.fullSyncIntervalHours,
   verifyEnabled: syncTask.verifyEnabled,
