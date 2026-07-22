@@ -147,7 +147,6 @@ const defaultSyncTask = (): DatasetSyncTask => ({
   syncRate: 'RIGHTNOW',
   simpleCronValue: 30,
   simpleCronType: 'minute',
-  simpleCronHour: 0,
   cron: '0 0/30 * * * ? *',
   fullSyncIntervalHours: 24,
   verifyEnabled: 1,
@@ -1048,6 +1047,20 @@ const syncMethodText = computed(() => {
   return '全量'
 })
 const syncRunning = computed(() => syncTask.taskStatus === 'UnderExecution')
+// radio 显示用：day 类型保存时 syncRate=CRON，但 UI 仍显示为"定时"
+// 手输的 CRON（非 day 类型）显示为"表达式"
+const syncRateDisplay = computed({
+  get: () => {
+    if (syncTask.syncRate === 'CRON' && syncTask.simpleCronType === 'day') {
+      return 'SIMPLE_CRON'
+    }
+    return syncTask.syncRate
+  },
+  set: val => {
+    syncTask.syncRate = val
+    syncRateChange()
+  }
+})
 const syncStatusText = computed(() =>
   getDatasetSyncStatusText({
     ...toRaw(syncTask),
@@ -1131,6 +1144,7 @@ const refreshSimpleCron = () => {
   const value = Number(syncTask.simpleCronValue || 30)
   if (syncTask.simpleCronType === 'hour') {
     syncTask.simpleCronValue = Math.min(Math.max(value, 1), 23)
+    syncTask.syncRate = 'SIMPLE_CRON'
     syncTask.cron = `0 0 0/${syncTask.simpleCronValue} * * ? *`
     return
   }
@@ -1138,15 +1152,18 @@ const refreshSimpleCron = () => {
     syncTask.simpleCronValue = Math.min(Math.max(value, 1), 31)
     const hour = Math.min(Math.max(Number(syncTask.simpleCronHour ?? 0), 0), 23)
     syncTask.simpleCronHour = hour
+    // day 类型用 CRON 模式：后端不重算 cron，直接用前端生成的表达式
+    syncTask.syncRate = 'CRON'
     syncTask.cron = `0 0 ${hour} 1/${syncTask.simpleCronValue} * ? *`
     return
   }
   syncTask.simpleCronValue = Math.min(Math.max(value, 1), 59)
+  syncTask.syncRate = 'SIMPLE_CRON'
   syncTask.cron = `0 0/${syncTask.simpleCronValue} * * * ? *`
 }
 
 const syncRateChange = () => {
-  if (syncTask.syncRate === 'SIMPLE_CRON') {
+  if (syncTask.syncRate === 'SIMPLE_CRON' || syncTask.syncRate === 'CRON') {
     refreshSimpleCron()
   }
   if (syncTask.syncRate === 'RIGHTNOW') {
@@ -1166,12 +1183,27 @@ const validateSyncSetting = () => {
   return true
 }
 
+const applyLoadedSyncTask = task => {
+  if (!task) {
+    return
+  }
+  Object.assign(syncTask, task)
+  // 后端返回 CRON 模式 + 匹配按天格式 → 反解为 SIMPLE_CRON UI 显示（simpleCronType=day）
+  if (syncTask.syncRate === 'CRON' && syncTask.cron) {
+    const m = syncTask.cron.match(/^0 0 (\d+) 1\/(\d+) \* \? \*$/)
+    if (m) {
+      syncTask.simpleCronType = 'day'
+      syncTask.simpleCronValue = Number(m[2])
+      syncTask.simpleCronHour = Number(m[1])
+      syncTask.syncRate = 'SIMPLE_CRON'
+    }
+  }
+}
+
 const loadDatasetSyncTask = async id => {
   Object.assign(syncTask, defaultSyncTask())
   const task = await datasetSyncTask(id)
-  if (task) {
-    Object.assign(syncTask, task)
-  }
+  applyLoadedSyncTask(task)
   applyIncrementalDefaults()
   syncLogs.value = await datasetSyncLogs(id)
   if (syncRunning.value) {
@@ -1186,9 +1218,7 @@ const refreshDatasetSyncState = async () => {
     return
   }
   const task = await datasetSyncTask(currentDatasetId.value)
-  if (task) {
-    Object.assign(syncTask, task)
-  }
+  applyLoadedSyncTask(task)
   applyIncrementalDefaults()
   syncLogs.value = await datasetSyncLogs(currentDatasetId.value)
   if (!syncRunning.value) {
@@ -2299,13 +2329,13 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
               </div>
               <div class="sync-row">
                 <span>更新频率</span>
-                <el-radio-group v-model="syncTask.syncRate" @change="syncRateChange">
+                <el-radio-group v-model="syncRateDisplay">
                   <el-radio value="RIGHTNOW">手动</el-radio>
                   <el-radio value="SIMPLE_CRON">定时</el-radio>
                   <el-radio v-if="syncTask.syncRate === 'CRON'" value="CRON">表达式</el-radio>
                 </el-radio-group>
               </div>
-              <div v-if="syncTask.syncRate === 'SIMPLE_CRON'" class="sync-cron">
+              <div v-if="syncRateDisplay === 'SIMPLE_CRON'" class="sync-cron">
                 <el-input-number
                   v-model="syncTask.simpleCronValue"
                   :min="1"

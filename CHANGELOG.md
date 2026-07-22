@@ -1,5 +1,34 @@
 # Changelog
 
+## v1.5.27 - 2026-07-22
+
+v1.5.27 是 v1.5.26 之后的修复与功能改进版本。修复 v1.5.26 跨源连表查询失败、导出 Excel 小数显示异常，并改进数据集缓存按天自定义时点（改为纯前端实现，无需数据库迁移）。**本版本没有新增数据库结构，无需执行升级 SQL。**
+
+### 修复
+
+- 修复跨源连表查询失败（`Unknown database 's_a_xxx'`）：`CalciteProvider` 跨源分支只替换了第一个数据源的虚拟 schema，改为遍历 `dsList` 所有 entry 替换。`fetchResultField` 和 `fetchTableField` 两处。`CalciteProvider.java`。
+- 修复跨源 SQL 语法错误（`OFFSET N ROWS LIMIT N`）：Calcite `toSqlString` 生成 `OFFSET N ROWS FETCH NEXT M ROWS ONLY`，MySQL 不认识。`SqlUtils.addSchema` 增加 `OFFSET N ROWS FETCH NEXT M ROWS ONLY → LIMIT M OFFSET N` 替换，残留 `OFFSET N ROWS` 去除。`SqlUtils.java`。
+- 修复导出 Excel FLOAT 整数值显示 `0.`（`0.######` 格式对 double 0.0 渲染）和 FLOAT 小数被误取整（`3.14` 显示 `3`）：FLOAT 整数值用纯整数格式 `"0"` 写入，非整数值显式用 `"0.######"` 小数格式写入。`ChartDataServer.java`（2 处）、`ExportCenterDownLoadManage.java`（1 处）。
+- 修复保存同步任务后「按天时点」丢失：前端 `buildDatasetSyncTaskPayload` 漏传 `simpleCronHour`，已补传。
+
+### 新增
+
+- 数据集缓存按天自定义时点（纯前端方案，无数据库迁移）：利用后端 `syncRate=CRON` 模式，前端在「天 + 时点」时生成完整 cron 表达式存入 `cron` 字段。加载时反解回 UI。不新增数据库字段、不执行 Flyway 迁移。
+- 明细表合并单元格大小写不敏感：`Pos系统/POS系统/pos系统` 相邻合并为一行，合并段统一显示大写。`tableMergeCells.mjs` 改 `sameValue` 大小写不敏感比较，`common_table.ts` 合并单元格 `fieldValue` 转大写。
+- 数据集字段上下移：字段列表支持上移/下移调整顺序，`column_index` 持久化，导出列按调整后顺序排列。
+
+### 验证
+
+- 数据集缓存按天选 8 点保存后重开仍为 8 点，DB `cron='0 0 8 1/1 * ? *'`、`sync_rate='CRON'`。
+- 跨源连表关联查询（两个数据源 JOIN）成功执行，不再报 `Unknown database`。
+- 导出 FLOAT 整数 `12.0`→`12`、`0`→`0`；小数 `3.14`→`3.14`。
+- 明细表含 Pos/POS/pos 相邻值合并为一行。
+
+### 安装说明
+
+- **从 v1.5.25 或 v1.5.26 升级到 v1.5.27 只需要替换前后端镜像，不需要新增升级 SQL。**
+- 默认镜像为 `ghcr.io/sevoniva/crest-service:v1.5.27` 和 `ghcr.io/sevoniva/crest-web:v1.5.27`。
+
 ## v1.5.26 - 2026-07-20
 
 v1.5.26 是 v1.5.25 之后的功能版本，新增数据集缓存按天自定义时点、明细表合并大小写、数据集字段上下移，并修复导出 Excel 小数显示缺陷。**本版本新增数据库结构，升级需执行升级 SQL（V1.5.9.1）。**

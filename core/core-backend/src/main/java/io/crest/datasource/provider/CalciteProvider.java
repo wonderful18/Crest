@@ -311,12 +311,16 @@ public class CalciteProvider extends Provider {
             DatasourceSchemaDTO dsDto = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
             // SQL 中的虚拟 schema（s_a_xxx）替换为真实数据库名
             String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
-            String virtualSchema = String.format(SQLConstants.SCHEMA, dsDto.getId());
-            DatasourceConfiguration dsConfig = parseDatasourceConfiguration(dsDto.getConfiguration(), Mysql.class);
-            String realSchema = dsConfig.getDataBase();
-            if (realSchema != null) {
-                readQuery = readQuery.replace("`" + virtualSchema + "`.", "`" + realSchema + "`.")
-                        .replace(virtualSchema + ".", realSchema + ".");
+            // 跨源连表关联时 dsList 可能有多个数据源，必须替换所有虚拟 schema
+            for (Map.Entry<Long, DatasourceSchemaDTO> entry : datasourceRequest.getDsList().entrySet()) {
+                DatasourceSchemaDTO ds = entry.getValue();
+                String vs = String.format(SQLConstants.SCHEMA, ds.getId());
+                DatasourceConfiguration dc = parseDatasourceConfiguration(ds.getConfiguration(), Mysql.class);
+                String rs = dc.getDataBase();
+                if (rs != null) {
+                    readQuery = readQuery.replace("`" + vs + "`.", "`" + rs + "`.")
+                            .replace(vs + ".", rs + ".");
+                }
             }
             // connection 必须在 try-with-resources 中关闭，否则每次跨源查询都会泄漏一个连接，
             // 连接池耗尽后下一次 getConnectionFromPool 会 borrow 超时（5s）抛 40001。
@@ -512,12 +516,16 @@ public class CalciteProvider extends Provider {
             try {
                 DatasourceSchemaDTO dsDto = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
                 String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
-                String virtualSchema = String.format(SQLConstants.SCHEMA, dsDto.getId());
-                DatasourceConfiguration dsConfig = parseDatasourceConfiguration(dsDto.getConfiguration(), Mysql.class);
-                String realSchema = dsConfig.getDataBase();
-                if (realSchema != null) {
-                    readQuery = readQuery.replace("`" + virtualSchema + "`.", "`" + realSchema + "`.")
-                            .replace(virtualSchema + ".", realSchema + ".");
+                // 跨源连表关联时 dsList 可能有多个数据源，必须替换所有虚拟 schema
+                for (Map.Entry<Long, DatasourceSchemaDTO> entry : datasourceRequest.getDsList().entrySet()) {
+                    DatasourceSchemaDTO ds = entry.getValue();
+                    String vs = String.format(SQLConstants.SCHEMA, ds.getId());
+                    DatasourceConfiguration dc = parseDatasourceConfiguration(ds.getConfiguration(), Mysql.class);
+                    String rs = dc.getDataBase();
+                    if (rs != null) {
+                        readQuery = readQuery.replace("`" + vs + "`.", "`" + rs + "`.")
+                                .replace(vs + ".", rs + ".");
+                    }
                 }
                 try (Connection connection = getConnectionFromPool(dsDto.getId());
                      PreparedStatement statement = connection.prepareStatement(readQuery)) {

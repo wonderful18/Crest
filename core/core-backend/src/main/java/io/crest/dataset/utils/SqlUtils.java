@@ -51,6 +51,11 @@ public class SqlUtils {
         // 兜底：用正则匹配所有 _ 开头后跟字母数字到单引号的前缀（如 _UTF-8'、_UTF8' 等）
         sqlRender = sqlRender.replaceAll("_[A-Za-z0-9-]+'", "'");
         // Calcite 的 Lex.JAVA 会把 LIMIT N 转成 FETCH NEXT N ROWS ONLY，MySQL 不认识，转回 LIMIT
+        // OFFSET M ROWS FETCH NEXT N ROWS ONLY → LIMIT N OFFSET M（MySQL 语法）
+        sqlRender = sqlRender.replaceAll("OFFSET (\\d+) ROWS\\s*FETCH NEXT (\\d+) ROWS ONLY", "LIMIT $2 OFFSET $1");
+        // 残留的 OFFSET M ROWS（无 FETCH）直接去掉（offset 0 无意义，且 MySQL 不认 "OFFSET N ROWS"）
+        sqlRender = sqlRender.replaceAll("OFFSET (\\d+) ROWS", "");
+        // 残留的 FETCH NEXT N ROWS ONLY → LIMIT N
         sqlRender = sqlRender.replaceAll("FETCH NEXT (\\d+) ROWS ONLY", "LIMIT $1");
         logger.info("[addSchema-debug] after UTF-8 cleanup: {}", sqlRender);
         return sqlRender;

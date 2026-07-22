@@ -98,6 +98,7 @@ export interface DatasetSyncTask {
   cron?: string
   simpleCronValue?: number
   simpleCronType?: 'minute' | 'hour' | 'day'
+  // 纯前端 UI 状态：按天类型选的执行时点(0-23)，不传后端（day 类型用 syncRate=CRON + cron 表达式存时点）
   simpleCronHour?: number
   endTime?: number
   lastExecTime?: number
