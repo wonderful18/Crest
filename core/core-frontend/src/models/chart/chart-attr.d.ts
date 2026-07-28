@@ -1075,6 +1075,14 @@ declare interface ChartLabelAttr {
     show: boolean
   }
   /**
+   * 标签距扇区距离（外标签偏移，用于缓解重叠），单位 px
+   */
+  labelOffset?: number
+  /**
+   * 标签防重叠：开启后对重叠标签自动隐藏/避让
+   */
+  labelAntiOverlap?: boolean
+  /**
    * 标签格式化设置
    */
   labelFormatter: Partial<BaseFormatter>
@@ -1154,6 +1162,14 @@ declare interface ChartLabelAttr {
    * 总计标签格式化设置
    */
   totalFormatter: BaseFormatter
+  /**
+   * 总计汇总方式：求和/平均/计数/最大/最小
+   */
+  totalCalcType: TotalCalcType
+  /**
+   * 总计标签位置：center 顶部 等
+   */
+  totalPosition: string
   /**
    * 柱状图堆叠指标
    */
@@ -1452,6 +1468,11 @@ declare interface ConversionTagAtt {
    */
   precision: number
 }
+
+/**
+ * 总计汇总方式：求和/平均/计数/最大/最小
+ */
+declare type TotalCalcType = 'sum' | 'avg' | 'count' | 'max' | 'min'
 
 declare interface ColumnNode {
   key: string

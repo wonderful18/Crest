@@ -57,7 +57,12 @@
           </el-button>
           <el-button
             class="m-button"
-            v-if="optType === 'details' && exportPermissions[2] && excelExportEnabled"
+            v-if="
+              optType === 'details' &&
+              exportPermissions[2] &&
+              excelExportEnabled &&
+              dvInfo.type !== 'dashboard'
+            "
             link
             :loading="exportLoading"
             @click="downloadViewDetails('dataset')"

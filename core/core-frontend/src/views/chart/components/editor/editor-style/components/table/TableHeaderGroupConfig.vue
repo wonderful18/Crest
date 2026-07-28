@@ -151,11 +151,11 @@ const renderTable = (chart: ChartObj) => {
   }
   const { headerGroupConfig } = chart.customAttr.tableHeader
   const meta: any[] = [...headerGroupConfig.meta]
-  const columns = headerGroupConfig.columns
   const axisMap = allAxis.value.reduce((pre, cur) => {
     pre[cur.engineFieldName] = cur
     return pre
   }, {})
+  // 先补 meta（含 name），用于 columns 的 title 映射
   if (data?.fields?.length) {
     data.fields.forEach(ele => {
       const f = axisMap[ele.engineFieldName]
@@ -193,6 +193,28 @@ const renderTable = (chart: ChartObj) => {
       }
     })
   }
+  // S2 的 columns 要求 {field, title} 格式，headerGroupConfig.columns 只有 {key}
+  // 用 meta 的 name 做标题，否则 S2 无法匹配数据 → 显示「-」
+  const fieldNameMap = meta.reduce((pre, cur) => {
+    pre[cur.field] = cur.name
+    return pre
+  }, {})
+  const normalizeColumns = (cols: any[]): any[] => {
+    return cols.map(col => {
+      if (typeof col === 'string') {
+        return col
+      }
+      const node: any = {
+        field: col.key,
+        title: col.title ?? fieldNameMap[col.key] ?? col.key
+      }
+      if (col.children?.length) {
+        node.children = normalizeColumns(col.children)
+      }
+      return node
+    })
+  }
+  const columns = normalizeColumns(headerGroupConfig.columns)
   // // data config
   const s2DataConfig: S2DataConfig = {
     fields: {
@@ -229,6 +251,8 @@ const renderTable = (chart: ChartObj) => {
     },
     interaction: {
       rangeSelection: false,
+      selectedCellsSpotlight: true,
+      multiSelection: true,
       resize: {
         colCellHorizontal: false,
         colCellVertical: false,

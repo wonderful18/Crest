@@ -22,7 +22,15 @@ export const PIE_EDITOR_PROPERTY_INNER: EditorPropertyInner = {
     'rPosition',
     'showDimension',
     'showQuota',
-    'showProportion'
+    'showProportion',
+    'showTotal',
+    'totalColor',
+    'totalFontSize',
+    'totalFormatter',
+    'totalCalcType',
+    'totalPosition',
+    'labelOffset',
+    'labelAntiOverlap'
   ],
   'tooltip-selector': ['fontSize', 'color', 'backgroundColor', 'seriesTooltipFormatter', 'show'],
   'basic-style-selector': ['colors', 'alpha', 'radius', 'seriesColor'],

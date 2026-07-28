@@ -220,7 +220,14 @@ public abstract class Provider {
             result.append(sql.charAt(index));
             index++;
         }
-        return result.toString();
+        // 兜底：清理 Calcite 在 toSqlString 时可能注入的 _UTF-8'xxx' 前缀（MySQL 不认识）。
+        // MySQL 方言 supportsCharSet()=false 本不应产生，但作为防御性处理，与 SqlUtils.addSchema 保持一致。
+        String cleaned = result.toString();
+        while (cleaned.contains("_UTF-8'")) {
+            cleaned = cleaned.replace("_UTF-8'", "'");
+        }
+        cleaned = cleaned.replaceAll("_[A-Za-z0-9-]+'", "'");
+        return cleaned;
     }
 
     private static boolean isUnicodeStringLiteralStart(String sql, int index) {

@@ -105,15 +105,24 @@ public class TableInfoHandler extends DefaultChartHandler {
         }
         Dimension2SQLObj.dimension2sqlObj(sqlMeta, xAxis, FieldUtil.transFields(allFields), crossDs, dsMap, Utils.getParams(FieldUtil.transFields(allFields)), view.getCalParams(), pluginManage);
         if (view.getExportDatasetOriginData()) {
+            // 导出原始明细时，聚合字段（指标定义）不应出现在导出列里，
+            // 否则会多出一列空值（原逻辑用 '-' 占位导致 header 和 data 多一列）。
+            // 直接从 xAxis 和 sqlMeta.xFields 中移除聚合字段，使 header 和数据列数一致。
+            List<Integer> aggIndexes = new ArrayList<>();
             for (int i = 0; i < xAxis.size(); i++) {
-                ChartViewFieldDTO fieldDTO = null;
                 for (ChartViewFieldDTO allField : allFields) {
-                    if (allField.getId().equals(xAxis.get(i).getId())) {
-                        fieldDTO = allField;
+                    if (allField.getId().equals(xAxis.get(i).getId()) && allField.isAgg()) {
+                        aggIndexes.add(i);
+                        break;
                     }
                 }
-                if (fieldDTO != null && fieldDTO.isAgg()) {
-                    sqlMeta.getXFields().get(i).setFieldName("'-'");
+            }
+            // 倒序移除，避免索引错位
+            for (int i = aggIndexes.size() - 1; i >= 0; i--) {
+                int idx = aggIndexes.get(i);
+                xAxis.remove(idx);
+                if (sqlMeta.getXFields() != null && idx < sqlMeta.getXFields().size()) {
+                    sqlMeta.getXFields().remove(idx);
                 }
             }
         }

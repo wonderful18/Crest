@@ -9,6 +9,8 @@ import icon_sql_outlined_1 from '@/assets/svg/icon_sql_outlined_1.svg'
 import icon_warning_colorful from '@/assets/svg/icon_warning_colorful.svg'
 import icon_add_outlined from '@/assets/svg/icon_add_outlined.svg'
 import icon_refresh_outlined from '@/assets/svg/icon_refresh_outlined.svg'
+import dragSvg from '@/assets/svg/drag.svg'
+import draggable from 'vuedraggable'
 import icon_expandRight_filled from '@/assets/svg/icon_expand-right_filled.svg'
 import icon_switch_outlined from '@/assets/svg/icon_switch_outlined.svg'
 import icon_copy_outlined from '@/assets/svg/icon_copy_outlined.svg'
@@ -419,24 +421,17 @@ const editeSave = () => {
 
 const moveField = (field, direction) => {
   changeUpdate()
-  const groupType = field.groupType
-  // 在 allfields 中找到同 groupType 的字段索引列表
-  const sameTypeIndices = []
-  allfields.value.forEach((ele, idx) => {
-    if (ele.groupType === groupType) sameTypeIndices.push(idx)
-  })
-  // 找到当前 field 在 sameTypeIndices 中的位置
-  const posInType = sameTypeIndices.indexOf(allfields.value.indexOf(field))
-  if (posInType < 0) return
-  const swapWith = direction === 'up' ? posInType - 1 : posInType + 1
-  if (swapWith < 0 || swapWith >= sameTypeIndices.length) return
-  // 在 allfields 中交换两个元素
-  const idxA = sameTypeIndices[posInType]
-  const idxB = sameTypeIndices[swapWith]
+  // 支持维度和指标混合排序：在整个 allfields 列表里上下移动，不限制在同 groupType 内。
+  // dimensions/quota 是 computed 过滤 groupType 的，交换后各表格内容不变，
+  // 但 allfields 整体顺序变化，保存后影响导出列顺序（指标可排在维度后面）。
+  const idx = allfields.value.indexOf(field)
+  if (idx < 0) return
+  const swapWith = direction === 'up' ? idx - 1 : idx + 1
+  if (swapWith < 0 || swapWith >= allfields.value.length) return
   const arr = [...allfields.value]
-  const tmp = arr[idxA]
-  arr[idxA] = arr[idxB]
-  arr[idxB] = tmp
+  const tmp = arr[idx]
+  arr[idx] = arr[swapWith]
+  arr[swapWith] = tmp
   allfields.value = arr
 }
 
@@ -851,7 +846,7 @@ const dfsGetName = (list, name) => {
 }
 
 const tabChange = val => {
-  if (val === 'preview') return
+  if (val === 'preview' || val === 'order') return
   reGetName()
   allfields.value.forEach(ele => {
     if (!Array.isArray(ele.fieldTypeSelectionValue)) {
@@ -2591,6 +2586,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
           <el-tabs class="padding-24" v-model="tabActive" @tab-change="tabChange">
             <el-tab-pane :label="t('chart.data_preview')" name="preview" />
             <el-tab-pane :label="t('dataset.batch_manage')" name="manage" />
+            <el-tab-pane :label="t('dataset.field_order')" name="order" />
           </el-tabs>
           <div v-show="tabActive === 'preview' && !!allfields.length" class="table-preview">
             <div class="preview-field">
@@ -2711,7 +2707,7 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
               </el-table>
             </div>
           </div>
-          <div v-show="tabActive !== 'preview' && !!allfields.length" class="batch-area">
+          <div v-show="tabActive === 'manage' && !!allfields.length" class="batch-area">
             <div class="manage-container">
               <el-collapse v-model="state.fieldCollapse" class="style-collapse">
                 <el-collapse-item
@@ -3258,6 +3254,55 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
                 {{ t('data_set.convert_to_dimension') }}
               </el-button>
             </div>
+          </div>
+          <div v-show="tabActive === 'order' && !!allfields.length" class="order-area">
+            <div class="order-tip">{{ t('dataset.field_order_tip') }}</div>
+            <div class="order-header">
+              <span class="col-name">{{ t('dataset.field_name') }}</span>
+              <span class="col-origin">{{ t('dataset.origin_name') }}</span>
+              <span class="col-type">{{ t('dataset.dim_quota_type') }}</span>
+              <span class="col-op">{{ t('dataset.operator') }}</span>
+            </div>
+            <draggable
+              :list="allfields"
+              item-key="id"
+              animation="300"
+              class="drag-list"
+              handle=".drag-handle"
+              @end="changeUpdate"
+            >
+              <template #item="{ element }">
+                <div class="order-item">
+                  <span class="col-name">{{ element.name }}</span>
+                  <span class="col-origin">{{ element.originName }}</span>
+                  <span
+                    class="col-type"
+                    :class="element.groupType === 'q' ? 'tag-quota' : 'tag-dimension'"
+                  >
+                    {{ element.groupType === 'q' ? t('chart.quota') : t('chart.dimension') }}
+                  </span>
+                  <span class="col-op">
+                    <el-tooltip effect="dark" :content="t('dataset.moveUp')" placement="top">
+                      <el-button text @click="moveField(element, 'up')">
+                        <el-icon><Icon name="icon_top-align_outlined"><icon_top_align_outlined class="svg-icon" /></Icon></el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip effect="dark" :content="t('dataset.moveDown')" placement="top">
+                      <el-button text @click="moveField(element, 'down')">
+                        <el-icon><Icon name="icon_down_outlined"><icon_down_outlined class="svg-icon" /></Icon></el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip effect="dark" :content="t('dataset.drag_sort')" placement="top">
+                      <span class="drag-handle">
+                        <el-icon size="16">
+                          <Icon name="drag"><dragSvg class="svg-icon" /></Icon>
+                        </el-icon>
+                      </span>
+                    </el-tooltip>
+                  </span>
+                </div>
+              </template>
+            </draggable>
           </div>
         </div>
       </div>
@@ -4211,6 +4256,85 @@ const getIconNameCalc = (fieldTypeCode, extField, dimension = false) => {
   display: flex;
   flex-direction: column;
   height: calc(100% - 55px);
+}
+
+.order-area {
+  padding: 16px 24px;
+  height: calc(100% - 55px);
+  overflow-y: auto;
+}
+.order-tip {
+  margin-bottom: 12px;
+  color: var(--ed-text-color-secondary);
+  font-size: 12px;
+}
+.order-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--ed-text-color-secondary);
+  border-bottom: 1px solid var(--ed-border-color-lighter);
+  .col-name { width: 200px; }
+  .col-origin { width: 200px; }
+  .col-type { width: 80px; }
+  .col-op { width: 140px; text-align: center; }
+}
+.drag-list {
+  min-height: 40px;
+}
+.order-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  margin-bottom: 2px;
+  background: var(--ed-fill-color-light);
+  border-radius: 4px;
+  border: 1px solid var(--ed-border-color-lighter);
+  cursor: default;
+  transition: background 0.2s;
+  &:hover {
+    background: var(--ed-fill-color);
+  }
+  .col-name { width: 200px; padding-left: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .col-origin { width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .col-type { width: 80px; }
+  .col-op {
+    width: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+}
+.drag-handle {
+  cursor: grab;
+  color: var(--ed-text-color-secondary);
+  width: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  &:active {
+    cursor: grabbing;
+  }
+}
+.tag-dimension {
+  background: #ebf1ff;
+  color: #3370ff;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.tag-quota {
+  background: #e6f7f5;
+  color: #008975;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
 }
 
 .dimension-manage-header {

@@ -393,6 +393,8 @@ export const DEFAULT_LABEL: ChartLabelAttr = {
   labelLine: {
     show: true
   },
+  labelOffset: undefined,
+  labelAntiOverlap: true,
   labelFormatter: formatterItem,
   reserveDecimalCount: 2,
   labelShadow: false,
@@ -412,6 +414,8 @@ export const DEFAULT_LABEL: ChartLabelAttr = {
   totalFontSize: 12,
   totalColor: '#FFF',
   totalFormatter: formatterItem,
+  totalCalcType: 'sum',
+  totalPosition: 'center',
   showStackQuota: false,
   fullDisplay: false,
   proportionSeriesFormatter: {

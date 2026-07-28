@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.5.28 - 2026-07-29
+
+v1.5.28 是 v1.5.27 之后的修复与功能改进版本。重构数据集「顺序调整」页签为 4 列布局并补齐拖拽,改进饼图/玫瑰图/柱状图标签防重叠与偏移,调整明细表合并单元格比较规则,并在仪表板隐藏明细导出按钮。**本版本没有新增数据库结构,无需执行升级 SQL。**
+
+### 修复
+
+- 修复数据集「顺序调整」页签被批量管理大表格占用:`batch-area` 显示条件由 `tabActive !== 'preview'` 收窄为 `tabActive === 'manage'`,顺序页签现只显示顺序列表。`dataset/form/index.vue`。
+- 修复拖拽手柄图标不渲染:`<drag>` 改为 `<dragSvg>`(与文件内其它图标导入用法一致)。`dataset/form/index.vue`。
+- 补齐 `en-US.ts`、`tw.ts` 缺失的 `field_order`/`field_order_tip`/`moveUp`/`moveDown`,新增 `dim_quota_type`、`drag_sort`。四个 locale 文件均已对齐。
+
+### 新增
+
+- 顺序调整页签 4 列布局:字段名称/物理字段名/维度·指标/操作(上移、下移、拖拽),拖拽手柄并入操作列,第 3 列改为维度/指标标签。`dataset/form/index.vue`。
+- 饼图/玫瑰图标签防重叠(`labelAntiOverlap`,默认开启)与标签偏移(`labelOffset`)。`pie.ts`、`rose.ts`、`LabelSelector.vue`。
+- 抽取按汇总方式计算总数的 `calcTotalValue`,柱状图与饼图共用。`bar/common.ts`。
+
+### 调整
+
+- 明细表合并单元格改回严格相等比较,`POS系统` 与 `pos系统` 不再合并。`tableMergeCells.mjs`。
+- 仪表板放大查看隐藏明细导出按钮。`UserViewEnlarge.vue`。
+- 后端 `TableInfoHandler`、`ChartDataServer`、`CalciteProvider`、`Provider` 跨源与数据查询相关修复。
+
 ## v1.5.27 - 2026-07-22
 
 v1.5.27 是 v1.5.26 之后的修复与功能改进版本。修复 v1.5.26 跨源连表查询失败、导出 Excel 小数显示异常，并改进数据集缓存按天自定义时点（改为纯前端实现，无需数据库迁移）。**本版本没有新增数据库结构，无需执行升级 SQL。**

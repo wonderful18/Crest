@@ -23,6 +23,7 @@ import {
   PIE_EDITOR_PROPERTY,
   PIE_EDITOR_PROPERTY_INNER
 } from '@/views/chart/components/js/panel/charts/pie/common'
+import { calcTotalValue } from '@/views/chart/components/js/panel/charts/bar/common'
 import type { Datum } from '@antv/g2plot/esm/types/common'
 import { add } from 'mathjs'
 import isEmpty from 'lodash-es/isEmpty'
@@ -152,16 +153,26 @@ export class Pie extends G2PlotChartView<PieOptions, G2Pie> {
     }
     const layout = []
     let textAlign = undefined
+    const antiOverlap = labelAttr.labelAntiOverlap ?? true
     if (labelAttr.position === 'inner') {
       textAlign = 'center'
       if (labelAttr.fullDisplay) {
         layout.push({ type: 'limit-in-plot' })
       } else {
         layout.push({ type: 'limit-in-canvas' })
-        layout.push({ type: 'hide-overlap' })
+        if (antiOverlap) {
+          layout.push({ type: 'hide-overlap' })
+        }
       }
     } else {
-      if (!labelAttr.fullDisplay) {
+      // 外标签（spider）
+      if (labelAttr.fullDisplay) {
+        // 全量显示：不隐藏，仅约束在画布内
+        layout.push({ type: 'limit-in-plot' })
+      } else if (antiOverlap) {
+        layout.push({ type: 'limit-in-plot' })
+        layout.push({ type: 'hide-overlap' })
+      } else {
         layout.push({ type: 'limit-in-plot' })
       }
     }
@@ -169,7 +180,7 @@ export class Pie extends G2PlotChartView<PieOptions, G2Pie> {
     if (layout.length === 0) {
       labelType = 'no'
     }
-    const label = {
+    const label: any = {
       type: labelType,
       textAlign,
       layout,
@@ -178,6 +189,7 @@ export class Pie extends G2PlotChartView<PieOptions, G2Pie> {
         fill: labelAttr.color,
         fontSize: labelAttr.fontSize
       },
+      ...(labelAttr.labelOffset != null ? { offset: labelAttr.labelOffset } : {}),
       formatter: (param: Datum) => {
         let res = param.value
         const contentItems = []
@@ -338,12 +350,45 @@ export class Pie extends G2PlotChartView<PieOptions, G2Pie> {
     return setUpSingleDimensionSeriesColor(chart, data)
   }
 
+  protected configTotal(chart: Chart, options: PieOptions): PieOptions {
+    const { label: labelAttr } = parseJson(chart.customAttr)
+    if (!labelAttr?.showTotal) {
+      return options
+    }
+    const data = options.data ?? []
+    const total = calcTotalValue(
+      data.map(d => d.value),
+      labelAttr.totalCalcType ?? 'sum'
+    )
+    const formatterCfg = labelAttr.totalFormatter ?? labelAttr.quotaLabelFormatter
+    const value = valueFormatter(total, formatterCfg)
+    const totalColor = labelAttr.totalColor ?? labelAttr.color
+    const totalFontSize = labelAttr.totalFontSize ?? labelAttr.fontSize
+    return {
+      ...options,
+      statistic: {
+        title: false,
+        content: {
+          style: {
+            whiteSpace: 'pre-wrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            fontSize: `${totalFontSize}`,
+            fill: totalColor
+          },
+          content: `${value}`
+        }
+      }
+    }
+  }
+
   protected setupOptions(chart: Chart, options: PieOptions): PieOptions {
     return flow(
       this.configTheme,
       this.configBasicStyle,
       this.configSingleDimensionColor,
       this.configLabel,
+      this.configTotal,
       this.configTooltip,
       this.configLegend
     )(chart, options, {}, this)

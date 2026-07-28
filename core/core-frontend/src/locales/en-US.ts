@@ -1867,6 +1867,8 @@ export default {
     zoom_level: 'Zoom level',
     central_point: 'Center point',
     full_display: 'Full display',
+    label_anti_overlap: 'Label anti-overlap',
+    label_offset: 'Label distance from sector',
     show_hover_style: 'Show mouse hover style',
     table_header_description: 'Header description',
     table_header_description_config: 'Description content',
@@ -2237,8 +2239,14 @@ export default {
       tip8: 'For Calcite functions, please refer to the documentation:'
     },
     batch_manage: 'Batch management',
+    field_order: 'Field order',
+    field_order_tip: 'Drag fields to adjust export column order, dimensions and quotas can be mixed',
+    moveUp: 'Move Up',
+    moveDown: 'Move Down',
+    drag_sort: 'Drag to sort',
     origin_name: 'Physical field name',
-    origin_type: 'Physical field type'
+    origin_type: 'Physical field type',
+    dim_quota_type: 'Dimension/Quota'
   },
   datasetUi: {
     search_by_name: 'Search by name',

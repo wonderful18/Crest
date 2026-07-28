@@ -8,14 +8,11 @@ const createFieldMap = fields =>
     return pre
   }, {})
 
-// 合并单元格时按大小写不敏感比较值，使 Pos系统/POS系统/pos系统 这类仅大小写不同的相邻值合并为一行。
-// null 与 null 仍视为相等（保持原 === 语义），但 null 与非空值不相等，避免把空值误并入非空合并段。
+// 合并单元格时按严格相等比较值，POS系统/pos系统 不再合并。
+// null 与 null 仍视为相等（保持原 === 语义），但 null 与非空值不相等。
 const sameValue = (a, b) => {
   if (a == null || b == null) {
     return a == null && b == null
-  }
-  if (typeof a === 'string' || typeof b === 'string') {
-    return String(a).toLowerCase() === String(b).toLowerCase()
   }
   return a === b
 }

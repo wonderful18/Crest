@@ -518,6 +518,36 @@ const isProgressBar = computed(() => {
         />
       </el-form-item>
       <el-form-item
+        v-if="showProperty('labelAntiOverlap')"
+        class="form-item"
+        :class="'form-item-' + themes"
+      >
+        <el-checkbox
+          size="small"
+          :effect="themes"
+          v-model="state.labelForm.labelAntiOverlap"
+          @change="changeLabelAttr('labelAntiOverlap')"
+          :label="t('chart.label_anti_overlap')"
+        />
+      </el-form-item>
+      <el-form-item
+        v-if="showProperty('labelOffset')"
+        :label="t('chart.label_offset')"
+        class="form-item"
+        :class="'form-item-' + themes"
+      >
+        <el-input-number
+          size="small"
+          :effect="themes"
+          v-model="state.labelForm.labelOffset"
+          :min="0"
+          :max="200"
+          :step="1"
+          :placeholder="t('chart.label_offset')"
+          @change="changeLabelAttr('labelOffset')"
+        />
+      </el-form-item>
+      <el-form-item
         v-if="showProperty('showStackQuota')"
         class="form-item"
         :class="'form-item-' + themes"
@@ -832,9 +862,44 @@ const isProgressBar = computed(() => {
         />
       </el-form-item>
     </template>
-    <template v-if="false && showProperty('totalFormatter')">
+    <template v-if="showProperty('totalFormatter')">
       <el-divider class="m-divider" :class="{ 'divider-dark': themes === 'dark' }" />
       <div v-show="state.labelForm.showTotal">
+        <el-form-item
+          :label="t('chart.summary')"
+          class="form-item"
+          :class="'form-item-' + themes"
+          v-if="showProperty('totalCalcType')"
+        >
+          <el-select
+            size="small"
+            :effect="themes"
+            v-model="state.labelForm.totalCalcType"
+            @change="changeLabelAttr('totalCalcType')"
+          >
+            <el-option :label="t('chart.sum')" value="sum" />
+            <el-option :label="t('chart.avg')" value="avg" />
+            <el-option :label="t('chart.count')" value="count" />
+            <el-option :label="t('chart.max')" value="max" />
+            <el-option :label="t('chart.min')" value="min" />
+          </el-select>
+        </el-form-item>
+        <el-form-item
+          :label="t('chart.label_position')"
+          class="form-item"
+          :class="'form-item-' + themes"
+          v-if="showProperty('totalPosition')"
+        >
+          <el-select
+            size="small"
+            :effect="themes"
+            v-model="state.labelForm.totalPosition"
+            @change="changeLabelAttr('totalPosition')"
+          >
+            <el-option :label="t('chart.center')" value="center" />
+            <el-option :label="t('chart.text_pos_top')" value="top" />
+          </el-select>
+        </el-form-item>
         <el-space>
           <el-form-item
             class="form-item"

@@ -9,6 +9,7 @@ import {
   PIE_EDITOR_PROPERTY,
   PIE_EDITOR_PROPERTY_INNER
 } from './common'
+import { calcTotalValue } from '@/views/chart/components/js/panel/charts/bar/common'
 import {
   configPlotTooltipEvent,
   getPadding,
@@ -119,10 +120,15 @@ export class Rose extends G2PlotChartView<RoseOptions, G2Rose> {
       }
     }
     const total = options.data?.reduce((pre, next) => add(pre, next.value ?? 0), 0)
+    const antiOverlap = labelAttr.labelAntiOverlap ?? true
     const layout = []
     if (!labelAttr.fullDisplay) {
       const tmpOptions = super.configLabel(chart, options)
       layout.push(...(((tmpOptions.label as Record<string, any>)?.layout || []) as any[]))
+    }
+    layout.push({ type: 'limit-in-plot' })
+    if (!labelAttr.fullDisplay && antiOverlap) {
+      layout.push({ type: 'hide-overlap' })
     }
     const labelOptions: Label = {
       autoRotate: true,
@@ -131,6 +137,7 @@ export class Rose extends G2PlotChartView<RoseOptions, G2Rose> {
         fill: labelAttr.color,
         fontSize: labelAttr.fontSize
       },
+      ...(labelAttr.labelOffset != null ? { offset: labelAttr.labelOffset } : {}),
       formatter: (param: Datum) => {
         let res = param.value
         const contentItems = []
@@ -160,6 +167,40 @@ export class Rose extends G2PlotChartView<RoseOptions, G2Rose> {
     return {
       ...options,
       label: labelOptions
+    }
+  }
+
+  protected configTotal(chart: Chart, options: RoseOptions): RoseOptions {
+    const { label: labelAttr } = parseJson(chart.customAttr)
+    if (!labelAttr?.showTotal) {
+      return options
+    }
+    const data = options.data ?? []
+    const total = calcTotalValue(
+      data.map(d => d.value),
+      labelAttr.totalCalcType ?? 'sum'
+    )
+    const formatterCfg = labelAttr.totalFormatter ?? labelAttr.quotaLabelFormatter
+    const value = valueFormatter(total, formatterCfg)
+    const totalColor = labelAttr.totalColor ?? labelAttr.color
+    const totalFontSize = labelAttr.totalFontSize ?? labelAttr.fontSize
+    const annotations = (options as any).annotations || []
+    // 玫瑰图无 statistic，用文本注解置于中心
+    annotations.push({
+      type: 'text',
+      position: ['min', 'max'],
+      content: `${value}`,
+      style: {
+        textAlign: 'center',
+        fontSize: totalFontSize,
+        fill: totalColor
+      },
+      offsetX: 0,
+      offsetY: 0
+    })
+    return {
+      ...options,
+      annotations
     }
   }
 
@@ -256,6 +297,7 @@ export class Rose extends G2PlotChartView<RoseOptions, G2Rose> {
       this.configSingleDimensionColor,
       this.configTheme,
       this.configLabel,
+      this.configTotal,
       this.configLegend,
       this.configTooltip
     )(chart, options)

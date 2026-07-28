@@ -304,28 +304,19 @@ public class CalciteProvider extends Provider {
 
         List<TableField> datasetTableFields = new ArrayList<>();
         List<String[]> list = new LinkedList<>();
-        // 跨源时直接用底层 MySQL JDBC 连接执行，避免 Calcite 内部生成 _UTF-8 前缀
-        // Calcite 的 prepareStatement 会在 planning 时给非 ASCII 字符串加 _UTF-8 前缀，
-        // MySQL 不认识该语法导致执行失败。
+        // 跨源用共享 CalciteConnection 执行，由 Calcite 自动做多源 JOIN 下推。
+        // 跨源 SQL 已带 s_a_<dsId>.table，Calcite 通过 rootSchema 中注册的 JdbcSchema(alias=s_a_<dsId>) 解析。
+        // MySQL 方言 supportsCharSet()=false + NO_CHARSET_FACTORY 双保险，planning 不会注入 _UTF-8/u&'...'。
+        // take() 返回共享单例 calciteConnectionRef，不能 close（@PreDestroy 时统一 close），
+        // 否则破坏单例；只需 close Statement/ResultSet 即可释放 Calcite 借用的底层 ds 连接。
+        Connection connection = take();
         try {
-            DatasourceSchemaDTO dsDto = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
-            // SQL 中的虚拟 schema（s_a_xxx）替换为真实数据库名
+            CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
+            // 确保本次 dsMap 中所有 ds 的 schema 都已注册（幂等），Calcite 才能解析多源 JOIN
+            ensureAllSchemasRegistered(calciteConnection, datasourceRequest.getDsList());
             String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
-            // 跨源连表关联时 dsList 可能有多个数据源，必须替换所有虚拟 schema
-            for (Map.Entry<Long, DatasourceSchemaDTO> entry : datasourceRequest.getDsList().entrySet()) {
-                DatasourceSchemaDTO ds = entry.getValue();
-                String vs = String.format(SQLConstants.SCHEMA, ds.getId());
-                DatasourceConfiguration dc = parseDatasourceConfiguration(ds.getConfiguration(), Mysql.class);
-                String rs = dc.getDataBase();
-                if (rs != null) {
-                    readQuery = readQuery.replace("`" + vs + "`.", "`" + rs + "`.")
-                            .replace(vs + ".", rs + ".");
-                }
-            }
-            // connection 必须在 try-with-resources 中关闭，否则每次跨源查询都会泄漏一个连接，
-            // 连接池耗尽后下一次 getConnectionFromPool 会 borrow 超时（5s）抛 40001。
-            try (Connection connection = getConnectionFromPool(dsDto.getId());
-                 PreparedStatement statement = connection.prepareStatement(readQuery)) {
+            // 跨源 SQL 里的 s_a_<dsId> 由 Calcite 解析，不做字符串替换
+            try (PreparedStatement statement = calciteConnection.prepareStatement(readQuery)) {
                 bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
                 try (ResultSet resultSet = statement.executeQuery()) {
                     ResultSetMetaData metaData = resultSet.getMetaData();
@@ -514,37 +505,34 @@ public class CalciteProvider extends Provider {
             // 1) Calcite prepareStatement 在 planning 时给非 ASCII 字符串加 _UTF-8 前缀，MySQL 不认识导致执行失败；
             // 2) take() 借出的连接没有 close，每次跨源取字段都会泄漏一个连接，池耗尽后 borrow 超时抛 40001。
             try {
-                DatasourceSchemaDTO dsDto = datasourceRequest.getDsList().entrySet().iterator().next().getValue();
-                String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
-                // 跨源连表关联时 dsList 可能有多个数据源，必须替换所有虚拟 schema
-                for (Map.Entry<Long, DatasourceSchemaDTO> entry : datasourceRequest.getDsList().entrySet()) {
-                    DatasourceSchemaDTO ds = entry.getValue();
-                    String vs = String.format(SQLConstants.SCHEMA, ds.getId());
-                    DatasourceConfiguration dc = parseDatasourceConfiguration(ds.getConfiguration(), Mysql.class);
-                    String rs = dc.getDataBase();
-                    if (rs != null) {
-                        readQuery = readQuery.replace("`" + vs + "`.", "`" + rs + "`.")
-                                .replace(vs + ".", rs + ".");
-                    }
-                }
-                try (Connection connection = getConnectionFromPool(dsDto.getId());
-                     PreparedStatement statement = connection.prepareStatement(readQuery)) {
-                    bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
-                    try (ResultSet resultSet = statement.executeQuery()) {
-                        ResultSetMetaData metaData = resultSet.getMetaData();
-                        int columnCount = metaData.getColumnCount();
-                        for (int i = 1; i <= columnCount; i++) {
-                            TableField tableField = new TableField();
-                            tableField.setOriginName(metaData.getColumnLabel(i));
-                            tableField.setType(metaData.getColumnTypeName(i));
-                            tableField.setPrecision(metaData.getPrecision(i));
-                            int fieldType = FieldUtils.resolveFieldType(tableField.getType());
-                            tableField.setExtractedFieldType(fieldType);
-                            tableField.setFieldType(fieldType);
-                            tableField.setScale(metaData.getScale(i));
-                            datasetTableFields.add(tableField);
+                // 跨源用共享 CalciteConnection 执行，由 Calcite 自动做多源 JOIN 下推。
+                // take() 返回共享单例，不能 close；只需 close Statement/ResultSet。
+                Connection connection = take();
+                try {
+                    CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
+                    ensureAllSchemasRegistered(calciteConnection, datasourceRequest.getDsList());
+                    String readQuery = SqlSecurityPolicy.validateReadQuery(datasourceRequest.getQuery());
+                    // 跨源 SQL 里的 s_a_<dsId> 由 Calcite 解析，不做字符串替换
+                    try (PreparedStatement statement = calciteConnection.prepareStatement(readQuery)) {
+                        bindPreparedStatementValues(statement, datasourceRequest.getTableFieldWithValues());
+                        try (ResultSet resultSet = statement.executeQuery()) {
+                            ResultSetMetaData metaData = resultSet.getMetaData();
+                            int columnCount = metaData.getColumnCount();
+                            for (int i = 1; i <= columnCount; i++) {
+                                TableField tableField = new TableField();
+                                tableField.setOriginName(metaData.getColumnLabel(i));
+                                tableField.setType(metaData.getColumnTypeName(i));
+                                tableField.setPrecision(metaData.getPrecision(i));
+                                int fieldType = FieldUtils.resolveFieldType(tableField.getType());
+                                tableField.setExtractedFieldType(fieldType);
+                                tableField.setFieldType(fieldType);
+                                tableField.setScale(metaData.getScale(i));
+                                datasetTableFields.add(tableField);
+                            }
                         }
                     }
+                } finally {
+                    // 不 close connection（共享单例，@PreDestroy 时统一 close）
                 }
             } catch (SQLException | RuntimeException e) {
                 throw CrestException.getException(e.getMessage());
@@ -1331,7 +1319,13 @@ public class CalciteProvider extends Provider {
 
     /**
      * 自定义 SqlDialectFactory：覆盖 supportsCharSet() 返回 false，
-     * 避免 Calcite 在 toSqlString 时给非 ASCII 字符串加 _UTF-8 前缀（MySQL 不认识）。
+     * 并覆盖 quoteStringLiteral 强制忽略 charset 参数，
+     * 避免 Calcite 在 planning/toSqlString 时给非 ASCII 字符串加 _UTF-8 前缀（MySQL 不认识）。
+     * supportsCharSet=false 只影响 toSqlString 时的 charset 附加逻辑，
+     * 但 plan→SQL 路径（JdbcImplementor via SqlLiteral.unparse → dialect.quoteStringLiteral）
+     * 仍会传入 charsetName 导致 append "_" + charsetName（即 _UTF-8）。
+     * 覆盖 quoteStringLiteral(sb, val, charsetName) 强制把 charsetName 当 null 处理，
+     * 从根上杜绝 _UTF-8 前缀注入。
      */
     private static final SqlDialectFactory NO_CHARSET_FACTORY = new SqlDialectFactory() {
         @Override
@@ -1344,6 +1338,16 @@ public class CalciteProvider extends Provider {
                 @Override
                 public boolean supportsCharSet() {
                     return false;
+                }
+
+                /**
+                 * 覆盖父类：强制忽略 charsetName，直接用标准单引号转义，
+                 * 避免 plan→SQL 路径注入 _UTF-8 前缀。
+                 */
+                @Override
+                public void quoteStringLiteral(StringBuilder buf, String charsetName, String val) {
+                    // 显式传 null charsetName，走父类不支持 charset 的标准单引号路径
+                    super.quoteStringLiteral(buf, null, val);
                 }
             };
         }
@@ -2199,6 +2203,29 @@ public class CalciteProvider extends Provider {
         DatasourceRequest datasourceRequest = new DatasourceRequest();
         datasourceRequest.setDsList(Map.of(datasourceSchemaDTO.getId(), datasourceSchemaDTO));
         buildSchema(datasourceRequest, calciteConnection);
+    }
+
+    /**
+     * 跨源连表时，确保 dsMap 中所有数据源的 schema 都已注册到 rootSchema。
+     * Calcite 的 prepareStatement 需要所有 s_a_<dsId> alias 都在 rootSchema 中才能解析多源 JOIN。
+     * 幂等：ensureSchemaRegistered 对已注册的 alias 直接 return。
+     */
+    private void ensureAllSchemasRegistered(CalciteConnection calciteConnection, Map<Long, DatasourceSchemaDTO> dsMap) {
+        SchemaPlus rootSchema = calciteConnection.getRootSchema();
+        for (Map.Entry<Long, DatasourceSchemaDTO> entry : dsMap.entrySet()) {
+            Long dsId = entry.getKey();
+            DatasourceSchemaDTO dsDto = entry.getValue();
+            String schemaAlias = StringUtils.isNotEmpty(dsDto.getSchemaAlias())
+                    ? dsDto.getSchemaAlias()
+                    : String.format(SQLConstants.SCHEMA, dsId);
+            if (rootSchema.getSubSchema(schemaAlias) != null) {
+                continue;
+            }
+            // 复用 dsMap 里已有的 DTO（putObj2Map 已 setSchemaAlias），避免再查库
+            DatasourceRequest datasourceRequest = new DatasourceRequest();
+            datasourceRequest.setDsList(Map.of(dsId, dsDto));
+            buildSchema(datasourceRequest, calciteConnection);
+        }
     }
 
     private Connection getConnectionFromPool(Long dsId) {

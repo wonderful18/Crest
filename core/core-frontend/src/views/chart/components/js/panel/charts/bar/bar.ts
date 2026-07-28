@@ -18,7 +18,8 @@ import { formatterItem, valueFormatter } from '@/views/chart/components/js/forma
 import {
   BAR_AXIS_TYPE,
   BAR_EDITOR_PROPERTY,
-  BAR_EDITOR_PROPERTY_INNER
+  BAR_EDITOR_PROPERTY_INNER,
+  calcTotalValue
 } from '@/views/chart/components/js/panel/charts/bar/common'
 import {
   configPlotTooltipEvent,
@@ -335,6 +336,8 @@ export class StackBar extends Bar {
       'totalColor',
       'totalFontSize',
       'totalFormatter',
+      'totalCalcType',
+      'totalPosition',
       'showStackQuota'
     ],
     'tooltip-selector': [
@@ -366,9 +369,13 @@ export class StackBar extends Bar {
       label = false
     }
     if (labelAttr.showTotal) {
-      const formatterCfg = labelAttr.labelFormatter ?? formatterItem
+      const formatterCfg = labelAttr.totalFormatter ?? labelAttr.labelFormatter ?? formatterItem
+      const calcType = labelAttr.totalCalcType ?? 'sum'
       each(groupBy(options.data, 'field'), (values, key) => {
-        const total = values.reduce((a, b) => a + b.value, 0)
+        const total = calcTotalValue(
+          values.map(v => v.value),
+          calcType
+        )
         const value = valueFormatter(total, formatterCfg)
         if (!options.annotations) {
           options = {
@@ -382,10 +389,10 @@ export class StackBar extends Bar {
           content: `${value}`,
           style: {
             textAlign: 'center',
-            fontSize: labelAttr.fontSize,
-            fill: labelAttr.color
+            fontSize: labelAttr.totalFontSize ?? labelAttr.fontSize,
+            fill: labelAttr.totalColor ?? labelAttr.color
           },
-          offsetY: -(parseInt(labelAttr.fontSize as unknown as string) / 2)
+          offsetY: -(parseInt((labelAttr.totalFontSize ?? labelAttr.fontSize) as unknown as string) / 2)
         })
       })
     }

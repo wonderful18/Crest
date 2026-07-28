@@ -130,6 +130,12 @@ public class ChartDataServer implements ChartDataApi {
                         x.setSort("asc");
                     }
                 });
+                // 导出原始明细时清空指标轴/扩展轴，避免 header 多出指标字段列（data 无对应列）
+                viewDTO.setYAxis(new ArrayList<>());
+                viewDTO.setXAxisExt(new ArrayList<>());
+                viewDTO.setYAxisExt(new ArrayList<>());
+                viewDTO.setExtStack(new ArrayList<>());
+                viewDTO.setDrillFields(new ArrayList<>());
             }
             int curLimit = Math.toIntExact(ExportCenterUtils.getExportLimit("view"));
             int curDsLimit = Math.toIntExact(ExportCenterUtils.getExportLimit("dataset"));
