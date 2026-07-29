@@ -213,7 +213,6 @@ const appStore = useAppStoreWithOut()
 const isCrestBi = computed(() => appStore.getIsCrestBi || appStore.getIsIframe)
 const itemFormRules = reactive<FormRules>({
   chartShowName: [
-    { required: true, message: t('commons.input_content'), trigger: 'change' },
     { max: 200, message: t('commons.char_count_limit', { count: 200 }), trigger: 'change' }
   ]
 })
@@ -1313,9 +1312,6 @@ const onChangeFlowMapPointForm = val => {
 const showRename = val => {
   recordSnapshotInfo('render')
   state.itemForm = JSON.parse(JSON.stringify(val))
-  if (!state.itemForm.chartShowName) {
-    state.itemForm.chartShowName = state.itemForm.name
-  }
   state.renameItem = true
 }
 
