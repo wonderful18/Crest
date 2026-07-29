@@ -43,7 +43,12 @@
           </el-button>
           <el-button
             class="m-button"
-            v-if="optType === 'details' && exportPermissions[1] && excelExportEnabled"
+            v-if="
+              optType === 'details' &&
+              exportPermissions[1] &&
+              excelExportEnabled &&
+              dvInfo.type !== 'dataV'
+            "
             link
             :loading="exportLoading"
             :disabled="
@@ -80,7 +85,8 @@
               optType === 'details' &&
               exportPermissions[2] &&
               excelExportEnabled &&
-              viewInfo.type === 'table-pivot'
+              viewInfo.type === 'table-pivot' &&
+              dvInfo.type !== 'dataV'
             "
             link
             :loading="exportLoading"
