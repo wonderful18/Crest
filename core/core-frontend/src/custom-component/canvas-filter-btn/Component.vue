@@ -1,9 +1,9 @@
-<!-- IconSlider.vue -->
+<!-- CanvasFilterBtn.vue -->
 <template>
   <el-tooltip :offset="22" effect="dark" placement="left" :content="t('visualization.query')">
     <div
       class="canvas-filter"
-      :class="{ 'filter-btn-fix': isFixed }"
+      :class="['pos-' + position, { 'filter-btn-fix': isFixed }]"
       @mousedown.stop
       @mousedup.stop
     >
@@ -15,6 +15,7 @@
           @click="popAreaActiveChange"
         >
           <el-icon><Filter /></el-icon>
+          <span class="filter-label">{{ t('commons.adv_search.title') }}</span>
         </div>
       </div>
     </div>
@@ -33,10 +34,14 @@ const slideDistance = ref(14) // 滑动距离
 const { canvasState } = storeToRefs(dvMainStore)
 const { t } = useI18n()
 
-defineProps({
+const props = defineProps({
   isFixed: {
     type: Boolean,
     default: false
+  },
+  position: {
+    type: String,
+    default: 'bottomRight'
   }
 })
 const filterActive = computed(() => canvasState.value.curPointArea === 'hidden')
@@ -56,26 +61,38 @@ const slideBack = () => {
 .canvas-filter {
   position: absolute;
   right: -14px;
-  bottom: 50px;
-  width: 28px;
   height: 32px;
+  z-index: 100;
+}
+/* 默认右下 */
+.pos-bottomRight {
+  bottom: 50px;
+}
+/* 右上 */
+.pos-topRight {
+  top: 16px;
 }
 .icon-slider {
   position: relative;
   z-index: 100;
-  width: 28px;
   height: 32px;
 }
 
 .icon-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
   transition: transform 0.3s ease; /* 过渡动画 */
   background: rgba(26, 26, 26, 1);
   font-size: 14px;
+  color: rgba(235, 235, 235, 1);
   border-bottom: 1px solid rgba(67, 67, 67, 1);
   border-left: 1px solid rgba(67, 67, 67, 1);
   border-top: 1px solid rgba(67, 67, 67, 1);
   border-radius: 16px 0 0 16px;
-  padding: 6px 0 0 6px;
+  padding: 0 12px 0 8px;
+  height: 32px;
   cursor: pointer;
   &:hover {
     background: rgba(235, 235, 235, 0.1);
@@ -84,6 +101,11 @@ const slideBack = () => {
   &:active {
     background: rgba(235, 235, 235, 0.2);
   }
+}
+
+.filter-label {
+  line-height: 32px;
+  font-size: 13px;
 }
 .icon-container-active {
   transform: translateX(-14px) !important;

@@ -42,6 +42,27 @@
       </el-form-item>
 
       <el-form-item
+        v-if="canvasStyleData.popupButtonAvailable"
+        class="form-item no-margin-bottom"
+        :class="'form-item-' + themes"
+        :label="t('visualization.pop_button_position')"
+      >
+        <el-radio-group
+          :effect="themes"
+          size="small"
+          v-model="canvasStyleData.popupButtonPosition"
+          @change="onThemeChange"
+        >
+          <el-radio :effect="themes" label="topRight">{{
+            t('visualization.pop_button_position_top')
+          }}</el-radio>
+          <el-radio :effect="themes" label="bottomRight">{{
+            t('visualization.pop_button_position_bottom')
+          }}</el-radio>
+        </el-radio-group>
+      </el-form-item>
+
+      <el-form-item
         v-if="!isDesktopFlag"
         class="form-item no-margin-bottom"
         :class="'form-item-' + themes"

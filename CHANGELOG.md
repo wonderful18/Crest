@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.5.30 - 2026-08-03
+
+v1.5.30 是 v1.5.29 之后的功能改进版本。新增数据大屏弹窗区查询按钮位置可配置(右上/右下)并带「高级查询」文字标签,并补全数据大屏分享链接仍显示图表悬浮导出按钮的问题。**本版本没有新增数据库结构,无需执行升级 SQL。**
+
+### 新增
+
+- 弹窗区查询按钮位置可配置(右上/右下)+「高级查询」文字标签:`CanvasBaseSetting.vue` 新增「查询按钮位置」单选项;`canvasUtils.ts` 的 `historyAdaptor` 兼容 `popupButtonPosition`(旧画布默认 `bottomRight`);`canvas-filter-btn/Component.vue` 接收 `position` prop 定位并加文字标签;`CrestPreview.vue` 透传 `popupButtonPosition`;`locales/en.ts`、`zh-CN.ts` 新增 `pop_button_position`/`_top`/`_bottom` 文案。
+
+### 修复
+
+- 数据大屏分享链接仍显示图表悬浮导出按钮(v1.5.29 遗漏):`ComponentEditBar.vue` 独立导出箭头 `el-dropdown` 的 `v-if` 增加 `dvInfo.type !== 'dataV'` 条件;`UserViewEnlarge.vue` 放大视图的图片导出按钮/像素选择/分割线同步补齐 `dvInfo.type !== 'dataV'` 条件。数据大屏场景不再渲染导出按钮。
+
 ## v1.5.29 - 2026-07-29
 
 v1.5.29 是 v1.5.28 之后的修复版本。修复数据大屏分享链接仍显示导出 Excel 按钮、图表字段显示名称无法留空两个问题。**本版本没有新增数据库结构,无需执行升级 SQL。**

@@ -184,6 +184,7 @@
         !['picture-group', 'rich-text'].includes(element.innerType) &&
         barShowCheck('previewDownload') &&
         showDownload &&
+        dvInfo.type !== 'dataV' &&
         (exportPermissions[0] || exportPermissions[1])
       "
     >

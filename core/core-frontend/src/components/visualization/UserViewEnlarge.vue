@@ -18,7 +18,7 @@
         <div v-if="!isIframe">{{ viewInfo?.title }}</div>
         <div class="export-button">
           <el-select
-            v-if="optType === 'enlarge' && exportPermissions[0]"
+            v-if="optType === 'enlarge' && exportPermissions[0] && dvInfo.type !== 'dataV'"
             v-model="pixel"
             class="pixel-select"
             size="small"
@@ -34,7 +34,7 @@
           </el-select>
           <el-button
             class="m-button"
-            v-if="optType === 'enlarge' && exportPermissions[0]"
+            v-if="optType === 'enlarge' && exportPermissions[0] && dvInfo.type !== 'dataV'"
             link
             @click="downloadViewImage"
           >
@@ -101,8 +101,9 @@
             class="close-divider"
             direction="vertical"
             v-if="
-              exportPermissions[0] ||
-              (excelExportEnabled && (exportPermissions[1] || exportPermissions[2]))
+              dvInfo.type !== 'dataV' &&
+              (exportPermissions[0] ||
+                (excelExportEnabled && (exportPermissions[1] || exportPermissions[2])))
             "
           />
         </div>

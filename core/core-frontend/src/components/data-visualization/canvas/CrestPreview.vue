@@ -574,7 +574,11 @@ defineExpose({
     v-if="state.initState"
   >
     <!--弹框触发区域-->
-    <canvas-filter-btn :is-fixed="isOverSize" v-if="filterBtnShow"></canvas-filter-btn>
+    <canvas-filter-btn
+      :is-fixed="isOverSize"
+      :position="canvasStyleData.popupButtonPosition"
+      v-if="filterBtnShow"
+    ></canvas-filter-btn>
     <!-- 弹框区域 -->
     <PopArea
       v-if="popAreaAvailable"
