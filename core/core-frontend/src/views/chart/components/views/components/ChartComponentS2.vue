@@ -274,7 +274,7 @@ const setupPage = (chart: ChartObj, resetPageInfo?: boolean) => {
   if (state.pageStyle !== 'general') {
     pageInfo.pageSize = customAttr.basicStyle.tablePageSize ?? 20
   }
-  if (state.totalItems > state.pageInfo.pageSize || state.pageStyle === 'general') {
+  if (state.totalItems > 0 || state.pageStyle === 'general') {
     pageInfo.total = state.totalItems
     state.showPage = true
   } else {
