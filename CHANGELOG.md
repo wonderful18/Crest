@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.5.32 - 2026-08-11
+
+v1.5.32 是 v1.5.31 之后的修复版本。修复分享链接升级弹框、透视表合计为空、汇总表自定义公式列为空、明细表自定义排序跨页乱序四个问题。**本版本没有新增数据库结构,无需执行升级 SQL。**
+
+### 修复
+
+- 分享链接(`/link/`)打开时不再提示"系统有升级"弹框:`service.ts` 的 `executeVersionHandler` 判断当前路由为 `/link/` 分享路径时直接跳过升级提示。
+- 透视表行/列合计均为空:`table-pivot.ts` 对齐 S2 v2.7.1 的 `TotalStatus` 字段名(`isRowGrandTotal`/`isColGrandTotal`),新增 `normalizeTotalStatus` 兼容旧名,合计节点正确匹配聚合配置。
+- 汇总表自定义公式列为空:`tableSummaryColumns.mjs` 新增 `evalSummaryColumnFormula`(strip 前导 `=`、纯算术白名单求值、单引号转义)+ `buildIdToEngineFieldMap`,`appendSummaryColumnsToS2Config` 对 custom 公式列逐行算值;`table-normal.ts`/`table-info.ts` 构建 id→engineFieldName 映射并传入。
+- 明细表自定义排序跨页乱序:`Dimension2SQLObj.java` 对 `custom_sort` 维度生成 `ORDER BY CASE WHEN ... END ASC` 下推 SQL,分页 `LIMIT` 在全局自定义顺序上切分;ES 数据源跳过;新增 `Dimension2SQLObjTest` 单测。
+
 ## v1.5.31 - 2026-08-03
 
 v1.5.31 是 v1.5.30 之后的修复版本。修复明细表带查询条件后结果剩 1 页时不显示分页数量的问题。**本版本没有新增数据库结构,无需执行升级 SQL。**

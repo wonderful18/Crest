@@ -20,6 +20,7 @@ import {
 } from '@/views/chart/components/js/panel/common/common_table'
 import {
   appendSummaryColumnsToS2Config,
+  buildIdToEngineFieldMap,
   buildSummaryRowWithColumns
 } from '@/views/chart/components/js/panel/common/tableSummaryColumns.mjs'
 import { buildS2HeaderColumns } from '@/views/chart/components/js/panel/common/tableAuxiliaryHeader.mjs'
@@ -199,7 +200,7 @@ export class TableNormal extends S2ChartView<TableSheet> {
       meta: meta,
       data: newData
     }
-    appendSummaryColumnsToS2Config(s2DataConfig, basicStyle.summaryColumns)
+    appendSummaryColumnsToS2Config(s2DataConfig, basicStyle.summaryColumns, buildIdToEngineFieldMap(chart))
 
     // options
     const s2Options: S2Options = {

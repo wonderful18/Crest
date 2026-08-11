@@ -305,6 +305,11 @@ const showMsg = (msg: string, id: string) => {
 }
 
 const executeVersionHandler = (response: AxiosResponse) => {
+  // 分享链接打开时不提示系统升级弹框，避免影响查看者
+  const currentPath = router.currentRoute.value.path
+  if (currentPath.startsWith('/link/')) {
+    return
+  }
   const executeVersionHeader = 'x-crest-execute-version'
   const executeVersion = response.headers[executeVersionHeader]
   const cacheVal = wsCache.get(executeVersionHeader)
