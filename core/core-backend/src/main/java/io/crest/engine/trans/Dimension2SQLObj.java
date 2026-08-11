@@ -84,12 +84,55 @@ public class Dimension2SQLObj {
                             .orderDirection(x.getSort())
                             .id(x.getId())
                             .build());
+                } else if (Strings.CI.equals(x.getSort(), "custom_sort") && !Strings.CI.equals(dsType, "es")) {
+                    // 自定义排序下推到 SQL ORDER BY CASE WHEN，使分页 LIMIT 在全局自定义顺序上切分，
+                    // 否则"先 LIMIT 再内存排序"会导致同维度数据跨页重复/乱序。
+                    // 用 fieldAlias 而非 originField：明细表 SQL 会再外包一层子查询 (inner) t_a_1，
+                    // 外层 ORDER BY 只能引用内层 SELECT 输出的别名，原始表别名在外层不可见。
+                    String caseExpr = buildCustomSortCaseExpr(fieldAlias, x.getCustomSort());
+                    if (caseExpr != null) {
+                        xOrders.add(SQLObj.builder()
+                                .orderField(caseExpr)
+                                .orderAlias(caseExpr)
+                                .orderDirection("ASC")
+                                .id(x.getId())
+                                .build());
+                    }
                 }
             }
         }
         meta.setXFields(xFields);
         meta.setXOrders(xOrders);
         meta.setXFieldsDialect(fieldsDialect);
+    }
+
+    /**
+     * 为自定义排序生成 ORDER BY 用的 CASE WHEN 表达式：CASE <field> WHEN 'v1' THEN 0 WHEN 'v2' THEN 1 ... END。
+     * 未在 customSort 列表中的值会落到 ELSE（取列表长度，排在所有已定义值之后，相对顺序保持数据库默认）。
+     * 字符串值做单引号转义，避免 SQL 注入。customSort 为空时返回 null（不生成 ORDER BY）。
+     */
+    private static String buildCustomSortCaseExpr(String field, List<String> customSort) {
+        if (CollectionUtils.isEmpty(customSort)) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder("CASE ").append(field);
+        for (int i = 0; i < customSort.size(); i++) {
+            String val = customSort.get(i);
+            if (val == null) {
+                continue;
+            }
+            sb.append(" WHEN '").append(escapeSqlSingleQuote(val)).append("' THEN ").append(i);
+        }
+        // 未定义值统一放到已定义值之后
+        sb.append(" ELSE ").append(customSort.size()).append(" END");
+        return sb.toString();
+    }
+
+    /**
+     * SQL 字符串值单引号转义：将 ' 替换为 ''，避免注入与语法错误。
+     */
+    private static String escapeSqlSingleQuote(String val) {
+        return val.replace("'", "''");
     }
 
     public static SQLObj getXFields(ChartViewFieldDTO x, String originField, String fieldAlias, boolean isCross) {

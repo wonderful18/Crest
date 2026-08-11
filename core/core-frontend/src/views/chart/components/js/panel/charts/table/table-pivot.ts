@@ -1113,15 +1113,27 @@ function customCalcFunc(query, data, status, chart, totalCfgMap, axisMap, custom
   }
 }
 
+// S2 v2 的 TotalStatus 字段名为 isRowGrandTotal/isColGrandTotal，
+// 历史代码沿用旧字段名 isRowTotal/isColTotal，此处归一化兼容，避免合计/小计匹配失效返回空。
+function normalizeTotalStatus(status: TotalStatus): TotalStatus {
+  if (!status) return status
+  return {
+    ...status,
+    isRowGrandTotal: status.isRowGrandTotal ?? (status as any).isRowTotal,
+    isColGrandTotal: status.isColGrandTotal ?? (status as any).isColTotal
+  } as TotalStatus
+}
+
 function getTreeCustomCalcResult(query, axisMap, status: TotalStatus, customCalc) {
+  status = normalizeTotalStatus(status)
   const quotaField = query[EXTRA_FIELD]
   const { row, col } = axisMap
   // 行列交叉总计
-  if (status.isRowTotal && status.isColTotal) {
+  if (status.isRowGrandTotal && status.isColGrandTotal) {
     return customCalc.rowColTotal?.data?.[quotaField]
   }
   // 列总计
-  if (status.isColTotal && !status.isRowSubTotal) {
+  if (status.isColGrandTotal && !status.isRowSubTotal) {
     const { colTotal, rowSubInColTotal } = customCalc
     const path = getTreePath(query, row)
     let val
@@ -1140,7 +1152,7 @@ function getTreeCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
     return val
   }
   // 列小计
-  if (status.isColSubTotal && !status.isRowTotal && !status.isRowSubTotal) {
+  if (status.isColSubTotal && !status.isRowGrandTotal && !status.isRowSubTotal) {
     const { colSubTotal } = customCalc
     const subColLevel = getSubLevel(query, col)
     const subRowLevel = getSubLevel(query, row)
@@ -1161,7 +1173,7 @@ function getTreeCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
     return val
   }
   // 行总计
-  if (status.isRowTotal && !status.isColSubTotal) {
+  if (status.isRowGrandTotal && !status.isColSubTotal) {
     const { rowTotal } = customCalc
     const path = getTreePath(query, col)
     let val
@@ -1181,8 +1193,8 @@ function getTreeCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
   if (status.isRowSubTotal) {
     // 列维度为空，行小计直接当成列总计
     if (
-      (!status.isColTotal && !status.isColSubTotal) ||
-      (!col.length && status.isColTotal && status.isRowSubTotal)
+      (!status.isColGrandTotal && !status.isColSubTotal) ||
+      (!col.length && status.isColGrandTotal && status.isRowSubTotal)
     ) {
       const { rowSubTotal } = customCalc
       const rowLevel = getSubLevel(query, row)
@@ -1199,7 +1211,7 @@ function getTreeCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
     }
   }
   // 行总计里面的列小计
-  if (status.isRowTotal && status.isColSubTotal) {
+  if (status.isRowGrandTotal && status.isColSubTotal) {
     const { colSubInRowTotal } = customCalc
     const colLevel = getSubLevel(query, col)
     const data = colSubInRowTotal?.[colLevel]?.data
@@ -1212,7 +1224,7 @@ function getTreeCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
     return val
   }
   // 列总计里面的行小计
-  if (status.isColTotal && status.isRowSubTotal) {
+  if (status.isColGrandTotal && status.isRowSubTotal) {
     const { rowSubInColTotal } = customCalc
     const rowSubLevel = getSubLevel(query, row)
     const data = rowSubInColTotal?.[rowSubLevel]?.data
@@ -1228,14 +1240,15 @@ function getTreeCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
 }
 
 function getGridCustomCalcResult(query, axisMap, status: TotalStatus, customCalc) {
+  status = normalizeTotalStatus(status)
   const quotaField = query[EXTRA_FIELD]
   const { row, col } = axisMap
   // 行列交叉总计
-  if (status.isRowTotal && status.isColTotal) {
+  if (status.isRowGrandTotal && status.isColGrandTotal) {
     return customCalc.rowColTotal?.data?.[quotaField]
   }
   // 列总计
-  if (status.isColTotal && !status.isRowSubTotal) {
+  if (status.isColGrandTotal && !status.isRowSubTotal) {
     const { colTotal } = customCalc
     const path = getTreePath(query, row)
     let val
@@ -1248,7 +1261,7 @@ function getGridCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
     return val
   }
   // 列小计
-  if (status.isColSubTotal && !status.isRowTotal && !status.isRowSubTotal) {
+  if (status.isColSubTotal && !status.isRowGrandTotal && !status.isRowSubTotal) {
     const { colSubTotal } = customCalc
     const subLevel = getSubLevel(query, col)
     const rowPath = getTreePath(query, row)
@@ -1263,7 +1276,7 @@ function getGridCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
     return val
   }
   // 行总计
-  if (status.isRowTotal && !status.isColSubTotal) {
+  if (status.isRowGrandTotal && !status.isColSubTotal) {
     const { rowTotal } = customCalc
     const path = getTreePath(query, col)
     let val
@@ -1280,7 +1293,7 @@ function getGridCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
     return val
   }
   // 行小计
-  if (status.isRowSubTotal && !status.isColTotal && !status.isColSubTotal) {
+  if (status.isRowSubTotal && !status.isColGrandTotal && !status.isColSubTotal) {
     const { rowSubTotal } = customCalc
     const rowLevel = getSubLevel(query, row)
     const colPath = getTreePath(query, col)
@@ -1295,7 +1308,7 @@ function getGridCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
     return val
   }
   // 行总计里面的列小计
-  if (status.isRowTotal && status.isColSubTotal) {
+  if (status.isRowGrandTotal && status.isColSubTotal) {
     const { colSubInRowTotal } = customCalc
     const colLevel = getSubLevel(query, col)
     const data = colSubInRowTotal?.[colLevel]?.data
@@ -1308,7 +1321,7 @@ function getGridCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
     return val
   }
   // 列总计里面的行小计
-  if (status.isColTotal && status.isRowSubTotal) {
+  if (status.isColGrandTotal && status.isRowSubTotal) {
     const { rowSubInColTotal } = customCalc
     const rowSubLevel = getSubLevel(query, row)
     const data = rowSubInColTotal?.[rowSubLevel]?.data
@@ -1372,7 +1385,14 @@ function getTreePath(query, axis) {
 }
 
 function getAggregationAndCalcFuncByQuery(totalsStatus, totalsOptions) {
-  const { isRowTotal, isRowSubTotal, isColTotal, isColSubTotal } = totalsStatus
+  // S2 v2 的 TotalStatus 字段名为 isRowGrandTotal/isColGrandTotal；
+  // 兼容旧字段名 isRowTotal/isColTotal，避免合计节点匹配不到聚合配置而显示为空。
+  const {
+    isRowGrandTotal,
+    isRowSubTotal,
+    isColGrandTotal,
+    isColSubTotal
+  } = totalsStatus || {}
   const { row, col } = totalsOptions || {}
   const { calcTotals: rowCalcTotals = {}, calcSubTotals: rowCalcSubTotals = {} } = row || {}
   const { calcTotals: colCalcTotals = {}, calcSubTotals: colCalcSubTotals = {} } = col || {}
@@ -1388,9 +1408,9 @@ function getAggregationAndCalcFuncByQuery(totalsStatus, totalsOptions) {
 
   // 优先级: 列总计/小计 > 行总计/小计
   return (
-    getCalcTotals(colCalcTotals, isColTotal) ||
+    getCalcTotals(colCalcTotals, isColGrandTotal) ||
     getCalcTotals(colCalcSubTotals, isColSubTotal) ||
-    getCalcTotals(rowCalcTotals, isRowTotal) ||
+    getCalcTotals(rowCalcTotals, isRowGrandTotal) ||
     getCalcTotals(rowCalcSubTotals, isRowSubTotal)
   )
 }
