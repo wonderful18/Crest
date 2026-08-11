@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.5.33 - 2026-08-11
+
+v1.5.33 是 v1.5.32 之后的性能优化与修复版本。优化前端组件懒加载降低首屏体积,并改进导出应用模板的错误提示。**本版本没有新增数据库结构,无需执行升级 SQL。**
+
+### 优化
+
+- 前端组件懒加载(P0 性能优化):`utils/components.ts` 所有自定义组件改 `defineAsyncComponent` 按需加载,`views/chart/components/views/index.vue` 的 `ChartComponentG2Plot`(echarts)与 `ChartComponentS2`(antv-s2)改异步。首屏 preload 从 ~7MB 降到 3.6MB,tinymce/exceljs/echarts/video.js 移出首屏。
+
+### 修复
+
+- 导出应用模板错误提示不明确:`DataVisualizationServer.validateAppExportScope` 三处"包含无效数据集"笼统提示改为带具体数据集名称,信息精简到 200 字符以内避免被 `safeClientMessage` 降级。
+
 ## v1.5.32 - 2026-08-11
 
 v1.5.32 是 v1.5.31 之后的修复版本。修复分享链接升级弹框、透视表合计为空、汇总表自定义公式列为空、明细表自定义排序跨页乱序四个问题。**本版本没有新增数据库结构,无需执行升级 SQL。**

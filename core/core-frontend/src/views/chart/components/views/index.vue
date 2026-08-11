@@ -5,7 +5,12 @@ import icon_viewinchat_outlined from '@/assets/svg/icon_viewinchat_outlined.svg'
 import { cancelRequestBatch } from '@/config/axios/service'
 import icon_drilling_outlined from '@/assets/svg/icon_drilling_outlined.svg'
 import { useI18n } from '@/hooks/web/useI18n'
-import ChartComponentG2Plot from './components/ChartComponentG2Plot.vue'
+import { defineAsyncComponent } from 'vue'
+// 图表渲染组件懒加载：echarts(G2Plot) 与 antv-s2 是大依赖，按图表类型按需加载，
+// 避免纯表格大屏/分享链接首屏被迫下载解析 echarts(887KB)/antv-s2(400KB+)。
+const ChartComponentG2Plot = defineAsyncComponent(
+  () => import('./components/ChartComponentG2Plot.vue')
+)
 import Indicator from '@/custom-component/indicator/Indicator.vue'
 import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 import { useAppStoreWithOut } from '@/store/modules/app'
@@ -37,7 +42,9 @@ import { useCache } from '@/hooks/web/useCache'
 
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { cloneDeep, debounce } from 'lodash-es'
-import ChartComponentS2 from '@/views/chart/components/views/components/ChartComponentS2.vue'
+const ChartComponentS2 = defineAsyncComponent(
+  () => import('@/views/chart/components/views/components/ChartComponentS2.vue')
+)
 import { ChartLibraryType } from '@/views/chart/components/js/panel/types'
 import chartViewManager from '@/views/chart/components/js/panel'
 import { storeToRefs } from 'pinia'

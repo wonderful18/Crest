@@ -1536,23 +1536,41 @@ public class DataVisualizationServer implements DataVisualizationApi {
         List<Long> requestedViewIds = Optional.ofNullable(request.getViewIds()).orElseGet(List::of);
         if (requestedViewIds.stream().anyMatch(Objects::isNull)
                 || !enabledViewIds.containsAll(requestedViewIds)) {
-            CrestException.throwException("导出范围包含无效图表");
+            List<Long> invalidViewIds = requestedViewIds.stream()
+                    .filter(v -> v == null || !enabledViewIds.contains(v))
+                    .collect(Collectors.toList());
+            CrestException.throwException("导出范围包含无效图表，图表ID：" + invalidViewIds + "。请检查图表是否已删除或未保存");
         }
 
         List<Long> requestedDsIds = Optional.ofNullable(request.getDsIds()).orElseGet(List::of);
-        if (requestedDsIds.stream().anyMatch(Objects::isNull)) {
-            CrestException.throwException("导出范围包含无效数据集");
+        List<Long> nullDsIds = requestedDsIds.stream().filter(Objects::isNull).collect(Collectors.toList());
+        if (!nullDsIds.isEmpty()) {
+            CrestException.throwException("导出范围包含无效数据集：存在空数据集，请检查图表或查询组件是否关联数据集");
         }
         if (!requestedDsIds.isEmpty()) {
             if (enabledViewIds.isEmpty()) {
-                CrestException.throwException("导出范围包含无效数据集");
+                CrestException.throwException("导出范围包含无效数据集：大屏未识别到有效图表，请保存或重新发布大屏后再导出");
             }
-            Set<Long> allowedDsIds = findAppChartViews(new ArrayList<>(enabledViewIds)).stream()
+            List<AppCoreChartViewVO> chartViews = findAppChartViews(new ArrayList<>(enabledViewIds));
+            Set<Long> allowedDsIds = chartViews.stream()
                     .map(AppCoreChartViewVO::getTableId)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
-            if (!allowedDsIds.containsAll(requestedDsIds)) {
-                CrestException.throwException("导出范围包含无效数据集");
+            List<Long> invalidDsIds = requestedDsIds.stream()
+                    .filter(dsId -> !allowedDsIds.contains(dsId))
+                    .collect(Collectors.toList());
+            if (!invalidDsIds.isEmpty()) {
+                // 查询无效数据集名称(可能已删除则只显示ID)
+                java.util.Map<Long, String> dsNameMap = appTemplateMapper
+                        .findAppDatasetGroupInfo(invalidDsIds).stream()
+                        .collect(Collectors.toMap(AppCoreDatasetGroupVO::getId,
+                                v -> v.getName() == null ? String.valueOf(v.getId()) : v.getName(),
+                                (a, b) -> a));
+                String invalidDsDesc = invalidDsIds.stream()
+                        .map(dsId -> dsNameMap.getOrDefault(dsId, "数据集(id=" + dsId + "，可能已删除)"))
+                        .collect(Collectors.joining("、"));
+                CrestException.throwException("导出范围包含无效数据集：" + invalidDsDesc
+                        + "。请检查该数据集是否被大屏图表引用或已删除");
             }
         }
     }
