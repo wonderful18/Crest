@@ -654,12 +654,43 @@ declare interface ChartTableCellAttr {
    */
   mergeFields?: string[]
   /**
+   * 单元格分组规则：按列值定位行，横向合并若干列为一个单元格，支持自定义显示文本
+   * 区别于 mergeCells 的按值自动纵向合并，这里是规则式、按数据内容定位、可横可纵
+   */
+  cellGroups?: CellGroup[]
+  /**
    * 对齐设置
    */
   alignConfig: {
     id: string
     align: string
   }[]
+}
+
+/**
+ * 单元格分组规则
+ */
+declare interface CellGroup {
+  /**
+   * 定位列 engineFieldName：该列值 === matchValue 时命中行
+   */
+  matchField: string
+  /**
+   * 命中值：定位列值等于此值时命中（多行命中则纵向合并）
+   */
+  matchValue: string
+  /**
+   * 横向起列 engineFieldName
+   */
+  startField: string
+  /**
+   * 横向止列 engineFieldName
+   */
+  endField: string
+  /**
+   * 合并后自定义显示文本
+   */
+  text: string
 }
 
 /**

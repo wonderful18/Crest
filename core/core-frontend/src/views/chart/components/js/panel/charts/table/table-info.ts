@@ -87,7 +87,8 @@ export class TableInfo extends S2ChartView<TableSheet> {
       'tableColumnFreezeHead',
       'tableRowFreezeHead',
       'mergeCells',
-      'mergeFields'
+      'mergeFields',
+      'cellGroups'
     ],
     'summary-selector': ['showSummary', 'summaryLabel']
   }
@@ -239,7 +240,7 @@ export class TableInfo extends S2ChartView<TableSheet> {
         return p
       }, {})
     }
-    if (tableCell.tableFreeze && !tableCell.mergeCells) {
+    if (tableCell.tableFreeze && !(tableCell.mergeCells || tableCell.cellGroups?.length)) {
       // s2 v2 将冻结配置从顶层属性改为 frozen 嵌套对象
       s2Options.frozen = {
         colCount: tableCell.tableColumnFreezeHead ?? 0,
@@ -250,6 +251,8 @@ export class TableInfo extends S2ChartView<TableSheet> {
     this.configTooltip(chart, s2Options)
     // 合并单元格
     this.configMergeCells(chart, s2Options, s2DataConfig)
+    // 单元格分组（手动优先，叠加到 mergedCellsInfo）
+    this.configCellGroups(chart, s2Options, s2DataConfig)
     // 隐藏表头，保留顶部的分割线, 禁用表头横向 resize
     if (tableHeader.showTableHeader === false) {
       s2Options.style.colCfg.height = 1
@@ -473,7 +476,7 @@ export class TableInfo extends S2ChartView<TableSheet> {
   protected configTheme(chart: Chart): S2Theme {
     const theme = super.configTheme(chart)
     const { basicStyle, tableCell, tableHeader } = parseJson(chart.customAttr)
-    if (tableCell.mergeCells) {
+    if (tableCell.mergeCells || tableCell.cellGroups?.length) {
       const tableFontColor = hexColorToRGBA(tableCell.tableFontColor, basicStyle.alpha)
       let tableItemBgColor = tableCell.tableItemBgColor
       if (!isAlphaColor(tableItemBgColor)) {

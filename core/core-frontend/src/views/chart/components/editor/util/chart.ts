@@ -1353,6 +1353,13 @@ export const CHART_TYPE_CONFIGS = [
         value: 't-heatmap',
         title: t('chart.chart_table_heatmap'),
         icon: 't-heatmap'
+      },
+      {
+        render: 'custom',
+        category: 'table',
+        value: 'deploy-calendar',
+        title: t('visualization.deploy_calendar'),
+        icon: 'deploy-calendar'
       }
     ]
   },
