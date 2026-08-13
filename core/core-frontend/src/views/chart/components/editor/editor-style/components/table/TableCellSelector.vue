@@ -83,6 +83,8 @@ const showCustomAlign = computed(() => {
 
 const alignConfigOptions = reactive([])
 const mergeFieldOptions = reactive([])
+// 单元格分组可选项：定位列/起列/止列，取 xAxis 全部列（含指标，不截断在 quota 前）
+const cellGroupFieldOptions = reactive([])
 
 const emit = defineEmits(['onTableCellChange'])
 
@@ -108,6 +110,50 @@ const changeAlignConfig = () => {
   }
 }
 
+// 单元格分组：开关 = 数组非空
+const cellGroupsEnabled = computed(() => (state.tableCellForm.cellGroups?.length ?? 0) > 0)
+const toggleCellGroups = (val: boolean) => {
+  state.tableCellForm.cellGroups = val ? [createEmptyCellGroup()] : []
+  changeTableCell('cellGroups')
+}
+const createEmptyCellGroup = () => ({
+  matchField: cellGroupFieldOptions[0]?.id ?? '',
+  matchValue: '',
+  startField: cellGroupFieldOptions[0]?.id ?? '',
+  endField: cellGroupFieldOptions[0]?.id ?? '',
+  text: ''
+})
+// 匹配值候选：从当前页数据按定位列去重，供模糊搜索下拉
+const getMatchValueOptions = (matchField: string) => {
+  const rows = props.chart?.data?.tableRow
+  if (!Array.isArray(rows) || !matchField) {
+    return []
+  }
+  const seen = new Set<string>()
+  const options: { id: string; label: string }[] = []
+  rows.forEach((row: any) => {
+    const v = row?.[matchField]
+    if (v == null) return
+    const key = String(v)
+    if (seen.has(key)) return
+    seen.add(key)
+    options.push({ id: key, label: key })
+  })
+  return options
+}
+const addCellGroup = () => {
+  state.tableCellForm.cellGroups.push(createEmptyCellGroup())
+  changeTableCell('cellGroups')
+}
+const removeCellGroup = (index: number) => {
+  state.tableCellForm.cellGroups.splice(index, 1)
+  changeTableCell('cellGroups')
+}
+// 是否处于合并态（自动或手动），用于互斥禁用斑马纹/冻结
+const hasMerge = computed(
+  () => state.tableCellForm.mergeCells || (state.tableCellForm.cellGroups?.length ?? 0) > 0
+)
+
 const init = () => {
   const tableCell = props.chart?.customAttr?.tableCell
   if (tableCell) {
@@ -115,6 +161,10 @@ const init = () => {
     if (tableCell.mergeCells === undefined) {
       state.tableCellForm.mergeCells = false
     }
+    // cellGroups 容错：老图表无此字段
+    state.tableCellForm.cellGroups = Array.isArray(tableCell.cellGroups)
+      ? tableCell.cellGroups
+      : []
     const alpha = props.chart.customAttr.basicStyle.alpha
 
     if (!isAlphaColor(state.tableCellForm.tableItemBgColor)) {
@@ -170,7 +220,14 @@ const init = () => {
       }
     }
     mergeFieldOptions.splice(0, mergeFieldOptions.length)
+    // 单元格分组：table-info 的全部列均可参与
+    cellGroupFieldOptions.splice(0, cellGroupFieldOptions.length)
     if (props.chart.type === 'table-info') {
+      const groupOptions = (props.chart?.xAxis || []).map(item => ({
+        id: item.engineFieldName,
+        label: item.chartShowName ?? item.name
+      }))
+      cellGroupFieldOptions.push(...groupOptions)
       const options = getMergeableFieldOptions(props.chart?.xAxis || [])
       mergeFieldOptions.push(...options)
       const optionIds = new Set(options.map(item => item.id))
@@ -219,7 +276,7 @@ onMounted(() => {
       <el-checkbox
         v-model="state.tableCellForm.enableTableCrossBG"
         :effect="themes"
-        :disabled="showProperty('mergeCells') && state.tableCellForm.mergeCells"
+        :disabled="hasMerge"
         @change="changeTableCell('enableTableCrossBG')"
       >
         <span class="data-area-label">
@@ -543,7 +600,7 @@ onMounted(() => {
       <el-checkbox
         size="small"
         :effect="themes"
-        :disabled="showProperty('mergeCells') && state.tableCellForm.mergeCells"
+        :disabled="hasMerge"
         v-model="state.tableCellForm.tableFreeze"
         @change="changeTableCell('tableFreeze')"
       >
@@ -553,7 +610,7 @@ onMounted(() => {
             class="item"
             effect="dark"
             placement="bottom"
-            v-if="state.tableCellForm.mergeCells"
+            v-if="hasMerge"
           >
             <template #content>
               <div>{{ t('chart.table_freeze_tip') }}</div>
@@ -577,10 +634,7 @@ onMounted(() => {
             :effect="themes"
             controls-position="right"
             v-model="state.tableCellForm.tableColumnFreezeHead"
-            :disabled="
-              (showProperty('mergeCells') && state.tableCellForm.mergeCells) ||
-              !state.tableCellForm.tableFreeze
-            "
+            :disabled="hasMerge || !state.tableCellForm.tableFreeze"
             :min="0"
             :max="100"
             @change="changeTableCell('tableColumnFreezeHead')"
@@ -598,10 +652,7 @@ onMounted(() => {
             :effect="themes"
             controls-position="right"
             v-model="state.tableCellForm.tableRowFreezeHead"
-            :disabled="
-              (showProperty('mergeCells') && state.tableCellForm.mergeCells) ||
-              !state.tableCellForm.tableFreeze
-            "
+            :disabled="hasMerge || !state.tableCellForm.tableFreeze"
             :min="0"
             :max="100"
             @change="changeTableCell('tableRowFreezeHead')"
@@ -660,6 +711,127 @@ onMounted(() => {
         {{ t('chart.merge_cells_fields_tip') }}
       </div>
     </el-form-item>
+    <el-form-item
+      class="form-item"
+      :class="'form-item-' + themes"
+      v-if="showProperty('cellGroups')"
+    >
+      <el-checkbox
+        size="small"
+        :effect="themes"
+        :model-value="cellGroupsEnabled"
+        @change="toggleCellGroups"
+      >
+        <span class="data-area-label">
+          <span style="margin-right: 4px">{{ t('chart.cell_groups') }}</span>
+          <el-tooltip class="item" effect="dark" placement="bottom">
+            <template #content>
+              <div>{{ t('chart.cell_groups_tip') }}</div>
+            </template>
+            <el-icon class="hint-icon" :class="{ 'hint-icon--dark': themes === 'dark' }">
+              <Icon name="icon_info_outlined"><icon_info_outlined class="svg-icon" /></Icon>
+            </el-icon>
+          </el-tooltip>
+        </span>
+      </el-checkbox>
+    </el-form-item>
+    <div
+      class="cell-groups-list"
+      :class="{ 'cell-groups-list--dark': themes === 'dark' }"
+      v-if="showProperty('cellGroups') && cellGroupsEnabled"
+    >
+      <div
+        v-for="(group, index) in state.tableCellForm.cellGroups"
+        :key="index"
+        class="cell-group-item"
+      >
+        <el-select
+          :effect="themes"
+          v-model="group.matchField"
+          :placeholder="t('chart.cell_groups_match_field')"
+          size="small"
+          @change="changeTableCell('cellGroups')"
+        >
+          <el-option
+            v-for="item in cellGroupFieldOptions"
+            :key="item.id"
+            :label="item.label"
+            :value="item.id"
+          />
+        </el-select>
+        <el-select
+          :effect="themes"
+          v-model="group.matchValue"
+          filterable
+          allow-create
+          default-first-option
+          clearable
+          :placeholder="t('chart.cell_groups_match_value')"
+          size="small"
+          @change="changeTableCell('cellGroups')"
+        >
+          <el-option
+            v-for="item in getMatchValueOptions(group.matchField)"
+            :key="item.id"
+            :label="item.label"
+            :value="item.id"
+          />
+        </el-select>
+        <el-select
+          :effect="themes"
+          v-model="group.startField"
+          :placeholder="t('chart.cell_groups_start_field')"
+          size="small"
+          @change="changeTableCell('cellGroups')"
+        >
+          <el-option
+            v-for="item in cellGroupFieldOptions"
+            :key="item.id"
+            :label="item.label"
+            :value="item.id"
+          />
+        </el-select>
+        <el-select
+          :effect="themes"
+          v-model="group.endField"
+          :placeholder="t('chart.cell_groups_end_field')"
+          size="small"
+          @change="changeTableCell('cellGroups')"
+        >
+          <el-option
+            v-for="item in cellGroupFieldOptions"
+            :key="item.id"
+            :label="item.label"
+            :value="item.id"
+          />
+        </el-select>
+        <el-input
+          :effect="themes"
+          v-model="group.text"
+          :placeholder="t('chart.cell_groups_text')"
+          size="small"
+          @change="changeTableCell('cellGroups')"
+        />
+        <el-button
+          :effect="themes"
+          size="small"
+          text
+          class="cell-group-del"
+          @click="removeCellGroup(index)"
+        >
+          {{ t('chart.cell_groups_delete') }}
+        </el-button>
+      </div>
+      <el-button
+        :effect="themes"
+        size="small"
+        text
+        class="cell-group-add"
+        @click="addCellGroup"
+      >
+        + {{ t('chart.cell_groups_add') }}
+      </el-button>
+    </div>
     <el-form-item
       class="form-item"
       :class="'form-item-' + themes"
@@ -779,6 +951,36 @@ onMounted(() => {
 
   &.merge-fields-tip--dark {
     color: rgba(235, 235, 235, 0.65);
+  }
+}
+.cell-groups-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  background: rgba(31, 35, 41, 0.04);
+
+  &.cell-groups-list--dark {
+    background: rgba(235, 235, 235, 0.06);
+  }
+
+  .cell-group-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    align-items: center;
+
+    .cell-group-del {
+      grid-column: 1 / -1;
+      justify-self: end;
+    }
+  }
+
+  .cell-group-add {
+    align-self: flex-start;
   }
 }
 </style>

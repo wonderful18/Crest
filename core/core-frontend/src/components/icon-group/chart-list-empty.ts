@@ -2,6 +2,7 @@ import outerParams from '@/assets/svg/icon_params_setting.svg'
 import filter from '@/assets/svg/filter.svg'
 import pictureGroup from '@/assets/svg/picture-group.svg'
 import richText from '@/assets/svg/rich-text.svg'
+import deployCalendar from '@/assets/svg/deploy-calendar.svg'
 import { defineAsyncComponent } from 'vue'
 const svgs = import.meta.glob('@/assets/svg/empty-light/*.svg')
 const iconChartMapEmpty = {
@@ -49,6 +50,7 @@ const iconChartMapEmpty = {
 const iconChartMap = {
   'rich-text': richText,
   'picture-group': pictureGroup,
+  'deploy-calendar': deployCalendar,
   filter: filter,
   outerParams: outerParams
 }

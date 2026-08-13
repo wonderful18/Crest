@@ -3249,6 +3249,117 @@ export function configMergeCells(chart: Chart, options: S2Options, dataConfig: S
   }
 }
 
+// 单元格分组：按列值定位行，横向合并若干列(多行命中则纵向)，支持自定义显示文本
+// 区别于 configMergeCells 的按值自动纵向合并，这里是规则式、手动优先
+export function configCellGroups(chart: Chart, options: S2Options, dataConfig: S2DataConfig) {
+  const { cellGroups } = parseJson(chart.customAttr).tableCell
+  const { showIndex } = parseJson(chart.customAttr).tableHeader
+  const groups = Array.isArray(cellGroups) ? cellGroups : []
+  if (!groups.length) {
+    return
+  }
+  const fields = chart.data?.fields || []
+  const fieldsMap =
+    fields.reduce((p, n) => {
+      p[n.engineFieldName] = n
+      return p
+    }, {} as Record<string, any>) || {}
+  const data = chart.data?.tableRow
+  if (!data?.length) {
+    return
+  }
+  // engineFieldName -> colIndex，复用 buildMergeCellsInfo 的 showIndex 偏移规则
+  // 用 dataConfig.meta 的顺序（已含 drill/summary 处理后的最终列序），最稳
+  const fieldToColIndex = new Map<string, number>()
+  ;(dataConfig.meta || []).forEach((item: any, index: number) => {
+    const field = item?.field ?? item?.engineFieldName
+    if (field) {
+      fieldToColIndex.set(field, showIndex ? index + 1 : index)
+    }
+  })
+  const manualRects: { minRow: number; maxRow: number; minCol: number; maxCol: number }[] = []
+  const textMap = new Map<string, string>()
+  const manualGroups: MergedCellInfo[][] = []
+  groups.forEach(group => {
+    const matchField = group.matchField
+    const startCol = fieldToColIndex.get(group.startField)
+    const endCol = fieldToColIndex.get(group.endField)
+    if (matchField == null || startCol == null || endCol == null) {
+      return
+    }
+    const minCol = Math.min(startCol, endCol)
+    const maxCol = Math.max(startCol, endCol)
+    // 命中行：定位列值 === matchValue，只取首个匹配行（单行横向合并，不做纵向）
+    let hitRow = -1
+    for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
+      if (String(data[rowIndex]?.[matchField]) === String(group.matchValue)) {
+        hitRow = rowIndex
+        break
+      }
+    }
+    if (hitRow < 0) {
+      return
+    }
+    // 单行横向矩形：命中行 × [minCol..maxCol] 的所有 cell
+    const cells: MergedCellInfo[] = []
+    for (let col = minCol; col <= maxCol; col++) {
+      cells.push({
+        rowIndex: hitRow,
+        colIndex: col,
+        // showText 设在矩形左侧（最小列）
+        showText: col === minCol
+      } as MergedCellInfo)
+    }
+    if (!cells.length) {
+      return
+    }
+    manualGroups.push(cells)
+    manualRects.push({
+      minRow: hitRow,
+      maxRow: hitRow,
+      minCol,
+      maxCol
+    })
+    textMap.set(`${hitRow}-${minCol}`, group.text)
+  })
+  if (!manualGroups.length) {
+    return
+  }
+  // 初始化 mergedCellsInfo
+  options.mergedCellsInfo = options.mergedCellsInfo || []
+  const merged = options.mergedCellsInfo
+  // 冲突仲裁：手动优先，剔除自动组中任一 cell 落在手动矩形内的整组
+  // S2 按 showText cell 的 meta id 去重，重叠组会叠加渲染损坏，必须由我们仲裁
+  const rectHit = (rowIndex: number, colIndex: number) =>
+    manualRects.some(
+      r => rowIndex >= r.minRow && rowIndex <= r.maxRow && colIndex >= r.minCol && colIndex <= r.maxCol
+    )
+  for (let i = merged.length - 1; i >= 0; i--) {
+    const group = merged[i]
+    if (group.some(cell => rectHit(cell.rowIndex, cell.colIndex))) {
+      merged.splice(i, 1)
+    }
+  }
+  manualGroups.forEach(g => merged.push(g))
+  // 禁用冻结，与 configMergeCells 一致
+  options.frozen = { colCount: 0, rowCount: 0 }
+  // 接管 mergedCell 回调：自定义文本优先，否则复刻 configMergeCells 原有逻辑
+  // MergedCellInfo 只有 {colIndex,rowIndex,showText}，不能挂自定义字段，故用闭包 Map
+  options.mergedCell = (sheet, cells, meta) => {
+    const customText = textMap.get(`${meta.rowIndex}-${meta.colIndex}`)
+    if (customText != null) {
+      meta.fieldValue = customText
+    } else if (showIndex && meta.colIndex === 0) {
+      meta.fieldValue = getRowIndex(merged, meta)
+    } else if (typeof meta.fieldValue === 'string') {
+      // 合并单元格统一显示大写，避免 Pos系统/POS系统/pos系统 合并后大小写不一
+      meta.fieldValue = meta.fieldValue.toUpperCase()
+    }
+    meta.fieldType = fieldsMap[meta.valueField]?.fieldType
+    return new CustomMergedCell(sheet, cells, meta)
+  }
+}
+
 export function getRowIndex(mergedCellsInfo: MergedCellInfo[][], meta: ViewMeta): number {
   if (!mergedCellsInfo?.length) {
     return meta.rowIndex + 1

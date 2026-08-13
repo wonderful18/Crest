@@ -2037,6 +2037,16 @@ export default {
     table_freeze_tip: '合并单元格后，不支持行列冻结',
     merge_cells_tips: '合并单元格后，行列冻结、自动换行和斑马纹会失效，当前页的序号会从 1 开始',
     merge_cells_break_line_tip: '合并单元格后，不支持自动换行',
+    cell_groups: '单元格分组',
+    cell_groups_tip:
+      '按定位列的值匹配到第一个命中行，把该行起列到止列横向合并为一个单元格并显示自定义文本；匹配值可从当前页数据中模糊搜索。与“合并单元格”同时开启时，手动分组优先。',
+    cell_groups_match_field: '定位列',
+    cell_groups_match_value: '匹配值',
+    cell_groups_start_field: '起列',
+    cell_groups_end_field: '止列',
+    cell_groups_text: '显示文本',
+    cell_groups_add: '添加规则',
+    cell_groups_delete: '删除',
     font_family_ya_hei: '微软雅黑',
     font_family_song_ti: '宋体',
     font_family_kai_ti: '楷体',
@@ -3063,6 +3073,7 @@ export default {
     select_dataset: '选择数据集',
     select_datasource: '选择数据源',
     picture_group: '图片组',
+    deploy_calendar: '投产窗口日历',
     new: '新建',
     new_folder: '新建文件夹',
     new_screen: '新建数据大屏',
@@ -4833,5 +4844,14 @@ export default {
         deprecationWarning: '检测到已弃用的用法，请参阅 el-pagination 文档以了解更多详情'
       }
     }
+  },
+  deploy_calendar: {
+    date_field: '投产日期',
+    content_field: '投产内容',
+    release_type_field: '版本类型',
+    weekly: '周版',
+    monthly: '月版',
+    unknown: '其他',
+    go_today: '回到今天'
   }
 }

@@ -17,6 +17,7 @@ import {
 import {
   configHeaderInteraction,
   configMergeCells,
+  configCellGroups,
   configTooltip,
   getConditions,
   getCustomTheme,
@@ -69,6 +70,10 @@ export abstract class S2ChartView<P extends SpreadSheet> extends AntVAbstractCha
 
   protected configMergeCells(chart: Chart, option: S2Options, dataConfig: S2DataConfig) {
     configMergeCells(chart, option, dataConfig)
+  }
+
+  protected configCellGroups(chart: Chart, option: S2Options, dataConfig: S2DataConfig) {
+    configCellGroups(chart, option, dataConfig)
   }
 
   protected showTooltip(s2Instance: P, event, metaConfig: Meta[]) {

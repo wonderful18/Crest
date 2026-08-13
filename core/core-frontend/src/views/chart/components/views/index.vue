@@ -52,6 +52,7 @@ import { checkAddHttp, setIdValueTrans } from '@/utils/canvasUtils'
 import { Base64 } from 'js-base64'
 import CrestRichTextView from '@/custom-component/rich-text/CrestRichTextView.vue'
 import PictureGroup from '@/custom-component/picture-group/Component.vue'
+import DeployCalendar from '@/custom-component/deploy-calendar/Component.vue'
 import ChartEmptyInfo from '@/views/chart/components/views/components/ChartEmptyInfo.vue'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import { viewFieldTimeTrans } from '@/utils/viewUtils'
@@ -943,7 +944,7 @@ const chartAreaShow = computed(() => {
       return true
     }
   }
-  if (['rich-text', 'picture-group'].includes(view.value.type)) {
+  if (['rich-text', 'picture-group', 'deploy-calendar'].includes(view.value.type)) {
     return true
   }
   if (view.value?.isPlugin) {
@@ -1264,6 +1265,17 @@ const clearG2Tooltip = () => {
         :suffixId="suffixId"
       >
       </PictureGroup>
+      <DeployCalendar
+        v-else-if="showChartView(ChartLibraryType.DEPLOY_CALENDAR)"
+        :themes="canvasStyleData.dashboard.themeColor"
+        ref="chartComponent"
+        :element="element"
+        :active="active"
+        :view="view"
+        :show-position="showPosition"
+        :suffixId="suffixId"
+        @onPointClick="onPointClick"
+      />
       <CrestRichTextView
         v-else-if="showChartView(ChartLibraryType.RICH_TEXT)"
         :scale="scale"
@@ -1330,7 +1342,7 @@ const clearG2Tooltip = () => {
       />
     </div>
     <chart-empty-info
-      v-if="(!chartAreaShow || showEmpty) && !allEmptyCheck"
+      v-if="(!chartAreaShow || showEmpty) && !allEmptyCheck && !['rich-text', 'picture-group', 'deploy-calendar'].includes(view.value.type)"
       :themes="canvasStyleData.dashboard.themeColor"
       :view-icon="view.type"
       @touchstart="clearG2Tooltip"
