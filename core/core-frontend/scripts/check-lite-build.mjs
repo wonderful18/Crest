@@ -12,8 +12,10 @@ const blockedFileNamePatterns = [
   /mapbox/i,
   /maplibre/i,
   /pmtiles/i,
-  /l7plot/i,
-  /(^|[-_./])l7([-_./]|$)/i
+  /l7plot/i
+  // 不再用裸 l7 文件名匹配：vite chunk hash 可能偶发产生含 l7 的串（如 -D2jsO-L7-），
+  // 与 @antv/l7 真实产物无法区分。@antv/l7 的检测改由下方 blockedContentPatterns
+  //（内容含 /@antv\/l7/i）兜底，避免误伤。
 ]
 const blockedContentPatterns = [
   /mapbox-gl/i,
