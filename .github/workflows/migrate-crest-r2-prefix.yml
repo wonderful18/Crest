@@ -94,12 +94,14 @@ jobs:
             --endpoint-url "${R2_ENDPOINT}" \
             --region "${AWS_DEFAULT_REGION}"
 
-          remaining_count="$(aws s3api list-objects-v2 \
-            --bucket "${R2_BUCKET}" \
-            --prefix "${legacy_prefix}" \
-            --endpoint-url "${R2_ENDPOINT}" \
-            --region "${AWS_DEFAULT_REGION}" \
-            --query KeyCount \
-            --output text)"
-          test "${remaining_count}" = "0"
+          remaining_keys="$({
+            aws s3api list-objects-v2 \
+              --bucket "${R2_BUCKET}" \
+              --prefix "${legacy_prefix}" \
+              --endpoint-url "${R2_ENDPOINT}" \
+              --region "${AWS_DEFAULT_REGION}" \
+              --query 'Contents[].Key' \
+              --output text
+          } | tr '\t' '\n' | sed '/^None$/d')"
+          test -z "${remaining_keys}"
           echo "R2 prefix migration completed: ${legacy_prefix} -> ${target_prefix}"
