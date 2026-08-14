@@ -1,0 +1,100 @@
+name: Migrate Crest R2 Prefix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  R2_BUCKET: crest-releases
+  R2_PREFIX: crest-releases
+  R2_ENDPOINT: https://12795078d01f49d69370b3e7efa7ea60.r2.cloudflarestorage.com
+
+jobs:
+  migrate:
+    name: Migrate releases to crest-releases
+    runs-on: ubuntu-24.04
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+    steps:
+      - name: Migrate and verify R2 objects
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          legacy_prefix="releases/"
+          target_prefix="${R2_PREFIX}/"
+
+          keys="$({
+            aws s3api list-objects-v2 \
+              --bucket "${R2_BUCKET}" \
+              --prefix "${legacy_prefix}" \
+              --endpoint-url "${R2_ENDPOINT}" \
+              --region "${AWS_DEFAULT_REGION}" \
+              --query 'Contents[].Key' \
+              --output text
+          } | tr '\t' '\n' | sed '/^None$/d')"
+
+          if [ -z "${keys}" ]; then
+            echo "No objects found under ${legacy_prefix}; nothing to migrate."
+            exit 0
+          fi
+
+          echo "Objects selected for migration:"
+          while IFS= read -r source_key; do
+            [ -n "${source_key}" ] || continue
+            case "${source_key}" in
+              releases/v*/crest-*)
+                ;;
+              *)
+                echo "Unexpected non-Crest object under ${legacy_prefix}: ${source_key}" >&2
+                exit 1
+                ;;
+            esac
+            echo "- ${source_key}"
+          done <<< "${keys}"
+
+          while IFS= read -r source_key; do
+            [ -n "${source_key}" ] || continue
+            relative_key="${source_key#${legacy_prefix}}"
+            target_key="${target_prefix}${relative_key}"
+
+            echo "Copying ${source_key} -> ${target_key}"
+            aws s3api copy-object \
+              --bucket "${R2_BUCKET}" \
+              --copy-source "${R2_BUCKET}/${source_key}" \
+              --key "${target_key}" \
+              --metadata-directive COPY \
+              --endpoint-url "${R2_ENDPOINT}" \
+              --region "${AWS_DEFAULT_REGION}" \
+              >/dev/null
+
+            source_size="$(aws s3api head-object \
+              --bucket "${R2_BUCKET}" \
+              --key "${source_key}" \
+              --endpoint-url "${R2_ENDPOINT}" \
+              --region "${AWS_DEFAULT_REGION}" \
+              --query ContentLength \
+              --output text)"
+            target_size="$(aws s3api head-object \
+              --bucket "${R2_BUCKET}" \
+              --key "${target_key}" \
+              --endpoint-url "${R2_ENDPOINT}" \
+              --region "${AWS_DEFAULT_REGION}" \
+              --query ContentLength \
+              --output text)"
+            test "${source_size}" = "${target_size}"
+          done <<< "${keys}"
+
+          remaining_count="$(aws s3api list-objects-v2 \
+            --bucket "${R2_BUCKET}" \
+            --prefix "${legacy_prefix}" \
+            --endpoint-url "${R2_ENDPOINT}" \
+            --region "${AWS_DEFAULT_REGION}" \
+            --query KeyCount \
+            --output text)"
+          test "${remaining_count}" = "0"
+          echo "R2 prefix migration completed: ${legacy_prefix} -> ${target_prefix}"

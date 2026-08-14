@@ -24,6 +24,7 @@ permissions:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   R2_BUCKET: crest-releases
+  R2_PREFIX: crest-releases
   R2_ENDPOINT: https://12795078d01f49d69370b3e7efa7ea60.r2.cloudflarestorage.com
 
 jobs:
@@ -155,7 +156,7 @@ jobs:
           package_file="crest-app-images-${VERSION}-${PACKAGE_PLATFORM}.tar.gz"
           package_path="offline-packages/${package_file}"
           checksum_path="/tmp/${package_file}.sha256"
-          object_prefix="releases/${VERSION}"
+          object_prefix="${R2_PREFIX}/${VERSION}"
 
           (cd offline-packages && sha256sum "${package_file}") > "${checksum_path}"
 
@@ -205,7 +206,7 @@ jobs:
             package_file="crest-app-images-${VERSION}-${package_platform}.tar.gz"
             for file in "${package_file}" "${package_file}.sha256"; do
               aws s3 cp \
-                "s3://${R2_BUCKET}/releases/${VERSION}/${file}" \
+                "s3://${R2_BUCKET}/${R2_PREFIX}/${VERSION}/${file}" \
                 "offline-packages/${file}" \
                 --endpoint-url "${R2_ENDPOINT}" \
                 --region "${AWS_DEFAULT_REGION}" \
@@ -235,7 +236,7 @@ jobs:
 
           file="crest-app-images-${VERSION}-checksums.txt"
           aws s3 cp "offline-packages/${file}" \
-            "s3://${R2_BUCKET}/releases/${VERSION}/${file}" \
+            "s3://${R2_BUCKET}/${R2_PREFIX}/${VERSION}/${file}" \
             --endpoint-url "${R2_ENDPOINT}" \
             --region "${AWS_DEFAULT_REGION}" \
             --no-progress
@@ -251,13 +252,13 @@ jobs:
           versions="$({
             aws s3api list-objects-v2 \
               --bucket "${R2_BUCKET}" \
-              --prefix "releases/" \
+              --prefix "${R2_PREFIX}/" \
               --delimiter "/" \
               --endpoint-url "${R2_ENDPOINT}" \
               --region "${AWS_DEFAULT_REGION}" \
               --query 'CommonPrefixes[].Prefix' \
               --output text
-          } | tr '\t' '\n' | sed -nE 's#^releases/(v[0-9]+(\.[0-9]+)*([.-].*)?)/$#\1#p' | sort -Vr)"
+          } | tr '\t' '\n' | sed -nE "s#^${R2_PREFIX}/(v[0-9]+(\.[0-9]+)*([.-].*)?)/\$#\1#p" | sort -Vr)"
 
           retained=0
           while IFS= read -r version; do
@@ -265,7 +266,7 @@ jobs:
             retained=$((retained + 1))
             if (( retained > 3 )); then
               echo "Removing expired R2 version: ${version}"
-              aws s3 rm "s3://${R2_BUCKET}/releases/${version}/" \
+                aws s3 rm "s3://${R2_BUCKET}/${R2_PREFIX}/${version}/" \
                 --recursive \
                 --endpoint-url "${R2_ENDPOINT}" \
                 --region "${AWS_DEFAULT_REGION}" \
@@ -274,7 +275,7 @@ jobs:
               legacy_keys="$({
                 aws s3api list-objects-v2 \
                   --bucket "${R2_BUCKET}" \
-                  --prefix "releases/${version}/crest-offline-" \
+                  --prefix "${R2_PREFIX}/${version}/crest-offline-" \
                   --endpoint-url "${R2_ENDPOINT}" \
                   --region "${AWS_DEFAULT_REGION}" \
                   --query 'Contents[].Key' \
