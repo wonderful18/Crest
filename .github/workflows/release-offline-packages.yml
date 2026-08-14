@@ -306,8 +306,7 @@ jobs:
                 echo "Removing legacy R2 object: ${key}"
                 aws s3 rm "s3://${R2_BUCKET}/${key}" \
                   --endpoint-url "${R2_ENDPOINT}" \
-                  --region "${AWS_DEFAULT_REGION}" \
-                  --no-progress
+                  --region "${AWS_DEFAULT_REGION}"
               done <<< "${legacy_keys}"
             fi
           done <<< "${versions}"
