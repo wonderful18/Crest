@@ -270,6 +270,24 @@ jobs:
                 --endpoint-url "${R2_ENDPOINT}" \
                 --region "${AWS_DEFAULT_REGION}" \
                 --no-progress
+            else
+              legacy_keys="$({
+                aws s3api list-objects-v2 \
+                  --bucket "${R2_BUCKET}" \
+                  --prefix "releases/${version}/crest-offline-" \
+                  --endpoint-url "${R2_ENDPOINT}" \
+                  --region "${AWS_DEFAULT_REGION}" \
+                  --query 'Contents[].Key' \
+                  --output text
+              } | tr '\t' '\n' | sed '/^None$/d')"
+              while IFS= read -r key; do
+                [ -n "${key}" ] || continue
+                echo "Removing legacy R2 object: ${key}"
+                aws s3 rm "s3://${R2_BUCKET}/${key}" \
+                  --endpoint-url "${R2_ENDPOINT}" \
+                  --region "${AWS_DEFAULT_REGION}" \
+                  --no-progress
+              done <<< "${legacy_keys}"
             fi
           done <<< "${versions}"
 
@@ -320,6 +338,7 @@ jobs:
           python3 - <<'PY'
           import html
           import os
+          import re
           import subprocess
           from pathlib import Path
 
@@ -330,6 +349,73 @@ jobs:
           arm64_url = f"{base}/releases/download/{version}/crest-app-images-{version}-linux-arm64.tar.gz"
           checksums_url = f"{base}/releases/download/{version}/crest-app-images-{version}-checksums.txt"
           notes = Path(f"docs/release/{version}.md").read_text(encoding="utf-8").strip()
+
+          def email_plain_notes(value: str) -> str:
+              lines = []
+              for raw_line in value.splitlines():
+                  line = raw_line.strip()
+                  if not line:
+                      lines.append("")
+                      continue
+                  if re.fullmatch(r"\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?", line):
+                      continue
+                  line = re.sub(r"^#{1,6}\s*", "", line)
+                  line = re.sub(r"\[([^\]]+)\]\((https?://[^)]+)\)", r"\1 (\2)", line)
+                  line = line.replace("**", "").replace("__", "").replace("`", "")
+                  line = re.sub(r"^[-*+]\s+", "• ", line)
+                  lines.append(line)
+              return "\n".join(lines).strip()
+
+          def inline_email_html(value: str) -> str:
+              value = html.escape(value, quote=False)
+              value = re.sub(
+                  r"\[([^\]]+)\]\((https?://[^)\s]+)\)",
+                  r'<a href="\2">\1</a>',
+                  value,
+              )
+              value = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", value)
+              value = re.sub(r"`(.+?)`", r"<code>\1</code>", value)
+              return value
+
+          def email_notes_html(value: str) -> str:
+              fragments = []
+              in_list = False
+              for raw_line in value.splitlines():
+                  line = raw_line.strip()
+                  if not line:
+                      if in_list:
+                          fragments.append("</ul>")
+                          in_list = False
+                      continue
+                  if re.fullmatch(r"\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?", line):
+                      continue
+                  if line.startswith("- "):
+                      if not in_list:
+                          fragments.append("<ul>")
+                          in_list = True
+                      fragments.append(f"<li>{inline_email_html(line[2:])}</li>")
+                      continue
+                  if in_list:
+                      fragments.append("</ul>")
+                      in_list = False
+                  if line.startswith("### "):
+                      fragments.append(f"<h4>{inline_email_html(line[4:])}</h4>")
+                  elif line.startswith("## "):
+                      fragments.append(f"<h3>{inline_email_html(line[3:])}</h3>")
+                  elif line.startswith("# "):
+                      fragments.append(f"<h2>{inline_email_html(line[2:])}</h2>")
+                  else:
+                      fragments.append(f"<p>{inline_email_html(line)}</p>")
+              if in_list:
+                  fragments.append("</ul>")
+              return "\n".join(fragments)
+
+          email_notes = notes
+          title_prefix = f"# {version} "
+          if email_notes.startswith(title_prefix) and "\n" in email_notes:
+              email_notes = email_notes.split("\n", 1)[1].lstrip()
+          plain_notes = email_plain_notes(email_notes)
+          notes_html = email_notes_html(email_notes)
 
           subprocess.run(
               ["git", "fetch", "--force", "--tags", "--depth=1", "origin", version],
@@ -396,7 +482,7 @@ jobs:
               f"提交链接：{commit_url}",
               "",
               "发布说明：",
-              notes,
+              plain_notes,
               "",
               "下载：",
               f"应用镜像包（Linux amd64）：{amd64_url}",
@@ -407,25 +493,22 @@ jobs:
               "本次不推送 GHCR；镜像仅以 crest-app-images 离线包提供。R2 仅保留最近 3 个版本，同版本重复发布会覆盖。",
           ])
           Path("/tmp/crest-email-body.txt").write_text(email_body + "\n", encoding="utf-8")
-          html_notes = html.escape(notes).replace("\n", "<br>\n")
-          email_html = """<html><body>
-          <h2>Crest %s 发布完成</h2>
-          <p><b>版本：</b>%s<br><b>最后提交：</b><a href="%s">%s %s</a></p>
+          email_html = f"""<!doctype html>
+          <html><body style="margin:0;padding:24px;background:#f6f8fa;color:#1f2328;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;line-height:1.6">
+          <div style="max-width:760px;margin:0 auto;padding:28px 32px;background:#ffffff;border:1px solid #d0d7de;border-radius:10px">
+          <h2 style="margin-top:0">Crest {html.escape(version)} 发布完成</h2>
+          <p><strong>版本：</strong>{html.escape(version)}<br><strong>最后提交：</strong><a href="{html.escape(commit_url, quote=True)}">{html.escape(commit_short)} {html.escape(commit_subject)}</a></p>
           <h3>发布说明</h3>
-          <p>%s</p>
+          <div>{notes_html}</div>
           <h3>下载</h3>
           <ul>
-            <li><a href="%s">应用镜像包（Linux amd64）</a></li>
-            <li><a href="%s">应用镜像包（Linux arm64）</a></li>
-            <li><a href="%s">应用镜像校验文件</a></li>
-            <li><a href="%s">GitHub Release 页面</a></li>
+            <li><a href="{html.escape(amd64_url, quote=True)}">应用镜像包（Linux amd64）</a></li>
+            <li><a href="{html.escape(arm64_url, quote=True)}">应用镜像包（Linux arm64）</a></li>
+            <li><a href="{html.escape(checksums_url, quote=True)}">应用镜像校验文件</a></li>
+            <li><a href="{html.escape(release_url, quote=True)}">GitHub Release 页面</a></li>
           </ul>
           <p>本次不推送 GHCR；镜像仅以 crest-app-images 离线包提供。R2 仅保留最近 3 个版本，同版本重复发布会覆盖。</p>
-          </body></html>""" % (
-              html.escape(version), html.escape(version), commit_url,
-              html.escape(commit_short), html.escape(commit_subject), html_notes,
-              amd64_url, arm64_url, checksums_url, release_url,
-          )
+          </div></body></html>"""
           Path("/tmp/crest-email-body.html").write_text(email_html, encoding="utf-8")
           PY
 
