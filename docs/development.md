@@ -111,8 +111,8 @@ mvn -s .mvn/settings.xml -pl :core-backend -am clean package -Pstandalone -Dskip
 构建本地镜像：
 
 ```bash
-docker build -f Dockerfile.backend -t ghcr.io/sevoniva/crest-service:local .
-docker build -f Dockerfile.frontend -t ghcr.io/sevoniva/crest-web:local .
+docker build -f Dockerfile.backend -t crest-service:local .
+docker build -f Dockerfile.frontend -t crest-web:local .
 ```
 
 源码方式启动后端：

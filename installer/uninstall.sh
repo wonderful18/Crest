@@ -50,9 +50,10 @@ if test ! -z "$(docker images -f dangling=true -q)"; then
    docker rmi $(docker images -f dangling=true -q)
 fi
 
-if test -n "$(docker images | grep -E 'ghcr.io/sevoniva/crest')"; then
+crest_images="$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E '(^|/)crest-(service|web):' || true)"
+if test -n "${crest_images}"; then
    echo "清理 Crest 镜像"
-   docker rmi $(docker images | grep -E "ghcr.io/sevoniva/crest" | awk -F' ' '{print $1":"$2}')
+   printf '%s\n' "${crest_images}" | xargs -r docker rmi
 fi
 
 # 清理 Crest 运行目录及命令行工具

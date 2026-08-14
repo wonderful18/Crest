@@ -44,8 +44,8 @@ kubectl apply -k deploy/kubernetes/internal-mysql
 ## Docker 镜像
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.34   # 后端
-ghcr.io/sevoniva/crest-web:v1.5.34        # 前端网关
+crest-service:v1.5.34   # 后端（离线包内）
+crest-web:v1.5.34        # 前端网关（离线包内）
 ```
 
 ## 本地开发

@@ -68,8 +68,8 @@ Crest 单机安装默认采用前后端分离容器：
 | --- | --- | --- |
 | `CREST_BASE` | `/opt` | 安装基目录，实际运行目录为 `${CREST_BASE}/crest` |
 | `CREST_PORT` | `8100` | Web 访问端口 |
-| `CREST_BACKEND_IMAGE` | `ghcr.io/sevoniva/crest-service:v1.5.34` | Crest 后端镜像 |
-| `CREST_FRONTEND_IMAGE` | `ghcr.io/sevoniva/crest-web:v1.5.34` | Crest 前端镜像 |
+| `CREST_BACKEND_IMAGE` | `crest-service:v1.5.34` | Crest 后端镜像 |
+| `CREST_FRONTEND_IMAGE` | `crest-web:v1.5.34` | Crest 前端镜像 |
 | `CREST_MYSQL_IMAGE` | `mysql:8.0.43` | MySQL 镜像 |
 | `CREST_LOAD_DEMO` | `true` | 是否初始化内置演示资源；生产环境不需要示例数据时设为 `false` |
 | `CREST_EXTERNAL_MYSQL` | `false` | 单机安装是否连接外部 MySQL；默认安装内置 MySQL 容器 |
@@ -281,10 +281,10 @@ crest-app-images-v1.5.34-linux-arm64.tar.gz
 制作前需要本机已有对应架构镜像：
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.34-amd64
-ghcr.io/sevoniva/crest-service:v1.5.34-arm64
-ghcr.io/sevoniva/crest-web:v1.5.34-amd64
-ghcr.io/sevoniva/crest-web:v1.5.34-arm64
+crest-service:v1.5.34-amd64
+crest-service:v1.5.34-arm64
+crest-web:v1.5.34-amd64
+crest-web:v1.5.34-arm64
 mysql:8.0.43
 ```
 
@@ -300,10 +300,10 @@ bash make-offline-package.sh v1.5.34 linux-amd64
 也可以通过环境变量指定来源镜像：
 
 ```bash
-SOURCE_BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.34-amd64 \
-BACKEND_IMAGE=ghcr.io/sevoniva/crest-service:v1.5.34-amd64 \
-SOURCE_FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.34-amd64 \
-FRONTEND_IMAGE=ghcr.io/sevoniva/crest-web:v1.5.34-amd64 \
+SOURCE_BACKEND_IMAGE=crest-service:v1.5.34-amd64 \
+BACKEND_IMAGE=crest-service:v1.5.34-amd64 \
+SOURCE_FRONTEND_IMAGE=crest-web:v1.5.34-amd64 \
+FRONTEND_IMAGE=crest-web:v1.5.34-amd64 \
 SOURCE_MYSQL_IMAGE=mysql:8.0.43-amd64 \
 MYSQL_IMAGE=mysql:8.0.43 \
 bash make-offline-package.sh v1.5.34 linux-amd64

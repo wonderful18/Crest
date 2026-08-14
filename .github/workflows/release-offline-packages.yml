@@ -10,12 +10,10 @@ on:
 
 permissions:
   contents: write
-  packages: read
 
 env:
   R2_BUCKET: crest-releases
   R2_ENDPOINT: https://12795078d01f49d69370b3e7efa7ea60.r2.cloudflarestorage.com
-  R2_PUBLIC_BASE_URL: https://downloads.sevoniva.cloud
 
 jobs:
   package:
@@ -38,17 +36,43 @@ jobs:
         with:
           ref: ${{ inputs.version }}
 
-      - name: Log in to GHCR
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@d15e628ca66d93ee5f352c71671a7bc6a97af5c9 # v6.0.8
+        with:
+          package_json_file: core/core-frontend/package.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: core/core-frontend/pnpm-lock.yaml
+
+      - name: Build frontend
+        working-directory: core/core-frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build:base
+          pnpm run build:lite:check
+
+      - name: Build backend
+        run: |
+          mvn -pl :core-backend -am clean package -Pstandalone -DskipTests -Dmaven.test.skip=true -Dcrest.copy.frontend.skip=true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
-      - name: Load target-architecture images
+      - name: Build target-architecture images
         env:
           VERSION: ${{ inputs.version }}
           DOCKER_PLATFORM: ${{ matrix.docker_platform }}
@@ -56,21 +80,31 @@ jobs:
         run: |
           set -euo pipefail
 
-          mkdir -p /tmp/crest-image-load
+          build_image() {
+            local image_tag="$1"
+            local dockerfile="$2"
+            docker buildx build \
+              --platform "${DOCKER_PLATFORM}" \
+              --file "${dockerfile}" \
+              --tag "${image_tag}" \
+              --load \
+              .
+            docker image inspect "${image_tag}" --format '{{.Architecture}}' | grep -qx "${ARCH}"
+          }
 
-          load_image() {
+          pull_image() {
             local source_image="$1"
             local local_image="$2"
-            printf 'FROM --platform=%s %s\n' "${DOCKER_PLATFORM}" "${source_image}" \
-              | docker buildx build --platform "${DOCKER_PLATFORM}" -t "${local_image}" --load -f - /tmp/crest-image-load
+            docker pull --platform "${DOCKER_PLATFORM}" "${source_image}"
+            docker tag "${source_image}" "${local_image}"
             docker image inspect "${local_image}" --format '{{.Architecture}}' | grep -qx "${ARCH}"
           }
 
-          load_image "ghcr.io/sevoniva/crest-service:${VERSION}" "ghcr.io/sevoniva/crest-service:${VERSION}-${ARCH}"
-          load_image "ghcr.io/sevoniva/crest-web:${VERSION}" "ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}"
-          load_image "mysql:8.0.43" "mysql:8.0.43-${ARCH}"
-          load_image "prom/prometheus:v3.12.0" "prom/prometheus:v3.12.0-${ARCH}"
-          load_image "grafana/grafana-oss:13.0.1" "grafana/grafana-oss:13.0.1-${ARCH}"
+          build_image "crest-service:${VERSION}-${ARCH}" Dockerfile.backend
+          build_image "crest-web:${VERSION}-${ARCH}" Dockerfile.frontend
+          pull_image "mysql:8.0.43" "mysql:8.0.43-${ARCH}"
+          pull_image "prom/prometheus:v3.12.0" "prom/prometheus:v3.12.0-${ARCH}"
+          pull_image "grafana/grafana-oss:13.0.1" "grafana/grafana-oss:13.0.1-${ARCH}"
 
       - name: Build offline package
         env:
@@ -87,10 +121,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          SOURCE_BACKEND_IMAGE="ghcr.io/sevoniva/crest-service:${VERSION}-${ARCH}" \
-          BACKEND_IMAGE="ghcr.io/sevoniva/crest-service:${VERSION}-${ARCH}" \
-          SOURCE_FRONTEND_IMAGE="ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}" \
-          FRONTEND_IMAGE="ghcr.io/sevoniva/crest-web:${VERSION}-${ARCH}" \
+          SOURCE_BACKEND_IMAGE="crest-service:${VERSION}-${ARCH}" \
+          BACKEND_IMAGE="crest-service:${VERSION}-${ARCH}" \
+          SOURCE_FRONTEND_IMAGE="crest-web:${VERSION}-${ARCH}" \
+          FRONTEND_IMAGE="crest-web:${VERSION}-${ARCH}" \
           bash installer/make-offline-package.sh "${VERSION}" "${PACKAGE_PLATFORM}"
 
       - name: Verify offline package contents
@@ -112,8 +146,8 @@ jobs:
           grep -Fqx "${package_dir}/upgrade-sql/v1.5.4_to_v1.5.5.sql" /tmp/crest-offline-package-files.txt
           grep -Fqx "${package_dir}/upgrade-sql/v1.5.7_to_v1.5.8.sql" /tmp/crest-offline-package-files.txt
           grep -Fqx "${package_dir}/upgrade-sql/v1.5.13_to_v1.5.14.sql" /tmp/crest-offline-package-files.txt
-          grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-service_${VERSION}-${ARCH}.tar.gz" /tmp/crest-offline-package-files.txt
-          grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-web_${VERSION}-${ARCH}.tar.gz" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/images/crest-service_${VERSION}-${ARCH}.tar.gz" /tmp/crest-offline-package-files.txt
+          grep -Fqx "${package_dir}/images/crest-web_${VERSION}-${ARCH}.tar.gz" /tmp/crest-offline-package-files.txt
           grep -Fqx "${package_dir}/images/mysql_8.0.43.tar.gz" /tmp/crest-offline-package-files.txt
           grep -Fqx "${package_dir}/images/prom_prometheus_v3.12.0.tar.gz" /tmp/crest-offline-package-files.txt
           grep -Fqx "${package_dir}/images/grafana_grafana-oss_13.0.1.tar.gz" /tmp/crest-offline-package-files.txt
@@ -169,7 +203,7 @@ jobs:
         with:
           ref: ${{ inputs.version }}
 
-      - name: Download package checksums from R2
+      - name: Download package files from R2
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -183,12 +217,14 @@ jobs:
 
           for package_platform in linux-amd64 linux-arm64; do
             package_file="crest-offline-${VERSION}-${package_platform}.tar.gz"
-            aws s3 cp \
-              "s3://${R2_BUCKET}/releases/${VERSION}/${package_file}.sha256" \
-              "offline-packages/${package_file}.sha256" \
-              --endpoint-url "${R2_ENDPOINT}" \
-              --region "${AWS_DEFAULT_REGION}" \
-              --no-progress
+            for file in "${package_file}" "${package_file}.sha256"; do
+              aws s3 cp \
+                "s3://${R2_BUCKET}/releases/${VERSION}/${file}" \
+                "offline-packages/${file}" \
+                --endpoint-url "${R2_ENDPOINT}" \
+                --region "${AWS_DEFAULT_REGION}" \
+                --no-progress
+            done
           done
 
       - name: Create checksums
@@ -228,6 +264,8 @@ jobs:
       - name: Create release body
         env:
           VERSION: ${{ inputs.version }}
+          RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ inputs.version }}
+          ASSET_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ inputs.version }}
         run: |
           set -euo pipefail
 
@@ -236,10 +274,10 @@ jobs:
             echo
             echo "## Downloads"
             echo
-            echo "- [Offline package (Linux amd64)](${R2_PUBLIC_BASE_URL}/releases/${VERSION}/crest-offline-${VERSION}-linux-amd64.tar.gz)"
-            echo "- [Offline package (Linux arm64)](${R2_PUBLIC_BASE_URL}/releases/${VERSION}/crest-offline-${VERSION}-linux-arm64.tar.gz)"
-            echo "- [Source package](${R2_PUBLIC_BASE_URL}/releases/${VERSION}/crest-source-${VERSION}.tar.gz)"
-            echo "- [Checksums](${R2_PUBLIC_BASE_URL}/releases/${VERSION}/crest-${VERSION}-checksums.txt)"
+            echo "- [Offline package (Linux amd64)](${ASSET_URL}/crest-offline-${VERSION}-linux-amd64.tar.gz)"
+            echo "- [Offline package (Linux arm64)](${ASSET_URL}/crest-offline-${VERSION}-linux-arm64.tar.gz)"
+            echo "- [Source package](${ASSET_URL}/crest-source-${VERSION}.tar.gz)"
+            echo "- [Checksums](${ASSET_URL}/crest-${VERSION}-checksums.txt)"
           } >> /tmp/crest-release-body.md
 
       - name: Publish release
@@ -253,4 +291,57 @@ jobs:
           make_latest: true
           overwrite_files: true
           files: |
+            offline-packages/crest-offline-${{ inputs.version }}-linux-amd64.tar.gz
+            offline-packages/crest-offline-${{ inputs.version }}-linux-arm64.tar.gz
+            offline-packages/crest-source-${{ inputs.version }}.tar.gz
             offline-packages/crest-${{ inputs.version }}-checksums.txt
+
+      - name: Notify Enterprise WeChat
+        env:
+          WECHAT_WEBHOOK_URL: ${{ secrets.WECHAT_WEBHOOK_URL }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          release_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${VERSION}"
+          content="Crest ${VERSION} 离线发布完成\n${release_url}\n\namd64: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}/crest-offline-${VERSION}-linux-amd64.tar.gz\narm64: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}/crest-offline-${VERSION}-linux-arm64.tar.gz\nsource: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}/crest-source-${VERSION}.tar.gz"
+          payload="$(jq -n --arg content "${content}" '{msgtype:"text",text:{content:$content}}')"
+          response="$(curl --fail-with-body -sS -X POST "${WECHAT_WEBHOOK_URL}" -H 'Content-Type: application/json' --data "${payload}")"
+          jq -e '.errcode == 0' >/dev/null <<<"${response}"
+
+      - name: Notify Gmail
+        env:
+          GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import smtplib
+          from email.message import EmailMessage
+
+          version = os.environ["VERSION"]
+          user = os.environ["GMAIL_USERNAME"]
+          password = os.environ["GMAIL_APP_PASSWORD"]
+          base = f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}"
+          release_url = f"{base}/releases/tag/{version}"
+          body = "\n".join([
+              f"Crest {version} 离线发布完成",
+              release_url,
+              "",
+              f"amd64: {base}/releases/download/{version}/crest-offline-{version}-linux-amd64.tar.gz",
+              f"arm64: {base}/releases/download/{version}/crest-offline-{version}-linux-arm64.tar.gz",
+              f"source: {base}/releases/download/{version}/crest-source-{version}.tar.gz",
+          ])
+
+          message = EmailMessage()
+          message["From"] = user
+          message["To"] = user
+          message["Subject"] = f"Crest {version} 离线包已发布"
+          message.set_content(body)
+
+          with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as smtp:
+              smtp.login(user, password)
+              smtp.send_message(message)
+          PY

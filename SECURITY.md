@@ -12,7 +12,7 @@
 | --- | --- |
 | `v1.5.x` | Supported |
 
-更早的本地构建和实验分支不作为公开安全维护对象。正式部署建议使用 GitHub Release，或使用 `ghcr.io/sevoniva/crest-service` 与 `ghcr.io/sevoniva/crest-web` 中带版本号的镜像。
+更早的本地构建和实验分支不作为公开安全维护对象。正式部署建议使用 GitHub Release 中的 Crest 离线安装包或应用镜像升级包；包内镜像已随版本固定并可在无公网环境加载。
 
 ## Reporting a Vulnerability
 
