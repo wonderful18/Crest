@@ -240,6 +240,39 @@ jobs:
             --region "${AWS_DEFAULT_REGION}" \
             --no-progress
 
+      - name: Retain latest three R2 versions
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          set -euo pipefail
+
+          versions="$({
+            aws s3api list-objects-v2 \
+              --bucket "${R2_BUCKET}" \
+              --prefix "releases/" \
+              --delimiter "/" \
+              --endpoint-url "${R2_ENDPOINT}" \
+              --region "${AWS_DEFAULT_REGION}" \
+              --query 'CommonPrefixes[].Prefix' \
+              --output text
+          } | tr '\t' '\n' | sed -nE 's#^releases/(v[0-9]+(\.[0-9]+)*([.-].*)?)/$#\1#p' | sort -Vr)"
+
+          retained=0
+          while IFS= read -r version; do
+            [ -n "${version}" ] || continue
+            retained=$((retained + 1))
+            if (( retained > 3 )); then
+              echo "Removing expired R2 version: ${version}"
+              aws s3 rm "s3://${R2_BUCKET}/releases/${version}/" \
+                --recursive \
+                --endpoint-url "${R2_ENDPOINT}" \
+                --region "${AWS_DEFAULT_REGION}" \
+                --no-progress
+            fi
+          done <<< "${versions}"
+
       - name: Create release body
         env:
           VERSION: ${{ inputs.version }}
@@ -252,13 +285,6 @@ jobs:
           {
             echo
             echo "## Downloads"
-            echo
-            echo "### Offline package"
-            echo
-            echo "- [Offline package (Linux amd64)](${ASSET_URL}/crest-offline-${VERSION}-linux-amd64.tar.gz)"
-            echo "- [Offline package (Linux arm64)](${ASSET_URL}/crest-offline-${VERSION}-linux-arm64.tar.gz)"
-            echo "- [Source package](${ASSET_URL}/crest-source-${VERSION}.tar.gz)"
-            echo "- [Offline checksums](${ASSET_URL}/crest-${VERSION}-checksums.txt)"
             echo
             echo "### App image package"
             echo
@@ -283,16 +309,133 @@ jobs:
             offline-packages/crest-app-images-${{ inputs.version }}-linux-arm64.tar.gz
             offline-packages/crest-app-images-${{ inputs.version }}-checksums.txt
 
+      - name: Prepare release notifications
+        env:
+          VERSION: ${{ inputs.version }}
+          TRIGGER_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test -f "docs/release/${VERSION}.md"
+
+          python3 - <<'PY'
+          import html
+          import os
+          import subprocess
+          from pathlib import Path
+
+          version = os.environ["VERSION"]
+          base = f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}"
+          release_url = f"{base}/releases/tag/{version}"
+          amd64_url = f"{base}/releases/download/{version}/crest-app-images-{version}-linux-amd64.tar.gz"
+          arm64_url = f"{base}/releases/download/{version}/crest-app-images-{version}-linux-arm64.tar.gz"
+          checksums_url = f"{base}/releases/download/{version}/crest-app-images-{version}-checksums.txt"
+          notes = Path(f"docs/release/{version}.md").read_text(encoding="utf-8").strip()
+
+          subprocess.run(
+              ["git", "fetch", "--force", "--tags", "--depth=1", "origin", version],
+              check=False,
+              stdout=subprocess.DEVNULL,
+              stderr=subprocess.DEVNULL,
+          )
+
+          def latest_commit(ref: str) -> str | None:
+              result = subprocess.run(
+                  ["git", "log", "-1", "--format=%H%x09%s", ref],
+                  check=False,
+                  capture_output=True,
+                  text=True,
+              )
+              if result.returncode != 0:
+                  return None
+              return result.stdout.rstrip("\n")
+
+          commit = latest_commit(version) or latest_commit(os.environ["TRIGGER_SHA"])
+          if not commit:
+              raise RuntimeError("Unable to resolve the release commit")
+          commit_sha, commit_subject = commit.split("\t", 1)
+          commit_short = commit_sha[:12]
+          commit_url = f"{base}/commit/{commit_sha}"
+
+          def markdown_escape(value: str) -> str:
+              return value.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+
+          def truncate_utf8(value: str, max_bytes: int) -> str:
+              data = value.encode("utf-8")
+              if len(data) <= max_bytes:
+                  return value
+              return data[:max_bytes].decode("utf-8", "ignore").rstrip() + (
+                  "\n\n> 发布说明较长，完整内容请查看 GitHub Release 页面。"
+              )
+
+          wechat_notes = truncate_utf8(notes, 2800)
+          wechat_content = "\n".join([
+              f"# Crest {version} 发布完成",
+              "",
+              "## 发布信息",
+              f"- **版本：** `{version}`",
+              f"- **最后提交：** [{commit_short} {markdown_escape(commit_subject)}]({commit_url})",
+              "",
+              "## 发布说明",
+              wechat_notes,
+              "",
+              "## 下载",
+              f"- [应用镜像包（Linux amd64）]({amd64_url})",
+              f"- [应用镜像包（Linux arm64）]({arm64_url})",
+              f"- [应用镜像校验文件]({checksums_url})",
+              f"- [GitHub Release 页面]({release_url})",
+              "",
+              "> 本次不推送 GHCR；镜像仅以 crest-app-images 离线包提供。R2 仅保留最近 3 个版本，同版本重复发布会覆盖。",
+          ])
+          Path("/tmp/crest-wechat-content.md").write_text(wechat_content + "\n", encoding="utf-8")
+
+          email_body = "\n".join([
+              f"Crest {version} 发布完成",
+              "",
+              f"版本：{version}",
+              f"最后提交：{commit_short} {commit_subject}",
+              f"提交链接：{commit_url}",
+              "",
+              "发布说明：",
+              notes,
+              "",
+              "下载：",
+              f"应用镜像包（Linux amd64）：{amd64_url}",
+              f"应用镜像包（Linux arm64）：{arm64_url}",
+              f"应用镜像校验文件：{checksums_url}",
+              f"GitHub Release 页面：{release_url}",
+              "",
+              "本次不推送 GHCR；镜像仅以 crest-app-images 离线包提供。R2 仅保留最近 3 个版本，同版本重复发布会覆盖。",
+          ])
+          Path("/tmp/crest-email-body.txt").write_text(email_body + "\n", encoding="utf-8")
+          html_notes = html.escape(notes).replace("\n", "<br>\n")
+          email_html = """<html><body>
+          <h2>Crest %s 发布完成</h2>
+          <p><b>版本：</b>%s<br><b>最后提交：</b><a href="%s">%s %s</a></p>
+          <h3>发布说明</h3>
+          <p>%s</p>
+          <h3>下载</h3>
+          <ul>
+            <li><a href="%s">应用镜像包（Linux amd64）</a></li>
+            <li><a href="%s">应用镜像包（Linux arm64）</a></li>
+            <li><a href="%s">应用镜像校验文件</a></li>
+            <li><a href="%s">GitHub Release 页面</a></li>
+          </ul>
+          <p>本次不推送 GHCR；镜像仅以 crest-app-images 离线包提供。R2 仅保留最近 3 个版本，同版本重复发布会覆盖。</p>
+          </body></html>""" % (
+              html.escape(version), html.escape(version), commit_url,
+              html.escape(commit_short), html.escape(commit_subject), html_notes,
+              amd64_url, arm64_url, checksums_url, release_url,
+          )
+          Path("/tmp/crest-email-body.html").write_text(email_html, encoding="utf-8")
+          PY
+
       - name: Notify Enterprise WeChat
         env:
           WECHAT_WEBHOOK_URL: ${{ secrets.WECHAT_WEBHOOK_URL }}
-          VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
 
-          release_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${VERSION}"
-          content="Crest ${VERSION} 应用镜像离线包发布完成\n${release_url}\n\namd64: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}/crest-app-images-${VERSION}-linux-amd64.tar.gz\narm64: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}/crest-app-images-${VERSION}-linux-arm64.tar.gz"
-          payload="$(jq -n --arg content "${content}" '{msgtype:"text",text:{content:$content}}')"
+          payload="$(jq -n --rawfile content /tmp/crest-wechat-content.md '{msgtype:"markdown",markdown:{content:$content}}')"
           response="$(curl --fail-with-body -sS -X POST "${WECHAT_WEBHOOK_URL}" -H 'Content-Type: application/json' --data "${payload}")"
           jq -e '.errcode == 0' >/dev/null <<<"${response}"
 
@@ -307,25 +450,16 @@ jobs:
           import os
           import smtplib
           from email.message import EmailMessage
+          from pathlib import Path
 
-          version = os.environ["VERSION"]
           user = os.environ["GMAIL_USERNAME"]
           password = os.environ["GMAIL_APP_PASSWORD"]
-          base = f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}"
-          release_url = f"{base}/releases/tag/{version}"
-          body = "\n".join([
-              f"Crest {version} 应用镜像离线包发布完成",
-              release_url,
-              "",
-              f"amd64: {base}/releases/download/{version}/crest-app-images-{version}-linux-amd64.tar.gz",
-              f"arm64: {base}/releases/download/{version}/crest-app-images-{version}-linux-arm64.tar.gz",
-          ])
-
           message = EmailMessage()
           message["From"] = user
           message["To"] = user
-          message["Subject"] = f"Crest {version} 应用镜像离线包已发布"
-          message.set_content(body)
+          message["Subject"] = f"Crest {os.environ['VERSION']} 应用镜像包已发布"
+          message.set_content(Path("/tmp/crest-email-body.txt").read_text(encoding="utf-8"))
+          message.add_alternative(Path("/tmp/crest-email-body.html").read_text(encoding="utf-8"), subtype="html")
 
           with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as smtp:
               smtp.login(user, password)
