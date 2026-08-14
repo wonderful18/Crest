@@ -89,6 +89,12 @@ jobs:
             test "${source_size}" = "${target_size}"
           done <<< "${keys}"
 
+          aws s3 rm "s3://${R2_BUCKET}/${legacy_prefix}" \
+            --recursive \
+            --endpoint-url "${R2_ENDPOINT}" \
+            --region "${AWS_DEFAULT_REGION}" \
+            --no-progress
+
           remaining_count="$(aws s3api list-objects-v2 \
             --bucket "${R2_BUCKET}" \
             --prefix "${legacy_prefix}" \
