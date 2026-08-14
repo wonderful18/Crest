@@ -92,8 +92,7 @@ jobs:
           aws s3 rm "s3://${R2_BUCKET}/${legacy_prefix}" \
             --recursive \
             --endpoint-url "${R2_ENDPOINT}" \
-            --region "${AWS_DEFAULT_REGION}" \
-            --no-progress
+            --region "${AWS_DEFAULT_REGION}"
 
           remaining_count="$(aws s3api list-objects-v2 \
             --bucket "${R2_BUCKET}" \
