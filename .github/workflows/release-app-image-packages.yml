@@ -253,9 +253,18 @@ jobs:
             echo
             echo "## Downloads"
             echo
+            echo "### Offline package"
+            echo
+            echo "- [Offline package (Linux amd64)](${ASSET_URL}/crest-offline-${VERSION}-linux-amd64.tar.gz)"
+            echo "- [Offline package (Linux arm64)](${ASSET_URL}/crest-offline-${VERSION}-linux-arm64.tar.gz)"
+            echo "- [Source package](${ASSET_URL}/crest-source-${VERSION}.tar.gz)"
+            echo "- [Offline checksums](${ASSET_URL}/crest-${VERSION}-checksums.txt)"
+            echo
+            echo "### App image package"
+            echo
             echo "- [App image package (Linux amd64)](${ASSET_URL}/crest-app-images-${VERSION}-linux-amd64.tar.gz)"
             echo "- [App image package (Linux arm64)](${ASSET_URL}/crest-app-images-${VERSION}-linux-arm64.tar.gz)"
-            echo "- [Checksums](${ASSET_URL}/crest-app-images-${VERSION}-checksums.txt)"
+            echo "- [App image checksums](${ASSET_URL}/crest-app-images-${VERSION}-checksums.txt)"
           } >> /tmp/crest-app-image-release-body.md
 
       - name: Publish release assets
