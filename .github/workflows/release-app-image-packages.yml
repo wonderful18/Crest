@@ -24,6 +24,9 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  R2_BUCKET: crest-releases
+  R2_ENDPOINT: https://12795078d01f49d69370b3e7efa7ea60.r2.cloudflarestorage.com
+  R2_PUBLIC_BASE_URL: https://downloads.sevoniva.cloud
 
 jobs:
   package:
@@ -104,13 +107,45 @@ jobs:
           grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-service_${VERSION}.tar.gz" /tmp/crest-app-image-package-files.txt
           grep -Fqx "${package_dir}/images/ghcr.io_sevoniva_crest-web_${VERSION}.tar.gz" /tmp/crest-app-image-package-files.txt
 
-      - name: Upload package artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: crest-app-images-${{ inputs.version }}-${{ matrix.package_platform }}
-          path: offline-packages/crest-app-images-${{ inputs.version }}-${{ matrix.package_platform }}.tar.gz
-          if-no-files-found: error
-          retention-days: 14
+      - name: Upload package to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          VERSION: ${{ inputs.version }}
+          PACKAGE_PLATFORM: ${{ matrix.package_platform }}
+        run: |
+          set -euo pipefail
+
+          command -v aws >/dev/null 2>&1
+
+          package_file="crest-app-images-${VERSION}-${PACKAGE_PLATFORM}.tar.gz"
+          package_path="offline-packages/${package_file}"
+          checksum_path="/tmp/${package_file}.sha256"
+          object_prefix="releases/${VERSION}"
+
+          (cd offline-packages && sha256sum "${package_file}") > "${checksum_path}"
+
+          aws s3 cp "${package_path}" \
+            "s3://${R2_BUCKET}/${object_prefix}/${package_file}" \
+            --endpoint-url "${R2_ENDPOINT}" \
+            --region "${AWS_DEFAULT_REGION}" \
+            --no-progress
+          aws s3 cp "${checksum_path}" \
+            "s3://${R2_BUCKET}/${object_prefix}/${package_file}.sha256" \
+            --endpoint-url "${R2_ENDPOINT}" \
+            --region "${AWS_DEFAULT_REGION}" \
+            --no-progress
+
+          expected_size="$(stat -c '%s' "${package_path}")"
+          actual_size="$(aws s3api head-object \
+            --bucket "${R2_BUCKET}" \
+            --key "${object_prefix}/${package_file}" \
+            --endpoint-url "${R2_ENDPOINT}" \
+            --region "${AWS_DEFAULT_REGION}" \
+            --query ContentLength \
+            --output text)"
+          test "${expected_size}" = "${actual_size}"
 
   publish:
     name: Publish app image release assets
@@ -121,11 +156,27 @@ jobs:
       - name: Checkout release notes
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
 
-      - name: Download package artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          path: offline-packages
-          merge-multiple: true
+      - name: Download package checksums from R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          command -v aws >/dev/null 2>&1
+          mkdir -p offline-packages
+
+          for package_platform in linux-amd64 linux-arm64; do
+            package_file="crest-app-images-${VERSION}-${package_platform}.tar.gz"
+            aws s3 cp \
+              "s3://${R2_BUCKET}/releases/${VERSION}/${package_file}.sha256" \
+              "offline-packages/${package_file}.sha256" \
+              --endpoint-url "${R2_ENDPOINT}" \
+              --region "${AWS_DEFAULT_REGION}" \
+              --no-progress
+          done
 
       - name: Create app image checksums
         env:
@@ -133,9 +184,42 @@ jobs:
         run: |
           set -euo pipefail
           cd offline-packages
-          sha256sum \
-            crest-app-images-${VERSION}-linux-*.tar.gz \
+          cat \
+            crest-app-images-${VERSION}-linux-amd64.tar.gz.sha256 \
+            crest-app-images-${VERSION}-linux-arm64.tar.gz.sha256 \
             > crest-app-images-${VERSION}-checksums.txt
+
+      - name: Upload checksums to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          file="crest-app-images-${VERSION}-checksums.txt"
+          aws s3 cp "offline-packages/${file}" \
+            "s3://${R2_BUCKET}/releases/${VERSION}/${file}" \
+            --endpoint-url "${R2_ENDPOINT}" \
+            --region "${AWS_DEFAULT_REGION}" \
+            --no-progress
+
+      - name: Create release body
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          cp "docs/release/${VERSION}.md" /tmp/crest-app-image-release-body.md
+          {
+            echo
+            echo "## Downloads"
+            echo
+            echo "- [App image package (Linux amd64)](${R2_PUBLIC_BASE_URL}/releases/${VERSION}/crest-app-images-${VERSION}-linux-amd64.tar.gz)"
+            echo "- [App image package (Linux arm64)](${R2_PUBLIC_BASE_URL}/releases/${VERSION}/crest-app-images-${VERSION}-linux-arm64.tar.gz)"
+            echo "- [Checksums](${R2_PUBLIC_BASE_URL}/releases/${VERSION}/crest-app-images-${VERSION}-checksums.txt)"
+          } >> /tmp/crest-app-image-release-body.md
 
       - name: Publish release assets
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
@@ -143,12 +227,10 @@ jobs:
           tag_name: ${{ inputs.version }}
           name: Crest ${{ inputs.version }}
           target_commitish: ${{ github.sha }}
-          body_path: docs/release/${{ inputs.version }}.md
+          body_path: /tmp/crest-app-image-release-body.md
           draft: false
           prerelease: ${{ inputs.prerelease }}
           make_latest: ${{ inputs.make_latest }}
           overwrite_files: true
           files: |
-            offline-packages/crest-app-images-${{ inputs.version }}-linux-amd64.tar.gz
-            offline-packages/crest-app-images-${{ inputs.version }}-linux-arm64.tar.gz
             offline-packages/crest-app-images-${{ inputs.version }}-checksums.txt
