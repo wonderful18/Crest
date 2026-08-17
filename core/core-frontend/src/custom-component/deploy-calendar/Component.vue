@@ -1,17 +1,52 @@
 <template>
-  <div class="deploy-calendar-main" :class="{ 'is-light': themes === 'light' }">
+  <div
+    class="deploy-calendar-main"
+    :class="{ 'is-light': themes === 'light' }"
+    :style="{ '--dc-cell-hover': state.style.cellHoverColor }"
+  >
     <div class="cal-header">
-      <span class="cal-title">{{ currentLabel }}</span>
+      <span
+        class="cal-title"
+        :style="{
+          color: state.style.titleColor,
+          'font-size': state.style.titleFontSize + 'px',
+          'font-weight': state.style.titleIsBolder ? 600 : 400
+        }"
+        >{{ currentLabel }}</span
+      >
       <div class="cal-nav">
-        <el-icon class="cal-nav-btn" @click="changeMonth(-1)"><ArrowLeft /></el-icon>
-        <el-icon class="cal-nav-btn" @click="goToday" :title="t('deploy_calendar.go_today')">
+        <!-- 导航按钮颜色跟随标题色：避免深色画布下按钮继承深色文字而看不见 -->
+        <el-icon
+          class="cal-nav-btn"
+          :style="{ color: state.style.titleColor }"
+          @click="changeMonth(-1)"
+          ><ArrowLeft
+        /></el-icon>
+        <el-icon
+          class="cal-nav-btn"
+          :style="{ color: state.style.titleColor }"
+          @click="goToday"
+          :title="t('deploy_calendar.go_today')"
+        >
           <Calendar />
         </el-icon>
-        <el-icon class="cal-nav-btn" @click="changeMonth(1)"><ArrowRight /></el-icon>
+        <el-icon
+          class="cal-nav-btn"
+          :style="{ color: state.style.titleColor }"
+          @click="changeMonth(1)"
+          ><ArrowRight
+        /></el-icon>
       </div>
     </div>
     <div class="cal-weekdays">
-      <div v-for="w in weekdays" :key="w" class="cal-weekday">{{ w }}</div>
+      <div
+        v-for="w in weekdays"
+        :key="w"
+        class="cal-weekday"
+        :style="{ color: state.style.weekdayColor }"
+      >
+        {{ w }}
+      </div>
     </div>
     <div class="cal-grid">
       <div
@@ -22,6 +57,12 @@
           'is-other-month': !cell.inMonth,
           'is-today': cell.isToday,
           'has-deploy': cell.deployments.length > 0
+        }"
+        :style="{
+          background: cell.deployments.length > 0
+            ? state.style.deployCellBgColor
+            : state.style.cellBgColor,
+          outline: cell.isToday ? `1px dashed ${state.style.todayBorderColor}` : 'none'
         }"
       >
         <el-popover
@@ -37,12 +78,35 @@
             <div
               class="cell-inner"
               :class="{ 'is-selected': selectedKey === formatDate(cell.date) }"
+              :style="{
+                'border-color':
+                  selectedKey === formatDate(cell.date) ? state.style.selectedBorderColor : 'transparent',
+                background:
+                  selectedKey === formatDate(cell.date) ? state.style.selectedBgColor : 'transparent'
+              }"
               @click.stop="onDateClick(cell)"
             >
-              <span class="cell-date">{{ cell.day }}</span>
+              <span
+                class="cell-date"
+                :style="{
+                  color: state.style.dateColor,
+                  'font-size': state.style.dateFontSize + 'px'
+                }"
+                >{{ cell.day }}</span
+              >
               <div class="cell-dots">
-                <span v-if="cell.hasWeekly" class="dot dot-weekly" :title="t('deploy_calendar.weekly')"></span>
-                <span v-if="cell.hasMonthly" class="dot dot-monthly" :title="t('deploy_calendar.monthly')"></span>
+                <span
+                  v-if="cell.hasWeekly"
+                  class="dot dot-weekly"
+                  :style="{ background: state.style.weeklyDotColor }"
+                  :title="t('deploy_calendar.weekly')"
+                ></span>
+                <span
+                  v-if="cell.hasMonthly"
+                  class="dot dot-monthly"
+                  :style="{ background: state.style.monthlyDotColor }"
+                  :title="t('deploy_calendar.monthly')"
+                ></span>
               </div>
             </div>
           </template>
@@ -56,9 +120,15 @@
         </el-popover>
       </div>
     </div>
-    <div class="cal-legend">
-      <span class="legend-item"><i class="dot dot-weekly"></i>{{ t('deploy_calendar.weekly') }}</span>
-      <span class="legend-item"><i class="dot dot-monthly"></i>{{ t('deploy_calendar.monthly') }}</span>
+    <div class="cal-legend" :style="{ color: state.style.legendColor }">
+      <span class="legend-item"
+        ><i class="dot dot-weekly" :style="{ background: state.style.weeklyDotColor }"></i
+        >{{ t('deploy_calendar.weekly') }}</span
+      >
+      <span class="legend-item"
+        ><i class="dot dot-monthly" :style="{ background: state.style.monthlyDotColor }"></i
+        >{{ t('deploy_calendar.monthly') }}</span
+      >
     </div>
   </div>
 </template>
@@ -70,6 +140,8 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { getData } from '@/api/chart'
 import { storeToRefs } from 'pinia'
+import { cloneDeep, defaultsDeep } from 'lodash-es'
+import { DEFAULT_DEPLOY_CALENDAR_STYLE } from '@/views/chart/components/editor/util/chart'
 import ChartEmptyInfo from '@/views/chart/components/views/components/ChartEmptyInfo.vue'
 import ChartError from '@/views/chart/components/views/components/ChartError.vue'
 
@@ -176,7 +248,9 @@ const state = reactive<any>({
   deployMap: new Map<string, any[]>(),
   // 字段名映射: { dateField, contentField, typeField }
   fieldMap: { dateField: null, contentField: null, typeField: null },
-  useMock: true
+  useMock: true,
+  // 日历样式（由 renderChart 从 customAttr.deployCalendar 合并默认值得来）
+  style: cloneDeep(DEFAULT_DEPLOY_CALENDAR_STYLE)
 })
 
 const isEditMode = computed(
@@ -212,16 +286,19 @@ const pad = (n: number) => String(n).padStart(2, '0')
 
 const formatDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
-// 判断版本类型：值含"周"为周版，含"月"为月版
+// 判断版本类型：
+// 中文含"周/月"，英文 weekly/monthly 或缩写 w/m、W/M 均识别
+// 都不匹配时，若该日期确有投产记录，回退为 'both'（保证圆点可见）
 const classifyType = (raw: any): 'weekly' | 'monthly' | 'both' | 'unknown' => {
-  if (raw === null || raw === undefined) return 'unknown'
-  const s = String(raw)
-  const hasW = /周/.test(s)
-  const hasM = /月/.test(s)
+  if (raw === null || raw === undefined || raw === '') return 'both'
+  const s = String(raw).trim().toLowerCase()
+  const hasW = /周/.test(raw) || /\bweekly\b/.test(s) || /^w\b/.test(s) || /week/.test(s)
+  const hasM = /月/.test(raw) || /\bmonthly\b/.test(s) || /^m\b/.test(s) || /month/.test(s)
   if (hasW && hasM) return 'both'
   if (hasW) return 'weekly'
   if (hasM) return 'monthly'
-  return 'unknown'
+  // 未识别但有值：同时显示周版/月版圆点，避免"有数据却看不到点"
+  return 'both'
 }
 
 const typeLabelOf = (tp: string) => {
@@ -359,11 +436,24 @@ const parseData = (res: any) => {
   console.log('[DeployCalendar] 4. 第一行数据:', JSON.stringify(probeRow))
   console.log('[DeployCalendar] 5. 返回的fields:', JSON.stringify(fields.map((f: any) => ({ id: f.id, eng: f.engineFieldName, name: f.name }))))
   if (!dateEng) return map
-  // 兜底：若 tableRow 的 key 与 engineFieldName 不一致，尝试按 originName/name 匹配
+  // 兜底：若 tableRow 的 key 与 engineFieldName 不一致，
+  // 用字段 id 对应的用户字段名(engToName)精确匹配 row key；匹配不到再模糊。
   const useOriginKey = !(dateEng in probeRow) && Object.keys(probeRow).length > 0
-  const dateKey = useOriginKey ? (findKeyByName(probeRow, '投产日期') || dateEng) : dateEng
-  const contentKey = useOriginKey ? (findKeyByName(probeRow, '投产内容') || contentEng) : contentEng
-  const typeKey = useOriginKey ? (findKeyByName(probeRow, '版本类型') || typeEng) : typeEng
+  const dateKey = useOriginKey
+    ? (engToName[dateEng] && engToName[dateEng] in probeRow
+        ? engToName[dateEng]
+        : findKeyByName(probeRow, engToName[dateEng] || '') || dateEng)
+    : dateEng
+  const contentKey = useOriginKey
+    ? (contentEng && engToName[contentEng] && engToName[contentEng] in probeRow
+        ? engToName[contentEng]
+        : contentEng && findKeyByName(probeRow, engToName[contentEng] || '') || contentEng)
+    : contentEng
+  const typeKey = useOriginKey
+    ? (typeEng && engToName[typeEng] && engToName[typeEng] in probeRow
+        ? engToName[typeEng]
+        : typeEng && findKeyByName(probeRow, engToName[typeEng] || '') || typeEng)
+    : typeEng
   if (useOriginKey) {
     console.info('[DeployCalendar] key 不匹配 engineFieldName，改用按列名匹配', { dateKey, contentKey, typeKey, dateEngInRow: dateEng in probeRow })
   }
@@ -403,7 +493,10 @@ const parseDate = (raw: any): Date | null => {
 
 const calcData = (viewCalc: Chart, callback?: () => void) => {
   isError.value = false
-  if (!viewCalc.tableId || viewCalc['dataFrom'] === 'template' || !viewCalc?.xAxis?.length) {
+  // 注意：不在此处调 renderChart()，避免写 reactive state.style 触发同步重绘
+  // 波及父组件 index.vue 在 view 切换间隙 view.value 为 undefined 时崩溃。
+  // 样式更新由 watch(customAttr.deployCalendar) + 父组件 renderChart 回调驱动。
+  if (!viewCalc || !viewCalc.tableId || viewCalc['dataFrom'] === 'template' || !viewCalc?.xAxis?.length) {
     // 未绑数据集 / 未绑日期列 → mock 兜底
     console.warn('[DeployCalendar] 走 mock：未绑数据集或日期列', { tableId: viewCalc.tableId, xAxis: viewCalc?.xAxis })
     state.useMock = true
@@ -459,19 +552,48 @@ const calcData = (viewCalc: Chart, callback?: () => void) => {
 }
 
 watch([() => props.searchCount], () => {
-  calcData(view.value, () => {})
+  if (view.value) {
+    calcData(view.value, () => {})
+  }
 })
 
-const renderChart = () => {}
+const renderChart = () => {
+  try {
+    const raw = view.value?.customAttr?.deployCalendar
+    const custom = raw
+      ? defaultsDeep(cloneDeep(raw), cloneDeep(DEFAULT_DEPLOY_CALENDAR_STYLE))
+      : cloneDeep(DEFAULT_DEPLOY_CALENDAR_STYLE)
+    state.style = custom
+  } catch (e) {
+    // 防御：配置异常时回退默认值，避免日历报错波及整个大屏渲染
+    console.warn('[DeployCalendar] renderChart 读取样式失败，回退默认值', e)
+    state.style = cloneDeep(DEFAULT_DEPLOY_CALENDAR_STYLE)
+  }
+}
 
 onBeforeMount(() => {
-  calcData(view.value)
+  if (view.value) {
+    calcData(view.value)
+    // 初始挂载时应用一次样式（calcData 内不再调，避免重绘波及父组件）
+    renderChart()
+  }
 })
+
+// 样式配置变化时实时更新（右侧面板改颜色/字号等）
+watch(
+  () => view.value?.customAttr?.deployCalendar,
+  () => {
+    renderChart()
+  },
+  { deep: true }
+)
 
 defineExpose({ calcData, renderChart })
 </script>
 
 <style lang="less" scoped>
+// 颜色全部由模板内联 :style（读取 state.style）驱动，这里只保留布局与结构样式。
+// 悬浮底色通过根节点 CSS 变量 --dc-cell-hover 传入（见模板 :style）。
 .deploy-calendar-main {
   overflow: hidden;
   width: 100%;
@@ -479,7 +601,6 @@ defineExpose({ calcData, renderChart })
   display: flex;
   flex-direction: column;
   padding: 8px 10px;
-  color: #e6e8eb;
   font-size: 12px;
   user-select: none;
 }
@@ -488,21 +609,13 @@ defineExpose({ calcData, renderChart })
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
-  .cal-title {
-    font-size: 14px;
-    font-weight: 600;
-  }
   .cal-nav {
     display: flex;
     align-items: center;
     gap: 6px;
     .cal-nav-btn {
       cursor: pointer;
-      color: #a6aeb8;
       font-size: 16px;
-      &:hover {
-        color: #fff;
-      }
     }
   }
 }
@@ -510,7 +623,6 @@ defineExpose({ calcData, renderChart })
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
-  color: #8a9099;
   margin-bottom: 4px;
   .cal-weekday {
     padding: 2px 0;
@@ -528,18 +640,11 @@ defineExpose({ calcData, renderChart })
   min-height: 0;
   border-radius: 4px;
   position: relative;
-  background: #1d2026;
   &:hover {
-    background: #262a31;
+    background: var(--dc-cell-hover) !important;
   }
   &.is-other-month {
     opacity: 0.35;
-  }
-  &.is-today {
-    outline: 1px dashed #8a9099;
-  }
-  &.has-deploy {
-    background: #2a2024;
   }
 }
 .cell-inner {
@@ -553,18 +658,10 @@ defineExpose({ calcData, renderChart })
   border-radius: 4px;
   border: 1px solid transparent;
   transition: border-color 0.15s, background 0.15s;
-  .cell-date {
-    line-height: 18px;
-    font-size: 12px;
-  }
   .cell-dots {
     display: flex;
     gap: 3px;
     height: 6px;
-  }
-  &.is-selected {
-    border-color: #409eff;
-    background: rgba(64, 158, 255, 0.18);
   }
 }
 .dot {
@@ -573,52 +670,15 @@ defineExpose({ calcData, renderChart })
   height: 6px;
   border-radius: 50%;
 }
-.dot-weekly {
-  background: #409eff;
-}
-.dot-monthly {
-  background: #f56c6c;
-}
 .cal-legend {
   display: flex;
   gap: 14px;
   justify-content: center;
   margin-top: 6px;
-  color: #8a9099;
   .legend-item {
     display: flex;
     align-items: center;
     gap: 4px;
-  }
-}
-/* light theme */
-.deploy-calendar-main.is-light {
-  color: #303133;
-  .cal-nav .cal-nav-btn {
-    color: #606266;
-    &:hover {
-      color: #303133;
-    }
-  }
-  .cal-cell {
-    background: #f5f7fa;
-    &:hover {
-      background: #ecf0f3;
-    }
-    &.has-deploy {
-      background: #fdf0f0;
-    }
-    &.is-today {
-      outline: 1px dashed #909399;
-    }
-    .cell-inner.is-selected {
-      border-color: #409eff;
-      background: rgba(64, 158, 255, 0.15);
-    }
-  }
-  .cal-weekdays,
-  .cal-legend {
-    color: #909399;
   }
 }
 </style>

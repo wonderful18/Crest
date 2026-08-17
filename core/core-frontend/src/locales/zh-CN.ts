@@ -4852,6 +4852,22 @@ export default {
     weekly: '周版',
     monthly: '月版',
     unknown: '其他',
-    go_today: '回到今天'
+    go_today: '回到今天',
+    style: '日历样式',
+    title_color: '标题颜色',
+    title_font_size: '标题字号',
+    title_bolder: '标题加粗',
+    date_color: '日期文字颜色',
+    date_font_size: '日期字号',
+    cell_bg_color: '普通格底色',
+    cell_hover_color: '悬浮格底色',
+    deploy_cell_bg_color: '投产格底色',
+    today_border_color: '今日边框色',
+    selected_border_color: '选中边框色',
+    selected_bg_color: '选中底色',
+    weekly_dot_color: '周版圆点色',
+    monthly_dot_color: '月版圆点色',
+    weekday_color: '星期表头色',
+    legend_color: '图例文字色'
   }
 }
