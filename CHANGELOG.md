@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.5.36 - 2026-08-17
+
+v1.5.36 是 v1.5.35 之后的修复与增强版本。修复明细表「单元格分组」合并文本的换行和居中不生效问题,并补齐该功能的全套样式配置面板;同时为「投产窗口日历」的日期弹出框(popup)新增可视化样式配置,并支持待定版/紧急版圆点标记。**本版本没有新增数据库结构,无需执行升级 SQL。**
+
+### 修复
+
+- 单元格分组合并文本「换行」和「居中」不生效:面板设居中、勾换行后文字仍靠左、长文本不截断。根因是 S2 v2 的 `MergedCell` meta 只是左上角单格 meta,换行宽度/对齐基准只落在第一格内,且 `wordBreak`/`whiteSpace` 对 G-lite Text 无效。修复为 `CustomMergedCell` 新增 `getMergedContentBox` 基于合并后整体矩形,重写 `getMaxTextWidth`/`getTextPosition`,换行改设 `wordWrap`/`maxLines`。
+
+### 增强
+
+- 单元格分组合并文本样式可配置:为「单元格分组」新增颜色/字号/加粗/对齐/换行的全局样式面板,配置存于 `customAttr.tableCell` 的 `cellGroupText*` 字段,`configCellGroups` 注入 `cellGroupTextStyle` 由 `CustomMergedCell` 覆盖 S2 默认。
+- 投产窗口日历弹出框(popup)样式可配置:日期标题、版本类型标签、投产内容三段文字的颜色/字号/加粗/对齐/换行可在面板调整;新增「待定版」「紧急版」圆点标记(`pendingDotColor`/`urgentDotColor`)。
+
 ## v1.5.35 - 2026-08-17
 
 v1.5.35 是 v1.5.34 之后的修复与增强版本。修复「投产窗口日历」在深色画布下月份切换按钮不可见的问题,并为该日历组件补充可视化样式配置面板。**本版本没有新增数据库结构,无需执行升级 SQL。**

@@ -545,6 +545,12 @@ export const DEFAULT_TABLE_CELL: ChartTableCellAttr = {
   tableColumnFreezeHead: 0,
   tableRowFreezeHead: 0,
   mergeCells: true,
+  // 单元格分组合并显示文本样式（全局，所有分组规则共用）
+  cellGroupTextColor: '#303133',
+  cellGroupTextFontSize: 12,
+  cellGroupTextIsBolder: true,
+  cellGroupTextAlign: 'center',
+  cellGroupTextWrap: false,
   alignConfig: []
 }
 export const DEFAULT_TITLE_STYLE: ChartTextStyle = {
@@ -618,8 +624,26 @@ export const DEFAULT_DEPLOY_CALENDAR_STYLE: ChartDeployCalendarStyle = {
   // 圆点 / 图例
   weeklyDotColor: '#409eff',
   monthlyDotColor: '#f56c6c',
+  pendingDotColor: '#e6a23c',
+  urgentDotColor: '#9c27b0',
   weekdayColor: '#8a9099',
-  legendColor: '#8a9099'
+  legendColor: '#8a9099',
+  // popover 显示文字（悬浮单元格弹出的当日投产记录）
+  titlePopColor: '#e6e8eb',
+  titlePopFontSize: 13,
+  titlePopIsBolder: true,
+  titlePopAlign: 'left',
+  titlePopWrap: true,
+  typePopColor: '#fff',
+  typePopFontSize: 11,
+  typePopIsBolder: false,
+  typePopAlign: 'center',
+  typePopWrap: false,
+  contentPopColor: '#e6e8eb',
+  contentPopFontSize: 12,
+  contentPopIsBolder: false,
+  contentPopAlign: 'left',
+  contentPopWrap: true
 }
 
 export const DEFAULT_TITLE_STYLE_BASE: ChartTextStyle = {

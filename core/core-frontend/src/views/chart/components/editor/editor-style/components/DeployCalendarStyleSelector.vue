@@ -313,6 +313,38 @@ watch(
         class="form-item"
         :class="'form-item-' + themes"
         :effect="themes"
+        :label="t('deploy_calendar.pending_dot_color')"
+      >
+        <el-color-picker
+          :effect="themes"
+          v-model="state.form.pendingDotColor"
+          class="color-picker-style"
+          :predefine="predefineColors"
+          @change="change('pendingDotColor')"
+          show-alpha
+          is-custom
+        />
+      </el-form-item>
+      <el-form-item
+        class="form-item"
+        :class="'form-item-' + themes"
+        :effect="themes"
+        :label="t('deploy_calendar.urgent_dot_color')"
+      >
+        <el-color-picker
+          :effect="themes"
+          v-model="state.form.urgentDotColor"
+          class="color-picker-style"
+          :predefine="predefineColors"
+          @change="change('urgentDotColor')"
+          show-alpha
+          is-custom
+        />
+      </el-form-item>
+      <el-form-item
+        class="form-item"
+        :class="'form-item-' + themes"
+        :effect="themes"
         :label="t('deploy_calendar.weekday_color')"
       >
         <el-color-picker
@@ -340,6 +372,204 @@ watch(
           show-alpha
           is-custom
         />
+      </el-form-item>
+
+      <el-divider class="m-divider" :class="{ 'divider-dark': themes === 'dark' }" />
+
+      <!-- 弹出标题（popover 日期标题） -->
+      <el-form-item
+        class="form-item"
+        :class="'form-item-' + themes"
+        :effect="themes"
+        :label="t('deploy_calendar.title_pop_color')"
+      >
+        <el-color-picker
+          :effect="themes"
+          v-model="state.form.titlePopColor"
+          class="color-picker-style"
+          :predefine="predefineColors"
+          @change="change('titlePopColor')"
+          show-alpha
+          is-custom
+        />
+      </el-form-item>
+      <el-form-item class="form-item" :class="'form-item-' + themes" :effect="themes">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+          <el-tooltip :content="t('chart.font_size')" placement="top">
+            <el-select
+              style="width: 56px"
+              :effect="themes"
+              v-model="state.form.titlePopFontSize"
+              :placeholder="t('chart.text_fontsize')"
+              size="small"
+              @change="change('titlePopFontSize')"
+            >
+              <el-option
+                v-for="option in fontSizeList"
+                :key="option.value"
+                :label="option.name"
+                :value="option.value"
+              />
+            </el-select>
+          </el-tooltip>
+          <el-select
+            style="width: 80px"
+            :effect="themes"
+            v-model="state.form.titlePopAlign"
+            size="small"
+            @change="change('titlePopAlign')"
+          >
+            <el-option :label="t('deploy_calendar.align_left')" value="left" />
+            <el-option :label="t('deploy_calendar.align_center')" value="center" />
+            <el-option :label="t('deploy_calendar.align_right')" value="right" />
+          </el-select>
+          <el-checkbox
+            size="small"
+            :effect="themes"
+            v-model="state.form.titlePopIsBolder"
+            @change="change('titlePopIsBolder')"
+            >{{ t('deploy_calendar.title_pop_bolder') }}</el-checkbox
+          >
+          <el-checkbox
+            size="small"
+            :effect="themes"
+            v-model="state.form.titlePopWrap"
+            @change="change('titlePopWrap')"
+            >{{ t('deploy_calendar.title_pop_wrap') }}</el-checkbox
+          >
+        </div>
+      </el-form-item>
+
+      <el-divider class="m-divider" :class="{ 'divider-dark': themes === 'dark' }" />
+
+      <!-- 弹出类型标签（popover 版本类型标签） -->
+      <el-form-item
+        class="form-item"
+        :class="'form-item-' + themes"
+        :effect="themes"
+        :label="t('deploy_calendar.type_pop_color')"
+      >
+        <el-color-picker
+          :effect="themes"
+          v-model="state.form.typePopColor"
+          class="color-picker-style"
+          :predefine="predefineColors"
+          @change="change('typePopColor')"
+          show-alpha
+          is-custom
+        />
+      </el-form-item>
+      <el-form-item class="form-item" :class="'form-item-' + themes" :effect="themes">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+          <el-tooltip :content="t('chart.font_size')" placement="top">
+            <el-select
+              style="width: 56px"
+              :effect="themes"
+              v-model="state.form.typePopFontSize"
+              :placeholder="t('chart.text_fontsize')"
+              size="small"
+              @change="change('typePopFontSize')"
+            >
+              <el-option
+                v-for="option in fontSizeList"
+                :key="option.value"
+                :label="option.name"
+                :value="option.value"
+              />
+            </el-select>
+          </el-tooltip>
+          <el-select
+            style="width: 80px"
+            :effect="themes"
+            v-model="state.form.typePopAlign"
+            size="small"
+            @change="change('typePopAlign')"
+          >
+            <el-option :label="t('deploy_calendar.align_left')" value="left" />
+            <el-option :label="t('deploy_calendar.align_center')" value="center" />
+            <el-option :label="t('deploy_calendar.align_right')" value="right" />
+          </el-select>
+          <el-checkbox
+            size="small"
+            :effect="themes"
+            v-model="state.form.typePopIsBolder"
+            @change="change('typePopIsBolder')"
+            >{{ t('deploy_calendar.type_pop_bolder') }}</el-checkbox
+          >
+          <el-checkbox
+            size="small"
+            :effect="themes"
+            v-model="state.form.typePopWrap"
+            @change="change('typePopWrap')"
+            >{{ t('deploy_calendar.type_pop_wrap') }}</el-checkbox
+          >
+        </div>
+      </el-form-item>
+
+      <el-divider class="m-divider" :class="{ 'divider-dark': themes === 'dark' }" />
+
+      <!-- 弹出内容（popover 投产内容文字） -->
+      <el-form-item
+        class="form-item"
+        :class="'form-item-' + themes"
+        :effect="themes"
+        :label="t('deploy_calendar.content_pop_color')"
+      >
+        <el-color-picker
+          :effect="themes"
+          v-model="state.form.contentPopColor"
+          class="color-picker-style"
+          :predefine="predefineColors"
+          @change="change('contentPopColor')"
+          show-alpha
+          is-custom
+        />
+      </el-form-item>
+      <el-form-item class="form-item" :class="'form-item-' + themes" :effect="themes">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+          <el-tooltip :content="t('chart.font_size')" placement="top">
+            <el-select
+              style="width: 56px"
+              :effect="themes"
+              v-model="state.form.contentPopFontSize"
+              :placeholder="t('chart.text_fontsize')"
+              size="small"
+              @change="change('contentPopFontSize')"
+            >
+              <el-option
+                v-for="option in fontSizeList"
+                :key="option.value"
+                :label="option.name"
+                :value="option.value"
+              />
+            </el-select>
+          </el-tooltip>
+          <el-select
+            style="width: 80px"
+            :effect="themes"
+            v-model="state.form.contentPopAlign"
+            size="small"
+            @change="change('contentPopAlign')"
+          >
+            <el-option :label="t('deploy_calendar.align_left')" value="left" />
+            <el-option :label="t('deploy_calendar.align_center')" value="center" />
+            <el-option :label="t('deploy_calendar.align_right')" value="right" />
+          </el-select>
+          <el-checkbox
+            size="small"
+            :effect="themes"
+            v-model="state.form.contentPopIsBolder"
+            @change="change('contentPopIsBolder')"
+            >{{ t('deploy_calendar.content_pop_bolder') }}</el-checkbox
+          >
+          <el-checkbox
+            size="small"
+            :effect="themes"
+            v-model="state.form.contentPopWrap"
+            @change="change('contentPopWrap')"
+            >{{ t('deploy_calendar.content_pop_wrap') }}</el-checkbox
+          >
+        </div>
       </el-form-item>
     </el-form>
   </div>
