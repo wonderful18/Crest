@@ -46,7 +46,76 @@ declare interface ChartAttr {
    * 指标名称
    */
   indicatorName: ChartIndicatorNameStyle
+  /**
+   * 投产窗口日历样式
+   */
+  deployCalendar?: ChartDeployCalendarStyle
   [key: string]: any
+}
+/**
+ * 投产窗口日历样式
+ */
+declare interface ChartDeployCalendarStyle {
+  /**
+   * 月份标题颜色（日历内 YYYY年MM月）
+   */
+  titleColor: string
+  /**
+   * 月份标题字号
+   */
+  titleFontSize: number
+  /**
+   * 月份标题加粗
+   */
+  titleIsBolder: boolean
+  /**
+   * 日期数字颜色
+   */
+  dateColor: string
+  /**
+   * 日期数字字号
+   */
+  dateFontSize: number
+  /**
+   * 普通单元格底色
+   */
+  cellBgColor: string
+  /**
+   * 普通单元格悬浮底色
+   */
+  cellHoverColor: string
+  /**
+   * 有投产记录的单元格底色
+   */
+  deployCellBgColor: string
+  /**
+   * 今日边框色
+   */
+  todayBorderColor: string
+  /**
+   * 选中日期边框色
+   */
+  selectedBorderColor: string
+  /**
+   * 选中日期底色
+   */
+  selectedBgColor: string
+  /**
+   * 周版圆点色
+   */
+  weeklyDotColor: string
+  /**
+   * 月版圆点色
+   */
+  monthlyDotColor: string
+  /**
+   * 星期表头文字色
+   */
+  weekdayColor: string
+  /**
+   * 图例文字色
+   */
+  legendColor: string
 }
 /**
  * 基础样式设置

@@ -33,6 +33,7 @@ declare type EditorProperty =
   | 'bubble-animate'
   | 'summary-selector'
   | 'bullet-graph-selector'
+  | 'deploy-calendar-style-selector'
 declare type EditorPropertyInner = {
   [key in EditorProperty]?: string[]
 }

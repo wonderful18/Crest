@@ -599,6 +599,29 @@ export const DEFAULT_INDICATOR_NAME_STYLE: ChartIndicatorNameStyle = {
   namePosition: 'bottom'
 }
 
+export const DEFAULT_DEPLOY_CALENDAR_STYLE: ChartDeployCalendarStyle = {
+  // 月份标题（日历内 YYYY年MM月）
+  titleColor: '#e6e8eb',
+  titleFontSize: 14,
+  titleIsBolder: true,
+  // 日期数字
+  dateColor: '#e6e8eb',
+  dateFontSize: 12,
+  // 单元格底色 —— 与深色画布拉开区分度，避免「黑乎乎一片」
+  cellBgColor: '#262a31',
+  cellHoverColor: '#2f3540',
+  deployCellBgColor: '#2a2024',
+  // 状态高亮
+  todayBorderColor: '#8a9099',
+  selectedBorderColor: '#409eff',
+  selectedBgColor: 'rgba(64, 158, 255, 0.18)',
+  // 圆点 / 图例
+  weeklyDotColor: '#409eff',
+  monthlyDotColor: '#f56c6c',
+  weekdayColor: '#8a9099',
+  legendColor: '#8a9099'
+}
+
 export const DEFAULT_TITLE_STYLE_BASE: ChartTextStyle = {
   show: true,
   fontSize: 16,
@@ -1807,6 +1830,7 @@ export const BASE_VIEW_CONFIG = {
     tableCell: DEFAULT_TABLE_CELL,
     indicator: DEFAULT_INDICATOR_STYLE,
     indicatorName: DEFAULT_INDICATOR_NAME_STYLE,
+    deployCalendar: DEFAULT_DEPLOY_CALENDAR_STYLE,
     map: {
       id: '',
       level: 'world'

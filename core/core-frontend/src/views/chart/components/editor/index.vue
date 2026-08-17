@@ -1142,6 +1142,11 @@ const onIndicatorNameChange = (val, prop) => {
   renderChart(view.value)
 }
 
+const onDeployCalendarStyleChange = (val, _prop) => {
+  view.value.customAttr.deployCalendar = val
+  renderChart(view.value)
+}
+
 const onTooltipChange = (chartForm: ChartEditorForm<ChartTooltipAttr>, prop: string) => {
   const { data, requestData, render } = chartForm
   let tooltipObj = data
@@ -2091,6 +2096,7 @@ const chartStyleScroll = (val: any) => {
               @onChangeQuadrantForm="onChangeQuadrantForm"
               @onChangeFlowMapLineForm="onChangeFlowMapLineForm"
               @onChangeFlowMapPointForm="onChangeFlowMapPointForm"
+              @onDeployCalendarStyleChange="onDeployCalendarStyleChange"
             />
           </template>
         </el-scrollbar>
@@ -3475,6 +3481,7 @@ const chartStyleScroll = (val: any) => {
                           @onChangeQuadrantForm="onChangeQuadrantForm"
                           @onChangeFlowMapLineForm="onChangeFlowMapLineForm"
                           @onChangeFlowMapPointForm="onChangeFlowMapPointForm"
+                          @onDeployCalendarStyleChange="onDeployCalendarStyleChange"
                         />
                       </template>
                     </el-scrollbar>

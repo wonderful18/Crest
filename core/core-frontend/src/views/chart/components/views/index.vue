@@ -359,7 +359,7 @@ const chartClick = param => {
     ElMessage.error(t('chart.drill_field_error'))
     return
   }
-  if (view.value.type === 'circle-packing' && param.data.name === t('commons.all')) {
+  if (view.value?.type === 'circle-packing' && param.data.name === t('commons.all')) {
     ElMessage.error(t('chart.last_layer'))
     return
   }
@@ -645,7 +645,7 @@ const calcData = params => {
 
 const showChartView = (...libs: ChartLibraryType[]) => {
   if (view.value?.render && view.value?.type) {
-    const chartView = chartViewManager.getChartView(view.value.render, view.value.type)
+    const chartView = chartViewManager.getChartView(view.value?.render, view.value?.type)
     return chartView && libs?.includes(chartView.library)
   } else {
     return false
@@ -662,7 +662,7 @@ const showEmpty = ref(false)
 const checkFieldIsAllowEmpty = (allField?) => {
   showEmpty.value = false
   if (view.value?.render && view.value?.type) {
-    const chartView = chartViewManager.getChartView(view.value.render, view.value.type)
+    const chartView = chartViewManager.getChartView(view.value?.render, view.value?.type)
     // 插件
     if (!chartView) {
       return
@@ -864,7 +864,7 @@ registerEnabledEmitt({
 registerEnabledEmitt({
   name: 'tabCanvasChange-' + element.value.canvasId,
   callback: () => {
-    if (!state.initReady && !view.value.type.includes('table')) {
+    if (!state.initReady && !view.value?.type?.includes('table')) {
       return
     }
     setTimeout(() => {
@@ -885,7 +885,7 @@ registerEnabledEmitt({
     chart.container = 'container-' + showPosition.value + '-' + view.value.id + '-' + suffixId.value
     clearExtremum(chart)
     // 切换到不支持下钻的图表类型时，清除下钻状态
-    const chartView = chartViewManager.getChartView(view.value.render, view.value.type)
+    const chartView = chartViewManager.getChartView(view.value?.render, view.value?.type)
     if (chartView && !chartView.axis.includes('drill')) {
       state.drillClickDimensionList = []
       state.drillFilters = []
@@ -939,12 +939,15 @@ const loadingFlag = computed(() => {
 })
 
 const chartAreaShow = computed(() => {
-  if (view.value.tableId) {
+  if (!view.value) {
+    return false
+  }
+  if (view.value?.tableId) {
     if (element.value['state'] === undefined || element.value['state'] === 'ready') {
       return true
     }
   }
-  if (['rich-text', 'picture-group', 'deploy-calendar'].includes(view.value.type)) {
+  if (['rich-text', 'picture-group', 'deploy-calendar'].includes(view.value?.type)) {
     return true
   }
   if (view.value?.isPlugin) {
@@ -955,7 +958,7 @@ const chartAreaShow = computed(() => {
   }
   if (view.value.customAttr?.map?.id) {
     const MAP_CHARTS = ['map', 'bubble-map', 'flow-map']
-    if (MAP_CHARTS.includes(view.value.type)) {
+    if (MAP_CHARTS.includes(view.value?.type)) {
       return true
     }
   }
@@ -1342,9 +1345,9 @@ const clearG2Tooltip = () => {
       />
     </div>
     <chart-empty-info
-      v-if="(!chartAreaShow || showEmpty) && !allEmptyCheck && !['rich-text', 'picture-group', 'deploy-calendar'].includes(view.value.type)"
+      v-if="(!chartAreaShow || showEmpty) && !allEmptyCheck && !['rich-text', 'picture-group', 'deploy-calendar'].includes(view?.type)"
       :themes="canvasStyleData.dashboard.themeColor"
-      :view-icon="view.type"
+      :view-icon="view?.type"
       @touchstart="clearG2Tooltip"
     ></chart-empty-info>
     <drill-path

@@ -26,6 +26,7 @@ import MiscStyleSelector from '@/views/chart/components/editor/editor-style/comp
 import IndicatorValueSelector from '@/views/chart/components/editor/editor-style/components/IndicatorValueSelector.vue'
 import IndicatorNameSelector from '@/views/chart/components/editor/editor-style/components/IndicatorNameSelector.vue'
 import QuadrantSelector from '@/views/chart/components/editor/editor-style/components/QuadrantSelector.vue'
+import DeployCalendarStyleSelector from '@/views/chart/components/editor/editor-style/components/DeployCalendarStyleSelector.vue'
 import CommonBorderSetting from '@/custom-component/common/CommonBorderSetting.vue'
 import { snapshotStoreWithOut } from '@/store/modules/data-visualization/snapshot'
 import BulletTargetSelector from '@/views/chart/components/editor/editor-style/components/bullet/BulletTargetSelector.vue'
@@ -125,7 +126,8 @@ const emit = defineEmits([
   'onExtTooltipChange',
   'onIndicatorChange',
   'onIndicatorNameChange',
-  'onChangeQuadrantForm'
+  'onChangeQuadrantForm',
+  'onDeployCalendarStyleChange'
 ])
 
 const indicatorValueRef = ref()
@@ -189,6 +191,10 @@ const onIndicatorNameChange = (val, prop) => {
     value.indicatorValue = indicatorValueRef.value?.getFormData()
   }
   state.initReady && emit('onIndicatorNameChange', value, prop)
+}
+
+const onDeployCalendarStyleChange = (val, prop) => {
+  state.initReady && emit('onDeployCalendarStyleChange', val, prop)
 }
 
 const onLegendChange = (val, prop) => {
@@ -466,6 +472,20 @@ watch(
               :chart="chart"
               :quota-fields="props.quotaData"
               @onChangeMiscStyleForm="onChangeMiscStyleForm"
+            />
+          </el-collapse-item>
+          <el-collapse-item
+            :effect="themes"
+            v-if="showProperties('deploy-calendar-style-selector')"
+            name="deployCalendarStyle"
+            :title="t('deploy_calendar.style')"
+          >
+            <deploy-calendar-style-selector
+              :property-inner="propertyInnerAll['deploy-calendar-style-selector']"
+              :themes="themes"
+              class="attr-selector"
+              :chart="chart"
+              @onDeployCalendarStyleChange="onDeployCalendarStyleChange"
             />
           </el-collapse-item>
           <collapse-switch-item
