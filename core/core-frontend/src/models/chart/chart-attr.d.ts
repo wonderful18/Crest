@@ -109,6 +109,14 @@ declare interface ChartDeployCalendarStyle {
    */
   monthlyDotColor: string
   /**
+   * 待定版圆点色
+   */
+  pendingDotColor: string
+  /**
+   * 紧急版圆点色
+   */
+  urgentDotColor: string
+  /**
    * 星期表头文字色
    */
   weekdayColor: string
@@ -116,6 +124,66 @@ declare interface ChartDeployCalendarStyle {
    * 图例文字色
    */
   legendColor: string
+  /**
+   * popover 日期标题文字色
+   */
+  titlePopColor: string
+  /**
+   * popover 日期标题字号
+   */
+  titlePopFontSize: number
+  /**
+   * popover 日期标题加粗
+   */
+  titlePopIsBolder: boolean
+  /**
+   * popover 日期标题对齐 left/center/right
+   */
+  titlePopAlign: string
+  /**
+   * popover 日期标题换行
+   */
+  titlePopWrap: boolean
+  /**
+   * popover 版本类型标签文字色
+   */
+  typePopColor: string
+  /**
+   * popover 版本类型标签字号
+   */
+  typePopFontSize: number
+  /**
+   * popover 版本类型标签加粗
+   */
+  typePopIsBolder: boolean
+  /**
+   * popover 版本类型标签对齐 left/center/right
+   */
+  typePopAlign: string
+  /**
+   * popover 版本类型标签换行
+   */
+  typePopWrap: boolean
+  /**
+   * popover 投产内容文字色
+   */
+  contentPopColor: string
+  /**
+   * popover 投产内容字号
+   */
+  contentPopFontSize: number
+  /**
+   * popover 投产内容加粗
+   */
+  contentPopIsBolder: boolean
+  /**
+   * popover 投产内容对齐 left/center/right
+   */
+  contentPopAlign: string
+  /**
+   * popover 投产内容换行
+   */
+  contentPopWrap: boolean
 }
 /**
  * 基础样式设置
@@ -727,6 +795,26 @@ declare interface ChartTableCellAttr {
    * 区别于 mergeCells 的按值自动纵向合并，这里是规则式、按数据内容定位、可横可纵
    */
   cellGroups?: CellGroup[]
+  /**
+   * 单元格分组合并文本颜色
+   */
+  cellGroupTextColor: string
+  /**
+   * 单元格分组合并文本字号
+   */
+  cellGroupTextFontSize: number
+  /**
+   * 单元格分组合并文本加粗
+   */
+  cellGroupTextIsBolder: boolean
+  /**
+   * 单元格分组合并文本对齐 left/center/right
+   */
+  cellGroupTextAlign: string
+  /**
+   * 单元格分组合并文本换行
+   */
+  cellGroupTextWrap: boolean
   /**
    * 对齐设置
    */

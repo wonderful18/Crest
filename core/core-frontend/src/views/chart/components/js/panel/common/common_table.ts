@@ -14,9 +14,11 @@ import {
 } from '@/views/chart/components/editor/util/chart'
 import {
   BaseTooltip,
+  CellClipBox,
   FONT_FAMILY,
   copyToClipboard,
   getAutoAdjustPosition,
+  getCellBoxByType,
   getEmptyPlaceholder,
   getPolygonPoints,
   InteractionStateName,
@@ -3252,7 +3254,8 @@ export function configMergeCells(chart: Chart, options: S2Options, dataConfig: S
 // 单元格分组：按列值定位行，横向合并若干列(多行命中则纵向)，支持自定义显示文本
 // 区别于 configMergeCells 的按值自动纵向合并，这里是规则式、手动优先
 export function configCellGroups(chart: Chart, options: S2Options, dataConfig: S2DataConfig) {
-  const { cellGroups } = parseJson(chart.customAttr).tableCell
+  const tableCellAttr = parseJson(chart.customAttr).tableCell
+  const { cellGroups } = tableCellAttr
   const { showIndex } = parseJson(chart.customAttr).tableHeader
   const groups = Array.isArray(cellGroups) ? cellGroups : []
   if (!groups.length) {
@@ -3356,6 +3359,14 @@ export function configCellGroups(chart: Chart, options: S2Options, dataConfig: S
       meta.fieldValue = meta.fieldValue.toUpperCase()
     }
     meta.fieldType = fieldsMap[meta.valueField]?.fieldType
+    // 注入 cellGroup 合并文本样式配置，供 CustomMergedCell.getTextStyle 覆盖 S2 默认
+    meta.cellGroupTextStyle = {
+      color: tableCellAttr.cellGroupTextColor,
+      fontSize: tableCellAttr.cellGroupTextFontSize,
+      fontWeight: tableCellAttr.cellGroupTextIsBolder ? 600 : 400,
+      textAlign: tableCellAttr.cellGroupTextAlign,
+      wrap: tableCellAttr.cellGroupTextWrap
+    }
     return new CustomMergedCell(sheet, cells, meta)
   }
 }
@@ -3388,6 +3399,42 @@ class CustomMergedCell extends MergedCell {
     return normalizeFormattedResult(super.getFormattedFieldValue())
   }
 
+  /**
+   * 合并后整体矩形（已扣除 border + padding 的 content box）。
+   *
+   * S2 v2 的 MergedCell 其 meta 只是左上角那个被合并 cell 的 meta，
+   * getBBoxByType() 取到的宽度/高度/坐标都只是单格范围，
+   * 导致文本换行宽度、对齐基准都只落在第一格内。
+   * 这里遍历 this.cells（MergedCell 在 handleRestOptions 里保存的组成格）求并集，
+   * 再用 getCellBoxByType 扣除 border+padding 得到真正的合并可用区域。
+   */
+  private getMergedContentBox() {
+    const cells = this.cells
+    if (!cells?.length) {
+      return this.getBBoxByType(CellClipBox.CONTENT_BOX)
+    }
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    cells.forEach(cell => {
+      const m = cell.getMeta()
+      if (!m) return
+      const x = m.x
+      const y = m.y
+      minX = Math.min(minX, x)
+      minY = Math.min(minY, y)
+      maxX = Math.max(maxX, x + m.width)
+      maxY = Math.max(maxY, y + m.height)
+    })
+    if (!isFinite(minX)) {
+      return this.getBBoxByType(CellClipBox.CONTENT_BOX)
+    }
+    const bbox = { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+    const cellStyle = this.getStyle() || (this.theme.dataCell as any)
+    return getCellBoxByType(bbox, this.getBorderPositions(), cellStyle?.cell, CellClipBox.CONTENT_BOX)
+  }
+
   protected drawBackgroundShape() {
     const allPoints = getPolygonPoints(this.cells)
     // 处理条件样式，这里没有用透明度
@@ -3402,6 +3449,33 @@ class CustomMergedCell extends MergedCell {
     } as any)
   }
 
+  /**
+   * 用合并后整体宽度作为换行宽度，S2 BaseCell.drawTextShape 会把它透传给
+   * renderTextShape 的 wordWrapWidth，从而在合并区域内正确折行。
+   */
+  public getMaxTextWidth() {
+    return Math.max(this.getMergedContentBox().width - this.getActionAndConditionIconWidth(), 0)
+  }
+
+  /**
+   * 文本定位基于合并后整体矩形，按 textAlign 计算 x，
+   * 避免 S2 默认只取左上角单格导致居中/右对齐偏在第一格内。
+   */
+  public getTextPosition() {
+    const contentBox = this.getMergedContentBox()
+    const textStyle = this.getTextStyle() as any
+    const align = (textStyle?.textAlign as string) || 'left'
+    const baseline = (textStyle?.textBaseline as string) || 'middle'
+    let x = contentBox.x
+    if (align === 'center') {
+      x = contentBox.x + contentBox.width / 2
+    } else if (align === 'right') {
+      x = contentBox.x + contentBox.width
+    }
+    // textBaseline 默认 middle，取垂直中点；top 取上沿
+    const y = baseline === 'top' ? contentBox.y : contentBox.y + contentBox.height / 2
+    return { x, y }
+  }
 
   protected getTextStyle(): any {
     const textStyle = super.getTextStyle() as any
@@ -3410,6 +3484,25 @@ class CustomMergedCell extends MergedCell {
       const align = dataCellAlignConfig[this.meta.valueField]
       if (align) {
         textStyle.textAlign = align
+      }
+    }
+    // cellGroup 合并文本样式优先：覆盖 S2 默认 dataCell.text 的颜色/字号/加粗/对齐
+    const cgStyle = (this.meta as any).cellGroupTextStyle
+    if (cgStyle) {
+      if (cgStyle.color) textStyle.fill = cgStyle.color
+      if (cgStyle.fontSize) textStyle.fontSize = cgStyle.fontSize
+      if (cgStyle.fontWeight) textStyle.fontWeight = cgStyle.fontWeight
+      if (cgStyle.textAlign) textStyle.textAlign = cgStyle.textAlign
+      // 换行：G-lite Text 的换行由 wordWrap(布尔) + wordWrapWidth + maxLines 驱动，
+      // wordBreak/whiteSpace 不在其 PARSED_STYLE_LIST 内、无效；这里按合并高度估算最大行数，
+      // 与 CustomTableColCell.getTextStyle 的自适应行高口径保持一致
+      if (cgStyle.wrap) {
+        textStyle.wordWrap = true
+        const mergedHeight = this.getMergedContentBox().height
+        textStyle.maxLines = Math.max(1, Math.floor(mergedHeight / (textStyle.fontSize * 1.35)))
+      } else {
+        textStyle.wordWrap = false
+        textStyle.maxLines = 1
       }
     }
     if ((textStyle.textAlign as string) === 'custom') {

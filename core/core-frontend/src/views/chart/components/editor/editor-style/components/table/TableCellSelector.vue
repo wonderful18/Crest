@@ -831,6 +831,70 @@ onMounted(() => {
       >
         + {{ t('chart.cell_groups_add') }}
       </el-button>
+      <!-- 合并文本样式配置 -->
+      <div class="cell-group-text-style" v-if="cellGroupsEnabled">
+        <el-form-item
+          class="form-item"
+          :class="'form-item-' + themes"
+          :effect="themes"
+          :label="t('chart.cell_group_text_color')"
+        >
+          <el-color-picker
+            :effect="themes"
+            v-model="state.tableCellForm.cellGroupTextColor"
+            class="color-picker-style"
+            :predefine="COLOR_PANEL"
+            @change="changeTableCell('cellGroupTextColor')"
+            show-alpha
+            is-custom
+          />
+        </el-form-item>
+        <el-form-item class="form-item" :class="'form-item-' + themes" :effect="themes">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+            <el-tooltip :content="t('chart.font_size')" placement="top">
+              <el-select
+                style="width: 56px"
+                :effect="themes"
+                v-model="state.tableCellForm.cellGroupTextFontSize"
+                size="small"
+                @change="changeTableCell('cellGroupTextFontSize')"
+              >
+                <el-option
+                  v-for="option in fontSizeList"
+                  :key="option.value"
+                  :label="option.name"
+                  :value="option.value"
+                />
+              </el-select>
+            </el-tooltip>
+            <el-select
+              style="width: 80px"
+              :effect="themes"
+              v-model="state.tableCellForm.cellGroupTextAlign"
+              size="small"
+              @change="changeTableCell('cellGroupTextAlign')"
+            >
+              <el-option :label="t('chart.table_align_left')" value="left" />
+              <el-option :label="t('chart.table_align_center')" value="center" />
+              <el-option :label="t('chart.table_align_right')" value="right" />
+            </el-select>
+            <el-checkbox
+              size="small"
+              :effect="themes"
+              v-model="state.tableCellForm.cellGroupTextIsBolder"
+              @change="changeTableCell('cellGroupTextIsBolder')"
+              >{{ t('chart.cell_group_text_bolder') }}</el-checkbox
+            >
+            <el-checkbox
+              size="small"
+              :effect="themes"
+              v-model="state.tableCellForm.cellGroupTextWrap"
+              @change="changeTableCell('cellGroupTextWrap')"
+              >{{ t('chart.cell_group_text_wrap') }}</el-checkbox
+            >
+          </div>
+        </el-form-item>
+      </div>
     </div>
     <el-form-item
       class="form-item"

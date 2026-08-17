@@ -107,14 +107,57 @@
                   :style="{ background: state.style.monthlyDotColor }"
                   :title="t('deploy_calendar.monthly')"
                 ></span>
+                <span
+                  v-if="cell.hasPending"
+                  class="dot dot-pending"
+                  :style="{ background: state.style.pendingDotColor }"
+                  :title="t('deploy_calendar.pending')"
+                ></span>
+                <span
+                  v-if="cell.hasUrgent"
+                  class="dot dot-urgent"
+                  :style="{ background: state.style.urgentDotColor }"
+                  :title="t('deploy_calendar.urgent')"
+                ></span>
               </div>
             </div>
           </template>
           <div class="pop-list">
-            <div class="pop-title">{{ formatDate(cell.date) }}</div>
+            <div
+              class="pop-title"
+              :class="{ 'pop-nowrap': !state.style.titlePopWrap }"
+              :style="{
+                color: state.style.titlePopColor,
+                'font-size': state.style.titlePopFontSize + 'px',
+                'font-weight': state.style.titlePopIsBolder ? 600 : 400,
+                'text-align': state.style.titlePopAlign
+              }"
+            >
+              {{ formatDate(cell.date) }}
+            </div>
             <div v-for="(d, i) in cell.deployments" :key="i" class="pop-item">
-              <span class="pop-type" :class="d.typeClass">{{ d.typeLabel }}</span>
-              <span class="pop-content">{{ d.content }}</span>
+              <span
+                class="pop-type"
+                :class="[d.typeClass, { 'pop-nowrap': !state.style.typePopWrap }]"
+                :style="{
+                  color: state.style.typePopColor,
+                  'font-size': state.style.typePopFontSize + 'px',
+                  'font-weight': state.style.typePopIsBolder ? 600 : 400,
+                  'text-align': state.style.typePopAlign
+                }"
+                >{{ d.typeLabel }}</span
+              >
+              <span
+                class="pop-content"
+                :class="{ 'pop-nowrap': !state.style.contentPopWrap }"
+                :style="{
+                  color: state.style.contentPopColor,
+                  'font-size': state.style.contentPopFontSize + 'px',
+                  'font-weight': state.style.contentPopIsBolder ? 600 : 400,
+                  'text-align': state.style.contentPopAlign
+                }"
+                >{{ d.content }}</span
+              >
             </div>
           </div>
         </el-popover>
@@ -128,6 +171,14 @@
       <span class="legend-item"
         ><i class="dot dot-monthly" :style="{ background: state.style.monthlyDotColor }"></i
         >{{ t('deploy_calendar.monthly') }}</span
+      >
+      <span class="legend-item"
+        ><i class="dot dot-pending" :style="{ background: state.style.pendingDotColor }"></i
+        >{{ t('deploy_calendar.pending') }}</span
+      >
+      <span class="legend-item"
+        ><i class="dot dot-urgent" :style="{ background: state.style.urgentDotColor }"></i
+        >{{ t('deploy_calendar.urgent') }}</span
       >
     </div>
   </div>
@@ -287,29 +338,41 @@ const pad = (n: number) => String(n).padStart(2, '0')
 const formatDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
 // 判断版本类型：
-// 中文含"周/月"，英文 weekly/monthly 或缩写 w/m、W/M 均识别
+// 中文含"周/月/待定/紧急"，英文 weekly/monthly/pending/urgent 等识别
+// 多个匹配 → 'both'（同时显示命中类型圆点）
 // 都不匹配时，若该日期确有投产记录，回退为 'both'（保证圆点可见）
-const classifyType = (raw: any): 'weekly' | 'monthly' | 'both' | 'unknown' => {
+const classifyType = (
+  raw: any
+): 'weekly' | 'monthly' | 'pending' | 'urgent' | 'both' | 'unknown' => {
   if (raw === null || raw === undefined || raw === '') return 'both'
   const s = String(raw).trim().toLowerCase()
   const hasW = /周/.test(raw) || /\bweekly\b/.test(s) || /^w\b/.test(s) || /week/.test(s)
   const hasM = /月/.test(raw) || /\bmonthly\b/.test(s) || /^m\b/.test(s) || /month/.test(s)
-  if (hasW && hasM) return 'both'
+  const hasPending = /待定|未定/.test(raw) || /\bpending\b/.test(s) || /\btbd\b/.test(s)
+  const hasUrgent = /紧急/.test(raw) || /\burgent\b/.test(s) || /\bemergency\b/.test(s) || /\bhotfix\b/.test(s)
+  const hits = [hasW, hasM, hasPending, hasUrgent].filter(Boolean).length
+  if (hits > 1) return 'both'
   if (hasW) return 'weekly'
   if (hasM) return 'monthly'
-  // 未识别但有值：同时显示周版/月版圆点，避免"有数据却看不到点"
+  if (hasPending) return 'pending'
+  if (hasUrgent) return 'urgent'
+  // 未识别但有值：显示全部圆点，避免"有数据却看不到点"
   return 'both'
 }
 
 const typeLabelOf = (tp: string) => {
   if (tp === 'weekly') return t('deploy_calendar.weekly')
   if (tp === 'monthly') return t('deploy_calendar.monthly')
+  if (tp === 'pending') return t('deploy_calendar.pending')
+  if (tp === 'urgent') return t('deploy_calendar.urgent')
   return t('deploy_calendar.unknown')
 }
 
 const typeClassOf = (tp: string) => {
   if (tp === 'weekly') return 'pop-type-weekly'
   if (tp === 'monthly') return 'pop-type-monthly'
+  if (tp === 'pending') return 'pop-type-pending'
+  if (tp === 'urgent') return 'pop-type-urgent'
   return 'pop-type-unknown'
 }
 
@@ -345,6 +408,8 @@ const makeCell = (d: Date, inMonth: boolean) => {
   const records = state.deployMap.get(key) || []
   const hasWeekly = records.some(r => r.type === 'weekly' || r.type === 'both')
   const hasMonthly = records.some(r => r.type === 'monthly' || r.type === 'both')
+  const hasPending = records.some(r => r.type === 'pending' || r.type === 'both')
+  const hasUrgent = records.some(r => r.type === 'urgent' || r.type === 'both')
   const todayStr = formatDate(today)
   return {
     date: d,
@@ -353,6 +418,8 @@ const makeCell = (d: Date, inMonth: boolean) => {
     isToday: key === todayStr,
     hasWeekly,
     hasMonthly,
+    hasPending,
+    hasUrgent,
     deployments: records.map(r => ({
       content: r.content,
       typeLabel: typeLabelOf(r.type),
@@ -407,7 +474,9 @@ const findKeyByName = (row: any, name: string): string | null => {
 
 const parseData = (res: any) => {
   const map = new Map<string, any[]>()
-  const data = res?.data
+  // getData resolve 值已是业务 data 体 { fields, tableRow, ... }，不可再取 .data
+  // （.data 是左右表子结构，普通 table-info 无此字段，多套一层会导致 fields/tableRow 全空 → 回退 mock）
+  const data = res
   if (!data) return map
   const fields = Array.isArray(data.fields) ? data.fields : []
   const rows = data.tableRow || []
@@ -535,8 +604,8 @@ const calcData = (viewCalc: Chart, callback?: () => void) => {
           state.deployMap = map
         }
         const curViewInfo = canvasViewInfo.value[props.element.id]
-        if (res?.data && curViewInfo) {
-          curViewInfo['curFields'] = res.data.fields || []
+        if (res?.fields && curViewInfo) {
+          curViewInfo['curFields'] = res.fields || []
         }
         dvMainStore.setViewDataDetails(props.element.id, res)
       }
@@ -688,9 +757,8 @@ defineExpose({ calcData, renderChart })
   max-height: 260px;
   overflow-y: auto;
   .pop-title {
-    font-weight: 600;
+    // 颜色/字号/加粗/对齐由模板内联 :style 驱动，这里只保留布局
     margin-bottom: 6px;
-    font-size: 13px;
   }
   .pop-item {
     display: flex;
@@ -705,8 +773,7 @@ defineExpose({ calcData, renderChart })
       flex-shrink: 0;
       padding: 1px 5px;
       border-radius: 3px;
-      font-size: 11px;
-      color: #fff;
+      // 文字色/字号/加粗由模板内联 :style 驱动，底色由 pop-type-* class 提供
     }
     .pop-type-weekly {
       background: #409eff;
@@ -714,13 +781,26 @@ defineExpose({ calcData, renderChart })
     .pop-type-monthly {
       background: #f56c6c;
     }
+    .pop-type-pending {
+      background: #e6a23c;
+    }
+    .pop-type-urgent {
+      background: #9c27b0;
+    }
     .pop-type-unknown {
       background: #909399;
     }
     .pop-content {
       flex: 1;
+      // 默认换行；不换行时由 .pop-nowrap class 接管（单行截断省略号）
       word-break: break-all;
     }
+  }
+  // 换行关闭时的单行截断（配合 wrap=false）
+  .pop-nowrap {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 </style>
