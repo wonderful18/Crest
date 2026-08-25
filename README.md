@@ -2,7 +2,7 @@
 
 Crest 是面向私有化部署的开源 BI 平台，提供数据源接入、数据集建模、仪表盘、数据大屏、数据血缘和单点登录等能力。基于 DataEase 2.10.22 开源版本继续开发，合入 2.10.23 安全加固，按 GPLv3 发布。
 
-**当前版本：v1.5.36**
+**当前版本：v1.5.37**
 
 ## 功能概览
 
@@ -44,8 +44,8 @@ kubectl apply -k deploy/kubernetes/internal-mysql
 ## Docker 镜像
 
 ```text
-ghcr.io/sevoniva/crest-service:v1.5.36   # 后端
-ghcr.io/sevoniva/crest-web:v1.5.36        # 前端网关
+ghcr.io/sevoniva/crest-service:v1.5.37   # 后端
+ghcr.io/sevoniva/crest-web:v1.5.37        # 前端网关
 ```
 
 ## 本地开发

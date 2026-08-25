@@ -626,6 +626,9 @@ export const DEFAULT_DEPLOY_CALENDAR_STYLE: ChartDeployCalendarStyle = {
   monthlyDotColor: '#f56c6c',
   pendingDotColor: '#e6a23c',
   urgentDotColor: '#9c27b0',
+  // 版本类型→颜色映射（动态图例）：key=类型原始值，value=颜色
+  // 新类型按出现顺序从 COLOR_PANEL 自动分配；用户可在样式面板逐个覆盖
+  typeColorMap: {},
   weekdayColor: '#8a9099',
   legendColor: '#8a9099',
   // popover 显示文字（悬浮单元格弹出的当日投产记录）

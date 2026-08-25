@@ -8,6 +8,10 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { defineAsyncComponent } from 'vue'
 // 图表渲染组件懒加载：echarts(G2Plot) 与 antv-s2 是大依赖，按图表类型按需加载，
 // 避免纯表格大屏/分享链接首屏被迫下载解析 echarts(887KB)/antv-s2(400KB+)。
+// 异步加载导致 onMounted 的 queryData 执行时 chartComponent ref 可能为空 →
+// calcData 跳过 → 不发 /chart-data/data 请求（预览/分享态首次加载无用户交互触发 calcData-{id}）。
+// 下方 watch(chartComponent) 在异步组件首次就绪时补一次 queryData；
+// loading.value 为 true 时 queryData 内部 early return，不会与已发出的请求重复。
 const ChartComponentG2Plot = defineAsyncComponent(
   () => import('./components/ChartComponentG2Plot.vue')
 )
@@ -642,6 +646,21 @@ const calcData = params => {
     }
   }
 }
+
+// 异步图表组件（defineAsyncComponent）首次挂载就绪时补触发一次取数。
+// 预览/分享态首次加载时，onMounted 的 queryData(debounce 300ms)执行时异步组件
+// 可能还没挂载 → chartComponent ref 为空 → calcData 跳过 → 不发 /chart-data/data 请求。
+// 编辑态有 calcData-{id} 事件兜底；预览/分享态只有 onMounted 这一次，需在此补。
+// loading.value 为 true 时 queryData 内部 early return，不会与已发出的请求重复。
+let chartComponentLoaded = false
+watch(chartComponent, val => {
+  if (val && !chartComponentLoaded) {
+    chartComponentLoaded = true
+    if (!loading.value) {
+      queryData(!showPosition.value.includes('viewDialog'))
+    }
+  }
+})
 
 const showChartView = (...libs: ChartLibraryType[]) => {
   if (view.value?.render && view.value?.type) {

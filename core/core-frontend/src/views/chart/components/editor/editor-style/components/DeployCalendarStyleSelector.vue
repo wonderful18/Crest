@@ -6,8 +6,10 @@ import {
   DEFAULT_DEPLOY_CALENDAR_STYLE
 } from '@/views/chart/components/editor/util/chart'
 import { cloneDeep, defaultsDeep } from 'lodash-es'
+import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 
 const { t } = useI18n()
+const dvMainStore = dvMainStoreWithOut()
 
 const props = defineProps({
   chart: {
@@ -50,12 +52,70 @@ const change = (prop: string) => {
   emit('onDeployCalendarStyleChange', state.form, prop)
 }
 
+// 版本类型→颜色覆盖映射兜底（老配置可能无此字段）
+const ensureTypeColorMap = () => {
+  if (!state.form.typeColorMap || typeof state.form.typeColorMap !== 'object') {
+    state.form.typeColorMap = {}
+  }
+}
+
+// 从当前图表数据去重出版本类型列表，供动态渲染颜色选择器
+// deploy-calendar 是自定义组件，查询结果由 Component.vue 通过 setViewDataDetails 写入
+// canvasViewDataInfo（而非 view.data），故此处用 getViewDataDetails 读取（同 TableHeaderGroupConfig）
+// 访问 dvMainStore.canvasViewDataInfo 以建立响应式依赖，数据加载后列表自动更新
+const typeColorList = computed<{ type: string; label: string }[]>(() => {
+  const chart = props.chart as any
+  // 触发响应式依赖
+  void dvMainStore.canvasViewDataInfo
+  const viewData = dvMainStore.getViewDataDetails(chart?.id)
+  const rows = viewData?.tableRow
+  if (!Array.isArray(rows) || rows.length === 0) return []
+  const extField = chart?.extStack?.[0]
+  if (!extField?.id) return []
+  const fields = Array.isArray(viewData?.fields) ? viewData.fields : []
+  // 字段 id → engineFieldName
+  const idToEng = fields.reduce((pre: any, f: any) => {
+    if (f?.id) pre[f.id] = f.engineFieldName || f.name
+    return pre
+  }, {})
+  let typeKey = idToEng[extField.id]
+  // 兜底：engineFieldName 不在 row key 里时，按用户字段名模糊匹配
+  const probe = rows[0] || {}
+  if (!typeKey || !(typeKey in probe)) {
+    const engToName = fields.reduce((pre: any, f: any) => {
+      if (f?.engineFieldName) pre[f.engineFieldName] = f.name
+      return pre
+    }, {})
+    const name = engToName[typeKey]
+    typeKey = (name && name in probe) ? name : (Object.keys(probe).find(k => typeof k === 'string' && name && k.includes(name)) || typeKey)
+  }
+  if (!typeKey) return []
+  const seen = new Set<string>()
+  const list: { type: string; label: string }[] = []
+  rows.forEach((row: any) => {
+    if (!row) return
+    const v = row[typeKey]
+    const tp = v === null || v === undefined ? '' : String(v).trim()
+    if (seen.has(tp)) return
+    seen.add(tp)
+    list.push({ type: tp, label: tp === '' ? t('deploy_calendar.unspecified') : tp })
+  })
+  return list
+})
+
+// 单个类型颜色变更
+const changeTypeColor = (tp: string) => {
+  ensureTypeColorMap()
+  emit('onDeployCalendarStyleChange', state.form, 'typeColorMap')
+}
+
 const init = () => {
   const custom = defaultsDeep(
     cloneDeep(props.chart?.customAttr?.deployCalendar),
     cloneDeep(DEFAULT_DEPLOY_CALENDAR_STYLE)
   )
   state.form = cloneDeep(custom)
+  ensureTypeColorMap()
   // 颜色初次赋值兜底
   nextTick(() => {
     state.form.titleColor = custom.titleColor
@@ -276,70 +336,34 @@ watch(
 
       <el-divider class="m-divider" :class="{ 'divider-dark': themes === 'dark' }" />
 
-      <!-- 圆点与图例 -->
+      <!-- 类型颜色（动态：按数据集里实际出现的版本类型逐个配色） -->
       <el-form-item
         class="form-item"
         :class="'form-item-' + themes"
         :effect="themes"
-        :label="t('deploy_calendar.weekly_dot_color')"
+        :label="t('deploy_calendar.type_colors')"
       >
-        <el-color-picker
-          :effect="themes"
-          v-model="state.form.weeklyDotColor"
-          class="color-picker-style"
-          :predefine="predefineColors"
-          @change="change('weeklyDotColor')"
-          show-alpha
-          is-custom
-        />
-      </el-form-item>
-      <el-form-item
-        class="form-item"
-        :class="'form-item-' + themes"
-        :effect="themes"
-        :label="t('deploy_calendar.monthly_dot_color')"
-      >
-        <el-color-picker
-          :effect="themes"
-          v-model="state.form.monthlyDotColor"
-          class="color-picker-style"
-          :predefine="predefineColors"
-          @change="change('monthlyDotColor')"
-          show-alpha
-          is-custom
-        />
-      </el-form-item>
-      <el-form-item
-        class="form-item"
-        :class="'form-item-' + themes"
-        :effect="themes"
-        :label="t('deploy_calendar.pending_dot_color')"
-      >
-        <el-color-picker
-          :effect="themes"
-          v-model="state.form.pendingDotColor"
-          class="color-picker-style"
-          :predefine="predefineColors"
-          @change="change('pendingDotColor')"
-          show-alpha
-          is-custom
-        />
-      </el-form-item>
-      <el-form-item
-        class="form-item"
-        :class="'form-item-' + themes"
-        :effect="themes"
-        :label="t('deploy_calendar.urgent_dot_color')"
-      >
-        <el-color-picker
-          :effect="themes"
-          v-model="state.form.urgentDotColor"
-          class="color-picker-style"
-          :predefine="predefineColors"
-          @change="change('urgentDotColor')"
-          show-alpha
-          is-custom
-        />
+        <div v-if="typeColorList.length === 0" class="type-color-empty">
+          {{ t('deploy_calendar.type_colors_empty') }}
+        </div>
+        <div v-else class="type-color-list">
+          <div
+            v-for="item in typeColorList"
+            :key="item.type"
+            class="type-color-row"
+          >
+            <span class="type-color-label" :title="item.label">{{ item.label }}</span>
+            <el-color-picker
+              :effect="themes"
+              v-model="state.form.typeColorMap[item.type]"
+              class="color-picker-style"
+              :predefine="predefineColors"
+              @change="changeTypeColor(item.type)"
+              show-alpha
+              is-custom
+            />
+          </div>
+        </div>
       </el-form-item>
       <el-form-item
         class="form-item"
@@ -590,5 +614,29 @@ watch(
   &.divider-dark {
     border-color: rgba(255, 255, 255, 0.15);
   }
+}
+.type-color-empty {
+  font-size: 12px;
+  opacity: 0.6;
+  line-height: 1.6;
+}
+.type-color-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.type-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.type-color-label {
+  flex: 1;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

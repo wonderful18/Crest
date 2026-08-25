@@ -96,28 +96,11 @@
               >
               <div class="cell-dots">
                 <span
-                  v-if="cell.hasWeekly"
-                  class="dot dot-weekly"
-                  :style="{ background: state.style.weeklyDotColor }"
-                  :title="t('deploy_calendar.weekly')"
-                ></span>
-                <span
-                  v-if="cell.hasMonthly"
-                  class="dot dot-monthly"
-                  :style="{ background: state.style.monthlyDotColor }"
-                  :title="t('deploy_calendar.monthly')"
-                ></span>
-                <span
-                  v-if="cell.hasPending"
-                  class="dot dot-pending"
-                  :style="{ background: state.style.pendingDotColor }"
-                  :title="t('deploy_calendar.pending')"
-                ></span>
-                <span
-                  v-if="cell.hasUrgent"
-                  class="dot dot-urgent"
-                  :style="{ background: state.style.urgentDotColor }"
-                  :title="t('deploy_calendar.urgent')"
+                  v-for="tp in cell.types"
+                  :key="tp"
+                  class="dot"
+                  :style="{ background: typeColorOf(tp) }"
+                  :title="typeLabelOf(tp)"
                 ></span>
               </div>
             </div>
@@ -138,9 +121,10 @@
             <div v-for="(d, i) in cell.deployments" :key="i" class="pop-item">
               <span
                 class="pop-type"
-                :class="[d.typeClass, { 'pop-nowrap': !state.style.typePopWrap }]"
+                :class="{ 'pop-nowrap': !state.style.typePopWrap }"
                 :style="{
                   color: state.style.typePopColor,
+                  background: d.typeColor,
                   'font-size': state.style.typePopFontSize + 'px',
                   'font-weight': state.style.typePopIsBolder ? 600 : 400,
                   'text-align': state.style.typePopAlign
@@ -164,22 +148,9 @@
       </div>
     </div>
     <div class="cal-legend" :style="{ color: state.style.legendColor }">
-      <span class="legend-item"
-        ><i class="dot dot-weekly" :style="{ background: state.style.weeklyDotColor }"></i
-        >{{ t('deploy_calendar.weekly') }}</span
-      >
-      <span class="legend-item"
-        ><i class="dot dot-monthly" :style="{ background: state.style.monthlyDotColor }"></i
-        >{{ t('deploy_calendar.monthly') }}</span
-      >
-      <span class="legend-item"
-        ><i class="dot dot-pending" :style="{ background: state.style.pendingDotColor }"></i
-        >{{ t('deploy_calendar.pending') }}</span
-      >
-      <span class="legend-item"
-        ><i class="dot dot-urgent" :style="{ background: state.style.urgentDotColor }"></i
-        >{{ t('deploy_calendar.urgent') }}</span
-      >
+      <span v-for="tp in state.typeOrder" :key="tp" class="legend-item">
+        <i class="dot" :style="{ background: typeColorOf(tp) }"></i>{{ typeLabelOf(tp) }}
+      </span>
     </div>
   </div>
 </template>
@@ -192,7 +163,7 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { getData } from '@/api/chart'
 import { storeToRefs } from 'pinia'
 import { cloneDeep, defaultsDeep } from 'lodash-es'
-import { DEFAULT_DEPLOY_CALENDAR_STYLE } from '@/views/chart/components/editor/util/chart'
+import { DEFAULT_DEPLOY_CALENDAR_STYLE, COLOR_PANEL } from '@/views/chart/components/editor/util/chart'
 import ChartEmptyInfo from '@/views/chart/components/views/components/ChartEmptyInfo.vue'
 import ChartError from '@/views/chart/components/views/components/ChartError.vue'
 
@@ -295,13 +266,17 @@ const cursor = reactive({ year: 0, month: 0 })
 
 const state = reactive<any>({
   // 按日期字符串 'YYYY-MM-DD' 分组的投产记录
-  // 每条: { content, type: 'weekly'|'monthly'|'both', raw }
+  // 每条: { content, type: 版本类型原始值, raw }
   deployMap: new Map<string, any[]>(),
   // 字段名映射: { dateField, contentField, typeField }
   fieldMap: { dateField: null, contentField: null, typeField: null },
   useMock: true,
   // 日历样式（由 renderChart 从 customAttr.deployCalendar 合并默认值得来）
-  style: cloneDeep(DEFAULT_DEPLOY_CALENDAR_STYLE)
+  style: cloneDeep(DEFAULT_DEPLOY_CALENDAR_STYLE),
+  // 版本类型按出现顺序排列（图例顺序与配色循环依据）
+  typeOrder: [] as string[],
+  // 版本类型→颜色覆盖映射（来自 customAttr.deployCalendar.typeColorMap，用户可逐个覆盖）
+  typeColorMap: {} as Record<string, string>
 })
 
 const isEditMode = computed(
@@ -341,39 +316,54 @@ const formatDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${p
 // 中文含"周/月/待定/紧急"，英文 weekly/monthly/pending/urgent 等识别
 // 多个匹配 → 'both'（同时显示命中类型圆点）
 // 都不匹配时，若该日期确有投产记录，回退为 'both'（保证圆点可见）
-const classifyType = (
-  raw: any
-): 'weekly' | 'monthly' | 'pending' | 'urgent' | 'both' | 'unknown' => {
-  if (raw === null || raw === undefined || raw === '') return 'both'
-  const s = String(raw).trim().toLowerCase()
-  const hasW = /周/.test(raw) || /\bweekly\b/.test(s) || /^w\b/.test(s) || /week/.test(s)
-  const hasM = /月/.test(raw) || /\bmonthly\b/.test(s) || /^m\b/.test(s) || /month/.test(s)
-  const hasPending = /待定|未定/.test(raw) || /\bpending\b/.test(s) || /\btbd\b/.test(s)
-  const hasUrgent = /紧急/.test(raw) || /\burgent\b/.test(s) || /\bemergency\b/.test(s) || /\bhotfix\b/.test(s)
-  const hits = [hasW, hasM, hasPending, hasUrgent].filter(Boolean).length
-  if (hits > 1) return 'both'
-  if (hasW) return 'weekly'
-  if (hasM) return 'monthly'
-  if (hasPending) return 'pending'
-  if (hasUrgent) return 'urgent'
-  // 未识别但有值：显示全部圆点，避免"有数据却看不到点"
-  return 'both'
+// 版本类型规范化：原始值 → 字符串 key（空值归为 ''）
+const normalizeType = (raw: any): string => {
+  if (raw === null || raw === undefined) return ''
+  return String(raw).trim()
 }
 
+// 登记一个版本类型：若未见过则加入 typeOrder，并按出现顺序分配调色板颜色
+// 用户在样式面板覆盖过 typeColorMap 的类型优先用覆盖色
+const registerType = (tp: string) => {
+  if (tp === undefined) return
+  if (state.typeOrder.includes(tp)) return
+  state.typeOrder.push(tp)
+  if (!(tp in state.typeColorMap)) {
+    const idx = state.typeOrder.length - 1
+    state.typeColorMap[tp] = COLOR_PANEL[idx % COLOR_PANEL.length]
+  }
+}
+
+// 每次取数前重置：清空出现顺序，保留用户在 customAttr 里配置的覆盖色
+// 直接读 customAttr 源（而非 state.style），避免 calcData 在 renderChart 之前
+// 调用时 state.style 尚未 hydrate，导致用户已配颜色被清空回退为调色板默认色
+const resetTypes = () => {
+  state.typeOrder = []
+  const saved = view.value?.customAttr?.deployCalendar?.typeColorMap
+  state.typeColorMap = saved && typeof saved === 'object' ? { ...saved } : {}
+}
+
+// 取数完成后再次同步用户覆盖色：覆盖"用户在 async getData 窗口期改色"的竞态
+// （resetTypes 早于 getData 捕获旧值，期间用户改色只写入了 customAttr，未进入运行时 typeColorMap）
+const syncTypeColorOverrides = () => {
+  const saved = view.value?.customAttr?.deployCalendar?.typeColorMap
+  if (!saved || typeof saved !== 'object') return
+  state.typeOrder.forEach(tp => {
+    if (saved[tp]) state.typeColorMap[tp] = saved[tp]
+  })
+}
+
+// 类型→颜色：用户覆盖优先，否则按 typeOrder 顺序从调色板循环取色
+const typeColorOf = (tp: string): string => {
+  if (state.typeColorMap[tp]) return state.typeColorMap[tp]
+  const idx = state.typeOrder.indexOf(tp)
+  return COLOR_PANEL[(idx < 0 ? 0 : idx) % COLOR_PANEL.length]
+}
+
+// 类型显示标签：空值显示"未指定"，否则直接用原始值
 const typeLabelOf = (tp: string) => {
-  if (tp === 'weekly') return t('deploy_calendar.weekly')
-  if (tp === 'monthly') return t('deploy_calendar.monthly')
-  if (tp === 'pending') return t('deploy_calendar.pending')
-  if (tp === 'urgent') return t('deploy_calendar.urgent')
-  return t('deploy_calendar.unknown')
-}
-
-const typeClassOf = (tp: string) => {
-  if (tp === 'weekly') return 'pop-type-weekly'
-  if (tp === 'monthly') return 'pop-type-monthly'
-  if (tp === 'pending') return 'pop-type-pending'
-  if (tp === 'urgent') return 'pop-type-urgent'
-  return 'pop-type-unknown'
+  if (tp === '') return t('deploy_calendar.unspecified')
+  return tp
 }
 
 // 生成当前月日历单元格（含前补白）
@@ -406,24 +396,22 @@ const calendarCells = computed(() => {
 const makeCell = (d: Date, inMonth: boolean) => {
   const key = formatDate(d)
   const records = state.deployMap.get(key) || []
-  const hasWeekly = records.some(r => r.type === 'weekly' || r.type === 'both')
-  const hasMonthly = records.some(r => r.type === 'monthly' || r.type === 'both')
-  const hasPending = records.some(r => r.type === 'pending' || r.type === 'both')
-  const hasUrgent = records.some(r => r.type === 'urgent' || r.type === 'both')
+  // 当日涉及的版本类型（去重，保留出现顺序）
+  const types: string[] = []
+  records.forEach(r => {
+    if (!types.includes(r.type)) types.push(r.type)
+  })
   const todayStr = formatDate(today)
   return {
     date: d,
     day: d.getDate(),
     inMonth,
     isToday: key === todayStr,
-    hasWeekly,
-    hasMonthly,
-    hasPending,
-    hasUrgent,
+    types,
     deployments: records.map(r => ({
       content: r.content,
       typeLabel: typeLabelOf(r.type),
-      typeClass: typeClassOf(r.type),
+      typeColor: typeColorOf(r.type),
       rawDate: r.rawDate
     }))
   }
@@ -444,10 +432,12 @@ const buildMock = () => {
       const records: any[] = []
       if (d.getDay() === 5) {
         // 周五 = 周版投产
-        records.push({ content: `${d.getFullYear()}年第${getWeekOfYear(d)}周版本投产`, type: 'weekly', raw: '周版' })
+        registerType('周版')
+        records.push({ content: `${d.getFullYear()}年第${getWeekOfYear(d)}周版本投产`, type: '周版', raw: '周版' })
       }
       if (d.getDate() === 1) {
-        records.push({ content: `${d.getFullYear()}年${d.getMonth() + 1}月版本投产`, type: 'monthly', raw: '月版' })
+        registerType('月版')
+        records.push({ content: `${d.getFullYear()}年${d.getMonth() + 1}月版本投产`, type: '月版', raw: '月版' })
       }
       if (records.length) map.set(key, records)
     }
@@ -536,7 +526,9 @@ const parseData = (res: any) => {
     const key = formatDate(d)
     const content = contentKey ? row[contentKey] : ''
     const rawType = typeKey ? row[typeKey] : ''
-    const tp = classifyType(rawType)
+    // 版本类型直接用原始值作 key（空值归为 ''），不再正则映射
+    const tp = normalizeType(rawType)
+    registerType(tp)
     const list = map.get(key) || []
     list.push({ content: content || '', type: tp, raw: rawType, rawDate: dateRaw })
     map.set(key, list)
@@ -562,6 +554,8 @@ const parseDate = (raw: any): Date | null => {
 
 const calcData = (viewCalc: Chart, callback?: () => void) => {
   isError.value = false
+  // 重置类型列表：清空出现顺序，保留用户在 customAttr 里的覆盖色
+  resetTypes()
   // 注意：不在此处调 renderChart()，避免写 reactive state.style 触发同步重绘
   // 波及父组件 index.vue 在 view 切换间隙 view.value 为 undefined 时崩溃。
   // 样式更新由 watch(customAttr.deployCalendar) + 父组件 renderChart 回调驱动。
@@ -608,6 +602,8 @@ const calcData = (viewCalc: Chart, callback?: () => void) => {
           curViewInfo['curFields'] = res.fields || []
         }
         dvMainStore.setViewDataDetails(props.element.id, res)
+        // 数据加载后同步用户覆盖色（覆盖 resetTypes 与 getData 之间的竞态窗口）
+        syncTypeColorOverrides()
       }
       callback?.()
       nextTick(() => {})
@@ -633,6 +629,14 @@ const renderChart = () => {
       ? defaultsDeep(cloneDeep(raw), cloneDeep(DEFAULT_DEPLOY_CALENDAR_STYLE))
       : cloneDeep(DEFAULT_DEPLOY_CALENDAR_STYLE)
     state.style = custom
+    // 同步用户覆盖色到运行时 typeColorMap（样式面板改色后圆点/图例立即生效）
+    // 已登记类型若用户未覆盖则保留自动分配色，已覆盖则用 customAttr 里的值
+    const saved = custom?.typeColorMap
+    if (saved && typeof saved === 'object') {
+      state.typeOrder.forEach(tp => {
+        if (saved[tp]) state.typeColorMap[tp] = saved[tp]
+      })
+    }
   } catch (e) {
     // 防御：配置异常时回退默认值，避免日历报错波及整个大屏渲染
     console.warn('[DeployCalendar] renderChart 读取样式失败，回退默认值', e)
@@ -773,22 +777,7 @@ defineExpose({ calcData, renderChart })
       flex-shrink: 0;
       padding: 1px 5px;
       border-radius: 3px;
-      // 文字色/字号/加粗由模板内联 :style 驱动，底色由 pop-type-* class 提供
-    }
-    .pop-type-weekly {
-      background: #409eff;
-    }
-    .pop-type-monthly {
-      background: #f56c6c;
-    }
-    .pop-type-pending {
-      background: #e6a23c;
-    }
-    .pop-type-urgent {
-      background: #9c27b0;
-    }
-    .pop-type-unknown {
-      background: #909399;
+      // 文字色/字号/加粗/底色均由模板内联 :style 驱动（底色=类型动态色）
     }
     .pop-content {
       flex: 1;
