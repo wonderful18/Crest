@@ -117,6 +117,12 @@ declare interface ChartDeployCalendarStyle {
    */
   urgentDotColor: string
   /**
+   * 版本类型→颜色映射（动态图例）
+   * key 为版本类型原始值，value 为该类型圆点/图例颜色
+   * 新类型按出现顺序从 COLOR_PANEL 自动分配，用户可在样式面板逐个覆盖
+   */
+  typeColorMap: Record<string, string>
+  /**
    * 星期表头文字色
    */
   weekdayColor: string
