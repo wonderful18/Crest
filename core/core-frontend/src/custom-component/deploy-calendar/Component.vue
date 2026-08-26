@@ -538,18 +538,27 @@ const parseData = (res: any) => {
 }
 
 const parseDate = (raw: any): Date | null => {
-  if (raw instanceof Date) return raw
+  if (raw instanceof Date) {
+    // Date 对象：取本地年月日构造纯日期，避免时区偏移导致圆点偏移到相邻日期
+    return new Date(raw.getFullYear(), raw.getMonth(), raw.getDate())
+  }
   if (typeof raw !== 'string' && typeof raw !== 'number') return null
   const s = String(raw).trim()
-  // 支持 YYYY-MM-DD / YYYY/MM/DD / YYYYMMDD / YYYYMM
+  // 支持 YYYY-MM-DD / YYYY/MM/DD（后跟可选时分秒或 T...ISO 格式）
+  // 只取年月日，用 new Date(y, m-1, d) 构造本地纯日期，避免时区偏移
   let m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/)
   if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
   m = s.match(/^(\d{4})(\d{2})(\d{2})$/)
   if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
   m = s.match(/^(\d{4})[-/]?(0?[1-9]|1[0-2])$/)
   if (m) return new Date(Number(m[1]), Number(m[2]) - 1, 1)
+  // ISO 格式 2026-07-03T00:00:00.000Z：提取年月日构造本地纯日期
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})T/)
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
   const dt = new Date(s)
-  return isNaN(dt.getTime()) ? null : dt
+  if (isNaN(dt.getTime())) return null
+  // 兜底：取本地年月日构造纯日期，避免时区偏移
+  return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate())
 }
 
 const calcData = (viewCalc: Chart, callback?: () => void) => {
