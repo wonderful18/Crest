@@ -613,8 +613,19 @@ const calcData = (viewCalc: Chart, callback?: () => void) => {
   const yArr = Array.isArray(v.yAxis) ? v.yAxis : []
   const extArr = Array.isArray(v.extStack) ? v.extStack : []
   v.xAxis = [...xArr, ...yArr, ...extArr]
+  // 清空 yAxis/extStack/drillFields，避免后端 formatAxis 把残留字段放进 yAxis/drill 轴
+  // （table-info 只用 xAxis，残留轴字段会被列权限过滤且干扰诊断）
+  v.yAxis = []
+  v.extStack = []
+  v.drillFields = []
   v.type = 'table-info'
   v.render = 'antv'
+  console.info('[DeployCalendar] 7. 传给后端的 view:', {
+    viewId: v.id, type: v.type,
+    xAxisIds: v.xAxis.map((f: any) => f?.id),
+    yAxisLen: v.yAxis.length, extStackLen: v.extStack.length, drillFieldsLen: v.drillFields.length,
+    fieldDetails: v.xAxis.map((f: any) => ({ id: f?.id, eng: f?.engineFieldName, name: f?.name, groupType: f?.groupType, summary: f?.summary }))
+  })
   getData(v)
     .then(res => {
       // 诊断：传给后端的字段 vs 后端实际返回的字段，定位"字段被列权限/engineFieldName 过滤"问题

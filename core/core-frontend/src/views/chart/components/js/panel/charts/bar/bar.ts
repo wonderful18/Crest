@@ -139,7 +139,7 @@ export class Bar extends G2PlotChartView<ColumnOptions, Column> {
     extremumEvt(newChart, chart, options, container)
     configPlotTooltipEvent(chart, newChart)
     configXAxisLengthLimit(chart, newChart)
-    renderAssistLineLegend(chart, container)
+    renderAssistLineLegend(chart, container, newChart)
     return newChart
   }
 

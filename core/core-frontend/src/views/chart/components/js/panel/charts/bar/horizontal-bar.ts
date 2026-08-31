@@ -154,7 +154,7 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
     }
     configPlotTooltipEvent(chart, newChart as any)
     configAxisLabelLengthLimit(chart, newChart)
-    renderAssistLineLegend(chart, container)
+    renderAssistLineLegend(chart, container, newChart)
     return newChart
   }
 
