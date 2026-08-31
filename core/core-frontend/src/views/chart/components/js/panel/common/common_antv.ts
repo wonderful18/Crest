@@ -951,6 +951,8 @@ export function getAnalyse(chart: Chart) {
     return assistLine
   }
   const assistLineArr = senior.assistLineCfg.assistLine
+  // 是否在线上保留文字标注，默认 false（仅在图例显示辅助线名称）
+  const showLineText = senior.assistLineCfg.showLineText === true
   if (assistLineArr?.length > 0) {
     const customStyle = parseJson(chart.customStyle)
     let yAxisPosition, axisFormatterCfg, yAxisExtPosition, axisExtFormatterCfg
@@ -1000,27 +1002,29 @@ export function getAnalyse(chart: Chart) {
           lineDash: getLineDash(ele.lineType)
         }
       })
-      assistLine.push({
-        type: 'text',
-        yAxisType: ele.yAxisType,
-        position: [
-          (ele.yAxisType === 'left' ? yAxisPosition : yAxisExtPosition) === 'left'
-            ? 'start'
-            : 'end',
-          value
-        ],
-        content: content,
-        offsetY: -2,
-        offsetX:
-          (ele.yAxisType === 'left' ? yAxisPosition : yAxisExtPosition) === 'left'
-            ? 2
-            : -10 * (content.length - 2),
-        style: {
-          textBaseline: 'bottom',
-          fill: ele.color,
-          fontSize: ele.fontSize ? ele.fontSize : 10
-        }
-      })
+      if (showLineText) {
+        assistLine.push({
+          type: 'text',
+          yAxisType: ele.yAxisType,
+          position: [
+            (ele.yAxisType === 'left' ? yAxisPosition : yAxisExtPosition) === 'left'
+              ? 'start'
+              : 'end',
+            value
+          ],
+          content: content,
+          offsetY: -2,
+          offsetX:
+            (ele.yAxisType === 'left' ? yAxisPosition : yAxisExtPosition) === 'left'
+              ? 2
+              : -10 * (content.length - 2),
+          style: {
+            textBaseline: 'bottom',
+            fill: ele.color,
+            fontSize: ele.fontSize ? ele.fontSize : 10
+          }
+        })
+      }
     })
   }
   return assistLine
@@ -1033,6 +1037,8 @@ export function getAnalyseHorizontal(chart: Chart) {
     return assistLine
   }
   const assistLineArr = senior.assistLineCfg.assistLine
+  // 是否在线上保留文字标注，默认 false（仅在图例显示辅助线名称）
+  const showLineText = senior.assistLineCfg.showLineText === true
   if (assistLineArr?.length > 0) {
     const customStyle = parseJson(chart.customStyle)
     let axisFormatterCfg
@@ -1067,22 +1073,144 @@ export function getAnalyseHorizontal(chart: Chart) {
           lineDash: getLineDash(ele.lineType)
         }
       })
-      assistLine.push({
-        type: 'text',
-        position: ['start', value],
-        content: content,
-        offsetY: 5,
-        offsetX: 2,
-        rotate: Math.PI / 2,
-        style: {
-          textBaseline: 'bottom',
-          fill: ele.color,
-          fontSize: ele.fontSize ? ele.fontSize : 10
-        }
-      })
+      if (showLineText) {
+        assistLine.push({
+          type: 'text',
+          position: ['start', value],
+          content: content,
+          offsetY: 5,
+          offsetX: 2,
+          rotate: Math.PI / 2,
+          style: {
+            textBaseline: 'bottom',
+            fill: ele.color,
+            fontSize: ele.fontSize ? ele.fontSize : 10
+          }
+        })
+      }
     })
   }
   return assistLine
+}
+
+/**
+ * 辅助线图例配置：供自定义 DOM 图例渲染使用。
+ * 名称默认以图例形式展示（线上文字另由 showLineText 控制），独立于 g2 系列图例。
+ */
+export function getAssistLineLegend(chart: Chart) {
+  const senior = parseJson(chart.senior)
+  const cfg = senior?.assistLineCfg
+  const fallback = { enable: false, position: 'bottom', items: [] }
+  if (!cfg?.enable || cfg.legendEnable === false) {
+    return fallback
+  }
+  const assistLineArr = cfg.assistLine
+  if (!assistLineArr?.length) {
+    return fallback
+  }
+
+  const fixedLines = assistLineArr.filter(ele => ele.field === '0')
+  const dynamicLineFields = assistLineArr
+    .filter(ele => ele.field === '1')
+    .map(item => item.fieldId)
+  const quotaFields = _.filter(chart.yAxis, ele => ele.summary !== '' && ele.id !== '-1')
+  const quotaExtFields = _.filter(chart.yAxisExt, ele => ele.summary !== '' && ele.id !== '-1')
+  const dynamicLines = chart.data?.dynamicAssistLines?.filter(item => {
+    return (
+      dynamicLineFields?.includes(item.fieldId) &&
+      (!!_.find(quotaFields, d => d.id === item.fieldId) ||
+        (!!_.find(quotaExtFields, d => d.id === item.fieldId) &&
+          chart.type.includes('chart-mix')))
+    )
+  })
+  const lines = fixedLines.concat(dynamicLines || [])
+  const items = lines.map(ele => ({
+    name: ele.name,
+    color: ele.color,
+    lineType: ele.lineType
+  }))
+  const position = ['top', 'bottom', 'left', 'right'].includes(cfg.legendPosition)
+    ? cfg.legendPosition
+    : 'bottom'
+  return { enable: true, position, items }
+}
+
+/**
+ * 渲染辅助线自定义 DOM 图例（g2 v4 原生 legend 不支持第二独立图例区）。
+ * 在各 chart 的 draw 方法、g2plot 实例渲染后调用，挂在图表容器内。
+ * 样式内联，不依赖外部 CSS。
+ */
+export function renderAssistLineLegend(chart: Chart, container: string) {
+  const el = document.getElementById(container) as HTMLElement | null
+  if (!el) return
+  const existing = el.querySelector(':scope > .crest-assist-line-legend')
+  if (existing) existing.remove()
+  const legend = getAssistLineLegend(chart)
+  if (!legend.enable || !legend.items?.length) return
+
+  const isVertical = legend.position === 'left' || legend.position === 'right'
+  // 容器需是相对定位锚点，图例绝对定位其上，避免破坏 g2 canvas 布局
+  if (getComputedStyle(el).position === 'static') {
+    el.style.position = 'relative'
+  }
+  const legendEl = document.createElement('div')
+  legendEl.className = 'crest-assist-line-legend'
+  const posStyle: Partial<CSSStyleDeclaration> = {
+    position: 'absolute',
+    display: 'flex',
+    flexDirection: isVertical ? 'column' : 'row',
+    flexWrap: 'wrap',
+    gap: '8px 16px',
+    alignItems: 'center',
+    fontSize: '12px',
+    lineHeight: '20px',
+    pointerEvents: 'none',
+    zIndex: '1'
+  }
+  if (legend.position === 'top') {
+    posStyle.top = '0'
+    posStyle.left = '0'
+    posStyle.right = '0'
+    posStyle.padding = '4px 8px 0'
+  } else if (legend.position === 'bottom') {
+    posStyle.bottom = '0'
+    posStyle.left = '0'
+    posStyle.right = '0'
+    posStyle.padding = '0 8px 4px'
+  } else if (legend.position === 'left') {
+    posStyle.left = '0'
+    posStyle.top = '0'
+    posStyle.bottom = '0'
+    posStyle.padding = '8px 4px 8px 0'
+  } else {
+    posStyle.right = '0'
+    posStyle.top = '0'
+    posStyle.bottom = '0'
+    posStyle.padding = '8px 0 8px 4px'
+  }
+  Object.assign(legendEl.style, posStyle)
+
+  const lineStyleMap = { solid: 'solid', dashed: 'dashed', dotted: 'dotted' }
+  legend.items.forEach(item => {
+    const row = document.createElement('span')
+    Object.assign(row.style, { display: 'inline-flex', alignItems: 'center', gap: '6px' } as Partial<CSSStyleDeclaration>)
+    const marker = document.createElement('span')
+    Object.assign(marker.style, {
+      display: 'inline-block',
+      width: '16px',
+      height: '0',
+      borderTopWidth: '2px',
+      borderTopStyle: lineStyleMap[item.lineType] || 'solid',
+      borderTopColor: item.color
+    } as Partial<CSSStyleDeclaration>)
+    const label = document.createElement('span')
+    label.style.color = item.color
+    label.textContent = item.name
+    row.appendChild(marker)
+    row.appendChild(label)
+    legendEl.appendChild(row)
+  })
+  el.appendChild(legendEl)
 }
 
 export function getLineDash(type) {

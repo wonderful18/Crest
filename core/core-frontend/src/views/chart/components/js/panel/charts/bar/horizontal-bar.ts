@@ -10,6 +10,7 @@ import {
   getPadding,
   getLabel,
   getTooltipContainer,
+  renderAssistLineLegend,
   setGradientColor,
   TOOLTIP_TPL
 } from '@/views/chart/components/js/panel/common/common_antv'
@@ -153,6 +154,7 @@ export class HorizontalBar extends G2PlotChartView<BarOptions, Bar> {
     }
     configPlotTooltipEvent(chart, newChart as any)
     configAxisLabelLengthLimit(chart, newChart)
+    renderAssistLineLegend(chart, container)
     return newChart
   }
 

@@ -467,9 +467,28 @@ const parseData = (res: any) => {
   // getData resolve 值已是业务 data 体 { fields, tableRow, ... }，不可再取 .data
   // （.data 是左右表子结构，普通 table-info 无此字段，多套一层会导致 fields/tableRow 全空 → 回退 mock）
   const data = res
-  if (!data) return map
+  if (!data) {
+    console.warn('[DeployCalendar] parseData 失败：getData 返回空（res 为空），将回退 mock')
+    return map
+  }
+  // 结构体检：后端返回体顶层字段一览，便于排查"fields/tableRow 缺失"类问题
+  console.info('[DeployCalendar] 0. 后端返回结构体检:', {
+    resKeys: Object.keys(data),
+    hasFields: Array.isArray(data.fields),
+    fieldsLen: Array.isArray(data.fields) ? data.fields.length : 0,
+    hasTableRow: Array.isArray(data.tableRow),
+    tableRowLen: Array.isArray(data.tableRow) ? data.tableRow.length : 0,
+    code: data.code,
+    msg: data.msg
+  })
   const fields = Array.isArray(data.fields) ? data.fields : []
   const rows = data.tableRow || []
+  if (fields.length === 0) {
+    console.warn('[DeployCalendar] parseData 失败：后端返回 fields 为空。'
+      + '最可能原因：后端 ChartDataManage.calcData 第151行按列权限/engineFieldName 过滤时，'
+      + 'xAxis/yAxis/extStack 绑定的字段全被 removeIf 删除。请检查：① 真实数据集是否对日期/内容/类型列配了列权限导致被过滤；'
+      + '② 数据集重建过字段，view 里绑定的字段 engineFieldName 与数据集当前字段对不上。')
+  }
   // 找到 view 里 xAxis/yAxis/extStack 绑定的字段 id
   const xFieldId = view.value?.xAxis?.[0]?.id
   const yFieldId = view.value?.yAxis?.[0]?.id
@@ -494,7 +513,12 @@ const parseData = (res: any) => {
   console.log('[DeployCalendar] 3. row的keys:', JSON.stringify(Object.keys(probeRow)))
   console.log('[DeployCalendar] 4. 第一行数据:', JSON.stringify(probeRow))
   console.log('[DeployCalendar] 5. 返回的fields:', JSON.stringify(fields.map((f: any) => ({ id: f.id, eng: f.engineFieldName, name: f.name }))))
-  if (!dateEng) return map
+  if (!dateEng) {
+    console.warn('[DeployCalendar] parseData 失败：未能从返回 fields 解析出日期列 engineFieldName。'
+      + '可能：① fields 为空（见诊断0）；② xAxis 绑定的字段id', xFieldId, '不在后端返回的 fields(id列表) 里 → 字段被后端过滤或数据集字段被重建。'
+      + '返回 fields 的 id 列表:', fields.map((f: any) => f.id))
+    return map
+  }
   // 兜底：若 tableRow 的 key 与 engineFieldName 不一致，
   // 用字段 id 对应的用户字段名(engToName)精确匹配 row key；匹配不到再模糊。
   const useOriginKey = !(dateEng in probeRow) && Object.keys(probeRow).length > 0
@@ -534,6 +558,12 @@ const parseData = (res: any) => {
     map.set(key, list)
   })
   console.log('[DeployCalendar] 9. 行数统计:', '总行=', rows.length, '有日期=', withDate, '解析成功=', map.size)
+  if (withDate > 0 && map.size === 0) {
+    // 有日期值但全部解析失败：打印前几个原始值，便于定位日期格式问题
+    const sample = rows.slice(0, 5).map((r: any) => r[dateKey]).filter(Boolean)
+    console.warn('[DeployCalendar] parseData 失败：有', withDate, '行日期值但 parseDate 全部解析失败，将回退 mock。'
+      + '前5个原始日期值:', JSON.stringify(sample), 'dateKey=', dateKey)
+  }
   return map
 }
 
@@ -586,10 +616,16 @@ const calcData = (viewCalc: Chart, callback?: () => void) => {
   v.type = 'table-info'
   v.render = 'antv'
   getData(v)
-  v.type = 'table-info'
-  v.render = 'antv'
-  getData(v)
     .then(res => {
+      // 诊断：传给后端的字段 vs 后端实际返回的字段，定位"字段被列权限/engineFieldName 过滤"问题
+      const sentFieldIds = [...xArr, ...yArr, ...extArr].map((f: any) => f?.id).filter(Boolean)
+      const retFieldIds = Array.isArray(res?.fields) ? res.fields.map((f: any) => f?.id) : []
+      const retFieldEngs = Array.isArray(res?.fields) ? res.fields.map((f: any) => f?.engineFieldName) : []
+      console.info('[DeployCalendar] 6. 传给后端的字段id:', sentFieldIds, '后端返回字段id:', retFieldIds, 'engineFieldName:', retFieldEngs)
+      if (sentFieldIds.length > 0 && retFieldIds.length === 0) {
+        console.warn('[DeployCalendar] 诊断：传出了', sentFieldIds.length, '个字段，但后端返回 fields 为空 → 后端把这些字段全过滤掉了（见 calcData 列权限 removeIf）。'
+          + '请确认数据集字段权限 / 字段是否被重建导致 engineFieldName 不匹配。')
+      }
       if (res?.code && res.code !== 0) {
         console.warn('[DeployCalendar] getData 报错，走 mock', res?.code, res?.msg)
         isError.value = true
