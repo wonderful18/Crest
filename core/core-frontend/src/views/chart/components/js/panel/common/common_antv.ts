@@ -1139,8 +1139,13 @@ export function getAssistLineLegend(chart: Chart) {
  * 渲染辅助线自定义 DOM 图例（g2 v4 原生 legend 不支持第二独立图例区）。
  * 在各 chart 的 draw 方法、g2plot 实例渲染后调用，挂在图表容器内。
  * 样式内联，不依赖外部 CSS。
+ *
+ * 布局原理：g2plot 画布尺寸 = 容器 clientWidth/Height 减去容器 padding
+ * （见 g2plot getContainerSize）。故给容器加 padding，画布会自动缩小避开 padding 区，
+ * 图例绝对定位到 padding 区，二者不重叠——不盖住图表显示区域。
+ * g2plot 的 size_sensor 监听容器变化会自动重适配画布，无需手动 forceFit。
  */
-export function renderAssistLineLegend(chart: Chart, container: string) {
+export function renderAssistLineLegend(chart: Chart, container: string, newChart?: any) {
   const el = document.getElementById(container) as HTMLElement | null
   if (!el) return
   const existing = el.querySelector(':scope > .crest-assist-line-legend')
@@ -1149,51 +1154,55 @@ export function renderAssistLineLegend(chart: Chart, container: string) {
   if (!legend.enable || !legend.items?.length) return
 
   const isVertical = legend.position === 'left' || legend.position === 'right'
-  // 容器需是相对定位锚点，图例绝对定位其上，避免破坏 g2 canvas 布局
+  // 容器需是相对定位锚点，图例绝对定位到 appendPadding 留出的区
+  // （画布已由 mergeAssistLineAppendPadding 缩小避开图例区，不会盖住图表）
   if (getComputedStyle(el).position === 'static') {
     el.style.position = 'relative'
   }
+
   const legendEl = document.createElement('div')
   legendEl.className = 'crest-assist-line-legend'
-  const posStyle: Partial<CSSStyleDeclaration> = {
+  Object.assign(legendEl.style, {
     position: 'absolute',
     display: 'flex',
     flexDirection: isVertical ? 'column' : 'row',
     flexWrap: 'wrap',
-    gap: '8px 16px',
-    alignItems: 'center',
+    gap: '6px 12px',
+    alignItems: isVertical ? 'flex-start' : 'center',
     fontSize: '12px',
     lineHeight: '20px',
     pointerEvents: 'none',
     zIndex: '1'
-  }
+  } as Partial<CSSStyleDeclaration>)
+  // 图例定位到对应 appendPadding 留白边
   if (legend.position === 'top') {
-    posStyle.top = '0'
-    posStyle.left = '0'
-    posStyle.right = '0'
-    posStyle.padding = '4px 8px 0'
+    legendEl.style.top = '0'
+    legendEl.style.left = '0'
+    legendEl.style.right = '0'
+    legendEl.style.padding = '2px 8px 0'
   } else if (legend.position === 'bottom') {
-    posStyle.bottom = '0'
-    posStyle.left = '0'
-    posStyle.right = '0'
-    posStyle.padding = '0 8px 4px'
+    legendEl.style.bottom = '0'
+    legendEl.style.left = '0'
+    legendEl.style.right = '0'
+    legendEl.style.padding = '0 8px 2px'
   } else if (legend.position === 'left') {
-    posStyle.left = '0'
-    posStyle.top = '0'
-    posStyle.bottom = '0'
-    posStyle.padding = '8px 4px 8px 0'
+    legendEl.style.left = '0'
+    legendEl.style.top = '0'
+    legendEl.style.bottom = '0'
+    legendEl.style.padding = '8px 4px 8px 8px'
+    legendEl.style.overflowY = 'auto'
   } else {
-    posStyle.right = '0'
-    posStyle.top = '0'
-    posStyle.bottom = '0'
-    posStyle.padding = '8px 0 8px 4px'
+    legendEl.style.right = '0'
+    legendEl.style.top = '0'
+    legendEl.style.bottom = '0'
+    legendEl.style.padding = '8px 8px 8px 4px'
+    legendEl.style.overflowY = 'auto'
   }
-  Object.assign(legendEl.style, posStyle)
 
   const lineStyleMap = { solid: 'solid', dashed: 'dashed', dotted: 'dotted' }
   legend.items.forEach(item => {
     const row = document.createElement('span')
-    Object.assign(row.style, { display: 'inline-flex', alignItems: 'center', gap: '6px' } as Partial<CSSStyleDeclaration>)
+    Object.assign(row.style, { display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' } as Partial<CSSStyleDeclaration>)
     const marker = document.createElement('span')
     Object.assign(marker.style, {
       display: 'inline-block',
@@ -1211,6 +1220,48 @@ export function renderAssistLineLegend(chart: Chart, container: string) {
     legendEl.appendChild(row)
   })
   el.appendChild(legendEl)
+}
+
+// 辅助线图例占位尺寸（px）：横排图例高度 / 纵排图例宽度
+// renderAssistLineLegend 绝对定位图例、mergeAssistLineAppendPadding 让画布留白，二者共用同一尺寸
+const ASSIST_LINE_LEGEND_HEIGHT = 28 // 上/下：横排图例高度
+const ASSIST_LINE_LEGEND_WIDTH = 100 // 左/右：纵排图例宽度
+
+/**
+ * 把辅助线图例占位叠加到 g2plot appendPadding。
+ * g2plot 画布尺寸会减去 appendPadding（见 getContainerSize），从而为图例留出空间，
+ * 图例 DOM 再绝对定位到该留白区，二者不重叠。
+ * @param chart 图表对象
+ * @param existing 现有 appendPadding（number | number[]）
+ * @param horizontal 是否横向图表（条形图），横向时 top/bottom 含义对应左右翻转
+ * @returns number[] [top, right, bottom, left]
+ */
+export function mergeAssistLineAppendPadding(chart: Chart, existing: any, horizontal: boolean): number[] {
+  const base = normalizeAppendPadding(existing)
+  const legend = getAssistLineLegend(chart)
+  if (!legend.enable || !legend.items?.length) return base
+  // 横向图表（条形图）时，图例 position 的 top/bottom 视觉上仍是上下，不翻转
+  const pos = legend.position
+  const gap = pos === 'left' || pos === 'right' ? ASSIST_LINE_LEGEND_WIDTH : ASSIST_LINE_LEGEND_HEIGHT
+  const [t, r, b, l] = base
+  if (pos === 'top') return [t + gap, r, b, l]
+  if (pos === 'bottom') return [t, r, b + gap, l]
+  if (pos === 'left') return [t, r, b, l + gap]
+  return [t, r + gap, b, l] // right
+}
+
+// appendPadding 归一化为 [top, right, bottom, left]
+const normalizeAppendPadding = (v: any): number[] => {
+  if (v == null) return [0, 0, 0, 0]
+  if (typeof v === 'number') return [v, v, v, v]
+  if (Array.isArray(v)) {
+    const a = v.map(x => (typeof x === 'number' ? x : 0))
+    if (a.length === 1) return [a[0], a[0], a[0], a[0]]
+    if (a.length === 2) return [a[0], a[1], a[0], a[1]]
+    if (a.length === 3) return [a[0], a[1], a[2], a[1]]
+    return [a[0], a[1], a[2], a[3]]
+  }
+  return [0, 0, 0, 0]
 }
 
 export function getLineDash(type) {

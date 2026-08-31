@@ -155,8 +155,8 @@ public class ChartDataManage {
                     .filter(fieldDTO -> !engineFieldNames.contains(fieldDTO.getEngineFieldName()))
                     .collect(Collectors.toList());
             if (!removed.isEmpty()) {
-                logger.warn("[calcData] 轴={} 被列权限/engineFieldName 过滤掉 {} 个字段: {}",
-                        axis, removed.size(),
+                logger.warn("[calcData] viewId={} 轴={} 被列权限/engineFieldName 过滤掉 {} 个字段: {}",
+                        view.getId(), axis, removed.size(),
                         removed.stream().map(f -> "id=" + f.getId() + ",eng=" + f.getEngineFieldName())
                                 .collect(Collectors.joining("; ")));
             }
@@ -449,7 +449,22 @@ public class ChartDataManage {
         }
 
         ChartCalcDataResult calcResult = chartHandler.calcChartResult(view, formatResult, filterResult, sqlMap, sqlMeta, provider);
-        return chartHandler.buildChart(view, calcResult, formatResult, filterResult);
+        var buildResult = chartHandler.buildChart(view, calcResult, formatResult, filterResult);
+        // 诊断：投产日历 fields 返回空排查。打印 xAxis 字段数 vs 最终返回的 fields/tableRow/originData
+        var xAxisAfter = formatResult.getAxisMap().get(ChartAxis.xAxis);
+        Object dataObj = buildResult != null ? buildResult.getData() : null;
+        int fieldsCnt = -1, tableRowCnt = -1;
+        if (dataObj instanceof java.util.Map) {
+            Object f = ((java.util.Map<?, ?>) dataObj).get("fields");
+            Object t = ((java.util.Map<?, ?>) dataObj).get("tableRow");
+            fieldsCnt = f instanceof java.util.List ? ((java.util.List<?>) f).size() : -2;
+            tableRowCnt = t instanceof java.util.List ? ((java.util.List<?>) t).size() : -2;
+        }
+        logger.info("[calcData] viewId={} buildChart出口: xAxis字段数={}, originData行数={}, 返回fields={}, tableRow={}",
+                view.getId(), xAxisAfter != null ? xAxisAfter.size() : 0,
+                calcResult.getOriginData() != null ? calcResult.getOriginData().size() : 0,
+                fieldsCnt, tableRowCnt);
+        return buildResult;
     }
 
     private List<ChartViewFieldDTO> getSizeField(ChartViewDTO view) {

@@ -14,7 +14,8 @@ import {
   getConditions,
   handleConditionsStyle,
   addConditionsStyleColorToData,
-  configEmptyDataStyle
+  configEmptyDataStyle,
+  mergeAssistLineAppendPadding
 } from '@/views/chart/components/js/panel/common/common_antv'
 import {
   AntVAbstractChartView,
@@ -134,7 +135,8 @@ export abstract class G2PlotChartView<
     const annotations = getAnalyse(chart)
     return {
       ...options,
-      annotations: [...annotations, ...((options as unknown as Options).annotations || [])]
+      annotations: [...annotations, ...((options as unknown as Options).annotations || [])],
+      appendPadding: mergeAssistLineAppendPadding(chart, (options as unknown as Options).appendPadding, false)
     }
   }
 
@@ -143,7 +145,11 @@ export abstract class G2PlotChartView<
       ...(((options as unknown as Options).annotations ?? []) as unknown[]),
       ...getAnalyseHorizontal(chart)
     ]
-    return { ...options, annotations }
+    return {
+      ...options,
+      annotations,
+      appendPadding: mergeAssistLineAppendPadding(chart, (options as unknown as Options).appendPadding, true)
+    }
   }
 
   protected configEmptyDataStrategy(chart: Chart, options: O): O {
