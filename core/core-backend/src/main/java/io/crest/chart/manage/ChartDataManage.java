@@ -148,7 +148,20 @@ public class ChartDataManage {
         var yAxis = formatResult.getAxisMap().get(ChartAxis.yAxis);
         formatResult.getContext().put("allFields", allFields);
         var axisMap = formatResult.getAxisMap();
-        axisMap.forEach((axis, fields) -> fields.removeIf(fieldDTO -> !engineFieldNames.contains(fieldDTO.getEngineFieldName())));
+        // 诊断：列权限/engineFieldName 过滤。记录被移除的字段，便于排查"投产日历等图表绑定的字段被全过滤导致 fields 返回空"。
+        // 仅在有字段被移除时记录，避免无列权限的普通图表刷日志。
+        axisMap.forEach((axis, fields) -> {
+            List<ChartViewFieldDTO> removed = fields.stream()
+                    .filter(fieldDTO -> !engineFieldNames.contains(fieldDTO.getEngineFieldName()))
+                    .collect(Collectors.toList());
+            if (!removed.isEmpty()) {
+                logger.warn("[calcData] 轴={} 被列权限/engineFieldName 过滤掉 {} 个字段: {}",
+                        axis, removed.size(),
+                        removed.stream().map(f -> "id=" + f.getId() + ",eng=" + f.getEngineFieldName())
+                                .collect(Collectors.joining("; ")));
+            }
+            fields.removeIf(fieldDTO -> !engineFieldNames.contains(fieldDTO.getEngineFieldName()));
+        });
 
         // 过滤来自仪表板的条件
         List<ChartExtFilterDTO> extFilterList = new ArrayList<>();

@@ -20,6 +20,7 @@ import { clearCache } from '@/utils/cacheUtil'
 import { securityConfig } from './hmac'
 import { isLoginPath } from '@/router/authFailureNavigation.mjs'
 import { shouldAttachLinkToken } from './linkTokenPolicy.mjs'
+import { isPublicLinkHash } from '@/views/chart/components/views/publicLinkJump.mjs'
 
 type AxiosErrorWidthLoading<T> = T & {
   config: {
@@ -306,8 +307,9 @@ const showMsg = (msg: string, id: string) => {
 
 const executeVersionHandler = (response: AxiosResponse) => {
   // 分享链接打开时不提示系统升级弹框，避免影响查看者
-  const currentPath = router.currentRoute.value.path
-  if (currentPath.startsWith('/link/')) {
+  // 用 hash 同步判断，避免依赖 router.currentRoute 异步导航状态：
+  // reload 后 / 路由未就绪时 currentRoute.path 可能仍非 /link/，导致拦截落空而误弹升级框
+  if (isPublicLinkHash(window.location.hash)) {
     return
   }
   const executeVersionHeader = 'x-crest-execute-version'

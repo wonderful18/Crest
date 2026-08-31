@@ -931,7 +931,10 @@ export const DEFAULT_FUNCTION_CFG: ChartFunctionCfg = {
 }
 export const DEFAULT_ASSIST_LINE_CFG: ChartAssistLineCfg = {
   enable: false,
-  assistLine: []
+  assistLine: [],
+  legendEnable: true,
+  legendPosition: 'bottom',
+  showLineText: false
 }
 export const DEFAULT_THRESHOLD: ChartThreshold = {
   enable: false,

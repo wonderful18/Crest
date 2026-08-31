@@ -49,7 +49,10 @@ const useQuotaExt = computed<boolean>(() => {
 const state = reactive({
   assistLineCfg: {
     enable: false,
-    assistLine: []
+    assistLine: [],
+    legendEnable: true,
+    legendPosition: 'bottom',
+    showLineText: false
   },
   editLineDialog: false,
   lineArr: [],
@@ -177,6 +180,50 @@ onMounted(() => {
         </button>
       </span>
     </div>
+
+    <el-row class="line-style" v-if="state.assistLineCfg.assistLine.length > 0">
+      <el-col :span="10" class="line-style">
+        <span :class="'label-' + props.themes">{{ t('chart.assist_line_legend') }}</span>
+      </el-col>
+      <el-col :span="14" class="line-style">
+        <el-switch
+          :effect="themes"
+          v-model="state.assistLineCfg.legendEnable"
+          @change="changeAssistLine"
+        />
+      </el-col>
+    </el-row>
+    <el-row class="line-style" v-if="state.assistLineCfg.assistLine.length > 0">
+      <el-col :span="10" class="line-style">
+        <span :class="'label-' + props.themes">{{ t('chart.assist_line_legend_position') }}</span>
+      </el-col>
+      <el-col :span="14" class="line-style">
+        <el-select
+          :effect="themes"
+          v-model="state.assistLineCfg.legendPosition"
+          :disabled="!state.assistLineCfg.legendEnable"
+          @change="changeAssistLine"
+          style="width: 100%"
+        >
+          <el-option :label="t('chart.assist_line_legend_pos_top')" value="top" />
+          <el-option :label="t('chart.assist_line_legend_pos_bottom')" value="bottom" />
+          <el-option :label="t('chart.assist_line_legend_pos_left')" value="left" />
+          <el-option :label="t('chart.assist_line_legend_pos_right')" value="right" />
+        </el-select>
+      </el-col>
+    </el-row>
+    <el-row class="line-style" v-if="state.assistLineCfg.assistLine.length > 0">
+      <el-col :span="10" class="line-style">
+        <span :class="'label-' + props.themes">{{ t('chart.assist_line_show_text') }}</span>
+      </el-col>
+      <el-col :span="14" class="line-style">
+        <el-switch
+          :effect="themes"
+          v-model="state.assistLineCfg.showLineText"
+          @change="changeAssistLine"
+        />
+      </el-col>
+    </el-row>
 
     <el-row v-for="(item, index) in state.assistLineCfg.assistLine" :key="index" class="line-style">
       <el-col :span="8" class="line-style">

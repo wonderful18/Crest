@@ -83,6 +83,18 @@ declare interface ChartAssistLineCfg {
    * 辅助线配置
    */
   assistLine: AssistLine[]
+  /**
+   * 是否显示图例（辅助线名称以图例形式展示）
+   */
+  legendEnable: boolean
+  /**
+   * 图例位置：top/bottom/left/right
+   */
+  legendPosition: 'top' | 'bottom' | 'left' | 'right'
+  /**
+   * 是否在线上保留文字标注（false 时只在图例显示名称）
+   */
+  showLineText: boolean
 }
 /**
  * 辅助线
