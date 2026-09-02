@@ -620,6 +620,12 @@ const calcData = (viewCalc: Chart, callback?: () => void) => {
   v.drillFields = []
   v.type = 'table-info'
   v.render = 'antv'
+  // 强制关闭明细表分页：投产日历需要全部投产数据，不能只取默认 pageSize（20行）
+  // 后端 TableInfoHandler.customFilter 会根据 basicStyle.tablePageMode=='page' 设置 LIMIT，
+  // 改成非 page 值后走 goPage=null/pageSize=null 分支，SQL 不加 LIMIT 返回全量。
+  if (v.customAttr?.basicStyle) {
+    v.customAttr.basicStyle.tablePageMode = 'all'
+  }
   console.info('[DeployCalendar] 7. 传给后端的 view:', {
     viewId: v.id, type: v.type,
     xAxisIds: v.xAxis.map((f: any) => f?.id),
