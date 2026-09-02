@@ -4859,7 +4859,7 @@ export default {
   },
   deploy_calendar: {
     date_field: '投产日期',
-    content_field: '投产内容',
+    content_field: '关联系统',
     release_type_field: '版本类型',
     weekly: '周版',
     monthly: '月版',

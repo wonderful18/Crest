@@ -548,13 +548,16 @@ const parseData = (res: any) => {
     const d = parseDate(dateRaw)
     if (!d) return
     const key = formatDate(d)
-    const content = contentKey ? row[contentKey] : ''
+    const system = contentKey ? row[contentKey] : ''
+    const systemStr = system === null || system === undefined ? '' : String(system).trim()
     const rawType = typeKey ? row[typeKey] : ''
     // 版本类型直接用原始值作 key（空值归为 ''），不再正则映射
     const tp = normalizeType(rawType)
     registerType(tp)
     const list = map.get(key) || []
-    list.push({ content: content || '', type: tp, raw: rawType, rawDate: dateRaw })
+    // 同一天内相同关联系统名称去重（含空值），避免同一系统多条投产记录在 popover 中重复显示
+    if (list.some(r => r.content === systemStr)) return
+    list.push({ content: systemStr, type: tp, raw: rawType, rawDate: dateRaw })
     map.set(key, list)
   })
   console.log('[DeployCalendar] 9. 行数统计:', '总行=', rows.length, '有日期=', withDate, '解析成功=', map.size)
@@ -620,6 +623,12 @@ const calcData = (viewCalc: Chart, callback?: () => void) => {
   v.drillFields = []
   v.type = 'table-info'
   v.render = 'antv'
+  // 强制关闭明细表分页：投产日历需要全部投产数据，不能只取默认 pageSize（20行）
+  // 后端 TableInfoHandler.customFilter 会根据 basicStyle.tablePageMode=='page' 设置 LIMIT，
+  // 改成非 page 值后走 goPage=null/pageSize=null 分支，SQL 不加 LIMIT 返回全量。
+  if (v.customAttr?.basicStyle) {
+    v.customAttr.basicStyle.tablePageMode = 'all'
+  }
   console.info('[DeployCalendar] 7. 传给后端的 view:', {
     viewId: v.id, type: v.type,
     xAxisIds: v.xAxis.map((f: any) => f?.id),
