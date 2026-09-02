@@ -464,25 +464,25 @@ const findKeyByName = (row: any, name: string): string | null => {
 
 const parseData = (res: any) => {
   const map = new Map<string, any[]>()
-  // getData resolve 值已是业务 data 体 { fields, tableRow, ... }，不可再取 .data
-  // （.data 是左右表子结构，普通 table-info 无此字段，多套一层会导致 fields/tableRow 全空 → 回退 mock）
-  const data = res
-  if (!data) {
+  // getData 返回的是 view 对象，fields/tableRow 嵌套在 view.data 中（与普通图表 ChartComponentS2 取 res?.data 一致）
+  const payload = res?.data || res
+  if (!payload) {
     console.warn('[DeployCalendar] parseData 失败：getData 返回空（res 为空），将回退 mock')
     return map
   }
   // 结构体检：后端返回体顶层字段一览，便于排查"fields/tableRow 缺失"类问题
   console.info('[DeployCalendar] 0. 后端返回结构体检:', {
-    resKeys: Object.keys(data),
-    hasFields: Array.isArray(data.fields),
-    fieldsLen: Array.isArray(data.fields) ? data.fields.length : 0,
-    hasTableRow: Array.isArray(data.tableRow),
-    tableRowLen: Array.isArray(data.tableRow) ? data.tableRow.length : 0,
-    code: data.code,
-    msg: data.msg
+    resKeys: Object.keys(res || {}),
+    dataKeys: Object.keys(res?.data || {}),
+    hasFields: Array.isArray(payload.fields),
+    fieldsLen: Array.isArray(payload.fields) ? payload.fields.length : 0,
+    hasTableRow: Array.isArray(payload.tableRow),
+    tableRowLen: Array.isArray(payload.tableRow) ? payload.tableRow.length : 0,
+    code: res?.code,
+    msg: res?.msg
   })
-  const fields = Array.isArray(data.fields) ? data.fields : []
-  const rows = data.tableRow || []
+  const fields = Array.isArray(payload.fields) ? payload.fields : []
+  const rows = payload.tableRow || []
   if (fields.length === 0) {
     console.warn('[DeployCalendar] parseData 失败：后端返回 fields 为空。'
       + '最可能原因：后端 ChartDataManage.calcData 第151行按列权限/engineFieldName 过滤时，'
@@ -630,8 +630,9 @@ const calcData = (viewCalc: Chart, callback?: () => void) => {
     .then(res => {
       // 诊断：传给后端的字段 vs 后端实际返回的字段，定位"字段被列权限/engineFieldName 过滤"问题
       const sentFieldIds = [...xArr, ...yArr, ...extArr].map((f: any) => f?.id).filter(Boolean)
-      const retFieldIds = Array.isArray(res?.fields) ? res.fields.map((f: any) => f?.id) : []
-      const retFieldEngs = Array.isArray(res?.fields) ? res.fields.map((f: any) => f?.engineFieldName) : []
+      const retFields = Array.isArray(res?.data?.fields) ? res.data.fields : []
+      const retFieldIds = retFields.map((f: any) => f?.id)
+      const retFieldEngs = retFields.map((f: any) => f?.engineFieldName)
       console.info('[DeployCalendar] 6. 传给后端的字段id:', sentFieldIds, '后端返回字段id:', retFieldIds, 'engineFieldName:', retFieldEngs)
       if (sentFieldIds.length > 0 && retFieldIds.length === 0) {
         console.warn('[DeployCalendar] 诊断：传出了', sentFieldIds.length, '个字段，但后端返回 fields 为空 → 后端把这些字段全过滤掉了（见 calcData 列权限 removeIf）。'
@@ -654,8 +655,8 @@ const calcData = (viewCalc: Chart, callback?: () => void) => {
           state.deployMap = map
         }
         const curViewInfo = canvasViewInfo.value[props.element.id]
-        if (res?.fields && curViewInfo) {
-          curViewInfo['curFields'] = res.fields || []
+        if (res?.data?.fields && curViewInfo) {
+          curViewInfo['curFields'] = res.data.fields || []
         }
         dvMainStore.setViewDataDetails(props.element.id, res)
         // 数据加载后同步用户覆盖色（覆盖 resetTypes 与 getData 之间的竞态窗口）
