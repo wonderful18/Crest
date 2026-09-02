@@ -548,13 +548,16 @@ const parseData = (res: any) => {
     const d = parseDate(dateRaw)
     if (!d) return
     const key = formatDate(d)
-    const content = contentKey ? row[contentKey] : ''
+    const system = contentKey ? row[contentKey] : ''
+    const systemStr = system === null || system === undefined ? '' : String(system).trim()
     const rawType = typeKey ? row[typeKey] : ''
     // 版本类型直接用原始值作 key（空值归为 ''），不再正则映射
     const tp = normalizeType(rawType)
     registerType(tp)
     const list = map.get(key) || []
-    list.push({ content: content || '', type: tp, raw: rawType, rawDate: dateRaw })
+    // 同一天内相同关联系统名称去重（含空值），避免同一系统多条投产记录在 popover 中重复显示
+    if (list.some(r => r.content === systemStr)) return
+    list.push({ content: systemStr, type: tp, raw: rawType, rawDate: dateRaw })
     map.set(key, list)
   })
   console.log('[DeployCalendar] 9. 行数统计:', '总行=', rows.length, '有日期=', withDate, '解析成功=', map.size)

@@ -6,7 +6,7 @@ import { DEFAULT_DEPLOY_CALENDAR_STYLE } from '@/views/chart/components/editor/u
 const { t } = useI18n()
 /**
  * 投产窗口日历图表
- * xAxis=投产日期列 yAxis=投产内容列 extStack=版本类型列(周版/月版)
+ * xAxis=投产日期列 yAxis=关联系统列 extStack=版本类型列(周版/月版)
  */
 export class DeployCalendarView extends AbstractChartView {
   properties: EditorProperty[] = [

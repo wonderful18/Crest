@@ -4985,7 +4985,7 @@ export default {
   },
   deploy_calendar: {
     date_field: 'Deploy Date',
-    content_field: 'Deploy Content',
+    content_field: 'Related System',
     release_type_field: 'Release Type',
     weekly: 'Weekly',
     monthly: 'Monthly',
