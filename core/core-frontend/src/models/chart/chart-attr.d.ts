@@ -131,6 +131,10 @@ declare interface ChartDeployCalendarStyle {
    */
   legendColor: string
   /**
+   * 浮窗日期标题是否显示汇总数（日期后“（共 N 个项目）”）
+   */
+  popShowSummary: boolean
+  /**
    * popover 日期标题文字色
    */
   titlePopColor: string

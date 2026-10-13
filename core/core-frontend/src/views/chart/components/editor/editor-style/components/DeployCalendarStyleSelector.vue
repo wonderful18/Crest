@@ -418,6 +418,16 @@ watch(
         />
       </el-form-item>
       <el-form-item class="form-item" :class="'form-item-' + themes" :effect="themes">
+        <el-checkbox
+          size="small"
+          :effect="themes"
+          v-model="state.form.popShowSummary"
+          @change="change('popShowSummary')"
+        >
+          {{ t('deploy_calendar.pop_summary_show') }}
+        </el-checkbox>
+      </el-form-item>
+      <el-form-item class="form-item" :class="'form-item-' + themes" :effect="themes">
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
           <el-tooltip :content="t('chart.font_size')" placement="top">
             <el-select

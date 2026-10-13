@@ -4889,6 +4889,7 @@ export default {
     weekday_color: '星期表头色',
     legend_color: '图例文字色',
     title_pop_color: '弹出标题色',
+    pop_summary_show: '显示汇总数（日期后“共 N 个”）',
     title_pop_font_size: '弹出标题字号',
     title_pop_bolder: '弹出标题加粗',
     title_pop_align: '弹出标题对齐',

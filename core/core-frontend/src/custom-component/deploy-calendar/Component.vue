@@ -116,7 +116,7 @@
                 'text-align': state.style.titlePopAlign
               }"
             >
-              {{ formatDate(cell.date) }}
+              {{ formatDate(cell.date) }}{{ state.style.popShowSummary !== false ? '（共 ' + cell.deployments.length + ' 个）' : '' }}
             </div>
             <div v-for="(d, i) in cell.deployments" :key="i" class="pop-item">
               <span

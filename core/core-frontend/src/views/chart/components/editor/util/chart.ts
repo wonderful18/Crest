@@ -631,6 +631,8 @@ export const DEFAULT_DEPLOY_CALENDAR_STYLE: ChartDeployCalendarStyle = {
   typeColorMap: {},
   weekdayColor: '#8a9099',
   legendColor: '#8a9099',
+  // 浮窗日期标题是否显示汇总数（日期后“（共 N 个项目）”）
+  popShowSummary: true,
   // popover 显示文字（悬浮单元格弹出的当日投产记录）
   titlePopColor: '#e6e8eb',
   titlePopFontSize: 13,

@@ -5015,6 +5015,7 @@ export default {
     weekday_color: 'Weekday Color',
     legend_color: 'Legend Color',
     title_pop_color: 'Popup Title Color',
+    pop_summary_show: 'Show summary count (date + "N")',
     title_pop_font_size: 'Popup Title Font Size',
     title_pop_bolder: 'Popup Title Bold',
     title_pop_align: 'Popup Title Align',
